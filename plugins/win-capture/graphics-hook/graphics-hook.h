@@ -143,7 +143,7 @@ static inline HMODULE load_system_library(const char *name)
 
 static inline bool capture_alive(void)
 {
-	HANDLE event = OpenEventA(EVENT_ALL_ACCESS, false, keepalive_name);
+	HANDLE event = OpenEventA(GC_EVENT_FLAGS, false, keepalive_name);
 	if (event) {
 		CloseHandle(event);
 		return true;

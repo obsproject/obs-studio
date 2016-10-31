@@ -101,6 +101,8 @@ struct hook_info {
 
 #pragma pack(pop)
 
+#define GC_MAPPING_FLAGS (FILE_MAP_READ | FILE_MAP_WRITE)
+
 static inline HANDLE get_hook_info(DWORD id)
 {
 	HANDLE handle;
@@ -111,7 +113,7 @@ static inline HANDLE get_hook_info(DWORD id)
 			PAGE_READWRITE, 0, sizeof(struct hook_info), new_name);
 
 	if (!handle && GetLastError() == ERROR_ALREADY_EXISTS) {
-		handle = OpenFileMappingA(FILE_MAP_ALL_ACCESS, false,
+		handle = OpenFileMappingA(GC_MAPPING_FLAGS, false,
 				new_name);
 	}
 

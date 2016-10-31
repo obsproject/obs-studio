@@ -4,11 +4,14 @@
 #define inline __inline
 #endif
 
+#define GC_EVENT_FLAGS (EVENT_MODIFY_STATE | SYNCHRONIZE)
+#define GC_MUTEX_FLAGS (SYNCHRONIZE)
+
 static inline HANDLE get_event(const char *name)
 {
 	HANDLE event = CreateEventA(NULL, false, false, name);
 	if (!event)
-		event = OpenEventA(EVENT_ALL_ACCESS, false, name);
+		event = OpenEventA(GC_EVENT_FLAGS, false, name);
 
 	return event;
 }
@@ -17,7 +20,7 @@ static inline HANDLE get_mutex(const char *name)
 {
 	HANDLE event = CreateMutexA(NULL, false, name);
 	if (!event)
-		event = OpenMutexA(MUTEX_ALL_ACCESS, false, name);
+		event = OpenMutexA(GC_MUTEX_FLAGS, false, name);
 
 	return event;
 }

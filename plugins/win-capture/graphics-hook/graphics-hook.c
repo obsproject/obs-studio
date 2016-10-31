@@ -88,7 +88,7 @@ static HANDLE init_mutex(const char *name, DWORD pid)
 
 	sprintf(new_name, "%s%lu", name, pid);
 
-	handle = OpenMutexA(MUTEX_ALL_ACCESS, false, new_name);
+	handle = OpenMutexA(SYNCHRONIZE, false, new_name);
 	if (!handle)
 		hlog("Failed to open mutex '%s': %lu", name, GetLastError());
 	return handle;
