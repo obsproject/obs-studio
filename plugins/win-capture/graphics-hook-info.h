@@ -113,11 +113,3 @@ static inline HANDLE create_hook_info(DWORD id)
 	return CreateFileMappingW(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE,
 			0, sizeof(struct hook_info), new_name);
 }
-
-static inline HANDLE open_hook_info(DWORD id)
-{
-	wchar_t new_name[64];
-	_snwprintf(new_name, 64, L"%s%lu", SHMEM_HOOK_INFO, id);
-
-	return OpenFileMappingW(GC_MAPPING_FLAGS, false, new_name);
-}
