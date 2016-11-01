@@ -20,8 +20,8 @@
 #define MUTEX_TEXTURE1        "CaptureHook_TextureMutex1"
 #define MUTEX_TEXTURE2        "CaptureHook_TextureMutex2"
 
-#define SHMEM_HOOK_INFO       "Local\\CaptureHook_HookInfo"
-#define SHMEM_TEXTURE         "Local\\CaptureHook_Texture"
+#define SHMEM_HOOK_INFO       "CaptureHook_HookInfo"
+#define SHMEM_TEXTURE         "CaptureHook_Texture"
 
 #define PIPE_NAME             "CaptureHook_Pipe"
 
