@@ -23,7 +23,7 @@ struct BasicOutputHandler {
 	virtual ~BasicOutputHandler() {};
 
 	virtual bool StartStreaming(obs_service_t *service) = 0;
-	virtual bool StartRecording() = 0;
+	virtual bool StartRecording(string RecorderPath, string SubPath) = 0;
 	virtual void StopStreaming(bool force = false) = 0;
 	virtual void StopRecording(bool force = false) = 0;
 	virtual bool StreamingActive() const = 0;

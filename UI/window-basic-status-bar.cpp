@@ -63,6 +63,8 @@ void OBSBasicStatusBar::Deactivate()
 	if (!main->outputHandler->Active()) {
 		delete refreshTimer;
 		sessionTime->setText(QString("00:00:00"));
+		main->RecordingElapsedTime = "00:00:00";
+
 		delayInfo->setText("");
 		droppedFrames->setText("");
 		kbps->setText("");
@@ -173,6 +175,10 @@ void OBSBasicStatusBar::UpdateSessionTime()
 
 	QString text;
 	text.sprintf("%02d:%02d:%02d", hours, minutes, seconds);
+
+	OBSBasic *main = qobject_cast<OBSBasic*>(parent());
+	main->RecordingElapsedTime = text.toStdString();
+
 	sessionTime->setText(text);
 	sessionTime->setMinimumWidth(sessionTime->width());
 

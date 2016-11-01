@@ -44,6 +44,8 @@ class QNetworkReply;
 
 #include "ui_OBSBasic.h"
 
+using namespace std;
+
 #define DESKTOP_AUDIO_1 Str("DesktopAudioDevice1")
 #define DESKTOP_AUDIO_2 Str("DesktopAudioDevice2")
 #define AUX_AUDIO_1     Str("AuxAudioDevice1")
@@ -323,7 +325,8 @@ public slots:
 	void StreamStopping();
 	void StreamingStop(int errorcode);
 
-	void StartRecording();
+	bool GetRecordStatus();
+	void StartRecording(string RecorderPath, string SubPath);
 	void StopRecording();
 
 	void RecordingStart();
@@ -443,6 +446,8 @@ public:
 		cx = previewCX;
 		cy = previewCY;
 	}
+
+	string RecordingElapsedTime;
 
 	inline double GetCPUUsage() const
 	{

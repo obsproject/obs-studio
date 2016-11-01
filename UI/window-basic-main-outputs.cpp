@@ -180,7 +180,7 @@ struct SimpleOutput : BasicOutputHandler {
 	void LoadStreamingPreset_h264(const char *encoder);
 
 	virtual bool StartStreaming(obs_service_t *service) override;
-	virtual bool StartRecording() override;
+	virtual bool StartRecording(string RecorderPath, string SubPath) override;
 	virtual void StopStreaming(bool force) override;
 	virtual void StopRecording(bool force) override;
 	virtual bool StreamingActive() const override;
@@ -633,7 +633,7 @@ static void ensure_directory_exists(string &path)
 	os_mkdirs(directory.c_str());
 }
 
-bool SimpleOutput::StartRecording()
+bool SimpleOutput::StartRecording(string RecorderPath, string SubPath)
 {
 	if (usingRecordingPreset) {
 		if (!ffmpegOutput)
@@ -645,8 +645,30 @@ bool SimpleOutput::StartRecording()
 	if (!Active())
 		SetupOutputs();
 
-	const char *path = config_get_string(main->Config(),
+	string NewPath;
+	const char *path1 = config_get_string(main->Config(),
 			"SimpleOutput", "FilePath");
+
+	const char * path;
+	path = path1;
+
+	if (SubPath != "")
+	{
+		NewPath += path1;
+		NewPath += "\\";
+		NewPath += SubPath;
+		path = NewPath.c_str();
+		path = path;
+	}
+
+	if (RecorderPath != "")
+	{
+		path = RecorderPath.c_str();
+	}
+
+	//CreateDirectories
+	os_mkdirs(path);	
+
 	const char *format = config_get_string(main->Config(),
 			"SimpleOutput", "RecFormat");
 	const char *mux = config_get_string(main->Config(), "SimpleOutput",
@@ -760,7 +782,7 @@ struct AdvancedOutput : BasicOutputHandler {
 	int GetAudioBitrate(size_t i) const;
 
 	virtual bool StartStreaming(obs_service_t *service) override;
-	virtual bool StartRecording() override;
+	virtual bool StartRecording(string RecorderPath, string SubPath) override;
 	virtual void StopStreaming(bool force) override;
 	virtual void StopRecording(bool force) override;
 	virtual bool StreamingActive() const override;
@@ -1170,7 +1192,7 @@ bool AdvancedOutput::StartStreaming(obs_service_t *service)
 	return false;
 }
 
-bool AdvancedOutput::StartRecording()
+bool AdvancedOutput::StartRecording(string RecorderPath, string SubPath)
 {
 	const char *path;
 	const char *recFormat;
@@ -1192,8 +1214,31 @@ bool AdvancedOutput::StartRecording()
 		SetupOutputs();
 
 	if (!ffmpegOutput || ffmpegRecording) {
-		path = config_get_string(main->Config(), "AdvOut",
+
+		string NewPath;
+		const char *path1 = config_get_string(main->Config(), "AdvOut",
 				ffmpegRecording ? "FFFilePath" : "RecFilePath");
+
+		const char * path;
+		path = path1;
+				
+		if (SubPath != "")
+		{
+			NewPath += path1;
+			NewPath += "\\";
+			NewPath += SubPath;
+			path = NewPath.c_str();
+			path = path;
+		}
+
+		if (RecorderPath != "")
+		{
+			path = RecorderPath.c_str();
+		}
+
+		//CreateDirectories
+		os_mkdirs(path);
+
 		recFormat = config_get_string(main->Config(), "AdvOut",
 				ffmpegRecording ? "FFExtension" : "RecFormat");
 		filenameFormat = config_get_string(main->Config(), "Output",
@@ -1249,6 +1294,7 @@ bool AdvancedOutput::StartRecording()
 
 	return false;
 }
+
 
 void AdvancedOutput::StopStreaming(bool force)
 {
