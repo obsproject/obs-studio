@@ -13,6 +13,8 @@
 #define EVENT_HOOK_READY      "CaptureHook_HookReady"
 #define EVENT_HOOK_EXIT       "CaptureHook_Exit"
 
+#define EVENT_HOOK_INIT       "CaptureHook_Initialize"
+
 #define WINDOW_HOOK_KEEPALIVE L"CaptureHook_KeepAlive"
 
 #define MUTEX_TEXTURE1        "CaptureHook_TextureMutex1"
@@ -103,19 +105,19 @@ struct hook_info {
 
 #define GC_MAPPING_FLAGS (FILE_MAP_READ | FILE_MAP_WRITE)
 
-static inline HANDLE get_hook_info(DWORD id)
+static inline HANDLE create_hook_info(DWORD id)
 {
-	HANDLE handle;
 	char new_name[64];
 	sprintf(new_name, "%s%lu", SHMEM_HOOK_INFO, id);
 
-	handle = CreateFileMappingA(INVALID_HANDLE_VALUE, NULL,
-			PAGE_READWRITE, 0, sizeof(struct hook_info), new_name);
+	return CreateFileMappingA(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE,
+			0, sizeof(struct hook_info), new_name);
+}
 
-	if (!handle && GetLastError() == ERROR_ALREADY_EXISTS) {
-		handle = OpenFileMappingA(GC_MAPPING_FLAGS, false,
-				new_name);
-	}
+static inline HANDLE open_hook_info(DWORD id)
+{
+	char new_name[64];
+	sprintf(new_name, "%s%lu", SHMEM_HOOK_INFO, id);
 
-	return handle;
+	return OpenFileMappingA(GC_MAPPING_FLAGS, false, new_name);
 }
