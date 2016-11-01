@@ -74,7 +74,7 @@ bool init_pipe(void)
 	return true;
 }
 
-static HANDLE init_event(const char *name, DWORD pid)
+static HANDLE init_event(const wchar_t *name, DWORD pid)
 {
 	HANDLE handle = create_event_plus_id(name, pid);
 	if (!handle)
@@ -82,7 +82,7 @@ static HANDLE init_event(const char *name, DWORD pid)
 	return handle;
 }
 
-static HANDLE init_mutex(const char *name, DWORD pid)
+static HANDLE init_mutex(const wchar_t *name, DWORD pid)
 {
 	HANDLE handle = create_mutex_plus_id(name, pid);
 	if (!handle)
@@ -484,10 +484,10 @@ static inline void unlock_shmem_tex(int id)
 
 static inline bool init_shared_info(size_t size)
 {
-	char name[64];
-	sprintf_s(name, 64, "%s%u", SHMEM_TEXTURE, ++shmem_id_counter);
+	wchar_t name[64];
+	_snwprintf(name, 64, L"%s%ld", SHMEM_TEXTURE, ++shmem_id_counter);
 
-	shmem_file_handle = CreateFileMappingA(INVALID_HANDLE_VALUE, NULL,
+	shmem_file_handle = CreateFileMappingW(INVALID_HANDLE_VALUE, NULL,
 			PAGE_READWRITE, 0, (DWORD)size, name);
 	if (!shmem_file_handle) {
 		hlog("init_shared_info: Failed to create shared memory: %d",

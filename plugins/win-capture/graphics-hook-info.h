@@ -7,21 +7,21 @@
 
 #include "hook-helpers.h"
 
-#define EVENT_CAPTURE_RESTART "CaptureHook_Restart"
-#define EVENT_CAPTURE_STOP    "CaptureHook_Stop"
+#define EVENT_CAPTURE_RESTART L"CaptureHook_Restart"
+#define EVENT_CAPTURE_STOP    L"CaptureHook_Stop"
 
-#define EVENT_HOOK_READY      "CaptureHook_HookReady"
-#define EVENT_HOOK_EXIT       "CaptureHook_Exit"
+#define EVENT_HOOK_READY      L"CaptureHook_HookReady"
+#define EVENT_HOOK_EXIT       L"CaptureHook_Exit"
 
-#define EVENT_HOOK_INIT       "CaptureHook_Initialize"
+#define EVENT_HOOK_INIT       L"CaptureHook_Initialize"
 
 #define WINDOW_HOOK_KEEPALIVE L"CaptureHook_KeepAlive"
 
-#define MUTEX_TEXTURE1        "CaptureHook_TextureMutex1"
-#define MUTEX_TEXTURE2        "CaptureHook_TextureMutex2"
+#define MUTEX_TEXTURE1        L"CaptureHook_TextureMutex1"
+#define MUTEX_TEXTURE2        L"CaptureHook_TextureMutex2"
 
-#define SHMEM_HOOK_INFO       "CaptureHook_HookInfo"
-#define SHMEM_TEXTURE         "CaptureHook_Texture"
+#define SHMEM_HOOK_INFO       L"CaptureHook_HookInfo"
+#define SHMEM_TEXTURE         L"CaptureHook_Texture"
 
 #define PIPE_NAME             "CaptureHook_Pipe"
 
@@ -107,17 +107,17 @@ struct hook_info {
 
 static inline HANDLE create_hook_info(DWORD id)
 {
-	char new_name[64];
-	sprintf(new_name, "%s%lu", SHMEM_HOOK_INFO, id);
+	wchar_t new_name[64];
+	_snwprintf(new_name, 64, L"%s%lu", SHMEM_HOOK_INFO, id);
 
-	return CreateFileMappingA(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE,
+	return CreateFileMappingW(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE,
 			0, sizeof(struct hook_info), new_name);
 }
 
 static inline HANDLE open_hook_info(DWORD id)
 {
-	char new_name[64];
-	sprintf(new_name, "%s%lu", SHMEM_HOOK_INFO, id);
+	wchar_t new_name[64];
+	_snwprintf(new_name, 64, L"%s%lu", SHMEM_HOOK_INFO, id);
 
-	return OpenFileMappingA(GC_MAPPING_FLAGS, false, new_name);
+	return OpenFileMappingW(GC_MAPPING_FLAGS, false, new_name);
 }
