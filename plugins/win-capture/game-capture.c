@@ -481,13 +481,6 @@ static void *game_capture_create(obs_data_t *settings, obs_source_t *source)
 	return gc;
 }
 
-static inline HANDLE open_event_id(const char *name, DWORD process_id)
-{
-	char new_name[128];
-	sprintf(new_name, "%s%lu", name, process_id);
-	return OpenEventA(EVENT_ALL_ACCESS, false, new_name);
-}
-
 #define STOP_BEING_BAD \
 	"  This is most likely due to security software. Please make sure " \
         "that the OBS installation folder is excluded/ignored in the "      \
@@ -666,7 +659,8 @@ static inline bool init_texture_mutexes(struct game_capture *gc)
 /* if there's already a hook in the process, then signal and start */
 static inline bool attempt_existing_hook(struct game_capture *gc)
 {
-	gc->hook_restart = open_event_id(EVENT_CAPTURE_RESTART, gc->process_id);
+	gc->hook_restart = open_event_plus_id(EVENT_CAPTURE_RESTART,
+			gc->process_id);
 	if (gc->hook_restart) {
 		debug("existing hook found, signaling process: %s",
 				gc->config.executable);
@@ -988,7 +982,7 @@ static void setup_window(struct game_capture *gc, HWND window)
 	GetWindowThreadProcessId(window, &process_id);
 
 	/* do not wait if we're re-hooking a process */
-	hook_restart = open_event_id(EVENT_CAPTURE_RESTART, process_id);
+	hook_restart = open_event_plus_id(EVENT_CAPTURE_RESTART, process_id);
 	if (hook_restart) {
 		gc->wait_for_target_startup = false;
 		CloseHandle(hook_restart);
