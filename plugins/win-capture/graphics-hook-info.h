@@ -13,7 +13,7 @@
 #define EVENT_HOOK_READY      "CaptureHook_HookReady"
 #define EVENT_HOOK_EXIT       "CaptureHook_Exit"
 
-#define EVENT_HOOK_KEEPALIVE  "CaptureHook_KeepAlive"
+#define WINDOW_HOOK_KEEPALIVE L"CaptureHook_KeepAlive"
 
 #define MUTEX_TEXTURE1        "CaptureHook_TextureMutex1"
 #define MUTEX_TEXTURE2        "CaptureHook_TextureMutex2"
