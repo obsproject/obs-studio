@@ -7,51 +7,51 @@
 #define GC_EVENT_FLAGS (EVENT_MODIFY_STATE | SYNCHRONIZE)
 #define GC_MUTEX_FLAGS (SYNCHRONIZE)
 
-static inline HANDLE create_event(const char *name)
+static inline HANDLE create_event(const wchar_t *name)
 {
-	return CreateEventA(NULL, false, false, name);
+	return CreateEventW(NULL, false, false, name);
 }
 
-static inline HANDLE open_event(const char *name)
+static inline HANDLE open_event(const wchar_t *name)
 {
-	return OpenEventA(GC_EVENT_FLAGS, false, name);
+	return OpenEventW(GC_EVENT_FLAGS, false, name);
 }
 
-static inline HANDLE create_mutex(const char *name)
+static inline HANDLE create_mutex(const wchar_t *name)
 {
-	return CreateMutexA(NULL, false, name);
+	return CreateMutexW(NULL, false, name);
 }
 
-static inline HANDLE open_mutex(const char *name)
+static inline HANDLE open_mutex(const wchar_t *name)
 {
-	return OpenMutexA(GC_MUTEX_FLAGS, false, name);
+	return OpenMutexW(GC_MUTEX_FLAGS, false, name);
 }
 
-static inline HANDLE create_event_plus_id(const char *name, DWORD id)
+static inline HANDLE create_event_plus_id(const wchar_t *name, DWORD id)
 {
-	char new_name[64];
-	sprintf(new_name, "%s%lu", name, id);
+	wchar_t new_name[64];
+	_snwprintf(new_name, 64, L"%s%lu", name, id);
 	return create_event(new_name);
 }
 
-static inline HANDLE open_event_plus_id(const char *name, DWORD id)
+static inline HANDLE open_event_plus_id(const wchar_t *name, DWORD id)
 {
-	char new_name[64];
-	sprintf(new_name, "%s%lu", name, id);
+	wchar_t new_name[64];
+	_snwprintf(new_name, 64, L"%s%lu", name, id);
 	return open_event(new_name);
 }
 
-static inline HANDLE create_mutex_plus_id(const char *name, DWORD id)
+static inline HANDLE create_mutex_plus_id(const wchar_t *name, DWORD id)
 {
-	char new_name[64];
-	sprintf(new_name, "%s%lu", name, id);
+	wchar_t new_name[64];
+	_snwprintf(new_name, 64, L"%s%lu", name, id);
 	return create_mutex(new_name);
 }
 
-static inline HANDLE open_mutex_plus_id(const char *name, DWORD id)
+static inline HANDLE open_mutex_plus_id(const wchar_t *name, DWORD id)
 {
-	char new_name[64];
-	sprintf(new_name, "%s%lu", name, id);
+	wchar_t new_name[64];
+	_snwprintf(new_name, 64, L"%s%lu", name, id);
 	return open_mutex(new_name);
 }
 
