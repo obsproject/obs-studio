@@ -39,7 +39,7 @@ static volatile bool           stop_loop                       = false;
 static HANDLE                  capture_thread                  = NULL;
 char                           system_path[MAX_PATH]           = {0};
 char                           process_name[MAX_PATH]          = {0};
-char                           keepalive_name[64]              = {0};
+wchar_t                        keepalive_name[64]              = {0};
 HWND                           dummy_window                    = NULL;
 
 static unsigned int            shmem_id_counter                = 0;
@@ -234,8 +234,8 @@ static inline bool init_hook(HANDLE thread_handle)
 {
 	wait_for_dll_main_finish(thread_handle);
 
-	sprintf(keepalive_name, "%s%lu", EVENT_HOOK_KEEPALIVE,
-			GetCurrentProcessId());
+	_snwprintf(keepalive_name, sizeof(keepalive_name), L"%s%lu",
+			WINDOW_HOOK_KEEPALIVE, GetCurrentProcessId());
 
 	init_pipe();
 	if (!init_signals()) {
