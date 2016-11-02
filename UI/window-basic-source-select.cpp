@@ -123,8 +123,8 @@ bool AddNew(QWidget *parent, const char *id, const char *name,
 	obs_source_t *source = obs_get_source_by_name(name);
 	if (source) {
 		QMessageBox::information(parent,
-				QTStr("NameExists.Title"),
-				QTStr("NameExists.Text"));
+				QObject::tr("NameExists.Title"),
+				QObject::tr("NameExists.Text"));
 
 	} else {
 		source = obs_source_create(id, name, NULL, nullptr);
@@ -159,8 +159,8 @@ void OBSBasicSourceSelect::on_buttonBox_accepted()
 	} else {
 		if (ui->sourceName->text().isEmpty()) {
 			QMessageBox::information(this,
-					QTStr("NoNameEntered.Title"),
-					QTStr("NoNameEntered.Text"));
+					tr("NoNameEntered.Title"),
+					tr("NoNameEntered.Text"));
 			return;
 		}
 
@@ -177,11 +177,12 @@ void OBSBasicSourceSelect::on_buttonBox_rejected()
 	done(DialogCode::Rejected);
 }
 
-static inline const char *GetSourceDisplayName(const char *id)
+static inline QString GetSourceDisplayName(const char *id)
 {
-	if (strcmp(id, "scene") == 0)
-		return Str("Basic.Scene");
-	return obs_source_get_display_name(id);
+	if (strcmp(id, "scene") == 0) {
+		return QObject::tr("Basic.Scene");
+	}
+	return QString(obs_source_get_display_name(id));
 }
 
 Q_DECLARE_METATYPE(OBSScene);
@@ -201,7 +202,7 @@ OBSBasicSourceSelect::OBSBasicSourceSelect(OBSBasic *parent, const char *id_)
 
 	ui->sourceList->setAttribute(Qt::WA_MacShowFocusRect, false);
 
-	QString placeHolderText{QT_UTF8(GetSourceDisplayName(id))};
+	QString placeHolderText = GetSourceDisplayName(id);
 
 	QString text{placeHolderText};
 	int i = 1;
