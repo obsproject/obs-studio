@@ -113,14 +113,14 @@ static bool GetSceneCollectionName(QWidget *parent, std::string &name,
 		}
 		if (name.empty()) {
 			QMessageBox::information(parent,
-					QTStr("NoNameEntered.Title"),
-					QTStr("NoNameEntered.Text"));
+					QObject::tr("NoNameEntered.Title"),
+					QObject::tr("NoNameEntered.Text"));
 			continue;
 		}
 		if (SceneCollectionExists(name.c_str())) {
 			QMessageBox::information(parent,
-					QTStr("NameExists.Title"),
-					QTStr("NameExists.Text"));
+					QObject::tr("NameExists.Title"),
+					QObject::tr("NameExists.Text"));
 			continue;
 		}
 		break;
@@ -306,11 +306,11 @@ void OBSBasic::on_actionRemoveSceneCollection_triggered()
 	if (newPath.empty())
 		return;
 
-	QString text = QTStr("ConfirmRemove.Text");
+	QString text = tr("ConfirmRemove.Text");
 	text.replace("$1", QT_UTF8(oldName.c_str()));
 
 	QMessageBox::StandardButton button = QMessageBox::question(this,
-			QTStr("ConfirmRemove.Title"), text);
+			tr("ConfirmRemove.Title"), text);
 	if (button == QMessageBox::No)
 		return;
 

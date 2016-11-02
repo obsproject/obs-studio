@@ -27,6 +27,7 @@
 #include <QDesktopWidget>
 #include <QRect>
 #include <QScreen>
+#include <QStringList>
 
 #include <util/dstr.h>
 #include <util/util.hpp>
@@ -432,10 +433,10 @@ void OBSBasic::CreateFirstRunSources()
 
 	if (hasDesktopAudio)
 		ResetAudioDevice(App()->OutputAudioSource(), "default",
-				Str("Basic.DesktopDevice1"), 1);
+				QT_TO_UTF8(tr("Basic.DesktopDevice1")), 1);
 	if (hasInputAudio)
 		ResetAudioDevice(App()->InputAudioSource(), "default",
-				Str("Basic.AuxDevice1"), 3);
+				QT_TO_UTF8(tr("Basic.AuxDevice1")), 3);
 }
 
 void OBSBasic::CreateDefaultScene(bool firstStart)
@@ -448,7 +449,8 @@ void OBSBasic::CreateDefaultScene(bool firstStart)
 	ui->transitionDuration->setValue(300);
 	SetTransition(fadeTransition);
 
-	obs_scene_t  *scene  = obs_scene_create(Str("Basic.Scene"));
+	obs_scene_t  *scene  = obs_scene_create(
+			qPrintable(QObject::tr("Basic.Scene")));
 
 	if (firstStart)
 		CreateFirstRunSources();
@@ -1252,11 +1254,15 @@ void OBSBasic::InitHotkeys()
 	t.mouse_num                    = Str("Hotkeys.MouseButton");
 	obs_hotkeys_set_translations(&t);
 
-	obs_hotkeys_set_audio_hotkeys_translations(Str("Mute"), Str("Unmute"),
-			Str("Push-to-mute"), Str("Push-to-talk"));
+	obs_hotkeys_set_audio_hotkeys_translations(
+			QT_TO_UTF8(tr("Mute")),
+			QT_TO_UTF8(tr("Unmute")),
+			QT_TO_UTF8(tr("Push-to-mute")),
+			QT_TO_UTF8(tr("Push-to-talk")));
 
 	obs_hotkeys_set_sceneitem_hotkeys_translations(
-			Str("SceneItemShow"), Str("SceneItemHide"));
+			QT_TO_UTF8(tr("SceneItemShow")),
+			QT_TO_UTF8(tr("SceneItemHide")));
 
 	obs_hotkey_enable_callback_rerouting(true);
 	obs_hotkey_set_callback_routing_func(OBSBasic::HotkeyTriggered, this);
@@ -1329,9 +1335,9 @@ void OBSBasic::CreateHotkeys()
 
 	streamingHotkeys = obs_hotkey_pair_register_frontend(
 			"OBSBasic.StartStreaming",
-			Str("Basic.Hotkeys.StartStreaming"),
+			QT_TO_UTF8(tr("Basic.Hotkeys.StartStreaming")),
 			"OBSBasic.StopStreaming",
-			Str("Basic.Hotkeys.StopStreaming"),
+			QT_TO_UTF8(tr("Basic.Hotkeys.StopStreaming")),
 			MAKE_CALLBACK(!basic.outputHandler->StreamingActive(),
 				basic.StartStreaming),
 			MAKE_CALLBACK(basic.outputHandler->StreamingActive(),
@@ -1350,16 +1356,16 @@ void OBSBasic::CreateHotkeys()
 
 	forceStreamingStopHotkey = obs_hotkey_register_frontend(
 			"OBSBasic.ForceStopStreaming",
-			Str("Basic.Main.ForceStopStreaming"),
+			QT_TO_UTF8(tr("Basic.Main.ForceStopStreaming")),
 			cb, this);
 	LoadHotkey(forceStreamingStopHotkey,
 			"OBSBasic.ForceStopStreaming");
 
 	recordingHotkeys = obs_hotkey_pair_register_frontend(
 			"OBSBasic.StartRecording",
-			Str("Basic.Hotkeys.StartRecording"),
+			QT_TO_UTF8(tr("Basic.Hotkeys.StartRecording")),
 			"OBSBasic.StopRecording",
-			Str("Basic.Hotkeys.StopRecording"),
+			QT_TO_UTF8(tr("Basic.Hotkeys.StopRecording")),
 			MAKE_CALLBACK(!basic.outputHandler->RecordingActive(),
 				basic.StartRecording),
 			MAKE_CALLBACK(basic.outputHandler->RecordingActive(),
@@ -1380,7 +1386,7 @@ void OBSBasic::CreateHotkeys()
 
 	togglePreviewProgramHotkey = obs_hotkey_register_frontend(
 			"OBSBasic.TogglePreviewProgram",
-			Str("Basic.TogglePreviewProgramMode"),
+			QT_TO_UTF8(tr("Basic.TogglePreviewProgramMode")),
 			togglePreviewProgram, this);
 	LoadHotkey(togglePreviewProgramHotkey, "OBSBasic.TogglePreviewProgram");
 
@@ -1395,7 +1401,7 @@ void OBSBasic::CreateHotkeys()
 
 	transitionHotkey = obs_hotkey_register_frontend(
 			"OBSBasic.Transition",
-			Str("Transition"), transition, this);
+			QT_TO_UTF8(tr("Transition")), transition, this);
 	LoadHotkey(transitionHotkey, "OBSBasic.Transition");
 }
 
@@ -1635,7 +1641,7 @@ void OBSBasic::AddScene(OBSSource source)
 	ui->scenes->addItem(item);
 
 	obs_hotkey_register_source(source, "OBSBasic.SelectScene",
-			Str("Basic.Hotkeys.SelectScene"),
+			QT_TO_UTF8(tr("Basic.Hotkeys.SelectScene")),
 			[](void *data,
 				obs_hotkey_id, obs_hotkey_t*, bool pressed)
 	{
@@ -1856,8 +1862,8 @@ void OBSBasic::VolControlContextMenu()
 {
 	VolControl *vol = reinterpret_cast<VolControl*>(sender());
 
-	QAction filtersAction(QTStr("Filters"), this);
-	QAction propertiesAction(QTStr("Properties"), this);
+	QAction filtersAction(tr("Filters"), this);
+	QAction propertiesAction(tr("Properties"), this);
 
 	connect(&filtersAction, &QAction::triggered,
 			this, &OBSBasic::GetAudioSourceFilters,
@@ -1903,16 +1909,16 @@ bool OBSBasic::QueryRemoveSource(obs_source_t *source)
 {
 	const char *name  = obs_source_get_name(source);
 
-	QString text = QTStr("ConfirmRemove.Text");
+	QString text = tr("ConfirmRemove.Text");
 	text.replace("$1", QT_UTF8(name));
 
 	QMessageBox remove_source(this);
 	remove_source.setText(text);
-	QAbstractButton *Yes = remove_source.addButton(QTStr("Yes"),
+	QAbstractButton *Yes = remove_source.addButton(tr("Yes"),
 			QMessageBox::YesRole);
-	remove_source.addButton(QTStr("No"), QMessageBox::NoRole);
+	remove_source.addButton(tr("No"), QMessageBox::NoRole);
 	remove_source.setIcon(QMessageBox::Question);
-	remove_source.setWindowTitle(QTStr("ConfirmRemove.Title"));
+	remove_source.setWindowTitle(tr("ConfirmRemove.Title"));
 	remove_source.exec();
 
 	return Yes == remove_source.clickedButton();
@@ -2005,7 +2011,7 @@ void OBSBasic::updateFileFinished(const QString &text, const QString &error)
 				major, minor, patch);
 
 		if (version > LIBOBS_API_VER) {
-			QString     str = QTStr("UpdateAvailable.Text");
+			QString     str = tr("UpdateAvailable.Text");
 			QMessageBox messageBox(this);
 
 			str = str.arg(QString::number(major),
@@ -2013,7 +2019,7 @@ void OBSBasic::updateFileFinished(const QString &text, const QString &error)
 			              QString::number(patch),
 			              download);
 
-			messageBox.setWindowTitle(QTStr("UpdateAvailable"));
+			messageBox.setWindowTitle(tr("UpdateAvailable"));
 			messageBox.setTextFormat(Qt::RichText);
 			messageBox.setText(str);
 			messageBox.setInformativeText(QT_UTF8(description));
@@ -2054,8 +2060,8 @@ void OBSBasic::DuplicateSelectedScene()
 	for (;;) {
 		string name;
 		bool accepted = NameDialog::AskForName(this,
-				QTStr("Basic.Main.AddSceneDlg.Title"),
-				QTStr("Basic.Main.AddSceneDlg.Text"),
+				tr("Basic.Main.AddSceneDlg.Title"),
+				tr("Basic.Main.AddSceneDlg.Text"),
 				name,
 				placeHolderText);
 		if (!accepted)
@@ -2063,16 +2069,16 @@ void OBSBasic::DuplicateSelectedScene()
 
 		if (name.empty()) {
 			QMessageBox::information(this,
-					QTStr("NoNameEntered.Title"),
-					QTStr("NoNameEntered.Text"));
+					tr("NoNameEntered.Title"),
+					tr("NoNameEntered.Text"));
 			continue;
 		}
 
 		obs_source_t *source = obs_get_source_by_name(name.c_str());
 		if (source) {
 			QMessageBox::information(this,
-					QTStr("NameExists.Title"),
-					QTStr("NameExists.Text"));
+					tr("NameExists.Title"),
+					tr("NameExists.Text"));
 
 			obs_source_release(source);
 			continue;
@@ -2645,8 +2651,8 @@ void OBSBasic::closeEvent(QCloseEvent *event)
 		SetShowing(true);
 
 		QMessageBox::StandardButton button = QMessageBox::question(
-				this, QTStr("ConfirmExit.Title"),
-				QTStr("ConfirmExit.Text"));
+				this, tr("ConfirmExit.Title"),
+				tr("ConfirmExit.Text"));
 
 		if (button == QMessageBox::No) {
 			event->ignore();
@@ -2776,7 +2782,7 @@ static void AddProjectorMenuMonitors(QMenu *parent, QObject *target,
 	for (int i = 0; i < screens.size(); i++) {
 		QRect screenGeometry = screens[i]->geometry();
 		QString str = QString("%1 %2: %3x%4 @ %5,%6").
-			arg(QTStr("Display"),
+			arg(QObject::tr("Display"),
 			    QString::number(i),
 			    QString::number((int)screenGeometry.width()),
 			    QString::number((int)screenGeometry.height()),
@@ -2794,39 +2800,39 @@ void OBSBasic::on_scenes_customContextMenuRequested(const QPoint &pos)
 	QPointer<QMenu> sceneProjectorMenu;
 
 	QMenu popup(this);
-	QMenu order(QTStr("Basic.MainMenu.Edit.Order"), this);
-	popup.addAction(QTStr("Add"),
+	QMenu order(tr("Basic.MainMenu.Edit.Order"), this);
+	popup.addAction(tr("Add"),
 			this, SLOT(on_actionAddScene_triggered()));
 
 	if (item) {
 		popup.addSeparator();
-		popup.addAction(QTStr("Duplicate"),
+		popup.addAction(tr("Duplicate"),
 				this, SLOT(DuplicateSelectedScene()));
-		popup.addAction(QTStr("Rename"),
+		popup.addAction(tr("Rename"),
 				this, SLOT(EditSceneName()));
-		popup.addAction(QTStr("Remove"),
+		popup.addAction(tr("Remove"),
 				this, SLOT(RemoveSelectedScene()),
 				DeleteKeys.front());
 		popup.addSeparator();
 
-		order.addAction(QTStr("Basic.MainMenu.Edit.Order.MoveUp"),
+		order.addAction(tr("Basic.MainMenu.Edit.Order.MoveUp"),
 				this, SLOT(on_actionSceneUp_triggered()));
-		order.addAction(QTStr("Basic.MainMenu.Edit.Order.MoveDown"),
+		order.addAction(tr("Basic.MainMenu.Edit.Order.MoveDown"),
 				this, SLOT(on_actionSceneDown_triggered()));
 		order.addSeparator();
-		order.addAction(QTStr("Basic.MainMenu.Edit.Order.MoveToTop"),
+		order.addAction(tr("Basic.MainMenu.Edit.Order.MoveToTop"),
 				this, SLOT(MoveSceneToTop()));
-		order.addAction(QTStr("Basic.MainMenu.Edit.Order.MoveToBottom"),
+		order.addAction(tr("Basic.MainMenu.Edit.Order.MoveToBottom"),
 				this, SLOT(MoveSceneToBottom()));
 		popup.addMenu(&order);
 
 		popup.addSeparator();
-		sceneProjectorMenu = new QMenu(QTStr("SceneProjector"));
+		sceneProjectorMenu = new QMenu(tr("SceneProjector"));
 		AddProjectorMenuMonitors(sceneProjectorMenu, this,
 				SLOT(OpenSceneProjector()));
 		popup.addMenu(sceneProjectorMenu);
 		popup.addSeparator();
-		popup.addAction(QTStr("Filters"), this,
+		popup.addAction(tr("Filters"), this,
 				SLOT(OpenSceneFilters()));
 	}
 
@@ -2836,7 +2842,7 @@ void OBSBasic::on_scenes_customContextMenuRequested(const QPoint &pos)
 void OBSBasic::on_actionAddScene_triggered()
 {
 	string name;
-	QString format{QTStr("Basic.Main.DefaultSceneName.Text")};
+	QString format{tr("Basic.Main.DefaultSceneName.Text")};
 
 	int i = 1;
 	QString placeHolderText = format.arg(i);
@@ -2847,16 +2853,16 @@ void OBSBasic::on_actionAddScene_triggered()
 	}
 
 	bool accepted = NameDialog::AskForName(this,
-			QTStr("Basic.Main.AddSceneDlg.Title"),
-			QTStr("Basic.Main.AddSceneDlg.Text"),
+			tr("Basic.Main.AddSceneDlg.Title"),
+			tr("Basic.Main.AddSceneDlg.Text"),
 			name,
 			placeHolderText);
 
 	if (accepted) {
 		if (name.empty()) {
 			QMessageBox::information(this,
-					QTStr("NoNameEntered.Title"),
-					QTStr("NoNameEntered.Text"));
+					tr("NoNameEntered.Title"),
+					tr("NoNameEntered.Text"));
 			on_actionAddScene_triggered();
 			return;
 		}
@@ -2864,8 +2870,8 @@ void OBSBasic::on_actionAddScene_triggered()
 		obs_source_t *source = obs_get_source_by_name(name.c_str());
 		if (source) {
 			QMessageBox::information(this,
-					QTStr("NameExists.Title"),
-					QTStr("NameExists.Text"));
+					tr("NameExists.Title"),
+					tr("NameExists.Text"));
 
 			obs_source_release(source);
 			on_actionAddScene_triggered();
@@ -2994,7 +3000,7 @@ void OBSBasic::SetDeinterlacingOrder()
 
 QMenu *OBSBasic::AddDeinterlacingMenu(obs_source_t *source)
 {
-	QMenu *menu = new QMenu(QTStr("Deinterlacing"));
+	QMenu *menu = new QMenu(tr("Deinterlacing"));
 	obs_deinterlace_mode deinterlaceMode =
 		obs_source_get_deinterlace_mode(source);
 	obs_deinterlace_field_order deinterlaceOrder =
@@ -3002,7 +3008,7 @@ QMenu *OBSBasic::AddDeinterlacingMenu(obs_source_t *source)
 	QAction *action;
 
 #define ADD_MODE(name, mode) \
-	action = menu->addAction(QTStr("" name), this, \
+	action = menu->addAction(tr("" name), this, \
 				SLOT(SetDeinterlacingMode())); \
 	action->setProperty("mode", (int)mode); \
 	action->setCheckable(true); \
@@ -3022,7 +3028,7 @@ QMenu *OBSBasic::AddDeinterlacingMenu(obs_source_t *source)
 	menu->addSeparator();
 
 #define ADD_ORDER(name, order) \
-	action = menu->addAction(QTStr("Deinterlacing." name), this, \
+	action = menu->addAction(tr("Deinterlacing." name), this, \
 				SLOT(SetDeinterlacingOrder())); \
 	action->setProperty("order", (int)order); \
 	action->setCheckable(true); \
@@ -3046,12 +3052,12 @@ void OBSBasic::SetScaleFilter()
 
 QMenu *OBSBasic::AddScaleFilteringMenu(obs_sceneitem_t *item)
 {
-	QMenu *menu = new QMenu(QTStr("ScaleFiltering"));
+	QMenu *menu = new QMenu(tr("ScaleFiltering"));
 	obs_scale_type scaleFilter = obs_sceneitem_get_scale_filter(item);
 	QAction *action;
 
 #define ADD_MODE(name, mode) \
-	action = menu->addAction(QTStr("" name), this, \
+	action = menu->addAction(tr("" name), this, \
 				SLOT(SetScaleFilter())); \
 	action->setProperty("mode", (int)mode); \
 	action->setCheckable(true); \
@@ -3075,7 +3081,7 @@ void OBSBasic::CreateSourcePopupMenu(QListWidgetItem *item, bool preview)
 
 	if (preview) {
 		QAction *action = popup.addAction(
-				QTStr("Basic.Main.PreviewConextMenu.Enable"),
+				tr("Basic.Main.PreviewConextMenu.Enable"),
 				this, SLOT(TogglePreview()));
 		action->setCheckable(true);
 		action->setChecked(
@@ -3084,12 +3090,12 @@ void OBSBasic::CreateSourcePopupMenu(QListWidgetItem *item, bool preview)
 			action->setEnabled(false);
 
 		action = popup.addAction(
-				QTStr("Basic.MainMenu.Edit.LockPreview"),
+				tr("Basic.MainMenu.Edit.LockPreview"),
 				this, SLOT(on_actionLockPreview_triggered()));
 		action->setCheckable(true);
 		action->setChecked(ui->preview->Locked());
 
-		previewProjector = new QMenu(QTStr("PreviewProjector"));
+		previewProjector = new QMenu(tr("PreviewProjector"));
 		AddProjectorMenuMonitors(previewProjector, this,
 				SLOT(OpenPreviewProjector()));
 
@@ -3113,16 +3119,16 @@ void OBSBasic::CreateSourcePopupMenu(QListWidgetItem *item, bool preview)
 			OBS_SOURCE_ASYNC_VIDEO;
 		QAction *action;
 
-		popup.addAction(QTStr("Rename"), this,
+		popup.addAction(tr("Rename"), this,
 				SLOT(EditSceneItemName()));
-		popup.addAction(QTStr("Remove"), this,
+		popup.addAction(tr("Remove"), this,
 				SLOT(on_actionRemoveSource_triggered()),
 				DeleteKeys.front());
 		popup.addSeparator();
 		popup.addMenu(ui->orderMenu);
 		popup.addMenu(ui->transformMenu);
 
-		sourceProjector = new QMenu(QTStr("SourceProjector"));
+		sourceProjector = new QMenu(tr("SourceProjector"));
 		AddProjectorMenuMonitors(sourceProjector, this,
 				SLOT(OpenSourceProjector()));
 
@@ -3138,15 +3144,15 @@ void OBSBasic::CreateSourcePopupMenu(QListWidgetItem *item, bool preview)
 		popup.addMenu(sourceProjector);
 		popup.addSeparator();
 
-		action = popup.addAction(QTStr("Interact"), this,
+		action = popup.addAction(tr("Interact"), this,
 				SLOT(on_actionInteract_triggered()));
 
 		action->setEnabled(obs_source_get_output_flags(source) &
 				OBS_SOURCE_INTERACTION);
 
-		popup.addAction(QTStr("Filters"), this,
+		popup.addAction(tr("Filters"), this,
 				SLOT(OpenFilters()));
-		popup.addAction(QTStr("Properties"), this,
+		popup.addAction(tr("Properties"), this,
 				SLOT(on_actionSourceProperties_triggered()));
 	}
 
@@ -3187,7 +3193,7 @@ QMenu *OBSBasic::CreateAddSourcePopupMenu()
 	bool foundValues = false;
 	size_t idx = 0;
 
-	QMenu *popup = new QMenu(QTStr("Add"), this);
+	QMenu *popup = new QMenu(tr("Add"), this);
 
 	auto getActionAfter = [] (QMenu *menu, const QString &name)
 	{
@@ -3202,15 +3208,14 @@ QMenu *OBSBasic::CreateAddSourcePopupMenu()
 	};
 
 	auto addSource = [this, getActionAfter] (QMenu *popup,
-			const char *type, const char *name)
+	                const char *type, const QString &name)
 	{
-		QString qname = QT_UTF8(name);
-		QAction *popupItem = new QAction(qname, this);
+		QAction *popupItem = new QAction(name, this);
 		popupItem->setData(QT_UTF8(type));
 		connect(popupItem, SIGNAL(triggered(bool)),
 				this, SLOT(AddSourceFromAction()));
 
-		QAction *after = getActionAfter(popup, qname);
+		QAction *after = getActionAfter(popup, name);
 		popup->insertAction(after, popupItem);
 	};
 
@@ -3224,7 +3229,7 @@ QMenu *OBSBasic::CreateAddSourcePopupMenu()
 		}
 	}
 
-	addSource(popup, "scene", Str("Basic.Scene"));
+	addSource(popup, "scene", QObject::tr("Basic.Scene"));
 
 	if (!foundValues) {
 		delete popup;
@@ -3248,8 +3253,8 @@ void OBSBasic::AddSourcePopupMenu(const QPoint &pos)
 	if (!GetCurrentScene()) {
 		// Tell the user he needs a scene first (help beginners).
 		QMessageBox::information(this,
-				QTStr("Basic.Main.AddSourceHelp.Title"),
-				QTStr("Basic.Main.AddSourceHelp.Text"));
+				tr("Basic.Main.AddSourceHelp.Title"),
+				tr("Basic.Main.AddSourceHelp.Text"));
 		return;
 	}
 
@@ -3283,16 +3288,16 @@ void OBSBasic::on_actionRemoveSource_triggered()
 
 	auto removeMultiple = [this] (size_t count)
 	{
-		QString text = QTStr("ConfirmRemove.TextMultiple")
+		QString text = tr("ConfirmRemove.TextMultiple")
 			.arg(QString::number(count));
 
 		QMessageBox remove_items(this);
 		remove_items.setText(text);
-		QAbstractButton *Yes = remove_items.addButton(QTStr("Yes"),
+		QAbstractButton *Yes = remove_items.addButton(tr("Yes"),
 				QMessageBox::YesRole);
-		remove_items.addButton(QTStr("No"), QMessageBox::NoRole);
+		remove_items.addButton(tr("No"), QMessageBox::NoRole);
 		remove_items.setIcon(QMessageBox::Question);
-		remove_items.setWindowTitle(QTStr("ConfirmRemove.Title"));
+		remove_items.setWindowTitle(tr("ConfirmRemove.Title"));
 		remove_items.exec();
 
 		return Yes == remove_items.clickedButton();
@@ -3483,7 +3488,7 @@ void OBSBasic::logUploadFinished(const QString &text, const QString &error)
 
 	if (text.isEmpty()) {
 		QMessageBox::information(this,
-				QTStr("LogReturnDialog.ErrorUploadingLog"),
+				tr("LogReturnDialog.ErrorUploadingLog"),
 				error);
 		return;
 	}
@@ -3511,12 +3516,12 @@ static void RenameListItem(OBSBasic *parent, QListWidget *listWidget,
 
 		if (foundSource) {
 			QMessageBox::information(parent,
-				QTStr("NameExists.Title"),
-				QTStr("NameExists.Text"));
+				QObject::tr("NameExists.Title"),
+				QObject::tr("NameExists.Text"));
 		} else if (name.empty()) {
 			QMessageBox::information(parent,
-				QTStr("NoNameEntered.Title"),
-				QTStr("NoNameEntered.Text"));
+				QObject::tr("NoNameEntered.Title"),
+				QObject::tr("NoNameEntered.Text"));
 		}
 
 		obs_source_release(foundSource);
@@ -3601,7 +3606,7 @@ void OBSBasic::StartStreaming()
 	SaveProject();
 
 	ui->streamButton->setEnabled(false);
-	ui->streamButton->setText(QTStr("Basic.Main.Connecting"));
+	ui->streamButton->setText(tr("Basic.Main.Connecting"));
 
 	if (sysTrayStream) {
 		sysTrayStream->setEnabled(false);
@@ -3609,7 +3614,7 @@ void OBSBasic::StartStreaming()
 	}
 
 	if (!outputHandler->StartStreaming(service)) {
-		ui->streamButton->setText(QTStr("Basic.Main.StartStreaming"));
+		ui->streamButton->setText(tr("Basic.Main.StartStreaming"));
 		ui->streamButton->setEnabled(true);
 
 		if (sysTrayStream) {
@@ -3705,7 +3710,7 @@ void OBSBasic::ForceStopStreaming()
 
 void OBSBasic::StreamDelayStarting(int sec)
 {
-	ui->streamButton->setText(QTStr("Basic.Main.StopStreaming"));
+	ui->streamButton->setText(tr("Basic.Main.StopStreaming"));
 	ui->streamButton->setEnabled(true);
 
 	if (sysTrayStream) {
@@ -3717,9 +3722,9 @@ void OBSBasic::StreamDelayStarting(int sec)
 		startStreamMenu->deleteLater();
 
 	startStreamMenu = new QMenu();
-	startStreamMenu->addAction(QTStr("Basic.Main.StopStreaming"),
+	startStreamMenu->addAction(tr("Basic.Main.StopStreaming"),
 			this, SLOT(StopStreaming()));
-	startStreamMenu->addAction(QTStr("Basic.Main.ForceStopStreaming"),
+	startStreamMenu->addAction(tr("Basic.Main.ForceStopStreaming"),
 			this, SLOT(ForceStopStreaming()));
 	ui->streamButton->setMenu(startStreamMenu);
 
@@ -3730,7 +3735,7 @@ void OBSBasic::StreamDelayStarting(int sec)
 
 void OBSBasic::StreamDelayStopping(int sec)
 {
-	ui->streamButton->setText(QTStr("Basic.Main.StartStreaming"));
+	ui->streamButton->setText(tr("Basic.Main.StartStreaming"));
 	ui->streamButton->setEnabled(true);
 
 	if (sysTrayStream) {
@@ -3742,9 +3747,9 @@ void OBSBasic::StreamDelayStopping(int sec)
 		startStreamMenu->deleteLater();
 
 	startStreamMenu = new QMenu();
-	startStreamMenu->addAction(QTStr("Basic.Main.StartStreaming"),
+	startStreamMenu->addAction(tr("Basic.Main.StartStreaming"),
 			this, SLOT(StartStreaming()));
-	startStreamMenu->addAction(QTStr("Basic.Main.ForceStopStreaming"),
+	startStreamMenu->addAction(tr("Basic.Main.ForceStopStreaming"),
 			this, SLOT(ForceStopStreaming()));
 	ui->streamButton->setMenu(startStreamMenu);
 
@@ -3753,7 +3758,7 @@ void OBSBasic::StreamDelayStopping(int sec)
 
 void OBSBasic::StreamingStart()
 {
-	ui->streamButton->setText(QTStr("Basic.Main.StopStreaming"));
+	ui->streamButton->setText(tr("Basic.Main.StopStreaming"));
 	ui->streamButton->setEnabled(true);
 	ui->statusbar->StreamStarted(outputHandler->streamOutput);
 
@@ -3772,7 +3777,7 @@ void OBSBasic::StreamingStart()
 
 void OBSBasic::StreamStopping()
 {
-	ui->streamButton->setText(QTStr("Basic.Main.StoppingStreaming"));
+	ui->streamButton->setText(tr("Basic.Main.StoppingStreaming"));
 
 	if (sysTrayStream)
 		sysTrayStream->setText(ui->streamButton->text());
@@ -3784,35 +3789,35 @@ void OBSBasic::StreamStopping()
 
 void OBSBasic::StreamingStop(int code)
 {
-	const char *errorMessage;
+	QString errorMessage;
 
 	switch (code) {
 	case OBS_OUTPUT_BAD_PATH:
-		errorMessage = Str("Output.ConnectFail.BadPath");
+		errorMessage = tr("Output.ConnectFail.BadPath");
 		break;
 
 	case OBS_OUTPUT_CONNECT_FAILED:
-		errorMessage = Str("Output.ConnectFail.ConnectFailed");
+		errorMessage = tr("Output.ConnectFail.ConnectFailed");
 		break;
 
 	case OBS_OUTPUT_INVALID_STREAM:
-		errorMessage = Str("Output.ConnectFail.InvalidStream");
+		errorMessage = tr("Output.ConnectFail.InvalidStream");
 		break;
 
 	default:
 	case OBS_OUTPUT_ERROR:
-		errorMessage = Str("Output.ConnectFail.Error");
+		errorMessage = tr("Output.ConnectFail.Error");
 		break;
 
 	case OBS_OUTPUT_DISCONNECTED:
 		/* doesn't happen if output is set to reconnect.  note that
 		 * reconnects are handled in the output, not in the UI */
-		errorMessage = Str("Output.ConnectFail.Disconnected");
+		errorMessage = tr("Output.ConnectFail.Disconnected");
 	}
 
 	ui->statusbar->StreamStopped();
 
-	ui->streamButton->setText(QTStr("Basic.Main.StartStreaming"));
+	ui->streamButton->setText(tr("Basic.Main.StartStreaming"));
 	ui->streamButton->setEnabled(true);
 
 	if (sysTrayStream) {
@@ -3830,10 +3835,9 @@ void OBSBasic::StreamingStop(int code)
 
 	if (code != OBS_OUTPUT_SUCCESS && isVisible()) {
 		QMessageBox::information(this,
-				QTStr("Output.ConnectFail.Title"),
-				QT_UTF8(errorMessage));
+				tr("Output.ConnectFail.Title"), errorMessage);
 	} else if (code != OBS_OUTPUT_SUCCESS && !isVisible()) {
-		SysTrayNotify(QT_UTF8(errorMessage), QSystemTrayIcon::Warning);
+		SysTrayNotify(errorMessage, QSystemTrayIcon::Warning);
 	}
 
 	if (!startStreamMenu.isNull()) {
@@ -3857,7 +3861,7 @@ void OBSBasic::StartRecording()
 
 void OBSBasic::RecordStopping()
 {
-	ui->recordButton->setText(QTStr("Basic.Main.StoppingRecording"));
+	ui->recordButton->setText(tr("Basic.Main.StoppingRecording"));
 
 	if (sysTrayRecord)
 		sysTrayRecord->setText(ui->recordButton->text());
@@ -3880,7 +3884,7 @@ void OBSBasic::StopRecording()
 void OBSBasic::RecordingStart()
 {
 	ui->statusbar->RecordingStarted(outputHandler->fileOutput);
-	ui->recordButton->setText(QTStr("Basic.Main.StopRecording"));
+	ui->recordButton->setText(tr("Basic.Main.StopRecording"));
 
 	if (sysTrayRecord)
 		sysTrayRecord->setText(ui->recordButton->text());
@@ -3897,7 +3901,7 @@ void OBSBasic::RecordingStart()
 void OBSBasic::RecordingStop(int code)
 {
 	ui->statusbar->RecordingStopped();
-	ui->recordButton->setText(QTStr("Basic.Main.StartRecording"));
+	ui->recordButton->setText(tr("Basic.Main.StartRecording"));
 
 	if (sysTrayRecord)
 		sysTrayRecord->setText(ui->recordButton->text());
@@ -3905,29 +3909,29 @@ void OBSBasic::RecordingStop(int code)
 
 	if (code == OBS_OUTPUT_UNSUPPORTED && isVisible()) {
 		QMessageBox::information(this,
-				QTStr("Output.RecordFail.Title"),
-				QTStr("Output.RecordFail.Unsupported"));
+				tr("Output.RecordFail.Title"),
+				tr("Output.RecordFail.Unsupported"));
 
 	} else if (code == OBS_OUTPUT_NO_SPACE && isVisible()) {
 		QMessageBox::information(this,
-				QTStr("Output.RecordNoSpace.Title"),
-				QTStr("Output.RecordNoSpace.Msg"));
+				tr("Output.RecordNoSpace.Title"),
+				tr("Output.RecordNoSpace.Msg"));
 
 	} else if (code != OBS_OUTPUT_SUCCESS && isVisible()) {
 		QMessageBox::information(this,
-				QTStr("Output.RecordError.Title"),
-				QTStr("Output.RecordError.Msg"));
+				tr("Output.RecordError.Title"),
+				tr("Output.RecordError.Msg"));
 
 	} else if (code == OBS_OUTPUT_UNSUPPORTED && !isVisible()) {
-		SysTrayNotify(QTStr("Output.RecordFail.Unsupported"),
+		SysTrayNotify(tr("Output.RecordFail.Unsupported"),
 			QSystemTrayIcon::Warning);
 
 	} else if (code == OBS_OUTPUT_NO_SPACE && !isVisible()) {
-		SysTrayNotify(QTStr("Output.RecordNoSpace.Msg"),
+		SysTrayNotify(tr("Output.RecordNoSpace.Msg"),
 			QSystemTrayIcon::Warning);
 
 	} else if (code != OBS_OUTPUT_SUCCESS && !isVisible()) {
-		SysTrayNotify(QTStr("Output.RecordError.Msg"),
+		SysTrayNotify(tr("Output.RecordError.Msg"),
 			QSystemTrayIcon::Warning);
 	}
 
@@ -3946,8 +3950,8 @@ void OBSBasic::on_streamButton_clicked()
 		if (confirm && isVisible()) {
 			QMessageBox::StandardButton button =
 				QMessageBox::question(this,
-						QTStr("ConfirmStop.Title"),
-						QTStr("ConfirmStop.Text"));
+						tr("ConfirmStop.Title"),
+						tr("ConfirmStop.Text"));
 
 			if (button == QMessageBox::No)
 				return;
@@ -3961,8 +3965,8 @@ void OBSBasic::on_streamButton_clicked()
 		if (confirm && isVisible()) {
 			QMessageBox::StandardButton button =
 				QMessageBox::question(this,
-						QTStr("ConfirmStart.Title"),
-						QTStr("ConfirmStart.Text"));
+						tr("ConfirmStart.Title"),
+						tr("ConfirmStart.Text"));
 
 			if (button == QMessageBox::No)
 				return;
@@ -4034,12 +4038,12 @@ void OBSBasic::on_previewDisabledLabel_customContextMenuRequested(
 	QPointer<QMenu> previewProjector;
 
 	QAction *action = popup.addAction(
-			QTStr("Basic.Main.PreviewConextMenu.Enable"),
+			tr("Basic.Main.PreviewConextMenu.Enable"),
 			this, SLOT(TogglePreview()));
 	action->setCheckable(true);
 	action->setChecked(obs_display_enabled(ui->preview->GetDisplay()));
 
-	previewProjector = new QMenu(QTStr("PreviewProjector"));
+	previewProjector = new QMenu(tr("PreviewProjector"));
 	AddProjectorMenuMonitors(previewProjector, this,
 			SLOT(OpenPreviewProjector()));
 
@@ -4475,25 +4479,26 @@ void OBSBasic::OpenSceneProjector()
 
 void OBSBasic::UpdateTitleBar()
 {
-	stringstream name;
+	QStringList nameParts;
 
-	const char *profile = config_get_string(App()->GlobalConfig(),
-			"Basic", "Profile");
-	const char *sceneCollection = config_get_string(App()->GlobalConfig(),
-			"Basic", "SceneCollection");
+	QString profile = QString(config_get_string(App()->GlobalConfig(),
+	                          "Basic", "Profile"));
+	QString sceneCollection = QString(
+	                        config_get_string(App()->GlobalConfig(),
+	                        "Basic", "SceneCollection"));
 
-	name << "OBS ";
+	nameParts << "OBS ";
 	if (previewProgramMode)
-		name << "Studio ";
+		nameParts << "Studio ";
 
-	name << App()->GetVersionString();
+	nameParts << QString::fromStdString(App()->GetVersionString());
 	if (App()->IsPortableMode())
-		name << " - Portable Mode";
+		nameParts << " - Portable Mode";
 
-	name << " - " << Str("TitleBar.Profile") << ": " << profile;
-	name << " - " << Str("TitleBar.Scenes") << ": " << sceneCollection;
+	nameParts << " - " << tr("TitleBar.Profile") << ": " << profile;
+	nameParts << " - " << tr("TitleBar.Scenes") << ": " << sceneCollection;
 
-	setWindowTitle(QT_UTF8(name.str().c_str()));
+	setWindowTitle(nameParts.join(""));
 }
 
 int OBSBasic::GetProfilePath(char *path, size_t size, const char *file) const
@@ -4560,7 +4565,7 @@ void OBSBasic::SetShowing(bool showing)
 			saveGeometry().toBase64().constData());
 
 		if (showHide)
-			showHide->setText(QTStr("Basic.SystemTray.Show"));
+			showHide->setText(tr("Basic.SystemTray.Show"));
 		QTimer::singleShot(250, this, SLOT(hide()));
 
 		if (previewEnabled)
@@ -4570,7 +4575,7 @@ void OBSBasic::SetShowing(bool showing)
 
 	} else if (showing && !isVisible()) {
 		if (showHide)
-			showHide->setText(QTStr("Basic.SystemTray.Hide"));
+			showHide->setText(tr("Basic.SystemTray.Hide"));
 		QTimer::singleShot(250, this, SLOT(show()));
 
 		if (previewEnabled)
@@ -4586,13 +4591,13 @@ void OBSBasic::SystemTrayInit()
 			this);
 	trayIcon->setToolTip("OBS Studio");
 
-	showHide = new QAction(QTStr("Basic.SystemTray.Show"),
+	showHide = new QAction(tr("Basic.SystemTray.Show"),
 			trayIcon);
-	sysTrayStream = new QAction(QTStr("Basic.Main.StartStreaming"),
+	sysTrayStream = new QAction(tr("Basic.Main.StartStreaming"),
 			trayIcon);
-	sysTrayRecord = new QAction(QTStr("Basic.Main.StartRecording"),
+	sysTrayRecord = new QAction(tr("Basic.Main.StartRecording"),
 			trayIcon);
-	exit = new QAction(QTStr("Exit"),
+	exit = new QAction(tr("Exit"),
 			trayIcon);
 
 	connect(trayIcon, SIGNAL(activated(QSystemTrayIcon::ActivationReason)),
@@ -4662,7 +4667,7 @@ void OBSBasic::SystemTray(bool firstStarted)
 	}
 
 	if (isVisible())
-		showHide->setText(QTStr("Basic.SystemTray.Hide"));
+		showHide->setText(tr("Basic.SystemTray.Hide"));
 	else
-		showHide->setText(QTStr("Basic.SystemTray.Show"));
+		showHide->setText(tr("Basic.SystemTray.Show"));
 }

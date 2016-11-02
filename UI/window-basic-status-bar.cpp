@@ -82,19 +82,19 @@ void OBSBasicStatusBar::UpdateDelayMsg()
 
 	if (delaySecTotal) {
 		if (delaySecStarting && !delaySecStopping) {
-			msg = QTStr("Basic.StatusBar.DelayStartingIn");
+			msg = tr("Basic.StatusBar.DelayStartingIn");
 			msg = msg.arg(QString::number(delaySecStarting));
 
 		} else if (!delaySecStarting && delaySecStopping) {
-			msg = QTStr("Basic.StatusBar.DelayStoppingIn");
+			msg = tr("Basic.StatusBar.DelayStoppingIn");
 			msg = msg.arg(QString::number(delaySecStopping));
 
 		} else if (delaySecStarting && delaySecStopping) {
-			msg = QTStr("Basic.StatusBar.DelayStartingStoppingIn");
+			msg = tr("Basic.StatusBar.DelayStartingStoppingIn");
 			msg = msg.arg(QString::number(delaySecStopping),
 					QString::number(delaySecStarting));
 		} else {
-			msg = QTStr("Basic.StatusBar.Delay");
+			msg = tr("Basic.StatusBar.Delay");
 			msg = msg.arg(QString::number(delaySecTotal));
 		}
 	}
@@ -168,14 +168,14 @@ void OBSBasicStatusBar::UpdateSessionTime()
 	sessionTime->setMinimumWidth(sessionTime->width());
 
 	if (reconnectTimeout > 0) {
-		QString msg = QTStr("Basic.StatusBar.Reconnecting")
+		QString msg = tr("Basic.StatusBar.Reconnecting")
 			.arg(QString::number(retries),
 					QString::number(reconnectTimeout));
 		showMessage(msg);
 		reconnectTimeout--;
 
 	} else if (retries > 0) {
-		QString msg = QTStr("Basic.StatusBar.AttemptingReconnect");
+		QString msg = tr("Basic.StatusBar.AttemptingReconnect");
 		showMessage(msg.arg(QString::number(retries)));
 	}
 
@@ -200,7 +200,7 @@ void OBSBasicStatusBar::UpdateDroppedFrames()
 	if (!totalFrames)
 		return;
 
-	QString text = QTStr("DroppedFrames");
+	QString text = tr("DroppedFrames");
 	text = text.arg(QString::number(totalDropped),
 			QString::number(percent, 'f', 1));
 	droppedFrames->setText(text);
@@ -232,7 +232,7 @@ void OBSBasicStatusBar::Reconnect(int seconds)
 
 	if (!retries)
 		main->SysTrayNotify(
-				QTStr("Basic.SystemTray.Message.Reconnecting"),
+				tr("Basic.SystemTray.Message.Reconnecting"),
 				QSystemTrayIcon::Warning);
 
 	reconnectTimeout = seconds;
@@ -260,7 +260,7 @@ void OBSBasicStatusBar::ReconnectSuccess()
 {
 	OBSBasic *main = qobject_cast<OBSBasic*>(parent());
 
-	QString msg = QTStr("Basic.StatusBar.ReconnectSuccessful");
+	QString msg = tr("Basic.StatusBar.ReconnectSuccessful");
 	showMessage(msg, 4000);
 	main->SysTrayNotify(msg, QSystemTrayIcon::Information);
 	ReconnectClear();
@@ -289,9 +289,9 @@ void OBSBasicStatusBar::UpdateStatusBar()
 	double percentage = double(skipped) / double(total) * 100.0;
 
 	if (diff > 10 && percentage >= 0.1f) {
-		showMessage(QTStr("HighResourceUsage"), 4000);
+		showMessage(tr("HighResourceUsage"), 4000);
 		if (!main->isVisible() && overloadedNotify) {
-			main->SysTrayNotify(QTStr("HighResourceUsage"),
+			main->SysTrayNotify(tr("HighResourceUsage"),
 					QSystemTrayIcon::Warning);
 			overloadedNotify = false;
 		}

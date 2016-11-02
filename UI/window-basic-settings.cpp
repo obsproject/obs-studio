@@ -383,7 +383,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	uint32_t winVer = GetWindowsVersion();
 	if (winVer > 0 && winVer < 0x602) {
 		toggleAero = new QCheckBox(
-				QTStr("Basic.Settings.Video.DisableAero"),
+				tr("Basic.Settings.Video.DisableAero"),
 				this);
 		QFormLayout *videoLayout =
 			reinterpret_cast<QFormLayout*>(ui->videoPage->layout());
@@ -409,7 +409,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 #undef PROCESS_PRIORITY
 
 	for (ProcessPriority pri : processPriorities)
-		ui->processPriority->addItem(QTStr(pri.name), pri.val);
+		ui->processPriority->addItem(tr(pri.name), pri.val);
 
 #else
 	delete ui->rendererLabel;
@@ -619,15 +619,15 @@ void OBSBasicSettings::LoadServiceTypes()
 	SetComboByValue(ui->streamType, type);
 }
 
-#define TEXT_USE_STREAM_ENC \
-	QTStr("Basic.Settings.Output.Adv.Recording.UseStreamEncoder")
-
 void OBSBasicSettings::LoadEncoderTypes()
 {
 	const char    *type;
 	size_t        idx = 0;
 
-	ui->advOutRecEncoder->addItem(TEXT_USE_STREAM_ENC, "none");
+	ui->advOutRecEncoder->addItem(
+			tr("Basic.Settings.Output.Adv.Recording."
+			   "UseStreamEncoder"),
+			"none");
 
 	while (obs_enum_encoder_types(idx++, &type)) {
 		const char *name = obs_encoder_get_display_name(type);
@@ -647,21 +647,18 @@ void OBSBasicSettings::LoadEncoderTypes()
 	}
 }
 
-#define CS_PARTIAL_STR QTStr("Basic.Settings.Advanced.Video.ColorRange.Partial")
-#define CS_FULL_STR    QTStr("Basic.Settings.Advanced.Video.ColorRange.Full")
-
 void OBSBasicSettings::LoadColorRanges()
 {
-	ui->colorRange->addItem(CS_PARTIAL_STR, "Partial");
-	ui->colorRange->addItem(CS_FULL_STR, "Full");
+	ui->colorRange->addItem(
+			tr("Basic.Settings.Advanced.Video.ColorRange.Partial"),
+			"Partial");
+	ui->colorRange->addItem(
+			tr("Basic.Settings.Advanced.Video.ColorRange.Full"),
+			"Full");
 }
 
-#define AV_FORMAT_DEFAULT_STR \
-	QTStr("Basic.Settings.Output.Adv.FFmpeg.FormatDefault")
-#define AUDIO_STR \
-	QTStr("Basic.Settings.Output.Adv.FFmpeg.FormatAudio")
-#define VIDEO_STR \
-	QTStr("Basic.Settings.Output.Adv.FFmpeg.FormatVideo")
+#define AUDIO_STR tr("Basic.Settings.Output.Adv.FFmpeg.FormatAudio")
+#define VIDEO_STR tr("Basic.Settings.Output.Adv.FFmpeg.FormatVideo")
 
 void OBSBasicSettings::LoadFormats()
 {
@@ -691,7 +688,9 @@ void OBSBasicSettings::LoadFormats()
 
 	ui->advOutFFFormat->model()->sort(0);
 
-	ui->advOutFFFormat->insertItem(0, AV_FORMAT_DEFAULT_STR);
+	ui->advOutFFFormat->insertItem(
+			0,
+			tr("Basic.Settings.Output.Adv.FFmpeg.FormatDefault"));
 
 	ui->advOutFFFormat->blockSignals(false);
 }
@@ -709,9 +708,6 @@ static void AddCodec(QComboBox *combo, const ff_codec_desc *codec_desc)
 	combo->addItem(itemText, qVariantFromValue(cd));
 }
 
-#define AV_ENCODER_DEFAULT_STR \
-	QTStr("Basic.Settings.Output.Adv.FFmpeg.AVEncoderDefault")
-
 static void AddDefaultCodec(QComboBox *combo, const ff_format_desc *formatDesc,
 		ff_codec_type codecType)
 {
@@ -721,12 +717,14 @@ static void AddDefaultCodec(QComboBox *combo, const ff_format_desc *formatDesc,
 	if (existingIdx >= 0)
 		combo->removeItem(existingIdx);
 
-	combo->addItem(QString("%1 (%2)").arg(cd.name, AV_ENCODER_DEFAULT_STR),
+	QString defEncoderStr = QObject::tr(
+			"Basic.Settings.Output.Adv.FFmpeg.AVEncoderDefault");
+	combo->addItem(QString("%1 (%2)").arg(cd.name, defEncoderStr),
 			qVariantFromValue(cd));
 }
 
 #define AV_ENCODER_DISABLE_STR \
-	QTStr("Basic.Settings.Output.Adv.FFmpeg.AVEncoderDisable")
+	tr("Basic.Settings.Output.Adv.FFmpeg.AVEncoderDisable")
 
 void OBSBasicSettings::ReloadCodecs(const ff_format_desc *formatDesc)
 {
@@ -1071,13 +1069,13 @@ void OBSBasicSettings::ResetDownscales(uint32_t cx, uint32_t cy)
 void OBSBasicSettings::LoadDownscaleFilters()
 {
 	ui->downscaleFilter->addItem(
-			QTStr("Basic.Settings.Video.DownscaleFilter.Bilinear"),
+			tr("Basic.Settings.Video.DownscaleFilter.Bilinear"),
 			QT_UTF8("bilinear"));
 	ui->downscaleFilter->addItem(
-			QTStr("Basic.Settings.Video.DownscaleFilter.Bicubic"),
+			tr("Basic.Settings.Video.DownscaleFilter.Bicubic"),
 			QT_UTF8("bicubic"));
 	ui->downscaleFilter->addItem(
-			QTStr("Basic.Settings.Video.DownscaleFilter.Lanczos"),
+			tr("Basic.Settings.Video.DownscaleFilter.Lanczos"),
 			QT_UTF8("lanczos"));
 
 	const char *scaleType = config_get_string(main->Config(),
@@ -1162,7 +1160,7 @@ void OBSBasicSettings::LoadVideoSettings()
 	if (video_output_active(obs_get_video())) {
 		ui->videoPage->setEnabled(false);
 		ui->videoMsg->setText(
-				QTStr("Basic.Settings.Video.CurrentlyActive"));
+				tr("Basic.Settings.Video.CurrentlyActive"));
 	}
 
 	LoadResolutionLists();
@@ -1268,13 +1266,13 @@ void OBSBasicSettings::LoadAdvOutputStreamingSettings()
 	ui->advOutRescale->setEnabled(rescale);
 	ui->advOutRescale->setCurrentText(rescaleRes);
 
-	QStringList specList = QTStr("FilenameFormatting.completer").split(
+	QStringList specList = tr("FilenameFormatting.completer").split(
 				QRegularExpression("\n"));
 	QCompleter *specCompleter = new QCompleter(specList);
 	specCompleter->setCaseSensitivity(Qt::CaseSensitive);
 	specCompleter->setFilterMode(Qt::MatchContains);
 	ui->filenameFormatting->setCompleter(specCompleter);
-	ui->filenameFormatting->setToolTip(QTStr("FilenameFormatting.TT"));
+	ui->filenameFormatting->setToolTip(tr("FilenameFormatting.TT"));
 
 	switch (trackIndex) {
 	case 1: ui->advOutTrack1->setChecked(true); break;
@@ -1607,7 +1605,7 @@ void OBSBasicSettings::LoadListValues(QComboBox *widget, obs_property_t *prop,
 			deviceId = obs_data_get_string(settings, "device_id");
 	}
 
-	widget->addItem(QTStr("Disabled"), "disabled");
+	widget->addItem(tr("Disabled"), "disabled");
 
 	for (size_t i = 0; i < count; i++) {
 		const char *name = obs_property_list_item_name(prop, i);
@@ -1622,7 +1620,7 @@ void OBSBasicSettings::LoadListValues(QComboBox *widget, obs_property_t *prop,
 			widget->setCurrentIndex(idx);
 		} else {
 			widget->insertItem(0,
-					QTStr("Basic.Settings.Audio."
+					tr("Basic.Settings.Audio."
 						"UnknownAudioDevice"),
 					var);
 			widget->setCurrentIndex(0);
@@ -1677,10 +1675,10 @@ void OBSBasicSettings::LoadAudioSources()
 	widget->setLayout(layout);
 	ui->audioSourceScrollArea->setWidget(widget);
 
-	const char *enablePtm = Str("Basic.Settings.Audio.EnablePushToMute");
-	const char *ptmDelay  = Str("Basic.Settings.Audio.PushToMuteDelay");
-	const char *enablePtt = Str("Basic.Settings.Audio.EnablePushToTalk");
-	const char *pttDelay  = Str("Basic.Settings.Audio.PushToTalkDelay");
+	QString enablePtm = tr("Basic.Settings.Audio.EnablePushToMute");
+	QString ptmDelay  = tr("Basic.Settings.Audio.PushToMuteDelay");
+	QString enablePtt = tr("Basic.Settings.Audio.EnablePushToTalk");
+	QString pttDelay  = tr("Basic.Settings.Audio.PushToTalkDelay");
 	auto AddSource = [&](obs_source_t *source)
 	{
 		if (!(obs_source_get_output_flags(source) & OBS_SOURCE_AUDIO))
@@ -2148,7 +2146,7 @@ void OBSBasicSettings::LoadHotkeySettings(obs_hotkey_id ignoreKey)
 		if (label2->pairPartner)
 			continue;
 
-		QString tt = QTStr("Basic.Settings.Hotkeys.Pair");
+		QString tt = tr("Basic.Settings.Hotkeys.Pair");
 		auto name1 = label1->text();
 		auto name2 = label2->text();
 
@@ -2589,7 +2587,7 @@ void OBSBasicSettings::SaveAudioSettings()
 				input ? App()->InputAudioSource()
 				      : App()->OutputAudioSource(),
 				QT_TO_UTF8(GetComboData(combo)),
-				Str(name), index);
+				QT_TO_UTF8(tr(name)), index);
 	};
 
 	UpdateAudioDevice(false, ui->desktopAudioDevice1,
@@ -2693,8 +2691,8 @@ bool OBSBasicSettings::QueryChanges()
 	QMessageBox::StandardButton button;
 
 	button = QMessageBox::question(this,
-			QTStr("Basic.Settings.ConfirmTitle"),
-			QTStr("Basic.Settings.Confirm"),
+			tr("Basic.Settings.ConfirmTitle"),
+			tr("Basic.Settings.Confirm"),
 			QMessageBox::Yes | QMessageBox::No |
 			QMessageBox::Cancel);
 
@@ -2787,7 +2785,7 @@ void OBSBasicSettings::on_streamType_currentIndexChanged(int idx)
 void OBSBasicSettings::on_simpleOutputBrowse_clicked()
 {
 	QString dir = QFileDialog::getExistingDirectory(this,
-			QTStr("Basic.Settings.Output.SelectDirectory"),
+			tr("Basic.Settings.Output.SelectDirectory"),
 			ui->simpleOutputPath->text(),
 			QFileDialog::ShowDirsOnly |
 			QFileDialog::DontResolveSymlinks);
@@ -2800,7 +2798,7 @@ void OBSBasicSettings::on_simpleOutputBrowse_clicked()
 void OBSBasicSettings::on_advOutRecPathBrowse_clicked()
 {
 	QString dir = QFileDialog::getExistingDirectory(this,
-			QTStr("Basic.Settings.Output.SelectDirectory"),
+			tr("Basic.Settings.Output.SelectDirectory"),
 			ui->advOutRecPath->text(),
 			QFileDialog::ShowDirsOnly |
 			QFileDialog::DontResolveSymlinks);
@@ -2813,7 +2811,7 @@ void OBSBasicSettings::on_advOutRecPathBrowse_clicked()
 void OBSBasicSettings::on_advOutFFPathBrowse_clicked()
 {
 	QString dir = QFileDialog::getExistingDirectory(this,
-			QTStr("Basic.Settings.Output.SelectDirectory"),
+			tr("Basic.Settings.Output.SelectDirectory"),
 			ui->advOutRecPath->text(),
 			QFileDialog::ShowDirsOnly |
 			QFileDialog::DontResolveSymlinks);
@@ -2862,9 +2860,6 @@ void OBSBasicSettings::on_advOutRecEncoder_currentIndexChanged(int idx)
 	}
 }
 
-#define DEFAULT_CONTAINER_STR \
-	QTStr("Basic.Settings.Output.Adv.FFmpeg.FormatDescDef")
-
 void OBSBasicSettings::on_advOutFFFormat_currentIndexChanged(int idx)
 {
 	const QVariant itemDataVariant = ui->advOutFFFormat->itemData(idx);
@@ -2891,7 +2886,9 @@ void OBSBasicSettings::on_advOutFFFormat_currentIndexChanged(int idx)
 				defaultVideoCodecDesc.id);
 	} else {
 		ReloadCodecs(nullptr);
-		ui->advOutFFFormatDesc->setText(DEFAULT_CONTAINER_STR);
+		ui->advOutFFFormatDesc->setText(
+				"Basic.Settings.Output.Adv.FFmpeg."
+				"FormatDescDef");
 	}
 }
 
@@ -2928,7 +2925,7 @@ void OBSBasicSettings::on_colorFormat_currentIndexChanged(const QString &text)
 		ui->advancedMsg2->setText(QString());
 	else
 		ui->advancedMsg2->setText(
-				QTStr("Basic.Settings.Advanced.FormatWarning"));
+				tr("Basic.Settings.Advanced.FormatWarning"));
 }
 
 #define INVALID_RES_STR "Basic.Settings.Video.InvalidResolution"
@@ -2942,7 +2939,7 @@ static bool ValidResolutions(Ui::OBSBasicSettings *ui)
 	if (!ConvertResText(QT_TO_UTF8(baseRes), cx, cy) ||
 	    !ConvertResText(QT_TO_UTF8(outputRes), cx, cy)) {
 
-		ui->videoMsg->setText(QTStr(INVALID_RES_STR));
+		ui->videoMsg->setText(QObject::tr(INVALID_RES_STR));
 		return false;
 	}
 
@@ -3036,7 +3033,7 @@ void OBSBasicSettings::AudioChangedRestart()
 {
 	if (!loading) {
 		audioChanged = true;
-		ui->audioMsg->setText(QTStr("Basic.Settings.ProgramRestart"));
+		ui->audioMsg->setText(tr("Basic.Settings.ProgramRestart"));
 		sender()->setProperty("changed", QVariant(true));
 		EnableApplyButton(true);
 	}
@@ -3051,7 +3048,7 @@ void OBSBasicSettings::VideoChangedRestart()
 {
 	if (!loading) {
 		videoChanged = true;
-		ui->videoMsg->setText(QTStr("Basic.Settings.ProgramRestart"));
+		ui->videoMsg->setText(tr("Basic.Settings.ProgramRestart"));
 		sender()->setProperty("changed", QVariant(true));
 		EnableApplyButton(true);
 	}
@@ -3062,7 +3059,7 @@ void OBSBasicSettings::AdvancedChangedRestart()
 	if (!loading) {
 		advancedChanged = true;
 		ui->advancedMsg->setText(
-				QTStr("Basic.Settings.ProgramRestart"));
+				tr("Basic.Settings.ProgramRestart"));
 		sender()->setProperty("changed", QVariant(true));
 		EnableApplyButton(true);
 	}
@@ -3133,11 +3130,11 @@ void OBSBasicSettings::AdvOutRecCheckWarnings()
 	const char *objectName = nullptr;
 
 	if (tracks == 0) {
-		msg = QTStr("OutputWarnings.NoTracksSelected");
+		msg = tr("OutputWarnings.NoTracksSelected");
 		objectName = "errorLabel";
 
 	} else if (tracks > 1) {
-		msg = QTStr("OutputWarnings.MultiTrackRecording");
+		msg = tr("OutputWarnings.MultiTrackRecording");
 		objectName = "warningLabel";
 	}
 
@@ -3156,7 +3153,8 @@ void OBSBasicSettings::AdvOutRecCheckWarnings()
 
 static inline QString MakeMemorySizeString(int bitrate, int seconds)
 {
-	QString str = QTStr("Basic.Settings.Advanced.StreamDelay.MemoryUsage");
+	QString str = QObject::tr(
+			"Basic.Settings.Advanced.StreamDelay.MemoryUsage");
 	int megabytes = bitrate * seconds / 1000 / 8;
 
 	return str.arg(QString::number(megabytes));
@@ -3222,10 +3220,10 @@ void OBSBasicSettings::FillSimpleRecordingValues()
 {
 #define ADD_QUALITY(str) \
 	ui->simpleOutRecQuality->addItem( \
-			QTStr("Basic.Settings.Output.Simple.RecordingQuality." \
+			tr("Basic.Settings.Output.Simple.RecordingQuality." \
 				str), \
-			QString(str));
-#define ENCODER_STR(str) QTStr("Basic.Settings.Output.Simple.Encoder." str)
+			str);
+#define ENCODER_STR(str) tr("Basic.Settings.Output.Simple.Encoder." str)
 
 	ADD_QUALITY("Stream");
 	ADD_QUALITY("Small");
@@ -3356,7 +3354,7 @@ void OBSBasicSettings::SimpleStreamingEncoderChanged()
 }
 
 #define SIMPLE_OUTPUT_WARNING(str) \
-	QTStr("Basic.Settings.Output.Simple.Warn." str)
+	tr("Basic.Settings.Output.Simple.Warn." str)
 
 void OBSBasicSettings::SimpleRecordingEncoderChanged()
 {

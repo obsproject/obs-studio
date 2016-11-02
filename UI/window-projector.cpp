@@ -122,7 +122,7 @@ void OBSProjector::mousePressEvent(QMouseEvent *event)
 
 	if (event->button() == Qt::RightButton) {
 		QMenu popup(this);
-		popup.addAction(QTStr("Close"), this, SLOT(EscapeTriggered()));
+		popup.addAction(tr("Close"), this, SLOT(EscapeTriggered()));
 		popup.exec(QCursor::pos());
 	}
 }

@@ -52,17 +52,29 @@ class OBSTranslator : public QTranslator {
 	Q_OBJECT
 
 public:
+	bool Init(const char *lang);
+
 	virtual bool isEmpty() const override {return false;}
 
-	virtual QString translate(const char *context, const char *sourceText,
-			const char *disambiguation, int n) const override;
+	virtual QString translate(
+	                const char *context, const char *sourceText,
+	                const char *disambiguation = Q_NULLPTR,
+	                int n = -1) const override;
+
+	inline std::string GetLocale() const
+	{
+		return locale;
+	}
+
+private:
+	std::string     locale;
+	TextLookup      textLookup;
 };
 
 class OBSApp : public QApplication {
 	Q_OBJECT
 
 private:
-	std::string                    locale;
 	std::string		       theme;
 	ConfigFile                     globalConfig;
 	TextLookup                     textLookup;
@@ -72,6 +84,7 @@ private:
 
 	os_inhibit_t                   *sleepInhibitor = nullptr;
 	int                            sleepInhibitRefs = 0;
+	OBSTranslator                  translator;
 
 	std::deque<obs_frontend_translate_ui_cb> translatorHooks;
 
@@ -93,7 +106,7 @@ public:
 
 	inline const char *GetLocale() const
 	{
-		return locale.c_str();
+		return translator.GetLocale().c_str();
 	}
 
 	inline const char *GetTheme() const {return theme.c_str();}
@@ -103,7 +116,7 @@ public:
 
 	inline const char *GetString(const char *lookupVal) const
 	{
-		return textLookup.GetString(lookupVal);
+		return qPrintable(translator.translate("", lookupVal));
 	}
 
 	bool TranslateString(const char *lookupVal, const char **out) const;
@@ -162,7 +175,6 @@ inline config_t *GetGlobalConfig() {return App()->GlobalConfig();}
 
 std::vector<std::pair<std::string, std::string>> GetLocaleNames();
 inline const char *Str(const char *lookup) {return App()->GetString(lookup);}
-#define QTStr(lookupVal) QString::fromUtf8(Str(lookupVal))
 
 bool GetFileSafeName(const char *name, std::string &file);
 bool GetClosestUnusedFileName(std::string &path, const char *extension);
