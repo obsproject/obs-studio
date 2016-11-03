@@ -205,6 +205,8 @@ void gs_device::InitDevice(uint32_t adapterIdx)
 	D3D_FEATURE_LEVEL levelUsed = D3D_FEATURE_LEVEL_9_3;
 	HRESULT hr = 0;
 
+	adpIdx = adapterIdx;
+
 	uint32_t createFlags = D3D11_CREATE_DEVICE_BGRA_SUPPORT;
 #ifdef _DEBUG
 	//createFlags |= D3D11_CREATE_DEVICE_DEBUG;

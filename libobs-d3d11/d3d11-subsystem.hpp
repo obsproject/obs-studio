@@ -625,6 +625,7 @@ struct gs_device {
 	ComPtr<IDXGIAdapter1>       adapter;
 	ComPtr<ID3D11Device>        device;
 	ComPtr<ID3D11DeviceContext> context;
+	uint32_t                    adpIdx = 0;
 
 	gs_texture_2d               *curRenderTarget = nullptr;
 	gs_zstencil_buffer          *curZStencilBuffer = nullptr;
