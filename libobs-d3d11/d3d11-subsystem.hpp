@@ -224,9 +224,11 @@ struct gs_vertex_buffer {
 			vector<ID3D11Buffer*> &buffers,
 			vector<uint32_t> &strides);
 
-	inline void InitBuffer(const size_t elementSize,
+	void InitBuffer(const size_t elementSize,
 			const size_t numVerts, void *array,
 			ID3D11Buffer **buffer);
+
+	void BuildBuffers();
 
 	gs_vertex_buffer(gs_device_t *device, struct gs_vb_data *data,
 			uint32_t flags);
