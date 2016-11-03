@@ -256,6 +256,15 @@ struct gs_vertex_buffer : gs_obj {
 
 	void BuildBuffers();
 
+	inline void Release()
+	{
+		vertexBuffer.Release();
+		normalBuffer.Release();
+		colorBuffer.Release();
+		tangentBuffer.Release();
+		uvBuffers.clear();
+	}
+
 	gs_vertex_buffer(gs_device_t *device, struct gs_vb_data *data,
 			uint32_t flags);
 };
@@ -280,6 +289,8 @@ struct gs_index_buffer : gs_obj {
 	D3D11_SUBRESOURCE_DATA srd = {};
 
 	void InitBuffer();
+
+	inline void Release() {indexBuffer.Release();}
 
 	gs_index_buffer(gs_device_t *device, enum gs_index_type type,
 			void *indices, size_t num, uint32_t flags);
@@ -343,6 +354,15 @@ struct gs_texture_2d : gs_texture {
 	void InitRenderTargets();
 	void BackupTexture(const uint8_t **data);
 
+	inline void Release()
+	{
+		texture.Release();
+		for (auto &rt : renderTarget)
+			rt.Release();
+		gdiSurface.Release();
+		shaderRes.Release();
+	}
+
 	inline gs_texture_2d()
 		: gs_texture (GS_TEXTURE_2D, 0, GS_UNKNOWN)
 	{
@@ -369,6 +389,12 @@ struct gs_zstencil_buffer : gs_obj {
 
 	void InitBuffer();
 
+	inline void Release()
+	{
+		texture.Release();
+		view.Release();
+	}
+
 	inline gs_zstencil_buffer()
 		: width      (0),
 		  height     (0),
@@ -388,6 +414,11 @@ struct gs_stage_surface : gs_obj {
 	gs_color_format format;
 	DXGI_FORMAT     dxgiFormat;
 
+	inline void Release()
+	{
+		texture.Release();
+	}
+
 	gs_stage_surface(gs_device_t *device, uint32_t width, uint32_t height,
 			gs_color_format colorFormat);
 };
@@ -396,6 +427,8 @@ struct gs_sampler_state : gs_obj {
 	ComPtr<ID3D11SamplerState> state;
 	D3D11_SAMPLER_DESC         sd = {};
 	gs_sampler_info            info;
+
+	inline void Release() {state.Release();}
 
 	gs_sampler_state(gs_device_t *device, const gs_sampler_info *info);
 };
@@ -482,6 +515,13 @@ struct gs_vertex_shader : gs_shader {
 	bool     hasTangents;
 	uint32_t nTexUnits;
 
+	inline void Release()
+	{
+		shader.Release();
+		layout.Release();
+		constants.Release();
+	}
+
 	inline uint32_t NumBuffersExpected() const
 	{
 		uint32_t count = nTexUnits+1;
@@ -505,6 +545,11 @@ struct gs_duplicator : gs_obj {
 
 	void Start();
 
+	inline void Release()
+	{
+		duplicator.Release();
+	}
+
 	gs_duplicator(gs_device_t *device, int monitor_idx);
 	~gs_duplicator();
 };
@@ -512,6 +557,12 @@ struct gs_duplicator : gs_obj {
 struct gs_pixel_shader : gs_shader {
 	ComPtr<ID3D11PixelShader> shader;
 	vector<unique_ptr<ShaderSampler>> samplers;
+
+	inline void Release()
+	{
+		shader.Release();
+		constants.Release();
+	}
 
 	inline void GetSamplerStates(ID3D11SamplerState **states)
 	{
@@ -540,6 +591,13 @@ struct gs_swap_chain : gs_obj {
 	void InitZStencilBuffer(uint32_t cx, uint32_t cy);
 	void Resize(uint32_t cx, uint32_t cy);
 	void Init();
+
+	inline void Release()
+	{
+		target.Release();
+		zs.Release();
+		swap.Release();
+	}
 
 	gs_swap_chain(gs_device *device, const gs_init_data *data);
 };
@@ -578,6 +636,11 @@ struct BlendState {
 struct SavedBlendState : BlendState {
 	ComPtr<ID3D11BlendState> state;
 	D3D11_BLEND_DESC         bd;
+
+	inline void Release()
+	{
+		state.Release();
+	}
 
 	inline SavedBlendState(const BlendState &val, D3D11_BLEND_DESC &desc)
 		: BlendState(val), bd(desc)
@@ -629,6 +692,11 @@ struct SavedZStencilState : ZStencilState {
 	ComPtr<ID3D11DepthStencilState> state;
 	D3D11_DEPTH_STENCIL_DESC        dsd;
 
+	inline void Release()
+	{
+		state.Release();
+	}
+
 	inline SavedZStencilState(const ZStencilState &val,
 			D3D11_DEPTH_STENCIL_DESC desc)
 		: ZStencilState (val),
@@ -656,6 +724,11 @@ struct RasterState {
 struct SavedRasterState : RasterState {
 	ComPtr<ID3D11RasterizerState> state;
 	D3D11_RASTERIZER_DESC         rd;
+
+	inline void Release()
+	{
+		state.Release();
+	}
 
 	inline SavedRasterState(const RasterState &val,
 			D3D11_RASTERIZER_DESC &desc)
