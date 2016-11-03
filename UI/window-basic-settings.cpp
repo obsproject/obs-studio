@@ -3331,9 +3331,12 @@ void OBSBasicSettings::SimpleStreamingEncoderChanged()
 		preset = curNVENCPreset;
 
 	} else if (encoder == SIMPLE_ENCODER_AMD) {
-		/* none */
-		defaultPreset = "";
+		ui->simpleOutPreset->addItem("Speed", "speed");
+		ui->simpleOutPreset->addItem("Balanced", "balanced");
+		ui->simpleOutPreset->addItem("Quality", "quality");
 
+		defaultPreset = "balanced";
+		preset = curAMDPreset;
 	} else {
 		ui->simpleOutPreset->addItem("ultrafast", "ultrafast");
 		ui->simpleOutPreset->addItem("superfast", "superfast");
