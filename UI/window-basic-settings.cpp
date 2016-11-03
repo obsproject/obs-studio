@@ -1290,14 +1290,16 @@ OBSPropertiesView *OBSBasicSettings::CreateEncoderPropertyView(
 	obs_data_t *settings = obs_encoder_defaults(encoder);
 	OBSPropertiesView *view;
 
-	char encoderJsonPath[512];
-	int ret = GetProfilePath(encoderJsonPath, sizeof(encoderJsonPath),
-			path);
-	if (ret > 0) {
-		obs_data_t *data = obs_data_create_from_json_file_safe(
-				encoderJsonPath, "bak");
-		obs_data_apply(settings, data);
-		obs_data_release(data);
+	if (path) {
+		char encoderJsonPath[512];
+		int ret = GetProfilePath(encoderJsonPath,
+				sizeof(encoderJsonPath), path);
+		if (ret > 0) {
+			obs_data_t *data = obs_data_create_from_json_file_safe(
+					encoderJsonPath, "bak");
+			obs_data_apply(settings, data);
+			obs_data_release(data);
+		}
 	}
 
 	view = new OBSPropertiesView(settings, encoder,
