@@ -453,6 +453,9 @@ struct gs_duplicator {
 	ComPtr<IDXGIOutputDuplication> duplicator;
 	gs_texture_2d *texture;
 	gs_device_t *device;
+	int idx;
+
+	void Start();
 
 	gs_duplicator(gs_device_t *device, int monitor_idx);
 	~gs_duplicator();
