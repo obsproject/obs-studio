@@ -40,5 +40,5 @@ gs_stage_surface::gs_stage_surface(gs_device_t *device, uint32_t width,
 
 	hr = device->device->CreateTexture2D(&td, NULL, texture.Assign());
 	if (FAILED(hr))
-		throw HRError("Failed to create 2D texture", hr);
+		throw HRError("Failed to create staging surface", hr);
 }
