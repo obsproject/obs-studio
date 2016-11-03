@@ -440,6 +440,11 @@ gs_device::gs_device(uint32_t adapterIdx)
 	device_set_render_target(this, NULL, NULL);
 }
 
+gs_device::~gs_device()
+{
+	context->ClearState();
+}
+
 const char *device_get_name(void)
 {
 	return "Direct3D 11";

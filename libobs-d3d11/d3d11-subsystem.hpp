@@ -679,4 +679,5 @@ struct gs_device {
 	void UpdateViewProjMatrix();
 
 	gs_device(uint32_t adapterIdx);
+	~gs_device();
 };
