@@ -613,6 +613,7 @@ struct mat4float {
 
 struct gs_device {
 	ComPtr<IDXGIFactory1>       factory;
+	ComPtr<IDXGIAdapter1>       adapter;
 	ComPtr<ID3D11Device>        device;
 	ComPtr<ID3D11DeviceContext> context;
 
@@ -652,8 +653,8 @@ struct gs_device {
 	matrix4                     curViewProjMatrix;
 
 	void InitCompiler();
-	void InitFactory(uint32_t adapterIdx, IDXGIAdapter1 **adapter);
-	void InitDevice(uint32_t adapterIdx, IDXGIAdapter *adapter);
+	void InitFactory(uint32_t adapterIdx);
+	void InitDevice(uint32_t adapterIdx);
 
 	ID3D11DepthStencilState *AddZStencilState();
 	ID3D11RasterizerState   *AddRasterState();

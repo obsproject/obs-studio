@@ -20,20 +20,9 @@
 static inline bool get_monitor(gs_device_t *device, int monitor_idx,
 		IDXGIOutput **dxgiOutput)
 {
-	ComPtr<IDXGIAdapter> dxgiAdapter;
-	ComPtr<IDXGIDevice> dxgiDevice;
 	HRESULT hr;
 
-	hr = device->device->QueryInterface(__uuidof(IDXGIDevice),
-			(void**)dxgiDevice.Assign());
-	if (FAILED(hr))
-		throw HRError("Failed to query IDXGIDevice", hr);
-
-	hr = dxgiDevice->GetAdapter(dxgiAdapter.Assign());
-	if (FAILED(hr))
-		throw HRError("Failed to get adapter", hr);
-
-	hr = dxgiAdapter->EnumOutputs(monitor_idx, dxgiOutput);
+	hr = device->adapter->EnumOutputs(monitor_idx, dxgiOutput);
 	if (FAILED(hr)) {
 		if (hr == DXGI_ERROR_NOT_FOUND)
 			return false;

@@ -171,7 +171,7 @@ void gs_device::InitCompiler()
 	throw "Could not find any D3DCompiler libraries";
 }
 
-void gs_device::InitFactory(uint32_t adapterIdx, IDXGIAdapter1 **padapter)
+void gs_device::InitFactory(uint32_t adapterIdx)
 {
 	HRESULT hr;
 	IID factoryIID = (GetWinVer() >= 0x602) ? dxgiFactory2 :
@@ -181,7 +181,7 @@ void gs_device::InitFactory(uint32_t adapterIdx, IDXGIAdapter1 **padapter)
 	if (FAILED(hr))
 		throw UnsupportedHWError("Failed to create DXGIFactory", hr);
 
-	hr = factory->EnumAdapters1(adapterIdx, padapter);
+	hr = factory->EnumAdapters1(adapterIdx, &adapter);
 	if (FAILED(hr))
 		throw UnsupportedHWError("Failed to enumerate DXGIAdapter", hr);
 }
@@ -194,7 +194,7 @@ const static D3D_FEATURE_LEVEL featureLevels[] =
 	D3D_FEATURE_LEVEL_9_3,
 };
 
-void gs_device::InitDevice(uint32_t adapterIdx, IDXGIAdapter *adapter)
+void gs_device::InitDevice(uint32_t adapterIdx)
 {
 	wstring adapterName;
 	DXGI_ADAPTER_DESC desc;
@@ -423,8 +423,6 @@ void gs_device::UpdateViewProjMatrix()
 gs_device::gs_device(uint32_t adapterIdx)
 	: curToplogy           (D3D11_PRIMITIVE_TOPOLOGY_UNDEFINED)
 {
-	ComPtr<IDXGIAdapter1> adapter;
-
 	matrix4_identity(&curProjMatrix);
 	matrix4_identity(&curViewMatrix);
 	matrix4_identity(&curViewProjMatrix);
@@ -437,8 +435,8 @@ gs_device::gs_device(uint32_t adapterIdx)
 	}
 
 	InitCompiler();
-	InitFactory(adapterIdx, adapter.Assign());
-	InitDevice(adapterIdx, adapter);
+	InitFactory(adapterIdx);
+	InitDevice(adapterIdx);
 	device_set_render_target(this, NULL, NULL);
 }
 
