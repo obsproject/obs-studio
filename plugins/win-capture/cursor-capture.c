@@ -131,15 +131,31 @@ static inline uint8_t *cursor_capture_icon_bitmap(ICONINFO *ii,
 	return output;
 }
 
+static gs_texture_t *get_cached_texture(struct cursor_data *data,
+		uint32_t cx, uint32_t cy)
+{
+	struct cached_cursor cc;
+
+	for (size_t i = 0; i < data->cached_textures.num; i++) {
+		struct cached_cursor *pcc = &data->cached_textures.array[i];
+
+		if (pcc->cx == cx && pcc->cy == cy)
+			return pcc->texture;
+	}
+
+	cc.texture = gs_texture_create(cx, cy, GS_BGRA, 1, NULL, GS_DYNAMIC);
+	cc.cx = cx;
+	cc.cy = cy;
+	da_push_back(data->cached_textures, &cc);
+	return cc.texture;
+}
+
 static inline bool cursor_capture_icon(struct cursor_data *data, HICON icon)
 {
 	uint8_t *bitmap;
 	uint32_t height;
 	uint32_t width;
 	ICONINFO ii;
-
-	gs_texture_destroy(data->texture);
-	data->texture = NULL;
 
 	if (!icon) {
 		return false;
@@ -150,8 +166,12 @@ static inline bool cursor_capture_icon(struct cursor_data *data, HICON icon)
 
 	bitmap = cursor_capture_icon_bitmap(&ii, &width, &height);
 	if (bitmap) {
-		data->texture = gs_texture_create(width, height, GS_BGRA,
-				1, (const uint8_t**)&bitmap, 0);
+		if (data->last_cx != width && data->last_cy != height) {
+			data->texture = get_cached_texture(data, width, height);
+			data->last_cx = width;
+			data->last_cy = height;
+		}
+		gs_texture_set_image(data->texture, bitmap, width * 4, false);
 		bfree(bitmap);
 
 		data->x_hotspot = ii.xHotspot;
@@ -217,6 +237,10 @@ void cursor_draw(struct cursor_data *data, long x_offset, long y_offset,
 
 void cursor_data_free(struct cursor_data *data)
 {
-	gs_texture_destroy(data->texture);
+	for (size_t i = 0; i < data->cached_textures.num; i++) {
+		struct cached_cursor *pcc = &data->cached_textures.array[i];
+		gs_texture_destroy(pcc->texture);
+	}
+	da_free(data->cached_textures);
 	memset(data, 0, sizeof(*data));
 }
