@@ -482,6 +482,7 @@ struct gs_swap_chain {
 	gs_device                      *device;
 	uint32_t                       numBuffers;
 	HWND                           hwnd;
+	gs_init_data                   initData;
 
 	gs_texture_2d                  target;
 	gs_zstencil_buffer             zs;
@@ -490,7 +491,7 @@ struct gs_swap_chain {
 	void InitTarget(uint32_t cx, uint32_t cy);
 	void InitZStencilBuffer(uint32_t cx, uint32_t cy);
 	void Resize(uint32_t cx, uint32_t cy);
-	void Init(const gs_init_data *data);
+	void Init();
 
 	inline gs_swap_chain()
 		: device     (NULL),

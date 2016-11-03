@@ -101,6 +101,9 @@ void gs_swap_chain::Resize(uint32_t cx, uint32_t cy)
 	zs.texture.Clear();
 	zs.view.Clear();
 
+	initData.cx = cx;
+	initData.cy = cy;
+
 	if (cx == 0 || cy == 0) {
 		GetClientRect(hwnd, &clientRect);
 		if (cx == 0) cx = clientRect.right;
@@ -115,24 +118,25 @@ void gs_swap_chain::Resize(uint32_t cx, uint32_t cy)
 	InitZStencilBuffer(cx, cy);
 }
 
-void gs_swap_chain::Init(const gs_init_data *data)
+void gs_swap_chain::Init()
 {
 	target.device         = device;
 	target.isRenderTarget = true;
-	target.format         = data->format;
-	target.dxgiFormat     = ConvertGSTextureFormat(data->format);
-	InitTarget(data->cx, data->cy);
+	target.format         = initData.format;
+	target.dxgiFormat     = ConvertGSTextureFormat(initData.format);
+	InitTarget(initData.cx, initData.cy);
 
 	zs.device     = device;
-	zs.format     = data->zsformat;
-	zs.dxgiFormat = ConvertGSZStencilFormat(data->zsformat);
-	InitZStencilBuffer(data->cx, data->cy);
+	zs.format     = initData.zsformat;
+	zs.dxgiFormat = ConvertGSZStencilFormat(initData.zsformat);
+	InitZStencilBuffer(initData.cx, initData.cy);
 }
 
 gs_swap_chain::gs_swap_chain(gs_device *device, const gs_init_data *data)
 	: device     (device),
 	  numBuffers (data->num_backbuffers),
-	  hwnd       ((HWND)data->window.hwnd)
+	  hwnd       ((HWND)data->window.hwnd),
+	  initData   (*data)
 {
 	HRESULT hr;
 	DXGI_SWAP_CHAIN_DESC swapDesc;
@@ -143,7 +147,7 @@ gs_swap_chain::gs_swap_chain(gs_device *device, const gs_init_data *data)
 	if (FAILED(hr))
 		throw HRError("Failed to create swap chain", hr);
 
-	Init(data);
+	Init();
 }
 
 void gs_device::InitCompiler()
