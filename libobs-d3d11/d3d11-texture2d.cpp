@@ -18,13 +18,13 @@
 #include <util/base.h>
 #include "d3d11-subsystem.hpp"
 
-void gs_texture_2d::InitSRD(vector<D3D11_SUBRESOURCE_DATA> &srd,
-		const uint8_t **data)
+void gs_texture_2d::InitSRD(vector<D3D11_SUBRESOURCE_DATA> &srd)
 {
 	uint32_t rowSizeBytes  = width  * gs_get_format_bpp(format);
 	uint32_t texSizeBytes  = height * rowSizeBytes / 8;
 	size_t   textures      = type == GS_TEXTURE_2D ? 1 : 6;
 	uint32_t actual_levels = levels;
+	size_t   curTex = 0;
 
 	if (!actual_levels)
 		actual_levels = gs_get_total_levels(width, height);
@@ -37,15 +37,37 @@ void gs_texture_2d::InitSRD(vector<D3D11_SUBRESOURCE_DATA> &srd,
 
 		for (uint32_t j = 0; j < actual_levels; j++) {
 			D3D11_SUBRESOURCE_DATA newSRD;
-			newSRD.pSysMem          = *data;
+			newSRD.pSysMem          = data[curTex++].data();
 			newSRD.SysMemPitch      = newRowSize;
 			newSRD.SysMemSlicePitch = newTexSize;
 			srd.push_back(newSRD);
 
 			newRowSize /= 2;
 			newTexSize /= 4;
-			data++;
 		}
+	}
+}
+
+void gs_texture_2d::BackupTexture(const uint8_t **data)
+{
+	this->data.resize(levels);
+
+	uint32_t w = width;
+	uint32_t h = height;
+	uint32_t bbp = gs_get_format_bpp(format);
+
+	for (uint32_t i = 0; i < levels; i++) {
+		if (!data[i])
+			break;
+
+		uint32_t texSize = bbp * w * h / 8;
+		this->data[i].resize(texSize);
+
+		vector<uint8_t> &subData = this->data[i];
+		memcpy(&subData[0], data[i], texSize);
+
+		w /= 2;
+		h /= 2;
 	}
 }
 
@@ -76,8 +98,10 @@ void gs_texture_2d::InitTexture(const uint8_t **data)
 	if (isGDICompatible)
 		td.MiscFlags |= D3D11_RESOURCE_MISC_GDI_COMPATIBLE;
 
-	if (data)
-		InitSRD(srd, data);
+	if (data) {
+		BackupTexture(data);
+		InitSRD(srd);
+	}
 
 	hr = device->device->CreateTexture2D(&td, data ? srd.data() : NULL,
 			texture.Assign());

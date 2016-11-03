@@ -291,10 +291,13 @@ struct gs_texture_2d : gs_texture {
 	bool            genMipmaps = false;
 	uint32_t        sharedHandle = 0;
 
-	void InitSRD(vector<D3D11_SUBRESOURCE_DATA> &srd, const uint8_t **data);
+	vector<vector<uint8_t>> data;
+
+	void InitSRD(vector<D3D11_SUBRESOURCE_DATA> &srd);
 	void InitTexture(const uint8_t **data);
 	void InitResourceView();
 	void InitRenderTargets();
+	void BackupTexture(const uint8_t **data);
 
 	inline gs_texture_2d()
 		: gs_texture (NULL, GS_TEXTURE_2D, 0, GS_UNKNOWN)
