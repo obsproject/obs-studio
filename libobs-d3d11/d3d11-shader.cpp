@@ -46,7 +46,6 @@ gs_vertex_shader::gs_vertex_shader(gs_device_t *device, const char *file,
 	  hasTangents (false),
 	  nTexUnits   (0)
 {
-	vector<D3D11_INPUT_ELEMENT_DESC> inputs;
 	ShaderProcessor    processor(device);
 	ComPtr<ID3D10Blob> shaderBlob;
 	string             outputString;
@@ -55,20 +54,23 @@ gs_vertex_shader::gs_vertex_shader(gs_device_t *device, const char *file,
 	processor.Process(shaderString, file);
 	processor.BuildString(outputString);
 	processor.BuildParams(params);
-	processor.BuildInputLayout(inputs);
-	GetBuffersExpected(inputs);
+	processor.BuildInputLayout(layoutData);
+	GetBuffersExpected(layoutData);
 	BuildConstantBuffer();
 
 	Compile(outputString.c_str(), file, "vs_4_0", shaderBlob.Assign());
 
-	hr = device->device->CreateVertexShader(shaderBlob->GetBufferPointer(),
-			shaderBlob->GetBufferSize(), NULL, shader.Assign());
+	data.resize(shaderBlob->GetBufferSize());
+	memcpy(&data[0], shaderBlob->GetBufferPointer(), data.size());
+
+	hr = device->device->CreateVertexShader(data.data(), data.size(),
+			NULL, shader.Assign());
 	if (FAILED(hr))
 		throw HRError("Failed to create vertex shader", hr);
 
-	hr = device->device->CreateInputLayout(inputs.data(),
-			(UINT)inputs.size(), shaderBlob->GetBufferPointer(),
-			shaderBlob->GetBufferSize(), layout.Assign());
+	hr = device->device->CreateInputLayout(layoutData.data(),
+			(UINT)layoutData.size(),
+			data.data(), data.size(), layout.Assign());
 	if (FAILED(hr))
 		throw HRError("Failed to create input layout", hr);
 
@@ -93,8 +95,11 @@ gs_pixel_shader::gs_pixel_shader(gs_device_t *device, const char *file,
 
 	Compile(outputString.c_str(), file, "ps_4_0", shaderBlob.Assign());
 
-	hr = device->device->CreatePixelShader(shaderBlob->GetBufferPointer(),
-			shaderBlob->GetBufferSize(), NULL, shader.Assign());
+	data.resize(shaderBlob->GetBufferSize());
+	memcpy(&data[0], shaderBlob->GetBufferPointer(), data.size());
+
+	hr = device->device->CreatePixelShader(data.data(), data.size(),
+			NULL, shader.Assign());
 	if (FAILED(hr))
 		throw HRError("Failed to create vertex shader", hr);
 }

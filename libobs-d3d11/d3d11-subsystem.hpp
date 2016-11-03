@@ -387,6 +387,8 @@ struct gs_shader {
 	ComPtr<ID3D11Buffer>    constants;
 	size_t                  constantSize;
 
+	vector<uint8_t>         data;
+
 	inline void UpdateParam(vector<uint8_t> &constData,
 			gs_shader_param &param, bool &upload);
 	void UploadParams();
@@ -422,6 +424,8 @@ struct gs_vertex_shader : gs_shader {
 	ComPtr<ID3D11InputLayout>  layout;
 
 	gs_shader_param *world, *viewProj;
+
+	vector<D3D11_INPUT_ELEMENT_DESC> layoutData;
 
 	bool     hasNormals;
 	bool     hasColors;
