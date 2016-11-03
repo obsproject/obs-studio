@@ -101,7 +101,7 @@ gs_pixel_shader::gs_pixel_shader(gs_device_t *device, const char *file,
 	hr = device->device->CreatePixelShader(data.data(), data.size(),
 			NULL, shader.Assign());
 	if (FAILED(hr))
-		throw HRError("Failed to create vertex shader", hr);
+		throw HRError("Failed to create pixel shader", hr);
 }
 
 /*
