@@ -22,6 +22,7 @@
 
 #include <vector>
 #include <string>
+#include <memory>
 
 #include <windows.h>
 #include <dxgi.h>
@@ -459,13 +460,13 @@ struct gs_duplicator {
 
 struct gs_pixel_shader : gs_shader {
 	ComPtr<ID3D11PixelShader> shader;
-	vector<ShaderSampler>     samplers;
+	vector<unique_ptr<ShaderSampler>> samplers;
 
 	inline void GetSamplerStates(ID3D11SamplerState **states)
 	{
 		size_t i;
 		for (i = 0; i < samplers.size(); i++)
-			states[i] = samplers[i].sampler.state;
+			states[i] = samplers[i]->sampler.state;
 		for (; i < GS_MAX_TEXTURES; i++)
 			states[i] = NULL;
 	}
