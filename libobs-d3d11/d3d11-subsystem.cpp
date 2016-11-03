@@ -315,7 +315,7 @@ ID3D11BlendState *gs_device::AddBlendState()
 
 	hr = device->CreateBlendState(&bd, savedState.state.Assign());
 	if (FAILED(hr))
-		throw HRError("Failed to create disabled blend state", hr);
+		throw HRError("Failed to create blend state", hr);
 
 	state = savedState.state;
 	blendStates.push_back(savedState);
