@@ -3185,9 +3185,11 @@ QMenu *OBSBasic::CreateAddSourcePopupMenu()
 {
 	const char *type;
 	bool foundValues = false;
+	bool foundDeprecated = false;
 	size_t idx = 0;
 
 	QMenu *popup = new QMenu(QTStr("Add"), this);
+	QMenu *deprecated = new QMenu(QTStr("Deprecated"), popup);
 
 	auto getActionAfter = [] (QMenu *menu, const QString &name)
 	{
@@ -3220,15 +3222,26 @@ QMenu *OBSBasic::CreateAddSourcePopupMenu()
 
 		if ((caps & OBS_SOURCE_DEPRECATED) == 0) {
 			addSource(popup, type, name);
-			foundValues = true;
+		} else {
+			addSource(deprecated, type, name);
+			foundDeprecated = true;
 		}
+		foundValues = true;
 	}
 
 	addSource(popup, "scene", Str("Basic.Scene"));
 
+	if (!foundDeprecated) {
+		delete deprecated;
+		deprecated = nullptr;
+	}
+
 	if (!foundValues) {
 		delete popup;
 		popup = nullptr;
+
+	} else if (foundDeprecated) {
+		popup->addMenu(deprecated);
 	}
 
 	return popup;
