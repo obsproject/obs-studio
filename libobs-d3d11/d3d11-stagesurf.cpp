@@ -25,7 +25,6 @@ gs_stage_surface::gs_stage_surface(gs_device_t *device, uint32_t width,
 	  format     (colorFormat),
 	  dxgiFormat (ConvertGSTextureFormat(colorFormat))
 {
-	D3D11_TEXTURE2D_DESC td;
 	HRESULT hr;
 
 	memset(&td, 0, sizeof(td));

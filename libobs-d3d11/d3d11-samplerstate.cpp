@@ -65,7 +65,6 @@ gs_sampler_state::gs_sampler_state(gs_device_t *device,
 	: device (device),
 	  info   (*info)
 {
-	D3D11_SAMPLER_DESC sd;
 	HRESULT hr;
 	vec4 v4;
 

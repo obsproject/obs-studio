@@ -19,8 +19,6 @@
 
 void gs_index_buffer::InitBuffer()
 {
-	D3D11_BUFFER_DESC bd;
-	D3D11_SUBRESOURCE_DATA srd;
 	HRESULT hr;
 
 	memset(&bd,  0, sizeof(bd));

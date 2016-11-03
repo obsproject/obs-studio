@@ -139,7 +139,6 @@ gs_swap_chain::gs_swap_chain(gs_device *device, const gs_init_data *data)
 	  initData   (*data)
 {
 	HRESULT hr;
-	DXGI_SWAP_CHAIN_DESC swapDesc;
 
 	make_swap_desc(swapDesc, data);
 	hr = device->factory->CreateSwapChain(device->device, &swapDesc,
@@ -246,7 +245,6 @@ ID3D11DepthStencilState *gs_device::AddZStencilState()
 {
 	HRESULT hr;
 	D3D11_DEPTH_STENCIL_DESC dsd;
-	SavedZStencilState savedState(zstencilState);
 	ID3D11DepthStencilState *state;
 
 	dsd.DepthEnable      = zstencilState.depthEnabled;
@@ -260,6 +258,7 @@ ID3D11DepthStencilState *gs_device::AddZStencilState()
 	ConvertStencilSide(dsd.FrontFace, zstencilState.stencilFront);
 	ConvertStencilSide(dsd.BackFace,  zstencilState.stencilBack);
 
+	SavedZStencilState savedState(zstencilState, dsd);
 	hr = device->CreateDepthStencilState(&dsd, savedState.state.Assign());
 	if (FAILED(hr))
 		throw HRError("Failed to create depth stencil state", hr);
@@ -274,7 +273,6 @@ ID3D11RasterizerState *gs_device::AddRasterState()
 {
 	HRESULT hr;
 	D3D11_RASTERIZER_DESC rd;
-	SavedRasterState savedState(rasterState);
 	ID3D11RasterizerState *state;
 
 	memset(&rd, 0, sizeof(rd));
@@ -285,6 +283,7 @@ ID3D11RasterizerState *gs_device::AddRasterState()
 	rd.DepthClipEnable       = true;
 	rd.ScissorEnable         = rasterState.scissorEnabled;
 
+	SavedRasterState savedState(rasterState, rd);
 	hr = device->CreateRasterizerState(&rd, savedState.state.Assign());
 	if (FAILED(hr))
 		throw HRError("Failed to create rasterizer state", hr);
@@ -299,7 +298,6 @@ ID3D11BlendState *gs_device::AddBlendState()
 {
 	HRESULT hr;
 	D3D11_BLEND_DESC bd;
-	SavedBlendState savedState(blendState);
 	ID3D11BlendState *state;
 
 	memset(&bd, 0, sizeof(bd));
@@ -319,6 +317,7 @@ ID3D11BlendState *gs_device::AddBlendState()
 			D3D11_COLOR_WRITE_ENABLE_ALL;
 	}
 
+	SavedBlendState savedState(blendState, bd);
 	hr = device->CreateBlendState(&bd, savedState.state.Assign());
 	if (FAILED(hr))
 		throw HRError("Failed to create blend state", hr);

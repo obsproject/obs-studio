@@ -162,11 +162,11 @@ void gs_shader::BuildConstantBuffer()
 		constantSize += size;
 	}
 
+	memset(&bd, 0, sizeof(bd));
+
 	if (constantSize) {
-		D3D11_BUFFER_DESC bd;
 		HRESULT hr;
 
-		memset(&bd, 0, sizeof(bd));
 		bd.ByteWidth      = (constantSize+15)&0xFFFFFFF0; /* align */
 		bd.Usage          = D3D11_USAGE_DYNAMIC;
 		bd.BindFlags      = D3D11_BIND_CONSTANT_BUFFER;

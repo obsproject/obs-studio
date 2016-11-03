@@ -251,6 +251,9 @@ struct gs_index_buffer {
 	size_t               num;
 	DataPtr              indices;
 
+	D3D11_BUFFER_DESC bd = {};
+	D3D11_SUBRESOURCE_DATA srd = {};
+
 	void InitBuffer();
 
 	gs_index_buffer(gs_device_t *device, enum gs_index_type type,
@@ -264,6 +267,7 @@ struct gs_texture {
 	gs_color_format format;
 
 	ComPtr<ID3D11ShaderResourceView> shaderRes;
+	D3D11_SHADER_RESOURCE_VIEW_DESC resourceDesc = {};
 
 	inline gs_texture() {}
 
@@ -294,6 +298,8 @@ struct gs_texture_2d : gs_texture {
 	uint32_t        sharedHandle = 0;
 
 	vector<vector<uint8_t>> data;
+	vector<D3D11_SUBRESOURCE_DATA> srd;
+	D3D11_TEXTURE2D_DESC td = {};
 
 	void InitSRD(vector<D3D11_SUBRESOURCE_DATA> &srd);
 	void InitTexture(const uint8_t **data);
@@ -323,6 +329,9 @@ struct gs_zstencil_buffer {
 	gs_zstencil_format format;
 	DXGI_FORMAT        dxgiFormat;
 
+	D3D11_TEXTURE2D_DESC td = {};
+	D3D11_DEPTH_STENCIL_VIEW_DESC dsvd = {};
+
 	void InitBuffer();
 
 	inline gs_zstencil_buffer()
@@ -339,6 +348,7 @@ struct gs_zstencil_buffer {
 
 struct gs_stage_surface {
 	ComPtr<ID3D11Texture2D> texture;
+	D3D11_TEXTURE2D_DESC td = {};
 
 	gs_device       *device;
 	uint32_t        width, height;
@@ -352,6 +362,7 @@ struct gs_stage_surface {
 struct gs_sampler_state {
 	ComPtr<ID3D11SamplerState> state;
 	gs_device_t                *device;
+	D3D11_SAMPLER_DESC         sd = {};
 	gs_sampler_info            info;
 
 	gs_sampler_state(gs_device_t *device, const gs_sampler_info *info);
@@ -393,6 +404,7 @@ struct gs_shader {
 	ComPtr<ID3D11Buffer>    constants;
 	size_t                  constantSize;
 
+	D3D11_BUFFER_DESC       bd = {};
 	vector<uint8_t>         data;
 
 	inline void UpdateParam(vector<uint8_t> &constData,
@@ -488,6 +500,7 @@ struct gs_swap_chain {
 	uint32_t                       numBuffers;
 	HWND                           hwnd;
 	gs_init_data                   initData;
+	DXGI_SWAP_CHAIN_DESC           swapDesc = {};
 
 	gs_texture_2d                  target;
 	gs_zstencil_buffer             zs;
@@ -541,8 +554,10 @@ struct BlendState {
 
 struct SavedBlendState : BlendState {
 	ComPtr<ID3D11BlendState> state;
+	D3D11_BLEND_DESC         bd;
 
-	inline SavedBlendState(const BlendState &val) : BlendState(val)
+	inline SavedBlendState(const BlendState &val, D3D11_BLEND_DESC &desc)
+		: BlendState(val), bd(desc)
 	{
 	}
 };
@@ -589,9 +604,12 @@ struct ZStencilState {
 
 struct SavedZStencilState : ZStencilState {
 	ComPtr<ID3D11DepthStencilState> state;
+	D3D11_DEPTH_STENCIL_DESC        dsd;
 
-	inline SavedZStencilState(const ZStencilState &val)
-		: ZStencilState (val)
+	inline SavedZStencilState(const ZStencilState &val,
+			D3D11_DEPTH_STENCIL_DESC desc)
+		: ZStencilState (val),
+		  dsd           (desc)
 	{
 	}
 };
@@ -614,9 +632,12 @@ struct RasterState {
 
 struct SavedRasterState : RasterState {
 	ComPtr<ID3D11RasterizerState> state;
+	D3D11_RASTERIZER_DESC         rd;
 
-	inline SavedRasterState(const RasterState &val)
-	       : RasterState (val)
+	inline SavedRasterState(const RasterState &val,
+			D3D11_RASTERIZER_DESC &desc)
+	       : RasterState (val),
+	         rd          (desc)
 	{
 	}
 };

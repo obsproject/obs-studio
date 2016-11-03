@@ -19,8 +19,6 @@
 
 void gs_zstencil_buffer::InitBuffer()
 {
-	D3D11_TEXTURE2D_DESC td;
-	D3D11_DEPTH_STENCIL_VIEW_DESC dsvd;
 	HRESULT hr;
 
 	memset(&td, 0, sizeof(td));

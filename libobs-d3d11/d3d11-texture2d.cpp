@@ -73,8 +73,6 @@ void gs_texture_2d::BackupTexture(const uint8_t **data)
 
 void gs_texture_2d::InitTexture(const uint8_t **data)
 {
-	vector<D3D11_SUBRESOURCE_DATA> srd;
-	D3D11_TEXTURE2D_DESC td;
 	HRESULT hr;
 
 	memset(&td, 0, sizeof(td));
@@ -118,7 +116,6 @@ void gs_texture_2d::InitTexture(const uint8_t **data)
 
 void gs_texture_2d::InitResourceView()
 {
-	D3D11_SHADER_RESOURCE_VIEW_DESC resourceDesc;
 	HRESULT hr;
 
 	memset(&resourceDesc, 0, sizeof(resourceDesc));
@@ -196,20 +193,19 @@ gs_texture_2d::gs_texture_2d(gs_device_t *device, uint32_t handle)
 	if (FAILED(hr))
 		throw HRError("Failed to open resource", hr);
 
-	D3D11_TEXTURE2D_DESC desc;
-	texture->GetDesc(&desc);
+	texture->GetDesc(&td);
 
 	this->type       = GS_TEXTURE_2D;
-	this->format     = ConvertDXGITextureFormat(desc.Format);
+	this->format     = ConvertDXGITextureFormat(td.Format);
 	this->levels     = 1;
 	this->device     = device;
 
-	this->width      = desc.Width;
-	this->height     = desc.Height;
-	this->dxgiFormat = desc.Format;
+	this->width      = td.Width;
+	this->height     = td.Height;
+	this->dxgiFormat = td.Format;
 
-	D3D11_SHADER_RESOURCE_VIEW_DESC resourceDesc = {};
-	resourceDesc.Format              = desc.Format;
+	memset(&resourceDesc, 0, sizeof(resourceDesc));
+	resourceDesc.Format              = td.Format;
 	resourceDesc.ViewDimension       = D3D11_SRV_DIMENSION_TEXTURE2D;
 	resourceDesc.Texture2D.MipLevels = 1;
 
