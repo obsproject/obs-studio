@@ -40,7 +40,7 @@ void gs_vertex_shader::GetBuffersExpected(
 
 gs_vertex_shader::gs_vertex_shader(gs_device_t *device, const char *file,
 		const char *shaderString)
-	: gs_shader   (device, GS_SHADER_VERTEX),
+	: gs_shader   (device, gs_type::gs_vertex_shader, GS_SHADER_VERTEX),
 	  hasNormals  (false),
 	  hasColors   (false),
 	  hasTangents (false),
@@ -80,7 +80,7 @@ gs_vertex_shader::gs_vertex_shader(gs_device_t *device, const char *file,
 
 gs_pixel_shader::gs_pixel_shader(gs_device_t *device, const char *file,
 		const char *shaderString)
-	: gs_shader(device, GS_SHADER_PIXEL)
+	: gs_shader(device, gs_type::gs_pixel_shader, GS_SHADER_PIXEL)
 {
 	ShaderProcessor    processor(device);
 	ComPtr<ID3D10Blob> shaderBlob;

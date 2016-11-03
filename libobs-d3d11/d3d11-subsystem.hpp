@@ -204,14 +204,42 @@ struct VBDataPtr {
 	inline ~VBDataPtr() {gs_vbdata_destroy(data);}
 };
 
-struct gs_vertex_buffer {
+enum class gs_type {
+	gs_vertex_buffer,
+	gs_index_buffer,
+	gs_texture_2d,
+	gs_zstencil_buffer,
+	gs_stage_surface,
+	gs_sampler_state,
+	gs_vertex_shader,
+	gs_pixel_shader,
+	gs_duplicator,
+	gs_swap_chain,
+};
+
+struct gs_obj {
+	gs_device_t *device;
+	gs_type obj_type;
+	gs_obj *next;
+	gs_obj **prev_next;
+
+	inline gs_obj() :
+		device(nullptr),
+		next(nullptr),
+		prev_next(nullptr)
+	{}
+
+	gs_obj(gs_device_t *device, gs_type type);
+	virtual ~gs_obj();
+};
+
+struct gs_vertex_buffer : gs_obj {
 	ComPtr<ID3D11Buffer>         vertexBuffer;
 	ComPtr<ID3D11Buffer>         normalBuffer;
 	ComPtr<ID3D11Buffer>         colorBuffer;
 	ComPtr<ID3D11Buffer>         tangentBuffer;
 	vector<ComPtr<ID3D11Buffer>> uvBuffers;
 
-	gs_device_t    *device;
 	bool           dynamic;
 	VBDataPtr      vbd;
 	size_t         numVerts;
@@ -242,9 +270,8 @@ struct DataPtr {
 	inline ~DataPtr() {bfree(data);}
 };
 
-struct gs_index_buffer {
+struct gs_index_buffer : gs_obj {
 	ComPtr<ID3D11Buffer> indexBuffer;
-	gs_device_t          *device;
 	bool                 dynamic;
 	gs_index_type        type;
 	size_t               indexSize;
@@ -260,27 +287,38 @@ struct gs_index_buffer {
 			void *indices, size_t num, uint32_t flags);
 };
 
-struct gs_texture {
+struct gs_texture : gs_obj {
 	gs_texture_type type;
-	gs_device       *device;
 	uint32_t        levels;
 	gs_color_format format;
 
 	ComPtr<ID3D11ShaderResourceView> shaderRes;
 	D3D11_SHADER_RESOURCE_VIEW_DESC resourceDesc = {};
 
-	inline gs_texture() {}
-
-	inline gs_texture(gs_device *device, gs_texture_type type,
-			uint32_t levels, gs_color_format format)
+	inline gs_texture(gs_texture_type type, uint32_t levels,
+			gs_color_format format)
 		: type   (type),
-		  device (device),
 		  levels (levels),
 		  format (format)
 	{
 	}
 
-	virtual ~gs_texture() {}
+	inline gs_texture(gs_device *device, gs_type obj_type,
+			gs_texture_type type)
+		: gs_obj (device, obj_type),
+		  type   (type)
+	{
+	}
+
+	inline gs_texture(gs_device *device, gs_type obj_type,
+			gs_texture_type type,
+			uint32_t levels, gs_color_format format)
+		: gs_obj (device, obj_type),
+		  type   (type),
+		  levels (levels),
+		  format (format)
+	{
+	}
 };
 
 struct gs_texture_2d : gs_texture {
@@ -308,7 +346,7 @@ struct gs_texture_2d : gs_texture {
 	void BackupTexture(const uint8_t **data);
 
 	inline gs_texture_2d()
-		: gs_texture (NULL, GS_TEXTURE_2D, 0, GS_UNKNOWN)
+		: gs_texture (GS_TEXTURE_2D, 0, GS_UNKNOWN)
 	{
 	}
 
@@ -320,11 +358,10 @@ struct gs_texture_2d : gs_texture {
 	gs_texture_2d(gs_device_t *device, uint32_t handle);
 };
 
-struct gs_zstencil_buffer {
+struct gs_zstencil_buffer : gs_obj {
 	ComPtr<ID3D11Texture2D>        texture;
 	ComPtr<ID3D11DepthStencilView> view;
 
-	gs_device          *device;
 	uint32_t           width, height;
 	gs_zstencil_format format;
 	DXGI_FORMAT        dxgiFormat;
@@ -335,8 +372,7 @@ struct gs_zstencil_buffer {
 	void InitBuffer();
 
 	inline gs_zstencil_buffer()
-		: device     (NULL),
-		  width      (0),
+		: width      (0),
 		  height     (0),
 		  dxgiFormat (DXGI_FORMAT_UNKNOWN)
 	{
@@ -346,11 +382,10 @@ struct gs_zstencil_buffer {
 			gs_zstencil_format format);
 };
 
-struct gs_stage_surface {
+struct gs_stage_surface : gs_obj {
 	ComPtr<ID3D11Texture2D> texture;
 	D3D11_TEXTURE2D_DESC td = {};
 
-	gs_device       *device;
 	uint32_t        width, height;
 	gs_color_format format;
 	DXGI_FORMAT     dxgiFormat;
@@ -359,9 +394,8 @@ struct gs_stage_surface {
 			gs_color_format colorFormat);
 };
 
-struct gs_sampler_state {
+struct gs_sampler_state : gs_obj {
 	ComPtr<ID3D11SamplerState> state;
-	gs_device_t                *device;
 	D3D11_SAMPLER_DESC         sd = {};
 	gs_sampler_info            info;
 
@@ -397,8 +431,7 @@ struct ShaderError {
 	}
 };
 
-struct gs_shader {
-	gs_device_t             *device;
+struct gs_shader : gs_obj {
 	gs_shader_type          type;
 	vector<gs_shader_param> params;
 	ComPtr<ID3D11Buffer>    constants;
@@ -415,8 +448,9 @@ struct gs_shader {
 	void Compile(const char *shaderStr, const char *file,
 			const char *target, ID3D10Blob **shader);
 
-	inline gs_shader(gs_device_t *device, gs_shader_type type)
-		: device       (device),
+	inline gs_shader(gs_device_t *device, gs_type obj_type,
+			gs_shader_type type)
+		: gs_obj       (device, obj_type),
 		  type         (type),
 		  constantSize (0)
 	{
@@ -466,10 +500,9 @@ struct gs_vertex_shader : gs_shader {
 			const char *shaderString);
 };
 
-struct gs_duplicator {
+struct gs_duplicator : gs_obj {
 	ComPtr<IDXGIOutputDuplication> duplicator;
 	gs_texture_2d *texture;
-	gs_device_t *device;
 	int idx;
 
 	void Start();
@@ -495,8 +528,7 @@ struct gs_pixel_shader : gs_shader {
 			const char *shaderString);
 };
 
-struct gs_swap_chain {
-	gs_device                      *device;
+struct gs_swap_chain : gs_obj {
 	uint32_t                       numBuffers;
 	HWND                           hwnd;
 	gs_init_data                   initData;
@@ -510,13 +542,6 @@ struct gs_swap_chain {
 	void InitZStencilBuffer(uint32_t cx, uint32_t cy);
 	void Resize(uint32_t cx, uint32_t cy);
 	void Init();
-
-	inline gs_swap_chain()
-		: device     (NULL),
-		  numBuffers (0),
-		  hwnd       (NULL)
-	{
-	}
 
 	gs_swap_chain(gs_device *device, const gs_init_data *data);
 };
@@ -687,6 +712,8 @@ struct gs_device {
 	matrix4                     curProjMatrix;
 	matrix4                     curViewMatrix;
 	matrix4                     curViewProjMatrix;
+
+	gs_obj                      *first_obj = nullptr;
 
 	void InitCompiler();
 	void InitFactory(uint32_t adapterIdx);

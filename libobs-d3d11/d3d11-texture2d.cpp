@@ -166,7 +166,8 @@ gs_texture_2d::gs_texture_2d(gs_device_t *device, uint32_t width,
 		uint32_t height, gs_color_format colorFormat, uint32_t levels,
 		const uint8_t **data, uint32_t flags, gs_texture_type type,
 		bool gdiCompatible, bool shared)
-	: gs_texture      (device, type, levels, colorFormat),
+	: gs_texture      (device, gs_type::gs_texture_2d, type, levels,
+	                   colorFormat),
 	  width           (width),
 	  height          (height),
 	  dxgiFormat      (ConvertGSTextureFormat(format)),
@@ -184,7 +185,9 @@ gs_texture_2d::gs_texture_2d(gs_device_t *device, uint32_t width,
 }
 
 gs_texture_2d::gs_texture_2d(gs_device_t *device, uint32_t handle)
-	: isShared        (true),
+	: gs_texture      (device, gs_type::gs_texture_2d,
+	                   GS_TEXTURE_2D),
+	  isShared        (true),
 	  sharedHandle    (handle)
 {
 	HRESULT hr;

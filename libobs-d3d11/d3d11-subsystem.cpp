@@ -46,6 +46,26 @@ static inline void LogD3D11ErrorDetails(HRError error, gs_device_t *device)
 static const IID dxgiFactory2 =
 {0x50c83a1c, 0xe072, 0x4c48, {0x87, 0xb0, 0x36, 0x30, 0xfa, 0x36, 0xa6, 0xd0}};
 
+
+gs_obj::gs_obj(gs_device_t *device_, gs_type type) :
+	device    (device_),
+	obj_type  (type)
+{
+	prev_next = &device->first_obj;
+	next = device->first_obj;
+	device->first_obj = this;
+	if (next)
+		next->prev_next = &next;
+}
+
+gs_obj::~gs_obj()
+{
+	if (prev_next)
+		*prev_next = next;
+	if (next)
+		next->prev_next = prev_next;
+}
+
 static inline void make_swap_desc(DXGI_SWAP_CHAIN_DESC &desc,
 		const gs_init_data *data)
 {
@@ -133,7 +153,7 @@ void gs_swap_chain::Init()
 }
 
 gs_swap_chain::gs_swap_chain(gs_device *device, const gs_init_data *data)
-	: device     (device),
+	: gs_obj     (device, gs_type::gs_swap_chain),
 	  numBuffers (data->num_backbuffers),
 	  hwnd       ((HWND)data->window.hwnd),
 	  initData   (*data)

@@ -62,7 +62,7 @@ static inline D3D11_FILTER ConvertGSFilter( gs_sample_filter filter)
 
 gs_sampler_state::gs_sampler_state(gs_device_t *device,
 		const gs_sampler_info *info)
-	: device (device),
+	: gs_obj (device, gs_type::gs_sampler_state),
 	  info   (*info)
 {
 	HRESULT hr;

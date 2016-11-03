@@ -53,7 +53,9 @@ void gs_duplicator::Start()
 }
 
 gs_duplicator::gs_duplicator(gs_device_t *device_, int monitor_idx)
-	: texture(nullptr), device(device_), idx(monitor_idx)
+	: gs_obj  (device_, gs_type::gs_duplicator),
+	  texture (nullptr),
+	  idx     (monitor_idx)
 {
 	Start();
 }

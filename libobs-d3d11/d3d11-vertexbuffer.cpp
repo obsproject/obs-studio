@@ -129,7 +129,7 @@ void gs_vertex_buffer::BuildBuffers()
 
 gs_vertex_buffer::gs_vertex_buffer(gs_device_t *device, struct gs_vb_data *data,
 		uint32_t flags)
-	: device   (device),
+	: gs_obj   (device, gs_type::gs_vertex_buffer),
 	  dynamic  ((flags & GS_DYNAMIC) != 0),
 	  vbd      (data),
 	  numVerts (data->num)
