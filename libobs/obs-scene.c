@@ -285,14 +285,14 @@ static inline uint32_t calc_cx(const struct obs_scene_item *item,
 		uint32_t width)
 {
 	uint32_t crop_cx = item->crop.left + item->crop.right;
-	return (crop_cx > width) ? 2 : (width - crop_cx);
+	return (crop_cx + 2 > width) ? 2 : (width - crop_cx);
 }
 
 static inline uint32_t calc_cy(const struct obs_scene_item *item,
 		uint32_t height)
 {
 	uint32_t crop_cy = item->crop.top + item->crop.bottom;
-	return (crop_cy > height) ? 2 : (height - crop_cy);
+	return (crop_cy + 2 > height) ? 2 : (height - crop_cy);
 }
 
 static void update_item_transform(struct obs_scene_item *item)
