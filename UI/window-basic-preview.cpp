@@ -17,6 +17,7 @@
 OBSBasicPreview::OBSBasicPreview(QWidget *parent, Qt::WindowFlags flags)
 	: OBSQTDisplay(parent, flags)
 {
+	ResetScrollingOffset();
 	setMouseTracking(true);
 }
 
@@ -377,6 +378,42 @@ void OBSBasicPreview::GetStretchHandleData(const vec2 &pos)
 	}
 }
 
+void OBSBasicPreview::keyPressEvent(QKeyEvent *event)
+{
+	if (locked ||
+	    GetScalingMode() == ScalingMode::Window ||
+	    event->isAutoRepeat()) {
+		OBSQTDisplay::keyPressEvent(event);
+		return;
+	}
+
+	switch (event->key()) {
+	case Qt::Key_Space:
+		setCursor(Qt::OpenHandCursor);
+		scrollMode = true;
+		break;
+	}
+
+	OBSQTDisplay::keyPressEvent(event);
+}
+
+void OBSBasicPreview::keyReleaseEvent(QKeyEvent *event)
+{
+	if (event->isAutoRepeat()) {
+		OBSQTDisplay::keyReleaseEvent(event);
+		return;
+	}
+
+	switch (event->key()) {
+	case Qt::Key_Space:
+		scrollMode = false;
+		setCursor(Qt::ArrowCursor);
+		break;
+	}
+
+	OBSQTDisplay::keyReleaseEvent(event);
+}
+
 void OBSBasicPreview::mousePressEvent(QMouseEvent *event)
 {
 	if (locked) {
@@ -392,6 +429,13 @@ void OBSBasicPreview::mousePressEvent(QMouseEvent *event)
 	bool altDown = (modifiers & Qt::AltModifier);
 
 	OBSQTDisplay::mousePressEvent(event);
+
+	if (scrollMode && GetScalingMode() != ScalingMode::Window) {
+		setCursor(Qt::ClosedHandCursor);
+		scrollingFrom.x = event->x();
+		scrollingFrom.y = event->y();
+		return;
+	}
 
 	if (event->button() != Qt::LeftButton &&
 	    event->button() != Qt::RightButton)
@@ -460,6 +504,9 @@ void OBSBasicPreview::mouseReleaseEvent(QMouseEvent *event)
 		OBSQTDisplay::mouseReleaseEvent(event);
 		return;
 	}
+
+	if (scrollMode)
+		setCursor(Qt::OpenHandCursor);
 
 	if (mouseDown) {
 		vec2 pos = GetMouseEventPos(event);
@@ -954,6 +1001,15 @@ void OBSBasicPreview::mouseMoveEvent(QMouseEvent *event)
 	if (locked)
 		return;
 
+	if (scrollMode && event->buttons() == Qt::LeftButton) {
+		scrollingOffset.x += event->x() - scrollingFrom.x;
+		scrollingOffset.y += event->y() - scrollingFrom.y;
+		scrollingFrom.x = event->x();
+		scrollingFrom.y = event->y();
+		emit DisplayResized();
+		return;
+	}
+
 	if (mouseDown) {
 		vec2 pos = GetMouseEventPos(event);
 
@@ -1112,4 +1168,9 @@ void OBSBasicPreview::DrawSceneEditing()
 
 	gs_technique_end_pass(tech);
 	gs_technique_end(tech);
+}
+
+void OBSBasicPreview::ResetScrollingOffset()
+{
+	vec2_zero(&scrollingOffset);
 }

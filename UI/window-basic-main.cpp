@@ -375,6 +375,8 @@ void OBSBasic::Save(const char *file)
 			scene, curProgramScene);
 
 	obs_data_set_bool(saveData, "preview_locked", ui->preview->Locked());
+	obs_data_set_int(saveData, "scaling_mode",
+			static_cast<uint32_t>(ui->preview->GetScalingMode()));
 
 	if (api) {
 		obs_data_t *moduleObj = obs_data_create();
@@ -664,6 +666,19 @@ retryScene:
 	bool previewLocked = obs_data_get_bool(data, "preview_locked");
 	ui->preview->SetLocked(previewLocked);
 	ui->actionLockPreview->setChecked(previewLocked);
+
+	ScalingMode previewScaling = static_cast<ScalingMode>(
+			obs_data_get_int(data, "scaling_mode"));
+	switch (previewScaling) {
+	case ScalingMode::Window:
+	case ScalingMode::Canvas:
+	case ScalingMode::Output:
+		break;
+	default:
+		previewScaling = ScalingMode::Window;
+	}
+
+	ui->preview->SetScaling(previewScaling);
 
 	if (api) {
 		obs_data_t *modulesObj = obs_data_get_obj(data, "modules");
@@ -1565,6 +1580,17 @@ OBSSceneItem OBSBasic::GetSceneItem(QListWidgetItem *item)
 OBSSceneItem OBSBasic::GetCurrentSceneItem()
 {
 	return GetSceneItem(GetTopSelectedSourceItem());
+}
+
+void OBSBasic::UpdatePreviewScalingMenu()
+{
+	ScalingMode scalingMode = ui->preview->GetScalingMode();
+	ui->actionScaleWindow->setChecked(
+			scalingMode == ScalingMode::Window);
+	ui->actionScaleCanvas->setChecked(
+			scalingMode == ScalingMode::Canvas);
+	ui->actionScaleOutput->setChecked(
+			scalingMode == ScalingMode::Output);
 }
 
 void OBSBasic::UpdateSources(OBSScene scene)
@@ -2570,13 +2596,39 @@ void OBSBasic::ResetAudioDevice(const char *sourceId, const char *deviceId,
 void OBSBasic::ResizePreview(uint32_t cx, uint32_t cy)
 {
 	QSize  targetSize;
+	ScalingMode scalingMode;
+	obs_video_info ovi;
 
 	/* resize preview panel to fix to the top section of the window */
 	targetSize = GetPixelSize(ui->preview);
-	GetScaleAndCenterPos(int(cx), int(cy),
-			targetSize.width()  - PREVIEW_EDGE_SIZE * 2,
-			targetSize.height() - PREVIEW_EDGE_SIZE * 2,
-			previewX, previewY, previewScale);
+
+	scalingMode = ui->preview->GetScalingMode();
+	obs_get_video_info(&ovi);
+
+	if (scalingMode == ScalingMode::Canvas) {
+		previewScale = 1.0f;
+		GetCenterPosFromFixedScale(int(cx), int(cy),
+				targetSize.width() - PREVIEW_EDGE_SIZE * 2,
+				targetSize.height() - PREVIEW_EDGE_SIZE * 2,
+				previewX, previewY, previewScale);
+		previewX += ui->preview->ScrollX();
+		previewY += ui->preview->ScrollY();
+
+	} else if (scalingMode == ScalingMode::Output) {
+		previewScale = float(ovi.output_width) / float(ovi.base_width);
+		GetCenterPosFromFixedScale(int(cx), int(cy),
+				targetSize.width() - PREVIEW_EDGE_SIZE * 2,
+				targetSize.height() - PREVIEW_EDGE_SIZE * 2,
+				previewX, previewY, previewScale);
+		previewX += ui->preview->ScrollX();
+		previewY += ui->preview->ScrollY();
+
+	} else {
+		GetScaleAndCenterPos(int(cx), int(cy),
+				targetSize.width() - PREVIEW_EDGE_SIZE * 2,
+				targetSize.height() - PREVIEW_EDGE_SIZE * 2,
+				previewX, previewY, previewScale);
+	}
 
 	previewX += float(PREVIEW_EDGE_SIZE);
 	previewY += float(PREVIEW_EDGE_SIZE);
@@ -3083,11 +3135,8 @@ void OBSBasic::CreateSourcePopupMenu(QListWidgetItem *item, bool preview)
 		if (IsPreviewProgramMode())
 			action->setEnabled(false);
 
-		action = popup.addAction(
-				QTStr("Basic.MainMenu.Edit.LockPreview"),
-				this, SLOT(on_actionLockPreview_triggered()));
-		action->setCheckable(true);
-		action->setChecked(ui->preview->Locked());
+		popup.addAction(ui->actionLockPreview);
+		popup.addMenu(ui->scalingMenu);
 
 		previewProjector = new QMenu(QTStr("PreviewProjector"));
 		AddProjectorMenuMonitors(previewProjector, this,
@@ -4563,6 +4612,45 @@ void OBSBasic::on_actionLockPreview_triggered()
 {
 	ui->preview->ToggleLocked();
 	ui->actionLockPreview->setChecked(ui->preview->Locked());
+}
+
+void OBSBasic::on_scalingMenu_aboutToShow()
+{
+	obs_video_info ovi;
+	obs_get_video_info(&ovi);
+
+	QAction *action = ui->actionScaleCanvas;
+	QString text = QTStr("Basic.MainMenu.Edit.Scale.Canvas");
+	text = text.arg(QString::number(ovi.base_width),
+			QString::number(ovi.base_height));
+	action->setText(text);
+
+	action = ui->actionScaleOutput;
+	text = QTStr("Basic.MainMenu.Edit.Scale.Output");
+	text = text.arg(QString::number(ovi.output_width),
+			QString::number(ovi.output_height));
+	action->setText(text);
+
+	UpdatePreviewScalingMenu();
+}
+
+void OBSBasic::on_actionScaleWindow_triggered()
+{
+	ui->preview->SetScaling(ScalingMode::Window);
+	ui->preview->ResetScrollingOffset();
+	emit ui->preview->DisplayResized();
+}
+
+void OBSBasic::on_actionScaleCanvas_triggered()
+{
+	ui->preview->SetScaling(ScalingMode::Canvas);
+	emit ui->preview->DisplayResized();
+}
+
+void OBSBasic::on_actionScaleOutput_triggered()
+{
+	ui->preview->SetScaling(ScalingMode::Output);
+	emit ui->preview->DisplayResized();
 }
 
 void OBSBasic::SetShowing(bool showing)
