@@ -2050,6 +2050,9 @@ extern "C" EXPORT void *gs_texture_get_dc(gs_texture_t *tex)
 	if (!TextureGDICompatible(tex2d, "gs_texture_get_dc"))
 		return nullptr;
 
+	if (!tex2d->gdiSurface)
+		return nullptr;
+
 	tex2d->gdiSurface->GetDC(true, &hDC);
 	return hDC;
 }
