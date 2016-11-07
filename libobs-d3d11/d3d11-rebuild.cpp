@@ -53,6 +53,13 @@ inline void gs_texture_2d::Rebuild(ID3D11Device *dev)
 
 	if (isRenderTarget)
 		InitRenderTargets();
+
+	if (isGDICompatible) {
+		hr = texture->QueryInterface(__uuidof(IDXGISurface1),
+				(void**)&gdiSurface);
+		if (FAILED(hr))
+			throw HRError("Failed to create GDI surface", hr);
+	}
 }
 
 inline void gs_zstencil_buffer::Rebuild(ID3D11Device *dev)
