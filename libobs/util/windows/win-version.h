@@ -27,6 +27,7 @@ struct win_version_info {
 	int minor;
 	int build;
 	int revis;
+	int bitness;
 };
 
 EXPORT bool get_dll_ver(const wchar_t *lib, struct win_version_info *info);
