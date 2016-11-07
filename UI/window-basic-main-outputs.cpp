@@ -670,10 +670,10 @@ bool SimpleOutput::StartRecording()
 	if (!dir) {
 		if (main->isVisible())
 			QMessageBox::information(main,
-					QTStr("Output.BadPath.Title"),
-					QTStr("Output.BadPath.Text"));
+					tr("Output.BadPath.Title"),
+					tr("Output.BadPath.Text"));
 		else
-			main->SysTrayNotify(QTStr("Output.BadPath.Text"),
+			main->SysTrayNotify(tr("Output.BadPath.Text"),
 					QSystemTrayIcon::Warning);
 		return false;
 	}
@@ -1217,10 +1217,10 @@ bool AdvancedOutput::StartRecording()
 		if (!dir) {
 			if (main->isVisible())
 				QMessageBox::information(main,
-						QTStr("Output.BadPath.Title"),
-						QTStr("Output.BadPath.Text"));
+						tr("Output.BadPath.Title"),
+						tr("Output.BadPath.Text"));
 			else
-				main->SysTrayNotify(QTStr("Output.BadPath.Text"),
+				main->SysTrayNotify(tr("Output.BadPath.Text"),
 						QSystemTrayIcon::Warning);
 			return false;
 		}

@@ -44,11 +44,11 @@ class QNetworkReply;
 
 #include "ui_OBSBasic.h"
 
-#define DESKTOP_AUDIO_1 Str("DesktopAudioDevice1")
-#define DESKTOP_AUDIO_2 Str("DesktopAudioDevice2")
-#define AUX_AUDIO_1     Str("AuxAudioDevice1")
-#define AUX_AUDIO_2     Str("AuxAudioDevice2")
-#define AUX_AUDIO_3     Str("AuxAudioDevice3")
+#define DESKTOP_AUDIO_1 QObject::tr("DesktopAudioDevice1")
+#define DESKTOP_AUDIO_2 QObject::tr("DesktopAudioDevice2")
+#define AUX_AUDIO_1     QObject::tr("AuxAudioDevice1")
+#define AUX_AUDIO_2     QObject::tr("AuxAudioDevice2")
+#define AUX_AUDIO_3     QObject::tr("AuxAudioDevice3")
 
 #define SIMPLE_ENCODER_X264                    "x264"
 #define SIMPLE_ENCODER_X264_LOWCPU             "x264_lowcpu"

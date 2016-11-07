@@ -78,8 +78,8 @@ bool OBSRemux::Stop()
 		return true;
 
 	if (QMessageBox::critical(nullptr,
-				QTStr("Remux.ExitUnfinishedTitle"),
-				QTStr("Remux.ExitUnfinished"),
+				tr("Remux.ExitUnfinishedTitle"),
+				tr("Remux.ExitUnfinished"),
 				QMessageBox::Yes | QMessageBox::No,
 				QMessageBox::No) ==
 			QMessageBox::Yes) {
@@ -106,8 +106,8 @@ void OBSRemux::BrowseInput()
 		path = recPath;
 
 	path = QFileDialog::getOpenFileName(this,
-			QTStr("Remux.SelectRecording"), path,
-			QTStr("Remux.OBSRecording") + QString(" ") +
+			tr("Remux.SelectRecording"), path,
+			tr("Remux.OBSRecording") + QString(" ") +
 			RECORDING_PATTERN);
 
 	inputChanged(path);
@@ -134,7 +134,7 @@ void OBSRemux::inputChanged(const QString &path)
 void OBSRemux::BrowseOutput()
 {
 	QString path(ui->targetFile->text());
-	path = QFileDialog::getSaveFileName(this, QTStr("Remux.SelectTarget"),
+	path = QFileDialog::getSaveFileName(this, tr("Remux.SelectTarget"),
 				path, RECORDING_PATTERN);
 
 	if (path.isEmpty())
@@ -146,8 +146,8 @@ void OBSRemux::BrowseOutput()
 void OBSRemux::Remux()
 {
 	if (QFileInfo::exists(ui->targetFile->text()))
-		if (QMessageBox::question(this, QTStr("Remux.FileExistsTitle"),
-					QTStr("Remux.FileExists"),
+		if (QMessageBox::question(this, tr("Remux.FileExistsTitle"),
+					tr("Remux.FileExists"),
 					QMessageBox::Yes | QMessageBox::No) !=
 				QMessageBox::Yes)
 			return;
@@ -189,9 +189,9 @@ void OBSRemux::updateProgress(float percent)
 
 void OBSRemux::remuxFinished(bool success)
 {
-	QMessageBox::information(this, QTStr("Remux.FinishedTitle"),
+	QMessageBox::information(this, tr("Remux.FinishedTitle"),
 			success ?
-			QTStr("Remux.Finished") : QTStr("Remux.FinishedError"));
+			tr("Remux.Finished") : tr("Remux.FinishedError"));
 
 	worker->job.reset();
 	ui->progressBar->setVisible(false);

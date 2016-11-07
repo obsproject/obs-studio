@@ -68,7 +68,7 @@ OBSBasicFilters::OBSBasicFilters(QWidget *parent, OBSSource source_)
 			new VisibilityItemDelegate(ui->effectFilters));
 
 	const char *name = obs_source_get_name(source);
-	setWindowTitle(QTStr("Basic.Filters.Title").arg(QT_UTF8(name)));
+	setWindowTitle(tr("Basic.Filters.Title").arg(QT_UTF8(name)));
 
 	installEventFilter(CreateShortcutFilter());
 
@@ -101,7 +101,7 @@ OBSBasicFilters::OBSBasicFilters(QWidget *parent, OBSSource source_)
 	}
 
 	if (audioOnly || (audio && !async))
-		ui->asyncLabel->setText(QTStr("Basic.Filters.AudioFilters"));
+		ui->asyncLabel->setText(tr("Basic.Filters.AudioFilters"));
 
 	auto addDrawCallback = [this] ()
 	{
@@ -325,7 +325,7 @@ QMenu *OBSBasicFilters::CreateAddFilterPopupMenu(bool async)
 	bool foundValues = false;
 	size_t idx = 0;
 
-	QMenu *popup = new QMenu(QTStr("Add"), this);
+	QMenu *popup = new QMenu(tr("Add"), this);
 	while (obs_enum_filter_types(idx++, &type)) {
 		const char *name = obs_source_get_display_name(type);
 		uint32_t filterFlags = obs_get_source_output_flags(type);
@@ -357,16 +357,16 @@ void OBSBasicFilters::AddNewFilter(const char *id)
 		string name = obs_source_get_display_name(id);
 
 		bool success = NameDialog::AskForName(this,
-				QTStr("Basic.Filters.AddFilter.Title"),
-				QTStr("Basic.FIlters.AddFilter.Text"), name,
+				tr("Basic.Filters.AddFilter.Title"),
+				tr("Basic.FIlters.AddFilter.Text"), name,
 				QT_UTF8(name.c_str()));
 		if (!success)
 			return;
 
 		if (name.empty()) {
 			QMessageBox::information(this,
-					QTStr("NoNameEntered.Title"),
-					QTStr("NoNameEntered.Text"));
+					tr("NoNameEntered.Title"),
+					tr("NoNameEntered.Text"));
 			AddNewFilter(id);
 			return;
 		}
@@ -375,8 +375,8 @@ void OBSBasicFilters::AddNewFilter(const char *id)
 				name.c_str());
 		if (existing_filter) {
 			QMessageBox::information(this,
-					QTStr("NameExists.Title"),
-					QTStr("NameExists.Text"));
+					tr("NameExists.Title"),
+					tr("NameExists.Text"));
 			obs_source_release(existing_filter);
 			AddNewFilter(id);
 			return;
@@ -457,7 +457,7 @@ void OBSBasicFilters::SourceRemoved(void *data, calldata_t *params)
 void OBSBasicFilters::SourceRenamed(void *data, calldata_t *params)
 {
 	const char *name = calldata_string(params, "new_name");
-	QString title = QTStr("Basic.Filters.Title").arg(QT_UTF8(name));
+	QString title = tr("Basic.Filters.Title").arg(QT_UTF8(name));
 
 	QMetaObject::invokeMethod(static_cast<OBSBasicFilters*>(data),
 	                "setWindowTitle", Q_ARG(QString, title));
@@ -499,16 +499,16 @@ static bool QueryRemove(QWidget *parent, obs_source_t *source)
 {
 	const char *name  = obs_source_get_name(source);
 
-	QString text = QTStr("ConfirmRemove.Text");
+	QString text = QObject::tr("ConfirmRemove.Text");
 	text.replace("$1", QT_UTF8(name));
 
 	QMessageBox remove_source(parent);
 	remove_source.setText(text);
-	QAbstractButton *Yes = remove_source.addButton(QTStr("Yes"),
+	QAbstractButton *Yes = remove_source.addButton(QObject::tr("Yes"),
 			QMessageBox::YesRole);
-	remove_source.addButton(QTStr("No"), QMessageBox::NoRole);
+	remove_source.addButton(QObject::tr("No"), QMessageBox::NoRole);
 	remove_source.setIcon(QMessageBox::Question);
-	remove_source.setWindowTitle(QTStr("ConfirmRemove.Title"));
+	remove_source.setWindowTitle(QObject::tr("ConfirmRemove.Title"));
 	remove_source.exec();
 
 	return Yes == remove_source.clickedButton();
@@ -615,8 +615,8 @@ void OBSBasicFilters::CustomContextMenu(const QPoint &pos, bool async)
 			SLOT(on_removeEffectFilter_clicked());
 
 		popup.addSeparator();
-		popup.addAction(QTStr("Rename"), this, renameSlot);
-		popup.addAction(QTStr("Remove"), this, removeSlot);
+		popup.addAction(tr("Rename"), this, renameSlot);
+		popup.addAction(tr("Remove"), this, removeSlot);
 	}
 
 	popup.exec(QCursor::pos());
@@ -678,14 +678,14 @@ void OBSBasicFilters::FilterNameEdited(QWidget *editor, QListWidget *list)
 
 		if (foundFilter) {
 			QMessageBox::information(window(),
-				QTStr("NameExists.Title"),
-				QTStr("NameExists.Text"));
+				tr("NameExists.Title"),
+				tr("NameExists.Text"));
 			obs_source_release(foundFilter);
 
 		} else if (name.empty()) {
 			QMessageBox::information(window(),
-				QTStr("NoNameEntered.Title"),
-				QTStr("NoNameEntered.Text"));
+				tr("NoNameEntered.Title"),
+				tr("NoNameEntered.Text"));
 		}
 	} else {
 		const char *sourceName = obs_source_get_name(source);

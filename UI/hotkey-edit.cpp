@@ -272,11 +272,11 @@ void OBSHotkeyWidget::AddEdit(obs_key_combination combo, int idx)
 	edit->setToolTip(toolTip);
 
 	auto revert = new QPushButton;
-	revert->setText(QTStr("Revert"));
+	revert->setText(tr("Revert"));
 	revert->setEnabled(false);
 
 	auto clear = new QPushButton;
-	clear->setText(QTStr("Clear"));
+	clear->setText(tr("Clear"));
 	clear->setEnabled(!obs_key_combination_is_empty(combo));
 
 	QObject::connect(edit, &OBSHotkeyEdit::KeyChanged,

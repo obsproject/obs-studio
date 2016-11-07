@@ -3,6 +3,9 @@
 class OBSBasic;
 
 struct BasicOutputHandler {
+	Q_DECLARE_TR_FUNCTIONS(BasicOutputHandler)
+
+public:
 	OBSOutput              fileOutput;
 	OBSOutput              streamOutput;
 	bool                   streamingActive = false;

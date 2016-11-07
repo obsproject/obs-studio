@@ -57,7 +57,7 @@ OBSBasicInteraction::OBSBasicInteraction(QWidget *parent, OBSSource source_)
 	obs_data_release(settings);
 
 	const char *name = obs_source_get_name(source);
-	setWindowTitle(QTStr("Basic.InteractionWindow").arg(QT_UTF8(name)));
+	setWindowTitle(tr("Basic.InteractionWindow").arg(QT_UTF8(name)));
 
 	auto addDrawCallback = [this] ()
 	{
@@ -122,7 +122,7 @@ void OBSBasicInteraction::SourceRemoved(void *data, calldata_t *params)
 void OBSBasicInteraction::SourceRenamed(void *data, calldata_t *params)
 {
 	const char *name = calldata_string(params, "new_name");
-	QString title = QTStr("Basic.InteractionWindow").arg(QT_UTF8(name));
+	QString title = tr("Basic.InteractionWindow").arg(QT_UTF8(name));
 
 	QMetaObject::invokeMethod(static_cast<OBSBasicProperties*>(data),
 	                "setWindowTitle", Q_ARG(QString, title));

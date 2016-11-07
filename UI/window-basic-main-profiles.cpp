@@ -102,14 +102,14 @@ static bool GetProfileName(QWidget *parent, std::string &name,
 		}
 		if (name.empty()) {
 			QMessageBox::information(parent,
-					QTStr("NoNameEntered.Title"),
-					QTStr("NoNameEntered.Text"));
+					QObject::tr("NoNameEntered.Title"),
+					QObject::tr("NoNameEntered.Text"));
 			continue;
 		}
 		if (ProfileExists(name.c_str())) {
 			QMessageBox::information(parent,
-					QTStr("NameExists.Title"),
-					QTStr("NameExists.Text"));
+					QObject::tr("NameExists.Title"),
+					QObject::tr("NameExists.Text"));
 			continue;
 		}
 		break;
@@ -180,8 +180,8 @@ static bool CopyProfile(const char *fromPartial, const char *to)
 	return true;
 }
 
-bool OBSBasic::AddProfile(bool create_new, const char *title, const char *text,
-		const char *init_text)
+bool OBSBasic::AddProfile(bool create_new, const char *title,
+		const char *text, const char *init_text)
 {
 	std::string newName;
 	std::string newDir;
@@ -346,12 +346,18 @@ void OBSBasic::ResetProfileData()
 
 void OBSBasic::on_actionNewProfile_triggered()
 {
-	AddProfile(true, Str("AddProfile.Title"), Str("AddProfile.Text"));
+	AddProfile(
+			true,
+			QT_TO_UTF8(tr("AddProfile.Title")),
+			QT_TO_UTF8(tr("AddProfile.Text")));
 }
 
 void OBSBasic::on_actionDupProfile_triggered()
 {
-	AddProfile(false, Str("AddProfile.Title"), Str("AddProfile.Text"));
+	AddProfile(
+			false,
+			QT_TO_UTF8(tr("AddProfile.Title")),
+			QT_TO_UTF8(tr("AddProfile.Text")));
 }
 
 void OBSBasic::on_actionRenameProfile_triggered()
@@ -362,8 +368,10 @@ void OBSBasic::on_actionRenameProfile_triggered()
 			"Basic", "Profile");
 
 	/* Duplicate and delete in case there are any issues in the process */
-	bool success = AddProfile(false, Str("RenameProfile.Title"),
-			Str("AddProfile.Text"), curName.c_str());
+	bool success = AddProfile(
+			false,
+			QT_TO_UTF8(tr("RenameProfile.Title")),
+			QT_TO_UTF8(tr("AddProfile.Text")), curName.c_str());
 	if (success) {
 		DeleteProfile(curName.c_str(), curDir.c_str());
 		RefreshProfiles();
@@ -403,11 +411,11 @@ void OBSBasic::on_actionRemoveProfile_triggered()
 	if (newPath.empty())
 		return;
 
-	QString text = QTStr("ConfirmRemove.Text");
+	QString text = tr("ConfirmRemove.Text");
 	text.replace("$1", QT_UTF8(oldName.c_str()));
 
 	QMessageBox::StandardButton button = QMessageBox::question(this,
-			QTStr("ConfirmRemove.Title"), text);
+			tr("ConfirmRemove.Title"), text);
 	if (button == QMessageBox::No)
 		return;
 
