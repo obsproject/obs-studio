@@ -259,7 +259,7 @@ static inline void write_header(struct exception_handler_data *data)
 			"Date/Time: %s\r\n"
 			"Fault address: %"PRIX64" (%s)\r\n"
 			"libobs version: "OBS_VERSION"\r\n"
-			"Windows version: %d.%d build %d (revision %d)\r\n"
+			"Windows version: %d.%d build %d (revision: %d; %d-bit)\r\n"
 			"CPU: %s\r\n\r\n",
 			data->exception->ExceptionRecord->ExceptionCode,
 			date_time,
@@ -267,6 +267,7 @@ static inline void write_header(struct exception_handler_data *data)
 			data->module_name.array,
 			data->win_version.major, data->win_version.minor,
 			data->win_version.build, data->win_version.revis,
+			data->win_version.bitness,
 			data->cpu_info.array);
 }
 
