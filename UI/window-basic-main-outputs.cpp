@@ -180,6 +180,7 @@ struct SimpleOutput : BasicOutputHandler {
 	void LoadStreamingPreset_h264(const char *encoder);
 
 	virtual bool StartStreaming(obs_service_t *service) override;
+	virtual bool StartRecordingHotKey();
 	virtual bool StartRecording(string RecorderPath, string SubPath) override;
 	virtual void StopStreaming(bool force) override;
 	virtual void StopRecording(bool force) override;
@@ -633,6 +634,11 @@ static void ensure_directory_exists(string &path)
 	os_mkdirs(directory.c_str());
 }
 
+bool SimpleOutput::StartRecordingHotKey()
+{
+	return StartRecording("", "");
+}
+
 bool SimpleOutput::StartRecording(string RecorderPath, string SubPath)
 {
 	if (usingRecordingPreset) {
@@ -782,6 +788,7 @@ struct AdvancedOutput : BasicOutputHandler {
 	int GetAudioBitrate(size_t i) const;
 
 	virtual bool StartStreaming(obs_service_t *service) override;
+	virtual bool StartRecordingHotKey();
 	virtual bool StartRecording(string RecorderPath, string SubPath) override;
 	virtual void StopStreaming(bool force) override;
 	virtual void StopRecording(bool force) override;
@@ -1190,6 +1197,11 @@ bool AdvancedOutput::StartStreaming(obs_service_t *service)
 	}
 
 	return false;
+}
+
+bool AdvancedOutput::StartRecordingHotKey()
+{
+	return StartRecording("", "");
 }
 
 bool AdvancedOutput::StartRecording(string RecorderPath, string SubPath)

@@ -326,6 +326,7 @@ public slots:
 	void StreamingStop(int errorcode);
 
 	bool GetRecordStatus();
+	void StartRecordingHotKey();
 	void StartRecording(string RecorderPath, string SubPath);
 	void StopRecording();
 

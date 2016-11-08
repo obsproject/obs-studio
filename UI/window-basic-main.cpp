@@ -151,10 +151,7 @@ OBSBasic::OBSBasic(QWidget *parent)
 
 	ui->sources->setItemDelegate(new VisibilityItemDelegate(ui->sources));
 	
-	bool MicroObs;
-	MicroObs = true;
-
-	if (MicroObs == true)
+	if (App()->IsMinimumUiMode() == true)
 	{
 		StartTcpListener();
 		CpuUsageTrigged = false;
@@ -1052,7 +1049,7 @@ bool OBSBasic::InitBasicConfigDefaults()
 	config_set_default_string(basicConfig, "SimpleOutput", "FilePath",
 			GetDefaultVideoSavePath().c_str());
 	config_set_default_string(basicConfig, "SimpleOutput", "RecFormat",
-			"flv");
+			"mp4");
 	config_set_default_uint  (basicConfig, "SimpleOutput", "VBitrate",
 			2500);
 	config_set_default_string(basicConfig, "SimpleOutput", "StreamEncoder",
@@ -1065,7 +1062,7 @@ bool OBSBasic::InitBasicConfigDefaults()
 	config_set_default_string(basicConfig, "SimpleOutput", "Preset",
 			"veryfast");
 	config_set_default_string(basicConfig, "SimpleOutput", "RecQuality",
-			"Stream");
+			"Small");
 	config_set_default_string(basicConfig, "SimpleOutput", "RecEncoder",
 			SIMPLE_ENCODER_X264);
 
@@ -1079,7 +1076,7 @@ bool OBSBasic::InitBasicConfigDefaults()
 
 	config_set_default_string(basicConfig, "AdvOut", "RecFilePath",
 			GetDefaultVideoSavePath().c_str());
-	config_set_default_string(basicConfig, "AdvOut", "RecFormat", "flv");
+	config_set_default_string(basicConfig, "AdvOut", "RecFormat", "mp4");
 	config_set_default_bool  (basicConfig, "AdvOut", "RecUseRescale",
 			false);
 	config_set_default_uint  (basicConfig, "AdvOut", "RecTracks", (1<<0));
@@ -1591,18 +1588,20 @@ void OBSBasic::CreateHotkeys()
 	LoadHotkey(forceStreamingStopHotkey,
 			"OBSBasic.ForceStopStreaming");
 
-	//ABBA MicroOBS
-	//recordingHotkeys = obs_hotkey_pair_register_frontend(
-	//		"OBSBasic.StartRecording",
-	//		Str("Basic.Hotkeys.StartRecording"),
-	//		"OBSBasic.StopRecording",
-	//		Str("Basic.Hotkeys.StopRecording"),
-	//		MAKE_CALLBACK(!basic.outputHandler->RecordingActive(),
-	//			basic.StartRecording),
-	//		MAKE_CALLBACK(basic.outputHandler->RecordingActive(),
-	//			basic.StopRecording),
-	//		this, this);
-
+	if (App()->IsMinimumUiMode() == false)
+	{ 
+		recordingHotkeys = obs_hotkey_pair_register_frontend(
+				"OBSBasic.StartRecording",
+				Str("Basic.Hotkeys.StartRecording"),
+				"OBSBasic.StopRecording",
+				Str("Basic.Hotkeys.StopRecording"),
+				MAKE_CALLBACK(!basic.outputHandler->RecordingActive(),
+					basic.StartRecordingHotKey),
+				MAKE_CALLBACK(basic.outputHandler->RecordingActive(),
+					basic.StopRecording),
+				this, this);
+	}
+	
 	LoadHotkeyPair(recordingHotkeys,
 			"OBSBasic.StartRecording", "OBSBasic.StopRecording");
 #undef MAKE_CALLBACK
@@ -3893,7 +3892,10 @@ static inline void ClearProcessPriority()
 inline void OBSBasic::OnActivate()
 {
 	if (ui->profileMenu->isEnabled()) {
-		//microOBS ui->profileMenu->setEnabled(false);
+		if (App()->IsMinimumUiMode() == false)
+		{
+			ui->profileMenu->setEnabled(false);
+		}
 		App()->IncrementSleepInhibition();
 		UpdateProcessPriority();
 
@@ -3905,7 +3907,10 @@ inline void OBSBasic::OnActivate()
 inline void OBSBasic::OnDeactivate()
 {
 	if (!outputHandler->Active() && !ui->profileMenu->isEnabled()) {
-		//microOBS ui->profileMenu->setEnabled(true);
+		if (App()->IsMinimumUiMode() == false)
+		{
+			ui->profileMenu->setEnabled(true);
+		}
 		App()->DecrementSleepInhibition();
 		ClearProcessPriority();
 
@@ -4105,6 +4110,11 @@ bool OBSBasic::GetRecordStatus()
 	{
 		return false;
 	}
+}
+
+void OBSBasic::StartRecordingHotKey()
+{
+ 	return StartRecording("","");
 }
 
 void OBSBasic::StartRecording(string RecorderPath, string SubPath)

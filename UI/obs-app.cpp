@@ -59,6 +59,7 @@ static log_handler_t def_log_handler;
 static string currentLogFile;
 static string lastLogFile;
 
+static bool MinimumUi_mode = false;
 static bool portable_mode = false;
 bool opt_start_streaming = false;
 bool opt_start_recording = false;
@@ -915,6 +916,11 @@ string OBSApp::GetVersionString() const
 bool OBSApp::IsPortableMode()
 {
 	return portable_mode;
+}
+
+bool OBSApp::IsMinimumUiMode()
+{
+	return MinimumUi_mode;
 }
 
 #ifdef __APPLE__
@@ -1800,6 +1806,10 @@ int main(int argc, char *argv[])
 	for (int i = 1; i < argc; i++) {
 		if (arg_is(argv[i], "--portable", "-p")) {
 			portable_mode = true;
+
+		}
+		else if (arg_is(argv[i], "/MinimumUI", nullptr)) {
+			MinimumUi_mode = true;
 
 		} else if (arg_is(argv[i], "--startstreaming", nullptr)) {
 			opt_start_streaming = true;
