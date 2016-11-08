@@ -1130,7 +1130,7 @@ bool OBSBasic::InitBasicConfigDefaults()
 	config_set_default_uint  (basicConfig, "Video", "OutputCX", scale_cx);
 	config_set_default_uint  (basicConfig, "Video", "OutputCY", scale_cy);
 
-	config_set_default_uint  (basicConfig, "Video", "FPSType", 0);
+	config_set_default_uint  (basicConfig, "Video", "FPSType", 1);
 	config_set_default_string(basicConfig, "Video", "FPSCommon", "50");
 	config_set_default_uint  (basicConfig, "Video", "FPSInt", 50);
 	config_set_default_uint  (basicConfig, "Video", "FPSNum", 50);
