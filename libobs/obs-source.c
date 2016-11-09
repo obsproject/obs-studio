@@ -410,7 +410,9 @@ obs_source_t *obs_source_duplicate(obs_source_t *source,
 		obs_scene_t *new_scene = obs_scene_duplicate(scene, new_name,
 				create_private ? OBS_SCENE_DUP_PRIVATE_COPY :
 					OBS_SCENE_DUP_COPY);
-		return obs_scene_get_source(new_scene);
+		obs_source_t *new_source = obs_scene_get_source(new_scene);
+		duplicate_filters(new_source, source, create_private);
+		return new_source;
 	}
 
 	settings = obs_data_create();
