@@ -94,7 +94,7 @@ OBSBasicProperties::OBSBasicProperties(QWidget *parent, OBSSource source_)
 	installEventFilter(CreateShortcutFilter());
 
 	const char *name = obs_source_get_name(source);
-	setWindowTitle(QTStr("Basic.PropertiesWindow").arg(QT_UTF8(name)));
+	setWindowTitle(tr("Basic.PropertiesWindow").arg(QT_UTF8(name)));
 
 	obs_source_inc_showing(source);
 
@@ -136,7 +136,7 @@ void OBSBasicProperties::SourceRemoved(void *data, calldata_t *params)
 void OBSBasicProperties::SourceRenamed(void *data, calldata_t *params)
 {
 	const char *name = calldata_string(params, "new_name");
-	QString title = QTStr("Basic.PropertiesWindow").arg(QT_UTF8(name));
+	QString title = tr("Basic.PropertiesWindow").arg(QT_UTF8(name));
 
 	QMetaObject::invokeMethod(static_cast<OBSBasicProperties*>(data),
 	                "setWindowTitle", Q_ARG(QString, title));
@@ -266,8 +266,8 @@ bool OBSBasicProperties::ConfirmQuit()
 	QMessageBox::StandardButton button;
 
 	button = QMessageBox::question(this,
-			QTStr("Basic.PropertiesWindow.ConfirmTitle"),
-			QTStr("Basic.PropertiesWindow.Confirm"),
+			tr("Basic.PropertiesWindow.ConfirmTitle"),
+			tr("Basic.PropertiesWindow.Confirm"),
 			QMessageBox::Save | QMessageBox::Discard |
 			QMessageBox::Cancel);
 

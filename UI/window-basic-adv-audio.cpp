@@ -24,22 +24,22 @@ OBSBasicAdvAudio::OBSBasicAdvAudio(QWidget *parent)
 
 	mainLayout = new QGridLayout;
 	mainLayout->setContentsMargins(0, 0, 0, 0);
-	label = new QLabel(QTStr("Basic.AdvAudio.Name"));
+	label = new QLabel(tr("Basic.AdvAudio.Name"));
 	label->setAlignment(Qt::AlignHCenter);
 	mainLayout->addWidget(label, 0, 0);
-	label = new QLabel(QTStr("Basic.AdvAudio.Volume"));
+	label = new QLabel(tr("Basic.AdvAudio.Volume"));
 	label->setAlignment(Qt::AlignHCenter);
 	mainLayout->addWidget(label, 0, 1);
-	label = new QLabel(QTStr("Basic.AdvAudio.Mono"));
+	label = new QLabel(tr("Basic.AdvAudio.Mono"));
 	label->setAlignment(Qt::AlignHCenter);
 	mainLayout->addWidget(label, 0, 2);
-	label = new QLabel(QTStr("Basic.AdvAudio.Panning"));
+	label = new QLabel(tr("Basic.AdvAudio.Panning"));
 	label->setAlignment(Qt::AlignHCenter);
 	mainLayout->addWidget(label, 0, 3);
-	label = new QLabel(QTStr("Basic.AdvAudio.SyncOffset"));
+	label = new QLabel(tr("Basic.AdvAudio.SyncOffset"));
 	label->setAlignment(Qt::AlignHCenter);
 	mainLayout->addWidget(label, 0, 4);
-	label = new QLabel(QTStr("Basic.AdvAudio.AudioTracks"));
+	label = new QLabel(tr("Basic.AdvAudio.AudioTracks"));
 	label->setAlignment(Qt::AlignHCenter);
 	mainLayout->addWidget(label, 0, 5);
 
@@ -70,7 +70,7 @@ OBSBasicAdvAudio::OBSBasicAdvAudio(QWidget *parent)
 	obs_enum_sources(EnumSources, this);
 
 	resize(1000, 340);
-	setWindowTitle(QTStr("Basic.AdvAudio"));
+	setWindowTitle(tr("Basic.AdvAudio"));
 	setSizeGripEnabled(true);
 	setWindowModality(Qt::NonModal);
 	setAttribute(Qt::WA_DeleteOnClose, true);

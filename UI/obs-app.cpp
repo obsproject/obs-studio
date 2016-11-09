@@ -581,64 +581,10 @@ bool OBSApp::InitLocale()
 	const char *lang = config_get_string(globalConfig, "General",
 			"Language");
 
-	locale = lang;
-
-	string englishPath;
-	if (!GetDataFilePath("locale/" DEFAULT_LANG ".ini", englishPath)) {
-		OBSErrorBox(NULL, "Failed to find locale/" DEFAULT_LANG ".ini");
+	if (!translator.Init(lang))
 		return false;
-	}
 
-	textLookup = text_lookup_create(englishPath.c_str());
-	if (!textLookup) {
-		OBSErrorBox(NULL, "Failed to create locale from file '%s'",
-				englishPath.c_str());
-		return false;
-	}
-
-	bool userLocale = config_has_user_value(globalConfig, "General",
-			"Language");
-	bool defaultLang = astrcmpi(lang, DEFAULT_LANG) == 0;
-
-	if (userLocale && defaultLang)
-		return true;
-
-	if (!userLocale && defaultLang) {
-		for (auto &locale_ : GetPreferredLocales()) {
-			if (locale_ == lang)
-				return true;
-
-			stringstream file;
-			file << "locale/" << locale_ << ".ini";
-
-			string path;
-			if (!GetDataFilePath(file.str().c_str(), path))
-				continue;
-
-			if (!text_lookup_add(textLookup, path.c_str()))
-				continue;
-
-			blog(LOG_INFO, "Using preferred locale '%s'",
-					locale_.c_str());
-			locale = locale_;
-			return true;
-		}
-
-		return true;
-	}
-
-	stringstream file;
-	file << "locale/" << lang << ".ini";
-
-	string path;
-	if (GetDataFilePath(file.str().c_str(), path)) {
-		if (!text_lookup_add(textLookup, path.c_str()))
-			blog(LOG_ERROR, "Failed to add locale file '%s'",
-					path.c_str());
-	} else {
-		blog(LOG_ERROR, "Could not find locale file '%s'",
-				file.str().c_str());
-	}
+	installTranslator(&translator);
 
 	return true;
 }
@@ -725,7 +671,7 @@ static void move_basic_to_profiles(void)
 		return;
 
 	strcat(new_path, "/");
-	strcat(new_path, Str("Untitled"));
+	strcat(new_path, QT_TO_UTF8(QObject::tr("Untitled")));
 	if (os_mkdir(new_path) == MKDIR_ERROR)
 		return;
 
@@ -778,7 +724,7 @@ static void move_basic_to_scene_collections(void)
 
 	strcat(path, "/scenes.json");
 	strcat(new_path, "/");
-	strcat(new_path, Str("Untitled"));
+	strcat(new_path, QT_TO_UTF8(QObject::tr("Untitled")));
 	strcat(new_path, ".json");
 
 	os_rename(path, new_path);
@@ -800,13 +746,13 @@ void OBSApp::AppInit()
 		throw "Failed to load theme";
 
 	config_set_default_string(globalConfig, "Basic", "Profile",
-			Str("Untitled"));
+			QT_TO_UTF8(tr("Untitled")));
 	config_set_default_string(globalConfig, "Basic", "ProfileDir",
-			Str("Untitled"));
+			QT_TO_UTF8(tr("Untitled")));
 	config_set_default_string(globalConfig, "Basic", "SceneCollection",
-			Str("Untitled"));
+			QT_TO_UTF8(tr("Untitled")));
 	config_set_default_string(globalConfig, "Basic", "SceneCollectionFile",
-			Str("Untitled"));
+			QT_TO_UTF8(tr("Untitled")));
 
 #ifdef __APPLE__
 	if (config_get_bool(globalConfig, "Video", "DisableOSXVSync"))
@@ -854,7 +800,8 @@ bool OBSApp::OBSInit()
 			config_save(globalConfig);
 		}
 
-		if (!StartupOBS(locale.c_str(), GetProfilerNameStore()))
+		if (!StartupOBS(translator.GetLocale().c_str(),
+		                GetProfilerNameStore()))
 			return false;
 
 		blog(LOG_INFO, "Portable mode: %s",
@@ -957,17 +904,72 @@ bool OBSApp::TranslateString(const char *lookupVal, const char **out) const
 	return text_lookup_getstr(App()->GetTextLookup(), lookupVal, out);
 }
 
+bool OBSTranslator::Init(const char *lang)
+{
+	locale = lang;
+
+	string englishPath;
+	if (!GetDataFilePath("locale/" DEFAULT_LANG ".ini", englishPath)) {
+		OBSErrorBox(NULL, "Failed to find locale/" DEFAULT_LANG ".ini");
+		return false;
+	}
+
+	textLookup = text_lookup_create(englishPath.c_str());
+	if (!textLookup) {
+		OBSErrorBox(NULL, "Failed to create locale from file '%s'",
+		                englishPath.c_str());
+		return false;
+	}
+
+	bool defaultLang = astrcmpi(lang, DEFAULT_LANG) == 0;
+
+	if (lang && defaultLang)
+		return true;
+
+	if (!lang && defaultLang) {
+		for (auto &locale_ : GetPreferredLocales()) {
+			if (locale_ == lang)
+				return true;
+
+			stringstream file;
+			file << "locale/" << locale_ << ".ini";
+
+			string path;
+			if (!GetDataFilePath(file.str().c_str(), path))
+				continue;
+
+			if (!text_lookup_add(textLookup, path.c_str()))
+				continue;
+
+			blog(LOG_INFO, "Using preferred locale '%s'",
+			                locale_.c_str());
+			locale = locale_;
+			return true;
+		}
+
+		return true;
+	}
+
+	stringstream file;
+	file << "locale/" << lang << ".ini";
+
+	string path;
+	if (GetDataFilePath(file.str().c_str(), path)) {
+		if (!text_lookup_add(textLookup, path.c_str()))
+			blog(LOG_ERROR, "Failed to add locale file '%s'",
+			                path.c_str());
+	} else {
+		blog(LOG_ERROR, "Could not find locale file '%s'",
+		                file.str().c_str());
+	}
+
+	return true;
+}
+
 QString OBSTranslator::translate(const char *context, const char *sourceText,
 		const char *disambiguation, int n) const
 {
-	const char *out = nullptr;
-	if (!App()->TranslateString(sourceText, &out))
-		return QString(sourceText);
-
-	UNUSED_PARAMETER(context);
-	UNUSED_PARAMETER(disambiguation);
-	UNUSED_PARAMETER(n);
-	return QT_UTF8(out);
+	return QT_UTF8(textLookup.GetString(sourceText));
 }
 
 static bool get_token(lexer *lex, string &str, base_token_type type)
@@ -1323,12 +1325,8 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 	try {
 		program.AppInit();
 
-		OBSTranslator translator;
-
 		create_log_file(logFile);
 		delete_oldest_file("obs-studio/profiler_data");
-
-		program.installTranslator(&translator);
 
 		if (!program.OBSInit())
 			return 0;

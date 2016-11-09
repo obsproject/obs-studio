@@ -76,7 +76,7 @@ void OBSBasic::AddQuickTransitionHotkey(QuickTransition *qt)
 	QString hotkeyName;
 
 	dstr_printf(hotkeyId, "OBSBasic.QuickTransition.%d", qt->id);
-	hotkeyName = QTStr("QuickTransitions.HotkeyName")
+	hotkeyName = tr("QuickTransitions.HotkeyName")
 		.arg(MakeQuickTransitionText(qt));
 
 	auto quickTransition = [] (void *data, obs_hotkey_id, obs_hotkey_t*,
@@ -356,15 +356,15 @@ void OBSBasic::AddTransition()
 	}
 
 	bool accepted = NameDialog::AskForName(this,
-			QTStr("TransitionNameDlg.Title"),
-			QTStr("TransitionNameDlg.Text"),
+			tr("TransitionNameDlg.Title"),
+			tr("TransitionNameDlg.Text"),
 			name, placeHolderText);
 
 	if (accepted) {
 		if (name.empty()) {
 			QMessageBox::information(this,
-					QTStr("NoNameEntered.Title"),
-					QTStr("NoNameEntered.Text"));
+					tr("NoNameEntered.Title"),
+					tr("NoNameEntered.Text"));
 			AddTransition();
 			return;
 		}
@@ -372,8 +372,8 @@ void OBSBasic::AddTransition()
 		source = FindTransition(name.c_str());
 		if (source) {
 			QMessageBox::information(this,
-					QTStr("NameExists.Title"),
-					QTStr("NameExists.Text"));
+					tr("NameExists.Title"),
+					tr("NameExists.Text"));
 
 			AddTransition();
 			return;
@@ -456,15 +456,15 @@ void OBSBasic::RenameTransition()
 	obs_source_t *source = nullptr;
 
 	bool accepted = NameDialog::AskForName(this,
-			QTStr("TransitionNameDlg.Title"),
-			QTStr("TransitionNameDlg.Text"),
+			tr("TransitionNameDlg.Title"),
+			tr("TransitionNameDlg.Text"),
 			name, placeHolderText);
 
 	if (accepted) {
 		if (name.empty()) {
 			QMessageBox::information(this,
-					QTStr("NoNameEntered.Title"),
-					QTStr("NoNameEntered.Text"));
+					tr("NoNameEntered.Title"),
+					tr("NoNameEntered.Text"));
 			RenameTransition();
 			return;
 		}
@@ -472,8 +472,8 @@ void OBSBasic::RenameTransition()
 		source = FindTransition(name.c_str());
 		if (source) {
 			QMessageBox::information(this,
-					QTStr("NameExists.Title"),
-					QTStr("NameExists.Text"));
+					tr("NameExists.Title"),
+					tr("NameExists.Text"));
 
 			RenameTransition();
 			return;
@@ -499,12 +499,12 @@ void OBSBasic::on_transitionProps_clicked()
 
 	QMenu menu(this);
 
-	QAction *action = new QAction(QTStr("Rename"), &menu);
+	QAction *action = new QAction(tr("Rename"), &menu);
 	connect(action, SIGNAL(triggered()), this, SLOT(RenameTransition()));
 	action->setProperty("transition", QVariant::fromValue(source));
 	menu.addAction(action);
 
-	action = new QAction(QTStr("Properties"), &menu);
+	action = new QAction(tr("Properties"), &menu);
 	connect(action, &QAction::triggered, properties);
 	menu.addAction(action);
 
@@ -634,7 +634,7 @@ void OBSBasic::CreateProgramOptions()
 	QHBoxLayout *mainButtonLayout = new QHBoxLayout();
 	mainButtonLayout->setSpacing(2);
 
-	QPushButton *transitionButton = new QPushButton(QTStr("Transition"));
+	QPushButton *transitionButton = new QPushButton(tr("Transition"));
 	QHBoxLayout *quickTransitions = new QHBoxLayout();
 	quickTransitions->setSpacing(2);
 
@@ -643,7 +643,7 @@ void OBSBasic::CreateProgramOptions()
 	addQuickTransition->setProperty("themeID", "addIconSmall");
 	addQuickTransition->setFlat(true);
 
-	QLabel *quickTransitionsLabel = new QLabel(QTStr("QuickTransitions"));
+	QLabel *quickTransitionsLabel = new QLabel(tr("QuickTransitions"));
 
 	quickTransitions->addWidget(quickTransitionsLabel);
 	quickTransitions->addWidget(addQuickTransition);
@@ -693,23 +693,23 @@ void OBSBasic::CreateProgramOptions()
 					&menu, menu.actionGeometry(act));
 		};
 
-		action = menu.addAction(QTStr("QuickTransitions.DuplicateScene"));
-		action->setToolTip(QTStr("QuickTransitions.DuplicateSceneTT"));
+		action = menu.addAction(tr("QuickTransitions.DuplicateScene"));
+		action->setToolTip(tr("QuickTransitions.DuplicateSceneTT"));
 		action->setCheckable(true);
 		action->setChecked(sceneDuplicationMode);
 		connect(action, &QAction::triggered, toggleSceneDuplication);
 		connect(action, &QAction::hovered, showToolTip);
 
-		action = menu.addAction(QTStr("QuickTransitions.EditProperties"));
-		action->setToolTip(QTStr("QuickTransitions.EditPropertiesTT"));
+		action = menu.addAction(tr("QuickTransitions.EditProperties"));
+		action->setToolTip(tr("QuickTransitions.EditPropertiesTT"));
 		action->setCheckable(true);
 		action->setChecked(editPropertiesMode);
 		action->setEnabled(sceneDuplicationMode);
 		connect(action, &QAction::triggered, toggleEditProperties);
 		connect(action, &QAction::hovered, showToolTip);
 
-		action = menu.addAction(QTStr("QuickTransitions.SwapScenes"));
-		action->setToolTip(QTStr("QuickTransitions.SwapScenesTT"));
+		action = menu.addAction(tr("QuickTransitions.SwapScenes"));
+		action->setToolTip(tr("QuickTransitions.SwapScenesTT"));
 		action->setCheckable(true);
 		action->setChecked(swapScenesMode);
 		connect(action, &QAction::triggered, toggleSwapScenesMode);
@@ -740,7 +740,7 @@ QMenu *OBSBasic::CreateTransitionMenu(QWidget *parent, QuickTransition *qt)
 	QAction *action;
 
 	if (qt) {
-		action = menu->addAction(QTStr("Remove"));
+		action = menu->addAction(tr("Remove"));
 		action->setProperty("id", qt->id);
 		connect(action, &QAction::triggered,
 				this, &OBSBasic::QuickTransitionRemoveClicked);
