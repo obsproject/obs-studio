@@ -23,6 +23,7 @@
 #include <util/platform.h>
 
 #include <libavutil/opt.h>
+#include <libavutil/pixdesc.h>
 #include <libavformat/avformat.h>
 #include <libswscale/swscale.h>
 
@@ -620,8 +621,10 @@ static void ffmpeg_output_destroy(void *data)
 }
 
 static inline void copy_data(AVPicture *pic, const struct video_data *frame,
-		int height)
+		int height, enum AVPixelFormat format)
 {
+	int h_chroma_shift, v_chroma_shift;
+	av_pix_fmt_get_chroma_sub_sample(format, &h_chroma_shift, &v_chroma_shift);
 	for (int plane = 0; plane < MAX_AV_PLANES; plane++) {
 		if (!frame->data[plane])
 			continue;
@@ -630,7 +633,7 @@ static inline void copy_data(AVPicture *pic, const struct video_data *frame,
 		int pic_rowsize   = pic->linesize[plane];
 		int bytes = frame_rowsize < pic_rowsize ?
 			frame_rowsize : pic_rowsize;
-		int plane_height = plane == 0 ? height : height/2;
+		int plane_height = height >> (plane ? v_chroma_shift : 0);
 
 		for (int y = 0; y < plane_height; y++) {
 			int pos_frame = y * frame_rowsize;
@@ -669,7 +672,7 @@ static void receive_video(void *param, struct video_data *frame)
 				0, data->config.height, data->dst_picture.data,
 				data->dst_picture.linesize);
 	else
-		copy_data(&data->dst_picture, frame, context->height);
+		copy_data(&data->dst_picture, frame, context->height, context->pix_fmt);
 
 	if (data->output->flags & AVFMT_RAWPICTURE) {
 		packet.flags        |= AV_PKT_FLAG_KEY;

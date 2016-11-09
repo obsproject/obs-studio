@@ -23,6 +23,7 @@
 #include <obs-avc.h>
 
 #include <libavutil/opt.h>
+#include <libavutil/pixdesc.h>
 #include <libavformat/avformat.h>
 
 #include "obs-ffmpeg-formats.h"
@@ -298,8 +299,10 @@ fail:
 }
 
 static inline void copy_data(AVPicture *pic, const struct encoder_frame *frame,
-		int height)
+		int height, enum AVPixelFormat format)
 {
+	int h_chroma_shift, v_chroma_shift;
+	av_pix_fmt_get_chroma_sub_sample(format, &h_chroma_shift, &v_chroma_shift);
 	for (int plane = 0; plane < MAX_AV_PLANES; plane++) {
 		if (!frame->data[plane])
 			continue;
@@ -308,7 +311,7 @@ static inline void copy_data(AVPicture *pic, const struct encoder_frame *frame,
 		int pic_rowsize   = pic->linesize[plane];
 		int bytes = frame_rowsize < pic_rowsize ?
 			frame_rowsize : pic_rowsize;
-		int plane_height = plane == 0 ? height : height/2;
+		int plane_height = height >> (plane ? v_chroma_shift : 0);
 
 		for (int y = 0; y < plane_height; y++) {
 			int pos_frame = y * frame_rowsize;
@@ -331,7 +334,7 @@ static bool nvenc_encode(void *data, struct encoder_frame *frame,
 
 	av_init_packet(&av_pkt);
 
-	copy_data(&enc->dst_picture, frame, enc->height);
+	copy_data(&enc->dst_picture, frame, enc->height, enc->context->pix_fmt);
 
 	enc->vframe->pts = frame->pts;
 	ret = avcodec_encode_video2(enc->context, &av_pkt, enc->vframe,
