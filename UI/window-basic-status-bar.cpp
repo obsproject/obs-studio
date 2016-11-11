@@ -63,6 +63,8 @@ void OBSBasicStatusBar::Deactivate()
 	if (!main->outputHandler->Active()) {
 		delete refreshTimer;
 		sessionTime->setText(QString("00:00:00"));
+		main->RecordingElapsedTime = "00:00:00";
+
 		delayInfo->setText("");
 		droppedFrames->setText("");
 		kbps->setText("");
@@ -137,12 +139,21 @@ void OBSBasicStatusBar::UpdateBandwidth()
 	lastBytesSentTime    = bytesSentTime;
 	bitrateUpdateSeconds = 0;
 }
+// ABBA
 
 void OBSBasicStatusBar::UpdateCPUUsage()
 {
 	OBSBasic *main = qobject_cast<OBSBasic*>(parent());
 	if (!main)
 		return;
+
+	if (main->CpuUsageTrigged == false)
+	{
+		// Run Startup Action
+		main->cpuUsageTimer->setInterval(1000);
+		main->on_actionResetTransform_triggered();
+		main->CpuUsageTrigged = true;
+	}
 
 	QString text;
 	text += QString("CPU: ") +
@@ -164,6 +175,10 @@ void OBSBasicStatusBar::UpdateSessionTime()
 
 	QString text;
 	text.sprintf("%02d:%02d:%02d", hours, minutes, seconds);
+
+	OBSBasic *main = qobject_cast<OBSBasic*>(parent());
+	main->RecordingElapsedTime = text.toStdString();
+
 	sessionTime->setText(text);
 	sessionTime->setMinimumWidth(sessionTime->width());
 

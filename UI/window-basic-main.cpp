@@ -60,6 +60,9 @@
 #include <QScreen>
 #include <QWindow>
 
+#include <stdio.h>
+#include <windows.h>
+
 using namespace std;
 
 namespace {
@@ -77,6 +80,22 @@ Q_DECLARE_METATYPE(OBSSceneItem);
 Q_DECLARE_METATYPE(OBSSource);
 Q_DECLARE_METATYPE(obs_order_movement);
 Q_DECLARE_METATYPE(SignalContainer<OBSScene>);
+
+void StartTcpListener();
+int OpenNamedPipe();
+void HandleCommand(string Data);
+string GetXmlData(string Data, string Header);
+void SendStatus(string Data);
+std::string upperCase(std::string input);
+unsigned long __stdcall NET_RvThr(void * pParam);
+DWORD WINAPI ThreadProc();
+HANDLE hPipe1, hPipe2;
+BOOL Finished;
+BOOL ErrorDetected;
+
+LPTSTR lpszPipename1;
+LPTSTR lpszPipename2;
+HANDLE hThread = NULL;
 
 template <typename T>
 static T GetOBSRef(QListWidgetItem *item)
@@ -131,6 +150,42 @@ OBSBasic::OBSBasic(QWidget *parent)
 	copyActionsDynamicProperties();
 
 	ui->sources->setItemDelegate(new VisibilityItemDelegate(ui->sources));
+	
+	if (App()->IsMinimumUiMode() == true)
+	{
+		StartTcpListener();
+		CpuUsageTrigged = false;
+		ui->scenesLabel->setVisible(false);
+		ui->scenesFrame->setVisible(false);
+
+		ui->sourcesLabel->setVisible(false);
+		ui->sourcesFrame->setVisible(false);
+		ui->actionSourceProperties->setVisible(false);
+
+		ui->advAudioProps->setVisible(false);
+		ui->mixerLabel->setVisible(false);
+
+		ui->transitionsContainer->setVisible(false);
+
+		ui->streamButton->setVisible(false);
+		ui->modeSwitch->setVisible(false);
+		ui->settingsButton->setVisible(false);
+		ui->exitButton->setVisible(false);
+
+		// File menu
+		ui->actionRemux->setVisible(false);
+		ui->action_Settings->setVisible(false);
+		ui->actionShowSettingsFolder->setVisible(false);
+		ui->actionShowProfileFolder->setVisible(false);
+
+		// Hide other menu options...
+		ui->menuBasic_MainMenu_Edit->setEnabled(false);
+		ui->viewMenu->setEnabled(false);
+		ui->profileMenu->setEnabled(false);
+		ui->sceneCollectionMenu->setEnabled(false);
+		ui->viewMenuToolbars->setEnabled(false);
+		ui->menuBasic_MainMenu_Help->setEnabled(false);
+	}
 
 	const char *geometry = config_get_string(App()->GlobalConfig(),
 			"BasicWindow", "geometry");
@@ -173,14 +228,14 @@ OBSBasic::OBSBasic(QWidget *parent)
 
 	ui->scenes->setAttribute(Qt::WA_MacShowFocusRect, false);
 	ui->sources->setAttribute(Qt::WA_MacShowFocusRect, false);
-
+	
 	auto displayResize = [this]() {
 		struct obs_video_info ovi;
 
 		if (obs_get_video_info(&ovi))
 			ResizePreview(ovi.base_width, ovi.base_height);
 	};
-
+	
 	connect(windowHandle(), &QWindow::screenChanged, displayResize);
 	connect(ui->preview, &OBSQTDisplay::DisplayResized, displayResize);
 
@@ -211,7 +266,7 @@ OBSBasic::OBSBasic(QWidget *parent)
 	cpuUsageTimer = new QTimer(this);
 	connect(cpuUsageTimer, SIGNAL(timeout()),
 			ui->statusbar, SLOT(UpdateCPUUsage()));
-	cpuUsageTimer->start(3000);
+	cpuUsageTimer->start(500);
 
 	DeleteKeys =
 #ifdef __APPLE__
@@ -241,6 +296,183 @@ OBSBasic::OBSBasic(QWidget *parent)
 	addNudge(Qt::Key_Left, SLOT(NudgeLeft()));
 	addNudge(Qt::Key_Right, SLOT(NudgeRight()));
 }
+
+// TCP Listener...
+
+void StartTcpListener()
+{
+	lpszPipename1 = TEXT("\\\\.\\pipe\\PipeXqObS23a");
+	lpszPipename2 = TEXT("\\\\.\\pipe\\PipeXqObS23b");
+
+	int Success;
+Startpoint:
+
+	Finished = FALSE;
+	Success = FALSE;
+	ErrorDetected = FALSE;
+
+	hThread = CreateThread(NULL, 0, &NET_RvThr, NULL, 0, NULL);
+
+}
+
+int OpenNamedPipe()
+{
+	hPipe1 = CreateFile(lpszPipename1, GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_FLAG_OVERLAPPED, NULL);
+	hPipe2 = CreateFile(lpszPipename2, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_FLAG_OVERLAPPED, NULL);
+
+	if ((hPipe1 == NULL || hPipe1 == INVALID_HANDLE_VALUE) || (hPipe2 == NULL || hPipe2 == INVALID_HANDLE_VALUE))
+	{
+		return FALSE;
+	}
+	else
+	{
+		return TRUE;
+	}
+}
+
+
+unsigned long __stdcall NET_RvThr(void * pParam) {
+	BOOL fSuccess;
+	char chBuf[104];
+	DWORD dwBytesToWrite = 104; (DWORD)strlen(chBuf);
+	DWORD cbRead = 104;
+	int i;
+	int Success;
+	string Data;
+
+	while (1)
+	{
+	StartPoint:
+		Success = FALSE;
+		ErrorDetected = FALSE;
+
+		while (Success == FALSE)
+		{
+			Success = OpenNamedPipe();
+			if (Success == FALSE)
+			{
+				Sleep(1000);
+			}
+		}
+NormalLoop:	
+		fSuccess = ReadFile(hPipe2, chBuf, dwBytesToWrite, &cbRead, NULL);
+		if (fSuccess)
+		{
+			Data = "";
+			for (i = 0; i < cbRead; i++)
+			{
+				Data = Data + chBuf[i];
+			}
+			HandleCommand(Data);
+	
+			goto NormalLoop;
+		}
+		if (!fSuccess && GetLastError() != ERROR_MORE_DATA)
+		{
+			ErrorDetected = TRUE;
+			goto StartPoint;
+		}
+	}
+	return 0;
+}
+
+void HandleCommand(string Data)
+{
+	try
+	{
+		OBSBasic *main = reinterpret_cast<OBSBasic*>(App()->GetMainWindow());
+
+		auto pos1 = upperCase(Data).find(upperCase("<GetStatus>"));
+		if (pos1 == 0)
+		{
+			bool RecSts = main->GetRecordStatus();
+			string state;
+			if (RecSts == false) 
+				{ state = "idle"; }
+			  else
+				{ state = "Recording"; }
+
+			string t = main->RecordingElapsedTime; 
+			// GetCPUUsage 
+	
+			SendStatus("<Status><RecordingState>"  + state + "</RecordingState><Time>" + t + "</Time></Status>");
+			return;
+		}
+
+		auto pos2 = upperCase(Data).find(upperCase("<StartRecording>"));
+		if (pos2 == 0)
+		{
+			string RecorderPath = GetXmlData(Data, "RecorderPath");
+			string SubPath = GetXmlData(Data, "RecorderSubPath");
+			main->StartRecording(RecorderPath, SubPath);
+			return;
+		}
+
+		auto pos3 = upperCase(Data).find(upperCase("<StopRecording>"));
+		if (pos3 == 0)
+		{
+			main->StopRecording();
+			return;
+		}
+	}
+	catch (const std::exception&)
+	{
+
+	}
+}
+
+string GetXmlData(string Data, string Header)
+{
+	try
+	{
+		if (Data.find("<" + Header + ">") != string::npos)
+		{
+			auto StartPos = Data.find("<" + Header + ">");
+			if (StartPos == 0) return "";
+			string Data2 = Data.substr(StartPos + 2 + Header.length() - 1);
+			auto EndPos = Data2.find("</" + Header + ">");
+			if (EndPos == 0) return "";
+			return Data2.substr(1, EndPos - 1);
+		}
+		return "";
+
+	}
+	catch (const std::exception&)
+	{
+		return "";
+	}
+	return "";
+}
+
+void SendStatus(string Data)
+{
+	try
+	{
+		char SendBuf[203];
+		DWORD cbWritten;
+			
+		strncpy(SendBuf, Data.c_str(), sizeof(SendBuf));
+		SendBuf[sizeof(SendBuf) - 1] = 0;
+		DWORD dwBytesToWrite = (DWORD)strlen(SendBuf);
+	
+		WriteFile(hPipe1, SendBuf, dwBytesToWrite, &cbWritten, NULL);
+		memset(SendBuf, 0xCC, 99);
+	}
+	catch (const std::exception&)
+	{
+
+	}
+}
+
+std::string upperCase(std::string input) 
+{
+	for (std::string::iterator it = input.begin(); it != input.end(); ++it)
+		*it = toupper((unsigned char)*it);
+	return input;
+}
+
+// TCP Listener...
+
 
 static void SaveAudioDevice(const char *name, int channel, obs_data_t *parent,
 		vector<OBSSource> &audioSources)
@@ -362,6 +594,7 @@ obs_data_array_t *OBSBasic::SaveSceneListOrder()
 
 void OBSBasic::Save(const char *file)
 {
+	//ABBA SAVE
 	OBSScene scene = GetCurrentScene();
 	OBSSource curProgramScene = OBSGetStrongRef(programScene);
 	if (!curProgramScene)
@@ -831,7 +1064,7 @@ bool OBSBasic::InitBasicConfigDefaults()
 	config_set_default_string(basicConfig, "SimpleOutput", "FilePath",
 			GetDefaultVideoSavePath().c_str());
 	config_set_default_string(basicConfig, "SimpleOutput", "RecFormat",
-			"flv");
+			"mp4");
 	config_set_default_uint  (basicConfig, "SimpleOutput", "VBitrate",
 			2500);
 	config_set_default_string(basicConfig, "SimpleOutput", "StreamEncoder",
@@ -844,7 +1077,7 @@ bool OBSBasic::InitBasicConfigDefaults()
 	config_set_default_string(basicConfig, "SimpleOutput", "Preset",
 			"veryfast");
 	config_set_default_string(basicConfig, "SimpleOutput", "RecQuality",
-			"Stream");
+			"Small");
 	config_set_default_string(basicConfig, "SimpleOutput", "RecEncoder",
 			SIMPLE_ENCODER_X264);
 
@@ -858,7 +1091,7 @@ bool OBSBasic::InitBasicConfigDefaults()
 
 	config_set_default_string(basicConfig, "AdvOut", "RecFilePath",
 			GetDefaultVideoSavePath().c_str());
-	config_set_default_string(basicConfig, "AdvOut", "RecFormat", "flv");
+	config_set_default_string(basicConfig, "AdvOut", "RecFormat", "mp4");
 	config_set_default_bool  (basicConfig, "AdvOut", "RecUseRescale",
 			false);
 	config_set_default_uint  (basicConfig, "AdvOut", "RecTracks", (1<<0));
@@ -912,12 +1145,12 @@ bool OBSBasic::InitBasicConfigDefaults()
 	config_set_default_uint  (basicConfig, "Video", "OutputCX", scale_cx);
 	config_set_default_uint  (basicConfig, "Video", "OutputCY", scale_cy);
 
-	config_set_default_uint  (basicConfig, "Video", "FPSType", 0);
-	config_set_default_string(basicConfig, "Video", "FPSCommon", "30");
-	config_set_default_uint  (basicConfig, "Video", "FPSInt", 30);
-	config_set_default_uint  (basicConfig, "Video", "FPSNum", 30);
+	config_set_default_uint  (basicConfig, "Video", "FPSType", 1);
+	config_set_default_string(basicConfig, "Video", "FPSCommon", "50");
+	config_set_default_uint  (basicConfig, "Video", "FPSInt", 50);
+	config_set_default_uint  (basicConfig, "Video", "FPSNum", 50);
 	config_set_default_uint  (basicConfig, "Video", "FPSDen", 1);
-	config_set_default_string(basicConfig, "Video", "ScaleType", "bicubic");
+	config_set_default_string(basicConfig, "Video", "ScaleType", "lanczos");
 	config_set_default_string(basicConfig, "Video", "ColorFormat", "NV12");
 	config_set_default_string(basicConfig, "Video", "ColorSpace", "601");
 	config_set_default_string(basicConfig, "Video", "ColorRange",
@@ -1370,16 +1603,20 @@ void OBSBasic::CreateHotkeys()
 	LoadHotkey(forceStreamingStopHotkey,
 			"OBSBasic.ForceStopStreaming");
 
-	recordingHotkeys = obs_hotkey_pair_register_frontend(
-			"OBSBasic.StartRecording",
-			Str("Basic.Hotkeys.StartRecording"),
-			"OBSBasic.StopRecording",
-			Str("Basic.Hotkeys.StopRecording"),
-			MAKE_CALLBACK(!basic.outputHandler->RecordingActive(),
-				basic.StartRecording),
-			MAKE_CALLBACK(basic.outputHandler->RecordingActive(),
-				basic.StopRecording),
-			this, this);
+	if (App()->IsMinimumUiMode() == false)
+	{ 
+		recordingHotkeys = obs_hotkey_pair_register_frontend(
+				"OBSBasic.StartRecording",
+				Str("Basic.Hotkeys.StartRecording"),
+				"OBSBasic.StopRecording",
+				Str("Basic.Hotkeys.StopRecording"),
+				MAKE_CALLBACK(!basic.outputHandler->RecordingActive(),
+					basic.StartRecordingHotKey),
+				MAKE_CALLBACK(basic.outputHandler->RecordingActive(),
+					basic.StopRecording),
+				this, this);
+	}
+	
 	LoadHotkeyPair(recordingHotkeys,
 			"OBSBasic.StartRecording", "OBSBasic.StopRecording");
 #undef MAKE_CALLBACK
@@ -1905,13 +2142,20 @@ void OBSBasic::VolControlContextMenu()
 
 void OBSBasic::ActivateAudioSource(OBSSource source)
 {
-	VolControl *vol = new VolControl(source, true);
+	bool showConfig = false;
+	bool showVolumeControls = false;
 
-	connect(vol, &VolControl::ConfigClicked,
+	VolControl *vol = new VolControl(source, showConfig);
+
+	if (showVolumeControls == true)
+	{
+		connect(vol, &VolControl::ConfigClicked,
 			this, &OBSBasic::VolControlContextMenu);
+	}
 
 	volumes.push_back(vol);
 	ui->volumeWidgets->layout()->addWidget(vol);
+
 }
 
 void OBSBasic::DeactivateAudioSource(OBSSource source)
@@ -3683,7 +3927,7 @@ void OBSBasic::StartStreaming()
 	bool recordWhenStreaming = config_get_bool(GetGlobalConfig(),
 			"BasicWindow", "RecordWhenStreaming");
 	if (recordWhenStreaming)
-		StartRecording();
+		StartRecording("", "");
 }
 
 #ifdef _WIN32
@@ -3710,7 +3954,10 @@ static inline void ClearProcessPriority()
 inline void OBSBasic::OnActivate()
 {
 	if (ui->profileMenu->isEnabled()) {
-		ui->profileMenu->setEnabled(false);
+		if (App()->IsMinimumUiMode() == false)
+		{
+			ui->profileMenu->setEnabled(false);
+		}
 		App()->IncrementSleepInhibition();
 		UpdateProcessPriority();
 
@@ -3722,7 +3969,10 @@ inline void OBSBasic::OnActivate()
 inline void OBSBasic::OnDeactivate()
 {
 	if (!outputHandler->Active() && !ui->profileMenu->isEnabled()) {
-		ui->profileMenu->setEnabled(true);
+		if (App()->IsMinimumUiMode() == false)
+		{
+			ui->profileMenu->setEnabled(true);
+		}
 		App()->DecrementSleepInhibition();
 		ClearProcessPriority();
 
@@ -3905,7 +4155,31 @@ void OBSBasic::StreamingStop(int code)
 	}
 }
 
-void OBSBasic::StartRecording()
+bool OBSBasic::GetRecordStatus()
+{
+	try
+	{
+		if (outputHandler)
+		{
+			return outputHandler->RecordingActive();
+		}
+		else
+		{
+			return false;
+		}
+	}
+	catch (const std::exception&)
+	{
+		return false;
+	}
+}
+
+void OBSBasic::StartRecordingHotKey()
+{
+ 	return StartRecording("","");
+}
+
+void OBSBasic::StartRecording(string RecorderPath, string SubPath)
 {
 	if (outputHandler->RecordingActive())
 		return;
@@ -3914,7 +4188,17 @@ void OBSBasic::StartRecording()
 		api->on_event(OBS_FRONTEND_EVENT_RECORDING_STARTING);
 
 	SaveProject();
-	outputHandler->StartRecording();
+	outputHandler->StartRecording(RecorderPath, SubPath);
+}
+
+void OBSBasic::StopRecording()
+{
+	SaveProject();
+
+	if (outputHandler->RecordingActive())
+		outputHandler->StopRecording(recordingStopping);
+
+	OnDeactivate();
 }
 
 void OBSBasic::RecordStopping()
@@ -3929,24 +4213,14 @@ void OBSBasic::RecordStopping()
 		api->on_event(OBS_FRONTEND_EVENT_RECORDING_STOPPING);
 }
 
-void OBSBasic::StopRecording()
-{
-	SaveProject();
-
-	if (outputHandler->RecordingActive())
-		outputHandler->StopRecording(recordingStopping);
-
-	OnDeactivate();
-}
-
 void OBSBasic::RecordingStart()
 {
 	ui->statusbar->RecordingStarted(outputHandler->fileOutput);
 	ui->recordButton->setText(QTStr("Basic.Main.StopRecording"));
 
 	if (sysTrayRecord)
-		sysTrayRecord->setText(ui->recordButton->text());
-
+			sysTrayRecord->setText(ui->recordButton->text());
+	
 	recordingStopping = false;
 	if (api)
 		api->on_event(OBS_FRONTEND_EVENT_RECORDING_STARTED);
@@ -4037,9 +4311,25 @@ void OBSBasic::on_streamButton_clicked()
 void OBSBasic::on_recordButton_clicked()
 {
 	if (outputHandler->RecordingActive())
-		StopRecording();
+	{
+		try
+		{
+			QMessageBox::StandardButton button = QMessageBox::question(this, "Recording is running...", "Really stop recording ?");
+			if (button == QMessageBox::No)
+			{
+				return;
+			}
+			StopRecording();
+		}
+		catch (const std::exception&)
+		{
+
+		}
+	}
 	else
-		StartRecording();
+	{
+		StartRecording("", "");
+	}
 }
 
 void OBSBasic::on_settingsButton_clicked()

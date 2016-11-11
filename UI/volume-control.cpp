@@ -140,8 +140,16 @@ VolControl::VolControl(OBSSource source_, bool showConfig)
 
 	mute->setChecked(obs_source_muted(source));
 
-	volLayout->addWidget(slider);
-	volLayout->addWidget(mute);
+	// showVolumeControls
+	if (showConfig == true)
+	{
+		// Add Volume slider control
+		volLayout->addWidget(slider);
+
+		// Adding Mute button
+		volLayout->addWidget(mute);
+	}
+	// ABBA 
 	volLayout->setSpacing(5);
 
 	botLayout->setContentsMargins(0, 0, 0, 0);
