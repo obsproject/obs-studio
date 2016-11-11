@@ -612,8 +612,10 @@ void OBSBasic::Save(const char *file)
 			ui->transitionDuration->value(), transitions,
 			scene, curProgramScene);
 
-	obs_data_set_bool(saveData, "preview_locked", ui->preview->Locked());
-
+	if (App()->IsMinimumUiMode() == false)
+	{
+		obs_data_set_bool(saveData, "preview_locked", ui->preview->Locked());
+	}
 	if (api) {
 		obs_data_t *moduleObj = obs_data_create();
 		api->on_save(moduleObj);
@@ -3321,6 +3323,8 @@ QMenu *OBSBasic::AddScaleFilteringMenu(obs_sceneitem_t *item)
 
 void OBSBasic::CreateSourcePopupMenu(QListWidgetItem *item, bool preview)
 {
+	if (App()->IsMinimumUiMode() == true) return;
+
 	QMenu popup(this);
 	QPointer<QMenu> previewProjector;
 	QPointer<QMenu> sourceProjector;
