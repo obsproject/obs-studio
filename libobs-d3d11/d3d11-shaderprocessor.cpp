@@ -181,14 +181,14 @@ void ShaderProcessor::BuildParams(vector<gs_shader_param> &params)
 }
 
 static inline void AddSampler(gs_device_t *device, shader_sampler &sampler,
-		vector<ShaderSampler> &samplers)
+		vector<unique_ptr<ShaderSampler>> &samplers)
 {
 	gs_sampler_info si;
 	shader_sampler_convert(&sampler, &si);
-	samplers.push_back(ShaderSampler(sampler.name, device, &si));
+	samplers.emplace_back(new ShaderSampler(sampler.name, device, &si));
 }
 
-void ShaderProcessor::BuildSamplers(vector<ShaderSampler> &samplers)
+void ShaderProcessor::BuildSamplers(vector<unique_ptr<ShaderSampler>> &samplers)
 {
 	for (size_t i = 0; i < parser.samplers.num; i++)
 		AddSampler(device, parser.samplers.array[i], samplers);

@@ -29,7 +29,6 @@
 #include <obs-config.h>
 #include <obs.hpp>
 
-#include <QtGlobal>
 #include <QGuiApplication>
 #include <QProxyStyle>
 #include <QScreen>
@@ -1325,10 +1324,6 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 	ScopeProfiler prof{run_program_init};
 
 	QCoreApplication::addLibraryPath(".");
-
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 6, 0))
-	QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
-#endif
 
 	OBSApp program(argc, argv, profilerNameStore.get());
 	try {

@@ -8,6 +8,10 @@
 #include "graphics-hook.h"
 #include "../funchook.h"
 
+#if COMPILE_D3D12_HOOK
+#include <d3d12.h>
+#endif
+
 typedef HRESULT (STDMETHODCALLTYPE *resize_buffers_t)(IDXGISwapChain*, UINT,
 		UINT, UINT, DXGI_FORMAT, UINT);
 typedef HRESULT (STDMETHODCALLTYPE *present_t)(IDXGISwapChain*, UINT, UINT);
@@ -59,6 +63,17 @@ static bool setup_dxgi(IDXGISwapChain *swap)
 		return true;
 	}
 
+#if COMPILE_D3D12_HOOK
+	hr = swap->GetDevice(__uuidof(ID3D12Device), (void**)&device);
+	if (SUCCEEDED(hr)) {
+		data.swap = swap;
+		data.capture = d3d12_capture;
+		data.free = d3d12_free;
+		device->Release();
+		return true;
+	}
+#endif
+
 	return false;
 }
 
@@ -87,12 +102,12 @@ static HRESULT STDMETHODCALLTYPE hook_resize_buffers(IDXGISwapChain *swap,
 	return hr;
 }
 
-static inline IDXGIResource *get_dxgi_backbuffer(IDXGISwapChain *swap)
+static inline IUnknown *get_dxgi_backbuffer(IDXGISwapChain *swap)
 {
 	IDXGIResource *res = nullptr;
 	HRESULT hr;
 
-	hr = swap->GetBuffer(0, __uuidof(ID3D11Resource), (void**)&res);
+	hr = swap->GetBuffer(0, __uuidof(IUnknown), (void**)&res);
 	if (FAILED(hr))
 		hlog_hr("get_dxgi_backbuffer: GetBuffer failed", hr);
 
@@ -102,7 +117,7 @@ static inline IDXGIResource *get_dxgi_backbuffer(IDXGISwapChain *swap)
 static HRESULT STDMETHODCALLTYPE hook_present(IDXGISwapChain *swap,
 		UINT sync_interval, UINT flags)
 {
-	IDXGIResource *backbuffer = nullptr;
+	IUnknown *backbuffer = nullptr;
 	bool capture_overlay = global_hook_info->capture_overlay;
 	bool test_draw = (flags & DXGI_PRESENT_TEST) != 0;
 	bool capture;

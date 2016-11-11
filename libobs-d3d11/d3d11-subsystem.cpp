@@ -46,6 +46,26 @@ static inline void LogD3D11ErrorDetails(HRError error, gs_device_t *device)
 static const IID dxgiFactory2 =
 {0x50c83a1c, 0xe072, 0x4c48, {0x87, 0xb0, 0x36, 0x30, 0xfa, 0x36, 0xa6, 0xd0}};
 
+
+gs_obj::gs_obj(gs_device_t *device_, gs_type type) :
+	device    (device_),
+	obj_type  (type)
+{
+	prev_next = &device->first_obj;
+	next = device->first_obj;
+	device->first_obj = this;
+	if (next)
+		next->prev_next = &next;
+}
+
+gs_obj::~gs_obj()
+{
+	if (prev_next)
+		*prev_next = next;
+	if (next)
+		next->prev_next = prev_next;
+}
+
 static inline void make_swap_desc(DXGI_SWAP_CHAIN_DESC &desc,
 		const gs_init_data *data)
 {
@@ -101,6 +121,9 @@ void gs_swap_chain::Resize(uint32_t cx, uint32_t cy)
 	zs.texture.Clear();
 	zs.view.Clear();
 
+	initData.cx = cx;
+	initData.cy = cy;
+
 	if (cx == 0 || cy == 0) {
 		GetClientRect(hwnd, &clientRect);
 		if (cx == 0) cx = clientRect.right;
@@ -115,27 +138,27 @@ void gs_swap_chain::Resize(uint32_t cx, uint32_t cy)
 	InitZStencilBuffer(cx, cy);
 }
 
-void gs_swap_chain::Init(const gs_init_data *data)
+void gs_swap_chain::Init()
 {
 	target.device         = device;
 	target.isRenderTarget = true;
-	target.format         = data->format;
-	target.dxgiFormat     = ConvertGSTextureFormat(data->format);
-	InitTarget(data->cx, data->cy);
+	target.format         = initData.format;
+	target.dxgiFormat     = ConvertGSTextureFormat(initData.format);
+	InitTarget(initData.cx, initData.cy);
 
 	zs.device     = device;
-	zs.format     = data->zsformat;
-	zs.dxgiFormat = ConvertGSZStencilFormat(data->zsformat);
-	InitZStencilBuffer(data->cx, data->cy);
+	zs.format     = initData.zsformat;
+	zs.dxgiFormat = ConvertGSZStencilFormat(initData.zsformat);
+	InitZStencilBuffer(initData.cx, initData.cy);
 }
 
 gs_swap_chain::gs_swap_chain(gs_device *device, const gs_init_data *data)
-	: device     (device),
+	: gs_obj     (device, gs_type::gs_swap_chain),
 	  numBuffers (data->num_backbuffers),
-	  hwnd       ((HWND)data->window.hwnd)
+	  hwnd       ((HWND)data->window.hwnd),
+	  initData   (*data)
 {
 	HRESULT hr;
-	DXGI_SWAP_CHAIN_DESC swapDesc;
 
 	make_swap_desc(swapDesc, data);
 	hr = device->factory->CreateSwapChain(device->device, &swapDesc,
@@ -143,7 +166,7 @@ gs_swap_chain::gs_swap_chain(gs_device *device, const gs_init_data *data)
 	if (FAILED(hr))
 		throw HRError("Failed to create swap chain", hr);
 
-	Init(data);
+	Init();
 }
 
 void gs_device::InitCompiler()
@@ -171,7 +194,7 @@ void gs_device::InitCompiler()
 	throw "Could not find any D3DCompiler libraries";
 }
 
-void gs_device::InitFactory(uint32_t adapterIdx, IDXGIAdapter1 **padapter)
+void gs_device::InitFactory(uint32_t adapterIdx)
 {
 	HRESULT hr;
 	IID factoryIID = (GetWinVer() >= 0x602) ? dxgiFactory2 :
@@ -181,7 +204,7 @@ void gs_device::InitFactory(uint32_t adapterIdx, IDXGIAdapter1 **padapter)
 	if (FAILED(hr))
 		throw UnsupportedHWError("Failed to create DXGIFactory", hr);
 
-	hr = factory->EnumAdapters1(adapterIdx, padapter);
+	hr = factory->EnumAdapters1(adapterIdx, &adapter);
 	if (FAILED(hr))
 		throw UnsupportedHWError("Failed to enumerate DXGIAdapter", hr);
 }
@@ -194,12 +217,14 @@ const static D3D_FEATURE_LEVEL featureLevels[] =
 	D3D_FEATURE_LEVEL_9_3,
 };
 
-void gs_device::InitDevice(uint32_t adapterIdx, IDXGIAdapter *adapter)
+void gs_device::InitDevice(uint32_t adapterIdx)
 {
 	wstring adapterName;
 	DXGI_ADAPTER_DESC desc;
 	D3D_FEATURE_LEVEL levelUsed = D3D_FEATURE_LEVEL_9_3;
 	HRESULT hr = 0;
+
+	adpIdx = adapterIdx;
 
 	uint32_t createFlags = D3D11_CREATE_DEVICE_BGRA_SUPPORT;
 #ifdef _DEBUG
@@ -240,7 +265,6 @@ ID3D11DepthStencilState *gs_device::AddZStencilState()
 {
 	HRESULT hr;
 	D3D11_DEPTH_STENCIL_DESC dsd;
-	SavedZStencilState savedState(zstencilState);
 	ID3D11DepthStencilState *state;
 
 	dsd.DepthEnable      = zstencilState.depthEnabled;
@@ -254,6 +278,7 @@ ID3D11DepthStencilState *gs_device::AddZStencilState()
 	ConvertStencilSide(dsd.FrontFace, zstencilState.stencilFront);
 	ConvertStencilSide(dsd.BackFace,  zstencilState.stencilBack);
 
+	SavedZStencilState savedState(zstencilState, dsd);
 	hr = device->CreateDepthStencilState(&dsd, savedState.state.Assign());
 	if (FAILED(hr))
 		throw HRError("Failed to create depth stencil state", hr);
@@ -268,7 +293,6 @@ ID3D11RasterizerState *gs_device::AddRasterState()
 {
 	HRESULT hr;
 	D3D11_RASTERIZER_DESC rd;
-	SavedRasterState savedState(rasterState);
 	ID3D11RasterizerState *state;
 
 	memset(&rd, 0, sizeof(rd));
@@ -279,6 +303,7 @@ ID3D11RasterizerState *gs_device::AddRasterState()
 	rd.DepthClipEnable       = true;
 	rd.ScissorEnable         = rasterState.scissorEnabled;
 
+	SavedRasterState savedState(rasterState, rd);
 	hr = device->CreateRasterizerState(&rd, savedState.state.Assign());
 	if (FAILED(hr))
 		throw HRError("Failed to create rasterizer state", hr);
@@ -293,7 +318,6 @@ ID3D11BlendState *gs_device::AddBlendState()
 {
 	HRESULT hr;
 	D3D11_BLEND_DESC bd;
-	SavedBlendState savedState(blendState);
 	ID3D11BlendState *state;
 
 	memset(&bd, 0, sizeof(bd));
@@ -313,9 +337,10 @@ ID3D11BlendState *gs_device::AddBlendState()
 			D3D11_COLOR_WRITE_ENABLE_ALL;
 	}
 
+	SavedBlendState savedState(blendState, bd);
 	hr = device->CreateBlendState(&bd, savedState.state.Assign());
 	if (FAILED(hr))
-		throw HRError("Failed to create disabled blend state", hr);
+		throw HRError("Failed to create blend state", hr);
 
 	state = savedState.state;
 	blendStates.push_back(savedState);
@@ -423,8 +448,6 @@ void gs_device::UpdateViewProjMatrix()
 gs_device::gs_device(uint32_t adapterIdx)
 	: curToplogy           (D3D11_PRIMITIVE_TOPOLOGY_UNDEFINED)
 {
-	ComPtr<IDXGIAdapter1> adapter;
-
 	matrix4_identity(&curProjMatrix);
 	matrix4_identity(&curViewMatrix);
 	matrix4_identity(&curViewProjMatrix);
@@ -437,9 +460,14 @@ gs_device::gs_device(uint32_t adapterIdx)
 	}
 
 	InitCompiler();
-	InitFactory(adapterIdx, adapter.Assign());
-	InitDevice(adapterIdx, adapter);
+	InitFactory(adapterIdx);
+	InitDevice(adapterIdx);
 	device_set_render_target(this, NULL, NULL);
+}
+
+gs_device::~gs_device()
+{
+	context->ClearState();
 }
 
 const char *device_get_name(void)
@@ -1404,8 +1432,14 @@ void device_clear(gs_device_t *device, uint32_t clear_flags,
 
 void device_present(gs_device_t *device)
 {
+	HRESULT hr;
+
 	if (device->curSwapChain) {
-		device->curSwapChain->swap->Present(0, 0);
+		hr = device->curSwapChain->swap->Present(0, 0);
+		if (hr == DXGI_ERROR_DEVICE_REMOVED ||
+		    hr == DXGI_ERROR_DEVICE_RESET) {
+			device->RebuildDevice();
+		}
 	} else {
 		blog(LOG_WARNING, "device_present (D3D11): No active swap");
 	}
@@ -2014,6 +2048,9 @@ extern "C" EXPORT void *gs_texture_get_dc(gs_texture_t *tex)
 
 	gs_texture_2d *tex2d = static_cast<gs_texture_2d*>(tex);
 	if (!TextureGDICompatible(tex2d, "gs_texture_get_dc"))
+		return nullptr;
+
+	if (!tex2d->gdiSurface)
 		return nullptr;
 
 	tex2d->gdiSurface->GetDC(true, &hDC);

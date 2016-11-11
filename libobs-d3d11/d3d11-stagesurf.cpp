@@ -19,13 +19,12 @@
 
 gs_stage_surface::gs_stage_surface(gs_device_t *device, uint32_t width,
 		uint32_t height, gs_color_format colorFormat)
-	: device     (device),
+	: gs_obj     (device, gs_type::gs_stage_surface),
 	  width      (width),
 	  height     (height),
 	  format     (colorFormat),
 	  dxgiFormat (ConvertGSTextureFormat(colorFormat))
 {
-	D3D11_TEXTURE2D_DESC td;
 	HRESULT hr;
 
 	memset(&td, 0, sizeof(td));
@@ -40,5 +39,5 @@ gs_stage_surface::gs_stage_surface(gs_device_t *device, uint32_t width,
 
 	hr = device->device->CreateTexture2D(&td, NULL, texture.Assign());
 	if (FAILED(hr))
-		throw HRError("Failed to create 2D texture", hr);
+		throw HRError("Failed to create staging surface", hr);
 }
