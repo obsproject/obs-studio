@@ -151,7 +151,7 @@ void OBSBasicStatusBar::UpdateCPUUsage()
 	{
 		// Run Startup Action
 		main->cpuUsageTimer->setInterval(1000);
-		main->on_actionResetTransform_triggered();
+		// main->on_actionResetTransform_triggered();
 		main->CpuUsageTrigged = true;
 	}
 

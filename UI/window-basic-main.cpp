@@ -185,6 +185,11 @@ OBSBasic::OBSBasic(QWidget *parent)
 		ui->sceneCollectionMenu->setEnabled(false);
 		ui->viewMenuToolbars->setEnabled(false);
 		ui->menuBasic_MainMenu_Help->setEnabled(false);
+
+		// Lock Preview windows. ==> Remove the read screen
+		ui->preview->SetLocked(true);
+		ui->actionLockPreview->setChecked(true);
+		
 	}
 
 	const char *geometry = config_get_string(App()->GlobalConfig(),
@@ -894,9 +899,12 @@ retryScene:
 
 	RefreshQuickTransitions();
 
-	bool previewLocked = obs_data_get_bool(data, "preview_locked");
-	ui->preview->SetLocked(previewLocked);
-	ui->actionLockPreview->setChecked(previewLocked);
+	if (App()->IsMinimumUiMode() == false)
+	{
+		bool previewLocked = obs_data_get_bool(data, "preview_locked");
+		ui->preview->SetLocked(previewLocked);
+		ui->actionLockPreview->setChecked(previewLocked);
+	}	
 
 	if (api) {
 		obs_data_t *modulesObj = obs_data_get_obj(data, "modules");
