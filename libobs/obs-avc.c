@@ -92,9 +92,9 @@ const uint8_t *obs_avc_find_startcode(const uint8_t *p, const uint8_t *end)
 	return out;
 }
 
-static inline int get_drop_priority(int priority)
+static inline void set_drop_priority(struct encoder_packet *p)
 {
-	return priority;
+	p->drop_priority = p->keyframe ? OBS_NAL_PRIORITY_HIGHEST : p->priority;
 }
 
 static void serialize_avc_data(struct serializer *s, const uint8_t *data,
@@ -141,7 +141,8 @@ void obs_parse_avc_packet(struct encoder_packet *avc_packet,
 
 	avc_packet->data          = output.bytes.array;
 	avc_packet->size          = output.bytes.num;
-	avc_packet->drop_priority = get_drop_priority(avc_packet->priority);
+
+	set_drop_priority(avc_packet);
 }
 
 static inline bool has_start_code(const uint8_t *data)
