@@ -162,6 +162,12 @@ bool load_graphics_offsets(bool is32bit)
 	bool success = false;
 	char data[128];
 
+#ifndef _WIN64
+	if (!is32bit && !is_64_bit_windows()) {
+		return true;
+	}
+#endif
+
 	dstr_copy(&offset_exe, "get-graphics-offsets");
 	dstr_cat(&offset_exe, is32bit ? "32.exe" : "64.exe");
 	offset_exe_path = obs_module_file(offset_exe.array);
