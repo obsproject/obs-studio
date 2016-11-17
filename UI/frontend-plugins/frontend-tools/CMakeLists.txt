@@ -20,6 +20,7 @@ endif()
 set(frontend-tools_HEADERS
 	${frontend-tools_HEADERS}
 	output-timer.hpp
+	tool-helpers.hpp
 	)
 set(frontend-tools_SOURCES
 	${frontend-tools_SOURCES}
