@@ -1,0 +1,3 @@
+#pragma once
+
+#define BUILD_CAPTIONS @BUILD_CAPTIONS@
