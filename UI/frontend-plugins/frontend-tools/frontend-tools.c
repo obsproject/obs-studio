@@ -7,6 +7,12 @@ OBS_MODULE_USE_DEFAULT_LOCALE("frontend-tools", "en-US")
 void InitSceneSwitcher();
 void FreeSceneSwitcher();
 #endif
+
+#ifdef _WIN32
+void InitCaptions();
+void FreeCaptions();
+#endif
+
 void InitOutputTimer();
 void FreeOutputTimer();
 
@@ -14,6 +20,9 @@ bool obs_module_load(void)
 {
 #if defined(_WIN32) || defined(__APPLE__)
 	InitSceneSwitcher();
+#endif
+#ifdef _WIN32
+	InitCaptions();
 #endif
 	InitOutputTimer();
 	return true;
@@ -23,6 +32,9 @@ void obs_module_unload(void)
 {
 #if defined(_WIN32) || defined(__APPLE__)
 	FreeSceneSwitcher();
+#endif
+#ifdef _WIN32
+	FreeCaptions();
 #endif
 	FreeOutputTimer();
 }
