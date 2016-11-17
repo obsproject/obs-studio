@@ -505,7 +505,6 @@ void SimpleOutput::UpdateStreamingSettings_amd(obs_data_t *settings,
 	obs_data_set_int(settings, "AMF.H264.Usage", 0);
 	obs_data_set_int(settings, "AMF.H264.Profile", 100); // High
 	obs_data_set_string(settings, "profile", "high"); // High
-	obs_data_set_int(settings, "AMF.H264.ProfileLevel", 0); // Automatic
 	
 	// Rate Control Properties
 	obs_data_set_int(settings, "AMF.H264.RateControlMethod", 1);
@@ -513,8 +512,6 @@ void SimpleOutput::UpdateStreamingSettings_amd(obs_data_t *settings,
 	obs_data_set_int(settings, "AMF.H264.Bitrate.Target", bitrate);
 	obs_data_set_int(settings, "bitrate", bitrate);
 	obs_data_set_int(settings, "AMF.H264.FillerData", 1);
-	obs_data_set_int(settings, "AMF.H264.VBVBuffer", 0); // Automatic VBV Buffer
-	obs_data_set_double(settings, "AMF.H264.VBVBuffer.Strictness", 0.9);
 	
 	// Picture Control Properties
 	obs_data_set_double(settings, "AMF.H264.KeyframeInterval", 2.0);
@@ -529,9 +526,8 @@ void SimpleOutput::UpdateRecordingSettings_amd_cqp(int cqp)
 	obs_data_set_int(settings, "AMF.H264.Usage", 0);
 	obs_data_set_int(settings, "AMF.H264.Profile", 100); // High
 	obs_data_set_string(settings, "profile", "high"); // High
-	obs_data_set_int(settings, "AMF.H264.ProfileLevel", 0); // Automatic
 
-															// Rate Control Properties
+	// Rate Control Properties
 	obs_data_set_int(settings, "AMF.H264.RateControlMethod", 0);
 	obs_data_set_string(settings, "rate_control", "CQP");
 	obs_data_set_int(settings, "AMF.H264.QP.IFrame", cqp);

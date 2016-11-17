@@ -1206,6 +1206,8 @@ void OBSBasicSettings::LoadSimpleOutputSettings()
 			"QSVPreset");
 	const char *nvPreset = config_get_string(main->Config(), "SimpleOutput",
 			"NVENCPreset");
+	const char* amdPreset = config_get_string(main->Config(), "SimpleOutput",
+			"AMDPreset");
 	const char *custom = config_get_string(main->Config(), "SimpleOutput",
 			"x264Settings");
 	const char *recQual = config_get_string(main->Config(), "SimpleOutput",
@@ -1218,6 +1220,7 @@ void OBSBasicSettings::LoadSimpleOutputSettings()
 	curPreset = preset;
 	curQSVPreset = qsvPreset;
 	curNVENCPreset = nvPreset;
+	curAMDPreset = amdPreset;
 
 	audioBitrate = FindClosestAvailableAACBitrate(audioBitrate);
 
