@@ -59,6 +59,8 @@ static string currentLogFile;
 static string lastLogFile;
 
 static bool portable_mode = false;
+static bool log_verbose = false;
+static bool unfiltered_log = false;
 bool opt_start_streaming = false;
 bool opt_start_recording = false;
 string opt_starting_collection;
@@ -270,6 +272,10 @@ static inline bool too_many_repeated_entries(fstream &logFile, const char *msg,
 
 	lock_guard<mutex> guard(log_mutex);
 
+	if (unfiltered_log) {
+		return false;
+	}
+
 	if (last_msg_ptr == msg) {
 		int diff = std::abs(new_sum - last_char_sum);
 		if (diff < MAX_CHAR_VARIATION) {
@@ -314,7 +320,7 @@ static void do_log(int log_level, const char *msg, va_list args, void *param)
 	if (too_many_repeated_entries(logFile, msg, str))
 		return;
 
-	if (log_level <= LOG_INFO)
+	if (log_level <= LOG_INFO || log_verbose)
 		LogStringChunk(logFile, str);
 
 #if defined(_WIN32) && defined(OBS_DEBUGBREAK_ON_ERROR)
@@ -1795,6 +1801,12 @@ int main(int argc, char *argv[])
 	for (int i = 1; i < argc; i++) {
 		if (arg_is(argv[i], "--portable", "-p")) {
 			portable_mode = true;
+
+		} else if (arg_is(argv[i], "--verbose", nullptr)) {
+			log_verbose = true;
+
+		} else if (arg_is(argv[i], "--unfiltered_log", nullptr)) {
+			unfiltered_log = true;
 
 		} else if (arg_is(argv[i], "--startstreaming", nullptr)) {
 			opt_start_streaming = true;
