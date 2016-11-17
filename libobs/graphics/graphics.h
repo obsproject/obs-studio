@@ -525,6 +525,9 @@ EXPORT uint8_t *gs_create_texture_file_data(const char *file,
 EXPORT void gs_draw_sprite(gs_texture_t *tex, uint32_t flip, uint32_t width,
 		uint32_t height);
 
+EXPORT void gs_draw_sprite_subregion(gs_texture_t *tex, uint32_t flip,
+		uint32_t x, uint32_t y, uint32_t cx, uint32_t cy);
+
 EXPORT void gs_draw_cube_backdrop(gs_texture_t *cubetex, const struct quat *rot,
 		float left, float right, float top, float bottom, float znear);
 

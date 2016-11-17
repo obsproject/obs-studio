@@ -23,6 +23,7 @@
 #include <initializer_list>
 #include <sstream>
 #include <QCompleter>
+#include <QGuiApplication>
 #include <QLineEdit>
 #include <QMessageBox>
 #include <QCloseEvent>
@@ -30,6 +31,7 @@
 #include <QDirIterator>
 #include <QVariant>
 #include <QTreeView>
+#include <QScreen>
 #include <QStandardItemModel>
 #include <QSpacerItem>
 
@@ -950,8 +952,6 @@ void OBSBasicSettings::LoadRendererList()
 #endif
 }
 
-Q_DECLARE_METATYPE(MonitorInfo);
-
 static string ResString(uint32_t cx, uint32_t cy)
 {
 	stringstream res;
@@ -1097,14 +1097,12 @@ void OBSBasicSettings::LoadResolutionLists()
 	uint32_t cy = config_get_uint(main->Config(), "Video", "BaseCY");
 	uint32_t out_cx = config_get_uint(main->Config(), "Video", "OutputCX");
 	uint32_t out_cy = config_get_uint(main->Config(), "Video", "OutputCY");
-	vector<MonitorInfo> monitors;
 
 	ui->baseResolution->clear();
 
-	GetMonitors(monitors);
-
-	for (MonitorInfo &monitor : monitors) {
-		string res = ResString(monitor.cx, monitor.cy);
+	for (QScreen* screen: QGuiApplication::screens()) {
+		QSize as = screen->size();
+		string res = ResString(as.width(), as.height());
 		ui->baseResolution->addItem(res.c_str());
 	}
 
@@ -1208,6 +1206,8 @@ void OBSBasicSettings::LoadSimpleOutputSettings()
 			"QSVPreset");
 	const char *nvPreset = config_get_string(main->Config(), "SimpleOutput",
 			"NVENCPreset");
+	const char* amdPreset = config_get_string(main->Config(), "SimpleOutput",
+			"AMDPreset");
 	const char *custom = config_get_string(main->Config(), "SimpleOutput",
 			"x264Settings");
 	const char *recQual = config_get_string(main->Config(), "SimpleOutput",
@@ -1220,6 +1220,7 @@ void OBSBasicSettings::LoadSimpleOutputSettings()
 	curPreset = preset;
 	curQSVPreset = qsvPreset;
 	curNVENCPreset = nvPreset;
+	curAMDPreset = amdPreset;
 
 	audioBitrate = FindClosestAvailableAACBitrate(audioBitrate);
 
@@ -1292,14 +1293,16 @@ OBSPropertiesView *OBSBasicSettings::CreateEncoderPropertyView(
 	obs_data_t *settings = obs_encoder_defaults(encoder);
 	OBSPropertiesView *view;
 
-	char encoderJsonPath[512];
-	int ret = GetProfilePath(encoderJsonPath, sizeof(encoderJsonPath),
-			path);
-	if (ret > 0) {
-		obs_data_t *data = obs_data_create_from_json_file_safe(
-				encoderJsonPath, "bak");
-		obs_data_apply(settings, data);
-		obs_data_release(data);
+	if (path) {
+		char encoderJsonPath[512];
+		int ret = GetProfilePath(encoderJsonPath,
+				sizeof(encoderJsonPath), path);
+		if (ret > 0) {
+			obs_data_t *data = obs_data_create_from_json_file_safe(
+					encoderJsonPath, "bak");
+			obs_data_apply(settings, data);
+			obs_data_release(data);
+		}
 	}
 
 	view = new OBSPropertiesView(settings, encoder,
@@ -2467,6 +2470,8 @@ void OBSBasicSettings::SaveOutputSettings()
 		presetType = "QSVPreset";
 	else if (encoder == SIMPLE_ENCODER_NVENC)
 		presetType = "NVENCPreset";
+	else if (encoder == SIMPLE_ENCODER_AMD)
+		presetType = "AMDPreset";
 	else
 		presetType = "Preset";
 
@@ -3246,6 +3251,10 @@ void OBSBasicSettings::FillSimpleRecordingValues()
 		ui->simpleOutRecEncoder->addItem(
 				ENCODER_STR("Hardware.NVENC"),
 				QString(SIMPLE_ENCODER_NVENC));
+	if (EncoderAvailable("amd_amf_h264"))
+		ui->simpleOutRecEncoder->addItem(
+				ENCODER_STR("Hardware.AMD"),
+				QString(SIMPLE_ENCODER_AMD));
 #undef ADD_QUALITY
 }
 
@@ -3262,6 +3271,10 @@ void OBSBasicSettings::FillSimpleStreamingValues()
 		ui->simpleOutStrEncoder->addItem(
 				ENCODER_STR("Hardware.NVENC"),
 				QString(SIMPLE_ENCODER_NVENC));
+	if (EncoderAvailable("amd_amf_h264"))
+		ui->simpleOutStrEncoder->addItem(
+				ENCODER_STR("Hardware.AMD"),
+				QString(SIMPLE_ENCODER_AMD));
 #undef ENCODER_STR
 }
 
@@ -3322,6 +3335,13 @@ void OBSBasicSettings::SimpleStreamingEncoderChanged()
 		defaultPreset = "default";
 		preset = curNVENCPreset;
 
+	} else if (encoder == SIMPLE_ENCODER_AMD) {
+		ui->simpleOutPreset->addItem("Speed", "speed");
+		ui->simpleOutPreset->addItem("Balanced", "balanced");
+		ui->simpleOutPreset->addItem("Quality", "quality");
+
+		defaultPreset = "balanced";
+		preset = curAMDPreset;
 	} else {
 		ui->simpleOutPreset->addItem("ultrafast", "ultrafast");
 		ui->simpleOutPreset->addItem("superfast", "superfast");

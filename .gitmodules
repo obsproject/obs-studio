@@ -5,3 +5,9 @@
 [submodule "plugins/mac-syphon/syphon-framework"]
 	path = plugins/mac-syphon/syphon-framework
 	url = https://github.com/palana/Syphon-Framework.git
+[submodule "plugins/enc-amf"]
+	path = plugins/enc-amf
+	url = https://github.com/Xaymar/obs-studio_amf-encoder-plugin.git
+[submodule "plugins/obs-browser"]
+	path = plugins/obs-browser
+	url = https://github.com/kc5nra/obs-browser.git

@@ -59,6 +59,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <util/darray.h>
 #include <util/platform.h>
 #include <obs-module.h>
+#include <obs-avc.h>
 
 #ifndef _STDINT_H_INCLUDED
 #define _STDINT_H_INCLUDED
@@ -579,6 +580,9 @@ static void obs_qsv_video_info(void *data, struct video_scale_info *info)
 
 static void parse_packet(struct obs_qsv *obsqsv, struct encoder_packet *packet, mfxBitstream *pBS, uint32_t fps_num, bool *received_packet)
 {
+	uint8_t *start, *end;
+	int type;
+
 	if (pBS == NULL || pBS->DataLength == 0) {
 		*received_packet = false;
 		return;
@@ -594,6 +598,36 @@ static void parse_packet(struct obs_qsv *obsqsv, struct encoder_packet *packet, 
 	packet->pts = pBS->TimeStamp * fps_num / 90000;
 	packet->keyframe = (pBS->FrameType &
 			(MFX_FRAMETYPE_I | MFX_FRAMETYPE_REF));
+
+	/* ------------------------------------ */
+
+	start = obsqsv->packet_data.array;
+	end = start + obsqsv->packet_data.num;
+
+	start = (uint8_t*)obs_avc_find_startcode(start, end);
+	while (true) {
+		while (start < end && !*(start++));
+
+		if (start == end)
+			break;
+
+		type = start[0] & 0x1F;
+		if (type == OBS_NAL_SLICE_IDR || type == OBS_NAL_SLICE) {
+			uint8_t prev_type = (start[0] >> 5) & 0x3;
+			start[0] &= ~(3 << 5);
+
+			if (pBS->FrameType & MFX_FRAMETYPE_I)
+				start[0] |= OBS_NAL_PRIORITY_HIGHEST << 5;
+			else if (pBS->FrameType & MFX_FRAMETYPE_P)
+				start[0] |= OBS_NAL_PRIORITY_HIGH << 5;
+			else
+				start[0] |= prev_type << 5;
+		}
+
+		start = (uint8_t*)obs_avc_find_startcode(start, end);
+	}
+
+	/* ------------------------------------ */
 
 	//bool iFrame = pBS->FrameType & MFX_FRAMETYPE_I;
 	//bool bFrame = pBS->FrameType & MFX_FRAMETYPE_B;

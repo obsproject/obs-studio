@@ -19,8 +19,6 @@
 
 void gs_zstencil_buffer::InitBuffer()
 {
-	D3D11_TEXTURE2D_DESC td;
-	D3D11_DEPTH_STENCIL_VIEW_DESC dsvd;
 	HRESULT hr;
 
 	memset(&td, 0, sizeof(td));
@@ -50,7 +48,7 @@ void gs_zstencil_buffer::InitBuffer()
 gs_zstencil_buffer::gs_zstencil_buffer(gs_device_t *device,
 		uint32_t width, uint32_t height,
 		gs_zstencil_format format)
-	: device     (device),
+	: gs_obj     (device, gs_type::gs_zstencil_buffer),
 	  width      (width),
 	  height     (height),
 	  format     (format),

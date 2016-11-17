@@ -78,6 +78,7 @@ struct rtmp_stream {
 	os_sem_t         *send_sem;
 	os_event_t       *stop_event;
 	uint64_t         stop_ts;
+	uint64_t         shutdown_timeout_ts;
 
 	struct dstr      path, key;
 	struct dstr      username, password;
@@ -234,6 +235,10 @@ static void rtmp_stream_stop(void *data, uint64_t ts)
 	stream->stop_ts = ts / 1000ULL;
 	os_event_signal(stream->stop_event);
 
+	if (ts)
+		stream->shutdown_timeout_ts = ts +
+			(uint64_t)stream->max_shutdown_time_sec * 1000000000ULL;
+
 	if (active(stream)) {
 		if (stream->stop_ts == 0)
 			os_sem_post(stream->send_sem);
@@ -378,6 +383,19 @@ static int send_packet(struct rtmp_stream *stream,
 
 static inline bool send_headers(struct rtmp_stream *stream);
 
+static inline bool can_shutdown_stream(struct rtmp_stream *stream,
+		struct encoder_packet *packet)
+{
+	uint64_t cur_time = os_gettime_ns();
+	bool timeout = cur_time >= stream->shutdown_timeout_ts;
+
+	if (timeout)
+		info("Stream shutdown timeout reached (%d second(s))",
+				stream->max_shutdown_time_sec);
+
+	return timeout || packet->sys_dts_usec >= (int64_t)stream->stop_ts;
+}
+
 static void *send_thread(void *data)
 {
 	struct rtmp_stream *stream = data;
@@ -395,7 +413,7 @@ static void *send_thread(void *data)
 			continue;
 
 		if (stopping(stream)) {
-			if (packet.sys_dts_usec >= (int64_t)stream->stop_ts) {
+			if (can_shutdown_stream(stream, &packet)) {
 				obs_free_encoder_packet(&packet);
 				break;
 			}
@@ -874,7 +892,7 @@ static void check_to_drop_frames(struct rtmp_stream *stream, bool pframes)
 	buffer_duration_usec = stream->last_dts_usec - first.dts_usec;
 
 	if (buffer_duration_usec > drop_threshold) {
-		debug("buffer_duration_usec: %lld", buffer_duration_usec);
+		debug("buffer_duration_usec: %" PRId64, buffer_duration_usec);
 		drop_frames(stream, name, priority, p_min_dts_usec);
 	}
 }
@@ -887,7 +905,7 @@ static bool add_video_packet(struct rtmp_stream *stream,
 
 	/* if currently dropping frames, drop packets until it reaches the
 	 * desired priority */
-	if (packet->priority < stream->min_priority) {
+	if (packet->drop_priority < stream->min_priority) {
 		stream->dropped_frames++;
 		return false;
 	} else {
@@ -931,7 +949,7 @@ static void rtmp_stream_defaults(obs_data_t *defaults)
 {
 	obs_data_set_default_int(defaults, OPT_DROP_THRESHOLD, 500);
 	obs_data_set_default_int(defaults, OPT_PFRAME_DROP_THRESHOLD, 800);
-	obs_data_set_default_int(defaults, OPT_MAX_SHUTDOWN_TIME_SEC, 5);
+	obs_data_set_default_int(defaults, OPT_MAX_SHUTDOWN_TIME_SEC, 30);
 	obs_data_set_default_string(defaults, OPT_BIND_IP, "default");
 }
 

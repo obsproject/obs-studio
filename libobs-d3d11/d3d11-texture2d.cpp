@@ -18,13 +18,13 @@
 #include <util/base.h>
 #include "d3d11-subsystem.hpp"
 
-void gs_texture_2d::InitSRD(vector<D3D11_SUBRESOURCE_DATA> &srd,
-		const uint8_t **data)
+void gs_texture_2d::InitSRD(vector<D3D11_SUBRESOURCE_DATA> &srd)
 {
 	uint32_t rowSizeBytes  = width  * gs_get_format_bpp(format);
 	uint32_t texSizeBytes  = height * rowSizeBytes / 8;
 	size_t   textures      = type == GS_TEXTURE_2D ? 1 : 6;
 	uint32_t actual_levels = levels;
+	size_t   curTex = 0;
 
 	if (!actual_levels)
 		actual_levels = gs_get_total_levels(width, height);
@@ -37,22 +37,42 @@ void gs_texture_2d::InitSRD(vector<D3D11_SUBRESOURCE_DATA> &srd,
 
 		for (uint32_t j = 0; j < actual_levels; j++) {
 			D3D11_SUBRESOURCE_DATA newSRD;
-			newSRD.pSysMem          = *data;
+			newSRD.pSysMem          = data[curTex++].data();
 			newSRD.SysMemPitch      = newRowSize;
 			newSRD.SysMemSlicePitch = newTexSize;
 			srd.push_back(newSRD);
 
 			newRowSize /= 2;
 			newTexSize /= 4;
-			data++;
 		}
+	}
+}
+
+void gs_texture_2d::BackupTexture(const uint8_t **data)
+{
+	this->data.resize(levels);
+
+	uint32_t w = width;
+	uint32_t h = height;
+	uint32_t bbp = gs_get_format_bpp(format);
+
+	for (uint32_t i = 0; i < levels; i++) {
+		if (!data[i])
+			break;
+
+		uint32_t texSize = bbp * w * h / 8;
+		this->data[i].resize(texSize);
+
+		vector<uint8_t> &subData = this->data[i];
+		memcpy(&subData[0], data[i], texSize);
+
+		w /= 2;
+		h /= 2;
 	}
 }
 
 void gs_texture_2d::InitTexture(const uint8_t **data)
 {
-	vector<D3D11_SUBRESOURCE_DATA> srd;
-	D3D11_TEXTURE2D_DESC td;
 	HRESULT hr;
 
 	memset(&td, 0, sizeof(td));
@@ -76,8 +96,10 @@ void gs_texture_2d::InitTexture(const uint8_t **data)
 	if (isGDICompatible)
 		td.MiscFlags |= D3D11_RESOURCE_MISC_GDI_COMPATIBLE;
 
-	if (data)
-		InitSRD(srd, data);
+	if (data) {
+		BackupTexture(data);
+		InitSRD(srd);
+	}
 
 	hr = device->device->CreateTexture2D(&td, data ? srd.data() : NULL,
 			texture.Assign());
@@ -94,7 +116,6 @@ void gs_texture_2d::InitTexture(const uint8_t **data)
 
 void gs_texture_2d::InitResourceView()
 {
-	D3D11_SHADER_RESOURCE_VIEW_DESC resourceDesc;
 	HRESULT hr;
 
 	memset(&resourceDesc, 0, sizeof(resourceDesc));
@@ -145,7 +166,8 @@ gs_texture_2d::gs_texture_2d(gs_device_t *device, uint32_t width,
 		uint32_t height, gs_color_format colorFormat, uint32_t levels,
 		const uint8_t **data, uint32_t flags, gs_texture_type type,
 		bool gdiCompatible, bool shared)
-	: gs_texture      (device, type, levels, colorFormat),
+	: gs_texture      (device, gs_type::gs_texture_2d, type, levels,
+	                   colorFormat),
 	  width           (width),
 	  height          (height),
 	  dxgiFormat      (ConvertGSTextureFormat(format)),
@@ -163,29 +185,30 @@ gs_texture_2d::gs_texture_2d(gs_device_t *device, uint32_t width,
 }
 
 gs_texture_2d::gs_texture_2d(gs_device_t *device, uint32_t handle)
-	: isShared        (true),
+	: gs_texture      (device, gs_type::gs_texture_2d,
+	                   GS_TEXTURE_2D),
+	  isShared        (true),
 	  sharedHandle    (handle)
 {
 	HRESULT hr;
 	hr = device->device->OpenSharedResource((HANDLE)(uintptr_t)handle,
 			__uuidof(ID3D11Texture2D), (void**)texture.Assign());
 	if (FAILED(hr))
-		throw HRError("Failed to open resource", hr);
+		throw HRError("Failed to open shared 2D texture", hr);
 
-	D3D11_TEXTURE2D_DESC desc;
-	texture->GetDesc(&desc);
+	texture->GetDesc(&td);
 
 	this->type       = GS_TEXTURE_2D;
-	this->format     = ConvertDXGITextureFormat(desc.Format);
+	this->format     = ConvertDXGITextureFormat(td.Format);
 	this->levels     = 1;
 	this->device     = device;
 
-	this->width      = desc.Width;
-	this->height     = desc.Height;
-	this->dxgiFormat = desc.Format;
+	this->width      = td.Width;
+	this->height     = td.Height;
+	this->dxgiFormat = td.Format;
 
-	D3D11_SHADER_RESOURCE_VIEW_DESC resourceDesc = {};
-	resourceDesc.Format              = desc.Format;
+	memset(&resourceDesc, 0, sizeof(resourceDesc));
+	resourceDesc.Format              = td.Format;
 	resourceDesc.ViewDimension       = D3D11_SRV_DIMENSION_TEXTURE2D;
 	resourceDesc.Texture2D.MipLevels = 1;
 

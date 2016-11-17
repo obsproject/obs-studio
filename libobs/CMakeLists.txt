@@ -13,6 +13,9 @@ endif()
 
 if(UNIX)
 	find_package(DBus QUIET)
+	if (NOT APPLE)
+		find_package(X11_XCB REQUIRED)
+	endif()
 else()
 	set(HAVE_DBUS "0")
 endif()
@@ -124,6 +127,14 @@ elseif(UNIX)
 			${libobs_PLATFORM_DEPS}
 			${DBUS_LIBRARIES})
 	endif()
+
+	include_directories(
+		${X11_XCB_INCLUDE_DIRS})
+	add_definitions(
+		${X11_XCB_DEFINITIONS})
+	set(libobs_PLATFORM_DEPS
+		${libobs_PLATFORM_DEPS}
+		${X11_XCB_LIBRARIES})
 
 	if(${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD")
 		# use the sysinfo compatibility library on bsd

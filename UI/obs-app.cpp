@@ -29,7 +29,9 @@
 #include <obs-config.h>
 #include <obs.hpp>
 
+#include <QGuiApplication>
 #include <QProxyStyle>
+#include <QScreen>
 
 #include "qt-wrappers.hpp"
 #include "obs-app.hpp"
@@ -57,6 +59,8 @@ static string currentLogFile;
 static string lastLogFile;
 
 static bool portable_mode = false;
+static bool log_verbose = false;
+static bool unfiltered_log = false;
 bool opt_start_streaming = false;
 bool opt_start_recording = false;
 string opt_starting_collection;
@@ -268,6 +272,10 @@ static inline bool too_many_repeated_entries(fstream &logFile, const char *msg,
 
 	lock_guard<mutex> guard(log_mutex);
 
+	if (unfiltered_log) {
+		return false;
+	}
+
 	if (last_msg_ptr == msg) {
 		int diff = std::abs(new_sum - last_char_sum);
 		if (diff < MAX_CHAR_VARIATION) {
@@ -312,7 +320,7 @@ static void do_log(int log_level, const char *msg, va_list args, void *param)
 	if (too_many_repeated_entries(logFile, msg, str))
 		return;
 
-	if (log_level <= LOG_INFO)
+	if (log_level <= LOG_INFO || log_verbose)
 		LogStringChunk(logFile, str);
 
 #if defined(_WIN32) && defined(OBS_DEBUGBREAK_ON_ERROR)
@@ -448,7 +456,7 @@ static string GetProfileDirFromName(const char *name)
 	if (GetConfigPath(path, sizeof(path), "obs-studio/basic/profiles") <= 0)
 		return outputPath;
 
-	strcat(path, "/*.*");
+	strcat(path, "/*");
 
 	if (os_glob(path, 0, &glob) != 0)
 		return outputPath;
@@ -855,6 +863,9 @@ bool OBSApp::OBSInit()
 		if (!StartupOBS(locale.c_str(), GetProfilerNameStore()))
 			return false;
 
+		blog(LOG_INFO, "Portable mode: %s",
+				portable_mode ? "true" : "false");
+
 		mainWindow = new OBSBasic();
 
 		mainWindow->setAttribute(Qt::WA_DeleteOnClose, true);
@@ -904,6 +915,11 @@ string OBSApp::GetVersionString() const
 #endif
 
 	return ver.str();
+}
+
+bool OBSApp::IsPortableMode()
+{
+	return portable_mode;
 }
 
 #ifdef __APPLE__
@@ -1518,20 +1534,12 @@ bool GetClosestUnusedFileName(std::string &path, const char *extension)
 	return true;
 }
 
-bool WindowPositionValid(int x, int y)
+bool WindowPositionValid(QRect rect)
 {
-	vector<MonitorInfo> monitors;
-	GetMonitors(monitors);
-
-	for (auto &monitor : monitors) {
-		int br_x = monitor.x + monitor.cx;
-		int br_y = monitor.y + monitor.cy;
-
-		if (x >= monitor.x && x < br_x &&
-		    y >= monitor.y && y < br_y)
+	for (QScreen* screen: QGuiApplication::screens()) {
+		if (screen->availableGeometry().intersects(rect))
 			return true;
 	}
-
 	return false;
 }
 
@@ -1793,6 +1801,12 @@ int main(int argc, char *argv[])
 	for (int i = 1; i < argc; i++) {
 		if (arg_is(argv[i], "--portable", "-p")) {
 			portable_mode = true;
+
+		} else if (arg_is(argv[i], "--verbose", nullptr)) {
+			log_verbose = true;
+
+		} else if (arg_is(argv[i], "--unfiltered_log", nullptr)) {
+			unfiltered_log = true;
 
 		} else if (arg_is(argv[i], "--startstreaming", nullptr)) {
 			opt_start_streaming = true;

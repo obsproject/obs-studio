@@ -117,6 +117,7 @@ public:
 	const char *GetCurrentLog() const;
 
 	std::string GetVersionString() const;
+	bool IsPortableMode();
 
 	const char *InputAudioSource() const;
 	const char *OutputAudioSource() const;
@@ -166,7 +167,7 @@ inline const char *Str(const char *lookup) {return App()->GetString(lookup);}
 bool GetFileSafeName(const char *name, std::string &file);
 bool GetClosestUnusedFileName(std::string &path, const char *extension);
 
-bool WindowPositionValid(int x, int y);
+bool WindowPositionValid(QRect rect);
 
 static inline int GetProfilePath(char *path, size_t size, const char *file)
 {

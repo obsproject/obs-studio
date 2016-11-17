@@ -17,4 +17,13 @@ add_library(obs-frontend-api SHARED
 target_link_libraries(obs-frontend-api
 	libobs)
 
+if(UNIX AND NOT APPLE)
+	set_target_properties(obs-frontend-api
+		PROPERTIES
+			OUTPUT_NAME obs-frontend-api
+			VERSION 0.0
+			SOVERSION 0
+			)
+endif()
+
 install_obs_core(obs-frontend-api)

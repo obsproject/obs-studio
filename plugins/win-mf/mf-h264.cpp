@@ -542,12 +542,7 @@ void RegisterMFH264Encoders()
 		if (!CanSpawnEncoder(e))
 			continue;
 
-		if (e->Type() == EncoderType::H264_QSV ||
-		    e->Type() == EncoderType::H264_NVENC)
-			info.caps = OBS_ENCODER_CAP_DEPRECATED;
-		else
-			info.caps = 0;
-
+		info.caps = OBS_ENCODER_CAP_DEPRECATED;
 		info.id = e->Id();
 		info.type_data = new TypeData(e);
 		info.free_type_data = [] (void *type_data) {

@@ -83,19 +83,7 @@ elseif(UNIX)
 	set(obs_PLATFORM_SOURCES
 		platform-x11.cpp)
 
-	find_package(XCB COMPONENTS XCB REQUIRED RANDR REQUIRED XINERAMA REQUIRED)
-	
-	include_directories(
-		${XCB_INCLUDE_DIRS}
-		${X11_XCB_INCLUDE_DIRS})
-		
-	add_definitions(
-		${XCB_DEFINITIONS}
-		${X11_XCB_DEFINITIONS})
-
-	set(obs_PLATFORM_LIBRARIES
-		${XCB_LIBRARIES}
-		${X11_XCB_LIBRARIES}
+        set(obs_PLATFORM_LIBRARIES
                 Qt5::X11Extras)
 endif()
 
@@ -112,6 +100,7 @@ set(obs_SOURCES
 	window-basic-source-select.cpp
 	window-basic-main-scene-collections.cpp
 	window-basic-main-transitions.cpp
+	window-basic-main-dropfiles.cpp
 	window-basic-main-profiles.cpp
 	window-license-agreement.cpp
 	window-basic-status-bar.cpp

@@ -112,7 +112,6 @@
             ],
             "recommended": {
                 "keyint": 2,
-                "profile": "main",
                 "max video bitrate": 3500,
                 "max audio bitrate": 160,
                 "x264opts": "scenecut=0"
@@ -132,7 +131,7 @@
                 }
             ],
             "recommended": {
-                "keyint": 4,
+                "keyint": 2,
                 "profile": "main",
                 "max video bitrate": 18000,
                 "max audio bitrate": 160
@@ -327,10 +326,14 @@
                 {
                     "name": "EU",
                     "url": "rtmp://eumedia1.livecoding.tv/livecodingtv"
+                },
+                {
+                    "name": "Asia Pacific",
+                    "url": "rtmp://apmedia1.livecoding.tv/livecodingtv"
                 }
             ],
             "recommended": {
-                "max video bitrate": 1300
+                "max video bitrate": 2300
             }
         },
         {
@@ -545,8 +548,8 @@
             "recommended": {
                 "keyint": 2,
                 "profile": "main",
-                "max video bitrate": 2500,
-                "max audio bitrate": 160
+                "max video bitrate": 4000,
+                "max audio bitrate": 128
             }
         },
         {
@@ -788,6 +791,36 @@
                 "profile": "main",
                 "max video bitrate": 5000,
                 "max audio bitrate": 192
+            }
+        },
+        {
+            "name": "CAM4",
+            "servers": [
+                {
+                    "name": "CAM4",
+                    "url": "rtmp://origin.cam4.com/cam4-origin-live"
+                }
+            ],
+            "recommended": {
+                "keyint": 1,
+                "profile": "baseline",
+                "max video bitrate": 3000,
+                "max audio bitrate": 128
+            }
+        },
+        {
+            "name": "Picarto",
+            "servers": [
+                {
+                    "name": "USA/Canada",
+                    "url": "rtmp://live.us.picarto.tv/golive"
+                }
+            ],
+            "recommended": {
+                "keyint": 2,
+                "profile": "main",
+                "max video bitrate": 2000,
+                "max audio bitrate": 160
             }
         }
     ]

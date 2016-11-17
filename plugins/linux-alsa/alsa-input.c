@@ -64,6 +64,8 @@ struct alsa_data {
 };
 
 static const char * alsa_get_name(void *);
+static bool alsa_devices_changed(obs_properties_t *props,
+		obs_property_t *p, obs_data_t *settings);
 static obs_properties_t * alsa_get_properties(void *);
 static void * alsa_create(obs_data_t *, obs_source_t *);
 static void alsa_destroy(void *);
@@ -119,7 +121,12 @@ void * alsa_create(obs_data_t *settings, obs_source_t *source)
 	data->listen_thread = 0;
 	data->reopen_thread = 0;
 
-	data->device = bstrdup(obs_data_get_string(settings, "device_id"));
+	const char *device = obs_data_get_string(settings, "device_id");
+
+	if (strcmp(device, "__custom__") == 0)
+		device = obs_data_get_string(settings, "custom_pcm");
+
+	data->device = bstrdup(device);
 	data->rate = obs_data_get_int(settings, "rate");
 
 	if (os_event_init(&data->abort_event, OS_EVENT_TYPE_MANUAL) != 0) {
@@ -179,6 +186,10 @@ void alsa_update(void *vptr, obs_data_t *settings)
 	bool reset = false;
 
 	device = obs_data_get_string(settings, "device_id");
+
+	if (strcmp(device, "__custom__") == 0)
+		device = obs_data_get_string(settings, "custom_pcm");
+
 	if (strcmp(data->device, device) != 0) {
 		bfree(data->device);
 		data->device = bstrdup(device);
@@ -215,7 +226,26 @@ const char * alsa_get_name(void *unused)
 void alsa_get_defaults(obs_data_t *settings)
 {
 	obs_data_set_default_string(settings, "device_id", "default");
+	obs_data_set_default_string(settings, "custom_pcm", "default");
 	obs_data_set_default_int(settings, "rate", 44100);
+}
+
+static bool alsa_devices_changed(obs_properties_t *props,
+		obs_property_t *p, obs_data_t *settings)
+{
+	UNUSED_PARAMETER(p);
+	bool visible = false;
+	const char *device_id = obs_data_get_string(settings, "device_id");
+
+	if (strcmp(device_id, "__custom__") == 0)
+		visible = true;
+
+	obs_property_t *custom_pcm = obs_properties_get(props, "custom_pcm");
+
+	obs_property_set_visible(custom_pcm, visible);
+	obs_property_modified(custom_pcm, settings);
+
+	return true;
 }
 
 obs_properties_t * alsa_get_properties(void *unused)
@@ -240,9 +270,14 @@ obs_properties_t * alsa_get_properties(void *unused)
 
 	obs_property_list_add_string(devices, "Default", "default");
 
+	obs_properties_add_text(props, "custom_pcm",
+	    obs_module_text("PCM"), OBS_TEXT_DEFAULT);
+
 	rate = obs_properties_add_list(props, "rate",
 	    obs_module_text("Rate"), OBS_COMBO_TYPE_LIST,
 	    OBS_COMBO_FORMAT_INT);
+
+	obs_property_set_modified_callback(devices, alsa_devices_changed);
 
 	obs_property_list_add_int(rate, "32000 Hz", 32000);
 	obs_property_list_add_int(rate, "44100 Hz", 44100);
@@ -276,6 +311,8 @@ obs_properties_t * alsa_get_properties(void *unused)
 		}
 
 		obs_property_list_add_string(devices, descr, name);
+
+	obs_property_list_add_string(devices, "Custom", "__custom__");
 
 	next:
 		if (name != NULL)

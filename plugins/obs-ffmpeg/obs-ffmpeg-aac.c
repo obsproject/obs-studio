@@ -170,7 +170,7 @@ static void *aac_create(obs_data_t *settings, obs_encoder_t *encoder)
 		enc->context->cutoff = cutoff;
 	}
 
-	info("bitrate: %d, channels: %d",
+	info("bitrate: %" PRId64 ", channels: %d",
 			enc->context->bit_rate / 1000, enc->context->channels);
 
 	init_sizes(enc, audio);

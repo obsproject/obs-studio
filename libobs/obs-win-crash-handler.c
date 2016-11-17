@@ -16,6 +16,7 @@
 ******************************************************************************/
 
 #include <windows.h>
+#include <time.h>
 #include <dbghelp.h>
 #include <shellapi.h>
 #include <tlhelp32.h>
@@ -248,16 +249,26 @@ static inline void init_module_info(struct exception_handler_data *data)
 
 static inline void write_header(struct exception_handler_data *data)
 {
+	char date_time[80];
+	time_t now = time(0);
+	struct tm ts;
+	ts = *localtime(&now);
+	strftime(date_time, sizeof(date_time), "%Y-%m-%d, %X", &ts);
+
 	dstr_catf(&data->str, "Unhandled exception: %x\r\n"
+			"Date/Time: %s\r\n"
 			"Fault address: %"PRIX64" (%s)\r\n"
 			"libobs version: "OBS_VERSION"\r\n"
-			"Windows version: %d.%d build %d (revision %d)\r\n"
+			"Windows version: %d.%d build %d (revision: %d; "
+				"%s-bit)\r\n"
 			"CPU: %s\r\n\r\n",
 			data->exception->ExceptionRecord->ExceptionCode,
+			date_time,
 			data->main_trace.instruction_ptr,
 			data->module_name.array,
 			data->win_version.major, data->win_version.minor,
 			data->win_version.build, data->win_version.revis,
+			is_64_bit_windows() ? "64" : "32",
 			data->cpu_info.array);
 }
 

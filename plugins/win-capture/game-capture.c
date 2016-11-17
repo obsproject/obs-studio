@@ -452,9 +452,14 @@ static void game_capture_update(void *data, obs_data_t *settings)
 	}
 }
 
+extern void wait_for_hook_initialization(void);
+
 static void *game_capture_create(obs_data_t *settings, obs_source_t *source)
 {
 	struct game_capture *gc = bzalloc(sizeof(*gc));
+
+	wait_for_hook_initialization();
+
 	gc->source = source;
 	gc->initial_config = true;
 	gc->retry_interval = DEFAULT_RETRY_INTERVAL;

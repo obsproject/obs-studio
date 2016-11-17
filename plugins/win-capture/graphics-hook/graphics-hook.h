@@ -1,5 +1,7 @@
 #pragma once
 
+#include "graphics-hook-config.h"
+
 #ifdef _MSC_VER
 /* conversion from data/function pointer */
 #pragma warning(disable: 4152)
@@ -45,6 +47,11 @@ extern void d3d10_capture(void *swap, void *backbuffer);
 extern void d3d10_free(void);
 extern void d3d11_capture(void *swap, void *backbuffer);
 extern void d3d11_free(void);
+
+#if COMPILE_D3D12_HOOK
+extern void d3d12_capture(void *swap, void *backbuffer);
+extern void d3d12_free(void);
+#endif
 
 extern uint8_t *get_d3d1x_vertex_shader(size_t *size);
 extern uint8_t *get_d3d1x_pixel_shader(size_t *size);

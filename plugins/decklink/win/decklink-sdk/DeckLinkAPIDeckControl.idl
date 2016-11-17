@@ -1,5 +1,5 @@
 /* -LICENSE-START-
-** Copyright (c) 2014 Blackmagic Design
+** Copyright (c) 2016 Blackmagic Design
 **
 ** Permission is hereby granted, free of charge, to any person or organization
 ** obtaining a copy of the software and accompanying documentation covered by
@@ -39,8 +39,8 @@
 
 // Enumeration Mapping
 
-cpp_quote("typedef unsigned long BMDDeckControlStatusFlags;")
-cpp_quote("typedef unsigned long BMDDeckControlExportModeOpsFlags;")
+cpp_quote("typedef unsigned int BMDDeckControlStatusFlags;")
+cpp_quote("typedef unsigned int BMDDeckControlExportModeOpsFlags;")
 cpp_quote("#if 0")
 typedef enum _BMDDeckControlStatusFlags BMDDeckControlStatusFlags;
 typedef enum _BMDDeckControlExportModeOpsFlags BMDDeckControlExportModeOpsFlags;
@@ -153,7 +153,7 @@ interface IDeckLinkDeckControl;
     HRESULT TimecodeUpdate([in] BMDTimecodeBCD currentTimecode);
     HRESULT VTRControlStateChanged([in] BMDDeckControlVTRControlState newState, [in] BMDDeckControlError error);
     HRESULT DeckControlEventReceived([in] BMDDeckControlEvent event, [in] BMDDeckControlError error);
-    HRESULT DeckControlStatusChanged([in] BMDDeckControlStatusFlags flags, [in] unsigned long mask);
+    HRESULT DeckControlStatusChanged([in] BMDDeckControlStatusFlags flags, [in] unsigned int mask);
 };
 
 /* Interface IDeckLinkDeckControl - Deck Control main interface */
@@ -168,7 +168,7 @@ interface IDeckLinkDeckControl;
     HRESULT Close([in] BOOL standbyOn);
     HRESULT GetCurrentState([out] BMDDeckControlMode *mode, [out] BMDDeckControlVTRControlState *vtrControlState, [out] BMDDeckControlStatusFlags *flags);
     HRESULT SetStandby([in] BOOL standbyOn);
-    HRESULT SendCommand([in] unsigned char *inBuffer, [in] unsigned long inBufferSize, [out] unsigned char *outBuffer, [out] unsigned long *outDataSize, [in] unsigned long outBufferSize, [out] BMDDeckControlError *error);
+    HRESULT SendCommand([in] unsigned char *inBuffer, [in] unsigned int inBufferSize, [out] unsigned char *outBuffer, [out] unsigned int *outDataSize, [in] unsigned int outBufferSize, [out] BMDDeckControlError *error);
     HRESULT Play([out] BMDDeckControlError *error);
     HRESULT Stop([out] BMDDeckControlError *error);
     HRESULT TogglePlayStop([out] BMDDeckControlError *error);
@@ -183,13 +183,13 @@ interface IDeckLinkDeckControl;
     HRESULT GetTimecodeString([out] BSTR *currentTimeCode, [out] BMDDeckControlError *error);
     HRESULT GetTimecode([out] IDeckLinkTimecode **currentTimecode, [out] BMDDeckControlError *error);
     HRESULT GetTimecodeBCD([out] BMDTimecodeBCD *currentTimecode, [out] BMDDeckControlError *error);
-    HRESULT SetPreroll([in] unsigned long prerollSeconds);
-    HRESULT GetPreroll([out] unsigned long *prerollSeconds);
-    HRESULT SetExportOffset([in] long exportOffsetFields);
-    HRESULT GetExportOffset([out] long *exportOffsetFields);
-    HRESULT GetManualExportOffset([out] long *deckManualExportOffsetFields);
-    HRESULT SetCaptureOffset([in] long captureOffsetFields);
-    HRESULT GetCaptureOffset([out] long *captureOffsetFields);
+    HRESULT SetPreroll([in] unsigned int prerollSeconds);
+    HRESULT GetPreroll([out] unsigned int *prerollSeconds);
+    HRESULT SetExportOffset([in] int exportOffsetFields);
+    HRESULT GetExportOffset([out] int *exportOffsetFields);
+    HRESULT GetManualExportOffset([out] int *deckManualExportOffsetFields);
+    HRESULT SetCaptureOffset([in] int captureOffsetFields);
+    HRESULT GetCaptureOffset([out] int *captureOffsetFields);
     HRESULT StartExport([in] BMDTimecodeBCD inTimecode, [in] BMDTimecodeBCD outTimecode, [in] BMDDeckControlExportModeOpsFlags exportModeOps, [out] BMDDeckControlError *error);
     HRESULT StartCapture([in] BOOL useVITC, [in] BMDTimecodeBCD inTimecode, [in] BMDTimecodeBCD outTimecode, [out] BMDDeckControlError *error);
     HRESULT GetDeviceID([out] unsigned short *deviceId, [out] BMDDeckControlError *error);
@@ -200,3 +200,7 @@ interface IDeckLinkDeckControl;
 };
 
 /* Coclasses */
+
+importlib("stdole2.tlb");
+
+

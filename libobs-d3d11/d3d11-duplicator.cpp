@@ -20,20 +20,9 @@
 static inline bool get_monitor(gs_device_t *device, int monitor_idx,
 		IDXGIOutput **dxgiOutput)
 {
-	ComPtr<IDXGIAdapter> dxgiAdapter;
-	ComPtr<IDXGIDevice> dxgiDevice;
 	HRESULT hr;
 
-	hr = device->device->QueryInterface(__uuidof(IDXGIDevice),
-			(void**)dxgiDevice.Assign());
-	if (FAILED(hr))
-		throw HRError("Failed to query IDXGIDevice", hr);
-
-	hr = dxgiDevice->GetAdapter(dxgiAdapter.Assign());
-	if (FAILED(hr))
-		throw HRError("Failed to get adapter", hr);
-
-	hr = dxgiAdapter->EnumOutputs(monitor_idx, dxgiOutput);
+	hr = device->adapter->EnumOutputs(monitor_idx, dxgiOutput);
 	if (FAILED(hr)) {
 		if (hr == DXGI_ERROR_NOT_FOUND)
 			return false;
@@ -44,14 +33,13 @@ static inline bool get_monitor(gs_device_t *device, int monitor_idx,
 	return true;
 }
 
-gs_duplicator::gs_duplicator(gs_device_t *device_, int monitor_idx)
-	: texture(nullptr), device(device_)
+void gs_duplicator::Start()
 {
 	ComPtr<IDXGIOutput1> output1;
 	ComPtr<IDXGIOutput> output;
 	HRESULT hr;
 
-	if (!get_monitor(device, monitor_idx, output.Assign()))
+	if (!get_monitor(device, idx, output.Assign()))
 		throw "Invalid monitor index";
 
 	hr = output->QueryInterface(__uuidof(IDXGIOutput1),
@@ -62,6 +50,14 @@ gs_duplicator::gs_duplicator(gs_device_t *device_, int monitor_idx)
 	hr = output1->DuplicateOutput(device->device, duplicator.Assign());
 	if (FAILED(hr))
 		throw HRError("Failed to duplicate output", hr);
+}
+
+gs_duplicator::gs_duplicator(gs_device_t *device_, int monitor_idx)
+	: gs_obj  (device_, gs_type::gs_duplicator),
+	  texture (nullptr),
+	  idx     (monitor_idx)
+{
+	Start();
 }
 
 gs_duplicator::~gs_duplicator()

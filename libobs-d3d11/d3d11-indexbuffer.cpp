@@ -19,8 +19,6 @@
 
 void gs_index_buffer::InitBuffer()
 {
-	D3D11_BUFFER_DESC bd;
-	D3D11_SUBRESOURCE_DATA srd;
 	HRESULT hr;
 
 	memset(&bd,  0, sizeof(bd));
@@ -39,7 +37,7 @@ void gs_index_buffer::InitBuffer()
 
 gs_index_buffer::gs_index_buffer(gs_device_t *device, enum gs_index_type type,
 		void *indices, size_t num, uint32_t flags)
-	: device  (device),
+	: gs_obj  (device, gs_type::gs_index_buffer),
 	  dynamic ((flags & GS_DYNAMIC) != 0),
 	  type    (type),
 	  num     (num),
