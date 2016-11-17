@@ -828,6 +828,9 @@ struct obs_output {
 	struct video_scale_info         video_conversion;
 	struct audio_convert_info       audio_conversion;
 
+	pthread_mutex_t                 caption_mutex;
+	char                            *cur_caption_text;
+
 	bool                            valid;
 
 	uint64_t                        active_delay_ns;

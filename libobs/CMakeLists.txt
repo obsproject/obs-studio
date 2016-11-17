@@ -347,6 +347,7 @@ source_group("media-io\\Header Files" FILES ${libobs_mediaio_HEADERS})
 source_group("util\\Source Files" FILES ${libobs_util_SOURCES})
 source_group("util\\Header Files" FILES ${libobs_util_HEADERS})
 
+include_directories(${CMAKE_SOURCE_DIR}/deps/libcaption)
 
 add_library(libobs SHARED ${libobs_SOURCES} ${libobs_HEADERS})
 
@@ -382,6 +383,7 @@ target_link_libraries(libobs
 		${OBS_JANSSON_IMPORT}
 		${FFMPEG_LIBRARIES}
 		${ZLIB_LIBRARIES}
+		caption
 	PUBLIC
 		${THREADS_LIBRARIES})
 

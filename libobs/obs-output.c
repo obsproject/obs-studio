@@ -20,6 +20,9 @@
 #include "obs.h"
 #include "obs-internal.h"
 
+#include <caption/caption.h>
+#include <caption/avc.h>
+
 static inline bool active(const struct obs_output *output)
 {
 	return os_atomic_load_bool(&output->active);
@@ -99,10 +102,13 @@ obs_output_t *obs_output_create(const char *id, const char *name,
 	output = bzalloc(sizeof(struct obs_output));
 	pthread_mutex_init_value(&output->interleaved_mutex);
 	pthread_mutex_init_value(&output->delay_mutex);
+	pthread_mutex_init_value(&output->caption_mutex);
 
 	if (pthread_mutex_init(&output->interleaved_mutex, NULL) != 0)
 		goto fail;
 	if (pthread_mutex_init(&output->delay_mutex, NULL) != 0)
+		goto fail;
+	if (pthread_mutex_init(&output->caption_mutex, NULL) != 0)
 		goto fail;
 	if (os_event_init(&output->stopping_event, OS_EVENT_TYPE_MANUAL) != 0)
 		goto fail;
@@ -195,7 +201,9 @@ void obs_output_destroy(obs_output_t *output)
 			}
 		}
 
+		bfree(output->cur_caption_text);
 		os_event_destroy(output->stopping_event);
+		pthread_mutex_destroy(&output->caption_mutex);
 		pthread_mutex_destroy(&output->interleaved_mutex);
 		pthread_mutex_destroy(&output->delay_mutex);
 		os_event_destroy(output->reconnect_stop_event);
@@ -942,6 +950,44 @@ static inline bool has_higher_opposing_ts(struct obs_output *output,
 		return output->highest_video_ts > packet->dts_usec;
 }
 
+static const uint8_t nal_start[4] = {0, 0, 0, 1};
+
+static void add_caption(struct obs_output *output, struct encoder_packet *out)
+{
+	caption_frame_t cf;
+	sei_t sei;
+	uint8_t *data;
+	size_t size;
+
+	DARRAY(uint8_t) out_data;
+
+	out_data.array = out->data;
+	out_data.num = out->size;
+	out_data.capacity = out->size;
+
+	if (out->priority > 1)
+		return;
+
+	caption_frame_init(&cf);
+	caption_frame_from_text(&cf, output->cur_caption_text);
+
+	sei_init(&sei);
+	sei_from_caption_frame(&sei, &cf);
+	data = malloc(sei_render_size(&sei));
+	size = sei_render(&sei, data);
+	da_push_back_array(out_data, nal_start, 4);
+	da_push_back_array(out_data, data, size);
+	out->data = out_data.array;
+	out->size = out_data.num;
+	free(data);
+	sei_free(&sei);
+
+	caption_frame_end(&cf);
+
+	bfree(output->cur_caption_text);
+	output->cur_caption_text = NULL;
+}
+
 static inline void send_interleaved(struct obs_output *output)
 {
 	struct encoder_packet out = output->interleaved_packets.array[0];
@@ -952,10 +998,16 @@ static inline void send_interleaved(struct obs_output *output)
 	if (!has_higher_opposing_ts(output, &out))
 		return;
 
-	if (out.type == OBS_ENCODER_VIDEO)
-		output->total_frames++;
-
 	da_erase(output->interleaved_packets, 0);
+
+	if (out.type == OBS_ENCODER_VIDEO) {
+		output->total_frames++;
+		pthread_mutex_lock(&output->caption_mutex);
+		if (output->cur_caption_text)
+			add_caption(output, &out);
+		pthread_mutex_unlock(&output->caption_mutex);
+	}
+
 	output->info.encoded_packet(output->context.data, &out);
 	obs_free_encoder_packet(&out);
 }
@@ -1953,4 +2005,18 @@ const char *obs_output_get_id(const obs_output_t *output)
 {
 	return obs_output_valid(output, "obs_output_get_id")
 		? output->info.id : NULL;
+}
+
+void obs_output_output_caption_text1(obs_output_t *output, const char *text)
+{
+	if (!obs_output_valid(output, "obs_output_output_caption_text1"))
+		return;
+
+	if (!active(output))
+		return;
+
+	pthread_mutex_lock(&output->caption_mutex);
+	bfree(output->cur_caption_text);
+	output->cur_caption_text = bstrdup(text);
+	pthread_mutex_unlock(&output->caption_mutex);
 }
