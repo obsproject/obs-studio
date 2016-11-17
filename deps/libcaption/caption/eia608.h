@@ -37,6 +37,12 @@ static const uint8_t eia608_parity_table[] = { EIA608_B1 (0), EIA608_B1 (64) };
 extern const char* eia608_mode_map[];
 extern const char* eia608_style_map[];
 
+#if defined(_MSC_VER)
+#ifndef inline
+#define inline __inline
+#endif
+#endif
+
 /*! \brief
     \param
 */
