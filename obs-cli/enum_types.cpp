@@ -76,7 +76,6 @@ void print_obs_enum_output_types() {
 
 void print_obs_enum_audio_type(obs_properties_t* props){
 	obs_property_t *property = obs_properties_first(props);
-	bool hasNoProperties = !property;
 	while (property){
 		const char        *name = obs_property_name(property);
 		//only check device_id properties
@@ -86,10 +85,8 @@ void print_obs_enum_audio_type(obs_properties_t* props){
 		obs_property_type type = obs_property_get_type(property);
 		//std::cout << "name:" << name << std::endl;
 
-		obs_combo_type   ctype = obs_property_list_type(property);
 		obs_combo_format cformat = obs_property_list_format(property);
 		size_t           ccount = obs_property_list_item_count(property);
-		int              cidx = -1;
 
 		switch (type)
 		{

@@ -221,7 +221,7 @@ int parse_args(int argc, char **argv) {
 	return Ret::success;
 }
 
-void start_output_callback(void */*data*/, calldata_t *params) {
+void start_output_callback(void * /*data*/, calldata_t *params) {
 	// auto loop = static_cast<EventLoop*>(data);
 	auto output = static_cast<obs_output_t*>(calldata_ptr(params, "output"));
 	blog(LOG_INFO, "Output '%s' started.", obs_output_get_name(output));
@@ -230,7 +230,7 @@ void start_output_callback(void */*data*/, calldata_t *params) {
 void stop_output_callback(void *data, calldata_t *params) {
 	auto loop = static_cast<EventLoop*>(data);
 	auto output = static_cast<obs_output_t*>(calldata_ptr(params, "output"));
-	int code = calldata_int(params, "code");
+	long long code = calldata_int(params, "code");
 
 	blog(LOG_INFO, "Output '%s' stopped with code %d.", obs_output_get_name(output), code);
 	// as soon as *any* output is stopped, we have to ensure that the
