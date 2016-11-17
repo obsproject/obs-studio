@@ -549,7 +549,7 @@ static int avc_find_start_code_increnental (const uint8_t* data, int size, int p
     return pos;
 }
 
-int avcnalu_init (avcnalu_t* nalu)
+void avcnalu_init (avcnalu_t* nalu)
 {
     memset (nalu,0,sizeof (avcnalu_t));
 }

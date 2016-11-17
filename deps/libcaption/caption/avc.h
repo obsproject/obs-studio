@@ -33,7 +33,7 @@ typedef struct {
     uint8_t data[MAX_NALU_SIZE];
 } avcnalu_t;
 
-int avcnalu_init (avcnalu_t* nalu);
+void avcnalu_init (avcnalu_t* nalu);
 int avcnalu_parse_annexb (avcnalu_t* nalu, const uint8_t** data, size_t* size);
 static inline uint8_t  avcnalu_type (avcnalu_t* nalu) { return nalu->data[0] & 0x1F; }
 static inline uint8_t* avcnalu_data (avcnalu_t* nalu) { return &nalu->data[0]; }
