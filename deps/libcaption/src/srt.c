@@ -152,8 +152,6 @@ int srt_to_caption_frame (srt_t* srt, caption_frame_t* frame)
 
 srt_t* srt_from_caption_frame (caption_frame_t* frame, srt_t* prev)
 {
-    int r, c, x, s, uln;
-    eia608_style_t sty;
     // CRLF per row, plus an extra at the end
     srt_t* srt = srt_new (0, 2+CAPTION_FRAME_TEXT_BYTES);
     utf8_char_t* data = srt_data (srt);
