@@ -347,6 +347,12 @@ source_group("media-io\\Header Files" FILES ${libobs_mediaio_HEADERS})
 source_group("util\\Source Files" FILES ${libobs_util_SOURCES})
 source_group("util\\Header Files" FILES ${libobs_util_HEADERS})
 
+if(BUILD_CAPTIONS)
+	include_directories(${CMAKE_SOURCE_DIR}/deps/libcaption)
+	set(libobs_PLATFORM_DEPS
+		${libobs_PLATFORM_DEPS}
+		caption)
+endif()
 
 add_library(libobs SHARED ${libobs_SOURCES} ${libobs_HEADERS})
 

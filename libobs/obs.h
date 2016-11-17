@@ -1460,6 +1460,11 @@ EXPORT uint32_t obs_output_get_height(const obs_output_t *output);
 
 EXPORT const char *obs_output_get_id(const obs_output_t *output);
 
+#if BUILD_CAPTIONS
+EXPORT void obs_output_output_caption_text1(obs_output_t *output,
+		const char *text);
+#endif
+
 /* ------------------------------------------------------------------------- */
 /* Functions used by outputs */
 
