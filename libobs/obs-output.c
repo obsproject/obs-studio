@@ -201,7 +201,12 @@ void obs_output_destroy(obs_output_t *output)
 			}
 		}
 
-		bfree(output->cur_caption_text);
+		while(output->caption_head) {
+				output->caption_tail = output->caption_head->next;
+				bfree(output->caption_head);
+				output->caption_head = output->caption_tail;
+		}
+
 		os_event_destroy(output->stopping_event);
 		pthread_mutex_destroy(&output->caption_mutex);
 		pthread_mutex_destroy(&output->interleaved_mutex);
@@ -969,7 +974,7 @@ static void add_caption(struct obs_output *output, struct encoder_packet *out)
 		return;
 
 	caption_frame_init(&cf);
-	caption_frame_from_text(&cf, output->cur_caption_text);
+	caption_frame_from_text(&cf, &output->caption_head->text[0]);
 
 	sei_init(&sei);
 	sei_from_caption_frame(&sei, &cf);
@@ -984,8 +989,9 @@ static void add_caption(struct obs_output *output, struct encoder_packet *out)
 
 	caption_frame_end(&cf);
 
-	bfree(output->cur_caption_text);
-	output->cur_caption_text = NULL;
+	struct caption_text *next = output->caption_head->next;
+	bfree(output->caption_head);
+	output->caption_head = next;
 }
 
 static inline void send_interleaved(struct obs_output *output)
@@ -1003,8 +1009,13 @@ static inline void send_interleaved(struct obs_output *output)
 	if (out.type == OBS_ENCODER_VIDEO) {
 		output->total_frames++;
 		pthread_mutex_lock(&output->caption_mutex);
-		if (output->cur_caption_text)
+		double frame_timestamp = (out.pts * out.timebase_num) / (double)out.timebase_den;
+		// TODO if output->caption_timestamp is more than 5 seconds old, send empty frame
+		if (output->caption_head && output->caption_timestamp <= frame_timestamp) {
+			output->caption_timestamp = frame_timestamp + 2.0;
+			blog(LOG_INFO,"Sending caption %s %f", &output->caption_head->text[0], output->caption_timestamp);
 			add_caption(output, &out);
+		}
 		pthread_mutex_unlock(&output->caption_mutex);
 	}
 
@@ -2007,6 +2018,19 @@ const char *obs_output_get_id(const obs_output_t *output)
 		? output->info.id : NULL;
 }
 
+struct caption_text *caption_text_new(const char *text, size_t bytes, struct caption_text *tail, struct caption_text **head)
+{
+	struct caption_text *next = bzalloc(sizeof(struct caption_text));
+	snprintf(&next->text[0],CAPTION_LINE_BYTES+1,"%.*s",bytes,text);
+	if( !(*head) ) {
+		(*head) = next;
+	} else {
+		tail->next = next;
+	}
+
+	return next;
+}
+
 void obs_output_output_caption_text1(obs_output_t *output, const char *text)
 {
 	if (!obs_output_valid(output, "obs_output_output_caption_text1"))
@@ -2015,8 +2039,26 @@ void obs_output_output_caption_text1(obs_output_t *output, const char *text)
 	if (!active(output))
 		return;
 
+	// split text into  32 charcter strings
+	int r, size = (int) strlen (text);
+	size_t char_count, line_length = 0, trimmed_length = 0;
+
+
+	blog(LOG_INFO, "Caption text: %s",text);
 	pthread_mutex_lock(&output->caption_mutex);
-	bfree(output->cur_caption_text);
-	output->cur_caption_text = bstrdup(text);
+	for (r = 0 ; 0 < size && CAPTION_LINE_CHARS > r ; ++r) {
+		line_length = utf8_line_length (text);
+		trimmed_length = utf8_trimmed_length (text,line_length);
+		char_count = utf8_char_count (text,trimmed_length);
+
+		if (SCREEN_COLS < char_count) {
+			char_count = utf8_wrap_length (text,CAPTION_LINE_CHARS);
+			line_length = utf8_string_length (text,char_count+1);
+		}
+
+		output->caption_tail = caption_text_new(text,line_length,output->caption_tail,&output->caption_head);
+		text += line_length; size -= line_length;
+	}
+
 	pthread_mutex_unlock(&output->caption_mutex);
 }

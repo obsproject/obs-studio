@@ -774,6 +774,13 @@ struct obs_weak_output {
 	struct obs_output *output;
 };
 
+#define CAPTION_LINE_CHARS (32)
+#define CAPTION_LINE_BYTES (4*CAPTION_LINE_CHARS)
+struct caption_text {
+		char text[CAPTION_LINE_BYTES+1];
+		struct caption_text *next;
+};
+
 struct obs_output {
 	struct obs_context_data         context;
 	struct obs_output_info          info;
@@ -829,7 +836,9 @@ struct obs_output {
 	struct audio_convert_info       audio_conversion;
 
 	pthread_mutex_t                 caption_mutex;
-	char                            *cur_caption_text;
+	double										  		caption_timestamp;
+	struct caption_text             *caption_head;
+	struct caption_text             *caption_tail;
 
 	bool                            valid;
 
@@ -990,4 +999,3 @@ extern bool obs_service_initialize(struct obs_service *service,
 		struct obs_output *output);
 
 void obs_service_destroy(obs_service_t *service);
-
