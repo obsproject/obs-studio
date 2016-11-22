@@ -107,7 +107,10 @@ static inline size_t   flvtag_size (flvtag_t* tag) { return (tag->data[1]<<16) |
 static inline uint32_t flvtag_timestamp (flvtag_t* tag) { return (tag->data[7]<<24) | (tag->data[4]<<16) | (tag->data[5]<<8) | tag->data[6]; }
 static inline uint32_t flvtag_dts (flvtag_t* tag) { return flvtag_timestamp (tag); }
 static inline uint32_t flvtag_cts (flvtag_t* tag) { return (flvtag_avcpackettype_nalu!=flvtag_avcpackettype (tag)) ?0: (tag->data[13]<<16) | (tag->data[14]<<8) |tag->data[15]; }
-static inline uint32_t flvtag_pts (flvtag_t* tag) { return flvtag_dts (tag)+flvtag_dts (tag); }
+static inline uint32_t flvtag_pts (flvtag_t* tag) { return flvtag_dts (tag)+flvtag_cts (tag); }
+static inline double flvtag_dts_seconds (flvtag_t* tag) { return flvtag_dts (tag) / 1000.0; }
+static inline double flvtag_cts_seconds (flvtag_t* tag) { return flvtag_cts (tag) / 1000.0; }
+static inline double flvtag_pts_seconds (flvtag_t* tag) { return flvtag_pts (tag) / 1000.0; }
 ////////////////////////////////////////////////////////////////////////////////
 size_t flvtag_header_size (flvtag_t* tag);
 size_t flvtag_payload_size (flvtag_t* tag);

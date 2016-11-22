@@ -66,6 +66,7 @@ typedef enum {
     sei_type_stereo_video_info = 21,
 } sei_msgtype_t;
 ////////////////////////////////////////////////////////////////////////////////
+// time in seconds
 typedef struct  {
     double dts;
     double cts;
@@ -95,7 +96,7 @@ int sei_parse_nalu (sei_t* sei, const uint8_t* data, size_t size, double dts, do
     \param
 */
 // TODO add dts,cts to nalu
-static inline int sei_parse_avcnalu (sei_t* sei, avcnalu_t* nalu, double dts, double cts) { return sei_parse_nalu (sei,avcnalu_data (nalu),avcnalu_size (nalu),dts,cts);}
+static inline int sei_parse_avcnalu (sei_t* sei, avcnalu_t* nalu, double dts, double cts) { return sei_parse_nalu (sei,avcnalu_data (nalu),avcnalu_size (nalu),dts,cts); }
 /*! \brief
     \param
 */
@@ -180,7 +181,7 @@ int sei_from_caption_frame (sei_t* sei, caption_frame_t* frame);
 /*! \brief
     \param
 */
-int sei_to_caption_frame (sei_t* sei, caption_frame_t* frame);
+libcaption_stauts_t sei_to_caption_frame (sei_t* sei, caption_frame_t* frame);
 /*! \brief
     \param
 */

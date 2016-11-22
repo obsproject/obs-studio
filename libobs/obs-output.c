@@ -957,7 +957,7 @@ static inline bool has_higher_opposing_ts(struct obs_output *output,
 
 static const uint8_t nal_start[4] = {0, 0, 0, 1};
 
-static void add_caption(struct obs_output *output, struct encoder_packet *out)
+static bool add_caption(struct obs_output *output, struct encoder_packet *out)
 {
 	caption_frame_t cf;
 	sei_t sei;
@@ -971,15 +971,15 @@ static void add_caption(struct obs_output *output, struct encoder_packet *out)
 	out_data.capacity = out->size;
 
 	if (out->priority > 1)
-		return;
-
-	caption_frame_init(&cf);
-	caption_frame_from_text(&cf, &output->caption_head->text[0]);
+		return false;
 
 	sei_init(&sei);
+	caption_frame_init(&cf);
+	caption_frame_from_text(&cf, &output->caption_head->text[0]);
 	sei_from_caption_frame(&sei, &cf);
 	data = malloc(sei_render_size(&sei));
 	size = sei_render(&sei, data);
+	// TODO SEI should come after AUD/SPS/PPS, but before any VCL
 	da_push_back_array(out_data, nal_start, 4);
 	da_push_back_array(out_data, data, size);
 	out->data = out_data.array;
@@ -987,11 +987,10 @@ static void add_caption(struct obs_output *output, struct encoder_packet *out)
 	free(data);
 	sei_free(&sei);
 
-	caption_frame_end(&cf);
-
 	struct caption_text *next = output->caption_head->next;
 	bfree(output->caption_head);
 	output->caption_head = next;
+	return true;
 }
 
 static inline void send_interleaved(struct obs_output *output)
@@ -1012,9 +1011,10 @@ static inline void send_interleaved(struct obs_output *output)
 		double frame_timestamp = (out.pts * out.timebase_num) / (double)out.timebase_den;
 		// TODO if output->caption_timestamp is more than 5 seconds old, send empty frame
 		if (output->caption_head && output->caption_timestamp <= frame_timestamp) {
-			output->caption_timestamp = frame_timestamp + 2.0;
-			blog(LOG_INFO,"Sending caption %s %f", &output->caption_head->text[0], output->caption_timestamp);
-			add_caption(output, &out);
+			blog(LOG_INFO,"Sending caption: %s %f", &output->caption_head->text[0], output->caption_timestamp);
+			if( add_caption(output, &out) ) {
+				output->caption_timestamp = frame_timestamp + 2.0;
+			}
 		}
 		pthread_mutex_unlock(&output->caption_mutex);
 	}

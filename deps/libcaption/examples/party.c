@@ -96,7 +96,7 @@ int main (int argc, char** argv)
 
     while (flv_read_tag (flv,&tag)) {
 
-        if (nextParty <= flvtag_timestamp (&tag)) {
+        if (flvtag_avcpackettype_nalu == flvtag_avcpackettype (&tag) && nextParty <= flvtag_timestamp (&tag)) {
             get_dudes (partyDudes);
 
             if (CAPTION_METHOD == CAPTION_METHOD_SEI_708) {

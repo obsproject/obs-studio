@@ -354,8 +354,7 @@ int flvtag_addcaption (flvtag_t* tag, const utf8_char_t* text)
         data += LENGTH_SIZE + nalu_size;
         size -= LENGTH_SIZE + nalu_size;
 
-        // we want to write after AUD if present
-        if (0 < sei_size && 9 != nalu_type) {
+        if (0 < sei_size && 7 != nalu_type && 8 != nalu_type && 9 != nalu_type ) {
             // fprintf (stderr,"Wrote SEI %d '%d'\n\n", sei_size, sei_data[3]);
             flvtag_avcwritenal (&new_tag,sei_data,sei_size);
             sei_size = 0;

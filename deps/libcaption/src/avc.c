@@ -200,7 +200,9 @@ void sei_dump (sei_t* sei)
 
 void sei_dump_messages (sei_message_t* head)
 {
+    cea708_t cea708;
     sei_message_t* msg;
+    cea708_init (&cea708);
 
     for (msg = head ; msg ; msg = sei_message_next (msg)) {
         uint8_t* data = sei_message_data (msg);
@@ -213,6 +215,13 @@ void sei_dump_messages (sei_message_t* head)
         }
 
         fprintf (stderr,"\n");
+
+        if (sei_type_user_data_registered_itu_t_t35 == sei_message_type (msg)) {
+            cea708_parse (sei_message_data (msg), sei_message_size (msg), &cea708);
+            cea708_dump (&cea708);
+        }
+
+
     }
 }
 
@@ -346,27 +355,33 @@ int sei_parse_nalu (sei_t* sei, const uint8_t* data, size_t size, double dts, do
     }
 
     // There should be one trailing byte, 0x80. But really, we can just ignore that fact.
-
     return ret;
 error:
     sei_init (sei);
     return 0;
 }
 ////////////////////////////////////////////////////////////////////////////////
-int sei_to_caption_frame (sei_t* sei, caption_frame_t* frame)
+libcaption_stauts_t sei_to_caption_frame (sei_t* sei, caption_frame_t* frame)
 {
     cea708_t cea708;
     sei_message_t* msg;
+    libcaption_stauts_t status = LIBCAPTION_OK;
+
     cea708_init (&cea708);
 
     for (msg = sei_message_head (sei) ; msg ; msg = sei_message_next (msg)) {
         if (sei_type_user_data_registered_itu_t_t35 == sei_message_type (msg)) {
             cea708_parse (sei_message_data (msg), sei_message_size (msg), &cea708);
-            cea708_to_caption_frame (frame, &cea708, sei_pts (sei));
+            status = libcaption_status_update (status, cea708_to_caption_frame (frame, &cea708, sei_pts (sei)));
         }
     }
 
-    return 1;
+    if (LIBCAPTION_READY == status) {
+        frame->timestamp = sei->dts + sei->cts;
+        frame->duration = 0;
+    }
+
+    return status;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -481,7 +496,7 @@ int sei_from_caption_frame (sei_t* sei, caption_frame_t* frame)
     }
 
     sei_encode_eia608 (sei, &cea708, 0); // flush
-    sei->dts = frame->str_pts; // assumes in order frames
+    sei->dts = frame->timestamp; // assumes in order frames
     // sei_dump (sei);
     return 1;
 }

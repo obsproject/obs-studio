@@ -189,19 +189,19 @@ void cea708_dump (cea708_t* cea708)
     }
 }
 
-int cea708_to_caption_frame (caption_frame_t* frame, cea708_t* cea708, double pts)
+libcaption_stauts_t cea708_to_caption_frame (caption_frame_t* frame, cea708_t* cea708, double pts)
 {
     int i, count = cea708_cc_count (&cea708->user_data);
+    libcaption_stauts_t status = LIBCAPTION_OK;
 
     for (i = 0 ; i < count ; ++i) {
         cea708_cc_type_t type; int valid;
         uint16_t cc_data = cea708_cc_data (&cea708->user_data, i, &valid, &type);
 
         if (valid && cc_type_ntsc_cc_field_1 == type) {
-            caption_frame_decode (frame,cc_data, pts);
+            status = libcaption_status_update (status,caption_frame_decode (frame,cc_data, pts));
         }
     }
 
-    // TODO look at the result of caption_frame_decode and return the rite value
-    return LIBCAPTION_READY;
+    return status;
 }

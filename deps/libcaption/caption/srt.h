@@ -27,15 +27,26 @@
 #include "eia608.h"
 #include "caption.h"
 
+// timestamp and duration are in seconds
 typedef struct _srt_t {
     struct _srt_t* next;
-    double str_pts;
-    double end_pts;
+    double timestamp;
+    double duration;
     size_t aloc;
 } srt_t;
 
 
-// returns the head of teh link list. must bee freed when done
+
+
+/*! \brief
+    \param
+*/
+srt_t* srt_new (const utf8_char_t* data, size_t size, double timestamp, srt_t* prev, srt_t** head);
+/*! \brief
+    \param
+*/
+srt_t* srt_free_head (srt_t* head);
+// returns the head of the link list. must bee freed when done
 /*! \brief
     \param
 */
@@ -53,7 +64,6 @@ static inline srt_t* srt_next (srt_t* srt) { return srt->next; }
     \param
 */
 static inline utf8_char_t* srt_data (srt_t* srt) { return (utf8_char_t*) (srt) + sizeof (srt_t); }
-
 // This only converts teh surrent SRT, It does not walk the list
 /*! \brief
     \param
@@ -64,7 +74,7 @@ int srt_to_caption_frame (srt_t* srt, caption_frame_t* frame);
 /*! \brief
     \param
 */
-srt_t* srt_from_caption_frame (caption_frame_t* frame, srt_t* prev);
+srt_t* srt_from_caption_frame (caption_frame_t* frame, srt_t* prev, srt_t** head);
 /*! \brief
     \param
 */

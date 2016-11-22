@@ -67,9 +67,7 @@ srt_t* scc2srt (const char* data)
         // utf8_char_t buff[CAPTION_FRAME_DUMP_BUF_SIZE];
         // size_t size = caption_frame_dump (&frame, buff);
         // fprintf (stderr,"%s\n", buff);
-        srt = srt_from_caption_frame (&frame,srt);
-
-        if (!head) {head = srt;}
+        srt = srt_from_caption_frame (&frame,srt,&head);
     }
 
     return head;

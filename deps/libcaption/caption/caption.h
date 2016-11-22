@@ -36,9 +36,17 @@ typedef signed int ssize_t;
 #endif
 #endif
 
-#define LIBCAPTION_OK 1
-#define LIBCAPTION_ERROR 0
-#define LIBCAPTION_READY 2
+typedef enum {
+    LIBCAPTION_OK = 1,
+    LIBCAPTION_ERROR = 0,
+    LIBCAPTION_READY = 2
+} libcaption_stauts_t;
+
+
+/*! \brief
+    \param
+*/
+static inline libcaption_stauts_t libcaption_status_update (libcaption_stauts_t old_stat, libcaption_stauts_t new_stat) { return (LIBCAPTION_ERROR == old_stat || LIBCAPTION_ERROR == new_stat) ? LIBCAPTION_ERROR : (LIBCAPTION_READY == old_stat) ? LIBCAPTION_READY : new_stat;  }
 
 #define SCREEN_ROWS 15
 #define SCREEN_COLS 32
@@ -62,9 +70,10 @@ typedef struct  {
     uint16_t row, col, cc_data;
 } caption_frame_state_t;
 
+// timestamp and duration are in seconds
 typedef struct {
-    double str_pts;
-    double end_pts;
+    double timestamp;
+    double duration;
     xds_t xds;
     caption_frame_state_t state;
     caption_frame_buffer_t front;
@@ -98,10 +107,6 @@ int caption_frame_write_char (caption_frame_t* frame, int row, int col, eia608_s
 /*! \brief
     \param
 */
-int caption_frame_end (caption_frame_t* frame);
-/*! \brief
-    \param
-*/
 const utf8_char_t* caption_frame_read_char (caption_frame_t* frame, int row, int col, eia608_style_t* style, int* underline);
 /*! \brief
     \param
@@ -110,7 +115,7 @@ const utf8_char_t* caption_frame_read_char (caption_frame_t* frame, int row, int
 /*! \brief
     \param
 */
-int caption_frame_decode (caption_frame_t* frame, uint16_t cc_data, double pts);
+libcaption_stauts_t caption_frame_decode (caption_frame_t* frame, uint16_t cc_data, double timestamp);
 
 /*! \brief
     \param

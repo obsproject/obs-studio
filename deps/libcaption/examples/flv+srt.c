@@ -81,8 +81,8 @@ int main (int argc, char** argv)
 
     while (flv_read_tag (flv,&tag)) {
         // TODO handle B freame!
-        if (srt && flvtag_timestamp (&tag) >= srt->str_pts && flvtag_avcpackettype_nalu == flvtag_avcpackettype (&tag)) {
-            fprintf (stderr,"%f: %s\n", srt->str_pts, srt_data (srt));
+        if (srt && flvtag_pts_seconds (&tag) >= srt->timestamp && flvtag_avcpackettype_nalu == flvtag_avcpackettype (&tag)) {
+            fprintf (stderr,"%f: %s\n", srt->timestamp, srt_data (srt));
             flvtag_addcaption (&tag, srt_data (srt));
             srt = srt->next;
         }

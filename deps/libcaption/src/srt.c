@@ -27,40 +27,25 @@
 #include <string.h>
 #include <stdlib.h>
 
-#define SRTTIME2MS(HH,MM,SS,MS) ((HH*3600.0 + MM*60.0 + SS) * 1000.0 + MS)
-int srt_parse_time (srt_t* srt, const char* line)
-{
-    int hh1, hh2, mm1, mm2, ss1, ss2, ms1, ms2;
-
-    if (8 == sscanf (line, "%d:%2d:%2d%*1[,.]%3d --> %d:%2d:%2d%*1[,.]%3d", &hh1, &mm1, &ss1, &ms1, &hh2, &mm2, &ss2, &ms2)) {
-        srt->str_pts = SRTTIME2MS (hh1, mm1, ss1, ms1);
-        srt->end_pts = SRTTIME2MS (hh2, mm2, ss2, ms2);
-        return 1;
-    }
-
-    return 0;
-}
-
-void srt_free (srt_t* srt)
-{
-    srt_t* next;
-
-    while (srt) {
-        next = srt->next;
-        free (srt);
-        srt = next;
-    }
-}
 
 
-srt_t* srt_new (const utf8_char_t* data, size_t size)
+srt_t* srt_new (const utf8_char_t* data, size_t size, double timestamp, srt_t* prev, srt_t** head)
 {
     srt_t* srt = malloc (sizeof (srt_t)+size+1);
-    srt->str_pts = 0;
-    srt->end_pts = 0;
     srt->next = 0;
+    srt->duration = 0;
     srt->aloc = size;
+    srt->timestamp = timestamp;
     utf8_char_t* dest = (utf8_char_t*) srt_data (srt);
+
+    if (prev) {
+        prev->next = srt;
+        prev->duration = timestamp - prev->timestamp;
+    }
+
+    if (head && 0 == (*head)) {
+        (*head) = srt;
+    }
 
     if (data) {
         memcpy (dest, data, size);
@@ -72,11 +57,26 @@ srt_t* srt_new (const utf8_char_t* data, size_t size)
     return srt;
 }
 
+srt_t* srt_free_head (srt_t* head)
+{
+    srt_t* next = head->next;
+    free (head);
+    return next;
+}
+
+void srt_free (srt_t* srt)
+{
+    while (srt) {
+        srt = srt_free_head (srt);
+    }
+}
+
+#define SRTTIME2SECONDS(HH,MM,SS,MS) ((HH*3600.0) + (MM*60.0) + SS + (MS/1000.0))
 srt_t* srt_parse (const utf8_char_t* data, size_t size)
 {
     int counter;
-    double str_pts, end_pts;
     srt_t* head = 0, *prev = 0;
+    double str_pts = 0, end_pts = 0;
     size_t line_length = 0, trimmed_length = 0;
     int hh1, hh2, mm1, mm2, ss1, ss2, ms1, ms2;
 
@@ -106,10 +106,8 @@ srt_t* srt_parse (const utf8_char_t* data, size_t size)
 
         {
             if (8 == sscanf (data, "%d:%2d:%2d%*1[,.]%3d --> %d:%2d:%2d%*1[,.]%3d", &hh1, &mm1, &ss1, &ms1, &hh2, &mm2, &ss2, &ms2)) {
-                str_pts = SRTTIME2MS (hh1, mm1, ss1, ms1);
-                end_pts = SRTTIME2MS (hh2, mm2, ss2, ms2);
-            } else {
-
+                str_pts = SRTTIME2SECONDS (hh1, mm1, ss1, ms1);
+                end_pts = SRTTIME2SECONDS (hh2, mm2, ss2, ms2);
             }
 
             data += line_length;
@@ -131,13 +129,8 @@ srt_t* srt_parse (const utf8_char_t* data, size_t size)
         } while (trimmed_length);
 
         // should we trim here?
-        srt_t* srt = srt_new (text,text_size);
-        srt->str_pts = str_pts;
-        srt->end_pts = end_pts;
-
-        if (! prev) {  head = srt; }
-        else { prev->next = srt; }
-
+        srt_t* srt = srt_new (text,text_size,str_pts,prev,&head);
+        srt->duration = end_pts - str_pts;
         prev = srt;
     }
 
@@ -150,23 +143,27 @@ int srt_to_caption_frame (srt_t* srt, caption_frame_t* frame)
     return caption_frame_from_text (frame,data);
 }
 
-srt_t* srt_from_caption_frame (caption_frame_t* frame, srt_t* prev)
+srt_t* srt_from_caption_frame (caption_frame_t* frame, srt_t* prev, srt_t** head)
 {
+    int r, c, x, s, uln;
+    eia608_style_t sty;
     // CRLF per row, plus an extra at the end
-    srt_t* srt = srt_new (0, 2+CAPTION_FRAME_TEXT_BYTES);
+    srt_t* srt = srt_new (0, 2+CAPTION_FRAME_TEXT_BYTES, frame->timestamp, prev, head);
     utf8_char_t* data = srt_data (srt);
-    srt->str_pts = frame->str_pts;
-    srt->end_pts = frame->end_pts;
-
-    if (prev) {
-        prev->next = srt;
-    }
 
     caption_frame_to_text (frame,data);
     // srt requires an extra new line
     strcat ( (char*) data,"\r\n");
 
     return srt;
+}
+
+static inline void _crack_time (double tt, int* hh, int* mm, int* ss, int* ms)
+{
+    (*ms) = (int64_t) (tt * 1000) % 1000;
+    (*ss) = (int64_t) (tt) % 60;
+    (*mm) = (int64_t) (tt / (60)) % 60;
+    (*hh) = (int64_t) (tt / (60*60));
 }
 
 static void _dump (srt_t* head, char type)
@@ -180,14 +177,8 @@ static void _dump (srt_t* head, char type)
 
     for (srt = head, i = 1; srt; srt=srt_next (srt), ++i) {
         int hh1, hh2, mm1, mm2, ss1, ss2, ms1, ms2;
-        ms1 = (int) (srt->str_pts) % 1000;
-        ss1 = (int) (srt->str_pts / 1000) % 60;
-        mm1 = (int) (srt->str_pts / (1000*60)) % 60;
-        hh1 = (int) (srt->str_pts / (1000*60*60));
-        ms2 = (int) (srt->end_pts) % 1000;
-        ss2 = (int) (srt->end_pts / 1000) % 60;
-        mm2 = (int) (srt->end_pts / (1000*60)) % 60;
-        hh2 = (int) (srt->end_pts / (1000*60*60));
+        _crack_time (srt->timestamp, &hh1, &mm1, &ss1, &ms1);
+        _crack_time (srt->timestamp + srt->duration, &hh2, &mm2, &ss2, &ms2);
 
         if ('s' == type) {
             printf ("%02d\r\n%d:%02d:%02d,%03d --> %02d:%02d:%02d,%03d\r\n%s\r\n", i,
@@ -195,11 +186,9 @@ static void _dump (srt_t* head, char type)
         }
 
         else if ('v' == type) {
-            printf ("%d:%02d:%02d --> %02d:%02d:%02d\r\n%s\r\n",
-                    hh1, mm1, ss1, hh2, mm2, ss2, srt_data (srt));
-
+            printf ("%d:%02d:%02d.%03d --> %02d:%02d:%02d.%03d\r\n%s\r\n",
+                    hh1, mm1, ss1, ms1, hh2, mm2, ss2, ms2, srt_data (srt));
         }
-
     }
 }
 

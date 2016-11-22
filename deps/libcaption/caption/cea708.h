@@ -94,7 +94,7 @@ int cea708_parse (uint8_t* data, size_t size, cea708_t* cea708);
 /*! \brief
     \param
 */
-int cea708_to_caption_frame (caption_frame_t* frame, cea708_t* cea708, double pts);
+libcaption_stauts_t cea708_to_caption_frame (caption_frame_t* frame, cea708_t* cea708, double pts);
 /*! \brief
     \param
 */
