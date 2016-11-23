@@ -33,6 +33,10 @@ set(seg_service_SOURCES
 	${seg_service_GENERATED_FILES}
 	)
 
+if(MSVC)
+	add_compile_options("$<$<CONFIG:RelWithDebInfo>:/MT>")
+endif()
+
 add_executable(seg_service WIN32
 	${seg_service_SOURCES}
 	${seg_service_HEADERS})

@@ -9,6 +9,10 @@ set(inject-helper_SOURCES
 	../obfuscate.c
 	inject-helper.c)
 
+if(MSVC)
+	add_compile_options("$<$<CONFIG:RelWithDebInfo>:/MT>")
+endif()
+
 add_executable(inject-helper
 	${inject-helper_SOURCES})
 

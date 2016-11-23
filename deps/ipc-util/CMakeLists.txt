@@ -22,6 +22,10 @@ else()
 		ipc-util/pipe-posix.c)
 endif()
 
+if(MSVC)
+	add_compile_options("$<$<CONFIG:RelWithDebInfo>:/MT>")
+endif()
+
 add_library(ipc-util STATIC
 	${ipc-util_SOURCES}
 	${ipc-util_HEADERS})

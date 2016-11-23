@@ -29,6 +29,10 @@ set(graphics-hook_SOURCES
 	d3d11-capture.cpp
 	d3d12-capture.cpp)
 
+if(MSVC)
+	add_compile_options("$<$<CONFIG:RelWithDebInfo>:/MT>")
+endif()
+
 add_library(graphics-hook MODULE
 	${graphics-hook_SOURCES}
 	${graphics-hook_HEADERS})
