@@ -36,6 +36,7 @@ for lib in $FOUNDLIBS; do
 
 	INTOOL_CALL+=(-change "$lib" "$LDEST/$libname")
 	cp "$lib" "$DEST/$libname"
+	chmod 644 "$DEST/$libname"
 
 	echo "Fixing up dependency: $libname"
 done
