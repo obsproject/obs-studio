@@ -346,15 +346,6 @@
             ]
         },
         {
-            "name": "mSportz",
-            "servers": [
-                {
-                    "name": "Primary",
-                    "url": "rtmp://52.21.78.175/mSports"
-                }
-            ]
-        },
-        {
             "name": "Switchboard Live (Joicaster)",
             "servers": [
                 {
@@ -435,15 +426,6 @@
                 {
                     "name": "US: New York 2, NY",
                     "url": "rtmp://live-nyc2.vaughnsoft.net:443/live"
-                }
-            ]
-        },
-        {
-            "name": "Streamup",
-            "servers": [
-                {
-                    "name": "Worldwide",
-                    "url": "rtmp://origin.streamuplive.com/app"
                 }
             ]
         },
