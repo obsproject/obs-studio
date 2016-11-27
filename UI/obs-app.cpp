@@ -67,6 +67,30 @@ string opt_starting_collection;
 string opt_starting_profile;
 string opt_starting_scene;
 
+// AMD PowerXpress & Nvidia Optimus High Performance Flags
+#if defined(_MSC_VER) //  Microsoft 
+#define EXPORT __declspec(dllexport)
+#define IMPORT __declspec(dllimport)
+#elif defined(__GNUC__) //  GCC
+#define EXPORT __attribute__((visibility("default")))
+#define IMPORT
+#else // Do nothing
+#define EXPORT
+#define IMPORT
+#pragma warning Unknown dynamic link import/export semantics.
+#endif
+
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+	EXPORT int NvOptimusEnablement = 0x00000001; // NVidia
+	EXPORT int AmdPowerXpressRequestHighPerformance = 0x00000001; // AMD
+#ifdef __cplusplus
+}
+#endif
+// End Of: AMD PowerXpress & Nvidia Optimus High Performance Flags
+
 QObject *CreateShortcutFilter()
 {
 	return new OBSEventFilter([](QObject *obj, QEvent *event)
