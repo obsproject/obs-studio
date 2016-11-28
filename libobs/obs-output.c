@@ -366,9 +366,9 @@ void obs_output_actual_stop(obs_output_t *output, bool force, uint64_t ts)
 	}
 
 	while(output->caption_head) {
-			output->caption_tail = output->caption_head->next;
-			bfree(output->caption_head);
-			output->caption_head = output->caption_tail;
+		output->caption_tail = output->caption_head->next;
+		bfree(output->caption_head);
+		output->caption_head = output->caption_tail;
 	}
 }
 
