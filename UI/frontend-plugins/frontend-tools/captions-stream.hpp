@@ -54,7 +54,7 @@ class CaptionStream : public ISpAudio {
 	WinHandle event;
 	ULONG vol = 0;
 
-	std::ofstream file;
+	//std::ofstream file;
 
 	std::condition_variable cv;
 	std::mutex m;

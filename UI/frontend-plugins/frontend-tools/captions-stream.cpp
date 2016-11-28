@@ -15,8 +15,8 @@ using namespace std;
 
 CaptionStream::CaptionStream(DWORD samplerate_) :
 	samplerate(samplerate_),
-	event(CreateEvent(nullptr, false, false, nullptr)),
-	file("D:\\test.raw", ios::binary | ios::out)
+	event(CreateEvent(nullptr, false, false, nullptr))
+	// file("D:\\test.raw", ios::binary | ios::out)
 {
 	buf_info.ulMsMinNotification = 50;
 	buf_info.ulMsBufferSize = 500;
@@ -61,7 +61,7 @@ void CaptionStream::PushAudio(const struct audio_data *data, bool muted)
 		circlebuf_push_back(buf, output[0], frames * sizeof(int16_t));
 		write_pos += frames * sizeof(int16_t);
 
-		file.write((char*)output[0], frames * sizeof(int16_t));
+		//file.write((char*)output[0], frames * sizeof(int16_t));
 
 		if (wait_size && buf->size >= wait_size)
 			ready = true;
@@ -208,7 +208,7 @@ STDMETHODIMP CaptionStream::CopyTo(IStream *stream, ULARGE_INTEGER bytes,
 	if (read_bytes)
 		*read_bytes = bytes;
 	if (written_bytes)
-		written_bytes->QuadPart = written; 
+		written_bytes->QuadPart = written;
 
 	return hr;
 }
