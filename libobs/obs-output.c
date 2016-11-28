@@ -201,12 +201,6 @@ void obs_output_destroy(obs_output_t *output)
 			}
 		}
 
-		while(output->caption_head) {
-				output->caption_tail = output->caption_head->next;
-				bfree(output->caption_head);
-				output->caption_head = output->caption_tail;
-		}
-
 		os_event_destroy(output->stopping_event);
 		pthread_mutex_destroy(&output->caption_mutex);
 		pthread_mutex_destroy(&output->interleaved_mutex);
@@ -248,6 +242,7 @@ bool obs_output_actual_start(obs_output_t *output)
 	if (os_atomic_load_long(&output->delay_restart_refs))
 		os_atomic_dec_long(&output->delay_restart_refs);
 
+	output->caption_timestamp = 0;
 	return success;
 }
 
@@ -368,6 +363,12 @@ void obs_output_actual_stop(obs_output_t *output, bool force, uint64_t ts)
 		output->stop_code = OBS_OUTPUT_SUCCESS;
 		signal_stop(output);
 		os_event_signal(output->stopping_event);
+	}
+
+	while(output->caption_head) {
+			output->caption_tail = output->caption_head->next;
+			bfree(output->caption_head);
+			output->caption_head = output->caption_tail;
 	}
 }
 
@@ -1011,7 +1012,7 @@ static inline void send_interleaved(struct obs_output *output)
 		double frame_timestamp = (out.pts * out.timebase_num) / (double)out.timebase_den;
 		// TODO if output->caption_timestamp is more than 5 seconds old, send empty frame
 		if (output->caption_head && output->caption_timestamp <= frame_timestamp) {
-			blog(LOG_INFO,"Sending caption: %s %f", &output->caption_head->text[0], output->caption_timestamp);
+			blog(LOG_INFO,"Sending caption: %f \"%s\"", frame_timestamp, &output->caption_head->text[0]);
 			if( add_caption(output, &out) ) {
 				output->caption_timestamp = frame_timestamp + 2.0;
 			}
