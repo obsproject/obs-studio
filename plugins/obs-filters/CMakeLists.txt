@@ -20,7 +20,7 @@ include_directories(${LIBSPEEXDSP_INCLUDE_DIRS}
 
 set(obs-filters_SOURCES
 	obs-filters.c
-	color-filter.c
+	color-correction-filter.c
 	async-delay-filter.c
 	crop-filter.c
 	scale-filter.c
