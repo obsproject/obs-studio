@@ -377,7 +377,7 @@ static bool open_input(struct ff_demuxer *demuxer,
 	}
 
 	if (avformat_open_input(format_context, demuxer->input,
-			input_format, NULL) != 0)
+			input_format, &demuxer->options.custom_options) != 0)
 		return false;
 
 	return avformat_find_stream_info(*format_context, NULL) >= 0;
