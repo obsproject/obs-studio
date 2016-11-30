@@ -768,16 +768,22 @@ gs_texture_t *device_voltexture_create(gs_device_t *device, uint32_t width,
 		enum gs_color_format color_format, uint32_t levels,
 		const uint8_t **data, uint32_t flags)
 {
-	/* TODO */
-	UNUSED_PARAMETER(device);
-	UNUSED_PARAMETER(width);
-	UNUSED_PARAMETER(height);
-	UNUSED_PARAMETER(depth);
-	UNUSED_PARAMETER(color_format);
-	UNUSED_PARAMETER(levels);
-	UNUSED_PARAMETER(data);
-	UNUSED_PARAMETER(flags);
-	return NULL;
+	gs_texture *texture = NULL;
+	try {
+		texture = new gs_texture_3d(device, width, height, depth, color_format,
+			levels, data, flags, false,
+			false);
+	}
+	catch (HRError error) {
+		blog(LOG_ERROR, "device_texture_create (D3D11): %s (%08lX) d3d11-subsystem.cpp",
+			error.str, error.hr);
+		LogD3D11ErrorDetails(error, device);
+	}
+	catch (const char *error) {
+		blog(LOG_ERROR, "device_texture_create (D3D11): %s d3d11-subsystem.cpp", error);
+	}
+
+	return texture;
 }
 
 gs_zstencil_t *device_zstencil_create(gs_device_t *device, uint32_t width,

@@ -62,6 +62,38 @@ inline void gs_texture_2d::Rebuild(ID3D11Device *dev)
 	}
 }
 
+inline void gs_texture_3d::Rebuild(ID3D11Device *dev)
+{
+	HRESULT hr;
+	if (isShared) {
+		hr = dev->OpenSharedResource((HANDLE)(uintptr_t)sharedHandle,
+			__uuidof(ID3D11Texture3D), (void**)&texture);
+		if (FAILED(hr))
+			throw HRError("Failed to open shared 3D texture d3d11-rebuild.cpp", hr);
+	}
+	else {
+		hr = dev->CreateTexture3D(&td,
+			data.size() ? srd.data() : nullptr,
+			&texture);
+		if (FAILED(hr))
+			throw HRError("Failed to create 3D texture d3d11-rebuild.cpp", hr);
+	}
+
+	hr = dev->CreateShaderResourceView(texture, &resourceDesc, &shaderRes);
+	if (FAILED(hr))
+		throw HRError("Failed to create resource view d3d11-rebuild.cpp", hr);
+
+	if (isRenderTarget)
+		InitRenderTargets();
+
+	if (isGDICompatible) {
+		hr = texture->QueryInterface(__uuidof(IDXGISurface1),
+			(void**)&gdiSurface);
+		if (FAILED(hr))
+			throw HRError("Failed to create GDI surface d3d11-rebuild.cpp", hr);
+	}
+}
+
 inline void gs_zstencil_buffer::Rebuild(ID3D11Device *dev)
 {
 	HRESULT hr;
