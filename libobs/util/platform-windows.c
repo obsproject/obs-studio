@@ -757,6 +757,16 @@ bool get_dll_ver(const wchar_t *lib, struct win_version_info *ver_info)
 	return true;
 }
 
+bool is_64_bit_windows(void)
+{
+#if defined(_WIN64)
+	return true;
+#elif defined(_WIN32)
+	BOOL b64 = false;
+	return IsWow64Process(GetCurrentProcess(), &b64) && b64;
+#endif
+}
+
 #define WINVER_REG_KEY L"SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion"
 
 void get_win_ver(struct win_version_info *info)

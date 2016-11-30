@@ -1206,6 +1206,8 @@ void OBSBasicSettings::LoadSimpleOutputSettings()
 			"QSVPreset");
 	const char *nvPreset = config_get_string(main->Config(), "SimpleOutput",
 			"NVENCPreset");
+	const char* amdPreset = config_get_string(main->Config(), "SimpleOutput",
+			"AMDPreset");
 	const char *custom = config_get_string(main->Config(), "SimpleOutput",
 			"x264Settings");
 	const char *recQual = config_get_string(main->Config(), "SimpleOutput",
@@ -1218,6 +1220,7 @@ void OBSBasicSettings::LoadSimpleOutputSettings()
 	curPreset = preset;
 	curQSVPreset = qsvPreset;
 	curNVENCPreset = nvPreset;
+	curAMDPreset = amdPreset;
 
 	audioBitrate = FindClosestAvailableAACBitrate(audioBitrate);
 
@@ -1290,14 +1293,16 @@ OBSPropertiesView *OBSBasicSettings::CreateEncoderPropertyView(
 	obs_data_t *settings = obs_encoder_defaults(encoder);
 	OBSPropertiesView *view;
 
-	char encoderJsonPath[512];
-	int ret = GetProfilePath(encoderJsonPath, sizeof(encoderJsonPath),
-			path);
-	if (ret > 0) {
-		obs_data_t *data = obs_data_create_from_json_file_safe(
-				encoderJsonPath, "bak");
-		obs_data_apply(settings, data);
-		obs_data_release(data);
+	if (path) {
+		char encoderJsonPath[512];
+		int ret = GetProfilePath(encoderJsonPath,
+				sizeof(encoderJsonPath), path);
+		if (ret > 0) {
+			obs_data_t *data = obs_data_create_from_json_file_safe(
+					encoderJsonPath, "bak");
+			obs_data_apply(settings, data);
+			obs_data_release(data);
+		}
 	}
 
 	view = new OBSPropertiesView(settings, encoder,

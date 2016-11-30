@@ -200,6 +200,8 @@ private:
 	void GetFPSNanoseconds(uint32_t &num, uint32_t &den) const;
 	void GetConfigFPS(uint32_t &num, uint32_t &den) const;
 
+	void UpdatePreviewScalingMenu();
+
 	void UpdateSources(OBSScene scene);
 	void InsertSceneItem(obs_sceneitem_t *item);
 
@@ -513,6 +515,11 @@ private slots:
 	void on_actionMoveToBottom_triggered();
 
 	void on_actionLockPreview_triggered();
+
+	void on_scalingMenu_aboutToShow();
+	void on_actionScaleWindow_triggered();
+	void on_actionScaleCanvas_triggered();
+	void on_actionScaleOutput_triggered();
 
 	void on_streamButton_clicked();
 	void on_recordButton_clicked();

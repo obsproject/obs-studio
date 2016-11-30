@@ -17,6 +17,7 @@
 OBSBasicPreview::OBSBasicPreview(QWidget *parent, Qt::WindowFlags flags)
 	: OBSQTDisplay(parent, flags)
 {
+	ResetScrollingOffset();
 	setMouseTracking(true);
 }
 
@@ -377,8 +378,56 @@ void OBSBasicPreview::GetStretchHandleData(const vec2 &pos)
 	}
 }
 
+void OBSBasicPreview::keyPressEvent(QKeyEvent *event)
+{
+	if (GetScalingMode() == ScalingMode::Window ||
+	    event->isAutoRepeat()) {
+		OBSQTDisplay::keyPressEvent(event);
+		return;
+	}
+
+	switch (event->key()) {
+	case Qt::Key_Space:
+		setCursor(Qt::OpenHandCursor);
+		scrollMode = true;
+		break;
+	}
+
+	OBSQTDisplay::keyPressEvent(event);
+}
+
+void OBSBasicPreview::keyReleaseEvent(QKeyEvent *event)
+{
+	if (event->isAutoRepeat()) {
+		OBSQTDisplay::keyReleaseEvent(event);
+		return;
+	}
+
+	switch (event->key()) {
+	case Qt::Key_Space:
+		scrollMode = false;
+		setCursor(Qt::ArrowCursor);
+		break;
+	}
+
+	OBSQTDisplay::keyReleaseEvent(event);
+}
+
 void OBSBasicPreview::mousePressEvent(QMouseEvent *event)
 {
+	if (scrollMode && GetScalingMode() != ScalingMode::Window &&
+	    event->button() == Qt::LeftButton) {
+		setCursor(Qt::ClosedHandCursor);
+		scrollingFrom.x = event->x();
+		scrollingFrom.y = event->y();
+		return;
+	}
+
+	if (event->button() == Qt::RightButton) {
+		scrollMode = false;
+		setCursor(Qt::ArrowCursor);
+	}
+
 	if (locked) {
 		OBSQTDisplay::mousePressEvent(event);
 		return;
@@ -456,6 +505,9 @@ void OBSBasicPreview::ProcessClick(const vec2 &pos)
 
 void OBSBasicPreview::mouseReleaseEvent(QMouseEvent *event)
 {
+	if (scrollMode)
+		setCursor(Qt::OpenHandCursor);
+
 	if (locked) {
 		OBSQTDisplay::mouseReleaseEvent(event);
 		return;
@@ -951,6 +1003,15 @@ void OBSBasicPreview::StretchItem(const vec2 &pos)
 
 void OBSBasicPreview::mouseMoveEvent(QMouseEvent *event)
 {
+	if (scrollMode && event->buttons() == Qt::LeftButton) {
+		scrollingOffset.x += event->x() - scrollingFrom.x;
+		scrollingOffset.y += event->y() - scrollingFrom.y;
+		scrollingFrom.x = event->x();
+		scrollingFrom.y = event->y();
+		emit DisplayResized();
+		return;
+	}
+
 	if (locked)
 		return;
 
@@ -1112,4 +1173,9 @@ void OBSBasicPreview::DrawSceneEditing()
 
 	gs_technique_end_pass(tech);
 	gs_technique_end(tech);
+}
+
+void OBSBasicPreview::ResetScrollingOffset()
+{
+	vec2_zero(&scrollingOffset);
 }

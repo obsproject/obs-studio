@@ -873,8 +873,17 @@
      <addaction name="actionMoveToTop"/>
      <addaction name="actionMoveToBottom"/>
     </widget>
+    <widget class="QMenu" name="scalingMenu">
+     <property name="title">
+      <string>Basic.MainMenu.Edit.Scale</string>
+     </property>
+     <addaction name="actionScaleWindow"/>
+     <addaction name="actionScaleCanvas"/>
+     <addaction name="actionScaleOutput"/>
+    </widget>
     <addaction name="transformMenu"/>
     <addaction name="orderMenu"/>
+    <addaction name="scalingMenu"/>
     <addaction name="actionLockPreview"/>
     <addaction name="separator"/>
     <addaction name="actionAdvAudioProperties"/>
@@ -1326,6 +1335,30 @@
    </property>
    <property name="text">
     <string>Basic.MainMenu.Edit.LockPreview</string>
+   </property>
+  </action>
+  <action name="actionScaleWindow">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Basic.MainMenu.Edit.Scale.Window</string>
+   </property>
+  </action>
+  <action name="actionScaleCanvas">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Basic.MainMenu.Edit.Scale.Canvas</string>
+   </property>
+  </action>
+  <action name="actionScaleOutput">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Basic.MainMenu.Edit.Scale.Output</string>
    </property>
   </action>
  </widget>

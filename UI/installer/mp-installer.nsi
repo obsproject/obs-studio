@@ -2,9 +2,10 @@
 
 ; Define your application name
 !define APPNAME "OBS Studio"
-!define APPVERSION "0.13.4"
+!define APPVERSION "0.16.5"
 !define APPNAMEANDVERSION "OBS Studio ${APPVERSION}"
-; !define BROWSER
+; !define FULL
+; !define REALSENSE_PLUGIN
 
 ; Additional script dependencies
 !include WinVer.nsh
@@ -14,10 +15,10 @@
 Name "${APPNAMEANDVERSION}"
 InstallDir "$PROGRAMFILES32\obs-studio"
 InstallDirRegKey HKLM "Software\${APPNAME}" ""
-!ifdef BROWSER
-OutFile "OBS-Studio-${APPVERSION}-With-Browser-Installer.exe"
+!ifdef FULL
+OutFile "OBS-Studio-${APPVERSION}-Full-Installer.exe"
 !else
-OutFile "OBS-Studio-${APPVERSION}-Installer.exe"
+OutFile "OBS-Studio-${APPVERSION}-Small-Installer.exe"
 !endif
 
 ; Use compression
@@ -37,6 +38,9 @@ RequestExecutionLevel admin
 !insertmacro MUI_PAGE_WELCOME
 !insertmacro MUI_PAGE_LICENSE "data\obs-studio\license\gplv2.txt"
 !insertmacro MUI_PAGE_DIRECTORY
+!ifdef FULL
+	!insertmacro MUI_PAGE_COMPONENTS
+!endif
 !insertmacro MUI_PAGE_INSTFILES
 !insertmacro MUI_PAGE_FINISH
 
@@ -177,14 +181,15 @@ FunctionEnd
 
 Var outputErrors
 
-Section "OBS Studio" Section1
+Section "OBS Studio" SecCore
 
 	; Set Section properties
+	SectionIn RO
 	SetOverwrite on
 	AllowSkipFiles off
 
-	FindProcDLL::KillProc "obs-plugins\32bit\cef-bootstrap.exe"
-	FindProcDLL::KillProc "obs-plugins\64bit\cef-bootstrap.exe"
+	KillProcDLL::KillProc "obs-plugins\32bit\cef-bootstrap.exe"
+	KillProcDLL::KillProc "obs-plugins\64bit\cef-bootstrap.exe"
 
 	SetShellVarContext all
 
@@ -235,6 +240,62 @@ Section "OBS Studio" Section1
 		Call filesInUse
 SectionEnd
 
+!ifdef FULL
+SectionGroup /e "Plugins" SecPlugins
+	Section "Browser plugin" SecPlugins_Browser
+		; Set Section properties
+		SetOverwrite on
+		AllowSkipFiles off
+		SetShellVarContext all
+
+		SetOutPath "$INSTDIR\obs-plugins"
+		File /r "obs-browser\obs-plugins\32bit"
+
+		${if} ${RunningX64}
+			File /r "obs-browser\obs-plugins\64bit"
+		${endif}
+
+		SetOutPath "$INSTDIR\bin\32bit"
+	SectionEnd
+
+	!ifdef REALSENSE_PLUGIN
+	Section /o "Realsense plugin" SecPlugins_Realsense
+		SetOverwrite on
+		AllowSkipFiles off
+		SetShellVarContext all
+
+		SetOutPath "$INSTDIR\obs-plugins"
+		File /r "realsense\32bit"
+
+		${if} ${RunningX64}
+			File /r "realsense\64bit"
+		${endif}
+
+		SetOutPath "$INSTDIR\data\obs-plugins"
+		File /r "realsense\actual_data\obs-plugins\win-ivcam"
+
+		ExecWait '"$INSTDIR\data\obs-plugins\win-ivcam\seg_service.exe" /UnregServer'
+		ExecWait '"$INSTDIR\data\obs-plugins\win-ivcam\seg_service.exe" /RegServer'
+
+		ReadRegStr $0 HKLM "Software\Intel\RSSDK\Dispatch" "Core"
+		${if} ${Errors}
+			ReadRegStr $0 HKLM "Software\Intel\RSSDK\v10\Dispatch" "Core"
+		${endif}
+
+		${if} ${Errors}
+			InitPluginsDir
+			SetOutPath "$PLUGINSDIR\realsense"
+
+			File "intel_rs_sdk_runtime_websetup_10.0.26.0396.exe"
+			ExecWait '"$PLUGINSDIR\realsense\intel_rs_sdk_runtime_websetup_10.0.26.0396.exe" --finstall=personify --fnone=all'
+		{endif}
+
+		SetOutPath "$INSTDIR\bin\32bit"
+	SectionEnd
+	!endif
+SectionGroupEnd
+!endif
+
 Section -FinishSection
 
 	WriteRegStr HKLM "Software\${APPNAME}" "" "$INSTDIR"
@@ -250,11 +311,18 @@ SectionEnd
 
 ; Modern install component descriptions
 !insertmacro MUI_FUNCTION_DESCRIPTION_BEGIN
-	!insertmacro MUI_DESCRIPTION_TEXT ${Section1} ""
+	!insertmacro MUI_DESCRIPTION_TEXT ${SecCore} "Core OBS Studio files"
+	!ifdef FULL
+		!insertmacro MUI_DESCRIPTION_TEXT ${SecPlugins} "Optional Plugins"
+		!insertmacro MUI_DESCRIPTION_TEXT ${SecPlugins_Browser} "Browser plugin (a source you can add to your scenes that displays web pages)"
+		!ifdef REALSENSE_PLUGIN
+			!insertmacro MUI_DESCRIPTION_TEXT ${SecPlugins_Realsense} "Plugin for Realsense cameras"
+		!endif
+	!endif
 !insertmacro MUI_FUNCTION_DESCRIPTION_END
 
 ;Uninstall section
-Section "un.obs-studio Program Files"
+Section "un.obs-studio Program Files" UninstallSection1
 
 	SectionIn RO
 
@@ -273,6 +341,11 @@ Section "un.obs-studio Program Files"
 		Delete "$SMPROGRAMS\OBS Studio\OBS Studio (64bit).lnk"
 	${endif}
 
+	IfFileExists "$INSTDIR\data\obs-plugins\win-ivcam\seg_service.exe" UnregisterSegService SkipUnreg
+	UnregisterSegService:
+	ExecWait '"$INSTDIR\data\obs-plugins\win-ivcam\seg_service.exe" /UnregServer'
+	SkipUnreg:
+
 	; Clean up OBS Studio
 	RMDir /r "$INSTDIR\bin"
 	RMDir /r "$INSTDIR\data"
@@ -284,13 +357,13 @@ Section "un.obs-studio Program Files"
 	RMDir "$INSTDIR\OBS Studio"
 SectionEnd
 
-Section /o "un.User Settings" Section2
+Section /o "un.User Settings" UninstallSection2
 	RMDir /R "$APPDATA\obs-studio"
 SectionEnd
 
 !insertmacro MUI_UNFUNCTION_DESCRIPTION_BEGIN
-	!insertmacro MUI_DESCRIPTION_TEXT ${Section1} "Remove the OBS program files."
-	!insertmacro MUI_DESCRIPTION_TEXT ${Section2} "Removes all settings, plugins, scenes and sources, profiles, log files and other application data."
+	!insertmacro MUI_DESCRIPTION_TEXT ${UninstallSection1} "Remove the OBS program files."
+	!insertmacro MUI_DESCRIPTION_TEXT ${UninstallSection2} "Removes all settings, plugins, scenes and sources, profiles, log files and other application data."
 !insertmacro MUI_UNFUNCTION_DESCRIPTION_END
 
 ; Version information

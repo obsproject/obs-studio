@@ -1,4 +1,4 @@
-macro(add_idl_files generated_files)
+macro(add_idl_files_base generated_files with_tlb)
 	foreach(filename ${ARGN})
 		get_filename_component(file_we ${filename} NAME_WE)
 		get_filename_component(file_path ${filename} PATH)
@@ -9,10 +9,18 @@ macro(add_idl_files generated_files)
 		set(bin_file_c ${CMAKE_CURRENT_BINARY_DIR}/${file_c})
 
 		if(MSVC)
+			if(${with_tlb})
+				set(file_tlb ${file_we}.tlb)
+				set(bin_file_tlb ${CMAKE_CURRENT_BINARY_DIR}/${file_tlb})
+				set(tlb_opt "")
+			else()
+				set(tlb_opt "/notlb")
+			endif()
+
 			add_custom_command(
 				OUTPUT ${bin_file_h} ${bin_file_c}
 				DEPENDS ${filename}
-				COMMAND midl /h ${file_h} /iid ${file_c} /notlb ${CMAKE_CURRENT_SOURCE_DIR}/${filename}
+				COMMAND midl /h ${file_h} /iid ${file_c} ${tlb_opt} ${CMAKE_CURRENT_SOURCE_DIR}/${filename}
 				WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 		else()
 			execute_process(COMMAND echo
@@ -62,4 +70,12 @@ macro(add_idl_files generated_files)
 			PROPERTIES
 			HEADER_FILE_ONLY TRUE)
 	endforeach(filename ${ARGN})
+endmacro(add_idl_files_base)
+
+macro(add_idl_files generated_files)
+	add_idl_files_base(${generated_files} FALSE ${ARGN})
 endmacro(add_idl_files)
+
+macro(add_idl_files_with_tlb generated_files)
+	add_idl_files_base(${generated_files} TRUE ${ARGN})
+endmacro(add_idl_files_with_tlb)

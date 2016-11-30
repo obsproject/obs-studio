@@ -26,6 +26,12 @@ enum class ItemHandle : uint32_t {
 	BottomRight  = ITEM_BOTTOM | ITEM_RIGHT
 };
 
+enum class ScalingMode : uint32_t {
+	Window = 0,
+	Canvas = 1,
+	Output = 2
+};
+
 class OBSBasicPreview : public OBSQTDisplay {
 	Q_OBJECT
 
@@ -35,17 +41,21 @@ private:
 	vec2         cropSize;
 	OBSSceneItem stretchItem;
 	ItemHandle   stretchHandle = ItemHandle::None;
+	ScalingMode  scale = ScalingMode::Window;
 	vec2         stretchItemSize;
 	matrix4      screenToItem;
 	matrix4      itemToScreen;
 
 	vec2         startPos;
 	vec2         lastMoveOffset;
+	vec2         scrollingFrom;
+	vec2         scrollingOffset;
 	bool         mouseDown      = false;
 	bool         mouseMoved     = false;
 	bool         mouseOverItems = false;
 	bool         cropping       = false;
 	bool         locked         = false;
+	bool         scrollMode     = false;
 
 	static vec2 GetMouseEventPos(QMouseEvent *event);
 	static bool DrawSelectedItem(obs_scene_t *scene, obs_sceneitem_t *item,
@@ -75,15 +85,25 @@ private:
 public:
 	OBSBasicPreview(QWidget *parent, Qt::WindowFlags flags = 0);
 
+	virtual void keyPressEvent(QKeyEvent *event) override;
+	virtual void keyReleaseEvent(QKeyEvent *event) override;
+
 	virtual void mousePressEvent(QMouseEvent *event) override;
 	virtual void mouseReleaseEvent(QMouseEvent *event) override;
 	virtual void mouseMoveEvent(QMouseEvent *event) override;
 
 	void DrawSceneEditing();
+	void ResetScrollingOffset();
 
 	inline void SetLocked(bool newLockedVal) {locked = newLockedVal;}
 	inline void ToggleLocked() {locked = !locked;}
 	inline bool Locked() const {return locked;}
+
+	inline void SetScaling(ScalingMode newScaledVal) {scale = newScaledVal;}
+	inline ScalingMode GetScalingMode() const {return scale;}
+
+	inline float ScrollX() const {return scrollingOffset.x;}
+	inline float ScrollY() const {return scrollingOffset.y;}
 
 	/* use libobs allocator for alignment because the matrices itemToScreen
 	 * and screenToItem may contain SSE data, which will cause SSE
