@@ -676,8 +676,10 @@ static int try_connect(struct rtmp_stream *stream)
 		bool success = netif_str_to_addr(&stream->rtmp.m_bindIP.addr,
 				&stream->rtmp.m_bindIP.addrLen,
 				stream->bind_ip.array);
-		if (success)
-			info("Binding to IP");
+		if (success) {
+			info("Binding to IPv%d", (stream->rtmp.m_bindIP.addrLen ==
+				sizeof(struct sockaddr_in6) ? 6 : 4));
+		}
 	}
 
 	RTMP_AddStream(&stream->rtmp, stream->key.array);
