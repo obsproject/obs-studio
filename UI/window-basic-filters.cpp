@@ -146,14 +146,24 @@ inline OBSSource OBSBasicFilters::GetFilter(int row, bool async)
 
 void OBSBasicFilters::UpdatePropertiesView(int row, bool async)
 {
-	if (view) {
+	OBSSource filter = GetFilter(row, async);
+
+	if (!filter && !view) {
+		return;
+	}
+	else if (!filter && view) {
+		view->hide();
 		view->deleteLater();
 		view = nullptr;
 	}
-
-	OBSSource filter = GetFilter(row, async);
-	if (!filter)
+	else if (!filter) {
 		return;
+	}
+	else if (view) {
+		view->hide();
+		view->deleteLater();
+		view = nullptr;
+	}
 
 	obs_data_t *settings = obs_source_get_settings(filter);
 
