@@ -191,7 +191,7 @@ void OBSBasic::RefreshSceneCollections()
 	int count = 0;
 
 	for (int i = 0; i < menuActions.count(); i++) {
-		QVariant v = menuActions[i]->property("fileName");
+		QVariant v = menuActions[i]->property("file_name");
 		if (v.typeName() != nullptr)
 			delete menuActions[i];
 	}
@@ -205,7 +205,7 @@ void OBSBasic::RefreshSceneCollections()
 		file.erase(file.size() - 5, 5);
 
 		QAction *action = new QAction(QT_UTF8(name), this);
-		action->setProperty("fileName", QT_UTF8(path));
+		action->setProperty("file_name", QT_UTF8(path));
 		connect(action, &QAction::triggered,
 				this, &OBSBasic::ChangeSceneCollection);
 		action->setCheckable(true);
@@ -355,7 +355,7 @@ void OBSBasic::ChangeSceneCollection()
 	if (!action)
 		return;
 
-	fileName = QT_TO_UTF8(action->property("fileName").value<QString>());
+	fileName = QT_TO_UTF8(action->property("file_name").value<QString>());
 	if (fileName.empty())
 		return;
 
