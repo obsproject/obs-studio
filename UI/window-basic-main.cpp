@@ -1719,6 +1719,9 @@ void OBSBasic::AddScene(OBSSource source)
 		blog(LOG_INFO, "User added scene '%s'",
 				obs_source_get_name(source));
 	}
+
+	if (api)
+		api->on_event(OBS_FRONTEND_EVENT_SCENE_LIST_CHANGED);
 }
 
 void OBSBasic::RemoveScene(OBSSource source)
@@ -2111,8 +2114,6 @@ void OBSBasic::DuplicateSelectedScene()
 		SetCurrentScene(source, true);
 		obs_scene_release(scene);
 
-		if (api)
-			api->on_event(OBS_FRONTEND_EVENT_SCENE_LIST_CHANGED);
 		break;
 	}
 }
