@@ -864,6 +864,8 @@ extern const struct obs_output_info *find_output(const char *id);
 extern void obs_output_remove_encoder(struct obs_output *output,
 		struct obs_encoder *encoder);
 
+extern void obs_encoder_packet_create_instance(struct encoder_packet *dst,
+		const struct encoder_packet *src);
 void obs_output_destroy(obs_output_t *output);
 
 

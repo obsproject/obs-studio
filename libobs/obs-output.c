@@ -157,7 +157,7 @@ fail:
 static inline void free_packets(struct obs_output *output)
 {
 	for (size_t i = 0; i < output->interleaved_packets.num; i++)
-		obs_free_encoder_packet(output->interleaved_packets.array+i);
+		obs_encoder_packet_release(output->interleaved_packets.array+i);
 	da_free(output->interleaved_packets);
 }
 
@@ -957,7 +957,7 @@ static inline void send_interleaved(struct obs_output *output)
 
 	da_erase(output->interleaved_packets, 0);
 	output->info.encoded_packet(output->context.data, &out);
-	obs_free_encoder_packet(&out);
+	obs_encoder_packet_release(&out);
 }
 
 static inline void set_higher_ts(struct obs_output *output,
@@ -1056,7 +1056,7 @@ static void discard_to_idx(struct obs_output *output, size_t idx)
 	for (size_t i = 0; i < idx; i++) {
 		struct encoder_packet *packet =
 			&output->interleaved_packets.array[i];
-		obs_free_encoder_packet(packet);
+		obs_encoder_packet_release(packet);
 	}
 
 	da_erase_range(output->interleaved_packets, 0, idx);
@@ -1304,7 +1304,7 @@ static void interleave_packets(void *data, struct encoder_packet *packet)
 		pthread_mutex_unlock(&output->interleaved_mutex);
 
 		if (output->active_delay_ns)
-			obs_free_encoder_packet(packet);
+			obs_encoder_packet_release(packet);
 		return;
 	}
 
@@ -1313,7 +1313,7 @@ static void interleave_packets(void *data, struct encoder_packet *packet)
 	if (output->active_delay_ns)
 		out = *packet;
 	else
-		obs_duplicate_encoder_packet(&out, packet);
+		obs_encoder_packet_create_instance(&out, packet);
 
 	if (was_started)
 		apply_interleaved_packet_offset(output, &out);
@@ -1356,7 +1356,7 @@ static void default_encoded_callback(void *param, struct encoder_packet *packet)
 	}
 
 	if (output->active_delay_ns)
-		obs_free_encoder_packet(packet);
+		obs_encoder_packet_release(packet);
 }
 
 static void default_raw_video_callback(void *param, struct video_data *frame)
