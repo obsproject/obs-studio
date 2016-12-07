@@ -4387,6 +4387,50 @@ void OBSBasic::on_actionEditTransform_triggered()
 	transformWindow->setAttribute(Qt::WA_DeleteOnClose, true);
 }
 
+static obs_transform_info copiedTransformInfo;
+static obs_sceneitem_crop copiedCropInfo;
+
+void OBSBasic::on_actionCopyTransform_triggered()
+{
+	auto func = [](obs_scene_t *scene, obs_sceneitem_t *item, void *param)
+	{
+		if (!obs_sceneitem_selected(item))
+			return true;
+
+		obs_sceneitem_defer_update_begin(item);
+		obs_sceneitem_get_info(item, &copiedTransformInfo);
+		obs_sceneitem_get_crop(item, &copiedCropInfo);
+		obs_sceneitem_defer_update_end(item);
+
+		UNUSED_PARAMETER(scene);
+		UNUSED_PARAMETER(param);
+		return true;
+	};
+
+	obs_scene_enum_items(GetCurrentScene(), func, nullptr);
+	ui->actionPasteTransform->setEnabled(true);
+}
+
+void OBSBasic::on_actionPasteTransform_triggered()
+{
+	auto func = [](obs_scene_t *scene, obs_sceneitem_t *item, void *param)
+	{
+		if (!obs_sceneitem_selected(item))
+			return true;
+
+		obs_sceneitem_defer_update_begin(item);
+		obs_sceneitem_set_info(item, &copiedTransformInfo);
+		obs_sceneitem_set_crop(item, &copiedCropInfo);
+		obs_sceneitem_defer_update_end(item);
+
+		UNUSED_PARAMETER(scene);
+		UNUSED_PARAMETER(param);
+		return true;
+	};
+
+	obs_scene_enum_items(GetCurrentScene(), func, nullptr);
+}
+
 void OBSBasic::on_actionResetTransform_triggered()
 {
 	auto func = [] (obs_scene_t *scene, obs_sceneitem_t *item, void *param)

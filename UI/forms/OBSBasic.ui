@@ -850,6 +850,8 @@
       <string>Basic.MainMenu.Edit.Transform</string>
      </property>
      <addaction name="actionEditTransform"/>
+     <addaction name="actionCopyTransform"/>
+     <addaction name="actionPasteTransform"/>
      <addaction name="actionResetTransform"/>
      <addaction name="separator"/>
      <addaction name="actionRotate90CW"/>
@@ -1127,6 +1129,19 @@
   <action name="actionEditTransform">
    <property name="text">
     <string>Basic.MainMenu.Edit.Transform.EditTransform</string>
+   </property>
+  </action>
+  <action name="actionCopyTransform">
+   <property name="text">
+    <string>Basic.MainMenu.Edit.Transform.CopyTransform</string>
+   </property>
+  </action>
+  <action name="actionPasteTransform">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Basic.MainMenu.Edit.Transform.PasteTransform</string>
    </property>
   </action>
   <action name="actionRotate90CW">
