@@ -722,7 +722,7 @@
               </widget>
              </item>
              <item>
-              <widget class="QGroupBox" name="groupBox_9">
+              <widget class="QGroupBox" name="simpleRecordingGroupBox">
                <property name="sizePolicy">
                 <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
                  <horstretch>0</horstretch>
