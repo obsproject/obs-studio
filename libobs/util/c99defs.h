@@ -24,12 +24,10 @@
 #define UNUSED_PARAMETER(param) (void)param
 
 #ifdef _MSC_VER
-#define DEPRECATED_START __declspec(deprecated)
-#define DEPRECATED_END
+#define DEPRECATED __declspec(deprecated)
 #define FORCE_INLINE __forceinline
 #else
-#define DEPRECATED_START
-#define DEPRECATED_END __attribute__ ((deprecated))
+#define DEPRECATED __attribute__ ((deprecated))
 #define FORCE_INLINE inline __attribute__((always_inline))
 #endif
 
