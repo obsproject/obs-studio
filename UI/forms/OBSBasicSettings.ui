@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>981</width>
-    <height>667</height>
+    <height>720</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -739,6 +739,25 @@
                 <property name="labelAlignment">
                  <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                 </property>
+                <item row="0" column="0">
+                 <widget class="QLabel" name="label_18">
+                  <property name="minimumSize">
+                   <size>
+                    <width>170</width>
+                    <height>0</height>
+                   </size>
+                  </property>
+                  <property name="text">
+                   <string>Basic.Settings.Output.Simple.SavePath</string>
+                  </property>
+                  <property name="alignment">
+                   <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                  </property>
+                  <property name="buddy">
+                   <cstring>simpleOutputPath</cstring>
+                  </property>
+                 </widget>
+                </item>
                 <item row="0" column="1">
                  <layout class="QHBoxLayout" name="horizontalLayout_5">
                   <item>
@@ -760,25 +779,6 @@
                   </item>
                  </layout>
                 </item>
-                <item row="0" column="0">
-                 <widget class="QLabel" name="label_18">
-                  <property name="minimumSize">
-                   <size>
-                    <width>170</width>
-                    <height>0</height>
-                   </size>
-                  </property>
-                  <property name="text">
-                   <string>Basic.Settings.Output.Simple.SavePath</string>
-                  </property>
-                  <property name="alignment">
-                   <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-                  </property>
-                  <property name="buddy">
-                   <cstring>simpleOutputPath</cstring>
-                  </property>
-                 </widget>
-                </item>
                 <item row="1" column="1">
                  <widget class="QCheckBox" name="simpleNoSpace">
                   <property name="text">
@@ -786,6 +786,29 @@
                   </property>
                   <property name="checked">
                    <bool>true</bool>
+                  </property>
+                 </widget>
+                </item>
+                <item row="2" column="0">
+                 <widget class="QLabel" name="label_26">
+                  <property name="text">
+                   <string>Basic.Settings.Output.Simple.RecordingQuality</string>
+                  </property>
+                  <property name="buddy">
+                   <cstring>simpleOutRecQuality</cstring>
+                  </property>
+                 </widget>
+                </item>
+                <item row="2" column="1">
+                 <widget class="QComboBox" name="simpleOutRecQuality"/>
+                </item>
+                <item row="3" column="0">
+                 <widget class="QLabel" name="simpleOutRecFormatLabel">
+                  <property name="text">
+                   <string>Basic.Settings.Output.Format</string>
+                  </property>
+                  <property name="buddy">
+                   <cstring>simpleOutRecFormat</cstring>
                   </property>
                  </widget>
                 </item>
@@ -823,32 +846,6 @@
                   </item>
                  </widget>
                 </item>
-                <item row="3" column="0">
-                 <widget class="QLabel" name="simpleOutRecFormatLabel">
-                  <property name="text">
-                   <string>Basic.Settings.Output.Format</string>
-                  </property>
-                  <property name="buddy">
-                   <cstring>simpleOutRecFormat</cstring>
-                  </property>
-                 </widget>
-                </item>
-                <item row="2" column="1">
-                 <widget class="QComboBox" name="simpleOutRecQuality"/>
-                </item>
-                <item row="2" column="0">
-                 <widget class="QLabel" name="label_26">
-                  <property name="text">
-                   <string>Basic.Settings.Output.Simple.RecordingQuality</string>
-                  </property>
-                  <property name="buddy">
-                   <cstring>simpleOutRecQuality</cstring>
-                  </property>
-                 </widget>
-                </item>
-                <item row="4" column="1">
-                 <widget class="QComboBox" name="simpleOutRecEncoder"/>
-                </item>
                 <item row="4" column="0">
                  <widget class="QLabel" name="simpleOutRecEncoderLabel">
                   <property name="text">
@@ -858,6 +855,9 @@
                    <cstring>simpleOutRecEncoder</cstring>
                   </property>
                  </widget>
+                </item>
+                <item row="4" column="1">
+                 <widget class="QComboBox" name="simpleOutRecEncoder"/>
                 </item>
                 <item row="5" column="0">
                  <widget class="QLabel" name="label_420">
@@ -871,6 +871,91 @@
                 </item>
                 <item row="5" column="1">
                  <widget class="QLineEdit" name="simpleOutMuxCustom"/>
+                </item>
+                <item row="6" column="1">
+                 <widget class="QCheckBox" name="simpleReplayBuf">
+                  <property name="text">
+                   <string>Basic.Settings.Output.UseReplayBuffer</string>
+                  </property>
+                  <property name="checked">
+                   <bool>true</bool>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </widget>
+             </item>
+             <item>
+              <widget class="QGroupBox" name="replayBufferGroupBox">
+               <property name="title">
+                <string>ReplayBuffer</string>
+               </property>
+               <layout class="QFormLayout" name="formLayout_24">
+                <property name="fieldGrowthPolicy">
+                 <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+                </property>
+                <property name="labelAlignment">
+                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                </property>
+                <item row="0" column="0">
+                 <widget class="QLabel" name="label_35">
+                  <property name="text">
+                   <string>Basic.Settings.Output.ReplayBuffer.SecondsMax</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="0" column="1">
+                 <widget class="QSpinBox" name="simpleRBSecMax">
+                  <property name="suffix">
+                   <string notr="true"> sec</string>
+                  </property>
+                  <property name="minimum">
+                   <number>5</number>
+                  </property>
+                  <property name="maximum">
+                   <number>21600</number>
+                  </property>
+                  <property name="value">
+                   <number>15</number>
+                  </property>
+                 </widget>
+                </item>
+                <item row="1" column="0">
+                 <widget class="QLabel" name="simpleRBMegsMaxLabel">
+                  <property name="text">
+                   <string>Basic.Settings.Output.ReplayBuffer.MegabytesMax</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="1" column="1">
+                 <widget class="QSpinBox" name="simpleRBMegsMax">
+                  <property name="suffix">
+                   <string notr="true"> MB</string>
+                  </property>
+                  <property name="minimum">
+                   <number>20</number>
+                  </property>
+                  <property name="maximum">
+                   <number>8192</number>
+                  </property>
+                  <property name="value">
+                   <number>512</number>
+                  </property>
+                 </widget>
+                </item>
+                <item row="3" column="1">
+                 <widget class="QLabel" name="simpleRBEstimate">
+                  <property name="text">
+                   <string notr="true"/>
+                  </property>
+                 </widget>
+                </item>
+                <item row="2" column="1">
+                 <widget class="QLabel" name="label_45">
+                  <property name="text">
+                   <string>Basic.Settings.Output.ReplayBuffer.HotkeyMessage</string>
+                  </property>
+                 </widget>
                 </item>
                </layout>
               </widget>
@@ -2545,8 +2630,8 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>80</width>
-              <height>16</height>
+              <width>98</width>
+              <height>28</height>
              </rect>
             </property>
            </widget>
@@ -3384,12 +3469,12 @@
    <slot>setCurrentIndex(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>310</x>
-     <y>29</y>
+     <x>159</x>
+     <y>30</y>
     </hint>
     <hint type="destinationlabel">
      <x>241</x>
-     <y>34</y>
+     <y>30</y>
     </hint>
    </hints>
   </connection>
@@ -3400,12 +3485,12 @@
    <slot>setCurrentIndex(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>250</x>
-     <y>39</y>
+     <x>586</x>
+     <y>38</y>
     </hint>
     <hint type="destinationlabel">
-     <x>250</x>
-     <y>39</y>
+     <x>401</x>
+     <y>102</y>
     </hint>
    </hints>
   </connection>
@@ -3416,12 +3501,12 @@
    <slot>setVisible(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>250</x>
-     <y>39</y>
+     <x>640</x>
+     <y>180</y>
     </hint>
     <hint type="destinationlabel">
-     <x>250</x>
-     <y>39</y>
+     <x>640</x>
+     <y>229</y>
     </hint>
    </hints>
   </connection>
@@ -3432,12 +3517,12 @@
    <slot>setVisible(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>250</x>
-     <y>39</y>
+     <x>640</x>
+     <y>180</y>
     </hint>
     <hint type="destinationlabel">
-     <x>250</x>
-     <y>39</y>
+     <x>383</x>
+     <y>229</y>
     </hint>
    </hints>
   </connection>
@@ -3448,12 +3533,12 @@
    <slot>setVisible(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>250</x>
-     <y>39</y>
+     <x>640</x>
+     <y>180</y>
     </hint>
     <hint type="destinationlabel">
-     <x>250</x>
-     <y>39</y>
+     <x>640</x>
+     <y>255</y>
     </hint>
    </hints>
   </connection>
@@ -3464,12 +3549,12 @@
    <slot>setVisible(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>250</x>
-     <y>39</y>
+     <x>640</x>
+     <y>180</y>
     </hint>
     <hint type="destinationlabel">
-     <x>250</x>
-     <y>39</y>
+     <x>383</x>
+     <y>255</y>
     </hint>
    </hints>
   </connection>
@@ -3480,12 +3565,12 @@
    <slot>setCurrentIndex(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>259</x>
-     <y>48</y>
+     <x>232</x>
+     <y>71</y>
     </hint>
     <hint type="destinationlabel">
      <x>241</x>
-     <y>30</y>
+     <y>83</y>
     </hint>
    </hints>
   </connection>
@@ -3496,12 +3581,12 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>259</x>
-     <y>60</y>
+     <x>168</x>
+     <y>97</y>
     </hint>
     <hint type="destinationlabel">
-     <x>228</x>
-     <y>50</y>
+     <x>250</x>
+     <y>97</y>
     </hint>
    </hints>
   </connection>
@@ -3512,12 +3597,12 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>259</x>
-     <y>39</y>
+     <x>168</x>
+     <y>82</y>
     </hint>
     <hint type="destinationlabel">
-     <x>228</x>
-     <y>29</y>
+     <x>232</x>
+     <y>82</y>
     </hint>
    </hints>
   </connection>
@@ -3528,12 +3613,12 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>259</x>
-     <y>60</y>
+     <x>168</x>
+     <y>86</y>
     </hint>
     <hint type="destinationlabel">
-     <x>228</x>
-     <y>50</y>
+     <x>232</x>
+     <y>86</y>
     </hint>
    </hints>
   </connection>
@@ -3544,12 +3629,12 @@
    <slot>setCurrentIndex(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>259</x>
-     <y>60</y>
+     <x>250</x>
+     <y>80</y>
     </hint>
     <hint type="destinationlabel">
-     <x>259</x>
-     <y>60</y>
+     <x>250</x>
+     <y>82</y>
     </hint>
    </hints>
   </connection>
@@ -3560,12 +3645,12 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>250</x>
-     <y>39</y>
+     <x>653</x>
+     <y>408</y>
     </hint>
     <hint type="destinationlabel">
-     <x>250</x>
-     <y>39</y>
+     <x>397</x>
+     <y>434</y>
     </hint>
    </hints>
   </connection>
@@ -3576,12 +3661,12 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>250</x>
-     <y>39</y>
+     <x>653</x>
+     <y>408</y>
     </hint>
     <hint type="destinationlabel">
-     <x>250</x>
-     <y>39</y>
+     <x>653</x>
+     <y>457</y>
     </hint>
    </hints>
   </connection>
@@ -3592,12 +3677,12 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>250</x>
-     <y>39</y>
+     <x>653</x>
+     <y>408</y>
     </hint>
     <hint type="destinationlabel">
-     <x>250</x>
-     <y>39</y>
+     <x>653</x>
+     <y>434</y>
     </hint>
    </hints>
   </connection>
@@ -3608,12 +3693,12 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>250</x>
-     <y>39</y>
+     <x>588</x>
+     <y>513</y>
     </hint>
     <hint type="destinationlabel">
-     <x>250</x>
-     <y>39</y>
+     <x>332</x>
+     <y>539</y>
     </hint>
    </hints>
   </connection>
@@ -3624,12 +3709,12 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>250</x>
-     <y>39</y>
+     <x>588</x>
+     <y>513</y>
     </hint>
     <hint type="destinationlabel">
-     <x>250</x>
-     <y>39</y>
+     <x>588</x>
+     <y>539</y>
     </hint>
    </hints>
   </connection>
@@ -3640,12 +3725,12 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>250</x>
-     <y>39</y>
+     <x>588</x>
+     <y>513</y>
     </hint>
     <hint type="destinationlabel">
-     <x>250</x>
-     <y>39</y>
+     <x>332</x>
+     <y>565</y>
     </hint>
    </hints>
   </connection>
@@ -3656,12 +3741,12 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>250</x>
-     <y>39</y>
+     <x>588</x>
+     <y>513</y>
     </hint>
     <hint type="destinationlabel">
-     <x>250</x>
-     <y>39</y>
+     <x>588</x>
+     <y>565</y>
     </hint>
    </hints>
   </connection>
@@ -3672,12 +3757,12 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>720</x>
-     <y>280</y>
+     <x>951</x>
+     <y>349</y>
     </hint>
     <hint type="destinationlabel">
      <x>346</x>
-     <y>306</y>
+     <y>375</y>
     </hint>
    </hints>
   </connection>
@@ -3688,12 +3773,12 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>761</x>
-     <y>280</y>
+     <x>951</x>
+     <y>349</y>
     </hint>
     <hint type="destinationlabel">
-     <x>778</x>
-     <y>306</y>
+     <x>951</x>
+     <y>375</y>
     </hint>
    </hints>
   </connection>
@@ -3704,12 +3789,12 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>820</x>
-     <y>280</y>
+     <x>951</x>
+     <y>349</y>
     </hint>
     <hint type="destinationlabel">
-     <x>810</x>
-     <y>329</y>
+     <x>951</x>
+     <y>398</y>
     </hint>
    </hints>
   </connection>
@@ -3720,12 +3805,12 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>862</x>
-     <y>280</y>
+     <x>951</x>
+     <y>349</y>
     </hint>
     <hint type="destinationlabel">
-     <x>859</x>
-     <y>352</y>
+     <x>951</x>
+     <y>421</y>
     </hint>
    </hints>
   </connection>
@@ -3736,12 +3821,12 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>866</x>
-     <y>280</y>
+     <x>951</x>
+     <y>349</y>
     </hint>
     <hint type="destinationlabel">
-     <x>866</x>
-     <y>375</y>
+     <x>951</x>
+     <y>444</y>
     </hint>
    </hints>
   </connection>
@@ -3752,12 +3837,12 @@
    <slot>setVisible(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>250</x>
-     <y>39</y>
+     <x>640</x>
+     <y>180</y>
     </hint>
     <hint type="destinationlabel">
-     <x>250</x>
-     <y>39</y>
+     <x>640</x>
+     <y>203</y>
     </hint>
    </hints>
   </connection>
@@ -3768,12 +3853,12 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>404</x>
-     <y>193</y>
+     <x>705</x>
+     <y>225</y>
     </hint>
     <hint type="destinationlabel">
-     <x>404</x>
-     <y>219</y>
+     <x>705</x>
+     <y>248</y>
     </hint>
    </hints>
   </connection>
@@ -3784,12 +3869,12 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>404</x>
-     <y>245</y>
+     <x>705</x>
+     <y>271</y>
     </hint>
     <hint type="destinationlabel">
-     <x>404</x>
-     <y>271</y>
+     <x>705</x>
+     <y>294</y>
     </hint>
    </hints>
   </connection>

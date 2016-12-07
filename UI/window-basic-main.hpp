@@ -86,6 +86,7 @@ class OBSBasic : public OBSMainWindow {
 	friend class OBSBasicPreview;
 	friend class OBSBasicStatusBar;
 	friend class OBSBasicSourceSelect;
+	friend class OBSBasicSettings;
 	friend struct OBSStudioAPI;
 
 	enum class MoveDir {

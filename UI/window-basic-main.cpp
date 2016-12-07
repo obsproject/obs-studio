@@ -847,6 +847,9 @@ bool OBSBasic::InitBasicConfigDefaults()
 			"Stream");
 	config_set_default_string(basicConfig, "SimpleOutput", "RecEncoder",
 			SIMPLE_ENCODER_X264);
+	config_set_default_bool(basicConfig, "SimpleOutput", "RecRB", false);
+	config_set_default_int(basicConfig, "SimpleOutput", "RecRBTime", 20);
+	config_set_default_int(basicConfig, "SimpleOutput", "RecRBSize", 512);
 
 	config_set_default_bool  (basicConfig, "AdvOut", "ApplyServiceSettings",
 			true);
@@ -1041,6 +1044,16 @@ void OBSBasic::ResetOutputs()
 		outputHandler.reset(advOut ?
 			CreateAdvancedOutputHandler(this) :
 			CreateSimpleOutputHandler(this));
+
+		if (outputHandler->replayBuffer)
+			ui->recordButton->setText(
+					QTStr("Basic.Main.StartReplayBuffer"));
+		else
+			ui->recordButton->setText(
+					QTStr("Basic.Main.StartRecording"));
+
+		if (sysTrayRecord)
+			sysTrayRecord->setText(ui->recordButton->text());
 	} else {
 		outputHandler->Update();
 	}
@@ -3905,10 +3918,30 @@ void OBSBasic::StreamingStop(int code)
 	}
 }
 
+#define RP_NO_HOTKEY_TITLE QTStr("Output.ReplayBuffer.NoHotkey.Title")
+#define RP_NO_HOTKEY_TEXT  QTStr("Output.ReplayBuffer.NoHotkey.Msg")
+
 void OBSBasic::StartRecording()
 {
 	if (outputHandler->RecordingActive())
 		return;
+
+	if (outputHandler->replayBuffer) {
+		obs_output_t *output = outputHandler->fileOutput;
+		obs_data_t *hotkeys = obs_hotkeys_save_output(output);
+		obs_data_array_t *bindings = obs_data_get_array(hotkeys,
+				"ReplayBuffer.Save");
+		size_t count = obs_data_array_count(bindings);
+		obs_data_array_release(bindings);
+		obs_data_release(hotkeys);
+
+		if (!count) {
+			QMessageBox::information(this,
+					RP_NO_HOTKEY_TITLE,
+					RP_NO_HOTKEY_TEXT);
+			return;
+		}
+	}
 
 	if (api)
 		api->on_event(OBS_FRONTEND_EVENT_RECORDING_STARTING);
@@ -3919,7 +3952,10 @@ void OBSBasic::StartRecording()
 
 void OBSBasic::RecordStopping()
 {
-	ui->recordButton->setText(QTStr("Basic.Main.StoppingRecording"));
+	if (outputHandler->replayBuffer)
+		ui->recordButton->setText(QTStr("Basic.Main.StoppingReplayBuffer"));
+	else
+		ui->recordButton->setText(QTStr("Basic.Main.StoppingRecording"));
 
 	if (sysTrayRecord)
 		sysTrayRecord->setText(ui->recordButton->text());
@@ -3942,7 +3978,11 @@ void OBSBasic::StopRecording()
 void OBSBasic::RecordingStart()
 {
 	ui->statusbar->RecordingStarted(outputHandler->fileOutput);
-	ui->recordButton->setText(QTStr("Basic.Main.StopRecording"));
+
+	if (outputHandler->replayBuffer)
+		ui->recordButton->setText(QTStr("Basic.Main.StopReplayBuffer"));
+	else
+		ui->recordButton->setText(QTStr("Basic.Main.StopRecording"));
 
 	if (sysTrayRecord)
 		sysTrayRecord->setText(ui->recordButton->text());
@@ -3959,7 +3999,11 @@ void OBSBasic::RecordingStart()
 void OBSBasic::RecordingStop(int code)
 {
 	ui->statusbar->RecordingStopped();
-	ui->recordButton->setText(QTStr("Basic.Main.StartRecording"));
+
+	if (outputHandler->replayBuffer)
+		ui->recordButton->setText(QTStr("Basic.Main.StartReplayBuffer"));
+	else
+		ui->recordButton->setText(QTStr("Basic.Main.StartRecording"));
 
 	if (sysTrayRecord)
 		sysTrayRecord->setText(ui->recordButton->text());
@@ -4695,6 +4739,8 @@ void OBSBasic::SystemTrayInit()
 			trayIcon);
 	exit = new QAction(QTStr("Exit"),
 			trayIcon);
+
+	sysTrayRecord->setText(ui->recordButton->text());	
 
 	connect(trayIcon, SIGNAL(activated(QSystemTrayIcon::ActivationReason)),
 			this,

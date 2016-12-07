@@ -8,6 +8,7 @@ struct BasicOutputHandler {
 	bool                   streamingActive = false;
 	bool                   recordingActive = false;
 	bool                   delayActive = false;
+	bool                   replayBuffer = false;
 	OBSBasic               *main;
 
 	OBSSignal              startRecording;

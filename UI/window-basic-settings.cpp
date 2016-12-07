@@ -44,6 +44,7 @@
 #include "qt-wrappers.hpp"
 #include "window-basic-main.hpp"
 #include "window-basic-settings.hpp"
+#include "window-basic-main-outputs.hpp"
 
 #include <util/platform.h>
 
@@ -299,6 +300,9 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->simpleOutRecQuality,  COMBO_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->simpleOutRecEncoder,  COMBO_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->simpleOutMuxCustom,   EDIT_CHANGED,   OUTPUTS_CHANGED);
+	HookWidget(ui->simpleReplayBuf,      CHECK_CHANGED,  OUTPUTS_CHANGED);
+	HookWidget(ui->simpleRBSecMax,       SCROLL_CHANGED, OUTPUTS_CHANGED);
+	HookWidget(ui->simpleRBMegsMax,      SCROLL_CHANGED, OUTPUTS_CHANGED);
 	HookWidget(ui->advOutEncoder,        COMBO_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advOutUseRescale,     CHECK_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advOutRescale,        CBEDIT_CHANGED, OUTPUTS_CHANGED);
@@ -525,6 +529,14 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 			this, SLOT(SimpleRecordingEncoderChanged()));
 	connect(ui->simpleOutEnforce, SIGNAL(toggled(bool)),
 			this, SLOT(SimpleRecordingEncoderChanged()));
+	connect(ui->simpleReplayBuf, SIGNAL(toggled(bool)),
+			this, SLOT(SimpleReplayBufferChanged()));
+	connect(ui->simpleOutputVBitrate, SIGNAL(valueChanged(int)),
+			this, SLOT(SimpleReplayBufferChanged()));
+	connect(ui->simpleOutputABitrate, SIGNAL(currentIndexChanged(int)),
+			this, SLOT(SimpleReplayBufferChanged()));
+	connect(ui->simpleRBSecMax, SIGNAL(valueChanged(int)),
+			this, SLOT(SimpleReplayBufferChanged()));
 	connect(ui->listWidget, SIGNAL(currentRowChanged(int)),
 			this, SLOT(SimpleRecordingEncoderChanged()));
 
@@ -1216,6 +1228,12 @@ void OBSBasicSettings::LoadSimpleOutputSettings()
 			"RecEncoder");
 	const char *muxCustom = config_get_string(main->Config(),
 			"SimpleOutput", "MuxerCustom");
+	bool replayBuf = config_get_bool(main->Config(), "SimpleOutput",
+			"RecRB");
+	int rbTime = config_get_int(main->Config(), "SimpleOutput",
+			"RecRBTime");
+	int rbSize = config_get_int(main->Config(), "SimpleOutput",
+			"RecRBSize");
 
 	curPreset = preset;
 	curQSVPreset = qsvPreset;
@@ -1251,6 +1269,10 @@ void OBSBasicSettings::LoadSimpleOutputSettings()
 	ui->simpleOutRecEncoder->setCurrentIndex(idx);
 
 	ui->simpleOutMuxCustom->setText(muxCustom);
+
+	ui->simpleReplayBuf->setChecked(replayBuf);
+	ui->simpleRBSecMax->setValue(rbTime);
+	ui->simpleRBMegsMax->setValue(rbSize);
 
 	SimpleStreamingEncoderChanged();
 }
@@ -1555,6 +1577,7 @@ void OBSBasicSettings::LoadOutputSettings()
 		ui->outputMode->setEnabled(false);
 		ui->outputModeLabel->setEnabled(false);
 		ui->simpleRecordingGroupBox->setEnabled(false);
+		ui->replayBufferGroupBox->setEnabled(false);
 		ui->advOutTopContainer->setEnabled(false);
 		ui->advOutRecTopContainer->setEnabled(false);
 		ui->advOutRecTypeContainer->setEnabled(false);
@@ -2489,6 +2512,9 @@ void OBSBasicSettings::SaveOutputSettings()
 	SaveComboData(ui->simpleOutRecQuality, "SimpleOutput", "RecQuality");
 	SaveComboData(ui->simpleOutRecEncoder, "SimpleOutput", "RecEncoder");
 	SaveEdit(ui->simpleOutMuxCustom, "SimpleOutput", "MuxerCustom");
+	SaveCheckBox(ui->simpleReplayBuf, "SimpleOutput", "RecRB");
+	SaveSpinBox(ui->simpleRBSecMax, "SimpleOutput", "RecRBTime");
+	SaveSpinBox(ui->simpleRBMegsMax, "SimpleOutput", "RecRBSize");
 
 	curAdvStreamEncoder = GetComboData(ui->advOutEncoder);
 
@@ -2635,6 +2661,15 @@ void OBSBasicSettings::SaveHotkeySettings()
 		config_set_string(config, "Hotkeys", hw.name.c_str(), json);
 		obs_data_release(data);
 		obs_data_array_release(array);
+	}
+
+	const char *id = obs_obj_get_id(main->outputHandler->fileOutput);
+	if (strcmp(id, "replay_buffer") == 0) {
+		obs_data_t *hotkeys = obs_hotkeys_save_output(
+				main->outputHandler->fileOutput);
+		config_set_string(config, "Hotkeys", "ReplayBuffer",
+				obs_data_get_json(hotkeys));
+		obs_data_release(hotkeys);
 	}
 }
 
@@ -3292,6 +3327,7 @@ void OBSBasicSettings::SimpleRecordingQualityChanged()
 	ui->simpleOutRecFormatLabel->setVisible(!losslessQuality);
 
 	SimpleRecordingEncoderChanged();
+	SimpleReplayBufferChanged();
 }
 
 void OBSBasicSettings::SimpleStreamingEncoderChanged()
@@ -3362,6 +3398,39 @@ void OBSBasicSettings::SimpleStreamingEncoderChanged()
 		idx = ui->simpleOutPreset->findData(QVariant(defaultPreset));
 
 	ui->simpleOutPreset->setCurrentIndex(idx);
+}
+
+#define ESTIMATE_STR "Basic.Settings.Output.ReplayBuffer.Estimate"
+#define ESTIMATE_UNKNOWN_STR \
+	"Basic.Settings.Output.ReplayBuffer.EstimateUnknown"
+
+void OBSBasicSettings::SimpleReplayBufferChanged()
+{
+	QString qual = ui->simpleOutRecQuality->currentData().toString();
+	bool replayBufferEnabled = ui->simpleReplayBuf->isChecked();
+	bool lossless = qual == "Lossless";
+	bool streamQuality = qual == "Stream";
+
+	ui->simpleRBMegsMax->setVisible(!streamQuality);
+	ui->simpleRBMegsMaxLabel->setVisible(!streamQuality);
+
+	int vbitrate = ui->simpleOutputVBitrate->value();
+	int abitrate = ui->simpleOutputABitrate->currentText().toInt();
+	int seconds = ui->simpleRBSecMax->value();
+
+	int64_t memMB = int64_t(seconds) * int64_t(vbitrate + abitrate) *
+		1000 / 8 / 1024 / 1024;
+	if (memMB < 1) memMB = 1;
+
+	if (streamQuality)
+		ui->simpleRBEstimate->setText(
+				QTStr(ESTIMATE_STR).arg(
+					QString::number(int(memMB))));
+	else
+		ui->simpleRBEstimate->setText(QTStr(ESTIMATE_UNKNOWN_STR));
+
+	ui->replayBufferGroupBox->setVisible(!lossless && replayBufferEnabled);
+	ui->simpleReplayBuf->setVisible(!lossless);
 }
 
 #define SIMPLE_OUTPUT_WARNING(str) \

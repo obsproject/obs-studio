@@ -306,8 +306,21 @@ SimpleOutput::SimpleOutput(OBSBasic *main_) : BasicOutputHandler(main_)
 	LoadRecordingPreset();
 
 	if (!ffmpegOutput) {
-		fileOutput = obs_output_create("ffmpeg_muxer",
-				"simple_file_output", nullptr, nullptr);
+		replayBuffer = config_get_bool(main->Config(),
+				"SimpleOutput", "RecRB");
+		if (replayBuffer) {
+			const char *str = config_get_string(main->Config(),
+					"Hotkeys", "ReplayBuffer");
+			obs_data_t *hotkey = obs_data_create_from_json(str);
+			fileOutput = obs_output_create("replay_buffer",
+					Str("ReplayBuffer"), nullptr, hotkey);
+
+			obs_data_release(hotkey);
+		} else {
+			fileOutput = obs_output_create("ffmpeg_muxer",
+					"simple_file_output", nullptr, nullptr);
+		}
+
 		if (!fileOutput)
 			throw "Failed to create recording output "
 			      "(simple output)";
@@ -660,6 +673,10 @@ bool SimpleOutput::StartRecording()
 				"FilenameFormatting");
 	bool overwriteIfExists = config_get_bool(main->Config(), "Output",
 				"OverwriteIfExists");
+	int rbTime = config_get_int(main->Config(), "SimpleOutput",
+			"RecRBTime");
+	int rbSize = config_get_int(main->Config(), "SimpleOutput",
+			"RecRBSize");
 
 	os_dir_t *dir = path ? os_opendir(path) : nullptr;
 
@@ -695,8 +712,17 @@ bool SimpleOutput::StartRecording()
 	}
 
 	obs_data_t *settings = obs_data_create();
-	obs_data_set_string(settings, ffmpegOutput ? "url" : "path",
-			strPath.c_str());
+	if (replayBuffer) {
+		obs_data_set_string(settings, "directory", path);
+		obs_data_set_string(settings, "format", filenameFormat);
+		obs_data_set_string(settings, "extension", format);
+		obs_data_set_int(settings, "max_time_sec", rbTime);
+		obs_data_set_int(settings, "max_size_mb",
+				usingRecordingPreset ? rbSize : 0);
+	} else {
+		obs_data_set_string(settings, ffmpegOutput ? "url" : "path",
+				strPath.c_str());
+	}
 	obs_data_set_string(settings, "muxer_settings", mux);
 
 	obs_output_update(fileOutput, settings);
