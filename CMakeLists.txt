@@ -60,7 +60,7 @@ elseif(MSVC)
 endif()
 
 if(WIN32)
-	add_definitions(-DUNICODE -D_UNICODE)
+	add_definitions(-DUNICODE -D_UNICODE -D_CRT_SECURE_NO_WARNINGS)
 endif()
 
 if(MSVC)
