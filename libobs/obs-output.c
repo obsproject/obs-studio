@@ -129,12 +129,6 @@ obs_output_t *obs_output_create(const char *id, const char *name,
 	if (ret < 0)
 		goto fail;
 
-	if (info)
-		output->context.data = info->create(output->context.settings,
-				output);
-	if (!output->context.data)
-		blog(LOG_ERROR, "Failed to create output '%s'!", name);
-
 	output->reconnect_retry_sec = 2;
 	output->reconnect_retry_max = 20;
 	output->valid               = true;
@@ -145,6 +139,12 @@ obs_output_t *obs_output_create(const char *id, const char *name,
 	obs_context_data_insert(&output->context,
 			&obs->data.outputs_mutex,
 			&obs->data.first_output);
+
+	if (info)
+		output->context.data = info->create(output->context.settings,
+				output);
+	if (!output->context.data)
+		blog(LOG_ERROR, "Failed to create output '%s'!", name);
 
 	blog(LOG_DEBUG, "output '%s' (%s) created", name, id);
 	return output;
