@@ -896,6 +896,8 @@
     <addaction name="actionDupProfile"/>
     <addaction name="actionRenameProfile"/>
     <addaction name="actionRemoveProfile"/>
+    <addaction name="actionImportProfile"/>
+    <addaction name="actionExportProfile"/>
     <addaction name="separator"/>
    </widget>
    <widget class="QMenu" name="sceneCollectionMenu">
@@ -906,6 +908,8 @@
     <addaction name="actionDupSceneCollection"/>
     <addaction name="actionRenameSceneCollection"/>
     <addaction name="actionRemoveSceneCollection"/>
+    <addaction name="actionImportSceneCollection"/>
+    <addaction name="actionExportSceneCollection"/>
     <addaction name="separator"/>
    </widget>
    <widget class="QMenu" name="viewMenu">
@@ -1258,6 +1262,16 @@
     <string>Remove</string>
    </property>
   </action>
+  <action name="actionImportSceneCollection">
+   <property name="text">
+    <string>Import</string>
+   </property>
+  </action>
+  <action name="actionExportSceneCollection">
+   <property name="text">
+    <string>Export</string>
+   </property>
+  </action>
   <action name="actionNewProfile">
    <property name="text">
     <string>New</string>
@@ -1276,6 +1290,16 @@
   <action name="actionRemoveProfile">
    <property name="text">
     <string>Remove</string>
+   </property>
+  </action>
+  <action name="actionImportProfile">
+   <property name="text">
+    <string>Import</string>
+   </property>
+  </action>
+  <action name="actionExportProfile">
+   <property name="text">
+    <string>Export</string>
    </property>
   </action>
   <action name="actionShowSettingsFolder">
