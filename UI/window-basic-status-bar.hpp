@@ -17,6 +17,7 @@ private:
 	QLabel *sessionTime;
 	QLabel *cpuUsage;
 	QLabel *kbps;
+	QLabel *statusSquare;
 
 	obs_output_t *streamOutput = nullptr;
 	obs_output_t *recordOutput = nullptr;
@@ -35,6 +36,9 @@ private:
 	int startSkippedFrameCount = 0;
 	int startTotalFrameCount = 0;
 	int lastSkippedFrameCount = 0;
+
+	bool dropping = false;
+	int previousDroppedFrameCount = 0;
 
 	int      bitrateUpdateSeconds = 0;
 	uint64_t lastBytesSent = 0;
