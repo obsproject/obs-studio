@@ -1,4 +1,7 @@
 #include <QLabel>
+#include <QHBoxLayout>
+#include <QPainter>
+#include <QPixmap>
 #include "obs-app.hpp"
 #include "window-basic-main.hpp"
 #include "window-basic-status-bar.hpp"
@@ -10,16 +13,36 @@ OBSBasicStatusBar::OBSBasicStatusBar(QWidget *parent)
 	  droppedFrames (new QLabel),
 	  sessionTime   (new QLabel),
 	  cpuUsage      (new QLabel),
-	  kbps          (new QLabel)
+	  transparentPixmap (20, 20),
+	  greenPixmap       (20, 20),
+	  grayPixmap        (20, 20),
+	  redPixmap         (20, 20)
 {
 	sessionTime->setText(QString("00:00:00"));
-	cpuUsage->setText(QString("CPU: 0.0%"));
+	cpuUsage->setText(QString("CPU: 0.0%, 0.00 fps"));
+
+	QWidget *brWidget = new QWidget(this);
+	QHBoxLayout *brLayout = new QHBoxLayout(brWidget);
+	brLayout->setContentsMargins(0, 0, 0, 0);
+
+	statusSquare = new QLabel(brWidget);
+	brLayout->addWidget(statusSquare);
+
+	kbps = new QLabel(brWidget);
+	brLayout->addWidget(kbps);
+
+	brWidget->setLayout(brLayout);
 
 	delayInfo->setAlignment(Qt::AlignRight);
+	delayInfo->setAlignment(Qt::AlignVCenter);
 	droppedFrames->setAlignment(Qt::AlignRight);
+	droppedFrames->setAlignment(Qt::AlignVCenter);
 	sessionTime->setAlignment(Qt::AlignRight);
+	sessionTime->setAlignment(Qt::AlignVCenter);
 	cpuUsage->setAlignment(Qt::AlignRight);
+	cpuUsage->setAlignment(Qt::AlignVCenter);
 	kbps->setAlignment(Qt::AlignRight);
+	kbps->setAlignment(Qt::AlignVCenter);
 
 	delayInfo->setIndent(20);
 	droppedFrames->setIndent(20);
@@ -31,7 +54,14 @@ OBSBasicStatusBar::OBSBasicStatusBar(QWidget *parent)
 	addPermanentWidget(sessionTime);
 	addPermanentWidget(cpuUsage);
 	addPermanentWidget(delayInfo);
-	addPermanentWidget(kbps);
+	addPermanentWidget(brWidget);
+
+	transparentPixmap.fill(QColor(0, 0, 0, 0));
+	greenPixmap.fill(QColor(0, 255, 0));
+	grayPixmap.fill(QColor(72, 72, 72));
+	redPixmap.fill(QColor(255, 0, 0));
+
+	statusSquare->setPixmap(transparentPixmap);
 }
 
 void OBSBasicStatusBar::Activate()
@@ -51,6 +81,10 @@ void OBSBasicStatusBar::Activate()
 
 		refreshTimer->start(1000);
 		active = true;
+
+		if (streamOutput) {
+			statusSquare->setPixmap(grayPixmap);
+		}
 	}
 }
 
@@ -73,6 +107,8 @@ void OBSBasicStatusBar::Deactivate()
 		reconnectTimeout = 0;
 		active = false;
 		overloadedNotify = true;
+
+		statusSquare->setPixmap(transparentPixmap);
 	}
 }
 
@@ -130,6 +166,7 @@ void OBSBasicStatusBar::UpdateBandwidth()
 	QString text;
 	text += QString("kb/s: ") +
 		QString::number(kbitsPerSec, 'f', 0);
+
 	kbps->setText(text);
 	kbps->setMinimumWidth(kbps->width());
 
@@ -205,6 +242,37 @@ void OBSBasicStatusBar::UpdateDroppedFrames()
 			QString::number(percent, 'f', 1));
 	droppedFrames->setText(text);
 	droppedFrames->setMinimumWidth(droppedFrames->width());
+
+	/* ----------------------------------- *
+	 * calculate congestion color          */
+
+	float congestion = obs_output_get_congestion(streamOutput);
+	float avgCongestion = (congestion + lastCongestion) * 0.5f;
+	if (avgCongestion < congestion)
+		avgCongestion = congestion;
+	if (avgCongestion > 1.0f)
+		avgCongestion = 1.0f;
+
+	if (avgCongestion < EPSILON) {
+		statusSquare->setPixmap(greenPixmap);
+	} else if (fabsf(avgCongestion - 1.0f) < EPSILON) {
+		statusSquare->setPixmap(redPixmap);
+	} else {
+		QPixmap pixmap(20, 20);
+
+		float red = avgCongestion * 2.0f;
+		if (red > 1.0f) red = 1.0f;
+		red *= 255.0;
+
+		float green = (1.0f - avgCongestion) * 2.0f;
+		if (green > 1.0f) green = 1.0f;
+		green *= 255.0;
+
+		pixmap.fill(QColor(int(red), int(green), 0));
+		statusSquare->setPixmap(pixmap);
+	}
+
+	lastCongestion = congestion;
 }
 
 void OBSBasicStatusBar::OBSOutputReconnect(void *data, calldata_t *params)

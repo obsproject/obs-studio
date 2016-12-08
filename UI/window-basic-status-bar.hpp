@@ -17,6 +17,7 @@ private:
 	QLabel *sessionTime;
 	QLabel *cpuUsage;
 	QLabel *kbps;
+	QLabel *statusSquare;
 
 	obs_output_t *streamOutput = nullptr;
 	obs_output_t *recordOutput = nullptr;
@@ -39,6 +40,13 @@ private:
 	int      bitrateUpdateSeconds = 0;
 	uint64_t lastBytesSent = 0;
 	uint64_t lastBytesSentTime = 0;
+
+	QPixmap transparentPixmap;
+	QPixmap greenPixmap;
+	QPixmap grayPixmap;
+	QPixmap redPixmap;
+
+	float lastCongestion = 0.0f;
 
 	QPointer<QTimer> refreshTimer;
 
