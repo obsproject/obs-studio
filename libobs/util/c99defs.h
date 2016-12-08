@@ -33,8 +33,6 @@
 
 #ifdef _MSC_VER
 
-#pragma warning (disable : 4996)
-
 /* Microsoft is one of the most inept companies on the face of the planet.
  * The fact that even visual studio 2013 doesn't support the standard 'inline'
  * keyword is so incredibly stupid that I just can't imagine what sort of
