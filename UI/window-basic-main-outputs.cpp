@@ -687,6 +687,19 @@ bool SimpleOutput::StartStreaming(obs_service_t *service)
 	return false;
 }
 
+static void remove_reserved_file_characters(string &s)
+{
+	replace(s.begin(), s.end(), '/', '_');
+	replace(s.begin(), s.end(), '\\', '_');
+	replace(s.begin(), s.end(), '*', '_');
+	replace(s.begin(), s.end(), '?', '_');
+	replace(s.begin(), s.end(), '"', '_');
+	replace(s.begin(), s.end(), '|', '_');
+	replace(s.begin(), s.end(), ':', '_');
+	replace(s.begin(), s.end(), '>', '_');
+	replace(s.begin(), s.end(), '<', '_');
+}
+
 static void ensure_directory_exists(string &path)
 {
 	replace(path.begin(), path.end(), '\\', '/');
@@ -740,6 +753,10 @@ bool SimpleOutput::ConfigureRecording(bool updateReplayBuffer)
 				"FilenameFormatting");
 	bool overwriteIfExists = config_get_bool(main->Config(), "Output",
 				"OverwriteIfExists");
+	const char *rbPrefix = config_get_string(main->Config(), "SimpleOutput",
+				"RecRBPrefix");
+	const char *rbSuffix = config_get_string(main->Config(), "SimpleOutput",
+				"RecRBSuffix");
 	int rbTime = config_get_int(main->Config(), "SimpleOutput",
 			"RecRBTime");
 	int rbSize = config_get_int(main->Config(), "SimpleOutput",
@@ -775,8 +792,26 @@ bool SimpleOutput::ConfigureRecording(bool updateReplayBuffer)
 
 	obs_data_t *settings = obs_data_create();
 	if (updateReplayBuffer) {
+		string f;
+
+		if (rbPrefix && *rbPrefix) {
+			f += rbPrefix;
+			if (f.back() != ' ')
+				f += " ";
+		}
+
+		f += filenameFormat;
+
+		if (rbSuffix && *rbSuffix) {
+			if (*rbSuffix != ' ')
+				f += " ";
+			f += rbSuffix;
+		}
+
+		remove_reserved_file_characters(f);
+
 		obs_data_set_string(settings, "directory", path);
-		obs_data_set_string(settings, "format", filenameFormat);
+		obs_data_set_string(settings, "format", f.c_str());
 		obs_data_set_string(settings, "extension", format);
 		obs_data_set_int(settings, "max_time_sec", rbTime);
 		obs_data_set_int(settings, "max_size_mb",

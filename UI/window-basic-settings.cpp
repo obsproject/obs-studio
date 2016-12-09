@@ -374,6 +374,8 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->resetOSXVSync,        CHECK_CHANGED,  ADV_CHANGED);
 	HookWidget(ui->filenameFormatting,   EDIT_CHANGED,   ADV_CHANGED);
 	HookWidget(ui->overwriteIfExists,    CHECK_CHANGED,  ADV_CHANGED);
+	HookWidget(ui->simpleRBPrefix,       EDIT_CHANGED,   ADV_CHANGED);
+	HookWidget(ui->simpleRBSuffix,       EDIT_CHANGED,   ADV_CHANGED);
 	HookWidget(ui->streamDelayEnable,    CHECK_CHANGED,  ADV_CHANGED);
 	HookWidget(ui->streamDelaySec,       SCROLL_CHANGED, ADV_CHANGED);
 	HookWidget(ui->streamDelayPreserve,  CHECK_CHANGED,  ADV_CHANGED);
@@ -1869,6 +1871,10 @@ void OBSBasicSettings::LoadAdvancedSettings()
 			"OverwriteIfExists");
 	const char *bindIP = config_get_string(main->Config(), "Output",
 			"BindIP");
+	const char *rbPrefix = config_get_string(main->Config(), "SimpleOutput",
+			"RecRBPrefix");
+	const char *rbSuffix = config_get_string(main->Config(), "SimpleOutput",
+			"RecRBSuffix");
 
 	loading = true;
 
@@ -1876,6 +1882,8 @@ void OBSBasicSettings::LoadAdvancedSettings()
 
 	ui->filenameFormatting->setText(filename);
 	ui->overwriteIfExists->setChecked(overwriteIfExists);
+	ui->simpleRBPrefix->setText(rbPrefix);
+	ui->simpleRBSuffix->setText(rbSuffix);
 
 	ui->reconnectEnable->setChecked(reconnect);
 	ui->reconnectRetryDelay->setValue(retryDelay);
@@ -2382,6 +2390,8 @@ void OBSBasicSettings::SaveAdvancedSettings()
 	SaveCombo(ui->colorSpace, "Video", "ColorSpace");
 	SaveComboData(ui->colorRange, "Video", "ColorRange");
 	SaveEdit(ui->filenameFormatting, "Output", "FilenameFormatting");
+	SaveEdit(ui->simpleRBPrefix, "SimpleOutput", "RecRBPrefix");
+	SaveEdit(ui->simpleRBSuffix, "SimpleOutput", "RecRBSuffix");
 	SaveCheckBox(ui->overwriteIfExists, "Output", "OverwriteIfExists");
 	SaveCheckBox(ui->streamDelayEnable, "Output", "DelayEnable");
 	SaveSpinBox(ui->streamDelaySec, "Output", "DelaySec");

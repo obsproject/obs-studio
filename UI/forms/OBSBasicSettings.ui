@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>981</width>
-    <height>720</height>
+    <height>748</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -2630,8 +2630,8 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>98</width>
-              <height>28</height>
+              <width>800</width>
+              <height>69</height>
              </rect>
             </property>
            </widget>
@@ -2949,8 +2949,8 @@
           <rect>
            <x>0</x>
            <y>0</y>
-           <width>98</width>
-           <height>28</height>
+           <width>818</width>
+           <height>697</height>
           </rect>
          </property>
          <layout class="QFormLayout" name="hotkeyLayout">
@@ -2996,8 +2996,8 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>559</width>
-              <height>681</height>
+              <width>803</width>
+              <height>709</height>
              </rect>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_16">
@@ -3193,6 +3193,9 @@
                    <string>Basic.Settings.Output.Adv.Recording</string>
                   </property>
                   <layout class="QFormLayout" name="formLayout_17">
+                   <property name="labelAlignment">
+                    <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                   </property>
                    <item row="0" column="0">
                     <widget class="QLabel" name="label_7">
                      <property name="text">
@@ -3207,6 +3210,42 @@
                     <widget class="QCheckBox" name="overwriteIfExists">
                      <property name="text">
                       <string>Basic.Settings.Output.Adv.Recording.OverwriteIfExists</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="2" column="1">
+                    <layout class="QHBoxLayout" name="horizontalLayout_14">
+                     <property name="leftMargin">
+                      <number>0</number>
+                     </property>
+                     <property name="topMargin">
+                      <number>0</number>
+                     </property>
+                     <property name="rightMargin">
+                      <number>0</number>
+                     </property>
+                     <property name="bottomMargin">
+                      <number>0</number>
+                     </property>
+                     <item>
+                      <widget class="QLineEdit" name="simpleRBPrefix"/>
+                     </item>
+                     <item>
+                      <widget class="QLabel" name="label_58">
+                       <property name="text">
+                        <string>Basic.Settings.Output.ReplayBuffer.Suffix</string>
+                       </property>
+                      </widget>
+                     </item>
+                     <item>
+                      <widget class="QLineEdit" name="simpleRBSuffix"/>
+                     </item>
+                    </layout>
+                   </item>
+                   <item row="2" column="0">
+                    <widget class="QLabel" name="label_57">
+                     <property name="text">
+                      <string>Basic.Settings.Output.ReplayBuffer.Prefix</string>
                      </property>
                     </widget>
                    </item>

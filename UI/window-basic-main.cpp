@@ -850,6 +850,8 @@ bool OBSBasic::InitBasicConfigDefaults()
 	config_set_default_bool(basicConfig, "SimpleOutput", "RecRB", false);
 	config_set_default_int(basicConfig, "SimpleOutput", "RecRBTime", 20);
 	config_set_default_int(basicConfig, "SimpleOutput", "RecRBSize", 512);
+	config_set_default_string(basicConfig, "SimpleOutput", "RecRBPrefix",
+			"Replay");
 
 	config_set_default_bool  (basicConfig, "AdvOut", "ApplyServiceSettings",
 			true);
