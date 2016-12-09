@@ -131,6 +131,7 @@ private:
 	std::unique_ptr<BasicOutputHandler> outputHandler;
 	bool streamingStopping = false;
 	bool recordingStopping = false;
+	bool replayBufferStopping = false;
 
 	gs_vertbuffer_t *box = nullptr;
 	gs_vertbuffer_t *boxLeft = nullptr;
@@ -152,9 +153,12 @@ private:
 
 	QPointer<QMenu> startStreamMenu;
 
+	QPointer<QPushButton> replayBufferButton;
+
 	QPointer<QSystemTrayIcon> trayIcon;
 	QPointer<QAction>         sysTrayStream;
 	QPointer<QAction>         sysTrayRecord;
+	QPointer<QAction>         sysTrayReplayBuffer;
 	QPointer<QAction>         showHide;
 	QPointer<QAction>         exit;
 	QPointer<QMenu>           trayMenu;
@@ -245,7 +249,8 @@ private:
 
 	QListWidgetItem *GetTopSelectedSourceItem();
 
-	obs_hotkey_pair_id streamingHotkeys, recordingHotkeys;
+	obs_hotkey_pair_id streamingHotkeys, recordingHotkeys,
+	                   replayBufHotkeys;
 	obs_hotkey_id forceStreamingStopHotkey;
 
 	void InitDefaultTransitions();
@@ -314,6 +319,8 @@ private:
 	void dragMoveEvent(QDragMoveEvent *event) override;
 	void dropEvent(QDropEvent *event) override;
 
+	void ReplayBufferClicked();
+
 public slots:
 	void StartStreaming();
 	void StopStreaming();
@@ -332,6 +339,13 @@ public slots:
 	void RecordingStart();
 	void RecordStopping();
 	void RecordingStop(int code);
+
+	void StartReplayBuffer();
+	void StopReplayBuffer();
+
+	void ReplayBufferStart();
+	void ReplayBufferStopping();
+	void ReplayBufferStop(int code);
 
 	void SaveProjectDeferred();
 	void SaveProject();

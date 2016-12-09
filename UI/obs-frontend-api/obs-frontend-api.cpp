@@ -205,6 +205,23 @@ bool obs_frontend_recording_active(void)
 		: false;
 }
 
+void obs_frontend_replay_buffer_start(void)
+{
+	if (callbacks_valid()) c->obs_frontend_replay_buffer_start();
+}
+
+void obs_frontend_replay_buffer_stop(void)
+{
+	if (callbacks_valid()) c->obs_frontend_replay_buffer_stop();
+}
+
+bool obs_frontend_replay_buffer_active(void)
+{
+	return !!callbacks_valid()
+		? c->obs_frontend_replay_buffer_active()
+		: false;
+}
+
 void *obs_frontend_add_tools_menu_qaction(const char *name)
 {
 	return !!callbacks_valid()
@@ -245,6 +262,13 @@ obs_output_t *obs_frontend_get_recording_output(void)
 {
 	return !!callbacks_valid()
 		? c->obs_frontend_get_recording_output()
+		: nullptr;
+}
+
+obs_output_t *obs_frontend_get_replay_buffer_output(void)
+{
+	return !!callbacks_valid()
+		? c->obs_frontend_get_replay_buffer_output()
 		: nullptr;
 }
 

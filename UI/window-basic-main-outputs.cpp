@@ -84,6 +84,36 @@ static void OBSRecordStopping(void *data, calldata_t *params)
 	UNUSED_PARAMETER(params);
 }
 
+static void OBSStartReplayBuffer(void *data, calldata_t *params)
+{
+	BasicOutputHandler *output = static_cast<BasicOutputHandler*>(data);
+
+	output->replayBufferActive = true;
+	QMetaObject::invokeMethod(output->main, "ReplayBufferStart");
+
+	UNUSED_PARAMETER(params);
+}
+
+static void OBSStopReplayBuffer(void *data, calldata_t *params)
+{
+	BasicOutputHandler *output = static_cast<BasicOutputHandler*>(data);
+	int code = (int)calldata_int(params, "code");
+
+	output->replayBufferActive = false;
+	QMetaObject::invokeMethod(output->main,
+			"ReplayBufferStop", Q_ARG(int, code));
+
+	UNUSED_PARAMETER(params);
+}
+
+static void OBSReplayBufferStopping(void *data, calldata_t *params)
+{
+	BasicOutputHandler *output = static_cast<BasicOutputHandler*>(data);
+	QMetaObject::invokeMethod(output->main, "ReplayBufferStopping");
+
+	UNUSED_PARAMETER(params);
+}
+
 static void FindBestFilename(string &strPath, bool noSpace)
 {
 	int num = 2;
@@ -154,6 +184,7 @@ struct SimpleOutput : BasicOutputHandler {
 	string                 videoEncoder;
 	string                 videoQuality;
 	bool                   usingRecordingPreset = false;
+	bool                   recordingConfigured = false;
 	bool                   ffmpegOutput = false;
 	bool                   lowCPUx264 = false;
 
@@ -179,12 +210,18 @@ struct SimpleOutput : BasicOutputHandler {
 
 	void LoadStreamingPreset_h264(const char *encoder);
 
+	void UpdateRecording();
+	bool ConfigureRecording(bool useReplayBuffer);
+
 	virtual bool StartStreaming(obs_service_t *service) override;
 	virtual bool StartRecording() override;
+	virtual bool StartReplayBuffer() override;
 	virtual void StopStreaming(bool force) override;
 	virtual void StopRecording(bool force) override;
+	virtual void StopReplayBuffer(bool force) override;
 	virtual bool StreamingActive() const override;
 	virtual bool RecordingActive() const override;
+	virtual bool ReplayBufferActive() const override;
 };
 
 void SimpleOutput::LoadRecordingPreset_Lossless()
@@ -306,21 +343,34 @@ SimpleOutput::SimpleOutput(OBSBasic *main_) : BasicOutputHandler(main_)
 	LoadRecordingPreset();
 
 	if (!ffmpegOutput) {
-		replayBuffer = config_get_bool(main->Config(),
+		bool useReplayBuffer = config_get_bool(main->Config(),
 				"SimpleOutput", "RecRB");
-		if (replayBuffer) {
+		if (useReplayBuffer) {
 			const char *str = config_get_string(main->Config(),
 					"Hotkeys", "ReplayBuffer");
 			obs_data_t *hotkey = obs_data_create_from_json(str);
-			fileOutput = obs_output_create("replay_buffer",
+			replayBuffer = obs_output_create("replay_buffer",
 					Str("ReplayBuffer"), nullptr, hotkey);
 
 			obs_data_release(hotkey);
-		} else {
-			fileOutput = obs_output_create("ffmpeg_muxer",
-					"simple_file_output", nullptr, nullptr);
+			if (!replayBuffer)
+				throw "Failed to create replay buffer output "
+				      "(simple output)";
+			obs_output_release(replayBuffer);
+
+			signal_handler_t *signal =
+				obs_output_get_signal_handler(replayBuffer);
+
+			startReplayBuffer.Connect(signal, "start",
+					OBSStartReplayBuffer, this);
+			stopReplayBuffer.Connect(signal, "stop",
+					OBSStopReplayBuffer, this);
+			replayBufferStopping.Connect(signal, "stopping",
+					OBSReplayBufferStopping, this);
 		}
 
+		fileOutput = obs_output_create("ffmpeg_muxer",
+				"simple_file_output", nullptr, nullptr);
 		if (!fileOutput)
 			throw "Failed to create recording output "
 			      "(simple output)";
@@ -649,8 +699,11 @@ static void ensure_directory_exists(string &path)
 	os_mkdirs(directory.c_str());
 }
 
-bool SimpleOutput::StartRecording()
+void SimpleOutput::UpdateRecording()
 {
+	if (replayBufferActive || recordingActive)
+		return;
+
 	if (usingRecordingPreset) {
 		if (!ffmpegOutput)
 			UpdateRecordingSettings();
@@ -661,6 +714,20 @@ bool SimpleOutput::StartRecording()
 	if (!Active())
 		SetupOutputs();
 
+	if (!ffmpegOutput) {
+		obs_output_set_video_encoder(fileOutput, h264Recording);
+		obs_output_set_audio_encoder(fileOutput, aacRecording, 0);
+	}
+	if (replayBuffer) {
+		obs_output_set_video_encoder(replayBuffer, h264Recording);
+		obs_output_set_audio_encoder(replayBuffer, aacRecording, 0);
+	}
+
+	recordingConfigured = true;
+}
+
+bool SimpleOutput::ConfigureRecording(bool updateReplayBuffer)
+{
 	const char *path = config_get_string(main->Config(),
 			"SimpleOutput", "FilePath");
 	const char *format = config_get_string(main->Config(),
@@ -706,13 +773,8 @@ bool SimpleOutput::StartRecording()
 	if (!overwriteIfExists)
 		FindBestFilename(strPath, noSpace);
 
-	if (!ffmpegOutput) {
-		obs_output_set_video_encoder(fileOutput, h264Recording);
-		obs_output_set_audio_encoder(fileOutput, aacRecording, 0);
-	}
-
 	obs_data_t *settings = obs_data_create();
-	if (replayBuffer) {
+	if (updateReplayBuffer) {
 		obs_data_set_string(settings, "directory", path);
 		obs_data_set_string(settings, "format", filenameFormat);
 		obs_data_set_string(settings, "extension", format);
@@ -723,17 +785,36 @@ bool SimpleOutput::StartRecording()
 		obs_data_set_string(settings, ffmpegOutput ? "url" : "path",
 				strPath.c_str());
 	}
+
 	obs_data_set_string(settings, "muxer_settings", mux);
 
-	obs_output_update(fileOutput, settings);
+	if (updateReplayBuffer)
+		obs_output_update(replayBuffer, settings);
+	else
+		obs_output_update(fileOutput, settings);
 
 	obs_data_release(settings);
+	return true;
+}
 
-	if (obs_output_start(fileOutput)) {
-		return true;
-	}
+bool SimpleOutput::StartRecording()
+{
+	UpdateRecording();
+	if (!ConfigureRecording(false))
+		return false;
+	if (!obs_output_start(fileOutput))
+		return false;
+	return true;
+}
 
-	return false;
+bool SimpleOutput::StartReplayBuffer()
+{
+	UpdateRecording();
+	if (!ConfigureRecording(true))
+		return false;
+	if (!obs_output_start(replayBuffer))
+		return false;
+	return true;
 }
 
 void SimpleOutput::StopStreaming(bool force)
@@ -752,6 +833,14 @@ void SimpleOutput::StopRecording(bool force)
 		obs_output_stop(fileOutput);
 }
 
+void SimpleOutput::StopReplayBuffer(bool force)
+{
+	if (force)
+		obs_output_force_stop(replayBuffer);
+	else
+		obs_output_stop(replayBuffer);
+}
+
 bool SimpleOutput::StreamingActive() const
 {
 	return obs_output_active(streamOutput);
@@ -760,6 +849,11 @@ bool SimpleOutput::StreamingActive() const
 bool SimpleOutput::RecordingActive() const
 {
 	return obs_output_active(fileOutput);
+}
+
+bool SimpleOutput::ReplayBufferActive() const
+{
+	return obs_output_active(replayBuffer);
 }
 
 /* ------------------------------------------------------------------------ */

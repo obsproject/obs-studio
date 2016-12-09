@@ -39,6 +39,10 @@ struct obs_frontend_callbacks {
 	virtual void obs_frontend_recording_stop(void)=0;
 	virtual bool obs_frontend_recording_active(void)=0;
 
+	virtual void obs_frontend_replay_buffer_start(void)=0;
+	virtual void obs_frontend_replay_buffer_stop(void)=0;
+	virtual bool obs_frontend_replay_buffer_active(void)=0;
+
 	virtual void *obs_frontend_add_tools_menu_qaction(const char *name)=0;
 	virtual void obs_frontend_add_tools_menu_item(const char *name,
 			obs_frontend_cb callback, void *private_data)=0;
@@ -50,6 +54,7 @@ struct obs_frontend_callbacks {
 
 	virtual obs_output_t *obs_frontend_get_streaming_output(void)=0;
 	virtual obs_output_t *obs_frontend_get_recording_output(void)=0;
+	virtual obs_output_t *obs_frontend_get_replay_buffer_output(void)=0;
 
 	virtual config_t *obs_frontend_get_profile_config(void)=0;
 	virtual config_t *obs_frontend_get_global_config(void)=0;

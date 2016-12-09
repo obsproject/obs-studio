@@ -2663,10 +2663,13 @@ void OBSBasicSettings::SaveHotkeySettings()
 		obs_data_array_release(array);
 	}
 
-	const char *id = obs_obj_get_id(main->outputHandler->fileOutput);
+	if (!main->outputHandler || !main->outputHandler->replayBuffer)
+		return;
+
+	const char *id = obs_obj_get_id(main->outputHandler->replayBuffer);
 	if (strcmp(id, "replay_buffer") == 0) {
 		obs_data_t *hotkeys = obs_hotkeys_save_output(
-				main->outputHandler->fileOutput);
+				main->outputHandler->replayBuffer);
 		config_set_string(config, "Hotkeys", "ReplayBuffer",
 				obs_data_get_json(hotkeys));
 		obs_data_release(hotkeys);
