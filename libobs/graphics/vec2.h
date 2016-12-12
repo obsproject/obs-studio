@@ -106,7 +106,7 @@ static inline void vec2_neg(struct vec2 *dst, const struct vec2 *v)
 
 static inline float vec2_dot(const struct vec2 *v1, const struct vec2 *v2)
 {
-	return (v1->x+v2->x) * (v1->y+v2->y);
+	return v1->x*v2->x + v1->y*v2->y;
 }
 
 static inline float vec2_len(const struct vec2 *v)
