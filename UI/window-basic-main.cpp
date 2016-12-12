@@ -1061,7 +1061,7 @@ void OBSBasic::ResetOutputs()
 			replayBufferButton = new QPushButton(
 					QTStr("Basic.Main.StartReplayBuffer"),
 					this);
-			connect(replayBufferButton,
+			connect(replayBufferButton.data(),
 					&QPushButton::clicked,
 					this,
 					&OBSBasic::ReplayBufferClicked);
@@ -4885,7 +4885,7 @@ void OBSBasic::SystemTrayInit()
 			this, SLOT(on_streamButton_clicked()));
 	connect(sysTrayRecord, SIGNAL(triggered()),
 			this, SLOT(on_recordButton_clicked()));
-	connect(sysTrayReplayBuffer, &QAction::triggered,
+	connect(sysTrayReplayBuffer.data(), &QAction::triggered,
 			this, &OBSBasic::ReplayBufferClicked);
 	connect(exit, SIGNAL(triggered()),
 			this, SLOT(close()));
