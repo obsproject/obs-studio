@@ -58,6 +58,10 @@ EXPORT void matrix4_from_quat(struct matrix4 *dst, const struct quat *q);
 EXPORT void matrix4_from_axisang(struct matrix4 *dst,
 		const struct axisang *aa);
 
+EXPORT void matrix4_add(struct matrix4 *dst, const struct matrix4 *m1,
+		const struct matrix4 *m2);
+EXPORT void matrix4_sub(struct matrix4 *dst, const struct matrix4 *m1,
+		const struct matrix4 *m2);
 EXPORT void matrix4_mul(struct matrix4 *dst, const struct matrix4 *m1,
 		const struct matrix4 *m2);
 
