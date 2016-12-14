@@ -188,6 +188,12 @@ bool obs_frontend_streaming_active(void)
 		: false;
 }
 
+void obs_frontend_set_streaming_service(obs_service_t *service)
+{
+	if (callbacks_valid()) c->obs_frontend_set_streaming_service(service);
+}
+
+
 void obs_frontend_recording_start(void)
 {
 	if (callbacks_valid()) c->obs_frontend_recording_start();
