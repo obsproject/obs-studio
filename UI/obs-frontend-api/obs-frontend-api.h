@@ -65,6 +65,7 @@ EXPORT void obs_frontend_set_current_profile(const char *profile);
 EXPORT void obs_frontend_streaming_start(void);
 EXPORT void obs_frontend_streaming_stop(void);
 EXPORT bool obs_frontend_streaming_active(void);
+EXPORT void obs_frontend_set_streaming_service(obs_service_t *service);
 
 EXPORT void obs_frontend_recording_start(void);
 EXPORT void obs_frontend_recording_stop(void);
