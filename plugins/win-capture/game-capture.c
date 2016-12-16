@@ -1186,7 +1186,9 @@ static void try_hook(struct game_capture *gc)
 		if (gc->process_id == GetCurrentProcessId())
 			return;
 
-		if (!gc->thread_id || !gc->process_id) {
+		if (!gc->thread_id && gc->process_id)
+			return;
+		if (!gc->process_id) {
 			warn("error acquiring, failed to get window "
 					"thread/process ids: %lu",
 					GetLastError());
