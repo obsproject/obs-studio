@@ -1729,13 +1729,17 @@ static void game_capture_tick(void *data, float seconds)
 static inline void game_capture_render_cursor(struct game_capture *gc)
 {
 	POINT p = {0};
+	HWND window;
 
-	if (!gc->global_hook_info->window ||
-	    !gc->global_hook_info->base_cx ||
+	if (!gc->global_hook_info->base_cx ||
 	    !gc->global_hook_info->base_cy)
 		return;
 
-	ClientToScreen((HWND)(uintptr_t)gc->global_hook_info->window, &p);
+	window = !!gc->global_hook_info->window
+		? (HWND)(uintptr_t)gc->global_hook_info->window
+		: gc->window;
+
+	ClientToScreen(window, &p);
 
 	float x_scale = (float)gc->global_hook_info->cx /
 		(float)gc->global_hook_info->base_cx;
