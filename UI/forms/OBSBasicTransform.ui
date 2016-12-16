@@ -648,5 +648,12 @@
   </layout>
  </widget>
  <resources/>
- <connections/>
+ <connections>
+  <connection>
+   <sender>buttonBox</sender>
+   <signal>rejected()</signal>
+   <receiver>OBSBasicTransform</receiver>
+   <slot>reject()</slot>
+  </connection>
+ </connections>
 </ui>
