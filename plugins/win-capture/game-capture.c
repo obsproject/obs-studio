@@ -1016,8 +1016,9 @@ static bool init_hook(struct game_capture *gc)
 					exe.array);
 		}
 	} else {
-		info("attempting to hook process: %s", gc->executable.array);
-		dstr_copy_dstr(&exe, &gc->executable);
+		if (get_window_exe(&exe, gc->next_window)) {
+			info("attempting to hook process: %s", exe.array);
+		}
 	}
 
 	blacklisted_process = is_blacklisted_exe(exe.array);
