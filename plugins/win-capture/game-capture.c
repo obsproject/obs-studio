@@ -1582,6 +1582,8 @@ static inline bool init_shtex_capture(struct game_capture *gc)
 
 static bool start_capture(struct game_capture *gc)
 {
+	debug("Starting capture");
+
 	if (gc->global_hook_info->type == CAPTURE_TYPE_MEMORY) {
 		if (!init_shmem_capture(gc)) {
 			return false;
@@ -1647,6 +1649,7 @@ static void game_capture_tick(void *data, float seconds)
 	}
 
 	if (gc->hook_stop && object_signalled(gc->hook_stop)) {
+		debug("hook stop signal received");
 		stop_capture(gc);
 	}
 	if (gc->active && deactivate) {
@@ -1674,10 +1677,13 @@ static void game_capture_tick(void *data, float seconds)
 	}
 
 	if (gc->hook_ready && object_signalled(gc->hook_ready)) {
+		debug("capture initializing!");
 		enum capture_result result = init_capture_data(gc);
 
 		if (result == CAPTURE_SUCCESS)
 			gc->capturing = start_capture(gc);
+		else
+			debug("init_capture_data failed");
 
 		if (result != CAPTURE_RETRY && !gc->capturing) {
 			gc->retry_interval = ERROR_RETRY_INTERVAL;
