@@ -13,6 +13,7 @@
 #include "window-helpers.h"
 #include "cursor-capture.h"
 #include "app-helpers.h"
+#include "nt-stuff.h"
 
 #define do_log(level, format, ...) \
 	blog(level, "[game-capture: '%s'] " format, \
@@ -984,6 +985,11 @@ static bool is_blacklisted_exe(const char *exe)
 	return false;
 }
 
+static bool target_suspended(struct game_capture *gc)
+{
+	return thread_is_suspended(gc->process_id, gc->thread_id);
+}
+
 static bool init_events(struct game_capture *gc);
 
 static bool init_hook(struct game_capture *gc)
@@ -1007,6 +1013,9 @@ static bool init_hook(struct game_capture *gc)
 	dstr_free(&exe);
 
 	if (blacklisted_process) {
+		return false;
+	}
+	if (target_suspended(gc)) {
 		return false;
 	}
 	if (!open_target_process(gc)) {

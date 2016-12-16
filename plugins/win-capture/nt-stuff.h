@@ -2,9 +2,45 @@
 
 #include <winternl.h>
 
+#define THREAD_STATE_WAITING 5
+#define THREAD_WAIT_REASON_SUSPENDED 5
+
+typedef struct _SYSTEM_PROCESS_INFORMATION2 {
+    ULONG NextEntryOffset;
+    ULONG ThreadCount;
+    BYTE Reserved1[48];
+    PVOID Reserved2[3];
+    HANDLE UniqueProcessId;
+    PVOID Reserved3;
+    ULONG HandleCount;
+    BYTE Reserved4[4];
+    PVOID Reserved5[11];
+    SIZE_T PeakPagefileUsage;
+    SIZE_T PrivatePageCount;
+    LARGE_INTEGER Reserved6[6];
+} SYSTEM_PROCESS_INFORMATION2;
+
+typedef struct _SYSTEM_THREAD_INFORMATION {
+	FILETIME KernelTime;
+	FILETIME UserTime;
+	FILETIME CreateTime;
+	DWORD WaitTime;
+	PVOID Address;
+	HANDLE UniqueProcessId;
+	HANDLE UniqueThreadId;
+	DWORD Priority;
+	DWORD BasePriority;
+	DWORD ContextSwitches;
+	DWORD ThreadState;
+	DWORD WaitReason;
+	DWORD Reserved1;
+} SYSTEM_THREAD_INFORMATION;
+
 #ifndef NT_SUCCESS
 #define NT_SUCCESS(status) ((NTSTATUS)(status) >= 0)
 #endif
+
+#define STATUS_INFO_LENGTH_MISMATCH      ((NTSTATUS)0xC0000004L)
 
 #define init_named_attribs(o, name) \
 	do { \
@@ -18,6 +54,8 @@
 
 typedef void (WINAPI *RTLINITUNICODESTRINGFUNC)(PCUNICODE_STRING pstr, const wchar_t *lpstrName);
 typedef NTSTATUS (WINAPI *NTOPENFUNC)(PHANDLE phandle, ACCESS_MASK access, POBJECT_ATTRIBUTES objattr);
+typedef ULONG (WINAPI *RTLNTSTATUSTODOSERRORFUNC)(NTSTATUS status);
+typedef NTSTATUS (WINAPI *NTQUERYSYSTEMINFORMATIONFUNC)(SYSTEM_INFORMATION_CLASS, PVOID, ULONG, PULONG);
 
 static FARPROC get_nt_func(const char *name)
 {
@@ -59,6 +97,79 @@ static void rtl_init_str(UNICODE_STRING *unistr, const wchar_t *str)
 
 	if (func)
 		func(unistr, str);
+}
+
+static NTSTATUS nt_query_information(SYSTEM_INFORMATION_CLASS info_class,
+		PVOID info, ULONG info_len, PULONG ret_len)
+{
+	static bool initialized = false;
+	static NTQUERYSYSTEMINFORMATIONFUNC func = NULL;
+
+	if (!initialized) {
+		func = (NTQUERYSYSTEMINFORMATIONFUNC)get_nt_func(
+				"NtQuerySystemInformation");
+		initialized = true;
+	}
+
+	if (func)
+		return func(info_class, info, info_len, ret_len);
+	return (NTSTATUS)-1;
+}
+
+static bool thread_is_suspended(DWORD process_id, DWORD thread_id)
+{
+	ULONG size = 4096;
+	bool suspended = false;
+	void *data = malloc(size);
+
+	for (;;) {
+		NTSTATUS stat = nt_query_information(SystemProcessInformation,
+				data, size, &size);
+		if (NT_SUCCESS(stat))
+			break;
+
+		if (stat != STATUS_INFO_LENGTH_MISMATCH) {
+			goto fail;
+		}
+
+		free(data);
+		size += 1024;
+		data = malloc(size);
+	}
+
+	SYSTEM_PROCESS_INFORMATION2 *spi = data;
+
+	for (;;) {
+		if (spi->UniqueProcessId == (HANDLE)process_id) {
+			break;
+		}
+
+		ULONG offset = spi->NextEntryOffset;
+		if (!offset)
+			goto fail;
+
+		spi = (SYSTEM_PROCESS_INFORMATION2*)((BYTE*)spi + offset);
+	}
+
+	SYSTEM_THREAD_INFORMATION *sti;
+	SYSTEM_THREAD_INFORMATION *info = NULL;
+	sti = (SYSTEM_THREAD_INFORMATION*)((BYTE*)spi + sizeof(*spi));
+
+	for (ULONG i = 0; i < spi->ThreadCount; i++) {
+		if (sti[i].UniqueThreadId == (HANDLE)thread_id) {
+			info = &sti[i];
+			break;
+		}
+	}
+
+	if (info) {
+		suspended = info->ThreadState == THREAD_STATE_WAITING &&
+			info->WaitReason == THREAD_WAIT_REASON_SUSPENDED;
+	}
+
+fail:
+	free(data);
+	return suspended;
 }
 
 #define MAKE_NT_OPEN_FUNC(func_name, nt_name, access) \
