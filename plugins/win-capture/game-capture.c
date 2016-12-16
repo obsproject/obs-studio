@@ -148,6 +148,7 @@ struct game_capture {
 	HANDLE                        target_process;
 	HANDLE                        texture_mutexes[2];
 	wchar_t                       *app_sid;
+	int                           retrying;
 
 	union {
 		struct {
@@ -316,6 +317,9 @@ static void stop_capture(struct game_capture *gc)
 	gc->wait_for_target_startup = false;
 	gc->active = false;
 	gc->capturing = false;
+
+	if (gc->retrying)
+		gc->retrying--;
 }
 
 static inline void free_config(struct game_capture_config *config)
@@ -718,7 +722,16 @@ static inline bool init_texture_mutexes(struct game_capture *gc)
 	gc->texture_mutexes[1] = open_mutex_gc(gc, MUTEX_TEXTURE2);
 
 	if (!gc->texture_mutexes[0] || !gc->texture_mutexes[1]) {
-		warn("failed to open texture mutexes: %lu", GetLastError());
+		DWORD error = GetLastError();
+		if (error == 2) {
+			if (!gc->retrying) {
+				gc->retrying = 2;
+				info("hook not loaded yet, retrying..");
+			}
+		} else {
+			warn("failed to open texture mutexes: %lu",
+					GetLastError());
+		}
 		return false;
 	}
 
@@ -1047,6 +1060,7 @@ static bool init_hook(struct game_capture *gc)
 	gc->window = gc->next_window;
 	gc->next_window = NULL;
 	gc->active = true;
+	gc->retrying = 0;
 	return true;
 }
 
