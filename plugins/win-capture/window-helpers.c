@@ -285,7 +285,8 @@ static int window_rating(HWND window,
 		enum window_priority priority,
 		const char *class,
 		const char *title,
-		const char *exe)
+		const char *exe,
+		bool uwp_window)
 {
 	struct dstr cur_class = {0};
 	struct dstr cur_title = {0};
@@ -307,12 +308,18 @@ static int window_rating(HWND window,
 	else
 		exe_val += 3;
 
-	if (dstr_cmpi(&cur_class, class) == 0)
-		total += class_val;
-	if (dstr_cmpi(&cur_title, title) == 0)
-		total += title_val;
-	if (dstr_cmpi(&cur_exe, exe) == 0)
-		total += exe_val;
+	if (uwp_window) {
+		if (dstr_cmpi(&cur_title, title) == 0 &&
+		    dstr_cmpi(&cur_exe, exe) == 0)
+			total += exe_val + title_val + class_val;
+	} else {
+		if (dstr_cmpi(&cur_class, class) == 0)
+			total += class_val;
+		if (dstr_cmpi(&cur_title, title) == 0)
+			total += title_val;
+		if (dstr_cmpi(&cur_exe, exe) == 0)
+			total += exe_val;
+	}
 
 	dstr_free(&cur_class);
 	dstr_free(&cur_title);
@@ -331,9 +338,11 @@ HWND find_window(enum window_search_mode mode,
 	HWND window      = first_window(mode, &parent);
 	HWND best_window = NULL;
 	int  best_rating = 0;
+	bool uwp_window  = strcmp(class, "Windows.UI.Core.CoreWindow") == 0;
 
 	while (window) {
-		int rating = window_rating(window, priority, class, title, exe);
+		int rating = window_rating(window, priority, class, title, exe,
+				uwp_window);
 		if (rating > best_rating) {
 			best_rating = rating;
 			best_window = window;
