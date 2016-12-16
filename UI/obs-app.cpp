@@ -66,6 +66,7 @@ bool opt_start_recording = false;
 string opt_starting_collection;
 string opt_starting_profile;
 string opt_starting_scene;
+string opt_starting_service_profile;
 
 QObject *CreateShortcutFilter()
 {
@@ -1752,7 +1753,11 @@ int main(int argc, char *argv[])
 
 		} else if (arg_is(argv[i], "--scene", nullptr)) {
 			if (++i < argc) opt_starting_scene = argv[i];
-		}
+
+        } else if (arg_is(argv[i], "--service", nullptr)) {
+            if (++i < argc) opt_starting_service_profile = argv[i];
+
+        }
 	}
 
 #if !OBS_UNIX_STRUCTURE

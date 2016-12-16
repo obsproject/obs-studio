@@ -736,14 +736,17 @@ void OBSBasic::SaveService()
 
 bool OBSBasic::LoadService()
 {
-	const char *type;
-
 	char serviceJsonPath[512];
-	int ret = GetProfilePath(serviceJsonPath, sizeof(serviceJsonPath),
+    int ret = GetProfilePath(serviceJsonPath, sizeof(serviceJsonPath),
 			SERVICE_PATH);
 	if (ret <= 0)
 		return false;
 
+    return LoadService(serviceJsonPath);
+}
+
+bool OBSBasic::LoadService(const char* serviceJsonPath){
+    const char *type;
 	obs_data_t *data = obs_data_create_from_json_file_safe(serviceJsonPath,
 			"bak");
 
@@ -767,6 +770,10 @@ bool OBSBasic::LoadService()
 bool OBSBasic::InitService()
 {
 	ProfileScope("OBSBasic::InitService");
+
+    if (opt_starting_service_profile.length()) { //load the starting service.
+        return LoadService(opt_starting_service_profile.c_str());
+    }
 
 	if (LoadService())
 		return true;

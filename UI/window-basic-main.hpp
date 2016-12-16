@@ -467,6 +467,7 @@ public:
 
 	void SaveService();
 	bool LoadService();
+    bool LoadService(const char * serviceJsonPath);
 
 	void ReorderSceneItem(obs_sceneitem_t *item, size_t idx);
 
