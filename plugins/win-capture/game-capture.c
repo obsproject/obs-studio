@@ -976,6 +976,7 @@ static const char *blacklisted_exes[] = {
 	"devenv",
 	"taskmgr",
 	"systemsettings",
+	"applicationframehost",
 	"cmd",
 	NULL
 };
