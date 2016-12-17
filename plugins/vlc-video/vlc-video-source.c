@@ -662,8 +662,10 @@ static void vlcs_defaults(obs_data_t *settings)
 			S_BEHAVIOR_STOP_RESTART);
 }
 
-static obs_properties_t *vlcs_properties(void *data)
+static obs_properties_t *vlcs_properties(void *data, obs_data_t *settings)
 {
+	UNUSED_PARAMETER(settings);
+
 	obs_properties_t *ppts = obs_properties_create();
 	struct vlc_source *c = data;
 	struct dstr filter = {0};

@@ -211,9 +211,10 @@ static BOOL CALLBACK enum_monitor_props(HMONITOR handle, HDC hdc, LPRECT rect,
 	return TRUE;
 }
 
-static obs_properties_t *monitor_capture_properties(void *unused)
+static obs_properties_t *monitor_capture_properties(void *unused, obs_data_t *settings)
 {
 	UNUSED_PARAMETER(unused);
+	UNUSED_PARAMETER(settings);
 
 	obs_properties_t *props = obs_properties_create();
 

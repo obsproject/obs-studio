@@ -723,9 +723,10 @@ static void device_removed(void *vptr, calldata_t *calldata)
 
 #endif
 
-static obs_properties_t *v4l2_properties(void *vptr)
+static obs_properties_t *v4l2_properties(void *vptr, obs_data_t *settings)
 {
 	V4L2_DATA(vptr);
+	UNUSED_PARAMETER(settings);
 
 	obs_properties_t *props = obs_properties_create();
 

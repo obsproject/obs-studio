@@ -82,7 +82,7 @@ static void mask_filter_defaults(obs_data_t *settings)
 #define IMAGE_FILTER_EXTENSIONS \
 	" (*.bmp *.jpg *.jpeg *.tga *.gif *.png)"
 
-static obs_properties_t *mask_filter_properties(void *data)
+static obs_properties_t *mask_filter_properties(void *data, obs_data_t *settings)
 {
 	obs_properties_t *props = obs_properties_create();
 	struct dstr filter_str = {0};
@@ -121,6 +121,8 @@ static obs_properties_t *mask_filter_properties(void *data)
 	dstr_free(&filter_str);
 
 	UNUSED_PARAMETER(data);
+	UNUSED_PARAMETER(settings);
+
 	return props;
 }
 

@@ -302,7 +302,7 @@ obs_properties_t *obs_get_encoder_properties(const char *id)
 		obs_data_t       *defaults = get_defaults(ei);
 		obs_properties_t *properties;
 
-		properties = ei->get_properties(NULL);
+		properties = ei->get_properties(NULL, defaults);
 		obs_properties_apply_settings(properties, defaults);
 		obs_data_release(defaults);
 		return properties;
@@ -317,7 +317,7 @@ obs_properties_t *obs_encoder_properties(const obs_encoder_t *encoder)
 
 	if (encoder->info.get_properties) {
 		obs_properties_t *props;
-		props = encoder->info.get_properties(encoder->context.data);
+		props = encoder->info.get_properties(encoder->context.data, encoder->context.settings);
 		obs_properties_apply_settings(props, encoder->context.settings);
 		return props;
 	}

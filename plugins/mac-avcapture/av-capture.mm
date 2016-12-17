@@ -2070,8 +2070,10 @@ static void add_manual_properties(obs_properties_t *props)
 #undef ADD_RANGE
 }
 
-static obs_properties_t *av_capture_properties(void *capture)
+static obs_properties_t *av_capture_properties(void *capture, obs_data_t *settings)
 {
+	UNUSED_PARAMETER(settings);
+
 	obs_properties_t *props = obs_properties_create();
 
 	add_properties_param(props, static_cast<av_capture*>(capture));

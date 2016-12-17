@@ -123,9 +123,10 @@ static void jack_input_defaults(obs_data_t *settings)
 /**
  * Get plugin properties
  */
-static obs_properties_t *jack_input_properties(void *unused)
+static obs_properties_t *jack_input_properties(void *unused, obs_data_t *settings)
 {
-	(void)unused;
+	UNUSED_PARAMETER(unused);
+	UNUSED_PARAMETER(settings);
 
 	obs_properties_t *props = obs_properties_create();
 

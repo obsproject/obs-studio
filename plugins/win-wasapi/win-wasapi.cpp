@@ -557,13 +557,17 @@ static obs_properties_t *GetWASAPIProperties(bool input)
 	return props;
 }
 
-static obs_properties_t *GetWASAPIPropertiesInput(void *)
+static obs_properties_t *GetWASAPIPropertiesInput(void *, obs_data_t *settings)
 {
+	UNUSED_PARAMETER(settings);
+
 	return GetWASAPIProperties(true);
 }
 
-static obs_properties_t *GetWASAPIPropertiesOutput(void *)
+static obs_properties_t *GetWASAPIPropertiesOutput(void *, obs_data_t *settings)
 {
+	UNUSED_PARAMETER(settings);
+
 	return GetWASAPIProperties(false);
 }
 

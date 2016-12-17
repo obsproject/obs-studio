@@ -222,8 +222,10 @@ static const char *image_filter =
 	"JPEG Files (*.jpeg *.jpg);;"
 	"GIF Files (*.gif)";
 
-static obs_properties_t *image_source_properties(void *data)
+static obs_properties_t *image_source_properties(void *data, obs_data_t *settings)
 {
+	UNUSED_PARAMETER(settings);
+
 	struct image_source *s = data;
 	struct dstr path = {0};
 

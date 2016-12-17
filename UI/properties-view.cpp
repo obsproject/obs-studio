@@ -89,9 +89,9 @@ Q_DECLARE_METATYPE(media_frames_per_second);
 void OBSPropertiesView::ReloadProperties()
 {
 	if (obj) {
-		properties.reset(reloadCallback(obj));
+		properties.reset(reloadCallback(obj, settings));
 	} else {
-		properties.reset(reloadCallback((void*)type.c_str()));
+		properties.reset(reloadCallback((void*)type.c_str(), settings));
 		obs_properties_apply_settings(properties.get(), settings);
 	}
 

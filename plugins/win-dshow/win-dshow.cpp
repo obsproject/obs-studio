@@ -1713,8 +1713,10 @@ static bool ActivateClicked(obs_properties_t *, obs_property_t *p,
 	return true;
 }
 
-static obs_properties_t *GetDShowProperties(void *obj)
+static obs_properties_t *GetDShowProperties(void *obj, obs_data_t *settings)
 {
+	UNUSED_PARAMETER(settings);
+
 	DShowInput *input = reinterpret_cast<DShowInput*>(obj);
 	obs_properties_t *ppts = obs_properties_create();
 	PropertiesData *data = new PropertiesData;

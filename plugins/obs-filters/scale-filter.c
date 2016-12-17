@@ -254,7 +254,7 @@ static const char *aspects[] = {
 
 #define NUM_ASPECTS (sizeof(aspects) / sizeof(const char *))
 
-static obs_properties_t *scale_filter_properties(void *data)
+static obs_properties_t *scale_filter_properties(void *data, obs_data_t *settings)
 {
 	obs_properties_t *props = obs_properties_create();
 	struct obs_video_info ovi;
@@ -304,6 +304,8 @@ static obs_properties_t *scale_filter_properties(void *data)
 	/* ----------------- */
 
 	UNUSED_PARAMETER(data);
+	UNUSED_PARAMETER(settings);
+
 	return props;
 }
 

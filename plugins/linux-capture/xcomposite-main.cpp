@@ -37,9 +37,10 @@ static uint32_t xcompcap_getheight(void* data)
 	return cc->height();
 }
 
-static obs_properties_t *xcompcap_props(void *unused)
+static obs_properties_t *xcompcap_props(void *unused, obs_data_t *settings)
 {
 	UNUSED_PARAMETER(unused);
+	UNUSED_PARAMETER(settings);
 
 	return XCompcapMain::properties();
 }

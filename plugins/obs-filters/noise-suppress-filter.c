@@ -272,7 +272,7 @@ static void noise_suppress_defaults(obs_data_t *s)
 	obs_data_set_default_int(s, S_SUPPRESS_LEVEL, -30);
 }
 
-static obs_properties_t *noise_suppress_properties(void *data)
+static obs_properties_t *noise_suppress_properties(void *data, obs_data_t *settings)
 {
 	obs_properties_t *ppts = obs_properties_create();
 
@@ -280,6 +280,8 @@ static obs_properties_t *noise_suppress_properties(void *data)
 			TEXT_SUPPRESS_LEVEL, SUP_MIN, SUP_MAX, 1);
 
 	UNUSED_PARAMETER(data);
+	UNUSED_PARAMETER(settings);
+
 	return ppts;
 }
 

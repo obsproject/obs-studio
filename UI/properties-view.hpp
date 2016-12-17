@@ -9,7 +9,8 @@ class QFormLayout;
 class OBSPropertiesView;
 class QLabel;
 
-typedef obs_properties_t *(*PropertiesReloadCallback)(void *obj);
+typedef obs_properties_t *(*PropertiesReloadCallback)(void *obj,
+							obs_data_t *settings);
 typedef void              (*PropertiesUpdateCallback)(void *obj,
 							obs_data_t *settings);
 

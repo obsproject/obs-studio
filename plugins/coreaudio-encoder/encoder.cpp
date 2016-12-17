@@ -1316,8 +1316,10 @@ static bool samplerate_updated(obs_properties_t *props, obs_property_t *prop,
 	return false;
 }
 
-static obs_properties_t *aac_properties(void *data)
+static obs_properties_t *aac_properties(void *data, obs_data_t *settings)
 {
+	UNUSED_PARAMETER(settings);
+
 	ca_encoder *ca = static_cast<ca_encoder*>(data);
 
 	obs_properties_t *props = obs_properties_create();

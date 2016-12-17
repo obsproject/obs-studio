@@ -329,9 +329,10 @@ static bool xshm_server_changed(obs_properties_t *props,
 /**
  * Get the properties for the capture
  */
-static obs_properties_t *xshm_properties(void *vptr)
+static obs_properties_t *xshm_properties(void *vptr, obs_data_t *settings)
 {
 	XSHM_DATA(vptr);
+	UNUSED_PARAMETER(settings);
 
 	obs_properties_t *props = obs_properties_create();
 
