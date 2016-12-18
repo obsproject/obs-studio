@@ -2098,6 +2098,23 @@ static inline void copy_frame_data_plane(struct obs_source_frame *dst,
 				dst->linesize[plane] * lines);
 }
 
+static inline void copy_frame_data_y800(struct obs_source_frame *dst,
+		const struct obs_source_frame *src)
+{
+	uint32_t          size     = src->height * src->width;
+	register uint32_t *ptr_dst = (uint32_t *)dst->data[0];
+	register uint8_t  *ptr_src = (uint8_t  *)src->data[0];
+	register uint32_t new_val;
+	uint8_t           *src_end = ptr_src + size;
+
+	while (ptr_src < src_end) {
+		new_val = *(ptr_src++);
+		new_val |= (new_val << 8);
+		new_val |= (new_val << 16);
+		*(ptr_dst++) = new_val;
+	}
+}
+
 static void copy_frame_data(struct obs_source_frame *dst,
 		const struct obs_source_frame *src)
 {
@@ -2111,7 +2128,7 @@ static void copy_frame_data(struct obs_source_frame *dst,
 		memcpy(dst->color_range_max, src->color_range_max, size);
 	}
 
-	switch (dst->format) {
+	switch (src->format) {
 	case VIDEO_FORMAT_I420:
 		copy_frame_data_plane(dst, src, 0, dst->height);
 		copy_frame_data_plane(dst, src, 1, dst->height/2);
@@ -2129,10 +2146,13 @@ static void copy_frame_data(struct obs_source_frame *dst,
 		copy_frame_data_plane(dst, src, 2, dst->height);
 		break;
 
+	case VIDEO_FORMAT_Y800:
+		copy_frame_data_y800(dst, src);
+		break;
+
 	case VIDEO_FORMAT_YVYU:
 	case VIDEO_FORMAT_YUY2:
 	case VIDEO_FORMAT_UYVY:
-	case VIDEO_FORMAT_Y800:
 	case VIDEO_FORMAT_NONE:
 	case VIDEO_FORMAT_RGBA:
 	case VIDEO_FORMAT_BGRA:
@@ -2218,8 +2238,12 @@ static inline struct obs_source_frame *cache_video(struct obs_source *source,
 
 	if (!new_frame) {
 		struct async_frame new_af;
+		enum video_format format;
 
-		new_frame = obs_source_frame_create(frame->format,
+		if (frame->format == VIDEO_FORMAT_Y800)
+			format = VIDEO_FORMAT_BGRX;
+
+		new_frame = obs_source_frame_create(format,
 				frame->width, frame->height);
 		new_af.frame = new_frame;
 		new_af.used = true;

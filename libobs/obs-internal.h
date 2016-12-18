@@ -719,8 +719,6 @@ static inline enum gs_color_format convert_video_format(
 		return GS_RGBA;
 	else if (format == VIDEO_FORMAT_BGRA)
 		return GS_BGRA;
-	else if (format == VIDEO_FORMAT_Y800)
-		return GS_R8;
 
 	return GS_BGRX;
 }
