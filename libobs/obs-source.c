@@ -2098,20 +2098,38 @@ static inline void copy_frame_data_plane(struct obs_source_frame *dst,
 				dst->linesize[plane] * lines);
 }
 
+static void copy_frame_data_line_y800(uint32_t *dst, uint8_t *src, uint8_t *end)
+{
+	while (src < end) {
+		register uint32_t val = *(src++);
+		val |= (val << 8);
+		val |= (val << 16);
+		*(dst++) = val;
+	}
+}
+
 static inline void copy_frame_data_y800(struct obs_source_frame *dst,
 		const struct obs_source_frame *src)
 {
-	uint32_t          size     = src->height * src->width;
-	register uint32_t *ptr_dst = (uint32_t *)dst->data[0];
-	register uint8_t  *ptr_src = (uint8_t  *)src->data[0];
-	register uint32_t new_val;
-	uint8_t           *src_end = ptr_src + size;
+	uint32_t *ptr_dst;
+	uint8_t  *ptr_src;
+	uint8_t  *src_end;
 
-	while (ptr_src < src_end) {
-		new_val = *(ptr_src++);
-		new_val |= (new_val << 8);
-		new_val |= (new_val << 16);
-		*(ptr_dst++) = new_val;
+	if ((src->linesize[0] * 4) != dst->linesize[0]) {
+		for (uint32_t cy = 0; cy < src->height; cy++) {
+			ptr_dst = (uint32_t*)
+				(dst->data[0] + cy * dst->linesize[0]);
+			ptr_src = (src->data[0] + cy * src->linesize[0]);
+			src_end = ptr_src + src->width;
+
+			copy_frame_data_line_y800(ptr_dst, ptr_src, src_end);
+		}
+	} else {
+		ptr_dst = (uint32_t*)dst->data[0];
+		ptr_src = (uint8_t *)src->data[0];
+		src_end = ptr_src + src->height * src->linesize[0];
+
+		copy_frame_data_line_y800(ptr_dst, ptr_src, src_end);
 	}
 }
 
@@ -2146,10 +2164,6 @@ static void copy_frame_data(struct obs_source_frame *dst,
 		copy_frame_data_plane(dst, src, 2, dst->height);
 		break;
 
-	case VIDEO_FORMAT_Y800:
-		copy_frame_data_y800(dst, src);
-		break;
-
 	case VIDEO_FORMAT_YVYU:
 	case VIDEO_FORMAT_YUY2:
 	case VIDEO_FORMAT_UYVY:
@@ -2158,6 +2172,10 @@ static void copy_frame_data(struct obs_source_frame *dst,
 	case VIDEO_FORMAT_BGRA:
 	case VIDEO_FORMAT_BGRX:
 		copy_frame_data_plane(dst, src, 0, dst->height);
+
+	case VIDEO_FORMAT_Y800:
+		copy_frame_data_y800(dst, src);
+		break;
 	}
 }
 
