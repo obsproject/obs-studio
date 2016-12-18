@@ -2238,9 +2238,9 @@ static inline struct obs_source_frame *cache_video(struct obs_source *source,
 
 	if (!new_frame) {
 		struct async_frame new_af;
-		enum video_format format;
+		enum video_format format = frame->format;
 
-		if (frame->format == VIDEO_FORMAT_Y800)
+		if (format == VIDEO_FORMAT_Y800)
 			format = VIDEO_FORMAT_BGRX;
 
 		new_frame = obs_source_frame_create(format,
