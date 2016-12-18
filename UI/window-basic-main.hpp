@@ -498,6 +498,8 @@ private slots:
 	void on_actionCheckForUpdates_triggered();
 
 	void on_actionEditTransform_triggered();
+	void on_actionCopyTransform_triggered();
+	void on_actionPasteTransform_triggered();
 	void on_actionRotate90CW_triggered();
 	void on_actionRotate90CCW_triggered();
 	void on_actionRotate180_triggered();
