@@ -639,11 +639,22 @@
     </layout>
    </item>
    <item>
-    <widget class="QDialogButtonBox" name="buttonBox">
-     <property name="standardButtons">
-      <set>QDialogButtonBox::Reset|QDialogButtonBox::Close</set>
-     </property>
-    </widget>
+    <layout class="QGridLayout" name="gridLayout1">
+     <item row="0" column="1">
+      <widget class="QDialogButtonBox" name="buttonBox1">
+       <property name="standardButtons">
+        <set>QDialogButtonBox::Close</set>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="0">
+      <widget class="QDialogButtonBox" name="buttonBox0">
+       <property name="standardButtons">
+        <set>QDialogButtonBox::Reset</set>
+       </property>
+      </widget>
+     </item>
+    </layout>
    </item>
   </layout>
  </widget>

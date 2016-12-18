@@ -56,9 +56,9 @@ OBSBasicTransform::OBSBasicTransform(OBSBasic *parent)
 	HookWidget(ui->cropTop,      ISCROLL_CHANGED, SLOT(OnCropChanged()));
 	HookWidget(ui->cropBottom,   ISCROLL_CHANGED, SLOT(OnCropChanged()));
 
-	connect(ui->buttonBox->button(QDialogButtonBox::Reset),
+	connect(ui->buttonBox0->button(QDialogButtonBox::Reset),
 		SIGNAL(clicked()), this, SLOT(on_resetButton_clicked()));
-	connect(ui->buttonBox,
+	connect(ui->buttonBox1,
 		SIGNAL(rejected()), this, SLOT(close()));
 
 	installEventFilter(CreateShortcutFilter());
