@@ -787,7 +787,6 @@ inline void TextSource::Render(gs_effect_t *effect)
 	if (!tex)
 		return;
 
-	gs_reset_blend_state();
 	gs_effect_set_texture(gs_effect_get_param_by_name(effect, "image"), tex);
 	gs_draw_sprite(tex, 0, cx, cy);
 }
