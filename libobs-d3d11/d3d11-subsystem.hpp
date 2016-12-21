@@ -362,6 +362,7 @@ struct gs_texture_2d : gs_texture {
 	void InitRenderTargets();
 	void BackupTexture(const uint8_t **data);
 
+	void RebuildSharedTextureFallback();
 	inline void Rebuild(ID3D11Device *dev);
 
 	inline void Release()
