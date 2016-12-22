@@ -1084,6 +1084,20 @@ void OBSBasic::ResetOutputs()
 
 extern obs_frontend_callbacks *InitializeAPIInterface(OBSBasic *main);
 
+#define UNSUPPORTED_ERROR \
+	"Failed to initialize video:\n\nRequired graphics API functionality " \
+	"not found.  Your GPU may not be supported."
+
+#define UNKNOWN_ERROR \
+	"Failed to initialize video.  This error can happen for one of " \
+		"the following reasons:\n\n" \
+	"1.) Your GPU might not supported (DirectX 10 support minimum " \
+		"is required - note that some older and outdated " \
+		"integrated laptop GPUs do not support DirectX 10)\n" \
+	"2.) You may be running Windows Vista without the " \
+		"\"Platform Update\"\n" \
+	"3.) Your video card drivers may be out of date"
+
 void OBSBasic::OBSInit()
 {
 	ProfileScope("OBSBasic::OBSInit");
@@ -1117,14 +1131,12 @@ void OBSBasic::OBSInit()
 	case OBS_VIDEO_MODULE_NOT_FOUND:
 		throw "Failed to initialize video:  Graphics module not found";
 	case OBS_VIDEO_NOT_SUPPORTED:
-		throw "Failed to initialize video:  Required graphics API "
-		      "functionality not found on these drivers or "
-		      "unavailable on this equipment";
+		throw UNSUPPORTED_ERROR;
 	case OBS_VIDEO_INVALID_PARAM:
 		throw "Failed to initialize video:  Invalid parameters";
 	default:
 		if (ret != OBS_VIDEO_SUCCESS)
-			throw "Failed to initialize video:  Unspecified error";
+			throw UNKNOWN_ERROR;
 	}
 
 	InitOBSCallbacks();
