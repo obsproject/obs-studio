@@ -1149,6 +1149,20 @@
                             </property>
                            </widget>
                           </item>
+                          <item>
+                           <widget class="QRadioButton" name="advOutTrack5">
+                            <property name="text">
+                             <string notr="true">5</string>
+                            </property>
+                           </widget>
+                          </item>
+                          <item>
+                           <widget class="QRadioButton" name="advOutTrack6">
+                            <property name="text">
+                             <string notr="true">6</string>
+                            </property>
+                           </widget>
+                          </item>
                          </layout>
                         </widget>
                        </item>
@@ -1489,6 +1503,20 @@
                                <widget class="QCheckBox" name="advOutRecTrack4">
                                 <property name="text">
                                  <string notr="true">4</string>
+                                </property>
+                               </widget>
+                              </item>
+                              <item>
+                               <widget class="QCheckBox" name="advOutRecTrack5">
+                                <property name="text">
+                                 <string notr="true">5</string>
+                                </property>
+                               </widget>
+                              </item>
+                              <item>
+                               <widget class="QCheckBox" name="advOutRecTrack6">
+                                <property name="text">
+                                 <string notr="true">6</string>
                                 </property>
                                </widget>
                               </item>
@@ -1856,6 +1884,20 @@
                          <widget class="QRadioButton" name="advOutFFTrack4">
                           <property name="text">
                            <string notr="true">4</string>
+                          </property>
+                         </widget>
+                        </item>
+                        <item>
+                         <widget class="QRadioButton" name="advOutFFTrack5">
+                          <property name="text">
+                           <string notr="true">5</string>
+                          </property>
+                         </widget>
+                        </item>
+                        <item>
+                         <widget class="QRadioButton" name="advOutFFTrack6">
+                          <property name="text">
+                           <string notr="true">6</string>
                           </property>
                          </widget>
                         </item>
@@ -2442,6 +2484,236 @@
                       </layout>
                      </widget>
                     </item>
+                    <item>
+                     <widget class="QGroupBox" name="groupBox_9">
+                      <property name="sizePolicy">
+                       <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
+                        <horstretch>0</horstretch>
+                        <verstretch>0</verstretch>
+                       </sizepolicy>
+                      </property>
+                      <property name="title">
+                       <string>Basic.Settings.Output.Adv.Audio.Track5</string>
+                      </property>
+                      <layout class="QFormLayout" name="formLayout_25">
+                       <property name="fieldGrowthPolicy">
+                        <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+                       </property>
+                       <property name="labelAlignment">
+                        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                       </property>
+                       <item row="0" column="0">
+                        <widget class="QLabel" name="label_59">
+                         <property name="minimumSize">
+                          <size>
+                           <width>170</width>
+                           <height>0</height>
+                          </size>
+                         </property>
+                         <property name="text">
+                          <string>Basic.Settings.Output.AudioBitrate</string>
+                         </property>
+                         <property name="alignment">
+                          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                         </property>
+                         <property name="buddy">
+                          <cstring>advOutTrack4Bitrate</cstring>
+                         </property>
+                        </widget>
+                       </item>
+                       <item row="0" column="1">
+                        <widget class="QComboBox" name="advOutTrack5Bitrate">
+                         <property name="currentIndex">
+                          <number>8</number>
+                         </property>
+                         <item>
+                          <property name="text">
+                           <string>32</string>
+                          </property>
+                         </item>
+                         <item>
+                          <property name="text">
+                           <string>48</string>
+                          </property>
+                         </item>
+                         <item>
+                          <property name="text">
+                           <string>64</string>
+                          </property>
+                         </item>
+                         <item>
+                          <property name="text">
+                           <string>80</string>
+                          </property>
+                         </item>
+                         <item>
+                          <property name="text">
+                           <string>96</string>
+                          </property>
+                         </item>
+                         <item>
+                          <property name="text">
+                           <string>112</string>
+                          </property>
+                         </item>
+                         <item>
+                          <property name="text">
+                           <string>128</string>
+                          </property>
+                         </item>
+                         <item>
+                          <property name="text">
+                           <string>160</string>
+                          </property>
+                         </item>
+                         <item>
+                          <property name="text">
+                           <string>192</string>
+                          </property>
+                         </item>
+                         <item>
+                          <property name="text">
+                           <string>256</string>
+                          </property>
+                         </item>
+                         <item>
+                          <property name="text">
+                           <string>320</string>
+                          </property>
+                         </item>
+                        </widget>
+                       </item>
+                       <item row="1" column="0">
+                        <widget class="QLabel" name="label_60">
+                         <property name="text">
+                          <string>Name</string>
+                         </property>
+                         <property name="buddy">
+                          <cstring>advOutTrack4Name</cstring>
+                         </property>
+                        </widget>
+                       </item>
+                       <item row="1" column="1">
+                        <widget class="QLineEdit" name="advOutTrack5Name"/>
+                       </item>
+                      </layout>
+                     </widget>
+                    </item>
+                    <item>
+                     <widget class="QGroupBox" name="groupBox_12">
+                      <property name="sizePolicy">
+                       <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
+                        <horstretch>0</horstretch>
+                        <verstretch>0</verstretch>
+                       </sizepolicy>
+                      </property>
+                      <property name="title">
+                       <string>Basic.Settings.Output.Adv.Audio.Track6</string>
+                      </property>
+                      <layout class="QFormLayout" name="formLayout_26">
+                       <property name="fieldGrowthPolicy">
+                        <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+                       </property>
+                       <property name="labelAlignment">
+                        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                       </property>
+                       <item row="0" column="0">
+                        <widget class="QLabel" name="label_61">
+                         <property name="minimumSize">
+                          <size>
+                           <width>170</width>
+                           <height>0</height>
+                          </size>
+                         </property>
+                         <property name="text">
+                          <string>Basic.Settings.Output.AudioBitrate</string>
+                         </property>
+                         <property name="alignment">
+                          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                         </property>
+                         <property name="buddy">
+                          <cstring>advOutTrack4Bitrate</cstring>
+                         </property>
+                        </widget>
+                       </item>
+                       <item row="0" column="1">
+                        <widget class="QComboBox" name="advOutTrack6Bitrate">
+                         <property name="currentIndex">
+                          <number>8</number>
+                         </property>
+                         <item>
+                          <property name="text">
+                           <string>32</string>
+                          </property>
+                         </item>
+                         <item>
+                          <property name="text">
+                           <string>48</string>
+                          </property>
+                         </item>
+                         <item>
+                          <property name="text">
+                           <string>64</string>
+                          </property>
+                         </item>
+                         <item>
+                          <property name="text">
+                           <string>80</string>
+                          </property>
+                         </item>
+                         <item>
+                          <property name="text">
+                           <string>96</string>
+                          </property>
+                         </item>
+                         <item>
+                          <property name="text">
+                           <string>112</string>
+                          </property>
+                         </item>
+                         <item>
+                          <property name="text">
+                           <string>128</string>
+                          </property>
+                         </item>
+                         <item>
+                          <property name="text">
+                           <string>160</string>
+                          </property>
+                         </item>
+                         <item>
+                          <property name="text">
+                           <string>192</string>
+                          </property>
+                         </item>
+                         <item>
+                          <property name="text">
+                           <string>256</string>
+                          </property>
+                         </item>
+                         <item>
+                          <property name="text">
+                           <string>320</string>
+                          </property>
+                         </item>
+                        </widget>
+                       </item>
+                       <item row="1" column="0">
+                        <widget class="QLabel" name="label_62">
+                         <property name="text">
+                          <string>Name</string>
+                         </property>
+                         <property name="buddy">
+                          <cstring>advOutTrack4Name</cstring>
+                         </property>
+                        </widget>
+                       </item>
+                       <item row="1" column="1">
+                        <widget class="QLineEdit" name="advOutTrack6Name"/>
+                       </item>
+                      </layout>
+                     </widget>
+                    </item>
                    </layout>
                   </widget>
                  </item>
@@ -2949,8 +3221,8 @@
           <rect>
            <x>0</x>
            <y>0</y>
-           <width>818</width>
-           <height>697</height>
+           <width>98</width>
+           <height>28</height>
           </rect>
          </property>
          <layout class="QFormLayout" name="hotkeyLayout">
@@ -2996,7 +3268,7 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>803</width>
+              <width>593</width>
               <height>709</height>
              </rect>
             </property>
