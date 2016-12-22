@@ -2517,7 +2517,7 @@
                           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                          </property>
                          <property name="buddy">
-                          <cstring>advOutTrack4Bitrate</cstring>
+                          <cstring>advOutTrack5Bitrate</cstring>
                          </property>
                         </widget>
                        </item>
@@ -2589,7 +2589,7 @@
                           <string>Name</string>
                          </property>
                          <property name="buddy">
-                          <cstring>advOutTrack4Name</cstring>
+                          <cstring>advOutTrack5Name</cstring>
                          </property>
                         </widget>
                        </item>
@@ -2632,7 +2632,7 @@
                           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                          </property>
                          <property name="buddy">
-                          <cstring>advOutTrack4Bitrate</cstring>
+                          <cstring>advOutTrack6Bitrate</cstring>
                          </property>
                         </widget>
                        </item>
@@ -2704,7 +2704,7 @@
                           <string>Name</string>
                          </property>
                          <property name="buddy">
-                          <cstring>advOutTrack4Name</cstring>
+                          <cstring>advOutTrack6Name</cstring>
                          </property>
                         </widget>
                        </item>
