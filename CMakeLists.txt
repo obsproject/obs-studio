@@ -2,6 +2,9 @@ cmake_minimum_required(VERSION 2.8.12)
 
 project(obs-studio)
 
+option(BUILD_CLI "Build obs-cli" ON)
+option(BUILD_OBS_STUDIO "Build obs-studio" ON)
+
 if(WIN32)
 	if (QTDIR OR DEFINED ENV{QTDIR} OR DEFINED ENV{QTDIR32} OR DEFINED ENV{QTDIR64})
 		# Qt path set by user or env var
@@ -23,10 +26,19 @@ include(ObsHelpers)
 include(ObsCpack)
 include(GNUInstallDirs)
 
-if(MSVC AND NOT EXISTS "${CMAKE_BINARY_DIR}/ALL_BUILD.vcxproj.user")
-	file(GENERATE
-		OUTPUT "${CMAKE_BINARY_DIR}/ALL_BUILD.vcxproj.user"
-		INPUT "${CMAKE_SOURCE_DIR}/cmake/ALL_BUILD.vcxproj.user.in")
+if(MSVC)
+	if(BUILD_OBS_STUDIO)
+		# make obs-studio "Start Debugging" work in ALL_BUILD.
+		file(GENERATE
+			OUTPUT "${CMAKE_BINARY_DIR}/ALL_BUILD.vcxproj.user"
+			INPUT "${CMAKE_SOURCE_DIR}/cmake/ALL_BUILD.vcxproj.user.in")
+	endif()
+	if(BUILD_CLI)
+		# make obs-cli project "Start Debugging" work.
+		file(GENERATE
+			OUTPUT "${CMAKE_BINARY_DIR}/obs-cli/obs-cli.vcxproj.user"
+			INPUT "${CMAKE_SOURCE_DIR}/cmake/ALL_BUILD_CLI.vcxproj.user.in")
+	endif()
 endif()
 
 if(NOT CMAKE_BUILD_TYPE)
@@ -110,8 +122,13 @@ if(NOT INSTALLER_RUN)
 
 	add_subdirectory(libobs-opengl)
 	add_subdirectory(libobs)
-	add_subdirectory(UI)
 	add_subdirectory(plugins)
+	if(BUILD_CLI)
+		add_subdirectory(obs-cli)
+	endif()
+	if(BUILD_OBS_STUDIO)
+		add_subdirectory(UI)
+	endif()
 	if (BUILD_TESTS)
 		add_subdirectory(test)
 	endif()
