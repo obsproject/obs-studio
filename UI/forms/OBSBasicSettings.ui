@@ -1301,7 +1301,7 @@
                  <item>
                   <widget class="QStackedWidget" name="stackedWidget">
                    <property name="currentIndex">
-                    <number>0</number>
+                    <number>1</number>
                    </property>
                    <widget class="QWidget" name="advOutRecStandard">
                     <layout class="QVBoxLayout" name="verticalLayout_13">
@@ -2517,7 +2517,7 @@
                           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                          </property>
                          <property name="buddy">
-                          <cstring>advOutTrack4Bitrate</cstring>
+                          <cstring>advOutTrack5Bitrate</cstring>
                          </property>
                         </widget>
                        </item>
@@ -2589,7 +2589,7 @@
                           <string>Name</string>
                          </property>
                          <property name="buddy">
-                          <cstring>advOutTrack4Name</cstring>
+                          <cstring>advOutTrack5Name</cstring>
                          </property>
                         </widget>
                        </item>
@@ -2632,7 +2632,7 @@
                           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                          </property>
                          <property name="buddy">
-                          <cstring>advOutTrack4Bitrate</cstring>
+                          <cstring>advOutTrack6Bitrate</cstring>
                          </property>
                         </widget>
                        </item>
@@ -2704,7 +2704,7 @@
                           <string>Name</string>
                          </property>
                          <property name="buddy">
-                          <cstring>advOutTrack4Name</cstring>
+                          <cstring>advOutTrack6Name</cstring>
                          </property>
                         </widget>
                        </item>
@@ -3876,12 +3876,12 @@
    <slot>setCurrentIndex(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>232</x>
-     <y>71</y>
+     <x>606</x>
+     <y>113</y>
     </hint>
     <hint type="destinationlabel">
-     <x>241</x>
-     <y>83</y>
+     <x>394</x>
+     <y>191</y>
     </hint>
    </hints>
   </connection>
@@ -3892,12 +3892,12 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>168</x>
-     <y>97</y>
+     <x>397</x>
+     <y>323</y>
     </hint>
     <hint type="destinationlabel">
-     <x>250</x>
-     <y>97</y>
+     <x>676</x>
+     <y>323</y>
     </hint>
    </hints>
   </connection>
@@ -3908,12 +3908,12 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>168</x>
-     <y>82</y>
+     <x>330</x>
+     <y>191</y>
     </hint>
     <hint type="destinationlabel">
-     <x>232</x>
-     <y>82</y>
+     <x>591</x>
+     <y>191</y>
     </hint>
    </hints>
   </connection>
@@ -3924,12 +3924,12 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>168</x>
-     <y>86</y>
+     <x>353</x>
+     <y>277</y>
     </hint>
     <hint type="destinationlabel">
-     <x>232</x>
-     <y>86</y>
+     <x>614</x>
+     <y>277</y>
     </hint>
    </hints>
   </connection>
@@ -3940,12 +3940,12 @@
    <slot>setCurrentIndex(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>250</x>
-     <y>80</y>
+     <x>676</x>
+     <y>148</y>
     </hint>
     <hint type="destinationlabel">
-     <x>250</x>
-     <y>82</y>
+     <x>676</x>
+     <y>177</y>
     </hint>
    </hints>
   </connection>
@@ -3956,12 +3956,12 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>653</x>
-     <y>408</y>
+     <x>724</x>
+     <y>436</y>
     </hint>
     <hint type="destinationlabel">
      <x>397</x>
-     <y>434</y>
+     <y>462</y>
     </hint>
    </hints>
   </connection>
@@ -3972,12 +3972,12 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>653</x>
-     <y>408</y>
+     <x>724</x>
+     <y>436</y>
     </hint>
     <hint type="destinationlabel">
-     <x>653</x>
-     <y>457</y>
+     <x>724</x>
+     <y>485</y>
     </hint>
    </hints>
   </connection>
@@ -3988,12 +3988,12 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>653</x>
-     <y>408</y>
+     <x>724</x>
+     <y>436</y>
     </hint>
     <hint type="destinationlabel">
-     <x>653</x>
-     <y>434</y>
+     <x>724</x>
+     <y>462</y>
     </hint>
    </hints>
   </connection>
@@ -4004,12 +4004,12 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>588</x>
-     <y>513</y>
+     <x>724</x>
+     <y>541</y>
     </hint>
     <hint type="destinationlabel">
      <x>332</x>
-     <y>539</y>
+     <y>567</y>
     </hint>
    </hints>
   </connection>
@@ -4020,12 +4020,12 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>588</x>
-     <y>513</y>
+     <x>724</x>
+     <y>541</y>
     </hint>
     <hint type="destinationlabel">
-     <x>588</x>
-     <y>539</y>
+     <x>724</x>
+     <y>567</y>
     </hint>
    </hints>
   </connection>
@@ -4036,12 +4036,12 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>588</x>
-     <y>513</y>
+     <x>724</x>
+     <y>541</y>
     </hint>
     <hint type="destinationlabel">
      <x>332</x>
-     <y>565</y>
+     <y>593</y>
     </hint>
    </hints>
   </connection>
@@ -4052,12 +4052,12 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>588</x>
-     <y>513</y>
+     <x>724</x>
+     <y>541</y>
     </hint>
     <hint type="destinationlabel">
-     <x>588</x>
-     <y>565</y>
+     <x>724</x>
+     <y>593</y>
     </hint>
    </hints>
   </connection>
