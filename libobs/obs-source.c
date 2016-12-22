@@ -2172,6 +2172,7 @@ static void copy_frame_data(struct obs_source_frame *dst,
 	case VIDEO_FORMAT_BGRA:
 	case VIDEO_FORMAT_BGRX:
 		copy_frame_data_plane(dst, src, 0, dst->height);
+		break;
 
 	case VIDEO_FORMAT_Y800:
 		copy_frame_data_y800(dst, src);
