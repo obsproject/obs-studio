@@ -1091,14 +1091,8 @@ extern obs_frontend_callbacks *InitializeAPIInterface(OBSBasic *main);
 	"not found.  Your GPU may not be supported."
 
 #define UNKNOWN_ERROR \
-	"Failed to initialize video.  This error can happen for one of " \
-		"the following reasons:\n\n" \
-	"1.) Your GPU might not supported (DirectX 10 support minimum " \
-		"is required - note that some older and outdated " \
-		"integrated laptop GPUs do not support DirectX 10)\n" \
-	"2.) You may be running Windows Vista without the " \
-		"\"Platform Update\"\n" \
-	"3.) Your video card drivers may be out of date"
+	"Failed to initialize video.  Your GPU may not be supported, " \
+	"or your graphics drivers may need to be updated."
 
 void OBSBasic::OBSInit()
 {
