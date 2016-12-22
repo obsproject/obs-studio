@@ -174,7 +174,7 @@ bool obs_source_init(struct obs_source *source)
 	source->control = bzalloc(sizeof(obs_weak_source_t));
 	source->deinterlace_top_first = true;
 	source->control->source = source;
-	source->audio_mixers = 0xF;
+	source->audio_mixers = 0xFF;
 
 	if (is_audio_source(source)) {
 		pthread_mutex_lock(&obs->data.audio_sources_mutex);
