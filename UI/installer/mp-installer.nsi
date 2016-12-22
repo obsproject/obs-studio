@@ -288,7 +288,7 @@ SectionGroup /e "Plugins" SecPlugins
 
 			File "intel_rs_sdk_runtime_websetup_10.0.26.0396.exe"
 			ExecWait '"$PLUGINSDIR\realsense\intel_rs_sdk_runtime_websetup_10.0.26.0396.exe" --finstall=personify --fnone=all'
-		{endif}
+		${endif}
 
 		SetOutPath "$INSTDIR\bin\32bit"
 	SectionEnd
