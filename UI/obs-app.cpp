@@ -20,6 +20,7 @@
 #include <wchar.h>
 #include <chrono>
 #include <ratio>
+#include <string>
 #include <sstream>
 #include <mutex>
 #include <util/bmem.h>
@@ -316,8 +317,19 @@ static void do_log(int log_level, const char *msg, va_list args, void *param)
 	vsnprintf(str, 4095, msg, args);
 
 #ifdef _WIN32
-	OutputDebugStringA(str);
-	OutputDebugStringA("\n");
+	if (IsDebuggerPresent()) {
+		static wstring wide_buf;
+		int wNum = MultiByteToWideChar(CP_UTF8, 0, str, -1, NULL, 0);
+		if (wNum > 1) {
+			wide_buf.reserve(wNum + 1);
+			wide_buf.resize(wNum - 1);
+			MultiByteToWideChar(CP_UTF8, 0, str, -1, &wide_buf[0],
+					wNum);
+			wide_buf.push_back('\n');
+
+			OutputDebugStringW(wide_buf.c_str());
+		}
+	}
 #else
 	def_log_handler(log_level, msg, args2, nullptr);
 #endif
