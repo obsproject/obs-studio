@@ -316,8 +316,12 @@ static void do_log(int log_level, const char *msg, va_list args, void *param)
 	vsnprintf(str, 4095, msg, args);
 
 #ifdef _WIN32
-	OutputDebugStringA(str);
-	OutputDebugStringA("\n");
+	int wNum = MultiByteToWideChar(CP_UTF8, 0, str, -1, NULL, 0);
+	wchar_t *wstr = new wchar_t[wNum];
+	MultiByteToWideChar(CP_UTF8, 0, str, -1, wstr, wNum);
+
+	OutputDebugString(wstr);
+	OutputDebugString(TEXT("\n"));
 #else
 	def_log_handler(log_level, msg, args2, nullptr);
 #endif
