@@ -261,12 +261,9 @@ static inline bool d3d12_init_format(IDXGISwapChain *swap, HWND &window,
 	for (UINT i = 0; i < bb.count; i++) {
 		hr = swap->GetBuffer(i, __uuidof(ID3D12Resource),
 				(void**)&bb.backbuffer[i]);
-		if (FAILED(hr)) {
-			if (i > 0) {
-				for (UINT j = 0; j < i; j++) {
-					bb.backbuffer[j]->Release();
-				}
-			}
+		if (SUCCEEDED(hr)) {
+			bb.backbuffer[i]->Release();
+		} else {
 			return false;
 		}
 	}
