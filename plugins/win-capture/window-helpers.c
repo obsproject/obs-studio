@@ -338,6 +338,10 @@ HWND find_window(enum window_search_mode mode,
 	HWND window      = first_window(mode, &parent);
 	HWND best_window = NULL;
 	int  best_rating = 0;
+
+	if (!class)
+		return NULL;
+
 	bool uwp_window  = strcmp(class, "Windows.UI.Core.CoreWindow") == 0;
 
 	while (window) {
