@@ -978,6 +978,9 @@ static const char *blacklisted_exes[] = {
 	"systemsettings",
 	"applicationframehost",
 	"cmd",
+	"shellexperiencehost",
+	"winstore.app",
+	"searchui",
 	NULL
 };
 
