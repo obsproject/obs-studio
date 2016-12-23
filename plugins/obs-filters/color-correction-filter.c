@@ -73,9 +73,9 @@ struct color_correction_filter_data {
 const static float root3 = 0.57735f;
 
 /*
-* As the functions' namesake, this provides the user facing name
-* of your Filter.
-*/
+ * As the functions' namesake, this provides the internal name of your Filter,
+ * which is then translated/referenced in the "data/locale" files.
+ */
 static const char *color_correction_filter_name(void *unused)
 {
 	UNUSED_PARAMETER(unused);
@@ -83,11 +83,11 @@ static const char *color_correction_filter_name(void *unused)
 }
 
 /*
-* This function is called (see bottom of this file for more details)
-* whenever the OBS filter interface changes. So when the user is messing
-* with a slider this function is called to update the internal settings
-* in OBS, and hence the settings being passed to the CPU/GPU.
-*/
+ * This function is called (see bottom of this file for more details)
+ * whenever the OBS filter interface changes. So when the user is messing
+ * with a slider this function is called to update the internal settings
+ * in OBS, and hence the settings being passed to the CPU/GPU.
+ */
 static void color_correction_filter_update(void *data, obs_data_t *settings)
 {
 	struct color_correction_filter_data *filter = data;
@@ -230,10 +230,10 @@ static void color_correction_filter_update(void *data, obs_data_t *settings)
 }
 
 /*
-* Since this is C we have to be careful when destroying/removing items from
-* OBS. Jim has added several useful functions to help keep memory leaks to
-* a minimum, and handle the destruction and construction of these filters.
-*/
+ * Since this is C we have to be careful when destroying/removing items from
+ * OBS. Jim has added several useful functions to help keep memory leaks to
+ * a minimum, and handle the destruction and construction of these filters.
+ */
 static void color_correction_filter_destroy(void *data)
 {
 	struct color_correction_filter_data *filter = data;
@@ -248,17 +248,17 @@ static void color_correction_filter_destroy(void *data)
 }
 
 /*
-* When you apply a filter OBS creates it, and adds it to the source. OBS also
-* starts rendering it immediately. This function doesn't just 'create' the
-* filter, it also calls the render function (farther below) that contains the
-* actual rendering code.
-*/
+ * When you apply a filter OBS creates it, and adds it to the source. OBS also
+ * starts rendering it immediately. This function doesn't just 'create' the
+ * filter, it also calls the render function (farther below) that contains the
+ * actual rendering code.
+ */
 static void *color_correction_filter_create(obs_data_t *settings,
 	obs_source_t *context)
 {
 	/*
 	* Because of limitations of pre-c99 compilers, you can't create an
-	* array that doesn't have a know size at compile time. The below
+	* array that doesn't have a known size at compile time. The below
 	* function calculates the size needed and allocates memory to
 	* handle the source.
 	*/
@@ -268,7 +268,7 @@ static void *color_correction_filter_create(obs_data_t *settings,
 	/*
 	 * By default the effect file is stored in the ./data directory that
 	 * your filter resides in.
-	*/
+	 */
 	char *effect_path = obs_module_file("color_correction_filter.effect");
 
 	filter->context = context;
@@ -307,10 +307,10 @@ static void *color_correction_filter_create(obs_data_t *settings,
 	}
 
 	/*
-	* It's important to call the update function here. if we don't
-	* we could end up with the user controlled sliders and values
-	* updating, but the visuals not updating to match.
-	*/
+	 * It's important to call the update function here. If we don't
+	 * we could end up with the user controlled sliders and values
+	 * updating, but the visuals not updating to match.
+	 */
 	color_correction_filter_update(filter, settings);
 	return filter;
 }
@@ -334,11 +334,11 @@ static void color_correction_filter_render(void *data, gs_effect_t *effect)
 }
 
 /*
-* This function sets the interface. the types (add_*_Slider), the type of
-* data collected (int), the internal name, user-facing name, minimum,
-* maximum and step values. While a custom interface can be built, for a
-* simple filter like this it's better to use the supplied functions.
-*/
+ * This function sets the interface. the types (add_*_Slider), the type of
+ * data collected (int), the internal name, user-facing name, minimum,
+ * maximum and step values. While a custom interface can be built, for a
+ * simple filter like this it's better to use the supplied functions.
+ */
 static obs_properties_t *color_correction_filter_properties(void *data)
 {
 	obs_properties_t *props = obs_properties_create();
@@ -365,11 +365,11 @@ static obs_properties_t *color_correction_filter_properties(void *data)
 
 /*
  * As the functions' namesake, this provides the default settings for any
-* options you wish to provide a default for. Try to select defaults that
-* make sense to the end user, or that don't effect the data.
-* *NOTE* this function is completely optional, as is providing a default
-* for any particular setting.
-*/
+ * options you wish to provide a default for. Try to select defaults that
+ * make sense to the end user, or that don't effect the data.
+ * *NOTE* this function is completely optional, as is providing a default
+ * for any particular setting.
+ */
 static void color_correction_filter_defaults(obs_data_t *settings)
 {
 	obs_data_set_default_double(settings, SETTING_GAMMA, 0.0);
@@ -383,15 +383,15 @@ static void color_correction_filter_defaults(obs_data_t *settings)
 }
 
 /*
-* So how does OBS keep track of all these plug-ins/filters? How does OBS know
-* which function to call when it needs to update a setting? Or a source? Or
-* what type of source this is?
-*
-* OBS does it through the obs_source_info_struct. Notice how variables are
-* assigned the name of a function? Notice how the function name has the
-* variable name in it? While not mandatory, it helps a ton for you (and those
-* reading your code) to follow this convention.
-*/
+ * So how does OBS keep track of all these plug-ins/filters? How does OBS know
+ * which function to call when it needs to update a setting? Or a source? Or
+ * what type of source this is?
+ *
+ * OBS does it through the obs_source_info_struct. Notice how variables are
+ * assigned the name of a function? Notice how the function name has the
+ * variable name in it? While not mandatory, it helps a ton for you (and those
+ * reading your code) to follow this convention.
+ */
 struct obs_source_info color_filter = {
 	.id = "color_filter",
 	.type = OBS_SOURCE_TYPE_FILTER,
