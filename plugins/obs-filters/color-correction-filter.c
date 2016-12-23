@@ -25,6 +25,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define SETTING_SATURATION             "saturation"
 #define SETTING_HUESHIFT               "hue_shift"
 #define SETTING_OPACITY                "opacity"
+#define SETTING_COLOR                  "color"
 
 #define TEXT_GAMMA                     obs_module_text("Gamma")
 #define TEXT_CONTRAST                  obs_module_text("Contrast")
@@ -32,6 +33,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define TEXT_SATURATION                obs_module_text("Saturation")
 #define TEXT_HUESHIFT                  obs_module_text("HueShift")
 #define TEXT_OPACITY                   obs_module_text("Opacity")
+#define TEXT_COLOR                     obs_module_text("Color")
 
 struct color_correction_filter_data {
 	obs_source_t                   *context;
@@ -47,12 +49,14 @@ struct color_correction_filter_data {
 	float                           saturation;
 	float                           hue_shift;
 	float                           opacity;
+	struct vec4                     color;
 
 	/* Pre-Computes */
 	struct matrix4                  con_matrix;
 	struct matrix4                  bright_matrix;
 	struct matrix4                  sat_matrix;
 	struct matrix4                  hue_op_matrix;
+	struct matrix4                  color_matrix;
 	struct matrix4                  final_matrix;
 
 	struct vec3                     rot_quaternion;
@@ -188,15 +192,41 @@ static void color_correction_filter_update(void *data, obs_data_t *settings)
 		0.0f, 0.0f, 0.0f, filter->opacity
 	};
 
+	/* Now get the overlay color data. */
+	uint32_t color = (uint32_t)obs_data_get_int(settings,
+			SETTING_COLOR);
+	vec4_from_rgba(&filter->color, color);
+
+	/*
+	* Now let's build our Color 'overlay' matrix.
+	* Earlier (in the function color_correction_filter_create) we set
+	* this matrix to the identity matrix, so now we only need
+	* to set the 6 variables that have changed.
+	*/
+	filter->color_matrix.x.x = filter->color.x;
+	filter->color_matrix.y.y = filter->color.y;
+	filter->color_matrix.z.z = filter->color.z;
+
+	filter->color_matrix.t.x = filter->color.w *
+			filter->color.x;
+	filter->color_matrix.t.y = filter->color.w *
+			filter->color.y;
+	filter->color_matrix.t.z = filter->color.w *
+			filter->color.z;
+
+
 	/* First we apply the Contrast & Brightness matrix. */
 	matrix4_mul(&filter->final_matrix, &filter->bright_matrix,
 			&filter->con_matrix);
 	/* Now we apply the Saturation matrix. */
 	matrix4_mul(&filter->final_matrix, &filter->final_matrix,
 			&filter->sat_matrix);
-	/* Lastly we apply the Hue+Opacity matrix. */
+	/* Next we apply the Hue+Opacity matrix. */
 	matrix4_mul(&filter->final_matrix, &filter->final_matrix,
 			&filter->hue_op_matrix);
+	/* Lastly we apply the Color Wash matrix. */
+	matrix4_mul(&filter->final_matrix, &filter->final_matrix,
+			&filter->color_matrix);
 }
 
 /*
@@ -246,6 +276,7 @@ static void *color_correction_filter_create(obs_data_t *settings,
 	/* Set/clear/assign for all necessary vectors. */
 	vec3_set(&filter->half_unit, 0.5f, 0.5f, 0.5f);
 	matrix4_identity(&filter->bright_matrix);
+	matrix4_identity(&filter->color_matrix);
 
 	/* Here we enter the GPU drawing/shader portion of our code. */
 	obs_enter_graphics();
@@ -326,6 +357,8 @@ static obs_properties_t *color_correction_filter_properties(void *data)
 	obs_properties_add_int_slider(props, SETTING_OPACITY,
 			TEXT_OPACITY, 0, 100, 1);
 
+	obs_properties_add_color(props, SETTING_COLOR, TEXT_COLOR);
+
 	UNUSED_PARAMETER(data);
 	return props;
 }
@@ -346,6 +379,7 @@ static void color_correction_filter_defaults(obs_data_t *settings)
 			SETTING_SATURATION, 0.0);
 	obs_data_set_default_double(settings, SETTING_HUESHIFT, 0.0);
 	obs_data_set_default_double(settings, SETTING_OPACITY, 100.0);
+	obs_data_set_default_int(settings, SETTING_COLOR, 0xFFFFFF);
 }
 
 /*
