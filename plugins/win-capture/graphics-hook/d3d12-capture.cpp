@@ -70,12 +70,6 @@ static bool create_d3d12_tex(ID3D12Resource *backbuffer[3], UINT count)
 	if (!count)
 		return false;
 
-	if (count > 3) {
-		hlog("Somehow it's using more than 3 backbuffers.  "
-				"Not sure why anyone would do that.");
-		count = 3;
-	}
-
 	data.backbuffer_count = count;
 
 	for (UINT i = 0; i < count; i++) {
@@ -245,6 +239,13 @@ static inline bool d3d12_init_format(IDXGISwapChain *swap, HWND &window,
 
 	count = desc.SwapEffect == DXGI_SWAP_EFFECT_DISCARD
 		? 1 : desc.BufferCount;
+
+	if (count > 3) {
+		hlog("Somehow it's using more than the max backbuffers.  "
+				"Not sure why anyone would do that.");
+		count = 1;
+		data.dxgi_1_4 = false;
+	}
 
 	for (UINT i = 0; i < count; i++) {
 		hr = swap->GetBuffer(i, __uuidof(ID3D12Resource),
