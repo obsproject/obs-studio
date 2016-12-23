@@ -10,6 +10,8 @@
 #include "dxgi-helpers.hpp"
 #include "../funchook.h"
 
+#define MAX_BACKBUFFERS 8
+
 struct d3d12_data {
 	ID3D12Device                   *device; /* do not release */
 	uint32_t                       base_cx;
@@ -29,7 +31,7 @@ struct d3d12_data {
 	union {
 		struct {
 			struct shtex_data      *shtex_info;
-			ID3D11Resource         *backbuffer11[3];
+			ID3D11Resource         *backbuffer11[MAX_BACKBUFFERS];
 			UINT                   backbuffer_count;
 			UINT                   cur_backbuffer;
 			ID3D11Texture2D        *copy_tex;
@@ -62,19 +64,24 @@ void d3d12_free(void)
 	hlog("----------------- d3d12 capture freed ----------------");
 }
 
-static bool create_d3d12_tex(ID3D12Resource *backbuffer[3], UINT count)
+struct bb_info {
+	ID3D12Resource *backbuffer[MAX_BACKBUFFERS];
+	UINT count;
+};
+
+static bool create_d3d12_tex(bb_info &bb)
 {
 	D3D11_RESOURCE_FLAGS rf11 = {};
 	HRESULT hr;
 
-	if (!count)
+	if (!bb.count)
 		return false;
 
-	data.backbuffer_count = count;
+	data.backbuffer_count = bb.count;
 
-	for (UINT i = 0; i < count; i++) {
+	for (UINT i = 0; i < bb.count; i++) {
 		hr = data.device11on12->CreateWrappedResource(
-				backbuffer[i],
+				bb.backbuffer[i],
 				&rf11,
 				D3D12_RESOURCE_STATE_COPY_SOURCE,
 				D3D12_RESOURCE_STATE_PRESENT,
@@ -104,7 +111,7 @@ static bool create_d3d12_tex(ID3D12Resource *backbuffer[3], UINT count)
 		return false;
 	}
 
-	for (UINT i = 0; i < count; i++) {
+	for (UINT i = 0; i < bb.count; i++) {
 		data.device11on12->ReleaseWrappedResources(
 				&data.backbuffer11[i], 1);
 	}
@@ -191,13 +198,12 @@ static bool d3d12_init_11on12(void)
 	return true;
 }
 
-static bool d3d12_shtex_init(HWND window, ID3D12Resource *backbuffer[3],
-		UINT count)
+static bool d3d12_shtex_init(HWND window, bb_info &bb)
 {
 	if (!d3d12_init_11on12()) {
 		return false;
 	}
-	if (!create_d3d12_tex(backbuffer, count)) {
+	if (!create_d3d12_tex(bb)) {
 		return false;
 	}
 	if (!capture_init_shtex(&data.shtex_info, window,
@@ -211,12 +217,11 @@ static bool d3d12_shtex_init(HWND window, ID3D12Resource *backbuffer[3],
 }
 
 static inline bool d3d12_init_format(IDXGISwapChain *swap, HWND &window,
-		ID3D12Resource *backbuffer[3], UINT *p_count)
+		bb_info &bb)
 {
 	DXGI_SWAP_CHAIN_DESC desc;
 	IDXGISwapChain3 *swap3;
 	HRESULT hr;
-	UINT count;
 
 	hr = swap->GetDesc(&desc);
 	if (FAILED(hr)) {
@@ -237,30 +242,31 @@ static inline bool d3d12_init_format(IDXGISwapChain *swap, HWND &window,
 		swap3->Release();
 	}
 
-	count = desc.SwapEffect == DXGI_SWAP_EFFECT_DISCARD
+	hlog("Buffer count: %d, swap effect: %d", (int)desc.BufferCount,
+			(int)desc.SwapEffect);
+
+	bb.count = desc.SwapEffect == DXGI_SWAP_EFFECT_DISCARD
 		? 1 : desc.BufferCount;
 
-	if (count > 3) {
+	if (bb.count > MAX_BACKBUFFERS) {
 		hlog("Somehow it's using more than the max backbuffers.  "
 				"Not sure why anyone would do that.");
-		count = 1;
+		bb.count = 1;
 		data.dxgi_1_4 = false;
 	}
 
-	for (UINT i = 0; i < count; i++) {
+	for (UINT i = 0; i < bb.count; i++) {
 		hr = swap->GetBuffer(i, __uuidof(ID3D12Resource),
-				(void**)&backbuffer[i]);
+				(void**)&bb.backbuffer[i]);
 		if (FAILED(hr)) {
 			if (i > 0) {
 				for (UINT j = 0; j < i; j++) {
-					backbuffer[j]->Release();
+					bb.backbuffer[j]->Release();
 				}
 			}
 			return false;
 		}
 	}
-
-	*p_count = count;
 
 	if (data.using_scale) {
 		data.cx = global_hook_info->cx;
@@ -274,11 +280,10 @@ static inline bool d3d12_init_format(IDXGISwapChain *swap, HWND &window,
 
 static void d3d12_init(IDXGISwapChain *swap)
 {
-	ID3D12Resource *backbuffer[3];
 	bool success = true;
+	bb_info bb = {};
 	HWND window;
 	HRESULT hr;
-	UINT count;
 
 	data.using_scale = global_hook_info->use_scale;
 
@@ -290,7 +295,7 @@ static void d3d12_init(IDXGISwapChain *swap)
 
 	data.device->Release();
 
-	if (!d3d12_init_format(swap, window, backbuffer, &count)) {
+	if (!d3d12_init_format(swap, window, bb)) {
 		return;
 	}
 	if (data.using_scale) {
@@ -302,7 +307,7 @@ static void d3d12_init(IDXGISwapChain *swap)
 					"unsupported; ignoring");
 		}
 
-		success = d3d12_shtex_init(window, backbuffer, count);
+		success = d3d12_shtex_init(window, bb);
 	}
 
 	if (!success)
