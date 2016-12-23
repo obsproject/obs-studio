@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 2.8.12)
 
 project(obs-studio)
 
+option(BUILD_CAPTIONS "Build captions" FALSE)
+
 if(WIN32)
 	if (QTDIR OR DEFINED ENV{QTDIR} OR DEFINED ENV{QTDIR32} OR DEFINED ENV{QTDIR64})
 		# Qt path set by user or env var
