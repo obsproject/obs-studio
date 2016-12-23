@@ -248,6 +248,9 @@ static inline bool d3d12_init_format(IDXGISwapChain *swap, HWND &window,
 	bb.count = desc.SwapEffect == DXGI_SWAP_EFFECT_DISCARD
 		? 1 : desc.BufferCount;
 
+	if (bb.count == 1)
+		data.dxgi_1_4 = false;
+
 	if (bb.count > MAX_BACKBUFFERS) {
 		hlog("Somehow it's using more than the max backbuffers.  "
 				"Not sure why anyone would do that.");
