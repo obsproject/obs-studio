@@ -128,6 +128,33 @@ void get_window_class(struct dstr *class, HWND hwnd)
 		dstr_from_wcs(class, temp);
 }
 
+/* not capturable or internal windows */
+static const char *internal_microsoft_exes[] = {
+	"applicationframehost",
+	"shellexperiencehost",
+	"winstore.app",
+	"searchui",
+	NULL
+};
+
+static bool is_microsoft_internal_window_exe(const char *exe)
+{
+	char cur_exe[MAX_PATH];
+
+	if (!exe)
+		return false;
+
+	for (const char **vals = internal_microsoft_exes; *vals; vals++) {
+		strcpy(cur_exe, *vals);
+		strcat(cur_exe, ".exe");
+
+		if (strcmpi(cur_exe, exe) == 0)
+			return true;
+	}
+
+	return false;
+}
+
 static void add_window(obs_property_t *p, HWND hwnd, add_window_cb callback)
 {
 	struct dstr class   = {0};
@@ -138,6 +165,10 @@ static void add_window(obs_property_t *p, HWND hwnd, add_window_cb callback)
 
 	if (!get_window_exe(&exe, hwnd))
 		return;
+	if (is_microsoft_internal_window_exe(exe.array)) {
+		dstr_free(&exe);
+		return;
+	}
 	get_window_title(&title, hwnd);
 	get_window_class(&class, hwnd);
 
