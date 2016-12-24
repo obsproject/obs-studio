@@ -2787,8 +2787,11 @@ void OBSBasic::closeEvent(QCloseEvent *event)
 
 void OBSBasic::changeEvent(QEvent *event)
 {
-	/* TODO */
-	UNUSED_PARAMETER(event);
+	/* MORE TODO */
+	if ((event->type() == QEvent::WindowStateChange) && isMinimized() &&
+		trayIcon->isVisible() && sysTrayMinimizeToTray()) {
+			ToggleShowHide();
+	}
 }
 
 void OBSBasic::on_actionShow_Recordings_triggered()
@@ -4898,6 +4901,14 @@ void OBSBasic::SetShowing(bool showing)
 		setVisible(false);
 
 	} else if (showing && !isVisible()) {
+		
+		//If the window is not visible(i.e. isVisible() returns false),
+		//the window state will take effect when show() is called.
+		//Unminimize window if was hidden to tray instead of task bar.
+		if (sysTrayMinimizeToTray())
+			this->setWindowState((this->windowState() & ~Qt::WindowMinimized) | 
+				Qt::WindowActive);
+		
 		if (showHide)
 			showHide->setText(QTStr("Basic.SystemTray.Hide"));
 		QTimer::singleShot(250, this, SLOT(show()));
