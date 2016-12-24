@@ -344,6 +344,8 @@ try {
 void obs_captions::start()
 {
 	if (!captions->th.joinable()) {
+		ResetEvent(captions->stop_event);
+
 		if (valid_lang(captions->lang_id))
 			captions->th = thread([] () {captions->main_thread();});
 	}
