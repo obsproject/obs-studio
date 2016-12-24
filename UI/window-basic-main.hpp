@@ -38,6 +38,8 @@
 
 #include <QPointer>
 
+#include <QMessageBox>
+
 class QListWidgetItem;
 class VolControl;
 class QNetworkReply;
@@ -162,7 +164,6 @@ private:
 	QPointer<QAction>         showHide;
 	QPointer<QAction>         exit;
 	QPointer<QMenu>           trayMenu;
-	bool          disableHiding = false;
 
 	void          DrawBackdrop(float cx, float cy);
 
@@ -327,6 +328,16 @@ private:
 			"BasicWindow", "SysTrayMinimizeToTray");
 	}
 
+	bool sysTrayMinimizeToTray();
+
+	void EnumDialogs();
+
+	QList<QDialog*> list_of_VisibleDialogs;
+	QList<QDialog*> list_of_ModalDialogs;
+	QList<QMessageBox*> list_of_VisibleMBoxes; //always modal
+
+	QList<QPoint> VisibleDialogsPos;
+
 public slots:
 	void StartStreaming();
 	void StopStreaming();
@@ -397,15 +408,7 @@ private slots:
 	void IconActivated(QSystemTrayIcon::ActivationReason reason);
 	void SetShowing(bool showing);
 
-	inline void ToggleShowHide()
-	{
-		bool showing = isVisible();
-		if (disableHiding && showing)
-			return;
-		if (showing)
-			CloseDialogs();
-		SetShowing(!showing);
-	}
+	void ToggleShowHide();
 
 private:
 	/* OBS Callbacks */
