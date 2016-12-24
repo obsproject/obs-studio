@@ -321,12 +321,6 @@ private:
 	void dropEvent(QDropEvent *event) override;
 
 	void ReplayBufferClicked();
-	
-	inline bool sysTrayMinimizeToTray() const
-	{
-		return config_get_bool(GetGlobalConfig(),
-			"BasicWindow", "SysTrayMinimizeToTray");
-	}
 
 	bool sysTrayMinimizeToTray();
 
