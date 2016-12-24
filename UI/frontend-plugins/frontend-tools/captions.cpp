@@ -3,6 +3,7 @@
 #include "captions.hpp"
 #include "tool-helpers.hpp"
 #include <sphelper.h>
+#include <util/dstr.hpp>
 #include <util/platform.h>
 #include <util/windows/HRError.hpp>
 #include <util/windows/ComPtr.hpp>
@@ -29,13 +30,15 @@ struct obs_captions {
 
 	string source_name;
 	OBSWeakSource source;
+	LANGID lang_id;
 
 	void main_thread();
 	void start();
 	void stop();
 
 	inline obs_captions() :
-		stop_event(CreateEvent(nullptr, false, false, nullptr))
+		stop_event(CreateEvent(nullptr, false, false, nullptr)),
+		lang_id(GetUserDefaultUILanguage())
 	{
 	}
 
@@ -43,6 +46,23 @@ struct obs_captions {
 };
 
 static obs_captions *captions = nullptr;
+
+/* ------------------------------------------------------------------------- */
+
+struct locale_info {
+	DStr name;
+	LANGID id;
+
+	inline locale_info() {}
+	inline locale_info(const locale_info &) = delete;
+	inline locale_info(locale_info &&li)
+		: name(std::move(li.name)),
+		  id(li.id)
+	{}
+};
+
+static void get_valid_locale_names(vector<locale_info> &names);
+static bool valid_lang(LANGID id);
 
 /* ------------------------------------------------------------------------- */
 
@@ -80,6 +100,46 @@ CaptionsDialog::CaptionsDialog(QWidget *parent) :
 	ui->enable->blockSignals(true);
 	ui->enable->setChecked(captions->th.joinable());
 	ui->enable->blockSignals(false);
+
+	vector<locale_info> locales;
+	get_valid_locale_names(locales);
+
+	bool set_language = false;
+
+	ui->language->blockSignals(true);
+	for (int idx = 0; idx < (int)locales.size(); idx++) {
+		locale_info &locale = locales[idx];
+
+		ui->language->addItem(locale.name->array, (int)locale.id);
+
+		if (locale.id == captions->lang_id) {
+			ui->language->setCurrentIndex(idx);
+			set_language = true;
+		}
+	}
+
+	if (!set_language && locales.size())
+		ui->language->setCurrentIndex(0);
+
+	ui->language->blockSignals(false);
+
+	if (!locales.size()) {
+		ui->source->setEnabled(false);
+		ui->enable->setEnabled(false);
+		ui->language->setEnabled(false);
+
+	} else if (!set_language) {
+		bool started = captions->th.joinable();
+		if (started)
+			captions->stop();
+
+		captions->m.lock();
+		captions->lang_id = locales[0].id;
+		captions->m.unlock();
+
+		if (started)
+			captions->start();
+	}
 }
 
 void CaptionsDialog::on_source_currentIndexChanged(int)
@@ -103,6 +163,20 @@ void CaptionsDialog::on_enable_clicked(bool checked)
 		captions->start();
 	else
 		captions->stop();
+}
+
+void CaptionsDialog::on_language_currentIndexChanged(int)
+{
+	bool started = captions->th.joinable();
+	if (started)
+		captions->stop();
+
+	captions->m.lock();
+	captions->lang_id = (LANGID)ui->language->currentData().toInt();
+	captions->m.unlock();
+
+	if (started)
+		captions->start();
 }
 
 /* ------------------------------------------------------------------------- */
@@ -134,8 +208,10 @@ try {
 
 	CoInitialize(nullptr);
 
-	hr = SpFindBestToken(SPCAT_RECOGNIZERS, L"language=409", nullptr,
-			&token);
+	wchar_t lang_str[32];
+	_snwprintf(lang_str, 31, L"language=%x", (int)captions->lang_id);
+
+	hr = SpFindBestToken(SPCAT_RECOGNIZERS, lang_str, nullptr, &token);
 	if (FAILED(hr))
 		throw HRError("SpFindBestToken failed", hr);
 
@@ -266,8 +342,10 @@ try {
 
 void obs_captions::start()
 {
-	if (!captions->th.joinable())
-		captions->th = thread([] () {captions->main_thread();});
+	if (!captions->th.joinable()) {
+		if (valid_lang(captions->lang_id))
+			captions->th = thread([] () {captions->main_thread();});
+	}
 }
 
 void obs_captions::stop()
@@ -277,6 +355,99 @@ void obs_captions::stop()
 
 	SetEvent(captions->stop_event);
 	captions->th.join();
+}
+
+static bool get_locale_name(LANGID id, char *out)
+{
+	wchar_t name[256];
+
+	int size = GetLocaleInfoW(id, LOCALE_SENGLISHLANGUAGENAME, name, 256);
+	if (size <= 0)
+		return false;
+
+	os_wcs_to_utf8(name, 0, out, 256);
+	return true;
+}
+
+static bool valid_lang(LANGID id)
+{
+	ComPtr<ISpObjectToken> token;
+	wchar_t lang_str[32];
+	HRESULT hr;
+
+	_snwprintf(lang_str, 31, L"language=%x", (int)id);
+
+	hr = SpFindBestToken(SPCAT_RECOGNIZERS, lang_str, nullptr, &token);
+	return SUCCEEDED(hr);
+}
+
+static void get_valid_locale_names(vector<locale_info> &locales)
+{
+	locale_info cur;
+	char locale_name[256];
+
+	static const LANGID default_locales[] = {
+		0x0409,
+		0x0401,
+		0x0402,
+		0x0403,
+		0x0404,
+		0x0405,
+		0x0406,
+		0x0407,
+		0x0408,
+		0x040a,
+		0x040b,
+		0x040c,
+		0x040d,
+		0x040e,
+		0x040f,
+		0x0410,
+		0x0411,
+		0x0412,
+		0x0413,
+		0x0414,
+		0x0415,
+		0x0416,
+		0x0417,
+		0x0418,
+		0x0419,
+		0x041a,
+		0
+	};
+
+	/* ---------------------------------- */
+
+	LANGID def_id = GetUserDefaultUILanguage();
+	LANGID id = def_id;
+	if (valid_lang(id) && get_locale_name(id, locale_name)) {
+		dstr_copy(cur.name, obs_module_text(
+					"Captions.CurrentSystemLanguage"));
+		dstr_replace(cur.name, "%1", locale_name);
+		cur.id = id;
+
+		locales.push_back(std::move(cur));
+	}
+
+	/* ---------------------------------- */
+
+	const LANGID *locale = default_locales;
+
+	while (*locale) {
+		id = *locale;
+
+		if (id != def_id &&
+		    valid_lang(id) &&
+		    get_locale_name(id, locale_name)) {
+
+			dstr_copy(cur.name, locale_name);
+			cur.id = id;
+
+			locales.push_back(std::move(cur));
+		}
+
+		locale++;
+	}
 }
 
 /* ------------------------------------------------------------------------- */
@@ -302,6 +473,7 @@ static void save_caption_data(obs_data_t *save_data, bool saving, void*)
 		obs_data_set_string(obj, "source",
 				captions->source_name.c_str());
 		obs_data_set_bool(obj, "enabled", captions->th.joinable());
+		obs_data_set_int(obj, "lang_id", captions->lang_id);
 
 		obs_data_set_obj(save_data, "captions", obj);
 		obs_data_release(obj);
@@ -314,8 +486,12 @@ static void save_caption_data(obs_data_t *save_data, bool saving, void*)
 		if (!obj)
 			obj = obs_data_create();
 
+		obs_data_set_default_int(obj, "lang_id",
+				GetUserDefaultUILanguage());
+
 		bool enabled = obs_data_get_bool(obj, "enabled");
 		captions->source_name = obs_data_get_string(obj, "source");
+		captions->lang_id = (int)obs_data_get_int(obj, "lang_id");
 		captions->source = GetWeakSourceByName(
 				captions->source_name.c_str());
 		obs_data_release(obj);
