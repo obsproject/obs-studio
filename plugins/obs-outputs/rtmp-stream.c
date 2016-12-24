@@ -375,7 +375,10 @@ static int send_packet(struct rtmp_stream *stream,
 	ret = RTMP_Write(&stream->rtmp, (char*)data, (int)size, (int)idx);
 	bfree(data);
 
-	obs_encoder_packet_release(packet);
+	if (is_header)
+		bfree(packet->data);
+	else
+		obs_encoder_packet_release(packet);
 
 	stream->total_bytes_sent += size;
 	return ret;
