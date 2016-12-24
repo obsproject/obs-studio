@@ -338,6 +338,7 @@ try {
 } catch (HRError err) {
 	error("%s failed: %s (%lX)", __FUNCTION__, err.str, err.hr);
 	CoUninitialize();
+	captions->th.detach();
 }
 
 void obs_captions::start()
