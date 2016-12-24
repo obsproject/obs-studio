@@ -142,7 +142,7 @@ void obs_parse_avc_packet(struct encoder_packet *avc_packet,
 			&avc_packet->priority);
 
 	avc_packet->data          = output.bytes.array + sizeof(ref);
-	avc_packet->size          = output.bytes.num + sizeof(ref);
+	avc_packet->size          = output.bytes.num - sizeof(ref);
 	avc_packet->drop_priority = get_drop_priority(avc_packet->priority);
 }
 
