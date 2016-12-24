@@ -963,11 +963,12 @@ static const uint8_t nal_start[4] = {0, 0, 0, 1};
 
 static bool add_caption(struct obs_output *output, struct encoder_packet *out)
 {
-	struct encoder_packet new_packet = *out;
+	struct encoder_packet backup = *out;
 	caption_frame_t cf;
 	sei_t sei;
 	uint8_t *data;
 	size_t size;
+	long ref = 1;
 
 	DARRAY(uint8_t) out_data;
 
@@ -977,7 +978,8 @@ static bool add_caption(struct obs_output *output, struct encoder_packet *out)
 	sei_init(&sei);
 
 	da_init(out_data);
-	da_copy_array(out_data, out->data, out->size);
+	da_push_back_array(out_data, &ref, sizeof(ref));
+	da_push_back_array(out_data, out->data, out->size);
 
 	caption_frame_init(&cf);
 	caption_frame_from_text(&cf, &output->caption_head->text[0]);
@@ -993,10 +995,9 @@ static bool add_caption(struct obs_output *output, struct encoder_packet *out)
 
 	obs_encoder_packet_release(out);
 
-	new_packet.data = out_data.array;
-	new_packet.size = out_data.num;
-	obs_encoder_packet_create_instance(out, &new_packet);
-	da_free(out_data);
+	*out = backup;
+	out->data = (uint8_t*)out_data.array + sizeof(ref);
+	out->size = out_data.num - sizeof(ref);
 
 	sei_free(&sei);
 
