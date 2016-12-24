@@ -322,6 +322,8 @@ static void do_log(int log_level, const char *msg, va_list args, void *param)
 
 	OutputDebugString(wstr);
 	OutputDebugString(TEXT("\n"));
+
+	delete[] wstr;
 #else
 	def_log_handler(log_level, msg, args2, nullptr);
 #endif
