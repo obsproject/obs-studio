@@ -338,16 +338,6 @@ private:
 
 	QList<QPoint> VisibleDialogsPos;
 
-	bool sysTrayMinimizeToTray();
-
-	void EnumDialogs();
-
-	QList<QDialog*> list_of_VisibleDialogs;
-	QList<QDialog*> list_of_ModalDialogs;
-	QList<QMessageBox*> list_of_VisibleMBoxes; //always modal
-
-	QList<QPoint> VisibleDialogsPos;
-
 public slots:
 	void StartStreaming();
 	void StopStreaming();
