@@ -481,6 +481,10 @@ void OBSBasic::on_actionImportProfile_triggered()
 					profileDir + "/basic.ini");
 			QFile::copy(dir + "/service.json",
 					profileDir + "/service.json");
+			QFile::copy(dir + "/streamEncoder.json",
+					profileDir + "/streamEncoder.json");
+			QFile::copy(dir + "/recordEncoder.json",
+					profileDir + "/recordEncoder.json");
 			RefreshProfiles();
 		} else {
 			QMessageBox::information(this,
@@ -524,6 +528,10 @@ void OBSBasic::on_actionExportProfile_triggered()
 					outputDir + "/basic.ini");
 			QFile::copy(inputPath + currentProfile + "/service.json",
 					outputDir + "/service.json");
+			QFile::copy(inputPath + currentProfile + "/streamEncoder.json",
+					outputDir + "/streamEncoder.json");
+			QFile::copy(inputPath + currentProfile + "/recordEncoder.json",
+					outputDir + "/recordEncoder.json");
 		}
 	}
 }
