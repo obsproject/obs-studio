@@ -35,10 +35,6 @@ struct VertData {
 	float2 uv : TEXCOORD0;
 };
 
-struct CurrentPixel {
-	float4 current_pixel;
-};
-
 VertData VSDefault(VertData vert_in)
 {
 	VertData vert_out;
@@ -49,23 +45,20 @@ VertData VSDefault(VertData vert_in)
 
 float4 PSColorFilterRGBA(VertData vert_in) : TARGET
 {
-	/* Realize the struct. */
-	CurrentPixel pixel = (CurrentPixel) 0;
-
 	/* Grab the current pixel to perform operations on. */
-	pixel.current_pixel = image.Sample(textureSampler, vert_in.uv);
+	float4 currentPixel = image.Sample(textureSampler, vert_in.uv);
 
 	/* Always address the gamma first. */
-	pixel.current_pixel.rgb = pow(pixel.current_pixel.rgb, gamma);
+	currentPixel.rgb = pow(currentPixel.rgb, gamma);
 
 	/* Much easier to manipulate pixels for these types of operations
 	 * when in a matrix such as the below. See
 	 * http://www.graficaobscura.com/matrix/index.html and
 	 * https://docs.rainmeter.net/tips/colormatrix-guide/for more info.
 	 */
-	pixel.current_pixel = mul(color_matrix, pixel.current_pixel);
+	currentPixel = mul(color_matrix, currentPixel);
 
-	return pixel.current_pixel;
+	return currentPixel;
 }
 
 technique Draw
