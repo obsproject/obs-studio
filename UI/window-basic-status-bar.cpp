@@ -156,6 +156,23 @@ void OBSBasicStatusBar::UpdateCPUUsage()
 	}
 
 	QString text;
+
+	if (App()->IsAutoStreamMode() == true)
+	{
+		// Check if Streaming is running...
+
+		if (main->StreamingActive() == false)
+		{
+			main->StartStreaming();
+			text += QString("NOT STREAMING ! ");
+		}
+		else
+		{
+			text += QString("STREAMING  OK! ");
+		}
+	}
+
+	
 	text += QString("CPU: ") +
 		QString::number(main->GetCPUUsage(), 'f', 1) + QString("%, ") +
 		QString::number(obs_get_active_fps(), 'f', 2) + QString(" fps");

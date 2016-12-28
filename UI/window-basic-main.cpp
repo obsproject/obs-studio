@@ -3859,6 +3859,7 @@ void OBSBasic::OpenSceneFilters()
 #define STREAMING_STOP \
 	"==== Streaming Stop ================================================"
 
+
 void OBSBasic::StartStreaming()
 {
 	if (outputHandler->StreamingActive())
@@ -4104,9 +4105,11 @@ void OBSBasic::StreamingStop(int code)
 	blog(LOG_INFO, STREAMING_STOP);
 
 	if (code != OBS_OUTPUT_SUCCESS && isVisible()) {
-		QMessageBox::information(this,
-				QTStr("Output.ConnectFail.Title"),
-				QT_UTF8(errorMessage));
+		if (App()->IsAutoStreamMode() == false)
+		{
+			QMessageBox::information(this, QTStr("Output.ConnectFail.Title"), QT_UTF8(errorMessage));
+		}
+
 	} else if (code != OBS_OUTPUT_SUCCESS && !isVisible()) {
 		SysTrayNotify(QT_UTF8(errorMessage), QSystemTrayIcon::Warning);
 	}

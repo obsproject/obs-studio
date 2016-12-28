@@ -59,6 +59,7 @@ static string currentLogFile;
 static string lastLogFile;
 
 static bool MinimumUi_mode = false;
+static bool AutoStream_mode = false;
 static bool portable_mode = false;
 bool opt_start_streaming = false;
 bool opt_start_recording = false;
@@ -920,6 +921,11 @@ bool OBSApp::IsPortableMode()
 bool OBSApp::IsMinimumUiMode()
 {
 	return MinimumUi_mode;
+}
+
+bool OBSApp::IsAutoStreamMode()
+{
+	return AutoStream_mode;
 }
 
 #ifdef __APPLE__
@@ -1798,6 +1804,10 @@ int main(int argc, char *argv[])
 	move_to_xdg();
 #endif
 
+	// For Debugging
+	//MinimumUi_mode = true;
+	//AutoStream_mode = true;
+
 	for (int i = 1; i < argc; i++) {
 		if (arg_is(argv[i], "--portable", "-p")) {
 			portable_mode = true;
@@ -1805,6 +1815,10 @@ int main(int argc, char *argv[])
 		}
 		else if (arg_is(argv[i], "/MinimumUI", nullptr)) {
 			MinimumUi_mode = true;
+
+		} else if (arg_is(argv[i], "/MinimumUIandStream", nullptr)) {
+			MinimumUi_mode = true;
+			AutoStream_mode = true;
 
 		} else if (arg_is(argv[i], "--startstreaming", nullptr)) {
 			opt_start_streaming = true;

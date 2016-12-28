@@ -118,6 +118,7 @@ public:
 
 	std::string GetVersionString() const;
 	bool IsMinimumUiMode();
+	bool IsAutoStreamMode();
 	bool IsPortableMode();
 
 	const char *InputAudioSource() const;
