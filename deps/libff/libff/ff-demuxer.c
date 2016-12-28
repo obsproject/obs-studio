@@ -297,7 +297,13 @@ static bool find_decoder(struct ff_demuxer *demuxer, AVStream *stream)
 	}
 
 	if (codec == NULL) {
-		codec = avcodec_find_decoder(codec_context->codec_id);
+		if (codec_context->codec_id == AV_CODEC_ID_VP8)
+			codec = avcodec_find_decoder_by_name("libvpx");
+		else if (codec_context->codec_id == AV_CODEC_ID_VP9)
+			codec = avcodec_find_decoder_by_name("libvpx-vp9");
+
+		if (!codec)
+			codec = avcodec_find_decoder(codec_context->codec_id);
 		if (codec == NULL) {
 			av_log(NULL, AV_LOG_WARNING, "no decoder found for"
                                                      " codec with id %d",
