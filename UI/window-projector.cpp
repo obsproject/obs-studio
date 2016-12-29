@@ -50,6 +50,7 @@ OBSProjector::~OBSProjector()
 void OBSProjector::Init(int monitor)
 {
 	QScreen *screen = QGuiApplication::screens()[monitor];
+
 	setGeometry(screen->geometry());
 
 	bool alwaysOnTop = config_get_bool(GetGlobalConfig(),
@@ -67,6 +68,8 @@ void OBSProjector::Init(int monitor)
 	addAction(action);
 
 	connect(action, SIGNAL(triggered()), this, SLOT(EscapeTriggered()));
+
+	savedMonitor = monitor;
 }
 
 void OBSProjector::OBSRender(void *data, uint32_t cx, uint32_t cy)
@@ -111,6 +114,7 @@ void OBSProjector::OBSRender(void *data, uint32_t cx, uint32_t cy)
 void OBSProjector::OBSSourceRemoved(void *data, calldata_t *params)
 {
 	OBSProjector *window = reinterpret_cast<OBSProjector*>(data);
+
 	window->deleteLater();
 
 	UNUSED_PARAMETER(params);
@@ -129,5 +133,8 @@ void OBSProjector::mousePressEvent(QMouseEvent *event)
 
 void OBSProjector::EscapeTriggered()
 {
+	OBSBasic *main = reinterpret_cast<OBSBasic*>(App()->GetMainWindow());
+	main->RemoveSavedProjectors(savedMonitor);
+
 	deleteLater();
 }
