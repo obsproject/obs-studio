@@ -4912,13 +4912,6 @@ void OBSBasic::SetShowing(bool showing)
 			"BasicWindow", "geometry",
 			saveGeometry().toBase64().constData());
 		
-		/* TODO - preserve projectors */
-		//delete projectors on hide
-		for (QPointer<QWidget> &projector : projectors) {
-			delete projector;
-			projector.clear();
-		}
-		
 		//hide all visible child dialogs
 		VisibleDialogsPos.clear();
 		if (!list_of_VisibleDialogs.isEmpty()) {
