@@ -282,6 +282,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->systemTrayEnabled,    CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->systemTrayWhenStarted,CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->systemTrayAlways,     CHECK_CHANGED,  GENERAL_CHANGED);
+	HookWidget(ui->saveProjectors,       CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->snappingEnabled,      CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->screenSnapping,       CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->centerSnapping,       CHECK_CHANGED,  GENERAL_CHANGED);
@@ -895,6 +896,10 @@ void OBSBasicSettings::LoadGeneralSettings()
 	bool systemTrayAlways = config_get_bool(GetGlobalConfig(),
 			"BasicWindow", "SysTrayMinimizeToTray");
 	ui->systemTrayAlways->setChecked(systemTrayAlways);
+
+	bool saveProjectors = config_get_bool(GetGlobalConfig(),
+			"BasicWindow", "SaveProjectors");
+	ui->saveProjectors->setChecked(saveProjectors);
 
 	bool snappingEnabled = config_get_bool(GetGlobalConfig(),
 			"BasicWindow", "SnappingEnabled");
@@ -2351,6 +2356,11 @@ void OBSBasicSettings::SaveGeneralSettings()
 		config_set_bool(GetGlobalConfig(),
 				"BasicWindow", "SysTrayMinimizeToTray",
 				ui->systemTrayAlways->isChecked());
+
+	if (WidgetChanged(ui->saveProjectors))
+		config_set_bool(GetGlobalConfig(), "BasicWindow",
+				"SaveProjectors",
+				ui->saveProjectors->isChecked());
 }
 
 void OBSBasicSettings::SaveStream1Settings()

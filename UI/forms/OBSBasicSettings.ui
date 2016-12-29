@@ -185,21 +185,21 @@
            </property>
           </widget>
          </item>
-         <item row="7" column="1">
+         <item row="8" column="1">
           <widget class="QCheckBox" name="recordWhenStreaming">
            <property name="text">
             <string>Basic.Settings.General.RecordWhenStreaming</string>
            </property>
           </widget>
          </item>
-         <item row="9" column="1">
+         <item row="10" column="1">
           <widget class="QCheckBox" name="systemTrayEnabled">
            <property name="text">
             <string>Basic.Settings.General.SysTrayEnabled</string>
            </property>
           </widget>
          </item>
-         <item row="10" column="1">
+         <item row="11" column="1">
           <widget class="QCheckBox" name="systemTrayWhenStarted">
            <property name="enabled">
             <bool>false</bool>
@@ -209,7 +209,7 @@
            </property>
           </widget>
          </item>
-         <item row="11" column="1">
+         <item row="12" column="1">
           <widget class="QCheckBox" name="systemTrayAlways">
            <property name="enabled">
             <bool>false</bool>
@@ -219,14 +219,14 @@
            </property>
           </widget>
          </item>
-         <item row="12" column="0" colspan="2">
+         <item row="13" column="0" colspan="2">
           <widget class="Line" name="line_4">
            <property name="orientation">
             <enum>Qt::Horizontal</enum>
            </property>
           </widget>
          </item>
-         <item row="13" column="0" colspan="2">
+         <item row="14" column="0" colspan="2">
           <widget class="QGroupBox" name="groupBox_10">
            <property name="enabled">
             <bool>true</bool>
@@ -326,7 +326,7 @@
            </property>
           </widget>
          </item>
-         <item row="8" column="1">
+         <item row="9" column="1">
           <widget class="QCheckBox" name="keepRecordStreamStops">
            <property name="enabled">
             <bool>false</bool>
@@ -340,6 +340,13 @@
           <widget class="QCheckBox" name="projectorAlwaysOnTop">
            <property name="text">
             <string>Basic.Settings.General.ProjectorAlwaysOnTop</string>
+           </property>
+          </widget>
+         </item>
+         <item row="7" column="1">
+          <widget class="QCheckBox" name="saveProjectors">
+           <property name="text">
+            <string>Basic.Settings.General.SaveProjectors</string>
            </property>
           </widget>
          </item>
@@ -2912,8 +2919,8 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>800</width>
-              <height>69</height>
+              <width>98</width>
+              <height>28</height>
              </rect>
             </property>
            </widget>
@@ -4204,6 +4211,16 @@
    <signal>toggled(bool)</signal>
    <receiver>systemTrayAlways</receiver>
    <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
   </connection>
  </connections>
 </ui>

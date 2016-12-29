@@ -111,6 +111,9 @@ private:
 
 	std::vector<OBSSignal> signalHandlers;
 
+	std::vector<std::string> projectorArray;
+	std::vector<int> previewProjectorArray;
+
 	bool loaded = false;
 	long disableSaving = 1;
 	bool projectChanged = false;
@@ -331,6 +334,13 @@ private:
 
 	QList<QPoint> visDlgPositions;
 
+	obs_data_array_t *SaveProjectors();
+	void LoadSavedProjectors(obs_data_array_t *savedProjectors);
+
+	obs_data_array_t *SavePreviewProjectors();
+	void LoadSavedPreviewProjectors(
+		obs_data_array_t *savedPreviewProjectors);
+
 public slots:
 	void StartStreaming();
 	void StopStreaming();
@@ -481,6 +491,9 @@ public:
 
 	void SystemTrayInit();
 	void SystemTray(bool firstStarted);
+
+	void OpenSavedProjectors();
+	void RemoveSavedProjectors(int monitor);
 
 protected:
 	virtual void closeEvent(QCloseEvent *event) override;

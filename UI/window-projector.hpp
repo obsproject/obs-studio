@@ -2,6 +2,7 @@
 
 #include <obs.hpp>
 #include "qt-display.hpp"
+#include "window-basic-main.hpp"
 
 class QMouseEvent;
 
@@ -16,6 +17,8 @@ private:
 	static void OBSSourceRemoved(void *data, calldata_t *params);
 
 	void mousePressEvent(QMouseEvent *event) override;
+
+	int savedMonitor = 0;
 
 private slots:
 	void EscapeTriggered();
