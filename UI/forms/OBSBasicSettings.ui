@@ -185,10 +185,34 @@
            </property>
           </widget>
          </item>
+         <item row="5" column="1">
+          <widget class="QCheckBox" name="hideProjectorCursor">
+           <property name="text">
+            <string>Basic.Settings.General.HideProjectorCursor</string>
+           </property>
+          </widget>
+         </item>
+         <item row="6" column="1">
+          <widget class="QCheckBox" name="projectorAlwaysOnTop">
+           <property name="text">
+            <string>Basic.Settings.General.ProjectorAlwaysOnTop</string>
+           </property>
+          </widget>
+         </item>
          <item row="7" column="1">
           <widget class="QCheckBox" name="recordWhenStreaming">
            <property name="text">
             <string>Basic.Settings.General.RecordWhenStreaming</string>
+           </property>
+          </widget>
+         </item>
+         <item row="8" column="1">
+          <widget class="QCheckBox" name="keepRecordStreamStops">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
+           <property name="text">
+            <string>Basic.Settings.General.KeepRecordingWhenStreamStops</string>
            </property>
           </widget>
          </item>
@@ -209,14 +233,14 @@
            </property>
           </widget>
          </item>
-         <item row="11" column="0" colspan="2">
+         <item row="13" column="0" colspan="2">
           <widget class="Line" name="line_4">
            <property name="orientation">
             <enum>Qt::Horizontal</enum>
            </property>
           </widget>
          </item>
-         <item row="12" column="0" colspan="2">
+         <item row="14" column="0" colspan="2">
           <widget class="QGroupBox" name="groupBox_10">
            <property name="enabled">
             <bool>true</bool>
@@ -267,16 +291,6 @@
               </property>
              </widget>
             </item>
-            <item row="3" column="1">
-             <widget class="QCheckBox" name="sourceSnapping">
-              <property name="text">
-               <string>Basic.Settings.General.SourceSnapping</string>
-              </property>
-              <property name="checked">
-               <bool>true</bool>
-              </property>
-             </widget>
-            </item>
             <item row="1" column="1">
              <widget class="QDoubleSpinBox" name="snapDistance">
               <property name="decimals">
@@ -306,30 +320,33 @@
               </property>
              </widget>
             </item>
+            <item row="3" column="1">
+             <widget class="QCheckBox" name="sourceSnapping">
+              <property name="text">
+               <string>Basic.Settings.General.SourceSnapping</string>
+              </property>
+              <property name="checked">
+               <bool>true</bool>
+              </property>
+             </widget>
+            </item>
            </layout>
           </widget>
          </item>
-         <item row="5" column="1">
-          <widget class="QCheckBox" name="hideProjectorCursor">
+         <item row="11" column="1">
+          <widget class="QCheckBox" name="replayBufferWhileStreaming">
            <property name="text">
-            <string>Basic.Settings.General.HideProjectorCursor</string>
+            <string>Basic.Settings.General.ReplayBufferWhileStreaming</string>
            </property>
           </widget>
          </item>
-         <item row="8" column="1">
-          <widget class="QCheckBox" name="keepRecordStreamStops">
+         <item row="12" column="1">
+          <widget class="QCheckBox" name="keepReplayBufferStreamStops">
            <property name="enabled">
             <bool>false</bool>
            </property>
            <property name="text">
-            <string>Basic.Settings.General.KeepRecordingWhenStreamStops</string>
-           </property>
-          </widget>
-         </item>
-         <item row="6" column="1">
-          <widget class="QCheckBox" name="projectorAlwaysOnTop">
-           <property name="text">
-            <string>Basic.Settings.General.ProjectorAlwaysOnTop</string>
+            <string>Basic.Settings.General.KeepReplayBufferStreamStops</string>
            </property>
           </widget>
          </item>
@@ -2902,8 +2919,8 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>800</width>
-              <height>69</height>
+              <width>63</width>
+              <height>16</height>
              </rect>
             </property>
            </widget>
@@ -3268,7 +3285,7 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>593</width>
+              <width>596</width>
               <height>709</height>
              </rect>
             </property>
@@ -3796,12 +3813,12 @@
    <slot>setCurrentIndex(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>586</x>
-     <y>38</y>
+     <x>241</x>
+     <y>16</y>
     </hint>
     <hint type="destinationlabel">
-     <x>401</x>
-     <y>102</y>
+     <x>250</x>
+     <y>40</y>
     </hint>
    </hints>
   </connection>
@@ -3812,12 +3829,12 @@
    <slot>setVisible(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>640</x>
-     <y>180</y>
+     <x>240</x>
+     <y>46</y>
     </hint>
     <hint type="destinationlabel">
-     <x>640</x>
-     <y>229</y>
+     <x>240</x>
+     <y>44</y>
     </hint>
    </hints>
   </connection>
@@ -3828,12 +3845,12 @@
    <slot>setVisible(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>640</x>
-     <y>180</y>
+     <x>240</x>
+     <y>46</y>
     </hint>
     <hint type="destinationlabel">
-     <x>383</x>
-     <y>229</y>
+     <x>160</x>
+     <y>44</y>
     </hint>
    </hints>
   </connection>
@@ -3844,12 +3861,12 @@
    <slot>setVisible(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>640</x>
-     <y>180</y>
+     <x>240</x>
+     <y>46</y>
     </hint>
     <hint type="destinationlabel">
-     <x>640</x>
-     <y>255</y>
+     <x>240</x>
+     <y>43</y>
     </hint>
    </hints>
   </connection>
@@ -3860,12 +3877,12 @@
    <slot>setVisible(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>640</x>
-     <y>180</y>
+     <x>240</x>
+     <y>46</y>
     </hint>
     <hint type="destinationlabel">
-     <x>383</x>
-     <y>255</y>
+     <x>160</x>
+     <y>43</y>
     </hint>
    </hints>
   </connection>
@@ -3876,12 +3893,12 @@
    <slot>setCurrentIndex(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>606</x>
-     <y>113</y>
+     <x>232</x>
+     <y>41</y>
     </hint>
     <hint type="destinationlabel">
-     <x>394</x>
-     <y>191</y>
+     <x>241</x>
+     <y>53</y>
     </hint>
    </hints>
   </connection>
@@ -3892,12 +3909,12 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>397</x>
-     <y>323</y>
+     <x>168</x>
+     <y>67</y>
     </hint>
     <hint type="destinationlabel">
-     <x>676</x>
-     <y>323</y>
+     <x>250</x>
+     <y>67</y>
     </hint>
    </hints>
   </connection>
@@ -3908,12 +3925,12 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>330</x>
-     <y>191</y>
+     <x>168</x>
+     <y>52</y>
     </hint>
     <hint type="destinationlabel">
-     <x>591</x>
-     <y>191</y>
+     <x>232</x>
+     <y>52</y>
     </hint>
    </hints>
   </connection>
@@ -3924,12 +3941,12 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>353</x>
-     <y>277</y>
+     <x>168</x>
+     <y>56</y>
     </hint>
     <hint type="destinationlabel">
-     <x>614</x>
-     <y>277</y>
+     <x>232</x>
+     <y>56</y>
     </hint>
    </hints>
   </connection>
@@ -3940,12 +3957,12 @@
    <slot>setCurrentIndex(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>676</x>
-     <y>148</y>
+     <x>250</x>
+     <y>50</y>
     </hint>
     <hint type="destinationlabel">
-     <x>676</x>
-     <y>177</y>
+     <x>250</x>
+     <y>52</y>
     </hint>
    </hints>
   </connection>
@@ -4062,98 +4079,18 @@
    </hints>
   </connection>
   <connection>
-   <sender>snappingEnabled</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>label_9</receiver>
-   <slot>setEnabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>951</x>
-     <y>349</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>346</x>
-     <y>375</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>snappingEnabled</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>snapDistance</receiver>
-   <slot>setEnabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>951</x>
-     <y>349</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>951</x>
-     <y>375</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>snappingEnabled</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>screenSnapping</receiver>
-   <slot>setEnabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>951</x>
-     <y>349</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>951</x>
-     <y>398</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>snappingEnabled</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>sourceSnapping</receiver>
-   <slot>setEnabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>951</x>
-     <y>349</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>951</x>
-     <y>421</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>snappingEnabled</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>centerSnapping</receiver>
-   <slot>setEnabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>951</x>
-     <y>349</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>951</x>
-     <y>444</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
    <sender>simpleOutAdvanced</sender>
    <signal>toggled(bool)</signal>
    <receiver>simpleOutEnforce</receiver>
    <slot>setVisible(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>640</x>
-     <y>180</y>
+     <x>240</x>
+     <y>46</y>
     </hint>
     <hint type="destinationlabel">
-     <x>640</x>
-     <y>203</y>
+     <x>240</x>
+     <y>45</y>
     </hint>
    </hints>
   </connection>
@@ -4186,6 +4123,102 @@
     <hint type="destinationlabel">
      <x>705</x>
      <y>294</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>snappingEnabled</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>screenSnapping</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>951</x>
+     <y>395</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>951</x>
+     <y>444</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>snappingEnabled</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>snapDistance</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>951</x>
+     <y>395</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>951</x>
+     <y>421</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>snappingEnabled</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>label_9</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>951</x>
+     <y>395</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>346</x>
+     <y>421</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>snappingEnabled</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>centerSnapping</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>951</x>
+     <y>395</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>951</x>
+     <y>490</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>snappingEnabled</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>sourceSnapping</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>951</x>
+     <y>395</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>951</x>
+     <y>467</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>replayBufferWhileStreaming</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>keepReplayBufferStreamStops</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>380</x>
+     <y>311</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>382</x>
+     <y>333</y>
     </hint>
    </hints>
   </connection>

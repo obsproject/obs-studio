@@ -279,6 +279,8 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->projectorAlwaysOnTop, CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->recordWhenStreaming,  CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->keepRecordStreamStops,CHECK_CHANGED,  GENERAL_CHANGED);
+	HookWidget(ui->replayBufferWhileStreaming, CHECK_CHANGED, GENERAL_CHANGED);
+	HookWidget(ui->keepReplayBufferStreamStops, CHECK_CHANGED, GENERAL_CHANGED);
 	HookWidget(ui->systemTrayEnabled,    CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->systemTrayWhenStarted,CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->snappingEnabled,      CHECK_CHANGED,  GENERAL_CHANGED);
@@ -882,6 +884,14 @@ void OBSBasicSettings::LoadGeneralSettings()
 	bool keepRecordStreamStops = config_get_bool(GetGlobalConfig(),
 			"BasicWindow", "KeepRecordingWhenStreamStops");
 	ui->keepRecordStreamStops->setChecked(keepRecordStreamStops);
+
+	bool replayBufferWhileStreaming = config_get_bool(GetGlobalConfig(),
+		"BasicWindow", "ReplayBufferWhileStreaming");
+	ui->replayBufferWhileStreaming->setChecked(replayBufferWhileStreaming);
+
+	bool keepReplayBufferStreamStops = config_get_bool(GetGlobalConfig(),
+		"BasicWindow", "KeepReplayBufferStreamStops");
+	ui->keepReplayBufferStreamStops->setChecked(keepReplayBufferStreamStops);
 
 	bool systemTrayEnabled = config_get_bool(GetGlobalConfig(),
 			"BasicWindow", "SysTrayEnabled");
@@ -2331,6 +2341,15 @@ void OBSBasicSettings::SaveGeneralSettings()
 		config_set_bool(GetGlobalConfig(), "BasicWindow",
 				"KeepRecordingWhenStreamStops",
 				ui->keepRecordStreamStops->isChecked());
+
+	if (WidgetChanged(ui->replayBufferWhileStreaming))
+		config_set_bool(GetGlobalConfig(), "BasicWindow",
+			"ReplayBufferWhileStreaming",
+			ui->replayBufferWhileStreaming->isChecked());
+	if (WidgetChanged(ui->keepReplayBufferStreamStops))
+		config_set_bool(GetGlobalConfig(), "BasicWindow",
+			"KeepReplayBufferStreamStops",
+			ui->keepReplayBufferStreamStops->isChecked());
 
 	if (WidgetChanged(ui->systemTrayEnabled))
 		config_set_bool(GetGlobalConfig(), "BasicWindow",
