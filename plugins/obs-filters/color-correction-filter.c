@@ -71,6 +71,10 @@ struct color_correction_filter_data {
 };
 
 const static float root3 = 0.57735f;
+const static float red_weight = 0.299f;
+const static float green_weight = 0.587f;
+const static float blue_weight = 0.114f;
+
 
 /*
  * As the functions' namesake, this provides the internal name of your Filter,
@@ -130,15 +134,19 @@ static void color_correction_filter_update(void *data, obs_data_t *settings)
 			SETTING_SATURATION) + 1.0f;
 
 	/* Factor in the selected color weights. */
-	float one_minus_sat = (1.0f - filter->saturation) / 3.0f;
-	float sat_val = one_minus_sat + filter->saturation;
+	float one_minus_sat_red = (1.0f - filter->saturation) * red_weight;
+	float one_minus_sat_green = (1.0f - filter->saturation) * green_weight;
+	float one_minus_sat_blue = (1.0f - filter->saturation) * blue_weight;
+	float sat_val_red   = one_minus_sat_red + filter->saturation;
+	float sat_val_green = one_minus_sat_green + filter->saturation;
+	float sat_val_blue  = one_minus_sat_blue + filter->saturation;
 
 	/* Now we build our Saturation matrix. */
 	filter->sat_matrix = (struct matrix4)
 	{
-		sat_val, one_minus_sat, one_minus_sat, 0.0f,
-		one_minus_sat, sat_val, one_minus_sat, 0.0f,
-		one_minus_sat, one_minus_sat, sat_val, 0.0f,
+		sat_val_red, one_minus_sat_red, one_minus_sat_red, 0.0f,
+		one_minus_sat_green, sat_val_green, one_minus_sat_green, 0.0f,
+		one_minus_sat_blue, one_minus_sat_blue, sat_val_blue, 0.0f,
 		0.0f, 0.0f, 0.0f, 1.0f
 	};
 
