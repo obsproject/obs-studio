@@ -192,14 +192,14 @@
            </property>
           </widget>
          </item>
-         <item row="10" column="1">
+         <item row="12" column="1">
           <widget class="QCheckBox" name="systemTrayEnabled">
            <property name="text">
             <string>Basic.Settings.General.SysTrayEnabled</string>
            </property>
           </widget>
          </item>
-         <item row="11" column="1">
+         <item row="13" column="1">
           <widget class="QCheckBox" name="systemTrayWhenStarted">
            <property name="enabled">
             <bool>false</bool>
@@ -209,7 +209,7 @@
            </property>
           </widget>
          </item>
-         <item row="12" column="1">
+         <item row="14" column="1">
           <widget class="QCheckBox" name="systemTrayAlways">
            <property name="enabled">
             <bool>false</bool>
@@ -219,14 +219,14 @@
            </property>
           </widget>
          </item>
-         <item row="13" column="0" colspan="2">
+         <item row="15" column="0" colspan="2">
           <widget class="Line" name="line_4">
            <property name="orientation">
             <enum>Qt::Horizontal</enum>
            </property>
           </widget>
          </item>
-         <item row="14" column="0" colspan="2">
+         <item row="16" column="0" colspan="2">
           <widget class="QGroupBox" name="groupBox_10">
            <property name="enabled">
             <bool>true</bool>
@@ -347,6 +347,23 @@
           <widget class="QCheckBox" name="saveProjectors">
            <property name="text">
             <string>Basic.Settings.General.SaveProjectors</string>
+           </property>
+          </widget>
+         </item>
+         <item row="11" column="1">
+          <widget class="QCheckBox" name="keepReplayStreamStops">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
+           <property name="text">
+            <string>Basic.Settings.General.KeepReplayBufferStreamStops</string>
+           </property>
+          </widget>
+         </item>
+         <item row="10" column="1">
+          <widget class="QCheckBox" name="replayWhileStreaming">
+           <property name="text">
+            <string>Basic.Settings.General.ReplayBufferWhileStreaming</string>
            </property>
           </widget>
          </item>
@@ -2919,8 +2936,8 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>98</width>
-              <height>28</height>
+              <width>80</width>
+              <height>16</height>
              </rect>
             </property>
            </widget>
@@ -3813,12 +3830,12 @@
    <slot>setCurrentIndex(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>586</x>
-     <y>38</y>
+     <x>241</x>
+     <y>16</y>
     </hint>
     <hint type="destinationlabel">
-     <x>401</x>
-     <y>102</y>
+     <x>250</x>
+     <y>40</y>
     </hint>
    </hints>
   </connection>
@@ -3829,12 +3846,12 @@
    <slot>setVisible(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>640</x>
-     <y>180</y>
+     <x>240</x>
+     <y>46</y>
     </hint>
     <hint type="destinationlabel">
-     <x>640</x>
-     <y>229</y>
+     <x>240</x>
+     <y>44</y>
     </hint>
    </hints>
   </connection>
@@ -3845,12 +3862,12 @@
    <slot>setVisible(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>640</x>
-     <y>180</y>
+     <x>240</x>
+     <y>46</y>
     </hint>
     <hint type="destinationlabel">
-     <x>383</x>
-     <y>229</y>
+     <x>160</x>
+     <y>44</y>
     </hint>
    </hints>
   </connection>
@@ -3861,12 +3878,12 @@
    <slot>setVisible(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>640</x>
-     <y>180</y>
+     <x>240</x>
+     <y>46</y>
     </hint>
     <hint type="destinationlabel">
-     <x>640</x>
-     <y>255</y>
+     <x>240</x>
+     <y>43</y>
     </hint>
    </hints>
   </connection>
@@ -3877,12 +3894,12 @@
    <slot>setVisible(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>640</x>
-     <y>180</y>
+     <x>240</x>
+     <y>46</y>
     </hint>
     <hint type="destinationlabel">
-     <x>383</x>
-     <y>255</y>
+     <x>160</x>
+     <y>43</y>
     </hint>
    </hints>
   </connection>
@@ -3893,12 +3910,12 @@
    <slot>setCurrentIndex(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>606</x>
-     <y>113</y>
+     <x>232</x>
+     <y>41</y>
     </hint>
     <hint type="destinationlabel">
-     <x>394</x>
-     <y>191</y>
+     <x>241</x>
+     <y>53</y>
     </hint>
    </hints>
   </connection>
@@ -3909,12 +3926,12 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>397</x>
-     <y>323</y>
+     <x>168</x>
+     <y>67</y>
     </hint>
     <hint type="destinationlabel">
-     <x>676</x>
-     <y>323</y>
+     <x>250</x>
+     <y>67</y>
     </hint>
    </hints>
   </connection>
@@ -3925,12 +3942,12 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>330</x>
-     <y>191</y>
+     <x>168</x>
+     <y>52</y>
     </hint>
     <hint type="destinationlabel">
-     <x>591</x>
-     <y>191</y>
+     <x>232</x>
+     <y>52</y>
     </hint>
    </hints>
   </connection>
@@ -3941,12 +3958,12 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>353</x>
-     <y>277</y>
+     <x>168</x>
+     <y>56</y>
     </hint>
     <hint type="destinationlabel">
-     <x>614</x>
-     <y>277</y>
+     <x>232</x>
+     <y>56</y>
     </hint>
    </hints>
   </connection>
@@ -3957,12 +3974,12 @@
    <slot>setCurrentIndex(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>676</x>
-     <y>148</y>
+     <x>250</x>
+     <y>50</y>
     </hint>
     <hint type="destinationlabel">
-     <x>676</x>
-     <y>177</y>
+     <x>250</x>
+     <y>52</y>
     </hint>
    </hints>
   </connection>
@@ -4086,11 +4103,11 @@
    <hints>
     <hint type="sourcelabel">
      <x>951</x>
-     <y>349</y>
+     <y>441</y>
     </hint>
     <hint type="destinationlabel">
      <x>346</x>
-     <y>375</y>
+     <y>467</y>
     </hint>
    </hints>
   </connection>
@@ -4102,11 +4119,11 @@
    <hints>
     <hint type="sourcelabel">
      <x>951</x>
-     <y>349</y>
+     <y>441</y>
     </hint>
     <hint type="destinationlabel">
      <x>951</x>
-     <y>375</y>
+     <y>467</y>
     </hint>
    </hints>
   </connection>
@@ -4118,11 +4135,11 @@
    <hints>
     <hint type="sourcelabel">
      <x>951</x>
-     <y>349</y>
+     <y>441</y>
     </hint>
     <hint type="destinationlabel">
      <x>951</x>
-     <y>398</y>
+     <y>490</y>
     </hint>
    </hints>
   </connection>
@@ -4134,11 +4151,11 @@
    <hints>
     <hint type="sourcelabel">
      <x>951</x>
-     <y>349</y>
+     <y>441</y>
     </hint>
     <hint type="destinationlabel">
      <x>951</x>
-     <y>421</y>
+     <y>513</y>
     </hint>
    </hints>
   </connection>
@@ -4150,11 +4167,11 @@
    <hints>
     <hint type="sourcelabel">
      <x>951</x>
-     <y>349</y>
+     <y>441</y>
     </hint>
     <hint type="destinationlabel">
      <x>951</x>
-     <y>444</y>
+     <y>536</y>
     </hint>
    </hints>
   </connection>
@@ -4165,12 +4182,12 @@
    <slot>setVisible(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>640</x>
-     <y>180</y>
+     <x>240</x>
+     <y>46</y>
     </hint>
     <hint type="destinationlabel">
-     <x>640</x>
-     <y>203</y>
+     <x>240</x>
+     <y>45</y>
     </hint>
    </hints>
   </connection>
@@ -4181,12 +4198,12 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>705</x>
-     <y>225</y>
+     <x>961</x>
+     <y>248</y>
     </hint>
     <hint type="destinationlabel">
-     <x>705</x>
-     <y>248</y>
+     <x>961</x>
+     <y>271</y>
     </hint>
    </hints>
   </connection>
@@ -4197,12 +4214,12 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>705</x>
-     <y>271</y>
+     <x>961</x>
+     <y>340</y>
     </hint>
     <hint type="destinationlabel">
-     <x>705</x>
-     <y>294</y>
+     <x>961</x>
+     <y>363</y>
     </hint>
    </hints>
   </connection>
@@ -4213,12 +4230,28 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>20</x>
-     <y>20</y>
+     <x>336</x>
+     <y>324</y>
     </hint>
     <hint type="destinationlabel">
-     <x>20</x>
-     <y>20</y>
+     <x>336</x>
+     <y>370</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>replayWhileStreaming</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>keepReplayStreamStops</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>497</x>
+     <y>288</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>513</x>
+     <y>304</y>
     </hint>
    </hints>
   </connection>

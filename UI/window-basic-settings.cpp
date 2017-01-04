@@ -279,6 +279,8 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->projectorAlwaysOnTop, CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->recordWhenStreaming,  CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->keepRecordStreamStops,CHECK_CHANGED,  GENERAL_CHANGED);
+	HookWidget(ui->replayWhileStreaming, CHECK_CHANGED,  GENERAL_CHANGED);
+	HookWidget(ui->keepReplayStreamStops,CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->systemTrayEnabled,    CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->systemTrayWhenStarted,CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->systemTrayAlways,     CHECK_CHANGED,  GENERAL_CHANGED);
@@ -591,6 +593,8 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	AdvOutRecCheckWarnings();
 
 	SimpleRecordingQualityChanged();
+
+	UpdateAutomaticReplayBufferCheckboxes();
 }
 
 void OBSBasicSettings::SaveCombo(QComboBox *widget, const char *section,
@@ -884,6 +888,14 @@ void OBSBasicSettings::LoadGeneralSettings()
 	bool keepRecordStreamStops = config_get_bool(GetGlobalConfig(),
 			"BasicWindow", "KeepRecordingWhenStreamStops");
 	ui->keepRecordStreamStops->setChecked(keepRecordStreamStops);
+
+	bool replayWhileStreaming = config_get_bool(GetGlobalConfig(),
+		"BasicWindow", "ReplayBufferWhileStreaming");
+	ui->replayWhileStreaming->setChecked(replayWhileStreaming);
+
+	bool keepReplayStreamStops = config_get_bool(GetGlobalConfig(),
+		"BasicWindow", "KeepReplayBufferStreamStops");
+	ui->keepReplayStreamStops->setChecked(keepReplayStreamStops);
 
 	bool systemTrayEnabled = config_get_bool(GetGlobalConfig(),
 			"BasicWindow", "SysTrayEnabled");
@@ -2342,6 +2354,15 @@ void OBSBasicSettings::SaveGeneralSettings()
 				"KeepRecordingWhenStreamStops",
 				ui->keepRecordStreamStops->isChecked());
 
+	if (WidgetChanged(ui->replayWhileStreaming))
+		config_set_bool(GetGlobalConfig(), "BasicWindow",
+			"ReplayBufferWhileStreaming",
+			ui->replayWhileStreaming->isChecked());
+	if (WidgetChanged(ui->keepReplayStreamStops))
+		config_set_bool(GetGlobalConfig(), "BasicWindow",
+			"KeepReplayBufferStreamStops",
+			ui->keepReplayStreamStops->isChecked());
+
 	if (WidgetChanged(ui->systemTrayEnabled))
 		config_set_bool(GetGlobalConfig(), "BasicWindow",
 				"SysTrayEnabled",
@@ -3337,6 +3358,8 @@ void OBSBasicSettings::UpdateStreamDelayEstimate()
 		UpdateSimpleOutStreamDelayEstimate();
 	else
 		UpdateAdvOutStreamDelayEstimate();
+
+	UpdateAutomaticReplayBufferCheckboxes();
 }
 
 static bool EncoderAvailable(const char *encoder)
@@ -3496,6 +3519,15 @@ void OBSBasicSettings::SimpleStreamingEncoderChanged()
 #define ESTIMATE_UNKNOWN_STR \
 	"Basic.Settings.Output.ReplayBuffer.EstimateUnknown"
 
+void OBSBasicSettings::UpdateAutomaticReplayBufferCheckboxes()
+{
+	bool state = ui->simpleReplayBuf->isChecked() &&
+		ui->outputMode->currentIndex() == 0;
+	ui->replayWhileStreaming->setEnabled(state);
+	ui->keepReplayStreamStops->setEnabled(state &&
+			ui->replayWhileStreaming->isChecked());
+}
+
 void OBSBasicSettings::SimpleReplayBufferChanged()
 {
 	QString qual = ui->simpleOutRecQuality->currentData().toString();
@@ -3523,6 +3555,9 @@ void OBSBasicSettings::SimpleReplayBufferChanged()
 
 	ui->replayBufferGroupBox->setVisible(!lossless && replayBufferEnabled);
 	ui->simpleReplayBuf->setVisible(!lossless);
+
+	UpdateAutomaticReplayBufferCheckboxes();
+
 }
 
 #define SIMPLE_OUTPUT_WARNING(str) \
