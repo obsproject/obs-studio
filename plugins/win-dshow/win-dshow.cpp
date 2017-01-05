@@ -38,6 +38,7 @@ using namespace DShow;
 #define LAST_RESOLUTION   "last_resolution"
 #define BUFFERING_VAL     "buffering"
 #define FLIP_IMAGE        "flip_vertically"
+#define FLIP_U_IMAGE      "flip_horizontally"
 #define AUDIO_OUTPUT_MODE "audio_output_mode"
 #define USE_CUSTOM_AUDIO  "use_custom_audio_device"
 #define AUDIO_DEVICE_ID   "audio_device_id"
@@ -62,6 +63,7 @@ using namespace DShow;
 #define TEXT_BUFFERING_ON   obs_module_text("Buffering.Enable")
 #define TEXT_BUFFERING_OFF  obs_module_text("Buffering.Disable")
 #define TEXT_FLIP_IMAGE     obs_module_text("FlipVertically")
+#define TEXT_FLIP_U_IMAGE   obs_module_text("FlipHorizontally")
 #define TEXT_AUDIO_MODE     obs_module_text("AudioOutputMode")
 #define TEXT_MODE_CAPTURE   obs_module_text("AudioOutputMode.Capture")
 #define TEXT_MODE_DSOUND    obs_module_text("AudioOutputMode.DirectSound")
@@ -165,6 +167,7 @@ struct DShowInput {
 	bool         deactivateWhenNotShowing = false;
 	bool         deviceHasAudio = false;
 	bool         flip = false;
+	bool         flip_u = false;
 	bool         active = false;
 
 	Decoder      audio_decoder;
@@ -421,6 +424,9 @@ void DShowInput::OnEncodedVideoData(enum AVCodecID id,
 		frame.timestamp = (uint64_t)ts * 100;
 		if (flip)
 			frame.flip = !frame.flip;
+
+		if (flip_u)
+			frame.flip_u = !frame.flip_u;
 #if LOG_ENCODED_VIDEO_TS
 		blog(LOG_DEBUG, "video ts: %llu", frame.timestamp);
 #endif
@@ -446,9 +452,14 @@ void DShowInput::OnVideoData(const VideoConfig &config,
 	frame.format     = ConvertVideoFormat(config.format);
 	frame.flip       = (config.format == VideoFormat::XRGB ||
 	                    config.format == VideoFormat::ARGB);
+	frame.flip_u     = (config.format == VideoFormat::XRGB ||
+	                    config.format == VideoFormat::ARGB);
 
 	if (flip)
 		frame.flip = !frame.flip;
+
+	if (flip_u)
+		frame.flip_u = !frame.flip_u;
 
 	if (videoConfig.format == VideoFormat::XRGB ||
 	    videoConfig.format == VideoFormat::ARGB) {
@@ -752,6 +763,7 @@ bool DShowInput::UpdateVideoConfig(obs_data_t *settings)
 	string video_device_id = obs_data_get_string(settings, VIDEO_DEVICE_ID);
 	deactivateWhenNotShowing = obs_data_get_bool(settings, DEACTIVATE_WNS);
 	flip = obs_data_get_bool(settings, FLIP_IMAGE);
+	flip_u = !obs_data_get_bool(settings, FLIP_U_IMAGE);
 
 	DeviceId id;
 	if (!DecodeDeviceId(id, video_device_id.c_str())) {
@@ -1798,6 +1810,7 @@ static obs_properties_t *GetDShowProperties(void *obj)
 			obs_module_text("Buffering.ToolTip"));
 
 	obs_properties_add_bool(ppts, FLIP_IMAGE, TEXT_FLIP_IMAGE);
+	obs_properties_add_bool(ppts, FLIP_U_IMAGE, TEXT_FLIP_U_IMAGE);
 
 	/* ------------------------------------- */
 	/* audio settings */

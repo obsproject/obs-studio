@@ -593,6 +593,7 @@ struct obs_source {
 	float                           async_color_range_max[3];
 	int                             async_plane_offset[2];
 	bool                            async_flip;
+	bool                            async_flip_u;
 	bool                            async_active;
 	bool                            async_update_texture;
 	DARRAY(struct async_frame)      async_cache;
