@@ -591,6 +591,8 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	AdvOutRecCheckWarnings();
 
 	SimpleRecordingQualityChanged();
+
+	UpdateAutomaticReplayBufferCheckboxes();
 }
 
 void OBSBasicSettings::SaveCombo(QComboBox *widget, const char *section,
@@ -3336,6 +3338,8 @@ void OBSBasicSettings::UpdateStreamDelayEstimate()
 		UpdateSimpleOutStreamDelayEstimate();
 	else
 		UpdateAdvOutStreamDelayEstimate();
+
+	UpdateAutomaticReplayBufferCheckboxes();
 }
 
 static bool EncoderAvailable(const char *encoder)
@@ -3495,6 +3499,13 @@ void OBSBasicSettings::SimpleStreamingEncoderChanged()
 #define ESTIMATE_UNKNOWN_STR \
 	"Basic.Settings.Output.ReplayBuffer.EstimateUnknown"
 
+void OBSBasicSettings::UpdateAutomaticReplayBufferCheckboxes()
+{
+	bool state = ui->simpleReplayBuf->isChecked() && ui->outputMode->currentIndex() == 0;
+	ui->replayBufferWhileStreaming->setEnabled(state);
+	ui->keepReplayBufferStreamStops->setEnabled(state && ui->replayBufferWhileStreaming->isChecked());
+}
+
 void OBSBasicSettings::SimpleReplayBufferChanged()
 {
 	QString qual = ui->simpleOutRecQuality->currentData().toString();
@@ -3522,6 +3533,9 @@ void OBSBasicSettings::SimpleReplayBufferChanged()
 
 	ui->replayBufferGroupBox->setVisible(!lossless && replayBufferEnabled);
 	ui->simpleReplayBuf->setVisible(!lossless);
+
+	UpdateAutomaticReplayBufferCheckboxes();
+
 }
 
 #define SIMPLE_OUTPUT_WARNING(str) \

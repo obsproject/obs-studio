@@ -284,6 +284,8 @@ private slots:
 
 	void UpdateStreamDelayEstimate();
 
+	void UpdateAutomaticReplayBufferCheckboxes();
+
 	void AdvOutRecCheckWarnings();
 
 	void SimpleRecordingQualityChanged();
