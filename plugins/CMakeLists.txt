@@ -55,6 +55,12 @@ if(WIN32 OR APPLE)
 			message(STATUS "obs-browser submodule not found!  Please fetch submodules.  obs-browser plugin disabled.")
 		endif()
 	endif()
+
+	if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/obs-vst/CMakeLists.txt")
+		add_subdirectory(obs-vst)
+	else()
+		message(STATUS "obs-vst submodule not found!  Please fetch/update submodules.  obs-vst plugin disabled.")
+	endif()
 endif()
 
 add_subdirectory(image-source)
