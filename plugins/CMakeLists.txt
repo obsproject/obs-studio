@@ -55,6 +55,8 @@ if(WIN32 OR APPLE)
 			message(STATUS "obs-browser submodule not found!  Please fetch submodules.  obs-browser plugin disabled.")
 		endif()
 	endif()
+
+	add_subdirectory(obs-vst)
 endif()
 
 add_subdirectory(image-source)
