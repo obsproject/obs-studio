@@ -1,7 +1,10 @@
 brew update
 
 #Base OBS Deps
-brew install ffmpeg x264 qt5
+brew install qt5
+
+curl -L -O https://s3-us-west-2.amazonaws.com/obs-nightly/osx-deps.tar.gz
+tar -xf ./osx-deps.tar.gz -C /tmp
 
 # CEF Stuff
 cd ../
