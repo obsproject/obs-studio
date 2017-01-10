@@ -68,6 +68,13 @@ if(WIN32)
 		util/windows/CoTaskMemPtr.hpp
 		util/windows/HRError.hpp
 		util/windows/WinHandle.hpp)
+	set(libobs_audio_monitoring_SOURCES
+		audio-monitoring/win32/wasapi-output.c
+		audio-monitoring/win32/wasapi-enum-devices.c
+		)
+	set(libobs_audio_monitoring_HEADERS
+		audio-monitoring/win32/wasapi-output.h
+		)
 	set(libobs_PLATFORM_DEPS winmm)
 	if(MSVC)
 		set(libobs_PLATFORM_DEPS
@@ -334,7 +341,10 @@ set(libobs_HEADERS
 	${libobs_graphics_HEADERS}
 	${libobs_mediaio_HEADERS}
 	${libobs_util_HEADERS}
-	${libobs_libobs_HEADERS})
+	${libobs_libobs_HEADERS}
+	${libobs_audio_monitoring_SOURCES}
+	${libobs_audio_monitoring_HEADERS}
+	)
 
 source_group("callback\\Source Files" FILES ${libobs_callback_SOURCES})
 source_group("callback\\Header Files" FILES ${libobs_callback_HEADERS})
@@ -346,6 +356,8 @@ source_group("media-io\\Source Files" FILES ${libobs_mediaio_SOURCES})
 source_group("media-io\\Header Files" FILES ${libobs_mediaio_HEADERS})
 source_group("util\\Source Files" FILES ${libobs_util_SOURCES})
 source_group("util\\Header Files" FILES ${libobs_util_HEADERS})
+source_group("audio-monitoring\\Source Files" FILES ${libobs_audio_monitoring_SOURCES})
+source_group("audio-monitoring\\Header Files" FILES ${libobs_audio_monitoring_HEADERS})
 
 if(BUILD_CAPTIONS)
 	include_directories(${CMAKE_SOURCE_DIR}/deps/libcaption)

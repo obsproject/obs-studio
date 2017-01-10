@@ -582,6 +582,15 @@ EXPORT enum obs_obj_type obs_obj_get_type(void *obj);
 EXPORT const char *obs_obj_get_id(void *obj);
 EXPORT bool obs_obj_invalid(void *obj);
 
+typedef bool (*obs_enum_audio_device_cb)(void *data, const char *name,
+		const char *id);
+
+EXPORT void obs_enum_audio_monitoring_devices(obs_enum_audio_device_cb cb,
+		void *data);
+
+EXPORT bool obs_set_audio_monitoring_device(const char *name, const char *id);
+EXPORT void obs_get_audio_monitoring_device(const char **name, const char **id);
+
 
 /* ------------------------------------------------------------------------- */
 /* View context */
@@ -912,6 +921,17 @@ EXPORT enum obs_deinterlace_mode obs_source_get_deinterlace_mode(
 EXPORT void obs_source_set_deinterlace_field_order(obs_source_t *source,
 		enum obs_deinterlace_field_order field_order);
 EXPORT enum obs_deinterlace_field_order obs_source_get_deinterlace_field_order(
+		const obs_source_t *source);
+
+enum obs_monitoring_type {
+	OBS_MONITORING_TYPE_NONE,
+	OBS_MONITORING_TYPE_MONITOR_ONLY,
+	OBS_MONITORING_TYPE_MONITOR_AND_OUTPUT
+};
+
+EXPORT void obs_source_set_monitoring_type(obs_source_t *source,
+		enum obs_monitoring_type type);
+EXPORT enum obs_monitoring_type obs_source_get_monitoring_type(
 		const obs_source_t *source);
 
 /* ------------------------------------------------------------------------- */

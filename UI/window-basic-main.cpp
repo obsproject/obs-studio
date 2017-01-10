@@ -1024,6 +1024,11 @@ bool OBSBasic::InitBasicConfigDefaults()
 	config_set_default_string(basicConfig, "Video", "ColorRange",
 			"Partial");
 
+	config_set_default_string(basicConfig, "Audio", "MonitoringDeviceId",
+			"default");
+	config_set_default_string(basicConfig, "Audio", "MonitoringDeviceName",
+			Str("Basic.Settings.Advanced.Audio.MonitoringDevice"
+				".Default"));
 	config_set_default_uint  (basicConfig, "Audio", "SampleRate", 44100);
 	config_set_default_string(basicConfig, "Audio", "ChannelSetup",
 			"Stereo");

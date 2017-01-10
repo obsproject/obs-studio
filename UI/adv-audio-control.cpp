@@ -2,9 +2,11 @@
 #include <QGridLayout>
 #include <QLabel>
 #include <QSpinBox>
+#include <QComboBox>
 #include <QCheckBox>
 #include <QSlider>
 #include "qt-wrappers.hpp"
+#include "obs-app.hpp"
 #include "adv-audio-control.hpp"
 
 #ifndef NSEC_PER_MSEC
@@ -30,6 +32,7 @@ OBSAdvAudioCtrl::OBSAdvAudioCtrl(QGridLayout *layout, obs_source_t *source_)
 	volume                         = new QSpinBox();
 	forceMono                      = new QCheckBox();
 	panning                        = new QSlider(Qt::Horizontal);
+	monitoringType                 = new QComboBox();
 	syncOffset                     = new QSpinBox();
 	mixer1                         = new QCheckBox();
 	mixer2                         = new QCheckBox();
@@ -87,6 +90,16 @@ OBSAdvAudioCtrl::OBSAdvAudioCtrl(QGridLayout *layout, obs_source_t *source_)
 	syncOffset->setMaximum(20000);
 	syncOffset->setValue(int(cur_sync / NSEC_PER_MSEC));
 
+	monitoringType->addItem(QTStr("Basic.AdvAudio.Monitoring.None"),
+			(int)OBS_MONITORING_TYPE_NONE);
+	monitoringType->addItem(QTStr("Basic.AdvAudio.Monitoring.MonitorOnly"),
+			(int)OBS_MONITORING_TYPE_MONITOR_ONLY);
+	monitoringType->addItem(QTStr("Basic.AdvAudio.Monitoring.Both"),
+			(int)OBS_MONITORING_TYPE_MONITOR_AND_OUTPUT);
+	int mt = (int)obs_source_get_monitoring_type(source);
+	int idx = monitoringType->findData(mt);
+	monitoringType->setCurrentIndex(idx);
+
 	mixer1->setText("1");
 	mixer1->setChecked(mixers & (1<<0));
 	mixer2->setText("2");
@@ -120,6 +133,8 @@ OBSAdvAudioCtrl::OBSAdvAudioCtrl(QGridLayout *layout, obs_source_t *source_)
 			this, SLOT(panningChanged(int)));
 	QWidget::connect(syncOffset, SIGNAL(valueChanged(int)),
 			this, SLOT(syncOffsetChanged(int)));
+	QWidget::connect(monitoringType, SIGNAL(currentIndexChanged(int)),
+			this, SLOT(monitoringTypeChanged(int)));
 	QWidget::connect(mixer1, SIGNAL(clicked(bool)),
 			this, SLOT(mixer1Changed(bool)));
 	QWidget::connect(mixer2, SIGNAL(clicked(bool)),
@@ -140,7 +155,8 @@ OBSAdvAudioCtrl::OBSAdvAudioCtrl(QGridLayout *layout, obs_source_t *source_)
 	layout->addWidget(forceMonoContainer, lastRow, 2);
 	layout->addWidget(panningContainer, lastRow, 3);
 	layout->addWidget(syncOffset, lastRow, 4);
-	layout->addWidget(mixerContainer, lastRow, 5);
+	layout->addWidget(monitoringType, lastRow, 5);
+	layout->addWidget(mixerContainer, lastRow, 6);
 	layout->layout()->setAlignment(mixerContainer,
 			Qt::AlignHCenter | Qt::AlignVCenter);
 }
@@ -152,6 +168,7 @@ OBSAdvAudioCtrl::~OBSAdvAudioCtrl()
 	forceMonoContainer->deleteLater();
 	panningContainer->deleteLater();
 	syncOffset->deleteLater();
+	monitoringType->deleteLater();
 	mixerContainer->deleteLater();
 }
 
@@ -262,6 +279,12 @@ void OBSAdvAudioCtrl::syncOffsetChanged(int milliseconds)
 	if (cur_val / NSEC_PER_MSEC != milliseconds)
 		obs_source_set_sync_offset(source,
 				int64_t(milliseconds) * NSEC_PER_MSEC);
+}
+
+void OBSAdvAudioCtrl::monitoringTypeChanged(int index)
+{
+	int mt = monitoringType->itemData(index).toInt();
+	obs_source_set_monitoring_type(source, (obs_monitoring_type)mt);
 }
 
 static inline void setMixer(obs_source_t *source, const int mixerIdx,
