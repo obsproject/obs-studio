@@ -4,5 +4,5 @@ export FILENAME=$FILE_DATE-$GIT_HASH-osx.zip
 mkdir nightly
 cd ./build
 sudo python ../CI/install/osx/build_app.py
-zip -r -X $FILENAME OBS.app
-mv ./$FILENAME ../nightly
+sudo zip -r -X $FILENAME OBS.app
+sudo mv ./$FILENAME ../nightly
