@@ -629,8 +629,16 @@ static inline bool open_target_process(struct game_capture *gc)
 			PROCESS_QUERY_INFORMATION | PROCESS_VM_READ,
 			false, gc->process_id);
 	if (!gc->target_process) {
-		warn("could not open process: %s", gc->config.executable);
-		return false;
+		warn("could not open process: %s  try limited privilege", 
+			gc->config.executable);
+
+		gc->target_process = open_process(
+			PROCESS_QUERY_LIMITED_INFORMATION, false, gc->process_id);
+		if (!gc->target_process) {
+			warn("could not open process: %s, try limited privilege" 
+				"still fail", gc->config.executable);
+			return false;
+		}
 	}
 
 	gc->process_is_64bit = is_64bit_process(gc->target_process);
