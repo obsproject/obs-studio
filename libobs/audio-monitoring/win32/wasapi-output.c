@@ -41,7 +41,6 @@ struct audio_monitor {
 	bool               correcting : 1;
 #endif
 	bool               source_has_video : 1;
-	bool               started : 1;
 
 	int64_t            lowest_audio_offset;
 	struct circlebuf   delay_buffer;
@@ -67,48 +66,34 @@ static bool process_audio_delay(struct audio_monitor *monitor,
 			*frames * blocksize);
 
 	while (monitor->delay_buffer.size != 0) {
+		size_t size;
+
 		circlebuf_peek_front(&monitor->delay_buffer, &cur_ts, sizeof(ts));
 		front_ts = cur_ts - ((uint64_t)pad * 1000000000ULL / (uint64_t)monitor->sample_rate);
 		diff = (int64_t)front_ts - (int64_t)last_frame_ts;
 
-		if (monitor->started || cur_ts < last_frame_ts) {
-			size_t size;
-
-			if (monitor->started && diff > 75000000) {
-				return false;
-			}
-
-			circlebuf_pop_front(&monitor->delay_buffer, NULL, sizeof(ts));
-			circlebuf_pop_front(&monitor->delay_buffer, frames,
-					sizeof(*frames));
-
-			size = *frames * blocksize;
-			da_resize(monitor->buf, size);
-			circlebuf_pop_front(&monitor->delay_buffer, monitor->buf.array,
-					size);
-
-			bool was_started = monitor->started;
-
-			if (!monitor->started) {
-				circlebuf_peek_front(&monitor->delay_buffer, &cur_ts,
-						sizeof(ts));
-				if (cur_ts < last_frame_ts) {
-					continue;
-				}
-				monitor->started = true;
-			}
-
-			//blog(LOG_DEBUG, "diff: %lld, playback ts: %llu, last_frame_ts: %llu", diff, front_ts, last_frame_ts);
-
-			if (diff < -75000000) {
-				blog(LOG_DEBUG, "cutting off audio: %lld", diff);
-				continue;
-			}
-
-			*data = monitor->buf.array;
-			return true;
+		if (diff > 75000000) {
+			return false;
 		}
-		break;
+
+		circlebuf_pop_front(&monitor->delay_buffer, NULL, sizeof(ts));
+		circlebuf_pop_front(&monitor->delay_buffer, frames,
+				sizeof(*frames));
+
+		size = *frames * blocksize;
+		da_resize(monitor->buf, size);
+		circlebuf_pop_front(&monitor->delay_buffer, monitor->buf.array,
+				size);
+
+		//blog(LOG_DEBUG, "diff: %lld, playback ts: %llu, last_frame_ts: %llu", diff, front_ts, last_frame_ts);
+
+		if (diff < -75000000) {
+			blog(LOG_DEBUG, "cutting off audio: %lld", diff);
+			continue;
+		}
+
+		*data = monitor->buf.array;
+		return true;
 	}
 
 	return false;
