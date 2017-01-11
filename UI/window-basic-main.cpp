@@ -703,6 +703,12 @@ retryScene:
 		opt_start_recording = false;
 	}
 
+	if (opt_start_replaybuffer) {
+		QMetaObject::invokeMethod(this, "StartReplayBuffer",
+				Qt::QueuedConnection);
+		opt_start_replaybuffer = false;
+	}
+
 	LogScenes();
 
 	disableSaving--;
@@ -1162,8 +1168,14 @@ void OBSBasic::OBSInit()
 				"BasicWindow", "SwapScenesMode");
 	editPropertiesMode = config_get_bool(App()->GlobalConfig(),
 				"BasicWindow", "EditPropertiesMode");
-	SetPreviewProgramMode(config_get_bool(App()->GlobalConfig(),
-				"BasicWindow", "PreviewProgramMode"));
+
+	if (!opt_studio_mode) {
+		SetPreviewProgramMode(config_get_bool(App()->GlobalConfig(),
+					"BasicWindow", "PreviewProgramMode"));
+	} else {
+		SetPreviewProgramMode(true);
+		opt_studio_mode = false;
+	}
 
 #define SET_VISIBILITY(name, control) \
 	do { \
@@ -4983,12 +4995,14 @@ void OBSBasic::SystemTray(bool firstStarted)
 
 	if (!sysTrayWhenStarted && !sysTrayEnabled) {
 		trayIcon->hide();
-	} else if (sysTrayWhenStarted && sysTrayEnabled) {
+	} else if ((sysTrayWhenStarted && sysTrayEnabled)
+			|| opt_minimize_tray) {
 		trayIcon->show();
 		if (firstStarted) {
 			QTimer::singleShot(50, this, SLOT(hide()));
 			EnablePreviewDisplay(false);
 			setVisible(false);
+			opt_minimize_tray = false;
 		}
 	} else if (sysTrayEnabled) {
 		trayIcon->show();

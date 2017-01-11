@@ -51,6 +51,8 @@
 #include <signal.h>
 #endif
 
+#include <iostream>
+
 using namespace std;
 
 static log_handler_t def_log_handler;
@@ -63,6 +65,9 @@ static bool log_verbose = false;
 static bool unfiltered_log = false;
 bool opt_start_streaming = false;
 bool opt_start_recording = false;
+bool opt_studio_mode = false;
+bool opt_start_replaybuffer = false;
+bool opt_minimize_tray = false;
 string opt_starting_collection;
 string opt_starting_profile;
 string opt_starting_scene;
@@ -1749,6 +1754,9 @@ int main(int argc, char *argv[])
 		} else if (arg_is(argv[i], "--startrecording", nullptr)) {
 			opt_start_recording = true;
 
+		} else if (arg_is(argv[i], "--startreplaybuffer", nullptr)) {
+			opt_start_replaybuffer = true;
+
 		} else if (arg_is(argv[i], "--collection", nullptr)) {
 			if (++i < argc) opt_starting_collection = argv[i];
 
@@ -1757,6 +1765,42 @@ int main(int argc, char *argv[])
 
 		} else if (arg_is(argv[i], "--scene", nullptr)) {
 			if (++i < argc) opt_starting_scene = argv[i];
+
+		} else if (arg_is(argv[i], "--minimize-to-tray", nullptr)) {
+			opt_minimize_tray = true;
+
+		} else if (arg_is(argv[i], "--studio-mode", nullptr)) {
+			opt_studio_mode = true;
+
+		} else if (arg_is(argv[i], "--help", "-h")) {
+			std::cout <<
+			"--help, -h: Get list of available commands.\n\n" << 
+			"--startstreaming: Automatically start streaming.\n" <<
+			"--startrecording: Automatically start recording.\n" <<
+			"--startreplaybuffer: Start replay buffer.\n\n" <<
+			"--collection <string>: Use specific scene collection."
+				<< "\n" <<
+			"--profile <string>: Use specific profile.\n" <<
+			"--scene <string>: Start with specific scene.\n\n" <<
+			"--studio-mode: Enable studio mode.\n" <<
+			"--minimize-to-tray: Minimize to system tray.\n" <<
+			"--portable, -p: Use portable mode.\n\n" <<
+			"--verbose: Make log more verbose.\n" <<
+			"--unfiltered_log: Make log unfiltered.\n\n" <<
+			"--version, -V: Get current version.\n";
+
+			exit(0);
+
+		} else if (arg_is(argv[i], "--version", "-V")) {
+			std::cout << "OBS Studio - " << 
+				App()->GetVersionString() << "\n";
+			exit(0);
+
+		} else {
+			std::cout << 
+				"Invalid arguments. Use --help or -h to get " << 
+				"a list of available command line arguments.\n";
+			exit(0);
 		}
 	}
 
