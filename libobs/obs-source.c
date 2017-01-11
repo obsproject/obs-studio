@@ -952,8 +952,6 @@ static void async_tick(obs_source_t *source)
 	if (source->cur_async_frame) {
 		source->async_update_texture = set_async_texture_size(source,
 				source->cur_async_frame);
-		source->audio_playback_offset =
-			(int64_t)(source->last_frame_ts - source->last_audio_ts);
 	}
 }
 
@@ -1056,7 +1054,7 @@ static void handle_ts_jump(obs_source_t *source, uint64_t expected,
 }
 
 static void source_signal_audio_data(obs_source_t *source,
-		struct audio_data *in, bool muted)
+		const struct audio_data *in, bool muted)
 {
 	pthread_mutex_lock(&source->audio_cb_mutex);
 
@@ -1243,7 +1241,7 @@ static void source_output_audio_data(obs_source_t *source,
 
 	pthread_mutex_unlock(&source->audio_buf_mutex);
 
-	source_signal_audio_data(source, &in, source_muted(source, os_time));
+	source_signal_audio_data(source, data, source_muted(source, os_time));
 }
 
 enum convert_type {

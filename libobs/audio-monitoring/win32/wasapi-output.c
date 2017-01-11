@@ -1,6 +1,7 @@
 #include "../../media-io/audio-resampler.h"
-#include "../../util/platform.h"
 #include "../../util/circlebuf.h"
+#include "../../util/platform.h"
+#include "../../util/darray.h"
 #include "../../obs-internal.h"
 
 #include "wasapi-output.h"
@@ -22,57 +23,90 @@ ACTUALLY_DEFINE_GUID(IID_IAudioRenderClient,
 	0xF294ACFC, 0x3146, 0x4483,
 	0xA7, 0xBF, 0xAD, 0xDC, 0xA7, 0xC2, 0x60, 0xE2);
 
+// #define ENABLE_CORRECTION
+
 struct audio_monitor {
 	obs_source_t       *source;
 	IMMDevice          *device;
 	IAudioClient       *client;
 	IAudioRenderClient *render;
 
+	audio_resampler_t  *resampler;
 	uint32_t           sample_rate;
 	uint32_t           channels;
+#ifdef ENABLE_CORRECTION
 	uint32_t           peak_frames;
 	uint32_t           correction_frames;
 	uint32_t           cur_correction_frames;
-	uint32_t           pad_size;
-	audio_resampler_t  *resampler;
-	bool               source_has_video : 1;
 	bool               correcting : 1;
+#endif
+	bool               source_has_video : 1;
+	bool               started : 1;
 
 	int64_t            lowest_audio_offset;
 	struct circlebuf   delay_buffer;
 	uint32_t           delay_size;
 
+	DARRAY(float)      buf;
 	pthread_mutex_t    playback_mutex;
 };
 
 static bool process_audio_delay(struct audio_monitor *monitor,
-		float *data, uint32_t frames, uint64_t ts_offset, uint32_t pad)
+		float **data, uint32_t *frames, uint64_t ts, uint32_t pad)
 {
-	int64_t audio_offset = monitor->source->audio_playback_offset +
-		ts_offset;
+	obs_source_t *s = monitor->source;
+	uint64_t last_frame_ts = s->last_frame_ts;
+	uint64_t front_ts;
+	uint64_t cur_ts;
+	int64_t diff;
+	uint32_t blocksize = monitor->channels * sizeof(float);
 
-	if (audio_offset < monitor->lowest_audio_offset) {
-		monitor->lowest_audio_offset = audio_offset;
-		monitor->delay_size = (uint32_t)
-			(-monitor->lowest_audio_offset *
-			 (int64_t)monitor->sample_rate / 1000000000LL) *
-			monitor->channels * sizeof(float);
-	}
+	circlebuf_push_back(&monitor->delay_buffer, &ts, sizeof(ts));
+	circlebuf_push_back(&monitor->delay_buffer, frames, sizeof(*frames));
+	circlebuf_push_back(&monitor->delay_buffer, *data,
+			*frames * blocksize);
 
-	if (monitor->lowest_audio_offset < 0) {
-		size_t size = frames * monitor->channels * sizeof(float);
+	for (;;) {
+		circlebuf_peek_front(&monitor->delay_buffer, &cur_ts, sizeof(ts));
+		front_ts = cur_ts - ((uint64_t)pad * 1000000000ULL / (uint64_t)monitor->sample_rate);
+		diff = (int64_t)front_ts - (int64_t)last_frame_ts;
 
-		circlebuf_push_back(&monitor->delay_buffer, data, size);
+		if (monitor->started || cur_ts < last_frame_ts) {
+			size_t size;
 
-		if (monitor->delay_buffer.size >= monitor->delay_size) {
-			circlebuf_pop_front(&monitor->delay_buffer, data, size);
+			circlebuf_pop_front(&monitor->delay_buffer, NULL, sizeof(ts));
+			circlebuf_pop_front(&monitor->delay_buffer, frames,
+					sizeof(*frames));
+
+			size = *frames * blocksize;
+			da_resize(monitor->buf, size);
+			circlebuf_pop_front(&monitor->delay_buffer, monitor->buf.array,
+					size);
+
+			bool was_started = monitor->started;
+
+			if (!monitor->started) {
+				circlebuf_peek_front(&monitor->delay_buffer, &cur_ts,
+						sizeof(ts));
+				if (cur_ts < last_frame_ts) {
+					blog(LOG_DEBUG, "woops, relooping");
+					continue;
+				}
+				monitor->started = true;
+			}
+
+			blog(LOG_DEBUG, "diff: %lld, playback ts: %llu, last_frame_ts: %llu", diff, front_ts, last_frame_ts);
+
+			if (diff < 0)
+				continue;
+
+			*data = monitor->buf.array;
 			return true;
 		}
-
-		return false;
+		break;
 	}
 
-	return true;
+	return false;
 }
 
 static void on_audio_playback(void *param, obs_source_t *source,
@@ -99,6 +133,7 @@ static void on_audio_playback(void *param, obs_source_t *source,
 			(const uint8_t *const *)audio_data->data,
 			(uint32_t)audio_data->frames);
 	if (!success) {
+		blog(LOG_DEBUG, "wtf 1");
 		goto unlock;
 	}
 
@@ -106,10 +141,18 @@ static void on_audio_playback(void *param, obs_source_t *source,
 	monitor->client->lpVtbl->GetCurrentPadding(monitor->client, &pad);
 
 	if (monitor->source_has_video) {
-		if (!process_audio_delay(monitor, (float*)(resample_data[0]),
-					resample_frames, ts_offset, pad)) {
+		//blog(LOG_DEBUG, "audio_data->ts: %llu", audio_data->timestamp);
+		uint64_t ts = audio_data->timestamp - ts_offset;
+		if (!process_audio_delay(monitor, (float**)(&resample_data[0]),
+					&resample_frames, ts, pad)) {
+			blog(LOG_DEBUG, "wtf 2");
 			goto unlock;
 		}
+	}
+
+#ifdef ENABLE_CORRECTION
+	if (monitor->peak_frames < resample_frames * 2) {
+		monitor->peak_frames = resample_frames * 2;
 	}
 
 	monitor->cur_correction_frames += resample_frames;
@@ -119,14 +162,20 @@ static void on_audio_playback(void *param, obs_source_t *source,
 	}
 
 	if (monitor->correcting && pad > monitor->peak_frames) {
+		blog(LOG_DEBUG, "wtf 3: pad %ld, peak: %ld, frame size: %ld",
+				pad,
+				monitor->peak_frames,
+				resample_frames);
 		goto unlock;
 	} else {
 		monitor->correcting = false;
 	}
+#endif
 
 	HRESULT hr = render->lpVtbl->GetBuffer(render, resample_frames,
 			&output);
 	if (FAILED(hr)) {
+		blog(LOG_DEBUG, "wtf 4");
 		goto unlock;
 	}
 
@@ -167,6 +216,7 @@ static inline void audio_monitor_free(struct audio_monitor *monitor)
 	safe_release(monitor->render);
 	audio_resampler_destroy(monitor->resampler);
 	circlebuf_free(&monitor->delay_buffer);
+	da_free(monitor->buf);
 }
 
 static enum speaker_layout convert_speaker_layout(DWORD layout, WORD channels)
@@ -240,7 +290,7 @@ static bool audio_monitor_init(struct audio_monitor *monitor)
 
 	hr = monitor->client->lpVtbl->Initialize(monitor->client,
 			AUDCLNT_SHAREMODE_SHARED, 0,
-			6000000, 0, wfex, NULL);
+			10000000, 0, wfex, NULL);
 	if (FAILED(hr)) {
 		goto fail;
 	}
@@ -264,8 +314,10 @@ static bool audio_monitor_init(struct audio_monitor *monitor)
 	to.format = AUDIO_FORMAT_FLOAT;
 
 	monitor->sample_rate = (uint32_t)wfex->nSamplesPerSec;
+#ifdef ENABLE_CORRECTION
 	monitor->peak_frames = monitor->sample_rate * 75 / 1000;
-	monitor->correction_frames = monitor->sample_rate * 30;
+	monitor->correction_frames = monitor->sample_rate * 5;
+#endif
 	monitor->channels = wfex->nChannels;
 	monitor->resampler = audio_resampler_create(&to, &from);
 	if (!monitor->resampler) {
