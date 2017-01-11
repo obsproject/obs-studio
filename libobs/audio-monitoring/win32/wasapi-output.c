@@ -30,10 +30,13 @@ struct audio_monitor {
 
 	uint32_t           sample_rate;
 	uint32_t           channels;
-	uint32_t           max_buffer_size;
+	uint32_t           peak_frames;
+	uint32_t           correction_frames;
+	uint32_t           cur_correction_frames;
 	uint32_t           pad_size;
 	audio_resampler_t  *resampler;
-	bool               source_has_video;
+	bool               source_has_video : 1;
+	bool               correcting : 1;
 
 	int64_t            lowest_audio_offset;
 	struct circlebuf   delay_buffer;
@@ -109,9 +112,16 @@ static void on_audio_playback(void *param, obs_source_t *source,
 		}
 	}
 
-	if (pad > monitor->max_buffer_size) {
-		//blog(LOG_DEBUG, "pad: %ld", pad);
-		//goto unlock;
+	monitor->cur_correction_frames += resample_frames;
+	if (monitor->cur_correction_frames >= monitor->correction_frames) {
+		monitor->correcting = true;
+		monitor->cur_correction_frames = 0;
+	}
+
+	if (monitor->correcting && pad > monitor->peak_frames) {
+		goto unlock;
+	} else {
+		monitor->correcting = false;
 	}
 
 	HRESULT hr = render->lpVtbl->GetBuffer(render, resample_frames,
@@ -254,7 +264,8 @@ static bool audio_monitor_init(struct audio_monitor *monitor)
 	to.format = AUDIO_FORMAT_FLOAT;
 
 	monitor->sample_rate = (uint32_t)wfex->nSamplesPerSec;
-	monitor->max_buffer_size = monitor->sample_rate / 10;
+	monitor->peak_frames = monitor->sample_rate * 75 / 1000;
+	monitor->correction_frames = monitor->sample_rate * 30;
 	monitor->channels = wfex->nChannels;
 	monitor->resampler = audio_resampler_create(&to, &from);
 	if (!monitor->resampler) {
