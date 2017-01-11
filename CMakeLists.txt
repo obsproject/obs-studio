@@ -7,6 +7,11 @@ endif()
 
 project(obs-studio)
 
+# ilos options
+option(ILOS_BUILD "Build project for ilos" TRUE)
+option(DISABLE_UI "Enables the OBS user interfaces" TRUE)
+set(QTDIR "\"\"")
+
 option(BUILD_CAPTIONS "Build captions" FALSE)
 
 if(WIN32)
