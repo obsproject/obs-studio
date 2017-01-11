@@ -23,23 +23,16 @@ ACTUALLY_DEFINE_GUID(IID_IAudioRenderClient,
 	0xF294ACFC, 0x3146, 0x4483,
 	0xA7, 0xBF, 0xAD, 0xDC, 0xA7, 0xC2, 0x60, 0xE2);
 
-// #define ENABLE_CORRECTION
-
 struct audio_monitor {
 	obs_source_t       *source;
 	IMMDevice          *device;
 	IAudioClient       *client;
 	IAudioRenderClient *render;
 
+	uint64_t           last_recv_time;
 	audio_resampler_t  *resampler;
 	uint32_t           sample_rate;
 	uint32_t           channels;
-#ifdef ENABLE_CORRECTION
-	uint32_t           peak_frames;
-	uint32_t           correction_frames;
-	uint32_t           cur_correction_frames;
-	bool               correcting : 1;
-#endif
 	bool               source_has_video : 1;
 
 	int64_t            lowest_audio_offset;
@@ -55,10 +48,16 @@ static bool process_audio_delay(struct audio_monitor *monitor,
 {
 	obs_source_t *s = monitor->source;
 	uint64_t last_frame_ts = s->last_frame_ts;
+	uint64_t cur_time = os_gettime_ns();
 	uint64_t front_ts;
 	uint64_t cur_ts;
 	int64_t diff;
 	uint32_t blocksize = monitor->channels * sizeof(float);
+
+	/* cut off audio if long-since leftover audio in delay buffer */
+	if (cur_time - monitor->last_recv_time > 1000000000)
+		circlebuf_free(&monitor->delay_buffer);
+	monitor->last_recv_time = cur_time;
 
 	circlebuf_push_back(&monitor->delay_buffer, &ts, sizeof(ts));
 	circlebuf_push_back(&monitor->delay_buffer, frames, sizeof(*frames));
@@ -68,10 +67,14 @@ static bool process_audio_delay(struct audio_monitor *monitor,
 	while (monitor->delay_buffer.size != 0) {
 		size_t size;
 
-		circlebuf_peek_front(&monitor->delay_buffer, &cur_ts, sizeof(ts));
-		front_ts = cur_ts - ((uint64_t)pad * 1000000000ULL / (uint64_t)monitor->sample_rate);
+		circlebuf_peek_front(&monitor->delay_buffer, &cur_ts,
+				sizeof(ts));
+		front_ts = cur_ts -
+			((uint64_t)pad * 1000000000ULL /
+			 (uint64_t)monitor->sample_rate);
 		diff = (int64_t)front_ts - (int64_t)last_frame_ts;
 
+		/* delay audio if rushing */
 		if (diff > 75000000) {
 			return false;
 		}
@@ -82,13 +85,11 @@ static bool process_audio_delay(struct audio_monitor *monitor,
 
 		size = *frames * blocksize;
 		da_resize(monitor->buf, size);
-		circlebuf_pop_front(&monitor->delay_buffer, monitor->buf.array,
-				size);
+		circlebuf_pop_front(&monitor->delay_buffer,
+				monitor->buf.array, size);
 
-		//blog(LOG_DEBUG, "diff: %lld, playback ts: %llu, last_frame_ts: %llu", diff, front_ts, last_frame_ts);
-
+		/* cut audio if dragging */
 		if (diff < -75000000) {
-			blog(LOG_DEBUG, "cutting off audio: %lld", diff);
 			continue;
 		}
 
@@ -123,7 +124,6 @@ static void on_audio_playback(void *param, obs_source_t *source,
 			(const uint8_t *const *)audio_data->data,
 			(uint32_t)audio_data->frames);
 	if (!success) {
-		blog(LOG_DEBUG, "wtf 1");
 		goto unlock;
 	}
 
@@ -131,41 +131,17 @@ static void on_audio_playback(void *param, obs_source_t *source,
 	monitor->client->lpVtbl->GetCurrentPadding(monitor->client, &pad);
 
 	if (monitor->source_has_video) {
-		//blog(LOG_DEBUG, "audio_data->ts: %llu", audio_data->timestamp);
 		uint64_t ts = audio_data->timestamp - ts_offset;
+
 		if (!process_audio_delay(monitor, (float**)(&resample_data[0]),
 					&resample_frames, ts, pad)) {
-			blog(LOG_DEBUG, "wtf 2");
 			goto unlock;
 		}
 	}
 
-#ifdef ENABLE_CORRECTION
-	if (monitor->peak_frames < resample_frames * 2) {
-		monitor->peak_frames = resample_frames * 2;
-	}
-
-	monitor->cur_correction_frames += resample_frames;
-	if (monitor->cur_correction_frames >= monitor->correction_frames) {
-		monitor->correcting = true;
-		monitor->cur_correction_frames = 0;
-	}
-
-	if (monitor->correcting && pad > monitor->peak_frames) {
-		blog(LOG_DEBUG, "wtf 3: pad %ld, peak: %ld, frame size: %ld",
-				pad,
-				monitor->peak_frames,
-				resample_frames);
-		goto unlock;
-	} else {
-		monitor->correcting = false;
-	}
-#endif
-
 	HRESULT hr = render->lpVtbl->GetBuffer(render, resample_frames,
 			&output);
 	if (FAILED(hr)) {
-		blog(LOG_DEBUG, "wtf 4");
 		goto unlock;
 	}
 
