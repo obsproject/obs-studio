@@ -4,6 +4,7 @@
 #include <QWidget>
 #include <QSharedPointer>
 #include <QTimer>
+#include <QMutex>
 #include <QList>
 
 class QPushButton;
