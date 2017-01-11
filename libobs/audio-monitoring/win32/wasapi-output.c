@@ -66,13 +66,17 @@ static bool process_audio_delay(struct audio_monitor *monitor,
 	circlebuf_push_back(&monitor->delay_buffer, *data,
 			*frames * blocksize);
 
-	for (;;) {
+	while (monitor->delay_buffer.size != 0) {
 		circlebuf_peek_front(&monitor->delay_buffer, &cur_ts, sizeof(ts));
 		front_ts = cur_ts - ((uint64_t)pad * 1000000000ULL / (uint64_t)monitor->sample_rate);
 		diff = (int64_t)front_ts - (int64_t)last_frame_ts;
 
 		if (monitor->started || cur_ts < last_frame_ts) {
 			size_t size;
+
+			if (monitor->started && diff > 75000000) {
+				return false;
+			}
 
 			circlebuf_pop_front(&monitor->delay_buffer, NULL, sizeof(ts));
 			circlebuf_pop_front(&monitor->delay_buffer, frames,
@@ -89,16 +93,17 @@ static bool process_audio_delay(struct audio_monitor *monitor,
 				circlebuf_peek_front(&monitor->delay_buffer, &cur_ts,
 						sizeof(ts));
 				if (cur_ts < last_frame_ts) {
-					blog(LOG_DEBUG, "woops, relooping");
 					continue;
 				}
 				monitor->started = true;
 			}
 
-			blog(LOG_DEBUG, "diff: %lld, playback ts: %llu, last_frame_ts: %llu", diff, front_ts, last_frame_ts);
+			//blog(LOG_DEBUG, "diff: %lld, playback ts: %llu, last_frame_ts: %llu", diff, front_ts, last_frame_ts);
 
-			if (diff < 0)
+			if (diff < -75000000) {
+				blog(LOG_DEBUG, "cutting off audio: %lld", diff);
 				continue;
+			}
 
 			*data = monitor->buf.array;
 			return true;
