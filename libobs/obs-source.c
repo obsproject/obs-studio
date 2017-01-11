@@ -949,9 +949,12 @@ static void async_tick(obs_source_t *source)
 	source->last_sys_timestamp = sys_time;
 	pthread_mutex_unlock(&source->async_mutex);
 
-	if (source->cur_async_frame)
+	if (source->cur_async_frame) {
 		source->async_update_texture = set_async_texture_size(source,
 				source->cur_async_frame);
+		source->audio_playback_offset =
+			(int64_t)(source->last_frame_ts - source->last_audio_ts);
+	}
 }
 
 void obs_source_video_tick(obs_source_t *source, float seconds)
@@ -1059,6 +1062,7 @@ static void source_signal_audio_data(obs_source_t *source,
 
 	for (size_t i = source->audio_cb_list.num; i > 0; i--) {
 		struct audio_cb_info info = source->audio_cb_list.array[i - 1];
+
 		info.callback(info.param, source, in, muted);
 	}
 
@@ -1187,6 +1191,7 @@ static void source_output_audio_data(obs_source_t *source,
 			in.timestamp = source->next_audio_ts_min;
 	}
 
+	source->last_audio_ts = in.timestamp;
 	source->next_audio_ts_min = in.timestamp +
 		conv_frames_to_time(sample_rate, in.frames);
 

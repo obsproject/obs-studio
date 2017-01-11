@@ -1,5 +1,6 @@
 #include "../../media-io/audio-resampler.h"
 #include "../../util/platform.h"
+#include "../../util/circlebuf.h"
 #include "../../obs-internal.h"
 
 #include "wasapi-output.h"
@@ -27,12 +28,49 @@ struct audio_monitor {
 	IAudioClient       *client;
 	IAudioRenderClient *render;
 
+	uint32_t           sample_rate;
 	uint32_t           channels;
-	uint32_t           frame_size;
+	uint32_t           max_buffer_size;
+	uint32_t           pad_size;
 	audio_resampler_t  *resampler;
+	bool               source_has_video;
+
+	int64_t            lowest_audio_offset;
+	struct circlebuf   delay_buffer;
+	uint32_t           delay_size;
 
 	pthread_mutex_t    playback_mutex;
 };
+
+static bool process_audio_delay(struct audio_monitor *monitor,
+		float *data, uint32_t frames, uint64_t ts_offset, uint32_t pad)
+{
+	int64_t audio_offset = monitor->source->audio_playback_offset +
+		ts_offset;
+
+	if (audio_offset < monitor->lowest_audio_offset) {
+		monitor->lowest_audio_offset = audio_offset;
+		monitor->delay_size = (uint32_t)
+			(-monitor->lowest_audio_offset *
+			 (int64_t)monitor->sample_rate / 1000000000LL) *
+			monitor->channels * sizeof(float);
+	}
+
+	if (monitor->lowest_audio_offset < 0) {
+		size_t size = frames * monitor->channels * sizeof(float);
+
+		circlebuf_push_back(&monitor->delay_buffer, data, size);
+
+		if (monitor->delay_buffer.size >= monitor->delay_size) {
+			circlebuf_pop_front(&monitor->delay_buffer, data, size);
+			return true;
+		}
+
+		return false;
+	}
+
+	return true;
+}
 
 static void on_audio_playback(void *param, obs_source_t *source,
 		const struct audio_data *audio_data, bool muted)
@@ -61,14 +99,19 @@ static void on_audio_playback(void *param, obs_source_t *source,
 		goto unlock;
 	}
 
-	if (monitor->frame_size < resample_frames)
-		monitor->frame_size = resample_frames;
-
 	UINT32 pad = 0;
 	monitor->client->lpVtbl->GetCurrentPadding(monitor->client, &pad);
 
-	if (pad > monitor->frame_size * 2) {
-		goto unlock;
+	if (monitor->source_has_video) {
+		if (!process_audio_delay(monitor, (float*)(resample_data[0]),
+					resample_frames, ts_offset, pad)) {
+			goto unlock;
+		}
+	}
+
+	if (pad > monitor->max_buffer_size) {
+		//blog(LOG_DEBUG, "pad: %ld", pad);
+		//goto unlock;
 	}
 
 	HRESULT hr = render->lpVtbl->GetBuffer(render, resample_frames,
@@ -103,8 +146,7 @@ static inline void audio_monitor_free(struct audio_monitor *monitor)
 {
 	if (monitor->source) {
 		obs_source_remove_audio_capture_callback(
-				monitor->source,
-				on_audio_playback, monitor);
+				monitor->source, on_audio_playback, monitor);
 	}
 
 	if (monitor->client)
@@ -114,6 +156,7 @@ static inline void audio_monitor_free(struct audio_monitor *monitor)
 	safe_release(monitor->client);
 	safe_release(monitor->render);
 	audio_resampler_destroy(monitor->resampler);
+	circlebuf_free(&monitor->delay_buffer);
 }
 
 static enum speaker_layout convert_speaker_layout(DWORD layout, WORD channels)
@@ -187,7 +230,7 @@ static bool audio_monitor_init(struct audio_monitor *monitor)
 
 	hr = monitor->client->lpVtbl->Initialize(monitor->client,
 			AUDCLNT_SHAREMODE_SHARED, 0,
-			10000000, 0, wfex, NULL);
+			6000000, 0, wfex, NULL);
 	if (FAILED(hr)) {
 		goto fail;
 	}
@@ -210,6 +253,8 @@ static bool audio_monitor_init(struct audio_monitor *monitor)
 			wfex->nChannels);
 	to.format = AUDIO_FORMAT_FLOAT;
 
+	monitor->sample_rate = (uint32_t)wfex->nSamplesPerSec;
+	monitor->max_buffer_size = monitor->sample_rate / 10;
 	monitor->channels = wfex->nChannels;
 	monitor->resampler = audio_resampler_create(&to, &from);
 	if (!monitor->resampler) {
@@ -252,6 +297,8 @@ static void audio_monitor_init_final(struct audio_monitor *monitor,
 		obs_source_t *source)
 {
 	monitor->source = source;
+	monitor->source_has_video =
+		(source->info.output_flags & OBS_SOURCE_VIDEO) != 0;
 	obs_source_add_audio_capture_callback(source, on_audio_playback,
 			monitor);
 }
