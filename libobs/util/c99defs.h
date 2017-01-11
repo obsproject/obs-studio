@@ -24,18 +24,14 @@
 #define UNUSED_PARAMETER(param) (void)param
 
 #ifdef _MSC_VER
-#define DEPRECATED_START __declspec(deprecated)
-#define DEPRECATED_END
+#define DEPRECATED __declspec(deprecated)
 #define FORCE_INLINE __forceinline
 #else
-#define DEPRECATED_START
-#define DEPRECATED_END __attribute__ ((deprecated))
+#define DEPRECATED __attribute__ ((deprecated))
 #define FORCE_INLINE inline __attribute__((always_inline))
 #endif
 
 #ifdef _MSC_VER
-
-#pragma warning (disable : 4996)
 
 /* Microsoft is one of the most inept companies on the face of the planet.
  * The fact that even visual studio 2013 doesn't support the standard 'inline'

@@ -35,6 +35,8 @@ OBSAdvAudioCtrl::OBSAdvAudioCtrl(QGridLayout *layout, obs_source_t *source_)
 	mixer2                         = new QCheckBox();
 	mixer3                         = new QCheckBox();
 	mixer4                         = new QCheckBox();
+	mixer5                         = new QCheckBox();
+	mixer6                         = new QCheckBox();
 
 	volChangedSignal.Connect(handler, "volume", OBSSourceVolumeChanged,
 			this);
@@ -93,6 +95,10 @@ OBSAdvAudioCtrl::OBSAdvAudioCtrl(QGridLayout *layout, obs_source_t *source_)
 	mixer3->setChecked(mixers & (1<<2));
 	mixer4->setText("4");
 	mixer4->setChecked(mixers & (1<<3));
+	mixer5->setText("5");
+	mixer5->setChecked(mixers & (1<<4));
+	mixer6->setText("6");
+	mixer6->setChecked(mixers & (1<<5));
 
 	panningContainer->layout()->addWidget(labelL);
 	panningContainer->layout()->addWidget(panning);
@@ -103,6 +109,8 @@ OBSAdvAudioCtrl::OBSAdvAudioCtrl(QGridLayout *layout, obs_source_t *source_)
 	mixerContainer->layout()->addWidget(mixer2);
 	mixerContainer->layout()->addWidget(mixer3);
 	mixerContainer->layout()->addWidget(mixer4);
+	mixerContainer->layout()->addWidget(mixer5);
+	mixerContainer->layout()->addWidget(mixer6);
 
 	QWidget::connect(volume, SIGNAL(valueChanged(int)),
 			this, SLOT(volumeChanged(int)));
@@ -120,6 +128,10 @@ OBSAdvAudioCtrl::OBSAdvAudioCtrl(QGridLayout *layout, obs_source_t *source_)
 			this, SLOT(mixer3Changed(bool)));
 	QWidget::connect(mixer4, SIGNAL(clicked(bool)),
 			this, SLOT(mixer4Changed(bool)));
+	QWidget::connect(mixer5, SIGNAL(clicked(bool)),
+			this, SLOT(mixer5Changed(bool)));
+	QWidget::connect(mixer6, SIGNAL(clicked(bool)),
+			this, SLOT(mixer6Changed(bool)));
 
 	int lastRow = layout->rowCount();
 
@@ -209,6 +221,8 @@ void OBSAdvAudioCtrl::SourceMixersChanged(uint32_t mixers)
 	setCheckboxState(mixer2, mixers & (1<<1));
 	setCheckboxState(mixer3, mixers & (1<<2));
 	setCheckboxState(mixer4, mixers & (1<<3));
+	setCheckboxState(mixer5, mixers & (1<<4));
+	setCheckboxState(mixer6, mixers & (1<<5));
 }
 
 /* ------------------------------------------------------------------------- */
@@ -280,4 +294,14 @@ void OBSAdvAudioCtrl::mixer3Changed(bool checked)
 void OBSAdvAudioCtrl::mixer4Changed(bool checked)
 {
 	setMixer(source, 3, checked);
+}
+
+void OBSAdvAudioCtrl::mixer5Changed(bool checked)
+{
+	setMixer(source, 4, checked);
+}
+
+void OBSAdvAudioCtrl::mixer6Changed(bool checked)
+{
+	setMixer(source, 5, checked);
 }

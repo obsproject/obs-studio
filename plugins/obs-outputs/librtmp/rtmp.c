@@ -650,7 +650,7 @@ int RTMP_AddStream(RTMP *r, const char *playpath)
 }
 
 static int
-add_addr_info(struct sockaddr_storage *service, socklen_t *addrlen, AVal *host, int port)
+add_addr_info(struct sockaddr_storage *service, socklen_t *addrlen, AVal *host, int port, socklen_t addrlen_hint)
 {
     char *hostname;
     int ret = TRUE;
@@ -698,7 +698,7 @@ add_addr_info(struct sockaddr_storage *service, socklen_t *addrlen, AVal *host, 
     // prefer ipv4 results, since lots of ISPs have broken ipv6 connectivity
     for (ptr = result; ptr != NULL; ptr = ptr->ai_next)
     {
-        if (ptr->ai_family == AF_INET)
+        if (ptr->ai_family == AF_INET && (!addrlen_hint || ptr->ai_addrlen == addrlen_hint))
         {
             memcpy(service, ptr->ai_addr, ptr->ai_addrlen);
             *addrlen = (socklen_t)ptr->ai_addrlen;
@@ -710,7 +710,7 @@ add_addr_info(struct sockaddr_storage *service, socklen_t *addrlen, AVal *host, 
 	{
 		for (ptr = result; ptr != NULL; ptr = ptr->ai_next)
 		{
-			if (ptr->ai_family == AF_INET6)
+            if (ptr->ai_family == AF_INET6 && (!addrlen_hint || ptr->ai_addrlen == addrlen_hint))
 			{
 				memcpy(service, ptr->ai_addr, ptr->ai_addrlen);
 				*addrlen = (socklen_t)ptr->ai_addrlen;
@@ -905,6 +905,7 @@ RTMP_Connect(RTMP *r, RTMPPacket *cp)
 #endif
     struct sockaddr_storage service;
     socklen_t addrlen = 0;
+    socklen_t addrlen_hint = 0;
     if (!r->Link.hostname.av_len)
         return FALSE;
 
@@ -920,16 +921,19 @@ RTMP_Connect(RTMP *r, RTMPPacket *cp)
 
     memset(&service, 0, sizeof(service));
 
+    if (r->m_bindIP.addrLen)
+        addrlen_hint = r->m_bindIP.addrLen;
+
     if (r->Link.socksport)
     {
         /* Connect via SOCKS */
-        if (!add_addr_info(&service, &addrlen, &r->Link.sockshost, r->Link.socksport))
+        if (!add_addr_info(&service, &addrlen, &r->Link.sockshost, r->Link.socksport, addrlen_hint))
             return FALSE;
     }
     else
     {
         /* Connect directly */
-        if (!add_addr_info(&service, &addrlen, &r->Link.hostname, r->Link.port))
+        if (!add_addr_info(&service, &addrlen, &r->Link.hostname, r->Link.port, addrlen_hint))
             return FALSE;
     }
 
@@ -949,7 +953,7 @@ SocksNegotiate(RTMP *r)
     socklen_t addrlen = 0;
     memset(&service, 0, sizeof(service));
 
-    add_addr_info(&service, &addrlen, &r->Link.hostname, r->Link.port);
+    add_addr_info(&service, &addrlen, &r->Link.hostname, r->Link.port, 0);
 
     // not doing IPv6 socks
     if (service.ss_family == AF_INET6)

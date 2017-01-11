@@ -1035,17 +1035,55 @@ void obs_encoder_remove_output(struct obs_encoder *encoder,
 	pthread_mutex_unlock(&encoder->outputs_mutex);
 }
 
+void obs_encoder_packet_create_instance(struct encoder_packet *dst,
+		const struct encoder_packet *src)
+{
+	long *p_refs;
+
+	*dst = *src;
+	p_refs = bmalloc(src->size + sizeof(long));
+	dst->data = (void*)(p_refs + 1);
+	*p_refs = 1;
+	memcpy(dst->data, src->data, src->size);
+}
+
 void obs_duplicate_encoder_packet(struct encoder_packet *dst,
 		const struct encoder_packet *src)
 {
-	*dst = *src;
-	dst->data = bmemdup(src->data, src->size);
+	obs_encoder_packet_create_instance(dst, src);
 }
 
 void obs_free_encoder_packet(struct encoder_packet *packet)
 {
-	bfree(packet->data);
-	memset(packet, 0, sizeof(struct encoder_packet));
+	obs_encoder_packet_release(packet);
+}
+
+void obs_encoder_packet_ref(struct encoder_packet *dst,
+		struct encoder_packet *src)
+{
+	if (!src)
+		return;
+
+	if (src->data) {
+		long *p_refs = ((long*)src->data) - 1;
+		os_atomic_inc_long(p_refs);
+	}
+
+	*dst = *src;
+}
+
+void obs_encoder_packet_release(struct encoder_packet *pkt)
+{
+	if (!pkt)
+		return;
+
+	if (pkt->data) {
+		long *p_refs = ((long*)pkt->data) - 1;
+		if (os_atomic_dec_long(p_refs) == 0)
+			bfree(p_refs);
+	}
+
+	memset(pkt, 0, sizeof(struct encoder_packet));
 }
 
 void obs_encoder_set_preferred_video_format(obs_encoder_t *encoder,

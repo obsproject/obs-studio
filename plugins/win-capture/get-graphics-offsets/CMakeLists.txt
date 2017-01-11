@@ -11,6 +11,10 @@ set(get-graphics-offsets_SOURCES
 	d3d8-offsets.cpp
 	d3d9-offsets.cpp)
 
+if(MSVC)
+	add_compile_options("$<$<CONFIG:RelWithDebInfo>:/MT>")
+endif()
+
 add_executable(get-graphics-offsets
 	${get-graphics-offsets_SOURCES}
 	${get-graphics-offsets_HEADERS})

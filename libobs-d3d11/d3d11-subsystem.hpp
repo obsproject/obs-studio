@@ -37,6 +37,8 @@
 #include <util/windows/ComPtr.hpp>
 #include <util/windows/HRError.hpp>
 
+// #define DISASSEMBLE_SHADERS
+
 struct shader_var;
 struct shader_sampler;
 struct gs_vertex_shader;
@@ -360,6 +362,7 @@ struct gs_texture_2d : gs_texture {
 	void InitRenderTargets();
 	void BackupTexture(const uint8_t **data);
 
+	void RebuildSharedTextureFallback();
 	inline void Rebuild(ID3D11Device *dev);
 
 	inline void Release()
@@ -801,6 +804,9 @@ struct gs_device {
 	D3D11_PRIMITIVE_TOPOLOGY    curToplogy;
 
 	pD3DCompile                 d3dCompile = nullptr;
+#ifdef DISASSEMBLE_SHADERS
+	pD3DDisassemble             d3dDisassemble = nullptr;
+#endif
 
 	gs_rect                     viewport;
 

@@ -134,7 +134,7 @@ static inline void free_packets(struct rtmp_stream *stream)
 	while (stream->packets.size) {
 		struct encoder_packet packet;
 		circlebuf_pop_front(&stream->packets, &packet, sizeof(packet));
-		obs_free_encoder_packet(&packet);
+		obs_encoder_packet_release(&packet);
 	}
 	pthread_mutex_unlock(&stream->packets_mutex);
 }
@@ -375,7 +375,10 @@ static int send_packet(struct rtmp_stream *stream,
 	ret = RTMP_Write(&stream->rtmp, (char*)data, (int)size, (int)idx);
 	bfree(data);
 
-	obs_free_encoder_packet(packet);
+	if (is_header)
+		bfree(packet->data);
+	else
+		obs_encoder_packet_release(packet);
 
 	stream->total_bytes_sent += size;
 	return ret;
@@ -414,7 +417,7 @@ static void *send_thread(void *data)
 
 		if (stopping(stream)) {
 			if (can_shutdown_stream(stream, &packet)) {
-				obs_free_encoder_packet(&packet);
+				obs_encoder_packet_release(&packet);
 				break;
 			}
 		}
@@ -676,8 +679,10 @@ static int try_connect(struct rtmp_stream *stream)
 		bool success = netif_str_to_addr(&stream->rtmp.m_bindIP.addr,
 				&stream->rtmp.m_bindIP.addrLen,
 				stream->bind_ip.array);
-		if (success)
-			info("Binding to IP");
+		if (success) {
+			info("Binding to IPv%d", (stream->rtmp.m_bindIP.addrLen ==
+				sizeof(struct sockaddr_in6) ? 6 : 4));
+		}
 	}
 
 	RTMP_AddStream(&stream->rtmp, stream->key.array);
@@ -842,7 +847,7 @@ static void drop_frames(struct rtmp_stream *stream, const char *name,
 
 		} else {
 			num_frames_dropped++;
-			obs_free_encoder_packet(&packet);
+			obs_encoder_packet_release(&packet);
 		}
 	}
 
@@ -927,7 +932,7 @@ static void rtmp_stream_data(void *data, struct encoder_packet *packet)
 	if (packet->type == OBS_ENCODER_VIDEO)
 		obs_parse_avc_packet(&new_packet, packet);
 	else
-		obs_duplicate_encoder_packet(&new_packet, packet);
+		obs_encoder_packet_ref(&new_packet, packet);
 
 	pthread_mutex_lock(&stream->packets_mutex);
 
@@ -942,7 +947,7 @@ static void rtmp_stream_data(void *data, struct encoder_packet *packet)
 	if (added_packet)
 		os_sem_post(stream->send_sem);
 	else
-		obs_free_encoder_packet(&new_packet);
+		obs_encoder_packet_release(&new_packet);
 }
 
 static void rtmp_stream_defaults(obs_data_t *defaults)

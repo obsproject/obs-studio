@@ -147,6 +147,7 @@ inline OBSSource OBSBasicFilters::GetFilter(int row, bool async)
 void OBSBasicFilters::UpdatePropertiesView(int row, bool async)
 {
 	if (view) {
+		ui->rightLayout->removeWidget(view);
 		view->deleteLater();
 		view = nullptr;
 	}

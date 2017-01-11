@@ -40,6 +40,7 @@ struct ff_demuxer_options
 	bool is_hw_decoding;
 	bool is_looping;
 	enum AVDiscard frame_drop;
+	AVDictionary *custom_options;
 };
 
 typedef struct ff_demuxer_options ff_demuxer_options_t;

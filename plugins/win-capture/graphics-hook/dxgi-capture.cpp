@@ -1,4 +1,3 @@
-#define _CRT_SECURE_NO_WARNINGS
 #include <d3d10_1.h>
 #include <d3d11.h>
 #include <dxgi.h>
@@ -21,7 +20,7 @@ static struct func_hook present;
 
 struct dxgi_swap_data {
 	IDXGISwapChain *swap;
-	void (*capture)(void*, void*);
+	void (*capture)(void*, void*, bool);
 	void (*free)(void);
 };
 
@@ -132,7 +131,7 @@ static HRESULT STDMETHODCALLTYPE hook_present(IDXGISwapChain *swap,
 		backbuffer = get_dxgi_backbuffer(swap);
 
 		if (!!backbuffer) {
-			data.capture(swap, backbuffer);
+			data.capture(swap, backbuffer, capture_overlay);
 			backbuffer->Release();
 		}
 	}
@@ -156,7 +155,7 @@ static HRESULT STDMETHODCALLTYPE hook_present(IDXGISwapChain *swap,
 			backbuffer = get_dxgi_backbuffer(swap);
 
 			if (!!backbuffer) {
-				data.capture(swap, backbuffer);
+				data.capture(swap, backbuffer, capture_overlay);
 				backbuffer->Release();
 			}
 		}

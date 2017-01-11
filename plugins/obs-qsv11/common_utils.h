@@ -95,7 +95,7 @@ typedef struct {
 int GetFreeTaskIndex(Task* pTaskPool, mfxU16 nPoolSize);
 
 // Initialize Intel Media SDK Session, device/display and memory manager
-mfxStatus Initialize(mfxIMPL impl, mfxVersion ver, MFXVideoSession* pSession, mfxFrameAllocator* pmfxAllocator, bool bCreateSharedHandles = false);
+mfxStatus Initialize(mfxIMPL impl, mfxVersion ver, MFXVideoSession* pSession, mfxFrameAllocator* pmfxAllocator, bool bCreateSharedHandles = false, bool dx9hack = false);
 
 // Release resources (device/display)
 void Release();

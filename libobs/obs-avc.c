@@ -132,15 +132,17 @@ void obs_parse_avc_packet(struct encoder_packet *avc_packet,
 {
 	struct array_output_data output;
 	struct serializer s;
+	long ref = 1;
 
 	array_output_serializer_init(&s, &output);
 	*avc_packet = *src;
 
+	serialize(&s, &ref, sizeof(ref));
 	serialize_avc_data(&s, src->data, src->size, &avc_packet->keyframe,
 			&avc_packet->priority);
 
-	avc_packet->data          = output.bytes.array;
-	avc_packet->size          = output.bytes.num;
+	avc_packet->data          = output.bytes.array + sizeof(ref);
+	avc_packet->size          = output.bytes.num - sizeof(ref);
 	avc_packet->drop_priority = get_drop_priority(avc_packet->priority);
 }
 

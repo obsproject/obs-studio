@@ -35,7 +35,7 @@ static inline void push_packet(struct obs_output *output,
 
 	dd.msg = DELAY_MSG_PACKET;
 	dd.ts  = t;
-	obs_duplicate_encoder_packet(&dd.packet, packet);
+	obs_encoder_packet_create_instance(&dd.packet, packet);
 
 	pthread_mutex_lock(&output->delay_mutex);
 	circlebuf_push_back(&output->delay_data, &dd, sizeof(dd));
@@ -48,7 +48,7 @@ static inline void process_delay_data(struct obs_output *output,
 	switch (dd->msg) {
 	case DELAY_MSG_PACKET:
 		if (!delay_active(output) || !delay_capturing(output))
-			obs_free_encoder_packet(&dd->packet);
+			obs_encoder_packet_release(&dd->packet);
 		else
 			output->delay_callback(output, &dd->packet);
 		break;
@@ -68,7 +68,7 @@ void obs_output_cleanup_delay(obs_output_t *output)
 	while (output->delay_data.size) {
 		circlebuf_pop_front(&output->delay_data, &dd, sizeof(dd));
 		if (dd.msg == DELAY_MSG_PACKET) {
-			obs_free_encoder_packet(&dd.packet);
+			obs_encoder_packet_release(&dd.packet);
 		}
 	}
 

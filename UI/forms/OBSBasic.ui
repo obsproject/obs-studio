@@ -850,6 +850,8 @@
       <string>Basic.MainMenu.Edit.Transform</string>
      </property>
      <addaction name="actionEditTransform"/>
+     <addaction name="actionCopyTransform"/>
+     <addaction name="actionPasteTransform"/>
      <addaction name="actionResetTransform"/>
      <addaction name="separator"/>
      <addaction name="actionRotate90CW"/>
@@ -896,6 +898,8 @@
     <addaction name="actionDupProfile"/>
     <addaction name="actionRenameProfile"/>
     <addaction name="actionRemoveProfile"/>
+    <addaction name="actionImportProfile"/>
+    <addaction name="actionExportProfile"/>
     <addaction name="separator"/>
    </widget>
    <widget class="QMenu" name="sceneCollectionMenu">
@@ -906,6 +910,8 @@
     <addaction name="actionDupSceneCollection"/>
     <addaction name="actionRenameSceneCollection"/>
     <addaction name="actionRemoveSceneCollection"/>
+    <addaction name="actionImportSceneCollection"/>
+    <addaction name="actionExportSceneCollection"/>
     <addaction name="separator"/>
    </widget>
    <widget class="QMenu" name="viewMenu">
@@ -1129,6 +1135,19 @@
     <string>Basic.MainMenu.Edit.Transform.EditTransform</string>
    </property>
   </action>
+  <action name="actionCopyTransform">
+   <property name="text">
+    <string>Basic.MainMenu.Edit.Transform.CopyTransform</string>
+   </property>
+  </action>
+  <action name="actionPasteTransform">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Basic.MainMenu.Edit.Transform.PasteTransform</string>
+   </property>
+  </action>
   <action name="actionRotate90CW">
    <property name="text">
     <string>Basic.MainMenu.Edit.Transform.Rotate90CW</string>
@@ -1258,6 +1277,16 @@
     <string>Remove</string>
    </property>
   </action>
+  <action name="actionImportSceneCollection">
+   <property name="text">
+    <string>Import</string>
+   </property>
+  </action>
+  <action name="actionExportSceneCollection">
+   <property name="text">
+    <string>Export</string>
+   </property>
+  </action>
   <action name="actionNewProfile">
    <property name="text">
     <string>New</string>
@@ -1276,6 +1305,16 @@
   <action name="actionRemoveProfile">
    <property name="text">
     <string>Remove</string>
+   </property>
+  </action>
+  <action name="actionImportProfile">
+   <property name="text">
+    <string>Import</string>
+   </property>
+  </action>
+  <action name="actionExportProfile">
+   <property name="text">
+    <string>Export</string>
    </property>
   </action>
   <action name="actionShowSettingsFolder">

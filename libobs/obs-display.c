@@ -23,6 +23,7 @@ bool obs_display_init(struct obs_display *display,
 		const struct gs_init_data *graphics_data)
 {
 	pthread_mutex_init_value(&display->draw_callbacks_mutex);
+	pthread_mutex_init_value(&display->draw_info_mutex);
 
 	if (graphics_data) {
 		display->swap = gs_swapchain_create(graphics_data);
@@ -37,6 +38,10 @@ bool obs_display_init(struct obs_display *display,
 	}
 
 	if (pthread_mutex_init(&display->draw_callbacks_mutex, NULL) != 0) {
+		blog(LOG_ERROR, "obs_display_init: Failed to create mutex");
+		return false;
+	}
+	if (pthread_mutex_init(&display->draw_info_mutex, NULL) != 0) {
 		blog(LOG_ERROR, "obs_display_init: Failed to create mutex");
 		return false;
 	}
@@ -73,6 +78,7 @@ obs_display_t *obs_display_create(const struct gs_init_data *graphics_data)
 void obs_display_free(obs_display_t *display)
 {
 	pthread_mutex_destroy(&display->draw_callbacks_mutex);
+	pthread_mutex_destroy(&display->draw_info_mutex);
 	da_free(display->draw_callbacks);
 
 	if (display->swap) {
@@ -103,13 +109,13 @@ void obs_display_resize(obs_display_t *display, uint32_t cx, uint32_t cy)
 {
 	if (!display) return;
 
-	pthread_mutex_lock(&display->draw_callbacks_mutex);
+	pthread_mutex_lock(&display->draw_info_mutex);
 
 	display->cx = cx;
 	display->cy = cy;
 	display->size_changed = true;
 
-	pthread_mutex_unlock(&display->draw_callbacks_mutex);
+	pthread_mutex_unlock(&display->draw_info_mutex);
 }
 
 void obs_display_add_draw_callback(obs_display_t *display,
@@ -138,16 +144,15 @@ void obs_display_remove_draw_callback(obs_display_t *display,
 	pthread_mutex_unlock(&display->draw_callbacks_mutex);
 }
 
-static inline void render_display_begin(struct obs_display *display)
+static inline void render_display_begin(struct obs_display *display,
+		uint32_t cx, uint32_t cy, bool size_changed)
 {
 	struct vec4 clear_color;
 
 	gs_load_swapchain(display ? display->swap : NULL);
 
-	if (display->size_changed) {
-		gs_resize(display->cx, display->cy);
-		display->size_changed = false;
-	}
+	if (size_changed)
+		gs_resize(cx, cy);
 
 	gs_begin_scene();
 
@@ -161,9 +166,8 @@ static inline void render_display_begin(struct obs_display *display)
 	/* gs_enable_blending(false); */
 	gs_set_cull_mode(GS_NEITHER);
 
-	gs_ortho(0.0f, (float)display->cx,
-			0.0f, (float)display->cy, -100.0f, 100.0f);
-	gs_set_viewport(0, 0, display->cx, display->cy);
+	gs_ortho(0.0f, (float)cx, 0.0f, (float)cy, -100.0f, 100.0f);
+	gs_set_viewport(0, 0, cx, cy);
 }
 
 static inline void render_display_end()
@@ -174,9 +178,27 @@ static inline void render_display_end()
 
 void render_display(struct obs_display *display)
 {
+	uint32_t cx, cy;
+	bool size_changed;
+
 	if (!display || !display->enabled) return;
 
-	render_display_begin(display);
+	/* -------------------------------------------- */
+
+	pthread_mutex_lock(&display->draw_info_mutex);
+
+	cx = display->cx;
+	cy = display->cy;
+	size_changed = display->size_changed;
+
+	if (size_changed)
+		display->size_changed = false;
+
+	pthread_mutex_unlock(&display->draw_info_mutex);
+
+	/* -------------------------------------------- */
+
+	render_display_begin(display, cx, cy, size_changed);
 
 	pthread_mutex_lock(&display->draw_callbacks_mutex);
 
@@ -184,7 +206,7 @@ void render_display(struct obs_display *display)
 		struct draw_callback *callback;
 		callback = display->draw_callbacks.array+i;
 
-		callback->draw(callback->param, display->cx, display->cy);
+		callback->draw(callback->param, cx, cy);
 	}
 
 	pthread_mutex_unlock(&display->draw_callbacks_mutex);

@@ -272,7 +272,9 @@ static void *nvenc_create(obs_data_t *settings, obs_encoder_t *encoder)
 
 	enc = bzalloc(sizeof(*enc));
 	enc->encoder = encoder;
-	enc->nvenc = avcodec_find_encoder_by_name("nvenc_h264");
+	enc->nvenc = avcodec_find_encoder_by_name("h264_nvenc");
+	if (!enc->nvenc)
+		enc->nvenc = avcodec_find_encoder_by_name("nvenc_h264");
 	enc->first_packet = true;
 
 	blog(LOG_INFO, "---------------------------------");

@@ -86,6 +86,7 @@ class OBSBasic : public OBSMainWindow {
 	friend class OBSBasicPreview;
 	friend class OBSBasicStatusBar;
 	friend class OBSBasicSourceSelect;
+	friend class OBSBasicSettings;
 	friend struct OBSStudioAPI;
 
 	enum class MoveDir {
@@ -130,6 +131,7 @@ private:
 	std::unique_ptr<BasicOutputHandler> outputHandler;
 	bool streamingStopping = false;
 	bool recordingStopping = false;
+	bool replayBufferStopping = false;
 
 	gs_vertbuffer_t *box = nullptr;
 	gs_vertbuffer_t *boxLeft = nullptr;
@@ -151,9 +153,12 @@ private:
 
 	QPointer<QMenu> startStreamMenu;
 
+	QPointer<QPushButton> replayBufferButton;
+
 	QPointer<QSystemTrayIcon> trayIcon;
 	QPointer<QAction>         sysTrayStream;
 	QPointer<QAction>         sysTrayRecord;
+	QPointer<QAction>         sysTrayReplayBuffer;
 	QPointer<QAction>         showHide;
 	QPointer<QAction>         exit;
 	QPointer<QMenu>           trayMenu;
@@ -244,7 +249,8 @@ private:
 
 	QListWidgetItem *GetTopSelectedSourceItem();
 
-	obs_hotkey_pair_id streamingHotkeys, recordingHotkeys;
+	obs_hotkey_pair_id streamingHotkeys, recordingHotkeys,
+	                   replayBufHotkeys;
 	obs_hotkey_id forceStreamingStopHotkey;
 
 	void InitDefaultTransitions();
@@ -313,6 +319,8 @@ private:
 	void dragMoveEvent(QDragMoveEvent *event) override;
 	void dropEvent(QDropEvent *event) override;
 
+	void ReplayBufferClicked();
+
 public slots:
 	void StartStreaming();
 	void StopStreaming();
@@ -331,6 +339,13 @@ public slots:
 	void RecordingStart();
 	void RecordStopping();
 	void RecordingStop(int code);
+
+	void StartReplayBuffer();
+	void StopReplayBuffer();
+
+	void ReplayBufferStart();
+	void ReplayBufferStopping();
+	void ReplayBufferStop(int code);
 
 	void SaveProjectDeferred();
 	void SaveProject();
@@ -483,6 +498,8 @@ private slots:
 	void on_actionCheckForUpdates_triggered();
 
 	void on_actionEditTransform_triggered();
+	void on_actionCopyTransform_triggered();
+	void on_actionPasteTransform_triggered();
 	void on_actionRotate90CW_triggered();
 	void on_actionRotate90CCW_triggered();
 	void on_actionRotate180_triggered();
@@ -535,11 +552,15 @@ private slots:
 	void on_actionDupSceneCollection_triggered();
 	void on_actionRenameSceneCollection_triggered();
 	void on_actionRemoveSceneCollection_triggered();
+	void on_actionImportSceneCollection_triggered();
+	void on_actionExportSceneCollection_triggered();
 
 	void on_actionNewProfile_triggered();
 	void on_actionDupProfile_triggered();
 	void on_actionRenameProfile_triggered();
 	void on_actionRemoveProfile_triggered();
+	void on_actionImportProfile_triggered();
+	void on_actionExportProfile_triggered();
 
 	void on_actionShowSettingsFolder_triggered();
 	void on_actionShowProfileFolder_triggered();

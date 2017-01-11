@@ -174,7 +174,7 @@ bool obs_source_init(struct obs_source *source)
 	source->control = bzalloc(sizeof(obs_weak_source_t));
 	source->deinterlace_top_first = true;
 	source->control->source = source;
-	source->audio_mixers = 0xF;
+	source->audio_mixers = 0xFF;
 
 	if (is_audio_source(source)) {
 		pthread_mutex_lock(&obs->data.audio_sources_mutex);
@@ -2098,6 +2098,41 @@ static inline void copy_frame_data_plane(struct obs_source_frame *dst,
 				dst->linesize[plane] * lines);
 }
 
+static void copy_frame_data_line_y800(uint32_t *dst, uint8_t *src, uint8_t *end)
+{
+	while (src < end) {
+		register uint32_t val = *(src++);
+		val |= (val << 8);
+		val |= (val << 16);
+		*(dst++) = val;
+	}
+}
+
+static inline void copy_frame_data_y800(struct obs_source_frame *dst,
+		const struct obs_source_frame *src)
+{
+	uint32_t *ptr_dst;
+	uint8_t  *ptr_src;
+	uint8_t  *src_end;
+
+	if ((src->linesize[0] * 4) != dst->linesize[0]) {
+		for (uint32_t cy = 0; cy < src->height; cy++) {
+			ptr_dst = (uint32_t*)
+				(dst->data[0] + cy * dst->linesize[0]);
+			ptr_src = (src->data[0] + cy * src->linesize[0]);
+			src_end = ptr_src + src->width;
+
+			copy_frame_data_line_y800(ptr_dst, ptr_src, src_end);
+		}
+	} else {
+		ptr_dst = (uint32_t*)dst->data[0];
+		ptr_src = (uint8_t *)src->data[0];
+		src_end = ptr_src + src->height * src->linesize[0];
+
+		copy_frame_data_line_y800(ptr_dst, ptr_src, src_end);
+	}
+}
+
 static void copy_frame_data(struct obs_source_frame *dst,
 		const struct obs_source_frame *src)
 {
@@ -2111,7 +2146,7 @@ static void copy_frame_data(struct obs_source_frame *dst,
 		memcpy(dst->color_range_max, src->color_range_max, size);
 	}
 
-	switch (dst->format) {
+	switch (src->format) {
 	case VIDEO_FORMAT_I420:
 		copy_frame_data_plane(dst, src, 0, dst->height);
 		copy_frame_data_plane(dst, src, 1, dst->height/2);
@@ -2132,12 +2167,16 @@ static void copy_frame_data(struct obs_source_frame *dst,
 	case VIDEO_FORMAT_YVYU:
 	case VIDEO_FORMAT_YUY2:
 	case VIDEO_FORMAT_UYVY:
-	case VIDEO_FORMAT_Y800:
 	case VIDEO_FORMAT_NONE:
 	case VIDEO_FORMAT_RGBA:
 	case VIDEO_FORMAT_BGRA:
 	case VIDEO_FORMAT_BGRX:
 		copy_frame_data_plane(dst, src, 0, dst->height);
+		break;
+
+	case VIDEO_FORMAT_Y800:
+		copy_frame_data_y800(dst, src);
+		break;
 	}
 }
 
@@ -2218,8 +2257,12 @@ static inline struct obs_source_frame *cache_video(struct obs_source *source,
 
 	if (!new_frame) {
 		struct async_frame new_af;
+		enum video_format format = frame->format;
 
-		new_frame = obs_source_frame_create(frame->format,
+		if (format == VIDEO_FORMAT_Y800)
+			format = VIDEO_FORMAT_BGRX;
+
+		new_frame = obs_source_frame_create(format,
 				frame->width, frame->height);
 		new_af.frame = new_frame;
 		new_af.used = true;

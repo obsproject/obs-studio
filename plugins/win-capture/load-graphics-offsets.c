@@ -1,4 +1,3 @@
-#define _CRT_SECURE_NO_WARNINGS
 #include <obs-module.h>
 #include <util/windows/win-version.h>
 #include <util/platform.h>

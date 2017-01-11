@@ -199,6 +199,7 @@ struct obs_display {
 	uint32_t                        background_color;
 	gs_swapchain_t                  *swap;
 	pthread_mutex_t                 draw_callbacks_mutex;
+	pthread_mutex_t                 draw_info_mutex;
 	DARRAY(struct draw_callback)    draw_callbacks;
 
 	struct obs_display              *next;
@@ -718,8 +719,6 @@ static inline enum gs_color_format convert_video_format(
 		return GS_RGBA;
 	else if (format == VIDEO_FORMAT_BGRA)
 		return GS_BGRA;
-	else if (format == VIDEO_FORMAT_Y800)
-		return GS_R8;
 
 	return GS_BGRX;
 }
@@ -772,6 +771,13 @@ typedef void (*encoded_callback_t)(void *data, struct encoder_packet *packet);
 struct obs_weak_output {
 	struct obs_weak_ref ref;
 	struct obs_output *output;
+};
+
+#define CAPTION_LINE_CHARS (32)
+#define CAPTION_LINE_BYTES (4*CAPTION_LINE_CHARS)
+struct caption_text {
+	char text[CAPTION_LINE_BYTES+1];
+	struct caption_text *next;
 };
 
 struct obs_output {
@@ -828,6 +834,11 @@ struct obs_output {
 	struct video_scale_info         video_conversion;
 	struct audio_convert_info       audio_conversion;
 
+	pthread_mutex_t                 caption_mutex;
+	double                          caption_timestamp;
+	struct caption_text             *caption_head;
+	struct caption_text             *caption_tail;
+
 	bool                            valid;
 
 	uint64_t                        active_delay_ns;
@@ -864,6 +875,8 @@ extern const struct obs_output_info *find_output(const char *id);
 extern void obs_output_remove_encoder(struct obs_output *output,
 		struct obs_encoder *encoder);
 
+extern void obs_encoder_packet_create_instance(struct encoder_packet *dst,
+		const struct encoder_packet *src);
 void obs_output_destroy(obs_output_t *output);
 
 
