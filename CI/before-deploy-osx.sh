@@ -9,7 +9,7 @@ export FILENAME=$FILE_DATE-$GIT_HASH-osx.pkg
 mkdir nightly
 cd ./build
 sudo python ../CI/install/osx/build_app.py
-packagesbuild ../CI/install/osx/CMakeLists.pkgproj
+../packagesbuild ../CI/install/osx/CMakeLists.pkgproj
 
 sudo cp OBS.pkg ./$FILENAME
 sudo mv ./$FILENAME ../nightly
