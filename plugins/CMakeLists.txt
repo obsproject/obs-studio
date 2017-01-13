@@ -1,6 +1,6 @@
 
 if(WIN32)
-	option(BUILD_CA_ENCODER "Build CoreAudio encoder module" ON)
+	option(BUILD_CA_ENCODER "Build CoreAudio encoder module" OFF)
 	if (BUILD_CA_ENCODER)
 		add_subdirectory(coreaudio-encoder)
 	endif()
