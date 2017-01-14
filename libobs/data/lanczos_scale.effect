@@ -132,7 +132,6 @@ float4 DrawLanczos(FragData v_in)
 		get_line(xystart.y + stepxy.y * 5.0, xpos1, xpos2, rowtap1, rowtap2) * coltap2.b;
 }
 
-
 float4 PSDrawLanczosRGBA(FragData v_in) : TARGET
 {
 	return DrawLanczos(v_in);

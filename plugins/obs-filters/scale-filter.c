@@ -8,7 +8,7 @@
 
 #define S_RESOLUTION                    "resolution"
 #define S_SAMPLING                      "sampling"
-#define S_DEDISTORD						"dedistord"
+#define S_DEDISTORD                     "dedistord"
 
 #define T_RESOLUTION                    obs_module_text("Resolution")
 #define T_NONE                          obs_module_text("None")
@@ -31,7 +31,7 @@ struct scale_filter_data {
 	gs_eparam_t                     *dimension_param;
 	gs_eparam_t                     *dedistord_factor_param;
 	struct vec2                     dimension_i;
-	float	 						dedistord_factor;
+	float                           dedistord_factor;
 	int                             cx_in;
 	int                             cy_in;
 	int                             cx_out;
