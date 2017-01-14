@@ -10,6 +10,7 @@ uniform float4x4 color_matrix;
 uniform float3 color_range_min = {0.0, 0.0, 0.0};
 uniform float3 color_range_max = {1.0, 1.0, 1.0};
 uniform float2 base_dimension_i;
+uniform float dedistord_factor = 1.0;
 
 sampler_state textureSampler {
 	Filter    = Linear;
@@ -63,9 +64,26 @@ float4 weight4(float x)
 		weight(x + 1.0));
 }
 
+float AspectDedistordX(float x, float a)
+{
+	// The higher the power, the longer the linear part will be.
+	return (1.0 - a) * (x * x * x * x * x) + a * x;
+}
+
+float AspectDedistordU(float u)
+{
+	// Normalize texture coord to -1.0 to 1.0 range, and back.
+	return AspectDedistordX((u - 0.5) * 2.0, dedistord_factor) * 0.5 + 0.5;
+}
+
+float2 pixel_coord(float xpos, float ypos)
+{
+	return float2(AspectDedistordU(xpos), ypos);
+}
+
 float4 pixel(float xpos, float ypos)
 {
-	return image.Sample(textureSampler, float2(xpos, ypos));
+	return image.Sample(textureSampler, pixel_coord(xpos, ypos));
 }
 
 float4 get_line(float ypos, float4 xpos, float4 linetaps)
