@@ -17,7 +17,7 @@
 #define T_SAMPLING_BILINEAR             obs_module_text("ScaleFiltering.Bilinear")
 #define T_SAMPLING_BICUBIC              obs_module_text("ScaleFiltering.Bicubic")
 #define T_SAMPLING_LANCZOS              obs_module_text("ScaleFiltering.Lanczos")
-#define T_DEDISTORD						obs_module_text("ScaleDedistord")
+#define T_DEDISTORD                     obs_module_text("ScaleDedistord")
 
 #define S_SAMPLING_POINT                "point"
 #define S_SAMPLING_BILINEAR             "bilinear"
