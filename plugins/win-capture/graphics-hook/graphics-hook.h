@@ -143,7 +143,13 @@ static inline HMODULE load_system_library(const char *name)
 
 static inline bool capture_alive(void)
 {
-	return !!FindWindowW(keepalive_name, NULL);
+	HANDLE handle = OpenMutexW(SYNCHRONIZE, false, keepalive_name);
+	CloseHandle(handle);
+
+	if (handle)
+		return true;
+
+	return GetLastError() != ERROR_FILE_NOT_FOUND;
 }
 
 static inline bool capture_active(void)

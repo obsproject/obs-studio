@@ -136,8 +136,7 @@ struct game_capture {
 	ipc_pipe_server_t             pipe;
 	gs_texture_t                  *texture;
 	struct hook_info              *global_hook_info;
-	HANDLE                        keepalive_thread;
-	DWORD                         keepalive_thread_id;
+	HANDLE                        keepalive_mutex;
 	HANDLE                        hook_init;
 	HANDLE                        hook_restart;
 	HANDLE                        hook_stop;
@@ -281,12 +280,6 @@ static void stop_capture(struct game_capture *gc)
 		gc->data = NULL;
 	}
 
-	if (gc->keepalive_thread) {
-		PostThreadMessage(gc->keepalive_thread_id, WM_QUIT, 0, 0);
-		WaitForSingleObject(gc->keepalive_thread, 300);
-		close_handle(&gc->keepalive_thread);
-	}
-
 	if (gc->app_sid) {
 		LocalFree(gc->app_sid);
 		gc->app_sid = NULL;
@@ -298,6 +291,7 @@ static void stop_capture(struct game_capture *gc)
 	close_handle(&gc->hook_exit);
 	close_handle(&gc->hook_init);
 	close_handle(&gc->hook_data_map);
+	close_handle(&gc->keepalive_mutex);
 	close_handle(&gc->global_hook_info_map);
 	close_handle(&gc->target_process);
 	close_handle(&gc->texture_mutexes[0]);
@@ -641,77 +635,17 @@ static inline bool open_target_process(struct game_capture *gc)
 	return true;
 }
 
-struct keepalive_data {
-	struct game_capture *gc;
-	HANDLE initialized;
-};
-
-#define DEF_FLAGS (WS_POPUP | WS_CLIPCHILDREN | WS_CLIPSIBLINGS)
-
-static DWORD WINAPI keepalive_window_thread(struct keepalive_data *data)
-{
-	HANDLE initialized = data->initialized;
-	struct game_capture *gc = data->gc;
-	wchar_t new_name[64];
-	WNDCLASSW wc;
-	HWND window;
-	MSG msg;
-
-	_snwprintf(new_name, sizeof(new_name), L"%s%lu",
-			WINDOW_HOOK_KEEPALIVE, gc->process_id);
-
-	memset(&wc, 0, sizeof(wc));
-	wc.style = CS_OWNDC;
-	wc.hInstance = GetModuleHandleW(NULL);
-	wc.lpfnWndProc = (WNDPROC)DefWindowProc;
-	wc.lpszClassName = new_name;
-
-	if (!RegisterClass(&wc)) {
-		warn("Failed to create keepalive window class: %lu",
-				GetLastError());
-		return 0;
-	}
-
-	window = CreateWindowExW(0, new_name, NULL, DEF_FLAGS, 0, 0, 1, 1,
-			NULL, NULL, wc.hInstance, NULL);
-	if (!window) {
-		warn("Failed to create keepalive window: %lu",
-				GetLastError());
-		return 0;
-	}
-
-	SetEvent(initialized);
-
-	while (GetMessage(&msg, NULL, 0, 0)) {
-		TranslateMessage(&msg);
-		DispatchMessage(&msg);
-	}
-
-	DestroyWindow(window);
-	UnregisterClassW(new_name, wc.hInstance);
-
-	return 0;
-}
-
 static inline bool init_keepalive(struct game_capture *gc)
 {
-	struct keepalive_data data;
-	HANDLE initialized = CreateEvent(NULL, false, false, NULL);
+	wchar_t new_name[64];
+	_snwprintf(new_name, 64, L"%s%lu", WINDOW_HOOK_KEEPALIVE,
+			gc->process_id);
 
-	data.gc = gc;
-	data.initialized = initialized;
-
-	gc->keepalive_thread = CreateThread(NULL, 0,
-			(LPTHREAD_START_ROUTINE)keepalive_window_thread,
-			&data, 0, &gc->keepalive_thread_id);
-	if (!gc->keepalive_thread) {
-		warn("Failed to create keepalive window thread: %lu",
-				GetLastError());
+	gc->keepalive_mutex = CreateMutexW(NULL, false, new_name);
+	if (!gc->keepalive_mutex) {
+		warn("Failed to create keepalive mutex: %lu", GetLastError());
 		return false;
 	}
-
-	WaitForSingleObject(initialized, INFINITE);
-	CloseHandle(initialized);
 
 	return true;
 }
