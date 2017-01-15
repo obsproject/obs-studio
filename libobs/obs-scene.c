@@ -1072,6 +1072,8 @@ obs_scene_t *obs_scene_duplicate(obs_scene_t *scene, const char *name,
 			new_item->align = item->align;
 			new_item->last_width = item->last_width;
 			new_item->last_height = item->last_height;
+			new_item->output_scale = item->output_scale;
+			new_item->scale_filter = item->scale_filter;
 			new_item->box_transform = item->box_transform;
 			new_item->draw_transform = item->draw_transform;
 			new_item->bounds_type = item->bounds_type;
