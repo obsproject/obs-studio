@@ -240,7 +240,7 @@ HWND get_uwp_actual_window(HWND parent)
 	HWND child;
 
 	GetWindowThreadProcessId(parent, &parent_id);
-	child = FindWindowEx(parent, NULL, NULL, NULL);
+	child = GetWindow(parent, GW_CHILD);
 
 	while (child) {
 		DWORD child_id = 0;
@@ -249,7 +249,7 @@ HWND get_uwp_actual_window(HWND parent)
 		if (child_id != parent_id)
 			return child;
 
-		child = FindWindowEx(parent, child, NULL, NULL);
+		child = GetNextWindow(child, GW_HWNDNEXT);
 	}
 
 	return NULL;
@@ -264,7 +264,7 @@ static inline HWND next_window(HWND window, enum window_search_mode mode,
 	}
 
 	while (true) {
-		window = FindWindowEx(GetDesktopWindow(), window, NULL, NULL);
+		window = GetNextWindow(window, GW_HWNDNEXT);
 		if (!window || check_window_valid(window, mode))
 			break;
 	}
@@ -282,7 +282,7 @@ static inline HWND next_window(HWND window, enum window_search_mode mode,
 
 static inline HWND first_window(enum window_search_mode mode, HWND *parent)
 {
-	HWND window = FindWindowEx(GetDesktopWindow(), NULL, NULL, NULL);
+	HWND window = GetWindow(GetDesktopWindow(), GW_CHILD);
 
 	*parent = NULL;
 
