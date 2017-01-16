@@ -3119,7 +3119,7 @@ bool obs_source_add_active_child(obs_source_t *parent, obs_source_t *child)
 		return false;
 	}
 
-	obs_source_enum_active_tree(child, check_descendant, &info);
+	obs_source_enum_full_tree(child, check_descendant, &info);
 	if (info.exists)
 		return false;
 
