@@ -29,6 +29,7 @@
 #  ifdef __linux__
 #    include <linux/if_link.h>
 #  elif __FreeBSD__
+#    include <netinet/in.h>
 #    ifndef _GNU_SOURCE
 #      define _GNU_SOURCE
 #      define __NET_IF_GNU_SOURCE__
