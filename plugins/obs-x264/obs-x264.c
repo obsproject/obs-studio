@@ -288,6 +288,8 @@ static inline void override_base_params(struct obs_x264 *obsx264, char **params,
 				preset, profile, tune);
 }
 
+#define OPENCL_ALIAS "opencl_is_experimental_and_potentially_unstable"
+
 static inline void set_param(struct obs_x264 *obsx264, const char *param)
 {
 	char       *name;
@@ -302,6 +304,8 @@ static inline void set_param(struct obs_x264 *obsx264, const char *param)
 		    strcmp(name, "width")     != 0 &&
 		    strcmp(name, "height")    != 0 &&
 		    strcmp(name, "opencl")    != 0) {
+			if (strcmp(name, OPENCL_ALIAS) == 0)
+				strcpy(name, "opencl");
 			if (x264_param_parse(&obsx264->params, name, val) != 0)
 				warn("x264 param: %s failed", param);
 		}
