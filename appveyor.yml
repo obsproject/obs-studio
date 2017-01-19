@@ -1,0 +1,21 @@
+environment:
+  FFMPEG_VERSION: 3.0.1
+  CURL_VERSION: 7.39.0
+  matrix:
+    - VSVER: Visual Studio 14 2015 Win64  
+
+platform: x64
+configuration: Debug
+
+install:
+  - git submodule update --init --recursive
+  - curl -kLO https://obsproject.com/downloads/dependencies2015.zip
+  - 7z x dependencies2015.zip -odependencies2015
+  - set DepsPath=%CD%\dependencies2015\win64
+  - set QTDIR=C:\Qt\5.7\msvc2015_64
+  - mkdir build
+  - cd ./build
+  - cmake -G "Visual Studio 14 2015 Win64" ..
+
+build:
+  project: C:\projects\obs-studio\build\obs-studio.sln
