@@ -8,7 +8,7 @@ if(COPIED_DEPENDENCIES)
 	return()
 endif()
 
-option(COPY_DEPENDENCIES "Automaticaly try copying all dependencies" OFF)
+option(COPY_DEPENDENCIES "Automaticaly try copying all dependencies" ON)
 if(NOT COPY_DEPENDENCIES)
 	return()
 endif()
