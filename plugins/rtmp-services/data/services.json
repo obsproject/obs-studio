@@ -439,45 +439,6 @@
             ]
         },
         {
-            "name": "Kamcord",
-            "servers": [
-                {
-                    "name": "US East (N. Virginia)",
-                    "url": "rtmp://us-east-1.stream.kamcord.com/live"
-                },
-                {
-                    "name": "Asia Pacific (Seoul)",
-                    "url": "rtmp://ap-northeast-2.stream.kamcord.com/live"
-                },
-                {
-                    "name": "Asia Pacific (Sydney)",
-                    "url": "rtmp://ap-southeast-2.stream.kamcord.com/live"
-                },
-                {
-                    "name": "Asia Pacific (Tokyo)",
-                    "url": "rtmp://ap-northeast-1.stream.kamcord.com/live"
-                },
-                {
-                    "name": "EU (Frankfurt)",
-                    "url": "rtmp://eu-central-1.stream.kamcord.com/live"
-                },
-                {
-                    "name": "South America (Sao Paulo)",
-                    "url": "rtmp://sa-east-1.stream.kamcord.com/live"
-                },
-                {
-                    "name": "US West (N. California)",
-                    "url": "rtmp://us-west-1.stream.kamcord.com/live"
-                }
-            ],
-            "recommended": {
-                "keyint": 2,
-                "profile": "main",
-                "max video bitrate": 4000,
-                "max audio bitrate": 192
-            }
-        },
-        {
             "name": "CyberGame.TV",
             "servers": [
                 {
@@ -640,15 +601,6 @@
                 {
                     "name": "Default",
                     "url": "rtmp://live.boomstream.com/live"
-                }
-            ]
-        },
-        {
-            "name": "Interactive LifeStream",
-            "servers": [
-                {
-                    "name": "Default",
-                    "url": "rtmp://lifestreamcdn.com/live/_definst_/doPublish=wls36"
                 }
             ]
         },
