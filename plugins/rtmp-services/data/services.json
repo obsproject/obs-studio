@@ -409,25 +409,64 @@
             ]
         },
         {
-            "name": "Vaughn Live / iNSTAGIB.tv",
+            "name": "Vaughn Live / iNSTAGIB",
             "servers": [
                 {
                     "name": "US: Primary",
-                    "url": "rtmp://live.vaughnsoft.net:443/live"
+                    "url": "rtmp://live.vaughnsoft.net/live"
                 },
                 {
-                    "name": "US: San Jose, CA",
-                    "url": "rtmp://live-sjc.vaughnsoft.net:443/live"
+                    "name": "US: Chicago, IL",
+                    "url": "rtmp://live-ord.vaughnsoft.net/live"
                 },
                 {
-                    "name": "US: New York, NY",
-                    "url": "rtmp://live-nyc.vaughnsoft.net:443/live"
+                    "name": "US: Denver, CO",
+                    "url": "rtmp://live-den.vaughnsoft.net/live"
                 },
                 {
-                    "name": "US: New York 2, NY",
-                    "url": "rtmp://live-nyc2.vaughnsoft.net:443/live"
+                    "name": "US: Los Angeles, CA",
+                    "url": "rtmp://live-lax.vaughnsoft.net/live"
+                },
+                {
+                    "name": "EU: Amsterdam, NL",
+                    "url": "rtmp://live-ams.vaughnsoft.net/live"
                 }
-            ]
+            ],
+            "recommended": {
+                "keyint": 2,
+                "max video bitrate": 3500,
+                "max audio bitrate": 160
+            }
+        },
+        {
+            "name": "Breakers.TV",
+            "servers": [
+                {
+                    "name": "US: Primary",
+                    "url": "rtmp://live.vaughnsoft.net/live"
+                },
+                {
+                    "name": "US: Chicago, IL",
+                    "url": "rtmp://live-ord.vaughnsoft.net/live"
+                },
+                {
+                    "name": "US: Denver, CO",
+                    "url": "rtmp://live-den.vaughnsoft.net/live"
+                },
+                {
+                    "name": "US: Los Angeles, CA",
+                    "url": "rtmp://live-lax.vaughnsoft.net/live"
+                },
+                {
+                    "name": "EU: Amsterdam, NL",
+                    "url": "rtmp://live-ams.vaughnsoft.net/live"
+                }
+            ],
+            "recommended": {
+                "keyint": 2,
+                "max video bitrate": 3500,
+                "max audio bitrate": 160
+            }
         },
         {
             "name": "connectcast.tv",
