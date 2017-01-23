@@ -162,9 +162,16 @@ static void log_available_memory(void)
 
 	GlobalMemoryStatusEx(&ms);
 
-	blog(LOG_INFO, "Physical Memory: %luMB Total, %luMB Free",
+#ifdef _WIN64
+	const char *note = "";
+#else
+	const char *note = " (NOTE: 32 bit OS may not use more than 3 GB due limitations)";
+#endif
+
+	blog(LOG_INFO, "Physical Memory: %luMB Total, %luMB Free%s",
 			(DWORD)(ms.ullTotalPhys / 1048576),
-			(DWORD)(ms.ullAvailPhys / 1048576));
+			(DWORD)(ms.ullAvailPhys / 1048576),
+			note);
 }
 
 static void log_windows_version(void)
