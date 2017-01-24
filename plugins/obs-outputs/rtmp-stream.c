@@ -961,8 +961,8 @@ static void rtmp_stream_data(void *data, struct encoder_packet *packet)
 
 static void rtmp_stream_defaults(obs_data_t *defaults)
 {
-	obs_data_set_default_int(defaults, OPT_DROP_THRESHOLD, 500);
-	obs_data_set_default_int(defaults, OPT_PFRAME_DROP_THRESHOLD, 800);
+	obs_data_set_default_int(defaults, OPT_DROP_THRESHOLD, 700);
+	obs_data_set_default_int(defaults, OPT_PFRAME_DROP_THRESHOLD, 900);
 	obs_data_set_default_int(defaults, OPT_MAX_SHUTDOWN_TIME_SEC, 30);
 	obs_data_set_default_string(defaults, OPT_BIND_IP, "default");
 }
