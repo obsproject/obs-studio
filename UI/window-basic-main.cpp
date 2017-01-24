@@ -2703,6 +2703,28 @@ void OBSBasic::CloseDialogs()
 	}
 }
 
+void OBSBasic::EnumDialogs()
+{
+	list_of_VisibleDialogs.clear();
+	list_of_ModalDialogs.clear();
+	//fill list of Visible dialogs and Modal dialogs
+	QList<QDialog*> allDialogs = this->findChildren<QDialog*>();
+	foreach(QDialog* cur_dialog, allDialogs) {
+		if (cur_dialog->isVisible())
+			list_of_VisibleDialogs.append(cur_dialog);
+		if (cur_dialog->isModal())
+			list_of_ModalDialogs.append(cur_dialog);
+	}
+
+	list_of_VisibleMBoxes.clear();
+	//fill list of Visible message boxes
+	QList<QMessageBox*> allMessageBoxes = this->findChildren<QMessageBox*>();
+	foreach(QMessageBox* cur_MBox, allMessageBoxes) {
+		if (cur_MBox->isVisible())
+			list_of_VisibleMBoxes.append(cur_MBox);
+	}
+}
+
 void OBSBasic::ClearSceneData()
 {
 	disableSaving++;
@@ -2787,8 +2809,11 @@ void OBSBasic::closeEvent(QCloseEvent *event)
 
 void OBSBasic::changeEvent(QEvent *event)
 {
-	/* TODO */
-	UNUSED_PARAMETER(event);
+	/* MORE TODO */
+	if ((event->type() == QEvent::WindowStateChange) && isMinimized() &&
+		trayIcon->isVisible() && sysTrayMinimizeToTray()) {
+			ToggleShowHide();
+	}
 }
 
 void OBSBasic::on_actionShow_Recordings_triggered()
@@ -2812,11 +2837,9 @@ void OBSBasic::on_actionRemux_triggered()
 
 void OBSBasic::on_action_Settings_triggered()
 {
-	disableHiding = true;
 	OBSBasicSettings settings(this);
 	settings.exec();
 	SystemTray(false);
-	disableHiding = false;
 }
 
 void OBSBasic::on_actionAdvAudioProperties_triggered()
@@ -4883,10 +4906,28 @@ void OBSBasic::on_actionScaleOutput_triggered()
 
 void OBSBasic::SetShowing(bool showing)
 {
+	//hide
 	if (!showing && isVisible()) {
 		config_set_string(App()->GlobalConfig(),
 			"BasicWindow", "geometry",
 			saveGeometry().toBase64().constData());
+		
+		//hide all visible child dialogs
+		VisibleDialogsPos.clear();
+		if (!list_of_VisibleDialogs.isEmpty()) {
+			for (int i = 0; i < list_of_VisibleDialogs.size(); ++i) {
+				/*
+				//remember size and pos of all visible children dialogs
+				QSize dlg_size = list_of_VisibleDialogs.at(i)->size();
+				VisibleDialogsSizes.append(dlg_size);
+				*/
+				QPoint dlg_pos = list_of_VisibleDialogs.at(i)->pos();
+				VisibleDialogsPos.append(dlg_pos);
+
+				list_of_VisibleDialogs.at(i)->hide();
+			}
+		}
+
 
 		if (showHide)
 			showHide->setText(QTStr("Basic.SystemTray.Show"));
@@ -4897,7 +4938,9 @@ void OBSBasic::SetShowing(bool showing)
 
 		setVisible(false);
 
+	//show
 	} else if (showing && !isVisible()) {
+		
 		if (showHide)
 			showHide->setText(QTStr("Basic.SystemTray.Hide"));
 		QTimer::singleShot(250, this, SLOT(show()));
@@ -4906,7 +4949,39 @@ void OBSBasic::SetShowing(bool showing)
 			EnablePreviewDisplay(true);
 
 		setVisible(true);
+		
+		//show all child dialogs that was visible earlier
+		if (!list_of_VisibleDialogs.isEmpty()) {
+			for (int i = 0; i < list_of_VisibleDialogs.size(); ++i) {
+				/*
+				//restore size and pos of all visible children dialogs
+				QSize dlg_size = VisibleDialogsSizes.at(i);
+				list_of_VisibleDialogs.at(i)->resize(dlg_size);
+				*/
+				QPoint dlg_pos = VisibleDialogsPos.at(i);
+				list_of_VisibleDialogs.at(i)->move(dlg_pos);
+				
+				list_of_VisibleDialogs.at(i)->show();
+			}
+		}
+		//Unminimize window if it was hidden to tray instead of task bar.
+		if (sysTrayMinimizeToTray())
+			this->setWindowState((this->windowState() & ~Qt::WindowMinimized) | 
+				Qt::WindowActive);
 	}
+}
+
+void OBSBasic::ToggleShowHide()
+{
+	bool showing = isVisible();
+	if (showing) {
+		//make check for modal dialogs
+		EnumDialogs();
+		if (!list_of_ModalDialogs.isEmpty() ||
+			!list_of_VisibleMBoxes.isEmpty())
+				return;
+	}
+	SetShowing(!showing);
 }
 
 void OBSBasic::SystemTrayInit()
@@ -5003,3 +5078,10 @@ void OBSBasic::SystemTray(bool firstStarted)
 	else
 		showHide->setText(QTStr("Basic.SystemTray.Show"));
 }
+
+bool OBSBasic::sysTrayMinimizeToTray()
+{
+	return config_get_bool(GetGlobalConfig(),
+		"BasicWindow", "SysTrayMinimizeToTray");
+}
+

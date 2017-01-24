@@ -281,6 +281,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->keepRecordStreamStops,CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->systemTrayEnabled,    CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->systemTrayWhenStarted,CHECK_CHANGED,  GENERAL_CHANGED);
+	HookWidget(ui->systemTrayMinimizeToTray, CHECK_CHANGED, GENERAL_CHANGED);
 	HookWidget(ui->snappingEnabled,      CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->screenSnapping,       CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->centerSnapping,       CHECK_CHANGED,  GENERAL_CHANGED);
@@ -890,6 +891,10 @@ void OBSBasicSettings::LoadGeneralSettings()
 	bool systemTrayWhenStarted = config_get_bool(GetGlobalConfig(),
 			"BasicWindow", "SysTrayWhenStarted");
 	ui->systemTrayWhenStarted->setChecked(systemTrayWhenStarted);
+	
+	bool systemTrayMinimizeToTray = config_get_bool(GetGlobalConfig(),
+		"BasicWindow", "SysTrayMinimizeToTray");
+	ui->systemTrayMinimizeToTray->setChecked(systemTrayMinimizeToTray);
 
 	bool snappingEnabled = config_get_bool(GetGlobalConfig(),
 			"BasicWindow", "SnappingEnabled");
@@ -2341,6 +2346,11 @@ void OBSBasicSettings::SaveGeneralSettings()
 		config_set_bool(GetGlobalConfig(), "BasicWindow",
 				"SysTrayWhenStarted",
 				ui->systemTrayWhenStarted->isChecked());
+	
+	if (WidgetChanged(ui->systemTrayMinimizeToTray))
+		config_set_bool(GetGlobalConfig(), "BasicWindow",
+		"SysTrayMinimizeToTray",
+		ui->systemTrayMinimizeToTray->isChecked());
 }
 
 void OBSBasicSettings::SaveStream1Settings()
