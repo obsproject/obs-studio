@@ -2103,3 +2103,17 @@ void obs_output_output_caption_text1(obs_output_t *output, const char *text)
 	pthread_mutex_unlock(&output->caption_mutex);
 }
 #endif
+
+float obs_output_get_congestion(obs_output_t *output)
+{
+	if (!obs_output_valid(output, "obs_output_get_congestion"))
+		return 0;
+
+	if (output->info.get_congestion) {
+		float val = output->info.get_congestion(output->context.data);
+		if (val < 0.0f) val = 0.0f;
+		else if (val > 1.0f) val = 1.0f;
+		return val;
+	}
+	return 0;
+}

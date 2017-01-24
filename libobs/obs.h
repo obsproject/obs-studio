@@ -1465,6 +1465,8 @@ EXPORT void obs_output_output_caption_text1(obs_output_t *output,
 		const char *text);
 #endif
 
+EXPORT float obs_output_get_congestion(obs_output_t *output);
+
 /* ------------------------------------------------------------------------- */
 /* Functions used by outputs */
 
