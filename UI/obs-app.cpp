@@ -393,6 +393,8 @@ bool OBSApp::InitGlobalConfigDefaults()
 	config_set_default_bool(globalConfig, "BasicWindow",
 			"SysTrayWhenStarted", false);
 	config_set_default_bool(globalConfig, "BasicWindow",
+			"SaveProjectors", false);
+	config_set_default_bool(globalConfig, "BasicWindow",
 			"ShowTransitions", true);
 	config_set_default_bool(globalConfig, "BasicWindow",
 			"ShowListboxToolbars", true);

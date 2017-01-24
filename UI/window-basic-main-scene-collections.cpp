@@ -222,6 +222,9 @@ void OBSBasic::RefreshSceneCollections()
 	EnumSceneCollections(addCollection);
 
 	ui->actionRemoveSceneCollection->setEnabled(count > 1);
+
+	OBSBasic *main = reinterpret_cast<OBSBasic*>(App()->GetMainWindow());
+	main->OpenSavedProjectors();
 }
 
 void OBSBasic::on_actionNewSceneCollection_triggered()
