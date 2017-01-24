@@ -1,4 +1,6 @@
 #include <QLabel>
+#include <QPainter>
+#include <QPixmap>
 #include "obs-app.hpp"
 #include "window-basic-main.hpp"
 #include "window-basic-status-bar.hpp"
@@ -10,28 +12,46 @@ OBSBasicStatusBar::OBSBasicStatusBar(QWidget *parent)
 	  droppedFrames (new QLabel),
 	  sessionTime   (new QLabel),
 	  cpuUsage      (new QLabel),
-	  kbps          (new QLabel)
+	  kbps          (new QLabel),
+	  statusSquare  (new QLabel)
 {
 	sessionTime->setText(QString("00:00:00"));
-	cpuUsage->setText(QString("CPU: 0.0%"));
+	cpuUsage->setText(QString("CPU: 0.0%, 0.00 fps"));
 
 	delayInfo->setAlignment(Qt::AlignRight);
+	delayInfo->setAlignment(Qt::AlignVCenter);
 	droppedFrames->setAlignment(Qt::AlignRight);
+	droppedFrames->setAlignment(Qt::AlignVCenter);
 	sessionTime->setAlignment(Qt::AlignRight);
+	sessionTime->setAlignment(Qt::AlignVCenter);
 	cpuUsage->setAlignment(Qt::AlignRight);
+	cpuUsage->setAlignment(Qt::AlignVCenter);
 	kbps->setAlignment(Qt::AlignRight);
+	kbps->setAlignment(Qt::AlignVCenter);
+	statusSquare->setAlignment(Qt::AlignRight);
+	statusSquare->setAlignment(Qt::AlignVCenter);
 
 	delayInfo->setIndent(20);
 	droppedFrames->setIndent(20);
 	sessionTime->setIndent(20);
 	cpuUsage->setIndent(20);
+	statusSquare->setIndent(20);
 	kbps->setIndent(10);
 
 	addPermanentWidget(droppedFrames);
 	addPermanentWidget(sessionTime);
 	addPermanentWidget(cpuUsage);
 	addPermanentWidget(delayInfo);
+	addPermanentWidget(statusSquare);
 	addPermanentWidget(kbps);
+
+	QPixmap pixmap(20, 20);
+	pixmap.fill(QColor("transparent"));
+	QPainter painter(&pixmap);
+	painter.setPen(Qt::NoPen);
+	painter.setBrush(QBrush(Qt::transparent));
+	painter.drawRect(0, 0, 20, 20);
+	statusSquare->setPixmap(pixmap);
 }
 
 void OBSBasicStatusBar::Activate()
@@ -51,6 +71,18 @@ void OBSBasicStatusBar::Activate()
 
 		refreshTimer->start(1000);
 		active = true;
+
+		if (streamOutput) {
+			kbps->setText("kb/s: 0");
+
+			QPixmap pixmap(20, 20);
+			pixmap.fill(QColor("transparent"));
+			QPainter painter(&pixmap);
+			painter.setPen(Qt::NoPen);
+			painter.setBrush(QBrush(QColor(32,32,32)));
+			painter.drawRect(0, 0, 20, 20);
+			statusSquare->setPixmap(pixmap);
+		}
 	}
 }
 
@@ -73,6 +105,16 @@ void OBSBasicStatusBar::Deactivate()
 		reconnectTimeout = 0;
 		active = false;
 		overloadedNotify = true;
+
+		dropping = false;
+
+		QPixmap pixmap(20, 20);
+		pixmap.fill(QColor("transparent"));
+		QPainter painter(&pixmap);
+		painter.setPen(Qt::NoPen);
+		painter.setBrush(QBrush(Qt::transparent));
+		painter.drawRect(0, 0, 20, 20);
+		statusSquare->setPixmap(pixmap);
 	}
 }
 
@@ -130,12 +172,39 @@ void OBSBasicStatusBar::UpdateBandwidth()
 	QString text;
 	text += QString("kb/s: ") +
 		QString::number(kbitsPerSec, 'f', 0);
+
 	kbps->setText(text);
 	kbps->setMinimumWidth(kbps->width());
 
 	lastBytesSent        = bytesSent;
 	lastBytesSentTime    = bytesSentTime;
 	bitrateUpdateSeconds = 0;
+
+	if (kbitsPerSec == 0) {
+		QPixmap pixmap(20, 20);
+		pixmap.fill(QColor("transparent"));
+		QPainter painter(&pixmap);
+		painter.setPen(Qt::NoPen);
+		painter.setBrush(QBrush(QColor(255,0,0)));
+		painter.drawRect(0, 0, 20, 20);
+		statusSquare->setPixmap(pixmap);
+	} else if (dropping) {
+		QPixmap pixmap(20, 20);
+		pixmap.fill(QColor("transparent"));
+		QPainter painter(&pixmap);
+		painter.setPen(Qt::NoPen);
+		painter.setBrush(QBrush(QColor(255,255,0)));
+		painter.drawRect(0, 0, 20, 20);
+		statusSquare->setPixmap(pixmap);
+	} else if (kbitsPerSec > 0) {
+		QPixmap pixmap(20, 20);
+		pixmap.fill(QColor("transparent"));
+		QPainter painter(&pixmap);
+		painter.setPen(Qt::NoPen);
+		painter.setBrush(QBrush(QColor(0,255,0)));
+		painter.drawRect(0, 0, 20, 20);
+		statusSquare->setPixmap(pixmap);
+	}
 }
 
 void OBSBasicStatusBar::UpdateCPUUsage()
@@ -196,6 +265,13 @@ void OBSBasicStatusBar::UpdateDroppedFrames()
 	int totalDropped = obs_output_get_frames_dropped(streamOutput);
 	int totalFrames  = obs_output_get_total_frames(streamOutput);
 	double percent   = (double)totalDropped / (double)totalFrames * 100.0;
+
+	if (totalDropped - previousDroppedFrameCount >= 1)
+		dropping = true;
+	else
+		dropping = false;
+
+	previousDroppedFrameCount = totalDropped;
 
 	if (!totalFrames)
 		return;
