@@ -1,3 +1,6 @@
+# Leave obs-studio folder
+cd ../
+
 curl -L -O https://s3-us-west-2.amazonaws.com/obs-nightly/Packages.pkg
 sudo installer -pkg ./Packages.pkg -target /
 
@@ -9,8 +12,10 @@ brew install qt5
 curl -L -O https://s3-us-west-2.amazonaws.com/obs-nightly/osx-deps.tar.gz
 tar -xf ./osx-deps.tar.gz -C /tmp
 
+curl https://github.com/videolan/vlc/archive/master.zip
+unzip ./vlc-master.zip
+
 # CEF Stuff
-cd ../
 curl -kLO http://opensource.spotify.com/cefbuilds/cef_binary_3.2883.1540.gedbfb20_macosx64.tar.bz2
 tar -xf ./cef_binary_3.2883.1540.gedbfb20_macosx64.tar.bz2
 cd ./cef_binary_3.2883.1540.gedbfb20_macosx64
