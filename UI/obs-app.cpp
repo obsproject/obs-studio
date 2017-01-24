@@ -318,9 +318,12 @@ static void do_log(int log_level, const char *msg, va_list args, void *param)
 
 #ifdef _WIN32
 	if (IsDebuggerPresent()) {
-		static wstring wide_buf;
 		int wNum = MultiByteToWideChar(CP_UTF8, 0, str, -1, NULL, 0);
 		if (wNum > 1) {
+			static wstring wide_buf;
+			static mutex wide_mutex;
+
+			lock_guard<mutex> lock(wide_mutex);
 			wide_buf.reserve(wNum + 1);
 			wide_buf.resize(wNum - 1);
 			MultiByteToWideChar(CP_UTF8, 0, str, -1, &wide_buf[0],
