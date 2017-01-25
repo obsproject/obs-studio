@@ -11,14 +11,16 @@ OBSBasicStatusBar::OBSBasicStatusBar(QWidget *parent)
 	: QStatusBar    (parent),
 	  delayInfo     (new QLabel),
 	  droppedFrames (new QLabel),
-	  sessionTime   (new QLabel),
+	  streamTime    (new QLabel),
+	  recordTime    (new QLabel),
 	  cpuUsage      (new QLabel),
 	  transparentPixmap (20, 20),
 	  greenPixmap       (20, 20),
 	  grayPixmap        (20, 20),
 	  redPixmap         (20, 20)
 {
-	sessionTime->setText(QString("00:00:00"));
+	streamTime->setText(QString("LIVE: 00:00:00"));
+	recordTime->setText(QString("REC: 00:00:00"));
 	cpuUsage->setText(QString("CPU: 0.0%, 0.00 fps"));
 
 	QWidget *brWidget = new QWidget(this);
@@ -37,8 +39,10 @@ OBSBasicStatusBar::OBSBasicStatusBar(QWidget *parent)
 	delayInfo->setAlignment(Qt::AlignVCenter);
 	droppedFrames->setAlignment(Qt::AlignRight);
 	droppedFrames->setAlignment(Qt::AlignVCenter);
-	sessionTime->setAlignment(Qt::AlignRight);
-	sessionTime->setAlignment(Qt::AlignVCenter);
+	streamTime->setAlignment(Qt::AlignRight);
+	streamTime->setAlignment(Qt::AlignVCenter);
+	recordTime->setAlignment(Qt::AlignRight);
+	recordTime->setAlignment(Qt::AlignVCenter);
 	cpuUsage->setAlignment(Qt::AlignRight);
 	cpuUsage->setAlignment(Qt::AlignVCenter);
 	kbps->setAlignment(Qt::AlignRight);
@@ -46,12 +50,14 @@ OBSBasicStatusBar::OBSBasicStatusBar(QWidget *parent)
 
 	delayInfo->setIndent(20);
 	droppedFrames->setIndent(20);
-	sessionTime->setIndent(20);
+	streamTime->setIndent(20);
+	recordTime->setIndent(20);
 	cpuUsage->setIndent(20);
 	kbps->setIndent(10);
 
 	addPermanentWidget(droppedFrames);
-	addPermanentWidget(sessionTime);
+	addPermanentWidget(streamTime);
+	addPermanentWidget(recordTime);
 	addPermanentWidget(cpuUsage);
 	addPermanentWidget(delayInfo);
 	addPermanentWidget(brWidget);
@@ -74,7 +80,8 @@ void OBSBasicStatusBar::Activate()
 		int skipped = video_output_get_skipped_frames(obs_get_video());
 		int total   = video_output_get_total_frames(obs_get_video());
 
-		totalSeconds = 0;
+		totalStreamSeconds = 0;
+		totalRecordSeconds = 0;
 		lastSkippedFrameCount = 0;
 		startSkippedFrameCount = skipped;
 		startTotalFrameCount = total;
@@ -94,9 +101,19 @@ void OBSBasicStatusBar::Deactivate()
 	if (!main)
 		return;
 
+	if (!streamOutput) {
+		streamTime->setText(QString("LIVE: 00:00:00"));
+		totalStreamSeconds = 0;
+	}
+
+	if (!recordOutput) {
+		recordTime->setText(QString("REC: 00:00:00"));
+		totalRecordSeconds = 0;
+	}
+
 	if (!main->outputHandler->Active()) {
 		delete refreshTimer;
-		sessionTime->setText(QString("00:00:00"));
+
 		delayInfo->setText("");
 		droppedFrames->setText("");
 		kbps->setText("");
@@ -190,19 +207,19 @@ void OBSBasicStatusBar::UpdateCPUUsage()
 	cpuUsage->setMinimumWidth(cpuUsage->width());
 }
 
-void OBSBasicStatusBar::UpdateSessionTime()
+void OBSBasicStatusBar::UpdateStreamTime()
 {
-	totalSeconds++;
+	totalStreamSeconds++;
 
-	int seconds      = totalSeconds % 60;
-	int totalMinutes = totalSeconds / 60;
+	int seconds      = totalStreamSeconds % 60;
+	int totalMinutes = totalStreamSeconds / 60;
 	int minutes      = totalMinutes % 60;
 	int hours        = totalMinutes / 60;
 
 	QString text;
-	text.sprintf("%02d:%02d:%02d", hours, minutes, seconds);
-	sessionTime->setText(text);
-	sessionTime->setMinimumWidth(sessionTime->width());
+	text.sprintf("LIVE: %02d:%02d:%02d", hours, minutes, seconds);
+	streamTime->setText(text);
+	streamTime->setMinimumWidth(streamTime->width());
 
 	if (reconnectTimeout > 0) {
 		QString msg = QTStr("Basic.StatusBar.Reconnecting")
@@ -223,6 +240,21 @@ void OBSBasicStatusBar::UpdateSessionTime()
 			--delaySecStarting;
 		UpdateDelayMsg();
 	}
+}
+
+void OBSBasicStatusBar::UpdateRecordTime()
+{
+	totalRecordSeconds++;
+
+	int seconds      = totalRecordSeconds % 60;
+	int totalMinutes = totalRecordSeconds / 60;
+	int minutes      = totalMinutes % 60;
+	int hours        = totalMinutes / 60;
+
+	QString text;
+	text.sprintf("REC: %02d:%02d:%02d", hours, minutes, seconds);
+	recordTime->setText(text);
+	recordTime->setMinimumWidth(recordTime->width());
 }
 
 void OBSBasicStatusBar::UpdateDroppedFrames()
@@ -344,7 +376,13 @@ void OBSBasicStatusBar::UpdateStatusBar()
 	OBSBasic *main = qobject_cast<OBSBasic*>(parent());
 
 	UpdateBandwidth();
-	UpdateSessionTime();
+
+	if (streamOutput)
+		UpdateStreamTime();
+
+	if (recordOutput)
+		UpdateRecordTime();
+
 	UpdateDroppedFrames();
 
 	int skipped = video_output_get_skipped_frames(obs_get_video());

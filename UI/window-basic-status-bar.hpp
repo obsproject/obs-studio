@@ -14,7 +14,8 @@ class OBSBasicStatusBar : public QStatusBar {
 private:
 	QLabel *delayInfo;
 	QLabel *droppedFrames;
-	QLabel *sessionTime;
+	QLabel *streamTime;
+	QLabel *recordTime;
 	QLabel *cpuUsage;
 	QLabel *kbps;
 	QLabel *statusSquare;
@@ -25,7 +26,8 @@ private:
 	bool overloadedNotify = true;
 
 	int retries = 0;
-	int totalSeconds = 0;
+	int totalStreamSeconds = 0;
+	int totalRecordSeconds = 0;
 
 	int reconnectTimeout = 0;
 
@@ -57,7 +59,8 @@ private:
 
 	void UpdateDelayMsg();
 	void UpdateBandwidth();
-	void UpdateSessionTime();
+	void UpdateStreamTime();
+	void UpdateRecordTime();
 	void UpdateDroppedFrames();
 
 	static void OBSOutputReconnect(void *data, calldata_t *params);
