@@ -19,6 +19,9 @@ OBSProjector::OBSProjector(QWidget *widget, obs_source_t *source_)
 {
 	setAttribute(Qt::WA_DeleteOnClose, true);
 
+	//disable application quit when last window closed
+	setAttribute(Qt::WA_QuitOnClose, false);
+
 	installEventFilter(CreateShortcutFilter());
 
 	auto addDrawCallback = [this] ()
