@@ -123,6 +123,7 @@ OBSBasic::OBSBasic(QWidget *parent)
 	: OBSMainWindow  (parent),
 	  ui             (new Ui::OBSBasic)
 {
+	setAttribute(Qt::WA_NativeWindow);
 	setAcceptDrops(true);
 
 	ui->setupUi(this);
