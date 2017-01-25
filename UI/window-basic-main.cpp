@@ -2703,6 +2703,29 @@ void OBSBasic::CloseDialogs()
 	}
 }
 
+void OBSBasic::EnumDialogs()
+{
+	visDialogs.clear();
+	modalDialogs.clear();
+	visMsgBoxes.clear();
+
+	/* fill list of Visible dialogs and Modal dialogs */
+	QList<QDialog*> dialogs = findChildren<QDialog*>();
+	for (QDialog *dialog : dialogs) {
+		if (dialog->isVisible())
+			visDialogs.append(dialog);
+		if (dialog->isModal())
+			modalDialogs.append(dialog);
+	}
+
+	/* fill list of Visible message boxes */
+	QList<QMessageBox*> msgBoxes = findChildren<QMessageBox*>();
+	for (QMessageBox *msgbox : msgBoxes) {
+		if (msgbox->isVisible())
+			visMsgBoxes.append(msgbox);
+	}
+}
+
 void OBSBasic::ClearSceneData()
 {
 	disableSaving++;
@@ -2817,11 +2840,9 @@ void OBSBasic::on_actionRemux_triggered()
 
 void OBSBasic::on_action_Settings_triggered()
 {
-	disableHiding = true;
 	OBSBasicSettings settings(this);
 	settings.exec();
 	SystemTray(false);
-	disableHiding = false;
 }
 
 void OBSBasic::on_actionAdvAudioProperties_triggered()
@@ -4893,6 +4914,15 @@ void OBSBasic::SetShowing(bool showing)
 			"BasicWindow", "geometry",
 			saveGeometry().toBase64().constData());
 
+		/* hide all visible child dialogs */
+		visDlgPositions.clear();
+		if (!visDialogs.isEmpty()) {
+			for (QDialog *dlg : visDialogs) {
+				visDlgPositions.append(dlg->pos());
+				dlg->hide();
+			}
+		}
+
 		if (showHide)
 			showHide->setText(QTStr("Basic.SystemTray.Show"));
 		QTimer::singleShot(250, this, SLOT(hide()));
@@ -4912,6 +4942,15 @@ void OBSBasic::SetShowing(bool showing)
 
 		setVisible(true);
 
+		/* show all child dialogs that was visible earlier */
+		if (!visDialogs.isEmpty()) {
+			for (int i = 0; i < visDialogs.size(); ++i) {
+				QDialog *dlg = visDialogs[i];
+				dlg->move(visDlgPositions[i]);
+				dlg->show();
+			}
+		}
+
 		/* Unminimize window if it was hidden to tray instead of task
 		 * bar. */
 		if (sysTrayMinimizeToTray()) {
@@ -4921,6 +4960,18 @@ void OBSBasic::SetShowing(bool showing)
 			setWindowState(state);
 		}
 	}
+}
+
+void OBSBasic::ToggleShowHide()
+{
+	bool showing = isVisible();
+	if (showing) {
+		/* check for modal dialogs */
+		EnumDialogs();
+		if (!modalDialogs.isEmpty() || !visMsgBoxes.isEmpty())
+			return;
+	}
+	SetShowing(!showing);
 }
 
 void OBSBasic::SystemTrayInit()
