@@ -2787,8 +2787,13 @@ void OBSBasic::closeEvent(QCloseEvent *event)
 
 void OBSBasic::changeEvent(QEvent *event)
 {
-	/* TODO */
-	UNUSED_PARAMETER(event);
+	if (event->type() == QEvent::WindowStateChange &&
+	    isMinimized() &&
+	    trayIcon->isVisible() &&
+	    sysTrayMinimizeToTray()) {
+
+		ToggleShowHide();
+	}
 }
 
 void OBSBasic::on_actionShow_Recordings_triggered()
@@ -4906,6 +4911,15 @@ void OBSBasic::SetShowing(bool showing)
 			EnablePreviewDisplay(true);
 
 		setVisible(true);
+
+		/* Unminimize window if it was hidden to tray instead of task
+		 * bar. */
+		if (sysTrayMinimizeToTray()) {
+			Qt::WindowStates state;
+			state  = windowState() & ~Qt::WindowMinimized;
+			state |= Qt::WindowActive;
+			setWindowState(state);
+		}
 	}
 }
 
@@ -5002,4 +5016,10 @@ void OBSBasic::SystemTray(bool firstStarted)
 		showHide->setText(QTStr("Basic.SystemTray.Hide"));
 	else
 		showHide->setText(QTStr("Basic.SystemTray.Show"));
+}
+
+bool OBSBasic::sysTrayMinimizeToTray()
+{
+	return config_get_bool(GetGlobalConfig(),
+			"BasicWindow", "SysTrayMinimizeToTray");
 }

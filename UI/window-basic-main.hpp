@@ -321,6 +321,8 @@ private:
 
 	void ReplayBufferClicked();
 
+	bool sysTrayMinimizeToTray();
+
 public slots:
 	void StartStreaming();
 	void StopStreaming();

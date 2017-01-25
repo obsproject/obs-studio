@@ -209,14 +209,24 @@
            </property>
           </widget>
          </item>
-         <item row="11" column="0" colspan="2">
+         <item row="11" column="1">
+          <widget class="QCheckBox" name="systemTrayAlways">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
+           <property name="text">
+            <string>Basic.Settings.General.SystemTrayHideMinimize</string>
+           </property>
+          </widget>
+         </item>
+         <item row="12" column="0" colspan="2">
           <widget class="Line" name="line_4">
            <property name="orientation">
             <enum>Qt::Horizontal</enum>
            </property>
           </widget>
          </item>
-         <item row="12" column="0" colspan="2">
+         <item row="13" column="0" colspan="2">
           <widget class="QGroupBox" name="groupBox_10">
            <property name="enabled">
             <bool>true</bool>
@@ -4188,6 +4198,12 @@
      <y>294</y>
     </hint>
    </hints>
+  </connection>
+  <connection>
+   <sender>systemTrayEnabled</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>systemTrayAlways</receiver>
+   <slot>setEnabled(bool)</slot>
   </connection>
  </connections>
 </ui>
