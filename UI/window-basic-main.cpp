@@ -123,6 +123,8 @@ OBSBasic::OBSBasic(QWidget *parent)
 	: OBSMainWindow  (parent),
 	  ui             (new Ui::OBSBasic)
 {
+	setAttribute(Qt::WA_NativeWindow);
+
 	projectorArray.resize(10, "");
 	previewProjectorArray.resize(10, 0);
 
