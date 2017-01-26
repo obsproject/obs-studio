@@ -179,3 +179,4 @@ static inline int GetProfilePath(char *path, size_t size, const char *file)
 extern bool opt_start_streaming;
 extern bool opt_start_recording;
 extern std::string opt_starting_scene;
+extern std::string opt_starting_service_profile;
