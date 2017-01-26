@@ -25,11 +25,12 @@ VertData VSDefault(VertData v_in)
 float4 PSSwipe(VertData v_in) : TARGET
 {
 	float2 swipe_uv = v_in.uv + swipe_val;
-
-	return (swipe_uv.x - saturate(swipe_uv.x) != 0.0) ||
-	       (swipe_uv.y - saturate(swipe_uv.y) != 0.0)
-		   ? tex_b.Sample(textureSampler, v_in.uv)
-		   : tex_a.Sample(textureSampler, swipe_uv);
+	
+	float4 tex_a_sample = tex_a.Sample(textureSampler, swipe_uv);
+	float4 tex_b_sample = tex_b.Sample(textureSampler, v_in.uv);
+	
+	float val = saturate(abs((swipe_uv.x - saturate(swipe_uv.x)) + (swipe_uv.y - saturate(swipe_uv.y))) * 65535);
+	return lerp(tex_a_sample, tex_b_sample, val);
 }
 
 technique Swipe
