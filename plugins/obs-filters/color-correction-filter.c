@@ -70,11 +70,10 @@ struct color_correction_filter_data {
 	struct vec3                     half_unit;
 };
 
-const static float root3 = 0.57735f;
-const static float red_weight = 0.299f;
-const static float green_weight = 0.587f;
-const static float blue_weight = 0.114f;
-
+static const float root3 = 0.57735f;
+static const float red_weight = 0.299f;
+static const float green_weight = 0.587f;
+static const float blue_weight = 0.114f;
 
 /*
  * As the functions' namesake, this provides the internal name of your Filter,
