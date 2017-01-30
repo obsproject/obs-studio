@@ -27,6 +27,7 @@ set(obs-filters_SOURCES
 	scroll-filter.c
 	chroma-key-filter.c
 	color-key-filter.c
+	color-grade-filter.c
 	sharpness-filter.c
 	gain-filter.c
 	noise-gate-filter.c
