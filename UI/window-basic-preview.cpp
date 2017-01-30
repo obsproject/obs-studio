@@ -740,18 +740,31 @@ void OBSBasicPreview::ClampAspect(vec3 &tl, vec3 &br, vec2 &size,
 	    stretchHandle == ItemHandle::TopRight   ||
 	    stretchHandle == ItemHandle::BottomLeft ||
 	    stretchHandle == ItemHandle::BottomRight) {
-		if (aspect < baseAspect)
-			size.x = size.y * baseAspect;
-		else
-			size.y = size.x / baseAspect;
+		if (aspect < baseAspect) {
+			if ((size.y >= 0 && size.x >= 0) || (size.y <= 0 && size.x <= 0))
+				size.x = size.y * baseAspect;
+			else
+				size.x = size.y * baseAspect * -1;
+		} else {
+			if ((size.y >= 0 && size.x >= 0) || (size.y <= 0 && size.x <= 0))
+				size.y = size.x / baseAspect;
+			else
+				size.y = size.x / baseAspect * -1;
+		}
 
 	} else if (stretchHandle == ItemHandle::TopCenter ||
 	           stretchHandle == ItemHandle::BottomCenter) {
-		size.x = size.y * baseAspect;
+		if ((size.y >= 0 && size.x >= 0) || (size.y <= 0 && size.x <= 0))
+			size.x = size.y * baseAspect;
+		else
+			size.x = size.y * baseAspect * -1;
 
 	} else if (stretchHandle == ItemHandle::CenterLeft ||
 	           stretchHandle == ItemHandle::CenterRight) {
-		size.y = size.x / baseAspect;
+		if ((size.y >= 0 && size.x >= 0) || (size.y <= 0 && size.x <= 0))
+			size.y = size.x / baseAspect;
+		else
+			size.y = size.x / baseAspect * -1;
 	}
 
 	size.x = std::round(size.x);
