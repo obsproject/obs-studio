@@ -274,6 +274,10 @@
                     "url": "rtmp://ingest-fra.beam.pro:1935/beam"
                 },
                 {
+                    "name": "EU: Oslo",
+                    "url": "rtmp://ingest-osl.beam.pro:1935/beam"
+                },
+                {
                     "name": "Brazil: Sao Paulo",
                     "url": "rtmp://ingest-sao.beam.pro:1935/beam"
                 },
@@ -296,6 +300,14 @@
                 {
                     "name": "Asia: Tokyo",
                     "url": "rtmp://ingest-tok.beam.pro:1935/beam"
+                },
+                {
+                    "name": "South Korea: Seoul",
+                    "url": "rtmp://ingest-seo.beam.pro:1935/beam"
+                },
+                {
+                    "name": "India: Chennai",
+                    "url": "rtmp://ingest-che.beam.pro:1935/beam"
                 }
             ],
             "recommended": {
