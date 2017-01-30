@@ -9,9 +9,6 @@ sudo python ../CI/install/osx/build_app.py
 mv ./CEF.app ./rundir/RelWithDebInfo/obs-plugins/
 mv ./obs-browser.so ./rundir/RelWithDebInfo/obs-plugins/
 
-# Fix permissions on CEF
-chmod 744 ./CEF.app/Contents/Info.plist
-
 packagesbuild ../CI/install/osx/CMakeLists.pkgproj
 
 sudo cp OBS.pkg ./$FILENAME
