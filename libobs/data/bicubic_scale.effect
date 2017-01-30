@@ -10,6 +10,7 @@ uniform float4x4 color_matrix;
 uniform float3 color_range_min = {0.0, 0.0, 0.0};
 uniform float3 color_range_max = {1.0, 1.0, 1.0};
 uniform float2 base_dimension_i;
+uniform float undistort_factor = 1.0;
 
 sampler_state textureSampler {
 	Filter    = Linear;
@@ -63,21 +64,41 @@ float4 weight4(float x)
 		weight(x + 1.0));
 }
 
-float4 pixel(float xpos, float ypos)
+float AspectUndistortX(float x, float a)
 {
-	return image.Sample(textureSampler, float2(xpos, ypos));
+	// The higher the power, the longer the linear part will be.
+	return (1.0 - a) * (x * x * x * x * x) + a * x;
 }
 
-float4 get_line(float ypos, float4 xpos, float4 linetaps)
+float AspectUndistortU(float u)
+{
+	// Normalize texture coord to -1.0 to 1.0 range, and back.
+	return AspectUndistortX((u - 0.5) * 2.0, undistort_factor) * 0.5 + 0.5;
+}
+
+float2 pixel_coord(float xpos, float ypos)
+{
+	return float2(AspectUndistortU(xpos), ypos);
+}
+
+float4 pixel(float xpos, float ypos, bool undistort)
+{
+	if (undistort)
+		return image.Sample(textureSampler, pixel_coord(xpos, ypos));
+	else
+		return image.Sample(textureSampler, float2(xpos, ypos));
+}
+
+float4 get_line(float ypos, float4 xpos, float4 linetaps, bool undistort)
 {
 	return
-		pixel(xpos.r, ypos) * linetaps.r +
-		pixel(xpos.g, ypos) * linetaps.g +
-		pixel(xpos.b, ypos) * linetaps.b +
-		pixel(xpos.a, ypos) * linetaps.a;
+		pixel(xpos.r, ypos, undistort) * linetaps.r +
+		pixel(xpos.g, ypos, undistort) * linetaps.g +
+		pixel(xpos.b, ypos, undistort) * linetaps.b +
+		pixel(xpos.a, ypos, undistort) * linetaps.a;
 }
 
-float4 DrawBicubic(VertData v_in)
+float4 DrawBicubic(VertData v_in, bool undistort)
 {
 	float2 stepxy = base_dimension_i;
 	float2 pos = v_in.uv + stepxy * 0.5;
@@ -100,20 +121,20 @@ float4 DrawBicubic(VertData v_in)
 	);
 
 	return
-		get_line(xystart.y                 , xpos, rowtaps) * coltaps.r +
-		get_line(xystart.y + stepxy.y      , xpos, rowtaps) * coltaps.g +
-		get_line(xystart.y + stepxy.y * 2.0, xpos, rowtaps) * coltaps.b +
-		get_line(xystart.y + stepxy.y * 3.0, xpos, rowtaps) * coltaps.a;
+		get_line(xystart.y                 , xpos, rowtaps, undistort) * coltaps.r +
+		get_line(xystart.y + stepxy.y      , xpos, rowtaps, undistort) * coltaps.g +
+		get_line(xystart.y + stepxy.y * 2.0, xpos, rowtaps, undistort) * coltaps.b +
+		get_line(xystart.y + stepxy.y * 3.0, xpos, rowtaps, undistort) * coltaps.a;
 }
 
-float4 PSDrawBicubicRGBA(VertData v_in) : TARGET
+float4 PSDrawBicubicRGBA(VertData v_in, bool undistort) : TARGET
 {
-	return DrawBicubic(v_in);
+	return DrawBicubic(v_in, undistort);
 }
 
 float4 PSDrawBicubicMatrix(VertData v_in) : TARGET
 {
-	float4 rgba = DrawBicubic(v_in);
+	float4 rgba = DrawBicubic(v_in, false);
 	float4 yuv;
 
 	yuv.xyz = clamp(rgba.xyz, color_range_min, color_range_max);
@@ -125,7 +146,16 @@ technique Draw
 	pass
 	{
 		vertex_shader = VSDefault(v_in);
-		pixel_shader  = PSDrawBicubicRGBA(v_in);
+		pixel_shader  = PSDrawBicubicRGBA(v_in, false);
+	}
+}
+
+technique DrawUndistort
+{
+	pass
+	{
+		vertex_shader = VSDefault(v_in);
+		pixel_shader  = PSDrawBicubicRGBA(v_in, true);
 	}
 }
 

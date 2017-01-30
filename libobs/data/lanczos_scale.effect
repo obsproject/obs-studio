@@ -10,6 +10,7 @@ uniform float4x4 color_matrix;
 uniform float3 color_range_min = {0.0, 0.0, 0.0};
 uniform float3 color_range_max = {1.0, 1.0, 1.0};
 uniform float2 base_dimension_i;
+uniform float undistort_factor = 1.0;
 
 sampler_state textureSampler
 {
@@ -64,24 +65,44 @@ float3 weight3(float x, float scale)
 		weight((x * 2.0 + 2.0 * 2.0 - 3.0) * scale, 3.0));
 }
 
-float4 pixel(float xpos, float ypos)
+float AspectUndistortX(float x, float a)
 {
-	return image.Sample(textureSampler, float2(xpos, ypos));
+	// The higher the power, the longer the linear part will be.
+	return (1.0 - a) * (x * x * x * x * x) + a * x;
+}
+
+float AspectUndistortU(float u)
+{
+	// Normalize texture coord to -1.0 to 1.0 range, and back.
+	return AspectUndistortX((u - 0.5) * 2.0, undistort_factor) * 0.5 + 0.5;
+}
+
+float2 pixel_coord(float xpos, float ypos)
+{
+	return float2(AspectUndistortU(xpos), ypos);
+}
+
+float4 pixel(float xpos, float ypos, bool undistort)
+{
+	if (undistort)
+		return image.Sample(textureSampler, pixel_coord(xpos, ypos));
+	else
+		return image.Sample(textureSampler, float2(xpos, ypos));
 }
 
 float4 get_line(float ypos, float3 xpos1, float3 xpos2, float3 rowtap1,
-		float3 rowtap2)
+		float3 rowtap2, bool undistort)
 {
 	return
-		pixel(xpos1.r, ypos) * rowtap1.r +
-		pixel(xpos1.g, ypos) * rowtap2.r +
-		pixel(xpos1.b, ypos) * rowtap1.g +
-		pixel(xpos2.r, ypos) * rowtap2.g +
-		pixel(xpos2.g, ypos) * rowtap1.b +
-		pixel(xpos2.b, ypos) * rowtap2.b;
+		pixel(xpos1.r, ypos, undistort) * rowtap1.r +
+		pixel(xpos1.g, ypos, undistort) * rowtap2.r +
+		pixel(xpos1.b, ypos, undistort) * rowtap1.g +
+		pixel(xpos2.r, ypos, undistort) * rowtap2.g +
+		pixel(xpos2.g, ypos, undistort) * rowtap1.b +
+		pixel(xpos2.b, ypos, undistort) * rowtap2.b;
 }
 
-float4 DrawLanczos(FragData v_in)
+float4 DrawLanczos(FragData v_in, bool undistort)
 {
 	float2 stepxy = base_dimension_i;
 	float2 pos = v_in.uv + stepxy * 0.5;
@@ -106,22 +127,22 @@ float4 DrawLanczos(FragData v_in)
 	float3 xpos2 = float3(xystart.x + stepxy.x * 3.0, xystart.x + stepxy.x * 4.0, xystart.x + stepxy.x * 5.0);
 
 	return
-		get_line(xystart.y                 , xpos1, xpos2, rowtap1, rowtap2) * coltap1.r +
-		get_line(xystart.y + stepxy.y      , xpos1, xpos2, rowtap1, rowtap2) * coltap2.r +
-		get_line(xystart.y + stepxy.y * 2.0, xpos1, xpos2, rowtap1, rowtap2) * coltap1.g +
-		get_line(xystart.y + stepxy.y * 3.0, xpos1, xpos2, rowtap1, rowtap2) * coltap2.g +
-		get_line(xystart.y + stepxy.y * 4.0, xpos1, xpos2, rowtap1, rowtap2) * coltap1.b +
-		get_line(xystart.y + stepxy.y * 5.0, xpos1, xpos2, rowtap1, rowtap2) * coltap2.b;
+		get_line(xystart.y                 , xpos1, xpos2, rowtap1, rowtap2, undistort) * coltap1.r +
+		get_line(xystart.y + stepxy.y      , xpos1, xpos2, rowtap1, rowtap2, undistort) * coltap2.r +
+		get_line(xystart.y + stepxy.y * 2.0, xpos1, xpos2, rowtap1, rowtap2, undistort) * coltap1.g +
+		get_line(xystart.y + stepxy.y * 3.0, xpos1, xpos2, rowtap1, rowtap2, undistort) * coltap2.g +
+		get_line(xystart.y + stepxy.y * 4.0, xpos1, xpos2, rowtap1, rowtap2, undistort) * coltap1.b +
+		get_line(xystart.y + stepxy.y * 5.0, xpos1, xpos2, rowtap1, rowtap2, undistort) * coltap2.b;
 }
 
-float4 PSDrawLanczosRGBA(FragData v_in) : TARGET
+float4 PSDrawLanczosRGBA(FragData v_in, bool undistort) : TARGET
 {
-	return DrawLanczos(v_in);
+	return DrawLanczos(v_in, undistort);
 }
 
 float4 PSDrawLanczosMatrix(FragData v_in) : TARGET
 {
-	float4 rgba = DrawLanczos(v_in);
+	float4 rgba = DrawLanczos(v_in, false);
 	float4 yuv;
 
 	yuv.xyz = clamp(rgba.xyz, color_range_min, color_range_max);
@@ -133,7 +154,16 @@ technique Draw
 	pass
 	{
 		vertex_shader = VSDefault(v_in);
-		pixel_shader  = PSDrawLanczosRGBA(v_in);
+		pixel_shader  = PSDrawLanczosRGBA(v_in, false);
+	}
+}
+
+technique DrawUndistort
+{
+	pass
+	{
+		vertex_shader = VSDefault(v_in);
+		pixel_shader  = PSDrawLanczosRGBA(v_in, true);
 	}
 }
 
