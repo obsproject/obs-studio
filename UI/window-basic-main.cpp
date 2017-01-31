@@ -1637,7 +1637,6 @@ OBSBasic::~OBSBasic()
 	config_set_int(App()->GlobalConfig(), "General", "LastVersion",
 			LIBOBS_API_VER);
 
-	QRect lastGeom = normalGeometry();
 	QList<int> splitterSizes = ui->mainSplitter->sizes();
 	bool alwaysOnTop = IsAlwaysOnTop(this);
 

@@ -1264,20 +1264,6 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 	profiler_start();
 	profile_register_root(run_program_init, 0);
 
-	auto PrintInitProfile = [&]()
-	{
-		auto snap = GetSnapshot();
-
-		profiler_snapshot_filter_roots(snap.get(), [](void *data,
-					const char *name, bool *remove)
-		{
-			*remove = (*static_cast<const char**>(data)) != name;
-			return true;
-		}, static_cast<void*>(&run_program_init));
-
-		profiler_print(snap.get());
-	};
-
 	ScopeProfiler prof{run_program_init};
 
 	QCoreApplication::addLibraryPath(".");
