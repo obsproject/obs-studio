@@ -12,7 +12,7 @@ brew install qt5
 curl -L -O https://s3-us-west-2.amazonaws.com/obs-nightly/osx-deps.tar.gz
 tar -xf ./osx-deps.tar.gz -C /tmp
 
-curl https://github.com/videolan/vlc/archive/master.zip
+curl -L -o vlc-master.zip https://github.com/videolan/vlc/archive/master.zip
 unzip ./vlc-master.zip
 
 # CEF Stuff
