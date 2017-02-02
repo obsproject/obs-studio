@@ -42,8 +42,16 @@
                     "url": "rtmp://live-fra.twitch.tv/app"
                 },
                 {
+                    "name": "EU: Lisbon, Portugal",
+                    "url": "rtmp://live-lis.twitch.tv/app"
+                },
+                {
                     "name": "EU: London, UK",
                     "url": "rtmp://live-lhr.twitch.tv/app"
+                },
+                {
+                    "name": "EU: Milan, Italy",
+                    "url": "rtmp://live-mil.twitch.tv/app"
                 },
                 {
                     "name": "EU: Paris, FR",
@@ -62,12 +70,24 @@
                     "url": "rtmp://live-waw.twitch.tv/app"
                 },
                 {
+                    "name": "NA: Mexico City",
+                    "url": "rtmp://live-qro.twitch.tv/app"
+                },
+                {
                     "name": "South America: Argentina",
                     "url": "rtmp://live-eze.twitch.tv/app"
                 },
                 {
                     "name": "South America: Chile",
                     "url": "rtmp://live-scl.twitch.tv/app"
+                },
+                {
+                    "name": "South America: Lima, Peru",
+                    "url": "rtmp://live-lim.twitch.tv/app"
+                },
+                {
+                    "name": "South America: Medellin, Columbia",
+                    "url": "rtmp://live-mde.twitch.tv/app"
                 },
                 {
                     "name": "South America: Rio de Janeiro, Brazil",
@@ -132,7 +152,6 @@
             ],
             "recommended": {
                 "keyint": 2,
-                "profile": "main",
                 "max video bitrate": 51000,
                 "max audio bitrate": 160
             }
@@ -176,10 +195,6 @@
                 {
                     "name": "Russia: Moscow",
                     "url": "rtmp://live.dme.hitbox.tv/push"
-                },
-                {
-                    "name": "US-East: Washington",
-                    "url": "rtmp://live.vgn.hitbox.tv/push"
                 },
                 {
                     "name": "US-East: New York - 1",
