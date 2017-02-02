@@ -13,7 +13,7 @@ curl -L -O https://s3-us-west-2.amazonaws.com/obs-nightly/osx-deps.tar.gz
 tar -xf ./osx-deps.tar.gz -C /tmp
 
 curl -L -o vlc-master.zip https://github.com/videolan/vlc/archive/master.zip
-unzip ./vlc-master.zip
+unzip -q ./vlc-master.zip
 
 # CEF Stuff
 curl -kLO http://opensource.spotify.com/cefbuilds/cef_binary_3.2883.1540.gedbfb20_macosx64.tar.bz2
