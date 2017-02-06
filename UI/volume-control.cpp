@@ -3,6 +3,7 @@
 #include "mute-checkbox.hpp"
 #include "slider-absoluteset-style.hpp"
 #include <util/platform.h>
+#include <util/threading.h>
 #include <QHBoxLayout>
 #include <QVBoxLayout>
 #include <QPushButton>
@@ -15,6 +16,8 @@
 #include <math.h>
 
 using namespace std;
+
+QWeakPointer<VolumeMeterTimer> VolumeMeter::updateTimer;
 
 void VolControl::OBSVolumeChanged(void *data, float db)
 {
@@ -29,11 +32,10 @@ void VolControl::OBSVolumeLevel(void *data, float level, float mag,
 {
 	VolControl *volControl = static_cast<VolControl*>(data);
 
-	QMetaObject::invokeMethod(volControl, "VolumeLevel",
-		Q_ARG(float, mag),
-		Q_ARG(float, level),
-		Q_ARG(float, peak),
-		Q_ARG(bool,  muted));
+	if (muted)
+		level = mag = peak = 0.0f;
+
+	volControl->volMeter->setLevels(mag, level, peak);
 }
 
 void VolControl::OBSVolumeMuted(void *data, calldata_t *calldata)
@@ -255,30 +257,51 @@ VolumeMeter::VolumeMeter(QWidget *parent)
 	peakColor.setRgb(0x3E, 0xF1, 0x2B);
 	peakHoldColor.setRgb(0x00, 0x00, 0x00);
 	
-	resetTimer = new QTimer(this);
-	connect(resetTimer, SIGNAL(timeout()), this, SLOT(resetState()));
+	updateTimerRef = updateTimer.toStrongRef();
+	if (!updateTimerRef) {
+		updateTimerRef = QSharedPointer<VolumeMeterTimer>::create();
+		updateTimerRef->start(100);
+		updateTimer = updateTimerRef;
+	}
 
-	resetState();
+	updateTimerRef->AddVolControl(this);
 }
 
-void VolumeMeter::resetState(void)
+VolumeMeter::~VolumeMeter()
 {
-	setLevels(0.0f, 0.0f, 0.0f);
-	if (resetTimer->isActive())
-		resetTimer->stop();
+	updateTimerRef->RemoveVolControl(this);
 }
 
 void VolumeMeter::setLevels(float nmag, float npeak, float npeakHold)
 {
-	mag      = nmag;
-	peak     = npeak;
-	peakHold = npeakHold;
+	uint64_t ts = os_gettime_ns();
+	QMutexLocker locker(&dataMutex);
 
-	update();
+	mag += nmag;
+	peak += npeak;
+	peakHold += npeakHold;
+	multiple += 1.0f;
+	lastUpdateTime = ts;
+}
 
-	if (resetTimer->isActive())
-		resetTimer->stop();
-	resetTimer->start(1000);
+inline void VolumeMeter::calcLevels()
+{
+	uint64_t ts = os_gettime_ns();
+	QMutexLocker locker(&dataMutex);
+
+	if (lastUpdateTime && ts - lastUpdateTime > 1000000000) {
+		mag = peak = peakHold = 0.0f;
+		multiple = 1.0f;
+		lastUpdateTime = 0;
+	}
+
+	if (multiple > 0.0f) {
+		curMag = mag / multiple;
+		curPeak = peak / multiple;
+		curPeakHold = peakHold / multiple;
+
+		mag = peak = peakHold = multiple = 0.0f;
+	}
 }
 
 void VolumeMeter::paintEvent(QPaintEvent *event)
@@ -291,9 +314,11 @@ void VolumeMeter::paintEvent(QPaintEvent *event)
 	int width  = size().width();
 	int height = size().height();
 
-	int scaledMag      = int((float)width * mag);
-	int scaledPeak     = int((float)width * peak);
-	int scaledPeakHold = int((float)width * peakHold);
+	calcLevels();
+
+	int scaledMag      = int((float)width * curMag);
+	int scaledPeak     = int((float)width * curPeak);
+	int scaledPeakHold = int((float)width * curPeakHold);
 
 	gradient.setStart(qreal(scaledMag), 0);
 	gradient.setFinalStop(qreal(scaledPeak), 0);
@@ -323,4 +348,20 @@ void VolumeMeter::paintEvent(QPaintEvent *event)
 	painter.drawLine(scaledPeakHold, 0,
 		scaledPeakHold, height);
 
+}
+
+void VolumeMeterTimer::AddVolControl(VolumeMeter *meter)
+{
+	volumeMeters.push_back(meter);
+}
+
+void VolumeMeterTimer::RemoveVolControl(VolumeMeter *meter)
+{
+	volumeMeters.removeOne(meter);
+}
+
+void VolumeMeterTimer::timerEvent(QTimerEvent*)
+{
+	for (VolumeMeter *meter : volumeMeters)
+		meter->update();
 }

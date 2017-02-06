@@ -2,8 +2,13 @@
 
 #include <obs.hpp>
 #include <QWidget>
+#include <QSharedPointer>
+#include <QTimer>
+#include <QMutex>
+#include <QList>
 
 class QPushButton;
+class VolumeMeterTimer;
 
 class VolumeMeter : public QWidget
 {
@@ -14,12 +19,23 @@ class VolumeMeter : public QWidget
 	Q_PROPERTY(QColor peakHoldColor READ getPeakHoldColor WRITE setPeakHoldColor DESIGNABLE true)
 
 private:
-	float mag, peak, peakHold;
+	static QWeakPointer<VolumeMeterTimer> updateTimer;
+	QSharedPointer<VolumeMeterTimer> updateTimerRef;
+	float curMag = 0.0f, curPeak = 0.0f, curPeakHold = 0.0f;
+
+	inline void calcLevels();
+
+	QMutex dataMutex;
+	float mag = 0.0f, peak = 0.0f, peakHold = 0.0f;
+	float multiple = 0.0f;
+	uint64_t lastUpdateTime = 0;
+
 	QColor bkColor, magColor, peakColor, peakHoldColor;
-	QTimer *resetTimer;
 
 public:
 	explicit VolumeMeter(QWidget *parent = 0);
+	~VolumeMeter();
+
 	void setLevels(float nmag, float npeak, float npeakHold);
 	QColor getBkColor() const;
 	void setBkColor(QColor c);
@@ -32,8 +48,20 @@ public:
 
 protected:
 	void paintEvent(QPaintEvent *event);
-private slots:
-	void resetState();
+};
+
+class VolumeMeterTimer : public QTimer {
+	Q_OBJECT
+
+public:
+	inline VolumeMeterTimer() : QTimer() {}
+
+	void AddVolControl(VolumeMeter *meter);
+	void RemoveVolControl(VolumeMeter *meter);
+
+protected:
+	virtual void timerEvent(QTimerEvent *event) override;
+	QList<VolumeMeter*> volumeMeters;
 };
 
 class QLabel;

@@ -120,6 +120,14 @@ enum obs_source_type {
  */
 #define OBS_SOURCE_DEPRECATED (1<<8)
 
+/**
+ * Source cannot have its audio monitored
+ *
+ * Specifies that this source may cause a feedback loop if audio is monitored.
+ * This is used primarily with desktop audio capture sources.
+ */
+#define OBS_SOURCE_DO_NOT_MONITOR (1<<9)
+
 /** @} */
 
 typedef void (*obs_source_enum_proc_t)(obs_source_t *parent,

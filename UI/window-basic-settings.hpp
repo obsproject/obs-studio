@@ -240,6 +240,7 @@ private:
 
 	void FillSimpleRecordingValues();
 	void FillSimpleStreamingValues();
+	void FillAudioMonitoringDevices();
 
 	void RecalcOutputResPixels(const char *resText);
 

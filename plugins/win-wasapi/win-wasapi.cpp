@@ -589,7 +589,8 @@ void RegisterWASAPIOutput()
 	info.id              = "wasapi_output_capture";
 	info.type            = OBS_SOURCE_TYPE_INPUT;
 	info.output_flags    = OBS_SOURCE_AUDIO |
-	                       OBS_SOURCE_DO_NOT_DUPLICATE;
+	                       OBS_SOURCE_DO_NOT_DUPLICATE |
+	                       OBS_SOURCE_DO_NOT_MONITOR;
 	info.get_name        = GetWASAPIOutputName;
 	info.create          = CreateWASAPIOutput;
 	info.destroy         = DestroyWASAPISource;
