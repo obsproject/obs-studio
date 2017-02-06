@@ -2936,8 +2936,8 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>80</width>
-              <height>16</height>
+              <width>98</width>
+              <height>28</height>
              </rect>
             </property>
            </widget>
@@ -3255,8 +3255,8 @@
           <rect>
            <x>0</x>
            <y>0</y>
-           <width>818</width>
-           <height>697</height>
+           <width>98</width>
+           <height>28</height>
           </rect>
          </property>
          <layout class="QFormLayout" name="hotkeyLayout">
@@ -3527,6 +3527,28 @@
                       <cstring>colorSpace</cstring>
                      </property>
                     </widget>
+                   </item>
+                  </layout>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QGroupBox" name="advAudioGroupBox">
+                  <property name="title">
+                   <string>Basic.Settings.Audio</string>
+                  </property>
+                  <layout class="QFormLayout" name="formLayout_27">
+                   <item row="0" column="0">
+                    <widget class="QLabel" name="monitoringDeviceLabel">
+                     <property name="text">
+                      <string>Basic.Settings.Advanced.Audio.MonitoringDevice</string>
+                     </property>
+                     <property name="buddy">
+                      <cstring>monitoringDevice</cstring>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="0" column="1">
+                    <widget class="QComboBox" name="monitoringDevice"/>
                    </item>
                   </layout>
                  </widget>
@@ -3974,6 +3996,7 @@
   <tabstop>colorRange</tabstop>
   <tabstop>disableOSXVSync</tabstop>
   <tabstop>resetOSXVSync</tabstop>
+  <tabstop>monitoringDevice</tabstop>
   <tabstop>filenameFormatting</tabstop>
   <tabstop>overwriteIfExists</tabstop>
   <tabstop>simpleRBPrefix</tabstop>

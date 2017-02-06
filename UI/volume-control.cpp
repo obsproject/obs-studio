@@ -3,6 +3,7 @@
 #include "mute-checkbox.hpp"
 #include "slider-absoluteset-style.hpp"
 #include <util/platform.h>
+#include <util/threading.h>
 #include <QHBoxLayout>
 #include <QVBoxLayout>
 #include <QPushButton>
