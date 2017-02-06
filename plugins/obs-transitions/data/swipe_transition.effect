@@ -14,6 +14,8 @@ struct VertData {
 	float2 uv  : TEXCOORD0;
 };
 
+#include "premultiplied.inc"
+
 VertData VSDefault(VertData v_in)
 {
 	VertData vert_out;
@@ -25,11 +27,14 @@ VertData VSDefault(VertData v_in)
 float4 PSSwipe(VertData v_in) : TARGET
 {
 	float2 swipe_uv = v_in.uv + swipe_val;
+	float4 outc;
 
-	return (swipe_uv.x - saturate(swipe_uv.x) != 0.0) ||
+	outc = (swipe_uv.x - saturate(swipe_uv.x) != 0.0) ||
 	       (swipe_uv.y - saturate(swipe_uv.y) != 0.0)
 		   ? tex_b.Sample(textureSampler, v_in.uv)
 		   : tex_a.Sample(textureSampler, swipe_uv);
+
+	return convert_pmalpha(outc);
 }
 
 technique Swipe

@@ -14,6 +14,8 @@ struct VertData {
 	float2 uv  : TEXCOORD0;
 };
 
+#include "premultiplied.inc"
+
 VertData VSDefault(VertData v_in)
 {
 	VertData vert_out;
@@ -24,7 +26,7 @@ VertData VSDefault(VertData v_in)
 
 float4 PSFadeToColor(VertData v_in) : TARGET
 {
-	return lerp(tex.Sample(textureSampler, v_in.uv), color, swp);
+	return lerp(convert_pmalpha(tex.Sample(textureSampler, v_in.uv)), color, swp);
 }
 
 technique FadeToColor
