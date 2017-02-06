@@ -1192,7 +1192,7 @@ static inline void LoadFPSCommon(OBSBasic *main, Ui::OBSBasicSettings *ui)
 			"FPSCommon");
 
 	int idx = ui->fpsCommon->findText(val);
-	if (idx == -1) idx = 3;
+	if (idx == -1) idx = 4;
 	ui->fpsCommon->setCurrentIndex(idx);
 }
 

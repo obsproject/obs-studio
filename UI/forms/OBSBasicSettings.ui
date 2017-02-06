@@ -2936,8 +2936,8 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>98</width>
-              <height>28</height>
+              <width>800</width>
+              <height>69</height>
              </rect>
             </property>
            </widget>
@@ -3091,10 +3091,10 @@
              <item alignment="Qt::AlignTop">
               <widget class="QComboBox" name="fpsCommon">
                <property name="currentText">
-                <string notr="true">30</string>
+                <string notr="true">10</string>
                </property>
                <property name="currentIndex">
-                <number>3</number>
+                <number>0</number>
                </property>
                <item>
                 <property name="text">
@@ -3104,6 +3104,11 @@
                <item>
                 <property name="text">
                  <string notr="true">20</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>24 NTSC</string>
                 </property>
                </item>
                <item>
@@ -3255,8 +3260,8 @@
           <rect>
            <x>0</x>
            <y>0</y>
-           <width>98</width>
-           <height>28</height>
+           <width>818</width>
+           <height>697</height>
           </rect>
          </property>
          <layout class="QFormLayout" name="hotkeyLayout">
