@@ -277,8 +277,9 @@ struct obs_core_video {
 	gs_effect_t                     *deinterlace_yadif_2x_effect;
 };
 
+struct audio_monitor;
+
 struct obs_core_audio {
-	/* TODO: sound output subsystem */
 	audio_t                         *audio;
 
 	DARRAY(struct obs_source*)      render_order;
@@ -290,6 +291,11 @@ struct obs_core_audio {
 	int                             total_buffering_ticks;
 
 	float                           user_volume;
+
+	pthread_mutex_t                 monitoring_mutex;
+	DARRAY(struct audio_monitor*)   monitors;
+	char                            *monitoring_device_name;
+	char                            *monitoring_device_id;
 };
 
 /* user sources, output channels, and displays */
@@ -546,6 +552,7 @@ struct obs_source {
 	volatile bool                   timing_set;
 	volatile uint64_t               timing_adjust;
 	uint64_t                        resample_offset;
+	uint64_t                        last_audio_ts;
 	uint64_t                        next_audio_ts_min;
 	uint64_t                        next_audio_sys_ts_min;
 	uint64_t                        last_frame_ts;
@@ -661,6 +668,9 @@ struct obs_source {
 	enum obs_transition_mode        transition_mode;
 	enum obs_transition_scale_type  transition_scale_type;
 	struct matrix4                  transition_matrices[2];
+
+	struct audio_monitor            *monitor;
+	enum obs_monitoring_type        monitoring_type;
 };
 
 extern const struct obs_source_info *get_source_info(const char *id);
@@ -678,6 +688,10 @@ extern void obs_transition_enum_sources(obs_source_t *transition,
 		obs_source_enum_proc_t enum_callback, void *param);
 extern void obs_transition_save(obs_source_t *source, obs_data_t *data);
 extern void obs_transition_load(obs_source_t *source, obs_data_t *data);
+
+struct audio_monitor *audio_monitor_create(obs_source_t *source);
+void audio_monitor_reset(struct audio_monitor *monitor);
+extern void audio_monitor_destroy(struct audio_monitor *monitor);
 
 extern void obs_source_destroy(struct obs_source *source);
 

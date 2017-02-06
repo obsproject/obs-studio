@@ -68,6 +68,13 @@ if(WIN32)
 		util/windows/CoTaskMemPtr.hpp
 		util/windows/HRError.hpp
 		util/windows/WinHandle.hpp)
+	set(libobs_audio_monitoring_SOURCES
+		audio-monitoring/win32/wasapi-output.c
+		audio-monitoring/win32/wasapi-enum-devices.c
+		)
+	set(libobs_audio_monitoring_HEADERS
+		audio-monitoring/win32/wasapi-output.h
+		)
 	set(libobs_PLATFORM_DEPS winmm)
 	if(MSVC)
 		set(libobs_PLATFORM_DEPS
@@ -83,6 +90,13 @@ elseif(APPLE)
 		util/platform-cocoa.m)
 	set(libobs_PLATFORM_HEADERS
 		util/threading-posix.h)
+	set(libobs_audio_monitoring_SOURCES
+		audio-monitoring/osx/coreaudio-enum-devices.c
+		audio-monitoring/osx/coreaudio-output.c
+		)
+	set(libobs_audio_monitoring_HEADERS
+		audio-monitoring/osx/mac-helpers.h
+		)
 
 	set_source_files_properties(${libobs_PLATFORM_SOURCES}
 		PROPERTIES
@@ -92,6 +106,18 @@ elseif(APPLE)
 	find_library(COCOA Cocoa)
 	mark_as_advanced(COCOA)
 	include_directories(${COCOA})
+
+	find_library(COREAUDIO CoreAudio)
+	mark_as_advanced(COREAUDIO)
+	include_directories(${COREAUDIO})
+
+	find_library(AUDIOTOOLBOX AudioToolbox)
+	mark_as_advanced(AUDIOTOOLBOX)
+	include_directories(${AUDIOTOOLBOX})
+
+	find_library(AUDIOUNIT AudioUnit)
+	mark_as_advanced(AUDIOUNIT)
+	include_directories(${AUDIOUNIT})
 
 	find_library(APPKIT AppKit)
 	mark_as_advanced(APPKIT)
@@ -107,6 +133,9 @@ elseif(APPLE)
 
 	set(libobs_PLATFORM_DEPS
 		${COCOA}
+		${COREAUDIO}
+		${AUDIOUNIT}
+		${AUDIOTOOLBOX}
 		${APPKIT}
 		${IOKIT}
 		${CARBON})
@@ -118,6 +147,9 @@ elseif(UNIX)
 		util/platform-nix.c)
 	set(libobs_PLATFORM_HEADERS
 		util/threading-posix.h)
+	set(libobs_audio_monitoring_SOURCES
+		audio-monitoring/null/null-audio-monitoring.c
+		)
 
 	if(DBUS_FOUND)
 		set(libobs_PLATFORM_SOURCES ${libobs_PLATFORM_SOURCES}
@@ -334,7 +366,10 @@ set(libobs_HEADERS
 	${libobs_graphics_HEADERS}
 	${libobs_mediaio_HEADERS}
 	${libobs_util_HEADERS}
-	${libobs_libobs_HEADERS})
+	${libobs_libobs_HEADERS}
+	${libobs_audio_monitoring_SOURCES}
+	${libobs_audio_monitoring_HEADERS}
+	)
 
 source_group("callback\\Source Files" FILES ${libobs_callback_SOURCES})
 source_group("callback\\Header Files" FILES ${libobs_callback_HEADERS})
@@ -346,6 +381,8 @@ source_group("media-io\\Source Files" FILES ${libobs_mediaio_SOURCES})
 source_group("media-io\\Header Files" FILES ${libobs_mediaio_HEADERS})
 source_group("util\\Source Files" FILES ${libobs_util_SOURCES})
 source_group("util\\Header Files" FILES ${libobs_util_HEADERS})
+source_group("audio-monitoring\\Source Files" FILES ${libobs_audio_monitoring_SOURCES})
+source_group("audio-monitoring\\Header Files" FILES ${libobs_audio_monitoring_HEADERS})
 
 if(BUILD_CAPTIONS)
 	include_directories(${CMAKE_SOURCE_DIR}/deps/libcaption)

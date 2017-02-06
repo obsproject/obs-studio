@@ -503,6 +503,8 @@ void obs_source_destroy(struct obs_source *source)
 		source->context.data = NULL;
 	}
 
+	audio_monitor_destroy(source->monitor);
+
 	obs_hotkey_unregister(source->push_to_talk_key);
 	obs_hotkey_unregister(source->push_to_mute_key);
 	obs_hotkey_pair_unregister(source->mute_unmute_key);
@@ -1184,6 +1186,7 @@ static void source_output_audio_data(obs_source_t *source,
 			in.timestamp = source->next_audio_ts_min;
 	}
 
+	source->last_audio_ts = in.timestamp;
 	source->next_audio_ts_min = in.timestamp +
 		conv_frames_to_time(sample_rate, in.frames);
 
@@ -1226,10 +1229,12 @@ static void source_output_audio_data(obs_source_t *source,
 		source->last_sync_offset = sync_offset;
 	}
 
-	if (push_back && source->audio_ts)
-		source_output_audio_push_back(source, &in);
-	else
-		source_output_audio_place(source, &in);
+	if (source->monitoring_type != OBS_MONITORING_TYPE_MONITOR_ONLY) {
+		if (push_back && source->audio_ts)
+			source_output_audio_push_back(source, &in);
+		else
+			source_output_audio_place(source, &in);
+	}
 
 	pthread_mutex_unlock(&source->audio_buf_mutex);
 
@@ -3890,4 +3895,39 @@ void obs_source_remove_audio_capture_callback(obs_source_t *source,
 	pthread_mutex_lock(&source->audio_cb_mutex);
 	da_erase_item(source->audio_cb_list, &info);
 	pthread_mutex_unlock(&source->audio_cb_mutex);
+}
+
+void obs_source_set_monitoring_type(obs_source_t *source,
+		enum obs_monitoring_type type)
+{
+	bool was_on;
+	bool now_on;
+
+	if (!obs_source_valid(source, "obs_source_set_monitoring_type"))
+		return;
+	if (source->info.output_flags & OBS_SOURCE_DO_NOT_MONITOR)
+		return;
+	if (source->monitoring_type == type)
+		return;
+
+	was_on = source->monitoring_type != OBS_MONITORING_TYPE_NONE;
+	now_on = type != OBS_MONITORING_TYPE_NONE;
+
+	if (was_on != now_on) {
+		if (!was_on) {
+			source->monitor = audio_monitor_create(source);
+		} else {
+			audio_monitor_destroy(source->monitor);
+			source->monitor = NULL;
+		}
+	}
+
+	source->monitoring_type = type;
+}
+
+enum obs_monitoring_type obs_source_get_monitoring_type(
+		const obs_source_t *source)
+{
+	return obs_source_valid(source, "obs_source_get_monitoring_type") ?
+		source->monitoring_type : OBS_MONITORING_TYPE_NONE;
 }
