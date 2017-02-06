@@ -337,7 +337,7 @@ static void ffmpeg_source_defaults(obs_data_t *settings)
 	obs_data_set_default_bool(settings, "clear_on_media_end", true);
 	obs_data_set_default_bool(settings, "restart_on_activate", true);
 	obs_data_set_default_bool(settings, "force_scale", true);
-#if defined(_WIN32) || defined(__APPLE__)
+#if defined(_WIN32)
 	obs_data_set_default_bool(settings, "hw_decode", true);
 #endif
 }
