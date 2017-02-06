@@ -37,6 +37,7 @@ static bool ready_deinterlace_frames(obs_source_t *source, uint64_t sys_time)
 		if (source->async_frames.num == 2)
 			source->async_frames.array[0]->prev_frame = true;
 		source->deinterlace_offset = 0;
+		source->last_frame_ts = next_frame->timestamp;
 		return true;
 	}
 

@@ -2513,6 +2513,7 @@ static bool ready_async_frame(obs_source_t *source, uint64_t sys_time)
 			next_frame = source->async_frames.array[0];
 		}
 
+		source->last_frame_ts = next_frame->timestamp;
 		return true;
 	}
 
