@@ -74,6 +74,10 @@
                     "url": "rtmp://live-qro.twitch.tv/app"
                 },
                 {
+                    "name": "NA: Toronto, Canada",
+                    "url": "rtmp://live-yto.twitch.tv/app"
+                },
+                {
                     "name": "South America: Argentina",
                     "url": "rtmp://live-eze.twitch.tv/app"
                 },

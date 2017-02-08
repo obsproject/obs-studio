@@ -1,10 +1,10 @@
 {
 	"url": "https://obsproject.com/obs2_update/rtmp-services",
-	"version": 49,
+	"version": 50,
 	"files": [
 		{
 			"name": "services.json",
-			"version": 49
+			"version": 50
 		}
 	]
 }
