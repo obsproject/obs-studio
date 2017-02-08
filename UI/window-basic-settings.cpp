@@ -3175,6 +3175,7 @@ void OBSBasicSettings::on_filenameFormatting_textEdited(const QString &text)
 		text.toStdString().find_first_of("<>:\"|?*");
 #else
 	size_t invalidLocation = string::npos;
+	UNUSED_PARAMETER(text);
 #endif
 
 	if (invalidLocation != string::npos)
