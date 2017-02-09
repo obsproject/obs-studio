@@ -145,7 +145,7 @@ static void add_video_encoder_params(struct ffmpeg_muxer *stream,
 	obs_data_release(settings);
 
 	dstr_catf(cmd, "%s %d %d %d %d %d ",
-			"h264",
+			obs_encoder_get_codec(vencoder),
 			bitrate,
 			obs_output_get_width(stream->output),
 			obs_output_get_height(stream->output),
