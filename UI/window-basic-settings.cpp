@@ -695,15 +695,28 @@ void OBSBasicSettings::LoadEncoderTypes()
 		const char *codec = obs_get_encoder_codec(type);
 		uint32_t caps = obs_get_encoder_caps(type);
 
-		if (strcmp(codec, "h264") != 0)
+		if (obs_get_encoder_type(type) != OBS_ENCODER_VIDEO)
 			continue;
+
+		const char* streaming_codecs[] = {
+			"h264",
+			//"hevc",
+		};
+		bool is_streaming_codec = false;
+		for (const char* test_codec : streaming_codecs) {
+			if (strcmp(codec, test_codec) == 0) {
+				is_streaming_codec = true;
+				break;
+			}
+		}
 		if ((caps & OBS_ENCODER_CAP_DEPRECATED) != 0)
 			continue;
 
 		QString qName = QT_UTF8(name);
 		QString qType = QT_UTF8(type);
 
-		ui->advOutEncoder->addItem(qName, qType);
+		if (is_streaming_codec)
+			ui->advOutEncoder->addItem(qName, qType);
 		ui->advOutRecEncoder->addItem(qName, qType);
 	}
 }
