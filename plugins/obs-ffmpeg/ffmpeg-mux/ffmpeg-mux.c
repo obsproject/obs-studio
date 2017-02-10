@@ -355,7 +355,8 @@ static void create_audio_stream(struct ffmpeg_mux *ffm, int idx)
 
 static bool init_streams(struct ffmpeg_mux *ffm)
 {
-	create_video_stream(ffm);
+	if (ffm->params.has_video)
+		create_video_stream(ffm);
 
 	if (ffm->params.tracks) {
 		ffm->audio_streams =
