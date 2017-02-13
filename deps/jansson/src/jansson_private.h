@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2013 Petri Lehtinen <petri@digip.org>
+ * Copyright (c) 2009-2016 Petri Lehtinen <petri@digip.org>
  *
  * Jansson is free software; you can redistribute it and/or modify
  * it under the terms of the MIT license. See LICENSE for details.
@@ -34,7 +34,6 @@
 typedef struct {
     json_t json;
     hashtable_t hashtable;
-    size_t serial;
     int visited;
 } json_object_t;
 
@@ -81,7 +80,7 @@ void jsonp_error_vset(json_error_t *error, int line, int column,
 
 /* Locale independent string<->double conversions */
 int jsonp_strtod(strbuffer_t *strbuffer, double *out);
-int jsonp_dtostr(char *buffer, size_t size, double value);
+int jsonp_dtostr(char *buffer, size_t size, double value, int prec);
 
 /* Wrappers for custom memory functions */
 void* jsonp_malloc(size_t size);
@@ -90,10 +89,20 @@ char *jsonp_strndup(const char *str, size_t length);
 char *jsonp_strdup(const char *str);
 char *jsonp_strndup(const char *str, size_t len);
 
+
 /* Windows compatibility */
-#ifdef _WIN32
-#define snprintf _snprintf
-#define vsnprintf _vsnprintf
+#if defined(_WIN32) || defined(WIN32)
+#  if defined(_MSC_VER)  /* MS compiller */
+#    if (_MSC_VER < 1900) && !defined(snprintf)  /* snprintf not defined yet & not introduced */
+#      define snprintf _snprintf
+#    endif
+#    if (_MSC_VER < 1500) && !defined(vsnprintf)  /* vsnprintf not defined yet & not introduced */
+#      define vsnprintf(b,c,f,a) _vsnprintf(b,c,f,a)
+#    endif
+#  else  /* Other Windows compiller, old definition */
+#    define snprintf _snprintf
+#    define vsnprintf _vsnprintf
+#  endif
 #endif
 
 #endif

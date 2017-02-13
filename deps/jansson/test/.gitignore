@@ -15,3 +15,7 @@ suites/api/test_pack
 suites/api/test_simple
 suites/api/test_unpack
 suites/api/test_load_callback
+run-suites.log
+run-suites.trs
+test-suite.log
+

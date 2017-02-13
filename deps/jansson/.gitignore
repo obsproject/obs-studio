@@ -19,6 +19,8 @@ install-sh
 libtool
 ltmain.sh
 missing
+compile
+test-driver
 *.lo
 *.la
 stamp-h1

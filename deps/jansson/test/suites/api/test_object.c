@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2013 Petri Lehtinen <petri@digip.org>
+ * Copyright (c) 2009-2016 Petri Lehtinen <petri@digip.org>
  *
  * Jansson is free software; you can redistribute it and/or modify
  * it under the terms of the MIT license. See LICENSE for details.
@@ -139,6 +139,32 @@ static void test_update()
     json_decref(object);
 }
 
+static void test_set_many_keys()
+{
+    json_t *object, *value;
+    const char *keys = "abcdefghijklmnopqrstuvwxyz";
+    char buf[2];
+    size_t i;
+
+    object = json_object();
+    if (!object)
+        fail("unable to create object");
+
+    value = json_string("a");
+    if (!value)
+        fail("unable to create string");
+
+    buf[1] = '\0';
+    for (i = 0; i < strlen(keys); i++) {
+        buf[0] = keys[i];
+        if (json_object_set(object, buf, value))
+            fail("unable to set object key");
+    }
+
+    json_decref(object);
+    json_decref(value);
+}
+
 static void test_conditional_updates()
 {
     json_t *object, *other;
@@ -262,7 +288,7 @@ static void test_iterators()
     foo = json_string("foo");
     bar = json_string("bar");
     baz = json_string("baz");
-    if(!object || !foo || !bar || !bar)
+    if(!object || !foo || !bar || !baz)
         fail("unable to create values");
 
     if(json_object_iter_next(object, NULL))
@@ -276,26 +302,26 @@ static void test_iterators()
     iter = json_object_iter(object);
     if(!iter)
         fail("unable to get iterator");
-    if(strcmp(json_object_iter_key(iter), "a"))
-        fail("iterating failed: wrong key");
-    if(json_object_iter_value(iter) != foo)
-        fail("iterating failed: wrong value");
+    if (strcmp(json_object_iter_key(iter), "a") != 0)
+        fail("iterating doesn't yield keys in order");
+    if (json_object_iter_value(iter) != foo)
+        fail("iterating doesn't yield values in order");
 
     iter = json_object_iter_next(object, iter);
     if(!iter)
         fail("unable to increment iterator");
-    if(strcmp(json_object_iter_key(iter), "b"))
-        fail("iterating failed: wrong key");
-    if(json_object_iter_value(iter) != bar)
-        fail("iterating failed: wrong value");
+    if (strcmp(json_object_iter_key(iter), "b") != 0)
+        fail("iterating doesn't yield keys in order");
+    if (json_object_iter_value(iter) != bar)
+        fail("iterating doesn't yield values in order");
 
     iter = json_object_iter_next(object, iter);
     if(!iter)
         fail("unable to increment iterator");
-    if(strcmp(json_object_iter_key(iter), "c"))
-        fail("iterating failed: wrong key");
-    if(json_object_iter_value(iter) != baz)
-        fail("iterating failed: wrong value");
+    if (strcmp(json_object_iter_key(iter), "c") != 0)
+        fail("iterating doesn't yield keys in order");
+    if (json_object_iter_value(iter) != baz)
+        fail("iterating doesn't yield values in order");
 
     if(json_object_iter_next(object, iter) != NULL)
         fail("able to iterate over the end");
@@ -312,22 +338,14 @@ static void test_iterators()
     if(json_object_iter_value(iter) != bar)
         fail("iterating failed: wrong value");
 
-    iter = json_object_iter_next(object, iter);
-    if(!iter)
-        fail("unable to increment iterator");
-    if(strcmp(json_object_iter_key(iter), "c"))
-        fail("iterating failed: wrong key");
-    if(json_object_iter_value(iter) != baz)
-        fail("iterating failed: wrong value");
-
-    if(json_object_iter_set(object, iter, bar))
+    if(json_object_iter_set(object, iter, baz))
         fail("unable to set value at iterator");
 
-    if(strcmp(json_object_iter_key(iter), "c"))
+    if(strcmp(json_object_iter_key(iter), "b"))
         fail("json_object_iter_key() fails after json_object_iter_set()");
-    if(json_object_iter_value(iter) != bar)
+    if(json_object_iter_value(iter) != baz)
         fail("json_object_iter_value() fails after json_object_iter_set()");
-    if(json_object_get(object, "c") != bar)
+    if(json_object_get(object, "b") != baz)
         fail("json_object_get() fails after json_object_iter_set()");
 
     json_decref(object);
@@ -357,6 +375,12 @@ static void test_misc()
 
     if(!json_object_set(object, NULL, string))
         fail("able to set NULL key");
+
+    if(json_object_del(object, "a"))
+        fail("unable to del the only key");
+
+    if(json_object_set(object, "a", string))
+        fail("unable to set value");
 
     if(!json_object_set(object, "a", NULL))
         fail("able to set NULL value");
@@ -497,15 +521,35 @@ static void test_object_foreach()
     json_decref(object2);
 }
 
+static void test_object_foreach_safe()
+{
+    const char *key;
+    void *tmp;
+    json_t *object, *value;
+
+    object = json_pack("{sisisi}", "foo", 1, "bar", 2, "baz", 3);
+
+    json_object_foreach_safe(object, tmp, key, value) {
+        json_object_del(object, key);
+    }
+
+    if(json_object_size(object) != 0)
+        fail("json_object_foreach_safe failed to iterate all key-value pairs");
+
+    json_decref(object);
+}
+
 static void run_tests()
 {
     test_misc();
     test_clear();
     test_update();
+    test_set_many_keys();
     test_conditional_updates();
     test_circular();
     test_set_nocheck();
     test_iterators();
     test_preserve_order();
     test_object_foreach();
+    test_object_foreach_safe();
 }
