@@ -854,6 +854,15 @@
                     "url": "rtmp://plive.pandora.tv:80/mediaHub"
                 }
             ]
+        },
+        {
+            "name": "LiveStream",
+            "servers": [
+                {
+                    "name": "Primary",
+                    "url": "rtmp://rtmpin.livestreamingest.com/rtmpin"
+                }
+            ]
         }
     ]
 }
