@@ -251,7 +251,7 @@ endif ()
 # detect what to use for the 64 bit type.
 # Note: I will prefer long long if I can get it, as that is what the automake system aimed for.
 if (NOT DEFINED JSON_INT_T)
-   if (HAVE_LONG_LONG_INT AND (${LONG_LONG_INT} EQUAL 8))
+   if (HAVE_LONG_LONG_INT AND ((${LONG_LONG_INT}) EQUAL 8))
       set (JSON_INT_T "long long")
    elseif (HAVE_INT64_T)
       set (JSON_INT_T int64_t)

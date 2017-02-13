@@ -340,7 +340,7 @@ static void lex_scan_string(lex_t *lex, json_error_t *error)
             /* control character */
             lex_unget_unsave(lex, c);
             if(c == '\n')
-                error_set(error, lex, "unexpected newline", c);
+                error_set(error, lex, "unexpected newline");
             else
                 error_set(error, lex, "control character 0x%x", c);
             goto out;
@@ -914,7 +914,7 @@ static json_t *parse_json(lex_t *lex, size_t flags, json_error_t *error)
 typedef struct
 {
     const char *data;
-    int pos;
+    size_t pos;
 } string_data_t;
 
 static int string_get(void *data)
