@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2013 Petri Lehtinen <petri@digip.org>
+ * Copyright (c) 2010-2016 Petri Lehtinen <petri@digip.org>
  *
  * Jansson is free software; you can redistribute it and/or modify
  * it under the terms of the MIT license. See LICENSE for details.
@@ -17,7 +17,9 @@
 #define JANSSON_CONFIG_H
 
 /* Define this so that we can disable scattered automake configuration in source files */
+#ifndef JANSSON_USING_CMAKE
 #define JANSSON_USING_CMAKE
+#endif
 
 /* Note: when using cmake, JSON_INTEGER_IS_LONG_LONG is not defined nor used,
  * as we will also check for __int64 etc types.
@@ -57,6 +59,10 @@
 /* If locale.h and localeconv() are available, define to 1, otherwise to 0. */
 #define JSON_HAVE_LOCALECONV @JSON_HAVE_LOCALECONV@
 
+
+/* Maximum recursion depth for parsing JSON input.
+   This limits the depth of e.g. array-within-array constructions. */
+#define JSON_PARSER_MAX_DEPTH 2048
 
 
 #endif

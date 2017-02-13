@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2013 Petri Lehtinen <petri@digip.org>
+ * Copyright (c) 2009-2016 Petri Lehtinen <petri@digip.org>
  *
  * Jansson is free software; you can redistribute it and/or modify
  * it under the terms of the MIT license. See LICENSE for details.
@@ -232,6 +232,9 @@ static void test_copy_object(void)
     const char *json_object_text =
         "{\"foo\": \"bar\", \"a\": 1, \"b\": 3.141592, \"c\": [1,2,3,4]}";
 
+    const char *keys[] = {"foo", "a", "b", "c"};
+    int i;
+
     json_t *object, *copy;
     void *iter;
 
@@ -247,6 +250,7 @@ static void test_copy_object(void)
     if(!json_equal(copy, object))
         fail("copying an object produces an inequal copy");
 
+    i = 0;
     iter = json_object_iter(object);
     while(iter)
     {
@@ -258,9 +262,13 @@ static void test_copy_object(void)
         value2 = json_object_get(copy, key);
 
         if(value1 != value2)
-            fail("deep copying an object modifies its items");
+            fail("copying an object modifies its items");
+
+        if (strcmp(key, keys[i]) != 0)
+            fail("copying an object doesn't preserve key order");
 
         iter = json_object_iter_next(object, iter);
+        i++;
     }
 
     json_decref(object);
@@ -271,6 +279,9 @@ static void test_deep_copy_object(void)
 {
     const char *json_object_text =
         "{\"foo\": \"bar\", \"a\": 1, \"b\": 3.141592, \"c\": [1,2,3,4]}";
+
+    const char *keys[] = {"foo", "a", "b", "c"};
+    int i;
 
     json_t *object, *copy;
     void *iter;
@@ -287,6 +298,7 @@ static void test_deep_copy_object(void)
     if(!json_equal(copy, object))
         fail("deep copying an object produces an inequal copy");
 
+    i = 0;
     iter = json_object_iter(object);
     while(iter)
     {
@@ -300,7 +312,11 @@ static void test_deep_copy_object(void)
         if(value1 == value2)
             fail("deep copying an object doesn't copy its items");
 
+        if (strcmp(key, keys[i]) != 0)
+            fail("deep copying an object doesn't preserve key order");
+
         iter = json_object_iter_next(object, iter);
+        i++;
     }
 
     json_decref(object);

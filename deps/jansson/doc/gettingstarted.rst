@@ -30,8 +30,7 @@ compiling and installing is extremely simple::
 
 To change the destination directory (``/usr/local`` by default), use
 the ``--prefix=DIR`` argument to ``./configure``. See ``./configure
---help`` for the list of all possible installation options. (There are
-no options to customize the resulting Jansson binary.)
+--help`` for the list of all possible configuration options.
 
 The command ``make check`` runs the test suite distributed with
 Jansson. This step is not strictly necessary, but it may find possible
@@ -44,7 +43,7 @@ version control. To create the script, the build system needs to be
 bootstrapped. There are many ways to do this, but the easiest one is
 to use ``autoreconf``::
 
-    autoreconf -vi
+    autoreconf -fi
 
 This command creates the ``./configure`` script, which can then be
 used as described above.
@@ -83,10 +82,10 @@ Generating make files on unix:
 
     mkdir build
     cd build
-    cmake .. # or `ccmake ..` for a GUI.
+    cmake .. # or ccmake .. for a GUI.
 
 Then to build::
-    
+
     make
     make check
     make install
@@ -107,7 +106,7 @@ Creating Visual Studio project files from the command line:
 You will now have a *Visual Studio Solution* in your build directory.
 To run the unit tests build the ``RUN_TESTS`` project.
 
-If you prefer a GUI the ``cmake`` line in the above example can 
+If you prefer a GUI the ``cmake`` line in the above example can
 be replaced with::
 
     cmake-gui ..
@@ -117,7 +116,7 @@ for CMake_ simply run::
 
     cmake
 
-To list available CMake_ settings (and what they are currently set to) 
+To list available CMake_ settings (and what they are currently set to)
 for the project, run::
 
     cmake -LH ..
@@ -125,7 +124,7 @@ for the project, run::
 Mac OSX (Xcode)
 ^^^^^^^^^^^^^^^
 If you prefer using Xcode instead of make files on OSX,
-do the following. (Use the same steps as 
+do the following. (Use the same steps as
 for :ref:`Unix <build-cmake-unix>`)::
 
     ...
@@ -140,12 +139,12 @@ By default the CMake_ project will generate build files for building the
 static library. To build the shared version use::
 
     ...
-    cmake -DBUILD_SHARED=1 ..
+    cmake -DJANSSON_BUILD_SHARED_LIBS=1 ..
 
 Changing install directory (same as autoconf --prefix)
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 Just as with the autoconf_ project you can change the destination directory
-for ``make install``. The equivalent for autoconfs ``./configure --prefix`` 
+for ``make install``. The equivalent for autoconfs ``./configure --prefix``
 in CMake_ is::
 
     ...
@@ -154,23 +153,13 @@ in CMake_ is::
 
 .. _CMake: http://www.cmake.org
 
+
 Android
 -------
 
 Jansson can be built for Android platforms. Android.mk is in the
 source root directory. The configuration header file is located in the
 ``android`` directory in the source distribution.
-
-
-Windows
--------
-
-**This method is deprecated**. Using :ref:`CMake <build-cmake>` is now
-preferred.
-
-Jansson can be built with Visual Studio 2010 (and probably newer
-versions, too). The solution and project files are in the
-``win32/vs2010/`` directory in the source distribution.
 
 
 Other Systems
@@ -230,7 +219,9 @@ link the program as follows::
 
     cc -o prog prog.c -ljansson
 
-Starting from version 1.2, there's also support for pkg-config_::
+Starting from version 1.2, there's also support for pkg-config_:
+
+.. code-block:: shell
 
     cc -o prog prog.c `pkg-config --cflags --libs jansson`
 

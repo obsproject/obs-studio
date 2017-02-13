@@ -7,6 +7,7 @@ LOCAL_SRC_FILES := \
     src/dump.c \
     src/error.c \
     src/hashtable.c \
+    src/hashtable_seed.c \
     src/load.c \
     src/memory.c \
     src/pack_unpack.c \
@@ -22,7 +23,7 @@ LOCAL_C_INCLUDES += \
 
 LOCAL_MODULE_TAGS := optional
 LOCAL_SHARED_LIBRARIES := libc
-LOCAL_CFLAGS += -O3
+LOCAL_CFLAGS += -O3 -DHAVE_STDINT_H=1
 
 LOCAL_MODULE:= libjansson
 

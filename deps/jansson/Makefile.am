@@ -1,4 +1,4 @@
-EXTRA_DIST = CHANGES LICENSE README.rst win32 CMakeLists.txt cmake
+EXTRA_DIST = CHANGES LICENSE README.rst CMakeLists.txt cmake android examples
 SUBDIRS = doc src test
 
 # "make distcheck" builds the dvi target, so use it to check that the
@@ -8,8 +8,3 @@ dvi:
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = jansson.pc
-
-if GCC
-# These flags are gcc specific
-export AM_CFLAGS = -Wall -Wextra -Wdeclaration-after-statement
-endif
