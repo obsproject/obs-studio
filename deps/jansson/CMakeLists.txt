@@ -685,3 +685,6 @@ endif()
 
 # For use when simply using add_library from a parent project to build jansson.
 set(JANSSON_LIBRARIES jansson CACHE STRING "Jansson libraries")
+
+target_include_directories(jansson
+        PUBLIC src "${CMAKE_CURRENT_BINARY_DIR}/include")
