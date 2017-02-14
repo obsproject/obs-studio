@@ -260,7 +260,7 @@ VolumeMeter::VolumeMeter(QWidget *parent)
 	updateTimerRef = updateTimer.toStrongRef();
 	if (!updateTimerRef) {
 		updateTimerRef = QSharedPointer<VolumeMeterTimer>::create();
-		updateTimerRef->start(100);
+		updateTimerRef->start(34);
 		updateTimer = updateTimerRef;
 	}
 
