@@ -3876,6 +3876,11 @@ void OBSBasic::StartStreaming()
 			sysTrayStream->setText(ui->streamButton->text());
 			sysTrayStream->setEnabled(true);
 		}
+
+		QMessageBox::critical(this,
+				QTStr("Output.StartStreamFailed"),
+				QTStr("Output.StartFailedGeneric"));
+		return;
 	}
 
 	bool recordWhenStreaming = config_get_bool(GetGlobalConfig(),
@@ -3887,7 +3892,6 @@ void OBSBasic::StartStreaming()
 		"BasicWindow", "ReplayBufferWhileStreaming");
 	if (replayBufferWhileStreaming)
 		StartReplayBuffer();
-
 }
 
 #ifdef _WIN32

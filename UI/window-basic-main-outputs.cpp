@@ -837,8 +837,13 @@ bool SimpleOutput::StartRecording()
 	UpdateRecording();
 	if (!ConfigureRecording(false))
 		return false;
-	if (!obs_output_start(fileOutput))
+	if (!obs_output_start(fileOutput))  {
+		QMessageBox::critical(main,
+				QTStr("Output.StartRecordingFailed"),
+				QTStr("Output.StartFailedGeneric"));
 		return false;
+	}
+
 	return true;
 }
 
@@ -847,8 +852,13 @@ bool SimpleOutput::StartReplayBuffer()
 	UpdateRecording();
 	if (!ConfigureRecording(true))
 		return false;
-	if (!obs_output_start(replayBuffer))
+	if (!obs_output_start(replayBuffer)) {
+		QMessageBox::critical(main,
+				QTStr("Output.StartReplayFailed"),
+				QTStr("Output.StartFailedGeneric"));
 		return false;
+	}
+
 	return true;
 }
 
@@ -1399,11 +1409,14 @@ bool AdvancedOutput::StartRecording()
 		obs_data_release(settings);
 	}
 
-	if (obs_output_start(fileOutput)) {
-		return true;
+	if (!obs_output_start(fileOutput)) {
+		QMessageBox::critical(main,
+				QTStr("Output.StartRecordingFailed"),
+				QTStr("Output.StartFailedGeneric"));
+		return false;
 	}
 
-	return false;
+	return true;
 }
 
 void AdvancedOutput::StopStreaming(bool force)
