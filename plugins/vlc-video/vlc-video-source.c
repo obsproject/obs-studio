@@ -733,6 +733,8 @@ static obs_properties_t *vlcs_properties(void *data)
 	dstr_free(&filter);
 	dstr_free(&exts);
 
+	obs_properties_add_int(ppts, S_NETWORK_CACHING, T_NETWORK_CACHING, 100, 3600000, 10);
+
 	return ppts;
 }
 
