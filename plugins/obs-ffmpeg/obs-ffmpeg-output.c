@@ -130,10 +130,12 @@ static bool new_stream(struct ffmpeg_data *data, AVStream **stream,
 	return true;
 }
 
-static void parse_params(AVCodecContext *context, char **opts)
+static bool parse_params(AVCodecContext *context, char **opts)
 {
+	bool ret = true;
+
 	if (!context || !context->priv_data)
-		return;
+		return true;
 
 	while (*opts) {
 		char *opt = *opts;
@@ -146,11 +148,16 @@ static void parse_params(AVCodecContext *context, char **opts)
 			*assign = 0;
 			value = assign+1;
 
-			av_opt_set(context->priv_data, name, value, 0);
+			if (av_opt_set(context->priv_data, name, value, 0)) {
+				blog(LOG_WARNING, "Failed to set %s=%s", name, value);
+				ret = false;
+			}
 		}
 
 		opts++;
 	}
+
+	return ret;
 }
 
 static bool open_video_codec(struct ffmpeg_data *data)
@@ -163,7 +170,9 @@ static bool open_video_codec(struct ffmpeg_data *data)
 		av_opt_set(context->priv_data, "preset", "veryfast", 0);
 
 	if (opts) {
-		parse_params(context, opts);
+		// libav requires x264 parameters in a special format which may be non-obvious
+		if (!parse_params(context, opts) && strcmp(data->vcodec->name, "libx264") == 0)
+			blog(LOG_WARNING, "If you're trying to set x264 parameters, use x264-params=name=value:name=value");
 		strlist_free(opts);
 	}
 
