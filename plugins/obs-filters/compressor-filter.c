@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include <inttypes.h>
+#include <math.h>
 
 #include <obs-module.h>
 #include <media-io/audio-math.h>
@@ -133,7 +134,7 @@ static struct obs_audio_data *compressor_filter_audio(void *data,
         get_peak_envelope(cd, samples[1], num_samples, &env_buf[num_samples]);
 
         for (uint32_t i = 0; i < num_samples; ++i) {
-            const float peak = max(env_buf[i], env_buf[num_samples + i]);
+            const float peak = fmaxf(env_buf[i], env_buf[num_samples + i]);
             env_buf[i] = peak;
         }
 
@@ -143,7 +144,7 @@ static struct obs_audio_data *compressor_filter_audio(void *data,
 
     for (size_t i = 0; i < num_samples; ++i) {
         float gain = cd->slope * (cd->threshold - mul_to_db(env_buf[i]));
-        gain = db_to_mul(min(0, gain));
+        gain = db_to_mul(fminf(0, gain));
 
         for (size_t c = 0; c < cd->num_channels; ++c) {
             if (audio->data[c]) {
