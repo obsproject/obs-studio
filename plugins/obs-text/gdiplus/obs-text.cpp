@@ -288,6 +288,7 @@ void TextSource::UpdateFont()
 	lf.lfUnderline = underline;
 	lf.lfStrikeOut = strikeout;
 	lf.lfQuality = ANTIALIASED_QUALITY;
+	lf.lfCharSet = DEFAULT_CHARSET;
 
 	if (!face.empty()) {
 		wcscpy(lf.lfFaceName, face.c_str());
