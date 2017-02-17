@@ -339,6 +339,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->advOutFFFormat,       COMBO_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advOutFFMCfg,         EDIT_CHANGED,   OUTPUTS_CHANGED);
 	HookWidget(ui->advOutFFVBitrate,     SCROLL_CHANGED, OUTPUTS_CHANGED);
+	HookWidget(ui->advOutFFVGOPSize,     SCROLL_CHANGED, OUTPUTS_CHANGED);
 	HookWidget(ui->advOutFFUseRescale,   CHECK_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advOutFFRescale,      CBEDIT_CHANGED, OUTPUTS_CHANGED);
 	HookWidget(ui->advOutFFVEncoder,     COMBO_CHANGED,  OUTPUTS_CHANGED);
@@ -1534,6 +1535,8 @@ void OBSBasicSettings::LoadAdvOutputFFmpegSettings()
 			"FFMCustom");
 	int videoBitrate = config_get_int(main->Config(), "AdvOut",
 			"FFVBitrate");
+	int gopSize = config_get_int(main->Config(), "AdvOut",
+			"FFVGOPSize");
 	bool rescale = config_get_bool(main->Config(), "AdvOut",
 			"FFRescale");
 	const char *rescaleRes = config_get_string(main->Config(), "AdvOut",
@@ -1562,6 +1565,7 @@ void OBSBasicSettings::LoadAdvOutputFFmpegSettings()
 	SelectFormat(ui->advOutFFFormat, format, mimeType);
 	ui->advOutFFMCfg->setText(muxCustom);
 	ui->advOutFFVBitrate->setValue(videoBitrate);
+	ui->advOutFFVGOPSize->setValue(gopSize);
 	ui->advOutFFUseRescale->setChecked(rescale);
 	ui->advOutFFRescale->setEnabled(rescale);
 	ui->advOutFFRescale->setCurrentText(rescaleRes);
@@ -1677,6 +1681,7 @@ void OBSBasicSettings::SetAdvOutputFFmpegEnablement(
 	switch (encoderType) {
 	case FF_CODEC_VIDEO:
 		ui->advOutFFVBitrate->setEnabled(enabled);
+		ui->advOutFFVGOPSize->setEnabled(enabled);
 		ui->advOutFFUseRescale->setEnabled(enabled);
 		ui->advOutFFRescale->setEnabled(enabled && rescale);
 		ui->advOutFFVEncoder->setEnabled(enabled || enableEncoder);
@@ -2706,6 +2711,7 @@ void OBSBasicSettings::SaveOutputSettings()
 	SaveFormat(ui->advOutFFFormat);
 	SaveEdit(ui->advOutFFMCfg, "AdvOut", "FFMCustom");
 	SaveSpinBox(ui->advOutFFVBitrate, "AdvOut", "FFVBitrate");
+	SaveSpinBox(ui->advOutFFVGOPSize, "AdvOut", "FFVGOPSize");
 	SaveCheckBox(ui->advOutFFUseRescale, "AdvOut", "FFRescale");
 	SaveCombo(ui->advOutFFRescale, "AdvOut", "FFRescaleRes");
 	SaveEncoder(ui->advOutFFVEncoder, "AdvOut", "FFVEncoder");
