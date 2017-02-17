@@ -37,7 +37,8 @@ const char *ff_codec_name_from_id(int codec_id);
 
 // Codec Description
 const struct ff_codec_desc *ff_codec_supported(
-		const struct ff_format_desc *format_desc);
+		const struct ff_format_desc *format_desc,
+		bool ignore_compatability);
 void ff_codec_desc_free(const struct ff_codec_desc *codec_desc);
 const char *ff_codec_desc_name(const struct ff_codec_desc *codec_desc);
 const char *ff_codec_desc_long_name(const struct ff_codec_desc *codec_desc);

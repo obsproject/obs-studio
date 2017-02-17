@@ -99,7 +99,8 @@ static const AVCodec *next_codec_for_id(enum AVCodecID id, const AVCodec *prev)
 
 static void add_codec_to_list(const struct ff_format_desc *format_desc,
 		struct ff_codec_desc **first, struct ff_codec_desc **current,
-		enum AVCodecID id, const AVCodec *codec)
+		enum AVCodecID id, const AVCodec *codec,
+		bool ignore_compatability)
 {
 	if (codec == NULL)
 		codec = avcodec_find_encoder(id);
@@ -112,11 +113,13 @@ static void add_codec_to_list(const struct ff_format_desc *format_desc,
 	if (!av_codec_is_encoder(codec))
 		return;
 
-	// Format doesn't support this codec
-	unsigned int tag = av_codec_get_tag(format_desc->codec_tags,
-			codec->id);
-	if (tag == 0)
-		return;
+	if (!ignore_compatability) {
+		// Format doesn't support this codec
+		unsigned int tag = av_codec_get_tag(format_desc->codec_tags,
+				codec->id);
+		if (tag == 0)
+			return;
+	}
 
 	struct ff_codec_desc *d = av_mallocz(sizeof(struct ff_codec_desc));
 
@@ -150,16 +153,17 @@ static void add_codec_to_list(const struct ff_format_desc *format_desc,
 
 static void get_codecs_for_id(const struct ff_format_desc *format_desc,
 		struct ff_codec_desc **first, struct ff_codec_desc **current,
-		enum AVCodecID id)
+		enum AVCodecID id, bool ignore_compatability)
 {
 	const AVCodec *codec = NULL;
 	while ((codec = next_codec_for_id(id, codec)))
 		add_codec_to_list(format_desc, first, current, codec->id,
-				codec);
+				codec, ignore_compatability);
 }
 
 const struct ff_codec_desc *ff_codec_supported(
-		const struct ff_format_desc *format_desc)
+		const struct ff_format_desc *format_desc,
+		bool ignore_compatability)
 {
 	const AVCodecDescriptor **codecs;
 	unsigned int size;
@@ -172,7 +176,8 @@ const struct ff_codec_desc *ff_codec_supported(
 
 	for(i = 0; i < size; i++) {
 		const AVCodecDescriptor *codec = codecs[i];
-		get_codecs_for_id(format_desc, &first, &current, codec->id);
+		get_codecs_for_id(format_desc, &first, &current, codec->id,
+				ignore_compatability);
 	}
 
 	av_free((void *)codecs);
