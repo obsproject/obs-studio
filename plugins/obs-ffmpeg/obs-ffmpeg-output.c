@@ -36,6 +36,7 @@ struct ffmpeg_cfg {
 	const char         *format_name;
 	const char         *format_mime_type;
 	const char         *muxer_settings;
+	int                gop_size;
 	int                video_bitrate;
 	int                audio_bitrate;
 	const char         *video_encoder;
@@ -248,7 +249,7 @@ static bool create_video_stream(struct ffmpeg_data *data)
 	context->width          = data->config.scale_width;
 	context->height         = data->config.scale_height;
 	context->time_base      = (AVRational){ ovi.fps_den, ovi.fps_num };
-	context->gop_size       = 120;
+	context->gop_size       = data->config.gop_size;
 	context->pix_fmt        = closest_format;
 	context->colorspace     = data->config.color_space;
 	context->color_range    = data->config.color_range;
@@ -951,6 +952,9 @@ static bool try_connect(struct ffmpeg_output *output)
 	int ret;
 
 	settings = obs_output_get_settings(output->output);
+
+	obs_data_set_default_int(settings, "gop_size", 120);
+
 	config.url = obs_data_get_string(settings, "url");
 	config.format_name = get_string_or_null(settings, "format_name");
 	config.format_mime_type = get_string_or_null(settings,
@@ -958,6 +962,7 @@ static bool try_connect(struct ffmpeg_output *output)
 	config.muxer_settings = obs_data_get_string(settings, "muxer_settings");
 	config.video_bitrate = (int)obs_data_get_int(settings, "video_bitrate");
 	config.audio_bitrate = (int)obs_data_get_int(settings, "audio_bitrate");
+	config.gop_size = (int)obs_data_get_int(settings, "gop_size");
 	config.video_encoder = get_string_or_null(settings, "video_encoder");
 	config.video_encoder_id = (int)obs_data_get_int(settings,
 			"video_encoder_id");
