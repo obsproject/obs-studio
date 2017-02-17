@@ -2603,7 +2603,7 @@ void OBSBasicSettings::SaveFormat(QComboBox *combo)
 
 		char *comma = strchr(&extStr[0], ',');
 		if (comma)
-			comma = 0;
+			*comma = 0;
 
 		config_set_string(main->Config(), "AdvOut", "FFExtension",
 				extStr.c_str());
