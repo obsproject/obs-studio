@@ -977,6 +977,8 @@ bool OBSBasic::InitBasicConfigDefaults()
 	config_set_default_uint  (basicConfig, "AdvOut", "FFVGOPSize", 250);
 	config_set_default_bool  (basicConfig, "AdvOut", "FFUseRescale",
 			false);
+	config_set_default_bool  (basicConfig, "AdvOut", "FFIgnoreCompat",
+			false);
 	config_set_default_uint  (basicConfig, "AdvOut", "FFABitrate", 160);
 	config_set_default_uint  (basicConfig, "AdvOut", "FFAudioTrack", 1);
 
