@@ -167,19 +167,28 @@ Function PreReqCheck
 	ClearErrors
 
 	; Check previous instance
-	FindProcDLL::FindProc "obs32.exe"
+
+	OBSInstallerUtils::IsProcessRunning "obs32.exe"
 	IntCmp $R0 1 0 notRunning1
 		MessageBox MB_OK|MB_ICONEXCLAMATION "${APPNAME} is already running. Please close it first before installing a new version." /SD IDOK
 		Quit
 	notRunning1:
+
 	${if} ${RunningX64}
-		FindProcDLL::FindProc "obs64.exe"
+		OBSInstallerUtils::IsProcessRunning "obs64.exe"
 		IntCmp $R0 1 0 notRunning2
 			MessageBox MB_OK|MB_ICONEXCLAMATION "${APPNAME} is already running. Please close it first before installing a new version." /SD IDOK
 			Quit
+		notRunning2:
 	${endif}
-	notRunning2:
 
+	OBSInstallerUtils::AddInUseFileCheck "$INSTDIR\data\obs-plugins\win-capture\graphics-hook32.dll"
+	OBSInstallerUtils::AddInUseFileCheck "$INSTDIR\data\obs-plugins\win-capture\graphics-hook64.dll"
+	OBSInstallerUtils::GetAppNameForInUseFiles
+	StrCmp $R0 "" gameCaptureNotRunning
+		MessageBox MB_OK|MB_ICONEXCLAMATION "Game Capture is still in use by the following applications:$\r$\n$\r$\n$R0$\r$\nPlease close these applications before installing a new version of OBS." /SD IDOK
+		Quit
+	gameCaptureNotRunning:
 FunctionEnd
 
 Function filesInUse
@@ -194,9 +203,6 @@ Section "OBS Studio" SecCore
 	SectionIn RO
 	SetOverwrite on
 	AllowSkipFiles off
-
-	KillProcDLL::KillProc "obs-plugins\32bit\cef-bootstrap.exe"
-	KillProcDLL::KillProc "obs-plugins\64bit\cef-bootstrap.exe"
 
 	SetShellVarContext all
 
@@ -264,9 +270,11 @@ SectionGroup /e "Plugins" SecPlugins
 		SetShellVarContext all
 
 		SetOutPath "$INSTDIR\obs-plugins"
+		OBSInstallerUtils::KillProcess "32bit\cef-bootstrap.exe"
 		File /r "new\obs-browser\obs-plugins\32bit"
 
 		${if} ${RunningX64}
+			OBSInstallerUtils::KillProcess "64bit\cef-bootstrap.exe"
 			File /r "new\obs-browser\obs-plugins\64bit"
 		${endif}
 
