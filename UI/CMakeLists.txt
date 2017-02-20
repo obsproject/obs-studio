@@ -252,3 +252,6 @@ if (UNIX AND UNIX_STRUCTURE AND NOT APPLE)
 endif()
 
 add_subdirectory(frontend-plugins)
+if(WIN32)
+	add_subdirectory(win-update/updater)
+endif()
