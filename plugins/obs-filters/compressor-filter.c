@@ -35,19 +35,24 @@
 #define TEXT_RELEASE_TIME   MT_("Compressor.ReleaseTime")
 #define TEXT_OUTPUT_GAIN    MT_("Compressor.OutputGain")
 
-#define MIN_RATIO           1.0f
-#define MAX_RATIO           32.0f
-#define MIN_THRESHOLD_DB    -60.0f
-#define MAX_THRESHOLD_DB    0.0f
-#define MIN_OUTPUT_GAIN_DB  -16.0f
-#define MAX_OUTPUT_GAIN_DB  16.0f
-#define MIN_ATK_RLS_MS      1
-#define MAX_ATK_RLS_MS      100
+#define MIN_RATIO            1.0f
+#define MAX_RATIO            32.0f
+#define MIN_THRESHOLD_DB     -60.0f
+#define MAX_THRESHOLD_DB     0.0f
+#define MIN_OUTPUT_GAIN_DB   -32.0f
+#define MAX_OUTPUT_GAIN_DB   32.0f
+#define MIN_ATK_RLS_MS       1
+#define MAX_ATK_RLS_MS       100
+#define DEFAULT_AUDIO_BUF_MS 10
+
+#define MS_IN_S 1000.0f
 
 /* -------------------------------------------------------- */
 
 struct compressor_data {
     obs_source_t *context;
+    float *envelope_buf;
+    size_t envelope_buf_len;
 
     float ratio;
     float threshold;
@@ -62,16 +67,10 @@ struct compressor_data {
 
 /* -------------------------------------------------------- */
 
-static const char *compressor_name(void *unused)
+static inline void resize_env_buffer(struct compressor_data *cd, size_t len)
 {
-    UNUSED_PARAMETER(unused);
-    return obs_module_text("Compressor");
-}
-
-static void compressor_destroy(void *data)
-{
-    struct compressor_data *cd = data;
-    bfree(cd);
+    cd->envelope_buf_len = len;
+    cd->envelope_buf = brealloc(cd->envelope_buf, len * sizeof(float));
 }
 
 static inline float gain_coefficient(uint32_t sample_rate, float time)
@@ -79,21 +78,32 @@ static inline float gain_coefficient(uint32_t sample_rate, float time)
     return (float)exp(-1.0f / (sample_rate * time));
 }
 
+static const char *compressor_name(void *unused)
+{
+    UNUSED_PARAMETER(unused);
+    return obs_module_text("Compressor");
+}
+
 static void compressor_update(void *data, obs_data_t *s)
 {
     struct compressor_data *cd = data;
 
     const uint32_t sample_rate = audio_output_get_sample_rate(obs_get_audio());
+    const size_t num_channels = audio_output_get_channels(obs_get_audio());
     const float attack_time_ms = (float)obs_data_get_int(s, S_ATTACK_TIME);
     const float release_time_ms = (float)obs_data_get_int(s, S_RELEASE_TIME);
     const float output_gain_db = (float)obs_data_get_double(s, S_OUTPUT_GAIN);
 
+    if (cd->envelope_buf_len <= 0) {
+        resize_env_buffer(cd, sample_rate * DEFAULT_AUDIO_BUF_MS / MS_IN_S);
+    }
+
     cd->ratio = (float)obs_data_get_double(s, S_RATIO);
     cd->threshold = (float)obs_data_get_double(s, S_THRESHOLD);
-    cd->attack_gain = gain_coefficient(sample_rate, attack_time_ms/1000.0f);
-    cd->release_gain = gain_coefficient(sample_rate, release_time_ms/1000.0f);
+    cd->attack_gain = gain_coefficient(sample_rate, attack_time_ms/MS_IN_S);
+    cd->release_gain = gain_coefficient(sample_rate, release_time_ms/MS_IN_S);
     cd->output_gain = db_to_mul(output_gain_db);
-    cd->num_channels = audio_output_get_channels(obs_get_audio());
+    cd->num_channels = num_channels;
     cd->slope = 1.0f - (1.0f / cd->ratio);
 }
 
@@ -105,19 +115,51 @@ static void *compressor_create(obs_data_t *settings, obs_source_t *filter)
     return cd;
 }
 
-static inline void get_peak_envelope(struct compressor_data *cd,
-    const float *audio_buf, const size_t audio_len, /* out */ float *env_buf)
+static void compressor_destroy(void *data)
 {
-    for (size_t i = 0; i < audio_len; ++i) {
-        const float env_in = fabsf(audio_buf[i]);
-        if (cd->envelope < env_in) {
-            cd->envelope = env_in + cd->attack_gain * (cd->envelope - env_in);
-        }
-        else {
-            cd->envelope = env_in + cd->release_gain * (cd->envelope - env_in);
-        }
+    struct compressor_data *cd = data;
+    bfree(cd->envelope_buf);
+    bfree(cd);
+}
 
-        env_buf[i] = cd->envelope;
+static inline void analyze_envelope(struct compressor_data *cd,
+    const float **samples, const uint32_t num_samples)
+{
+    if (cd->envelope_buf_len < num_samples) {
+        resize_env_buffer(cd, num_samples);
+    }
+
+    memset(cd->envelope_buf, 0, num_samples * sizeof(cd->envelope_buf[0]));
+    for (size_t chan = 0; chan < cd->num_channels; ++chan) {
+        if (samples[chan]) {
+            float env = cd->envelope;
+            for (uint32_t i = 0; i < num_samples; ++i) {
+                const float env_in = fabsf(samples[chan][i]);
+                if (env < env_in) {
+                    env = env_in + cd->attack_gain * (env - env_in);
+                } else {
+                    env = env_in + cd->release_gain * (env - env_in);
+                }
+                cd->envelope_buf[i] = fmaxf(cd->envelope_buf[i], env);
+            }
+        }
+    }
+    cd->envelope = cd->envelope_buf[num_samples - 1];
+}
+
+static inline void process_compression(const struct compressor_data *cd,
+    float **samples, uint32_t num_samples)
+{
+    for (size_t i = 0; i < num_samples; ++i) {
+        const float env_db = mul_to_db(cd->envelope_buf[i]);
+        float gain = cd->slope * (cd->threshold - env_db);
+        gain = db_to_mul(fminf(0, gain));
+
+        for (size_t c = 0; c < cd->num_channels; ++c) {
+            if (samples[c]) {
+                samples[c][i] *= gain * cd->output_gain;
+            }
+        }
     }
 }
 
@@ -126,34 +168,11 @@ static struct obs_audio_data *compressor_filter_audio(void *data,
 {
     struct compressor_data *cd = data;
     const uint32_t num_samples = audio->frames;
-    float *samples[2] = {(float*)audio->data[0], (float*)audio->data[1]};
-    float *env_buf = bmalloc(cd->num_channels * num_samples * sizeof(float));
+    float **samples = (float**)audio->data;
 
-    if (cd->num_channels == 2) {
-        get_peak_envelope(cd, samples[0], num_samples, &env_buf[0]);
-        get_peak_envelope(cd, samples[1], num_samples, &env_buf[num_samples]);
+    analyze_envelope(cd, samples, num_samples);
+    process_compression(cd, samples, num_samples);
 
-        for (uint32_t i = 0; i < num_samples; ++i) {
-            const float peak = fmaxf(env_buf[i], env_buf[num_samples + i]);
-            env_buf[i] = peak;
-        }
-
-    } else if (cd->num_channels == 1) {
-        get_peak_envelope(cd, samples[0], num_samples, env_buf);
-    }
-
-    for (size_t i = 0; i < num_samples; ++i) {
-        float gain = cd->slope * (cd->threshold - mul_to_db(env_buf[i]));
-        gain = db_to_mul(fminf(0, gain));
-
-        for (size_t c = 0; c < cd->num_channels; ++c) {
-            if (audio->data[c]) {
-                samples[c][i] *= gain * cd->output_gain;
-            }
-        }
-    }
-
-    bfree(env_buf);
     return audio;
 }
 
