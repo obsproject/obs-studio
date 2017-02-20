@@ -168,6 +168,9 @@
                    <property name="labelAlignment">
                     <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                    </property>
+                   <property name="topMargin">
+                    <number>2</number>
+                   </property>
                    <item row="0" column="0">
                     <widget class="QLabel" name="label">
                      <property name="text">
@@ -194,6 +197,32 @@
                    <item row="1" column="1">
                     <widget class="QComboBox" name="theme"/>
                    </item>
+                   <item row="2" column="1">
+                    <widget class="QCheckBox" name="enableAutoUpdates">
+                     <property name="text">
+                      <string>Basic.Settings.General.EnableAutoUpdates</string>
+                     </property>
+                     <property name="checked">
+                      <bool>true</bool>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="2" column="0">
+                    <spacer name="horizontalSpacer_3">
+                     <property name="orientation">
+                      <enum>Qt::Horizontal</enum>
+                     </property>
+                     <property name="sizeType">
+                      <enum>QSizePolicy::Fixed</enum>
+                     </property>
+                     <property name="sizeHint" stdset="0">
+                      <size>
+                       <width>170</width>
+                       <height>5</height>
+                      </size>
+                     </property>
+                    </spacer>
+                   </item>
                   </layout>
                  </widget>
                 </item>
@@ -203,6 +232,9 @@
                    <string>Basic.Settings.Output</string>
                   </property>
                   <layout class="QFormLayout" name="formLayout_2">
+                   <property name="topMargin">
+                    <number>2</number>
+                   </property>
                    <item row="0" column="0">
                     <spacer name="horizontalSpacer_5">
                      <property name="orientation">
@@ -211,7 +243,7 @@
                      <property name="sizeHint" stdset="0">
                       <size>
                        <width>170</width>
-                       <height>11</height>
+                       <height>5</height>
                       </size>
                      </property>
                     </spacer>

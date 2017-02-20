@@ -273,6 +273,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 
 	HookWidget(ui->language,             COMBO_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->theme, 		     COMBO_CHANGED,  GENERAL_CHANGED);
+	HookWidget(ui->enableAutoUpdates,    CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->warnBeforeStreamStart,CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->warnBeforeStreamStop, CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->hideProjectorCursor,  CHECK_CHANGED,  GENERAL_CHANGED);
@@ -895,6 +896,10 @@ void OBSBasicSettings::LoadGeneralSettings()
 
 	LoadLanguageList();
 	LoadThemeList();
+
+	bool enableAutoUpdates = config_get_bool(GetGlobalConfig(),
+			"General", "EnableAutoUpdates");
+	ui->enableAutoUpdates->setChecked(enableAutoUpdates);
 
 	bool recordWhenStreaming = config_get_bool(GetGlobalConfig(),
 			"BasicWindow", "RecordWhenStreaming");
@@ -2351,6 +2356,10 @@ void OBSBasicSettings::SaveGeneralSettings()
 		App()->SetTheme(theme);
 	}
 
+	if (WidgetChanged(ui->enableAutoUpdates))
+		config_set_bool(GetGlobalConfig(), "General",
+				"EnableAutoUpdates",
+				ui->enableAutoUpdates->isChecked());
 	if (WidgetChanged(ui->snappingEnabled))
 		config_set_bool(GetGlobalConfig(), "BasicWindow",
 				"SnappingEnabled",

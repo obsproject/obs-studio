@@ -52,6 +52,10 @@
 #include "volume-control.hpp"
 #include "remote-text.hpp"
 
+#if defined(_WIN32) && defined(ENABLE_WIN_UPDATER)
+#include "win-update/win-update.hpp"
+#endif
+
 #include "ui_OBSBasic.h"
 
 #include <fstream>
@@ -1585,6 +1589,9 @@ void OBSBasic::ClearHotkeys()
 
 OBSBasic::~OBSBasic()
 {
+	if (updateCheckThread && updateCheckThread->isRunning())
+		updateCheckThread->wait();
+
 	delete programOptions;
 	delete program;
 
@@ -2123,10 +2130,14 @@ void trigger_sparkle_update();
 
 void OBSBasic::TimedCheckForUpdates()
 {
+	if (!config_get_bool(App()->GlobalConfig(), "General",
+				"EnableAutoUpdates"))
+		return;
+
 #ifdef UPDATE_SPARKLE
 	init_sparkle_updater(config_get_bool(App()->GlobalConfig(), "General",
 				"UpdateToUndeployed"));
-#else
+#elif ENABLE_WIN_UPDATER
 	long long lastUpdate = config_get_int(App()->GlobalConfig(), "General",
 			"LastUpdateCheck");
 	uint32_t lastVersion = config_get_int(App()->GlobalConfig(), "General",
@@ -2142,27 +2153,21 @@ void OBSBasic::TimedCheckForUpdates()
 	long long secs = t - lastUpdate;
 
 	if (secs > UPDATE_CHECK_INTERVAL)
-		CheckForUpdates();
+		CheckForUpdates(false);
 #endif
 }
 
-void OBSBasic::CheckForUpdates()
+void OBSBasic::CheckForUpdates(bool manualUpdate)
 {
 #ifdef UPDATE_SPARKLE
 	trigger_sparkle_update();
-#else
+#elif ENABLE_WIN_UPDATER
 	ui->actionCheckForUpdates->setEnabled(false);
 
-	if (updateCheckThread) {
-		updateCheckThread->wait();
-		delete updateCheckThread;
-	}
+	if (updateCheckThread && updateCheckThread->isRunning())
+		return;
 
-	RemoteTextThread *thread = new RemoteTextThread(
-			"https://obsproject.com/obs2_update/basic.json");
-	updateCheckThread = thread;
-	connect(thread, &RemoteTextThread::Result,
-			this, &OBSBasic::updateFileFinished);
+	updateCheckThread = new AutoUpdateThread(manualUpdate);
 	updateCheckThread->start();
 #endif
 }
@@ -2175,57 +2180,9 @@ void OBSBasic::CheckForUpdates()
 #define VERSION_ENTRY "other"
 #endif
 
-void OBSBasic::updateFileFinished(const QString &text, const QString &error)
+void OBSBasic::updateCheckFinished()
 {
 	ui->actionCheckForUpdates->setEnabled(true);
-
-	if (text.isEmpty()) {
-		blog(LOG_WARNING, "Update check failed: %s", QT_TO_UTF8(error));
-		return;
-	}
-
-	obs_data_t *returnData  = obs_data_create_from_json(QT_TO_UTF8(text));
-	obs_data_t *versionData = obs_data_get_obj(returnData, VERSION_ENTRY);
-	const char *description = obs_data_get_string(returnData,
-			"description");
-	const char *download    = obs_data_get_string(versionData, "download");
-
-	if (returnData && versionData && description && download) {
-		long major   = obs_data_get_int(versionData, "major");
-		long minor   = obs_data_get_int(versionData, "minor");
-		long patch   = obs_data_get_int(versionData, "patch");
-		long version = MAKE_SEMANTIC_VERSION(major, minor, patch);
-
-		blog(LOG_INFO, "Update check: last known remote version "
-				"is %ld.%ld.%ld",
-				major, minor, patch);
-
-		if (version > LIBOBS_API_VER) {
-			QString     str = QTStr("UpdateAvailable.Text");
-			QMessageBox messageBox(this);
-
-			str = str.arg(QString::number(major),
-			              QString::number(minor),
-			              QString::number(patch),
-			              download);
-
-			messageBox.setWindowTitle(QTStr("UpdateAvailable"));
-			messageBox.setTextFormat(Qt::RichText);
-			messageBox.setText(str);
-			messageBox.setInformativeText(QT_UTF8(description));
-			messageBox.exec();
-
-			long long t = (long long)time(nullptr);
-			config_set_int(App()->GlobalConfig(), "General",
-					"LastUpdateCheck", t);
-			config_save_safe(App()->GlobalConfig(), "tmp", nullptr);
-		}
-	} else {
-		blog(LOG_WARNING, "Bad JSON file received from server");
-	}
-
-	obs_data_release(versionData);
-	obs_data_release(returnData);
 }
 
 void OBSBasic::DuplicateSelectedScene()
@@ -3730,7 +3687,7 @@ void OBSBasic::on_actionViewCurrentLog_triggered()
 
 void OBSBasic::on_actionCheckForUpdates_triggered()
 {
-	CheckForUpdates();
+	CheckForUpdates(true);
 }
 
 void OBSBasic::logUploadFinished(const QString &text, const QString &error)
