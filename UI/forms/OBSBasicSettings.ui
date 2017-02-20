@@ -116,255 +116,372 @@
         <number>0</number>
        </property>
        <widget class="QWidget" name="generalPage">
-        <layout class="QFormLayout" name="formLayout_2">
-         <property name="fieldGrowthPolicy">
-          <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+        <layout class="QVBoxLayout" name="verticalLayout_18">
+         <property name="leftMargin">
+          <number>0</number>
          </property>
-         <property name="labelAlignment">
-          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+         <property name="topMargin">
+          <number>0</number>
          </property>
-         <item row="0" column="0">
-          <spacer name="verticalSpacer">
-           <property name="orientation">
-            <enum>Qt::Vertical</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>20</width>
-             <height>40</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
-         <item row="1" column="0">
-          <widget class="QLabel" name="label">
-           <property name="minimumSize">
-            <size>
-             <width>170</width>
-             <height>0</height>
-            </size>
-           </property>
-           <property name="text">
-            <string>Basic.Settings.General.Language</string>
-           </property>
-           <property name="alignment">
-            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-           </property>
-           <property name="buddy">
-            <cstring>language</cstring>
-           </property>
-          </widget>
-         </item>
-         <item row="1" column="1">
-          <widget class="QComboBox" name="language"/>
-         </item>
-         <item row="2" column="0">
-          <widget class="QLabel" name="label_42">
-           <property name="text">
-            <string>Basic.Settings.General.Theme</string>
-           </property>
-           <property name="buddy">
-            <cstring>theme</cstring>
-           </property>
-          </widget>
-         </item>
-         <item row="2" column="1">
-          <widget class="QComboBox" name="theme"/>
-         </item>
-         <item row="3" column="1">
-          <widget class="QCheckBox" name="warnBeforeStreamStart">
-           <property name="text">
-            <string>Basic.Settings.General.WarnBeforeStartingStream</string>
-           </property>
-          </widget>
-         </item>
-         <item row="4" column="1">
-          <widget class="QCheckBox" name="warnBeforeStreamStop">
-           <property name="text">
-            <string>Basic.Settings.General.WarnBeforeStoppingStream</string>
-           </property>
-          </widget>
-         </item>
-         <item row="8" column="1">
-          <widget class="QCheckBox" name="recordWhenStreaming">
-           <property name="text">
-            <string>Basic.Settings.General.RecordWhenStreaming</string>
-           </property>
-          </widget>
-         </item>
-         <item row="12" column="1">
-          <widget class="QCheckBox" name="systemTrayEnabled">
-           <property name="text">
-            <string>Basic.Settings.General.SysTrayEnabled</string>
-           </property>
-          </widget>
-         </item>
-         <item row="13" column="1">
-          <widget class="QCheckBox" name="systemTrayWhenStarted">
-           <property name="enabled">
-            <bool>false</bool>
-           </property>
-           <property name="text">
-            <string>Basic.Settings.General.SysTrayWhenStarted</string>
-           </property>
-          </widget>
-         </item>
-         <item row="14" column="1">
-          <widget class="QCheckBox" name="systemTrayAlways">
-           <property name="enabled">
-            <bool>false</bool>
-           </property>
-           <property name="text">
-            <string>Basic.Settings.General.SystemTrayHideMinimize</string>
-           </property>
-          </widget>
-         </item>
-         <item row="15" column="0" colspan="2">
-          <widget class="Line" name="line_4">
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-          </widget>
-         </item>
-         <item row="16" column="0" colspan="2">
-          <widget class="QGroupBox" name="groupBox_10">
-           <property name="enabled">
+         <property name="rightMargin">
+          <number>0</number>
+         </property>
+         <property name="bottomMargin">
+          <number>0</number>
+         </property>
+         <item>
+          <widget class="QScrollArea" name="scrollArea_2">
+           <property name="widgetResizable">
             <bool>true</bool>
            </property>
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="title">
-            <string>Basic.Settings.General.Snapping</string>
-           </property>
-           <property name="flat">
-            <bool>false</bool>
-           </property>
-           <layout class="QFormLayout" name="formLayout_21">
-            <property name="labelAlignment">
-             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+           <widget class="QWidget" name="scrollAreaWidgetContents_2">
+            <property name="geometry">
+             <rect>
+              <x>0</x>
+              <y>0</y>
+              <width>818</width>
+              <height>697</height>
+             </rect>
             </property>
-            <item row="0" column="1">
-             <widget class="QCheckBox" name="snappingEnabled">
-              <property name="text">
-               <string>Enable</string>
-              </property>
-              <property name="checked">
-               <bool>true</bool>
-              </property>
-             </widget>
-            </item>
-            <item row="2" column="1">
-             <widget class="QCheckBox" name="screenSnapping">
-              <property name="text">
-               <string>Basic.Settings.General.ScreenSnapping</string>
-              </property>
-              <property name="checked">
-               <bool>true</bool>
-              </property>
-             </widget>
-            </item>
-            <item row="4" column="1">
-             <widget class="QCheckBox" name="centerSnapping">
-              <property name="text">
-               <string>Basic.Settings.General.CenterSnapping</string>
-              </property>
-              <property name="checked">
-               <bool>true</bool>
-              </property>
-             </widget>
-            </item>
-            <item row="3" column="1">
-             <widget class="QCheckBox" name="sourceSnapping">
-              <property name="text">
-               <string>Basic.Settings.General.SourceSnapping</string>
-              </property>
-              <property name="checked">
-               <bool>true</bool>
-              </property>
-             </widget>
-            </item>
-            <item row="1" column="1">
-             <widget class="QDoubleSpinBox" name="snapDistance">
-              <property name="decimals">
-               <number>1</number>
-              </property>
-              <property name="singleStep">
-               <double>0.500000000000000</double>
-              </property>
-              <property name="value">
-               <double>10.000000000000000</double>
-              </property>
-             </widget>
-            </item>
-            <item row="1" column="0">
-             <widget class="QLabel" name="label_9">
-              <property name="minimumSize">
-               <size>
-                <width>170</width>
-                <height>0</height>
-               </size>
-              </property>
-              <property name="text">
-               <string>Basic.Settings.General.SnapDistance</string>
-              </property>
-              <property name="alignment">
-               <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-              </property>
-             </widget>
-            </item>
-           </layout>
-          </widget>
-         </item>
-         <item row="5" column="1">
-          <widget class="QCheckBox" name="hideProjectorCursor">
-           <property name="text">
-            <string>Basic.Settings.General.HideProjectorCursor</string>
-           </property>
-          </widget>
-         </item>
-         <item row="9" column="1">
-          <widget class="QCheckBox" name="keepRecordStreamStops">
-           <property name="enabled">
-            <bool>false</bool>
-           </property>
-           <property name="text">
-            <string>Basic.Settings.General.KeepRecordingWhenStreamStops</string>
-           </property>
-          </widget>
-         </item>
-         <item row="6" column="1">
-          <widget class="QCheckBox" name="projectorAlwaysOnTop">
-           <property name="text">
-            <string>Basic.Settings.General.ProjectorAlwaysOnTop</string>
-           </property>
-          </widget>
-         </item>
-         <item row="7" column="1">
-          <widget class="QCheckBox" name="saveProjectors">
-           <property name="text">
-            <string>Basic.Settings.General.SaveProjectors</string>
-           </property>
-          </widget>
-         </item>
-         <item row="11" column="1">
-          <widget class="QCheckBox" name="keepReplayStreamStops">
-           <property name="enabled">
-            <bool>false</bool>
-           </property>
-           <property name="text">
-            <string>Basic.Settings.General.KeepReplayBufferStreamStops</string>
-           </property>
-          </widget>
-         </item>
-         <item row="10" column="1">
-          <widget class="QCheckBox" name="replayWhileStreaming">
-           <property name="text">
-            <string>Basic.Settings.General.ReplayBufferWhileStreaming</string>
-           </property>
+            <layout class="QVBoxLayout" name="verticalLayout_19">
+             <property name="leftMargin">
+              <number>0</number>
+             </property>
+             <property name="topMargin">
+              <number>0</number>
+             </property>
+             <property name="rightMargin">
+              <number>0</number>
+             </property>
+             <property name="bottomMargin">
+              <number>9</number>
+             </property>
+             <item alignment="Qt::AlignTop">
+              <widget class="QWidget" name="widget_2" native="true">
+               <layout class="QVBoxLayout" name="verticalLayout_20">
+                <item>
+                 <widget class="QGroupBox" name="groupBox_15">
+                  <property name="title">
+                   <string>Basic.Settings.General</string>
+                  </property>
+                  <layout class="QFormLayout" name="formLayout_32">
+                   <property name="labelAlignment">
+                    <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                   </property>
+                   <item row="0" column="0">
+                    <widget class="QLabel" name="label">
+                     <property name="text">
+                      <string>Basic.Settings.General.Language</string>
+                     </property>
+                     <property name="buddy">
+                      <cstring>language</cstring>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="0" column="1">
+                    <widget class="QComboBox" name="language"/>
+                   </item>
+                   <item row="1" column="0">
+                    <widget class="QLabel" name="label_42">
+                     <property name="text">
+                      <string>Basic.Settings.General.Theme</string>
+                     </property>
+                     <property name="buddy">
+                      <cstring>theme</cstring>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="1" column="1">
+                    <widget class="QComboBox" name="theme"/>
+                   </item>
+                  </layout>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QGroupBox" name="groupBox_16">
+                  <property name="title">
+                   <string>Basic.Settings.Output</string>
+                  </property>
+                  <layout class="QFormLayout" name="formLayout_2">
+                   <item row="0" column="0">
+                    <spacer name="horizontalSpacer_5">
+                     <property name="orientation">
+                      <enum>Qt::Horizontal</enum>
+                     </property>
+                     <property name="sizeHint" stdset="0">
+                      <size>
+                       <width>170</width>
+                       <height>11</height>
+                      </size>
+                     </property>
+                    </spacer>
+                   </item>
+                   <item row="0" column="1">
+                    <widget class="QCheckBox" name="warnBeforeStreamStart">
+                     <property name="text">
+                      <string>Basic.Settings.General.WarnBeforeStartingStream</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="1" column="1">
+                    <widget class="QCheckBox" name="warnBeforeStreamStop">
+                     <property name="text">
+                      <string>Basic.Settings.General.WarnBeforeStoppingStream</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="2" column="1">
+                    <widget class="QCheckBox" name="recordWhenStreaming">
+                     <property name="text">
+                      <string>Basic.Settings.General.RecordWhenStreaming</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="3" column="1">
+                    <widget class="QCheckBox" name="keepRecordStreamStops">
+                     <property name="enabled">
+                      <bool>false</bool>
+                     </property>
+                     <property name="text">
+                      <string>Basic.Settings.General.KeepRecordingWhenStreamStops</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="4" column="1">
+                    <widget class="QCheckBox" name="replayWhileStreaming">
+                     <property name="text">
+                      <string>Basic.Settings.General.ReplayBufferWhileStreaming</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="5" column="1">
+                    <widget class="QCheckBox" name="keepReplayStreamStops">
+                     <property name="enabled">
+                      <bool>false</bool>
+                     </property>
+                     <property name="text">
+                      <string>Basic.Settings.General.KeepReplayBufferStreamStops</string>
+                     </property>
+                    </widget>
+                   </item>
+                  </layout>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QGroupBox" name="groupBox_10">
+                  <property name="enabled">
+                   <bool>true</bool>
+                  </property>
+                  <property name="sizePolicy">
+                   <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                   </sizepolicy>
+                  </property>
+                  <property name="title">
+                   <string>Basic.Settings.General.Snapping</string>
+                  </property>
+                  <property name="flat">
+                   <bool>false</bool>
+                  </property>
+                  <layout class="QFormLayout" name="formLayout_21">
+                   <property name="labelAlignment">
+                    <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                   </property>
+                   <property name="topMargin">
+                    <number>2</number>
+                   </property>
+                   <item row="0" column="1">
+                    <widget class="QCheckBox" name="snappingEnabled">
+                     <property name="text">
+                      <string>Enable</string>
+                     </property>
+                     <property name="checked">
+                      <bool>true</bool>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="2" column="1">
+                    <widget class="QCheckBox" name="screenSnapping">
+                     <property name="text">
+                      <string>Basic.Settings.General.ScreenSnapping</string>
+                     </property>
+                     <property name="checked">
+                      <bool>true</bool>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="4" column="1">
+                    <widget class="QCheckBox" name="centerSnapping">
+                     <property name="text">
+                      <string>Basic.Settings.General.CenterSnapping</string>
+                     </property>
+                     <property name="checked">
+                      <bool>true</bool>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="3" column="1">
+                    <widget class="QCheckBox" name="sourceSnapping">
+                     <property name="text">
+                      <string>Basic.Settings.General.SourceSnapping</string>
+                     </property>
+                     <property name="checked">
+                      <bool>true</bool>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="1" column="1">
+                    <widget class="QDoubleSpinBox" name="snapDistance">
+                     <property name="decimals">
+                      <number>1</number>
+                     </property>
+                     <property name="singleStep">
+                      <double>0.500000000000000</double>
+                     </property>
+                     <property name="value">
+                      <double>10.000000000000000</double>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="1" column="0">
+                    <widget class="QLabel" name="label_9">
+                     <property name="text">
+                      <string>Basic.Settings.General.SnapDistance</string>
+                     </property>
+                     <property name="buddy">
+                      <cstring>snapDistance</cstring>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="3" column="0">
+                    <spacer name="horizontalSpacer_4">
+                     <property name="orientation">
+                      <enum>Qt::Horizontal</enum>
+                     </property>
+                     <property name="sizeType">
+                      <enum>QSizePolicy::Fixed</enum>
+                     </property>
+                     <property name="sizeHint" stdset="0">
+                      <size>
+                       <width>170</width>
+                       <height>5</height>
+                      </size>
+                     </property>
+                    </spacer>
+                   </item>
+                  </layout>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QGroupBox" name="groupBox_14">
+                  <property name="title">
+                   <string>Basic.Settings.General.Projectors</string>
+                  </property>
+                  <layout class="QFormLayout" name="formLayout_28">
+                   <property name="topMargin">
+                    <number>2</number>
+                   </property>
+                   <item row="0" column="1">
+                    <widget class="QCheckBox" name="hideProjectorCursor">
+                     <property name="text">
+                      <string>Basic.Settings.General.HideProjectorCursor</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="1" column="1">
+                    <widget class="QCheckBox" name="projectorAlwaysOnTop">
+                     <property name="text">
+                      <string>Basic.Settings.General.ProjectorAlwaysOnTop</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="2" column="1">
+                    <widget class="QCheckBox" name="saveProjectors">
+                     <property name="text">
+                      <string>Basic.Settings.General.SaveProjectors</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="1" column="0">
+                    <spacer name="horizontalSpacer">
+                     <property name="orientation">
+                      <enum>Qt::Horizontal</enum>
+                     </property>
+                     <property name="sizeType">
+                      <enum>QSizePolicy::Fixed</enum>
+                     </property>
+                     <property name="sizeHint" stdset="0">
+                      <size>
+                       <width>170</width>
+                       <height>5</height>
+                      </size>
+                     </property>
+                    </spacer>
+                   </item>
+                  </layout>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QGroupBox" name="groupBox_13">
+                  <property name="title">
+                   <string>Basic.Settings.General.SysTray</string>
+                  </property>
+                  <layout class="QFormLayout" name="formLayout_29">
+                   <property name="topMargin">
+                    <number>2</number>
+                   </property>
+                   <item row="0" column="1">
+                    <widget class="QCheckBox" name="systemTrayEnabled">
+                     <property name="text">
+                      <string>Enabled</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="1" column="1">
+                    <widget class="QCheckBox" name="systemTrayWhenStarted">
+                     <property name="enabled">
+                      <bool>false</bool>
+                     </property>
+                     <property name="text">
+                      <string>Basic.Settings.General.SysTrayWhenStarted</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="2" column="1">
+                    <widget class="QCheckBox" name="systemTrayAlways">
+                     <property name="enabled">
+                      <bool>false</bool>
+                     </property>
+                     <property name="text">
+                      <string>Basic.Settings.General.SystemTrayHideMinimize</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="1" column="0">
+                    <spacer name="horizontalSpacer_2">
+                     <property name="orientation">
+                      <enum>Qt::Horizontal</enum>
+                     </property>
+                     <property name="sizeType">
+                      <enum>QSizePolicy::Fixed</enum>
+                     </property>
+                     <property name="sizeHint" stdset="0">
+                      <size>
+                       <width>170</width>
+                       <height>5</height>
+                      </size>
+                     </property>
+                    </spacer>
+                   </item>
+                  </layout>
+                 </widget>
+                </item>
+               </layout>
+              </widget>
+             </item>
+            </layout>
+           </widget>
           </widget>
          </item>
         </layout>
@@ -2936,8 +3053,8 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>800</width>
-              <height>69</height>
+              <width>63</width>
+              <height>16</height>
              </rect>
             </property>
            </widget>
@@ -3260,8 +3377,8 @@
           <rect>
            <x>0</x>
            <y>0</y>
-           <width>818</width>
-           <height>697</height>
+           <width>98</width>
+           <height>28</height>
           </rect>
          </property>
          <layout class="QFormLayout" name="hotkeyLayout">
@@ -3307,7 +3424,7 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>820</width>
+              <width>593</width>
               <height>699</height>
              </rect>
             </property>
@@ -3883,21 +4000,6 @@
  </widget>
  <tabstops>
   <tabstop>listWidget</tabstop>
-  <tabstop>language</tabstop>
-  <tabstop>theme</tabstop>
-  <tabstop>warnBeforeStreamStart</tabstop>
-  <tabstop>warnBeforeStreamStop</tabstop>
-  <tabstop>recordWhenStreaming</tabstop>
-  <tabstop>systemTrayEnabled</tabstop>
-  <tabstop>systemTrayWhenStarted</tabstop>
-  <tabstop>snappingEnabled</tabstop>
-  <tabstop>screenSnapping</tabstop>
-  <tabstop>centerSnapping</tabstop>
-  <tabstop>sourceSnapping</tabstop>
-  <tabstop>snapDistance</tabstop>
-  <tabstop>hideProjectorCursor</tabstop>
-  <tabstop>keepRecordStreamStops</tabstop>
-  <tabstop>projectorAlwaysOnTop</tabstop>
   <tabstop>streamType</tabstop>
   <tabstop>outputMode</tabstop>
   <tabstop>simpleOutputVBitrate</tabstop>
@@ -4062,7 +4164,7 @@
     </hint>
     <hint type="destinationlabel">
      <x>250</x>
-     <y>40</y>
+     <y>39</y>
     </hint>
    </hints>
   </connection>
@@ -4142,7 +4244,7 @@
     </hint>
     <hint type="destinationlabel">
      <x>241</x>
-     <y>53</y>
+     <y>54</y>
     </hint>
    </hints>
   </connection>
@@ -4157,7 +4259,7 @@
      <y>67</y>
     </hint>
     <hint type="destinationlabel">
-     <x>250</x>
+     <x>243</x>
      <y>67</y>
     </hint>
    </hints>
@@ -4217,12 +4319,12 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>724</x>
-     <y>436</y>
+     <x>503</x>
+     <y>450</y>
     </hint>
     <hint type="destinationlabel">
-     <x>397</x>
-     <y>462</y>
+     <x>269</x>
+     <y>476</y>
     </hint>
    </hints>
   </connection>
@@ -4233,12 +4335,12 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>724</x>
-     <y>436</y>
+     <x>503</x>
+     <y>450</y>
     </hint>
     <hint type="destinationlabel">
-     <x>724</x>
-     <y>485</y>
+     <x>503</x>
+     <y>499</y>
     </hint>
    </hints>
   </connection>
@@ -4249,92 +4351,12 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>724</x>
-     <y>436</y>
+     <x>503</x>
+     <y>450</y>
     </hint>
     <hint type="destinationlabel">
-     <x>724</x>
-     <y>462</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>snappingEnabled</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>label_9</receiver>
-   <slot>setEnabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>951</x>
-     <y>441</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>346</x>
-     <y>467</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>snappingEnabled</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>snapDistance</receiver>
-   <slot>setEnabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>951</x>
-     <y>441</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>951</x>
-     <y>467</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>snappingEnabled</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>screenSnapping</receiver>
-   <slot>setEnabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>951</x>
-     <y>441</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>951</x>
-     <y>490</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>snappingEnabled</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>sourceSnapping</receiver>
-   <slot>setEnabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>951</x>
-     <y>441</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>951</x>
-     <y>513</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>snappingEnabled</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>centerSnapping</receiver>
-   <slot>setEnabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>951</x>
-     <y>441</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>951</x>
-     <y>536</y>
+     <x>503</x>
+     <y>476</y>
     </hint>
    </hints>
   </connection>
@@ -4355,34 +4377,18 @@
    </hints>
   </connection>
   <connection>
-   <sender>recordWhenStreaming</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>keepRecordStreamStops</receiver>
-   <slot>setEnabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>961</x>
-     <y>248</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>961</x>
-     <y>271</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
    <sender>systemTrayEnabled</sender>
    <signal>toggled(bool)</signal>
    <receiver>systemTrayWhenStarted</receiver>
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>961</x>
-     <y>340</y>
+     <x>384</x>
+     <y>559</y>
     </hint>
     <hint type="destinationlabel">
-     <x>961</x>
-     <y>363</y>
+     <x>400</x>
+     <y>585</y>
     </hint>
    </hints>
   </connection>
@@ -4393,12 +4399,108 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>336</x>
-     <y>324</y>
+     <x>484</x>
+     <y>566</y>
     </hint>
     <hint type="destinationlabel">
-     <x>336</x>
-     <y>370</y>
+     <x>480</x>
+     <y>605</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>snappingEnabled</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>label_9</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>380</x>
+     <y>322</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>330</x>
+     <y>350</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>snappingEnabled</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>snapDistance</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>421</x>
+     <y>325</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>429</x>
+     <y>346</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>snappingEnabled</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>screenSnapping</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>467</x>
+     <y>325</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>484</x>
+     <y>378</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>snappingEnabled</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>sourceSnapping</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>528</x>
+     <y>329</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>537</x>
+     <y>392</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>snappingEnabled</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>centerSnapping</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>575</x>
+     <y>328</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>562</x>
+     <y>422</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>recordWhenStreaming</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>keepRecordStreamStops</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>457</x>
+     <y>205</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>474</x>
+     <y>226</y>
     </hint>
    </hints>
   </connection>
@@ -4409,12 +4511,12 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>497</x>
-     <y>288</y>
+     <x>401</x>
+     <y>247</y>
     </hint>
     <hint type="destinationlabel">
-     <x>513</x>
-     <y>304</y>
+     <x>407</x>
+     <y>270</y>
     </hint>
    </hints>
   </connection>
