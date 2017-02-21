@@ -491,6 +491,12 @@ static bool replay_buffer_hotkey(void *data, obs_hotkey_id id,
 	return true;
 }
 
+static void save_replay_proc(void *data, calldata_t *cd)
+{
+	replay_buffer_hotkey(data, 0, NULL, true);
+	UNUSED_PARAMETER(cd);
+}
+
 static void *replay_buffer_create(obs_data_t *settings, obs_output_t *output)
 {
 	struct ffmpeg_muxer *stream = bzalloc(sizeof(*stream));
@@ -500,6 +506,9 @@ static void *replay_buffer_create(obs_data_t *settings, obs_output_t *output)
 			"ReplayBuffer.Save",
 			obs_module_text("ReplayBuffer.Save"),
 			replay_buffer_hotkey, stream);
+
+	proc_handler_t *ph = obs_output_get_proc_handler(output);
+	proc_handler_add(ph, "void save()", save_replay_proc, stream);
 
 	UNUSED_PARAMETER(settings);
 	return stream;
