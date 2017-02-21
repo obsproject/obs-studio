@@ -332,7 +332,7 @@
             "recommended": {
                 "keyint": 1,
                 "max audio bitrate": 160,
-                "max video bitrate": 3500,
+                "max video bitrate": 10000,
                 "profile": "main"
             }
         },
