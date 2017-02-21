@@ -30,6 +30,8 @@ struct audio_monitor {
 	IAudioRenderClient *render;
 
 	uint64_t           last_recv_time;
+	uint64_t           prev_video_ts;
+	uint64_t           time_since_prev;
 	audio_resampler_t  *resampler;
 	uint32_t           sample_rate;
 	uint32_t           channels;
@@ -66,6 +68,16 @@ static bool process_audio_delay(struct audio_monitor *monitor,
 	circlebuf_push_back(&monitor->delay_buffer, *data,
 			*frames * blocksize);
 
+	if (!monitor->prev_video_ts) {
+		monitor->prev_video_ts = last_frame_ts;
+
+	} else if (monitor->prev_video_ts == last_frame_ts) {
+		monitor->time_since_prev += (uint64_t)*frames *
+			1000000000ULL / (uint64_t)monitor->sample_rate;
+	} else {
+		monitor->time_since_prev = 0;
+	}
+
 	while (monitor->delay_buffer.size != 0) {
 		size_t size;
 		bool bad_diff;
@@ -76,7 +88,9 @@ static bool process_audio_delay(struct audio_monitor *monitor,
 			((uint64_t)pad * 1000000000ULL /
 			 (uint64_t)monitor->sample_rate);
 		diff = (int64_t)front_ts - (int64_t)last_frame_ts;
-		bad_diff = llabs(diff) > 5000000000;
+		bad_diff = !last_frame_ts ||
+		           llabs(diff) > 5000000000 ||
+		           monitor->time_since_prev > 100000000ULL;
 
 		/* delay audio if rushing */
 		if (!bad_diff && diff > 75000000) {
