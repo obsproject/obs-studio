@@ -825,8 +825,6 @@ static bool rtmp_stream_start(void *data)
 	if (!obs_output_initialize_encoders(stream->output, 0))
 		return false;
 
-	RTMP_Init(&stream->rtmp);
-
 	os_atomic_set_bool(&stream->connecting, true);
 	return pthread_create(&stream->connect_thread, NULL, connect_thread,
 			stream) == 0;
