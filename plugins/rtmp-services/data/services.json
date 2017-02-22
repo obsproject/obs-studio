@@ -841,6 +841,15 @@
                 "max video bitrate": 2000,
                 "max audio bitrate": 160
             }
+        },
+        {
+            "name": "Pandora TV Korea",
+            "servers": [
+                {
+                    "name": "Default",
+                    "url": "rtmp://plive.pandora.tv:80/mediaHub"
+                }
+            ]
         }
     ]
 }
