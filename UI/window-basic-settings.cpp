@@ -402,6 +402,8 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->reconnectMaxRetries,  SCROLL_CHANGED, ADV_CHANGED);
 	HookWidget(ui->processPriority,      COMBO_CHANGED,  ADV_CHANGED);
 	HookWidget(ui->bindToIP,             COMBO_CHANGED,  ADV_CHANGED);
+	HookWidget(ui->enableNewSocketLoop,  CHECK_CHANGED,  ADV_CHANGED);
+	HookWidget(ui->enableLowLatencyMode, CHECK_CHANGED,  ADV_CHANGED);
 
 #if !defined(_WIN32) && !defined(__APPLE__)
 	delete ui->monitoringDevice;
@@ -1961,6 +1963,10 @@ void OBSBasicSettings::LoadAdvancedSettings()
 			"RecRBPrefix");
 	const char *rbSuffix = config_get_string(main->Config(), "SimpleOutput",
 			"RecRBSuffix");
+	bool enableNewSocketLoop = config_get_bool(main->Config(), "Output",
+			"NewSocketLoopEnable");
+	bool enableLowLatencyMode = config_get_bool(main->Config(), "Output",
+			"LowLatencyEnable");
 	int idx;
 
 	loading = true;
@@ -1998,6 +2004,9 @@ void OBSBasicSettings::LoadAdvancedSettings()
 	ui->streamDelaySec->setValue(delaySec);
 	ui->streamDelayPreserve->setChecked(preserveDelay);
 	ui->streamDelayEnable->setChecked(enableDelay);
+
+	ui->enableNewSocketLoop->setChecked(enableNewSocketLoop);
+	ui->enableLowLatencyMode->setChecked(enableLowLatencyMode);
 
 	SetComboByName(ui->colorFormat, videoColorFormat);
 	SetComboByName(ui->colorSpace, videoColorSpace);
@@ -2529,6 +2538,8 @@ void OBSBasicSettings::SaveAdvancedSettings()
 	SaveSpinBox(ui->reconnectRetryDelay, "Output", "RetryDelay");
 	SaveSpinBox(ui->reconnectMaxRetries, "Output", "MaxRetries");
 	SaveComboData(ui->bindToIP, "Output", "BindIP");
+	SaveCheckBox(ui->enableNewSocketLoop, "Output", "NewSocketLoopEnable");
+	SaveCheckBox(ui->enableLowLatencyMode, "Output", "LowLatencyEnable");
 
 #if defined(_WIN32) || defined(__APPLE__)
 	obs_set_audio_monitoring_device(
