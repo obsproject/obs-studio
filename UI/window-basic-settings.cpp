@@ -403,6 +403,8 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->reconnectMaxRetries,  SCROLL_CHANGED, ADV_CHANGED);
 	HookWidget(ui->processPriority,      COMBO_CHANGED,  ADV_CHANGED);
 	HookWidget(ui->bindToIP,             COMBO_CHANGED,  ADV_CHANGED);
+	HookWidget(ui->enableNewSocketLoop,  CHECK_CHANGED,  ADV_CHANGED);
+	HookWidget(ui->enableLowLatencyMode, CHECK_CHANGED,  ADV_CHANGED);
 
 #if !defined(_WIN32) && !defined(__APPLE__)
 	delete ui->monitoringDevice;
@@ -453,6 +455,8 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	delete ui->processPriorityLabel;
 	delete ui->processPriority;
 	delete ui->advancedGeneralGroupBox;
+	delete ui->enableNewSocketLoop;
+	delete ui->enableLowLatencyMode;
 	ui->rendererLabel = nullptr;
 	ui->renderer = nullptr;
 	ui->adapterLabel = nullptr;
@@ -460,6 +464,8 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	ui->processPriorityLabel = nullptr;
 	ui->processPriority = nullptr;
 	ui->advancedGeneralGroupBox = nullptr;
+	ui->enableNewSocketLoop = nullptr;
+	ui->enableLowLatencyMode = nullptr;
 #endif
 
 #ifndef __APPLE__
@@ -2004,6 +2010,7 @@ void OBSBasicSettings::LoadAdvancedSettings()
 	ui->streamDelayPreserve->setChecked(preserveDelay);
 	ui->streamDelayEnable->setChecked(enableDelay);
 
+
 	SetComboByName(ui->colorFormat, videoColorFormat);
 	SetComboByName(ui->colorSpace, videoColorSpace);
 	SetComboByValue(ui->colorRange, videoColorRange);
@@ -2025,10 +2032,18 @@ void OBSBasicSettings::LoadAdvancedSettings()
 #elif _WIN32
 	const char *processPriority = config_get_string(App()->GlobalConfig(),
 			"General", "ProcessPriority");
+	bool enableNewSocketLoop = config_get_bool(main->Config(), "Output",
+			"NewSocketLoopEnable");
+	bool enableLowLatencyMode = config_get_bool(main->Config(), "Output",
+			"LowLatencyEnable");
+
 	idx = ui->processPriority->findData(processPriority);
 	if (idx == -1)
 		idx = ui->processPriority->findData("Normal");
 	ui->processPriority->setCurrentIndex(idx);
+
+	ui->enableNewSocketLoop->setChecked(enableNewSocketLoop);
+	ui->enableLowLatencyMode->setChecked(enableLowLatencyMode);
 #endif
 
 	loading = false;
@@ -2505,6 +2520,9 @@ void OBSBasicSettings::SaveAdvancedSettings()
 			priority.c_str());
 	if (main->Active())
 		SetProcessPriority(priority.c_str());
+
+	SaveCheckBox(ui->enableNewSocketLoop, "Output", "NewSocketLoopEnable");
+	SaveCheckBox(ui->enableLowLatencyMode, "Output", "LowLatencyEnable");
 #endif
 
 #ifdef __APPLE__

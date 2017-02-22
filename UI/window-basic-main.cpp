@@ -1001,6 +1001,10 @@ bool OBSBasic::InitBasicConfigDefaults()
 	config_set_default_uint  (basicConfig, "Output", "MaxRetries", 20);
 
 	config_set_default_string(basicConfig, "Output", "BindIP", "default");
+	config_set_default_bool  (basicConfig, "Output", "NewSocketLoopEnable",
+			false);
+	config_set_default_bool  (basicConfig, "Output", "LowLatencyEnable",
+			false);
 
 	int i = 0;
 	uint32_t scale_cx = cx;
