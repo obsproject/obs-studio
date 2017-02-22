@@ -28,6 +28,8 @@
 #define OPT_PFRAME_DROP_THRESHOLD "pframe_drop_threshold_ms"
 #define OPT_MAX_SHUTDOWN_TIME_SEC "max_shutdown_time_sec"
 #define OPT_BIND_IP "bind_ip"
+#define OPT_NEWSOCKETLOOP_ENABLED "new_socket_loop_enabled"
+#define OPT_LOWLATENCY_ENABLED "low_latency_mode_enabled"
 
 #define STREAM_WRITE_BUFFER_SIZE 524288
 
