@@ -563,6 +563,10 @@ static int init_send(struct rtmp_stream *stream)
 			return OBS_OUTPUT_ERROR;
 		}
 
+		info("New socket loop enabled by user");
+		if (stream->low_latency_mode)
+			info("Low latency mode enabled by user");
+
 		stream->write_buf_size = STREAM_WRITE_BUFFER_SIZE;
 		stream->write_buf = bmalloc(STREAM_WRITE_BUFFER_SIZE);
 
