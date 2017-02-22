@@ -16,6 +16,8 @@
 ******************************************************************************/
 
 #include "ffmpeg-decode.h"
+#include <util/util_uint128.h>
+#include <util/base.h>
 #include <obs-avc.h>
 
 int ffmpeg_decode_init(struct ffmpeg_decode *decode, enum AVCodecID id)
@@ -107,8 +109,33 @@ static inline void copy_data(struct ffmpeg_decode *decode, uint8_t *data,
 	memcpy(decode->packet_buffer, data, size);
 }
 
+static void do_idiotic_lgp_audio_packet_realignment(
+		struct ffmpeg_decode *decode, long long *ts)
+{
+	uint64_t new_ts = (uint64_t)*ts;
+	util_uint128_t u128;
+
+	if (!decode->lgp_started) {
+		decode->lgp_start_ts = new_ts;
+		decode->lgp_next_expected_ts = new_ts;
+		decode->lgp_started = true;
+	}
+
+	if (llabs(decode->lgp_next_expected_ts - new_ts) < 3000000ULL) {
+		*ts = (long long)decode->lgp_next_expected_ts;
+	} else {
+		decode->lgp_start_ts = new_ts;
+		decode->lgp_frames_since_start = 0;
+	}
+
+	decode->lgp_frames_since_start += (uint64_t)decode->frame->nb_samples;
+	u128 = util_mul64_64(decode->lgp_frames_since_start, 10000000ULL);
+	decode->lgp_next_expected_ts = decode->lgp_start_ts +
+		util_div128_32(u128, (uint32_t)decode->frame->sample_rate).low;
+}
+
 int ffmpeg_decode_audio(struct ffmpeg_decode *decode,
-		uint8_t *data, size_t size,
+		uint8_t *data, size_t size, long long *ts,
 		struct obs_source_audio *audio,
 		bool *got_output)
 {
@@ -147,6 +174,9 @@ int ffmpeg_decode_audio(struct ffmpeg_decode *decode,
 
 	if (audio->format == AUDIO_FORMAT_UNKNOWN)
 		return 0;
+
+	if (decode->fix_braindead_lgp_audio_packet_stupidity)
+		do_idiotic_lgp_audio_packet_realignment(decode, ts);
 
 	*got_output = true;
 	return len;

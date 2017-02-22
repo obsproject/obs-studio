@@ -44,13 +44,19 @@ struct ffmpeg_decode {
 
 	uint8_t        *packet_buffer;
 	size_t         packet_size;
+
+	uint64_t       lgp_start_ts;
+	uint64_t       lgp_frames_since_start;
+	uint64_t       lgp_next_expected_ts;
+	bool           lgp_started;
+	bool           fix_braindead_lgp_audio_packet_stupidity;
 };
 
 extern int ffmpeg_decode_init(struct ffmpeg_decode *decode, enum AVCodecID id);
 extern void ffmpeg_decode_free(struct ffmpeg_decode *decode);
 
 extern int ffmpeg_decode_audio(struct ffmpeg_decode *decode,
-		uint8_t *data, size_t size,
+		uint8_t *data, size_t size, long long *ts,
 		struct obs_source_audio *audio,
 		bool *got_output);
 

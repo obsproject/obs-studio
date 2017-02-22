@@ -116,6 +116,7 @@ public:
 	inline ~Decoder() {ffmpeg_decode_free(&decode);}
 
 	inline operator ffmpeg_decode*() {return &decode;}
+	inline ffmpeg_decode *operator->() {return &decode;}
 };
 
 class CriticalSection {
@@ -507,10 +508,18 @@ void DShowInput::OnEncodedAudioData(enum AVCodecID id,
 			blog(LOG_WARNING, "Could not initialize audio decoder");
 			return;
 		}
+
+		if (videoConfig.name.find(L"C875") != std::string::npos ||
+		    videoConfig.name.find(L"C835") != std::string::npos) {
+			audio_decoder->fix_braindead_lgp_audio_packet_stupidity
+				= true;
+			blog(LOG_INFO, "Oh great, an LGP was detected.  "
+					"How wonderful.  I'm just ecstatic.");
+		}
 	}
 
 	bool got_output;
-	int len = ffmpeg_decode_audio(audio_decoder, data, size,
+	int len = ffmpeg_decode_audio(audio_decoder, data, size, &ts,
 			&audio, &got_output);
 	if (len < 0) {
 		blog(LOG_WARNING, "Error decoding audio");
