@@ -4,7 +4,7 @@ environment:
 install:
   - git submodule update --init --recursive
   - git clone https://github.com/videolan/vlc.git
-  - curl -kLO https://obsproject.com/downloads/dependencies2015.zip
+  - curl -kLO https://obsproject.com/downloads/dependencies2015.zip -f --retry 5 -C -
   - 7z x dependencies2015.zip -odependencies2015
   - set DepsPath32=%CD%\dependencies2015\win32
   - set DepsPath64=%CD%\dependencies2015\win64
