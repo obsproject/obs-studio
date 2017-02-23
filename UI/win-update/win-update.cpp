@@ -11,6 +11,7 @@
 #include <util/windows/WinHandle.hpp>
 #include <util/util.hpp>
 #include <jansson.h>
+#include <blake2.h>
 
 #include <time.h>
 #include <strsafe.h>
@@ -39,6 +40,9 @@ typedef struct {
 } PUBLICKEYHEADER;
 
 #pragma pack(pop, r1)
+
+#define BLAKE2_HASH_LENGTH 20
+#define BLAKE2_HASH_STR_LENGTH ((BLAKE2_HASH_LENGTH * 2) + 1)
 
 #define TEST_BUILD
 
@@ -185,18 +189,18 @@ static void HashToString(const uint8_t *in, char *out)
 {
 	const char alphabet[] = "0123456789abcdef";
 
-	for (int i = 0; i != 20; ++i) {
+	for (int i = 0; i != BLAKE2_HASH_LENGTH; ++i) {
 		out[2 * i]     = alphabet[in[i] / 16];
 		out[2 * i + 1] = alphabet[in[i] % 16];
 	}
 
-	out[40] = 0;
+	out[BLAKE2_HASH_LENGTH * 2] = 0;
 }
 
 static bool CalculateFileHash(const char *path, uint8_t *hash)
 try {
-	CryptHash hHash;
-	if (!CryptCreateHash(provider, CALG_SHA1, 0, 0, &hHash))
+	blake2b_state blake2;
+	if (blake2b_init(&blake2, BLAKE2_HASH_LENGTH) != 0)
 		return false;
 
 	BPtr<wchar_t> w_path;
@@ -222,12 +226,11 @@ try {
 		if (!read)
 			break;
 
-		if (!CryptHashData(hHash, buf.data(), read, 0))
+		if (blake2b_update(&blake2, buf.data(), read) != 0)
 			return false;
 	}
 
-	DWORD hashLength = 20;
-	if (!CryptGetHashParam(hHash, HP_HASHVAL, hash, &hashLength, 0))
+	if (blake2b_final(&blake2, hash, BLAKE2_HASH_LENGTH) != 0)
 		return false;
 
 	return true;
@@ -366,14 +369,14 @@ try {
 static bool FetchUpdaterModule(const char *url)
 try {
 	long     responseCode;
-	uint8_t  updateFileHash[20];
+	uint8_t  updateFileHash[BLAKE2_HASH_LENGTH];
 	vector<string> extraHeaders;
 
 	BPtr<char> updateFilePath = GetConfigPathPtr(
 			"obs-studio\\updates\\updater.exe");
 
 	if (CalculateFileHash(updateFilePath, updateFileHash)) {
-		char hashString[41];
+		char hashString[BLAKE2_HASH_STR_LENGTH];
 		HashToString(updateFileHash, hashString);
 
 		string header = "If-None-Match: ";
@@ -534,7 +537,7 @@ try {
 	string         error;
 	string         signature;
 	CryptProvider  provider;
-	BYTE           manifestHash[20];
+	BYTE           manifestHash[BLAKE2_HASH_LENGTH];
 	bool           updatesAvailable = false;
 	bool           success;
 
@@ -590,7 +593,7 @@ try {
 	 * avoid downloading manifest again    */
 
 	if (CalculateFileHash(manifestPath, manifestHash)) {
-		char hashString[41];
+		char hashString[BLAKE2_HASH_STR_LENGTH];
 		HashToString(manifestHash, hashString);
 
 		string header = "If-None-Match: ";
@@ -620,7 +623,7 @@ try {
 	}
 
 	if (!guid.empty()) {
-		string header = "X-OBS-GUID: ";
+		string header = "X-OBS2-GUID: ";
 		header += guid;
 		extraHeaders.push_back(move(header));
 	}
