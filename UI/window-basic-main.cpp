@@ -1918,6 +1918,9 @@ void OBSBasic::RemoveScene(OBSSource source)
 		blog(LOG_INFO, "User Removed scene '%s'",
 				obs_source_get_name(source));
 	}
+
+	if (api)
+		api->on_event(OBS_FRONTEND_EVENT_SCENE_LIST_CHANGED);
 }
 
 void OBSBasic::AddSceneItem(OBSSceneItem item)
