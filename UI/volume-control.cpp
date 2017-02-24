@@ -1,5 +1,6 @@
 #include "volume-control.hpp"
 #include "qt-wrappers.hpp"
+#include "obs-app.hpp"
 #include "mute-checkbox.hpp"
 #include "slider-absoluteset-style.hpp"
 #include <util/platform.h>
@@ -86,8 +87,19 @@ void VolControl::SliderChanged(int vol)
 
 void VolControl::updateText()
 {
-	volLabel->setText(QString::number(obs_fader_get_db(obs_fader), 'f', 1)
-			.append(" dB"));
+	QString db = QString::number(obs_fader_get_db(obs_fader), 'f', 1)
+			.append(" dB");
+	volLabel->setText(db);
+
+	bool muted = obs_source_muted(source);
+	const char *accTextLookup = muted
+		? "VolControl.SliderMuted"
+		: "VolControl.SliderUnmuted";
+
+	QString sourceName = obs_source_get_name(source);
+	QString accText = QTStr(accTextLookup).arg(sourceName, db);
+
+	slider->setAccessibleName(accText);
 }
 
 QString VolControl::GetName() const
@@ -126,7 +138,9 @@ VolControl::VolControl(OBSSource source_, bool showConfig)
 	QFont font = nameLabel->font();
 	font.setPointSize(font.pointSize()-1);
 
-	nameLabel->setText(obs_source_get_name(source));
+	QString sourceName = obs_source_get_name(source);
+
+	nameLabel->setText(sourceName);
 	nameLabel->setFont(font);
 	volLabel->setFont(font);
 	slider->setMinimum(0);
@@ -140,7 +154,10 @@ VolControl::VolControl(OBSSource source_, bool showConfig)
 	textLayout->setAlignment(nameLabel, Qt::AlignLeft);
 	textLayout->setAlignment(volLabel,  Qt::AlignRight);
 
-	mute->setChecked(obs_source_muted(source));
+	bool muted = obs_source_muted(source);
+	mute->setChecked(muted);
+	mute->setAccessibleName(
+			QTStr("VolControl.Mute").arg(sourceName));
 
 	volLayout->addWidget(slider);
 	volLayout->addWidget(mute);
@@ -158,6 +175,9 @@ VolControl::VolControl(OBSSource source_, bool showConfig)
 				QSizePolicy::Maximum);
 		config->setMaximumSize(22, 22);
 		config->setAutoDefault(false);
+
+		config->setAccessibleName(QTStr("VolControl.Properties")
+				.arg(sourceName));
 
 		connect(config, &QAbstractButton::clicked,
 				this, &VolControl::EmitConfigClicked);
