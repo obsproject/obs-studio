@@ -1,6 +1,6 @@
 ; Script generated with the Venis Install Wizard
 
-; Unicode true
+Unicode true
 
 ; Define your application name
 !define APPNAME "OBS Studio"
@@ -38,7 +38,9 @@ RequestExecutionLevel admin
 !include "MUI.nsh"
 
 !define MUI_ABORTWARNING
-!define MUI_FINISHPAGE_RUN "$INSTDIR\bin\32bit\obs32.exe"
+!define MUI_FINISHPAGE_RUN
+!define MUI_FINISHPAGE_RUN_TEXT "Launch OBS Studio ${SHORTVERSION}"
+!define MUI_FINISHPAGE_RUN_FUNCTION "LaunchOBS"
 
 !define MUI_PAGE_CUSTOMFUNCTION_LEAVE PreReqCheck
 
@@ -193,6 +195,14 @@ FunctionEnd
 
 Function filesInUse
 	MessageBox MB_OK|MB_ICONEXCLAMATION "Some files were not able to be installed. If this is the first time you are installing OBS, please disable any anti-virus or other security software and try again. If you are re-installing or updating OBS, close any applications that may be have been hooked, or reboot and try again."  /SD IDOK
+FunctionEnd
+
+Function LaunchOBS
+	${if} ${RunningX64}
+		Exec '"$WINDIR\explorer.exe" "$SMPROGRAMS\OBS Studio\OBS Studio (64bit).lnk"'
+	${else}
+		Exec '"$WINDIR\explorer.exe" "$SMPROGRAMS\OBS Studio\OBS Studio (32bit).lnk"'
+	${endif}
 FunctionEnd
 
 Var outputErrors
