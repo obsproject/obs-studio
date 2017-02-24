@@ -35,3 +35,7 @@ deploy_script:
   - ps: Push-AppveyorArtifact "build.zip" -FileName "$(git describe).zip"
 
 test: off
+
+cache:
+  - dependencies2015.zip
+  - vlc.zip
