@@ -149,7 +149,7 @@ static inline void render_display_begin(struct obs_display *display,
 {
 	struct vec4 clear_color;
 
-	gs_load_swapchain(display ? display->swap : NULL);
+	gs_load_swapchain(display->swap);
 
 	if (size_changed)
 		gs_resize(cx, cy);

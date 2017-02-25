@@ -95,25 +95,23 @@ static void rtmp_stream_destroy(void *data)
 	if (stream->socket_thread_active)
 		pthread_join(stream->socket_thread, NULL);
 
-	if (stream) {
-		free_packets(stream);
-		dstr_free(&stream->path);
-		dstr_free(&stream->key);
-		dstr_free(&stream->username);
-		dstr_free(&stream->password);
-		dstr_free(&stream->encoder_name);
-		dstr_free(&stream->bind_ip);
-		os_event_destroy(stream->stop_event);
-		os_sem_destroy(stream->send_sem);
-		pthread_mutex_destroy(&stream->packets_mutex);
-		circlebuf_free(&stream->packets);
+	free_packets(stream);
+	dstr_free(&stream->path);
+	dstr_free(&stream->key);
+	dstr_free(&stream->username);
+	dstr_free(&stream->password);
+	dstr_free(&stream->encoder_name);
+	dstr_free(&stream->bind_ip);
+	os_event_destroy(stream->stop_event);
+	os_sem_destroy(stream->send_sem);
+	pthread_mutex_destroy(&stream->packets_mutex);
+	circlebuf_free(&stream->packets);
 #ifdef TEST_FRAMEDROPS
-		circlebuf_free(&stream->droptest_info);
+	circlebuf_free(&stream->droptest_info);
 #endif
-		if (stream->write_buf)
-			bfree(stream->write_buf);
-		bfree(stream);
-	}
+	if (stream->write_buf)
+		bfree(stream->write_buf);
+	bfree(stream);
 }
 
 static void *rtmp_stream_create(obs_data_t *settings, obs_output_t *output)

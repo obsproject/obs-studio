@@ -551,7 +551,7 @@ static inline struct list_data *get_list_fmt_data(struct obs_property *p,
 		enum obs_combo_format format)
 {
 	struct list_data *data = get_list_data(p);
-	return (data->format == format) ? data : NULL;
+	return (data && data->format == format) ? data : NULL;
 }
 
 /* ------------------------------------------------------------------------- */

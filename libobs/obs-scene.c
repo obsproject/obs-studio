@@ -1395,8 +1395,7 @@ void obs_sceneitem_remove(obs_sceneitem_t *item)
 
 	scene = item->parent;
 
-	if (scene)
-		full_lock(scene);
+	full_lock(scene);
 
 	if (item->removed) {
 		if (scene)

@@ -927,11 +927,6 @@ int obs_reset_video(struct obs_video_info *ovi)
 	stop_video();
 	obs_free_video();
 
-	if (!ovi) {
-		obs_free_graphics();
-		return OBS_VIDEO_SUCCESS;
-	}
-
 	/* align to multiple-of-two and SSE alignment sizes */
 	ovi->output_width  &= 0xFFFFFFFC;
 	ovi->output_height &= 0xFFFFFFFE;
