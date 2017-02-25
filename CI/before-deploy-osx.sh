@@ -1,3 +1,6 @@
+# Exit if something fails
+set -e
+
 export GIT_HASH=$(git rev-parse --short HEAD)
 export FILE_DATE=$(date +%Y-%m-%d.%H:%M:%S)
 export FILENAME=$FILE_DATE-$GIT_HASH-osx.pkg
