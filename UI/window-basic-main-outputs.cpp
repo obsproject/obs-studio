@@ -1170,6 +1170,8 @@ inline void AdvancedOutput::SetupFFmpeg()
 	const char *url = config_get_string(main->Config(), "AdvOut", "FFURL");
 	int vBitrate = config_get_int(main->Config(), "AdvOut",
 			"FFVBitrate");
+	int gopSize = config_get_int(main->Config(), "AdvOut",
+			"FFVGOPSize");
 	bool rescale = config_get_bool(main->Config(), "AdvOut",
 			"FFRescale");
 	const char *rescaleRes = config_get_string(main->Config(), "AdvOut",
@@ -1202,6 +1204,7 @@ inline void AdvancedOutput::SetupFFmpeg()
 	obs_data_set_string(settings, "format_name", formatName);
 	obs_data_set_string(settings, "format_mime_type", mimeType);
 	obs_data_set_string(settings, "muxer_settings", muxCustom);
+	obs_data_set_int(settings, "gop_size", gopSize);
 	obs_data_set_int(settings, "video_bitrate", vBitrate);
 	obs_data_set_string(settings, "video_encoder", vEncoder);
 	obs_data_set_int(settings, "video_encoder_id", vEncoderId);
