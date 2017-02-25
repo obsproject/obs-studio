@@ -14,6 +14,7 @@ sudo apt-get install -y \
         libavformat-ffmpeg-dev \
         libavutil-ffmpeg-dev \
         libcurl4-openssl-dev \
+        libfdk-aac-dev \
         libfontconfig-dev \
         libfreetype6-dev \
         libgl1-mesa-dev \
