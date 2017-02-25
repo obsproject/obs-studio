@@ -165,6 +165,9 @@
                    <string>Basic.Settings.General</string>
                   </property>
                   <layout class="QFormLayout" name="formLayout_32">
+                   <property name="fieldGrowthPolicy">
+                    <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+                   </property>
                    <property name="labelAlignment">
                     <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                    </property>
@@ -232,6 +235,9 @@
                    <string>Basic.Settings.Output</string>
                   </property>
                   <layout class="QFormLayout" name="formLayout_2">
+                   <property name="fieldGrowthPolicy">
+                    <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+                   </property>
                    <property name="topMargin">
                     <number>2</number>
                    </property>
@@ -320,6 +326,9 @@
                    <bool>false</bool>
                   </property>
                   <layout class="QFormLayout" name="formLayout_21">
+                   <property name="fieldGrowthPolicy">
+                    <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+                   </property>
                    <property name="labelAlignment">
                     <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                    </property>
@@ -414,6 +423,9 @@
                    <string>Basic.Settings.General.Projectors</string>
                   </property>
                   <layout class="QFormLayout" name="formLayout_28">
+                   <property name="fieldGrowthPolicy">
+                    <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+                   </property>
                    <property name="topMargin">
                     <number>2</number>
                    </property>
@@ -463,6 +475,9 @@
                    <string>Basic.Settings.General.SysTray</string>
                   </property>
                   <layout class="QFormLayout" name="formLayout_29">
+                   <property name="fieldGrowthPolicy">
+                    <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+                   </property>
                    <property name="topMargin">
                     <number>2</number>
                    </property>
@@ -3088,8 +3103,8 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>63</width>
-              <height>16</height>
+              <width>98</width>
+              <height>28</height>
              </rect>
             </property>
            </widget>
@@ -3458,7 +3473,7 @@
             <property name="geometry">
              <rect>
               <x>0</x>
-              <y>-16</y>
+              <y>0</y>
               <width>803</width>
               <height>738</height>
              </rect>
@@ -3485,6 +3500,9 @@
                    <string>Basic.Settings.General</string>
                   </property>
                   <layout class="QFormLayout" name="formLayout_22">
+                   <property name="fieldGrowthPolicy">
+                    <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+                   </property>
                    <item row="0" column="0">
                     <widget class="QLabel" name="processPriorityLabel">
                      <property name="text">
@@ -3694,6 +3712,9 @@
                    <string>Basic.Settings.Audio</string>
                   </property>
                   <layout class="QFormLayout" name="formLayout_27">
+                   <property name="fieldGrowthPolicy">
+                    <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+                   </property>
                    <item row="0" column="0">
                     <widget class="QLabel" name="monitoringDeviceLabel">
                      <property name="text">
@@ -3716,6 +3737,9 @@
                    <string>Basic.Settings.Output.Adv.Recording</string>
                   </property>
                   <layout class="QFormLayout" name="formLayout_17">
+                   <property name="fieldGrowthPolicy">
+                    <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+                   </property>
                    <property name="labelAlignment">
                     <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                    </property>
@@ -3790,6 +3814,9 @@
                    <string>Basic.Settings.Advanced.StreamDelay</string>
                   </property>
                   <layout class="QFormLayout" name="formLayout_18">
+                   <property name="fieldGrowthPolicy">
+                    <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+                   </property>
                    <property name="topMargin">
                     <number>2</number>
                    </property>
