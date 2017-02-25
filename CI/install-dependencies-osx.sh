@@ -1,6 +1,8 @@
 # Exit if something fails
 set -e
 
+git fetch --tags
+
 # Leave obs-studio folder
 cd ../
 
