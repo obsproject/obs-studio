@@ -695,15 +695,32 @@ void OBSBasicSettings::LoadEncoderTypes()
 		const char *codec = obs_get_encoder_codec(type);
 		uint32_t caps = obs_get_encoder_caps(type);
 
-		if (strcmp(codec, "h264") != 0)
+		if (obs_get_encoder_type(type) != OBS_ENCODER_VIDEO)
 			continue;
+
+		const char* streaming_codecs[] = {
+			"h264",
+			//"hevc", // This probably needs WebRTC or a similar format
+			// Add more in the future if their AVCodec name is known.
+		};
+		bool is_streaming_codec = false;
+		for (const char* test_codec : streaming_codecs) {
+			if (strcmp(codec, test_codec) == 0) {
+				is_streaming_codec = true;
+				break;
+			}
+		}
 		if ((caps & OBS_ENCODER_CAP_DEPRECATED) != 0)
 			continue;
 
 		QString qName = QT_UTF8(name);
 		QString qType = QT_UTF8(type);
 
-		ui->advOutEncoder->addItem(qName, qType);
+		if (is_streaming_codec) {
+			ui->advOutEncoder->addItem(qName, qType);
+		} else {
+			blog(LOG_DEBUG, "Encoder '%s' with codec '%s' is not yet supported for streaming and will be hidden.", name, codec);
+		}
 		ui->advOutRecEncoder->addItem(qName, qType);
 	}
 }
