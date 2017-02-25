@@ -695,8 +695,11 @@ void OBSBasicSettings::LoadEncoderTypes()
 		const char *codec = obs_get_encoder_codec(type);
 		uint32_t caps = obs_get_encoder_caps(type);
 
-		if (strcmp(codec, "h264") != 0)
+		if ((strcmp(codec, "h264") != 0)
+			&& (strcmp(codec, "h265") != 0)) {
+			blog(LOG_DEBUG, "Hiding encoder '%s' due to use of unsupported codec '%s'.", name, codec);
 			continue;
+		}
 		if ((caps & OBS_ENCODER_CAP_DEPRECATED) != 0)
 			continue;
 
