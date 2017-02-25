@@ -560,6 +560,8 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 			this, SLOT(SimpleRecordingQualityChanged()));
 	connect(ui->simpleOutRecQuality, SIGNAL(currentIndexChanged(int)),
 			this, SLOT(SimpleRecordingQualityLosslessWarning(int)));
+	connect(ui->simpleOutRecFormat, SIGNAL(currentIndexChanged(int)),
+			this, SLOT(SimpleRecordingEncoderChanged()));
 	connect(ui->simpleOutStrEncoder, SIGNAL(currentIndexChanged(int)),
 			this, SLOT(SimpleStreamingEncoderChanged()));
 	connect(ui->simpleOutStrEncoder, SIGNAL(currentIndexChanged(int)),
@@ -613,6 +615,8 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	connect(ui->advOutRecTrack5, SIGNAL(clicked()),
 			this, SLOT(AdvOutRecCheckWarnings()));
 	connect(ui->advOutRecTrack6, SIGNAL(clicked()),
+			this, SLOT(AdvOutRecCheckWarnings()));
+	connect(ui->advOutRecFormat, SIGNAL(currentIndexChanged(int)),
 			this, SLOT(AdvOutRecCheckWarnings()));
 	AdvOutRecCheckWarnings();
 
@@ -3387,7 +3391,8 @@ void OBSBasicSettings::AdvOutRecCheckWarnings()
 		return box->isChecked() ? 1 : 0;
 	};
 
-	QString msg;
+	QString errorMsg;
+	QString warningMsg;
 	uint32_t tracks =
 		Checked(ui->advOutRecTrack1) +
 		Checked(ui->advOutRecTrack2) +
@@ -3395,22 +3400,30 @@ void OBSBasicSettings::AdvOutRecCheckWarnings()
 		Checked(ui->advOutRecTrack4) +
 		Checked(ui->advOutRecTrack5) +
 		Checked(ui->advOutRecTrack6);
-	const char *objectName = nullptr;
 
 	if (tracks == 0) {
-		msg = QTStr("OutputWarnings.NoTracksSelected");
-		objectName = "errorLabel";
+		errorMsg = QTStr("OutputWarnings.NoTracksSelected");
 
 	} else if (tracks > 1) {
-		msg = QTStr("OutputWarnings.MultiTrackRecording");
-		objectName = "warningLabel";
+		warningMsg = QTStr("OutputWarnings.MultiTrackRecording");
+	}
+
+	if (ui->advOutRecFormat->currentText().compare("mp4") == 0) {
+		if (!warningMsg.isEmpty())
+			warningMsg += "\n\n";
+		warningMsg += QTStr("OutputWarnings.MP4Recording");
 	}
 
 	delete advOutRecWarning;
 
-	if (!msg.isEmpty()) {
-		advOutRecWarning = new QLabel(msg, this);
-		advOutRecWarning->setObjectName(objectName);
+	if (!errorMsg.isEmpty() || !warningMsg.isEmpty()) {
+		advOutRecWarning = new QLabel(
+				errorMsg.isEmpty() ? warningMsg : errorMsg,
+				this);
+		advOutRecWarning->setObjectName(
+				errorMsg.isEmpty() ? "warningLabel" :
+					"errorLabel");
+		advOutRecWarning->setWordWrap(true);
 
 		QFormLayout *formLayout = reinterpret_cast<QFormLayout*>(
 				ui->advOutRecTopContainer->layout());
@@ -3766,6 +3779,12 @@ void OBSBasicSettings::SimpleRecordingEncoderChanged()
 				warning += "\n\n";
 			warning += SIMPLE_OUTPUT_WARNING("MultipleQSV");
 		}
+	}
+
+	if (ui->simpleOutRecFormat->currentText().compare("mp4") == 0) {
+		if (!warning.isEmpty())
+			warning += "\n\n";
+		warning += QTStr("OutputWarnings.MP4Recording");
 	}
 
 	if (warning.isEmpty())
