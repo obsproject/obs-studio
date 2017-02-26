@@ -3051,7 +3051,7 @@ void OBSBasic::on_actionAddScene_triggered()
 	string name;
 	QString format{QTStr("Basic.Main.DefaultSceneName.Text")};
 
-	int i = 1;
+	int i = 2;
 	QString placeHolderText = format.arg(i);
 	obs_source_t *source = nullptr;
 	while ((source = obs_get_source_by_name(QT_TO_UTF8(placeHolderText)))) {

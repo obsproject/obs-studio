@@ -204,7 +204,7 @@ OBSBasicSourceSelect::OBSBasicSourceSelect(OBSBasic *parent, const char *id_)
 	QString placeHolderText{QT_UTF8(GetSourceDisplayName(id))};
 
 	QString text{placeHolderText};
-	int i = 1;
+	int i = 2;
 	obs_source_t *source = nullptr;
 	while ((source = obs_get_source_by_name(QT_TO_UTF8(text)))) {
 		obs_source_release(source);
