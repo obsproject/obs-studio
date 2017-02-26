@@ -1,5 +1,5 @@
 # Exit if something fails
-set -e
+set -ex
 
 # Generate file name variables
 export GIT_HASH=$(git rev-parse --short HEAD)
