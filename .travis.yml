@@ -40,7 +40,7 @@ deploy:
 # The channel name "azubu.il.us.quakenet.org#obs-dev" is encrypted against jp9000/obs-studio to prevent IRC spam of forks
 notifications:
   irc:
-    skip_join: true
+    skip_join: false
     template:
       - "%{message} %{build_url}"
     channels:
