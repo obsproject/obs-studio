@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -ev
 
 # Fix permissions on CEF
 chmod 744 "/Library/Application Support/obs-studio/plugins/obs-browser/bin/CEF.app/Contents/Info.plist"

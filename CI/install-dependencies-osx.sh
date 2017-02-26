@@ -1,3 +1,6 @@
+#!/bin/sh
+set -ev
+
 # Exit if something fails
 set -e
 
