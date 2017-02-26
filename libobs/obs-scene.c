@@ -883,7 +883,7 @@ static bool scene_audio_render(void *data, uint64_t *ts_out,
 			uint64_t source_ts =
 				obs_source_get_audio_timestamp(item->source);
 
-			if (!timestamp || source_ts < timestamp)
+			if (source_ts && (!timestamp || source_ts < timestamp))
 				timestamp = source_ts;
 		}
 
@@ -918,6 +918,11 @@ static bool scene_audio_render(void *data, uint64_t *ts_out,
 		}
 
 		source_ts = obs_source_get_audio_timestamp(item->source);
+		if (!source_ts) {
+			item = item->next;
+			continue;
+		}
+
 		pos = (size_t)ns_to_audio_frames(sample_rate,
 				source_ts - timestamp);
 		count = AUDIO_OUTPUT_FRAMES - pos;
