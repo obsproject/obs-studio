@@ -1906,8 +1906,10 @@ bool obs_set_audio_monitoring_device(const char *name, const char *id)
 #ifdef _WIN32
 	pthread_mutex_lock(&obs->audio.monitoring_mutex);
 
-	if (strcmp(id, obs->audio.monitoring_device_id) == 0)
+	if (strcmp(id, obs->audio.monitoring_device_id) == 0) {
+		pthread_mutex_unlock(&obs->audio.monitoring_mutex);
 		return true;
+	}
 
 	if (obs->audio.monitoring_device_name)
 		bfree(obs->audio.monitoring_device_name);
