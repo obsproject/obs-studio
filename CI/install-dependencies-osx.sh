@@ -14,7 +14,7 @@ sudo installer -pkg ./Packages.pkg -target /
 brew update
 
 #Base OBS Deps
-brew install qt5
+brew install qt5 jack
 
 # Fetch and untar prebuilt OBS deps that are compatible with older versions of OSX
 curl -L -O https://s3-us-west-2.amazonaws.com/obs-nightly/osx-deps.tar.gz -f --retry 5 -C -
