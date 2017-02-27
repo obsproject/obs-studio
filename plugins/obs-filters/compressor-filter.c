@@ -42,7 +42,8 @@
 #define MIN_OUTPUT_GAIN_DB              -32.0f
 #define MAX_OUTPUT_GAIN_DB              32.0f
 #define MIN_ATK_RLS_MS                  1
-#define MAX_ATK_RLS_MS                  300
+#define MAX_RLS_MS                      1000
+#define MAX_ATK_MS                      500
 #define DEFAULT_AUDIO_BUF_MS            10
 
 #define MS_IN_S                         1000
@@ -206,9 +207,9 @@ static obs_properties_t *compressor_properties(void *data)
 	obs_properties_add_float_slider(props, S_THRESHOLD,
 		TEXT_THRESHOLD, MIN_THRESHOLD_DB, MAX_THRESHOLD_DB, 0.1f);
 	obs_properties_add_int_slider(props, S_ATTACK_TIME,
-		TEXT_ATTACK_TIME, MIN_ATK_RLS_MS, MAX_ATK_RLS_MS, 1);
+		TEXT_ATTACK_TIME, MIN_ATK_RLS_MS, MAX_ATK_MS, 1);
 	obs_properties_add_int_slider(props, S_RELEASE_TIME,
-		TEXT_RELEASE_TIME, MIN_ATK_RLS_MS, MAX_ATK_RLS_MS, 1);
+		TEXT_RELEASE_TIME, MIN_ATK_RLS_MS, MAX_RLS_MS, 1);
 	obs_properties_add_float_slider(props, S_OUTPUT_GAIN,
 		TEXT_OUTPUT_GAIN, MIN_OUTPUT_GAIN_DB, MAX_OUTPUT_GAIN_DB, 0.1f);
 
