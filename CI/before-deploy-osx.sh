@@ -1,10 +1,7 @@
 hr() {
-  local start=$'\e(0' end=$'\e(B' line='qqqqqqqqqqqqqqqq'
-  local cols=${COLUMNS:-$(tput cols)}
-  while ((${#line} < cols)); do line+="$line"; done
-  printf '%s%s%s\n' "$start" "${line:0:cols}" "$end"
+  echo "───────────────────────────────────────────────────"
   echo $1
-  printf '%s%s%s\n' "$start" "${line:0:cols}" "$end"
+  echo "───────────────────────────────────────────────────"
 }
 
 # Exit if something fails
@@ -44,7 +41,7 @@ security default-keychain -s build.keychain
 security unlock-keychain -p mysecretpassword build.keychain
 security set-keychain-settings -t 3600 -u build.keychain
 hr "Importing certs into keychain"
-security import Certificates.p12 -k build.keychain -T /usr/bin/productsign
+security import ./Certificates.p12 -k build.keychain -T /usr/bin/productsign -P ""
 hr "Signing Package"
 productsign --sign 'Developer ID Installer: Hugh Bailey (2MMRE5MTB8)' ./OBS.pkg ./$FILENAME
 
