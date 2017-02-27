@@ -412,9 +412,11 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	delete ui->monitoringDevice;
 	delete ui->monitoringDeviceLabel;
 	delete ui->advAudioGroupBox;
+	delete ui->enableAutoUpdates;
 	ui->monitoringDevice = nullptr;
 	ui->monitoringDeviceLabel = nullptr;
 	ui->advAudioGroupBox = nullptr;
+	ui->enableAutoUpdates = nullptr;
 #endif
 
 #ifdef _WIN32
@@ -924,9 +926,11 @@ void OBSBasicSettings::LoadGeneralSettings()
 	LoadLanguageList();
 	LoadThemeList();
 
+#if defined(_WIN32) || defined(__APPLE__)
 	bool enableAutoUpdates = config_get_bool(GetGlobalConfig(),
 			"General", "EnableAutoUpdates");
 	ui->enableAutoUpdates->setChecked(enableAutoUpdates);
+#endif
 
 	bool recordWhenStreaming = config_get_bool(GetGlobalConfig(),
 			"BasicWindow", "RecordWhenStreaming");
@@ -2399,10 +2403,12 @@ void OBSBasicSettings::SaveGeneralSettings()
 		App()->SetTheme(theme);
 	}
 
+#if defined(_WIN32) || defined(__APPLE__)
 	if (WidgetChanged(ui->enableAutoUpdates))
 		config_set_bool(GetGlobalConfig(), "General",
 				"EnableAutoUpdates",
 				ui->enableAutoUpdates->isChecked());
+#endif
 	if (WidgetChanged(ui->snappingEnabled))
 		config_set_bool(GetGlobalConfig(), "BasicWindow",
 				"SnappingEnabled",
