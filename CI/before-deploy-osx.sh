@@ -21,12 +21,12 @@ mv ./rundir/RelWithDebInfo/obs-plugins/obs-browser.so ./
 
 # Package everything into a nice .app
 hr "Packaging .app"
-STABLE=False
+STABLE=false
 if [ -n "${TRAVIS_TAG}" ]; then
-  STABLE=TRUE
+  STABLE=true
 fi
 
-sudo python ../CI/install/osx/build_app.py --public-key ../CI/install/osx/OBSPublicDSAKey.pem --sparkle-framework ../../sparkle/Sparkle.framework --base-url "https://obsproject.com/osx_update" --stable $STABLE
+sudo python ../CI/install/osx/build_app.py --public-key ../CI/install/osx/OBSPublicDSAKey.pem --sparkle-framework ../../sparkle/Sparkle.framework --base-url "https://obsproject.com/osx_update" --stable=$STABLE
 
 # Move the CEF plugin back to where it belongs
 hr "Moving CEF back"
