@@ -26,6 +26,20 @@ from os import makedirs, rename, walk, path as ospath
 import plistlib
 
 import argparse
+
+def _str_to_bool(s):
+    """Convert string to bool (in argparse context)."""
+    if s.lower() not in ['true', 'false']:
+        raise ValueError('Need bool; got %r' % s)
+    return {'true': True, 'false': False}[s.lower()]
+
+def add_boolean_argument(parser, name, default=False):                                                                                               
+    """Add a boolean argument to an ArgumentParser instance."""
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument(
+        '--' + name, nargs='?', default=default, const=True, type=_str_to_bool)
+    group.add_argument('--no' + name, dest=name, action='store_false')
+
 parser = argparse.ArgumentParser(description='obs-studio package util')
 parser.add_argument('-d', '--base-dir', dest='dir', default='rundir/RelWithDebInfo')
 parser.add_argument('-n', '--build-number', dest='build_number', default='0')
@@ -34,7 +48,7 @@ parser.add_argument('-f', '--sparkle-framework', dest='sparkle', default=None)
 parser.add_argument('-b', '--base-url', dest='base_url', default='https://builds.catchexception.org/obs-studio')
 parser.add_argument('-u', '--user', dest='user', default='jp9000')
 parser.add_argument('-c', '--channel', dest='channel', default='master')
-parser.add_argument('-s', '--stable', dest='stable', required=False, action='store_true', default=False)
+add_boolean_argument(parser, 'stable', default=False)
 parser.add_argument('-p', '--prefix', dest='prefix', default='')
 args = parser.parse_args()
 
