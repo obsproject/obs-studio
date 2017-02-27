@@ -42,7 +42,7 @@
 #define MIN_OUTPUT_GAIN_DB              -32.0f
 #define MAX_OUTPUT_GAIN_DB              32.0f
 #define MIN_ATK_RLS_MS                  1
-#define MAX_ATK_RLS_MS                  100
+#define MAX_ATK_RLS_MS                  300
 #define DEFAULT_AUDIO_BUF_MS            10
 
 #define MS_IN_S                         1000
