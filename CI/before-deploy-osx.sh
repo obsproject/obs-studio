@@ -10,7 +10,7 @@ set -e
 # Generate file name variables
 export GIT_HASH=$(git rev-parse --short HEAD)
 export FILE_DATE=$(date +%Y-%m-%d.%H:%M:%S)
-export FILENAME=$FILE_DATE-$GIT_HASH-osx.pkg
+export FILENAME=$FILE_DATE-$GIT_HASH-$TRAVIS_BRANCH-osx.pkg
 
 cd ./build
 
