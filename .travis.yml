@@ -36,6 +36,8 @@ deploy:
   on:
     repo: jp9000/obs-studio
     condition: "$TRAVIS_OS_NAME = osx"
+    tags: true
+    branch: master
 
 # The channel name "azubu.il.us.quakenet.org#obs-dev" is encrypted against jp9000/obs-studio to prevent IRC spam of forks
 notifications:
