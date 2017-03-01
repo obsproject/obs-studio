@@ -1,6 +1,8 @@
 # Exit if something fails
 set -e
 
+CEF_BUILD_VERSION=3.2987.1588.g1952835
+
 git fetch --tags
 
 # Leave obs-studio folder
@@ -30,9 +32,9 @@ mkdir ./sparkle
 tar -xf ./sparkle.tar.bz2 -C ./sparkle
 
 # CEF Stuff
-curl -kLO https://obs-nightly.s3-us-west-2.amazonaws.com/cef_binary_3.2987.1588.g1952835_macosx64.tar.bz2 -f --retry 5 -C -
-tar -xf ./cef_binary_3.2987.1588.g1952835_macosx64.tar.bz2
-cd ./cef_binary_3.2987.1588.g1952835_macosx64
+curl -kLO https://obs-nightly.s3-us-west-2.amazonaws.com/cef_binary_$CEF_BUILD_VERSION_macosx64.tar.bz2 -f --retry 5 -C -
+tar -xf ./cef_binary_$CEF_BUILD_VERSION_macosx64.tar.bz2
+cd ./cef_binary_$CEF_BUILD_VERSION_macosx64
 mkdir build
 cd ./build
 cmake -DCMAKE_CXX_FLAGS="-std=c++11 -stdlib=libc++" -DCMAKE_EXE_LINKER_FLAGS="-std=c++11 -stdlib=libc++" -DCMAKE_OSX_DEPLOYMENT_TARGET=10.9 ..
