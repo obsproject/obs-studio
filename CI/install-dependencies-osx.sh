@@ -1,7 +1,7 @@
 # Exit if something fails
 set -e
 
-CEF_BUILD_VERSION=3.2987.1588.g1952835
+export CEF_BUILD_VERSION=3.2987.1588.g1952835
 
 git fetch --tags
 
