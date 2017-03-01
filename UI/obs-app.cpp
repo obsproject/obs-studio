@@ -1806,12 +1806,6 @@ int main(int argc, char *argv[])
 			std::cout << "OBS Studio - " << 
 				App()->GetVersionString() << "\n";
 			exit(0);
-
-		} else {
-			std::cout << 
-				"Invalid arguments. Use --help or -h to get " << 
-				"a list of available command line arguments.\n";
-			exit(0);
 		}
 	}
 
