@@ -321,13 +321,14 @@ static inline void socket_thread_windows_internal(struct rtmp_stream *stream)
 
 				switch (ret) {
 				case RET_BREAK:
-					break;
+					goto exit_write_loop;
 				case RET_FATAL:
 					return;
 				case RET_CONTINUE:;
 				}
 			}
 		}
+		exit_write_loop:;
 	}
 
 	blog(LOG_INFO, "socket_thread_windows: Normal exit");
