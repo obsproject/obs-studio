@@ -1,5 +1,5 @@
 #!/bin/sh
-set -ex
+set -ev
 
 sudo add-apt-repository ppa:kirillshkrogalev/ffmpeg-next -y
 sudo apt-get -qq update

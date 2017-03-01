@@ -1,5 +1,5 @@
 #!/bin/sh
-set -ex
+set -ev
 
 mkdir build && cd build
 cmake ..
