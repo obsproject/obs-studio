@@ -30,9 +30,9 @@ mkdir ./sparkle
 tar -xf ./sparkle.tar.bz2 -C ./sparkle
 
 # CEF Stuff
-curl -kLO http://opensource.spotify.com/cefbuilds/cef_binary_3.2883.1540.gedbfb20_macosx64.tar.bz2 -f --retry 5 -C -
-tar -xf ./cef_binary_3.2883.1540.gedbfb20_macosx64.tar.bz2
-cd ./cef_binary_3.2883.1540.gedbfb20_macosx64
+curl -kLO https://obs-nightly.s3-us-west-2.amazonaws.com/cef_binary_3.2987.1588.g1952835_macosx64.tar.bz2 -f --retry 5 -C -
+tar -xf ./cef_binary_3.2987.1588.g1952835_macosx64.tar.bz2
+cd ./cef_binary_3.2987.1588.g1952835_macosx64
 mkdir build
 cd ./build
 cmake -DCMAKE_CXX_FLAGS="-std=c++11 -stdlib=libc++" -DCMAKE_EXE_LINKER_FLAGS="-std=c++11 -stdlib=libc++" -DCMAKE_OSX_DEPLOYMENT_TARGET=10.9 ..
