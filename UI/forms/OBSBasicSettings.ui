@@ -484,7 +484,7 @@
                    <item row="0" column="1">
                     <widget class="QCheckBox" name="systemTrayEnabled">
                      <property name="text">
-                      <string>Enabled</string>
+                      <string>Enable</string>
                      </property>
                     </widget>
                    </item>
