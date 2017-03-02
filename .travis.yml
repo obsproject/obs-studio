@@ -11,7 +11,9 @@ env:
 matrix:
   include:
     - os: osx
-      env: CMAKE_PREFIX_PATH=/usr/local/opt/qt5/lib/cmake
+      env:
+       - CMAKE_PREFIX_PATH=/usr/local/opt/qt5/lib/cmake
+       - CEF_BUILD_VERSION=3.2987.1588.g1952835
       before_install: "./CI/install-dependencies-osx.sh"
       before_script: "./CI/before-script-osx.sh"
       before_deploy: "./CI/before-deploy-osx.sh"
