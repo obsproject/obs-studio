@@ -1391,12 +1391,6 @@ EXPORT signal_handler_t *obs_output_get_signal_handler(
 EXPORT proc_handler_t *obs_output_get_proc_handler(const obs_output_t *output);
 
 /**
- * Sets the current video media context associated with this output,
- * required for non-encoded outputs
- */
-EXPORT void obs_output_set_video(obs_output_t *output, video_t *video);
-
-/**
  * Sets the current audio/video media contexts associated with this output,
  * required for non-encoded outputs.  Can be null.
  */
