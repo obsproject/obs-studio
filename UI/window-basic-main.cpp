@@ -1253,6 +1253,9 @@ void OBSBasic::OBSInit()
 			"MonitoringDeviceId");
 
 	obs_set_audio_monitoring_device(device_name, device_id);
+
+	blog(LOG_INFO, "Audio monitoring device:\n\tname: %s\n\tid: %s",
+			device_name, device_id);
 #endif
 
 	InitOBSCallbacks();

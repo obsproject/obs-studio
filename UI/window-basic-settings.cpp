@@ -2543,6 +2543,9 @@ void OBSBasicSettings::SaveVideoSettings()
 
 void OBSBasicSettings::SaveAdvancedSettings()
 {
+	QString lastMonitoringDevice = config_get_string(main->Config(),
+			"Audio", "MonitoringDeviceId");
+
 #ifdef _WIN32
 	if (WidgetChanged(ui->renderer))
 		config_set_string(App()->GlobalConfig(), "Video", "Renderer",
@@ -2592,10 +2595,17 @@ void OBSBasicSettings::SaveAdvancedSettings()
 	SaveComboData(ui->bindToIP, "Output", "BindIP");
 
 #if defined(_WIN32) || defined(__APPLE__)
-	obs_set_audio_monitoring_device(
-			QT_TO_UTF8(ui->monitoringDevice->currentText()),
-			QT_TO_UTF8(ui->monitoringDevice->currentData()
-				.toString()));
+	QString newDevice = ui->monitoringDevice->currentData().toString();
+
+	if (lastMonitoringDevice != newDevice) {
+		obs_set_audio_monitoring_device(
+				QT_TO_UTF8(ui->monitoringDevice->currentText()),
+				QT_TO_UTF8(newDevice));
+
+		blog(LOG_INFO, "Audio monitoring device:\n\tname: %s\n\tid: %s",
+				QT_TO_UTF8(ui->monitoringDevice->currentText()),
+				QT_TO_UTF8(newDevice));
+	}
 #endif
 }
 
