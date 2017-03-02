@@ -1245,6 +1245,16 @@ void OBSBasic::OBSInit()
 			throw UNKNOWN_ERROR;
 	}
 
+	/* load audio monitoring */
+#if defined(_WIN32) || defined(__APPLE__)
+	const char *device_name = config_get_string(basicConfig, "Audio",
+			"MonitoringDeviceName");
+	const char *device_id = config_get_string(basicConfig, "Audio",
+			"MonitoringDeviceId");
+
+	obs_set_audio_monitoring_device(device_name, device_id);
+#endif
+
 	InitOBSCallbacks();
 	InitHotkeys();
 
