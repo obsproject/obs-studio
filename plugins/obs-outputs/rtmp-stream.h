@@ -31,8 +31,6 @@
 #define OPT_NEWSOCKETLOOP_ENABLED "new_socket_loop_enabled"
 #define OPT_LOWLATENCY_ENABLED "low_latency_mode_enabled"
 
-#define STREAM_WRITE_BUFFER_SIZE 524288
-
 //#define TEST_FRAMEDROPS
 
 #ifdef TEST_FRAMEDROPS
@@ -104,6 +102,7 @@ struct rtmp_stream {
 	os_event_t       *buffer_space_available_event;
 	os_event_t       *buffer_has_data_event;
 	os_event_t       *socket_available_event;
+	os_event_t       *send_thread_signaled_exit;
 };
 
 #ifdef _WIN32

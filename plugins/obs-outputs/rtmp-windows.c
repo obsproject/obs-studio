@@ -7,6 +7,7 @@ static void fatal_sock_shutdown(struct rtmp_stream *stream)
 	closesocket(stream->rtmp.m_sb.sb_socket);
 	stream->rtmp.m_sb.sb_socket = -1;
 	stream->write_buf_len = 0;
+	os_event_signal(stream->buffer_space_available_event);
 }
 
 static bool socket_event(struct rtmp_stream *stream, bool *can_write,
@@ -15,9 +16,9 @@ static bool socket_event(struct rtmp_stream *stream, bool *can_write,
 	WSANETWORKEVENTS net_events;
 	bool success;
 
-	success = !!WSAEnumNetworkEvents(stream->rtmp.m_sb.sb_socket, NULL,
+	success = !WSAEnumNetworkEvents(stream->rtmp.m_sb.sb_socket, NULL,
 			&net_events);
-	if (success) {
+	if (!success) {
 		blog(LOG_ERROR, "socket_thread_windows: Aborting due to "
 				"WSAEnumNetworkEvents failure, %d",
 				WSAGetLastError());
@@ -231,6 +232,8 @@ static enum data_ret write_data(struct rtmp_stream *stream, bool *can_write,
 	return exit_loop ? RET_BREAK : RET_CONTINUE;
 }
 
+#define LATENCY_FACTOR 20
+
 static inline void socket_thread_windows_internal(struct rtmp_stream *stream)
 {
 	bool can_write = false;
@@ -251,8 +254,8 @@ static inline void socket_thread_windows_internal(struct rtmp_stream *stream)
 	send_backlog_event = CreateEvent(NULL, true, false, NULL);
 
 	if (stream->low_latency_mode) {
-		delay_time = 1400.0f / (stream->write_buf_size / 1000.0f);
-		latency_packet_size = 1460;
+		delay_time = 1000 / LATENCY_FACTOR;
+		latency_packet_size = stream->write_buf_size / (LATENCY_FACTOR - 2);
 	} else {
 		latency_packet_size = stream->write_buf_size;
 		delay_time = 0;
@@ -276,11 +279,12 @@ static inline void socket_thread_windows_internal(struct rtmp_stream *stream)
 	objs[2] = send_backlog_event;
 
 	for (;;) {
-		if (os_event_try(stream->stop_event) != EAGAIN) {
+		if (os_event_try(stream->send_thread_signaled_exit) != EAGAIN) {
 			pthread_mutex_lock(&stream->write_buf_mutex);
 			if (stream->write_buf_len == 0) {
 				//blog(LOG_DEBUG, "Exiting on empty buffer");
 				pthread_mutex_unlock(&stream->write_buf_mutex);
+				os_event_reset(stream->send_thread_signaled_exit);
 				break;
 			}
 

@@ -92,9 +92,6 @@ static void rtmp_stream_destroy(void *data)
 		}
 	}
 
-	if (stream->socket_thread_active)
-		pthread_join(stream->socket_thread, NULL);
-
 	free_packets(stream);
 	dstr_free(&stream->path);
 	dstr_free(&stream->key);
@@ -390,6 +387,12 @@ static void *send_thread(void *data)
 		info("User stopped the stream");
 	}
 
+	if (stream->new_socket_loop) {
+		os_event_signal(stream->send_thread_signaled_exit);
+		os_event_signal(stream->buffer_has_data_event);
+		pthread_join(stream->socket_thread, NULL);
+	}
+
 	RTMP_Close(&stream->rtmp);
 
 	if (!stopping(stream)) {
@@ -546,18 +549,23 @@ static int init_send(struct rtmp_stream *stream)
 		}
 
 		if (os_event_init(&stream->buffer_space_available_event,
-					OS_EVENT_TYPE_MANUAL) != 0) {
+					OS_EVENT_TYPE_AUTO) != 0) {
 			warn("Failed to initialize write buffer event");
 			return OBS_OUTPUT_ERROR;
 		}
 		if (os_event_init(&stream->buffer_has_data_event,
-					OS_EVENT_TYPE_MANUAL) != 0) {
+					OS_EVENT_TYPE_AUTO) != 0) {
 			warn("Failed to initialize data buffer event");
 			return OBS_OUTPUT_ERROR;
 		}
 		if (os_event_init(&stream->socket_available_event,
-					OS_EVENT_TYPE_MANUAL) != 0) {
+					OS_EVENT_TYPE_AUTO) != 0) {
 			warn("Failed to initialize socket buffer event");
+			return OBS_OUTPUT_ERROR;
+		}
+		if (os_event_init(&stream->send_thread_signaled_exit,
+					OS_EVENT_TYPE_MANUAL) != 0) {
+			warn("Failed to initialize socket exit event");
 			return OBS_OUTPUT_ERROR;
 		}
 
@@ -568,8 +576,37 @@ static int init_send(struct rtmp_stream *stream)
 		if (stream->write_buf)
 			bfree(stream->write_buf);
 
-		stream->write_buf_size = STREAM_WRITE_BUFFER_SIZE;
-		stream->write_buf = bmalloc(STREAM_WRITE_BUFFER_SIZE);
+		int total_bitrate = 0;
+		obs_output_t  *context  = stream->output;
+
+		obs_encoder_t *vencoder = obs_output_get_video_encoder(context);
+		if (vencoder) {
+			obs_data_t *params = obs_encoder_get_settings(vencoder);
+			if (params) {
+				int bitrate = obs_data_get_int(params, "bitrate");
+				total_bitrate += bitrate;
+				obs_data_release(params);
+			}
+		}
+
+		obs_encoder_t *aencoder = obs_output_get_audio_encoder(context, 0);
+		if (aencoder) {
+			obs_data_t *params = obs_encoder_get_settings(aencoder);
+			if (params) {
+				int bitrate = obs_data_get_int(params, "bitrate");
+				total_bitrate += bitrate;
+				obs_data_release(params);
+			}
+		}
+
+		// to bytes/sec
+		int ideal_buffer_size = total_bitrate * 128;
+
+		if (ideal_buffer_size < 131072)
+			ideal_buffer_size = 131072;
+
+		stream->write_buf_size = ideal_buffer_size;
+		stream->write_buf = bmalloc(ideal_buffer_size);
 
 #ifdef _WIN32
 		ret = pthread_create(&stream->socket_thread, NULL,
