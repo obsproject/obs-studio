@@ -119,6 +119,7 @@ private:
 	long disableSaving = 1;
 	bool projectChanged = false;
 	bool previewEnabled = true;
+	bool fullscreenInterface = false;
 
 	const char *copyString;
 	const char *copyFiltersString;
@@ -529,6 +530,8 @@ protected:
 	virtual void changeEvent(QEvent *event) override;
 
 private slots:
+	void on_actionFullscreenInterface_triggered();
+
 	void on_actionShow_Recordings_triggered();
 	void on_actionRemux_triggered();
 	void on_action_Settings_triggered();

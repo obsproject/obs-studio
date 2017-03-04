@@ -978,6 +978,16 @@
      </property>
      <addaction name="toggleListboxToolbars"/>
     </widget>
+    <addaction name="actionFullscreenInterface"/>
+    <action name="actionFullscreenInterface">
+     <property name="shortcut">
+      <string>F11</string>
+     </property>
+     <property name="text">
+      <string>Basic.MainMenu.View.Fullscreen.Interface</string>
+     </property>
+    </action>
+    <addaction name="separator"/>
     <addaction name="viewMenuToolbars"/>
     <addaction name="toggleSceneTransitions"/>
     <addaction name="toggleStatusBar"/>
