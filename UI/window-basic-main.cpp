@@ -5327,6 +5327,8 @@ void OBSBasic::SystemTrayInit()
 
 	showHide = new QAction(QTStr("Basic.SystemTray.Show"),
 			trayIcon);
+	fullscreenPreview = new QAction(QTStr("SysTrayMenu.FullscreenPreview"),
+			trayIcon);
 	sysTrayStream = new QAction(QTStr("Basic.Main.StartStreaming"),
 			trayIcon);
 	sysTrayRecord = new QAction(QTStr("Basic.Main.StartRecording"),
@@ -5344,6 +5346,8 @@ void OBSBasic::SystemTrayInit()
 			SLOT(IconActivated(QSystemTrayIcon::ActivationReason)));
 	connect(showHide, SIGNAL(triggered()),
 			this, SLOT(ToggleShowHide()));
+	connect(fullscreenPreview, SIGNAL(triggered()),
+			this, SLOT(OpenPreviewProjector()));
 	connect(sysTrayStream, SIGNAL(triggered()),
 			this, SLOT(on_streamButton_clicked()));
 	connect(sysTrayRecord, SIGNAL(triggered()),
@@ -5355,6 +5359,7 @@ void OBSBasic::SystemTrayInit()
 
 	trayMenu = new QMenu;
 	trayMenu->addAction(showHide);
+	trayMenu->addAction(fullscreenPreview);
 	trayMenu->addAction(sysTrayStream);
 	trayMenu->addAction(sysTrayRecord);
 	trayMenu->addAction(sysTrayReplayBuffer);
