@@ -1102,6 +1102,9 @@
    <property name="text">
     <string>Basic.MainMenu.File.Exit</string>
    </property>
+   <property name="shortcut">
+    <string>Ctrl+Q</string>
+   </property>
   </action>
   <action name="actionShowLogs">
    <property name="text">
