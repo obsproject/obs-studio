@@ -70,7 +70,7 @@ bool opt_studio_mode = false;
 bool opt_start_replaybuffer = false;
 bool opt_minimize_tray = false;
 
-bool opt_lessui = false;
+bool opt_minimal = false;
 bool opt_always_on_top = false;
 
 string opt_starting_collection;
@@ -1763,8 +1763,8 @@ int main(int argc, char *argv[])
 		} else if (arg_is(argv[i], "--always-on-top", nullptr)) {
 			opt_always_on_top = true;
 
-		} else if (arg_is(argv[i], "--less-ui", nullptr)) {
-			opt_lessui = true;
+		} else if (arg_is(argv[i], "--minimal", nullptr)) {
+			opt_minimal = true;
 
 		} else if (arg_is(argv[i], "--unfiltered_log", nullptr)) {
 			unfiltered_log = true;
@@ -1808,7 +1808,7 @@ int main(int argc, char *argv[])
 			"--portable, -p: Use portable mode.\n\n" <<
 			"--verbose: Make log more verbose.\n" <<
 			"--unfiltered_log: Make log unfiltered.\n" <<
-			"--less-ui: Show less UI.\n" <<
+			"--minimal: Show less UI.\n" <<
 			"--always-on-top: Show the UI always on top.\n\n" <<
 			"--version, -V: Get current version.\n";
 

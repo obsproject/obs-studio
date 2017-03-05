@@ -813,7 +813,7 @@ retryScene:
 		opt_start_replaybuffer = false;
 	}
 
-	if(opt_lessui) {
+	if(opt_minimal) {
 		ui->scenesLabel->setVisible(false);
 		ui->scenes->setVisible(false);
 		ui->scenesToolbar->setVisible(false);
