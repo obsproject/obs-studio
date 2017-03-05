@@ -1704,6 +1704,7 @@ void OBSBasicSettings::LoadOutputSettings()
 		ui->advOutRecTopContainer->setEnabled(false);
 		ui->advOutRecTypeContainer->setEnabled(false);
 		ui->advOutputAudioTracksTab->setEnabled(false);
+		ui->advNetworkGroupBox->setEnabled(false);
 	}
 
 	loading = false;

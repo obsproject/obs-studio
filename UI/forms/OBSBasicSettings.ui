@@ -4018,7 +4018,7 @@
                  </widget>
                 </item>
                 <item>
-                 <widget class="QGroupBox" name="groupBox_11">
+                 <widget class="QGroupBox" name="advNetworkGroupBox">
                   <property name="title">
                    <string>Basic.Settings.Advanced.Network</string>
                   </property>
