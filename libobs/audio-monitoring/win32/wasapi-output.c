@@ -63,6 +63,8 @@ static bool process_audio_delay(struct audio_monitor *monitor,
 		circlebuf_free(&monitor->delay_buffer);
 	monitor->last_recv_time = cur_time;
 
+	ts += monitor->source->sync_offset;
+
 	circlebuf_push_back(&monitor->delay_buffer, &ts, sizeof(ts));
 	circlebuf_push_back(&monitor->delay_buffer, frames, sizeof(*frames));
 	circlebuf_push_back(&monitor->delay_buffer, *data,
