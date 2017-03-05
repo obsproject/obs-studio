@@ -132,8 +132,14 @@ static bool load_libvlc_module(void)
 	status = RegOpenKeyW(HKEY_LOCAL_MACHINE,
 			L"SOFTWARE\\VideoLAN\\VLC",
 			&key);
-	if (status != ERROR_SUCCESS)
-		return false;
+	if (status != ERROR_SUCCESS) {
+		status = RegOpenKeyW(HKEY_LOCAL_MACHINE,
+				L"SOFTWARE\\WOW6432Node\\VideoLAN\\VLC",
+				&key);
+		if (status != ERROR_SUCCESS) {
+			return false;
+		}
+	}
 
 	size = 1024;
 	status = RegQueryValueExW(key, L"InstallDir", NULL, NULL,
