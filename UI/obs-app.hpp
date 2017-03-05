@@ -182,3 +182,6 @@ extern bool opt_start_replaybuffer;
 extern bool opt_minimize_tray;
 extern bool opt_studio_mode;
 extern std::string opt_starting_scene;
+extern bool opt_lessui; // Customer requirement for some company requirement
+extern bool opt_always_on_top;
+
