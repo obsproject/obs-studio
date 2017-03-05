@@ -69,6 +69,10 @@ bool opt_start_recording = false;
 bool opt_studio_mode = false;
 bool opt_start_replaybuffer = false;
 bool opt_minimize_tray = false;
+
+bool opt_lessui = false;
+bool opt_always_on_top = false;
+
 string opt_starting_collection;
 string opt_starting_profile;
 string opt_starting_scene;
@@ -1755,7 +1759,7 @@ int main(int argc, char *argv[])
 
 		} else if (arg_is(argv[i], "--verbose", nullptr)) {
 			log_verbose = true;
-			
+
 		} else if (arg_is(argv[i], "--always-on-top", nullptr)) {
 			opt_always_on_top = true;
 
