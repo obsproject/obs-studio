@@ -1755,6 +1755,12 @@ int main(int argc, char *argv[])
 
 		} else if (arg_is(argv[i], "--verbose", nullptr)) {
 			log_verbose = true;
+			
+		} else if (arg_is(argv[i], "--always-on-top", nullptr)) {
+			opt_always_on_top = true;
+
+		} else if (arg_is(argv[i], "--less-ui", nullptr)) {
+			opt_lessui = true;
 
 		} else if (arg_is(argv[i], "--unfiltered_log", nullptr)) {
 			unfiltered_log = true;
@@ -1785,7 +1791,7 @@ int main(int argc, char *argv[])
 
 		} else if (arg_is(argv[i], "--help", "-h")) {
 			std::cout <<
-			"--help, -h: Get list of available commands.\n\n" << 
+			"--help, -h: Get list of available commands.\n\n" <<
 			"--startstreaming: Automatically start streaming.\n" <<
 			"--startrecording: Automatically start recording.\n" <<
 			"--startreplaybuffer: Start replay buffer.\n\n" <<
@@ -1797,13 +1803,15 @@ int main(int argc, char *argv[])
 			"--minimize-to-tray: Minimize to system tray.\n" <<
 			"--portable, -p: Use portable mode.\n\n" <<
 			"--verbose: Make log more verbose.\n" <<
-			"--unfiltered_log: Make log unfiltered.\n\n" <<
+			"--unfiltered_log: Make log unfiltered.\n" <<
+			"--less-ui: Show less UI.\n" <<
+			"--always-on-top: Show the UI always on top.\n\n" <<
 			"--version, -V: Get current version.\n";
 
 			exit(0);
 
 		} else if (arg_is(argv[i], "--version", "-V")) {
-			std::cout << "OBS Studio - " << 
+			std::cout << "OBS Studio - " <<
 				App()->GetVersionString() << "\n";
 			exit(0);
 		}

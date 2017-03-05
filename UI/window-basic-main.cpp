@@ -813,6 +813,27 @@ retryScene:
 		opt_start_replaybuffer = false;
 	}
 
+	if(opt_lessui) {
+		ui->scenesLabel->setVisible(false);
+		ui->scenes->setVisible(false);
+		ui->scenesToolbar->setVisible(false);
+		ui->scenesFrame->setVisible(false);
+		ui->sceneTransitionsLabel->setVisible(false);
+		ui->transitions->setVisible(false);
+		ui->transitionAdd->setVisible(false);
+		ui->transitionRemove->setVisible(false);
+		ui->transitionProps->setVisible(false);
+		ui->transitionDurationLabel->setVisible(false);
+		ui->transitionDuration->setVisible(false);
+		ui->settingsButton->setVisible(false);
+		ui->modeSwitch->setVisible(false);
+	}
+
+	if (opt_always_on_top) {
+		SetAlwaysOnTop(this, true);
+		ui->actionAlwaysOnTop->setChecked(true);
+	}
+
 	LogScenes();
 
 	disableSaving--;
