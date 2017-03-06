@@ -335,6 +335,10 @@ static inline void socket_thread_windows_internal(struct rtmp_stream *stream)
 		exit_write_loop:;
 	}
 
+	if (stream->rtmp.m_sb.sb_socket != INVALID_SOCKET)
+		WSAEventSelect(stream->rtmp.m_sb.sb_socket,
+			stream->socket_available_event, 0);
+
 	blog(LOG_INFO, "socket_thread_windows: Normal exit");
 }
 

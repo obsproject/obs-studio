@@ -106,6 +106,13 @@ static void rtmp_stream_destroy(void *data)
 #ifdef TEST_FRAMEDROPS
 	circlebuf_free(&stream->droptest_info);
 #endif
+
+	os_event_destroy(stream->buffer_space_available_event);
+	os_event_destroy(stream->buffer_has_data_event);
+	os_event_destroy(stream->socket_available_event);
+	os_event_destroy(stream->send_thread_signaled_exit);
+	pthread_mutex_destroy(&stream->write_buf_mutex);
+
 	if (stream->write_buf)
 		bfree(stream->write_buf);
 	bfree(stream);
@@ -125,6 +132,32 @@ static void *rtmp_stream_create(obs_data_t *settings, obs_output_t *output)
 		goto fail;
 	if (os_event_init(&stream->stop_event, OS_EVENT_TYPE_MANUAL) != 0)
 		goto fail;
+
+	if (pthread_mutex_init(&stream->write_buf_mutex, NULL) != 0) {
+		warn("Failed to initialize write buffer mutex");
+		goto fail;
+	}
+
+	if (os_event_init(&stream->buffer_space_available_event,
+		OS_EVENT_TYPE_AUTO) != 0) {
+		warn("Failed to initialize write buffer event");
+		goto fail;
+	}
+	if (os_event_init(&stream->buffer_has_data_event,
+		OS_EVENT_TYPE_AUTO) != 0) {
+		warn("Failed to initialize data buffer event");
+		goto fail;
+	}
+	if (os_event_init(&stream->socket_available_event,
+		OS_EVENT_TYPE_AUTO) != 0) {
+		warn("Failed to initialize socket buffer event");
+		goto fail;
+	}
+	if (os_event_init(&stream->send_thread_signaled_exit,
+		OS_EVENT_TYPE_MANUAL) != 0) {
+		warn("Failed to initialize socket exit event");
+		goto fail;
+	}
 
 	UNUSED_PARAMETER(settings);
 	return stream;
@@ -391,6 +424,8 @@ static void *send_thread(void *data)
 		os_event_signal(stream->send_thread_signaled_exit);
 		os_event_signal(stream->buffer_has_data_event);
 		pthread_join(stream->socket_thread, NULL);
+		stream->socket_thread_active = false;
+		stream->rtmp.m_bCustomSend = false;
 	}
 
 	RTMP_Close(&stream->rtmp);
@@ -543,31 +578,7 @@ static int init_send(struct rtmp_stream *stream)
 			return OBS_OUTPUT_ERROR;
 		}
 
-		if (pthread_mutex_init(&stream->write_buf_mutex, NULL) != 0) {
-			warn("Failed to initialize write buffer mutex");
-			return OBS_OUTPUT_ERROR;
-		}
-
-		if (os_event_init(&stream->buffer_space_available_event,
-					OS_EVENT_TYPE_AUTO) != 0) {
-			warn("Failed to initialize write buffer event");
-			return OBS_OUTPUT_ERROR;
-		}
-		if (os_event_init(&stream->buffer_has_data_event,
-					OS_EVENT_TYPE_AUTO) != 0) {
-			warn("Failed to initialize data buffer event");
-			return OBS_OUTPUT_ERROR;
-		}
-		if (os_event_init(&stream->socket_available_event,
-					OS_EVENT_TYPE_AUTO) != 0) {
-			warn("Failed to initialize socket buffer event");
-			return OBS_OUTPUT_ERROR;
-		}
-		if (os_event_init(&stream->send_thread_signaled_exit,
-					OS_EVENT_TYPE_MANUAL) != 0) {
-			warn("Failed to initialize socket exit event");
-			return OBS_OUTPUT_ERROR;
-		}
+		os_event_reset(stream->send_thread_signaled_exit);
 
 		info("New socket loop enabled by user");
 		if (stream->low_latency_mode)
@@ -776,11 +787,6 @@ static bool init_connect(struct rtmp_stream *stream)
 
 	if (stopping(stream)) {
 		pthread_join(stream->send_thread, NULL);
-	}
-
-	if (stream->socket_thread_active) {
-		pthread_join(stream->socket_thread, NULL);
-		stream->socket_thread_active = false;
 	}
 
 	free_packets(stream);
