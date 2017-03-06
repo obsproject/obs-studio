@@ -28,6 +28,7 @@ unzip -q ./vlc-master.zip
 curl -L -o ./sparkle.tar.bz2 https://github.com/sparkle-project/Sparkle/releases/download/1.16.0/Sparkle-1.16.0.tar.bz2
 mkdir ./sparkle
 tar -xf ./sparkle.tar.bz2 -C ./sparkle
+sudo cp -R ./sparkle/Sparkle.framework /Library/Frameworks/Sparkle.framework
 
 # CEF Stuff
 curl -kLO https://obs-nightly.s3-us-west-2.amazonaws.com/cef_binary_${CEF_BUILD_VERSION}_macosx64.tar.bz2 -f --retry 5 -C -
