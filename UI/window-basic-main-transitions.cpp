@@ -319,7 +319,7 @@ void OBSBasic::SetTransition(OBSSource transition)
 		obs_source_release(oldTransition);
 
 	bool fixed = transition ? obs_transition_fixed(transition) : false;
-	if(opt_lessui) {
+	if(opt_minimal) {
 		// Customer requirement for some company requirement
 	} else {
 		ui->transitionDurationLabel->setVisible(!fixed);
