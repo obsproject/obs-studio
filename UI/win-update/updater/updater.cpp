@@ -18,6 +18,8 @@
 
 #include "updater.hpp"
 
+#include <psapi.h>
+
 #include <util/windows/CoTaskMemPtr.hpp>
 
 #include <future>
@@ -472,6 +474,77 @@ try {
 
 /* ----------------------------------------------------------------------- */
 
+#define WAITIFOBS_SUCCESS       0
+#define WAITIFOBS_WRONG_PROCESS 1
+#define WAITIFOBS_CANCELLED     2
+
+static inline DWORD WaitIfOBS(DWORD id, const wchar_t *expected)
+{
+	wchar_t name[MAX_PATH];
+	*name = 0;
+
+	WinHandle proc = OpenProcess(
+			PROCESS_QUERY_INFORMATION |
+			PROCESS_VM_READ |
+			SYNCHRONIZE,
+			false, id);
+	if (!proc.Valid())
+		return WAITIFOBS_WRONG_PROCESS;
+
+	HMODULE mod;
+	DWORD temp;
+
+	if (!EnumProcessModules(proc, &mod, sizeof(mod), &temp))
+		return WAITIFOBS_WRONG_PROCESS;
+
+	GetModuleBaseName(proc, mod, name, _countof(name));
+
+	if (_wcsnicmp(name, expected, 5) == 0) {
+		HANDLE hWait[2];
+		hWait[0] = proc;
+		hWait[1] = cancelRequested;
+
+		int i = WaitForMultipleObjects(2, hWait, false, INFINITE);
+		DWORD err = GetLastError();
+		if (i == WAIT_OBJECT_0 + 1)
+			return WAITIFOBS_CANCELLED;
+
+		return WAITIFOBS_SUCCESS;
+	}
+
+	return WAITIFOBS_WRONG_PROCESS;
+}
+
+static bool WaitForOBS()
+{
+	DWORD proc_ids[1024], needed, count;
+	const wchar_t *name = is32bit ? L"obs32" : L"obs64";
+
+	if (!EnumProcesses(proc_ids, sizeof(proc_ids), &needed)) {
+		return true;
+	}
+
+	count = needed / sizeof(DWORD);
+
+	for (DWORD i = 0; i < count; i++) {
+		DWORD id = proc_ids[i];
+		if (id != 0) {
+			switch (WaitIfOBS(id, name)) {
+			case WAITIFOBS_SUCCESS:
+				return true;
+			case WAITIFOBS_WRONG_PROCESS:
+				break;
+			case WAITIFOBS_CANCELLED:
+				return false;
+			}
+		}
+	}
+
+	return true;
+}
+
+/* ----------------------------------------------------------------------- */
+
 static inline bool UTF8ToWide(wchar_t *wide, int wideSize, const char *utf8)
 {
 	return !!MultiByteToWideChar(CP_UTF8, 0, utf8, -1, wide, wideSize);
@@ -836,6 +909,9 @@ static bool Update(wchar_t *cmdLine)
 		if (i == WAIT_OBJECT_0 + 1)
 			return false;
 	}
+
+	if (!WaitForOBS())
+		return false;
 
 	/* ------------------------------------- *
 	 * Init crypt stuff                      */

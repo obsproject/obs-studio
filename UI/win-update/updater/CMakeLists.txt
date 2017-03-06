@@ -44,6 +44,7 @@ target_link_libraries(updater
 	${STATIC_ZLIB_PATH}
 	lzma
 	blake2
+	psapi
 	comctl32
 	shell32
 	winhttp
