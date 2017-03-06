@@ -510,7 +510,7 @@ int AutoUpdateThread::queryUpdate(bool manualUpdate, const char *text_utf8)
 
 static bool IsFileInUse(const wstring &file)
 {
-	WinHandle f = CreateFile(file.c_str(), GENERIC_READ, 0, nullptr,
+	WinHandle f = CreateFile(file.c_str(), GENERIC_WRITE, 0, nullptr,
 			OPEN_EXISTING, 0, nullptr);
 	if (!f.Valid()) {
 		int err = GetLastError();
