@@ -580,6 +580,27 @@ static bool NonCorePackageInstalled(const char *name)
 	return false;
 }
 
+static inline bool is_64bit_windows(void)
+{
+#ifdef _WIN64
+	return true;
+#else
+	BOOL x86 = false;
+	bool success = !!IsWow64Process(GetCurrentProcess(), &x86);
+	return success && !!x86;
+#endif
+}
+
+static inline bool is_64bit_file(const char *file)
+{
+	if (!file)
+		return false;
+
+	return strstr(file, "64bit") != nullptr ||
+	       strstr(file, "64.dll") != nullptr ||
+	       strstr(file, "64.exe") != nullptr;
+}
+
 #define UTF8ToWideBuf(wide, utf8) UTF8ToWide(wide, _countof(wide), utf8)
 #define WideToUTF8Buf(utf8, wide) WideToUTF8(utf8, _countof(utf8), wide)
 
@@ -591,6 +612,8 @@ static bool AddPackageUpdateFiles(json_t *root, size_t idx,
 	json_t *package = json_array_get(root, idx);
 	json_t *name    = json_object_get(package, "name");
 	json_t *files   = json_object_get(package, "files");
+
+	bool isWin64 = is_64bit_windows();
 
 	if (!json_is_array(files))
 		return true;
@@ -626,6 +649,9 @@ static bool AddPackageUpdateFiles(json_t *root, size_t idx,
 		int fileSize         = (int)json_integer_value(size);
 
 		if (strlen(hashUTF8) != BLAKE2_HASH_LENGTH * 2)
+			continue;
+
+		if (!isWin64 && is_64bit_file(fileUTF8))
 			continue;
 
 		/* convert strings to wide */
