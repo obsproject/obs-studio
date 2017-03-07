@@ -75,6 +75,7 @@ string opt_starting_scene;
 
 bool opt_always_on_top = false;
 bool opt_url_custom_manifest = false;
+string opt_url_custom_manifest_value;
 
 // AMD PowerXpress High Performance Flags
 #ifdef _MSC_VER
