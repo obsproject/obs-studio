@@ -987,18 +987,18 @@ static bool Update(wchar_t *cmdLine)
 
 	StringCbPrintf(manifestPath, sizeof(manifestPath),
 			L"%s\\updates\\manifest.json", lpAppDataPath);
-	if (!GetTempPathW(_countof(tempPath), tempPath)) {
+	if (!GetTempPathW(_countof(tempDirName), tempDirName)) {
 		Status(L"Update failed: Failed to get temp path: %ld",
 				GetLastError());
 		return false;
 	}
-	if (!GetTempFileNameW(tempDirName, L"obs-studio", 0, tempDirName)) {
+	if (!GetTempFileNameW(tempDirName, L"obs-studio", 0, tempPath)) {
 		Status(L"Update failed: Failed to create temp dir name: %ld",
 				GetLastError());
 		return false;
 	}
 
-	StringCbCat(tempPath, sizeof(tempPath), tempDirName);
+	DeleteFile(tempPath);
 	CreateDirectory(tempPath, nullptr);
 
 	/* ------------------------------------- *
