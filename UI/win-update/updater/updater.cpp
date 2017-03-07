@@ -480,8 +480,9 @@ try {
 
 static inline DWORD WaitIfOBS(DWORD id, const wchar_t *expected)
 {
-	wchar_t name[MAX_PATH];
-	*name = 0;
+	wchar_t path[MAX_PATH];
+	wchar_t *name;
+	*path = 0;
 
 	WinHandle proc = OpenProcess(
 			PROCESS_QUERY_INFORMATION |
@@ -491,13 +492,14 @@ static inline DWORD WaitIfOBS(DWORD id, const wchar_t *expected)
 	if (!proc.Valid())
 		return WAITIFOBS_WRONG_PROCESS;
 
-	HMODULE mod;
-	DWORD temp;
-
-	if (!EnumProcessModules(proc, &mod, sizeof(mod), &temp))
+	if (!GetProcessImageFileName(proc, path, _countof(path)))
 		return WAITIFOBS_WRONG_PROCESS;
 
-	GetModuleBaseName(proc, mod, name, _countof(name));
+	name = wcsrchr(path, L'\\');
+	if (name)
+		name += 1;
+	else
+		name = path;
 
 	if (_wcsnicmp(name, expected, 5) == 0) {
 		HANDLE hWait[2];
@@ -505,7 +507,6 @@ static inline DWORD WaitIfOBS(DWORD id, const wchar_t *expected)
 		hWait[1] = cancelRequested;
 
 		int i = WaitForMultipleObjects(2, hWait, false, INFINITE);
-		DWORD err = GetLastError();
 		if (i == WAIT_OBJECT_0 + 1)
 			return WAITIFOBS_CANCELLED;
 
