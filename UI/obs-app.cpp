@@ -73,6 +73,8 @@ string opt_starting_collection;
 string opt_starting_profile;
 string opt_starting_scene;
 
+bool opt_always_on_top = false;
+
 // AMD PowerXpress High Performance Flags
 #ifdef _MSC_VER
 extern "C" __declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
@@ -1756,6 +1758,9 @@ int main(int argc, char *argv[])
 		} else if (arg_is(argv[i], "--verbose", nullptr)) {
 			log_verbose = true;
 
+		} else if (arg_is(argv[i], "--always-on-top", nullptr)) {
+			opt_always_on_top = true;
+
 		} else if (arg_is(argv[i], "--unfiltered_log", nullptr)) {
 			unfiltered_log = true;
 
@@ -1785,7 +1790,7 @@ int main(int argc, char *argv[])
 
 		} else if (arg_is(argv[i], "--help", "-h")) {
 			std::cout <<
-			"--help, -h: Get list of available commands.\n\n" << 
+			"--help, -h: Get list of available commands.\n\n" <<
 			"--startstreaming: Automatically start streaming.\n" <<
 			"--startrecording: Automatically start recording.\n" <<
 			"--startreplaybuffer: Start replay buffer.\n\n" <<
@@ -1797,13 +1802,14 @@ int main(int argc, char *argv[])
 			"--minimize-to-tray: Minimize to system tray.\n" <<
 			"--portable, -p: Use portable mode.\n\n" <<
 			"--verbose: Make log more verbose.\n" <<
+			"--always-on-top: Start as Always on top.\n" <<
 			"--unfiltered_log: Make log unfiltered.\n\n" <<
 			"--version, -V: Get current version.\n";
 
 			exit(0);
 
 		} else if (arg_is(argv[i], "--version", "-V")) {
-			std::cout << "OBS Studio - " << 
+			std::cout << "OBS Studio - " <<
 				App()->GetVersionString() << "\n";
 			exit(0);
 		}

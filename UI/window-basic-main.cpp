@@ -813,6 +813,11 @@ retryScene:
 		opt_start_replaybuffer = false;
 	}
 
+	if (opt_always_on_top) {
+		SetAlwaysOnTop(this, true);
+		ui->actionAlwaysOnTop->setChecked(true);
+	}
+
 	LogScenes();
 
 	disableSaving--;
