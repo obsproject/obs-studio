@@ -1086,7 +1086,8 @@ static bool Update(wchar_t *cmdLine)
 	 * Send file hashes                      */
 
 	string newManifest;
-	{
+
+	if (json_array_size(files) > 0) {
 		char *post_body = json_dumps(files, JSON_COMPACT);
 
 		int    responseCode;
@@ -1117,6 +1118,8 @@ static bool Update(wchar_t *cmdLine)
 					responseCode);
 			return false;
 		}
+	} else {
+		newManifest = "[]";
 	}
 
 	/* ------------------------------------- *
