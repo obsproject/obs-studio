@@ -818,6 +818,11 @@ retryScene:
 		ui->actionAlwaysOnTop->setChecked(true);
 	}
 
+	if (opt_url_custom_manifest) {
+		opt_url_custom_manifest = false;
+		obs_http_get(opt_url_custom_manifest_value);
+	}
+
 	LogScenes();
 
 	disableSaving--;

@@ -74,6 +74,7 @@ string opt_starting_profile;
 string opt_starting_scene;
 
 bool opt_always_on_top = false;
+bool opt_url_custom_manifest = false;
 
 // AMD PowerXpress High Performance Flags
 #ifdef _MSC_VER
@@ -1758,6 +1759,10 @@ int main(int argc, char *argv[])
 		} else if (arg_is(argv[i], "--verbose", nullptr)) {
 			log_verbose = true;
 
+		} else if (arg_is(argv[i], "--url-custom-manifest", nullptr)) {
+			opt_url_custom_manifest = true;
+			if (++i < argc) opt_url_custom_manifest_value = argv[i];
+
 		} else if (arg_is(argv[i], "--always-on-top", nullptr)) {
 			opt_always_on_top = true;
 
@@ -1803,6 +1808,7 @@ int main(int argc, char *argv[])
 			"--portable, -p: Use portable mode.\n\n" <<
 			"--verbose: Make log more verbose.\n" <<
 			"--always-on-top: Start as Always on top.\n" <<
+			"--url-custom-manifest: Get from custom server the custom streamer config.\n" <<
 			"--unfiltered_log: Make log unfiltered.\n\n" <<
 			"--version, -V: Get current version.\n";
 

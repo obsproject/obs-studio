@@ -183,3 +183,5 @@ extern bool opt_minimize_tray;
 extern bool opt_studio_mode;
 extern std::string opt_starting_scene;
 extern bool opt_always_on_top;
+extern bool opt_url_custom_manifest;
+extern std::string opt_url_custom_manifest_value;
