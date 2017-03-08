@@ -1,5 +1,8 @@
 language: cpp
 
+cache:
+  ccache: true
+
 env:
   global:
   # AWS S3 creds
@@ -7,6 +10,12 @@ env:
   - secure: "MfhOg+84yb4ZHB2tM8PIPFQX2Y+WLN0I0iiAgyLC4KaHPUoNOyloe9yk6OjV7Lj7SZWqTlQUsqHa8S9mOUswGIody1Ydglo4RvyGOKCd8I6b2ri/jE8qHVuD9sO+sNlIxq4YqqG/qReTsbSs2YEgLneZUCYLCk/fihl8L6eVuSc="
   # secret
   - secure: "JRQVU2zgC3hY6CEY+Crmh/upp93En0BzKaLcsuBT538johNlK7m5hn3m2UOw63seLvBvVaKKWUDj9N986a3DwcXxWPMyF/9ctXgNWy39WzaVWxrbVR5nQB1fdiRp5YEgkoVN+gEm3OVF7sV5AGzh5/8CvEdRCoTLIGgMGHxW9mc="
+
+  # ccache
+  - USE_CCACHE=1
+  - CCACHE_COMPRESS=1
+  - CCACHE_MAXSIZE=200M
+  - CCACHE_CPP2=1
 
 matrix:
   include:
