@@ -2918,6 +2918,7 @@ void OBSBasic::changeEvent(QEvent *event)
 {
 	if (event->type() == QEvent::WindowStateChange &&
 	    isMinimized() &&
+	    trayIcon &&
 	    trayIcon->isVisible() &&
 	    sysTrayMinimizeToTray()) {
 
