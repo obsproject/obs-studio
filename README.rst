@@ -7,8 +7,10 @@ What is OBS?
   video content, efficiently.
 
 
-Bug Tracker: https://obsproject.com/mantis/
+Bug Tracker
 ----------------------------------------------------
+
+https://obsproject.com/mantis/
 
    We are no longer using GitHub issues!  Please use Mantis, and only report
    bugs and major issues.  Do NOT use mantis to ask questions or request
