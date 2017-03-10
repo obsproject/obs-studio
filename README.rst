@@ -2,9 +2,9 @@
 OBS Studio
 ==========
 
-  This project is a rewrite of what was formerly known as "Open Broadcaster
-  Software", software originally designed for recording and streaming live
-  video content, efficiently.
+This project is a rewrite of what was formerly known as "Open Broadcaster
+Software", software originally designed for recording and streaming live
+video content, efficiently.
 
 
 Bug Tracker
