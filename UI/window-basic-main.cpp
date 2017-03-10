@@ -2916,13 +2916,15 @@ void OBSBasic::closeEvent(QCloseEvent *event)
 
 void OBSBasic::changeEvent(QEvent *event)
 {
-	if (event->type() == QEvent::WindowStateChange &&
-	    isMinimized() &&
-	    trayIcon->isVisible() &&
-	    sysTrayMinimizeToTray()) {
+  if (trayIcon) {
+	  if (event->type() == QEvent::WindowStateChange &&
+	      isMinimized() &&
+	      trayIcon->isVisible() &&
+	      sysTrayMinimizeToTray()) {
 
-		ToggleShowHide();
-	}
+	  	ToggleShowHide();
+	  }
+  }
 }
 
 void OBSBasic::on_actionShow_Recordings_triggered()
