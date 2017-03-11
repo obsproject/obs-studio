@@ -126,6 +126,9 @@
             <property name="checkable">
              <bool>false</bool>
             </property>
+            <property name="themeID" stdset="0">
+                <string notr="true">startStreaming</string>
+            </property>
            </widget>
           </item>
           <item>
@@ -147,6 +150,9 @@
             </property>
             <property name="text">
              <string>Basic.Main.StartRecording</string>
+            </property>
+            <property name="themeID" stdset="0">
+                <string notr="true">startRecording</string>
             </property>
            </widget>
           </item>
