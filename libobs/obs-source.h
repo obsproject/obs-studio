@@ -428,6 +428,8 @@ struct obs_source_info {
 EXPORT void obs_register_source_s(const struct obs_source_info *info,
 		size_t size);
 
+EXPORT void copy_paste_filters(obs_source_t *dst, obs_source_t *src);
+
 /**
  * Regsiters a source definition to the current obs context.  This should be
  * used in obs_module_load.

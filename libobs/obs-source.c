@@ -391,6 +391,17 @@ static void duplicate_filters(obs_source_t *dst, obs_source_t *src,
 	da_free(filters);
 }
 
+void copy_paste_filters(obs_source_t *dst, obs_source_t *src)
+{
+	bool create_private;
+
+	duplicate_filters(dst, src, create_private ?
+					OBS_SCENE_DUP_PRIVATE_COPY :
+					OBS_SCENE_DUP_COPY);
+
+	obs_source_release(src);
+}
+
 obs_source_t *obs_source_duplicate(obs_source_t *source,
 		const char *new_name, bool create_private)
 {

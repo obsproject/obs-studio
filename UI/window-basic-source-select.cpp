@@ -243,3 +243,8 @@ OBSBasicSourceSelect::OBSBasicSourceSelect(OBSBasic *parent, const char *id_)
 		obs_enum_sources(EnumSources, this);
 	}
 }
+
+void OBSBasicSourceSelect::SourcePaste(const char *name, const bool visible)
+{
+	AddExisting(name, visible);
+}
