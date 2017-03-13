@@ -365,6 +365,27 @@ obs_source_t *obs_source_create_private(const char *id, const char *name,
 	return obs_source_create_internal(id, name, settings, NULL, true);
 }
 
+static char *get_new_filter_name(obs_source_t *dst, const char *name)
+{
+	struct dstr new_name = {0};
+	int inc = 0;
+
+	dstr_copy(&new_name, name);
+
+	for (;;) {
+		obs_source_t *existing_filter = obs_source_get_filter_by_name(
+				dst, new_name.array);
+		if (!existing_filter)
+			break;
+
+		obs_source_release(existing_filter);
+
+		dstr_printf(&new_name, "%s %d", name, ++inc + 1);
+	}
+
+	return new_name.array;
+}
+
 static void duplicate_filters(obs_source_t *dst, obs_source_t *src,
 		bool private)
 {
@@ -380,15 +401,28 @@ static void duplicate_filters(obs_source_t *dst, obs_source_t *src,
 
 	for (size_t i = filters.num; i > 0; i--) {
 		obs_source_t *src_filter = filters.array[i - 1];
-		obs_source_t *dst_filter = obs_source_duplicate(src_filter,
-				src_filter->context.name, private);
+		char *new_name = get_new_filter_name(dst,
+				src_filter->context.name);
 
+		obs_source_t *dst_filter = obs_source_duplicate(src_filter,
+				new_name, private);
+
+		bfree(new_name);
 		obs_source_filter_add(dst, dst_filter);
 		obs_source_release(dst_filter);
 		obs_source_release(src_filter);
 	}
 
 	da_free(filters);
+}
+
+void obs_source_copy_filters(obs_source_t *dst, obs_source_t *src)
+{
+	duplicate_filters(dst, src, dst->context.private ?
+					OBS_SCENE_DUP_PRIVATE_COPY :
+					OBS_SCENE_DUP_COPY);
+
+	obs_source_release(src);
 }
 
 obs_source_t *obs_source_duplicate(obs_source_t *source,
