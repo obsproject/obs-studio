@@ -637,6 +637,10 @@
                     "url": "rtmp://singapore.restream.io/live"
                 },
                 {
+                    "name": "Asia (Seoul, South Korea)",
+                    "url": "rtmp://seoul.restream.io/live"
+                },
+                {
                     "name": "Australia (Sydney)",
                     "url": "rtmp://au.restream.io/live"
                 }
