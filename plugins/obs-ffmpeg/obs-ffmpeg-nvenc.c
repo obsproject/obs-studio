@@ -384,7 +384,7 @@ static void nvenc_defaults(obs_data_t *settings)
 	obs_data_set_default_int(settings, "keyint_sec", 0);
 	obs_data_set_default_int(settings, "cqp", 23);
 	obs_data_set_default_string(settings, "rate_control", "CBR");
-	obs_data_set_default_string(settings, "preset", "default");
+	obs_data_set_default_string(settings, "preset", "hq");
 	obs_data_set_default_string(settings, "profile", "main");
 	obs_data_set_default_string(settings, "level", "auto");
 	obs_data_set_default_bool(settings, "2pass", true);
@@ -448,7 +448,6 @@ static obs_properties_t *nvenc_properties(void *unused)
 #define add_preset(val) \
 	obs_property_list_add_string(p, obs_module_text("NVENC.Preset." val), \
 			val)
-	add_preset("default");
 	add_preset("hq");
 	add_preset("hp");
 	add_preset("bd");
