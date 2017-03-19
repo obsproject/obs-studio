@@ -69,7 +69,7 @@ static inline int get_stencil_format_bits(enum gs_zstencil_format zsformat)
 	}
 }
 
-/* would use designated initializers but microsoft sort of sucks */
+/* would use designated initializers but Microsoft sort of sucks */
 static inline void init_dummy_pixel_format(PIXELFORMATDESCRIPTOR *pfd)
 {
 	memset(pfd, 0, sizeof(PIXELFORMATDESCRIPTOR));

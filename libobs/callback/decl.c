@@ -109,7 +109,7 @@ static int parse_param(struct cf_parser *cfp, struct decl_info *decl)
 	int                code;
 	struct decl_param  param = {0};
 
-	/* get stprage specifiers */
+	/* get storage specifiers */
 	code = cf_next_name_ref(cfp, &ref, TYPE_OR_STORAGE, ",");
 	if (code != PARSE_SUCCESS)
 		return code;
@@ -120,7 +120,7 @@ static int parse_param(struct cf_parser *cfp, struct decl_info *decl)
 			return code;
 	}
 
-	/* parameters not marked with specifers are input parameters */
+	/* parameters not marked with specifiers are input parameters */
 	if (param.flags == 0)
 		param.flags = CALL_PARAM_IN;
 
@@ -198,7 +198,7 @@ bool parse_decl_string(struct decl_info *decl, const char *decl_string)
 	ret_param.flags = CALL_PARAM_OUT;
 
 	cf_parser_init(&cfp);
-	if (!cf_parser_parse(&cfp, decl_string, "declaraion"))
+	if (!cf_parser_parse(&cfp, decl_string, "declaration"))
 		goto fail;
 
 	code = cf_get_name_ref(&cfp, &ret_type, "return type", NULL);

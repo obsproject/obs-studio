@@ -534,7 +534,7 @@ mfxStatus QSV_Encoder_Internal::Encode(uint64_t ts, uint8_t *pDataY,
 	}
 
 	for (;;) {
-		// Encode a frame asychronously (returns immediately)
+		// Encode a frame asynchronously (returns immediately)
 		sts = m_pmfxENC->EncodeFrameAsync(NULL, pSurface,
 				&m_pTaskPool[nTaskIdx].mfxBS,
 				&m_pTaskPool[nTaskIdx].syncp);

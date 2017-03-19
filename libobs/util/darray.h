@@ -33,7 +33,7 @@ extern "C" {
  * NOTE: Not type-safe when using directly.
  *       Specifying size per call with inline maximizes compiler optimizations
  *
- *       See DARRAY macro at the bottom of thhe file for slightly safer usage.
+ *       See DARRAY macro at the bottom of the file for slightly safer usage.
  */
 
 #define DARRAY_INVALID ((size_t)-1)
@@ -438,7 +438,7 @@ static inline void darray_swap(const size_t element_size,
  *       Makes it a little easier to use as well.
  *
  *       I did -not- want to use a gigantic macro to generate a crapload of
- *       typsafe inline functions per type.  It just feels like a mess to me.
+ *       typesafe inline functions per type.  It just feels like a mess to me.
  */
 
 #define DARRAY(type)                     \

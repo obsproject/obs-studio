@@ -112,7 +112,7 @@ struct obs_hotkeys_translations {
  * that may not have translations.  If the operating system can provide
  * translations for these keys, it will use the operating system's translation
  * over these translations.  If no translations are specified, it will use
- * the default english translations for that specific operating system. */
+ * the default English translations for that specific operating system. */
 EXPORT void obs_hotkeys_set_translations_s(
 		struct obs_hotkeys_translations *translations, size_t size);
 

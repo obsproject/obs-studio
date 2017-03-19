@@ -362,7 +362,7 @@ size_t wchar_to_utf8(const wchar_t *in, size_t insize, char *out,
 
 		/*
 		 * NOTE: do not check here for forbidden UTF-8 characters.
-		 * They cannot appear here because we do proper convertion.
+		 * They cannot appear here because we do proper conversion.
 		 */
 
 		p += n;

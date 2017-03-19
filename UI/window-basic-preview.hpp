@@ -108,7 +108,7 @@ public:
 	/* use libobs allocator for alignment because the matrices itemToScreen
 	 * and screenToItem may contain SSE data, which will cause SSE
 	 * instructions to crash if the data is not aligned to at least a 16
-	 * byte boundry. */
+	 * byte boundary. */
 	static inline void* operator new(size_t size) {return bmalloc(size);}
 	static inline void operator delete(void* ptr) {bfree(ptr);}
 };
