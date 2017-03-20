@@ -841,7 +841,7 @@
                 "max video bitrate": 2000,
                 "max audio bitrate": 160
             }
-        }
+        },
         {
             "name": "LiveStream",
             "servers": [
@@ -850,6 +850,6 @@
                     "url": "rtmp://rtmpin.livestreamingest.com/rtmpin"
                 }
             ]
-        },
+        }
     ]
 }
