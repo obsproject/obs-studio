@@ -455,7 +455,7 @@ void device_load_texture(gs_device_t *device, gs_texture_t *tex, int unit)
 
 	/* need a pixel shader to properly bind textures */
 	if (!device->cur_pixel_shader)
-		tex = NULL;
+		goto fail;
 
 	if (cur_tex == tex)
 		return;

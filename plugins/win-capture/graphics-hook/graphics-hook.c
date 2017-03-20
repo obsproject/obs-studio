@@ -235,8 +235,8 @@ static inline bool init_hook(HANDLE thread_handle)
 {
 	wait_for_dll_main_finish(thread_handle);
 
-	_snwprintf(keepalive_name, sizeof(keepalive_name), L"%s%lu",
-			WINDOW_HOOK_KEEPALIVE, GetCurrentProcessId());
+	_snwprintf(keepalive_name, sizeof(keepalive_name) / sizeof(wchar_t),
+			L"%s%lu", WINDOW_HOOK_KEEPALIVE, GetCurrentProcessId());
 
 	init_pipe();
 

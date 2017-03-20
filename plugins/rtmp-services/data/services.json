@@ -136,7 +136,7 @@
             ],
             "recommended": {
                 "keyint": 2,
-                "max video bitrate": 3500,
+                "max video bitrate": 6000,
                 "max audio bitrate": 160,
                 "x264opts": "scenecut=0"
             }
@@ -332,7 +332,7 @@
             "recommended": {
                 "keyint": 1,
                 "max audio bitrate": 160,
-                "max video bitrate": 3500,
+                "max video bitrate": 10000,
                 "profile": "main"
             }
         },
@@ -637,6 +637,10 @@
                     "url": "rtmp://singapore.restream.io/live"
                 },
                 {
+                    "name": "Asia (Seoul, South Korea)",
+                    "url": "rtmp://seoul.restream.io/live"
+                },
+                {
                     "name": "Australia (Sydney)",
                     "url": "rtmp://au.restream.io/live"
                 }
@@ -848,6 +852,15 @@
                 {
                     "name": "Primary",
                     "url": "rtmp://rtmpin.livestreamingest.com/rtmpin"
+                }
+            ]
+        },
+        {
+            "name": "Pandora TV Korea",
+            "servers": [
+                {
+                    "name": "Default",
+                    "url": "rtmp://plive.pandora.tv:80/mediaHub"
                 }
             ]
         }

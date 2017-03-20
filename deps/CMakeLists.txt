@@ -8,6 +8,11 @@ add_subdirectory(ipc-util)
 add_subdirectory(libff)
 add_subdirectory(file-updater)
 
+if(WIN32)
+	add_subdirectory(blake2)
+	add_subdirectory(lzma)
+endif()
+
 if(BUILD_CAPTIONS)
 	add_subdirectory(libcaption)
 endif()

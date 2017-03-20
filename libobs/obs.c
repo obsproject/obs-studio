@@ -927,11 +927,6 @@ int obs_reset_video(struct obs_video_info *ovi)
 	stop_video();
 	obs_free_video();
 
-	if (!ovi) {
-		obs_free_graphics();
-		return OBS_VIDEO_SUCCESS;
-	}
-
 	/* align to multiple-of-two and SSE alignment sizes */
 	ovi->output_width  &= 0xFFFFFFFC;
 	ovi->output_height &= 0xFFFFFFFE;
@@ -1911,8 +1906,10 @@ bool obs_set_audio_monitoring_device(const char *name, const char *id)
 #ifdef _WIN32
 	pthread_mutex_lock(&obs->audio.monitoring_mutex);
 
-	if (strcmp(id, obs->audio.monitoring_device_id) == 0)
+	if (strcmp(id, obs->audio.monitoring_device_id) == 0) {
+		pthread_mutex_unlock(&obs->audio.monitoring_mutex);
 		return true;
+	}
 
 	if (obs->audio.monitoring_device_name)
 		bfree(obs->audio.monitoring_device_name);

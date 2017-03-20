@@ -178,7 +178,7 @@ void ff_decoder_refresh(void *opaque)
 
 	struct ff_frame *frame;
 
-	if (decoder && decoder->stream) {
+	if (decoder->stream) {
 		if (decoder->frame_queue.size == 0) {
 			if (!decoder->eof || !decoder->finished) {
 				// We expected a frame, but there were none

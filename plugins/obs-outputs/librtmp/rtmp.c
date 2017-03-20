@@ -4252,6 +4252,11 @@ RTMP_Close(RTMP *r)
         r->Link.lFlags ^= RTMP_LF_FTCU;
     }
 
+    memset (&r->m_bindIP, 0, sizeof(r->m_bindIP));
+    r->m_bCustomSend = 0;
+    r->m_customSendFunc = NULL;
+    r->m_customSendParam = NULL;
+
 #if defined(CRYPTO) || defined(USE_ONLY_MD5)
     if (!(r->Link.protocol & RTMP_FEATURE_WRITE) || (r->Link.pFlags & RTMP_PUB_CLEAN))
     {

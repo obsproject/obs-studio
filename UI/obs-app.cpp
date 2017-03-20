@@ -363,6 +363,8 @@ bool OBSApp::InitGlobalConfigDefaults()
 	config_set_default_uint(globalConfig, "General", "MaxLogs", 10);
 	config_set_default_string(globalConfig, "General", "ProcessPriority",
 			"Normal");
+	config_set_default_bool(globalConfig, "General", "EnableAutoUpdates",
+			true);
 
 #if _WIN32
 	config_set_default_string(globalConfig, "Video", "Renderer",
@@ -448,7 +450,13 @@ static bool MakeUserDirs()
 		return false;
 	if (!do_mkdir(path))
 		return false;
+
+	if (GetConfigPath(path, sizeof(path), "obs-studio/updates") <= 0)
+		return false;
+	if (!do_mkdir(path))
+		return false;
 #endif
+
 	if (GetConfigPath(path, sizeof(path), "obs-studio/plugin_config") <= 0)
 		return false;
 	if (!do_mkdir(path))
@@ -1797,12 +1805,6 @@ int main(int argc, char *argv[])
 		} else if (arg_is(argv[i], "--version", "-V")) {
 			std::cout << "OBS Studio - " << 
 				App()->GetVersionString() << "\n";
-			exit(0);
-
-		} else {
-			std::cout << 
-				"Invalid arguments. Use --help or -h to get " << 
-				"a list of available command line arguments.\n";
 			exit(0);
 		}
 	}

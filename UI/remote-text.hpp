@@ -18,6 +18,7 @@
 #pragma once
 
 #include <QThread>
+#include <vector>
 #include <string>
 
 class RemoteTextThread : public QThread {
@@ -40,3 +41,13 @@ public:
 		: url(url_), contentType(contentType_), postData(postData_)
 	{}
 };
+
+bool GetRemoteFile(
+	const char *url,
+	std::string &str,
+	std::string &error,
+	long *responseCode = nullptr,
+	const char *contentType = nullptr,
+	const char *postData = nullptr,
+	std::vector<std::string> extraHeaders = std::vector<std::string>(),
+	std::string *signature = nullptr);

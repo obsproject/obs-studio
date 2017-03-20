@@ -1884,10 +1884,9 @@ void obs_source_filter_add(obs_source_t *source, obs_source_t *filter)
 
 	signal_handler_signal(source->context.signals, "filter_add", &cd);
 
-	if (source && filter)
-		blog(LOG_DEBUG, "- filter '%s' (%s) added to source '%s'",
-				filter->context.name, filter->info.id,
-				source->context.name);
+	blog(LOG_DEBUG, "- filter '%s' (%s) added to source '%s'",
+			filter->context.name, filter->info.id,
+			source->context.name);
 }
 
 static bool obs_source_filter_remove_refless(obs_source_t *source,
@@ -1920,10 +1919,9 @@ static bool obs_source_filter_remove_refless(obs_source_t *source,
 
 	signal_handler_signal(source->context.signals, "filter_remove", &cd);
 
-	if (source && filter)
-		blog(LOG_DEBUG, "- filter '%s' (%s) removed from source '%s'",
-				filter->context.name, filter->info.id,
-				source->context.name);
+	blog(LOG_DEBUG, "- filter '%s' (%s) removed from source '%s'",
+			filter->context.name, filter->info.id,
+			source->context.name);
 
 	if (filter->info.filter_remove)
 		filter->info.filter_remove(filter->context.data,
