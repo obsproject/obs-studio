@@ -208,8 +208,14 @@ struct DShowInput {
 		if (!thread)
 			throw "Failed to create thread";
 
+		deactivateWhenNotShowing =
+			obs_data_get_bool(settings, DEACTIVATE_WNS);
+
 		if (obs_data_get_bool(settings, "active")) {
-			QueueAction(Action::Activate);
+			bool showing = obs_source_showing(source);
+			if (!deactivateWhenNotShowing || showing)
+				QueueAction(Action::Activate);
+
 			active = true;
 		}
 	}
