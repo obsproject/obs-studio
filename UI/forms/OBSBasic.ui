@@ -854,6 +854,44 @@
     <property name="title">
      <string>Basic.MainMenu.Edit</string>
     </property>
+    <addaction name="actionCopySource"/>
+     <action name="actionCopySource">
+      <property name="shortcut">
+       <string>Ctrl+C</string>
+      </property>
+      <property name="text">
+       <string>Copy</string>
+      </property>
+     </action>
+    <addaction name="actionPasteSource"/>
+     <action name="actionPasteSource">
+      <property name="shortcut">
+       <string>Ctrl+V</string>
+      </property>
+      <property name="text">
+       <string>Paste</string>
+      </property>
+      <property name="enabled">
+       <bool>false</bool>
+      </property>
+     </action>
+    <addaction name="separator"/>
+    <addaction name="actionCopyFilters"/>
+     <action name="actionCopyFilters">
+      <property name="text">
+       <string>Copy.Filters</string>
+      </property>
+     </action>
+    <addaction name="actionPasteFilters"/>
+     <action name="actionPasteFilters">
+      <property name="text">
+       <string>Paste.Filters</string>
+      </property>
+      <property name="enabled">
+       <bool>false</bool>
+      </property>
+     </action>
+    <addaction name="separator"/>
     <widget class="QMenu" name="transformMenu">
      <property name="title">
       <string>Basic.MainMenu.Edit.Transform</string>

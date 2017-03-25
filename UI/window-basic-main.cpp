@@ -3347,6 +3347,18 @@ void OBSBasic::CreateSourcePopupMenu(QListWidgetItem *item, bool preview)
 	if (addSourceMenu)
 		popup.addMenu(addSourceMenu);
 
+	ui->actionCopyFilters->setEnabled(false);
+
+	popup.addSeparator();
+	popup.addAction(ui->actionCopySource);
+	popup.addAction(ui->actionPasteSource);
+	popup.addSeparator();
+
+	popup.addSeparator();
+	popup.addAction(ui->actionCopyFilters);
+	popup.addAction(ui->actionPasteFilters);
+	popup.addSeparator();
+
 	if (item) {
 		if (addSourceMenu)
 			popup.addSeparator();
@@ -3393,6 +3405,8 @@ void OBSBasic::CreateSourcePopupMenu(QListWidgetItem *item, bool preview)
 				SLOT(OpenFilters()));
 		popup.addAction(QTStr("Properties"), this,
 				SLOT(on_actionSourceProperties_triggered()));
+
+		ui->actionCopyFilters->setEnabled(true);
 	}
 
 	popup.exec(QCursor::pos());
@@ -5269,4 +5283,58 @@ bool OBSBasic::sysTrayMinimizeToTray()
 {
 	return config_get_bool(GetGlobalConfig(),
 			"BasicWindow", "SysTrayMinimizeToTray");
+}
+
+void OBSBasic::on_actionCopySource_triggered()
+{
+	on_actionCopyTransform_triggered();
+
+	OBSSceneItem item = GetCurrentSceneItem();
+
+	if (!item)
+		return;
+
+	OBSSource source = obs_sceneitem_get_source(item);
+
+	copyString = obs_source_get_name(source);
+	copyVisible = obs_sceneitem_visible(item);
+
+	ui->actionPasteSource->setEnabled(true);
+}
+
+void OBSBasic::on_actionPasteSource_triggered()
+{
+	OBSBasicSourceSelect *select =
+			reinterpret_cast<OBSBasicSourceSelect*>(sender());
+
+	select->SourcePaste(copyString, (const bool)copyVisible);
+
+	on_actionPasteTransform_triggered();
+}
+
+void OBSBasic::on_actionCopyFilters_triggered()
+{
+	OBSSceneItem item = GetCurrentSceneItem();
+
+	if (!item)
+		return;
+
+	OBSSource source = obs_sceneitem_get_source(item);
+
+	copyFiltersString = obs_source_get_name(source);
+
+	ui->actionPasteFilters->setEnabled(true);
+}
+
+void OBSBasic::on_actionPasteFilters_triggered()
+{
+	OBSSource source = obs_get_source_by_name(copyFiltersString);
+	OBSSceneItem sceneItem = GetCurrentSceneItem();
+
+	OBSSource dstSource = obs_sceneitem_get_source(sceneItem);
+
+	if (source == dstSource)
+		return;
+
+	copy_paste_filters(dstSource, source);
 }
