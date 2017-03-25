@@ -2140,13 +2140,15 @@ void OBSBasic::DeactivateAudioSource(OBSSource source)
 
 bool OBSBasic::QueryRemoveSource(obs_source_t *source)
 {
-	int count = ui->scenes->count();
+	if (obs_source_get_type(source) == OBS_SOURCE_TYPE_SCENE) {
+		int count = ui->scenes->count();
 
-	if (count == 1) {
-		QMessageBox::information(this,
-					QTStr("FinalScene.Title"),
-					QTStr("FinalScene.Text"));
-		return false;
+		if (count == 1) {
+			QMessageBox::information(this,
+						QTStr("FinalScene.Title"),
+						QTStr("FinalScene.Text"));
+			return false;
+		}
 	}
 
 	const char *name  = obs_source_get_name(source);
