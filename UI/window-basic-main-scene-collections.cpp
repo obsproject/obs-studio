@@ -225,6 +225,7 @@ void OBSBasic::RefreshSceneCollections()
 
 	OBSBasic *main = reinterpret_cast<OBSBasic*>(App()->GetMainWindow());
 	main->OpenSavedProjectors();
+	main->ui->actionPasteFilters->setEnabled(false);
 	main->ui->actionPasteRef->setEnabled(false);
 	main->ui->actionPasteDup->setEnabled(false);
 }
