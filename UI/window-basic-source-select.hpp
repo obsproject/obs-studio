@@ -47,4 +47,6 @@ public:
 	OBSBasicSourceSelect(OBSBasic *parent, const char *id);
 
 	OBSSource newSource;
+
+	static void SourcePaste(const char *name, bool visible, bool duplicate);
 };

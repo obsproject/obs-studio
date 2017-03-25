@@ -93,7 +93,28 @@ static void AddSource(void *_data, obs_scene_t *scene)
 	obs_sceneitem_set_visible(sceneitem, data->visible);
 }
 
-static void AddExisting(const char *name, const bool visible)
+static char *get_new_source_name(const char *name)
+{
+	struct dstr new_name = {0};
+	int inc = 0;
+
+	dstr_copy(&new_name, name);
+
+	for (;;) {
+		obs_source_t *existing_source = obs_get_source_by_name(
+				new_name.array);
+		if (!existing_source)
+			break;
+
+		obs_source_release(existing_source);
+
+		dstr_printf(&new_name, "%s %d", name, ++inc + 1);
+	}
+
+	return new_name.array;
+}
+
+static void AddExisting(const char *name, bool visible, bool duplicate)
 {
 	OBSBasic *main = reinterpret_cast<OBSBasic*>(App()->GetMainWindow());
 	OBSScene scene = main->GetCurrentScene();
@@ -102,6 +123,17 @@ static void AddExisting(const char *name, const bool visible)
 
 	obs_source_t *source = obs_get_source_by_name(name);
 	if (source) {
+		if (duplicate) {
+			obs_source_t *from = source;
+			char *new_name = get_new_source_name(name);
+			source = obs_source_duplicate(from, new_name, false);
+			bfree(new_name);
+			obs_source_release(from);
+
+			if (!source)
+				return;
+		}
+
 		AddSourceData data;
 		data.source = source;
 		data.visible = visible;
@@ -155,7 +187,7 @@ void OBSBasicSourceSelect::on_buttonBox_accepted()
 		if (!item)
 			return;
 
-		AddExisting(QT_TO_UTF8(item->text()), visible);
+		AddExisting(QT_TO_UTF8(item->text()), visible, false);
 	} else {
 		if (ui->sourceName->text().isEmpty()) {
 			QMessageBox::information(this,
@@ -242,4 +274,9 @@ OBSBasicSourceSelect::OBSBasicSourceSelect(OBSBasic *parent, const char *id_)
 	} else {
 		obs_enum_sources(EnumSources, this);
 	}
+}
+
+void OBSBasicSourceSelect::SourcePaste(const char *name, bool visible, bool dup)
+{
+	AddExisting(name, visible, dup);
 }

@@ -119,6 +119,10 @@ private:
 	bool projectChanged = false;
 	bool previewEnabled = true;
 
+	const char *copyString;
+	const char *copyFiltersString;
+	bool copyVisible = true;
+
 	QPointer<QThread> updateCheckThread;
 	QPointer<QThread> logUploadThread;
 
@@ -412,6 +416,13 @@ private slots:
 	void SetShowing(bool showing);
 
 	void ToggleShowHide();
+
+	void on_actionCopySource_triggered();
+	void on_actionPasteRef_triggered();
+	void on_actionPasteDup_triggered();
+
+	void on_actionCopyFilters_triggered();
+	void on_actionPasteFilters_triggered();
 
 private:
 	/* OBS Callbacks */

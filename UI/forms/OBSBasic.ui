@@ -892,6 +892,51 @@
      <addaction name="actionScaleCanvas"/>
      <addaction name="actionScaleOutput"/>
     </widget>
+    <action name="actionCopySource">
+     <property name="text">
+      <string>Copy</string>
+     </property>
+     <property name="shortcut">
+      <string>Ctrl+C</string>
+     </property>
+    </action>
+    <action name="actionPasteRef">
+     <property name="enabled">
+      <bool>false</bool>
+     </property>
+     <property name="text">
+      <string>PasteReference</string>
+     </property>
+     <property name="iconText">
+      <string>PasteReference</string>
+     </property>
+     <property name="toolTip">
+      <string>PasteReference</string>
+     </property>
+     <property name="shortcut">
+      <string>Ctrl+V</string>
+     </property>
+    </action>
+    <action name="actionCopyFilters">
+     <property name="text">
+      <string>Copy.Filters</string>
+     </property>
+    </action>
+    <action name="actionPasteFilters">
+     <property name="enabled">
+      <bool>false</bool>
+     </property>
+     <property name="text">
+      <string>Paste.Filters</string>
+     </property>
+    </action>
+    <addaction name="actionCopySource"/>
+    <addaction name="actionPasteRef"/>
+    <addaction name="actionPasteDup"/>
+    <addaction name="separator"/>
+    <addaction name="actionCopyFilters"/>
+    <addaction name="actionPasteFilters"/>
+    <addaction name="separator"/>
     <addaction name="transformMenu"/>
     <addaction name="orderMenu"/>
     <addaction name="scalingMenu"/>
@@ -1407,6 +1452,11 @@
    </property>
    <property name="text">
     <string>Basic.MainMenu.Edit.Scale.Output</string>
+   </property>
+  </action>
+  <action name="actionPasteDup">
+   <property name="text">
+    <string>PasteDuplicate</string>
    </property>
   </action>
  </widget>
