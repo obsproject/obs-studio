@@ -1928,6 +1928,7 @@ void OBSBasic::RemoveScene(OBSSource source)
 
 	QListWidgetItem *sel = nullptr;
 	int count = ui->scenes->count();
+
 	for (int i = 0; i < count; i++) {
 		auto item = ui->scenes->item(i);
 		auto cur_scene = GetOBSRef<OBSScene>(item);
@@ -2139,6 +2140,15 @@ void OBSBasic::DeactivateAudioSource(OBSSource source)
 
 bool OBSBasic::QueryRemoveSource(obs_source_t *source)
 {
+	int count = ui->scenes->count();
+
+	if (count == 1) {
+		QMessageBox::information(this,
+					QTStr("FinalScene.Title"),
+					QTStr("FinalScene.Text"));
+		return false;
+	}
+
 	const char *name  = obs_source_get_name(source);
 
 	QString text = QTStr("ConfirmRemove.Text");
