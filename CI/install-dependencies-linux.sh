@@ -8,6 +8,7 @@ sudo apt-get install -y \
         cmake \
         libasound2-dev \
         libcurl4-openssl-dev \
+        libfdk-aac-dev \
         libfontconfig-dev \
         libfreetype6-dev \
         libgl1-mesa-dev \
