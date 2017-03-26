@@ -976,6 +976,13 @@ EXPORT void obs_source_draw(gs_texture_t *image, int x, int y,
 EXPORT void obs_source_output_video(obs_source_t *source,
 		const struct obs_source_frame *frame);
 
+/** Preloads asynchronous video data to allow instantaneous playback */
+EXPORT void obs_source_preload_video(obs_source_t *source,
+		const struct obs_source_frame *frame);
+
+/** Shows any preloaded video data */
+EXPORT void obs_source_show_preloaded_video(obs_source_t *source);
+
 /** Outputs audio data (always asynchronous) */
 EXPORT void obs_source_output_audio(obs_source_t *source,
 		const struct obs_source_audio *audio);

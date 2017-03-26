@@ -567,6 +567,8 @@ void obs_source_destroy(struct obs_source *source)
 	audio_resampler_destroy(source->resampler);
 	bfree(source->audio_output_buf[0][0]);
 
+	obs_source_frame_destroy(source->async_preload_frame);
+
 	if (source->info.type == OBS_SOURCE_TYPE_TRANSITION)
 		obs_transition_free(source);
 
@@ -1072,6 +1074,7 @@ static void reset_audio_data(obs_source_t *source, uint64_t os_time)
 
 	source->last_audio_input_buf_size = 0;
 	source->audio_ts = os_time;
+	source->next_audio_sys_ts_min = os_time;
 }
 
 static void handle_ts_jump(obs_source_t *source, uint64_t expected,
@@ -2346,6 +2349,62 @@ void obs_source_output_video(obs_source_t *source,
 		pthread_mutex_unlock(&source->async_mutex);
 		source->async_active = true;
 	}
+}
+
+static inline bool preload_frame_changed(obs_source_t *source,
+		const struct obs_source_frame *in)
+{
+	if (!source->async_preload_frame)
+		return true;
+
+	return in->width  != source->async_preload_frame->width  ||
+	       in->height != source->async_preload_frame->height ||
+	       in->format != source->async_preload_frame->format;
+}
+
+void obs_source_preload_video(obs_source_t *source,
+		const struct obs_source_frame *frame)
+{
+	if (!obs_source_valid(source, "obs_source_preload_video"))
+		return;
+	if (!frame)
+		return;
+
+	obs_enter_graphics();
+
+	if (preload_frame_changed(source, frame)) {
+		obs_source_frame_destroy(source->async_preload_frame);
+		source->async_preload_frame = obs_source_frame_create(
+				frame->format,
+				frame->width,
+				frame->height);
+	}
+
+	copy_frame_data(source->async_preload_frame, frame);
+	set_async_texture_size(source, source->async_preload_frame);
+	update_async_texture(source, source->async_preload_frame,
+			source->async_texture,
+			source->async_texrender);
+
+	source->last_frame_ts = frame->timestamp;
+
+	obs_leave_graphics();
+}
+
+void obs_source_show_preloaded_video(obs_source_t *source)
+{
+	uint64_t sys_ts;
+
+	if (!obs_source_valid(source, "obs_source_show_preloaded_video"))
+		return;
+
+	source->async_active = true;
+
+	pthread_mutex_lock(&source->audio_buf_mutex);
+	sys_ts = os_gettime_ns();
+	reset_audio_timing(source, source->last_frame_ts, sys_ts);
+	reset_audio_data(source, sys_ts);
+	pthread_mutex_unlock(&source->audio_buf_mutex);
 }
 
 static inline struct obs_audio_data *filter_async_audio(obs_source_t *source,
