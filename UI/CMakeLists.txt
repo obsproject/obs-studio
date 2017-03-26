@@ -36,6 +36,7 @@ else()
 endif()
 
 find_package(Qt5Widgets ${FIND_MODE})
+find_package(FFmpeg REQUIRED COMPONENTS avcodec avutil avformat)
 
 if(NOT Qt5Widgets_FOUND)
 	if (ENABLE_UI)
@@ -46,8 +47,11 @@ if(NOT Qt5Widgets_FOUND)
 	endif()
 endif()
 
+
+include_directories(${FFMPEG_INCLUDE_DIRS})
 include_directories(SYSTEM "obs-frontend-api")
 include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/libobs")
+include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/deps/libff")
 
 find_package(Libcurl REQUIRED)
 include_directories(${LIBCURL_INCLUDE_DIRS})
@@ -107,8 +111,23 @@ elseif(UNIX)
                 Qt5::X11Extras)
 endif()
 
+set(obs_libffutil_SOURCES
+	../deps/libff/libff/ff-util.c
+	)
+set(obs_libffutil_HEADERS
+	../deps/libff/libff/ff-util.h
+	)
+
+if(MSVC)
+	set_source_files_properties(
+		../deps/libff/libff/ff-util.c
+		PROPERTIES COMPILE_FLAGS -Dinline=__inline
+		)
+endif()
+
 set(obs_SOURCES
 	${obs_PLATFORM_SOURCES}
+	${obs_libffutil_SOURCES}
 	obs-app.cpp
 	api-interface.cpp
 	window-basic-main.cpp
@@ -153,6 +172,7 @@ set(obs_SOURCES
 
 set(obs_HEADERS
 	${obs_PLATFORM_HEADERS}
+	${obs_libffutil_HEADERS}
 	obs-app.hpp
 	platform.hpp
 	window-main.hpp
@@ -234,9 +254,9 @@ endif()
 
 target_link_libraries(obs
 	libobs
-	libff
 	Qt5::Widgets
 	obs-frontend-api
+	${FFMPEG_LIBRARIES}
 	${LIBCURL_LIBRARIES}
 	${obs_PLATFORM_LIBRARIES})
 
