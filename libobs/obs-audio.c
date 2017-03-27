@@ -108,10 +108,20 @@ static bool discard_if_stopped(obs_source_t *source, size_t channels)
 	/* if perpetually pending data, it means the audio has stopped,
 	 * so clear the audio data */
 	if (last_size == size) {
+		if (!source->pending_stop) {
+			source->pending_stop = true;
+#if DEBUG_AUDIO == 1
+			blog(LOG_DEBUG, "doing pending stop trick: '%s'",
+					source->context.name);
+#endif
+			return true;
+		}
+
 		for (size_t ch = 0; ch < channels; ch++)
 			circlebuf_pop_front(&source->audio_input_buf[ch], NULL,
 					source->audio_input_buf[ch].size);
 
+		source->pending_stop = false;
 		source->audio_ts = 0;
 		source->last_audio_input_buf_size = 0;
 #if DEBUG_AUDIO == 1
@@ -212,6 +222,7 @@ static inline void discard_audio(struct obs_core_audio *audio,
 				ts->end);
 #endif
 
+	source->pending_stop = false;
 	source->audio_ts = ts->end;
 }
 

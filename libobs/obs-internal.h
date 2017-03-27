@@ -562,6 +562,7 @@ struct obs_source {
 	/* audio */
 	bool                            audio_failed;
 	bool                            audio_pending;
+	bool                            pending_stop;
 	bool                            user_muted;
 	bool                            muted;
 	struct obs_source               *next_audio_source;
