@@ -1,4 +1,4 @@
-#include "captions-stream.hpp"
+#include "captions-mssapi-stream.hpp"
 #include <mmreg.h>
 #include <util/windows/CoTaskMemPtr.hpp>
 #include <util/threading.h>

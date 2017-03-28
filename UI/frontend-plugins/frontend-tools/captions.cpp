@@ -1,5 +1,5 @@
 #include <obs-frontend-api.h>
-#include "captions-stream.hpp"
+#include "captions-mssapi-stream.hpp"
 #include "captions.hpp"
 #include "tool-helpers.hpp"
 #include <sphelper.h>

@@ -45,10 +45,10 @@ if(WIN32)
 		set(frontend-tools_PLATFORM_SOURCES
 			${frontend-tools_PLATFORM_SOURCES}
 			captions.cpp
-			captions-stream.cpp)
+			captions-mssapi-stream.cpp)
 		set(frontend-tools_PLATFORM_HEADERS
 			captions.hpp
-			captions-stream.hpp)
+			captions-mssapi-stream.hpp)
 		set(frontend-tools_PLATFORM_UI
 			forms/captions.ui)
 	endif()
