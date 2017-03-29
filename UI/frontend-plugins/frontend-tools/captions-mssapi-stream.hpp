@@ -1,10 +1,11 @@
+#pragma once
+
 #include <windows.h>
 #include <sapi.h>
 #include <condition_variable>
 #include <mutex>
 #include <vector>
 #include <obs.h>
-#include <media-io/audio-resampler.h>
 #include <util/circlebuf.h>
 #include <util/windows/WinHandle.hpp>
 
@@ -18,37 +19,12 @@ public:
 	inline circlebuf *operator->() {return &buf;}
 };
 
-class Resampler {
-	audio_resampler_t *resampler = nullptr;
-
-public:
-	inline void Reset(const WAVEFORMATEX *wfex)
-	{
-		const struct audio_output_info *aoi =
-			audio_output_get_info(obs_get_audio());
-
-		struct resample_info src;
-		src.samples_per_sec = aoi->samples_per_sec;
-		src.format = aoi->format;
-		src.speakers = aoi->speakers;
-
-		struct resample_info dst;
-		dst.samples_per_sec = uint32_t(wfex->nSamplesPerSec);
-		dst.format = AUDIO_FORMAT_16BIT;
-		dst.speakers = (enum speaker_layout)wfex->nChannels;
-
-		if (resampler)
-			audio_resampler_destroy(resampler);
-		resampler = audio_resampler_create(&dst, &src);
-	}
-
-	inline ~Resampler() {audio_resampler_destroy(resampler);}
-	inline operator audio_resampler_t*() {return resampler;}
-};
+class mssapi_captions;
 
 class CaptionStream : public ISpAudio {
 	volatile long refs = 1;
 	SPAUDIOBUFFERINFO buf_info = {};
+	mssapi_captions *handler;
 	ULONG notify_size = 0;
 	SPAUDIOSTATE state;
 	WinHandle event;
@@ -58,7 +34,6 @@ class CaptionStream : public ISpAudio {
 	std::mutex m;
 	std::vector<int16_t> temp_buf;
 	WAVEFORMATEX format = {};
-	Resampler resampler;
 
 	CircleBuf buf;
 	ULONG wait_size = 0;
@@ -67,10 +42,10 @@ class CaptionStream : public ISpAudio {
 	ULONGLONG write_pos = 0;
 
 public:
-	CaptionStream(DWORD samplerate);
+	CaptionStream(DWORD samplerate, mssapi_captions *handler_);
 
 	void Stop();
-	void PushAudio(const struct audio_data *audio_data, bool muted);
+	void PushAudio(const void *data, size_t frames);
 
 	// IUnknown methods
 	STDMETHODIMP QueryInterface(REFIID riid, void **ppv) override;

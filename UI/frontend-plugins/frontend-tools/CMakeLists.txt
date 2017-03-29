@@ -45,9 +45,13 @@ if(WIN32)
 		set(frontend-tools_PLATFORM_SOURCES
 			${frontend-tools_PLATFORM_SOURCES}
 			captions.cpp
+			captions-handler.cpp
+			captions-mssapi.cpp
 			captions-mssapi-stream.cpp)
 		set(frontend-tools_PLATFORM_HEADERS
 			captions.hpp
+			captions-handler.hpp
+			captions-mssapi.hpp
 			captions-mssapi-stream.hpp)
 		set(frontend-tools_PLATFORM_UI
 			forms/captions.ui)
