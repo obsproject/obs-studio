@@ -423,6 +423,16 @@ struct obs_source_info {
 	void (*enum_all_sources)(void *data,
 			obs_source_enum_proc_t enum_callback,
 			void *param);
+
+	/**
+	 * Creates the source data for the source with type data.
+	 *
+	 * @param  settings  Settings to initialize the source with
+	 * @param  source    Source that this data is assoicated with
+	 * @param  type_data Data associated with this type of source
+	 * @return           The data associated with this source
+	 */
+	void *(*create2)(obs_data_t *settings, obs_source_t *source, void *type_data);
 };
 
 EXPORT void obs_register_source_s(const struct obs_source_info *info,
