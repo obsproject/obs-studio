@@ -299,8 +299,12 @@ static void ffmpeg_source_update(void *data, obs_data_t *settings)
 		s->media_valid = false;
 	}
 
+	bool active = obs_source_active(s->source);
+	if (!s->close_when_inactive || active)
+		ffmpeg_source_open(s);
+
 	dump_source_info(s, input, input_format);
-	if (!s->restart_on_activate || obs_source_active(s->source))
+	if (!s->restart_on_activate || active)
 		ffmpeg_source_start(s);
 }
 
