@@ -22,6 +22,8 @@ set(linux-decklink_HEADERS
 	../decklink-device-discovery.hpp
 	../decklink-device.hpp
 	../decklink-device-mode.hpp
+	../audio-repack.h
+	../audio-repack.hpp
 	)
 
 set(linux-decklink_SOURCES
@@ -31,6 +33,7 @@ set(linux-decklink_SOURCES
 	../decklink-device-discovery.cpp
 	../decklink-device.cpp
 	../decklink-device-mode.cpp
+	../audio-repack.c
 	platform.cpp)
 
 add_library(linux-decklink MODULE

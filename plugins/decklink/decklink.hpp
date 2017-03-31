@@ -22,6 +22,7 @@ protected:
 	volatile long                         activateRefs = 0;
 	std::recursive_mutex                  deviceMutex;
 	BMDPixelFormat                        pixelFormat = bmdFormat8BitYUV;
+	speaker_layout                        channelFormat = SPEAKERS_STEREO;
 
 	void SaveSettings();
 	static void DevicesChanged(void *param, DeckLinkDevice *device,
@@ -40,6 +41,11 @@ public:
 	inline void SetPixelFormat(BMDPixelFormat format)
 	{
 		pixelFormat = format;
+	}
+	inline speaker_layout GetChannelFormat() const {return channelFormat;}
+	inline void SetChannelFormat(speaker_layout format)
+	{
+		channelFormat = format;
 	}
 
 	bool Activate(DeckLinkDevice *device, long long modeId);

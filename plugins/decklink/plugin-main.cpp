@@ -7,6 +7,25 @@
 OBS_DECLARE_MODULE()
 OBS_MODULE_USE_DEFAULT_LOCALE("decklink", "en-US")
 
+#define DEVICE_HASH     "device_hash"
+#define DEVICE_NAME     "device_name"
+#define MODE_ID         "mode_id"
+#define MODE_NAME       "mode_name"
+#define CHANNEL_FORMAT  "channel_format"
+#define PIXEL_FORMAT    "pixel_format"
+#define BUFFERING       "buffering"
+
+#define TEXT_DEVICE                     obs_module_text("Device")
+#define TEXT_MODE                       obs_module_text("Mode")
+#define TEXT_PIXEL_FORMAT               obs_module_text("PixelFormat")
+#define TEXT_CHANNEL_FORMAT             obs_module_text("ChannelFormat")
+#define TEXT_CHANNEL_FORMAT_NONE        obs_module_text("ChannelFormat.None")
+#define TEXT_CHANNEL_FORMAT_2_0CH       obs_module_text("ChannelFormat.2_0ch")
+#define TEXT_CHANNEL_FORMAT_5_1CH       obs_module_text("ChannelFormat.5_1ch")
+#define TEXT_CHANNEL_FORMAT_5_1CH_BACK  obs_module_text("ChannelFormat.5_1chBack")
+#define TEXT_CHANNEL_FORMAT_7_1CH       obs_module_text("ChannelFormat.7_1ch")
+#define TEXT_BUFFERING                  obs_module_text("Buffering")
+
 static DeckLinkDeviceDiscovery *deviceEnum = nullptr;
 
 static void decklink_enable_buffering(DeckLink *decklink, bool enabled)
@@ -25,7 +44,7 @@ static void *decklink_create(obs_data_t *settings, obs_source_t *source)
 	DeckLink *decklink = new DeckLink(source, deviceEnum);
 
 	decklink_enable_buffering(decklink,
-			obs_data_get_bool(settings, "buffering"));
+			obs_data_get_bool(settings, BUFFERING));
 
 	obs_source_update(source, settings);
 	return decklink;
@@ -40,25 +59,29 @@ static void decklink_destroy(void *data)
 static void decklink_update(void *data, obs_data_t *settings)
 {
 	DeckLink *decklink = (DeckLink *)data;
-	const char *hash = obs_data_get_string(settings, "device_hash");
-	long long id = obs_data_get_int(settings, "mode_id");
-	BMDPixelFormat format = (BMDPixelFormat)obs_data_get_int(settings,
-			"pixel_format");
+	const char *hash = obs_data_get_string(settings, DEVICE_HASH);
+	long long id = obs_data_get_int(settings, MODE_ID);
+	BMDPixelFormat pixelFormat = (BMDPixelFormat)obs_data_get_int(settings,
+			PIXEL_FORMAT);
+	speaker_layout channelFormat = (speaker_layout)obs_data_get_int(settings,
+			CHANNEL_FORMAT);
 
 	decklink_enable_buffering(decklink,
-			obs_data_get_bool(settings, "buffering"));
+			obs_data_get_bool(settings, BUFFERING));
 
 	ComPtr<DeckLinkDevice> device;
 	device.Set(deviceEnum->FindByHash(hash));
 
-	decklink->SetPixelFormat(format);
+	decklink->SetPixelFormat(pixelFormat);
+	decklink->SetChannelFormat(channelFormat);
 	decklink->Activate(device, id);
 }
 
 static void decklink_get_defaults(obs_data_t *settings)
 {
-	obs_data_set_default_bool(settings, "buffering", true);
-	obs_data_set_default_int(settings, "pixel_format", bmdFormat8BitYUV);
+	obs_data_set_default_bool(settings, BUFFERING, true);
+	obs_data_set_default_int(settings, PIXEL_FORMAT, bmdFormat8BitYUV);
+	obs_data_set_default_int(settings, CHANNEL_FORMAT, SPEAKERS_STEREO);
 }
 
 static const char *decklink_get_name(void*)
@@ -69,10 +92,10 @@ static const char *decklink_get_name(void*)
 static bool decklink_device_changed(obs_properties_t *props,
 		obs_property_t *list, obs_data_t *settings)
 {
-	const char *name = obs_data_get_string(settings, "device_name");
-	const char *hash = obs_data_get_string(settings, "device_hash");
-	const char *mode = obs_data_get_string(settings, "mode_name");
-	long long modeId = obs_data_get_int(settings, "mode_id");
+	const char *name = obs_data_get_string(settings, DEVICE_NAME);
+	const char *hash = obs_data_get_string(settings, DEVICE_HASH);
+	const char *mode = obs_data_get_string(settings, MODE_NAME);
+	long long modeId = obs_data_get_int(settings, MODE_ID);
 
 	size_t itemCount = obs_property_list_item_count(list);
 	bool itemFound = false;
@@ -90,24 +113,40 @@ static bool decklink_device_changed(obs_properties_t *props,
 		obs_property_list_item_disable(list, 0, true);
 	}
 
-	list = obs_properties_get(props, "mode_id");
+	obs_property_t *modeList = obs_properties_get(props, MODE_ID);
+	obs_property_t *channelList = obs_properties_get(props, CHANNEL_FORMAT);
 
-	obs_property_list_clear(list);
+	obs_property_list_clear(modeList);
+
+	obs_property_list_clear(channelList);
+	obs_property_list_add_int(channelList, TEXT_CHANNEL_FORMAT_NONE,
+			SPEAKERS_UNKNOWN);
+	obs_property_list_add_int(channelList, TEXT_CHANNEL_FORMAT_2_0CH,
+			SPEAKERS_STEREO);
 
 	ComPtr<DeckLinkDevice> device;
 	device.Set(deviceEnum->FindByHash(hash));
 
 	if (!device) {
-		obs_property_list_add_int(list, mode, modeId);
-		obs_property_list_item_disable(list, 0, true);
+		obs_property_list_add_int(modeList, mode, modeId);
+		obs_property_list_item_disable(modeList, 0, true);
 	} else {
 		const std::vector<DeckLinkDeviceMode*> &modes =
 			device->GetModes();
 
 		for (DeckLinkDeviceMode *mode : modes) {
-			obs_property_list_add_int(list,
+			obs_property_list_add_int(modeList,
 					mode->GetName().c_str(),
 					mode->GetId());
+		}
+
+		if (device->GetMaxChannel() >= 8) {
+			obs_property_list_add_int(channelList, TEXT_CHANNEL_FORMAT_5_1CH,
+					SPEAKERS_5POINT1);
+			obs_property_list_add_int(channelList, TEXT_CHANNEL_FORMAT_5_1CH_BACK,
+					SPEAKERS_5POINT1_SURROUND);
+			obs_property_list_add_int(channelList, TEXT_CHANNEL_FORMAT_7_1CH,
+					SPEAKERS_7POINT1);
 		}
 	}
 
@@ -132,26 +171,30 @@ static obs_properties_t *decklink_get_properties(void *data)
 {
 	obs_properties_t *props = obs_properties_create();
 
-	obs_property_t *list = obs_properties_add_list(props, "device_hash",
-			obs_module_text("Device"), OBS_COMBO_TYPE_LIST,
-			OBS_COMBO_FORMAT_STRING);
+	obs_property_t *list = obs_properties_add_list(props, DEVICE_HASH,
+			TEXT_DEVICE, OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
 	obs_property_set_modified_callback(list, decklink_device_changed);
 
 	fill_out_devices(list);
 
-	list = obs_properties_add_list(props, "mode_id",
-			obs_module_text("Mode"), OBS_COMBO_TYPE_LIST,
-			OBS_COMBO_FORMAT_INT);
+	list = obs_properties_add_list(props, MODE_ID, TEXT_MODE,
+			OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
 
-	list = obs_properties_add_list(props, "pixel_format",
-			obs_module_text("PixelFormat"), OBS_COMBO_TYPE_LIST,
+	list = obs_properties_add_list(props, PIXEL_FORMAT,
+			TEXT_PIXEL_FORMAT, OBS_COMBO_TYPE_LIST,
 			OBS_COMBO_FORMAT_INT);
-
 	obs_property_list_add_int(list, "8-bit YUV", bmdFormat8BitYUV);
 	obs_property_list_add_int(list, "8-bit BGRA", bmdFormat8BitBGRA);
 
-	obs_properties_add_bool(props, "buffering",
-			obs_module_text("Buffering"));
+	list = obs_properties_add_list(props, CHANNEL_FORMAT,
+			TEXT_CHANNEL_FORMAT, OBS_COMBO_TYPE_LIST,
+			OBS_COMBO_FORMAT_INT);
+	obs_property_list_add_int(list, TEXT_CHANNEL_FORMAT_NONE,
+			SPEAKERS_UNKNOWN);
+	obs_property_list_add_int(list, TEXT_CHANNEL_FORMAT_2_0CH,
+			SPEAKERS_STEREO);
+
+	obs_properties_add_bool(props, BUFFERING, TEXT_BUFFERING);
 
 	UNUSED_PARAMETER(data);
 	return props;

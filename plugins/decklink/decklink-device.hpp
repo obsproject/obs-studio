@@ -14,6 +14,7 @@ class DeckLinkDevice {
 	std::string                               name;
 	std::string                               displayName;
 	std::string                               hash;
+	int32_t                                   maxChannel;
 	volatile long                             refCount = 1;
 
 public:
@@ -30,6 +31,7 @@ public:
 	const std::string& GetHash(void) const;
 	const std::vector<DeckLinkDeviceMode *>& GetModes(void) const;
 	const std::string& GetName(void) const;
+	const int32_t GetMaxChannel(void) const;
 
 	bool GetInput(IDeckLinkInput **input);
 
