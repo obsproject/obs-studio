@@ -45,7 +45,7 @@ struct ffmpeg_source {
 	enum AVPixelFormat sws_format;
 	uint8_t *sws_data;
 	int sws_linesize;
-	enum video_range range;
+	enum video_range_type range;
 	obs_source_t *source;
 
 	char *input;
