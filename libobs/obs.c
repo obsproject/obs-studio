@@ -818,9 +818,6 @@ void obs_shutdown(void)
 	} while (false)
 
 	FREE_REGISTERED_TYPES(obs_source_info, obs->source_types);
-	FREE_REGISTERED_TYPES(obs_source_info, obs->input_types);
-	FREE_REGISTERED_TYPES(obs_source_info, obs->filter_types);
-	FREE_REGISTERED_TYPES(obs_source_info, obs->transition_types);
 	FREE_REGISTERED_TYPES(obs_output_info, obs->output_types);
 	FREE_REGISTERED_TYPES(obs_encoder_info, obs->encoder_types);
 	FREE_REGISTERED_TYPES(obs_service_info, obs->service_types);
@@ -828,6 +825,10 @@ void obs_shutdown(void)
 	FREE_REGISTERED_TYPES(obs_modeless_ui, obs->modeless_ui_callbacks);
 
 #undef FREE_REGISTERED_TYPES
+
+	da_free(obs->input_types);
+	da_free(obs->filter_types);
+	da_free(obs->transition_types);
 
 	stop_video();
 	stop_hotkeys();
