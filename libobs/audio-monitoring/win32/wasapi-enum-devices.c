@@ -103,3 +103,66 @@ fail:
 	safe_release(enumerator);
 	safe_release(collection);
 }
+
+static void get_default_id(char **p_id)
+{
+	IMMDeviceEnumerator *immde = NULL;
+	IMMDevice *device = NULL;
+	WCHAR *w_id = NULL;
+	HRESULT hr;
+
+	if (*p_id)
+		return;
+
+	hr = CoCreateInstance(&CLSID_MMDeviceEnumerator, NULL, CLSCTX_ALL,
+			&IID_IMMDeviceEnumerator, &immde);
+	if (FAILED(hr)) {
+		goto fail;
+	}
+
+	hr = immde->lpVtbl->GetDefaultAudioEndpoint(immde,
+			eRender, eConsole, &device);
+	if (FAILED(hr)) {
+		goto fail;
+	}
+
+	hr = device->lpVtbl->GetId(device, &w_id);
+	if (FAILED(hr)) {
+		goto fail;
+	}
+
+	os_wcs_to_utf8_ptr(w_id, 0, p_id);
+
+fail:
+	if (!*p_id)
+		*p_id = bzalloc(1);
+	if (immde)
+		immde->lpVtbl->Release(immde);
+	if (device)
+		device->lpVtbl->Release(device);
+	if (w_id)
+		CoTaskMemFree(w_id);
+}
+
+bool devices_match(const char *id1, const char *id2)
+{
+	char *default_id = NULL;
+	bool match;
+
+	if (!id1 || !id2)
+		return false;
+
+	if (strcmp(id1, "default") == 0) {
+		get_default_id(&default_id);
+		id1 = default_id;
+	}
+	if (strcmp(id2, "default") == 0) {
+		get_default_id(&default_id);
+		id2 = default_id;
+	}
+
+	match = strcmp(id1, id2) == 0;
+	bfree(default_id);
+
+	return match;
+}
