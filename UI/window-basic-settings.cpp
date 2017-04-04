@@ -2599,6 +2599,22 @@ void OBSBasicSettings::SaveAdvancedSettings()
 	QString newDevice = ui->monitoringDevice->currentData().toString();
 
 	if (lastMonitoringDevice != newDevice) {
+		QString desktopAudio = ui->desktopAudioDevice1->currentData().toString();
+		obs_source_t *source = nullptr;
+		if (desktopAudio == newDevice) {
+			source = obs_get_output_source(1);
+			obs_source_set_monitoring_type(source, OBS_MONITORING_TYPE_NONE);
+		}
+
+		desktopAudio = ui->desktopAudioDevice2->currentData().toString();
+		if (desktopAudio == newDevice) {
+			source = obs_get_output_source(2);
+			obs_source_set_monitoring_type(source, OBS_MONITORING_TYPE_NONE);
+		}
+
+		if (source)
+			obs_source_release(source);
+
 		obs_set_audio_monitoring_device(
 				QT_TO_UTF8(ui->monitoringDevice->currentText()),
 				QT_TO_UTF8(newDevice));

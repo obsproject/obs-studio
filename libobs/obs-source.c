@@ -3997,8 +3997,15 @@ void obs_source_set_monitoring_type(obs_source_t *source,
 
 	if (!obs_source_valid(source, "obs_source_set_monitoring_type"))
 		return;
-	if (source->info.output_flags & OBS_SOURCE_DO_NOT_MONITOR)
-		return;
+
+	if (source->info.output_flags & OBS_SOURCE_DO_NOT_SELF_MONITOR) {
+		obs_data_t* settings = obs_source_get_settings(source);
+		const char *curId = obs_data_get_string(settings, "device_id");
+		obs_data_release(settings);
+
+		if (strcmp(curId, obs->audio.monitoring_device_id) == 0)
+			return;
+	}
 	if (source->monitoring_type == type)
 		return;
 
