@@ -123,10 +123,12 @@ enum obs_source_type {
 /**
  * Source cannot have its audio monitored
  *
- * Specifies that this source may cause a feedback loop if audio is monitored.
+ * Specifies that this source may cause a feedback loop if audio is monitored
+ * with a device selected as desktop audio.
+ *
  * This is used primarily with desktop audio capture sources.
  */
-#define OBS_SOURCE_DO_NOT_MONITOR (1<<9)
+#define OBS_SOURCE_DO_NOT_SELF_MONITOR (1<<9)
 
 /** @} */
 
