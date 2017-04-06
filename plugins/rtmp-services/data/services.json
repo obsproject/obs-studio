@@ -847,6 +847,15 @@
             }
         },
         {
+            "name": "LiveStream",
+            "servers": [
+                {
+                    "name": "Primary",
+                    "url": "rtmp://rtmpin.livestreamingest.com/rtmpin"
+                }
+            ]
+        },
+        {
             "name": "Pandora TV Korea",
             "servers": [
                 {
