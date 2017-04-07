@@ -14,7 +14,9 @@ protected:
 	BMDPixelFormat          pixelFormat = bmdFormat8BitYUV;
 	ComPtr<IDeckLinkInput>  input;
 	volatile long           refCount = 1;
-
+	int64_t                 audioOffset = 0;
+	uint64_t                nextAudioTS = 0;
+	uint64_t                lastVideoTS = 0;
 	AudioRepacker           *audioRepacker = nullptr;
 	speaker_layout          channelFormat = SPEAKERS_STEREO;
 
