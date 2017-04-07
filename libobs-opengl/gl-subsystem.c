@@ -207,6 +207,9 @@ int device_create(gs_device_t **p_device, uint32_t adapter)
 	struct gs_device *device = bzalloc(sizeof(struct gs_device));
 	int errorcode = GS_ERROR_FAIL;
 
+	blog(LOG_INFO, "---------------------------------");
+	blog(LOG_INFO, "Initializing OpenGL...");
+
 	device->plat = gl_platform_create(device, adapter);
 	if (!device->plat)
 		goto fail;
@@ -215,6 +218,8 @@ int device_create(gs_device_t **p_device, uint32_t adapter)
 		errorcode = GS_ERROR_NOT_SUPPORTED;
 		goto fail;
 	}
+
+	blog(LOG_INFO, "OpenGL version: %s", glGetString(GL_VERSION));
 	
 	gl_enable(GL_CULL_FACE);
 	
