@@ -101,6 +101,7 @@ static inline void copy_data(struct ffmpeg_decode *decode, uint8_t *data,
 	if (decode->packet_size < new_size) {
 		decode->packet_buffer = brealloc(decode->packet_buffer,
 				new_size);
+		decode->packet_size   = new_size;
 	}
 
 	memset(decode->packet_buffer + size, 0, FF_INPUT_BUFFER_PADDING_SIZE);
