@@ -250,7 +250,7 @@ void OBSBasic::TransitionToScene(OBSSource source, bool force)
 		return;
 
 	OBSWeakSource lastProgramScene;
-	
+
 	if (usingPreviewProgram) {
 		lastProgramScene = programScene;
 		programScene = OBSGetWeakRef(source);
@@ -319,8 +319,12 @@ void OBSBasic::SetTransition(OBSSource transition)
 		obs_source_release(oldTransition);
 
 	bool fixed = transition ? obs_transition_fixed(transition) : false;
-	ui->transitionDurationLabel->setVisible(!fixed);
-	ui->transitionDuration->setVisible(!fixed);
+	if(opt_minimal) {
+		// Customer requirement for some company requirement
+	} else {
+		ui->transitionDurationLabel->setVisible(!fixed);
+		ui->transitionDuration->setVisible(!fixed);
+	}
 
 	bool configurable = obs_source_configurable(transition);
 	ui->transitionRemove->setEnabled(configurable);
