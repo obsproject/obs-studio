@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Dialog</string>
+   <string>RemuxRecordings</string>
   </property>
   <widget class="QProgressBar" name="progressBar">
    <property name="geometry">
