@@ -68,12 +68,15 @@ private:
 
 	void FilterNameEdited(QWidget *editor, QListWidget *list);
 
+	bool isAsync;
+
 private slots:
 	void AddFilter(OBSSource filter);
 	void RemoveFilter(OBSSource filter);
 	void ReorderFilters();
 	void RenameAsyncFilter();
 	void RenameEffectFilter();
+	void ResetFilters();
 
 	void AddFilterFromAction();
 

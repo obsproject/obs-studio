@@ -86,6 +86,12 @@ OBSBasicFilters::OBSBasicFilters(QWidget *parent, OBSSource source_)
 			SLOT(EffectFilterNameEdited(QWidget*,
 					QAbstractItemDelegate::EndEditHint)));
 
+	connect(ui->buttonBox->button(QDialogButtonBox::Close),
+		SIGNAL(clicked()), this, SLOT(close()));
+
+	connect(ui->buttonBox->button(QDialogButtonBox::Reset),
+		SIGNAL(clicked()), this, SLOT(ResetFilters()));
+
 	uint32_t flags = obs_source_get_output_flags(source);
 	bool audio     = (flags & OBS_SOURCE_AUDIO) != 0;
 	bool audioOnly = (flags & OBS_SOURCE_VIDEO) == 0;
@@ -549,6 +555,7 @@ void OBSBasicFilters::on_moveAsyncFilterDown_clicked()
 void OBSBasicFilters::on_asyncFilters_GotFocus()
 {
 	UpdatePropertiesView(ui->asyncFilters->currentRow(), true);
+	isAsync = true;
 }
 
 void OBSBasicFilters::on_asyncFilters_currentRowChanged(int row)
@@ -590,6 +597,7 @@ void OBSBasicFilters::on_moveEffectFilterDown_clicked()
 void OBSBasicFilters::on_effectFilters_GotFocus()
 {
 	UpdatePropertiesView(ui->effectFilters->currentRow(), false);
+	isAsync = false;
 }
 
 void OBSBasicFilters::on_effectFilters_currentRowChanged(int row)
@@ -714,4 +722,29 @@ void OBSBasicFilters::EffectFilterNameEdited(QWidget *editor,
 {
 	FilterNameEdited(editor, ui->effectFilters);
 	UNUSED_PARAMETER(endHint);
+}
+
+void OBSBasicFilters::ResetFilters()
+{
+	QListWidget *list = isAsync ? ui->asyncFilters : ui->effectFilters;
+	int row = list->currentRow();
+
+	OBSSource filter = GetFilter(row, isAsync);
+
+	if (!filter)
+		return;
+
+	const char *id = obs_source_get_id(filter);
+	obs_data_t *settings = obs_source_get_settings(filter);
+	obs_data_t *defaultSettings = obs_get_source_defaults(id);
+	obs_data_clear(settings);
+	obs_data_release(settings);
+
+	if (view->DeferUpdate())
+		obs_data_apply(settings, defaultSettings);
+	else
+		obs_source_update(filter, defaultSettings);
+
+	view->RefreshProperties();
+	obs_data_release(defaultSettings);
 }
