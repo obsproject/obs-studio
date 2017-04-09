@@ -39,7 +39,6 @@ class OBSRemux : public QDialog {
 
 	void BrowseInput();
 	void BrowseOutput();
-	void Remux();
 
 	bool Stop();
 
@@ -58,6 +57,7 @@ private slots:
 public slots:
 	void updateProgress(float percent);
 	void remuxFinished(bool success);
+	void Remux();
 
 signals:
 	void remux();
