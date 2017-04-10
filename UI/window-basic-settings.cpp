@@ -1041,18 +1041,20 @@ void OBSBasicSettings::LoadRendererList()
 			"Renderer");
 
 	ui->renderer->addItem(QT_UTF8("Direct3D 11"));
-	ui->renderer->addItem(QT_UTF8("OpenGL"));
+	if (opt_allow_opengl)
+		ui->renderer->addItem(QT_UTF8("OpenGL"));
 
 	int idx = ui->renderer->findText(QT_UTF8(renderer));
 	if (idx == -1)
 		idx = 0;
 
-	if (strcmp(renderer, "OpenGL") == 0) {
-		delete ui->adapter;
-		delete ui->adapterLabel;
-		ui->adapter = nullptr;
-		ui->adapterLabel = nullptr;
-	}
+	// the video adapter selection is not currently implemented, hide for now
+	// to avoid user confusion. was previously protected by
+	// if (strcmp(renderer, "OpenGL") == 0)
+	delete ui->adapter;
+	delete ui->adapterLabel;
+	ui->adapter = nullptr;
+	ui->adapterLabel = nullptr;
 
 	ui->renderer->setCurrentIndex(idx);
 #endif
