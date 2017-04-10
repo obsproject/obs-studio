@@ -1041,7 +1041,7 @@ void OBSBasicSettings::LoadRendererList()
 			"Renderer");
 
 	ui->renderer->addItem(QT_UTF8("Direct3D 11"));
-	if (opt_allow_opengl)
+	if (opt_allow_opengl || strcmp(renderer, "OpenGL") == 0)
 		ui->renderer->addItem(QT_UTF8("OpenGL"));
 
 	int idx = ui->renderer->findText(QT_UTF8(renderer));
