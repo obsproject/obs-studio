@@ -29,6 +29,7 @@
 #ifdef _MSC_VER
 #include "../../deps/w32-pthreads/pthread.h"
 #else
+#include <stdlib.h>
 #include <errno.h>
 #include <pthread.h>
 #endif
