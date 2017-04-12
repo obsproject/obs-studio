@@ -30,10 +30,13 @@ struct audio_monitor {
 	IAudioRenderClient *render;
 
 	uint64_t           last_recv_time;
+	uint64_t           prev_video_ts;
+	uint64_t           time_since_prev;
 	audio_resampler_t  *resampler;
 	uint32_t           sample_rate;
 	uint32_t           channels;
 	bool               source_has_video : 1;
+	bool               ignore : 1;
 
 	int64_t            lowest_audio_offset;
 	struct circlebuf   delay_buffer;
@@ -61,10 +64,22 @@ static bool process_audio_delay(struct audio_monitor *monitor,
 		circlebuf_free(&monitor->delay_buffer);
 	monitor->last_recv_time = cur_time;
 
+	ts += monitor->source->sync_offset;
+
 	circlebuf_push_back(&monitor->delay_buffer, &ts, sizeof(ts));
 	circlebuf_push_back(&monitor->delay_buffer, frames, sizeof(*frames));
 	circlebuf_push_back(&monitor->delay_buffer, *data,
 			*frames * blocksize);
+
+	if (!monitor->prev_video_ts) {
+		monitor->prev_video_ts = last_frame_ts;
+
+	} else if (monitor->prev_video_ts == last_frame_ts) {
+		monitor->time_since_prev += (uint64_t)*frames *
+			1000000000ULL / (uint64_t)monitor->sample_rate;
+	} else {
+		monitor->time_since_prev = 0;
+	}
 
 	while (monitor->delay_buffer.size != 0) {
 		size_t size;
@@ -76,7 +91,9 @@ static bool process_audio_delay(struct audio_monitor *monitor,
 			((uint64_t)pad * 1000000000ULL /
 			 (uint64_t)monitor->sample_rate);
 		diff = (int64_t)front_ts - (int64_t)last_frame_ts;
-		bad_diff = llabs(diff) > 5000000000;
+		bad_diff = !last_frame_ts ||
+		           llabs(diff) > 5000000000 ||
+		           monitor->time_since_prev > 100000000ULL;
 
 		/* delay audio if rushing */
 		if (!bad_diff && diff > 75000000) {
@@ -187,6 +204,9 @@ unlock:
 
 static inline void audio_monitor_free(struct audio_monitor *monitor)
 {
+	if (monitor->ignore)
+		return;
+
 	if (monitor->source) {
 		obs_source_remove_audio_capture_callback(
 				monitor->source, on_audio_playback, monitor);
@@ -219,7 +239,10 @@ static enum speaker_layout convert_speaker_layout(DWORD layout, WORD channels)
 	return (enum speaker_layout)channels;
 }
 
-static bool audio_monitor_init(struct audio_monitor *monitor)
+extern bool devices_match(const char *id1, const char *id2);
+
+static bool audio_monitor_init(struct audio_monitor *monitor,
+		obs_source_t *source)
 {
 	IMMDeviceEnumerator *immde = NULL;
 	WAVEFORMATEX *wfex = NULL;
@@ -227,12 +250,26 @@ static bool audio_monitor_init(struct audio_monitor *monitor)
 	UINT32 frames;
 	HRESULT hr;
 
+	pthread_mutex_init_value(&monitor->playback_mutex);
+
+	monitor->source = source;
+
 	const char *id = obs->audio.monitoring_device_id;
 	if (!id) {
 		return false;
 	}
 
-	pthread_mutex_init_value(&monitor->playback_mutex);
+	if (source->info.output_flags & OBS_SOURCE_DO_NOT_SELF_MONITOR) {
+		obs_data_t *s = obs_source_get_settings(source);
+		const char *s_dev_id = obs_data_get_string(s, "device_id");
+		bool match = devices_match(s_dev_id, id);
+		obs_data_release(s);
+
+		if (match) {
+			monitor->ignore = true;
+			return true;
+		}
+	}
 
 	/* ------------------------------------------ *
 	 * Init device                                */
@@ -336,14 +373,15 @@ fail:
 	return success;
 }
 
-static void audio_monitor_init_final(struct audio_monitor *monitor,
-		obs_source_t *source)
+static void audio_monitor_init_final(struct audio_monitor *monitor)
 {
-	monitor->source = source;
+	if (monitor->ignore)
+		return;
+
 	monitor->source_has_video =
-		(source->info.output_flags & OBS_SOURCE_VIDEO) != 0;
-	obs_source_add_audio_capture_callback(source, on_audio_playback,
-			monitor);
+		(monitor->source->info.output_flags & OBS_SOURCE_VIDEO) != 0;
+	obs_source_add_audio_capture_callback(monitor->source,
+			on_audio_playback, monitor);
 }
 
 struct audio_monitor *audio_monitor_create(obs_source_t *source)
@@ -351,7 +389,7 @@ struct audio_monitor *audio_monitor_create(obs_source_t *source)
 	struct audio_monitor monitor = {0};
 	struct audio_monitor *out;
 
-	if (!audio_monitor_init(&monitor)) {
+	if (!audio_monitor_init(&monitor, source)) {
 		goto fail;
 	}
 
@@ -361,7 +399,7 @@ struct audio_monitor *audio_monitor_create(obs_source_t *source)
 	da_push_back(obs->audio.monitors, &out);
 	pthread_mutex_unlock(&obs->audio.monitoring_mutex);
 
-	audio_monitor_init_final(out, source);
+	audio_monitor_init_final(out);
 	return out;
 
 fail:
@@ -375,14 +413,14 @@ void audio_monitor_reset(struct audio_monitor *monitor)
 	bool success;
 
 	pthread_mutex_lock(&monitor->playback_mutex);
-	success = audio_monitor_init(&new_monitor);
+	success = audio_monitor_init(&new_monitor, monitor->source);
 	pthread_mutex_unlock(&monitor->playback_mutex);
 
 	if (success) {
 		obs_source_t *source = monitor->source;
 		audio_monitor_free(monitor);
 		*monitor = new_monitor;
-		audio_monitor_init_final(monitor, source);
+		audio_monitor_init_final(monitor);
 	} else {
 		audio_monitor_free(&new_monitor);
 	}

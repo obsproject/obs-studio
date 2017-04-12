@@ -148,7 +148,7 @@ mfxStatus LoadRawFrame(mfxFrameSurface1* pSurface, FILE* fSource)
     if (MFX_ERR_NONE != sts)
         return sts;
     // load V
-    ReadPlaneData(w, h, buf, ptr, pitch, 1, fSource);
+    sts = ReadPlaneData(w, h, buf, ptr, pitch, 1, fSource);
     if (MFX_ERR_NONE != sts)
         return sts;
 

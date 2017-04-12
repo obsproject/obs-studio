@@ -73,11 +73,12 @@ static void flv_output_stop(void *data, uint64_t ts)
 	struct flv_output *stream = data;
 
 	if (stream->active) {
-		if (stream->file)
+		if (stream->file) {
 			write_file_info(stream->file, stream->last_packet_ts,
 					os_ftelli64(stream->file));
 
-		fclose(stream->file);
+			fclose(stream->file);
+		}
 		obs_output_end_data_capture(stream->output);
 		stream->active = false;
 		stream->sent_headers = false;

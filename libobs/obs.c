@@ -818,9 +818,6 @@ void obs_shutdown(void)
 	} while (false)
 
 	FREE_REGISTERED_TYPES(obs_source_info, obs->source_types);
-	FREE_REGISTERED_TYPES(obs_source_info, obs->input_types);
-	FREE_REGISTERED_TYPES(obs_source_info, obs->filter_types);
-	FREE_REGISTERED_TYPES(obs_source_info, obs->transition_types);
 	FREE_REGISTERED_TYPES(obs_output_info, obs->output_types);
 	FREE_REGISTERED_TYPES(obs_encoder_info, obs->encoder_types);
 	FREE_REGISTERED_TYPES(obs_service_info, obs->service_types);
@@ -828,6 +825,10 @@ void obs_shutdown(void)
 	FREE_REGISTERED_TYPES(obs_modeless_ui, obs->modeless_ui_callbacks);
 
 #undef FREE_REGISTERED_TYPES
+
+	da_free(obs->input_types);
+	da_free(obs->filter_types);
+	da_free(obs->transition_types);
 
 	stop_video();
 	stop_hotkeys();
@@ -926,11 +927,6 @@ int obs_reset_video(struct obs_video_info *ovi)
 
 	stop_video();
 	obs_free_video();
-
-	if (!ovi) {
-		obs_free_graphics();
-		return OBS_VIDEO_SUCCESS;
-	}
 
 	/* align to multiple-of-two and SSE alignment sizes */
 	ovi->output_width  &= 0xFFFFFFFC;
@@ -1469,7 +1465,6 @@ static obs_source_t *obs_load_source_type(obs_data_t *source_data)
 	obs_data_t   *hotkeys  = obs_data_get_obj(source_data, "hotkeys");
 	double       volume;
 	int64_t      sync;
-	uint32_t     flags;
 	uint32_t     mixers;
 	int          di_order;
 	int          di_mode;
@@ -1489,10 +1484,6 @@ static obs_source_t *obs_load_source_type(obs_data_t *source_data)
 	obs_data_set_default_int(source_data, "mixers", 0xF);
 	mixers = (uint32_t)obs_data_get_int(source_data, "mixers");
 	obs_source_set_audio_mixers(source, mixers);
-
-	obs_data_set_default_int(source_data, "flags", source->default_flags);
-	flags = (uint32_t)obs_data_get_int(source_data, "flags");
-	obs_source_set_flags(source, flags);
 
 	obs_data_set_default_bool(source_data, "enabled", true);
 	obs_source_set_enabled(source,
@@ -1616,7 +1607,6 @@ obs_data_t *obs_save_source(obs_source_t *source)
 	float      volume      = obs_source_get_volume(source);
 	uint32_t   mixers      = obs_source_get_audio_mixers(source);
 	int64_t    sync        = obs_source_get_sync_offset(source);
-	uint32_t   flags       = obs_source_get_flags(source);
 	const char *name       = obs_source_get_name(source);
 	const char *id         = obs_source_get_id(source);
 	bool       enabled     = obs_source_enabled(source);
@@ -1644,7 +1634,6 @@ obs_data_t *obs_save_source(obs_source_t *source)
 	obs_data_set_obj   (source_data, "settings", settings);
 	obs_data_set_int   (source_data, "mixers",   mixers);
 	obs_data_set_int   (source_data, "sync",     sync);
-	obs_data_set_int   (source_data, "flags",    flags);
 	obs_data_set_double(source_data, "volume",   volume);
 	obs_data_set_bool  (source_data, "enabled",  enabled);
 	obs_data_set_bool  (source_data, "muted",    muted);
@@ -1911,8 +1900,10 @@ bool obs_set_audio_monitoring_device(const char *name, const char *id)
 #ifdef _WIN32
 	pthread_mutex_lock(&obs->audio.monitoring_mutex);
 
-	if (strcmp(id, obs->audio.monitoring_device_id) == 0)
+	if (strcmp(id, obs->audio.monitoring_device_id) == 0) {
+		pthread_mutex_unlock(&obs->audio.monitoring_mutex);
 		return true;
+	}
 
 	if (obs->audio.monitoring_device_name)
 		bfree(obs->audio.monitoring_device_name);

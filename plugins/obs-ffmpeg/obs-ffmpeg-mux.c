@@ -145,7 +145,7 @@ static void add_video_encoder_params(struct ffmpeg_muxer *stream,
 	obs_data_release(settings);
 
 	dstr_catf(cmd, "%s %d %d %d %d %d ",
-			"h264",
+			obs_encoder_get_codec(vencoder),
 			bitrate,
 			obs_output_get_width(stream->output),
 			obs_output_get_height(stream->output),
@@ -485,10 +485,20 @@ static const char *replay_buffer_getname(void *type)
 static bool replay_buffer_hotkey(void *data, obs_hotkey_id id,
 		obs_hotkey_t *hotkey, bool pressed)
 {
+	UNUSED_PARAMETER(id);
+	UNUSED_PARAMETER(hotkey);
+	UNUSED_PARAMETER(pressed);
+
 	struct ffmpeg_muxer *stream = data;
 	if (os_atomic_load_bool(&stream->active))
 		stream->save_ts = os_gettime_ns() / 1000LL;
 	return true;
+}
+
+static void save_replay_proc(void *data, calldata_t *cd)
+{
+	replay_buffer_hotkey(data, 0, NULL, true);
+	UNUSED_PARAMETER(cd);
 }
 
 static void *replay_buffer_create(obs_data_t *settings, obs_output_t *output)
@@ -500,6 +510,9 @@ static void *replay_buffer_create(obs_data_t *settings, obs_output_t *output)
 			"ReplayBuffer.Save",
 			obs_module_text("ReplayBuffer.Save"),
 			replay_buffer_hotkey, stream);
+
+	proc_handler_t *ph = obs_output_get_proc_handler(output);
+	proc_handler_add(ph, "void save()", save_replay_proc, stream);
 
 	UNUSED_PARAMETER(settings);
 	return stream;

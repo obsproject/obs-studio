@@ -291,6 +291,11 @@ void OBSPropertiesView::AddPath(obs_property_t *prop, QFormLayout *layout,
 	QLineEdit   *edit      = new QLineEdit();
 	QPushButton *button    = new QPushButton(QTStr("Browse"));
 
+	if (!obs_property_enabled(prop)) {
+		edit->setEnabled(false);
+		button->setEnabled(false);
+	}
+
 	edit->setText(QT_UTF8(val));
 	edit->setReadOnly(true);
 	edit->setToolTip(QT_UTF8(obs_property_long_description(prop)));
@@ -315,6 +320,9 @@ void OBSPropertiesView::AddInt(obs_property_t *prop, QFormLayout *layout,
 	const char *name = obs_property_name(prop);
 	int        val   = (int)obs_data_get_int(settings, name);
 	QSpinBox   *spin = new QSpinBox();
+
+	if (!obs_property_enabled(prop))
+		spin->setEnabled(false);
 
 	int minVal = obs_property_int_min(prop);
 	int maxVal = obs_property_int_max(prop);
@@ -361,6 +369,9 @@ void OBSPropertiesView::AddFloat(obs_property_t *prop, QFormLayout *layout,
 	const char     *name = obs_property_name(prop);
 	double         val   = obs_data_get_double(settings, name);
 	QDoubleSpinBox *spin = new QDoubleSpinBox();
+
+	if (!obs_property_enabled(prop))
+		spin->setEnabled(false);
 
 	double minVal = obs_property_float_min(prop);
 	double maxVal = obs_property_float_max(prop);
@@ -554,6 +565,9 @@ void OBSPropertiesView::AddEditableList(obs_property_t *prop,
 	QListWidget      *list  = new QListWidget();
 	size_t           count  = obs_data_array_count(array);
 
+	if (!obs_property_enabled(prop))
+		list->setEnabled(false);
+
 	list->setSortingEnabled(false);
 	list->setSelectionMode(QAbstractItemView::ExtendedSelection);
 	list->setToolTip(QT_UTF8(obs_property_long_description(prop)));
@@ -608,6 +622,11 @@ void OBSPropertiesView::AddColor(obs_property_t *prop, QFormLayout *layout,
 	const char  *name       = obs_property_name(prop);
 	long long   val         = obs_data_get_int(settings, name);
 	QColor      color       = color_from_int(val);
+
+	if (!obs_property_enabled(prop)) {
+		button->setEnabled(false);
+		colorLabel->setEnabled(false);
+	}
 
 	button->setText(QTStr("Basic.PropertiesWindow.SelectColor"));
 	button->setToolTip(QT_UTF8(obs_property_long_description(prop)));
@@ -670,6 +689,11 @@ void OBSPropertiesView::AddFont(obs_property_t *prop, QFormLayout *layout,
 	QPushButton *button    = new QPushButton;
 	QLabel      *fontLabel = new QLabel;
 	QFont       font;
+
+	if (!obs_property_enabled(prop)) {
+		button->setEnabled(false);
+		fontLabel->setEnabled(false);
+	}
 
 	font = fontLabel->font();
 	MakeQFont(font_obj, font, true);
@@ -1355,6 +1379,9 @@ void OBSPropertiesView::AddProperty(obs_property_t *property,
 		label->setMinimumWidth(minSize);
 		label->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
 	}
+
+	if (label && !obs_property_enabled(property))
+		label->setEnabled(false);
 
 	if (!widget)
 		return;

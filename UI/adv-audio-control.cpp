@@ -297,6 +297,23 @@ void OBSAdvAudioCtrl::monitoringTypeChanged(int index)
 {
 	int mt = monitoringType->itemData(index).toInt();
 	obs_source_set_monitoring_type(source, (obs_monitoring_type)mt);
+
+	const char *type = nullptr;
+
+	switch (mt) {
+	case OBS_MONITORING_TYPE_NONE:
+		type = "none";
+		break;
+	case OBS_MONITORING_TYPE_MONITOR_ONLY:
+		type = "monitor only";
+		break;
+	case OBS_MONITORING_TYPE_MONITOR_AND_OUTPUT:
+		type = "monitor and output";
+		break;
+	}
+
+	blog(LOG_INFO, "User changed audio monitoring for source '%s' to: %s",
+			obs_source_get_name(source), type);
 }
 
 static inline void setMixer(obs_source_t *source, const int mixerIdx,

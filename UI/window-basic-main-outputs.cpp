@@ -575,6 +575,8 @@ void SimpleOutput::UpdateStreamingSettings_amd(obs_data_t *settings,
 	obs_data_set_int(settings, "AMF.H264.Bitrate.Target", bitrate);
 	obs_data_set_int(settings, "bitrate", bitrate);
 	obs_data_set_int(settings, "AMF.H264.FillerData", 1);
+	obs_data_set_int(settings, "AMF.H264.VBVBuffer", 1);
+	obs_data_set_int(settings, "AMF.H264.VBVBuffer.Size", bitrate);
 	
 	// Picture Control Properties
 	obs_data_set_double(settings, "AMF.H264.KeyframeInterval", 2.0);
@@ -596,6 +598,8 @@ void SimpleOutput::UpdateRecordingSettings_amd_cqp(int cqp)
 	obs_data_set_int(settings, "AMF.H264.QP.IFrame", cqp);
 	obs_data_set_int(settings, "AMF.H264.QP.PFrame", cqp);
 	obs_data_set_int(settings, "AMF.H264.QP.BFrame", cqp);
+	obs_data_set_int(settings, "AMF.H264.VBVBuffer", 1);
+	obs_data_set_int(settings, "AMF.H264.VBVBuffer.Size", 50000);
 
 	// Picture Control Properties
 	obs_data_set_double(settings, "AMF.H264.KeyframeInterval", 2.0);
@@ -665,9 +669,17 @@ bool SimpleOutput::StartStreaming(obs_service_t *service)
 			"DelayPreserve");
 	const char *bindIP = config_get_string(main->Config(), "Output",
 			"BindIP");
+	bool enableNewSocketLoop = config_get_bool(main->Config(), "Output",
+			"NewSocketLoopEnable");
+	bool enableLowLatencyMode = config_get_bool(main->Config(), "Output",
+			"LowLatencyEnable");
 
 	obs_data_t *settings = obs_data_create();
 	obs_data_set_string(settings, "bind_ip", bindIP);
+	obs_data_set_bool(settings, "new_socket_loop_enabled",
+			enableNewSocketLoop);
+	obs_data_set_bool(settings, "low_latency_mode_enabled",
+			enableLowLatencyMode);
 	obs_output_update(streamOutput, settings);
 	obs_data_release(settings);
 
@@ -1162,6 +1174,8 @@ inline void AdvancedOutput::SetupFFmpeg()
 	const char *url = config_get_string(main->Config(), "AdvOut", "FFURL");
 	int vBitrate = config_get_int(main->Config(), "AdvOut",
 			"FFVBitrate");
+	int gopSize = config_get_int(main->Config(), "AdvOut",
+			"FFVGOPSize");
 	bool rescale = config_get_bool(main->Config(), "AdvOut",
 			"FFRescale");
 	const char *rescaleRes = config_get_string(main->Config(), "AdvOut",
@@ -1194,6 +1208,7 @@ inline void AdvancedOutput::SetupFFmpeg()
 	obs_data_set_string(settings, "format_name", formatName);
 	obs_data_set_string(settings, "format_mime_type", mimeType);
 	obs_data_set_string(settings, "muxer_settings", muxCustom);
+	obs_data_set_int(settings, "gop_size", gopSize);
 	obs_data_set_int(settings, "video_bitrate", vBitrate);
 	obs_data_set_string(settings, "video_encoder", vEncoder);
 	obs_data_set_int(settings, "video_encoder_id", vEncoderId);
@@ -1314,9 +1329,17 @@ bool AdvancedOutput::StartStreaming(obs_service_t *service)
 			"DelayPreserve");
 	const char *bindIP = config_get_string(main->Config(), "Output",
 			"BindIP");
+	bool enableNewSocketLoop = config_get_bool(main->Config(), "Output",
+			"NewSocketLoopEnable");
+	bool enableLowLatencyMode = config_get_bool(main->Config(), "Output",
+			"LowLatencyEnable");
 
 	obs_data_t *settings = obs_data_create();
 	obs_data_set_string(settings, "bind_ip", bindIP);
+	obs_data_set_bool(settings, "new_socket_loop_enabled",
+			enableNewSocketLoop);
+	obs_data_set_bool(settings, "low_latency_mode_enabled",
+			enableLowLatencyMode);
 	obs_output_update(streamOutput, settings);
 	obs_data_release(settings);
 

@@ -1,11 +1,18 @@
 ; Script generated with the Venis Install Wizard
 
+Unicode true
+
 ; Define your application name
 !define APPNAME "OBS Studio"
-!define APPVERSION "0.16.5"
-!define APPNAMEANDVERSION "OBS Studio ${APPVERSION}"
+
+!ifndef APPVERSION
+!define APPVERSION "17.0.2"
+!define SHORTVERSION "17.0.2"
+!endif
+
+!define APPNAMEANDVERSION "OBS Studio ${SHORTVERSION}"
 ; !define FULL
-; !define REALSENSE_PLUGIN
+!define REALSENSE_PLUGIN
 
 ; Additional script dependencies
 !include WinVer.nsh
@@ -16,9 +23,9 @@ Name "${APPNAMEANDVERSION}"
 InstallDir "$PROGRAMFILES32\obs-studio"
 InstallDirRegKey HKLM "Software\${APPNAME}" ""
 !ifdef FULL
-OutFile "OBS-Studio-${APPVERSION}-Full-Installer.exe"
+OutFile "OBS-Studio-${SHORTVERSION}-Full-Installer.exe"
 !else
-OutFile "OBS-Studio-${APPVERSION}-Small-Installer.exe"
+OutFile "OBS-Studio-${SHORTVERSION}-Small-Installer.exe"
 !endif
 
 ; Use compression
@@ -31,12 +38,14 @@ RequestExecutionLevel admin
 !include "MUI.nsh"
 
 !define MUI_ABORTWARNING
-!define MUI_FINISHPAGE_RUN "$INSTDIR\bin\32bit\obs32.exe"
+!define MUI_FINISHPAGE_RUN
+!define MUI_FINISHPAGE_RUN_TEXT "Launch OBS Studio ${SHORTVERSION}"
+!define MUI_FINISHPAGE_RUN_FUNCTION "LaunchOBS"
 
 !define MUI_PAGE_CUSTOMFUNCTION_LEAVE PreReqCheck
 
 !insertmacro MUI_PAGE_WELCOME
-!insertmacro MUI_PAGE_LICENSE "data\obs-studio\license\gplv2.txt"
+!insertmacro MUI_PAGE_LICENSE "new\core\data\obs-studio\license\gplv2.txt"
 !insertmacro MUI_PAGE_DIRECTORY
 !ifdef FULL
 	!insertmacro MUI_PAGE_COMPONENTS
@@ -160,23 +169,40 @@ Function PreReqCheck
 	ClearErrors
 
 	; Check previous instance
-	FindProcDLL::FindProc "obs32.exe"
+
+	OBSInstallerUtils::IsProcessRunning "obs32.exe"
 	IntCmp $R0 1 0 notRunning1
 		MessageBox MB_OK|MB_ICONEXCLAMATION "${APPNAME} is already running. Please close it first before installing a new version." /SD IDOK
 		Quit
 	notRunning1:
+
 	${if} ${RunningX64}
-		FindProcDLL::FindProc "obs64.exe"
+		OBSInstallerUtils::IsProcessRunning "obs64.exe"
 		IntCmp $R0 1 0 notRunning2
 			MessageBox MB_OK|MB_ICONEXCLAMATION "${APPNAME} is already running. Please close it first before installing a new version." /SD IDOK
 			Quit
+		notRunning2:
 	${endif}
-	notRunning2:
 
+	OBSInstallerUtils::AddInUseFileCheck "$INSTDIR\data\obs-plugins\win-capture\graphics-hook32.dll"
+	OBSInstallerUtils::AddInUseFileCheck "$INSTDIR\data\obs-plugins\win-capture\graphics-hook64.dll"
+	OBSInstallerUtils::GetAppNameForInUseFiles
+	StrCmp $R0 "" gameCaptureNotRunning
+		MessageBox MB_OK|MB_ICONEXCLAMATION "Game Capture is still in use by the following applications:$\r$\n$\r$\n$R0$\r$\nPlease close these applications before installing a new version of OBS." /SD IDOK
+		Quit
+	gameCaptureNotRunning:
 FunctionEnd
 
 Function filesInUse
 	MessageBox MB_OK|MB_ICONEXCLAMATION "Some files were not able to be installed. If this is the first time you are installing OBS, please disable any anti-virus or other security software and try again. If you are re-installing or updating OBS, close any applications that may be have been hooked, or reboot and try again."  /SD IDOK
+FunctionEnd
+
+Function LaunchOBS
+	${if} ${RunningX64}
+		Exec '"$WINDIR\explorer.exe" "$SMPROGRAMS\OBS Studio\OBS Studio (64bit).lnk"'
+	${else}
+		Exec '"$WINDIR\explorer.exe" "$SMPROGRAMS\OBS Studio\OBS Studio (32bit).lnk"'
+	${endif}
 FunctionEnd
 
 Var outputErrors
@@ -188,24 +214,23 @@ Section "OBS Studio" SecCore
 	SetOverwrite on
 	AllowSkipFiles off
 
-	KillProcDLL::KillProc "obs-plugins\32bit\cef-bootstrap.exe"
-	KillProcDLL::KillProc "obs-plugins\64bit\cef-bootstrap.exe"
-
 	SetShellVarContext all
 
 	; Set Section Files and Shortcuts
 	SetOutPath "$INSTDIR"
-	File /r "data"
+	OBSInstallerUtils::KillProcess "obs-plugins\32bit\cef-bootstrap.exe"
+	OBSInstallerUtils::KillProcess "obs-plugins\64bit\cef-bootstrap.exe"
+	File /r "new\core\data"
 	SetOutPath "$INSTDIR\bin"
-	File /r "bin\32bit"
+	File /r "new\core\bin\32bit"
 	SetOutPath "$INSTDIR\obs-plugins"
-	File /r "obs-plugins\32bit"
+	File /r "new\core\obs-plugins\32bit"
 
 	${if} ${RunningX64}
 		SetOutPath "$INSTDIR\bin"
-		File /r "bin\64bit"
+		File /r "new\core\bin\64bit"
 		SetOutPath "$INSTDIR\obs-plugins"
-		File /r "obs-plugins\64bit"
+		File /r "new\core\obs-plugins\64bit"
 	${endif}
 
 	ClearErrors
@@ -223,12 +248,14 @@ Section "OBS Studio" SecCore
 		Delete "$SMPROGRAMS\OBS Multiplatform\OBS Multiplatform (64bit).lnk"
 	${endif}
 
-	SetOutPath "$INSTDIR\bin\32bit"
 	${if} ${RunningX64}
+		SetOutPath "$INSTDIR\bin\64bit"
 		CreateShortCut "$DESKTOP\OBS Studio.lnk" "$INSTDIR\bin\64bit\obs64.exe"
 	${else}
+		SetOutPath "$INSTDIR\bin\32bit"
 		CreateShortCut "$DESKTOP\OBS Studio.lnk" "$INSTDIR\bin\32bit\obs32.exe"
 	${endif}
+	SetOutPath "$INSTDIR\bin\32bit"
 	CreateDirectory "$SMPROGRAMS\OBS Studio"
 	CreateShortCut "$SMPROGRAMS\OBS Studio\OBS Studio (32bit).lnk" "$INSTDIR\bin\32bit\obs32.exe"
 	CreateShortCut "$SMPROGRAMS\OBS Studio\Uninstall.lnk" "$INSTDIR\uninstall.exe"
@@ -253,10 +280,12 @@ SectionGroup /e "Plugins" SecPlugins
 		SetShellVarContext all
 
 		SetOutPath "$INSTDIR\obs-plugins"
-		File /r "obs-browser\obs-plugins\32bit"
+		OBSInstallerUtils::KillProcess "32bit\cef-bootstrap.exe"
+		File /r "new\obs-browser\obs-plugins\32bit"
 
 		${if} ${RunningX64}
-			File /r "obs-browser\obs-plugins\64bit"
+			OBSInstallerUtils::KillProcess "64bit\cef-bootstrap.exe"
+			File /r "new\obs-browser\obs-plugins\64bit"
 		${endif}
 
 		SetOutPath "$INSTDIR\bin\32bit"
@@ -269,14 +298,14 @@ SectionGroup /e "Plugins" SecPlugins
 		SetShellVarContext all
 
 		SetOutPath "$INSTDIR\obs-plugins"
-		File /r "realsense\32bit"
+		File /r "new\realsense\32bit"
 
 		${if} ${RunningX64}
-			File /r "realsense\64bit"
+			File /r "new\realsense\64bit"
 		${endif}
 
 		SetOutPath "$INSTDIR\data\obs-plugins"
-		File /r "realsense\actual_data\obs-plugins\win-ivcam"
+		File /r "new\realsense\data\obs-plugins\win-ivcam"
 
 		ExecWait '"$INSTDIR\data\obs-plugins\win-ivcam\seg_service.exe" /UnregServer'
 		ExecWait '"$INSTDIR\data\obs-plugins\win-ivcam\seg_service.exe" /RegServer'
@@ -371,7 +400,7 @@ SectionEnd
 !insertmacro MUI_UNFUNCTION_DESCRIPTION_END
 
 ; Version information
-VIProductVersion "0.${APPVERSION}"
+VIProductVersion "${APPVERSION}.0"
 VIAddVersionKey /LANG=${LANG_ENGLISH} "ProductName" "OBS Studio"
 VIAddVersionKey /LANG=${LANG_ENGLISH} "CompanyName" "obsproject.com"
 VIAddVersionKey /LANG=${LANG_ENGLISH} "LegalCopyright" "(c) 2012-2016"

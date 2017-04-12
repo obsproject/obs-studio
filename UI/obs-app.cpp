@@ -69,6 +69,7 @@ bool opt_start_recording = false;
 bool opt_studio_mode = false;
 bool opt_start_replaybuffer = false;
 bool opt_minimize_tray = false;
+bool opt_allow_opengl = false;
 string opt_starting_collection;
 string opt_starting_profile;
 string opt_starting_scene;
@@ -363,6 +364,8 @@ bool OBSApp::InitGlobalConfigDefaults()
 	config_set_default_uint(globalConfig, "General", "MaxLogs", 10);
 	config_set_default_string(globalConfig, "General", "ProcessPriority",
 			"Normal");
+	config_set_default_bool(globalConfig, "General", "EnableAutoUpdates",
+			true);
 
 #if _WIN32
 	config_set_default_string(globalConfig, "Video", "Renderer",
@@ -448,7 +451,13 @@ static bool MakeUserDirs()
 		return false;
 	if (!do_mkdir(path))
 		return false;
+
+	if (GetConfigPath(path, sizeof(path), "obs-studio/updates") <= 0)
+		return false;
+	if (!do_mkdir(path))
+		return false;
 #endif
+
 	if (GetConfigPath(path, sizeof(path), "obs-studio/plugin_config") <= 0)
 		return false;
 	if (!do_mkdir(path))
@@ -1294,7 +1303,7 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 	return ret;
 }
 
-#define MAX_CRASH_REPORT_SIZE (50 * 1024)
+#define MAX_CRASH_REPORT_SIZE (150 * 1024)
 
 #ifdef _WIN32
 
@@ -1775,6 +1784,9 @@ int main(int argc, char *argv[])
 		} else if (arg_is(argv[i], "--studio-mode", nullptr)) {
 			opt_studio_mode = true;
 
+		} else if (arg_is(argv[i], "--allow-opengl", nullptr)) {
+			opt_allow_opengl = true;
+
 		} else if (arg_is(argv[i], "--help", "-h")) {
 			std::cout <<
 			"--help, -h: Get list of available commands.\n\n" << 
@@ -1790,6 +1802,7 @@ int main(int argc, char *argv[])
 			"--portable, -p: Use portable mode.\n\n" <<
 			"--verbose: Make log more verbose.\n" <<
 			"--unfiltered_log: Make log unfiltered.\n\n" <<
+			"--allow-opengl: Allow OpenGL on Windows.\n\n" <<
 			"--version, -V: Get current version.\n";
 
 			exit(0);
@@ -1797,12 +1810,6 @@ int main(int argc, char *argv[])
 		} else if (arg_is(argv[i], "--version", "-V")) {
 			std::cout << "OBS Studio - " << 
 				App()->GetVersionString() << "\n";
-			exit(0);
-
-		} else {
-			std::cout << 
-				"Invalid arguments. Use --help or -h to get " << 
-				"a list of available command line arguments.\n";
 			exit(0);
 		}
 	}

@@ -52,6 +52,10 @@
 #include "volume-control.hpp"
 #include "remote-text.hpp"
 
+#if defined(_WIN32) && defined(ENABLE_WIN_UPDATER)
+#include "win-update/win-update.hpp"
+#endif
+
 #include "ui_OBSBasic.h"
 
 #include <fstream>
@@ -583,6 +587,18 @@ static bool LogSceneItem(obs_scene_t*, obs_sceneitem_t *item, void*)
 
 	blog(LOG_INFO, "    - source: '%s' (%s)", name, id);
 
+	obs_monitoring_type monitoring_type =
+		obs_source_get_monitoring_type(source);
+
+	if (monitoring_type != OBS_MONITORING_TYPE_NONE) {
+		const char *type =
+			(monitoring_type == OBS_MONITORING_TYPE_MONITOR_ONLY)
+			? "monitor only"
+			: "monitor and output";
+
+		blog(LOG_INFO, "        - monitoring: %s", type);
+	}
+
 	obs_source_enum_filters(source, LogFilter, (void*)(intptr_t)2);
 	return true;
 }
@@ -970,7 +986,10 @@ bool OBSBasic::InitBasicConfigDefaults()
 			GetDefaultVideoSavePath().c_str());
 	config_set_default_string(basicConfig, "AdvOut", "FFExtension", "mp4");
 	config_set_default_uint  (basicConfig, "AdvOut", "FFVBitrate", 2500);
+	config_set_default_uint  (basicConfig, "AdvOut", "FFVGOPSize", 250);
 	config_set_default_bool  (basicConfig, "AdvOut", "FFUseRescale",
+			false);
+	config_set_default_bool  (basicConfig, "AdvOut", "FFIgnoreCompat",
 			false);
 	config_set_default_uint  (basicConfig, "AdvOut", "FFABitrate", 160);
 	config_set_default_uint  (basicConfig, "AdvOut", "FFAudioTrack", 1);
@@ -997,6 +1016,10 @@ bool OBSBasic::InitBasicConfigDefaults()
 	config_set_default_uint  (basicConfig, "Output", "MaxRetries", 20);
 
 	config_set_default_string(basicConfig, "Output", "BindIP", "default");
+	config_set_default_bool  (basicConfig, "Output", "NewSocketLoopEnable",
+			false);
+	config_set_default_bool  (basicConfig, "Output", "LowLatencyEnable",
+			false);
 
 	int i = 0;
 	uint32_t scale_cx = cx;
@@ -1233,6 +1256,19 @@ void OBSBasic::OBSInit()
 		if (ret != OBS_VIDEO_SUCCESS)
 			throw UNKNOWN_ERROR;
 	}
+
+	/* load audio monitoring */
+#if defined(_WIN32) || defined(__APPLE__)
+	const char *device_name = config_get_string(basicConfig, "Audio",
+			"MonitoringDeviceName");
+	const char *device_id = config_get_string(basicConfig, "Audio",
+			"MonitoringDeviceId");
+
+	obs_set_audio_monitoring_device(device_name, device_id);
+
+	blog(LOG_INFO, "Audio monitoring device:\n\tname: %s\n\tid: %s",
+			device_name, device_id);
+#endif
 
 	InitOBSCallbacks();
 	InitHotkeys();
@@ -1585,6 +1621,9 @@ void OBSBasic::ClearHotkeys()
 
 OBSBasic::~OBSBasic()
 {
+	if (updateCheckThread && updateCheckThread->isRunning())
+		updateCheckThread->wait();
+
 	delete programOptions;
 	delete program;
 
@@ -1889,6 +1928,7 @@ void OBSBasic::RemoveScene(OBSSource source)
 
 	QListWidgetItem *sel = nullptr;
 	int count = ui->scenes->count();
+
 	for (int i = 0; i < count; i++) {
 		auto item = ui->scenes->item(i);
 		auto cur_scene = GetOBSRef<OBSScene>(item);
@@ -1911,6 +1951,9 @@ void OBSBasic::RemoveScene(OBSSource source)
 		blog(LOG_INFO, "User Removed scene '%s'",
 				obs_source_get_name(source));
 	}
+
+	if (api)
+		api->on_event(OBS_FRONTEND_EVENT_SCENE_LIST_CHANGED);
 }
 
 void OBSBasic::AddSceneItem(OBSSceneItem item)
@@ -2097,6 +2140,17 @@ void OBSBasic::DeactivateAudioSource(OBSSource source)
 
 bool OBSBasic::QueryRemoveSource(obs_source_t *source)
 {
+	if (obs_source_get_type(source) == OBS_SOURCE_TYPE_SCENE) {
+		int count = ui->scenes->count();
+
+		if (count == 1) {
+			QMessageBox::information(this,
+						QTStr("FinalScene.Title"),
+						QTStr("FinalScene.Text"));
+			return false;
+		}
+	}
+
 	const char *name  = obs_source_get_name(source);
 
 	QString text = QTStr("ConfirmRemove.Text");
@@ -2123,10 +2177,14 @@ void trigger_sparkle_update();
 
 void OBSBasic::TimedCheckForUpdates()
 {
+	if (!config_get_bool(App()->GlobalConfig(), "General",
+				"EnableAutoUpdates"))
+		return;
+
 #ifdef UPDATE_SPARKLE
 	init_sparkle_updater(config_get_bool(App()->GlobalConfig(), "General",
 				"UpdateToUndeployed"));
-#else
+#elif ENABLE_WIN_UPDATER
 	long long lastUpdate = config_get_int(App()->GlobalConfig(), "General",
 			"LastUpdateCheck");
 	uint32_t lastVersion = config_get_int(App()->GlobalConfig(), "General",
@@ -2142,27 +2200,21 @@ void OBSBasic::TimedCheckForUpdates()
 	long long secs = t - lastUpdate;
 
 	if (secs > UPDATE_CHECK_INTERVAL)
-		CheckForUpdates();
+		CheckForUpdates(false);
 #endif
 }
 
-void OBSBasic::CheckForUpdates()
+void OBSBasic::CheckForUpdates(bool manualUpdate)
 {
 #ifdef UPDATE_SPARKLE
 	trigger_sparkle_update();
-#else
+#elif ENABLE_WIN_UPDATER
 	ui->actionCheckForUpdates->setEnabled(false);
 
-	if (updateCheckThread) {
-		updateCheckThread->wait();
-		delete updateCheckThread;
-	}
+	if (updateCheckThread && updateCheckThread->isRunning())
+		return;
 
-	RemoteTextThread *thread = new RemoteTextThread(
-			"https://obsproject.com/obs2_update/basic.json");
-	updateCheckThread = thread;
-	connect(thread, &RemoteTextThread::Result,
-			this, &OBSBasic::updateFileFinished);
+	updateCheckThread = new AutoUpdateThread(manualUpdate);
 	updateCheckThread->start();
 #endif
 }
@@ -2175,57 +2227,9 @@ void OBSBasic::CheckForUpdates()
 #define VERSION_ENTRY "other"
 #endif
 
-void OBSBasic::updateFileFinished(const QString &text, const QString &error)
+void OBSBasic::updateCheckFinished()
 {
 	ui->actionCheckForUpdates->setEnabled(true);
-
-	if (text.isEmpty()) {
-		blog(LOG_WARNING, "Update check failed: %s", QT_TO_UTF8(error));
-		return;
-	}
-
-	obs_data_t *returnData  = obs_data_create_from_json(QT_TO_UTF8(text));
-	obs_data_t *versionData = obs_data_get_obj(returnData, VERSION_ENTRY);
-	const char *description = obs_data_get_string(returnData,
-			"description");
-	const char *download    = obs_data_get_string(versionData, "download");
-
-	if (returnData && versionData && description && download) {
-		long major   = obs_data_get_int(versionData, "major");
-		long minor   = obs_data_get_int(versionData, "minor");
-		long patch   = obs_data_get_int(versionData, "patch");
-		long version = MAKE_SEMANTIC_VERSION(major, minor, patch);
-
-		blog(LOG_INFO, "Update check: last known remote version "
-				"is %ld.%ld.%ld",
-				major, minor, patch);
-
-		if (version > LIBOBS_API_VER) {
-			QString     str = QTStr("UpdateAvailable.Text");
-			QMessageBox messageBox(this);
-
-			str = str.arg(QString::number(major),
-			              QString::number(minor),
-			              QString::number(patch),
-			              download);
-
-			messageBox.setWindowTitle(QTStr("UpdateAvailable"));
-			messageBox.setTextFormat(Qt::RichText);
-			messageBox.setText(str);
-			messageBox.setInformativeText(QT_UTF8(description));
-			messageBox.exec();
-
-			long long t = (long long)time(nullptr);
-			config_set_int(App()->GlobalConfig(), "General",
-					"LastUpdateCheck", t);
-			config_save_safe(App()->GlobalConfig(), "tmp", nullptr);
-		}
-	} else {
-		blog(LOG_WARNING, "Bad JSON file received from server");
-	}
-
-	obs_data_release(versionData);
-	obs_data_release(returnData);
 }
 
 void OBSBasic::DuplicateSelectedScene()
@@ -2926,6 +2930,7 @@ void OBSBasic::changeEvent(QEvent *event)
 {
 	if (event->type() == QEvent::WindowStateChange &&
 	    isMinimized() &&
+	    trayIcon &&
 	    trayIcon->isVisible() &&
 	    sysTrayMinimizeToTray()) {
 
@@ -3084,7 +3089,7 @@ void OBSBasic::on_actionAddScene_triggered()
 	string name;
 	QString format{QTStr("Basic.Main.DefaultSceneName.Text")};
 
-	int i = 1;
+	int i = 2;
 	QString placeHolderText = format.arg(i);
 	obs_source_t *source = nullptr;
 	while ((source = obs_get_source_by_name(QT_TO_UTF8(placeHolderText)))) {
@@ -3345,6 +3350,19 @@ void OBSBasic::CreateSourcePopupMenu(QListWidgetItem *item, bool preview)
 	if (addSourceMenu)
 		popup.addMenu(addSourceMenu);
 
+	ui->actionCopyFilters->setEnabled(false);
+
+	popup.addSeparator();
+	popup.addAction(ui->actionCopySource);
+	popup.addAction(ui->actionPasteRef);
+	popup.addAction(ui->actionPasteDup);
+	popup.addSeparator();
+
+	popup.addSeparator();
+	popup.addAction(ui->actionCopyFilters);
+	popup.addAction(ui->actionPasteFilters);
+	popup.addSeparator();
+
 	if (item) {
 		if (addSourceMenu)
 			popup.addSeparator();
@@ -3391,6 +3409,8 @@ void OBSBasic::CreateSourcePopupMenu(QListWidgetItem *item, bool preview)
 				SLOT(OpenFilters()));
 		popup.addAction(QTStr("Properties"), this,
 				SLOT(on_actionSourceProperties_triggered()));
+
+		ui->actionCopyFilters->setEnabled(true);
 	}
 
 	popup.exec(QCursor::pos());
@@ -3730,7 +3750,7 @@ void OBSBasic::on_actionViewCurrentLog_triggered()
 
 void OBSBasic::on_actionCheckForUpdates_triggered()
 {
-	CheckForUpdates();
+	CheckForUpdates(true);
 }
 
 void OBSBasic::logUploadFinished(const QString &text, const QString &error)
@@ -5267,4 +5287,61 @@ bool OBSBasic::sysTrayMinimizeToTray()
 {
 	return config_get_bool(GetGlobalConfig(),
 			"BasicWindow", "SysTrayMinimizeToTray");
+}
+
+void OBSBasic::on_actionCopySource_triggered()
+{
+	on_actionCopyTransform_triggered();
+
+	OBSSceneItem item = GetCurrentSceneItem();
+
+	if (!item)
+		return;
+
+	OBSSource source = obs_sceneitem_get_source(item);
+
+	copyString = obs_source_get_name(source);
+	copyVisible = obs_sceneitem_visible(item);
+
+	ui->actionPasteRef->setEnabled(true);
+	ui->actionPasteDup->setEnabled(true);
+}
+
+void OBSBasic::on_actionPasteRef_triggered()
+{
+	OBSBasicSourceSelect::SourcePaste(copyString, copyVisible, false);
+	on_actionPasteTransform_triggered();
+}
+
+void OBSBasic::on_actionPasteDup_triggered()
+{
+	OBSBasicSourceSelect::SourcePaste(copyString, copyVisible, true);
+	on_actionPasteTransform_triggered();
+}
+
+void OBSBasic::on_actionCopyFilters_triggered()
+{
+	OBSSceneItem item = GetCurrentSceneItem();
+
+	if (!item)
+		return;
+
+	OBSSource source = obs_sceneitem_get_source(item);
+
+	copyFiltersString = obs_source_get_name(source);
+
+	ui->actionPasteFilters->setEnabled(true);
+}
+
+void OBSBasic::on_actionPasteFilters_triggered()
+{
+	OBSSource source = obs_get_source_by_name(copyFiltersString);
+	OBSSceneItem sceneItem = GetCurrentSceneItem();
+
+	OBSSource dstSource = obs_sceneitem_get_source(sceneItem);
+
+	if (source == dstSource)
+		return;
+
+	obs_source_copy_filters(dstSource, source);
 }

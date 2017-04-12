@@ -119,6 +119,10 @@ private:
 	bool projectChanged = false;
 	bool previewEnabled = true;
 
+	const char *copyString;
+	const char *copyFiltersString;
+	bool copyVisible = true;
+
 	QPointer<QThread> updateCheckThread;
 	QPointer<QThread> logUploadThread;
 
@@ -200,7 +204,7 @@ private:
 	bool          QueryRemoveSource(obs_source_t *source);
 
 	void          TimedCheckForUpdates();
-	void          CheckForUpdates();
+	void          CheckForUpdates(bool manualUpdate);
 
 	void GetFPSCommon(uint32_t &num, uint32_t &den) const;
 	void GetFPSInteger(uint32_t &num, uint32_t &den) const;
@@ -413,6 +417,13 @@ private slots:
 
 	void ToggleShowHide();
 
+	void on_actionCopySource_triggered();
+	void on_actionPasteRef_triggered();
+	void on_actionPasteDup_triggered();
+
+	void on_actionCopyFilters_triggered();
+	void on_actionPasteFilters_triggered();
+
 private:
 	/* OBS Callbacks */
 	static void SceneReordered(void *data, calldata_t *params);
@@ -595,7 +606,7 @@ private slots:
 
 	void logUploadFinished(const QString &text, const QString &error);
 
-	void updateFileFinished(const QString &text, const QString &error);
+	void updateCheckFinished();
 
 	void AddSourceFromAction();
 

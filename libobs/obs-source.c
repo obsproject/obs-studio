@@ -330,6 +330,8 @@ static obs_source_t *obs_source_create_internal(const char *id,
 	if (!private)
 		obs_source_init_audio_hotkeys(source);
 
+	source->flags = source->default_flags;
+
 	/* allow the source to be created even if creation fails so that the
 	 * user's data doesn't become lost */
 	if (info)
@@ -342,7 +344,6 @@ static obs_source_t *obs_source_create_internal(const char *id,
 			private ? "private " : "", name, id);
 	obs_source_dosignal(source, "source_create", NULL);
 
-	source->flags = source->default_flags;
 	source->enabled = true;
 	return source;
 
@@ -365,6 +366,27 @@ obs_source_t *obs_source_create_private(const char *id, const char *name,
 	return obs_source_create_internal(id, name, settings, NULL, true);
 }
 
+static char *get_new_filter_name(obs_source_t *dst, const char *name)
+{
+	struct dstr new_name = {0};
+	int inc = 0;
+
+	dstr_copy(&new_name, name);
+
+	for (;;) {
+		obs_source_t *existing_filter = obs_source_get_filter_by_name(
+				dst, new_name.array);
+		if (!existing_filter)
+			break;
+
+		obs_source_release(existing_filter);
+
+		dstr_printf(&new_name, "%s %d", name, ++inc + 1);
+	}
+
+	return new_name.array;
+}
+
 static void duplicate_filters(obs_source_t *dst, obs_source_t *src,
 		bool private)
 {
@@ -380,15 +402,28 @@ static void duplicate_filters(obs_source_t *dst, obs_source_t *src,
 
 	for (size_t i = filters.num; i > 0; i--) {
 		obs_source_t *src_filter = filters.array[i - 1];
-		obs_source_t *dst_filter = obs_source_duplicate(src_filter,
-				src_filter->context.name, private);
+		char *new_name = get_new_filter_name(dst,
+				src_filter->context.name);
 
+		obs_source_t *dst_filter = obs_source_duplicate(src_filter,
+				new_name, private);
+
+		bfree(new_name);
 		obs_source_filter_add(dst, dst_filter);
 		obs_source_release(dst_filter);
 		obs_source_release(src_filter);
 	}
 
 	da_free(filters);
+}
+
+void obs_source_copy_filters(obs_source_t *dst, obs_source_t *src)
+{
+	duplicate_filters(dst, src, dst->context.private ?
+					OBS_SCENE_DUP_PRIVATE_COPY :
+					OBS_SCENE_DUP_COPY);
+
+	obs_source_release(src);
 }
 
 obs_source_t *obs_source_duplicate(obs_source_t *source,
@@ -531,6 +566,8 @@ void obs_source_destroy(struct obs_source *source)
 		circlebuf_free(&source->audio_input_buf[i]);
 	audio_resampler_destroy(source->resampler);
 	bfree(source->audio_output_buf[0][0]);
+
+	obs_source_frame_destroy(source->async_preload_frame);
 
 	if (source->info.type == OBS_SOURCE_TYPE_TRANSITION)
 		obs_transition_free(source);
@@ -1037,6 +1074,7 @@ static void reset_audio_data(obs_source_t *source, uint64_t os_time)
 
 	source->last_audio_input_buf_size = 0;
 	source->audio_ts = os_time;
+	source->next_audio_sys_ts_min = os_time;
 }
 
 static void handle_ts_jump(obs_source_t *source, uint64_t expected,
@@ -1884,10 +1922,9 @@ void obs_source_filter_add(obs_source_t *source, obs_source_t *filter)
 
 	signal_handler_signal(source->context.signals, "filter_add", &cd);
 
-	if (source && filter)
-		blog(LOG_DEBUG, "- filter '%s' (%s) added to source '%s'",
-				filter->context.name, filter->info.id,
-				source->context.name);
+	blog(LOG_DEBUG, "- filter '%s' (%s) added to source '%s'",
+			filter->context.name, filter->info.id,
+			source->context.name);
 }
 
 static bool obs_source_filter_remove_refless(obs_source_t *source,
@@ -1920,10 +1957,9 @@ static bool obs_source_filter_remove_refless(obs_source_t *source,
 
 	signal_handler_signal(source->context.signals, "filter_remove", &cd);
 
-	if (source && filter)
-		blog(LOG_DEBUG, "- filter '%s' (%s) removed from source '%s'",
-				filter->context.name, filter->info.id,
-				source->context.name);
+	blog(LOG_DEBUG, "- filter '%s' (%s) removed from source '%s'",
+			filter->context.name, filter->info.id,
+			source->context.name);
 
 	if (filter->info.filter_remove)
 		filter->info.filter_remove(filter->context.data,
@@ -2313,6 +2349,62 @@ void obs_source_output_video(obs_source_t *source,
 		pthread_mutex_unlock(&source->async_mutex);
 		source->async_active = true;
 	}
+}
+
+static inline bool preload_frame_changed(obs_source_t *source,
+		const struct obs_source_frame *in)
+{
+	if (!source->async_preload_frame)
+		return true;
+
+	return in->width  != source->async_preload_frame->width  ||
+	       in->height != source->async_preload_frame->height ||
+	       in->format != source->async_preload_frame->format;
+}
+
+void obs_source_preload_video(obs_source_t *source,
+		const struct obs_source_frame *frame)
+{
+	if (!obs_source_valid(source, "obs_source_preload_video"))
+		return;
+	if (!frame)
+		return;
+
+	obs_enter_graphics();
+
+	if (preload_frame_changed(source, frame)) {
+		obs_source_frame_destroy(source->async_preload_frame);
+		source->async_preload_frame = obs_source_frame_create(
+				frame->format,
+				frame->width,
+				frame->height);
+	}
+
+	copy_frame_data(source->async_preload_frame, frame);
+	set_async_texture_size(source, source->async_preload_frame);
+	update_async_texture(source, source->async_preload_frame,
+			source->async_texture,
+			source->async_texrender);
+
+	source->last_frame_ts = frame->timestamp;
+
+	obs_leave_graphics();
+}
+
+void obs_source_show_preloaded_video(obs_source_t *source)
+{
+	uint64_t sys_ts;
+
+	if (!obs_source_valid(source, "obs_source_show_preloaded_video"))
+		return;
+
+	source->async_active = true;
+
+	pthread_mutex_lock(&source->audio_buf_mutex);
+	sys_ts = os_gettime_ns();
+	reset_audio_timing(source, source->last_frame_ts, sys_ts);
+	reset_audio_data(source, sys_ts);
+	pthread_mutex_unlock(&source->audio_buf_mutex);
 }
 
 static inline struct obs_audio_data *filter_async_audio(obs_source_t *source,
@@ -3904,8 +3996,6 @@ void obs_source_set_monitoring_type(obs_source_t *source,
 	bool now_on;
 
 	if (!obs_source_valid(source, "obs_source_set_monitoring_type"))
-		return;
-	if (source->info.output_flags & OBS_SOURCE_DO_NOT_MONITOR)
 		return;
 	if (source->monitoring_type == type)
 		return;

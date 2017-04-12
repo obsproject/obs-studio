@@ -1,4 +1,5 @@
 #include "decklink-device-instance.hpp"
+#include "audio-repack.hpp"
 
 #include <util/platform.h>
 #include <util/threading.h>
@@ -7,6 +8,8 @@
 
 #define LOG(level, message, ...) blog(level, "%s: " message, \
 		obs_source_get_name(this->decklink->GetSource()), ##__VA_ARGS__)
+
+#define ISSTEREO(flag) ((flag) == SPEAKERS_STEREO)
 
 static inline enum video_format ConvertPixelFormat(BMDPixelFormat format)
 {
@@ -18,6 +21,36 @@ static inline enum video_format ConvertPixelFormat(BMDPixelFormat format)
 	}
 
 	return VIDEO_FORMAT_UYVY;
+}
+
+static inline int ConvertChannelFormat(speaker_layout format)
+{
+	switch (format) {
+	case SPEAKERS_5POINT1:
+	case SPEAKERS_5POINT1_SURROUND:
+	case SPEAKERS_7POINT1:
+		return 8;
+
+	default:
+	case SPEAKERS_STEREO:
+		return 2;
+	}
+}
+
+static inline audio_repack_mode_t ConvertRepackFormat(speaker_layout format)
+{
+	switch (format) {
+	case SPEAKERS_5POINT1:
+	case SPEAKERS_5POINT1_SURROUND:
+		return repack_mode_8to6ch_swap23;
+
+	case SPEAKERS_7POINT1:
+		return repack_mode_8ch_swap23;
+
+	default:
+		assert(false && "No repack requested");
+		return (audio_repack_mode_t)-1;
+	}
 }
 
 DeckLinkDeviceInstance::DeckLinkDeviceInstance(DeckLink *decklink_,
@@ -46,9 +79,23 @@ void DeckLinkDeviceInstance::HandleAudioPacket(
 		return;
 	}
 
-	currentPacket.data[0]   = (uint8_t *)bytes;
-	currentPacket.frames    = (uint32_t)audioPacket->GetSampleFrameCount();
-	currentPacket.timestamp = timestamp;
+	const uint32_t frameCount = (uint32_t)audioPacket->GetSampleFrameCount();
+	currentPacket.frames      = frameCount;
+	currentPacket.timestamp   = timestamp;
+
+	if (!ISSTEREO(channelFormat)) {
+		if (audioRepacker->repack((uint8_t *)bytes, frameCount) < 0) {
+			LOG(LOG_ERROR, "Failed to convert audio packet data");
+			return;
+		}
+
+		currentPacket.data[0]   = (*audioRepacker)->packet_buffer;
+	} else {
+		currentPacket.data[0]   = (uint8_t *)bytes;
+	}
+
+	nextAudioTS = timestamp +
+		((uint64_t)frameCount * 1000000000ULL / 48000ULL) + 1;
 
 	obs_source_output_audio(decklink->GetSource(), &currentPacket);
 }
@@ -78,6 +125,19 @@ void DeckLinkDeviceInstance::HandleVideoFrame(
 	obs_source_output_video(decklink->GetSource(), &currentFrame);
 }
 
+void DeckLinkDeviceInstance::FinalizeStream()
+{
+	input->SetCallback(nullptr);
+
+	if (audioRepacker != nullptr)
+	{
+		delete audioRepacker;
+		audioRepacker = nullptr;
+	}
+
+	mode = nullptr;
+}
+
 bool DeckLinkDeviceInstance::StartCapture(DeckLinkDeviceMode *mode_)
 {
 	if (mode != nullptr)
@@ -93,8 +153,6 @@ bool DeckLinkDeviceInstance::StartCapture(DeckLinkDeviceMode *mode_)
 	pixelFormat = decklink->GetPixelFormat();
 	currentFrame.format = ConvertPixelFormat(pixelFormat);
 
-	input->SetCallback(this);
-
 	const BMDDisplayMode displayMode = mode_->GetDisplayMode();
 
 	const HRESULT videoResult = input->EnableVideoInput(displayMode,
@@ -102,22 +160,36 @@ bool DeckLinkDeviceInstance::StartCapture(DeckLinkDeviceMode *mode_)
 
 	if (videoResult != S_OK) {
 		LOG(LOG_ERROR, "Failed to enable video input");
-		input->SetCallback(nullptr);
 		return false;
 	}
 
-	const HRESULT audioResult = input->EnableAudioInput(
-			bmdAudioSampleRate48kHz, bmdAudioSampleType16bitInteger,
-			2);
+	channelFormat = decklink->GetChannelFormat();
+	currentPacket.speakers = channelFormat;
 
-	if (audioResult != S_OK)
-		LOG(LOG_WARNING, "Failed to enable audio input; continuing...");
+	if (channelFormat != SPEAKERS_UNKNOWN) {
+		const int channel = ConvertChannelFormat(channelFormat);
+		const HRESULT audioResult = input->EnableAudioInput(
+				bmdAudioSampleRate48kHz, bmdAudioSampleType16bitInteger,
+				channel);
+
+		if (audioResult != S_OK)
+			LOG(LOG_WARNING, "Failed to enable audio input; continuing...");
+
+		if (!ISSTEREO(channelFormat)) {
+			const audio_repack_mode_t repack_mode = ConvertRepackFormat(channelFormat);
+			audioRepacker = new AudioRepacker(repack_mode);
+		}
+	}
+
+	if (input->SetCallback(this) != S_OK) {
+		LOG(LOG_ERROR, "Failed to set callback");
+		FinalizeStream();
+		return false;
+	}
 
 	if (input->StartStreams() != S_OK) {
 		LOG(LOG_ERROR, "Failed to start streams");
-		input->SetCallback(nullptr);
-		input->DisableVideoInput();
-		input->DisableAudioInput();
+		FinalizeStream();
 		return false;
 	}
 
@@ -135,11 +207,7 @@ bool DeckLinkDeviceInstance::StopCapture(void)
 			GetDevice()->GetDisplayName().c_str());
 
 	input->StopStreams();
-	input->SetCallback(nullptr);
-	input->DisableVideoInput();
-	input->DisableAudioInput();
-
-	mode = nullptr;
+	FinalizeStream();
 
 	return true;
 }
@@ -154,10 +222,27 @@ HRESULT STDMETHODCALLTYPE DeckLinkDeviceInstance::VideoInputFrameArrived(
 	BMDTimeValue videoDur = 0;
 	BMDTimeValue audioTS = 0;
 
-	if (videoFrame)
+	if (videoFrame) {
 		videoFrame->GetStreamTime(&videoTS, &videoDur, TIME_BASE);
-	if (audioPacket)
-		audioPacket->GetPacketTime(&audioTS, TIME_BASE);
+		lastVideoTS = (uint64_t)videoTS;
+	}
+	if (audioPacket) {
+		BMDTimeValue newAudioTS = 0;
+		int64_t diff;
+
+		audioPacket->GetPacketTime(&newAudioTS, TIME_BASE);
+		audioTS = newAudioTS + audioOffset;
+
+		diff = (int64_t)audioTS - (int64_t)nextAudioTS;
+		if (diff > 10000000LL) {
+			audioOffset -= diff;
+			audioTS = newAudioTS + audioOffset;
+
+		} else if (diff < -1000000) {
+			audioOffset = 0;
+			audioTS = newAudioTS;
+		}
+	}
 
 	if (videoFrame && videoTS >= 0)
 		HandleVideoFrame(videoFrame, (uint64_t)videoTS);

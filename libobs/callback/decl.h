@@ -31,7 +31,7 @@ struct decl_param {
 
 static inline void decl_param_free(struct decl_param *param)
 {
-	if (param)
+	if (param->name)
 		bfree(param->name);
 	memset(param, 0, sizeof(struct decl_param));
 }

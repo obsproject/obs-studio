@@ -234,8 +234,10 @@ void OBSBasic::TransitionStopped()
 			SetCurrentScene(scene);
 	}
 
-	if (api)
+	if (api) {
 		api->on_event(OBS_FRONTEND_EVENT_TRANSITION_STOPPED);
+		api->on_event(OBS_FRONTEND_EVENT_SCENE_CHANGED);
+	}
 
 	swapScene = nullptr;
 }
@@ -274,19 +276,19 @@ void OBSBasic::TransitionToScene(OBSSource source, bool force)
 
 	obs_source_t *transition = obs_get_output_source(0);
 
-	if (force)
+	if (force) {
 		obs_transition_set(transition, source);
-	else
+		if (api)
+			api->on_event(OBS_FRONTEND_EVENT_SCENE_CHANGED);
+	} else {
 		obs_transition_start(transition, OBS_TRANSITION_MODE_AUTO,
 				ui->transitionDuration->value(), source);
+	}
 
 	if (usingPreviewProgram && sceneDuplicationMode)
 		obs_scene_release(scene);
 
 	obs_source_release(transition);
-
-	if (api)
-		api->on_event(OBS_FRONTEND_EVENT_SCENE_CHANGED);
 }
 
 static inline void SetComboTransition(QComboBox *combo, obs_source_t *tr)

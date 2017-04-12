@@ -162,6 +162,17 @@ static void image_source_tick(void *data, float seconds)
 	struct image_source *context = data;
 	uint64_t frame_time = obs_get_video_frame_time();
 
+	context->update_time_elapsed += seconds;
+
+	if (context->update_time_elapsed >= 1.0f) {
+		time_t t = get_modified_timestamp(context->file);
+		context->update_time_elapsed = 0.0f;
+
+		if (context->file_timestamp != t) {
+			image_source_load(context);
+		}
+	}
+
 	if (obs_source_active(context->source)) {
 		if (!context->active) {
 			if (context->image.is_animated_gif)
@@ -199,17 +210,6 @@ static void image_source_tick(void *data, float seconds)
 	}
 
 	context->last_time = frame_time;
-
-	context->update_time_elapsed += seconds;
-
-	if (context->update_time_elapsed >= 1.0f) {
-		time_t t = get_modified_timestamp(context->file);
-		context->update_time_elapsed = 0.0f;
-
-		if (context->file_timestamp != t) {
-			image_source_load(context);
-		}
-	}
 }
 
 
@@ -270,10 +270,12 @@ OBS_DECLARE_MODULE()
 OBS_MODULE_USE_DEFAULT_LOCALE("image-source", "en-US")
 
 extern struct obs_source_info slideshow_info;
+extern struct obs_source_info color_source_info;
 
 bool obs_module_load(void)
 {
 	obs_register_source(&image_source_info);
+	obs_register_source(&color_source_info);
 	obs_register_source(&slideshow_info);
 	return true;
 }

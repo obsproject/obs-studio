@@ -64,15 +64,15 @@ EXPORT void config_set_bool(config_t *config, const char *section,
 EXPORT void config_set_double(config_t *config, const char *section,
 		const char *name, double value);
 
-EXPORT const char *config_get_string(const config_t *config,
+EXPORT const char *config_get_string(config_t *config,
 		const char *section, const char *name);
-EXPORT int64_t config_get_int(const config_t *config, const char *section,
+EXPORT int64_t config_get_int(config_t *config, const char *section,
 		const char *name);
-EXPORT uint64_t config_get_uint(const config_t *config, const char *section,
+EXPORT uint64_t config_get_uint(config_t *config, const char *section,
 		const char *name);
-EXPORT bool config_get_bool(const config_t *config, const char *section,
+EXPORT bool config_get_bool(config_t *config, const char *section,
 		const char *name);
-EXPORT double config_get_double(const config_t *config, const char *section,
+EXPORT double config_get_double(config_t *config, const char *section,
 		const char *name);
 
 EXPORT bool config_remove_value(config_t *config, const char *section,
@@ -107,20 +107,20 @@ EXPORT void config_set_default_double(config_t *config, const char *section,
 
 /* These functions allow you to get the current default values rather than get
  * the actual values.  Probably almost never really needed */
-EXPORT const char *config_get_default_string(const config_t *config,
+EXPORT const char *config_get_default_string(config_t *config,
 		const char *section, const char *name);
-EXPORT int64_t config_get_default_int(const config_t *config,
+EXPORT int64_t config_get_default_int(config_t *config,
 		const char *section, const char *name);
-EXPORT uint64_t config_get_default_uint(const config_t *config,
+EXPORT uint64_t config_get_default_uint(config_t *config,
 		const char *section, const char *name);
-EXPORT bool config_get_default_bool(const config_t *config,
+EXPORT bool config_get_default_bool(config_t *config,
 		const char *section, const char *name);
-EXPORT double config_get_default_double(const config_t *config,
+EXPORT double config_get_default_double(config_t *config,
 		const char *section, const char *name);
 
-EXPORT bool config_has_user_value(const config_t *config,
+EXPORT bool config_has_user_value(config_t *config,
 		const char *section, const char *name);
-EXPORT bool config_has_default_value(const config_t *config,
+EXPORT bool config_has_default_value(config_t *config,
 		const char *section, const char *name);
 
 #ifdef __cplusplus
