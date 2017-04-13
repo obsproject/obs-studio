@@ -317,7 +317,8 @@ private:
 		return os_atomic_load_bool(&previewProgramMode);
 	}
 
-	inline void OnActivate();
+	inline void OnActivateRecording();
+	inline void OnActivateStreaming();
 	inline void OnDeactivate();
 
 	void AddDropSource(const char *file, DropType image);

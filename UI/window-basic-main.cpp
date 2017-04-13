@@ -3935,7 +3935,7 @@ static inline void ClearProcessPriority()
 #define ClearProcessPriority() do {} while(false)
 #endif
 
-inline void OBSBasic::OnActivate()
+inline void OBSBasic::OnActivateRecording()
 {
 	if (ui->profileMenu->isEnabled()) {
 		ui->profileMenu->setEnabled(false);
@@ -3943,7 +3943,19 @@ inline void OBSBasic::OnActivate()
 		UpdateProcessPriority();
 
 		if (trayIcon)
-			trayIcon->setIcon(QIcon(":/res/images/tray_active.png"));
+			trayIcon->setIcon(QIcon(":/res/images/tray_rec.png"));
+	}
+}
+
+inline void OBSBasic::OnActivateStreaming()
+{
+	if (ui->profileMenu->isEnabled()) {
+		ui->profileMenu->setEnabled(false);
+		App()->IncrementSleepInhibition();
+		UpdateProcessPriority();
+
+		if (trayIcon)
+			trayIcon->setIcon(QIcon(":/res/images/tray_live.png"));
 	}
 }
 
@@ -4029,7 +4041,7 @@ void OBSBasic::StreamDelayStarting(int sec)
 
 	ui->statusbar->StreamDelayStarting(sec);
 
-	OnActivate();
+	OnActivateStreaming();
 }
 
 void OBSBasic::StreamDelayStopping(int sec)
@@ -4069,7 +4081,7 @@ void OBSBasic::StreamingStart()
 	if (api)
 		api->on_event(OBS_FRONTEND_EVENT_STREAMING_STARTED);
 
-	OnActivate();
+	OnActivateStreaming();
 
 	blog(LOG_INFO, STREAMING_START);
 }
@@ -4193,7 +4205,7 @@ void OBSBasic::RecordingStart()
 	if (api)
 		api->on_event(OBS_FRONTEND_EVENT_RECORDING_STARTED);
 
-	OnActivate();
+	OnActivateRecording();
 
 	blog(LOG_INFO, RECORDING_START);
 }
