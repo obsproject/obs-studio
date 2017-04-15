@@ -104,6 +104,8 @@ typedef struct
 	mfxU16 nAsyncDepth;
 	mfxU16 nFpsNum;
 	mfxU16 nFpsDen;
+	mfxU16 nPsrX;
+	mfxU16 nPsrY;
 	mfxU16 nTargetBitRate;
 	mfxU16 nMaxBitRate;
 	mfxU16 nCodecProfile;

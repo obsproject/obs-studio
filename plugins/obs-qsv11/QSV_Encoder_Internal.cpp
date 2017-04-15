@@ -198,6 +198,8 @@ bool QSV_Encoder_Internal::InitParams(qsv_param_t * pParams)
 	m_mfxEncParams.mfx.FrameInfo.FrameRateExtN = pParams->nFpsNum;
 	m_mfxEncParams.mfx.FrameInfo.FrameRateExtD = pParams->nFpsDen;
 	m_mfxEncParams.mfx.FrameInfo.FourCC = MFX_FOURCC_NV12;
+	m_mfxEncParams.mfx.FrameInfo.AspectRatioW = pParams->nPsrX;
+	m_mfxEncParams.mfx.FrameInfo.AspectRatioH = pParams->nPsrY;
 	m_mfxEncParams.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
 	m_mfxEncParams.mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
 	m_mfxEncParams.mfx.FrameInfo.CropX = 0;
