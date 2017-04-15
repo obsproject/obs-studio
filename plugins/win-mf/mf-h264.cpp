@@ -18,6 +18,8 @@ struct MFH264_Encoder {
 	uint32_t height;
 	uint32_t framerateNum;
 	uint32_t framerateDen;
+	uint16_t pixelAspectRatioX;
+	uint16_t pixelAspectRatioY;
 	uint32_t keyint;
 	bool advanced;
 	uint32_t bitrate;
@@ -278,6 +280,8 @@ static void UpdateParams(MFH264_Encoder *enc, obs_data_t *settings)
 	enc->height = (uint32_t)obs_encoder_get_height(enc->encoder);
 	enc->framerateNum = voi->fps_num;
 	enc->framerateDen = voi->fps_den;
+	enc->pixelAspectRatioX = voi->psr_x;
+	enc->pixelAspectRatioY = voi->psr_y;
 
 	enc->descriptor = typeData.descriptor;
 
@@ -369,6 +373,8 @@ static void *MFH264_Create(obs_data_t *settings, obs_encoder_t *encoder)
 			enc->height,
 			enc->framerateNum,
 			enc->framerateDen,
+			enc->pixelAspectRatioX,
+			enc->pixelAspectRatioY,
 			enc->profile,
 			enc->bitrate));
 

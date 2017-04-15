@@ -57,6 +57,8 @@ H264Encoder::H264Encoder(const obs_encoder_t *encoder,
 	UINT32 height,
 	UINT32 framerateNum,
 	UINT32 framerateDen,
+	UINT16 pixelAspectRatioX,
+	UINT16 pixelAspectRatioY,
 	H264Profile profile,
 	UINT32 bitrate)
 	: encoder(encoder),
@@ -65,6 +67,8 @@ H264Encoder::H264Encoder(const obs_encoder_t *encoder,
 	height(height),
 	framerateNum(framerateNum),
 	framerateDen(framerateDen),
+	pixelAspectRatioX(pixelAspectRatioX),
+	pixelAspectRatioY(pixelAspectRatioY),
 	initialBitrate(bitrate),
 	profile(profile)
 {}
@@ -107,7 +111,8 @@ HRESULT H264Encoder::CreateMediaTypes(ComPtr<IMFMediaType> &i,
 			framerateDen));
 	HRC(i->SetUINT32(MF_MT_INTERLACE_MODE,
 			MFVideoInterlaceMode::MFVideoInterlace_Progressive));
-	HRC(MFSetAttributeRatio(i, MF_MT_PIXEL_ASPECT_RATIO, 1, 1));
+	HRC(MFSetAttributeRatio(i, MF_MT_PIXEL_ASPECT_RATIO,
+			pixelAspectRatioX, pixelAspectRatioY));
 
 	HRC(o->SetGUID(MF_MT_MAJOR_TYPE, MFMediaType_Video));
 	HRC(o->SetGUID(MF_MT_SUBTYPE, MFVideoFormat_H264));
@@ -117,7 +122,8 @@ HRESULT H264Encoder::CreateMediaTypes(ComPtr<IMFMediaType> &i,
 	HRC(o->SetUINT32(MF_MT_AVG_BITRATE, initialBitrate * 1000));
 	HRC(o->SetUINT32(MF_MT_INTERLACE_MODE,
 			MFVideoInterlaceMode::MFVideoInterlace_Progressive));
-	HRC(MFSetAttributeRatio(o, MF_MT_PIXEL_ASPECT_RATIO, 1, 1));
+	HRC(MFSetAttributeRatio(o, MF_MT_PIXEL_ASPECT_RATIO,
+			pixelAspectRatioX, pixelAspectRatioY));
 	HRC(o->SetUINT32(MF_MT_MPEG2_LEVEL, (UINT32)-1));
 	HRC(o->SetUINT32(MF_MT_MPEG2_PROFILE, MapProfile(profile)));
 
