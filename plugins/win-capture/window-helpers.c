@@ -349,7 +349,7 @@ static int window_rating(HWND window,
 	struct dstr cur_exe   = {0};
 	int         class_val = 1;
 	int         title_val = 1;
-	int         exe_val   = 0;
+	int         exe_val   = 1;
 	int         total     = 0;
 
 	if (!get_window_exe(&cur_exe, window))
@@ -381,7 +381,11 @@ static int window_rating(HWND window,
 	dstr_free(&cur_title);
 	dstr_free(&cur_exe);
 
-	return total;
+	/*
+	 * If we don't have a total of at least 4 (1 base + 3 selected priority),
+	 * then the window is a partial match of the non-selected priority.
+	 */
+	return total < 4 ? 0 : total;
 }
 
 HWND find_window(enum window_search_mode mode,
