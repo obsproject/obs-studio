@@ -410,6 +410,11 @@ bool OBSApp::InitGlobalConfigDefaults()
 	config_set_default_bool(globalConfig, "BasicWindow",
 			"ShowStatusBar", true);
 
+#ifdef _WIN32
+	config_set_default_bool(globalConfig, "Audio", "DisableAudioDucking",
+			true);
+#endif
+
 #ifdef __APPLE__
 	config_set_default_bool(globalConfig, "Video", "DisableOSXVSync", true);
 	config_set_default_bool(globalConfig, "Video", "ResetOSXVSyncOnExit",
@@ -733,6 +738,13 @@ OBSApp::OBSApp(int &argc, char **argv, profiler_name_store_t *store)
 
 OBSApp::~OBSApp()
 {
+#ifdef _WIN32
+	bool disableAudioDucking = config_get_bool(globalConfig, "Audio",
+			"DisableAudioDucking");
+	if (disableAudioDucking)
+		DisableAudioDucking(false);
+#endif
+
 #ifdef __APPLE__
 	bool vsyncDiabled = config_get_bool(globalConfig, "Video",
 			"DisableOSXVSync");
@@ -850,6 +862,13 @@ void OBSApp::AppInit()
 			Str("Untitled"));
 	config_set_default_string(globalConfig, "Basic", "SceneCollectionFile",
 			Str("Untitled"));
+
+#ifdef _WIN32
+	bool disableAudioDucking = config_get_bool(globalConfig, "Audio",
+			"DisableAudioDucking");
+	if (disableAudioDucking)
+		DisableAudioDucking(true);
+#endif
 
 #ifdef __APPLE__
 	if (config_get_bool(globalConfig, "Video", "DisableOSXVSync"))

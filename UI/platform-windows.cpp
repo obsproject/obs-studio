@@ -30,6 +30,11 @@ using namespace std;
 #include <shellapi.h>
 #include <shlobj.h>
 #include <Dwmapi.h>
+#include <mmdeviceapi.h>
+#include <audiopolicy.h>
+
+#include <util/windows/HRError.hpp>
+#include <util/windows/ComPtr.hpp>
 
 static inline bool check_path(const char* data, const char *path,
 		string &output)
@@ -215,4 +220,42 @@ void SetWin32DropStyle(QWidget *window)
 	LONG_PTR ex_style = GetWindowLongPtr(hwnd, GWL_EXSTYLE);
 	ex_style |= WS_EX_ACCEPTFILES;
 	SetWindowLongPtr(hwnd, GWL_EXSTYLE, ex_style);
+}
+
+bool DisableAudioDucking(bool disable)
+{
+	ComPtr<IMMDeviceEnumerator>   devEmum;
+	ComPtr<IMMDevice>             device;
+	ComPtr<IAudioSessionManager2> sessionManager2;
+	ComPtr<IAudioSessionControl>  sessionControl;
+	ComPtr<IAudioSessionControl2> sessionControl2;
+
+	HRESULT result = CoCreateInstance(__uuidof(MMDeviceEnumerator),
+			nullptr, CLSCTX_INPROC_SERVER,
+			__uuidof(IMMDeviceEnumerator),
+			(void **)&devEmum);
+	if (FAILED(result))
+		return false;
+
+	result = devEmum->GetDefaultAudioEndpoint(eRender, eConsole, &device);
+	if (FAILED(result))
+		return false;
+
+	result = device->Activate(__uuidof(IAudioSessionManager2),
+			CLSCTX_INPROC_SERVER, nullptr,
+			(void **)&sessionManager2);
+	if (FAILED(result))
+		return false;
+
+	result = sessionManager2->GetAudioSessionControl(nullptr, 0,
+			&sessionControl);
+	if (FAILED(result))
+		return false;
+
+	result = sessionControl->QueryInterface(&sessionControl2);
+	if (FAILED(result))
+		return false;
+
+	result = sessionControl2->SetDuckingPreference(disable);
+	return SUCCEEDED(result);
 }

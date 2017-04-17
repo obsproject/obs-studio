@@ -393,6 +393,9 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 #if defined(_WIN32) || defined(__APPLE__)
 	HookWidget(ui->monitoringDevice,     COMBO_CHANGED,  ADV_CHANGED);
 #endif
+#ifdef _WIN32
+	HookWidget(ui->disableAudioDucking,  CHECK_CHANGED,  ADV_CHANGED);
+#endif
 	HookWidget(ui->filenameFormatting,   EDIT_CHANGED,   ADV_CHANGED);
 	HookWidget(ui->overwriteIfExists,    CHECK_CHANGED,  ADV_CHANGED);
 	HookWidget(ui->simpleRBPrefix,       EDIT_CHANGED,   ADV_CHANGED);
@@ -461,6 +464,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	delete ui->advancedGeneralGroupBox;
 	delete ui->enableNewSocketLoop;
 	delete ui->enableLowLatencyMode;
+	delete ui->disableAudioDucking;
 	ui->rendererLabel = nullptr;
 	ui->renderer = nullptr;
 	ui->adapterLabel = nullptr;
@@ -470,6 +474,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	ui->advancedGeneralGroupBox = nullptr;
 	ui->enableNewSocketLoop = nullptr;
 	ui->enableLowLatencyMode = nullptr;
+	ui->disableAudioDucking = nullptr;
 #endif
 
 #ifndef __APPLE__
@@ -2065,6 +2070,10 @@ void OBSBasicSettings::LoadAdvancedSettings()
 	ui->resetOSXVSync->setChecked(resetOSXVSync);
 	ui->resetOSXVSync->setEnabled(disableOSXVSync);
 #elif _WIN32
+	bool disableAudioDucking = config_get_bool(App()->GlobalConfig(),
+			"Audio", "DisableAudioDucking");
+	ui->disableAudioDucking->setChecked(disableAudioDucking);
+
 	const char *processPriority = config_get_string(App()->GlobalConfig(),
 			"General", "ProcessPriority");
 	bool enableNewSocketLoop = config_get_bool(main->Config(), "Output",
@@ -2585,6 +2594,16 @@ void OBSBasicSettings::SaveAdvancedSettings()
 	SaveCombo(ui->monitoringDevice, "Audio", "MonitoringDeviceName");
 	SaveComboData(ui->monitoringDevice, "Audio", "MonitoringDeviceId");
 #endif
+
+#ifdef _WIN32
+	if (WidgetChanged(ui->disableAudioDucking)) {
+		bool disable = ui->disableAudioDucking->isChecked();
+		config_set_bool(App()->GlobalConfig(),
+				"Audio", "DisableAudioDucking", disable);
+		DisableAudioDucking(disable);
+	}
+#endif
+
 	SaveEdit(ui->filenameFormatting, "Output", "FilenameFormatting");
 	SaveEdit(ui->simpleRBPrefix, "SimpleOutput", "RecRBPrefix");
 	SaveEdit(ui->simpleRBSuffix, "SimpleOutput", "RecRBSuffix");
