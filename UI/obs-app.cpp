@@ -409,6 +409,11 @@ bool OBSApp::InitGlobalConfigDefaults()
 	config_set_default_bool(globalConfig, "BasicWindow",
 			"ShowStatusBar", true);
 
+#ifdef _WIN32
+	config_set_default_bool(globalConfig, "Audio", "DisableDockingVolume",
+			true);
+#endif
+
 #ifdef __APPLE__
 	config_set_default_bool(globalConfig, "Video", "DisableOSXVSync", true);
 	config_set_default_bool(globalConfig, "Video", "ResetOSXVSyncOnExit",
@@ -732,6 +737,13 @@ OBSApp::OBSApp(int &argc, char **argv, profiler_name_store_t *store)
 
 OBSApp::~OBSApp()
 {
+#ifdef _WIN32
+	bool dockingVolumeDisabled = config_get_bool(globalConfig, "Audio",
+			"DisableDockingVolume");
+	if (dockingVolumeDisabled)
+		SetDockingVolumeDisabled(false);
+#endif
+
 #ifdef __APPLE__
 	bool vsyncDiabled = config_get_bool(globalConfig, "Video",
 			"DisableOSXVSync");
@@ -849,6 +861,13 @@ void OBSApp::AppInit()
 			Str("Untitled"));
 	config_set_default_string(globalConfig, "Basic", "SceneCollectionFile",
 			Str("Untitled"));
+
+#ifdef _WIN32
+	bool dockingVolumeDisabled = config_get_bool(globalConfig, "Audio",
+			"DisableDockingVolume");
+	if (dockingVolumeDisabled)
+		SetDockingVolumeDisabled(true);
+#endif
 
 #ifdef __APPLE__
 	if (config_get_bool(globalConfig, "Video", "DisableOSXVSync"))
