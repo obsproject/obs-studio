@@ -1,0 +1,4 @@
+usr/include/*
+usr/lib/*/libobsglad.so
+usr/lib/*/libobs.so
+usr/lib/*/cmake/LibObs/*

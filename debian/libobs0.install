@@ -1,0 +1,3 @@
+usr/lib/*/lib*.so.*
+usr/lib/*/libobs-opengl.so
+usr/share/obs/libobs/*
