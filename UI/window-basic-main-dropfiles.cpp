@@ -15,6 +15,10 @@ static const char *textExtensions[] = {
 	"txt", "log", nullptr
 };
 
+static const char *htmlExtensions[] = {
+	"htm", "html", nullptr
+};
+
 static const char *imageExtensions[] = {
 	"bmp", "tga", "png", "jpg", "jpeg", "gif", nullptr
 };
@@ -56,8 +60,167 @@ static string GenerateSourceName(const char *base)
 	}
 }
 
+#if defined(_WIN32)
+#define PLUGIN_NAME_TEXT_GDIPLUS    "obs-text"
+#endif
+#define PLUGIN_NAME_TEXT_FREETYPE2  "text-freetype2"
+#define PLUGIN_NAME_IMAGE           "image-source"
+#define PLUGIN_NAME_MEDIA           "obs-ffmpeg"
+#define PLUGIN_NAME_HTML            "obs-browser"
+
+static bool plugin_exist_initialized = false;
+
+static struct _plugin_info
+{
+	const char *plugin_name;
+	const char *plugin_id;
+	bool       is_exist;
+	const char *target_param_name;
+} plugin_info[] = {
+#if defined(_WIN32)
+	{ PLUGIN_NAME_TEXT_GDIPLUS,   "text_gdiplus",    false, "text" },
+#endif
+	{ PLUGIN_NAME_TEXT_FREETYPE2, "text_ft2_source", false, "text" },
+	{ PLUGIN_NAME_IMAGE,          "image_source",    false, "file" },
+	{ PLUGIN_NAME_MEDIA,          "ffmpeg_source",   false, "local_file" },
+	{ PLUGIN_NAME_HTML,           "browser_source",  false, "local_file" },
+};
+typedef _plugin_info plugin_info_t;
+
+#define PLUGIN_INFO_COUNT (sizeof(plugin_info)/sizeof(plugin_info[0]))
+
+#define INIT_PLUGIN_INFO() \
+if (!plugin_exist_initialized) { \
+	initialze_plugin_exist(); \
+	plugin_exist_initialized = true; \
+}
+
+static void initialze_plugin_exist_callback(
+		void *param, obs_module_t *module)
+{
+	const char *module_name = *(const char**)module;
+	for (int i = 0; i < PLUGIN_INFO_COUNT; ++i) {
+		if (strcmp(plugin_info[i].plugin_name, module_name) == 0) {
+			plugin_info[i].is_exist = true;
+			break;
+		}
+	}
+
+	UNUSED_PARAMETER(param);
+}
+
+static void initialze_plugin_exist()
+{
+	obs_enum_modules(initialze_plugin_exist_callback, NULL);
+}
+
+static bool get_plugin_info(const char *plugin_name, plugin_info_t **info)
+{
+	for (int i = 0; i < PLUGIN_INFO_COUNT; ++i) {
+		if (strcmp(plugin_info[i].plugin_name, plugin_name) == 0) {
+			*info = &plugin_info[i];
+			return true;
+		}
+	}
+	return false;
+}
+
+static bool is_plugin_exist(const char *plugin_name)
+{
+	plugin_info_t *info;
+	INIT_PLUGIN_INFO();
+
+	return get_plugin_info(plugin_name, &info) && info->is_exist;
+}
+
+static bool set_raw_text(const char *data, obs_data_t *settings,
+		const char **type)
+{
+	plugin_info_t *info;
+	INIT_PLUGIN_INFO();
+
+#if defined(_WIN32)
+	if (get_plugin_info(PLUGIN_NAME_TEXT_GDIPLUS, &info) &&
+	    info->is_exist) {
+		obs_data_set_string(settings, "text", data);
+		*type = info->plugin_id;
+		return true;
+	}
+#endif
+
+	if (get_plugin_info(PLUGIN_NAME_TEXT_FREETYPE2, &info) &&
+	    info->is_exist) {
+		obs_data_set_string(settings, "text", data);
+		*type = info->plugin_id;
+		return true;
+	}
+
+	return false;
+}
+
+static bool set_text(const char *data, obs_data_t *settings, const char **type)
+{
+	plugin_info_t *info;
+	INIT_PLUGIN_INFO();
+
+#if defined(_WIN32)
+	if (get_plugin_info(PLUGIN_NAME_TEXT_GDIPLUS, &info) &&
+	    info->is_exist) {
+		obs_data_set_bool(settings, "read_from_file", true);
+		obs_data_set_string(settings, "file", data);
+		*type = info->plugin_id;
+		return true;
+	}
+#endif
+
+	if (get_plugin_info(PLUGIN_NAME_TEXT_FREETYPE2, &info) &&
+	    info->is_exist) {
+		obs_data_set_bool(settings, "from_file", true);
+		obs_data_set_string(settings, "text_file", data);
+		*type = info->plugin_id;
+		return true;
+	}
+
+	return false;
+}
+
+static bool set_data(const char *data, obs_data_t *settings,
+		const char **type, const char *plugin_name)
+{
+	plugin_info_t *info;
+	INIT_PLUGIN_INFO();
+
+	if (get_plugin_info(plugin_name, &info) && info->is_exist) {
+		obs_data_set_string(settings, info->target_param_name, data);
+		*type = info->plugin_id;
+		return true;
+	}
+
+	return false;
+}
+
+static bool set_image(const char *data, obs_data_t *settings, const char **type)
+{
+	return set_data(data, settings, type, PLUGIN_NAME_IMAGE);
+}
+
+static bool set_media(const char *data, obs_data_t *settings, const char **type)
+{
+	return set_data(data, settings, type, PLUGIN_NAME_MEDIA);
+}
+
+static bool set_html(const char *data, obs_data_t *settings, const char **type)
+{
+	if (set_data(data, settings, type, PLUGIN_NAME_HTML)) {
+		obs_data_set_bool(settings, "is_local_file", true);
+		return true;
+	}
+	return false;
+}
+
 void OBSBasic::AddDropSource(const char *data, DropType image)
 {
+	bool ret;
 	OBSBasic *main = reinterpret_cast<OBSBasic*>(App()->GetMainWindow());
 	obs_data_t *settings = obs_data_create();
 	obs_source_t *source = nullptr;
@@ -65,23 +228,23 @@ void OBSBasic::AddDropSource(const char *data, DropType image)
 
 	switch (image) {
 	case DropType_RawText:
-		obs_data_set_string(settings, "text", data);
-		type = "text_gdiplus";
+		ret = set_raw_text(data, settings, &type);
 		break;
 	case DropType_Text:
-		obs_data_set_bool(settings, "read_from_file", true);
-		obs_data_set_string(settings, "file", data);
-		type = "text_gdiplus";
+		ret = set_text(data, settings, &type);
 		break;
 	case DropType_Image:
-		obs_data_set_string(settings, "file", data);
-		type = "image_source";
+		ret = set_image(data, settings, &type);
 		break;
 	case DropType_Media:
-		obs_data_set_string(settings, "local_file", data);
-		type = "ffmpeg_source";
+		ret = set_media(data, settings, &type);
+		break;
+	case DropType_Html:
+		ret = set_html(data, settings, &type);
 		break;
 	}
+	if (!ret)
+		return;
 
 	const char *name = obs_source_get_display_name(type);
 	source = obs_source_create(type, GenerateSourceName(name).c_str(),
@@ -97,17 +260,10 @@ void OBSBasic::AddDropSource(const char *data, DropType image)
 
 void OBSBasic::dragEnterEvent(QDragEnterEvent *event)
 {
-	event->acceptProposedAction();
-}
-
-void OBSBasic::dragLeaveEvent(QDragLeaveEvent *event)
-{
-	event->accept();
-}
-
-void OBSBasic::dragMoveEvent(QDragMoveEvent *event)
-{
-	event->acceptProposedAction();
+	const QMimeData* mimeData = event->mimeData();
+	if (mimeData->hasUrls() || mimeData->hasText()) {
+		event->acceptProposedAction();
+	}
 }
 
 void OBSBasic::dropEvent(QDropEvent *event)
@@ -131,46 +287,42 @@ void OBSBasic::dropEvent(QDropEvent *event)
 
 			const char **cmp;
 
-			cmp = textExtensions;
-			while (*cmp) {
-				if (strcmp(*cmp, suffix) == 0) {
-					AddDropSource(QT_TO_UTF8(file),
-							DropType_Text);
-					found = true;
-					break;
-				}
+#define CHECK_SUFFIX(extensions, type) \
+cmp = extensions; \
+while (*cmp) { \
+	if (strcmp(*cmp, suffix) == 0) { \
+		AddDropSource(QT_TO_UTF8(file), type); \
+		found = true; \
+		break; \
+	} \
+\
+	cmp++; \
+} \
+\
+if (found) \
+	continue;
 
-				cmp++;
+#if defined(_WIN32)
+			if (is_plugin_exist(PLUGIN_NAME_TEXT_GDIPLUS) ||
+			    is_plugin_exist(PLUGIN_NAME_TEXT_FREETYPE2)) {
+#else
+			if (is_plugin_exist(PLUGIN_NAME_TEXT_FREETYPE2)) {
+#endif
+				CHECK_SUFFIX(textExtensions, DropType_Text);
 			}
 
-			if (found)
-				continue;
-
-			cmp = imageExtensions;
-			while (*cmp) {
-				if (strcmp(*cmp, suffix) == 0) {
-					AddDropSource(QT_TO_UTF8(file),
-							DropType_Image);
-					found = true;
-					break;
-				}
-
-				cmp++;
+			if (is_plugin_exist(PLUGIN_NAME_HTML)) {
+				CHECK_SUFFIX(htmlExtensions, DropType_Html);
 			}
 
-			if (found)
-				continue;
-
-			cmp = mediaExtensions;
-			while (*cmp) {
-				if (strcmp(*cmp, suffix) == 0) {
-					AddDropSource(QT_TO_UTF8(file),
-							DropType_Media);
-					break;
-				}
-
-				cmp++;
+			if (is_plugin_exist(PLUGIN_NAME_IMAGE)) {
+				CHECK_SUFFIX(imageExtensions, DropType_Image);
 			}
+
+			if (is_plugin_exist(PLUGIN_NAME_MEDIA)) {
+				CHECK_SUFFIX(mediaExtensions, DropType_Media);
+			}
+#undef CHECK_SUFFIX
 		}
 	} else if (mimeData->hasText()) {
 		AddDropSource(QT_TO_UTF8(mimeData->text()), DropType_RawText);
