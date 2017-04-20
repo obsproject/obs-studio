@@ -1188,6 +1188,9 @@
    <property name="text">
     <string>Basic.MainMenu.Edit.Transform.EditTransform</string>
    </property>
+   <property name="shortcut">
+    <string>Ctrl+E</string>
+   </property>
   </action>
   <action name="actionCopyTransform">
    <property name="text">
