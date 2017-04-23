@@ -83,8 +83,10 @@ void OBSBasic::AddDropSource(const char *data, DropType image)
 		break;
 	}
 
-	const char *name = obs_source_get_display_name(type);
-	source = obs_source_create(type, GenerateSourceName(name).c_str(),
+	QString dataToQt = data;
+	QString name = QUrl::fromLocalFile(dataToQt).fileName();
+	source = obs_source_create(type,
+			GenerateSourceName(QT_TO_UTF8(name)).c_str(),
 			settings, nullptr);
 	if (source) {
 		OBSScene scene = main->GetCurrentScene();
