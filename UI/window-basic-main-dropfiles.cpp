@@ -62,6 +62,7 @@ void OBSBasic::AddDropSource(const char *data, DropType image)
 	obs_data_t *settings = obs_data_create();
 	obs_source_t *source = nullptr;
 	const char *type = nullptr;
+	QString name;
 
 	switch (image) {
 	case DropType_RawText:
@@ -71,20 +72,25 @@ void OBSBasic::AddDropSource(const char *data, DropType image)
 	case DropType_Text:
 		obs_data_set_bool(settings, "read_from_file", true);
 		obs_data_set_string(settings, "file", data);
+		name = QUrl::fromLocalFile(QString(data)).fileName();
 		type = "text_gdiplus";
 		break;
 	case DropType_Image:
 		obs_data_set_string(settings, "file", data);
+		name = QUrl::fromLocalFile(QString(data)).fileName();
 		type = "image_source";
 		break;
 	case DropType_Media:
 		obs_data_set_string(settings, "local_file", data);
+		name = QUrl::fromLocalFile(QString(data)).fileName();
 		type = "ffmpeg_source";
 		break;
 	}
 
-	const char *name = obs_source_get_display_name(type);
-	source = obs_source_create(type, GenerateSourceName(name).c_str(),
+	if (name.isEmpty())
+		name = obs_source_get_display_name(type);
+	source = obs_source_create(type,
+			GenerateSourceName(QT_TO_UTF8(name)).c_str(),
 			settings, nullptr);
 	if (source) {
 		OBSScene scene = main->GetCurrentScene();
