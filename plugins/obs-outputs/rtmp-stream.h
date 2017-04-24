@@ -72,9 +72,7 @@ struct rtmp_stream {
 
 	/* frame drop variables */
 	int64_t          drop_threshold_usec;
-	int64_t          min_drop_dts_usec;
 	int64_t          pframe_drop_threshold_usec;
-	int64_t          pframe_min_drop_dts_usec;
 	int              min_priority;
 	float            congestion;
 
