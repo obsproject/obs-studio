@@ -390,6 +390,7 @@ static int obs_init_video(struct obs_video_info *ovi)
 		return OBS_VIDEO_FAIL;
 
 	video->thread_initialized = true;
+	video->ovi = *ovi;
 	return OBS_VIDEO_SUCCESS;
 }
 
@@ -1008,28 +1009,11 @@ bool obs_reset_audio(const struct obs_audio_info *oai)
 bool obs_get_video_info(struct obs_video_info *ovi)
 {
 	struct obs_core_video *video = &obs->video;
-	const struct video_output_info *info;
 
 	if (!obs || !video->graphics)
 		return false;
 
-	info = video_output_get_info(video->video);
-	if (!info)
-		return false;
-
-	memset(ovi, 0, sizeof(struct obs_video_info));
-	ovi->base_width    = video->base_width;
-	ovi->base_height   = video->base_height;
-	ovi->gpu_conversion= video->gpu_conversion;
-	ovi->scale_type    = video->scale_type;
-	ovi->colorspace    = info->colorspace;
-	ovi->range         = info->range;
-	ovi->output_width  = info->width;
-	ovi->output_height = info->height;
-	ovi->output_format = info->format;
-	ovi->fps_num       = info->fps_num;
-	ovi->fps_den       = info->fps_den;
-
+	*ovi = video->ovi;
 	return true;
 }
 
