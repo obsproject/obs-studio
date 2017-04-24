@@ -235,8 +235,6 @@ bool obs_output_actual_start(obs_output_t *output)
 	if (success && output->video) {
 		output->starting_frame_count =
 			video_output_get_total_frames(output->video);
-		output->starting_skipped_frame_count =
-			video_output_get_skipped_frames(output->video);
 		output->starting_drawn_count = obs->video.total_frames;
 		output->starting_lagged_count = obs->video.lagged_frames;
 	}
@@ -280,24 +278,19 @@ static void log_frame_info(struct obs_output *output)
 	struct obs_core_video *video = &obs->video;
 
 	uint32_t video_frames  = video_output_get_total_frames(output->video);
-	uint32_t video_skipped = video_output_get_skipped_frames(output->video);
 
 	uint32_t total   = video_frames  - output->starting_frame_count;
-	uint32_t skipped = video_skipped - output->starting_skipped_frame_count;
 
 	uint32_t drawn  = video->total_frames - output->starting_drawn_count;
 	uint32_t lagged = video->lagged_frames - output->starting_lagged_count;
 
 	int dropped = obs_output_get_frames_dropped(output);
 
-	double percentage_skipped = 0.0f;
 	double percentage_lagged = 0.0f;
 	double percentage_dropped = 0.0f;
 
-	if (total) {
-		percentage_skipped = (double)skipped / (double)total * 100.0;
+	if (total)
 		percentage_dropped = (double)dropped / (double)total * 100.0;
-	}
 	if (drawn)
 		percentage_lagged = (double)lagged  / (double)drawn * 100.0;
 
@@ -307,11 +300,6 @@ static void log_frame_info(struct obs_output *output)
 	blog(LOG_INFO, "Output '%s': Total drawn frames: %"PRIu32,
 			output->context.name, drawn);
 
-	if (total && skipped)
-		blog(LOG_INFO, "Output '%s': Number of skipped frames due "
-				"to encoding lag: %"PRIu32" (%0.1f%%)",
-				output->context.name,
-				skipped, percentage_skipped);
 	if (drawn && lagged)
 		blog(LOG_INFO, "Output '%s': Number of lagged frames due "
 				"to rendering lag/stalls: %"PRIu32" (%0.1f%%)",
