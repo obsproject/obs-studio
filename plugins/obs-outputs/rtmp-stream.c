@@ -1090,6 +1090,12 @@ static float rtmp_stream_congestion(void *data)
 		return stream->min_priority > 0 ? 1.0f : stream->congestion;
 }
 
+static int rtmp_stream_connect_time(void *data)
+{
+	struct rtmp_stream *stream = data;
+	return stream->rtmp.connect_time_ms;
+}
+
 struct obs_output_info rtmp_output_info = {
 	.id                 = "rtmp_output",
 	.flags              = OBS_OUTPUT_AV |
@@ -1106,5 +1112,6 @@ struct obs_output_info rtmp_output_info = {
 	.get_properties     = rtmp_stream_properties,
 	.get_total_bytes    = rtmp_stream_total_bytes_sent,
 	.get_congestion     = rtmp_stream_congestion,
+	.get_connect_time_ms= rtmp_stream_connect_time,
 	.get_dropped_frames = rtmp_stream_dropped_frames
 };

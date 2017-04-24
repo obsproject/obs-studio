@@ -32,6 +32,8 @@
 #include "rtmp_sys.h"
 #include "log.h"
 
+#include <util/platform.h>
+
 #ifdef CRYPTO
 
 #ifdef __APPLE__
@@ -773,6 +775,8 @@ RTMP_Connect0(RTMP *r, struct sockaddr * service, socklen_t addrlen)
             }
         }
 
+        uint64_t connect_start = os_gettime_ns();
+
         if (connect(r->m_sb.sb_socket, service, addrlen) < 0)
         {
             int err = GetSockError();
@@ -788,6 +792,8 @@ RTMP_Connect0(RTMP *r, struct sockaddr * service, socklen_t addrlen)
             RTMP_Close(r);
             return FALSE;
         }
+
+        r->connect_time_ms = (int)((os_gettime_ns() - connect_start) / 1000000);
 
         if (r->Link.socksport)
         {
