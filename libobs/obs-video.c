@@ -105,6 +105,19 @@ static inline void render_main_texture(struct obs_core_video *video,
 	gs_clear(GS_CLEAR_COLOR, &clear_color, 1.0f, 0);
 
 	set_render_size(video->base_width, video->base_height);
+
+	pthread_mutex_lock(&obs->data.draw_callbacks_mutex);
+
+	for (size_t i = 0; i < obs->data.draw_callbacks.num; i++) {
+		struct draw_callback *callback;
+		callback = obs->data.draw_callbacks.array+i;
+
+		callback->draw(callback->param,
+				video->base_width, video->base_height);
+	}
+
+	pthread_mutex_unlock(&obs->data.draw_callbacks_mutex);
+
 	obs_view_render(&obs->data.main_view);
 
 	video->textures_rendered[cur_texture] = true;
