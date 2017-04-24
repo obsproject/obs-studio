@@ -879,3 +879,70 @@ void os_breakpoint(void)
 {
 	__debugbreak();
 }
+
+DWORD num_logical_cores(ULONG_PTR mask)
+{
+	DWORD     left_shift    = sizeof(ULONG_PTR) * 8 - 1;
+	DWORD     bit_set_count = 0;
+	ULONG_PTR bit_test      = (ULONG_PTR)1 << left_shift;
+
+	for (DWORD i = 0; i <= left_shift; ++i) {
+		bit_set_count += ((mask & bit_test) ? 1 : 0);
+		bit_test      /= 2;
+	}
+
+	return bit_set_count;
+}
+
+static int physical_cores = 0;
+static int logical_cores = 0;
+static bool core_count_initialized = false;
+
+static void os_get_cores_internal(void)
+{
+	PSYSTEM_LOGICAL_PROCESSOR_INFORMATION info = NULL, temp = NULL;
+	DWORD len = 0;
+
+	if (core_count_initialized)
+		return;
+
+	core_count_initialized = true;
+
+	GetLogicalProcessorInformation(info, &len);
+	if (GetLastError() != ERROR_INSUFFICIENT_BUFFER)
+		return;
+
+	info = malloc(len);
+
+	if (GetLogicalProcessorInformation(info, &len)) {
+		DWORD num = len / sizeof(*info);
+		temp = info;
+
+		for (DWORD i = 0; i < num; i++) {
+			if (temp->Relationship == RelationProcessorCore) {
+				ULONG_PTR mask = temp->ProcessorMask;
+
+				physical_cores++;
+				logical_cores += num_logical_cores(mask);
+			}
+
+			temp++;
+		}
+	}
+
+	free(info);
+}
+
+int os_get_physical_cores(void)
+{
+	if (!core_count_initialized)
+		os_get_cores_internal();
+	return physical_cores;
+}
+
+int os_get_logical_cores(void)
+{
+	if (!core_count_initialized)
+		os_get_cores_internal();
+	return logical_cores;
+}

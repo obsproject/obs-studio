@@ -22,6 +22,8 @@
 #include <dlfcn.h>
 #include <time.h>
 #include <unistd.h>
+#include <sys/types.h>
+#include <sys/sysctl.h>
 
 #include <CoreServices/CoreServices.h>
 #include <mach/mach.h>
@@ -311,4 +313,42 @@ void os_inhibit_sleep_destroy(os_inhibit_t *info)
 		CFRelease(info->reason);
 		bfree(info);
 	}
+}
+
+static int physical_cores = 0;
+static int logical_cores = 0;
+static bool core_count_initialized = false;
+
+static void os_get_cores_internal(void)
+{
+	if (core_count_initialized)
+		return;
+
+	core_count_initialized = true;
+
+	size_t size;
+	int    ret;
+
+	size = sizeof(physical_cores);
+	ret = sysctlbyname("machdep.cpu.core_count", &physical_cores,
+			&size, NULL, 0);
+	if (ret != 0)
+		return;
+
+	ret = sysctlbyname("machdep.cpu.thread_count", &logical_cores,
+			&size, NULL, 0);
+}
+
+int os_get_physical_cores(void)
+{
+	if (!core_count_initialized)
+		os_get_cores_internal();
+	return physical_cores;
+}
+
+int os_get_logical_cores(void)
+{
+	if (!core_count_initialized)
+		os_get_cores_internal();
+	return logical_cores;
 }

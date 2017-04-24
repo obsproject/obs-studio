@@ -94,23 +94,8 @@ static void log_processor_speed(void)
 
 static void log_processor_cores(void)
 {
-	size_t size;
-	int    physical_cores = 0, logical_cores = 0;
-	int    ret;
-
-	size = sizeof(physical_cores);
-	ret = sysctlbyname("machdep.cpu.core_count", &physical_cores,
-			&size, NULL, 0);
-	if (ret != 0)
-		return;
-
-	ret = sysctlbyname("machdep.cpu.thread_count", &logical_cores,
-			&size, NULL, 0);
-	if (ret != 0)
-		return;
-
 	blog(LOG_INFO, "Physical Cores: %d, Logical Cores: %d",
-			physical_cores, logical_cores);
+			os_get_physical_cores(), os_get_logical_cores());
 }
 
 static void log_available_memory(void)

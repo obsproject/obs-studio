@@ -105,54 +105,10 @@ static void log_processor_info(void)
 	RegCloseKey(key);
 }
 
-static DWORD num_logical_cores(ULONG_PTR mask)
-{
-	DWORD     left_shift    = sizeof(ULONG_PTR) * 8 - 1;
-	DWORD     bit_set_count = 0;
-	ULONG_PTR bit_test      = (ULONG_PTR)1 << left_shift;
-
-	for (DWORD i = 0; i <= left_shift; ++i) {
-		bit_set_count += ((mask & bit_test) ? 1 : 0);
-		bit_test      /= 2;
-	}
-
-	return bit_set_count;
-}
-
 static void log_processor_cores(void)
 {
-	PSYSTEM_LOGICAL_PROCESSOR_INFORMATION info = NULL, temp = NULL;
-	DWORD len = 0;
-
-	GetLogicalProcessorInformation(info, &len);
-	if (GetLastError() != ERROR_INSUFFICIENT_BUFFER)
-		return;
-
-	info = malloc(len);
-
-	if (GetLogicalProcessorInformation(info, &len)) {
-		DWORD num            = len / sizeof(*info);
-		int   physical_cores = 0;
-		int   logical_cores  = 0;
-
-		temp = info;
-
-		for (DWORD i = 0; i < num; i++) {
-			if (temp->Relationship == RelationProcessorCore) {
-				ULONG_PTR mask = temp->ProcessorMask;
-
-				physical_cores++;
-				logical_cores += num_logical_cores(mask);
-			}
-
-			temp++;
-		}
-
-		blog(LOG_INFO, "Physical Cores: %d, Logical Cores: %d",
-				physical_cores, logical_cores);
-	}
-
-	free(info);
+	blog(LOG_INFO, "Physical Cores: %d, Logical Cores: %d",
+			os_get_physical_cores(), os_get_logical_cores());
 }
 
 static void log_available_memory(void)

@@ -176,6 +176,9 @@ EXPORT void os_inhibit_sleep_destroy(os_inhibit_t *info);
 
 EXPORT void os_breakpoint(void);
 
+EXPORT int os_get_physical_cores(void);
+EXPORT int os_get_logical_cores(void);
+
 #ifdef _MSC_VER
 #define strtoll _strtoi64
 #if _MSC_VER < 1900
