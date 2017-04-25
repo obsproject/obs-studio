@@ -366,8 +366,6 @@ extern struct gl_platform *gl_platform_create(gs_device_t *device,
 		goto fail_load_gl;
 	}
 
-	blog(LOG_INFO, "OpenGL version: %s\n", glGetString(GL_VERSION));
-
 	goto success;
 
 fail_make_current:
