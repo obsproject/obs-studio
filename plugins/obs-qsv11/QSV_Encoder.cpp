@@ -98,7 +98,7 @@ qsv_t *qsv_encoder_open(qsv_param_t *pParams)
 }
 
 int qsv_encoder_headers(qsv_t *pContext, uint8_t **pSPS, uint8_t **pPPS,
-		uint16_t *pnSPS, uint16_t *pnPPS)
+	uint16_t *pnSPS, uint16_t *pnPPS)
 {
 	QSV_Encoder_Internal *pEncoder = (QSV_Encoder_Internal *)pContext;
 	pEncoder->GetSPSPPS(pSPS, pPPS, pnSPS, pnPPS);
@@ -106,9 +106,9 @@ int qsv_encoder_headers(qsv_t *pContext, uint8_t **pSPS, uint8_t **pPPS,
 	return 0;
 }
 
-int qsv_encoder_encode(qsv_t * pContext, uint64_t ts, uint8_t *pDataY,
-		uint8_t *pDataUV, uint32_t strideY, uint32_t strideUV,
-		mfxBitstream **pBS)
+int qsv_encoder_encode(qsv_t *pContext, uint64_t ts, uint8_t *pDataY,
+	uint8_t *pDataUV, uint32_t strideY, uint32_t strideUV,
+	mfxBitstream **pBS)
 {
 	QSV_Encoder_Internal *pEncoder = (QSV_Encoder_Internal *)pContext;
 	mfxStatus sts = MFX_ERR_NONE;
@@ -189,33 +189,27 @@ enum qsv_cpu_platform qsv_get_cpu_platform()
 	if (family != 6)
 		return QSV_CPU_PLATFORM_UNKNOWN;
 
-	switch (model)
-	{
+	switch (model) {
 	case 0x1C:
 	case 0x26:
 	case 0x27:
 	case 0x35:
 	case 0x36:
 		return QSV_CPU_PLATFORM_BNL;
-
 	case 0x2a:
 	case 0x2d:
 		return QSV_CPU_PLATFORM_SNB;
-
 	case 0x3a:
 	case 0x3e:
 		return QSV_CPU_PLATFORM_IVB;
-
 	case 0x37:
 	case 0x4A:
 	case 0x4D:
 	case 0x5A:
 	case 0x5D:
 		return QSV_CPU_PLATFORM_SLM;
-
 	case 0x4C:
 		return QSV_CPU_PLATFORM_CHT;
-
 	case 0x3c:
 	case 0x3f:
 	case 0x45:

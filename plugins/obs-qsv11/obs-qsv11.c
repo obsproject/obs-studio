@@ -491,9 +491,9 @@ static void *obs_qsv_create(obs_data_t *settings, obs_encoder_t *encoder)
 		               "\tGopPictSize:    %d\n"
 		               "\tg_pts2dtsShift: %d",
 		               interval, GopPicSize, g_pts2dtsShift);
-	}
-	else
+	} else {
 		g_pts2dtsShift = -1;
+	}
 
 	if (!obsqsv->context) {
 		bfree(obsqsv);
@@ -520,7 +520,7 @@ static bool obs_qsv_extra_data(void *data, uint8_t **extra_data, size_t *size)
 	return true;
 }
 
-static bool obs_qsv_sei(void *data, uint8_t **sei,size_t *size)
+static bool obs_qsv_sei(void *data, uint8_t **sei, size_t *size)
 {
 	struct obs_qsv *obsqsv = data;
 
@@ -542,7 +542,7 @@ static inline bool valid_format(enum video_format format)
 }
 
 static inline void cap_resolution(obs_encoder_t *encoder,
-		struct video_scale_info *info)
+	struct video_scale_info *info)
 {
 	enum qsv_cpu_platform qsv_platform = qsv_get_cpu_platform();
 	uint32_t width = obs_encoder_get_width(encoder);
@@ -578,7 +578,8 @@ static void obs_qsv_video_info(void *data, struct video_scale_info *info)
 	cap_resolution(obsqsv->encoder, info);
 }
 
-static void parse_packet(struct obs_qsv *obsqsv, struct encoder_packet *packet, mfxBitstream *pBS, uint32_t fps_num, bool *received_packet)
+static void parse_packet(struct obs_qsv *obsqsv, struct encoder_packet *packet,
+	mfxBitstream *pBS, uint32_t fps_num, bool *received_packet)
 {
 	uint8_t *start, *end;
 	int type;
@@ -637,8 +638,7 @@ static void parse_packet(struct obs_qsv *obsqsv, struct encoder_packet *packet, 
 
 	// In case MSDK doesn't support automatic DecodeTimeStamp, do manual
 	// calculation
-	if (g_pts2dtsShift >= 0)
-	{
+	if (g_pts2dtsShift >= 0) {
 		if (g_bFirst) {
 			packet->dts = packet->pts - 3 * obsqsv->params.nFpsDen;
 		} else if (pFrame) {

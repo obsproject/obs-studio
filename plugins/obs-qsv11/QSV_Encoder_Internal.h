@@ -62,10 +62,10 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 class QSV_Encoder_Internal
 {
 public:
-	QSV_Encoder_Internal(mfxIMPL& impl, mfxVersion& version);
+	QSV_Encoder_Internal(mfxIMPL &impl, mfxVersion &version);
 	~QSV_Encoder_Internal();
 
-	mfxStatus    Open(qsv_param_t * pParams);
+	mfxStatus    Open(qsv_param_t *pParams);
 	void         GetSPSPPS(mfxU8 **pSPSBuf, mfxU8 **pPPSBuf,
 			mfxU16 *pnSPSBuf, mfxU16 *pnPPSBuf);
 	mfxStatus    Encode(uint64_t ts, uint8_t *pDataY, uint8_t *pDataUV,
@@ -75,14 +75,14 @@ public:
 	mfxStatus    Reset(qsv_param_t *pParams);
 
 protected:
-	bool         InitParams(qsv_param_t * pParams);
+	bool         InitParams(qsv_param_t *pParams);
 	mfxStatus    AllocateSurfaces();
 	mfxStatus    GetVideoParam();
 	mfxStatus    InitBitstream();
 	mfxStatus    LoadNV12(mfxFrameSurface1 *pSurface, uint8_t *pDataY,
 			uint8_t *pDataUV, uint32_t strideY, uint32_t strideUV);
 	mfxStatus    Drain();
-	int          GetFreeTaskIndex(Task* pTaskPool, mfxU16 nPoolSize);
+	int          GetFreeTaskIndex(Task *pTaskPool, mfxU16 nPoolSize);
 
 private:
 	mfxIMPL                        m_impl;
@@ -91,9 +91,9 @@ private:
 	mfxFrameAllocator              m_mfxAllocator;
 	mfxVideoParam                  m_mfxEncParams;
 	mfxFrameAllocResponse          m_mfxResponse;
-	mfxFrameSurface1**             m_pmfxSurfaces;
+	mfxFrameSurface1             **m_pmfxSurfaces;
 	mfxU16                         m_nSurfNum;
-	MFXVideoENCODE*                m_pmfxENC;
+	MFXVideoENCODE                *m_pmfxENC;
 	mfxU8                          m_SPSBuffer[100];
 	mfxU8                          m_PPSBuffer[100];
 	mfxU16                         m_nSPSBufferSize;
@@ -102,7 +102,7 @@ private:
 	mfxExtCodingOption2            m_co2;
 	mfxExtCodingOption             m_co;
 	mfxU16                         m_nTaskPool;
-	Task*                          m_pTaskPool;
+	Task                          *m_pTaskPool;
 	int                            m_nTaskIdx;
 	int                            m_nFirstSyncTask;
 	mfxBitstream                   m_outBitstream;
@@ -110,4 +110,3 @@ private:
 	bool                           m_bUseD3D11;
 	bool                           m_bD3D9HACK;
 };
-

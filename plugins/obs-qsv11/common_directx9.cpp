@@ -24,7 +24,7 @@ HANDLE m_hDecoder;
 HANDLE m_hProcessor;
 DWORD m_surfaceUsage;
 
-CD3D9Device* g_hwdevice;
+CD3D9Device *g_hwdevice;
 
 const struct {
 	mfxIMPL impl;       // actual implementation
@@ -38,35 +38,35 @@ const struct {
 
 struct mfxAllocatorParams
 {
-    virtual ~mfxAllocatorParams(){};
+	virtual ~mfxAllocatorParams(){};
 };
 
 struct D3DAllocatorParams : mfxAllocatorParams
 {
-    IDirect3DDeviceManager9 *pManager;
-    DWORD surfaceUsage;
+	IDirect3DDeviceManager9 *pManager;
+	DWORD surfaceUsage;
 
-    D3DAllocatorParams()
-        : pManager()
-        , surfaceUsage()
-    {
-    }
+	D3DAllocatorParams()
+		: pManager()
+		, surfaceUsage()
+	{
+	}
 };
 
 mfxStatus DX9_Alloc_Init(D3DAllocatorParams *pParams)
 {
-    D3DAllocatorParams *pd3dParams = 0;
-    pd3dParams = dynamic_cast<D3DAllocatorParams *>(pParams);
-    if (!pd3dParams)
-        return MFX_ERR_NOT_INITIALIZED;
+	D3DAllocatorParams *pd3dParams = 0;
+	pd3dParams = dynamic_cast<D3DAllocatorParams *>(pParams);
+	if (!pd3dParams)
+		return MFX_ERR_NOT_INITIALIZED;
 
-    m_manager = pd3dParams->pManager;
-    m_surfaceUsage = pd3dParams->surfaceUsage;
+	m_manager = pd3dParams->pManager;
+	m_surfaceUsage = pd3dParams->surfaceUsage;
 
-    return MFX_ERR_NONE;
+	return MFX_ERR_NONE;
 }
 
-mfxStatus DX9_CreateHWDevice(mfxSession session, mfxHDL* deviceHandle, HWND, bool)
+mfxStatus DX9_CreateHWDevice(mfxSession session, mfxHDL *deviceHandle, HWND, bool)
 {
 	mfxStatus result;
 
@@ -76,9 +76,10 @@ mfxStatus DX9_CreateHWDevice(mfxSession session, mfxHDL* deviceHandle, HWND, boo
 
 	MFXQueryIMPL(session, &impl);
 
-	mfxIMPL baseImpl = MFX_IMPL_BASETYPE(impl); // Extract Media SDK base implementation type
+	// Extract Media SDK base implementation type
+	mfxIMPL baseImpl = MFX_IMPL_BASETYPE(impl);
 
-						    // get corresponding adapter number
+	// get corresponding adapter number
 	for (mfxU8 i = 0; i < sizeof(implTypes) / sizeof(implTypes[0]); i++) {
 		if (implTypes[i].impl == baseImpl) {
 			adapterNum = implTypes[i].adapterID;
@@ -96,9 +97,9 @@ mfxStatus DX9_CreateHWDevice(mfxSession session, mfxHDL* deviceHandle, HWND, boo
 
 	g_hwdevice->GetHandle(MFX_HANDLE_D3D9_DEVICE_MANAGER, deviceHandle);
 
-
 	D3DAllocatorParams dx9_allocParam;
-	dx9_allocParam.pManager = reinterpret_cast<IDirect3DDeviceManager9 *>(*deviceHandle);
+	dx9_allocParam.pManager =
+			reinterpret_cast<IDirect3DDeviceManager9 *>(*deviceHandle);
 	DX9_Alloc_Init(&dx9_allocParam);
 	return MFX_ERR_NONE;
 }
@@ -115,18 +116,15 @@ void DX9_CleanupHWDevice()
 		m_manager = NULL;
 		m_hDecoder = NULL;
 	}
-
 	if (m_manager && m_hProcessor) {
 		m_manager->CloseDeviceHandle(m_hProcessor);
 		m_manager = NULL;
 		m_hProcessor = NULL;
 	}
-
 	if (m_decoderService) {
 		// delete m_decoderService;
 		m_decoderService = NULL;
 	}
-
 	if (m_processorService) {
 		// delete m_processorService;
 		m_processorService = NULL;
@@ -135,8 +133,7 @@ void DX9_CleanupHWDevice()
 
 D3DFORMAT ConvertMfxFourccToD3dFormat(mfxU32 fourcc)
 {
-	switch (fourcc)
-	{
+	switch (fourcc) {
 	case MFX_FOURCC_NV12:
 		return D3DFMT_NV12;
 	case MFX_FOURCC_YV12:
@@ -158,7 +155,7 @@ D3DFORMAT ConvertMfxFourccToD3dFormat(mfxU32 fourcc)
 	}
 }
 
-mfxStatus dx9_simple_lock(mfxHDL pthis, mfxMemId mid, mfxFrameData* ptr)
+mfxStatus dx9_simple_lock(mfxHDL pthis, mfxMemId mid, mfxFrameData *ptr)
 {
 	pthis; // To suppress warning for this unused parameter
 
@@ -166,7 +163,8 @@ mfxStatus dx9_simple_lock(mfxHDL pthis, mfxMemId mid, mfxFrameData* ptr)
 		return MFX_ERR_NULL_PTR;
 
 	mfxHDLPair *dxmid = (mfxHDLPair*)mid;
-	IDirect3DSurface9 *pSurface = static_cast<IDirect3DSurface9*>(dxmid->first);
+	IDirect3DSurface9 *pSurface =
+			static_cast<IDirect3DSurface9*>(dxmid->first);
 	if (pSurface == 0)
 		return MFX_ERR_INVALID_HANDLE;
 
@@ -191,8 +189,7 @@ mfxStatus dx9_simple_lock(mfxHDL pthis, mfxMemId mid, mfxFrameData* ptr)
 	if (FAILED(hr))
 		return MFX_ERR_LOCK_MEMORY;
 
-	switch ((DWORD)desc.Format)
-	{
+	switch ((DWORD)desc.Format) {
 	case D3DFMT_NV12:
 		ptr->Pitch = (mfxU16)locked.Pitch;
 		ptr->Y = (mfxU8 *)locked.pBits;
@@ -243,20 +240,20 @@ mfxStatus dx9_simple_lock(mfxHDL pthis, mfxMemId mid, mfxFrameData* ptr)
 	return MFX_ERR_NONE;
 }
 
-mfxStatus dx9_simple_unlock(mfxHDL, mfxMemId mid, mfxFrameData* ptr)
+mfxStatus dx9_simple_unlock(mfxHDL, mfxMemId mid, mfxFrameData *ptr)
 {
 	if (!mid)
 		return MFX_ERR_NULL_PTR;
 
 	mfxHDLPair *dxmid = (mfxHDLPair*)mid;
-	IDirect3DSurface9 *pSurface = static_cast<IDirect3DSurface9*>(dxmid->first);
+	IDirect3DSurface9 *pSurface =
+			static_cast<IDirect3DSurface9*>(dxmid->first);
 	if (pSurface == 0)
 		return MFX_ERR_INVALID_HANDLE;
 
 	pSurface->UnlockRect();
 
-	if (NULL != ptr)
-	{
+	if (NULL != ptr) {
 		ptr->Pitch = 0;
 		ptr->Y = 0;
 		ptr->U = 0;
@@ -266,7 +263,7 @@ mfxStatus dx9_simple_unlock(mfxHDL, mfxMemId mid, mfxFrameData* ptr)
 	return MFX_ERR_NONE;
 }
 
-mfxStatus dx9_simple_gethdl(mfxHDL, mfxMemId mid, mfxHDL* handle)
+mfxStatus dx9_simple_gethdl(mfxHDL, mfxMemId mid, mfxHDL *handle)
 {
 	if (!mid || !handle)
 		return MFX_ERR_NULL_PTR;
@@ -276,7 +273,7 @@ mfxStatus dx9_simple_gethdl(mfxHDL, mfxMemId mid, mfxHDL* handle)
 	return MFX_ERR_NONE;
 }
 
-mfxStatus _dx9_simple_free(mfxFrameAllocResponse* response)
+mfxStatus _dx9_simple_free(mfxFrameAllocResponse *response)
 {
 	if (!response)
 		return MFX_ERR_NULL_PTR;
@@ -286,7 +283,8 @@ mfxStatus _dx9_simple_free(mfxFrameAllocResponse* response)
 	if (response->mids) {
 		for (mfxU32 i = 0; i < response->NumFrameActual; i++) {
 			if (response->mids[i]) {
-				mfxHDLPair *dxMids = (mfxHDLPair*)response->mids[i];
+				mfxHDLPair *dxMids =
+						(mfxHDLPair*)response->mids[i];
 				static_cast<IDirect3DSurface9*>(dxMids->first)->Release();
 			}
 		}
@@ -297,28 +295,29 @@ mfxStatus _dx9_simple_free(mfxFrameAllocResponse* response)
 	return sts;
 }
 
-mfxStatus dx9_simple_free(mfxHDL pthis, mfxFrameAllocResponse* response)
+mfxStatus dx9_simple_free(mfxHDL pthis, mfxFrameAllocResponse *response)
 {
-    if (NULL == response)
-        return MFX_ERR_NULL_PTR;
+	if (NULL == response)
+		return MFX_ERR_NULL_PTR;
 
-    if (dx9_allocResponses.find(response->mids) == dx9_allocResponses.end()) {
-        // Decode free response handling
-        if (--dx9_allocDecodeRefCount[pthis] == 0) {
-            _dx9_simple_free(response);
-            dx9_allocDecodeResponses.erase(pthis);
-            dx9_allocDecodeRefCount.erase(pthis);
-        }
-    } else {
-        // Encode and VPP free response handling
-        dx9_allocResponses.erase(response->mids);
-        _dx9_simple_free(response);
-    }
+	if (dx9_allocResponses.find(response->mids) == dx9_allocResponses.end()) {
+		// Decode free response handling
+		if (--dx9_allocDecodeRefCount[pthis] == 0) {
+			_dx9_simple_free(response);
+			dx9_allocDecodeResponses.erase(pthis);
+			dx9_allocDecodeRefCount.erase(pthis);
+		}
+	} else {
+		// Encode and VPP free response handling
+		dx9_allocResponses.erase(response->mids);
+		_dx9_simple_free(response);
+	}
 
-    return MFX_ERR_NONE;
+	return MFX_ERR_NONE;
 }
 
-mfxStatus _dx9_simple_alloc(mfxFrameAllocRequest* request, mfxFrameAllocResponse* response)
+mfxStatus _dx9_simple_alloc(mfxFrameAllocRequest *request,
+	mfxFrameAllocResponse *response)
 {
 	HRESULT hr;
 
@@ -331,20 +330,17 @@ mfxStatus _dx9_simple_alloc(mfxFrameAllocRequest* request, mfxFrameAllocResponse
 	if (format == D3DFMT_UNKNOWN)
 		return MFX_ERR_UNSUPPORTED;
 
-	DWORD   target;
+	DWORD target;
 
-	if (MFX_MEMTYPE_DXVA2_DECODER_TARGET & request->Type)
-	{
+	if (MFX_MEMTYPE_DXVA2_DECODER_TARGET & request->Type) {
 		target = DXVA2_VideoDecoderRenderTarget;
-	}
-	else if (MFX_MEMTYPE_DXVA2_PROCESSOR_TARGET & request->Type)
-	{
+	} else if (MFX_MEMTYPE_DXVA2_PROCESSOR_TARGET & request->Type) {
 		target = DXVA2_VideoProcessorRenderTarget;
-	}
-	else
+	} else {
 		return MFX_ERR_UNSUPPORTED;
+	}
 
-	IDirectXVideoAccelerationService* videoService = NULL;
+	IDirectXVideoAccelerationService *videoService = NULL;
 
 	if (target == DXVA2_VideoProcessorRenderTarget) {
 		if (!m_hProcessor) {
@@ -352,29 +348,34 @@ mfxStatus _dx9_simple_alloc(mfxFrameAllocRequest* request, mfxFrameAllocResponse
 			if (FAILED(hr))
 				return MFX_ERR_MEMORY_ALLOC;
 
-			hr = m_manager->GetVideoService(m_hProcessor, IID_IDirectXVideoProcessorService, (void**)&m_processorService);
+			hr = m_manager->GetVideoService(m_hProcessor,
+					IID_IDirectXVideoProcessorService,
+					(void**)&m_processorService);
 			if (FAILED(hr))
 				return MFX_ERR_MEMORY_ALLOC;
 		}
 		videoService = m_processorService;
-	}
-	else {
-		if (!m_hDecoder)
-		{
+	} else {
+		if (!m_hDecoder) {
 			hr = m_manager->OpenDeviceHandle(&m_hDecoder);
 			if (FAILED(hr))
 				return MFX_ERR_MEMORY_ALLOC;
 
-			hr = m_manager->GetVideoService(m_hDecoder, IID_IDirectXVideoDecoderService, (void**)&m_decoderService);
+			hr = m_manager->GetVideoService(m_hDecoder,
+					IID_IDirectXVideoDecoderService,
+					(void**)&m_decoderService);
 			if (FAILED(hr))
 				return MFX_ERR_MEMORY_ALLOC;
 		}
 		videoService = m_decoderService;
 	}
 
-	mfxHDLPair *dxMids = NULL, **dxMidPtrs = NULL;
-	dxMids = (mfxHDLPair*)calloc(request->NumFrameSuggested, sizeof(mfxHDLPair));
-	dxMidPtrs = (mfxHDLPair**)calloc(request->NumFrameSuggested, sizeof(mfxHDLPair*));
+	mfxHDLPair *dxMids = NULL;
+	mfxHDLPair **dxMidPtrs = NULL;
+	dxMids = (mfxHDLPair*)calloc(request->NumFrameSuggested,
+			sizeof(mfxHDLPair));
+	dxMidPtrs = (mfxHDLPair**)calloc(request->NumFrameSuggested,
+			sizeof(mfxHDLPair*));
 
 	if (!dxMids || !dxMidPtrs) {
 		MSDK_SAFE_FREE(dxMids);
@@ -387,8 +388,11 @@ mfxStatus _dx9_simple_alloc(mfxFrameAllocRequest* request, mfxFrameAllocResponse
 
 	if (request->Type & MFX_MEMTYPE_EXTERNAL_FRAME) {
 		for (int i = 0; i < request->NumFrameSuggested; i++) {
-			hr = videoService->CreateSurface(request->Info.Width, request->Info.Height, 0, format,
-				D3DPOOL_DEFAULT, m_surfaceUsage, target, (IDirect3DSurface9**)&dxMids[i].first, &dxMids[i].second);
+			hr = videoService->CreateSurface(request->Info.Width,
+					request->Info.Height, 0, format,
+					D3DPOOL_DEFAULT, m_surfaceUsage, target,
+					(IDirect3DSurface9**)&dxMids[i].first,
+					&dxMids[i].second);
 			if (FAILED(hr)) {
 				_dx9_simple_free(response);
 				MSDK_SAFE_FREE(dxMids);
@@ -396,22 +400,21 @@ mfxStatus _dx9_simple_alloc(mfxFrameAllocRequest* request, mfxFrameAllocResponse
 			}
 			dxMidPtrs[i] = &dxMids[i];
 		}
-	}
-	else {
+	} else {
 		safe_array<IDirect3DSurface9*> dxSrf(new IDirect3DSurface9*[request->NumFrameSuggested]);
-		if (!dxSrf.get())
-		{
+		if (!dxSrf.get()) {
 			MSDK_SAFE_FREE(dxMids);
 			return MFX_ERR_MEMORY_ALLOC;
 		}
-		hr = videoService->CreateSurface(request->Info.Width, request->Info.Height, request->NumFrameSuggested - 1, format,
-			D3DPOOL_DEFAULT, m_surfaceUsage, target, dxSrf.get(), NULL);
-		if (FAILED(hr))
-		{
+		hr = videoService->CreateSurface(request->Info.Width,
+				request->Info.Height,
+				request->NumFrameSuggested - 1, format,
+				D3DPOOL_DEFAULT, m_surfaceUsage, target,
+				dxSrf.get(), NULL);
+		if (FAILED(hr)) {
 			MSDK_SAFE_FREE(dxMids);
 			return MFX_ERR_MEMORY_ALLOC;
 		}
-
 
 		for (int i = 0; i < request->NumFrameSuggested; i++) {
 			dxMids[i].first = dxSrf.get()[i];
@@ -421,37 +424,43 @@ mfxStatus _dx9_simple_alloc(mfxFrameAllocRequest* request, mfxFrameAllocResponse
 	return MFX_ERR_NONE;
 }
 
-mfxStatus dx9_simple_alloc(mfxHDL pthis, mfxFrameAllocRequest* request, mfxFrameAllocResponse* response)
+mfxStatus dx9_simple_alloc(mfxHDL pthis, mfxFrameAllocRequest *request,
+	mfxFrameAllocResponse *response)
 {
-    mfxStatus sts = MFX_ERR_NONE;
+	mfxStatus sts = MFX_ERR_NONE;
 
-    if (request->Type & MFX_MEMTYPE_SYSTEM_MEMORY)
-        return MFX_ERR_UNSUPPORTED;
+	if (request->Type & MFX_MEMTYPE_SYSTEM_MEMORY)
+		return MFX_ERR_UNSUPPORTED;
 
-    if (dx9_allocDecodeResponses.find(pthis) != dx9_allocDecodeResponses.end() &&
-        MFX_MEMTYPE_EXTERNAL_FRAME & request->Type &&
-        MFX_MEMTYPE_FROM_DECODE & request->Type) {
-        // Memory for this request was already allocated during manual allocation stage. Return saved response
-        //   When decode acceleration device (DXVA) is created it requires a list of d3d surfaces to be passed.
-        //   Therefore Media SDK will ask for the surface info/mids again at Init() stage, thus requiring us to return the saved response
-        //   (No such restriction applies to Encode or VPP)
-        *response = dx9_allocDecodeResponses[pthis];
-        dx9_allocDecodeRefCount[pthis]++;
-    } else {
-        sts = _dx9_simple_alloc(request, response);
+	if (dx9_allocDecodeResponses.find(pthis) != dx9_allocDecodeResponses.end() &&
+		MFX_MEMTYPE_EXTERNAL_FRAME & request->Type &&
+		MFX_MEMTYPE_FROM_DECODE & request->Type) {
+		/*
+		 * Memory for this request was already allocated during manual
+		 * allocation stage. Return saved response.
+		 *   When decode acceleration device (DXVA) is created it
+		 *   requires a list of d3d surfaces to be passed. Therefore
+		 *   Media SDK will ask for the surface info/mids again at
+		 *   Init() stage, thus requiring us to return the saved
+		 *   response. (No such restriction applies to Encode or VPP)
+		 */
+		*response = dx9_allocDecodeResponses[pthis];
+		dx9_allocDecodeRefCount[pthis]++;
+	} else {
+		sts = _dx9_simple_alloc(request, response);
 
-        if (MFX_ERR_NONE == sts) {
-            if ( MFX_MEMTYPE_EXTERNAL_FRAME & request->Type &&
-                 MFX_MEMTYPE_FROM_DECODE & request->Type) {
-                // Decode alloc response handling
-                dx9_allocDecodeResponses[pthis] = *response;
-                dx9_allocDecodeRefCount[pthis]++;
-            } else {
-                // Encode and VPP alloc response handling
-                dx9_allocResponses[response->mids] = pthis;
-            }
-        }
-    }
+		if (MFX_ERR_NONE == sts) {
+			if (MFX_MEMTYPE_EXTERNAL_FRAME & request->Type &&
+				MFX_MEMTYPE_FROM_DECODE & request->Type) {
+				// Decode alloc response handling
+				dx9_allocDecodeResponses[pthis] = *response;
+				dx9_allocDecodeRefCount[pthis]++;
+			} else {
+				// Encode and VPP alloc response handling
+				dx9_allocResponses[response->mids] = pthis;
+			}
+		}
+	}
 
-    return sts;
+	return sts;
 }
