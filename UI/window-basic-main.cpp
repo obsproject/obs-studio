@@ -2219,14 +2219,6 @@ void OBSBasic::CheckForUpdates(bool manualUpdate)
 #endif
 }
 
-#ifdef __APPLE__
-#define VERSION_ENTRY "mac"
-#elif _WIN32
-#define VERSION_ENTRY "windows"
-#else
-#define VERSION_ENTRY "other"
-#endif
-
 void OBSBasic::updateCheckFinished()
 {
 	ui->actionCheckForUpdates->setEnabled(true);
