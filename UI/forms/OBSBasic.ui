@@ -1187,7 +1187,7 @@
   <action name="actionEditTransform">
    <property name="text">
     <string>Basic.MainMenu.Edit.Transform.EditTransform</string>
-  </property>
+   </property>
    <property name="shortcut">
     <string>Ctrl+E</string>
    </property> 
