@@ -166,7 +166,7 @@ static const uint8_t mask_cmp[][MAX_CMP_SIZE] = {
 		0x68, 0x00, 0x00, 0x00, 0x00
 	},
 
-	/* Windows 10 Creator's Edition+
+	/* Windows 10 Creator's Update+
 	* 8B 86 F8 2B 00 00      mov     eax, [esi+2BF8h]
 	* 83 B8 00 4D 00 00 00   cmp     dword ptr [eax+4D00h], 0
 	* 75 0F                  jnz     short loc_100D793C
@@ -178,6 +178,12 @@ static const uint8_t mask_cmp[][MAX_CMP_SIZE] = {
 		0x75, 0x00,
 		0x68, 0x00, 0x00, 0x00, 0x00
 	}
+};
+
+// Offset into the code for the numbers we're interested in
+static const uint32_t code_offsets[][2] = {
+	{2, 8},
+	{2, 8},
 };
 #endif
 
