@@ -29,7 +29,7 @@ static bool create_pixel_pack_buffer(struct gs_stage_surface *surf)
 		return false;
 
 	size  = surf->width * surf->bytes_per_pixel;
-	size  = (size+3) & 0xFFFFFFFC; /* align width to 4-byte boundry */
+	size  = (size+3) & 0xFFFFFFFC; /* align width to 4-byte boundary */
 	size *= surf->height;
 
 	glBufferData(GL_PIXEL_PACK_BUFFER, size, 0, GL_DYNAMIC_READ);
@@ -109,7 +109,7 @@ static bool can_stage(struct gs_stage_surface *dst, struct gs_texture_2d *src)
 #ifdef __APPLE__
 
 /* Apparently for mac, PBOs won't do an asynchronous transfer unless you use
- * FBOs aong with glReadPixels, which is really dumb. */
+ * FBOs along with glReadPixels, which is really dumb. */
 void device_stage_texture(gs_device_t *device, gs_stagesurf_t *dst,
 		gs_texture_t *src)
 {

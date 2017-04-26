@@ -1013,7 +1013,7 @@ static inline void send_interleaved(struct obs_output *output)
 	struct encoder_packet out = output->interleaved_packets.array[0];
 
 	/* do not send an interleaved packet if there's no packet of the
-	 * opposing type of a higher timstamp in the interleave buffer.
+	 * opposing type of a higher timestamp in the interleave buffer.
 	 * this ensures that the timestamps are monotonic */
 	if (!has_higher_opposing_ts(output, &out))
 		return;
@@ -2069,7 +2069,7 @@ void obs_output_output_caption_text1(obs_output_t *output, const char *text)
 	if (!active(output))
 		return;
 
-	// split text into  32 charcter strings
+	// split text into 32 character strings
 	int size = (int)strlen(text);
 	int r;
 	size_t char_count;

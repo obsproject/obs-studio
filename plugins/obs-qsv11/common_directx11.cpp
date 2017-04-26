@@ -351,7 +351,7 @@ mfxStatus simple_lock(mfxHDL pthis, mfxMemId mid, mfxFrameData* ptr)
     } else {
         pSurface->GetDesc(&desc);
 
-        // copy data only in case of user wants o read from stored surface
+        // copy data only in case of user wants to read from stored surface
         if (memId->rw & WILL_READ)
             g_pD3D11Ctx->CopySubresourceRegion(pStage, 0, 0, 0, 0, pSurface, 0, NULL);
 

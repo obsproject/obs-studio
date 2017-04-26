@@ -89,7 +89,7 @@ static inline void calldata_clear(struct calldata *data)
 }
 
 /* ------------------------------------------------------------------------- */
-/* NOTE: 'get' functions return true only if paramter exists, and is the
+/* NOTE: 'get' functions return true only if parameter exists, and is the
  *       same type.  They return false otherwise. */
 
 static inline bool calldata_get_int(const calldata_t *data, const char *name,

@@ -49,7 +49,7 @@ struct obs_scene_item {
 	uint32_t              align;
 
 	/* last width/height of the source, this is used to check whether
-	 * ths transform needs updating */
+	 * the transform needs updating */
 	uint32_t              last_width;
 	uint32_t              last_height;
 

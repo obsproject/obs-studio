@@ -49,13 +49,13 @@ enum {
 	 * Use if a problem occurs that doesn't affect the program and is
 	 * recoverable.
 	 *
-	 * Use in places where where failure isn't entirely unexpected, and can
+	 * Use in places where failure isn't entirely unexpected, and can
 	 * be handled safely.
 	 */
 	LOG_WARNING = 200,
 
 	/**
-	 * Informative essage to be displayed in the log.
+	 * Informative message to be displayed in the log.
 	 */
 	LOG_INFO    = 300,
 

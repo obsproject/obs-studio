@@ -22,7 +22,7 @@ Copyright(c) 2011-2014 Intel Corporation. All Rights Reserved.
 class IGFXS3DControl;
 
 /** Direct3D 9 device implementation.
-@note Can be initilized for only 1 or two 2 views. Handle to
+@note Can be initialized for only 1 or two 2 views. Handle to
 MFX_HANDLE_GFXS3DCONTROL must be set prior if initializing for 2 views.
 
 @note Device always set D3DPRESENT_PARAMETERS::Windowed to TRUE.

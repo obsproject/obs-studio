@@ -189,7 +189,7 @@ static inline void discard_audio(struct obs_core_audio *audio,
 		if (start_point == AUDIO_OUTPUT_FRAMES) {
 #if DEBUG_AUDIO == 1
 			if (is_audio_source)
-				blog(LOG_DEBUG, "can't dicard, start point is "
+				blog(LOG_DEBUG, "can't discard, start point is "
 						"at audio frame count");
 #endif
 			return;

@@ -184,7 +184,7 @@ struct obs_encoder_info {
 
 	/**
 	 * Updates the settings for this encoder (usually used for things like
-	 * changeing birate while active)
+	 * changing bitrate while active)
 	 *
 	 * @param  data      Data associated with this encoder context
 	 * @param  settings  New settings for this encoder

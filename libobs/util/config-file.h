@@ -88,7 +88,7 @@ EXPORT bool config_remove_value(config_t *config, const char *section,
  * These do *not* actually set any values, they only set what values will be
  * returned for config_get_* if the specified variable does not exist.
  *
- * You can initialize the defaults programmitically using config_set_default_*
+ * You can initialize the defaults programmatically using config_set_default_*
  * functions (recommended for most cases), or you can initialize it via a file
  * with config_open_defaults.
  */
