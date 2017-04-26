@@ -317,3 +317,22 @@ void obs_frontend_pop_ui_translation(void)
 	if (callbacks_valid())
 		c->obs_frontend_pop_ui_translation();
 }
+
+void obs_frontend_set_streaming_service(obs_service_t *service)
+{
+	if (callbacks_valid())
+		c->obs_frontend_set_streaming_service(service);
+}
+
+obs_service_t* obs_frontend_get_streaming_service(void)
+{
+	return !!callbacks_valid()
+		? c->obs_frontend_get_streaming_service()
+		: nullptr;
+}
+
+void obs_frontend_save_streaming_service(void)
+{
+	if (callbacks_valid())
+		c->obs_frontend_save_streaming_service();
+}
