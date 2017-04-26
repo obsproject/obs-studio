@@ -354,6 +354,21 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 		App()->PopUITranslation();
 	}
 
+	void obs_frontend_set_streaming_service(obs_service_t *service) override
+	{
+		main->SetService(service);
+	}
+
+	obs_service_t *obs_frontend_get_streaming_service(void) override
+	{
+		return main->GetService();
+	}
+
+	void obs_frontend_save_streaming_service(void) override
+	{
+		main->SaveService();
+	}
+
 	void on_load(obs_data_t *settings) override
 	{
 		for (auto cb : saveCallbacks)

@@ -70,6 +70,11 @@ struct obs_frontend_callbacks {
 			obs_frontend_translate_ui_cb translate)=0;
 	virtual void obs_frontend_pop_ui_translation(void)=0;
 
+	virtual void obs_frontend_set_streaming_service(
+			obs_service_t *service)=0;
+	virtual obs_service_t *obs_frontend_get_streaming_service(void)=0;
+	virtual void obs_frontend_save_streaming_service()=0;
+
 	virtual void on_load(obs_data_t *settings)=0;
 	virtual void on_save(obs_data_t *settings)=0;
 	virtual void on_event(enum obs_frontend_event event)=0;
