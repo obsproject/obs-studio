@@ -314,6 +314,8 @@ private:
 	int   programCX = 0, programCY = 0;
 	float programScale = 0.0f;
 
+	bool enableOutputs = true;
+
 	inline bool IsPreviewProgramMode() const
 	{
 		return os_atomic_load_bool(&previewProgramMode);
@@ -492,6 +494,11 @@ public:
 
 	void SaveService();
 	bool LoadService();
+
+	inline void EnableOutputs(bool enable)
+	{
+		enableOutputs = enable;
+	}
 
 	void ReorderSceneItem(obs_sceneitem_t *item, size_t idx);
 
