@@ -35,6 +35,7 @@ extern profiler_name_store_t *obs_get_profiler_name_store(void);
 
 struct cached_frame_info {
 	struct video_data frame;
+	int skipped;
 	int count;
 };
 
@@ -115,6 +116,7 @@ static inline bool video_output_cur_frame(struct video_output *video)
 {
 	struct cached_frame_info *frame_info;
 	bool complete;
+	bool skipped;
 
 	/* -------------------------------- */
 
@@ -144,6 +146,7 @@ static inline bool video_output_cur_frame(struct video_output *video)
 
 	frame_info->frame.timestamp += video->frame_time;
 	complete = --frame_info->count == 0;
+	skipped = frame_info->skipped > 0;
 
 	if (complete) {
 		if (++video->first_added == video->info.cache_size)
@@ -151,7 +154,8 @@ static inline bool video_output_cur_frame(struct video_output *video)
 
 		if (++video->available_frames == video->info.cache_size)
 			video->last_added = video->first_added;
-	} else {
+	} else if (skipped) {
+		--frame_info->skipped;
 		++video->skipped_frames;
 	}
 
@@ -426,6 +430,7 @@ bool video_output_lock_frame(video_t *video, struct video_frame *frame,
 
 	if (video->available_frames == 0) {
 		video->cache[video->last_added].count += count;
+		video->cache[video->last_added].skipped += count;
 		locked = false;
 
 	} else {
@@ -437,6 +442,7 @@ bool video_output_lock_frame(video_t *video, struct video_frame *frame,
 		cfi = &video->cache[video->last_added];
 		cfi->frame.timestamp = timestamp;
 		cfi->count = count;
+		cfi->skipped = 0;
 
 		memcpy(frame, &cfi->frame, sizeof(*frame));
 
