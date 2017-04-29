@@ -913,6 +913,17 @@ bool OBSBasic::InitBasicConfigDefaults()
 	uint32_t cx = primaryScreen->size().width();
 	uint32_t cy = primaryScreen->size().height();
 
+	bool oldResolutionDefaults = config_get_bool(App()->GlobalConfig(),
+			"General", "Pre19Defaults");
+
+	/* use 1920x1080 for new default base res if main monitor is above
+	 * 1920x1080, but don't apply for people from older builds -- only to
+	 * new users */
+	if (!oldResolutionDefaults && (cx * cy) > (1920 * 1080)) {
+		cx = 1920;
+		cy = 1080;
+	}
+
 	/* ----------------------------------------------------- */
 	/* move over mixer values in advanced if older config */
 	if (config_has_user_value(basicConfig, "AdvOut", "RecTrackIndex") &&

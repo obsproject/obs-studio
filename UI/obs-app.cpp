@@ -583,6 +583,7 @@ static string GetSceneCollectionFileFromName(const char *name)
 bool OBSApp::InitGlobalConfig()
 {
 	char path[512];
+	bool changed = false;
 
 	int len = GetConfigPath(path, sizeof(path),
 			"obs-studio/global.ini");
@@ -606,6 +607,7 @@ bool OBSApp::InitGlobalConfig()
 			config_set_string(globalConfig,
 					"Basic", "SceneCollectionFile",
 					path.c_str());
+			changed = true;
 		}
 	}
 
@@ -617,8 +619,23 @@ bool OBSApp::InitGlobalConfig()
 					opt_starting_profile.c_str());
 			config_set_string(globalConfig, "Basic", "ProfileDir",
 					path.c_str());
+			changed = true;
 		}
 	}
+
+	if (!config_has_user_value(globalConfig, "General", "OldDefaults")) {
+		uint32_t lastVersion = config_get_int(globalConfig, "General",
+				"LastVersion");
+		bool useOldDefaults = lastVersion &&
+		    lastVersion < MAKE_SEMANTIC_VERSION(19, 0, 0);
+
+		config_set_bool(globalConfig, "General", "Pre19Defaults",
+				useOldDefaults);
+		changed = true;
+	}
+
+	if (changed)
+		config_save_safe(globalConfig, "tmp", nullptr);
 
 	return InitGlobalConfigDefaults();
 }
