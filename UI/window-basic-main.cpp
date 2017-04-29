@@ -996,6 +996,14 @@ bool OBSBasic::InitBasicConfigDefaults()
 	config_set_default_uint  (basicConfig, "Video", "BaseCX",   cx);
 	config_set_default_uint  (basicConfig, "Video", "BaseCY",   cy);
 
+	/* don't allow BaseCX/BaseCY to be susceptible to defaults changing */
+	if (!config_has_user_value(basicConfig, "Video", "BaseCX") ||
+	    !config_has_user_value(basicConfig, "Video", "BaseCY")) {
+		config_set_uint(basicConfig, "Video", "BaseCX", cx);
+		config_set_uint(basicConfig, "Video", "BaseCY", cy);
+		config_save_safe(basicConfig, "tmp", nullptr);
+	}
+
 	config_set_default_string(basicConfig, "Output", "FilenameFormatting",
 			"%CCYY-%MM-%DD %hh-%mm-%ss");
 
@@ -1027,6 +1035,15 @@ bool OBSBasic::InitBasicConfigDefaults()
 
 	config_set_default_uint  (basicConfig, "Video", "OutputCX", scale_cx);
 	config_set_default_uint  (basicConfig, "Video", "OutputCY", scale_cy);
+
+	/* don't allow OutputCX/OutputCY to be susceptible to defaults
+	 * changing */
+	if (!config_has_user_value(basicConfig, "Video", "OutputCX") ||
+	    !config_has_user_value(basicConfig, "Video", "OutputCY")) {
+		config_set_uint(basicConfig, "Video", "OutputCX", scale_cx);
+		config_set_uint(basicConfig, "Video", "OutputCY", scale_cy);
+		config_save_safe(basicConfig, "tmp", nullptr);
+	}
 
 	config_set_default_uint  (basicConfig, "Video", "FPSType", 0);
 	config_set_default_string(basicConfig, "Video", "FPSCommon", "30");
