@@ -1217,11 +1217,20 @@ void OBSBasicSettings::LoadResolutionLists()
 
 	ui->baseResolution->clear();
 
+	auto addRes = [this] (int cx, int cy)
+	{
+		QString res = ResString(cx, cy).c_str();
+		if (ui->baseResolution->findText(res) == -1)
+			ui->baseResolution->addItem(res);
+	};
+
 	for (QScreen* screen: QGuiApplication::screens()) {
 		QSize as = screen->size();
-		string res = ResString(as.width(), as.height());
-		ui->baseResolution->addItem(res.c_str());
+		addRes(as.width(), as.height());
 	}
+
+	addRes(1920, 1080);
+	addRes(1280, 720);
 
 	string outputResString = ResString(out_cx, out_cy);
 
