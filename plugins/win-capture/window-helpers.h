@@ -6,6 +6,7 @@ enum window_priority {
 	WINDOW_PRIORITY_CLASS,
 	WINDOW_PRIORITY_TITLE,
 	WINDOW_PRIORITY_EXE,
+	WINDOW_PRIORITY_EXACT,
 };
 
 enum window_search_mode {

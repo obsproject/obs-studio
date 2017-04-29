@@ -361,8 +361,10 @@ static int window_rating(HWND window,
 		class_val += 3;
 	else if (priority == WINDOW_PRIORITY_TITLE)
 		title_val += 3;
-	else
+	else if (priority == WINDOW_PRIORITY_EXE)
 		exe_val += 3;
+	else
+		exe_val = title_val = class_val = 4;
 
 	if (uwp_window) {
 		if (dstr_cmpi(&cur_title, title) == 0 &&
@@ -405,7 +407,10 @@ HWND find_window(enum window_search_mode mode,
 	while (window) {
 		int rating = window_rating(window, priority, class, title, exe,
 				uwp_window);
-		if (rating > best_rating) {
+		if (priority == WINDOW_PRIORITY_EXACT) {
+			if (rating == 12)
+				return window;
+		} else if (rating > best_rating) {
 			best_rating = rating;
 			best_window = window;
 		}

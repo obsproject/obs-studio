@@ -9,6 +9,7 @@
 #define TEXT_MATCH_TITLE    obs_module_text("WindowCapture.Priority.Title")
 #define TEXT_MATCH_CLASS    obs_module_text("WindowCapture.Priority.Class")
 #define TEXT_MATCH_EXE      obs_module_text("WindowCapture.Priority.Exe")
+#define TEXT_MATCH_EXACT    obs_module_text("WindowCapture.Priority.Exact")
 #define TEXT_CAPTURE_CURSOR obs_module_text("CaptureCursor")
 #define TEXT_COMPATIBILITY  obs_module_text("Compatibility")
 
@@ -35,12 +36,16 @@ static void update_settings(struct window_capture *wc, obs_data_t *s)
 {
 	const char *window     = obs_data_get_string(s, "window");
 	int        priority    = (int)obs_data_get_int(s, "priority");
+	bool       exact_match = obs_data_get_bool(s, "exact_match");
 
 	bfree(wc->title);
 	bfree(wc->class);
 	bfree(wc->executable);
 
 	build_window_strings(window, &wc->class, &wc->title, &wc->executable);
+
+	if (exact_match)
+		priority = WINDOW_PRIORITY_EXACT;
 
 	wc->priority      = (enum window_priority)priority;
 	wc->cursor        = obs_data_get_bool(s, "cursor");
@@ -105,8 +110,17 @@ static uint32_t wc_height(void *data)
 
 static void wc_defaults(obs_data_t *defaults)
 {
+	obs_data_set_default_bool(defaults, "exact_match", false);
 	obs_data_set_default_bool(defaults, "cursor", true);
 	obs_data_set_default_bool(defaults, "compatibility", false);
+}
+
+static bool exact_toggled(obs_properties_t *props, obs_property_t *p,
+	obs_data_t *settings)
+{
+	bool exact = obs_data_get_bool(settings, "exact_match");
+	obs_property_set_visible(obs_properties_get(props, "priority"), !exact);
+	return true;
 }
 
 static obs_properties_t *wc_properties(void *unused)
@@ -119,6 +133,9 @@ static obs_properties_t *wc_properties(void *unused)
 	p = obs_properties_add_list(ppts, "window", TEXT_WINDOW,
 			OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
 	fill_window_list(p, EXCLUDE_MINIMIZED, NULL);
+
+	p = obs_properties_add_bool(ppts, "exact_match", TEXT_MATCH_EXACT);
+	obs_property_set_modified_callback(p, exact_toggled);
 
 	p = obs_properties_add_list(ppts, "priority", TEXT_MATCH_PRIORITY,
 			OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
