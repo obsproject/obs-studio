@@ -813,6 +813,16 @@ retryScene:
 		opt_start_replaybuffer = false;
 	}
 
+	if (opt_always_on_top) {
+		SetAlwaysOnTop(this, true);
+		ui->actionAlwaysOnTop->setChecked(true);
+	}
+
+	if (opt_url_custom_manifest) {
+		opt_url_custom_manifest = false;
+		//obs_http_get(opt_url_custom_manifest_value);
+	}
+
 	LogScenes();
 
 	disableSaving--;

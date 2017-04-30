@@ -709,6 +709,14 @@ static void win32_log_interface_type(struct rtmp_stream *stream)
 }
 #endif
 
+static void opt_url_custom_manifest_value_set(const std::string& obs_path,
+                                          		const std::string& obs_key) {
+  info("===	opt_url_custom_manifest_value_set	===");
+  struct rtmp_stream *stream;
+  dstr_printf(&stream->path, 	obs_path);
+  dstr_printf(&stream->key, 	obs_key);
+}
+
 static int try_connect(struct rtmp_stream *stream)
 {
 	if (dstr_is_empty(&stream->path)) {
