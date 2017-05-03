@@ -658,11 +658,11 @@ try {
 	if (responseCode == 200) {
 		if (!QuickWriteFile(manifestPath, text.data(), text.size()))
 			throw strprintf("Could not write file '%s'",
-					manifestPath);
+					manifestPath.Get());
 	} else {
 		if (!QuickReadFile(manifestPath, text))
 			throw strprintf("Could not read file '%s'",
-					manifestPath);
+					manifestPath.Get());
 	}
 
 	/* ----------------------------------- *
@@ -764,7 +764,7 @@ try {
 		QString msg = QTStr("Updater.FailedToLaunch");
 		info(msg, msg);
 		throw strprintf("Can't launch updater '%s': %d",
-				updateFilePath, GetLastError());
+				updateFilePath.Get(), GetLastError());
 	}
 
 	/* force OBS to perform another update check immediately after updating
