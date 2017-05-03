@@ -347,27 +347,6 @@
             ]
         },
         {
-            "name": "Livecoding.tv",
-            "common": true,
-            "servers": [
-                {
-                    "name": "United States",
-                    "url": "rtmp://usmedia3.livecoding.tv/livecodingtv"
-                },
-                {
-                    "name": "EU",
-                    "url": "rtmp://eumedia1.livecoding.tv/livecodingtv"
-                },
-                {
-                    "name": "Asia Pacific",
-                    "url": "rtmp://apmedia1.livecoding.tv/livecodingtv"
-                }
-            ],
-            "recommended": {
-                "max video bitrate": 2300
-            }
-        },
-        {
             "name": "WatchPeopleCode.com",
             "servers": [
                 {
@@ -515,15 +494,6 @@
             }
         },
         {
-            "name": "connectcast.tv",
-            "servers": [
-                {
-                    "name": "Default",
-                    "url": "rtmp://stream.connectcast.tv/live"
-                }
-            ]
-        },
-        {
             "name": "CyberGame.TV",
             "servers": [
                 {
@@ -533,19 +503,6 @@
                 {
                     "name": "RU Premium",
                     "url": "rtmp://premium.cybergame.tv:1953/premium"
-                }
-            ]
-        },
-        {
-            "name": "CashPlay.tv",
-            "servers": [
-                {
-                    "name": "Primary, UK",
-                    "url": "rtmp://live.cashplay.tv/live"
-                },
-                {
-                    "name": "Low Priority, DE",
-                    "url": "rtmp://de.live.cashplay.tv/live"
                 }
             ]
         },
@@ -611,10 +568,6 @@
                 {
                     "name": "US-West (San Jose, CA)",
                     "url": "rtmp://us-west.restream.io/live"
-                },
-                {
-                    "name": "US-West (Los Angeles, CA)",
-                    "url": "rtmp://us-la.restream.io/live"
                 },
                 {
                     "name": "US-Central (Dallas, TX)",
@@ -698,11 +651,11 @@
             ]
         },
         {
-            "name": "Stre.am",
+            "name": "Stream.live",
             "servers": [
                 {
                     "name": "Default",
-                    "url": "rtmp://media.stre.am:1935/live"
+                    "url": "rtmp://media.stream.live:1935/live"
                 }
             ],
             "recommended": {
