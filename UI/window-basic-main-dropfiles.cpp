@@ -67,13 +67,23 @@ void OBSBasic::AddDropSource(const char *data, DropType image)
 	switch (image) {
 	case DropType_RawText:
 		obs_data_set_string(settings, "text", data);
+#ifdef _WIN32
 		type = "text_gdiplus";
+#else
+		type = "text_ft2_source";
+#endif
 		break;
 	case DropType_Text:
+#ifdef _WIN32
 		obs_data_set_bool(settings, "read_from_file", true);
 		obs_data_set_string(settings, "file", data);
 		name = QUrl::fromLocalFile(QString(data)).fileName();
 		type = "text_gdiplus";
+#else
+		obs_data_set_bool(settings, "from_file", true);
+		obs_data_set_string(settings, "text_file", data);
+		type = "text_ft2_source";
+#endif
 		break;
 	case DropType_Image:
 		obs_data_set_string(settings, "file", data);
