@@ -12,7 +12,7 @@ Copyright(c) 2011-2015 Intel Corporation. All Rights Reserved.
 
 #if defined(WIN32) || defined(WIN64)
 
-//prefast singnature used in combaseapi.h
+//prefast signature used in combaseapi.h
 #ifndef _PREFAST_
     #pragma warning(disable:4068)
 #endif

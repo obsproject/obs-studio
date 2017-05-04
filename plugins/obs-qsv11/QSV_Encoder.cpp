@@ -223,6 +223,6 @@ enum qsv_cpu_platform qsv_get_cpu_platform()
 		return QSV_CPU_PLATFORM_HSW;
 	}
 
-	//assume newer revisions are at least as capable as haswell
+	//assume newer revisions are at least as capable as Haswell
 	return QSV_CPU_PLATFORM_INTEL;
 }

@@ -201,6 +201,13 @@
           </property>
         </widget>
       </item>
+      <item row="6" column="8">
+        <widget class="QDialogButtonBox" name="buttonBox">
+          <property name="standardButtons">
+            <set>QDialogButtonBox::Close</set>
+          </property>
+        </widget>
+      </item>
     </layout>
   </widget>
   <resources />

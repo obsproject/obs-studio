@@ -19,7 +19,7 @@
 /*
  * Text Lookup interface
  *
- *   Used for storing and looking up localized strings.  Stores locazation
+ *   Used for storing and looking up localized strings.  Stores localization
  * strings in a radix/trie tree to efficiently look up associated strings via a
  * unique string identifier name.
  */
@@ -30,7 +30,7 @@
 extern "C" {
 #endif
 
-/* opaque typdef */
+/* opaque typedef */
 struct text_lookup;
 typedef struct text_lookup lookup_t;
 

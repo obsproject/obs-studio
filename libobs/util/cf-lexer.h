@@ -162,7 +162,7 @@ static inline void cf_def_free(struct cf_def *cfd)
  *   + option to exclude features such as #import, variadic macros, and other
  *     features for certain language implementations
  *   + macro parameter string operator #
- *   + macro parameter token concactenation operator ##
+ *   + macro parameter token concatenation operator ##
  *   + predefined macros
  *   + restricted macros
  */

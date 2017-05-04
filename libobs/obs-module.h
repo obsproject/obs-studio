@@ -90,7 +90,7 @@ bool obs_module_load(void)
  * may need loading.
  *
  * @return           Return true to continue loading the module, otherwise
- *                   false to indcate failure and unload the module
+ *                   false to indicate failure and unload the module
  */
 MODULE_EXPORT bool obs_module_load(void);
 

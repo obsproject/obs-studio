@@ -1371,7 +1371,7 @@ void OBSBasic::OBSInit()
 
 	bool alwaysOnTop = config_get_bool(App()->GlobalConfig(), "BasicWindow",
 			"AlwaysOnTop");
-	if (alwaysOnTop) {
+	if (alwaysOnTop || opt_always_on_top) {
 		SetAlwaysOnTop(this, true);
 		ui->actionAlwaysOnTop->setChecked(true);
 	}
@@ -2218,14 +2218,6 @@ void OBSBasic::CheckForUpdates(bool manualUpdate)
 	updateCheckThread->start();
 #endif
 }
-
-#ifdef __APPLE__
-#define VERSION_ENTRY "mac"
-#elif _WIN32
-#define VERSION_ENTRY "windows"
-#else
-#define VERSION_ENTRY "other"
-#endif
 
 void OBSBasic::updateCheckFinished()
 {

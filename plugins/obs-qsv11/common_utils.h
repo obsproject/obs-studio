@@ -62,7 +62,7 @@ mfxStatus simple_free(mfxHDL pthis, mfxFrameAllocResponse* response);
 void PrintErrString(int err,const char* filestr,int line);
 
 // LoadRawFrame: Reads raw frame from YUV file (YV12) into NV12 surface
-// - YV12 is a more common format for for YUV files than NV12 (therefore the conversion during read and write)
+// - YV12 is a more common format for YUV files than NV12 (therefore the conversion during read and write)
 // - For the simulation case (fSource = NULL), the surface is filled with default image data
 // LoadRawRGBFrame: Reads raw RGB32 frames from file into RGB32 surface
 // - For the simulation case (fSource = NULL), the surface is filled with default image data

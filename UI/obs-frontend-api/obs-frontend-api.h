@@ -137,6 +137,10 @@ EXPORT void obs_frontend_push_ui_translation(
 		obs_frontend_translate_ui_cb translate);
 EXPORT void obs_frontend_pop_ui_translation(void);
 
+EXPORT void obs_frontend_set_streaming_service(obs_service_t *service);
+EXPORT obs_service_t* obs_frontend_get_streaming_service(void);
+EXPORT void obs_frontend_save_streaming_service(void);
+
 /* ------------------------------------------------------------------------- */
 
 #ifdef __cplusplus

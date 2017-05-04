@@ -107,6 +107,12 @@ struct IVCamSource {
 	void IVCamSource::CamThread()
 	{
 		pSegServer = SegServer::CreateServer();
+
+		if (!pSegServer) {
+			warn("SegServer::CreateServer failed\n");
+			return;
+		}
+
 		SegServer::ServiceStatus status = pSegServer->Init();
 
 		if (status != SegServer::ServiceStatus::SERVICE_NO_ERROR) {

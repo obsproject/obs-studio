@@ -2,6 +2,8 @@
 
 #include "decklink-device.hpp"
 
+class AudioRepacker;
+
 class DeckLinkDeviceInstance : public IDeckLinkInputCallback {
 protected:
 	struct obs_source_frame currentFrame;
@@ -12,6 +14,13 @@ protected:
 	BMDPixelFormat          pixelFormat = bmdFormat8BitYUV;
 	ComPtr<IDeckLinkInput>  input;
 	volatile long           refCount = 1;
+	int64_t                 audioOffset = 0;
+	uint64_t                nextAudioTS = 0;
+	uint64_t                lastVideoTS = 0;
+	AudioRepacker           *audioRepacker = nullptr;
+	speaker_layout          channelFormat = SPEAKERS_STEREO;
+
+	void FinalizeStream();
 
 	void HandleAudioPacket(IDeckLinkAudioInputPacket *audioPacket,
 			const uint64_t timestamp);
@@ -29,6 +38,7 @@ public:
 	}
 
 	inline BMDPixelFormat GetActivePixelFormat() const {return pixelFormat;}
+	inline speaker_layout GetActiveChannelFormat() const {return channelFormat;}
 
 	inline DeckLinkDeviceMode *GetMode() const {return mode;}
 

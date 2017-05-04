@@ -81,46 +81,131 @@ static inline void d3d9_free(d3d9_info &info)
 
 #ifdef _WIN64
 
-#define CMP_SIZE 21
+#define MAX_CMP_SIZE 22
 
-static const uint8_t mask[CMP_SIZE] =
-{0xF8, 0xFF, 0xC0, 0x00, 0x00, 0x00, 0x00,
- 0xFF, 0xC0, 0x00, 0x00, 0x00, 0x00,
- 0xFF, 0x00,
- 0xF8, 0xF8, 0x00, 0x00, 0x00, 0x00};
+static const uint8_t mask[][MAX_CMP_SIZE] = {
+	{
+		0xF8, 0xFF, 0xC0, 0x00, 0x00, 0x00, 0x00,
+		0xFF, 0xFF, 0x00, 0x00, 0x00, 0x00, 0x00,
+		0xFF, 0x00,
+		0xF8, 0xF8, 0x00, 0x00, 0x00, 0x00
+	},
+	{
+		0xF8, 0xFF, 0xC0, 0x00, 0x00, 0x00, 0x00,
+		0xFF, 0xC0, 0x00, 0x00, 0x00, 0x00,
+		0xFF, 0x00,
+		0xF8, 0xF8, 0x00, 0x00, 0x00, 0x00
+	}
+};
 
-static const uint8_t mask_cmp[CMP_SIZE] =
-{0x48, 0x8B, 0x80, 0x00, 0x00, 0x00, 0x00,
- 0x39, 0x80, 0x00, 0x00, 0x00, 0x00,
- 0x75, 0x00,
- 0x40, 0xB8, 0x00, 0x00, 0x00, 0x00};
+static const uint8_t mask_cmp[][MAX_CMP_SIZE] = {
+	/*
+	* Windows 7
+	* 48 8B 83 B8 3D 00 00                    mov     rax, [rbx+3DB8h]
+	* 44 39 B8 68 50 00 00                    cmp     [rax+5068h], r15d
+	* 75 12                                   jnz     short loc_7FF7AA90530
+	* 41 B8 F9 19 00 00                       mov     r8d, 19F9h
+	*/
+	{
+		0x48, 0x8B, 0x80, 0x00, 0x00, 0x00, 0x00,
+		0x44, 0x39, 0x00, 0x00, 0x00, 0x00, 0x00,
+		0x75, 0x00,
+		0x40, 0xB8, 0x00, 0x00, 0x00, 0x00
+	},
+	/*
+	* Windows ???+
+	* 49 8B 87 78 41 00 00                    mov     rax, [r15+4178h]
+	* 39 98 E0 51 00 00                       cmp     [rax+51E0h], ebx
+	* 75 12                                   jnz     short loc_1800AEC9C
+	* 41 B9 C3 1A 00 00                       mov     r9d, 1AC3h
+	*/
+	{
+		0x48, 0x8B, 0x80, 0x00, 0x00, 0x00, 0x00,
+		0x39, 0x80, 0x00, 0x00, 0x00, 0x00,
+		0x75, 0x00,
+		0x40, 0xB8, 0x00, 0x00, 0x00, 0x00
+	}
+};
+
+// Offset into the code for the numbers we're interested in
+static const uint32_t code_offsets[][2] = {
+	{3, 10},
+	{3, 9},
+};
 #else
 
-#define CMP_SIZE 19
+#define MAX_CMP_SIZE 20
 
-static const uint8_t mask[CMP_SIZE] =
-{0xFF, 0xC0, 0x00, 0x00, 0x00, 0x00,
- 0xFF, 0xC0, 0x00, 0x00, 0x00, 0x00,
- 0xFF, 0x00,
- 0xFF, 0x00, 0x00, 0x00, 0x00};
+static const uint8_t mask[][MAX_CMP_SIZE] = {
+	{
+		0xFF, 0xC0, 0x00, 0x00, 0x00, 0x00,
+		0xFF, 0xC0, 0x00, 0x00, 0x00, 0x00,
+		0xFF, 0x00,
+		0xFF, 0x00, 0x00, 0x00, 0x00
+	},
+	{
+		0xFF, 0xC0, 0x00, 0x00, 0x00, 0x00,
+		0xFF, 0xC0, 0x00, 0x00, 0x00, 0x00, 0xFF,
+		0xFF, 0x00,
+		0xFF, 0x00, 0x00, 0x00, 0x00
+	}
+};
 
-static const uint8_t mask_cmp[CMP_SIZE] =
-{0x8B, 0x80, 0x00, 0x00, 0x00, 0x00,
- 0x39, 0x80, 0x00, 0x00, 0x00, 0x00,
- 0x75, 0x00,
- 0x68, 0x00, 0x00, 0x00, 0x00};
+static const uint8_t mask_cmp[][MAX_CMP_SIZE] = {
+	/*
+	* Windows 7+
+	* 8B 83 E8 29 00 00      mov     eax, [ebx+29E8h]
+	* 39 B0 80 4B 00 00      cmp     [eax+4B80h], esi
+	* 75 14                  jnz     short loc_754CD9E1
+	* 68 F9 19 00 00         push    19F9h
+	*/
+	{
+		0x8B, 0x80, 0x00, 0x00, 0x00, 0x00,
+		0x39, 0x80, 0x00, 0x00, 0x00, 0x00,
+		0x75, 0x00,
+		0x68, 0x00, 0x00, 0x00, 0x00
+	},
+
+	/* Windows 10 Creator's Update+
+	* 8B 86 F8 2B 00 00      mov     eax, [esi+2BF8h]
+	* 83 B8 00 4D 00 00 00   cmp     dword ptr [eax+4D00h], 0
+	* 75 0F                  jnz     short loc_100D793C
+	* 68 C3 1A 00 00         push    1AC3h
+	*/
+	{
+		0x8B, 0x80, 0x00, 0x00, 0x00, 0x00,
+		0x83, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00,
+		0x75, 0x00,
+		0x68, 0x00, 0x00, 0x00, 0x00
+	}
+};
+
+// Offset into the code for the numbers we're interested in
+static const uint32_t code_offsets[][2] = {
+	{2, 8},
+	{2, 8},
+};
 #endif
 
 #define MAX_FUNC_SCAN_BYTES 200
 
-static inline bool pattern_matches(uint8_t *byte)
+static inline bool pattern_matches(uint8_t *byte, uint32_t *offset1,
+	uint32_t *offset2)
 {
-	for (size_t i = 0; i < CMP_SIZE; i++) {
-		if ((byte[i] & mask[i]) != mask_cmp[i])
-			return false;
+	for (size_t j = 0; j < sizeof(mask) / sizeof(mask[0]); j++) {
+		for (size_t i = 0; i < MAX_CMP_SIZE; i++) {
+			if ((byte[i] & mask[j][i]) != mask_cmp[j][i])
+				goto next_signature;
+		}
+
+		*offset1 = code_offsets[j][0];
+		*offset2 = code_offsets[j][1];
+
+		return true;
+next_signature:;
 	}
 
-	return true;
+	return false;
 }
 
 void get_d3d9_offsets(struct d3d9_offsets *offsets)
@@ -138,16 +223,12 @@ void get_d3d9_offsets(struct d3d9_offsets *offsets)
 		offsets->present_swap = vtable_offset(info.module, info.swap,
 				3);
 
+		uint32_t offset1, offset2;
 		for (size_t i = 0; i < MAX_FUNC_SCAN_BYTES; i++) {
-			if (pattern_matches(&crr[i])) {
+			if (pattern_matches(&crr[i], &offset1, &offset2)) {
 #define get_offset(x) *(uint32_t*)&crr[i + x]
-#ifdef _WIN64
-				uint32_t off1 = get_offset(3);
-				uint32_t off2 = get_offset(9);
-#else
-				uint32_t off1 = get_offset(2);
-				uint32_t off2 = get_offset(8);
-#endif
+				uint32_t off1 = get_offset(offset1);
+				uint32_t off2 = get_offset(offset2);
 
 				/* check to make sure offsets are within
 				 * expected values */

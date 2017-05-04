@@ -123,10 +123,12 @@ enum obs_source_type {
 /**
  * Source cannot have its audio monitored
  *
- * Specifies that this source may cause a feedback loop if audio is monitored.
+ * Specifies that this source may cause a feedback loop if audio is monitored
+ * with a device selected as desktop audio.
+ *
  * This is used primarily with desktop audio capture sources.
  */
-#define OBS_SOURCE_DO_NOT_MONITOR (1<<9)
+#define OBS_SOURCE_DO_NOT_SELF_MONITOR (1<<9)
 
 /** @} */
 
@@ -171,7 +173,7 @@ struct obs_source_info {
 	 * Creates the source data for the source
 	 *
 	 * @param  settings  Settings to initialize the source with
-	 * @param  source    Source that this data is assoicated with
+	 * @param  source    Source that this data is associated with
 	 * @return           The data associated with this source
 	 */
 	void *(*create)(obs_data_t *settings, obs_source_t *source);
@@ -257,7 +259,7 @@ struct obs_source_info {
 	 * If the source output flags do not include SOURCE_CUSTOM_DRAW, all
 	 * a source needs to do is set the "image" parameter of the effect to
 	 * the desired texture, and then draw.  If the output flags include
-	 * SOURCE_COLOR_MATRIX, you may optionally set the the "color_matrix"
+	 * SOURCE_COLOR_MATRIX, you may optionally set the "color_matrix"
 	 * parameter of the effect to a custom 4x4 conversion matrix (by
 	 * default it will be set to an YUV->RGB conversion matrix)
 	 *
@@ -429,7 +431,7 @@ EXPORT void obs_register_source_s(const struct obs_source_info *info,
 		size_t size);
 
 /**
- * Regsiters a source definition to the current obs context.  This should be
+ * Registers a source definition to the current obs context.  This should be
  * used in obs_module_load.
  *
  * @param  info  Pointer to the source definition structure

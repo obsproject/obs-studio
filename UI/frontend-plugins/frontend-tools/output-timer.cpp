@@ -22,6 +22,8 @@ OutputTimer::OutputTimer(QWidget *parent)
 		SLOT(StreamingTimerButton()));
 	QObject::connect(ui->outputTimerRecord, SIGNAL(clicked()), this,
 		SLOT(RecordingTimerButton()));
+	QObject::connect(ui->buttonBox->button(QDialogButtonBox::Close),
+		SIGNAL(clicked()), this, SLOT(hide()));
 
 	streamingTimer = new QTimer(this);
 	streamingTimerDisplay = new QTimer(this);

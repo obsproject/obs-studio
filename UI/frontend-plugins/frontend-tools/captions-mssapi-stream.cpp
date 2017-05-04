@@ -1,4 +1,5 @@
-#include "captions-stream.hpp"
+#include "captions-mssapi-stream.hpp"
+#include "captions-mssapi.hpp"
 #include <mmreg.h>
 #include <util/windows/CoTaskMemPtr.hpp>
 #include <util/threading.h>
@@ -13,7 +14,8 @@ using namespace std;
 #define debugfunc(format, ...)
 #endif
 
-CaptionStream::CaptionStream(DWORD samplerate_) :
+CaptionStream::CaptionStream(DWORD samplerate_, mssapi_captions *handler_) :
+	handler(handler_),
 	samplerate(samplerate_),
 	event(CreateEvent(nullptr, false, false, nullptr))
 {
@@ -28,8 +30,6 @@ CaptionStream::CaptionStream(DWORD samplerate_) :
 	format.nBlockAlign = 2;
 	format.wBitsPerSample = 16;
 	format.cbSize = sizeof(format);
-
-	resampler.Reset(&format);
 }
 
 void CaptionStream::Stop()
@@ -42,28 +42,16 @@ void CaptionStream::Stop()
 	cv.notify_one();
 }
 
-void CaptionStream::PushAudio(const struct audio_data *data, bool muted)
+void CaptionStream::PushAudio(const void *data, size_t frames)
 {
-	uint8_t *output[MAX_AV_PLANES] = {};
-	uint32_t frames = data->frames;
-	uint64_t ts_offset;
 	bool ready = false;
 
-	audio_resampler_resample(resampler, output, &frames, &ts_offset,
-			data->data, data->frames);
+	lock_guard<mutex> lock(m);
+	circlebuf_push_back(buf, data, frames * sizeof(int16_t));
+	write_pos += frames * sizeof(int16_t);
 
-	if (output[0]) {
-		if (muted)
-			memset(output[0], 0, frames * sizeof(int16_t));
-
-		lock_guard<mutex> lock(m);
-		circlebuf_push_back(buf, output[0], frames * sizeof(int16_t));
-		write_pos += frames * sizeof(int16_t);
-
-		if (wait_size && buf->size >= wait_size)
-			ready = true;
-	}
-
+	if (wait_size && buf->size >= wait_size)
+		ready = true;
 	if (ready)
 		cv.notify_one();
 }
@@ -316,7 +304,9 @@ STDMETHODIMP CaptionStream::SetFormat(REFGUID guid_ref,
 	if (guid_ref == SPDFID_WaveFormatEx) {
 		lock_guard<mutex> lock(m);
 		memcpy(&format, wfex, sizeof(format));
-		resampler.Reset(wfex);
+		if (!handler->reset_resampler(AUDIO_FORMAT_16BIT,
+				wfex->nSamplesPerSec))
+			return E_FAIL;
 
 		/* 50 msec */
 		DWORD size = format.nSamplesPerSec / 20;

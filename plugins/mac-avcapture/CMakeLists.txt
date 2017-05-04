@@ -6,12 +6,14 @@ find_library(COREFOUNDATION CoreFoundation)
 find_library(COREMEDIA CoreMedia)
 find_library(COREVIDEO CoreVideo)
 find_library(COCOA Cocoa)
+find_library(COREMEDIAIO CoreMediaIO)
 
 include_directories(${AVFOUNDATION}
                     ${COCOA}
                     ${COREFOUNDATION}
                     ${COREMEDIA}
                     ${COREVIDEO}
+                    ${COREMEDIAIO}
 		    ${COCOA})
 
 set(mac-avcapture_HEADERS
@@ -36,6 +38,7 @@ target_link_libraries(mac-avcapture
 	${COREFOUNDATION}
 	${COREMEDIA}
 	${COREVIDEO}
+	${COREMEDIAIO}
 	${COCOA})
 
 install_obs_plugin_with_data(mac-avcapture data)

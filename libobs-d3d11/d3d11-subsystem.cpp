@@ -253,7 +253,7 @@ void gs_device::InitDevice(uint32_t adapterIdx)
 	if (FAILED(hr))
 		throw UnsupportedHWError("Failed to create device", hr);
 
-	blog(LOG_INFO, "D3D11 loaded sucessfully, feature level used: %u",
+	blog(LOG_INFO, "D3D11 loaded successfully, feature level used: %u",
 			(unsigned int)levelUsed);
 }
 
@@ -514,7 +514,7 @@ static inline void EnumD3DAdapters(
 		if (FAILED(hr))
 			continue;
 
-		/* ignore microsoft's 'basic' renderer' */
+		/* ignore Microsoft's 'basic' renderer' */
 		if (desc.VendorId == 0x1414 && desc.DeviceId == 0x8c)
 			continue;
 
@@ -586,7 +586,7 @@ static inline void LogD3DAdapters()
 		if (FAILED(hr))
 			continue;
 
-		/* ignore microsoft's 'basic' renderer' */
+		/* ignore Microsoft's 'basic' renderer' */
 		if (desc.VendorId == 0x1414 && desc.DeviceId == 0x8c)
 			continue;
 
@@ -608,7 +608,7 @@ int device_create(gs_device_t **p_device, uint32_t adapter)
 
 	try {
 		blog(LOG_INFO, "---------------------------------");
-		blog(LOG_INFO, "Initializing D3D11..");
+		blog(LOG_INFO, "Initializing D3D11...");
 		LogD3DAdapters();
 
 		device = new gs_device(adapter);

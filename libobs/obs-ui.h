@@ -71,7 +71,7 @@ struct obs_modal_ui {
 };
 
 /**
- * Regsiters a modal UI definition to the current obs context.  This should be
+ * Registers a modal UI definition to the current obs context.  This should be
  * used in obs_module_load.
  *
  * @param  info  Pointer to the modal definition structure

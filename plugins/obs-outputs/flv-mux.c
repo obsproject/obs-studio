@@ -208,7 +208,7 @@ static void flv_video(struct serializer *s, struct encoder_packet *packet,
 	s_wb24(s, get_ms_time(packet, offset));
 	s_write(s, packet->data, packet->size);
 
-	/* write tag size (starting byte doesnt count) */
+	/* write tag size (starting byte doesn't count) */
 	s_wb32(s, (uint32_t)serializer_get_pos(s) + 4 - 1);
 }
 
@@ -241,7 +241,7 @@ static void flv_audio(struct serializer *s, struct encoder_packet *packet,
 	s_w8(s, is_header ? 0 : 1);
 	s_write(s, packet->data, packet->size);
 
-	/* write tag size (starting byte doesnt count) */
+	/* write tag size (starting byte doesn't count) */
 	s_wb32(s, (uint32_t)serializer_get_pos(s) + 4 - 1);
 }
 

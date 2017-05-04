@@ -50,12 +50,19 @@ deploy:
     all_branches: true
 
 # The channel name "azubu.il.us.quakenet.org#obs-dev" is encrypted against jp9000/obs-studio to prevent IRC spam of forks
+#notifications:
+#  irc:
+#    skip_join: false
+#    template:
+#      - "[Travis CI|%{result}] %{repository_name}/%{branch} (%{author} - %{commit_subject}) %{build_url}"
+#    channels:
+#      - secure: k9j7+ogVODMlveZdd5pP73AVLCFl1VbzVaVon0ECn3EQcxnLSpiZbc6l+PnIUKgee5pRKtUB4breufgmr4puq3s69YeQiOVKk5gx2yJGZ5jGacbSne0xTspzPxapiEbVUkcJ2L7gKntDG4+SUiW67dtt4G26O7zsErDF/lY/woQ=
+#    on_failure: always
+#    on_success: change
 notifications:
-  irc:
-    skip_join: false
-    template:
-      - "[Travis CI|%{result}] %{repository_name}/%{branch} (%{author} - %{commit_subject}) %{build_url}"
-    channels:
-      - secure: k9j7+ogVODMlveZdd5pP73AVLCFl1VbzVaVon0ECn3EQcxnLSpiZbc6l+PnIUKgee5pRKtUB4breufgmr4puq3s69YeQiOVKk5gx2yJGZ5jGacbSne0xTspzPxapiEbVUkcJ2L7gKntDG4+SUiW67dtt4G26O7zsErDF/lY/woQ=
-    on_failure: always
+  webhooks:
+    urls:
+      - secure: T5RBY818nO40nr5eC8pdrCfAdQKGkjQdbyYw7mfFrhxWxgt/U5tyKXpX0l9zNGfobS0SnLSqF71OrfW04V97oijXx3q5Y24xV6mSrlLQZOq19+XvGp82LDpkVd4yi2N0kBYpoANB9Pkof4jWT/rKfdQCQttluOLjgr5SM0uWHRg=
     on_success: change
+    on_failure: always
+
