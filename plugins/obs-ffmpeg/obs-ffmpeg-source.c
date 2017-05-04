@@ -56,6 +56,7 @@ struct ffmpeg_source {
 	bool is_clear_on_media_end;
 	bool restart_on_activate;
 	bool close_when_inactive;
+	bool latest_replay_buffer;
 };
 
 static bool is_local_file_modified(obs_properties_t *props,
@@ -65,14 +66,29 @@ static bool is_local_file_modified(obs_properties_t *props,
 
 	bool enabled = obs_data_get_bool(settings, "is_local_file");
 	obs_property_t *input = obs_properties_get(props, "input");
-	obs_property_t *input_format =obs_properties_get(props,
+	obs_property_t *input_format = obs_properties_get(props,
 			"input_format");
 	obs_property_t *local_file = obs_properties_get(props, "local_file");
 	obs_property_t *looping = obs_properties_get(props, "looping");
+	obs_property_t *latest_replay_buffer = obs_properties_get(props,
+			"latest_replay_buffer");
 	obs_property_set_visible(input, !enabled);
 	obs_property_set_visible(input_format, !enabled);
 	obs_property_set_visible(local_file, enabled);
 	obs_property_set_visible(looping, enabled);
+	obs_property_set_visible(latest_replay_buffer, enabled);
+
+	return true;
+}
+
+static bool is_latest_rb_modified(obs_properties_t *props,
+		obs_property_t *prop, obs_data_t *settings)
+{
+	UNUSED_PARAMETER(prop);
+
+	bool enabled = obs_data_get_bool(settings, "latest_replay_buffer");
+	obs_property_t *local_file = obs_properties_get(props, "local_file");
+	obs_property_set_enabled(local_file, !enabled);
 
 	return true;
 }
@@ -80,6 +96,7 @@ static bool is_local_file_modified(obs_properties_t *props,
 static void ffmpeg_source_defaults(obs_data_t *settings)
 {
 	obs_data_set_default_bool(settings, "is_local_file", true);
+	obs_data_set_default_bool(settings, "latest_replay_buffer", false);
 	obs_data_set_default_bool(settings, "looping", false);
 	obs_data_set_default_bool(settings, "clear_on_media_end", true);
 	obs_data_set_default_bool(settings, "restart_on_activate", true);
@@ -94,6 +111,11 @@ static const char *video_filter =
 	" (*.mp4 *.ts *.mov *.flv *.mkv *.avi *.gif *.webm);;";
 static const char *audio_filter =
 	" (*.mp3 *.aac *.ogg *.wav);;";
+
+static char *get_latest_replay_buffer()
+{
+	return obs_get_replay_buffer_filename();
+}
 
 static obs_properties_t *ffmpeg_source_getproperties(void *data)
 {
@@ -112,6 +134,12 @@ static obs_properties_t *ffmpeg_source_getproperties(void *data)
 			obs_module_text("LocalFile"));
 
 	obs_property_set_modified_callback(prop, is_local_file_modified);
+
+	obs_property_t *prop_latest;
+	prop_latest = obs_properties_add_bool(props, "latest_replay_buffer",
+			obs_module_text("LatestReplayBuffer"));
+
+	obs_property_set_modified_callback(prop_latest, is_latest_rb_modified);
 
 	dstr_copy(&filter, obs_module_text("MediaFileFilter.AllMediaFiles"));
 	dstr_cat(&filter, media_filter);
@@ -269,16 +297,25 @@ static void ffmpeg_source_update(void *data, obs_data_t *settings)
 	bfree(s->input_format);
 
 	if (is_local_file) {
-		input = (char *)obs_data_get_string(settings, "local_file");
+		s->latest_replay_buffer = obs_data_get_bool(settings,
+				"latest_replay_buffer");
+
+		if (s->latest_replay_buffer) {
+			input = get_latest_replay_buffer();
+		} else {
+			input = (char *)obs_data_get_string(settings,
+				"local_file");
+		}
+
 		input_format = NULL;
 		s->is_looping = obs_data_get_bool(settings, "looping");
-
 		obs_source_set_flags(s->source, OBS_SOURCE_FLAG_UNBUFFERED);
 	} else {
 		input = (char *)obs_data_get_string(settings, "input");
 		input_format = (char *)obs_data_get_string(settings,
 				"input_format");
 		s->is_looping = false;
+		s->latest_replay_buffer = false;
 
 		obs_source_set_flags(s->source, 0);
 	}
@@ -373,9 +410,15 @@ static void ffmpeg_source_destroy(void *data)
 static void ffmpeg_source_activate(void *data)
 {
 	struct ffmpeg_source *s = data;
+	obs_data_t *settings = obs_source_get_settings(s->source);
+
+	if (s->latest_replay_buffer)
+		ffmpeg_source_update(s, settings);
 
 	if (s->restart_on_activate)
 		ffmpeg_source_start(s);
+
+	obs_data_release(settings);
 }
 
 static void ffmpeg_source_deactivate(void *data)

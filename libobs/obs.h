@@ -1778,11 +1778,15 @@ EXPORT void *obs_service_get_type_data(obs_service_t *service);
 
 EXPORT const char *obs_service_get_id(const obs_service_t *service);
 
-
 /* ------------------------------------------------------------------------- */
 /* Source frame allocation functions */
 EXPORT void obs_source_frame_init(struct obs_source_frame *frame,
 		enum video_format format, uint32_t width, uint32_t height);
+
+/* ------------------------------------------------------------------------- */
+/* Replay buffer filename */
+EXPORT void obs_set_replay_buffer_filename(char *filename);
+EXPORT char *obs_get_replay_buffer_filename();
 
 static inline void obs_source_frame_free(struct obs_source_frame *frame)
 {
