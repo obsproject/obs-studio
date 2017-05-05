@@ -682,7 +682,6 @@ obs_data_t *obs_data_create_from_json_file_safe(const char *json_file,
 
 			/* delete current file if corrupt to prevent it from
 			 * being backed up again */
-			os_unlink(json_file);
 			os_rename(backup_file.array, json_file);
 
 			file_data = obs_data_create_from_json_file(json_file);
