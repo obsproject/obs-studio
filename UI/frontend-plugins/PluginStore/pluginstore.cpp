@@ -5,19 +5,28 @@
 #include <QMainWindow>
 #include <QMessageBox>
 #include <QAction>
+#include <qwebchannel>
 #include "pluginstore.h"
 #include "ui_pluginstore.h"
-#include <QMessageBox>
+#include "WebPluginEvent.h"
 PluginStore::PluginStore(QWidget *parent) :
     QDialog(parent),
     ui(new Ui::PluginStore)
 {
+	
     ui->setupUi(this);
-
+	webui = new QWebEngineView(this);
+	connect(webui, SIGNAL(loadFinished(bool)), this, SLOT(on_web_loadFinished(bool)));
+	QWebChannel* channel = new QWebChannel(webui->page());
+	channel->registerObject(QStringLiteral("QCiscik"), new WebPluginEvent(channel));
+	webui->page()->setWebChannel(channel);
+	webui->load(QUrl("d:/index.html"));
+	webui->show();
 }
 
 PluginStore::~PluginStore()
 {
+
 }
 void PluginStore::on_close_clicked()
 {
@@ -27,11 +36,18 @@ void PluginStore::closeEvent(QCloseEvent *event)
 {
 	obs_frontend_save();
 }
+void    PluginStore::resizeEvent(QResizeEvent *event)
+{
+	webui->resize(size());
+}
+void PluginStore::on_web_loadFinished(bool ok)
+{
+	
+}
 extern "C" void FreePluginStore()
 {
 
 }
-
 static void OBSEvent(enum obs_frontend_event event, void *)
 {
 	if (event == OBS_FRONTEND_EVENT_EXIT)

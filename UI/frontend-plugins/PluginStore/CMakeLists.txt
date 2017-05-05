@@ -18,10 +18,13 @@ if(WIN32 OR APPLE)
 endif()
 set(pluginstore_HEADERS
 	${pluginstore_HEADERS}
+	PluginStore.h
+	webpluginevent.h
 	)
 set(pluginstore_SOURCES
 	${PluginStore_SOURCES}
 	pluginstoremodule.c
+	webpluginevent.cpp
 	)
 set(pluginstore_UI
 	${pluginstore_UI}
@@ -29,16 +32,20 @@ set(pluginstore_UI
 qt5_wrap_ui(pluginstore_UI_HEADERS
 	${pluginstore_UI}
 	)
-
+find_package(Qt5WebChannel)
+find_package(Qt5WebEngineWidgets)
 add_library(pluginstore MODULE
 	${pluginstore_HEADERS}
 	${pluginstore_SOURCES}
 	${pluginstore_UI_HEADERS}
 	)
+
 target_link_libraries(pluginstore
 	${pluginstore_PLATFORM_LIBS}
 	obs-frontend-api
 	Qt5::Widgets
+	Qt5::WebChannel
+	Qt5::WebEngineWidgets
 	libobs)
 install_obs_plugin_with_data(pluginstore data)
 
