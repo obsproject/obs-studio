@@ -31,3 +31,11 @@ bool		WebPluginEvent::UnInstallPluginName(QString strName)
 	return true;
 }
 
+QString		WebPluginEvent::GetCurrentSaveDirectory()
+{
+	return QString("");
+}
+void		WebPluginEvent::SetNewSaveDirectory(QString strDirectory)
+{
+
+}

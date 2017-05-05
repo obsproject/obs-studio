@@ -16,6 +16,8 @@ public	slots:
 	void		DownLoadPluginUrl(QString strName,QString strUrl);
 	bool		InstallPluginName(QString strName);
 	bool		UnInstallPluginName(QString strName);
+	QString		GetCurrentSaveDirectory();
+	void		SetNewSaveDirectory(QString strDirectory);
 private:
 };
 
