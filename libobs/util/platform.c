@@ -297,17 +297,10 @@ bool os_quick_write_utf8_file_safe(const char *path, const char *str,
 		if (*backup_ext != '.')
 			dstr_cat(&backup_path, ".");
 		dstr_cat(&backup_path, backup_ext);
-
-		os_unlink(backup_path.array);
-		os_rename(path, backup_path.array);
-
-		dstr_free(&backup_path);
-	} else {
-		os_unlink(path);
 	}
 
-	os_rename(temp_path.array, path);
-	success = true;
+	if (os_safe_replace(path, temp_path.array, backup_path.array) == 0)
+		success = true;
 
 cleanup:
 	dstr_free(&backup_path);
