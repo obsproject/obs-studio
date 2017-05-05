@@ -625,20 +625,12 @@ void OBSBasic::LogScenes()
 
 void OBSBasic::Load(const char *file)
 {
-	if (!file || !os_file_exists(file)) {
-		blog(LOG_INFO, "No scene file found, creating default scene");
-		CreateDefaultScene(true);
-		SaveProject();
-		return;
-	}
-
 	disableSaving++;
 
 	obs_data_t *data = obs_data_create_from_json_file_safe(file, "bak");
 	if (!data) {
 		disableSaving--;
-		blog(LOG_ERROR, "Failed to load '%s', creating default scene",
-				file);
+		blog(LOG_INFO, "No scene file found, creating default scene");
 		CreateDefaultScene(true);
 		SaveProject();
 		return;
