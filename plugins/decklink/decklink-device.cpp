@@ -29,6 +29,21 @@ ULONG DeckLinkDevice::Release()
 
 bool DeckLinkDevice::Init()
 {
+	ComPtr<IDeckLinkAttributes> attributes;
+	const HRESULT result = device->QueryInterface(IID_IDeckLinkAttributes,
+			(void **)&attributes);
+
+	if (result == S_OK) {
+		decklink_bool_t detectable = false;
+		if (attributes->GetFlag(BMDDeckLinkSupportsInputFormatDetection,
+				&detectable) == S_OK && !!detectable) {
+			DeckLinkDeviceMode *mode =
+				new DeckLinkDeviceMode("Auto", MODE_ID_AUTO);
+			modes.push_back(mode);
+			modeIdMap[MODE_ID_AUTO] = mode;
+		}
+	}
+
 	ComPtr<IDeckLinkInput> input;
 	if (device->QueryInterface(IID_IDeckLinkInput, (void**)&input) != S_OK)
 		return false;
@@ -66,9 +81,6 @@ bool DeckLinkDevice::Init()
 
 	hash = displayName;
 
-	ComPtr<IDeckLinkAttributes> attributes;
-	const HRESULT result = device->QueryInterface(IID_IDeckLinkAttributes,
-			(void **)&attributes);
 	if (result != S_OK)
 		return true;
 
