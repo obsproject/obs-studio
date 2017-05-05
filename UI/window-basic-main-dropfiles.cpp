@@ -19,6 +19,10 @@ static const char *imageExtensions[] = {
 	"bmp", "tga", "png", "jpg", "jpeg", "gif", nullptr
 };
 
+static const char *htmlExtensions[] = {
+	"htm", "html", nullptr
+};
+
 static const char *mediaExtensions[] = {
 	"3ga", "669", "a52", "aac", "ac3", "adt", "adts", "aif", "aifc",
 	"aiff", "amb", "amr", "aob", "ape", "au", "awb", "caf", "dts",
@@ -95,7 +99,16 @@ void OBSBasic::AddDropSource(const char *data, DropType image)
 		name = QUrl::fromLocalFile(QString(data)).fileName();
 		type = "ffmpeg_source";
 		break;
+	case DropType_Html:
+		obs_data_set_bool(settings, "is_local_file", true);
+		obs_data_set_string(settings, "local_file", data);
+		name = QUrl::fromLocalFile(QString(data)).fileName();
+		type = "browser_source";
+		break;
 	}
+
+	if (!obs_source_get_display_name(type))
+		return;
 
 	if (name.isEmpty())
 		name = obs_source_get_display_name(type);
@@ -147,46 +160,27 @@ void OBSBasic::dropEvent(QDropEvent *event)
 
 			const char **cmp;
 
-			cmp = textExtensions;
-			while (*cmp) {
-				if (strcmp(*cmp, suffix) == 0) {
-					AddDropSource(QT_TO_UTF8(file),
-							DropType_Text);
-					found = true;
-					break;
-				}
+#define CHECK_SUFFIX(extensions, type) \
+cmp = extensions; \
+while (*cmp) { \
+	if (strcmp(*cmp, suffix) == 0) { \
+		AddDropSource(QT_TO_UTF8(file), type); \
+		found = true; \
+		break; \
+	} \
+\
+	cmp++; \
+} \
+\
+if (found) \
+	continue;
 
-				cmp++;
-			}
+			CHECK_SUFFIX(textExtensions, DropType_Text);
+			CHECK_SUFFIX(htmlExtensions, DropType_Html);
+			CHECK_SUFFIX(imageExtensions, DropType_Image);
+			CHECK_SUFFIX(mediaExtensions, DropType_Media);
 
-			if (found)
-				continue;
-
-			cmp = imageExtensions;
-			while (*cmp) {
-				if (strcmp(*cmp, suffix) == 0) {
-					AddDropSource(QT_TO_UTF8(file),
-							DropType_Image);
-					found = true;
-					break;
-				}
-
-				cmp++;
-			}
-
-			if (found)
-				continue;
-
-			cmp = mediaExtensions;
-			while (*cmp) {
-				if (strcmp(*cmp, suffix) == 0) {
-					AddDropSource(QT_TO_UTF8(file),
-							DropType_Media);
-					break;
-				}
-
-				cmp++;
-			}
+#undef CHECK_SUFFIX
 		}
 	} else if (mimeData->hasText()) {
 		AddDropSource(QT_TO_UTF8(mimeData->text()), DropType_RawText);
