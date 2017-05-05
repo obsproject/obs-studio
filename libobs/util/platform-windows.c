@@ -549,7 +549,8 @@ int os_rename(const char *old_path, const char *new_path)
 		goto error;
 	}
 
-	code = MoveFileW(old_path_utf16, new_path_utf16) ? 0 : -1;
+	code = MoveFileExW(old_path_utf16, new_path_utf16,
+			MOVEFILE_REPLACE_EXISTING) ? 0 : -1;
 
 error:
 	bfree(old_path_utf16);
@@ -576,7 +577,8 @@ int os_safe_replace(const char *target, const char *from, const char *backup)
 	if (ReplaceFileW(wtarget, wfrom, wbackup, 0, NULL, NULL)) {
 		code = 0;
 	} else if (GetLastError() == ERROR_FILE_NOT_FOUND) {
-		code = MoveFile(wfrom, wtarget) ? 0 : -1;
+		code = MoveFileExW(wfrom, wtarget, MOVEFILE_REPLACE_EXISTING)
+			? 0 : -1;
 	}
 
 fail:
