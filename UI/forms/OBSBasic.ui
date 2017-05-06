@@ -983,12 +983,11 @@
     <addaction name="toggleStatusBar"/>
    </widget>
    <widget class="QMenu" name="menuTools">
-    <property name="enabled">
-     <bool>false</bool>
-    </property>
     <property name="title">
      <string>Basic.MainMenu.Tools</string>
     </property>
+    <addaction name="autoConfigure"/>
+    <addaction name="separator"/>
    </widget>
    <addaction name="menu_File"/>
    <addaction name="menuBasic_MainMenu_Edit"/>
@@ -1460,6 +1459,16 @@
   <action name="actionPasteDup">
    <property name="text">
     <string>PasteDuplicate</string>
+   </property>
+  </action>
+  <action name="autoConfigure2">
+   <property name="text">
+    <string>Basic.AutoConfig</string>
+   </property>
+  </action>
+  <action name="autoConfigure">
+   <property name="text">
+    <string>Basic.AutoConfig.Beta</string>
    </property>
   </action>
  </widget>

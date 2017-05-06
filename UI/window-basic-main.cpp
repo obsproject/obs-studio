@@ -40,6 +40,7 @@
 #include "item-widget-helpers.hpp"
 #include "window-basic-settings.hpp"
 #include "window-namedialog.hpp"
+#include "window-basic-auto-config.hpp"
 #include "window-basic-source-select.hpp"
 #include "window-basic-main.hpp"
 #include "window-basic-main-outputs.hpp"
@@ -1422,6 +1423,36 @@ void OBSBasic::OBSInit()
 	SystemTray(true);
 
 	OpenSavedProjectors();
+
+	bool has_last_version = config_has_user_value(App()->GlobalConfig(),
+			"General", "LastVersion");
+	bool first_run = config_get_bool(App()->GlobalConfig(), "General",
+			"FirstRun");
+
+	if (!first_run) {
+		config_set_bool(App()->GlobalConfig(), "General", "FirstRun",
+				true);
+		config_save_safe(App()->GlobalConfig(), "tmp", nullptr);
+	}
+
+	if (!first_run && !has_last_version && !Active()) {
+		QString msg;
+		msg = QTStr("Basic.FirstStartup.RunWizard");
+		msg += "\n\n";
+		msg += QTStr("Basic.FirstStartup.RunWizard.BetaWarning");
+
+		QMessageBox::StandardButton button =
+			QMessageBox::question(this, QTStr("Basic.AutoConfig"),
+					msg);
+
+		if (button == QMessageBox::Yes) {
+			on_autoConfigure_triggered();
+		} else {
+			msg = QTStr("Basic.FirstStartup.RunWizard.NoClicked");
+			QMessageBox::information(this,
+					QTStr("Basic.AutoConfig"), msg);
+		}
+	}
 }
 
 void OBSBasic::InitHotkeys()
@@ -3976,6 +4007,7 @@ inline void OBSBasic::OnActivate()
 {
 	if (ui->profileMenu->isEnabled()) {
 		ui->profileMenu->setEnabled(false);
+		ui->autoConfigure->setEnabled(false);
 		App()->IncrementSleepInhibition();
 		UpdateProcessPriority();
 
@@ -3988,6 +4020,7 @@ inline void OBSBasic::OnDeactivate()
 {
 	if (!outputHandler->Active() && !ui->profileMenu->isEnabled()) {
 		ui->profileMenu->setEnabled(true);
+		ui->autoConfigure->setEnabled(true);
 		App()->DecrementSleepInhibition();
 		ClearProcessPriority();
 
@@ -5444,4 +5477,12 @@ void OBSBasic::on_actionPasteFilters_triggered()
 		return;
 
 	obs_source_copy_filters(dstSource, source);
+}
+
+void OBSBasic::on_autoConfigure_triggered()
+{
+	AutoConfig test(this);
+	test.setModal(true);
+	test.show();
+	test.exec();
 }

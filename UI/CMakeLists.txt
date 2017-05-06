@@ -135,8 +135,10 @@ set(obs_SOURCES
 	window-basic-settings.cpp
 	window-basic-interaction.cpp
 	window-basic-properties.cpp
+	window-basic-auto-config.cpp
 	window-basic-main-outputs.cpp
 	window-basic-source-select.cpp
+	window-basic-auto-config-test.cpp
 	window-basic-main-scene-collections.cpp
 	window-basic-main-transitions.cpp
 	window-basic-main-dropfiles.cpp
@@ -181,6 +183,7 @@ set(obs_HEADERS
 	window-basic-settings.hpp
 	window-basic-interaction.hpp
 	window-basic-properties.hpp
+	window-basic-auto-config.hpp
 	window-basic-main-outputs.hpp
 	window-basic-source-select.hpp
 	window-license-agreement.hpp
@@ -217,6 +220,10 @@ set(obs_HEADERS
 
 set(obs_UI
 	forms/NameDialog.ui
+	forms/AutoConfigStartPage.ui
+	forms/AutoConfigVideoPage.ui
+	forms/AutoConfigStreamPage.ui
+	forms/AutoConfigTestPage.ui
 	forms/OBSLicenseAgreement.ui
 	forms/OBSLogReply.ui
 	forms/OBSBasic.ui

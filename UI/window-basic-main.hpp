@@ -613,6 +613,8 @@ private slots:
 
 	void on_modeSwitch_clicked();
 
+	void on_autoConfigure_triggered();
+
 	void logUploadFinished(const QString &text, const QString &error);
 
 	void updateCheckFinished();
