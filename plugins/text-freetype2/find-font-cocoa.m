@@ -32,7 +32,16 @@ static void add_path_fonts(NSFileManager *file_manager, NSString *path)
 	for (NSString *file in files) {
 		NSString *full_path = [path stringByAppendingPathComponent:file];
 
-		add_path_font(full_path.fileSystemRepresentation);
+		BOOL is_dir = FALSE;
+		bool folder_exists = [file_manager
+				fileExistsAtPath:full_path
+				isDirectory:&is_dir];
+
+		if (folder_exists && is_dir) {
+			add_path_fonts(file_manager, full_path);
+		} else {
+			add_path_font(full_path.fileSystemRepresentation);
+		}
 	}
 }
 
