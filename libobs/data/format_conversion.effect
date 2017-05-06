@@ -242,8 +242,9 @@ float4 PSPlanar444(VertInOut vert_in) : TARGET
 
 float GetIntOffsetColor(int offset)
 {
-	return image.Load(int2(offset % int_input_width,
-	                       offset / int_input_width)).r;
+	return image.Load(int3(offset % int_input_width,
+	                       offset / int_input_width,
+	                       0)).r;
 }
 
 float4 PSPacked422_Reverse(VertInOut vert_in, int u_pos, int v_pos,
