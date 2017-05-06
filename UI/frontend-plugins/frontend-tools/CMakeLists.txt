@@ -5,16 +5,10 @@ if(APPLE)
 	include_directories(${COCOA})
 endif()
 
-if(WIN32 OR APPLE)
-	set(frontend-tools_HEADERS
-		auto-scene-switcher.hpp
-		)
-	set(frontend-tools_SOURCES
-		auto-scene-switcher.cpp
-		)
-	set(frontend-tools_UI
-		forms/auto-scene-switcher.ui
-		)
+if(UNIX)
+	find_package(X11 REQUIRED)
+	link_libraries(${X11_LIBRARIES})
+	include_directories(${X11_INCLUDE_DIR})
 endif()
 
 configure_file(
@@ -24,16 +18,19 @@ configure_file(
 set(frontend-tools_HEADERS
 	${frontend-tools_HEADERS}
 	"${CMAKE_BINARY_DIR}/config/frontend-tools-config.h"
+	auto-scene-switcher.hpp
 	output-timer.hpp
 	tool-helpers.hpp
 	)
 set(frontend-tools_SOURCES
 	${frontend-tools_SOURCES}
+	auto-scene-switcher.cpp
 	frontend-tools.c
 	output-timer.cpp
 	)
 set(frontend-tools_UI
 	${frontend-tools_UI}
+	forms/auto-scene-switcher.ui
 	forms/output-timer.ui
 	)
 
@@ -64,6 +61,9 @@ elseif(APPLE)
 
 	set(frontend-tools_PLATFORM_LIBS
 		${COCOA})
+else()
+	set(frontend-tools_PLATFORM_SOURCES
+		auto-scene-switcher-nix.cpp)
 endif()
 
 qt5_wrap_ui(frontend-tools_UI_HEADERS

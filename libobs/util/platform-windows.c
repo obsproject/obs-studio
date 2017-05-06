@@ -549,11 +549,42 @@ int os_rename(const char *old_path, const char *new_path)
 		goto error;
 	}
 
-	code = MoveFileW(old_path_utf16, new_path_utf16) ? 0 : -1;
+	code = MoveFileExW(old_path_utf16, new_path_utf16,
+			MOVEFILE_REPLACE_EXISTING) ? 0 : -1;
 
 error:
 	bfree(old_path_utf16);
 	bfree(new_path_utf16);
+	return code;
+}
+
+int os_safe_replace(const char *target, const char *from, const char *backup)
+{
+	wchar_t *wtarget = NULL;
+	wchar_t *wfrom = NULL;
+	wchar_t *wbackup = NULL;
+	int code = -1;
+
+	if (!target || !from)
+		return -1;
+	if (!os_utf8_to_wcs_ptr(target, 0, &wtarget))
+		return -1;
+	if (!os_utf8_to_wcs_ptr(from, 0, &wfrom))
+		goto fail;
+	if (backup && !os_utf8_to_wcs_ptr(backup, 0, &wbackup))
+		goto fail;
+
+	if (ReplaceFileW(wtarget, wfrom, wbackup, 0, NULL, NULL)) {
+		code = 0;
+	} else if (GetLastError() == ERROR_FILE_NOT_FOUND) {
+		code = MoveFileExW(wfrom, wtarget, MOVEFILE_REPLACE_EXISTING)
+			? 0 : -1;
+	}
+
+fail:
+	bfree(wtarget);
+	bfree(wfrom);
+	bfree(wbackup);
 	return code;
 }
 

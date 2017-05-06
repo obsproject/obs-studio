@@ -12,6 +12,7 @@
 
 #define S_PLAYLIST                     "playlist"
 #define S_LOOP                         "loop"
+#define S_SHUFFLE                      "shuffle"
 #define S_BEHAVIOR                     "playback_behavior"
 #define S_BEHAVIOR_STOP_RESTART        "stop_restart"
 #define S_BEHAVIOR_PAUSE_UNPAUSE       "pause_unpause"
@@ -20,6 +21,7 @@
 #define T_(text) obs_module_text(text)
 #define T_PLAYLIST                     T_("Playlist")
 #define T_LOOP                         T_("LoopPlaylist")
+#define T_SHUFFLE                      T_("shuffle")
 #define T_BEHAVIOR                     T_("PlaybackBehavior")
 #define T_BEHAVIOR_STOP_RESTART        T_("PlaybackBehavior.StopRestart")
 #define T_BEHAVIOR_PAUSE_UNPAUSE       T_("PlaybackBehavior.PauseUnpause")
@@ -52,6 +54,7 @@ struct vlc_source {
 	DARRAY(struct media_file_data) files;
 	enum behavior behavior;
 	bool loop;
+	bool shuffle;
 };
 
 static libvlc_media_t *get_media(struct darray *array, const char *path)
@@ -543,6 +546,22 @@ static void vlcs_update(void *data, obs_data_t *settings)
 	pthread_mutex_unlock(&c->mutex);
 
 	/* ------------------------------------- */
+	/* shuffle playlist */
+
+	c->shuffle = obs_data_get_bool(settings, S_SHUFFLE);
+
+	if (c->files.num > 1 && c->shuffle) {
+		for (size_t i = 0; i < c->files.num - 1; i++) {
+			size_t j = i + rand() / (RAND_MAX
+					/ (c->files.num - i) + 1);
+
+			struct media_file_data t = c->files.array[j];
+			c->files.array[j] = c->files.array[i];
+			c->files.array[i] = t;
+		}
+	}
+
+	/* ------------------------------------- */
 	/* clean up and restart playback */
 
 	free_files(&old_files.da);
@@ -658,6 +677,7 @@ static void vlcs_deactivate(void *data)
 static void vlcs_defaults(obs_data_t *settings)
 {
 	obs_data_set_default_bool(settings, S_LOOP, true);
+	obs_data_set_default_bool(settings, S_SHUFFLE, false);
 	obs_data_set_default_string(settings, S_BEHAVIOR,
 			S_BEHAVIOR_STOP_RESTART);
 }
@@ -672,6 +692,7 @@ static obs_properties_t *vlcs_properties(void *data)
 	obs_property_t *p;
 
 	obs_properties_add_bool(ppts, S_LOOP, T_LOOP);
+	obs_properties_add_bool(ppts, S_SHUFFLE, T_SHUFFLE);
 
 	if (c) {
 		pthread_mutex_lock(&c->mutex);

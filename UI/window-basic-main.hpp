@@ -158,6 +158,7 @@ private:
 	ConfigFile    basicConfig;
 
 	QPointer<QWidget> projectors[10];
+	QList<QPointer<QWidget>> windowProjectors;
 
 	QPointer<QMenu> startStreamMenu;
 
@@ -233,7 +234,8 @@ private:
 	void ClearSceneData();
 
 	void Nudge(int dist, MoveDir dir);
-	void OpenProjector(obs_source_t *source, int monitor);
+	void OpenProjector(obs_source_t *source, int monitor, bool window,
+			QString title = nullptr);
 
 	void GetAudioSourceFilters();
 	void GetAudioSourceProperties();
@@ -635,6 +637,10 @@ private slots:
 	void OpenPreviewProjector();
 	void OpenSourceProjector();
 	void OpenSceneProjector();
+
+	void OpenPreviewWindow();
+	void OpenSourceWindow();
+	void OpenSceneWindow();
 
 public slots:
 	void on_actionResetTransform_triggered();

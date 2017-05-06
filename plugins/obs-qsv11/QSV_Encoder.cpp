@@ -62,6 +62,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <obs-module.h>
 #include <string>
 #include <mutex>
+#include <intrin.h>
 
 #define do_log(level, format, ...) \
 	blog(level, "[qsv encoder: '%s'] " format, \

@@ -248,6 +248,7 @@ bool os_quick_write_mbs_file(const char *path, const char *str, size_t len)
 	if (mbs_len)
 		fwrite(mbs, 1, mbs_len, f);
 	bfree(mbs);
+	fflush(f);
 	fclose(f);
 
 	return true;
@@ -264,6 +265,7 @@ bool os_quick_write_utf8_file(const char *path, const char *str, size_t len,
 		fwrite("\xEF\xBB\xBF", 1, 3, f);
 	if (len)
 		fwrite(str, 1, len, f);
+	fflush(f);
 	fclose(f);
 
 	return true;
@@ -297,17 +299,10 @@ bool os_quick_write_utf8_file_safe(const char *path, const char *str,
 		if (*backup_ext != '.')
 			dstr_cat(&backup_path, ".");
 		dstr_cat(&backup_path, backup_ext);
-
-		os_unlink(backup_path.array);
-		os_rename(path, backup_path.array);
-
-		dstr_free(&backup_path);
-	} else {
-		os_unlink(path);
 	}
 
-	os_rename(temp_path.array, path);
-	success = true;
+	if (os_safe_replace(path, temp_path.array, backup_path.array) == 0)
+		success = true;
 
 cleanup:
 	dstr_free(&backup_path);
