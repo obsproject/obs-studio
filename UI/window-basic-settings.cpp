@@ -464,7 +464,9 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	delete ui->advancedGeneralGroupBox;
 	delete ui->enableNewSocketLoop;
 	delete ui->enableLowLatencyMode;
+#ifdef __APPLE__
 	delete ui->disableAudioDucking;
+#endif
 	ui->rendererLabel = nullptr;
 	ui->renderer = nullptr;
 	ui->adapterLabel = nullptr;
@@ -474,7 +476,9 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	ui->advancedGeneralGroupBox = nullptr;
 	ui->enableNewSocketLoop = nullptr;
 	ui->enableLowLatencyMode = nullptr;
+#ifdef __APPLE__
 	ui->disableAudioDucking = nullptr;
+#endif
 #endif
 
 #ifndef __APPLE__
