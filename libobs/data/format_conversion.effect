@@ -37,6 +37,11 @@ uniform float     input_height_i;
 uniform float     input_width_i_d2;
 uniform float     input_height_i_d2;
 
+uniform int       int_width;
+uniform int       int_input_width;
+uniform int       int_u_plane_offset;
+uniform int       int_v_plane_offset;
+
 uniform texture2d image;
 
 sampler_state def_sampler {
@@ -235,6 +240,13 @@ float4 PSPlanar444(VertInOut vert_in) : TARGET
 		return out_val[2];
 }
 
+float GetIntOffsetColor(int offset)
+{
+	return image.Load(int3(offset % int_input_width,
+	                       offset / int_input_width,
+	                       0)).r;
+}
+
 float4 PSPacked422_Reverse(VertInOut vert_in, int u_pos, int v_pos,
 		int y0_pos, int y1_pos) : TARGET
 {
@@ -250,59 +262,37 @@ float4 PSPacked422_Reverse(VertInOut vert_in, int u_pos, int v_pos,
 			texel[u_pos], texel[v_pos], 1.0);
 }
 
-float GetOffsetColor(float offset)
-{
-	float2 uv;
-
-	offset += PRECISION_OFFSET;
-	uv.x = floor(fmod(offset, input_width)) * input_width_i;
-	uv.y = floor(offset * input_width_i)    * input_height_i;
-
-	uv.xy += float2(input_width_i_d2, input_height_i_d2);
-
-	return image.Sample(def_sampler, uv).r;
-}
-
 float4 PSPlanar420_Reverse(VertInOut vert_in) : TARGET
 {
-	float x = vert_in.uv.x;
-	float y = vert_in.uv.y;
-	float x_offset   = floor(x * width  + PRECISION_OFFSET);
-	float y_offset   = floor(y * height + PRECISION_OFFSET);
+	int x = int(vert_in.uv.x * width  + PRECISION_OFFSET);
+	int y = int(vert_in.uv.y * height + PRECISION_OFFSET);
 
-	float lum_offset = y_offset * width + x_offset + PRECISION_OFFSET;
-	lum_offset       = floor(lum_offset);
-
-	float ch_offset  = floor(y_offset * 0.5 + PRECISION_OFFSET) * width_d2 +
-		(x_offset * 0.5) + PRECISION_OFFSET;
-	ch_offset        = floor(ch_offset);
+	int lum_offset = y * int_width + x;
+	int chroma_offset = (y / 2) * (int_width / 2) + x / 2;
+	int chroma1    = int_u_plane_offset + chroma_offset;
+	int chroma2    = int_v_plane_offset + chroma_offset;
 
 	return float4(
-		GetOffsetColor(lum_offset),
-		GetOffsetColor(u_plane_offset + ch_offset),
-		GetOffsetColor(v_plane_offset + ch_offset),
+		GetIntOffsetColor(lum_offset),
+		GetIntOffsetColor(chroma1),
+		GetIntOffsetColor(chroma2),
 		1.0
 	);
 }
 
 float4 PSNV12_Reverse(VertInOut vert_in) : TARGET
 {
-	float x = vert_in.uv.x;
-	float y = vert_in.uv.y;
-	float x_offset   = floor(x * width  + PRECISION_OFFSET);
-	float y_offset   = floor(y * height + PRECISION_OFFSET);
+	int x = int(vert_in.uv.x * width  + PRECISION_OFFSET);
+	int y = int(vert_in.uv.y * height + PRECISION_OFFSET);
 
-	float lum_offset = y_offset * width + x_offset + PRECISION_OFFSET;
-	lum_offset       = floor(lum_offset);
-
-	float ch_offset  = floor(y_offset * 0.5 + PRECISION_OFFSET) * width_d2 +
-		(x_offset * 0.5);
-	ch_offset        = floor(ch_offset * 2.0 + PRECISION_OFFSET);
+	int lum_offset    = y * int_width + x;
+	int chroma_offset = (y / 2) * (int_width / 2) + x / 2;
+	int chroma        = int_u_plane_offset + chroma_offset * 2;
 
 	return float4(
-		GetOffsetColor(lum_offset),
-		GetOffsetColor(u_plane_offset + ch_offset),
-		GetOffsetColor(u_plane_offset + ch_offset + 1.0),
+		GetIntOffsetColor(lum_offset),
+		GetIntOffsetColor(chroma),
+		GetIntOffsetColor(chroma + 1),
 		1.0
 	);
 }
