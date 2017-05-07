@@ -195,7 +195,7 @@ static inline PIP_ADAPTER_ADDRESSES get_adapters(void)
 			break;
 		}
 		i++;
-	} while ((ret == ERROR_BUFFER_OVERFLOW) && (i < max_tries));
+	} while ((ret != ERROR_BUFFER_OVERFLOW) && (i < max_tries));
 
 	if (ret != NO_ERROR && ret != ERROR_NO_DATA) {
 		LPSTR msg_buf = NULL;
