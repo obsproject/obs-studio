@@ -26,6 +26,11 @@ static struct func_hook reset;
 static struct func_hook reset_ex;
 
 struct d3d9_data {
+	explicit d3d9_data()
+	{
+			
+	}
+	
 	HMODULE                d3d9;
 	IDirect3DDevice9       *device; /* do not release */
 	uint32_t               cx;
@@ -56,7 +61,7 @@ struct d3d9_data {
 	int                    copy_wait;
 };
 
-static struct d3d9_data data = {};
+static struct d3d9_data data;
 
 static void d3d9_free()
 {
