@@ -137,7 +137,7 @@ EXPORT void obs_properties_apply_settings(obs_properties_t *props,
  * otherwise return false.
  */
 typedef bool (*obs_property_clicked_t)(obs_properties_t *props,
-		obs_property_t *property, void *data);
+		obs_property_t *property, void *data, obs_data_t *settings);
 
 EXPORT obs_property_t *obs_properties_add_bool(obs_properties_t *props,
 		const char *name, const char *description);
@@ -228,7 +228,7 @@ EXPORT void obs_property_set_modified_callback(obs_property_t *p,
 		obs_property_modified_t modified);
 
 EXPORT bool obs_property_modified(obs_property_t *p, obs_data_t *settings);
-EXPORT bool obs_property_button_clicked(obs_property_t *p, void *obj);
+EXPORT bool obs_property_button_clicked(obs_property_t *p, void *obj, obs_data_t *settings);
 
 EXPORT void obs_property_set_visible(obs_property_t *p, bool visible);
 EXPORT void obs_property_set_enabled(obs_property_t *p, bool enabled);
