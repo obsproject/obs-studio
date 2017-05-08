@@ -161,6 +161,8 @@ EXPORT int os_mkdir(const char *path);
 EXPORT int os_mkdirs(const char *path);
 EXPORT int os_rename(const char *old_path, const char *new_path);
 EXPORT int os_copyfile(const char *file_in, const char *file_out);
+EXPORT int os_safe_replace(const char *target_path, const char *from_path,
+		const char *backup_path);
 
 EXPORT char *os_generate_formatted_filename(const char *extension, bool space,
 		const char *format);

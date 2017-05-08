@@ -9,14 +9,18 @@
 #include "platform.hpp"
 #include "obs-app.hpp"
 
-OBSProjector::OBSProjector(QWidget *widget, obs_source_t *source_)
+OBSProjector::OBSProjector(QWidget *widget, obs_source_t *source_, bool window)
 	: OBSQTDisplay                 (widget,
-	                                Qt::Window | Qt::FramelessWindowHint |
-					Qt::X11BypassWindowManagerHint),
+	                                Qt::Window),
 	  source                       (source_),
 	  removedSignal                (obs_source_get_signal_handler(source),
 	                                "remove", OBSSourceRemoved, this)
 {
+	if (!window) {
+		setWindowFlags(Qt::FramelessWindowHint |
+				Qt::X11BypassWindowManagerHint);
+	}
+
 	setAttribute(Qt::WA_DeleteOnClose, true);
 
 	//disable application quit when last window closed
@@ -34,13 +38,14 @@ OBSProjector::OBSProjector(QWidget *widget, obs_source_t *source_)
 
 	bool hideCursor = config_get_bool(GetGlobalConfig(),
 			"BasicWindow", "HideProjectorCursor");
-	if (hideCursor) {
+	if (hideCursor && !window) {
 		QPixmap empty(16, 16);
 		empty.fill(Qt::transparent);
 		setCursor(QCursor(empty));
 	}
 
 	App()->IncrementSleepInhibition();
+	resize(480, 270);
 }
 
 OBSProjector::~OBSProjector()
@@ -50,29 +55,36 @@ OBSProjector::~OBSProjector()
 	App()->DecrementSleepInhibition();
 }
 
-void OBSProjector::Init(int monitor)
+void OBSProjector::Init(int monitor, bool window, QString title)
 {
 	QScreen *screen = QGuiApplication::screens()[monitor];
 
-	setGeometry(screen->geometry());
+	if (!window)
+		setGeometry(screen->geometry());
 
 	bool alwaysOnTop = config_get_bool(GetGlobalConfig(),
 			"BasicWindow", "ProjectorAlwaysOnTop");
-	if (alwaysOnTop)
+	if (alwaysOnTop && !window)
 		SetAlwaysOnTop(this, true);
+
+	if (window)
+		setWindowTitle(title);
 
 	show();
 
 	if (source)
 		obs_source_inc_showing(source);
 
-	QAction *action = new QAction(this);
-	action->setShortcut(Qt::Key_Escape);
-	addAction(action);
-
-	connect(action, SIGNAL(triggered()), this, SLOT(EscapeTriggered()));
+	if (!window) {
+		QAction *action = new QAction(this);
+		action->setShortcut(Qt::Key_Escape);
+		addAction(action);
+		connect(action, SIGNAL(triggered()), this,
+				SLOT(EscapeTriggered()));
+	}
 
 	savedMonitor = monitor;
+	isWindow = window;
 }
 
 void OBSProjector::OBSRender(void *data, uint32_t cx, uint32_t cy)
@@ -136,8 +148,12 @@ void OBSProjector::mousePressEvent(QMouseEvent *event)
 
 void OBSProjector::EscapeTriggered()
 {
-	OBSBasic *main = reinterpret_cast<OBSBasic*>(App()->GetMainWindow());
-	main->RemoveSavedProjectors(savedMonitor);
+	if (!isWindow) {
+		OBSBasic *main =
+			reinterpret_cast<OBSBasic*>(App()->GetMainWindow());
+
+		main->RemoveSavedProjectors(savedMonitor);
+	}
 
 	deleteLater();
 }

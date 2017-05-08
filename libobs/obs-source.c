@@ -1490,6 +1490,12 @@ static inline void set_eparam(gs_effect_t *effect, const char *name, float val)
 	gs_effect_set_float(param, val);
 }
 
+static inline void set_eparami(gs_effect_t *effect, const char *name, int val)
+{
+	gs_eparam_t *param = gs_effect_get_param_by_name(effect, name);
+	gs_effect_set_int(param, val);
+}
+
 static bool update_async_texrender(struct obs_source *source,
 		const struct obs_source_frame *frame,
 		gs_texture_t *tex, gs_texrender_t *texrender)
@@ -1517,22 +1523,16 @@ static bool update_async_texrender(struct obs_source *source,
 	gs_effect_set_texture(gs_effect_get_param_by_name(conv, "image"), tex);
 	set_eparam(conv, "width",  (float)cx);
 	set_eparam(conv, "height", (float)cy);
-	set_eparam(conv, "width_i",  1.0f / cx);
-	set_eparam(conv, "height_i", 1.0f / cy);
 	set_eparam(conv, "width_d2",  cx * 0.5f);
-	set_eparam(conv, "height_d2", cy * 0.5f);
 	set_eparam(conv, "width_d2_i",  1.0f / (cx * 0.5f));
-	set_eparam(conv, "height_d2_i", 1.0f / (cy * 0.5f));
-	set_eparam(conv, "input_width",  convert_width);
-	set_eparam(conv, "input_height", convert_height);
-	set_eparam(conv, "input_width_i",  1.0f / convert_width);
-	set_eparam(conv, "input_height_i", 1.0f / convert_height);
 	set_eparam(conv, "input_width_i_d2",  (1.0f / convert_width)  * 0.5f);
-	set_eparam(conv, "input_height_i_d2", (1.0f / convert_height) * 0.5f);
-	set_eparam(conv, "u_plane_offset",
-			(float)source->async_plane_offset[0]);
-	set_eparam(conv, "v_plane_offset",
-			(float)source->async_plane_offset[1]);
+
+	set_eparami(conv, "int_width", (int)cx);
+	set_eparami(conv, "int_input_width", (int)source->async_convert_width);
+	set_eparami(conv, "int_u_plane_offset",
+			(int)source->async_plane_offset[0]);
+	set_eparami(conv, "int_v_plane_offset",
+			(int)source->async_plane_offset[1]);
 
 	gs_ortho(0.f, (float)cx, 0.f, (float)cy, -100.f, 100.f);
 

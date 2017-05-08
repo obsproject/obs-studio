@@ -46,6 +46,8 @@ public:
 	inline bool operator!()     {return ptr == NULL;}
 	inline bool operator==(T p) {return ptr == p;}
 	inline bool operator!=(T p) {return ptr != p;}
+
+	inline T *Get() const       {return ptr;}
 };
 
 class ConfigFile {

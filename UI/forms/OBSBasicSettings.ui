@@ -3755,6 +3755,13 @@
                    <item row="0" column="1">
                     <widget class="QComboBox" name="monitoringDevice"/>
                    </item>
+                   <item row="1" column="1">
+                    <widget class="QCheckBox" name="disableAudioDucking">
+                     <property name="text">
+                      <string>Basic.Settings.Advanced.Audio.DisableAudioDucking</string>
+                     </property>
+                    </widget>
+                   </item>
                   </layout>
                  </widget>
                 </item>

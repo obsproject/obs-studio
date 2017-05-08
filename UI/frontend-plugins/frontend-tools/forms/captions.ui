@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>519</width>
-    <height>140</height>
+    <height>152</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -55,6 +55,20 @@
      </item>
      <item row="2" column="1">
       <widget class="QComboBox" name="language"/>
+     </item>
+     <item row="3" column="1">
+      <widget class="QComboBox" name="provider">
+       <property name="insertPolicy">
+        <enum>QComboBox::InsertAlphabetically</enum>
+       </property>
+      </widget>
+     </item>
+     <item row="3" column="0">
+      <widget class="QLabel" name="label_3">
+       <property name="text">
+        <string>Captions.Provider</string>
+       </property>
+      </widget>
      </item>
     </layout>
    </item>

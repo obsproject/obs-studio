@@ -490,20 +490,20 @@ void AutoUpdateThread::info(const QString &title, const QString &text)
 			Q_ARG(QString, text));
 }
 
-int AutoUpdateThread::queryUpdateSlot(bool manualUpdate, const QString &text)
+int AutoUpdateThread::queryUpdateSlot(bool localManualUpdate, const QString &text)
 {
-	OBSUpdate updateDlg(App()->GetMainWindow(), manualUpdate, text);
+	OBSUpdate updateDlg(App()->GetMainWindow(), localManualUpdate, text);
 	return updateDlg.exec();
 }
 
-int AutoUpdateThread::queryUpdate(bool manualUpdate, const char *text_utf8)
+int AutoUpdateThread::queryUpdate(bool localManualUpdate, const char *text_utf8)
 {
 	int ret = OBSUpdate::No;
 	QString text = text_utf8;
 	QMetaObject::invokeMethod(this, "queryUpdateSlot",
 			Qt::BlockingQueuedConnection,
 			Q_RETURN_ARG(int, ret),
-			Q_ARG(bool, manualUpdate),
+			Q_ARG(bool, localManualUpdate),
 			Q_ARG(QString, text));
 	return ret;
 }
@@ -536,7 +536,7 @@ try {
 	string         text;
 	string         error;
 	string         signature;
-	CryptProvider  provider;
+	CryptProvider  localProvider;
 	BYTE           manifestHash[BLAKE2_HASH_LENGTH];
 	bool           updatesAvailable = false;
 	bool           success;
@@ -579,7 +579,7 @@ try {
 	/* ----------------------------------- *
 	 * create signature provider           */
 
-	if (!CryptAcquireContext(&provider,
+	if (!CryptAcquireContext(&localProvider,
 	                         nullptr,
 	                         MS_ENH_RSA_AES_PROV,
 	                         PROV_RSA_AES,
@@ -587,7 +587,7 @@ try {
 		throw strprintf("CryptAcquireContext failed: %lu",
 				GetLastError());
 
-	::provider = provider;
+	provider = localProvider;
 
 	/* ----------------------------------- *
 	 * avoid downloading manifest again    */
@@ -638,7 +638,7 @@ try {
 		if (responseCode == 404)
 			return;
 
-		throw strprintf("Failed to fetch manifest file: %s", error);   
+		throw strprintf("Failed to fetch manifest file: %s", error.c_str());
 	}
 
 	/* ----------------------------------- *
@@ -658,11 +658,11 @@ try {
 	if (responseCode == 200) {
 		if (!QuickWriteFile(manifestPath, text.data(), text.size()))
 			throw strprintf("Could not write file '%s'",
-					manifestPath);
+					manifestPath.Get());
 	} else {
 		if (!QuickReadFile(manifestPath, text))
 			throw strprintf("Could not read file '%s'",
-					manifestPath);
+					manifestPath.Get());
 	}
 
 	/* ----------------------------------- *
@@ -764,7 +764,7 @@ try {
 		QString msg = QTStr("Updater.FailedToLaunch");
 		info(msg, msg);
 		throw strprintf("Can't launch updater '%s': %d",
-				updateFilePath, GetLastError());
+				updateFilePath.Get(), GetLastError());
 	}
 
 	/* force OBS to perform another update check immediately after updating

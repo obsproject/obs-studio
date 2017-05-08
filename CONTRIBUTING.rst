@@ -24,7 +24,7 @@ Coding Guidelines
 
  - OBS Studio uses kernel normal form (linux variant), for more
    information, please read here:
-   https://www.kernel.org/doc/Documentation/CodingStyle
+   https://github.com/torvalds/linux/blob/master/Documentation/process/coding-style.rst
 
  - Avoid trailing spaces.  To view trailing spaces before making a
    commit, use "git diff" on your changes.  If colors are enabled for

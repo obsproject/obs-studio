@@ -70,6 +70,7 @@ bool opt_studio_mode = false;
 bool opt_start_replaybuffer = false;
 bool opt_minimize_tray = false;
 bool opt_allow_opengl = false;
+bool opt_always_on_top = false;
 string opt_starting_collection;
 string opt_starting_profile;
 string opt_starting_scene;
@@ -409,6 +410,11 @@ bool OBSApp::InitGlobalConfigDefaults()
 	config_set_default_bool(globalConfig, "BasicWindow",
 			"ShowStatusBar", true);
 
+#ifdef _WIN32
+	config_set_default_bool(globalConfig, "Audio", "DisableAudioDucking",
+			true);
+#endif
+
 #ifdef __APPLE__
 	config_set_default_bool(globalConfig, "Video", "DisableOSXVSync", true);
 	config_set_default_bool(globalConfig, "Video", "ResetOSXVSyncOnExit",
@@ -732,6 +738,13 @@ OBSApp::OBSApp(int &argc, char **argv, profiler_name_store_t *store)
 
 OBSApp::~OBSApp()
 {
+#ifdef _WIN32
+	bool disableAudioDucking = config_get_bool(globalConfig, "Audio",
+			"DisableAudioDucking");
+	if (disableAudioDucking)
+		DisableAudioDucking(false);
+#endif
+
 #ifdef __APPLE__
 	bool vsyncDiabled = config_get_bool(globalConfig, "Video",
 			"DisableOSXVSync");
@@ -849,6 +862,13 @@ void OBSApp::AppInit()
 			Str("Untitled"));
 	config_set_default_string(globalConfig, "Basic", "SceneCollectionFile",
 			Str("Untitled"));
+
+#ifdef _WIN32
+	bool disableAudioDucking = config_get_bool(globalConfig, "Audio",
+			"DisableAudioDucking");
+	if (disableAudioDucking)
+		DisableAudioDucking(true);
+#endif
 
 #ifdef __APPLE__
 	if (config_get_bool(globalConfig, "Video", "DisableOSXVSync"))
@@ -1757,6 +1777,9 @@ int main(int argc, char *argv[])
 		} else if (arg_is(argv[i], "--verbose", nullptr)) {
 			log_verbose = true;
 
+		} else if (arg_is(argv[i], "--always-on-top", nullptr)) {
+			opt_always_on_top = true;
+
 		} else if (arg_is(argv[i], "--unfiltered_log", nullptr)) {
 			unfiltered_log = true;
 
@@ -1801,6 +1824,7 @@ int main(int argc, char *argv[])
 			"--minimize-to-tray: Minimize to system tray.\n" <<
 			"--portable, -p: Use portable mode.\n\n" <<
 			"--verbose: Make log more verbose.\n" <<
+			"--always-on-top: Start in 'always on top' mode.\n\n" <<
 			"--unfiltered_log: Make log unfiltered.\n\n" <<
 			"--allow-opengl: Allow OpenGL on Windows.\n\n" <<
 			"--version, -V: Get current version.\n";
