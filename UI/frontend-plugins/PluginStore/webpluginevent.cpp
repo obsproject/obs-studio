@@ -13,20 +13,26 @@ QStringList	WebPluginEvent::GetLocalPluginList()
 {
 	return	{ "1", "2", "3" };
 }
-QString		WebPluginEvent::GetLocalPluginVersion(QString strName)
+QString		WebPluginEvent::GetLocalPluginVersion(QString strPluginID)
 {
 	return	QString("1.1.1.1");
 }
-void		WebPluginEvent::DownLoadPluginUrl(QString strName,QString strUrl)
+void		WebPluginEvent::DownLoadPluginUrl(QString strPluginID,
+	QString	strPluginproductName,
+	QString	strPluginInfo,
+	QString	strLocalVersion,
+	QString strMD5,
+	qint64  iSize,
+	QString strUrl)
 {
-	emit DownLoadState(strName, 0, 0);
+	emit DownLoadState(strPluginID, 0, 0);
 }
-bool		WebPluginEvent::InstallPluginName(QString strName)
+bool		WebPluginEvent::InstallPluginName(QString strPluginID)
 {
 	
 	return true;
 }
-bool		WebPluginEvent::UnInstallPluginName(QString strName)
+bool		WebPluginEvent::UnInstallPluginName(QString strPluginID)
 {
 	return true;
 }
