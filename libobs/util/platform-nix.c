@@ -434,7 +434,7 @@ int os_rename(const char *old_path, const char *new_path)
 
 int os_safe_replace(const char *target, const char *from, const char *backup)
 {
-	if (backup && rename(target, backup) != 0)
+	if (backup && os_file_exists(target) && rename(target, backup) != 0)
 		return -1;
 	return rename(from, target);
 }
