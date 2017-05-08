@@ -1,6 +1,9 @@
 # Exit if something fails
 set -e
 
+# Echo all commands before executing
+set -v
+
 git fetch --tags
 
 # Leave obs-studio folder
@@ -8,7 +11,7 @@ cd ../
 
 # Install Packages app so we can build a package later
 # http://s.sudre.free.fr/Software/Packages/about.html
-curl -L -O https://s3-us-west-2.amazonaws.com/obs-nightly/Packages.pkg -f --retry 5 -C -
+wget --retry-connrefused --waitretry=1 https://s3-us-west-2.amazonaws.com/obs-nightly/Packages.pkg
 sudo installer -pkg ./Packages.pkg -target /
 
 brew update
@@ -20,21 +23,21 @@ export PATH=/usr/local/opt/ccache/libexec:$PATH
 ccache -s || echo "CCache is not available."
 
 # Fetch and untar prebuilt OBS deps that are compatible with older versions of OSX
-curl -L -O https://s3-us-west-2.amazonaws.com/obs-nightly/osx-deps.tar.gz -f --retry 5 -C -
+wget --retry-connrefused --waitretry=1 https://s3-us-west-2.amazonaws.com/obs-nightly/osx-deps.tar.gz
 tar -xf ./osx-deps.tar.gz -C /tmp
 
 # Fetch vlc codebase
-curl -L -o vlc-master.zip https://github.com/videolan/vlc/archive/master.zip -f --retry 5 -C -
+wget --retry-connrefused --waitretry=1 -O vlc-master.zip https://github.com/videolan/vlc/archive/master.zip
 unzip -q ./vlc-master.zip
 
 # Get sparkle
-curl -L -o ./sparkle.tar.bz2 https://github.com/sparkle-project/Sparkle/releases/download/1.16.0/Sparkle-1.16.0.tar.bz2
+wget --retry-connrefused --waitretry=1 -O sparkle.tar.bz2 https://github.com/sparkle-project/Sparkle/releases/download/1.16.0/Sparkle-1.16.0.tar.bz2
 mkdir ./sparkle
 tar -xf ./sparkle.tar.bz2 -C ./sparkle
 sudo cp -R ./sparkle/Sparkle.framework /Library/Frameworks/Sparkle.framework
 
 # CEF Stuff
-curl -kLO https://obs-nightly.s3-us-west-2.amazonaws.com/cef_binary_${CEF_BUILD_VERSION}_macosx64.tar.bz2 -f --retry 5 -C -
+wget --retry-connrefused --waitretry=1 https://obs-nightly.s3-us-west-2.amazonaws.com/cef_binary_${CEF_BUILD_VERSION}_macosx64.tar.bz2
 tar -xf ./cef_binary_${CEF_BUILD_VERSION}_macosx64.tar.bz2
 cd ./cef_binary_${CEF_BUILD_VERSION}_macosx64
 mkdir build
