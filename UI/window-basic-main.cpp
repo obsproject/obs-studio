@@ -4246,6 +4246,20 @@ void OBSBasic::RecordingStop(int code)
 	if (api)
 		api->on_event(OBS_FRONTEND_EVENT_RECORDING_STOPPED);
 
+	if (autoRemux) {
+		const char *mode = config_get_string(basicConfig, "Output", "Mode");
+		const char *path = strcmp(mode, "Advanced") ?
+		config_get_string(basicConfig, "SimpleOutput", "FilePath") :
+		config_get_string(basicConfig, "AdvOut", "RecFilePath");
+		std::string s(path);
+		s += "/";
+		s += remuxFilename;
+		const QString &str = QString::fromStdString(s);
+		OBSRemux *remux = new OBSRemux(path, this);
+		remux->inputChanged(str);
+		remux->Remux();
+	}
+
 	OnDeactivate();
 }
 

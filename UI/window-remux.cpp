@@ -86,6 +86,9 @@ bool OBSRemux::Stop()
 	if (!worker->job)
 		return true;
 
+	if (autoRemux)
+		return true;
+
 	if (QMessageBox::critical(nullptr,
 				QTStr("Remux.ExitUnfinishedTitle"),
 				QTStr("Remux.ExitUnfinished"),
@@ -156,7 +159,7 @@ void OBSRemux::BrowseOutput()
 
 void OBSRemux::Remux()
 {
-	if (QFileInfo::exists(ui->targetFile->text()))
+	if (QFileInfo::exists(ui->targetFile->text()) && !autoRemux)
 		if (QMessageBox::question(this, QTStr("Remux.FileExistsTitle"),
 					QTStr("Remux.FileExists"),
 					QMessageBox::Yes | QMessageBox::No) !=
@@ -176,6 +179,12 @@ void OBSRemux::Remux()
 			setEnabled(false);
 
 	emit remux();
+
+	if (autoRemux) {
+		QFile file(ui->sourceFile->text());
+		file.remove();
+		Stop();
+	}
 }
 
 void OBSRemux::closeEvent(QCloseEvent *event)
@@ -201,9 +210,12 @@ void OBSRemux::updateProgress(float percent)
 
 void OBSRemux::remuxFinished(bool success)
 {
-	QMessageBox::information(this, QTStr("Remux.FinishedTitle"),
-			success ?
-			QTStr("Remux.Finished") : QTStr("Remux.FinishedError"));
+	if (!autoRemux) {
+		QMessageBox::information(this, QTStr("Remux.FinishedTitle"),
+				success ?
+				QTStr("Remux.Finished") :
+				QTStr("Remux.FinishedError"));
+	}
 
 	worker->job.reset();
 	ui->progressBar->setVisible(false);
