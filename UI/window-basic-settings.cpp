@@ -448,6 +448,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->enableNewSocketLoop,  CHECK_CHANGED,  ADV_CHANGED);
 	HookWidget(ui->enableLowLatencyMode, CHECK_CHANGED,  ADV_CHANGED);
 	HookWidget(ui->disableFocusHotkeys,  CHECK_CHANGED,  ADV_CHANGED);
+	HookWidget(ui->autoRemux,            CHECK_CHANGED,  ADV_CHANGED);
 
 #if !defined(_WIN32) && !defined(__APPLE__)
 	delete ui->enableAutoUpdates;
@@ -2236,6 +2237,8 @@ void OBSBasicSettings::LoadAdvancedSettings()
 			"RecRBTime");
 	int rbSize = config_get_int(main->Config(), "AdvOut",
 			"RecRBSize");
+	bool autoRemux = config_get_bool(main->Config(), "Video",
+			"AutoRemux");
 
 	loading = true;
 
@@ -2262,6 +2265,7 @@ void OBSBasicSettings::LoadAdvancedSettings()
 	ui->streamDelaySec->setValue(delaySec);
 	ui->streamDelayPreserve->setChecked(preserveDelay);
 	ui->streamDelayEnable->setChecked(enableDelay);
+	ui->autoRemux->setChecked(autoRemux);
 
 
 	SetComboByName(ui->colorFormat, videoColorFormat);
@@ -2935,6 +2939,7 @@ void OBSBasicSettings::SaveAdvancedSettings()
 	SaveSpinBox(ui->reconnectRetryDelay, "Output", "RetryDelay");
 	SaveSpinBox(ui->reconnectMaxRetries, "Output", "MaxRetries");
 	SaveComboData(ui->bindToIP, "Output", "BindIP");
+	SaveCheckBox(ui->autoRemux, "Video", "AutoRemux");
 
 #if defined(_WIN32) || defined(__APPLE__) || HAVE_PULSEAUDIO
 	QString newDevice = ui->monitoringDevice->currentData().toString();
@@ -3914,6 +3919,13 @@ void OBSBasicSettings::AdvOutRecCheckWarnings()
 		if (!warningMsg.isEmpty())
 			warningMsg += "\n\n";
 		warningMsg += QTStr("OutputWarnings.MP4Recording");
+		ui->autoRemux->setText(
+				QTStr("Basic.Settings.Advanced.AutoRemux")
+				+ " " +
+				QTStr("Basic.Settings.Advanced.AutoRemux.MP4"));
+	} else {
+		ui->autoRemux->setText(
+				QTStr("Basic.Settings.Advanced.AutoRemux"));
 	}
 
 	delete advOutRecWarning;
@@ -4370,6 +4382,13 @@ void OBSBasicSettings::SimpleRecordingEncoderChanged()
 		if (!warning.isEmpty())
 			warning += "\n\n";
 		warning += QTStr("OutputWarnings.MP4Recording");
+		ui->autoRemux->setText(
+				QTStr("Basic.Settings.Advanced.AutoRemux")
+				+ " " +
+				QTStr("Basic.Settings.Advanced.AutoRemux.MP4"));
+	} else {
+		ui->autoRemux->setText(
+				QTStr("Basic.Settings.Advanced.AutoRemux"));
 	}
 
 	if (warning.isEmpty())
