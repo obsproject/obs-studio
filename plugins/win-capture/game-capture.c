@@ -130,6 +130,7 @@ struct game_capture {
 	bool                          initial_config : 1;
 	bool                          convert_16bit : 1;
 	bool                          is_app : 1;
+	bool                          cursor_hidden;
 
 	struct game_capture_config    config;
 
@@ -148,6 +149,7 @@ struct game_capture {
 	HANDLE                        texture_mutexes[2];
 	wchar_t                       *app_sid;
 	int                           retrying;
+	float                         cursor_check_time;
 
 	union {
 		struct {
@@ -1547,6 +1549,22 @@ static inline bool capture_valid(struct game_capture *gc)
 	return !object_signalled(gc->target_process);
 }
 
+static void check_foreground_window(struct game_capture *gc, float seconds)
+{
+	// Hides the cursor if the user isn't actively in the game
+	gc->cursor_check_time += seconds;
+	if (gc->cursor_check_time >= 0.1f) {
+		DWORD foreground_process_id;
+		GetWindowThreadProcessId(GetForegroundWindow(),
+			&foreground_process_id);
+		if (gc->process_id != foreground_process_id)
+			gc->cursor_hidden = true;
+		else
+			gc->cursor_hidden = false;
+		gc->cursor_check_time = 0.0f;
+	}
+}
+
 static void game_capture_tick(void *data, float seconds)
 {
 	struct game_capture *gc = data;
@@ -1653,6 +1671,7 @@ static void game_capture_tick(void *data, float seconds)
 			}
 
 			if (gc->config.cursor) {
+				check_foreground_window(gc, seconds);
 				obs_enter_graphics();
 				cursor_capture(&gc->cursor_data);
 				obs_leave_graphics();
@@ -1708,12 +1727,14 @@ static void game_capture_render(void *data, gs_effect_t *effect)
 		obs_source_draw(gc->texture, 0, 0, 0, 0,
 				gc->global_hook_info->flip);
 
-		if (gc->config.allow_transparency && gc->config.cursor) {
+		if (gc->config.allow_transparency && gc->config.cursor &&
+			!gc->cursor_hidden) {
 			game_capture_render_cursor(gc);
 		}
 	}
 
-	if (!gc->config.allow_transparency && gc->config.cursor) {
+	if (!gc->config.allow_transparency && gc->config.cursor &&
+		!gc->cursor_hidden) {
 		effect = obs_get_base_effect(OBS_EFFECT_DEFAULT);
 
 		while (gs_effect_loop(effect, "Draw")) {
