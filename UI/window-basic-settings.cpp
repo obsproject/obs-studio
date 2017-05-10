@@ -151,6 +151,23 @@ static inline bool SetComboByValue(QComboBox *combo, const char *name)
 	return false;
 }
 
+static inline bool SetInvalidValue(QComboBox *combo, const char *name,
+	const char *data = nullptr)
+{
+	combo->insertItem(0, name, data);
+
+	QStandardItemModel *model =
+		dynamic_cast<QStandardItemModel*>(combo->model());
+	if (!model)
+		return false;
+
+	QStandardItem *item = model->item(0);
+	item->setFlags(Qt::NoItemFlags);
+
+	combo->setCurrentIndex(0);
+	return true;
+}
+
 static inline QString GetComboData(QComboBox *combo)
 {
 	int idx = combo->currentIndex();
@@ -2032,22 +2049,8 @@ void OBSBasicSettings::LoadAdvancedSettings()
 	LoadRendererList();
 
 #if defined(_WIN32) || defined(__APPLE__)
-	QComboBox *cb = ui->monitoringDevice;
-	idx = cb->findData(monDevId);
-	if (idx == -1) {
-		cb->insertItem(0, monDevName, monDevId);
-
-		QStandardItemModel *model =
-			dynamic_cast<QStandardItemModel*>(cb->model());
-		if (!model)
-			return;
-
-		QStandardItem *item = model->item(0);
-		item->setFlags(Qt::NoItemFlags);
-
-		idx = 0;
-	}
-	cb->setCurrentIndex(idx);
+	if (!SetComboByValue(ui->monitoringDevice, monDevId))
+		SetInvalidValue(ui->monitoringDevice, monDevName, monDevId);
 #endif
 
 	ui->filenameFormatting->setText(filename);
@@ -2068,7 +2071,8 @@ void OBSBasicSettings::LoadAdvancedSettings()
 	SetComboByName(ui->colorSpace, videoColorSpace);
 	SetComboByValue(ui->colorRange, videoColorRange);
 
-	SetComboByValue(ui->bindToIP, bindIP);
+	if (!SetComboByValue(ui->bindToIP, bindIP))
+		SetInvalidValue(ui->bindToIP, bindIP, bindIP);
 
 	if (video_output_active(obs_get_video())) {
 		ui->advancedVideoContainer->setEnabled(false);
