@@ -143,7 +143,13 @@ if (CMAKE_CONFIGURATION_TYPES MATCHES "Debug")
 		"${Qt5Core_DIR}/../../../bin/Qt5Guid.dll"
 		"${Qt5Core_DIR}/../../../bin/Qt5Widgetsd.dll"
 		"${Qt5Core_DIR}/../../../bin/libGLESv2d.dll"
-		"${Qt5Core_DIR}/../../../bin/libEGLd.dll")
+		"${Qt5Core_DIR}/../../../bin/libEGLd.dll"
+		"${Qt5Core_DIR}/../../../bin/Qt5Networkd.dll"
+		"${Qt5Core_DIR}/../../../bin/Qt5Qmld.dll"
+		"${Qt5Core_DIR}/../../../bin/Qt5Quickd.dll"
+		"${Qt5Core_DIR}/../../../bin/Qt5WebChanneld.dll"
+		"${Qt5Core_DIR}/../../../bin/Qt5WebEngineCored.dll"
+		"${Qt5Core_DIR}/../../../bin/Qt5WebEngineWidgetsd.dll")
 	file(GLOB QT_DEBUG_PLAT_BIN_FILES
 		"${Qt5Core_DIR}/../../../plugins/platforms/qwindowsd.dll")
 endif()
@@ -154,7 +160,13 @@ if (CMAKE_CONFIGURATION_TYPES MATCHES "Rel")
 		"${Qt5Core_DIR}/../../../bin/Qt5Gui.dll"
 		"${Qt5Core_DIR}/../../../bin/Qt5Widgets.dll"
 		"${Qt5Core_DIR}/../../../bin/libGLESv2.dll"
-		"${Qt5Core_DIR}/../../../bin/libEGL.dll")
+		"${Qt5Core_DIR}/../../../bin/libEGL.dll"
+		"${Qt5Core_DIR}/../../../bin/Qt5Network.dll"
+		"${Qt5Core_DIR}/../../../bin/Qt5Qml.dll"
+		"${Qt5Core_DIR}/../../../bin/Qt5Quick.dll"
+		"${Qt5Core_DIR}/../../../bin/Qt5WebChannel.dll"
+		"${Qt5Core_DIR}/../../../bin/Qt5WebEngineCore.dll"
+		"${Qt5Core_DIR}/../../../bin/Qt5WebEngineWidgets.dll")
 	file(GLOB QT_PLAT_BIN_FILES
 		"${Qt5Core_DIR}/../../../plugins/platforms/qwindows.dll")
 endif()
