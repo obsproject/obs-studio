@@ -140,8 +140,8 @@ struct obs_hotkey_pair {
 	obs_hotkey_pair_id          pair_id;
 	obs_hotkey_id               id[2];
 	obs_hotkey_active_func      func[2];
-	bool                        pressed0 : 1;
-	bool                        pressed1 : 1;
+	bool                        pressed0;
+	bool                        pressed1;
 	void                        *data[2];
 };
 
@@ -166,8 +166,8 @@ void obs_hotkeys_free(void);
 
 struct obs_hotkey_binding {
 	obs_key_combination_t       key;
-	bool                        pressed : 1;
-	bool                        modifiers_match : 1;
+	bool                        pressed;
+	bool                        modifiers_match;
 
 	obs_hotkey_id               hotkey_id;
 	obs_hotkey_t                *hotkey;
@@ -336,9 +336,9 @@ struct obs_core_hotkeys {
 	pthread_t                       hotkey_thread;
 	bool                            hotkey_thread_initialized;
 	os_event_t                      *stop_event;
-	bool                            thread_disable_press : 1;
-	bool                            strict_modifiers : 1;
-	bool                            reroute_hotkeys : 1;
+	bool                            thread_disable_press;
+	bool                            strict_modifiers;
+	bool                            reroute_hotkeys;
 	DARRAY(obs_hotkey_binding_t)    bindings;
 
 	obs_hotkey_callback_router_func router_func;
@@ -643,12 +643,12 @@ struct obs_source {
 	obs_hotkey_pair_id              mute_unmute_key;
 	obs_hotkey_id                   push_to_mute_key;
 	obs_hotkey_id                   push_to_talk_key;
-	bool                            push_to_mute_enabled : 1;
-	bool                            push_to_mute_pressed : 1;
-	bool                            user_push_to_mute_pressed : 1;
-	bool                            push_to_talk_enabled : 1;
-	bool                            push_to_talk_pressed : 1;
-	bool                            user_push_to_talk_pressed : 1;
+	bool                            push_to_mute_enabled;
+	bool                            push_to_mute_pressed;
+	bool                            user_push_to_mute_pressed;
+	bool                            push_to_talk_enabled;
+	bool                            push_to_talk_pressed;
+	bool                            user_push_to_talk_pressed;
 	uint64_t                        push_to_mute_delay;
 	uint64_t                        push_to_mute_stop_time;
 	uint64_t                        push_to_talk_delay;
@@ -670,7 +670,7 @@ struct obs_source {
 	uint32_t                        transition_cx;
 	uint32_t                        transition_cy;
 	uint32_t                        transition_fixed_duration;
-	bool                            transition_use_fixed_duration : 1;
+	bool                            transition_use_fixed_duration;
 	enum obs_transition_mode        transition_mode;
 	enum obs_transition_scale_type  transition_scale_type;
 	struct matrix4                  transition_matrices[2];

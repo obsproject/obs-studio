@@ -38,10 +38,10 @@ struct scale_filter_data {
 	int                             cy_out;
 	enum obs_scale_type             sampling;
 	gs_samplerstate_t               *point_sampler;
-	bool                            aspect_ratio_only : 1;
-	bool                            target_valid : 1;
-	bool                            valid : 1;
-	bool                            undistort : 1;
+	bool                            aspect_ratio_only;
+	bool                            target_valid;
+	bool                            valid;
+	bool                            undistort;
 };
 
 static const char *scale_filter_name(void *unused)
