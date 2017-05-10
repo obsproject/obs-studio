@@ -128,7 +128,7 @@ const std::string& DeckLinkDevice::GetName(void) const
 	return name;
 }
 
-const int32_t DeckLinkDevice::GetMaxChannel(void) const
+int32_t DeckLinkDevice::GetMaxChannel(void) const
 {
 	return maxChannel;
 }
