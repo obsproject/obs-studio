@@ -47,6 +47,7 @@ struct ffmpeg_source {
 	int sws_linesize;
 	enum video_range_type range;
 	obs_source_t *source;
+	obs_hotkey_id hotkey;
 
 	char *input;
 	char *input_format;
@@ -314,12 +315,39 @@ static const char *ffmpeg_source_getname(void *unused)
 	return obs_module_text("FFMpegSource");
 }
 
+static bool restart_hotkey(void *data, obs_hotkey_id id,
+		obs_hotkey_t *hotkey, bool pressed)
+{
+	UNUSED_PARAMETER(id);
+	UNUSED_PARAMETER(hotkey);
+	UNUSED_PARAMETER(pressed);
+
+	struct ffmpeg_source *s = data;
+	if (obs_source_active(s->source))
+		ffmpeg_source_start(s);
+	return true;
+}
+
+static void restart_proc(void *data, calldata_t *cd)
+{
+	restart_hotkey(data, 0, NULL, true);
+	UNUSED_PARAMETER(cd);
+}
+
 static void *ffmpeg_source_create(obs_data_t *settings, obs_source_t *source)
 {
 	UNUSED_PARAMETER(settings);
 
 	struct ffmpeg_source *s = bzalloc(sizeof(struct ffmpeg_source));
 	s->source = source;
+
+	s->hotkey = obs_hotkey_register_source(source,
+			"MediaSource.Restart",
+			obs_module_text("RestartMedia"),
+			restart_hotkey, s);
+
+	proc_handler_t *ph = obs_source_get_proc_handler(source);
+	proc_handler_add(ph, "void restart()", restart_proc, s);
 
 	ffmpeg_source_update(s, settings);
 	return s;
@@ -329,6 +357,8 @@ static void ffmpeg_source_destroy(void *data)
 {
 	struct ffmpeg_source *s = data;
 
+	if (s->hotkey)
+		obs_hotkey_unregister(s->hotkey);
 	if (s->media_valid)
 		mp_media_free(&s->media);
 
