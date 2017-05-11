@@ -131,6 +131,7 @@ set(obs_SOURCES
 	obs-app.cpp
 	api-interface.cpp
 	window-basic-main.cpp
+	window-basic-stats.cpp
 	window-basic-filters.cpp
 	window-basic-settings.cpp
 	window-basic-interaction.cpp
@@ -179,6 +180,7 @@ set(obs_HEADERS
 	platform.hpp
 	window-main.hpp
 	window-basic-main.hpp
+	window-basic-stats.hpp
 	window-basic-filters.hpp
 	window-basic-settings.hpp
 	window-basic-interaction.hpp

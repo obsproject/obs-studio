@@ -987,6 +987,7 @@
      <string>Basic.MainMenu.Tools</string>
     </property>
     <addaction name="autoConfigure"/>
+    <addaction name="stats"/>
     <addaction name="separator"/>
    </widget>
    <addaction name="menu_File"/>
@@ -1469,6 +1470,11 @@
   <action name="autoConfigure">
    <property name="text">
     <string>Basic.AutoConfig.Beta</string>
+   </property>
+  </action>
+  <action name="stats">
+   <property name="text">
+    <string>Basic.Stats</string>
    </property>
   </action>
  </widget>

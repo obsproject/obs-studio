@@ -42,6 +42,7 @@ class QMessageBox;
 class QListWidgetItem;
 class VolControl;
 class QNetworkReply;
+class OBSBasicStats;
 
 #include "ui_OBSBasic.h"
 
@@ -159,6 +160,8 @@ private:
 
 	QPointer<QWidget> projectors[10];
 	QList<QPointer<QWidget>> windowProjectors;
+
+	QPointer<QWidget> stats;
 
 	QPointer<QMenu> startStreamMenu;
 
@@ -614,6 +617,7 @@ private slots:
 	void on_modeSwitch_clicked();
 
 	void on_autoConfigure_triggered();
+	void on_stats_triggered();
 
 	void logUploadFinished(const QString &text, const QString &error);
 

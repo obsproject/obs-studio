@@ -1,0 +1,455 @@
+#include "obs-frontend-api/obs-frontend-api.h"
+
+#include "window-basic-stats.hpp"
+#include "window-basic-main.hpp"
+#include "platform.hpp"
+#include "obs-app.hpp"
+
+#include <QPushButton>
+#include <QScrollArea>
+#include <QVBoxLayout>
+#include <QHBoxLayout>
+#include <QGridLayout>
+
+#include <string>
+
+#define TIMER_INTERVAL 2000
+
+static void setThemeID(QWidget *widget, const QString &themeID)
+{
+	if (widget->property("themeID").toString() != themeID) {
+		widget->setProperty("themeID", themeID);
+
+		/* force style sheet recalculation */
+		QString qss = widget->styleSheet();
+		widget->setStyleSheet("/* */");
+		widget->setStyleSheet(qss);
+	}
+}
+
+OBSBasicStats::OBSBasicStats(QWidget *parent)
+	: QDialog             (parent),
+	  cpu_info            (os_cpu_usage_info_start()),
+	  timer               (this)
+{
+	QVBoxLayout *mainLayout = new QVBoxLayout();
+	QGridLayout *topLayout = new QGridLayout();
+	outputLayout = new QGridLayout();
+
+	int row = 0;
+
+	auto newStatBare = [&] (QString name, QWidget *label, int col)
+	{
+		QLabel *typeLabel = new QLabel(name, this);
+		topLayout->addWidget(typeLabel, row, col);
+		topLayout->addWidget(label, row++, col + 1);
+	};
+
+	auto newStat = [&] (const char *strLoc, QWidget *label, int col)
+	{
+		std::string str = "Basic.Stats.";
+		str += strLoc;
+		newStatBare(QTStr(str.c_str()), label, col);
+	};
+
+	/* --------------------------------------------- */
+
+	cpuUsage = new QLabel(this);
+	hddSpace = new QLabel(this);
+#ifdef _WIN32
+	memUsage = new QLabel(this);
+#endif
+
+	newStat("CPUUsage", cpuUsage, 0);
+	newStat("HDDSpaceAvailable", hddSpace, 0);
+#ifdef _WIN32
+	newStat("MemoryUsage", memUsage, 0);
+#endif
+
+	fps = new QLabel(this);
+	renderTime = new QLabel(this);
+	skippedFrames = new QLabel(this);
+	missedFrames = new QLabel(this);
+	row = 0;
+
+	newStatBare("FPS", fps, 2);
+	newStat("AverageTimeToRender", renderTime, 2);
+	newStat("SkipppedFrames", skippedFrames, 2);
+	newStat("MissedFrames", missedFrames, 2);
+
+	/* --------------------------------------------- */
+
+	QPushButton *closeButton = new QPushButton(QTStr("Close"));
+	QPushButton *resetButton = new QPushButton(QTStr("Reset"));
+	QHBoxLayout *buttonLayout = new QHBoxLayout;
+	buttonLayout->addStretch();
+	buttonLayout->addWidget(resetButton);
+	buttonLayout->addWidget(closeButton);
+
+	/* --------------------------------------------- */
+
+	int col = 0;
+	auto addOutputCol = [&] (const char *loc)
+	{
+		QLabel *label = new QLabel(QTStr(loc), this);
+		label->setStyleSheet("font-weight: bold");
+		outputLayout->addWidget(label, 0, col++);
+	};
+
+	addOutputCol("Basic.Settings.Output");
+	addOutputCol("Basic.Stats.Status");
+	addOutputCol("Basic.Stats.DroppedFrames");
+	addOutputCol("Basic.Stats.MegabytesSent");
+	addOutputCol("Basic.Stats.Bitrate");
+
+	/* --------------------------------------------- */
+
+	AddOutputLabels(QTStr("Basic.Stats.Output.Stream"));
+	AddOutputLabels(QTStr("Basic.Stats.Output.Recording"));
+
+	/* --------------------------------------------- */
+
+	QVBoxLayout *outputContainerLayout = new QVBoxLayout();
+	outputContainerLayout->addLayout(outputLayout);
+	outputContainerLayout->addStretch();
+
+	QWidget *widget = new QWidget(this);
+	widget->setLayout(outputContainerLayout);
+
+	QScrollArea *scrollArea = new QScrollArea(this);
+	scrollArea->setWidget(widget);
+	scrollArea->setWidgetResizable(true);
+
+	/* --------------------------------------------- */
+
+	mainLayout->addLayout(topLayout);
+	mainLayout->addWidget(scrollArea);
+	mainLayout->addLayout(buttonLayout);
+	setLayout(mainLayout);
+
+	/* --------------------------------------------- */
+
+	connect(closeButton, &QPushButton::clicked, [this] () {close();});
+	connect(resetButton, &QPushButton::clicked, [this] () {Reset();});
+
+	installEventFilter(CreateShortcutFilter());
+
+	resize(800, 280);
+	setWindowTitle(QTStr("Basic.Stats"));
+	setSizeGripEnabled(true);
+	setWindowModality(Qt::NonModal);
+	setAttribute(Qt::WA_DeleteOnClose, true);
+
+	QObject::connect(&timer, &QTimer::timeout, this, &OBSBasicStats::Update);
+	timer.setInterval(TIMER_INTERVAL);
+	timer.start();
+	Update();
+}
+
+OBSBasicStats::~OBSBasicStats()
+{
+	os_cpu_usage_info_destroy(cpu_info);
+}
+
+void OBSBasicStats::AddOutputLabels(QString name)
+{
+	OutputLabels ol;
+	ol.name = new QLabel(name, this);
+	ol.status = new QLabel(this);
+	ol.droppedFrames = new QLabel(this);
+	ol.megabytesSent = new QLabel(this);
+	ol.bitrate = new QLabel(this);
+
+	int newPointSize = ol.status->font().pointSize();
+	newPointSize *= 13;
+	newPointSize /= 10;
+	QString qss =
+		QString("font-size: %1pt").arg(QString::number(newPointSize));
+	ol.status->setStyleSheet(qss);
+
+	int col = 0;
+	int row = outputLabels.size() + 1;
+	outputLayout->addWidget(ol.name, row, col++);
+	outputLayout->addWidget(ol.status, row, col++);
+	outputLayout->addWidget(ol.droppedFrames, row, col++);
+	outputLayout->addWidget(ol.megabytesSent, row, col++);
+	outputLayout->addWidget(ol.bitrate, row, col++);
+	outputLabels.push_back(ol);
+}
+
+static uint32_t first_encoded = 0xFFFFFFFF;
+static uint32_t first_skipped = 0xFFFFFFFF;
+static uint32_t first_rendered = 0xFFFFFFFF;
+static uint32_t first_lagged = 0xFFFFFFFF;
+
+void OBSBasicStats::Update()
+{
+	OBSBasic *main = reinterpret_cast<OBSBasic*>(App()->GetMainWindow());
+
+	/* TODO: Un-hardcode */
+
+	struct obs_video_info ovi = {};
+	obs_get_video_info(&ovi);
+
+	OBSOutput strOutput = obs_frontend_get_streaming_output();
+	OBSOutput recOutput = obs_frontend_get_recording_output();
+	obs_output_release(strOutput);
+	obs_output_release(recOutput);
+
+	/* ------------------------------------------- */
+	/* general usage                               */
+
+	double curFPS = obs_get_active_fps();
+	double obsFPS = (double)ovi.fps_num / (double)ovi.fps_den;
+
+	QString str = QString::number(curFPS, 'f', 2);
+	fps->setText(str);
+
+	if (curFPS < (obsFPS * 0.8))
+		setThemeID(fps, "error");
+	else if (curFPS < (obsFPS * 0.95))
+		setThemeID(fps, "warning");
+	else
+		setThemeID(fps, "");
+
+	/* ------------------ */
+
+	double usage = os_cpu_usage_info_query(cpu_info);
+	str = QString::number(usage, 'g', 2) + QStringLiteral("%");
+	cpuUsage->setText(str);
+
+	/* ------------------ */
+
+	const char *mode = config_get_string(main->Config(), "Output", "Mode");
+	const char *path = strcmp(mode, "Advanced") ?
+		config_get_string(main->Config(), "SimpleOutput", "FilePath") :
+		config_get_string(main->Config(), "AdvOut", "RecFilePath");
+
+#define MBYTE (1024ULL * 1024ULL)
+#define GBYTE (1024ULL * 1024ULL * 1024ULL)
+#define TBYTE (1024ULL * 1024ULL * 1024ULL * 1024ULL)
+	uint64_t num_bytes = os_get_free_disk_space(path);
+	QString abrv = QStringLiteral(" MB");
+	long double num;
+
+	num = (long double)num_bytes / (1024.0l * 1024.0l);
+	if (num_bytes > TBYTE) {
+		num /= 1024.0l * 1024.0l;
+		abrv = QStringLiteral(" TB");
+	} else if (num_bytes > GBYTE) {
+		num /= 1024.0l;
+		abrv = QStringLiteral(" GB");
+	}
+
+	str = QString::number(num, 'f', 1) + abrv;
+	hddSpace->setText(str);
+
+	if (num_bytes < GBYTE)
+		setThemeID(hddSpace, "error");
+	else if (num_bytes < (5 * GBYTE))
+		setThemeID(hddSpace, "warning");
+	else
+		setThemeID(hddSpace, "");
+
+	/* ------------------ */
+
+#ifdef _WIN32
+	num = (long double)CurrentMemoryUsage() / (1024.0l * 1024.0l);
+
+	str = QString::number(num, 'f', 1) + QStringLiteral(" MB");
+	memUsage->setText(str);
+#endif
+
+	/* ------------------ */
+
+	num = (long double)obs_get_average_frame_time_ns() / 1000000.0l;
+
+	str = QString::number(num, 'f', 1) + QStringLiteral(" ms");
+	renderTime->setText(str);
+
+	long double fpsFrameTime =
+		(long double)ovi.fps_den * 1000.0l / (long double)ovi.fps_num;
+
+	if (num > fpsFrameTime)
+		setThemeID(renderTime, "error");
+	else if (num > fpsFrameTime * 0.75l)
+		setThemeID(renderTime, "warning");
+	else
+		setThemeID(renderTime, "");
+
+	/* ------------------ */
+
+	video_t *video = obs_get_video();
+	uint32_t total_encoded = video_output_get_total_frames(video);
+	uint32_t total_skipped = video_output_get_skipped_frames(video);
+
+	if (total_encoded < first_encoded || total_skipped < first_skipped) {
+		first_encoded = total_encoded;
+		first_skipped = total_skipped;
+	}
+	total_encoded -= first_encoded;
+	total_skipped -= first_skipped;
+
+	num = total_encoded
+		? (long double)total_skipped / (long double)total_encoded
+		: 0.0l;
+	num *= 100.0l;
+
+	str = QString("%1 / %2 (%3%)").arg(
+			QString::number(total_skipped),
+			QString::number(total_encoded),
+			QString::number(num, 'f', 1));
+	skippedFrames->setText(str);
+
+	if (num > 5.0l)
+		setThemeID(skippedFrames, "error");
+	else if (num > 1.0l)
+		setThemeID(skippedFrames, "warning");
+	else
+		setThemeID(skippedFrames, "");
+
+	/* ------------------ */
+
+	uint32_t total_rendered = obs_get_total_frames();
+	uint32_t total_lagged   = obs_get_lagged_frames();
+
+	if (total_rendered < first_rendered || total_lagged < first_lagged) {
+		first_rendered = total_rendered;
+		first_lagged   = total_lagged;
+	}
+	total_rendered -= first_rendered;
+	total_lagged   -= first_lagged;
+
+	num = total_rendered
+		? (long double)total_lagged / (long double)total_rendered
+		: 0.0l;
+	num *= 100.0l;
+
+	str = QString("%1 / %2 (%3%)").arg(
+			QString::number(total_lagged),
+			QString::number(total_rendered),
+			QString::number(num, 'f', 1));
+	missedFrames->setText(str);
+
+	if (num > 5.0l)
+		setThemeID(missedFrames, "error");
+	else if (num > 1.0l)
+		setThemeID(missedFrames, "warning");
+	else
+		setThemeID(missedFrames, "");
+
+	/* ------------------------------------------- */
+	/* recording/streaming stats                   */
+
+	outputLabels[0].Update(strOutput);
+	outputLabels[1].Update(recOutput);
+}
+
+void OBSBasicStats::Reset()
+{
+	timer.start();
+
+	first_encoded  = 0xFFFFFFFF;
+	first_skipped  = 0xFFFFFFFF;
+	first_rendered = 0xFFFFFFFF;
+	first_lagged   = 0xFFFFFFFF;
+
+	OBSOutput strOutput = obs_frontend_get_streaming_output();
+	OBSOutput recOutput = obs_frontend_get_recording_output();
+	obs_output_release(strOutput);
+	obs_output_release(recOutput);
+
+	outputLabels[0].Reset(strOutput);
+	outputLabels[1].Reset(recOutput);
+	Update();
+}
+
+void OBSBasicStats::OutputLabels::Update(obs_output_t *output)
+{
+	const char *id = obs_obj_get_id(output);
+	bool rec = strcmp(id, "rtmp_output") != 0;
+
+	uint64_t totalBytes = obs_output_get_total_bytes(output);
+	uint64_t curTime = os_gettime_ns();
+	uint64_t bytesSent = totalBytes;
+
+	if (bytesSent < lastBytesSent)
+		bytesSent = 0;
+	if (bytesSent == 0)
+		lastBytesSent = 0;
+
+	uint64_t bitsBetween = (bytesSent - lastBytesSent) * 8;
+	long double timePassed = (long double)(curTime - lastBytesSentTime) /
+		1000000000.0l;
+	long double kbps = (long double)bitsBetween /
+		timePassed / 1000.0l;
+
+	if (timePassed < 0.01l)
+		kbps = 0.0l;
+
+	QString str = QTStr("Basic.Stats.Status.Inactive");
+	QString themeID;
+	if (rec) {
+		if (obs_output_active(output))
+			str = QTStr("Basic.Stats.Status.Recording");
+	} else {
+		if (obs_output_active(output)) {
+			if (obs_output_reconnecting(output)) {
+				str = QTStr("Basic.Stats.Status.Reconnecting");
+				themeID = "error";
+			} else {
+				str = QTStr("Basic.Stats.Status.Live");
+				themeID = "good";
+			}
+		}
+	}
+
+	status->setText(str);
+	setThemeID(status, themeID);
+
+	long double num = (long double)totalBytes / (1024.0l * 1024.0l);
+
+	megabytesSent->setText(
+			QString("%1 MB").arg(QString::number(num, 'f', 1)));
+	bitrate->setText(
+			QString("%1 kb/s").arg(QString::number(kbps, 'f', 0)));
+
+	if (!rec) {
+		int total = obs_output_get_total_frames(output);
+		int dropped = obs_output_get_frames_dropped(output);
+
+		if (total < first_total || dropped < first_dropped) {
+			first_total   = 0;
+			first_dropped = 0;
+		}
+
+		total   -= first_total;
+		dropped -= first_dropped;
+
+		num = total
+			? (long double)dropped / (long double)total * 100.0l
+			: 0.0l;
+
+		str = QString("%1 / %2 (%3%)").arg(
+				QString::number(dropped),
+				QString::number(total),
+				QString::number(num, 'f', 1));
+		droppedFrames->setText(str);
+
+		if (num > 5.0l)
+			setThemeID(droppedFrames, "error");
+		else if (num > 1.0l)
+			setThemeID(droppedFrames, "warning");
+		else
+			setThemeID(droppedFrames, "");
+	}
+
+	lastBytesSent     = bytesSent;
+	lastBytesSentTime = curTime;
+}
+
+void OBSBasicStats::OutputLabels::Reset(obs_output_t *output)
+{
+	first_total   = obs_output_get_total_frames(output);
+	first_dropped = obs_output_get_frames_dropped(output);
+}
