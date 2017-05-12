@@ -679,3 +679,12 @@ int os_get_logical_cores(void)
 	return logical_cores;
 }
 #endif
+
+uint64_t os_get_free_disk_space(const char *dir)
+{
+	struct statvfs info;
+	if (statvfs(dir, &info) != 0)
+		return 0;
+
+	return (uint64_t)info.f_frsize * (uint64_t)info.f_bavail;
+}

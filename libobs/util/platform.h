@@ -153,6 +153,8 @@ EXPORT int os_rmdir(const char *path);
 EXPORT char *os_getcwd(char *path, size_t size);
 EXPORT int os_chdir(const char *path);
 
+EXPORT uint64_t os_get_free_disk_space(const char *dir);
+
 #define MKDIR_EXISTS   1
 #define MKDIR_SUCCESS  0
 #define MKDIR_ERROR   -1
