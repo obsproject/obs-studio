@@ -778,7 +778,7 @@ RTMP_Connect0(RTMP *r, struct sockaddr * service, socklen_t addrlen)
                 int err = GetSockError();
                 RTMP_Log(RTMP_LOGERROR, "%s, failed to bind socket: %s (%d)",
                          __FUNCTION__, socketerror(err), err);
-				r->last_error_code = err;
+                r->last_error_code = err;
                 RTMP_Close(r);
                 return FALSE;
             }
@@ -798,7 +798,7 @@ RTMP_Connect0(RTMP *r, struct sockaddr * service, socklen_t addrlen)
             else
                 RTMP_Log(RTMP_LOGERROR, "%s, failed to connect socket: %s (%d)",
                      __FUNCTION__, socketerror(err), err);
-			r->last_error_code = err;
+            r->last_error_code = err;
             RTMP_Close(r);
             return FALSE;
         }
@@ -932,7 +932,7 @@ RTMP_Connect(RTMP *r, RTMPPacket *cp)
     h = gethostbyname("localhost");
     if (!h && GetLastError() == WSAHOST_NOT_FOUND)
     {
-		r->last_error_code = WSAHOST_NOT_FOUND;
+        r->last_error_code = WSAHOST_NOT_FOUND;
         RTMP_Log(RTMP_LOGERROR, "RTMP_Connect: Connection test failed. This error is likely caused by Comodo Internet Security running OBS in sandbox mode. Please add OBS to the Comodo automatic sandbox exclusion list, restart OBS and try again (11001).");
         return FALSE;
     }
@@ -1462,7 +1462,7 @@ WriteN(RTMP *r, const char *buffer, int n)
             if (sockerr == EINTR && !RTMP_ctrlC)
                 continue;
 
-			r->last_error_code = sockerr;
+            r->last_error_code = sockerr;
 
             RTMP_Close(r);
             n = 1;
