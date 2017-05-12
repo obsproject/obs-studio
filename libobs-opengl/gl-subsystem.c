@@ -1232,17 +1232,21 @@ static inline uint32_t get_target_height(const struct gs_device *device)
 void device_set_viewport(gs_device_t *device, int x, int y, int width,
 		int height)
 {
-	uint32_t base_height;
+	uint32_t base_height = 0;
+	int gl_y = 0;
 
 	/* GL uses bottom-up coordinates for viewports.  We want top-down */
 	if (device->cur_render_target) {
 		base_height = get_target_height(device);
-	} else {
+	} else if (device->cur_swap) {
 		uint32_t dw;
 		gl_getclientsize(device->cur_swap, &dw, &base_height);
 	}
 
-	glViewport(x, base_height - y - height, width, height);
+	if (base_height)
+		gl_y = base_height - y - height;
+
+	glViewport(x, gl_y, width, height);
 	if (!gl_success("glViewport"))
 		blog(LOG_ERROR, "device_set_viewport (GL) failed");
 
