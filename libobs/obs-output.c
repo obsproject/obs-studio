@@ -1558,13 +1558,15 @@ static inline void signal_reconnect_success(struct obs_output *output)
 static inline void signal_stop(struct obs_output *output)
 {
 	struct calldata params;
-	uint8_t stack[1024];
 
-	calldata_init_fixed(&params, stack, sizeof(stack));
+	calldata_init(&params);
 	calldata_set_string(&params, "last_error", output->last_error_message);
 	calldata_set_int(&params, "code", output->stop_code);
 	calldata_set_ptr(&params, "output", output);
+
 	signal_handler_signal(output->context.signals, "stop", &params);
+
+	calldata_free(&params);
 }
 
 static inline void convert_flags(const struct obs_output *output,
@@ -2128,10 +2130,6 @@ const char *obs_output_get_last_error(obs_output_t *output)
 void obs_output_set_last_error(obs_output_t *output, const char *message)
 {
 	if (!obs_output_valid(output, "obs_output_set_last_error"))
-		return;
-
-	// Don't pass huge strings in calldata
-	if (message && strlen(message) > 900)
 		return;
 
 	output->last_error_message = message;
