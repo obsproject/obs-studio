@@ -244,6 +244,7 @@ struct obs_core_video {
 	int                             cur_texture;
 
 	uint64_t                        video_time;
+	uint64_t                        video_avg_frame_time_ns;
 	double                          video_fps;
 	video_t                         *video;
 	pthread_t                       video_thread;
