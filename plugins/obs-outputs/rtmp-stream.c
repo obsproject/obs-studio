@@ -705,7 +705,7 @@ static int init_send(struct rtmp_stream *stream)
 		if (!send_meta_data(stream, idx++, &next)) {
 			warn("Disconnected while attempting to connect to "
 			     "server.");
-			set_output_error (stream);
+			set_output_error(stream);
 			return OBS_OUTPUT_DISCONNECTED;
 		}
 	}
@@ -830,7 +830,7 @@ static int try_connect(struct rtmp_stream *stream)
 #endif
 
 	if (!RTMP_Connect(&stream->rtmp, NULL)) {
-		set_output_error (stream);
+		set_output_error(stream);
 		return OBS_OUTPUT_CONNECT_FAILED;
 	}
 
