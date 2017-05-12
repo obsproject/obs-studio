@@ -412,7 +412,7 @@ static void set_output_error(struct rtmp_stream *stream)
 	case ETIMEDOUT:
 		msg = obs_module_text("ConnectionTimedOut");
 		break;
-	case AEACCES:
+	case EACCES:
 		msg = obs_module_text("PermissionDenied");
 		break;
 	case ECONNABORTED:
