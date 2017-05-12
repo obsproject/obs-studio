@@ -32,6 +32,7 @@
 #include <util/util.hpp>
 #include <util/platform.h>
 #include <util/profiler.hpp>
+#include <util/dstr.hpp>
 #include <graphics/math-defs.h>
 
 #include "obs-app.hpp"
@@ -4159,7 +4160,7 @@ void OBSBasic::StreamStopping()
 void OBSBasic::StreamingStop(int code, QString last_error)
 {
 	const char *errorDescription;
-	dstr errorMessage = {0};
+	DStr errorMessage;
 	bool use_last_error = false;
 
 	switch (code) {
@@ -4190,10 +4191,10 @@ void OBSBasic::StreamingStop(int code, QString last_error)
 	}
 
 	if (use_last_error && !last_error.isEmpty())
-		dstr_printf(&errorMessage, "%s\n\n%s", errorDescription,
+		dstr_printf(errorMessage, "%s\n\n%s", errorDescription,
 			QT_TO_UTF8(last_error));
 	else
-		dstr_copy(&errorMessage, errorDescription);
+		dstr_copy(errorMessage, errorDescription);
 
 	ui->statusbar->StreamStopped();
 
@@ -4216,12 +4217,10 @@ void OBSBasic::StreamingStop(int code, QString last_error)
 	if (code != OBS_OUTPUT_SUCCESS && isVisible()) {
 		QMessageBox::information(this,
 				QTStr("Output.ConnectFail.Title"),
-				QT_UTF8(errorMessage.array));
+				QT_UTF8(errorMessage));
 	} else if (code != OBS_OUTPUT_SUCCESS && !isVisible()) {
 		SysTrayNotify(QT_UTF8(errorDescription), QSystemTrayIcon::Warning);
 	}
-
-	dstr_free (&errorMessage);
 
 	if (!startStreamMenu.isNull()) {
 		ui->streamButton->setMenu(nullptr);
