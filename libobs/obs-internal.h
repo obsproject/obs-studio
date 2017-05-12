@@ -871,7 +871,7 @@ struct obs_output {
 	volatile bool                   delay_active;
 	volatile bool                   delay_capturing;
 
-	const char                      *last_error_message;
+	char                            *last_error_message;
 };
 
 static inline void do_output_signal(struct obs_output *output,

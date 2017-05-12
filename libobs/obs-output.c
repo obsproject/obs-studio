@@ -212,6 +212,8 @@ void obs_output_destroy(obs_output_t *output)
 		circlebuf_free(&output->delay_data);
 		if (output->owns_info_id)
 			bfree((void*)output->info.id);
+		if (output->last_error_message)
+			bfree(output->last_error_message);
 		bfree(output);
 	}
 }
@@ -228,6 +230,10 @@ bool obs_output_actual_start(obs_output_t *output)
 
 	os_event_wait(output->stopping_event);
 	output->stop_code = 0;
+	if (output->last_error_message) {
+		bfree(output->last_error_message);
+		output->last_error_message = NULL;
+	}
 
 	if (output->context.data)
 		success = output->info.start(output->context.data);
@@ -2132,5 +2138,11 @@ void obs_output_set_last_error(obs_output_t *output, const char *message)
 	if (!obs_output_valid(output, "obs_output_set_last_error"))
 		return;
 
-	output->last_error_message = message;
+	if (output->last_error_message)
+		bfree(output->last_error_message);
+
+	if (message)
+		output->last_error_message = bstrdup(message);
+	else
+		output->last_error_message = NULL;
 }
