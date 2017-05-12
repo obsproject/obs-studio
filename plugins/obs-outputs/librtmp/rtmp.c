@@ -693,7 +693,7 @@ add_addr_info(struct sockaddr_storage *service, socklen_t *addrlen, AVal *host, 
 #define gai_strerrorA gai_strerror
 #endif
         RTMP_Log(RTMP_LOGERROR, "Could not resolve %s: %s (%d)", hostname, gai_strerrorA(GetSockError()), GetSockError());
-		*socket_error = GetSockError();
+        *socket_error = GetSockError();
         ret = FALSE;
         goto finish;
     }
@@ -709,28 +709,28 @@ add_addr_info(struct sockaddr_storage *service, socklen_t *addrlen, AVal *host, 
         }
     }
 
-	if (!*addrlen)
-	{
-		for (ptr = result; ptr != NULL; ptr = ptr->ai_next)
-		{
+    if (!*addrlen)
+    {
+        for (ptr = result; ptr != NULL; ptr = ptr->ai_next)
+        {
             if (ptr->ai_family == AF_INET6 && (!addrlen_hint || ptr->ai_addrlen == addrlen_hint))
-			{
-				memcpy(service, ptr->ai_addr, ptr->ai_addrlen);
-				*addrlen = (socklen_t)ptr->ai_addrlen;
-				break;
-			}
-		}
-	}
+            {
+                memcpy(service, ptr->ai_addr, ptr->ai_addrlen);
+                *addrlen = (socklen_t)ptr->ai_addrlen;
+                break;
+            }
+        }
+    }
 
     freeaddrinfo(result);
 
     if (service->ss_family == AF_UNSPEC || *addrlen == 0)
     {
-		// since we're handling multiple addresses internally, fake the correct error response
+        // since we're handling multiple addresses internally, fake the correct error response
 #ifdef _WIN32
-		*socket_error = WSANO_DATA;
+        *socket_error = WSANO_DATA;
 #else
-		*socket_error = ENODATA;
+        *socket_error = ENODATA;
 #endif
 
         RTMP_Log(RTMP_LOGERROR, "Could not resolve server '%s': no valid address found", hostname);
