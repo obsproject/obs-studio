@@ -922,7 +922,7 @@ RTMP_Connect(RTMP *r, RTMPPacket *cp)
     struct sockaddr_storage service;
     socklen_t addrlen = 0;
     socklen_t addrlen_hint = 0;
-	int socket_error = 0;
+    int socket_error = 0;
 
     if (!r->Link.hostname.av_len)
         return FALSE;
@@ -947,19 +947,19 @@ RTMP_Connect(RTMP *r, RTMPPacket *cp)
     {
         /* Connect via SOCKS */
         if (!add_addr_info(&service, &addrlen, &r->Link.sockshost, r->Link.socksport, addrlen_hint, &socket_error))
-		{
-			r->last_error_code = socket_error;
+        {
+            r->last_error_code = socket_error;
             return FALSE;
-		}
+        }
     }
     else
     {
         /* Connect directly */
         if (!add_addr_info(&service, &addrlen, &r->Link.hostname, r->Link.port, addrlen_hint, &socket_error))
-		{
-			r->last_error_code = socket_error;
+        {
+            r->last_error_code = socket_error;
             return FALSE;
-		}
+        }
     }
 
     if (!RTMP_Connect0(r, (struct sockaddr *)&service, addrlen))
@@ -976,7 +976,7 @@ SocksNegotiate(RTMP *r)
     unsigned long addr;
     struct sockaddr_storage service;
     socklen_t addrlen = 0;
-	int socket_error = 0;
+    int socket_error = 0;
     memset(&service, 0, sizeof(service));
 
     add_addr_info(&service, &addrlen, &r->Link.hostname, r->Link.port, 0, &socket_error);
