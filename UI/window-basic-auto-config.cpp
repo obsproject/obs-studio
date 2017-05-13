@@ -625,6 +625,9 @@ AutoConfig::AutoConfig(QWidget *parent)
 	setOptions(0);
 	setButtonText(QWizard::FinishButton,
 			QTStr("Basic.AutoConfig.ApplySettings"));
+	setButtonText(QWizard::BackButton, QTStr("Back"));
+	setButtonText(QWizard::NextButton, QTStr("Next"));
+	setButtonText(QWizard::CancelButton, QTStr("Cancel"));
 }
 
 AutoConfig::~AutoConfig()
