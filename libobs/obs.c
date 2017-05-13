@@ -1903,7 +1903,7 @@ bool obs_set_audio_monitoring_device(const char *name, const char *id)
 	if (!obs || !name || !id || !*name || !*id)
 		return false;
 
-#ifdef _WIN32
+#if defined(_WIN32) || HAVE_PULSEAUDIO
 	pthread_mutex_lock(&obs->audio.monitoring_mutex);
 
 	if (strcmp(id, obs->audio.monitoring_device_id) == 0) {
