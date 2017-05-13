@@ -95,22 +95,27 @@ void OBSProjector::OBSRender(void *data, uint32_t cx, uint32_t cy)
 	uint32_t targetCY;
 	int      x, y;
 	int      newCX, newCY;
-	float    scale;
+	float    scaleX, scaleY;
+	struct obs_video_info ovi;
+
+	obs_get_video_info(&ovi);
+	scaleX = float(ovi.psr_x) / float(ovi.psr_y);
 
 	if (window->source) {
-		targetCX = std::max(obs_source_get_width(window->source), 1u);
+		obs_source_get_type(window->source);
+		targetCX = int(float(std::max(obs_source_get_width(window->source), 1u)) * scaleX);
 		targetCY = std::max(obs_source_get_height(window->source), 1u);
 	} else {
-		struct obs_video_info ovi;
-		obs_get_video_info(&ovi);
-		targetCX = ovi.base_width;
+		targetCX = int(float(ovi.base_width) * scaleX);
 		targetCY = ovi.base_height;
 	}
 
-	GetScaleAndCenterPos(targetCX, targetCY, cx, cy, x, y, scale);
+	GetScaleAndCenterPos(targetCX, targetCY, cx, cy, x, y, scaleY);
 
-	newCX = int(scale * float(targetCX));
-	newCY = int(scale * float(targetCY));
+	scaleX *= scaleY;
+
+	newCX = int(scaleX * float(targetCX));
+	newCY = int(scaleY * float(targetCY));
 
 	gs_viewport_push();
 	gs_projection_push();

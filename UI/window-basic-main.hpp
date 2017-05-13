@@ -154,7 +154,7 @@ private:
 
 	int           previewX = 0,  previewY = 0;
 	int           previewCX = 0, previewCY = 0;
-	float         previewScale = 0.0f;
+	float         previewScaleX = 0.0f, previewScaleY = 0.0f;
 
 	ConfigFile    basicConfig;
 
@@ -315,7 +315,7 @@ private:
 
 	int   programX = 0,  programY = 0;
 	int   programCX = 0, programCY = 0;
-	float programScale = 0.0f;
+	float programScaleX = 0.0f, programScaleY = 0.0f;
 
 	bool enableOutputs = true;
 

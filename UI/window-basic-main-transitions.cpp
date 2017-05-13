@@ -1020,8 +1020,8 @@ void OBSBasic::RenderProgram(void *data, uint32_t cx, uint32_t cy)
 
 	obs_get_video_info(&ovi);
 
-	window->programCX = int(window->programScale * float(ovi.base_width));
-	window->programCY = int(window->programScale * float(ovi.base_height));
+	window->programCX = int(window->programScaleX * float(ovi.base_width));
+	window->programCY = int(window->programScaleY * float(ovi.base_height));
 
 	gs_viewport_push();
 	gs_projection_push();
@@ -1050,13 +1050,22 @@ void OBSBasic::RenderProgram(void *data, uint32_t cx, uint32_t cy)
 void OBSBasic::ResizeProgram(uint32_t cx, uint32_t cy)
 {
 	QSize targetSize;
+	obs_video_info ovi;
+	float scaleX;
+	int scaledWidth;
+
+	obs_get_video_info(&ovi);
+
+	scaleX = float(ovi.psr_x) / float(ovi.psr_y);
+	scaledWidth = int(float(cx) * scaleX);
 
 	/* resize program panel to fix to the top section of the window */
 	targetSize = GetPixelSize(program);
-	GetScaleAndCenterPos(int(cx), int(cy),
+	GetScaleAndCenterPos(scaledWidth, int(cy),
 			targetSize.width()  - PREVIEW_EDGE_SIZE * 2,
 			targetSize.height() - PREVIEW_EDGE_SIZE * 2,
-			programX, programY, programScale);
+			programX, programY, programScaleY);
+	programScaleX = programScaleY * scaleX;
 
 	programX += float(PREVIEW_EDGE_SIZE);
 	programY += float(PREVIEW_EDGE_SIZE);

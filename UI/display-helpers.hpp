@@ -43,10 +43,10 @@ static inline void GetScaleAndCenterPos(
 
 static inline void GetCenterPosFromFixedScale(
 		int baseCX, int baseCY, int windowCX, int windowCY,
-		int &x, int &y, float scale)
+		int &x, int &y, float scaleX, float scaleY)
 {
-	x = (float(windowCX) - float(baseCX)*scale) / 2.0f;
-	y = (float(windowCY) - float(baseCY)*scale) / 2.0f;
+	x = (float(windowCX) - float(baseCX) * scaleX) / 2.0f;
+	y = (float(windowCY) - float(baseCY) * scaleY) / 2.0f;
 }
 
 static inline QSize GetPixelSize(QWidget *widget)
