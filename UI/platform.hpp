@@ -43,6 +43,7 @@ void SetAeroEnabled(bool enable);
 void SetProcessPriority(const char *priority);
 void SetWin32DropStyle(QWidget *window);
 bool DisableAudioDucking(bool disable);
+uint64_t CurrentMemoryUsage();
 #endif
 
 #ifdef __APPLE__

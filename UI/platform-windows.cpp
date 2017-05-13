@@ -30,6 +30,7 @@ using namespace std;
 #include <shellapi.h>
 #include <shlobj.h>
 #include <Dwmapi.h>
+#include <psapi.h>
 #include <mmdeviceapi.h>
 #include <audiopolicy.h>
 
@@ -258,4 +259,15 @@ bool DisableAudioDucking(bool disable)
 
 	result = sessionControl2->SetDuckingPreference(disable);
 	return SUCCEEDED(result);
+}
+
+uint64_t CurrentMemoryUsage()
+{
+	PROCESS_MEMORY_COUNTERS pmc = {};
+	pmc.cb = sizeof(pmc);
+
+	if (!GetProcessMemoryInfo(GetCurrentProcess(), &pmc, sizeof(pmc)))
+		return 0;
+
+	return (uint64_t)pmc.WorkingSetSize;
 }
