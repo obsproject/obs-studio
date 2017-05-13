@@ -1443,14 +1443,14 @@ void OBSBasic::OBSInit()
 		msg += QTStr("Basic.FirstStartup.RunWizard.BetaWarning");
 
 		QMessageBox::StandardButton button =
-			QMessageBox::question(this, QTStr("Basic.AutoConfig"),
+			OBSMessageBox::question(this, QTStr("Basic.AutoConfig"),
 					msg);
 
 		if (button == QMessageBox::Yes) {
 			on_autoConfigure_triggered();
 		} else {
 			msg = QTStr("Basic.FirstStartup.RunWizard.NoClicked");
-			QMessageBox::information(this,
+			OBSMessageBox::information(this,
 					QTStr("Basic.AutoConfig"), msg);
 		}
 	}
@@ -2196,7 +2196,7 @@ bool OBSBasic::QueryRemoveSource(obs_source_t *source)
 		int count = ui->scenes->count();
 
 		if (count == 1) {
-			QMessageBox::information(this,
+			OBSMessageBox::information(this,
 						QTStr("FinalScene.Title"),
 						QTStr("FinalScene.Text"));
 			return false;
@@ -2306,7 +2306,7 @@ void OBSBasic::DuplicateSelectedScene()
 			return;
 
 		if (name.empty()) {
-			QMessageBox::information(this,
+			OBSMessageBox::information(this,
 					QTStr("NoNameEntered.Title"),
 					QTStr("NoNameEntered.Text"));
 			continue;
@@ -2314,7 +2314,7 @@ void OBSBasic::DuplicateSelectedScene()
 
 		obs_source_t *source = obs_get_source_by_name(name.c_str());
 		if (source) {
-			QMessageBox::information(this,
+			OBSMessageBox::information(this,
 					QTStr("NameExists.Title"),
 					QTStr("NameExists.Text"));
 
@@ -2941,7 +2941,7 @@ void OBSBasic::closeEvent(QCloseEvent *event)
 	if (outputHandler && outputHandler->Active()) {
 		SetShowing(true);
 
-		QMessageBox::StandardButton button = QMessageBox::question(
+		QMessageBox::StandardButton button = OBSMessageBox::question(
 				this, QTStr("ConfirmExit.Title"),
 				QTStr("ConfirmExit.Text"));
 
@@ -3161,7 +3161,7 @@ void OBSBasic::on_actionAddScene_triggered()
 
 	if (accepted) {
 		if (name.empty()) {
-			QMessageBox::information(this,
+			OBSMessageBox::information(this,
 					QTStr("NoNameEntered.Title"),
 					QTStr("NoNameEntered.Text"));
 			on_actionAddScene_triggered();
@@ -3170,7 +3170,7 @@ void OBSBasic::on_actionAddScene_triggered()
 
 		obs_source_t *source = obs_get_source_by_name(name.c_str());
 		if (source) {
-			QMessageBox::information(this,
+			OBSMessageBox::information(this,
 					QTStr("NameExists.Title"),
 					QTStr("NameExists.Text"));
 
@@ -3592,7 +3592,7 @@ void OBSBasic::AddSourcePopupMenu(const QPoint &pos)
 {
 	if (!GetCurrentScene()) {
 		// Tell the user he needs a scene first (help beginners).
-		QMessageBox::information(this,
+		OBSMessageBox::information(this,
 				QTStr("Basic.Main.AddSourceHelp.Title"),
 				QTStr("Basic.Main.AddSourceHelp.Text"));
 		return;
@@ -3827,7 +3827,7 @@ void OBSBasic::logUploadFinished(const QString &text, const QString &error)
 	ui->menuLogFiles->setEnabled(true);
 
 	if (text.isEmpty()) {
-		QMessageBox::information(this,
+		OBSMessageBox::information(this,
 				QTStr("LogReturnDialog.ErrorUploadingLog"),
 				error);
 		return;
@@ -3855,11 +3855,11 @@ static void RenameListItem(OBSBasic *parent, QListWidget *listWidget,
 		listItem->setText(QT_UTF8(prevName));
 
 		if (foundSource) {
-			QMessageBox::information(parent,
+			OBSMessageBox::information(parent,
 				QTStr("NameExists.Title"),
 				QTStr("NameExists.Text"));
 		} else if (name.empty()) {
-			QMessageBox::information(parent,
+			OBSMessageBox::information(parent,
 				QTStr("NoNameEntered.Title"),
 				QTStr("NoNameEntered.Text"));
 		}
@@ -4206,7 +4206,7 @@ void OBSBasic::StreamingStop(int code)
 	blog(LOG_INFO, STREAMING_STOP);
 
 	if (code != OBS_OUTPUT_SUCCESS && isVisible()) {
-		QMessageBox::information(this,
+		OBSMessageBox::information(this,
 				QTStr("Output.ConnectFail.Title"),
 				QT_UTF8(errorMessage));
 	} else if (code != OBS_OUTPUT_SUCCESS && !isVisible()) {
@@ -4284,17 +4284,17 @@ void OBSBasic::RecordingStop(int code)
 	blog(LOG_INFO, RECORDING_STOP);
 
 	if (code == OBS_OUTPUT_UNSUPPORTED && isVisible()) {
-		QMessageBox::information(this,
+		OBSMessageBox::information(this,
 				QTStr("Output.RecordFail.Title"),
 				QTStr("Output.RecordFail.Unsupported"));
 
 	} else if (code == OBS_OUTPUT_NO_SPACE && isVisible()) {
-		QMessageBox::information(this,
+		OBSMessageBox::information(this,
 				QTStr("Output.RecordNoSpace.Title"),
 				QTStr("Output.RecordNoSpace.Msg"));
 
 	} else if (code != OBS_OUTPUT_SUCCESS && isVisible()) {
-		QMessageBox::information(this,
+		OBSMessageBox::information(this,
 				QTStr("Output.RecordError.Title"),
 				QTStr("Output.RecordError.Msg"));
 
@@ -4338,7 +4338,7 @@ void OBSBasic::StartReplayBuffer()
 	obs_data_release(hotkeys);
 
 	if (!count) {
-		QMessageBox::information(this,
+		OBSMessageBox::information(this,
 				RP_NO_HOTKEY_TITLE,
 				RP_NO_HOTKEY_TEXT);
 		return;
@@ -4411,17 +4411,17 @@ void OBSBasic::ReplayBufferStop(int code)
 	blog(LOG_INFO, REPLAY_BUFFER_STOP);
 
 	if (code == OBS_OUTPUT_UNSUPPORTED && isVisible()) {
-		QMessageBox::information(this,
+		OBSMessageBox::information(this,
 				QTStr("Output.RecordFail.Title"),
 				QTStr("Output.RecordFail.Unsupported"));
 
 	} else if (code == OBS_OUTPUT_NO_SPACE && isVisible()) {
-		QMessageBox::information(this,
+		OBSMessageBox::information(this,
 				QTStr("Output.RecordNoSpace.Title"),
 				QTStr("Output.RecordNoSpace.Msg"));
 
 	} else if (code != OBS_OUTPUT_SUCCESS && isVisible()) {
-		QMessageBox::information(this,
+		OBSMessageBox::information(this,
 				QTStr("Output.RecordError.Title"),
 				QTStr("Output.RecordError.Msg"));
 
@@ -4452,7 +4452,7 @@ void OBSBasic::on_streamButton_clicked()
 
 		if (confirm && isVisible()) {
 			QMessageBox::StandardButton button =
-				QMessageBox::question(this,
+				OBSMessageBox::question(this,
 						QTStr("ConfirmStop.Title"),
 						QTStr("ConfirmStop.Text"));
 
@@ -4467,7 +4467,7 @@ void OBSBasic::on_streamButton_clicked()
 
 		if (confirm && isVisible()) {
 			QMessageBox::StandardButton button =
-				QMessageBox::question(this,
+				OBSMessageBox::question(this,
 						QTStr("ConfirmStart.Title"),
 						QTStr("ConfirmStart.Text"));
 

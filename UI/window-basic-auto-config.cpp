@@ -330,7 +330,7 @@ bool AutoConfigStreamPage::validatePage()
 	if (wiz->service != AutoConfig::Service::Twitch && wiz->bandwidthTest) {
 		QMessageBox::StandardButton button;
 #define WARNING_TEXT(x) QTStr("Basic.AutoConfig.StreamPage.StreamWarning." x)
-		button = QMessageBox::question(this,
+		button = OBSMessageBox::question(this,
 				WARNING_TEXT("Title"),
 				WARNING_TEXT("Text"));
 #undef WARNING_TEXT

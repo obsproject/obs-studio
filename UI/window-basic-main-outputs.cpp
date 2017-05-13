@@ -1,6 +1,7 @@
 #include <string>
 #include <algorithm>
 #include <QMessageBox>
+#include "qt-wrappers.hpp"
 #include "audio-encoders.hpp"
 #include "window-basic-main.hpp"
 #include "window-basic-main-outputs.hpp"
@@ -778,7 +779,7 @@ bool SimpleOutput::ConfigureRecording(bool updateReplayBuffer)
 
 	if (!dir) {
 		if (main->isVisible())
-			QMessageBox::information(main,
+			OBSMessageBox::information(main,
 					QTStr("Output.BadPath.Title"),
 					QTStr("Output.BadPath.Text"));
 		else
@@ -1398,7 +1399,7 @@ bool AdvancedOutput::StartRecording()
 
 		if (!dir) {
 			if (main->isVisible())
-				QMessageBox::information(main,
+				OBSMessageBox::information(main,
 						QTStr("Output.BadPath.Title"),
 						QTStr("Output.BadPath.Text"));
 			else

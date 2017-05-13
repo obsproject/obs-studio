@@ -3006,7 +3006,7 @@ bool OBSBasicSettings::QueryChanges()
 {
 	QMessageBox::StandardButton button;
 
-	button = QMessageBox::question(this,
+	button = OBSMessageBox::question(this,
 			QTStr("Basic.Settings.ConfirmTitle"),
 			QTStr("Basic.Settings.Confirm"),
 			QMessageBox::Yes | QMessageBox::No |
@@ -3871,10 +3871,9 @@ void OBSBasicSettings::SimpleRecordingQualityLosslessWarning(int idx)
 			QString("\n\n") +
 			SIMPLE_OUTPUT_WARNING("Lossless.Msg");
 
-		button = QMessageBox::question(this,
+		button = OBSMessageBox::question(this,
 				SIMPLE_OUTPUT_WARNING("Lossless.Title"),
-				warningString,
-				QMessageBox::Yes | QMessageBox::No);
+				warningString);
 
 		if (button == QMessageBox::No) {
 			QMetaObject::invokeMethod(ui->simpleOutRecQuality,

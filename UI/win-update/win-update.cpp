@@ -1,6 +1,7 @@
 #include "win-update-helpers.hpp"
 #include "update-window.hpp"
 #include "remote-text.hpp"
+#include "qt-wrappers.hpp"
 #include "win-update.hpp"
 #include "obs-app.hpp"
 
@@ -479,7 +480,7 @@ void GenerateGUID(string &guid)
 
 void AutoUpdateThread::infoMsg(const QString &title, const QString &text)
 {
-	QMessageBox::information(App()->GetMainWindow(), title, text);
+	OBSMessageBox::information(App()->GetMainWindow(), title, text);
 }
 
 void AutoUpdateThread::info(const QString &title, const QString &text)
