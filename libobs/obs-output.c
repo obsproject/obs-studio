@@ -2115,3 +2115,11 @@ int obs_output_get_connect_time_ms(obs_output_t *output)
 		return output->info.get_connect_time_ms(output->context.data);
 	return -1;
 }
+
+bool obs_output_reconnecting(const obs_output_t *output)
+{
+	if (!obs_output_valid(output, "obs_output_reconnecting"))
+		return false;
+
+	return reconnecting(output);
+}
