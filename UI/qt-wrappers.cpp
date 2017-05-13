@@ -55,10 +55,11 @@ QMessageBox::StandardButton OBSMessageBox::question(
 			title, text, buttons,
 			parent);
 	mb.setDefaultButton(defaultButton);
+	if (buttons & QMessageBox::Ok) \
+		mb.setButtonText(QMessageBox::Ok, QTStr("OK"));
 #define translate_button(x) \
 	if (buttons & QMessageBox::x) \
 		mb.setButtonText(QMessageBox::x, QTStr(#x));
-	translate_button(Ok);
 	translate_button(Open);
 	translate_button(Save);
 	translate_button(Cancel);
