@@ -164,6 +164,9 @@ struct obs_video_info {
 	uint32_t            output_height; /**< Output height */
 	enum video_format   output_format; /**< Output format */
 
+	uint16_t            psr_x;         /**< Pixel aspect ratio x */
+	uint16_t            psr_y;         /**< Pixel aspect ratio y */
+
 	/** Video adapter index to use (NOTE: avoid for optimus laptops) */
 	uint32_t            adapter;
 

@@ -82,6 +82,9 @@ struct video_output_info {
 
 	enum video_colorspace colorspace;
 	enum video_range_type range;
+
+	uint16_t              psr_x;
+	uint16_t              psr_y;
 };
 
 static inline bool format_is_yuv(enum video_format format)
