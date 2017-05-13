@@ -74,8 +74,8 @@ OBSBasicStats::OBSBasicStats(QWidget *parent)
 
 	newStatBare("FPS", fps, 2);
 	newStat("AverageTimeToRender", renderTime, 2);
-	newStat("SkipppedFrames", skippedFrames, 2);
 	newStat("MissedFrames", missedFrames, 2);
+	newStat("SkippedFrames", skippedFrames, 2);
 
 	/* --------------------------------------------- */
 
