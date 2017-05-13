@@ -12,12 +12,20 @@ if (NOT "${FFMPEG_AVCODEC_LIBRARIES}" STREQUAL "")
 endif()
 
 if(UNIX)
+	find_package(PulseAudio)
+	if (NOT "${PULSEAUDIO_LIBRARY}" STREQUAL "")
+		message(STATUS "Found PulseAudio - Audio Monitor enabled")
+		set(HAVE_PULSEAUDIO "1")
+	else()
+		set(HAVE_PULSEAUDIO "0")
+	endif()
 	find_package(DBus QUIET)
 	if (NOT APPLE)
 		find_package(X11_XCB REQUIRED)
 	endif()
 else()
 	set(HAVE_DBUS "0")
+	set(HAVE_PULSEAUDIO "0")
 endif()
 
 find_package(ImageMagick QUIET COMPONENTS MagickCore)
@@ -145,12 +153,22 @@ elseif(UNIX)
 		util/threading-posix.c
 		util/pipe-posix.c
 		util/platform-nix.c)
+
 	set(libobs_PLATFORM_HEADERS
 		util/threading-posix.h)
-	set(libobs_audio_monitoring_SOURCES
-		audio-monitoring/null/null-audio-monitoring.c
-		)
 
+	if(HAVE_PULSEAUDIO)
+		set(libobs_audio_monitoring_HEADERS
+			audio-monitoring/pulse/pulseaudio-wrapper.h)
+
+		set(libobs_audio_monitoring_SOURCES
+			audio-monitoring/pulse/pulseaudio-wrapper.c
+			audio-monitoring/pulse/pulseaudio-enum-devices.c
+			audio-monitoring/pulse/pulseaudio-output.c)
+	else()
+		set(libobs_audio_monitoring_SOURCES
+			audio-monitoring/null/null-audio-monitoring.c)
+	endif()
 	if(DBUS_FOUND)
 		set(libobs_PLATFORM_SOURCES ${libobs_PLATFORM_SOURCES}
 			util/platform-nix-dbus.c)
@@ -167,6 +185,12 @@ elseif(UNIX)
 	set(libobs_PLATFORM_DEPS
 		${libobs_PLATFORM_DEPS}
 		${X11_XCB_LIBRARIES})
+
+	if(HAVE_PULSEAUDIO)
+		set(libobs_PLATFORM_DEPS
+			${libobs_PLATFORM_DEPS}
+			${PULSEAUDIO_LIBRARY})
+	endif()
 
 	if(${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD")
 		# use the sysinfo compatibility library on bsd
@@ -358,7 +382,9 @@ set(libobs_SOURCES
 	${libobs_graphics_SOURCES}
 	${libobs_mediaio_SOURCES}
 	${libobs_util_SOURCES}
-	${libobs_libobs_SOURCES})
+	${libobs_libobs_SOURCES}
+	${libobs_audio_monitoring_SOURCES}
+	)
 
 set(libobs_HEADERS
 	${libobs_config_HEADERS}
@@ -367,7 +393,6 @@ set(libobs_HEADERS
 	${libobs_mediaio_HEADERS}
 	${libobs_util_HEADERS}
 	${libobs_libobs_HEADERS}
-	${libobs_audio_monitoring_SOURCES}
 	${libobs_audio_monitoring_HEADERS}
 	)
 
