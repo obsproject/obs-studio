@@ -1957,3 +1957,13 @@ void obs_remove_main_render_callback(
 	da_erase_item(obs->data.draw_callbacks, &data);
 	pthread_mutex_unlock(&obs->data.draw_callbacks_mutex);
 }
+
+uint32_t obs_get_total_frames(void)
+{
+	return obs ? obs->video.total_frames : 0;
+}
+
+uint32_t obs_get_lagged_frames(void)
+{
+	return obs ? obs->video.lagged_frames : 0;
+}

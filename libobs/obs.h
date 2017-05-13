@@ -629,6 +629,9 @@ EXPORT uint64_t obs_get_video_frame_time(void);
 EXPORT double obs_get_active_fps(void);
 EXPORT uint64_t obs_get_average_frame_time_ns(void);
 
+EXPORT uint32_t obs_get_total_frames(void);
+EXPORT uint32_t obs_get_lagged_frames(void);
+
 
 /* ------------------------------------------------------------------------- */
 /* Display context */
