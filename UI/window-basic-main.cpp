@@ -1048,6 +1048,8 @@ bool OBSBasic::InitBasicConfigDefaults()
 
 	config_set_default_uint  (basicConfig, "Video", "OutputCX", scale_cx);
 	config_set_default_uint  (basicConfig, "Video", "OutputCY", scale_cy);
+	config_set_default_uint  (basicConfig, "Video", "PixelAspectRatioX", 1);
+	config_set_default_uint  (basicConfig, "Video", "PixelAspectRatioY", 1);
 
 	/* don't allow OutputCX/OutputCY to be susceptible to defaults
 	 * changing */
@@ -2711,6 +2713,10 @@ int OBSBasic::ResetVideo()
 			"Video", "OutputCX");
 	ovi.output_height  = (uint32_t)config_get_uint(basicConfig,
 			"Video", "OutputCY");
+	ovi.psr_x          = (uint16_t)config_get_uint(basicConfig,
+			"Video", "PixelAspectRatioX");
+	ovi.psr_y          = (uint16_t)config_get_uint(basicConfig,
+			"Video", "PixelAspectRatioY");
 	ovi.output_format  = GetVideoFormatFromName(colorFormat);
 	ovi.colorspace     = astrcmpi(colorSpace, "601") == 0 ?
 		VIDEO_CS_601 : VIDEO_CS_709;
