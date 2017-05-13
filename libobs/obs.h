@@ -1498,6 +1498,10 @@ EXPORT void obs_output_output_caption_text1(obs_output_t *output,
 EXPORT float obs_output_get_congestion(obs_output_t *output);
 EXPORT int obs_output_get_connect_time_ms(obs_output_t *output);
 
+/** Pass a static string of the last output error, for UI use */
+EXPORT void obs_output_set_last_error(obs_output_t *output,
+		const char *message);
+
 /* ------------------------------------------------------------------------- */
 /* Functions used by outputs */
 
