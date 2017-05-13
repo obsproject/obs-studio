@@ -39,6 +39,7 @@ struct ffmpeg_muxer {
 	obs_output_t      *output;
 	os_process_pipe_t *pipe;
 	int64_t           stop_ts;
+	uint64_t          total_bytes;
 	struct dstr       path;
 	bool              sent_headers;
 	volatile bool     active;
@@ -292,6 +293,7 @@ static bool ffmpeg_mux_start(void *data)
 	/* write headers and start capture */
 	os_atomic_set_bool(&stream->active, true);
 	os_atomic_set_bool(&stream->capturing, true);
+	stream->total_bytes = 0;
 	obs_output_begin_data_capture(stream->output, 0);
 
 	info("Writing file '%s'...", stream->path.array);
@@ -374,6 +376,7 @@ static bool write_packet(struct ffmpeg_muxer *stream,
 		return false;
 	}
 
+	stream->total_bytes += packet->size;
 	return true;
 }
 
@@ -460,6 +463,12 @@ static obs_properties_t *ffmpeg_mux_properties(void *unused)
 	return props;
 }
 
+static uint64_t ffmpeg_mux_total_bytes(void *data)
+{
+	struct ffmpeg_muxer *stream = data;
+	return stream->total_bytes;
+}
+
 struct obs_output_info ffmpeg_muxer = {
 	.id             = "ffmpeg_muxer",
 	.flags          = OBS_OUTPUT_AV |
@@ -471,6 +480,7 @@ struct obs_output_info ffmpeg_muxer = {
 	.start          = ffmpeg_mux_start,
 	.stop           = ffmpeg_mux_stop,
 	.encoded_packet = ffmpeg_mux_data,
+	.get_total_bytes= ffmpeg_mux_total_bytes,
 	.get_properties = ffmpeg_mux_properties
 };
 
@@ -542,6 +552,7 @@ static bool replay_buffer_start(void *data)
 
 	os_atomic_set_bool(&stream->active, true);
 	os_atomic_set_bool(&stream->capturing, true);
+	stream->total_bytes = 0;
 	obs_output_begin_data_capture(stream->output, 0);
 
 	return true;
@@ -811,5 +822,6 @@ struct obs_output_info replay_buffer = {
 	.start          = replay_buffer_start,
 	.stop           = ffmpeg_mux_stop,
 	.encoded_packet = replay_buffer_data,
+	.get_total_bytes= ffmpeg_mux_total_bytes,
 	.get_defaults   = replay_buffer_defaults
 };
