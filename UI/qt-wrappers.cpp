@@ -16,6 +16,8 @@
 ******************************************************************************/
 
 #include "qt-wrappers.hpp"
+#include "obs-app.hpp"
+
 #include <graphics/graphics.h>
 #include <QWidget>
 #include <QLayout>
@@ -40,6 +42,50 @@ void OBSErrorBox(QWidget *parent, const char *msg, ...)
 	va_start(args, msg);
 	OBSErrorBoxva(parent, msg, args);
 	va_end(args);
+}
+
+QMessageBox::StandardButton OBSMessageBox::question(
+		QWidget *parent,
+		const QString &title,
+		const QString &text,
+		QMessageBox::StandardButtons buttons,
+		QMessageBox::StandardButton defaultButton)
+{
+	QMessageBox mb(QMessageBox::Question,
+			title, text, buttons,
+			parent);
+	mb.setDefaultButton(defaultButton);
+#define translate_button(x) \
+	if (buttons & QMessageBox::x) \
+		mb.setButtonText(QMessageBox::x, QTStr(#x));
+	translate_button(Ok);
+	translate_button(Open);
+	translate_button(Save);
+	translate_button(Cancel);
+	translate_button(Close);
+	translate_button(Discard);
+	translate_button(Apply);
+	translate_button(Reset);
+	translate_button(Yes);
+	translate_button(No);
+	translate_button(No);
+	translate_button(Abort);
+	translate_button(Retry);
+	translate_button(Ignore);
+#undef translate_button
+	return (QMessageBox::StandardButton)mb.exec();
+}
+
+void OBSMessageBox::information(
+		QWidget *parent,
+		const QString &title,
+		const QString &text)
+{
+	QMessageBox mb(QMessageBox::Information,
+			title, text, QMessageBox::Ok,
+			parent);
+	mb.setButtonText(QMessageBox::Ok, QTStr("OK"));
+	mb.exec();
 }
 
 void QTToGSWindow(WId windowId, gs_window &gswindow)
