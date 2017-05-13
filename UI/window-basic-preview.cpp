@@ -382,8 +382,7 @@ void OBSBasicPreview::GetStretchHandleData(const vec2 &pos)
 
 void OBSBasicPreview::keyPressEvent(QKeyEvent *event)
 {
-	if (GetScalingMode() == ScalingMode::Window ||
-	    event->isAutoRepeat()) {
+	if (!IsFixedScaling() || event->isAutoRepeat()) {
 		OBSQTDisplay::keyPressEvent(event);
 		return;
 	}
@@ -415,9 +414,23 @@ void OBSBasicPreview::keyReleaseEvent(QKeyEvent *event)
 	OBSQTDisplay::keyReleaseEvent(event);
 }
 
+void OBSBasicPreview::wheelEvent(QWheelEvent *event)
+{
+	if (scrollMode && IsFixedScaling()
+			&& event->orientation() == Qt::Vertical) {
+		if (event->delta() > 0)
+			SetScalingLevel(scalingLevel + 1);
+		else if (event->delta() < 0)
+			SetScalingLevel(scalingLevel - 1);
+		emit DisplayResized();
+	}
+
+	OBSQTDisplay::wheelEvent(event);
+}
+
 void OBSBasicPreview::mousePressEvent(QMouseEvent *event)
 {
-	if (scrollMode && GetScalingMode() != ScalingMode::Window &&
+	if (scrollMode && IsFixedScaling() &&
 	    event->button() == Qt::LeftButton) {
 		setCursor(Qt::ClosedHandCursor);
 		scrollingFrom.x = event->x();
@@ -1204,4 +1217,16 @@ void OBSBasicPreview::DrawSceneEditing()
 void OBSBasicPreview::ResetScrollingOffset()
 {
 	vec2_zero(&scrollingOffset);
+}
+
+void OBSBasicPreview::SetScalingLevel(int32_t newScalingLevelVal) {
+	float newScalingAmountVal = pow(ZOOM_SENSITIVITY, float(newScalingLevelVal));
+	scalingLevel = newScalingLevelVal;
+	SetScalingAmount(newScalingAmountVal);
+}
+
+void OBSBasicPreview::SetScalingAmount(float newScalingAmountVal) {
+	scrollingOffset.x *= newScalingAmountVal / scalingAmount;
+	scrollingOffset.y *= newScalingAmountVal / scalingAmount;
+	scalingAmount = newScalingAmountVal;
 }
