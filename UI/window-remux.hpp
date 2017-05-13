@@ -51,13 +51,11 @@ public:
 
 	using job_t = std::shared_ptr<struct media_remux_job>;
 
-private slots:
-	void inputChanged(const QString &str);
-
 public slots:
 	void updateProgress(float percent);
 	void remuxFinished(bool success);
 	void Remux();
+	void inputChanged(const QString &str);
 
 signals:
 	void remux();

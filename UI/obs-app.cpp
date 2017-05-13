@@ -75,6 +75,9 @@ string opt_starting_collection;
 string opt_starting_profile;
 string opt_starting_scene;
 
+bool autoRemux = false;
+string remuxFilename;
+
 // AMD PowerXpress High Performance Flags
 #ifdef _MSC_VER
 extern "C" __declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
@@ -1162,6 +1165,13 @@ static void get_last_log(void)
 
 string GenerateTimeDateFilename(const char *extension, bool noSpace)
 {
+	if (strcmp(extension, "mp4") == 0) {
+		extension = "mkv";
+		autoRemux = true;
+	} else {
+		autoRemux = false;
+	}
+
 	time_t    now = time(0);
 	char      file[256] = {};
 	struct tm *cur_time;
@@ -1177,14 +1187,26 @@ string GenerateTimeDateFilename(const char *extension, bool noSpace)
 			cur_time->tm_sec,
 			extension);
 
+	remuxFilename = string(file);
+
 	return string(file);
 }
 
 string GenerateSpecifiedFilename(const char *extension, bool noSpace,
 		const char *format)
 {
+	if (strcmp(extension, "mp4") == 0) {
+		extension = "mkv";
+		autoRemux = true;
+	} else {
+		autoRemux = false;
+	}
+
 	BPtr<char> filename = os_generate_formatted_filename(extension,
 			!noSpace, format);
+
+	remuxFilename = string(filename);
+
 	return string(filename);
 }
 
