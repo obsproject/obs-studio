@@ -330,8 +330,6 @@ static obs_source_t *obs_source_create_internal(const char *id,
 	if (!private)
 		obs_source_init_audio_hotkeys(source);
 
-	source->flags = source->default_flags;
-
 	/* allow the source to be created even if creation fails so that the
 	 * user's data doesn't become lost */
 	if (info)
@@ -344,6 +342,7 @@ static obs_source_t *obs_source_create_internal(const char *id,
 			private ? "private " : "", name, id);
 	obs_source_dosignal(source, "source_create", NULL);
 
+	source->flags = source->default_flags;
 	source->enabled = true;
 	return source;
 
