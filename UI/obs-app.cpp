@@ -623,7 +623,7 @@ bool OBSApp::InitGlobalConfig()
 		}
 	}
 
-	if (!config_has_user_value(globalConfig, "General", "OldDefaults")) {
+	if (!config_has_user_value(globalConfig, "General", "Pre19Defaults")) {
 		uint32_t lastVersion = config_get_int(globalConfig, "General",
 				"LastVersion");
 		bool useOldDefaults = lastVersion &&
