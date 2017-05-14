@@ -61,7 +61,7 @@ static log_handler_t def_log_handler;
 static string currentLogFile;
 static string lastLogFile;
 
-static bool portable_mode = false;
+bool portable_mode = false;
 static bool log_verbose = false;
 static bool unfiltered_log = false;
 bool opt_start_streaming = false;
@@ -1326,6 +1326,46 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 		delete_oldest_file("obs-studio/profiler_data");
 
 		program.installTranslator(&translator);
+
+#ifdef _WIN32
+		/* --------------------------------------- */
+		/* check and warn if already running       */
+
+		bool already_running = false;
+		RunOnceMutex rom = GetRunOnceMutex(already_running);
+
+		if (already_running) {
+			blog(LOG_WARNING, "\n================================");
+			blog(LOG_WARNING, "Warning: OBS is already running!");
+			blog(LOG_WARNING, "================================\n");
+
+			QMessageBox::StandardButtons buttons(
+					QMessageBox::Yes | QMessageBox::Cancel);
+			QMessageBox mb(QMessageBox::Question,
+					QTStr("AlreadyRunning.Title"),
+					QTStr("AlreadyRunning.Text"),
+					buttons,
+					nullptr);
+			mb.setButtonText(QMessageBox::Yes,
+					QTStr("AlreadyRunning.LaunchAnyway"));
+			mb.setButtonText(QMessageBox::Cancel, QTStr("Cancel"));
+			mb.setDefaultButton(QMessageBox::Cancel);
+
+			QMessageBox::StandardButton button;
+			button = (QMessageBox::StandardButton)mb.exec();
+			if (button == QMessageBox::Cancel) {
+				blog(LOG_INFO, "User shut down the program "
+						"because OBS was already "
+						"running");
+				return 0;
+			}
+
+			blog(LOG_WARNING, "User is now running a secondary "
+					"instance of OBS!");
+		}
+
+		/* --------------------------------------- */
+#endif
 
 		if (!program.OBSInit())
 			return 0;

@@ -44,6 +44,22 @@ void SetProcessPriority(const char *priority);
 void SetWin32DropStyle(QWidget *window);
 bool DisableAudioDucking(bool disable);
 uint64_t CurrentMemoryUsage();
+
+struct RunOnceMutexData;
+
+class RunOnceMutex {
+	RunOnceMutexData *data = nullptr;
+public:
+	RunOnceMutex(RunOnceMutexData *data_) : data(data_) {}
+	RunOnceMutex(const RunOnceMutex &rom) = delete;
+	RunOnceMutex(RunOnceMutex &&rom);
+	~RunOnceMutex();
+
+	RunOnceMutex &operator=(const RunOnceMutex &rom) = delete;
+	RunOnceMutex &operator=(RunOnceMutex &&rom);
+};
+
+RunOnceMutex GetRunOnceMutex(bool &already_running);
 #endif
 
 #ifdef __APPLE__

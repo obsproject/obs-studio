@@ -176,6 +176,7 @@ static inline int GetProfilePath(char *path, size_t size, const char *file)
 	return window->GetProfilePath(path, size, file);
 }
 
+extern bool portable_mode;
 extern bool opt_start_streaming;
 extern bool opt_start_recording;
 extern bool opt_start_replaybuffer;
