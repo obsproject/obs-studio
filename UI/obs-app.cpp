@@ -939,6 +939,10 @@ bool OBSApp::OBSInit()
 		blog(LOG_INFO, "Portable mode: %s",
 				portable_mode ? "true" : "false");
 
+		//disable implicitly quit when the last window is closed
+		//we will call for quit manually later
+		this->setQuitOnLastWindowClosed(false);
+
 		mainWindow = new OBSBasic();
 
 		mainWindow->setAttribute(Qt::WA_DeleteOnClose, true);
