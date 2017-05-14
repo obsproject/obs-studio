@@ -834,8 +834,8 @@ EXPORT bool obs_source_active(const obs_source_t *source);
  */
 EXPORT bool obs_source_showing(const obs_source_t *source);
 
-/** Specifies that async video frames should be played as soon as possible */
-#define OBS_SOURCE_FLAG_UNBUFFERED             (1<<0)
+/** Unused flag */
+#define OBS_SOURCE_FLAG_UNUSED_1               (1<<0)
 /** Specifies to force audio to mono */
 #define OBS_SOURCE_FLAG_FORCE_MONO             (1<<1)
 
@@ -1099,6 +1099,10 @@ EXPORT bool obs_source_audio_pending(const obs_source_t *source);
 EXPORT uint64_t obs_source_get_audio_timestamp(const obs_source_t *source);
 EXPORT void obs_source_get_audio_mix(const obs_source_t *source,
 		struct obs_source_audio_mix *audio);
+
+EXPORT void obs_source_set_async_unbuffered(obs_source_t *source,
+		bool unbuffered);
+EXPORT bool obs_source_async_unbuffered(const obs_source_t *source);
 
 /* ------------------------------------------------------------------------- */
 /* Transition-specific functions */

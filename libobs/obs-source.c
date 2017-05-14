@@ -2602,7 +2602,7 @@ static bool ready_async_frame(obs_source_t *source, uint64_t sys_time)
 	uint64_t frame_time = next_frame->timestamp;
 	uint64_t frame_offset = 0;
 
-	if ((source->flags & OBS_SOURCE_FLAG_UNBUFFERED) != 0) {
+	if (source->async_unbuffered) {
 		while (source->async_frames.num > 1) {
 			da_erase(source->async_frames, 0);
 			remove_async_frame(source, next_frame);
@@ -4019,4 +4019,18 @@ enum obs_monitoring_type obs_source_get_monitoring_type(
 {
 	return obs_source_valid(source, "obs_source_get_monitoring_type") ?
 		source->monitoring_type : OBS_MONITORING_TYPE_NONE;
+}
+
+void obs_source_set_async_unbuffered(obs_source_t *source, bool unbuffered)
+{
+	if (!obs_source_valid(source, "obs_source_set_async_unbuffered"))
+		return;
+
+	source->async_unbuffered = unbuffered;
+}
+
+bool obs_source_async_unbuffered(const obs_source_t *source)
+{
+	return obs_source_valid(source, "obs_source_async_unbuffered") ?
+		source->async_unbuffered : false;
 }
