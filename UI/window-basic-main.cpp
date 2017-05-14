@@ -5492,7 +5492,12 @@ void OBSBasic::on_autoConfigure_triggered()
 
 void OBSBasic::on_stats_triggered()
 {
-	stats.clear();
+	if (!stats.isNull()) {
+		stats->show();
+		stats->raise();
+		return;
+	}
+
 	OBSBasicStats *statsDlg;
 	statsDlg = new OBSBasicStats(nullptr);
 	statsDlg->setModal(false);
