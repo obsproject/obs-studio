@@ -9,6 +9,7 @@
 #include <QList>
 
 class QGridLayout;
+class QCloseEvent;
 
 class OBSBasicStats : public QDialog {
 	Q_OBJECT
@@ -50,6 +51,8 @@ class OBSBasicStats : public QDialog {
 	void AddOutputLabels(QString name);
 	void Update();
 	void Reset();
+
+	virtual void closeEvent(QCloseEvent *event) override;
 
 public:
 	OBSBasicStats(QWidget *parent = nullptr);

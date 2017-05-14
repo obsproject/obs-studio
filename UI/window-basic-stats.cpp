@@ -5,6 +5,7 @@
 #include "platform.hpp"
 #include "obs-app.hpp"
 
+#include <QDesktopWidget>
 #include <QPushButton>
 #include <QScrollArea>
 #include <QVBoxLayout>
@@ -144,6 +145,38 @@ OBSBasicStats::OBSBasicStats(QWidget *parent)
 	timer.setInterval(TIMER_INTERVAL);
 	timer.start();
 	Update();
+
+	OBSBasic *main = reinterpret_cast<OBSBasic*>(App()->GetMainWindow());
+
+	const char *geometry = config_get_string(main->Config(),
+			"Stats", "geometry");
+	if (geometry != NULL) {
+		QByteArray byteArray = QByteArray::fromBase64(
+				QByteArray(geometry));
+		restoreGeometry(byteArray);
+
+		QRect windowGeometry = normalGeometry();
+		if (!WindowPositionValid(windowGeometry)) {
+			QRect rect = App()->desktop()->geometry();
+			setGeometry(QStyle::alignedRect(
+						Qt::LeftToRight,
+						Qt::AlignCenter,
+						size(), rect));
+		}
+	}
+}
+
+void OBSBasicStats::closeEvent(QCloseEvent *event)
+{
+	OBSBasic *main = reinterpret_cast<OBSBasic*>(App()->GetMainWindow());
+	if (isVisible()) {
+		config_set_string(main->Config(),
+				"Stats", "geometry",
+				saveGeometry().toBase64().constData());
+		config_save_safe(main->Config(), "tmp", nullptr);
+	}
+
+	QDialog::closeEvent(event);
 }
 
 OBSBasicStats::~OBSBasicStats()
