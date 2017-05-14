@@ -344,11 +344,11 @@ static void do_log(int log_level, const char *msg, va_list args, void *param)
 	def_log_handler(log_level, msg, args2, nullptr);
 #endif
 
-	if (too_many_repeated_entries(logFile, msg, str))
-		return;
-
-	if (log_level <= LOG_INFO || log_verbose)
+	if (log_level <= LOG_INFO || log_verbose) {
+		if (too_many_repeated_entries(logFile, msg, str))
+			return;
 		LogStringChunk(logFile, str);
+	}
 
 #if defined(_WIN32) && defined(OBS_DEBUGBREAK_ON_ERROR)
 	if (log_level <= LOG_ERROR && IsDebuggerPresent())
