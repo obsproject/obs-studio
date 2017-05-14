@@ -25,6 +25,8 @@
 
 struct obs_core *obs = NULL;
 
+char *replay_buffer_filename;
+
 extern void add_default_module_paths(void);
 extern char *find_libobs_data_file(const char *file);
 
@@ -1884,6 +1886,16 @@ bool obs_obj_invalid(void *obj)
 		return true;
 
 	return !context->data;
+}
+
+void obs_set_replay_buffer_filename(char *filename)
+{
+	replay_buffer_filename = filename;
+}
+
+char *obs_get_replay_buffer_filename()
+{
+	return replay_buffer_filename;
 }
 
 bool obs_set_audio_monitoring_device(const char *name, const char *id)

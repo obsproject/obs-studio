@@ -674,6 +674,7 @@ static void *replay_buffer_mux_thread(void *data)
 	}
 
 	info("Wrote replay buffer to '%s'", stream->path.array);
+	obs_set_replay_buffer_filename(stream->path.array);
 
 error:
 	os_process_pipe_destroy(stream->pipe);
