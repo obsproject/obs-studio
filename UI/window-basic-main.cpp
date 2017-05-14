@@ -2977,6 +2977,8 @@ void OBSBasic::closeEvent(QCloseEvent *event)
 	/* Clear all scene data (dialogs, widgets, widget sub-items, scenes,
 	 * sources, etc) so that all references are released before shutdown */
 	ClearSceneData();
+
+	App()->quit();
 }
 
 void OBSBasic::changeEvent(QEvent *event)
