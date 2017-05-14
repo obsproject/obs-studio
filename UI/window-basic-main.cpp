@@ -1454,6 +1454,9 @@ void OBSBasic::OBSInit()
 					QTStr("Basic.AutoConfig"), msg);
 		}
 	}
+
+	if (config_get_bool(basicConfig, "General", "OpenStatsOnStartup"))
+		on_stats_triggered();
 }
 
 void OBSBasic::InitHotkeys()
