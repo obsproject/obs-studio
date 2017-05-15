@@ -67,19 +67,6 @@
     <bool>true</bool>
    </property>
   </widget>
-  <widget class="QPushButton" name="pushButton">
-   <property name="geometry">
-    <rect>
-     <x>10</x>
-     <y>180</y>
-     <width>81</width>
-     <height>23</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>TestDownLoad</string>
-   </property>
-  </widget>
   <widget class="QSplitter" name="splitter">
    <property name="geometry">
     <rect>

@@ -17,7 +17,7 @@
    <iconset resource="ui.qrc">
     <normaloff>:/obs.png</normaloff>:/obs.png</iconset>
   </property>
-  <widget class="QLabel" name="label">
+  <widget class="QLabel" name="label_downtext">
    <property name="geometry">
     <rect>
      <x>30</x>
@@ -33,7 +33,7 @@
     <bool>false</bool>
    </property>
   </widget>
-  <widget class="QProgressBar" name="progressBar">
+  <widget class="QProgressBar" name="progress_down">
    <property name="geometry">
     <rect>
      <x>30</x>
@@ -46,7 +46,7 @@
     <number>24</number>
    </property>
   </widget>
-  <widget class="QPushButton" name="pushButton">
+  <widget class="QPushButton" name="pushButton_update">
    <property name="geometry">
     <rect>
      <x>30</x>
@@ -56,7 +56,20 @@
     </rect>
    </property>
    <property name="text">
-    <string>立即更新</string>
+    <string>更新</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="pushButton_stop">
+   <property name="geometry">
+    <rect>
+     <x>120</x>
+     <y>70</y>
+     <width>75</width>
+     <height>23</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>暂停</string>
    </property>
   </widget>
  </widget>
