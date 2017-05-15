@@ -29,7 +29,7 @@ static void setThemeID(QWidget *widget, const QString &themeID)
 }
 
 OBSBasicStats::OBSBasicStats(QWidget *parent)
-	: QDialog             (parent),
+	: QWidget             (parent),
 	  cpu_info            (os_cpu_usage_info_start()),
 	  timer               (this)
 {
@@ -136,8 +136,10 @@ OBSBasicStats::OBSBasicStats(QWidget *parent)
 	installEventFilter(CreateShortcutFilter());
 
 	resize(800, 280);
+	setWindowFlags(Qt::Window |
+	               Qt::WindowMinimizeButtonHint |
+	               Qt::WindowCloseButtonHint);
 	setWindowTitle(QTStr("Basic.Stats"));
-	setSizeGripEnabled(true);
 	setWindowModality(Qt::NonModal);
 	setAttribute(Qt::WA_DeleteOnClose, true);
 
@@ -176,7 +178,7 @@ void OBSBasicStats::closeEvent(QCloseEvent *event)
 		config_save_safe(main->Config(), "tmp", nullptr);
 	}
 
-	QDialog::closeEvent(event);
+	QWidget::closeEvent(event);
 }
 
 OBSBasicStats::~OBSBasicStats()

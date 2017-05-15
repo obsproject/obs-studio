@@ -5526,7 +5526,6 @@ void OBSBasic::on_stats_triggered()
 
 	OBSBasicStats *statsDlg;
 	statsDlg = new OBSBasicStats(nullptr);
-	statsDlg->setModal(false);
 	statsDlg->show();
 	stats = statsDlg;
 }
