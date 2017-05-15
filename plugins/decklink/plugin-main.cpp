@@ -31,12 +31,7 @@ static DeckLinkDeviceDiscovery *deviceEnum = nullptr;
 static void decklink_enable_buffering(DeckLink *decklink, bool enabled)
 {
 	obs_source_t *source = decklink->GetSource();
-	uint32_t flags = obs_source_get_flags(source);
-	if (enabled)
-		flags &= ~OBS_SOURCE_FLAG_UNBUFFERED;
-	else
-		flags |= OBS_SOURCE_FLAG_UNBUFFERED;
-	obs_source_set_flags(source, flags);
+	obs_source_set_async_unbuffered(source, !enabled);
 }
 
 static void *decklink_create(obs_data_t *settings, obs_source_t *source)

@@ -157,9 +157,8 @@ void OBSRemux::BrowseOutput()
 void OBSRemux::Remux()
 {
 	if (QFileInfo::exists(ui->targetFile->text()))
-		if (QMessageBox::question(this, QTStr("Remux.FileExistsTitle"),
-					QTStr("Remux.FileExists"),
-					QMessageBox::Yes | QMessageBox::No) !=
+		if (OBSMessageBox::question(this, QTStr("Remux.FileExistsTitle"),
+					QTStr("Remux.FileExists")) !=
 				QMessageBox::Yes)
 			return;
 
@@ -201,7 +200,7 @@ void OBSRemux::updateProgress(float percent)
 
 void OBSRemux::remuxFinished(bool success)
 {
-	QMessageBox::information(this, QTStr("Remux.FinishedTitle"),
+	OBSMessageBox::information(this, QTStr("Remux.FinishedTitle"),
 			success ?
 			QTStr("Remux.Finished") : QTStr("Remux.FinishedError"));
 

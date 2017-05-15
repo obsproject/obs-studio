@@ -154,7 +154,7 @@ bool AddNew(QWidget *parent, const char *id, const char *name,
 
 	obs_source_t *source = obs_get_source_by_name(name);
 	if (source) {
-		QMessageBox::information(parent,
+		OBSMessageBox::information(parent,
 				QTStr("NameExists.Title"),
 				QTStr("NameExists.Text"));
 
@@ -190,7 +190,7 @@ void OBSBasicSourceSelect::on_buttonBox_accepted()
 		AddExisting(QT_TO_UTF8(item->text()), visible, false);
 	} else {
 		if (ui->sourceName->text().isEmpty()) {
-			QMessageBox::information(this,
+			OBSMessageBox::information(this,
 					QTStr("NoNameEntered.Title"),
 					QTStr("NoNameEntered.Text"));
 			return;

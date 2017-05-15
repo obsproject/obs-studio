@@ -87,13 +87,13 @@ struct game_capture_config {
 	enum capture_mode             mode;
 	uint32_t                      scale_cx;
 	uint32_t                      scale_cy;
-	bool                          cursor : 1;
-	bool                          force_shmem : 1;
-	bool                          force_scaling : 1;
-	bool                          allow_transparency : 1;
-	bool                          limit_framerate : 1;
-	bool                          capture_overlays : 1;
-	bool                          anticheat_hook : 1;
+	bool                          cursor;
+	bool                          force_shmem;
+	bool                          force_scaling;
+	bool                          allow_transparency;
+	bool                          limit_framerate;
+	bool                          capture_overlays;
+	bool                          anticheat_hook;
 };
 
 struct game_capture {
@@ -119,17 +119,18 @@ struct game_capture {
 	volatile long                 hotkey_window;
 	volatile bool                 deactivate_hook;
 	volatile bool                 activate_hook_now;
-	bool                          wait_for_target_startup : 1;
-	bool                          showing : 1;
-	bool                          active : 1;
-	bool                          capturing : 1;
-	bool                          activate_hook : 1;
-	bool                          process_is_64bit : 1;
-	bool                          error_acquiring : 1;
-	bool                          dwm_capture : 1;
-	bool                          initial_config : 1;
-	bool                          convert_16bit : 1;
-	bool                          is_app : 1;
+	bool                          wait_for_target_startup;
+	bool                          showing;
+	bool                          active;
+	bool                          capturing;
+	bool                          activate_hook;
+	bool                          process_is_64bit;
+	bool                          error_acquiring;
+	bool                          dwm_capture;
+	bool                          initial_config;
+	bool                          convert_16bit;
+	bool                          is_app;
+	bool                          cursor_hidden;
 
 	struct game_capture_config    config;
 
@@ -148,6 +149,7 @@ struct game_capture {
 	HANDLE                        texture_mutexes[2];
 	wchar_t                       *app_sid;
 	int                           retrying;
+	float                         cursor_check_time;
 
 	union {
 		struct {
@@ -1547,6 +1549,22 @@ static inline bool capture_valid(struct game_capture *gc)
 	return !object_signalled(gc->target_process);
 }
 
+static void check_foreground_window(struct game_capture *gc, float seconds)
+{
+	// Hides the cursor if the user isn't actively in the game
+	gc->cursor_check_time += seconds;
+	if (gc->cursor_check_time >= 0.1f) {
+		DWORD foreground_process_id;
+		GetWindowThreadProcessId(GetForegroundWindow(),
+			&foreground_process_id);
+		if (gc->process_id != foreground_process_id)
+			gc->cursor_hidden = true;
+		else
+			gc->cursor_hidden = false;
+		gc->cursor_check_time = 0.0f;
+	}
+}
+
 static void game_capture_tick(void *data, float seconds)
 {
 	struct game_capture *gc = data;
@@ -1653,6 +1671,7 @@ static void game_capture_tick(void *data, float seconds)
 			}
 
 			if (gc->config.cursor) {
+				check_foreground_window(gc, seconds);
 				obs_enter_graphics();
 				cursor_capture(&gc->cursor_data);
 				obs_leave_graphics();
@@ -1708,12 +1727,14 @@ static void game_capture_render(void *data, gs_effect_t *effect)
 		obs_source_draw(gc->texture, 0, 0, 0, 0,
 				gc->global_hook_info->flip);
 
-		if (gc->config.allow_transparency && gc->config.cursor) {
+		if (gc->config.allow_transparency && gc->config.cursor &&
+			!gc->cursor_hidden) {
 			game_capture_render_cursor(gc);
 		}
 	}
 
-	if (!gc->config.allow_transparency && gc->config.cursor) {
+	if (!gc->config.allow_transparency && gc->config.cursor &&
+		!gc->cursor_hidden) {
 		effect = obs_get_base_effect(OBS_EFFECT_DEFAULT);
 
 		while (gs_effect_loop(effect, "Draw")) {

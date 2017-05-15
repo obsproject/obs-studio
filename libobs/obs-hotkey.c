@@ -1197,8 +1197,8 @@ reset:
 
 struct obs_hotkey_internal_inject {
 	obs_key_combination_t hotkey;
-	bool                  pressed : 1;
-	bool                  strict_modifiers : 1;
+	bool                  pressed;
+	bool                  strict_modifiers;
 };
 
 static inline bool inject_hotkey(void *data,
@@ -1251,8 +1251,8 @@ void obs_hotkey_enable_strict_modifiers(bool enable)
 
 struct obs_query_hotkeys_helper {
 	uint32_t modifiers;
-	bool     no_press : 1;
-	bool     strict_modifiers : 1;
+	bool     no_press;
+	bool     strict_modifiers;
 };
 
 static inline bool query_hotkey(void *data,

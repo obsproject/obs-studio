@@ -912,11 +912,8 @@ fail:
 static void v4l2_update_source_flags(struct v4l2_data *data,
 		obs_data_t *settings)
 {
-	uint32_t flags = obs_source_get_flags(data->source);
-	flags = (obs_data_get_bool(settings, "buffering"))
-			? flags & ~OBS_SOURCE_FLAG_UNBUFFERED
-			: flags | OBS_SOURCE_FLAG_UNBUFFERED;
-	obs_source_set_flags(data->source, flags);
+	obs_source_set_async_unbuffered(data->source,
+			!obs_data_get_bool(settings, "buffering"));
 }
 
 /**

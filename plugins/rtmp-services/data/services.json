@@ -161,7 +161,7 @@
             }
         },
         {
-            "name": "hitbox.tv",
+            "name": "Smashcast",
             "common": true,
             "servers": [
                 {

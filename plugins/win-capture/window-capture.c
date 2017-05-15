@@ -26,6 +26,7 @@ struct window_capture {
 	struct dc_capture    capture;
 
 	float                resize_timer;
+	float                cursor_check_time;
 
 	HWND                 window;
 	RECT                 last_rect;
@@ -134,6 +135,7 @@ static obs_properties_t *wc_properties(void *unused)
 }
 
 #define RESIZE_CHECK_TIME 0.2f
+#define CURSOR_CHECK_TIME 0.2f
 
 static void wc_tick(void *data, float seconds)
 {
@@ -160,6 +162,25 @@ static void wc_tick(void *data, float seconds)
 
 	} else if (IsIconic(wc->window)) {
 		return;
+	}
+
+	wc->cursor_check_time += seconds;
+	if (wc->cursor_check_time > CURSOR_CHECK_TIME) {
+		DWORD foreground_pid, target_pid;
+
+		// Can't just compare the window handle in case of app with child windows
+		if (!GetWindowThreadProcessId(GetForegroundWindow(), &foreground_pid))
+			foreground_pid = 0;
+
+		if (!GetWindowThreadProcessId(wc->window, &target_pid))
+			target_pid = 0;
+
+		if (foreground_pid && target_pid && foreground_pid != target_pid)
+			wc->capture.cursor_hidden = true;
+		else
+			wc->capture.cursor_hidden = false;
+
+		wc->cursor_check_time = 0.0f;
 	}
 
 	obs_enter_graphics();

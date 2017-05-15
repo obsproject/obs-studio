@@ -1,5 +1,10 @@
 project(mac-decklink)
 
+if(DISABLE_DECKLINK)
+	message(STATUS "decklink plugin disabled")
+	return()
+endif()
+
 find_library(COREFOUNDATION CoreFoundation)
 
 include_directories(${COREFOUNDATION})

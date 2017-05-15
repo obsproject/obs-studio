@@ -364,7 +364,7 @@ void OBSBasic::AddTransition()
 
 	if (accepted) {
 		if (name.empty()) {
-			QMessageBox::information(this,
+			OBSMessageBox::information(this,
 					QTStr("NoNameEntered.Title"),
 					QTStr("NoNameEntered.Text"));
 			AddTransition();
@@ -373,7 +373,7 @@ void OBSBasic::AddTransition()
 
 		source = FindTransition(name.c_str());
 		if (source) {
-			QMessageBox::information(this,
+			OBSMessageBox::information(this,
 					QTStr("NameExists.Title"),
 					QTStr("NameExists.Text"));
 
@@ -464,7 +464,7 @@ void OBSBasic::RenameTransition()
 
 	if (accepted) {
 		if (name.empty()) {
-			QMessageBox::information(this,
+			OBSMessageBox::information(this,
 					QTStr("NoNameEntered.Title"),
 					QTStr("NoNameEntered.Text"));
 			RenameTransition();
@@ -473,7 +473,7 @@ void OBSBasic::RenameTransition()
 
 		source = FindTransition(name.c_str());
 		if (source) {
-			QMessageBox::information(this,
+			OBSMessageBox::information(this,
 					QTStr("NameExists.Title"),
 					QTStr("NameExists.Text"));
 

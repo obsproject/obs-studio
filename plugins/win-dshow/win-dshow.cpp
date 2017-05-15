@@ -753,12 +753,7 @@ inline void DShowInput::SetupBuffering(obs_data_t *settings)
 	else
 		useBuffering = bufType == BufferingType::On;
 
-	if (useBuffering)
-		flags &= ~OBS_SOURCE_FLAG_UNBUFFERED;
-	else
-		flags |= OBS_SOURCE_FLAG_UNBUFFERED;
-
-	obs_source_set_flags(source, flags);
+	obs_source_set_async_unbuffered(source, !useBuffering);
 }
 
 static DStr GetVideoFormatName(VideoFormat format);

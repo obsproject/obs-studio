@@ -1,6 +1,10 @@
 uniform float4x4 ViewProj;
 uniform float4 color = {1.0, 1.0, 1.0, 1.0};
 
+uniform float4 randomvals1;
+uniform float4 randomvals2;
+uniform float4 randomvals3;
+
 struct SolidVertInOut {
 	float4 pos : POSITION;
 };
@@ -15,6 +19,19 @@ SolidVertInOut VSSolid(SolidVertInOut vert_in)
 float4 PSSolid(SolidVertInOut vert_in) : TARGET
 {
 	return color;
+}
+
+float rand(float4 pos, float4 rand_vals)
+{
+	return 0.5 + 0.5 * frac(sin(dot(pos.xy, float2(rand_vals.x, rand_vals.y))) * rand_vals.z);
+}
+
+float4 PSRandom(SolidVertInOut vert_in) : TARGET
+{
+	return float4(rand(vert_in.pos, randomvals1),
+	              rand(vert_in.pos, randomvals2),
+	              rand(vert_in.pos, randomvals3),
+	              1.0);
 }
 
 struct SolidColoredVertInOut {
@@ -50,5 +67,14 @@ technique SolidColored
 	{
 		vertex_shader = VSSolidColored(vert_in);
 		pixel_shader  = PSSolidColored(vert_in);
+	}
+}
+
+technique Random
+{
+	pass
+	{
+		vertex_shader = VSSolid(vert_in);
+		pixel_shader  = PSRandom(vert_in);
 	}
 }

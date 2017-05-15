@@ -591,6 +591,13 @@ EXPORT void obs_enum_audio_monitoring_devices(obs_enum_audio_device_cb cb,
 EXPORT bool obs_set_audio_monitoring_device(const char *name, const char *id);
 EXPORT void obs_get_audio_monitoring_device(const char **name, const char **id);
 
+EXPORT void obs_add_main_render_callback(
+		void (*draw)(void *param, uint32_t cx, uint32_t cy),
+		void *param);
+EXPORT void obs_remove_main_render_callback(
+		void (*draw)(void *param, uint32_t cx, uint32_t cy),
+		void *param);
+
 
 /* ------------------------------------------------------------------------- */
 /* View context */
@@ -620,6 +627,10 @@ EXPORT void obs_view_render(obs_view_t *view);
 EXPORT uint64_t obs_get_video_frame_time(void);
 
 EXPORT double obs_get_active_fps(void);
+EXPORT uint64_t obs_get_average_frame_time_ns(void);
+
+EXPORT uint32_t obs_get_total_frames(void);
+EXPORT uint32_t obs_get_lagged_frames(void);
 
 
 /* ------------------------------------------------------------------------- */
@@ -823,8 +834,8 @@ EXPORT bool obs_source_active(const obs_source_t *source);
  */
 EXPORT bool obs_source_showing(const obs_source_t *source);
 
-/** Specifies that async video frames should be played as soon as possible */
-#define OBS_SOURCE_FLAG_UNBUFFERED             (1<<0)
+/** Unused flag */
+#define OBS_SOURCE_FLAG_UNUSED_1               (1<<0)
 /** Specifies to force audio to mono */
 #define OBS_SOURCE_FLAG_FORCE_MONO             (1<<1)
 
@@ -1088,6 +1099,10 @@ EXPORT bool obs_source_audio_pending(const obs_source_t *source);
 EXPORT uint64_t obs_source_get_audio_timestamp(const obs_source_t *source);
 EXPORT void obs_source_get_audio_mix(const obs_source_t *source,
 		struct obs_source_audio_mix *audio);
+
+EXPORT void obs_source_set_async_unbuffered(obs_source_t *source,
+		bool unbuffered);
+EXPORT bool obs_source_async_unbuffered(const obs_source_t *source);
 
 /* ------------------------------------------------------------------------- */
 /* Transition-specific functions */
@@ -1489,6 +1504,9 @@ EXPORT void obs_output_output_caption_text1(obs_output_t *output,
 #endif
 
 EXPORT float obs_output_get_congestion(obs_output_t *output);
+EXPORT int obs_output_get_connect_time_ms(obs_output_t *output);
+
+EXPORT bool obs_output_reconnecting(const obs_output_t *output);
 
 /* ------------------------------------------------------------------------- */
 /* Functions used by outputs */

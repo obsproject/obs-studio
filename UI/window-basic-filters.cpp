@@ -365,7 +365,7 @@ void OBSBasicFilters::AddNewFilter(const char *id)
 			return;
 
 		if (name.empty()) {
-			QMessageBox::information(this,
+			OBSMessageBox::information(this,
 					QTStr("NoNameEntered.Title"),
 					QTStr("NoNameEntered.Text"));
 			AddNewFilter(id);
@@ -375,7 +375,7 @@ void OBSBasicFilters::AddNewFilter(const char *id)
 		existing_filter = obs_source_get_filter_by_name(source,
 				name.c_str());
 		if (existing_filter) {
-			QMessageBox::information(this,
+			OBSMessageBox::information(this,
 					QTStr("NameExists.Title"),
 					QTStr("NameExists.Text"));
 			obs_source_release(existing_filter);
@@ -678,13 +678,13 @@ void OBSBasicFilters::FilterNameEdited(QWidget *editor, QListWidget *list)
 		listItem->setText(QT_UTF8(prevName));
 
 		if (foundFilter) {
-			QMessageBox::information(window(),
+			OBSMessageBox::information(window(),
 				QTStr("NameExists.Title"),
 				QTStr("NameExists.Text"));
 			obs_source_release(foundFilter);
 
 		} else if (name.empty()) {
-			QMessageBox::information(window(),
+			OBSMessageBox::information(window(),
 				QTStr("NoNameEntered.Title"),
 				QTStr("NoNameEntered.Text"));
 		}

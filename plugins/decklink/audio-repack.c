@@ -25,7 +25,7 @@ int check_buffer(struct audio_repack *repack,
 	squash data array
 
 	| FL | FR |LFE | FC | BL | BR |emp |emp |
-    |    |       x      |    |
+	  |    |       x      |    |
 	| FL | FR | FC |LFE | BL | BR |
  */
 int repack_8to6ch_swap23(struct audio_repack *repack,
@@ -33,8 +33,6 @@ int repack_8to6ch_swap23(struct audio_repack *repack,
 {
 	if (check_buffer(repack, frame_count) < 0)
 		return -1;
-
-	const uint32_t size = frame_count * repack->base_src_size;
 
 	const __m128i *src = (__m128i *)bsrc;
 	const __m128i *esrc = src + frame_count;
@@ -61,8 +59,6 @@ int repack_8ch_swap23(struct audio_repack *repack,
 {
 	if (check_buffer(repack, frame_count) < 0)
 		return -1;
-
-	const uint32_t size = frame_count * repack->base_src_size;
 
 	const __m128i *src = (__m128i *)bsrc;
 	const __m128i *esrc = src + frame_count;

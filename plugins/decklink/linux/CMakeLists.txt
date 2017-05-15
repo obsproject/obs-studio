@@ -1,5 +1,10 @@
 project(linux-decklink)
 
+if(DISABLE_DECKLINK)
+	message(STATUS "decklink plugin disabled")
+	return()
+endif()
+
 set(linux-decklink-sdk_HEADERS
 	decklink-sdk/DeckLinkAPI.h
 	decklink-sdk/DeckLinkAPIConfiguration.h

@@ -40,8 +40,10 @@
 #include "item-widget-helpers.hpp"
 #include "window-basic-settings.hpp"
 #include "window-namedialog.hpp"
+#include "window-basic-auto-config.hpp"
 #include "window-basic-source-select.hpp"
 #include "window-basic-main.hpp"
+#include "window-basic-stats.hpp"
 #include "window-basic-main-outputs.hpp"
 #include "window-basic-properties.hpp"
 #include "window-log-reply.hpp"
@@ -913,6 +915,17 @@ bool OBSBasic::InitBasicConfigDefaults()
 	uint32_t cx = primaryScreen->size().width();
 	uint32_t cy = primaryScreen->size().height();
 
+	bool oldResolutionDefaults = config_get_bool(App()->GlobalConfig(),
+			"General", "Pre19Defaults");
+
+	/* use 1920x1080 for new default base res if main monitor is above
+	 * 1920x1080, but don't apply for people from older builds -- only to
+	 * new users */
+	if (!oldResolutionDefaults && (cx * cy) > (1920 * 1080)) {
+		cx = 1920;
+		cy = 1080;
+	}
+
 	/* ----------------------------------------------------- */
 	/* move over mixer values in advanced if older config */
 	if (config_has_user_value(basicConfig, "AdvOut", "RecTrackIndex") &&
@@ -996,6 +1009,14 @@ bool OBSBasic::InitBasicConfigDefaults()
 	config_set_default_uint  (basicConfig, "Video", "BaseCX",   cx);
 	config_set_default_uint  (basicConfig, "Video", "BaseCY",   cy);
 
+	/* don't allow BaseCX/BaseCY to be susceptible to defaults changing */
+	if (!config_has_user_value(basicConfig, "Video", "BaseCX") ||
+	    !config_has_user_value(basicConfig, "Video", "BaseCY")) {
+		config_set_uint(basicConfig, "Video", "BaseCX", cx);
+		config_set_uint(basicConfig, "Video", "BaseCY", cy);
+		config_save_safe(basicConfig, "tmp", nullptr);
+	}
+
 	config_set_default_string(basicConfig, "Output", "FilenameFormatting",
 			"%CCYY-%MM-%DD %hh-%mm-%ss");
 
@@ -1027,6 +1048,15 @@ bool OBSBasic::InitBasicConfigDefaults()
 
 	config_set_default_uint  (basicConfig, "Video", "OutputCX", scale_cx);
 	config_set_default_uint  (basicConfig, "Video", "OutputCY", scale_cy);
+
+	/* don't allow OutputCX/OutputCY to be susceptible to defaults
+	 * changing */
+	if (!config_has_user_value(basicConfig, "Video", "OutputCX") ||
+	    !config_has_user_value(basicConfig, "Video", "OutputCY")) {
+		config_set_uint(basicConfig, "Video", "OutputCX", scale_cx);
+		config_set_uint(basicConfig, "Video", "OutputCY", scale_cy);
+		config_save_safe(basicConfig, "tmp", nullptr);
+	}
 
 	config_set_default_uint  (basicConfig, "Video", "FPSType", 0);
 	config_set_default_string(basicConfig, "Video", "FPSCommon", "30");
@@ -1394,6 +1424,39 @@ void OBSBasic::OBSInit()
 	SystemTray(true);
 
 	OpenSavedProjectors();
+
+	bool has_last_version = config_has_user_value(App()->GlobalConfig(),
+			"General", "LastVersion");
+	bool first_run = config_get_bool(App()->GlobalConfig(), "General",
+			"FirstRun");
+
+	if (!first_run) {
+		config_set_bool(App()->GlobalConfig(), "General", "FirstRun",
+				true);
+		config_save_safe(App()->GlobalConfig(), "tmp", nullptr);
+	}
+
+	if (!first_run && !has_last_version && !Active()) {
+		QString msg;
+		msg = QTStr("Basic.FirstStartup.RunWizard");
+		msg += "\n\n";
+		msg += QTStr("Basic.FirstStartup.RunWizard.BetaWarning");
+
+		QMessageBox::StandardButton button =
+			OBSMessageBox::question(this, QTStr("Basic.AutoConfig"),
+					msg);
+
+		if (button == QMessageBox::Yes) {
+			on_autoConfigure_triggered();
+		} else {
+			msg = QTStr("Basic.FirstStartup.RunWizard.NoClicked");
+			OBSMessageBox::information(this,
+					QTStr("Basic.AutoConfig"), msg);
+		}
+	}
+
+	if (config_get_bool(basicConfig, "General", "OpenStatsOnStartup"))
+		on_stats_triggered();
 }
 
 void OBSBasic::InitHotkeys()
@@ -2136,7 +2199,7 @@ bool OBSBasic::QueryRemoveSource(obs_source_t *source)
 		int count = ui->scenes->count();
 
 		if (count == 1) {
-			QMessageBox::information(this,
+			OBSMessageBox::information(this,
 						QTStr("FinalScene.Title"),
 						QTStr("FinalScene.Text"));
 			return false;
@@ -2246,7 +2309,7 @@ void OBSBasic::DuplicateSelectedScene()
 			return;
 
 		if (name.empty()) {
-			QMessageBox::information(this,
+			OBSMessageBox::information(this,
 					QTStr("NoNameEntered.Title"),
 					QTStr("NoNameEntered.Text"));
 			continue;
@@ -2254,7 +2317,7 @@ void OBSBasic::DuplicateSelectedScene()
 
 		obs_source_t *source = obs_get_source_by_name(name.c_str());
 		if (source) {
-			QMessageBox::information(this,
+			OBSMessageBox::information(this,
 					QTStr("NameExists.Title"),
 					QTStr("NameExists.Text"));
 
@@ -2807,6 +2870,8 @@ void OBSBasic::CloseDialogs()
 		delete projector;
 		projector.clear();
 	}
+
+	delete stats;
 }
 
 void OBSBasic::EnumDialogs()
@@ -2879,7 +2944,7 @@ void OBSBasic::closeEvent(QCloseEvent *event)
 	if (outputHandler && outputHandler->Active()) {
 		SetShowing(true);
 
-		QMessageBox::StandardButton button = QMessageBox::question(
+		QMessageBox::StandardButton button = OBSMessageBox::question(
 				this, QTStr("ConfirmExit.Title"),
 				QTStr("ConfirmExit.Text"));
 
@@ -2912,6 +2977,8 @@ void OBSBasic::closeEvent(QCloseEvent *event)
 	/* Clear all scene data (dialogs, widgets, widget sub-items, scenes,
 	 * sources, etc) so that all references are released before shutdown */
 	ClearSceneData();
+
+	App()->quit();
 }
 
 void OBSBasic::changeEvent(QEvent *event)
@@ -3099,7 +3166,7 @@ void OBSBasic::on_actionAddScene_triggered()
 
 	if (accepted) {
 		if (name.empty()) {
-			QMessageBox::information(this,
+			OBSMessageBox::information(this,
 					QTStr("NoNameEntered.Title"),
 					QTStr("NoNameEntered.Text"));
 			on_actionAddScene_triggered();
@@ -3108,7 +3175,7 @@ void OBSBasic::on_actionAddScene_triggered()
 
 		obs_source_t *source = obs_get_source_by_name(name.c_str());
 		if (source) {
-			QMessageBox::information(this,
+			OBSMessageBox::information(this,
 					QTStr("NameExists.Title"),
 					QTStr("NameExists.Text"));
 
@@ -3530,7 +3597,7 @@ void OBSBasic::AddSourcePopupMenu(const QPoint &pos)
 {
 	if (!GetCurrentScene()) {
 		// Tell the user he needs a scene first (help beginners).
-		QMessageBox::information(this,
+		OBSMessageBox::information(this,
 				QTStr("Basic.Main.AddSourceHelp.Title"),
 				QTStr("Basic.Main.AddSourceHelp.Text"));
 		return;
@@ -3765,7 +3832,7 @@ void OBSBasic::logUploadFinished(const QString &text, const QString &error)
 	ui->menuLogFiles->setEnabled(true);
 
 	if (text.isEmpty()) {
-		QMessageBox::information(this,
+		OBSMessageBox::information(this,
 				QTStr("LogReturnDialog.ErrorUploadingLog"),
 				error);
 		return;
@@ -3793,11 +3860,11 @@ static void RenameListItem(OBSBasic *parent, QListWidget *listWidget,
 		listItem->setText(QT_UTF8(prevName));
 
 		if (foundSource) {
-			QMessageBox::information(parent,
+			OBSMessageBox::information(parent,
 				QTStr("NameExists.Title"),
 				QTStr("NameExists.Text"));
 		} else if (name.empty()) {
-			QMessageBox::information(parent,
+			OBSMessageBox::information(parent,
 				QTStr("NoNameEntered.Title"),
 				QTStr("NoNameEntered.Text"));
 		}
@@ -3881,6 +3948,8 @@ void OBSBasic::StartStreaming()
 {
 	if (outputHandler->StreamingActive())
 		return;
+	if (!enableOutputs)
+		return;
 
 	if (api)
 		api->on_event(OBS_FRONTEND_EVENT_STREAMING_STARTING);
@@ -3946,6 +4015,7 @@ inline void OBSBasic::OnActivate()
 {
 	if (ui->profileMenu->isEnabled()) {
 		ui->profileMenu->setEnabled(false);
+		ui->autoConfigure->setEnabled(false);
 		App()->IncrementSleepInhibition();
 		UpdateProcessPriority();
 
@@ -3958,6 +4028,7 @@ inline void OBSBasic::OnDeactivate()
 {
 	if (!outputHandler->Active() && !ui->profileMenu->isEnabled()) {
 		ui->profileMenu->setEnabled(true);
+		ui->autoConfigure->setEnabled(true);
 		App()->DecrementSleepInhibition();
 		ClearProcessPriority();
 
@@ -4140,7 +4211,7 @@ void OBSBasic::StreamingStop(int code)
 	blog(LOG_INFO, STREAMING_STOP);
 
 	if (code != OBS_OUTPUT_SUCCESS && isVisible()) {
-		QMessageBox::information(this,
+		OBSMessageBox::information(this,
 				QTStr("Output.ConnectFail.Title"),
 				QT_UTF8(errorMessage));
 	} else if (code != OBS_OUTPUT_SUCCESS && !isVisible()) {
@@ -4157,6 +4228,8 @@ void OBSBasic::StreamingStop(int code)
 void OBSBasic::StartRecording()
 {
 	if (outputHandler->RecordingActive())
+		return;
+	if (!enableOutputs)
 		return;
 
 	if (api)
@@ -4216,17 +4289,17 @@ void OBSBasic::RecordingStop(int code)
 	blog(LOG_INFO, RECORDING_STOP);
 
 	if (code == OBS_OUTPUT_UNSUPPORTED && isVisible()) {
-		QMessageBox::information(this,
+		OBSMessageBox::information(this,
 				QTStr("Output.RecordFail.Title"),
 				QTStr("Output.RecordFail.Unsupported"));
 
 	} else if (code == OBS_OUTPUT_NO_SPACE && isVisible()) {
-		QMessageBox::information(this,
+		OBSMessageBox::information(this,
 				QTStr("Output.RecordNoSpace.Title"),
 				QTStr("Output.RecordNoSpace.Msg"));
 
 	} else if (code != OBS_OUTPUT_SUCCESS && isVisible()) {
-		QMessageBox::information(this,
+		OBSMessageBox::information(this,
 				QTStr("Output.RecordError.Title"),
 				QTStr("Output.RecordError.Msg"));
 
@@ -4258,6 +4331,8 @@ void OBSBasic::StartReplayBuffer()
 		return;
 	if (outputHandler->ReplayBufferActive())
 		return;
+	if (!enableOutputs)
+		return;
 
 	obs_output_t *output = outputHandler->replayBuffer;
 	obs_data_t *hotkeys = obs_hotkeys_save_output(output);
@@ -4268,7 +4343,7 @@ void OBSBasic::StartReplayBuffer()
 	obs_data_release(hotkeys);
 
 	if (!count) {
-		QMessageBox::information(this,
+		OBSMessageBox::information(this,
 				RP_NO_HOTKEY_TITLE,
 				RP_NO_HOTKEY_TEXT);
 		return;
@@ -4341,17 +4416,17 @@ void OBSBasic::ReplayBufferStop(int code)
 	blog(LOG_INFO, REPLAY_BUFFER_STOP);
 
 	if (code == OBS_OUTPUT_UNSUPPORTED && isVisible()) {
-		QMessageBox::information(this,
+		OBSMessageBox::information(this,
 				QTStr("Output.RecordFail.Title"),
 				QTStr("Output.RecordFail.Unsupported"));
 
 	} else if (code == OBS_OUTPUT_NO_SPACE && isVisible()) {
-		QMessageBox::information(this,
+		OBSMessageBox::information(this,
 				QTStr("Output.RecordNoSpace.Title"),
 				QTStr("Output.RecordNoSpace.Msg"));
 
 	} else if (code != OBS_OUTPUT_SUCCESS && isVisible()) {
-		QMessageBox::information(this,
+		OBSMessageBox::information(this,
 				QTStr("Output.RecordError.Title"),
 				QTStr("Output.RecordError.Msg"));
 
@@ -4382,7 +4457,7 @@ void OBSBasic::on_streamButton_clicked()
 
 		if (confirm && isVisible()) {
 			QMessageBox::StandardButton button =
-				QMessageBox::question(this,
+				OBSMessageBox::question(this,
 						QTStr("ConfirmStop.Title"),
 						QTStr("ConfirmStop.Text"));
 
@@ -4397,7 +4472,7 @@ void OBSBasic::on_streamButton_clicked()
 
 		if (confirm && isVisible()) {
 			QMessageBox::StandardButton button =
-				QMessageBox::question(this,
+				OBSMessageBox::question(this,
 						QTStr("ConfirmStart.Title"),
 						QTStr("ConfirmStart.Text"));
 
@@ -5410,4 +5485,27 @@ void OBSBasic::on_actionPasteFilters_triggered()
 		return;
 
 	obs_source_copy_filters(dstSource, source);
+}
+
+void OBSBasic::on_autoConfigure_triggered()
+{
+	AutoConfig test(this);
+	test.setModal(true);
+	test.show();
+	test.exec();
+}
+
+void OBSBasic::on_stats_triggered()
+{
+	if (!stats.isNull()) {
+		stats->show();
+		stats->raise();
+		return;
+	}
+
+	OBSBasicStats *statsDlg;
+	statsDlg = new OBSBasicStats(nullptr);
+	statsDlg->setModal(false);
+	statsDlg->show();
+	stats = statsDlg;
 }
