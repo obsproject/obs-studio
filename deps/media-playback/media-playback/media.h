@@ -104,6 +104,8 @@ extern void mp_media_free(mp_media_t *media);
 extern void mp_media_play(mp_media_t *media, bool loop);
 extern void mp_media_stop(mp_media_t *media);
 
+/* #define DETAILED_DEBUG_INFO */
+
 #ifdef __cplusplus
 }
 #endif

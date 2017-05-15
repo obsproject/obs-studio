@@ -256,8 +256,10 @@ bool mp_decode_next(struct mp_decode *d)
 			return true;
 		}
 		if (ret < 0) {
+#ifdef DETAILED_DEBUG_INFO
 			blog(LOG_DEBUG, "MP: decode failed: %s",
 					av_err2str(ret));
+#endif
 
 			if (d->packet_pending) {
 				av_packet_unref(&d->orig_pkt);
