@@ -392,6 +392,9 @@ void OBSBasic::AddTransition()
 
 		if (api)
 			api->on_event(OBS_FRONTEND_EVENT_TRANSITION_LIST_CHANGED);
+
+		ClearQuickTransitionWidgets();
+		RefreshQuickTransitions();
 	}
 }
 
@@ -445,6 +448,9 @@ void OBSBasic::on_transitionRemove_clicked()
 
 	if (api)
 		api->on_event(OBS_FRONTEND_EVENT_TRANSITION_LIST_CHANGED);
+
+	ClearQuickTransitionWidgets();
+	RefreshQuickTransitions();
 }
 
 void OBSBasic::RenameTransition()
@@ -483,8 +489,11 @@ void OBSBasic::RenameTransition()
 
 		obs_source_set_name(transition, name.c_str());
 		int idx = ui->transitions->findData(variant);
-		if (idx != -1)
+		if (idx != -1) {
 			ui->transitions->setItemText(idx, QT_UTF8(name.c_str()));
+			ClearQuickTransitionWidgets();
+			RefreshQuickTransitions();
+		}
 	}
 }
 
@@ -917,6 +926,31 @@ void OBSBasic::QuickTransitionRemoveClicked()
 
 	RemoveQuickTransitionHotkey(&qt);
 	quickTransitions.erase(quickTransitions.begin() + idx);
+}
+
+void OBSBasic::ClearQuickTransitionWidgets()
+{
+	if (!IsPreviewProgramMode())
+		return;
+
+	QVBoxLayout *programLayout =
+		reinterpret_cast<QVBoxLayout*>(programOptions->layout());
+
+	for (int idx = 0;; idx++) {
+		QLayoutItem *item = programLayout->itemAt(idx);
+		if (!item)
+			break;
+
+		QWidget *widget = item->widget();
+		if (!widget)
+			continue;
+
+		int id = widget->property("id").toInt();
+		if (id != 0) {
+			delete widget;
+			idx--;
+		}
+	}
 }
 
 void OBSBasic::RefreshQuickTransitions()
