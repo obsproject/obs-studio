@@ -1223,8 +1223,16 @@ static void create_log_file(fstream &logFile)
 	dst << "obs-studio/logs/" << currentLogFile.c_str();
 
 	BPtr<char> path(GetConfigPathPtr(dst.str().c_str()));
+
+#ifdef _WIN32
+	BPtr<wchar_t> wpath;
+	os_utf8_to_wcs_ptr(path, 0, &wpath);
+	logFile.open(wpath,
+			ios_base::in | ios_base::out | ios_base::trunc);
+#else
 	logFile.open(path,
 			ios_base::in | ios_base::out | ios_base::trunc);
+#endif
 
 	if (logFile.is_open()) {
 		delete_oldest_file("obs-studio/logs");
