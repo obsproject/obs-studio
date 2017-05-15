@@ -212,6 +212,8 @@ void obs_output_destroy(obs_output_t *output)
 		circlebuf_free(&output->delay_data);
 		if (output->owns_info_id)
 			bfree((void*)output->info.id);
+		if (output->last_error_message)
+			bfree(output->last_error_message);
 		bfree(output);
 	}
 }
@@ -228,6 +230,10 @@ bool obs_output_actual_start(obs_output_t *output)
 
 	os_event_wait(output->stopping_event);
 	output->stop_code = 0;
+	if (output->last_error_message) {
+		bfree(output->last_error_message);
+		output->last_error_message = NULL;
+	}
 
 	if (output->context.data)
 		success = output->info.start(output->context.data);
@@ -1558,12 +1564,15 @@ static inline void signal_reconnect_success(struct obs_output *output)
 static inline void signal_stop(struct obs_output *output)
 {
 	struct calldata params;
-	uint8_t stack[128];
 
-	calldata_init_fixed(&params, stack, sizeof(stack));
+	calldata_init(&params);
+	calldata_set_string(&params, "last_error", output->last_error_message);
 	calldata_set_int(&params, "code", output->stop_code);
 	calldata_set_ptr(&params, "output", output);
+
 	signal_handler_signal(output->context.signals, "stop", &params);
+
+	calldata_free(&params);
 }
 
 static inline void convert_flags(const struct obs_output *output,
@@ -2114,6 +2123,28 @@ int obs_output_get_connect_time_ms(obs_output_t *output)
 	if (output->info.get_connect_time_ms)
 		return output->info.get_connect_time_ms(output->context.data);
 	return -1;
+}
+
+const char *obs_output_get_last_error(obs_output_t *output)
+{
+	if (!obs_output_valid(output, "obs_output_get_last_error"))
+		return NULL;
+
+	return output->last_error_message;
+}
+
+void obs_output_set_last_error(obs_output_t *output, const char *message)
+{
+	if (!obs_output_valid(output, "obs_output_set_last_error"))
+		return;
+
+	if (output->last_error_message)
+		bfree(output->last_error_message);
+
+	if (message)
+		output->last_error_message = bstrdup(message);
+	else
+		output->last_error_message = NULL;
 }
 
 bool obs_output_reconnecting(const obs_output_t *output)
