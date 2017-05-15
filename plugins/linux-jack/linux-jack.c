@@ -17,7 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <obs-module.h>
 
 OBS_DECLARE_MODULE()
-OBS_MODULE_USE_DEFAULT_LOCALE("linux-jack", "en-US")
+OBS_MODULE_USE_DEFAULT_LOCALE("jack-audio", "en-US")
 
 extern struct obs_source_info jack_output_capture;
 

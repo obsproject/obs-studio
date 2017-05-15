@@ -18,18 +18,18 @@ include_directories(
 	${JACK_INCLUDE_DIR}
 )
 
-set(linux-jack_SOURCES
+set(jack-audio_SOURCES
 	linux-jack.c
 	jack-wrapper.c
 	jack-input.c
 )
 
-add_library(linux-jack MODULE
-	${linux-jack_SOURCES}
+add_library(jack-audio MODULE
+	${jack-audio_SOURCES}
 )
-target_link_libraries(linux-jack
+target_link_libraries(jack-audio
 	libobs
 	${JACK_LIBRARIES}
 )
 
-install_obs_plugin_with_data(linux-jack data)
+install_obs_plugin_with_data(jack-audio data)
