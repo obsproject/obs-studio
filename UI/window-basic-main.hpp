@@ -318,7 +318,7 @@ private:
 	int   programCX = 0, programCY = 0;
 	float programScale = 0.0f;
 
-	bool enableOutputs = true;
+	int disableOutputsRef = 0;
 
 	inline bool IsPreviewProgramMode() const
 	{
@@ -501,7 +501,12 @@ public:
 
 	inline void EnableOutputs(bool enable)
 	{
-		enableOutputs = enable;
+		if (enable) {
+			if (--disableOutputsRef < 0)
+				disableOutputsRef = 0;
+		} else {
+			disableOutputsRef++;
+		}
 	}
 
 	void ReorderSceneItem(obs_sceneitem_t *item, size_t idx);

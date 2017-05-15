@@ -3958,7 +3958,7 @@ void OBSBasic::StartStreaming()
 {
 	if (outputHandler->StreamingActive())
 		return;
-	if (!enableOutputs)
+	if (disableOutputsRef)
 		return;
 
 	if (api)
@@ -4250,7 +4250,7 @@ void OBSBasic::StartRecording()
 {
 	if (outputHandler->RecordingActive())
 		return;
-	if (!enableOutputs)
+	if (disableOutputsRef)
 		return;
 
 	if (api)
@@ -4352,7 +4352,7 @@ void OBSBasic::StartReplayBuffer()
 		return;
 	if (outputHandler->ReplayBufferActive())
 		return;
-	if (!enableOutputs)
+	if (disableOutputsRef)
 		return;
 
 	obs_output_t *output = outputHandler->replayBuffer;
