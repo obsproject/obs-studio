@@ -71,6 +71,8 @@ static void *scene_create(obs_data_t *settings, struct obs_source *source)
 	signal_handler_add_array(obs_source_get_signal_handler(source),
 			obs_scene_signals);
 
+	scene->id_counter = 0;
+
 	if (pthread_mutexattr_init(&attr) != 0)
 		goto fail;
 	if (pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE) != 0)
@@ -608,6 +610,9 @@ static void scene_load_item(struct obs_scene *scene, obs_data_t *item_data)
 	obs_data_set_default_int(item_data, "align",
 			OBS_ALIGN_TOP | OBS_ALIGN_LEFT);
 
+	if (obs_data_has_user_value(item_data, "id"))
+		item->id = obs_data_get_int(item_data, "id");
+
 	item->rot     = (float)obs_data_get_double(item_data, "rot");
 	item->align   = (uint32_t)obs_data_get_int(item_data, "align");
 	visible = obs_data_get_bool(item_data, "visible");
@@ -659,8 +664,9 @@ static void scene_load_item(struct obs_scene *scene, obs_data_t *item_data)
 	update_item_transform(item);
 }
 
-static void scene_load(void *scene, obs_data_t *settings)
+static void scene_load(void *data, obs_data_t *settings)
 {
+	struct obs_scene *scene = data;
 	obs_data_array_t *items = obs_data_get_array(settings, "items");
 	size_t           count, i;
 
@@ -675,6 +681,9 @@ static void scene_load(void *scene, obs_data_t *settings)
 		scene_load_item(scene, item_data);
 		obs_data_release(item_data);
 	}
+
+	if (obs_data_has_user_value(settings, "id_counter"))
+		scene->id_counter = obs_data_get_int(settings, "id_counter");
 
 	obs_data_array_release(items);
 }
@@ -699,6 +708,7 @@ static void scene_save_item(obs_data_array_t *array,
 	obs_data_set_int  (item_data, "crop_top",     (int)item->crop.top);
 	obs_data_set_int  (item_data, "crop_right",   (int)item->crop.right);
 	obs_data_set_int  (item_data, "crop_bottom",  (int)item->crop.bottom);
+	obs_data_set_int  (item_data, "id",           item->id);
 
 	if (item->scale_filter == OBS_SCALE_POINT)
 		scale_filter = "point";
@@ -730,6 +740,8 @@ static void scene_save(void *data, obs_data_t *settings)
 		scene_save_item(array, item);
 		item = item->next;
 	}
+
+	obs_data_set_int(settings, "id_counter", scene->id_counter);
 
 	full_unlock(scene);
 
@@ -1160,6 +1172,28 @@ obs_sceneitem_t *obs_scene_find_source(obs_scene_t *scene, const char *name)
 	return item;
 }
 
+obs_sceneitem_t *obs_scene_find_sceneitem_by_id(obs_scene_t *scene, int64_t id)
+{
+	struct obs_scene_item *item;
+
+	if (!scene)
+		return NULL;
+
+	full_lock(scene);
+
+	item = scene->first_item;
+	while (item) {
+		if (item->id == id)
+			break;
+
+		item = item->next;
+	}
+
+	full_unlock(scene);
+
+	return item;
+}
+
 void obs_scene_enum_items(obs_scene_t *scene,
 		bool (*callback)(obs_scene_t*, obs_sceneitem_t*, void*),
 		void *param)
@@ -1307,6 +1341,7 @@ obs_sceneitem_t *obs_scene_add(obs_scene_t *scene, obs_source_t *source)
 
 	item = bzalloc(sizeof(struct obs_scene_item));
 	item->source  = source;
+	item->id      = ++scene->id_counter;
 	item->parent  = scene;
 	item->ref     = 1;
 	item->align   = OBS_ALIGN_TOP | OBS_ALIGN_LEFT;
@@ -1918,4 +1953,12 @@ void obs_sceneitem_defer_update_end(obs_sceneitem_t *item)
 
 	if (os_atomic_dec_long(&item->defer_update) == 0)
 		update_item_transform(item);
+}
+
+int64_t obs_sceneitem_get_id(const obs_sceneitem_t *item)
+{
+	if (!obs_ptr_valid(item, "obs_sceneitem_get_id"))
+		return 0;
+
+	return item->id;
 }

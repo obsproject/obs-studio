@@ -1218,6 +1218,9 @@ EXPORT obs_scene_t *obs_scene_from_source(const obs_source_t *source);
 EXPORT obs_sceneitem_t *obs_scene_find_source(obs_scene_t *scene,
 		const char *name);
 
+EXPORT obs_sceneitem_t *obs_scene_find_sceneitem_by_id(obs_scene_t *scene,
+		int64_t id);
+
 /** Enumerates sources within a scene */
 EXPORT void obs_scene_enum_items(obs_scene_t *scene,
 		bool (*callback)(obs_scene_t*, obs_sceneitem_t*, void*),
@@ -1265,6 +1268,8 @@ EXPORT void obs_sceneitem_set_bounds_alignment(obs_sceneitem_t *item,
 		uint32_t alignment);
 EXPORT void obs_sceneitem_set_bounds(obs_sceneitem_t *item,
 		const struct vec2 *bounds);
+
+EXPORT int64_t obs_sceneitem_get_id(const obs_sceneitem_t *item);
 
 EXPORT void  obs_sceneitem_get_pos(const obs_sceneitem_t *item,
 		struct vec2 *pos);
