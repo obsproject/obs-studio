@@ -48,11 +48,14 @@ static void OBSStopStreaming(void *data, calldata_t *params)
 {
 	BasicOutputHandler *output = static_cast<BasicOutputHandler*>(data);
 	int code = (int)calldata_int(params, "code");
+	const char *last_error = calldata_string(params, "last_error");
+
+	QString arg_last_error = QString::fromUtf8(last_error);
 
 	output->streamingActive = false;
 	output->delayActive = false;
 	QMetaObject::invokeMethod(output->main,
-			"StreamingStop", Q_ARG(int, code));
+			"StreamingStop", Q_ARG(int, code), Q_ARG(QString, arg_last_error));
 }
 
 static void OBSStartRecording(void *data, calldata_t *params)

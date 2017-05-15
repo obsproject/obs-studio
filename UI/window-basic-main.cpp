@@ -32,6 +32,7 @@
 #include <util/util.hpp>
 #include <util/platform.h>
 #include <util/profiler.hpp>
+#include <util/dstr.hpp>
 #include <graphics/math-defs.h>
 
 #include "obs-app.hpp"
@@ -4164,33 +4165,44 @@ void OBSBasic::StreamStopping()
 		api->on_event(OBS_FRONTEND_EVENT_STREAMING_STOPPING);
 }
 
-void OBSBasic::StreamingStop(int code)
+void OBSBasic::StreamingStop(int code, QString last_error)
 {
-	const char *errorMessage;
+	const char *errorDescription;
+	DStr errorMessage;
+	bool use_last_error = false;
 
 	switch (code) {
 	case OBS_OUTPUT_BAD_PATH:
-		errorMessage = Str("Output.ConnectFail.BadPath");
+		errorDescription = Str("Output.ConnectFail.BadPath");
 		break;
 
 	case OBS_OUTPUT_CONNECT_FAILED:
-		errorMessage = Str("Output.ConnectFail.ConnectFailed");
+		use_last_error = true;
+		errorDescription = Str("Output.ConnectFail.ConnectFailed");
 		break;
 
 	case OBS_OUTPUT_INVALID_STREAM:
-		errorMessage = Str("Output.ConnectFail.InvalidStream");
+		errorDescription = Str("Output.ConnectFail.InvalidStream");
 		break;
 
 	default:
 	case OBS_OUTPUT_ERROR:
-		errorMessage = Str("Output.ConnectFail.Error");
+		use_last_error = true;
+		errorDescription = Str("Output.ConnectFail.Error");
 		break;
 
 	case OBS_OUTPUT_DISCONNECTED:
 		/* doesn't happen if output is set to reconnect.  note that
 		 * reconnects are handled in the output, not in the UI */
-		errorMessage = Str("Output.ConnectFail.Disconnected");
+		use_last_error = true;
+		errorDescription = Str("Output.ConnectFail.Disconnected");
 	}
+
+	if (use_last_error && !last_error.isEmpty())
+		dstr_printf(errorMessage, "%s\n\n%s", errorDescription,
+			QT_TO_UTF8(last_error));
+	else
+		dstr_copy(errorMessage, errorDescription);
 
 	ui->statusbar->StreamStopped();
 
@@ -4215,7 +4227,7 @@ void OBSBasic::StreamingStop(int code)
 				QTStr("Output.ConnectFail.Title"),
 				QT_UTF8(errorMessage));
 	} else if (code != OBS_OUTPUT_SUCCESS && !isVisible()) {
-		SysTrayNotify(QT_UTF8(errorMessage), QSystemTrayIcon::Warning);
+		SysTrayNotify(QT_UTF8(errorDescription), QSystemTrayIcon::Warning);
 	}
 
 	if (!startStreamMenu.isNull()) {

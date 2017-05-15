@@ -363,7 +363,7 @@ public slots:
 
 	void StreamingStart();
 	void StreamStopping();
-	void StreamingStop(int errorcode);
+	void StreamingStop(int errorcode, QString last_error);
 
 	void StartRecording();
 	void StopRecording();
