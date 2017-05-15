@@ -566,21 +566,21 @@ void SimpleOutput::UpdateStreamingSettings_amd(obs_data_t *settings,
 		int bitrate)
 {
 	// Static Properties
-	obs_data_set_int(settings, "AMF.H264.Usage", 0);
-	obs_data_set_int(settings, "AMF.H264.Profile", 100); // High
+	obs_data_set_int(settings, "Usage", 0);
+	obs_data_set_int(settings, "Profile", 100); // High
 	obs_data_set_string(settings, "profile", "high"); // High
 	
 	// Rate Control Properties
-	obs_data_set_int(settings, "AMF.H264.RateControlMethod", 1);
+	obs_data_set_int(settings, "RateControlMethod", 1);
 	obs_data_set_string(settings, "rate_control", "CBR");
-	obs_data_set_int(settings, "AMF.H264.Bitrate.Target", bitrate);
+	obs_data_set_int(settings, "Bitrate.Target", bitrate);
 	obs_data_set_int(settings, "bitrate", bitrate);
-	obs_data_set_int(settings, "AMF.H264.FillerData", 1);
-	obs_data_set_int(settings, "AMF.H264.VBVBuffer", 1);
-	obs_data_set_int(settings, "AMF.H264.VBVBuffer.Size", bitrate);
+	obs_data_set_int(settings, "FillerData", 1);
+	obs_data_set_int(settings, "VBVBuffer", 1);
+	obs_data_set_int(settings, "VBVBuffer.Size", bitrate);
 	
 	// Picture Control Properties
-	obs_data_set_double(settings, "AMF.H264.KeyframeInterval", 2.0);
+	obs_data_set_double(settings, "KeyframeInterval", 2.0);
 	obs_data_set_int(settings, "keyint_sec", 2);
 }
 
@@ -589,21 +589,21 @@ void SimpleOutput::UpdateRecordingSettings_amd_cqp(int cqp)
 	obs_data_t *settings = obs_data_create();
 
 	// Static Properties
-	obs_data_set_int(settings, "AMF.H264.Usage", 0);
-	obs_data_set_int(settings, "AMF.H264.Profile", 100); // High
+	obs_data_set_int(settings, "Usage", 0);
+	obs_data_set_int(settings, "Profile", 100); // High
 	obs_data_set_string(settings, "profile", "high"); // High
 
 	// Rate Control Properties
-	obs_data_set_int(settings, "AMF.H264.RateControlMethod", 0);
+	obs_data_set_int(settings, "RateControlMethod", 0);
 	obs_data_set_string(settings, "rate_control", "CQP");
-	obs_data_set_int(settings, "AMF.H264.QP.IFrame", cqp);
-	obs_data_set_int(settings, "AMF.H264.QP.PFrame", cqp);
-	obs_data_set_int(settings, "AMF.H264.QP.BFrame", cqp);
-	obs_data_set_int(settings, "AMF.H264.VBVBuffer", 1);
-	obs_data_set_int(settings, "AMF.H264.VBVBuffer.Size", 50000);
+	obs_data_set_int(settings, "QP.IFrame", cqp);
+	obs_data_set_int(settings, "QP.PFrame", cqp);
+	obs_data_set_int(settings, "QP.BFrame", cqp);
+	obs_data_set_int(settings, "VBVBuffer", 1);
+	obs_data_set_int(settings, "VBVBuffer.Size", 100000);
 
 	// Picture Control Properties
-	obs_data_set_double(settings, "AMF.H264.KeyframeInterval", 2.0);
+	obs_data_set_double(settings, "KeyframeInterval", 2.0);
 	obs_data_set_int(settings, "keyint_sec", 2);
 
 	// Update and release
