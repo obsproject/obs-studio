@@ -21,6 +21,15 @@ add_library(media-playback STATIC
 	${media-playback_HEADERS}
 	${media-playback_SOURCES}
 	)
+
+if(NOT MSVC)
+	target_compile_options(media-playback
+		PUBLIC
+			-mmmx
+			-msse
+			-msse2)
+endif()
+
 target_include_directories(media-playback
 	PUBLIC .
 	)
