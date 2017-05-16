@@ -52,6 +52,7 @@ struct ffmpeg_source {
 	char *input;
 	char *input_format;
 	bool is_looping;
+	bool is_local_file;
 	bool is_hw_decoding;
 	bool is_clear_on_media_end;
 	bool restart_on_activate;
@@ -252,7 +253,8 @@ static void ffmpeg_source_start(struct ffmpeg_source *s)
 
 	if (s->media_valid) {
 		mp_media_play(&s->media, s->is_looping);
-		obs_source_show_preloaded_video(s->source);
+		if (s->is_local_file)
+			obs_source_show_preloaded_video(s->source);
 	}
 }
 
@@ -294,6 +296,7 @@ static void ffmpeg_source_update(void *data, obs_data_t *settings)
 			"close_when_inactive");
 	s->range = (enum video_range_type)obs_data_get_int(settings,
 			"color_range");
+	s->is_local_file = is_local_file;
 
 	if (s->media_valid) {
 		mp_media_free(&s->media);
