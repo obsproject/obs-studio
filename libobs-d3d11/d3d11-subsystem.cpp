@@ -929,33 +929,40 @@ enum gs_texture_type device_get_texture_type(const gs_texture_t *texture)
 	return texture->type;
 }
 
-void device_load_vertexbuffer(gs_device_t *device, gs_vertbuffer_t *vertbuffer)
+void gs_device::LoadVertexBufferData()
 {
-	if (device->curVertexBuffer == vertbuffer)
-		return;
-
-	device->curVertexBuffer = vertbuffer;
-
-	if (!device->curVertexShader)
+	if (curVertexBuffer == lastVertexBuffer &&
+	    curVertexShader == lastVertexShader)
 		return;
 
 	vector<ID3D11Buffer*> buffers;
 	vector<uint32_t> strides;
 	vector<uint32_t> offsets;
 
-	if (vertbuffer) {
-		vertbuffer->MakeBufferList(device->curVertexShader,
+	if (curVertexBuffer && curVertexShader) {
+		curVertexBuffer->MakeBufferList(curVertexShader,
 				buffers, strides);
 	} else {
-		size_t buffersToClear =
-			device->curVertexShader->NumBuffersExpected();
+		size_t buffersToClear = curVertexShader
+			? curVertexShader->NumBuffersExpected() : 0;
 		buffers.resize(buffersToClear);
 		strides.resize(buffersToClear);
 	}
 
 	offsets.resize(buffers.size());
-	device->context->IASetVertexBuffers(0, (UINT)buffers.size(),
+	context->IASetVertexBuffers(0, (UINT)buffers.size(),
 			buffers.data(), strides.data(), offsets.data());
+
+	lastVertexBuffer = curVertexBuffer;
+	lastVertexShader = curVertexShader;
+}
+
+void device_load_vertexbuffer(gs_device_t *device, gs_vertbuffer_t *vertbuffer)
+{
+	if (device->curVertexBuffer == vertbuffer)
+		return;
+
+	device->curVertexBuffer = vertbuffer;
 }
 
 void device_load_indexbuffer(gs_device_t *device, gs_indexbuffer_t *indexbuffer)
@@ -1044,9 +1051,6 @@ void device_load_vertexshader(gs_device_t *device, gs_shader_t *vertshader)
 	device->context->VSSetShader(shader, NULL, 0);
 	device->context->IASetInputLayout(layout);
 	device->context->VSSetConstantBuffers(0, 1, &constants);
-
-	if (vertshader && curVB)
-		device_load_vertexbuffer(device, curVB);
 }
 
 static inline void clear_textures(gs_device_t *device)
@@ -1348,6 +1352,7 @@ void device_draw(gs_device_t *device, enum gs_draw_mode draw_mode,
 		if (effect)
 			gs_effect_update_params(effect);
 
+		device->LoadVertexBufferData();
 		device->UpdateBlendState();
 		device->UpdateRasterState();
 		device->UpdateZStencilState();
@@ -1926,6 +1931,8 @@ void gs_samplerstate_destroy(gs_samplerstate_t *samplerstate)
 
 void gs_vertexbuffer_destroy(gs_vertbuffer_t *vertbuffer)
 {
+	if (vertbuffer && vertbuffer->device->lastVertexBuffer == vertbuffer)
+		vertbuffer->device->lastVertexBuffer = nullptr;
 	delete vertbuffer;
 }
 
