@@ -5,25 +5,32 @@
 #include <memory>
 #include <vector>
 #include <string>
-#include "ui_pluginstore.h"
+
 #include <QWebEngineView>
+#include <qwebchannel>
+#include <QWebEnginePage>
+#include <QWebEngineDownloadItem>
+#include "ui_pluginstore.h"
+#include "webpluginevent.h"
+
+#define __DEF_PLUGING_MARKET_URL_   "D:/index.html"
+
 class PluginStore : public QDialog
 {
     Q_OBJECT
+private:
+    QWebEngineView* m_lpWebUI;
+    std::unique_ptr<Ui_PluginStore> ui;
 
 public:
-    std::unique_ptr<Ui_PluginStore> ui;
-	QWebEngineView* webui;
-     bool loading = true;
     explicit PluginStore(QWidget *parent = 0);
     ~PluginStore();
-	void closeEvent(QCloseEvent *event) override;
-	void    resizeEvent(QResizeEvent *event)override;
-private slots:
-	void on_close_clicked();
-	void on_web_loadFinished(bool ok);
-private:
 
+	void        closeEvent(QCloseEvent *event) override;
+	void        resizeEvent(QResizeEvent *event)override;
+
+private slots:
+	void        on_close_clicked();
 };
 
 #endif // PLUGINSTORE_H
