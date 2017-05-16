@@ -401,7 +401,11 @@ __int64 CHttpClient::GetRmoteFileSize( const std::string & strUrl )
 	}
 	return (__int64)iret;
 }
-
+size_t CHttpClient::WriteFileCallback(void *contents, size_t size, size_t nmemb, void *userp)
+{
+	fwrite(contents, size, nmemb,(FILE*)userp);
+	return size*nmemb;
+}
 __int64 CHttpClient::DownUrlToFile( const std::string & strUrl,const std::string& localFileName,unsigned	__int64 iBeg,PROGRESSFUN cb,void* userData)
 {
 	m_FilePtr=NULL;
@@ -422,7 +426,7 @@ __int64 CHttpClient::DownUrlToFile( const std::string & strUrl,const std::string
 	curl_easy_setopt(m_curl, CURLOPT_NOBODY, 0L);
 	curl_easy_setopt(m_curl, CURLOPT_HEADER, 0L);
 	curl_easy_setopt(m_curl, CURLOPT_READFUNCTION, NULL);
-	curl_easy_setopt(m_curl, CURLOPT_WRITEFUNCTION,NULL);  
+	curl_easy_setopt(m_curl, CURLOPT_WRITEFUNCTION, fwrite);
 	if(strlowurl.find("https://")!=string::npos)
 	{
 		curl_easy_setopt(m_curl, CURLOPT_SSL_VERIFYPEER, false);  
@@ -432,7 +436,9 @@ __int64 CHttpClient::DownUrlToFile( const std::string & strUrl,const std::string
 	if(!m_FilePtr)
 		return -1;
 	unsigned	__int64 begPos = GetFileLen(localFileName);
-	curl_easy_setopt(m_curl, CURLOPT_FILE,m_FilePtr);
+	string strver=curl_version();
+	curl_easy_setopt(m_curl, CURLOPT_WRITEDATA,m_FilePtr);
+	
 	struct curl_slist *slist=NULL;
 	slist=(curl_slist *)ApplyUserHeader();
 	if(slist)

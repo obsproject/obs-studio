@@ -109,6 +109,7 @@ public:
 	std::string	UrlEncode(const std::string& strSrc);
 	std::string	UrlDecode(const std::string& strSrc);
 	std::string GetHttpHeaderDate();
+	static size_t WriteFileCallback(void *contents, size_t size, size_t nmemb, void *userp);
 
 public:  
     void		  SetDebug(bool bDebug);

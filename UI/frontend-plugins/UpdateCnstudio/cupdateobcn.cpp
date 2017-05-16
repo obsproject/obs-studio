@@ -36,9 +36,11 @@ UpdateImpl::UpdateImpl()
 	updatePath = updatePath.replace_extension("exe");
 	tempExePath = QDir::tempPath().toStdString() + "/obscn.exe";
 	fs::create_directories(updatePath.parent_path());
-	strOBSCN =OBS_VERSION;				//
+	strOBSCN =OBS_VERSION;				//用作更新
 	strBuild="4096";				//build VER
 	g_window =(QMainWindow*)obs_frontend_get_main_window();
+	QString qString=g_window->windowTitle();
+	string str = qString.toStdString();
 	g_UpdateThreadRun=false;
 	g_exitDown = false;
 	g_LocalFileSize = 0;
@@ -59,9 +61,41 @@ QAction* UpdateImpl::GetHelpMenuItem(QString strClassName)
 void UpdateImpl::LoadJson()
 {
 
+	fstream f(updateJsonPath);
+	if (f.is_open())
+	{
+		string strJson;
+		long long fSize=fs::file_size(updateJsonPath);
+		strJson.assign(fSize, 0x0);
+		f.read(strJson._Myptr(),fSize);
+		f.close();
+		string strErr;
+		auto jsVar = json11::Json::parse(strJson, strErr);
+		if (!jsVar.is_null() && strErr.empty())
+		{
+			strJsonCfgMd5 = jsVar["md5"].string_value();
+			strJsonCfgSize = std::stoll(jsVar["size"].string_value());
+			if (strJsonCfgSize == 0)strJsonCfgSize = 1;
+			strJsonCfgUrl = jsVar["url"].string_value();
+			strJsonCfgVer = jsVar["version"].string_value();
+		}
+
+	}
 }
 void UpdateImpl::SaveJson()
 {
+	fstream f(updateJsonPath,ios_base::out);
+	if (f.is_open())
+	{
+		json11::Json::object jsVar;
+		jsVar["md5"] = strJsonCfgMd5;
+		jsVar["url"] = strJsonCfgUrl;
+		jsVar["version"] = strJsonCfgVer;
+		jsVar["size"] = to_string(strJsonCfgSize);
+		json11::Json js = jsVar;
+		string strJson = js.dump();
+		f.write(strJson.c_str(), strJson.length());
+	}
 
 }
 int  UpdateImpl::CompVersion(string strVersion1, string strVersion2)
@@ -74,26 +108,65 @@ void UpdateImpl::ExecuteInstall()
 	QProcess p(Q_NULLPTR);
 	p.startDetached(QString(tempExePath.directory_string().c_str()), QStringList());
 }
+void UpdateImpl::UpdateProgress(double totalToDownload, double nowDownloaded)
+{
+	int Progress = ((long double)(g_LocalFileSize + nowDownloaded)/ (long double)strJsonCfgSize) * 100;
+	QMetaObject::invokeMethod(g_RecvMsg, "On_DownLoadProgress", Q_ARG(int, Progress));
+}
+void  UpdateImpl::DownLoadFinished()
+{
+	if (fs::exists(updateDlPath))
+	{
+		QString qMd5Str(CUIMD5::MD5File(updateDlPath.directory_string().c_str()).c_str());
+		
+		if (qMd5Str.compare(strJsonCfgMd5.c_str(), Qt::CaseInsensitive) == 0)
+		{
+			fs::remove(updatePath);
+			fs::rename(updateDlPath, updatePath);
+			QMetaObject::invokeMethod(g_RecvMsg, "On_DownLoadProgress", Q_ARG(int, 100));
+			QMetaObject::invokeMethod(g_RecvMsg, "On_DownLoadFinished");
+		}
+		else
+		{
+			fs::remove(updateDlPath);
+			QMetaObject::invokeMethod(g_RecvMsg, "On_DownLoadError");
+		}
+	}
+}
+void UpdateImpl::DownLoadError()
+{
+	QMetaObject::invokeMethod(g_RecvMsg, "On_DownLoadError");
+}
 void UpdateImpl::StartUpdate(QWidget* wid)
 {
 	g_RecvMsg = wid;
-
 	auto DownUrlToFile = [&](const string& url, const string& localPath)
 	{
 		CHttpClient h;
 		h.InitHttpConnect();
 		curl_easy_setopt(h.GetLibCurl(), CURLOPT_TIMEOUT, 0);
 		curl_easy_setopt(h.GetLibCurl(), CURLOPT_SSL_ENABLE_ALPN, 0);
+		g_LocalFileSize = fs::file_size(updateDlPath);
 		h.DownUrlToFile(url, localPath, g_LocalFileSize,[](void *ptr, double totalToDownload, double nowDownloaded, double totalToUpLoad, double nowUpLoaded)->int
 		{
 			if (UpdateImpl::GetUpdateImpl()->g_exitDown)
-				return -1;
-			return 0;;
+				return -3;
+			if (nowDownloaded>0)
+			{
+				UpdateImpl::GetUpdateImpl()->UpdateProgress(totalToDownload, nowDownloaded);
+			}
+			return 0;
 		});
-		if (h.m_curlretcode != CURLcode::CURLE_OK || h.m_httpretcode > 400)
+		if (h.m_curlretcode == CURLcode::CURLE_OK && (h.m_httpretcode == 200 || h.m_httpretcode == 206))
 		{
-			
+			UpdateImpl::GetUpdateImpl()->DownLoadFinished();
 		}
+		else
+		{
+			// down break
+			UpdateImpl::GetUpdateImpl()->DownLoadError();
+		}
+		
 	};
 	if (fs::exists(updatePath))
 	{
@@ -105,7 +178,8 @@ void UpdateImpl::StartUpdate(QWidget* wid)
 	if (fs::exists(updateDlPath))
 	{
 		g_LocalFileSize = fs::file_size(updateDlPath);
-		if (CUIMD5::MD5File(updatePath.directory_string().c_str()) == strJsonCfgMd5)
+		QString qMd5Str = CUIMD5::MD5File(updateDlPath.directory_string().c_str()).c_str();
+		if (qMd5Str.compare(strJsonCfgMd5.c_str(), Qt::CaseInsensitive) == 0)
 		{
 			fs::remove(updatePath);
 			fs::rename(updateDlPath,updatePath);
@@ -121,6 +195,7 @@ void UpdateImpl::StartUpdate(QWidget* wid)
 		
 	}
 	QMetaObject::invokeMethod(wid, "On_DownLoadProgress", Q_ARG(int, ((long double)g_LocalFileSize / (long double)strJsonCfgSize) * 100));
+	UpdateImpl::GetUpdateImpl()->g_exitDown = false;
 	std::thread down(DownUrlToFile, strJsonCfgUrl, updateDlPath);
 	down.detach();
 }
@@ -151,7 +226,7 @@ bool UpdateImpl::CheckUpdate(bool manualUpdate)
 		int iret = q.Get(strUrl, strJson);
 		if (iret == CURLcode::CURLE_OK&&q.m_httpretcode == 200)
 		{
-			strJson = R"({"md5":"6B882F69B146F333FE5CCDFBC3400F0A","url":"https://github.com/jp9000/obs-studio/releases/download/18.0.1/OBS-Studio-18.0.1-Full-Installer.exe","size":"113034688","version":"18.0.3"})";
+			strJson = R"({"md5":"4FB691E0629A45FF2F464DBFCC2EC29D","url":"http://cktools.cikevideo.com/installer/pc/setup/setup_1.6.2.10893_0510.exe","size":"63016248","version":"18.0.3"})";
 			//更新本地josn
 			string strErr;
 			auto jsVar = json11::Json::parse(strJson, strErr);
@@ -211,6 +286,7 @@ CUpdateOBCN::CUpdateOBCN(QWidget *parent) :
 	ui->setupUi(this);
 	
 	ui->progress_down->setValue(0);
+	ui->progress_down->setMaximum(100);
 	ui->pushButton_update->setEnabled(true);
 	ui->pushButton_stop->setEnabled(false);
 	//UpdateImpl::GetUpdateImpl()->StartUpdate(this);
@@ -232,10 +308,12 @@ void	CUpdateOBCN::On_DownLoadFinished()
 {
 	ui->pushButton_update->setEnabled(false);
 	ui->pushButton_stop->setEnabled(false);
+	ui->label_downtext->setText(obs_module_text("UpdateCnstuido.downloadFinished"));
 	UpdateImpl::GetUpdateImpl()->ExecuteInstall();
 }
 void	CUpdateOBCN::On_DownLoadError()
 {
+	ui->label_downtext->setText(obs_module_text("UpdateCnstuido.downloaderr"));
 	ui->pushButton_update->setEnabled(true);
 	ui->pushButton_stop->setEnabled(false);
 }
@@ -247,6 +325,7 @@ void	CUpdateOBCN::On_DownLoadPause()
 }
 void	CUpdateOBCN::On_DownLoadStart()
 {
+	ui->label_downtext->setText(obs_module_text("UPdateCnstuido.downloading"));
 	UpdateImpl::GetUpdateImpl()->StartUpdate(this);
 	ui->pushButton_update->setEnabled(false);
 	ui->pushButton_stop->setEnabled(true);

@@ -8,11 +8,21 @@ OBS_MODULE_USE_DEFAULT_LOCALE("UpdateCnOBS", "en-US")
 void InitPluginUpdateCn();
 void FreePluginUpdateCn();
 #endif
-
+#if defined(_WIN32)
+BOOL WINAPI DllMain(HINSTANCE hInstance, DWORD dwReason, LPVOID lpvReserved)
+{
+	
+	if (dwReason == DLL_PROCESS_ATTACH)
+		curl_global_init(CURL_GLOBAL_WIN32);
+	if (dwReason == DLL_PROCESS_DETACH)
+		curl_global_cleanup();
+	return TRUE;
+}
+#endif
 bool obs_module_load(void)
 {
 #if defined(_WIN32) || defined(__APPLE__)
-	//curl_global_init(CURL_GLOBAL_ALL);
+	
 	InitPluginUpdateCn();
 	
 #endif

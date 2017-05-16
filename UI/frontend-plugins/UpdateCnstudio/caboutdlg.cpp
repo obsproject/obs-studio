@@ -16,6 +16,23 @@ CAboutDlg::CAboutDlg(QWidget *parent) :
     ui(new Ui::CAboutDlg)
 {
     ui->setupUi(this);
+	QMainWindow* window = (QMainWindow*)obs_frontend_get_main_window();
+	QString qString = window->windowTitle();
+	QRegularExpression reg(R"(\d+(\.\d+){0,2})");
+	QRegularExpressionMatch match=reg.match(qString);
+	if (match.hasMatch())
+	{
+		qString = match.captured(0);
+		qString=qString.trimmed();
+		QString vstr = obs_module_text("UpdateCnstuido.version");
+		qString.insert(0, vstr);
+		qString += "(4096)";
+		
+	}
+	
+	ui->label_3->setText(qString);
+	
+	
 }
 
 CAboutDlg::~CAboutDlg()
@@ -54,6 +71,13 @@ extern "C" void InitPluginUpdateCn()
 	QMenuBar* pBar=window->menuBar();
 	QMenu*	  pHelp = pBar->findChild<QMenu*>(QString("menuBasic_MainMenu_Help"));
 	blog(LOG_INFO, "ck---InitPluginUpdateCn	init", bnum_allocs());
+
+	config_t* globalcfg=obs_frontend_get_global_config();
+	if (globalcfg)
+	{
+		//close auto updates
+		config_set_bool(globalcfg, "General", "EnableAutoUpdates", false);
+	}
 	auto cb = []()
 	{
 		//about

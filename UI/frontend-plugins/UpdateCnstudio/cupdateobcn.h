@@ -27,6 +27,9 @@ public:
 	void StartUpdate(QWidget* wid);
 	void StopUpdate();
 	void ExecuteInstall();
+	void UpdateProgress(double totalToDownload, double nowDownloaded);
+	void	DownLoadFinished();
+	void	DownLoadError();
 public:
 	string					cache_dir;				//缓存目录
 	fs::path				updatePath;				//安装包下载目录
@@ -40,7 +43,8 @@ public:
 	long long				strJsonCfgSize;
 	string					strJsonCfgUrl;
 	atomic_bool					g_UpdateThreadRun;
-	atomic_bool					g_LocalFileSize;
+	long long					g_LocalFileSize;
+	long long					g_remoteFileSize;
 	atomic_bool					g_exitDown;
 	QMainWindow *				g_window;
 	QWidget*					g_RecvMsg;
