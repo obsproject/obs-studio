@@ -51,6 +51,9 @@ struct mp_media {
 	mp_audio_cb a_cb;
 	void *opaque;
 
+	char *path;
+	char *format_name;
+
 	enum AVPixelFormat scale_format;
 	struct SwsContext *swscale;
 	int scale_linesizes[4];
@@ -63,6 +66,7 @@ struct mp_media {
 	bool has_audio;
 	bool is_file;
 	bool eof;
+	bool hw;
 
 	struct obs_source_frame obsframe;
 	enum video_colorspace cur_space;
