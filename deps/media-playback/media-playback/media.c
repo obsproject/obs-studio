@@ -391,10 +391,13 @@ static bool mp_media_reset(mp_media_t *m)
 		? av_rescale_q(seek_pos, AV_TIME_BASE_Q, stream->time_base)
 		: seek_pos;
 
-	int ret = av_seek_frame(m->fmt, 0, seek_target, seek_flags);
-	if (ret < 0) {
-		blog(LOG_WARNING, "MP: Failed to seek: %s", av_err2str(ret));
-		return false;
+	if (!m->is_network) {
+		int ret = av_seek_frame(m->fmt, 0, seek_target, seek_flags);
+		if (ret < 0) {
+			blog(LOG_WARNING, "MP: Failed to seek: %s",
+					av_err2str(ret));
+			return false;
+		}
 	}
 
 	if (m->has_video && !m->is_network)
