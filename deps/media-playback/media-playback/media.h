@@ -110,6 +110,10 @@ extern void mp_media_stop(mp_media_t *media);
 
 /* #define DETAILED_DEBUG_INFO */
 
+#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(57, 48, 101)
+#define USE_NEW_FFMPEG_DECODE_API
+#endif
+
 #ifdef __cplusplus
 }
 #endif

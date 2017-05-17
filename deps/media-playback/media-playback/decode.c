@@ -204,6 +204,40 @@ static inline int64_t get_estimated_duration(struct mp_decode *d,
 	}
 }
 
+static int decode_packet(struct mp_decode *d, int *got_frame)
+{
+	int ret;
+	*got_frame = 0;
+
+#ifdef USE_NEW_FFMPEG_DECODE_API
+	ret = avcodec_send_packet(d->decoder, &d->pkt);
+	if (ret != 0 && ret != AVERROR(EAGAIN)) {
+		if (ret == AVERROR_EOF)
+			ret = 0;
+		return ret;
+	}
+
+	ret = avcodec_receive_frame(d->decoder, d->frame);
+	if (ret != 0 && ret != AVERROR(EAGAIN)) {
+		if (ret == AVERROR_EOF)
+			ret = 0;
+		return ret;
+	}
+
+	*got_frame = (ret == 0);
+	ret = d->pkt.size;
+#else
+	if (d->audio) {
+		ret = avcodec_decode_audio4(d->decoder,
+				d->frame, got_frame, &d->pkt);
+	} else {
+		ret = avcodec_decode_video2(d->decoder,
+				d->frame, got_frame, &d->pkt);
+	}
+#endif
+	return ret;
+}
+
 bool mp_decode_next(struct mp_decode *d)
 {
 	bool eof = d->m->eof;
@@ -232,25 +266,20 @@ bool mp_decode_next(struct mp_decode *d)
 			}
 		}
 
-		if (d->audio) {
-			ret = avcodec_decode_audio4(d->decoder,
-					d->frame, &got_frame, &d->pkt);
-		} else {
-			if (d->m->is_network && !d->got_first_keyframe) {
-				if (d->pkt.flags & AV_PKT_FLAG_KEY) {
-					d->got_first_keyframe = true;
-				} else {
-					av_packet_unref(&d->orig_pkt);
-					av_init_packet(&d->orig_pkt);
-					av_init_packet(&d->pkt);
-					d->packet_pending = false;
-					return true;
-				}
+		if (!d->audio && d->m->is_network && !d->got_first_keyframe) {
+			if (d->pkt.flags & AV_PKT_FLAG_KEY) {
+				d->got_first_keyframe = true;
+			} else {
+				av_packet_unref(&d->orig_pkt);
+				av_init_packet(&d->orig_pkt);
+				av_init_packet(&d->pkt);
+				d->packet_pending = false;
+				return true;
 			}
-
-			ret = avcodec_decode_video2(d->decoder,
-					d->frame, &got_frame, &d->pkt);
 		}
+
+		ret = decode_packet(d, &got_frame);
+
 		if (!got_frame && ret == 0) {
 			d->eof = true;
 			return true;
