@@ -92,7 +92,7 @@ void	UpdateImpl::LoadServiceInfo()
 string  UpdateImpl::GetUpdateFullUrl()
 {
 	//v=18.0.2.456&g=DAFADSF&type=rtmp_common&key=dsafa&server=rtmp://live.twitch.tv/app
-	string qString=R"(http://intf.soft.360.cn/index.php?c=Coop&a=update&version=19.0.1)";
+	string qString=R"(http://192.168.110.243:90/storeapi/update.php?)";
 	CHttpClient h;
 	stringstream urlParam;
 	urlParam << "v="
@@ -311,11 +311,13 @@ bool UpdateImpl::CheckUpdate(bool manualUpdate)
 		int iret = q.Get(strUrl, strJson);
 		if (iret == CURLcode::CURLE_OK&&q.m_httpretcode == 200)
 		{
-			strJson = R"({"md5":"4FB691E0629A45FF2F464DBFCC2EC29D","url":"http://cktools.cikevideo.com/installer/pc/setup/setup_1.6.2.10893_0510.exe","size":"63016248","version":"18.0.3"})";
+			//strJson = R"({"md5":"4FB691E0629A45FF2F464DBFCC2EC29D","url":"http://cktools.cikevideo.com/installer/pc/setup/setup_1.6.2.10893_0510.exe","size":"63016248","version":"18.0.3"})";
 			//更新本地josn
 			string strErr;
-			auto jsVar = json11::Json::parse(strJson, strErr);
+			auto jsVarRoot = json11::Json::parse(strJson, strErr);
 			UpdateImpl::GetUpdateImpl()->LoadJson();
+			auto jsd = jsVarRoot["d"].object_items();
+			auto jsVar = jsd["data"];
 			if (!jsVar.is_null()&&strErr.empty())
 			{
 				string		obsFileVer = UpdateImpl::GetUpdateImpl()->strOBSCN;
