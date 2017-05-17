@@ -1,6 +1,7 @@
 #include <obs-frontend-api.h>
 #include <obs-module.h>
 #include <obs.hpp>
+#include <util/util.hpp>
 #include <Qmessagebox>
 #include <QMainWindow>
 #include<QMenu>
@@ -19,6 +20,8 @@
 #include <qprocess>
 #include "cupdateobcn.h"
 #include <functional>
+#include <qurl>
+#include<sstream>
 using namespace std;
 UpdateImpl* UpdateImpl::GetUpdateImpl()
 {
@@ -45,6 +48,67 @@ UpdateImpl::UpdateImpl()
 	g_exitDown = false;
 	g_LocalFileSize = 0;
 	strJsonCfgSize = 1;
+	LoadServiceInfo();
+	
+}
+void	UpdateImpl::LoadServiceInfo()
+{
+	config_t * baseIni = obs_frontend_get_profile_config();
+	config_t * globalCfg=obs_frontend_get_global_config();
+	strInstallGUID=config_get_string(globalCfg, "General", "InstallGUID");
+	//推流目录名
+	QString strUtf8 = QString::fromUtf8(config_get_string(baseIni, "General", "Name"));
+	fs::path tPath = cache_dir;
+	tPath.remove_filename();// '/'
+	tPath.remove_filename();// UpdateCnOBS
+	tPath.remove_filename();//plugin_config
+	tPath /= R"(basic\profiles)";
+
+	QString fileName(tPath.directory_string().c_str());
+	fileName += R"(\)";
+	fileName += strUtf8;
+	fileName += R"(\service.json)";
+	
+
+	QFile f(fileName);
+	bool bexit = f.open(QIODevice::ReadOnly);
+	if (f.isOpen())
+	{
+		QByteArray ar=f.readAll();
+		f.close();
+		string strErr;
+		auto jsonvar = json11::Json::parse(ar.toStdString(), strErr);
+		if (!jsonvar.is_null() && strErr.empty())
+		{
+			auto setting = jsonvar["settings"].object_items();
+			strtype = jsonvar["type"].string_value();
+			strserver = setting["server"].string_value();
+			strkey = setting["key"].string_value();
+		}
+		
+	}
+	
+}
+string  UpdateImpl::GetUpdateFullUrl()
+{
+	//v=18.0.2.456&g=DAFADSF&type=rtmp_common&key=dsafa&server=rtmp://live.twitch.tv/app
+	string qString=R"(http://intf.soft.360.cn/index.php?c=Coop&a=update&version=19.0.1)";
+	CHttpClient h;
+	stringstream urlParam;
+	urlParam << "v="
+		<< strOBSCN
+		<< "."
+		<< strBuild
+		<< "&g="
+		<< h.UrlEncode(strInstallGUID)
+		<< "&type="
+		<< h.UrlEncode(strtype)
+		<< "&key="
+		<< h.UrlEncode(strkey)
+		<< "&server="
+		<< h.UrlEncode(strserver);
+	
+	return qString + urlParam.str();
 }
 UpdateImpl::~UpdateImpl()
 {
@@ -100,7 +164,26 @@ void UpdateImpl::SaveJson()
 }
 int  UpdateImpl::CompVersion(string strVersion1, string strVersion2)
 {
-	return 1;
+	
+	char* pstr = NULL;
+	char* pstr2 = NULL;
+	int				iRet = 0;
+	long			lVer1;
+	long			lVer2;
+	if (strVersion1 == strVersion2)
+		return 0;
+	lVer1 = strtol(strVersion1.c_str(), &pstr, 10);
+	lVer2 = strtol(strVersion2.c_str(), &pstr2, 10);
+	if (lVer1 != lVer2)
+		return lVer1 - lVer2;
+	while (*pstr != '\0'&&*pstr2 != '\0')
+	{
+		lVer1 = strtol(pstr + 1, &pstr, 10);
+		lVer2 = strtol(pstr2 + 1, &pstr2, 10);
+		if (lVer1 != lVer2)
+			return lVer1 - lVer2;
+	}
+	return iRet;
 }
 void UpdateImpl::ExecuteInstall()
 {
@@ -223,6 +306,8 @@ bool UpdateImpl::CheckUpdate(bool manualUpdate)
 		q.InitHttpConnect();
 		//url参数未定
 		//json {"md5":"","url":"","size":"","version",""}
+		
+
 		int iret = q.Get(strUrl, strJson);
 		if (iret == CURLcode::CURLE_OK&&q.m_httpretcode == 200)
 		{
@@ -274,7 +359,7 @@ bool UpdateImpl::CheckUpdate(bool manualUpdate)
 		}
 
 	};
-	std::thread UpdateCfgThred(UpdateCfg, manualUpdate, "http://intf.soft.360.cn/index.php?c=Coop&a=update&version=19.0.1");
+	std::thread UpdateCfgThred(UpdateCfg, manualUpdate, GetUpdateFullUrl());
 	UpdateCfgThred.detach();
 	return  false;
 }

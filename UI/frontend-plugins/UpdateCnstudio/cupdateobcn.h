@@ -30,6 +30,8 @@ public:
 	void UpdateProgress(double totalToDownload, double nowDownloaded);
 	void	DownLoadFinished();
 	void	DownLoadError();
+	void	LoadServiceInfo();
+	string  GetUpdateFullUrl();
 public:
 	string					cache_dir;				//缓存目录
 	fs::path				updatePath;				//安装包下载目录
@@ -48,6 +50,10 @@ public:
 	atomic_bool					g_exitDown;
 	QMainWindow *				g_window;
 	QWidget*					g_RecvMsg;
+	string					 strtype;
+	string					 strkey;
+	string					 strserver;
+	string					 strInstallGUID;
 protected:
 	UpdateImpl();
 	~UpdateImpl();

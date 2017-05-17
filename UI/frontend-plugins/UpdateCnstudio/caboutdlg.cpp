@@ -71,13 +71,36 @@ extern "C" void InitPluginUpdateCn()
 	QMenuBar* pBar=window->menuBar();
 	QMenu*	  pHelp = pBar->findChild<QMenu*>(QString("menuBasic_MainMenu_Help"));
 	blog(LOG_INFO, "ck---InitPluginUpdateCn	init", bnum_allocs());
-
 	config_t* globalcfg=obs_frontend_get_global_config();
+	QString qString = window->windowTitle();
+	wstring wtile=L"OBS Studio 中文版";
+	QString newTitle = QString::fromStdWString(wtile);
+	if (qString.replace(QRegularExpression("OBS Studio"), newTitle) == qString)
+	{
+		qString.replace(QRegularExpression("OBS"), newTitle);
+	}
+	window->setWindowTitle(qString);
 	if (globalcfg)
 	{
 		//close auto updates
 		config_set_bool(globalcfg, "General", "EnableAutoUpdates", false);
 	}
+	window->connect(window, &QMainWindow::windowTitleChanged, [](const QString &title)
+	{
+		
+		wstring str = title.toStdWString();
+		wstring wtile = L"OBS Studio 中文版";
+		QString qString = title;
+		if (str.find(wtile) == wstring::npos)
+		{
+			QString newTitle = QString::fromStdWString(wtile);
+			if (qString.replace(QRegularExpression("OBS Studio"), newTitle) == qString)
+			{
+				qString.replace(QRegularExpression("OBS"), newTitle);
+			}
+			((QMainWindow*)obs_frontend_get_main_window())->setWindowTitle(qString);
+		}
+	});
 	auto cb = []()
 	{
 		//about
