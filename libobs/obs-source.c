@@ -1695,7 +1695,7 @@ static inline void obs_source_render_filters(obs_source_t *source)
 	source->rendering_filter = false;
 }
 
-static void obs_source_default_render(obs_source_t *source)
+void obs_source_default_render(obs_source_t *source)
 {
 	gs_effect_t    *effect     = obs->video.default_effect;
 	gs_technique_t *tech       = gs_effect_get_technique(effect, "Draw");

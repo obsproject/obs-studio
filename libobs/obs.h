@@ -771,6 +771,9 @@ EXPORT obs_source_t *obs_filter_get_parent(const obs_source_t *filter);
  */
 EXPORT obs_source_t *obs_filter_get_target(const obs_source_t *filter);
 
+/** Used to directly render a non-async source without any filter processing */
+EXPORT void obs_source_default_render(obs_source_t *source);
+
 /** Adds a filter to the source (which is used whenever the source is used) */
 EXPORT void obs_source_filter_add(obs_source_t *source, obs_source_t *filter);
 
