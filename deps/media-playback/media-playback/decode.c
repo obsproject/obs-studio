@@ -278,7 +278,7 @@ bool mp_decode_next(struct mp_decode *d)
 				d->pkt.size -= ret;
 			}
 
-			if (d->pkt.size == 0) {
+			if (d->pkt.size <= 0) {
 				av_packet_unref(&d->orig_pkt);
 				av_init_packet(&d->orig_pkt);
 				av_init_packet(&d->pkt);
