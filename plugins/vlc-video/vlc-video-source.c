@@ -421,8 +421,10 @@ static void add_file(struct vlc_source *c, struct darray *array,
 	if (new_media) {
 		if (is_url) {
 			struct dstr network_caching_option = {0};
-			dstr_catf(&network_caching_option, ":network-caching=%d", network_caching);
-			libvlc_media_add_option_(new_media, network_caching_option.array);
+			dstr_catf(&network_caching_option,
+					":network-caching=%d", network_caching);
+			libvlc_media_add_option_(new_media,
+					network_caching_option.array);
 			dstr_free(&network_caching_option);
 		}
 
@@ -528,7 +530,8 @@ static void vlcs_update(void *data, obs_data_t *settings)
 				dstr_copy(&dir_path, path);
 				dstr_cat_ch(&dir_path, '/');
 				dstr_cat(&dir_path, ent->d_name);
-				add_file(c, &new_files.da, dir_path.array, network_caching);
+				add_file(c, &new_files.da, dir_path.array,
+						network_caching);
 			}
 
 			dstr_free(&dir_path);
@@ -733,7 +736,8 @@ static obs_properties_t *vlcs_properties(void *data)
 	dstr_free(&filter);
 	dstr_free(&exts);
 
-	obs_properties_add_int(ppts, S_NETWORK_CACHING, T_NETWORK_CACHING, 100, 3600000, 10);
+	obs_properties_add_int(ppts, S_NETWORK_CACHING, T_NETWORK_CACHING,
+			100, 3600000, 10);
 
 	return ppts;
 }
