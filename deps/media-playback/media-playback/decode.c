@@ -210,13 +210,6 @@ static int decode_packet(struct mp_decode *d, int *got_frame)
 	*got_frame = 0;
 
 #ifdef USE_NEW_FFMPEG_DECODE_API
-	ret = avcodec_send_packet(d->decoder, &d->pkt);
-	if (ret != 0 && ret != AVERROR(EAGAIN)) {
-		if (ret == AVERROR_EOF)
-			ret = 0;
-		return ret;
-	}
-
 	ret = avcodec_receive_frame(d->decoder, d->frame);
 	if (ret != 0 && ret != AVERROR(EAGAIN)) {
 		if (ret == AVERROR_EOF)
@@ -224,8 +217,28 @@ static int decode_packet(struct mp_decode *d, int *got_frame)
 		return ret;
 	}
 
-	*got_frame = (ret == 0);
-	ret = d->pkt.size;
+	if (ret != 0) {
+		ret = avcodec_send_packet(d->decoder, &d->pkt);
+		if (ret != 0 && ret != AVERROR(EAGAIN)) {
+			if (ret == AVERROR_EOF)
+				ret = 0;
+			return ret;
+		}
+
+		ret = avcodec_receive_frame(d->decoder, d->frame);
+		if (ret != 0 && ret != AVERROR(EAGAIN)) {
+			if (ret == AVERROR_EOF)
+				ret = 0;
+			return ret;
+		}
+
+		*got_frame = (ret == 0);
+		ret = d->pkt.size;
+	} else {
+		ret = 0;
+		*got_frame = 1;
+	}
+
 #else
 	if (d->audio) {
 		ret = avcodec_decode_audio4(d->decoder,
