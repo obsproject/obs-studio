@@ -903,6 +903,7 @@ void AutoConfigTestPage::FinalizeResults()
 
 		obs_data_set_string(service_settings, "service",
 				wiz->serviceName.c_str());
+		obs_service_update(service, service_settings);
 		obs_service_apply_encoder_settings(service,
 				vencoder_settings, nullptr);
 
