@@ -82,7 +82,7 @@ extern "C" void InitPluginUpdateCn()
 	window->setWindowTitle(qString);
 	if (globalcfg)
 	{
-		//close auto updates
+		//close auto updates EnableAutoUpdates
 		config_set_bool(globalcfg, "General", "EnableAutoUpdates", false);
 	}
 	window->connect(window, &QMainWindow::windowTitleChanged, [](const QString &title)
