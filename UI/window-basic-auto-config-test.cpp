@@ -240,12 +240,12 @@ void AutoConfigTestPage::TestBandwidthThread()
 	/* -----------------------------------*/
 	/* apply settings                     */
 
+	obs_service_update(service, service_settings);
 	obs_service_apply_encoder_settings(service,
 			vencoder_settings, aencoder_settings);
 
 	obs_encoder_update(vencoder, vencoder_settings);
 	obs_encoder_update(aencoder, aencoder_settings);
-	obs_service_update(service, service_settings);
 	obs_output_update(output, output_settings);
 
 	/* -----------------------------------*/
@@ -885,6 +885,30 @@ void AutoConfigTestPage::FinalizeResults()
 	};
 
 	if (wiz->type != AutoConfig::Type::Recording) {
+		const char *serverType = wiz->customServer
+			? "rtmp_custom"
+			: "rtmp_common";
+
+		OBSService service = obs_service_create(serverType,
+				"temp_service", nullptr, nullptr);
+		obs_service_release(service);
+
+		OBSData service_settings = obs_data_create();
+		OBSData vencoder_settings = obs_data_create();
+		obs_data_release(service_settings);
+		obs_data_release(vencoder_settings);
+
+		obs_data_set_int(vencoder_settings, "bitrate",
+				wiz->idealBitrate);
+
+		obs_data_set_string(service_settings, "service",
+				wiz->serviceName.c_str());
+		obs_service_apply_encoder_settings(service,
+				vencoder_settings, nullptr);
+
+		wiz->idealBitrate = (int)obs_data_get_int(vencoder_settings,
+				"bitrate");
+
 		if (!wiz->customServer)
 			form->addRow(
 				newLabel("Basic.AutoConfig.StreamPage.Service"),
