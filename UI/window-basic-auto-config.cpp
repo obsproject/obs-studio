@@ -765,6 +765,7 @@ void AutoConfig::SaveStreamSettings()
 			idealBitrate);
 	config_set_string(main->Config(), "SimpleOutput", "StreamEncoder",
 			GetEncoderId(streamingEncoder));
+	config_remove_value(main->Config(), "SimpleOutput", "UseAdvanced");
 }
 
 void AutoConfig::SaveSettings()

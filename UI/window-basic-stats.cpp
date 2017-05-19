@@ -29,7 +29,7 @@ static void setThemeID(QWidget *widget, const QString &themeID)
 }
 
 OBSBasicStats::OBSBasicStats(QWidget *parent)
-	: QDialog             (parent),
+	: QWidget             (parent),
 	  cpu_info            (os_cpu_usage_info_start()),
 	  timer               (this)
 {
@@ -136,8 +136,10 @@ OBSBasicStats::OBSBasicStats(QWidget *parent)
 	installEventFilter(CreateShortcutFilter());
 
 	resize(800, 280);
+	setWindowFlags(Qt::Window |
+	               Qt::WindowMinimizeButtonHint |
+	               Qt::WindowCloseButtonHint);
 	setWindowTitle(QTStr("Basic.Stats"));
-	setSizeGripEnabled(true);
 	setWindowModality(Qt::NonModal);
 	setAttribute(Qt::WA_DeleteOnClose, true);
 
@@ -176,7 +178,7 @@ void OBSBasicStats::closeEvent(QCloseEvent *event)
 		config_save_safe(main->Config(), "tmp", nullptr);
 	}
 
-	QDialog::closeEvent(event);
+	QWidget::closeEvent(event);
 }
 
 OBSBasicStats::~OBSBasicStats()
@@ -228,6 +230,9 @@ void OBSBasicStats::Update()
 	OBSOutput recOutput = obs_frontend_get_recording_output();
 	obs_output_release(strOutput);
 	obs_output_release(recOutput);
+
+	if (!strOutput || !recOutput)
+		return;
 
 	/* ------------------------------------------- */
 	/* general usage                               */
@@ -399,6 +404,9 @@ void OBSBasicStats::Reset()
 
 void OBSBasicStats::OutputLabels::Update(obs_output_t *output)
 {
+	if (!output)
+		return;
+
 	const char *id = obs_obj_get_id(output);
 	bool rec = strcmp(id, "rtmp_output") != 0;
 
@@ -483,6 +491,9 @@ void OBSBasicStats::OutputLabels::Update(obs_output_t *output)
 
 void OBSBasicStats::OutputLabels::Reset(obs_output_t *output)
 {
+	if (!output)
+		return;
+
 	first_total   = obs_output_get_total_frames(output);
 	first_dropped = obs_output_get_frames_dropped(output);
 }

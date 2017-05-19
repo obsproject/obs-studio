@@ -52,6 +52,7 @@ struct ffmpeg_source {
 	char *input;
 	char *input_format;
 	bool is_looping;
+	bool is_local_file;
 	bool is_hw_decoding;
 	bool is_clear_on_media_end;
 	bool restart_on_activate;
@@ -69,8 +70,10 @@ static bool is_local_file_modified(obs_properties_t *props,
 			"input_format");
 	obs_property_t *local_file = obs_properties_get(props, "local_file");
 	obs_property_t *looping = obs_properties_get(props, "looping");
+	obs_property_t *close = obs_properties_get(props, "close_when_inactive");
 	obs_property_set_visible(input, !enabled);
 	obs_property_set_visible(input_format, !enabled);
+	obs_property_set_visible(close, enabled);
 	obs_property_set_visible(local_file, enabled);
 	obs_property_set_visible(looping, enabled);
 
@@ -252,7 +255,8 @@ static void ffmpeg_source_start(struct ffmpeg_source *s)
 
 	if (s->media_valid) {
 		mp_media_play(&s->media, s->is_looping);
-		obs_source_show_preloaded_video(s->source);
+		if (s->is_local_file)
+			obs_source_show_preloaded_video(s->source);
 	}
 }
 
@@ -272,6 +276,8 @@ static void ffmpeg_source_update(void *data, obs_data_t *settings)
 		input = (char *)obs_data_get_string(settings, "local_file");
 		input_format = NULL;
 		s->is_looping = obs_data_get_bool(settings, "looping");
+		s->close_when_inactive = obs_data_get_bool(settings,
+				"close_when_inactive");
 
 		obs_source_set_async_unbuffered(s->source, true);
 	} else {
@@ -279,6 +285,7 @@ static void ffmpeg_source_update(void *data, obs_data_t *settings)
 		input_format = (char *)obs_data_get_string(settings,
 				"input_format");
 		s->is_looping = false;
+		s->close_when_inactive = true;
 
 		obs_source_set_async_unbuffered(s->source, false);
 	}
@@ -290,10 +297,9 @@ static void ffmpeg_source_update(void *data, obs_data_t *settings)
 			"clear_on_media_end");
 	s->restart_on_activate = obs_data_get_bool(settings,
 			"restart_on_activate");
-	s->close_when_inactive = obs_data_get_bool(settings,
-			"close_when_inactive");
 	s->range = (enum video_range_type)obs_data_get_int(settings,
 			"color_range");
+	s->is_local_file = is_local_file;
 
 	if (s->media_valid) {
 		mp_media_free(&s->media);

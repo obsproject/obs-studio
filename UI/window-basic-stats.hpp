@@ -3,7 +3,7 @@
 #include <obs.hpp>
 #include <util/platform.h>
 #include <QPointer>
-#include <QDialog>
+#include <QWidget>
 #include <QTimer>
 #include <QLabel>
 #include <QList>
@@ -11,7 +11,7 @@
 class QGridLayout;
 class QCloseEvent;
 
-class OBSBasicStats : public QDialog {
+class OBSBasicStats : public QWidget {
 	Q_OBJECT
 
 	QLabel *fps = nullptr;

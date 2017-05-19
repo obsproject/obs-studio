@@ -277,6 +277,8 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 
 	ui->setupUi(this);
 
+	main->EnableOutputs(false);
+
 	PopulateAACBitrates({ui->simpleOutputABitrate,
 			ui->advOutTrack1Bitrate, ui->advOutTrack2Bitrate,
 			ui->advOutTrack3Bitrate, ui->advOutTrack4Bitrate,
@@ -652,6 +654,11 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	SimpleRecordingQualityChanged();
 
 	UpdateAutomaticReplayBufferCheckboxes();
+}
+
+OBSBasicSettings::~OBSBasicSettings()
+{
+	main->EnableOutputs(true);
 }
 
 void OBSBasicSettings::SaveCombo(QComboBox *widget, const char *section,

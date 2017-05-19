@@ -22,6 +22,7 @@ set(obs-filters_SOURCES
 	obs-filters.c
 	color-correction-filter.c
 	async-delay-filter.c
+	gpu-delay.c
 	crop-filter.c
 	scale-filter.c
 	scroll-filter.c

@@ -282,6 +282,7 @@ private:
 	void RemoveQuickTransitionHotkey(QuickTransition *qt);
 	void LoadQuickTransitions(obs_data_array_t *array);
 	obs_data_array_t *SaveQuickTransitions();
+	void ClearQuickTransitionWidgets();
 	void RefreshQuickTransitions();
 	void CreateDefaultQuickTransitions();
 
@@ -317,7 +318,7 @@ private:
 	int   programCX = 0, programCY = 0;
 	float programScale = 0.0f;
 
-	bool enableOutputs = true;
+	int disableOutputsRef = 0;
 
 	inline bool IsPreviewProgramMode() const
 	{
@@ -362,7 +363,7 @@ public slots:
 
 	void StreamingStart();
 	void StreamStopping();
-	void StreamingStop(int errorcode);
+	void StreamingStop(int errorcode, QString last_error);
 
 	void StartRecording();
 	void StopRecording();
@@ -500,7 +501,12 @@ public:
 
 	inline void EnableOutputs(bool enable)
 	{
-		enableOutputs = enable;
+		if (enable) {
+			if (--disableOutputsRef < 0)
+				disableOutputsRef = 0;
+		} else {
+			disableOutputsRef++;
+		}
 	}
 
 	void ReorderSceneItem(obs_sceneitem_t *item, size_t idx);

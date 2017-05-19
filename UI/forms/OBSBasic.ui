@@ -981,13 +981,14 @@
     <addaction name="viewMenuToolbars"/>
     <addaction name="toggleSceneTransitions"/>
     <addaction name="toggleStatusBar"/>
+    <addaction name="separator"/>
+    <addaction name="stats"/>
    </widget>
    <widget class="QMenu" name="menuTools">
     <property name="title">
      <string>Basic.MainMenu.Tools</string>
     </property>
     <addaction name="autoConfigure"/>
-    <addaction name="stats"/>
     <addaction name="separator"/>
    </widget>
    <addaction name="menu_File"/>

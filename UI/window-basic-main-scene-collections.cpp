@@ -221,9 +221,22 @@ void OBSBasic::RefreshSceneCollections()
 
 	EnumSceneCollections(addCollection);
 
+	/* force saving of first scene collection on first run, otherwise
+	 * no scene collections will show up */
+	if (!count) {
+		long prevDisableVal = disableSaving;
+
+		disableSaving = 0;
+		SaveProjectNow();
+		disableSaving = prevDisableVal;
+
+		EnumSceneCollections(addCollection);
+	}
+
 	ui->actionRemoveSceneCollection->setEnabled(count > 1);
 
 	OBSBasic *main = reinterpret_cast<OBSBasic*>(App()->GetMainWindow());
+
 	main->OpenSavedProjectors();
 	main->ui->actionPasteFilters->setEnabled(false);
 	main->ui->actionPasteRef->setEnabled(false);
