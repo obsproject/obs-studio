@@ -1886,6 +1886,18 @@ obs_source_t *obs_filter_get_target(const obs_source_t *filter)
 		filter->filter_target : NULL;
 }
 
+static bool filter_compatible(obs_source_t *source, obs_source_t *filter)
+{
+	uint32_t s_caps = source->info.output_flags;
+	uint32_t f_caps = filter->info.output_flags;
+
+	if ((f_caps & OBS_SOURCE_AUDIO) != 0 &&
+	    (f_caps & OBS_SOURCE_VIDEO) == 0)
+		f_caps &= ~OBS_SOURCE_ASYNC;
+
+	return (s_caps & f_caps) == f_caps;
+}
+
 void obs_source_filter_add(obs_source_t *source, obs_source_t *filter)
 {
 	struct calldata cd;
@@ -1901,6 +1913,11 @@ void obs_source_filter_add(obs_source_t *source, obs_source_t *filter)
 	if (da_find(source->filters, &filter, 0) != DARRAY_INVALID) {
 		blog(LOG_WARNING, "Tried to add a filter that was already "
 		                  "present on the source");
+		pthread_mutex_unlock(&source->filter_mutex);
+		return;
+	}
+
+	if (!filter_compatible(source, filter)) {
 		pthread_mutex_unlock(&source->filter_mutex);
 		return;
 	}
