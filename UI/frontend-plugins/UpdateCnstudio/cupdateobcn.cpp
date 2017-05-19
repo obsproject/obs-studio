@@ -55,9 +55,17 @@ void	UpdateImpl::LoadServiceInfo()
 {
 	config_t * baseIni = obs_frontend_get_profile_config();
 	config_t * globalCfg=obs_frontend_get_global_config();
-	strInstallGUID=config_get_string(globalCfg, "General", "InstallGUID");
+	if (!baseIni || !globalCfg)
+		return;
+	const char* pInstallGUID = config_get_string(globalCfg, "General", "InstallGUID");
+	strInstallGUID = pInstallGUID ? pInstallGUID : "";
+	if (strInstallGUID.empty())
+		return;
 	//推流目录名
-	QString strUtf8 = QString::fromUtf8(config_get_string(baseIni, "General", "Name"));
+	const char* pDirName=config_get_string(baseIni, "General", "Name");
+	if (!pDirName)
+		return;
+	QString strUtf8 = QString::fromUtf8(pDirName);
 	fs::path tPath = cache_dir;
 	tPath.remove_filename();// '/'
 	tPath.remove_filename();// UpdateCnOBS
