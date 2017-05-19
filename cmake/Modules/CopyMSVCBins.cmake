@@ -166,7 +166,9 @@ if (CMAKE_CONFIGURATION_TYPES MATCHES "Rel")
 		"${Qt5Core_DIR}/../../../bin/Qt5Quick.dll"
 		"${Qt5Core_DIR}/../../../bin/Qt5WebChannel.dll"
 		"${Qt5Core_DIR}/../../../bin/Qt5WebEngineCore.dll"
-		"${Qt5Core_DIR}/../../../bin/Qt5WebEngineWidgets.dll")
+		"${Qt5Core_DIR}/../../../bin/Qt5WebEngineWidgets.dll"
+		"${Qt5Core_DIR}/../../../bin/QtWebEngineProcess.exe"
+		"${Qt5Core_DIR}/../../../resources/*.*")
 	file(GLOB QT_PLAT_BIN_FILES
 		"${Qt5Core_DIR}/../../../plugins/platforms/qwindows.dll")
 endif()
