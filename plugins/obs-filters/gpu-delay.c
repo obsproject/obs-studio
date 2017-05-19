@@ -147,7 +147,7 @@ static obs_properties_t *gpu_delay_filter_properties(void *data)
 {
 	obs_properties_t *props = obs_properties_create();
 
-	obs_properties_add_int(props, S_DELAY_MS, T_DELAY_MS, 0, 300, 1);
+	obs_properties_add_int(props, S_DELAY_MS, T_DELAY_MS, 0, 500, 1);
 
 	UNUSED_PARAMETER(data);
 	return props;
