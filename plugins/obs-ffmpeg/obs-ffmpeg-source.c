@@ -153,8 +153,10 @@ static obs_properties_t *ffmpeg_source_getproperties(void *data)
 	obs_properties_add_text(props, "input_format",
 			obs_module_text("InputFormat"), OBS_TEXT_DEFAULT);
 
+#ifndef __APPLE__
 	obs_properties_add_bool(props, "hw_decode",
 			obs_module_text("HardwareDecode"));
+#endif
 
 	obs_properties_add_bool(props, "clear_on_media_end",
 			obs_module_text("ClearOnMediaEnd"));
@@ -292,7 +294,9 @@ static void ffmpeg_source_update(void *data, obs_data_t *settings)
 
 	s->input = input ? bstrdup(input) : NULL;
 	s->input_format = input_format ? bstrdup(input_format) : NULL;
+#ifndef __APPLE__
 	s->is_hw_decoding = obs_data_get_bool(settings, "hw_decode");
+#endif
 	s->is_clear_on_media_end = obs_data_get_bool(settings,
 			"clear_on_media_end");
 	s->restart_on_activate = obs_data_get_bool(settings,
