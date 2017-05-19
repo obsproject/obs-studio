@@ -111,6 +111,8 @@ static void add_service(obs_property_t *list, json_t *service, bool show_all,
 	obs_property_list_add_string(list, name, name);
 }
 
+static inline json_t *find_service(json_t *root, const char *name);
+
 static void add_services(obs_property_t *list, json_t *root, bool show_all,
 		const char *cur_service)
 {
@@ -125,6 +127,13 @@ static void add_services(obs_property_t *list, json_t *root, bool show_all,
 
 	json_array_foreach (root, index, service) {
 		add_service(list, service, show_all, cur_service);
+	}
+
+	service = find_service(root, cur_service);
+	if (!service && cur_service && *cur_service) {
+		obs_property_list_insert_string(list, 0, cur_service,
+				cur_service);
+		obs_property_list_item_disable(list, 0, true);
 	}
 }
 
@@ -263,12 +272,20 @@ static bool service_selected(obs_properties_t *props, obs_property_t *p,
 		return false;
 
 	service = find_service(root, name);
-	if (!service)
-		return false;
+	if (!service) {
+		const char *server = obs_data_get_string(settings, "server");
+
+		obs_property_list_insert_string(p, 0, name, name);
+		obs_property_list_item_disable(p, 0, true);
+
+		p = obs_properties_get(props, "server");
+		obs_property_list_insert_string(p, 0, server, server);
+		obs_property_list_item_disable(p, 0, true);
+		return true;
+	}
 
 	fill_servers(obs_properties_get(props, "server"), service, name);
 
-	UNUSED_PARAMETER(p);
 	return true;
 }
 
