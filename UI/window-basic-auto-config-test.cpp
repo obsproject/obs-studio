@@ -338,12 +338,14 @@ void AutoConfigTestPage::TestBandwidthThread()
 
 		unique_lock<mutex> ul(m);
 		if (cancel) {
+			ul.unlock();
 			obs_output_force_stop(output);
 			return;
 		}
 		if (!stopped && !connected)
 			cv.wait(ul);
 		if (cancel) {
+			ul.unlock();
 			obs_output_force_stop(output);
 			return;
 		}
@@ -360,6 +362,7 @@ void AutoConfigTestPage::TestBandwidthThread()
 		if (stopped)
 			continue;
 		if (cancel) {
+			ul.unlock();
 			obs_output_force_stop(output);
 			return;
 		}
