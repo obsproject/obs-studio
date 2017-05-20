@@ -1819,6 +1819,7 @@ static void obs_output_end_data_capture_internal(obs_output_t *output,
 		if (signal) {
 			signal_stop(output);
 			output->stop_code = OBS_OUTPUT_SUCCESS;
+			os_event_signal(output->stopping_event);
 		}
 		return;
 	}
