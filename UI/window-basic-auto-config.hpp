@@ -65,7 +65,7 @@ class AutoConfig : public QWizard {
 	Quality recordingQuality = Quality::Stream;
 	Encoder recordingEncoder = Encoder::Stream;
 	Encoder streamingEncoder = Encoder::x264;
-	Type type = Type::Invalid;
+	Type type = Type::Streaming;
 	FPSType fpsType = FPSType::PreferHighFPS;
 	int idealBitrate = 2500;
 	int baseResolutionCX = 1920;
