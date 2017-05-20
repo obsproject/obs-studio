@@ -289,6 +289,7 @@ static void mp_media_next_video(mp_media_t *m, bool preload)
 		return;
 	}
 
+	bool flip = false;
 	if (m->swscale) {
 		int ret = sws_scale(m->swscale,
 				(const uint8_t *const *)f->data, f->linesize,
@@ -297,16 +298,23 @@ static void mp_media_next_video(mp_media_t *m, bool preload)
 		if (ret < 0)
 			return;
 
+		flip = m->scale_linesizes[0] < 0 && m->scale_linesizes[1] == 0;
 		for (size_t i = 0; i < 4; i++) {
 			frame->data[i] = m->scale_pic[i];
-			frame->linesize[i] = m->scale_linesizes[i];
+			frame->linesize[i] = abs(m->scale_linesizes[i]);
 		}
+
 	} else {
+		flip = f->linesize[0] < 0 && f->linesize[1] == 0;
+
 		for (size_t i = 0; i < MAX_AV_PLANES; i++) {
 			frame->data[i] = f->data[i];
-			frame->linesize[i] = f->linesize[i];
+			frame->linesize[i] = abs(f->linesize[i]);
 		}
 	}
+
+	if (flip)
+		frame->data[0] -= frame->linesize[0] * (f->height - 1);
 
 	new_format = convert_pixel_format(m->scale_format);
 	new_space  = convert_color_space(f->colorspace);
@@ -346,7 +354,7 @@ static void mp_media_next_video(mp_media_t *m, bool preload)
 		m->play_sys_ts - base_sys_ts;
 	frame->width = f->width;
 	frame->height = f->height;
-	frame->flip = false;
+	frame->flip = flip;
 
 	if (preload)
 		m->v_preload_cb(m->opaque, frame);
