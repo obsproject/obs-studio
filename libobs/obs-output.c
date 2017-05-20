@@ -346,10 +346,10 @@ void obs_output_actual_stop(obs_output_t *output, bool force, uint64_t ts)
 			obs_output_end_data_capture(output);
 			os_event_signal(output->stopping_event);
 		} else {
-			call_stop = data_active(output);
+			call_stop = true;
 		}
 	} else {
-		call_stop = data_active(output);
+		call_stop = true;
 	}
 
 	if (output->context.data && call_stop) {
