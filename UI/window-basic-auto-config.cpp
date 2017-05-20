@@ -283,7 +283,7 @@ bool AutoConfigStreamPage::validatePage()
 
 	wiz->customServer = ui->streamType->currentIndex() == 1;
 
-	int bitrate = 6000;
+	int bitrate = 10000;
 	if (!ui->doBandwidthTest->isChecked()) {
 		bitrate = ui->bitrate->value();
 		wiz->idealBitrate = bitrate;
