@@ -1414,8 +1414,16 @@ static void main_crash_handler(const char *format, va_list args, void *param)
 	BPtr<char> path(GetConfigPathPtr(name.c_str()));
 
 	fstream file;
-	file.open(path, ios_base::in | ios_base::out | ios_base::trunc |
+
+#ifdef _WIN32
+	BPtr<wchar_t> wpath;
+	os_utf8_to_wcs_ptr(path, 0, &wpath);
+	file.open(wpath, ios_base::in | ios_base::out | ios_base::trunc |
 			ios_base::binary);
+#else
+	file.open(path,	ios_base::in | ios_base::out | ios_base::trunc |
+			ios_base::binary);
+#endif
 	file << text;
 	file.close();
 
