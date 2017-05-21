@@ -274,14 +274,21 @@ bool AutoConfigStreamPage::validatePage()
 {
 	OBSData service_settings = obs_data_create();
 	obs_data_release(service_settings);
-	obs_data_set_string(service_settings, "service",
-			QT_TO_UTF8(ui->service->currentText()));
-
-	OBSService service = obs_service_create("rtmp_common", "temp_service",
-			service_settings, nullptr);
-	obs_service_release(service);
 
 	wiz->customServer = ui->streamType->currentIndex() == 1;
+
+	const char *serverType = wiz->customServer
+		? "rtmp_custom"
+		: "rtmp_common";
+
+	if (!wiz->customServer) {
+		obs_data_set_string(service_settings, "service",
+				QT_TO_UTF8(ui->service->currentText()));
+	}
+
+	OBSService service = obs_service_create(serverType, "temp_service",
+			service_settings, nullptr);
+	obs_service_release(service);
 
 	int bitrate = 10000;
 	if (!ui->doBandwidthTest->isChecked()) {
