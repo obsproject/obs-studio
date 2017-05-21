@@ -1039,9 +1039,6 @@ void device_load_vertexshader(gs_device_t *device, gs_shader_t *vertshader)
 			return;
 		}
 
-		if (curVB)
-			device_load_vertexbuffer(device, NULL);
-
 		shader    = vs->shader;
 		layout    = vs->layout;
 		constants = vs->constants;
