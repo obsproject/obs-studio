@@ -20,11 +20,13 @@ set(pluginstore_HEADERS
 	${pluginstore_HEADERS}
 	PluginStore.h
 	webpluginevent.h
+	plugindb.h
 	)
 set(pluginstore_SOURCES
 	${PluginStore_SOURCES}
 	pluginstoremodule.c
 	webpluginevent.cpp
+	plugindb.cpp
 	)
 set(pluginstore_UI
 	${pluginstore_UI}
