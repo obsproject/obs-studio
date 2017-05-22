@@ -397,6 +397,8 @@ CUpdateOBCN::~CUpdateOBCN()
 }
 void CUpdateOBCN::closeEvent(QCloseEvent *event)
 {
+	UpdateImpl::GetUpdateImpl()->StopUpdate();
+	std::this_thread::sleep_for(std::chrono::milliseconds(500));
 	obs_frontend_save();
 }
 void	CUpdateOBCN::On_DownLoadFinished()
