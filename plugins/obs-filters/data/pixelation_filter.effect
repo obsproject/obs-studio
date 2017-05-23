@@ -1,0 +1,91 @@
+/****************************************************************************
+Copyright (C) 2017 by c3r1c3 <c3r1c3@nevermindonline.com>
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 2 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*****************************************************************************/
+
+/*
+ * Inspired by the "Pixelation" filter from
+ * http://coding-experiments.blogspot.com/2010/06/pixelation.html
+ * Coded for OBS by c3r1c3
+ */
+
+/* Standard OBS->GPU uploads. */
+uniform float4x4 ViewProj;
+uniform texture2d image;
+
+/* Filter variables from OBS. */
+uniform float horiz_weight;
+uniform float vert_weight;
+uniform float block_height;
+uniform float block_width;
+
+/*
+ * Here we set how the base texture will be sampled/read/interpreted.
+ * Below is what you would normally use in OBS. Why?
+ * Linear filtering 'messes' with the image the least.
+ */
+sampler_state textureSampler {
+	Filter    = Linear;
+	AddressU  = Clamp;
+	AddressV  = Clamp;
+};
+
+/*
+ * Here we create the struct to hold the current position and texture info
+ * of the vertex in question.
+ */
+struct VertData {
+	float4 pos : POSITION;
+	float2 uv  : TEXCOORD0;
+};
+
+/*
+ * Now we transform the vertices to world space (and the
+ * textures to go with it). In OBS you'll usually want to
+ * use the code below, unless you're trying to create a
+ * '3D'-esqe effect.
+ */
+VertData VSDefault(VertData vert_in)
+{
+	VertData vert_out;
+	vert_out.pos = mul(float4(vert_in.pos.xyz, 1.0), ViewProj);
+	vert_out.uv  = vert_in.uv;
+	return vert_out;
+}
+
+/*
+ * Lastly we have the function that transforms the texture into
+ * the "Pixelation" version of itself.
+ */
+float4 PSPixelation(VertData vert_in) : TARGET
+{
+	float2 uv = float2((block_width * floor(vert_in.uv.x /
+			block_width) + horiz_weight),
+			(block_height * floor(vert_in.uv.y /
+			block_height) + vert_weight));
+	float4 imageSample = image.Sample(textureSampler, uv);
+
+	return imageSample;
+}
+
+/* This call actually executes the above functions on the GPU. */
+technique Draw
+{
+	pass
+	{
+		vertex_shader = VSDefault(vert_in);
+		pixel_shader  = PSPixelation(vert_in);
+	}
+}
