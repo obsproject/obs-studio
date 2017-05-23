@@ -1,0 +1,148 @@
+/****************************************************************************
+Copyright (C) 2017 by c3r1c3 <c3r1c3@nevermindonline.com>
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 2 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*****************************************************************************/
+
+/* From the "Cross-Stitching" filter from
+ * http://www.geeks3d.com/20110408/cross-stitching-post-processing-shader-glsl
+  -filter-geexlab-pixel-bender/
+ * Adapted for OBS by c3r1c3
+ */
+
+/* Standard OBS->GPU uploads. */
+uniform float4x4 ViewProj;
+uniform texture2d image;
+
+/* Filter variables from OBS. */
+uniform float stitch_gap;
+uniform float negative_bias;
+uniform float4 stitch_color;
+uniform bool invert;
+uniform bool grayscale;
+
+/*
+ * Here we set how the base texture will be sampled/read/interpreted.
+ * Below is what you would normally use in OBS. Why?
+ * Linear filtering 'messes' with the image the least.
+ */
+sampler_state textureSampler {
+	Filter   = linear;
+	AddressU = clamp;
+	AddressV = clamp;
+};
+
+/*
+ * Here we create the struct to hold the current position and texture info
+ * of the vertex in question.
+ */
+struct VertData {
+	float4 pos : POSITION;
+	float2 uv  : TEXCOORD0;
+};
+
+/*
+ * Now we transform the vertices to world space (and the
+ * textures to go with it). In OBS you'll usually want to
+ * use the code below, unless you're trying to create a
+ * '3D'-esqe effect.
+ */
+VertData VSDefault(VertData vert_in)
+{
+	VertData vert_out;
+	vert_out.pos = mul(float4(vert_in.pos.xyz, 1.0), ViewProj);
+	vert_out.uv = vert_in.uv;
+	return vert_out;
+}
+
+/*
+ * HLSL's fmod function doesn't seem to work like the GLSL
+ * mod command. This function addresses that issue.
+ */
+float mod(float x, float y)
+{
+	return x - y * floor(x / y);
+}
+
+/*
+ * Lastly we have the function that transforms the texture into
+ * the "Cross-Stitched" version of itself.
+ */
+float4 PSCrossStitch(VertData vert_in) : TARGET
+{
+	float4 color;
+	float4 transColor;
+	float luminance;
+	uint2 textureSize;
+
+	/* Get current Texture Size */
+	image.GetDimensions(textureSize.x, textureSize.y);
+
+	/* Get the current pixel color. */
+	color = image.Sample(textureSampler, vert_in.uv);
+	
+	/* Now the fun math... */
+	float2 cPos = vert_in.uv * textureSize;
+
+	float2 tlPos = floor(cPos / float2(stitch_gap, stitch_gap));
+	tlPos *= stitch_gap;
+
+	int remX = int(mod(cPos.x, stitch_gap));
+	int remY = int(mod(cPos.y, stitch_gap));
+
+	if (remX == 0 && remY == 0) {
+		tlPos = cPos;
+	}
+
+	float2 blPos = tlPos;
+	blPos.y += (stitch_gap - negative_bias);
+
+	if ((remX == remY) || (((int(cPos.x) -
+			int(blPos.x)) == (int(blPos.y) - int(cPos.y))))) {
+		if (!invert) {
+			transColor.rgb = stitch_color.rgb;
+		} else {
+			transColor = image.Sample(textureSampler, tlPos *
+					float2((1.0 / textureSize.x),
+					(1.0 / textureSize.y))) * 1.4;
+		}
+	} else {
+		if (!invert) {
+			transColor = image.Sample(textureSampler, tlPos *
+					float2((1.0 / textureSize.x),
+					(1.0 / textureSize.y))) * 1.4;
+		} else {
+			transColor.rgb = stitch_color.rgb;
+		}
+	}
+
+	transColor.a = color.a;
+
+	if (grayscale) {
+		luminance = length(transColor) * 0.5;
+		transColor.rgb = float3(luminance, luminance, luminance);
+	}
+
+	return transColor;
+}
+
+/* This call actually executes the above functions on the GPU. */
+technique Draw
+{
+	pass
+	{
+		vertex_shader = VSDefault(vert_in);
+		pixel_shader = PSCrossStitch(vert_in);
+	}
+}
