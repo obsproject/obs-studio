@@ -6,14 +6,17 @@
 #include <vector>
 #include <string>
 
+#include <QMainWindow>
+#include <QAction>
 #include <QWebEngineView>
 #include <qwebchannel>
 #include <QWebEnginePage>
 #include <QWebEngineDownloadItem>
-#include "ui_pluginstore.h"
 #include "webpluginevent.h"
+#include "ui_pluginstore.h"
 
-#define __DEF_PLUGING_MARKET_URL_   "D:/index.html"
+//#define __DEF_PLUGING_MARKET_URL_   "D://obs-store//test1.html"
+#define __DEF_PLUGING_MARKET_URL_   "http://plugin.ciscik.com/obs-store/test1.html"
 
 class PluginStore : public QDialog
 {

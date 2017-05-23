@@ -8,31 +8,32 @@
 #include <string>
 #include <iostream>
 
-
 #include <QDesktopServices>
 #include <QWebEngineView>
 #include <QWebEnginePage>
 #include <QWebEngineProfile>
 #include <QWebEngineDownloadItem>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QJsonArray>
+
+#include "plugindb.h"
 
 class WebPluginEvent;
 class PluginItem : public QObject
 {
     Q_OBJECT
 public:
-    explicit PluginItem();
+    explicit PluginItem(double dblId, QWebEngineDownloadItem* lpItem,WebPluginEvent* lpEvent);
     ~PluginItem();
 
-    void        SetPluginId(QString qstrId);
-    QString     GetPluginId();
-
 public slots:
-    void        on_web_downfile_start(QWebEngineDownloadItem *item);
     void        on_web_downfile_progress(qint64 qiRecvSize, qint64 qiTotalSize);
     void        on_web_downfile_finished();
 private:
-    QString                     m_qstrPluginId;
+    double                      m_qstrPluginId;
     QWebEngineDownloadItem*     m_lpWebItem;
+    WebPluginEvent*             m_lpEvent;
 };
 
 
@@ -52,25 +53,30 @@ public:
     explicit WebPluginEvent(QObject *parent = 0, QWebEngineView* view = 0);
 	~WebPluginEvent();
 
+    QString     ResultToJsonString(double dblPlugId,bool bResult);
 signals:
 	void        DownLoadState(QString strPluginID, qint64 iDownLoadSize, qint64 iTotalSize);
 public	slots:
-	QStringList	GetLocalPluginList();
+    QString	    GetLocalPluginList();
 	QString		GetLocalPluginVersion(QString strPluginID);
-    void        DownLoadPluginUrl(QString obj, QString strDownUrl);
-	bool        InstallPluginName(QString strPluginID);
-	bool        UnInstallPluginName(QString strPluginID);
+    void        DownLoadPluginUrl(const QVariantMap& param);
+	QString     InstallPlugin(const QVariant& param);
+    QString     UninstallPlugin(const QVariant& param);
+    QString     RemoveFilePlugin(const QVariant& param);
 	QString     GetCurrentSaveDirectory();
 	void        SetNewSaveDirectory(QString strDirectory);
     void        OpenUrl(QString url);
 
     void        on_web_load_finished(bool ok);
+    void        on_web_downfile_start(QWebEngineDownloadItem *item);
 public:
 	static	void	RemoveAllLabelFile();
 	static	void	SetLabelDelete(QString strPluginFile);
+
 private:
     QWebEngineView*                                 m_lpView;
-    QMap<QString, PluginItem*>                      m_DownItemsMap;
+    QMap<QString, QJsonObject>                      m_downInfoMap;
+    PluginDB                                        m_PluginDB;
 };
 
 #endif // WEBPLUGINEVENT_H

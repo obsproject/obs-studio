@@ -13,45 +13,24 @@ using namespace std;
 /************************************************************************/
 /* download files Mangert                                               */
 /************************************************************************/
-PluginItem::PluginItem()
-{
-    m_qstrPluginId = "";
-    m_lpWebItem = NULL;
+PluginItem::PluginItem(double dblId, QWebEngineDownloadItem* lpItem, WebPluginEvent* lpEvent)
+    : m_qstrPluginId(dblId)
+    , m_lpWebItem(lpItem)
+    , m_lpEvent(lpEvent)
+{   
+    connect(m_lpWebItem, SIGNAL(downloadProgress(qint64, qint64)), this, SLOT(on_web_downfile_progress(qint64, qint64)));
+    connect(m_lpWebItem, SIGNAL(finished()), this, SLOT(on_web_downfile_finished()));
 }
 
 PluginItem::~PluginItem()
 {
+
 }
-
-
-void PluginItem::SetPluginId(QString qstrId)
-{
-    m_qstrPluginId = qstrId;
-}
-
-QString PluginItem::GetPluginId()
-{
-    return m_qstrPluginId;
-}
-
-
-void PluginItem::on_web_downfile_start(QWebEngineDownloadItem *item)
-{
-    if (item)
-    {
-        m_lpWebItem = item;
-
-        connect(item, SIGNAL(downloadProgress(qint64, qint64)),
-            this, SLOT(on_web_downfile_progress(qint64, qint64)));
-        connect(item, SIGNAL(finished()), this, SLOT(on_web_downfile_finished()));
-        item->accept();
-    }
-}
-
 
 void PluginItem::on_web_downfile_progress(qint64 qiRecvSize, qint64 qiTotalSize)
 {
-    qDebug("Plugins down progresss %s :%d -- %d", m_qstrPluginId, qiRecvSize, qiTotalSize);
+    qDebug() << "file:" << m_qstrPluginId << "recv:" << qiRecvSize << "qiTotalSize " << qiTotalSize;
+    m_lpEvent->DownLoadState(QString::number(m_qstrPluginId),qiRecvSize,qiTotalSize);
 }
 
 void PluginItem::on_web_downfile_finished()
@@ -68,6 +47,10 @@ WebPluginEvent::WebPluginEvent(QObject *parent, QWebEngineView* view) : QObject(
     {
         m_lpView = view;
         connect(view, SIGNAL(loadFinished(bool)), this, SLOT(on_web_load_finished(bool)));
+        connect(m_lpView->page()->profile(), SIGNAL(downloadRequested(QWebEngineDownloadItem*)),
+            this, SLOT(on_web_downfile_start(QWebEngineDownloadItem*)));
+
+        m_PluginDB.InitPluginDB();
     }
 }
 WebPluginEvent::~WebPluginEvent()
@@ -75,37 +58,68 @@ WebPluginEvent::~WebPluginEvent()
 	
 }
 
-QStringList	WebPluginEvent::GetLocalPluginList()
+QString WebPluginEvent::ResultToJsonString(double dblPlugId, bool bResult)
 {
-    return	{ "1", "2", "3" };
+    QJsonObject json;
+    json.insert("plugid", dblPlugId);
+    json.insert("result", bResult);
+
+    QJsonDocument document;
+    document.setObject(json);
+    QByteArray byte_array = document.toJson(QJsonDocument::Compact);
+    QString json_str(byte_array);
+
+    return json_str;
+}
+
+QString	WebPluginEvent::GetLocalPluginList()
+{
+    return	QString("{ 1, 2, 3 }");
 }
 QString	WebPluginEvent::GetLocalPluginVersion(QString strPluginID)
 {
     return	QString("1.1.1.1");
 }
-void WebPluginEvent::DownLoadPluginUrl(QString qstrId, QString strDownUrl)
+void WebPluginEvent::DownLoadPluginUrl(const QVariantMap& param)
 {
+
+    double dblPlugId;
+    QString qstrUrl;
+
     if (m_lpView)
-    {
+    {  
+        QJsonObject qjsonObj = QJsonObject::fromVariantMap(param);
+        if (!qjsonObj.isEmpty())
+        {   
+            dblPlugId = qjsonObj.value("plug_id").toDouble();
+            qstrUrl = qjsonObj.value("file_url").toString();
+            if (qstrUrl.isEmpty())
+                return;
 
-        PluginItem item;
-        item.SetPluginId(qstrId);
-        m_DownItemsMap.insert(qstrId, &item);
-
-        connect(m_lpView->page()->profile(), SIGNAL(downloadRequested(QWebEngineDownloadItem*)),
-            &item, SLOT(on_web_downfile_start(QWebEngineDownloadItem*)));
-
-        m_lpView->load(QUrl(strDownUrl));
+            m_downInfoMap.insert(qstrUrl, qjsonObj);
+            m_lpView->load(QUrl(qstrUrl));
+        }
     }
     return;
 }
-bool WebPluginEvent::InstallPluginName(QString strPluginID)
+QString WebPluginEvent::InstallPlugin(const QVariant& param)
 {
-    return true;
+    double dblPlugId = param.toDouble();
+
+    return ResultToJsonString(dblPlugId, true);
 }
-bool WebPluginEvent::UnInstallPluginName(QString strPluginID)
+QString WebPluginEvent::UninstallPlugin(const QVariant& param)
 {
-    return true;
+    double dblPlugId = param.toDouble();
+    
+    return ResultToJsonString(dblPlugId,true);
+}
+
+QString WebPluginEvent::RemoveFilePlugin(const QVariant& param)
+{
+    double dblPlugId = param.toDouble();
+
+    return ResultToJsonString(dblPlugId, true);
 }
 
 QString WebPluginEvent::GetCurrentSaveDirectory()
@@ -126,6 +140,21 @@ void WebPluginEvent::on_web_load_finished(bool ok)
 {
     return;
 }
+
+void WebPluginEvent::on_web_downfile_start(QWebEngineDownloadItem *item)
+{
+    QString qstrUrl = item->url().toString();
+
+    QMap<QString, QJsonObject>::const_iterator iter = m_downInfoMap.constFind(qstrUrl);
+    if (iter != m_downInfoMap.constEnd())
+    {
+        QJsonObject obj = *iter;
+        PluginItem* lpPlugItem = new PluginItem(obj.value("plug_id").toDouble(), item, this);
+
+        item->accept();
+    }
+}
+
 void WebPluginEvent::RemoveAllLabelFile()
 {
 	obs_module_t* hModule = obs_current_module();
@@ -150,7 +179,8 @@ void WebPluginEvent::RemoveAllLabelFile()
 	DelFiles(strBinPath, filters);
 	DelFiles(strDataPath, filters);
 }
-void	WebPluginEvent::SetLabelDelete(QString strPluginFile)
+
+void WebPluginEvent::SetLabelDelete(QString strPluginFile)
 {
 	QFileInfo f(strPluginFile);
 	if (f.exists())
