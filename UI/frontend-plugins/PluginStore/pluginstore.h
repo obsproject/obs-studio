@@ -28,7 +28,6 @@ public:
 
 	void        closeEvent(QCloseEvent *event) override;
 	void        resizeEvent(QResizeEvent *event)override;
-
 private slots:
 	void        on_close_clicked();
 };

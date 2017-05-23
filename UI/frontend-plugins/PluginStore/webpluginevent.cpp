@@ -1,3 +1,10 @@
+#include <obs-frontend-api.h>
+#include <obs-module.h>
+#include <obs.hpp>
+#include <QFileInfo>
+#include <QDir>
+#include <QDirIterator>
+#include <QRegularExpression>
 #include "webpluginevent.h"
 
 
@@ -118,4 +125,41 @@ void WebPluginEvent::OpenUrl(QString url)
 void WebPluginEvent::on_web_load_finished(bool ok)
 {
     return;
+}
+void WebPluginEvent::RemoveAllLabelFile()
+{
+	obs_module_t* hModule = obs_current_module();
+	QString strBinPath = QString::fromUtf8(obs_get_module_binary_path(hModule));
+	QString strDataPath = QString::fromUtf8(obs_get_module_data_path(hModule));
+	qDebug() << strBinPath.remove(QRegularExpression("pluginstore.dll"));
+	qDebug() << strDataPath.remove(QRegularExpression("pluginstore"));
+	auto DelFiles = [](QDir d, QStringList filters)
+	{
+
+
+		d.setNameFilters(filters);
+		QDirIterator it(d, QDirIterator::Subdirectories);
+		while (it.hasNext()) {
+			QString strFile = it.next();
+			qDebug() << strFile;
+			QFile::remove(strFile);
+		}
+	};
+	QStringList filters;
+	filters << "*.old";
+	DelFiles(strBinPath, filters);
+	DelFiles(strDataPath, filters);
+}
+void	WebPluginEvent::SetLabelDelete(QString strPluginFile)
+{
+	QFileInfo f(strPluginFile);
+	if (f.exists())
+	{
+		QString strExt = f.suffix();
+		if (strExt != "old")
+		{
+			//if(!QFile::exists(strPluginFile + ".old"))
+			QFile::rename(strPluginFile, strPluginFile + ".old");
+		}
+	}
 }

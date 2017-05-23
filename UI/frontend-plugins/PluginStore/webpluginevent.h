@@ -65,7 +65,9 @@ public	slots:
     void        OpenUrl(QString url);
 
     void        on_web_load_finished(bool ok);
-
+public:
+	static	void	RemoveAllLabelFile();
+	static	void	SetLabelDelete(QString strPluginFile);
 private:
     QWebEngineView*                                 m_lpView;
     QMap<QString, PluginItem*>                      m_DownItemsMap;
