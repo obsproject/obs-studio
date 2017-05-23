@@ -36,6 +36,7 @@ qt5_wrap_ui(pluginstore_UI_HEADERS
 	)
 find_package(Qt5WebChannel)
 find_package(Qt5WebEngineWidgets)
+find_package(Qt5Sql)
 add_library(pluginstore MODULE
 	${pluginstore_HEADERS}
 	${pluginstore_SOURCES}
@@ -48,6 +49,7 @@ target_link_libraries(pluginstore
 	Qt5::Widgets
 	Qt5::WebChannel
 	Qt5::WebEngineWidgets
+	Qt5::Sql
 	libobs)
 install_obs_plugin_with_data(pluginstore data)
 
