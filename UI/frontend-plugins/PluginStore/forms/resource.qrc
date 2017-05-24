@@ -1,0 +1,5 @@
+<RCC>
+    <qresource prefix="/">
+        <file>PluginInfo.sql</file>
+    </qresource>
+</RCC>
