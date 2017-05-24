@@ -39,15 +39,6 @@ private:
 
 class WebPluginEvent : public QObject
 {
-	struct PluginInfo
-	{
-		QString strPluginID;				//PluginId
-		QString	strPluginProductName;		//ProductName
-		QString	strPluginInfo;              //PluginInfo
-		QString	strLocalVersion;            //Vesion
-		QString	strPluginLocalFileName;     //Local File Name
-	};
-
     Q_OBJECT
 public:
     explicit WebPluginEvent(QObject *parent = 0, QWebEngineView* view = 0);

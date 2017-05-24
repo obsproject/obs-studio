@@ -74,7 +74,19 @@ QString WebPluginEvent::ResultToJsonString(double dblPlugId, bool bResult)
 
 QString	WebPluginEvent::GetLocalPluginList()
 {
-    return	QString("{ 1, 2, 3 }");
+    QString qstrResult;
+    QJsonArray qArray;
+    QList<PluginDB::PluginInfo> list =  m_PluginDB.QueryPluginData();
+    for each (PluginDB::PluginInfo var in list)
+    {
+        QString qstrValue = var.json_data;
+        qDebug() << qstrValue;
+        qArray.append(qstrValue);
+    }
+    qstrResult = QJsonDocument(qArray).toJson();
+    qDebug() << qstrResult;
+
+    return	qstrResult;
 }
 QString	WebPluginEvent::GetLocalPluginVersion(QString strPluginID)
 {
@@ -82,16 +94,12 @@ QString	WebPluginEvent::GetLocalPluginVersion(QString strPluginID)
 }
 void WebPluginEvent::DownLoadPluginUrl(const QVariantMap& param)
 {
-
-    double dblPlugId;
     QString qstrUrl;
-
     if (m_lpView)
     {  
         QJsonObject qjsonObj = QJsonObject::fromVariantMap(param);
         if (!qjsonObj.isEmpty())
         {   
-            dblPlugId = qjsonObj.value("plug_id").toDouble();
             qstrUrl = qjsonObj.value("file_url").toString();
             if (qstrUrl.isEmpty())
                 return;
@@ -150,6 +158,17 @@ void WebPluginEvent::on_web_downfile_start(QWebEngineDownloadItem *item)
     {
         QJsonObject obj = *iter;
         PluginItem* lpPlugItem = new PluginItem(obj.value("plug_id").toDouble(), item, this);
+
+
+        //add web data to database
+        PluginDB::PluginInfo info;
+        info.plugin_id = obj.value("plug_id").toInt();
+        info.local_path = item->path();
+        info.down_size = 0;
+        info.file_size = obj.value("file_size").toInt();
+        info.json_data = QJsonDocument(obj).toJson();
+
+        m_PluginDB.InsertPluginData(info);
 
         item->accept();
     }

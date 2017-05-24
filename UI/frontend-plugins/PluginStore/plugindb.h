@@ -11,6 +11,7 @@
 
 class PluginDB
 {
+public:
     struct PluginInfo
     {
         qint64      plugin_id;
