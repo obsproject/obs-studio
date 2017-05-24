@@ -31,16 +31,20 @@ set(pluginstore_SOURCES
 set(pluginstore_UI
 	${pluginstore_UI}
 	)
+set(PluginStore_QRC
+	forms/resource.qrc)
 qt5_wrap_ui(pluginstore_UI_HEADERS
 	${pluginstore_UI}
 	)
 find_package(Qt5WebChannel)
 find_package(Qt5WebEngineWidgets)
 find_package(Qt5Sql)
+qt5_add_resources(PluginStore_QRC_SOURCES ${PluginStore_QRC})
 add_library(pluginstore MODULE
 	${pluginstore_HEADERS}
 	${pluginstore_SOURCES}
 	${pluginstore_UI_HEADERS}
+	${PluginStore_QRC_SOURCES}
 	)
 
 target_link_libraries(pluginstore
