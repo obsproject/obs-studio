@@ -149,7 +149,8 @@ if (CMAKE_CONFIGURATION_TYPES MATCHES "Debug")
 		"${Qt5Core_DIR}/../../../bin/Qt5Quickd.dll"
 		"${Qt5Core_DIR}/../../../bin/Qt5WebChanneld.dll"
 		"${Qt5Core_DIR}/../../../bin/Qt5WebEngineCored.dll"
-		"${Qt5Core_DIR}/../../../bin/Qt5WebEngineWidgetsd.dll")
+		"${Qt5Core_DIR}/../../../bin/Qt5WebEngineWidgetsd.dll"
+		"${Qt5Core_DIR}/../../../bin/Qt5Sqld.dll")
 	file(GLOB QT_DEBUG_PLAT_BIN_FILES
 		"${Qt5Core_DIR}/../../../plugins/platforms/qwindowsd.dll")
 endif()
@@ -168,6 +169,7 @@ if (CMAKE_CONFIGURATION_TYPES MATCHES "Rel")
 		"${Qt5Core_DIR}/../../../bin/Qt5WebEngineCore.dll"
 		"${Qt5Core_DIR}/../../../bin/Qt5WebEngineWidgets.dll"
 		"${Qt5Core_DIR}/../../../bin/QtWebEngineProcess.exe"
+		"${Qt5Core_DIR}/../../../bin/Qt5Sql.dll"
 		"${Qt5Core_DIR}/../../../resources/*.*")
 	file(GLOB QT_PLAT_BIN_FILES
 		"${Qt5Core_DIR}/../../../plugins/platforms/qwindows.dll")

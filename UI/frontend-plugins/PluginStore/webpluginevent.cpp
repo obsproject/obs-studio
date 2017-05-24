@@ -160,7 +160,7 @@ void WebPluginEvent::RemoveAllLabelFile()
 	obs_module_t* hModule = obs_current_module();
 	QString strBinPath = QString::fromUtf8(obs_get_module_binary_path(hModule));
 	QString strDataPath = QString::fromUtf8(obs_get_module_data_path(hModule));
-	qDebug() << strBinPath.remove(QRegularExpression("pluginstore.dll"));
+	qDebug() << strBinPath.remove(QRegularExpression("pluginstore.*"));
 	qDebug() << strDataPath.remove(QRegularExpression("pluginstore"));
 	auto DelFiles = [](QDir d, QStringList filters)
 	{
