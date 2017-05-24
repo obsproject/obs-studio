@@ -394,12 +394,97 @@ static int vlcs_audio_setup(void **p_data, char *format, unsigned *rate,
 	return 0;
 }
 
+static inline void vlc_split_media_path(const struct dstr *new_path,
+	struct dstr *path_only, struct dstr *options)
+{
+	int i;
+	const char* path = new_path->array;
+	bool quoting = false;
+	int options_at = 0;
+	int path_len;
+
+	for (i = 0; path[i]; ++i) {
+		if (path[i] == '"') {
+			quoting = !quoting;
+		}
+		if (!quoting && path[i+1]==' ' && path[i+2]==':') {
+			// ++i to be consistent with finished loop case
+			options_at = ++i;
+			break;
+		}
+	}
+	if (options_at) { // grab options
+		dstr_copy(options, new_path->array+options_at);
+	}
+	for(--i; path[i]==' '; --i); // remove trailing spaces
+	path_len = i+1;
+	dstr_ncopy_dstr(path_only, new_path, path_len);
+}
+
+static inline void vlc_apply_media_options(libvlc_media_t *media,
+	const char *options, const bool is_url)
+{
+	int i, j;
+	bool quoting = false;
+	int option_at = 0;
+	int option_len;
+	char* option_str = 0;
+	bool custom_network_caching = false;
+
+	if (!options)
+		return;
+	for (i = 0; options[i]; ++i) {
+		if (options[i] == '"') {
+			quoting = !quoting;
+		}
+		if (!option_at) {
+			if (options[i] == ':') {
+				// option begins
+				option_at = i;
+			}
+		}
+		else if (options[i+1] == '\0' || (!quoting &&
+			options[i+1] == ' ' && options[i+2] == ':')) {
+			// option completed
+			option_len = i+1-option_at;
+			for (j = i; j != option_at; j--) {
+				// remove trailing spaces
+				if (options[j] == ' ') {
+					--option_len;
+				}
+				else {
+					break;
+				}
+			}
+			option_str = malloc((option_len+1) *
+				sizeof(char));
+			memcpy(option_str, options+option_at, option_len);
+			option_str[option_len] = '\0';
+			libvlc_media_add_option_(media, option_str);
+			if (!custom_network_caching &&
+				option_len > 17) {
+				custom_network_caching = strncmp(
+					option_str,
+					":network-caching=", 17)==0;
+			}
+			free(option_str);
+			option_str = 0;
+			option_at = 0;
+		}
+	}
+	if (is_url && !custom_network_caching) {
+		libvlc_media_add_option_(media, ":network-caching=100");
+	}
+}
+
 static void add_file(struct vlc_source *c, struct darray *array,
 		const char *path)
 {
 	DARRAY(struct media_file_data) new_files;
 	struct media_file_data data;
 	struct dstr new_path = {0};
+	struct dstr path_only = {0};
+	struct dstr options = {0};
 	libvlc_media_t *new_media;
 	bool is_url = path && strstr(path, "://") != NULL;
 
@@ -410,19 +495,17 @@ static void add_file(struct vlc_source *c, struct darray *array,
 	if (!is_url)
 		dstr_replace(&new_path, "/", "\\");
 #endif
-	path = new_path.array;
+	vlc_split_media_path(&new_path, &path_only, &options);
+	path = path_only.array;
 
 	new_media = get_media(&c->files.da, path);
-
 	if (!new_media)
 		new_media = get_media(&new_files.da, path);
 	if (!new_media)
 		new_media = create_media_from_file(path);
 
 	if (new_media) {
-		if (is_url)
-			libvlc_media_add_option_(new_media,
-					":network-caching=100");
+		vlc_apply_media_options(new_media, options.array, is_url);
 
 		data.path = new_path.array;
 		data.media = new_media;
@@ -430,6 +513,9 @@ static void add_file(struct vlc_source *c, struct darray *array,
 	} else {
 		dstr_free(&new_path);
 	}
+
+	dstr_free(&path_only);
+	dstr_free(&options);
 
 	*array = new_files.da;
 }
