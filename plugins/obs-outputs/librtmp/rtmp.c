@@ -729,6 +729,8 @@ add_addr_info(struct sockaddr_storage *service, socklen_t *addrlen, AVal *host, 
         // since we're handling multiple addresses internally, fake the correct error response
 #ifdef _WIN32
         *socket_error = WSANO_DATA;
+#elif __FreeBSD__
+        *socket_error = ENOATTR;
 #else
         *socket_error = ENODATA;
 #endif
