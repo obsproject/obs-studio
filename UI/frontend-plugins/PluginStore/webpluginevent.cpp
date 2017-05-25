@@ -6,8 +6,9 @@
 #include <QDirIterator>
 #include <QRegularExpression>
 #include "webpluginevent.h"
-
-
+#include "zip_file.hpp"
+#include <qcoreapplication>
+#include <filesystem>
 using namespace std;
 
 /************************************************************************/
@@ -203,7 +204,92 @@ void WebPluginEvent::RemoveAllLabelFile()
 	DelFiles(strBinPath, filters);
 	DelFiles(strDataPath, filters);
 }
+bool WebPluginEvent::InstallPluginZip(QString strZipFile, QString strPluginName)
+{
+	using namespace miniz_cpp;
+	if (!QFile::exists(strZipFile))
+	{
+		return false;
+	}
+	auto makeDestPath = [](QString strPluginName,QString zipItemFile,bool b32bit)->QString{
+		
+		QString obsDir = QCoreApplication::applicationDirPath().replace(QRegularExpression("bin/32bit"), "");
+		obsDir.replace(QRegularExpression("bin/64bit"), "");
+		QRegularExpressionMatch match;
+		QRegularExpression reg;
+		reg.setPattern(strPluginName+'/');
+		match = reg.match(zipItemFile);
+		if (match.hasMatch())
+		{
+			//data
+			obsDir += "data/obs-plugins/";
+		}
+		else
+		{
+			b32bit ? reg.setPattern(R"(^32bit/bin/)") : reg.setPattern(R"(^64bit/bin/)");
+			match = reg.match(zipItemFile);
+			if (match.hasMatch())
+			{
+				//obs bin
+				obsDir += b32bit ? "bin/32bit/" : "bin/64bit/";
+			}
+			else
+			{
+				//plugin bin
+				obsDir += b32bit ? "obs - plugins/32bit/" : "obs - plugins/64bit/";
+			}
+		}
+		obsDir += zipItemFile.replace(QRegularExpression("^64bit/|^32bit/"),"");
+		return obsDir;
+	};
+	auto extractToFile = [&](zip_file& zfile,QString qDestPath, const zip_info &member)
+	{
+		namespace fs=std::tr2::sys;
+		if (!QFile::exists(qDestPath))
+		{
+			fs::create_directories(fs::path(qDestPath.toStdString()));
+		}
+		
+		std::fstream stream(qDestPath.toStdString(), std::ios::binary | std::ios::out);
+		if (!stream.is_open())
+		{
+			SetLabelDelete(QString::fromStdString(qDestPath.toStdString()));
 
+		}
+		if (stream.is_open())
+			stream << zfile.open(member).rdbuf();
+	};
+	try{
+	
+		zip_file zfile(strZipFile.toStdString());
+		std::vector<zip_info> infolist = zfile.infolist();
+		for (auto &item : infolist)
+		{
+			QString itemFileName = QString::fromStdString(item.filename);
+			QRegularExpressionMatch match;
+			QRegularExpression reg("^64bit/");
+			QString extractDst;
+			match = reg.match(itemFileName);
+			if (match.hasMatch())
+			{
+				extractDst=makeDestPath(strPluginName, itemFileName, false);
+			}
+			else
+			{
+				extractDst=makeDestPath(strPluginName, itemFileName, true);
+			}
+			extractToFile(zfile, extractDst, item);
+			
+		}
+		//install
+
+	}
+	catch (...)
+	{
+
+	}
+	return true;
+}
 void WebPluginEvent::SetLabelDelete(QString strPluginFile)
 {
 	QFileInfo f(strPluginFile);

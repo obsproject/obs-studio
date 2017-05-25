@@ -2,7 +2,7 @@
 #include <obs-module.h>
 #include <obs.hpp>
 #include <util/util.hpp>
-
+#include <QProcess>
 #include "pluginstore.h"
 class WebPluginEvent;
 PluginStore::PluginStore(QWidget *parent) : QDialog(parent), ui(new Ui::PluginStore)
@@ -52,6 +52,7 @@ static void OBSEvent(enum obs_frontend_event event, void *)
 
 extern "C" void InitPluginStore()
 {
+
 	WebPluginEvent::RemoveAllLabelFile();
     QAction *action = (QAction*)obs_frontend_add_tools_menu_qaction(obs_module_text("pluginstore"));
     auto cb = []()

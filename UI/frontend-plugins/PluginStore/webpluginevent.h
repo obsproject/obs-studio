@@ -63,7 +63,7 @@ public	slots:
 public:
 	static	void	RemoveAllLabelFile();
 	static	void	SetLabelDelete(QString strPluginFile);
-
+	static  bool	InstallPluginZip(QString strZipFile, QString strPluginName);
 private:
     QWebEngineView*                                 m_lpView;
     QMap<QString, QJsonObject>                      m_downInfoMap;
