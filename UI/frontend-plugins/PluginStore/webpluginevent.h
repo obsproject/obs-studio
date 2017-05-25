@@ -48,8 +48,8 @@ public:
 signals:
 	void        DownLoadState(QString strPluginID, qint64 iDownLoadSize, qint64 iTotalSize);
 public	slots:
-    QString	    GetLocalPluginList();
-	QString		GetLocalPluginVersion(QString strPluginID);
+    QVariant	GetLocalPluginList();
+	QString     GetLocalPluginVersion(QString strPluginID);
     void        DownLoadPluginUrl(const QVariantMap& param);
 	QString     InstallPlugin(const QVariant& param);
     QString     UninstallPlugin(const QVariant& param);

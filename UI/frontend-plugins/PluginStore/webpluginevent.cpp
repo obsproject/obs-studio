@@ -35,7 +35,7 @@ void PluginItem::on_web_downfile_progress(qint64 qiRecvSize, qint64 qiTotalSize)
 
 void PluginItem::on_web_downfile_finished()
 {
-
+    
 }
 
 /************************************************************************/
@@ -72,21 +72,26 @@ QString WebPluginEvent::ResultToJsonString(double dblPlugId, bool bResult)
     return json_str;
 }
 
-QString	WebPluginEvent::GetLocalPluginList()
+QVariant WebPluginEvent::GetLocalPluginList()
 {
-    QString qstrResult;
-    QJsonArray qArray;
+    QJsonParseError qJsonError;
+    QJsonDocument   qJsonDocument;
+    QJsonArray      qJsonArray;
     QList<PluginDB::PluginInfo> list =  m_PluginDB.QueryPluginData();
     for each (PluginDB::PluginInfo var in list)
     {
-        QString qstrValue = var.json_data;
-        qDebug() << qstrValue;
-        qArray.append(qstrValue);
-    }
-    qstrResult = QJsonDocument(qArray).toJson();
-    qDebug() << qstrResult;
+        QJsonDocument doc = QJsonDocument::fromJson(var.json_data.toUtf8(), &qJsonError);
 
-    return	qstrResult;
+        if (qJsonError.error == QJsonParseError::NoError && doc.isObject())
+        {
+            QJsonObject obj = doc.object();
+            qJsonArray.append(obj);
+        }
+    }
+    qJsonDocument.setArray(qJsonArray);
+    qDebug() << qJsonDocument.toJson(QJsonDocument::Compact);
+
+    return	qJsonDocument.toJson(QJsonDocument::Compact);
 }
 QString	WebPluginEvent::GetLocalPluginVersion(QString strPluginID)
 {
@@ -166,7 +171,7 @@ void WebPluginEvent::on_web_downfile_start(QWebEngineDownloadItem *item)
         info.local_path = item->path();
         info.down_size = 0;
         info.file_size = obj.value("file_size").toInt();
-        info.json_data = QJsonDocument(obj).toJson();
+        info.json_data = QJsonDocument(obj).toJson(QJsonDocument::Compact);
 
         m_PluginDB.InsertPluginData(info);
 
