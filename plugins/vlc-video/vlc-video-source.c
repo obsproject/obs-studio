@@ -395,10 +395,10 @@ static int vlcs_audio_setup(void **p_data, char *format, unsigned *rate,
 }
 
 static inline void vlc_split_media_path(const struct dstr *new_path,
-	struct dstr *path_only, struct dstr *options)
+		struct dstr *path_only, struct dstr *options)
 {
 	int i;
-	const char* path = new_path->array;
+	const char *path = new_path->array;
 	bool quoting = false;
 	int options_at = 0;
 	int path_len;
@@ -407,28 +407,31 @@ static inline void vlc_split_media_path(const struct dstr *new_path,
 		if (path[i] == '"') {
 			quoting = !quoting;
 		}
-		if (!quoting && path[i+1]==' ' && path[i+2]==':') {
+		if (!quoting && path[i+1] == ' ' && path[i+2] == ':') {
 			// ++i to be consistent with finished loop case
 			options_at = ++i;
 			break;
 		}
 	}
 	if (options_at) { // grab options
-		dstr_copy(options, new_path->array+options_at);
+		dstr_copy(options, new_path->array + options_at);
 	}
-	for(--i; path[i]==' '; --i); // remove trailing spaces
-	path_len = i+1;
+	for(--i; path[i] == ' '; --i); // remove trailing spaces
+	path_len = i + 1;
 	dstr_ncopy_dstr(path_only, new_path, path_len);
+	dstr_replace(path_only, "\"", "");
 }
 
 static inline void vlc_apply_media_options(libvlc_media_t *media,
-	const char *options, const bool is_url)
+		const char *options, const bool is_url)
 {
-	int i, j;
+	int i;
+	int j;
+	int k;
 	bool quoting = false;
 	int option_at = 0;
 	int option_len;
-	char* option_str = 0;
+	char *option_str = 0;
 	bool custom_network_caching = false;
 
 	if (!options)
@@ -442,30 +445,45 @@ static inline void vlc_apply_media_options(libvlc_media_t *media,
 				// option begins
 				option_at = i;
 			}
-		}
-		else if (options[i+1] == '\0' || (!quoting &&
+		} else if (options[i+1] == '\0' || (!quoting &&
 			options[i+1] == ' ' && options[i+2] == ':')) {
 			// option completed
-			option_len = i+1-option_at;
+			option_len = i + 1 - option_at;
 			for (j = i; j != option_at; j--) {
 				// remove trailing spaces
 				if (options[j] == ' ') {
 					--option_len;
-				}
-				else {
+				} else {
 					break;
 				}
 			}
-			option_str = malloc((option_len+1) *
+			option_str = malloc((option_len + 1) *
 				sizeof(char));
-			memcpy(option_str, options+option_at, option_len);
+			memcpy(option_str, options + option_at, option_len);
 			option_str[option_len] = '\0';
+			for (j = k = 1; option_str[j] != '\0'; ++j) {
+				// j: cursor for reading string
+				// k: cursor for writing string
+				if (option_str[j] == '"') {
+					// remove unescaped quote
+				} else if (option_str[j] == '\\' &&
+					option_str[j+1] == '"') {
+					// unescape escaped quote
+					option_str[k] = '"';
+					++k;
+					++j;
+				} else {
+					option_str[k] = option_str[j];
+					++k;
+				}
+			}
+			option_str[k] = '\0';
 			libvlc_media_add_option_(media, option_str);
 			if (!custom_network_caching &&
 				option_len > 17) {
 				custom_network_caching = strncmp(
 					option_str,
-					":network-caching=", 17)==0;
+					":network-caching=", 17) == 0;
 			}
 			free(option_str);
 			option_str = 0;
