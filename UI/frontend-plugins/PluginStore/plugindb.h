@@ -12,13 +12,23 @@
 class PluginDB
 {
 public:
+    enum PluginState{
+        DOWNSTART,
+        DOWNING,
+        DOWNPAUSED,
+        CANINSTALL,
+        INSTALLED
+    };
+
     struct PluginInfo
     {
         qint64      plugin_id;
+        QString     file_name;
         QString     local_path;
         qint64      down_size;
         qint64      file_size;
         QString     json_data;
+        PluginState state;
     };
 
 public:

@@ -19,21 +19,29 @@
 
 #include "plugindb.h"
 
+static PluginDB m_PluginDB;
+
 class WebPluginEvent;
 class PluginItem : public QObject
 {
     Q_OBJECT
 public:
-    explicit PluginItem(double dblId, QWebEngineDownloadItem* lpItem,WebPluginEvent* lpEvent);
+    explicit PluginItem(qint64 qiPluginId, WebPluginEvent* lpEvent);
     ~PluginItem();
 
+    void SetPluginDownItem(QWebEngineDownloadItem* lpItem);
+    QWebEngineDownloadItem* GetPluginDownItem();
+    void SetPluginData(QJsonObject obj, PluginDB::PluginState state);
+    void SetPluginData(PluginDB::PluginInfo obj);
+    PluginDB::PluginInfo GetPluingData();
 public slots:
     void        on_web_downfile_progress(qint64 qiRecvSize, qint64 qiTotalSize);
     void        on_web_downfile_finished();
 private:
-    double                      m_qstrPluginId;
+    qint64                      m_qiPluginId;
     QWebEngineDownloadItem*     m_lpWebItem;
     WebPluginEvent*             m_lpEvent;
+    PluginDB::PluginInfo        m_PluginData;
 };
 
 
@@ -44,7 +52,10 @@ public:
     explicit WebPluginEvent(QObject *parent = 0, QWebEngineView* view = 0);
 	~WebPluginEvent();
 
-    QString     ResultToJsonString(double dblPlugId,bool bResult);
+    QString     ResultToJsonString(qint64 qiPlugId, bool bResult);
+    void        DownloadSuc(qint64 qiPluginId);
+    void        RemovePluginMap(qint64 qiPluginId);
+    void        ClearPluingMap();
 signals:
 	void        DownLoadState(QString strPluginID, qint64 iDownLoadSize, qint64 iTotalSize);
 public	slots:
@@ -67,7 +78,8 @@ public:
 private:
     QWebEngineView*                                 m_lpView;
     QMap<QString, QJsonObject>                      m_downInfoMap;
-    PluginDB                                        m_PluginDB;
+    QMap<qint64, PluginItem*>                       m_PluginMap;
+    QString                                         m_DownPluginDir;
 };
 
 #endif // WEBPLUGINEVENT_H
