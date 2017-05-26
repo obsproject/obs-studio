@@ -75,6 +75,9 @@ public:
 	static	void	RemoveAllLabelFile();
 	static	void	SetLabelDelete(QString strPluginFile);
 	static  bool	InstallPluginZip(QString strZipFile, QString strPluginName);
+	static  bool	CheckPluginRuning(QString strPluginName);
+	static  void	MakePluginPath(QString strPluginName, QString& strPluginBin, QString& strPluginData);
+	static	bool	LoadPlugin(QString	strPluginName);
 private:
     QWebEngineView*                                 m_lpView;
     QMap<QString, QJsonObject>                      m_downInfoMap;

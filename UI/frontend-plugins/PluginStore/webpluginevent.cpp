@@ -239,7 +239,7 @@ QString WebPluginEvent::InstallPlugin(const QVariant& param)
             QString qstrFileName = lpItem->GetPluingData().file_name;
             QString qstrPath = lpItem->GetPluingData().local_path;
             qDebug() << "install file" << qstrPath << "name :" << qstrFileName;
-            qstrFileName = "test";
+            qstrFileName = "CalabashWinCapture";
             if (WebPluginEvent::InstallPluginZip(qstrPath, qstrFileName));
             {
 
@@ -339,7 +339,20 @@ void WebPluginEvent::RemoveAllLabelFile()
 	DelFiles(strBinPath, filters);
 	DelFiles(strDataPath, filters);
 }
-
+/*
+zip dir test plugin
+32bit/-
+	  - test/
+		-locale/
+			-*.ini
+	  - test.dll
+64bit/-
+	  - test/
+		-locale/
+			-*.ini
+	  - test.dll
+	
+*/
 bool WebPluginEvent::InstallPluginZip(QString strZipFile, QString strPluginName)
 {
 	using namespace miniz_cpp;
@@ -372,7 +385,7 @@ bool WebPluginEvent::InstallPluginZip(QString strZipFile, QString strPluginName)
 			else
 			{
 				//plugin bin
-				obsDir += b32bit ? "obs - plugins/32bit/" : "obs - plugins/64bit/";
+				obsDir += b32bit ? "obs-plugins/32bit/" : "obs-plugins/64bit/";
 			}
 		}
 		obsDir += zipItemFile.replace(QRegularExpression("^64bit/|^32bit/"),"");
@@ -381,9 +394,15 @@ bool WebPluginEvent::InstallPluginZip(QString strZipFile, QString strPluginName)
 	auto extractToFile = [&](zip_file& zfile,QString qDestPath, const zip_info &member)
 	{
 		namespace fs=std::tr2::sys;
+		
 		if (!QFile::exists(qDestPath))
 		{
-			fs::create_directories(fs::path(qDestPath.toStdString()));
+			fs::path newPath = qDestPath.toStdString();
+			if (!fs::is_directory(newPath))
+			{
+				newPath.remove_filename();
+			}
+			fs::create_directories(newPath);
 		}
 		
 		std::fstream stream(qDestPath.toStdString(), std::ios::binary | std::ios::out);
@@ -418,6 +437,10 @@ bool WebPluginEvent::InstallPluginZip(QString strZipFile, QString strPluginName)
 			
 		}
 		//install
+		if (!CheckPluginRuning(strPluginName))
+		{
+			return LoadPlugin(strPluginName);
+		}
 	}
 	catch (...)
 	{
@@ -428,7 +451,7 @@ bool WebPluginEvent::InstallPluginZip(QString strZipFile, QString strPluginName)
 void WebPluginEvent::SetLabelDelete(QString strPluginFile)
 {
 	QFileInfo f(strPluginFile);
-	if (f.exists())
+	if (f.exists()&&!f.isDir())
 	{
 		QString strExt = f.suffix();
 		if (strExt != "old")
@@ -437,4 +460,45 @@ void WebPluginEvent::SetLabelDelete(QString strPluginFile)
 			QFile::rename(strPluginFile, strPluginFile + ".old");
 		}
 	}
+}
+bool	WebPluginEvent::CheckPluginRuning(QString strPluginName)
+{
+	
+	QPair<bool, QString> callBackParam = { false, strPluginName };
+	auto findModule = [](void *param, obs_module_t *module)
+	{
+		auto p = static_cast<QPair<bool, QString>*>(param);
+		QString strModuleName = obs_get_module_name(module);
+		if (strModuleName.compare(p->second, Qt::CaseInsensitive) == 0)
+		{
+			p->first = true;
+		}
+	};
+	obs_enum_modules(findModule, &callBackParam);
+	return callBackParam.first;
+
+}
+void	WebPluginEvent::MakePluginPath(QString strPluginName, QString& strPluginBin, QString& strPluginData)
+{
+	obs_module_t* hModule = obs_current_module();
+	QString strBinPath = QString::fromUtf8(obs_get_module_binary_path(hModule));
+	QString strDataPath = QString::fromUtf8(obs_get_module_data_path(hModule));
+	strPluginBin=strBinPath.replace(QRegularExpression("pluginstore"), strPluginName);
+	strPluginData=strDataPath.replace(QRegularExpression("pluginstore"), strPluginName);
+}
+bool	WebPluginEvent::LoadPlugin(QString	strPluginName)
+{
+	QString strBinPath;
+	QString	strDataPath;
+	MakePluginPath(strPluginName, strBinPath, strDataPath);
+	if (!QFile::exists(strBinPath))
+		return false;
+
+	obs_module_t *module;
+	int code = obs_open_module(&module, strBinPath.toUtf8(), strDataPath.toUtf8());
+	if (code !=MODULE_SUCCESS) {
+		
+		return false;
+	}
+	return obs_init_module(module);
 }
