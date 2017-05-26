@@ -457,8 +457,7 @@ static inline void vlc_apply_media_options(libvlc_media_t *media,
 					break;
 				}
 			}
-			option_str = malloc((option_len + 1) *
-				sizeof(char));
+			option_str = malloc((option_len + 1) * sizeof(char));
 			memcpy(option_str, options + option_at, option_len);
 			option_str[option_len] = '\0';
 			for (j = k = 1; option_str[j] != '\0'; ++j) {
@@ -479,8 +478,7 @@ static inline void vlc_apply_media_options(libvlc_media_t *media,
 			}
 			option_str[k] = '\0';
 			libvlc_media_add_option_(media, option_str);
-			if (!custom_network_caching &&
-				option_len > 17) {
+			if (!custom_network_caching && option_len > 17) {
 				custom_network_caching = strncmp(
 					option_str,
 					":network-caching=", 17) == 0;
