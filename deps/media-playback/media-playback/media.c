@@ -61,6 +61,22 @@ static inline enum audio_format convert_sample_format(int f)
 	return AUDIO_FORMAT_UNKNOWN;
 }
 
+static inline enum speaker_layout convert_speaker_layout(uint8_t channels)
+{
+	switch (channels) {
+	case 0:     return SPEAKERS_UNKNOWN;
+	case 1:     return SPEAKERS_MONO;
+	case 2:     return SPEAKERS_STEREO;
+	case 3:     return SPEAKERS_2POINT1;
+	case 4:     return SPEAKERS_QUAD;
+	case 5:     return SPEAKERS_4POINT1;
+	case 6:     return SPEAKERS_5POINT1;
+	case 8:     return SPEAKERS_7POINT1;
+	case 16:    return SPEAKERS_HEXADECAGONAL;
+	default:    return SPEAKERS_UNKNOWN;
+	}
+}
+
 static inline enum video_colorspace convert_color_space(enum AVColorSpace s)
 {
 	return s == AVCOL_SPC_BT709 ? VIDEO_CS_709 : VIDEO_CS_DEFAULT;
@@ -257,7 +273,7 @@ static void mp_media_next_audio(mp_media_t *m)
 		audio.data[i] = f->data[i];
 
 	audio.samples_per_sec = f->sample_rate;
-	audio.speakers = (enum speaker_layout)f->channels;
+	audio.speakers = convert_speaker_layout(f->channels);
 	audio.format = convert_sample_format(f->format);
 	audio.frames = f->nb_samples;
 	audio.timestamp = m->base_ts + d->frame_pts - m->start_ts +

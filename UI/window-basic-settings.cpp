@@ -243,6 +243,9 @@ static void PopulateAACBitrates(initializer_list<QComboBox*> boxes)
 	}
 }
 
+void restrictResetBitrates(initializer_list<QComboBox*> boxes,
+		int maxbitrate);
+
 void OBSBasicSettings::HookWidget(QWidget *widget, const char *signal,
 		const char *slot)
 {
@@ -256,6 +259,7 @@ void OBSBasicSettings::HookWidget(QWidget *widget, const char *signal,
 #define CHECK_CHANGED   SIGNAL(clicked(bool))
 #define SCROLL_CHANGED  SIGNAL(valueChanged(int))
 #define DSCROLL_CHANGED SIGNAL(valueChanged(double))
+#define TOGGLE_CHANGED  SIGNAL(toggled(bool))
 
 #define GENERAL_CHANGED SLOT(GeneralChanged())
 #define STREAM1_CHANGED SLOT(Stream1Changed())
@@ -267,6 +271,7 @@ void OBSBasicSettings::HookWidget(QWidget *widget, const char *signal,
 #define VIDEO_CHANGED   SLOT(VideoChanged())
 #define ADV_CHANGED     SLOT(AdvancedChanged())
 #define ADV_RESTART     SLOT(AdvancedChangedRestart())
+#define MULTICHANNEL_ON SLOT(MultichannelToggled(bool))
 
 OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	: QDialog          (parent),
@@ -291,7 +296,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	ui->audioSourceScrollArea->setSizePolicy(policy);
 
 	HookWidget(ui->language,             COMBO_CHANGED,  GENERAL_CHANGED);
-	HookWidget(ui->theme, 		     COMBO_CHANGED,  GENERAL_CHANGED);
+	HookWidget(ui->theme,                COMBO_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->enableAutoUpdates,    CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->openStatsOnStartup,   CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->warnBeforeStreamStart,CHECK_CHANGED,  GENERAL_CHANGED);
@@ -391,6 +396,8 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->advRBSecMax,          SCROLL_CHANGED, OUTPUTS_CHANGED);
 	HookWidget(ui->advRBMegsMax,         SCROLL_CHANGED, OUTPUTS_CHANGED);
 	HookWidget(ui->channelSetup,         COMBO_CHANGED,  AUDIO_RESTART);
+	HookWidget(ui->enableMultichannel,   TOGGLE_CHANGED, MULTICHANNEL_ON);
+	HookWidget(ui->enableMultichannel,   TOGGLE_CHANGED, AUDIO_CHANGED);
 	HookWidget(ui->sampleRate,           COMBO_CHANGED,  AUDIO_RESTART);
 	HookWidget(ui->desktopAudioDevice1,  COMBO_CHANGED,  AUDIO_CHANGED);
 	HookWidget(ui->desktopAudioDevice2,  COMBO_CHANGED,  AUDIO_CHANGED);
@@ -1423,6 +1430,12 @@ void OBSBasicSettings::LoadSimpleOutputSettings()
 	int idx = ui->simpleOutRecFormat->findText(format);
 	ui->simpleOutRecFormat->setCurrentIndex(idx);
 
+	// restrict list of bitrates when multichannel is OFF
+	bool multichannel = config_get_bool(main->Config(), "Audio",
+			"enableMultichannel");
+	if (!multichannel)
+		restrictResetBitrates({ ui->simpleOutputABitrate }, 320);
+
 	SetComboByName(ui->simpleOutputABitrate,
 			std::to_string(audioBitrate).c_str());
 
@@ -1741,6 +1754,15 @@ void OBSBasicSettings::LoadAdvOutputAudioSettings()
 	track5Bitrate = FindClosestAvailableAACBitrate(track5Bitrate);
 	track6Bitrate = FindClosestAvailableAACBitrate(track6Bitrate);
 
+	// restrict list of bitrates  when multichannel is OFF
+	bool multichannel = config_get_bool(main->Config(), "Audio",
+			"enableMultichannel");
+	if (!multichannel) {
+		restrictResetBitrates({ui->advOutTrack1Bitrate, ui->advOutTrack2Bitrate,
+				ui->advOutTrack3Bitrate, ui->advOutTrack4Bitrate,
+				ui->advOutTrack5Bitrate, ui->advOutTrack6Bitrate }, 320);
+	}
+
 	SetComboByName(ui->advOutTrack1Bitrate,
 			std::to_string(track1Bitrate).c_str());
 	SetComboByName(ui->advOutTrack2Bitrate,
@@ -2029,6 +2051,8 @@ void OBSBasicSettings::LoadAudioSettings()
 			"SampleRate");
 	const char *speakers = config_get_string(main->Config(), "Audio",
 			"ChannelSetup");
+	bool multichannel = config_get_bool(main->Config(), "Audio",
+			"enableMultichannel");
 
 	loading = true;
 
@@ -2042,10 +2066,26 @@ void OBSBasicSettings::LoadAudioSettings()
 	if (sampleRateIdx != -1)
 		ui->sampleRate->setCurrentIndex(sampleRateIdx);
 
+	ui->enableMultichannel->setChecked(multichannel);
+
 	if (strcmp(speakers, "Mono") == 0)
 		ui->channelSetup->setCurrentIndex(0);
-	else
+	if (strcmp(speakers, "Stereo") == 0)
 		ui->channelSetup->setCurrentIndex(1);
+	if (strcmp(speakers, "2.1") == 0)
+		ui->channelSetup->setCurrentIndex(2);
+	if (strcmp(speakers, "4.0 Quad") == 0)
+		ui->channelSetup->setCurrentIndex(3);
+	if (strcmp(speakers, "4.1") == 0)
+		ui->channelSetup->setCurrentIndex(4);
+	if (strcmp(speakers, "5.1") == 0)
+		ui->channelSetup->setCurrentIndex(5);
+	if (strcmp(speakers, "7.1") == 0)
+		ui->channelSetup->setCurrentIndex(6);
+	if (strcmp(speakers, "8.0") == 0)
+		ui->channelSetup->setCurrentIndex(7);
+	if (strcmp(speakers, "16.0") == 0)
+		ui->channelSetup->setCurrentIndex(8);
 
 	LoadAudioDevices();
 	LoadAudioSources();
@@ -2918,7 +2958,40 @@ void OBSBasicSettings::SaveAudioSettings()
 	QString sampleRateStr  = ui->sampleRate->currentText();
 	int channelSetupIdx    = ui->channelSetup->currentIndex();
 
-	const char *channelSetup = (channelSetupIdx == 0) ? "Mono" : "Stereo";
+	const char *channelSetup;
+	switch (channelSetupIdx) {
+	case 0:
+		channelSetup = "Mono";
+		break;
+	case 1:
+		channelSetup = "Stereo";
+		break;
+	case 2:
+		channelSetup = "2.1";
+		break;
+	case 3:
+		channelSetup = "4.0 Quad";
+		break;
+	case 4:
+		channelSetup = "4.1";
+		break;
+	case 5:
+		channelSetup = "5.1";
+		break;
+	case 6:
+		channelSetup = "7.1";
+		break;
+	case 7:
+		channelSetup = "8.0";
+		break;
+	case 8:
+		channelSetup = "16.0";
+		break;
+
+	default:
+		channelSetup = "Stereo";
+		break;
+	}
 
 	int sampleRate = 44100;
 	if (sampleRateStr == "48khz")
@@ -2927,6 +3000,11 @@ void OBSBasicSettings::SaveAudioSettings()
 	if (WidgetChanged(ui->sampleRate))
 		config_set_uint(main->Config(), "Audio", "SampleRate",
 				sampleRate);
+
+	bool multichannel = ui->enableMultichannel->isChecked();
+	if (WidgetChanged(ui->enableMultichannel))
+		config_set_bool(main->Config(), "Audio", "enableMultichannel",
+				multichannel);
 
 	if (WidgetChanged(ui->channelSetup))
 		config_set_string(main->Config(), "Audio", "ChannelSetup",
@@ -3434,6 +3512,99 @@ void OBSBasicSettings::AudioChangedRestart()
 void OBSBasicSettings::ReloadAudioSources()
 {
 	LoadAudioSources();
+}
+
+void OBSBasicSettings::MultichannelToggled(bool state)
+{
+	if (state) {
+		//display all channels
+		ui->channelSetup->addItem("2.1");
+		ui->channelSetup->addItem("4.0 Quad");
+		ui->channelSetup->addItem("4.1");
+		ui->channelSetup->addItem("5.1");
+		ui->channelSetup->addItem("7.1");
+        ui->channelSetup->addItem("8.0");
+        #ifndef _WIN32
+        /* speaker layout is detected by OBS through channel count on linux and osx;
+         * therefore 7.1 and 8.0 can not be distinguished as yet except on windows.
+         */
+        QStandardItemModel* model = qobject_cast<QStandardItemModel*>(ui->channelSetup->model());
+        QStandardItem* item_octagonal= model->item(7);
+        item_octagonal->setFlags(item_octagonal->flags() & ~Qt::ItemIsEnabled);
+        #endif
+		ui->channelSetup->addItem("16.0");
+		ui->audioMsg->setText(QTStr("Basic.Settings.Audio.MultichannelWarning"));
+		blog(LOG_INFO, "Multichannel ON, bitrates > 320 kbs unlocked");
+		//display all bitrates
+		PopulateAACBitrates({ ui->simpleOutputABitrate,
+				ui->advOutTrack1Bitrate, ui->advOutTrack2Bitrate,
+				ui->advOutTrack3Bitrate, ui->advOutTrack4Bitrate,
+				ui->advOutTrack5Bitrate, ui->advOutTrack6Bitrate });
+	} else {
+		blog(LOG_INFO, "Multichannel OFF");
+		/*
+		 * Reset channel & bitrates settings when Multichannel is switched OFF.
+		 * First reset channel menu and save new setting.
+		 */
+		int idx_channel = ui->channelSetup->currentIndex();
+		if (idx_channel >= 2) {
+			ui->channelSetup->setCurrentIndex(1);
+			ui->channelSetup->setProperty("changed", QVariant(true));
+			config_set_string(main->Config(), "Audio", "ChannelSetup",
+					"Stereo");
+		}
+		for (int i = 8; i >= 2; i--)
+			ui->channelSetup->removeItem(i);
+		ui->audioMsg->setText(QTStr(""));
+		blog(LOG_INFO, "Channel list reset to mono & stereo");
+
+		/*
+		 * Reset audio bitrate for simple and adv mode, update list of bitrates
+		 * and save setting.
+		 */
+
+		blog(LOG_INFO, "Bitrates restricted to under 320kbs");
+		blog(LOG_INFO, "If current bitrate > 320 kbs, reset to 160 kbs");
+		restrictResetBitrates({ ui->simpleOutputABitrate,
+				ui->advOutTrack1Bitrate, ui->advOutTrack2Bitrate,
+				ui->advOutTrack3Bitrate, ui->advOutTrack4Bitrate,
+				ui->advOutTrack5Bitrate, ui->advOutTrack6Bitrate}, 320);
+
+		SaveCombo(ui->simpleOutputABitrate, "SimpleOutput", "ABitrate");
+		SaveCombo(ui->advOutTrack1Bitrate, "AdvOut", "Track1Bitrate");
+		SaveCombo(ui->advOutTrack2Bitrate, "AdvOut", "Track2Bitrate");
+		SaveCombo(ui->advOutTrack3Bitrate, "AdvOut", "Track3Bitrate");
+		SaveCombo(ui->advOutTrack4Bitrate, "AdvOut", "Track4Bitrate");
+		SaveCombo(ui->advOutTrack5Bitrate, "AdvOut", "Track5Bitrate");
+		SaveCombo(ui->advOutTrack6Bitrate, "AdvOut", "Track6Bitrate");
+	}
+}
+
+/*
+ * resets current bitrate if too large and restricts the number of bitrates
+ * displayed when multichannel OFF
+ */
+
+void restrictResetBitrates(initializer_list<QComboBox*> boxes,
+		int maxbitrate)
+{
+	for (auto box : boxes) {
+		int idx = box->currentIndex();
+		int max_bitrate = FindClosestAvailableAACBitrate(maxbitrate);
+		int count = box->count();
+		int max_idx = box->findText(QT_UTF8(std::to_string
+				(max_bitrate).c_str()));
+		for (int i = (count - 1); i > max_idx; i--) box->removeItem(i);
+		if (idx > max_idx) {
+			int default_bitrate = FindClosestAvailableAACBitrate(maxbitrate/2);
+			int default_idx = box->findText(QT_UTF8(std::to_string
+					(default_bitrate).c_str()));
+			box->setCurrentIndex(default_idx);
+			box->setProperty("changed", QVariant(true));
+		} else {
+			box->setCurrentIndex(idx);
+		}
+	}
 }
 
 void OBSBasicSettings::VideoChangedRestart()

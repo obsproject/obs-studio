@@ -1134,6 +1134,8 @@ bool OBSBasic::InitBasicConfigDefaults()
 	config_set_default_uint  (basicConfig, "Audio", "SampleRate", 44100);
 	config_set_default_string(basicConfig, "Audio", "ChannelSetup",
 			"Stereo");
+	config_set_default_bool  (basicConfig, "Audio", "enableMultichannel",
+			false);
 
 	return true;
 }
@@ -2988,9 +2990,22 @@ bool OBSBasic::ResetAudio()
 
 	if (strcmp(channelSetupStr, "Mono") == 0)
 		ai.speakers = SPEAKERS_MONO;
-	else
+	if (strcmp(channelSetupStr, "Stereo") == 0)
 		ai.speakers = SPEAKERS_STEREO;
-
+	if (strcmp(channelSetupStr, "2.1") == 0)
+		ai.speakers = SPEAKERS_2POINT1;
+	if (strcmp(channelSetupStr, "4.0 Quad") == 0)
+		ai.speakers = SPEAKERS_QUAD;
+	if (strcmp(channelSetupStr, "4.1") == 0)
+		ai.speakers = SPEAKERS_4POINT1;
+	if (strcmp(channelSetupStr, "5.1") == 0)
+		ai.speakers = SPEAKERS_5POINT1;
+	if (strcmp(channelSetupStr, "7.1") == 0)
+		ai.speakers = SPEAKERS_7POINT1;
+	if (strcmp(channelSetupStr, "8.0") == 0)
+		ai.speakers = SPEAKERS_OCTAGONAL;
+	if (strcmp(channelSetupStr, "16.0") == 0)
+		ai.speakers = SPEAKERS_HEXADECAGONAL;
 	return obs_reset_audio(&ai);
 }
 
