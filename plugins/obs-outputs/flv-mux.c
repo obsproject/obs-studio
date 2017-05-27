@@ -102,6 +102,26 @@ static bool build_flv_meta_data(obs_output_t *context,
 
 	enc_bool_val(&enc, end, "stereo",
 			audio_output_get_channels(audio) == 2);
+	enc_bool_val(&enc, end, "2.1",
+			audio_output_get_channels(audio) == 3);
+	enc_bool_val(&enc, end, "3.1",
+			audio_output_get_channels(audio) == 4);
+	enc_bool_val(&enc, end, "4.0 Quad",
+			audio_output_get_channels(audio) == 4);
+	enc_bool_val(&enc, end, "4.1",
+			audio_output_get_channels(audio) == 5);
+	enc_bool_val(&enc, end, "5.1",
+			audio_output_get_channels(audio) == 6);
+	enc_bool_val(&enc, end, "5.1surround",
+			audio_output_get_channels(audio) == 6);
+	enc_bool_val(&enc, end, "7.1",
+			audio_output_get_channels(audio) == 8);
+	enc_bool_val(&enc, end, "7.1surround",
+			audio_output_get_channels(audio) == 8);
+	enc_bool_val(&enc, end, "8.0",
+			audio_output_get_channels(audio) == 8);
+	enc_bool_val(&enc, end, "16.0",
+			audio_output_get_channels(audio) == 16);
 
 	dstr_printf(&encoder_name, "%s (libobs version ",
 			MODULE_NAME);

@@ -403,6 +403,22 @@ static inline audio_format ConvertAudioFormat(AudioFormat format)
 	}
 }
 
+static inline enum speaker_layout convert_speaker_layout(uint8_t channels)
+{
+	switch (channels) {
+	case 0:     return SPEAKERS_UNKNOWN;
+	case 1:     return SPEAKERS_MONO;
+	case 2:     return SPEAKERS_STEREO;
+	case 3:     return SPEAKERS_2POINT1;
+	case 4:     return SPEAKERS_QUAD;
+	case 5:     return SPEAKERS_4POINT1;
+	case 6:     return SPEAKERS_5POINT1;
+	case 8:     return SPEAKERS_7POINT1;
+	case 16:    return SPEAKERS_HEXADECAGONAL;
+	default:    return SPEAKERS_UNKNOWN;
+	}
+}
+
 //#define LOG_ENCODED_VIDEO_TS 1
 //#define LOG_ENCODED_AUDIO_TS 1
 
@@ -559,7 +575,7 @@ void DShowInput::OnAudioData(const AudioConfig &config,
 		return;
 	}
 
-	audio.speakers        = (enum speaker_layout)config.channels;
+	audio.speakers        = convert_speaker_layout(config.channels);
 	audio.format          = ConvertAudioFormat(config.format);
 	audio.samples_per_sec = (uint32_t)config.sampleRate;
 	audio.data[0]         = data;

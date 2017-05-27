@@ -93,6 +93,22 @@ static inline enum audio_format convert_sample_format(int f)
 	return AUDIO_FORMAT_UNKNOWN;
 }
 
+static inline enum speaker_layout convert_speaker_layout(uint8_t channels)
+ {
+	switch (channels) {
+	case 0:     return SPEAKERS_UNKNOWN;
+	case 1:     return SPEAKERS_MONO;
+	case 2:     return SPEAKERS_STEREO;
+	case 3:     return SPEAKERS_2POINT1;
+	case 4:     return SPEAKERS_QUAD;
+	case 5:     return SPEAKERS_4POINT1;
+	case 6:     return SPEAKERS_5POINT1;
+	case 8:     return SPEAKERS_7POINT1;
+	case 16:    return SPEAKERS_HEXADECAGONAL;
+	default:    return SPEAKERS_UNKNOWN;
+	}
+}
+
 static inline void copy_data(struct ffmpeg_decode *decode, uint8_t *data,
 		size_t size)
 {
@@ -141,7 +157,7 @@ int ffmpeg_decode_audio(struct ffmpeg_decode *decode,
 		audio->data[i] = decode->frame->data[i];
 
 	audio->samples_per_sec = decode->frame->sample_rate;
-	audio->speakers        = (enum speaker_layout)decode->decoder->channels;
+	audio->speakers        = convert_speaker_layout(decode->decoder->channels);
 	audio->format          = convert_sample_format(decode->frame->format);
 
 	audio->frames = decode->frame->nb_samples;

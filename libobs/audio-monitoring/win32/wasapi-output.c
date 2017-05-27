@@ -234,6 +234,8 @@ static enum speaker_layout convert_speaker_layout(DWORD layout, WORD channels)
 	case KSAUDIO_SPEAKER_5POINT1_SURROUND: return SPEAKERS_5POINT1_SURROUND;
 	case KSAUDIO_SPEAKER_7POINT1:          return SPEAKERS_7POINT1;
 	case KSAUDIO_SPEAKER_7POINT1_SURROUND: return SPEAKERS_7POINT1_SURROUND;
+	case KSAUDIO_SPEAKER_OCTAGONAL:        return SPEAKERS_OCTAGONAL;
+	case KSAUDIO_SPEAKER_HEXADECAGONAL:    return SPEAKERS_HEXADECAGONAL;
 	}
 
 	return (enum speaker_layout)channels;

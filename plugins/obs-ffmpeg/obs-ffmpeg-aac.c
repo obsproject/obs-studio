@@ -257,9 +257,8 @@ static obs_properties_t *aac_properties(void *unused)
 	UNUSED_PARAMETER(unused);
 
 	obs_properties_t *props = obs_properties_create();
-
 	obs_properties_add_int(props, "bitrate",
-			obs_module_text("Bitrate"), 64, 320, 32);
+			obs_module_text("Bitrate"), 64, 1024, 32);
 	return props;
 }
 
