@@ -109,7 +109,7 @@ static struct obs_audio_data *noise_gate_filter_audio(void *data,
 {
 	struct noise_gate_data *ng = data;
 
-	float *adata[2] = {(float*)audio->data[0], (float*)audio->data[1]};
+	float **adata = (float**)audio->data;
 	const float close_threshold = ng->close_threshold;
 	const float open_threshold = ng->open_threshold;
 	const float sample_rate_i = ng->sample_rate_i;
@@ -120,9 +120,10 @@ static struct obs_audio_data *noise_gate_filter_audio(void *data,
 	const size_t channels = ng->channels;
 
 	for (size_t i = 0; i < audio->frames; i++) {
-		float cur_level = (channels == 2)
-			? fmaxf(fabsf(adata[0][i]), fabsf(adata[1][i]))
-			: fabsf(adata[0][i]);
+		float cur_level = fabsf(adata[0][i]);
+		for (size_t j = 0; j < channels; j++) {
+			cur_level = fmaxf(cur_level, fabsf(adata[j][i]));
+		}
 
 		if (cur_level > open_threshold && !ng->is_open) {
 			ng->is_open = true;

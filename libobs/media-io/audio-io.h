@@ -26,7 +26,7 @@ extern "C" {
 #endif
 
 #define MAX_AUDIO_MIXES     6
-#define MAX_AUDIO_CHANNELS  2
+#define MAX_AUDIO_CHANNELS  8
 #define AUDIO_OUTPUT_FRAMES 1024
 
 /*
@@ -101,13 +101,13 @@ static inline uint32_t get_audio_channels(enum speaker_layout speakers)
 	switch (speakers) {
 	case SPEAKERS_MONO:             return 1;
 	case SPEAKERS_STEREO:           return 2;
-	case SPEAKERS_2POINT1:          return 3;
-	case SPEAKERS_SURROUND:
+	case SPEAKERS_2POINT1:
+	case SPEAKERS_SURROUND:         return 3;
 	case SPEAKERS_QUAD:             return 4;
 	case SPEAKERS_4POINT1:          return 5;
 	case SPEAKERS_5POINT1:
 	case SPEAKERS_5POINT1_SURROUND: return 6;
-	case SPEAKERS_7POINT1:          return 8;
+	case SPEAKERS_7POINT1:
 	case SPEAKERS_7POINT1_SURROUND: return 8;
 	case SPEAKERS_UNKNOWN:          return 0;
 	}

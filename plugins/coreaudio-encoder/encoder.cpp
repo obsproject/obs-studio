@@ -601,6 +601,29 @@ static void *aac_create(obs_data_t *settings, obs_encoder_t *encoder)
 			kAudioConverterCurrentOutputStreamDescription,
 			&size, &out));
 
+	/*
+	 * Fix channel map differences between CoreAudio AAC, FFmpeg, Wav
+	 * New channel mappings below assume 4.1, 5.1, 7.1 resp.
+	 */
+	if (ca->channels == 5) {
+		SInt32 channelMap5[5] = {2, 0, 1, 3, 4};
+		AudioConverterSetProperty(ca->converter,
+				kAudioConverterChannelMap,
+				sizeof(channelMap5), channelMap5);
+
+	} else if (ca->channels == 6) {
+		SInt32 channelMap6[6] = {2, 0, 1, 4, 5, 3};
+		AudioConverterSetProperty(ca->converter,
+				kAudioConverterChannelMap,
+				sizeof(channelMap6), channelMap6);
+
+	} else if (ca->channels == 8) {
+		SInt32 channelMap8[8] = {2, 0, 1, 6, 7, 4, 5, 3};
+		AudioConverterSetProperty(ca->converter,
+				kAudioConverterChannelMap,
+				sizeof(channelMap8), channelMap8);
+	}
+
 	ca->in_frame_size     = in.mBytesPerFrame;
 	ca->in_packets        = out.mFramesPerPacket / in.mFramesPerPacket;
 	ca->in_bytes_required = ca->in_packets * ca->in_frame_size;

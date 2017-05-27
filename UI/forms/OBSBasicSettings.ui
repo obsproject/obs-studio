@@ -3180,6 +3180,31 @@
              <string>Stereo</string>
             </property>
            </item>
+           <item>
+            <property name="text">
+             <string>2.1</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>4.0 Quad</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>4.1</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>5.1</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>7.1</string>
+            </property>
+           </item>
           </widget>
          </item>
          <item row="2" column="0">
@@ -3306,6 +3331,19 @@
            </property>
            <property name="wordWrap">
             <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item row="9" column="1">
+          <widget class="QLabel" name="audioMsg_2">
+           <property name="text">
+            <string notr="true"/>
+           </property>
+           <property name="wordWrap">
+            <bool>true</bool>
+           </property>
+           <property name="themeID" stdset="0">
+            <string notr="true">warning</string>
            </property>
           </widget>
          </item>
@@ -3613,8 +3651,8 @@
           <rect>
            <x>0</x>
            <y>0</y>
-           <width>98</width>
-           <height>28</height>
+           <width>818</width>
+           <height>697</height>
           </rect>
          </property>
          <layout class="QFormLayout" name="hotkeyLayout">
@@ -3659,7 +3697,7 @@
             <property name="geometry">
              <rect>
               <x>0</x>
-              <y>0</y>
+              <y>-62</y>
               <width>803</width>
               <height>761</height>
              </rect>
