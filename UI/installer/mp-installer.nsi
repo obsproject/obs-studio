@@ -298,10 +298,10 @@ SectionGroup /e "Plugins" SecPlugins
 		SetShellVarContext all
 
 		SetOutPath "$INSTDIR\obs-plugins"
-		File /r "new\realsense\32bit"
+		File /r "new\realsense\obs-plugins\32bit"
 
 		${if} ${RunningX64}
-			File /r "new\realsense\64bit"
+			File /r "new\realsense\obs-plugins\64bit"
 		${endif}
 
 		SetOutPath "$INSTDIR\data\obs-plugins"
