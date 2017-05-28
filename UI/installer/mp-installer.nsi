@@ -273,7 +273,7 @@ SectionEnd
 
 !ifdef FULL
 SectionGroup /e "Plugins" SecPlugins
-	Section "Browser plugin" SecPlugins_Browser
+	Section "Browser Source" SecPlugins_Browser
 		; Set Section properties
 		SetOverwrite on
 		AllowSkipFiles off
@@ -292,7 +292,7 @@ SectionGroup /e "Plugins" SecPlugins
 	SectionEnd
 
 	!ifdef REALSENSE_PLUGIN
-	Section /o "Realsense plugin" SecPlugins_Realsense
+	Section /o "Realsense Source" SecPlugins_Realsense
 		SetOverwrite on
 		AllowSkipFiles off
 		SetShellVarContext all
