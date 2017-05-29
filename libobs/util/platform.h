@@ -153,6 +153,8 @@ EXPORT int os_rmdir(const char *path);
 EXPORT char *os_getcwd(char *path, size_t size);
 EXPORT int os_chdir(const char *path);
 
+EXPORT uint64_t os_get_free_disk_space(const char *dir);
+
 #define MKDIR_EXISTS   1
 #define MKDIR_SUCCESS  0
 #define MKDIR_ERROR   -1
@@ -175,6 +177,9 @@ EXPORT bool os_inhibit_sleep_set_active(os_inhibit_t *info, bool active);
 EXPORT void os_inhibit_sleep_destroy(os_inhibit_t *info);
 
 EXPORT void os_breakpoint(void);
+
+EXPORT int os_get_physical_cores(void);
+EXPORT int os_get_logical_cores(void);
 
 #ifdef _MSC_VER
 #define strtoll _strtoi64

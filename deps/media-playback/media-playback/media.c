@@ -289,6 +289,7 @@ static void mp_media_next_video(mp_media_t *m, bool preload)
 		return;
 	}
 
+	bool flip = false;
 	if (m->swscale) {
 		int ret = sws_scale(m->swscale,
 				(const uint8_t *const *)f->data, f->linesize,
@@ -297,16 +298,23 @@ static void mp_media_next_video(mp_media_t *m, bool preload)
 		if (ret < 0)
 			return;
 
+		flip = m->scale_linesizes[0] < 0 && m->scale_linesizes[1] == 0;
 		for (size_t i = 0; i < 4; i++) {
 			frame->data[i] = m->scale_pic[i];
-			frame->linesize[i] = m->scale_linesizes[i];
+			frame->linesize[i] = abs(m->scale_linesizes[i]);
 		}
+
 	} else {
+		flip = f->linesize[0] < 0 && f->linesize[1] == 0;
+
 		for (size_t i = 0; i < MAX_AV_PLANES; i++) {
 			frame->data[i] = f->data[i];
-			frame->linesize[i] = f->linesize[i];
+			frame->linesize[i] = abs(f->linesize[i]);
 		}
 	}
+
+	if (flip)
+		frame->data[0] -= frame->linesize[0] * (f->height - 1);
 
 	new_format = convert_pixel_format(m->scale_format);
 	new_space  = convert_color_space(f->colorspace);
@@ -346,7 +354,7 @@ static void mp_media_next_video(mp_media_t *m, bool preload)
 		m->play_sys_ts - base_sys_ts;
 	frame->width = f->width;
 	frame->height = f->height;
-	frame->flip = false;
+	frame->flip = flip;
 
 	if (preload)
 		m->v_preload_cb(m->opaque, frame);
@@ -391,10 +399,13 @@ static bool mp_media_reset(mp_media_t *m)
 		? av_rescale_q(seek_pos, AV_TIME_BASE_Q, stream->time_base)
 		: seek_pos;
 
-	int ret = av_seek_frame(m->fmt, 0, seek_target, seek_flags);
-	if (ret < 0) {
-		blog(LOG_WARNING, "MP: Failed to seek: %s", av_err2str(ret));
-		return false;
+	if (!m->is_network) {
+		int ret = av_seek_frame(m->fmt, 0, seek_target, seek_flags);
+		if (ret < 0) {
+			blog(LOG_WARNING, "MP: Failed to seek: %s",
+					av_err2str(ret));
+			return false;
+		}
 	}
 
 	if (m->has_video && !m->is_network)
@@ -467,11 +478,50 @@ static inline bool mp_media_eof(mp_media_t *m)
 	return eof;
 }
 
+static bool init_avformat(mp_media_t *m)
+{
+	AVInputFormat *format = NULL;
+
+	if (m->format_name && *m->format_name) {
+		format = av_find_input_format(m->format_name);
+		if (!format)
+			blog(LOG_INFO, "MP: Unable to find input format for "
+					"'%s'", m->path);
+	}
+
+	int ret = avformat_open_input(&m->fmt, m->path, format, NULL);
+	if (ret < 0) {
+		blog(LOG_WARNING, "MP: Failed to open media: '%s'", m->path);
+		return false;
+	}
+
+	if (avformat_find_stream_info(m->fmt, NULL) < 0) {
+		blog(LOG_WARNING, "MP: Failed to find stream info for '%s'",
+				m->path);
+		return false;
+	}
+
+	m->has_video = mp_decode_init(m, AVMEDIA_TYPE_VIDEO, m->hw);
+	m->has_audio = mp_decode_init(m, AVMEDIA_TYPE_AUDIO, m->hw);
+
+	if (!m->has_video && !m->has_audio) {
+		blog(LOG_WARNING, "MP: Could not initialize audio or video: "
+				"'%s'", m->path);
+		return false;
+	}
+
+	return true;
+}
+
 static void *mp_media_thread(void *opaque)
 {
 	mp_media_t *m = opaque;
 
 	os_set_thread_name("mp_media_thread");
+
+	if (!init_avformat(m)) {
+		return NULL;
+	}
 
 	mp_media_reset(m);
 
@@ -530,8 +580,6 @@ static inline bool mp_media_init_internal(mp_media_t *m,
 		const char *format_name,
 		bool hw)
 {
-	AVInputFormat *format = NULL;
-
 	if (pthread_mutex_init(&m->mutex, NULL) != 0) {
 		blog(LOG_WARNING, "MP: Failed to init mutex");
 		return false;
@@ -541,33 +589,9 @@ static inline bool mp_media_init_internal(mp_media_t *m,
 		return false;
 	}
 
-	if (format_name && *format_name) {
-		format = av_find_input_format(format_name);
-		if (!format)
-			blog(LOG_INFO, "MP: Unable to find input format for "
-					"'%s'", path);
-	}
-
-	int ret = avformat_open_input(&m->fmt, path, format, NULL);
-	if (ret < 0) {
-		blog(LOG_WARNING, "MP: Failed to open media: '%s'", path);
-		return false;
-	}
-
-	if (avformat_find_stream_info(m->fmt, NULL) < 0) {
-		blog(LOG_WARNING, "MP: Failed to find stream info for '%s'",
-				path);
-		return false;
-	}
-
-	m->has_video = mp_decode_init(m, AVMEDIA_TYPE_VIDEO, hw);
-	m->has_audio = mp_decode_init(m, AVMEDIA_TYPE_AUDIO, hw);
-
-	if (!m->has_video && !m->has_audio) {
-		blog(LOG_WARNING, "MP: Could not initialize audio or video: "
-				"'%s'", path);
-		return false;
-	}
+	m->path = path ? bstrdup(path) : NULL;
+	m->format_name = format_name ? bstrdup(format_name) : NULL;
+	m->hw = hw;
 
 	if (pthread_create(&m->thread, NULL, mp_media_thread, m) != 0) {
 		blog(LOG_WARNING, "MP: Could not create media thread");
@@ -647,6 +671,8 @@ void mp_media_free(mp_media_t *media)
 	avformat_close_input(&media->fmt);
 	sws_freeContext(media->swscale);
 	av_freep(&media->scale_pic[0]);
+	bfree(media->path);
+	bfree(media->format_name);
 	memset(media, 0, sizeof(*media));
 	pthread_mutex_init_value(&media->mutex);
 }

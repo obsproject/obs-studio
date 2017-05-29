@@ -303,4 +303,5 @@ protected:
 
 public:
 	OBSBasicSettings(QWidget *parent);
+	~OBSBasicSettings();
 };

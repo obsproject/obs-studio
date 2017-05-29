@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include <QMessageBox>
 #include <QWidget>
 #include <obs.hpp>
 
@@ -29,7 +30,22 @@
 class QDataStream;
 class QWidget;
 class QLayout;
+class QString;
 struct gs_window;
+
+class OBSMessageBox {
+public:
+	static QMessageBox::StandardButton question(
+			QWidget *parent,
+			const QString &title,
+			const QString &text,
+			QMessageBox::StandardButtons buttons = QMessageBox::StandardButtons( QMessageBox::Yes | QMessageBox::No ),
+			QMessageBox::StandardButton defaultButton = QMessageBox::NoButton);
+	static void information(
+			QWidget *parent,
+			const QString &title,
+			const QString &text);
+};
 
 void OBSErrorBox(QWidget *parent, const char *msg, ...);
 

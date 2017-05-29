@@ -265,7 +265,7 @@ bool OBSBasicProperties::ConfirmQuit()
 {
 	QMessageBox::StandardButton button;
 
-	button = QMessageBox::question(this,
+	button = OBSMessageBox::question(this,
 			QTStr("Basic.PropertiesWindow.ConfirmTitle"),
 			QTStr("Basic.PropertiesWindow.Confirm"),
 			QMessageBox::Save | QMessageBox::Discard |

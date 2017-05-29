@@ -11,6 +11,7 @@
 #define warn(format, ...)  do_log(LOG_WARNING, format, ##__VA_ARGS__)
 
 #define S_TR_SPEED                     "transition_speed"
+#define S_CUSTOM_SIZE                  "use_custom_size"
 #define S_SLIDE_TIME                   "slide_time"
 #define S_TRANSITION                   "transition"
 #define S_RANDOMIZE                    "randomize"
@@ -23,6 +24,8 @@
 
 #define T_(text) obs_module_text("SlideShow." text)
 #define T_TR_SPEED                     T_("TransitionSpeed")
+#define T_CUSTOM_SIZE                  T_("CustomSize")
+#define T_CUSTOM_SIZE_AUTO             T_("CustomSize.Auto")
 #define T_SLIDE_TIME                   T_("SlideTime")
 #define T_TRANSITION                   T_("Transition")
 #define T_RANDOMIZE                    T_("Randomize")
@@ -288,6 +291,48 @@ static void ss_update(void *data, obs_data_t *settings)
 		obs_source_release(old_tr);
 	free_files(&old_files.da);
 
+	/* ------------------------- */
+
+	const char *res_str = obs_data_get_string(settings, S_CUSTOM_SIZE);
+	bool aspect_only = false, use_auto = true;
+	int cx_in = 0, cy_in = 0;
+
+	if (strcmp(res_str, T_CUSTOM_SIZE_AUTO) != 0) {
+		int ret = sscanf(res_str, "%dx%d", &cx_in, &cy_in);
+		if (ret == 2) {
+			aspect_only = false;
+			use_auto = false;
+		} else {
+			ret = sscanf(res_str, "%d:%d", &cx_in, &cy_in);
+			if (ret == 2) {
+				aspect_only = true;
+				use_auto = false;
+			}
+		}
+	}
+
+	if (!use_auto) {
+		double cx_f = (double)cx;
+		double cy_f = (double)cy;
+
+		double old_aspect = cx_f / cy_f;
+		double new_aspect = (double)cx_in / (double)cy_in;
+
+		if (aspect_only) {
+			if (fabs(old_aspect - new_aspect) > EPSILON) {
+				if (new_aspect > old_aspect)
+					cx = (uint32_t)(cy_f * new_aspect);
+				else
+					cy = (uint32_t)(cx_f / new_aspect);
+			}
+		} else {
+			cx = (uint32_t)cx_in;
+			cy = (uint32_t)cy_in;
+		}
+	}
+
+	/* ------------------------- */
+
 	ss->cx = cx;
 	ss->cy = cy;
 	ss->cur_item = 0;
@@ -460,17 +505,38 @@ static void ss_defaults(obs_data_t *settings)
 	obs_data_set_default_string(settings, S_TRANSITION, "fade");
 	obs_data_set_default_int(settings, S_SLIDE_TIME, 8000);
 	obs_data_set_default_int(settings, S_TR_SPEED, 700);
+	obs_data_set_default_string(settings, S_CUSTOM_SIZE, T_CUSTOM_SIZE_AUTO);
 }
 
 static const char *file_filter =
 	"Image files (*.bmp *.tga *.png *.jpeg *.jpg *.gif)";
 
+static const char *aspects[] = {
+	"16:9",
+	"16:10",
+	"4:3",
+	"1:1"
+};
+
+#define NUM_ASPECTS (sizeof(aspects) / sizeof(const char *))
+
 static obs_properties_t *ss_properties(void *data)
 {
 	obs_properties_t *ppts = obs_properties_create();
 	struct slideshow *ss = data;
+	struct obs_video_info ovi;
 	struct dstr path = {0};
 	obs_property_t *p;
+	int cx;
+	int cy;
+
+	/* ----------------- */
+
+	obs_get_video_info(&ovi);
+	cx = (int)ovi.base_width;
+	cy = (int)ovi.base_height;
+
+	/* ----------------- */
 
 	p = obs_properties_add_list(ppts, S_TRANSITION, T_TRANSITION,
 			OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
@@ -484,6 +550,18 @@ static obs_properties_t *ss_properties(void *data)
 	obs_properties_add_int(ppts, S_TR_SPEED, T_TR_SPEED,
 			0, 3600000, 50);
 	obs_properties_add_bool(ppts, S_RANDOMIZE, T_RANDOMIZE);
+
+	p = obs_properties_add_list(ppts, S_CUSTOM_SIZE, T_CUSTOM_SIZE,
+			OBS_COMBO_TYPE_EDITABLE, OBS_COMBO_FORMAT_STRING);
+
+	obs_property_list_add_string(p, T_CUSTOM_SIZE_AUTO, T_CUSTOM_SIZE_AUTO);
+
+	for (size_t i = 0; i < NUM_ASPECTS; i++)
+		obs_property_list_add_string(p, aspects[i], aspects[i]);
+
+	char str[32];
+	snprintf(str, 32, "%dx%d", cx, cy);
+	obs_property_list_add_string(p, str, str);
 
 	if (ss) {
 		pthread_mutex_lock(&ss->mutex);

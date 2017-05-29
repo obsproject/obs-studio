@@ -42,6 +42,7 @@ class QMessageBox;
 class QListWidgetItem;
 class VolControl;
 class QNetworkReply;
+class OBSBasicStats;
 
 #include "ui_OBSBasic.h"
 
@@ -159,6 +160,8 @@ private:
 
 	QPointer<QWidget> projectors[10];
 	QList<QPointer<QWidget>> windowProjectors;
+
+	QPointer<QWidget> stats;
 
 	QPointer<QMenu> startStreamMenu;
 
@@ -279,6 +282,7 @@ private:
 	void RemoveQuickTransitionHotkey(QuickTransition *qt);
 	void LoadQuickTransitions(obs_data_array_t *array);
 	obs_data_array_t *SaveQuickTransitions();
+	void ClearQuickTransitionWidgets();
 	void RefreshQuickTransitions();
 	void CreateDefaultQuickTransitions();
 
@@ -313,6 +317,8 @@ private:
 	int   programX = 0,  programY = 0;
 	int   programCX = 0, programCY = 0;
 	float programScale = 0.0f;
+
+	int disableOutputsRef = 0;
 
 	inline bool IsPreviewProgramMode() const
 	{
@@ -357,7 +363,7 @@ public slots:
 
 	void StreamingStart();
 	void StreamStopping();
-	void StreamingStop(int errorcode);
+	void StreamingStop(int errorcode, QString last_error);
 
 	void StartRecording();
 	void StopRecording();
@@ -493,6 +499,16 @@ public:
 	void SaveService();
 	bool LoadService();
 
+	inline void EnableOutputs(bool enable)
+	{
+		if (enable) {
+			if (--disableOutputsRef < 0)
+				disableOutputsRef = 0;
+		} else {
+			disableOutputsRef++;
+		}
+	}
+
 	void ReorderSceneItem(obs_sceneitem_t *item, size_t idx);
 
 	QMenu *AddDeinterlacingMenu(obs_source_t *source);
@@ -605,6 +621,9 @@ private slots:
 	void on_transitionProps_clicked();
 
 	void on_modeSwitch_clicked();
+
+	void on_autoConfigure_triggered();
+	void on_stats_triggered();
 
 	void logUploadFinished(const QString &text, const QString &error);
 

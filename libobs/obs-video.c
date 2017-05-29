@@ -105,6 +105,19 @@ static inline void render_main_texture(struct obs_core_video *video,
 	gs_clear(GS_CLEAR_COLOR, &clear_color, 1.0f, 0);
 
 	set_render_size(video->base_width, video->base_height);
+
+	pthread_mutex_lock(&obs->data.draw_callbacks_mutex);
+
+	for (size_t i = 0; i < obs->data.draw_callbacks.num; i++) {
+		struct draw_callback *callback;
+		callback = obs->data.draw_callbacks.array+i;
+
+		callback->draw(callback->param,
+				video->base_width, video->base_height);
+	}
+
+	pthread_mutex_unlock(&obs->data.draw_callbacks_mutex);
+
 	obs_view_render(&obs->data.main_view);
 
 	video->textures_rendered[cur_texture] = true;
@@ -573,6 +586,7 @@ void *obs_video_thread(void *param)
 {
 	uint64_t last_time = 0;
 	uint64_t interval = video_output_get_frame_time(obs->video.video);
+	uint64_t frame_time_total_ns = 0;
 	uint64_t fps_total_ns = 0;
 	uint32_t fps_total_frames = 0;
 
@@ -586,6 +600,9 @@ void *obs_video_thread(void *param)
 	profile_register_root(video_thread_name, interval);
 
 	while (!video_output_stopped(obs->video.video)) {
+		uint64_t frame_start = os_gettime_ns();
+		uint64_t frame_time_ns;
+
 		profile_start(video_thread_name);
 
 		profile_start(tick_sources_name);
@@ -600,18 +617,25 @@ void *obs_video_thread(void *param)
 		output_frame();
 		profile_end(output_frame_name);
 
+		frame_time_ns = os_gettime_ns() - frame_start;
+
 		profile_end(video_thread_name);
 
 		profile_reenable_thread();
 
 		video_sleep(&obs->video, &obs->video.video_time, interval);
 
+		frame_time_total_ns += frame_time_ns;
 		fps_total_ns += (obs->video.video_time - last_time);
 		fps_total_frames++;
 
 		if (fps_total_ns >= 1000000000ULL) {
 			obs->video.video_fps = (double)fps_total_frames /
 				((double)fps_total_ns / 1000000000.0);
+			obs->video.video_avg_frame_time_ns =
+				frame_time_total_ns / (uint64_t)fps_total_frames;
+
+			frame_time_total_ns = 0;
 			fps_total_ns = 0;
 			fps_total_frames = 0;
 		}

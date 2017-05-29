@@ -26,6 +26,7 @@
 
 #include <QMessageBox>
 #include <QCloseEvent>
+#include <vector>
 #include <string>
 #include <QMenu>
 #include <QVariant>
@@ -322,20 +323,43 @@ static bool filter_compatible(bool async, uint32_t sourceFlags,
 QMenu *OBSBasicFilters::CreateAddFilterPopupMenu(bool async)
 {
 	uint32_t sourceFlags = obs_source_get_output_flags(source);
-	const char *type;
+	const char *type_str;
 	bool foundValues = false;
 	size_t idx = 0;
 
+	struct FilterInfo {
+		string type;
+		string name;
+
+		inline FilterInfo(const char *type_, const char *name_)
+			: type(type_), name(name_)
+		{}
+	};
+
+	vector<FilterInfo> types;
+	while (obs_enum_filter_types(idx++, &type_str)) {
+		const char *name = obs_source_get_display_name(type_str);
+
+		auto it = types.begin();
+		for (; it != types.end(); ++it) {
+			if (it->name >= name)
+				break;
+		}
+
+		types.emplace(it, type_str, name);
+	}
+
 	QMenu *popup = new QMenu(QTStr("Add"), this);
-	while (obs_enum_filter_types(idx++, &type)) {
-		const char *name = obs_source_get_display_name(type);
-		uint32_t filterFlags = obs_get_source_output_flags(type);
+	for (FilterInfo &type : types) {
+		uint32_t filterFlags = obs_get_source_output_flags(
+				type.type.c_str());
 
 		if (!filter_compatible(async, sourceFlags, filterFlags))
 			continue;
 
-		QAction *popupItem = new QAction(QT_UTF8(name), this);
-		popupItem->setData(QT_UTF8(type));
+		QAction *popupItem = new QAction(QT_UTF8(type.name.c_str()),
+				this);
+		popupItem->setData(QT_UTF8(type.type.c_str()));
 		connect(popupItem, SIGNAL(triggered(bool)),
 				this, SLOT(AddFilterFromAction()));
 		popup->addAction(popupItem);
@@ -365,7 +389,7 @@ void OBSBasicFilters::AddNewFilter(const char *id)
 			return;
 
 		if (name.empty()) {
-			QMessageBox::information(this,
+			OBSMessageBox::information(this,
 					QTStr("NoNameEntered.Title"),
 					QTStr("NoNameEntered.Text"));
 			AddNewFilter(id);
@@ -375,7 +399,7 @@ void OBSBasicFilters::AddNewFilter(const char *id)
 		existing_filter = obs_source_get_filter_by_name(source,
 				name.c_str());
 		if (existing_filter) {
-			QMessageBox::information(this,
+			OBSMessageBox::information(this,
 					QTStr("NameExists.Title"),
 					QTStr("NameExists.Text"));
 			obs_source_release(existing_filter);
@@ -678,13 +702,13 @@ void OBSBasicFilters::FilterNameEdited(QWidget *editor, QListWidget *list)
 		listItem->setText(QT_UTF8(prevName));
 
 		if (foundFilter) {
-			QMessageBox::information(window(),
+			OBSMessageBox::information(window(),
 				QTStr("NameExists.Title"),
 				QTStr("NameExists.Text"));
 			obs_source_release(foundFilter);
 
 		} else if (name.empty()) {
-			QMessageBox::information(window(),
+			OBSMessageBox::information(window(),
 				QTStr("NoNameEntered.Title"),
 				QTStr("NoNameEntered.Text"));
 		}

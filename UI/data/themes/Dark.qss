@@ -508,3 +508,18 @@ QLabel#errorLabel {
     color: rgb(192, 0, 0);
     font-weight: bold;
 }
+
+* [themeID="warning"] {
+    color: rgb(192, 128, 0);
+    font-weight: bold;
+}
+
+* [themeID="error"] {
+    color: rgb(192, 0, 0);
+    font-weight: bold;
+}
+
+* [themeID="good"] {
+    color: rgb(0, 192, 0);
+    font-weight: bold;
+}
