@@ -92,7 +92,8 @@ static int mp_media_next_packet(mp_media_t *media)
 	int ret = av_read_frame(media->fmt, &pkt);
 	if (ret < 0) {
 		if (ret != AVERROR_EOF)
-			blog(LOG_WARNING, "MP: av_read_frame failed: %d", ret);
+			blog(LOG_WARNING, "MP: av_read_frame failed: %s (%d)",
+					av_err2str(ret), ret);
 		return ret;
 	}
 
