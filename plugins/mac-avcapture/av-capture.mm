@@ -645,13 +645,7 @@ static inline bool update_frame(av_capture *capture,
 
 static void av_capture_enable_buffering(av_capture *capture, bool enabled)
 {
-	obs_source_t *source = capture->source;
-	uint32_t flags = obs_source_get_flags(source);
-	if (enabled)
-		flags &= ~OBS_SOURCE_FLAG_UNBUFFERED;
-	else
-		flags |= OBS_SOURCE_FLAG_UNBUFFERED;
-	obs_source_set_flags(source, flags);
+	obs_source_set_async_unbuffered(capture->source, !enabled);
 }
 
 static const char *av_capture_getname(void*)

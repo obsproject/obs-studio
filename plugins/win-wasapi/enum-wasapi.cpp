@@ -20,7 +20,7 @@ string GetDeviceName(IMMDevice *device)
 		PropVariantInit(&nameVar);
 		res = store->GetValue(PKEY_Device_FriendlyName, &nameVar);
 
-		if (SUCCEEDED(res)) {
+		if (SUCCEEDED(res) && nameVar.pwszVal && *nameVar.pwszVal) {
 			size_t len = wcslen(nameVar.pwszVal);
 			size_t size;
 

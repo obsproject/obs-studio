@@ -35,8 +35,8 @@ struct audio_monitor {
 	audio_resampler_t  *resampler;
 	uint32_t           sample_rate;
 	uint32_t           channels;
-	bool               source_has_video : 1;
-	bool               ignore : 1;
+	bool               source_has_video;
+	bool               ignore;
 
 	int64_t            lowest_audio_offset;
 	struct circlebuf   delay_buffer;

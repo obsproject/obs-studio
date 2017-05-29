@@ -434,7 +434,7 @@ int os_rename(const char *old_path, const char *new_path)
 
 int os_safe_replace(const char *target, const char *from, const char *backup)
 {
-	if (backup && rename(target, backup) != 0)
+	if (backup && os_file_exists(target) && rename(target, backup) != 0)
 		return -1;
 	return rename(from, target);
 }
@@ -621,4 +621,70 @@ void os_inhibit_sleep_destroy(os_inhibit_t *info)
 void os_breakpoint()
 {
 	raise(SIGTRAP);
+}
+
+#ifndef __APPLE__
+static int physical_cores = 0;
+static int logical_cores = 0;
+static bool core_count_initialized = false;
+
+/* return sysconf(_SC_NPROCESSORS_ONLN); */
+
+static void os_get_cores_internal(void)
+{
+	if (core_count_initialized)
+		return;
+
+	core_count_initialized = true;
+
+	logical_cores = sysconf(_SC_NPROCESSORS_ONLN);
+
+#ifndef __linux__
+	physical_cores = logical_cores;
+#else
+	char *text = os_quick_read_utf8_file("/proc/cpuinfo");
+	char *core_id = text;
+
+	if (!text || !*text) {
+		physical_cores = logical_cores;
+		return;
+	}
+
+	for (;;) {
+		core_id = strstr(core_id, "\ncore id");
+		if (!core_id)
+			break;
+		physical_cores++;
+		core_id++;
+	}
+
+	if (physical_cores == 0)
+		physical_cores = logical_cores;
+
+	bfree(text);
+#endif
+}
+
+int os_get_physical_cores(void)
+{
+	if (!core_count_initialized)
+		os_get_cores_internal();
+	return physical_cores;
+}
+
+int os_get_logical_cores(void)
+{
+	if (!core_count_initialized)
+		os_get_cores_internal();
+	return logical_cores;
+}
+#endif
+
+uint64_t os_get_free_disk_space(const char *dir)
+{
+	struct statvfs info;
+	if (statvfs(dir, &info) != 0)
+		return 0;
+
+	return (uint64_t)info.f_frsize * (uint64_t)info.f_bavail;
 }

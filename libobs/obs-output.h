@@ -66,6 +66,7 @@ struct obs_output_info {
 	void (*free_type_data)(void *type_data);
 
 	float (*get_congestion)(void *data);
+	int (*get_connect_time_ms)(void *data);
 };
 
 EXPORT void obs_register_output_s(const struct obs_output_info *info,

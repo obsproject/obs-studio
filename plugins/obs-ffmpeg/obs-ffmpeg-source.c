@@ -47,10 +47,12 @@ struct ffmpeg_source {
 	int sws_linesize;
 	enum video_range_type range;
 	obs_source_t *source;
+	obs_hotkey_id hotkey;
 
 	char *input;
 	char *input_format;
 	bool is_looping;
+	bool is_local_file;
 	bool is_hw_decoding;
 	bool is_clear_on_media_end;
 	bool restart_on_activate;
@@ -68,8 +70,10 @@ static bool is_local_file_modified(obs_properties_t *props,
 			"input_format");
 	obs_property_t *local_file = obs_properties_get(props, "local_file");
 	obs_property_t *looping = obs_properties_get(props, "looping");
+	obs_property_t *close = obs_properties_get(props, "close_when_inactive");
 	obs_property_set_visible(input, !enabled);
 	obs_property_set_visible(input_format, !enabled);
+	obs_property_set_visible(close, enabled);
 	obs_property_set_visible(local_file, enabled);
 	obs_property_set_visible(looping, enabled);
 
@@ -149,8 +153,10 @@ static obs_properties_t *ffmpeg_source_getproperties(void *data)
 	obs_properties_add_text(props, "input_format",
 			obs_module_text("InputFormat"), OBS_TEXT_DEFAULT);
 
+#ifndef __APPLE__
 	obs_properties_add_bool(props, "hw_decode",
 			obs_module_text("HardwareDecode"));
+#endif
 
 	obs_properties_add_bool(props, "clear_on_media_end",
 			obs_module_text("ClearOnMediaEnd"));
@@ -251,7 +257,8 @@ static void ffmpeg_source_start(struct ffmpeg_source *s)
 
 	if (s->media_valid) {
 		mp_media_play(&s->media, s->is_looping);
-		obs_source_show_preloaded_video(s->source);
+		if (s->is_local_file)
+			obs_source_show_preloaded_video(s->source);
 	}
 }
 
@@ -271,28 +278,32 @@ static void ffmpeg_source_update(void *data, obs_data_t *settings)
 		input = (char *)obs_data_get_string(settings, "local_file");
 		input_format = NULL;
 		s->is_looping = obs_data_get_bool(settings, "looping");
+		s->close_when_inactive = obs_data_get_bool(settings,
+				"close_when_inactive");
 
-		obs_source_set_flags(s->source, OBS_SOURCE_FLAG_UNBUFFERED);
+		obs_source_set_async_unbuffered(s->source, true);
 	} else {
 		input = (char *)obs_data_get_string(settings, "input");
 		input_format = (char *)obs_data_get_string(settings,
 				"input_format");
 		s->is_looping = false;
+		s->close_when_inactive = true;
 
-		obs_source_set_flags(s->source, 0);
+		obs_source_set_async_unbuffered(s->source, false);
 	}
 
 	s->input = input ? bstrdup(input) : NULL;
 	s->input_format = input_format ? bstrdup(input_format) : NULL;
+#ifndef __APPLE__
 	s->is_hw_decoding = obs_data_get_bool(settings, "hw_decode");
+#endif
 	s->is_clear_on_media_end = obs_data_get_bool(settings,
 			"clear_on_media_end");
 	s->restart_on_activate = obs_data_get_bool(settings,
 			"restart_on_activate");
-	s->close_when_inactive = obs_data_get_bool(settings,
-			"close_when_inactive");
 	s->range = (enum video_range_type)obs_data_get_int(settings,
 			"color_range");
+	s->is_local_file = is_local_file;
 
 	if (s->media_valid) {
 		mp_media_free(&s->media);
@@ -314,12 +325,39 @@ static const char *ffmpeg_source_getname(void *unused)
 	return obs_module_text("FFMpegSource");
 }
 
+static bool restart_hotkey(void *data, obs_hotkey_id id,
+		obs_hotkey_t *hotkey, bool pressed)
+{
+	UNUSED_PARAMETER(id);
+	UNUSED_PARAMETER(hotkey);
+	UNUSED_PARAMETER(pressed);
+
+	struct ffmpeg_source *s = data;
+	if (obs_source_active(s->source))
+		ffmpeg_source_start(s);
+	return true;
+}
+
+static void restart_proc(void *data, calldata_t *cd)
+{
+	restart_hotkey(data, 0, NULL, true);
+	UNUSED_PARAMETER(cd);
+}
+
 static void *ffmpeg_source_create(obs_data_t *settings, obs_source_t *source)
 {
 	UNUSED_PARAMETER(settings);
 
 	struct ffmpeg_source *s = bzalloc(sizeof(struct ffmpeg_source));
 	s->source = source;
+
+	s->hotkey = obs_hotkey_register_source(source,
+			"MediaSource.Restart",
+			obs_module_text("RestartMedia"),
+			restart_hotkey, s);
+
+	proc_handler_t *ph = obs_source_get_proc_handler(source);
+	proc_handler_add(ph, "void restart()", restart_proc, s);
 
 	ffmpeg_source_update(s, settings);
 	return s;
@@ -329,6 +367,8 @@ static void ffmpeg_source_destroy(void *data)
 {
 	struct ffmpeg_source *s = data;
 
+	if (s->hotkey)
+		obs_hotkey_unregister(s->hotkey);
 	if (s->media_valid)
 		mp_media_free(&s->media);
 

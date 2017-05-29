@@ -19,10 +19,10 @@ struct d3d12_data {
 	uint32_t                       cx;
 	uint32_t                       cy;
 	DXGI_FORMAT                    format;
-	bool                           using_shtex : 1;
-	bool                           using_scale : 1;
-	bool                           multisampled : 1;
-	bool                           dxgi_1_4 : 1;
+	bool                           using_shtex;
+	bool                           using_scale;
+	bool                           multisampled;
+	bool                           dxgi_1_4;
 
 	ID3D11Device                   *device11;
 	ID3D11DeviceContext            *context11;

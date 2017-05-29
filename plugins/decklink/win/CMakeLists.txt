@@ -1,5 +1,10 @@
 project(win-decklink)
 
+if(DISABLE_DECKLINK)
+	message(STATUS "decklink plugin disabled")
+	return()
+endif()
+
 include(IDLFileHelper)
 
 set(win-decklink-sdk_IDLS

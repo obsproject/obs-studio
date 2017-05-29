@@ -16,6 +16,7 @@
 ******************************************************************************/
 
 #include <assert.h>
+#include <inttypes.h>
 #include "../util/bmem.h"
 #include "../util/platform.h"
 #include "../util/profiler.h"
@@ -34,6 +35,7 @@ extern profiler_name_store_t *obs_get_profiler_name_store(void);
 
 struct cached_frame_info {
 	struct video_data frame;
+	int skipped;
 	int count;
 };
 
@@ -114,6 +116,7 @@ static inline bool video_output_cur_frame(struct video_output *video)
 {
 	struct cached_frame_info *frame_info;
 	bool complete;
+	bool skipped;
 
 	/* -------------------------------- */
 
@@ -143,6 +146,7 @@ static inline bool video_output_cur_frame(struct video_output *video)
 
 	frame_info->frame.timestamp += video->frame_time;
 	complete = --frame_info->count == 0;
+	skipped = frame_info->skipped > 0;
 
 	if (complete) {
 		if (++video->first_added == video->info.cache_size)
@@ -150,6 +154,9 @@ static inline bool video_output_cur_frame(struct video_output *video)
 
 		if (++video->available_frames == video->info.cache_size)
 			video->last_added = video->first_added;
+	} else if (skipped) {
+		--frame_info->skipped;
+		++video->skipped_frames;
 	}
 
 	pthread_mutex_unlock(&video->data_mutex);
@@ -333,6 +340,11 @@ bool video_output_connect(video_t *video,
 
 	pthread_mutex_lock(&video->input_mutex);
 
+	if (video->inputs.num == 0) {
+		video->skipped_frames = 0;
+		video->total_frames = 0;
+	}
+
 	if (video_get_input_idx(video, callback, param) == DARRAY_INVALID) {
 		struct video_input input;
 		memset(&input, 0, sizeof(input));
@@ -378,6 +390,20 @@ void video_output_disconnect(video_t *video,
 		da_erase(video->inputs, idx);
 	}
 
+	if (video->inputs.num == 0) {
+		double percentage_skipped = (double)video->skipped_frames /
+			(double)video->total_frames * 100.0;
+
+		if (video->skipped_frames)
+			blog(LOG_INFO, "Video stopped, number of "
+					"skipped frames due "
+					"to encoding lag: "
+					"%"PRIu32"/%"PRIu32" (%0.1f%%)",
+					video->skipped_frames,
+					video->total_frames,
+					percentage_skipped);
+	}
+
 	pthread_mutex_unlock(&video->input_mutex);
 }
 
@@ -403,8 +429,8 @@ bool video_output_lock_frame(video_t *video, struct video_frame *frame,
 	pthread_mutex_lock(&video->data_mutex);
 
 	if (video->available_frames == 0) {
-		video->skipped_frames += count;
 		video->cache[video->last_added].count += count;
+		video->cache[video->last_added].skipped += count;
 		locked = false;
 
 	} else {
@@ -416,6 +442,7 @@ bool video_output_lock_frame(video_t *video, struct video_frame *frame,
 		cfi = &video->cache[video->last_added];
 		cfi->frame.timestamp = timestamp;
 		cfi->count = count;
+		cfi->skipped = 0;
 
 		memcpy(frame, &cfi->frame, sizeof(*frame));
 

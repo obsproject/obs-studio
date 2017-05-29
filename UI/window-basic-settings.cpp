@@ -151,6 +151,23 @@ static inline bool SetComboByValue(QComboBox *combo, const char *name)
 	return false;
 }
 
+static inline bool SetInvalidValue(QComboBox *combo, const char *name,
+	const char *data = nullptr)
+{
+	combo->insertItem(0, name, data);
+
+	QStandardItemModel *model =
+		dynamic_cast<QStandardItemModel*>(combo->model());
+	if (!model)
+		return false;
+
+	QStandardItem *item = model->item(0);
+	item->setFlags(Qt::NoItemFlags);
+
+	combo->setCurrentIndex(0);
+	return true;
+}
+
 static inline QString GetComboData(QComboBox *combo)
 {
 	int idx = combo->currentIndex();
@@ -260,6 +277,8 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 
 	ui->setupUi(this);
 
+	main->EnableOutputs(false);
+
 	PopulateAACBitrates({ui->simpleOutputABitrate,
 			ui->advOutTrack1Bitrate, ui->advOutTrack2Bitrate,
 			ui->advOutTrack3Bitrate, ui->advOutTrack4Bitrate,
@@ -274,6 +293,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->language,             COMBO_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->theme, 		     COMBO_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->enableAutoUpdates,    CHECK_CHANGED,  GENERAL_CHANGED);
+	HookWidget(ui->openStatsOnStartup,   CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->warnBeforeStreamStart,CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->warnBeforeStreamStop, CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->hideProjectorCursor,  CHECK_CHANGED,  GENERAL_CHANGED);
@@ -636,6 +656,11 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	UpdateAutomaticReplayBufferCheckboxes();
 }
 
+OBSBasicSettings::~OBSBasicSettings()
+{
+	main->EnableOutputs(true);
+}
+
 void OBSBasicSettings::SaveCombo(QComboBox *widget, const char *section,
 		const char *value)
 {
@@ -940,6 +965,9 @@ void OBSBasicSettings::LoadGeneralSettings()
 			"General", "EnableAutoUpdates");
 	ui->enableAutoUpdates->setChecked(enableAutoUpdates);
 #endif
+	bool openStatsOnStartup = config_get_bool(main->Config(),
+			"General", "OpenStatsOnStartup");
+	ui->openStatsOnStartup->setChecked(openStatsOnStartup);
 
 	bool recordWhenStreaming = config_get_bool(GetGlobalConfig(),
 			"BasicWindow", "RecordWhenStreaming");
@@ -1217,11 +1245,20 @@ void OBSBasicSettings::LoadResolutionLists()
 
 	ui->baseResolution->clear();
 
+	auto addRes = [this] (int cx, int cy)
+	{
+		QString res = ResString(cx, cy).c_str();
+		if (ui->baseResolution->findText(res) == -1)
+			ui->baseResolution->addItem(res);
+	};
+
 	for (QScreen* screen: QGuiApplication::screens()) {
 		QSize as = screen->size();
-		string res = ResString(as.width(), as.height());
-		ui->baseResolution->addItem(res.c_str());
+		addRes(as.width(), as.height());
 	}
+
+	addRes(1920, 1080);
+	addRes(1280, 720);
 
 	string outputResString = ResString(out_cx, out_cy);
 
@@ -2023,22 +2060,8 @@ void OBSBasicSettings::LoadAdvancedSettings()
 	LoadRendererList();
 
 #if defined(_WIN32) || defined(__APPLE__)
-	QComboBox *cb = ui->monitoringDevice;
-	idx = cb->findData(monDevId);
-	if (idx == -1) {
-		cb->insertItem(0, monDevName, monDevId);
-
-		QStandardItemModel *model =
-			dynamic_cast<QStandardItemModel*>(cb->model());
-		if (!model)
-			return;
-
-		QStandardItem *item = model->item(0);
-		item->setFlags(Qt::NoItemFlags);
-
-		idx = 0;
-	}
-	cb->setCurrentIndex(idx);
+	if (!SetComboByValue(ui->monitoringDevice, monDevId))
+		SetInvalidValue(ui->monitoringDevice, monDevName, monDevId);
 #endif
 
 	ui->filenameFormatting->setText(filename);
@@ -2059,7 +2082,8 @@ void OBSBasicSettings::LoadAdvancedSettings()
 	SetComboByName(ui->colorSpace, videoColorSpace);
 	SetComboByValue(ui->colorRange, videoColorRange);
 
-	SetComboByValue(ui->bindToIP, bindIP);
+	if (!SetComboByValue(ui->bindToIP, bindIP))
+		SetInvalidValue(ui->bindToIP, bindIP, bindIP);
 
 	if (video_output_active(obs_get_video())) {
 		ui->advancedVideoContainer->setEnabled(false);
@@ -2425,6 +2449,10 @@ void OBSBasicSettings::SaveGeneralSettings()
 				"EnableAutoUpdates",
 				ui->enableAutoUpdates->isChecked());
 #endif
+	if (WidgetChanged(ui->openStatsOnStartup))
+		config_set_bool(main->Config(), "General",
+				"OpenStatsOnStartup",
+				ui->openStatsOnStartup->isChecked());
 	if (WidgetChanged(ui->snappingEnabled))
 		config_set_bool(GetGlobalConfig(), "BasicWindow",
 				"SnappingEnabled",
@@ -2993,7 +3021,7 @@ bool OBSBasicSettings::QueryChanges()
 {
 	QMessageBox::StandardButton button;
 
-	button = QMessageBox::question(this,
+	button = OBSMessageBox::question(this,
 			QTStr("Basic.Settings.ConfirmTitle"),
 			QTStr("Basic.Settings.Confirm"),
 			QMessageBox::Yes | QMessageBox::No |
@@ -3858,10 +3886,9 @@ void OBSBasicSettings::SimpleRecordingQualityLosslessWarning(int idx)
 			QString("\n\n") +
 			SIMPLE_OUTPUT_WARNING("Lossless.Msg");
 
-		button = QMessageBox::question(this,
+		button = OBSMessageBox::question(this,
 				SIMPLE_OUTPUT_WARNING("Lossless.Title"),
-				warningString,
-				QMessageBox::Yes | QMessageBox::No);
+				warningString);
 
 		if (button == QMessageBox::No) {
 			QMetaObject::invokeMethod(ui->simpleOutRecQuality,

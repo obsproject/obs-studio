@@ -105,7 +105,7 @@ Function PreReqCheck
 	vs2013Missing:
 		MessageBox MB_YESNO|MB_ICONEXCLAMATION "Your system is missing runtime components that ${APPNAME} requires. Please make sure to install both vcredist_x64 and vcredist_x86. Would you like to download them?" IDYES vs2013true IDNO vs2013false
 		vs2013true:
-			ExecShell "open" "http://www.microsoft.com/en-us/download/details.aspx?id=40784"
+			ExecShell "open" "https://obsproject.com/visual-studio-2013-runtimes"
 		vs2013false:
 		Quit
 	vs2013OK:
@@ -273,7 +273,7 @@ SectionEnd
 
 !ifdef FULL
 SectionGroup /e "Plugins" SecPlugins
-	Section "Browser plugin" SecPlugins_Browser
+	Section "Browser Source" SecPlugins_Browser
 		; Set Section properties
 		SetOverwrite on
 		AllowSkipFiles off
@@ -292,16 +292,16 @@ SectionGroup /e "Plugins" SecPlugins
 	SectionEnd
 
 	!ifdef REALSENSE_PLUGIN
-	Section /o "Realsense plugin" SecPlugins_Realsense
+	Section /o "Realsense Source" SecPlugins_Realsense
 		SetOverwrite on
 		AllowSkipFiles off
 		SetShellVarContext all
 
 		SetOutPath "$INSTDIR\obs-plugins"
-		File /r "new\realsense\32bit"
+		File /r "new\realsense\obs-plugins\32bit"
 
 		${if} ${RunningX64}
-			File /r "new\realsense\64bit"
+			File /r "new\realsense\obs-plugins\64bit"
 		${endif}
 
 		SetOutPath "$INSTDIR\data\obs-plugins"

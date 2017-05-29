@@ -13,9 +13,9 @@ struct d3d11_data {
 	uint32_t                       cx;
 	uint32_t                       cy;
 	DXGI_FORMAT                    format;
-	bool                           using_shtex : 1;
-	bool                           using_scale : 1;
-	bool                           multisampled : 1;
+	bool                           using_shtex;
+	bool                           using_scale;
+	bool                           multisampled;
 
 	ID3D11Texture2D                *scale_tex;
 	ID3D11ShaderResourceView       *scale_resource;

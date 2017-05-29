@@ -51,6 +51,9 @@ struct mp_media {
 	mp_audio_cb a_cb;
 	void *opaque;
 
+	char *path;
+	char *format_name;
+
 	enum AVPixelFormat scale_format;
 	struct SwsContext *swscale;
 	int scale_linesizes[4];
@@ -63,6 +66,7 @@ struct mp_media {
 	bool has_audio;
 	bool is_file;
 	bool eof;
+	bool hw;
 
 	struct obs_source_frame obsframe;
 	enum video_colorspace cur_space;
@@ -103,6 +107,12 @@ extern void mp_media_free(mp_media_t *media);
 
 extern void mp_media_play(mp_media_t *media, bool loop);
 extern void mp_media_stop(mp_media_t *media);
+
+/* #define DETAILED_DEBUG_INFO */
+
+#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(57, 48, 101)
+#define USE_NEW_FFMPEG_DECODE_API
+#endif
 
 #ifdef __cplusplus
 }

@@ -69,6 +69,7 @@ set(obs-outputs_HEADERS
 	librtmp)
 set(obs-outputs_SOURCES
 	obs-outputs.c
+	null-output.c
 	rtmp-stream.c
 	rtmp-windows.c
 	flv-output.c

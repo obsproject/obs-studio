@@ -287,6 +287,8 @@ void gs_shader::UploadParams()
 
 void gs_shader_destroy(gs_shader_t *shader)
 {
+	if (shader && shader->device->lastVertexShader == shader)
+		shader->device->lastVertexShader = nullptr;
 	delete shader;
 }
 

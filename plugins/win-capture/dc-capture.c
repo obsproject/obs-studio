@@ -167,7 +167,7 @@ void dc_capture_capture(struct dc_capture *capture, HWND window)
 
 	ReleaseDC(NULL, hdc_target);
 
-	if (capture->cursor_captured)
+	if (capture->cursor_captured && !capture->cursor_hidden)
 		draw_cursor(capture, hdc, window);
 
 	dc_capture_release_dc(capture);
