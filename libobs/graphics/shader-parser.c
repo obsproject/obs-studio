@@ -277,12 +277,14 @@ static void sp_parse_struct(struct shader_parser *sp)
 
 		case PARSE_UNEXPECTED_CONTINUE:
 			cf_adderror_syntax_error(&sp->cfp);
+			/* Falls through. */
 		case PARSE_CONTINUE:
 			shader_var_free(&var);
 			continue;
 
 		case PARSE_UNEXPECTED_BREAK:
 			cf_adderror_syntax_error(&sp->cfp);
+			/* Falls through. */
 		case PARSE_BREAK:
 			shader_var_free(&var);
 			do_break = true;
