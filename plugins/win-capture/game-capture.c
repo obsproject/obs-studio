@@ -622,7 +622,7 @@ static inline bool is_64bit_process(HANDLE process)
 static inline bool open_target_process(struct game_capture *gc)
 {
 	gc->target_process = open_process(
-			PROCESS_QUERY_INFORMATION | PROCESS_VM_READ,
+			PROCESS_QUERY_LIMITED_INFORMATION,
 			false, gc->process_id);
 	if (!gc->target_process) {
 		warn("could not open process: %s", gc->config.executable);
@@ -1013,7 +1013,7 @@ static void setup_window(struct game_capture *gc, HWND window)
 
 	GetWindowThreadProcessId(window, &gc->process_id);
 	if (gc->process_id) {
-		process = open_process(PROCESS_QUERY_INFORMATION,
+		process = open_process(PROCESS_QUERY_LIMITED_INFORMATION,
 			false, gc->process_id);
 		if (process) {
 			gc->is_app = is_app(process);
