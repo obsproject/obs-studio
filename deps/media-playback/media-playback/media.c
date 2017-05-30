@@ -528,18 +528,15 @@ static bool init_avformat(mp_media_t *m)
 	return true;
 }
 
-static void *mp_media_thread(void *opaque)
+static inline bool mp_media_thread(mp_media_t *m)
 {
-	mp_media_t *m = opaque;
-
 	os_set_thread_name("mp_media_thread");
 
 	if (!init_avformat(m)) {
-		return NULL;
+		return false;
 	}
-
 	if (!mp_media_reset(m)) {
-		return NULL;
+		return false;
 	}
 
 	for (;;) {
@@ -551,7 +548,7 @@ static void *mp_media_thread(void *opaque)
 
 		if (!is_active) {
 			if (os_sem_wait(m->sem) < 0)
-				return NULL;
+				return false;
 		} else {
 			mp_media_sleepto(m);
 		}
@@ -581,11 +578,24 @@ static void *mp_media_thread(void *opaque)
 				mp_media_next_audio(m);
 
 			if (!mp_media_prepare_frames(m))
-				return NULL;
+				return false;
 			if (mp_media_eof(m))
 				continue;
 
 			mp_media_calc_next_ns(m);
+		}
+	}
+
+	return true;
+}
+
+static void *mp_media_thread_start(void *opaque)
+{
+	mp_media_t *m = opaque;
+
+	if (!mp_media_thread(m)) {
+		if (m->stop_cb) {
+			m->stop_cb(m->opaque);
 		}
 	}
 
@@ -610,7 +620,7 @@ static inline bool mp_media_init_internal(mp_media_t *m,
 	m->format_name = format_name ? bstrdup(format_name) : NULL;
 	m->hw = hw;
 
-	if (pthread_create(&m->thread, NULL, mp_media_thread, m) != 0) {
+	if (pthread_create(&m->thread, NULL, mp_media_thread_start, m) != 0) {
 		blog(LOG_WARNING, "MP: Could not create media thread");
 		return false;
 	}
