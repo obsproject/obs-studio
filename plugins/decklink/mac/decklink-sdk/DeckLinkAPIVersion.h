@@ -34,3 +34,4 @@
 #define BLACKMAGIC_DECKLINK_API_VERSION_STRING			"10.8"
 
 #endif	// __DeckLink_API_Version_h__
+
