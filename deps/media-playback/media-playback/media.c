@@ -497,7 +497,14 @@ static bool init_avformat(mp_media_t *m)
 					"'%s'", m->path);
 	}
 
-	int ret = avformat_open_input(&m->fmt, m->path, format, NULL);
+	AVDictionary *opts = NULL;
+	if (m->buffering && m->is_network)
+		av_dict_set_int(&opts, "buffer_size", m->buffering, 0);
+
+	int ret = avformat_open_input(&m->fmt, m->path, format,
+			opts ? &opts : NULL);
+	av_dict_free(&opts);
+
 	if (ret < 0) {
 		blog(LOG_WARNING, "MP: Failed to open media: '%s'", m->path);
 		return false;
@@ -531,7 +538,9 @@ static void *mp_media_thread(void *opaque)
 		return NULL;
 	}
 
-	mp_media_reset(m);
+	if (!mp_media_reset(m)) {
+		return NULL;
+	}
 
 	for (;;) {
 		bool reset, kill, is_active;
@@ -613,6 +622,7 @@ static inline bool mp_media_init_internal(mp_media_t *m,
 bool mp_media_init(mp_media_t *media,
 		const char *path,
 		const char *format,
+		int buffering,
 		void *opaque,
 		mp_video_cb v_cb,
 		mp_audio_cb a_cb,
@@ -629,6 +639,7 @@ bool mp_media_init(mp_media_t *media,
 	media->stop_cb = stop_cb;
 	media->v_preload_cb = v_preload_cb;
 	media->force_range = force_range;
+	media->buffering = buffering;
 
 	if (path && *path)
 		media->is_network = !!strstr(path, "://");
