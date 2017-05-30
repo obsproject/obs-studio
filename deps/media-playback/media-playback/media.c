@@ -357,6 +357,13 @@ static void mp_media_next_video(mp_media_t *m, bool preload)
 	frame->height = f->height;
 	frame->flip = flip;
 
+	if (m->is_network && !d->got_first_keyframe) {
+		if (!f->key_frame)
+			return;
+
+		d->got_first_keyframe = true;
+	}
+
 	if (preload)
 		m->v_preload_cb(m->opaque, frame);
 	else
