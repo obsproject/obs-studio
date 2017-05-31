@@ -461,6 +461,18 @@ void XCompcapMain::updateSettings(obs_data_t *settings)
 	glXBindTexImageEXT(xdisp, p->glxpixmap, GLX_FRONT_LEFT_EXT, NULL);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	if (!p->windowName.empty()) {
+		blog(LOG_INFO, "[window-capture: '%s'] update settings:\n"
+				"\ttitle: %s\n"
+				"\tclass: %s",
+				obs_source_get_name(p->source),
+				XCompcap::getWindowName(p->win).c_str(),
+				XCompcap::getWindowClass(p->win).c_str());
+		blog(LOG_DEBUG, "\n"
+				"\tid:    %s",
+				std::to_string((long long)p->win).c_str());
+	}
 }
 
 void XCompcapMain::tick(float seconds)
