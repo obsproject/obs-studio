@@ -7,6 +7,10 @@
 class WebPluginEvent;
 PluginStore::PluginStore(QWidget *parent) : QDialog(parent), ui(new Ui::PluginStore)
 {
+    QString qurl;
+    QString qstrLanguage;
+    QString qstrSystem;
+    QString qstrBigVersion;
 
     ui->setupUi(this);
     m_lpWebUI = new QWebEngineView(this);
@@ -17,7 +21,24 @@ PluginStore::PluginStore(QWidget *parent) : QDialog(parent), ui(new Ui::PluginSt
         lpChannel->registerObject(QStringLiteral("QCiscik"), m_lpWebEvent);
         m_lpWebUI->page()->setWebChannel(lpChannel);
         m_lpWebUI->setFixedSize(QSize(890,486));
-        m_lpWebUI->load(QUrl(__DEF_PLUGING_MARKET_URL_));
+
+        qstrLanguage = obs_get_locale();
+#ifdef _WIN32
+        qstrSystem = "2";
+#else   //_MAC
+        qstrSystem = "1";
+#endif // _WIN32
+
+#ifdef __OBS__STUDIO__
+        qstrBigVersion = "1";
+#else
+        qstrBigVersion = "2"
+#endif // __OBS__STUDIO__
+
+        qurl = QString(__DEF_PLUGING_MARKET_URL_).arg(qstrLanguage).arg(qstrSystem).arg(qstrBigVersion);
+        qDebug() << "request page :" <<qurl;
+  
+        m_lpWebUI->load(QUrl(qurl));
         m_lpWebUI->show();
     }
 }
