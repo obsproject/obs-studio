@@ -293,6 +293,8 @@ static void droptest_cap_data_rate(struct rtmp_stream *stream, size_t size)
 
 static int socket_queue_data(RTMPSockBuf *sb, const char *data, int len, void *arg)
 {
+	UNUSED_PARAMETER(sb);
+
 	struct rtmp_stream *stream = arg;
 
 retry_send:
@@ -951,8 +953,9 @@ static inline size_t num_buffered_packets(struct rtmp_stream *stream)
 static void drop_frames(struct rtmp_stream *stream, const char *name,
 		int highest_priority, bool pframes)
 {
+	UNUSED_PARAMETER(pframes);
+
 	struct circlebuf new_buf            = {0};
-	uint64_t         last_drop_dts_usec = 0;
 	int              num_frames_dropped = 0;
 
 #ifdef _DEBUG
@@ -966,8 +969,6 @@ static void drop_frames(struct rtmp_stream *stream, const char *name,
 	while (stream->packets.size) {
 		struct encoder_packet packet;
 		circlebuf_pop_front(&stream->packets, &packet, sizeof(packet));
-
-		last_drop_dts_usec = packet.dts_usec;
 
 		/* do not drop audio data or video keyframes */
 		if (packet.type          == OBS_ENCODER_AUDIO ||

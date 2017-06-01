@@ -2283,6 +2283,8 @@ void OBSBasic::CheckForUpdates(bool manualUpdate)
 	updateCheckThread = new AutoUpdateThread(manualUpdate);
 	updateCheckThread->start();
 #endif
+
+	UNUSED_PARAMETER(manualUpdate);
 }
 
 void OBSBasic::updateCheckFinished()

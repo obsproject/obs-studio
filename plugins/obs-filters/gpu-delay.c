@@ -172,8 +172,9 @@ static void gpu_delay_filter_destroy(void *data)
 
 static void gpu_delay_filter_tick(void *data, float t)
 {
+	UNUSED_PARAMETER(t);
+
 	struct gpu_delay_filter_data *f = data;
-	uint64_t cur_time = obs_get_video_frame_time();
 
 	f->processed_frame = false;
 

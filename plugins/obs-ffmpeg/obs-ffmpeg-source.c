@@ -249,6 +249,8 @@ static void ffmpeg_source_open(struct ffmpeg_source *s)
 
 static void ffmpeg_source_tick(void *data, float seconds)
 {
+	UNUSED_PARAMETER(seconds);
+
 	struct ffmpeg_source *s = data;
 	if (s->destroy_media) {
 		if (s->media_valid) {
