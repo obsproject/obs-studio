@@ -1507,7 +1507,6 @@ static bool update_async_texrender(struct obs_source *source,
 	uint32_t cy = source->async_height;
 
 	float convert_width  = (float)source->async_convert_width;
-	float convert_height = (float)source->async_convert_height;
 
 	gs_effect_t *conv = obs->video.conversion_effect;
 	gs_technique_t *tech = gs_effect_get_technique(conv,

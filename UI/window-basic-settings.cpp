@@ -2053,8 +2053,6 @@ void OBSBasicSettings::LoadAdvancedSettings()
 			"RecRBPrefix");
 	const char *rbSuffix = config_get_string(main->Config(), "SimpleOutput",
 			"RecRBSuffix");
-	int idx;
-
 	loading = true;
 
 	LoadRendererList();
@@ -2109,7 +2107,7 @@ void OBSBasicSettings::LoadAdvancedSettings()
 	bool enableLowLatencyMode = config_get_bool(main->Config(), "Output",
 			"LowLatencyEnable");
 
-	idx = ui->processPriority->findData(processPriority);
+	int idx = ui->processPriority->findData(processPriority);
 	if (idx == -1)
 		idx = ui->processPriority->findData("Normal");
 	ui->processPriority->setCurrentIndex(idx);
