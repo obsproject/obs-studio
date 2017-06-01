@@ -42,6 +42,13 @@ bool PluginDB::InitPluginDB()
             }
             else
                 bRet = true;
+
+            if (!IsExistTable("Config"))
+            {
+                bRet = CreateConfigTable();
+            }
+            else
+                bRet = true;
         }
     }    
     return bRet;
@@ -86,6 +93,62 @@ bool PluginDB::CreatePluginTable()
     return bRet;
 }
 
+bool PluginDB::CreateConfigTable()
+{
+    bool bRet = false;
+    QString qstrSQL("CREATE TABLE Config(name TEXT,value TEXT);");
+    if (!qstrSQL.isEmpty())
+    {
+        QSqlQuery query(m_database);
+        bRet = query.exec(qstrSQL);
+        if (!bRet)
+        {
+            qDebug() << query.lastError();
+        }
+    }
+    return bRet;
+}
+
+bool PluginDB::SetConfigValue(QString qstrName, QString qstrValue)
+{
+    bool bRet = false;
+    QSqlQuery query(m_database);
+    QString qstrSQL;
+    if (GetConfigValue(qstrName).isEmpty())
+    {
+        qstrSQL = QString("INSERT INTO Config (name,value) VALUES(:name,:value);");
+    }
+    else
+    {
+        qstrSQL = QString("UPDATE Config SET value=:value WHERE name=:name;");
+    }
+    
+    query.prepare(qstrSQL);
+    query.bindValue(":name", qstrName);
+    query.bindValue(":value", qstrValue);
+    qDebug() << query.executedQuery();
+    bRet = query.exec();
+    if (!bRet)
+    {
+        qDebug() << query.lastError();
+    }
+
+    return bRet;
+}
+
+QString PluginDB::GetConfigValue(QString qstrName)
+{
+    QString qstrValue = "";
+    QSqlQuery query(m_database);
+    QString qstrSQL = QString("SELECT value FROM Config WHERE name='%1'").arg(qstrName);
+    query.exec(qstrSQL);
+    while (query.next())
+    {
+        qstrValue = query.value("value").toString();
+    }
+    return qstrValue;
+}
+
 bool PluginDB::IsExistTable(QString qstrTabName)
 {
     bool bRet = false;
@@ -95,7 +158,8 @@ bool PluginDB::IsExistTable(QString qstrTabName)
     if (query.next())
     {
         QString qResult = query.value("name").toString();
-        if (qResult.compare(qstrTabName));
+        qDebug() << qResult << "---------" << qstrTabName;
+        if (qResult.compare(qstrTabName) == 0)
         {
             bRet = true;
         }
@@ -133,7 +197,7 @@ bool PluginDB::DeletePluginData(qint64 qiPluginId)
     bool bRet = false;
     QSqlQuery query(m_database);
     QString qstrSQL = QString("DELETE FROM PluginInfo where PluginInfo.plug_id ='%1'").arg(qiPluginId);
-    bRet = query.exec();
+    bRet = query.exec(qstrSQL);
     if (!bRet)
     {
         qDebug() << query.lastError();
@@ -145,22 +209,34 @@ bool PluginDB::UpdatePluginData(qint64 qiPluginId, PluginInfo obj)
 {
     bool bRet = false;
     QSqlQuery query(m_database);
-    QString qstrSQL = QString("UPDATE PluginInfo SET down_size = :down_size,file_size = :file_size,file_name = :file_name,local_path = :local_path,"\
-                                                    "json_data = :json_data,plugin_state = :plugin_state WHERE plug_id = :plug_id");
+    QString qstrSQL = QString("UPDATE PluginInfo SET down_size = :down_size,"\
+                                                    "file_size = :file_size,"\
+                                                    "file_name = :file_name,"\
+                                                    "local_path = :local_path,"\
+                                                    "json_data = :json_data,"\
+                                                    "plugin_state = :plugin_state"\
+                              " WHERE plug_id = :plug_id");
+
     query.prepare(qstrSQL);
-    query.bindValue(":plug_id", qiPluginId);
     query.bindValue(":local_path", obj.local_path);
     query.bindValue(":file_name", obj.file_name);
     query.bindValue(":down_size", obj.down_size);
     query.bindValue(":file_size", obj.file_size);
     query.bindValue(":json_data", obj.json_data);
     query.bindValue(":plugin_state", obj.state);
+    query.bindValue(":plug_id", qiPluginId);
+
     bRet = query.exec();
     if (!bRet)
     {
         qDebug() << query.lastError();
     }
     return bRet;
+}
+
+int PluginDB::GetPluginDataCount(qint64 qiPluginId)
+{
+    return QueryPluginData(qiPluginId).count();
 }
 
 QList<PluginDB::PluginInfo> PluginDB::QueryPluginData(qint64 qiPluginId)

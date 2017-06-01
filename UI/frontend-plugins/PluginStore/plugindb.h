@@ -9,6 +9,8 @@
 #define __DEF_SQL_DRIVER_TYPE__     "QSQLITE"
 #define __DEF_SQL_DATABASE_NAME__   "plugin_database.db"
 
+#define __DEF_CFG_DOWN_PATH_NAME__  "download_path"
+
 class PluginDB
 {
 public:
@@ -39,10 +41,14 @@ public:
     bool OpenDB();
     void CloseDB();
     bool CreatePluginTable();
+    bool CreateConfigTable();
+    bool SetConfigValue(QString qstrName,QString qstrValue);
+    QString GetConfigValue(QString qstrName);
     bool IsExistTable(QString qstrTabName);
     bool InsertPluginData(PluginInfo obj);
     bool DeletePluginData(qint64 qiPluginId);
     bool UpdatePluginData(qint64 qiPluginId, PluginInfo obj);
+    int  GetPluginDataCount(qint64 qiPluginId = -1);
     QList<PluginInfo> QueryPluginData(qint64 qiPluginId = -1);
 private:
     QSqlDatabase m_database;

@@ -13,7 +13,8 @@ PluginStore::PluginStore(QWidget *parent) : QDialog(parent), ui(new Ui::PluginSt
     if (m_lpWebUI != nullptr)
     {
         QWebChannel* lpChannel = new QWebChannel(m_lpWebUI->page());
-        lpChannel->registerObject(QStringLiteral("QCiscik"), new WebPluginEvent(lpChannel, m_lpWebUI));
+        m_lpWebEvent = new WebPluginEvent(lpChannel, m_lpWebUI);
+        lpChannel->registerObject(QStringLiteral("QCiscik"), m_lpWebEvent);
         m_lpWebUI->page()->setWebChannel(lpChannel);
         m_lpWebUI->setFixedSize(QSize(890,486));
         m_lpWebUI->load(QUrl(__DEF_PLUGING_MARKET_URL_));
@@ -31,6 +32,10 @@ void PluginStore::on_close_clicked()
 }
 void PluginStore::closeEvent(QCloseEvent *event)
 {
+    if (m_lpWebEvent != NULL)
+    {
+        m_lpWebEvent->UninitPluginStore();
+    }
     obs_frontend_save();
 }
 void PluginStore::resizeEvent(QResizeEvent *event)

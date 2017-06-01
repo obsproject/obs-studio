@@ -16,7 +16,7 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QJsonArray>
-
+#include <QFileDialog>
 #include "plugindb.h"
 
 static PluginDB m_PluginDB;
@@ -52,10 +52,16 @@ public:
     explicit WebPluginEvent(QObject *parent = 0, QWebEngineView* view = 0);
 	~WebPluginEvent();
 
+    // for return web json value.
     QString     ResultToJsonString(qint64 qiPlugId, bool bResult);
     void        DownloadSuc(qint64 qiPluginId);
     void        RemovePluginMap(qint64 qiPluginId);
-    void        ClearPluingMap();
+    void        ClearPluginMap();
+    void        UninitPluginStore();
+
+    // Find to download plugin item. 
+    bool        FindDownloadListItem(qint64 qiPluginId,PluginItem** lpItem = NULL);
+
 signals:
 	void        DownLoadState(QString strPluginID, qint64 iDownLoadSize, qint64 iTotalSize);
 public	slots:
@@ -68,6 +74,7 @@ public	slots:
 	QString     GetCurrentSaveDirectory();
 	void        SetNewSaveDirectory(QString strDirectory);
     void        OpenUrl(QString url);
+    void        SetDownloadPluginDir();
 
     void        on_web_load_finished(bool ok);
     void        on_web_downfile_start(QWebEngineDownloadItem *item);

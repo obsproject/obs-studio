@@ -23,7 +23,7 @@ PluginItem::PluginItem(qint64 qiPluginId, WebPluginEvent* lpEvent)
 
 PluginItem::~PluginItem()
 {
-
+    qDebug() << "delete PluginItem :" << m_qiPluginId;
 }
 
 void PluginItem::SetPluginDownItem(QWebEngineDownloadItem* lpItem)
@@ -123,18 +123,27 @@ WebPluginEvent::WebPluginEvent(QObject *parent, QWebEngineView* view) : QObject(
                     m_PluginMap.insert(var.plugin_id, lpItem);
                 }
             }
+
+            m_DownPluginDir = m_PluginDB.GetConfigValue(__DEF_CFG_DOWN_PATH_NAME__);
+            if (m_DownPluginDir.isEmpty())
+            {
+                m_DownPluginDir = obs_module_config_path("");
+                qDebug() << m_DownPluginDir;
+            }
         }
     }
 }
+
 WebPluginEvent::~WebPluginEvent()
 {
-	
+    qDebug() << "stop pluging store.";
+    return;
 }
 
 QString WebPluginEvent::ResultToJsonString(qint64 qiPlugId, bool bResult)
 {
     QJsonObject json;
-    json.insert("plugid", qiPlugId);
+    json.insert("id", qiPlugId);
     json.insert("result", bResult);
 
     QJsonDocument document;
@@ -153,33 +162,62 @@ void WebPluginEvent::DownloadSuc(qint64 qiPluginId)
 
 void WebPluginEvent::RemovePluginMap(qint64 qiPluginId)
 {
-    QMap<qint64, PluginItem*>::const_iterator itor = m_PluginMap.constFind(qiPluginId);
-    if (itor != m_PluginMap.constEnd())
+    PluginItem* lpItem = NULL;
+
+    FindDownloadListItem(qiPluginId , &lpItem);
+    if (lpItem != NULL)
     {
-        PluginItem* lpItem = *itor;
-        if (lpItem != NULL)
+        QWebEngineDownloadItem* lpDownItem = lpItem->GetPluginDownItem();
+        if (lpDownItem != NULL)
         {
-            QWebEngineDownloadItem* lpDownItem = lpItem->GetPluginDownItem();
-            if (lpDownItem != NULL)
-            {
-                lpDownItem->finished();
-                delete lpItem;
-                lpItem = NULL;
-            }
+            lpDownItem->cancel();
+            delete lpItem;
+            lpItem = NULL;
         }
-        m_PluginMap.remove(qiPluginId);
     }
+    m_PluginMap.remove(qiPluginId);
 }
 
-void WebPluginEvent::ClearPluingMap()
+void WebPluginEvent::ClearPluginMap()
 {
     qint64 qiPluginId;
     QMap<qint64, PluginItem*>::const_iterator itor = m_PluginMap.constBegin();
     while (itor != m_PluginMap.constEnd())
     {
-        qiPluginId = itor.key();
-        RemovePluginMap(qiPluginId);
+
+        PluginItem* lpItem = const_cast<PluginItem*>(itor.value());
+        if (lpItem != NULL)
+        {
+            QWebEngineDownloadItem* lpDownItem = lpItem->GetPluginDownItem();
+            if (lpDownItem != NULL)
+            {
+                lpDownItem->cancel();
+                delete lpItem;
+                lpItem = NULL;
+            }
+        }
+        m_PluginMap.remove(qiPluginId);
+
+        ++itor;
     }
+}
+
+void WebPluginEvent::UninitPluginStore()
+{
+    ClearPluginMap();
+    m_PluginDB.CloseDB();
+}
+
+bool WebPluginEvent::FindDownloadListItem(qint64 qiPluginId,PluginItem** lpItem)
+{
+    bool bRet = false;
+    QMap<qint64, PluginItem*>::const_iterator itor = m_PluginMap.constFind(qiPluginId);
+    if (itor != m_PluginMap.constEnd())
+    {
+        *lpItem = const_cast<PluginItem*>(itor.value());
+        bRet = true;
+    }
+    return bRet;
 }
 
 QVariant WebPluginEvent::GetLocalPluginList()
@@ -202,6 +240,7 @@ QVariant WebPluginEvent::GetLocalPluginList()
 
     return	qJsonDocument.toJson(QJsonDocument::Compact);
 }
+
 QString	WebPluginEvent::GetLocalPluginVersion(QString strPluginID)
 {
     return	QString("1.1.1.1");
@@ -219,7 +258,7 @@ void WebPluginEvent::DownLoadPluginUrl(const QVariantMap& param)
             qstrUrl = qjsonObj.value("file_url").toString();
             if (qstrUrl.isEmpty())
                 return;
-
+            qDebug() << qstrUrl;
             m_downInfoMap.insert(qstrUrl, qjsonObj);
             m_lpView->load(QUrl(qstrUrl));
         }
@@ -228,26 +267,35 @@ void WebPluginEvent::DownLoadPluginUrl(const QVariantMap& param)
 }
 QString WebPluginEvent::InstallPlugin(const QVariant& param)
 {
-    bool bRet = false;
-    qint64 qiPlugId = param.toInt();
-    QMap<qint64, PluginItem*>::const_iterator it = m_PluginMap.constFind(qiPlugId);
-    if (it != m_PluginMap.constEnd())
-    {
-        PluginItem* lpItem = *it;
-        if (lpItem != NULL && lpItem->GetPluingData().state == PluginDB::CANINSTALL)
-        {
-            QString qstrFileName = lpItem->GetPluingData().file_name;
-            QString qstrPath = lpItem->GetPluingData().local_path;
-            qDebug() << "install file" << qstrPath << "name :" << qstrFileName;
-            qstrFileName = "CalabashWinCapture";
-            if (WebPluginEvent::InstallPluginZip(qstrPath, qstrFileName));
-            {
+    bool                           bRet       = false;
+    qint64                         qiPluginId = param.toInt();
+    PluginItem*                    lpItem     = NULL;
+    PluginDB::PluginInfo           data;
+    QString                        qstrPath;
+    QString                        qstrName;
 
+    FindDownloadListItem(qiPluginId,&lpItem);
+    if (lpItem != NULL)
+    {
+        data = lpItem->GetPluingData();
+        qstrPath = data.local_path;
+        qstrName = data.file_name;
+
+        if (data.state == PluginDB::CANINSTALL)
+        {
+            qstrName = "CalabashWinCapture";
+            if (WebPluginEvent::InstallPluginZip(data.local_path, data.file_name));
+            {
+                data.state = PluginDB::INSTALLED;
+                lpItem->SetPluginData(data);
+
+                m_PluginDB.UpdatePluginData(qiPluginId, data);
+                qDebug() << "install file" << qstrPath << "name :" << qstrName;
+                bRet = true;
             }
         }
-        bRet = true;
     }
-    return ResultToJsonString(qiPlugId, bRet);
+    return ResultToJsonString(qiPluginId, bRet);
 }
 QString WebPluginEvent::UninstallPlugin(const QVariant& param)
 {
@@ -277,6 +325,20 @@ void WebPluginEvent::OpenUrl(QString url)
     QDesktopServices::openUrl(QUrl(url));
 }
 
+void WebPluginEvent::SetDownloadPluginDir()
+{
+    m_DownPluginDir = QFileDialog::getExistingDirectory(NULL, tr("Open File"), m_DownPluginDir,
+        QFileDialog::ShowDirsOnly|QFileDialog::DontResolveSymlinks);
+
+    if (!m_DownPluginDir.isEmpty())
+    {
+        m_PluginDB.SetConfigValue(__DEF_CFG_DOWN_PATH_NAME__, m_DownPluginDir);
+    }
+
+    qDebug() << m_DownPluginDir;
+    return;
+}
+
 void WebPluginEvent::on_web_load_finished(bool ok)
 {
     return;
@@ -284,34 +346,90 @@ void WebPluginEvent::on_web_load_finished(bool ok)
 
 void WebPluginEvent::on_web_downfile_start(QWebEngineDownloadItem *item)
 {
-    qint64  qiPluginId = 0;
-    QString qstrUrl = item->url().toString();
-    QString qstrPath = item->path();
+    qint64          qiPluginId  = 0;
+    PluginItem*     lpPlugItem  = NULL;
+    QJsonObject     obj;
+    QString         qstrUrl;
+    QString         qstrFileName;
+    QString         qstrPath;
+
+    if (item == NULL)
+        return;
+
+    qstrUrl = item->url().toString();
+    QRegExp rx("[^\/]+$");
+    
+    int pos = qstrUrl.indexOf(rx);
+    if (pos > 0)
+    {
+        qstrFileName = rx.cap(0);
+        qstrPath.append(m_DownPluginDir);
+        if (qstrPath.right(0) != "\\" || qstrPath.right(0) != "/")
+        {
+            qstrPath.append("/");
+        }
+        qstrPath.append(qstrFileName);
+        qDebug() << qstrPath;
+    }
 
     QMap<QString, QJsonObject>::const_iterator iter = m_downInfoMap.constFind(qstrUrl);
     if (iter != m_downInfoMap.constEnd())
     {
-        QJsonObject obj = *iter;
-        qiPluginId = obj.value("plug_id").toInt();
+        obj = iter.value();
+        qiPluginId = obj.value("id").toInt();
+
         if (QFile::exists(qstrPath))
-            QFile::remove(qstrPath);
-
-        PluginItem* lpPlugItem = new PluginItem(qiPluginId, this);
-        if (item != NULL)
         {
-            lpPlugItem->SetPluginDownItem(item);
-
-            obj.insert("local_path",qstrPath);
-            lpPlugItem->SetPluginData(obj, PluginDB::DOWNSTART);
-            m_PluginMap.insert(qiPluginId, lpPlugItem);
-
-            //add web data to database
-            m_PluginDB.InsertPluginData(lpPlugItem->GetPluingData());
-
-            //already recive json ,and remove item
-            m_downInfoMap.remove(qstrUrl);
-            item->accept();
+            if (QFile::remove(qstrPath))
+            {
+                m_PluginDB.DeletePluginData(qiPluginId);
+            }
+            else
+            {
+                return;
+            }
         }
+        item->setPath(qstrPath);
+
+        obj.insert("local_path", qstrPath);
+        if (FindDownloadListItem(qiPluginId,&lpPlugItem))
+        {
+            if (lpPlugItem != NULL)
+            {
+                lpPlugItem->SetPluginData(obj, PluginDB::DOWNSTART);
+            }
+            else
+            {
+                m_PluginMap.remove(qiPluginId);
+                return;
+            }
+        }
+        else
+        {
+            lpPlugItem = new PluginItem(qiPluginId, this);
+        }
+
+        lpPlugItem->SetPluginDownItem(item);
+
+        //add download plugin local dir
+        lpPlugItem->SetPluginData(obj, PluginDB::DOWNSTART);
+        m_PluginMap.insert(qiPluginId, lpPlugItem);
+
+        //add web data to database
+        //note: if the plugin already downloaded , it will again down.
+        if (m_PluginDB.GetPluginDataCount(qiPluginId) > 0)
+        {
+            m_PluginDB.UpdatePluginData(qiPluginId, lpPlugItem->GetPluingData());
+        }
+        else
+        {
+            m_PluginDB.InsertPluginData(lpPlugItem->GetPluingData());
+        }
+           
+        item->accept();
+
+        //already recive json ,remove item
+        m_downInfoMap.remove(qstrUrl);
     }
 }
 
@@ -461,7 +579,7 @@ void WebPluginEvent::SetLabelDelete(QString strPluginFile)
 		}
 	}
 }
-bool	WebPluginEvent::CheckPluginRuning(QString strPluginName)
+bool WebPluginEvent::CheckPluginRuning(QString strPluginName)
 {
 	
 	QPair<bool, QString> callBackParam = { false, strPluginName };
@@ -478,7 +596,8 @@ bool	WebPluginEvent::CheckPluginRuning(QString strPluginName)
 	return callBackParam.first;
 
 }
-void	WebPluginEvent::MakePluginPath(QString strPluginName, QString& strPluginBin, QString& strPluginData)
+
+void WebPluginEvent::MakePluginPath(QString strPluginName, QString& strPluginBin, QString& strPluginData)
 {
 	obs_module_t* hModule = obs_current_module();
 	QString strBinPath = QString::fromUtf8(obs_get_module_binary_path(hModule));
@@ -486,7 +605,8 @@ void	WebPluginEvent::MakePluginPath(QString strPluginName, QString& strPluginBin
 	strPluginBin=strBinPath.replace(QRegularExpression("pluginstore"), strPluginName);
 	strPluginData=strDataPath.replace(QRegularExpression("pluginstore"), strPluginName);
 }
-bool	WebPluginEvent::LoadPlugin(QString	strPluginName)
+
+bool WebPluginEvent::LoadPlugin(QString	strPluginName)
 {
 	QString strBinPath;
 	QString	strDataPath;
