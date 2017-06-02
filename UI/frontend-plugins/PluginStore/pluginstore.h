@@ -7,6 +7,7 @@
 #include <string>
 
 #include <QMainWindow>
+#include <QMouseEvent>
 #include <QAction>
 #include <QWebEngineView>
 #include <qwebchannel>
@@ -28,15 +29,21 @@ private:
     QWebEngineView* m_lpWebUI;
     WebPluginEvent* m_lpWebEvent;
     std::unique_ptr<Ui_PluginStore> ui;
+    QPoint move_point;
+    bool mouse_press = false;
 
 public:
     explicit PluginStore(QWidget *parent = 0);
     ~PluginStore();
 
 	void        closeEvent(QCloseEvent *event) override;
-	void        resizeEvent(QResizeEvent *event)override;
+	void        resizeEvent(QResizeEvent *event) override;
+    void        mousePressEvent(QMouseEvent *event) override;
+    void        mouseReleaseEvent(QMouseEvent *event) override;
+    void        mouseMoveEvent(QMouseEvent *event) override;
 private slots:
-	void        on_close_clicked();
+    void        on_closeButton_clicked();
+    void        on_setButton_clicked();
 };
 
 #endif // PLUGINSTORE_H

@@ -11,8 +11,30 @@ PluginStore::PluginStore(QWidget *parent) : QDialog(parent), ui(new Ui::PluginSt
     QString qstrLanguage;
     QString qstrSystem;
     QString qstrBigVersion;
+    QPalette pe;
 
     ui->setupUi(this);
+    ui->horizontalGroupBox->setFixedWidth(890);
+    ui->setButton->setStyleSheet("QPushButton{border:0px;}");
+    ui->setButton->setIcon(QPixmap(":/ico_Settings.png"));
+    ui->setButton->setIconSize(QPixmap(":/ico_Settings.png").size());
+    ui->setButton->resize(QPixmap(":/ico_Settings.png").size());
+    ui->setButton->move(QPoint(840, 13));
+
+    ui->closeButton->setStyleSheet("QPushButton{border:0px;}");
+    ui->closeButton->setIcon(QPixmap(":/ico_close.png"));
+    ui->closeButton->setIconSize(QPixmap(":/ico_close.png").size());
+    ui->closeButton->resize(QPixmap(":/ico_close.png").size());
+    ui->closeButton->move(QPoint(860,13));
+    pe.setColor(QPalette::WindowText, QColor(101,101,101,255));
+    ui->label->setPalette(pe);
+
+
+    if (this->objectName().isEmpty())
+        ui->label->setText(QStringLiteral("PluginStore"));
+    else
+        ui->label->setText(QApplication::translate("PluginStore", "PluginStore", 0));
+
     m_lpWebUI = new QWebEngineView(this);
     if (m_lpWebUI != nullptr)
     {
@@ -20,7 +42,8 @@ PluginStore::PluginStore(QWidget *parent) : QDialog(parent), ui(new Ui::PluginSt
         m_lpWebEvent = new WebPluginEvent(lpChannel, m_lpWebUI);
         lpChannel->registerObject(QStringLiteral("QCiscik"), m_lpWebEvent);
         m_lpWebUI->page()->setWebChannel(lpChannel);
-        m_lpWebUI->setFixedSize(QSize(890,486));
+        m_lpWebUI->move(QPoint(0, 40));
+        m_lpWebUI->setFixedSize(QSize(890,526));
 
         qstrLanguage = obs_get_locale();
 #ifdef _WIN32
@@ -47,10 +70,17 @@ PluginStore::~PluginStore()
 {
 
 }
-void PluginStore::on_close_clicked()
+
+void PluginStore::on_closeButton_clicked()
 {
     done(0);
 }
+
+void PluginStore::on_setButton_clicked()
+{
+
+}
+
 void PluginStore::closeEvent(QCloseEvent *event)
 {
     if (m_lpWebEvent != NULL)
@@ -61,8 +91,31 @@ void PluginStore::closeEvent(QCloseEvent *event)
 }
 void PluginStore::resizeEvent(QResizeEvent *event)
 {
-    //if (m_lpWebUI != nullptr)
-    //    m_lpWebUI->resize(size());
+    if (m_lpWebUI != nullptr)
+        m_lpWebUI->resize(size());
+}
+
+void PluginStore::mousePressEvent(QMouseEvent *event)
+{
+    if (event->button() == Qt::LeftButton)
+    {
+        mouse_press = true;
+        move_point = event->pos();
+    }
+}
+
+void PluginStore::mouseReleaseEvent(QMouseEvent *event)
+{
+    mouse_press = false;
+}
+
+void PluginStore::mouseMoveEvent(QMouseEvent *event)
+{
+    if (mouse_press)
+    {
+        QPoint move_pos = event->globalPos();
+        this->move(move_pos - move_point);
+    }
 }
 
 extern "C" void FreePluginStore()
@@ -86,7 +139,8 @@ extern "C" void InitPluginStore()
         obs_frontend_push_ui_translation(obs_module_get_string);
         QMainWindow *window = (QMainWindow*)obs_frontend_get_main_window();
         PluginStore ss(window);
-        ss.setFixedSize(QSize(890,486));
+        ss.setFixedSize(QSize(890,526));
+        ss.setWindowFlags(Qt::FramelessWindowHint | Qt::Dialog);
         ss.exec();
     };
     obs_frontend_add_event_callback(OBSEvent, nullptr);
