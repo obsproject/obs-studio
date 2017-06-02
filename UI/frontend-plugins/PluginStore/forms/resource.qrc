@@ -1,5 +1,6 @@
 <RCC>
     <qresource prefix="/">
-        <file>PluginInfo.sql</file>
+        <file>ico_close.png</file>
+        <file>ico_Settings.png</file>
     </qresource>
 </RCC>
