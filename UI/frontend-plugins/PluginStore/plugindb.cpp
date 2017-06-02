@@ -246,8 +246,9 @@ QList<PluginDB::PluginInfo> PluginDB::QueryPluginData(qint64 qiPluginId)
     QString qstrSQL = QString("SELECT * FROM PluginInfo");
     if (qiPluginId != -1)
     {
-        qstrSQL.append(" WHERE plug_id = '%1'").arg(qiPluginId);
+        qstrSQL.append(QString(" WHERE plug_id = '%1'").arg(qiPluginId));
     }
+    qDebug() << qstrSQL;
     query.exec(qstrSQL);
     while (query.next())
     {

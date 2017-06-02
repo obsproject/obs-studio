@@ -16,7 +16,7 @@
 #include "ui_pluginstore.h"
 
 //#define __DEF_PLUGING_MARKET_URL_           "D://html/test.html"
-#define __DEF_PLUGING_MARKET_URL_             "http://plugin.ciscik.com/obs-store/test1.html?language=%1&system=%2&big_version=%3"
+#define __DEF_PLUGING_MARKET_URL_             "http://plugin.ciscik.com/obs-store/index.html?language=%1&system=%2&big_version=%3"
 #define __OBS__STUDIO__         
 
 

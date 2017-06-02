@@ -54,6 +54,7 @@ public:
 
     // for return web json value.
     QString     ResultToJsonString(qint64 qiPlugId, bool bResult);
+    void        DownloadCancel(qint64 qiPluginId);
     void        DownloadSuc(qint64 qiPluginId);
     void        RemovePluginMap(qint64 qiPluginId);
     void        ClearPluginMap();
@@ -74,13 +75,13 @@ public	slots:
 	QString     GetCurrentSaveDirectory();
 	void        SetNewSaveDirectory(QString strDirectory);
     void        OpenUrl(QString url);
-    void        SetDownloadPluginDir();
+    QString     SetDownloadPluginDir();
 
     void        on_web_load_finished(bool ok);
     void        on_web_downfile_start(QWebEngineDownloadItem *item);
 public:
 	static	void	RemoveAllLabelFile();
-	static	void	SetLabelDelete(QString strPluginFile);
+	static	bool	SetLabelDelete(QString strPluginFile);
 	static  bool	InstallPluginZip(QString strZipFile, QString strPluginName);
 	static  bool	CheckPluginRuning(QString strPluginName);
 	static  void	MakePluginPath(QString strPluginName, QString& strPluginBin, QString& strPluginData);

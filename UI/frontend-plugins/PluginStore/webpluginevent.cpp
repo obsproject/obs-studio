@@ -86,9 +86,14 @@ void PluginItem::on_web_downfile_finished()
             {
                 qDebug() << "file:" << m_qiPluginId << " completed";
                 m_PluginData.state = PluginDB::CANINSTALL;
+                m_lpEvent->DownloadSuc(m_qiPluginId);
             }
             break;
         case QWebEngineDownloadItem::DownloadCancelled:
+            {
+                qDebug() << "file:" << m_qiPluginId << " cancel";
+                m_lpEvent->DownloadCancel(m_qiPluginId);
+            }
             break;
         case QWebEngineDownloadItem::DownloadInterrupted:
             {
@@ -154,6 +159,11 @@ QString WebPluginEvent::ResultToJsonString(qint64 qiPlugId, bool bResult)
     return json_str;
 }
 
+void WebPluginEvent::DownloadCancel(qint64 qiPluginId)
+{
+    RemovePluginMap(qiPluginId);
+}
+
 void WebPluginEvent::DownloadSuc(qint64 qiPluginId)
 {
 
@@ -163,19 +173,15 @@ void WebPluginEvent::DownloadSuc(qint64 qiPluginId)
 void WebPluginEvent::RemovePluginMap(qint64 qiPluginId)
 {
     PluginItem* lpItem = NULL;
-
-    FindDownloadListItem(qiPluginId , &lpItem);
-    if (lpItem != NULL)
+    if (FindDownloadListItem(qiPluginId, &lpItem))
     {
-        QWebEngineDownloadItem* lpDownItem = lpItem->GetPluginDownItem();
-        if (lpDownItem != NULL)
+        if (lpItem != NULL)
         {
-            lpDownItem->cancel();
             delete lpItem;
             lpItem = NULL;
         }
+        m_PluginMap.remove(qiPluginId);
     }
-    m_PluginMap.remove(qiPluginId);
 }
 
 void WebPluginEvent::ClearPluginMap()
@@ -192,11 +198,8 @@ void WebPluginEvent::ClearPluginMap()
             if (lpDownItem != NULL)
             {
                 lpDownItem->cancel();
-                delete lpItem;
-                lpItem = NULL;
             }
         }
-        m_PluginMap.remove(qiPluginId);
 
         ++itor;
     }
@@ -283,9 +286,11 @@ QString WebPluginEvent::InstallPlugin(const QVariant& param)
 
         if (data.state == PluginDB::CANINSTALL)
         {
-            qstrName = "CalabashWinCapture";
+            // don't need
+            //qstrName = "CalabashWinCapture";
             if (WebPluginEvent::InstallPluginZip(data.local_path, data.file_name));
             {
+
                 data.state = PluginDB::INSTALLED;
                 lpItem->SetPluginData(data);
 
@@ -299,16 +304,42 @@ QString WebPluginEvent::InstallPlugin(const QVariant& param)
 }
 QString WebPluginEvent::UninstallPlugin(const QVariant& param)
 {
-    qint64 qiPlugId = param.toDouble();
-    
-    return ResultToJsonString(qiPlugId, true);
+    bool            bRet = false;
+    PluginItem*     lpItem = NULL;
+    qint64          qiPluginId = param.toDouble();
+
+    QList<PluginDB::PluginInfo> list = m_PluginDB.QueryPluginData(qiPluginId);
+    if (list.count() > 0)
+    {
+        PluginDB::PluginInfo info = list.at(0);
+        bRet = FindDownloadListItem(qiPluginId, &lpItem);
+        if (lpItem != NULL && info.state == PluginDB::INSTALLED)
+        {
+            bRet = SetLabelDelete(info.file_name);
+            if (bRet)
+                RemovePluginMap(qiPluginId);
+        }
+        else
+            bRet = false;
+    }
+    if (bRet)
+    {
+        bRet = m_PluginDB.DeletePluginData(qiPluginId);
+    }
+    return ResultToJsonString(qiPluginId, bRet);
 }
 
 QString WebPluginEvent::RemoveFilePlugin(const QVariant& param)
 {
-    qint64 qiPlugId = param.toDouble();
+    bool bRet = false;
+    qint64 qiPluginId = param.toDouble();
 
-    return ResultToJsonString(qiPlugId, true);
+
+    if (bRet)
+    {
+        bRet = m_PluginDB.DeletePluginData(qiPluginId);
+    }
+    return ResultToJsonString(qiPluginId, bRet);
 }
 
 QString WebPluginEvent::GetCurrentSaveDirectory()
@@ -325,7 +356,7 @@ void WebPluginEvent::OpenUrl(QString url)
     QDesktopServices::openUrl(QUrl(url));
 }
 
-void WebPluginEvent::SetDownloadPluginDir()
+QString WebPluginEvent::SetDownloadPluginDir()
 {
     m_DownPluginDir = QFileDialog::getExistingDirectory(NULL, tr("Open File"), m_DownPluginDir,
         QFileDialog::ShowDirsOnly|QFileDialog::DontResolveSymlinks);
@@ -336,7 +367,7 @@ void WebPluginEvent::SetDownloadPluginDir()
     }
 
     qDebug() << m_DownPluginDir;
-    return;
+    return m_DownPluginDir;
 }
 
 void WebPluginEvent::on_web_load_finished(bool ok)
@@ -566,18 +597,19 @@ bool WebPluginEvent::InstallPluginZip(QString strZipFile, QString strPluginName)
 	}
 	return true;
 }
-void WebPluginEvent::SetLabelDelete(QString strPluginFile)
+bool WebPluginEvent::SetLabelDelete(QString strPluginFile)
 {
+    bool bRet = false;
 	QFileInfo f(strPluginFile);
 	if (f.exists()&&!f.isDir())
 	{
 		QString strExt = f.suffix();
 		if (strExt != "old")
 		{
-			//if(!QFile::exists(strPluginFile + ".old"))
-			QFile::rename(strPluginFile, strPluginFile + ".old");
+			bRet = QFile::rename(strPluginFile, strPluginFile + ".old");
 		}
 	}
+    return bRet;
 }
 bool WebPluginEvent::CheckPluginRuning(QString strPluginName)
 {
