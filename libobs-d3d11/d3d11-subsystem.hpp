@@ -208,6 +208,7 @@ enum class gs_type {
 	gs_vertex_buffer,
 	gs_index_buffer,
 	gs_texture_2d,
+	gs_texture_3d,
 	gs_zstencil_buffer,
 	gs_stage_surface,
 	gs_sampler_state,
@@ -386,6 +387,54 @@ struct gs_texture_2d : gs_texture {
 
 	gs_texture_2d(gs_device_t *device, uint32_t handle);
 };
+
+struct gs_texture_3d : gs_texture {
+	ComPtr<ID3D11Texture3D>          texture;
+	ComPtr<ID3D11RenderTargetView>   renderTarget[6];
+	ComPtr<IDXGISurface1>            gdiSurface;
+
+	uint32_t        width = 0, height = 0, depth = 0;
+	DXGI_FORMAT     dxgiFormat = DXGI_FORMAT_UNKNOWN;
+	bool            isRenderTarget = false;
+	bool            isGDICompatible = false;
+	bool            isDynamic = false;
+	bool            isShared = false;
+	bool            genMipmaps = false;
+	uint32_t        sharedHandle = 0;
+
+	vector<vector<uint8_t>> data;
+	vector<D3D11_SUBRESOURCE_DATA> srd;
+	D3D11_TEXTURE3D_DESC td = {};
+
+	void InitSRD(vector<D3D11_SUBRESOURCE_DATA> &srd);
+	void InitTexture(const uint8_t **data);
+	void InitResourceView();
+	void InitRenderTargets();
+	void BackupTexture(const uint8_t **data);
+
+	inline void Rebuild(ID3D11Device *dev);
+
+	inline void Release()
+	{
+		texture.Release();
+		for (auto &rt : renderTarget)
+			rt.Release();
+		gdiSurface.Release();
+		shaderRes.Release();
+	}
+
+	inline gs_texture_3d()
+		: gs_texture(GS_TEXTURE_3D, 0, GS_UNKNOWN)
+	{
+	}
+
+	gs_texture_3d(gs_device_t *device, uint32_t width, uint32_t height, uint32_t depth,
+		gs_color_format colorFormat, uint32_t levels,
+		const uint8_t **data, uint32_t flags, bool gdiCompatible, bool shared);
+
+	gs_texture_3d(gs_device_t *device, uint32_t handle);
+};
+
 
 struct gs_zstencil_buffer : gs_obj {
 	ComPtr<ID3D11Texture2D>        texture;
