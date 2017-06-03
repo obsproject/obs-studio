@@ -57,6 +57,55 @@ void matrix4_from_axisang(struct matrix4 *dst, const struct axisang *aa)
 	matrix4_from_quat(dst, &q);
 }
 
+void matrix4_add(struct matrix4 *dst, const struct matrix4 *m1,
+		const struct matrix4 *m2)
+{
+	/* Brute Force */
+	dst->x.x = m1->x.x + m2->x.x;
+	dst->x.y = m1->x.y + m2->x.y;
+	dst->x.z = m1->x.z + m2->x.z;
+	dst->x.w = m1->x.w + m2->x.w;
+
+	dst->y.x = m1->y.x + m2->y.x;
+	dst->y.y = m1->y.y + m2->y.y;
+	dst->y.z = m1->y.z + m2->y.z;
+	dst->y.w = m1->y.w + m2->y.w;
+
+	dst->z.x = m1->z.x + m2->z.x;
+	dst->z.y = m1->z.y + m2->z.y;
+	dst->z.z = m1->z.z + m2->z.z;
+	dst->z.w = m1->z.w + m2->z.w;
+
+	dst->t.x = m1->t.x + m2->t.x;
+	dst->t.y = m1->t.y + m2->t.y;
+	dst->t.z = m1->t.z + m2->t.z;
+	dst->t.w = m1->t.w + m2->t.w;
+}
+
+void matrix4_sub(struct matrix4 *dst, const struct matrix4 *m1,
+		const struct matrix4 *m2)
+{
+	/* Brute Force */
+	dst->x.x = m1->x.x - m2->x.x;
+	dst->x.y = m1->x.y - m2->x.y;
+	dst->x.z = m1->x.z - m2->x.z;
+	dst->x.w = m1->x.w - m2->x.w;
+
+	dst->y.x = m1->y.x - m2->y.x;
+	dst->y.y = m1->y.y - m2->y.y;
+	dst->y.z = m1->y.z - m2->y.z;
+	dst->y.w = m1->y.w - m2->y.w;
+
+	dst->z.x = m1->z.x - m2->z.x;
+	dst->z.y = m1->z.y - m2->z.y;
+	dst->z.z = m1->z.z - m2->z.z;
+	dst->z.w = m1->z.w - m2->z.w;
+
+	dst->t.x = m1->t.x - m2->t.x;
+	dst->t.y = m1->t.y - m2->t.y;
+	dst->t.z = m1->t.z - m2->t.z;
+	dst->t.w = m1->t.w - m2->t.w;
+}
 void matrix4_mul(struct matrix4 *dst, const struct matrix4 *m1,
 		const struct matrix4 *m2)
 {
