@@ -155,7 +155,7 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 
 		for (int i = 0; i < menuActions.count(); i++) {
 			QAction *action = menuActions[i];
-			QVariant v = action->property("file_name");
+			QVariant v = action->property("fileName");
 
 			if (v.typeName() != nullptr) {
 				if (action->text() == qstrCollection) {
