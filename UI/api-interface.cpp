@@ -219,6 +219,11 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 		return main->outputHandler->StreamingActive();
 	}
 
+	void obs_frontend_set_streaming_service(obs_service_t *service) override
+	{
+		main->SetService(service);
+	}
+
 	void obs_frontend_recording_start(void) override
 	{
 		QMetaObject::invokeMethod(main, "StartRecording");

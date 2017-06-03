@@ -35,6 +35,7 @@ struct obs_frontend_callbacks {
 	virtual void obs_frontend_streaming_start(void)=0;
 	virtual void obs_frontend_streaming_stop(void)=0;
 	virtual bool obs_frontend_streaming_active(void)=0;
+	virtual void obs_frontend_set_streaming_service(obs_service_t *service)=0;
 
 	virtual void obs_frontend_recording_start(void)=0;
 	virtual void obs_frontend_recording_stop(void)=0;
