@@ -158,7 +158,8 @@ static void color_correction_filter_update(void *data, obs_data_t *settings)
 			SETTING_OPACITY) * 0.01f;
 
 	/* Hue is the radian of 0 to 360 degrees. */
-	float half_angle = 0.5f * (float)(filter->hue_shift / (180.0f / M_PI));
+	float half_angle = 0.5f * (float)(filter->hue_shift /
+			(180.0f / M_PI));
 
 	/* Pseudo-Quaternion To Matrix. */
 	float rot_quad1 = root3 * (float)sin(half_angle);
@@ -333,7 +334,8 @@ static void color_correction_filter_render(void *data, gs_effect_t *effect)
 
 	/* Now pass the interface variables to the .effect file. */
 	gs_effect_set_vec3(filter->gamma_param, &filter->gamma);
-	gs_effect_set_matrix4(filter->final_matrix_param, &filter->final_matrix);
+	gs_effect_set_matrix4(filter->final_matrix_param,
+			&filter->final_matrix);
 
 	obs_source_process_filter_end(filter->context, filter->effect, 0, 0);
 
@@ -400,14 +402,14 @@ static void color_correction_filter_defaults(obs_data_t *settings)
  * reading your code) to follow this convention.
  */
 struct obs_source_info color_filter = {
-	.id = "color_filter",
-	.type = OBS_SOURCE_TYPE_FILTER,
-	.output_flags = OBS_SOURCE_VIDEO,
-	.get_name = color_correction_filter_name,
-	.create = color_correction_filter_create,
-	.destroy = color_correction_filter_destroy,
-	.video_render = color_correction_filter_render,
-	.update = color_correction_filter_update,
-	.get_properties = color_correction_filter_properties,
-	.get_defaults = color_correction_filter_defaults
+	.id =                          "color_filter",
+	.type =                         OBS_SOURCE_TYPE_FILTER,
+	.output_flags =                 OBS_SOURCE_VIDEO,
+	.get_name =                     color_correction_filter_name,
+	.create =                       color_correction_filter_create,
+	.destroy =                      color_correction_filter_destroy,
+	.video_render =                 color_correction_filter_render,
+	.update =                       color_correction_filter_update,
+	.get_properties =               color_correction_filter_properties,
+	.get_defaults =                 color_correction_filter_defaults
 };
