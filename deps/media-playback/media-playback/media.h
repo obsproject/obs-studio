@@ -80,6 +80,8 @@ struct mp_media {
 	int64_t start_ts;
 	int64_t base_ts;
 
+	uint64_t interrupt_poll_ts;
+
 	pthread_mutex_t mutex;
 	os_sem_t *sem;
 	bool stopping;

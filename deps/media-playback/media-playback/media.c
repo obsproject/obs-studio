@@ -486,6 +486,23 @@ static inline bool mp_media_eof(mp_media_t *m)
 	return eof;
 }
 
+static int interrupt_callback(void *data)
+{
+	mp_media_t *m = data;
+	bool stop = false;
+	uint64_t ts = os_gettime_ns();
+
+	if ((ts - m->interrupt_poll_ts) > 20000000) {
+		pthread_mutex_lock(&m->mutex);
+		stop = m->kill || m->stopping;
+		pthread_mutex_unlock(&m->mutex);
+
+		m->interrupt_poll_ts = ts;
+	}
+
+	return stop;
+}
+
 static bool init_avformat(mp_media_t *m)
 {
 	AVInputFormat *format = NULL;
@@ -500,6 +517,10 @@ static bool init_avformat(mp_media_t *m)
 	AVDictionary *opts = NULL;
 	if (m->buffering && m->is_network)
 		av_dict_set_int(&opts, "buffer_size", m->buffering, 0);
+
+	m->fmt = avformat_alloc_context();
+	m->fmt->interrupt_callback.callback = interrupt_callback;
+	m->fmt->interrupt_callback.opaque = m;
 
 	int ret = avformat_open_input(&m->fmt, m->path, format,
 			opts ? &opts : NULL);
@@ -695,9 +716,9 @@ void mp_media_free(mp_media_t *media)
 	mp_kill_thread(media);
 	mp_decode_free(&media->v);
 	mp_decode_free(&media->a);
+	avformat_close_input(&media->fmt);
 	pthread_mutex_destroy(&media->mutex);
 	os_sem_destroy(media->sem);
-	avformat_close_input(&media->fmt);
 	sws_freeContext(media->swscale);
 	av_freep(&media->scale_pic[0]);
 	bfree(media->path);
