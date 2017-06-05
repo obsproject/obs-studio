@@ -78,7 +78,10 @@ void PluginStore::on_closeButton_clicked()
 
 void PluginStore::on_setButton_clicked()
 {
-
+    if (m_lpWebEvent != NULL)
+    {
+        m_lpWebEvent->SetDownloadPluginDir();
+    }
 }
 
 void PluginStore::closeEvent(QCloseEvent *event)
