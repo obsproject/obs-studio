@@ -65,6 +65,7 @@ PluginDB::PluginInfo PluginItem::GetPluingData()
 void PluginItem::on_web_downfile_progress(qint64 qiRecvSize, qint64 qiTotalSize)
 {
     qDebug() << "file:" << m_qiPluginId << "recv:" << qiRecvSize << "qiTotalSize " << qiTotalSize;
+    m_PluginData.down_size = qiRecvSize;
     m_lpEvent->DownLoadState(QString::number(m_qiPluginId), qiRecvSize, qiTotalSize);
 }
 
@@ -77,16 +78,17 @@ void PluginItem::on_web_downfile_finished()
         case QWebEngineDownloadItem::DownloadRequested:
             return;
         case QWebEngineDownloadItem::DownloadInProgress:
-        {
-            m_PluginData.state = PluginDB::DOWNING;
-            Q_UNREACHABLE();
-        }
+            {
+                m_PluginData.state = PluginDB::DOWNING;
+                Q_UNREACHABLE();
+            }
             break;
         case QWebEngineDownloadItem::DownloadCompleted:
             {
                 qDebug() << "file:" << m_qiPluginId << " completed";
                 m_PluginData.state = PluginDB::CANINSTALL;
-                m_lpEvent->DownloadSuc(m_qiPluginId);
+                m_PluginData.down_size = m_lpWebItem->receivedBytes();
+                m_lpEvent->DownloadSuc(m_PluginData);
             }
             break;
         case QWebEngineDownloadItem::DownloadCancelled:
@@ -164,9 +166,9 @@ void WebPluginEvent::DownloadCancel(qint64 qiPluginId)
     RemovePluginMap(qiPluginId);
 }
 
-void WebPluginEvent::DownloadSuc(qint64 qiPluginId)
+void WebPluginEvent::DownloadSuc(PluginDB::PluginInfo obj)
 {
-
+    m_PluginDB.UpdatePluginData(obj.plugin_id, obj);
 }
 
 
@@ -190,8 +192,10 @@ void WebPluginEvent::ClearPluginMap()
     QMap<qint64, PluginItem*>::const_iterator itor = m_PluginMap.constBegin();
     while (itor != m_PluginMap.constEnd())
     {
-
+        qiPluginId = itor.key();
         PluginItem* lpItem = const_cast<PluginItem*>(itor.value());
+
+        ++itor;
         if (lpItem != NULL)
         {
             QWebEngineDownloadItem* lpDownItem = lpItem->GetPluginDownItem();
@@ -199,9 +203,11 @@ void WebPluginEvent::ClearPluginMap()
             {
                 lpDownItem->cancel();
             }
+            else
+            {
+                RemovePluginMap(qiPluginId);
+            }
         }
-
-        ++itor;
     }
 }
 
@@ -268,6 +274,7 @@ void WebPluginEvent::DownLoadPluginUrl(const QVariantMap& param)
     }
     return;
 }
+
 QString WebPluginEvent::InstallPlugin(const QVariant& param)
 {
     bool                           bRet       = false;
@@ -302,6 +309,7 @@ QString WebPluginEvent::InstallPlugin(const QVariant& param)
     }
     return ResultToJsonString(qiPluginId, bRet);
 }
+ 
 QString WebPluginEvent::UninstallPlugin(const QVariant& param)
 {
     bool            bRet = false;
@@ -313,16 +321,16 @@ QString WebPluginEvent::UninstallPlugin(const QVariant& param)
     {
         PluginDB::PluginInfo info = list.at(0);
         bRet = FindDownloadListItem(qiPluginId, &lpItem);
-        if (lpItem != NULL && info.state == PluginDB::INSTALLED)
+        if (lpItem != NULL)
         {
             bRet = SetLabelDelete(info.file_name);
-            if (bRet)
+            //if (bRet)
                 RemovePluginMap(qiPluginId);
         }
         else
             bRet = false;
     }
-    if (bRet)
+    //if (bRet)
     {
         bRet = m_PluginDB.DeletePluginData(qiPluginId);
     }

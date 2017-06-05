@@ -55,7 +55,7 @@ public:
     // for return web json value.
     QString     ResultToJsonString(qint64 qiPlugId, bool bResult);
     void        DownloadCancel(qint64 qiPluginId);
-    void        DownloadSuc(qint64 qiPluginId);
+    void        DownloadSuc(PluginDB::PluginInfo obj);
     void        RemovePluginMap(qint64 qiPluginId);
     void        ClearPluginMap();
     void        UninitPluginStore();
