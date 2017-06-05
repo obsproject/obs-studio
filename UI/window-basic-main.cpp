@@ -430,8 +430,8 @@ void OBSBasic::Save(const char *file)
 			savedPreviewProjectorList);
 
 	obs_data_set_bool(saveData, "preview_locked", ui->preview->Locked());
-	obs_data_set_int(saveData, "scaling_mode",
-			static_cast<uint32_t>(ui->preview->GetScalingMode()));
+	obs_data_set_bool(saveData, "fixed_scaling_mode",
+		static_cast<bool>(ui->preview->IsFixedScaling()));
 
 	if (api) {
 		obs_data_t *moduleObj = obs_data_create();
@@ -771,18 +771,17 @@ retryScene:
 	ui->preview->SetLocked(previewLocked);
 	ui->actionLockPreview->setChecked(previewLocked);
 
-	ScalingMode previewScaling = static_cast<ScalingMode>(
-			obs_data_get_int(data, "scaling_mode"));
-	switch (previewScaling) {
-	case ScalingMode::Window:
-	case ScalingMode::Canvas:
-	case ScalingMode::Output:
+	bool fixedScaling = static_cast<bool>(
+			obs_data_get_bool(data, "fixed_scaling_mode"));
+	switch (fixedScaling) {
+	case true:
+	case false:
 		break;
 	default:
-		previewScaling = ScalingMode::Window;
+		fixedScaling = false;
 	}
 
-	ui->preview->SetScaling(previewScaling);
+	ui->preview->SetFixedScaling(fixedScaling);
 
 	if (api) {
 		obs_data_t *modulesObj = obs_data_get_obj(data, "modules");
@@ -1843,13 +1842,22 @@ OBSSceneItem OBSBasic::GetCurrentSceneItem()
 
 void OBSBasic::UpdatePreviewScalingMenu()
 {
-	ScalingMode scalingMode = ui->preview->GetScalingMode();
-	ui->actionScaleWindow->setChecked(
-			scalingMode == ScalingMode::Window);
-	ui->actionScaleCanvas->setChecked(
-			scalingMode == ScalingMode::Canvas);
+	bool fixedScaling = ui->preview->IsFixedScaling();
+	float scalingAmount = ui->preview->GetScalingAmount();
+	if (!fixedScaling) {
+		ui->actionScaleWindow->setChecked(true);
+		ui->actionScaleCanvas->setChecked(false);
+		ui->actionScaleOutput->setChecked(false);
+		return;
+	}
+
+	obs_video_info ovi;
+	obs_get_video_info(&ovi);
+
+	ui->actionScaleWindow->setChecked(false);
+	ui->actionScaleCanvas->setChecked(scalingAmount == 1.0f);
 	ui->actionScaleOutput->setChecked(
-			scalingMode == ScalingMode::Output);
+			scalingAmount == float(ovi.output_width) / float(ovi.base_width));
 }
 
 void OBSBasic::UpdateSources(OBSScene scene)
@@ -2830,32 +2838,23 @@ void OBSBasic::ResetAudioDevice(const char *sourceId, const char *deviceId,
 void OBSBasic::ResizePreview(uint32_t cx, uint32_t cy)
 {
 	QSize  targetSize;
-	ScalingMode scalingMode;
+	bool isFixedScaling;
 	obs_video_info ovi;
 
 	/* resize preview panel to fix to the top section of the window */
 	targetSize = GetPixelSize(ui->preview);
 
-	scalingMode = ui->preview->GetScalingMode();
+	isFixedScaling = ui->preview->IsFixedScaling();
 	obs_get_video_info(&ovi);
 
-	if (scalingMode == ScalingMode::Canvas) {
-		previewScale = 1.0f;
+	if (isFixedScaling) {
+		previewScale = ui->preview->GetScalingAmount();
 		GetCenterPosFromFixedScale(int(cx), int(cy),
 				targetSize.width() - PREVIEW_EDGE_SIZE * 2,
 				targetSize.height() - PREVIEW_EDGE_SIZE * 2,
 				previewX, previewY, previewScale);
-		previewX += ui->preview->ScrollX();
-		previewY += ui->preview->ScrollY();
-
-	} else if (scalingMode == ScalingMode::Output) {
-		previewScale = float(ovi.output_width) / float(ovi.base_width);
-		GetCenterPosFromFixedScale(int(cx), int(cy),
-				targetSize.width() - PREVIEW_EDGE_SIZE * 2,
-				targetSize.height() - PREVIEW_EDGE_SIZE * 2,
-				previewX, previewY, previewScale);
-		previewX += ui->preview->ScrollX();
-		previewY += ui->preview->ScrollY();
+		previewX += ui->preview->GetScrollX();
+		previewY += ui->preview->GetScrollY();
 
 	} else {
 		GetScaleAndCenterPos(int(cx), int(cy),
@@ -5263,26 +5262,34 @@ void OBSBasic::on_scalingMenu_aboutToShow()
 	text = text.arg(QString::number(ovi.output_width),
 			QString::number(ovi.output_height));
 	action->setText(text);
+	action->setVisible(!(ovi.output_width == ovi.base_width &&
+			ovi.output_height == ovi.base_height));
 
 	UpdatePreviewScalingMenu();
 }
 
 void OBSBasic::on_actionScaleWindow_triggered()
 {
-	ui->preview->SetScaling(ScalingMode::Window);
+	ui->preview->SetFixedScaling(false);
 	ui->preview->ResetScrollingOffset();
 	emit ui->preview->DisplayResized();
 }
 
 void OBSBasic::on_actionScaleCanvas_triggered()
 {
-	ui->preview->SetScaling(ScalingMode::Canvas);
+	ui->preview->SetFixedScaling(true);
+	ui->preview->SetScalingAmount(1.0f);
 	emit ui->preview->DisplayResized();
 }
 
 void OBSBasic::on_actionScaleOutput_triggered()
 {
-	ui->preview->SetScaling(ScalingMode::Output);
+	obs_video_info ovi;
+	obs_get_video_info(&ovi);
+
+	ui->preview->SetFixedScaling(true);
+	ui->preview->SetScalingAmount(
+			float(ovi.output_width) / float(ovi.base_width));
 	emit ui->preview->DisplayResized();
 }
 
