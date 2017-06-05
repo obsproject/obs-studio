@@ -268,7 +268,7 @@ void WebPluginEvent::DownLoadPluginUrl(const QVariantMap& param)
             if (qstrUrl.isEmpty())
                 return;
             qDebug() << qstrUrl;
-            m_downInfoMap.insert(qstrUrl, qjsonObj);
+            m_downInfoMap.insert(QUrl(qstrUrl).toString(), qjsonObj);
             m_lpView->load(QUrl(qstrUrl));
         }
     }
