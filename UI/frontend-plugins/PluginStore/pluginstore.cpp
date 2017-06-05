@@ -73,6 +73,11 @@ PluginStore::~PluginStore()
 
 void PluginStore::on_closeButton_clicked()
 {
+    if (m_lpWebEvent != NULL)
+    {
+        m_lpWebEvent->UninitPluginStore();
+    }
+    obs_frontend_save();
     done(0);
 }
 
@@ -82,20 +87,6 @@ void PluginStore::on_setButton_clicked()
     {
         m_lpWebEvent->SetDownloadPluginDir();
     }
-}
-
-void PluginStore::closeEvent(QCloseEvent *event)
-{
-    if (m_lpWebEvent != NULL)
-    {
-        m_lpWebEvent->UninitPluginStore();
-    }
-    obs_frontend_save();
-}
-void PluginStore::resizeEvent(QResizeEvent *event)
-{
-    if (m_lpWebUI != nullptr)
-        m_lpWebUI->resize(size());
 }
 
 void PluginStore::mousePressEvent(QMouseEvent *event)

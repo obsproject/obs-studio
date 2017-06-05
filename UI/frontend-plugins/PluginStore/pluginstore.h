@@ -16,7 +16,7 @@
 #include "webpluginevent.h"
 #include "ui_pluginstore.h"
 
-//#define __DEF_PLUGING_MARKET_URL_           "D://html/test.html"
+//#define __DEF_PLUGING_MARKET_URL_           "D://html/OBS plugin store.html"
 #define __DEF_PLUGING_MARKET_URL_             "http://plugin.ciscik.com/obs-store/index.html?language=%1&system=%2&big_version=%3"
 #define __OBS__STUDIO__         
 
@@ -36,8 +36,6 @@ public:
     explicit PluginStore(QWidget *parent = 0);
     ~PluginStore();
 
-	void        closeEvent(QCloseEvent *event) override;
-	void        resizeEvent(QResizeEvent *event) override;
     void        mousePressEvent(QMouseEvent *event) override;
     void        mouseReleaseEvent(QMouseEvent *event) override;
     void        mouseMoveEvent(QMouseEvent *event) override;
