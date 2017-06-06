@@ -1554,6 +1554,7 @@ bool update_async_texture(struct obs_source *source,
 	uint32_t          linesize;
 
 	source->async_flip       = frame->flip;
+	source->async_flip_u     = frame->flip_u;
 	source->async_full_range = frame->full_range;
 	memcpy(source->async_color_matrix, frame->color_matrix,
 			sizeof(frame->color_matrix));
@@ -1626,7 +1627,7 @@ static inline void obs_source_draw_texture(struct obs_source *source,
 	param = gs_effect_get_param_by_name(effect, "image");
 	gs_effect_set_texture(param, tex);
 
-	gs_draw_sprite(tex, source->async_flip ? GS_FLIP_V : 0, 0, 0);
+	gs_draw_sprite(tex, (source->async_flip ? GS_FLIP_V : 0) | (source->async_flip_u ? GS_FLIP_U : 0), 0, 0);
 }
 
 static void obs_source_draw_async_texture(struct obs_source *source)
@@ -2194,6 +2195,7 @@ static void copy_frame_data(struct obs_source_frame *dst,
 		const struct obs_source_frame *src)
 {
 	dst->flip         = src->flip;
+	dst->flip_u       = src->flip_u;
 	dst->full_range   = src->full_range;
 	dst->timestamp    = src->timestamp;
 	memcpy(dst->color_matrix, src->color_matrix, sizeof(float) * 16);

@@ -231,6 +231,7 @@ struct obs_source_frame {
 	float               color_range_min[3];
 	float               color_range_max[3];
 	bool                flip;
+	bool                flip_u;
 
 	/* used internally by libobs */
 	volatile long       refs;
