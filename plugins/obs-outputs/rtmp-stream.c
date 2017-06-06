@@ -925,6 +925,9 @@ static bool rtmp_stream_start(void *data)
 {
 	struct rtmp_stream *stream = data;
 
+	RTMP_Close(&stream->rtmp);
+	RTMP_Init(&stream->rtmp);
+
 	if (!obs_output_can_begin_data_capture(stream->output, 0))
 		return false;
 	if (!obs_output_initialize_encoders(stream->output, 0))
