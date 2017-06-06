@@ -1217,6 +1217,10 @@ void OBSBasic::ResetOutputs()
 					&QPushButton::clicked,
 					this,
 					&OBSBasic::ReplayBufferClicked);
+			//use themeID="startReplayBuffer" property to customize button style
+			replayBufferButton->setProperty("themeID", "startReplayBuffer");
+			//update style cache by forcing setStyleSheet() with comment string inside
+			replayBufferButton->setStyleSheet("/**/");
 
 			ui->buttonsVLayout->insertWidget(2, replayBufferButton);
 		}
@@ -3973,6 +3977,10 @@ void OBSBasic::StartStreaming()
 
 	ui->streamButton->setEnabled(false);
 	ui->streamButton->setText(QTStr("Basic.Main.Connecting"));
+	//use themeID="Connecting" property to customize button style
+	ui->streamButton->setProperty("themeID", "Connecting");
+	//update style cache by forcing setStyleSheet() with comment string inside
+	ui->streamButton->setStyleSheet("/**/");
 
 	if (sysTrayStream) {
 		sysTrayStream->setEnabled(false);
@@ -3982,6 +3990,8 @@ void OBSBasic::StartStreaming()
 	if (!outputHandler->StartStreaming(service)) {
 		ui->streamButton->setText(QTStr("Basic.Main.StartStreaming"));
 		ui->streamButton->setEnabled(true);
+		ui->streamButton->setProperty("themeID", "startStreaming");
+		ui->streamButton->setStyleSheet("/**/");
 
 		if (sysTrayStream) {
 			sysTrayStream->setText(ui->streamButton->text());
@@ -4104,6 +4114,8 @@ void OBSBasic::StreamDelayStarting(int sec)
 {
 	ui->streamButton->setText(QTStr("Basic.Main.StopStreaming"));
 	ui->streamButton->setEnabled(true);
+	ui->streamButton->setProperty("themeID", "stopStreaming");
+	ui->streamButton->setStyleSheet("/**/");
 
 	if (sysTrayStream) {
 		sysTrayStream->setText(ui->streamButton->text());
@@ -4129,6 +4141,8 @@ void OBSBasic::StreamDelayStopping(int sec)
 {
 	ui->streamButton->setText(QTStr("Basic.Main.StartStreaming"));
 	ui->streamButton->setEnabled(true);
+	ui->streamButton->setProperty("themeID", "startStreaming");
+	ui->streamButton->setStyleSheet("/**/");
 
 	if (sysTrayStream) {
 		sysTrayStream->setText(ui->streamButton->text());
@@ -4152,6 +4166,8 @@ void OBSBasic::StreamingStart()
 {
 	ui->streamButton->setText(QTStr("Basic.Main.StopStreaming"));
 	ui->streamButton->setEnabled(true);
+	ui->streamButton->setProperty("themeID", "stopStreaming");
+	ui->streamButton->setStyleSheet("/**/");
 	ui->statusbar->StreamStarted(outputHandler->streamOutput);
 
 	if (sysTrayStream) {
@@ -4170,6 +4186,8 @@ void OBSBasic::StreamingStart()
 void OBSBasic::StreamStopping()
 {
 	ui->streamButton->setText(QTStr("Basic.Main.StoppingStreaming"));
+	ui->streamButton->setProperty("themeID", "stoppingStreaming");
+	ui->streamButton->setStyleSheet("/**/");
 
 	if (sysTrayStream)
 		sysTrayStream->setText(ui->streamButton->text());
@@ -4222,6 +4240,8 @@ void OBSBasic::StreamingStop(int code, QString last_error)
 
 	ui->streamButton->setText(QTStr("Basic.Main.StartStreaming"));
 	ui->streamButton->setEnabled(true);
+	ui->streamButton->setProperty("themeID", "startStreaming");
+	ui->streamButton->setStyleSheet("/**/");
 
 	if (sysTrayStream) {
 		sysTrayStream->setText(ui->streamButton->text());
@@ -4268,6 +4288,10 @@ void OBSBasic::StartRecording()
 void OBSBasic::RecordStopping()
 {
 	ui->recordButton->setText(QTStr("Basic.Main.StoppingRecording"));
+	//use themeID="stoppingRecording" property to customize button style
+	ui->recordButton->setProperty("themeID", "stoppingRecording");
+	//update style cache by forcing setStyleSheet() with comment string inside
+	ui->recordButton->setStyleSheet("/**/");
 
 	if (sysTrayRecord)
 		sysTrayRecord->setText(ui->recordButton->text());
@@ -4291,6 +4315,8 @@ void OBSBasic::RecordingStart()
 {
 	ui->statusbar->RecordingStarted(outputHandler->fileOutput);
 	ui->recordButton->setText(QTStr("Basic.Main.StopRecording"));
+	ui->recordButton->setProperty("themeID", "stopRecording");
+	ui->recordButton->setStyleSheet("/**/");
 
 	if (sysTrayRecord)
 		sysTrayRecord->setText(ui->recordButton->text());
@@ -4308,6 +4334,8 @@ void OBSBasic::RecordingStop(int code)
 {
 	ui->statusbar->RecordingStopped();
 	ui->recordButton->setText(QTStr("Basic.Main.StartRecording"));
+	ui->recordButton->setProperty("themeID", "startRecording");
+	ui->recordButton->setStyleSheet("/**/");
 
 	if (sysTrayRecord)
 		sysTrayRecord->setText(ui->recordButton->text());
@@ -4388,6 +4416,8 @@ void OBSBasic::ReplayBufferStopping()
 		return;
 
 	replayBufferButton->setText(QTStr("Basic.Main.StoppingReplayBuffer"));
+	replayBufferButton->setProperty("themeID", "stoppingReplayBuffer");
+	replayBufferButton->setStyleSheet("/**/");
 
 	if (sysTrayReplayBuffer)
 		sysTrayReplayBuffer->setText(replayBufferButton->text());
@@ -4416,6 +4446,8 @@ void OBSBasic::ReplayBufferStart()
 		return;
 
 	replayBufferButton->setText(QTStr("Basic.Main.StopReplayBuffer"));
+	replayBufferButton->setProperty("themeID", "stopReplayBuffer");
+	replayBufferButton->setStyleSheet("/**/");
 
 	if (sysTrayReplayBuffer)
 		sysTrayReplayBuffer->setText(replayBufferButton->text());
@@ -4435,6 +4467,8 @@ void OBSBasic::ReplayBufferStop(int code)
 		return;
 
 	replayBufferButton->setText(QTStr("Basic.Main.StartReplayBuffer"));
+	replayBufferButton->setProperty("themeID", "startReplayBuffer");
+	replayBufferButton->setStyleSheet("/**/");
 
 	if (sysTrayReplayBuffer)
 		sysTrayReplayBuffer->setText(replayBufferButton->text());
