@@ -332,9 +332,14 @@ static obs_source_t *obs_source_create_internal(const char *id,
 
 	/* allow the source to be created even if creation fails so that the
 	 * user's data doesn't become lost */
-	if (info)
-		source->context.data = info->create(source->context.settings,
-				source);
+	if (info) {
+		if(info->create2) /* alow plugins to use type data during creation */
+			source->context.data = info->create2(source->context.settings,
+			                                     source, info->type_data);
+		else
+			source->context.data = info->create(source->context.settings,
+			                                    source);
+	}
 	if (!source->context.data)
 		blog(LOG_ERROR, "Failed to create source '%s'!", name);
 
