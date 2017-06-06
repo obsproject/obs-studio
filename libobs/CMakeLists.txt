@@ -168,6 +168,11 @@ elseif(UNIX)
 		${libobs_PLATFORM_DEPS}
 		${X11_XCB_LIBRARIES})
 
+	set(libobs_PLATFORM_DEPS
+		${libobs_PLATFORM_DEPS}
+		m
+		dl)
+
 	if(${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD")
 		# use the sysinfo compatibility library on bsd
 		find_package(Libsysinfo REQUIRED)
