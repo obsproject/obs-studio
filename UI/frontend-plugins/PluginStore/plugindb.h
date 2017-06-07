@@ -17,9 +17,9 @@ public:
     enum PluginState{
         DOWNSTART,
         DOWNING,
-        DOWNPAUSED,
         CANINSTALL,
-        INSTALLED
+        INSTALLED,
+        DOWNPAUSED
     };
 
     struct PluginInfo

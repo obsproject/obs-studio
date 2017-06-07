@@ -135,6 +135,7 @@ WebPluginEvent::WebPluginEvent(QObject *parent, QWebEngineView* view) : QObject(
             if (m_DownPluginDir.isEmpty())
             {
                 m_DownPluginDir = obs_module_config_path("");
+                m_PluginDB.SetConfigValue(__DEF_CFG_DOWN_PATH_NAME__, m_DownPluginDir);
                 qDebug() << m_DownPluginDir;
             }
         }
@@ -315,6 +316,10 @@ QString WebPluginEvent::UninstallPlugin(const QVariant& param)
     bool            bRet = false;
     PluginItem*     lpItem = NULL;
     qint64          qiPluginId = param.toDouble();
+    QString         qstrPath;
+
+    QString         qstrBinPath;
+    QString         qstrDataPath;
 
     QList<PluginDB::PluginInfo> list = m_PluginDB.QueryPluginData(qiPluginId);
     if (list.count() > 0)
@@ -323,7 +328,53 @@ QString WebPluginEvent::UninstallPlugin(const QVariant& param)
         bRet = FindDownloadListItem(qiPluginId, &lpItem);
         if (lpItem != NULL)
         {
-            bRet = SetLabelDelete(info.file_name);
+
+            MakePluginPath(info.file_name, qstrBinPath, qstrDataPath);
+            qDebug() << "Uninstall plugin :" << qstrBinPath;
+            qDebug() << "Uninstall plugin :" << qstrDataPath;
+
+            // remove plugin DLL file
+            if (QFile::exists(qstrBinPath))
+            {
+                bRet = QFile::remove(qstrBinPath);
+                if (!bRet)
+                {
+                    bRet = SetLabelDelete(qstrBinPath);
+                }
+            }
+
+            // remove plugin Data document
+            auto DeletePluginDir = [](QString qstrDir)
+            {
+                QDir dir(qstrDir);
+                if (!dir.exists())
+                    return;
+
+                QDirIterator qFileItor(qstrDir, QDirIterator::Subdirectories);
+                while (qFileItor.hasNext())
+                {
+                    qFileItor.next();
+
+                    if (!qFileItor.fileInfo().isDir())
+                    {
+                        qDebug() << "Sub file" << qFileItor.filePath();
+                        if (!QFile::remove(qFileItor.filePath()))
+                        {
+                            WebPluginEvent::SetLabelDelete(qFileItor.filePath());
+                        }
+                    }
+                }
+
+                QDirIterator qDirItor(qstrDir, QDirIterator::Subdirectories);
+                while (qDirItor.hasNext())
+                {
+                    qDirItor.next();
+                    qDebug() << "Sub dir" << qDirItor.filePath();
+                    QDir().rmdir(qDirItor.fileInfo().filePath());
+                }
+            };
+            DeletePluginDir(qstrDataPath);
+  
             //if (bRet)
                 RemovePluginMap(qiPluginId);
         }
@@ -341,7 +392,6 @@ QString WebPluginEvent::RemoveFilePlugin(const QVariant& param)
 {
     bool bRet = false;
     qint64 qiPluginId = param.toDouble();
-
 
     if (bRet)
     {
@@ -403,9 +453,12 @@ void WebPluginEvent::on_web_downfile_start(QWebEngineDownloadItem *item)
     {
         qstrFileName = rx.cap(0);
         qstrPath.append(m_DownPluginDir);
-        if (qstrPath.right(0) != "\\" || qstrPath.right(0) != "/")
+
+        QChar qLastChr = qstrPath.at(qstrPath.length() - 1);
+        if (qLastChr != '/' && qLastChr != '\\')
         {
-            qstrPath.append("/");
+            qDebug() << qstrPath.right(1);
+            qstrPath.append('/');
         }
         qstrPath.append(qstrFileName);
         qDebug() << qstrPath;
@@ -475,10 +528,11 @@ void WebPluginEvent::on_web_downfile_start(QWebEngineDownloadItem *item)
 void WebPluginEvent::RemoveAllLabelFile()
 {
 	obs_module_t* hModule = obs_current_module();
-	QString strBinPath = QString::fromUtf8(obs_get_module_binary_path(hModule));
-	QString strDataPath = QString::fromUtf8(obs_get_module_data_path(hModule));
-	qDebug() << strBinPath.remove(QRegularExpression("pluginstore.*"));
-	qDebug() << strDataPath.remove(QRegularExpression("pluginstore"));
+    QString strBinPath = "../../";
+	//QString strBinPath = QString::fromUtf8(obs_get_module_binary_path(hModule));
+	//QString strDataPath = QString::fromUtf8(obs_get_module_data_path(hModule));
+	//qDebug() << strBinPath.remove(QRegularExpression("pluginstore.*"));
+	//qDebug() << strDataPath.remove(QRegularExpression("pluginstore"));
 	auto DelFiles = [](QDir d, QStringList filters)
 	{
 
@@ -494,7 +548,7 @@ void WebPluginEvent::RemoveAllLabelFile()
 	QStringList filters;
 	filters << "*.old";
 	DelFiles(strBinPath, filters);
-	DelFiles(strDataPath, filters);
+	//DelFiles(strDataPath, filters);
 }
 /*
 zip dir test plugin
