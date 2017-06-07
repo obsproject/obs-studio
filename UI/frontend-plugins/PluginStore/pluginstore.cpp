@@ -85,7 +85,8 @@ void PluginStore::on_setButton_clicked()
 {
     if (m_lpWebEvent != NULL)
     {
-        m_lpWebEvent->SetDownloadPluginDir();
+        //m_lpWebEvent->SetDownloadPluginDir();
+        m_lpWebUI->page()->runJavaScript("showSettingPage()");
     }
 }
 
