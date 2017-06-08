@@ -17,6 +17,18 @@
 #define S_BEHAVIOR_STOP_RESTART        "stop_restart"
 #define S_BEHAVIOR_PAUSE_UNPAUSE       "pause_unpause"
 #define S_BEHAVIOR_ALWAYS_PLAY         "always_play"
+#define S_DEINTERLACE                  "deinterlace"
+#define S_DEINTERLACE_NONE             ""
+#define S_DEINTERLACE_BLEND            "blend"
+#define S_DEINTERLACE_BOB              "bob"
+#define S_DEINTERLACE_DISCARD          "discard"
+#define S_DEINTERLACE_LINEAR           "linear"
+#define S_DEINTERLACE_MEAN             "mean"
+#define S_DEINTERLACE_X                "x"
+#define S_DEINTERLACE_YADIF            "yadif"
+#define S_DEINTERLACE_YADIF2X          "yadif2x"
+#define S_DEINTERLACE_PHOSPHOR         "phosphor"
+#define S_DEINTERLACE_IVTC             "ivtc"
 
 #define T_(text) obs_module_text(text)
 #define T_PLAYLIST                     T_("Playlist")
@@ -26,6 +38,18 @@
 #define T_BEHAVIOR_STOP_RESTART        T_("PlaybackBehavior.StopRestart")
 #define T_BEHAVIOR_PAUSE_UNPAUSE       T_("PlaybackBehavior.PauseUnpause")
 #define T_BEHAVIOR_ALWAYS_PLAY         T_("PlaybackBehavior.AlwaysPlay")
+#define T_DEINTERLACE                  T_("Deinterlace")
+#define T_DEINTERLACE_NONE             T_("Deinterlace.None")
+#define T_DEINTERLACE_BLEND            T_("Deinterlace.Blend")
+#define T_DEINTERLACE_BOB              T_("Deinterlace.Bob")
+#define T_DEINTERLACE_DISCARD          T_("Deinterlace.Discard")
+#define T_DEINTERLACE_LINEAR           T_("Deinterlace.Linear")
+#define T_DEINTERLACE_MEAN             T_("Deinterlace.Mean")
+#define T_DEINTERLACE_X                T_("Deinterlace.X")
+#define T_DEINTERLACE_YADIF            T_("Deinterlace.Yadif")
+#define T_DEINTERLACE_YADIF2X          T_("Deinterlace.Yadif2x")
+#define T_DEINTERLACE_PHOSPHOR         T_("Deinterlace.Phosphor")
+#define T_DEINTERLACE_IVTC             T_("Deinterlace.Ivtc")
 
 /* ------------------------------------------------------------------------- */
 
@@ -475,6 +499,7 @@ static void vlcs_update(void *data, obs_data_t *settings)
 	struct vlc_source *c = data;
 	obs_data_array_t *array;
 	const char *behavior;
+	const char *deinterlace;
 	size_t count;
 
 	da_init(new_files);
@@ -587,6 +612,9 @@ static void vlcs_update(void *data, obs_data_t *settings)
 		libvlc_media_list_player_play_(c->media_list_player);
 	else
 		obs_source_output_video(c->source, NULL);
+
+	deinterlace = obs_data_get_string(settings, S_DEINTERLACE);
+	libvlc_video_set_deinterlace_(c->media_player, deinterlace);
 
 	obs_data_array_release(array);
 }
@@ -745,6 +773,31 @@ static obs_properties_t *vlcs_properties(void *data)
 	dstr_free(&path);
 	dstr_free(&filter);
 	dstr_free(&exts);
+
+	p = obs_properties_add_list(ppts, S_DEINTERLACE, T_DEINTERLACE,
+			OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
+	obs_property_list_add_string(p, T_DEINTERLACE_NONE,
+			S_DEINTERLACE_NONE);
+	obs_property_list_add_string(p, T_DEINTERLACE_BLEND,
+			S_DEINTERLACE_BLEND);
+	obs_property_list_add_string(p, T_DEINTERLACE_BOB,
+			S_DEINTERLACE_BOB);
+	obs_property_list_add_string(p, T_DEINTERLACE_DISCARD,
+			S_DEINTERLACE_DISCARD);
+	obs_property_list_add_string(p, T_DEINTERLACE_LINEAR,
+			S_DEINTERLACE_LINEAR);
+	obs_property_list_add_string(p, T_DEINTERLACE_MEAN,
+			S_DEINTERLACE_MEAN);
+	obs_property_list_add_string(p, T_DEINTERLACE_X,
+			S_DEINTERLACE_X);
+	obs_property_list_add_string(p, T_DEINTERLACE_YADIF,
+			S_DEINTERLACE_YADIF);
+	obs_property_list_add_string(p, T_DEINTERLACE_YADIF2X,
+			S_DEINTERLACE_YADIF2X);
+	obs_property_list_add_string(p, T_DEINTERLACE_PHOSPHOR,
+			S_DEINTERLACE_PHOSPHOR);
+	obs_property_list_add_string(p, T_DEINTERLACE_IVTC,
+			S_DEINTERLACE_IVTC);
 
 	return ppts;
 }

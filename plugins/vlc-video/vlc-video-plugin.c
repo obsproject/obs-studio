@@ -34,6 +34,7 @@ LIBVLC_MEDIA_PLAYER_STOP libvlc_media_player_stop_;
 LIBVLC_MEDIA_PLAYER_GET_TIME libvlc_media_player_get_time_;
 LIBVLC_VIDEO_GET_SIZE libvlc_video_get_size_;
 LIBVLC_MEDIA_PLAYER_EVENT_MANAGER libvlc_media_player_event_manager_;
+LIBVLC_VIDEO_SET_DEINTERLACE libvlc_video_set_deinterlace_;
 
 /* libvlc media list */
 LIBVLC_MEDIA_LIST_NEW libvlc_media_list_new_;
@@ -96,6 +97,7 @@ static bool load_vlc_funcs(void)
 	LOAD_VLC_FUNC(libvlc_media_player_get_time);
 	LOAD_VLC_FUNC(libvlc_video_get_size);
 	LOAD_VLC_FUNC(libvlc_media_player_event_manager);
+	LOAD_VLC_FUNC(libvlc_video_set_deinterlace);
 
 	/* libvlc media list */
 	LOAD_VLC_FUNC(libvlc_media_list_new);
