@@ -228,12 +228,14 @@ static void ep_parse_struct(struct effect_parser *ep)
 
 		case PARSE_UNEXPECTED_CONTINUE:
 			cf_adderror_syntax_error(&ep->cfp);
+			/* Falls through. */
 		case PARSE_CONTINUE:
 			ep_var_free(&var);
 			continue;
 
 		case PARSE_UNEXPECTED_BREAK:
 			cf_adderror_syntax_error(&ep->cfp);
+			/* Falls through. */
 		case PARSE_BREAK:
 			ep_var_free(&var);
 			do_break = true;

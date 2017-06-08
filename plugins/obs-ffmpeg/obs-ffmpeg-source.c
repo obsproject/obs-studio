@@ -51,6 +51,7 @@ struct ffmpeg_source {
 
 	char *input;
 	char *input_format;
+	int buffering_mb;
 	bool is_looping;
 	bool is_local_file;
 	bool is_hw_decoding;
@@ -70,9 +71,11 @@ static bool is_local_file_modified(obs_properties_t *props,
 			"input_format");
 	obs_property_t *local_file = obs_properties_get(props, "local_file");
 	obs_property_t *looping = obs_properties_get(props, "looping");
+	obs_property_t *buffering = obs_properties_get(props, "buffering_mb");
 	obs_property_t *close = obs_properties_get(props, "close_when_inactive");
 	obs_property_set_visible(input, !enabled);
 	obs_property_set_visible(input_format, !enabled);
+	obs_property_set_visible(buffering, !enabled);
 	obs_property_set_visible(close, enabled);
 	obs_property_set_visible(local_file, enabled);
 	obs_property_set_visible(looping, enabled);
@@ -89,6 +92,7 @@ static void ffmpeg_source_defaults(obs_data_t *settings)
 #if defined(_WIN32)
 	obs_data_set_default_bool(settings, "hw_decode", true);
 #endif
+	obs_data_set_default_int(settings, "buffering_mb", 2);
 }
 
 static const char *media_filter =
@@ -153,8 +157,14 @@ static obs_properties_t *ffmpeg_source_getproperties(void *data)
 	obs_properties_add_text(props, "input_format",
 			obs_module_text("InputFormat"), OBS_TEXT_DEFAULT);
 
+	obs_properties_add_int(props, "buffering_mb",
+			obs_module_text("BufferingMB"),
+			0, 50, 1);
+
+#ifndef __APPLE__
 	obs_properties_add_bool(props, "hw_decode",
 			obs_module_text("HardwareDecode"));
+#endif
 
 	obs_properties_add_bool(props, "clear_on_media_end",
 			obs_module_text("ClearOnMediaEnd"));
@@ -232,6 +242,7 @@ static void ffmpeg_source_open(struct ffmpeg_source *s)
 	if (s->input && *s->input)
 		s->media_valid = mp_media_init(&s->media,
 				s->input, s->input_format,
+				s->buffering_mb * 1024 * 1024,
 				s, get_frame, get_audio, media_stopped,
 				preload_frame, s->is_hw_decoding, s->range);
 }
@@ -292,13 +303,16 @@ static void ffmpeg_source_update(void *data, obs_data_t *settings)
 
 	s->input = input ? bstrdup(input) : NULL;
 	s->input_format = input_format ? bstrdup(input_format) : NULL;
+#ifndef __APPLE__
 	s->is_hw_decoding = obs_data_get_bool(settings, "hw_decode");
+#endif
 	s->is_clear_on_media_end = obs_data_get_bool(settings,
 			"clear_on_media_end");
 	s->restart_on_activate = obs_data_get_bool(settings,
 			"restart_on_activate");
 	s->range = (enum video_range_type)obs_data_get_int(settings,
 			"color_range");
+	s->buffering_mb = (int)obs_data_get_int(settings, "buffering_mb");
 	s->is_local_file = is_local_file;
 
 	if (s->media_valid) {

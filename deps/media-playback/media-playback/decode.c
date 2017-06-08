@@ -279,18 +279,6 @@ bool mp_decode_next(struct mp_decode *d)
 			}
 		}
 
-		if (!d->audio && d->m->is_network && !d->got_first_keyframe) {
-			if (d->pkt.flags & AV_PKT_FLAG_KEY) {
-				d->got_first_keyframe = true;
-			} else {
-				av_packet_unref(&d->orig_pkt);
-				av_init_packet(&d->orig_pkt);
-				av_init_packet(&d->pkt);
-				d->packet_pending = false;
-				return true;
-			}
-		}
-
 		ret = decode_packet(d, &got_frame);
 
 		if (!got_frame && ret == 0) {

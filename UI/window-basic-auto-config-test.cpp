@@ -146,6 +146,17 @@ void AutoConfigTestPage::GetServers(std::vector<ServerInfo> &servers)
 	obs_properties_destroy(ppts);
 }
 
+static inline void string_depad_key(string &key)
+{
+	while (!key.empty()) {
+		char ch = key.back();
+		if (ch == ' ' || ch == '\t' || ch == '\n' || ch == '\r')
+			key.pop_back();
+		else
+			break;
+	}
+}
+
 void AutoConfigTestPage::TestBandwidthThread()
 {
 	bool connected = false;
@@ -205,8 +216,10 @@ void AutoConfigTestPage::TestBandwidthThread()
 	obs_data_release(output_settings);
 
 	std::string key = wiz->key;
-	if (wiz->service == AutoConfig::Service::Twitch)
+	if (wiz->service == AutoConfig::Service::Twitch) {
+		string_depad_key(key);
 		key += "?bandwidthtest";
+	}
 
 	obs_data_set_string(service_settings, "service",
 			wiz->serviceName.c_str());
@@ -325,12 +338,14 @@ void AutoConfigTestPage::TestBandwidthThread()
 
 		unique_lock<mutex> ul(m);
 		if (cancel) {
+			ul.unlock();
 			obs_output_force_stop(output);
 			return;
 		}
 		if (!stopped && !connected)
 			cv.wait(ul);
 		if (cancel) {
+			ul.unlock();
 			obs_output_force_stop(output);
 			return;
 		}
@@ -347,6 +362,7 @@ void AutoConfigTestPage::TestBandwidthThread()
 		if (stopped)
 			continue;
 		if (cancel) {
+			ul.unlock();
 			obs_output_force_stop(output);
 			return;
 		}

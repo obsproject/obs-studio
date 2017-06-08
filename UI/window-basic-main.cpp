@@ -115,6 +115,11 @@ static void AddExtraModulePaths()
 	string path = (char*)base_module_dir;
 #if defined(__APPLE__)
 	obs_add_module_path((path + "/bin").c_str(), (path + "/data").c_str());
+
+	BPtr<char> config_bin = os_get_config_path_ptr("obs-studio/plugins/%module%/bin");
+	BPtr<char> config_data = os_get_config_path_ptr("obs-studio/plugins/%module%/data");
+	obs_add_module_path(config_bin, config_data);
+
 #elif ARCH_BITS == 64
 	obs_add_module_path((path + "/bin/64bit").c_str(),
 			(path + "/data").c_str());

@@ -92,7 +92,8 @@ static int mp_media_next_packet(mp_media_t *media)
 	int ret = av_read_frame(media->fmt, &pkt);
 	if (ret < 0) {
 		if (ret != AVERROR_EOF)
-			blog(LOG_WARNING, "MP: av_read_frame failed: %d", ret);
+			blog(LOG_WARNING, "MP: av_read_frame failed: %s (%d)",
+					av_err2str(ret), ret);
 		return ret;
 	}
 
@@ -289,6 +290,7 @@ static void mp_media_next_video(mp_media_t *m, bool preload)
 		return;
 	}
 
+	bool flip = false;
 	if (m->swscale) {
 		int ret = sws_scale(m->swscale,
 				(const uint8_t *const *)f->data, f->linesize,
@@ -297,16 +299,23 @@ static void mp_media_next_video(mp_media_t *m, bool preload)
 		if (ret < 0)
 			return;
 
+		flip = m->scale_linesizes[0] < 0 && m->scale_linesizes[1] == 0;
 		for (size_t i = 0; i < 4; i++) {
 			frame->data[i] = m->scale_pic[i];
-			frame->linesize[i] = m->scale_linesizes[i];
+			frame->linesize[i] = abs(m->scale_linesizes[i]);
 		}
+
 	} else {
+		flip = f->linesize[0] < 0 && f->linesize[1] == 0;
+
 		for (size_t i = 0; i < MAX_AV_PLANES; i++) {
 			frame->data[i] = f->data[i];
-			frame->linesize[i] = f->linesize[i];
+			frame->linesize[i] = abs(f->linesize[i]);
 		}
 	}
+
+	if (flip)
+		frame->data[0] -= frame->linesize[0] * (f->height - 1);
 
 	new_format = convert_pixel_format(m->scale_format);
 	new_space  = convert_color_space(f->colorspace);
@@ -346,7 +355,14 @@ static void mp_media_next_video(mp_media_t *m, bool preload)
 		m->play_sys_ts - base_sys_ts;
 	frame->width = f->width;
 	frame->height = f->height;
-	frame->flip = false;
+	frame->flip = flip;
+
+	if (m->is_network && !d->got_first_keyframe) {
+		if (!f->key_frame)
+			return;
+
+		d->got_first_keyframe = true;
+	}
 
 	if (preload)
 		m->v_preload_cb(m->opaque, frame);
@@ -470,6 +486,23 @@ static inline bool mp_media_eof(mp_media_t *m)
 	return eof;
 }
 
+static int interrupt_callback(void *data)
+{
+	mp_media_t *m = data;
+	bool stop = false;
+	uint64_t ts = os_gettime_ns();
+
+	if ((ts - m->interrupt_poll_ts) > 20000000) {
+		pthread_mutex_lock(&m->mutex);
+		stop = m->kill || m->stopping;
+		pthread_mutex_unlock(&m->mutex);
+
+		m->interrupt_poll_ts = ts;
+	}
+
+	return stop;
+}
+
 static bool init_avformat(mp_media_t *m)
 {
 	AVInputFormat *format = NULL;
@@ -481,7 +514,18 @@ static bool init_avformat(mp_media_t *m)
 					"'%s'", m->path);
 	}
 
-	int ret = avformat_open_input(&m->fmt, m->path, format, NULL);
+	AVDictionary *opts = NULL;
+	if (m->buffering && m->is_network)
+		av_dict_set_int(&opts, "buffer_size", m->buffering, 0);
+
+	m->fmt = avformat_alloc_context();
+	m->fmt->interrupt_callback.callback = interrupt_callback;
+	m->fmt->interrupt_callback.opaque = m;
+
+	int ret = avformat_open_input(&m->fmt, m->path, format,
+			opts ? &opts : NULL);
+	av_dict_free(&opts);
+
 	if (ret < 0) {
 		blog(LOG_WARNING, "MP: Failed to open media: '%s'", m->path);
 		return false;
@@ -505,17 +549,16 @@ static bool init_avformat(mp_media_t *m)
 	return true;
 }
 
-static void *mp_media_thread(void *opaque)
+static inline bool mp_media_thread(mp_media_t *m)
 {
-	mp_media_t *m = opaque;
-
 	os_set_thread_name("mp_media_thread");
 
 	if (!init_avformat(m)) {
-		return NULL;
+		return false;
 	}
-
-	mp_media_reset(m);
+	if (!mp_media_reset(m)) {
+		return false;
+	}
 
 	for (;;) {
 		bool reset, kill, is_active;
@@ -526,7 +569,7 @@ static void *mp_media_thread(void *opaque)
 
 		if (!is_active) {
 			if (os_sem_wait(m->sem) < 0)
-				return NULL;
+				return false;
 		} else {
 			mp_media_sleepto(m);
 		}
@@ -556,11 +599,24 @@ static void *mp_media_thread(void *opaque)
 				mp_media_next_audio(m);
 
 			if (!mp_media_prepare_frames(m))
-				return NULL;
+				return false;
 			if (mp_media_eof(m))
 				continue;
 
 			mp_media_calc_next_ns(m);
+		}
+	}
+
+	return true;
+}
+
+static void *mp_media_thread_start(void *opaque)
+{
+	mp_media_t *m = opaque;
+
+	if (!mp_media_thread(m)) {
+		if (m->stop_cb) {
+			m->stop_cb(m->opaque);
 		}
 	}
 
@@ -585,7 +641,7 @@ static inline bool mp_media_init_internal(mp_media_t *m,
 	m->format_name = format_name ? bstrdup(format_name) : NULL;
 	m->hw = hw;
 
-	if (pthread_create(&m->thread, NULL, mp_media_thread, m) != 0) {
+	if (pthread_create(&m->thread, NULL, mp_media_thread_start, m) != 0) {
 		blog(LOG_WARNING, "MP: Could not create media thread");
 		return false;
 	}
@@ -597,6 +653,7 @@ static inline bool mp_media_init_internal(mp_media_t *m,
 bool mp_media_init(mp_media_t *media,
 		const char *path,
 		const char *format,
+		int buffering,
 		void *opaque,
 		mp_video_cb v_cb,
 		mp_audio_cb a_cb,
@@ -613,6 +670,7 @@ bool mp_media_init(mp_media_t *media,
 	media->stop_cb = stop_cb;
 	media->v_preload_cb = v_preload_cb;
 	media->force_range = force_range;
+	media->buffering = buffering;
 
 	if (path && *path)
 		media->is_network = !!strstr(path, "://");
@@ -658,9 +716,9 @@ void mp_media_free(mp_media_t *media)
 	mp_kill_thread(media);
 	mp_decode_free(&media->v);
 	mp_decode_free(&media->a);
+	avformat_close_input(&media->fmt);
 	pthread_mutex_destroy(&media->mutex);
 	os_sem_destroy(media->sem);
-	avformat_close_input(&media->fmt);
 	sws_freeContext(media->swscale);
 	av_freep(&media->scale_pic[0]);
 	bfree(media->path);

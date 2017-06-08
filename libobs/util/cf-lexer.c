@@ -123,6 +123,7 @@ static bool cf_is_token_break(struct base_token *start_token,
 			start_token->type = BASETOKEN_DIGIT;
 			break;
 		}
+		/* Falls through. */
 
 	case BASETOKEN_NONE:
 		return true;

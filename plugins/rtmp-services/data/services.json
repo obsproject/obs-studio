@@ -95,11 +95,11 @@
                 },
                 {
                     "name": "South America: Rio de Janeiro, Brazil",
-                    "url": "rtmp://live-gig.twitch.tv/app"
+                    "url": "rtmp://live-rio.twitch.tv/app"
                 },
                 {
                     "name": "South America: Sao Paulo, Brazil",
-                    "url": "rtmp://live-gru.twitch.tv/app"
+                    "url": "rtmp://live-sao.twitch.tv/app"
                 },
                 {
                     "name": "US Central: Dallas, TX",
