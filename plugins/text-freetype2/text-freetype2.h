@@ -37,7 +37,7 @@ struct ft2_source {
 	bool from_file;
 	char *text_file;
 	wchar_t *text;
-	time_t m_timestamp;
+	struct stat file_stats;
 	uint64_t last_checked;
 
 	uint32_t cx, cy, max_h, custom_width;
@@ -83,7 +83,7 @@ static const char *ft2_source_get_name(void *unused);
 
 uint32_t get_ft2_text_width(wchar_t *text, struct ft2_source *srcdata);
 
-time_t get_modified_timestamp(char *filename);
+struct stat get_file_stats(char *filename);
 void load_text_from_file(struct ft2_source *srcdata, const char *filename);
 void read_from_end(struct ft2_source *srcdata, const char *filename);
 
