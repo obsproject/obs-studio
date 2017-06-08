@@ -196,7 +196,7 @@ struct TextSource {
 
 	bool read_from_file = false;
 	string file;
-	time_t file_timestamp = 0;
+	struct stat file_stats = {};
 	float update_time_elapsed = 0.0f;
 
 	wstring text;
@@ -268,12 +268,14 @@ struct TextSource {
 	inline void Render(gs_effect_t *effect);
 };
 
-static time_t get_modified_timestamp(const char *filename)
+static struct stat get_file_stats(const char *filename)
 {
-	struct stat stats;
-	if (os_stat(filename, &stats) != 0)
-		return -1;
-	return stats.st_mtime;
+	struct stat stats = {};
+	if (os_stat(filename, &stats) != 0) {
+		stats.st_mtime = -1;
+		stats.st_size = -1;
+	}
+	return stats;
 }
 
 void TextSource::UpdateFont()
@@ -724,7 +726,7 @@ inline void TextSource::Update(obs_data_t *s)
 
 	if (read_from_file) {
 		file = new_file;
-		file_timestamp = get_modified_timestamp(new_file);
+		file_stats = get_file_stats(new_file);
 		LoadFileText();
 
 	} else {
@@ -772,13 +774,14 @@ inline void TextSource::Tick(float seconds)
 	update_time_elapsed += seconds;
 
 	if (update_time_elapsed >= 1.0f) {
-		time_t t = get_modified_timestamp(file.c_str());
+		struct stat new_stats = get_file_stats(file.c_str());
 		update_time_elapsed = 0.0f;
 
-		if (file_timestamp != t) {
+		if (file_stats.st_mtime != new_stats.st_mtime ||
+			file_stats.st_size  != new_stats.st_size) {
 			LoadFileText();
 			RenderText();
-			file_timestamp = t;
+			file_stats = new_stats;
 		}
 	}
 }
