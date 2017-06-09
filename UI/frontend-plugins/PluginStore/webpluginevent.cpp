@@ -295,10 +295,8 @@ QString WebPluginEvent::InstallPlugin(const QVariant& param)
         if (data.state == PluginDB::CANINSTALL)
         {
             // don't need
-            //qstrPath = "C:\\Users\\shida\\AppData\\Roaming\\obs-studio\\plugin_config\\pluginstore\\plugin_store.zip";
-            //qstrName = "pluginstore";
-
-
+            //qstrPath = "C:\\Users\\shida\\AppData\\Roaming\\obs-studio\\plugin_config\\pluginstore\\SceneSwitcher2.zip";
+            //qstrName = "SceneSwitcher";
 
             bRet = WebPluginEvent::InstallPluginZip(qstrPath, qstrName);
             if(bRet)
@@ -591,6 +589,7 @@ bool WebPluginEvent::InstallPluginZip(QString strZipFile, QString strPluginName)
 		QRegularExpression reg;
 		reg.setPattern(strPluginName+'/');
 		match = reg.match(zipItemFile);
+
 		if (match.hasMatch())
 		{
 			//data
@@ -609,35 +608,65 @@ bool WebPluginEvent::InstallPluginZip(QString strZipFile, QString strPluginName)
 			{
 				//plugin bin
 				obsDir += b32bit ? "obs-plugins/32bit/" : "obs-plugins/64bit/";
-                obsDir += zipItemFile.replace(QRegularExpression("^64bit/|^32bit/"), "");
-                
 			}
 		}
+
         qDebug() << "Zipping dir :" << obsDir;
 		return obsDir;
 	};
-	auto extractToFile = [&](zip_file& zfile,QString qDestPath, const zip_info &member)
+    auto extractToFile = [&](zip_file& zfile, QString qDestPath, const zip_info &member)
 	{
 		namespace fs=std::tr2::sys;
-		
-		if (!QFile::exists(qDestPath))
-		{
-			fs::path newPath = qDestPath.toStdString();
-			if (!fs::is_directory(newPath))
-			{
-				newPath.remove_filename();
-			}
-			fs::create_directories(newPath);
-		}
-		
-		std::fstream stream(qDestPath.toStdString(), std::ios::binary | std::ios::out);
-		if (!stream.is_open())
-		{
-			SetLabelDelete(QString::fromStdString(qDestPath.toStdString()));
+        QRegularExpressionMatch match;
+        QRegularExpression reg;
 
-		}
-		if (stream.is_open())
-			stream << zfile.open(member).rdbuf();
+        QString qstrUnzipFName = QString::fromStdString(member.filename);
+        if (qstrUnzipFName.right(1) == "/")
+        {
+            return;
+        }
+        else
+        {
+            QStringList qDirList = qstrUnzipFName.split("/");
+            for (int i = 1; i < qDirList.size();i++)
+            {
+                qDebug() << " var:" << qDirList.at(i);
+                QString qstrTemp = qDirList.at(i);
+                qDestPath.append(qDirList.at(i));
+
+
+                if (qstrTemp.compare("bin") == 0)
+                {
+                    qDestPath.replace(QRegularExpression("bin/"), "");
+                }
+
+                //if not the last string is zip dir
+                if (i != (qDirList.size() - 1))
+                    qDestPath.append("/");
+
+
+                qDebug() << " dir:" << qDestPath;
+                if (!QFile::exists(qDestPath))
+                {
+                    fs::path newPath = qDestPath.toStdString();
+                    if (!fs::is_directory(newPath))
+                    {
+                        newPath.remove_filename();
+                    }
+                    fs::create_directories(newPath);
+                }
+            }
+            qDebug() << " Tab:" << qstrUnzipFName << qDestPath;
+            
+            std::fstream stream(qDestPath.toStdString(), std::ios::binary | std::ios::out);
+            if (!stream.is_open())
+            {
+                SetLabelDelete(QString::fromStdString(qDestPath.toStdString()));
+            }
+            stream << zfile.open(member).rdbuf();
+            
+            stream.close();
+        }
 	};
 	try{
 	
@@ -650,17 +679,18 @@ bool WebPluginEvent::InstallPluginZip(QString strZipFile, QString strPluginName)
 			QRegularExpression reg("^64bit/");
 			QString extractDst;
 			match = reg.match(itemFileName);
+
             qDebug() << "UnZip downloaded plugin file start :";
-			if (match.hasMatch())
-			{
-				extractDst=makeDestPath(strPluginName, itemFileName, false);
-			}
-			else
-			{
-				extractDst=makeDestPath(strPluginName, itemFileName, true);
-			}
-			extractToFile(zfile, extractDst, item);
-			
+            if (match.hasMatch())
+            {
+                extractDst = makeDestPath(strPluginName, itemFileName, false);
+            }
+            else
+            {
+                extractDst = makeDestPath(strPluginName, itemFileName, true);
+            }
+            extractToFile(zfile, extractDst, item);
+
 		}
 		//install
 		if (!CheckPluginRuning(strPluginName))
