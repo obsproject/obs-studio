@@ -630,7 +630,6 @@ bool WebPluginEvent::InstallPluginZip(QString strZipFile, QString strPluginName)
             QStringList qDirList = qstrUnzipFName.split("/");
             for (int i = 1; i < qDirList.size();i++)
             {
-                qDebug() << " var:" << qDirList.at(i);
                 QString qstrTemp = qDirList.at(i);
                 qDestPath.append(qDirList.at(i));
 
@@ -644,8 +643,6 @@ bool WebPluginEvent::InstallPluginZip(QString strZipFile, QString strPluginName)
                 if (i != (qDirList.size() - 1))
                     qDestPath.append("/");
 
-
-                qDebug() << " dir:" << qDestPath;
                 if (!QFile::exists(qDestPath))
                 {
                     fs::path newPath = qDestPath.toStdString();
