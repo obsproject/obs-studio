@@ -295,8 +295,13 @@ QString WebPluginEvent::InstallPlugin(const QVariant& param)
         if (data.state == PluginDB::CANINSTALL)
         {
             // don't need
-            //qstrName = "CalabashWinCapture";
-            if (WebPluginEvent::InstallPluginZip(data.local_path, data.file_name));
+            //qstrPath = "C:\\Users\\shida\\AppData\\Roaming\\obs-studio\\plugin_config\\pluginstore\\plugin_store.zip";
+            //qstrName = "pluginstore";
+
+
+
+            bRet = WebPluginEvent::InstallPluginZip(qstrPath, qstrName);
+            if(bRet)
             {
 
                 data.state = PluginDB::INSTALLED;
@@ -528,7 +533,13 @@ void WebPluginEvent::on_web_downfile_start(QWebEngineDownloadItem *item)
 void WebPluginEvent::RemoveAllLabelFile()
 {
 	obs_module_t* hModule = obs_current_module();
+
+#ifdef __APPLE__
+    QString strBinPath = "../";
+#else
     QString strBinPath = "../../";
+#endif // __APPLE__
+
 	//QString strBinPath = QString::fromUtf8(obs_get_module_binary_path(hModule));
 	//QString strDataPath = QString::fromUtf8(obs_get_module_data_path(hModule));
 	//qDebug() << strBinPath.remove(QRegularExpression("pluginstore.*"));
@@ -566,6 +577,7 @@ zip dir test plugin
 */
 bool WebPluginEvent::InstallPluginZip(QString strZipFile, QString strPluginName)
 {
+    bool bRet = false;
 	using namespace miniz_cpp;
 	if (!QFile::exists(strZipFile))
 	{
@@ -597,9 +609,11 @@ bool WebPluginEvent::InstallPluginZip(QString strZipFile, QString strPluginName)
 			{
 				//plugin bin
 				obsDir += b32bit ? "obs-plugins/32bit/" : "obs-plugins/64bit/";
+                obsDir += zipItemFile.replace(QRegularExpression("^64bit/|^32bit/"), "");
+                
 			}
 		}
-		obsDir += zipItemFile.replace(QRegularExpression("^64bit/|^32bit/"),"");
+        qDebug() << "Zipping dir :" << obsDir;
 		return obsDir;
 	};
 	auto extractToFile = [&](zip_file& zfile,QString qDestPath, const zip_info &member)
@@ -636,6 +650,7 @@ bool WebPluginEvent::InstallPluginZip(QString strZipFile, QString strPluginName)
 			QRegularExpression reg("^64bit/");
 			QString extractDst;
 			match = reg.match(itemFileName);
+            qDebug() << "UnZip downloaded plugin file start :";
 			if (match.hasMatch())
 			{
 				extractDst=makeDestPath(strPluginName, itemFileName, false);
@@ -650,14 +665,14 @@ bool WebPluginEvent::InstallPluginZip(QString strZipFile, QString strPluginName)
 		//install
 		if (!CheckPluginRuning(strPluginName))
 		{
-			return LoadPlugin(strPluginName);
+			bRet = LoadPlugin(strPluginName);
 		}
 	}
 	catch (...)
 	{
-
+        bRet = false;
 	}
-	return true;
+    return bRet;
 }
 bool WebPluginEvent::SetLabelDelete(QString strPluginFile)
 {
