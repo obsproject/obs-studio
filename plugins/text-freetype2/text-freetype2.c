@@ -19,7 +19,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <util/platform.h>
 #include <ft2build.h>
 #include FT_FREETYPE_H
-#include <sys/stat.h>
 #include "text-freetype2.h"
 #include "obs-convenience.h"
 #include "find-font.h"

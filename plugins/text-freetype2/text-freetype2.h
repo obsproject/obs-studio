@@ -17,6 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <obs-module.h>
 #include <ft2build.h>
+#include <sys/stat.h>
 
 #define num_cache_slots 65535
 #define src_glyph srcdata->cacheglyphs[glyph_index]
