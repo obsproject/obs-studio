@@ -998,9 +998,10 @@ static bool Update(wchar_t *cmdLine)
 		}
 
 		StringCbCopy(lpAppDataPath, sizeof(lpAppDataPath), pOut);
-		StringCbCat(lpAppDataPath, sizeof(lpAppDataPath),
-				L"\\obs-studio");
 	}
+
+	StringCbCat(lpAppDataPath, sizeof(lpAppDataPath),
+			L"\\obs-studio");
 
 	/* ------------------------------------- *
 	 * Get download path                     */
