@@ -584,6 +584,7 @@ bool WebPluginEvent::InstallPluginZip(QString strZipFile, QString strPluginName)
 	}
 	auto makeDestPath = [](QString strPluginName,QString zipItemFile,bool b32bit)->QString{
 		
+        QString fileName = zipItemFile;
 		QString obsDir = QCoreApplication::applicationDirPath().replace(QRegularExpression("bin/32bit"), "");
 		obsDir.replace(QRegularExpression("bin/64bit"), "");
 		QRegularExpressionMatch match;
@@ -591,11 +592,15 @@ bool WebPluginEvent::InstallPluginZip(QString strZipFile, QString strPluginName)
 		reg.setPattern(strPluginName+'/');
 		match = reg.match(zipItemFile);
 
-		if (match.hasMatch())
-		{
-			//data
-			obsDir += "data/obs-plugins/";
-		}
+        if (match.hasMatch())
+        {
+            //data
+            obsDir += "data/obs-plugins/";
+            if (b32bit)
+                obsDir += zipItemFile.replace(QRegularExpression("32bit/"), "");
+            else
+                obsDir += zipItemFile.replace(QRegularExpression("64bit/"), "");
+        }
 		else
 		{
 			b32bit ? reg.setPattern(R"(^32bit/bin/)") : reg.setPattern(R"(^64bit/bin/)");
@@ -604,15 +609,23 @@ bool WebPluginEvent::InstallPluginZip(QString strZipFile, QString strPluginName)
 			{
 				//obs bin
 				obsDir += b32bit ? "bin/32bit/" : "bin/64bit/";
+                if (b32bit)
+                    obsDir += zipItemFile.replace(QRegularExpression("32bit/bin/"), "");
+                else
+                    obsDir += zipItemFile.replace(QRegularExpression("64bit/bin/"), "");
 			}
 			else
 			{
 				//plugin bin
 				obsDir += b32bit ? "obs-plugins/32bit/" : "obs-plugins/64bit/";
+                if (b32bit)
+                    obsDir += zipItemFile.replace(QRegularExpression("32bit/"), "");
+                else
+                    obsDir += zipItemFile.replace(QRegularExpression("64bit/"), "");
 			}
 		}
 
-        qDebug() << "Zipping dir :" << obsDir;
+        qDebug() << "Zipping dir :" << obsDir << "--" << fileName;
 		return obsDir;
 	};
     auto extractToFile = [&](zip_file& zfile, QString qDestPath, const zip_info &member)
@@ -620,40 +633,23 @@ bool WebPluginEvent::InstallPluginZip(QString strZipFile, QString strPluginName)
 		namespace fs=std::tr2::sys;
         QRegularExpressionMatch match;
         QRegularExpression reg;
-
         QString qstrUnzipFName = QString::fromStdString(member.filename);
-        if (qstrUnzipFName.right(1) == "/")
-        {
-            return;
-        }
-        else
-        {
-            QStringList qDirList = qstrUnzipFName.split("/");
-            for (int i = 1; i < qDirList.size();i++)
+
+        if (qstrUnzipFName.right(1) == "/")       // dir          
+        {   
+            if (!QFile::exists(qDestPath))
             {
-                QString qstrTemp = qDirList.at(i);
-                qDestPath.append(qDirList.at(i));
-
-
-                if (qstrTemp.compare("bin") == 0)
+                fs::path newPath = qDestPath.toStdString();
+                if (!fs::is_directory(newPath))
                 {
-                    qDestPath.replace(QRegularExpression("bin/"), "");
+                    newPath.remove_filename();
                 }
-
-                //if not the last string is zip dir
-                if (i != (qDirList.size() - 1))
-                    qDestPath.append("/");
-
-                if (!QFile::exists(qDestPath))
-                {
-                    fs::path newPath = qDestPath.toStdString();
-                    if (!fs::is_directory(newPath))
-                    {
-                        newPath.remove_filename();
-                    }
-                    fs::create_directories(newPath);
-                }
+                fs::create_directories(newPath);
+                qDebug() << " create dir:" << qDestPath;
             }
+        }
+        else                                      // file
+        {
             qDebug() << " Tab:" << qstrUnzipFName << qDestPath;
             
             std::fstream stream(qDestPath.toStdString(), std::ios::binary | std::ios::out);
@@ -661,9 +657,10 @@ bool WebPluginEvent::InstallPluginZip(QString strZipFile, QString strPluginName)
             {
                 bool bResult = SetLabelDelete(QString::fromStdString(qDestPath.toStdString()));
                 qDebug() << " change plugin :" << bResult << qDestPath;
+                stream.close();
             }
+            stream.open(qDestPath.toStdString(), std::ios::binary | std::ios::out);
             stream << zfile.open(member).rdbuf();
-            
             stream.close();
         }
 	};
@@ -671,6 +668,7 @@ bool WebPluginEvent::InstallPluginZip(QString strZipFile, QString strPluginName)
 	
 		zip_file zfile(strZipFile.toStdString());
 		std::vector<zip_info> infolist = zfile.infolist();
+        qDebug() << "UnZip downloaded plugin file start :";
 		for (auto &item : infolist)
 		{
 			QString itemFileName = QString::fromStdString(item.filename);
@@ -679,7 +677,6 @@ bool WebPluginEvent::InstallPluginZip(QString strZipFile, QString strPluginName)
 			QString extractDst;
 			match = reg.match(itemFileName);
 
-            qDebug() << "UnZip downloaded plugin file start :";
             if (match.hasMatch())
             {
                 extractDst = makeDestPath(strPluginName, itemFileName, false);

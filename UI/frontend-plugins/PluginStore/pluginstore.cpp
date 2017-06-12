@@ -76,6 +76,11 @@ void PluginStore::on_closeButton_clicked()
     {
         m_lpWebEvent->UninitPluginStore();
     }
+    if (m_lpWebUI != NULL)
+    {
+        m_lpWebUI->close();
+    }
+    
     obs_frontend_save();
     done(0);
 }
