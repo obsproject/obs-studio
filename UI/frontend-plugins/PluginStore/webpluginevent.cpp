@@ -528,6 +528,7 @@ void WebPluginEvent::on_web_downfile_start(QWebEngineDownloadItem *item)
     }
 }
 
+
 void WebPluginEvent::RemoveAllLabelFile()
 {
 	obs_module_t* hModule = obs_current_module();
@@ -658,7 +659,8 @@ bool WebPluginEvent::InstallPluginZip(QString strZipFile, QString strPluginName)
             std::fstream stream(qDestPath.toStdString(), std::ios::binary | std::ios::out);
             if (!stream.is_open())
             {
-                SetLabelDelete(QString::fromStdString(qDestPath.toStdString()));
+                bool bResult = SetLabelDelete(QString::fromStdString(qDestPath.toStdString()));
+                qDebug() << " change plugin :" << bResult << qDestPath;
             }
             stream << zfile.open(member).rdbuf();
             
@@ -692,7 +694,9 @@ bool WebPluginEvent::InstallPluginZip(QString strZipFile, QString strPluginName)
 		//install
 		if (!CheckPluginRuning(strPluginName))
 		{
-			bRet = LoadPlugin(strPluginName);
+            // if load plugin already occupation, users need real run OBS.
+			LoadPlugin(strPluginName);
+            bRet = true;
 		}
 	}
 	catch (...)
