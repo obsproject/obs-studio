@@ -29,7 +29,6 @@ PluginStore::PluginStore(QWidget *parent) : QDialog(parent), ui(new Ui::PluginSt
     pe.setColor(QPalette::WindowText, QColor(101,101,101,255));
     ui->label->setPalette(pe);
 
-
     if (this->objectName().isEmpty())
         ui->label->setText(QStringLiteral("PluginStore"));
     else
@@ -42,9 +41,9 @@ PluginStore::PluginStore(QWidget *parent) : QDialog(parent), ui(new Ui::PluginSt
         m_lpWebEvent = new WebPluginEvent(lpChannel, m_lpWebUI);
         lpChannel->registerObject(QStringLiteral("QCiscik"), m_lpWebEvent);
         m_lpWebUI->page()->setWebChannel(lpChannel);
+        m_lpWebUI->setContextMenuPolicy(Qt::NoContextMenu);
         m_lpWebUI->move(QPoint(0, 40));
         m_lpWebUI->setFixedSize(QSize(890,526));
-
         qstrLanguage = obs_get_locale();
 #ifdef _WIN32
         qstrSystem = "2";
