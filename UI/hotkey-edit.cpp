@@ -272,10 +272,12 @@ void OBSHotkeyWidget::AddEdit(obs_key_combination combo, int idx)
 	edit->setToolTip(toolTip);
 
 	auto revert = new QPushButton;
+	revert->setProperty("themeID", "hotkeyButtons");
 	revert->setText(QTStr("Revert"));
 	revert->setEnabled(false);
 
 	auto clear = new QPushButton;
+	clear->setProperty("themeID", "hotkeyButtons");
 	clear->setText(QTStr("Clear"));
 	clear->setEnabled(!obs_key_combination_is_empty(combo));
 
@@ -287,10 +289,12 @@ void OBSHotkeyWidget::AddEdit(obs_key_combination combo, int idx)
 	});
 
 	auto add = new QPushButton;
+	add->setProperty("themeID", "hotkeyButtons");
 	add->setText("+");
 	add->setMinimumWidth(50);
 
 	auto remove = new QPushButton;
+	remove->setProperty("themeID", "hotkeyButtons");
 	remove->setText("-");
 	remove->setEnabled(removeButtons.size() > 0);
 	remove->setMinimumWidth(50);
