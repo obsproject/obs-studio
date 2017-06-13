@@ -19,6 +19,7 @@
 #include <QFileDialog>
 #include "plugindb.h"
 
+
 static PluginDB m_PluginDB;
 
 class WebPluginEvent;

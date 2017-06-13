@@ -652,15 +652,18 @@ bool WebPluginEvent::InstallPluginZip(QString strZipFile, QString strPluginName)
         {
             qDebug() << " Tab:" << qstrUnzipFName << qDestPath;
             
-            std::fstream stream(qDestPath.toStdString(), std::ios::binary | std::ios::out);
-            if (!stream.is_open())
+            QFile dllFile(qDestPath);
+            if (!dllFile.isOpen())
             {
                 bool bResult = SetLabelDelete(QString::fromStdString(qDestPath.toStdString()));
                 qDebug() << " change plugin :" << bResult << qDestPath;
-                stream.close();
             }
-            stream.open(qDestPath.toStdString(), std::ios::binary | std::ios::out);
-            stream << zfile.open(member).rdbuf();
+            
+            std::fstream stream(qDestPath.toStdString(), std::ios::binary | std::ios::out);
+            if (stream.is_open())
+            {
+                stream << zfile.open(member).rdbuf();
+            }
             stream.close();
         }
 	};
@@ -693,8 +696,8 @@ bool WebPluginEvent::InstallPluginZip(QString strZipFile, QString strPluginName)
 		{
             // if load plugin already occupation, users need real run OBS.
 			LoadPlugin(strPluginName);
-            bRet = true;
 		}
+        bRet = true;
 	}
 	catch (...)
 	{
@@ -723,11 +726,20 @@ bool WebPluginEvent::CheckPluginRuning(QString strPluginName)
 	auto findModule = [](void *param, obs_module_t *module)
 	{
 		auto p = static_cast<QPair<bool, QString>*>(param);
-		QString strModuleName = obs_get_module_name(module);
-		if (strModuleName.compare(p->second, Qt::CaseInsensitive) == 0)
-		{
-			p->first = true;
-		}
+
+        if (module == NULL)
+            return;
+
+        QString strModuleName = obs_get_module_file_name(module);
+        strModuleName = strModuleName.split(".").at(0);
+        qDebug() << strModuleName;
+        if (strModuleName.isEmpty())
+            return;
+
+        if (strModuleName.compare(p->second, Qt::CaseInsensitive) == 0)
+        {
+            p->first = true;
+        }
 	};
 	obs_enum_modules(findModule, &callBackParam);
 	return callBackParam.first;
