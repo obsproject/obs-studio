@@ -751,6 +751,7 @@ OBSApp::OBSApp(int &argc, char **argv, profiler_name_store_t *store)
 	: QApplication(argc, argv),
 	  profilerNameStore(store)
 {
+    
 	sleepInhibitor = os_inhibit_sleep_create("OBS Video/audio");
 }
 
@@ -1324,7 +1325,8 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 	ScopeProfiler prof{run_program_init};
 
 	QCoreApplication::addLibraryPath(".");
-
+   //
+    QCoreApplication::setAttribute(Qt::AA_ShareOpenGLContexts);
 	OBSApp program(argc, argv, profilerNameStore.get());
 	try {
 		program.AppInit();
