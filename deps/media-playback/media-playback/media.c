@@ -427,14 +427,14 @@ static bool mp_media_reset(mp_media_t *m)
 	m->eof = false;
 	m->base_ts += next_ts;
 
-	if (!mp_media_prepare_frames(m))
-		return false;
-
 	pthread_mutex_lock(&m->mutex);
 	stopping = m->stopping;
 	active = m->active;
 	m->stopping = false;
 	pthread_mutex_unlock(&m->mutex);
+
+	if (!mp_media_prepare_frames(m))
+		return false;
 
 	if (active) {
 		if (!m->play_sys_ts)
