@@ -455,12 +455,25 @@ static bool mp_media_reset(mp_media_t *m)
 	return true;
 }
 
-static inline void mp_media_sleepto(mp_media_t *m)
+static inline bool mp_media_sleepto(mp_media_t *m)
 {
-	if (!m->next_ns)
+	bool timeout = false;
+
+	if (!m->next_ns) {
 		m->next_ns = os_gettime_ns();
-	else
-		os_sleepto_ns(m->next_ns);
+	} else {
+		uint64_t t = os_gettime_ns();
+		const uint64_t timeout_ns = 200000000;
+
+		if (m->next_ns > t && (m->next_ns - t) > timeout_ns) {
+			os_sleepto_ns(t + timeout_ns);
+			timeout = true;
+		} else {
+			os_sleepto_ns(m->next_ns);
+		}
+	}
+
+	return timeout;
 }
 
 static inline bool mp_media_eof(mp_media_t *m)
@@ -562,6 +575,7 @@ static inline bool mp_media_thread(mp_media_t *m)
 
 	for (;;) {
 		bool reset, kill, is_active;
+		bool timeout = false;
 
 		pthread_mutex_lock(&m->mutex);
 		is_active = m->active;
@@ -571,7 +585,7 @@ static inline bool mp_media_thread(mp_media_t *m)
 			if (os_sem_wait(m->sem) < 0)
 				return false;
 		} else {
-			mp_media_sleepto(m);
+			timeout = mp_media_sleepto(m);
 		}
 
 		pthread_mutex_lock(&m->mutex);
@@ -592,7 +606,7 @@ static inline bool mp_media_thread(mp_media_t *m)
 		}
 
 		/* frames are ready */
-		if (is_active) {
+		if (is_active && !timeout) {
 			if (m->has_video)
 				mp_media_next_video(m, false);
 			if (m->has_audio)
