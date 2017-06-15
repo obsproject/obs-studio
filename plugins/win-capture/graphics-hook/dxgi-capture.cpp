@@ -28,30 +28,30 @@ static struct dxgi_swap_data data = {};
 
 static bool setup_dxgi(IDXGISwapChain *swap)
 {
-	const char *process_name = get_process_name();
-	bool ignore_d3d10 = false;
 	IUnknown *device;
 	HRESULT hr;
 
-	/* Call of duty ghosts allows the context to be queried as a d3d10
-	 * context when it's actually a d3d11 context.  Why this is I don't
-	 * quite know. */
-	if (_strcmpi(process_name, "iw6sp64_ship.exe") == 0 ||
-	    _strcmpi(process_name, "iw6mp64_ship.exe") == 0 ||
-	    _strcmpi(process_name, "justcause3.exe") == 0 ||
-	    _strcmpi(process_name, "theHunterCotW_F.exe") == 0) {
-		ignore_d3d10 = true;
-	}
+	hr = swap->GetDevice(__uuidof(ID3D11Device), (void**)&device);
+	if (SUCCEEDED(hr)) {
+		ID3D11Device *d3d11 = reinterpret_cast<ID3D11Device*>(device);
+		D3D_FEATURE_LEVEL level = d3d11->GetFeatureLevel();
+		device->Release();
 
-	if (!ignore_d3d10) {
-		hr = swap->GetDevice(__uuidof(ID3D10Device), (void**)&device);
-		if (SUCCEEDED(hr)) {
+		if (level >= D3D_FEATURE_LEVEL_11_0) {
 			data.swap = swap;
-			data.capture = d3d10_capture;
-			data.free = d3d10_free;
-			device->Release();
+			data.capture = d3d11_capture;
+			data.free = d3d11_free;
 			return true;
 		}
+	}
+
+	hr = swap->GetDevice(__uuidof(ID3D10Device), (void**)&device);
+	if (SUCCEEDED(hr)) {
+		data.swap = swap;
+		data.capture = d3d10_capture;
+		data.free = d3d10_free;
+		device->Release();
+		return true;
 	}
 
 	hr = swap->GetDevice(__uuidof(ID3D11Device), (void**)&device);
