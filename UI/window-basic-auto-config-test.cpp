@@ -356,6 +356,19 @@ void AutoConfigTestPage::TestBandwidthThread()
 				Q_ARG(QString, QTStr(TEST_BW_SERVER)
 					.arg(server.name.c_str())));
 
+		/* ignore first 2.5 seconds due to possible buffering skewing
+		 * the result */
+		cv.wait_for(ul, chrono::milliseconds(2500));
+		if (stopped)
+			continue;
+		if (cancel) {
+			ul.unlock();
+			obs_output_force_stop(output);
+			return;
+		}
+
+		/* continue test */
+		int start_bytes = (int)obs_output_get_total_bytes(output);
 		uint64_t t_start = os_gettime_ns();
 
 		cv.wait_for(ul, chrono::seconds(10));
@@ -372,7 +385,8 @@ void AutoConfigTestPage::TestBandwidthThread()
 
 		uint64_t total_time = os_gettime_ns() - t_start;
 
-		int total_bytes = (int)obs_output_get_total_bytes(output);
+		int total_bytes = (int)obs_output_get_total_bytes(output) -
+			start_bytes;
 		uint64_t bitrate = (uint64_t)total_bytes * 8
 			* 1000000000 / total_time / 1000;
 
