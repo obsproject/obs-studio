@@ -1251,8 +1251,12 @@ EXPORT obs_scene_t *obs_sceneitem_get_scene(const obs_sceneitem_t *item);
 /** Gets the source of a scene item. */
 EXPORT obs_source_t *obs_sceneitem_get_source(const obs_sceneitem_t *item);
 
+/* FIXME: The following functions should be deprecated and replaced with a way
+ * to specify savable private user data. -Jim */
 EXPORT void obs_sceneitem_select(obs_sceneitem_t *item, bool select);
 EXPORT bool obs_sceneitem_selected(const obs_sceneitem_t *item);
+EXPORT bool obs_sceneitem_locked(const obs_sceneitem_t *item);
+EXPORT bool obs_sceneitem_set_locked(obs_sceneitem_t *item, bool lock);
 
 /* Functions for getting/setting specific orientation of a scene item */
 EXPORT void obs_sceneitem_set_pos(obs_sceneitem_t *item, const struct vec2 *pos);

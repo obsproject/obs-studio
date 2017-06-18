@@ -75,6 +75,8 @@ static bool FindItemAtPos(obs_scene_t *scene, obs_sceneitem_t *item,
 
 	if (!SceneItemHasVideo(item))
 		return true;
+	if (obs_sceneitem_locked(item))
+		return true;
 
 	vec3_set(&pos3, data->pos.x, data->pos.y, 0.0f);
 
@@ -674,6 +676,9 @@ void OBSBasicPreview::SnapItemMovement(vec2 &offset)
 
 static bool move_items(obs_scene_t *scene, obs_sceneitem_t *item, void *param)
 {
+	if (obs_sceneitem_locked(item))
+		return true;
+
 	vec2 *offset = reinterpret_cast<vec2*>(param);
 
 	if (obs_sceneitem_selected(item)) {
@@ -1084,6 +1089,9 @@ static inline bool crop_enabled(const obs_sceneitem_crop *crop)
 bool OBSBasicPreview::DrawSelectedItem(obs_scene_t *scene,
 		obs_sceneitem_t *item, void *param)
 {
+	if (obs_sceneitem_locked(item))
+		return true;
+
 	if (!obs_sceneitem_selected(item))
 		return true;
 
@@ -1183,6 +1191,7 @@ void OBSBasicPreview::DrawSceneEditing()
 	gs_technique_begin_pass(tech, 0);
 
 	OBSScene scene = main->GetCurrentScene();
+
 	if (scene)
 		obs_scene_enum_items(scene, DrawSelectedItem, this);
 

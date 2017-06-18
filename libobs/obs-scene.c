@@ -590,6 +590,7 @@ static void scene_load_item(struct obs_scene *scene, obs_data_t *item_data)
 	const char            *scale_filter_str;
 	struct obs_scene_item *item;
 	bool visible;
+	bool lock;
 
 	if (!source) {
 		blog(LOG_WARNING, "[scene_load_item] Source %s not found!",
@@ -616,10 +617,12 @@ static void scene_load_item(struct obs_scene *scene, obs_data_t *item_data)
 	item->rot     = (float)obs_data_get_double(item_data, "rot");
 	item->align   = (uint32_t)obs_data_get_int(item_data, "align");
 	visible = obs_data_get_bool(item_data, "visible");
+	lock = obs_data_get_bool(item_data, "locked");
 	obs_data_get_vec2(item_data, "pos",    &item->pos);
 	obs_data_get_vec2(item_data, "scale",  &item->scale);
 
 	set_visibility(item, visible);
+	obs_sceneitem_set_locked(item, lock);
 
 	item->bounds_type =
 		(enum obs_bounds_type)obs_data_get_int(item_data,
@@ -697,6 +700,7 @@ static void scene_save_item(obs_data_array_t *array,
 
 	obs_data_set_string(item_data, "name",         name);
 	obs_data_set_bool  (item_data, "visible",      item->user_visible);
+	obs_data_set_bool  (item_data, "locked",       item->locked);
 	obs_data_set_double(item_data, "rot",          item->rot);
 	obs_data_set_vec2 (item_data, "pos",          &item->pos);
 	obs_data_set_vec2 (item_data, "scale",        &item->scale);
@@ -1347,6 +1351,7 @@ obs_sceneitem_t *obs_scene_add(obs_scene_t *scene, obs_source_t *source)
 	item->align   = OBS_ALIGN_TOP | OBS_ALIGN_LEFT;
 	item->actions_mutex = mutex;
 	item->user_visible = true;
+	item->locked = false;
 	os_atomic_set_long(&item->active_refs, 1);
 	vec2_set(&item->scale, 1.0f, 1.0f);
 	matrix4_identity(&item->draw_transform);
@@ -1770,6 +1775,27 @@ bool obs_sceneitem_set_visible(obs_sceneitem_t *item, bool visible)
 	} else {
 		set_visibility(item, visible);
 	}
+	return true;
+}
+
+bool obs_sceneitem_locked(const obs_sceneitem_t *item)
+{
+	return item ? item->locked : false;
+}
+
+bool obs_sceneitem_set_locked(obs_sceneitem_t *item, bool lock)
+{
+	if (!item)
+		return false;
+
+	if (item->locked == lock)
+		return false;
+
+	if (!item->parent)
+		return false;
+
+	item->locked = lock;
+
 	return true;
 }
 

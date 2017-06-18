@@ -1,5 +1,6 @@
 #include "visibility-item-widget.hpp"
 #include "visibility-checkbox.hpp"
+#include "locked-checkbox.hpp"
 #include "qt-wrappers.hpp"
 #include "obs-app.hpp"
 #include <QListWidget>
@@ -49,6 +50,7 @@ VisibilityItemWidget::VisibilityItemWidget(obs_sceneitem_t *item_)
 {
 	const char *name = obs_source_get_name(source);
 	bool enabled = obs_sceneitem_visible(item);
+	bool locked = obs_sceneitem_locked(item);
 	obs_scene_t *scene = obs_sceneitem_get_scene(item);
 	obs_source_t *sceneSource = obs_scene_get_source(scene);
 
@@ -60,13 +62,23 @@ VisibilityItemWidget::VisibilityItemWidget(obs_sceneitem_t *item_)
 #endif
 	vis->setChecked(enabled);
 
+	lock = new LockedCheckBox();
+	lock->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
+	/* Fix for non-apple systems where the spacing would be too big */
+#ifndef __APPLE__
+	lock->setMaximumSize(16, 16);
+#endif
+	lock->setChecked(locked);
+
 	label = new QLabel(QT_UTF8(name));
 	label->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
 
 	QHBoxLayout *itemLayout = new QHBoxLayout();
 	itemLayout->addWidget(vis);
+	itemLayout->addWidget(lock);
 	itemLayout->addWidget(label);
 	itemLayout->setContentsMargins(5, 2, 5, 2);
+	itemLayout->setSpacing(2);
 
 	setLayout(itemLayout);
 	setStyleSheet("background-color: rgba(255, 255, 255, 0);");
@@ -80,6 +92,9 @@ VisibilityItemWidget::VisibilityItemWidget(obs_sceneitem_t *item_)
 
 	connect(vis, SIGNAL(clicked(bool)),
 			this, SLOT(VisibilityClicked(bool)));
+
+	connect(lock, SIGNAL(clicked(bool)),
+			this, SLOT(LockClicked(bool)));
 }
 
 VisibilityItemWidget::~VisibilityItemWidget()
@@ -137,6 +152,18 @@ void VisibilityItemWidget::OBSSceneItemVisible(void *param, calldata_t *data)
 				Q_ARG(bool, enabled));
 }
 
+void VisibilityItemWidget::OBSSceneItemLocked(void *param, calldata_t *data)
+{
+	VisibilityItemWidget *window =
+		reinterpret_cast<VisibilityItemWidget*>(param);
+	obs_sceneitem_t *curItem = (obs_sceneitem_t*)calldata_ptr(data, "item");
+	bool locked = calldata_bool(data, "locked");
+
+	if (window->item == curItem)
+		QMetaObject::invokeMethod(window, "SourceLocked",
+				Q_ARG(bool, locked));
+}
+
 void VisibilityItemWidget::OBSSourceEnabled(void *param, calldata_t *data)
 {
 	VisibilityItemWidget *window =
@@ -165,10 +192,22 @@ void VisibilityItemWidget::VisibilityClicked(bool visible)
 		obs_source_set_enabled(source, visible);
 }
 
+void VisibilityItemWidget::LockClicked(bool locked)
+{
+	if (item)
+		obs_sceneitem_set_locked(item, locked);
+}
+
 void VisibilityItemWidget::SourceEnabled(bool enabled)
 {
 	if (vis->isChecked() != enabled)
 		vis->setChecked(enabled);
+}
+
+void VisibilityItemWidget::SourceLocked(bool locked)
+{
+	if (lock->isChecked() != locked)
+		lock->setChecked(locked);
 }
 
 void VisibilityItemWidget::SourceRenamed(QString name)
