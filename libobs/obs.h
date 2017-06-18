@@ -1300,6 +1300,9 @@ EXPORT void obs_sceneitem_get_box_transform(const obs_sceneitem_t *item,
 EXPORT bool obs_sceneitem_visible(const obs_sceneitem_t *item);
 EXPORT bool obs_sceneitem_set_visible(obs_sceneitem_t *item, bool visible);
 
+EXPORT bool obs_sceneitem_locked(const obs_sceneitem_t *item);
+EXPORT bool obs_sceneitem_set_locked(obs_sceneitem_t *item, bool lock);
+
 struct obs_sceneitem_crop {
 	int left;
 	int top;
