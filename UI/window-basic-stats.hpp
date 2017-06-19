@@ -57,4 +57,6 @@ class OBSBasicStats : public QWidget {
 public:
 	OBSBasicStats(QWidget *parent = nullptr);
 	~OBSBasicStats();
+
+	static void InitializeValues();
 };

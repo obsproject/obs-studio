@@ -217,6 +217,15 @@ static uint32_t first_skipped = 0xFFFFFFFF;
 static uint32_t first_rendered = 0xFFFFFFFF;
 static uint32_t first_lagged = 0xFFFFFFFF;
 
+void OBSBasicStats::InitializeValues()
+{
+	video_t *video = obs_get_video();
+	first_encoded  = video_output_get_total_frames(video);
+	first_skipped  = video_output_get_skipped_frames(video);
+	first_rendered = obs_get_total_frames();
+	first_lagged   = obs_get_lagged_frames();
+}
+
 void OBSBasicStats::Update()
 {
 	OBSBasic *main = reinterpret_cast<OBSBasic*>(App()->GetMainWindow());
