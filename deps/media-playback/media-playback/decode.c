@@ -320,9 +320,13 @@ bool mp_decode_next(struct mp_decode *d)
 	if (d->frame_ready) {
 		int64_t last_pts = d->frame_pts;
 
-		d->frame_pts = av_rescale_q(d->frame->best_effort_timestamp,
-				d->stream->time_base,
-				(AVRational){1, 1000000000});
+		if (d->frame->best_effort_timestamp == AV_NOPTS_VALUE)
+			d->frame_pts = d->next_pts;
+		else
+			d->frame_pts = av_rescale_q(
+					d->frame->best_effort_timestamp,
+					d->stream->time_base,
+					(AVRational){1, 1000000000});
 
 		int64_t duration = d->frame->pkt_duration;
 		if (!duration)
@@ -331,6 +335,7 @@ bool mp_decode_next(struct mp_decode *d)
 			duration = av_rescale_q(duration,
 					d->stream->time_base,
 					(AVRational){1, 1000000000});
+
 		d->last_duration = duration;
 		d->next_pts = d->frame_pts + duration;
 	}
