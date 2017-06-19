@@ -36,6 +36,8 @@ static inline bool load_offsets_from_string(struct graphics_offsets *offsets,
 
 	offsets->dxgi.present =
 		(uint32_t)config_get_uint(config, "dxgi", "present");
+	offsets->dxgi.present1 =
+		(uint32_t)config_get_uint(config, "dxgi", "present1");
 	offsets->dxgi.resize =
 		(uint32_t)config_get_uint(config, "dxgi", "resize");
 
