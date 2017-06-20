@@ -218,6 +218,9 @@ static void get_frame(void *opaque, struct obs_source_frame *f)
 static void preload_frame(void *opaque, struct obs_source_frame *f)
 {
 	struct ffmpeg_source *s = opaque;
+	if (s->close_when_inactive)
+		return;
+
 	if (s->is_clear_on_media_end || s->is_looping)
 		obs_source_preload_video(s->source, f);
 }
