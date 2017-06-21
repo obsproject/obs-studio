@@ -2801,26 +2801,30 @@ bool OBSBasic::ResetAudio()
 void OBSBasic::ResetAudioDevice(const char *sourceId, const char *deviceId,
 		const char *deviceDesc, int channel)
 {
+	bool disable = deviceId && strcmp(deviceId, "disabled") == 0;
 	obs_source_t *source;
 	obs_data_t *settings;
-	bool same = false;
 
 	source = obs_get_output_source(channel);
 	if (source) {
-		settings = obs_source_get_settings(source);
-		const char *curId = obs_data_get_string(settings, "device_id");
+		if (disable) {
+			obs_set_output_source(channel, nullptr);
+		} else {
+			settings = obs_source_get_settings(source);
+			const char *oldId = obs_data_get_string(settings,
+					"device_id");
+			if (strcmp(oldId, deviceId) != 0) {
+				obs_data_set_string(settings, "device_id",
+						deviceId);
+				obs_source_update(source, settings);
+			}
+			obs_data_release(settings);
+		}
 
-		same = (strcmp(curId, deviceId) == 0);
-
-		obs_data_release(settings);
 		obs_source_release(source);
-	}
 
-	if (!same)
-		obs_set_output_source(channel, nullptr);
-
-	if (!same && strcmp(deviceId, "disabled") != 0) {
-		obs_data_t *settings = obs_data_create();
+	} else if (!disable) {
+		settings = obs_data_create();
 		obs_data_set_string(settings, "device_id", deviceId);
 		source = obs_source_create(sourceId, deviceDesc, settings,
 				nullptr);
