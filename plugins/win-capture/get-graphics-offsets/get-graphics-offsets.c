@@ -15,6 +15,8 @@ int main(int argc, char *argv[])
 	wc.lpfnWndProc   = (WNDPROC)DefWindowProcA;
 	wc.lpszClassName = DUMMY_WNDCLASS;
 
+	SetErrorMode(SEM_FAILCRITICALERRORS);
+
 	if (!RegisterClassA(&wc)) {
 		printf("failed to register '%s'\n", DUMMY_WNDCLASS);
 		return -1;
