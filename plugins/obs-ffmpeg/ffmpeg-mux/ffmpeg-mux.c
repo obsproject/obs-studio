@@ -646,6 +646,8 @@ int main(int argc, char *argv[])
 #ifdef _WIN32
 	char **argv;
 
+	SetErrorMode(SEM_FAILCRITICALERRORS);
+
 	argv = malloc(argc * sizeof(char*));
 	for (int i = 0; i < argc; i++) {
 		size_t len = wcslen(argv_w[i]);
