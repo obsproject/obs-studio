@@ -157,10 +157,6 @@ static obs_properties_t *ffmpeg_source_getproperties(void *data)
 	obs_properties_add_text(props, "input_format",
 			obs_module_text("InputFormat"), OBS_TEXT_DEFAULT);
 
-	obs_properties_add_int(props, "buffering_mb",
-			obs_module_text("BufferingMB"),
-			0, 50, 1);
-
 #ifndef __APPLE__
 	obs_properties_add_bool(props, "hw_decode",
 			obs_module_text("HardwareDecode"));
