@@ -114,8 +114,9 @@ static bool limit_cy_clicked(obs_properties_t *props, obs_property_t *p,
 	return true;
 }
 
-static obs_properties_t *scroll_filter_properties(void *data)
+static obs_properties_t *scroll_filter_properties(void *data, void *type_data)
 {
+	UNUSED_PARAMETER(type_data);
 	obs_properties_t *props = obs_properties_create();
 	obs_property_t *p;
 
@@ -142,8 +143,9 @@ static obs_properties_t *scroll_filter_properties(void *data)
 	return props;
 }
 
-static void scroll_filter_defaults(obs_data_t *settings)
+static void scroll_filter_defaults(obs_data_t *settings, void *type_data)
 {
+	UNUSED_PARAMETER(type_data);
 	obs_data_set_default_bool(settings, "limit_size", false);
 	obs_data_set_default_int(settings, "cx", 100);
 	obs_data_set_default_int(settings, "cy", 100);

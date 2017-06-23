@@ -123,8 +123,9 @@ static void luma_wipe_destroy(void *data)
 	bfree(lwipe);
 }
 
-static obs_properties_t *luma_wipe_properties(void *data)
+static obs_properties_t *luma_wipe_properties(void *data, void *type_data)
 {
+	UNUSED_PARAMETER(type_data);
 	obs_properties_t *props = obs_properties_create();
 	struct luma_wipe_info *lwipe = data;
 
@@ -147,8 +148,9 @@ static obs_properties_t *luma_wipe_properties(void *data)
 	return props;
 }
 
-static void luma_wipe_defaults(obs_data_t *settings)
+static void luma_wipe_defaults(obs_data_t *settings, void *type_data)
 {
+	UNUSED_PARAMETER(type_data);
 	obs_data_set_default_string(settings, S_LUMA_IMG, "linear-h.png");
 	obs_data_set_default_double(settings, S_LUMA_SOFT, 0.03);
 	obs_data_set_default_bool(settings, S_LUMA_INV, false);

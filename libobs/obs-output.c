@@ -130,7 +130,7 @@ obs_output_t *obs_output_create(const char *id, const char *name,
 	output->video    = obs_get_video();
 	output->audio    = obs_get_audio();
 	if (output->info.get_defaults)
-		output->info.get_defaults(output->context.settings);
+		output->info.get_defaults(output->context.settings, output->info.type_data);
 
 	ret = os_event_init(&output->reconnect_stop_event,
 			OS_EVENT_TYPE_MANUAL);
@@ -415,7 +415,7 @@ static inline obs_data_t *get_defaults(const struct obs_output_info *info)
 {
 	obs_data_t *settings = obs_data_create();
 	if (info->get_defaults)
-		info->get_defaults(settings);
+		info->get_defaults(settings, info->type_data);
 	return settings;
 }
 
@@ -432,7 +432,7 @@ obs_properties_t *obs_get_output_properties(const char *id)
 		obs_data_t       *defaults = get_defaults(info);
 		obs_properties_t *properties;
 
-		properties = info->get_properties(NULL);
+		properties = info->get_properties(NULL, info->type_data);
 		obs_properties_apply_settings(properties, defaults);
 		obs_data_release(defaults);
 		return properties;
@@ -447,7 +447,7 @@ obs_properties_t *obs_output_properties(const obs_output_t *output)
 
 	if (output && output->info.get_properties) {
 		obs_properties_t *props;
-		props = output->info.get_properties(output->context.data);
+		props = output->info.get_properties(output->context.data, output->info.type_data);
 		obs_properties_apply_settings(props, output->context.settings);
 		return props;
 	}

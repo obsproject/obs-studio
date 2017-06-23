@@ -309,8 +309,9 @@ static bool sampling_modified(obs_properties_t *props, obs_property_t *p,
 	return true;
 }
 
-static obs_properties_t *scale_filter_properties(void *data)
+static obs_properties_t *scale_filter_properties(void *data, void *type_data)
 {
+	UNUSED_PARAMETER(type_data);
 	obs_properties_t *props = obs_properties_create();
 	struct obs_video_info ovi;
 	obs_property_t *p;
@@ -365,8 +366,9 @@ static obs_properties_t *scale_filter_properties(void *data)
 	return props;
 }
 
-static void scale_filter_defaults(obs_data_t *settings)
+static void scale_filter_defaults(obs_data_t *settings, void *type_data)
 {
+	UNUSED_PARAMETER(type_data);
 	obs_data_set_default_string(settings, S_SAMPLING, S_SAMPLING_BICUBIC);
 	obs_data_set_default_string(settings, S_RESOLUTION, T_NONE);
 	obs_data_set_default_bool(settings, S_UNDISTORT, 0);

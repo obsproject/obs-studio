@@ -105,8 +105,9 @@ static void monitor_capture_destroy(void *data)
 	bfree(capture);
 }
 
-static void monitor_capture_defaults(obs_data_t *settings)
+static void monitor_capture_defaults(obs_data_t *settings, void *type_data)
 {
+	UNUSED_PARAMETER(type_data);
 	obs_data_set_default_int(settings, "monitor", 0);
 	obs_data_set_default_bool(settings, "capture_cursor", true);
 	obs_data_set_default_bool(settings, "compatibility", false);
@@ -211,8 +212,9 @@ static BOOL CALLBACK enum_monitor_props(HMONITOR handle, HDC hdc, LPRECT rect,
 	return TRUE;
 }
 
-static obs_properties_t *monitor_capture_properties(void *unused)
+static obs_properties_t *monitor_capture_properties(void *unused, void *type_data)
 {
+	UNUSED_PARAMETER(type_data);
 	UNUSED_PARAMETER(unused);
 
 	obs_properties_t *props = obs_properties_create();

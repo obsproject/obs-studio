@@ -137,8 +137,9 @@ static void obs_qsv_destroy(void *data)
 	}
 }
 
-static void obs_qsv_defaults(obs_data_t *settings)
+static void obs_qsv_defaults(obs_data_t *settings, void *type_data)
 {
+	UNUSED_PARAMETER(type_data);
 	obs_data_set_default_string(settings, "target_usage", "balanced");
 	obs_data_set_default_int(settings, "bitrate", 2500);
 	obs_data_set_default_int(settings, "max_bitrate", 3000);
@@ -233,8 +234,9 @@ static inline void add_rate_controls(obs_property_t *list,
 	}
 }
 
-static obs_properties_t *obs_qsv_props(void *unused)
+static obs_properties_t *obs_qsv_props(void *unused, void *type_data)
 {
+	UNUSED_PARAMETER(type_data);
 	UNUSED_PARAMETER(unused);
 
 	obs_properties_t *props = obs_properties_create();

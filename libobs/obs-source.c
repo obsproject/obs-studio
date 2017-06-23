@@ -322,7 +322,7 @@ static obs_source_t *obs_source_create_internal(const char *id,
 		goto fail;
 
 	if (info && info->get_defaults)
-		info->get_defaults(source->context.settings);
+		info->get_defaults(source->context.settings, source->info.type_data);
 
 	if (!obs_source_init(source))
 		goto fail;
@@ -689,7 +689,7 @@ static inline obs_data_t *get_defaults(const struct obs_source_info *info)
 {
 	obs_data_t *settings = obs_data_create();
 	if (info->get_defaults)
-		info->get_defaults(settings);
+		info->get_defaults(settings, info->type_data);
 	return settings;
 }
 
@@ -712,7 +712,7 @@ obs_properties_t *obs_get_source_properties(const char *id)
 		obs_data_t       *defaults = get_defaults(info);
 		obs_properties_t *properties;
 
-		properties = info->get_properties(NULL);
+		properties = info->get_properties(NULL, info->type_data);
 		obs_properties_apply_settings(properties, defaults);
 		obs_data_release(defaults);
 		return properties;
@@ -739,7 +739,7 @@ obs_properties_t *obs_source_properties(const obs_source_t *source)
 
 	if (source->info.get_properties) {
 		obs_properties_t *props;
-		props = source->info.get_properties(source->context.data);
+		props = source->info.get_properties(source->context.data, source->info.type_data);
 		obs_properties_apply_settings(props, source->context.settings);
 		return props;
 	}

@@ -91,8 +91,9 @@ static void image_source_update(void *data, obs_data_t *settings)
 		image_source_unload(data);
 }
 
-static void image_source_defaults(obs_data_t *settings)
+static void image_source_defaults(obs_data_t *settings, void *type_data)
 {
+	UNUSED_PARAMETER(type_data);
 	obs_data_set_default_bool(settings, "unload", false);
 }
 
@@ -221,8 +222,9 @@ static const char *image_filter =
 	"JPEG Files (*.jpeg *.jpg);;"
 	"GIF Files (*.gif)";
 
-static obs_properties_t *image_source_properties(void *data)
+static obs_properties_t *image_source_properties(void *data, void *type_data)
 {
+	UNUSED_PARAMETER(type_data);
 	struct image_source *s = data;
 	struct dstr path = {0};
 

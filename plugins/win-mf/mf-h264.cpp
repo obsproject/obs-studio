@@ -194,7 +194,7 @@ static bool rate_control_modified(obs_properties_t *ppts, obs_property_t *p,
 	return true;
 }
 
-static obs_properties_t *MFH264_GetProperties(void *)
+static obs_properties_t *MFH264_GetProperties(void *, void *)
 {
 	obs_properties_t *props = obs_properties_create();
 	obs_property_t *p;
@@ -245,7 +245,7 @@ static obs_properties_t *MFH264_GetProperties(void *)
 	return props;
 }
 
-static void MFH264_GetDefaults(obs_data_t *settings)
+static void MFH264_GetDefaults(obs_data_t *settings, void *)
 {
 #define PROP_DEF(x, y, z) obs_data_set_default_ ## x(settings, y, z)
 	PROP_DEF(int,    MFP_BITRATE,         2500);

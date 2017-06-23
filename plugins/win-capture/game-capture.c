@@ -1761,8 +1761,9 @@ static const char *game_capture_name(void *unused)
 	return TEXT_GAME_CAPTURE;
 }
 
-static void game_capture_defaults(obs_data_t *settings)
+static void game_capture_defaults(obs_data_t *settings, void *type_data)
 {
+	UNUSED_PARAMETER(type_data);
 	obs_data_set_default_string(settings, SETTING_MODE, SETTING_MODE_ANY);
 	obs_data_set_default_int(settings, SETTING_WINDOW_PRIORITY,
 			(int)WINDOW_PRIORITY_EXE);
@@ -1889,8 +1890,9 @@ static bool window_not_blacklisted(const char *title, const char *class,
 	return !is_blacklisted_exe(exe);
 }
 
-static obs_properties_t *game_capture_properties(void *data)
+static obs_properties_t *game_capture_properties(void *data, void *type_data)
 {
+	UNUSED_PARAMETER(type_data);
 	HMONITOR monitor;
 	uint32_t cx = 1920;
 	uint32_t cy = 1080;

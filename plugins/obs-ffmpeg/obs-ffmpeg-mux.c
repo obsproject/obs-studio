@@ -451,8 +451,9 @@ static void ffmpeg_mux_data(void *data, struct encoder_packet *packet)
 	write_packet(stream, packet);
 }
 
-static obs_properties_t *ffmpeg_mux_properties(void *unused)
+static obs_properties_t *ffmpeg_mux_properties(void *unused, void *type_data)
 {
+	UNUSED_PARAMETER(type_data);
 	UNUSED_PARAMETER(unused);
 
 	obs_properties_t *props = obs_properties_create();
@@ -802,8 +803,9 @@ static void replay_buffer_data(void *data, struct encoder_packet *packet)
 	}
 }
 
-static void replay_buffer_defaults(obs_data_t *s)
+static void replay_buffer_defaults(obs_data_t *s, void *type_data)
 {
+	UNUSED_PARAMETER(type_data);
 	obs_data_set_default_int(s, "max_time_sec", 15);
 	obs_data_set_default_int(s, "max_size_mb", 500);
 	obs_data_set_default_string(s, "format", "%CCYY-%MM-%DD %hh-%mm-%ss");

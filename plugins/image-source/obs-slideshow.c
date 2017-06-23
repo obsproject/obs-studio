@@ -500,8 +500,9 @@ static uint32_t ss_height(void *data)
 	return ss->transition ? ss->cy : 0;
 }
 
-static void ss_defaults(obs_data_t *settings)
+static void ss_defaults(obs_data_t *settings, void *type_data)
 {
+	UNUSED_PARAMETER(type_data);
 	obs_data_set_default_string(settings, S_TRANSITION, "fade");
 	obs_data_set_default_int(settings, S_SLIDE_TIME, 8000);
 	obs_data_set_default_int(settings, S_TR_SPEED, 700);
@@ -520,8 +521,9 @@ static const char *aspects[] = {
 
 #define NUM_ASPECTS (sizeof(aspects) / sizeof(const char *))
 
-static obs_properties_t *ss_properties(void *data)
+static obs_properties_t *ss_properties(void *data, void *type_data)
 {
+	UNUSED_PARAMETER(type_data);
 	obs_properties_t *ppts = obs_properties_create();
 	struct slideshow *ss = data;
 	struct obs_video_info ovi;

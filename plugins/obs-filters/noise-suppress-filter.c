@@ -267,13 +267,15 @@ static struct obs_audio_data *noise_suppress_filter_audio(void *data,
 	return &ng->output_audio;
 }
 
-static void noise_suppress_defaults(obs_data_t *s)
+static void noise_suppress_defaults(obs_data_t *s, void *type_data)
 {
+	UNUSED_PARAMETER(type_data);
 	obs_data_set_default_int(s, S_SUPPRESS_LEVEL, -30);
 }
 
-static obs_properties_t *noise_suppress_properties(void *data)
+static obs_properties_t *noise_suppress_properties(void *data, void *type_data)
 {
+	UNUSED_PARAMETER(type_data);
 	obs_properties_t *ppts = obs_properties_create();
 
 	obs_properties_add_int_slider(ppts, S_SUPPRESS_LEVEL,

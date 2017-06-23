@@ -859,8 +859,9 @@ static bool extents_modified(obs_properties_t *props, obs_property_t *p,
 
 #undef set_vis
 
-static obs_properties_t *get_properties(void *data)
+static obs_properties_t *get_properties(void *data, void *type_data)
 {
+	UNUSED_PARAMETER(type_data);
 	TextSource *s = reinterpret_cast<TextSource*>(data);
 	string path;
 
@@ -973,8 +974,9 @@ bool obs_module_load(void)
 	{
 		return reinterpret_cast<TextSource*>(data)->cy;
 	};
-	si.get_defaults = [] (obs_data_t *settings)
+	si.get_defaults = [](obs_data_t *settings, void *type_data)
 	{
+		UNUSED_PARAMETER(type_data);
 		obs_data_t *font_obj = obs_data_create();
 		obs_data_set_default_string(font_obj, "face", "Arial");
 		obs_data_set_default_int(font_obj, "size", 36);
