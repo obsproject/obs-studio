@@ -495,7 +495,7 @@ static void vlcs_update(void *data, obs_data_t *settings)
 
 	behavior = obs_data_get_string(settings, S_BEHAVIOR);
 
-	network_caching = obs_data_get_int(settings, S_NETWORK_CACHING);
+	network_caching = (int)obs_data_get_int(settings, S_NETWORK_CACHING);
 
 	if (astrcmpi(behavior, S_BEHAVIOR_PAUSE_UNPAUSE) == 0) {
 		c->behavior = BEHAVIOR_PAUSE_UNPAUSE;
