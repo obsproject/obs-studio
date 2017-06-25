@@ -67,7 +67,11 @@ void *os_dlopen(const char *path)
 #endif
 		dstr_cat(&dylib_name, ".so");
 
+#ifdef __APPLE__
+	void *res = dlopen(dylib_name.array, RTLD_LAZY | RTLD_FIRST);
+#else
 	void *res = dlopen(dylib_name.array, RTLD_LAZY);
+#endif
 	if (!res)
 		blog(LOG_ERROR, "os_dlopen(%s->%s): %s\n",
 				path, dylib_name.array, dlerror());
