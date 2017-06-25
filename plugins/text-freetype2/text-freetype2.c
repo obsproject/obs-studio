@@ -19,7 +19,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <util/platform.h>
 #include <ft2build.h>
 #include FT_FREETYPE_H
-#include <sys/stat.h>
 #include "text-freetype2.h"
 #include "obs-convenience.h"
 #include "find-font.h"
@@ -235,10 +234,11 @@ static void ft2_video_tick(void *data, float seconds)
 	if (!srcdata->from_file || !srcdata->text_file) return;
 
 	if (os_gettime_ns() - srcdata->last_checked >= 1000000000) {
-		time_t t = get_modified_timestamp(srcdata->text_file);
+		struct stat new_stats = get_file_stats(srcdata->text_file);
 		srcdata->last_checked = os_gettime_ns();
 
-		if (srcdata->m_timestamp != t) {
+		if (srcdata->file_stats.st_mtime != new_stats.st_mtime ||
+			srcdata->file_stats.st_size  != new_stats.st_size) {
 			if (srcdata->log_mode)
 				read_from_end(srcdata, srcdata->text_file);
 			else
