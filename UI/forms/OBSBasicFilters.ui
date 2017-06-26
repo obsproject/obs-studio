@@ -412,12 +412,9 @@
           </spacer>
          </item>
          <item>
-          <widget class="QPushButton" name="close">
-           <property name="text">
-            <string>Close</string>
-           </property>
-           <property name="autoDefault">
-            <bool>false</bool>
+          <widget class="QDialogButtonBox" name="buttonBox">
+           <property name="standardButtons">
+            <set>QDialogButtonBox::Reset|QDialogButtonBox::Close</set>
            </property>
           </widget>
          </item>
@@ -446,21 +443,5 @@
   <include location="obs.qrc"/>
  </resources>
  <connections>
-  <connection>
-   <sender>close</sender>
-   <signal>clicked()</signal>
-   <receiver>OBSBasicFilters</receiver>
-   <slot>accept()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>811</x>
-     <y>701</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>722</x>
-     <y>727</y>
-    </hint>
-   </hints>
-  </connection>
  </connections>
 </ui>

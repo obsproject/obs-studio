@@ -49,7 +49,7 @@ OBSBasicProperties::OBSBasicProperties(QWidget *parent, OBSSource source_)
 	int cy = (int)config_get_int(App()->GlobalConfig(), "PropertiesWindow",
 			"cy");
 
-	buttonBox->setStandardButtons(QDialogButtonBox::Ok |
+	buttonBox->setStandardButtons(QDialogButtonBox::Reset | QDialogButtonBox::Ok |
 			QDialogButtonBox::Cancel);
 	buttonBox->setObjectName(QStringLiteral("buttonBox"));
 
@@ -171,6 +171,22 @@ void OBSBasicProperties::on_buttonBox_clicked(QAbstractButton *button)
 			obs_source_update(source, oldSettings);
 
 		close();
+	}
+
+	if (val == QDialogButtonBox::ResetRole) {
+		const char *id = obs_source_get_id(source);
+		obs_data_t *settings = obs_source_get_settings(source);
+		obs_data_t *defaultSettings = obs_get_source_defaults(id);
+		obs_data_clear(settings);
+		obs_data_release(settings);
+
+		if (view->DeferUpdate())
+			obs_data_apply(settings, defaultSettings);
+		else
+			obs_source_update(source, defaultSettings);
+
+		view->RefreshProperties();
+		obs_data_release(defaultSettings);
 	}
 }
 
