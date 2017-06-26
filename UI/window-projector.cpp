@@ -3,6 +3,7 @@
 #include <QMouseEvent>
 #include <QMenu>
 #include <QScreen>
+#include <QShortcut>
 #include "window-projector.hpp"
 #include "display-helpers.hpp"
 #include "qt-wrappers.hpp"
@@ -19,6 +20,8 @@ OBSProjector::OBSProjector(QWidget *widget, obs_source_t *source_, bool window)
 	if (!window) {
 		setWindowFlags(Qt::FramelessWindowHint |
 				Qt::X11BypassWindowManagerHint);
+		new QShortcut(QKeySequence(Qt::Key_F), this,
+				SLOT(EscapeTriggered()));
 	}
 
 	setAttribute(Qt::WA_DeleteOnClose, true);
