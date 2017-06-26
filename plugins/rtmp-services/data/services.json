@@ -840,6 +840,48 @@
                     "url": "rtmp://rtmpin.livestreamingest.com/rtmpin"
                 }
             ]
+        },
+        {
+            "name": "Chaturbate",
+            "servers": [
+                {
+                    "name": "Default Global Auto Select - Recommended",
+                    "url": "rtmp://live.stream.highwebmedia.com/live-origin"
+                },
+                {
+                    "name": "US West",
+                    "url": "rtmp://live-us-west.stream.highwebmedia.com/live-origin"
+                },
+                {
+                    "name": "US Central",
+                    "url": "rtmp://live-us-central.stream.highwebmedia.com/live-origin"
+                },
+                {
+                    "name": "US East",
+                    "url": "rtmp://live-us-east.stream.highwebmedia.com/live-origin"
+                },
+                {
+                    "name": "Europe West",
+                    "url": "rtmp://live-eu-west.stream.highwebmedia.com/live-origin"
+                },
+                {
+                    "name": "Europe East",
+                    "url": "rtmp://live-eu-east.stream.highwebmedia.com/live-origin"
+                },
+                {
+                    "name": "Asia/Pacific South",
+                    "url": "rtmp://live-as-south.stream.highwebmedia.com/live-origin"
+                },
+                {
+                    "name": "Asia/Pacific North-East",
+                    "url": "rtmp://live-as-northeast.stream.highwebmedia.com/live-origin"
+                }
+            ],
+            "recommended": {
+                "keyint": 2,
+                "max video bitrate": 20000,
+                "max audio bitrate": 192
+            }
         }
     ]
 }
