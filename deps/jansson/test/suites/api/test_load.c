@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2013 Petri Lehtinen <petri@digip.org>
+ * Copyright (c) 2009-2016 Petri Lehtinen <petri@digip.org>
  *
  * Jansson is free software; you can redistribute it and/or modify
  * it under the terms of the MIT license. See LICENSE for details.
@@ -32,6 +32,20 @@ static void file_not_found()
 
     if(strcmp(error.text, "unable to open /path/to/nonexistent/file.json") != 0)
         fail("json_load_file returned an invalid error message");
+}
+
+static void very_long_file_name() {
+    json_t *json;
+    json_error_t error;
+
+    json = json_load_file("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", 0, &error);
+    if(json)
+        fail("json_load_file returned non-NULL for a nonexistent file");
+    if(error.line != -1)
+        fail("json_load_file returned an invalid line number");
+
+    if (strncmp(error.source, "...aaa", 6) != 0)
+        fail("error source was set incorrectly");
 }
 
 static void reject_duplicates()
@@ -97,6 +111,8 @@ static void decode_int_as_real()
     json_int_t expected;
 #endif
 
+    char big[311];
+
     json = json_loads("42", JSON_DECODE_INT_AS_REAL | JSON_DECODE_ANY, &error);
     if (!json || !json_is_real(json) || json_real_value(json) != 42.0)
         fail("json_load decode int as real failed - int");
@@ -113,6 +129,18 @@ static void decode_int_as_real()
         fail("json_load decode int as real failed - expected imprecision");
     json_decref(json);
 #endif
+
+    /* 1E309 overflows. Here we create 1E309 as a decimal number, i.e.
+       1000...(309 zeroes)...0. */
+    big[0] = '1';
+    memset(big + 1, '0', 309);
+    big[310] = '\0';
+
+    json = json_loads(big, JSON_DECODE_INT_AS_REAL | JSON_DECODE_ANY, &error);
+    if (json || strcmp(error.text, "real number overflow") != 0)
+        fail("json_load decode int as real failed - expected overflow");
+    json_decref(json);
+
 }
 
 static void allow_nul()
@@ -177,6 +205,7 @@ static void position()
 static void run_tests()
 {
     file_not_found();
+    very_long_file_name();
     reject_duplicates();
     disable_eof_check();
     decode_any();

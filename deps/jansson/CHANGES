@@ -1,33 +1,243 @@
-Version 2.6 (in development)
-============================
+Version 2.9
+===========
 
-Released XXXX-XX-XX
+Released 2016-09-18
+
+* New features:
+
+  - Add ``json_auto_t`` to automatically decref a value that goes out
+    of scope. Available only on GCC and Clang. (#301)
+
+* Build:
+
+  - Fix CMake build (at least on Linux) by removing conflicting
+    jansson_config.h from the distribution (#306)
+
+  - Change CMake install target generation to be optional (#305)
+
+* Documentation:
+
+  - Small documentation fixes.
+
+
+Version 2.8
+===========
+
+Released 2016-08-30
+
+* New features:
+
+  - Always preserve insertion order of object items.
+    `json_object_iter()` and friends, `json_object_foreach()` and
+    `json_dumps()` and friends now always work in the insertion order of
+    object items (#293).
+
+  - Add `json_object_foreach_safe()` macro that allows
+    `json_object_del()` calls during iteration (#230).
+
+  - Add `json_get_alloc_funcs()` to allow reading the allocation
+    functions set by `json_set_alloc_funcs()` (#262, #264).
+
+  - Add `json_pack()` format specifiers s?, o? and O? for values that
+    can be null (#261, #270).
+
+* Bug fixes:
+
+  - Fix a crash when parsing inputs consisting of very deeply nested
+    arrays or objects (#282, #284).
+
+  - Never convert numbers to integers in the parser when
+    JSON_DECODE_INT_AS_REAL is set. This fixes error messages for
+    overflowing numbers when JSON_DECODE_INT_AS_REAL is set (#212).
+
+  - Fix a use-after-free in `json_pack()` error handling.
+
+  - Fix subnormal number parsing on mingw32.
+
+  - Handle out-of-memory situations gracefully in the hashtable
+    implementation (#298).
+
+* Build:
+
+  - Fix build with CMake on all versions of Visual Studio up to 2015
+    (#262, #289).
+
+  - Fix pkgconfig libdir when using CMake (#268).
+
+  - Fix CMake config for static CRT builds on Windows (#206).
+
+  - Fix warnings on LLVM 6.0 targeting iOS arm64 (#208).
+
+  - Add coverlls.io support via Travis for a nice test coverage badge
+    (#211).
+
+  - Don't expect ``jansson_config.h`` to be in the compiler's include
+    path (#209).
+
+  - Add a build-time option to set initial hashtable size (#213).
+
+  - Use snprintf and strncpy in place of sprintf and strcpy to silence
+    linker warnings on OpenBSD (#233).
+
+* Documentation:
+
+  - Fix various typos in documentation, and a broken link (#258).
+
+  - Add an example program in ``examples/`` (#214, #217).
+
+  - Fix building of documentation man pages (#207).
+
+  - Document the fact that copying objects doesn't preserve the
+    insertion order of keys (#237).
+
+* Tests:
+
+  - Don't use the nonstandard __FUNCTION__ macro in tests.
+
+  - Use expr instead of $((...)) in shell scripts for Solaris 10
+    compatibility.
+
+  - Disable Visual Studio warning C4756 when triggered deliberately in
+    tests (#216).
+
+  - Other minor fixes (#221, #248).
+
+* Other changes:
+
+  - List all unrecognized object keys when strict unpacking fails
+    (#263).
+
+  - Alter the order of the members of the hashtable_pair struct for
+    easier debugging.
+
+  - Minor performance improvement to `json_dump()` and friends (#234).
+
+  - Minor style fixes (#255, #257).
+
+
+Version 2.7
+===========
+
+Released 2014-10-02
 
 * New features:
 
   - `json_pack()` and friends: Add format specifiers ``s%`` and ``+%``
-    for a size_t string length.
+    for a size_t string length (#141).
 
   - `json_unpack()` and friends: Add format specifier ``s%`` for
-    unpacking the string length along with the string itself.
+    unpacking the string length along with the string itself (#141).
 
   - Add length-aware string constructors `json_stringn()` and
     `json_stringn_nocheck()`, length-aware string mutators
     `json_string_setn()` and `json_string_setn_nocheck()`, and a
-    function for getting string's length `json_string_length()`.
+    function for getting string's length `json_string_length()` (#141,
+    #143).
 
   - Support ``\u0000`` escapes in the decoder. The support can be
-    enabled by using the ``JSON_ALLOW_NUL`` decoding flag.
+    enabled by using the ``JSON_ALLOW_NUL`` decoding flag (#141).
+
+  - Add `json_boolean_value()` as an alias for `json_is_true()`
+    (#146).
+
+  - Add JSON_REAL_PRECISION encoding flag/macro for controlling real
+    number precision (#178).
+
+  - Define the maximum indentation as JSON_MAX_INDENT (#191).
 
 * Bug fixes:
 
   - Some malformed ``\uNNNN`` escapes could crash the decoder with an
     assertion failure.
 
+  - Avoid integer overflows with very long strings in UTF-8 decoder and
+    hashtable.
+
+  - Check for *NULL* key in `json_object_get()` and
+    `json_object_del()` (#151).
+
+  - Enhance hashtable seeding on Windows (#162).
+
+  - `json_unpack()`: Allow mixing JSON_STRICT with optional keys
+    (#162, #163).
+
+  - Fix int/int32 mismatch (#142).
+
+  - Parse subnormal numbers correctly (#202).
+
+* Build:
+
+  - Remove VS2010 build files. CMake should be used on Windows instead
+    (#165).
+
+  - Fix CMake build flags for MinGW (#193).
+
+  - Add CMake config files for find_package. Rename config.h to
+    jansson_private_config.h (#157, #159).
+
+  - Make Valgrind checks work with CMake (#160).
+
+  - Fix feature checks to use correct __ATOMIC flags.
+
+  - Fix CMake checks for uint16_t and uint8_t support (#177).
+
+  - Make Jansson build on SmartOS/Solaris (#171).
+
+  - Work around a GCC bug on Solaris (#175).
+
+  - Fix autoreconf on Debian (#182).
+
+  - Don't use GNU make specific export for global AM_CFLAGS (#203,
+    #204).
+
+  - Fix building on Android using the supplied Android.mk (#166,
+    #174).
+
+  - Android.mk: Add -DHAVE_STDINT_H to LOCAL_CFLAGS (#200).
+
+* Documentation:
+
+  - Document JANSSON_BUILD_SHARED_LIBS CMake option (#187).
+
+* Tests:
+
+  - Close file handles correctly (#198).
+
 * Other changes:
 
   - ``\uNNNN`` escapes are now encoded in upper case for better
     readability.
+
+  - Enable usage of AddressSanitizer (#180).
+
+
+Version 2.6
+===========
+
+Released 2014-02-11
+
+* Security:
+
+  - CVE-2013-6401: The hash function used by the hashtable
+    implementation has been changed, and is automatically seeded with
+    random data when the first JSON object is created. This prevents
+    an attacker from causing large JSON objects with specially crafted
+    keys perform poorly.
+
+* New features:
+
+  - `json_object_seed()`: Set the seed value of the hash function.
+
+* Bug fixes:
+
+  - Include CMake specific files in the release tarball.
+
+* Documentation:
+
+  - Fix tutorial source to send a User-Agent header, which is now
+    required by the GitHub API.
+
+  - Set all memory to zero in secure_free() example.
 
 
 Version 2.5

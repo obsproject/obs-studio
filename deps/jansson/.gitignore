@@ -19,10 +19,15 @@ install-sh
 libtool
 ltmain.sh
 missing
+compile
+test-driver
 *.lo
 *.la
 stamp-h1
 *.pyc
 *.pc
 /src/jansson_config.h
+/jansson_private_config.h.in
+/jansson_private_config.h
+/build
 *.exe

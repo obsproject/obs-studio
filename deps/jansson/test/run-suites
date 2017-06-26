@@ -34,15 +34,15 @@ failed=0
 for suite in $SUITES; do
     echo "Suite: $suite"
     if $suites_srcdir/$suite/run $suite; then
-        passed=$(($passed+1))
+        passed=`expr $passed + 1`
     else
-        failed=$(($failed+1))
+        failed=`expr $failed + 1`
         [ $STOP -eq 1 ] && break
     fi
 done
 
 if [ $failed -gt 0 ]; then
-    echo "$failed of $((passed+failed)) test suites failed"
+    echo "$failed of `expr $passed + $failed` test suites failed"
     exit 1
 else
     echo "$passed test suites passed"
