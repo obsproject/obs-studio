@@ -168,6 +168,7 @@ private:
 	QPointer<QPushButton> replayBufferButton;
 
 	QPointer<QSystemTrayIcon> trayIcon;
+	QPointer<QAction>         fullscreenPreview;
 	QPointer<QAction>         sysTrayStream;
 	QPointer<QAction>         sysTrayRecord;
 	QPointer<QAction>         sysTrayReplayBuffer;
