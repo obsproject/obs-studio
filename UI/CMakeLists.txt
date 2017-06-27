@@ -161,6 +161,7 @@ set(obs_SOURCES
 	adv-audio-control.cpp
 	item-widget-helpers.cpp
 	visibility-checkbox.cpp
+	locked-checkbox.cpp
 	vertical-scroll-area.cpp
 	visibility-item-widget.cpp
 	slider-absoluteset-style.cpp
@@ -208,6 +209,7 @@ set(obs_HEADERS
 	adv-audio-control.hpp
 	item-widget-helpers.hpp
 	visibility-checkbox.hpp
+	locked-checkbox.hpp
 	vertical-scroll-area.hpp
 	visibility-item-widget.hpp
 	slider-absoluteset-style.hpp

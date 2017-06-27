@@ -5004,6 +5004,9 @@ void OBSBasic::Nudge(int dist, MoveDir dir)
 
 	auto func = [] (obs_scene_t*, obs_sceneitem_t *item, void *param)
 	{
+		if (obs_sceneitem_locked(item))
+			return true;
+
 		MoveInfo *info = reinterpret_cast<MoveInfo*>(param);
 		struct vec2 dir;
 		struct vec2 pos;
