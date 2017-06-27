@@ -4,6 +4,9 @@
 #include <util/util.hpp>
 #include <QProcess>
 #include "pluginstore.h"
+
+PluginStore* ss = NULL;
+
 class WebPluginEvent;
 PluginStore::PluginStore(QWidget *parent) : QDialog(parent), ui(new Ui::PluginStore)
 {
@@ -140,10 +143,10 @@ extern "C" void InitPluginStore()
     {
         obs_frontend_push_ui_translation(obs_module_get_string);
         QMainWindow *window = (QMainWindow*)obs_frontend_get_main_window();
-        PluginStore ss(window);
-        ss.setFixedSize(QSize(890,526));
-        ss.setWindowFlags(Qt::FramelessWindowHint | Qt::Dialog);
-        ss.exec();
+        ss  = new PluginStore(window);
+        ss->setFixedSize(QSize(890,526));
+        ss->setWindowFlags(Qt::FramelessWindowHint | Qt::Window);
+        ss->show();
     };
     obs_frontend_add_event_callback(OBSEvent, nullptr);
     action->connect(action, &QAction::triggered, cb);
