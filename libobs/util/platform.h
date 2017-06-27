@@ -181,6 +181,18 @@ EXPORT void os_breakpoint(void);
 EXPORT int os_get_physical_cores(void);
 EXPORT int os_get_logical_cores(void);
 
+EXPORT uint64_t os_get_sys_free_size(void);
+
+struct os_proc_memory_usage {
+	uint64_t resident_size;
+	uint64_t virtual_size;
+};
+typedef struct os_proc_memory_usage os_proc_memory_usage_t;
+
+EXPORT bool os_get_proc_memory_usage(os_proc_memory_usage_t *usage);
+EXPORT uint64_t os_get_proc_resident_size(void);
+EXPORT uint64_t os_get_proc_virtual_size(void);
+
 #ifdef _MSC_VER
 #define strtoll _strtoi64
 #if _MSC_VER < 1900

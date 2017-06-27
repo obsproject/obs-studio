@@ -352,3 +352,68 @@ int os_get_logical_cores(void)
 		os_get_cores_internal();
 	return logical_cores;
 }
+
+static inline bool os_get_sys_memory_usage_internal(vm_statistics_t vmstat)
+{
+	mach_msg_type_number_t out_count = HOST_VM_INFO_COUNT;
+	if (host_statistics(mach_host_self(), HOST_VM_INFO,
+	    (host_info_t)vmstat, &out_count) != KERN_SUCCESS)
+		return false;
+	return true;
+}
+
+uint64_t os_get_sys_free_size(void)
+{
+	vm_statistics_data_t vmstat = {};
+	if (!os_get_sys_memory_usage_internal(&vmstat))
+		return 0;
+
+	return vmstat.free_count * vm_page_size;
+}
+
+#ifndef MACH_TASK_BASIC_INFO
+typedef task_basic_info_data_t mach_task_basic_info_data_t;
+#endif
+
+static inline bool os_get_proc_memory_usage_internal(
+		mach_task_basic_info_data_t *taskinfo)
+{
+#ifdef MACH_TASK_BASIC_INFO
+	const task_flavor_t flavor = MACH_TASK_BASIC_INFO;
+	mach_msg_type_number_t out_count = MACH_TASK_BASIC_INFO_COUNT;
+#else
+	const task_flavor_t flavor = TASK_BASIC_INFO;
+	mach_msg_type_number_t out_count = TASK_BASIC_INFO_COUNT;
+#endif
+	if (task_info(mach_task_self(), flavor,
+	    (task_info_t)taskinfo, &out_count) != KERN_SUCCESS)
+		return false;
+	return true;
+}
+
+bool os_get_proc_memory_usage(os_proc_memory_usage_t *usage)
+{
+	mach_task_basic_info_data_t taskinfo = {};
+	if (!os_get_proc_memory_usage_internal(&taskinfo))
+		return false;
+
+	usage->resident_size = taskinfo.resident_size;
+	usage->virtual_size  = taskinfo.virtual_size;
+	return true;
+}
+
+uint64_t os_get_proc_resident_size(void)
+{
+	mach_task_basic_info_data_t taskinfo = {};
+	if (!os_get_proc_memory_usage_internal(&taskinfo))
+		return 0;
+	return taskinfo.resident_size;
+}
+
+uint64_t os_get_proc_virtual_size(void)
+{
+	mach_task_basic_info_data_t taskinfo = {};
+	if (!os_get_proc_memory_usage_internal(&taskinfo))
+		return 0;
+	return taskinfo.virtual_size;
+}
