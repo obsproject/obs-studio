@@ -738,13 +738,13 @@ bool OBSApp::InitTheme()
 {
 	const char *themeName = config_get_string(globalConfig, "General",
 			"Theme");
-
 	if (!themeName)
 		themeName = "Default";
 
-	stringstream t;
-	t << themeName;
-	return SetTheme(t.str());
+	if (strcmp(themeName, "Default") != 0 && SetTheme(themeName))
+		return true;
+
+	return SetTheme("Default");
 }
 
 OBSApp::OBSApp(int &argc, char **argv, profiler_name_store_t *store)
