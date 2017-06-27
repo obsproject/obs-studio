@@ -377,8 +377,6 @@ void load_text_from_file(struct ft2_source *srcdata, const char *filename)
 		srcdata->text = bzalloc(filesize);
 		bytes_read = fread(srcdata->text, filesize - 2, 1, tmp_file);
 
-		srcdata->m_timestamp =
-			get_modified_timestamp(srcdata->text_file);
 		bfree(tmp_read);
 		fclose(tmp_file);
 
@@ -386,7 +384,6 @@ void load_text_from_file(struct ft2_source *srcdata, const char *filename)
 	}
 
 	fseek(tmp_file, 0, SEEK_SET);
-	srcdata->m_timestamp = get_modified_timestamp(srcdata->text_file);
 
 	tmp_read = bzalloc(filesize + 1);
 	bytes_read = fread(tmp_read, filesize, 1, tmp_file);
@@ -464,8 +461,6 @@ void read_from_end(struct ft2_source *srcdata, const char *filename)
 				tmp_file);
 
 		remove_cr(srcdata->text);
-		srcdata->m_timestamp =
-			get_modified_timestamp(srcdata->text_file);
 		bfree(tmp_read);
 		fclose(tmp_file);
 
@@ -485,7 +480,6 @@ void read_from_end(struct ft2_source *srcdata, const char *filename)
 		srcdata->text, (strlen(tmp_read) + 1));
 
 	remove_cr(srcdata->text);
-	srcdata->m_timestamp = get_modified_timestamp(srcdata->text_file);
 	bfree(tmp_read);
 }
 

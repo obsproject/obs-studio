@@ -238,7 +238,7 @@ static void ft2_video_tick(void *data, float seconds)
 		time_t t = get_modified_timestamp(srcdata->text_file);
 		srcdata->last_checked = os_gettime_ns();
 
-		if (srcdata->m_timestamp != t) {
+		if (srcdata->update_file) {
 			if (srcdata->log_mode)
 				read_from_end(srcdata, srcdata->text_file);
 			else
@@ -246,6 +246,12 @@ static void ft2_video_tick(void *data, float seconds)
 					srcdata->text_file);
 			cache_glyphs(srcdata, srcdata->text);
 			set_up_vertex_buffer(srcdata);
+			srcdata->update_file = false;
+		}
+
+		if (srcdata->m_timestamp != t) {
+			srcdata->m_timestamp = t;
+			srcdata->update_file = true;
 		}
 	}
 
