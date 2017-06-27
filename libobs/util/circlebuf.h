@@ -100,7 +100,7 @@ static inline void circlebuf_upsize(struct circlebuf *cb, size_t size)
 	cb->size = size;
 	circlebuf_ensure_capacity(cb);
 
-	if (new_end_pos > cb->capacity) {
+	if (new_end_pos >= cb->capacity) {
 		size_t back_size = cb->capacity - cb->end_pos;
 		size_t loop_size = add_size - back_size;
 
@@ -151,7 +151,7 @@ static inline void circlebuf_push_back(struct circlebuf *cb, const void *data,
 	cb->size += size;
 	circlebuf_ensure_capacity(cb);
 
-	if (new_end_pos > cb->capacity) {
+	if (new_end_pos >= cb->capacity) {
 		size_t back_size = cb->capacity - cb->end_pos;
 		size_t loop_size = size - back_size;
 
