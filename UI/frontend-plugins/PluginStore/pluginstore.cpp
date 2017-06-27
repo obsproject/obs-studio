@@ -20,12 +20,14 @@ PluginStore::PluginStore(QWidget *parent) : QDialog(parent), ui(new Ui::PluginSt
     ui->setButton->setIconSize(QPixmap(":/ico_Settings.png").size());
     ui->setButton->resize(QPixmap(":/ico_Settings.png").size());
     ui->setButton->move(QPoint(840, 13));
+    ui->setButton->setCursor(Qt::PointingHandCursor);
 
     ui->closeButton->setStyleSheet("QPushButton{border:0px;}");
     ui->closeButton->setIcon(QPixmap(":/ico_close.png"));
     ui->closeButton->setIconSize(QPixmap(":/ico_close.png").size());
     ui->closeButton->resize(QPixmap(":/ico_close.png").size());
     ui->closeButton->move(QPoint(860,13));
+    ui->closeButton->setCursor(Qt::PointingHandCursor);
     pe.setColor(QPalette::WindowText, QColor(101,101,101,255));
     ui->label->setPalette(pe);
 
@@ -45,6 +47,7 @@ PluginStore::PluginStore(QWidget *parent) : QDialog(parent), ui(new Ui::PluginSt
         m_lpWebUI->move(QPoint(0, 40));
         m_lpWebUI->setFixedSize(QSize(890,526));
         qstrLanguage = obs_get_locale();
+
 #ifdef _WIN32
         qstrSystem = "2";
 #else   //_MAC
