@@ -11,6 +11,7 @@ OBS_MODULE_USE_DEFAULT_LOCALE("decklink", "en-US")
 #define DEVICE_NAME     "device_name"
 #define MODE_ID         "mode_id"
 #define MODE_NAME       "mode_name"
+#define AUTO_DEINTERACE "auto_deinterace"
 #define CHANNEL_FORMAT  "channel_format"
 #define PIXEL_FORMAT    "pixel_format"
 #define COLOR_SPACE     "color_space"
@@ -20,6 +21,7 @@ OBS_MODULE_USE_DEFAULT_LOCALE("decklink", "en-US")
 #define TEXT_DEVICE                     obs_module_text("Device")
 #define TEXT_MODE                       obs_module_text("Mode")
 #define TEXT_PIXEL_FORMAT               obs_module_text("PixelFormat")
+#define TEXT_AUTO_DEINTERACE            obs_module_text("AutoDeinterace")
 #define TEXT_COLOR_SPACE                obs_module_text("ColorSpace")
 #define TEXT_COLOR_SPACE_DEFAULT        obs_module_text("ColorSpace.Default")
 #define TEXT_COLOR_RANGE                obs_module_text("ColorRange")
@@ -69,6 +71,7 @@ static void decklink_update(void *data, obs_data_t *settings)
 	DeckLink *decklink = (DeckLink *)data;
 	const char *hash = obs_data_get_string(settings, DEVICE_HASH);
 	long long id = obs_data_get_int(settings, MODE_ID);
+	bool autoDeinterace = obs_data_get_bool(settings, AUTO_DEINTERACE);
 	BMDPixelFormat pixelFormat = (BMDPixelFormat)obs_data_get_int(settings,
 			PIXEL_FORMAT);
 	video_colorspace colorSpace = (video_colorspace)obs_data_get_int(settings,
@@ -84,6 +87,7 @@ static void decklink_update(void *data, obs_data_t *settings)
 	ComPtr<DeckLinkDevice> device;
 	device.Set(deviceEnum->FindByHash(hash));
 
+	decklink->SetAutoDeinterace(autoDeinterace);
 	decklink->SetPixelFormat(pixelFormat);
 	decklink->SetColorSpace(colorSpace);
 	decklink->SetColorRange(colorRange);
@@ -94,6 +98,7 @@ static void decklink_update(void *data, obs_data_t *settings)
 static void decklink_get_defaults(obs_data_t *settings)
 {
 	obs_data_set_default_bool(settings, BUFFERING, true);
+	obs_data_set_default_bool(settings, AUTO_DEINTERACE, false);
 	obs_data_set_default_int(settings, PIXEL_FORMAT, bmdFormat8BitYUV);
 	obs_data_set_default_int(settings, COLOR_SPACE, VIDEO_CS_DEFAULT);
 	obs_data_set_default_int(settings, COLOR_RANGE, VIDEO_RANGE_DEFAULT);
@@ -228,6 +233,8 @@ static obs_properties_t *decklink_get_properties(void *data)
 	list = obs_properties_add_list(props, MODE_ID, TEXT_MODE,
 			OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
 	obs_property_set_modified_callback(list, mode_id_changed);
+
+	obs_properties_add_bool(props, AUTO_DEINTERACE, TEXT_AUTO_DEINTERACE);
 
 	list = obs_properties_add_list(props, PIXEL_FORMAT,
 			TEXT_PIXEL_FORMAT, OBS_COMBO_TYPE_LIST,

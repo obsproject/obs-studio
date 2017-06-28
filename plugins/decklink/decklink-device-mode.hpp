@@ -19,6 +19,7 @@ public:
 
 	BMDDisplayMode GetDisplayMode(void) const;
 	BMDDisplayModeFlags GetDisplayModeFlags(void) const;
+	BMDFieldDominance GetFieldDominance(void) const;
 	long long GetId(void) const;
 	const std::string& GetName(void) const;
 

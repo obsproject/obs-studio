@@ -21,6 +21,7 @@ protected:
 	obs_source_t                          *source;
 	volatile long                         activateRefs = 0;
 	std::recursive_mutex                  deviceMutex;
+	bool                                  autoDeinterace = false;
 	BMDPixelFormat                        pixelFormat = bmdFormat8BitYUV;
 	video_colorspace                      colorSpace = VIDEO_CS_DEFAULT;
 	video_range_type                      colorRange = VIDEO_RANGE_DEFAULT;
@@ -39,6 +40,11 @@ public:
 	long long GetActiveModeId(void) const;
 	obs_source_t *GetSource(void) const;
 
+	inline bool GetAutoDeinterace() const {return autoDeinterace;}
+	inline void SetAutoDeinterace(bool enable)
+	{
+		autoDeinterace = enable;
+	}
 	inline BMDPixelFormat GetPixelFormat() const {return pixelFormat;}
 	inline void SetPixelFormat(BMDPixelFormat format)
 	{

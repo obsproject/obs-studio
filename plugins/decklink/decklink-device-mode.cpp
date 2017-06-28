@@ -40,6 +40,14 @@ BMDDisplayModeFlags DeckLinkDeviceMode::GetDisplayModeFlags(void) const
 	return (BMDDisplayModeFlags)0;
 }
 
+BMDFieldDominance DeckLinkDeviceMode::GetFieldDominance(void) const
+{
+	if (mode != nullptr)
+		return mode->GetFieldDominance();
+
+	return bmdUnknownFieldDominance;
+}
+
 long long DeckLinkDeviceMode::GetId(void) const
 {
 	return id;
