@@ -336,6 +336,8 @@ static int get_virtual_key(obs_key_t key)
 
 	case OBS_KEY_HANGUL: return VK_HANGUL;
 
+	case OBS_KEY_BACKSLASH_RT102: return VK_OEM_102;
+
 	case OBS_KEY_MOUSE1: return VK_LBUTTON;
 	case OBS_KEY_MOUSE2: return VK_RBUTTON;
 	case OBS_KEY_MOUSE3: return VK_MBUTTON;
