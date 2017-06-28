@@ -18,6 +18,7 @@
 #include "base.h"
 #include "platform.h"
 #include "dstr.h"
+#include "mac/mac-version.h"
 
 #include <dlfcn.h>
 #include <time.h>
@@ -351,4 +352,39 @@ int os_get_logical_cores(void)
 	if (!core_count_initialized)
 		os_get_cores_internal();
 	return logical_cores;
+}
+
+void get_mac_ver(struct mac_version_info *info)
+{
+	static struct mac_version_info ver = {0};
+	static bool got_version = false;
+
+	if (!info)
+		return;
+
+	if (!got_version) {
+		@autoreleasepool {
+			NSDictionary *dict = [NSDictionary
+					      dictionaryWithContentsOfFile:
+					      @"/System/Library/CoreServices/"
+					      "SystemVersion.plist"];
+			NSString *version =
+					[dict objectForKey:@"ProductVersion"];
+			const char *str = version.UTF8String;
+		
+			const char *p = str;
+			ver.major = atoi(p);
+			if ((p = strchr(p, '.')) != NULL) {
+				p++;
+				ver.minor = atoi(p);
+			}
+			if ((p = strchr(p, '.')) != NULL) {
+				p++;
+				ver.bug_fix = atoi(p);
+			}
+		}
+		got_version = true;
+	}
+
+	*info = ver;
 }

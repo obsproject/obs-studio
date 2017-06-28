@@ -89,6 +89,7 @@ elseif(APPLE)
 		util/platform-nix.c
 		util/platform-cocoa.m)
 	set(libobs_PLATFORM_HEADERS
+		util/mac/mac-version.h
 		util/threading-posix.h)
 	set(libobs_audio_monitoring_SOURCES
 		audio-monitoring/osx/coreaudio-enum-devices.c
