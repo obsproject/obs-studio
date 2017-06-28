@@ -11,7 +11,12 @@ protected:
 	DeckLink                *decklink = nullptr;
 	DeckLinkDevice          *device = nullptr;
 	DeckLinkDeviceMode      *mode = nullptr;
+	bool                    autoDeinterace = false;
+	BMDDisplayMode          displayMode = bmdModeNTSC;
 	BMDPixelFormat          pixelFormat = bmdFormat8BitYUV;
+	video_colorspace        colorSpace = VIDEO_CS_DEFAULT;
+	video_colorspace        activeColorSpace = VIDEO_CS_DEFAULT;
+	video_range_type        colorRange = VIDEO_RANGE_DEFAULT;
 	ComPtr<IDeckLinkInput>  input;
 	volatile long           refCount = 1;
 	int64_t                 audioOffset = 0;
@@ -20,7 +25,11 @@ protected:
 	AudioRepacker           *audioRepacker = nullptr;
 	speaker_layout          channelFormat = SPEAKERS_STEREO;
 
+	obs_deinterlace_mode        prevDeinterlaceMode;
+	obs_deinterlace_field_order prevDeinterlaceFieldOrder;
+
 	void FinalizeStream();
+	void SetupVideoFormat(DeckLinkDeviceMode *mode_);
 
 	void HandleAudioPacket(IDeckLinkAudioInputPacket *audioPacket,
 			const uint64_t timestamp);
@@ -37,7 +46,10 @@ public:
 		return mode ? mode->GetId() : 0;
 	}
 
+	inline bool GetActiveAutoDeinterace() const {return autoDeinterace;}
 	inline BMDPixelFormat GetActivePixelFormat() const {return pixelFormat;}
+	inline video_colorspace GetActiveColorSpace() const {return colorSpace;}
+	inline video_range_type GetActiveColorRange() const {return colorRange;}
 	inline speaker_layout GetActiveChannelFormat() const {return channelFormat;}
 
 	inline DeckLinkDeviceMode *GetMode() const {return mode;}

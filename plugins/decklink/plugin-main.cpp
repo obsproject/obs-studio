@@ -11,13 +11,23 @@ OBS_MODULE_USE_DEFAULT_LOCALE("decklink", "en-US")
 #define DEVICE_NAME     "device_name"
 #define MODE_ID         "mode_id"
 #define MODE_NAME       "mode_name"
+#define AUTO_DEINTERACE "auto_deinterace"
 #define CHANNEL_FORMAT  "channel_format"
 #define PIXEL_FORMAT    "pixel_format"
+#define COLOR_SPACE     "color_space"
+#define COLOR_RANGE     "color_range"
 #define BUFFERING       "buffering"
 
 #define TEXT_DEVICE                     obs_module_text("Device")
 #define TEXT_MODE                       obs_module_text("Mode")
 #define TEXT_PIXEL_FORMAT               obs_module_text("PixelFormat")
+#define TEXT_AUTO_DEINTERACE            obs_module_text("AutoDeinterace")
+#define TEXT_COLOR_SPACE                obs_module_text("ColorSpace")
+#define TEXT_COLOR_SPACE_DEFAULT        obs_module_text("ColorSpace.Default")
+#define TEXT_COLOR_RANGE                obs_module_text("ColorRange")
+#define TEXT_COLOR_RANGE_DEFAULT        obs_module_text("ColorRange.Default")
+#define TEXT_COLOR_RANGE_PARTIAL        obs_module_text("ColorRange.Partial")
+#define TEXT_COLOR_RANGE_FULL           obs_module_text("ColorRange.Full")
 #define TEXT_CHANNEL_FORMAT             obs_module_text("ChannelFormat")
 #define TEXT_CHANNEL_FORMAT_NONE        obs_module_text("ChannelFormat.None")
 #define TEXT_CHANNEL_FORMAT_2_0CH       obs_module_text("ChannelFormat.2_0ch")
@@ -56,8 +66,13 @@ static void decklink_update(void *data, obs_data_t *settings)
 	DeckLink *decklink = (DeckLink *)data;
 	const char *hash = obs_data_get_string(settings, DEVICE_HASH);
 	long long id = obs_data_get_int(settings, MODE_ID);
+	bool autoDeinterace = obs_data_get_bool(settings, AUTO_DEINTERACE);
 	BMDPixelFormat pixelFormat = (BMDPixelFormat)obs_data_get_int(settings,
 			PIXEL_FORMAT);
+	video_colorspace colorSpace = (video_colorspace)obs_data_get_int(settings,
+			COLOR_SPACE);
+	video_range_type colorRange = (video_range_type)obs_data_get_int(settings,
+			COLOR_RANGE);
 	speaker_layout channelFormat = (speaker_layout)obs_data_get_int(settings,
 			CHANNEL_FORMAT);
 
@@ -67,7 +82,10 @@ static void decklink_update(void *data, obs_data_t *settings)
 	ComPtr<DeckLinkDevice> device;
 	device.Set(deviceEnum->FindByHash(hash));
 
+	decklink->SetAutoDeinterace(autoDeinterace);
 	decklink->SetPixelFormat(pixelFormat);
+	decklink->SetColorSpace(colorSpace);
+	decklink->SetColorRange(colorRange);
 	decklink->SetChannelFormat(channelFormat);
 	decklink->Activate(device, id);
 }
@@ -75,7 +93,10 @@ static void decklink_update(void *data, obs_data_t *settings)
 static void decklink_get_defaults(obs_data_t *settings)
 {
 	obs_data_set_default_bool(settings, BUFFERING, true);
+	obs_data_set_default_bool(settings, AUTO_DEINTERACE, false);
 	obs_data_set_default_int(settings, PIXEL_FORMAT, bmdFormat8BitYUV);
+	obs_data_set_default_int(settings, COLOR_SPACE, VIDEO_CS_DEFAULT);
+	obs_data_set_default_int(settings, COLOR_RANGE, VIDEO_RANGE_DEFAULT);
 	obs_data_set_default_int(settings, CHANNEL_FORMAT, SPEAKERS_STEREO);
 }
 
@@ -162,6 +183,38 @@ static void fill_out_devices(obs_property_t *list)
 	deviceEnum->Unlock();
 }
 
+static bool color_format_changed(obs_properties_t *props,
+		obs_property_t *list, obs_data_t *settings);
+
+static bool mode_id_changed(obs_properties_t *props,
+		obs_property_t *list, obs_data_t *settings)
+{
+	long long id = obs_data_get_int(settings, MODE_ID);
+
+	list = obs_properties_get(props, PIXEL_FORMAT);
+	obs_property_set_visible(list, id != MODE_ID_AUTO);
+
+	return color_format_changed(props, nullptr, settings);
+}
+
+static bool color_format_changed(obs_properties_t *props,
+		obs_property_t *list, obs_data_t *settings)
+{
+	long long id = obs_data_get_int(settings, MODE_ID);
+	BMDPixelFormat pixelFormat = (BMDPixelFormat)obs_data_get_int(settings,
+			PIXEL_FORMAT);
+	
+	list = obs_properties_get(props, COLOR_SPACE);
+	obs_property_set_visible(list,
+			id != MODE_ID_AUTO && pixelFormat == bmdFormat8BitYUV);
+
+	list = obs_properties_get(props, COLOR_RANGE);
+	obs_property_set_visible(list,
+			id == MODE_ID_AUTO || pixelFormat == bmdFormat8BitYUV);
+
+	return true;
+}
+
 static obs_properties_t *decklink_get_properties(void *data)
 {
 	obs_properties_t *props = obs_properties_create();
@@ -174,12 +227,29 @@ static obs_properties_t *decklink_get_properties(void *data)
 
 	list = obs_properties_add_list(props, MODE_ID, TEXT_MODE,
 			OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
+	obs_property_set_modified_callback(list, mode_id_changed);
+
+	obs_properties_add_bool(props, AUTO_DEINTERACE, TEXT_AUTO_DEINTERACE);
 
 	list = obs_properties_add_list(props, PIXEL_FORMAT,
 			TEXT_PIXEL_FORMAT, OBS_COMBO_TYPE_LIST,
 			OBS_COMBO_FORMAT_INT);
+	obs_property_set_modified_callback(list, color_format_changed);
+
 	obs_property_list_add_int(list, "8-bit YUV", bmdFormat8BitYUV);
 	obs_property_list_add_int(list, "8-bit BGRA", bmdFormat8BitBGRA);
+
+	list = obs_properties_add_list(props, COLOR_SPACE, TEXT_COLOR_SPACE,
+			OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
+	obs_property_list_add_int(list, TEXT_COLOR_SPACE_DEFAULT, VIDEO_CS_DEFAULT);
+	obs_property_list_add_int(list, "BT.601", VIDEO_CS_601);
+	obs_property_list_add_int(list, "BT.709", VIDEO_CS_709);
+
+	list = obs_properties_add_list(props, COLOR_RANGE, TEXT_COLOR_RANGE,
+			OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
+	obs_property_list_add_int(list, TEXT_COLOR_RANGE_DEFAULT, VIDEO_RANGE_DEFAULT);
+	obs_property_list_add_int(list, TEXT_COLOR_RANGE_PARTIAL, VIDEO_RANGE_PARTIAL);
+	obs_property_list_add_int(list, TEXT_COLOR_RANGE_FULL, VIDEO_RANGE_FULL);
 
 	list = obs_properties_add_list(props, CHANNEL_FORMAT,
 			TEXT_CHANNEL_FORMAT, OBS_COMBO_TYPE_LIST,
