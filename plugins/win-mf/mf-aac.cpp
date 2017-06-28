@@ -13,7 +13,7 @@ static const char *MFAAC_GetName(void*)
 	return obs_module_text("MFAACEnc");
 }
 
-static obs_properties_t *MFAAC_GetProperties(void *)
+static obs_properties_t *MFAAC_GetProperties(void *, void *)
 {
 	obs_properties_t *props = obs_properties_create();
 
@@ -23,7 +23,7 @@ static obs_properties_t *MFAAC_GetProperties(void *)
 	return props;
 }
 
-static void MFAAC_GetDefaults(obs_data_t *settings)
+static void MFAAC_GetDefaults(obs_data_t *settings, void *)
 {
 	obs_data_set_default_int(settings, "bitrate", 128);
 }

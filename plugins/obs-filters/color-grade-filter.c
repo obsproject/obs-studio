@@ -56,13 +56,15 @@ static void color_grade_filter_update(void *data, obs_data_t *settings)
 	obs_leave_graphics();
 }
 
-static void color_grade_filter_defaults(obs_data_t *settings)
+static void color_grade_filter_defaults(obs_data_t *settings, void *type_data)
 {
+	UNUSED_PARAMETER(type_data);
 	obs_data_set_default_double(settings, SETTING_CLUT_AMOUNT, 1);
 }
 
-static obs_properties_t *color_grade_filter_properties(void *data)
+static obs_properties_t *color_grade_filter_properties(void *data, void *type_data)
 {
+	UNUSED_PARAMETER(type_data);
 	struct lut_filter_data *s = data;
 	struct dstr path = {0};
 	const char *slash;

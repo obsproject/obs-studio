@@ -44,8 +44,9 @@ static void color_source_destroy(void *data)
 	bfree(data);
 }
 
-static obs_properties_t *color_source_properties(void *unused)
+static obs_properties_t *color_source_properties(void *unused, void *type_data)
 {
+	UNUSED_PARAMETER(type_data);
 	UNUSED_PARAMETER(unused);
 
 	obs_properties_t *props = obs_properties_create();
@@ -97,8 +98,9 @@ static uint32_t color_source_getheight(void *data)
 	return context->height;
 }
 
-static void color_source_defaults(obs_data_t *settings)
+static void color_source_defaults(obs_data_t *settings, void *type_data)
 {
+	UNUSED_PARAMETER(type_data);
 	obs_data_set_default_int(settings, "color", 0xFFFFFFFF);
 	obs_data_set_default_int(settings, "width", 400);
 	obs_data_set_default_int(settings, "height", 400);

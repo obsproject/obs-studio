@@ -1030,8 +1030,9 @@ static UInt32 find_matching_bitrate(UInt32 bitrate)
 	return match;
 }
 
-static void aac_defaults(obs_data_t *settings)
+static void aac_defaults(obs_data_t *settings, void *type_data)
 {
+	UNUSED_PARAMETER(type_data);
 	obs_data_set_default_int(settings, "samplerate", 0); //match input
 	obs_data_set_default_int(settings, "bitrate",
 			find_matching_bitrate(128));
@@ -1316,8 +1317,9 @@ static bool samplerate_updated(obs_properties_t *props, obs_property_t *prop,
 	return false;
 }
 
-static obs_properties_t *aac_properties(void *data)
+static obs_properties_t *aac_properties(void *data, void *type_data)
 {
+	UNUSED_PARAMETER(type_data);
 	ca_encoder *ca = static_cast<ca_encoder*>(data);
 
 	obs_properties_t *props = obs_properties_create();

@@ -83,8 +83,9 @@ static bool is_local_file_modified(obs_properties_t *props,
 	return true;
 }
 
-static void ffmpeg_source_defaults(obs_data_t *settings)
+static void ffmpeg_source_defaults(obs_data_t *settings, void *type_data)
 {
+	UNUSED_PARAMETER(type_data);
 	obs_data_set_default_bool(settings, "is_local_file", true);
 	obs_data_set_default_bool(settings, "looping", false);
 	obs_data_set_default_bool(settings, "clear_on_media_end", true);
@@ -102,8 +103,9 @@ static const char *video_filter =
 static const char *audio_filter =
 	" (*.mp3 *.aac *.ogg *.wav);;";
 
-static obs_properties_t *ffmpeg_source_getproperties(void *data)
+static obs_properties_t *ffmpeg_source_getproperties(void *data, void *type_data)
 {
+	UNUSED_PARAMETER(type_data);
 	struct ffmpeg_source *s = data;
 	struct dstr filter = {0};
 	struct dstr path = {0};

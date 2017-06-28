@@ -1100,8 +1100,9 @@ static void rtmp_stream_data(void *data, struct encoder_packet *packet)
 		obs_encoder_packet_release(&new_packet);
 }
 
-static void rtmp_stream_defaults(obs_data_t *defaults)
+static void rtmp_stream_defaults(obs_data_t *defaults, void *type_data)
 {
+	UNUSED_PARAMETER(type_data);
 	obs_data_set_default_int(defaults, OPT_DROP_THRESHOLD, 700);
 	obs_data_set_default_int(defaults, OPT_PFRAME_DROP_THRESHOLD, 900);
 	obs_data_set_default_int(defaults, OPT_MAX_SHUTDOWN_TIME_SEC, 30);
@@ -1110,8 +1111,9 @@ static void rtmp_stream_defaults(obs_data_t *defaults)
 	obs_data_set_default_bool(defaults, OPT_LOWLATENCY_ENABLED, false);
 }
 
-static obs_properties_t *rtmp_stream_properties(void *unused)
+static obs_properties_t *rtmp_stream_properties(void *unused, void *type_data)
 {
+	UNUSED_PARAMETER(type_data);
 	UNUSED_PARAMETER(unused);
 
 	obs_properties_t *props = obs_properties_create();

@@ -247,13 +247,15 @@ static bool aac_encode(void *data, struct encoder_frame *frame,
 	return do_aac_encode(enc, packet, received_packet);
 }
 
-static void aac_defaults(obs_data_t *settings)
+static void aac_defaults(obs_data_t *settings, void *type_data)
 {
+	UNUSED_PARAMETER(type_data);
 	obs_data_set_default_int(settings, "bitrate", 128);
 }
 
-static obs_properties_t *aac_properties(void *unused)
+static obs_properties_t *aac_properties(void *unused, void *type_data)
 {
+	UNUSED_PARAMETER(type_data);
 	UNUSED_PARAMETER(unused);
 
 	obs_properties_t *props = obs_properties_create();

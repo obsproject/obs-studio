@@ -42,9 +42,9 @@ struct obs_service_info {
 
 	void (*update)(void *data, obs_data_t *settings);
 
-	void (*get_defaults)(obs_data_t *settings);
+	void (*get_defaults)(obs_data_t *settings, void *type_data);
 
-	obs_properties_t *(*get_properties)(void *data);
+	obs_properties_t *(*get_properties)(void *data, void *type_data);
 
 	/**
 	 * Called when getting ready to start up an output, before the encoders

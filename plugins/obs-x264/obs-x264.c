@@ -89,8 +89,9 @@ static void obs_x264_destroy(void *data)
 	}
 }
 
-static void obs_x264_defaults(obs_data_t *settings)
+static void obs_x264_defaults(obs_data_t *settings, void *type_data)
 {
+	UNUSED_PARAMETER(type_data);
 	obs_data_set_default_int   (settings, "bitrate",     2500);
 	obs_data_set_default_bool  (settings, "use_bufsize", false);
 	obs_data_set_default_int   (settings, "buffer_size", 2500);
@@ -158,8 +159,9 @@ static bool rate_control_modified(obs_properties_t *ppts, obs_property_t *p,
 	return true;
 }
 
-static obs_properties_t *obs_x264_props(void *unused)
+static obs_properties_t *obs_x264_props(void *unused, void *type_data)
 {
+	UNUSED_PARAMETER(type_data);
 	UNUSED_PARAMETER(unused);
 
 	obs_properties_t *props = obs_properties_create();

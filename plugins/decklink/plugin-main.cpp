@@ -72,8 +72,9 @@ static void decklink_update(void *data, obs_data_t *settings)
 	decklink->Activate(device, id);
 }
 
-static void decklink_get_defaults(obs_data_t *settings)
+static void decklink_get_defaults(obs_data_t *settings, void *type_data)
 {
+	UNUSED_PARAMETER(type_data);
 	obs_data_set_default_bool(settings, BUFFERING, true);
 	obs_data_set_default_int(settings, PIXEL_FORMAT, bmdFormat8BitYUV);
 	obs_data_set_default_int(settings, CHANNEL_FORMAT, SPEAKERS_STEREO);
@@ -162,8 +163,9 @@ static void fill_out_devices(obs_property_t *list)
 	deviceEnum->Unlock();
 }
 
-static obs_properties_t *decklink_get_properties(void *data)
+static obs_properties_t *decklink_get_properties(void *data, void *type_data)
 {
+	UNUSED_PARAMETER(type_data);
 	obs_properties_t *props = obs_properties_create();
 
 	obs_property_t *list = obs_properties_add_list(props, DEVICE_HASH,

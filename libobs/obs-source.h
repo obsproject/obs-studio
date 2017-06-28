@@ -200,16 +200,19 @@ struct obs_source_info {
 	/**
 	 * Gets the default settings for this source
 	 *
+	 * @param  type_data  The type_data variable of this structure
 	 * @param[out]  settings  Data to assign default settings to
 	 */
-	void (*get_defaults)(obs_data_t *settings);
+	void (*get_defaults)(obs_data_t *settings, void *type_data);
 
 	/**
 	 * Gets the property information of this source
 	 *
+	 * @param data      Source data
+	 * @param  type_data  The type_data variable of this structure
 	 * @return         The properties data
 	 */
-	obs_properties_t *(*get_properties)(void *data);
+	obs_properties_t *(*get_properties)(void *data, void *type_data);
 
 	/**
 	 * Updates the settings for this source

@@ -81,8 +81,9 @@ static void duplicator_capture_destroy(void *data)
 	bfree(capture);
 }
 
-static void duplicator_capture_defaults(obs_data_t *settings)
+static void duplicator_capture_defaults(obs_data_t *settings, void *type_data)
 {
+	UNUSED_PARAMETER(type_data);
 	obs_data_set_default_int(settings, "monitor", 0);
 	obs_data_set_default_bool(settings, "capture_cursor", true);
 }
@@ -282,10 +283,11 @@ static bool get_monitor_props(obs_property_t *monitor_list, int monitor_idx)
 	return true;
 }
 
-static obs_properties_t *duplicator_capture_properties(void *unused)
+static obs_properties_t *duplicator_capture_properties(void *unused, void *type_data)
 {
 	int monitor_idx = 0;
 
+	UNUSED_PARAMETER(type_data);
 	UNUSED_PARAMETER(unused);
 
 	obs_properties_t *props = obs_properties_create();

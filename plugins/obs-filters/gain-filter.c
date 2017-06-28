@@ -66,13 +66,15 @@ static struct obs_audio_data *gain_filter_audio(void *data,
 	return audio;
 }
 
-static void gain_defaults(obs_data_t *s)
+static void gain_defaults(obs_data_t *s, void *type_data)
 {
+	UNUSED_PARAMETER(type_data);
 	obs_data_set_default_double(s, S_GAIN_DB, 0.0f);
 }
 
-static obs_properties_t *gain_properties(void *data)
+static obs_properties_t *gain_properties(void *data, void *type_data)
 {
+	UNUSED_PARAMETER(type_data);
 	obs_properties_t *ppts = obs_properties_create();
 
 	obs_properties_add_float_slider(ppts, S_GAIN_DB, TEXT_GAIN_DB,

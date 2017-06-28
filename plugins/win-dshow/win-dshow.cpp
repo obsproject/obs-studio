@@ -1057,8 +1057,9 @@ static void UpdateDShowInput(void *data, obs_data_t *settings)
 	UNUSED_PARAMETER(settings);
 }
 
-static void GetDShowDefaults(obs_data_t *settings)
+static void GetDShowDefaults(obs_data_t *settings, void *type_data)
 {
+	UNUSED_PARAMETER(type_data);
 	obs_data_set_default_int(settings, FRAME_INTERVAL, FPS_MATCHING);
 	obs_data_set_default_int(settings, RES_TYPE, ResType_Preferred);
 	obs_data_set_default_int(settings, VIDEO_FORMAT, (int)VideoFormat::Any);
@@ -1724,8 +1725,9 @@ static bool ActivateClicked(obs_properties_t *, obs_property_t *p,
 	return true;
 }
 
-static obs_properties_t *GetDShowProperties(void *obj)
+static obs_properties_t *GetDShowProperties(void *obj, void *type_data)
 {
+	UNUSED_PARAMETER(type_data);
 	DShowInput *input = reinterpret_cast<DShowInput*>(obj);
 	obs_properties_t *ppts = obs_properties_create();
 	PropertiesData *data = new PropertiesData;

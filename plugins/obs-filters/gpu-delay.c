@@ -143,8 +143,9 @@ static void gpu_delay_filter_update(void *data, obs_data_t *s)
 	free_textures(f);
 }
 
-static obs_properties_t *gpu_delay_filter_properties(void *data)
+static obs_properties_t *gpu_delay_filter_properties(void *data, void *type_data)
 {
+	UNUSED_PARAMETER(type_data);
 	obs_properties_t *props = obs_properties_create();
 
 	obs_properties_add_int(props, S_DELAY_MS, T_DELAY_MS, 0, 500, 1);

@@ -196,8 +196,9 @@ static bool key_type_changed(obs_properties_t *props, obs_property_t *p,
 	return true;
 }
 
-static obs_properties_t *color_key_properties(void *data)
+static obs_properties_t *color_key_properties(void *data, void *type_data)
 {
+	UNUSED_PARAMETER(type_data);
 	obs_properties_t *props = obs_properties_create();
 
 	obs_property_t *p = obs_properties_add_list(props,
@@ -230,8 +231,9 @@ static obs_properties_t *color_key_properties(void *data)
 	return props;
 }
 
-static void color_key_defaults(obs_data_t *settings)
+static void color_key_defaults(obs_data_t *settings, void *type_data)
 {
+	UNUSED_PARAMETER(type_data);
 	obs_data_set_default_int(settings, SETTING_OPACITY, 100);
 	obs_data_set_default_double(settings, SETTING_CONTRAST, 0.0);
 	obs_data_set_default_double(settings, SETTING_BRIGHTNESS, 0.0);

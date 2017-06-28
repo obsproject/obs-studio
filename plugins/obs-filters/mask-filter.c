@@ -71,8 +71,9 @@ static void mask_filter_update(void *data, obs_data_t *settings)
 	obs_leave_graphics();
 }
 
-static void mask_filter_defaults(obs_data_t *settings)
+static void mask_filter_defaults(obs_data_t *settings, void *type_data)
 {
+	UNUSED_PARAMETER(type_data);
 	obs_data_set_default_string(settings, SETTING_TYPE,
 			"mask_color_filter.effect");
 	obs_data_set_default_int(settings, SETTING_COLOR, 0xFFFFFF);
@@ -82,8 +83,9 @@ static void mask_filter_defaults(obs_data_t *settings)
 #define IMAGE_FILTER_EXTENSIONS \
 	" (*.bmp *.jpg *.jpeg *.tga *.gif *.png)"
 
-static obs_properties_t *mask_filter_properties(void *data)
+static obs_properties_t *mask_filter_properties(void *data, void *type_data)
 {
+	UNUSED_PARAMETER(type_data);
 	obs_properties_t *props = obs_properties_create();
 	struct dstr filter_str = {0};
 	obs_property_t *p;

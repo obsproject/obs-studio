@@ -306,8 +306,9 @@ static bool show_all_services_toggled(obs_properties_t *ppts,
 	return true;
 }
 
-static obs_properties_t *rtmp_common_properties(void *unused)
+static obs_properties_t *rtmp_common_properties(void *unused, void *type_data)
 {
+	UNUSED_PARAMETER(type_data);
 	UNUSED_PARAMETER(unused);
 
 	obs_properties_t *ppts = obs_properties_create();

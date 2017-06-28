@@ -65,7 +65,7 @@ static bool init_encoder(struct obs_encoder *encoder, const char *name,
 		return false;
 
 	if (encoder->info.get_defaults)
-		encoder->info.get_defaults(encoder->context.settings);
+		encoder->info.get_defaults(encoder->context.settings, encoder->info.type_data);
 
 	return true;
 }
@@ -285,7 +285,7 @@ static inline obs_data_t *get_defaults(const struct obs_encoder_info *info)
 {
 	obs_data_t *settings = obs_data_create();
 	if (info->get_defaults)
-		info->get_defaults(settings);
+		info->get_defaults(settings, info->type_data);
 	return settings;
 }
 
@@ -302,7 +302,7 @@ obs_properties_t *obs_get_encoder_properties(const char *id)
 		obs_data_t       *defaults = get_defaults(ei);
 		obs_properties_t *properties;
 
-		properties = ei->get_properties(NULL);
+		properties = ei->get_properties(NULL, ei->type_data);
 		obs_properties_apply_settings(properties, defaults);
 		obs_data_release(defaults);
 		return properties;
@@ -317,7 +317,7 @@ obs_properties_t *obs_encoder_properties(const obs_encoder_t *encoder)
 
 	if (encoder->info.get_properties) {
 		obs_properties_t *props;
-		props = encoder->info.get_properties(encoder->context.data);
+		props = encoder->info.get_properties(encoder->context.data, encoder->info.type_data);
 		obs_properties_apply_settings(props, encoder->context.settings);
 		return props;
 	}

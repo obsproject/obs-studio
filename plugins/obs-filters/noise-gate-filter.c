@@ -152,8 +152,9 @@ static struct obs_audio_data *noise_gate_filter_audio(void *data,
 	return audio;
 }
 
-static void noise_gate_defaults(obs_data_t *s)
+static void noise_gate_defaults(obs_data_t *s, void *type_data)
 {
+	UNUSED_PARAMETER(type_data);
 	obs_data_set_default_double(s, S_OPEN_THRESHOLD, -26.0f);
 	obs_data_set_default_double(s, S_CLOSE_THRESHOLD, -32.0f);
 	obs_data_set_default_int   (s, S_ATTACK_TIME, 25);
@@ -161,8 +162,9 @@ static void noise_gate_defaults(obs_data_t *s)
 	obs_data_set_default_int   (s, S_RELEASE_TIME, 150);
 }
 
-static obs_properties_t *noise_gate_properties(void *data)
+static obs_properties_t *noise_gate_properties(void *data, void *type_data)
 {
+	UNUSED_PARAMETER(type_data);
 	obs_properties_t *ppts = obs_properties_create();
 
 	obs_properties_add_float_slider(ppts, S_CLOSE_THRESHOLD,

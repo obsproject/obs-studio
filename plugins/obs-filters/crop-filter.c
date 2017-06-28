@@ -98,8 +98,9 @@ static bool relative_clicked(obs_properties_t *props, obs_property_t *p,
 	return true;
 }
 
-static obs_properties_t *crop_filter_properties(void *data)
+static obs_properties_t *crop_filter_properties(void *data, void *type_data)
 {
+	UNUSED_PARAMETER(type_data);
 	obs_properties_t *props = obs_properties_create();
 
 	obs_property_t *p = obs_properties_add_bool(props, "relative",
@@ -124,8 +125,9 @@ static obs_properties_t *crop_filter_properties(void *data)
 	return props;
 }
 
-static void crop_filter_defaults(obs_data_t *settings)
+static void crop_filter_defaults(obs_data_t *settings, void *type_data)
 {
+	UNUSED_PARAMETER(type_data);
 	obs_data_set_default_bool(settings, "relative", true);
 }
 

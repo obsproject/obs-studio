@@ -346,8 +346,9 @@ static void color_correction_filter_render(void *data, gs_effect_t *effect)
  * maximum and step values. While a custom interface can be built, for a
  * simple filter like this it's better to use the supplied functions.
  */
-static obs_properties_t *color_correction_filter_properties(void *data)
+static obs_properties_t *color_correction_filter_properties(void *data, void *type_data)
 {
+	UNUSED_PARAMETER(type_data);
 	obs_properties_t *props = obs_properties_create();
 
 	obs_properties_add_float_slider(props, SETTING_GAMMA,
@@ -377,8 +378,9 @@ static obs_properties_t *color_correction_filter_properties(void *data)
  * *NOTE* this function is completely optional, as is providing a default
  * for any particular setting.
  */
-static void color_correction_filter_defaults(obs_data_t *settings)
+static void color_correction_filter_defaults(obs_data_t *settings, void *type_data)
 {
+	UNUSED_PARAMETER(type_data);
 	obs_data_set_default_double(settings, SETTING_GAMMA, 0.0);
 	obs_data_set_default_double(settings, SETTING_CONTRAST, 0.0);
 	obs_data_set_default_double(settings, SETTING_BRIGHTNESS, 0.0);

@@ -378,8 +378,9 @@ static bool nvenc_encode(void *data, struct encoder_frame *frame,
 	return true;
 }
 
-static void nvenc_defaults(obs_data_t *settings)
+static void nvenc_defaults(obs_data_t *settings, void *type_data)
 {
+	UNUSED_PARAMETER(type_data);
 	obs_data_set_default_int(settings, "bitrate", 2500);
 	obs_data_set_default_int(settings, "keyint_sec", 0);
 	obs_data_set_default_int(settings, "cqp", 23);
@@ -416,8 +417,9 @@ static bool rate_control_modified(obs_properties_t *ppts, obs_property_t *p,
 	return true;
 }
 
-static obs_properties_t *nvenc_properties(void *unused)
+static obs_properties_t *nvenc_properties(void *unused, void *type_data)
 {
+	UNUSED_PARAMETER(type_data);
 	UNUSED_PARAMETER(unused);
 
 	obs_properties_t *props = obs_properties_create();

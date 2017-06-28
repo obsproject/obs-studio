@@ -104,14 +104,16 @@ static uint32_t wc_height(void *data)
 	return wc->capture.height;
 }
 
-static void wc_defaults(obs_data_t *defaults)
+static void wc_defaults(obs_data_t *defaults, void *type_data)
 {
+	UNUSED_PARAMETER(type_data);
 	obs_data_set_default_bool(defaults, "cursor", true);
 	obs_data_set_default_bool(defaults, "compatibility", false);
 }
 
-static obs_properties_t *wc_properties(void *unused)
+static obs_properties_t *wc_properties(void *unused, void *type_data)
 {
+	UNUSED_PARAMETER(type_data);
 	UNUSED_PARAMETER(unused);
 
 	obs_properties_t *ppts = obs_properties_create();

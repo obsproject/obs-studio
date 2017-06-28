@@ -124,8 +124,9 @@ static bool swipe_audio_render(void *data, uint64_t *ts_out,
 		audio, mixers, channels, sample_rate, mix_a, mix_b);
 }
 
-static obs_properties_t *swipe_properties(void *data)
+static obs_properties_t *swipe_properties(void *data, void *type_data)
 {
+	UNUSED_PARAMETER(type_data);
 	obs_properties_t *ppts = obs_properties_create();
 	obs_property_t *p;
 

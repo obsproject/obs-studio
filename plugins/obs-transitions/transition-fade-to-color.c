@@ -146,8 +146,9 @@ static bool fade_to_color_audio_render(void *data, uint64_t *ts_out,
 		audio, mixers, channels, sample_rate, mix_a, mix_b);
 }
 
-static obs_properties_t *fade_to_color_properties(void *data)
+static obs_properties_t *fade_to_color_properties(void *data, void *type_data)
 {
+	UNUSED_PARAMETER(type_data);
 	obs_properties_t *props = obs_properties_create();
 
 	obs_properties_add_color(props, S_COLOR, S_COLOR_TEXT);
@@ -158,8 +159,9 @@ static obs_properties_t *fade_to_color_properties(void *data)
 	return props;
 }
 
-static void fade_to_color_defaults(obs_data_t *settings)
+static void fade_to_color_defaults(obs_data_t *settings, void *type_data)
 {
+	UNUSED_PARAMETER(type_data);
 	obs_data_set_default_int(settings, S_COLOR, 0xFF000000);
 	obs_data_set_default_int(settings, S_SWITCH_POINT, 50);
 }

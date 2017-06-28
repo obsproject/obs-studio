@@ -96,8 +96,9 @@ static void sharpness_render(void *data, gs_effect_t *effect)
 	UNUSED_PARAMETER(effect);
 }
 
-static obs_properties_t *sharpness_properties(void *data)
+static obs_properties_t *sharpness_properties(void *data, void *type_data)
 {
+	UNUSED_PARAMETER(type_data);
 	obs_properties_t *props = obs_properties_create();
 
 	obs_properties_add_float_slider(props, "sharpness",
@@ -107,8 +108,9 @@ static obs_properties_t *sharpness_properties(void *data)
 	return props;
 }
 
-static void sharpness_defaults(obs_data_t *settings)
+static void sharpness_defaults(obs_data_t *settings, void *type_data)
 {
+	UNUSED_PARAMETER(type_data);
 	obs_data_set_default_double(settings, "sharpness", 0.08);
 }
 

@@ -315,13 +315,15 @@ static void GetDShowVideoInfo(void *data, struct video_scale_info *info)
 	}
 }
 
-static void GetDShowEncoderDefauts(obs_data_t *settings)
+static void GetDShowEncoderDefauts(obs_data_t *settings, void *type_data)
 {
+	UNUSED_PARAMETER(type_data);
 	obs_data_set_default_int(settings, "bitrate", 1000);
 }
 
-static obs_properties_t *GetDShowEncoderProperties(void *data)
+static obs_properties_t *GetDShowEncoderProperties(void *data, void *type_data)
 {
+	UNUSED_PARAMETER(type_data);
 	obs_properties_t *ppts = obs_properties_create();
 
 	obs_properties_add_int(ppts, "bitrate", obs_module_text("Bitrate"),

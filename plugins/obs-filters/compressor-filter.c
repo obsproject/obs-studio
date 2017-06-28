@@ -189,8 +189,9 @@ static struct obs_audio_data *compressor_filter_audio(void *data,
 	return audio;
 }
 
-static void compressor_defaults(obs_data_t *s)
+static void compressor_defaults(obs_data_t *s, void *type_data)
 {
+	UNUSED_PARAMETER(type_data);
 	obs_data_set_default_double(s, S_RATIO, 10.0f);
 	obs_data_set_default_double(s, S_THRESHOLD, -18.0f);
 	obs_data_set_default_int(s, S_ATTACK_TIME, 6);
@@ -198,8 +199,9 @@ static void compressor_defaults(obs_data_t *s)
 	obs_data_set_default_double(s, S_OUTPUT_GAIN, 0.0f);
 }
 
-static obs_properties_t *compressor_properties(void *data)
+static obs_properties_t *compressor_properties(void *data, void *type_data)
 {
+	UNUSED_PARAMETER(type_data);
 	obs_properties_t *props = obs_properties_create();
 
 	obs_properties_add_float_slider(props, S_RATIO,
