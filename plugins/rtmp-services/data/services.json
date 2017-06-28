@@ -473,8 +473,8 @@
                     "url": "rtmp://live-den.vaughnsoft.net/live"
                 },
                 {
-                    "name": "US: Los Angeles, CA",
-                    "url": "rtmp://live-lax.vaughnsoft.net/live"
+                    "name": "US: New York, NY",
+                    "url": "rtmp://live-nyc.vaughnsoft.net/live"
                 },
                 {
                     "name": "EU: Amsterdam, NL",
@@ -503,8 +503,8 @@
                     "url": "rtmp://live-den.vaughnsoft.net/live"
                 },
                 {
-                    "name": "US: Los Angeles, CA",
-                    "url": "rtmp://live-lax.vaughnsoft.net/live"
+                    "name": "US: New York, NY",
+                    "url": "rtmp://live-nyc.vaughnsoft.net/live"
                 },
                 {
                     "name": "EU: Amsterdam, NL",
