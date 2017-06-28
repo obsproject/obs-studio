@@ -50,6 +50,10 @@
 #include <util/platform.h>
 #include "ui-config.h"
 
+#ifdef __APPLE__
+#include <util/mac/mac-version.h>
+#endif
+
 using namespace std;
 
 // Used for QVariant in codec comboboxes
@@ -466,6 +470,26 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	delete ui->enableAutoUpdates;
 	ui->enableAutoUpdates = nullptr;
 #endif
+	
+#if defined(__APPLE__) && defined(__MAC_10_12)
+	struct mac_version_info ver;
+	get_mac_ver(&ver);
+	
+	if (ver.identifier < MACOS_SIERRA) {
+#endif
+#ifndef _WIN32
+		delete ui->rendererLabel;
+		delete ui->renderer;
+		delete ui->adapterLabel;
+		delete ui->adapter;
+		ui->rendererLabel = nullptr;
+		ui->renderer = nullptr;
+		ui->adapterLabel = nullptr;
+		ui->adapter = nullptr;
+#endif
+#if defined(__APPLE__) && defined(__MAC_10_12)
+	}
+#endif
 
 #if !defined(_WIN32) && !defined(__APPLE__) && !HAVE_PULSEAUDIO
 	delete ui->audioAdvGroupBox;
@@ -506,10 +530,6 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 		ui->processPriority->addItem(QTStr(pri.name), pri.val);
 
 #else
-	delete ui->rendererLabel;
-	delete ui->renderer;
-	delete ui->adapterLabel;
-	delete ui->adapter;
 	delete ui->processPriorityLabel;
 	delete ui->processPriority;
 	delete ui->advancedGeneralGroupBox;
@@ -520,10 +540,6 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 #if defined(__APPLE__) || HAVE_PULSEAUDIO
 	delete ui->disableAudioDucking;
 #endif
-	ui->rendererLabel = nullptr;
-	ui->renderer = nullptr;
-	ui->adapterLabel = nullptr;
-	ui->adapter = nullptr;
 	ui->processPriorityLabel = nullptr;
 	ui->processPriority = nullptr;
 	ui->advancedGeneralGroupBox = nullptr;
@@ -1174,12 +1190,28 @@ void OBSBasicSettings::LoadGeneralSettings()
 
 void OBSBasicSettings::LoadRendererList()
 {
-#ifdef _WIN32
+#if defined(_WIN32) || (defined(__APPLE__) && defined(__MAC_10_12))
+#if defined(__APPLE__)
+	struct mac_version_info ver;
+	get_mac_ver(&ver);
+	
+	if (ver.identifier < MACOS_SIERRA)
+		return;
+#endif
+	
 	const char *renderer = config_get_string(GetGlobalConfig(), "Video",
 			"Renderer");
 
+#ifdef _WIN32
 	ui->renderer->addItem(QT_UTF8("Direct3D 11"));
+#endif
+#if defined(__APPLE__) && defined(__MAC_10_12)
+	if (ver.identifier >= MACOS_SIERRA)
+		ui->renderer->addItem(QT_UTF8("Metal"));
+#endif
+#ifdef _WIN32
 	if (opt_allow_opengl || strcmp(renderer, "OpenGL") == 0)
+#endif
 		ui->renderer->addItem(QT_UTF8("OpenGL"));
 
 	int idx = ui->renderer->findText(QT_UTF8(renderer));
@@ -2880,11 +2912,13 @@ void OBSBasicSettings::SaveAdvancedSettings()
 	QString lastMonitoringDevice = config_get_string(main->Config(),
 			"Audio", "MonitoringDeviceId");
 
-#ifdef _WIN32
+#if defined(_WIN32) || defined(__APPLE__)
 	if (WidgetChanged(ui->renderer))
 		config_set_string(App()->GlobalConfig(), "Video", "Renderer",
 				QT_TO_UTF8(ui->renderer->currentText()));
-
+#endif
+	
+#ifdef _WIN32
 	std::string priority =
 		QT_TO_UTF8(ui->processPriority->currentData().toString());
 	config_set_string(App()->GlobalConfig(), "General", "ProcessPriority",

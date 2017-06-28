@@ -1,0 +1,33 @@
+# Once done these will be defined:
+#
+#   MACOS_VERSION
+
+if(APPLE)
+	# NOTE: CMAKE_SYSTEM_VERSION is Darwin version
+	# - 12.x.x = OS X Mountain Lion (10.8)
+	# - 13.x.x = OS X Mavericks (10.9)
+	# - 14.x.x = OS X Yosemite (10.10)
+	# - 15.x.x = OS X El Capitan (10.11)
+	# - 16.x.x = macOS Sierra (10.12)
+	# - 17.x.x = macOS High Sierra (10.13)
+
+	if(${CMAKE_SYSTEM_VERSION} GREATER 12 AND ${CMAKE_SYSTEM_VERSION} LESS 13)
+		set(MACOS_VERSION 10.8)
+	elseif(${CMAKE_SYSTEM_VERSION} GREATER 13 AND ${CMAKE_SYSTEM_VERSION} LESS 14)
+		set(MACOS_VERSION 10.9)
+	elseif(${CMAKE_SYSTEM_VERSION} GREATER 14 AND ${CMAKE_SYSTEM_VERSION} LESS 15)
+		set(MACOS_VERSION 10.10)
+	elseif(${CMAKE_SYSTEM_VERSION} GREATER 15 AND ${CMAKE_SYSTEM_VERSION} LESS 16)
+		set(MACOS_VERSION 10.11)
+	elseif(${CMAKE_SYSTEM_VERSION} GREATER 16 AND ${CMAKE_SYSTEM_VERSION} LESS 17)
+		set(MACOS_VERSION 10.12)
+	elseif(${CMAKE_SYSTEM_VERSION} GREATER 17 AND ${CMAKE_SYSTEM_VERSION} LESS 18)
+		set(MACOS_VERSION 10.13)
+	else()
+		set(MACOS_VERSION 10.0)
+	endif()
+
+	message(STATUS "macOS Version ${MACOS_VERSION}")
+else()
+	set(MACOS_VERSION 0.0)
+endif()

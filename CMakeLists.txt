@@ -31,6 +31,7 @@ set(SCRIPTING_ENABLED OFF CACHE BOOL "Interal global cmake variable" FORCE)
 include(ObsHelpers)
 include(ObsCpack)
 include(GNUInstallDirs)
+include(MacOSVersion)
 
 # Must be a string in the format of "x.x.x-rcx"
 if(DEFINED RELEASE_CANDIDATE)
@@ -172,6 +173,10 @@ if(NOT INSTALLER_RUN)
 
 	if(WIN32)
 		add_subdirectory(libobs-d3d11)
+	endif()
+
+	if(APPLE AND ${MACOS_VERSION} VERSION_GREATER 10.11)
+		add_subdirectory(libobs-metal)
 	endif()
 
 	add_subdirectory(libobs-opengl)

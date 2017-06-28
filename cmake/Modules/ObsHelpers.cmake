@@ -553,7 +553,7 @@ function(install_obs_plugin_with_data target datadir)
 endfunction()
 
 function(define_graphic_modules target)
-	foreach(dl_lib opengl d3d9 d3d11)
+	foreach(dl_lib opengl d3d9 d3d11 metal)
 		string(TOUPPER ${dl_lib} dl_lib_upper)
 		if(TARGET libobs-${dl_lib})
 			if(UNIX AND UNIX_STRUCTURE)
