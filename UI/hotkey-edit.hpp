@@ -53,6 +53,7 @@ public:
 		// enough with the default focus frame
 		setReadOnly(true);
 #endif
+		setAttribute(Qt::WA_InputMethodEnabled, false);
 		setAttribute(Qt::WA_MacShowFocusRect, true);
 		InitSignalHandler();
 		ResetKey();
