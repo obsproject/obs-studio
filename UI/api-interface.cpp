@@ -369,6 +369,37 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 		main->SaveService();
 	}
 
+	bool obs_frontend_preview_program_mode_active(void) override
+	{
+		return main->IsPreviewProgramMode();
+	}
+
+	void obs_frontend_set_preview_program_mode(bool enable) override
+	{
+		main->SetPreviewProgramMode(enable);
+	}
+
+	obs_source_t *obs_frontend_get_current_preview_scene(void) override
+	{
+		OBSSource source = nullptr;
+
+		if (main->IsPreviewProgramMode()) {
+			source = main->GetCurrentSceneSource();
+			obs_source_addref(source);
+		}
+
+		return source;
+	}
+
+	void obs_frontend_set_current_preview_scene(obs_source_t *scene) override
+	{
+		if (main->IsPreviewProgramMode()) {
+			QMetaObject::invokeMethod(main, "SetCurrentScene",
+				Q_ARG(OBSSource, OBSSource(scene)),
+				Q_ARG(bool, false));
+		}
+	}
+
 	void on_load(obs_data_t *settings) override
 	{
 		for (auto cb : saveCallbacks)
