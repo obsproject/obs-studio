@@ -82,7 +82,7 @@ static void null_output_stop(void *data, uint64_t ts)
 
 static void null_output_data(void *data, struct encoder_packet *packet)
 {
-	struct null_output *context = data;
+	UNUSED_PARAMETER(data);
 	UNUSED_PARAMETER(packet);
 }
 
