@@ -73,6 +73,11 @@ VisibilityItemWidget::VisibilityItemWidget(obs_sceneitem_t *item_)
 	label = new QLabel(QT_UTF8(name));
 	label->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
 
+#ifdef __APPLE__
+	vis->setAttribute(Qt::WA_LayoutUsesWidgetRect);
+	lock->setAttribute(Qt::WA_LayoutUsesWidgetRect);
+#endif
+
 	QHBoxLayout *itemLayout = new QHBoxLayout();
 	itemLayout->addWidget(vis);
 	itemLayout->addWidget(lock);
