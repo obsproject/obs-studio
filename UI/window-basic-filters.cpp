@@ -87,8 +87,9 @@ OBSBasicFilters::OBSBasicFilters(QWidget *parent, OBSSource source_)
 			SLOT(EffectFilterNameEdited(QWidget*,
 					QAbstractItemDelegate::EndEditHint)));
 
-	connect(ui->buttonBox->button(QDialogButtonBox::Close),
-		SIGNAL(clicked()), this, SLOT(close()));
+	QPushButton *close = ui->buttonBox->button(QDialogButtonBox::Close);
+	connect(close, SIGNAL(clicked()), this, SLOT(close()));
+	close->setDefault(true);
 
 	ui->buttonBox->button(QDialogButtonBox::Reset)->setText(
 			QTStr("Defaults"));

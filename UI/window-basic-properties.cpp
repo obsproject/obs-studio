@@ -49,10 +49,13 @@ OBSBasicProperties::OBSBasicProperties(QWidget *parent, OBSSource source_)
 	int cy = (int)config_get_int(App()->GlobalConfig(), "PropertiesWindow",
 			"cy");
 
-	buttonBox->addButton(QTStr("OK"), QDialogButtonBox::AcceptRole);
+	QPushButton *b;
+	b = buttonBox->addButton(QTStr("OK"), QDialogButtonBox::AcceptRole);
 	buttonBox->addButton(QTStr("Cancel"), QDialogButtonBox::RejectRole);
 	buttonBox->addButton(QTStr("Defaults"), QDialogButtonBox::ResetRole);
 	buttonBox->setObjectName(QStringLiteral("buttonBox"));
+
+	b->setDefault(true);
 
 	if (cx > 400 && cy > 400)
 		resize(cx, cy);
