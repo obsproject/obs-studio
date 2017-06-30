@@ -458,6 +458,8 @@ static void update_params(struct obs_x264 *obsx264, obs_data_t *settings,
 	obsx264->params.p_log_private        = obsx264;
 	obsx264->params.i_log_level          = X264_LOG_WARNING;
 
+	obsx264->params.vui.i_sar_width      = voi->psr_x;
+	obsx264->params.vui.i_sar_height     = voi->psr_y;
 	obsx264->params.vui.i_transfer =
 		get_x264_cs_val(info.colorspace, x264_transfer_names);
 	obsx264->params.vui.i_colmatrix =

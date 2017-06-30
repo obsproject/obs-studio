@@ -91,8 +91,8 @@ struct CodecDesc {
 Q_DECLARE_METATYPE(FormatDesc)
 Q_DECLARE_METATYPE(CodecDesc)
 
-/* parses "[width]x[height]", string, i.e. 1024x768 */
-static bool ConvertResText(const char *res, uint32_t &cx, uint32_t &cy)
+static bool ConvertSizeText(const char *res, const char *delimiter,
+		uint32_t &cx, uint32_t &cy)
 {
 	BaseLexer lex;
 	base_token token;
@@ -107,10 +107,10 @@ static bool ConvertResText(const char *res, uint32_t &cx, uint32_t &cy)
 
 	cx = std::stoul(token.text.array);
 
-	/* parse 'x' */
+	/* parse delimiter */
 	if (!lexer_getbasetoken(lex, &token, IGNORE_WHITESPACE))
 		return false;
-	if (strref_cmpi(&token.text, "x") != 0)
+	if (strref_cmpi(&token.text, delimiter) != 0)
 		return false;
 
 	/* parse height */
@@ -126,6 +126,18 @@ static bool ConvertResText(const char *res, uint32_t &cx, uint32_t &cy)
 		return false;
 
 	return true;
+}
+
+/* parses "[width]x[height]", string, i.e. 1024x768 */
+static bool ConvertResText(const char *res, uint32_t &cx, uint32_t &cy)
+{
+	return ConvertSizeText(res, "x", cx, cy);
+}
+
+/* parses "[width]:[height]", string, i.e. 8:9 */
+static bool ConvertRatioText(const char *res, uint32_t &cx, uint32_t &cy)
+{
+	return ConvertSizeText(res, ":", cx, cy);
 }
 
 static inline bool WidgetChanged(QWidget *widget)
@@ -396,6 +408,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->auxAudioDevice3,      COMBO_CHANGED,  AUDIO_CHANGED);
 	HookWidget(ui->baseResolution,       CBEDIT_CHANGED, VIDEO_RES);
 	HookWidget(ui->outputResolution,     CBEDIT_CHANGED, VIDEO_RES);
+	HookWidget(ui->pixelAspectRatio,     CBEDIT_CHANGED, VIDEO_RES);
 	HookWidget(ui->downscaleFilter,      COMBO_CHANGED,  VIDEO_CHANGED);
 	HookWidget(ui->fpsType,              COMBO_CHANGED,  VIDEO_CHANGED);
 	HookWidget(ui->fpsCommon,            COMBO_CHANGED,  VIDEO_CHANGED);
@@ -1104,6 +1117,13 @@ static string ResString(uint32_t cx, uint32_t cy)
 	return res.str();
 }
 
+static string RatioString(uint32_t cx, uint32_t cy)
+{
+	stringstream res;
+	res << cx << ":" << cy;
+	return res.str();
+}
+
 /* some nice default output resolution vals */
 static const double vals[] =
 {
@@ -1242,6 +1262,10 @@ void OBSBasicSettings::LoadResolutionLists()
 	uint32_t cy = config_get_uint(main->Config(), "Video", "BaseCY");
 	uint32_t out_cx = config_get_uint(main->Config(), "Video", "OutputCX");
 	uint32_t out_cy = config_get_uint(main->Config(), "Video", "OutputCY");
+	uint32_t par_x = config_get_uint(main->Config(),
+			"Video", "PixelAspectRatioX");
+	uint32_t par_y = config_get_uint(main->Config(),
+			"Video", "PixelAspectRatioY");
 
 	ui->baseResolution->clear();
 
@@ -1268,6 +1292,8 @@ void OBSBasicSettings::LoadResolutionLists()
 	ResetDownscales(cx, cy);
 
 	ui->outputResolution->lineEdit()->setText(outputResString.c_str());
+	ui->pixelAspectRatio->lineEdit()->setText(
+			RatioString(par_x, par_y).c_str());
 }
 
 static inline void LoadFPSCommon(OBSBasic *main, Ui::OBSBasicSettings *ui)
@@ -2549,6 +2575,7 @@ void OBSBasicSettings::SaveVideoSettings()
 {
 	QString baseResolution   = ui->baseResolution->currentText();
 	QString outputResolution = ui->outputResolution->currentText();
+	QString pixelAspectRatio = ui->pixelAspectRatio->currentText();
 	int     fpsType          = ui->fpsType->currentIndex();
 	uint32_t cx = 0, cy = 0;
 
@@ -2564,6 +2591,14 @@ void OBSBasicSettings::SaveVideoSettings()
 	    ConvertResText(QT_TO_UTF8(outputResolution), cx, cy)) {
 		config_set_uint(main->Config(), "Video", "OutputCX", cx);
 		config_set_uint(main->Config(), "Video", "OutputCY", cy);
+	}
+
+	if (WidgetChanged(ui->pixelAspectRatio) &&
+	    ConvertRatioText(QT_TO_UTF8(pixelAspectRatio), cx, cy)) {
+		config_set_uint(main->Config(), "Video", "PixelAspectRatioX",
+				cx);
+		config_set_uint(main->Config(), "Video", "PixelAspectRatioY",
+				cy);
 	}
 
 	if (WidgetChanged(ui->fpsType))

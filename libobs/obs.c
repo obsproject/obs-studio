@@ -37,6 +37,8 @@ static inline void make_video_info(struct video_output_info *vi,
 	vi->fps_den = ovi->fps_den;
 	vi->width   = ovi->output_width;
 	vi->height  = ovi->output_height;
+	vi->psr_x   = ovi->psr_x;
+	vi->psr_y   = ovi->psr_y;
 	vi->range   = ovi->range;
 	vi->colorspace = ovi->colorspace;
 	vi->cache_size = 6;

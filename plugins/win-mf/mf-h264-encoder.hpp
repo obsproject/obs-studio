@@ -93,6 +93,8 @@ namespace MF {
 			UINT32 height,
 			UINT32 framerateNum,
 			UINT32 framerateDen,
+			UINT16 pixelAspectRatioX,
+			UINT16 pixelAspectRatioY,
 			H264Profile profile,
 			UINT32 bitrate);
 
@@ -146,6 +148,8 @@ namespace MF {
 		const UINT32 height;
 		const UINT32 framerateNum;
 		const UINT32 framerateDen;
+		const UINT16 pixelAspectRatioX;
+		const UINT16 pixelAspectRatioY;
 		const UINT32 initialBitrate;
 		const H264Profile profile;
 

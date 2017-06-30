@@ -350,6 +350,8 @@ static void update_params(struct obs_qsv *obsqsv, obs_data_t *settings)
 	obsqsv->params.nHeight = (mfxU16)height;
 	obsqsv->params.nFpsNum = (mfxU16)voi->fps_num;
 	obsqsv->params.nFpsDen = (mfxU16)voi->fps_den;
+	obsqsv->params.nPsrX = (mfxU16)voi->psr_x;
+	obsqsv->params.nPsrY = (mfxU16)voi->psr_y;
 	obsqsv->params.nbFrames = (mfxU16)bFrames;
 	obsqsv->params.nKeyIntSec = (mfxU16)keyint_sec;
 	obsqsv->params.nICQQuality = (mfxU16)icq_quality;

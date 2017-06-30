@@ -1054,6 +1054,8 @@ bool OBSBasic::InitBasicConfigDefaults()
 
 	config_set_default_uint  (basicConfig, "Video", "OutputCX", scale_cx);
 	config_set_default_uint  (basicConfig, "Video", "OutputCY", scale_cy);
+	config_set_default_uint  (basicConfig, "Video", "PixelAspectRatioX", 1);
+	config_set_default_uint  (basicConfig, "Video", "PixelAspectRatioY", 1);
 
 	/* don't allow OutputCX/OutputCY to be susceptible to defaults
 	 * changing */
@@ -2579,8 +2581,8 @@ void OBSBasic::RenderMain(void *data, uint32_t cx, uint32_t cy)
 
 	obs_get_video_info(&ovi);
 
-	window->previewCX = int(window->previewScale * float(ovi.base_width));
-	window->previewCY = int(window->previewScale * float(ovi.base_height));
+	window->previewCX = int(window->previewScaleX * float(ovi.base_width));
+	window->previewCY = int(window->previewScaleY * float(ovi.base_height));
 
 	gs_viewport_push();
 	gs_projection_push();
@@ -2730,6 +2732,10 @@ int OBSBasic::ResetVideo()
 			"Video", "OutputCX");
 	ovi.output_height  = (uint32_t)config_get_uint(basicConfig,
 			"Video", "OutputCY");
+	ovi.psr_x          = (uint16_t)config_get_uint(basicConfig,
+			"Video", "PixelAspectRatioX");
+	ovi.psr_y          = (uint16_t)config_get_uint(basicConfig,
+			"Video", "PixelAspectRatioY");
 	ovi.output_format  = GetVideoFormatFromName(colorFormat);
 	ovi.colorspace     = astrcmpi(colorSpace, "601") == 0 ?
 		VIDEO_CS_601 : VIDEO_CS_709;
@@ -2753,6 +2759,15 @@ int OBSBasic::ResetVideo()
 				ovi.base_width);
 		config_set_uint(basicConfig, "Video", "OutputCY",
 				ovi.base_height);
+	}
+
+	if (ovi.psr_x == 0 || ovi.psr_y == 0) {
+		ovi.psr_x = 1;
+		ovi.psr_y = 1;
+		config_set_uint(basicConfig, "Video", "PixelAspectRatioX",
+				ovi.psr_x);
+		config_set_uint(basicConfig, "Video", "PixelAspectRatioY",
+				ovi.psr_y);
 	}
 
 	ret = AttemptToResetVideo(&ovi);
@@ -2846,6 +2861,8 @@ void OBSBasic::ResizePreview(uint32_t cx, uint32_t cy)
 	QSize  targetSize;
 	ScalingMode scalingMode;
 	obs_video_info ovi;
+	float scaleX;
+	int scaledWidth;
 
 	/* resize preview panel to fix to the top section of the window */
 	targetSize = GetPixelSize(ui->preview);
@@ -2853,29 +2870,35 @@ void OBSBasic::ResizePreview(uint32_t cx, uint32_t cy)
 	scalingMode = ui->preview->GetScalingMode();
 	obs_get_video_info(&ovi);
 
+	scaleX = float(ovi.psr_x) / float(ovi.psr_y);
+	scaledWidth = int(float(cx) * scaleX);
+
 	if (scalingMode == ScalingMode::Canvas) {
-		previewScale = 1.0f;
-		GetCenterPosFromFixedScale(int(cx), int(cy),
+		previewScaleX = scaleX;
+		previewScaleY = 1.0f;
+		GetCenterPosFromFixedScale(scaledWidth, int(cy),
 				targetSize.width() - PREVIEW_EDGE_SIZE * 2,
 				targetSize.height() - PREVIEW_EDGE_SIZE * 2,
-				previewX, previewY, previewScale);
+				previewX, previewY, previewScaleX, previewScaleY);
 		previewX += ui->preview->ScrollX();
 		previewY += ui->preview->ScrollY();
 
 	} else if (scalingMode == ScalingMode::Output) {
-		previewScale = float(ovi.output_width) / float(ovi.base_width);
-		GetCenterPosFromFixedScale(int(cx), int(cy),
+		previewScaleY = float(ovi.output_height) / float(ovi.base_height);
+		previewScaleX = scaleX * previewScaleY;
+		GetCenterPosFromFixedScale(scaledWidth, int(cy),
 				targetSize.width() - PREVIEW_EDGE_SIZE * 2,
 				targetSize.height() - PREVIEW_EDGE_SIZE * 2,
-				previewX, previewY, previewScale);
+				previewX, previewY, previewScaleX, previewScaleY);
 		previewX += ui->preview->ScrollX();
 		previewY += ui->preview->ScrollY();
 
 	} else {
-		GetScaleAndCenterPos(int(cx), int(cy),
+		GetScaleAndCenterPos(scaledWidth, int(cy),
 				targetSize.width() - PREVIEW_EDGE_SIZE * 2,
 				targetSize.height() - PREVIEW_EDGE_SIZE * 2,
-				previewX, previewY, previewScale);
+				previewX, previewY, previewScaleY);
+		previewScaleX = previewScaleY * scaleX;
 	}
 
 	previewX += float(PREVIEW_EDGE_SIZE);
@@ -4952,13 +4975,17 @@ void OBSBasic::on_actionCenterToScreen_triggered()
 	{
 		vec3 tl, br, itemCenter, screenCenter, offset;
 		obs_video_info ovi;
+		float scaledWidth;
 
 		if (!obs_sceneitem_selected(item))
 			return true;
 
 		obs_get_video_info(&ovi);
 
-		vec3_set(&screenCenter, float(ovi.base_width),
+		scaledWidth = float(ovi.base_width) *
+				float(ovi.psr_x) / float(ovi.psr_y);
+
+		vec3_set(&screenCenter, scaledWidth,
 				float(ovi.base_height), 0.0f);
 		vec3_mulf(&screenCenter, &screenCenter, 0.5f);
 

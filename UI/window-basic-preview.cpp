@@ -25,11 +25,12 @@ vec2 OBSBasicPreview::GetMouseEventPos(QMouseEvent *event)
 {
 	OBSBasic *main = reinterpret_cast<OBSBasic*>(App()->GetMainWindow());
 	float pixelRatio = main->devicePixelRatio();
-	float scale = pixelRatio / main->previewScale;
+	float scaleX = pixelRatio / main->previewScaleX;
+	float scaleY = pixelRatio / main->previewScaleY;
 	vec2 pos;
 	vec2_set(&pos,
-		(float(event->x()) - main->previewX / pixelRatio) * scale,
-		(float(event->y()) - main->previewY / pixelRatio) * scale);
+		(float(event->x()) - main->previewX / pixelRatio) * scaleX,
+		(float(event->y()) - main->previewY / pixelRatio) * scaleY);
 
 	return pos;
 }
@@ -112,12 +113,13 @@ static vec3 GetTransformedPos(float x, float y, const matrix4 &mat)
 }
 
 static vec3 GetTransformedPosScaled(float x, float y, const matrix4 &mat,
-		float scale)
+		vec2 scale)
 {
-	vec3 result;
+	vec3 result, scale3;
 	vec3_set(&result, x, y, 0.0f);
+	vec3_set(&scale3, scale.x, scale.y, 0.0f);
 	vec3_transform(&result, &result, &mat);
-	vec3_mulf(&result, &result, scale);
+	vec3_mul(&result, &result, &scale3);
 	return result;
 }
 
@@ -128,7 +130,8 @@ static inline vec2 GetOBSScreenSize()
 	vec2_zero(&size);
 
 	if (obs_get_video_info(&ovi)) {
-		size.x = float(ovi.base_width);
+		size.x = floorf(float(ovi.base_width) *
+				float(ovi.psr_x) / float(ovi.psr_y));
 		size.y = float(ovi.base_height);
 	}
 
@@ -153,39 +156,41 @@ vec3 OBSBasicPreview::GetSnapOffset(const vec3 &tl, const vec3 &br)
 	const bool centerSnap = config_get_bool(GetGlobalConfig(),
 			"BasicWindow", "CenterSnapping");
 
-	const float clampDist = config_get_double(GetGlobalConfig(),
-			"BasicWindow", "SnapDistance") / main->previewScale;
+	const float clampDistX = config_get_double(GetGlobalConfig(),
+			"BasicWindow", "SnapDistance") / main->previewScaleX;
+	const float clampDistY = config_get_double(GetGlobalConfig(),
+			"BasicWindow", "SnapDistance") / main->previewScaleY;
 	const float centerX = br.x - (br.x - tl.x) / 2.0f;
 	const float centerY = br.y - (br.y - tl.y) / 2.0f;
 
 	// Left screen edge.
 	if (screenSnap &&
-	    fabsf(tl.x) < clampDist)
+	    fabsf(tl.x) < clampDistX)
 		clampOffset.x = -tl.x;
 	// Right screen edge.
 	if (screenSnap &&
 	    fabsf(clampOffset.x) < EPSILON &&
-	    fabsf(screenSize.x - br.x) < clampDist)
+	    fabsf(screenSize.x - br.x) < clampDistX)
 		clampOffset.x = screenSize.x - br.x;
 	// Horizontal center.
 	if (centerSnap &&
-	    fabsf(screenSize.x - (br.x - tl.x)) > clampDist &&
-	    fabsf(screenSize.x / 2.0f - centerX) < clampDist)
+	    fabsf(screenSize.x - (br.x - tl.x)) > clampDistX &&
+	    fabsf(screenSize.x / 2.0f - centerX) < clampDistX)
 		clampOffset.x = screenSize.x / 2.0f - centerX;
 
 	// Top screen edge.
 	if (screenSnap &&
-	    fabsf(tl.y) < clampDist)
+	    fabsf(tl.y) < clampDistY)
 		clampOffset.y = -tl.y;
 	// Bottom screen edge.
 	if (screenSnap &&
 	    fabsf(clampOffset.y) < EPSILON &&
-	    fabsf(screenSize.y - br.y) < clampDist)
+	    fabsf(screenSize.y - br.y) < clampDistY)
 		clampOffset.y = screenSize.y - br.y;
 	// Vertical center.
 	if (centerSnap &&
-	    fabsf(screenSize.y - (br.y - tl.y)) > clampDist &&
-	    fabsf(screenSize.y / 2.0f - centerY) < clampDist)
+	    fabsf(screenSize.y - (br.y - tl.y)) > clampDistY &&
+	    fabsf(screenSize.y / 2.0f - centerY) < clampDistY)
 		clampOffset.y = screenSize.y / 2.0f - centerY;
 
 	return clampOffset;
@@ -249,7 +254,7 @@ bool OBSBasicPreview::SelectedAtPos(const vec2 &pos)
 
 struct HandleFindData {
 	const vec2   &pos;
-	const float  scale;
+	const vec2   scale;
 
 	OBSSceneItem item;
 	ItemHandle   handle = ItemHandle::None;
@@ -259,7 +264,7 @@ struct HandleFindData {
 	HandleFindData& operator=(const HandleFindData &) = delete;
 	HandleFindData& operator=(HandleFindData &&) = delete;
 
-	inline HandleFindData(const vec2 &pos_, float scale_)
+	inline HandleFindData(const vec2 &pos_, vec2 scale_)
 		: pos   (pos_),
 		  scale (scale_)
 	{}
@@ -339,7 +344,10 @@ void OBSBasicPreview::GetStretchHandleData(const vec2 &pos)
 	if (!scene)
 		return;
 
-	HandleFindData data(pos, main->previewScale / main->devicePixelRatio());
+	HandleFindData data(pos, {
+		main->previewScaleX / main->devicePixelRatio(),
+		main->previewScaleY / main->devicePixelRatio()
+	});
 	obs_scene_enum_items(scene, FindHandleAtPos, &data);
 
 	stretchItem     = std::move(data.item);
@@ -457,7 +465,8 @@ void OBSBasicPreview::mousePressEvent(QMouseEvent *event)
 	vec2_set(&startPos, x, y);
 	GetStretchHandleData(startPos);
 
-	vec2_divf(&startPos, &startPos, main->previewScale / pixelRatio);
+	vec2 previewScale = { main->previewScaleX, main->previewScaleY };
+	vec2_div(&startPos, &startPos, &previewScale);
 	startPos.x = std::round(startPos.x);
 	startPos.y = std::round(startPos.y);
 
@@ -567,8 +576,7 @@ static bool AddItemBounds(obs_scene_t *scene, obs_sceneitem_t *item,
 }
 
 struct OffsetData {
-	float clampDist;
-	vec3 tl, br, offset;
+	vec3 clampDist, tl, br, offset;
 };
 
 static bool GetSourceSnapOffset(obs_scene_t *scene, obs_sceneitem_t *item,
@@ -608,7 +616,7 @@ static bool GetSourceSnapOffset(obs_scene_t *scene, obs_sceneitem_t *item,
 #define EDGE_SNAP(l, r, x, y) \
 	do { \
 		double dist = fabsf(l.x - data->r.x); \
-		if (dist < data->clampDist && \
+		if (dist < data->clampDist.x && \
 		    fabsf(data->offset.x) < EPSILON && \
 		    data->tl.y < br.y && \
 		    data->br.y > tl.y && \
@@ -653,8 +661,13 @@ void OBSBasicPreview::SnapItemMovement(vec2 &offset)
 		return;
 	}
 
-	const float clampDist = config_get_double(GetGlobalConfig(),
-			"BasicWindow", "SnapDistance") / main->previewScale;
+	const float clampDistX = config_get_double(GetGlobalConfig(),
+			"BasicWindow", "SnapDistance") / main->previewScaleX;
+	const float clampDistY = config_get_double(GetGlobalConfig(),
+			"BasicWindow", "SnapDistance") / main->previewScaleY;
+
+	vec3 clampDist;
+	vec3_set(&clampDist, clampDistX, clampDistY, 0.0f);
 
 	OffsetData offsetData;
 	offsetData.clampDist = clampDist;
@@ -1064,12 +1077,12 @@ void OBSBasicPreview::mouseMoveEvent(QMouseEvent *event)
 }
 
 static void DrawCircleAtPos(float x, float y, matrix4 &matrix,
-		float previewScale)
+		const struct vec3& previewScale)
 {
 	struct vec3 pos;
 	vec3_set(&pos, x, y, 0.0f);
 	vec3_transform(&pos, &pos, &matrix);
-	vec3_mulf(&pos, &pos, previewScale);
+	vec3_mul(&pos, &pos, &previewScale);
 
 	gs_matrix_push();
 	gs_matrix_translate(&pos);
@@ -1126,17 +1139,19 @@ bool OBSBasicPreview::DrawSelectedItem(obs_scene_t *scene,
 
 	gs_load_vertexbuffer(main->circle);
 
-	DrawCircleAtPos(0.0f, 0.0f, boxTransform, main->previewScale);
-	DrawCircleAtPos(0.0f, 1.0f, boxTransform, main->previewScale);
-	DrawCircleAtPos(1.0f, 0.0f, boxTransform, main->previewScale);
-	DrawCircleAtPos(1.0f, 1.0f, boxTransform, main->previewScale);
-	DrawCircleAtPos(0.5f, 0.0f, boxTransform, main->previewScale);
-	DrawCircleAtPos(0.0f, 0.5f, boxTransform, main->previewScale);
-	DrawCircleAtPos(0.5f, 1.0f, boxTransform, main->previewScale);
-	DrawCircleAtPos(1.0f, 0.5f, boxTransform, main->previewScale);
+	const vec3 previewScale =
+			{ main->previewScaleX, main->previewScaleY, 0.0f };
+	DrawCircleAtPos(0.0f, 0.0f, boxTransform, previewScale);
+	DrawCircleAtPos(0.0f, 1.0f, boxTransform, previewScale);
+	DrawCircleAtPos(1.0f, 0.0f, boxTransform, previewScale);
+	DrawCircleAtPos(1.0f, 1.0f, boxTransform, previewScale);
+	DrawCircleAtPos(0.5f, 0.0f, boxTransform, previewScale);
+	DrawCircleAtPos(0.0f, 0.5f, boxTransform, previewScale);
+	DrawCircleAtPos(0.5f, 1.0f, boxTransform, previewScale);
+	DrawCircleAtPos(1.0f, 0.5f, boxTransform, previewScale);
 
 	gs_matrix_push();
-	gs_matrix_scale3f(main->previewScale, main->previewScale, 1.0f);
+	gs_matrix_scale3f(main->previewScaleX, main->previewScaleY, 1.0f);
 	gs_matrix_mul(&boxTransform);
 
 	obs_sceneitem_crop crop;
