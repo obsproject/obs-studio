@@ -725,6 +725,11 @@ static inline bool init_hook_info(struct game_capture *gc)
 		return false;
 	}
 
+	if (gc->config.force_shmem) {
+		warn("init_hook_info: user is forcing shared memory "
+			"(compatibility mode)");
+	}
+
 	gc->global_hook_info->offsets = gc->process_is_64bit ?
 		offsets64 : offsets32;
 	gc->global_hook_info->capture_overlay = gc->config.capture_overlays;
@@ -1545,7 +1550,7 @@ static inline bool capture_valid(struct game_capture *gc)
 {
 	if (!gc->dwm_capture && !IsWindow(gc->window))
 	       return false;
-	
+
 	return !object_signalled(gc->target_process);
 }
 
