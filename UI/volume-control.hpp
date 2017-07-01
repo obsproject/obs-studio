@@ -75,6 +75,7 @@ private:
 	OBSSource source;
 	QLabel          *nameLabel;
 	QLabel          *volLabel;
+	QLabel          *dbLabel;
 	VolumeMeter     *volMeter;
 	QSlider         *slider;
 	MuteCheckBox    *mute;

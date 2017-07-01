@@ -15,6 +15,7 @@
 #include <QTimer>
 #include <string>
 #include <math.h>
+#include <obs-audio-controls.h>
 
 using namespace std;
 
@@ -66,6 +67,13 @@ void VolControl::VolumeLevel(float mag, float peak, float peakHold, bool muted)
 	}
 
 	volMeter->setLevels(mag, peak, peakHold);
+
+	float db = obs_volmeter_get_cur_db(OBS_FADER_LOG, peakHold);
+
+	if (db == 0.0f)
+		dbLabel->setText("<font color='red'><b>CLIP</b></font>");
+	else
+		dbLabel->setText(QString::number(round(db)) + " dB");
 }
 
 void VolControl::VolumeMuted(bool muted)
@@ -131,6 +139,7 @@ VolControl::VolControl(OBSSource source_, bool showConfig)
 
 	nameLabel = new QLabel();
 	volLabel  = new QLabel();
+	dbLabel   = new QLabel();
 	volMeter  = new VolumeMeter();
 	mute      = new MuteCheckBox();
 	slider    = new QSlider(Qt::Horizontal);
@@ -143,6 +152,7 @@ VolControl::VolControl(OBSSource source_, bool showConfig)
 	nameLabel->setText(sourceName);
 	nameLabel->setFont(font);
 	volLabel->setFont(font);
+	dbLabel->setFont(font);
 	slider->setMinimum(0);
 	slider->setMaximum(100);
 
@@ -151,8 +161,10 @@ VolControl::VolControl(OBSSource source_, bool showConfig)
 	textLayout->setContentsMargins(0, 0, 0, 0);
 	textLayout->addWidget(nameLabel);
 	textLayout->addWidget(volLabel);
+	textLayout->addWidget(dbLabel);
 	textLayout->setAlignment(nameLabel, Qt::AlignLeft);
 	textLayout->setAlignment(volLabel,  Qt::AlignRight);
+	textLayout->setAlignment(dbLabel,  Qt::AlignRight);
 
 	bool muted = obs_source_muted(source);
 	mute->setChecked(muted);
@@ -367,7 +379,6 @@ void VolumeMeter::paintEvent(QPaintEvent *event)
 	painter.setPen(peakHoldColor);
 	painter.drawLine(scaledPeakHold, 0,
 		scaledPeakHold, height);
-
 }
 
 void VolumeMeterTimer::AddVolControl(VolumeMeter *meter)
