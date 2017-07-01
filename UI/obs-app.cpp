@@ -61,7 +61,7 @@ static log_handler_t def_log_handler;
 static string currentLogFile;
 static string lastLogFile;
 
-static bool portable_mode = false;
+bool portable_mode = false;
 static bool log_verbose = false;
 static bool unfiltered_log = false;
 bool opt_start_streaming = false;
@@ -164,6 +164,7 @@ QObject *CreateShortcutFilter()
 			case Qt::Key_Return:
 				if (dialog && pressed)
 					return false;
+				/* Falls through. */
 			default:
 				hotkey.key = obs_key_from_virtual_key(
 					event->nativeVirtualKey());
@@ -344,11 +345,11 @@ static void do_log(int log_level, const char *msg, va_list args, void *param)
 	def_log_handler(log_level, msg, args2, nullptr);
 #endif
 
-	if (too_many_repeated_entries(logFile, msg, str))
-		return;
-
-	if (log_level <= LOG_INFO || log_verbose)
+	if (log_level <= LOG_INFO || log_verbose) {
+		if (too_many_repeated_entries(logFile, msg, str))
+			return;
 		LogStringChunk(logFile, str);
+	}
 
 #if defined(_WIN32) && defined(OBS_DEBUGBREAK_ON_ERROR)
 	if (log_level <= LOG_ERROR && IsDebuggerPresent())
@@ -623,7 +624,7 @@ bool OBSApp::InitGlobalConfig()
 		}
 	}
 
-	if (!config_has_user_value(globalConfig, "General", "OldDefaults")) {
+	if (!config_has_user_value(globalConfig, "General", "Pre19Defaults")) {
 		uint32_t lastVersion = config_get_int(globalConfig, "General",
 				"LastVersion");
 		bool useOldDefaults = lastVersion &&
@@ -939,6 +940,8 @@ bool OBSApp::OBSInit()
 		blog(LOG_INFO, "Portable mode: %s",
 				portable_mode ? "true" : "false");
 
+		setQuitOnLastWindowClosed(false);
+
 		mainWindow = new OBSBasic();
 
 		mainWindow->setAttribute(Qt::WA_DeleteOnClose, true);
@@ -1221,8 +1224,16 @@ static void create_log_file(fstream &logFile)
 	dst << "obs-studio/logs/" << currentLogFile.c_str();
 
 	BPtr<char> path(GetConfigPathPtr(dst.str().c_str()));
+
+#ifdef _WIN32
+	BPtr<wchar_t> wpath;
+	os_utf8_to_wcs_ptr(path, 0, &wpath);
+	logFile.open(wpath,
+			ios_base::in | ios_base::out | ios_base::trunc);
+#else
 	logFile.open(path,
 			ios_base::in | ios_base::out | ios_base::trunc);
+#endif
 
 	if (logFile.is_open()) {
 		delete_oldest_file("obs-studio/logs");
@@ -1325,6 +1336,46 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 
 		program.installTranslator(&translator);
 
+#ifdef _WIN32
+		/* --------------------------------------- */
+		/* check and warn if already running       */
+
+		bool already_running = false;
+		RunOnceMutex rom = GetRunOnceMutex(already_running);
+
+		if (already_running) {
+			blog(LOG_WARNING, "\n================================");
+			blog(LOG_WARNING, "Warning: OBS is already running!");
+			blog(LOG_WARNING, "================================\n");
+
+			QMessageBox::StandardButtons buttons(
+					QMessageBox::Yes | QMessageBox::Cancel);
+			QMessageBox mb(QMessageBox::Question,
+					QTStr("AlreadyRunning.Title"),
+					QTStr("AlreadyRunning.Text"),
+					buttons,
+					nullptr);
+			mb.setButtonText(QMessageBox::Yes,
+					QTStr("AlreadyRunning.LaunchAnyway"));
+			mb.setButtonText(QMessageBox::Cancel, QTStr("Cancel"));
+			mb.setDefaultButton(QMessageBox::Cancel);
+
+			QMessageBox::StandardButton button;
+			button = (QMessageBox::StandardButton)mb.exec();
+			if (button == QMessageBox::Cancel) {
+				blog(LOG_INFO, "User shut down the program "
+						"because OBS was already "
+						"running");
+				return 0;
+			}
+
+			blog(LOG_WARNING, "User is now running a secondary "
+					"instance of OBS!");
+		}
+
+		/* --------------------------------------- */
+#endif
+
 		if (!program.OBSInit())
 			return 0;
 
@@ -1364,8 +1415,16 @@ static void main_crash_handler(const char *format, va_list args, void *param)
 	BPtr<char> path(GetConfigPathPtr(name.c_str()));
 
 	fstream file;
-	file.open(path, ios_base::in | ios_base::out | ios_base::trunc |
+
+#ifdef _WIN32
+	BPtr<wchar_t> wpath;
+	os_utf8_to_wcs_ptr(path, 0, &wpath);
+	file.open(wpath, ios_base::in | ios_base::out | ios_base::trunc |
 			ios_base::binary);
+#else
+	file.open(path,	ios_base::in | ios_base::out | ios_base::trunc |
+			ios_base::binary);
+#endif
 	file << text;
 	file.close();
 
@@ -1777,6 +1836,7 @@ int main(int argc, char *argv[])
 #endif
 
 #ifdef _WIN32
+	SetErrorMode(SEM_FAILCRITICALERRORS);
 	load_debug_privilege();
 	base_set_crash_handler(main_crash_handler, nullptr);
 #endif

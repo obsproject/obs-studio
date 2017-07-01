@@ -42,6 +42,7 @@ class QMessageBox;
 class QListWidgetItem;
 class VolControl;
 class QNetworkReply;
+class OBSBasicStats;
 
 #include "ui_OBSBasic.h"
 
@@ -101,7 +102,8 @@ class OBSBasic : public OBSMainWindow {
 		DropType_RawText,
 		DropType_Text,
 		DropType_Image,
-		DropType_Media
+		DropType_Media,
+		DropType_Html
 	};
 
 private:
@@ -118,6 +120,7 @@ private:
 	long disableSaving = 1;
 	bool projectChanged = false;
 	bool previewEnabled = true;
+	bool fullscreenInterface = false;
 
 	const char *copyString;
 	const char *copyFiltersString;
@@ -159,6 +162,8 @@ private:
 
 	QPointer<QWidget> projectors[10];
 	QList<QPointer<QWidget>> windowProjectors;
+
+	QPointer<QWidget> stats;
 
 	QPointer<QMenu> startStreamMenu;
 
@@ -279,6 +284,7 @@ private:
 	void RemoveQuickTransitionHotkey(QuickTransition *qt);
 	void LoadQuickTransitions(obs_data_array_t *array);
 	obs_data_array_t *SaveQuickTransitions();
+	void ClearQuickTransitionWidgets();
 	void RefreshQuickTransitions();
 	void CreateDefaultQuickTransitions();
 
@@ -314,7 +320,7 @@ private:
 	int   programCX = 0, programCY = 0;
 	float programScale = 0.0f;
 
-	bool enableOutputs = true;
+	int disableOutputsRef = 0;
 
 	inline bool IsPreviewProgramMode() const
 	{
@@ -359,7 +365,7 @@ public slots:
 
 	void StreamingStart();
 	void StreamStopping();
-	void StreamingStop(int errorcode);
+	void StreamingStop(int errorcode, QString last_error);
 
 	void StartRecording();
 	void StopRecording();
@@ -497,7 +503,12 @@ public:
 
 	inline void EnableOutputs(bool enable)
 	{
-		enableOutputs = enable;
+		if (enable) {
+			if (--disableOutputsRef < 0)
+				disableOutputsRef = 0;
+		} else {
+			disableOutputsRef++;
+		}
 	}
 
 	void ReorderSceneItem(obs_sceneitem_t *item, size_t idx);
@@ -520,6 +531,8 @@ protected:
 	virtual void changeEvent(QEvent *event) override;
 
 private slots:
+	void on_actionFullscreenInterface_triggered();
+
 	void on_actionShow_Recordings_triggered();
 	void on_actionRemux_triggered();
 	void on_action_Settings_triggered();
@@ -614,6 +627,7 @@ private slots:
 	void on_modeSwitch_clicked();
 
 	void on_autoConfigure_triggered();
+	void on_stats_triggered();
 
 	void logUploadFinished(const QString &text, const QString &error);
 

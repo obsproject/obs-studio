@@ -101,6 +101,7 @@ int main(int argc, char *argv_ansi[])
 	LPWSTR *argv;
 	int ret = INJECT_ERROR_INVALID_PARAMS;
 
+	SetErrorMode(SEM_FAILCRITICALERRORS);
 	load_debug_privilege();
 
 	pCommandLineW = GetCommandLineW();

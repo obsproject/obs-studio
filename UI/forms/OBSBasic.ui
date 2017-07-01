@@ -978,9 +978,21 @@
      </property>
      <addaction name="toggleListboxToolbars"/>
     </widget>
+    <addaction name="actionFullscreenInterface"/>
+    <action name="actionFullscreenInterface">
+     <property name="shortcut">
+      <string>F11</string>
+     </property>
+     <property name="text">
+      <string>Basic.MainMenu.View.Fullscreen.Interface</string>
+     </property>
+    </action>
+    <addaction name="separator"/>
     <addaction name="viewMenuToolbars"/>
     <addaction name="toggleSceneTransitions"/>
     <addaction name="toggleStatusBar"/>
+    <addaction name="separator"/>
+    <addaction name="stats"/>
    </widget>
    <widget class="QMenu" name="menuTools">
     <property name="title">
@@ -1469,6 +1481,11 @@
   <action name="autoConfigure">
    <property name="text">
     <string>Basic.AutoConfig.Beta</string>
+   </property>
+  </action>
+  <action name="stats">
+   <property name="text">
+    <string>Basic.Stats</string>
    </property>
   </action>
  </widget>

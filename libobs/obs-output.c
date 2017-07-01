@@ -212,6 +212,8 @@ void obs_output_destroy(obs_output_t *output)
 		circlebuf_free(&output->delay_data);
 		if (output->owns_info_id)
 			bfree((void*)output->info.id);
+		if (output->last_error_message)
+			bfree(output->last_error_message);
 		bfree(output);
 	}
 }
@@ -228,6 +230,10 @@ bool obs_output_actual_start(obs_output_t *output)
 
 	os_event_wait(output->stopping_event);
 	output->stop_code = 0;
+	if (output->last_error_message) {
+		bfree(output->last_error_message);
+		output->last_error_message = NULL;
+	}
 
 	if (output->context.data)
 		success = output->info.start(output->context.data);
@@ -277,26 +283,33 @@ static void log_frame_info(struct obs_output *output)
 {
 	struct obs_core_video *video = &obs->video;
 
-	uint32_t video_frames  = video_output_get_total_frames(output->video);
+	uint32_t encoded_frames  = video_output_get_total_frames(output->video);
 
-	uint32_t total   = video_frames  - output->starting_frame_count;
+	int64_t encoded_temp = (int64_t)encoded_frames
+		- (int64_t)output->starting_frame_count;
+	uint32_t encoded = encoded_temp > 0 ? (uint32_t)encoded_temp : 0;
 
-	uint32_t drawn  = video->total_frames - output->starting_drawn_count;
-	uint32_t lagged = video->lagged_frames - output->starting_lagged_count;
+	int64_t drawn_temp = (int64_t)video->total_frames
+		- (int64_t)output->starting_drawn_count;
+	uint32_t drawn = drawn_temp > 0 ? (uint32_t)drawn_temp : 0;
+
+	int64_t lagged_temp = (int64_t)video->total_frames
+		- (int64_t)output->starting_lagged_count;
+	uint32_t lagged = lagged_temp > 0 ? (uint32_t)lagged_temp : 0;
 
 	int dropped = obs_output_get_frames_dropped(output);
 
 	double percentage_lagged = 0.0f;
 	double percentage_dropped = 0.0f;
 
-	if (total)
-		percentage_dropped = (double)dropped / (double)total * 100.0;
+	if (encoded)
+		percentage_dropped = (double)dropped / (double)encoded * 100.0;
 	if (drawn)
 		percentage_lagged = (double)lagged  / (double)drawn * 100.0;
 
 	blog(LOG_INFO, "Output '%s': stopping", output->context.name);
 	blog(LOG_INFO, "Output '%s': Total encoded frames: %"PRIu32,
-			output->context.name, total);
+			output->context.name, encoded);
 	blog(LOG_INFO, "Output '%s': Total drawn frames: %"PRIu32,
 			output->context.name, drawn);
 
@@ -305,7 +318,7 @@ static void log_frame_info(struct obs_output *output)
 				"to rendering lag/stalls: %"PRIu32" (%0.1f%%)",
 				output->context.name,
 				lagged, percentage_lagged);
-	if (total && dropped)
+	if (encoded && dropped)
 		blog(LOG_INFO, "Output '%s': Number of dropped frames due "
 				"to insufficient bandwidth/connection stalls: "
 				"%d (%0.1f%%)",
@@ -340,10 +353,10 @@ void obs_output_actual_stop(obs_output_t *output, bool force, uint64_t ts)
 			obs_output_end_data_capture(output);
 			os_event_signal(output->stopping_event);
 		} else {
-			call_stop = data_active(output);
+			call_stop = true;
 		}
 	} else {
-		call_stop = data_active(output);
+		call_stop = true;
 	}
 
 	if (output->context.data && call_stop) {
@@ -1558,12 +1571,15 @@ static inline void signal_reconnect_success(struct obs_output *output)
 static inline void signal_stop(struct obs_output *output)
 {
 	struct calldata params;
-	uint8_t stack[128];
 
-	calldata_init_fixed(&params, stack, sizeof(stack));
+	calldata_init(&params);
+	calldata_set_string(&params, "last_error", output->last_error_message);
 	calldata_set_int(&params, "code", output->stop_code);
 	calldata_set_ptr(&params, "output", output);
+
 	signal_handler_signal(output->context.signals, "stop", &params);
+
+	calldata_free(&params);
 }
 
 static inline void convert_flags(const struct obs_output *output,
@@ -1810,6 +1826,7 @@ static void obs_output_end_data_capture_internal(obs_output_t *output,
 		if (signal) {
 			signal_stop(output);
 			output->stop_code = OBS_OUTPUT_SUCCESS;
+			os_event_signal(output->stopping_event);
 		}
 		return;
 	}
@@ -2114,4 +2131,34 @@ int obs_output_get_connect_time_ms(obs_output_t *output)
 	if (output->info.get_connect_time_ms)
 		return output->info.get_connect_time_ms(output->context.data);
 	return -1;
+}
+
+const char *obs_output_get_last_error(obs_output_t *output)
+{
+	if (!obs_output_valid(output, "obs_output_get_last_error"))
+		return NULL;
+
+	return output->last_error_message;
+}
+
+void obs_output_set_last_error(obs_output_t *output, const char *message)
+{
+	if (!obs_output_valid(output, "obs_output_set_last_error"))
+		return;
+
+	if (output->last_error_message)
+		bfree(output->last_error_message);
+
+	if (message)
+		output->last_error_message = bstrdup(message);
+	else
+		output->last_error_message = NULL;
+}
+
+bool obs_output_reconnecting(const obs_output_t *output)
+{
+	if (!obs_output_valid(output, "obs_output_reconnecting"))
+		return false;
+
+	return reconnecting(output);
 }

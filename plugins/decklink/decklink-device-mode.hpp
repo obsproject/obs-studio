@@ -4,6 +4,8 @@
 
 #include <string>
 
+#define MODE_ID_AUTO  -1
+
 class DeckLinkDeviceMode {
 protected:
 	long long            id;
@@ -16,6 +18,9 @@ public:
 	virtual ~DeckLinkDeviceMode(void);
 
 	BMDDisplayMode GetDisplayMode(void) const;
+	BMDDisplayModeFlags GetDisplayModeFlags(void) const;
 	long long GetId(void) const;
 	const std::string& GetName(void) const;
+
+	void SetMode(IDeckLinkDisplayMode *mode);
 };

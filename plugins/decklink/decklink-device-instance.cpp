@@ -118,16 +118,15 @@ void DeckLinkDeviceInstance::HandleVideoFrame(
 	currentFrame.height      = (uint32_t)videoFrame->GetHeight();
 	currentFrame.timestamp   = timestamp;
 
-	video_format_get_parameters(VIDEO_CS_601, VIDEO_RANGE_PARTIAL,
-			currentFrame.color_matrix, currentFrame.color_range_min,
-			currentFrame.color_range_max);
-
 	obs_source_output_video(decklink->GetSource(), &currentFrame);
 }
 
 void DeckLinkDeviceInstance::FinalizeStream()
 {
 	input->SetCallback(nullptr);
+	input->DisableVideoInput();
+	if (channelFormat != SPEAKERS_UNKNOWN)
+		input->DisableAudioInput();
 
 	if (audioRepacker != nullptr)
 	{
@@ -136,6 +135,43 @@ void DeckLinkDeviceInstance::FinalizeStream()
 	}
 
 	mode = nullptr;
+}
+
+//#define LOG_SETUP_VIDEO_FORMAT 1
+
+void DeckLinkDeviceInstance::SetupVideoFormat(DeckLinkDeviceMode *mode_)
+{
+	if (mode_ == nullptr)
+		return;
+
+	currentFrame.format = ConvertPixelFormat(pixelFormat);
+
+	colorSpace = decklink->GetColorSpace();
+	if (colorSpace == VIDEO_CS_DEFAULT) {
+		const BMDDisplayModeFlags flags = mode_->GetDisplayModeFlags();
+		if (flags & bmdDisplayModeColorspaceRec709)
+			activeColorSpace = VIDEO_CS_709;
+		else if (flags & bmdDisplayModeColorspaceRec601)
+			activeColorSpace = VIDEO_CS_601;
+		else
+			activeColorSpace = VIDEO_CS_DEFAULT;
+	} else {
+		activeColorSpace = colorSpace;
+	}
+
+	colorRange = decklink->GetColorRange();
+	currentFrame.full_range = colorRange == VIDEO_RANGE_FULL;
+
+	video_format_get_parameters(activeColorSpace, colorRange,
+			currentFrame.color_matrix, currentFrame.color_range_min,
+			currentFrame.color_range_max);
+
+#ifdef LOG_SETUP_VIDEO_FORMAT
+	LOG(LOG_INFO, "Setup video format: %s, %s, %s",
+			pixelFormat == bmdFormat8BitYUV ? "YUV" : "RGB",
+			activeColorSpace == VIDEO_CS_709 ? "BT.709" : "BT.601",
+			colorRange == VIDEO_RANGE_FULL ? "full" : "limited");
+#endif
 }
 
 bool DeckLinkDeviceInstance::StartCapture(DeckLinkDeviceMode *mode_)
@@ -150,18 +186,27 @@ bool DeckLinkDeviceInstance::StartCapture(DeckLinkDeviceMode *mode_)
 	if (!device->GetInput(&input))
 		return false;
 
-	pixelFormat = decklink->GetPixelFormat();
-	currentFrame.format = ConvertPixelFormat(pixelFormat);
+	BMDVideoInputFlags flags;
 
-	const BMDDisplayMode displayMode = mode_->GetDisplayMode();
+	bool isauto = mode_->GetName() == "Auto";
+	if (isauto) {
+		displayMode = bmdModeNTSC;
+		pixelFormat = bmdFormat8BitYUV;
+		flags = bmdVideoInputEnableFormatDetection;
+	} else {
+		displayMode = mode_->GetDisplayMode();
+		pixelFormat = decklink->GetPixelFormat();
+		flags = bmdVideoInputFlagDefault;
+	}
 
 	const HRESULT videoResult = input->EnableVideoInput(displayMode,
-			pixelFormat, bmdVideoInputFlagDefault);
-
+			pixelFormat, flags);
 	if (videoResult != S_OK) {
 		LOG(LOG_ERROR, "Failed to enable video input");
 		return false;
 	}
+
+	SetupVideoFormat(mode_);
 
 	channelFormat = decklink->GetChannelFormat();
 	currentPacket.speakers = channelFormat;
@@ -171,7 +216,6 @@ bool DeckLinkDeviceInstance::StartCapture(DeckLinkDeviceMode *mode_)
 		const HRESULT audioResult = input->EnableAudioInput(
 				bmdAudioSampleRate48kHz, bmdAudioSampleType16bitInteger,
 				channel);
-
 		if (audioResult != S_OK)
 			LOG(LOG_WARNING, "Failed to enable audio input; continuing...");
 
@@ -257,12 +301,41 @@ HRESULT STDMETHODCALLTYPE DeckLinkDeviceInstance::VideoInputFormatChanged(
 		IDeckLinkDisplayMode *newMode,
 		BMDDetectedVideoInputFormatFlags detectedSignalFlags)
 {
-	UNUSED_PARAMETER(events);
-	UNUSED_PARAMETER(newMode);
-	UNUSED_PARAMETER(detectedSignalFlags);
+	input->PauseStreams();
 
-	// There is no implementation for automatic format detection, so this
-	// method goes unused.
+	mode->SetMode(newMode);
+
+	if (events & bmdVideoInputDisplayModeChanged) {
+		displayMode = mode->GetDisplayMode();
+	}
+
+	if (events & bmdVideoInputColorspaceChanged) {
+		switch (detectedSignalFlags) {
+		case bmdDetectedVideoInputRGB444:
+			pixelFormat = bmdFormat8BitBGRA;
+			break;
+
+		default:
+		case bmdDetectedVideoInputYCbCr422:
+			pixelFormat = bmdFormat8BitYUV;
+			break;
+		}
+	}
+
+	const HRESULT videoResult = input->EnableVideoInput(displayMode,
+			pixelFormat, bmdVideoInputEnableFormatDetection);
+	if (videoResult != S_OK) {
+		LOG(LOG_ERROR, "Failed to enable video input");
+		input->StopStreams();
+		FinalizeStream();
+
+		return E_FAIL;
+	}
+
+	SetupVideoFormat(mode);
+
+	input->FlushStreams();
+	input->StartStreams();
 
 	return S_OK;
 }

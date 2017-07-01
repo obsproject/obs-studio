@@ -328,11 +328,15 @@ static int get_virtual_key(obs_key_t key)
 	case OBS_KEY_BRACKETRIGHT: return VK_OEM_6;
 	case OBS_KEY_ASCIITILDE: return VK_OEM_3;
 
+	case OBS_KEY_HENKAN: return VK_CONVERT;
+	case OBS_KEY_MUHENKAN: return VK_NONCONVERT;
 	case OBS_KEY_KANJI: return VK_KANJI;
 	case OBS_KEY_TOUROKU: return VK_OEM_FJ_TOUROKU;
 	case OBS_KEY_MASSYO: return VK_OEM_FJ_MASSHOU;
 
 	case OBS_KEY_HANGUL: return VK_HANGUL;
+
+	case OBS_KEY_BACKSLASH_RT102: return VK_OEM_102;
 
 	case OBS_KEY_MOUSE1: return VK_LBUTTON;
 	case OBS_KEY_MOUSE2: return VK_RBUTTON;

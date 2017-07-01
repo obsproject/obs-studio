@@ -82,6 +82,9 @@
    </item>
    <item row="5" column="1">
     <widget class="QCheckBox" name="preferHardware">
+     <property name="toolTip">
+      <string>Basic.AutoConfig.StreamPage.PreferHardwareEncoding.ToolTip</string>
+     </property>
      <property name="text">
       <string>Basic.AutoConfig.StreamPage.PreferHardwareEncoding</string>
      </property>

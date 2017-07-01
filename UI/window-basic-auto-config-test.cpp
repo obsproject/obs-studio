@@ -146,6 +146,17 @@ void AutoConfigTestPage::GetServers(std::vector<ServerInfo> &servers)
 	obs_properties_destroy(ppts);
 }
 
+static inline void string_depad_key(string &key)
+{
+	while (!key.empty()) {
+		char ch = key.back();
+		if (ch == ' ' || ch == '\t' || ch == '\n' || ch == '\r')
+			key.pop_back();
+		else
+			break;
+	}
+}
+
 void AutoConfigTestPage::TestBandwidthThread()
 {
 	bool connected = false;
@@ -205,8 +216,10 @@ void AutoConfigTestPage::TestBandwidthThread()
 	obs_data_release(output_settings);
 
 	std::string key = wiz->key;
-	if (wiz->service == AutoConfig::Service::Twitch)
+	if (wiz->service == AutoConfig::Service::Twitch) {
+		string_depad_key(key);
 		key += "?bandwidthtest";
+	}
 
 	obs_data_set_string(service_settings, "service",
 			wiz->serviceName.c_str());
@@ -240,12 +253,12 @@ void AutoConfigTestPage::TestBandwidthThread()
 	/* -----------------------------------*/
 	/* apply settings                     */
 
+	obs_service_update(service, service_settings);
 	obs_service_apply_encoder_settings(service,
 			vencoder_settings, aencoder_settings);
 
 	obs_encoder_update(vencoder, vencoder_settings);
 	obs_encoder_update(aencoder, aencoder_settings);
-	obs_service_update(service, service_settings);
 	obs_output_update(output, output_settings);
 
 	/* -----------------------------------*/
@@ -325,12 +338,14 @@ void AutoConfigTestPage::TestBandwidthThread()
 
 		unique_lock<mutex> ul(m);
 		if (cancel) {
+			ul.unlock();
 			obs_output_force_stop(output);
 			return;
 		}
 		if (!stopped && !connected)
 			cv.wait(ul);
 		if (cancel) {
+			ul.unlock();
 			obs_output_force_stop(output);
 			return;
 		}
@@ -341,12 +356,26 @@ void AutoConfigTestPage::TestBandwidthThread()
 				Q_ARG(QString, QTStr(TEST_BW_SERVER)
 					.arg(server.name.c_str())));
 
+		/* ignore first 2.5 seconds due to possible buffering skewing
+		 * the result */
+		cv.wait_for(ul, chrono::milliseconds(2500));
+		if (stopped)
+			continue;
+		if (cancel) {
+			ul.unlock();
+			obs_output_force_stop(output);
+			return;
+		}
+
+		/* continue test */
+		int start_bytes = (int)obs_output_get_total_bytes(output);
 		uint64_t t_start = os_gettime_ns();
 
 		cv.wait_for(ul, chrono::seconds(10));
 		if (stopped)
 			continue;
 		if (cancel) {
+			ul.unlock();
 			obs_output_force_stop(output);
 			return;
 		}
@@ -356,7 +385,8 @@ void AutoConfigTestPage::TestBandwidthThread()
 
 		uint64_t total_time = os_gettime_ns() - t_start;
 
-		int total_bytes = (int)obs_output_get_total_bytes(output);
+		int total_bytes = (int)obs_output_get_total_bytes(output) -
+			start_bytes;
 		uint64_t bitrate = (uint64_t)total_bytes * 8
 			* 1000000000 / total_time / 1000;
 
@@ -885,6 +915,31 @@ void AutoConfigTestPage::FinalizeResults()
 	};
 
 	if (wiz->type != AutoConfig::Type::Recording) {
+		const char *serverType = wiz->customServer
+			? "rtmp_custom"
+			: "rtmp_common";
+
+		OBSService service = obs_service_create(serverType,
+				"temp_service", nullptr, nullptr);
+		obs_service_release(service);
+
+		OBSData service_settings = obs_data_create();
+		OBSData vencoder_settings = obs_data_create();
+		obs_data_release(service_settings);
+		obs_data_release(vencoder_settings);
+
+		obs_data_set_int(vencoder_settings, "bitrate",
+				wiz->idealBitrate);
+
+		obs_data_set_string(service_settings, "service",
+				wiz->serviceName.c_str());
+		obs_service_update(service, service_settings);
+		obs_service_apply_encoder_settings(service,
+				vencoder_settings, nullptr);
+
+		wiz->idealBitrate = (int)obs_data_get_int(vencoder_settings,
+				"bitrate");
+
 		if (!wiz->customServer)
 			form->addRow(
 				newLabel("Basic.AutoConfig.StreamPage.Service"),

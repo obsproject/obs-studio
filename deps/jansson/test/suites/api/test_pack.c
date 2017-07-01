@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2013 Petri Lehtinen <petri@digip.org>
+ * Copyright (c) 2009-2016 Petri Lehtinen <petri@digip.org>
  * Copyright (c) 2010-2012 Graeme Smecher <graeme.smecher@mail.mcgill.ca>
  *
  * Jansson is free software; you can redistribute it and/or modify
@@ -7,7 +7,7 @@
  */
 
 #ifdef HAVE_CONFIG_H
-#include <config.h>
+#include <jansson_private_config.h>
 #endif
 
 #include <jansson_config.h>
@@ -81,6 +81,22 @@ static void run_tests()
         fail("json_pack string failed");
     if(value->refcount != (size_t)1)
         fail("json_pack string refcount failed");
+    json_decref(value);
+
+    /* nullable string (defined case) */
+    value = json_pack("s?", "test");
+    if(!json_is_string(value) || strcmp("test", json_string_value(value)))
+        fail("json_pack nullable string (defined case) failed");
+    if(value->refcount != (size_t)1)
+        fail("json_pack nullable string (defined case) refcount failed");
+    json_decref(value);
+
+    /* nullable string (NULL case) */
+    value = json_pack("s?", NULL);
+    if(!json_is_null(value))
+        fail("json_pack nullable string (NULL case) failed");
+    if(value->refcount != (size_t)-1)
+        fail("json_pack nullable string (NULL case) refcount failed");
     json_decref(value);
 
     /* string and length (int) */
@@ -163,6 +179,22 @@ static void run_tests()
         fail("json_pack integer refcount failed");
     json_decref(value);
 
+    /* non-incref'd nullable object (defined case) */
+    value = json_pack("o?", json_integer(1));
+    if(!json_is_integer(value) || json_integer_value(value) != 1)
+        fail("json_pack nullable object (defined case) failed");
+    if(value->refcount != (size_t)1)
+        fail("json_pack nullable object (defined case) refcount failed");
+    json_decref(value);
+
+    /* non-incref'd nullable object (NULL case) */
+    value = json_pack("o?", NULL);
+    if(!json_is_null(value))
+        fail("json_pack nullable object (NULL case) failed");
+    if(value->refcount != (size_t)-1)
+        fail("json_pack nullable object (NULL case) refcount failed");
+    json_decref(value);
+
     /* incref'd object */
     value = json_pack("O", json_integer(1));
     if(!json_is_integer(value) || json_integer_value(value) != 1)
@@ -171,6 +203,22 @@ static void run_tests()
         fail("json_pack integer refcount failed");
     json_decref(value);
     json_decref(value);
+
+    /* incref'd nullable object (defined case) */
+    value = json_pack("O?", json_integer(1));
+    if(!json_is_integer(value) || json_integer_value(value) != 1)
+        fail("json_pack incref'd nullable object (defined case) failed");
+    if(value->refcount != (size_t)2)
+        fail("json_pack incref'd nullable object (defined case) refcount failed");
+    json_decref(value);
+    json_decref(value);
+
+    /* incref'd nullable object (NULL case) */
+    value = json_pack("O?", NULL);
+    if(!json_is_null(value))
+        fail("json_pack incref'd nullable object (NULL case) failed");
+    if(value->refcount != (size_t)-1)
+        fail("json_pack incref'd nullable object (NULL case) refcount failed");
 
     /* simple object */
     value = json_pack("{s:[]}", "foo");

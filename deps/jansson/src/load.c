@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2013 Petri Lehtinen <petri@digip.org>
+ * Copyright (c) 2009-2016 Petri Lehtinen <petri@digip.org>
  *
  * Jansson is free software; you can redistribute it and/or modify
  * it under the terms of the MIT license. See LICENSE for details.
@@ -61,6 +61,8 @@ typedef struct {
 typedef struct {
     stream_t stream;
     strbuffer_t saved_text;
+    size_t flags;
+    size_t depth;
     int token;
     union {
         struct {
@@ -169,9 +171,9 @@ static int stream_get(stream_t *stream, json_error_t *error)
         if(0x80 <= c && c <= 0xFF)
         {
             /* multi-byte UTF-8 sequence */
-            int i, count;
+            size_t i, count;
 
-            count = (int)utf8_check_first(c);
+            count = utf8_check_first(c);
             if(!count)
                 goto out;
 
@@ -265,7 +267,7 @@ static void lex_unget_unsave(lex_t *lex, int c)
         #endif
         stream_unget(&lex->stream, c);
         #ifndef NDEBUG
-        d = 
+        d =
         #endif
             strbuffer_pop(&lex->saved_text);
         assert(c == d);
@@ -338,7 +340,7 @@ static void lex_scan_string(lex_t *lex, json_error_t *error)
             /* control character */
             lex_unget_unsave(lex, c);
             if(c == '\n')
-                error_set(error, lex, "unexpected newline", c);
+                error_set(error, lex, "unexpected newline");
             else
                 error_set(error, lex, "control character 0x%x", c);
             goto out;
@@ -483,7 +485,7 @@ static int lex_scan_number(lex_t *lex, int c, json_error_t *error)
 {
     const char *saved_text;
     char *end;
-    double value;
+    double doubleval;
 
     lex->token = TOKEN_INVALID;
 
@@ -498,26 +500,28 @@ static int lex_scan_number(lex_t *lex, int c, json_error_t *error)
         }
     }
     else if(l_isdigit(c)) {
-        c = lex_get_save(lex, error);
-        while(l_isdigit(c))
+        do
             c = lex_get_save(lex, error);
+        while(l_isdigit(c));
     }
     else {
         lex_unget_unsave(lex, c);
         goto out;
     }
 
-    if(c != '.' && c != 'E' && c != 'e') {
-        json_int_t value;
+    if(!(lex->flags & JSON_DECODE_INT_AS_REAL) &&
+       c != '.' && c != 'E' && c != 'e')
+    {
+        json_int_t intval;
 
         lex_unget_unsave(lex, c);
 
         saved_text = strbuffer_value(&lex->saved_text);
 
         errno = 0;
-        value = json_strtoint(saved_text, &end, 10);
+        intval = json_strtoint(saved_text, &end, 10);
         if(errno == ERANGE) {
-            if(value < 0)
+            if(intval < 0)
                 error_set(error, lex, "too big negative integer");
             else
                 error_set(error, lex, "too big integer");
@@ -527,7 +531,7 @@ static int lex_scan_number(lex_t *lex, int c, json_error_t *error)
         assert(end == saved_text + lex->saved_text.length);
 
         lex->token = TOKEN_INTEGER;
-        lex->value.integer = value;
+        lex->value.integer = intval;
         return 0;
     }
 
@@ -539,9 +543,9 @@ static int lex_scan_number(lex_t *lex, int c, json_error_t *error)
         }
         lex_save(lex, c);
 
-        c = lex_get_save(lex, error);
-        while(l_isdigit(c))
+        do
             c = lex_get_save(lex, error);
+        while(l_isdigit(c));
     }
 
     if(c == 'E' || c == 'e') {
@@ -554,20 +558,20 @@ static int lex_scan_number(lex_t *lex, int c, json_error_t *error)
             goto out;
         }
 
-        c = lex_get_save(lex, error);
-        while(l_isdigit(c))
+        do
             c = lex_get_save(lex, error);
+        while(l_isdigit(c));
     }
 
     lex_unget_unsave(lex, c);
 
-    if(jsonp_strtod(&lex->saved_text, &value)) {
+    if(jsonp_strtod(&lex->saved_text, &doubleval)) {
         error_set(error, lex, "real number overflow");
         goto out;
     }
 
     lex->token = TOKEN_REAL;
-    lex->value.real = value;
+    lex->value.real = doubleval;
     return 0;
 
 out:
@@ -583,9 +587,9 @@ static int lex_scan(lex_t *lex, json_error_t *error)
     if(lex->token == TOKEN_STRING)
         lex_free_string(lex);
 
-    c = lex_get(lex, error);
-    while(c == ' ' || c == '\t' || c == '\n' || c == '\r')
+    do
         c = lex_get(lex, error);
+    while(c == ' ' || c == '\t' || c == '\n' || c == '\r');
 
     if(c == STREAM_STATE_EOF) {
         lex->token = TOKEN_EOF;
@@ -614,9 +618,9 @@ static int lex_scan(lex_t *lex, json_error_t *error)
         /* eat up the whole identifier for clearer error messages */
         const char *saved_text;
 
-        c = lex_get_save(lex, error);
-        while(l_isalpha(c))
+        do
             c = lex_get_save(lex, error);
+        while(l_isalpha(c));
         lex_unget_unsave(lex, c);
 
         saved_text = strbuffer_value(&lex->saved_text);
@@ -654,12 +658,13 @@ static char *lex_steal_string(lex_t *lex, size_t *out_len)
     return result;
 }
 
-static int lex_init(lex_t *lex, get_func get, void *data)
+static int lex_init(lex_t *lex, get_func get, size_t flags, void *data)
 {
     stream_init(&lex->stream, get, data);
     if(strbuffer_init(&lex->saved_text))
         return -1;
 
+    lex->flags = flags;
     lex->token = TOKEN_INVALID;
     return 0;
 }
@@ -798,7 +803,12 @@ error:
 static json_t *parse_value(lex_t *lex, size_t flags, json_error_t *error)
 {
     json_t *json;
-    double value;
+
+    lex->depth++;
+    if(lex->depth > JSON_PARSER_MAX_DEPTH) {
+        error_set(error, lex, "maximum parsing depth reached");
+        return NULL;
+    }
 
     switch(lex->token) {
         case TOKEN_STRING: {
@@ -821,15 +831,7 @@ static json_t *parse_value(lex_t *lex, size_t flags, json_error_t *error)
         }
 
         case TOKEN_INTEGER: {
-            if (flags & JSON_DECODE_INT_AS_REAL) {
-                if(jsonp_strtod(&lex->saved_text, &value)) {
-                    error_set(error, lex, "real number overflow");
-                    return NULL;
-                }
-                json = json_real(value);
-            } else {
-                json = json_integer(lex->value.integer);
-            }
+            json = json_integer(lex->value.integer);
             break;
         }
 
@@ -870,12 +872,15 @@ static json_t *parse_value(lex_t *lex, size_t flags, json_error_t *error)
     if(!json)
         return NULL;
 
+    lex->depth--;
     return json;
 }
 
 static json_t *parse_json(lex_t *lex, size_t flags, json_error_t *error)
 {
     json_t *result;
+
+    lex->depth = 0;
 
     lex_scan(lex, error);
     if(!(flags & JSON_DECODE_ANY)) {
@@ -909,7 +914,7 @@ static json_t *parse_json(lex_t *lex, size_t flags, json_error_t *error)
 typedef struct
 {
     const char *data;
-    int pos;
+    size_t pos;
 } string_data_t;
 
 static int string_get(void *data)
@@ -942,7 +947,7 @@ json_t *json_loads(const char *string, size_t flags, json_error_t *error)
     stream_data.data = string;
     stream_data.pos = 0;
 
-    if(lex_init(&lex, string_get, (void *)&stream_data))
+    if(lex_init(&lex, string_get, flags, (void *)&stream_data))
         return NULL;
 
     result = parse_json(&lex, flags, error);
@@ -987,7 +992,7 @@ json_t *json_loadb(const char *buffer, size_t buflen, size_t flags, json_error_t
     stream_data.pos = 0;
     stream_data.len = buflen;
 
-    if(lex_init(&lex, buffer_get, (void *)&stream_data))
+    if(lex_init(&lex, buffer_get, flags, (void *)&stream_data))
         return NULL;
 
     result = parse_json(&lex, flags, error);
@@ -1014,7 +1019,7 @@ json_t *json_loadf(FILE *input, size_t flags, json_error_t *error)
         return NULL;
     }
 
-    if(lex_init(&lex, (get_func)fgetc, input))
+    if(lex_init(&lex, (get_func)fgetc, flags, input))
         return NULL;
 
     result = parse_json(&lex, flags, error);
@@ -1095,7 +1100,7 @@ json_t *json_load_callback(json_load_callback_t callback, void *arg, size_t flag
         return NULL;
     }
 
-    if(lex_init(&lex, (get_func)callback_get, &stream_data))
+    if(lex_init(&lex, (get_func)callback_get, flags, &stream_data))
         return NULL;
 
     result = parse_json(&lex, flags, error);

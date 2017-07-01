@@ -622,7 +622,7 @@ static inline bool is_64bit_process(HANDLE process)
 static inline bool open_target_process(struct game_capture *gc)
 {
 	gc->target_process = open_process(
-			PROCESS_QUERY_INFORMATION | PROCESS_VM_READ,
+			PROCESS_QUERY_INFORMATION | SYNCHRONIZE,
 			false, gc->process_id);
 	if (!gc->target_process) {
 		warn("could not open process: %s", gc->config.executable);

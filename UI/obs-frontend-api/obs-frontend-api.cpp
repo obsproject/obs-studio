@@ -336,3 +336,29 @@ void obs_frontend_save_streaming_service(void)
 	if (callbacks_valid())
 		c->obs_frontend_save_streaming_service();
 }
+
+bool obs_frontend_preview_program_mode_active(void)
+{
+	return !!callbacks_valid()
+		? c->obs_frontend_preview_program_mode_active()
+		: false;
+}
+
+void obs_frontend_set_preview_program_mode(bool enable)
+{
+	if (callbacks_valid())
+		c->obs_frontend_set_preview_program_mode(enable);
+}
+
+obs_source_t *obs_frontend_get_current_preview_scene(void)
+{
+	return !!callbacks_valid()
+		? c->obs_frontend_get_current_preview_scene()
+		: nullptr;
+}
+
+void obs_frontend_set_current_preview_scene(obs_source_t *scene)
+{
+	if (callbacks_valid())
+		c->obs_frontend_set_current_preview_scene(scene);
+}

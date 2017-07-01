@@ -17,6 +17,7 @@
 #define S_BEHAVIOR_STOP_RESTART        "stop_restart"
 #define S_BEHAVIOR_PAUSE_UNPAUSE       "pause_unpause"
 #define S_BEHAVIOR_ALWAYS_PLAY         "always_play"
+#define S_NETWORK_CACHING              "network_caching"
 
 #define T_(text) obs_module_text(text)
 #define T_PLAYLIST                     T_("Playlist")
@@ -26,6 +27,7 @@
 #define T_BEHAVIOR_STOP_RESTART        T_("PlaybackBehavior.StopRestart")
 #define T_BEHAVIOR_PAUSE_UNPAUSE       T_("PlaybackBehavior.PauseUnpause")
 #define T_BEHAVIOR_ALWAYS_PLAY         T_("PlaybackBehavior.AlwaysPlay")
+#define T_NETWORK_CACHING              T_("NetworkCaching")
 
 /* ------------------------------------------------------------------------- */
 
@@ -395,7 +397,7 @@ static int vlcs_audio_setup(void **p_data, char *format, unsigned *rate,
 }
 
 static void add_file(struct vlc_source *c, struct darray *array,
-		const char *path)
+		const char *path, int network_caching)
 {
 	DARRAY(struct media_file_data) new_files;
 	struct media_file_data data;
@@ -420,9 +422,14 @@ static void add_file(struct vlc_source *c, struct darray *array,
 		new_media = create_media_from_file(path);
 
 	if (new_media) {
-		if (is_url)
+		if (is_url) {
+			struct dstr network_caching_option = {0};
+			dstr_catf(&network_caching_option,
+					":network-caching=%d", network_caching);
 			libvlc_media_add_option_(new_media,
-					":network-caching=100");
+					network_caching_option.array);
+			dstr_free(&network_caching_option);
+		}
 
 		data.path = new_path.array;
 		data.media = new_media;
@@ -476,6 +483,7 @@ static void vlcs_update(void *data, obs_data_t *settings)
 	obs_data_array_t *array;
 	const char *behavior;
 	size_t count;
+	int network_caching;
 
 	da_init(new_files);
 	da_init(old_files);
@@ -486,6 +494,8 @@ static void vlcs_update(void *data, obs_data_t *settings)
 	c->loop = obs_data_get_bool(settings, S_LOOP);
 
 	behavior = obs_data_get_string(settings, S_BEHAVIOR);
+
+	network_caching = (int)obs_data_get_int(settings, S_NETWORK_CACHING);
 
 	if (astrcmpi(behavior, S_BEHAVIOR_PAUSE_UNPAUSE) == 0) {
 		c->behavior = BEHAVIOR_PAUSE_UNPAUSE;
@@ -523,13 +533,14 @@ static void vlcs_update(void *data, obs_data_t *settings)
 				dstr_copy(&dir_path, path);
 				dstr_cat_ch(&dir_path, '/');
 				dstr_cat(&dir_path, ent->d_name);
-				add_file(c, &new_files.da, dir_path.array);
+				add_file(c, &new_files.da, dir_path.array,
+						network_caching);
 			}
 
 			dstr_free(&dir_path);
 			os_closedir(dir);
 		} else {
-			add_file(c, &new_files.da, path);
+			add_file(c, &new_files.da, path, network_caching);
 		}
 
 		obs_data_release(item);
@@ -680,6 +691,7 @@ static void vlcs_defaults(obs_data_t *settings)
 	obs_data_set_default_bool(settings, S_SHUFFLE, false);
 	obs_data_set_default_string(settings, S_BEHAVIOR,
 			S_BEHAVIOR_STOP_RESTART);
+	obs_data_set_default_int(settings, S_NETWORK_CACHING, 400);
 }
 
 static obs_properties_t *vlcs_properties(void *data)
@@ -745,6 +757,9 @@ static obs_properties_t *vlcs_properties(void *data)
 	dstr_free(&path);
 	dstr_free(&filter);
 	dstr_free(&exts);
+
+	obs_properties_add_int(ppts, S_NETWORK_CACHING, T_NETWORK_CACHING,
+			100, 60000, 10);
 
 	return ppts;
 }

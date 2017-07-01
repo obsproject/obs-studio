@@ -277,6 +277,8 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 
 	ui->setupUi(this);
 
+	main->EnableOutputs(false);
+
 	PopulateAACBitrates({ui->simpleOutputABitrate,
 			ui->advOutTrack1Bitrate, ui->advOutTrack2Bitrate,
 			ui->advOutTrack3Bitrate, ui->advOutTrack4Bitrate,
@@ -291,6 +293,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->language,             COMBO_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->theme, 		     COMBO_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->enableAutoUpdates,    CHECK_CHANGED,  GENERAL_CHANGED);
+	HookWidget(ui->openStatsOnStartup,   CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->warnBeforeStreamStart,CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->warnBeforeStreamStop, CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->hideProjectorCursor,  CHECK_CHANGED,  GENERAL_CHANGED);
@@ -653,6 +656,11 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	UpdateAutomaticReplayBufferCheckboxes();
 }
 
+OBSBasicSettings::~OBSBasicSettings()
+{
+	main->EnableOutputs(true);
+}
+
 void OBSBasicSettings::SaveCombo(QComboBox *widget, const char *section,
 		const char *value)
 {
@@ -957,6 +965,9 @@ void OBSBasicSettings::LoadGeneralSettings()
 			"General", "EnableAutoUpdates");
 	ui->enableAutoUpdates->setChecked(enableAutoUpdates);
 #endif
+	bool openStatsOnStartup = config_get_bool(main->Config(),
+			"General", "OpenStatsOnStartup");
+	ui->openStatsOnStartup->setChecked(openStatsOnStartup);
 
 	bool recordWhenStreaming = config_get_bool(GetGlobalConfig(),
 			"BasicWindow", "RecordWhenStreaming");
@@ -2042,8 +2053,6 @@ void OBSBasicSettings::LoadAdvancedSettings()
 			"RecRBPrefix");
 	const char *rbSuffix = config_get_string(main->Config(), "SimpleOutput",
 			"RecRBSuffix");
-	int idx;
-
 	loading = true;
 
 	LoadRendererList();
@@ -2098,7 +2107,7 @@ void OBSBasicSettings::LoadAdvancedSettings()
 	bool enableLowLatencyMode = config_get_bool(main->Config(), "Output",
 			"LowLatencyEnable");
 
-	idx = ui->processPriority->findData(processPriority);
+	int idx = ui->processPriority->findData(processPriority);
 	if (idx == -1)
 		idx = ui->processPriority->findData("Normal");
 	ui->processPriority->setCurrentIndex(idx);
@@ -2438,6 +2447,10 @@ void OBSBasicSettings::SaveGeneralSettings()
 				"EnableAutoUpdates",
 				ui->enableAutoUpdates->isChecked());
 #endif
+	if (WidgetChanged(ui->openStatsOnStartup))
+		config_set_bool(main->Config(), "General",
+				"OpenStatsOnStartup",
+				ui->openStatsOnStartup->isChecked());
 	if (WidgetChanged(ui->snappingEnabled))
 		config_set_bool(GetGlobalConfig(), "BasicWindow",
 				"SnappingEnabled",
@@ -3006,7 +3019,7 @@ bool OBSBasicSettings::QueryChanges()
 {
 	QMessageBox::StandardButton button;
 
-	button = QMessageBox::question(this,
+	button = OBSMessageBox::question(this,
 			QTStr("Basic.Settings.ConfirmTitle"),
 			QTStr("Basic.Settings.Confirm"),
 			QMessageBox::Yes | QMessageBox::No |
@@ -3871,10 +3884,9 @@ void OBSBasicSettings::SimpleRecordingQualityLosslessWarning(int idx)
 			QString("\n\n") +
 			SIMPLE_OUTPUT_WARNING("Lossless.Msg");
 
-		button = QMessageBox::question(this,
+		button = OBSMessageBox::question(this,
 				SIMPLE_OUTPUT_WARNING("Lossless.Title"),
-				warningString,
-				QMessageBox::Yes | QMessageBox::No);
+				warningString);
 
 		if (button == QMessageBox::No) {
 			QMetaObject::invokeMethod(ui->simpleOutRecQuality,

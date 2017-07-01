@@ -244,6 +244,7 @@ struct obs_core_video {
 	int                             cur_texture;
 
 	uint64_t                        video_time;
+	uint64_t                        video_avg_frame_time_ns;
 	double                          video_fps;
 	video_t                         *video;
 	pthread_t                       video_thread;
@@ -607,6 +608,7 @@ struct obs_source {
 	bool                            async_flip;
 	bool                            async_active;
 	bool                            async_update_texture;
+	bool                            async_unbuffered;
 	struct obs_source_frame         *async_preload_frame;
 	DARRAY(struct async_frame)      async_cache;
 	DARRAY(struct obs_source_frame*)async_frames;
@@ -870,6 +872,8 @@ struct obs_output {
 	volatile long                   delay_restart_refs;
 	volatile bool                   delay_active;
 	volatile bool                   delay_capturing;
+
+	char                            *last_error_message;
 };
 
 static inline void do_output_signal(struct obs_output *output,

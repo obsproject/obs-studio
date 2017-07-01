@@ -364,7 +364,7 @@ void OBSBasic::AddTransition()
 
 	if (accepted) {
 		if (name.empty()) {
-			QMessageBox::information(this,
+			OBSMessageBox::information(this,
 					QTStr("NoNameEntered.Title"),
 					QTStr("NoNameEntered.Text"));
 			AddTransition();
@@ -373,7 +373,7 @@ void OBSBasic::AddTransition()
 
 		source = FindTransition(name.c_str());
 		if (source) {
-			QMessageBox::information(this,
+			OBSMessageBox::information(this,
 					QTStr("NameExists.Title"),
 					QTStr("NameExists.Text"));
 
@@ -392,6 +392,9 @@ void OBSBasic::AddTransition()
 
 		if (api)
 			api->on_event(OBS_FRONTEND_EVENT_TRANSITION_LIST_CHANGED);
+
+		ClearQuickTransitionWidgets();
+		RefreshQuickTransitions();
 	}
 }
 
@@ -445,6 +448,9 @@ void OBSBasic::on_transitionRemove_clicked()
 
 	if (api)
 		api->on_event(OBS_FRONTEND_EVENT_TRANSITION_LIST_CHANGED);
+
+	ClearQuickTransitionWidgets();
+	RefreshQuickTransitions();
 }
 
 void OBSBasic::RenameTransition()
@@ -464,7 +470,7 @@ void OBSBasic::RenameTransition()
 
 	if (accepted) {
 		if (name.empty()) {
-			QMessageBox::information(this,
+			OBSMessageBox::information(this,
 					QTStr("NoNameEntered.Title"),
 					QTStr("NoNameEntered.Text"));
 			RenameTransition();
@@ -473,7 +479,7 @@ void OBSBasic::RenameTransition()
 
 		source = FindTransition(name.c_str());
 		if (source) {
-			QMessageBox::information(this,
+			OBSMessageBox::information(this,
 					QTStr("NameExists.Title"),
 					QTStr("NameExists.Text"));
 
@@ -483,8 +489,11 @@ void OBSBasic::RenameTransition()
 
 		obs_source_set_name(transition, name.c_str());
 		int idx = ui->transitions->findData(variant);
-		if (idx != -1)
+		if (idx != -1) {
 			ui->transitions->setItemText(idx, QT_UTF8(name.c_str()));
+			ClearQuickTransitionWidgets();
+			RefreshQuickTransitions();
+		}
 	}
 }
 
@@ -576,6 +585,9 @@ void OBSBasic::SetCurrentScene(OBSSource scene, bool force)
 				break;
 			}
 		}
+
+		if (api && IsPreviewProgramMode())
+			api->on_event(OBS_FRONTEND_EVENT_PREVIEW_SCENE_CHANGED);
 	}
 
 	UpdateSceneSelection(scene);
@@ -919,6 +931,31 @@ void OBSBasic::QuickTransitionRemoveClicked()
 	quickTransitions.erase(quickTransitions.begin() + idx);
 }
 
+void OBSBasic::ClearQuickTransitionWidgets()
+{
+	if (!IsPreviewProgramMode())
+		return;
+
+	QVBoxLayout *programLayout =
+		reinterpret_cast<QVBoxLayout*>(programOptions->layout());
+
+	for (int idx = 0;; idx++) {
+		QLayoutItem *item = programLayout->itemAt(idx);
+		if (!item)
+			break;
+
+		QWidget *widget = item->widget();
+		if (!widget)
+			continue;
+
+		int id = widget->property("id").toInt();
+		if (id != 0) {
+			delete widget;
+			idx--;
+		}
+	}
+}
+
 void OBSBasic::RefreshQuickTransitions()
 {
 	if (!IsPreviewProgramMode())
@@ -975,6 +1012,9 @@ void OBSBasic::SetPreviewProgramMode(bool enabled)
 		ui->previewLayout->addWidget(program);
 		program->show();
 
+		if (api)
+			api->on_event(OBS_FRONTEND_EVENT_STUDIO_MODE_ENABLED);
+
 		blog(LOG_INFO, "Switched to Preview/Program mode");
 		blog(LOG_INFO, "-----------------------------"
 				"-------------------");
@@ -1004,6 +1044,9 @@ void OBSBasic::SetPreviewProgramMode(bool enabled)
 
 		if (!previewEnabled)
 			EnablePreviewDisplay(false);
+
+		if (api)
+			api->on_event(OBS_FRONTEND_EVENT_STUDIO_MODE_DISABLED);
 
 		blog(LOG_INFO, "Switched to regular Preview mode");
 		blog(LOG_INFO, "-----------------------------"

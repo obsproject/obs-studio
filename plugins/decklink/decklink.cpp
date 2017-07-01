@@ -66,6 +66,8 @@ bool DeckLink::Activate(DeckLinkDevice *device, long long modeId)
 			return false;
 		if (instance->GetActiveModeId() == modeId &&
 		    instance->GetActivePixelFormat() == pixelFormat &&
+		    instance->GetActiveColorSpace() == colorSpace &&
+		    instance->GetActiveColorRange() == colorRange &&
 		    instance->GetActiveChannelFormat() == channelFormat)
 			return false;
 	}

@@ -14,6 +14,8 @@
     <file>images/up.png</file>
     <file>images/obs.png</file>
     <file>images/tray_active.png</file>
+    <file>images/locked_mask.png</file>
+    <file>images/unlocked_mask.png</file>
   </qresource>
   <qresource prefix="/settings">
     <file>images/settings/advanced.png</file>

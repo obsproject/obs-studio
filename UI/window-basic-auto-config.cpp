@@ -274,16 +274,23 @@ bool AutoConfigStreamPage::validatePage()
 {
 	OBSData service_settings = obs_data_create();
 	obs_data_release(service_settings);
-	obs_data_set_string(service_settings, "service",
-			QT_TO_UTF8(ui->service->currentText()));
-
-	OBSService service = obs_service_create("rtmp_common", "temp_service",
-			service_settings, nullptr);
-	obs_service_release(service);
 
 	wiz->customServer = ui->streamType->currentIndex() == 1;
 
-	int bitrate = 6000;
+	const char *serverType = wiz->customServer
+		? "rtmp_custom"
+		: "rtmp_common";
+
+	if (!wiz->customServer) {
+		obs_data_set_string(service_settings, "service",
+				QT_TO_UTF8(ui->service->currentText()));
+	}
+
+	OBSService service = obs_service_create(serverType, "temp_service",
+			service_settings, nullptr);
+	obs_service_release(service);
+
+	int bitrate = 10000;
 	if (!ui->doBandwidthTest->isChecked()) {
 		bitrate = ui->bitrate->value();
 		wiz->idealBitrate = bitrate;
@@ -330,7 +337,7 @@ bool AutoConfigStreamPage::validatePage()
 	if (wiz->service != AutoConfig::Service::Twitch && wiz->bandwidthTest) {
 		QMessageBox::StandardButton button;
 #define WARNING_TEXT(x) QTStr("Basic.AutoConfig.StreamPage.StreamWarning." x)
-		button = QMessageBox::question(this,
+		button = OBSMessageBox::question(this,
 				WARNING_TEXT("Title"),
 				WARNING_TEXT("Text"));
 #undef WARNING_TEXT
@@ -625,6 +632,9 @@ AutoConfig::AutoConfig(QWidget *parent)
 	setOptions(0);
 	setButtonText(QWizard::FinishButton,
 			QTStr("Basic.AutoConfig.ApplySettings"));
+	setButtonText(QWizard::BackButton, QTStr("Back"));
+	setButtonText(QWizard::NextButton, QTStr("Next"));
+	setButtonText(QWizard::CancelButton, QTStr("Cancel"));
 }
 
 AutoConfig::~AutoConfig()
@@ -762,6 +772,7 @@ void AutoConfig::SaveStreamSettings()
 			idealBitrate);
 	config_set_string(main->Config(), "SimpleOutput", "StreamEncoder",
 			GetEncoderId(streamingEncoder));
+	config_remove_value(main->Config(), "SimpleOutput", "UseAdvanced");
 }
 
 void AutoConfig::SaveSettings()

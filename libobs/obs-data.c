@@ -854,7 +854,7 @@ static inline void set_item_def(struct obs_data *data, obs_data_item_t **item,
 		item = &actual_item;
 	}
 
-	if (item && *item && (*item)->type == type)
+	if (item && *item && (*item)->type != type)
 		return;
 
 	set_item_data(data, item, name, ptr, size, type, true, false);

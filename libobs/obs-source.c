@@ -330,8 +330,6 @@ static obs_source_t *obs_source_create_internal(const char *id,
 	if (!private)
 		obs_source_init_audio_hotkeys(source);
 
-	source->flags = source->default_flags;
-
 	/* allow the source to be created even if creation fails so that the
 	 * user's data doesn't become lost */
 	if (info)
@@ -344,6 +342,7 @@ static obs_source_t *obs_source_create_internal(const char *id,
 			private ? "private " : "", name, id);
 	obs_source_dosignal(source, "source_create", NULL);
 
+	source->flags = source->default_flags;
 	source->enabled = true;
 	return source;
 
@@ -1508,7 +1507,6 @@ static bool update_async_texrender(struct obs_source *source,
 	uint32_t cy = source->async_height;
 
 	float convert_width  = (float)source->async_convert_width;
-	float convert_height = (float)source->async_convert_height;
 
 	gs_effect_t *conv = obs->video.conversion_effect;
 	gs_technique_t *tech = gs_effect_get_technique(conv,
@@ -1696,7 +1694,7 @@ static inline void obs_source_render_filters(obs_source_t *source)
 	source->rendering_filter = false;
 }
 
-static void obs_source_default_render(obs_source_t *source)
+void obs_source_default_render(obs_source_t *source)
 {
 	gs_effect_t    *effect     = obs->video.default_effect;
 	gs_technique_t *tech       = gs_effect_get_technique(effect, "Draw");
@@ -1887,6 +1885,18 @@ obs_source_t *obs_filter_get_target(const obs_source_t *filter)
 		filter->filter_target : NULL;
 }
 
+static bool filter_compatible(obs_source_t *source, obs_source_t *filter)
+{
+	uint32_t s_caps = source->info.output_flags;
+	uint32_t f_caps = filter->info.output_flags;
+
+	if ((f_caps & OBS_SOURCE_AUDIO) != 0 &&
+	    (f_caps & OBS_SOURCE_VIDEO) == 0)
+		f_caps &= ~OBS_SOURCE_ASYNC;
+
+	return (s_caps & f_caps) == f_caps;
+}
+
 void obs_source_filter_add(obs_source_t *source, obs_source_t *filter)
 {
 	struct calldata cd;
@@ -1902,6 +1912,11 @@ void obs_source_filter_add(obs_source_t *source, obs_source_t *filter)
 	if (da_find(source->filters, &filter, 0) != DARRAY_INVALID) {
 		blog(LOG_WARNING, "Tried to add a filter that was already "
 		                  "present on the source");
+		pthread_mutex_unlock(&source->filter_mutex);
+		return;
+	}
+
+	if (!filter_compatible(source, filter)) {
 		pthread_mutex_unlock(&source->filter_mutex);
 		return;
 	}
@@ -2603,7 +2618,7 @@ static bool ready_async_frame(obs_source_t *source, uint64_t sys_time)
 	uint64_t frame_time = next_frame->timestamp;
 	uint64_t frame_offset = 0;
 
-	if ((source->flags & OBS_SOURCE_FLAG_UNBUFFERED) != 0) {
+	if (source->async_unbuffered) {
 		while (source->async_frames.num > 1) {
 			da_erase(source->async_frames, 0);
 			remove_async_frame(source, next_frame);
@@ -4020,4 +4035,18 @@ enum obs_monitoring_type obs_source_get_monitoring_type(
 {
 	return obs_source_valid(source, "obs_source_get_monitoring_type") ?
 		source->monitoring_type : OBS_MONITORING_TYPE_NONE;
+}
+
+void obs_source_set_async_unbuffered(obs_source_t *source, bool unbuffered)
+{
+	if (!obs_source_valid(source, "obs_source_set_async_unbuffered"))
+		return;
+
+	source->async_unbuffered = unbuffered;
+}
+
+bool obs_source_async_unbuffered(const obs_source_t *source)
+{
+	return obs_source_valid(source, "obs_source_async_unbuffered") ?
+		source->async_unbuffered : false;
 }

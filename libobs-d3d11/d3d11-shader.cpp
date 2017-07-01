@@ -149,6 +149,9 @@ void gs_shader::BuildConstantBuffer()
 			continue;
 		}
 
+		if (param.arrayCount)
+			size *= param.arrayCount;
+
 		/* checks to see if this constant needs to start at a new
 		 * register */
 		if (size && (constantSize & 15) != 0) {
@@ -287,6 +290,8 @@ void gs_shader::UploadParams()
 
 void gs_shader_destroy(gs_shader_t *shader)
 {
+	if (shader && shader->device->lastVertexShader == shader)
+		shader->device->lastVertexShader = nullptr;
 	delete shader;
 }
 

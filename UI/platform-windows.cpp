@@ -30,9 +30,11 @@ using namespace std;
 #include <shellapi.h>
 #include <shlobj.h>
 #include <Dwmapi.h>
+#include <psapi.h>
 #include <mmdeviceapi.h>
 #include <audiopolicy.h>
 
+#include <util/windows/WinHandle.hpp>
 #include <util/windows/HRError.hpp>
 #include <util/windows/ComPtr.hpp>
 
@@ -258,4 +260,77 @@ bool DisableAudioDucking(bool disable)
 
 	result = sessionControl2->SetDuckingPreference(disable);
 	return SUCCEEDED(result);
+}
+
+uint64_t CurrentMemoryUsage()
+{
+	PROCESS_MEMORY_COUNTERS pmc = {};
+	pmc.cb = sizeof(pmc);
+
+	if (!GetProcessMemoryInfo(GetCurrentProcess(), &pmc, sizeof(pmc)))
+		return 0;
+
+	return (uint64_t)pmc.WorkingSetSize;
+}
+
+struct RunOnceMutexData {
+	WinHandle handle;
+
+	inline RunOnceMutexData(HANDLE h) : handle(h) {}
+};
+
+RunOnceMutex::RunOnceMutex(RunOnceMutex &&rom)
+{
+	delete data;
+	data = rom.data;
+	rom.data = nullptr;
+}
+
+RunOnceMutex::~RunOnceMutex()
+{
+	delete data;
+}
+
+RunOnceMutex &RunOnceMutex::operator=(RunOnceMutex &&rom)
+{
+	delete data;
+	data = rom.data;
+	rom.data = nullptr;
+	return *this;
+}
+
+RunOnceMutex GetRunOnceMutex(bool &already_running)
+{
+	string name;
+
+	if (!portable_mode) {
+		name = "OBSStudioCore";
+	} else {
+		char path[500];
+		*path = 0;
+		GetConfigPath(path, sizeof(path), "");
+		name = "OBSStudioPortable";
+		name += path;
+	}
+
+	BPtr<wchar_t> wname;
+	os_utf8_to_wcs_ptr(name.c_str(), name.size(), &wname);
+
+	if (wname) {
+		wchar_t *temp = wname;
+		while (*temp) {
+			if (!iswalnum(*temp))
+				*temp = L'_';
+			temp++;
+		}
+	}
+
+	HANDLE h = OpenMutexW(SYNCHRONIZE, false, wname.Get());
+	already_running = !!h;
+
+	if (!already_running)
+		h = CreateMutexW(nullptr, false, wname.Get());
+
+	RunOnceMutex rom(h ? new RunOnceMutexData(h) : nullptr);
+	return rom;
 }

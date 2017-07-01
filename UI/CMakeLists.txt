@@ -131,6 +131,7 @@ set(obs_SOURCES
 	obs-app.cpp
 	api-interface.cpp
 	window-basic-main.cpp
+	window-basic-stats.cpp
 	window-basic-filters.cpp
 	window-basic-settings.cpp
 	window-basic-interaction.cpp
@@ -160,6 +161,7 @@ set(obs_SOURCES
 	adv-audio-control.cpp
 	item-widget-helpers.cpp
 	visibility-checkbox.cpp
+	locked-checkbox.cpp
 	vertical-scroll-area.cpp
 	visibility-item-widget.cpp
 	slider-absoluteset-style.cpp
@@ -179,6 +181,7 @@ set(obs_HEADERS
 	platform.hpp
 	window-main.hpp
 	window-basic-main.hpp
+	window-basic-stats.hpp
 	window-basic-filters.hpp
 	window-basic-settings.hpp
 	window-basic-interaction.hpp
@@ -206,6 +209,7 @@ set(obs_HEADERS
 	adv-audio-control.hpp
 	item-widget-helpers.hpp
 	visibility-checkbox.hpp
+	locked-checkbox.hpp
 	vertical-scroll-area.hpp
 	visibility-item-widget.hpp
 	slider-absoluteset-style.hpp

@@ -293,6 +293,8 @@ static void droptest_cap_data_rate(struct rtmp_stream *stream, size_t size)
 
 static int socket_queue_data(RTMPSockBuf *sb, const char *data, int len, void *arg)
 {
+	UNUSED_PARAMETER(sb);
+
 	struct rtmp_stream *stream = arg;
 
 retry_send:
@@ -378,6 +380,64 @@ static inline bool can_shutdown_stream(struct rtmp_stream *stream,
 	return timeout || packet->sys_dts_usec >= (int64_t)stream->stop_ts;
 }
 
+static void set_output_error(struct rtmp_stream *stream)
+{
+	const char *msg = NULL;
+#ifdef _WIN32
+	switch (stream->rtmp.last_error_code)
+	{
+	case WSAETIMEDOUT:
+		msg = obs_module_text("ConnectionTimedOut");
+		break;
+	case WSAEACCES:
+		msg = obs_module_text("PermissionDenied");
+		break;
+	case WSAECONNABORTED:
+		msg = obs_module_text("ConnectionAborted");
+		break;
+	case WSAECONNRESET:
+		msg = obs_module_text("ConnectionReset");
+		break;
+	case WSAHOST_NOT_FOUND:
+		msg = obs_module_text("HostNotFound");
+		break;
+	case WSANO_DATA:
+		msg = obs_module_text("NoData");
+		break;
+	case WSAEADDRNOTAVAIL:
+		msg = obs_module_text("AddressNotAvailable");
+		break;
+	}
+#else
+	switch (stream->rtmp.last_error_code)
+	{
+	case ETIMEDOUT:
+		msg = obs_module_text("ConnectionTimedOut");
+		break;
+	case EACCES:
+		msg = obs_module_text("PermissionDenied");
+		break;
+	case ECONNABORTED:
+		msg = obs_module_text("ConnectionAborted");
+		break;
+	case ECONNRESET:
+		msg = obs_module_text("ConnectionReset");
+		break;
+	case HOST_NOT_FOUND:
+		msg = obs_module_text("HostNotFound");
+		break;
+	case NO_DATA:
+		msg = obs_module_text("NoData");
+		break;
+	case EADDRNOTAVAIL:
+		msg = obs_module_text("AddressNotAvailable");
+		break;
+	}
+#endif
+
+	obs_output_set_last_error(stream->output, msg);
+}
+
 static void *send_thread(void *data)
 {
 	struct rtmp_stream *stream = data;
@@ -428,6 +488,7 @@ static void *send_thread(void *data)
 		stream->rtmp.m_bCustomSend = false;
 	}
 
+	set_output_error(stream);
 	RTMP_Close(&stream->rtmp);
 
 	if (!stopping(stream)) {
@@ -571,8 +632,10 @@ static int init_send(struct rtmp_stream *stream)
 		int one = 1;
 #ifdef _WIN32
 		if (ioctlsocket(stream->rtmp.m_sb.sb_socket, FIONBIO, &one)) {
+			stream->rtmp.last_error_code = WSAGetLastError();
 #else
 		if (ioctl(stream->rtmp.m_sb.sb_socket, FIONBIO, &one)) {
+			stream->rtmp.last_error_code = errno;
 #endif
 			warn("Failed to set non-blocking socket");
 			return OBS_OUTPUT_ERROR;
@@ -644,6 +707,7 @@ static int init_send(struct rtmp_stream *stream)
 		if (!send_meta_data(stream, idx++, &next)) {
 			warn("Disconnected while attempting to connect to "
 			     "server.");
+			set_output_error(stream);
 			return OBS_OUTPUT_DISCONNECTED;
 		}
 	}
@@ -767,8 +831,11 @@ static int try_connect(struct rtmp_stream *stream)
 	win32_log_interface_type(stream);
 #endif
 
-	if (!RTMP_Connect(&stream->rtmp, NULL))
+	if (!RTMP_Connect(&stream->rtmp, NULL)) {
+		set_output_error(stream);
 		return OBS_OUTPUT_CONNECT_FAILED;
+	}
+
 	if (!RTMP_ConnectStream(&stream->rtmp, 0))
 		return OBS_OUTPUT_INVALID_STREAM;
 
@@ -886,8 +953,9 @@ static inline size_t num_buffered_packets(struct rtmp_stream *stream)
 static void drop_frames(struct rtmp_stream *stream, const char *name,
 		int highest_priority, bool pframes)
 {
+	UNUSED_PARAMETER(pframes);
+
 	struct circlebuf new_buf            = {0};
-	uint64_t         last_drop_dts_usec = 0;
 	int              num_frames_dropped = 0;
 
 #ifdef _DEBUG
@@ -901,8 +969,6 @@ static void drop_frames(struct rtmp_stream *stream, const char *name,
 	while (stream->packets.size) {
 		struct encoder_packet packet;
 		circlebuf_pop_front(&stream->packets, &packet, sizeof(packet));
-
-		last_drop_dts_usec = packet.dts_usec;
 
 		/* do not drop audio data or video keyframes */
 		if (packet.type          == OBS_ENCODER_AUDIO ||

@@ -91,6 +91,8 @@ struct ffmpeg_output {
 	bool               connecting;
 	pthread_t          start_thread;
 
+	uint64_t           total_bytes;
+
 	uint64_t           audio_start_ts;
 	uint64_t           video_start_ts;
 	uint64_t           stop_ts;
@@ -893,6 +895,8 @@ static int process_packet(struct ffmpeg_output *output)
 		}
 	}
 
+	output->total_bytes += packet.size;
+
 	ret = av_interleaved_write_frame(output->ff_data.output, &packet);
 	if (ret < 0) {
 		av_free_packet(&packet);
@@ -1051,6 +1055,7 @@ static bool ffmpeg_output_start(void *data)
 	os_atomic_set_bool(&output->stopping, false);
 	output->audio_start_ts = 0;
 	output->video_start_ts = 0;
+	output->total_bytes = 0;
 
 	ret = pthread_create(&output->start_thread, NULL, start_thread, output);
 	return (output->connecting = (ret == 0));
@@ -1100,6 +1105,12 @@ static void ffmpeg_deactivate(struct ffmpeg_output *output)
 	ffmpeg_data_free(&output->ff_data);
 }
 
+static uint64_t ffmpeg_output_total_bytes(void *data)
+{
+	struct ffmpeg_output *output = data;
+	return output->total_bytes;
+}
+
 struct obs_output_info ffmpeg_output = {
 	.id        = "ffmpeg_output",
 	.flags     = OBS_OUTPUT_AUDIO | OBS_OUTPUT_VIDEO,
@@ -1110,4 +1121,5 @@ struct obs_output_info ffmpeg_output = {
 	.stop      = ffmpeg_output_stop,
 	.raw_video = receive_video,
 	.raw_audio = receive_audio,
+	.get_total_bytes = ffmpeg_output_total_bytes,
 };

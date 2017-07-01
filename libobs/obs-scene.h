@@ -32,6 +32,8 @@ struct obs_scene_item {
 	volatile long         ref;
 	volatile bool         removed;
 
+	int64_t               id;
+
 	struct obs_scene      *parent;
 	struct obs_source     *source;
 	volatile long         active_refs;
@@ -39,6 +41,7 @@ struct obs_scene_item {
 	bool                  user_visible;
 	bool                  visible;
 	bool                  selected;
+	bool                  locked;
 
 	gs_texrender_t        *item_render;
 	struct obs_sceneitem_crop crop;
@@ -75,6 +78,8 @@ struct obs_scene_item {
 
 struct obs_scene {
 	struct obs_source     *source;
+
+	int64_t               id_counter;
 
 	pthread_mutex_t       video_mutex;
 	pthread_mutex_t       audio_mutex;
