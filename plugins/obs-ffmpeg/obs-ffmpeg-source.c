@@ -337,7 +337,7 @@ static const char *ffmpeg_source_getname(void *unused)
 	return obs_module_text("FFMpegSource");
 }
 
-static bool restart_hotkey(void *data, obs_hotkey_id id,
+static void restart_hotkey(void *data, obs_hotkey_id id,
 		obs_hotkey_t *hotkey, bool pressed)
 {
 	UNUSED_PARAMETER(id);
@@ -347,7 +347,6 @@ static bool restart_hotkey(void *data, obs_hotkey_id id,
 	struct ffmpeg_source *s = data;
 	if (obs_source_active(s->source))
 		ffmpeg_source_start(s);
-	return true;
 }
 
 static void restart_proc(void *data, calldata_t *cd)
