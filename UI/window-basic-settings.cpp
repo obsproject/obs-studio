@@ -2436,8 +2436,12 @@ void OBSBasicSettings::SaveGeneralSettings()
 	string theme = themeData.toStdString();
 
 	if (WidgetChanged(ui->theme)) {
-		config_set_string(GetGlobalConfig(), "General", "Theme",
+		config_set_string(GetGlobalConfig(), "General", "CustomTheme",
 				  theme.c_str());
+		if (theme == "Default" || theme == "Dark") {
+			config_set_string(GetGlobalConfig(), "General", "Theme",
+					theme.c_str());
+		}
 		App()->SetTheme(theme);
 	}
 
