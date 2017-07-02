@@ -31,6 +31,7 @@ private:
 	uint64_t lastUpdateTime = 0;
 
 	QColor bkColor, magColor, peakColor, peakHoldColor;
+	QColor clipColor1, clipColor2;
 
 public:
 	explicit VolumeMeter(QWidget *parent = 0);
