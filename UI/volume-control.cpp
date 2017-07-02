@@ -57,17 +57,6 @@ void VolControl::VolumeChanged()
 	updateText();
 }
 
-void VolControl::VolumeLevel(float mag, float peak, float peakHold, bool muted)
-{
-	if (muted) {
-		mag = 0.0f;
-		peak = 0.0f;
-		peakHold = 0.0f;
-	}
-
-	volMeter->setLevels(mag, peak, peakHold);
-}
-
 void VolControl::VolumeMuted(bool muted)
 {
 	if (mute->isChecked() != muted)
