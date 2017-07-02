@@ -882,6 +882,24 @@
                 "max video bitrate": 20000,
                 "max audio bitrate": 192
             }
+        },
+        {
+            "name": "LiveEdu.tv",
+            "common": true,
+            "servers": [
+                {
+                    "name": "US",
+                    "url": "rtmp://usmedia11.liveedu.tv/liveedutv"
+                },
+                {
+                    "name": "EU",
+                    "url": "rtmp://eumedia8.liveedu.tv/liveedutv"
+                },
+                {
+                    "name": "Asia",
+                    "url": "rtmp://apmedia1.liveedu.tv/liveedutv"
+                }
+            ]
         }
     ]
 }
