@@ -12,10 +12,10 @@ struct lut_filter_data {
 	obs_source_t                   *context;
 	gs_effect_t                    *effect;
 	gs_texture_t                   *target;
-	gs_image_file_t                image;
+	gs_image_file_t                 image;
 
 	char                           *file;
-	float                          clut_amount;
+	float                           clut_amount;
 };
 
 static const char *color_grade_filter_get_name(void *unused)
