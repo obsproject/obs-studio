@@ -251,6 +251,8 @@ EXPORT void obs_volmeter_add_callback(obs_volmeter_t *volmeter,
 EXPORT void obs_volmeter_remove_callback(obs_volmeter_t *volmeter,
 		obs_volmeter_updated_t callback, void *param);
 
+EXPORT float obs_volmeter_get_cur_db(enum obs_fader_type type, const float def);
+
 #ifdef __cplusplus
 }
 #endif
