@@ -17,7 +17,7 @@
 
 #pragma once
 
-#define MAX_AV_PLANES 8
+#define MAX_AV_PLANES 16
 
 /* time threshold in nanoseconds to ensure audio timing is as seamless as
  * possible */
