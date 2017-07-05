@@ -99,17 +99,31 @@ Function PreReqCheck
 		gotPatch:
 	${EndIf}
 
+	; 32 bit Visual Studio 2013 runtime check
 	ClearErrors
 	GetDLLVersion "MSVCR120.DLL" $R0 $R1
-	IfErrors vs2013Missing vs2013OK
+	GetDLLVersion "MSVCP120.DLL" $R0 $R1
+	IfErrors vs2013Missing vs2013OK1
 	vs2013Missing:
 		MessageBox MB_YESNO|MB_ICONEXCLAMATION "Your system is missing runtime components that ${APPNAME} requires. Please make sure to install both vcredist_x64 and vcredist_x86. Would you like to download them?" IDYES vs2013true IDNO vs2013false
 		vs2013true:
 			ExecShell "open" "https://obsproject.com/visual-studio-2013-runtimes"
 		vs2013false:
 		Quit
-	vs2013OK:
+	vs2013OK1:
 	ClearErrors
+
+	; 64 bit Visual Studio 2013 runtime check
+	${if} ${RunningX64}
+		SetOutPath "$TEMP\OBS"
+		File check_for_64bit_visual_studio_2013_runtimes.exe
+		ExecWait "$TEMP\OBS\check_for_64bit_visual_studio_2013_runtimes.exe" $R0
+		Delete "$TEMP\OBS\check_for_64bit_visual_studio_2013_runtimes.exe"
+		RMDir "$TEMP\OBS"
+		IntCmp $R0 126 vs2013Missing vs2013OK2
+		vs2013OK2:
+		ClearErrors
+	${endif}
 
 	; DirectX Version Check
 	ClearErrors
