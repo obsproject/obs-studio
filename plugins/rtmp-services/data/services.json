@@ -82,6 +82,10 @@
                     "url": "rtmp://live-qro.twitch.tv/app"
                 },
                 {
+                    "name": "NA: Quebec, Canada",
+                    "url": "rtmp://live-ymq.twitch.tv/app"
+                },
+                {
                     "name": "NA: Toronto, Canada",
                     "url": "rtmp://live-yto.twitch.tv/app"
                 },
