@@ -2162,3 +2162,15 @@ bool obs_output_reconnecting(const obs_output_t *output)
 
 	return reconnecting(output);
 }
+
+const char *obs_output_get_supported_video_codecs(const obs_output_t *output)
+{
+	return obs_output_valid(output, __FUNCTION__) ?
+		output->info.encoded_video_codecs : NULL;
+}
+
+const char *obs_output_get_supported_audio_codecs(const obs_output_t *output)
+{
+	return obs_output_valid(output, __FUNCTION__) ?
+		output->info.encoded_audio_codecs : NULL;
+}

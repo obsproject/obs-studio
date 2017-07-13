@@ -220,13 +220,15 @@ static obs_properties_t *flv_output_properties(void *unused)
 }
 
 struct obs_output_info flv_output_info = {
-	.id             = "flv_output",
-	.flags          = OBS_OUTPUT_AV | OBS_OUTPUT_ENCODED,
-	.get_name       = flv_output_getname,
-	.create         = flv_output_create,
-	.destroy        = flv_output_destroy,
-	.start          = flv_output_start,
-	.stop           = flv_output_stop,
-	.encoded_packet = flv_output_data,
-	.get_properties = flv_output_properties
+	.id                   = "flv_output",
+	.flags                = OBS_OUTPUT_AV | OBS_OUTPUT_ENCODED,
+	.encoded_video_codecs = "h264",
+	.encoded_audio_codecs = "aac",
+	.get_name             = flv_output_getname,
+	.create               = flv_output_create,
+	.destroy              = flv_output_destroy,
+	.start                = flv_output_start,
+	.stop                 = flv_output_stop,
+	.encoded_packet       = flv_output_data,
+	.get_properties       = flv_output_properties
 };

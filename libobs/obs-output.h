@@ -67,6 +67,10 @@ struct obs_output_info {
 
 	float (*get_congestion)(void *data);
 	int (*get_connect_time_ms)(void *data);
+
+	/* only used with encoded outputs, separated with semicolon */
+	const char *encoded_video_codecs;
+	const char *encoded_audio_codecs;
 };
 
 EXPORT void obs_register_output_s(const struct obs_output_info *info,
