@@ -682,6 +682,27 @@ bool SimpleOutput::StartStreaming(obs_service_t *service)
 				obs_output_get_signal_handler(streamOutput),
 				"stop", OBSStopStreaming, this);
 
+		const char *codec =
+			obs_output_get_supported_audio_codecs(streamOutput);
+
+		if (strcmp(codec, "aac") != 0) {
+			const char *id = FindAudioEncoderFromCodec(codec);
+			int audioBitrate = GetAudioBitrate();
+			obs_data_t *settings = obs_data_create();
+			obs_data_set_int(settings, "bitrate", audioBitrate);
+
+			aacStreaming = obs_audio_encoder_create(id,
+					"alt_audio_enc", nullptr, 0, nullptr);
+			obs_encoder_release(aacStreaming);
+			if (!aacStreaming)
+				return false;
+
+			obs_encoder_update(aacStreaming, settings);
+			obs_encoder_set_audio(aacStreaming, obs_get_audio());
+
+			obs_data_release(settings);
+		}
+
 		outputType = type;
 	}
 
@@ -955,6 +976,8 @@ struct AdvancedOutput : BasicOutputHandler {
 	OBSEncoder             aacTrack[MAX_AUDIO_MIXES];
 	OBSEncoder             h264Streaming;
 	OBSEncoder             h264Recording;
+
+	OBSEncoder             streamAudioEnc;
 
 	bool                   ffmpegOutput;
 	bool                   ffmpegRecording;
@@ -1346,11 +1369,34 @@ bool AdvancedOutput::StartStreaming(obs_service_t *service)
 				obs_output_get_signal_handler(streamOutput),
 				"stop", OBSStopStreaming, this);
 
+		const char *codec =
+			obs_output_get_supported_audio_codecs(streamOutput);
+
+		if (strcmp(codec, "aac") == 0) {
+			streamAudioEnc = aacTrack[trackIndex - 1];
+		} else {
+			const char *id = FindAudioEncoderFromCodec(codec);
+			int audioBitrate = GetAudioBitrate(trackIndex - 1);
+			obs_data_t *settings = obs_data_create();
+			obs_data_set_int(settings, "bitrate", audioBitrate);
+
+			streamAudioEnc = obs_audio_encoder_create(id,
+					"alt_audio_enc", nullptr,
+					trackIndex - 1, nullptr);
+			if (!streamAudioEnc)
+				return false;
+
+			obs_encoder_update(streamAudioEnc, settings);
+			obs_encoder_set_audio(streamAudioEnc, obs_get_audio());
+
+			obs_data_release(settings);
+		}
+
 		outputType = type;
 	}
 
 	obs_output_set_video_encoder(streamOutput, h264Streaming);
-	obs_output_set_audio_encoder(streamOutput, aacTrack[trackIndex - 1], 0);
+	obs_output_set_audio_encoder(streamOutput, streamAudioEnc, 0);
 
 	/* --------------------- */
 
