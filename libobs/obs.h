@@ -1809,6 +1809,10 @@ EXPORT void *obs_service_get_type_data(obs_service_t *service);
 
 EXPORT const char *obs_service_get_id(const obs_service_t *service);
 
+/* NOTE: This function is temporary and should be removed/replaced at a later
+ * date. */
+EXPORT const char *obs_service_get_output_type(const obs_service_t *service);
+
 
 /* ------------------------------------------------------------------------- */
 /* Source frame allocation functions */

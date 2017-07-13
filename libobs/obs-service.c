@@ -393,3 +393,13 @@ const char *obs_service_get_id(const obs_service_t *service)
 	return obs_service_valid(service, "obs_service_get_id")
 		? service->info.id : NULL;
 }
+
+const char *obs_service_get_output_type(const obs_service_t *service)
+{
+	if (!obs_service_valid(service, "obs_service_get_output_type"))
+		return NULL;
+
+	if (service->info.get_output_type)
+		return service->info.get_output_type(service->context.data);
+	return NULL;
+}
