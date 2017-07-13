@@ -407,6 +407,7 @@ static void update_params(struct obs_x264 *obsx264, obs_data_t *settings,
 	int crf          = (int)obs_data_get_int(settings, "crf");
 	int width        = (int)obs_encoder_get_width(obsx264->encoder);
 	int height       = (int)obs_encoder_get_height(obsx264->encoder);
+	int bf           = (int)obs_data_get_int(settings, "bf");
 	bool use_bufsize = obs_data_get_bool(settings, "use_bufsize");
 	bool vfr         = obs_data_get_bool(settings, "vfr");
 	bool cbr_override= obs_data_get_bool(settings, "cbr");
@@ -457,6 +458,9 @@ static void update_params(struct obs_x264 *obsx264, obs_data_t *settings,
 	obsx264->params.pf_log               = log_x264;
 	obsx264->params.p_log_private        = obsx264;
 	obsx264->params.i_log_level          = X264_LOG_WARNING;
+
+	if (obs_data_has_user_value(settings, "bf"))
+		obsx264->params.i_bframe = bf;
 
 	obsx264->params.vui.i_transfer =
 		get_x264_cs_val(info.colorspace, x264_transfer_names);
