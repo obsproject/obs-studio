@@ -1,5 +1,7 @@
 #pragma once
 
+#include <string>
+
 class OBSBasic;
 
 struct BasicOutputHandler {
@@ -11,6 +13,8 @@ struct BasicOutputHandler {
 	bool                   delayActive = false;
 	bool                   replayBufferActive = false;
 	OBSBasic               *main;
+
+	std::string            outputType;
 
 	OBSSignal              startRecording;
 	OBSSignal              stopRecording;

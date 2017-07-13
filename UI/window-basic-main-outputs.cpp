@@ -313,12 +313,6 @@ void SimpleOutput::LoadRecordingPreset()
 
 SimpleOutput::SimpleOutput(OBSBasic *main_) : BasicOutputHandler(main_)
 {
-	streamOutput = obs_output_create("rtmp_output", "simple_stream",
-			nullptr, nullptr);
-	if (!streamOutput)
-		throw "Failed to create stream output (simple output)";
-	obs_output_release(streamOutput);
-
 	const char *encoder = config_get_string(main->Config(), "SimpleOutput",
 			"StreamEncoder");
 	if (strcmp(encoder, SIMPLE_ENCODER_QSV) == 0)
@@ -333,16 +327,6 @@ SimpleOutput::SimpleOutput(OBSBasic *main_) : BasicOutputHandler(main_)
 	if (!CreateAACEncoder(aacStreaming, aacStreamEncID, GetAudioBitrate(),
 				"simple_aac", 0))
 		throw "Failed to create aac streaming encoder (simple output)";
-
-	streamDelayStarting.Connect(obs_output_get_signal_handler(streamOutput),
-			"starting", OBSStreamStarting, this);
-	streamStopping.Connect(obs_output_get_signal_handler(streamOutput),
-			"stopping", OBSStreamStopping, this);
-
-	startStreaming.Connect(obs_output_get_signal_handler(streamOutput),
-			"start", OBSStartStreaming, this);
-	stopStreaming.Connect(obs_output_get_signal_handler(streamOutput),
-			"stop", OBSStopStreaming, this);
 
 	LoadRecordingPreset();
 
@@ -650,14 +634,62 @@ inline void SimpleOutput::SetupOutputs()
 	}
 }
 
+const char *FindAudioEncoderFromCodec(const char *type)
+{
+	const char *alt_enc_id = nullptr;
+	size_t i = 0;
+
+	while (obs_enum_encoder_types(i++, &alt_enc_id)) {
+		const char *codec = obs_get_encoder_codec(alt_enc_id);
+		if (strcmp(type, codec) == 0) {
+			return alt_enc_id;
+		}
+	}
+
+	return nullptr;
+}
+
 bool SimpleOutput::StartStreaming(obs_service_t *service)
 {
 	if (!Active())
 		SetupOutputs();
 
+	/* --------------------- */
+
+	const char *type = obs_service_get_output_type(service);
+	if (!type)
+		type = "rtmp_output";
+
+	/* XXX: this is messy and disgusting and should be refactored */
+	if (outputType != type) {
+		streamOutput = obs_output_create(type, "simple_stream",
+				nullptr, nullptr);
+		if (!streamOutput)
+			return false;
+		obs_output_release(streamOutput);
+
+		streamDelayStarting.Connect(
+				obs_output_get_signal_handler(streamOutput),
+				"starting", OBSStreamStarting, this);
+		streamStopping.Connect(
+				obs_output_get_signal_handler(streamOutput),
+				"stopping", OBSStreamStopping, this);
+
+		startStreaming.Connect(
+				obs_output_get_signal_handler(streamOutput),
+				"start", OBSStartStreaming, this);
+		stopStreaming.Connect(
+				obs_output_get_signal_handler(streamOutput),
+				"stop", OBSStopStreaming, this);
+
+		outputType = type;
+	}
+
 	obs_output_set_video_encoder(streamOutput, h264Streaming);
 	obs_output_set_audio_encoder(streamOutput, aacStreaming, 0);
 	obs_output_set_service(streamOutput, service);
+
+	/* --------------------- */
 
 	bool reconnect = config_get_bool(main->Config(), "Output",
 			"Reconnect");
@@ -986,12 +1018,6 @@ AdvancedOutput::AdvancedOutput(OBSBasic *main_) : BasicOutputHandler(main_)
 	OBSData streamEncSettings = GetDataFromJsonFile("streamEncoder.json");
 	OBSData recordEncSettings = GetDataFromJsonFile("recordEncoder.json");
 
-	streamOutput = obs_output_create("rtmp_output", "adv_stream",
-			nullptr, nullptr);
-	if (!streamOutput)
-		throw "Failed to create stream output (advanced output)";
-	obs_output_release(streamOutput);
-
 	if (ffmpegOutput) {
 		fileOutput = obs_output_create("ffmpeg_output",
 				"adv_ffmpeg_output", nullptr, nullptr);
@@ -1034,16 +1060,6 @@ AdvancedOutput::AdvancedOutput(OBSBasic *main_) : BasicOutputHandler(main_)
 			throw "Failed to create audio encoder "
 			      "(advanced output)";
 	}
-
-	streamDelayStarting.Connect(obs_output_get_signal_handler(streamOutput),
-			"starting", OBSStreamStarting, this);
-	streamStopping.Connect(obs_output_get_signal_handler(streamOutput),
-			"stopping", OBSStreamStopping, this);
-
-	startStreaming.Connect(obs_output_get_signal_handler(streamOutput),
-			"start", OBSStartStreaming, this);
-	stopStreaming.Connect(obs_output_get_signal_handler(streamOutput),
-			"stop", OBSStopStreaming, this);
 
 	startRecording.Connect(obs_output_get_signal_handler(fileOutput),
 			"start", OBSStartRecording, this);
@@ -1094,12 +1110,6 @@ inline void AdvancedOutput::SetupStreaming()
 			"Rescale");
 	const char *rescaleRes = config_get_string(main->Config(), "AdvOut",
 			"RescaleRes");
-	bool multitrack = config_get_bool(main->Config(), "AdvOut",
-			"Multitrack");
-	int trackIndex = config_get_int(main->Config(), "AdvOut",
-			"TrackIndex");
-	int trackCount = config_get_int(main->Config(), "AdvOut",
-			"TrackCount");
 	unsigned int cx = 0;
 	unsigned int cy = 0;
 
@@ -1112,21 +1122,6 @@ inline void AdvancedOutput::SetupStreaming()
 
 	obs_encoder_set_scaled_size(h264Streaming, cx, cy);
 	obs_encoder_set_video(h264Streaming, obs_get_video());
-
-	obs_output_set_video_encoder(streamOutput, h264Streaming);
-
-	if (multitrack) {
-		int i = 0;
-		for (; i < trackCount; i++)
-			obs_output_set_audio_encoder(streamOutput, aacTrack[i],
-					i);
-		for (; i < MAX_AUDIO_MIXES; i++)
-			obs_output_set_audio_encoder(streamOutput, nullptr, i);
-
-	} else {
-		obs_output_set_audio_encoder(streamOutput,
-				aacTrack[trackIndex - 1], 0);
-	}
 }
 
 inline void AdvancedOutput::SetupRecording()
@@ -1319,6 +1314,45 @@ bool AdvancedOutput::StartStreaming(obs_service_t *service)
 
 	if (!Active())
 		SetupOutputs();
+
+	/* --------------------- */
+
+	int trackIndex = config_get_int(main->Config(), "AdvOut",
+			"TrackIndex");
+
+	const char *type = obs_service_get_output_type(service);
+	if (!type)
+		type = "rtmp_output";
+
+	/* XXX: this is messy and disgusting and should be refactored */
+	if (outputType != type) {
+		streamOutput = obs_output_create(type, "adv_stream",
+				nullptr, nullptr);
+		if (!streamOutput)
+			return false;
+		obs_output_release(streamOutput);
+
+		streamDelayStarting.Connect(
+				obs_output_get_signal_handler(streamOutput),
+				"starting", OBSStreamStarting, this);
+		streamStopping.Connect(
+				obs_output_get_signal_handler(streamOutput),
+				"stopping", OBSStreamStopping, this);
+
+		startStreaming.Connect(
+				obs_output_get_signal_handler(streamOutput),
+				"start", OBSStartStreaming, this);
+		stopStreaming.Connect(
+				obs_output_get_signal_handler(streamOutput),
+				"stop", OBSStopStreaming, this);
+
+		outputType = type;
+	}
+
+	obs_output_set_video_encoder(streamOutput, h264Streaming);
+	obs_output_set_audio_encoder(streamOutput, aacTrack[trackIndex - 1], 0);
+
+	/* --------------------- */
 
 	obs_output_set_service(streamOutput, service);
 
