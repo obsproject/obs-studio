@@ -64,9 +64,7 @@ set(obs-outputs_HEADERS
 	rtmp-helpers.h
 	rtmp-stream.h
 	net-if.h
-	flv-mux.h
-	flv-output.h
-	librtmp)
+	flv-mux.h)
 set(obs-outputs_SOURCES
 	obs-outputs.c
 	null-output.c
@@ -78,7 +76,7 @@ set(obs-outputs_SOURCES
 	
 add_library(obs-outputs MODULE
 	${obs-outputs_SOURCES}
-	${obs-outputs_HEADER}
+	${obs-outputs_HEADERS}
 	${obs-outputs_librtmp_SOURCES}
 	${obs-outputs_librtmp_HEADERS})
 target_link_libraries(obs-outputs
