@@ -185,9 +185,9 @@ static json_t *open_json_file(const char *file)
 	format_ver = get_int_val(root, "format_version");
 
 	if (format_ver != RTMP_SERVICES_FORMAT_VERSION) {
-		blog(LOG_WARNING, "rtmp-common.c: [open_json_file] "
-		                  "Wrong format version (%d), expected %d",
-				  format_ver, RTMP_SERVICES_FORMAT_VERSION);
+		blog(LOG_DEBUG, "rtmp-common.c: [open_json_file] "
+		                "Wrong format version (%d), expected %d",
+		                format_ver, RTMP_SERVICES_FORMAT_VERSION);
 		json_decref(root);
 		return NULL;
 	}
