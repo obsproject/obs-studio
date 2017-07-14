@@ -62,6 +62,7 @@ static string currentLogFile;
 static string lastLogFile;
 
 bool portable_mode = false;
+static bool multi = false;
 static bool log_verbose = false;
 static bool unfiltered_log = false;
 bool opt_start_streaming = false;
@@ -1348,7 +1349,7 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 		bool already_running = false;
 		RunOnceMutex rom = GetRunOnceMutex(already_running);
 
-		if (already_running) {
+		if (already_running && !multi) {
 			blog(LOG_WARNING, "\n================================");
 			blog(LOG_WARNING, "Warning: OBS is already running!");
 			blog(LOG_WARNING, "================================\n");
@@ -1376,6 +1377,10 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 
 			blog(LOG_WARNING, "User is now running a secondary "
 					"instance of OBS!");
+
+		} else if (already_running && multi) {
+			blog(LOG_INFO, "User enabled --multi flag and is now "
+					"running multiple instances of OBS.");
 		}
 
 		/* --------------------------------------- */
@@ -1856,6 +1861,9 @@ int main(int argc, char *argv[])
 		if (arg_is(argv[i], "--portable", "-p")) {
 			portable_mode = true;
 
+		} else if (arg_is(argv[i], "--multi", "-m")) {
+			multi = true;
+
 		} else if (arg_is(argv[i], "--verbose", nullptr)) {
 			log_verbose = true;
 
@@ -1904,7 +1912,8 @@ int main(int argc, char *argv[])
 			"--scene <string>: Start with specific scene.\n\n" <<
 			"--studio-mode: Enable studio mode.\n" <<
 			"--minimize-to-tray: Minimize to system tray.\n" <<
-			"--portable, -p: Use portable mode.\n\n" <<
+			"--portable, -p: Use portable mode.\n" <<
+			"--multi, -m: Don't warn when launching multiple instances.\n\n" <<
 			"--verbose: Make log more verbose.\n" <<
 			"--always-on-top: Start in 'always on top' mode.\n\n" <<
 			"--unfiltered_log: Make log unfiltered.\n\n" <<
