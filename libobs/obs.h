@@ -374,6 +374,10 @@ EXPORT void obs_add_module_path(const char *bin, const char *data);
 /** Automatically loads all modules from module paths (convenience function) */
 EXPORT void obs_load_all_modules(void);
 
+/** Notifies modules that all modules have been loaded.  This function should
+ * be called after all modules have been loaded. */
+EXPORT void obs_post_load_modules(void);
+
 struct obs_module_info {
 	const char *bin_path;
 	const char *data_path;
