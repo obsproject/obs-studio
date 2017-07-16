@@ -429,9 +429,14 @@ static void set_peak_bitrate(struct ftl_stream *stream)
 		float percent_lost = (float)results.lost_pkts * 100.f /
 			(float)results.pkts_sent;
 
-		info("Speed test completed: Peak kbps %d, "
+        obs_encoder_t *video_encoder = obs_output_get_video_encoder(stream->output);
+        obs_data_t *video_settings = obs_encoder_get_settings(video_encoder);
+        int user_desired_bitrate = (int)obs_data_get_int(video_settings, "bitrate");
+
+		info("Speed test completed: User desired bitrate %d, Peak kbps %d, "
 				"initial rtt %d, "
 				"final rtt %d, %3.2f lost packets",
+                user_desired_bitrate,
 				results.peak_kbps,
 				results.starting_rtt,
 				results.ending_rtt,
@@ -638,9 +643,8 @@ static int try_connect(struct ftl_stream *stream)
 
 	info("Connection to %s successful", stream->path.array);
 
-	if (stream->peak_kbps < 0) {
-		set_peak_bitrate(stream);
-	}
+	// Always get the peak bitrate when we are starting.
+	set_peak_bitrate(stream);	
 
 	pthread_create(&stream->status_thread, NULL, status_thread, stream);
 

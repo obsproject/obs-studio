@@ -1,5 +1,5 @@
 {
-    "format_version": 1,
+    "format_version": 2,
     "services": [
         {
             "name": "Twitch",
@@ -285,87 +285,93 @@
             "common": true,
             "servers": [
                 {
+                    "name": "Auto (Recommended)",
+                    "url": "auto"
+                },
+                {
                     "name": "US: Dallas, TX",
-                    "url": "rtmp://ingest-dal.mixer.com:1935/beam"
+                    "url": "ingest-dal.mixer.com"
                 },
                 {
                     "name": "US: San Jose, CA",
-                    "url": "rtmp://ingest-sjc.mixer.com:1935/beam"
+                    "url": "ingest-sjc.mixer.com"
                 },
                 {
                     "name": "US: Seattle, WA",
-                    "url": "rtmp://ingest-sea.mixer.com:1935/beam"
+                    "url": "ingest-sea.mixer.com"
                 },
                 {
                     "name": "US: Washington DC",
-                    "url": "rtmp://ingest-wdc.mixer.com:1935/beam"
+                    "url": "ingest-wdc.mixer.com"
                 },
                 {
                     "name": "Canada: Toronto",
-                    "url": "rtmp://ingest-tor.mixer.com:1935/beam"
+                    "url": "ingest-tor.mixer.com"
                 },
                 {
                     "name": "EU: London",
-                    "url": "rtmp://ingest-lon.mixer.com:1935/beam"
+                    "url": "ingest-lon.mixer.com"
                 },
                 {
                     "name": "EU: Amsterdam",
-                    "url": "rtmp://ingest-ams.mixer.com:1935/beam"
+                    "url": "ingest-ams.mixer.com"
                 },
                 {
                     "name": "EU: Milan",
-                    "url": "rtmp://ingest-mil.mixer.com:1935/beam"
+                    "url": "ingest-mil.mixer.com"
                 },
                 {
                     "name": "EU: Paris",
-                    "url": "rtmp://ingest-par.mixer.com:1935/beam"
+                    "url": "ingest-par.mixer.com"
                 },
                 {
                     "name": "EU: Frankfurt",
-                    "url": "rtmp://ingest-fra.mixer.com:1935/beam"
+                    "url": "ingest-fra.mixer.com"
                 },
                 {
                     "name": "EU: Oslo",
-                    "url": "rtmp://ingest-osl.mixer.com:1935/beam"
+                    "url": "ingest-osl.mixer.com"
                 },
                 {
                     "name": "Brazil: Sao Paulo",
-                    "url": "rtmp://ingest-sao.mixer.com:1935/beam"
+                    "url": "ingest-sao.mixer.com"
                 },
                 {
                     "name": "Australia: Melbourne",
-                    "url": "rtmp://ingest-mel.mixer.com:1935/beam"
+                    "url": "ingest-mel.mixer.com"
                 },
                 {
                     "name": "Australia: Sydney",
-                    "url": "rtmp://ingest-syd.mixer.com:1935/beam"
+                    "url": "ingest-syd.mixer.com"
                 },
                 {
                     "name": "Mexico: Mexico City",
-                    "url": "rtmp://ingest-mex.mixer.com:1935/beam"
+                    "url": "ingest-mex.mixer.com"
                 },
                 {
                     "name": "Asia: Hong Kong",
-                    "url": "rtmp://ingest-hkg.mixer.com:1935/beam"
+                    "url": "ingest-hkg.mixer.com"
                 },
                 {
                     "name": "Asia: Tokyo",
-                    "url": "rtmp://ingest-tok.mixer.com:1935/beam"
+                    "url": "ingest-tok.mixer.com"
                 },
                 {
                     "name": "South Korea: Seoul",
-                    "url": "rtmp://ingest-seo.mixer.com:1935/beam"
+                    "url": "ingest-seo.mixer.com"
                 },
                 {
                     "name": "India: Chennai",
-                    "url": "rtmp://ingest-che.mixer.com:1935/beam"
+                    "url": "ingest-che.mixer.com"
                 }
             ],
             "recommended": {
-                "keyint": 1,
+                "keyint": 3,
+                "output": "ftl_output",
                 "max audio bitrate": 160,
                 "max video bitrate": 10000,
-                "profile": "main"
+                "profile": "main",
+                "bframes": 0
             }
         },
         {
