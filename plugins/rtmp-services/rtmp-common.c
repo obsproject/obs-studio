@@ -52,7 +52,7 @@ static void rtmp_common_update(void *data, obs_data_t *settings)
 	json_decref(root);
 
 	if (!service->output)
-		service->output = bstrdup("rtmp_stream");
+		service->output = bstrdup("rtmp_output");
 }
 
 static void rtmp_common_destroy(void *data)
