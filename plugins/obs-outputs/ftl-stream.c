@@ -1,4 +1,4 @@
-/******************************************************************************
+﻿/******************************************************************************
     Copyright (C) 2014 by Quinn Damerell <qdamere@microsoft.com>
 
     This program is free software: you can redistribute it and/or modify
@@ -107,7 +107,7 @@ struct ftl_stream {
 
 static void log_libftl_messages(ftl_log_severity_t log_level,
 		const char *message);
-static bool init_connect(struct ftl_stream *stream);
+static int init_connect(struct ftl_stream *stream);
 static void *connect_thread(void *data);
 static void *status_thread(void *data);
 static int _ftl_error_to_obs_error(int status);
@@ -415,7 +415,7 @@ static int send_packet(struct ftl_stream *stream,
 static void set_peak_bitrate(struct ftl_stream *stream)
 {
 	int speedtest_kbps = 15000;
-	int speedtest_duration = 2000;
+	int speedtest_duration = 1000;
 	speed_test_t results;
 	ftl_status_t status_code;
 
@@ -425,31 +425,39 @@ static void set_peak_bitrate(struct ftl_stream *stream)
 			speedtest_duration,
 			&results);
 
+    float percent_lost = 0;
+
 	if (status_code == FTL_SUCCESS) {
-		float percent_lost = (float)results.lost_pkts * 100.f /
+		percent_lost = (float)results.lost_pkts * 100.f /
 			(float)results.pkts_sent;
-
-        obs_encoder_t *video_encoder = obs_output_get_video_encoder(stream->output);
-        obs_data_t *video_settings = obs_encoder_get_settings(video_encoder);
-        int user_desired_bitrate = (int)obs_data_get_int(video_settings, "bitrate");
-
-		info("Speed test completed: User desired bitrate %d, Peak kbps %d, "
-				"initial rtt %d, "
-				"final rtt %d, %3.2f lost packets",
-                user_desired_bitrate,
-				results.peak_kbps,
-				results.starting_rtt,
-				results.ending_rtt,
-				percent_lost);
-
-		stream->peak_kbps = stream->params.peak_kbps =
-			results.peak_kbps;
-
-		ftl_ingest_update_params(&stream->ftl_handle, &stream->params);
 	} else {
 		warn("Speed test failed with: %s",
 				ftl_status_code_to_string(status_code));
 	}
+
+    // Get what the user set the encoding bitrate to.
+    obs_encoder_t *video_encoder = obs_output_get_video_encoder(stream->output);
+    obs_data_t *video_settings = obs_encoder_get_settings(video_encoder);
+    int user_desired_bitrate = (int)obs_data_get_int(video_settings, "bitrate");
+    obs_data_release(video_settings);
+
+    // Report the results.
+    info("Speed test completed: User desired bitrate %d, Peak kbps %d, "
+        "initial rtt %d, "
+        "final rtt %d, %3.2f lost packets",
+        user_desired_bitrate,
+        results.peak_kbps,
+        results.starting_rtt,
+        results.ending_rtt,
+        percent_lost);
+
+    // We still want to set the peak to about 1.2x what the target bitrate is,
+    // even if the speed test reported it should be lower. If we don't, FTL
+    // will queue data on the client and start adding latency. If the internet
+    // connection really can't handle the bitrate the user will see either lost frame
+    // and recovered frame counts go up, which is reflect in the dropped_frames count.
+    stream->peak_kbps = stream->params.peak_kbps = user_desired_bitrate * 1.2;
+    ftl_ingest_update_params(&stream->ftl_handle, &stream->params);
 }
 
 static inline bool send_headers(struct ftl_stream *stream, int64_t dts_usec);
@@ -644,7 +652,7 @@ static int try_connect(struct ftl_stream *stream)
 	info("Connection to %s successful", stream->path.array);
 
 	// Always get the peak bitrate when we are starting.
-	set_peak_bitrate(stream);	
+    set_peak_bitrate(stream);
 
 	pthread_create(&stream->status_thread, NULL, status_thread, stream);
 
@@ -657,10 +665,18 @@ static bool ftl_stream_start(void *data)
 
 	info("ftl_stream_start");
 
-	if (!obs_output_can_begin_data_capture(stream->output, 0))
-		return false;
-	if (!obs_output_initialize_encoders(stream->output, 0))
-		return false;
+    // Mixer doesn't support bframes. So force them off.
+    obs_encoder_t *video_encoder = obs_output_get_video_encoder(stream->output);
+    obs_data_t *video_settings = obs_encoder_get_settings(video_encoder);
+    obs_data_set_int(video_settings, "bf", 0);
+    obs_data_release(video_settings);
+
+    if (!obs_output_can_begin_data_capture(stream->output, 0)) {
+        return false;
+    }
+    if (!obs_output_initialize_encoders(stream->output, 0)) {
+        return false;
+    }
 
 	stream->frames_sent = 0;
 	os_atomic_set_bool(&stream->connecting, true);
@@ -845,28 +861,10 @@ static obs_properties_t *ftl_stream_properties(void *unused)
 	UNUSED_PARAMETER(unused);
 
 	obs_properties_t *props = obs_properties_create();
-/*
-	struct netif_saddr_data addrs = {0};
-	obs_property_t *p;
-*/
 	obs_properties_add_int(props, "peak_bitrate_kbps",
 			obs_module_text("FTLStream.PeakBitrate"),
 			1000, 10000, 500);
 
-/*
-	p = obs_properties_add_list(props, OPT_BIND_IP,
-			obs_module_text("RTMPStream.BindIP"),
-			OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
-
-	obs_property_list_add_string(p, obs_module_text("Default"), "default");
-
-	netif_get_addrs(&addrs);
-	for (size_t i = 0; i < addrs.addrs.num; i++) {
-		struct netif_saddr_item item = addrs.addrs.array[i];
-		obs_property_list_add_string(p, item.name, item.addr);
-	}
-	netif_saddr_data_free(&addrs);
-*/
 	return props;
 }
 
@@ -950,6 +948,9 @@ static void *status_thread(void *data)
 		} else if (status.type == FTL_STATUS_VIDEO_PACKETS) {
 			ftl_packet_stats_msg_t *p = &status.msg.pkt_stats;
 
+            // Report lost frames as dropped frames
+            stream->dropped_frames += p->recovered + p->lost;
+
 			blog(LOG_INFO, "Avg packet send per second %3.1f, "
 					"total nack requests %d",
 					(float)p->sent * 1000.f / p->period,
@@ -1001,13 +1002,13 @@ static void *connect_thread(void *data)
 
 	blog(LOG_WARNING, "ftl-stream: connect thread");
 
-	if (!init_connect(stream)) {
-		obs_output_signal_stop(stream->output, OBS_OUTPUT_BAD_PATH);
+    ret = init_connect(stream);
+	if (ret != OBS_OUTPUT_SUCCESS) {
+		obs_output_signal_stop(stream->output, ret);
 		return NULL;
 	}
 
 	ret = try_connect(stream);
-
 	if (ret != OBS_OUTPUT_SUCCESS) {
 		obs_output_signal_stop(stream->output, ret);
 		info("Connection to %s failed: %d", stream->path.array, ret);
@@ -1027,7 +1028,7 @@ static void log_libftl_messages(ftl_log_severity_t log_level,
 	blog(LOG_WARNING, "[libftl] %s", message);
 }
 
-static bool init_connect(struct ftl_stream *stream)
+static int init_connect(struct ftl_stream *stream)
 {
 	obs_service_t *service;
 	obs_data_t *settings;
@@ -1042,8 +1043,10 @@ static bool init_connect(struct ftl_stream *stream)
 	free_packets(stream);
 
 	service = obs_output_get_service(stream->output);
-	if (!service)
-		return false;
+    if (!service)
+    {
+        return OBS_OUTPUT_ERROR;
+    }
 
 	os_atomic_set_bool(&stream->disconnected, false);
 	stream->total_bytes_sent  = 0;
@@ -1089,9 +1092,16 @@ static bool init_connect(struct ftl_stream *stream)
 
 	status_code = ftl_ingest_create(&stream->ftl_handle, &stream->params);
 	if (status_code != FTL_SUCCESS) {
-		blog(LOG_ERROR, "Failed to create ingest handle (%s)",
-				ftl_status_code_to_string(status_code));
-		return false;
+        if (status_code == FTL_BAD_OR_INVALID_STREAM_KEY) {
+            blog(LOG_ERROR, "Invalid Key (%s)",
+                ftl_status_code_to_string(status_code));
+            return OBS_OUTPUT_INVALID_STREAM;
+        }
+        else {
+            blog(LOG_ERROR, "Failed to create ingest handle (%s)",
+                ftl_status_code_to_string(status_code));
+            return OBS_OUTPUT_ERROR;
+        }
 	}
 
 	dstr_copy(&stream->username, obs_service_get_username(service));
@@ -1108,7 +1118,7 @@ static bool init_connect(struct ftl_stream *stream)
 
 	obs_data_release(settings);
 	obs_data_release(video_settings);
-	return true;
+	return OBS_OUTPUT_SUCCESS;
 }
 
 // Returns 0 on success
