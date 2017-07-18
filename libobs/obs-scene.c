@@ -1121,6 +1121,14 @@ obs_scene_t *obs_scene_duplicate(obs_scene_t *scene, const char *name,
 
 			obs_sceneitem_set_crop(new_item, &item->crop);
 
+			if (!new_item->item_render &&
+			    item_texture_enabled(new_item)) {
+				obs_enter_graphics();
+				new_item->item_render = gs_texrender_create(
+						GS_RGBA, GS_ZS_NONE);
+				obs_leave_graphics();
+			}
+
 			obs_source_release(source);
 		}
 	}
