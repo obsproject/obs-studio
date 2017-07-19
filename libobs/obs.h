@@ -1170,6 +1170,11 @@ EXPORT float obs_transition_get_time(obs_source_t *transition);
 EXPORT void obs_transition_video_render(obs_source_t *transition,
 		obs_transition_video_render_callback_t callback);
 
+/** Directly renders its sub-source instead of to texture.  Returns false if no
+ * longer transitioning */
+EXPORT bool obs_transition_video_render_direct(obs_source_t *transition,
+		enum obs_transition_target target);
+
 EXPORT bool obs_transition_audio_render(obs_source_t *transition,
 		uint64_t *ts_out, struct obs_source_audio_mix *audio,
 		uint32_t mixers, size_t channels, size_t sample_rate,

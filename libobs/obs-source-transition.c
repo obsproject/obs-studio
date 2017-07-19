@@ -747,6 +747,60 @@ void obs_transition_video_render(obs_source_t *transition,
 		handle_stop(transition);
 }
 
+bool obs_transition_video_render_direct(obs_source_t *transition,
+		enum obs_transition_target target)
+{
+	struct transition_state state;
+	struct matrix4 matrices[2];
+	bool stopped = false;
+	bool video_stopped = false;
+	bool render_b = target == OBS_TRANSITION_SOURCE_B;
+	bool transitioning;
+	float t;
+
+	if (!transition_valid(transition, "obs_transition_video_render"))
+		return false;
+
+	t = get_video_time(transition);
+
+	lock_transition(transition);
+
+	if (t >= 1.0f && transition->transitioning_video) {
+		transition->transitioning_video = false;
+		video_stopped = true;
+
+		if (!transition->transitioning_audio) {
+			obs_transition_stop(transition);
+			stopped = true;
+		}
+	}
+	copy_transition_state(transition, &state);
+	transitioning = state.transitioning_audio || state.transitioning_video;
+	matrices[0] = transition->transition_matrices[0];
+	matrices[1] = transition->transition_matrices[1];
+
+	unlock_transition(transition);
+
+	int idx = (transitioning && render_b) ? 1 : 0;
+	if (state.s[idx]) {
+		gs_matrix_push();
+		gs_matrix_mul(&matrices[idx]);
+		obs_source_video_render(state.s[idx]);
+		gs_matrix_pop();
+	}
+
+	obs_source_release(state.s[0]);
+	obs_source_release(state.s[1]);
+
+	if (video_stopped)
+		obs_source_dosignal(transition, "source_transition_video_stop",
+				"transition_video_stop");
+	if (stopped)
+		handle_stop(transition);
+
+	return transitioning;
+}
+
 static inline float get_sample_time(obs_source_t *transition,
 		size_t sample_rate, size_t sample, uint64_t ts)
 {
