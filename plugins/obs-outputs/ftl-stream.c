@@ -96,7 +96,8 @@ struct ftl_stream {
 	int64_t          last_dts_usec;
 
 	uint64_t         total_bytes_sent;
-	int              dropped_frames;
+    uint64_t         dropped_frames;
+    uint64_t         last_nack_count;
 
 	ftl_handle_t	    ftl_handle;
 	ftl_ingest_params_t params;
@@ -948,13 +949,13 @@ static void *status_thread(void *data)
 		} else if (status.type == FTL_STATUS_VIDEO_PACKETS) {
 			ftl_packet_stats_msg_t *p = &status.msg.pkt_stats;
 
-            // Report lost frames as dropped frames
-            stream->dropped_frames += p->recovered + p->lost;
+            // Report nack requests as dropped frames
+            stream->dropped_frames += p->nack_reqs - stream->last_nack_count;
+            stream->last_nack_count = p->nack_reqs;
 
 			blog(LOG_INFO, "Avg packet send per second %3.1f, "
 					"total nack requests %d",
-					(float)p->sent * 1000.f / p->period,
-					p->nack_reqs);
+					(float)p->sent * 1000.f / p->period);
 
 		} else if (status.type == FTL_STATUS_VIDEO_PACKETS_INSTANT) {
 			ftl_packet_stats_instant_msg_t *p =
