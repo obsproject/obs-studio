@@ -365,6 +365,9 @@ bool obs_transition_start(obs_source_t *transition,
 	if (same_as_source && !active)
 		return false;
 
+	if (transition->info.transition_start)
+		transition->info.transition_start(transition->context.data);
+
 	if (transition->transition_use_fixed_duration)
 		duration_ms = transition->transition_fixed_duration;
 
@@ -645,6 +648,14 @@ static void obs_transition_stop(obs_source_t *transition)
 	transition->transition_sources[1] = NULL;
 }
 
+static inline void handle_stop(obs_source_t *transition)
+{
+	if (transition->info.transition_stop)
+		transition->info.transition_stop(transition->context.data);
+	obs_source_dosignal(transition, "source_transition_stop",
+			"transition_stop");
+}
+
 void obs_transition_video_render(obs_source_t *transition,
 		obs_transition_video_render_callback_t callback)
 {
@@ -728,8 +739,7 @@ void obs_transition_video_render(obs_source_t *transition,
 		obs_source_dosignal(transition, "source_transition_video_stop",
 				"transition_video_stop");
 	if (stopped)
-		obs_source_dosignal(transition, "source_transition_stop",
-				"transition_stop");
+		handle_stop(transition);
 }
 
 static inline float get_sample_time(obs_source_t *transition,
@@ -882,8 +892,7 @@ bool obs_transition_audio_render(obs_source_t *transition,
 	}
 
 	if (stopped)
-		obs_source_dosignal(transition, "source_transition_stop",
-				"transition_stop");
+		handle_stop(transition);
 
 	*ts_out = min_ts;
 	return !!min_ts;

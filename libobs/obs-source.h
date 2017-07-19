@@ -425,6 +425,9 @@ struct obs_source_info {
 	void (*enum_all_sources)(void *data,
 			obs_source_enum_proc_t enum_callback,
 			void *param);
+
+	void (*transition_start)(void *data);
+	void (*transition_stop)(void *data);
 };
 
 EXPORT void obs_register_source_s(const struct obs_source_info *info,
