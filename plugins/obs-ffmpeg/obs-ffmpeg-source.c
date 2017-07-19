@@ -355,6 +355,16 @@ static void restart_proc(void *data, calldata_t *cd)
 	UNUSED_PARAMETER(cd);
 }
 
+static void get_duration(void *data, calldata_t *cd)
+{
+	struct ffmpeg_source *s = data;
+	int64_t dur = 0;
+	if (s->media.fmt)
+		dur = s->media.fmt->duration;
+
+	calldata_set_int(cd, "duration", dur * 1000);
+}
+
 static void *ffmpeg_source_create(obs_data_t *settings, obs_source_t *source)
 {
 	UNUSED_PARAMETER(settings);
@@ -369,6 +379,8 @@ static void *ffmpeg_source_create(obs_data_t *settings, obs_source_t *source)
 
 	proc_handler_t *ph = obs_source_get_proc_handler(source);
 	proc_handler_add(ph, "void restart()", restart_proc, s);
+	proc_handler_add(ph, "void get_duration(out int duration)",
+			get_duration, s);
 
 	ffmpeg_source_update(s, settings);
 	return s;
