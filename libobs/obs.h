@@ -1165,6 +1165,8 @@ typedef void (*obs_transition_video_render_callback_t)(void *data,
 		uint32_t cx, uint32_t cy);
 typedef float (*obs_transition_audio_mix_callback_t)(void *data, float t);
 
+EXPORT float obs_transition_get_time(obs_source_t *transition);
+
 EXPORT void obs_transition_video_render(obs_source_t *transition,
 		obs_transition_video_render_callback_t callback);
 
