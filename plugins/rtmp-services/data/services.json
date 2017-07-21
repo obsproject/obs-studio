@@ -6,10 +6,6 @@
             "common": true,
             "servers": [
                 {
-                    "name": "US West: San Francisco, CA",
-                    "url": "rtmp://live.twitch.tv/app"
-                },
-                {
                     "name": "Asia: Hong Kong",
                     "url": "rtmp://live-hkg.twitch.tv/app"
                 },
@@ -152,6 +148,14 @@
                 {
                     "name": "US West: Phoenix, AZ",
                     "url": "rtmp://live-phx.twitch.tv/app"
+                },
+                {
+                    "name": "US West: Portland, Oregon",
+                    "url": "rtmp://live-pdx.twitch.tv/app"
+                },
+                {
+                    "name": "US West: San Francisco, CA",
+                    "url": "rtmp://live-sfo.twitch.tv/app"
                 },
                 {
                     "name": "US West: San Jose, CA",
