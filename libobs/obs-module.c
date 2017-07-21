@@ -48,6 +48,7 @@ static int load_module_exports(struct obs_module *mod, const char *path)
 
 	/* optional exports */
 	mod->unload      = os_dlsym(mod->module, "obs_module_unload");
+	mod->post_load   = os_dlsym(mod->module, "obs_module_post_load");
 	mod->set_locale  = os_dlsym(mod->module, "obs_module_set_locale");
 	mod->free_locale = os_dlsym(mod->module, "obs_module_free_locale");
 	mod->name        = os_dlsym(mod->module, "obs_module_name");
@@ -252,6 +253,13 @@ void obs_load_all_modules(void)
 	profile_end(reset_win32_symbol_paths_name);
 #endif
 	profile_end(obs_load_all_modules_name);
+}
+
+void obs_post_load_modules(void)
+{
+	for (obs_module_t *mod = obs->first_module; !!mod; mod = mod->next)
+		if (mod->post_load)
+			mod->post_load();
 }
 
 static inline void make_data_dir(struct dstr *parsed_data_dir,
