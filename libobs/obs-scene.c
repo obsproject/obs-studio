@@ -486,7 +486,10 @@ static inline void render_item(struct obs_scene_item *item)
 					-(float)item->crop.top,
 					0.0f);
 
+			gs_blend_state_push();
+			gs_blend_function(GS_BLEND_ONE, GS_BLEND_ZERO);
 			obs_source_video_render(item->source);
+			gs_blend_state_pop();
 			gs_texrender_end(item->item_render);
 		}
 	}
