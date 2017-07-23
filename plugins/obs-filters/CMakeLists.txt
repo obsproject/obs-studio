@@ -33,7 +33,8 @@ set(obs-filters_SOURCES
 	gain-filter.c
 	noise-gate-filter.c
 	mask-filter.c
-	compressor-filter.c)
+	compressor-filter.c
+	visibility-filter.c)
 
 add_library(obs-filters MODULE
 	${obs-filters_SOURCES}
