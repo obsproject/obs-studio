@@ -15,6 +15,8 @@
 #define S_SLIDE_TIME                   "slide_time"
 #define S_TRANSITION                   "transition"
 #define S_RANDOMIZE                    "randomize"
+#define S_LOOP                         "loop"
+#define S_HIDE                         "hide"
 #define S_FILES                        "files"
 
 #define TR_CUT                         "cut"
@@ -29,6 +31,8 @@
 #define T_SLIDE_TIME                   T_("SlideTime")
 #define T_TRANSITION                   T_("Transition")
 #define T_RANDOMIZE                    T_("Randomize")
+#define T_LOOP                         T_("Loop")
+#define T_HIDE                         T_("HideWhenDone")
 #define T_FILES                        T_("Files")
 
 #define T_TR_(text) obs_module_text("SlideShow.Transition." text)
@@ -48,6 +52,8 @@ struct slideshow {
 	obs_source_t *source;
 
 	bool randomize;
+	bool loop;
+	bool hide;
 	float slide_time;
 	uint32_t tr_speed;
 	const char *tr_name;
@@ -179,6 +185,22 @@ static bool valid_extension(const char *ext)
 	       astrcmpi(ext, ".gif") == 0;
 }
 
+static void do_transition(void *data, bool to_null)
+{
+	struct slideshow *ss = data;
+
+	if (!to_null)
+		obs_transition_start(ss->transition,
+				OBS_TRANSITION_MODE_AUTO,
+				ss->tr_speed,
+				ss->files.array[ss->cur_item].source);
+	else
+		obs_transition_start(ss->transition,
+				OBS_TRANSITION_MODE_AUTO,
+				ss->tr_speed,
+				NULL);
+}
+
 static void ss_update(void *data, obs_data_t *settings)
 {
 	DARRAY(struct image_file_data) new_files;
@@ -210,6 +232,8 @@ static void ss_update(void *data, obs_data_t *settings)
 		tr_name = "fade_transition";
 
 	ss->randomize = obs_data_get_bool(settings, S_RANDOMIZE);
+	ss->loop = obs_data_get_bool(settings, S_LOOP);
+	ss->hide = obs_data_get_bool(settings, S_HIDE);
 
 	if (!ss->tr_name || strcmp(tr_name, ss->tr_name) != 0)
 		new_tr = obs_source_create_private(tr_name, NULL, NULL);
@@ -347,9 +371,7 @@ static void ss_update(void *data, obs_data_t *settings)
 	if (new_tr)
 		obs_source_add_active_child(ss->source, new_tr);
 	if (ss->files.num)
-		obs_transition_start(ss->transition, OBS_TRANSITION_MODE_AUTO,
-				ss->tr_speed,
-				ss->files.array[ss->cur_item].source);
+		do_transition(ss, false);
 
 	obs_data_array_release(array);
 }
@@ -407,6 +429,15 @@ static void ss_video_tick(void *data, float seconds)
 	if (ss->elapsed > ss->slide_time) {
 		ss->elapsed -= ss->slide_time;
 
+		if (!ss->loop && ss->cur_item == ss->files.num - 1) {
+			if (ss->hide)
+				do_transition(ss, true);
+			else
+				do_transition(ss, false);
+
+			return;
+		}
+
 		if (ss->randomize) {
 			size_t next = ss->cur_item;
 			if (ss->files.num > 1) {
@@ -420,9 +451,7 @@ static void ss_video_tick(void *data, float seconds)
 		}
 
 		if (ss->files.num)
-			obs_transition_start(ss->transition,
-					OBS_TRANSITION_MODE_AUTO, ss->tr_speed,
-					ss->files.array[ss->cur_item].source);
+			do_transition(ss, false);
 	}
 }
 
@@ -506,6 +535,7 @@ static void ss_defaults(obs_data_t *settings)
 	obs_data_set_default_int(settings, S_SLIDE_TIME, 8000);
 	obs_data_set_default_int(settings, S_TR_SPEED, 700);
 	obs_data_set_default_string(settings, S_CUSTOM_SIZE, T_CUSTOM_SIZE_AUTO);
+	obs_data_set_default_bool(settings, S_LOOP, true);
 }
 
 static const char *file_filter =
@@ -549,6 +579,8 @@ static obs_properties_t *ss_properties(void *data)
 			50, 3600000, 50);
 	obs_properties_add_int(ppts, S_TR_SPEED, T_TR_SPEED,
 			0, 3600000, 50);
+	obs_properties_add_bool(ppts, S_LOOP, T_LOOP);
+	obs_properties_add_bool(ppts, S_HIDE, T_HIDE);
 	obs_properties_add_bool(ppts, S_RANDOMIZE, T_RANDOMIZE);
 
 	p = obs_properties_add_list(ppts, S_CUSTOM_SIZE, T_CUSTOM_SIZE,
