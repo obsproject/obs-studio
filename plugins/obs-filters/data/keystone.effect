@@ -1,0 +1,205 @@
+/*****************************************************************************
+Copyright (C) 2016 by c3r1c3 <c3r1c3@nevermindonline.com>
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 2 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*****************************************************************************/
+
+uniform float4x4 ViewProj;
+uniform texture2d image;
+
+uniform float3 gamma;
+
+/* Pre-Compute variables. */
+uniform float h_keystone;
+uniform float v_keystone;
+uniform float texture_width;
+uniform float texture_height;
+uniform float vertical_shear;
+uniform float horizontal_shear;
+uniform float h_scale;
+uniform float v_scale;
+uniform float v_offset;
+uniform float h_offset;
+
+
+sampler_state textureSampler {
+	Filter   = Linear;
+	AddressU = Clamp;
+	AddressV = Clamp;
+};
+
+struct VertData {
+	float4 pos : POSITION;
+	float3 uvq : TEXCOORD0;
+};
+
+int imod(int a, int b){
+    return int(mod(a,b));
+}
+
+float getLimDir(float keyStone){
+    return keyStone > 0.0 ? 1.0 : -1.0;
+}
+
+float2 toNormalSpace(float2 pos, float2 texture_size){
+    pos /= texture_size/2.0;
+    pos -= 1;
+    return pos;
+}
+
+float2 fromNormalSpace(float2 pos, float2 texture_size){
+    pos.xy += 1;
+    pos.xy *= texture_size/2.0;
+    return pos;
+}
+
+float2 getKeystonedPosInNormalSpace(float2 pos){
+    float2 outPos = pos.xy;
+    
+    float Vlim = getLimDir(v_keystone)*pos.y;
+    if(Vlim > 0){
+        outPos.x = pos.x * (1-abs(v_keystone));
+    }
+    
+    float Hlim = getLimDir(h_keystone)*pos.x;
+    if(Hlim > 0){
+        outPos.y = pos.y * (1-abs(h_keystone));
+    }
+    
+    float sx = outPos.x;
+    float sy = outPos.y;
+    
+    outPos.x += sy*horizontal_shear;
+    outPos.y += sx*vertical_shear;
+    
+    outPos.x += h_offset;
+    outPos.y += v_offset;
+    
+    outPos.x *= h_scale;
+    outPos.y *= v_scale;
+    
+    return outPos;
+}
+
+float2 getKeystonedPos(float2 pos, float2 texture_size){
+    pos = toNormalSpace(pos, texture_size);
+    pos = getKeystonedPosInNormalSpace(pos);
+    return fromNormalSpace(pos, texture_size);
+}
+
+float2 getPosByIndex(int index, float2 texture_size){
+    int i = imod(index,4);
+    
+    if(i == 0){
+        return float2(0.0,0.0);
+    }
+    if(i == 1){
+        return float2(0.0,texture_size.y);
+    }
+    if(i == 2){
+        return float2(texture_size.x,texture_size.y);
+    }
+    if(i == 3){
+        return float2(texture_size.x,0.0);
+    }else{
+        return float2(42.0,42.0);
+    }
+}
+
+float2 getKeystonedPosByIndex(int index, float2 texture_size){
+    float2 rawPos = getPosByIndex(index, texture_size);
+    return getKeystonedPos(rawPos,texture_size);
+}
+
+int getIndexFromPos(float2 pos){
+    int2 norm = int2(pos.x == 0.0 ? 0 : 1, pos.y == 0.0 ? 0 : 1);
+    
+    return abs(3*norm.x - norm.y);
+}
+
+float getD(int i, float2 center,float2 texture_size){
+    float2 pos = getKeystonedPosByIndex(i,texture_size);
+    
+    return distance(center, pos);
+}
+
+float2 getCenter(float2 texture_size){
+    float2 p0 = getKeystonedPosByIndex(0, texture_size);
+    float2 p1 = getKeystonedPosByIndex(1, texture_size);
+    float2 p2 = getKeystonedPosByIndex(2, texture_size);
+    float2 p3 = getKeystonedPosByIndex(3, texture_size);
+    
+    
+    float k1 = (p2.y-p0.y)/(p2.x-p0.x);
+    float k2 = (p3.y-p1.y)/(p3.x-p1.x);
+    
+    float d1 = p0.y - p0.x*k1;
+    float d2 = p1.y - p1.x*k2;
+    
+    float x = (d2-d1)/(k1-k2);
+    float y = k2*x + d2;
+    
+    return float2(x,y);
+}
+
+float getQCoeff(int i, float2 center, float2 texture_size){
+    
+    float di = getD(i, center, texture_size);
+    float diz = getD(i+2, center, texture_size);
+    
+    return (di+diz)/diz;
+    
+}
+
+VertData VSDefault(VertData vert_in)
+{
+    float4 pos = vert_in.pos;
+    
+    float2 texture_size = float2(texture_width, texture_height);
+    
+    pos.xy = getKeystonedPos(pos.xy, texture_size);
+    
+
+    int ind = getIndexFromPos(vert_in.pos.xy);
+    
+    float2 center = getCenter(texture_size);
+    
+    float3 uvq = float3(vert_in.uvq.xy,1.0) * getQCoeff(ind, center, texture_size);
+    float4 posClip = mul(float4(pos.xyz, 1.0),ViewProj);
+    
+    VertData vert_out;
+    vert_out.uvq = uvq;
+    vert_out.pos = posClip;
+    return vert_out;
+    
+}
+
+float4 PSColorFilterRGBA(VertData vert_in) : TARGET
+{
+    //float4 currentPixel;
+    //float3 uvq = vert_in.uvq;
+    
+    return image.Sample(textureSampler, vert_in.uvq.xy / vert_in.uvq.z);
+    
+	//return currentPixel;
+}
+
+technique Draw
+{
+	pass
+	{
+		vertex_shader = VSDefault(vert_in);
+		pixel_shader = PSColorFilterRGBA(vert_in);
+	}
+}
