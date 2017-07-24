@@ -13,3 +13,6 @@
 [submodule "plugins/obs-vst"]
 	path = plugins/obs-vst
 	url = https://github.com/DDRBoxman/obs-vst.git
+[submodule "plugins/obs-stream-effects"]
+	path = plugins/obs-stream-effects
+	url = https://github.com/Xaymar/obs-stream-effects.git

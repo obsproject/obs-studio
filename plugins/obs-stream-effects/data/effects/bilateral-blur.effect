@@ -1,0 +1,79 @@
+uniform float4x4 ViewProj;
+uniform texture2d image;
+uniform float2 texel;
+uniform int widthHalf;
+uniform int width;
+uniform float bilateralSmoothing;
+uniform float bilateralSharpness;
+
+sampler_state textureSampler {
+	Filter    = Point;
+	AddressU  = Clamp;
+	AddressV  = Clamp;
+};
+
+struct VertDataIn {
+	float4 pos : POSITION;
+	float2 uv  : TEXCOORD0;
+};
+
+struct VertDataOut {
+	float4 pos : POSITION;
+	float2 uv  : TEXCOORD0;
+};
+
+VertDataOut VSDefault(VertDataIn v_in)
+{
+	VertDataOut vert_out;
+	vert_out.pos = mul(float4(v_in.pos.xyz, 1.0), ViewProj);
+	vert_out.uv  = v_in.uv;
+	return vert_out;
+}
+
+// Bilateral Blur
+float Bilateral(float x, float sigma)
+{
+	return 0.39894 * exp(-0.5 * (x*x) / (sigma*sigma)) / sigma;
+}
+
+float Bilateral3(float3 v, float sigma)
+{
+	return 0.39894 * exp(-0.5 * dot(v,v) / (sigma*sigma)) / sigma;
+}
+
+float4 PSBilateral(VertDataOut v_in) : TARGET
+{
+	float4 source = image.Sample(textureSampler, v_in.uv);	
+	
+	float3 color = float3(0, 0, 0);
+	float2 rootuv = v_in.uv - (texel * widthHalf);
+	float Z = 0.0;
+	float bZ = 1.0 / Bilateral(0.0, bilateralSharpness);
+	for (int k = -widthHalf; k <= widthHalf; k++) {
+		// Sample Color
+		float3 sample = image.Sample(textureSampler, rootuv);
+		
+		// Bilateral Stuff
+		float bKernel = Bilateral(abs(k), bilateralSmoothing);
+		bKernel *= bKernel;		
+		float factor = Bilateral3(sample - source.rgb, bilateralSharpness) * bZ * bKernel;
+		Z += factor;
+		
+		// Store Color
+		color += factor * sample;
+		
+		// Advance UV
+		rootuv += texel;
+	}
+	
+	return float4(color.rgb / Z, source.a);
+}
+
+technique Draw
+{
+	pass
+	{
+		vertex_shader = VSDefault(v_in);
+		pixel_shader  = PSBilateral(v_in);
+	}
+}
