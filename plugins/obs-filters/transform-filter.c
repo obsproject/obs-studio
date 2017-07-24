@@ -143,12 +143,13 @@ static void *transform_filter_create(
 			filter->effect, "v_scale");
 		filter->scale_H_param = gs_effect_get_param_by_name(
 			filter->effect, "h_scale");
-	}else{
+	}
+	/*else{
 		if(errorString)
 			fprintf(stderr,errorString);
 		else
-			fprintf(stderr,"Unknown Error Occured in Keystone");
-	}
+			fprintf(stderr,"Unknown Error Occured in Transform");
+	}*/
 
 	obs_leave_graphics();
 
