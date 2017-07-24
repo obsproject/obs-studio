@@ -9,14 +9,14 @@
 #include <graphics/vec2.h>
 #include <graphics/math-defs.h>
 
-#define T_HORIZONTALKS          obs_module_text("KeystoneFiltering.Keystone.Horizontal")
-#define T_VERTICALKS            obs_module_text("KeystoneFiltering.Keystone.Vertical")
-#define T_HORIZONTALSHEAR       obs_module_text("KeystoneFiltering.Shear.Horizontal")
-#define T_VERTICALSHEAR         obs_module_text("KeystoneFiltering.Shear.Vertical")
-#define T_HORIZONTALOFFSET      obs_module_text("KeystoneFiltering.Offset.Horizontal")
-#define T_VERTICALOFFSET        obs_module_text("KeystoneFiltering.Offset.Vertical")
-#define T_HORIZONTALSCALE       obs_module_text("KeystoneFiltering.Scale.Horizontal")
-#define T_VERTICALSCALE         obs_module_text("KeystoneFiltering.Scale.Vertical")
+#define T_HORIZONTALKS          obs_module_text("TransformFiltering.Keystone.Horizontal")
+#define T_VERTICALKS            obs_module_text("TransformFiltering.Keystone.Vertical")
+#define T_HORIZONTALSHEAR       obs_module_text("TransformFiltering.Shear.Horizontal")
+#define T_VERTICALSHEAR         obs_module_text("TransformFiltering.Shear.Vertical")
+#define T_HORIZONTALOFFSET      obs_module_text("TransformFiltering.Offset.Horizontal")
+#define T_VERTICALOFFSET        obs_module_text("TransformFiltering.Offset.Vertical")
+#define T_HORIZONTALSCALE       obs_module_text("TransformFiltering.Scale.Horizontal")
+#define T_VERTICALSCALE         obs_module_text("TransformFiltering.Scale.Vertical")
 #define S_HORIZONTALKS          "horizontal_keystone"
 #define S_VERTICALKS            "vertical_keystone"
 #define S_HORIZONTALSHEAR       "horizontal_shear"
@@ -27,7 +27,7 @@
 #define S_VERTICALSCALE         "vertical_scale"
 
 
-struct keystone_filter_data {
+struct transform_filter_data {
 	obs_source_t        *context;
 	gs_effect_t         *effect;
 	gs_eparam_t         *keystone_V_param;
@@ -47,15 +47,15 @@ struct keystone_filter_data {
 	float               texwidth, texheight;
 };
 
-static const char *keystone_filter_name(void *unused)
+static const char *transform_filter_name(void *unused)
 {
 	UNUSED_PARAMETER(unused);
-	return obs_module_text("KeystoneFiltering");
+	return obs_module_text("TransformFiltering");
 }
 
-static void keystone_filter_update(void *data, obs_data_t *settings)
+static void transform_filter_update(void *data, obs_data_t *settings)
 {
-	struct keystone_filter_data *filter = data;
+	struct transform_filter_data *filter = data;
 
 	double vKS = obs_data_get_double(settings, S_VERTICALKS);
 	double hKS = obs_data_get_double(settings, S_HORIZONTALKS);
@@ -79,9 +79,9 @@ static void keystone_filter_update(void *data, obs_data_t *settings)
 	filter->v_scale = v_scale;
 }
 
-static void keystone_filter_destroy(void *data)
+static void transform_filter_destroy(void *data)
 {
-	struct keystone_filter_data *filter = data;
+	struct transform_filter_data *filter = data;
 
 	if(filter->effect){
 		obs_enter_graphics();
@@ -92,12 +92,12 @@ static void keystone_filter_destroy(void *data)
 	bfree(data);
 }
 
-static void *keystone_filter_create(
+static void *transform_filter_create(
 	obs_data_t *settings, obs_source_t *context)
 {
-	struct keystone_filter_data *filter =
-		bzalloc(sizeof(struct keystone_filter_data));
-	char *effect_path = obs_module_file("keystone.effect");
+	struct transform_filter_data *filter =
+		bzalloc(sizeof(struct transform_filter_data));
+	char *effect_path = obs_module_file("transform.effect");
 	filter->context = context;
 
 	obs_enter_graphics();
@@ -137,18 +137,18 @@ static void *keystone_filter_create(
 	bfree(effect_path);
 
 	if(!filter->effect){
-		keystone_filter_destroy(filter);
+		transform_filter_destroy(filter);
 		return NULL;
 	}
 
-	keystone_filter_update(filter,settings);
+	transform_filter_update(filter,settings);
 
 	return filter;
 }
 
-static void keystone_filter_render(void *data, gs_effect_t *effect)
+static void transform_filter_render(void *data, gs_effect_t *effect)
 {
-	struct keystone_filter_data *filter = data;
+	struct transform_filter_data *filter = data;
 
 	if (!obs_source_process_filter_begin(filter->context, GS_RGBA,
 				OBS_NO_DIRECT_RENDERING))
@@ -175,7 +175,7 @@ static void keystone_filter_render(void *data, gs_effect_t *effect)
 	UNUSED_PARAMETER(effect);
 }
 
-static obs_properties_t *keystone_filter_properties(void *data)
+static obs_properties_t *transform_filter_properties(void *data)
 {
 	obs_properties_t *props = obs_properties_create();
 
@@ -204,7 +204,7 @@ static obs_properties_t *keystone_filter_properties(void *data)
 	return props;
 }
 
-static void keystone_filter_defaults(obs_data_t *settings)
+static void transform_filter_defaults(obs_data_t *settings)
 {
 	obs_data_set_default_double(settings, S_HORIZONTALKS, 0.0);
 	obs_data_set_default_double(settings, S_VERTICALKS, 0.0);
@@ -216,15 +216,15 @@ static void keystone_filter_defaults(obs_data_t *settings)
 	obs_data_set_default_double(settings, S_HORIZONTALSCALE, 10.0);
 }
 
-struct obs_source_info keystone_filter = {
-	.id                     = "keystone_filter",
+struct obs_source_info transform_filter = {
+	.id                     = "transform_filter",
 	.type                   = OBS_SOURCE_TYPE_FILTER,
 	.output_flags           = OBS_SOURCE_VIDEO,
-	.get_name               = keystone_filter_name,
-	.create                 = keystone_filter_create,
-	.destroy                = keystone_filter_destroy,
-	.video_render           = keystone_filter_render,
-	.update                 = keystone_filter_update,
-	.get_properties         = keystone_filter_properties,
-	.get_defaults            = keystone_filter_defaults,
+	.get_name               = transform_filter_name,
+	.create                 = transform_filter_create,
+	.destroy                = transform_filter_destroy,
+	.video_render           = transform_filter_render,
+	.update                 = transform_filter_update,
+	.get_properties         = transform_filter_properties,
+	.get_defaults            = transform_filter_defaults,
 };

@@ -34,7 +34,7 @@ set(obs-filters_SOURCES
 	noise-gate-filter.c
 	mask-filter.c
 	compressor-filter.c
-	keystone-filter.c)
+	transform-filter.c)
 
 add_library(obs-filters MODULE
 	${obs-filters_SOURCES}
