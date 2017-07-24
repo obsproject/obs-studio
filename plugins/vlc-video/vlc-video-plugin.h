@@ -111,6 +111,10 @@ typedef libvlc_event_manager_t *(*LIBVLC_MEDIA_LIST_PLAYER_EVENT_MANAGER)(
 typedef void (*LIBVLC_MEDIA_LIST_PLAYER_SET_PLAYBACK_MODE)(
 		libvlc_media_list_player_t *p_mlp,
 		libvlc_playback_mode_t e_mode);
+typedef int (*LIBVLC_MEDIA_LIST_PLAYER_NEXT)(
+		libvlc_media_list_player_t *p_mlp);
+typedef int (*LIBVLC_MEDIA_LIST_PLAYER_PREVIOUS)(
+		libvlc_media_list_player_t *p_mlp);
 
 /* -------------------------------------------------------------------- */
 
@@ -159,6 +163,8 @@ extern LIBVLC_MEDIA_LIST_PLAYER_SET_MEDIA_PLAYER libvlc_media_list_player_set_me
 extern LIBVLC_MEDIA_LIST_PLAYER_SET_MEDIA_LIST libvlc_media_list_player_set_media_list_;
 extern LIBVLC_MEDIA_LIST_PLAYER_EVENT_MANAGER libvlc_media_list_player_event_manager_;
 extern LIBVLC_MEDIA_LIST_PLAYER_SET_PLAYBACK_MODE libvlc_media_list_player_set_playback_mode_;
+extern LIBVLC_MEDIA_LIST_PLAYER_NEXT libvlc_media_list_player_next_;
+extern LIBVLC_MEDIA_LIST_PLAYER_PREVIOUS libvlc_media_list_player_previous_;
 
 #define EXTENSIONS_AUDIO \
 	"*.3ga;" \
