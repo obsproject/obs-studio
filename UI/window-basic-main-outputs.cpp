@@ -662,6 +662,11 @@ bool SimpleOutput::StartStreaming(obs_service_t *service)
 
 	/* XXX: this is messy and disgusting and should be refactored */
 	if (outputType != type) {
+		streamDelayStarting.Disconnect();
+		streamStopping.Disconnect();
+		startStreaming.Disconnect();
+		stopStreaming.Disconnect();
+
 		streamOutput = obs_output_create(type, "simple_stream",
 				nullptr, nullptr);
 		if (!streamOutput)
@@ -1349,6 +1354,11 @@ bool AdvancedOutput::StartStreaming(obs_service_t *service)
 
 	/* XXX: this is messy and disgusting and should be refactored */
 	if (outputType != type) {
+		streamDelayStarting.Disconnect();
+		streamStopping.Disconnect();
+		startStreaming.Disconnect();
+		stopStreaming.Disconnect();
+
 		streamOutput = obs_output_create(type, "adv_stream",
 				nullptr, nullptr);
 		if (!streamOutput)
