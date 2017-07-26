@@ -467,6 +467,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 		PROCESS_PRIORITY("High"),
 		PROCESS_PRIORITY("AboveNormal"),
 		PROCESS_PRIORITY("Normal"),
+		PROCESS_PRIORITY("BelowNormal"),
 		PROCESS_PRIORITY("Idle")
 	};
 #undef PROCESS_PRIORITY
