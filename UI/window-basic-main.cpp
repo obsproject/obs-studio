@@ -145,6 +145,8 @@ OBSBasic::OBSBasic(QWidget *parent)
 	ui->setupUi(this);
 	ui->previewDisabledLabel->setVisible(false);
 
+	startingDockLayout = saveState();
+
 	copyActionsDynamicProperties();
 
 	ui->sources->setItemDelegate(new VisibilityItemDelegate(ui->sources));
@@ -257,6 +259,33 @@ OBSBasic::OBSBasic(QWidget *parent)
 	addNudge(Qt::Key_Down, SLOT(NudgeDown()));
 	addNudge(Qt::Key_Left, SLOT(NudgeLeft()));
 	addNudge(Qt::Key_Right, SLOT(NudgeRight()));
+
+	auto assignDockToggle = [this](QDockWidget *dock, QAction *action)
+	{
+		auto handleWindowToggle = [action] (bool vis)
+		{
+			action->blockSignals(true);
+			action->setChecked(vis);
+			action->blockSignals(false);
+		};
+		auto handleMenuToggle = [dock] (bool check)
+		{
+			dock->blockSignals(true);
+			dock->setVisible(check);
+			dock->blockSignals(false);
+		};
+
+		dock->connect(dock->toggleViewAction(), &QAction::toggled,
+				handleWindowToggle);
+		dock->connect(action, &QAction::toggled,
+				handleMenuToggle);
+	};
+
+	assignDockToggle(ui->scenesDock, ui->toggleScenes);
+	assignDockToggle(ui->sourcesDock, ui->toggleSources);
+	assignDockToggle(ui->mixerDock, ui->toggleMixer);
+	assignDockToggle(ui->transitionsDock, ui->toggleTransitions);
+	assignDockToggle(ui->controlsDock, ui->toggleControls);
 }
 
 static void SaveAudioDevice(const char *name, int channel, obs_data_t *parent,
@@ -1355,7 +1384,6 @@ void OBSBasic::OBSInit()
 		} \
 	} while (false)
 
-	SET_VISIBILITY("ShowTransitions", toggleSceneTransitions);
 	SET_VISIBILITY("ShowListboxToolbars", toggleListboxToolbars);
 	SET_VISIBILITY("ShowStatusBar", toggleStatusBar);
 #undef SET_VISIBILITY
@@ -1419,24 +1447,26 @@ void OBSBasic::OBSInit()
 	show();
 #endif
 
-	QList<int> defSizes;
-
-	int top = config_get_int(App()->GlobalConfig(), "BasicWindow",
-			"splitterTop");
-	int bottom = config_get_int(App()->GlobalConfig(), "BasicWindow",
-			"splitterBottom");
-
-	if (!top || !bottom) {
-		defSizes = ui->mainSplitter->sizes();
-		int total = defSizes[0] + defSizes[1];
-		defSizes[0] = total * 75 / 100;
-		defSizes[1] = total - defSizes[0];
+	const char *dockStateStr = config_get_string(App()->GlobalConfig(),
+			"BasicWindow", "DockState");
+	if (!dockStateStr) {
+		on_resetUI_triggered();
 	} else {
-		defSizes.push_back(top);
-		defSizes.push_back(bottom);
+		QByteArray dockState =
+			QByteArray::fromBase64(QByteArray(dockStateStr));
+		if (!restoreState(dockState))
+			on_resetUI_triggered();
 	}
 
-	ui->mainSplitter->setSizes(defSizes);
+	config_set_default_bool(App()->GlobalConfig(), "BasicWindow",
+			"DocksLocked", true);
+
+	bool docksLocked = config_get_bool(App()->GlobalConfig(),
+			"BasicWindow", "DocksLocked");
+	on_lockUI_toggled(docksLocked);
+	ui->lockUI->blockSignals(true);
+	ui->lockUI->setChecked(docksLocked);
+	ui->lockUI->blockSignals(false);
 
 	SystemTray(true);
 
@@ -1758,13 +1788,8 @@ OBSBasic::~OBSBasic()
 	config_set_int(App()->GlobalConfig(), "General", "LastVersion",
 			LIBOBS_API_VER);
 
-	QList<int> splitterSizes = ui->mainSplitter->sizes();
 	bool alwaysOnTop = IsAlwaysOnTop(this);
 
-	config_set_int(App()->GlobalConfig(), "BasicWindow", "splitterTop",
-			splitterSizes[0]);
-	config_set_int(App()->GlobalConfig(), "BasicWindow", "splitterBottom",
-			splitterSizes[1]);
 	config_set_bool(App()->GlobalConfig(), "BasicWindow", "PreviewEnabled",
 			previewEnabled);
 	config_set_bool(App()->GlobalConfig(), "BasicWindow", "AlwaysOnTop",
@@ -1777,6 +1802,8 @@ OBSBasic::~OBSBasic()
 			"EditPropertiesMode", editPropertiesMode);
 	config_set_bool(App()->GlobalConfig(), "BasicWindow",
 			"PreviewProgramMode", IsPreviewProgramMode());
+	config_set_bool(App()->GlobalConfig(), "BasicWindow",
+			"DocksLocked", ui->lockUI->isChecked());
 	config_save_safe(App()->GlobalConfig(), "tmp", nullptr);
 
 #ifdef _WIN32
@@ -2980,6 +3007,10 @@ void OBSBasic::closeEvent(QCloseEvent *event)
 		config_set_string(App()->GlobalConfig(),
 				"BasicWindow", "geometry",
 				saveGeometry().toBase64().constData());
+
+	config_set_string(App()->GlobalConfig(),
+			"BasicWindow", "DockState",
+			saveState().toBase64().constData());
 
 	if (outputHandler && outputHandler->Active()) {
 		SetShowing(true);
@@ -5253,13 +5284,57 @@ int OBSBasic::GetProfilePath(char *path, size_t size, const char *file) const
 	return snprintf(path, size, "%s/%s/%s", profiles_path, profile, file);
 }
 
-void OBSBasic::on_toggleSceneTransitions_toggled(bool visible)
+void OBSBasic::on_resetUI_triggered()
 {
-	ui->sceneTransitionsLabel->setVisible(visible);
-	ui->transitionsContainer->setVisible(visible);
+	restoreState(startingDockLayout);
 
-	config_set_bool(App()->GlobalConfig(), "BasicWindow",
-			"ShowTransitions", visible);
+	int cx = width();
+	int cy = height();
+
+	int cx22_5 = cx * 225 / 1000;
+	int cx5 = cx * 5 / 100;
+
+	cy = cy * 225 / 1000;
+
+	int mixerSize = cx - (cx22_5 * 2 + cx5 * 2);
+
+	QList<QDockWidget*> docks {
+		ui->scenesDock,
+		ui->sourcesDock,
+		ui->mixerDock,
+		ui->transitionsDock,
+		ui->controlsDock
+	};
+
+	QList<int> sizes {
+		cx22_5,
+		cx22_5,
+		mixerSize,
+		cx5,
+		cx5
+	};
+
+	ui->scenesDock->setVisible(true);
+	ui->sourcesDock->setVisible(true);
+	ui->mixerDock->setVisible(true);
+	ui->transitionsDock->setVisible(true);
+	ui->controlsDock->setVisible(true);
+
+	resizeDocks(docks, {cy, cy, cy, cy, cy}, Qt::Vertical);
+	resizeDocks(docks, sizes, Qt::Horizontal);
+}
+
+void OBSBasic::on_lockUI_toggled(bool lock)
+{
+	QDockWidget::DockWidgetFeatures features = lock
+		? QDockWidget::NoDockWidgetFeatures
+		: QDockWidget::AllDockWidgetFeatures;
+
+	ui->scenesDock->setFeatures(features);
+	ui->sourcesDock->setFeatures(features);
+	ui->mixerDock->setFeatures(features);
+	ui->transitionsDock->setFeatures(features);
+	ui->controlsDock->setFeatures(features);
 }
 
 void OBSBasic::on_toggleListboxToolbars_toggled(bool visible)
