@@ -281,7 +281,7 @@
             }
         },
         {
-            "name": "Mixer.com FTL",
+            "name": "Mixer.com - FTL",
             "common": true,
             "servers": [
                 {
@@ -375,7 +375,7 @@
             }
         },
         {
-            "name": "Mixer.com RTMP",
+            "name": "Mixer.com - RTMP",
             "common": true,
             "servers": [
                 {

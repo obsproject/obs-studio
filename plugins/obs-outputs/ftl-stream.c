@@ -1155,6 +1155,7 @@ static int _ftl_error_to_obs_error(int status)
 	case FTL_BAD_OR_INVALID_STREAM_KEY:
 	case FTL_CHANNEL_IN_USE:
 	case FTL_REGION_UNSUPPORTED:
+    case FTL_GAME_BLOCKED:
 		return OBS_OUTPUT_CONNECT_FAILED;
 	case FTL_NO_MEDIA_TIMEOUT:
 		return OBS_OUTPUT_DISCONNECTED;
