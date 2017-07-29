@@ -411,7 +411,7 @@ void AutoConfigTestPage::TestBandwidthThread()
 			* 1000000000 / total_time / 1000;
 
 		if (obs_output_get_frames_dropped(output) ||
-		    (int)bitrate < (wiz->startingBitrate * 75 / 100)) {
+			(int)bitrate < (wiz->startingBitrate * 75 / 100)) {
 			server.bitrate = (int)bitrate * 70 / 100;
 		} else {
 			server.bitrate = wiz->startingBitrate;
@@ -436,7 +436,7 @@ void AutoConfigTestPage::TestBandwidthThread()
 		bool close = abs(server.bitrate - bestBitrate) < 400;
 
 		if ((!close && server.bitrate > bestBitrate) ||
-		    (close && server.ms < bestMS)) {
+			(close && server.ms < bestMS)) {
 			bestServer = server.address;
 			bestServerName = server.name;
 			bestBitrate = server.bitrate;
@@ -867,7 +867,7 @@ void AutoConfigTestPage::TestRecordingEncoderThread()
 	}
 
 	if (wiz->type == AutoConfig::Type::Recording &&
-	    wiz->hardwareEncodingAvailable)
+		wiz->hardwareEncodingAvailable)
 		FindIdealHardwareResolution();
 
 	wiz->recordingQuality = AutoConfig::Quality::High;
@@ -983,7 +983,7 @@ void AutoConfigTestPage::FinalizeResults()
 			QString::number(wiz->idealResolutionCY));
 
 	if (wiz->recordingEncoder != AutoConfig::Encoder::Stream ||
-	    wiz->recordingQuality != AutoConfig::Quality::Stream)
+		wiz->recordingQuality != AutoConfig::Quality::Stream)
 		form->addRow(newLabel(TEST_RESULT_RE),
 			new QLabel(encName(wiz->recordingEncoder),
 				ui->finishPage));

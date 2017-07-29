@@ -234,7 +234,7 @@ void SimpleOutput::LoadRecordingPreset_Lossless()
 			"simple_ffmpeg_output", nullptr, nullptr);
 	if (!fileOutput)
 		throw "Failed to create recording FFmpeg output "
-		      "(simple output)";
+			  "(simple output)";
 	obs_output_release(fileOutput);
 
 	obs_data_t *settings = obs_data_create();
@@ -307,7 +307,7 @@ void SimpleOutput::LoadRecordingPreset()
 		if (!CreateAACEncoder(aacRecording, aacRecEncID, 192,
 					"simple_aac_recording", 0))
 			throw "Failed to create aac recording encoder "
-			      "(simple output)";
+				  "(simple output)";
 	}
 }
 
@@ -343,7 +343,7 @@ SimpleOutput::SimpleOutput(OBSBasic *main_) : BasicOutputHandler(main_)
 			obs_data_release(hotkey);
 			if (!replayBuffer)
 				throw "Failed to create replay buffer output "
-				      "(simple output)";
+					  "(simple output)";
 			obs_output_release(replayBuffer);
 
 			signal_handler_t *signal =
@@ -361,7 +361,7 @@ SimpleOutput::SimpleOutput(OBSBasic *main_) : BasicOutputHandler(main_)
 				"simple_file_output", nullptr, nullptr);
 		if (!fileOutput)
 			throw "Failed to create recording output "
-			      "(simple output)";
+				  "(simple output)";
 		obs_output_release(fileOutput);
 	}
 
@@ -689,9 +689,9 @@ bool SimpleOutput::StartStreaming(obs_service_t *service)
 
 		const char *codec =
 			obs_output_get_supported_audio_codecs(streamOutput);
-        if (!codec) {
-            return false;
-        }
+		if (!codec) {
+			return false;
+		}
 
 		if (strcmp(codec, "aac") != 0) {
 			const char *id = FindAudioEncoderFromCodec(codec);
@@ -1054,14 +1054,14 @@ AdvancedOutput::AdvancedOutput(OBSBasic *main_) : BasicOutputHandler(main_)
 				"adv_ffmpeg_output", nullptr, nullptr);
 		if (!fileOutput)
 			throw "Failed to create recording FFmpeg output "
-			      "(advanced output)";
+				  "(advanced output)";
 		obs_output_release(fileOutput);
 	} else {
 		fileOutput = obs_output_create("ffmpeg_muxer",
 				"adv_file_output", nullptr, nullptr);
 		if (!fileOutput)
 			throw "Failed to create recording output "
-			      "(advanced output)";
+				  "(advanced output)";
 		obs_output_release(fileOutput);
 
 		if (!useStreamEncoder) {
@@ -1070,7 +1070,7 @@ AdvancedOutput::AdvancedOutput(OBSBasic *main_) : BasicOutputHandler(main_)
 					nullptr);
 			if (!h264Recording)
 				throw "Failed to create recording h264 "
-				      "encoder (advanced output)";
+					  "encoder (advanced output)";
 			obs_encoder_release(h264Recording);
 		}
 	}
@@ -1079,7 +1079,7 @@ AdvancedOutput::AdvancedOutput(OBSBasic *main_) : BasicOutputHandler(main_)
 			"streaming_h264", streamEncSettings, nullptr);
 	if (!h264Streaming)
 		throw "Failed to create streaming h264 encoder "
-		      "(advanced output)";
+			  "(advanced output)";
 	obs_encoder_release(h264Streaming);
 
 	for (int i = 0; i < MAX_AUDIO_MIXES; i++) {
@@ -1089,7 +1089,7 @@ AdvancedOutput::AdvancedOutput(OBSBasic *main_) : BasicOutputHandler(main_)
 		if (!CreateAACEncoder(aacTrack[i], aacEncoderID[i],
 					GetAudioBitrate(i), name, i))
 			throw "Failed to create audio encoder "
-			      "(advanced output)";
+				  "(advanced output)";
 	}
 
 	startRecording.Connect(obs_output_get_signal_handler(fileOutput),
@@ -1337,7 +1337,7 @@ int AdvancedOutput::GetAudioBitrate(size_t i) const
 bool AdvancedOutput::StartStreaming(obs_service_t *service)
 {
 	if (!useStreamEncoder ||
-	    (!ffmpegOutput && !obs_output_active(fileOutput))) {
+		(!ffmpegOutput && !obs_output_active(fileOutput))) {
 		UpdateStreamSettings();
 	}
 
@@ -1384,9 +1384,9 @@ bool AdvancedOutput::StartStreaming(obs_service_t *service)
 
 		const char *codec =
 			obs_output_get_supported_audio_codecs(streamOutput);
-        if (!codec) {
-            return false;
-        }
+		if (!codec) {
+			return false;
+		}
 
 		if (strcmp(codec, "aac") == 0) {
 			streamAudioEnc = aacTrack[trackIndex - 1];

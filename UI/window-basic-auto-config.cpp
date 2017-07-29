@@ -134,8 +134,8 @@ AutoConfigVideoPage::AutoConfigVideoPage(QWidget *parent)
 
 		QString str = QTStr(RES_USE_DISPLAY)
 			.arg(QString::number(i + 1),
-			     QString::number(as.width()),
-			     QString::number(as.height()));
+				 QString::number(as.width()),
+				 QString::number(as.height()));
 
 		ui->canvasRes->addItem(str, encRes);
 	}
@@ -366,7 +366,7 @@ void AutoConfigStreamPage::ServiceChanged()
 
 	std::string service = QT_TO_UTF8(ui->service->currentText());
 	bool regionBased = service == "Twitch" ||
-	                   service == "hitbox.tv";
+					   service == "hitbox.tv";
 	bool testBandwidth = ui->doBandwidthTest->isChecked();
 	bool custom = ui->streamType->currentIndex() == 1;
 
@@ -661,8 +661,8 @@ bool AutoConfig::CanTestServer(const char *server)
 
 	if (service == Service::Twitch) {
 		if (astrcmp_n(server, "US West:", 8) == 0 ||
-		    astrcmp_n(server, "US East:", 8) == 0 ||
-		    astrcmp_n(server, "US Central:", 11) == 0) {
+			astrcmp_n(server, "US East:", 8) == 0 ||
+			astrcmp_n(server, "US Central:", 11) == 0) {
 			return regionUS;
 		} else if (astrcmp_n(server, "EU:", 3) == 0) {
 			return regionEU;
@@ -675,13 +675,13 @@ bool AutoConfig::CanTestServer(const char *server)
 		if (strcmp(server, "Default") == 0) {
 			return true;
 		} else if (astrcmp_n(server, "US-West:", 8) == 0 ||
-		           astrcmp_n(server, "US-East:", 8) == 0) {
+				   astrcmp_n(server, "US-East:", 8) == 0) {
 			return regionUS;
 		} else if (astrcmp_n(server, "EU-", 3) == 0) {
 			return regionEU;
 		} else if (astrcmp_n(server, "South Korea:", 12) == 0 ||
-		           astrcmp_n(server, "Asia:", 5) == 0 ||
-		           astrcmp_n(server, "China:", 6) == 0) {
+				   astrcmp_n(server, "Asia:", 5) == 0 ||
+				   astrcmp_n(server, "China:", 6) == 0) {
 			return regionAsia;
 		} else if (regionOther) {
 			return true;

@@ -1,18 +1,18 @@
 /******************************************************************************
-    Copyright (C) 2014 by Quinn Damerell <qdamere@microsoft.com>
+	Copyright (C) 2017 by Quinn Damerell <qdamere@microsoft.com>
 
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 2 of the License, or
-    (at your option) any later version.
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 2 of the License, or
+	(at your option) any later version.
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
 #include <media-io/audio-resampler.h>
@@ -79,7 +79,7 @@ static bool initialize_codec(struct opus_encoder *enc)
 {
 	int ret;
 
-	enc->aframe  = av_frame_alloc();
+	enc->aframe = av_frame_alloc();
 	if (!enc->aframe) {
 		warn("Failed to allocate audio frame");
 		return false;
@@ -126,8 +126,8 @@ static void init_sizes(struct opus_encoder *enc, audio_t *audio)
 static void *opus_create(obs_data_t *settings, obs_encoder_t *encoder)
 {
 	struct opus_encoder *enc;
-	int                bitrate = (int)obs_data_get_int(settings, "bitrate");
-	audio_t            *audio   = obs_encoder_audio(encoder);
+	int bitrate = (int)obs_data_get_int(settings, "bitrate");
+	audio_t *audio   = obs_encoder_audio(encoder);
 
 	avcodec_register_all();
 
