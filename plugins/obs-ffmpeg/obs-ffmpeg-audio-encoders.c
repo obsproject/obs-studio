@@ -163,6 +163,24 @@ static void *enc_create(obs_data_t *settings, obs_encoder_t *encoder,
 	enc->context->sample_fmt  = enc->codec->sample_fmts ?
 		enc->codec->sample_fmts[0] : AV_SAMPLE_FMT_FLTP;
 
+	/* check to make sure sample rate is supported */
+	if (enc->codec->supported_samplerates) {
+		const int *rate = enc->codec->supported_samplerates;
+		int cur_rate = enc->context->sample_rate;
+		int closest = 0;
+
+		while (rate) {
+			int dist = abs(cur_rate - *rate);
+			int closest_dist = abs(cur_rate - closest);
+
+			if (dist < closest_dist)
+				closest = *rate;
+		}
+
+		if (closest)
+			enc->context->sample_rate = closest;
+	}
+
 	/* if using FFmpeg's AAC encoder, at least set a cutoff value
 	 * (recommended by konverter) */
 	if (strcmp(enc->codec->name, "aac") == 0) {
@@ -287,6 +305,7 @@ static void enc_audio_info(void *data, struct audio_convert_info *info)
 {
 	struct enc_encoder *enc = data;
 	info->format = convert_ffmpeg_sample_format(enc->context->sample_fmt);
+	info->samples_per_sec = (uint32_t)enc->context->sample_rate;
 }
 
 static size_t enc_frame_size(void *data)
