@@ -15,7 +15,7 @@ set(obs-ffmpeg_HEADERS
 	closest-pixel-format.h)
 set(obs-ffmpeg_SOURCES
 	obs-ffmpeg.c
-	obs-ffmpeg-aac.c
+	obs-ffmpeg-audio-encoders.c
 	obs-ffmpeg-nvenc.c
 	obs-ffmpeg-output.c
 	obs-ffmpeg-mux.c
