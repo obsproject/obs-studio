@@ -1,0 +1,11 @@
+# CMAKE
+/build
+/build32
+/build64
+/deps
+/deps32
+/deps64
+
+# Visual Studio
+/.vs
+/#Build

@@ -1,0 +1,49 @@
+uniform float4x4 ViewProj;
+uniform texture2d image;
+uniform float2 texel;
+uniform int widthHalf;
+uniform int width;
+
+sampler_state textureSampler {
+	Filter    = Point;
+	AddressU  = Clamp;
+	AddressV  = Clamp;
+};
+
+struct VertDataIn {
+	float4 pos : POSITION;
+	float2 uv  : TEXCOORD0;
+};
+
+struct VertDataOut {
+	float4 pos : POSITION;
+	float2 uv  : TEXCOORD0;
+};
+
+VertDataOut VSDefault(VertDataIn v_in)
+{
+	VertDataOut vert_out;
+	vert_out.pos = mul(float4(v_in.pos.xyz, 1.0), ViewProj);
+	vert_out.uv  = v_in.uv;
+	return vert_out;
+}
+
+// Box Blur
+float4 PSBox(VertDataOut v_in) : TARGET
+{
+	float4 rgba = float4(0,0,0,0);
+	for (int k = -widthHalf; k <= widthHalf; k++) {
+		rgba += image.Sample(textureSampler, v_in.uv + (texel * k));
+	}
+	rgba = rgba / width;
+	return rgba;
+}
+
+technique Draw
+{
+	pass
+	{
+		vertex_shader = VSDefault(v_in);
+		pixel_shader  = PSBox(v_in);
+	}
+}

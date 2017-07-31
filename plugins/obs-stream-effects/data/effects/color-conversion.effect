@@ -1,0 +1,81 @@
+uniform float4x4 ViewProj;
+uniform texture2d image;
+
+sampler_state primarySampler {
+	Filter = Linear;
+	AddressU = Clamp;
+	AddressV = Clamp;
+};
+
+struct VertDataIn {
+	float4 pos : POSITION;
+	float2 uv  : TEXCOORD0;
+};
+
+struct VertDataOut {
+	float4 pos : POSITION;
+	float2 uv  : TEXCOORD0;
+};
+
+VertDataOut VSDefault(VertDataIn v_in) {
+	VertDataOut vert_out;
+	vert_out.pos = mul(float4(v_in.pos.xyz, 1.0), ViewProj);
+	vert_out.uv = v_in.uv;
+	return vert_out;
+}
+
+// ************************************************************************** //
+// RGB <-> YUV
+// ************************************************************************** //
+float4 RGBtoYUV(float4 rgba, float3x3 yuv) {	
+	return float4(
+		rgba.r * yuv._m00 + rgba.g * yuv._m01 + rgba.b * yuv._m02,
+		rgba.r * yuv._m10 + rgba.g * yuv._m11 + rgba.b * yuv._m12,
+		rgba.r * yuv._m20 + rgba.g * yuv._m21 + rgba.b * yuv._m22,
+		rgba.a
+	) + float4(0,0.5,0.5,0);
+}
+float4 YUVtoRGB(float4 yuva, float3x3 yuvi) {
+	yuva.gb -= 0.5;
+	return float4(
+		yuva.r * yuvi._m00 + yuva.g * yuvi._m01 + yuva.b * yuvi._m02,
+		yuva.r * yuvi._m10 + yuva.g * yuvi._m11 + yuva.b * yuvi._m12,
+		yuva.r * yuvi._m20 + yuva.g * yuvi._m21 + yuva.b * yuvi._m22,
+		yuva.a);
+}
+
+float4 RGBToYUV_Pass(VertDataOut v_in) : TARGET {
+	const float3x3 mYUV709 = {
+		0.2126, 0.7152, 0.0722,
+		-0.2126, -0.7152, 0.9278,
+		0.7874, -0.7152, -0.0722
+	};
+	const float3x3 mYUV709n = { // Normalized
+		0.2126, 0.7152, 0.0722,
+		-0.1145721060573399, -0.3854278939426601, 0.5,
+		0.5, -0.4541529083058166, -0.0458470916941834
+	};
+	return RGBtoYUV(image.Sample(primarySampler, v_in.uv), mYUV709n);
+}
+
+float4 YUVToRGB_Pass(VertDataOut v_in) : TARGET {
+	const float3x3 mYUV709i = { // Inverse Normalized
+		1, 0, 1.5748,
+		1, -0.187324, -0.468124,
+		1, 1.8556, 0
+	};
+	return YUVtoRGB(image.Sample(primarySampler, v_in.uv), mYUV709i);
+}
+
+technique RGBToYUV {
+	pass {
+		vertex_shader = VSDefault(v_in);
+		pixel_shader = RGBToYUV_Pass(v_in);
+	}
+}
+technique YUVToRGB {
+	pass {
+		vertex_shader = VSDefault(v_in);
+		pixel_shader = YUVToRGB_Pass(v_in);
+	}
+}

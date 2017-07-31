@@ -1,0 +1,58 @@
+uniform float4x4 ViewProj;
+uniform texture2d image;
+uniform texture2d displacementMap;
+uniform float2 texelScale;
+uniform float2 displacementScale;
+
+sampler_state textureSampler {
+	Filter    = Trilinear;
+	AddressU  = Wrap;
+	AddressV  = Wrap;
+};
+sampler_state dispTextureSampler {
+	Filter    = Trilinear;
+	AddressU  = Clamp;
+	AddressV  = Clamp;
+};
+
+struct VertDataIn {
+	float4 pos : POSITION;
+	float2 uv  : TEXCOORD0;
+};
+
+struct VertDataOut {
+	float4 pos : POSITION;
+	float2 uv  : TEXCOORD0;
+};
+
+VertDataOut VSDefault(VertDataIn v_in)
+{
+	VertDataOut vert_out;
+	vert_out.pos = mul(float4(v_in.pos.xyz, 1.0), ViewProj);
+	vert_out.uv  = v_in.uv;
+	return vert_out;
+}
+
+float4 PSDisplace(VertDataOut v_in) : TARGET
+{
+	float2 disp = displacementMap.Sample(dispTextureSampler, v_in.uv).rg - float2(0.5, 0.5);
+
+	// Handle 0..255 correctly (127, 128 are center)
+	float2 signdisp = disp * float2(281474976710656.0, 281474976710656.0);
+	float2 signs = float2(clamp(disp.r, -1.0, 1.0), clamp(disp.g, -1.0, 1.0));
+	disp = (floor(abs(disp * 127.0)) / 127.0) * signs;
+	
+	float2 uv = v_in.uv + (disp * texelScale * displacementScale);
+	float4 rgba = image.Sample(textureSampler, uv);
+	
+	return rgba;
+}
+
+technique Draw
+{
+	pass
+	{
+		vertex_shader = VSDefault(v_in);
+		pixel_shader  = PSDisplace(v_in);
+	}
+}
