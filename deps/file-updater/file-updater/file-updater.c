@@ -523,3 +523,53 @@ update_info_t *update_info_create(
 
 	return info;
 }
+
+static void *single_file_thread(void *data)
+{
+	struct update_info *info = data;
+	struct file_download_data download_data;
+	long response_code;
+
+	info->curl = curl_easy_init();
+	if (!info->curl) {
+		warn("Could not initialize Curl");
+		return NULL;
+	}
+
+	if (!do_http_request(info, info->url, &response_code))
+		return NULL;
+	if (!info->file_data.array || !info->file_data.array[0])
+		return NULL;
+
+	download_data.name = info->url;
+	download_data.version = 0;
+	download_data.buffer.da = info->file_data.da;
+	info->callback(info->param, &download_data);
+	info->file_data.da = download_data.buffer.da;
+	return NULL;
+}
+
+update_info_t *update_info_create_single(
+		const char *log_prefix,
+		const char *user_agent,
+		const char *file_url,
+		confirm_file_callback_t confirm_callback,
+		void *param)
+{
+	struct update_info *info;
+
+	if (!log_prefix)
+		log_prefix = "";
+
+	info = bzalloc(sizeof(*info));
+	info->log_prefix = bstrdup(log_prefix);
+	info->user_agent = bstrdup(user_agent);
+	info->url = bstrdup(file_url);
+	info->callback = confirm_callback;
+	info->param = param;
+
+	if (pthread_create(&info->thread, NULL, single_file_thread, info) == 0)
+		info->thread_created = true;
+
+	return info;
+}
