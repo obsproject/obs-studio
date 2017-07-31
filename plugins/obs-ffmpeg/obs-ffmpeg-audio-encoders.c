@@ -62,6 +62,12 @@ static const char *aac_getname(void *unused)
 	return obs_module_text("FFmpegAAC");
 }
 
+static const char *opus_getname(void *unused)
+{
+	UNUSED_PARAMETER(unused);
+	return obs_module_text("FFmpegOpus");
+}
+
 static void enc_destroy(void *data)
 {
 	struct enc_encoder *enc = data;
@@ -126,7 +132,7 @@ static void init_sizes(struct enc_encoder *enc, audio_t *audio)
 #endif
 
 static void *enc_create(obs_data_t *settings, obs_encoder_t *encoder,
-		const char *type)
+		const char *type, const char *alt)
 {
 	struct enc_encoder *enc;
 	int                bitrate = (int)obs_data_get_int(settings, "bitrate");
@@ -138,6 +144,11 @@ static void *enc_create(obs_data_t *settings, obs_encoder_t *encoder,
 	enc->encoder = encoder;
 	enc->codec   = avcodec_find_encoder_by_name(type);
 	enc->type    = type;
+
+	if (!enc->codec && alt) {
+		enc->codec = avcodec_find_encoder_by_name(alt);
+		enc->type  = alt;
+	}
 
 	blog(LOG_INFO, "---------------------------------");
 
@@ -169,12 +180,13 @@ static void *enc_create(obs_data_t *settings, obs_encoder_t *encoder,
 		int cur_rate = enc->context->sample_rate;
 		int closest = 0;
 
-		while (rate) {
+		while (*rate) {
 			int dist = abs(cur_rate - *rate);
 			int closest_dist = abs(cur_rate - closest);
 
 			if (dist < closest_dist)
 				closest = *rate;
+			rate++;
 		}
 
 		if (closest)
@@ -214,7 +226,12 @@ fail:
 
 static void *aac_create(obs_data_t *settings, obs_encoder_t *encoder)
 {
-	return enc_create(settings, encoder, "aac");
+	return enc_create(settings, encoder, "aac", NULL);
+}
+
+static void *opus_create(obs_data_t *settings, obs_encoder_t *encoder)
+{
+	return enc_create(settings, encoder, "libopus", "opus");
 }
 
 static bool do_encode(struct enc_encoder *enc,
@@ -320,6 +337,21 @@ struct obs_encoder_info aac_encoder_info = {
 	.codec          = "AAC",
 	.get_name       = aac_getname,
 	.create         = aac_create,
+	.destroy        = enc_destroy,
+	.encode         = enc_encode,
+	.get_frame_size = enc_frame_size,
+	.get_defaults   = enc_defaults,
+	.get_properties = enc_properties,
+	.get_extra_data = enc_extra_data,
+	.get_audio_info = enc_audio_info
+};
+
+struct obs_encoder_info opus_encoder_info = {
+	.id             = "ffmpeg_opus",
+	.type           = OBS_ENCODER_AUDIO,
+	.codec          = "opus",
+	.get_name       = opus_getname,
+	.create         = opus_create,
 	.destroy        = enc_destroy,
 	.encode         = enc_encode,
 	.get_frame_size = enc_frame_size,
