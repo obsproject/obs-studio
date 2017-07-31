@@ -281,7 +281,97 @@
             }
         },
         {
-            "name": "Mixer.com",
+            "name": "Mixer.com - FTL",
+            "common": true,
+            "servers": [
+                {
+                    "name": "US: Dallas, TX",
+                    "url": "ingest-dal.mixer.com"
+                },
+                {
+                    "name": "US: San Jose, CA",
+                    "url": "ingest-sjc.mixer.com"
+                },
+                {
+                    "name": "US: Seattle, WA",
+                    "url": "ingest-sea.mixer.com"
+                },
+                {
+                    "name": "US: Washington DC",
+                    "url": "ingest-wdc.mixer.com"
+                },
+                {
+                    "name": "Canada: Toronto",
+                    "url": "ingest-tor.mixer.com"
+                },
+                {
+                    "name": "EU: London",
+                    "url": "ingest-lon.mixer.com"
+                },
+                {
+                    "name": "EU: Amsterdam",
+                    "url": "ingest-ams.mixer.com"
+                },
+                {
+                    "name": "EU: Milan",
+                    "url": "ingest-mil.mixer.com"
+                },
+                {
+                    "name": "EU: Paris",
+                    "url": "ingest-par.mixer.com"
+                },
+                {
+                    "name": "EU: Frankfurt",
+                    "url": "ingest-fra.mixer.com"
+                },
+                {
+                    "name": "EU: Oslo",
+                    "url": "ingest-osl.mixer.com"
+                },
+                {
+                    "name": "Brazil: Sao Paulo",
+                    "url": "ingest-sao.mixer.com"
+                },
+                {
+                    "name": "Australia: Melbourne",
+                    "url": "ingest-mel.mixer.com"
+                },
+                {
+                    "name": "Australia: Sydney",
+                    "url": "ingest-syd.mixer.com"
+                },
+                {
+                    "name": "Mexico: Mexico City",
+                    "url": "ingest-mex.mixer.com"
+                },
+                {
+                    "name": "Asia: Hong Kong",
+                    "url": "ingest-hkg.mixer.com"
+                },
+                {
+                    "name": "Asia: Tokyo",
+                    "url": "ingest-tok.mixer.com"
+                },
+                {
+                    "name": "South Korea: Seoul",
+                    "url": "ingest-seo.mixer.com"
+                },
+                {
+                    "name": "India: Chennai",
+                    "url": "ingest-che.mixer.com"
+                }
+            ],
+            "recommended": {
+                "keyint": 3,
+                "output": "ftl_output",
+                "max audio bitrate": 160,
+                "max video bitrate": 10000,
+                "profile": "main",
+                "bframes": 0
+            }
+        },
+        {
+            "name": "Mixer.com - RTMP",
             "common": true,
             "servers": [
                 {
@@ -362,7 +452,7 @@
                 }
             ],
             "recommended": {
-                "keyint": 1,
+                "keyint": 3,
                 "max audio bitrate": 160,
                 "max video bitrate": 10000,
                 "profile": "main"

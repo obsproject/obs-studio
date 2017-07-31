@@ -259,6 +259,11 @@ static void fill_servers(obs_property_t *servers_prop, json_t *service,
 		return;
 	}
 
+	if (strcmp(name, "Mixer.com - FTL") == 0) {
+		obs_property_list_add_string(servers_prop,
+				obs_module_text("Server.Auto"), "auto");
+	}
+
 	json_array_foreach (servers, index, server) {
 		const char *server_name = get_string_val(server, "name");
 		const char *url         = get_string_val(server, "url");
