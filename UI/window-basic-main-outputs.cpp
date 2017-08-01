@@ -556,7 +556,7 @@ void SimpleOutput::UpdateStreamingSettings_amd(obs_data_t *settings,
 	obs_data_set_int(settings, "Usage", 0);
 	obs_data_set_int(settings, "Profile", 100); // High
 	obs_data_set_string(settings, "profile", "high"); // High
-	
+
 	// Rate Control Properties
 	obs_data_set_int(settings, "RateControlMethod", 1);
 	obs_data_set_string(settings, "rate_control", "CBR");
@@ -565,7 +565,7 @@ void SimpleOutput::UpdateStreamingSettings_amd(obs_data_t *settings,
 	obs_data_set_int(settings, "FillerData", 1);
 	obs_data_set_int(settings, "VBVBuffer", 1);
 	obs_data_set_int(settings, "VBVBuffer.Size", bitrate);
-	
+
 	// Picture Control Properties
 	obs_data_set_double(settings, "KeyframeInterval", 2.0);
 	obs_data_set_int(settings, "keyint_sec", 2);
