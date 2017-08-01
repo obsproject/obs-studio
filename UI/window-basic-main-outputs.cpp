@@ -689,6 +689,9 @@ bool SimpleOutput::StartStreaming(obs_service_t *service)
 
 		const char *codec =
 			obs_output_get_supported_audio_codecs(streamOutput);
+		if (!codec) {
+			return false;
+		}
 
 		if (strcmp(codec, "aac") != 0) {
 			const char *id = FindAudioEncoderFromCodec(codec);
@@ -1381,6 +1384,9 @@ bool AdvancedOutput::StartStreaming(obs_service_t *service)
 
 		const char *codec =
 			obs_output_get_supported_audio_codecs(streamOutput);
+		if (!codec) {
+			return false;
+		}
 
 		if (strcmp(codec, "aac") == 0) {
 			streamAudioEnc = aacTrack[trackIndex - 1];
