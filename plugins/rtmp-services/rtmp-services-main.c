@@ -40,6 +40,9 @@ static bool confirm_service_file(void *param, struct file_download_data *file)
 	return true;
 }
 
+extern void load_twitch_data(const char *module_str);
+extern void unload_twitch_data(void);
+
 bool obs_module_load(void)
 {
 	char *local_dir = obs_module_file("");
@@ -60,6 +63,8 @@ bool obs_module_load(void)
 				confirm_service_file, NULL);
 	}
 
+	load_twitch_data(module_name.array);
+
 	bfree(local_dir);
 	bfree(cache_dir);
 	dstr_free(&module_name);
@@ -72,4 +77,5 @@ bool obs_module_load(void)
 void obs_module_unload(void)
 {
 	update_info_destroy(update_info);
+	unload_twitch_data();
 }

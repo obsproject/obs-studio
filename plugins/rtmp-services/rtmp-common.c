@@ -4,6 +4,7 @@
 #include <jansson.h>
 
 #include "rtmp-format-ver.h"
+#include "twitch.h"
 
 struct rtmp_common {
 	char *service;
@@ -242,6 +243,32 @@ static void properties_data_destroy(void *data)
 		json_decref(root);
 }
 
+static bool fill_twitch_servers_locked(obs_property_t *servers_prop)
+{
+	size_t count = twitch_ingest_count();
+
+	if (count <= 1)
+		return false;
+
+	for (size_t i = 0; i < count; i++) {
+		struct twitch_ingest ing = twitch_ingest(i);
+		obs_property_list_add_string(servers_prop, ing.name, ing.url);
+	}
+
+	return true;
+}
+
+static inline bool fill_twitch_servers(obs_property_t *servers_prop)
+{
+	bool success;
+
+	twitch_ingests_lock();
+	success = fill_twitch_servers_locked(servers_prop);
+	twitch_ingests_unlock();
+
+	return success;
+}
+
 static void fill_servers(obs_property_t *servers_prop, json_t *service,
 		const char *name)
 {
@@ -262,6 +289,10 @@ static void fill_servers(obs_property_t *servers_prop, json_t *service,
 	if (strcmp(name, "Mixer.com - FTL") == 0) {
 		obs_property_list_add_string(servers_prop,
 				obs_module_text("Server.Auto"), "auto");
+	}
+	if (name && strcmp(name, "Twitch") == 0) {
+		if (fill_twitch_servers(servers_prop))
+			return;
 	}
 
 	json_array_foreach (servers, index, server) {
