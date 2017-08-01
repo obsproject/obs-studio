@@ -44,11 +44,16 @@ bool obs_module_load(void)
 {
 	char *local_dir = obs_module_file("");
 	char *cache_dir = obs_module_config_path("");
+	struct dstr module_name = {0};
+
+	dstr_copy(&module_name, "rtmp-services plugin (libobs ");
+	dstr_cat(&module_name, obs_get_version_string());
+	dstr_cat(&module_name, ")");
 
 	if (cache_dir) {
 		update_info = update_info_create(
 				RTMP_SERVICES_LOG_STR,
-				RTMP_SERVICES_VER_STR,
+				module_name.array,
 				RTMP_SERVICES_URL,
 				local_dir,
 				cache_dir,
@@ -57,6 +62,7 @@ bool obs_module_load(void)
 
 	bfree(local_dir);
 	bfree(cache_dir);
+	dstr_free(&module_name);
 
 	obs_register_service(&rtmp_common_service);
 	obs_register_service(&rtmp_custom_service);
