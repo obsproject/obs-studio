@@ -247,6 +247,9 @@ static bool fill_twitch_servers_locked(obs_property_t *servers_prop)
 {
 	size_t count = twitch_ingest_count();
 
+	obs_property_list_add_string(servers_prop,
+			obs_module_text("Server.Auto"), "auto");
+
 	if (count <= 1)
 		return false;
 
@@ -500,6 +503,19 @@ static const char *rtmp_common_get_output_type(void *data)
 static const char *rtmp_common_url(void *data)
 {
 	struct rtmp_common *service = data;
+
+	if (service->service && strcmp(service->service, "Twitch") == 0) {
+		if (service->server && strcmp(service->server, "auto") == 0) {
+			struct twitch_ingest ing;
+
+			twitch_ingests_lock();
+			ing = twitch_ingest(0);
+			twitch_ingests_unlock();
+
+			return ing.url;
+		}
+	}
+
 	return service->server;
 }
 
