@@ -245,8 +245,9 @@ void AutoConfigTestPage::TestBandwidthThread()
 	else
 		GetServers(servers);
 
-	/* just use the first server if it only has one alternate server */
-	if (servers.size() < 3)
+	/* just use the first server if it only has one alternate server,
+	 * or if using Mixer due to its "auto" server */
+	if (servers.size() < 3 || wiz->serviceName == "Mixer.com - FTL")
 		servers.resize(1);
 
 	/* -----------------------------------*/

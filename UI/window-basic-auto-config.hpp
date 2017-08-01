@@ -34,7 +34,6 @@ class AutoConfig : public QWizard {
 	enum class Service {
 		Twitch,
 		Hitbox,
-		Beam,
 		Other
 	};
 
