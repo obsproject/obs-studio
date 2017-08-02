@@ -2943,7 +2943,7 @@ void OBSBasic::CloseDialogs()
 		projector.clear();
 	}
 
-	delete stats;
+	if (!stats.isNull()) stats->close(); //call close to save Stats geometry
 }
 
 void OBSBasic::EnumDialogs()
