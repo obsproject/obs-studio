@@ -246,10 +246,8 @@ void AutoConfigTestPage::TestBandwidthThread()
 		GetServers(servers);
 
 	/* just use the first server if it only has one alternate server,
-	 * or if using Twitch/Mixer due to the "auto" option */
-	if (servers.size() < 3 ||
-	    wiz->service == AutoConfig::Service::Twitch ||
-	    wiz->serviceName == "Mixer.com - FTL")
+	 * or if using Mixer due to its "auto" server */
+	if (servers.size() < 3 || wiz->serviceName == "Mixer.com - FTL")
 		servers.resize(1);
 
 	/* -----------------------------------*/

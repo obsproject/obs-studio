@@ -365,7 +365,8 @@ void AutoConfigStreamPage::ServiceChanged()
 		return;
 
 	std::string service = QT_TO_UTF8(ui->service->currentText());
-	bool regionBased = service == "hitbox.tv";
+	bool regionBased = service == "Twitch" ||
+	                   service == "hitbox.tv";
 	bool testBandwidth = ui->doBandwidthTest->isChecked();
 	bool custom = ui->streamType->currentIndex() == 1;
 
@@ -658,7 +659,19 @@ bool AutoConfig::CanTestServer(const char *server)
 	if (!testRegions || (regionUS && regionEU && regionAsia && regionOther))
 		return true;
 
-	if (service == Service::Hitbox) {
+	if (service == Service::Twitch) {
+		if (astrcmp_n(server, "US West:", 8) == 0 ||
+		    astrcmp_n(server, "US East:", 8) == 0 ||
+		    astrcmp_n(server, "US Central:", 11) == 0) {
+			return regionUS;
+		} else if (astrcmp_n(server, "EU:", 3) == 0) {
+			return regionEU;
+		} else if (astrcmp_n(server, "Asia:", 5) == 0) {
+			return regionAsia;
+		} else if (regionOther) {
+			return true;
+		}
+	} else if (service == Service::Hitbox) {
 		if (strcmp(server, "Default") == 0) {
 			return true;
 		} else if (astrcmp_n(server, "US-West:", 8) == 0 ||
