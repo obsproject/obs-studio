@@ -370,6 +370,10 @@ void AutoConfigStreamPage::ServiceChanged()
 	bool testBandwidth = ui->doBandwidthTest->isChecked();
 	bool custom = ui->streamType->currentIndex() == 1;
 
+	/* Test three closest servers if "Auto" is available for Twitch */
+	if (service == "Twitch" && wiz->twitchAuto)
+		regionBased = false;
+
 	ui->service->setVisible(!custom);
 	ui->serviceLabel->setVisible(!custom);
 
@@ -564,6 +568,23 @@ AutoConfig::AutoConfig(QWidget *parent)
 
 	baseResolutionCX = ovi.base_width;
 	baseResolutionCY = ovi.base_height;
+
+	/* ----------------------------------------- */
+	/* check to see if Twitch's "auto" available */
+
+	OBSData twitchSettings = obs_data_create();
+	obs_data_release(twitchSettings);
+
+	obs_data_set_string(twitchSettings, "service", "Twitch");
+
+	obs_properties_t *props = obs_get_service_properties("rtmp_common");
+	obs_properties_apply_settings(props, twitchSettings);
+
+	obs_property_t *p = obs_properties_get(props, "server");
+	const char *first = obs_property_list_item_string(p, 0);
+	twitchAuto = strcmp(first, "auto") == 0;
+
+	obs_properties_destroy(props);
 
 	/* ----------------------------------------- */
 	/* load service/servers                      */
