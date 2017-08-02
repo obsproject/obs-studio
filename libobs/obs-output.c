@@ -283,28 +283,36 @@ static void log_frame_info(struct obs_output *output)
 {
 	struct obs_core_video *video = &obs->video;
 
-	uint32_t video_frames  = video_output_get_total_frames(output->video);
-
-	uint32_t total   = video_frames  - output->starting_frame_count;
-
 	uint32_t drawn  = video->total_frames - output->starting_drawn_count;
 	uint32_t lagged = video->lagged_frames - output->starting_lagged_count;
 
 	int dropped = obs_output_get_frames_dropped(output);
+	int total = output->total_frames;
 
 	double percentage_lagged = 0.0f;
 	double percentage_dropped = 0.0f;
 
-	if (total)
-		percentage_dropped = (double)dropped / (double)total * 100.0;
 	if (drawn)
 		percentage_lagged = (double)lagged  / (double)drawn * 100.0;
+	if (dropped)
+		percentage_dropped = (double)dropped / (double)total * 100.0;
 
 	blog(LOG_INFO, "Output '%s': stopping", output->context.name);
-	blog(LOG_INFO, "Output '%s': Total encoded frames: %"PRIu32,
-			output->context.name, total);
-	blog(LOG_INFO, "Output '%s': Total drawn frames: %"PRIu32,
-			output->context.name, drawn);
+	if (!dropped || !total)
+		blog(LOG_INFO, "Output '%s': Total frames output: %d",
+				output->context.name, total);
+	else
+		blog(LOG_INFO, "Output '%s': Total frames output: %d"
+				" (%d attempted)",
+				output->context.name, total - dropped, total);
+
+	if (!lagged || !drawn)
+		blog(LOG_INFO, "Output '%s': Total drawn frames: %"PRIu32,
+				output->context.name, drawn);
+	else
+		blog(LOG_INFO, "Output '%s': Total drawn frames: %"PRIu32
+				" (%"PRIu32" attempted)",
+				output->context.name, drawn - lagged, drawn);
 
 	if (drawn && lagged)
 		blog(LOG_INFO, "Output '%s': Number of lagged frames due "
