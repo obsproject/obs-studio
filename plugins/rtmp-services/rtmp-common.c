@@ -247,11 +247,11 @@ static bool fill_twitch_servers_locked(obs_property_t *servers_prop)
 {
 	size_t count = twitch_ingest_count();
 
-	obs_property_list_add_string(servers_prop,
-			obs_module_text("Server.Auto"), "auto");
-
 	if (count <= 1)
 		return false;
+
+	obs_property_list_add_string(servers_prop,
+			obs_module_text("Server.Auto"), "auto");
 
 	for (size_t i = 0; i < count; i++) {
 		struct twitch_ingest ing = twitch_ingest(i);

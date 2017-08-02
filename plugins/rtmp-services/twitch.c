@@ -28,14 +28,6 @@ static void free_ingests(void)
 	da_free(cur_ingests);
 }
 
-static inline void init_defaults(void)
-{
-	struct ingest ingest = {0};
-	ingest.name = bstrdup("Default");
-	ingest.url = bstrdup("rtmp://live.twitch.tv/app");
-	da_push_back(cur_ingests, &ingest);
-}
-
 static void load_ingests(const char *json, bool write_file)
 {
 	json_t *root;
@@ -100,8 +92,6 @@ static void load_ingests(const char *json, bool write_file)
 	bfree(cache_new);
 
 finish:
-	if (!cur_ingests.num)
-		init_defaults();
 	if (root)
 		json_decref(root);
 }
@@ -157,8 +147,6 @@ void load_twitch_data(const char *module_str)
 		pthread_mutex_unlock(&mutex);
 
 		bfree(data);
-	} else {
-		init_defaults();
 	}
 
 	twitch_update_info = update_info_create_single(
