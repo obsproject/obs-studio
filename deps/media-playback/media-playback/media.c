@@ -407,7 +407,7 @@ static bool mp_media_reset(mp_media_t *m)
 		? av_rescale_q(seek_pos, AV_TIME_BASE_Q, stream->time_base)
 		: seek_pos;
 
-	if (!m->is_network) {
+	if (!m->is_network && !m->is_concat) {
 		int ret = av_seek_frame(m->fmt, 0, seek_target, seek_flags);
 		if (ret < 0) {
 			blog(LOG_WARNING, "MP: Failed to seek: %s",
@@ -688,6 +688,9 @@ bool mp_media_init(mp_media_t *media,
 
 	if (path && *path)
 		media->is_network = !!strstr(path, "://");
+
+	if (format && *format)
+		media->is_concat = strcmp(format, "concat") == 0;
 
 	static bool initialized = false;
 	if (!initialized) {
