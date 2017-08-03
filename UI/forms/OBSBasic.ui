@@ -86,6 +86,7 @@
             <property name="contextMenuPolicy">
              <enum>Qt::CustomContextMenu</enum>
             </property>
+            <addaction name="actionRemoveSource"/>
            </widget>
           </item>
          </layout>
@@ -400,6 +401,7 @@
           <property name="defaultDropAction">
            <enum>Qt::TargetMoveAction</enum>
           </property>
+          <addaction name="actionRemoveScene"/>
          </widget>
         </item>
         <item>
@@ -531,6 +533,7 @@
           <property name="selectionMode">
            <enum>QAbstractItemView::ExtendedSelection</enum>
           </property>
+          <addaction name="actionRemoveSource"/>
          </widget>
         </item>
         <item>
