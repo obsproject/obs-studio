@@ -201,7 +201,7 @@ struct VBDataPtr {
 	gs_vb_data *data;
 
 	inline VBDataPtr(gs_vb_data *data) : data(data) {}
-	inline ~VBDataPtr() {gs_vbdata_destroy(data);}
+	inline ~VBDataPtr() {}
 };
 
 enum class gs_type {
@@ -278,7 +278,7 @@ struct DataPtr {
 	void *data;
 
 	inline DataPtr(void *data) : data(data) {}
-	inline ~DataPtr() {bfree(data);}
+	inline ~DataPtr() {}
 };
 
 struct gs_index_buffer : gs_obj {

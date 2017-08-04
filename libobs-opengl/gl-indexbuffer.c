@@ -26,7 +26,6 @@ static inline bool init_ib(struct gs_index_buffer *ib)
 			ib->size, ib->data, usage);
 
 	if (!ib->dynamic) {
-		bfree(ib->data);
 		ib->data = NULL;
 	}
 
@@ -65,7 +64,6 @@ void gs_indexbuffer_destroy(gs_indexbuffer_t *ib)
 		if (ib->buffer)
 			gl_delete_buffers(1, &ib->buffer);
 
-		bfree(ib->data);
 		bfree(ib);
 	}
 }
