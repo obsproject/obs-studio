@@ -834,7 +834,7 @@ bool SimpleOutput::ConfigureRecording(bool updateReplayBuffer)
 	int rbSize = config_get_int(main->Config(), "SimpleOutput",
 			"RecRBSize");
 
-	os_dir_t *dir = path ? os_opendir(path) : nullptr;
+	os_dir_t *dir = path && path[0] ? os_opendir(path) : nullptr;
 
 	if (!dir) {
 		if (main->isVisible())
