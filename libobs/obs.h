@@ -1537,6 +1537,7 @@ EXPORT bool obs_output_reconnecting(const obs_output_t *output);
 /** Pass a string of the last output error, for UI use */
 EXPORT void obs_output_set_last_error(obs_output_t *output,
 		const char *message);
+EXPORT const char *obs_output_get_last_error(obs_output_t *output);
 
 EXPORT const char *obs_output_get_supported_video_codecs(
 		const obs_output_t *output);
