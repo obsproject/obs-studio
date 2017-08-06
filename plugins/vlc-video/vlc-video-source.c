@@ -767,7 +767,9 @@ static obs_properties_t *vlcs_properties(void *data)
 struct obs_source_info vlc_source_info = {
 	.id = "vlc_source",
 	.type = OBS_SOURCE_TYPE_INPUT,
-	.output_flags = OBS_SOURCE_ASYNC_VIDEO | OBS_SOURCE_AUDIO,
+	.output_flags = OBS_SOURCE_ASYNC_VIDEO |
+	                OBS_SOURCE_AUDIO |
+	                OBS_SOURCE_DO_NOT_DUPLICATE,
 	.get_name = vlcs_get_name,
 	.create = vlcs_create,
 	.destroy = vlcs_destroy,
