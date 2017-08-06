@@ -282,10 +282,31 @@ static bool ffmpeg_mux_start(void *data)
 
 	settings = obs_output_get_settings(stream->output);
 	path = obs_data_get_string(settings, "path");
+
+	/* ensure output path is writable to avoid generic error message */
+	/* TODO: remove once ffmpeg-mux is refactored to pass errors back */
+	FILE *test_file = os_fopen(path, "wb");
+	if (!test_file) {
+		struct dstr error_message;
+		dstr_init_copy(&error_message,
+			obs_module_text("UnableToWritePath"));
+		dstr_replace(&error_message, "%1", path);
+		obs_output_set_last_error(stream->output,
+			error_message.array);
+		dstr_free(&error_message);
+		obs_data_release(settings);
+		return false;
+	}
+
+	fclose(test_file);
+	os_unlink(path);
+
 	start_pipe(stream, path);
 	obs_data_release(settings);
 
 	if (!stream->pipe) {
+		obs_output_set_last_error(stream->output,
+			obs_module_text("HelperProcessFailed"));
 		warn("Failed to create process pipe");
 		return false;
 	}
