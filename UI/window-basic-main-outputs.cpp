@@ -1495,7 +1495,7 @@ bool AdvancedOutput::StartRecording()
 				"FFFileNameWithoutSpace" :
 				"RecFileNameWithoutSpace");
 
-		os_dir_t *dir = path ? os_opendir(path) : nullptr;
+		os_dir_t *dir = path && path[0] ? os_opendir(path) : nullptr;
 
 		if (!dir) {
 			if (main->isVisible())
