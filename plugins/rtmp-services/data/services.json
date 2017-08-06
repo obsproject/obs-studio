@@ -493,51 +493,6 @@
             }
         },
         {
-            "name": "Switchboard Live (Joicaster)",
-            "servers": [
-                {
-                    "name": "Default - Performance Global",
-                    "url": "rtmp://ingest-global-a.switchboard.zone/live"
-                },
-                {
-                    "name": "U.S. - Dallas, TX",
-                    "url": "rtmp://ingest-us-dal.switchboard.zone/live"
-                },
-                {
-                    "name": "U.S. - Seattle, WA",
-                    "url": "rtmp://ingest-us-sea.switchboard.zone/live"
-                },
-                {
-                    "name": "U.S. - Washington, DC",
-                    "url": "rtmp://ingest-us-wdc.switchboard.zone/live"
-                },
-                {
-                    "name": "C.A. - Toronto, Canada",
-                    "url": "rtmp://ingest-cn-tor.switchboard.zone/live"
-                },
-                {
-                    "name": "E.U. - London, England",
-                    "url": "rtmp://ingest-eu-lon.switchboard.zone/live"
-                },
-                {
-                    "name": "E.U. - Amsterdam, Netherlands",
-                    "url": "rtmp://ingest-as-tok.switchboard.zone/live"
-                },
-                {
-                    "name": "A.S. - Tokyo, Japan",
-                    "url": "rtmp://ingest-as-tok.switchboard.zone/live"
-                },
-                {
-                    "name": "A.U. - Melbourne, Australia",
-                    "url": "rtmp://ingest-au-mel.switchboard.zone/live"
-                },
-                {
-                    "name": "S.A - São Paulo, Brazil",
-                    "url": "rtmp://ingest-sa-sao.switchboard.zone/live"
-                }
-            ]
-        },
-        {
             "name": "GoodGame.ru",
             "servers": [
                 {
@@ -1044,6 +999,39 @@
                 "max video bitrate": 800,
                 "max audio bitrate": 96
             }
+        },
+        {
+            "name": "Switchboard Live (Joicaster)",
+            "servers": [
+                {
+                    "name": "Default - Performance Global",
+                    "url": "rtmp://ingest-global-a.switchboard.zone/live"
+                },
+                {
+                    "name": "US West",
+                    "url": "rtmp://ingest-us-west.a.switchboard.zone/live"
+                },
+                {
+                    "name": "US East",
+                    "url": "rtmp://ingest-us-east.a.switchboard.zone/live"
+                },
+                {
+                    "name": "Europe West",
+                    "url": "rtmp://ingest-eu-west.a.switchboard.zone/live"
+                },
+                {
+                    "name": "Europe Central",
+                    "url": "rtmp://ingest-us-east.a.switchboard.zone/live"
+                },
+                {
+                    "name": "Australia East",
+                    "url": "rtmp://ingest-au-east.a.switchboard.zone/live"
+                },
+                {
+                    "name": "Asia Central",
+                    "url": "rtmp://ingest-as-central.a.switchboard.zone/live"
+                }
+            ]
         }
     ]
 }
