@@ -659,58 +659,6 @@
        </widget>
       </widget>
      </item>
-     <item>
-      <layout class="QHBoxLayout" name="mixadvHLayout">
-       <property name="spacing">
-        <number>2</number>
-       </property>
-       <item>
-        <spacer name="mixadvHSpacer">
-         <property name="orientation">
-          <enum>Qt::Horizontal</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>0</width>
-           <height>0</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
-       <item>
-        <widget class="QPushButton" name="advAudioProps">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Maximum" vsizetype="Maximum">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="maximumSize">
-          <size>
-           <width>22</width>
-           <height>22</height>
-          </size>
-         </property>
-         <property name="accessibleName">
-          <string>Basic.AdvAudio</string>
-         </property>
-         <property name="text">
-          <string notr="true"/>
-         </property>
-         <property name="icon">
-          <iconset resource="obs.qrc">
-           <normaloff>:/res/images/configuration21_16.png</normaloff>:/res/images/configuration21_16.png</iconset>
-         </property>
-         <property name="flat">
-          <bool>true</bool>
-         </property>
-         <property name="themeID" stdset="0">
-          <string notr="true">configIconSmall</string>
-         </property>
-        </widget>
-       </item>
-      </layout>
-     </item>
     </layout>
    </widget>
   </widget>
