@@ -594,7 +594,7 @@ static inline bool fill_keycodes(struct obs_core_hotkeys *hotkeys)
 	context->min_keycode = setup->min_keycode;
 
 	cookie = xcb_get_keyboard_mapping(connection,
-			mincode, maxcode - mincode - 1);
+			mincode, maxcode - mincode + 1);
 
 	reply = xcb_get_keyboard_mapping_reply(connection, cookie, &error);
 
@@ -606,7 +606,7 @@ static inline bool fill_keycodes(struct obs_core_hotkeys *hotkeys)
 	const xcb_keysym_t *keysyms = xcb_get_keyboard_mapping_keysyms(reply);
 	int syms_per_code = (int)reply->keysyms_per_keycode;
 
-	context->num_keysyms = (maxcode - mincode) * syms_per_code;
+	context->num_keysyms = (maxcode - mincode + 1) * syms_per_code;
 	context->syms_per_code = syms_per_code;
 	context->keysyms = bmemdup(keysyms,
 			sizeof(xcb_keysym_t) * context->num_keysyms);
