@@ -365,6 +365,43 @@ static void get_duration(void *data, calldata_t *cd)
 	calldata_set_int(cd, "duration", dur * 1000);
 }
 
+static void get_nb_frames(void *data, calldata_t *cd)
+{
+	struct ffmpeg_source *s = data;
+	int64_t frames = 0;
+
+	if (!s->media.fmt) {
+		calldata_set_int(cd, "num_frames", frames);
+		return;
+	}
+
+	int video_stream_index = av_find_best_stream(s->media.fmt,
+			AVMEDIA_TYPE_VIDEO, -1, -1, NULL, 0);
+
+	if (video_stream_index < 0) {
+		FF_BLOG(LOG_WARNING, "Getting number of frames failed: No "
+				"video stream in media file!");
+		calldata_set_int(cd, "num_frames", frames);
+		return;
+	}
+
+	AVStream *stream = s->media.fmt->streams[video_stream_index];
+
+	if (stream->nb_frames > 0) {
+		frames = stream->nb_frames;
+	} else {
+		FF_BLOG(LOG_DEBUG, "nb_frames not set, estimating using frame "
+				"rate and duration");
+		AVRational avg_frame_rate = stream->avg_frame_rate;
+		frames = (int64_t)ceil((double)s->media.fmt->duration /
+				(double)AV_TIME_BASE *
+				(double)avg_frame_rate.num /
+				(double)avg_frame_rate.den);
+	}
+
+	calldata_set_int(cd, "num_frames", frames);
+}
+
 static void *ffmpeg_source_create(obs_data_t *settings, obs_source_t *source)
 {
 	UNUSED_PARAMETER(settings);
@@ -381,6 +418,8 @@ static void *ffmpeg_source_create(obs_data_t *settings, obs_source_t *source)
 	proc_handler_add(ph, "void restart()", restart_proc, s);
 	proc_handler_add(ph, "void get_duration(out int duration)",
 			get_duration, s);
+	proc_handler_add(ph, "void get_nb_frames(out int num_frames)",
+			get_nb_frames, s);
 
 	ffmpeg_source_update(s, settings);
 	return s;
