@@ -94,6 +94,20 @@ void pulse_accept();
 int_fast32_t pulse_get_source_info_list(pa_source_info_cb_t cb, void *userdata);
 
 /**
+ * Request sink information
+ *
+ * The function will block until the operation was executed and the mainloop
+ * called the provided callback function.
+ *
+ * @return negative on error
+ *
+ * @note The function will block until the server context is ready.
+ *
+ * @warning call without active locks
+ */
+int_fast32_t pulse_get_sink_info_list(pa_sink_info_cb_t cb, void *userdata);
+
+/**
  * Request source information from a specific source
  *
  * The function will block until the operation was executed and the mainloop
