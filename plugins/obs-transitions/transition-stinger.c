@@ -1,16 +1,22 @@
 #include <obs-module.h>
 
+#define TIMING_TIME  0
+#define TIMING_FRAME 1
+
 struct stinger_info {
 	obs_source_t *source;
 
 	obs_source_t *media_source;
 
 	uint64_t duration_ns;
+	uint64_t duration_frames;
 	uint64_t transition_point_ns;
+	uint64_t transition_point_frame;
 	float transition_point;
 	float transition_a_mul;
 	float transition_b_mul;
 	bool transitioning;
+	bool transition_point_is_frame;
 };
 
 static const char *stinger_get_name(void *type_data)
@@ -32,9 +38,15 @@ static void stinger_update(void *data, obs_data_t *settings)
 			media_settings);
 	obs_data_release(media_settings);
 
-	int64_t point_ms = obs_data_get_int(settings, "transition_point");
+	int64_t point = obs_data_get_int(settings, "transition_point");
 
-	s->transition_point_ns = (uint64_t)(point_ms * 1000000LL);
+	s->transition_point_is_frame =
+			obs_data_get_int(settings, "tp_type") == TIMING_FRAME;
+
+	if (s->transition_point_is_frame)
+		s->transition_point_frame = (uint64_t)point;
+	else
+		s->transition_point_ns = (uint64_t)(point * 1000000LL);
 }
 
 static void *stinger_create(obs_data_t *settings, obs_source_t *source)
@@ -165,12 +177,19 @@ static void stinger_transition_start(void *data)
 		}
 
 		proc_handler_call(ph, "get_duration", &cd);
-
+		proc_handler_call(ph, "get_nb_frames", &cd);
 		s->duration_ns = (uint64_t)calldata_int(&cd, "duration");
+		s->duration_frames = (uint64_t)calldata_int(&cd, "num_frames");
 
-		s->transition_point = (float)(
-			(long double)s->transition_point_ns /
-			(long double)s->duration_ns);
+		if (s->transition_point_is_frame)
+			s->transition_point = (float)(
+				(long double)s->transition_point_frame /
+				(long double)s->duration_frames);
+		else
+			s->transition_point = (float)(
+				(long double)s->transition_point_ns /
+				(long double)s->duration_ns);
+
 		if (s->transition_point > 1.0f)
 			s->transition_point = 1.0f;
 		else if (s->transition_point < 0.001f)
@@ -229,6 +248,14 @@ static obs_properties_t *stinger_properties(void *data)
 			obs_module_text("VideoFile"),
 			OBS_PATH_FILE,
 			FILE_FILTER, NULL);
+	obs_property_t *list = obs_properties_add_list(ppts, "tp_type",
+			obs_module_text("TransitionPointType"),
+			OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
+	obs_property_list_add_int(list,
+			obs_module_text("TransitionPointTypeTime"), TIMING_TIME);
+	obs_property_list_add_int(list,
+			obs_module_text("TransitionPointTypeFrame"), TIMING_FRAME);
+
 	obs_properties_add_int(ppts, "transition_point",
 			obs_module_text("TransitionPoint"),
 			0, 120000, 1);
