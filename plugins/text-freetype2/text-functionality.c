@@ -97,7 +97,9 @@ void set_up_vertex_buffer(struct ft2_source *srcdata)
 	if (srcdata->vbuf != NULL) {
 		gs_vertbuffer_t *tmpvbuf = srcdata->vbuf;
 		srcdata->vbuf = NULL;
+		struct gs_vb_data *vbd = gs_vertexbuffer_get_data(tmpvbuf);
 		gs_vertexbuffer_destroy(tmpvbuf);
+		gs_vbdata_destroy(vbd);
 	}
 
 	if (*srcdata->text == 0) {

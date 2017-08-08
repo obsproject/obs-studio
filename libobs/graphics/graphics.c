@@ -592,7 +592,9 @@ void gs_render_stop(enum gs_draw_mode mode)
 		gs_load_indexbuffer(NULL);
 		gs_draw(mode, 0, 0);
 
+		struct gs_vb_data *vbd = gs_vertexbuffer_get_data(vb);
 		gs_vertexbuffer_destroy(vb);
+		gs_vbdata_destroy(vbd);
 	}
 
 	graphics->vbd = NULL;
