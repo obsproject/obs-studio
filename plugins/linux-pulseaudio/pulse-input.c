@@ -343,15 +343,15 @@ skip:
 /**
  * output info callback
  */
-static void pulse_output_info(pa_context *c, const pa_source_info *i, int eol,
+static void pulse_output_info(pa_context *c, const pa_sink_info *i, int eol,
 	void *userdata)
 {
 	UNUSED_PARAMETER(c);
-	if (eol != 0 || i->monitor_of_sink == PA_INVALID_INDEX)
+	if (eol != 0 || i->monitor_source == PA_INVALID_INDEX)
 		goto skip;
 
 	obs_property_list_add_string((obs_property_t*) userdata,
-		i->description, i->name);
+		i->description, i->monitor_source_name);
 
 skip:
 	pulse_signal(0);
@@ -368,8 +368,10 @@ static obs_properties_t *pulse_properties(bool input)
 		OBS_COMBO_FORMAT_STRING);
 
 	pulse_init();
-	pa_source_info_cb_t cb = (input) ? pulse_input_info : pulse_output_info;
-	pulse_get_source_info_list(cb, (void *) devices);
+	if (input)
+		pulse_get_source_info_list(pulse_input_info, (void *) devices);
+	else
+		pulse_get_sink_info_list(pulse_output_info, (void *) devices);
 	pulse_unref();
 
 	return props;
