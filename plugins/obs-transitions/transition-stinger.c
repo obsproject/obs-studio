@@ -238,6 +238,21 @@ static void stinger_enum_all_sources(void *data,
 #define FILE_FILTER \
 	"Video Files (*.mp4 *.ts *.mov *.wmv *.flv *.mkv *.avi *.gif *.webm);;"
 
+static bool transition_point_type_modified(obs_properties_t *ppts,
+		obs_property_t *p, obs_data_t *s)
+{
+	int64_t type = obs_data_get_int(s, "tp_type");
+	p = obs_properties_get(ppts, "transition_point");
+
+	if (type == TIMING_TIME)
+		obs_property_set_description(p,
+				obs_module_text("TransitionPoint"));
+	else
+		obs_property_set_description(p,
+				obs_module_text("TransitionPointFrame"));
+	return true;
+}
+
 static obs_properties_t *stinger_properties(void *data)
 {
 	obs_properties_t *ppts = obs_properties_create();
@@ -252,9 +267,13 @@ static obs_properties_t *stinger_properties(void *data)
 			obs_module_text("TransitionPointType"),
 			OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
 	obs_property_list_add_int(list,
-			obs_module_text("TransitionPointTypeTime"), TIMING_TIME);
+			obs_module_text("TransitionPointTypeTime"),
+			TIMING_TIME);
 	obs_property_list_add_int(list,
-			obs_module_text("TransitionPointTypeFrame"), TIMING_FRAME);
+			obs_module_text("TransitionPointTypeFrame"),
+			TIMING_FRAME);
+
+	obs_property_set_modified_callback(list, transition_point_type_modified);
 
 	obs_properties_add_int(ppts, "transition_point",
 			obs_module_text("TransitionPoint"),
