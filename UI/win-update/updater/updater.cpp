@@ -1211,9 +1211,25 @@ static bool Update(wchar_t *cmdLine)
 	/* ------------------------------------- *
 	 * Install updates                       */
 
+	int updatesInstalled = 0;
+	int lastPosition = 0;
+
+	SendDlgItemMessage(hwndMain, IDC_PROGRESS,
+		PBM_SETPOS, 0, 0);
+
 	for (update_t &update : updates) {
-		if (!UpdateFile(update))
+		if (!UpdateFile(update)) {
 			return false;
+		} else {
+			updatesInstalled++;
+			int position = (int)(((float)updatesInstalled /
+				(float)completedUpdates) * 100.0f);
+			if (position > lastPosition) {
+				lastPosition = position;
+				SendDlgItemMessage(hwndMain, IDC_PROGRESS,
+					PBM_SETPOS, position, 0);
+			}
+		}
 	}
 
 	/* If we get here, all updates installed successfully so we can purge
@@ -1226,6 +1242,9 @@ static bool Update(wchar_t *cmdLine)
 		if (!update.tempPath.empty())
 			DeleteFile(update.tempPath.c_str());
 	}
+
+	SendDlgItemMessage(hwndMain, IDC_PROGRESS,
+		PBM_SETPOS, 100, 0);
 
 	Status(L"Update complete.");
 	SetDlgItemText(hwndMain, IDC_BUTTON, L"Launch OBS");
