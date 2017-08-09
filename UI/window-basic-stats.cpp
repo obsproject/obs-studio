@@ -240,7 +240,7 @@ void OBSBasicStats::Update()
 	obs_output_release(strOutput);
 	obs_output_release(recOutput);
 
-	if (!strOutput || !recOutput)
+	if (!strOutput && !recOutput)
 		return;
 
 	/* ------------------------------------------- */
