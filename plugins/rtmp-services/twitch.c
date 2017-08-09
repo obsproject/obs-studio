@@ -135,6 +135,12 @@ struct twitch_ingest twitch_ingest(size_t idx)
 	return ingest;
 }
 
+void init_twitch_data(void)
+{
+	da_init(cur_ingests);
+	pthread_mutex_init(&mutex, NULL);
+}
+
 void load_twitch_data(const char *module_str)
 {
 	char *twitch_cache = obs_module_config_path("twitch_ingests.json");
@@ -162,4 +168,5 @@ void unload_twitch_data(void)
 {
 	update_info_destroy(twitch_update_info);
 	free_ingests();
+	pthread_mutex_destroy(&mutex);
 }
