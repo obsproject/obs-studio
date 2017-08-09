@@ -787,7 +787,6 @@ BOOL WINAPI DllMain(HINSTANCE hinst, DWORD reason, LPVOID unused1)
 				GetCurrentThread(),
 				GetCurrentProcess(), &cur_thread,
 				SYNCHRONIZE, false, 0);
-
 		if (!success)
 			DbgOut("Failed to get current thread handle");
 

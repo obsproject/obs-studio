@@ -1,6 +1,0 @@
-<RCC>
-    <qresource prefix="/">
-        <file alias="obs.png">images/obs.png</file>
-        <file alias="tray_active.png">images/tray_active.png</file>
-    </qresource>
-</RCC>
