@@ -48,6 +48,7 @@ bool obs_module_load(void)
 {
 	init_twitch_data();
 
+#if CHECK_FOR_SERVICE_UPDATES
 	char *local_dir = obs_module_file("");
 	char *cache_dir = obs_module_config_path("");
 	struct dstr module_name = {0};
@@ -71,6 +72,7 @@ bool obs_module_load(void)
 	bfree(local_dir);
 	bfree(cache_dir);
 	dstr_free(&module_name);
+#endif
 
 	obs_register_service(&rtmp_common_service);
 	obs_register_service(&rtmp_custom_service);
