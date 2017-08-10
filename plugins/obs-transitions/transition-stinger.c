@@ -284,7 +284,7 @@ static obs_properties_t *stinger_properties(void *data)
 }
 
 struct obs_source_info stinger_transition = {
-	.id = "stinger_transition",
+	.id = "obs_stinger_transition",
 	.type = OBS_SOURCE_TYPE_TRANSITION,
 	.get_name = stinger_get_name,
 	.create = stinger_create,
