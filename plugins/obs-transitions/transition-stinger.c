@@ -17,6 +17,7 @@ struct stinger_info {
 	float transition_b_mul;
 	bool transitioning;
 	bool transition_point_is_frame;
+	int monitoring_type;
 };
 
 static const char *stinger_get_name(void *type_data)
@@ -47,6 +48,9 @@ static void stinger_update(void *data, obs_data_t *settings)
 		s->transition_point_frame = (uint64_t)point;
 	else
 		s->transition_point_ns = (uint64_t)(point * 1000000LL);
+
+	s->monitoring_type = obs_data_get_int(settings,"audio_monitoring");
+	obs_source_set_monitoring_type(s->media_source, s->monitoring_type);
 }
 
 static void *stinger_create(obs_data_t *settings, obs_source_t *source)
@@ -278,6 +282,19 @@ static obs_properties_t *stinger_properties(void *data)
 	obs_properties_add_int(ppts, "transition_point",
 			obs_module_text("TransitionPoint"),
 			0, 120000, 1);
+
+	obs_property_t *monitor_list = obs_properties_add_list(ppts,
+			"audio_monitoring", obs_module_text("AudioMonitoring"),
+			OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
+	obs_property_list_add_int(monitor_list,
+			obs_module_text("AudioMonitoring.None"),
+			OBS_MONITORING_TYPE_NONE);
+	obs_property_list_add_int(monitor_list,
+			obs_module_text("AudioMonitoring.MonitorOnly"),
+			OBS_MONITORING_TYPE_MONITOR_ONLY);
+	obs_property_list_add_int(monitor_list,
+			obs_module_text("AudioMonitoring.Both"),
+			OBS_MONITORING_TYPE_MONITOR_AND_OUTPUT);
 
 	UNUSED_PARAMETER(data);
 	return ppts;
