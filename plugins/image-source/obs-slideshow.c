@@ -220,18 +220,26 @@ static bool valid_extension(const char *ext)
 	       astrcmpi(ext, ".gif") == 0;
 }
 
+static inline bool item_valid(struct slideshow *ss)
+{
+	return ss->files.num && ss->cur_item < ss->files.num;
+}
+
 static void do_transition(void *data, bool to_null)
 {
 	struct slideshow *ss = data;
+	bool valid = item_valid(ss);
 
-	if (ss->use_cut)
+	if (valid && ss->use_cut)
 		obs_transition_set(ss->transition,
 				ss->files.array[ss->cur_item].source);
-	else if (!to_null)
+
+	else if (valid && !to_null)
 		obs_transition_start(ss->transition,
 				OBS_TRANSITION_MODE_AUTO,
 				ss->tr_speed,
 				ss->files.array[ss->cur_item].source);
+
 	else
 		obs_transition_start(ss->transition,
 				OBS_TRANSITION_MODE_AUTO,
