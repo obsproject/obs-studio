@@ -1120,7 +1120,7 @@ obs_scene_t *obs_scene_duplicate(obs_scene_t *scene, const char *name,
 			new_item->bounds = item->bounds;
 
 			new_item->toggle_visibility =
-				OBS_INVALID_HOTKEY_PAIR_ID;
+					OBS_INVALID_HOTKEY_PAIR_ID;
 			
 			obs_sceneitem_set_crop(new_item, &item->crop);
 
