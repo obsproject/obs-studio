@@ -42,7 +42,7 @@ class OBSBasicStats : public QWidget {
 		int first_total = 0;
 		int first_dropped = 0;
 
-		void Update(obs_output_t *output);
+		void Update(obs_output_t *output, bool rec);
 		void Reset(obs_output_t *output);
 	};
 
