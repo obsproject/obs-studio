@@ -1114,6 +1114,10 @@ EXPORT void obs_source_set_async_unbuffered(obs_source_t *source,
 		bool unbuffered);
 EXPORT bool obs_source_async_unbuffered(const obs_source_t *source);
 
+/** Functions to hide audio mixer **/
+EXPORT bool obs_source_mixer_hidden(const obs_source_t *source);
+EXPORT void obs_source_set_mixer_hidden(obs_source_t *source, bool hide);
+
 /* ------------------------------------------------------------------------- */
 /* Transition-specific functions */
 enum obs_transition_target {

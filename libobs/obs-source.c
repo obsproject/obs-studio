@@ -4050,3 +4050,17 @@ bool obs_source_async_unbuffered(const obs_source_t *source)
 	return obs_source_valid(source, "obs_source_async_unbuffered") ?
 		source->async_unbuffered : false;
 }
+
+void obs_source_set_mixer_hidden(obs_source_t *source, bool hide)
+{
+	if (!obs_source_valid(source, "obs_source_set_mixer_hidden"))
+		return;
+
+	source->hide_mixer = hide;
+}
+
+bool obs_source_mixer_hidden(const obs_source_t *source)
+{
+	return obs_source_valid(source, "obs_source_mixer_hidden") ?
+		source->hide_mixer : false;
+}

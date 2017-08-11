@@ -2236,6 +2236,11 @@ void OBSBasic::VolControlContextMenu()
 
 void OBSBasic::ActivateAudioSource(OBSSource source)
 {
+	if (obs_source_mixer_hidden(source)) {
+		obs_source_set_muted(source, true);
+		return;
+	}
+
 	VolControl *vol = new VolControl(source, true);
 
 	connect(vol, &VolControl::ConfigClicked,
@@ -3515,6 +3520,8 @@ void OBSBasic::CreateSourcePopupMenu(QListWidgetItem *item, bool preview)
 		uint32_t flags = obs_source_get_output_flags(source);
 		bool isAsyncVideo = (flags & OBS_SOURCE_ASYNC_VIDEO) ==
 			OBS_SOURCE_ASYNC_VIDEO;
+		bool hasAudio = (flags & OBS_SOURCE_AUDIO) ==
+			OBS_SOURCE_AUDIO;
 		QAction *action;
 
 		popup.addAction(QTStr("Rename"), this,
@@ -3537,6 +3544,16 @@ void OBSBasic::CreateSourcePopupMenu(QListWidgetItem *item, bool preview)
 		popup.addAction(sourceWindow);
 
 		popup.addSeparator();
+
+		if (isAsyncVideo && hasAudio) {
+			QAction *actionHideMixer = popup.addAction(
+				QTStr("HideMixer"),
+				this, SLOT(ToggleHideMixer()));
+			actionHideMixer->setCheckable(true);
+			actionHideMixer->setChecked(
+				obs_source_mixer_hidden(source));
+		}
+
 		if (isAsyncVideo) {
 			popup.addMenu(AddDeinterlacingMenu(source));
 			popup.addSeparator();
@@ -5039,6 +5056,21 @@ void OBSBasic::TogglePreview()
 {
 	previewEnabled = !previewEnabled;
 	EnablePreviewDisplay(previewEnabled);
+}
+
+void OBSBasic::ToggleHideMixer()
+{
+	OBSSceneItem item = GetCurrentSceneItem();
+	OBSSource source = obs_sceneitem_get_source(item);
+
+	bool hide = !obs_source_mixer_hidden(source);
+	obs_source_set_mixer_hidden(source, hide);
+	obs_source_set_muted(source, hide);
+
+	if (hide)
+		DeactivateAudioSource(source);
+	else
+		ActivateAudioSource(source);
 }
 
 void OBSBasic::Nudge(int dist, MoveDir dir)
