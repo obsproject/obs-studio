@@ -418,7 +418,7 @@ extern LZMA_API(lzma_vli) lzma_block_total_size(const lzma_block *block)
  *              - LZMA_MEM_ERROR
  *              - LZMA_OPTIONS_ERROR
  *              - LZMA_UNSUPPORTED_CHECK: block->check specifies a Check ID
- *                that is not supported by this buid of liblzma. Initializing
+ *                that is not supported by this build of liblzma. Initializing
  *                the encoder failed.
  *              - LZMA_PROG_ERROR
  */

@@ -52,7 +52,7 @@ pthread_setcanceltype (int type, int *oldtype)
       *      type,
       *      oldtype
       *              PTHREAD_CANCEL_DEFERRED
-      *                      only deferred cancelation is allowed,
+      *                      only deferred cancellation is allowed,
       *
       *              PTHREAD_CANCEL_ASYNCHRONOUS
       *                      Asynchronous cancellation is allowed

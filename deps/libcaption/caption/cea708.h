@@ -86,7 +86,7 @@ typedef struct {
 /*! \brief
     \param
 */
-int cea708_init (cea708_t* cea708); // will confgure using HLS compatiable defaults
+int cea708_init (cea708_t* cea708); // will confgure using HLS compatible defaults
 /*! \brief
     \param
 */

@@ -133,10 +133,10 @@ mythread(void * arg)
 #endif
   pthread_cleanup_push(increment_pop_count, (void *) &pop_count);
   /*
-   * We don't have true async cancelation - it relies on the thread
+   * We don't have true async cancellation - it relies on the thread
    * at least re-entering the run state at some point.
    * We wait up to 10 seconds, waking every 0.1 seconds,
-   * for a cancelation to be applied to us.
+   * for a cancellation to be applied to us.
    */
   for (bag->count = 0; bag->count < 100; bag->count++)
     Sleep(100);

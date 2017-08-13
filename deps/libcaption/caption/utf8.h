@@ -89,7 +89,7 @@ utf8_size_t utf8_wrap_length (const utf8_char_t* data, utf8_size_t size);
 /*! \brief
     \param
 
-    returns number of new lins in teh string
+    returns number of new lins in the string
 */
 int utf8_line_count (const utf8_char_t* data);
 

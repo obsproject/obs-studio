@@ -96,7 +96,7 @@
 	* GNUMakefile: Update for new tests.
 	* Makefile: Ditto.
 	* BMakefile: Ditto.
-	* once3.c: Improve cancelation testing.
+	* once3.c: Improve cancellation testing.
 	* stress1.c: Fix comment.
 
 2007-01-04  Ross Johnson <Ross dot Johnson at homemail dot com dot au>
@@ -742,13 +742,13 @@
 
 2000-01-04  Ross Johnson  <rpj@special.ise.canberra.edu.au>
 
-	* cancel4.c: New; Test cancelation does not occur in deferred
-	cancelation threads with no cancelation points.
+	* cancel4.c: New; Test cancellation does not occur in deferred
+	cancellation threads with no cancellation points.
 
-	* cancel3.c: New; Test asynchronous cancelation.
+	* cancel3.c: New; Test asynchronous cancellation.
 
 	* context1.c: New; Test context switching method for async
-	cancelation.
+	cancellation.
 
 1999-11-23  Ross Johnson  <rpj@special.ise.canberra.edu.au>
 
@@ -772,7 +772,7 @@ Oct 14 1999  Ross Johnson  <rpj@ixobrychus.canberra.edu.au>
 	* condvar7.c: New. Test broadcast after waiting thread is canceled.
 	* condvar8.c: New. Test multiple broadcasts.
 	* condvar9.c: New. Test multiple broadcasts with thread
-	cancelation.
+	cancellation.
 	
 Sep 16 1999  Ross Johnson  <rpj@ixobrychus.canberra.edu.au>
 

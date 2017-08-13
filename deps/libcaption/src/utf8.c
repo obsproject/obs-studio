@@ -141,7 +141,7 @@ size_t utf8_line_length (const char* data)
 // returns number of chars to include before split
 utf8_size_t utf8_wrap_length (const utf8_char_t* data, utf8_size_t size)
 {
-    // Set split_at to size, so if a split point cna not be found, retuns the size passed in
+    // Set split_at to size, so if a split point cna not be found, returns the size passed in
     size_t char_length, char_count, split_at = size;
 
     for (char_count = 0 ; char_count <= size ; ++char_count) {

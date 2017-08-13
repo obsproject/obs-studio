@@ -25,7 +25,7 @@ pthread_win32_test_features_np(int mask)
 			QUSEREX.DLL is available and the AlertDrv.sys
 			driver is loaded into Windows, providing
 			alertable (pre-emptive) asyncronous threads
-			cancelation. If this feature returns FALSE
+			cancellation. If this feature returns FALSE
 			then the default async cancel scheme is in
 			use, which cannot cancel blocked threads.
 
@@ -121,9 +121,9 @@ pthread_delay_np (const struct timespec *interval);
 
         Specifying an interval of zero (0) seconds and zero (0) nanoseconds is
         allowed and can be used to force the thread to give up the processor or to
-        deliver a pending cancelation request.
+        deliver a pending cancellation request.
 
-        This routine is a cancelation point.
+        This routine is a cancellation point.
 
         The timespec structure contains the following two fields:
 
@@ -390,7 +390,7 @@ How can we force the behaviour we need?
 
 Solutions
 
-Adding new functions to the standard API or as non-portable extentions is
+Adding new functions to the standard API or as non-portable extensions is
 the only reliable and portable way to provide the necessary operations.
 Remember also that POSIX is not tied to the C language. The most common
 functions that have been suggested are:
@@ -639,7 +639,7 @@ Partial solutions without a pthread_normalize function
 
 
 An application-level pthread_null and pthread_compare proposal
-(and pthread_hash proposal by extention)
+(and pthread_hash proposal by extension)
 
 In order to deal with the problem of scalar/aggregate pthread_t type disparity in
 portable code I suggest using an old-fashioned union, e.g.:
@@ -710,7 +710,7 @@ line 16 on page 43 of the rationale.
 An aside
 
 Certain compilers, e.g. gcc and one of the IBM compilers, include a feature
-extention: provided the union contains a member of the same type as the
+extension: provided the union contains a member of the same type as the
 object then the object may be cast to the union itself.
 
 We could use this feature to speed up the pthrcmp() function from example 2

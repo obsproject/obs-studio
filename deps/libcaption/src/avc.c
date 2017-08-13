@@ -294,7 +294,7 @@ uint8_t* sei_render_alloc (sei_t* sei, size_t* size)
 ////////////////////////////////////////////////////////////////////////////////
 int sei_parse_nalu (sei_t* sei, const uint8_t* data, size_t size, double dts, double cts)
 {
-    assert (0<=cts); // cant present before decode
+    assert (0<=cts); // can't present before decode
     sei->dts = dts;
     sei->cts = cts;
     int ret = 0;
@@ -393,7 +393,7 @@ void sei_append_708 (sei_t* sei, cea708_t* cea708)
     msg->size = cea708_render (cea708, sei_message_data (msg), sei_message_size (msg));
     sei_message_append (sei,msg);
     // cea708_dump (cea708);
-    cea708_init (cea708); // will confgure using HLS compatiable defaults
+    cea708_init (cea708); // will confgure using HLS compatible defaults
 }
 
 // This should be moved to 708.c
@@ -402,7 +402,7 @@ void sei_append_708 (sei_t* sei, cea708_t* cea708)
 void sei_encode_eia608 (sei_t* sei, cea708_t* cea708, uint16_t cc_data)
 {
     // This one is full, flush and init a new one
-    // shoudl this be 32? I cant remember
+    // should this be 32? I can't remember
     if (31 == cea708->user_data.cc_count) {
         sei_append_708 (sei,cea708);
     }
@@ -466,7 +466,7 @@ int sei_from_caption_frame (sei_t* sei, caption_frame_t* frame)
                     sei_encode_eia608 (sei, &cea708, eia608_from_basicna (prev_cc_data,eia608_from_utf8_1 (EIA608_CHAR_SPACE,DEFAULT_CHANNEL)));
                     sei_encode_eia608 (sei, &cea708, cc_data);
                 } else {
-                    // previous was basic na, but current isnt; write previous and current
+                    // previous was basic na, but current isn't; write previous and current
                     sei_encode_eia608 (sei, &cea708, prev_cc_data);
                     sei_encode_eia608 (sei, &cea708, cc_data);
                 }
@@ -483,7 +483,7 @@ int sei_from_caption_frame (sei_t* sei, caption_frame_t* frame)
             }
 
             if (eia608_is_specialna (cc_data)) {
-                // specialna are treated as controll charcters. Duplicated controll charcters are discarded
+                // specialna are treated as control charcters. Duplicated control charcters are discarded
                 // So we for a resume after a specialna as a noop to break repetition detection
                 // TODO only do this if the same charcter is repeated
                 sei_encode_eia608 (sei, &cea708, eia608_control_command (eia608_control_resume_caption_loading, DEFAULT_CHANNEL));

@@ -24,9 +24,9 @@
  *
  * --------------------------------------------------------------------------
  *
- * Test Synopsis: Test double cancelation - deferred.
+ * Test Synopsis: Test double cancellation - deferred.
  * Second attempt should succeed (unless the canceled thread has started
- * cancelation already - not tested here).
+ * cancellation already - not tested here).
  *
  * Test Method (Validation or Falsification):
  * -
@@ -101,7 +101,7 @@ mythread(void * arg)
 
   /*
    * We wait up to 10 seconds, waking every 0.1 seconds,
-   * for a cancelation to be applied to us.
+   * for a cancellation to be applied to us.
    */
   for (bag->count = 0; bag->count < 100; bag->count++)
     {
@@ -138,7 +138,7 @@ main()
       assert(pthread_cancel(t[i]) == 0);
       if (pthread_cancel(t[i]) != 0)
         {
-          printf("Second cancelation failed but this is expected sometimes.\n");
+          printf("Second cancellation failed but this is expected sometimes.\n");
         }
     }
 

@@ -65,7 +65,7 @@
  * Define defaults for cleanup code.
  * Note: Unless the build explicitly defines one of the following, then
  * we default to standard C style cleanup. This style uses setjmp/longjmp
- * in the cancelation and thread exit implementations and therefore won't
+ * in the cancellation and thread exit implementations and therefore won't
  * do stack unwinding if linked to applications that have it (e.g.
  * C++ apps). This is currently consistent with most/all commercial Unix
  * POSIX threads implementations.
@@ -629,7 +629,7 @@ enum {
   PTHREAD_SCOPE_SYSTEM          = 1,  /* Default */
 
 /*
- * pthread_setcancelstate paramters
+ * pthread_setcancelstate parameters
  */
   PTHREAD_CANCEL_ENABLE         = 0,  /* Default */
   PTHREAD_CANCEL_DISABLE        = 1,
@@ -662,7 +662,7 @@ enum {
 /*
  * ====================
  * ====================
- * Cancelation
+ * Cancellation
  * ====================
  * ====================
  */
@@ -1313,7 +1313,7 @@ PTW32_DLLPORT DWORD PTW32_CDECL ptw32_get_exception_services_code(void);
 #if defined(_MSC_VER)
         /*
          * WARNING: Replace any 'catch( ... )' with 'PtW32CatchAll'
-         * if you want Pthread-Win32 cancelation and pthread_exit to work.
+         * if you want Pthread-Win32 cancellation and pthread_exit to work.
          */
 
 #if !defined(PtW32NoCatchWarn)
@@ -1323,7 +1323,7 @@ PTW32_DLLPORT DWORD PTW32_CDECL ptw32_get_exception_services_code(void);
 #pragma message("When compiling applications with MSVC++ and C++ exception handling:")
 #pragma message("  Replace any 'catch( ... )' in routines called from POSIX threads")
 #pragma message("  with 'PtW32CatchAll' or 'CATCHALL' if you want POSIX thread")
-#pragma message("  cancelation and pthread_exit to work. For example:")
+#pragma message("  cancellation and pthread_exit to work. For example:")
 #pragma message("")
 #pragma message("    #if defined(PtW32CatchAll)")
 #pragma message("      PtW32CatchAll")

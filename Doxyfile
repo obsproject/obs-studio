@@ -1924,7 +1924,7 @@ PREDEFINED             =
 EXPAND_AS_DEFINED      =
 
 # If the SKIP_FUNCTION_MACROS tag is set to YES then doxygen's preprocessor will
-# remove all refrences to function-like macros that are alone on a line, have an
+# remove all references to function-like macros that are alone on a line, have an
 # all uppercase name, and do not end with a semicolon. Such function macros are
 # typically used for boiler-plate code, and will confuse the parser if not
 # removed.

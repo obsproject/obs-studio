@@ -523,7 +523,7 @@ David Schwartz <davids@webmaster.com> wrote:
 >
 >  } while ( eGameState < BOTH_PLAYERS_GONE );
 >
->I bet everytime you thing a signal is lost, you'll see that printf.
+>I bet every time you thing a signal is lost, you'll see that printf.
 >The signal isn't lost, it was stolen by another thread.
 
 well, you can probably loose your bet.. it was indeed stolen
@@ -686,9 +686,9 @@ Sleep( 1 ); // @AT
       *              a timeout
       *
       * Note:
-      *      ptw32_sem_timedwait is a cancelation point,
+      *      ptw32_sem_timedwait is a cancellation point,
       *      hence providing the
-      *      mechanism for making pthread_cond_wait a cancelation
+      *      mechanism for making pthread_cond_wait a cancellation
       *      point. We use the cleanup mechanism to ensure we
       *      re-lock the mutex and decrement the waiters count
       *      if we are canceled.

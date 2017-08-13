@@ -33,7 +33,7 @@
  *
  * --------------------------------------------------------------------------
  *
- * Test Synopsis: Test true asynchronous cancelation with Alert driver.
+ * Test Synopsis: Test true asynchronous cancellation with Alert driver.
  *
  * Test Method (Validation or Falsification):
  * - 

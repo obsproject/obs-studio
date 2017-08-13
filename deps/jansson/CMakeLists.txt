@@ -218,7 +218,7 @@ else ()
    set (JSON_UINT8 "unsigned char")
 endif ()
 
-# Check for ssize_t and SSIZE_T existance.
+# Check for ssize_t and SSIZE_T existence.
 check_type_size(ssize_t SSIZE_T)
 check_type_size(SSIZE_T UPPERCASE_SSIZE_T)
 if(NOT HAVE_SSIZE_T)

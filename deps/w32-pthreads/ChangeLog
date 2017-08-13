@@ -185,7 +185,7 @@
 
 	* implement.h (PTW32_INTERLOCKED_*): Mingw32 does not provide
 	the __sync_* intrinsics so implemented them here as macro
-	assembler routines. MSVS Interlocked* are emmitted as intrinsics
+	assembler routines. MSVS Interlocked* are emitted as intrinsics
 	wherever possible, so we want mingw to match it; Extended to
 	include all interlocked routines used by the library; implemented
 	x86_64 versions also.
@@ -252,7 +252,7 @@
 2010-06-18  Ramiro Polla  <ramiro.polla at gmail.com >
 
 	* autostatic.c: New file; call pthread_win32_process_*()
-	libary init/cleanup routines automatically on application start
+	library init/cleanup routines automatically on application start
 	when statically linked.
 	* pthread.c (autostatic.c): Included.
 	* pthread.h (declspec): Remove import/export defines if compiler
@@ -362,7 +362,7 @@
 2007-01-06  Romano Paolo Tenca <rotenca at telvia dot it>
 
 	* pthread_cond_destroy.c: Replace sem_wait() with non-cancelable
-	ptw32_semwait() since pthread_cond_destroy() is not a cancelation
+	ptw32_semwait() since pthread_cond_destroy() is not a cancellation
 	point.
 	* implement.h (ptw32_spinlock_check_need_init): Add prototype.
 	* ptw32_MCS_lock.c: Reverse order of includes.
@@ -644,11 +644,11 @@
 	This uses late initialisation similar to the technique already used for
 	pthreads-win32 mutexes and semaphores (from Alexander Terekhov).
 
-	The subsequent cancelation cleanup additions (by rpj) could not be implemented
+	The subsequent cancellation cleanup additions (by rpj) could not be implemented
 	without sacrificing some of the efficiency in Gottlob's design. In particular,
 	although each once_control uses it's own event to block on, a global CS is
 	required to manage it - since the event must be either re-usable or
-	re-creatable under cancelation. This is not needed in the non-cancelable
+	re-creatable under cancellation. This is not needed in the non-cancelable
 	design because it is able to mark the event as closed (forever).
 
 	When uncontested, a CS operation is equivalent to an Interlocked operation
@@ -763,7 +763,7 @@
 	'PThreadStateCancelPending' state as short cut to avoid entering
 	kernel space via WaitForSingleObject() call. This was obviated
 	by user space sema acquisition in sem_wait() and sem_timedwait(),
-	which are also cancelation points. A call to pthread_testcancel()
+	which are also cancellation points. A call to pthread_testcancel()
 	was required, which introduced a kernel call, effectively nullifying
 	any gains made by the user space sem acquisition checks.
 	* pthread_cancel.c (pthread_cancel): Set new thread
@@ -785,7 +785,7 @@
 	being the address of the thread struct. The new pthread_t retains
 	the reuse stack but provides virtually unique thread IDs.
 	* sem_wait.c (ptw32_sem_wait_cleanup): New routine used for
-	cancelation cleanup.
+	cancellation cleanup.
 	* sem_timedwait.c (ptw32_sem_timedwait_cleanup): Likewise.
 
 2004-10-22  Ross Johnson  <rpj at callisto.canberra.edu.au>
@@ -825,12 +825,12 @@
 	keeps it's own counter. Although the motivation to do this has existed
 	for a long time, credit goes to Alexander Terekhov for providing
 	the logic. I have deviated slightly from AT's logic to add the waiters
-	count, which has made the code more complicated by adding cancelation
+	count, which has made the code more complicated by adding cancellation
 	cleanup. This also appears to have broken the VCE (C++ EH) version of
 	the library (the same problem as previously reported - see BUGS #2),
 	only apparently not fixable using the usual workaround, nor by turning
 	all optimisation off. The GCE version works fine, so it is presumed to
-	be a bug in MSVC++ 6.0. The cancelation exception is thrown and caught
+	be a bug in MSVC++ 6.0. The cancellation exception is thrown and caught
 	correctly, but the cleanup class destructor is never called. The failing
 	test is tests\semaphore4.c.
 	* sem_wait.c (sem_wait): Implemented user space check model.
@@ -1035,13 +1035,13 @@
 	QueueUserAPCEx features at run-time.
 	(ptw32_RegisterCancelation): Drop in replacement for QueueUserAPCEx()
 	if it can't be used. Provides older style non-preemptive async
-	cancelation.
+	cancellation.
 	* pthread_win32_attach_detach_np.c (pthread_win32_attach_np):
 	Auto-detect quserex.dll and the availability of alertdrv.sys;
 	initialise and close on process attach/detach.
 	* global.c (ptw32_register_cancelation): Pointer to either
 	QueueUserAPCEx() or ptw32_RegisterCancelation() depending on
-	availability. QueueUserAPCEx makes pre-emptive async cancelation
+	availability. QueueUserAPCEx makes pre-emptive async cancellation
 	possible.
 	* implement.h: Add definitions and prototypes related to QueueUserAPC.
 
@@ -1051,7 +1051,7 @@
 	APC feature.
 	* pthread_cancel.c (pthread_cancel): Initial integration of
 	QueueUserAPCEx into pthreads-win32 to provide true pre-emptive
-	async cancelation of threads, including blocked threads.
+	async cancellation of threads, including blocked threads.
 
 2004-05-06  Makoto Kato  <raven at oldskool.jp>
 
@@ -1158,7 +1158,7 @@
 
 2003-09-03  Ross Johnson  <rpj at callisto.canberra.edu.au>
 
-	* w32_cancelableWait.c (ptw32_cancelable_wait): Allow cancelation
+	* w32_cancelableWait.c (ptw32_cancelable_wait): Allow cancellation
 	of implicit POSIX threads as well.
 
 2003-09-02  Ross Johnson  <rpj at callisto.canberra.edu.au>
@@ -1182,7 +1182,7 @@
 
 2003-09-01  Ross Johnson  <rpj at callisto.canberra.edu.au>
 
-	* pthread_self.c (pthread_self): The newly aquired pthread_t must be
+	* pthread_self.c (pthread_self): The newly acquired pthread_t must be
 	assigned to the reuse stack, not freed, if the routine fails somehow.
 
 2003-08-13  Ross Johnson  <rpj at ise.canberra.edu.au>
@@ -1574,7 +1574,7 @@
 2002-02-07  Alexander Terekhov<TEREKHOV at de.ibm.com>
 
 	* nonportable.c (pthread_delay_np): Make a true
-	cancelation point. Deferred cancels will interrupt the
+	cancellation point. Deferred cancels will interrupt the
 	wait.
 
 2002-02-07  Ross Johnson  <rpj at setup1.ise.canberra.edu.au
@@ -1678,13 +1678,13 @@
 	* pthread_attr_setstackaddr.c: Likewise.
 	* pthread_attr_setstacksize.c: Likewise.
 
-	* pthread.c: Agregation of agregate modules for super-inlineability.
+	* pthread.c: Aggregation of aggregate modules for super-inlineability.
 
 2002-02-02  Ross Johnson  <rpj at setup1.ise.canberra.edu.au>
 
 	* cancel.c: Rearranged some code and introduced checks
-	to disable cancelation at the start of a thread's cancelation
-	run to prevent double cancelation. The main problem
+	to disable cancellation at the start of a thread's cancellation
+	run to prevent double cancellation. The main problem
 	arises if a thread is canceling and then receives a subsequent
 	async cancel request.
 	* private.c: Likewise.
@@ -1749,7 +1749,7 @@
 	* pthread.h: Unless the build explicitly defines __CLEANUP_SEH,
 	__CLEANUP_CXX, or __CLEANUP_C, then the build defaults to
 	__CLEANUP_C style cleanup. This style uses setjmp/longjmp
-	in the cancelation and thread exit implementations and therefore
+	in the cancellation and thread exit implementations and therefore
 	won't do stack unwinding if linked to applications that have it
 	(e.g. C++ apps). This is currently consistent with most/all
 	commercial Unix POSIX threads implementations.
@@ -1936,7 +1936,7 @@
 2001-07-15  Ross Johnson  <rpj at setup1.ise.canberra.edu.au>
 
 	* rwlock.c (pthread_rwlock_wrlock): Is allowed to be
-	a cancelation point; re-enable deferred cancelability
+	a cancellation point; re-enable deferred cancelability
 	around the CV call.
 
 2001-07-10  Ross Johnson  <rpj at setup1.ise.canberra.edu.au>
@@ -1995,12 +1995,12 @@
 
 2001-07-05  Ross Johnson  <rpj at setup1.ise.canberra.edu.au>
 
-	* barrier.c: Remove static initialisation - irrelevent
+	* barrier.c: Remove static initialisation - irrelevant
 	for this object.
 	* pthread.h (PTHREAD_BARRIER_INITIALIZER): Removed.
 	* rwlock.c (pthread_rwlock_wrlock): This routine is
-	not a cancelation point - disable deferred
-	cancelation around call to pthread_cond_wait().
+	not a cancellation point - disable deferred
+	cancellation around call to pthread_cond_wait().
 
 2001-07-05  Ross Johnson  <rpj at setup1.ise.canberra.edu.au>
 
@@ -2252,7 +2252,7 @@
 	* (pthread_mutex_lock): Likewise.
 	* (pthread_mutex_trylock): Likewise.
 	* (pthread_mutex_unlock): Likewise.
-	* Use longjmp/setjmp to implement cancelation when building the library
+	* Use longjmp/setjmp to implement cancellation when building the library
 	using a C compiler which doesn't support exceptions, e.g. gcc -x c (note
 	that gcc -x c++ uses exceptions).
 	* Also fixed some of the same typos and eliminated PT_STDCALL as
@@ -2543,7 +2543,7 @@
 	function pointer arg in _beginthread().
 
 	* pthread.h: PT_STDCALL really does need to be defined
-	in both this and impliment.h; don't set it to __cdecl
+	in both this and implement.h; don't set it to __cdecl
 	- this macro is only used to extend function pointer
 	casting for functions that will be passed as parameters.
 	(~PThreadCleanup): add cast and group expression.
@@ -2580,7 +2580,7 @@
 	* pthread.h: Add compile-time message when using
 	MSC_VER compiler and C++ EH to warn application
 	programmers to use PtW32Catch instead of catch(...)
-	if they want cancelation and pthread_exit to work.
+	if they want cancellation and pthread_exit to work.
 
 	* implement.h: Remove #include <semaphore.h>; we
 	use our own local semaphore.h.
@@ -2628,7 +2628,7 @@
 	* pthread.h (PtW32CatchAll): Add macro. When compiling
 	applications using VC++ with C++ EH rather than SEH
 	'PtW32CatchAll' must be used in place of any 'catch( ... )'
-	if the application wants pthread cancelation or
+	if the application wants pthread cancellation or
 	pthread_exit() to work.
 
 2000-08-03  Ross Johnson  <rpj at special.ise.canberra.edu.au>
@@ -2862,7 +2862,7 @@
 
 1999-11-10  Ross Johnson  <rpj at ixobrychus.canberra.edu.au>
 
-	* sync.c (pthread_join): Make it a deferred cancelation point.
+	* sync.c (pthread_join): Make it a deferred cancellation point.
 
 	* misc.c (pthread_self): Explicitly initialise implicitly
 	created thread state to default values.
@@ -2960,7 +2960,7 @@ Thu Sep 16 1999  Ross Johnson  <rpj at swan.canberra.edu.au>
 1999-08-21  Ross Johnson  <rpj at ixobrychus.canberra.edu.au>
 
 	* private.c (ptw32_threadStart): Apply fix of 1999-08-19
-	this time to C++ and non-trapped C versions. Ommitted to
+	this time to C++ and non-trapped C versions. Omitted to
 	do this the first time through.
 
 1999-08-19  Ross Johnson  <rpj at ixobrychus.canberra.edu.au>
@@ -3220,7 +3220,7 @@ Sun Mar  7 12:31:14 1999  Ross Johnson  <rpj at ixobrychus.canberra.edu.au>
 
 	* misc.c (CancelableWait): Place the cancel event handle first
 	in the handle table for WaitForMultipleObjects. This ensures that
-	the cancel event is recognised and acted apon if both objects
+	the cancel event is recognised and acted upon if both objects
 	happen to be signaled together.
 
 	* private.c (ptw32_cond_test_init_lock): Initialise and destroy.
@@ -3789,7 +3789,7 @@ Sun Dec 20 14:51:58 1998  Ross Johnson  <rpj at ixobrychus.canberra.edu.au>
 	(pthread_condattr_getpshared): Replaced by John Bossom's version.
 	(pthread_condattr_setpshared): Replaced by John Bossom's version.
 	(pthread_cond_init): Replaced by John Bossom's version.
-	Fix comment (refered to mutex rather than condition variable).
+	Fix comment (referred to mutex rather than condition variable).
 	(pthread_cond_destroy): Replaced by John Bossom's version.
 	(pthread_cond_wait): Replaced by John Bossom's version.
 	(pthread_cond_timedwait): Replaced by John Bossom's version.
@@ -4591,7 +4591,7 @@ Sun Jul 26 00:09:59 1998  Ross Johnson  <rpj at ixobrychus.canberra.edu.au>
  	a part of making the eventual pthreads DLL binary compatible
  	through version changes.
 
-	* condvar.c (cond_wait): Add cancelation point. This applies the
+	* condvar.c (cond_wait): Add cancellation point. This applies the
 	point to both pthread_cond_wait() and pthread_cond_timedwait().
 
 	* exit.c (pthread_exit): Rename "this" to "us".
@@ -5058,7 +5058,7 @@ Sun Jul 19 16:26:23 1998  Ross Johnson  <rpj at ixobrychus.canberra.edu.au>
 	(pthread_cond_wait): Likewise.
 	(pthread_cond_destroy): Likewise.
 	(pthread_cond_t): Define this type.  Fix for u_int.  Do not assume
-	that the mutex contained withing the pthread_cond_t structure will
+	that the mutex contained within the pthread_cond_t structure will
 	be a critical section.  Use our new POSIX type!
 
 	* implement.h (ptw32_condattr_t): Remove shared attribute.

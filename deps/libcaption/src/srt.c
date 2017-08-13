@@ -91,7 +91,7 @@ srt_t* srt_parse (const utf8_char_t* data, size_t size)
             // Skip empty lines
         } while (0 < line_length && 0 == trimmed_length);
 
-        // linelength cant be zero before EOF
+        // linelength can't be zero before EOF
         if (0 == line_length) {
             break;
         }

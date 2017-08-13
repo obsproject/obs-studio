@@ -140,7 +140,7 @@ version 1.x.x series. It is probably time to drop version 1.
 
 Testing and verification
 ------------------------
-This release has not yet been tested on SMP architechtures. All tests pass
+This release has not yet been tested on SMP architectures. All tests pass
 on a uni-processor system.
 
 Bug fixes
@@ -242,7 +242,7 @@ back-ported in release 1.9.0.
 Bugs fixed
 ----------
 
-* Thread Specific Data (TSD) key management has been ammended to
+* Thread Specific Data (TSD) key management has been amended to
 eliminate a source of (what was effectively) resource leakage (a HANDLE
 plus memory for each key destruct routine/thread association). This was
 not a true leak because these resources were eventually reclaimed when
@@ -250,7 +250,7 @@ pthread_key_delete was run AND each thread referencing the key had exited.
 The problem was that these two conditions are often not met until very
 late, and often not until the process is about to exit.
 
-The ammended implementation avoids the need for the problematic HANDLE
+The amended implementation avoids the need for the problematic HANDLE
 and reclaims the memory as soon as either the key is deleted OR the
 thread exits, whichever is first.
 
@@ -445,7 +445,7 @@ Bugs fixed
 * pthread_setcancelstate() no longer checks for a pending
 async cancel event if the library is using alertable async
 cancel. See the README file (Prerequisites section) for info
-on adding alertable async cancelation.
+on adding alertable async cancellation.
 
 New features
 ------------
@@ -455,7 +455,7 @@ New features
 New tests
 ---------
 
-* Agressively test pthread_once() init_routine cancellability.
+* Aggressively test pthread_once() init_routine cancellability.
 
 
 SNAPSHOT 2005-03-08
@@ -611,7 +611,7 @@ Bug fixes
 A segfault (memory access fault) will result, and no thread will be
 created.
 
-* pthread_barrier_wait() no longer acts as a cancelation point.
+* pthread_barrier_wait() no longer acts as a cancellation point.
 
 * Fix potential race condition in pthread_once()
 - Tristan Savatier  <tristan at mpegtv.com>
@@ -650,7 +650,7 @@ destruction/creation cycles.
 New tests
 ---------
 
-* semaphore4.c: Tests cancelation of the new sem_wait().
+* semaphore4.c: Tests cancellation of the new sem_wait().
 
 * semaphore4t.c: Likewise for sem_timedwait().
 
@@ -688,21 +688,21 @@ New features
 * Ported to AMD64.
 - Makoto Kato  <raven at oldskool.jp>
 
-* True pre-emptive asynchronous cancelation of threads. This is optional
+* True pre-emptive asynchronous cancellation of threads. This is optional
 and requires that Panagiotis E. Hadjidoukas's QueueUserAPCEx package be
 installed. This package is included in the pthreads-win32 self-unpacking
 Zip archive starting from this snapshot. See the README.txt file inside
 the package for installation details.
 
-Note: If you don't use async cancelation in your application, or don't need
+Note: If you don't use async cancellation in your application, or don't need
 to cancel threads that are blocked on system resources such as network I/O,
-then the default non-preemptive async cancelation is probably good enough.
+then the default non-preemptive async cancellation is probably good enough.
 However, pthreads-win32 auto-detects the availability of these components
 at run-time, so you don't need to rebuild the library from source if you
 change your mind later.
 
 All of the advice available in books and elsewhere on the undesirability
-of using async cancelation in any application still stands, but this
+of using async cancellation in any application still stands, but this
 feature is a welcome addition with respect to the library's conformance to
 the POSIX standard.
 
@@ -731,12 +731,12 @@ SNAPSHOT 2003-09-04
 
 Bug fixes
 ---------
-* ptw32_cancelableWait() now allows cancelation of waiting implicit POSIX
+* ptw32_cancelableWait() now allows cancellation of waiting implicit POSIX
 threads.
 
 New test
 --------
-* cancel8.c tests cancelation of Win32 threads waiting at a POSIX cancelation
+* cancel8.c tests cancellation of Win32 threads waiting at a POSIX cancellation
 point.
 
 
@@ -751,13 +751,13 @@ DuplicateHandle failed instead of recycle it (very unlikely).
 * pthread_exit() was neither freeing nor recycling the POSIX thread struct
 for implicit POSIX threads.
 
-New feature - Cancelation of/by Win32 (non-POSIX) threads
+New feature - Cancellation of/by Win32 (non-POSIX) threads
 ---------------------------------------------------------
 Since John Bossom's original implementation, the library has allowed non-POSIX
 initialised threads (Win32 threads) to call pthreads-win32 routines and
 therefore interact with POSIX threads. This is done by creating an on-the-fly
 POSIX thread ID for the Win32 thread that, once created, allows fully
-reciprical interaction. This did not extend to thread cancelation (async or
+reciprical interaction. This did not extend to thread cancellation (async or
 deferred). Now it does.
 
 Any thread can be canceled by any other thread (Win32 or POSIX) if the former
@@ -767,15 +767,15 @@ PTHREAD_CANCELED (retrieved with GetExitCodeThread()).
 
 This allows a Win32 thread to, for example, call POSIX CV routines in the same way
 that POSIX threads would/should, with pthread_cond_wait() cancelability and
-cleanup handlers (pthread_cond_wait() is a POSIX cancelation point).
+cleanup handlers (pthread_cond_wait() is a POSIX cancellation point).
 
-By adding cancelation, Win32 threads should now be able to call all POSIX
+By adding cancellation, Win32 threads should now be able to call all POSIX
 threads routines that make sense including semaphores, mutexes, condition
 variables, read/write locks, barriers, spinlocks, tsd, cleanup push/pop,
-cancelation, pthread_exit, scheduling, etc.
+cancellation, pthread_exit, scheduling, etc.
 
 Note that these on-the-fly 'implicit' POSIX thread IDs are initialised as detached
-(not joinable) with deferred cancelation type. The POSIX thread ID will be created
+(not joinable) with deferred cancellation type. The POSIX thread ID will be created
 automatically by any POSIX routines that need a POSIX handle (unless the routine
 needs a pthread_t as a parameter of course). A Win32 thread can discover it's own
 POSIX thread ID by calling pthread_self(), which will create the handle if
@@ -840,7 +840,7 @@ Bug fixes
 
 * pthread_mutex_trylock() now returns correct error values.
 pthread_mutex_destroy() will no longer destroy a recursively locked mutex.
-pthread_mutex_lock() is no longer inadvertantly behaving as a cancelation point.
+pthread_mutex_lock() is no longer inadvertently behaving as a cancellation point.
 - Thomas Pfaff  <tpfaff@gmx.net>
 
 * pthread_mutex_timedlock() no longer occasionally sets incorrect mutex
@@ -888,7 +888,7 @@ from the compiler/language, and one of the following was defined accordingly:
         __CLEANUP_C             C, including GNU GCC, not MSVC
 
 These defines determine the style of cleanup (see pthread.h) and,
-most importantly, the way that cancelation and thread exit (via
+most importantly, the way that cancellation and thread exit (via
 pthread_exit) is performed (see the routine ptw32_throw() in private.c).
 
 In short, the exceptions versions of the library throw an exception
@@ -900,7 +900,7 @@ is when it's canceled or exits via pthread_exit().
 In this and future snapshots, unless the build explicitly defines (e.g.
 via a compiler option) __CLEANUP_SEH, __CLEANUP_CXX, or __CLEANUP_C, then
 the build NOW always defaults to __CLEANUP_C style cleanup. This style
-uses setjmp/longjmp in the cancelation and pthread_exit implementations,
+uses setjmp/longjmp in the cancellation and pthread_exit implementations,
 and therefore won't do stack unwinding even when linked to applications
 that have it (e.g. C++ apps). This is for consistency with most
 current commercial Unix POSIX threads implementations. Compaq's TRU64
@@ -1096,9 +1096,9 @@ with the C version, but AFAIK cleanup handlers would not then run in the
 correct sequence with destructors and exception cleanup handlers when
 an exception occurs.
 
-* Cancelation once started in a thread cannot now be inadvertantly
-double canceled. That is, once a thread begins it's cancelation run,
-cancelation is disabled and a subsequent cancel request will
+* Cancellation once started in a thread cannot now be inadvertently
+double canceled. That is, once a thread begins it's cancellation run,
+cancellation is disabled and a subsequent cancel request will
 return an error (ESRCH).
 
 * errno: An incorrect compiler directive caused a local version
@@ -1146,7 +1146,7 @@ SNAPSHOT 2000-08-10
 -------------------
 
 New:
--       asynchronous cancelation on X86 (Jason Nye)
+-       asynchronous cancellation on X86 (Jason Nye)
 -       Makefile compatible with MS nmake to replace
         buildlib.bat
 -       GNUmakefile for Mingw32
@@ -1186,7 +1186,7 @@ Some new tests have been added.
 SNAPSHOT 1999-10-17
 -------------------
 
-Bug fix - Cancelation of threads waiting on condition variables
+Bug fix - Cancellation of threads waiting on condition variables
 now works properly (Lorin Hochstein and Peter Slacik)
 
 
