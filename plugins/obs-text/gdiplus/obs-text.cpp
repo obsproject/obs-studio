@@ -39,9 +39,7 @@ using namespace Gdiplus;
 #define MAX_AREA (4096LL * 4096LL)
 
 /* ------------------------------------------------------------------------- */
-
-/* clang-format off */
-
+#define S_CUSTOM_FONT                   "custom_font"
 #define S_FONT                          "font"
 #define S_USE_FILE                      "read_from_file"
 #define S_FILE                          "file"
@@ -157,40 +155,6 @@ static inline uint32_t rgb_to_bgr(uint32_t rgb)
 
 /* ------------------------------------------------------------------------- */
 
-template<typename T, typename T2, BOOL WINAPI deleter(T2)> class GDIObj {
-	T obj = nullptr;
-
-	inline GDIObj &Replace(T obj_)
-	{
-		if (obj)
-			deleter(obj);
-		obj = obj_;
-		return *this;
-	}
-
-public:
-	inline GDIObj() {}
-	inline GDIObj(T obj_) : obj(obj_) {}
-	inline ~GDIObj() { deleter(obj); }
-
-	inline T operator=(T obj_)
-	{
-		Replace(obj_);
-		return obj;
-	}
-
-	inline operator T() const { return obj; }
-
-	inline bool operator==(T obj_) const { return obj == obj_; }
-	inline bool operator!=(T obj_) const { return obj != obj_; }
-};
-
-using HDCObj = GDIObj<HDC, HDC, DeleteDC>;
-using HFONTObj = GDIObj<HFONT, HGDIOBJ, DeleteObject>;
-using HBITMAPObj = GDIObj<HBITMAP, HGDIOBJ, DeleteObject>;
-
-/* ------------------------------------------------------------------------- */
-
 enum class Align {
 	Left,
 	Center,
@@ -210,11 +174,14 @@ struct TextSource {
 	uint32_t cx = 0;
 	uint32_t cy = 0;
 
-	HDCObj hdc;
+	HDC hdc;
 	Graphics graphics;
 
-	HFONTObj hfont;
-	unique_ptr<Font> font;
+	bool custom_font = false;
+	PrivateFontCollection private_fonts;
+	InstalledFontCollection installed_fonts;
+
+	unique_ptr<FontFamily> family;
 
 	bool read_from_file = false;
 	string file;
@@ -268,6 +235,8 @@ struct TextSource {
 
 	inline ~TextSource()
 	{
+		DeleteDC(hdc);
+
 		if (tex) {
 			obs_enter_graphics();
 			gs_texture_destroy(tex);
@@ -276,12 +245,14 @@ struct TextSource {
 	}
 
 	void UpdateFont();
+	void UpdateCustomFont(const wchar_t *font_path);
 	void GetStringFormat(StringFormat &format);
-	void RemoveNewlinePadding(const StringFormat &format, RectF &box);
-	void CalculateTextSizes(const StringFormat &format, RectF &bounding_box,
-				SIZE &text_size);
-	void RenderOutlineText(Graphics &graphics, const GraphicsPath &path,
-			       const Brush &brush);
+	void RemoveNewlinePadding(Font *font, const StringFormat &format, RectF &box);
+	void CalculateTextSizes(Font *font, const StringFormat &format,
+			RectF &bounding_box, SIZE &text_size);
+	void RenderOutlineText(Graphics &graphics,
+			const GraphicsPath &path,
+			const Brush &brush);
 	void RenderText();
 	void LoadFileText();
 	void TransformText();
@@ -301,33 +272,19 @@ static time_t get_modified_timestamp(const char *filename)
 	return stats.st_mtime;
 }
 
+void TextSource::UpdateCustomFont(const wchar_t *font_path) 
+{
+	private_fonts.AddFontFile(font_path);
+
+	family.reset(new FontFamily(face.c_str(), &private_fonts));
+}
+
 void TextSource::UpdateFont()
 {
-	hfont = nullptr;
-	font.reset(nullptr);
-
-	LOGFONT lf = {};
-	lf.lfHeight = face_size;
-	lf.lfWeight = bold ? FW_BOLD : FW_DONTCARE;
-	lf.lfItalic = italic;
-	lf.lfUnderline = underline;
-	lf.lfStrikeOut = strikeout;
-	lf.lfQuality = ANTIALIASED_QUALITY;
-	lf.lfCharSet = DEFAULT_CHARSET;
-
-	if (!face.empty()) {
-		wcscpy(lf.lfFaceName, face.c_str());
-		hfont = CreateFontIndirect(&lf);
-	}
-
-	if (!hfont) {
-		wcscpy(lf.lfFaceName, L"Arial");
-		hfont = CreateFontIndirect(&lf);
-	}
-
-	if (hfont)
-		font.reset(new Font(hdc, hfont));
+	/* We don't spawn a font from this, we use it for metainfo */
+	family.reset(new FontFamily(face.c_str(), &installed_fonts));
 }
+
 
 void TextSource::GetStringFormat(StringFormat &format)
 {
@@ -386,18 +343,19 @@ void TextSource::GetStringFormat(StringFormat &format)
  * calculating the texture size, so we have to calculate the size of '\n' to
  * remove the padding.  Because we always add a newline to the string, we
  * also remove the extra unused newline. */
-void TextSource::RemoveNewlinePadding(const StringFormat &format, RectF &box)
+void TextSource::RemoveNewlinePadding(Font *font, 
+		const StringFormat &format, RectF &box)
 {
 	RectF before;
 	RectF after;
 	Status stat;
 
-	stat = graphics.MeasureString(L"W", 2, font.get(), PointF(0.0f, 0.0f),
-				      &format, &before);
+	stat = graphics.MeasureString(L"W", 2, font, PointF(0.0f, 0.0f),
+			&format, &before);
 	warn_stat("MeasureString (without newline)");
 
-	stat = graphics.MeasureString(L"W\n", 3, font.get(), PointF(0.0f, 0.0f),
-				      &format, &after);
+	stat = graphics.MeasureString(L"W\n", 3, font, PointF(0.0f, 0.0f),
+			&format, &after);
 	warn_stat("MeasureString (with newline)");
 
 	float offset_cx = after.Width - before.Width;
@@ -425,8 +383,8 @@ void TextSource::RemoveNewlinePadding(const StringFormat &format, RectF &box)
 	box.Height -= offset_cy;
 }
 
-void TextSource::CalculateTextSizes(const StringFormat &format,
-				    RectF &bounding_box, SIZE &text_size)
+void TextSource::CalculateTextSizes(Font *font, 
+		const StringFormat &format,	RectF &bounding_box, SIZE &text_size)
 {
 	RectF layout_box;
 	RectF temp_box;
@@ -444,16 +402,17 @@ void TextSource::CalculateTextSizes(const StringFormat &format,
 			}
 
 			stat = graphics.MeasureString(text.c_str(),
-						      (int)text.size() + 1,
-						      font.get(), layout_box,
-						      &format, &bounding_box);
+					(int)text.size() + 1, font,
+					layout_box, &format,
+					&bounding_box);
 			warn_stat("MeasureString (wrapped)");
 
 			temp_box = bounding_box;
 		} else {
-			stat = graphics.MeasureString(
-				text.c_str(), (int)text.size() + 1, font.get(),
-				PointF(0.0f, 0.0f), &format, &bounding_box);
+			stat = graphics.MeasureString(text.c_str(),
+					(int)text.size() + 1, font,
+					PointF(0.0f, 0.0f), &format,
+					&bounding_box);
 			warn_stat("MeasureString (non-wrapped)");
 
 			temp_box = bounding_box;
@@ -461,7 +420,7 @@ void TextSource::CalculateTextSizes(const StringFormat &format,
 			bounding_box.X = 0.0f;
 			bounding_box.Y = 0.0f;
 
-			RemoveNewlinePadding(format, bounding_box);
+			RemoveNewlinePadding(font, format, bounding_box);
 
 			if (use_outline) {
 				bounding_box.Width += outline_size;
@@ -543,8 +502,42 @@ void TextSource::RenderText()
 	RectF box;
 	SIZE size;
 
+	std::unique_ptr<Font> font;
+	HFONT hfont = NULL;
+
+	INT style =
+		(underline ? FontStyleUnderline : 0) |
+		(strikeout ? FontStyleStrikeout : 0) |
+		(italic ? FontStyleItalic : 0) |
+		(bold ? FontStyleBold : 0);
+
+	/* This has gotten a bit messy. FIXME */
+	if (custom_font)
+		font.reset(new Font(family.get(), REAL(face_size), style, UnitPixel));
+	else {
+		/* I realize that we're not passing emSize here, unlike
+		 * above. Unfortunately, since we passed cell height 
+		 * before, we still need to do so now for compatibility */
+		LOGFONT lf = { 0 };
+		lf.lfHeight = face_size;
+		lf.lfWeight = bold ? FW_BOLD : FW_DONTCARE;
+		lf.lfItalic = italic;
+		lf.lfUnderline = underline;
+		lf.lfStrikeOut = strikeout;
+		lf.lfQuality = ANTIALIASED_QUALITY;
+		lf.lfCharSet = DEFAULT_CHARSET;
+
+		if (!face.empty()) {
+			wcscpy(lf.lfFaceName, face.c_str());
+			hfont = CreateFontIndirectW(&lf);
+		}
+
+		if (hfont)
+			font.reset(new Font(hdc, hfont));
+	}
+
 	GetStringFormat(format);
-	CalculateTextSizes(format, box, size);
+	CalculateTextSizes(font.get(), format, box, size);
 
 	unique_ptr<uint8_t[]> bits(new uint8_t[size.cx * size.cy * 4]);
 	Bitmap bitmap(size.cx, size.cy, 4 * size.cx, PixelFormat32bppARGB,
@@ -580,13 +573,10 @@ void TextSource::RenderText()
 		if (use_outline) {
 			box.Offset(outline_size / 2, outline_size / 2);
 
-			FontFamily family;
 			GraphicsPath path;
 
-			font->GetFamily(&family);
 			stat = path.AddString(text.c_str(), (int)text.size(),
-					      &family, font->GetStyle(),
-					      font->GetSize(), box, &format);
+					family.get(), font->GetStyle(), font->GetSize(), box, &format);
 			warn_stat("path.AddString");
 
 			RenderOutlineText(graphics_bitmap, path, brush);
@@ -601,6 +591,7 @@ void TextSource::RenderText()
 
 	if (!tex || (LONG)cx != size.cx || (LONG)cy != size.cy) {
 		obs_enter_graphics();
+
 		if (tex)
 			gs_texture_destroy(tex);
 
@@ -618,6 +609,8 @@ void TextSource::RenderText()
 		gs_texture_set_image(tex, bits.get(), size.cx * 4, false);
 		obs_leave_graphics();
 	}
+
+	DeleteObject(hfont);
 }
 
 const char *TextSource::GetMainString(const char *str)
@@ -667,19 +660,20 @@ void TextSource::TransformText()
 
 inline void TextSource::Update(obs_data_t *s)
 {
-	const char *new_text = obs_data_get_string(s, S_TEXT);
-	obs_data_t *font_obj = obs_data_get_obj(s, S_FONT);
-	const char *align_str = obs_data_get_string(s, S_ALIGN);
+	const char *custom_font_str = obs_data_get_string(s, S_CUSTOM_FONT);
+	const char *new_text   = obs_data_get_string(s, S_TEXT);
+	obs_data_t *font_obj   = obs_data_get_obj(s, S_FONT);
+	const char *align_str  = obs_data_get_string(s, S_ALIGN);
 	const char *valign_str = obs_data_get_string(s, S_VALIGN);
-	uint32_t new_color = obs_data_get_uint32(s, S_COLOR);
-	uint32_t new_opacity = obs_data_get_uint32(s, S_OPACITY);
-	bool gradient = obs_data_get_bool(s, S_GRADIENT);
-	uint32_t new_color2 = obs_data_get_uint32(s, S_GRADIENT_COLOR);
-	uint32_t new_opacity2 = obs_data_get_uint32(s, S_GRADIENT_OPACITY);
-	float new_grad_dir = (float)obs_data_get_double(s, S_GRADIENT_DIR);
-	bool new_vertical = obs_data_get_bool(s, S_VERTICAL);
-	bool new_outline = obs_data_get_bool(s, S_OUTLINE);
-	uint32_t new_o_color = obs_data_get_uint32(s, S_OUTLINE_COLOR);
+	uint32_t new_color     = obs_data_get_uint32(s, S_COLOR);
+	uint32_t new_opacity   = obs_data_get_uint32(s, S_OPACITY);
+	bool gradient          = obs_data_get_bool(s, S_GRADIENT);
+	uint32_t new_color2    = obs_data_get_uint32(s, S_GRADIENT_COLOR);
+	uint32_t new_opacity2  = obs_data_get_uint32(s, S_GRADIENT_OPACITY);
+	double new_grad_dir    = obs_data_get_double(s, S_GRADIENT_DIR);
+	bool new_vertical      = obs_data_get_bool(s, S_VERTICAL);
+	bool new_outline       = obs_data_get_bool(s, S_OUTLINE);
+	uint32_t new_o_color   = obs_data_get_uint32(s, S_OUTLINE_COLOR);
 	uint32_t new_o_opacity = obs_data_get_uint32(s, S_OUTLINE_OPACITY);
 	uint32_t new_o_size = obs_data_get_uint32(s, S_OUTLINE_SIZE);
 	bool new_use_file = obs_data_get_bool(s, S_USE_FILE);
@@ -704,21 +698,21 @@ inline void TextSource::Update(obs_data_t *s)
 	uint32_t new_bk_opacity = obs_data_get_uint32(s, S_BKOPACITY);
 
 	/* ----------------------------- */
-
 	wstring new_face = to_wide(font_face);
 
-	if (new_face != face || face_size != font_size || new_bold != bold ||
-	    new_italic != italic || new_underline != underline ||
-	    new_strikeout != strikeout) {
+	face = new_face;
+	face_size = font_size;
+	bold = new_bold;
+	italic = new_italic;
+	underline = new_underline;
+	strikeout = new_strikeout;
 
-		face = new_face;
-		face_size = font_size;
-		bold = new_bold;
-		italic = new_italic;
-		underline = new_underline;
-		strikeout = new_strikeout;
-
+	if (strlen(custom_font_str) != 0) {
+		custom_font = true;
+		UpdateCustomFont(to_wide(custom_font_str).c_str());
+	} else {
 		UpdateFont();
+		custom_font = false;
 	}
 
 	/* ----------------------------- */
@@ -911,7 +905,7 @@ static bool extents_modified(obs_properties_t *props, obs_property_t *p,
 
 #undef set_vis
 
-static obs_properties_t *get_properties(void *data)
+static obs_properties_t *text_get_properties(void *data)
 {
 	TextSource *s = reinterpret_cast<TextSource *>(data);
 	string path;
@@ -1012,72 +1006,108 @@ static obs_properties_t *get_properties(void *data)
 	return props;
 }
 
+void *text_create(obs_data_t *settings, obs_source_t *source)
+{
+	return reinterpret_cast<void*>(new TextSource(source, settings));
+}
+
+void text_destroy(void *data)
+{
+	delete reinterpret_cast<TextSource*>(data);
+}
+
+const char *text_get_name(void *)
+{
+	return obs_module_text("TextGDIPlus");
+}
+
+uint32_t text_get_width(void *data)
+{
+	TextSource *source = reinterpret_cast<TextSource*>(data);
+
+	return source->cx;
+}
+
+uint32_t text_get_height(void *data)
+{
+	TextSource *source = reinterpret_cast<TextSource*>(data);
+
+	return source->cy;
+}
+
+void text_get_defaults(obs_data_t *settings)
+{
+	obs_data_t *font_obj = obs_data_create();
+	obs_data_set_default_string(font_obj, "face", "Arial");
+	obs_data_set_default_int(font_obj, "size", 36);
+
+	obs_data_set_default_obj(settings, S_FONT, font_obj);
+	obs_data_set_default_string(settings, S_ALIGN, S_ALIGN_LEFT);
+	obs_data_set_default_string(settings, S_VALIGN, S_VALIGN_TOP);
+	obs_data_set_default_int(settings, S_COLOR, 0xFFFFFF);
+	obs_data_set_default_int(settings, S_OPACITY, 100);
+	obs_data_set_default_int(settings, S_GRADIENT_COLOR, 0xFFFFFF);
+	obs_data_set_default_int(settings, S_GRADIENT_OPACITY, 100);
+	obs_data_set_default_double(settings, S_GRADIENT_DIR, 90.0);
+	obs_data_set_default_int(settings, S_BKCOLOR, 0x000000);
+	obs_data_set_default_int(settings, S_BKOPACITY, 0);
+	obs_data_set_default_int(settings, S_OUTLINE_SIZE, 2);
+	obs_data_set_default_int(settings, S_OUTLINE_COLOR, 0xFFFFFF);
+	obs_data_set_default_int(settings, S_OUTLINE_OPACITY, 100);
+	obs_data_set_default_int(settings, S_CHATLOG_LINES, 6);
+	obs_data_set_default_bool(settings, S_EXTENTS_WRAP, true);
+	obs_data_set_default_int(settings, S_EXTENTS_CX, 100);
+	obs_data_set_default_int(settings, S_EXTENTS_CY, 100);
+
+	obs_data_release(font_obj);
+}
+
+void text_update(void *data, obs_data_t *settings)
+{
+	TextSource *source = reinterpret_cast<TextSource*>(data);
+
+	source->Update(settings);
+}
+
+void text_tick(void *data, float seconds)
+{
+	TextSource *source = reinterpret_cast<TextSource*>(data);
+
+	source->Tick(seconds);
+}
+
+void text_render(void *data, gs_effect_t *effect)
+{
+	reinterpret_cast<TextSource*>(data)->Render(effect);
+}
+
 bool obs_module_load(void)
 {
-	obs_source_info si = {};
+	const GdiplusStartupInput gdip_input;
+	GdiplusStartup(&gdip_token, &gdip_input, nullptr);
+
+	obs_source_info si = { 0 };
 	si.id = "text_gdiplus";
 	si.type = OBS_SOURCE_TYPE_INPUT;
-	si.output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_CUSTOM_DRAW;
-	si.get_properties = get_properties;
-
-	si.get_name = [](void *) { return obs_module_text("TextGDIPlus"); };
-	si.create = [](obs_data_t *settings, obs_source_t *source) {
-		return (void *)new TextSource(source, settings);
-	};
-	si.destroy = [](void *data) {
-		delete reinterpret_cast<TextSource *>(data);
-	};
-	si.get_width = [](void *data) {
-		return reinterpret_cast<TextSource *>(data)->cx;
-	};
-	si.get_height = [](void *data) {
-		return reinterpret_cast<TextSource *>(data)->cy;
-	};
-	si.get_defaults = [](obs_data_t *settings) {
-		obs_data_t *font_obj = obs_data_create();
-		obs_data_set_default_string(font_obj, "face", "Arial");
-		obs_data_set_default_int(font_obj, "size", 36);
-
-		obs_data_set_default_obj(settings, S_FONT, font_obj);
-		obs_data_set_default_string(settings, S_ALIGN, S_ALIGN_LEFT);
-		obs_data_set_default_string(settings, S_VALIGN, S_VALIGN_TOP);
-		obs_data_set_default_int(settings, S_COLOR, 0xFFFFFF);
-		obs_data_set_default_int(settings, S_OPACITY, 100);
-		obs_data_set_default_int(settings, S_GRADIENT_COLOR, 0xFFFFFF);
-		obs_data_set_default_int(settings, S_GRADIENT_OPACITY, 100);
-		obs_data_set_default_double(settings, S_GRADIENT_DIR, 90.0);
-		obs_data_set_default_int(settings, S_BKCOLOR, 0x000000);
-		obs_data_set_default_int(settings, S_BKOPACITY, 0);
-		obs_data_set_default_int(settings, S_OUTLINE_SIZE, 2);
-		obs_data_set_default_int(settings, S_OUTLINE_COLOR, 0xFFFFFF);
-		obs_data_set_default_int(settings, S_OUTLINE_OPACITY, 100);
-		obs_data_set_default_int(settings, S_CHATLOG_LINES, 6);
-		obs_data_set_default_bool(settings, S_EXTENTS_WRAP, true);
-		obs_data_set_default_int(settings, S_EXTENTS_CX, 100);
-		obs_data_set_default_int(settings, S_EXTENTS_CY, 100);
-		obs_data_set_default_int(settings, S_TRANSFORM,
-					 S_TRANSFORM_NONE);
-
-		obs_data_release(font_obj);
-	};
-	si.update = [](void *data, obs_data_t *settings) {
-		reinterpret_cast<TextSource *>(data)->Update(settings);
-	};
-	si.video_tick = [](void *data, float seconds) {
-		reinterpret_cast<TextSource *>(data)->Tick(seconds);
-	};
-	si.video_render = [](void *data, gs_effect_t *) {
-		reinterpret_cast<TextSource *>(data)->Render();
-	};
+	si.output_flags = OBS_SOURCE_VIDEO;
+	si.create = text_create;
+	si.destroy = text_destroy;
+	si.get_name = text_get_name;
+	si.get_properties = text_get_properties;
+	si.get_width = text_get_width;
+	si.get_height = text_get_height;
+	si.get_defaults = text_get_defaults;
+	si.update = text_update;
+	si.video_tick = text_tick;
+	si.video_render = text_render;
 
 	obs_register_source(&si);
 
-	const GdiplusStartupInput gdip_input;
-	GdiplusStartup(&gdip_token, &gdip_input, nullptr);
 	return true;
 }
 
 void obs_module_unload(void)
 {
 	GdiplusShutdown(gdip_token);
+	gdip_token = 0;
 }
