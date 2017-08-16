@@ -1052,6 +1052,22 @@
                     "url": "rtmp://ingest-as-central.a.switchboard.zone/live"
                 }
             ]
+        },
+        {
+            "name": "Looch",
+            "common": false,
+            "servers": [
+                {
+                    "name": "Primary Looch ingest server",
+                    "url": "rtmp://ingest.looch.tv/live"
+                }
+            ],
+            "recommended": {
+                "keyint": 2,
+                "profile": "main",
+                "max video bitrate": 6000,
+                "max audio bitrate": 160
+            }
         }
     ]
 }
