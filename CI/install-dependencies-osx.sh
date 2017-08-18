@@ -40,6 +40,8 @@ sudo cp -R ./sparkle/Sparkle.framework /Library/Frameworks/Sparkle.framework
 wget --retry-connrefused --waitretry=1 https://obs-nightly.s3-us-west-2.amazonaws.com/cef_binary_${CEF_BUILD_VERSION}_macosx64.tar.bz2
 tar -xf ./cef_binary_${CEF_BUILD_VERSION}_macosx64.tar.bz2
 cd ./cef_binary_${CEF_BUILD_VERSION}_macosx64
+# remove a broken test
+sed -i '.orig' '/add_subdirectory(tests\/ceftests)/d' ./CMakeLists.txt
 mkdir build
 cd ./build
 cmake -DCMAKE_CXX_FLAGS="-std=c++11 -stdlib=libc++" -DCMAKE_EXE_LINKER_FLAGS="-std=c++11 -stdlib=libc++" -DCMAKE_OSX_DEPLOYMENT_TARGET=10.9 ..
