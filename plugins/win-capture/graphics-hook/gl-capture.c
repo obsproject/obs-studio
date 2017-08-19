@@ -26,6 +26,7 @@ static struct func_hook wgl_swap_buffers;
 static struct func_hook wgl_delete_context;
 
 static bool darkest_dungeon_fix = false;
+static bool gl_functions_initialized = false;
 
 struct gl_data {
 	HDC                            hdc;
@@ -725,16 +726,15 @@ static void gl_shmem_capture(void)
 
 static void gl_capture(HDC hdc)
 {
-	static bool functions_initialized = false;
 	static bool critical_failure = false;
 
 	if (critical_failure) {
 		return;
 	}
 
-	if (!functions_initialized) {
-		functions_initialized = init_gl_functions();
-		if (!functions_initialized) {
+	if (!gl_functions_initialized) {
+		gl_functions_initialized = init_gl_functions();
+		if (!gl_functions_initialized) {
 			critical_failure = true;
 			return;
 		}
@@ -773,6 +773,9 @@ static void gl_capture(HDC hdc)
 
 static BOOL WINAPI hook_swap_buffers(HDC hdc)
 {
+	if (!gl_functions_initialized)
+		return false;
+
 	BOOL ret;
 
 	if (!global_hook_info->capture_overlay)
@@ -791,6 +794,9 @@ static BOOL WINAPI hook_swap_buffers(HDC hdc)
 
 static BOOL WINAPI hook_wgl_swap_buffers(HDC hdc)
 {
+	if (!gl_functions_initialized)
+		return false;
+
 	BOOL ret;
 
 	if (!global_hook_info->capture_overlay)
@@ -809,6 +815,9 @@ static BOOL WINAPI hook_wgl_swap_buffers(HDC hdc)
 
 static BOOL WINAPI hook_wgl_swap_layer_buffers(HDC hdc, UINT planes)
 {
+	if (!gl_functions_initialized)
+		return false;
+
 	BOOL ret;
 
 	if (!global_hook_info->capture_overlay)
@@ -827,6 +836,9 @@ static BOOL WINAPI hook_wgl_swap_layer_buffers(HDC hdc, UINT planes)
 
 static BOOL WINAPI hook_wgl_delete_context(HGLRC hrc)
 {
+	if (!gl_functions_initialized)
+		return false;
+
 	BOOL ret;
 
 	if (capture_active()) {
