@@ -49,13 +49,15 @@ OBSBasicProperties::OBSBasicProperties(QWidget *parent, OBSSource source_)
 	int cy = (int)config_get_int(App()->GlobalConfig(), "PropertiesWindow",
 			"cy");
 
-	QPushButton *b;
-	b = buttonBox->addButton(QTStr("OK"), QDialogButtonBox::AcceptRole);
-	buttonBox->addButton(QTStr("Cancel"), QDialogButtonBox::RejectRole);
-	buttonBox->addButton(QTStr("Defaults"), QDialogButtonBox::ResetRole);
 	buttonBox->setObjectName(QStringLiteral("buttonBox"));
+	buttonBox->setStandardButtons(QDialogButtonBox::Ok |
+	                              QDialogButtonBox::Cancel |
+	                              QDialogButtonBox::RestoreDefaults);
 
-	b->setDefault(true);
+	buttonBox->button(QDialogButtonBox::Ok)->setText(QTStr("OK"));
+	buttonBox->button(QDialogButtonBox::Cancel)->setText(QTStr("Cancel"));
+	buttonBox->button(QDialogButtonBox::RestoreDefaults)->
+		setText(QTStr("Defaults"));
 
 	if (cx > 400 && cy > 400)
 		resize(cx, cy);
@@ -92,7 +94,7 @@ OBSBasicProperties::OBSBasicProperties(QWidget *parent, OBSSource source_)
 	setLayout(new QVBoxLayout(this));
 	layout()->addWidget(windowSplitter);
 	layout()->addWidget(buttonBox);
-	layout()->setAlignment(buttonBox, Qt::AlignRight | Qt::AlignBottom);
+	layout()->setAlignment(buttonBox, Qt::AlignBottom);
 
 	view->show();
 	installEventFilter(CreateShortcutFilter());
