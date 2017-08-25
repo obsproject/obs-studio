@@ -940,7 +940,7 @@ static void *status_thread(void *data)
 				break;
 
 		} else if(status.type == FTL_STATUS_LOG) {
-			blog(LOG_DEBUG, "[%d] %s", status.msg.log.log_level,
+			blog(LOG_INFO, "[%d] %s", status.msg.log.log_level,
 					status.msg.log.string);
 
 		} else if (status.type == FTL_STATUS_VIDEO_PACKETS) {
@@ -951,15 +951,20 @@ static void *status_thread(void *data)
 					p->nack_reqs -stream->last_nack_count;
 			stream->last_nack_count = p->nack_reqs;
 
-			blog(LOG_DEBUG, "Avg packet send per second %3.1f, "
+			int log_level = p->nack_reqs > 2 ? LOG_INFO : LOG_DEBUG;
+
+			blog(log_level, "Avg packet send per second %3.1f, "
 					"total nack requests %d",
-					(float)p->sent * 1000.f / p->period);
+					(float)p->sent * 1000.f / p->period,
+					p->nack_reqs);
 
 		} else if (status.type == FTL_STATUS_VIDEO_PACKETS_INSTANT) {
 			ftl_packet_stats_instant_msg_t *p =
 				&status.msg.ipkt_stats;
 
-			blog(LOG_DEBUG, "avg transmit delay %dms "
+			int log_level = p->avg_rtt > 200 ? LOG_INFO : LOG_DEBUG;
+
+			blog(log_level, "avg transmit delay %dms "
 					"(min: %d, max: %d), "
 					"avg rtt %dms (min: %d, max: %d)",
 					p->avg_xmit_delay,
@@ -970,7 +975,10 @@ static void *status_thread(void *data)
 			ftl_video_frame_stats_msg_t *v =
 				&status.msg.video_stats;
 
-			blog(LOG_DEBUG, "Queue an average of %3.2f fps "
+			int log_level = v->queue_fullness > 5 ?
+				LOG_INFO : LOG_DEBUG;
+
+			blog(log_level, "Queue an average of %3.2f fps "
 				"(%3.1f kbps), "
 				"sent an average of %3.2f fps "
 				"(%3.1f kbps), "
