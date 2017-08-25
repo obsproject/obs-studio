@@ -34,6 +34,10 @@
                     "url": "rtmp://live-ams.twitch.tv/app"
                 },
                 {
+                    "name": "EU: Berlin, DE",
+                    "url": "rtmp://live-ber.twitch.tv/app"
+                },
+                {
                     "name": "EU: Frankfurt, DE",
                     "url": "rtmp://live-fra.twitch.tv/app"
                 },
@@ -48,6 +52,10 @@
                 {
                     "name": "EU: Madrid, Spain",
                     "url": "rtmp://live-mad.twitch.tv/app"
+                },
+                {
+                    "name": "EU: Marseille, FR",
+                    "url": "rtmp://live-mrs.twitch.tv/app"
                 },
                 {
                     "name": "EU: Milan, Italy",
