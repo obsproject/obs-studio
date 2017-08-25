@@ -1,18 +1,18 @@
 /******************************************************************************
-    Copyright (C) 2017 by Quinn Damerell <qdamere@microsoft.com>
+	Copyright (C) 2017 by Quinn Damerell <qdamere@microsoft.com>
 
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 2 of the License, or
-    (at your option) any later version.
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 2 of the License, or
+	(at your option) any later version.
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
 #include <obs-module.h>
@@ -324,9 +324,9 @@ static int avc_get_video_frame(struct ftl_stream *stream,
 			consumed += 2;
 		} else {
 			len = video_stream[0] << 24 |
-			      video_stream[1] << 16 |
-			      video_stream[2] << 8 |
-			      video_stream[3];
+				  video_stream[1] << 16 |
+				  video_stream[2] << 8 |
+				  video_stream[3];
 
 			if (len > (packet->size - consumed)) {
 				warn("ERROR: got len of %d but packet only "
@@ -346,7 +346,7 @@ static int avc_get_video_frame(struct ftl_stream *stream,
 		int send_marker_bit = (consumed >= packet->size) && !is_header;
 
 		if ((nalu_type != 12 && nalu_type != 6 && nalu_type != 9) ||
-		    nri) {
+			nri) {
 			nalu->data = video_stream;
 			nalu->len = len;
 			nalu->send_marker_bit = 0;
@@ -644,10 +644,17 @@ static int try_connect(struct ftl_stream *stream)
 
 	status_code = ftl_ingest_connect(&stream->ftl_handle);
 	if (status_code != FTL_SUCCESS) {
-		warn("Ingest connect failed with: %s (%d)",
+		if (status_code == FTL_BAD_OR_INVALID_STREAM_KEY) {
+			blog(LOG_ERROR, "Invalid Key (%s)",
+				ftl_status_code_to_string(status_code));
+			return OBS_OUTPUT_INVALID_STREAM;
+		}
+		else {
+			warn("Ingest connect failed with: %s (%d)",
 				ftl_status_code_to_string(status_code),
 				status_code);
-		return _ftl_error_to_obs_error(status_code);
+			return _ftl_error_to_obs_error(status_code);
+		}
 	}
 
 	info("Connection to %s successful", stream->path.array);
@@ -721,7 +728,7 @@ static void drop_frames(struct ftl_stream *stream, const char *name,
 
 		/* do not drop audio data or video keyframes */
 		if (packet.type          == OBS_ENCODER_AUDIO ||
-		    packet.drop_priority >= highest_priority) {
+			packet.drop_priority >= highest_priority) {
 			circlebuf_push_back(&new_buf, &packet, sizeof(packet));
 
 		} else {
@@ -926,7 +933,7 @@ static void *status_thread(void *data)
 				&status, 1000);
 
 		if (status_code == FTL_STATUS_TIMEOUT ||
-		    status_code == FTL_QUEUE_EMPTY) {
+			status_code == FTL_QUEUE_EMPTY) {
 			continue;
 		} else if (status_code == FTL_NOT_INITIALIZED) {
 			break;
@@ -940,7 +947,7 @@ static void *status_thread(void *data)
 				break;
 
 		} else if(status.type == FTL_STATUS_LOG) {
-			blog(LOG_DEBUG, "[%d] %s", status.msg.log.log_level,
+			blog(LOG_INFO, "[%d] %s", status.msg.log.log_level,
 					status.msg.log.string);
 
 		} else if (status.type == FTL_STATUS_VIDEO_PACKETS) {
@@ -951,15 +958,25 @@ static void *status_thread(void *data)
 					p->nack_reqs -stream->last_nack_count;
 			stream->last_nack_count = p->nack_reqs;
 
-			blog(LOG_DEBUG, "Avg packet send per second %3.1f, "
+			int logLevel = LOG_DEBUG;
+			if (p->nack_reqs > 2)
+			{
+				logLevel = LOG_INFO;
+			}
+			blog(logLevel, "Avg packet send per second %3.1f, "
 					"total nack requests %d",
-					(float)p->sent * 1000.f / p->period);
+					(float)p->sent * 1000.f / p->period, p->nack_reqs);
 
 		} else if (status.type == FTL_STATUS_VIDEO_PACKETS_INSTANT) {
 			ftl_packet_stats_instant_msg_t *p =
 				&status.msg.ipkt_stats;
 
-			blog(LOG_DEBUG, "avg transmit delay %dms "
+			int logLevel = LOG_DEBUG;
+			if (p->avg_rtt > 200)
+			{
+				logLevel = LOG_INFO;
+			}
+			blog(logLevel, "avg transmit delay %dms "
 					"(min: %d, max: %d), "
 					"avg rtt %dms (min: %d, max: %d)",
 					p->avg_xmit_delay,
@@ -970,7 +987,12 @@ static void *status_thread(void *data)
 			ftl_video_frame_stats_msg_t *v =
 				&status.msg.video_stats;
 
-			blog(LOG_DEBUG, "Queue an average of %3.2f fps "
+			int logLevel = LOG_DEBUG;
+			if (v->queue_fullness > 5)
+			{
+				logLevel = LOG_INFO;
+			}
+			blog(logLevel, "Queue an average of %3.2f fps "
 				"(%3.1f kbps), "
 				"sent an average of %3.2f fps "
 				"(%3.1f kbps), "
@@ -1168,8 +1190,8 @@ static int _ftl_error_to_obs_error(int status)
 struct obs_output_info ftl_output_info = {
 	.id                   = "ftl_output",
 	.flags                = OBS_OUTPUT_AV |
-	                        OBS_OUTPUT_ENCODED |
-	                        OBS_OUTPUT_SERVICE,
+				OBS_OUTPUT_ENCODED |
+				OBS_OUTPUT_SERVICE,
 	.encoded_video_codecs = "h264",
 	.encoded_audio_codecs = "opus",
 	.get_name             = ftl_stream_getname,
