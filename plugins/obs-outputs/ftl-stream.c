@@ -644,10 +644,16 @@ static int try_connect(struct ftl_stream *stream)
 
 	status_code = ftl_ingest_connect(&stream->ftl_handle);
 	if (status_code != FTL_SUCCESS) {
-		warn("Ingest connect failed with: %s (%d)",
-				ftl_status_code_to_string(status_code),
-				status_code);
-		return _ftl_error_to_obs_error(status_code);
+		if (status_code == FTL_BAD_OR_INVALID_STREAM_KEY) {
+			blog(LOG_ERROR, "Invalid Key (%s)",
+					ftl_status_code_to_string(status_code));
+			return OBS_OUTPUT_INVALID_STREAM;
+		} else {
+			warn("Ingest connect failed with: %s (%d)",
+					ftl_status_code_to_string(status_code),
+					status_code);
+			return _ftl_error_to_obs_error(status_code);
+		}
 	}
 
 	info("Connection to %s successful", stream->path.array);
