@@ -323,8 +323,13 @@ static obs_source_t *obs_source_create_internal(const char *id,
 				private))
 		goto fail;
 
-	if (info && info->get_defaults)
-		info->get_defaults(source->context.settings);
+	if (info) {
+		if (info->get_defaults2)
+			info->get_defaults2(info->type_data,
+					source->context.settings);
+		else if (info->get_defaults)
+			info->get_defaults(source->context.settings);
+	}
 
 	if (!obs_source_init(source))
 		goto fail;
@@ -695,7 +700,9 @@ bool obs_source_removed(const obs_source_t *source)
 static inline obs_data_t *get_defaults(const struct obs_source_info *info)
 {
 	obs_data_t *settings = obs_data_create();
-	if (info->get_defaults)
+	if (info->get_defaults2)
+		info->get_defaults2(info->type_data, settings);
+	else if (info->get_defaults)
 		info->get_defaults(settings);
 	return settings;
 }
