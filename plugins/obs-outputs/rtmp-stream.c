@@ -658,6 +658,14 @@ static int init_send(struct rtmp_stream *stream)
 			obs_data_t *params = obs_encoder_get_settings(vencoder);
 			if (params) {
 				int bitrate = obs_data_get_int(params, "bitrate");
+				if (!bitrate) {
+					warn ("Video encoder didn't return a "
+						"valid bitrate, new network "
+						"code may function poorly. "
+						"Low latency mode disabled.");
+					stream->low_latency_mode = false;
+					bitrate = 10000;
+				}
 				total_bitrate += bitrate;
 				obs_data_release(params);
 			}
@@ -668,6 +676,8 @@ static int init_send(struct rtmp_stream *stream)
 			obs_data_t *params = obs_encoder_get_settings(aencoder);
 			if (params) {
 				int bitrate = obs_data_get_int(params, "bitrate");
+				if (!bitrate)
+					bitrate = 160;
 				total_bitrate += bitrate;
 				obs_data_release(params);
 			}
