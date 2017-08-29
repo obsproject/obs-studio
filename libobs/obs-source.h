@@ -201,6 +201,7 @@ struct obs_source_info {
 	 * Gets the default settings for this source
 	 *
 	 * @param[out]  settings  Data to assign default settings to
+	 * @deprecated            Use get_defaults2 if type_data is needed
 	 */
 	void (*get_defaults)(obs_data_t *settings);
 
@@ -428,6 +429,14 @@ struct obs_source_info {
 
 	void (*transition_start)(void *data);
 	void (*transition_stop)(void *data);
+
+	/**
+	 * Gets the default settings for this source
+	 *
+	 * @param       type_data The type_data variable of this structure
+	 * @param[out]  settings  Data to assign default settings to
+	 */
+	void (*get_defaults2)(void *type_data, obs_data_t *settings);
 };
 
 EXPORT void obs_register_source_s(const struct obs_source_info *info,
