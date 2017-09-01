@@ -237,29 +237,33 @@ static inline void LogString(fstream &logFile, const char *timeString,
 	logFile << timeString << str << endl;
 }
 
-static inline void LogStringChunk(fstream &logFile, char *str)
+static inline void LogStringChunk(fstream &logFile, char *str,
+		bool block = false)
 {
-	char *nextLine = str;
-	string timeString = CurrentTimeString();
-	timeString += ": ";
+	if (block) {
+		logFile << str;
+	} else {
+		char *nextLine = str;
+		string timeString = CurrentTimeString();
+		timeString += ": ";
+		while (*nextLine) {
+			char *nextLine = strchr(str, '\n');
+			if (!nextLine)
+				break;
 
-	while (*nextLine) {
-		char *nextLine = strchr(str, '\n');
-		if (!nextLine)
-			break;
+			if (nextLine != str && nextLine[-1] == '\r') {
+				nextLine[-1] = 0;
+			} else {
+				nextLine[0] = 0;
+			}
 
-		if (nextLine != str && nextLine[-1] == '\r') {
-			nextLine[-1] = 0;
-		} else {
-			nextLine[0] = 0;
+			LogString(logFile, timeString.c_str(), str);
+			nextLine++;
+			str = nextLine;
 		}
 
 		LogString(logFile, timeString.c_str(), str);
-		nextLine++;
-		str = nextLine;
 	}
-
-	LogString(logFile, timeString.c_str(), str);
 }
 
 #define MAX_REPEATED_LINES 30
@@ -317,6 +321,8 @@ static void do_log(int log_level, const char *msg, va_list args, void *param)
 {
 	fstream &logFile = *static_cast<fstream*>(param);
 	char str[4096];
+	bool block = (log_level & LOG_TEXTBLOCK) != 0;
+	log_level &= ~LOG_TEXTBLOCK;
 
 #ifndef _WIN32
 	va_list args2;
@@ -337,7 +343,8 @@ static void do_log(int log_level, const char *msg, va_list args, void *param)
 			wide_buf.resize(wNum - 1);
 			MultiByteToWideChar(CP_UTF8, 0, str, -1, &wide_buf[0],
 					wNum);
-			wide_buf.push_back('\n');
+			if (!block)
+				wide_buf.push_back('\n');
 
 			OutputDebugStringW(wide_buf.c_str());
 		}
@@ -349,7 +356,7 @@ static void do_log(int log_level, const char *msg, va_list args, void *param)
 	if (log_level <= LOG_INFO || log_verbose) {
 		if (too_many_repeated_entries(logFile, msg, str))
 			return;
-		LogStringChunk(logFile, str);
+		LogStringChunk(logFile, str, block);
 	}
 
 #if defined(_WIN32) && defined(OBS_DEBUGBREAK_ON_ERROR)
