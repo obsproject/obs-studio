@@ -34,27 +34,36 @@ static void def_log_handler(int log_level, const char *format,
 		va_list args, void *param)
 {
 	char out[4096];
+
 	vsnprintf(out, sizeof(out), format, args);
 
 	if (log_level <= log_output_level) {
+		if ((log_level & LOG_TEXTBLOCK) != 0) {
+			fprintf(log_level <= LOG_ERROR ? stderr : stdout,
+					"%s", out);
+			return;
+		}
+
+		log_level &= ~LOG_TEXTBLOCK;
+
 		switch (log_level) {
 		case LOG_DEBUG:
-			fprintf(stdout, "debug: %s\n", out);
+			fprintf(stdout, "debug: %s%c", out);
 			fflush(stdout);
 			break;
 
 		case LOG_INFO:
-			fprintf(stdout, "info: %s\n", out);
+			fprintf(stdout, "info: %s%c", out);
 			fflush(stdout);
 			break;
 
 		case LOG_WARNING:
-			fprintf(stdout, "warning: %s\n", out);
+			fprintf(stdout, "warning: %s%c", out);
 			fflush(stdout);
 			break;
 
 		case LOG_ERROR:
-			fprintf(stderr, "error: %s\n", out);
+			fprintf(stderr, "error: %s%c", out);
 			fflush(stderr);
 		}
 	}

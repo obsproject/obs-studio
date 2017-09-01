@@ -62,7 +62,13 @@ enum {
 	/**
 	 * Debug message to be used mostly by developers.
 	 */
-	LOG_DEBUG   = 400
+	LOG_DEBUG   = 400,
+
+	/**
+	 * Marks the text as a block of text, not a line
+	 * (in other words, a newline character will not be appended)
+	 */
+	LOG_TEXTBLOCK = (1<<31)
 };
 
 typedef void (*log_handler_t)(int lvl, const char *msg, va_list args, void *p);
