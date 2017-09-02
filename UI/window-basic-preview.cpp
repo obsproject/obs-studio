@@ -75,6 +75,8 @@ static bool FindItemAtPos(obs_scene_t *scene, obs_sceneitem_t *item,
 
 	if (!SceneItemHasVideo(item))
 		return true;
+	if (obs_sceneitem_locked(item))
+		return true;
 
 	vec3_set(&pos3, data->pos.x, data->pos.y, 0.0f);
 
@@ -380,8 +382,7 @@ void OBSBasicPreview::GetStretchHandleData(const vec2 &pos)
 
 void OBSBasicPreview::keyPressEvent(QKeyEvent *event)
 {
-	if (GetScalingMode() == ScalingMode::Window ||
-	    event->isAutoRepeat()) {
+	if (!IsFixedScaling() || event->isAutoRepeat()) {
 		OBSQTDisplay::keyPressEvent(event);
 		return;
 	}
@@ -413,9 +414,23 @@ void OBSBasicPreview::keyReleaseEvent(QKeyEvent *event)
 	OBSQTDisplay::keyReleaseEvent(event);
 }
 
+void OBSBasicPreview::wheelEvent(QWheelEvent *event)
+{
+	if (scrollMode && IsFixedScaling()
+			&& event->orientation() == Qt::Vertical) {
+		if (event->delta() > 0)
+			SetScalingLevel(scalingLevel + 1);
+		else if (event->delta() < 0)
+			SetScalingLevel(scalingLevel - 1);
+		emit DisplayResized();
+	}
+
+	OBSQTDisplay::wheelEvent(event);
+}
+
 void OBSBasicPreview::mousePressEvent(QMouseEvent *event)
 {
-	if (scrollMode && GetScalingMode() != ScalingMode::Window &&
+	if (scrollMode && IsFixedScaling() &&
 	    event->button() == Qt::LeftButton) {
 		setCursor(Qt::ClosedHandCursor);
 		scrollingFrom.x = event->x();
@@ -674,6 +689,9 @@ void OBSBasicPreview::SnapItemMovement(vec2 &offset)
 
 static bool move_items(obs_scene_t *scene, obs_sceneitem_t *item, void *param)
 {
+	if (obs_sceneitem_locked(item))
+		return true;
+
 	vec2 *offset = reinterpret_cast<vec2*>(param);
 
 	if (obs_sceneitem_selected(item)) {
@@ -1084,6 +1102,9 @@ static inline bool crop_enabled(const obs_sceneitem_crop *crop)
 bool OBSBasicPreview::DrawSelectedItem(obs_scene_t *scene,
 		obs_sceneitem_t *item, void *param)
 {
+	if (obs_sceneitem_locked(item))
+		return true;
+
 	if (!obs_sceneitem_selected(item))
 		return true;
 
@@ -1183,6 +1204,7 @@ void OBSBasicPreview::DrawSceneEditing()
 	gs_technique_begin_pass(tech, 0);
 
 	OBSScene scene = main->GetCurrentScene();
+
 	if (scene)
 		obs_scene_enum_items(scene, DrawSelectedItem, this);
 
@@ -1195,4 +1217,16 @@ void OBSBasicPreview::DrawSceneEditing()
 void OBSBasicPreview::ResetScrollingOffset()
 {
 	vec2_zero(&scrollingOffset);
+}
+
+void OBSBasicPreview::SetScalingLevel(int32_t newScalingLevelVal) {
+	float newScalingAmountVal = pow(ZOOM_SENSITIVITY, float(newScalingLevelVal));
+	scalingLevel = newScalingLevelVal;
+	SetScalingAmount(newScalingAmountVal);
+}
+
+void OBSBasicPreview::SetScalingAmount(float newScalingAmountVal) {
+	scrollingOffset.x *= newScalingAmountVal / scalingAmount;
+	scrollingOffset.y *= newScalingAmountVal / scalingAmount;
+	scalingAmount = newScalingAmountVal;
 }

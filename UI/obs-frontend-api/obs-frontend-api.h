@@ -103,7 +103,11 @@ enum obs_frontend_event {
 	OBS_FRONTEND_EVENT_REPLAY_BUFFER_STARTING,
 	OBS_FRONTEND_EVENT_REPLAY_BUFFER_STARTED,
 	OBS_FRONTEND_EVENT_REPLAY_BUFFER_STOPPING,
-	OBS_FRONTEND_EVENT_REPLAY_BUFFER_STOPPED
+	OBS_FRONTEND_EVENT_REPLAY_BUFFER_STOPPED,
+
+	OBS_FRONTEND_EVENT_STUDIO_MODE_ENABLED,
+	OBS_FRONTEND_EVENT_STUDIO_MODE_DISABLED,
+	OBS_FRONTEND_EVENT_PREVIEW_SCENE_CHANGED
 };
 
 typedef void (*obs_frontend_event_cb)(enum obs_frontend_event event,
@@ -140,6 +144,12 @@ EXPORT void obs_frontend_pop_ui_translation(void);
 EXPORT void obs_frontend_set_streaming_service(obs_service_t *service);
 EXPORT obs_service_t* obs_frontend_get_streaming_service(void);
 EXPORT void obs_frontend_save_streaming_service(void);
+
+EXPORT bool obs_frontend_preview_program_mode_active(void);
+EXPORT void obs_frontend_set_preview_program_mode(bool enable);
+
+EXPORT obs_source_t *obs_frontend_get_current_preview_scene(void);
+EXPORT void obs_frontend_set_current_preview_scene(obs_source_t *scene);
 
 /* ------------------------------------------------------------------------- */
 

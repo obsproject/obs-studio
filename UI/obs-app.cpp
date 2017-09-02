@@ -62,6 +62,7 @@ static string currentLogFile;
 static string lastLogFile;
 
 bool portable_mode = false;
+static bool multi = false;
 static bool log_verbose = false;
 static bool unfiltered_log = false;
 bool opt_start_streaming = false;
@@ -737,14 +738,19 @@ bool OBSApp::SetTheme(std::string name, std::string path)
 bool OBSApp::InitTheme()
 {
 	const char *themeName = config_get_string(globalConfig, "General",
-			"Theme");
+			"CurrentTheme");
+	if (!themeName) {
+		/* Use deprecated "Theme" value if available */
+		themeName = config_get_string(globalConfig,
+				"General", "Theme");
+		if (!themeName)
+			themeName = "Default";
+	}
 
-	if (!themeName)
-		themeName = "Default";
+	if (strcmp(themeName, "Default") != 0 && SetTheme(themeName))
+		return true;
 
-	stringstream t;
-	t << themeName;
-	return SetTheme(t.str());
+	return SetTheme("Default");
 }
 
 OBSApp::OBSApp(int &argc, char **argv, profiler_name_store_t *store)
@@ -1343,7 +1349,7 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 		bool already_running = false;
 		RunOnceMutex rom = GetRunOnceMutex(already_running);
 
-		if (already_running) {
+		if (already_running && !multi) {
 			blog(LOG_WARNING, "\n================================");
 			blog(LOG_WARNING, "Warning: OBS is already running!");
 			blog(LOG_WARNING, "================================\n");
@@ -1371,6 +1377,10 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 
 			blog(LOG_WARNING, "User is now running a secondary "
 					"instance of OBS!");
+
+		} else if (already_running && multi) {
+			blog(LOG_INFO, "User enabled --multi flag and is now "
+					"running multiple instances of OBS.");
 		}
 
 		/* --------------------------------------- */
@@ -1836,6 +1846,7 @@ int main(int argc, char *argv[])
 #endif
 
 #ifdef _WIN32
+	SetErrorMode(SEM_FAILCRITICALERRORS);
 	load_debug_privilege();
 	base_set_crash_handler(main_crash_handler, nullptr);
 #endif
@@ -1849,6 +1860,9 @@ int main(int argc, char *argv[])
 	for (int i = 1; i < argc; i++) {
 		if (arg_is(argv[i], "--portable", "-p")) {
 			portable_mode = true;
+
+		} else if (arg_is(argv[i], "--multi", "-m")) {
+			multi = true;
 
 		} else if (arg_is(argv[i], "--verbose", nullptr)) {
 			log_verbose = true;
@@ -1898,7 +1912,8 @@ int main(int argc, char *argv[])
 			"--scene <string>: Start with specific scene.\n\n" <<
 			"--studio-mode: Enable studio mode.\n" <<
 			"--minimize-to-tray: Minimize to system tray.\n" <<
-			"--portable, -p: Use portable mode.\n\n" <<
+			"--portable, -p: Use portable mode.\n" <<
+			"--multi, -m: Don't warn when launching multiple instances.\n\n" <<
 			"--verbose: Make log more verbose.\n" <<
 			"--always-on-top: Start in 'always on top' mode.\n\n" <<
 			"--unfiltered_log: Make log unfiltered.\n\n" <<

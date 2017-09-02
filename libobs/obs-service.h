@@ -72,6 +72,8 @@ struct obs_service_info {
 	void *type_data;
 	void (*free_type_data)(void *type_data);
 
+	const char *(*get_output_type)(void *data);
+
 	/* TODO: more stuff later */
 };
 

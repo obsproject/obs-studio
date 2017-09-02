@@ -524,15 +524,28 @@ void OBSBasic::on_actionExportProfile_triggered()
 
 		if (!folder.exists()) {
 			folder.mkpath(outputDir);
-			QFile::copy(inputPath + currentProfile + "/basic.ini",
-					outputDir + "/basic.ini");
-			QFile::copy(inputPath + currentProfile + "/service.json",
-					outputDir + "/service.json");
-			QFile::copy(inputPath + currentProfile + "/streamEncoder.json",
-					outputDir + "/streamEncoder.json");
-			QFile::copy(inputPath + currentProfile + "/recordEncoder.json",
-					outputDir + "/recordEncoder.json");
+		} else {
+			if (QFile::exists(outputDir + "/basic.ini"))
+				QFile::remove(outputDir + "/basic.ini");
+
+			if (QFile::exists(outputDir + "/service.json"))
+				QFile::remove(outputDir + "/service.json");
+
+			if (QFile::exists(outputDir + "/streamEncoder.json"))
+				QFile::remove(outputDir + "/streamEncoder.json");
+
+			if (QFile::exists(outputDir + "/recordEncoder.json"))
+				QFile::remove(outputDir + "/recordEncoder.json");
 		}
+
+		QFile::copy(inputPath + currentProfile + "/basic.ini",
+				outputDir + "/basic.ini");
+		QFile::copy(inputPath + currentProfile + "/service.json",
+				outputDir + "/service.json");
+		QFile::copy(inputPath + currentProfile + "/streamEncoder.json",
+				outputDir + "/streamEncoder.json");
+		QFile::copy(inputPath + currentProfile + "/recordEncoder.json",
+				outputDir + "/recordEncoder.json");
 	}
 }
 

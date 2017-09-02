@@ -6,10 +6,6 @@
             "common": true,
             "servers": [
                 {
-                    "name": "US West: San Francisco, CA",
-                    "url": "rtmp://live.twitch.tv/app"
-                },
-                {
                     "name": "Asia: Hong Kong",
                     "url": "rtmp://live-hkg.twitch.tv/app"
                 },
@@ -38,6 +34,10 @@
                     "url": "rtmp://live-ams.twitch.tv/app"
                 },
                 {
+                    "name": "EU: Berlin, DE",
+                    "url": "rtmp://live-ber.twitch.tv/app"
+                },
+                {
                     "name": "EU: Frankfurt, DE",
                     "url": "rtmp://live-fra.twitch.tv/app"
                 },
@@ -48,6 +48,14 @@
                 {
                     "name": "EU: London, UK",
                     "url": "rtmp://live-lhr.twitch.tv/app"
+                },
+                {
+                    "name": "EU: Madrid, Spain",
+                    "url": "rtmp://live-mad.twitch.tv/app"
+                },
+                {
+                    "name": "EU: Marseille, FR",
+                    "url": "rtmp://live-mrs.twitch.tv/app"
                 },
                 {
                     "name": "EU: Milan, Italy",
@@ -66,12 +74,20 @@
                     "url": "rtmp://live-arn.twitch.tv/app"
                 },
                 {
+                    "name": "EU: Vienna, Austria",
+                    "url": "rtmp://live-vie.twitch.tv/app"
+                },
+                {
                     "name": "EU: Warsaw, Poland",
                     "url": "rtmp://live-waw.twitch.tv/app"
                 },
                 {
                     "name": "NA: Mexico City",
                     "url": "rtmp://live-qro.twitch.tv/app"
+                },
+                {
+                    "name": "NA: Quebec, Canada",
+                    "url": "rtmp://live-ymq.twitch.tv/app"
                 },
                 {
                     "name": "NA: Toronto, Canada",
@@ -106,8 +122,20 @@
                     "url": "rtmp://live-dfw.twitch.tv/app"
                 },
                 {
+                    "name": "US Central: Denver, CO",
+                    "url": "rtmp://live-den.twitch.tv/app"
+                },
+                {
+                    "name": "US Central: Houston, TX",
+                    "url": "rtmp://live-hou.twitch.tv/app"
+                },
+                {
                     "name": "US East: Ashburn, VA",
                     "url": "rtmp://live-iad.twitch.tv/app"
+                },
+                {
+                    "name": "US East: Atlanta, GA",
+                    "url": "rtmp://live-atl.twitch.tv/app"
                 },
                 {
                     "name": "US East: Chicago",
@@ -124,6 +152,18 @@
                 {
                     "name": "US West: Los Angeles, CA",
                     "url": "rtmp://live-lax.twitch.tv/app"
+                },
+                {
+                    "name": "US West: Phoenix, AZ",
+                    "url": "rtmp://live-phx.twitch.tv/app"
+                },
+                {
+                    "name": "US West: Portland, Oregon",
+                    "url": "rtmp://live-pdx.twitch.tv/app"
+                },
+                {
+                    "name": "US West: San Francisco, CA",
+                    "url": "rtmp://live-sfo.twitch.tv/app"
                 },
                 {
                     "name": "US West: San Jose, CA",
@@ -249,88 +289,178 @@
             }
         },
         {
-            "name": "beam.pro",
+            "name": "Mixer.com - FTL",
             "common": true,
             "servers": [
                 {
                     "name": "US: Dallas, TX",
-                    "url": "rtmp://ingest-dal.beam.pro:1935/beam"
+                    "url": "ingest-dal.mixer.com"
                 },
                 {
                     "name": "US: San Jose, CA",
-                    "url": "rtmp://ingest-sjc.beam.pro:1935/beam"
+                    "url": "ingest-sjc.mixer.com"
                 },
                 {
                     "name": "US: Seattle, WA",
-                    "url": "rtmp://ingest-sea.beam.pro:1935/beam"
+                    "url": "ingest-sea.mixer.com"
                 },
                 {
                     "name": "US: Washington DC",
-                    "url": "rtmp://ingest-wdc.beam.pro:1935/beam"
+                    "url": "ingest-wdc.mixer.com"
                 },
                 {
                     "name": "Canada: Toronto",
-                    "url": "rtmp://ingest-tor.beam.pro:1935/beam"
+                    "url": "ingest-tor.mixer.com"
                 },
                 {
                     "name": "EU: London",
-                    "url": "rtmp://ingest-lon.beam.pro:1935/beam"
+                    "url": "ingest-lon.mixer.com"
                 },
                 {
                     "name": "EU: Amsterdam",
-                    "url": "rtmp://ingest-ams.beam.pro:1935/beam"
+                    "url": "ingest-ams.mixer.com"
                 },
                 {
                     "name": "EU: Milan",
-                    "url": "rtmp://ingest-mil.beam.pro:1935/beam"
+                    "url": "ingest-mil.mixer.com"
                 },
                 {
                     "name": "EU: Paris",
-                    "url": "rtmp://ingest-par.beam.pro:1935/beam"
+                    "url": "ingest-par.mixer.com"
                 },
                 {
                     "name": "EU: Frankfurt",
-                    "url": "rtmp://ingest-fra.beam.pro:1935/beam"
+                    "url": "ingest-fra.mixer.com"
                 },
                 {
                     "name": "EU: Oslo",
-                    "url": "rtmp://ingest-osl.beam.pro:1935/beam"
+                    "url": "ingest-osl.mixer.com"
                 },
                 {
                     "name": "Brazil: Sao Paulo",
-                    "url": "rtmp://ingest-sao.beam.pro:1935/beam"
+                    "url": "ingest-sao.mixer.com"
                 },
                 {
                     "name": "Australia: Melbourne",
-                    "url": "rtmp://ingest-mel.beam.pro:1935/beam"
+                    "url": "ingest-mel.mixer.com"
                 },
                 {
                     "name": "Australia: Sydney",
-                    "url": "rtmp://ingest-syd.beam.pro:1935/beam"
+                    "url": "ingest-syd.mixer.com"
                 },
                 {
                     "name": "Mexico: Mexico City",
-                    "url": "rtmp://ingest-mex.beam.pro:1935/beam"
+                    "url": "ingest-mex.mixer.com"
                 },
                 {
                     "name": "Asia: Hong Kong",
-                    "url": "rtmp://ingest-hkg.beam.pro:1935/beam"
+                    "url": "ingest-hkg.mixer.com"
                 },
                 {
                     "name": "Asia: Tokyo",
-                    "url": "rtmp://ingest-tok.beam.pro:1935/beam"
+                    "url": "ingest-tok.mixer.com"
                 },
                 {
                     "name": "South Korea: Seoul",
-                    "url": "rtmp://ingest-seo.beam.pro:1935/beam"
+                    "url": "ingest-seo.mixer.com"
                 },
                 {
                     "name": "India: Chennai",
-                    "url": "rtmp://ingest-che.beam.pro:1935/beam"
+                    "url": "ingest-che.mixer.com"
                 }
             ],
             "recommended": {
-                "keyint": 1,
+                "keyint": 3,
+                "output": "ftl_output",
+                "max audio bitrate": 160,
+                "max video bitrate": 10000,
+                "profile": "main",
+                "bframes": 0
+            }
+        },
+        {
+            "name": "Mixer.com - RTMP",
+            "common": true,
+            "servers": [
+                {
+                    "name": "US: Dallas, TX",
+                    "url": "rtmp://ingest-dal.mixer.com:1935/beam"
+                },
+                {
+                    "name": "US: San Jose, CA",
+                    "url": "rtmp://ingest-sjc.mixer.com:1935/beam"
+                },
+                {
+                    "name": "US: Seattle, WA",
+                    "url": "rtmp://ingest-sea.mixer.com:1935/beam"
+                },
+                {
+                    "name": "US: Washington DC",
+                    "url": "rtmp://ingest-wdc.mixer.com:1935/beam"
+                },
+                {
+                    "name": "Canada: Toronto",
+                    "url": "rtmp://ingest-tor.mixer.com:1935/beam"
+                },
+                {
+                    "name": "EU: London",
+                    "url": "rtmp://ingest-lon.mixer.com:1935/beam"
+                },
+                {
+                    "name": "EU: Amsterdam",
+                    "url": "rtmp://ingest-ams.mixer.com:1935/beam"
+                },
+                {
+                    "name": "EU: Milan",
+                    "url": "rtmp://ingest-mil.mixer.com:1935/beam"
+                },
+                {
+                    "name": "EU: Paris",
+                    "url": "rtmp://ingest-par.mixer.com:1935/beam"
+                },
+                {
+                    "name": "EU: Frankfurt",
+                    "url": "rtmp://ingest-fra.mixer.com:1935/beam"
+                },
+                {
+                    "name": "EU: Oslo",
+                    "url": "rtmp://ingest-osl.mixer.com:1935/beam"
+                },
+                {
+                    "name": "Brazil: Sao Paulo",
+                    "url": "rtmp://ingest-sao.mixer.com:1935/beam"
+                },
+                {
+                    "name": "Australia: Melbourne",
+                    "url": "rtmp://ingest-mel.mixer.com:1935/beam"
+                },
+                {
+                    "name": "Australia: Sydney",
+                    "url": "rtmp://ingest-syd.mixer.com:1935/beam"
+                },
+                {
+                    "name": "Mexico: Mexico City",
+                    "url": "rtmp://ingest-mex.mixer.com:1935/beam"
+                },
+                {
+                    "name": "Asia: Hong Kong",
+                    "url": "rtmp://ingest-hkg.mixer.com:1935/beam"
+                },
+                {
+                    "name": "Asia: Tokyo",
+                    "url": "rtmp://ingest-tok.mixer.com:1935/beam"
+                },
+                {
+                    "name": "South Korea: Seoul",
+                    "url": "rtmp://ingest-seo.mixer.com:1935/beam"
+                },
+                {
+                    "name": "India: Chennai",
+                    "url": "rtmp://ingest-che.mixer.com:1935/beam"
+                }
+            ],
+            "recommended": {
+                "keyint": 3,
                 "max audio bitrate": 160,
                 "max video bitrate": 10000,
                 "profile": "main"
@@ -371,51 +501,6 @@
             }
         },
         {
-            "name": "Switchboard Live (Joicaster)",
-            "servers": [
-                {
-                    "name": "Default - Performance Global",
-                    "url": "rtmp://ingest-global-a.switchboard.zone/live"
-                },
-                {
-                    "name": "U.S. - Dallas, TX",
-                    "url": "rtmp://ingest-us-dal.switchboard.zone/live"
-                },
-                {
-                    "name": "U.S. - Seattle, WA",
-                    "url": "rtmp://ingest-us-sea.switchboard.zone/live"
-                },
-                {
-                    "name": "U.S. - Washington, DC",
-                    "url": "rtmp://ingest-us-wdc.switchboard.zone/live"
-                },
-                {
-                    "name": "C.A. - Toronto, Canada",
-                    "url": "rtmp://ingest-cn-tor.switchboard.zone/live"
-                },
-                {
-                    "name": "E.U. - London, England",
-                    "url": "rtmp://ingest-eu-lon.switchboard.zone/live"
-                },
-                {
-                    "name": "E.U. - Amsterdam, Netherlands",
-                    "url": "rtmp://ingest-as-tok.switchboard.zone/live"
-                },
-                {
-                    "name": "A.S. - Tokyo, Japan",
-                    "url": "rtmp://ingest-as-tok.switchboard.zone/live"
-                },
-                {
-                    "name": "A.U. - Melbourne, Australia",
-                    "url": "rtmp://ingest-au-mel.switchboard.zone/live"
-                },
-                {
-                    "name": "S.A - São Paulo, Brazil",
-                    "url": "rtmp://ingest-sa-sao.switchboard.zone/live"
-                }
-            ]
-        },
-        {
             "name": "GoodGame.ru",
             "servers": [
                 {
@@ -449,8 +534,8 @@
                     "url": "rtmp://live-den.vaughnsoft.net/live"
                 },
                 {
-                    "name": "US: Los Angeles, CA",
-                    "url": "rtmp://live-lax.vaughnsoft.net/live"
+                    "name": "US: New York, NY",
+                    "url": "rtmp://live-nyc.vaughnsoft.net/live"
                 },
                 {
                     "name": "EU: Amsterdam, NL",
@@ -479,8 +564,8 @@
                     "url": "rtmp://live-den.vaughnsoft.net/live"
                 },
                 {
-                    "name": "US: Los Angeles, CA",
-                    "url": "rtmp://live-lax.vaughnsoft.net/live"
+                    "name": "US: New York, NY",
+                    "url": "rtmp://live-nyc.vaughnsoft.net/live"
                 },
                 {
                     "name": "EU: Amsterdam, NL",
@@ -550,12 +635,20 @@
                     "url": "rtmp://eu-ams.restream.io/live"
                 },
                 {
+                    "name": "EU-West (Luxembourg)",
+                    "url": "rtmp://eu-luxembourg.restream.io/live"
+                },
+                {
                     "name": "EU-Central (Frankfurt, DE)",
                     "url": "rtmp://eu-central.restream.io/live"
                 },
                 {
                     "name": "EU-East (Falkenstein, DE)",
                     "url": "rtmp://eu-east.restream.io/live"
+                },
+                {
+                    "name": "EU-South (Madrid, Spain)",
+                    "url": "rtmp://eu-madrid.restream.io/live"
                 },
                 {
                     "name": "Russia (Moscow)",
@@ -795,8 +888,7 @@
             "recommended": {
                 "keyint": 2,
                 "profile": "main",
-                "max video bitrate": 3500,
-                "max audio bitrate": 128
+                "max video bitrate": 3500
             }
         },
         {
@@ -814,6 +906,146 @@
                 {
                     "name": "Primary",
                     "url": "rtmp://rtmpin.livestreamingest.com/rtmpin"
+                }
+            ]
+        },
+        {
+            "name": "Chaturbate",
+            "servers": [
+                {
+                    "name": "Default Global Auto Select - Recommended",
+                    "url": "rtmp://live.stream.highwebmedia.com/live-origin"
+                },
+                {
+                    "name": "US West",
+                    "url": "rtmp://live-us-west.stream.highwebmedia.com/live-origin"
+                },
+                {
+                    "name": "US Central",
+                    "url": "rtmp://live-us-central.stream.highwebmedia.com/live-origin"
+                },
+                {
+                    "name": "US East",
+                    "url": "rtmp://live-us-east.stream.highwebmedia.com/live-origin"
+                },
+                {
+                    "name": "Europe West",
+                    "url": "rtmp://live-eu-west.stream.highwebmedia.com/live-origin"
+                },
+                {
+                    "name": "Europe East",
+                    "url": "rtmp://live-eu-east.stream.highwebmedia.com/live-origin"
+                },
+                {
+                    "name": "Asia/Pacific South",
+                    "url": "rtmp://live-as-south.stream.highwebmedia.com/live-origin"
+                },
+                {
+                    "name": "Asia/Pacific North-East",
+                    "url": "rtmp://live-as-northeast.stream.highwebmedia.com/live-origin"
+                }
+            ],
+            "recommended": {
+                "keyint": 2,
+                "max video bitrate": 20000,
+                "max audio bitrate": 192
+            }
+        },
+        {
+            "name": "LiveEdu.tv",
+            "common": true,
+            "servers": [
+                {
+                    "name": "US",
+                    "url": "rtmp://usmedia11.liveedu.tv/liveedutv"
+                },
+                {
+                    "name": "EU",
+                    "url": "rtmp://eumedia8.liveedu.tv/liveedutv"
+                },
+                {
+                    "name": "Asia",
+                    "url": "rtmp://apmedia1.liveedu.tv/liveedutv"
+                }
+            ]
+        },
+        {
+            "name": "Twitter / Periscope",
+            "common": true,
+            "servers": [
+                {
+                    "name": "US West: California",
+                    "url": "rtmp://ca.pscp.tv:80/x"
+                },
+                {
+                    "name": "US West: Oregon",
+                    "url": "rtmp://or.pscp.tv:80/x"
+                },
+                {
+                    "name": "US East: Virginia",
+                    "url": "rtmp://va.pscp.tv:80/x"
+                },
+                {
+                    "name": "South America: Brazil",
+                    "url": "rtmp://br.pscp.tv:80/x"
+                },
+                {
+                    "name": "EU West: Ireland",
+                    "url": "rtmp://ie.pscp.tv:80/x"
+                },
+                {
+                    "name": "EU Central: Germany",
+                    "url": "rtmp://de.pscp.tv:80/x"
+                },
+                {
+                    "name": "Asia/Pacific: Australia",
+                    "url": "rtmp://au.pscp.tv:80/x"
+                },
+                {
+                    "name": "Asia/Pacific: Japan",
+                    "url": "rtmp://jp.pscp.tv:80/x"
+                },
+                {
+                    "name": "Asia/Pacific: Singapore",
+                    "url": "rtmp://sg.pscp.tv:80/x"
+                }
+            ],
+            "recommended": {
+                "keyint": 2,
+                "max video bitrate": 800,
+                "max audio bitrate": 96
+            }
+        },
+        {
+            "name": "Switchboard Live (Joicaster)",
+            "servers": [
+                {
+                    "name": "Default - Performance Global",
+                    "url": "rtmp://ingest-global-a.switchboard.zone/live"
+                },
+                {
+                    "name": "US West",
+                    "url": "rtmp://ingest-us-west.a.switchboard.zone/live"
+                },
+                {
+                    "name": "US East",
+                    "url": "rtmp://ingest-us-east.a.switchboard.zone/live"
+                },
+                {
+                    "name": "Europe West",
+                    "url": "rtmp://ingest-eu-west.a.switchboard.zone/live"
+                },
+                {
+                    "name": "Europe Central",
+                    "url": "rtmp://ingest-us-east.a.switchboard.zone/live"
+                },
+                {
+                    "name": "Australia East",
+                    "url": "rtmp://ingest-au-east.a.switchboard.zone/live"
+                },
+                {
+                    "name": "Asia Central",
+                    "url": "rtmp://ingest-as-central.a.switchboard.zone/live"
                 }
             ]
         }

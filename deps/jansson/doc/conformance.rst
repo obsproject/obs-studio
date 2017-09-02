@@ -108,3 +108,13 @@ types, ``long double``, etc. Obviously, shorter types like ``short``,
 are implicitly handled via the ordinary C type coercion rules (subject
 to overflow semantics). Also, no support or hooks are provided for any
 supplemental "bignum" type add-on packages.
+
+Depth of nested values
+----------------------
+
+To avoid stack exhaustion, Jansson currently limits the nesting depth
+for arrays and objects to a certain value (default: 2048), defined as
+a macro ``JSON_PARSER_MAX_DEPTH`` within ``jansson_config.h``.
+
+The limit is allowed to be set by the RFC; there is no recommended value
+or required minimum depth to be supported.

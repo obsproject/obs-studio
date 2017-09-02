@@ -293,6 +293,9 @@ static void update_params(struct obs_qsv *obsqsv, obs_data_t *settings)
 	bool cbr_override = obs_data_get_bool(settings, "cbr");
 	int bFrames = 7;
 
+	if (obs_data_has_user_value(settings, "bf"))
+		bFrames = (int)obs_data_get_int(settings, "bf");
+
 	int width = (int)obs_encoder_get_width(obsqsv->encoder);
 	int height = (int)obs_encoder_get_height(obsqsv->encoder);
 	if (astrcmpi(target_usage, "quality") == 0)

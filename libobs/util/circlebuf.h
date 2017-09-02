@@ -237,6 +237,11 @@ static inline void circlebuf_pop_front(struct circlebuf *cb, void *data,
 	circlebuf_peek_front(cb, data, size);
 
 	cb->size -= size;
+	if (!cb->size) {
+		cb->start_pos = cb->end_pos = 0;
+		return;
+	}
+
 	cb->start_pos += size;
 	if (cb->start_pos >= cb->capacity)
 		cb->start_pos -= cb->capacity;
@@ -248,6 +253,11 @@ static inline void circlebuf_pop_back(struct circlebuf *cb, void *data,
 	circlebuf_peek_front(cb, data, size);
 
 	cb->size -= size;
+	if (!cb->size) {
+		cb->start_pos = cb->end_pos = 0;
+		return;
+	}
+
 	if (cb->end_pos <= size)
 		cb->end_pos = cb->capacity - (size - cb->end_pos);
 	else

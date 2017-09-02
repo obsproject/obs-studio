@@ -102,7 +102,8 @@ class OBSBasic : public OBSMainWindow {
 		DropType_RawText,
 		DropType_Text,
 		DropType_Image,
-		DropType_Media
+		DropType_Media,
+		DropType_Html
 	};
 
 private:
@@ -119,6 +120,7 @@ private:
 	long disableSaving = 1;
 	bool projectChanged = false;
 	bool previewEnabled = true;
+	bool fullscreenInterface = false;
 
 	const char *copyString;
 	const char *copyFiltersString;
@@ -346,6 +348,8 @@ private:
 
 	QList<QPoint> visDlgPositions;
 
+	QByteArray startingDockLayout;
+
 	obs_data_array_t *SaveProjectors();
 	void LoadSavedProjectors(obs_data_array_t *savedProjectors);
 
@@ -529,6 +533,8 @@ protected:
 	virtual void changeEvent(QEvent *event) override;
 
 private slots:
+	void on_actionFullscreenInterface_triggered();
+
 	void on_actionShow_Recordings_triggered();
 	void on_actionRemux_triggered();
 	void on_action_Settings_triggered();
@@ -611,7 +617,6 @@ private slots:
 
 	void on_actionAlwaysOnTop_triggered();
 
-	void on_toggleSceneTransitions_toggled(bool visible);
 	void on_toggleListboxToolbars_toggled(bool visible);
 	void on_toggleStatusBar_toggled(bool visible);
 
@@ -624,6 +629,9 @@ private slots:
 
 	void on_autoConfigure_triggered();
 	void on_stats_triggered();
+
+	void on_resetUI_triggered();
+	void on_lockUI_toggled(bool lock);
 
 	void logUploadFinished(const QString &text, const QString &error);
 

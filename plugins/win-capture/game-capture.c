@@ -622,7 +622,7 @@ static inline bool is_64bit_process(HANDLE process)
 static inline bool open_target_process(struct game_capture *gc)
 {
 	gc->target_process = open_process(
-			PROCESS_QUERY_LIMITED_INFORMATION,
+			PROCESS_QUERY_INFORMATION | SYNCHRONIZE,
 			false, gc->process_id);
 	if (!gc->target_process) {
 		warn("could not open process: %s", gc->config.executable);
@@ -723,6 +723,11 @@ static inline bool init_hook_info(struct game_capture *gc)
 		warn("init_hook_info: failed to map data view: %lu",
 				GetLastError());
 		return false;
+	}
+
+	if (gc->config.force_shmem) {
+		warn("init_hook_info: user is forcing shared memory "
+			"(compatibility mode)");
 	}
 
 	gc->global_hook_info->offsets = gc->process_is_64bit ?
@@ -1013,7 +1018,7 @@ static void setup_window(struct game_capture *gc, HWND window)
 
 	GetWindowThreadProcessId(window, &gc->process_id);
 	if (gc->process_id) {
-		process = open_process(PROCESS_QUERY_LIMITED_INFORMATION,
+		process = open_process(PROCESS_QUERY_INFORMATION,
 			false, gc->process_id);
 		if (process) {
 			gc->is_app = is_app(process);
@@ -1545,7 +1550,7 @@ static inline bool capture_valid(struct game_capture *gc)
 {
 	if (!gc->dwm_capture && !IsWindow(gc->window))
 	       return false;
-	
+
 	return !object_signalled(gc->target_process);
 }
 

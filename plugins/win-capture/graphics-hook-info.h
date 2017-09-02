@@ -42,6 +42,8 @@ struct d3d9_offsets {
 struct dxgi_offsets {
 	uint32_t present;
 	uint32_t resize;
+
+	uint32_t present1;
 };
 
 struct ddraw_offsets {

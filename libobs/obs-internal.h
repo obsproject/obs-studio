@@ -82,6 +82,7 @@ struct obs_module {
 
 	bool        (*load)(void);
 	void        (*unload)(void);
+	void        (*post_load)(void);
 	void        (*set_locale)(const char *locale);
 	void        (*free_locale)(void);
 	uint32_t    (*ver)(void);

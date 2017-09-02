@@ -19,7 +19,7 @@
 
        <description of the json_object function>
 
-    :copyright: Copyright (c) 2009-2013 Petri Lehtinen <petri@digip.org>
+    :copyright: Copyright (c) 2009-2016 Petri Lehtinen <petri@digip.org>
     :license: MIT, see LICENSE for details.
 """
 
@@ -55,5 +55,6 @@ def setup(app):
     app.add_node(refcounting,
                  html=(html_visit, html_depart),
                  latex=(visit, depart),
-                 text=(visit, depart))
+                 text=(visit, depart),
+                 man=(visit, depart))
     app.add_directive('refcounting', refcounting_directive, 0, (1, 0, 0))

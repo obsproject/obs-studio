@@ -256,7 +256,9 @@ For a detailed explanation of reference counting in Jansson, see
 :ref:`apiref-reference-count` in :ref:`apiref`.
 
 The program's ready, let's test it and view the latest commits in
-Jansson's repository::
+Jansson's repository:
+
+.. code-block:: shell
 
     $ ./github_commits akheron jansson
     1581f26a Merge branch '2.3'

@@ -212,6 +212,8 @@ void SetProcessPriority(const char *priority)
 		SetPriorityClass(GetCurrentProcess(), ABOVE_NORMAL_PRIORITY_CLASS);
 	else if (strcmp(priority, "Normal") == 0)
 		SetPriorityClass(GetCurrentProcess(), NORMAL_PRIORITY_CLASS);
+	else if (strcmp(priority, "BelowNormal") == 0)
+		SetPriorityClass(GetCurrentProcess(), BELOW_NORMAL_PRIORITY_CLASS);
 	else if (strcmp(priority, "Idle") == 0)
 		SetPriorityClass(GetCurrentProcess(), IDLE_PRIORITY_CLASS);
 }

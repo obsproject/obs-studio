@@ -63,6 +63,7 @@ struct mp_media {
 	struct mp_decode v;
 	struct mp_decode a;
 	bool is_network;
+	bool is_concat;
 	bool has_video;
 	bool has_audio;
 	bool is_file;

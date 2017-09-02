@@ -133,7 +133,7 @@ static void compressor_destroy(void *data)
 }
 
 static inline void analyze_envelope(struct compressor_data *cd,
-	const float **samples, const uint32_t num_samples)
+	float **samples, const uint32_t num_samples)
 {
 	if (cd->envelope_buf_len < num_samples) {
 		resize_env_buffer(cd, num_samples);

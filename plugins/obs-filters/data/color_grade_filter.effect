@@ -53,7 +53,8 @@ float4 LUT(VertDataOut v_in) : TARGET
 	float4 newColor2 = clut.Sample(textureSampler, texPos2);
 	float4 luttedColor = lerp(newColor1, newColor2, frac(blueColor));
 
-	return lerp(textureColor, luttedColor, clut_amount);
+	float4 final_color = lerp(textureColor, luttedColor, clut_amount);
+	return float4(final_color.rgb, textureColor.a);
 }
 
 technique Draw

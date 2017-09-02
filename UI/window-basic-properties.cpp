@@ -49,9 +49,13 @@ OBSBasicProperties::OBSBasicProperties(QWidget *parent, OBSSource source_)
 	int cy = (int)config_get_int(App()->GlobalConfig(), "PropertiesWindow",
 			"cy");
 
-	buttonBox->setStandardButtons(QDialogButtonBox::Ok |
-			QDialogButtonBox::Cancel);
+	QPushButton *b;
+	b = buttonBox->addButton(QTStr("OK"), QDialogButtonBox::AcceptRole);
+	buttonBox->addButton(QTStr("Cancel"), QDialogButtonBox::RejectRole);
+	buttonBox->addButton(QTStr("Defaults"), QDialogButtonBox::ResetRole);
 	buttonBox->setObjectName(QStringLiteral("buttonBox"));
+
+	b->setDefault(true);
 
 	if (cx > 400 && cy > 400)
 		resize(cx, cy);
@@ -158,9 +162,8 @@ void OBSBasicProperties::on_buttonBox_clicked(QAbstractButton *button)
 
 		if (view->DeferUpdate())
 			view->UpdateSettings();
-	}
 
-	if (val == QDialogButtonBox::RejectRole) {
+	} else if (val == QDialogButtonBox::RejectRole) {
 		obs_data_t *settings = obs_source_get_settings(source);
 		obs_data_clear(settings);
 		obs_data_release(settings);
@@ -171,6 +174,16 @@ void OBSBasicProperties::on_buttonBox_clicked(QAbstractButton *button)
 			obs_source_update(source, oldSettings);
 
 		close();
+
+	} else if (val == QDialogButtonBox::ResetRole) {
+		obs_data_t *settings = obs_source_get_settings(source);
+		obs_data_clear(settings);
+		obs_data_release(settings);
+
+		if (!view->DeferUpdate())
+			obs_source_update(source, nullptr);
+
+		view->RefreshProperties();
 	}
 }
 

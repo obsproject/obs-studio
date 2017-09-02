@@ -238,6 +238,7 @@ enum state_t {
 	STATE_PENDING_DOWNLOAD,
 	STATE_DOWNLOADING,
 	STATE_DOWNLOADED,
+	STATE_INSTALL_FAILED,
 	STATE_INSTALLED,
 };
 
@@ -296,7 +297,8 @@ struct update_t {
 
 	void CleanPartialUpdate()
 	{
-		if (state == STATE_INSTALLED) {
+		if (state == STATE_INSTALL_FAILED ||
+			state == STATE_INSTALLED) {
 			if (!previousFile.empty()) {
 				DeleteFile(outputPath.c_str());
 				MyCopyFile(previousFile.c_str(),
@@ -823,6 +825,8 @@ static bool UpdateFile(update_t &file)
 			return false;
 		}
 
+		file.previousFile = oldFileRenamedPath;
+
 		int  error_code;
 		bool installed_ok;
 
@@ -839,6 +843,8 @@ static bool UpdateFile(update_t &file)
 					Status(L"Update failed: Couldn't "
 					       L"verify integrity of patched %s",
 					       curFileName);
+
+					file.state = STATE_INSTALL_FAILED;
 					return false;
 				}
 
@@ -848,6 +854,8 @@ static bool UpdateFile(update_t &file)
 					       L"check of patched "
 					       L"%s failed",
 					       curFileName);
+
+					file.state = STATE_INSTALL_FAILED;
 					return false;
 				}
 			}
@@ -872,11 +880,12 @@ static bool UpdateFile(update_t &file)
 				       L"(error %d)",
 				       curFileName,
 				       GetLastError());
+
+			file.state = STATE_INSTALL_FAILED;
 			return false;
 		}
 
-		file.previousFile = oldFileRenamedPath;
-		file.state        = STATE_INSTALLED;
+		file.state = STATE_INSTALLED;
 	} else {
 		if (file.patchable) {
 			/* Uh oh, we thought we could patch something but it's
@@ -890,6 +899,8 @@ static bool UpdateFile(update_t &file)
 		 * make sure they exist */
 		CreateFoldersForPath(file.outputPath.c_str());
 
+		file.previousFile = L"";
+
 		bool success = !!MyCopyFile(
 				file.tempPath.c_str(),
 				file.outputPath.c_str());
@@ -897,11 +908,11 @@ static bool UpdateFile(update_t &file)
 			Status(L"Update failed: Couldn't install %s (error %d)",
 					file.outputPath.c_str(),
 					GetLastError());
+			file.state = STATE_INSTALL_FAILED;
 			return false;
 		}
 
-		file.previousFile = L"";
-		file.state        = STATE_INSTALLED;
+		file.state = STATE_INSTALLED;
 	}
 
 	return true;
@@ -998,9 +1009,10 @@ static bool Update(wchar_t *cmdLine)
 		}
 
 		StringCbCopy(lpAppDataPath, sizeof(lpAppDataPath), pOut);
-		StringCbCat(lpAppDataPath, sizeof(lpAppDataPath),
-				L"\\obs-studio");
 	}
+
+	StringCbCat(lpAppDataPath, sizeof(lpAppDataPath),
+			L"\\obs-studio");
 
 	/* ------------------------------------- *
 	 * Get download path                     */
@@ -1210,9 +1222,25 @@ static bool Update(wchar_t *cmdLine)
 	/* ------------------------------------- *
 	 * Install updates                       */
 
+	int updatesInstalled = 0;
+	int lastPosition = 0;
+
+	SendDlgItemMessage(hwndMain, IDC_PROGRESS,
+		PBM_SETPOS, 0, 0);
+
 	for (update_t &update : updates) {
-		if (!UpdateFile(update))
+		if (!UpdateFile(update)) {
 			return false;
+		} else {
+			updatesInstalled++;
+			int position = (int)(((float)updatesInstalled /
+				(float)completedUpdates) * 100.0f);
+			if (position > lastPosition) {
+				lastPosition = position;
+				SendDlgItemMessage(hwndMain, IDC_PROGRESS,
+					PBM_SETPOS, position, 0);
+			}
+		}
 	}
 
 	/* If we get here, all updates installed successfully so we can purge
@@ -1225,6 +1253,9 @@ static bool Update(wchar_t *cmdLine)
 		if (!update.tempPath.empty())
 			DeleteFile(update.tempPath.c_str());
 	}
+
+	SendDlgItemMessage(hwndMain, IDC_PROGRESS,
+		PBM_SETPOS, 100, 0);
 
 	Status(L"Update complete.");
 	SetDlgItemText(hwndMain, IDC_BUTTON, L"Launch OBS");

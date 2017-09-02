@@ -1,5 +1,22 @@
+env:
+  matrix:
+    - JANSSON_BUILD_METHOD=cmake JANSSON_CMAKE_OPTIONS="-DJANSSON_TEST_WITH_VALGRIND=ON" JANSSON_EXTRA_INSTALL="valgrind"
+    - JANSSON_BUILD_METHOD=autotools
+    - JANSSON_BUILD_METHOD=coverage JANSSON_CMAKE_OPTIONS="-DJANSSON_COVERAGE=ON -DJANSSON_COVERALLS=ON -DCMAKE_BUILD_TYPE=Debug" JANSSON_EXTRA_INSTALL="lcov curl"
 language: c
 compiler:
   - gcc
   - clang
-script: autoreconf -f -i && CFLAGS=-Werror ./configure && make check
+matrix:
+  exclude:
+    - compiler: clang
+      env: JANSSON_BUILD_METHOD=coverage JANSSON_CMAKE_OPTIONS="-DJANSSON_COVERAGE=ON -DJANSSON_COVERALLS=ON -DCMAKE_BUILD_TYPE=Debug" JANSSON_EXTRA_INSTALL="lcov curl"
+  allow_failures:
+    - env: JANSSON_BUILD_METHOD=coverage JANSSON_CMAKE_OPTIONS="-DJANSSON_COVERAGE=ON -DJANSSON_COVERALLS=ON -DCMAKE_BUILD_TYPE=Debug" JANSSON_EXTRA_INSTALL="lcov curl"
+install:
+  - sudo apt-get update -qq
+  - sudo apt-get install -y -qq cmake $JANSSON_EXTRA_INSTALL
+script:
+  - if [ "$JANSSON_BUILD_METHOD" = "autotools" ]; then autoreconf -f -i && CFLAGS=-Werror ./configure && make check; fi
+  - if [ "$JANSSON_BUILD_METHOD" = "cmake" ]; then mkdir build && cd build && cmake $JANSSON_CMAKE_OPTIONS .. && cmake --build . && ctest --output-on-failure; fi
+  - if [ "$JANSSON_BUILD_METHOD" = "coverage" ]; then mkdir build && cd build && cmake $JANSSON_CMAKE_OPTIONS .. && cmake --build . && cmake --build . --target coveralls; fi

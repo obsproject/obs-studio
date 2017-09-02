@@ -26,17 +26,21 @@
 #include "obs-ffmpeg-compat.h"
 
 #define do_log(level, format, ...) \
-	blog(level, "[FFmpeg aac encoder: '%s'] " format, \
-			obs_encoder_get_name(enc->encoder), ##__VA_ARGS__)
+	blog(level, "[FFmpeg %s encoder: '%s'] " format, \
+			enc->type, \
+			obs_encoder_get_name(enc->encoder), \
+			##__VA_ARGS__)
 
 #define warn(format, ...)  do_log(LOG_WARNING, format, ##__VA_ARGS__)
 #define info(format, ...)  do_log(LOG_INFO,    format, ##__VA_ARGS__)
 #define debug(format, ...) do_log(LOG_DEBUG,   format, ##__VA_ARGS__)
 
-struct aac_encoder {
+struct enc_encoder {
 	obs_encoder_t    *encoder;
 
-	AVCodec          *aac;
+	const char       *type;
+
+	AVCodec          *codec;
 	AVCodecContext   *context;
 
 	uint8_t          *samples[MAX_AV_PLANES];
@@ -58,9 +62,15 @@ static const char *aac_getname(void *unused)
 	return obs_module_text("FFmpegAAC");
 }
 
-static void aac_destroy(void *data)
+static const char *opus_getname(void *unused)
 {
-	struct aac_encoder *enc = data;
+	UNUSED_PARAMETER(unused);
+	return obs_module_text("FFmpegOpus");
+}
+
+static void enc_destroy(void *data)
+{
+	struct enc_encoder *enc = data;
 
 	if (enc->samples[0])
 		av_freep(&enc->samples[0]);
@@ -73,7 +83,7 @@ static void aac_destroy(void *data)
 	bfree(enc);
 }
 
-static bool initialize_codec(struct aac_encoder *enc)
+static bool initialize_codec(struct enc_encoder *enc)
 {
 	int ret;
 
@@ -83,7 +93,7 @@ static bool initialize_codec(struct aac_encoder *enc)
 		return false;
 	}
 
-	ret = avcodec_open2(enc->context, enc->aac, NULL);
+	ret = avcodec_open2(enc->context, enc->codec, NULL);
 	if (ret < 0) {
 		warn("Failed to open AAC codec: %s", av_err2str(ret));
 		return false;
@@ -105,7 +115,7 @@ static bool initialize_codec(struct aac_encoder *enc)
 	return true;
 }
 
-static void init_sizes(struct aac_encoder *enc, audio_t *audio)
+static void init_sizes(struct enc_encoder *enc, audio_t *audio)
 {
 	const struct audio_output_info *aoi;
 	enum audio_format format;
@@ -121,21 +131,28 @@ static void init_sizes(struct aac_encoder *enc, audio_t *audio)
 #define MIN(x, y) ((x) < (y) ? (x) : (y))
 #endif
 
-static void *aac_create(obs_data_t *settings, obs_encoder_t *encoder)
+static void *enc_create(obs_data_t *settings, obs_encoder_t *encoder,
+		const char *type, const char *alt)
 {
-	struct aac_encoder *enc;
+	struct enc_encoder *enc;
 	int                bitrate = (int)obs_data_get_int(settings, "bitrate");
 	audio_t            *audio   = obs_encoder_audio(encoder);
 
 	avcodec_register_all();
 
-	enc          = bzalloc(sizeof(struct aac_encoder));
+	enc          = bzalloc(sizeof(struct enc_encoder));
 	enc->encoder = encoder;
-	enc->aac     = avcodec_find_encoder(AV_CODEC_ID_AAC);
+	enc->codec   = avcodec_find_encoder_by_name(type);
+	enc->type    = type;
+
+	if (!enc->codec && alt) {
+		enc->codec = avcodec_find_encoder_by_name(alt);
+		enc->type  = alt;
+	}
 
 	blog(LOG_INFO, "---------------------------------");
 
-	if (!enc->aac) {
+	if (!enc->codec) {
 		warn("Couldn't find encoder");
 		goto fail;
 	}
@@ -145,7 +162,7 @@ static void *aac_create(obs_data_t *settings, obs_encoder_t *encoder)
 		return NULL;
 	}
 
-	enc->context = avcodec_alloc_context3(enc->aac);
+	enc->context = avcodec_alloc_context3(enc->codec);
 	if (!enc->context) {
 		warn("Failed to create codec context");
 		goto fail;
@@ -154,12 +171,31 @@ static void *aac_create(obs_data_t *settings, obs_encoder_t *encoder)
 	enc->context->bit_rate    = bitrate * 1000;
 	enc->context->channels    = (int)audio_output_get_channels(audio);
 	enc->context->sample_rate = audio_output_get_sample_rate(audio);
-	enc->context->sample_fmt  = enc->aac->sample_fmts ?
-		enc->aac->sample_fmts[0] : AV_SAMPLE_FMT_FLTP;
+	enc->context->sample_fmt  = enc->codec->sample_fmts ?
+		enc->codec->sample_fmts[0] : AV_SAMPLE_FMT_FLTP;
+
+	/* check to make sure sample rate is supported */
+	if (enc->codec->supported_samplerates) {
+		const int *rate = enc->codec->supported_samplerates;
+		int cur_rate = enc->context->sample_rate;
+		int closest = 0;
+
+		while (*rate) {
+			int dist = abs(cur_rate - *rate);
+			int closest_dist = abs(cur_rate - closest);
+
+			if (dist < closest_dist)
+				closest = *rate;
+			rate++;
+		}
+
+		if (closest)
+			enc->context->sample_rate = closest;
+	}
 
 	/* if using FFmpeg's AAC encoder, at least set a cutoff value
 	 * (recommended by konverter) */
-	if (strcmp(enc->aac->name, "aac") == 0) {
+	if (strcmp(enc->codec->name, "aac") == 0) {
 		int cutoff1 = 4000 + (int)enc->context->bit_rate / 8;
 		int cutoff2 = 12000 + (int)enc->context->bit_rate / 8;
 		int cutoff3 = enc->context->sample_rate / 2;
@@ -184,11 +220,21 @@ static void *aac_create(obs_data_t *settings, obs_encoder_t *encoder)
 		return enc;
 
 fail:
-	aac_destroy(enc);
+	enc_destroy(enc);
 	return NULL;
 }
 
-static bool do_aac_encode(struct aac_encoder *enc,
+static void *aac_create(obs_data_t *settings, obs_encoder_t *encoder)
+{
+	return enc_create(settings, encoder, "aac", NULL);
+}
+
+static void *opus_create(obs_data_t *settings, obs_encoder_t *encoder)
+{
+	return enc_create(settings, encoder, "libopus", "opus");
+}
+
+static bool do_encode(struct enc_encoder *enc,
 		struct encoder_packet *packet, bool *received_packet)
 {
 	AVRational time_base = {1, enc->context->sample_rate};
@@ -236,23 +282,23 @@ static bool do_aac_encode(struct aac_encoder *enc,
 	return true;
 }
 
-static bool aac_encode(void *data, struct encoder_frame *frame,
+static bool enc_encode(void *data, struct encoder_frame *frame,
 		struct encoder_packet *packet, bool *received_packet)
 {
-	struct aac_encoder *enc = data;
+	struct enc_encoder *enc = data;
 
 	for (size_t i = 0; i < enc->audio_planes; i++)
 		memcpy(enc->samples[i], frame->data[i], enc->frame_size_bytes);
 
-	return do_aac_encode(enc, packet, received_packet);
+	return do_encode(enc, packet, received_packet);
 }
 
-static void aac_defaults(obs_data_t *settings)
+static void enc_defaults(obs_data_t *settings)
 {
 	obs_data_set_default_int(settings, "bitrate", 128);
 }
 
-static obs_properties_t *aac_properties(void *unused)
+static obs_properties_t *enc_properties(void *unused)
 {
 	UNUSED_PARAMETER(unused);
 
@@ -263,24 +309,25 @@ static obs_properties_t *aac_properties(void *unused)
 	return props;
 }
 
-static bool aac_extra_data(void *data, uint8_t **extra_data, size_t *size)
+static bool enc_extra_data(void *data, uint8_t **extra_data, size_t *size)
 {
-	struct aac_encoder *enc = data;
+	struct enc_encoder *enc = data;
 
 	*extra_data = enc->context->extradata;
 	*size       = enc->context->extradata_size;
 	return true;
 }
 
-static void aac_audio_info(void *data, struct audio_convert_info *info)
+static void enc_audio_info(void *data, struct audio_convert_info *info)
 {
-	struct aac_encoder *enc = data;
+	struct enc_encoder *enc = data;
 	info->format = convert_ffmpeg_sample_format(enc->context->sample_fmt);
+	info->samples_per_sec = (uint32_t)enc->context->sample_rate;
 }
 
-static size_t aac_frame_size(void *data)
+static size_t enc_frame_size(void *data)
 {
-	struct aac_encoder *enc =data;
+	struct enc_encoder *enc =data;
 	return enc->frame_size;
 }
 
@@ -290,11 +337,26 @@ struct obs_encoder_info aac_encoder_info = {
 	.codec          = "AAC",
 	.get_name       = aac_getname,
 	.create         = aac_create,
-	.destroy        = aac_destroy,
-	.encode         = aac_encode,
-	.get_frame_size = aac_frame_size,
-	.get_defaults   = aac_defaults,
-	.get_properties = aac_properties,
-	.get_extra_data = aac_extra_data,
-	.get_audio_info = aac_audio_info
+	.destroy        = enc_destroy,
+	.encode         = enc_encode,
+	.get_frame_size = enc_frame_size,
+	.get_defaults   = enc_defaults,
+	.get_properties = enc_properties,
+	.get_extra_data = enc_extra_data,
+	.get_audio_info = enc_audio_info
+};
+
+struct obs_encoder_info opus_encoder_info = {
+	.id             = "ffmpeg_opus",
+	.type           = OBS_ENCODER_AUDIO,
+	.codec          = "opus",
+	.get_name       = opus_getname,
+	.create         = opus_create,
+	.destroy        = enc_destroy,
+	.encode         = enc_encode,
+	.get_frame_size = enc_frame_size,
+	.get_defaults   = enc_defaults,
+	.get_properties = enc_properties,
+	.get_extra_data = enc_extra_data,
+	.get_audio_info = enc_audio_info
 };

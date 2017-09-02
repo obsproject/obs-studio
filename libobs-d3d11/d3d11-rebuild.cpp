@@ -40,6 +40,7 @@ void gs_texture_2d::RebuildSharedTextureFallback()
 	td.Format           = DXGI_FORMAT_B8G8R8A8_UNORM;
 	td.ArraySize        = 1;
 	td.SampleDesc.Count = 1;
+	td.BindFlags        = D3D11_BIND_SHADER_RESOURCE;
 
 	width      = td.Width;
 	height     = td.Height;

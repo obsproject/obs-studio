@@ -3,6 +3,7 @@
 #include "obs-app.hpp"
 #include "mute-checkbox.hpp"
 #include "slider-absoluteset-style.hpp"
+#include <obs-audio-controls.h>
 #include <util/platform.h>
 #include <util/threading.h>
 #include <QHBoxLayout>
@@ -55,17 +56,6 @@ void VolControl::VolumeChanged()
 	slider->blockSignals(false);
 	
 	updateText();
-}
-
-void VolControl::VolumeLevel(float mag, float peak, float peakHold, bool muted)
-{
-	if (muted) {
-		mag = 0.0f;
-		peak = 0.0f;
-		peakHold = 0.0f;
-	}
-
-	volMeter->setLevels(mag, peak, peakHold);
 }
 
 void VolControl::VolumeMuted(bool muted)
@@ -276,7 +266,10 @@ VolumeMeter::VolumeMeter(QWidget *parent)
 	magColor.setRgb(0x20, 0x7D, 0x17);
 	peakColor.setRgb(0x3E, 0xF1, 0x2B);
 	peakHoldColor.setRgb(0x00, 0x00, 0x00);
-	
+
+	clipColor1.setRgb(0x7F, 0x00, 0x00);
+	clipColor2.setRgb(0xFF, 0x00, 0x00);
+
 	updateTimerRef = updateTimer.toStrongRef();
 	if (!updateTimerRef) {
 		updateTimerRef = QSharedPointer<VolumeMeterTimer>::create();
@@ -340,15 +333,17 @@ void VolumeMeter::paintEvent(QPaintEvent *event)
 	int scaledPeak     = int((float)width * curPeak);
 	int scaledPeakHold = int((float)width * curPeakHold);
 
+	float db = obs_volmeter_get_cur_db(OBS_FADER_LOG, curPeakHold);
+
 	gradient.setStart(qreal(scaledMag), 0);
 	gradient.setFinalStop(qreal(scaledPeak), 0);
-	gradient.setColorAt(0, magColor);
-	gradient.setColorAt(1, peakColor);
+	gradient.setColorAt(0, db == 0.0f ? clipColor1 : magColor);
+	gradient.setColorAt(1, db == 0.0f ? clipColor2 : peakColor);
 
 	// RMS
 	painter.fillRect(0, 0, 
 			scaledMag, height,
-			magColor);
+			db == 0.0f ? clipColor1 : magColor);
 
 	// RMS - Peak gradient
 	painter.fillRect(scaledMag, 0,

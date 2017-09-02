@@ -296,6 +296,7 @@ void OBSPropertiesView::AddPath(obs_property_t *prop, QFormLayout *layout,
 		button->setEnabled(false);
 	}
 
+	button->setProperty("themeID", "settingsButtons");
 	edit->setText(QT_UTF8(val));
 	edit->setReadOnly(true);
 	edit->setToolTip(QT_UTF8(obs_property_long_description(prop)));
@@ -610,6 +611,7 @@ QWidget *OBSPropertiesView::AddButton(obs_property_t *prop)
 	const char *desc = obs_property_description(prop);
 
 	QPushButton *button = new QPushButton(QT_UTF8(desc));
+	button->setProperty("themeID", "settingsButtons");
 	button->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
 	return NewWidget(prop, button, SIGNAL(clicked()));
 }
@@ -628,6 +630,7 @@ void OBSPropertiesView::AddColor(obs_property_t *prop, QFormLayout *layout,
 		colorLabel->setEnabled(false);
 	}
 
+	button->setProperty("themeID", "settingsButtons");
 	button->setText(QTStr("Basic.PropertiesWindow.SelectColor"));
 	button->setToolTip(QT_UTF8(obs_property_long_description(prop)));
 
@@ -698,6 +701,7 @@ void OBSPropertiesView::AddFont(obs_property_t *prop, QFormLayout *layout,
 	font = fontLabel->font();
 	MakeQFont(font_obj, font, true);
 
+	button->setProperty("themeID", "settingsButtons");
 	button->setText(QTStr("Basic.PropertiesWindow.SelectFont"));
 	button->setToolTip(QT_UTF8(obs_property_long_description(prop)));
 
@@ -1795,6 +1799,7 @@ public:
 		if (browse) {
 			QPushButton *browseButton =
 				new QPushButton(QTStr("Browse"));
+			browseButton->setProperty("themeID", "settingsButtons");
 			topLayout->addWidget(browseButton);
 			topLayout->setAlignment(browseButton, Qt::AlignVCenter);
 

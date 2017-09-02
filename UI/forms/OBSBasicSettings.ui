@@ -11,10 +11,16 @@
    </rect>
   </property>
   <property name="sizePolicy">
-   <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+   <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
     <horstretch>0</horstretch>
     <verstretch>0</verstretch>
    </sizepolicy>
+  </property>
+  <property name="minimumSize">
+   <size>
+    <width>700</width>
+    <height>512</height>
+   </size>
   </property>
   <property name="windowTitle">
    <string>Settings</string>
@@ -659,6 +665,33 @@
          <property name="bottomMargin">
           <number>0</number>
          </property>
+         <item>
+         <widget class="QScrollArea" name="scrollArea_3">
+          <property name="widgetResizable">
+           <bool>true</bool>
+          </property>
+          <widget class="QWidget" name="scrollAreaWidgetContents_3">
+           <property name="geometry">
+            <rect>
+             <x>0</x>
+             <y>0</y>
+             <width>818</width>
+             <height>697</height>
+            </rect>
+           </property>
+           <layout class="QVBoxLayout" name="verticalLayout_21">
+            <property name="leftMargin">
+             <number>0</number>
+            </property>
+            <property name="topMargin">
+             <number>0</number>
+            </property>
+            <property name="rightMargin">
+             <number>0</number>
+            </property>
+            <property name="bottomMargin">
+             <number>9</number>
+            </property>
          <item alignment="Qt::AlignTop">
           <widget class="QWidget" name="widget" native="true">
            <property name="sizePolicy">
@@ -2959,6 +2992,10 @@
             </layout>
            </widget>
           </widget>
+         </item>
+         </layout>
+         </widget>
+         </widget>
          </item>
         </layout>
        </widget>

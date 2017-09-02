@@ -467,6 +467,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 		PROCESS_PRIORITY("High"),
 		PROCESS_PRIORITY("AboveNormal"),
 		PROCESS_PRIORITY("Normal"),
+		PROCESS_PRIORITY("BelowNormal"),
 		PROCESS_PRIORITY("Idle")
 	};
 #undef PROCESS_PRIORITY
@@ -2053,8 +2054,6 @@ void OBSBasicSettings::LoadAdvancedSettings()
 			"RecRBPrefix");
 	const char *rbSuffix = config_get_string(main->Config(), "SimpleOutput",
 			"RecRBSuffix");
-	int idx;
-
 	loading = true;
 
 	LoadRendererList();
@@ -2109,7 +2108,7 @@ void OBSBasicSettings::LoadAdvancedSettings()
 	bool enableLowLatencyMode = config_get_bool(main->Config(), "Output",
 			"LowLatencyEnable");
 
-	idx = ui->processPriority->findData(processPriority);
+	int idx = ui->processPriority->findData(processPriority);
 	if (idx == -1)
 		idx = ui->processPriority->findData("Normal");
 	ui->processPriority->setCurrentIndex(idx);
@@ -2438,8 +2437,9 @@ void OBSBasicSettings::SaveGeneralSettings()
 	string theme = themeData.toStdString();
 
 	if (WidgetChanged(ui->theme)) {
-		config_set_string(GetGlobalConfig(), "General", "Theme",
+		config_set_string(GetGlobalConfig(), "General", "CurrentTheme",
 				  theme.c_str());
+
 		App()->SetTheme(theme);
 	}
 

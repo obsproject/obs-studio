@@ -16,6 +16,7 @@
 ******************************************************************************/
 
 #include "window-namedialog.hpp"
+#include "qt-wrappers.hpp"
 #include "ui_NameDialog.h"
 #include "obs-app.hpp"
 
@@ -46,7 +47,7 @@ bool NameDialog::AskForName(QWidget *parent, const QString &title,
 
 	bool accepted = (dialog.exec() == DialogCode::Accepted);
 	if (accepted) {
-		str = dialog.ui->userText->text().toStdString();
+		str = QT_TO_UTF8(dialog.ui->userText->text());
 
 		while (str.size() && IsWhitespace(str.back()))
 			str.erase(str.end() - 1);

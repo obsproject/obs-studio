@@ -282,10 +282,31 @@ static bool ffmpeg_mux_start(void *data)
 
 	settings = obs_output_get_settings(stream->output);
 	path = obs_data_get_string(settings, "path");
+
+	/* ensure output path is writable to avoid generic error message */
+	/* TODO: remove once ffmpeg-mux is refactored to pass errors back */
+	FILE *test_file = os_fopen(path, "wb");
+	if (!test_file) {
+		struct dstr error_message;
+		dstr_init_copy(&error_message,
+			obs_module_text("UnableToWritePath"));
+		dstr_replace(&error_message, "%1", path);
+		obs_output_set_last_error(stream->output,
+			error_message.array);
+		dstr_free(&error_message);
+		obs_data_release(settings);
+		return false;
+	}
+
+	fclose(test_file);
+	os_unlink(path);
+
 	start_pipe(stream, path);
 	obs_data_release(settings);
 
 	if (!stream->pipe) {
+		obs_output_set_last_error(stream->output,
+			obs_module_text("HelperProcessFailed"));
 		warn("Failed to create process pipe");
 		return false;
 	}
@@ -492,7 +513,7 @@ static const char *replay_buffer_getname(void *type)
 	return obs_module_text("ReplayBuffer");
 }
 
-static bool replay_buffer_hotkey(void *data, obs_hotkey_id id,
+static void replay_buffer_hotkey(void *data, obs_hotkey_id id,
 		obs_hotkey_t *hotkey, bool pressed)
 {
 	UNUSED_PARAMETER(id);
@@ -502,7 +523,6 @@ static bool replay_buffer_hotkey(void *data, obs_hotkey_id id,
 	struct ffmpeg_muxer *stream = data;
 	if (os_atomic_load_bool(&stream->active))
 		stream->save_ts = os_gettime_ns() / 1000LL;
-	return true;
 }
 
 static void save_replay_proc(void *data, calldata_t *cd)
@@ -513,6 +533,7 @@ static void save_replay_proc(void *data, calldata_t *cd)
 
 static void *replay_buffer_create(obs_data_t *settings, obs_output_t *output)
 {
+	UNUSED_PARAMETER(settings);
 	struct ffmpeg_muxer *stream = bzalloc(sizeof(*stream));
 	stream->output = output;
 
@@ -524,7 +545,6 @@ static void *replay_buffer_create(obs_data_t *settings, obs_output_t *output)
 	proc_handler_t *ph = obs_output_get_proc_handler(output);
 	proc_handler_add(ph, "void save()", save_replay_proc, stream);
 
-	UNUSED_PARAMETER(settings);
 	return stream;
 }
 

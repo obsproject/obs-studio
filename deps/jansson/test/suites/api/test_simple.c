@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2013 Petri Lehtinen <petri@digip.org>
+ * Copyright (c) 2009-2016 Petri Lehtinen <petri@digip.org>
  *
  * Jansson is free software; you can redistribute it and/or modify
  * it under the terms of the MIT license. See LICENSE for details.
@@ -224,4 +224,17 @@ static void run_tests()
     json_incref(value);
     if(value->refcount != (size_t)-1)
       fail("refcounting null works incorrectly");
+
+#ifdef json_auto_t
+    value = json_string("foo");
+    {
+        json_auto_t *test = json_incref(value);
+        /* Use test so GCC doesn't complain it is unused. */
+        if(!json_is_string(test))
+            fail("value type check failed");
+    }
+    if(value->refcount != 1)
+	fail("automatic decrement failed");
+    json_decref(value);
+#endif
 }

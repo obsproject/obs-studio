@@ -804,3 +804,27 @@ void obs_volmeter_remove_callback(obs_volmeter_t *volmeter,
 	da_erase_item(volmeter->callbacks, &cb);
 	pthread_mutex_unlock(&volmeter->callback_mutex);
 }
+
+float obs_volmeter_get_cur_db(enum obs_fader_type type, const float def)
+{
+	float db;
+
+	switch(type) {
+	case OBS_FADER_CUBIC:
+		db = cubic_def_to_db(def);
+		break;
+	case OBS_FADER_IEC:
+		db = iec_def_to_db(def);
+		break;
+	case OBS_FADER_LOG:
+		db = log_def_to_db(def);
+		break;
+	default:
+		goto fail;
+		break;
+	}
+
+	return db;
+fail:
+	return -INFINITY;
+}

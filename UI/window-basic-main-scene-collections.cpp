@@ -425,8 +425,12 @@ void OBSBasic::on_actionExportSceneCollection_triggered()
 
 	string file = QT_TO_UTF8(exportFile);
 
-	if (!exportFile.isEmpty() && !exportFile.isNull())
+	if (!exportFile.isEmpty() && !exportFile.isNull()) {
+		if (QFile::exists(exportFile))
+			QFile::remove(exportFile);
+
 		QFile::copy(path + currentFile + ".json", exportFile);
+	}
 }
 
 void OBSBasic::ChangeSceneCollection()

@@ -585,6 +585,9 @@ void OBSBasic::SetCurrentScene(OBSSource scene, bool force)
 				break;
 			}
 		}
+
+		if (api && IsPreviewProgramMode())
+			api->on_event(OBS_FRONTEND_EVENT_PREVIEW_SCENE_CHANGED);
 	}
 
 	UpdateSceneSelection(scene);
@@ -1009,6 +1012,9 @@ void OBSBasic::SetPreviewProgramMode(bool enabled)
 		ui->previewLayout->addWidget(program);
 		program->show();
 
+		if (api)
+			api->on_event(OBS_FRONTEND_EVENT_STUDIO_MODE_ENABLED);
+
 		blog(LOG_INFO, "Switched to Preview/Program mode");
 		blog(LOG_INFO, "-----------------------------"
 				"-------------------");
@@ -1038,6 +1044,9 @@ void OBSBasic::SetPreviewProgramMode(bool enabled)
 
 		if (!previewEnabled)
 			EnablePreviewDisplay(false);
+
+		if (api)
+			api->on_event(OBS_FRONTEND_EVENT_STUDIO_MODE_DISABLED);
 
 		blog(LOG_INFO, "Switched to regular Preview mode");
 		blog(LOG_INFO, "-----------------------------"

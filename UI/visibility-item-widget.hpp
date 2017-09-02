@@ -9,6 +9,7 @@ class QLineEdit;
 class QListWidget;
 class QListWidgetItem;
 class VisibilityCheckBox;
+class LockedCheckBox;
 
 class VisibilityItemWidget : public QWidget {
 	Q_OBJECT
@@ -18,6 +19,7 @@ private:
 	OBSSource source;
 	QLabel *label = nullptr;
 	VisibilityCheckBox *vis = nullptr;
+	LockedCheckBox *lock = nullptr;
 	QString oldName;
 
 	OBSSignal sceneRemoveSignal;
@@ -31,6 +33,7 @@ private:
 	static void OBSSceneRemove(void *param, calldata_t *data);
 	static void OBSSceneItemRemove(void *param, calldata_t *data);
 	static void OBSSceneItemVisible(void *param, calldata_t *data);
+	static void OBSSceneItemLocked(void *param, calldata_t *data);
 	static void OBSSourceEnabled(void *param, calldata_t *data);
 	static void OBSSourceRenamed(void *param, calldata_t *data);
 
@@ -38,8 +41,10 @@ private:
 
 private slots:
 	void VisibilityClicked(bool visible);
+	void LockClicked(bool locked);
 	void SourceEnabled(bool enabled);
 	void SourceRenamed(QString name);
+	void SourceLocked(bool locked);
 
 public:
 	VisibilityItemWidget(obs_source_t *source);
