@@ -543,6 +543,7 @@ static bool obs_init_data(void)
 
 	pthread_mutex_init_value(&obs->data.displays_mutex);
 	pthread_mutex_init_value(&obs->data.draw_callbacks_mutex);
+	pthread_mutex_init_value(&obs->data.rename_cache_mutex);
 
 	if (pthread_mutexattr_init(&attr) != 0)
 		return false;
@@ -561,6 +562,8 @@ static bool obs_init_data(void)
 	if (pthread_mutex_init(&data->services_mutex, &attr) != 0)
 		goto fail;
 	if (pthread_mutex_init(&obs->data.draw_callbacks_mutex, NULL) != 0)
+		goto fail;
+	if (pthread_mutex_init(&obs->data.rename_cache_mutex, NULL) != 0)
 		goto fail;
 	if (!obs_view_init(&data->main_view))
 		goto fail;
@@ -611,6 +614,10 @@ static void obs_free_data(void)
 	FREE_OBS_LINKED_LIST(display);
 	FREE_OBS_LINKED_LIST(service);
 
+	for (size_t i = 0; i < data->rename_cache.num; i++)
+		bfree(data->rename_cache.array[i]);
+	da_free(data->rename_cache);
+
 	pthread_mutex_destroy(&data->sources_mutex);
 	pthread_mutex_destroy(&data->audio_sources_mutex);
 	pthread_mutex_destroy(&data->displays_mutex);
@@ -618,6 +625,7 @@ static void obs_free_data(void)
 	pthread_mutex_destroy(&data->encoders_mutex);
 	pthread_mutex_destroy(&data->services_mutex);
 	pthread_mutex_destroy(&data->draw_callbacks_mutex);
+	pthread_mutex_destroy(&data->rename_cache_mutex);
 	da_free(data->draw_callbacks);
 }
 
@@ -1754,10 +1762,6 @@ static inline bool obs_context_data_init_wrap(
 	context->private = private;
 	context->type = type;
 
-	pthread_mutex_init_value(&context->rename_cache_mutex);
-	if (pthread_mutex_init(&context->rename_cache_mutex, NULL) < 0)
-		return false;
-
 	context->signals = signal_handler_create();
 	if (!context->signals)
 		return false;
@@ -1796,12 +1800,7 @@ void obs_context_data_free(struct obs_context_data *context)
 	proc_handler_destroy(context->procs);
 	obs_data_release(context->settings);
 	obs_context_data_remove(context);
-	pthread_mutex_destroy(&context->rename_cache_mutex);
 	bfree(context->name);
-
-	for (size_t i = 0; i < context->rename_cache.num; i++)
-		bfree(context->rename_cache.array[i]);
-	da_free(context->rename_cache);
 
 	memset(context, 0, sizeof(*context));
 }
@@ -1843,13 +1842,13 @@ void obs_context_data_remove(struct obs_context_data *context)
 void obs_context_data_setname(struct obs_context_data *context,
 		const char *name)
 {
-	pthread_mutex_lock(&context->rename_cache_mutex);
+	pthread_mutex_lock(&obs->data.rename_cache_mutex);
 
 	if (context->name)
-		da_push_back(context->rename_cache, &context->name);
+		da_push_back(obs->data.rename_cache, &context->name);
 	context->name = dup_name(name, context->private);
 
-	pthread_mutex_unlock(&context->rename_cache_mutex);
+	pthread_mutex_unlock(&obs->data.rename_cache_mutex);
 }
 
 profiler_name_store_t *obs_get_profiler_name_store(void)

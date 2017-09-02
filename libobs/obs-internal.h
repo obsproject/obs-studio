@@ -318,7 +318,9 @@ struct obs_core_data {
 	pthread_mutex_t                 services_mutex;
 	pthread_mutex_t                 audio_sources_mutex;
 	pthread_mutex_t                 draw_callbacks_mutex;
+	pthread_mutex_t                 rename_cache_mutex;
 	DARRAY(struct draw_callback)    draw_callbacks;
+	DARRAY(char*)                   rename_cache;
 
 	struct obs_view                 main_view;
 
@@ -417,9 +419,6 @@ struct obs_context_data {
 	DARRAY(obs_hotkey_id)           hotkeys;
 	DARRAY(obs_hotkey_pair_id)      hotkey_pairs;
 	obs_data_t                      *hotkey_data;
-
-	DARRAY(char*)                   rename_cache;
-	pthread_mutex_t                 rename_cache_mutex;
 
 	pthread_mutex_t                 *mutex;
 	struct obs_context_data         *next;
