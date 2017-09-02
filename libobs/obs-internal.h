@@ -213,6 +213,19 @@ extern void obs_display_free(struct obs_display *display);
 
 
 /* ------------------------------------------------------------------------- */
+/* path table */
+
+struct path_table {
+	const char *name;
+
+	/* the following variables are automatically stored on the rename cache
+	 * and thus do not need to be manually freed, and are safe to return
+	 * without locking */
+	char *      paths;
+	char **     parsed;
+};
+
+/* ------------------------------------------------------------------------- */
 /* core */
 
 struct obs_vframe_info {
@@ -318,9 +331,11 @@ struct obs_core_data {
 	pthread_mutex_t                 services_mutex;
 	pthread_mutex_t                 audio_sources_mutex;
 	pthread_mutex_t                 draw_callbacks_mutex;
+	pthread_mutex_t                 path_tables_mutex;
 	pthread_mutex_t                 rename_cache_mutex;
 	DARRAY(struct draw_callback)    draw_callbacks;
 	DARRAY(char*)                   rename_cache;
+	DARRAY(struct path_table)       path_tables;
 
 	struct obs_view                 main_view;
 

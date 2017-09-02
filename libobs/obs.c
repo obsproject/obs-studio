@@ -543,6 +543,7 @@ static bool obs_init_data(void)
 
 	pthread_mutex_init_value(&obs->data.displays_mutex);
 	pthread_mutex_init_value(&obs->data.draw_callbacks_mutex);
+	pthread_mutex_init_value(&obs->data.path_tables_mutex);
 	pthread_mutex_init_value(&obs->data.rename_cache_mutex);
 
 	if (pthread_mutexattr_init(&attr) != 0)
@@ -562,6 +563,8 @@ static bool obs_init_data(void)
 	if (pthread_mutex_init(&data->services_mutex, &attr) != 0)
 		goto fail;
 	if (pthread_mutex_init(&obs->data.draw_callbacks_mutex, NULL) != 0)
+		goto fail;
+	if (pthread_mutex_init(&obs->data.path_tables_mutex, NULL) != 0)
 		goto fail;
 	if (pthread_mutex_init(&obs->data.rename_cache_mutex, NULL) != 0)
 		goto fail;
@@ -614,6 +617,8 @@ static void obs_free_data(void)
 	FREE_OBS_LINKED_LIST(display);
 	FREE_OBS_LINKED_LIST(service);
 
+	da_free(data->path_tables);
+
 	for (size_t i = 0; i < data->rename_cache.num; i++)
 		bfree(data->rename_cache.array[i]);
 	da_free(data->rename_cache);
@@ -625,6 +630,7 @@ static void obs_free_data(void)
 	pthread_mutex_destroy(&data->encoders_mutex);
 	pthread_mutex_destroy(&data->services_mutex);
 	pthread_mutex_destroy(&data->draw_callbacks_mutex);
+	pthread_mutex_destroy(&data->path_tables_mutex);
 	pthread_mutex_destroy(&data->rename_cache_mutex);
 	da_free(data->draw_callbacks);
 }
@@ -1986,4 +1992,84 @@ uint32_t obs_get_total_frames(void)
 uint32_t obs_get_lagged_frames(void)
 {
 	return obs ? obs->video.lagged_frames : 0;
+}
+
+static inline struct path_table *get_path_table(struct obs_core_data *data,
+		const char *table_name)
+{
+	for (size_t i = 0; i < data->path_tables.num; i++) {
+		if (strcmp(data->path_tables.array[i].name, table_name) == 0) {
+			return data->path_tables.array + i;
+		}
+	}
+
+	return NULL;
+}
+
+static char *empty_paths = NULL;
+
+void obs_set_search_paths(const char *table_name, const char *paths)
+{
+	struct obs_core_data *data = &obs->data;
+	struct path_table *pt = NULL;
+	char *new_paths;
+	char **new_parsed;
+
+	/* ----------------- */
+
+	if (!paths || !*paths) {
+		new_paths = "";
+		new_parsed = &empty_paths;
+	} else {
+		new_paths  = bstrdup(paths);
+		new_parsed = strlist_split(paths, ';', false);
+
+		pthread_mutex_lock(&data->rename_cache_mutex);
+		da_push_back(data->rename_cache, &new_paths);
+		da_push_back(data->rename_cache, &new_parsed);
+		pthread_mutex_unlock(&data->rename_cache_mutex);
+	}
+
+	/* ----------------- */
+
+	pthread_mutex_lock(&data->path_tables_mutex);
+
+	pt = get_path_table(data, table_name);
+	if (!pt)
+		pt = da_push_back_new(data->path_tables);
+	if (!pt->name)
+		pt->name = table_name;
+
+	pt->paths  = new_paths;
+	pt->parsed = new_parsed;
+
+	pthread_mutex_unlock(&data->path_tables_mutex);
+}
+
+const char *obs_get_search_paths(const char *table_name)
+{
+	struct obs_core_data *data = &obs->data;
+	struct path_table *pt = NULL;
+	const char *paths;
+
+	pthread_mutex_lock(&data->path_tables_mutex);
+	pt = get_path_table(data, table_name);
+	paths = pt ? pt->paths : "";
+	pthread_mutex_unlock(&data->path_tables_mutex);
+
+	return paths;
+}
+
+const char **obs_get_parsed_search_paths(const char *table_name)
+{
+	struct obs_core_data *data = &obs->data;
+	struct path_table *pt = NULL;
+	const char **parsed;
+
+	pthread_mutex_lock(&data->path_tables_mutex);
+	pt = get_path_table(data, table_name);
+	parsed = pt ? pt->parsed : &empty_paths;
+	pthread_mutex_unlock(&data->path_tables_mutex);
+
+	return parsed;
 }

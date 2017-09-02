@@ -605,6 +605,19 @@ EXPORT void obs_remove_main_render_callback(
 		void (*draw)(void *param, uint32_t cx, uint32_t cy),
 		void *param);
 
+/* Functions that allow storage of custom module-specific path lists based upon
+ * a table name.  Used primarily for things like scripting, where the user
+ * should be able to define paths that they would like to use for script
+ * lookup.  For example, the UI would set a search path for a "scripts" table
+ * before loading plugins, then that plugin can use these functions to get
+ * those paths on plugin load or at any point thereafter.
+ *
+ * Paths should be separated with ';'. */
+
+EXPORT void obs_set_search_paths(const char *table_name, const char *paths);
+EXPORT const char *obs_get_search_paths(const char *table_name);
+EXPORT const char **obs_get_parsed_search_paths(const char *table_name);
+
 
 /* ------------------------------------------------------------------------- */
 /* View context */
