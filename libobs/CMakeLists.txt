@@ -39,6 +39,12 @@ option(LIBOBS_PREFER_IMAGEMAGICK "Prefer ImageMagick over ffmpeg for image loadi
 if(NOT FFMPEG_AVCODEC_FOUND OR (ImageMagick_MagickCore_FOUND AND LIBOBS_PREFER_IMAGEMAGICK))
 	message(STATUS "Using ImageMagick for image loading in libobs")
 
+	if(${ImageMagick_VERSION_STRING} LESS 7)
+		set(LIBOBS_IMAGEMAGICK_DIR_STYLE LIBOBS_IMAGEMAGICK_DIR_STYLE_6L)
+	elseif(${ImageMagick_VERSION_STRING} GREATER_EQUAL 7)
+		set(LIBOBS_IMAGEMAGICK_DIR_STYLE LIBOBS_IMAGEMAGICK_DIR_STYLE_7GE)
+	endif()
+
 	set(libobs_image_loading_SOURCES
 		graphics/graphics-magick.c)
 	set(libobs_image_loading_LIBRARIES
