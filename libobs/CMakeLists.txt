@@ -31,7 +31,7 @@ endif()
 find_package(ImageMagick QUIET COMPONENTS MagickCore)
 
 if(NOT ImageMagick_MagickCore_FOUND AND NOT FFMPEG_AVCODEC_FOUND)
-	message(FATAL_ERROR "Either MagickCore or Libavcodec is required, but both were not found")
+	message(FATAL_ERROR "Either MagickCore or Libavcodec is required, but neither were found.")
 elseif(NOT ImageMagick_MagickCore_FOUND AND LIBOBS_PREFER_IMAGEMAGICK)
 	message(FATAL_ERROR "ImageMagick support was requested, but was not found.")
 endif()
