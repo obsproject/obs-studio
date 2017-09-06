@@ -1049,6 +1049,9 @@ bool OBSBasic::InitBasicConfigDefaults()
 	config_set_default_uint  (basicConfig, "AdvOut", "Track5Bitrate", 160);
 	config_set_default_uint  (basicConfig, "AdvOut", "Track6Bitrate", 160);
 
+	config_set_default_bool  (basicConfig, "AdvOut", "RecRB", false);
+	config_set_default_uint  (basicConfig, "AdvOut", "RecRBTime", 20);
+
 	config_set_default_uint  (basicConfig, "Video", "BaseCX",   cx);
 	config_set_default_uint  (basicConfig, "Video", "BaseCY",   cy);
 
