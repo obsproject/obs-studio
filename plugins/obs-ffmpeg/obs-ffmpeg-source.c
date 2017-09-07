@@ -232,7 +232,7 @@ static void media_stopped(void *opaque)
 	struct ffmpeg_source *s = opaque;
 	if (s->is_clear_on_media_end) {
 		obs_source_output_video(s->source, NULL);
-		if (s->close_when_inactive)
+		if (s->close_when_inactive && s->media_valid)
 			s->destroy_media = true;
 	}
 }
