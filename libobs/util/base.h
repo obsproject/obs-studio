@@ -82,7 +82,7 @@ EXPORT void base_set_crash_handler(
 
 EXPORT void blogva(int log_level, const char *format, va_list args);
 
-#ifndef _MSC_VER
+#if !defined(_MSC_VER) && !defined(SWIG)
 #define PRINTFATTR(f, a) __attribute__((__format__(__printf__, f, a)))
 #else
 #define PRINTFATTR(f, a)
