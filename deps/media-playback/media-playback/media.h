@@ -69,6 +69,7 @@ struct mp_media {
 	bool is_file;
 	bool eof;
 	bool hw;
+	bool not_seekable;
 
 	struct obs_source_frame obsframe;
 	enum video_colorspace cur_space;
@@ -107,6 +108,7 @@ extern bool mp_media_init(mp_media_t *media,
 		mp_stop_cb stop_cb,
 		mp_video_cb v_preload_cb,
 		bool hardware_decoding,
+		bool not_seekable,
 		enum video_range_type force_range);
 extern void mp_media_free(mp_media_t *media);
 
