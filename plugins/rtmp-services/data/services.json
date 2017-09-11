@@ -671,6 +671,10 @@
                     "url": "rtmp://us-east.restream.io/live"
                 },
                 {
+                    "name": "US-East (Miami, FL)",
+                    "url": "rtmp://us-miami.restream.io/live"
+                },
+                {
                     "name": "NA-East (Toronto, Canada)",
                     "url": "rtmp://na-toronto.restream.io/live"
                 },
