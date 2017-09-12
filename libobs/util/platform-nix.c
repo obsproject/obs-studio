@@ -638,8 +638,6 @@ static int physical_cores = 0;
 static int logical_cores = 0;
 static bool core_count_initialized = false;
 
-/* return sysconf(_SC_NPROCESSORS_ONLN); */
-
 static void os_get_cores_internal(void)
 {
 	if (core_count_initialized)
@@ -649,29 +647,120 @@ static void os_get_cores_internal(void)
 
 	logical_cores = sysconf(_SC_NPROCESSORS_ONLN);
 
-#ifndef __linux__
-	physical_cores = logical_cores;
-#else
-	char *text = os_quick_read_utf8_file("/proc/cpuinfo");
-	char *core_id = text;
+#if defined(__linux__)
+	int physical_id = -1;
+	int last_physical_id = -1;
+	int core_count = 0;
+	char *line = NULL;
+	size_t linecap = 0;
+
+	FILE *fp;
+	struct dstr proc_phys_id;
+	struct dstr proc_phys_ids;
+
+	fp = fopen("/proc/cpuinfo", "r");
+	if (!fp)
+		return;
+
+	dstr_init(&proc_phys_id);
+	dstr_init(&proc_phys_ids);
+
+	while (getline(&line, &linecap, fp) != -1) {
+		if (!strncmp(line, "physical id", 11)) {
+			char *start = strchr(line, ':');
+			if (!start || *(++start) == '\0')
+				continue;
+
+			physical_id = atoi(start);
+			dstr_free(&proc_phys_id);
+			dstr_init(&proc_phys_id);
+			dstr_catf(&proc_phys_id, "%d", physical_id);
+		}
+
+		if (!strncmp(line, "cpu cores", 9)) {
+			char *start = strchr(line, ':');
+			if (!start || *(++start) == '\0')
+				continue;
+
+			if (dstr_is_empty(&proc_phys_ids) ||
+				(!dstr_is_empty(&proc_phys_ids) &&
+				!dstr_find(&proc_phys_ids, proc_phys_id.array))) {
+				dstr_cat_dstr(&proc_phys_ids, &proc_phys_id);
+				dstr_cat(&proc_phys_ids, " ");
+				core_count += atoi(start);
+			}
+		}
+
+		if (*line == '\n' && physical_id != last_physical_id) {
+			last_physical_id = physical_id;
+		}
+	}
+
+	if (core_count == 0)
+		physical_cores = logical_cores;
+	else
+		physical_cores = core_count;
+
+	fclose(fp);
+	dstr_free(&proc_phys_ids);
+	dstr_free(&proc_phys_id);
+	free(line);
+#elif defined(__FreeBSD__)
+	char *text = os_quick_read_utf8_file("/var/run/dmesg.boot");
+	char *core_count = text;
+	int packages = 0;
+	int cores = 0;
+
+	struct dstr proc_packages;
+	struct dstr proc_cores;
+	dstr_init(&proc_packages);
+	dstr_init(&proc_cores);
 
 	if (!text || !*text) {
 		physical_cores = logical_cores;
 		return;
 	}
 
-	for (;;) {
-		core_id = strstr(core_id, "\ncore id");
-		if (!core_id)
-			break;
-		physical_cores++;
-		core_id++;
-	}
+	core_count = strstr(core_count, "\nFreeBSD/SMP: ");
+	if (!core_count)
+		goto FreeBSD_cores_cleanup;
 
-	if (physical_cores == 0)
+	core_count++;
+	core_count = strstr(core_count, "\nFreeBSD/SMP: ");
+	if (!core_count)
+		goto FreeBSD_cores_cleanup;
+
+	core_count = strstr(core_count, ": ");
+	core_count += 2;
+	size_t len = strcspn(core_count, " ");
+	dstr_ncopy(&proc_packages, core_count, len);
+
+	core_count = strstr(core_count, "package(s) x ");
+	if (!core_count)
+		goto FreeBSD_cores_cleanup;
+
+	core_count += 13;
+	len = strcspn(core_count, " ");
+	dstr_ncopy(&proc_cores, core_count, len);
+
+	FreeBSD_cores_cleanup:
+	if (!dstr_is_empty(&proc_packages))
+		packages = atoi(proc_packages.array);
+	if (!dstr_is_empty(&proc_cores))
+		cores = atoi(proc_cores.array);
+
+	if (packages == 0)
 		physical_cores = logical_cores;
+	else if (cores == 0)
+		physical_cores = packages;
+	else
+		physical_cores = packages * cores;
 
+	dstr_free(&proc_cores);
+	dstr_free(&proc_packages);
 	bfree(text);
+#else
+	physical_cores = logical_cores;
 #endif
 }
 
