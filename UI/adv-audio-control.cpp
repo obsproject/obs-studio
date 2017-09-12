@@ -32,7 +32,7 @@ OBSAdvAudioCtrl::OBSAdvAudioCtrl(QGridLayout *layout, obs_source_t *source_)
 	volume                         = new QSpinBox();
 	forceMono                      = new QCheckBox();
 	panning                        = new QSlider(Qt::Horizontal);
-#if defined(_WIN32) || defined(__APPLE__)
+#if defined(_WIN32) || defined(__APPLE__) || HAVE_PULSEAUDIO
 	monitoringType                 = new QComboBox();
 #endif
 	syncOffset                     = new QSpinBox();
@@ -93,7 +93,7 @@ OBSAdvAudioCtrl::OBSAdvAudioCtrl(QGridLayout *layout, obs_source_t *source_)
 	syncOffset->setValue(int(cur_sync / NSEC_PER_MSEC));
 
 	int idx;
-#if defined(_WIN32) || defined(__APPLE__)
+#if defined(_WIN32) || defined(__APPLE__) || HAVE_PULSEAUDIO
 	monitoringType->addItem(QTStr("Basic.AdvAudio.Monitoring.None"),
 			(int)OBS_MONITORING_TYPE_NONE);
 	monitoringType->addItem(QTStr("Basic.AdvAudio.Monitoring.MonitorOnly"),
@@ -138,7 +138,7 @@ OBSAdvAudioCtrl::OBSAdvAudioCtrl(QGridLayout *layout, obs_source_t *source_)
 			this, SLOT(panningChanged(int)));
 	QWidget::connect(syncOffset, SIGNAL(valueChanged(int)),
 			this, SLOT(syncOffsetChanged(int)));
-#if defined(_WIN32) || defined(__APPLE__)
+#if defined(_WIN32) || defined(__APPLE__) || HAVE_PULSEAUDIO
 	QWidget::connect(monitoringType, SIGNAL(currentIndexChanged(int)),
 			this, SLOT(monitoringTypeChanged(int)));
 #endif
@@ -163,7 +163,7 @@ OBSAdvAudioCtrl::OBSAdvAudioCtrl(QGridLayout *layout, obs_source_t *source_)
 	layout->addWidget(forceMonoContainer, lastRow, idx++);
 	layout->addWidget(panningContainer, lastRow, idx++);
 	layout->addWidget(syncOffset, lastRow, idx++);
-#if defined(_WIN32) || defined(__APPLE__)
+#if defined(_WIN32) || defined(__APPLE__) || HAVE_PULSEAUDIO
 	layout->addWidget(monitoringType, lastRow, idx++);
 #endif
 	layout->addWidget(mixerContainer, lastRow, idx++);
@@ -178,7 +178,7 @@ OBSAdvAudioCtrl::~OBSAdvAudioCtrl()
 	forceMonoContainer->deleteLater();
 	panningContainer->deleteLater();
 	syncOffset->deleteLater();
-#if defined(_WIN32) || defined(__APPLE__)
+#if defined(_WIN32) || defined(__APPLE__) || HAVE_PULSEAUDIO
 	monitoringType->deleteLater();
 #endif
 	mixerContainer->deleteLater();
