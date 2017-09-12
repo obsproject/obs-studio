@@ -23,13 +23,21 @@ endif()
 find_package(ImageMagick QUIET COMPONENTS MagickCore)
 
 if(NOT ImageMagick_MagickCore_FOUND AND NOT FFMPEG_AVCODEC_FOUND)
-	message(FATAL_ERROR "Either MagickCore or Libavcodec is required, but both were not found")
+	message(FATAL_ERROR "Either MagickCore or Libavcodec is required, but neither was found.")
+elseif(NOT ImageMagick_MagickCore_FOUND AND LIBOBS_PREFER_IMAGEMAGICK)
+	message(FATAL_ERROR "ImageMagick support was requested, but not found.")
 endif()
 
 option(LIBOBS_PREFER_IMAGEMAGICK "Prefer ImageMagick over ffmpeg for image loading" OFF)
 
 if(NOT FFMPEG_AVCODEC_FOUND OR (ImageMagick_MagickCore_FOUND AND LIBOBS_PREFER_IMAGEMAGICK))
 	message(STATUS "Using ImageMagick for image loading in libobs")
+
+	if(${ImageMagick_VERSION_STRING} LESS 7)
+		set(LIBOBS_IMAGEMAGICK_DIR_STYLE LIBOBS_IMAGEMAGICK_DIR_STYLE_6L)
+	elseif(${ImageMagick_VERSION_STRING} GREATER_EQUAL 7)
+		set(LIBOBS_IMAGEMAGICK_DIR_STYLE LIBOBS_IMAGEMAGICK_DIR_STYLE_7GE)
+	endif()
 
 	set(libobs_image_loading_SOURCES
 		graphics/graphics-magick.c)

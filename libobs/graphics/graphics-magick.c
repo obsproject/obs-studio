@@ -1,8 +1,14 @@
 #include "graphics.h"
+#include "obsconfig.h"
 
 #define MAGICKCORE_QUANTUM_DEPTH 16
 #define MAGICKCORE_HDRI_ENABLE   0
+
+#if LIBOBS_IMAGEMAGICK_DIR_STYLE == LIBOBS_IMAGEMAGICK_DIR_STYLE_6L
 #include <magick/MagickCore.h>
+#elif LIBOBS_IMAGEMAGICK_DIR_STYLE == LIBOBS_IMAGEMAGICK_DIR_STYLE_7GE
+#include <MagickCore/MagickCore.h>
+#endif
 
 void gs_init_image_deps()
 {
