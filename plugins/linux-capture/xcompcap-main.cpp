@@ -318,7 +318,10 @@ void XCompcapMain::updateSettings(obs_data_t *settings)
 	}
 
 	if (p->win)
-		XSelectInput(xdisp, p->win, StructureNotifyMask | ExposureMask);
+		XSelectInput(xdisp, p->win,
+			StructureNotifyMask
+			| ExposureMask
+			| VisibilityChangeMask);
 	XSync(xdisp, 0);
 
 	XWindowAttributes attr;
