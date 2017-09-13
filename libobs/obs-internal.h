@@ -680,6 +680,8 @@ struct obs_source {
 
 	struct audio_monitor            *monitor;
 	enum obs_monitoring_type        monitoring_type;
+
+	bool                            hide_mixer;
 };
 
 extern const struct obs_source_info *get_source_info(const char *id);

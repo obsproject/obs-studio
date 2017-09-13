@@ -655,6 +655,7 @@ private slots:
 
 	void EnablePreviewDisplay(bool enable);
 	void TogglePreview();
+	void ToggleHideMixer();
 
 	void NudgeUp();
 	void NudgeDown();

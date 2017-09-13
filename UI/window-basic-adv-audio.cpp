@@ -132,6 +132,9 @@ void OBSBasicAdvAudio::OBSSourceRemoved(void *param, calldata_t *calldata)
 
 inline void OBSBasicAdvAudio::AddAudioSource(obs_source_t *source)
 {
+	if (obs_source_mixer_hidden(source))
+		return;
+
 	OBSAdvAudioCtrl *control = new OBSAdvAudioCtrl(mainLayout, source);
 	controls.push_back(control);
 }

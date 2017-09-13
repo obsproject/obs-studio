@@ -1491,6 +1491,10 @@ static obs_source_t *obs_load_source_type(obs_data_t *source_data)
 	obs_data_set_default_bool(source_data, "muted", false);
 	obs_source_set_muted(source, obs_data_get_bool(source_data, "muted"));
 
+	obs_data_set_default_bool(source_data, "hide_mixer", false);
+	obs_source_set_mixer_hidden(source,
+			obs_data_get_bool(source_data, "hide_mixer"));
+
 	obs_data_set_default_bool(source_data, "push-to-mute", false);
 	obs_source_enable_push_to_mute(source,
 			obs_data_get_bool(source_data, "push-to-mute"));
@@ -1611,6 +1615,7 @@ obs_data_t *obs_save_source(obs_source_t *source)
 	const char *id         = obs_source_get_id(source);
 	bool       enabled     = obs_source_enabled(source);
 	bool       muted       = obs_source_muted(source);
+	bool       hide_mixer  = obs_source_mixer_hidden(source);
 	bool       push_to_mute= obs_source_push_to_mute_enabled(source);
 	uint64_t   ptm_delay   = obs_source_get_push_to_mute_delay(source);
 	bool       push_to_talk= obs_source_push_to_talk_enabled(source);
@@ -1638,6 +1643,7 @@ obs_data_t *obs_save_source(obs_source_t *source)
 	obs_data_set_double(source_data, "volume",   volume);
 	obs_data_set_bool  (source_data, "enabled",  enabled);
 	obs_data_set_bool  (source_data, "muted",    muted);
+	obs_data_set_bool  (source_data, "hide_mixer", hide_mixer);
 	obs_data_set_bool  (source_data, "push-to-mute", push_to_mute);
 	obs_data_set_int   (source_data, "push-to-mute-delay", ptm_delay);
 	obs_data_set_bool  (source_data, "push-to-talk", push_to_talk);
