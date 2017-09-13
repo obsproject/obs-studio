@@ -300,7 +300,7 @@ static inline void stage_output_texture(struct obs_core_video *video,
 		texture_ready = video->textures_converted[prev_texture];
 	} else {
 		texture = video->output_textures[prev_texture];
-		texture_ready = video->output_textures[prev_texture];
+		texture_ready = video->textures_output[prev_texture];
 	}
 
 	unmap_last_surface(video);
