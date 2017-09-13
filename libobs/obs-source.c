@@ -190,6 +190,8 @@ bool obs_source_init(struct obs_source *source)
 		pthread_mutex_unlock(&obs->data.audio_sources_mutex);
 	}
 
+	source->private_settings = obs_data_create();
+
 	obs_context_data_insert(&source->context,
 			&obs->data.sources_mutex,
 			&obs->data.first_source);
@@ -582,6 +584,7 @@ void obs_source_destroy(struct obs_source *source)
 	pthread_mutex_destroy(&source->audio_cb_mutex);
 	pthread_mutex_destroy(&source->audio_mutex);
 	pthread_mutex_destroy(&source->async_mutex);
+	obs_data_release(source->private_settings);
 	obs_context_data_free(&source->context);
 
 	if (source->owns_info_id)
@@ -4049,4 +4052,13 @@ bool obs_source_async_unbuffered(const obs_source_t *source)
 {
 	return obs_source_valid(source, "obs_source_async_unbuffered") ?
 		source->async_unbuffered : false;
+}
+
+obs_data_t *obs_source_get_private_settings(obs_source_t *source)
+{
+	if (!obs_ptr_valid(source, "obs_source_get_private_settings"))
+		return NULL;
+
+	obs_data_addref(source->private_settings);
+	return source->private_settings;
 }
