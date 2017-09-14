@@ -102,22 +102,16 @@ static void stinger_video_render(void *data, gs_effect_t *effect)
 	UNUSED_PARAMETER(effect);
 }
 
-static inline float calc_fade(float t, float mul)
-{
-	t *= mul;
-	return t > 1.0f ? 1.0f : t;
-}
-
 static float mix_a(void *data, float t)
 {
-	struct stinger_info *s = data;
-	return 1.0f - calc_fade(t, s->transition_a_mul);
+	UNUSED_PARAMETER(data);
+	return 1.0f - t;
 }
 
 static float mix_b(void *data, float t)
 {
-	struct stinger_info *s = data;
-	return 1.0f - calc_fade(1.0f - t, s->transition_b_mul);
+	UNUSED_PARAMETER(data);
+	return t;
 }
 
 static bool stinger_audio_render(void *data, uint64_t *ts_out,
