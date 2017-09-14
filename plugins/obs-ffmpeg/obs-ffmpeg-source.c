@@ -448,6 +448,7 @@ static void ffmpeg_source_activate(void *data)
 
 	if (s->restart_on_activate)
 		ffmpeg_source_start(s);
+	obs_source_output_video(s->source, NULL);
 }
 
 static void ffmpeg_source_deactivate(void *data)
