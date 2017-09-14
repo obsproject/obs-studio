@@ -2186,6 +2186,22 @@ void OBSBasic::SelectSceneItem(OBSScene scene, OBSSceneItem item, bool select)
 	}
 }
 
+static inline bool SourceMixerHidden(obs_source_t *source)
+{
+	obs_data_t *priv_settings = obs_source_get_private_settings(source);
+	bool hidden = obs_data_get_bool(priv_settings, "mixer_hidden");
+	obs_data_release(priv_settings);
+
+	return hidden;
+}
+
+static inline void SetSourceMixerHidden(obs_source_t *source, bool hidden)
+{
+	obs_data_t *priv_settings = obs_source_get_private_settings(source);
+	obs_data_set_bool(priv_settings, "mixer_hidden", hidden);
+	obs_data_release(priv_settings);
+}
+
 void OBSBasic::GetAudioSourceFilters()
 {
 	QAction *action = reinterpret_cast<QAction*>(sender());
@@ -2204,13 +2220,77 @@ void OBSBasic::GetAudioSourceProperties()
 	CreatePropertiesWindow(source);
 }
 
+void OBSBasic::HideAudioControl()
+{
+	QAction *action = reinterpret_cast<QAction*>(sender());
+	VolControl *vol = action->property("volControl").value<VolControl*>();
+	obs_source_t *source = vol->GetSource();
+
+	if (!SourceMixerHidden(source)) {
+		SetSourceMixerHidden(source, true);
+		DeactivateAudioSource(source);
+	}
+}
+
+void OBSBasic::UnhideAllAudioControls()
+{
+	auto UnhideAudioMixer = [this] (obs_source_t *source) /* -- */
+	{
+		if (!obs_source_active(source))
+			return true;
+		if (!SourceMixerHidden(source))
+			return true;
+
+		SetSourceMixerHidden(source, false);
+		ActivateAudioSource(source);
+		return true;
+	};
+
+	using UnhideAudioMixer_t = decltype(UnhideAudioMixer);
+
+	auto PreEnum = [] (void *data, obs_source_t *source) -> bool /* -- */
+	{
+		return (*reinterpret_cast<UnhideAudioMixer_t *>(data))(source);
+	};
+
+	obs_enum_sources(PreEnum, &UnhideAudioMixer);
+}
+
+void OBSBasic::ToggleHideMixer()
+{
+	OBSSceneItem item = GetCurrentSceneItem();
+	OBSSource source = obs_sceneitem_get_source(item);
+
+	if (!SourceMixerHidden(source)) {
+		SetSourceMixerHidden(source, true);
+		DeactivateAudioSource(source);
+	} else {
+		SetSourceMixerHidden(source, false);
+		ActivateAudioSource(source);
+	}
+}
+
 void OBSBasic::VolControlContextMenu()
 {
 	VolControl *vol = reinterpret_cast<VolControl*>(sender());
 
+	/* ------------------- */
+
+	QAction hideAction(QTStr("Hide"), this);
+	QAction unhideAllAction(QTStr("UnhideAll"), this);
+
 	QAction filtersAction(QTStr("Filters"), this);
 	QAction propertiesAction(QTStr("Properties"), this);
 	QAction advPropAction(QTStr("Basic.MainMenu.Edit.AdvAudio"), this);
+
+	/* ------------------- */
+
+	connect(&hideAction, &QAction::triggered,
+			this, &OBSBasic::HideAudioControl,
+			Qt::DirectConnection);
+	connect(&unhideAllAction, &QAction::triggered,
+			this, &OBSBasic::UnhideAllAudioControls,
+			Qt::DirectConnection);
 
 	connect(&filtersAction, &QAction::triggered,
 			this, &OBSBasic::GetAudioSourceFilters,
@@ -2222,20 +2302,45 @@ void OBSBasic::VolControlContextMenu()
 			this, &OBSBasic::on_actionAdvAudioProperties_triggered,
 			Qt::DirectConnection);
 
+	/* ------------------- */
+
+	hideAction.setProperty("volControl",
+			QVariant::fromValue<VolControl*>(vol));
+
 	filtersAction.setProperty("volControl",
 			QVariant::fromValue<VolControl*>(vol));
 	propertiesAction.setProperty("volControl",
 			QVariant::fromValue<VolControl*>(vol));
 
+	/* ------------------- */
+
 	QMenu popup(this);
+	popup.addAction(&unhideAllAction);
+	popup.addAction(&hideAction);
+	popup.addSeparator();
 	popup.addAction(&filtersAction);
 	popup.addAction(&propertiesAction);
 	popup.addAction(&advPropAction);
 	popup.exec(QCursor::pos());
 }
 
+void OBSBasic::on_mixerScrollArea_customContextMenuRequested()
+{
+	QAction unhideAllAction(QTStr("UnhideAll"), this);
+	connect(&unhideAllAction, &QAction::triggered,
+			this, &OBSBasic::UnhideAllAudioControls,
+			Qt::DirectConnection);
+
+	QMenu popup(this);
+	popup.addAction(&unhideAllAction);
+	popup.exec(QCursor::pos());
+}
+
 void OBSBasic::ActivateAudioSource(OBSSource source)
 {
+	if (SourceMixerHidden(source))
+		return;
+
 	VolControl *vol = new VolControl(source, true);
 
 	vol->setContextMenuPolicy(Qt::CustomContextMenu);
@@ -3519,6 +3624,8 @@ void OBSBasic::CreateSourcePopupMenu(QListWidgetItem *item, bool preview)
 		uint32_t flags = obs_source_get_output_flags(source);
 		bool isAsyncVideo = (flags & OBS_SOURCE_ASYNC_VIDEO) ==
 			OBS_SOURCE_ASYNC_VIDEO;
+		bool hasAudio = (flags & OBS_SOURCE_AUDIO) ==
+			OBS_SOURCE_AUDIO;
 		QAction *action;
 
 		popup.addAction(QTStr("Rename"), this,
@@ -3541,6 +3648,15 @@ void OBSBasic::CreateSourcePopupMenu(QListWidgetItem *item, bool preview)
 		popup.addAction(sourceWindow);
 
 		popup.addSeparator();
+
+		if (hasAudio) {
+			QAction *actionHideMixer = popup.addAction(
+					QTStr("HideMixer"),
+					this, SLOT(ToggleHideMixer()));
+			actionHideMixer->setCheckable(true);
+			actionHideMixer->setChecked(SourceMixerHidden(source));
+		}
+
 		if (isAsyncVideo) {
 			popup.addMenu(AddDeinterlacingMenu(source));
 			popup.addSeparator();
