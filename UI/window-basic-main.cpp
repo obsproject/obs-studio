@@ -2238,6 +2238,10 @@ void OBSBasic::ActivateAudioSource(OBSSource source)
 {
 	VolControl *vol = new VolControl(source, true);
 
+	vol->setContextMenuPolicy(Qt::CustomContextMenu);
+
+	connect(vol, &QWidget::customContextMenuRequested,
+			this, &OBSBasic::VolControlContextMenu);
 	connect(vol, &VolControl::ConfigClicked,
 			this, &OBSBasic::VolControlContextMenu);
 
