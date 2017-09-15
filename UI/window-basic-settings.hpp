@@ -295,6 +295,7 @@ private slots:
 	void SimpleRecordingQualityLosslessWarning(int idx);
 
 	void SimpleReplayBufferChanged();
+	void AdvReplayBufferChanged();
 
 	void SimpleStreamingEncoderChanged();
 
