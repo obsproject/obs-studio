@@ -671,9 +671,11 @@ QProgressBar::chunk {
 
 VolumeMeter {
 	qproperty-bkColor: rgb(35, 38, 41); /* Dark Gray */
-	qproperty-magColor: rgb(186, 45, 101); /* Dark Pink (Secondary Dark) */
-	qproperty-peakColor: rgb(240, 98, 146); /* Pink (Secondary) */
-	qproperty-peakHoldColor: rgb(255, 148, 194); /* Light Pink (Secondary Light) */
+	qproperty-magColor: rgb(153, 204, 0);
+	qproperty-peakColor: rgb(96, 128, 0);
+	qproperty-peakHoldColor: rgb(210, 255, 77);
+	qproperty-clipColor1: rgb(230, 40, 50);
+	qproperty-clipColor2: rgb(140, 0, 40);
 }
 
 /*******************/
@@ -718,8 +720,6 @@ QPushButton:disabled {
 	border: 1px solid rgb(0, 139, 163); /* Dark Cyan (Primary Dark) */
 	color: rgb(162, 161, 162); /* Lighter Gray */
 }
-
-
 
 /******************************/
 /* --- Dialog Box Buttons --- */

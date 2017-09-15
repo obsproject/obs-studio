@@ -255,6 +255,26 @@ void VolumeMeter::setPeakHoldColor(QColor c)
 	peakHoldColor = c;
 }
 
+QColor VolumeMeter::getClipColor1() const
+{
+	return clipColor1;
+}
+
+void VolumeMeter::setClipColor1(QColor c)
+{
+	clipColor1 = c;
+}
+
+QColor VolumeMeter::getClipColor2() const
+{
+	return clipColor2;
+}
+
+void VolumeMeter::setClipColor2(QColor c)
+{
+	clipColor2 = c;
+}
+
 
 VolumeMeter::VolumeMeter(QWidget *parent)
 			: QWidget(parent)
