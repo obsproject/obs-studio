@@ -186,7 +186,7 @@ static void test_insert(void)
 
     for(i = 0; i < 20; i++) {
         if(json_array_insert(array, 0, seven))
-            fail("unable to insert value at the begining of an array");
+            fail("unable to insert value at the beginning of an array");
     }
 
     for(i = 0; i < 20; i++) {

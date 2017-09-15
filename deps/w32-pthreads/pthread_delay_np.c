@@ -50,7 +50,7 @@
  *
  *       Specifying an interval of zero (0) seconds and zero (0) nanoseconds is
  *       allowed and can be used to force the thread to give up the processor or to
- *       deliver a pending cancelation request. 
+ *       deliver a pending cancellation request. 
  *
  *       The timespec structure contains the following two fields: 
  *
@@ -135,8 +135,8 @@ pthread_delay_np (struct timespec *interval)
   if (sp->cancelState == PTHREAD_CANCEL_ENABLE)
     {
       /*
-       * Async cancelation won't catch us until wait_time is up.
-       * Deferred cancelation will cancel us immediately.
+       * Async cancellation won't catch us until wait_time is up.
+       * Deferred cancellation will cancel us immediately.
        */
       if (WAIT_OBJECT_0 ==
 	  (status = WaitForSingleObject (sp->cancelEvent, wait_time)))

@@ -49,7 +49,7 @@
  * - 
  *
  * Description:
- * - Creates and then imediately destroys a CV. Does not
+ * - Creates and then immediately destroys a CV. Does not
  *   test the CV.
  *
  * Environment:

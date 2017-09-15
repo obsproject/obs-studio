@@ -27,7 +27,7 @@ CFLAGS	= /q /I. /D_WIN32_WINNT=0x400 /DHAVE_PTW32_CONFIG_H=1 /4 /tWD /tWM \
 #C cleanup code
 BCFLAGS	= $(PTW32_FLAGS) $(CFLAGS)
 
-# Agregate modules for inlinability
+# Aggregate modules for inlinability
 DLL_OBJS	= \
 		attr.obj \
 		barrier.obj \

@@ -2,7 +2,7 @@
  * attr.c
  *
  * Description:
- * This translation unit agregates operations on thread attribute objects.
+ * This translation unit aggregates operations on thread attribute objects.
  * It is used for inline optimisation.
  *
  * The included modules are used separately when static executable sizes

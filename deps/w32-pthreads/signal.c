@@ -44,7 +44,7 @@
  * signal (interrupt) to a specified thread in the same
  * process.
  * Signals are always asynchronous (no deferred signals).
- * Pthread-win32 has an async cancelation mechanism.
+ * Pthread-win32 has an async cancellation mechanism.
  * A similar system can be written to deliver signals
  * within the same process (on ix86 processors at least).
  *

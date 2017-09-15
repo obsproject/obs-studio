@@ -325,7 +325,7 @@ libcaption_stauts_t caption_frame_decode (caption_frame_t* frame, uint16_t cc_da
         return LIBCAPTION_OK;
     }
 
-    // skip duplicate controll commands. We also skip duplicate specialna to match the behaviour of iOS/vlc
+    // skip duplicate control commands. We also skip duplicate specialna to match the behaviour of iOS/vlc
     if ( (eia608_is_specialna (cc_data) || eia608_is_control (cc_data)) && cc_data == frame->state.cc_data) {
         return LIBCAPTION_OK;
     }
@@ -346,7 +346,7 @@ libcaption_stauts_t caption_frame_decode (caption_frame_t* frame, uint16_t cc_da
                eia608_is_specialna (cc_data) ||
                eia608_is_westeu (cc_data)) {
 
-        // Don't decode text if we dont know what mode we are in.
+        // Don't decode text if we don't know what mode we are in.
         if (CAPTION_CLEAR == frame->state.mod) {
             return LIBCAPTION_OK;
         }

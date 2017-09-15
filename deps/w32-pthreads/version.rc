@@ -36,7 +36,7 @@
 /*
  * Note: the correct __CLEANUP_* macro must be defined corresponding to
  * the definition used for the object file builds. This is done in the
- * relevent makefiles for the command line builds, but users should ensure
+ * relevant makefiles for the command line builds, but users should ensure
  * that their resource compiler knows what it is too.
  * If using the default (no __CLEANUP_* defined), pthread.h will define it
  * as __CLEANUP_C.

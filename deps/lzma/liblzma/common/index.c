@@ -166,7 +166,7 @@ struct lzma_index_s {
 	lzma_vli index_list_size;
 
 	/// How many Records to allocate at once in lzma_index_append().
-	/// This defaults to INDEX_GROUP_SIZE but can be overriden with
+	/// This defaults to INDEX_GROUP_SIZE but can be overridden with
 	/// lzma_index_prealloc().
 	size_t prealloc;
 

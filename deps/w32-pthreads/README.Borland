@@ -22,7 +22,7 @@ rather than make more extensive patches to the pthreads-win32 source I
 have a mostly-arbitrary constant for it in the makefile.  However this
 doesn't make it visible to the application using the library, so if
 anyone actually wants to use this constant in their apps (why?)
-someone might like to make a seperate NEED_BCC_something define to add
+someone might like to make a separate NEED_BCC_something define to add
 this stuff.
 
 The makefile also #defines EDEADLK as EDEADLOCK, _timeb as timeb, and

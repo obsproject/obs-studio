@@ -1,4 +1,4 @@
-# Doesn't realy make sense anywhere else
+# Doesn't really make sense anywhere else
 if(NOT MSVC)
 	return()
 endif()

@@ -101,7 +101,7 @@ pthread_rwlock_timedwrlock (pthread_rwlock_t * rwlock,
 	  rwl->nCompletedSharedAccessCount = -rwl->nSharedAccessCount;
 
 	  /*
-	   * This routine may be a cancelation point
+	   * This routine may be a cancellation point
 	   * according to POSIX 1003.1j section 18.1.2.
 	   */
 #if defined(_MSC_VER) && _MSC_VER < 1400

@@ -31,11 +31,11 @@ MSVC or GNU C (MinGW32 MSys development kit)
 	To build from source.
 
 QueueUserAPCEx by Panagiotis E. Hadjidoukas
-	To support any thread cancelation in C++ library builds or
-	to support cancelation of blocked threads in any build.
+	To support any thread cancellation in C++ library builds or
+	to support cancellation of blocked threads in any build.
 	This library is not required otherwise.
 
-	For true async cancelation of threads (including blocked threads).
+	For true async cancellation of threads (including blocked threads).
 	This is a DLL and Windows driver that provides pre-emptive APC
 	by forcing threads into an alertable state when the APC is queued.
 	Both the DLL and driver are provided with the pthreads-win32.exe
@@ -47,7 +47,7 @@ QueueUserAPCEx by Panagiotis E. Hadjidoukas
 	Pthreads-win32 will automatically detect if the QueueUserAPCEx DLL
 	QuserEx.DLL is available and whether the driver AlertDrv.sys is
 	loaded. If it is not available, pthreads-win32 will simulate async
-	cancelation, which means that it can async cancel only threads that
+	cancellation, which means that it can async cancel only threads that
 	are runnable. The simulated async cancellation cannot cancel blocked
 	threads.
 
@@ -194,15 +194,15 @@ Otherwise, you need to choose carefully and know WHY.
 The most important choice you need to make is whether to use a
 version that uses exceptions internally, or not. There are versions
 of the library that use exceptions as part of the thread
-cancelation and exit implementation. The default version uses
+cancellation and exit implementation. The default version uses
 setjmp/longjmp.
 
 There is some contension amongst POSIX threads experts as
-to how POSIX threads cancelation and exit should work
+to how POSIX threads cancellation and exit should work
 with languages that use exceptions, e.g. C++ and even C
 (Microsoft's Structured Exceptions).
 
-The issue is: should cancelation of a thread in, say,
+The issue is: should cancellation of a thread in, say,
 a C++ application cause object destructors and C++ exception
 handlers to be invoked as the stack unwinds during thread
 exit, or not?
@@ -248,9 +248,9 @@ threads then you will need to replace the "catch(...)" with the macro
 		}
 	#endif
 
-Otherwise neither pthreads cancelation nor pthread_exit() will work
+Otherwise neither pthreads cancellation nor pthread_exit() will work
 reliably when using versions of the library that use C++ exceptions
-for cancelation and thread exit.
+for cancellation and thread exit.
 
 This is due to what is believed to be a C++ compliance error in VC++
 whereby you may not have multiple handlers for the same exception in
@@ -285,7 +285,7 @@ from the compiler used, and one of the following was defined accordingly:
 	__CLEANUP_C	C, including GNU GCC, not MSVC
 
 These defines determine the style of cleanup (see pthread.h) and,
-most importantly, the way that cancelation and thread exit (via
+most importantly, the way that cancellation and thread exit (via
 pthread_exit) is performed (see the routine ptw32_throw()).
 
 In short, the exceptions versions of the library throw an exception
@@ -297,7 +297,7 @@ is when it's canceled or exits via pthread_exit().
 In this snapshot, unless the build explicitly defines (e.g. via a
 compiler option) __CLEANUP_SEH, __CLEANUP_CXX, or __CLEANUP_C, then
 the build NOW always defaults to __CLEANUP_C style cleanup. This style
-uses setjmp/longjmp in the cancelation and pthread_exit implementations,
+uses setjmp/longjmp in the cancellation and pthread_exit implementations,
 and therefore won't do stack unwinding even when linked to applications
 that have it (e.g. C++ apps). This is for consistency with most/all
 commercial Unix POSIX threads implementations.

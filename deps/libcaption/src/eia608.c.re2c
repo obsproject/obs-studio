@@ -307,7 +307,7 @@ uint16_t _eia608_from_utf8 (const utf8_char_t* s)
     "\x7C" { /*VERTICAL_LINE*/ return 0x132E; }
     "\x7D" { /*RIGHT_CURLY_BRACKET*/ return 0x132A; }
     "\x7E" { /*TILDE*/ return 0x132F; }
-    /*There is a controll equivilant. Havnt decided if we want to habcle that here, or not*/
+    /*There is a control equivalent. Havnt decided if we want to habcle that here, or not*/
     "\x7F" { /*DEL/BACKSPACE. Need to set bits 9 and 12! return 0x1421;*/ return 0x0000; }
 
     /* Rules are processed top to bottom. So All single byte chars MUST be above this line!*/

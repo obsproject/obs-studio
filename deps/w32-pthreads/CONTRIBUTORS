@@ -55,7 +55,7 @@ Rich Peters		rpeters at micro-magic dot com
 Todd Owen		towen at lucidcalm dot dropbear dot id dot au
 					Bug fixes to dll loading.
 Jason Nye		jnye at nbnet dot nb dot ca
-					Implementation of async cancelation.
+					Implementation of async cancellation.
 Fred Forester		fforest at eticomm dot net
 Kevin D. Clark		kclark at cabletron dot com
 David Baggett		dmb at itasoftware dot com
@@ -116,7 +116,7 @@ Makoto Kato		raven at oldskool dot jp
 Panagiotis E. Hadjidoukas	peh at hpclab dot ceid dot upatras dot gr
                                 phadjido at cs dot uoi dot gr
 					Contributed the QueueUserAPCEx package which
-					makes preemptive async cancelation possible.
+					makes preemptive async cancellation possible.
 Will Bryant		will dot bryant at ecosm dot com
 					Borland compiler patch and makefile.
 Anuj Goyal		anuj dot goyal at gmail dot com

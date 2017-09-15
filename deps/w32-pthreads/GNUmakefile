@@ -104,7 +104,7 @@ DLL_INLINED_OBJS	= \
 		pthread.o \
 		version.o
 
-# Agregate modules for inlinability
+# Aggregate modules for inlinability
 DLL_OBJS	= \
 		attr.o \
 		barrier.o \

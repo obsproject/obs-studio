@@ -25,7 +25,7 @@ Q 7	Now that pthreads-win32 builds under Mingw32, why do I get
 
 Q 8	How do I use pthread.dll for Win32 (Visual C++ 5.0)
 
-Q 9	Cancelation doesn't work for me, why?
+Q 9	Cancellation doesn't work for me, why?
 
 Q 10	How do I generate pthreadGCE.dll and libpthreadw32.a for use
 	with Mingw32?
@@ -61,15 +61,15 @@ Simply, you only use one of them, but you need to choose carefully.
 The most important choice you need to make is whether to use a
 version that uses exceptions internally, or not (there are versions
 of the library that use exceptions as part of the thread
-cancelation and cleanup implementation, and one that uses
+cancellation and cleanup implementation, and one that uses
 setjmp/longjmp instead).
 
 There is some contension amongst POSIX threads experts as
-to how POSIX threads cancelation and exit should work
+to how POSIX threads cancellation and exit should work
 with languages that include exceptions and handlers, e.g.
 C++ and even C (Microsoft's Structured Exceptions).
 
-The issue is: should cancelation of a thread in, say,
+The issue is: should cancellation of a thread in, say,
 a C++ application cause object destructors and C++ exception
 handlers to be invoked as the stack unwinds during thread
 exit, or not?
@@ -161,7 +161,7 @@ of the following was defined accordingly:
 	__CLEANUP_C		C, including GNU GCC, not MSVC
 
 These defines determine the style of cleanup (see pthread.h) and,
-most importantly, the way that cancelation and thread exit (via
+most importantly, the way that cancellation and thread exit (via
 pthread_exit) is performed (see the routine ptw32_throw() in private.c).
 
 In short, the exceptions versions of the library throw an exception
@@ -173,7 +173,7 @@ is when it's canceled or exits via pthread_exit().
 After snapshot 2001-07-12, unless your build explicitly defines (e.g.
 via a compiler option) __CLEANUP_SEH, __CLEANUP_CXX, or __CLEANUP_C, then
 the build now ALWAYS defaults to __CLEANUP_C style cleanup. This style
-uses setjmp/longjmp in the cancelation and pthread_exit implementations,
+uses setjmp/longjmp in the cancellation and pthread_exit implementations,
 and therefore won't do stack unwinding even when linked to applications
 that have it (e.g. C++ apps). This is for consistency with most/all
 commercial Unix POSIX threads implementations.
@@ -305,10 +305,10 @@ Ross
 
 ------------------------------------------------------------------------------
 
-Q 9	Cancelation doesn't work for me, why?
+Q 9	Cancellation doesn't work for me, why?
 ---
 
-> I'm investigating a problem regarding thread cancelation. The thread I want
+> I'm investigating a problem regarding thread cancellation. The thread I want
 > to cancel has PTHREAD_CANCEL_ASYNCHRONOUS, however, this piece of code
 > blocks on the join():
 >
@@ -326,42 +326,42 @@ Q 9	Cancelation doesn't work for me, why?
 >
 > 1) is this normal behaviour?
 >
-> 2) if not, how does the cancel mechanism work? I'm not very familliar to
+> 2) if not, how does the cancel mechanism work? I'm not very familiar to
 > win32 programming, so I don't really understand how the *Event() family of
 > calls work.
 
 The answer to your first question is, normal POSIX behaviour would  
 be to asynchronously cancel the thread. However, even that doesn't
-guarantee cancelation as the standard only says it should be
+guarantee cancellation as the standard only says it should be
 cancelled as soon as possible.
 
 Snapshot 99-11-02 or earlier only partially supports asynchronous cancellation.
-Snapshots since then simulate async cancelation by poking the address of
-a cancelation routine into the PC of the threads context. This requires
-the thread to be resumed in some way for the cancelation to actually
-proceed. This is not true async cancelation, but it is as close as we've
+Snapshots since then simulate async cancellation by poking the address of
+a cancellation routine into the PC of the threads context. This requires
+the thread to be resumed in some way for the cancellation to actually
+proceed. This is not true async cancellation, but it is as close as we've
 been able to get to it.
 
 If the thread you're trying to cancel is blocked (for instance, it could be
 waiting for data from the network), it will only get cancelled when it unblocks
-(when the data arrives). For true pre-emptive cancelation in these cases,
+(when the data arrives). For true pre-emptive cancellation in these cases,
 pthreads-win32 from snapshot 2004-05-16 can automatically recognise and use the
 QueueUserAPCEx package by Panagiotis E. Hadjidoukas. This package is available
 from the pthreads-win32 ftp site and is included in the pthreads-win32
 self-unpacking zip from 2004-05-16 onwards.
 
-Using deferred cancelation would normally be the way to go, however,
+Using deferred cancellation would normally be the way to go, however,
 even though the POSIX threads standard lists a number of C library
-functions that are defined as deferred cancelation points, there is
+functions that are defined as deferred cancellation points, there is
 no hookup between those which are provided by Windows and the
 pthreads-win32 library.
 
-Incidently, it's worth noting for code portability that the older POSIX
-threads standards cancelation point lists didn't include "select" because
+Incidentally, it's worth noting for code portability that the older POSIX
+threads standards cancellation point lists didn't include "select" because
 (as I read in Butenhof) it wasn't part of POSIX. However, it does appear in
 the SUSV3.
 
-Effectively, the only mandatory cancelation points that pthreads-win32
+Effectively, the only mandatory cancellation points that pthreads-win32
 recognises are those the library implements itself, ie.
 	
 	pthread_testcancel
@@ -373,19 +373,19 @@ recognises are those the library implements itself, ie.
 	pthread_delay_np
 
 The following routines from the non-mandatory list in SUSV3 are
-cancelation points in pthreads-win32:
+cancellation points in pthreads-win32:
 
 	pthread_rwlock_wrlock
 	pthread_rwlock_timedwrlock
 
 The following routines from the non-mandatory list in SUSV3 are not
-cancelation points in pthreads-win32:
+cancellation points in pthreads-win32:
 
 	pthread_rwlock_rdlock
 	pthread_rwlock_timedrdlock
 
 Pthreads-win32 also provides two functions that allow you to create
-cancelation points within your application, but only for cases where
+cancellation points within your application, but only for cases where
 a thread is going to block on a Win32 handle. These are:
 
 	pthreadCancelableWait(HANDLE waitHandle) /* Infinite wait */
@@ -417,7 +417,7 @@ When pthread_t is a simple pointer to a struct some very difficult to
 debug problems arise from the process of freeing and later allocing
 thread structs because new pthread_t handles can acquire the identity of
 previously detached threads. The change to a struct was made, along with
-some changes to their internal managment, in order to guarantee (for
+some changes to their internal management, in order to guarantee (for
 practical applications) that the pthread_t handle will be unique over the
 life of the running process.
 

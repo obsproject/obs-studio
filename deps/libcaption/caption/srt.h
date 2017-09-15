@@ -64,13 +64,13 @@ static inline srt_t* srt_next (srt_t* srt) { return srt->next; }
     \param
 */
 static inline utf8_char_t* srt_data (srt_t* srt) { return (utf8_char_t*) (srt) + sizeof (srt_t); }
-// This only converts teh surrent SRT, It does not walk the list
+// This only converts the surrent SRT, It does not walk the list
 /*! \brief
     \param
 */
 int srt_to_caption_frame (srt_t* srt, caption_frame_t* frame);
 
-// returns teh new srt. Head is not tracher internally.
+// returns the new srt. Head is not tracher internally.
 /*! \brief
     \param
 */

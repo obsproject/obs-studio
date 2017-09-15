@@ -153,7 +153,7 @@ canceledThread(void * arg)
   {
     /*
      * We wait up to 10 seconds, waking every 0.1 seconds,
-     * for a cancelation to be applied to us.
+     * for a cancellation to be applied to us.
      */
     for (count = 0; count < 100; count++)
       Sleep(100);
@@ -168,7 +168,7 @@ canceledThread(void * arg)
   {
     /*
      * We wait up to 10 seconds, waking every 0.1 seconds,
-     * for a cancelation to be applied to us.
+     * for a cancellation to be applied to us.
      */
     for (count = 0; count < 100; count++)
       Sleep(100);

@@ -3,7 +3,7 @@
  * Copyright 2008 Sean Fox <dyntryx@gmail.com>
  *
  * This file is part of NetSurf's libnsgif, http://www.netsurf-browser.org/
- * Licenced under the MIT License,
+ * Licensed under the MIT License,
  *                http://www.opensource.org/licenses/mit-license.php
  */
 
@@ -78,7 +78,7 @@ typedef struct gif_bitmap_callback_vt {
     */
     gif_bitmap_cb_set_opaque bitmap_set_opaque;    /**< Sets whether a bitmap should be plotted opaque. */
     gif_bitmap_cb_test_opaque bitmap_test_opaque;    /**< Tests whether a bitmap has an opaque alpha channel. */
-    gif_bitmap_cb_modified bitmap_modified;    /**< The bitmap image has changed, so flush any persistant cache. */
+    gif_bitmap_cb_modified bitmap_modified;    /**< The bitmap image has changed, so flush any persistent cache. */
 } gif_bitmap_callback_vt;
 
 /*    The GIF animation data

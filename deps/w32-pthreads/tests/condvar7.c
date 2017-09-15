@@ -34,7 +34,7 @@
  * --------------------------------------------------------------------------
  *
  * Test Synopsis:
- * - Test pthread_cond_broadcast with thread cancelation.
+ * - Test pthread_cond_broadcast with thread cancellation.
  *
  * Test Method (Validation or Falsification):
  * - Validation
