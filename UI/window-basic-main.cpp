@@ -2327,12 +2327,25 @@ void OBSBasic::VolControlContextMenu()
 void OBSBasic::on_mixerScrollArea_customContextMenuRequested()
 {
 	QAction unhideAllAction(QTStr("UnhideAll"), this);
+
+	QAction advPropAction(QTStr("Basic.MainMenu.Edit.AdvAudio"), this);
+
+	/* ------------------- */
+
 	connect(&unhideAllAction, &QAction::triggered,
 			this, &OBSBasic::UnhideAllAudioControls,
 			Qt::DirectConnection);
 
+	connect(&advPropAction, &QAction::triggered,
+			this, &OBSBasic::on_actionAdvAudioProperties_triggered,
+			Qt::DirectConnection);
+
+	/* ------------------- */
+
 	QMenu popup(this);
 	popup.addAction(&unhideAllAction);
+	popup.addSeparator();
+	popup.addAction(&advPropAction);
 	popup.exec(QCursor::pos());
 }
 
