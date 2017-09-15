@@ -1047,6 +1047,9 @@ void obs_source_video_tick(obs_source_t *source, float seconds)
 static inline uint64_t conv_frames_to_time(const size_t sample_rate,
 		const size_t frames)
 {
+	if (!sample_rate)
+		return 0;
+	
 	return (uint64_t)frames * 1000000000ULL / (uint64_t)sample_rate;
 }
 
