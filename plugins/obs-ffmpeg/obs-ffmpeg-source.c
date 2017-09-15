@@ -232,7 +232,7 @@ static void media_stopped(void *opaque)
 	struct ffmpeg_source *s = opaque;
 	if (s->is_clear_on_media_end) {
 		obs_source_output_video(s->source, NULL);
-		if (s->close_when_inactive)
+		if (s->close_when_inactive && s->media_valid)
 			s->destroy_media = true;
 	}
 }
@@ -318,8 +318,8 @@ static void ffmpeg_source_update(void *data, obs_data_t *settings)
 	s->is_local_file = is_local_file;
 
 	if (s->media_valid) {
-		mp_media_free(&s->media);
 		s->media_valid = false;
+		mp_media_free(&s->media);
 	}
 
 	bool active = obs_source_active(s->source);
