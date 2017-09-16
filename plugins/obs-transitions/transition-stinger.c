@@ -17,6 +17,7 @@ struct stinger_info {
 	float transition_b_mul;
 	bool transitioning;
 	bool transition_point_is_frame;
+	bool audio_crossfade;
 };
 
 static const char *stinger_get_name(void *type_data)
@@ -47,6 +48,8 @@ static void stinger_update(void *data, obs_data_t *settings)
 		s->transition_point_frame = (uint64_t)point;
 	else
 		s->transition_point_ns = (uint64_t)(point * 1000000LL);
+
+	s->audio_crossfade = obs_data_get_bool(settings, "audio_crossfade");
 }
 
 static void *stinger_create(obs_data_t *settings, obs_source_t *source)
@@ -111,13 +114,19 @@ static inline float calc_fade(float t, float mul)
 static float mix_a(void *data, float t)
 {
 	struct stinger_info *s = data;
-	return 1.0f - calc_fade(t, s->transition_a_mul);
+	if (s->audio_crossfade)
+		return 1.0f - t;
+	else
+		return 1.0f - calc_fade(t, s->transition_a_mul);
 }
 
 static float mix_b(void *data, float t)
 {
 	struct stinger_info *s = data;
-	return 1.0f - calc_fade(1.0f - t, s->transition_b_mul);
+	if (s->audio_crossfade)
+		return t;
+	else
+		return 1.0f - calc_fade(1.0f - t, s->transition_b_mul);
 }
 
 static bool stinger_audio_render(void *data, uint64_t *ts_out,
@@ -278,6 +287,9 @@ static obs_properties_t *stinger_properties(void *data)
 	obs_properties_add_int(ppts, "transition_point",
 			obs_module_text("TransitionPoint"),
 			0, 120000, 1);
+
+	obs_properties_add_bool(ppts, "audio_crossfade",
+		obs_module_text("AudioCrossfade"));
 
 	UNUSED_PARAMETER(data);
 	return ppts;
