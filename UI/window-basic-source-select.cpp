@@ -137,7 +137,10 @@ static void AddExisting(const char *name, bool visible, bool duplicate)
 		AddSourceData data;
 		data.source = source;
 		data.visible = visible;
+
+		obs_enter_graphics();
 		obs_scene_atomic_update(scene, AddSource, &data);
+		obs_leave_graphics();
 
 		obs_source_release(source);
 	}
@@ -165,7 +168,10 @@ bool AddNew(QWidget *parent, const char *id, const char *name,
 			AddSourceData data;
 			data.source = source;
 			data.visible = visible;
+
+			obs_enter_graphics();
 			obs_scene_atomic_update(scene, AddSource, &data);
+			obs_leave_graphics();
 
 			newSource = source;
 
