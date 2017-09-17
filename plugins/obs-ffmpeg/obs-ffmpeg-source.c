@@ -58,6 +58,7 @@ struct ffmpeg_source {
 	bool is_clear_on_media_end;
 	bool restart_on_activate;
 	bool close_when_inactive;
+	bool is_not_seekable;
 };
 
 static bool is_local_file_modified(obs_properties_t *props,
@@ -181,6 +182,9 @@ static obs_properties_t *ffmpeg_source_getproperties(void *data)
 	obs_property_list_add_int(prop, obs_module_text("ColorRange.Full"),
 			VIDEO_RANGE_FULL);
 
+	obs_properties_add_bool(props, "not_seekable",
+			obs_module_text("DisableSeeking"));
+
 	return props;
 }
 
@@ -193,6 +197,7 @@ static void dump_source_info(struct ffmpeg_source *s, const char *input,
 			"\tinput_format:            %s\n"
 			"\tis_looping:              %s\n"
 			"\tis_hw_decoding:          %s\n"
+			"\tis_not_seekable:         %s\n"
 			"\tis_clear_on_media_end:   %s\n"
 			"\trestart_on_activate:     %s\n"
 			"\tclose_when_inactive:     %s",
@@ -200,6 +205,7 @@ static void dump_source_info(struct ffmpeg_source *s, const char *input,
 			input_format ? input_format : "(null)",
 			s->is_looping ? "yes" : "no",
 			s->is_hw_decoding ? "yes" : "no",
+			s->is_not_seekable ? "yes" : "no",
 			s->is_clear_on_media_end ? "yes" : "no",
 			s->restart_on_activate ? "yes" : "no",
 			s->close_when_inactive ? "yes" : "no");
@@ -244,7 +250,8 @@ static void ffmpeg_source_open(struct ffmpeg_source *s)
 				s->input, s->input_format,
 				s->buffering_mb * 1024 * 1024,
 				s, get_frame, get_audio, media_stopped,
-				preload_frame, s->is_hw_decoding, s->range);
+				preload_frame, s->is_hw_decoding,
+				s->is_not_seekable, s->range);
 }
 
 static void ffmpeg_source_tick(void *data, float seconds)
@@ -316,6 +323,7 @@ static void ffmpeg_source_update(void *data, obs_data_t *settings)
 			"color_range");
 	s->buffering_mb = (int)obs_data_get_int(settings, "buffering_mb");
 	s->is_local_file = is_local_file;
+	s->is_not_seekable = obs_data_get_bool(settings, "not_seekable");
 
 	if (s->media_valid) {
 		mp_media_free(&s->media);

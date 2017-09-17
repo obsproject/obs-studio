@@ -531,6 +531,9 @@ static bool init_avformat(mp_media_t *m)
 	if (m->buffering && m->is_network)
 		av_dict_set_int(&opts, "buffer_size", m->buffering, 0);
 
+	if (m->not_seekable)
+		av_dict_set(&opts, "seekable", "0", 0);
+
 	m->fmt = avformat_alloc_context();
 	m->fmt->interrupt_callback.callback = interrupt_callback;
 	m->fmt->interrupt_callback.opaque = m;
@@ -674,6 +677,7 @@ bool mp_media_init(mp_media_t *media,
 		mp_stop_cb stop_cb,
 		mp_video_cb v_preload_cb,
 		bool hw_decoding,
+		bool not_seekable,
 		enum video_range_type force_range)
 {
 	memset(media, 0, sizeof(*media));
@@ -685,6 +689,7 @@ bool mp_media_init(mp_media_t *media,
 	media->v_preload_cb = v_preload_cb;
 	media->force_range = force_range;
 	media->buffering = buffering;
+	media->not_seekable = not_seekable;
 
 	if (path && *path)
 		media->is_network = !!strstr(path, "://");
