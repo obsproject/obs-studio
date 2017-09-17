@@ -47,6 +47,11 @@ struct pulse_data {
 	uint_fast64_t frames;
 };
 
+struct pulse_devices {
+	char *default_source_name;
+	char *default_sink_name;
+};
+
 static void pulse_stop_recording(struct pulse_data *data);
 
 /**
@@ -394,32 +399,19 @@ static obs_properties_t *pulse_output_properties(void *unused)
 /**
  * Server info callback
  */
-static void pulse_input_device(pa_context *c, const pa_server_info *i,
+static void pulse_default_devices(pa_context *c, const pa_server_info *i,
 	void *userdata)
 {
 	UNUSED_PARAMETER(c);
-	obs_data_t *settings = (obs_data_t*) userdata;
+	struct pulse_devices *d = (struct pulse_devices*) userdata;
 
-	obs_data_set_default_string(settings, "device_id",
-		i->default_source_name);
-	blog(LOG_DEBUG, "Default input device: '%s'", i->default_source_name);
-
-	pulse_signal(0);
-}
-
-static void pulse_output_device(pa_context *c, const pa_server_info *i,
-	void *userdata)
-{
-	UNUSED_PARAMETER(c);
-	obs_data_t *settings = (obs_data_t*) userdata;
+	d->default_source_name = bstrdup(i->default_source_name);
 
 	char *monitor = bzalloc(strlen(i->default_sink_name) + 9);
 	strcat(monitor, i->default_sink_name);
 	strcat(monitor, ".monitor");
 
-	obs_data_set_default_string(settings, "device_id", monitor);
-	blog(LOG_DEBUG, "Default output device: '%s'", monitor);
-	bfree(monitor);
+	d->default_sink_name = monitor;
 
 	pulse_signal(0);
 }
@@ -431,10 +423,25 @@ static void pulse_defaults(obs_data_t *settings, bool input)
 {
 	pulse_init();
 
-	pa_server_info_cb_t cb = (input)
-		? pulse_input_device : pulse_output_device;
-	pulse_get_server_info(cb, (void *) settings);
+	const char *device_name;
+	struct pulse_devices *d = bzalloc(sizeof(struct pulse_devices));
 
+	pulse_get_server_info((pa_server_info_cb_t) pulse_default_devices,
+		(void *) d);
+
+	if (input) {
+		device_name = d->default_source_name;
+		blog(LOG_DEBUG, "Default input device: '%s'", device_name);
+	} else {
+		device_name = d->default_sink_name;
+		blog(LOG_DEBUG, "Default output device: '%s'", device_name);
+	}
+
+	obs_data_set_default_string(settings, "device_id", device_name);
+
+	bfree(d->default_source_name);
+	bfree(d->default_sink_name);
+	bfree(d);
 	pulse_unref();
 }
 
@@ -485,13 +492,30 @@ static void pulse_destroy(void *vptr)
 /**
  * Update the input settings
  */
-static void pulse_update(void *vptr, obs_data_t *settings)
+static void pulse_update(void *vptr, obs_data_t *settings, bool input)
 {
 	PULSE_DATA(vptr);
 	bool restart = false;
 	const char *new_device;
 
 	new_device = obs_data_get_string(settings, "device_id");
+
+	if (strcmp("default", new_device) == 0) {
+		struct pulse_devices *d = bzalloc(sizeof(struct pulse_devices));
+
+		pulse_get_server_info((pa_server_info_cb_t) pulse_default_devices, (void *) d);
+
+		if (input) {
+			new_device = d->default_source_name;
+		} else {
+			new_device = d->default_sink_name;
+		}
+
+		bfree(d->default_source_name);
+		bfree(d->default_sink_name);
+		bfree(d);
+	}
+
 	if (!data->device || strcmp(data->device, new_device) != 0) {
 		if (data->device)
 			bfree(data->device);
@@ -507,19 +531,39 @@ static void pulse_update(void *vptr, obs_data_t *settings)
 	pulse_start_recording(data);
 }
 
+static void pulse_input_update(void *vptr, obs_data_t *settings)
+{
+	return pulse_update(vptr, settings, true);
+}
+
+static void pulse_output_update(void *vptr, obs_data_t *settings)
+{
+	return pulse_update(vptr, settings, false);
+}
+
 /**
  * Create the plugin object
  */
-static void *pulse_create(obs_data_t *settings, obs_source_t *source)
+static void *pulse_create(obs_data_t *settings, obs_source_t *source, bool input)
 {
 	struct pulse_data *data = bzalloc(sizeof(struct pulse_data));
 
 	data->source   = source;
 
 	pulse_init();
-	pulse_update(data, settings);
+	pulse_update(data, settings, input);
 
 	return data;
+}
+
+static void *pulse_input_create(obs_data_t *settings, obs_source_t *source)
+{
+	return pulse_create(settings, source, true);
+}
+
+static void *pulse_output_create(obs_data_t *settings, obs_source_t *source)
+{
+	return pulse_create(settings, source, false);
 }
 
 struct obs_source_info pulse_input_capture = {
@@ -528,9 +572,9 @@ struct obs_source_info pulse_input_capture = {
 	.output_flags   = OBS_SOURCE_AUDIO |
 	                  OBS_SOURCE_DO_NOT_DUPLICATE,
 	.get_name       = pulse_input_getname,
-	.create         = pulse_create,
+	.create         = pulse_input_create,
 	.destroy        = pulse_destroy,
-	.update         = pulse_update,
+	.update         = pulse_input_update,
 	.get_defaults   = pulse_input_defaults,
 	.get_properties = pulse_input_properties
 };
@@ -542,9 +586,9 @@ struct obs_source_info pulse_output_capture = {
 	                  OBS_SOURCE_DO_NOT_DUPLICATE |
 	                  OBS_SOURCE_DO_NOT_SELF_MONITOR,
 	.get_name       = pulse_output_getname,
-	.create         = pulse_create,
+	.create         = pulse_output_create,
 	.destroy        = pulse_destroy,
-	.update         = pulse_update,
+	.update         = pulse_output_update,
 	.get_defaults   = pulse_output_defaults,
 	.get_properties = pulse_output_properties
 };
