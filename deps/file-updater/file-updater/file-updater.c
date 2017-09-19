@@ -117,6 +117,7 @@ static bool do_http_request(struct update_info *info, const char *url,
 	curl_easy_setopt(info->curl, CURLOPT_WRITEFUNCTION, http_write);
 	curl_easy_setopt(info->curl, CURLOPT_WRITEDATA, info);
 	curl_easy_setopt(info->curl, CURLOPT_FAILONERROR, true);
+	curl_easy_setopt(info->curl, CURLOPT_NOSIGNAL, 1);
 
 	if (!info->remote_url) {
 		// We only care about headers from the main package file
