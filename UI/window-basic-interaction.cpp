@@ -215,37 +215,35 @@ static int TranslateQtMouseEventModifiers(
 	return modifiers;
 }
 
-static int TranslateQtNavigationKeys(
-	QKeyEvent *event)
+static int TranslateQtNavigationKeys(QKeyEvent *event)
 {
 	int navkeys = NAVKEY_NONE;
 
-	switch (event->key())
-	{
-		case Qt::Key_Up:
-			navkeys |= NAVKEY_UP;
-			break;
-		case Qt::Key_Down:
-			navkeys |= NAVKEY_DOWN;
-			break;
-		case Qt::Key_Left:
-			navkeys |= NAVKEY_LEFT;
-			break;
-		case Qt::Key_Right:
-			navkeys |= NAVKEY_RIGHT;
-			break;
-		case Qt::Key_Home:
-			navkeys |= NAVKEY_START;
-			break;
-		case Qt::Key_End:
-			navkeys |= NAVKEY_END;
-			break;
-		case Qt::Key_PageUp:
-			navkeys |= NAVKEY_PREVPAGE;
-			break;
-		case Qt::Key_PageDown:
-			navkeys |= NAVKEY_NEXTPAGE;
-			break;
+	switch (event->key()) {
+	case Qt::Key_Up:
+		navkeys |= NAVKEY_UP;
+		break;
+	case Qt::Key_Down:
+		navkeys |= NAVKEY_DOWN;
+		break;
+	case Qt::Key_Left:
+		navkeys |= NAVKEY_LEFT;
+		break;
+	case Qt::Key_Right:
+		navkeys |= NAVKEY_RIGHT;
+		break;
+	case Qt::Key_Home:
+		navkeys |= NAVKEY_START;
+		break;
+	case Qt::Key_End:
+		navkeys |= NAVKEY_END;
+		break;
+	case Qt::Key_PageUp:
+		navkeys |= NAVKEY_PREVPAGE;
+		break;
+	case Qt::Key_PageDown:
+		navkeys |= NAVKEY_NEXTPAGE;
+		break;
 	}
 
 	return navkeys;

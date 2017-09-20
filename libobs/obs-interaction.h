@@ -41,17 +41,16 @@ enum obs_mouse_button_type {
 	MOUSE_RIGHT
 };
 
-enum obs_navigation_key_flags
-{
-	NAVKEY_NONE		= 0,
-	NAVKEY_LEFT		= 1,
-	NAVKEY_RIGHT	= 1 << 1,
-	NAVKEY_UP		= 1 << 2,
-	NAVKEY_DOWN		= 1 << 3,
-	NAVKEY_START	= 1 << 4,
-	NAVKEY_END		= 1 << 5,
-	NAVKEY_NEXTPAGE = 1 << 6,
-	NAVKEY_PREVPAGE = 1 << 7
+enum obs_navigation_key_flags {
+	NAVKEY_NONE            = 0,
+	NAVKEY_LEFT            = 1,
+	NAVKEY_RIGHT           = 1 << 1,
+	NAVKEY_UP              = 1 << 2,
+	NAVKEY_DOWN            = 1 << 3,
+	NAVKEY_START           = 1 << 4,
+	NAVKEY_END             = 1 << 5,
+	NAVKEY_NEXTPAGE        = 1 << 6,
+	NAVKEY_PREVPAGE        = 1 << 7
 };
 
 struct obs_mouse_event {
@@ -63,7 +62,7 @@ struct obs_mouse_event {
 struct obs_key_event {
 	uint32_t            modifiers;
 	char                *text;
-	uint32_t			navigation_keys;
+	uint32_t            navigation_keys;
 	uint32_t            native_modifiers;
 	uint32_t            native_scancode;
 	uint32_t            native_vkey;
