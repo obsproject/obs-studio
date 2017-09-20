@@ -215,6 +215,40 @@ static int TranslateQtMouseEventModifiers(
 	return modifiers;
 }
 
+static int TranslateQtNavigationKeys(QKeyEvent *event)
+{
+	int navkeys = NAVKEY_NONE;
+
+	switch (event->key()) {
+	case Qt::Key_Up:
+		navkeys |= NAVKEY_UP;
+		break;
+	case Qt::Key_Down:
+		navkeys |= NAVKEY_DOWN;
+		break;
+	case Qt::Key_Left:
+		navkeys |= NAVKEY_LEFT;
+		break;
+	case Qt::Key_Right:
+		navkeys |= NAVKEY_RIGHT;
+		break;
+	case Qt::Key_Home:
+		navkeys |= NAVKEY_START;
+		break;
+	case Qt::Key_End:
+		navkeys |= NAVKEY_END;
+		break;
+	case Qt::Key_PageUp:
+		navkeys |= NAVKEY_PREVPAGE;
+		break;
+	case Qt::Key_PageDown:
+		navkeys |= NAVKEY_NEXTPAGE;
+		break;
+	}
+
+	return navkeys;
+}
+
 bool OBSBasicInteraction::GetSourceRelativeXY(
       int mouseX, int mouseY, int &relX, int &relY)
 {
@@ -355,7 +389,7 @@ bool OBSBasicInteraction::HandleKeyEvent(QKeyEvent *event)
 	keyEvent.native_modifiers = event->nativeModifiers();
 	keyEvent.native_scancode = event->nativeScanCode();
 	keyEvent.native_vkey = event->nativeVirtualKey();
-
+	keyEvent.navigation_keys = TranslateQtNavigationKeys(event);
 	bool keyUp = event->type() == QEvent::KeyRelease;
 
 	obs_source_send_key_click(source, &keyEvent, keyUp);
