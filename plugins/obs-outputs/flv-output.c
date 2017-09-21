@@ -38,6 +38,9 @@ struct flv_output {
 	bool         active;
 	bool         sent_headers;
 	int64_t      last_packet_ts;
+
+	bool         got_first_video;
+	int64_t      start_video_dts_offset;
 };
 
 static const char *flv_output_getname(void *unused)
@@ -168,6 +171,8 @@ static bool flv_output_start(void *data)
 	if (!obs_output_initialize_encoders(stream->output, 0))
 		return false;
 
+	stream->got_first_video = false;
+
 	/* get path */
 	settings = obs_output_get_settings(stream->output);
 	path = obs_data_get_string(settings, "path");
@@ -199,6 +204,14 @@ static void flv_output_data(void *data, struct encoder_packet *packet)
 	}
 
 	if (packet->type == OBS_ENCODER_VIDEO) {
+		if (!stream->got_first_video) {
+			stream->start_video_dts_offset = packet->dts;
+			stream->got_first_video = true;
+		}
+
+		packet->dts -= stream->start_video_dts_offset;
+		packet->pts -= stream->start_video_dts_offset;
+
 		obs_parse_avc_packet(&parsed_packet, packet);
 		write_packet(stream, &parsed_packet, false);
 		obs_encoder_packet_release(&parsed_packet);
