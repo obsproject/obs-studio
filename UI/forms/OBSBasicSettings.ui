@@ -145,8 +145,8 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>818</width>
-              <height>697</height>
+              <width>801</width>
+              <height>698</height>
              </rect>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_19">
@@ -540,6 +540,41 @@
                   </layout>
                  </widget>
                 </item>
+                <item>
+                 <widget class="QGroupBox" name="groupBox_11">
+                  <property name="title">
+                   <string>Basic.TogglePreviewProgramMode</string>
+                  </property>
+                  <layout class="QFormLayout" name="formLayout_31">
+                   <property name="fieldGrowthPolicy">
+                    <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+                   </property>
+                   <property name="topMargin">
+                    <number>2</number>
+                   </property>
+                   <item row="0" column="1">
+                    <widget class="QCheckBox" name="doubleClickSwitch">
+                     <property name="text">
+                      <string>Basic.Settings.General.SwitchOnDoubleClick</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="0" column="0">
+                    <spacer name="horizontalSpacer_6">
+                     <property name="orientation">
+                      <enum>Qt::Horizontal</enum>
+                     </property>
+                     <property name="sizeHint" stdset="0">
+                      <size>
+                       <width>170</width>
+                       <height>5</height>
+                      </size>
+                     </property>
+                    </spacer>
+                   </item>
+                  </layout>
+                 </widget>
+                </item>
                </layout>
               </widget>
              </item>
@@ -675,8 +710,8 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>818</width>
-              <height>697</height>
+              <width>601</width>
+              <height>640</height>
              </rect>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_21">
@@ -3314,8 +3349,8 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>800</width>
-              <height>69</height>
+              <width>80</width>
+              <height>16</height>
              </rect>
             </property>
            </widget>
@@ -3651,8 +3686,8 @@
           <rect>
            <x>0</x>
            <y>0</y>
-           <width>818</width>
-           <height>697</height>
+           <width>98</width>
+           <height>28</height>
           </rect>
          </property>
          <layout class="QFormLayout" name="hotkeyLayout">
@@ -3697,8 +3732,8 @@
             <property name="geometry">
              <rect>
               <x>0</x>
-              <y>-62</y>
-              <width>803</width>
+              <y>0</y>
+              <width>593</width>
               <height>761</height>
              </rect>
             </property>

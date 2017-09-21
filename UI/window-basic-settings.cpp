@@ -315,6 +315,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->centerSnapping,       CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->sourceSnapping,       CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->snapDistance,         DSCROLL_CHANGED,GENERAL_CHANGED);
+	HookWidget(ui->doubleClickSwitch,    CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->outputMode,           COMBO_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->streamType,           COMBO_CHANGED,  STREAM1_CHANGED);
 	HookWidget(ui->simpleOutputPath,     EDIT_CHANGED,   OUTPUTS_CHANGED);
@@ -1076,6 +1077,10 @@ void OBSBasicSettings::LoadGeneralSettings()
 	bool projectorAlwaysOnTop = config_get_bool(GetGlobalConfig(),
 			"BasicWindow", "ProjectorAlwaysOnTop");
 	ui->projectorAlwaysOnTop->setChecked(projectorAlwaysOnTop);
+
+	bool doubleClickSwitch = config_get_bool(GetGlobalConfig(),
+			"BasicWindow", "TransitionOnDoubleClick");
+	ui->doubleClickSwitch->setChecked(doubleClickSwitch);
 
 	loading = false;
 }
@@ -2582,6 +2587,10 @@ void OBSBasicSettings::SaveGeneralSettings()
 		config_set_double(GetGlobalConfig(), "BasicWindow",
 				"SnapDistance",
 				ui->snapDistance->value());
+	if (WidgetChanged(ui->doubleClickSwitch))
+		config_set_bool(GetGlobalConfig(), "BasicWindow",
+				"TransitionOnDoubleClick",
+				ui->doubleClickSwitch->isChecked());
 
 	config_set_bool(GetGlobalConfig(), "BasicWindow",
 			"WarnBeforeStartingStream",
