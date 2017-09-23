@@ -33,6 +33,7 @@ struct pulse_data {
 
 	/* user settings */
 	char *device;
+	bool input;
 
 	/* server info */
 	enum speaker_layout speakers;
@@ -164,10 +165,29 @@ static void pulse_server_info(pa_context *c, const pa_server_info *i,
 	void *userdata)
 {
 	UNUSED_PARAMETER(c);
-	UNUSED_PARAMETER(userdata);
+	PULSE_DATA(userdata);
 
 	blog(LOG_INFO, "Server name: '%s %s'",
 		i->server_name, i->server_version);
+
+	if (data->device && strcmp("default", data->device) == 0) {
+		if (data->input) {
+			bfree(data->device);
+			data->device = bstrdup(i->default_source_name);
+
+			blog(LOG_DEBUG, "Default input device: '%s'", data->device);
+		} else {
+			char *monitor = bzalloc(strlen(i->default_sink_name) + 9);
+			strcat(monitor, i->default_sink_name);
+			strcat(monitor, ".monitor");
+
+			bfree(data->device);
+			data->device = bstrdup(monitor);
+
+			blog(LOG_DEBUG, "Default output device: '%s'", data->device);
+			bfree(monitor);
+		}
+	}
 
 	pulse_signal(0);
 }
@@ -374,6 +394,12 @@ static obs_properties_t *pulse_properties(bool input)
 		pulse_get_sink_info_list(pulse_output_info, (void *) devices);
 	pulse_unref();
 
+	size_t count = obs_property_list_item_count(devices);
+
+	if (count > 0)
+		obs_property_list_insert_string(devices, 0,
+				obs_module_text("Default"), "default");
+
 	return props;
 }
 
@@ -392,60 +418,11 @@ static obs_properties_t *pulse_output_properties(void *unused)
 }
 
 /**
- * Server info callback
- */
-static void pulse_input_device(pa_context *c, const pa_server_info *i,
-	void *userdata)
-{
-	UNUSED_PARAMETER(c);
-	obs_data_t *settings = (obs_data_t*) userdata;
-
-	obs_data_set_default_string(settings, "device_id",
-		i->default_source_name);
-	blog(LOG_DEBUG, "Default input device: '%s'", i->default_source_name);
-
-	pulse_signal(0);
-}
-
-static void pulse_output_device(pa_context *c, const pa_server_info *i,
-	void *userdata)
-{
-	UNUSED_PARAMETER(c);
-	obs_data_t *settings = (obs_data_t*) userdata;
-
-	char *monitor = bzalloc(strlen(i->default_sink_name) + 9);
-	strcat(monitor, i->default_sink_name);
-	strcat(monitor, ".monitor");
-
-	obs_data_set_default_string(settings, "device_id", monitor);
-	blog(LOG_DEBUG, "Default output device: '%s'", monitor);
-	bfree(monitor);
-
-	pulse_signal(0);
-}
-
-/**
  * Get plugin defaults
  */
-static void pulse_defaults(obs_data_t *settings, bool input)
+static void pulse_defaults(obs_data_t *settings)
 {
-	pulse_init();
-
-	pa_server_info_cb_t cb = (input)
-		? pulse_input_device : pulse_output_device;
-	pulse_get_server_info(cb, (void *) settings);
-
-	pulse_unref();
-}
-
-static void pulse_input_defaults(obs_data_t *settings)
-{
-	return pulse_defaults(settings, true);
-}
-
-static void pulse_output_defaults(obs_data_t *settings)
-{
-	return pulse_defaults(settings, false);
+	obs_data_set_default_string(settings, "device_id", "default");
 }
 
 /**
@@ -510,10 +487,11 @@ static void pulse_update(void *vptr, obs_data_t *settings)
 /**
  * Create the plugin object
  */
-static void *pulse_create(obs_data_t *settings, obs_source_t *source)
+static void *pulse_create(obs_data_t *settings, obs_source_t *source, bool input)
 {
 	struct pulse_data *data = bzalloc(sizeof(struct pulse_data));
 
+	data->input    = input;
 	data->source   = source;
 
 	pulse_init();
@@ -522,16 +500,26 @@ static void *pulse_create(obs_data_t *settings, obs_source_t *source)
 	return data;
 }
 
+static void *pulse_input_create(obs_data_t *settings, obs_source_t *source)
+{
+	return pulse_create(settings, source, true);
+}
+
+static void *pulse_output_create(obs_data_t *settings, obs_source_t *source)
+{
+	return pulse_create(settings, source, false);
+}
+
 struct obs_source_info pulse_input_capture = {
 	.id             = "pulse_input_capture",
 	.type           = OBS_SOURCE_TYPE_INPUT,
 	.output_flags   = OBS_SOURCE_AUDIO |
 	                  OBS_SOURCE_DO_NOT_DUPLICATE,
 	.get_name       = pulse_input_getname,
-	.create         = pulse_create,
+	.create         = pulse_input_create,
 	.destroy        = pulse_destroy,
 	.update         = pulse_update,
-	.get_defaults   = pulse_input_defaults,
+	.get_defaults   = pulse_defaults,
 	.get_properties = pulse_input_properties
 };
 
@@ -542,9 +530,9 @@ struct obs_source_info pulse_output_capture = {
 	                  OBS_SOURCE_DO_NOT_DUPLICATE |
 	                  OBS_SOURCE_DO_NOT_SELF_MONITOR,
 	.get_name       = pulse_output_getname,
-	.create         = pulse_create,
+	.create         = pulse_output_create,
 	.destroy        = pulse_destroy,
 	.update         = pulse_update,
-	.get_defaults   = pulse_output_defaults,
+	.get_defaults   = pulse_defaults,
 	.get_properties = pulse_output_properties
 };
