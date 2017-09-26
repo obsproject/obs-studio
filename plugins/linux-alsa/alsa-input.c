@@ -312,8 +312,6 @@ obs_properties_t * alsa_get_properties(void *unused)
 
 		obs_property_list_add_string(devices, descr, name);
 
-	obs_property_list_add_string(devices, "Custom", "__custom__");
-
 	next:
 		if (name != NULL)
 			free(name), name = NULL;
@@ -326,6 +324,8 @@ obs_properties_t * alsa_get_properties(void *unused)
 
 		++hint;
 	}
+	obs_property_list_add_string(devices, "Custom", "__custom__");
+
 	snd_device_name_free_hint(hints);
 
 	return props;
