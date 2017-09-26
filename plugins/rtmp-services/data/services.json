@@ -592,21 +592,6 @@
             ]
         },
         {
-            "name": "DJlive.pl",
-            "servers": [
-                {
-                    "name": "Default",
-                    "url": "rtmp://live.djlive.pl/live"
-                }
-            ],
-            "recommended": {
-                "keyint": 1,
-                "profile": "high",
-                "max video bitrate": 1300,
-                "max audio bitrate": 320
-            }
-        },
-        {
             "name": "Facebook Live",
             "common": true,
             "servers": [
