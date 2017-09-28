@@ -14,6 +14,7 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+#define PSAPI_VERSION 1
 #include <windows.h>
 #include <mmsystem.h>
 #include <shellapi.h>
@@ -48,7 +49,7 @@ static inline uint32_t get_winver(void)
 		winver = (ver.major << 16) | ver.minor;
 	}
 
-	return winver;	
+	return winver;
 }
 
 void *os_dlopen(const char *path)
