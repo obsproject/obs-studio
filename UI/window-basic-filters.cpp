@@ -158,6 +158,7 @@ inline OBSSource OBSBasicFilters::GetFilter(int row, bool async)
 void OBSBasicFilters::UpdatePropertiesView(int row, bool async)
 {
 	if (view) {
+		updatePropertiesSignal.Disconnect();
 		ui->rightLayout->removeWidget(view);
 		view->deleteLater();
 		view = nullptr;
@@ -173,12 +174,23 @@ void OBSBasicFilters::UpdatePropertiesView(int row, bool async)
 			(PropertiesReloadCallback)obs_source_properties,
 			(PropertiesUpdateCallback)obs_source_update);
 
+	updatePropertiesSignal.Connect(obs_source_get_signal_handler(filter),
+			"update_properties",
+			OBSBasicFilters::UpdateProperties,
+			this);
+
 	obs_data_release(settings);
 
 	view->setMaximumHeight(250);
 	view->setMinimumHeight(150);
 	ui->rightLayout->addWidget(view);
 	view->show();
+}
+
+void OBSBasicFilters::UpdateProperties(void *data, calldata_t *)
+{
+	QMetaObject::invokeMethod(static_cast<OBSBasicFilters*>(data)->view,
+			"ReloadProperties");
 }
 
 void OBSBasicFilters::AddFilter(OBSSource filter)
