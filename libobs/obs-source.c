@@ -1676,7 +1676,7 @@ static void obs_source_update_async_video(obs_source_t *source)
 		source->async_rendered = true;
 		if (frame) {
 			source->timing_adjust =
-				os_gettime_ns() - frame->timestamp;
+				obs->video.video_time - frame->timestamp;
 			source->timing_set = true;
 
 			if (source->async_update_texture) {
