@@ -1062,6 +1062,10 @@ static inline size_t conv_time_to_frames(const size_t sample_rate,
 /* maximum buffer size */
 #define MAX_BUF_SIZE        (1000 * AUDIO_OUTPUT_FRAMES * sizeof(float))
 
+/* time threshold in nanoseconds to ensure audio timing is as seamless as
+ * possible */
+#define TS_SMOOTHING_THRESHOLD 70000000ULL
+
 static inline void reset_audio_timing(obs_source_t *source, uint64_t timestamp,
 		uint64_t os_time)
 {
