@@ -164,7 +164,7 @@ bool flv_meta_data(obs_output_t *context, uint8_t **output, size_t *size,
 
 	s_write(&s, meta_data, meta_data_size);
 
-	s_wb32(&s, (uint32_t)serializer_get_pos(&s) - start_pos + 4 - 1);
+	s_wb32(&s, (uint32_t)serializer_get_pos(&s) - start_pos - 1);
 
 	*output = data.bytes.array;
 	*size   = data.bytes.num;
@@ -209,7 +209,7 @@ static void flv_video(struct serializer *s, int32_t dts_offset,
 	s_write(s, packet->data, packet->size);
 
 	/* write tag size (starting byte doesn't count) */
-	s_wb32(s, (uint32_t)serializer_get_pos(s) + 4 - 1);
+	s_wb32(s, (uint32_t)serializer_get_pos(s) - 1);
 }
 
 static void flv_audio(struct serializer *s, int32_t dts_offset,
@@ -242,7 +242,7 @@ static void flv_audio(struct serializer *s, int32_t dts_offset,
 	s_write(s, packet->data, packet->size);
 
 	/* write tag size (starting byte doesn't count) */
-	s_wb32(s, (uint32_t)serializer_get_pos(s) + 4 - 1);
+	s_wb32(s, (uint32_t)serializer_get_pos(s) - 1);
 }
 
 void flv_packet_mux(struct encoder_packet *packet, int32_t dts_offset,
