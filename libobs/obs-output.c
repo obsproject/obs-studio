@@ -1337,8 +1337,12 @@ static inline void insert_interleaved_packet(struct obs_output *output,
 		struct encoder_packet *cur_packet;
 		cur_packet = output->interleaved_packets.array + idx;
 
-		if (out->dts_usec < cur_packet->dts_usec)
+		if (out->dts_usec == cur_packet->dts_usec &&
+		    out->type == OBS_ENCODER_VIDEO) {
 			break;
+		} else if (out->dts_usec < cur_packet->dts_usec) {
+			break;
+		}
 	}
 
 	da_insert(output->interleaved_packets, idx, out);
