@@ -1301,7 +1301,7 @@ static bool initialize_interleaved_packets(struct obs_output *output)
 	}
 
 	/* get new offsets */
-	output->video_offset = video->dts;
+	output->video_offset = video->pts;
 	for (size_t i = 0; i < audio_mixes; i++)
 		output->audio_offsets[i] = audio[i]->dts;
 

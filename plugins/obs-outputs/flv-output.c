@@ -32,12 +32,15 @@
 #define info(format, ...)  do_log(LOG_INFO,    format, ##__VA_ARGS__)
 
 struct flv_output {
-	obs_output_t *output;
-	struct dstr  path;
-	FILE         *file;
-	bool         active;
-	bool         sent_headers;
-	int64_t      last_packet_ts;
+	obs_output_t    *output;
+	struct dstr     path;
+	FILE            *file;
+	volatile bool   active;
+	bool            sent_headers;
+	int64_t         last_packet_ts;
+
+	bool            got_first_video;
+	int32_t         start_dts_offset;
 };
 
 static const char *flv_output_getname(void *unused)
@@ -98,7 +101,8 @@ static int write_packet(struct flv_output *stream,
 
 	stream->last_packet_ts = get_ms_time(packet, packet->dts);
 
-	flv_packet_mux(packet, &data, &size, is_header);
+	flv_packet_mux(packet, is_header ? 0 : stream->start_dts_offset,
+			&data, &size, is_header);
 	fwrite(data, 1, size, stream->file);
 	bfree(data);
 	obs_encoder_packet_release(packet);
@@ -168,6 +172,8 @@ static bool flv_output_start(void *data)
 	if (!obs_output_initialize_encoders(stream->output, 0))
 		return false;
 
+	stream->got_first_video = false;
+
 	/* get path */
 	settings = obs_output_get_settings(stream->output);
 	path = obs_data_get_string(settings, "path");
@@ -199,6 +205,12 @@ static void flv_output_data(void *data, struct encoder_packet *packet)
 	}
 
 	if (packet->type == OBS_ENCODER_VIDEO) {
+		if (!stream->got_first_video) {
+			stream->start_dts_offset =
+				get_ms_time(packet, packet->dts);
+			stream->got_first_video = true;
+		}
+
 		obs_parse_avc_packet(&parsed_packet, packet);
 		write_packet(stream, &parsed_packet, false);
 		obs_encoder_packet_release(&parsed_packet);

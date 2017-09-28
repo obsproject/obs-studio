@@ -177,11 +177,11 @@ bool flv_meta_data(obs_output_t *context, uint8_t **output, size_t *size,
 static int32_t last_time = 0;
 #endif
 
-static void flv_video(struct serializer *s, struct encoder_packet *packet,
-		bool is_header)
+static void flv_video(struct serializer *s, int32_t dts_offset,
+		struct encoder_packet *packet, bool is_header)
 {
 	int64_t offset  = packet->pts - packet->dts;
-	int32_t time_ms = get_ms_time(packet, packet->dts);
+	int32_t time_ms = get_ms_time(packet, packet->dts) - dts_offset;
 
 	if (!packet->data || !packet->size)
 		return;
@@ -212,10 +212,10 @@ static void flv_video(struct serializer *s, struct encoder_packet *packet,
 	s_wb32(s, (uint32_t)serializer_get_pos(s) + 4 - 1);
 }
 
-static void flv_audio(struct serializer *s, struct encoder_packet *packet,
-		bool is_header)
+static void flv_audio(struct serializer *s, int32_t dts_offset,
+		struct encoder_packet *packet, bool is_header)
 {
-	int32_t time_ms = get_ms_time(packet, packet->dts);
+	int32_t time_ms = get_ms_time(packet, packet->dts) - dts_offset;
 
 	if (!packet->data || !packet->size)
 		return;
@@ -245,7 +245,7 @@ static void flv_audio(struct serializer *s, struct encoder_packet *packet,
 	s_wb32(s, (uint32_t)serializer_get_pos(s) + 4 - 1);
 }
 
-void flv_packet_mux(struct encoder_packet *packet,
+void flv_packet_mux(struct encoder_packet *packet, int32_t dts_offset,
 		uint8_t **output, size_t *size, bool is_header)
 {
 	struct array_output_data data;
@@ -254,9 +254,9 @@ void flv_packet_mux(struct encoder_packet *packet,
 	array_output_serializer_init(&s, &data);
 
 	if (packet->type == OBS_ENCODER_VIDEO)
-		flv_video(&s, packet, is_header);
+		flv_video(&s, dts_offset, packet, is_header);
 	else
-		flv_audio(&s, packet, is_header);
+		flv_audio(&s, dts_offset, packet, is_header);
 
 	*output = data.bytes.array;
 	*size   = data.bytes.num;
