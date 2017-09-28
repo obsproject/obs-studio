@@ -831,6 +831,7 @@ static obs_properties_t *vlcs_properties(void *data)
 	struct dstr path = {0};
 	obs_property_t *p;
 
+	obs_properties_set_flags(ppts, OBS_PROPERTIES_DEFER_UPDATE);
 	obs_properties_add_bool(ppts, S_LOOP, T_LOOP);
 	obs_properties_add_bool(ppts, S_SHUFFLE, T_SHUFFLE);
 
