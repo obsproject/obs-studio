@@ -40,12 +40,14 @@ static void decklink_enable_buffering(DeckLink *decklink, bool enabled)
 {
 	obs_source_t *source = decklink->GetSource();
 	obs_source_set_async_unbuffered(source, !enabled);
+	decklink->buffering = enabled;
 }
 
 static void *decklink_create(obs_data_t *settings, obs_source_t *source)
 {
 	DeckLink *decklink = new DeckLink(source, deviceEnum);
 
+	obs_source_set_async_decoupled(source, true);
 	decklink_enable_buffering(decklink,
 			obs_data_get_bool(settings, BUFFERING));
 
@@ -88,7 +90,7 @@ static void decklink_update(void *data, obs_data_t *settings)
 
 static void decklink_get_defaults(obs_data_t *settings)
 {
-	obs_data_set_default_bool(settings, BUFFERING, true);
+	obs_data_set_default_bool(settings, BUFFERING, false);
 	obs_data_set_default_int(settings, PIXEL_FORMAT, bmdFormat8BitYUV);
 	obs_data_set_default_int(settings, COLOR_SPACE, VIDEO_CS_DEFAULT);
 	obs_data_set_default_int(settings, COLOR_RANGE, VIDEO_RANGE_DEFAULT);

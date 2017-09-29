@@ -83,6 +83,13 @@ void DeckLinkDeviceInstance::HandleAudioPacket(
 	currentPacket.frames      = frameCount;
 	currentPacket.timestamp   = timestamp;
 
+	if (decklink && !decklink->buffering) {
+		currentPacket.timestamp = os_gettime_ns();
+		currentPacket.timestamp -=
+			(uint64_t)frameCount * 1000000000ULL /
+			(uint64_t)currentPacket.samples_per_sec;
+	}
+
 	if (!ISSTEREO(channelFormat)) {
 		if (audioRepacker->repack((uint8_t *)bytes, frameCount) < 0) {
 			LOG(LOG_ERROR, "Failed to convert audio packet data");

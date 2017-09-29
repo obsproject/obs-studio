@@ -62,4 +62,6 @@ public:
 
 	bool Activate(DeckLinkDevice *device, long long modeId);
 	void Deactivate();
+
+	bool buffering = false;
 };
