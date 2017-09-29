@@ -175,9 +175,9 @@ void OBSBasicFilters::UpdatePropertiesView(int row, bool async)
 			(PropertiesUpdateCallback)obs_source_update);
 
 	updatePropertiesSignal.Connect(obs_source_get_signal_handler(filter),
-		"update_properties",
-		OBSBasicFilters::UpdateProperties,
-		this);
+			"update_properties",
+			OBSBasicFilters::UpdateProperties,
+			this);
 
 	obs_data_release(settings);
 
@@ -190,7 +190,7 @@ void OBSBasicFilters::UpdatePropertiesView(int row, bool async)
 void OBSBasicFilters::UpdateProperties(void *data, calldata_t *)
 {
 	QMetaObject::invokeMethod(static_cast<OBSBasicFilters*>(data)->view,
-		"ReloadProperties");
+			"ReloadProperties");
 }
 
 void OBSBasicFilters::AddFilter(OBSSource filter)
