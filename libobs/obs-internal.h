@@ -610,6 +610,7 @@ struct obs_source {
 	bool                            async_active;
 	bool                            async_update_texture;
 	bool                            async_unbuffered;
+	bool                            async_decoupled;
 	struct obs_source_frame         *async_preload_frame;
 	DARRAY(struct async_frame)      async_cache;
 	DARRAY(struct obs_source_frame*)async_frames;

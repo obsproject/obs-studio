@@ -1118,6 +1118,12 @@ EXPORT void obs_source_set_async_unbuffered(obs_source_t *source,
 		bool unbuffered);
 EXPORT bool obs_source_async_unbuffered(const obs_source_t *source);
 
+/** Used to decouple audio from video so that audio doesn't attempt to sync up
+ * with video.  I.E. Audio acts independently.  Only works when in unbuffered
+ * mode. */
+EXPORT void obs_source_set_async_decoupled(obs_source_t *source, bool decouple);
+EXPORT bool obs_source_async_decoupled(const obs_source_t *source);
+
 /* ------------------------------------------------------------------------- */
 /* Transition-specific functions */
 enum obs_transition_target {

@@ -165,7 +165,10 @@ static void on_audio_playback(void *param, obs_source_t *source,
 	UINT32 pad = 0;
 	monitor->client->lpVtbl->GetCurrentPadding(monitor->client, &pad);
 
-	if (monitor->source_has_video) {
+	bool decouple_audio =
+		source->async_unbuffered && source->async_decoupled;
+
+	if (monitor->source_has_video && !decouple_audio) {
 		uint64_t ts = audio_data->timestamp - ts_offset;
 
 		if (!process_audio_delay(monitor, (float**)(&resample_data[0]),
