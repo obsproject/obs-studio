@@ -344,6 +344,8 @@ static inline void CleanupPartialUpdates()
 
 bool DownloadWorkerThread()
 {
+	const DWORD tlsProtocols = WINHTTP_FLAG_SECURE_PROTOCOL_TLS1_2;
+
 	HttpHandle hSession = WinHttpOpen(L"OBS Studio Updater/2.1",
 	                                  WINHTTP_ACCESS_TYPE_DEFAULT_PROXY,
 	                                  WINHTTP_NO_PROXY_NAME,
@@ -354,6 +356,9 @@ bool DownloadWorkerThread()
 		Status(L"Update failed: Couldn't open obsproject.com");
 		return false;
 	}
+
+	WinHttpSetOption(hSession, WINHTTP_OPTION_SECURE_PROTOCOLS,
+		(LPVOID)&tlsProtocols, sizeof(tlsProtocols));
 
 	HttpHandle hConnect = WinHttpConnect(hSession, L"obsproject.com",
 			INTERNET_DEFAULT_HTTPS_PORT, 0);
