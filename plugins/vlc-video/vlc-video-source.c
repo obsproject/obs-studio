@@ -568,14 +568,27 @@ static void vlcs_update(void *data, obs_data_t *settings)
 	c->shuffle = obs_data_get_bool(settings, S_SHUFFLE);
 
 	if (c->files.num > 1 && c->shuffle) {
-		for (size_t i = 0; i < c->files.num - 1; i++) {
-			size_t j = i + rand() / (RAND_MAX
-					/ (c->files.num - i) + 1);
+		DARRAY(struct media_file_data) new_files;
+		DARRAY(size_t) idxs;
 
-			struct media_file_data t = c->files.array[j];
-			c->files.array[j] = c->files.array[i];
-			c->files.array[i] = t;
+		da_init(new_files);
+		da_init(idxs);
+		da_resize(idxs, c->files.num);
+		da_reserve(new_files, c->files.num);
+
+		for (size_t i = 0; i < c->files.num; i++) {
+			idxs.array[i] = i;
 		}
+		for (size_t i = idxs.num; i > 0; i--) {
+			size_t val = rand() % i;
+			size_t idx = idxs.array[val];
+			da_push_back(new_files, &c->files.array[idx]);
+			da_erase(idxs, val);
+		}
+
+		da_free(c->files);
+		da_free(idxs);
+		c->files.da = new_files.da;
 	}
 
 	/* ------------------------------------- */
