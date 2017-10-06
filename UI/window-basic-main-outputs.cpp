@@ -664,8 +664,11 @@ bool SimpleOutput::StartStreaming(obs_service_t *service)
 
 		streamOutput = obs_output_create(type, "simple_stream",
 				nullptr, nullptr);
-		if (!streamOutput)
+		if (!streamOutput) {
+			blog(LOG_WARNING, "Creation of stream output type '%s' "
+					"failed!", type);
 			return false;
+		}
 		obs_output_release(streamOutput);
 
 		streamDelayStarting.Connect(
@@ -756,6 +759,13 @@ bool SimpleOutput::StartStreaming(obs_service_t *service)
 		return true;
 	}
 
+	const char *error = obs_output_get_last_error(streamOutput);
+	bool has_last_error = error && *error;
+
+	blog(LOG_WARNING, "Stream output type '%s' failed to start!%s%s",
+			type,
+			has_last_error ? "  Last Error: " : "",
+			has_last_error ? error : "");
 	return false;
 }
 
@@ -1417,8 +1427,11 @@ bool AdvancedOutput::StartStreaming(obs_service_t *service)
 
 		streamOutput = obs_output_create(type, "adv_stream",
 				nullptr, nullptr);
-		if (!streamOutput)
+		if (!streamOutput) {
+			blog(LOG_WARNING, "Creation of stream output type '%s' "
+					"failed!", type);
 			return false;
+		}
 		obs_output_release(streamOutput);
 
 		streamDelayStarting.Connect(
@@ -1509,6 +1522,13 @@ bool AdvancedOutput::StartStreaming(obs_service_t *service)
 		return true;
 	}
 
+	const char *error = obs_output_get_last_error(streamOutput);
+	bool has_last_error = error && *error;
+
+	blog(LOG_WARNING, "Stream output type '%s' failed to start!%s%s",
+			type,
+			has_last_error ? "  Last Error: " : "",
+			has_last_error ? error : "");
 	return false;
 }
 
