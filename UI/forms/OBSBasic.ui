@@ -951,7 +951,7 @@
         <string>Basic.Main.StartStreaming</string>
        </property>
        <property name="checkable">
-        <bool>false</bool>
+        <bool>true</bool>
        </property>
       </widget>
      </item>
@@ -974,6 +974,9 @@
        </property>
        <property name="text">
         <string>Basic.Main.StartRecording</string>
+       </property>
+      <property name="checkable">
+        <bool>true</bool>
        </property>
       </widget>
      </item>
