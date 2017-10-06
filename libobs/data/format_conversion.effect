@@ -172,10 +172,25 @@ float4 PSPlanar420(VertInOut vert_in) : TARGET
 		ch_u += width_i;
 		ch_v += height_i;
 
+		/* set up coordinates for next chroma line, in case
+		 * (width / 2) % 4 == 2, i.e. the current set of 4 pixels is split
+		 * between the current and the next chroma line; do note that the next
+		 * chroma line is two source lines below the current source line */
+		float ch_u_n = 0.   + width_i;
+		float ch_v_n = ch_v + height_i * 3;
+
 		sample_pos[0] = float2(ch_u,             ch_v);
 		sample_pos[1] = float2(ch_u += width_i2, ch_v);
-		sample_pos[2] = float2(ch_u += width_i2, ch_v);
-		sample_pos[3] = float2(ch_u +  width_i2, ch_v);
+
+		ch_u += width_i2;
+		// check if ch_u overflowed the current source and chroma line
+		if (ch_u > 1.0) {
+			sample_pos[2] = float2(ch_u_n,            ch_v_n);
+			sample_pos[2] = float2(ch_u_n + width_i2, ch_v_n);
+		} else {
+			sample_pos[2] = float2(ch_u,             ch_v);
+			sample_pos[3] = float2(ch_u +  width_i2, ch_v);
+		}
 	}
 
 	float4x4 out_val = float4x4(

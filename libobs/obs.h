@@ -957,6 +957,10 @@ EXPORT void obs_source_set_monitoring_type(obs_source_t *source,
 EXPORT enum obs_monitoring_type obs_source_get_monitoring_type(
 		const obs_source_t *source);
 
+/** Gets private front-end settings data.  This data is saved/loaded
+ * automatically.  Returns an incremented reference. */
+EXPORT obs_data_t *obs_source_get_private_settings(obs_source_t *item);
+
 /* ------------------------------------------------------------------------- */
 /* Functions used by sources */
 
@@ -1337,6 +1341,10 @@ EXPORT enum obs_scale_type obs_sceneitem_get_scale_filter(
 
 EXPORT void obs_sceneitem_defer_update_begin(obs_sceneitem_t *item);
 EXPORT void obs_sceneitem_defer_update_end(obs_sceneitem_t *item);
+
+/** Gets private front-end settings data.  This data is saved/loaded
+ * automatically.  Returns an incremented reference. */
+EXPORT obs_data_t *obs_sceneitem_get_private_settings(obs_sceneitem_t *item);
 
 
 /* ------------------------------------------------------------------------- */

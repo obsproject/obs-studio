@@ -1301,7 +1301,7 @@ static bool initialize_interleaved_packets(struct obs_output *output)
 	}
 
 	/* get new offsets */
-	output->video_offset = video->dts;
+	output->video_offset = video->pts;
 	for (size_t i = 0; i < audio_mixes; i++)
 		output->audio_offsets[i] = audio[i]->dts;
 
@@ -1337,8 +1337,12 @@ static inline void insert_interleaved_packet(struct obs_output *output,
 		struct encoder_packet *cur_packet;
 		cur_packet = output->interleaved_packets.array + idx;
 
-		if (out->dts_usec < cur_packet->dts_usec)
+		if (out->dts_usec == cur_packet->dts_usec &&
+		    out->type == OBS_ENCODER_VIDEO) {
 			break;
+		} else if (out->dts_usec < cur_packet->dts_usec) {
+			break;
+		}
 	}
 
 	da_insert(output->interleaved_packets, idx, out);

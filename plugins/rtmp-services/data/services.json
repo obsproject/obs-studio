@@ -106,7 +106,7 @@
                     "url": "rtmp://live-lim.twitch.tv/app"
                 },
                 {
-                    "name": "South America: Medellin, Columbia",
+                    "name": "South America: Medellin, Colombia",
                     "url": "rtmp://live-mde.twitch.tv/app"
                 },
                 {
@@ -671,6 +671,10 @@
                     "url": "rtmp://us-east.restream.io/live"
                 },
                 {
+                    "name": "US-East (Miami, FL)",
+                    "url": "rtmp://us-miami.restream.io/live"
+                },
+                {
                     "name": "NA-East (Toronto, Canada)",
                     "url": "rtmp://na-toronto.restream.io/live"
                 },
@@ -1048,6 +1052,22 @@
                     "url": "rtmp://ingest-as-central.a.switchboard.zone/live"
                 }
             ]
+        },
+        {
+            "name": "Looch",
+            "common": false,
+            "servers": [
+                {
+                    "name": "Primary Looch ingest server",
+                    "url": "rtmp://ingest.looch.tv/live"
+                }
+            ],
+            "recommended": {
+                "keyint": 2,
+                "profile": "main",
+                "max video bitrate": 6000,
+                "max audio bitrate": 160
+            }
         }
     ]
 }

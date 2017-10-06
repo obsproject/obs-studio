@@ -58,6 +58,7 @@ struct ffmpeg_source {
 	bool is_clear_on_media_end;
 	bool restart_on_activate;
 	bool close_when_inactive;
+	bool seekable;
 };
 
 static bool is_local_file_modified(obs_properties_t *props,
@@ -73,12 +74,14 @@ static bool is_local_file_modified(obs_properties_t *props,
 	obs_property_t *looping = obs_properties_get(props, "looping");
 	obs_property_t *buffering = obs_properties_get(props, "buffering_mb");
 	obs_property_t *close = obs_properties_get(props, "close_when_inactive");
+	obs_property_t *seekable = obs_properties_get(props, "seekable");
 	obs_property_set_visible(input, !enabled);
 	obs_property_set_visible(input_format, !enabled);
 	obs_property_set_visible(buffering, !enabled);
 	obs_property_set_visible(close, enabled);
 	obs_property_set_visible(local_file, enabled);
 	obs_property_set_visible(looping, enabled);
+	obs_property_set_visible(seekable, !enabled);
 
 	return true;
 }
@@ -181,6 +184,8 @@ static obs_properties_t *ffmpeg_source_getproperties(void *data)
 	obs_property_list_add_int(prop, obs_module_text("ColorRange.Full"),
 			VIDEO_RANGE_FULL);
 
+	obs_properties_add_bool(props, "seekable", obs_module_text("Seekable"));
+
 	return props;
 }
 
@@ -232,7 +237,7 @@ static void media_stopped(void *opaque)
 	struct ffmpeg_source *s = opaque;
 	if (s->is_clear_on_media_end) {
 		obs_source_output_video(s->source, NULL);
-		if (s->close_when_inactive)
+		if (s->close_when_inactive && s->media_valid)
 			s->destroy_media = true;
 	}
 }
@@ -244,7 +249,10 @@ static void ffmpeg_source_open(struct ffmpeg_source *s)
 				s->input, s->input_format,
 				s->buffering_mb * 1024 * 1024,
 				s, get_frame, get_audio, media_stopped,
-				preload_frame, s->is_hw_decoding, s->range);
+				preload_frame,
+				s->is_hw_decoding,
+				s->is_local_file || s->seekable,
+				s->range);
 }
 
 static void ffmpeg_source_tick(void *data, float seconds)
@@ -316,6 +324,7 @@ static void ffmpeg_source_update(void *data, obs_data_t *settings)
 			"color_range");
 	s->buffering_mb = (int)obs_data_get_int(settings, "buffering_mb");
 	s->is_local_file = is_local_file;
+	s->seekable = obs_data_get_bool(settings, "seekable");
 
 	if (s->media_valid) {
 		mp_media_free(&s->media);

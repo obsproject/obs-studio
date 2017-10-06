@@ -357,7 +357,7 @@ static void mp_media_next_video(mp_media_t *m, bool preload)
 	frame->height = f->height;
 	frame->flip = flip;
 
-	if (m->is_network && !d->got_first_keyframe) {
+	if (!m->is_local_file && !d->got_first_keyframe) {
 		if (!f->key_frame)
 			return;
 
@@ -407,18 +407,17 @@ static bool mp_media_reset(mp_media_t *m)
 		? av_rescale_q(seek_pos, AV_TIME_BASE_Q, stream->time_base)
 		: seek_pos;
 
-	if (!m->is_network && !m->is_concat) {
+	if (m->is_local_file) {
 		int ret = av_seek_frame(m->fmt, 0, seek_target, seek_flags);
 		if (ret < 0) {
 			blog(LOG_WARNING, "MP: Failed to seek: %s",
 					av_err2str(ret));
-			return false;
 		}
 	}
 
-	if (m->has_video && !m->is_network)
+	if (m->has_video && m->is_local_file)
 		mp_decode_flush(&m->v);
-	if (m->has_audio && !m->is_network)
+	if (m->has_audio && m->is_local_file)
 		mp_decode_flush(&m->a);
 
 	int64_t next_ts = mp_media_get_base_pts(m);
@@ -448,7 +447,7 @@ static bool mp_media_reset(mp_media_t *m)
 		m->next_ns = 0;
 	}
 
-	if (!active && !m->is_network && m->v_preload_cb)
+	if (!active && m->is_local_file && m->v_preload_cb)
 		mp_media_next_video(m, true);
 	if (stopping && m->stop_cb)
 		m->stop_cb(m->opaque);
@@ -528,7 +527,7 @@ static bool init_avformat(mp_media_t *m)
 	}
 
 	AVDictionary *opts = NULL;
-	if (m->buffering && m->is_network)
+	if (m->buffering && !m->is_local_file)
 		av_dict_set_int(&opts, "buffer_size", m->buffering, 0);
 
 	m->fmt = avformat_alloc_context();
@@ -674,6 +673,7 @@ bool mp_media_init(mp_media_t *media,
 		mp_stop_cb stop_cb,
 		mp_video_cb v_preload_cb,
 		bool hw_decoding,
+		bool is_local_file,
 		enum video_range_type force_range)
 {
 	memset(media, 0, sizeof(*media));
@@ -685,12 +685,7 @@ bool mp_media_init(mp_media_t *media,
 	media->v_preload_cb = v_preload_cb;
 	media->force_range = force_range;
 	media->buffering = buffering;
-
-	if (path && *path)
-		media->is_network = !!strstr(path, "://");
-
-	if (format && *format)
-		media->is_concat = strcmp(format, "concat") == 0;
+	media->is_local_file = is_local_file;
 
 	static bool initialized = false;
 	if (!initialized) {

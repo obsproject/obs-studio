@@ -421,6 +421,9 @@ bool WASAPISource::ProcessCaptureData()
 		data.timestamp        = useDeviceTiming ?
 			ts*100 : os_gettime_ns();
 
+		data.timestamp -= (uint64_t)frames * 1000000000ULL /
+			(uint64_t)sampleRate;
+
 		obs_source_output_audio(source, &data);
 
 		capture->ReleaseBuffer(frames);

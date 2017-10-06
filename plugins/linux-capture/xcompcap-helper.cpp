@@ -267,6 +267,9 @@ namespace XCompcap
 			if (ev.type == Expose)
 				changedWindows.insert(ev.xexpose.window);
 
+			if (ev.type == VisibilityNotify)
+				changedWindows.insert(ev.xvisibility.window);
+
 			if (ev.type == DestroyNotify)
 				changedWindows.insert(ev.xdestroywindow.event);
 		}

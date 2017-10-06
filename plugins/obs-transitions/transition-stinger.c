@@ -3,6 +3,11 @@
 #define TIMING_TIME  0
 #define TIMING_FRAME 1
 
+enum fade_style {
+	FADE_STYLE_FADE_OUT_FADE_IN,
+	FADE_STYLE_CROSS_FADE
+};
+
 struct stinger_info {
 	obs_source_t *source;
 
@@ -17,6 +22,11 @@ struct stinger_info {
 	float transition_b_mul;
 	bool transitioning;
 	bool transition_point_is_frame;
+	int monitoring_type;
+	enum fade_style fade_style;
+
+	float (*mix_a)(void *data, float t);
+	float (*mix_b)(void *data, float t);
 };
 
 static const char *stinger_get_name(void *type_data)
@@ -24,6 +34,11 @@ static const char *stinger_get_name(void *type_data)
 	UNUSED_PARAMETER(type_data);
 	return obs_module_text("StingerTransition");
 }
+
+static float mix_a_fade_in_out(void *data, float t);
+static float mix_b_fade_in_out(void *data, float t);
+static float mix_a_cross_fade(void *data, float t);
+static float mix_b_cross_fade(void *data, float t);
 
 static void stinger_update(void *data, obs_data_t *settings)
 {
@@ -47,6 +62,24 @@ static void stinger_update(void *data, obs_data_t *settings)
 		s->transition_point_frame = (uint64_t)point;
 	else
 		s->transition_point_ns = (uint64_t)(point * 1000000LL);
+
+	s->monitoring_type = (int)obs_data_get_int(settings,"audio_monitoring");
+	obs_source_set_monitoring_type(s->media_source, s->monitoring_type);
+
+	s->fade_style = (enum fade_style)obs_data_get_int(settings,
+			"audio_fade_style");
+
+	switch (s->fade_style) {
+	default:
+	case FADE_STYLE_FADE_OUT_FADE_IN:
+		s->mix_a = mix_a_fade_in_out;
+		s->mix_b = mix_b_fade_in_out;
+		break;
+	case FADE_STYLE_CROSS_FADE:
+		s->mix_a = mix_a_cross_fade;
+		s->mix_b = mix_b_cross_fade;
+		break;
+	}
 }
 
 static void *stinger_create(obs_data_t *settings, obs_source_t *source)
@@ -54,6 +87,8 @@ static void *stinger_create(obs_data_t *settings, obs_source_t *source)
 	struct stinger_info *s = bzalloc(sizeof(*s));
 
 	s->source = source;
+	s->mix_a = mix_a_fade_in_out;
+	s->mix_b = mix_b_fade_in_out;
 
 	obs_transition_enable_fixed(s->source, true, 0);
 	obs_source_update(source, settings);
@@ -108,16 +143,28 @@ static inline float calc_fade(float t, float mul)
 	return t > 1.0f ? 1.0f : t;
 }
 
-static float mix_a(void *data, float t)
+static float mix_a_fade_in_out(void *data, float t)
 {
 	struct stinger_info *s = data;
 	return 1.0f - calc_fade(t, s->transition_a_mul);
 }
 
-static float mix_b(void *data, float t)
+static float mix_b_fade_in_out(void *data, float t)
 {
 	struct stinger_info *s = data;
 	return 1.0f - calc_fade(1.0f - t, s->transition_b_mul);
+}
+
+static float mix_a_cross_fade(void *data, float t)
+{
+	UNUSED_PARAMETER(data);
+	return 1.0f - t;
+}
+
+static float mix_b_cross_fade(void *data, float t)
+{
+	UNUSED_PARAMETER(data);
+	return t;
 }
 
 static bool stinger_audio_render(void *data, uint64_t *ts_out,
@@ -134,7 +181,7 @@ static bool stinger_audio_render(void *data, uint64_t *ts_out,
 	}
 
 	bool success = obs_transition_audio_render(s->source, ts_out,
-		audio, mixers, channels, sample_rate, mix_a, mix_b);
+		audio, mixers, channels, sample_rate, s->mix_a, s->mix_b);
 	if (!ts)
 		return success;
 
@@ -278,6 +325,29 @@ static obs_properties_t *stinger_properties(void *data)
 	obs_properties_add_int(ppts, "transition_point",
 			obs_module_text("TransitionPoint"),
 			0, 120000, 1);
+
+	obs_property_t *monitor_list = obs_properties_add_list(ppts,
+			"audio_monitoring", obs_module_text("AudioMonitoring"),
+			OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
+	obs_property_list_add_int(monitor_list,
+			obs_module_text("AudioMonitoring.None"),
+			OBS_MONITORING_TYPE_NONE);
+	obs_property_list_add_int(monitor_list,
+			obs_module_text("AudioMonitoring.MonitorOnly"),
+			OBS_MONITORING_TYPE_MONITOR_ONLY);
+	obs_property_list_add_int(monitor_list,
+			obs_module_text("AudioMonitoring.Both"),
+			OBS_MONITORING_TYPE_MONITOR_AND_OUTPUT);
+
+	obs_property_t *audio_fade_style = obs_properties_add_list(ppts,
+			"audio_fade_style", obs_module_text("AudioFadeStyle"),
+			OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
+	obs_property_list_add_int(audio_fade_style,
+			obs_module_text("AudioFadeStyle.FadeOutFadeIn"),
+			FADE_STYLE_FADE_OUT_FADE_IN);
+	obs_property_list_add_int(audio_fade_style,
+			obs_module_text("AudioFadeStyle.CrossFade"),
+			FADE_STYLE_CROSS_FADE);
 
 	UNUSED_PARAMETER(data);
 	return ppts;

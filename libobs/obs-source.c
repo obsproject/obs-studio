@@ -190,6 +190,8 @@ bool obs_source_init(struct obs_source *source)
 		pthread_mutex_unlock(&obs->data.audio_sources_mutex);
 	}
 
+	source->private_settings = obs_data_create();
+
 	obs_context_data_insert(&source->context,
 			&obs->data.sources_mutex,
 			&obs->data.first_source);
@@ -582,6 +584,7 @@ void obs_source_destroy(struct obs_source *source)
 	pthread_mutex_destroy(&source->audio_cb_mutex);
 	pthread_mutex_destroy(&source->audio_mutex);
 	pthread_mutex_destroy(&source->async_mutex);
+	obs_data_release(source->private_settings);
 	obs_context_data_free(&source->context);
 
 	if (source->owns_info_id)
@@ -1044,6 +1047,9 @@ void obs_source_video_tick(obs_source_t *source, float seconds)
 static inline uint64_t conv_frames_to_time(const size_t sample_rate,
 		const size_t frames)
 {
+	if (!sample_rate)
+		return 0;
+	
 	return (uint64_t)frames * 1000000000ULL / (uint64_t)sample_rate;
 }
 
@@ -1055,6 +1061,10 @@ static inline size_t conv_time_to_frames(const size_t sample_rate,
 
 /* maximum buffer size */
 #define MAX_BUF_SIZE        (1000 * AUDIO_OUTPUT_FRAMES * sizeof(float))
+
+/* time threshold in nanoseconds to ensure audio timing is as seamless as
+ * possible */
+#define TS_SMOOTHING_THRESHOLD 70000000ULL
 
 static inline void reset_audio_timing(obs_source_t *source, uint64_t timestamp,
 		uint64_t os_time)
@@ -1666,7 +1676,7 @@ static void obs_source_update_async_video(obs_source_t *source)
 		source->async_rendered = true;
 		if (frame) {
 			source->timing_adjust =
-				os_gettime_ns() - frame->timestamp;
+				obs->video.video_time - frame->timestamp;
 			source->timing_set = true;
 
 			if (source->async_update_texture) {
@@ -4049,4 +4059,13 @@ bool obs_source_async_unbuffered(const obs_source_t *source)
 {
 	return obs_source_valid(source, "obs_source_async_unbuffered") ?
 		source->async_unbuffered : false;
+}
+
+obs_data_t *obs_source_get_private_settings(obs_source_t *source)
+{
+	if (!obs_ptr_valid(source, "obs_source_get_private_settings"))
+		return NULL;
+
+	obs_data_addref(source->private_settings);
+	return source->private_settings;
 }

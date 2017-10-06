@@ -1519,6 +1519,12 @@ static obs_source_t *obs_load_source_type(obs_data_t *source_data)
 	obs_source_set_monitoring_type(source,
 			(enum obs_monitoring_type)monitoring_type);
 
+	obs_data_release(source->private_settings);
+	source->private_settings =
+		obs_data_get_obj(source_data, "private_settings");
+	if (!source->private_settings)
+		source->private_settings = obs_data_create();
+
 	if (filters) {
 		size_t count = obs_data_array_count(filters);
 
@@ -1646,6 +1652,9 @@ obs_data_t *obs_save_source(obs_source_t *source)
 	obs_data_set_int   (source_data, "deinterlace_mode", di_mode);
 	obs_data_set_int   (source_data, "deinterlace_field_order", di_order);
 	obs_data_set_int   (source_data, "monitoring_type", m_type);
+
+	obs_data_set_obj(source_data, "private_settings",
+			source->private_settings);
 
 	if (source->info.type == OBS_SOURCE_TYPE_TRANSITION)
 		obs_transition_save(source, source_data);
@@ -1903,7 +1912,7 @@ bool obs_set_audio_monitoring_device(const char *name, const char *id)
 	if (!obs || !name || !id || !*name || !*id)
 		return false;
 
-#ifdef _WIN32
+#if defined(_WIN32) || HAVE_PULSEAUDIO
 	pthread_mutex_lock(&obs->audio.monitoring_mutex);
 
 	if (strcmp(id, obs->audio.monitoring_device_id) == 0) {

@@ -14,11 +14,13 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+#define PSAPI_VERSION 1
 #include <windows.h>
 #include <mmsystem.h>
 #include <shellapi.h>
 #include <shlobj.h>
 #include <intrin.h>
+#include <psapi.h>
 
 #include "base.h"
 #include "platform.h"
@@ -47,7 +49,7 @@ static inline uint32_t get_winver(void)
 		winver = (ver.major << 16) | ver.minor;
 	}
 
-	return winver;	
+	return winver;
 }
 
 void *os_dlopen(const char *path)
@@ -945,6 +947,55 @@ int os_get_logical_cores(void)
 	if (!core_count_initialized)
 		os_get_cores_internal();
 	return logical_cores;
+}
+
+static inline bool os_get_sys_memory_usage_internal(MEMORYSTATUSEX *msex)
+{
+	if (!GlobalMemoryStatusEx(msex))
+		return false;
+	return true;
+}
+
+uint64_t os_get_sys_free_size(void)
+{
+	MEMORYSTATUSEX msex = {sizeof(MEMORYSTATUSEX)};
+	if (!os_get_sys_memory_usage_internal(&msex))
+		return 0;
+	return msex.ullAvailPhys;
+}
+
+static inline bool os_get_proc_memory_usage_internal(PROCESS_MEMORY_COUNTERS *pmc)
+{
+	if (!GetProcessMemoryInfo(GetCurrentProcess(), pmc, sizeof(*pmc)))
+		return false;
+	return true;
+}
+
+bool os_get_proc_memory_usage(os_proc_memory_usage_t *usage)
+{
+	PROCESS_MEMORY_COUNTERS pmc = {sizeof(PROCESS_MEMORY_COUNTERS)};
+	if (!os_get_proc_memory_usage_internal(&pmc))
+		return false;
+
+	usage->resident_size = pmc.WorkingSetSize;
+	usage->virtual_size  = pmc.PagefileUsage;
+	return true;
+}
+
+uint64_t os_get_proc_resident_size(void)
+{
+	PROCESS_MEMORY_COUNTERS pmc = {sizeof(PROCESS_MEMORY_COUNTERS)};
+	if (!os_get_proc_memory_usage_internal(&pmc))
+		return 0;
+	return pmc.WorkingSetSize;
+}
+
+uint64_t os_get_proc_virtual_size(void)
+{
+	PROCESS_MEMORY_COUNTERS pmc = {sizeof(PROCESS_MEMORY_COUNTERS)};
+	if (!os_get_proc_memory_usage_internal(&pmc))
+		return 0;
+	return pmc.PagefileUsage;
 }
 
 uint64_t os_get_free_disk_space(const char *dir)

@@ -32,13 +32,30 @@
 #define info(format, ...)  do_log(LOG_INFO,    format, ##__VA_ARGS__)
 
 struct flv_output {
-	obs_output_t *output;
-	struct dstr  path;
-	FILE         *file;
-	bool         active;
-	bool         sent_headers;
-	int64_t      last_packet_ts;
+	obs_output_t    *output;
+	struct dstr     path;
+	FILE            *file;
+	volatile bool   active;
+	volatile bool   stopping;
+	uint64_t        stop_ts;
+	bool            sent_headers;
+	int64_t         last_packet_ts;
+
+	pthread_mutex_t mutex;
+
+	bool            got_first_video;
+	int32_t         start_dts_offset;
 };
+
+static inline bool stopping(struct flv_output *stream)
+{
+	return os_atomic_load_bool(&stream->stopping);
+}
+
+static inline bool active(struct flv_output *stream)
+{
+	return os_atomic_load_bool(&stream->active);
+}
 
 static const char *flv_output_getname(void *unused)
 {
@@ -52,9 +69,7 @@ static void flv_output_destroy(void *data)
 {
 	struct flv_output *stream = data;
 
-	if (stream->active)
-		flv_output_stop(data, 0);
-
+	pthread_mutex_destroy(&stream->mutex);
 	dstr_free(&stream->path);
 	bfree(stream);
 }
@@ -63,30 +78,10 @@ static void *flv_output_create(obs_data_t *settings, obs_output_t *output)
 {
 	struct flv_output *stream = bzalloc(sizeof(struct flv_output));
 	stream->output = output;
+	pthread_mutex_init(&stream->mutex, NULL);
 
 	UNUSED_PARAMETER(settings);
 	return stream;
-}
-
-static void flv_output_stop(void *data, uint64_t ts)
-{
-	struct flv_output *stream = data;
-
-	if (stream->active) {
-		if (stream->file) {
-			write_file_info(stream->file, stream->last_packet_ts,
-					os_ftelli64(stream->file));
-
-			fclose(stream->file);
-		}
-		obs_output_end_data_capture(stream->output);
-		stream->active = false;
-		stream->sent_headers = false;
-
-		info("FLV file output complete");
-	}
-
-	UNUSED_PARAMETER(ts);
 }
 
 static int write_packet(struct flv_output *stream,
@@ -98,10 +93,10 @@ static int write_packet(struct flv_output *stream,
 
 	stream->last_packet_ts = get_ms_time(packet, packet->dts);
 
-	flv_packet_mux(packet, &data, &size, is_header);
+	flv_packet_mux(packet, is_header ? 0 : stream->start_dts_offset,
+			&data, &size, is_header);
 	fwrite(data, 1, size, stream->file);
 	bfree(data);
-	obs_encoder_packet_release(packet);
 
 	return ret;
 }
@@ -120,15 +115,13 @@ static void write_audio_header(struct flv_output *stream)
 {
 	obs_output_t  *context  = stream->output;
 	obs_encoder_t *aencoder = obs_output_get_audio_encoder(context, 0);
-	uint8_t       *header;
 
 	struct encoder_packet packet   = {
 		.type         = OBS_ENCODER_AUDIO,
 		.timebase_den = 1
 	};
 
-	obs_encoder_get_extra_data(aencoder, &header, &packet.size);
-	packet.data = bmemdup(header, packet.size);
+	obs_encoder_get_extra_data(aencoder, &packet.data, &packet.size);
 	write_packet(stream, &packet, true);
 }
 
@@ -148,13 +141,14 @@ static void write_video_header(struct flv_output *stream)
 	obs_encoder_get_extra_data(vencoder, &header, &size);
 	packet.size = obs_parse_avc_header(&packet.data, header, size);
 	write_packet(stream, &packet, true);
+	bfree(packet.data);
 }
 
 static void write_headers(struct flv_output *stream)
 {
 	write_meta_data(stream);
-	write_audio_header(stream);
 	write_video_header(stream);
+	write_audio_header(stream);
 }
 
 static bool flv_output_start(void *data)
@@ -167,6 +161,10 @@ static bool flv_output_start(void *data)
 		return false;
 	if (!obs_output_initialize_encoders(stream->output, 0))
 		return false;
+
+	stream->got_first_video = false;
+	stream->sent_headers = false;
+	os_atomic_set_bool(&stream->stopping, false);
 
 	/* get path */
 	settings = obs_output_get_settings(stream->output);
@@ -181,11 +179,33 @@ static bool flv_output_start(void *data)
 	}
 
 	/* write headers and start capture */
-	stream->active = true;
+	os_atomic_set_bool(&stream->active, true);
 	obs_output_begin_data_capture(stream->output, 0);
 
 	info("Writing FLV file '%s'...", stream->path.array);
 	return true;
+}
+
+static void flv_output_stop(void *data, uint64_t ts)
+{
+	struct flv_output *stream = data;
+	stream->stop_ts = ts / 1000;
+	os_atomic_set_bool(&stream->stopping, true);
+}
+
+static void flv_output_actual_stop(struct flv_output *stream)
+{
+	os_atomic_set_bool(&stream->active, false);
+
+	if (stream->file) {
+		write_file_info(stream->file, stream->last_packet_ts,
+				os_ftelli64(stream->file));
+
+		fclose(stream->file);
+	}
+	obs_output_end_data_capture(stream->output);
+
+	info("FLV file output complete");
 }
 
 static void flv_output_data(void *data, struct encoder_packet *packet)
@@ -193,18 +213,39 @@ static void flv_output_data(void *data, struct encoder_packet *packet)
 	struct flv_output     *stream = data;
 	struct encoder_packet parsed_packet;
 
+	pthread_mutex_lock(&stream->mutex);
+
+	if (!active(stream))
+		goto unlock;
+
+	if (stopping(stream)) {
+		if (packet->sys_dts_usec >= (int64_t)stream->stop_ts) {
+			flv_output_actual_stop(stream);
+			goto unlock;
+		}
+	}
+
 	if (!stream->sent_headers) {
 		write_headers(stream);
 		stream->sent_headers = true;
 	}
 
 	if (packet->type == OBS_ENCODER_VIDEO) {
+		if (!stream->got_first_video) {
+			stream->start_dts_offset =
+				get_ms_time(packet, packet->dts);
+			stream->got_first_video = true;
+		}
+
 		obs_parse_avc_packet(&parsed_packet, packet);
 		write_packet(stream, &parsed_packet, false);
 		obs_encoder_packet_release(&parsed_packet);
 	} else {
 		write_packet(stream, packet, false);
 	}
+
+unlock:
+	pthread_mutex_unlock(&stream->mutex);
 }
 
 static obs_properties_t *flv_output_properties(void *unused)

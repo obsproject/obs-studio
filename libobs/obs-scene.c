@@ -624,6 +624,12 @@ static void scene_load_item(struct obs_scene *scene, obs_data_t *item_data)
 	obs_data_get_vec2(item_data, "pos",    &item->pos);
 	obs_data_get_vec2(item_data, "scale",  &item->scale);
 
+	obs_data_release(item->private_settings);
+	item->private_settings =
+		obs_data_get_obj(item_data, "private_settings");
+	if (!item->private_settings)
+		item->private_settings = obs_data_create();
+
 	set_visibility(item, visible);
 	obs_sceneitem_set_locked(item, lock);
 
@@ -729,6 +735,9 @@ static void scene_save_item(obs_data_array_t *array,
 		scale_filter = "disable";
 
 	obs_data_set_string(item_data, "scale_filter", scale_filter);
+
+	obs_data_set_obj(item_data, "private_settings",
+			item->private_settings);
 
 	obs_data_array_push_back(array, item_data);
 	obs_data_release(item_data);
@@ -1366,6 +1375,7 @@ obs_sceneitem_t *obs_scene_add(obs_scene_t *scene, obs_source_t *source)
 	item->actions_mutex = mutex;
 	item->user_visible = true;
 	item->locked = false;
+	item->private_settings = obs_data_create();
 	os_atomic_set_long(&item->active_refs, 1);
 	vec2_set(&item->scale, 1.0f, 1.0f);
 	matrix4_identity(&item->draw_transform);
@@ -1421,6 +1431,7 @@ static void obs_sceneitem_destroy(obs_sceneitem_t *item)
 			gs_texrender_destroy(item->item_render);
 			obs_leave_graphics();
 		}
+		obs_data_release(item->private_settings);
 		obs_hotkey_pair_unregister(item->toggle_visibility);
 		pthread_mutex_destroy(&item->actions_mutex);
 		if (item->source)
@@ -2001,4 +2012,13 @@ int64_t obs_sceneitem_get_id(const obs_sceneitem_t *item)
 		return 0;
 
 	return item->id;
+}
+
+obs_data_t *obs_sceneitem_get_private_settings(obs_sceneitem_t *item)
+{
+	if (!obs_ptr_valid(item, "obs_sceneitem_get_private_settings"))
+		return NULL;
+
+	obs_data_addref(item->private_settings);
+	return item->private_settings;
 }

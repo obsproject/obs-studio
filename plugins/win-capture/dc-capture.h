@@ -5,16 +5,12 @@
 
 #include <obs-module.h>
 
-#define NUM_TEXTURES 2
-
 struct dc_capture {
-	int          cur_tex;
-	gs_texture_t *textures[NUM_TEXTURES];
-	bool         textures_written[NUM_TEXTURES];
+	gs_texture_t *texture;
+	bool         texture_written;
 	int          x, y;
 	uint32_t     width;
 	uint32_t     height;
-	int          num_textures;
 
 	bool         compatibility;
 	HDC          hdc;

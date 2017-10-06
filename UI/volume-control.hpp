@@ -17,6 +17,8 @@ class VolumeMeter : public QWidget
 	Q_PROPERTY(QColor magColor READ getMagColor WRITE setMagColor DESIGNABLE true)
 	Q_PROPERTY(QColor peakColor READ getPeakColor WRITE setPeakColor DESIGNABLE true)
 	Q_PROPERTY(QColor peakHoldColor READ getPeakHoldColor WRITE setPeakHoldColor DESIGNABLE true)
+	Q_PROPERTY(QColor clipColor1 READ getClipColor1 WRITE setClipColor1 DESIGNABLE true)
+	Q_PROPERTY(QColor clipColor2 READ getClipColor2 WRITE setClipColor2 DESIGNABLE true)
 
 private:
 	static QWeakPointer<VolumeMeterTimer> updateTimer;
@@ -46,6 +48,10 @@ public:
 	void setPeakColor(QColor c);
 	QColor getPeakHoldColor() const;
 	void setPeakHoldColor(QColor c);
+	QColor getClipColor1() const;
+	void setClipColor1(QColor c);
+	QColor getClipColor2() const;
+	void setClipColor2(QColor c);
 
 protected:
 	void paintEvent(QPaintEvent *event);

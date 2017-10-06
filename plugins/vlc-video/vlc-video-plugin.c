@@ -53,6 +53,8 @@ LIBVLC_MEDIA_LIST_PLAYER_SET_MEDIA_PLAYER libvlc_media_list_player_set_media_pla
 LIBVLC_MEDIA_LIST_PLAYER_SET_MEDIA_LIST libvlc_media_list_player_set_media_list_;
 LIBVLC_MEDIA_LIST_PLAYER_EVENT_MANAGER libvlc_media_list_player_event_manager_;
 LIBVLC_MEDIA_LIST_PLAYER_SET_PLAYBACK_MODE libvlc_media_list_player_set_playback_mode_;
+LIBVLC_MEDIA_LIST_PLAYER_NEXT libvlc_media_list_player_next_;
+LIBVLC_MEDIA_LIST_PLAYER_PREVIOUS libvlc_media_list_player_previous_;
 
 void *libvlc_module = NULL;
 libvlc_instance_t *libvlc = NULL;
@@ -115,6 +117,8 @@ static bool load_vlc_funcs(void)
 	LOAD_VLC_FUNC(libvlc_media_list_player_set_media_list);
 	LOAD_VLC_FUNC(libvlc_media_list_player_event_manager);
 	LOAD_VLC_FUNC(libvlc_media_list_player_set_playback_mode);
+	LOAD_VLC_FUNC(libvlc_media_list_player_next);
+	LOAD_VLC_FUNC(libvlc_media_list_player_previous);
 	return true;
 }
 

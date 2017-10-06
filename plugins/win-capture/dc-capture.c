@@ -5,20 +5,18 @@
 
 static inline void init_textures(struct dc_capture *capture)
 {
-	for (int i = 0; i < capture->num_textures; i++) {
-		if (capture->compatibility)
-			capture->textures[i] = gs_texture_create(
-					capture->width, capture->height,
-					GS_BGRA, 1, NULL, GS_DYNAMIC);
-		else
-			capture->textures[i] = gs_texture_create_gdi(
-					capture->width, capture->height);
+	if (capture->compatibility)
+		capture->texture = gs_texture_create(
+				capture->width, capture->height,
+				GS_BGRA, 1, NULL, GS_DYNAMIC);
+	else
+		capture->texture = gs_texture_create_gdi(
+				capture->width, capture->height);
 
-		if (!capture->textures[i]) {
-			blog(LOG_WARNING, "[dc_capture_init] Failed to "
-			                  "create textures");
-			return;
-		}
+	if (!capture->texture) {
+		blog(LOG_WARNING, "[dc_capture_init] Failed to "
+				  "create textures");
+		return;
 	}
 
 	capture->valid = true;
@@ -42,7 +40,6 @@ void dc_capture_init(struct dc_capture *capture, int x, int y,
 		compatibility = true;
 
 	capture->compatibility = compatibility;
-	capture->num_textures  = compatibility ? 1 : 2;
 
 	init_textures(capture);
 
@@ -77,10 +74,7 @@ void dc_capture_free(struct dc_capture *capture)
 	}
 
 	obs_enter_graphics();
-
-	for (int i = 0; i < capture->num_textures; i++)
-		gs_texture_destroy(capture->textures[i]);
-
+	gs_texture_destroy(capture->texture);
 	obs_leave_graphics();
 
 	memset(capture, 0, sizeof(struct dc_capture));
@@ -126,16 +120,16 @@ static inline HDC dc_capture_get_dc(struct dc_capture *capture)
 	if (capture->compatibility)
 		return capture->hdc;
 	else
-		return gs_texture_get_dc(capture->textures[capture->cur_tex]);
+		return gs_texture_get_dc(capture->texture);
 }
 
 static inline void dc_capture_release_dc(struct dc_capture *capture)
 {
 	if (capture->compatibility) {
-		gs_texture_set_image(capture->textures[capture->cur_tex],
+		gs_texture_set_image(capture->texture,
 				capture->bits, capture->width*4, false);
 	} else {
-		gs_texture_release_dc(capture->textures[capture->cur_tex]);
+		gs_texture_release_dc(capture->texture);
 	}
 }
 
@@ -149,9 +143,6 @@ void dc_capture_capture(struct dc_capture *capture, HWND window)
 		capture->ci.cbSize = sizeof(CURSORINFO);
 		capture->cursor_captured = GetCursorInfo(&capture->ci);
 	}
-
-	if (++capture->cur_tex == capture->num_textures)
-		capture->cur_tex = 0;
 
 	hdc = dc_capture_get_dc(capture);
 	if (!hdc) {
@@ -172,13 +163,12 @@ void dc_capture_capture(struct dc_capture *capture, HWND window)
 
 	dc_capture_release_dc(capture);
 
-	capture->textures_written[capture->cur_tex] = true;
+	capture->texture_written = true;
 }
 
-static void draw_texture(struct dc_capture *capture, int id,
-		gs_effect_t *effect)
+static void draw_texture(struct dc_capture *capture, gs_effect_t *effect)
 {
-	gs_texture_t   *texture = capture->textures[id];
+	gs_texture_t   *texture = capture->texture;
 	gs_technique_t *tech    = gs_effect_get_technique(effect, "Draw");
 	gs_eparam_t    *image   = gs_effect_get_param_by_name(effect, "image");
 	size_t      passes;
@@ -201,12 +191,6 @@ static void draw_texture(struct dc_capture *capture, int id,
 
 void dc_capture_render(struct dc_capture *capture, gs_effect_t *effect)
 {
-	int last_tex = (capture->cur_tex > 0) ?
-		capture->cur_tex-1 : capture->num_textures-1;
-
-	if (!capture->valid)
-		return;
-
-	if (capture->textures_written[last_tex])
-		draw_texture(capture, last_tex, effect);
+	if (capture->valid && capture->texture_written)
+		draw_texture(capture, effect);
 }

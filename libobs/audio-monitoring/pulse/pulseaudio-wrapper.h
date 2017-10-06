@@ -1,5 +1,6 @@
 /*
 Copyright (C) 2014 by Leonhard Oelke <leonhard@in-verted.de>
+Copyright (C) 2017 by Fabio Madia <admshao@gmail.com>
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -22,16 +23,30 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #pragma once
 
+struct pulseaudio_default_output {
+	char *default_sink_name;
+};
+
+struct enum_cb {
+	obs_enum_audio_device_cb cb;
+	void *data;
+	int cont;
+};
+
+void get_default_id(char **id);
+
+bool devices_match(const char *id1, const char *id2);
+
 /**
  * Initialize the pulseaudio mainloop and increase the reference count
  */
-int_fast32_t pulse_init();
+int_fast32_t pulseaudio_init();
 
 /**
  * Unreference the pulseaudio mainloop, when the reference count reaches
  * zero the mainloop will automatically be destroyed
  */
-void pulse_unref();
+void pulseaudio_unref();
 
 /**
  * Lock the mainloop
@@ -43,41 +58,41 @@ void pulse_unref();
  *
  * @note use of this function may cause deadlocks
  *
- * @warning do not use with pulse_ wrapper functions
+ * @warning do not use with pulseaudio_ wrapper functions
  */
-void pulse_lock();
+void pulseaudio_lock();
 
 /**
  * Unlock the mainloop
  *
- * @see pulse_lock()
+ * @see pulseaudio_lock()
  */
-void pulse_unlock();
+void pulseaudio_unlock();
 
 /**
  * Wait for events to happen
  *
  * This function should be called when waiting for an event to happen.
  */
-void pulse_wait();
+void pulseaudio_wait();
 
 /**
  * Wait for accept signal from calling thread
  *
  * This function tells the pulseaudio mainloop wheter the data provided to
  * the callback should be retained until the calling thread executes
- * pulse_accept()
+ * pulseaudio_accept()
  *
  * If wait_for_accept is 0 the function returns and the data is freed.
  */
-void pulse_signal(int wait_for_accept);
+void pulseaudio_signal(int wait_for_accept);
 
 /**
  * Signal the waiting callback to return
  *
- * This function is used in conjunction with pulse_signal()
+ * This function is used in conjunction with pulseaudio_signal()
  */
-void pulse_accept();
+void pulseaudio_accept();
 
 /**
  * Request source information
@@ -91,21 +106,8 @@ void pulse_accept();
  *
  * @warning call without active locks
  */
-int_fast32_t pulse_get_source_info_list(pa_source_info_cb_t cb, void *userdata);
-
-/**
- * Request sink information
- *
- * The function will block until the operation was executed and the mainloop
- * called the provided callback function.
- *
- * @return negative on error
- *
- * @note The function will block until the server context is ready.
- *
- * @warning call without active locks
- */
-int_fast32_t pulse_get_sink_info_list(pa_sink_info_cb_t cb, void *userdata);
+int_fast32_t pulseaudio_get_source_info_list(pa_source_info_cb_t cb,
+		void *userdata);
 
 /**
  * Request source information from a specific source
@@ -123,8 +125,8 @@ int_fast32_t pulse_get_sink_info_list(pa_sink_info_cb_t cb, void *userdata);
  *
  * @warning call without active locks
  */
-int_fast32_t pulse_get_source_info(pa_source_info_cb_t cb, const char *name,
-	void *userdata);
+int_fast32_t pulseaudio_get_source_info(pa_source_info_cb_t cb,
+		const char *name, void *userdata);
 
 /**
  * Request server information
@@ -138,7 +140,7 @@ int_fast32_t pulse_get_source_info(pa_source_info_cb_t cb, const char *name,
  *
  * @warning call without active locks
  */
-int_fast32_t pulse_get_server_info(pa_server_info_cb_t cb, void *userdata);
+int_fast32_t pulseaudio_get_server_info(pa_server_info_cb_t cb, void *userdata);
 
 /**
  * Create a new stream with the default properties
@@ -147,5 +149,27 @@ int_fast32_t pulse_get_server_info(pa_server_info_cb_t cb, void *userdata);
  *
  * @warning call without active locks
  */
-pa_stream *pulse_stream_new(const char *name, const pa_sample_spec *ss,
-	const pa_channel_map *map);
+pa_stream *pulseaudio_stream_new(const char *name, const pa_sample_spec *ss,
+		const pa_channel_map *map);
+
+/**
+ * Connect to a pulseaudio playback stream
+ *
+ * @param s pa_stream to connect to. NULL for default
+ * @param attr pa_buffer_attr
+ * @param name Device name. NULL for default device
+ * @param flags pa_stream_flags_t
+ * @return negative on error
+ */
+int_fast32_t pulseaudio_connect_playback(pa_stream *s, const char *name,
+		const pa_buffer_attr *attr, pa_stream_flags_t flags);
+
+/**
+ * Sets a callback function for when data can be written to the stream
+ *
+ * @param p pa_stream to connect to. NULL for default
+ * @param cb pa_stream_request_cb_t
+ * @param userdata pointer to userdata the callback will be called with
+ */
+void pulseaudio_write_callback(pa_stream *p, pa_stream_request_cb_t cb,
+		void *userdata);

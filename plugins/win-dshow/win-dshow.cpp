@@ -847,6 +847,8 @@ bool DShowInput::UpdateVideoConfig(obs_data_t *settings)
 
 	if (videoConfig.internalFormat == VideoFormat::MJPEG) {
 		videoConfig.format = VideoFormat::XRGB;
+		videoConfig.useDefaultConfig = false;
+
 		if (!device.SetVideoConfig(&videoConfig)) {
 			blog(LOG_WARNING, "%s: device.SetVideoConfig (XRGB) "
 					"failed", obs_source_get_name(source));

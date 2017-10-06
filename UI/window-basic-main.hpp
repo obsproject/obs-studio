@@ -429,6 +429,12 @@ private slots:
 
 	void ToggleShowHide();
 
+	void HideAudioControl();
+	void UnhideAllAudioControls();
+	void ToggleHideMixer();
+
+	void on_mixerScrollArea_customContextMenuRequested();
+
 	void on_actionCopySource_triggered();
 	void on_actionPasteRef_triggered();
 	void on_actionPasteDup_triggered();
