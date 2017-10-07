@@ -794,8 +794,12 @@ QPushButton:pressed#exitButton {
 	border: 1px solid rgb(240, 98, 146); /* Pink (Secondary) */
 }
 
+QPushButton:checked#streamButton,
+QPushButton:checked#recordButton,
 QPushButton:checked[themeID="replayBufferButton"],
-QPushButton:checked#modeSwitch {
+QPushButton:checked#modeSwitch,
+QPushButton:checked#settingsButton,
+QPushButton:checked#exitButton {
 	background-color: rgba(240, 98, 146, 0.5); /* Pink (Secondary) */
 	border: 1px solid rgba(240, 98, 146, 0.5); /* Pink (Secondary) */
 }
