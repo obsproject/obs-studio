@@ -978,7 +978,7 @@
        <property name="text">
         <string>Basic.Main.StartRecording</string>
        </property>
-      <property name="checkable">
+       <property name="checkable">
         <bool>true</bool>
        </property>
       </widget>
