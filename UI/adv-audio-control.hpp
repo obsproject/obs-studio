@@ -19,12 +19,12 @@ private:
 
 	QPointer<QWidget>      forceMonoContainer;
 	QPointer<QWidget>      mixerContainer;
-	QPointer<QWidget>      panningContainer;
+	QPointer<QWidget>      balanceContainer;
 
 	QPointer<QLabel>       nameLabel;
 	QPointer<QSpinBox>     volume;
 	QPointer<QCheckBox>    forceMono;
-	QPointer<QSlider>      panning;
+	QPointer<QSlider>      balance;
 	QPointer<QLabel>       labelL;
 	QPointer<QLabel>       labelR;
 	QPointer<QSpinBox>     syncOffset;
@@ -61,7 +61,7 @@ public slots:
 
 	void volumeChanged(int percentage);
 	void downmixMonoChanged(bool checked);
-	void panningChanged(int val);
+	void balanceChanged(int val);
 	void syncOffsetChanged(int milliseconds);
 	void monitoringTypeChanged(int index);
 	void mixer1Changed(bool checked);
