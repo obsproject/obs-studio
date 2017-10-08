@@ -38,6 +38,11 @@ enum obs_source_type {
 	OBS_SOURCE_TYPE_SCENE,
 };
 
+enum obs_panning_type {
+	OBS_PANNING_TYPE_SINE_LAW,
+	OBS_PANNING_TYPE_SQUARE_LAW,
+	OBS_PANNING_TYPE_LINEAR,
+};
 
 /**
  * @name Source output flags

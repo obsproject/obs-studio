@@ -16,6 +16,7 @@
 ******************************************************************************/
 
 #include <inttypes.h>
+#include <math.h>
 
 #include "media-io/format-conversion.h"
 #include "media-io/video-frame.h"
@@ -140,6 +141,7 @@ bool obs_source_init(struct obs_source *source)
 	source->user_volume = 1.0f;
 	source->volume = 1.0f;
 	source->sync_offset = 0;
+	source->pan = 0.5f;
 	pthread_mutex_init_value(&source->filter_mutex);
 	pthread_mutex_init_value(&source->async_mutex);
 	pthread_mutex_init_value(&source->audio_mutex);
@@ -2534,6 +2536,37 @@ static void downmix_to_mono_planar(struct obs_source *source, uint32_t frames)
 	}
 }
 
+static void process_audio_panning(struct obs_source *source, uint32_t frames,
+		float pan, enum obs_panning_type type)
+{
+	float **data = (float**)source->audio_data.data;
+
+	switch(type) {
+	case OBS_PANNING_TYPE_SINE_LAW:
+		for (uint32_t frame = 0; frame < frames; frame++) {
+			data[0][frame] = data[0][frame] *
+				sinf((1.0f - pan) * (M_PI/2.0f));
+			data[1][frame] = data[1][frame] *
+				sinf(pan * (M_PI/2.0f));
+		}
+		break;
+	case OBS_PANNING_TYPE_SQUARE_LAW:
+		for (uint32_t frame = 0; frame < frames; frame++) {
+			data[0][frame] = data[0][frame] * sqrtf(1.0f - pan);
+			data[1][frame] = data[1][frame] * sqrtf(pan);
+		}
+		break;
+	case OBS_PANNING_TYPE_LINEAR:
+		for (uint32_t frame = 0; frame < frames; frame++) {
+			data[0][frame] = data[0][frame] * (1.0f - pan);
+			data[1][frame] = data[1][frame] * pan;
+		}
+		break;
+	default:
+		break;
+	}
+}
+
 /* resamples/remixes new audio to the designated main audio output format */
 static void process_audio(obs_source_t *source,
 		const struct obs_source_audio *audio)
@@ -2566,6 +2599,12 @@ static void process_audio(obs_source_t *source,
 	}
 
 	mono_output = audio_output_get_channels(obs->audio.audio) == 1;
+
+	if (!mono_output) {
+		process_audio_panning(source, frames,
+				obs_source_get_panning_value(source),
+				OBS_PANNING_TYPE_SINE_LAW);
+	}
 
 	if (!mono_output && (source->flags & OBS_SOURCE_FLAG_FORCE_MONO) != 0)
 		downmix_to_mono_planar(source, frames);
@@ -4068,4 +4107,18 @@ obs_data_t *obs_source_get_private_settings(obs_source_t *source)
 
 	obs_data_addref(source->private_settings);
 	return source->private_settings;
+}
+
+void obs_source_set_panning_value(obs_source_t *source, float pan)
+{
+	if (!obs_source_valid(source, "obs_source_set_panning_value"))
+		return;
+
+	source->pan = pan;
+}
+
+float obs_source_get_panning_value(const obs_source_t *source)
+{
+	return obs_source_valid(source, "obs_source_get_panning_value") ?
+		source->pan : 0.5f;
 }

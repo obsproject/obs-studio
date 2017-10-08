@@ -592,6 +592,7 @@ struct obs_source {
 	float                           volume;
 	int64_t                         sync_offset;
 	int64_t                         last_sync_offset;
+	float                           pan;
 
 	/* async video data */
 	gs_texture_t                    *async_texture;

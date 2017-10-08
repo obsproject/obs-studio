@@ -8,6 +8,7 @@
 #include "qt-wrappers.hpp"
 #include "obs-app.hpp"
 #include "adv-audio-control.hpp"
+#include "window-basic-main.hpp"
 
 #ifndef NSEC_PER_MSEC
 #define NSEC_PER_MSEC 1000000
@@ -84,8 +85,19 @@ OBSAdvAudioCtrl::OBSAdvAudioCtrl(QGridLayout *layout, obs_source_t *source_)
 	panning->setMinimum(0);
 	panning->setMaximum(100);
 	panning->setTickPosition(QSlider::TicksAbove);
-	panning->setEnabled(false);
-	panning->setValue(50); /* XXX */
+
+	OBSBasic *main = reinterpret_cast<OBSBasic*>(App()->GetMainWindow());
+
+	const char *speakers = config_get_string(main->Config(), "Audio",
+			"ChannelSetup");
+
+	if (strcmp(speakers, "Mono") == 0)
+		panning->setEnabled(false);
+	else
+		panning->setEnabled(true);
+
+	float pan = obs_source_get_panning_value(source) * 100.0f;
+	panning->setValue((int)pan);
 
 	int64_t cur_sync = obs_source_get_sync_offset(source);
 	syncOffset->setMinimum(-20000);
@@ -280,8 +292,9 @@ void OBSAdvAudioCtrl::downmixMonoChanged(bool checked)
 
 void OBSAdvAudioCtrl::panningChanged(int val)
 {
-	/* TODO */
-	UNUSED_PARAMETER(val);
+	float pan = (float)val / 100.0f;
+
+	obs_source_set_panning_value(source, pan);
 }
 
 void OBSAdvAudioCtrl::syncOffsetChanged(int milliseconds)
