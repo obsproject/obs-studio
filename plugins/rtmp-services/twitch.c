@@ -9,6 +9,9 @@
 
 static update_info_t *twitch_update_info = NULL;
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+static bool ingests_refreshed = false;
+static bool ingests_refreshing = false;
+static bool ingests_loaded = false;
 
 struct ingest {
 	char *name;
@@ -28,7 +31,7 @@ static void free_ingests(void)
 	da_free(cur_ingests);
 }
 
-static void load_ingests(const char *json, bool write_file)
+static bool load_ingests(const char *json, bool write_file)
 {
 	json_t *root;
 	json_t *ingests;
@@ -79,7 +82,12 @@ static void load_ingests(const char *json, bool write_file)
 		da_push_back(cur_ingests, &ingest);
 	}
 
-	if (!write_file || !cur_ingests.num)
+	if (!cur_ingests.num)
+		goto finish;
+
+	success = true;
+
+	if (!write_file)
 		goto finish;
 
 	cache_old = obs_module_config_path("twitch_ingests.json");
@@ -94,13 +102,21 @@ static void load_ingests(const char *json, bool write_file)
 finish:
 	if (root)
 		json_decref(root);
+	return success;
 }
 
 static bool twitch_ingest_update(void *param, struct file_download_data *data)
 {
+	bool success;
+
 	pthread_mutex_lock(&mutex);
-	load_ingests(data->buffer.array, true);
+	success = load_ingests(data->buffer.array, true);
 	pthread_mutex_unlock(&mutex);
+
+	if (success) {
+		os_atomic_set_bool(&ingests_refreshed, true);
+		os_atomic_set_bool(&ingests_loaded, true);
+	}
 
 	UNUSED_PARAMETER(param);
 	return true;
@@ -141,25 +157,61 @@ void init_twitch_data(void)
 	pthread_mutex_init(&mutex, NULL);
 }
 
-void load_twitch_data(const char *module_str)
+extern const char *get_module_name(void);
+
+void twitch_ingests_refresh(int seconds)
+{
+	if (os_atomic_load_bool(&ingests_refreshed))
+		return;
+
+	if (!os_atomic_load_bool(&ingests_refreshing)) {
+		os_atomic_set_bool(&ingests_refreshing, true);
+
+		twitch_update_info = update_info_create_single(
+				"[twitch ingest update] ",
+				get_module_name(),
+				"https://ingest.twitch.tv/api/v2/ingests",
+				twitch_ingest_update, NULL);
+	}
+
+	/* wait five seconds max when loading ingests for the first time */
+	if (!os_atomic_load_bool(&ingests_loaded)) {
+		for (int i = 0; i < seconds * 100; i++) {
+			if (os_atomic_load_bool(&ingests_refreshed)) {
+				break;
+			}
+			os_sleep_ms(10);
+		}
+	}
+}
+
+void load_twitch_data(void)
 {
 	char *twitch_cache = obs_module_config_path("twitch_ingests.json");
 
+	struct ingest def = {
+		.name = bstrdup("Default"),
+		.url = bstrdup("rtmp://live.twitch.tv/app")
+	};
+
+	pthread_mutex_lock(&mutex);
+	da_push_back(cur_ingests, &def);
+	pthread_mutex_unlock(&mutex);
+
 	if (os_file_exists(twitch_cache)) {
 		char *data = os_quick_read_utf8_file(twitch_cache);
+		bool success;
 
 		pthread_mutex_lock(&mutex);
-		load_ingests(data, false);
+		success = load_ingests(data, false);
 		pthread_mutex_unlock(&mutex);
+
+		if (success) {
+			os_atomic_set_bool(&ingests_loaded, true);
+		}
 
 		bfree(data);
 	}
-
-	twitch_update_info = update_info_create_single(
-			"[twitch ingest update] ",
-			module_str,
-			"https://ingest.twitch.tv/api/v2/ingests",
-			twitch_ingest_update, NULL);
 
 	bfree(twitch_cache);
 }

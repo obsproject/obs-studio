@@ -24,6 +24,8 @@ static json_t *open_services_file(void);
 static inline json_t *find_service(json_t *root, const char *name);
 static inline const char *get_string_val(json_t *service, const char *key);
 
+extern void twitch_ingests_refresh(int seconds);
+
 static void rtmp_common_update(void *data, obs_data_t *settings)
 {
 	struct rtmp_common *service = data;
@@ -247,11 +249,11 @@ static bool fill_twitch_servers_locked(obs_property_t *servers_prop)
 {
 	size_t count = twitch_ingest_count();
 
-	if (count <= 1)
-		return false;
-
 	obs_property_list_add_string(servers_prop,
 			obs_module_text("Server.Auto"), "auto");
+
+	if (count <= 1)
+		return false;
 
 	for (size_t i = 0; i < count; i++) {
 		struct twitch_ingest ing = twitch_ingest(i);
@@ -507,6 +509,8 @@ static const char *rtmp_common_url(void *data)
 	if (service->service && strcmp(service->service, "Twitch") == 0) {
 		if (service->server && strcmp(service->server, "auto") == 0) {
 			struct twitch_ingest ing;
+
+			twitch_ingests_refresh(3);
 
 			twitch_ingests_lock();
 			ing = twitch_ingest(0);

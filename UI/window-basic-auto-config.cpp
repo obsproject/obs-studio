@@ -545,6 +545,13 @@ void AutoConfigStreamPage::UpdateCompleted()
 AutoConfig::AutoConfig(QWidget *parent)
 	: QWizard(parent)
 {
+	calldata_t cd = {0};
+	calldata_set_int(&cd, "seconds", 5);
+
+	proc_handler_t *ph = obs_get_proc_handler();
+	proc_handler_call(ph, "twitch_ingests_refresh", &cd);
+	calldata_free(&cd);
+
 	OBSBasic *main = reinterpret_cast<OBSBasic*>(parent);
 	main->EnableOutputs(false);
 
