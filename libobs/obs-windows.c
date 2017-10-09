@@ -15,6 +15,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
+#include "util/windows/win-registry.h"
 #include "util/windows/win-version.h"
 #include "util/platform.h"
 #include "util/dstr.h"
@@ -189,6 +190,49 @@ static void log_aero(void)
 			aeroMessage);
 }
 
+#define WIN10_GAME_BAR_REG_KEY \
+		L"Software\\Microsoft\\Windows\\CurrentVersion\\GameDVR"
+#define WIN10_GAME_DVR_POLICY_REG_KEY \
+		L"SOFTWARE\\Policies\\Microsoft\\Windows\\GameDVR"
+#define WIN10_GAME_DVR_REG_KEY L"System\\GameConfigStore"
+#define WIN10_GAME_MODE_REG_KEY L"Software\\Microsoft\\GameBar"
+
+static void log_gaming_features(void)
+{
+	if (win_ver < 0xA00)
+		return;
+
+	struct reg_dword game_bar_enabled;
+	struct reg_dword game_dvr_allowed;
+	struct reg_dword game_dvr_enabled;
+	struct reg_dword game_dvr_bg_recording;
+	struct reg_dword game_mode_enabled;
+
+	get_reg_dword(HKEY_CURRENT_USER, WIN10_GAME_BAR_REG_KEY,
+			L"AppCaptureEnabled", &game_bar_enabled);
+	get_reg_dword(HKEY_CURRENT_USER, WIN10_GAME_DVR_POLICY_REG_KEY,
+			L"AllowGameDVR", &game_dvr_allowed);
+	get_reg_dword(HKEY_CURRENT_USER, WIN10_GAME_DVR_REG_KEY,
+			L"GameDVR_Enabled", &game_dvr_enabled);
+	get_reg_dword(HKEY_CURRENT_USER, WIN10_GAME_BAR_REG_KEY,
+			L"HistoricalCaptureEnabled", &game_dvr_bg_recording);
+	get_reg_dword(HKEY_CURRENT_USER, WIN10_GAME_MODE_REG_KEY,
+			L"AllowAutoGameMode", &game_mode_enabled);
+
+	blog(LOG_INFO, "Windows 10 Gaming Features:");
+	blog(LOG_INFO, "\tGame Bar: %s",
+			(bool)game_bar_enabled.return_value ? "On" : "Off");
+	blog(LOG_INFO, "\tGame DVR Allowed: %s",
+			(bool)game_dvr_allowed.return_value ? "Yes" : "No");
+	blog(LOG_INFO, "\tGame DVR: %s",
+			(bool)game_dvr_enabled.return_value ? "On" : "Off");
+	blog(LOG_INFO, "\tGame DVR Background Recording: %s",
+			(bool)game_dvr_bg_recording.return_value ? "On" :
+			"Off");
+	blog(LOG_INFO, "\tGame Mode: %s",
+			(bool)game_mode_enabled.return_value ? "On" : "Off");
+}
+
 void log_system_info(void)
 {
 	struct win_version_info ver;
@@ -202,6 +246,7 @@ void log_system_info(void)
 	log_windows_version();
 	log_admin_status();
 	log_aero();
+	log_gaming_features();
 }
 
 
