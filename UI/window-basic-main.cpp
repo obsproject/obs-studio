@@ -1133,6 +1133,10 @@ bool OBSBasic::InitBasicConfigDefaults()
 	config_set_default_string(basicConfig, "Audio", "ChannelSetup",
 			"Stereo");
 
+#if defined(_WIN32) || defined(__APPLE__) || HAVE_PULSEAUDIO
+	config_set_default_int (basicConfig, "Audio", "MonitoringVolume", 100);
+#endif
+
 	return true;
 }
 
@@ -1336,13 +1340,16 @@ void OBSBasic::OBSInit()
 	}
 
 	/* load audio monitoring */
-#if defined(_WIN32) || defined(__APPLE__)
+#if defined(_WIN32) || defined(__APPLE__) || HAVE_PULSEAUDIO
 	const char *device_name = config_get_string(basicConfig, "Audio",
 			"MonitoringDeviceName");
 	const char *device_id = config_get_string(basicConfig, "Audio",
 			"MonitoringDeviceId");
+	int monitorVolume = config_get_int(basicConfig, "Audio", 
+			"MonitoringVolume");
 
 	obs_set_audio_monitoring_device(device_name, device_id);
+	obs_set_audio_monitor_volume((float)monitorVolume / 100.0f);
 
 	blog(LOG_INFO, "Audio monitoring device:\n\tname: %s\n\tid: %s",
 			device_name, device_id);
@@ -1817,6 +1824,10 @@ OBSBasic::~OBSBasic()
 	config_set_bool(App()->GlobalConfig(), "BasicWindow",
 			"DocksLocked", ui->lockUI->isChecked());
 	config_save_safe(App()->GlobalConfig(), "tmp", nullptr);
+#if defined(_WIN32) || defined(__APPLE__) || HAVE_PULSEAUDIO
+	int volume = (int)(round(obs_get_audio_monitor_volume() * 100.0f));
+	config_set_int(basicConfig, "Audio", "MonitoringVolume", volume);
+#endif
 
 #ifdef _WIN32
 	uint32_t winVer = GetWindowsVersion();

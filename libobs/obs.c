@@ -501,6 +501,7 @@ static bool obs_init_audio(struct audio_output_info *ai)
 		return false;
 
 	audio->user_volume    = 1.0f;
+	audio->monitoring_volume = 1.0f;
 
 	audio->monitoring_device_name = bstrdup("Default");
 	audio->monitoring_device_id = bstrdup("default");
@@ -1949,6 +1950,22 @@ void obs_get_audio_monitoring_device(const char **name, const char **id)
 		*name = obs->audio.monitoring_device_name;
 	if (id)
 		*id = obs->audio.monitoring_device_id;
+}
+
+void obs_set_audio_monitor_volume(float vol)
+{
+	if (!obs)
+		return;
+
+	obs->audio.monitoring_volume = vol;
+}
+
+float obs_get_audio_monitor_volume()
+{
+	if (!obs)
+		return 1.0f;
+
+	return obs->audio.monitoring_volume;
 }
 
 void obs_add_main_render_callback(

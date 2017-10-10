@@ -58,8 +58,9 @@ static void process_byte(void *p, size_t frames, size_t channels, float vol)
 	register char *cur = (char *) p;
 	register char *end = cur + frames * channels;
 
-	while (cur < end)
+	while (cur < end) {
 		*(cur++) *= vol;
+	}
 }
 
 static void process_short(void *p, size_t frames, size_t channels, float vol)
@@ -129,7 +130,7 @@ static void on_audio_playback(void *param, obs_source_t *source,
 		const struct audio_data *audio_data, bool muted)
 {
 	struct audio_monitor *monitor = param;
-	float vol = source->user_volume;
+	float vol = source->user_volume * obs_get_audio_monitor_volume();
 	size_t bytes;
 
 	uint8_t *resample_data[MAX_AV_PLANES];
