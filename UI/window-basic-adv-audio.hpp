@@ -30,6 +30,10 @@ private:
 public slots:
 	void SourceAdded(OBSSource source);
 	void SourceRemoved(OBSSource source);
+	void monitorAVolumeChanged(int val);
+	void monitorBVolumeChanged(int val);
+	void monitorMuteAChanged(bool checked);
+	void monitorMuteBChanged(bool checked);
 
 public:
 	OBSBasicAdvAudio(QWidget *parent);

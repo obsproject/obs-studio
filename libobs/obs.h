@@ -595,8 +595,19 @@ typedef bool (*obs_enum_audio_device_cb)(void *data, const char *name,
 EXPORT void obs_enum_audio_monitoring_devices(obs_enum_audio_device_cb cb,
 		void *data);
 
-EXPORT bool obs_set_audio_monitoring_device(const char *name, const char *id);
-EXPORT void obs_get_audio_monitoring_device(const char **name, const char **id);
+EXPORT bool obs_set_audio_monitoring_device(const char *name,
+		const char *id, int bus);
+EXPORT void obs_get_audio_monitoring_device(const char **name,
+		const char **id, int bus);
+EXPORT void obs_source_set_monitoring_bus(obs_source_t *source, bool use,
+		int bus);
+EXPORT bool obs_source_monitoring_using_bus(obs_source_t *source, int bus);
+EXPORT void obs_source_monitoring_bus_create(obs_source_t *source, int bus);
+EXPORT void obs_source_monitoring_bus_destroy(obs_source_t *source, int bus);
+EXPORT void obs_set_audio_monitor_volume(float vol, int bus);
+EXPORT float obs_get_audio_monitor_volume(int bus);
+EXPORT void obs_set_audio_monitor_muted(bool mute, int bus);
+EXPORT bool obs_audio_monitor_muted(int bus);
 
 EXPORT void obs_add_main_render_callback(
 		void (*draw)(void *param, uint32_t cx, uint32_t cy),

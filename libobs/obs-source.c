@@ -539,7 +539,8 @@ void obs_source_destroy(struct obs_source *source)
 		source->context.data = NULL;
 	}
 
-	audio_monitor_destroy(source->monitor);
+	audio_monitor_destroy(source->monitor_bus_a);
+	audio_monitor_destroy(source->monitor_bus_b);
 
 	obs_hotkey_unregister(source->push_to_talk_key);
 	obs_hotkey_unregister(source->push_to_mute_key);
@@ -4018,11 +4019,58 @@ void obs_source_remove_audio_capture_callback(obs_source_t *source,
 	pthread_mutex_unlock(&source->audio_cb_mutex);
 }
 
+void obs_source_set_monitoring_bus(obs_source_t *source, bool use, int bus)
+{
+	if (!source)
+		return;
+
+	if (bus == 0)
+		source->using_bus_a = use;
+	else if (bus == 1)
+		source->using_bus_b = use;
+}
+
+bool obs_source_monitoring_using_bus(obs_source_t *source, int bus)
+{
+	if (!obs_source_valid(source, "obs_source_monitoring_using_bus_a"))
+		return false;
+
+	bool using = false;
+
+	if (bus == 0)
+		using = source->using_bus_a;
+	else if (bus == 1)
+		using = source->using_bus_b;
+
+	return using;
+}
+
+void obs_source_monitoring_bus_create(obs_source_t *source, int bus)
+{
+	if (bus == 0)
+		source->monitor_bus_a = audio_monitor_create(source, 0);
+	else if (bus == 1)
+		source->monitor_bus_b = audio_monitor_create(source, 1);
+}
+
+void obs_source_monitoring_bus_destroy(obs_source_t *source, int bus)
+{
+	if (bus == 0 && source->monitor_bus_a) {
+		audio_monitor_destroy(source->monitor_bus_a);
+		source->monitor_bus_a = NULL;
+	} else if (bus == 1 && source->monitor_bus_b) {
+		audio_monitor_destroy(source->monitor_bus_b);
+		source->monitor_bus_b = NULL;
+	}
+}
+
 void obs_source_set_monitoring_type(obs_source_t *source,
 		enum obs_monitoring_type type)
 {
 	bool was_on;
 	bool now_on;
+	bool using_bus_a = obs_source_monitoring_using_bus(source, 0);
+	bool using_bus_b = obs_source_monitoring_using_bus(source, 1);
 
 	if (!obs_source_valid(source, "obs_source_set_monitoring_type"))
 		return;
@@ -4034,10 +4082,13 @@ void obs_source_set_monitoring_type(obs_source_t *source,
 
 	if (was_on != now_on) {
 		if (!was_on) {
-			source->monitor = audio_monitor_create(source);
+			if (using_bus_a)
+				obs_source_monitoring_bus_create(source, 0);
+			if (using_bus_b)
+				obs_source_monitoring_bus_create(source, 1);
 		} else {
-			audio_monitor_destroy(source->monitor);
-			source->monitor = NULL;
+			obs_source_monitoring_bus_destroy(source, 0);
+			obs_source_monitoring_bus_destroy(source, 1);
 		}
 	}
 
