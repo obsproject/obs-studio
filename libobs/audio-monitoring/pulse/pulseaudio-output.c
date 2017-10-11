@@ -26,6 +26,8 @@ struct audio_monitor {
 	size_t          	bytes_per_channel;
 	bool 			ignore;
 	pthread_mutex_t 	playback_mutex;
+
+	int                     bus;
 };
 
 static enum speaker_layout pulseaudio_channels_to_obs_speakers(
@@ -129,7 +131,15 @@ static void on_audio_playback(void *param, obs_source_t *source,
 		const struct audio_data *audio_data, bool muted)
 {
 	struct audio_monitor *monitor = param;
-	float vol = source->user_volume;
+
+	float vol = 1.0f;
+
+	if (obs_audio_monitor_muted(monitor->bus))
+		vol = 0.0f;
+	else
+		vol = source->user_volume *
+				obs_get_audio_monitor_volume(monitor->bus);
+
 	size_t bytes;
 
 	uint8_t *resample_data[MAX_AV_PLANES];
@@ -258,13 +268,21 @@ static void pulseaudio_stop_playback(struct audio_monitor *monitor)
 }
 
 static bool audio_monitor_init(struct audio_monitor *monitor,
-		obs_source_t *source)
+		obs_source_t *source, int bus)
 {
 	pthread_mutex_init_value(&monitor->playback_mutex);
 
 	monitor->source = source;
+	monitor->bus = bus;
 
-	const char *id = obs->audio.monitoring_device_id;
+	const char *id = NULL;
+
+	if (monitor->bus == 0) {
+		id = obs->audio.monitoring_device_id_bus_a;
+	} else if (monitor->bus == 1) {
+		id = obs->audio.monitoring_device_id_bus_b;
+	}
+
 	if (!id)
 		return false;
 
@@ -415,18 +433,20 @@ static inline void audio_monitor_free(struct audio_monitor *monitor)
 	bfree(monitor->device);
 }
 
-struct audio_monitor *audio_monitor_create(obs_source_t *source)
+struct audio_monitor *audio_monitor_create(obs_source_t *source, int bus)
 {
 	struct audio_monitor monitor = {0};
 	struct audio_monitor *out;
 
-	if (!audio_monitor_init(&monitor, source))
+	if (!audio_monitor_init(&monitor, source, bus))
 		goto fail;
 
 	out = bmemdup(&monitor, sizeof(monitor));
 
 	pthread_mutex_lock(&obs->audio.monitoring_mutex);
+
 	da_push_back(obs->audio.monitors, &out);
+
 	pthread_mutex_unlock(&obs->audio.monitoring_mutex);
 
 	audio_monitor_init_final(out);
@@ -439,12 +459,13 @@ fail:
 
 void audio_monitor_reset(struct audio_monitor *monitor)
 {
+	int bus = monitor->bus;
 	struct audio_monitor new_monitor = {0};
 	bool success;
 	audio_monitor_free(monitor);
 
 	pthread_mutex_lock(&monitor->playback_mutex);
-	success = audio_monitor_init(&new_monitor, monitor->source);
+	success = audio_monitor_init(&new_monitor, monitor->source, bus);
 	pthread_mutex_unlock(&monitor->playback_mutex);
 
 	if (success) {
@@ -461,7 +482,9 @@ void audio_monitor_destroy(struct audio_monitor *monitor)
 		audio_monitor_free(monitor);
 
 		pthread_mutex_lock(&obs->audio.monitoring_mutex);
+
 		da_erase_item(obs->audio.monitors, &monitor);
+
 		pthread_mutex_unlock(&obs->audio.monitoring_mutex);
 
 		bfree(monitor);

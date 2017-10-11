@@ -1124,10 +1124,15 @@ bool OBSBasic::InitBasicConfigDefaults()
 	config_set_default_string(basicConfig, "Video", "ColorRange",
 			"Partial");
 
-	config_set_default_string(basicConfig, "Audio", "MonitoringDeviceId",
+	config_set_default_string(basicConfig, "Audio", "MonitoringDeviceIdA",
 			"default");
-	config_set_default_string(basicConfig, "Audio", "MonitoringDeviceName",
-			Str("Basic.Settings.Advanced.Audio.MonitoringDevice"
+	config_set_default_string(basicConfig, "Audio", "MonitoringDeviceNameA",
+			Str("Basic.Settings.Advanced.Audio.MonitoringDeviceA"
+				".Default"));
+	config_set_default_string(basicConfig, "Audio", "MonitoringDeviceIdB",
+			"default");
+	config_set_default_string(basicConfig, "Audio", "MonitoringDeviceNameB",
+			Str("Basic.Settings.Advanced.Audio.MonitoringDeviceB"
 				".Default"));
 	config_set_default_uint  (basicConfig, "Audio", "SampleRate", 44100);
 	config_set_default_string(basicConfig, "Audio", "ChannelSetup",
@@ -1336,16 +1341,23 @@ void OBSBasic::OBSInit()
 	}
 
 	/* load audio monitoring */
-#if defined(_WIN32) || defined(__APPLE__)
-	const char *device_name = config_get_string(basicConfig, "Audio",
-			"MonitoringDeviceName");
-	const char *device_id = config_get_string(basicConfig, "Audio",
-			"MonitoringDeviceId");
+#if defined(_WIN32) || defined(__APPLE__) || HAVE_PULSEAUDIO
+	const char *device_name_a = config_get_string(basicConfig, "Audio",
+			"MonitoringDeviceNameA");
+	const char *device_id_a = config_get_string(basicConfig, "Audio",
+			"MonitoringDeviceIdA");
+	const char *device_name_b = config_get_string(basicConfig, "Audio",
+			"MonitoringDeviceNameB");
+	const char *device_id_b = config_get_string(basicConfig, "Audio",
+			"MonitoringDeviceIdB");
 
-	obs_set_audio_monitoring_device(device_name, device_id);
+	obs_set_audio_monitoring_device(device_name_a, device_id_a, 0);
+	obs_set_audio_monitoring_device(device_name_b, device_id_b, 1);
 
-	blog(LOG_INFO, "Audio monitoring device:\n\tname: %s\n\tid: %s",
-			device_name, device_id);
+	blog(LOG_INFO, "Audio monitoring device:\n\tname (Bus A): %s\n\tid: %s",
+			device_name_a, device_id_a);
+	blog(LOG_INFO, "Audio monitoring device:\n\tname (Bus B): %s\n\tid: %s",
+			device_name_b, device_id_b);
 #endif
 
 	InitOBSCallbacks();

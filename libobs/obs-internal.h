@@ -295,11 +295,17 @@ struct obs_core_audio {
 	int                             total_buffering_ticks;
 
 	float                           user_volume;
+	float                           monitoring_volume_bus_a;
+	float                           monitoring_volume_bus_b;
+	bool                            monitoring_muted_bus_a;
+	bool                            monitoring_muted_bus_b;
 
 	pthread_mutex_t                 monitoring_mutex;
 	DARRAY(struct audio_monitor*)   monitors;
-	char                            *monitoring_device_name;
-	char                            *monitoring_device_id;
+	char                            *monitoring_device_name_bus_a;
+	char                            *monitoring_device_id_bus_a;
+	char                            *monitoring_device_name_bus_b;
+	char                            *monitoring_device_id_bus_b;
 };
 
 /* user sources, output channels, and displays */
@@ -679,8 +685,11 @@ struct obs_source {
 	enum obs_transition_scale_type  transition_scale_type;
 	struct matrix4                  transition_matrices[2];
 
-	struct audio_monitor            *monitor;
+	struct audio_monitor            *monitor_bus_a;
+	struct audio_monitor            *monitor_bus_b;
 	enum obs_monitoring_type        monitoring_type;
+	bool                            using_bus_a;
+	bool                            using_bus_b;
 
 	obs_data_t                      *private_settings;
 };
@@ -701,7 +710,7 @@ extern void obs_transition_enum_sources(obs_source_t *transition,
 extern void obs_transition_save(obs_source_t *source, obs_data_t *data);
 extern void obs_transition_load(obs_source_t *source, obs_data_t *data);
 
-struct audio_monitor *audio_monitor_create(obs_source_t *source);
+struct audio_monitor *audio_monitor_create(obs_source_t *source, int bus);
 void audio_monitor_reset(struct audio_monitor *monitor);
 extern void audio_monitor_destroy(struct audio_monitor *monitor);
 
