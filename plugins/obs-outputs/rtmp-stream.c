@@ -178,13 +178,13 @@ static void rtmp_stream_stop(void *data, uint64_t ts)
 		pthread_join(stream->connect_thread, NULL);
 
 	stream->stop_ts = ts / 1000ULL;
-	os_event_signal(stream->stop_event);
 
 	if (ts)
 		stream->shutdown_timeout_ts = ts +
 			(uint64_t)stream->max_shutdown_time_sec * 1000000000ULL;
 
 	if (active(stream)) {
+		os_event_signal(stream->stop_event);
 		if (stream->stop_ts == 0)
 			os_sem_post(stream->send_sem);
 	} else {
