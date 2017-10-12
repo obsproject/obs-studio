@@ -267,6 +267,8 @@ static void ftl_stream_stop(void *data, uint64_t ts)
 	if (active(stream)) {
 		if (stream->stop_ts == 0)
 			os_sem_post(stream->send_sem);
+	} else {
+		obs_output_signal_stop(stream->output, OBS_OUTPUT_SUCCESS);
 	}
 }
 
