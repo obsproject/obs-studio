@@ -1693,9 +1693,9 @@ void OBSBasic::CreateHotkeys()
 			"OBSBasic.StopReplayBuffer",
 			Str("Basic.Main.StopReplayBuffer"),
 			MAKE_CALLBACK(!basic.outputHandler->ReplayBufferActive(),
-				basic.StartReplayBuffer),
+				basic.StartReplayBuffer, "Starting replay buffer"),
 			MAKE_CALLBACK(basic.outputHandler->ReplayBufferActive(),
-				basic.StopReplayBuffer),
+				basic.StopReplayBuffer, "Stopping replay buffer"),
 			this, this);
 	LoadHotkeyPair(replayBufHotkeys,
 			"OBSBasic.StartReplayBuffer", "OBSBasic.StopReplayBuffer");
