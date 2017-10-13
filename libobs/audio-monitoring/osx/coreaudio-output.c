@@ -58,7 +58,7 @@ static void on_audio_playback(void *param, obs_source_t *source,
 		const struct audio_data *audio_data, bool muted)
 {
 	struct audio_monitor *monitor = param;
-	float vol = source->user_volume;
+	float vol = source->user_volume * obs_get_audio_monitor_volume();
 	uint32_t bytes;
 
 	UNUSED_PARAMETER(source);

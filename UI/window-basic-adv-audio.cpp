@@ -4,6 +4,7 @@
 #include <QScrollArea>
 #include <QPushButton>
 #include <QLabel>
+#include <QSpinBox>
 #include "window-basic-adv-audio.hpp"
 #include "window-basic-main.hpp"
 #include "adv-audio-control.hpp"
@@ -67,6 +68,32 @@ OBSBasicAdvAudio::OBSBasicAdvAudio(QWidget *parent)
 	scrollArea->setWidget(widget);
 	scrollArea->setWidgetResizable(true);
 
+#if defined(_WIN32) || defined(__APPLE__) || HAVE_PULSEAUDIO
+	QSpinBox *monitorVolume = new QSpinBox;
+	monitorVolume->setMaximumWidth(100);
+	monitorVolume->setMinimum(0);
+	monitorVolume->setMaximum(400);
+
+	QLabel *monitorVolLabel =
+			new QLabel(QTStr("Basic.AdvAudio.Monitoring.Volume"));
+
+	QHBoxLayout *monVolLayout = new QHBoxLayout();
+	QWidget *monVolContainer = new QWidget();
+
+	monVolContainer->setLayout(monVolLayout);
+	monVolContainer->setMinimumWidth(100);
+	monVolContainer->setMaximumWidth(250);
+
+	monVolContainer->layout()->addWidget(monitorVolLabel);
+	monVolContainer->layout()->addWidget(monitorVolume);
+
+	float monVol = obs_get_audio_monitor_volume() * 100.0f;
+	monitorVolume->setValue((int)monVol);
+
+	QWidget::connect(monitorVolume, SIGNAL(valueChanged(int)),
+			this, SLOT(monitorVolumeChanged(int)));
+#endif
+
 	QPushButton *closeButton = new QPushButton(QTStr("Close"));
 
 	QHBoxLayout *buttonLayout = new QHBoxLayout;
@@ -76,6 +103,9 @@ OBSBasicAdvAudio::OBSBasicAdvAudio(QWidget *parent)
 	vlayout = new QVBoxLayout;
 	vlayout->setContentsMargins(11, 11, 11, 11);
 	vlayout->addWidget(scrollArea);
+#if defined(_WIN32) || defined(__APPLE__) || HAVE_PULSEAUDIO
+	vlayout->addWidget(monVolContainer);
+#endif
 	vlayout->addLayout(buttonLayout);
 	setLayout(vlayout);
 
@@ -160,4 +190,11 @@ void OBSBasicAdvAudio::SourceRemoved(OBSSource source)
 			break;
 		}
 	}
+}
+
+void OBSBasicAdvAudio::monitorVolumeChanged(int val)
+{
+	float vol = (float)val / 100.0f;
+
+	obs_set_audio_monitor_volume(vol);
 }
