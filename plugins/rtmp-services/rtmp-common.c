@@ -467,9 +467,10 @@ static void initialize_output(struct rtmp_common *service, json_t *root,
 	json_t        *recommended;
 
 	if (!json_service) {
-		blog(LOG_WARNING, "rtmp-common.c: [initialize_output] "
-		                  "Could not find service '%s'",
-		                  service->service);
+		if (service->service && *service->service)
+			blog(LOG_WARNING, "rtmp-common.c: [initialize_output] "
+					  "Could not find service '%s'",
+					  service->service);
 		return;
 	}
 
