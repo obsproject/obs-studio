@@ -1338,7 +1338,7 @@ void OBSBasic::OBSInit()
 	}
 
 	/* load audio monitoring */
-#if defined(_WIN32) || defined(__APPLE__)
+#if defined(_WIN32) || defined(__APPLE__) || HAVE_PULSEAUDIO
 	const char *device_name = config_get_string(basicConfig, "Audio",
 			"MonitoringDeviceName");
 	const char *device_id = config_get_string(basicConfig, "Audio",
