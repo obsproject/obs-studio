@@ -814,7 +814,7 @@ void get_win_ver(struct win_version_info *info)
 		get_dll_ver(L"kernel32", &ver);
 		got_version = true;
 
-		if (ver.major == 10 && ver.revis == 0) {
+		if (ver.major == 10) {
 			HKEY    key;
 			DWORD   size, win10_revision;
 			LSTATUS status;
@@ -829,7 +829,8 @@ void get_win_ver(struct win_version_info *info)
 			status = RegQueryValueExW(key, L"UBR", NULL, NULL,
 					(LPBYTE)&win10_revision, &size);
 			if (status == ERROR_SUCCESS)
-				ver.revis = (int)win10_revision;
+				ver.revis = (int)win10_revision > ver.revis ?
+						(int)win10_revision : ver.revis;
 
 			RegCloseKey(key);
 		}
