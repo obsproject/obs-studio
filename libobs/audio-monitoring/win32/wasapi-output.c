@@ -44,6 +44,8 @@ struct audio_monitor {
 
 	DARRAY(float)      buf;
 	pthread_mutex_t    playback_mutex;
+
+	int                bus;
 };
 
 /* #define DEBUG_AUDIO */
@@ -141,7 +143,15 @@ static void on_audio_playback(void *param, obs_source_t *source,
 	struct audio_monitor *monitor = param;
 	IAudioRenderClient *render = monitor->render;
 	uint8_t *resample_data[MAX_AV_PLANES];
-	float vol = source->user_volume;
+
+	float vol = 1.0f;
+
+	if (obs_audio_monitor_muted(monitor->bus))
+		vol = 0.0f;
+	else
+		vol = source->user_volume *
+				obs_get_audio_monitor_volume(monitor->bus);
+
 	uint32_t resample_frames;
 	uint64_t ts_offset;
 	bool success;
@@ -245,7 +255,7 @@ static enum speaker_layout convert_speaker_layout(DWORD layout, WORD channels)
 extern bool devices_match(const char *id1, const char *id2);
 
 static bool audio_monitor_init(struct audio_monitor *monitor,
-		obs_source_t *source)
+		obs_source_t *source, int bus)
 {
 	IMMDeviceEnumerator *immde = NULL;
 	WAVEFORMATEX *wfex = NULL;
@@ -256,8 +266,16 @@ static bool audio_monitor_init(struct audio_monitor *monitor,
 	pthread_mutex_init_value(&monitor->playback_mutex);
 
 	monitor->source = source;
+	monitor->bus = bus;
 
-	const char *id = obs->audio.monitoring_device_id;
+	const char *id = NULL;
+
+	if (monitor->bus == 0) {
+		id = obs->audio.monitoring_device_id_bus_a;
+	} else if (monitor->bus == 1) {
+		id = obs->audio.monitoring_device_id_bus_b;
+	}
+
 	if (!id) {
 		return false;
 	}
@@ -387,19 +405,21 @@ static void audio_monitor_init_final(struct audio_monitor *monitor)
 			on_audio_playback, monitor);
 }
 
-struct audio_monitor *audio_monitor_create(obs_source_t *source)
+struct audio_monitor *audio_monitor_create(obs_source_t *source, int bus)
 {
 	struct audio_monitor monitor = {0};
 	struct audio_monitor *out;
 
-	if (!audio_monitor_init(&monitor, source)) {
+	if (!audio_monitor_init(&monitor, source, bus)) {
 		goto fail;
 	}
 
 	out = bmemdup(&monitor, sizeof(monitor));
 
 	pthread_mutex_lock(&obs->audio.monitoring_mutex);
+
 	da_push_back(obs->audio.monitors, &out);
+
 	pthread_mutex_unlock(&obs->audio.monitoring_mutex);
 
 	audio_monitor_init_final(out);
@@ -412,11 +432,12 @@ fail:
 
 void audio_monitor_reset(struct audio_monitor *monitor)
 {
+	int bus = monitor->bus;
 	struct audio_monitor new_monitor = {0};
 	bool success;
 
 	pthread_mutex_lock(&monitor->playback_mutex);
-	success = audio_monitor_init(&new_monitor, monitor->source);
+	success = audio_monitor_init(&new_monitor, monitor->source, bus);
 	pthread_mutex_unlock(&monitor->playback_mutex);
 
 	if (success) {
@@ -435,7 +456,9 @@ void audio_monitor_destroy(struct audio_monitor *monitor)
 		audio_monitor_free(monitor);
 
 		pthread_mutex_lock(&obs->audio.monitoring_mutex);
+
 		da_erase_item(obs->audio.monitors, &monitor);
+
 		pthread_mutex_unlock(&obs->audio.monitoring_mutex);
 
 		bfree(monitor);

@@ -4,6 +4,8 @@
 #include <QScrollArea>
 #include <QPushButton>
 #include <QLabel>
+#include <QSpinBox>
+#include <QCheckBox>
 #include "window-basic-adv-audio.hpp"
 #include "window-basic-main.hpp"
 #include "adv-audio-control.hpp"
@@ -43,6 +45,9 @@ OBSBasicAdvAudio::OBSBasicAdvAudio(QWidget *parent)
 	label->setAlignment(Qt::AlignHCenter);
 	mainLayout->addWidget(label, 0, idx++);
 #if defined(_WIN32) || defined(__APPLE__) || HAVE_PULSEAUDIO
+	label = new QLabel(QTStr("Basic.AdvAudio.Monitoring.Bus"));
+	label->setAlignment(Qt::AlignHCenter);
+	mainLayout->addWidget(label, 0, idx++);
 	label = new QLabel(QTStr("Basic.AdvAudio.Monitoring"));
 	label->setAlignment(Qt::AlignHCenter);
 	mainLayout->addWidget(label, 0, idx++);
@@ -67,6 +72,66 @@ OBSBasicAdvAudio::OBSBasicAdvAudio(QWidget *parent)
 	scrollArea->setWidget(widget);
 	scrollArea->setWidgetResizable(true);
 
+#if defined(_WIN32) || defined(__APPLE__) || HAVE_PULSEAUDIO
+	QSpinBox *monitorVolumeA = new QSpinBox;
+	QSpinBox *monitorVolumeB = new QSpinBox;
+
+	QCheckBox *monitorVolumeAMute = new QCheckBox;
+	QCheckBox *monitorVolumeBMute = new QCheckBox;
+
+	monitorVolumeAMute->setChecked(obs_audio_monitor_muted(0));
+	monitorVolumeBMute->setChecked(obs_audio_monitor_muted(1));
+
+	monitorVolumeA->setMaximumWidth(100);
+	monitorVolumeA->setMinimum(0);
+	monitorVolumeA->setMaximum(400);
+	monitorVolumeB->setMaximumWidth(100);
+	monitorVolumeB->setMinimum(0);
+	monitorVolumeB->setMaximum(400);
+
+	QLabel *monitorVolLabel =
+			new QLabel(QTStr("Basic.AdvAudio.Monitoring.Volume"));
+
+	QLabel *monitorVolLabelA = new QLabel("A");
+	QLabel *monitorVolLabelB = new QLabel("B");
+	monitorVolumeAMute->setText("Mute");
+	monitorVolumeBMute->setText("Mute");
+
+	monitorVolLabelA->setAlignment(Qt::AlignRight);
+	monitorVolLabelB->setAlignment(Qt::AlignRight);
+	monitorVolLabelA->setAlignment(Qt::AlignVCenter);
+	monitorVolLabelB->setAlignment(Qt::AlignVCenter);
+
+	QHBoxLayout *monVolLayout = new QHBoxLayout();
+	QWidget *monVolContainer = new QWidget();
+
+	monVolContainer->setLayout(monVolLayout);
+	monVolContainer->setMinimumWidth(100);
+	monVolContainer->setMaximumWidth(600);
+
+	monVolContainer->layout()->addWidget(monitorVolLabel);
+	monVolContainer->layout()->addWidget(monitorVolLabelA);
+	monVolContainer->layout()->addWidget(monitorVolumeA);
+	monVolContainer->layout()->addWidget(monitorVolumeAMute);
+	monVolContainer->layout()->addWidget(monitorVolLabelB);
+	monVolContainer->layout()->addWidget(monitorVolumeB);
+	monVolContainer->layout()->addWidget(monitorVolumeBMute);
+
+	float monVolA = obs_get_audio_monitor_volume(0) * 100.0f;
+	float monVolB = obs_get_audio_monitor_volume(1) * 100.0f;
+	monitorVolumeA->setValue((int)monVolA);
+	monitorVolumeB->setValue((int)monVolB);
+
+	QWidget::connect(monitorVolumeA, SIGNAL(valueChanged(int)),
+			this, SLOT(monitorAVolumeChanged(int)));
+	QWidget::connect(monitorVolumeB, SIGNAL(valueChanged(int)),
+			this, SLOT(monitorBVolumeChanged(int)));
+	QWidget::connect(monitorVolumeAMute, SIGNAL(clicked(bool)),
+			this, SLOT(monitorMuteAChanged(bool)));
+	QWidget::connect(monitorVolumeBMute, SIGNAL(clicked(bool)),
+			this, SLOT(monitorMuteBChanged(bool)));
+#endif
+
 	QPushButton *closeButton = new QPushButton(QTStr("Close"));
 
 	QHBoxLayout *buttonLayout = new QHBoxLayout;
@@ -76,6 +141,9 @@ OBSBasicAdvAudio::OBSBasicAdvAudio(QWidget *parent)
 	vlayout = new QVBoxLayout;
 	vlayout->setContentsMargins(11, 11, 11, 11);
 	vlayout->addWidget(scrollArea);
+#if defined(_WIN32) || defined(__APPLE__) || HAVE_PULSEAUDIO
+	vlayout->addWidget(monVolContainer);
+#endif
 	vlayout->addLayout(buttonLayout);
 	setLayout(vlayout);
 
@@ -160,4 +228,28 @@ void OBSBasicAdvAudio::SourceRemoved(OBSSource source)
 			break;
 		}
 	}
+}
+
+void OBSBasicAdvAudio::monitorAVolumeChanged(int val)
+{
+	float vol = (float)val / 100.0f;
+
+	obs_set_audio_monitor_volume(vol, 0);
+}
+
+void OBSBasicAdvAudio::monitorBVolumeChanged(int val)
+{
+	float vol = (float)val / 100.0f;
+
+	obs_set_audio_monitor_volume(vol, 1);
+}
+
+void OBSBasicAdvAudio::monitorMuteAChanged(bool checked)
+{
+	obs_set_audio_monitor_muted(checked, 0);
+}
+
+void OBSBasicAdvAudio::monitorMuteBChanged(bool checked)
+{
+	obs_set_audio_monitor_muted(checked, 1);
 }

@@ -25,6 +25,7 @@ OBSAdvAudioCtrl::OBSAdvAudioCtrl(QGridLayout *layout, obs_source_t *source_)
 
 	forceMonoContainer             = new QWidget();
 	mixerContainer                 = new QWidget();
+	busContainer                   = new QWidget();
 	panningContainer               = new QWidget();
 	labelL                         = new QLabel();
 	labelR                         = new QLabel();
@@ -36,6 +37,8 @@ OBSAdvAudioCtrl::OBSAdvAudioCtrl(QGridLayout *layout, obs_source_t *source_)
 	monitoringType                 = new QComboBox();
 #endif
 	syncOffset                     = new QSpinBox();
+	busA                           = new QCheckBox();
+	busB                           = new QCheckBox();
 	mixer1                         = new QCheckBox();
 	mixer2                         = new QCheckBox();
 	mixer3                         = new QCheckBox();
@@ -55,6 +58,9 @@ OBSAdvAudioCtrl::OBSAdvAudioCtrl(QGridLayout *layout, obs_source_t *source_)
 	hlayout = new QHBoxLayout();
 	hlayout->setContentsMargins(0, 0, 0, 0);
 	forceMonoContainer->setLayout(hlayout);
+	hlayout = new QHBoxLayout();
+	hlayout->setContentsMargins(0, 0, 0, 0);
+	busContainer->setLayout(hlayout);
 	hlayout = new QHBoxLayout();
 	hlayout->setContentsMargins(0, 0, 0, 0);
 	mixerContainer->setLayout(hlayout);
@@ -103,6 +109,16 @@ OBSAdvAudioCtrl::OBSAdvAudioCtrl(QGridLayout *layout, obs_source_t *source_)
 	int mt = (int)obs_source_get_monitoring_type(source);
 	idx = monitoringType->findData(mt);
 	monitoringType->setCurrentIndex(idx);
+
+	busA->setChecked(obs_source_monitoring_using_bus(source, 0));
+	busB->setChecked(obs_source_monitoring_using_bus(source, 1));
+	busA->setText("A");
+	busB->setText("B");
+
+	QWidget::connect(busA, SIGNAL(clicked(bool)),
+			this, SLOT(busAChanged(bool)));
+	QWidget::connect(busB, SIGNAL(clicked(bool)),
+			this, SLOT(busBChanged(bool)));
 #endif
 
 	mixer1->setText("1");
@@ -122,6 +138,11 @@ OBSAdvAudioCtrl::OBSAdvAudioCtrl(QGridLayout *layout, obs_source_t *source_)
 	panningContainer->layout()->addWidget(panning);
 	panningContainer->layout()->addWidget(labelR);
 	panningContainer->setMaximumWidth(170);
+
+#if defined(_WIN32) || defined(__APPLE__) || HAVE_PULSEAUDIO
+	busContainer->layout()->addWidget(busA);
+	busContainer->layout()->addWidget(busB);
+#endif
 
 	mixerContainer->layout()->addWidget(mixer1);
 	mixerContainer->layout()->addWidget(mixer2);
@@ -164,7 +185,10 @@ OBSAdvAudioCtrl::OBSAdvAudioCtrl(QGridLayout *layout, obs_source_t *source_)
 	layout->addWidget(panningContainer, lastRow, idx++);
 	layout->addWidget(syncOffset, lastRow, idx++);
 #if defined(_WIN32) || defined(__APPLE__) || HAVE_PULSEAUDIO
+	layout->addWidget(busContainer, lastRow, idx++);
 	layout->addWidget(monitoringType, lastRow, idx++);
+	layout->layout()->setAlignment(busContainer,
+			Qt::AlignHCenter | Qt::AlignVCenter);
 #endif
 	layout->addWidget(mixerContainer, lastRow, idx++);
 	layout->layout()->setAlignment(mixerContainer,
@@ -180,6 +204,7 @@ OBSAdvAudioCtrl::~OBSAdvAudioCtrl()
 	syncOffset->deleteLater();
 #if defined(_WIN32) || defined(__APPLE__) || HAVE_PULSEAUDIO
 	monitoringType->deleteLater();
+	busContainer->deleteLater();
 #endif
 	mixerContainer->deleteLater();
 }
@@ -356,4 +381,34 @@ void OBSAdvAudioCtrl::mixer5Changed(bool checked)
 void OBSAdvAudioCtrl::mixer6Changed(bool checked)
 {
 	setMixer(source, 5, checked);
+}
+
+void OBSAdvAudioCtrl::busAChanged(bool checked)
+{
+	obs_source_set_monitoring_bus(source, checked, 0);
+
+	int mt = monitoringType->currentIndex();
+
+	if (mt == 0)
+		return;
+
+	if (checked)
+		obs_source_monitoring_bus_create(source, 0);
+	else
+		obs_source_monitoring_bus_destroy(source, 0);
+}
+
+void OBSAdvAudioCtrl::busBChanged(bool checked)
+{
+	obs_source_set_monitoring_bus(source, checked, 1);
+
+	int mt = monitoringType->currentIndex();
+
+	if (mt == 0)
+		return;
+
+	if (checked)
+		obs_source_monitoring_bus_create(source, 1);
+	else
+		obs_source_monitoring_bus_destroy(source, 1);
 }

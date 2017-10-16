@@ -20,6 +20,7 @@ private:
 	QPointer<QWidget>      forceMonoContainer;
 	QPointer<QWidget>      mixerContainer;
 	QPointer<QWidget>      panningContainer;
+	QPointer<QWidget>      busContainer;
 
 	QPointer<QLabel>       nameLabel;
 	QPointer<QSpinBox>     volume;
@@ -35,6 +36,8 @@ private:
 	QPointer<QCheckBox>    mixer4;
 	QPointer<QCheckBox>    mixer5;
 	QPointer<QCheckBox>    mixer6;
+	QPointer<QCheckBox>    busA;
+	QPointer<QCheckBox>    busB;
 
 	OBSSignal              volChangedSignal;
 	OBSSignal              syncOffsetSignal;
@@ -69,4 +72,6 @@ public slots:
 	void mixer4Changed(bool checked);
 	void mixer5Changed(bool checked);
 	void mixer6Changed(bool checked);
+	void busAChanged(bool checked);
+	void busBChanged(bool checked);
 };
