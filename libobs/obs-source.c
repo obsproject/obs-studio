@@ -2394,6 +2394,7 @@ void obs_source_output_video(obs_source_t *source,
                     source->video_fps = 1000 / frame_time_delta_ms;
                 }
 	}
+	source->total_frames++;
 	source->former_frame_ts = source->last_frame_ts;
 }
 
