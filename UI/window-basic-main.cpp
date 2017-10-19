@@ -318,7 +318,8 @@ static obs_data_t *GenerateSaveData(obs_data_array_t *sceneOrder,
 		obs_data_array_t *transitions,
 		OBSScene &scene, OBSSource &curProgramScene,
 		obs_data_array_t *savedProjectorList,
-		obs_data_array_t *savedPreviewProjectorList)
+		obs_data_array_t *savedPreviewProjectorList,
+		QString currentTransition)
 {
 	obs_data_t *saveData = obs_data_create();
 
@@ -365,7 +366,7 @@ static obs_data_t *GenerateSaveData(obs_data_array_t *sceneOrder,
 	obs_data_array_release(sourcesArray);
 
 	obs_data_set_string(saveData, "current_transition",
-			obs_source_get_name(transition));
+			QT_TO_UTF8(currentTransition));
 	obs_data_set_int(saveData, "transition_duration", transitionDuration);
 	obs_source_release(transition);
 
@@ -464,7 +465,8 @@ void OBSBasic::Save(const char *file)
 	obs_data_t *saveData  = GenerateSaveData(sceneOrder, quickTrData,
 			ui->transitionDuration->value(), transitions,
 			scene, curProgramScene, savedProjectorList,
-			savedPreviewProjectorList);
+			savedPreviewProjectorList,
+			ui->transitions->currentText());
 
 	obs_data_set_bool(saveData, "preview_locked", ui->preview->Locked());
 	obs_data_set_bool(saveData, "scaling_enabled",
@@ -548,7 +550,7 @@ void OBSBasic::CreateDefaultScene(bool firstStart)
 	InitDefaultTransitions();
 	CreateDefaultQuickTransitions();
 	ui->transitionDuration->setValue(300);
-	SetTransition(fadeTransition);
+	SetComboTransition(fadeTransition);
 
 	obs_scene_t  *scene  = obs_scene_create(Str("Basic.Scene"));
 
@@ -746,7 +748,7 @@ void OBSBasic::Load(const char *file)
 		curTransition = fadeTransition;
 
 	ui->transitionDuration->setValue(newDuration);
-	SetTransition(curTransition);
+	SetComboTransition(curTransition);
 
 	obs_data_array_t *savedProjectors = obs_data_get_array(data,
 			"saved_projectors");
@@ -1779,6 +1781,9 @@ OBSBasic::~OBSBasic()
 	if (advAudioWindow)
 		delete advAudioWindow;
 
+	if (perSceneTransition)
+		delete perSceneTransition;
+
 	obs_display_remove_draw_callback(ui->preview->GetDisplay(),
 			OBSBasic::RenderMain, this);
 
@@ -2479,6 +2484,15 @@ void OBSBasic::CheckForUpdates(bool manualUpdate)
 void OBSBasic::updateCheckFinished()
 {
 	ui->actionCheckForUpdates->setEnabled(true);
+}
+
+void OBSBasic::PerSceneTransitionDialog()
+{
+	if (perSceneTransition)
+		perSceneTransition->close();
+
+	perSceneTransition = new PerSceneTransition(this, GetCurrentScene());
+	perSceneTransition->setAttribute(Qt::WA_DeleteOnClose, true);
 }
 
 void OBSBasic::DuplicateSelectedScene()
@@ -3319,7 +3333,6 @@ void OBSBasic::on_scenes_customContextMenuRequested(const QPoint &pos)
 			this, SLOT(on_actionAddScene_triggered()));
 
 	if (item) {
-		popup.addSeparator();
 		popup.addAction(QTStr("Duplicate"),
 				this, SLOT(DuplicateSelectedScene()));
 		popup.addAction(QTStr("Rename"),
@@ -3354,6 +3367,10 @@ void OBSBasic::on_scenes_customContextMenuRequested(const QPoint &pos)
 		popup.addSeparator();
 		popup.addAction(QTStr("Filters"), this,
 				SLOT(OpenSceneFilters()));
+
+		popup.addSeparator();
+		popup.addAction(QTStr("PerSceneTransition"),
+				this, SLOT(PerSceneTransitionDialog()));
 	}
 
 	popup.exec(QCursor::pos());

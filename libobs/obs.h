@@ -1241,6 +1241,19 @@ EXPORT obs_source_t *obs_scene_get_source(const obs_scene_t *scene);
 /** Gets the scene from its source, or NULL if not a scene */
 EXPORT obs_scene_t *obs_scene_from_source(const obs_source_t *source);
 
+/** Set per-scene transition **/
+EXPORT void obs_scene_set_transition(obs_scene_t *scene,
+		const char *transition);
+
+/** Set per-scene transition duration **/
+EXPORT void obs_scene_set_transition_duration(obs_scene_t *scene, int duration);
+
+/** Get per-scene transition **/
+EXPORT const char *obs_scene_get_transition(const obs_scene_t *scene);
+
+/** Get per-scene transition duration **/
+EXPORT int obs_scene_get_transition_duration(const obs_scene_t *scene);
+
 /** Determines whether a source is within a scene */
 EXPORT obs_sceneitem_t *obs_scene_find_source(obs_scene_t *scene,
 		const char *name);

@@ -20,6 +20,7 @@
 #include <QBuffer>
 #include <QAction>
 #include <QSystemTrayIcon>
+#include <QDialog>
 #include <obs.hpp>
 #include <vector>
 #include <memory>
@@ -43,6 +44,7 @@ class QListWidgetItem;
 class VolControl;
 class QNetworkReply;
 class OBSBasicStats;
+class PerSceneTransition;
 
 #include "ui_OBSBasic.h"
 
@@ -80,6 +82,36 @@ struct QuickTransition {
 		  duration (duration_),
 		  id       (id_)
 	{}
+};
+
+class PerSceneTransition : public QDialog {
+	Q_OBJECT
+
+private:
+	OBSScene scene;
+
+	QPointer<QWidget> trContainer;
+	QPointer<QWidget> trDurationContainer;
+
+	QPointer<QVBoxLayout> layout;
+	QPointer<QHBoxLayout> hLayoutTr;
+	QPointer<QHBoxLayout> hLayoutTrDuration;
+
+	QPointer<QComboBox> transition;
+	QPointer<QSpinBox> trDuration;
+
+	QPointer<QLabel> transitionLabel;
+	QPointer<QLabel> trDurationLabel;
+
+	QPointer<QDialogButtonBox> buttonBox;
+
+public:
+	PerSceneTransition(QWidget *parent, OBSScene scene_);
+	~PerSceneTransition();
+
+public slots:
+	void perSceneTransitionChanged(int index);
+	void perSceneTransitionDurationChanged(int value);
 };
 
 class OBSBasic : public OBSMainWindow {
@@ -134,6 +166,7 @@ private:
 	QPointer<OBSBasicTransform> transformWindow;
 	QPointer<OBSBasicAdvAudio> advAudioWindow;
 	QPointer<OBSBasicFilters> filters;
+	QPointer<PerSceneTransition> perSceneTransition;
 
 	QPointer<QTimer>    cpuUsageTimer;
 	os_cpu_usage_info_t *cpuUsageInfo = nullptr;
@@ -357,6 +390,9 @@ private:
 	void LoadSavedPreviewProjectors(
 		obs_data_array_t *savedPreviewProjectors);
 
+	int durationTr = 0;
+	bool usingQuick = false;
+
 public slots:
 	void StartStreaming();
 	void StopStreaming();
@@ -387,6 +423,7 @@ public slots:
 	void SaveProject();
 
 	void SetTransition(OBSSource transition);
+	void SetComboTransition(OBSSource transition);
 	void TransitionToScene(OBSScene scene, bool force = false);
 	void TransitionToScene(OBSSource scene, bool force = false);
 	void SetCurrentScene(OBSSource scene, bool force = false);
@@ -406,6 +443,8 @@ private slots:
 	void DuplicateSelectedScene();
 	void RemoveSelectedScene();
 	void RemoveSelectedSceneItem();
+
+	void PerSceneTransitionDialog();
 
 	void ToggleAlwaysOnTop();
 
@@ -689,6 +728,5 @@ public:
 	virtual int GetProfilePath(char *path, size_t size, const char *file)
 		const override;
 
-private:
 	std::unique_ptr<Ui::OBSBasic> ui;
 };
