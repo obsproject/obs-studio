@@ -2383,17 +2383,24 @@ void obs_source_output_video(obs_source_t *source,
 		source->async_active = true;
 	}
 	
+	/* Calculate the average frame rate,
+	 * current frame rate and frame counter
+	 */
+	
 	if (source->last_frame_ts >= 1000000000ULL) {
-                source->video_avg_fps = (
-			source->total_frames / 
-			(source->last_frame_ts / 1000000000));
-                float frame_time_delta_ms = (
+		source->video_avg_fps = (
+			(double)source->total_frames /
+			(source->last_frame_ts / 1000000000ULL));
+
+		float frame_time_delta_ms = (
 			source->last_frame_ts - 
-			source->former_frame_ts)/1000000;
-                if (frame_time_delta_ms > 0) {
-                    source->video_fps = 1000 / frame_time_delta_ms;
-                }
+			source->former_frame_ts);
+
+		if (frame_time_delta_ms > 0) {
+			source->video_fps = 1000000000ULL / frame_time_delta_ms;
+        	}
 	}
+
 	source->total_frames++;
 	source->former_frame_ts = source->last_frame_ts;
 }
