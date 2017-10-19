@@ -380,6 +380,7 @@ public slots:
 	void StopReplayBuffer();
 
 	void ReplayBufferStart();
+	void ReplayBufferSave();
 	void ReplayBufferStopping();
 	void ReplayBufferStop(int code);
 
