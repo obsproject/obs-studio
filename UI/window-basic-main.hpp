@@ -433,6 +433,8 @@ private slots:
 	void UnhideAllAudioControls();
 	void ToggleHideMixer();
 
+	void MixerRenameSource();
+
 	void on_mixerScrollArea_customContextMenuRequested();
 
 	void on_actionCopySource_triggered();
