@@ -2285,6 +2285,48 @@ void OBSBasic::ToggleHideMixer()
 	}
 }
 
+void OBSBasic::MixerRenameSource()
+{
+	QAction *action = reinterpret_cast<QAction*>(sender());
+	VolControl *vol = action->property("volControl").value<VolControl*>();
+	OBSSource source = vol->GetSource();
+
+	const char *prevName = obs_source_get_name(source);
+
+	for (;;) {
+		string name;
+		bool accepted = NameDialog::AskForName(this,
+				QTStr("Basic.Main.MixerRename.Title"),
+				QTStr("Basic.Main.MixerRename.Text"),
+				name,
+				QT_UTF8(prevName));
+		if (!accepted)
+			return;
+
+		if (name.empty()) {
+			OBSMessageBox::information(this,
+					QTStr("NoNameEntered.Title"),
+					QTStr("NoNameEntered.Text"));
+			continue;
+		}
+
+		obs_source_t *sourceTest =
+				obs_get_source_by_name(name.c_str());
+
+		if (sourceTest) {
+			OBSMessageBox::information(this,
+					QTStr("NameExists.Title"),
+					QTStr("NameExists.Text"));
+			continue;
+		}
+
+		obs_source_set_name(source, name.c_str());
+		obs_source_release(sourceTest);
+
+		break;
+	}
+}
+
 void OBSBasic::VolControlContextMenu()
 {
 	VolControl *vol = reinterpret_cast<VolControl*>(sender());
@@ -2293,6 +2335,7 @@ void OBSBasic::VolControlContextMenu()
 
 	QAction hideAction(QTStr("Hide"), this);
 	QAction unhideAllAction(QTStr("UnhideAll"), this);
+	QAction mixerRenameAction(QTStr("Rename"), this);
 
 	QAction filtersAction(QTStr("Filters"), this);
 	QAction propertiesAction(QTStr("Properties"), this);
@@ -2305,6 +2348,9 @@ void OBSBasic::VolControlContextMenu()
 			Qt::DirectConnection);
 	connect(&unhideAllAction, &QAction::triggered,
 			this, &OBSBasic::UnhideAllAudioControls,
+			Qt::DirectConnection);
+	connect(&mixerRenameAction, &QAction::triggered,
+			this, &OBSBasic::MixerRenameSource,
 			Qt::DirectConnection);
 
 	connect(&filtersAction, &QAction::triggered,
@@ -2321,6 +2367,8 @@ void OBSBasic::VolControlContextMenu()
 
 	hideAction.setProperty("volControl",
 			QVariant::fromValue<VolControl*>(vol));
+	mixerRenameAction.setProperty("volControl",
+			QVariant::fromValue<VolControl*>(vol));
 
 	filtersAction.setProperty("volControl",
 			QVariant::fromValue<VolControl*>(vol));
@@ -2332,6 +2380,7 @@ void OBSBasic::VolControlContextMenu()
 	QMenu popup(this);
 	popup.addAction(&unhideAllAction);
 	popup.addAction(&hideAction);
+	popup.addAction(&mixerRenameAction);
 	popup.addSeparator();
 	popup.addAction(&filtersAction);
 	popup.addAction(&propertiesAction);
