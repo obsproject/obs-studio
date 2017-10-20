@@ -1072,6 +1072,38 @@
                 "max video bitrate": 6000,
                 "max audio bitrate": 160
             }
+        },
+        {
+            "name": "Stream.me",
+            "common": false,
+            "servers": [
+                {
+                    "name": "US, Central",
+                    "url": "rtmp://uc-origin.stream.me/origin"
+                },
+                {
+                    "name": "US, East",
+                    "url": "rtmp://ue-origin.stream.me/origin"
+                },
+                {
+                    "name": "US, West",
+                    "url": "rtmp://uw-origin.stream.me/origin"
+                },
+                {
+                    "name": "Europe, West",
+                    "url": "rtmp://ew-origin.stream.me/origin"
+                },
+                {
+                    "name": "Asia, East",
+                    "url": "rtmp://ae-origin.stream.me/origin"
+                }
+            ],
+            "recommended": {
+                "keyint": 2,
+                "profile": "main",
+                "max video bitrate": 20000,
+                "max audio bitrate": 192
+            }
         }
     ]
 }
