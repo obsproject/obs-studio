@@ -4,6 +4,12 @@
 #include "qt-display.hpp"
 #include "window-basic-main.hpp"
 
+enum source_type {
+	PROGRAM,
+	PREVIEW,
+	SOURCE
+};
+
 class QMouseEvent;
 
 class OBSProjector : public OBSQTDisplay {
@@ -13,6 +19,7 @@ private:
 	OBSSource source;
 	OBSSignal removedSignal;
 
+	static void OBSRenderMultiview(void *data, uint32_t cx, uint32_t cy);
 	static void OBSRender(void *data, uint32_t cx, uint32_t cy);
 	static void OBSSourceRemoved(void *data, calldata_t *params);
 
@@ -20,6 +27,16 @@ private:
 
 	int savedMonitor = 0;
 	bool isWindow = false;
+	bool isMultiview = false;
+	std::vector<obs_source_t *> multiviewScenes;
+	std::vector<obs_source_t *> multiviewLabels;
+	gs_vertbuffer_t *outerBox = nullptr;
+	gs_vertbuffer_t *innerBox = nullptr;
+	gs_vertbuffer_t *leftVLine = nullptr;
+	gs_vertbuffer_t *rightVLine = nullptr;
+	gs_vertbuffer_t *leftLine = nullptr;
+	gs_vertbuffer_t *topLine = nullptr;
+	gs_vertbuffer_t *rightLine = nullptr;
 
 private slots:
 	void EscapeTriggered();
@@ -28,5 +45,5 @@ public:
 	OBSProjector(QWidget *parent, obs_source_t *source, bool window);
 	~OBSProjector();
 
-	void Init(int monitor, bool window, QString title);
+	void Init(int monitor, bool window, QString title, bool multiView);
 };
