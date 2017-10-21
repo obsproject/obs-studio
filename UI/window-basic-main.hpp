@@ -67,6 +67,13 @@ enum class QtDataRole {
 	OBSSignals,
 };
 
+enum class ProjectorType {
+	Source,
+	Preview,
+	StudioProgram,
+	Multiview
+};
+
 struct QuickTransition {
 	QPushButton *button = nullptr;
 	OBSSource source;
@@ -115,6 +122,7 @@ private:
 
 	std::vector<std::string> projectorArray;
 	std::vector<int> studioProgramProjectorArray;
+	std::vector<int> multiviewProjectorArray;
 	std::vector<int> previewProjectorArray;
 
 	bool loaded = false;
@@ -241,7 +249,8 @@ private:
 
 	void Nudge(int dist, MoveDir dir);
 	void OpenProjector(obs_source_t *source, int monitor, bool window,
-			QString title = nullptr, bool studioProgram = false);
+			QString title = nullptr,
+			ProjectorType type = ProjectorType::Source);
 
 	void GetAudioSourceFilters();
 	void GetAudioSourceProperties();
@@ -361,6 +370,10 @@ private:
 	void LoadSavedStudioProgramProjectors(
 		obs_data_array_t *savedStudioProgramProjectors);
 
+	obs_data_array_t *SaveMultiviewProjectors();
+	void LoadSavedMultiviewProjectors(
+		obs_data_array_t *savedMultiviewProjectors);
+
 public slots:
 	void StartStreaming();
 	void StopStreaming();
@@ -404,7 +417,7 @@ private slots:
 	void RemoveSceneItem(OBSSceneItem item);
 	void AddScene(OBSSource source);
 	void RemoveScene(OBSSource source);
-	void RenameSources(QString newName, QString prevName);
+	void RenameSources(OBSSource source, QString newName, QString prevName);
 
 	void SelectSceneItem(OBSScene scene, OBSSceneItem item, bool select);
 
@@ -477,7 +490,8 @@ private:
 	static void HotkeyTriggered(void *data, obs_hotkey_id id, bool pressed);
 
 public:
-	OBSScene      GetCurrentScene();
+	OBSSource GetProgramSource();
+	OBSScene GetCurrentScene();
 
 	void SysTrayNotify(const QString &text, QSystemTrayIcon::MessageIcon n);
 
@@ -689,11 +703,13 @@ private slots:
 	void OpenStudioProgramProjector();
 	void OpenPreviewProjector();
 	void OpenSourceProjector();
+	void OpenMultiviewProjector();
 	void OpenSceneProjector();
 
 	void OpenStudioProgramWindow();
 	void OpenPreviewWindow();
 	void OpenSourceWindow();
+	void OpenMultiviewWindow();
 	void OpenSceneWindow();
 
 public slots:
