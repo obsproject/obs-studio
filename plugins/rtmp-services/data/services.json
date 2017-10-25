@@ -885,8 +885,12 @@
             "name": "Picarto",
             "servers": [
                 {
-                    "name": "USA/Canada",
-                    "url": "rtmp://live.us.picarto.tv/golive"
+                    "name": "US East",
+                    "url": "rtmp://live.us-east1.picarto.tv/golive"
+                },
+                {
+                    "name": "EU West",
+                    "url": "rtmp://live.eu-west1.picarto.tv/golive"
                 }
             ],
             "recommended": {
