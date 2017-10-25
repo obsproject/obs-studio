@@ -42,6 +42,11 @@ install-sh
 Makefile.in
 Makefile
 
+#sphinx
+/docs/sphinx/_build/*
+!/docs/sphinx/_build/.gitignore
+!/docs/sphinx/Makefile
+
 #random useless file stuff
 *.dmg
 *.app
