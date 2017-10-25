@@ -83,6 +83,7 @@ if(WIN32)
 		util/platform-windows.c)
 	set(libobs_PLATFORM_HEADERS
 		util/threading-windows.h
+		util/windows/win-registry.h
 		util/windows/win-version.h
 		util/windows/ComPtr.hpp
 		util/windows/CoTaskMemPtr.hpp

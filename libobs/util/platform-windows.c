@@ -26,6 +26,7 @@
 #include "platform.h"
 #include "darray.h"
 #include "dstr.h"
+#include "windows/win-registry.h"
 #include "windows/win-version.h"
 
 #include "../../deps/w32-pthreads/pthread.h"
@@ -798,6 +799,28 @@ bool is_64_bit_windows(void)
 	BOOL b64 = false;
 	return IsWow64Process(GetCurrentProcess(), &b64) && b64;
 #endif
+}
+
+void get_reg_dword(HKEY hkey, LPCWSTR sub_key, LPCWSTR value_name,
+		struct reg_dword *info)
+{
+	struct reg_dword reg = {0};
+	HKEY key;
+	LSTATUS status;
+
+	status = RegOpenKeyEx(hkey, sub_key, 0, KEY_READ, &key);
+
+	if (status != ERROR_SUCCESS)
+		return;
+
+	reg.size = sizeof(reg.return_value);
+
+	reg.status = RegQueryValueExW(key, value_name, NULL, NULL,
+			(LPBYTE)&reg.return_value, &reg.size);
+
+	RegCloseKey(key);
+
+	*info = reg;
 }
 
 #define WINVER_REG_KEY L"SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion"
