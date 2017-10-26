@@ -32,9 +32,18 @@ sudo apt-get install -y \
         zlib1g-dev
 
 # FFmpeg
-cd ..
-git clone --depth 1 git://source.ffmpeg.org/ffmpeg.git
-cd ffmpeg
-./configure --enable-shared
-make -j2
-sudo make install
+if [ "$USE_FFMPEG_MASTER" = true ] ; then
+  cd ..
+  git clone --depth 1 git://source.ffmpeg.org/ffmpeg.git
+  cd ffmpeg
+  ./configure --enable-shared
+  make -j2
+  sudo make install
+else
+  sudo add-apt-repository ppa:kirillshkrogalev/ffmpeg-next -y
+  sudo apt-get -qq update
+  sudo apt-get install -y \
+        libavcodec-ffmpeg-dev \
+        libavdevice-ffmpeg-dev \
+        libavfilter-ffmpeg-dev
+fi
