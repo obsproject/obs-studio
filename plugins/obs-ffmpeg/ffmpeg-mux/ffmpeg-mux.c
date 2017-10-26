@@ -312,7 +312,7 @@ static void create_video_stream(struct ffmpeg_mux *ffm)
 	ffm->video_stream->time_base = context->time_base;
 
 	if (ffm->output->oformat->flags & AVFMT_GLOBALHEADER)
-		context->flags |= CODEC_FLAG_GLOBAL_HEADER;
+		context->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
 }
 
 static void create_audio_stream(struct ffmpeg_mux *ffm, int idx)
@@ -348,7 +348,7 @@ static void create_audio_stream(struct ffmpeg_mux *ffm, int idx)
 			av_get_default_channel_layout(context->channels);
 
 	if (ffm->output->oformat->flags & AVFMT_GLOBALHEADER)
-		context->flags |= CODEC_FLAG_GLOBAL_HEADER;
+		context->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
 
 	ffm->num_audio_streams++;
 }

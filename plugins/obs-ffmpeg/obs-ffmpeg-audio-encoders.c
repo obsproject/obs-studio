@@ -214,7 +214,7 @@ static void *enc_create(obs_data_t *settings, obs_encoder_t *encoder,
 	/* enable experimental FFmpeg encoder if the only one available */
 	enc->context->strict_std_compliance = -2;
 
-	enc->context->flags = CODEC_FLAG_GLOBAL_HEADER;
+	enc->context->flags = AV_CODEC_FLAG_GLOBAL_HEADER;
 
 	if (initialize_codec(enc))
 		return enc;
