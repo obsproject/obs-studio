@@ -95,7 +95,7 @@ static inline bool init_output(media_remux_job_t job, const char *out_filename)
 
 		out_stream->codec->codec_tag = 0;
 		if (job->ofmt_ctx->oformat->flags & AVFMT_GLOBALHEADER)
-			out_stream->codec->flags |= CODEC_FLAG_GLOBAL_HEADER;
+			out_stream->codec->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
 	}
 
 #ifndef _NDEBUG
