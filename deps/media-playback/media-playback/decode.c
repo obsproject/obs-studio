@@ -142,8 +142,8 @@ bool mp_decode_init(mp_media_t *m, enum AVMediaType type, bool hw)
 		return false;
 	}
 
-	if (d->codec->capabilities & CODEC_CAP_TRUNCATED)
-		d->decoder->flags |= CODEC_FLAG_TRUNCATED;
+	if (d->codec->capabilities & AV_CODEC_CAP_TRUNCATED)
+		d->decoder->flags |= AV_CODEC_FLAG_TRUNCATED;
 	return true;
 }
 
