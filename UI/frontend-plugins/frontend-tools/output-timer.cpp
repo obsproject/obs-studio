@@ -208,11 +208,13 @@ void OutputTimer::ShowHideDialog()
 
 void OutputTimer::EventStopStreaming()
 {
+	blog(LOG_INFO, "Stopping stream due to OutputTimer timeout");
 	obs_frontend_streaming_stop();
 }
 
 void OutputTimer::EventStopRecording()
 {
+	blog(LOG_INFO, "Stopping recording due to OutputTimer timeout");
 	obs_frontend_recording_stop();
 }
 
