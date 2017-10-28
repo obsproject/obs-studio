@@ -385,7 +385,7 @@ static int obs_init_video(struct obs_video_info *ovi)
 	gs_leave_context();
 
 	errorcode = pthread_create(&video->video_thread, NULL,
-			obs_video_thread, obs);
+			obs_graphics_thread, obs);
 	if (errorcode != 0)
 		return OBS_VIDEO_FAIL;
 

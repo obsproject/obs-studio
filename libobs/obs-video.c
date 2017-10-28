@@ -585,7 +585,7 @@ static inline void output_frame(void)
 static const char *tick_sources_name = "tick_sources";
 static const char *render_displays_name = "render_displays";
 static const char *output_frame_name = "output_frame";
-void *obs_video_thread(void *param)
+void *obs_graphics_thread(void *param)
 {
 	uint64_t last_time = 0;
 	uint64_t interval = video_output_get_frame_time(obs->video.video);
@@ -599,7 +599,7 @@ void *obs_video_thread(void *param)
 
 	const char *video_thread_name =
 		profile_store_name(obs_get_profiler_name_store(),
-			"obs_video_thread(%g"NBSP"ms)", interval / 1000000.);
+			"obs_graphics_thread(%g"NBSP"ms)", interval / 1000000.);
 	profile_register_root(video_thread_name, interval);
 
 	srand((unsigned int)time(NULL));

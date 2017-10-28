@@ -394,7 +394,7 @@ struct obs_core {
 
 extern struct obs_core *obs;
 
-extern void *obs_video_thread(void *param);
+extern void *obs_graphics_thread(void *param);
 
 extern gs_effect_t *obs_load_effect(gs_effect_t **effect, const char *file);
 
