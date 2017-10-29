@@ -36,6 +36,14 @@ extern "C" {
 #pragma warning(pop)
 #endif
 
+#if LIBAVCODEC_VERSION_MAJOR >= 58
+#define CODEC_CAP_TRUNC AV_CODEC_CAP_TRUNCATED
+#define CODEC_FLAG_TRUNC AV_CODEC_FLAG_TRUNCATED
+#else
+#define CODEC_CAP_TRUNC CODEC_CAP_TRUNCATED
+#define CODEC_FLAG_TRUNC CODEC_FLAG_TRUNCATED
+#endif
+
 struct mp_media;
 
 struct mp_decode {

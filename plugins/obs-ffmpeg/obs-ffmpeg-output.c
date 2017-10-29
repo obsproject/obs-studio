@@ -260,7 +260,7 @@ static bool create_video_stream(struct ffmpeg_data *data)
 	data->video->time_base = context->time_base;
 
 	if (data->output->oformat->flags & AVFMT_GLOBALHEADER)
-		context->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
+		context->flags |= CODEC_FLAG_GLOBAL_H;
 
 	if (!open_video_codec(data))
 		return false;
@@ -348,7 +348,7 @@ static bool create_audio_stream(struct ffmpeg_data *data)
 	data->audio_size = get_audio_size(data->audio_format, aoi.speakers, 1);
 
 	if (data->output->oformat->flags & AVFMT_GLOBALHEADER)
-		context->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
+		context->flags |= CODEC_FLAG_GLOBAL_H;
 
 	return open_audio_codec(data);
 }
@@ -686,7 +686,7 @@ static void receive_video(void *param, struct video_data *frame)
 	else
 		copy_data(&data->dst_picture, frame, context->height, context->pix_fmt);
 
-	if (data->output->flags & AVFMT_RAWPICTURE) {
+	if (data->output->flags) {
 		packet.flags        |= AV_PKT_FLAG_KEY;
 		packet.stream_index  = data->video->index;
 		packet.data          = data->dst_picture.data[0];
