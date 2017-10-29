@@ -29,6 +29,12 @@
 
 #include <libavformat/avformat.h>
 
+#if LIBAVCODEC_VERSION_MAJOR >= 58
+#define CODEC_FLAG_GLOBAL_H AV_CODEC_FLAG_GLOBAL_HEADER
+#else
+#define CODEC_FLAG_GLOBAL_H CODEC_FLAG_GLOBAL_HEADER
+#endif
+
 /* ------------------------------------------------------------------------- */
 
 struct resize_buf {
@@ -312,7 +318,7 @@ static void create_video_stream(struct ffmpeg_mux *ffm)
 	ffm->video_stream->time_base = context->time_base;
 
 	if (ffm->output->oformat->flags & AVFMT_GLOBALHEADER)
-		context->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
+		context->flags |= CODEC_FLAG_GLOBAL_H;
 }
 
 static void create_audio_stream(struct ffmpeg_mux *ffm, int idx)
@@ -348,7 +354,7 @@ static void create_audio_stream(struct ffmpeg_mux *ffm, int idx)
 			av_get_default_channel_layout(context->channels);
 
 	if (ffm->output->oformat->flags & AVFMT_GLOBALHEADER)
-		context->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
+		context->flags |= CODEC_FLAG_GLOBAL_H;
 
 	ffm->num_audio_streams++;
 }

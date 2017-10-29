@@ -24,8 +24,8 @@ static AVCodec *find_hardware_decoder(enum AVCodecID id)
 
 	while (hwa) {
 		if (hwa->id == id) {
-			if (hwa->pix_fmt == AV_PIX_FMT_VDA_VLD ||
-			    hwa->pix_fmt == AV_PIX_FMT_DXVA2_VLD ||
+			if (hwa->pix_fmt == AV_PIX_FMT_VIDEOTOOLBOX ||
+				hwa->pix_fmt == AV_PIX_FMT_DXVA2_VLD ||
 			    hwa->pix_fmt == AV_PIX_FMT_VAAPI_VLD) {
 				c = avcodec_find_decoder_by_name(hwa->name);
 				if (c)
@@ -142,8 +142,8 @@ bool mp_decode_init(mp_media_t *m, enum AVMediaType type, bool hw)
 		return false;
 	}
 
-	if (d->codec->capabilities & AV_CODEC_CAP_TRUNCATED)
-		d->decoder->flags |= AV_CODEC_FLAG_TRUNCATED;
+	if (d->codec->capabilities & CODEC_CAP_TRUNC)
+		d->decoder->flags |= CODEC_FLAG_TRUNC;
 	return true;
 }
 
