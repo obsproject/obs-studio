@@ -23,16 +23,17 @@ matrix:
       env:
        - CMAKE_PREFIX_PATH=/usr/local/opt/qt5/lib/cmake
        - CEF_BUILD_VERSION=3.3112.1656.g9ec3e42
-      before_install: "./CI/install-dependencies-osx.sh"
-      before_script: "./CI/before-script-osx.sh"
       before_deploy: "./CI/before-deploy-osx.sh"
-
     - os: linux
-      dist: trusty
       sudo: required
-      before_install: "./CI/install-dependencies-linux.sh"
-      before_script: "./CI/before-script-linux.sh"
+    - os: linux
+      sudo: required
+      env: USE_FFMPEG_MASTER=true
+  allow_failures:
+    - env: USE_FFMPEG_MASTER=true
 
+before_install: "./CI/install-dependencies-${TRAVIS_OS_NAME}.sh"
+before_script: "./CI/before-script-${TRAVIS_OS_NAME}.sh"
 script: cd ./build && make -j4 && cd -
 
 deploy:
@@ -65,4 +66,3 @@ notifications:
       - secure: T5RBY818nO40nr5eC8pdrCfAdQKGkjQdbyYw7mfFrhxWxgt/U5tyKXpX0l9zNGfobS0SnLSqF71OrfW04V97oijXx3q5Y24xV6mSrlLQZOq19+XvGp82LDpkVd4yi2N0kBYpoANB9Pkof4jWT/rKfdQCQttluOLjgr5SM0uWHRg=
     on_success: change
     on_failure: always
-
