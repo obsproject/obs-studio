@@ -350,6 +350,19 @@ void obs_frontend_set_preview_program_mode(bool enable)
 		c->obs_frontend_set_preview_program_mode(enable);
 }
 
+void obs_frontend_set_preview_enabled(bool enable)
+{
+	if (callbacks_valid())
+		c->obs_frontend_set_preview_enabled(enable);
+}
+
+bool obs_frontend_preview_enabled(void)
+{
+	return !!callbacks_valid()
+	? c->obs_frontend_preview_enabled()
+	: false;
+}
+
 obs_source_t *obs_frontend_get_current_preview_scene(void)
 {
 	return !!callbacks_valid()
