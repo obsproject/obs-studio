@@ -65,10 +65,6 @@ static void rtmp_common_update(void *data, obs_data_t *settings)
 			service->output = bstrdup("rtmp_output");
 		
 	}
-	
-	obs_data_set_string(settings, "service", service->service);
-	obs_data_set_string(settings, "server", service->server);
-	obs_data_set_string(settings, "key", service->key);
 }
 
 static void rtmp_common_destroy(void *data)

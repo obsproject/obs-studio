@@ -27,11 +27,6 @@ static void rtmp_custom_update(void *data, obs_data_t *settings)
 	service->username = bstrdup(obs_data_get_string(settings, "username"));
 	service->password = bstrdup(obs_data_get_string(settings, "password"));
 	
-	//set duplicated strings back on settings
-	obs_data_set_string(settings, "server", service->server);
-	obs_data_set_string(settings, "key", service->key);
-	obs_data_set_string(settings, "username", service->username);
-	obs_data_set_string(settings, "password", service->password);
 }
 
 static void rtmp_custom_destroy(void *data)
