@@ -171,9 +171,9 @@ void obs_frontend_set_current_profile(const char *profile)
 		c->obs_frontend_set_current_profile(profile);
 }
 
-void obs_frontend_streaming_start(void)
+void obs_frontend_streaming_start(obs_service_t* _service)
 {
-	if (callbacks_valid()) c->obs_frontend_streaming_start();
+	if (callbacks_valid()) c->obs_frontend_streaming_start(_service);
 }
 
 void obs_frontend_streaming_stop(void)

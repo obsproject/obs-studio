@@ -4169,12 +4169,15 @@ void OBSBasic::OpenSceneFilters()
 #define STREAMING_STOP \
 	"==== Streaming Stop ================================================"
 
-void OBSBasic::StartStreaming()
+void OBSBasic::StartStreaming(OBSService _service)
 {
 	if (outputHandler->StreamingActive())
 		return;
 	if (disableOutputsRef)
 		return;
+	
+	if (_service == nullptr)
+		_service = service;
 
 	if (api)
 		api->on_event(OBS_FRONTEND_EVENT_STREAMING_STARTING);
@@ -4189,7 +4192,7 @@ void OBSBasic::StartStreaming()
 		sysTrayStream->setText(ui->streamButton->text());
 	}
 
-	if (!outputHandler->StartStreaming(service)) {
+	if (!outputHandler->StartStreaming(_service)) {
 		ui->streamButton->setText(QTStr("Basic.Main.StartStreaming"));
 		ui->streamButton->setEnabled(true);
 

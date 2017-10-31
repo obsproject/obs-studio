@@ -204,9 +204,10 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 		}
 	}
 
-	void obs_frontend_streaming_start(void) override
+	void obs_frontend_streaming_start(obs_service_t* _service) override
 	{
-		QMetaObject::invokeMethod(main, "StartStreaming");
+		//must be executed synchronously
+		QMetaObject::invokeMethod(main, "StartStreaming", Q_ARG(OBSService, OBSService(_service)));
 	}
 
 	void obs_frontend_streaming_stop(void) override

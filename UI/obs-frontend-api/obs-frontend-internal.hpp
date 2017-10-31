@@ -32,7 +32,7 @@ struct obs_frontend_callbacks {
 	virtual char *obs_frontend_get_current_profile(void)=0;
 	virtual void obs_frontend_set_current_profile(const char *profile)=0;
 
-	virtual void obs_frontend_streaming_start(void)=0;
+	virtual void obs_frontend_streaming_start(obs_service_t* service)=0;
 	virtual void obs_frontend_streaming_stop(void)=0;
 	virtual bool obs_frontend_streaming_active(void)=0;
 

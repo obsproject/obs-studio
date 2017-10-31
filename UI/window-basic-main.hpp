@@ -358,7 +358,7 @@ private:
 		obs_data_array_t *savedPreviewProjectors);
 
 public slots:
-	void StartStreaming();
+	void StartStreaming(OBSService _service = OBSService());
 	void StopStreaming();
 	void ForceStopStreaming();
 

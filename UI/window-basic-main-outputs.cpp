@@ -754,7 +754,7 @@ bool SimpleOutput::StartStreaming(obs_service_t *service)
 
 	obs_output_set_reconnect_settings(streamOutput, maxRetries,
 			retryDelay);
-
+	
 	if (obs_output_start(streamOutput)) {
 		return true;
 	}
