@@ -1123,6 +1123,19 @@
                 "max video bitrate": 900,
                 "max audio bitrate": 192
             }
+        },
+        {
+            "name": "Lahzenegar - لحظه نگار",
+            "servers": [
+                {
+                    "name": "Primary",
+                    "url": "rtmp://live.lahzenegar.com:80/pro"
+                }
+            ],
+            "recommended": {
+                "max video bitrate": 1000,
+                "max audio bitrate": 96
+            }
         }
     ]
 }
