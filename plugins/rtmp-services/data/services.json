@@ -885,11 +885,15 @@
             "name": "Picarto",
             "servers": [
                 {
-                    "name": "US East",
+                    "name": "US East (Chicago, USA)",
                     "url": "rtmp://live.us-east1.picarto.tv/golive"
                 },
                 {
-                    "name": "EU West",
+                    "name": "US West (Los Angeles, USA)",
+                    "url": "rtmp://live.us-west1.picarto.tv/golive"
+                },
+                {
+                    "name": "EU West (Düsseldorf, Germany)",
                     "url": "rtmp://live.eu-west1.picarto.tv/golive"
                 }
             ],
