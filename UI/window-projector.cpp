@@ -81,6 +81,7 @@ void OBSProjector::Init(int monitor, bool window, QString title)
 		addAction(action);
 		connect(action, SIGNAL(triggered()), this,
 				SLOT(EscapeTriggered()));
+		activateWindow();
 	}
 
 	savedMonitor = monitor;
