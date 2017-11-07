@@ -1104,6 +1104,21 @@
                 "max video bitrate": 20000,
                 "max audio bitrate": 192
             }
+        },
+        {
+            "name": "Eventials",
+            "servers": [
+                {
+                    "name": "Default",
+                    "url": "rtmp://live.eventials.com/eventialsLiveOrigin"
+                }
+            ],
+            "recommended": {
+                "keyint": 1,
+                "profile": "baseline",
+                "max video bitrate": 900,
+                "max audio bitrate": 192
+            }
         }
     ]
 }
