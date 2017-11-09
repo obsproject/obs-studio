@@ -4226,6 +4226,25 @@
                  </widget>
                 </item>
                 <item>
+                 <widget class="QGroupBox" name="advUIGroupBox">
+                  <property name="title">
+                   <string>Basic.Settings.Advanced.UI</string>
+                  </property>
+                  <layout class="QFormLayout" name="formLayout_30">
+                   <property name="fieldGrowthPolicy">
+                    <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+                   </property>
+                   <item row="0" column="1">
+                    <widget class="QCheckBox" name="enableStudioPortraitLayout">
+                     <property name="text">
+                      <string>Basic.Settings.Advanced.UI.EnableStudioPortraitLayout</string>
+                     </property>
+                    </widget>
+                   </item>
+                  </layout>
+                 </widget>
+                </item>
+                <item>
                  <widget class="QLabel" name="advancedMsg">
                   <property name="styleSheet">
                    <string notr="true">color: rgb(255, 0, 4);</string>
