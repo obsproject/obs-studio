@@ -2986,6 +2986,17 @@ static inline enum video_format GetVideoFormatFromName(const char *name)
 		return VIDEO_FORMAT_RGBA;
 }
 
+void OBSBasic::ResetUI()
+{
+	bool studioPortraitLayout = config_get_bool(GetGlobalConfig(),
+			"BasicWindow", "StudioPortraitLayout");
+
+	if (studioPortraitLayout)
+		ui->previewLayout->setDirection(QBoxLayout::TopToBottom);
+	else
+		ui->previewLayout->setDirection(QBoxLayout::LeftToRight);
+}
+
 int OBSBasic::ResetVideo()
 {
 	if (outputHandler && outputHandler->Active())

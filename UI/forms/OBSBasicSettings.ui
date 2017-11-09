@@ -146,7 +146,7 @@
               <x>0</x>
               <y>0</y>
               <width>801</width>
-              <height>698</height>
+              <height>715</height>
              </rect>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_19">
@@ -571,6 +571,13 @@
                       </size>
                      </property>
                     </spacer>
+                   </item>
+                   <item row="1" column="1">
+                    <widget class="QCheckBox" name="studioPortraitLayout">
+                     <property name="text">
+                      <string>Basic.Settings.General.StudioPortraitLayout</string>
+                     </property>
+                    </widget>
                    </item>
                   </layout>
                  </widget>
@@ -3349,7 +3356,7 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>80</width>
+              <width>63</width>
               <height>16</height>
              </rect>
             </property>
@@ -3733,7 +3740,7 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>593</width>
+              <width>803</width>
               <height>761</height>
              </rect>
             </property>
