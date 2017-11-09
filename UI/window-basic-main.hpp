@@ -494,6 +494,7 @@ public:
 	bool StreamingActive() const;
 	bool Active() const;
 
+	void ResetUI();
 	int  ResetVideo();
 	bool ResetAudio();
 
