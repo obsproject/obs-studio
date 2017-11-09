@@ -604,6 +604,9 @@ void OBSBasic::SetCurrentScene(OBSSource scene, bool force, bool direct)
 void OBSBasic::CreateProgramDisplay()
 {
 	program = new OBSQTDisplay();
+	program->setContextMenuPolicy(Qt::CustomContextMenu);
+	connect(program.data(), &QWidget::customContextMenuRequested,
+			this, &OBSBasic::on_program_customContextMenuRequested);
 
 	auto displayResize = [this]() {
 		struct obs_video_info ovi;

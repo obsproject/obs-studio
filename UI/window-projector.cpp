@@ -55,7 +55,8 @@ OBSProjector::~OBSProjector()
 	App()->DecrementSleepInhibition();
 }
 
-void OBSProjector::Init(int monitor, bool window, QString title)
+void OBSProjector::Init(int monitor, bool window, QString title,
+		bool studioProgram)
 {
 	QScreen *screen = QGuiApplication::screens()[monitor];
 
@@ -72,6 +73,12 @@ void OBSProjector::Init(int monitor, bool window, QString title)
 
 	show();
 
+	if (studioProgram && !source) {
+		OBSBasic *main =
+			reinterpret_cast<OBSBasic*>(App()->GetMainWindow());
+		source = main->GetCurrentSceneSource();
+	}
+
 	if (source)
 		obs_source_inc_showing(source);
 
@@ -86,6 +93,7 @@ void OBSProjector::Init(int monitor, bool window, QString title)
 
 	savedMonitor = monitor;
 	isWindow = window;
+	useStudioProgram = studioProgram;
 }
 
 void OBSProjector::OBSRender(void *data, uint32_t cx, uint32_t cy)
@@ -118,10 +126,25 @@ void OBSProjector::OBSRender(void *data, uint32_t cx, uint32_t cy)
 	gs_ortho(0.0f, float(targetCX), 0.0f, float(targetCY), -100.0f, 100.0f);
 	gs_set_viewport(x, y, newCX, newCY);
 
-	if (window->source)
+	if (window->useStudioProgram) {
+		OBSBasic *main =
+			reinterpret_cast<OBSBasic*>(App()->GetMainWindow());
+		OBSSource curSource = main->GetCurrentSceneSource();
+
+		if (window->source != curSource) {
+			blog(LOG_INFO, "new scene for studio preview projector: '%s'",
+					obs_source_get_name(curSource));
+			obs_source_dec_showing(window->source);
+			obs_source_inc_showing(curSource);
+			window->source = curSource;
+		}
+	}
+
+	if (window->source) {
 		obs_source_video_render(window->source);
-	else
+	} else {
 		obs_render_main_view();
+	}
 
 	gs_projection_pop();
 	gs_viewport_pop();
