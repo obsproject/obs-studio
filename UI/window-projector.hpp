@@ -20,6 +20,7 @@ private:
 
 	int savedMonitor = 0;
 	bool isWindow = false;
+	bool useStudioProgram = false;
 
 private slots:
 	void EscapeTriggered();
@@ -28,5 +29,6 @@ public:
 	OBSProjector(QWidget *parent, obs_source_t *source, bool window);
 	~OBSProjector();
 
-	void Init(int monitor, bool window, QString title);
+	void Init(int monitor, bool window, QString title,
+			bool studioProgram = false);
 };
