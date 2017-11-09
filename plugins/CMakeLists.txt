@@ -1,3 +1,8 @@
+option(BUILD_PLUGINS "Build OBS plugins" ON)
+if(NOT BUILD_PLUGINS)
+	message(STATUS "OBS plugins disabled")
+	return()
+endif()
 
 if(WIN32)
 	option(BUILD_CA_ENCODER "Build CoreAudio encoder module" ON)
