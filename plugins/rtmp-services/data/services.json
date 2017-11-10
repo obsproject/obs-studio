@@ -1136,6 +1136,21 @@
                 "max video bitrate": 1000,
                 "max audio bitrate": 96
             }
+        },
+        {
+            "name": "MyLive",
+            "servers": [
+                {
+                    "name": "Default",
+                    "url": "rtmp://stream.mylive.in.th/live"
+                }
+            ],
+            "recommended": {
+                "keyint": 2,
+                "profile": "main",
+                "max video bitrate": 7000,
+                "max audio bitrate": 192
+            }
         }
     ]
 }
