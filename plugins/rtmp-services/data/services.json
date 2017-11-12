@@ -1107,7 +1107,6 @@
         },
         {
             "name": "MyLive",
-            "common": false,
             "servers": [
                 {
                     "name": "Default",
