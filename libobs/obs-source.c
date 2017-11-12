@@ -405,9 +405,11 @@ static void duplicate_filters(obs_source_t *dst, obs_source_t *src,
 		obs_source_t *src_filter = filters.array[i - 1];
 		char *new_name = get_new_filter_name(dst,
 				src_filter->context.name);
+		bool enabled = obs_source_enabled(src_filter);
 
 		obs_source_t *dst_filter = obs_source_duplicate(src_filter,
 				new_name, private);
+		obs_source_set_enabled(dst_filter, enabled);
 
 		bfree(new_name);
 		obs_source_filter_add(dst, dst_filter);
