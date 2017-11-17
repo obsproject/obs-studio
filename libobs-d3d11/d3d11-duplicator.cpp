@@ -171,6 +171,10 @@ EXPORT bool gs_duplicator_update_frame(gs_duplicator_t *d)
 	ComPtr<IDXGIResource> res;
 	HRESULT hr;
 
+	if (!d->duplicator) {
+		return false;
+	}
+
 	hr = d->duplicator->AcquireNextFrame(0, &info, res.Assign());
 	if (hr == DXGI_ERROR_ACCESS_LOST) {
 		return false;
