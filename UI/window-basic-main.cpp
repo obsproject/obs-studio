@@ -1783,12 +1783,19 @@ OBSBasic::~OBSBasic()
 			OBSBasic::RenderMain, this);
 
 	obs_enter_graphics();
-	gs_vertexbuffer_destroy(box);
-	gs_vertexbuffer_destroy(boxLeft);
-	gs_vertexbuffer_destroy(boxTop);
-	gs_vertexbuffer_destroy(boxRight);
-	gs_vertexbuffer_destroy(boxBottom);
-	gs_vertexbuffer_destroy(circle);
+	gs_vertbuffer_t* vbs[] = {
+		box,
+		boxLeft,
+		boxTop,
+		boxRight,
+		boxBottom,
+		circle
+	};
+	for (auto vb : vbs) {
+		struct gs_vb_data *vbd = gs_vertexbuffer_get_data(vb);
+		gs_vertexbuffer_destroy(vb);
+		gs_vbdata_destroy(vbd);
+	}
 	obs_leave_graphics();
 
 	/* When shutting down, sometimes source references can get in to the

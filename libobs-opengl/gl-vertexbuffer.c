@@ -66,7 +66,6 @@ static bool create_buffers(struct gs_vertex_buffer *vb)
 	}
 
 	if (!vb->dynamic) {
-		gs_vbdata_destroy(vb->data);
 		vb->data = NULL;
 	}
 
@@ -114,7 +113,6 @@ void gs_vertexbuffer_destroy(gs_vertbuffer_t *vb)
 
 		da_free(vb->uv_sizes);
 		da_free(vb->uv_buffers);
-		gs_vbdata_destroy(vb->data);
 
 		bfree(vb);
 	}

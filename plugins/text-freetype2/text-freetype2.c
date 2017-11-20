@@ -197,7 +197,9 @@ static void ft2_source_destroy(void *data)
 		srcdata->tex = NULL;
 	}
 	if (srcdata->vbuf != NULL) {
+		struct gs_vb_data *vbd = gs_vertexbuffer_get_data(srcdata->vbuf);
 		gs_vertexbuffer_destroy(srcdata->vbuf);
+		gs_vbdata_destroy(vbd);
 		srcdata->vbuf = NULL;
 	}
 	if (srcdata->draw_effect != NULL) {
