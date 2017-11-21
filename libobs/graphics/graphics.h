@@ -419,6 +419,8 @@ EXPORT gs_texture_t *gs_texrender_get_texture(const gs_texrender_t *texrender);
 #define GS_DYNAMIC       (1<<1)
 #define GS_RENDER_TARGET (1<<2)
 #define GS_GL_DUMMYTEX   (1<<3) /**<< texture with no allocated texture data */
+#define GS_DUP_BUFFER    (1<<4) /**<< do not pass buffer ownership when
+				 *    creating a vertex/index buffer */
 
 /* ---------------- */
 /* global functions */
