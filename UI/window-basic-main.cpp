@@ -1338,7 +1338,7 @@ void OBSBasic::OBSInit()
 	}
 
 	/* load audio monitoring */
-#if defined(_WIN32) || defined(__APPLE__) || HAVE_PULSEAUDIO
+#if defined(_WIN32) || defined(__APPLE__)
 	const char *device_name = config_get_string(basicConfig, "Audio",
 			"MonitoringDeviceName");
 	const char *device_id = config_get_string(basicConfig, "Audio",
@@ -1447,7 +1447,10 @@ void OBSBasic::OBSInit()
 
 #ifdef _WIN32
 	SetWin32DropStyle(this);
-	show();
+  if (!opt_disable_ui)
+    opt_disable_ui = false;
+  if (opt_disable_ui == false)
+	  show();
 #endif
 
 	bool alwaysOnTop = config_get_bool(App()->GlobalConfig(), "BasicWindow",
@@ -1458,7 +1461,8 @@ void OBSBasic::OBSInit()
 	}
 
 #ifndef _WIN32
-	show();
+  if (opt_disable_ui == false)
+	  show();
 #endif
 
 	const char *dockStateStr = config_get_string(App()->GlobalConfig(),

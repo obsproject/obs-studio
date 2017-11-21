@@ -182,6 +182,7 @@ extern bool opt_start_recording;
 extern bool opt_start_replaybuffer;
 extern bool opt_minimize_tray;
 extern bool opt_studio_mode;
+extern bool opt_disable_ui;
 extern bool opt_allow_opengl;
 extern bool opt_always_on_top;
 extern std::string opt_starting_scene;
