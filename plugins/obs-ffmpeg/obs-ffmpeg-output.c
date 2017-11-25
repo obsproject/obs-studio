@@ -417,6 +417,18 @@ static inline bool open_output_file(struct ffmpeg_data *data)
 		return false;
 	}
 
+	if (av_dict_count(dict) > 0) {
+		struct dstr str = {0};
+
+		AVDictionaryEntry *entry = NULL;
+		while ((entry = av_dict_get(dict, "", entry,
+						AV_DICT_IGNORE_SUFFIX)))
+			dstr_catf(&str, "\n\t%s=%s", entry->key, entry->value);
+
+		blog(LOG_INFO, "Invalid muxer settings: %s", str.array);
+		dstr_free(&str);
+	}
+
 	av_dict_free(&dict);
 
 	return true;
