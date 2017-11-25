@@ -1,5 +1,5 @@
 environment:
-  CURL_VERSION: 7.39.0
+  CURL_VERSION: 7.56.1
 
 install:
   - git submodule update --init --recursive
