@@ -71,6 +71,7 @@ EXPORT void obs_frontend_recording_stop(void);
 EXPORT bool obs_frontend_recording_active(void);
 
 EXPORT void obs_frontend_replay_buffer_start(void);
+EXPORT void obs_frontend_replay_buffer_save(void);
 EXPORT void obs_frontend_replay_buffer_stop(void);
 EXPORT bool obs_frontend_replay_buffer_active(void);
 

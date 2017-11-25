@@ -41,6 +41,7 @@ struct obs_frontend_callbacks {
 	virtual bool obs_frontend_recording_active(void)=0;
 
 	virtual void obs_frontend_replay_buffer_start(void)=0;
+	virtual void obs_frontend_replay_buffer_save(void) = 0;
 	virtual void obs_frontend_replay_buffer_stop(void)=0;
 	virtual bool obs_frontend_replay_buffer_active(void)=0;
 

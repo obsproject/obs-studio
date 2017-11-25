@@ -210,6 +210,11 @@ void obs_frontend_replay_buffer_start(void)
 	if (callbacks_valid()) c->obs_frontend_replay_buffer_start();
 }
 
+void obs_frontend_replay_buffer_save(void)
+{
+	if (callbacks_valid()) c->obs_frontend_replay_buffer_save();
+}
+
 void obs_frontend_replay_buffer_stop(void)
 {
 	if (callbacks_valid()) c->obs_frontend_replay_buffer_stop();
