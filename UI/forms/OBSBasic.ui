@@ -182,6 +182,9 @@
      <addaction name="actionScaleOutput"/>
     </widget>
     <action name="actionCopySource">
+     <property name="enabled">
+      <bool>false</bool>
+     </property>
      <property name="text">
       <string>Copy</string>
      </property>
