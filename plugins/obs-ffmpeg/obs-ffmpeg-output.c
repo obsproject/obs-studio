@@ -373,20 +373,6 @@ static inline bool open_output_file(struct ffmpeg_data *data)
 	AVOutputFormat *format = data->output->oformat;
 	int ret;
 
-	if ((format->flags & AVFMT_NOFILE) == 0) {
-		ret = avio_open(&data->output->pb, data->config.url,
-				AVIO_FLAG_WRITE);
-		if (ret < 0) {
-			blog(LOG_WARNING, "Couldn't open '%s', %s",
-					data->config.url, av_err2str(ret));
-			return false;
-		}
-	}
-
-	strncpy(data->output->filename, data->config.url,
-			sizeof(data->output->filename));
-	data->output->filename[sizeof(data->output->filename) - 1] = 0;
-
 	AVDictionary *dict = NULL;
 	if ((ret = av_dict_parse_string(&dict, data->config.muxer_settings,
 				"=", " ", 0))) {
@@ -405,9 +391,24 @@ static inline bool open_output_file(struct ffmpeg_data *data)
 						AV_DICT_IGNORE_SUFFIX)))
 			dstr_catf(&str, "\n\t%s=%s", entry->key, entry->value);
 
-		blog(LOG_INFO, "Using muxer settings:%s", str.array);
+		blog(LOG_INFO, "Using muxer settings: %s", str.array);
 		dstr_free(&str);
 	}
+
+	if ((format->flags & AVFMT_NOFILE) == 0) {
+		ret = avio_open2(&data->output->pb, data->config.url,
+				AVIO_FLAG_WRITE, NULL, &dict);
+		if (ret < 0) {
+			blog(LOG_WARNING, "Couldn't open '%s', %s",
+					data->config.url, av_err2str(ret));
+			av_dict_free(&dict);
+			return false;
+		}
+	}
+
+	strncpy(data->output->filename, data->config.url,
+			sizeof(data->output->filename));
+	data->output->filename[sizeof(data->output->filename) - 1] = 0;
 
 	ret = avformat_write_header(data->output, &dict);
 	if (ret < 0) {
