@@ -73,6 +73,9 @@ static void *scene_create(obs_data_t *settings, struct obs_source *source)
 
 	scene->id_counter = 0;
 
+	scene->transition = NULL;
+	scene->transition_duration = 300;
+
 	if (pthread_mutexattr_init(&attr) != 0)
 		goto fail;
 	if (pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE) != 0)
@@ -159,6 +162,8 @@ static void scene_destroy(void *data)
 
 	pthread_mutex_destroy(&scene->video_mutex);
 	pthread_mutex_destroy(&scene->audio_mutex);
+
+	bfree(scene->transition);
 	bfree(scene);
 }
 
@@ -681,6 +686,13 @@ static void scene_load(void *data, obs_data_t *settings)
 	struct obs_scene *scene = data;
 	obs_data_array_t *items = obs_data_get_array(settings, "items");
 	size_t           count, i;
+	const char       *transition = obs_data_get_string(settings,
+				"per_scene_transition");
+	int              transition_duration = obs_data_get_int(settings,
+				"per_scene_transition_duration");
+
+	obs_scene_set_transition(scene, transition);
+	obs_scene_set_transition_duration(scene, transition_duration);
 
 	remove_all_items(scene);
 
@@ -758,6 +770,11 @@ static void scene_save(void *data, obs_data_t *settings)
 	}
 
 	obs_data_set_int(settings, "id_counter", scene->id_counter);
+
+	obs_data_set_string(settings, "per_scene_transition",
+			scene->transition);
+	obs_data_set_int(settings, "per_scene_transition_duration",
+			scene->transition_duration);
 
 	full_unlock(scene);
 
@@ -2021,4 +2038,36 @@ obs_data_t *obs_sceneitem_get_private_settings(obs_sceneitem_t *item)
 
 	obs_data_addref(item->private_settings);
 	return item->private_settings;
+}
+
+void obs_scene_set_transition(obs_scene_t *scene, const char *transition)
+{
+	if (!scene)
+		return;
+
+	scene->transition = bstrdup(transition);
+}
+
+const char *obs_scene_get_transition(const obs_scene_t *scene)
+{
+	if (!scene)
+		return NULL;
+
+	return scene->transition;
+}
+
+void obs_scene_set_transition_duration(obs_scene_t *scene, int duration)
+{
+	if (!scene)
+		return;
+
+	scene->transition_duration = duration;
+}
+
+int obs_scene_get_transition_duration(const obs_scene_t *scene)
+{
+	if (!scene)
+		return 0;
+
+	return scene->transition_duration;
 }
