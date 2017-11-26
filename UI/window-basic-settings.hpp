@@ -274,6 +274,7 @@ private slots:
 	void AudioChanged();
 	void AudioChangedRestart();
 	void ReloadAudioSources();
+	void MultichannelToggled(bool state);
 	void OutputsChanged();
 	void Stream1Changed();
 	void VideoChanged();

@@ -31,9 +31,18 @@ struct audio_monitor {
 static enum speaker_layout pulseaudio_channels_to_obs_speakers(
 		uint_fast32_t channels)
 {
-	if ((channels >= 1 && channels <= 6) || channels == 8)
-		return (enum speaker_layout) channels;
-	return SPEAKERS_UNKNOWN;
+		switch (channels) {
+		case 0:     return SPEAKERS_UNKNOWN;
+		case 1:     return SPEAKERS_MONO;
+		case 2:     return SPEAKERS_STEREO;
+		case 3:     return SPEAKERS_2POINT1;
+		case 4:     return SPEAKERS_QUAD;
+		case 5:     return SPEAKERS_4POINT1;
+		case 6:     return SPEAKERS_5POINT1;
+		case 8:     return SPEAKERS_7POINT1;
+		case 16:    return SPEAKERS_HEXADECAGONAL;
+		default:    return SPEAKERS_UNKNOWN;
+		}
 }
 
 static enum audio_format pulseaudio_to_obs_audio_format(

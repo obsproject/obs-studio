@@ -17,4 +17,4 @@
 
 #pragma once
 
-#define MAX_AV_PLANES 8
+#define MAX_AV_PLANES 16

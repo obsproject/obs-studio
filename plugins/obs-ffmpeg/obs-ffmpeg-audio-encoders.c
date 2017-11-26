@@ -56,6 +56,49 @@ struct enc_encoder {
 	int              frame_size_bytes;
 };
 
+static inline uint64_t convert_speaker_layout(enum speaker_layout layout)
+{
+	switch (layout) {
+	case SPEAKERS_UNKNOWN:          return 0;
+	case SPEAKERS_MONO:             return AV_CH_LAYOUT_MONO;
+	case SPEAKERS_STEREO:           return AV_CH_LAYOUT_STEREO;
+	case SPEAKERS_2POINT1:          return AV_CH_LAYOUT_2_1;
+	case SPEAKERS_QUAD:             return AV_CH_LAYOUT_QUAD;
+	case SPEAKERS_4POINT1:          return AV_CH_LAYOUT_4POINT1;
+	case SPEAKERS_5POINT1:          return AV_CH_LAYOUT_5POINT1;
+	case SPEAKERS_5POINT1_SURROUND: return AV_CH_LAYOUT_5POINT1_BACK;
+	case SPEAKERS_7POINT1:          return AV_CH_LAYOUT_7POINT1;
+	case SPEAKERS_7POINT1_SURROUND: return AV_CH_LAYOUT_7POINT1_WIDE_BACK;
+	case SPEAKERS_SURROUND:         return AV_CH_LAYOUT_SURROUND;
+	case SPEAKERS_OCTAGONAL:        return AV_CH_LAYOUT_OCTAGONAL;
+	case SPEAKERS_HEXADECAGONAL:    return AV_CH_LAYOUT_HEXADECAGONAL;
+	}
+
+	/* shouldn't get here */
+	return 0;
+}
+
+static inline enum speaker_layout convert_ff_channel_layout(uint64_t  channel_layout)
+{
+	switch (channel_layout) {
+	case AV_CH_LAYOUT_MONO:              return SPEAKERS_MONO;
+	case AV_CH_LAYOUT_STEREO:            return SPEAKERS_STEREO;
+	case AV_CH_LAYOUT_2_1:               return SPEAKERS_2POINT1;
+	case AV_CH_LAYOUT_QUAD:              return SPEAKERS_QUAD;
+	case AV_CH_LAYOUT_4POINT1:           return SPEAKERS_4POINT1;
+	case AV_CH_LAYOUT_5POINT1:           return SPEAKERS_5POINT1;
+	case AV_CH_LAYOUT_5POINT1_BACK:      return SPEAKERS_5POINT1_SURROUND;
+	case AV_CH_LAYOUT_7POINT1:           return SPEAKERS_7POINT1;
+	case AV_CH_LAYOUT_7POINT1_WIDE_BACK: return SPEAKERS_7POINT1_SURROUND;
+	case AV_CH_LAYOUT_SURROUND:          return SPEAKERS_SURROUND;
+	case AV_CH_LAYOUT_OCTAGONAL:         return SPEAKERS_OCTAGONAL;
+	case AV_CH_LAYOUT_HEXADECAGONAL:     return SPEAKERS_HEXADECAGONAL;
+	}
+
+	/* shouldn't get here */
+	return  SPEAKERS_UNKNOWN;
+}
+
 static const char *aac_getname(void *unused)
 {
 	UNUSED_PARAMETER(unused);
@@ -169,7 +212,10 @@ static void *enc_create(obs_data_t *settings, obs_encoder_t *encoder,
 	}
 
 	enc->context->bit_rate    = bitrate * 1000;
+	const struct audio_output_info *aoi;
+	aoi = audio_output_get_info(audio);
 	enc->context->channels    = (int)audio_output_get_channels(audio);
+	enc->context->channel_layout = convert_speaker_layout(aoi->speakers);
 	enc->context->sample_rate = audio_output_get_sample_rate(audio);
 	enc->context->sample_fmt  = enc->codec->sample_fmts ?
 		enc->codec->sample_fmts[0] : AV_SAMPLE_FMT_FLTP;
@@ -206,8 +252,9 @@ static void *enc_create(obs_data_t *settings, obs_encoder_t *encoder,
 		enc->context->cutoff = cutoff;
 	}
 
-	info("bitrate: %" PRId64 ", channels: %d",
-			enc->context->bit_rate / 1000, enc->context->channels);
+	info("bitrate: %" PRId64 ", channels: %d, channel_layout: %x\n",
+			enc->context->bit_rate / 1000, enc->context->channels,
+			enc->context->channel_layout);
 
 	init_sizes(enc, audio);
 
@@ -303,9 +350,8 @@ static obs_properties_t *enc_properties(void *unused)
 	UNUSED_PARAMETER(unused);
 
 	obs_properties_t *props = obs_properties_create();
-
 	obs_properties_add_int(props, "bitrate",
-			obs_module_text("Bitrate"), 64, 320, 32);
+			obs_module_text("Bitrate"), 64, 1024, 32);
 	return props;
 }
 
@@ -323,6 +369,7 @@ static void enc_audio_info(void *data, struct audio_convert_info *info)
 	struct enc_encoder *enc = data;
 	info->format = convert_ffmpeg_sample_format(enc->context->sample_fmt);
 	info->samples_per_sec = (uint32_t)enc->context->sample_rate;
+	info->speakers = convert_ff_channel_layout(enc->context->channel_layout);
 }
 
 static size_t enc_frame_size(void *data)

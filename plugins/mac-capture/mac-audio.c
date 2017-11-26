@@ -187,9 +187,16 @@ static inline enum audio_format convert_ca_format(UInt32 format_flags,
 
 static inline enum speaker_layout convert_ca_speaker_layout(UInt32 channels)
 {
-	/* directly map channel count to enum values */
-	if (channels >= 1 && channels <= 8 && channels != 7)
-		return (enum speaker_layout)channels;
+    switch (channels) {
+        case 1:             return SPEAKERS_MONO;
+        case 2:             return SPEAKERS_STEREO;
+        case 3:             return SPEAKERS_2POINT1;
+        case 4:             return SPEAKERS_QUAD;
+        case 5:             return SPEAKERS_4POINT1;
+        case 6:             return SPEAKERS_5POINT1;
+        case 8:             return SPEAKERS_7POINT1;
+        case 16:            return SPEAKERS_HEXADECAGONAL;
+    }
 
 	return SPEAKERS_UNKNOWN;
 }
@@ -208,7 +215,7 @@ static bool coreaudio_init_format(struct coreaudio_data *ca)
 	/* Certain types of devices have no limit on channel count, and
 	 * there's no way to know the actual number of channels it's using,
 	 * so if we encounter this situation just force to stereo */
-        if (desc.mChannelsPerFrame > 8) {
+        if (desc.mChannelsPerFrame > 16) {
                 desc.mChannelsPerFrame = 2;
                 desc.mBytesPerFrame = 2 * desc.mBitsPerChannel / 8;
                 desc.mBytesPerPacket =

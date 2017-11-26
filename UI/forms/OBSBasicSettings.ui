@@ -3182,7 +3182,14 @@
            </item>
           </widget>
          </item>
-         <item row="2" column="0">
+         <item row="2" column="1">
+          <widget class="QCheckBox" name="enableMultichannel">
+            <property name="text">
+              <string>Basic.Settings.Audio.EnableMultichannel</string>
+            </property>
+          </widget>
+         </item>
+         <item row="3" column="0">
           <widget class="QLabel" name="label_2">
            <property name="minimumSize">
             <size>
@@ -3201,14 +3208,14 @@
            </property>
           </widget>
          </item>
-         <item row="2" column="1">
+         <item row="3" column="1">
           <widget class="QComboBox" name="desktopAudioDevice1">
            <property name="enabled">
             <bool>true</bool>
            </property>
           </widget>
          </item>
-         <item row="3" column="0">
+         <item row="4" column="0">
           <widget class="QLabel" name="label_3">
            <property name="text">
             <string>Basic.Settings.Audio.DesktopDevice2</string>
@@ -3221,14 +3228,14 @@
            </property>
           </widget>
          </item>
-         <item row="3" column="1">
+         <item row="4" column="1">
           <widget class="QComboBox" name="desktopAudioDevice2">
            <property name="enabled">
             <bool>true</bool>
            </property>
           </widget>
          </item>
-         <item row="4" column="0">
+         <item row="5" column="0">
           <widget class="QLabel" name="label_4">
            <property name="text">
             <string>Basic.Settings.Audio.AuxDevice</string>
@@ -3238,14 +3245,14 @@
            </property>
           </widget>
          </item>
-         <item row="4" column="1">
+         <item row="5" column="1">
           <widget class="QComboBox" name="auxAudioDevice1">
            <property name="enabled">
             <bool>true</bool>
            </property>
           </widget>
          </item>
-         <item row="5" column="0">
+         <item row="6" column="0">
           <widget class="QLabel" name="label_5">
            <property name="text">
             <string>Basic.Settings.Audio.AuxDevice2</string>
@@ -3255,14 +3262,14 @@
            </property>
           </widget>
          </item>
-         <item row="5" column="1">
+         <item row="6" column="1">
           <widget class="QComboBox" name="auxAudioDevice2">
            <property name="enabled">
             <bool>true</bool>
            </property>
           </widget>
          </item>
-         <item row="6" column="0">
+         <item row="7" column="0">
           <widget class="QLabel" name="label_6">
            <property name="text">
             <string>Basic.Settings.Audio.AuxDevice3</string>
@@ -3272,14 +3279,14 @@
            </property>
           </widget>
          </item>
-         <item row="6" column="1">
+         <item row="7" column="1">
           <widget class="QComboBox" name="auxAudioDevice3">
            <property name="enabled">
             <bool>true</bool>
            </property>
           </widget>
          </item>
-         <item row="7" column="0" colspan="2">
+         <item row="8" column="0" colspan="2">
           <widget class="QScrollArea" name="audioSourceScrollArea">
            <property name="widgetResizable">
             <bool>true</bool>
@@ -3296,7 +3303,7 @@
            </widget>
           </widget>
          </item>
-         <item row="8" column="1">
+         <item row="9" column="1">
           <widget class="QLabel" name="audioMsg">
            <property name="styleSheet">
             <string notr="true">color: rgb(255, 0, 4);</string>
@@ -4357,6 +4364,7 @@
   <tabstop>advOutTrack6Name</tabstop>
   <tabstop>sampleRate</tabstop>
   <tabstop>channelSetup</tabstop>
+  <tabstop>enableMultichannel</tabstop>
   <tabstop>desktopAudioDevice1</tabstop>
   <tabstop>desktopAudioDevice2</tabstop>
   <tabstop>auxAudioDevice1</tabstop>
