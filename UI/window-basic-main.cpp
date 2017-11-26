@@ -2310,8 +2310,8 @@ void OBSBasic::MixerRenameSource()
 			continue;
 		}
 
-		obs_source_t *sourceTest =
-				obs_get_source_by_name(name.c_str());
+		OBSSource sourceTest = obs_get_source_by_name(name.c_str());
+		obs_source_release(sourceTest);
 
 		if (sourceTest) {
 			OBSMessageBox::information(this,
@@ -2321,8 +2321,6 @@ void OBSBasic::MixerRenameSource()
 		}
 
 		obs_source_set_name(source, name.c_str());
-		obs_source_release(sourceTest);
-
 		break;
 	}
 }
