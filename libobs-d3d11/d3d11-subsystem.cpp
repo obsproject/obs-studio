@@ -341,7 +341,10 @@ ID3D11BlendState *gs_device::AddBlendState()
 		bd.RenderTarget[i].DestBlendAlpha =
 			ConvertGSBlendType(blendState.destFactorA);
 		bd.RenderTarget[i].RenderTargetWriteMask =
-			D3D11_COLOR_WRITE_ENABLE_ALL;
+			(blendState.redEnabled   ? D3D11_COLOR_WRITE_ENABLE_RED   : 0) |
+			(blendState.greenEnabled ? D3D11_COLOR_WRITE_ENABLE_GREEN : 0) |
+			(blendState.blueEnabled  ? D3D11_COLOR_WRITE_ENABLE_BLUE  : 0) |
+			(blendState.alphaEnabled ? D3D11_COLOR_WRITE_ENABLE_ALPHA : 0) ;
 	}
 
 	SavedBlendState savedState(blendState, bd);
