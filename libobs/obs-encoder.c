@@ -611,7 +611,7 @@ uint32_t obs_encoder_get_height(const obs_encoder_t *encoder)
 	if (!encoder->media)
 		return 0;
 
-	return encoder->scaled_width != 0 ?
+	return encoder->scaled_height != 0 ?
 		encoder->scaled_height :
 		video_output_get_height(encoder->media);
 }
