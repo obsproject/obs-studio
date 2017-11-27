@@ -114,6 +114,7 @@ private:
 	std::vector<OBSSignal> signalHandlers;
 
 	std::vector<std::string> projectorArray;
+	std::vector<std::string> studioPreviewProjectorArray;
 	std::vector<int> previewProjectorArray;
 
 	bool loaded = false;
@@ -240,7 +241,7 @@ private:
 
 	void Nudge(int dist, MoveDir dir);
 	void OpenProjector(obs_source_t *source, int monitor, bool window,
-			QString title = nullptr);
+			QString title = nullptr, bool studioPreview = false);
 
 	void GetAudioSourceFilters();
 	void GetAudioSourceProperties();
@@ -357,6 +358,10 @@ private:
 	obs_data_array_t *SavePreviewProjectors();
 	void LoadSavedPreviewProjectors(
 		obs_data_array_t *savedPreviewProjectors);
+
+	obs_data_array_t *SaveStudioPreviewProjectors();
+	void LoadSavedStudioPreviewProjectors(
+		obs_data_array_t *savedStudioPreviewProjectors);
 
 public slots:
 	void StartStreaming();
@@ -675,10 +680,12 @@ private slots:
 	void NudgeLeft();
 	void NudgeRight();
 
+	void OpenStudioPreviewProjector();
 	void OpenPreviewProjector();
 	void OpenSourceProjector();
 	void OpenSceneProjector();
 
+	void OpenStudioPreviewWindow();
 	void OpenPreviewWindow();
 	void OpenSourceWindow();
 	void OpenSceneWindow();
