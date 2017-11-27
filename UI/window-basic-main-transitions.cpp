@@ -220,10 +220,10 @@ obs_source_t *OBSBasic::FindTransition(const char *name)
 	return nullptr;
 }
 
-void OBSBasic::TransitionToScene(OBSScene scene, bool force)
+void OBSBasic::TransitionToScene(OBSScene scene, bool force, bool direct)
 {
 	obs_source_t *source = obs_scene_get_source(scene);
-	TransitionToScene(source, force);
+	TransitionToScene(source, force, direct);
 }
 
 void OBSBasic::TransitionStopped()
@@ -242,7 +242,7 @@ void OBSBasic::TransitionStopped()
 	swapScene = nullptr;
 }
 
-void OBSBasic::TransitionToScene(OBSSource source, bool force)
+void OBSBasic::TransitionToScene(OBSSource source, bool force, bool direct)
 {
 	obs_scene_t *scene = obs_scene_from_source(source);
 	bool usingPreviewProgram = IsPreviewProgramMode();
@@ -251,7 +251,7 @@ void OBSBasic::TransitionToScene(OBSSource source, bool force)
 
 	OBSWeakSource lastProgramScene;
 	
-	if (usingPreviewProgram) {
+	if (usingPreviewProgram && !direct) {
 		lastProgramScene = programScene;
 		programScene = OBSGetWeakRef(source);
 
@@ -266,7 +266,7 @@ void OBSBasic::TransitionToScene(OBSSource source, bool force)
 		}
 	}
 
-	if (usingPreviewProgram && sceneDuplicationMode) {
+	if (usingPreviewProgram && sceneDuplicationMode && !direct) {
 		scene = obs_scene_duplicate(scene, NULL,
 				editPropertiesMode ?
 				OBS_SCENE_DUP_PRIVATE_COPY :
@@ -285,7 +285,7 @@ void OBSBasic::TransitionToScene(OBSSource source, bool force)
 				ui->transitionDuration->value(), source);
 	}
 
-	if (usingPreviewProgram && sceneDuplicationMode)
+	if (usingPreviewProgram && sceneDuplicationMode && !direct)
 		obs_scene_release(scene);
 
 	obs_source_release(transition);
@@ -544,10 +544,10 @@ int OBSBasic::GetQuickTransitionIdx(int id)
 	return -1;
 }
 
-void OBSBasic::SetCurrentScene(obs_scene_t *scene, bool force)
+void OBSBasic::SetCurrentScene(obs_scene_t *scene, bool force, bool direct)
 {
 	obs_source_t *source = obs_scene_get_source(scene);
-	SetCurrentScene(source, force);
+	SetCurrentScene(source, force, direct);
 }
 
 template <typename T>
@@ -556,10 +556,13 @@ static T GetOBSRef(QListWidgetItem *item)
 	return item->data(static_cast<int>(QtDataRole::OBSRef)).value<T>();
 }
 
-void OBSBasic::SetCurrentScene(OBSSource scene, bool force)
+void OBSBasic::SetCurrentScene(OBSSource scene, bool force, bool direct)
 {
-	if (!IsPreviewProgramMode()) {
-		TransitionToScene(scene, force);
+	if (!IsPreviewProgramMode() && !direct) {
+		TransitionToScene(scene, force, false);
+
+	} else if (IsPreviewProgramMode() && direct) {
+		TransitionToScene(scene, force, true);
 
 	} else {
 		OBSSource actualLastScene = OBSGetStrongRef(lastScene);

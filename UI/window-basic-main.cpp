@@ -3794,6 +3794,17 @@ void OBSBasic::on_sources_itemDoubleClicked(QListWidgetItem *witem)
 		CreatePropertiesWindow(source);
 }
 
+void OBSBasic::on_scenes_itemDoubleClicked(QListWidgetItem *witem)
+{
+	if (!witem)
+		return;
+
+	OBSScene scene = GetCurrentScene();
+
+	if (scene)
+		SetCurrentScene(scene, false, true);
+}
+
 void OBSBasic::AddSource(const char *id)
 {
 	if (id && *id) {
