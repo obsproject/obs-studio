@@ -148,7 +148,7 @@ bool gl_create_buffer(GLenum target, GLuint *buffer, GLsizeiptr size,
 	return success;
 }
 
-bool update_buffer(GLenum target, GLuint buffer, void *data, size_t size)
+bool update_buffer(GLenum target, GLuint buffer, const void *data, size_t size)
 {
 	void *ptr;
 	bool success = true;
