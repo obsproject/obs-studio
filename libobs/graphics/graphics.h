@@ -718,11 +718,15 @@ EXPORT void     gs_samplerstate_destroy(gs_samplerstate_t *samplerstate);
 
 EXPORT void     gs_vertexbuffer_destroy(gs_vertbuffer_t *vertbuffer);
 EXPORT void     gs_vertexbuffer_flush(gs_vertbuffer_t *vertbuffer);
+EXPORT void     gs_vertexbuffer_flush_direct(gs_vertbuffer_t *vertbuffer,
+		const struct gs_vb_data *data);
 EXPORT struct gs_vb_data *gs_vertexbuffer_get_data(
 		const gs_vertbuffer_t *vertbuffer);
 
 EXPORT void     gs_indexbuffer_destroy(gs_indexbuffer_t *indexbuffer);
 EXPORT void     gs_indexbuffer_flush(gs_indexbuffer_t *indexbuffer);
+EXPORT void     gs_indexbuffer_flush_direct(gs_indexbuffer_t *indexbuffer,
+		const void *data);
 EXPORT void     *gs_indexbuffer_get_data(const gs_indexbuffer_t *indexbuffer);
 EXPORT size_t   gs_indexbuffer_get_num_indices(
 		const gs_indexbuffer_t *indexbuffer);
