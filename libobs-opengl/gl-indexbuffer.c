@@ -70,21 +70,31 @@ void gs_indexbuffer_destroy(gs_indexbuffer_t *ib)
 	}
 }
 
-void gs_indexbuffer_flush(gs_indexbuffer_t *ib)
+static inline void gs_indexbuffer_flush_internal(gs_indexbuffer_t *ib,
+		const void *data)
 {
 	if (!ib->dynamic) {
 		blog(LOG_ERROR, "Index buffer is not dynamic");
 		goto fail;
 	}
 
-	if (!update_buffer(GL_ELEMENT_ARRAY_BUFFER, ib->buffer, ib->data,
-				ib->size))
+	if (!update_buffer(GL_ELEMENT_ARRAY_BUFFER, ib->buffer, data, ib->size))
 		goto fail;
 
 	return;
 
 fail:
 	blog(LOG_ERROR, "gs_indexbuffer_flush (GL) failed");
+}
+
+void gs_indexbuffer_flush(gs_indexbuffer_t *ib)
+{
+	gs_indexbuffer_flush_internal(ib, ib->data);
+}
+
+void gs_indexbuffer_flush_direct(gs_indexbuffer_t *ib, const void *data)
+{
+	gs_indexbuffer_flush_internal(ib, data);
 }
 
 void *gs_indexbuffer_get_data(const gs_indexbuffer_t *ib)

@@ -189,11 +189,15 @@ struct gs_exports {
 
 	void (*gs_vertexbuffer_destroy)(gs_vertbuffer_t *vertbuffer);
 	void (*gs_vertexbuffer_flush)(gs_vertbuffer_t *vertbuffer);
+	void (*gs_vertexbuffer_flush_direct)(gs_vertbuffer_t *vertbuffer,
+			const struct gs_vb_data *data);
 	struct gs_vb_data *(*gs_vertexbuffer_get_data)(
 			const gs_vertbuffer_t *vertbuffer);
 
 	void   (*gs_indexbuffer_destroy)(gs_indexbuffer_t *indexbuffer);
 	void   (*gs_indexbuffer_flush)(gs_indexbuffer_t *indexbuffer);
+	void   (*gs_indexbuffer_flush_direct)(gs_indexbuffer_t *indexbuffer,
+			const void *data);
 	void  *(*gs_indexbuffer_get_data)(const gs_indexbuffer_t *indexbuffer);
 	size_t (*gs_indexbuffer_get_num_indices)(
 			const gs_indexbuffer_t *indexbuffer);

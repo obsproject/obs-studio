@@ -2477,6 +2477,16 @@ void gs_vertexbuffer_flush(gs_vertbuffer_t *vertbuffer)
 	thread_graphics->exports.gs_vertexbuffer_flush(vertbuffer);
 }
 
+void gs_vertexbuffer_flush_direct(gs_vertbuffer_t *vertbuffer,
+		const struct gs_vb_data *data)
+{
+	if (!gs_valid_p2("gs_vertexbuffer_flush_direct", vertbuffer, data))
+		return;
+
+	thread_graphics->exports.gs_vertexbuffer_flush_direct(vertbuffer,
+			data);
+}
+
 struct gs_vb_data *gs_vertexbuffer_get_data(const gs_vertbuffer_t *vertbuffer)
 {
 	if (!gs_valid_p("gs_vertexbuffer_get_data", vertbuffer))
@@ -2503,6 +2513,15 @@ void   gs_indexbuffer_flush(gs_indexbuffer_t *indexbuffer)
 		return;
 
 	thread_graphics->exports.gs_indexbuffer_flush(indexbuffer);
+}
+
+void   gs_indexbuffer_flush_direct(gs_indexbuffer_t *indexbuffer,
+		const void *data)
+{
+	if (!gs_valid_p2("gs_indexbuffer_flush_direct", indexbuffer, data))
+		return;
+
+	thread_graphics->exports.gs_indexbuffer_flush_direct(indexbuffer, data);
 }
 
 void  *gs_indexbuffer_get_data(const gs_indexbuffer_t *indexbuffer)
