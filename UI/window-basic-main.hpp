@@ -240,7 +240,7 @@ private:
 
 	void Nudge(int dist, MoveDir dir);
 	void OpenProjector(obs_source_t *source, int monitor, bool window,
-			QString title = nullptr);
+			QString title = nullptr, bool multiView = false);
 
 	void GetAudioSourceFilters();
 	void GetAudioSourceProperties();
@@ -473,7 +473,8 @@ private:
 	static void HotkeyTriggered(void *data, obs_hotkey_id id, bool pressed);
 
 public:
-	OBSScene      GetCurrentScene();
+	OBSSource GetProgramSource();
+	OBSScene GetCurrentScene();
 
 	void SysTrayNotify(const QString &text, QSystemTrayIcon::MessageIcon n);
 
@@ -677,10 +678,12 @@ private slots:
 
 	void OpenPreviewProjector();
 	void OpenSourceProjector();
+	void OpenMultiviewProjector();
 	void OpenSceneProjector();
 
 	void OpenPreviewWindow();
 	void OpenSourceWindow();
+	void OpenMultiviewWindow();
 	void OpenSceneWindow();
 
 public slots:

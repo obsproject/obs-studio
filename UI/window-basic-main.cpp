@@ -1883,6 +1883,11 @@ void OBSBasic::SaveProjectDeferred()
 	Save(savePath);
 }
 
+OBSSource OBSBasic::GetProgramSource()
+{
+	return OBSGetStrongRef(programScene);
+}
+
 OBSScene OBSBasic::GetCurrentScene()
 {
 	QListWidgetItem *item = ui->scenes->currentItem();
@@ -3402,6 +3407,7 @@ void OBSBasic::on_scenes_customContextMenuRequested(const QPoint &pos)
 		popup.addMenu(&order);
 
 		popup.addSeparator();
+
 		sceneProjectorMenu = new QMenu(QTStr("SceneProjector"));
 		AddProjectorMenuMonitors(sceneProjectorMenu, this,
 				SLOT(OpenSceneProjector()));
@@ -3659,6 +3665,7 @@ void OBSBasic::CreateSourcePopupMenu(QListWidgetItem *item, bool preview)
 	QMenu popup(this);
 	QPointer<QMenu> previewProjector;
 	QPointer<QMenu> sourceProjector;
+	QPointer<QMenu> multiviewProjectorMenu;
 
 	if (preview) {
 		QAction *action = popup.addAction(
@@ -3672,6 +3679,20 @@ void OBSBasic::CreateSourcePopupMenu(QListWidgetItem *item, bool preview)
 
 		popup.addAction(ui->actionLockPreview);
 		popup.addMenu(ui->scalingMenu);
+
+		if (IsPreviewProgramMode()) {
+			multiviewProjectorMenu = new QMenu(
+					"Multiview Projector");
+			AddProjectorMenuMonitors(multiviewProjectorMenu, this,
+					SLOT(OpenMultiviewProjector()));
+			popup.addMenu(multiviewProjectorMenu);
+
+			QAction *multiviewWindow = popup.addAction(
+					"Multiview Windowed",
+					this, SLOT(OpenMultiviewWindow()));
+
+			popup.addAction(multiviewWindow);
+		}
 
 		previewProjector = new QMenu(QTStr("PreviewProjector"));
 		AddProjectorMenuMonitors(previewProjector, this,
@@ -5336,7 +5357,7 @@ void OBSBasic::NudgeLeft()     {Nudge(1,  MoveDir::Left);}
 void OBSBasic::NudgeRight()    {Nudge(1,  MoveDir::Right);}
 
 void OBSBasic::OpenProjector(obs_source_t *source, int monitor, bool window,
-		QString title)
+		QString title, bool multiView)
 {
 	/* seriously?  10 monitors? */
 	if (monitor > 9 || monitor > QGuiApplication::screens().size() - 1)
@@ -5365,10 +5386,10 @@ void OBSBasic::OpenProjector(obs_source_t *source, int monitor, bool window,
 	}
 
 	if (!window) {
-		projector->Init(monitor, false, nullptr);
+		projector->Init(monitor, false, nullptr, multiView);
 		projectors[monitor] = projector;
 	} else {
-		projector->Init(monitor, true, title);
+		projector->Init(monitor, true, title, multiView);
 
 		for (auto &projPtr : windowProjectors) {
 			if (!projPtr) {
@@ -5396,6 +5417,12 @@ void OBSBasic::OpenSourceProjector()
 		return;
 
 	OpenProjector(obs_sceneitem_get_source(item), monitor, false);
+}
+
+void OBSBasic::OpenMultiviewProjector()
+{
+	int monitor = sender()->property("monitor").toInt();
+	OpenProjector(nullptr, monitor, false, nullptr, true);
 }
 
 void OBSBasic::OpenSceneProjector()
@@ -5428,6 +5455,12 @@ void OBSBasic::OpenSourceWindow()
 		return;
 
 	OpenProjector(obs_sceneitem_get_source(item), monitor, true, title);
+}
+
+void OBSBasic::OpenMultiviewWindow()
+{
+	int monitor = sender()->property("monitor").toInt();
+	OpenProjector(nullptr, monitor, true, "Multiview", true);
 }
 
 void OBSBasic::OpenSceneWindow()
