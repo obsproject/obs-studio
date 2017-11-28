@@ -237,7 +237,11 @@ static void build_command_line(struct ffmpeg_muxer *stream, struct dstr *cmd,
 		num_tracks++;
 	}
 
+#ifdef FFMPEG_MUX_FIXED
+	dstr_init_copy(cmd, FFMPEG_MUX_FIXED);
+#else
 	dstr_init_move_array(cmd, obs_module_file(FFMPEG_MUX));
+#endif
 	dstr_insert_ch(cmd, 0, '\"');
 	dstr_cat(cmd, "\" \"");
 
