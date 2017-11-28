@@ -251,11 +251,11 @@ void OBSBasic::TransitionToScene(OBSSource source, bool force, bool direct)
 
 	OBSWeakSource lastProgramScene;
 	
-	if (usingPreviewProgram && !direct) {
+	if (usingPreviewProgram) {
 		lastProgramScene = programScene;
 		programScene = OBSGetWeakRef(source);
 
-		if (swapScenesMode && !force) {
+		if (swapScenesMode && !force && !direct) {
 			OBSSource newScene = OBSGetStrongRef(lastProgramScene);
 
 			if (!sceneDuplicationMode && newScene == source)
