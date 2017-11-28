@@ -165,6 +165,7 @@ struct DShowInput {
 	Device       device;
 	bool         deactivateWhenNotShowing = false;
 	bool         deviceHasAudio = false;
+	bool         deviceHasSeparateAudioFilter = false;
 	bool         flip = false;
 	bool         active = false;
 
@@ -845,6 +846,7 @@ bool DShowInput::UpdateVideoConfig(obs_data_t *settings)
 	videoConfig.internalFormat   = format;
 
 	deviceHasAudio = dev.audioAttached;
+	deviceHasSeparateAudioFilter = dev.separateAudioFilter;
 
 	videoConfig.callback = std::bind(&DShowInput::OnVideoData, this,
 			placeholders::_1, placeholders::_2,
@@ -921,7 +923,8 @@ bool DShowInput::UpdateAudioConfig(obs_data_t *settings)
 		return true;
 	}
 
-	audioConfig.useVideoDevice = !useCustomAudio;
+	audioConfig.useVideoDevice = !useCustomAudio && !deviceHasSeparateAudioFilter;
+	audioConfig.useSeparateAudioFilter = deviceHasSeparateAudioFilter;
 
 	audioConfig.callback = std::bind(&DShowInput::OnAudioData, this,
 			placeholders::_1, placeholders::_2,
@@ -942,8 +945,12 @@ bool DShowInput::UpdateAudioConfig(obs_data_t *settings)
 	blog(LOG_INFO, "\tusing video device audio: %s",
 			audioConfig.useVideoDevice ? "yes" : "no");
 
-	if (!audioConfig.useVideoDevice)
-		blog(LOG_INFO, "\taudio device: %s", (const char*)name_utf8);
+	if (!audioConfig.useVideoDevice) {
+		if (audioConfig.useSeparateAudioFilter)
+			blog(LOG_INFO, "\tseparate audio filter");
+		else
+			blog(LOG_INFO, "\taudio device: %s", (const char*)name_utf8);
+	}
 
 	const char *mode = "";
 
