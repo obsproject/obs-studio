@@ -1016,6 +1016,7 @@ void OBSBasic::SetPreviewProgramMode(bool enabled)
 
 		ui->previewLayout->addWidget(programOptions);
 		ui->previewLayout->addWidget(program);
+		ui->previewLayout->setAlignment(programOptions, Qt::AlignCenter);
 		program->show();
 
 		if (api)
@@ -1059,6 +1060,7 @@ void OBSBasic::SetPreviewProgramMode(bool enabled)
 				"-------------------");
 	}
 
+	ResetUI();
 	UpdateTitleBar();
 }
 

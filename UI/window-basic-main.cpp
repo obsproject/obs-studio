@@ -1135,6 +1135,9 @@ bool OBSBasic::InitBasicConfigDefaults()
 	config_set_default_bool  (basicConfig, "Output", "LowLatencyEnable",
 			false);
 
+	config_set_default_bool  (basicConfig, "UI",
+			"EnableStudioPortraitLayout", false);
+
 	int i = 0;
 	uint32_t scale_cx = cx;
 	uint32_t scale_cy = cy;
@@ -2984,6 +2987,17 @@ static inline enum video_format GetVideoFormatFromName(const char *name)
 #endif
 	else
 		return VIDEO_FORMAT_RGBA;
+}
+
+void OBSBasic::ResetUI()
+{
+	bool enableStudioPortraitLayout = config_get_bool(GetGlobalConfig(),
+			"BasicWindow", "EnableStudioPortraitLayout");
+
+	if (enableStudioPortraitLayout)
+		ui->previewLayout->setDirection(QBoxLayout::TopToBottom);
+	else
+		ui->previewLayout->setDirection(QBoxLayout::LeftToRight);
 }
 
 int OBSBasic::ResetVideo()

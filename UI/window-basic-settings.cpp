@@ -438,6 +438,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->bindToIP,             COMBO_CHANGED,  ADV_CHANGED);
 	HookWidget(ui->enableNewSocketLoop,  CHECK_CHANGED,  ADV_CHANGED);
 	HookWidget(ui->enableLowLatencyMode, CHECK_CHANGED,  ADV_CHANGED);
+	HookWidget(ui->enableStudioPortraitLayout, CHECK_CHANGED, ADV_CHANGED);
 
 #if !defined(_WIN32) && !defined(__APPLE__) && !HAVE_PULSEAUDIO
 	delete ui->enableAutoUpdates;
@@ -2221,6 +2222,8 @@ void OBSBasicSettings::LoadAdvancedSettings()
 			"NewSocketLoopEnable");
 	bool enableLowLatencyMode = config_get_bool(main->Config(), "Output",
 			"LowLatencyEnable");
+	bool enableStudioPortraitLayout = config_get_bool(GetGlobalConfig(),
+			"BasicWindow", "EnableStudioPortraitLayout");
 
 	int idx = ui->processPriority->findData(processPriority);
 	if (idx == -1)
@@ -2229,6 +2232,7 @@ void OBSBasicSettings::LoadAdvancedSettings()
 
 	ui->enableNewSocketLoop->setChecked(enableNewSocketLoop);
 	ui->enableLowLatencyMode->setChecked(enableLowLatencyMode);
+	ui->enableStudioPortraitLayout->setChecked(enableStudioPortraitLayout);
 #endif
 
 	loading = false;
@@ -2722,6 +2726,14 @@ void OBSBasicSettings::SaveAdvancedSettings()
 
 	SaveCheckBox(ui->enableNewSocketLoop, "Output", "NewSocketLoopEnable");
 	SaveCheckBox(ui->enableLowLatencyMode, "Output", "LowLatencyEnable");
+
+	if (WidgetChanged(ui->enableStudioPortraitLayout)) {
+		config_set_bool(GetGlobalConfig(), "BasicWindow",
+				"EnableStudioPortraitLayout",
+				ui->enableStudioPortraitLayout->isChecked());
+
+		main->ResetUI();
+	}
 #endif
 
 #ifdef __APPLE__
