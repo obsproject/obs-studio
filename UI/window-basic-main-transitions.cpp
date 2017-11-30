@@ -110,7 +110,7 @@ void OBSBasic::TriggerQuickTransition(int id)
 		if (GetCurrentTransition() != qt->source)
 			SetTransition(qt->source);
 
-		TransitionToScene(source);
+		TransitionToScene(source, false, false, true);
 	}
 }
 
@@ -271,7 +271,8 @@ void OBSBasic::TransitionFullyStopped()
 	}
 }
 
-void OBSBasic::TransitionToScene(OBSSource source, bool force, bool direct)
+void OBSBasic::TransitionToScene(OBSSource source, bool force, bool direct,
+		bool quickTransition)
 {
 	obs_scene_t *scene = obs_scene_from_source(source);
 	bool usingPreviewProgram = IsPreviewProgramMode();
@@ -319,7 +320,7 @@ void OBSBasic::TransitionToScene(OBSSource source, bool force, bool direct)
 				"transition");
 		int duration = ui->transitionDuration->value();
 
-		if (trOverrideName && *trOverrideName) {
+		if (trOverrideName && *trOverrideName && !quickTransition) {
 			OBSSource trOverride = FindTransition(trOverrideName);
 			if (trOverride) {
 				transition = trOverride;
