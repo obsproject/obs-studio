@@ -121,18 +121,20 @@ void OBSProjector::OBSRender(void *data, uint32_t cx, uint32_t cy)
 	gs_ortho(0.0f, float(targetCX), 0.0f, float(targetCY), -100.0f, 100.0f);
 	gs_set_viewport(x, y, newCX, newCY);
 
+	OBSSource source = window->source;
+
 	if (!window->useStudioProgram && main->IsPreviewProgramMode()) {
 		OBSSource curSource = main->GetCurrentSceneSource();
 
 		if (window->source != curSource) {
 			obs_source_dec_showing(window->source);
 			obs_source_inc_showing(curSource);
-			window->source = curSource;
+			source = curSource;
 		}
 	}
 
-	if (window->source) {
-		obs_source_video_render(window->source);
+	if (source) {
+		obs_source_video_render(source);
 	} else {
 		obs_render_main_view();
 	}
