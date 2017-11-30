@@ -468,6 +468,8 @@ obs_source_t *obs_source_duplicate(obs_source_t *source,
 	new_source->muted = source->muted;
 	new_source->flags = source->flags;
 
+	obs_data_apply(new_source->private_settings, source->private_settings);
+
 	if (source->info.type != OBS_SOURCE_TYPE_FILTER)
 		duplicate_filters(new_source, source, create_private);
 
