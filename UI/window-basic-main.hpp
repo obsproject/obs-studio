@@ -395,7 +395,7 @@ public slots:
 	void TransitionToScene(OBSScene scene, bool force = false,
 			bool direct = false);
 	void TransitionToScene(OBSSource scene, bool force = false,
-			bool direct = false);
+			bool direct = false, bool quickTransition = false);
 	void SetCurrentScene(OBSSource scene, bool force = false,
 			bool direct = false);
 
