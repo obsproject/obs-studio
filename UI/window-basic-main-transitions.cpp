@@ -335,8 +335,10 @@ void OBSBasic::TransitionToScene(OBSSource source, bool force, bool direct,
 			}
 		}
 
-		obs_transition_start(transition, OBS_TRANSITION_MODE_AUTO,
-				duration, source);
+		bool success = obs_transition_start(transition,
+				OBS_TRANSITION_MODE_AUTO, duration, source);
+		if (!success)
+			TransitionFullyStopped();
 	}
 
 	if (usingPreviewProgram && sceneDuplicationMode && !direct)
@@ -1164,7 +1166,7 @@ void OBSBasic::SetPreviewProgramMode(bool enabled)
 		if (!actualProgramScene)
 			actualProgramScene = GetCurrentSceneSource();
 		else
-			SetCurrentScene(actualProgramScene);
+			SetCurrentScene(actualProgramScene, true);
 		TransitionToScene(actualProgramScene, true);
 
 		delete programOptions;
