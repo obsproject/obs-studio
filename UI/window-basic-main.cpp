@@ -139,7 +139,7 @@ OBSBasic::OBSBasic(QWidget *parent)
 
 	projectorArray.resize(10, "");
 	previewProjectorArray.resize(10, 0);
-	studioProgramProjectorArray.resize(10, "");
+	studioProgramProjectorArray.resize(10, 0);
 
 	setAcceptDrops(true);
 
@@ -459,8 +459,8 @@ obs_data_array_t *OBSBasic::SaveStudioProgramProjectors()
 
 	for (size_t i = 0; i < studioProgramProjectorArray.size(); i++) {
 		obs_data_t *data = obs_data_create();
-		obs_data_set_string(data, "saved_studio_preview_projectors",
-			studioProgramProjectorArray.at(i).c_str());
+		obs_data_set_int(data, "saved_studio_preview_projectors",
+			studioProgramProjectorArray.at(i));
 		obs_data_array_push_back(saveProjector, data);
 		obs_data_release(data);
 	}
@@ -646,7 +646,7 @@ void OBSBasic::LoadSavedStudioProgramProjectors(obs_data_array_t *array)
 
 	for (size_t i = 0; i < num; i++) {
 		obs_data_t *data = obs_data_array_item(array, i);
-		studioProgramProjectorArray.at(i) = obs_data_get_string(data,
+		studioProgramProjectorArray.at(i) = obs_data_get_int(data,
 				"saved_studio_preview_projectors");
 
 		obs_data_release(data);
@@ -5442,7 +5442,7 @@ void OBSBasic::OpenProjector(obs_source_t *source, int monitor, bool window,
 
 	if (!window) {
 		if (studioProgram) {
-			studioProgramProjectorArray.at((size_t)monitor) = name;
+			studioProgramProjectorArray.at((size_t)monitor) = 1;
 		} else if (isPreview) {
 			previewProjectorArray.at((size_t)monitor) = 1;
 		} else {
@@ -5471,11 +5471,7 @@ void OBSBasic::OpenProjector(obs_source_t *source, int monitor, bool window,
 void OBSBasic::OpenStudioProgramProjector()
 {
 	int monitor = sender()->property("monitor").toInt();
-	obs_source_t *source = GetCurrentSceneSource();
-	if (!source)
-		return;
-
-	OpenProjector(source, monitor, false, nullptr, true);
+	OpenProjector(nullptr, monitor, false, nullptr, true);
 }
 
 void OBSBasic::OpenPreviewProjector()
@@ -5508,11 +5504,7 @@ void OBSBasic::OpenStudioProgramWindow()
 {
 	int monitor = sender()->property("monitor").toInt();
 	QString title = QTStr("StudioProgramWindow");
-	obs_source_t *source = GetCurrentSceneSource();
-	if (!source)
-		return;
-
-	OpenProjector(source, monitor, true, title, true);
+	OpenProjector(nullptr, monitor, true, title, true);
 }
 
 void OBSBasic::OpenPreviewWindow()
@@ -5575,18 +5567,9 @@ void OBSBasic::OpenSavedProjectors()
 		}
 
 		for (size_t i = 0; i < studioProgramProjectorArray.size(); i++) {
-			if (studioProgramProjectorArray.at(i).empty() == false) {
-				OBSSource source = obs_get_source_by_name(
-					studioProgramProjectorArray.at(i).c_str());
-
-				if (!source) {
-					RemoveSavedProjectors((int)i);
-					obs_source_release(source);
-					continue;
-				}
-
-				OpenProjector(source, (int)i, false, nullptr, true);
-				obs_source_release(source);
+			if (studioProgramProjectorArray.at(i) == 1) {
+				OpenProjector(nullptr, (int)i, false, nullptr,
+						true);
 			}
 		}
 
@@ -5600,7 +5583,7 @@ void OBSBasic::OpenSavedProjectors()
 
 void OBSBasic::RemoveSavedProjectors(int monitor)
 {
-	studioProgramProjectorArray.at((size_t)monitor) = "";
+	studioProgramProjectorArray.at((size_t)monitor) = 0;
 	previewProjectorArray.at((size_t)monitor) = 0;
 	projectorArray.at((size_t)monitor) = "";
 }
