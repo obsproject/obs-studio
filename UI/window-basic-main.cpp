@@ -3470,6 +3470,11 @@ void OBSBasic::on_scenes_customContextMenuRequested(const QPoint &pos)
 		popup.addSeparator();
 		popup.addAction(QTStr("Filters"), this,
 				SLOT(OpenSceneFilters()));
+
+		popup.addSeparator();
+
+		QMenu *transitionMenu = CreatePerSceneTransitionMenu();
+		popup.addMenu(transitionMenu);
 	}
 
 	popup.exec(QCursor::pos());
