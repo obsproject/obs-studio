@@ -5503,14 +5503,18 @@ void OBSBasic::OpenSceneProjector()
 void OBSBasic::OpenStudioProgramWindow()
 {
 	int monitor = sender()->property("monitor").toInt();
-	QString title = QTStr("StudioProgramWindow");
+	//by user's side it's just Preview Window
+	QString title = QTStr("PreviewWindow");
 	OpenProjector(nullptr, monitor, true, title, true);
 }
 
 void OBSBasic::OpenPreviewWindow()
 {
 	int monitor = sender()->property("monitor").toInt();
-	QString title = QTStr("PreviewWindow");
+	//in program mode swap the titles
+	QString title = QTStr(IsPreviewProgramMode()
+			      ? "StudioProgramWindow"
+			      : "PreviewWindow");
 	OpenProjector(nullptr, monitor, true, title);
 }
 
