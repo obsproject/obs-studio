@@ -73,12 +73,6 @@ void OBSProjector::Init(int monitor, bool window, QString title,
 
 	show();
 
-	if (studioProgram && !source) {
-		OBSBasic *main =
-			reinterpret_cast<OBSBasic*>(App()->GetMainWindow());
-		source = main->GetCurrentSceneSource();
-	}
-
 	if (source)
 		obs_source_inc_showing(source);
 
@@ -99,6 +93,7 @@ void OBSProjector::Init(int monitor, bool window, QString title,
 void OBSProjector::OBSRender(void *data, uint32_t cx, uint32_t cy)
 {
 	OBSProjector *window = reinterpret_cast<OBSProjector*>(data);
+	OBSBasic *main = reinterpret_cast<OBSBasic*>(App()->GetMainWindow());
 
 	uint32_t targetCX;
 	uint32_t targetCY;
@@ -126,14 +121,10 @@ void OBSProjector::OBSRender(void *data, uint32_t cx, uint32_t cy)
 	gs_ortho(0.0f, float(targetCX), 0.0f, float(targetCY), -100.0f, 100.0f);
 	gs_set_viewport(x, y, newCX, newCY);
 
-	if (window->useStudioProgram) {
-		OBSBasic *main =
-			reinterpret_cast<OBSBasic*>(App()->GetMainWindow());
+	if (!window->useStudioProgram && main->IsPreviewProgramMode()) {
 		OBSSource curSource = main->GetCurrentSceneSource();
 
 		if (window->source != curSource) {
-			blog(LOG_INFO, "new scene for studio preview projector: '%s'",
-					obs_source_get_name(curSource));
 			obs_source_dec_showing(window->source);
 			obs_source_inc_showing(curSource);
 			window->source = curSource;

@@ -327,11 +327,6 @@ private:
 
 	int disableOutputsRef = 0;
 
-	inline bool IsPreviewProgramMode() const
-	{
-		return os_atomic_load_bool(&previewProgramMode);
-	}
-
 	inline void OnActivate();
 	inline void OnDeactivate();
 
@@ -494,6 +489,11 @@ public:
 
 	obs_service_t *GetService();
 	void          SetService(obs_service_t *service);
+
+	inline bool IsPreviewProgramMode() const
+	{
+		return os_atomic_load_bool(&previewProgramMode);
+	}
 
 	bool StreamingActive() const;
 	bool Active() const;

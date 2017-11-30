@@ -3733,23 +3733,15 @@ void OBSBasic::CreateSourcePopupMenu(QListWidgetItem *item, bool preview)
 		popup.addAction(ui->actionLockPreview);
 		popup.addMenu(ui->scalingMenu);
 
-		const char *slot = IsPreviewProgramMode()
-			? SLOT(OpenStudioProgramProjector())
-			: SLOT(OpenPreviewProjector());
-
 		previewProjector = new QMenu(QTStr("PreviewProjector"));
 		AddProjectorMenuMonitors(previewProjector, this,
-				slot);
+				SLOT(OpenPreviewProjector()));
 
 		popup.addMenu(previewProjector);
 
-		slot = IsPreviewProgramMode()
-			? SLOT(OpenStudioProgramWindow())
-			: SLOT(OpenPreviewWindow());
-
 		QAction *previewWindow = popup.addAction(
 				QTStr("PreviewWindow"),
-				this, slot);
+				this, SLOT(OpenPreviewWindow()));
 
 		popup.addAction(previewWindow);
 
@@ -4951,13 +4943,13 @@ void OBSBasic::on_program_customContextMenuRequested(const QPoint&)
 	studioProgramProjector = new QMenu(
 			QTStr("StudioProgramProjector"));
 	AddProjectorMenuMonitors(studioProgramProjector, this,
-			SLOT(OpenPreviewProjector()));
+			SLOT(OpenStudioProgramProjector()));
 
 	popup.addMenu(studioProgramProjector);
 
 	QAction *studioProgramWindow = popup.addAction(
 			QTStr("StudioProgramWindow"),
-			this, SLOT(OpenPreviewWindow()));
+			this, SLOT(OpenStudioProgramWindow()));
 
 	popup.addAction(studioProgramWindow);
 
