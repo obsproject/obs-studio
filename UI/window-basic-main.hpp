@@ -289,6 +289,8 @@ private:
 	void RefreshQuickTransitions();
 	void CreateDefaultQuickTransitions();
 
+	QMenu *CreatePerSceneTransitionMenu();
+
 	QuickTransition *GetQuickTransition(int id);
 	int GetQuickTransitionIdx(int id);
 	QMenu *CreateTransitionMenu(QWidget *parent, QuickTransition *qt);
@@ -317,6 +319,7 @@ private:
 	obs_hotkey_id togglePreviewProgramHotkey = 0;
 	obs_hotkey_id transitionHotkey = 0;
 	int quickTransitionIdCounter = 1;
+	bool overridingTransition = false;
 
 	int   programX = 0,  programY = 0;
 	int   programCX = 0, programCY = 0;
@@ -427,6 +430,7 @@ private slots:
 	void RenameTransition();
 	void TransitionClicked();
 	void TransitionStopped();
+	void TransitionFullyStopped();
 	void TriggerQuickTransition(int id);
 
 	void SetDeinterlacingMode();
