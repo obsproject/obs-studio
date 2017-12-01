@@ -48,7 +48,7 @@ security set-keychain-settings -t 3600 -u build.keychain
 hr "Importing certs into keychain"
 security import ./Certificates.p12 -k build.keychain -T /usr/bin/productsign -P ""
 hr "Signing Package"
-productsign --sign 'Developer ID Installer: Hugh Bailey (2MMRE5MTB8)' ./OBS.pkg ./$FILENAME
+productsign --sign 2MMRE5MTB8 ./OBS.pkg ./$FILENAME
 
 # Move to the folder that travis uses to upload artifacts from
 hr "Moving package to nightly folder for distribution"
