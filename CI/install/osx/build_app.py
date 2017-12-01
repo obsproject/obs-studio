@@ -86,7 +86,7 @@ for i in candidate_paths:
 			try:
 				out = check_output("{0}otool -L '{1}'".format(args.prefix, path), shell=True,
 						universal_newlines=True)
-				if "is not an object file" in out:
+				if "The file was not recognized as a valid object file" in out:
 					continue
 			except:
 				continue
