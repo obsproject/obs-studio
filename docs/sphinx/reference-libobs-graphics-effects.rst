@@ -288,6 +288,16 @@ HLSL format.
 
 ---------------------
 
+.. function:: void gs_effect_set_color(gs_eparam_t *param, uint32_t argb)
+
+   Convenience function for setting a color value via an integer value.
+
+   :param param: Effect parameter
+   :param argb:  Integer color value (i.e. hex value would be
+                 0xAARRGGBB)
+
+---------------------
+
 .. function:: void gs_effect_set_texture(gs_eparam_t *param, gs_texture_t *val)
 
    Sets a texture parameter.

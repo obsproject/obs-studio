@@ -398,6 +398,8 @@ EXPORT void gs_effect_set_default(gs_eparam_t *param);
 EXPORT void gs_effect_set_next_sampler(gs_eparam_t *param,
 		gs_samplerstate_t *sampler);
 
+EXPORT void gs_effect_set_color(gs_eparam_t *param, uint32_t argb);
+
 /* ---------------------------------------------------
  * texture render helper functions
  * --------------------------------------------------- */
