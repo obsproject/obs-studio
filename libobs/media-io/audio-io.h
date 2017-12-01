@@ -56,7 +56,7 @@ enum speaker_layout {
 	SPEAKERS_MONO,
 	SPEAKERS_STEREO,
 	SPEAKERS_2POINT1,
-	SPEAKERS_QUAD,
+	SPEAKERS_4POINT0,
 	SPEAKERS_4POINT1,
 	SPEAKERS_5POINT1,
 	SPEAKERS_7POINT1=8,
@@ -99,7 +99,7 @@ static inline uint32_t get_audio_channels(enum speaker_layout speakers)
 	case SPEAKERS_MONO:             return 1;
 	case SPEAKERS_STEREO:           return 2;
 	case SPEAKERS_2POINT1:          return 3;
-	case SPEAKERS_QUAD:             return 4;
+	case SPEAKERS_4POINT0:          return 4;
 	case SPEAKERS_4POINT1:          return 5;
 	case SPEAKERS_5POINT1:          return 6;
 	case SPEAKERS_7POINT1:          return 8;

@@ -1390,7 +1390,7 @@ static inline bool IsSurround(const char *speakers)
 {
 	static const char *surroundLayouts[] = {
 		"2.1",
-		"4.0 Quad",
+		"4.0",
 		"4.1",
 		"5.1",
 		"7.1",
@@ -2109,7 +2109,7 @@ void OBSBasicSettings::LoadAudioSettings()
 		ui->channelSetup->setCurrentIndex(0);
 	else if (strcmp(speakers, "2.1") == 0)
 		ui->channelSetup->setCurrentIndex(2);
-	else if (strcmp(speakers, "4.0 Quad") == 0)
+	else if (strcmp(speakers, "4.0") == 0)
 		ui->channelSetup->setCurrentIndex(3);
 	else if (strcmp(speakers, "4.1") == 0)
 		ui->channelSetup->setCurrentIndex(4);
@@ -3015,7 +3015,7 @@ void OBSBasicSettings::SaveAudioSettings()
 		channelSetup = "2.1";
 		break;
 	case 3:
-		channelSetup = "4.0 Quad";
+		channelSetup = "4.0";
 		break;
 	case 4:
 		channelSetup = "4.1";
