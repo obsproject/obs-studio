@@ -133,7 +133,22 @@ static bool nvenc_supported(void)
 #else
 	lib = os_dlopen("libnvidia-encode.so.1");
 #endif
+
+	AVCodecContext *context = avcodec_alloc_context3(nvenc);
+	if (!context)
+		return false;
+
+	context->bit_rate = 5000;
+	context->width = 640;
+	context->height = 480;
+	context->time_base = (AVRational) { 1, 25 };
+	context->pix_fmt = AV_PIX_FMT_YUV420P;
+
+	if (avcodec_open2(context, nvenc, NULL) < 0)
+		return false;
+
 	os_dlclose(lib);
+	avcodec_free_context(&context);
 	return !!lib;
 }
 
