@@ -51,6 +51,7 @@ struct ffmpeg_source {
 
 	char *input;
 	char *input_format;
+	char *input_options;
 	int buffering_mb;
 	bool is_looping;
 	bool is_local_file;
@@ -70,6 +71,8 @@ static bool is_local_file_modified(obs_properties_t *props,
 	obs_property_t *input = obs_properties_get(props, "input");
 	obs_property_t *input_format =obs_properties_get(props,
 			"input_format");
+	obs_property_t *input_options = obs_properties_get(props,
+			"input_options");
 	obs_property_t *local_file = obs_properties_get(props, "local_file");
 	obs_property_t *looping = obs_properties_get(props, "looping");
 	obs_property_t *buffering = obs_properties_get(props, "buffering_mb");
@@ -160,6 +163,9 @@ static obs_properties_t *ffmpeg_source_getproperties(void *data)
 	obs_properties_add_text(props, "input_format",
 			obs_module_text("InputFormat"), OBS_TEXT_DEFAULT);
 
+	obs_properties_add_text(props, "input_options",
+			obs_module_text("InputOptions"), OBS_TEXT_DEFAULT);
+
 #ifndef __APPLE__
 	obs_properties_add_bool(props, "hw_decode",
 			obs_module_text("HardwareDecode"));
@@ -190,12 +196,13 @@ static obs_properties_t *ffmpeg_source_getproperties(void *data)
 }
 
 static void dump_source_info(struct ffmpeg_source *s, const char *input,
-		const char *input_format)
+		const char *input_format, const char *input_options)
 {
 	FF_BLOG(LOG_INFO,
 			"settings:\n"
 			"\tinput:                   %s\n"
 			"\tinput_format:            %s\n"
+			"\tinput_options:           %s\n"
 			"\tis_looping:              %s\n"
 			"\tis_hw_decoding:          %s\n"
 			"\tis_clear_on_media_end:   %s\n"
@@ -203,6 +210,7 @@ static void dump_source_info(struct ffmpeg_source *s, const char *input,
 			"\tclose_when_inactive:     %s",
 			input ? input : "(null)",
 			input_format ? input_format : "(null)",
+			input_options ? input_options : "(null)",
 			s->is_looping ? "yes" : "no",
 			s->is_hw_decoding ? "yes" : "no",
 			s->is_clear_on_media_end ? "yes" : "no",
@@ -247,7 +255,7 @@ static void ffmpeg_source_open(struct ffmpeg_source *s)
 	if (s->input && *s->input)
 		s->media_valid = mp_media_init(&s->media,
 				s->input, s->input_format,
-				s->buffering_mb * 1024 * 1024,
+				s->buffering_mb * 1024 * 1024, s->input_options,
 				s, get_frame, get_audio, media_stopped,
 				preload_frame,
 				s->is_hw_decoding,
@@ -289,9 +297,11 @@ static void ffmpeg_source_update(void *data, obs_data_t *settings)
 
 	char *input;
 	char *input_format;
+	char *input_options;
 
 	bfree(s->input);
 	bfree(s->input_format);
+	bfree(s->input_options);
 
 	if (is_local_file) {
 		input = (char *)obs_data_get_string(settings, "local_file");
@@ -310,9 +320,12 @@ static void ffmpeg_source_update(void *data, obs_data_t *settings)
 
 		obs_source_set_async_unbuffered(s->source, false);
 	}
+	input_options = (char *)obs_data_get_string(settings,
+			"input_options");
 
 	s->input = input ? bstrdup(input) : NULL;
 	s->input_format = input_format ? bstrdup(input_format) : NULL;
+	s->input_options = input_options ? bstrdup(input_options) : NULL;
 #ifndef __APPLE__
 	s->is_hw_decoding = obs_data_get_bool(settings, "hw_decode");
 #endif
@@ -335,7 +348,7 @@ static void ffmpeg_source_update(void *data, obs_data_t *settings)
 	if (!s->close_when_inactive || active)
 		ffmpeg_source_open(s);
 
-	dump_source_info(s, input, input_format);
+	dump_source_info(s, input, input_format, input_options);
 	if (!s->restart_on_activate || active)
 		ffmpeg_source_start(s);
 }
@@ -448,6 +461,7 @@ static void ffmpeg_source_destroy(void *data)
 	bfree(s->sws_data);
 	bfree(s->input);
 	bfree(s->input_format);
+	bfree(s->input_options);
 	bfree(s);
 }
 

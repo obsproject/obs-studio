@@ -54,6 +54,7 @@ struct mp_media {
 	char *path;
 	char *format_name;
 	int buffering;
+	char *input_options;
 
 	enum AVPixelFormat scale_format;
 	struct SwsContext *swscale;
@@ -100,6 +101,7 @@ extern bool mp_media_init(mp_media_t *media,
 		const char *path,
 		const char *format,
 		int buffering,
+		char *input_options,
 		void *opaque,
 		mp_video_cb v_cb,
 		mp_audio_cb a_cb,
