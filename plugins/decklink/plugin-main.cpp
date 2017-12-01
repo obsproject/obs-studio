@@ -157,7 +157,7 @@ static bool decklink_device_changed(obs_properties_t *props,
 
 		if (device->GetMaxChannel() >= 8) {
 			obs_property_list_add_int(channelList, TEXT_CHANNEL_FORMAT_4_0CH,
-					SPEAKERS_QUAD);
+					SPEAKERS_4POINT0);
 			obs_property_list_add_int(channelList, TEXT_CHANNEL_FORMAT_5_1CH,
 					SPEAKERS_5POINT1);
 			obs_property_list_add_int(channelList, TEXT_CHANNEL_FORMAT_7_1CH,
@@ -258,7 +258,7 @@ static obs_properties_t *decklink_get_properties(void *data)
 	obs_property_list_add_int(list, TEXT_CHANNEL_FORMAT_2_1CH,
 			SPEAKERS_2POINT1);
 	obs_property_list_add_int(list, TEXT_CHANNEL_FORMAT_4_0CH,
-			SPEAKERS_QUAD);
+			SPEAKERS_4POINT0);
 	obs_property_list_add_int(list, TEXT_CHANNEL_FORMAT_4_1CH,
 			SPEAKERS_4POINT1);
 	obs_property_list_add_int(list, TEXT_CHANNEL_FORMAT_5_1CH,

@@ -106,7 +106,7 @@ static bool build_flv_meta_data(obs_output_t *context,
 			audio_output_get_channels(audio) == 3);
 	enc_bool_val(&enc, end, "3.1",
 			audio_output_get_channels(audio) == 4);
-	enc_bool_val(&enc, end, "4.0 Quad",
+	enc_bool_val(&enc, end, "4.0",
 			audio_output_get_channels(audio) == 4);
 	enc_bool_val(&enc, end, "4.1",
 			audio_output_get_channels(audio) == 5);

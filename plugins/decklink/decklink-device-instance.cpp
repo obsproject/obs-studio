@@ -31,7 +31,7 @@ static inline int ConvertChannelFormat(speaker_layout format)
 {
 	switch (format) {
 	case SPEAKERS_2POINT1:
-	case SPEAKERS_QUAD:
+	case SPEAKERS_4POINT0:
 	case SPEAKERS_4POINT1:
 	case SPEAKERS_5POINT1:
 	case SPEAKERS_7POINT1:
@@ -46,7 +46,7 @@ static inline int ConvertChannelFormat(speaker_layout format)
 static inline audio_repack_mode_t ConvertRepackFormat(speaker_layout format)
 {
 	switch (format) {
-	case SPEAKERS_QUAD:
+	case SPEAKERS_4POINT0:
 		return repack_mode_8to4ch_swap23;
 	case SPEAKERS_4POINT1:
 		return repack_mode_8to5ch_swap23;
