@@ -188,7 +188,8 @@ static obs_properties_t *ffmpeg_source_getproperties(void *data)
 
 	obs_properties_add_bool(props, "seekable", obs_module_text("Seekable"));
 
-	obs_properties_add_int_slider(props, "speed_percentage", obs_module_text("SpeedPercentage"), 1, 10000, 1);
+	obs_properties_add_int_slider(props, "speed_percentage",
+		obs_module_text("SpeedPercentage"), 1, 10000, 1);
 
 	return props;
 }
@@ -330,7 +331,8 @@ static void ffmpeg_source_update(void *data, obs_data_t *settings)
 	s->buffering_mb = (int)obs_data_get_int(settings, "buffering_mb");
 	s->is_local_file = is_local_file;
 	s->seekable = obs_data_get_bool(settings, "seekable");
-	s->speed_percentage = (int)obs_data_get_int(settings, "speed_percentage");
+	s->speed_percentage = (int)obs_data_get_int(settings,
+			"speed_percentage");
 
 	if (s->media_valid) {
 		mp_media_free(&s->media);
