@@ -84,10 +84,9 @@ for i in candidate_paths:
 		for file_ in files:
 			path = root + "/" + file_
 			try:
-				out = check_output("{0}otool -L '{1}'".format(args.prefix, path),
-						stderr=subprocess.STDOUT, shell=True,
+				out = check_output("{0}otool -L '{1}'".format(args.prefix, path), shell=True,
 						universal_newlines=True)
-				if "The file was not recognized as a valid object file" in out:
+				if "is not an object file" in out:
 					continue
 			except:
 				continue
