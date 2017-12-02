@@ -24,7 +24,7 @@ static AVCodec *find_hardware_decoder(enum AVCodecID id)
 
 	while (hwa) {
 		if (hwa->id == id) {
-			if (hwa->pix_fmt == AV_PIX_FMT_VIDEOTOOLBOX ||
+			if (hwa->pix_fmt == AV_PIX_FMT_VDTOOL ||
 				hwa->pix_fmt == AV_PIX_FMT_DXVA2_VLD ||
 			    hwa->pix_fmt == AV_PIX_FMT_VAAPI_VLD) {
 				c = avcodec_find_decoder_by_name(hwa->name);
