@@ -45,6 +45,8 @@ security create-keychain -p mysecretpassword build.keychain
 security default-keychain -s build.keychain
 security unlock-keychain -p mysecretpassword build.keychain
 security set-keychain-settings -t 3600 -u build.keychain
+security set-key-partition-list -S apple-tool:,apple: -s -k mysecretpassword build.keychain
+security list-keychains -s build.keychain
 hr "Importing certs into keychain"
 security import ./Certificates.p12 -k build.keychain -T /usr/bin/productsign -P ""
 hr "Signing Package"
