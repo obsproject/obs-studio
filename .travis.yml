@@ -20,6 +20,39 @@ env:
 matrix:
   include:
     - os: osx
+      osx_image: xcode7.3
+      env:
+       - CMAKE_PREFIX_PATH=/usr/local/opt/qt5/lib/cmake
+       - CEF_BUILD_VERSION=3.3112.1656.g9ec3e42
+      before_install: "./CI/install-dependencies-osx.sh"
+      before_script: "./CI/before-script-osx.sh"
+      before_deploy: "./CI/before-deploy-osx.sh"
+    - os: osx
+      osx_image: xcode8
+      env:
+       - CMAKE_PREFIX_PATH=/usr/local/opt/qt5/lib/cmake
+       - CEF_BUILD_VERSION=3.3112.1656.g9ec3e42
+      before_install: "./CI/install-dependencies-osx.sh"
+      before_script: "./CI/before-script-osx.sh"
+      before_deploy: "./CI/before-deploy-osx.sh"
+    - os: osx
+      osx_image: xcode8.3
+      env:
+       - CMAKE_PREFIX_PATH=/usr/local/opt/qt5/lib/cmake
+       - CEF_BUILD_VERSION=3.3112.1656.g9ec3e42
+      before_install: "./CI/install-dependencies-osx.sh"
+      before_script: "./CI/before-script-osx.sh"
+      before_deploy: "./CI/before-deploy-osx.sh"
+    - os: osx
+      osx_image: xcode9
+      env:
+       - CMAKE_PREFIX_PATH=/usr/local/opt/qt5/lib/cmake
+       - CEF_BUILD_VERSION=3.3112.1656.g9ec3e42
+      before_install: "./CI/install-dependencies-osx.sh"
+      before_script: "./CI/before-script-osx.sh"
+      before_deploy: "./CI/before-deploy-osx.sh"
+    - os: osx
+      osx_image: xcode9.1
       env:
        - CMAKE_PREFIX_PATH=/usr/local/opt/qt5/lib/cmake
        - CEF_BUILD_VERSION=3.3112.1656.g9ec3e42
