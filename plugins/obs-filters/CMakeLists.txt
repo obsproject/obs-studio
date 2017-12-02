@@ -18,6 +18,11 @@ set(obs-filters_config_HEADERS
 include_directories(${LIBSPEEXDSP_INCLUDE_DIRS}
 	"${CMAKE_BINARY_DIR}/plugins/obs-filters/config")
 
+if(MSVC)
+	set(obs-filters_PLATFORM_DEPS
+		w32-pthreads)
+endif()
+
 set(obs-filters_SOURCES
 	obs-filters.c
 	color-correction-filter.c
@@ -41,6 +46,7 @@ add_library(obs-filters MODULE
 	${obs-filters_LIBSPEEXDSP_SOURCES})
 target_link_libraries(obs-filters
 	libobs
+	${obs-filters_PLATFORM_DEPS}
 	${obs-filters_LIBSPEEXDSP_LIBRARIES})
 
 install_obs_plugin_with_data(obs-filters data)
