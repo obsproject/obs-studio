@@ -250,7 +250,6 @@ void OBSProjector::OBSRenderMultiview(void *data, uint32_t cx, uint32_t cy)
 		     hiCX, hiCY, qiX, qiY, qiCX, qiCY,
 		     hiScaleX, hiScaleY, qiScaleX, qiScaleY;
 	uint32_t     offset;
-	gs_rect      rect;
 
 	gs_effect_t  *solid = obs_get_base_effect(OBS_EFFECT_SOLID);
 	gs_eparam_t  *color = gs_effect_get_param_by_name(solid, "color");
@@ -294,6 +293,30 @@ void OBSProjector::OBSRenderMultiview(void *data, uint32_t cx, uint32_t cy)
 			gs_draw_sprite(nullptr, 0, (uint32_t)cx, (uint32_t)cy);
 	};
 
+	auto setRegion = [fX, fY, scale] (float x, float y, float cx, float cy)
+	{
+		float vX  = int(fX + x * scale);
+		float vY  = int(fY + y * scale);
+		float vCX = int(cx * scale);
+		float vCY = int(cy * scale);
+
+		float oL = x;
+		float oT = y;
+		float oR = (x + cx);
+		float oB = (y + cy);
+
+		gs_projection_push();
+		gs_viewport_push();
+		gs_set_viewport(vX, vY, vCX, vCY);
+		gs_ortho(oL, oR, oT, oB, -100.0f, 100.0f);
+	};
+
+	auto resetRegion = [] ()
+	{
+		gs_viewport_pop();
+		gs_projection_pop();
+	};
+
 	/* ----------------------------- */
 	/* draw sources                  */
 
@@ -322,11 +345,6 @@ void OBSProjector::OBSRenderMultiview(void *data, uint32_t cx, uint32_t cy)
 		qiX = sourceX + 4.0f;
 		qiY = sourceY + 4.0f;
 
-		rect.x = int(fX + qiX * scale);
-		rect.y = int(fY + qiY * scale);
-		rect.cx = int(qiCX * scale);
-		rect.cy = int(qiCY * scale);
-
 		/* ----------- */
 
 		if (src == previewSrc || src == programSrc) {
@@ -351,17 +369,16 @@ void OBSProjector::OBSRenderMultiview(void *data, uint32_t cx, uint32_t cy)
 		gs_matrix_translate3f(qiX, qiY, 0.0f);
 		gs_matrix_scale3f(qiScaleX, qiScaleY, 1.0f);
 
-		gs_effect_set_color(color, 0xFF000000);
-		gs_set_scissor_rect(&rect);
+		setRegion(qiX, qiY, qiCX, qiCY);
 		obs_source_video_render(src);
-		gs_set_scissor_rect(nullptr);
+		resetRegion();
+
 		gs_effect_set_color(color, 0xFFFFFFFF);
 		renderVB(solid, window->outerBox, targetCX, targetCY);
 
 		gs_matrix_pop();
 
 		/* ----------- */
-
 
 		offset = labelOffset(label, quarterCX);
 		cx = obs_source_get_width(label);
@@ -386,11 +403,7 @@ void OBSProjector::OBSRenderMultiview(void *data, uint32_t cx, uint32_t cy)
 	gs_matrix_translate3f(2.0f, 2.0f, 0.0f);
 	gs_matrix_scale3f(hiScaleX, hiScaleY, 1.0f);
 
-	rect.x = int(fX + 2.0f * scale);
-	rect.y = int(fY + 2.0f * scale);
-	rect.cx = int(hiCX * scale);
-	rect.cy = int(hiCY * scale);
-	gs_set_scissor_rect(&rect);
+	setRegion(2.0f, 2.0f, hiCX, hiCY);
 
 	if (studioMode) {
 		obs_source_video_render(previewSrc);
@@ -398,7 +411,7 @@ void OBSProjector::OBSRenderMultiview(void *data, uint32_t cx, uint32_t cy)
 		obs_render_main_view();
 	}
 
-	gs_set_scissor_rect(nullptr);
+	resetRegion();
 
 	gs_matrix_pop();
 
@@ -439,13 +452,9 @@ void OBSProjector::OBSRenderMultiview(void *data, uint32_t cx, uint32_t cy)
 	gs_matrix_translate3f(halfCX + 2.0, 2.0f, 0.0f);
 	gs_matrix_scale3f(hiScaleX, hiScaleY, 1.0f);
 
-	rect.x = int(fX + (halfCX + 2.0f) * scale);
-	rect.y = int(fY + 2.0f * scale);
-	gs_set_scissor_rect(&rect);
-
+	setRegion(halfCX + 2.0f, 2.0f, hiCX, hiCY);
 	obs_render_main_view();
-
-	gs_set_scissor_rect(nullptr);
+	resetRegion();
 
 	gs_matrix_pop();
 
