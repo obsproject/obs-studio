@@ -91,6 +91,24 @@ Circular Buffer Inline Functions
 
 ---------------------
 
+.. function:: void circlebuf_push_back_zero(struct circlebuf *cb, size_t size)
+
+   Pushes zeroed data to the end of the circular buffer.
+
+   :param cb:       The circular buffer
+   :param size:     Size
+
+---------------------
+
+.. function:: void circlebuf_push_front_zero(struct circlebuf *cb, size_t size)
+
+   Pushes zeroed data to the front of the circular buffer.
+
+   :param cb:       The circular buffer
+   :param size:     Size
+
+---------------------
+
 .. function:: void circlebuf_peek_front(struct circlebuf *cb, void *data, size_t size)
 
    Peeks data at the front of the circular buffer.
