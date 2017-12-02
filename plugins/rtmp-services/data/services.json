@@ -778,18 +778,6 @@
             }
         },
         {
-            "name": "Coderwall",
-            "servers": [
-                {
-                    "name": "Primary",
-                    "url": "rtmp://live.coderwall.com/coderwall"
-                }
-            ],
-            "recommended": {
-                "max video bitrate": 1500
-            }
-        },
-        {
             "name": "Meridix Live Sports Platform",
             "servers": [
                 {
@@ -928,7 +916,7 @@
             ]
         },
         {
-            "name": "LiveStream",
+            "name": "Livestream",
             "servers": [
                 {
                     "name": "Primary",
