@@ -60,6 +60,8 @@ struct mp_media {
 	int scale_linesizes[4];
 	uint8_t *scale_pic[4];
 
+	int speed_percentage;
+
 	struct mp_decode v;
 	struct mp_decode a;
 	bool is_local_file;
@@ -107,7 +109,8 @@ extern bool mp_media_init(mp_media_t *media,
 		mp_video_cb v_preload_cb,
 		bool hardware_decoding,
 		bool is_local_file,
-		enum video_range_type force_range);
+		enum video_range_type force_range,
+		int speed_percentage);
 extern void mp_media_free(mp_media_t *media);
 
 extern void mp_media_play(mp_media_t *media, bool loop);
