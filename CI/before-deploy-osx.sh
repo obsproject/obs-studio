@@ -7,18 +7,10 @@ hr() {
 # Exit if something fails
 set -e
 
-# debug: echo everything before outputting
-set -v
-
 # Generate file name variables
 export GIT_HASH=$(git rev-parse --short HEAD)
 export FILE_DATE=$(date +%Y-%m-%d.%H:%M:%S)
 export FILENAME=$FILE_DATE-$GIT_HASH-$TRAVIS_BRANCH-osx.pkg
-
-# debug
-echo GIT_HASH: $GIT_HASH
-echo FILE_DATE: $FILE_DATE
-echo FILENAME: $FILENAME
 
 cd ./build
 
@@ -43,24 +35,20 @@ mv ./obs-browser.so ./rundir/RelWithDebInfo/obs-plugins/
 
 # Package app
 hr "Generating .pkg"
-packagesbuild -v ../CI/install/osx/CMakeLists.pkgproj
+packagesbuild ../CI/install/osx/CMakeLists.pkgproj
 
 # Signing stuff
 hr "Decrypting Cert"
 openssl aes-256-cbc -K $encrypted_dd3c7f5e9db9_key -iv $encrypted_dd3c7f5e9db9_iv -in ../CI/osxcert/Certificates.p12.enc -out Certificates.p12 -d
 hr "Creating Keychain"
-
-# debug -v
-security -v create-keychain -p mysecretpassword build.keychain
-security -v default-keychain -s build.keychain
-security -v unlock-keychain -p mysecretpassword build.keychain
-security -v set-keychain-settings -t 3600 -u build.keychain
-security -v list-keychains -s build.keychain
+security create-keychain -p mysecretpassword build.keychain
+security default-keychain -s build.keychain
+security unlock-keychain -p mysecretpassword build.keychain
+security set-keychain-settings -t 3600 -u build.keychain
 hr "Importing certs into keychain"
-security -v import ./Certificates.p12 -k build.keychain -T /usr/bin/productsign -P ""
-# macOS 10.12
-security -v set-key-partition-list -S apple-tool:,apple: -s -k mysecretpassword build.keychain
-security -v list-keychains -s build.keychain
+security import ./Certificates.p12 -k build.keychain -T /usr/bin/productsign -P ""
+# macOS 10.12+
+security set-key-partition-list -S apple-tool:,apple: -s -k mysecretpassword build.keychain
 hr "Signing Package"
 productsign --sign 2MMRE5MTB8 ./OBS.pkg ./$FILENAME
 

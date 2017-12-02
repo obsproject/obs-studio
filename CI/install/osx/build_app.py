@@ -85,7 +85,7 @@ for i in candidate_paths:
 			path = root + "/" + file_
 			try:
 				out = check_output("{0}otool -L '{1}'".format(args.prefix, path),
-						stderr=subprocess.STDOUT, shell=True,
+						shell=True,
 						universal_newlines=True)
 				if "is not an object file" in out:
 					continue
