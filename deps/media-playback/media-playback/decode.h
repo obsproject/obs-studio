@@ -44,6 +44,12 @@ extern "C" {
 #define CODEC_FLAG_TRUNC CODEC_FLAG_TRUNCATED
 #endif
 
+#if LIBAVUTIL_VERSION_INT >= AV_VERSION_INT(54, 31, 100)
+#define AV_PIX_FMT_VDTOOL AV_PIX_FMT_VIDEOTOOLBOX
+#else
+#define AV_PIX_FMT_VDTOOL AV_PIX_FMT_VDA_VLD
+#endif
+
 struct mp_media;
 
 struct mp_decode {
