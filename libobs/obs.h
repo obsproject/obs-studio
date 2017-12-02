@@ -801,6 +801,18 @@ EXPORT const char *obs_source_get_name(const obs_source_t *source);
 /** Sets the name of a source */
 EXPORT void obs_source_set_name(obs_source_t *source, const char *name);
 
+/** Gets the video fps of a source */
+EXPORT double obs_source_get_video_fps(const obs_source_t *source);
+
+/** Gets the video average fps of a source */
+EXPORT double obs_source_get_video_avg_fps(const obs_source_t *source);
+
+/** Gets the total frames of a source */
+EXPORT double obs_source_get_total_frames(const obs_source_t *source);
+
+/** Gets the last frame timestamp of a source */
+EXPORT long long obs_source_get_last_frame_ts(const obs_source_t *source);
+
 /** Gets the source type */
 EXPORT enum obs_source_type obs_source_get_type(const obs_source_t *source);
 

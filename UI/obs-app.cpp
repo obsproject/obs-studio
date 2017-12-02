@@ -68,6 +68,7 @@ static bool unfiltered_log = false;
 bool opt_start_streaming = false;
 bool opt_start_recording = false;
 bool opt_studio_mode = false;
+bool opt_disable_ui = false;
 bool opt_start_replaybuffer = false;
 bool opt_minimize_tray = false;
 bool opt_allow_opengl = false;
@@ -1896,6 +1897,9 @@ int main(int argc, char *argv[])
 
 		} else if (arg_is(argv[i], "--studio-mode", nullptr)) {
 			opt_studio_mode = true;
+
+		} else if (arg_is(argv[i], "--disable-ui", nullptr)) {
+			opt_disable_ui = true;
 
 		} else if (arg_is(argv[i], "--allow-opengl", nullptr)) {
 			opt_allow_opengl = true;

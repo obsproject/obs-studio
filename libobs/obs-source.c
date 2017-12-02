@@ -140,6 +140,10 @@ bool obs_source_init(struct obs_source *source)
 	source->user_volume = 1.0f;
 	source->volume = 1.0f;
 	source->sync_offset = 0;
+	source->total_frames = 0;
+	source->former_frame_ts = 0;
+	source->video_fps = 0;
+	source->video_avg_fps = 0;
 	pthread_mutex_init_value(&source->filter_mutex);
 	pthread_mutex_init_value(&source->async_mutex);
 	pthread_mutex_init_value(&source->audio_mutex);
@@ -2382,6 +2386,27 @@ void obs_source_output_video(obs_source_t *source,
 		pthread_mutex_unlock(&source->async_mutex);
 		source->async_active = true;
 	}
+	
+	/* Calculate the average frame rate,
+	 * current frame rate and frame counter
+	 */
+	
+	if (source->last_frame_ts >= 1000000000ULL) {
+		source->video_avg_fps = (
+			(double)source->total_frames /
+			(source->last_frame_ts / 1000000000ULL));
+
+		float frame_time_delta_ms = (
+			source->last_frame_ts - 
+			source->former_frame_ts);
+
+		if (frame_time_delta_ms > 0) {
+			source->video_fps = 1000000000ULL / frame_time_delta_ms;
+        	}
+	}
+
+	source->total_frames++;
+	source->former_frame_ts = source->last_frame_ts;
 }
 
 static inline bool preload_frame_changed(obs_source_t *source,
@@ -2787,6 +2812,26 @@ const char *obs_source_get_name(const obs_source_t *source)
 {
 	return obs_source_valid(source, "obs_source_get_name") ?
 		source->context.name : NULL;
+}
+
+double obs_source_get_video_fps(const obs_source_t *source)
+{
+    return source->video_fps;
+}
+
+double obs_source_get_video_avg_fps(const obs_source_t *source)
+{
+    return source->video_avg_fps;
+}
+
+double obs_source_get_total_frames(const obs_source_t *source)
+{
+    return source->total_frames;
+}
+
+long long obs_source_get_last_frame_ts(const obs_source_t *source)
+{
+    return source->last_frame_ts;
 }
 
 void obs_source_set_name(obs_source_t *source, const char *name)

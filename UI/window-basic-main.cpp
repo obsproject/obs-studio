@@ -1543,7 +1543,10 @@ void OBSBasic::OBSInit()
 
 #ifdef _WIN32
 	SetWin32DropStyle(this);
-	show();
+  if (!opt_disable_ui)
+    opt_disable_ui = false;
+  if (opt_disable_ui == false)
+	  show();
 #endif
 
 	bool alwaysOnTop = config_get_bool(App()->GlobalConfig(), "BasicWindow",
@@ -1554,7 +1557,8 @@ void OBSBasic::OBSInit()
 	}
 
 #ifndef _WIN32
-	show();
+  if (opt_disable_ui == false)
+	  show();
 #endif
 
 	const char *dockStateStr = config_get_string(App()->GlobalConfig(),
