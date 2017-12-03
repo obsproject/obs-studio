@@ -296,7 +296,7 @@ void OBSBasic::TransitionToScene(OBSSource source, bool force, bool direct,
 		}
 	}
 
-	if (usingPreviewProgram && sceneDuplicationMode && !direct) {
+	if (usingPreviewProgram && sceneDuplicationMode) {
 		scene = obs_scene_duplicate(scene, NULL,
 				editPropertiesMode ?
 				OBS_SCENE_DUP_PRIVATE_COPY :
