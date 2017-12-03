@@ -123,7 +123,7 @@ static inline void update_window_params(struct display_capture *dc)
 	NSArray *arr = (NSArray*)CGWindowListCopyWindowInfo(
 			kCGWindowListOptionIncludingWindow,
 			dc->window.window_id);
-	
+
 	if (arr.count) {
 		NSDictionary *dict = arr[0];
 		NSDictionary *ref = dict[(NSString*)kCGWindowBounds];
@@ -373,7 +373,7 @@ static void display_capture_video_tick(void *data, float seconds)
 		end.x -= dc->crop_rect.size.width;
 	case CROP_TO_WINDOW:
 		origin.x += x = dc->window_rect.origin.x - dc->frame.origin.x;
-		origin.y += y = dc->window_rect.origin.y - dc->frame.origin.y;
+		origin.y += y = dc->window_rect.origin.y;
 		end.y += dc->window_rect.size.height + y;
 		end.x += dc->window_rect.size.width + x;
 		break;
