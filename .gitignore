@@ -24,6 +24,9 @@
 #xcode
 *.xcodeproj/
 
+#clion
+.idea/
+
 #other stuff (windows stuff, qt moc stuff, etc)
 Release_MD/
 Release/
