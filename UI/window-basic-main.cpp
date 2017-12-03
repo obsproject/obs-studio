@@ -1377,6 +1377,9 @@ void OBSBasic::ResetOutputs()
 	}
 }
 
+static void AddProjectorMenuMonitors(QMenu *parent, QObject *target,
+		const char *slot);
+
 #define STARTUP_SEPARATOR \
 	"==== Startup complete ==============================================="
 #define SHUTDOWN_SEPARATOR \
@@ -1619,6 +1622,19 @@ void OBSBasic::OBSInit()
 		on_stats_triggered();
 
 	OBSBasicStats::InitializeValues();
+
+	/* ----------------------- */
+	/* Add multiview menu      */
+
+	ui->viewMenu->addSeparator();
+
+	QMenu *multiviewProjectorMenu = new QMenu(QTStr("MultiviewProjector"));
+	AddProjectorMenuMonitors(multiviewProjectorMenu, this,
+			SLOT(OpenMultiviewProjector()));
+	ui->viewMenu->addMenu(multiviewProjectorMenu);
+
+	ui->viewMenu->addAction(QTStr("MultiviewWindowed"),
+			this, SLOT(OpenMultiviewWindow()));
 }
 
 void OBSBasic::InitHotkeys()
@@ -3547,33 +3563,31 @@ void OBSBasic::on_scenes_customContextMenuRequested(const QPoint &pos)
 
 		/* ---------------------- */
 
-		if (IsPreviewProgramMode()) {
-			QAction *multiviewAction = popup.addAction(
-					QTStr("ShowInMultiview"));
+		QAction *multiviewAction = popup.addAction(
+				QTStr("ShowInMultiview"));
 
-			OBSSource source = GetCurrentSceneSource();
-			OBSData data = obs_source_get_private_settings(source);
-			obs_data_release(data);
+		OBSSource source = GetCurrentSceneSource();
+		OBSData data = obs_source_get_private_settings(source);
+		obs_data_release(data);
 
-			obs_data_set_default_bool(data, "show_in_multiview",
-					true);
-			bool show = obs_data_get_bool(data, "show_in_multiview");
+		obs_data_set_default_bool(data, "show_in_multiview",
+				true);
+		bool show = obs_data_get_bool(data, "show_in_multiview");
 
-			multiviewAction->setCheckable(true);
-			multiviewAction->setChecked(show);
+		multiviewAction->setCheckable(true);
+		multiviewAction->setChecked(show);
 
-			auto showInMultiview = [this] (OBSData data)
-			{
-				bool show = obs_data_get_bool(data,
-						"show_in_multiview");
-				obs_data_set_bool(data, "show_in_multiview",
-						!show);
-				OBSProjector::UpdateMultiviewProjectors();
-			};
+		auto showInMultiview = [this] (OBSData data)
+		{
+			bool show = obs_data_get_bool(data,
+					"show_in_multiview");
+			obs_data_set_bool(data, "show_in_multiview",
+					!show);
+			OBSProjector::UpdateMultiviewProjectors();
+		};
 
-			connect(multiviewAction, &QAction::triggered,
-					std::bind(showInMultiview, data));
-		}
+		connect(multiviewAction, &QAction::triggered,
+				std::bind(showInMultiview, data));
 	}
 
 	popup.exec(QCursor::pos());
@@ -3818,7 +3832,6 @@ void OBSBasic::CreateSourcePopupMenu(QListWidgetItem *item, bool preview)
 	QMenu popup(this);
 	QPointer<QMenu> previewProjector;
 	QPointer<QMenu> sourceProjector;
-	QPointer<QMenu> multiviewProjectorMenu;
 
 	if (preview) {
 		QAction *action = popup.addAction(
@@ -3832,20 +3845,6 @@ void OBSBasic::CreateSourcePopupMenu(QListWidgetItem *item, bool preview)
 
 		popup.addAction(ui->actionLockPreview);
 		popup.addMenu(ui->scalingMenu);
-
-		if (IsPreviewProgramMode()) {
-			multiviewProjectorMenu = new QMenu(
-					"Multiview Projector");
-			AddProjectorMenuMonitors(multiviewProjectorMenu, this,
-					SLOT(OpenMultiviewProjector()));
-			popup.addMenu(multiviewProjectorMenu);
-
-			QAction *multiviewWindow = popup.addAction(
-					"Multiview Windowed",
-					this, SLOT(OpenMultiviewWindow()));
-
-			popup.addAction(multiviewWindow);
-		}
 
 		previewProjector = new QMenu(QTStr("PreviewProjector"));
 		AddProjectorMenuMonitors(previewProjector, this,
