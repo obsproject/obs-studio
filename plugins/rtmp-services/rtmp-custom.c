@@ -18,12 +18,15 @@ static void rtmp_custom_update(void *data, obs_data_t *settings)
 
 	bfree(service->server);
 	bfree(service->key);
+	bfree(service->username);
+	bfree(service->password);
 
 	service->server = bstrdup(obs_data_get_string(settings, "server"));
 	service->key    = bstrdup(obs_data_get_string(settings, "key"));
 	service->use_auth = obs_data_get_bool(settings, "use_auth");
 	service->username = bstrdup(obs_data_get_string(settings, "username"));
 	service->password = bstrdup(obs_data_get_string(settings, "password"));
+	
 }
 
 static void rtmp_custom_destroy(void *data)

@@ -32,7 +32,7 @@ struct obs_frontend_callbacks {
 	virtual char *obs_frontend_get_current_profile(void)=0;
 	virtual void obs_frontend_set_current_profile(const char *profile)=0;
 
-	virtual void obs_frontend_streaming_start(void)=0;
+	virtual void obs_frontend_streaming_start(obs_service_t* service)=0;
 	virtual void obs_frontend_streaming_stop(void)=0;
 	virtual bool obs_frontend_streaming_active(void)=0;
 
@@ -78,6 +78,8 @@ struct obs_frontend_callbacks {
 
 	virtual bool obs_frontend_preview_program_mode_active(void)=0;
 	virtual void obs_frontend_set_preview_program_mode(bool enable)=0;
+	virtual bool obs_frontend_preview_enabled(void)=0;
+	virtual void obs_frontend_set_preview_enabled(bool enable)=0;
 
 	virtual obs_source_t *obs_frontend_get_current_preview_scene(void)=0;
 	virtual void obs_frontend_set_current_preview_scene(obs_source_t *scene)=0;

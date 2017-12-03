@@ -171,9 +171,9 @@ void obs_frontend_set_current_profile(const char *profile)
 		c->obs_frontend_set_current_profile(profile);
 }
 
-void obs_frontend_streaming_start(void)
+void obs_frontend_streaming_start(obs_service_t* _service)
 {
-	if (callbacks_valid()) c->obs_frontend_streaming_start();
+	if (callbacks_valid()) c->obs_frontend_streaming_start(_service);
 }
 
 void obs_frontend_streaming_stop(void)
@@ -353,6 +353,19 @@ void obs_frontend_set_preview_program_mode(bool enable)
 {
 	if (callbacks_valid())
 		c->obs_frontend_set_preview_program_mode(enable);
+}
+
+void obs_frontend_set_preview_enabled(bool enable)
+{
+	if (callbacks_valid())
+		c->obs_frontend_set_preview_enabled(enable);
+}
+
+bool obs_frontend_preview_enabled(void)
+{
+	return !!callbacks_valid()
+	? c->obs_frontend_preview_enabled()
+	: false;
 }
 
 obs_source_t *obs_frontend_get_current_preview_scene(void)
