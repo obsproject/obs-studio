@@ -67,10 +67,7 @@ static inline uint64_t convert_speaker_layout(enum speaker_layout layout)
 	case SPEAKERS_QUAD:             return AV_CH_LAYOUT_QUAD;
 	case SPEAKERS_4POINT1:          return AV_CH_LAYOUT_4POINT1;
 	case SPEAKERS_5POINT1:          return AV_CH_LAYOUT_5POINT1;
-	case SPEAKERS_5POINT1_SURROUND: return AV_CH_LAYOUT_5POINT1_BACK;
 	case SPEAKERS_7POINT1:          return AV_CH_LAYOUT_7POINT1;
-	case SPEAKERS_7POINT1_SURROUND: return AV_CH_LAYOUT_7POINT1_WIDE_BACK;
-	case SPEAKERS_SURROUND:         return AV_CH_LAYOUT_SURROUND;
 	}
 
 	/* shouldn't get here */
