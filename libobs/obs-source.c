@@ -430,8 +430,6 @@ void obs_source_copy_filters(obs_source_t *dst, obs_source_t *src)
 	duplicate_filters(dst, src, dst->context.private ?
 					OBS_SCENE_DUP_PRIVATE_COPY :
 					OBS_SCENE_DUP_COPY);
-
-	obs_source_release(src);
 }
 
 obs_source_t *obs_source_duplicate(obs_source_t *source,
