@@ -23,7 +23,7 @@ endif()
 set(glad_include_dirs
 	PRIVATE ${OPENGL_INCLUDE_DIR})
 
-if (LINUX)
+if (UNIX AND NOT APPLE)
 list (APPEND glad_include_dirs
 	PRIVATE ${X11_X11_INCLUDE_PATH})
 endif()
