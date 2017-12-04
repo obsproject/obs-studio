@@ -6146,6 +6146,7 @@ void OBSBasic::on_actionPasteFilters_triggered()
 		return;
 
 	obs_source_copy_filters(dstSource, source);
+	obs_source_release(source);
 }
 
 void OBSBasic::on_autoConfigure_triggered()
