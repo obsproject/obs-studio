@@ -6149,8 +6149,9 @@ void OBSBasic::on_actionCopyFilters_triggered()
 void OBSBasic::on_actionPasteFilters_triggered()
 {
 	OBSSource source = obs_get_source_by_name(copyFiltersString);
-	OBSSceneItem sceneItem = GetCurrentSceneItem();
+	obs_source_release(source);
 
+	OBSSceneItem sceneItem = GetCurrentSceneItem();
 	OBSSource dstSource = obs_sceneitem_get_source(sceneItem);
 
 	if (source == dstSource)
