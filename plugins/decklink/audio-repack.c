@@ -22,6 +22,11 @@ int check_buffer(struct audio_repack *repack,
 
 /*
  * Swap channel 3 & 4, 5 & 7, 6 & 8 and squash arrays
+ * 2.1:
+ *
+ * | FL | FR | LFE | emp | emp | emp |emp |emp |
+ * |    |    |
+ * | FL | FR | LFE |
  * 4.0 (quad):
  *
  * | FL | FR | BR | BL | emp | emp |emp |emp |
@@ -57,12 +62,23 @@ int repack_squash_swap(struct audio_repack *repack,
 	const __m128i *src = (__m128i *)bsrc;
 	const __m128i *esrc = src + frame_count;
 	uint16_t *dst = (uint16_t *)repack->packet_buffer;
-	while (src != esrc) {
-		__m128i target = _mm_load_si128(src++);
-		__m128i buf = _mm_shufflelo_epi16(target,_MM_SHUFFLE(2, 3, 1, 0));
-		__m128i buf2 = _mm_shufflehi_epi16(buf, _MM_SHUFFLE(1, 0, 3, 2));
-		_mm_storeu_si128((__m128i *)dst, buf2);
-		dst += 8 - squash;
+	/* 2.1 audio does not require re-ordering but still needs squashing
+	 * in order to avoid sampling issues.
+	 */
+	if (squash == 5) {
+		while (src != esrc) {
+			__m128i target = _mm_load_si128(src++);
+			_mm_storeu_si128((__m128i *)dst, target);
+			dst += 8 - squash;
+		}
+	} else {
+		while (src != esrc) {
+			__m128i target = _mm_load_si128(src++);
+			__m128i buf = _mm_shufflelo_epi16(target, _MM_SHUFFLE(2, 3, 1, 0));
+			__m128i buf2 = _mm_shufflehi_epi16(buf, _MM_SHUFFLE(1, 0, 3, 2));
+			_mm_storeu_si128((__m128i *)dst, buf2);
+			dst += 8 - squash;
+		}
 	}
 
 	return 0;
@@ -77,6 +93,12 @@ int audio_repack_init(struct audio_repack *repack,
 		return -1;
 
 	switch (repack_mode) {
+	case repack_mode_8to3ch_swap23:
+		repack->base_src_size = 8 * (16 / 8);
+		repack->base_dst_size = 3 * (16 / 8);
+		repack->extra_dst_size = 5;
+		repack->repack_func = &repack_squash_swap;
+		break;
 	case repack_mode_8to4ch_swap23:
 		repack->base_src_size = 8 * (16 / 8);
 		repack->base_dst_size = 4 * (16 / 8);
