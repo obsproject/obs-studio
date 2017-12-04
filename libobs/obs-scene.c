@@ -1095,6 +1095,8 @@ obs_scene_t *obs_scene_duplicate(obs_scene_t *scene, const char *name,
 	new_scene = make_private ?
 		obs_scene_create_private(name) : obs_scene_create(name);
 
+	obs_source_copy_filters(new_scene->source, scene->source);
+
 	obs_data_apply(new_scene->source->private_settings,
 			scene->source->private_settings);
 
