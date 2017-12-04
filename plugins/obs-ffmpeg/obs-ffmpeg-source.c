@@ -189,7 +189,7 @@ static obs_properties_t *ffmpeg_source_getproperties(void *data)
 	obs_properties_add_bool(props, "seekable", obs_module_text("Seekable"));
 
 	obs_properties_add_int_slider(props, "speed_percentage",
-		obs_module_text("SpeedPercentage"), 1, 10000, 1);
+			obs_module_text("SpeedPercentage"), 1, 10000, 1);
 
 	return props;
 }
