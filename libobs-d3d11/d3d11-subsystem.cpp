@@ -1034,7 +1034,6 @@ void device_load_vertexshader(gs_device_t *device, gs_shader_t *vertshader)
 		return;
 
 	gs_vertex_shader *vs = static_cast<gs_vertex_shader*>(vertshader);
-	gs_vertex_buffer *curVB = device->curVertexBuffer;
 
 	if (vertshader) {
 		if (vertshader->type != GS_SHADER_VERTEX) {

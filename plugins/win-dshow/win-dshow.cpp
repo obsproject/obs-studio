@@ -433,9 +433,9 @@ void DShowInput::OnEncodedVideoData(enum AVCodecID id,
 	}
 
 	bool got_output;
-	int len = ffmpeg_decode_video(video_decoder, data, size, &ts,
+	bool success = ffmpeg_decode_video(video_decoder, data, size, &ts,
 			&frame, &got_output);
-	if (len < 0) {
+	if (!success) {
 		blog(LOG_WARNING, "Error decoding video");
 		return;
 	}
@@ -532,11 +532,11 @@ void DShowInput::OnEncodedAudioData(enum AVCodecID id,
 		}
 	}
 
+	bool got_output = false;
 	do {
-		bool got_output;
-		int len = ffmpeg_decode_audio(audio_decoder, data, size,
+		bool success = ffmpeg_decode_audio(audio_decoder, data, size,
 				&audio, &got_output);
-		if (len < 0) {
+		if (!success) {
 			blog(LOG_WARNING, "Error decoding audio");
 			return;
 		}
@@ -553,9 +553,9 @@ void DShowInput::OnEncodedAudioData(enum AVCodecID id,
 
 		ts += int64_t(audio_decoder->frame->nb_samples) * 10000000LL /
 			int64_t(audio_decoder->frame->sample_rate);
-		size -= (size_t)len;
-		data += len;
-	} while (size > 0);
+		size = 0;
+		data = nullptr;
+	} while (got_output);
 }
 
 void DShowInput::OnAudioData(const AudioConfig &config,
@@ -575,7 +575,7 @@ void DShowInput::OnAudioData(const AudioConfig &config,
 		return;
 	}
 
-	audio.speakers        = convert_speaker_layout(config.channels);
+	audio.speakers        = convert_speaker_layout((uint8_t)config.channels);
 	audio.format          = ConvertAudioFormat(config.format);
 	audio.samples_per_sec = (uint32_t)config.sampleRate;
 	audio.data[0]         = data;
@@ -759,7 +759,6 @@ static inline bool IsEncoded(const VideoConfig &config)
 inline void DShowInput::SetupBuffering(obs_data_t *settings)
 {
 	BufferingType bufType;
-	uint32_t flags = obs_source_get_flags(source);
 	bool useBuffering;
 
 	bufType = (BufferingType)obs_data_get_int(settings, BUFFERING_VAL);

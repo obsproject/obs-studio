@@ -10,7 +10,17 @@
 #include <util/windows/WinHandle.hpp>
 #include <util/windows/ComPtr.hpp>
 #include <obs-module.h>
+
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable : 4996)
+#endif
+
 #include <sphelper.h>
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
 
 #include <unordered_map>
 #include <vector>

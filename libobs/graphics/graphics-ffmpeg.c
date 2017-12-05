@@ -164,8 +164,19 @@ static bool ffmpeg_image_decode(struct ffmpeg_image *info, uint8_t *out,
 	}
 
 	while (!got_frame) {
+#if LIBAVFORMAT_VERSION_INT >= AV_VERSION_INT(57, 40, 101)
+		ret = avcodec_send_packet(info->decoder_ctx, &packet);
+		if (ret == 0)
+			ret = avcodec_receive_frame(info->decoder_ctx, frame);
+
+		got_frame = (ret == 0);
+
+		if (ret == AVERROR_EOF || ret == AVERROR(EAGAIN))
+			ret = 0;
+#else
 		ret = avcodec_decode_video2(info->decoder_ctx, frame,
 				&got_frame, &packet);
+#endif
 		if (ret < 0) {
 			blog(LOG_WARNING, "Failed to decode frame for '%s': %s",
 					info->file, av_err2str(ret));
@@ -176,7 +187,7 @@ static bool ffmpeg_image_decode(struct ffmpeg_image *info, uint8_t *out,
 	success = ffmpeg_image_reformat_frame(info, frame, out, linesize);
 
 fail:
-	av_free_packet(&packet);
+	av_packet_unref(&packet);
 	av_frame_free(&frame);
 	return success;
 }

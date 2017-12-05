@@ -63,7 +63,6 @@ struct ffmpeg_data {
 	struct SwsContext  *swscale;
 
 	int64_t            total_frames;
-	AVPicture          dst_picture;
 	AVFrame            *vframe;
 	int                frame_size;
 
@@ -198,15 +197,13 @@ static bool open_video_codec(struct ffmpeg_data *data)
 	data->vframe->colorspace = data->config.color_space;
 	data->vframe->color_range = data->config.color_range;
 
-	ret = avpicture_alloc(&data->dst_picture, context->pix_fmt,
-			context->width, context->height);
+	ret = av_frame_get_buffer(data->vframe, base_get_alignment());
 	if (ret < 0) {
-		blog(LOG_WARNING, "Failed to allocate dst_picture: %s",
+		blog(LOG_WARNING, "Failed to allocate vframe: %s",
 				av_err2str(ret));
 		return false;
 	}
 
-	*((AVPicture*)data->vframe) = data->dst_picture;
 	return true;
 }
 
@@ -446,7 +443,7 @@ static inline bool open_output_file(struct ffmpeg_data *data)
 static void close_video(struct ffmpeg_data *data)
 {
 	avcodec_close(data->video->codec);
-	avpicture_free(&data->dst_picture);
+	av_frame_unref(data->vframe);
 
 	// This format for some reason derefs video frame
 	// too many times
@@ -654,7 +651,7 @@ static void ffmpeg_output_destroy(void *data)
 	}
 }
 
-static inline void copy_data(AVPicture *pic, const struct video_data *frame,
+static inline void copy_data(AVFrame *pic, const struct video_data *frame,
 		int height, enum AVPixelFormat format)
 {
 	int h_chroma_shift, v_chroma_shift;
@@ -703,15 +700,15 @@ static void receive_video(void *param, struct video_data *frame)
 	if (!!data->swscale)
 		sws_scale(data->swscale, (const uint8_t *const *)frame->data,
 				(const int*)frame->linesize,
-				0, data->config.height, data->dst_picture.data,
-				data->dst_picture.linesize);
+				0, data->config.height, data->vframe->data,
+				data->vframe->linesize);
 	else
-		copy_data(&data->dst_picture, frame, context->height, context->pix_fmt);
+		copy_data(data->vframe, frame, context->height, context->pix_fmt);
 
 	if (data->output->flags) {
 		packet.flags        |= AV_PKT_FLAG_KEY;
 		packet.stream_index  = data->video->index;
-		packet.data          = data->dst_picture.data[0];
+		packet.data          = data->vframe->data[0];
 		packet.size          = sizeof(AVPicture);
 
 		pthread_mutex_lock(&output->write_mutex);
@@ -721,8 +718,19 @@ static void receive_video(void *param, struct video_data *frame)
 
 	} else {
 		data->vframe->pts = data->total_frames;
+#if LIBAVFORMAT_VERSION_INT >= AV_VERSION_INT(57, 40, 101)
+		ret = avcodec_send_frame(context, data->vframe);
+		if (ret == 0)
+			ret = avcodec_receive_packet(context, &packet);
+
+		got_packet = (ret == 0);
+
+		if (ret == AVERROR_EOF || ret == AVERROR(EAGAIN))
+			ret = 0;
+#else
 		ret = avcodec_encode_video2(context, &packet, data->vframe,
 				&got_packet);
+#endif
 		if (ret < 0) {
 			blog(LOG_WARNING, "receive_video: Error encoding "
 			                  "video: %s", av_err2str(ret));
@@ -780,8 +788,19 @@ static void encode_audio(struct ffmpeg_output *output,
 
 	data->total_samples += data->frame_size;
 
+#if LIBAVFORMAT_VERSION_INT >= AV_VERSION_INT(57, 40, 101)
+	ret = avcodec_send_frame(context, data->aframe);
+	if (ret == 0)
+		ret = avcodec_receive_packet(context, &packet);
+
+	got_packet = (ret == 0);
+
+	if (ret == AVERROR_EOF || ret == AVERROR(EAGAIN))
+		ret = 0;
+#else
 	ret = avcodec_encode_audio2(context, &packet, data->aframe,
 			&got_packet);
+#endif
 	if (ret < 0) {
 		blog(LOG_WARNING, "encode_audio: Error encoding audio: %s",
 				av_err2str(ret));

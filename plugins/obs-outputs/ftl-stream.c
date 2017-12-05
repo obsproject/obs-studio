@@ -459,7 +459,7 @@ static void set_peak_bitrate(struct ftl_stream *stream)
 	// will queue data on the client and start adding latency. If the internet
 	// connection really can't handle the bitrate the user will see either lost frame
 	// and recovered frame counts go up, which is reflect in the dropped_frames count.
-	stream->peak_kbps = stream->params.peak_kbps = user_desired_bitrate * 1.2;
+	stream->peak_kbps = stream->params.peak_kbps = user_desired_bitrate * 12 / 10;
 	ftl_ingest_update_params(&stream->ftl_handle, &stream->params);
 }
 
@@ -600,34 +600,6 @@ static int init_send(struct ftl_stream *stream)
 	obs_output_begin_data_capture(stream->output, 0);
 
 	return OBS_OUTPUT_SUCCESS;
-}
-
-static int lookup_ingest_ip(const char *ingest_location, char *ingest_ip)
-{
-	struct hostent *remoteHost;
-	struct in_addr addr;
-	int retval = -1;
-	ingest_ip[0] = '\0';
-
-	remoteHost = gethostbyname(ingest_location);
-
-	if (remoteHost && remoteHost->h_addrtype == AF_INET) {
-		int i = 0;
-
-		while (remoteHost->h_addr_list[i] != 0) {
-			addr.s_addr = *(u_long *)remoteHost->h_addr_list[i++];
-			blog(LOG_INFO, "IP Address #%d of ingest is: %s",
-					i, inet_ntoa(addr));
-
-			/*only use the first ip found*/
-			if (strlen(ingest_ip) == 0) {
-				strcpy(ingest_ip, inet_ntoa(addr));
-				retval = 0;
-			}
-		}
-	}
-
-	return retval;
 }
 
 static int try_connect(struct ftl_stream *stream)
@@ -888,7 +860,7 @@ static uint64_t ftl_stream_total_bytes_sent(void *data)
 static int ftl_stream_dropped_frames(void *data)
 {
 	struct ftl_stream *stream = data;
-	return stream->dropped_frames;
+	return (int)stream->dropped_frames;
 }
 
 static float ftl_stream_congestion(void *data)

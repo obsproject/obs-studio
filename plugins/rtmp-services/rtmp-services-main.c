@@ -53,7 +53,7 @@ extern void twitch_ingests_refresh(int seconds);
 
 static void refresh_callback(void *unused, calldata_t *cd)
 {
-	int seconds = calldata_int(cd, "seconds");
+	int seconds = (int)calldata_int(cd, "seconds");
 	if (seconds <= 0)
 		seconds = 3;
 	if (seconds > 10)
