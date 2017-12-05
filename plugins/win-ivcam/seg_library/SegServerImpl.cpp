@@ -36,7 +36,7 @@ SegServerImpl::SegServerImpl()
     m_sharedBuffer = NULL;
 }
 
-SegServerImpl::SegServerImpl(SegServerImpl const& src) {};
+SegServerImpl::SegServerImpl(SegServerImpl const&) {};
 SegServerImpl::~SegServerImpl() 
 {
     if (m_server)
@@ -46,7 +46,7 @@ SegServerImpl::~SegServerImpl()
     }
     instance = nullptr;
 };
-SegServerImpl& SegServerImpl::operator=(const SegServerImpl & src) { return *this; };
+SegServerImpl& SegServerImpl::operator=(const SegServerImpl &) { return *this; };
 
 SegServer* SegServerImpl::CreateServer()
 {

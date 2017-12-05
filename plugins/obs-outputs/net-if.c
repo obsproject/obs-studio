@@ -15,6 +15,8 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
+#define _WINSOCK_DEPRECATED_NO_WARNINGS
+
 #include "net-if.h"
 #include <util/platform.h>
 #include <util/dstr.h>
