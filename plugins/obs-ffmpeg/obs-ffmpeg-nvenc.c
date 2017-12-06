@@ -245,7 +245,7 @@ static void nvenc_destroy(void *data)
 			if (avcodec_receive_packet(enc->context, &pkt) < 0)
 				break;
 #else
-			if (avcodec_receive_packet(enc->context, &pkt, NULL,
+			if (avcodec_encode_video2(enc->context, &pkt, NULL,
 						&r_pkt) < 0)
 				break;
 #endif
