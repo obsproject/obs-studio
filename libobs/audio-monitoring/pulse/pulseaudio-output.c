@@ -8,7 +8,7 @@ struct audio_monitor {
 	obs_source_t 		*source;
 	pa_stream    		*stream;
 	char         		*device;
-
+	pa_buffer_attr 		attr;
 	enum speaker_layout 	speakers;
 	pa_sample_format_t  	format;
 	uint_fast32_t       	samples_per_sec;
@@ -22,8 +22,8 @@ struct audio_monitor {
 	audio_resampler_t 	*resampler;
 	size_t            	buffer_size;
 	size_t            	bytesRemaining;
-
 	size_t          	bytes_per_channel;
+
 	bool 			ignore;
 	pthread_mutex_t 	playback_mutex;
 };
@@ -186,6 +186,21 @@ static void pulseaudio_stream_write(pa_stream *p, size_t nbytes, void *userdata)
 
 	pthread_mutex_lock(&data->playback_mutex);
 	data->bytesRemaining += nbytes;
+	pthread_mutex_unlock(&data->playback_mutex);
+
+	pulseaudio_signal(0);
+}
+
+static void pulseaudio_underflow(pa_stream *p, void *userdata)
+{
+	UNUSED_PARAMETER(p);
+	PULSE_DATA(userdata);
+
+	pthread_mutex_lock(&data->playback_mutex);
+	if (obs_source_active(data->source))
+		data->attr.tlength = (data->attr.tlength * 3) / 2;
+
+	pa_stream_set_buffer_attr(data->stream, &data->attr, NULL, NULL);
 	pthread_mutex_unlock(&data->playback_mutex);
 
 	pulseaudio_signal(0);
@@ -362,17 +377,17 @@ static bool audio_monitor_init(struct audio_monitor *monitor,
 		return false;
 	}
 
-	pa_buffer_attr attr;
-	attr.fragsize = (uint32_t) -1;
-	attr.maxlength = (uint32_t) -1;
-	attr.minreq = (uint32_t) -1;
-	attr.prebuf = (uint32_t) -1;
-	attr.tlength = pa_usec_to_bytes(25000, &spec);
+	monitor->attr.fragsize = (uint32_t) -1;
+	monitor->attr.maxlength = (uint32_t) -1;
+	monitor->attr.minreq = (uint32_t) -1;
+	monitor->attr.prebuf = (uint32_t) -1;
+	monitor->attr.tlength = pa_usec_to_bytes(25000, &spec);
 
-	monitor->buffer_size =
-			monitor->bytes_per_frame * pa_usec_to_bytes(100, &spec);
+	monitor->buffer_size = monitor->bytes_per_frame *
+			pa_usec_to_bytes(5000, &spec);
 
-	pa_stream_flags_t flags = PA_STREAM_ADJUST_LATENCY;
+	pa_stream_flags_t flags = PA_STREAM_INTERPOLATE_TIMING |
+			PA_STREAM_AUTO_TIMING_UPDATE;
 
 	if (pthread_mutex_init(&monitor->playback_mutex, NULL) != 0) {
 		blog(LOG_WARNING, "%s: %s", __FUNCTION__,
@@ -381,7 +396,7 @@ static bool audio_monitor_init(struct audio_monitor *monitor,
 	}
 
 	int_fast32_t ret = pulseaudio_connect_playback(monitor->stream,
-			monitor->device, &attr, flags);
+			monitor->device, &monitor->attr, flags);
 	if (ret < 0) {
 		pulseaudio_stop_playback(monitor);
 		blog(LOG_ERROR, "Unable to connect to stream");
@@ -401,6 +416,9 @@ static void audio_monitor_init_final(struct audio_monitor *monitor)
 			on_audio_playback, monitor);
 
 	pulseaudio_write_callback(monitor->stream, pulseaudio_stream_write,
+			(void *) monitor);
+
+	pulseaudio_set_underflow_callback(monitor->stream, pulseaudio_underflow,
 			(void *) monitor);
 }
 
