@@ -183,7 +183,8 @@ size_t os_fread_utf8(FILE *file, char **pstr)
 
 		/* remove the ghastly BOM if present */
 		fseek(file, 0, SEEK_SET);
-		fread(bom, 1, 3, file);
+		size_t size_read = fread(bom, 1, 3, file);
+		(void)size_read;
 
 		offset = (astrcmp_n(bom, "\xEF\xBB\xBF", 3) == 0) ? 3 : 0;
 

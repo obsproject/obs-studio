@@ -12,6 +12,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <inttypes.h>
 #include <assert.h>
 
 #include "jansson.h"
@@ -187,7 +188,7 @@ static int do_dump(const json_t *json, size_t flags, int depth,
             int size;
 
             size = snprintf(buffer, MAX_INTEGER_STR_LENGTH,
-                            "%" JSON_INTEGER_FORMAT,
+                            "%" PRId64,
                             json_integer_value(json));
             if(size < 0 || size >= MAX_INTEGER_STR_LENGTH)
                 return -1;

@@ -110,7 +110,7 @@ static bool twitch_ingest_update(void *param, struct file_download_data *data)
 	bool success;
 
 	pthread_mutex_lock(&mutex);
-	success = load_ingests(data->buffer.array, true);
+	success = load_ingests((const char *)data->buffer.array, true);
 	pthread_mutex_unlock(&mutex);
 
 	if (success) {
