@@ -249,8 +249,9 @@ static void *enc_create(obs_data_t *settings, obs_encoder_t *encoder,
 	}
 
 	info("bitrate: %" PRId64 ", channels: %d, channel_layout: %x\n",
-			enc->context->bit_rate / 1000, enc->context->channels,
-			enc->context->channel_layout);
+			(int64_t)enc->context->bit_rate / 1000,
+			(int)enc->context->channels,
+			(unsigned int)enc->context->channel_layout);
 
 	init_sizes(enc, audio);
 

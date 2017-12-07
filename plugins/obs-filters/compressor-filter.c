@@ -145,6 +145,8 @@ static void sidechain_capture(void *param, obs_source_t *source,
 {
 	struct compressor_data *cd = param;
 
+	UNUSED_PARAMETER(source);
+
 	pthread_mutex_lock(&cd->sidechain_mutex);
 
 	if (cd->max_sidechain_frames < audio_data->frames)

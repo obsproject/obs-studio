@@ -64,7 +64,7 @@ static bool init_animated_gif(gs_image_file_t *image, const char *path)
 	bool is_animated_gif = true;
 	gif_result result;
 	uint64_t max_size;
-	size_t size;
+	size_t size, size_read;
 	FILE *file;
 
 	image->bitmap_callbacks.bitmap_create = bi_def_bitmap_create;
@@ -87,7 +87,11 @@ static bool init_animated_gif(gs_image_file_t *image, const char *path)
 	fseek(file, 0, SEEK_SET);
 
 	image->gif_data = bmalloc(size);
-	fread(image->gif_data, 1, size, file);
+	size_read = fread(image->gif_data, 1, size, file);
+	if (size_read != size) {
+		blog(LOG_WARNING, "Failed to fully read gif file '%s'.", path);
+		goto fail;
+	}
 
 	do {
 		result = gif_initialise(&image->gif, size, image->gif_data);

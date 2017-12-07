@@ -122,6 +122,7 @@ static const char *ftl_stream_getname(void *unused)
 static void log_ftl(int level, const char *format, va_list args)
 {
 	blogva(LOG_INFO, format, args);
+	UNUSED_PARAMETER(level);
 }
 
 static inline size_t num_buffered_packets(struct ftl_stream *stream);
@@ -289,7 +290,7 @@ static inline bool get_next_packet(struct ftl_stream *stream,
 }
 
 static int avc_get_video_frame(struct ftl_stream *stream,
-		struct encoder_packet *packet, bool is_header, size_t idx)
+		struct encoder_packet *packet, bool is_header)
 {
 	int consumed = 0;
 	int len = (int)packet->size;
@@ -333,7 +334,8 @@ static int avc_get_video_frame(struct ftl_stream *stream,
 			if ((size_t)len > (packet->size - (size_t)consumed)) {
 				warn("ERROR: got len of %d but packet only "
 						"has %d left",
-						len, packet->size - consumed);
+						len,
+						(int)(packet->size - consumed));
 			}
 
 			consumed += 4;
@@ -344,9 +346,6 @@ static int avc_get_video_frame(struct ftl_stream *stream,
 
 		uint8_t nalu_type = video_stream[0] & 0x1F;
 		uint8_t nri = (video_stream[0] >> 5) & 0x3;
-
-		int send_marker_bit =
-			((size_t)consumed >= packet->size) && !is_header;
 
 		if ((nalu_type != 12 && nalu_type != 6 && nalu_type != 9) ||
 		    nri) {
@@ -368,15 +367,14 @@ static int avc_get_video_frame(struct ftl_stream *stream,
 }
 
 static int send_packet(struct ftl_stream *stream,
-		struct encoder_packet *packet, bool is_header, size_t idx)
+		struct encoder_packet *packet, bool is_header)
 {
 	int bytes_sent = 0;
-	int recv_size = 0;
 	int ret = 0;
 
 	if (packet->type == OBS_ENCODER_VIDEO) {
 		stream->coded_pic_buffer.total = 0;
-		avc_get_video_frame(stream, packet, is_header, idx);
+		avc_get_video_frame(stream, packet, is_header);
 
 		int i;
 		for (i = 0; i < stream->coded_pic_buffer.total; i++) {
@@ -512,7 +510,7 @@ static void *send_thread(void *data)
 			}
 		}
 
-		if (send_packet(stream, &packet, false, packet.track_idx) < 0) {
+		if (send_packet(stream, &packet, false) < 0) {
 			os_atomic_set_bool(&stream->disconnected, true);
 			break;
 		}
@@ -561,7 +559,7 @@ static bool send_video_header(struct ftl_stream *stream, int64_t dts_usec)
 
 	obs_encoder_get_extra_data(vencoder, &header, &size);
 	packet.size = obs_parse_avc_header(&packet.data, header, size);
-	return send_packet(stream, &packet, true, 0) >= 0;
+	return send_packet(stream, &packet, true) >= 0;
 }
 
 static inline bool send_headers(struct ftl_stream *stream, int64_t dts_usec)
@@ -937,7 +935,7 @@ static void *status_thread(void *data)
 			blog(log_level, "Avg packet send per second %3.1f, "
 					"total nack requests %d",
 					(float)p->sent * 1000.f / p->period,
-					p->nack_reqs);
+					(int)p->nack_reqs);
 
 		} else if (status.type == FTL_STATUS_VIDEO_PACKETS_INSTANT) {
 			ftl_packet_stats_instant_msg_t *p =
@@ -1048,13 +1046,6 @@ static int init_connect(struct ftl_stream *stream)
 
 	dstr_copy(&stream->path, obs_service_get_url(service));
 	key = obs_service_get_key(service);
-
-	struct obs_video_info ovi;
-	int fps_num = 30, fps_den = 1;
-	if (obs_get_video_info(&ovi)) {
-		fps_num = ovi.fps_num;
-		fps_den = ovi.fps_den;
-	}
 
 	int target_bitrate = (int)obs_data_get_int(video_settings, "bitrate");
 	int peak_bitrate = (int)((float)target_bitrate * 1.1f);
