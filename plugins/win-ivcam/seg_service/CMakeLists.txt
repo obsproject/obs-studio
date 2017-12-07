@@ -28,7 +28,6 @@ set(seg_service_SOURCES
 	seg_service.cpp
 	SegProc.cpp
 	stdafx.cpp
-	xdlldata.c
 	seg_service.rc
 	${seg_service_GENERATED_FILES}
 	)

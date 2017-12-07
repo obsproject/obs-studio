@@ -297,11 +297,11 @@ static int avc_get_video_frame(struct ftl_stream *stream,
 
 	unsigned char *video_stream = packet->data;
 
-	while (consumed < packet->size) {
+	while ((size_t)consumed < packet->size) {
 		size_t total_max = sizeof(stream->coded_pic_buffer.nalus) /
 			sizeof(stream->coded_pic_buffer.nalus[0]);
 
-		if (stream->coded_pic_buffer.total >= total_max) {
+		if ((size_t)stream->coded_pic_buffer.total >= total_max) {
 			warn("ERROR: cannot continue, nalu buffers are full");
 			return -1;
 		}
@@ -330,7 +330,7 @@ static int avc_get_video_frame(struct ftl_stream *stream,
 			      video_stream[2] << 8 |
 			      video_stream[3];
 
-			if (len > (packet->size - consumed)) {
+			if ((size_t)len > (packet->size - (size_t)consumed)) {
 				warn("ERROR: got len of %d but packet only "
 						"has %d left",
 						len, packet->size - consumed);
@@ -345,7 +345,8 @@ static int avc_get_video_frame(struct ftl_stream *stream,
 		uint8_t nalu_type = video_stream[0] & 0x1F;
 		uint8_t nri = (video_stream[0] >> 5) & 0x3;
 
-		int send_marker_bit = (consumed >= packet->size) && !is_header;
+		int send_marker_bit =
+			((size_t)consumed >= packet->size) && !is_header;
 
 		if ((nalu_type != 12 && nalu_type != 6 && nalu_type != 9) ||
 		    nri) {
