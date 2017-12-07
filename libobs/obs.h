@@ -602,6 +602,13 @@ EXPORT void obs_enum_audio_monitoring_devices(obs_enum_audio_device_cb cb,
 EXPORT bool obs_set_audio_monitoring_device(const char *name, const char *id);
 EXPORT void obs_get_audio_monitoring_device(const char **name, const char **id);
 
+EXPORT void obs_add_tick_callback(
+		void (*tick)(void *param, float seconds),
+		void *param);
+EXPORT void obs_remove_tick_callback(
+		void (*tick)(void *param, float seconds),
+		void *param);
+
 EXPORT void obs_add_main_render_callback(
 		void (*draw)(void *param, uint32_t cx, uint32_t cy),
 		void *param);

@@ -44,6 +44,11 @@ static inline int64_t packet_dts_usec(struct encoder_packet *packet)
 	return packet->dts * MICROSECOND_DEN / packet->timebase_den;
 }
 
+struct tick_callback {
+	void (*tick)(void *param, float seconds);
+	void *param;
+};
+
 struct draw_callback {
 	void (*draw)(void *param, uint32_t cx, uint32_t cy);
 	void *param;
@@ -319,6 +324,7 @@ struct obs_core_data {
 	pthread_mutex_t                 audio_sources_mutex;
 	pthread_mutex_t                 draw_callbacks_mutex;
 	DARRAY(struct draw_callback)    draw_callbacks;
+	DARRAY(struct tick_callback)    tick_callbacks;
 
 	struct obs_view                 main_view;
 
