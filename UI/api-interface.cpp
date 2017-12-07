@@ -373,10 +373,22 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 	{
 		return main->IsPreviewProgramMode();
 	}
-
+	
 	void obs_frontend_set_preview_program_mode(bool enable) override
 	{
 		main->SetPreviewProgramMode(enable);
+		
+	}
+	
+	bool obs_frontend_preview_enabled(void) override
+	{
+		return main->previewEnabled;
+	}
+	
+	void obs_frontend_set_preview_enabled(bool enable) override
+	{
+		if (main->previewEnabled != enable)
+			main->TogglePreview();
 	}
 
 	obs_source_t *obs_frontend_get_current_preview_scene(void) override

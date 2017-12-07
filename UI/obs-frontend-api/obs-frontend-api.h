@@ -148,6 +148,9 @@ EXPORT void obs_frontend_save_streaming_service(void);
 EXPORT bool obs_frontend_preview_program_mode_active(void);
 EXPORT void obs_frontend_set_preview_program_mode(bool enable);
 
+EXPORT void obs_frontend_set_preview_enabled(bool enable);
+EXPORT bool obs_frontend_preview_enabled(void);
+
 EXPORT obs_source_t *obs_frontend_get_current_preview_scene(void);
 EXPORT void obs_frontend_set_current_preview_scene(obs_source_t *scene);
 
