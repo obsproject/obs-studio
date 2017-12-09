@@ -130,6 +130,10 @@
                     "url": "rtmp://live-hou.twitch.tv/app"
                 },
                 {
+                    "name": "US Central: Salt Lake City, UT",
+                    "url": "rtmp://live-slc.twitch.tv/app"
+                },
+                {
                     "name": "US East: Ashburn, VA",
                     "url": "rtmp://live-iad.twitch.tv/app"
                 },
