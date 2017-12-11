@@ -310,6 +310,9 @@ EXPORT int obs_reset_video(struct obs_video_info *ovi);
  */
 EXPORT bool obs_reset_audio(const struct obs_audio_info *oai);
 
+/** Gets the current audio buffering duration in milliseconds */
+EXPORT int obs_get_audio_buffering();
+
 #ifndef SWIG
 /** Gets the current video settings, returns false if no video */
 EXPORT bool obs_get_video_info(struct obs_video_info *ovi);
