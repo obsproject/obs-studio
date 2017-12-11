@@ -58,10 +58,12 @@ OBSBasicStats::OBSBasicStats(QWidget *parent)
 	cpuUsage = new QLabel(this);
 	hddSpace = new QLabel(this);
 	memUsage = new QLabel(this);
+	audioBuffering = new QLabel(this);
 
 	newStat("CPUUsage", cpuUsage, 0);
 	newStat("HDDSpaceAvailable", hddSpace, 0);
 	newStat("MemoryUsage", memUsage, 0);
+	newStat("AudioBuffering", audioBuffering, 0);
 
 	fps = new QLabel(this);
 	renderTime = new QLabel(this);
@@ -254,6 +256,12 @@ void OBSBasicStats::Update()
 		setThemeID(fps, "warning");
 	else
 		setThemeID(fps, "");
+
+	/* ------------------ */
+
+	int audioBuffer = obs_get_audio_buffering();
+	QString audioBufferStr = QString("%1 ms").arg(audioBuffer);
+	audioBuffering->setText(audioBufferStr);
 
 	/* ------------------ */
 

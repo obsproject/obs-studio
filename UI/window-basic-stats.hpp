@@ -15,6 +15,7 @@ class OBSBasicStats : public QWidget {
 	Q_OBJECT
 
 	QLabel *fps = nullptr;
+	QLabel *audioBuffering = nullptr;
 	QLabel *cpuUsage = nullptr;
 	QLabel *hddSpace = nullptr;
 	QLabel *memUsage = nullptr;
