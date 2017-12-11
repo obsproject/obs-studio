@@ -1020,7 +1020,7 @@ bool obs_reset_audio(const struct obs_audio_info *oai)
 	return obs_init_audio(&ai);
 }
 
-int obs_get_audio_buffering()
+int obs_get_current_audio_buffering()
 {
 	struct obs_audio_info oai;
 	int buffering_ticks, sample_rate;

@@ -259,7 +259,7 @@ void OBSBasicStats::Update()
 
 	/* ------------------ */
 
-	int audioBuffer = obs_get_audio_buffering();
+	int audioBuffer = obs_get_current_audio_buffering();
 	QString audioBufferStr = QString("%1 ms").arg(audioBuffer);
 	audioBuffering->setText(audioBufferStr);
 
