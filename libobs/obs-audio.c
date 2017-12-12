@@ -435,7 +435,7 @@ bool audio_callback(void *param,
 	/* ------------------------------------------------ */
 	/* if a source has gone backward in time, buffer */
 	if (min_ts < ts.start) {
-		blog(LOG_INFO, "audio from source '%s' is late. buffering required.",
+		blog(LOG_INFO, "audio from source '%s' is late, buffering required.",
 			min_ts_source->context.name);
 		add_audio_buffering(audio, sample_rate, &ts, min_ts);
 	}
