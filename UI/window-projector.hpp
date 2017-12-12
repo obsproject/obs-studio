@@ -18,6 +18,7 @@ private:
 	static void OBSSourceRemoved(void *data, calldata_t *params);
 
 	void mousePressEvent(QMouseEvent *event) override;
+	void mouseDoubleClickEvent(QMouseEvent *event) override;
 
 	int savedMonitor = 0;
 	bool isWindow = false;

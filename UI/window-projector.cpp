@@ -556,6 +556,69 @@ void OBSProjector::OBSSourceRemoved(void *data, calldata_t *params)
 	UNUSED_PARAMETER(params);
 }
 
+static int getSourceByPosition(int x, int y)
+{
+	struct obs_video_info ovi;
+	obs_get_video_info(&ovi);
+	float ratio = float(ovi.base_width) / float(ovi.base_height);
+
+	QWidget *rec  = QApplication::activeWindow();
+	int     cx    = rec->width();
+	int     cy    = rec->height();
+	int     minX  = 0;
+	int     minY  = 0;
+	int     maxX  = cx;
+	int     maxY  = cy;
+	int     halfX = cx / 2;
+	int     halfY = cy / 2;
+
+	if (float(cx) / float(cy) > ratio) {
+		int validX = cy * ratio;
+		minX = halfX - (validX / 2);
+		maxX = halfX + (validX / 2);
+	} else {
+		int validY = cx / ratio;
+		maxY = halfY + (validY / 2);
+	}
+
+	minY = halfY;
+
+	if (x < minX || x > maxX || y < minY || y > maxY)
+		return -1;
+
+	int quarterX = (maxX - minX) / 4;
+	int pos = (x - minX) / quarterX;
+	if (y > minY + ((maxY - minY) / 2))
+		pos += 4;
+
+	return pos;
+}
+
+void OBSProjector::mouseDoubleClickEvent(QMouseEvent *event)
+{
+	OBSQTDisplay::mouseDoubleClickEvent(event);
+
+	if (!config_get_bool(GetGlobalConfig(), "BasicWindow",
+			"TransitionOnDoubleClick"))
+		return;
+
+	OBSBasic *main = (OBSBasic*)obs_frontend_get_main_window();
+	if (!main->IsPreviewProgramMode())
+		return;
+
+	if (event->button() == Qt::LeftButton) {
+		int pos = getSourceByPosition(event->x(), event->y());
+		if (pos < 0)
+			return;
+		OBSSource src = OBSGetStrongRef(multiviewScenes[pos]);
+		if (!src)
+			return;
+
+		if (main->GetProgramSource() != src)
+			main->TransitionToScene(src);
+	}
+}
+
 void OBSProjector::mousePressEvent(QMouseEvent *event)
 {
 	OBSQTDisplay::mousePressEvent(event);
@@ -564,6 +627,19 @@ void OBSProjector::mousePressEvent(QMouseEvent *event)
 		QMenu popup(this);
 		popup.addAction(QTStr("Close"), this, SLOT(EscapeTriggered()));
 		popup.exec(QCursor::pos());
+	}
+
+	if (event->button() == Qt::LeftButton) {
+		int pos = getSourceByPosition(event->x(), event->y());
+		if (pos < 0)
+			return;
+		OBSSource src = OBSGetStrongRef(multiviewScenes[pos]);
+		if (!src)
+			return;
+
+		OBSBasic *main = (OBSBasic*)obs_frontend_get_main_window();
+		if (main->GetCurrentSceneSource() != src)
+			main->SetCurrentScene(src, false);
 	}
 }
 
