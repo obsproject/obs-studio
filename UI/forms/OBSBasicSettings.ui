@@ -146,7 +146,7 @@
               <x>0</x>
               <y>0</y>
               <width>801</width>
-              <height>715</height>
+              <height>1044</height>
              </rect>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_19">
@@ -549,6 +549,9 @@
                    <property name="fieldGrowthPolicy">
                     <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
                    </property>
+                   <property name="labelAlignment">
+                    <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                   </property>
                    <property name="topMargin">
                     <number>2</number>
                    </property>
@@ -576,6 +579,19 @@
                     <widget class="QCheckBox" name="studioPortraitLayout">
                      <property name="text">
                       <string>Basic.Settings.General.StudioPortraitLayout</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="2" column="1">
+                    <widget class="QComboBox" name="multiviewLayout"/>
+                   </item>
+                   <item row="2" column="0">
+                    <widget class="QLabel" name="label_64">
+                     <property name="text">
+                      <string>Basic.Settings.General.MultiviewLayout</string>
+                     </property>
+                     <property name="buddy">
+                      <cstring>multiviewLayout</cstring>
                      </property>
                     </widget>
                    </item>
