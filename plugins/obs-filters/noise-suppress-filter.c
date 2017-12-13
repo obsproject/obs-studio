@@ -155,9 +155,13 @@ static inline void process(struct noise_suppress_data *ng)
 
 	/* Convert to 16bit */
 	for (size_t i = 0; i < ng->channels; i++)
-		for (size_t j = 0; j < ng->frames; j++)
+		for (size_t j = 0; j < ng->frames; j++) {
+			float s = ng->copy_buffers[i][j];
+			if (s > 1.0f) s = 1.0f;
+			else if (s < -1.0f) s = -1.0f;
 			ng->segment_buffers[i][j] = (spx_int16_t)
-				(ng->copy_buffers[i][j] * c_32_to_16);
+				(s * c_32_to_16);
+		}
 
 	/* Execute */
 	for (size_t i = 0; i < ng->channels; i++)
