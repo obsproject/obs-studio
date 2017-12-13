@@ -45,6 +45,7 @@
 #include "window-basic-main.hpp"
 #include "window-basic-settings.hpp"
 #include "window-basic-main-outputs.hpp"
+#include "window-projector.hpp"
 
 #include <util/platform.h>
 
@@ -317,6 +318,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->snapDistance,         DSCROLL_CHANGED,GENERAL_CHANGED);
 	HookWidget(ui->doubleClickSwitch,    CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->studioPortraitLayout, CHECK_CHANGED,  GENERAL_CHANGED);
+	HookWidget(ui->multiviewLayout,      COMBO_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->outputMode,           COMBO_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->streamType,           COMBO_CHANGED,  STREAM1_CHANGED);
 	HookWidget(ui->simpleOutputPath,     EDIT_CHANGED,   OUTPUTS_CHANGED);
@@ -1086,6 +1088,31 @@ void OBSBasicSettings::LoadGeneralSettings()
 	bool studioPortraitLayout = config_get_bool(GetGlobalConfig(),
 			"BasicWindow", "StudioPortraitLayout");
 	ui->studioPortraitLayout->setChecked(studioPortraitLayout);
+
+	ui->multiviewLayout->addItem(QTStr(
+			"Basic.Settings.General.MultiviewLayout.Horizontal.Top"),
+			QT_UTF8("horizontaltop"));
+	ui->multiviewLayout->addItem(QTStr(
+			"Basic.Settings.General.MultiviewLayout.Horizontal.Bottom"),
+			QT_UTF8("horizontalbottom"));
+	ui->multiviewLayout->addItem(QTStr(
+			"Basic.Settings.General.MultiviewLayout.Vertical.Left"),
+			QT_UTF8("verticalleft"));
+	ui->multiviewLayout->addItem(QTStr(
+			"Basic.Settings.General.MultiviewLayout.Vertical.Right"),
+			QT_UTF8("verticalright"));
+
+	const char *multiviewLayoutText = config_get_string(GetGlobalConfig(),
+			"BasicWindow", "MultiviewLayout");
+
+	if (astrcmpi(multiviewLayoutText, "horizontalbottom") == 0)
+		ui->multiviewLayout->setCurrentIndex(1);
+	else if (astrcmpi(multiviewLayoutText, "verticalleft") == 0)
+		ui->multiviewLayout->setCurrentIndex(2);
+	else if (astrcmpi(multiviewLayoutText, "verticalright") == 0)
+		ui->multiviewLayout->setCurrentIndex(3);
+	else
+		ui->multiviewLayout->setCurrentIndex(0);
 
 	loading = false;
 }
@@ -2655,6 +2682,14 @@ void OBSBasicSettings::SaveGeneralSettings()
 				ui->studioPortraitLayout->isChecked());
 
 		main->ResetUI();
+	}
+
+	if (WidgetChanged(ui->multiviewLayout)) {
+		config_set_string(GetGlobalConfig(), "BasicWindow",
+				"MultiviewLayout",
+				QT_TO_UTF8(GetComboData(ui->multiviewLayout)));
+
+		OBSProjector::UpdateMultiviewProjectors();
 	}
 }
 
