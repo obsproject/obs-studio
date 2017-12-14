@@ -15,6 +15,9 @@ Quick Links for Contributing
  - Development forum:
    https://obsproject.com/forum/list/general-development.21/
 
+ - Developer/API Documentation:
+   https://obsproject.com/docs
+
  - To contribute language translations, do not make pull requests.
    Instead, use crowdin.  Read here for more information:
    https://obsproject.com/forum/threads/how-to-contribute-translations-for-obs.16327/
@@ -59,9 +62,3 @@ Commit Guidlines
      libobs: Fix source not displaying
 
  - If you still need examples, please view the commit history.
-
-Developer Documentation
------------------------
-
-Documentation is generated via sphinx, and can be found at
-https://obsproject.com/docs
