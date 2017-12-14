@@ -35,7 +35,7 @@ Contributing
    the coding and commit guidelines:
    https://github.com/jp9000/obs-studio/blob/master/CONTRIBUTING.rst
 
- - Developer/API documentaiton can be found here:
+ - Developer/API documentation can be found here:
    https://obsproject.com/docs
 
  - If you wish to contribute translations, do not submit pull requests.
