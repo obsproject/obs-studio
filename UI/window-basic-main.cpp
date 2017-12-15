@@ -3980,7 +3980,8 @@ void OBSBasic::on_scenes_itemDoubleClicked(QListWidgetItem *witem)
 			OBSScene scene = GetCurrentScene();
 
 			if (scene)
-				SetCurrentScene(scene, false, true);
+				//because we are in PreviewProgramMode
+				TransitionToScene(scene);
 		}
 	}
 }
