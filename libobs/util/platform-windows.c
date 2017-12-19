@@ -810,8 +810,12 @@ void get_reg_dword(HKEY hkey, LPCWSTR sub_key, LPCWSTR value_name,
 
 	status = RegOpenKeyEx(hkey, sub_key, 0, KEY_READ, &key);
 
-	if (status != ERROR_SUCCESS)
+	if (status != ERROR_SUCCESS) {
+		info->status = status;
+		info->size = 0;
+		info->return_value = 0;
 		return;
+	}
 
 	reg.size = sizeof(reg.return_value);
 
