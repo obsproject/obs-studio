@@ -220,17 +220,31 @@ static void log_gaming_features(void)
 			L"AllowAutoGameMode", &game_mode_enabled);
 
 	blog(LOG_INFO, "Windows 10 Gaming Features:");
-	blog(LOG_INFO, "\tGame Bar: %s",
+	if (game_bar_enabled.status == ERROR_SUCCESS) {
+		blog(LOG_INFO, "\tGame Bar: %s",
 			(bool)game_bar_enabled.return_value ? "On" : "Off");
-	blog(LOG_INFO, "\tGame DVR Allowed: %s",
+	}
+
+	if (game_dvr_allowed.status == ERROR_SUCCESS) {
+		blog(LOG_INFO, "\tGame DVR Allowed: %s",
 			(bool)game_dvr_allowed.return_value ? "Yes" : "No");
-	blog(LOG_INFO, "\tGame DVR: %s",
+	}
+
+	if (game_dvr_enabled.status == ERROR_SUCCESS) {
+		blog(LOG_INFO, "\tGame DVR: %s",
 			(bool)game_dvr_enabled.return_value ? "On" : "Off");
-	blog(LOG_INFO, "\tGame DVR Background Recording: %s",
+	}
+
+	if (game_dvr_bg_recording.status == ERROR_SUCCESS) {
+		blog(LOG_INFO, "\tGame DVR Background Recording: %s",
 			(bool)game_dvr_bg_recording.return_value ? "On" :
 			"Off");
-	blog(LOG_INFO, "\tGame Mode: %s",
+	}
+
+	if (game_mode_enabled.status == ERROR_SUCCESS) {
+		blog(LOG_INFO, "\tGame Mode: %s",
 			(bool)game_mode_enabled.return_value ? "On" : "Off");
+	}
 }
 
 void log_system_info(void)
