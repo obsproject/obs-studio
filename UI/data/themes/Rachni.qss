@@ -298,7 +298,6 @@ QTabWidget::tab-bar {
 /********************/
 
 QTabBar {
-	qproperty-drawBase: 0;
 	border-radius: 3px;
 }
 
@@ -324,21 +323,27 @@ QTabBar::close-button:pressed {
 QTabBar::tab {
 	color: rgb(239, 240, 241); /* White */
 	border: 1px solid rgb(118, 121, 124); /* Light Gray */
-	border-bottom: 1px transparent;
 	background-color: rgba(240, 98, 146, 0.5); /* Pink (Secondary) */
 	padding: 5px;
 	min-width: 50px;
+}
+
+QTabBar::tab:top {
+	border-bottom: 1px transparent;
 	border-top-left-radius: 2px;
 	border-top-right-radius: 2px;
+}
+
+QTabBar::tab:bottom {
+	margin-bottom: 4px;
+	border-bottom-left-radius: 2px;
+	border-bottom-right-radius: 2px;
+	height: 12px;
 }
 
 QTabBar::tab:!selected {
 	color: rgb(239, 240, 241); /* White */
 	background-color: rgb(84, 87, 91); /* Gray */
-	border: 1px solid rgb(118, 121, 124); /* Light Gray */
-	border-bottom: 1px transparent;
-	border-top-left-radius: 2px;
-	border-top-right-radius: 2px;
 }
 
 QTabBar::tab:!selected:hover {
@@ -498,6 +503,16 @@ QLineEdit {
 	border-radius: 2px;
 	color: rgb(239, 240, 241); /* White */
 }
+
+QListWidget QLineEdit {
+	padding-top: 0;
+	padding-bottom: 0;
+	padding-right: 0;
+	padding-left: 2px;
+	border: none;
+	border-radius: none;
+}
+
 
 /**********************/
 /* --- Checkboxes --- */
@@ -989,7 +1004,6 @@ QSlider::handle:disabled {
 /****************/
 /* --- Misc --- */
 /****************/
-
 
 /* Highlight linked hotkeys */
 OBSHotkeyLabel[hotkeyPairHover=true] {
