@@ -15,6 +15,11 @@ void FreeCaptions();
 void InitOutputTimer();
 void FreeOutputTimer();
 
+#if ENABLE_SCRIPTING
+void InitScripts();
+void FreeScripts();
+#endif
+
 bool obs_module_load(void)
 {
 #if defined(_WIN32) && BUILD_CAPTIONS
@@ -22,6 +27,9 @@ bool obs_module_load(void)
 #endif
 	InitSceneSwitcher();
 	InitOutputTimer();
+#if ENABLE_SCRIPTING
+	InitScripts();
+#endif
 	return true;
 }
 
@@ -32,4 +40,7 @@ void obs_module_unload(void)
 #endif
 	FreeSceneSwitcher();
 	FreeOutputTimer();
+#if ENABLE_SCRIPTING
+	FreeScripts();
+#endif
 }
