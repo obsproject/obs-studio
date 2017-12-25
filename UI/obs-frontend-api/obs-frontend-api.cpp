@@ -311,6 +311,20 @@ void obs_frontend_remove_save_callback(obs_frontend_save_cb callback,
 		c->obs_frontend_remove_save_callback(callback, private_data);
 }
 
+void obs_frontend_add_preload_callback(obs_frontend_save_cb callback,
+		void *private_data)
+{
+	if (callbacks_valid())
+		c->obs_frontend_add_preload_callback(callback, private_data);
+}
+
+void obs_frontend_remove_preload_callback(obs_frontend_save_cb callback,
+		void *private_data)
+{
+	if (callbacks_valid())
+		c->obs_frontend_remove_preload_callback(callback, private_data);
+}
+
 void obs_frontend_push_ui_translation(obs_frontend_translate_ui_cb translate)
 {
 	if (callbacks_valid())

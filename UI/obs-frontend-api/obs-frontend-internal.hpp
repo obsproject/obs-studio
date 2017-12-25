@@ -67,6 +67,11 @@ struct obs_frontend_callbacks {
 	virtual void obs_frontend_remove_save_callback(
 			obs_frontend_save_cb callback, void *private_data)=0;
 
+	virtual void obs_frontend_add_preload_callback(
+			obs_frontend_save_cb callback, void *private_data)=0;
+	virtual void obs_frontend_remove_preload_callback(
+			obs_frontend_save_cb callback, void *private_data)=0;
+
 	virtual void obs_frontend_push_ui_translation(
 			obs_frontend_translate_ui_cb translate)=0;
 	virtual void obs_frontend_pop_ui_translation(void)=0;
@@ -83,6 +88,7 @@ struct obs_frontend_callbacks {
 	virtual void obs_frontend_set_current_preview_scene(obs_source_t *scene)=0;
 
 	virtual void on_load(obs_data_t *settings)=0;
+	virtual void on_preload(obs_data_t *settings)=0;
 	virtual void on_save(obs_data_t *settings)=0;
 	virtual void on_event(enum obs_frontend_event event)=0;
 };
