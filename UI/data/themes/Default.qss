@@ -31,6 +31,10 @@
     qproperty-icon: url(:/res/images/up.png);
 }
 
+* [themeID="refreshIconSmall"] {
+    qproperty-icon: url(:/res/images/refresh.png);
+}
+
 * [themeID="downArrowIconSmall"] {
     qproperty-icon: url(:/res/images/down.png);
 }

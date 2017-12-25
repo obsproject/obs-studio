@@ -2,6 +2,7 @@
   <qresource prefix="/res">
     <file>images/mute.png</file>
     <file>images/unmute.png</file>
+    <file>images/refresh.png</file>
     <file>images/configuration21_16.png</file>
     <file>images/invisible_mask.png</file>
     <file>images/visible_mask.png</file>
