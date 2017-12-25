@@ -60,6 +60,8 @@ EXPORT void signal_handler_connect(signal_handler_t *handler,
 EXPORT void signal_handler_disconnect(signal_handler_t *handler,
 		const char *signal, signal_callback_t callback, void *data);
 
+EXPORT void signal_handler_remove_current(void);
+
 EXPORT void signal_handler_signal(signal_handler_t *handler, const char *signal,
 		calldata_t *params);
 
