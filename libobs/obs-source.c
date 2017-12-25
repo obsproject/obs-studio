@@ -3887,13 +3887,17 @@ static void custom_audio_render(obs_source_t *source, uint32_t mixers,
 	uint64_t ts;
 
 	for (size_t mix = 0; mix < MAX_AUDIO_MIXES; mix++) {
-		for (size_t ch = 0; ch < channels; ch++)
+		for (size_t ch = 0; ch < channels; ch++) {
 			audio_data.output[mix].data[ch] =
 				source->audio_output_buf[mix][ch];
-	}
+		}
 
-	memset(audio_data.output[0].data[0], 0, AUDIO_OUTPUT_FRAMES *
-			MAX_AUDIO_MIXES * channels * sizeof(float));
+		if ((source->audio_mixers & mixers & (1 << mix)) != 0) {
+			memset(source->audio_output_buf[mix][0], 0,
+					sizeof(float) * AUDIO_OUTPUT_FRAMES *
+					channels);
+		}
+	}
 
 	success = source->info.audio_render(source->context.data, &ts,
 			&audio_data, mixers, channels, sample_rate);
