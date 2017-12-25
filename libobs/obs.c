@@ -810,6 +810,7 @@ bool obs_startup(const char *locale, const char *module_config_path,
 void obs_shutdown(void)
 {
 	struct obs_module *module;
+	struct obs_core *core;
 
 	if (!obs)
 		return;
@@ -850,25 +851,27 @@ void obs_shutdown(void)
 	obs->procs = NULL;
 	obs->signals = NULL;
 
-	module = obs->first_module;
+	core = obs;
+	obs = NULL;
+
+	module = core->first_module;
 	while (module) {
 		struct obs_module *next = module->next;
 		free_module(module);
 		module = next;
 	}
-	obs->first_module = NULL;
+	core->first_module = NULL;
 
-	for (size_t i = 0; i < obs->module_paths.num; i++)
-		free_module_path(obs->module_paths.array+i);
-	da_free(obs->module_paths);
+	for (size_t i = 0; i < core->module_paths.num; i++)
+		free_module_path(core->module_paths.array+i);
+	da_free(core->module_paths);
 
-	if (obs->name_store_owned)
-		profiler_name_store_free(obs->name_store);
+	if (core->name_store_owned)
+		profiler_name_store_free(core->name_store);
 
-	bfree(obs->module_config_path);
-	bfree(obs->locale);
-	bfree(obs);
-	obs = NULL;
+	bfree(core->module_config_path);
+	bfree(core->locale);
+	bfree(core);
 
 #ifdef _WIN32
 	uninitialize_com();
