@@ -291,6 +291,7 @@ enum gs_shader_param_type {
 	GS_SHADER_PARAM_TEXTURE,
 };
 
+#ifndef SWIG
 struct gs_shader_param_info {
 	enum gs_shader_param_type type;
 	const char *name;
@@ -327,6 +328,7 @@ EXPORT void gs_shader_set_val(gs_sparam_t *param, const void *val, size_t size);
 EXPORT void gs_shader_set_default(gs_sparam_t *param);
 EXPORT void gs_shader_set_next_sampler(gs_sparam_t *param,
 		gs_samplerstate_t *sampler);
+#endif
 
 /* ---------------------------------------------------
  * effect functions
@@ -340,6 +342,7 @@ EXPORT void gs_shader_set_next_sampler(gs_sparam_t *param,
 	GS_EFFECT_TEXTURE
 };*/
 
+#ifndef SWIG
 struct gs_effect_param_info {
 	const char *name;
 	enum gs_shader_param_type type;
@@ -349,6 +352,7 @@ struct gs_effect_param_info {
 
 	float min, max, inc, mul; */
 };
+#endif
 
 EXPORT void gs_effect_destroy(gs_effect_t *effect);
 
@@ -382,8 +386,11 @@ EXPORT void gs_effect_update_params(gs_effect_t *effect);
 EXPORT gs_eparam_t *gs_effect_get_viewproj_matrix(const gs_effect_t *effect);
 EXPORT gs_eparam_t *gs_effect_get_world_matrix(const gs_effect_t *effect);
 
+#ifndef SWIG
 EXPORT void gs_effect_get_param_info(const gs_eparam_t *param,
 		struct gs_effect_param_info *info);
+#endif
+
 EXPORT void gs_effect_set_bool(gs_eparam_t *param, bool val);
 EXPORT void gs_effect_set_float(gs_eparam_t *param, float val);
 EXPORT void gs_effect_set_int(gs_eparam_t *param, int val);
