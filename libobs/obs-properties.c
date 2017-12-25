@@ -143,9 +143,9 @@ static inline void frame_rate_data_free(struct frame_rate_data *data)
 struct obs_properties;
 
 struct obs_property {
-	const char              *name;
-	const char              *desc;
-	const char              *long_desc;
+	char                    *name;
+	char                    *desc;
+	char                    *long_desc;
 	enum obs_property_type  type;
 	bool                    visible;
 	bool                    enabled;
@@ -222,6 +222,9 @@ static void obs_property_destroy(struct obs_property *property)
 	else if (property->type == OBS_PROPERTY_FRAME_RATE)
 		frame_rate_data_free(get_property_data(property));
 
+	bfree(property->name);
+	bfree(property->desc);
+	bfree(property->long_desc);
 	bfree(property);
 }
 
@@ -323,8 +326,8 @@ static inline struct obs_property *new_prop(struct obs_properties *props,
 	p->enabled = true;
 	p->visible = true;
 	p->type    = type;
-	p->name    = name;
-	p->desc    = desc;
+	p->name    = bstrdup(name);
+	p->desc    = bstrdup(desc);
 	propertes_add(props, p);
 
 	return p;
@@ -604,12 +607,22 @@ void obs_property_set_enabled(obs_property_t *p, bool enabled)
 
 void obs_property_set_description(obs_property_t *p, const char *description)
 {
-	if (p) p->desc = description;
+	if (p) {
+		bfree(p->desc);
+		p->desc = description && *description
+			? bstrdup(description)
+			: NULL;
+	}
 }
 
 void obs_property_set_long_description(obs_property_t *p, const char *long_desc)
 {
-	if (p) p->long_desc = long_desc;
+	if (p) {
+		bfree(p->long_desc);
+		p->long_desc = long_desc && *long_desc
+			? bstrdup(long_desc)
+			: NULL;
+	}
 }
 
 const char *obs_property_name(obs_property_t *p)
