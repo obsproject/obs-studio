@@ -380,6 +380,10 @@ QToolButton:pressed {
 	qproperty-icon: url(./Dark/cogwheel.png);
 }
 
+* [themeID="refreshIconSmall"] {
+	qproperty-icon: url(./Dark/refresh.png);
+}
+
 * [themeID="upArrowIconSmall"] {
 	qproperty-icon: url(./Dark/up_arrow.png);
 }
