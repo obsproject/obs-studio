@@ -20,6 +20,7 @@ if(WIN32)
 endif()
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
+set(ENABLE_SCRIPTING OFF CACHE BOOL "" FORCE)
 
 include(ObsHelpers)
 include(ObsCpack)
