@@ -961,6 +961,9 @@ retryScene:
 	LogScenes();
 
 	disableSaving--;
+
+	if (api)
+		api->on_event(OBS_FRONTEND_EVENT_SCENE_CHANGED);
 }
 
 #define SERVICE_PATH "service.json"
