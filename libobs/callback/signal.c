@@ -236,8 +236,16 @@ void signal_handler_disconnect(signal_handler_t *handler, const char *signal,
 		else
 			da_erase(sig->callbacks, idx);
 	}
-	
+
 	pthread_mutex_unlock(&sig->mutex);
+}
+
+static THREAD_LOCAL struct signal_callback *current_signal_cb = NULL;
+
+void signal_handler_remove_current(void)
+{
+	if (current_signal_cb)
+		current_signal_cb->remove = true;
 }
 
 void signal_handler_signal(signal_handler_t *handler, const char *signal,
@@ -253,8 +261,11 @@ void signal_handler_signal(signal_handler_t *handler, const char *signal,
 
 	for (size_t i = 0; i < sig->callbacks.num; i++) {
 		struct signal_callback *cb = sig->callbacks.array+i;
-		if (!cb->remove)
+		if (!cb->remove) {
+			current_signal_cb = cb;
 			cb->callback(cb->data, params);
+			current_signal_cb = NULL;
+		}
 	}
 
 	for (size_t i = sig->callbacks.num; i > 0; i--) {
