@@ -4042,6 +4042,9 @@ QMenu *OBSBasic::CreateAddSourcePopupMenu()
 		const char *name = obs_source_get_display_name(type);
 		uint32_t caps = obs_get_source_output_flags(type);
 
+		if ((caps & OBS_SOURCE_CAP_DISABLED) != 0)
+			continue;
+
 		if ((caps & OBS_SOURCE_DEPRECATED) == 0) {
 			addSource(popup, type, name);
 		} else {
