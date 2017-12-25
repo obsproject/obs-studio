@@ -130,6 +130,11 @@ enum obs_source_type {
  */
 #define OBS_SOURCE_DO_NOT_SELF_MONITOR (1<<9)
 
+/**
+ * Source type is currently disabled and should not be shown to the user
+ */
+#define OBS_SOURCE_CAP_DISABLED (1<<10)
+
 /** @} */
 
 typedef void (*obs_source_enum_proc_t)(obs_source_t *parent,

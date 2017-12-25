@@ -39,7 +39,7 @@ static inline bool deinterlacing_enabled(const struct obs_source *source)
 	return source->deinterlace_mode != OBS_DEINTERLACE_MODE_DISABLE;
 }
 
-const struct obs_source_info *get_source_info(const char *id)
+struct obs_source_info *get_source_info(const char *id)
 {
 	for (size_t i = 0; i < obs->source_types.num; i++) {
 		struct obs_source_info *info = &obs->source_types.array[i];
@@ -4114,4 +4114,17 @@ bool obs_source_async_decoupled(const obs_source_t *source)
 {
 	return obs_source_valid(source, "obs_source_async_decoupled") ?
 		source->async_decoupled : false;
+}
+
+/* hidden/undocumented export to allow source type redefinition for scripts */
+EXPORT void obs_enable_source_type(const char *name, bool enable)
+{
+	struct obs_source_info *info = get_source_info(name);
+	if (!info)
+		return;
+
+	if (enable)
+		info->output_flags &= ~OBS_SOURCE_CAP_DISABLED;
+	else
+		info->output_flags |= OBS_SOURCE_CAP_DISABLED;
 }
