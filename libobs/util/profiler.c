@@ -260,13 +260,8 @@ static bool enabled = false;
 static pthread_mutex_t root_mutex = PTHREAD_MUTEX_INITIALIZER;
 static DARRAY(profile_root_entry) root_entries;
 
-#ifdef _MSC_VER
-static __declspec(thread) profile_call *thread_context = NULL;
-static __declspec(thread) bool thread_enabled = true;
-#else
-static __thread profile_call *thread_context = NULL;
-static __thread bool thread_enabled = true;
-#endif
+static THREAD_LOCAL profile_call *thread_context = NULL;
+static THREAD_LOCAL bool thread_enabled = true;
 
 void profiler_start(void)
 {
