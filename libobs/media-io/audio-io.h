@@ -29,6 +29,10 @@ extern "C" {
 #define MAX_AUDIO_CHANNELS  8
 #define AUDIO_OUTPUT_FRAMES 1024
 
+#define TOTAL_AUDIO_SIZE \
+	(MAX_AUDIO_MIXES * MAX_AUDIO_CHANNELS * \
+	 AUDIO_OUTPUT_FRAMES * sizeof(float))
+
 /*
  * Base audio output component.  Use this to create an audio output track
  * for the media.
