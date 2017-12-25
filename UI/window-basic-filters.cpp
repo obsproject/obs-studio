@@ -361,6 +361,10 @@ QMenu *OBSBasicFilters::CreateAddFilterPopupMenu(bool async)
 	vector<FilterInfo> types;
 	while (obs_enum_filter_types(idx++, &type_str)) {
 		const char *name = obs_source_get_display_name(type_str);
+		uint32_t caps = obs_get_source_output_flags(type_str);
+
+		if ((caps & OBS_SOURCE_DEPRECATED) != 0)
+			continue;
 
 		auto it = types.begin();
 		for (; it != types.end(); ++it) {
