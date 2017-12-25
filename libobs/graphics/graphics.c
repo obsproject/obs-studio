@@ -28,11 +28,7 @@
 #include "effect-parser.h"
 #include "effect.h"
 
-#ifdef _MSC_VER
-static __declspec(thread) graphics_t *thread_graphics = NULL;
-#else /* assume GCC or that other compiler we dare not mention */
-static __thread graphics_t *thread_graphics = NULL;
-#endif
+static THREAD_LOCAL graphics_t *thread_graphics = NULL;
 
 static inline bool gs_obj_valid(const void *obj, const char *f,
 		const char *name)

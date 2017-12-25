@@ -78,6 +78,12 @@ EXPORT int  os_sem_wait(os_sem_t *sem);
 
 EXPORT void os_set_thread_name(const char *name);
 
+#ifdef _MSC_VER
+#define THREAD_LOCAL __declspec(thread)
+#else
+#define THREAD_LOCAL __thread
+#endif
+
 
 #ifdef __cplusplus
 }
