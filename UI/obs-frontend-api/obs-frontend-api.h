@@ -47,6 +47,8 @@ enum obs_frontend_event {
 
 /* ------------------------------------------------------------------------- */
 
+#ifndef SWIG
+
 struct obs_frontend_source_list {
 	DARRAY(obs_source_t*) sources;
 };
@@ -60,6 +62,8 @@ static inline void obs_frontend_source_list_free(
 	da_free(source_list->sources);
 }
 
+#endif //!SWIG
+
 /* ------------------------------------------------------------------------- */
 
 /* NOTE: Functions that return char** string lists are a single allocation of
@@ -72,6 +76,8 @@ static inline void obs_frontend_source_list_free(
  * window, use obs_frontend_push_ui_translation when the text is about to be
  * translated, and obs_frontend_pop_ui_translation when translation is
  * complete. */
+
+#ifndef SWIG
 
 EXPORT void *obs_frontend_get_main_window(void);
 EXPORT void *obs_frontend_get_main_window_handle(void);
@@ -127,6 +133,8 @@ typedef bool (*obs_frontend_translate_ui_cb)(const char *text,
 EXPORT void obs_frontend_push_ui_translation(
 		obs_frontend_translate_ui_cb translate);
 EXPORT void obs_frontend_pop_ui_translation(void);
+
+#endif //!SWIG
 
 EXPORT void obs_frontend_streaming_start(void);
 EXPORT void obs_frontend_streaming_stop(void);
