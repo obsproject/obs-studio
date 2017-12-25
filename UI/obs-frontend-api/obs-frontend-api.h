@@ -135,6 +135,11 @@ EXPORT obs_output_t *obs_frontend_get_replay_buffer_output(void);
 EXPORT config_t *obs_frontend_get_profile_config(void);
 EXPORT config_t *obs_frontend_get_global_config(void);
 
+EXPORT void obs_frontend_add_preload_callback(obs_frontend_save_cb callback,
+		void *private_data);
+EXPORT void obs_frontend_remove_preload_callback(obs_frontend_save_cb callback,
+		void *private_data);
+
 typedef bool (*obs_frontend_translate_ui_cb)(const char *text,
 		const char **out);
 
