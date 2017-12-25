@@ -45,6 +45,9 @@ install-sh
 Makefile.in
 Makefile
 
+#python
+__pycache__
+
 #sphinx
 /docs/sphinx/_build/*
 !/docs/sphinx/_build/.gitignore
