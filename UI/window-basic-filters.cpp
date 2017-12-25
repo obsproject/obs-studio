@@ -365,6 +365,8 @@ QMenu *OBSBasicFilters::CreateAddFilterPopupMenu(bool async)
 
 		if ((caps & OBS_SOURCE_DEPRECATED) != 0)
 			continue;
+		if ((caps & OBS_SOURCE_CAP_DISABLED) != 0)
+			continue;
 
 		auto it = types.begin();
 		for (; it != types.end(); ++it) {
