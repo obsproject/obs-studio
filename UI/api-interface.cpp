@@ -428,7 +428,8 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 
 	void on_load(obs_data_t *settings) override
 	{
-		for (auto cb : saveCallbacks)
+		for (size_t i = saveCallbacks.size(); i > 0; i--) {
+			auto cb = saveCallbacks[i - 1];
 			cb.callback(settings, false, cb.private_data);
 		}
 	}
@@ -443,8 +444,10 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 
 	void on_save(obs_data_t *settings) override
 	{
-		for (auto cb : saveCallbacks)
+		for (size_t i = saveCallbacks.size(); i > 0; i--) {
+			auto cb = saveCallbacks[i - 1];
 			cb.callback(settings, true, cb.private_data);
+		}
 	}
 
 	void on_event(enum obs_frontend_event event) override
@@ -452,8 +455,10 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 		if (main->disableSaving)
 			return;
 
-		for (auto cb : callbacks)
+		for (size_t i = callbacks.size(); i > 0; i--) {
+			auto cb = callbacks[i - 1];
 			cb.callback(event, cb.private_data);
+		}
 	}
 };
 
