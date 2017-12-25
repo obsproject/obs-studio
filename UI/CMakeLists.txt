@@ -1,4 +1,3 @@
-option(ENABLE_UI "Enables the OBS user interfaces" ON)
 if(DISABLE_UI)
 	message(STATUS "UI disabled")
 	return()
