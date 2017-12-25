@@ -49,6 +49,7 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 	OBSBasic *main;
 	vector<OBSStudioCallback<obs_frontend_event_cb>> callbacks;
 	vector<OBSStudioCallback<obs_frontend_save_cb>> saveCallbacks;
+	vector<OBSStudioCallback<obs_frontend_save_cb>> preloadCallbacks;
 
 	inline OBSStudioAPI(OBSBasic *main_) : main(main_) {}
 
@@ -348,6 +349,26 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 		saveCallbacks.erase(saveCallbacks.begin() + idx);
 	}
 
+	void obs_frontend_add_preload_callback(obs_frontend_save_cb callback,
+			void *private_data) override
+	{
+		size_t idx = GetCallbackIdx(preloadCallbacks, callback,
+				private_data);
+		if (idx == (size_t)-1)
+			preloadCallbacks.emplace_back(callback, private_data);
+	}
+
+	void obs_frontend_remove_preload_callback(obs_frontend_save_cb callback,
+			void *private_data) override
+	{
+		size_t idx = GetCallbackIdx(preloadCallbacks, callback,
+				private_data);
+		if (idx == (size_t)-1)
+			return;
+
+		preloadCallbacks.erase(preloadCallbacks.begin() + idx);
+	}
+
 	void obs_frontend_push_ui_translation(
 			obs_frontend_translate_ui_cb translate) override
 	{
@@ -409,6 +430,15 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 	{
 		for (auto cb : saveCallbacks)
 			cb.callback(settings, false, cb.private_data);
+		}
+	}
+
+	void on_preload(obs_data_t *settings) override
+	{
+		for (size_t i = preloadCallbacks.size(); i > 0; i--) {
+			auto cb = preloadCallbacks[i - 1];
+			cb.callback(settings, false, cb.private_data);
+		}
 	}
 
 	void on_save(obs_data_t *settings) override
