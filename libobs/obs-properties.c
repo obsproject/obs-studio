@@ -146,6 +146,7 @@ struct obs_property {
 	char                    *name;
 	char                    *desc;
 	char                    *long_desc;
+	void                    *priv;
 	enum obs_property_type  type;
 	bool                    visible;
 	bool                    enabled;
@@ -498,6 +499,20 @@ obs_property_t *obs_properties_add_button(obs_properties_t *props,
 	return p;
 }
 
+obs_property_t *obs_properties_add_button2(obs_properties_t *props,
+		const char *name, const char *text,
+		obs_property_clicked_t callback, void *priv)
+{
+	if (!props || has_prop(props, name)) return NULL;
+
+	struct obs_property *p = new_prop(props, name, text,
+			OBS_PROPERTY_BUTTON);
+	struct button_data *data = get_property_data(p);
+	data->callback = callback;
+	p->priv = priv;
+	return p;
+}
+
 obs_property_t *obs_properties_add_font(obs_properties_t *props,
 		const char *name, const char *desc)
 {
@@ -587,9 +602,12 @@ bool obs_property_button_clicked(obs_property_t *p, void *obj)
 	if (p) {
 		struct button_data *data = get_type_data(p,
 				OBS_PROPERTY_BUTTON);
-		if (data && data->callback)
+		if (data && data->callback) {
+			if (p->priv)
+				return data->callback(p->parent, p, p->priv);
 			return data->callback(p->parent, p,
 					(context ? context->data : NULL));
+		}
 	}
 
 	return false;
