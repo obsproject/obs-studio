@@ -78,6 +78,7 @@ PY_EXTERN void (*Import_Py_Initialize)(void);
 PY_EXTERN void (*Import_Py_Finalize)(void);
 PY_EXTERN int (*Import_Py_IsInitialized)(void);
 PY_EXTERN void (*Import_PyEval_InitThreads)(void);
+PY_EXTERN int (*Import_PyEval_ThreadsInitialized)(void);
 PY_EXTERN void (*Import_PyEval_ReleaseThread)(PyThreadState *tstate);
 PY_EXTERN void (*Import_PySys_SetArgv)(int, wchar_t **);
 PY_EXTERN PyObject *(*Import_PyImport_ImportModule)(const char *name);
@@ -150,6 +151,7 @@ extern bool import_python(const char *python_path);
 # define Py_Finalize Import_Py_Finalize
 # define Py_IsInitialized Import_Py_IsInitialized
 # define PyEval_InitThreads Import_PyEval_InitThreads
+# define PyEval_ThreadsInitialized Import_PyEval_ThreadsInitialized
 # define PyEval_ReleaseThread Import_PyEval_ReleaseThread
 # define PySys_SetArgv Import_PySys_SetArgv
 # define PyImport_ImportModule Import_PyImport_ImportModule

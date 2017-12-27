@@ -92,6 +92,7 @@ bool import_python(const char *python_path)
 	IMPORT_FUNC(Py_Finalize);
 	IMPORT_FUNC(Py_IsInitialized);
 	IMPORT_FUNC(PyEval_InitThreads);
+	IMPORT_FUNC(PyEval_ThreadsInitialized);
 	IMPORT_FUNC(PyEval_ReleaseThread);
 	IMPORT_FUNC(PySys_SetArgv);
 	IMPORT_FUNC(PyImport_ImportModule);
