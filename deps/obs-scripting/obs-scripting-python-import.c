@@ -131,6 +131,7 @@ bool import_python(const char *python_path)
 	IMPORT_FUNC(PyList_GetItem);
 	IMPORT_FUNC(PyUnicode_AsUTF8String);
 	IMPORT_FUNC(PyLong_FromUnsignedLongLong);
+	IMPORT_FUNC(PyArg_VaParse);
 
 #undef IMPORT_FUNC
 

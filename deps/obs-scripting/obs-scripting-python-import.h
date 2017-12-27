@@ -117,6 +117,7 @@ PY_EXTERN Py_ssize_t (*Import_PyList_Size)(PyObject *);
 PY_EXTERN PyObject *(*Import_PyList_GetItem)(PyObject *, Py_ssize_t);
 PY_EXTERN PyObject *(*Import_PyUnicode_AsUTF8String)(PyObject *unicode);
 PY_EXTERN PyObject *(*Import_PyLong_FromUnsignedLongLong)(unsigned long long);
+PY_EXTERN int (*Import_PyArg_VaParse)(PyObject *, const char *, va_list);
 
 extern bool import_python(const char *python_path);
 
@@ -187,6 +188,7 @@ extern bool import_python(const char *python_path);
 # define PyList_GetItem Import_PyList_GetItem
 # define PyUnicode_AsUTF8String Import_PyUnicode_AsUTF8String
 # define PyLong_FromUnsignedLongLong Import_PyLong_FromUnsignedLongLong
+# define PyArg_VaParse Import_PyArg_VaParse
 # endif
 
 #endif
