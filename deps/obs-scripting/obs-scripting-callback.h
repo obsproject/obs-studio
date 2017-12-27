@@ -20,11 +20,7 @@
 #include <callback/calldata.h>
 #include <util/threading.h>
 #include <util/bmem.h>
-
-struct script_callback;
-struct obs_script;
-
-typedef struct obs_script obs_script_t;
+#include "obs-scripting-internal.h"
 
 extern pthread_mutex_t detach_mutex;
 extern struct script_callback *detached_callbacks;
