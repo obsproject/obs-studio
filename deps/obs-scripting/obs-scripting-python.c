@@ -1544,6 +1544,8 @@ bool obs_scripting_load_python(const char *python_path)
 #endif
 
 	Py_Initialize();
+	if (!Py_IsInitialized())
+		return false;
 
 #if 0
 # ifdef _DEBUG
@@ -1559,6 +1561,8 @@ bool obs_scripting_load_python(const char *python_path)
 #endif
 
 	PyEval_InitThreads();
+	if (!PyEval_ThreadsInitialized())
+		return false;
 
 	/* ---------------------------------------------- */
 	/* Must set arguments for guis to work            */
