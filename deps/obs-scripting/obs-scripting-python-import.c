@@ -28,8 +28,8 @@
 
 #ifdef _WIN32
 #define SO_EXT ".dll"
-#else
-#define SO_EXT ".so"
+#elif __APPLE__
+#define SO_EXT ".dylib"
 #endif
 
 bool import_python(const char *python_path)
