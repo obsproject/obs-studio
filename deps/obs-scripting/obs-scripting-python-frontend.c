@@ -96,7 +96,7 @@ static PyObject *set_current_scene(PyObject *self, PyObject *args)
 	PyObject *py_source;
 	obs_source_t *source = NULL;
 
-	if (!PyArg_ParseTuple(args, "O:" __FUNCTION__, &py_source))
+	if (!parse_args(args, "O", &py_source))
 		return python_none();
 	if (!py_to_libobs(obs_source_t, py_source, &source))
 		return python_none();
@@ -151,7 +151,7 @@ static PyObject *set_current_transition(PyObject *self, PyObject *args)
 	PyObject *py_source;
 	obs_source_t *source = NULL;
 
-	if (!PyArg_ParseTuple(args, "O:" __FUNCTION__, &py_source))
+	if (!parse_args(args, "O", &py_source))
 		return python_none();
 	if (!py_to_libobs(obs_source_t, py_source, &source))
 		return python_none();
@@ -199,7 +199,7 @@ static PyObject *get_current_scene_collection(PyObject *self, PyObject *args)
 static PyObject *set_current_scene_collection(PyObject *self, PyObject *args)
 {
 	const char *name;
-	if (!PyArg_ParseTuple(args, "s:" __FUNCTION__, &name))
+	if (!parse_args(args, "s", &name))
 		return python_none();
 
 	UNUSED_PARAMETER(self);
@@ -245,7 +245,7 @@ static PyObject *get_current_profile(PyObject *self, PyObject *args)
 static PyObject *set_current_profile(PyObject *self, PyObject *args)
 {
 	const char *name;
-	if (!PyArg_ParseTuple(args, "s:" __FUNCTION__, &name))
+	if (!parse_args(args, "s", &name))
 		return python_none();
 
 	UNUSED_PARAMETER(self);
@@ -298,7 +298,7 @@ static PyObject *remove_save_callback(PyObject *self, PyObject *args)
 
 	UNUSED_PARAMETER(self);
 
-	if (!PyArg_ParseTuple(args, "O:" __FUNCTION__, &py_cb))
+	if (!parse_args(args, "O", &py_cb))
 		return python_none();
 	if (!py_cb || !PyFunction_Check(py_cb))
 		return python_none();
@@ -320,7 +320,7 @@ static PyObject *add_save_callback(PyObject *self, PyObject *args)
 
 	UNUSED_PARAMETER(self);
 
-	if (!PyArg_ParseTuple(args, "O:" __FUNCTION__, &py_cb))
+	if (!parse_args(args, "O", &py_cb))
 		return python_none();
 	if (!py_cb || !PyFunction_Check(py_cb))
 		return python_none();

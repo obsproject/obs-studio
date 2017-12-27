@@ -130,6 +130,7 @@ bool libobs_to_py_(const char *type,
 	return true;
 }
 
+
 #define libobs_to_py(type, obs_obj, ownership, py_obj) \
 	libobs_to_py_(#type " *", obs_obj, ownership, py_obj, \
 			NULL, __func__, __LINE__)
@@ -436,7 +437,7 @@ static PyObject *timer_remove(PyObject *self, PyObject *args)
 
 	UNUSED_PARAMETER(self);
 
-	if (!PyArg_ParseTuple(args, "O:" __FUNCTION__, &py_cb))
+	if (!parse_args(args, "O", &py_cb))
 		return python_none();
 
 	struct python_obs_callback *cb = find_python_obs_callback(script, py_cb);
@@ -458,9 +459,9 @@ static void timer_call(struct script_callback *p_cb)
 	unlock_callback();
 }
 
-static void defer_timer_init(struct script_callback *script_cb)
+static void defer_timer_init(void *p_cb)
 {
-	struct python_obs_callback *cb = (struct python_obs_callback *)script_cb;
+	struct python_obs_callback *cb = p_cb;
 	struct python_obs_timer *timer = python_obs_callback_extra_data(cb);
 	python_obs_timer_init(timer);
 }
@@ -473,7 +474,7 @@ static PyObject *timer_add(PyObject *self, PyObject *args)
 
 	UNUSED_PARAMETER(self);
 
-	if (!PyArg_ParseTuple(args, "Oi:" __FUNCTION__, &py_cb, &ms))
+	if (!parse_args(args, "Oi", &py_cb, &ms))
 		return python_none();
 
 	struct python_obs_callback *cb = add_python_obs_callback_extra(
@@ -522,7 +523,7 @@ static PyObject *obs_python_remove_tick_callback(PyObject *self, PyObject *args)
 
 	UNUSED_PARAMETER(self);
 
-	if (!PyArg_ParseTuple(args, "O:" __FUNCTION__, &py_cb))
+	if (!parse_args(args, "O", &py_cb))
 		return python_none();
 	if (!py_cb || !PyFunction_Check(py_cb))
 		return python_none();
@@ -545,7 +546,7 @@ static PyObject *obs_python_add_tick_callback(PyObject *self, PyObject *args)
 
 	UNUSED_PARAMETER(self);
 
-	if (!PyArg_ParseTuple(args, "O:" __FUNCTION__, &py_cb))
+	if (!parse_args(args, "O", &py_cb))
 		return python_none();
 	if (!py_cb || !PyFunction_Check(py_cb))
 		return python_none();
@@ -600,8 +601,7 @@ static PyObject *obs_python_signal_handler_disconnect(
 
 	signal_handler_t *handler;
 
-	if (!PyArg_ParseTuple(args, "OsO:" __FUNCTION__, &py_sh, &signal,
-				&py_cb))
+	if (!parse_args(args, "OsO", &py_sh, &signal, &py_cb))
 		return python_none();
 
 	if (!py_to_libobs(signal_handler_t, py_sh, &handler))
@@ -646,10 +646,8 @@ static PyObject *obs_python_signal_handler_connect(
 
 	signal_handler_t *handler;
 
-	if (!PyArg_ParseTuple(args, "OsO:" __FUNCTION__, &py_sh, &signal,
-				&py_cb))
+	if (!parse_args(args, "OsO", &py_sh, &signal, &py_cb))
 		return python_none();
-
 	if (!py_to_libobs(signal_handler_t, py_sh, &handler))
 		return python_none();
 	if (!py_cb || !PyFunction_Check(py_cb))
@@ -707,7 +705,7 @@ static PyObject *obs_python_signal_handler_disconnect_global(
 
 	signal_handler_t *handler;
 
-	if (!PyArg_ParseTuple(args, "OO:" __FUNCTION__, &py_sh, &py_cb))
+	if (!parse_args(args, "OO", &py_sh, &py_cb))
 		return python_none();
 
 	if (!py_to_libobs(signal_handler_t, py_sh, &handler))
@@ -747,7 +745,7 @@ static PyObject *obs_python_signal_handler_connect_global(
 
 	signal_handler_t *handler;
 
-	if (!PyArg_ParseTuple(args, "OO:" __FUNCTION__, &py_sh, &py_cb))
+	if (!parse_args(args, "OO", &py_sh, &py_cb))
 		return python_none();
 
 	if (!py_to_libobs(signal_handler_t, py_sh, &handler))
@@ -841,7 +839,7 @@ static PyObject *hotkey_unregister(PyObject *self, PyObject *args)
 		return NULL;
 	}
 
-	if (!PyArg_ParseTuple(args, "O:" __FUNCTION__, &py_cb))
+	if (!parse_args(args, "O", &py_cb))
 		return python_none();
 	if (!py_cb || !PyFunction_Check(py_cb))
 		return python_none();
@@ -861,7 +859,7 @@ static PyObject *hotkey_register_frontend(PyObject *self, PyObject *args)
 	obs_hotkey_id id;
 	PyObject *py_cb;
 
-	if (!PyArg_ParseTuple(args, "ssO:" __FUNCTION__, &name, &desc, &py_cb))
+	if (!parse_args(args, "ssO", &name, &desc, &py_cb))
 		return py_invalid_hotkey_id();
 	if (!py_cb || !PyFunction_Check(py_cb))
 		return py_invalid_hotkey_id();
@@ -924,8 +922,7 @@ static PyObject *properties_add_button(PyObject *self, PyObject *args)
 	const char *text;
 	PyObject *py_cb;
 
-	if (!PyArg_ParseTuple(args, "OssO:" __FUNCTION__,
-				&py_props, &name, &text, &py_cb))
+	if (!parse_args(args, "OssO", &py_props, &name, &text, &py_cb))
 		return python_none();
 	if (!py_to_libobs(obs_properties_t, py_props, &props))
 		return python_none();
@@ -967,7 +964,7 @@ static PyObject *calldata_source(PyObject *self, PyObject *args)
 
 	UNUSED_PARAMETER(self);
 
-	if (!PyArg_ParseTuple(args, "Os:" __FUNCTION__, &py_cd, &name))
+	if (!parse_args(args, "Os", &py_cd, &name))
 		goto fail;
 	if (!py_to_libobs(calldata_t, py_cd, &cd))
 		goto fail;
@@ -989,7 +986,7 @@ static PyObject *calldata_sceneitem(PyObject *self, PyObject *args)
 
 	UNUSED_PARAMETER(self);
 
-	if (!PyArg_ParseTuple(args, "Os:" __FUNCTION__, &py_cd, &name))
+	if (!parse_args(args, "Os", &py_cd, &name))
 		goto fail;
 	if (!py_to_libobs(calldata_t, py_cd, &cd))
 		goto fail;
@@ -1051,7 +1048,7 @@ static PyObject *scene_enum_items(PyObject *self, PyObject *args)
 
 	UNUSED_PARAMETER(self);
 
-	if (!PyArg_ParseTuple(args, "O:" __FUNCTION__, &py_scene))
+	if (!parse_args(args, "O", &py_scene))
 		return python_none();
 	if (!py_to_libobs(obs_scene_t, py_scene, &scene))
 		return python_none();
@@ -1066,7 +1063,7 @@ static PyObject *scene_enum_items(PyObject *self, PyObject *args)
 static PyObject *source_list_release(PyObject *self, PyObject *args)
 {
 	PyObject *list;
-	if (!PyArg_ParseTuple(args, "O:" __FUNCTION__, &list))
+	if (!parse_args(args, "O", &list))
 		return python_none();
 
 	Py_ssize_t count = PyList_Size(list);
@@ -1086,7 +1083,7 @@ static PyObject *source_list_release(PyObject *self, PyObject *args)
 static PyObject *sceneitem_list_release(PyObject *self, PyObject *args)
 {
 	PyObject *list;
-	if (!PyArg_ParseTuple(args, "O:" __FUNCTION__, &list))
+	if (!parse_args(args, "O", &list))
 		return python_none();
 
 	Py_ssize_t count = PyList_Size(list);
@@ -1121,7 +1118,7 @@ static PyObject *py_script_log(PyObject *self, PyObject *args)
 
 	/* ------------------- */
 
-	if (!PyArg_ParseTuple(args, "is:calldata_source", &log_level, &msg))
+	if (!parse_args(args, "is", &log_level, &msg))
 		goto fail;
 	if (!msg || !*msg)
 		goto fail;
@@ -1543,7 +1540,7 @@ bool obs_scripting_load_python(const char *python_path)
 # endif
 	}
 #else
-	UNUSED_VARIABLE(python_path);
+	UNUSED_PARAMETER(python_path);
 #endif
 
 	Py_Initialize();

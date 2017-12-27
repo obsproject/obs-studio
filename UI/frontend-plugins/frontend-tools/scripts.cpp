@@ -32,7 +32,7 @@
 #if ARCH_BITS == 64
 #define ARCH_NAME "64bit"
 #else
-#define ARCH_NAME "32bit
+#define ARCH_NAME "32bit"
 #endif
 
 #define PYTHONPATH_LABEL_TEXT "PythonSettings.PythonInstallPath" ARCH_NAME
@@ -190,7 +190,6 @@ ScriptsTool::ScriptsTool()
 ScriptsTool::~ScriptsTool()
 {
 	delete ui;
-	scriptsWindow = false;
 }
 
 void ScriptsTool::RemoveScript(const char *path)

@@ -6,7 +6,7 @@ if(MSVC)
 		w32-pthreads)
 endif()
 
-find_package(Lua QUIET 5.1)
+find_package(LuaDep QUIET 5.2)
 find_package(PythonLibs QUIET 3.4)
 find_package(SWIG QUIET 2)
 

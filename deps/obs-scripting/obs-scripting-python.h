@@ -167,6 +167,24 @@ static inline void free_python_obs_callback(struct python_obs_callback *cb)
 
 /* ------------------------------------------------------------ */
 
+static int parse_args_(PyObject *args, const char *func, const char *format, ...)
+{
+	char new_format[128];
+	va_list va_args;
+	int ret;
+
+	snprintf(new_format, sizeof(new_format), "%s:%s", format, func);
+
+	va_start(va_args, format);
+	ret = PyArg_VaParse(args, new_format, va_args);
+	va_end(va_args);
+
+	return ret;
+}
+
+#define parse_args(args, format, ...) \
+	parse_args_(args, __FUNCTION__, format, ##__VA_ARGS__)
+
 static inline bool py_error_(const char *func, int line)
 {
 	if (PyErr_Occurred()) {

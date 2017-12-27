@@ -33,7 +33,7 @@ struct obs_script {
 };
 
 struct script_callback;
-typedef void (*defer_call_cb)(struct script_callback *cb);
+typedef void (*defer_call_cb)(void *param);
 
 extern void defer_call_post(defer_call_cb call, void *cb);
 

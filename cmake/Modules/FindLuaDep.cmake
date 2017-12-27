@@ -10,7 +10,11 @@
 
 find_package(PkgConfig QUIET)
 if (PKG_CONFIG_FOUND)
-	pkg_check_modules(_LUA QUIET LUA>=5.2)
+	find_package(Lua QUIET 5.2)
+	if (LUA_FOUND)
+		return()
+	endif()
+	pkg_check_modules(_LUA QUIET LUA>=5.2 LIBLUA>=5.2)
 ENDIF()
 
 IF(CMAKE_SIZEOF_VOID_P EQUAL 8)

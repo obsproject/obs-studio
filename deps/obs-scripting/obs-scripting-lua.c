@@ -295,9 +295,9 @@ static void timer_call(struct script_callback *p_cb)
 	current_cb = NULL;
 }
 
-static void defer_timer_init(struct script_callback *script_cb)
+static void defer_timer_init(void *p_cb)
 {
-	struct lua_obs_callback *cb = (struct lua_obs_callback *)script_cb;
+	struct lua_obs_callback *cb = p_cb;
 	struct lua_obs_timer *timer = lua_obs_callback_extra_data(cb);
 	lua_obs_timer_init(timer);
 }
@@ -356,7 +356,7 @@ static int obs_lua_remove_main_render_callback(lua_State *script)
 	return 0;
 }
 
-static void defer_add_render(struct script_callback *cb)
+static void defer_add_render(void *cb)
 {
 	obs_add_main_render_callback(obs_lua_main_render_callback, cb);
 }
@@ -404,7 +404,7 @@ static int obs_lua_remove_tick_callback(lua_State *script)
 	return 0;
 }
 
-static void defer_add_tick(struct script_callback *cb)
+static void defer_add_tick(void *cb)
 {
 	obs_add_tick_callback(obs_lua_tick_callback, cb);
 }
@@ -474,8 +474,10 @@ static int obs_lua_signal_handler_disconnect(lua_State *script)
 	return 0;
 }
 
-static void defer_connect(struct script_callback *cb)
+static void defer_connect(void *p_cb)
 {
+	struct script_callback *cb = p_cb;
+
 	signal_handler_t *handler = calldata_ptr(&cb->extra, "handler");
 	const char *signal = calldata_string(&cb->extra, "signal");
 	signal_handler_connect(handler, signal, calldata_signal_callback, cb);	
@@ -550,8 +552,10 @@ static int obs_lua_signal_handler_disconnect_global(lua_State *script)
 	return 0;
 }
 
-static void defer_connect_global(struct script_callback *cb)
+static void defer_connect_global(void *p_cb)
 {
+	struct script_callback *cb = p_cb;
+
 	signal_handler_t *handler = calldata_ptr(&cb->extra, "handler");
 	signal_handler_connect_global(handler,
 			calldata_signal_callback_global, cb);
