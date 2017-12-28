@@ -39,9 +39,13 @@ else()
 	set(PYTHON_FOUND TRUE)
 	set(COMPILE_PYTHON TRUE CACHE BOOL "" FORCE)
 
-	get_filename_component(PYTHON_LIB "${PYTHON_LIBRARIES}" NAME)
-	string(REGEX REPLACE "\\.[^.]*$" "" PYTHON_LIB ${PYTHON_LIB})
-	string(REGEX REPLACE "_d" "" PYTHON_LIB "${PYTHON_LIB}")
+	if(WIN32)
+		get_filename_component(PYTHON_LIB "${PYTHON_LIBRARIES}" NAME)
+		string(REGEX REPLACE "\\.[^.]*$" "" PYTHON_LIB ${PYTHON_LIB})
+		string(REGEX REPLACE "_d" "" PYTHON_LIB "${PYTHON_LIB}")
+	else()
+		set(PYTHON_LIB ${PYTHON_LIBRARIES})
+	endif()
 endif()
 
 set(ENABLE_SCRIPTING ON CACHE BOOL "" FORCE)
@@ -83,6 +87,8 @@ if(PYTHONLIBS_FOUND)
 			${obs-scripting-python_SOURCES}
 			obs-scripting-python-import.c
 			)
+	else()
+		set(EXTRA_LIBS ${EXTRA_LIBS} ${PYTHON_LIB})
 	endif()
 endif()
 
