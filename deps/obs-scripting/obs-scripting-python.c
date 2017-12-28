@@ -1564,15 +1564,13 @@ bool obs_scripting_load_python(const char *python_path)
 	if (!PyEval_ThreadsInitialized())
 		return false;
 
-#ifdef _WIN32
 	/* ---------------------------------------------- */
-	/* Must set arguments for win32 guis to work      */
+	/* Must set arguments for guis to work            */
 
 	wchar_t *argv[] = {L"", NULL};
 	int      argc   = sizeof(argv) / sizeof(wchar_t*) - 1;
 
 	PySys_SetArgv(argc, argv);
-#endif
 
 #ifdef DEBUG_PYTHON_STARTUP
 	/* ---------------------------------------------- */
