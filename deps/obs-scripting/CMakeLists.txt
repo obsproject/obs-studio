@@ -18,6 +18,16 @@ if(NOT SWIG_FOUND)
 	return()
 endif()
 
+# Currently, Apple Python support is a bit troublesome, so development for
+# Python support on Apple systems has been temporarily put on the back burner.
+if(APPLE)
+	set(ENABLE_APPLE_PYTHON_SUPPORT FALSE CACHE BOOL "Enables Python 3 scripting support on Apple systems.")
+	if(NOT ENABLE_APPLE_PYTHON_SUPPORT)
+		set(PYTHONLIBS_FOUND FALSE)
+		message(STATUS "Scripting: Apple Python 3 support is currently on the backburner.  If you would like to enable it anyway, please set ENABLE_APPLE_PYTHON_SUPPORT to TRUE.")
+	endif()
+endif()
+
 if(NOT PYTHONLIBS_FOUND AND NOT LUA_FOUND)
 	message(STATUS "Scripting: Neither Python 3 nor Lua was found; scripting plugin disabled")
 	return()
