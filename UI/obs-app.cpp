@@ -72,6 +72,7 @@ bool opt_start_replaybuffer = false;
 bool opt_minimize_tray = false;
 bool opt_allow_opengl = false;
 bool opt_always_on_top = false;
+bool opt_fullscreen_preview = false;
 string opt_starting_collection;
 string opt_starting_profile;
 string opt_starting_scene;
@@ -1334,7 +1335,7 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 	OBSApp program(argc, argv, profilerNameStore.get());
 	try {
 		program.AppInit();
-
+		
 		OBSTranslator translator;
 
 		create_log_file(logFile);
@@ -1348,7 +1349,7 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 
 		bool already_running = false;
 		RunOnceMutex rom = GetRunOnceMutex(already_running);
-
+		
 		if (already_running && !multi) {
 			blog(LOG_WARNING, "\n================================");
 			blog(LOG_WARNING, "Warning: OBS is already running!");
@@ -1388,6 +1389,8 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 
 		if (!program.OBSInit())
 			return 0;
+		
+		
 
 		prof.Stop();
 
@@ -1397,7 +1400,6 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 		blog(LOG_ERROR, "%s", error);
 		OBSErrorBox(nullptr, "%s", error);
 	}
-
 	return ret;
 }
 
@@ -1900,6 +1902,9 @@ int main(int argc, char *argv[])
 		} else if (arg_is(argv[i], "--allow-opengl", nullptr)) {
 			opt_allow_opengl = true;
 
+		} else if (arg_is(argv[i], "--fullscreen-preview", nullptr)) {
+			opt_fullscreen_preview = true;
+
 		} else if (arg_is(argv[i], "--help", "-h")) {
 			std::cout <<
 			"--help, -h: Get list of available commands.\n\n" << 
@@ -1918,7 +1923,8 @@ int main(int argc, char *argv[])
 			"--always-on-top: Start in 'always on top' mode.\n\n" <<
 			"--unfiltered_log: Make log unfiltered.\n\n" <<
 			"--allow-opengl: Allow OpenGL on Windows.\n\n" <<
-			"--version, -V: Get current version.\n";
+			"--version, -V: Get current version.\n" <<
+			"--fullscreen-preview: Start OBS with preview projector in fullscreen";
 
 			exit(0);
 
