@@ -72,6 +72,7 @@ bool opt_start_replaybuffer = false;
 bool opt_minimize_tray = false;
 bool opt_allow_opengl = false;
 bool opt_always_on_top = false;
+bool opt_fullscreen_preview = false;
 string opt_starting_collection;
 string opt_starting_profile;
 string opt_starting_scene;
@@ -1899,6 +1900,9 @@ int main(int argc, char *argv[])
 
 		} else if (arg_is(argv[i], "--allow-opengl", nullptr)) {
 			opt_allow_opengl = true;
+
+		} else if (arg_is(argv[i], "--fullscreen-preview", nullptr)) {
+			opt_fullscreen_preview = true;
 
 		} else if (arg_is(argv[i], "--help", "-h")) {
 			std::cout <<
