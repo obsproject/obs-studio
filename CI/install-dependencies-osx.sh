@@ -17,7 +17,7 @@ sudo installer -pkg ./Packages.pkg -target /
 brew update
 
 #Base OBS Deps and ccache
-brew install qt5 jack speexdsp ccache
+brew install qt5 jack speexdsp ccache python3
 
 export PATH=/usr/local/opt/ccache/libexec:$PATH
 ccache -s || echo "CCache is not available."
