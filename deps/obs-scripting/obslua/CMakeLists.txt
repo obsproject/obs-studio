@@ -10,6 +10,7 @@ if(MSVC)
 	add_compile_options("/wd4054")
 	add_compile_options("/wd4197")
 	add_compile_options("/wd4244")
+	add_compile_options("/wd4267")
 endif()
 
 include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/libobs")

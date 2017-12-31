@@ -140,6 +140,8 @@ Set Functions
 ---------------------
 
 
+.. _obs_data_get_funcs:
+
 Get Functions
 -------------
 
@@ -170,6 +172,9 @@ Get Functions
    :return: An incremented reference to a data array object.
 
 ---------------------
+
+
+.. _obs_data_default_funcs:
 
 Default Value Functions
 -----------------------

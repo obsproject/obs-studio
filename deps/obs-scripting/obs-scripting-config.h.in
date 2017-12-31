@@ -17,6 +17,6 @@
 #endif
 
 #define PYTHON_LIB     "@PYTHON_LIB@"
-#define COMPILE_LUA    @LUA_FOUND@
+#define COMPILE_LUA    @LUAJIT_FOUND@
 #define COMPILE_PYTHON @PYTHON_FOUND@
 #define UI_ENABLED     @UI_ENABLED@

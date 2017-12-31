@@ -59,7 +59,7 @@ static int get_scenes(lua_State *script)
 	for (size_t i = 0; i < list.sources.num; i++) {
 		obs_source_t *source = list.sources.array[i];
 		ls_push_libobs_obj(obs_source_t, source, false);
-		lua_rawseti(script, -2, i++);
+		lua_rawseti(script, -2, (int)i++);
 	}
 
 	da_free(list.sources);
@@ -91,7 +91,7 @@ static int get_transitions(lua_State *script)
 	for (size_t i = 0; i < list.sources.num; i++) {
 		obs_source_t *source = list.sources.array[i];
 		ls_push_libobs_obj(obs_source_t, source, false);
-		lua_rawseti(script, -2, i++);
+		lua_rawseti(script, -2, (int)i++);
 	}
 
 	da_free(list.sources);
@@ -195,12 +195,12 @@ static void frontend_event_callback(enum obs_frontend_event event, void *priv)
 		return;
 	}
 
-	lock_script(script);
+	lock_callback();
 
 	lua_pushinteger(script, (int)event);
 	call_func(frontend_event_callback, 1, 0);
 
-	unlock_script();
+	unlock_callback();
 }
 
 static int remove_event_callback(lua_State *script)
@@ -243,13 +243,13 @@ static void frontend_save_callback(obs_data_t *save_data, bool saving,
 		return;
 	}
 
-	lock_script(script);
+	lock_callback();
 
 	ls_push_libobs_obj(obs_data_t, save_data, false);
 	lua_pushboolean(script, saving);
 	call_func(frontend_save_callback, 2, 0);
 
-	unlock_script();
+	unlock_callback();
 }
 
 static int remove_save_callback(lua_State *script)

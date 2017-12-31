@@ -147,6 +147,8 @@ bool ls_push_libobs_obj_(lua_State * script,
 struct obs_lua_data;
 
 struct obs_lua_source {
+	struct obs_lua_script *data;
+
 	lua_State * script;
 	const char *id;
 	const char *display_name;
@@ -194,6 +196,14 @@ struct obs_lua_data {
 	lua_rawgeti(ls->script, LUA_REGISTRYINDEX, ld->lua_data_ref)
 #define ls_pop(count) \
 	lua_pop(ls->script, count)
+#define lock_script() \
+	struct obs_lua_script *__data = ls->data; \
+	struct obs_lua_script *__prev_script = current_lua_script; \
+	current_lua_script = __data; \
+	pthread_mutex_lock(&__data->mutex);
+#define unlock_script() \
+	pthread_mutex_unlock(&__data->mutex); \
+	current_lua_script = __prev_script;
 
 static const char *obs_lua_source_get_name(void *type_data)
 {
@@ -212,7 +222,7 @@ static void *obs_lua_source_create(obs_data_t *settings, obs_source_t *source)
 	if (!have_func(create))
 		goto fail;
 
-	lock_script(ls->script);
+	lock_script();
 
 	ls_push_libobs_obj(obs_data_t, settings, false);
 	ls_push_libobs_obj(obs_source_t, source, false);
@@ -263,7 +273,7 @@ static void obs_lua_source_destroy(void *data)
 	if (!have_func(destroy))
 		goto fail;
 
-	lock_script(ls->script);
+	lock_script();
 	call_destroy(ld);
 	unlock_script();
 
@@ -288,7 +298,7 @@ static uint32_t obs_lua_source_get_width(void *data)
 	if (!have_func(get_width))
 		goto fail;
 
-	lock_script(ls->script);
+	lock_script();
 
 	ls_push_data();
 	if (call_func(get_width, 1, 1)) {
@@ -315,7 +325,7 @@ static uint32_t obs_lua_source_get_height(void *data)
 	if (!have_func(get_height))
 		goto fail;
 
-	lock_script(ls->script);
+	lock_script();
 
 	ls_push_data();
 	if (call_func(get_height, 1, 1)) {
@@ -340,7 +350,7 @@ static void obs_lua_source_get_defaults(void *type_data, obs_data_t *settings)
 	if (!have_func(get_defaults))
 		goto fail;
 
-	lock_script(ls->script);
+	lock_script();
 
 	ls_push_libobs_obj(obs_data_t, settings, false);
 	call_func(get_defaults, 1, 0);
@@ -363,7 +373,7 @@ static obs_properties_t *obs_lua_source_get_properties(void *data)
 	if (!have_func(get_properties))
 		goto fail;
 
-	lock_script(ls->script);
+	lock_script();
 
 	ls_push_data();
 	if (call_func(get_properties, 1, 1)) {
@@ -389,7 +399,7 @@ static void obs_lua_source_update(void *data, obs_data_t *settings)
 	if (!have_func(update))
 		goto fail;
 
-	lock_script(ls->script);
+	lock_script();
 
 	ls_push_data();
 	ls_push_libobs_obj(obs_data_t, settings, false);
@@ -408,7 +418,7 @@ fail:
 		struct obs_lua_source *ls = ld->ls; \
 		if (!have_func(name)) \
 			return; \
-		lock_script(ls->script); \
+		lock_script(); \
 		ls_push_data(); \
 		call_func(name, 1, 0); \
 		unlock_script(); \
@@ -430,7 +440,7 @@ static void obs_lua_source_video_tick(void *data, float seconds)
 	if (!have_func(video_tick))
 		goto fail;
 
-	lock_script(ls->script);
+	lock_script();
 
 	ls_push_data();
 	lua_pushnumber(ls->script, (double)seconds);
@@ -453,7 +463,7 @@ static void obs_lua_source_video_render(void *data, gs_effect_t *effect)
 	if (!have_func(video_render))
 		goto fail;
 
-	lock_script(ls->script);
+	lock_script();
 
 	ls_push_data();
 	ls_push_libobs_obj(gs_effect_t, effect, false);
@@ -476,7 +486,7 @@ static void obs_lua_source_save(void *data, obs_data_t *settings)
 	if (!have_func(save))
 		goto fail;
 
-	lock_script(ls->script);
+	lock_script();
 
 	ls_push_data();
 	ls_push_libobs_obj(obs_data_t, settings, false);
@@ -499,7 +509,7 @@ static void obs_lua_source_load(void *data, obs_data_t *settings)
 	if (!have_func(load))
 		goto fail;
 
-	lock_script(ls->script);
+	lock_script();
 
 	ls_push_data();
 	ls_push_libobs_obj(obs_data_t, settings, false);
@@ -542,7 +552,7 @@ static void obs_lua_source_free_type_data(void *type_data)
 	pthread_mutex_lock(&ls->definition_mutex);
 
 	if (ls->script) {
-		lock_script(ls->script);
+		lock_script();
 		source_type_unload(ls);
 		unlock_script();
 		ls->script = NULL;
@@ -650,6 +660,8 @@ static int obs_lua_register_source(lua_State *script)
 			&v->func_get_defaults);
 
 	if (!existing) {
+		ls.data = current_lua_script;
+
 		pthread_mutex_init(&ls.definition_mutex, NULL);
 		info.type_data      = bmemdup(&ls, sizeof(ls));
 		info.free_type_data = obs_lua_source_free_type_data;
@@ -669,6 +681,7 @@ static int obs_lua_register_source(lua_State *script)
 		pthread_mutex_unlock(&lua_source_def_mutex);
 	} else {
 		existing->script = script;
+		existing->data = current_lua_script;
 		obs_enable_source_type(id, true);
 
 		struct obs_lua_data *ld = v->first_source;

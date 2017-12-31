@@ -71,26 +71,13 @@ static int obs_lua_remove_main_render_callback(lua_State *script);
 void add_lua_frontend_funcs(lua_State *script);
 #endif
 
-static void *luaalloc(void *ud, void *ptr, size_t osize, size_t nsize)
-{
-	UNUSED_PARAMETER(ud);
-	UNUSED_PARAMETER(osize);
-
-	if (nsize == 0) {
-		bfree(ptr);
-		return NULL;
-	} else {
-		return brealloc(ptr, nsize);
-	}
-}
-
 static bool load_lua_script(struct obs_lua_script *data)
 {
 	struct dstr str = {0};
 	bool success = false;
 	int ret;
 
-	lua_State *script = lua_newstate(luaalloc, data);
+	lua_State *script = luaL_newstate();
 	if (!script) {
 		script_warn(&data->base, "Failed to create new lua state");
 		goto fail;
@@ -176,6 +163,8 @@ static bool load_lua_script(struct obs_lua_script *data)
 	else
 		data->save = LUA_REFNIL;
 
+	current_lua_script = data;
+
 	lua_getglobal(script, "script_defaults");
 	if (lua_isfunction(script, -1)) {
 		ls_push_libobs_obj(obs_data_t, data->base.settings, false);
@@ -205,7 +194,6 @@ static bool load_lua_script(struct obs_lua_script *data)
 			script_warn(&data->base, "Error calling "
 					"script_load: %s",
 					lua_tostring(script, -1));
-			goto fail;
 		}
 	}
 
@@ -222,12 +210,14 @@ fail:
 		lua_close(script);
 	}
 
+	current_lua_script = NULL;
 	return success;
 }
 
 /* -------------------------------------------- */
 
-static THREAD_LOCAL struct lua_obs_callback *current_cb = NULL;
+THREAD_LOCAL struct lua_obs_callback *current_lua_cb = NULL;
+THREAD_LOCAL struct obs_lua_script *current_lua_script = NULL;
 
 /* -------------------------------------------- */
 
@@ -281,18 +271,13 @@ static int timer_remove(lua_State *script)
 static void timer_call(struct script_callback *p_cb)
 {
 	struct lua_obs_callback *cb = (struct lua_obs_callback *)p_cb;
-	struct obs_lua_script *data = lua_obs_callback_script(cb);
 
 	if (p_cb->removed)
 		return;
 
-	current_cb = cb;
-	pthread_mutex_lock(&data->mutex);
-
+	lock_callback();
 	call_func_(cb->script, cb->reg_idx, 0, 0, "timer_cb", __FUNCTION__);
-
-	pthread_mutex_unlock(&data->mutex);
-	current_cb = NULL;
+	unlock_callback();
 }
 
 static void defer_timer_init(void *p_cb)
@@ -326,7 +311,6 @@ static int timer_add(lua_State *script)
 static void obs_lua_main_render_callback(void *priv, uint32_t cx, uint32_t cy)
 {
 	struct lua_obs_callback *cb = priv;
-	struct lua_obs_callback *last_current = current_cb;
 	lua_State *script = cb->script;
 
 	if (cb->base.removed) {
@@ -335,15 +319,13 @@ static void obs_lua_main_render_callback(void *priv, uint32_t cx, uint32_t cy)
 		return;
 	}
 
-	lock_script(script);
-	current_cb = cb;
+	lock_callback();
 
 	lua_pushinteger(script, (lua_Integer)cx);
 	lua_pushinteger(script, (lua_Integer)cy);
 	call_func(obs_lua_main_render_callback, 2, 0);
 
-	current_cb = last_current;
-	unlock_script();
+	unlock_callback();
 }
 
 static int obs_lua_remove_main_render_callback(lua_State *script)
@@ -376,7 +358,6 @@ static int obs_lua_add_main_render_callback(lua_State *script)
 static void obs_lua_tick_callback(void *priv, float seconds)
 {
 	struct lua_obs_callback *cb = priv;
-	struct lua_obs_callback *last_current = current_cb;
 	lua_State *script = cb->script;
 
 	if (cb->base.removed) {
@@ -384,14 +365,12 @@ static void obs_lua_tick_callback(void *priv, float seconds)
 		return;
 	}
 
-	lock_script(script);
-	current_cb = cb;
+	lock_callback();
 
 	lua_pushnumber(script, (lua_Number)seconds);
 	call_func(obs_lua_tick_callback, 2, 0);
 
-	current_cb = last_current;
-	unlock_script();
+	unlock_callback();
 }
 
 static int obs_lua_remove_tick_callback(lua_State *script)
@@ -424,7 +403,6 @@ static int obs_lua_add_tick_callback(lua_State *script)
 static void calldata_signal_callback(void *priv, calldata_t *cd)
 {
 	struct lua_obs_callback *cb = priv;
-	struct lua_obs_callback *last_current = current_cb;
 	lua_State *script = cb->script;
 
 	if (cb->base.removed) {
@@ -432,14 +410,12 @@ static void calldata_signal_callback(void *priv, calldata_t *cd)
 		return;
 	}
 
-	lock_script(script);
-	current_cb = cb;
+	lock_callback();
 
 	ls_push_libobs_obj(calldata_t, cd, false);
 	call_func(calldata_signal_callback, 1, 0);
 
-	current_cb = last_current;
-	unlock_script();
+	unlock_callback();
 }
 
 static int obs_lua_signal_handler_disconnect(lua_State *script)
@@ -509,7 +485,6 @@ static void calldata_signal_callback_global(void *priv, const char *signal,
 		calldata_t *cd)
 {
 	struct lua_obs_callback *cb = priv;
-	struct lua_obs_callback *last_current = current_cb;
 	lua_State *script = cb->script;
 
 	if (cb->base.removed) {
@@ -517,15 +492,13 @@ static void calldata_signal_callback_global(void *priv, const char *signal,
 		return;
 	}
 
-	lock_script(script);
-	current_cb = cb;
+	lock_callback();
 
 	lua_pushstring(script, signal);
 	ls_push_libobs_obj(calldata_t, cd, false);
 	call_func(calldata_signal_callback_global, 2, 0);
 
-	current_cb = last_current;
-	unlock_script();
+	unlock_callback();
 }
 
 static int obs_lua_signal_handler_disconnect_global(lua_State *script)
@@ -586,7 +559,7 @@ static bool enum_sources_proc(void *param, obs_source_t *source)
 	ls_push_libobs_obj(obs_source_t, source, false);
 
 	size_t idx = lua_rawlen(script, -2);
-	lua_rawseti(script, -2, idx + 1);
+	lua_rawseti(script, -2, (int)idx + 1);
 	return true;
 }
 
@@ -608,7 +581,7 @@ static bool enum_items_proc(obs_scene_t *scene, obs_sceneitem_t *item,
 
 	obs_sceneitem_addref(item);
 	ls_push_libobs_obj(obs_sceneitem_t, item, false);
-	lua_rawseti(script, -2, lua_rawlen(script, -2) + 1);
+	lua_rawseti(script, -2, (int)lua_rawlen(script, -2) + 1);
 	return true;
 }
 
@@ -642,20 +615,17 @@ static void on_remove_hotkey(void *p_cb)
 static void hotkey_pressed(void *p_cb, bool pressed)
 {
 	struct lua_obs_callback *cb = p_cb;
-	struct lua_obs_callback *last_current = current_cb;
 	lua_State *script = cb->script;
 
 	if (cb->base.removed)
 		return;
 
-	lock_script(script);
-	current_cb = cb;
+	lock_callback();
 
 	lua_pushboolean(script, pressed);
 	call_func(hotkey_pressed, 1, 0);
 
-	current_cb = last_current;
-	unlock_script();
+	unlock_callback();
 }
 
 static void defer_hotkey_pressed(void *p_cb)
@@ -725,15 +695,13 @@ static bool button_prop_clicked(obs_properties_t *props, obs_property_t *p,
 		void *p_cb)
 {
 	struct lua_obs_callback *cb = p_cb;
-	struct lua_obs_callback *last_current = current_cb;
 	lua_State *script = cb->script;
 	bool ret = false;
 
 	if (cb->base.removed)
 		return false;
 
-	lock_script(script);
-	current_cb = cb;
+	lock_callback();
 
 	if (!ls_push_libobs_obj(obs_properties_t, props, false))
 		goto fail;
@@ -747,8 +715,7 @@ static bool button_prop_clicked(obs_properties_t *props, obs_property_t *p,
 		ret = lua_toboolean(script, -1);
 
 fail:
-	current_cb = last_current;
-	unlock_script();
+	unlock_callback();
 
 	return ret;
 }
@@ -783,8 +750,8 @@ static int properties_add_button(lua_State *script)
 static int remove_current_callback(lua_State *script)
 {
 	UNUSED_PARAMETER(script);
-	if (current_cb)
-		remove_lua_obs_callback(current_cb);
+	if (current_lua_cb)
+		remove_lua_obs_callback(current_lua_cb);
 	return 0;
 }
 
@@ -838,7 +805,7 @@ static int source_list_release(lua_State *script)
 	for (size_t i = 0; i < count; i++) {
 		obs_source_t *source;
 
-		lua_rawgeti(script, 1, i + 1);
+		lua_rawgeti(script, 1, (int)i + 1);
 		ls_get_libobs_obj(obs_source_t, -1, &source);
 		lua_pop(script, 1);
 
@@ -853,7 +820,7 @@ static int sceneitem_list_release(lua_State *script)
 	for (size_t i = 0; i < count; i++) {
 		obs_sceneitem_t *item;
 
-		lua_rawgeti(script, 1, i + 1);
+		lua_rawgeti(script, 1, (int)i + 1);
 		ls_get_libobs_obj(obs_sceneitem_t, -1, &item);
 		lua_pop(script, 1);
 
@@ -866,7 +833,7 @@ static int sceneitem_list_release(lua_State *script)
 
 static int hook_print(lua_State *script)
 {
-	struct obs_lua_script *data = get_obs_script(script);
+	struct obs_lua_script *data = current_lua_script;
 	const char *msg = lua_tostring(script, 1);
 	if (!msg)
 		return 0;
@@ -877,7 +844,7 @@ static int hook_print(lua_State *script)
 
 static int hook_error(lua_State *script)
 {
-	struct obs_lua_script *data = get_obs_script(script);
+	struct obs_lua_script *data = current_lua_script;
 	const char *msg = lua_tostring(script, 1);
 	if (!msg)
 		return 0;
@@ -890,7 +857,7 @@ static int hook_error(lua_State *script)
 
 static int lua_script_log(lua_State *script)
 {
-	struct obs_lua_script *data = get_obs_script(script);
+	struct obs_lua_script *data = current_lua_script;
 	int log_level = (int)lua_tointeger(script, 1);
 	const char *msg = lua_tostring(script, 2);
 
@@ -1178,10 +1145,14 @@ void obs_lua_script_update(obs_script_t *s, obs_data_t *settings)
 	if (settings)
 		obs_data_apply(s->settings, settings);
 
-	lock_script(script);
+	current_lua_script = data;
+	pthread_mutex_lock(&data->mutex);
+
 	ls_push_libobs_obj(obs_data_t, s->settings, false);
 	call_func_(script, data->update, 1, 0, "script_update", __FUNCTION__);
-	unlock_script();
+
+	pthread_mutex_unlock(&data->mutex);
+	current_lua_script = NULL;
 }
 
 obs_properties_t *obs_lua_script_get_properties(obs_script_t *s)
@@ -1195,11 +1166,15 @@ obs_properties_t *obs_lua_script_get_properties(obs_script_t *s)
 	if (data->get_properties == LUA_REFNIL)
 		return NULL;
 
-	lock_script(script);
+	current_lua_script = data;
+	pthread_mutex_lock(&data->mutex);
+
 	call_func_(script, data->get_properties, 0, 1, "script_properties",
 			__FUNCTION__);
 	ls_get_libobs_obj(obs_properties_t, -1, &props);
-	unlock_script();
+
+	pthread_mutex_unlock(&data->mutex);
+	current_lua_script = NULL;
 
 	return props;
 }
@@ -1214,10 +1189,14 @@ void obs_lua_script_save(obs_script_t *s)
 	if (data->save == LUA_REFNIL)
 		return;
 
-	lock_script(script);
+	current_lua_script = data;
+	pthread_mutex_lock(&data->mutex);
+
 	ls_push_libobs_obj(obs_data_t, s->settings, false);
 	call_func_(script, data->save, 1, 0, "script_save", __FUNCTION__);
-	unlock_script();
+
+	pthread_mutex_unlock(&data->mutex);
+	current_lua_script = NULL;
 }
 
 /* -------------------------------------------- */

@@ -26,6 +26,7 @@
 #ifdef _MSC_VER
 #pragma warning(push)
 #pragma warning(disable : 4244)
+#pragma warning(disable : 4267)
 #endif
 
 #define SWIG_TYPE_TABLE obslua
@@ -49,6 +50,14 @@
 #define warn(format, ...)  do_log(LOG_WARNING, format, ##__VA_ARGS__)
 #define info(format, ...)  do_log(LOG_INFO,    format, ##__VA_ARGS__)
 #define debug(format, ...) do_log(LOG_DEBUG,   format, ##__VA_ARGS__)
+
+/* ------------------------------------------------------------ */
+
+struct obs_lua_script;
+struct lua_obs_callback;
+
+extern THREAD_LOCAL struct lua_obs_callback *current_lua_cb;
+extern THREAD_LOCAL struct obs_lua_script *current_lua_script;
 
 /* ------------------------------------------------------------ */
 
@@ -76,36 +85,16 @@ struct obs_lua_script {
 	bool defined_sources;
 };
 
-static inline struct obs_lua_script *get_obs_script(lua_State *script)
-{
-	if (!script)
-		return NULL;
-
-	void *ud = NULL;
-	lua_getallocf(script, &ud);
-
-	struct obs_lua_script *data = ud;
-	return data;
-}
-
-static inline struct obs_lua_script *lock_script_(lua_State *script)
-{
-	struct obs_lua_script *data = get_obs_script(script);
-	if (data)
-		pthread_mutex_lock(&data->mutex);
-	return data;
-}
-
-static inline void unlock_script_(struct obs_lua_script *data)
-{
-	if (data)
-		pthread_mutex_unlock(&data->mutex);
-}
-
-#define lock_script(script) \
-	struct obs_lua_script *ud__ = lock_script_(script)
-#define unlock_script() \
-	unlock_script_(ud__)
+#define lock_callback() \
+	struct obs_lua_script *__last_script = current_lua_script; \
+	struct lua_obs_callback *__last_callback = current_lua_cb; \
+	current_lua_cb = cb; \
+	current_lua_script = (struct obs_lua_script *)cb->base.script; \
+	pthread_mutex_lock(&current_lua_script->mutex);
+#define unlock_callback() \
+	pthread_mutex_unlock(&current_lua_script->mutex); \
+	current_lua_script = __last_script; \
+	current_lua_cb = __last_callback;
 
 /* ------------------------------------------------ */
 
@@ -121,7 +110,7 @@ static inline struct lua_obs_callback *add_lua_obs_callback_extra(
 		int stack_idx,
 		size_t extra_size)
 {
-	struct obs_lua_script *data = get_obs_script(script);
+	struct obs_lua_script *data = current_lua_script;
 	struct lua_obs_callback *cb = add_script_callback(
 			&data->first_callback,
 			(obs_script_t *)data,
@@ -153,9 +142,7 @@ static inline struct obs_lua_script *lua_obs_callback_script(
 static inline struct lua_obs_callback *find_next_lua_obs_callback(
 		lua_State *script, struct lua_obs_callback *cb, int stack_idx)
 {
-	void *ud = NULL;
-	lua_getallocf(script, &ud);
-	struct obs_lua_script *data = ud;
+	struct obs_lua_script *data = current_lua_script;
 
 	cb = cb ? (struct lua_obs_callback *)cb->base.next
 		: (struct lua_obs_callback *)data->first_callback;
@@ -241,7 +228,7 @@ static inline bool call_func_(lua_State *script,
 	if (reg_idx == LUA_REFNIL)
 		return false;
 
-	struct obs_lua_script *data = get_obs_script(script);
+	struct obs_lua_script *data = current_lua_script;
 
 	lua_rawgeti(script, LUA_REGISTRYINDEX, reg_idx);
 	lua_insert(script, -1 - args);

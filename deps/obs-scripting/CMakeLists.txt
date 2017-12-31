@@ -6,7 +6,7 @@ if(MSVC)
 		w32-pthreads)
 endif()
 
-find_package(LuaDep QUIET 5.2)
+find_package(LuajitDep QUIET 5.2)
 find_package(PythonLibs QUIET 3.4)
 find_package(SWIG QUIET 2)
 
@@ -28,15 +28,15 @@ if(APPLE)
 	endif()
 endif()
 
-if(NOT PYTHONLIBS_FOUND AND NOT LUA_FOUND)
-	message(STATUS "Scripting: Neither Python 3 nor Lua was found; scripting plugin disabled")
+if(NOT PYTHONLIBS_FOUND AND NOT LUAJIT_FOUND)
+	message(STATUS "Scripting: Neither Python 3 nor Luajit was found; scripting plugin disabled")
 	return()
 endif()
 
-if(NOT LUA_FOUND)
-	message(STATUS "Scripting: Lua not found; Lua support disabled")
+if(NOT LUAJIT_FOUND)
+	message(STATUS "Scripting: Lua not found; Luajit support disabled")
 else()
-	message(STATUS "Scripting: Lua supported")
+	message(STATUS "Scripting: Luajit supported")
 	set(COMPILE_LUA TRUE CACHE BOOL "" FORCE)
 endif()
 
@@ -100,8 +100,8 @@ if(PYTHONLIBS_FOUND)
 	endif()
 endif()
 
-if(LUA_FOUND)
-	include_directories(${LUA_INCLUDE_DIR})
+if(LUAJIT_FOUND)
+	include_directories(${LUAJIT_INCLUDE_DIR})
 
 	set(obs-scripting-lua_SOURCES
 		obs-scripting-lua.c
@@ -143,7 +143,7 @@ if(PYTHONLIBS_FOUND)
 	set_source_files_properties(${SWIG_PY_RUNTIME} PROPERTIES GENERATED TRUE)
 endif()
 
-if(LUA_FOUND)
+if(LUAJIT_FOUND)
 	set(SWIG_LUA_RUNTIME swig/swigluarun.h)
 	add_custom_command(OUTPUT ${SWIG_LUA_RUNTIME}
 		WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
@@ -167,7 +167,7 @@ add_library(obs-scripting SHARED
 
 target_link_libraries(obs-scripting
 	libobs
-	${LUA_LIBRARIES}
+	${LUAJIT_LIBRARIES}
 	${EXTRA_LIBS}
 	${obs-scripting_PLATFORM_DEPS}
 	)
@@ -176,7 +176,7 @@ if(PYTHONLIBS_FOUND)
 	add_subdirectory(obspython)
 endif()
 
-if(LUA_FOUND)
+if(LUAJIT_FOUND)
 	add_subdirectory(obslua)
 endif()
 
