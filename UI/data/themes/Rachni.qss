@@ -689,12 +689,16 @@ QProgressBar::chunk {
 /**************************/
 
 VolumeMeter {
-	qproperty-bkColor: rgb(35, 38, 41); /* Dark Gray */
-	qproperty-magColor: rgb(153, 204, 0);
-	qproperty-peakColor: rgb(96, 128, 0);
-	qproperty-peakHoldColor: rgb(210, 255, 77);
-	qproperty-clipColor1: rgb(230, 40, 50);
-	qproperty-clipColor2: rgb(140, 0, 40);
+	qproperty-backgroundNominalColor: rgb(0, 128, 79);
+	qproperty-backgroundWarningColor: rgb(128, 57, 0);
+	qproperty-backgroundErrorColor: rgb(128, 9, 0);
+	qproperty-foregroundNominalColor: rgb(119, 255, 143);
+	qproperty-foregroundWarningColor: rgb(255, 157, 76);
+	qproperty-foregroundErrorColor: rgb(255, 89, 76);
+	qproperty-magnitudeColor: rgb(49, 54, 59); /* Blue-gray */
+	qproperty-majorTickColor: rgb(239, 240, 241); /* White */
+	qproperty-minorTickColor: rgb(118, 121, 124); /* Light Gray */
+	qproperty-peakDecayRate: 23.4; /* Override of the standard PPM Type I rate. */
 }
 
 /*******************/
