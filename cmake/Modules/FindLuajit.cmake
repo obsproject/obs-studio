@@ -8,15 +8,6 @@
 #
 #  LUAJIT_INCLUDE_DIR
 
-find_package(PkgConfig QUIET)
-if (PKG_CONFIG_FOUND)
-	find_package(Luajit QUIET)
-	if (LUAJIT_FOUND)
-		return()
-	endif()
-	pkg_check_modules(_LUAJIT QUIET)
-ENDIF()
-
 IF(CMAKE_SIZEOF_VOID_P EQUAL 8)
 	SET(_LIB_SUFFIX 64)
 ELSE()
@@ -36,12 +27,27 @@ FIND_PATH(LUAJIT_INCLUDE_DIR
 		${DepsPath}
 		${_LUAJIT_INCLUDE_DIRS}
 	PATHS
-		/usr/include /usr/local/include /opt/local/include /sw/include
+		/usr/include
+		/usr/local/include
+		/opt/local/include
+		/opt/local
+		/sw/include
+		~/Library/Frameworks
+		/Library/Frameworks
 	PATH_SUFFIXES
-		include luajit luajit/src include/luajit include/luajit/src)
+		include
+		luajit
+		luajit/src
+		include/luajit
+		include/luajit/src
+		luajit-2.0
+		include/luajit-2.0
+		luajit2.0
+		include/luajit2.0
+		)
 
 find_library(LUAJIT_LIB
-	NAMES ${_LUAJIT_LIBRARIES} luajit libluajit
+	NAMES ${_LUAJIT_LIBRARIES} luajit luajit-51 luajit-5.1
 	HINTS
 		ENV LuajitPath${_lib_suffix}
 		ENV LuajitPath
@@ -53,7 +59,13 @@ find_library(LUAJIT_LIB
 		${DepsPath}
 		${_LUAJIT_LIBRARY_DIRS}
 	PATHS
-		/usr/lib /usr/local/lib /opt/local/lib /sw/lib
+		/usr/lib
+		/usr/local/lib
+		/opt/local/lib
+		/opt/local
+		/sw/lib
+		~/Library/Frameworks
+		/Library/Frameworks
 	PATH_SUFFIXES
 		lib${_lib_suffix} lib
 		libs${_lib_suffix} libs

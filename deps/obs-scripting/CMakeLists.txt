@@ -6,7 +6,7 @@ if(MSVC)
 		w32-pthreads)
 endif()
 
-find_package(LuajitDep QUIET 5.2)
+find_package(Luajit QUIET)
 find_package(PythonLibs QUIET 3.4)
 find_package(SWIG QUIET 2)
 
@@ -34,7 +34,7 @@ if(NOT PYTHONLIBS_FOUND AND NOT LUAJIT_FOUND)
 endif()
 
 if(NOT LUAJIT_FOUND)
-	message(STATUS "Scripting: Lua not found; Luajit support disabled")
+	message(STATUS "Scripting: Luajit not found; Luajit support disabled")
 else()
 	message(STATUS "Scripting: Luajit supported")
 	set(COMPILE_LUA TRUE CACHE BOOL "" FORCE)
