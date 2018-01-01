@@ -1,9 +1,10 @@
 Python/Lua Scripting
 ====================
 
-Scripting (21.0+) adds support for Python 3 and Lua 5, allowing the
-ability to quickly extend, add features, or automate the program without
-needing to know C/C++ or build the program manually.
+Scripting (21.0+) adds support for Python 3 and Luajit 2 (which is
+roughly equivalent to Lua 5.2), allowing the ability to quickly extend,
+add features, or automate the program without needing to know C/C++ or
+build the program manually.
 
 Scripting can be accessed in OBS Studio via the Tools menu -> Scripts
 option, which will bring up the scripting dialog.  Scripts can be added,
