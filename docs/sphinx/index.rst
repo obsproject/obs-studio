@@ -15,6 +15,7 @@ Welcome to OBS Studio's documentation!
    plugins
    frontends
    graphics
+   scripting
    reference-core
    reference-modules
    reference-core-objects
