@@ -550,7 +550,11 @@ EXPORT signal_handler_t *obs_get_signal_handler(void);
 EXPORT proc_handler_t *obs_get_proc_handler(void);
 
 /** Renders the main view */
+DEPRECATED
 EXPORT void obs_render_main_view(void);
+
+/** Renders the last main output texture */
+EXPORT void obs_render_main_texture(void);
 
 /** Sets the master user volume */
 EXPORT void obs_set_master_volume(float volume);

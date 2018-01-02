@@ -408,7 +408,7 @@ void OBSProjector::OBSRenderMultiview(void *data, uint32_t cx, uint32_t cy)
 	if (studioMode) {
 		obs_source_video_render(previewSrc);
 	} else {
-		obs_render_main_view();
+		obs_render_main_texture();
 	}
 
 	resetRegion();
@@ -453,7 +453,7 @@ void OBSProjector::OBSRenderMultiview(void *data, uint32_t cx, uint32_t cy)
 	gs_matrix_scale3f(hiScaleX, hiScaleY, 1.0f);
 
 	setRegion(halfCX + 2.0f, 2.0f, hiCX, hiCY);
-	obs_render_main_view();
+	obs_render_main_texture();
 	resetRegion();
 
 	gs_matrix_pop();
@@ -540,7 +540,7 @@ void OBSProjector::OBSRender(void *data, uint32_t cx, uint32_t cy)
 	if (source) {
 		obs_source_video_render(source);
 	} else {
-		obs_render_main_view();
+		obs_render_main_texture();
 	}
 
 	gs_projection_pop();

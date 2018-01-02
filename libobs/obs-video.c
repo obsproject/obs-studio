@@ -614,13 +614,13 @@ void *obs_graphics_thread(void *param)
 		last_time = tick_sources(obs->video.video_time, last_time);
 		profile_end(tick_sources_name);
 
-		profile_start(render_displays_name);
-		render_displays();
-		profile_end(render_displays_name);
-
 		profile_start(output_frame_name);
 		output_frame();
 		profile_end(output_frame_name);
+
+		profile_start(render_displays_name);
+		render_displays();
+		profile_end(render_displays_name);
 
 		frame_time_ns = os_gettime_ns() - frame_start;
 

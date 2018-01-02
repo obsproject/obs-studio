@@ -57,7 +57,7 @@ display, then you must assign a draw callback with
 callback, call :c:func:`obs_display_remove_draw_callback()` similarly.
 
 When drawing, to draw the main preview window (if any), call
-:c:func:`obs_render_main_view()`.  If you need to render a specific
+:c:func:`obs_render_main_texture()`.  If you need to render a specific
 source on a secondary display, you can increment its "showing" state
 with :c:func:`obs_source_inc_showing()` while it's showing in the
 secondary display, draw it with :c:func:`obs_source_video_render()` in
