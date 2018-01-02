@@ -1906,23 +1906,24 @@ int main(int argc, char *argv[])
 
 		} else if (arg_is(argv[i], "--help", "-h")) {
 			std::cout <<
-			"--help, -h: Get list of available commands.\n\n" << 
-			"--startstreaming: Automatically start streaming.\n" <<
-			"--startrecording: Automatically start recording.\n" <<
-			"--startreplaybuffer: Start replay buffer.\n\n" <<
-			"--collection <string>: Use specific scene collection."
+				"--help, -h: Get list of available commands.\n\n" <<
+				"--startstreaming: Automatically start streaming.\n" <<
+				"--startrecording: Automatically start recording.\n" <<
+				"--startreplaybuffer: Start replay buffer.\n\n" <<
+				"--collection <string>: Use specific scene collection."
 				<< "\n" <<
-			"--profile <string>: Use specific profile.\n" <<
-			"--scene <string>: Start with specific scene.\n\n" <<
-			"--studio-mode: Enable studio mode.\n" <<
-			"--minimize-to-tray: Minimize to system tray.\n" <<
-			"--portable, -p: Use portable mode.\n" <<
-			"--multi, -m: Don't warn when launching multiple instances.\n\n" <<
-			"--verbose: Make log more verbose.\n" <<
-			"--always-on-top: Start in 'always on top' mode.\n\n" <<
-			"--unfiltered_log: Make log unfiltered.\n\n" <<
-			"--allow-opengl: Allow OpenGL on Windows.\n\n" <<
-			"--version, -V: Get current version.\n";
+				"--profile <string>: Use specific profile.\n" <<
+				"--scene <string>: Start with specific scene.\n\n" <<
+				"--studio-mode: Enable studio mode.\n" <<
+				"--minimize-to-tray: Minimize to system tray.\n" <<
+				"--portable, -p: Use portable mode.\n" <<
+				"--multi, -m: Don't warn when launching multiple instances.\n\n" <<
+				"--verbose: Make log more verbose.\n" <<
+				"--always-on-top: Start in 'always on top' mode.\n\n" <<
+				"--unfiltered_log: Make log unfiltered.\n\n" <<
+				"--allow-opengl: Allow OpenGL on Windows.\n\n" <<
+				"--version, -V: Get current version.\n" <<
+				"--fullscreen-preview: Open fullscreen preview projector at launch.\n";
 
 			exit(0);
 
