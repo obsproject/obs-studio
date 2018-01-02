@@ -22,3 +22,4 @@ Welcome to OBS Studio's documentation!
    reference-libobs-callback
    reference-libobs-graphics
    reference-libobs-media-io
+   reference-frontend-api
