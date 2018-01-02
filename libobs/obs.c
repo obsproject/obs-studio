@@ -1430,6 +1430,32 @@ void obs_render_main_view(void)
 	obs_view_render(&obs->data.main_view);
 }
 
+void obs_render_main_texture(void)
+{
+	struct obs_core_video *video = &obs->video;
+	gs_texture_t *tex;
+	gs_effect_t *effect;
+	gs_eparam_t *param;
+	int last_tex;
+
+	if (!obs) return;
+
+	last_tex = video->cur_texture == 0
+		? NUM_TEXTURES - 1
+		: video->cur_texture - 1;
+
+	if (!video->textures_rendered[last_tex])
+		return;
+
+	tex = video->render_textures[last_tex];
+	effect = obs_get_base_effect(OBS_EFFECT_DEFAULT);
+	param = gs_effect_get_param_by_name(effect, "image");
+	gs_effect_set_texture(param, tex);
+
+	while (gs_effect_loop(effect, "Draw"))
+		gs_draw_sprite(tex, 0, 0, 0);
+}
+
 void obs_set_master_volume(float volume)
 {
 	struct calldata data = {0};

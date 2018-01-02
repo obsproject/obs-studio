@@ -2968,7 +2968,7 @@ void OBSBasic::RenderMain(void *data, uint32_t cx, uint32_t cy)
 		if (source)
 			obs_source_video_render(source);
 	} else {
-		obs_render_main_view();
+		obs_render_main_texture();
 	}
 	gs_load_vertexbuffer(nullptr);
 

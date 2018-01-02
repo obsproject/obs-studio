@@ -146,7 +146,7 @@ static SceneContext SetupScene()
 
 		obs_display_add_draw_callback(display.get(),
 				[](void *, uint32_t, uint32_t) {
-					obs_render_main_view();
+					obs_render_main_texture();
 				}, nullptr);
 
 	} catch (char const *error) {
