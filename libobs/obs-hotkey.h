@@ -285,7 +285,7 @@ EXPORT int obs_key_to_virtual_key(obs_key_t key);
 EXPORT const char *obs_key_to_name(obs_key_t key);
 EXPORT obs_key_t obs_key_from_name(const char *name);
 
-inline bool obs_key_combination_is_empty(obs_key_combination_t combo)
+static inline bool obs_key_combination_is_empty(obs_key_combination_t combo)
 {
 	return !combo.modifiers && combo.key == OBS_KEY_NONE;
 }
