@@ -54,7 +54,7 @@ static PyObject *get_scene_names(PyObject *self, PyObject *args)
 
 static PyObject *get_scenes(PyObject *self, PyObject *args)
 {
-	struct obs_frontend_source_list list;
+	struct obs_frontend_source_list list = {0};
 	obs_frontend_get_scenes(&list);
 
 	PyObject *ret = PyList_New(0);
@@ -109,7 +109,7 @@ static PyObject *set_current_scene(PyObject *self, PyObject *args)
 
 static PyObject *get_transitions(PyObject *self, PyObject *args)
 {
-	struct obs_frontend_source_list list;
+	struct obs_frontend_source_list list = {0};
 	obs_frontend_get_transitions(&list);
 
 	PyObject *ret = PyList_New(0);

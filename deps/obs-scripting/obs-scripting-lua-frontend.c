@@ -51,7 +51,7 @@ static int get_scene_names(lua_State *script)
 
 static int get_scenes(lua_State *script)
 {
-	struct obs_frontend_source_list list;
+	struct obs_frontend_source_list list = {0};
 	obs_frontend_get_scenes(&list);
 
 	lua_createtable(script, (int)list.sources.num, 0);
@@ -83,7 +83,7 @@ static int set_current_scene(lua_State *script)
 
 static int get_transitions(lua_State *script)
 {
-	struct obs_frontend_source_list list;
+	struct obs_frontend_source_list list = {0};
 	obs_frontend_get_transitions(&list);
 
 	lua_createtable(script, (int)list.sources.num, 0);
