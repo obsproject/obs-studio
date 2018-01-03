@@ -154,6 +154,7 @@ struct obs_property {
 	struct obs_properties   *parent;
 
 	obs_property_modified_t modified;
+	obs_property_modified2_t modified2;
 
 	struct obs_property     *next;
 };
@@ -281,6 +282,8 @@ void obs_properties_apply_settings(obs_properties_t *props, obs_data_t *settings
 	while (p) {
 		if (p->modified)
 			p->modified(props, p, settings);
+		else if (p->modified2)
+			p->modified2(p->priv, props, p, settings);
 		p = p->next;
 	}
 }
@@ -589,10 +592,24 @@ void obs_property_set_modified_callback(obs_property_t *p,
 	if (p) p->modified = modified;
 }
 
+void obs_property_set_modified_callback2(obs_property_t *p,
+		obs_property_modified2_t modified2, void *priv)
+{
+	if (p) {
+		p->modified2 = modified2;
+		p->priv = priv;
+	}
+}
+
 bool obs_property_modified(obs_property_t *p, obs_data_t *settings)
 {
-	if (p && p->modified)
-		return p->modified(p->parent, p, settings);
+	if (p) {
+		if (p->modified) {
+			return p->modified(p->parent, p, settings);
+		} else if (p->modified2) {
+			return p->modified2(p->priv, p->parent, p, settings);
+		}
+	}
 	return false;
 }
 
