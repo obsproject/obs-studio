@@ -39,14 +39,14 @@
 
 ---------------------
 
-.. function:: void vec4_set(struct vec4 *dst, float x, float y)
+.. function:: void vec4_set(struct vec4 *dst, float x, float y, float z, float w)
 
    Sets the individual components of a 4-component vector.
 
    :param dst: Destination
    :param x:   X component
    :param y:   Y component
-   :param y:   Z component
+   :param z:   Z component
    :param w:   W component
 
 ---------------------
