@@ -23,6 +23,8 @@
 #include "obs-internal.h"
 
 #include <windows.h>
+#include <wscapi.h>
+#include <iwscapi.h>
 
 static uint32_t win_ver = 0;
 
@@ -247,6 +249,117 @@ static void log_gaming_features(void)
 	}
 }
 
+static const char *get_str_for_state(int state)
+{
+	switch (state) {
+	case WSC_SECURITY_PRODUCT_STATE_ON:
+		return "enabled";
+	case WSC_SECURITY_PRODUCT_STATE_OFF:
+		return "disabled";
+	case WSC_SECURITY_PRODUCT_STATE_SNOOZED:
+		return "temporarily disabled";
+	case WSC_SECURITY_PRODUCT_STATE_EXPIRED:
+		return "expired";
+	default:
+		return "unknown";
+	}
+}
+
+static void log_security_products_by_type(IWSCProductList *ProductList, int type)
+{
+	HRESULT hr;
+	LONG ProductCount = 0;
+	IWscProduct *Product;
+	BSTR ValueStr;
+	WSC_SECURITY_PRODUCT_STATE ProductState;
+
+	hr = ProductList->lpVtbl->Initialize (ProductList, type);
+
+	if (FAILED(hr))
+		return;
+
+	hr = ProductList->lpVtbl->get_Count(ProductList, &ProductCount);
+	if (FAILED(hr)) {
+		ProductList->lpVtbl->Release(ProductList);
+		return;
+	}
+
+	for (int i = 0; i < ProductCount; i++) {
+		hr = ProductList->lpVtbl->get_Item(ProductList, i, &Product);
+		if (FAILED(hr))
+			continue;
+
+		hr = Product->lpVtbl->get_ProductName(Product, &ValueStr);
+		if (FAILED(hr))
+			continue;
+
+		hr = Product->lpVtbl->get_ProductState(Product, &ProductState);
+		if (FAILED(hr)) {
+			SysFreeString(ValueStr);
+			continue;
+		}
+
+		blog (LOG_INFO, "\t%S: %s", ValueStr,
+			get_str_for_state(ProductState));
+
+		SysFreeString(ValueStr);
+
+		Product->lpVtbl->Release(Product);
+	}
+
+	ProductList->lpVtbl->Release(ProductList);
+}
+
+static void log_security_products(void)
+{
+	HRESULT hr;
+
+	IWSCProductList *ProductList = NULL;
+	IWscProduct *Product = NULL;
+
+	HMODULE hWSC;
+
+	// We load the dll rather than import wcsapi.lib because the clsid / iid
+	// only exist on Windows 8 or higher.
+
+	hWSC = LoadLibraryW(L"wscapi.dll");
+	if (!hWSC)
+		return;
+
+	const CLSID *pCLSID_WSCProductList =
+		(const CLSID *)GetProcAddress(hWSC, "CLSID_WSCProductList");
+
+	const IID *pIID_IWSCProductList =
+		(const IID *)GetProcAddress(hWSC, "IID_IWSCProductList");
+
+	if (pCLSID_WSCProductList && pIID_IWSCProductList) {
+		blog(LOG_INFO, "Security Software Status:");
+
+		hr = CoCreateInstance(pCLSID_WSCProductList, NULL, CLSCTX_INPROC_SERVER,
+			pIID_IWSCProductList, &ProductList);
+		if (!FAILED(hr)) {
+			log_security_products_by_type (ProductList,
+				WSC_SECURITY_PROVIDER_ANTIVIRUS);
+		}
+
+		hr = CoCreateInstance(pCLSID_WSCProductList, NULL, CLSCTX_INPROC_SERVER,
+			pIID_IWSCProductList, &ProductList);
+		if (!FAILED(hr)) {
+			log_security_products_by_type (ProductList,
+				WSC_SECURITY_PROVIDER_FIREWALL);
+		}
+
+		hr = CoCreateInstance(pCLSID_WSCProductList, NULL, CLSCTX_INPROC_SERVER,
+			pIID_IWSCProductList, &ProductList);
+		if (!FAILED(hr)) {
+			log_security_products_by_type (ProductList,
+				WSC_SECURITY_PROVIDER_ANTISPYWARE);
+		}
+	}
+
+	FreeLibrary(hWSC);
+}
+
 void log_system_info(void)
 {
 	struct win_version_info ver;
@@ -261,6 +374,7 @@ void log_system_info(void)
 	log_admin_status();
 	log_aero();
 	log_gaming_features();
+	log_security_products();
 }
 
 
