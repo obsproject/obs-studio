@@ -2527,7 +2527,8 @@ PublisherAuth(RTMP *r, AVal *description)
             else if(r->Link.pubUser.av_len && r->Link.pubPasswd.av_len)
             {
                 pubToken.av_val = malloc(r->Link.pubUser.av_len + av_authmod_adobe.av_len + 8);
-                pubToken.av_len = sprintf(pubToken.av_val, "?%s&user=%s",
+                pubToken.av_len = sprintf(pubToken.av_val, "%s%s&user=%s",
+										  strstr(r->Link.app.av_val, "?") != NULL ? "&":"?",
                                           av_authmod_adobe.av_val,
                                           r->Link.pubUser.av_val);
                 RTMP_Log(RTMP_LOGDEBUG, "%s, pubToken1: %s", __FUNCTION__, pubToken.av_val);
