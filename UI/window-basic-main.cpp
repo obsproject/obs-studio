@@ -5017,6 +5017,12 @@ void OBSBasic::on_settingsButton_clicked()
 	on_action_Settings_triggered();
 }
 
+void OBSBasic::on_actionHelpPortal_triggered()
+{
+	QUrl url = QUrl("https://obsproject.com/help", QUrl::TolerantMode);
+	QDesktopServices::openUrl(url);
+}
+
 void OBSBasic::on_actionWebsite_triggered()
 {
 	QUrl url = QUrl("https://obsproject.com", QUrl::TolerantMode);

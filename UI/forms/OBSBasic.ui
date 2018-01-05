@@ -134,6 +134,7 @@
      <addaction name="actionUploadLastLog"/>
      <addaction name="actionViewCurrentLog"/>
     </widget>
+    <addaction name="actionHelpPortal"/>
     <addaction name="actionWebsite"/>
     <addaction name="separator"/>
     <addaction name="menuLogFiles"/>
@@ -1574,6 +1575,11 @@
    </property>
    <property name="text">
     <string>Basic.Main.Controls</string>
+   </property>
+  </action>
+  <action name="actionHelpPortal">
+   <property name="text">
+    <string>Basic.MainMenu.Help.HelpPortal</string>
    </property>
   </action>
  </widget>
