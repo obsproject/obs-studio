@@ -958,6 +958,12 @@ retryScene:
 		opt_start_replaybuffer = false;
 	}
 
+	if (opt_fullscreen_preview) {
+		blog(LOG_INFO, "Starting with fullscreen projector of preview due to command line parameter");
+		QMetaObject::invokeMethod(this, "OpenPreviewProjector",
+				Qt::QueuedConnection);
+	}
+
 	LogScenes();
 
 	disableSaving--;
@@ -5595,8 +5601,14 @@ void OBSBasic::OpenStudioProgramProjector()
 
 void OBSBasic::OpenPreviewProjector()
 {
-	int monitor = sender()->property("monitor").toInt();
-	OpenProjector(nullptr, monitor, false, nullptr, ProjectorType::Preview);
+	if (opt_fullscreen_preview) {
+		OpenProjector(nullptr, 0, false, nullptr, ProjectorType::Preview);
+		opt_fullscreen_preview = false;
+	}
+	else {
+		int monitor = sender()->property("monitor").toInt();
+		OpenProjector(nullptr, monitor, false, nullptr, ProjectorType::Preview);
+	}
 }
 
 void OBSBasic::OpenSourceProjector()
