@@ -341,7 +341,7 @@ void OBSBasic::TransitionToScene(OBSSource source, bool force, bool direct,
 			TransitionFullyStopped();
 	}
 
-	if (usingPreviewProgram && sceneDuplicationMode && !direct)
+	if (usingPreviewProgram && sceneDuplicationMode)
 		obs_scene_release(scene);
 }
 
