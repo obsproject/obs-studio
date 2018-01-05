@@ -335,10 +335,6 @@ static bool create_audio_stream(struct ffmpeg_data *data)
 	context->channel_layout =
 			av_get_default_channel_layout(context->channels);
 
-	//AVlib default channel layout for 4 channels is 4.0 ; fix for quad
-	if (aoi.speakers == SPEAKERS_QUAD)
-		context->channel_layout = av_get_channel_layout("quad");
-
 	//AVlib default channel layout for 5 channels is 5.0 ; fix for 4.1
 	if (aoi.speakers == SPEAKERS_4POINT1)
 		context->channel_layout = av_get_channel_layout("4.1");

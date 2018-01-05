@@ -33,8 +33,6 @@ OBS_MODULE_USE_DEFAULT_LOCALE("decklink", "en-US")
 #define TEXT_CHANNEL_FORMAT_4_0CH       obs_module_text("ChannelFormat.4_0ch")
 #define TEXT_CHANNEL_FORMAT_4_1CH       obs_module_text("ChannelFormat.4_1ch")
 #define TEXT_CHANNEL_FORMAT_5_1CH       obs_module_text("ChannelFormat.5_1ch")
-#define TEXT_CHANNEL_FORMAT_5_1CH_BACK \
-	obs_module_text("ChannelFormat.5_1chBack")
 #define TEXT_CHANNEL_FORMAT_7_1CH       obs_module_text("ChannelFormat.7_1ch")
 #define TEXT_BUFFERING                  obs_module_text("Buffering")
 
@@ -158,12 +156,14 @@ static bool decklink_device_changed(obs_properties_t *props,
 		}
 
 		if (device->GetMaxChannel() >= 8) {
+			obs_property_list_add_int(channelList, TEXT_CHANNEL_FORMAT_2_1CH,
+				SPEAKERS_2POINT1);
 			obs_property_list_add_int(channelList, TEXT_CHANNEL_FORMAT_4_0CH,
-					SPEAKERS_QUAD);
+					SPEAKERS_4POINT0);
+			obs_property_list_add_int(channelList, TEXT_CHANNEL_FORMAT_4_1CH,
+				SPEAKERS_4POINT1);
 			obs_property_list_add_int(channelList, TEXT_CHANNEL_FORMAT_5_1CH,
 					SPEAKERS_5POINT1);
-			obs_property_list_add_int(channelList,
-					TEXT_CHANNEL_FORMAT_5_1CH_BACK, SPEAKERS_5POINT1_SURROUND);
 			obs_property_list_add_int(channelList, TEXT_CHANNEL_FORMAT_7_1CH,
 					SPEAKERS_7POINT1);
 		}
@@ -262,13 +262,11 @@ static obs_properties_t *decklink_get_properties(void *data)
 	obs_property_list_add_int(list, TEXT_CHANNEL_FORMAT_2_1CH,
 			SPEAKERS_2POINT1);
 	obs_property_list_add_int(list, TEXT_CHANNEL_FORMAT_4_0CH,
-			SPEAKERS_QUAD);
+			SPEAKERS_4POINT0);
 	obs_property_list_add_int(list, TEXT_CHANNEL_FORMAT_4_1CH,
 			SPEAKERS_4POINT1);
 	obs_property_list_add_int(list, TEXT_CHANNEL_FORMAT_5_1CH,
 			SPEAKERS_5POINT1);
-	obs_property_list_add_int(list, TEXT_CHANNEL_FORMAT_5_1CH_BACK,
-			SPEAKERS_5POINT1_SURROUND);
 	obs_property_list_add_int(list, TEXT_CHANNEL_FORMAT_7_1CH,
 			SPEAKERS_7POINT1);
 

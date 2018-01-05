@@ -72,7 +72,7 @@ static obs_properties_t *libfdk_properties(void *unused)
 	obs_properties_t *props = obs_properties_create();
 
 	obs_properties_add_int(props, "bitrate",
-			obs_module_text("Bitrate"), 32, 256, 32);
+			obs_module_text("Bitrate"), 32, 1024, 32);
 	obs_properties_add_bool(props, "afterburner",
 			obs_module_text("Afterburner"));
 

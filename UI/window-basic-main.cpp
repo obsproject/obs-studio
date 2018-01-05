@@ -3185,8 +3185,8 @@ bool OBSBasic::ResetAudio()
 		ai.speakers = SPEAKERS_MONO;
 	else if (strcmp(channelSetupStr, "2.1") == 0)
 		ai.speakers = SPEAKERS_2POINT1;
-	else if (strcmp(channelSetupStr, "4.0 Quad") == 0)
-		ai.speakers = SPEAKERS_QUAD;
+	else if (strcmp(channelSetupStr, "4.0") == 0)
+		ai.speakers = SPEAKERS_4POINT0;
 	else if (strcmp(channelSetupStr, "4.1") == 0)
 		ai.speakers = SPEAKERS_4POINT1;
 	else if (strcmp(channelSetupStr, "5.1") == 0)
