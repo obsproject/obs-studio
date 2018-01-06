@@ -42,6 +42,10 @@
                     "url": "rtmp://live-fra.twitch.tv/app"
                 },
                 {
+                    "name": "EU: Helsinki, FI",
+                    "url": "rtmp://live-hel.twitch.tv/app"
+                },
+                {
                     "name": "EU: Lisbon, Portugal",
                     "url": "rtmp://live-lis.twitch.tv/app"
                 },
