@@ -288,6 +288,7 @@ bool OBSBasicProperties::ConfirmQuit()
 
 	switch (button) {
 	case QMessageBox::Save:
+		acceptClicked = true;
 		if (view->DeferUpdate())
 			view->UpdateSettings();
 		// Do nothing because the settings are already updated
