@@ -8,8 +8,14 @@
 #include "qt-wrappers.hpp"
 #include "platform.hpp"
 
+#define HORIZONTAL_TOP    0
+#define HORIZONTAL_BOTTOM 1
+#define VERTICAL_LEFT     2
+#define VERTICAL_RIGHT    3
+
 static QList<OBSProjector *> multiviewProjectors;
 static bool updatingMultiview = false;
+static int multiviewLayout = HORIZONTAL_TOP;
 
 OBSProjector::OBSProjector(QWidget *widget, obs_source_t *source_, bool window)
 	: OBSQTDisplay                 (widget,
@@ -245,10 +251,10 @@ void OBSProjector::OBSRenderMultiview(void *data, uint32_t cx, uint32_t cy)
 	OBSBasic     *main   = (OBSBasic *)obs_frontend_get_main_window();
 	uint32_t     targetCX, targetCY;
 	int          x, y;
-	float        fX, fY, halfCX, halfCY, sourceX, sourceY,
-	             quarterCX, quarterCY, scale, targetCXF, targetCYF,
-		     hiCX, hiCY, qiX, qiY, qiCX, qiCY,
-		     hiScaleX, hiScaleY, qiScaleX, qiScaleY;
+	float        fX, fY, halfCX, halfCY, sourceX, sourceY, labelX, labelY,
+		     quarterCX, quarterCY, scale, targetCXF, targetCYF,
+		     hiCX, hiCY, qiX, qiY, qiCX, qiCY, hiScaleX, hiScaleY,
+		     qiScaleX, qiScaleY;
 	uint32_t     offset;
 
 	gs_effect_t  *solid = obs_get_base_effect(OBS_EFFECT_SOLID);
@@ -317,6 +323,86 @@ void OBSProjector::OBSRenderMultiview(void *data, uint32_t cx, uint32_t cy)
 		gs_projection_pop();
 	};
 
+	auto calcBaseSource = [&](int i)
+	{
+		switch (multiviewLayout) {
+		case VERTICAL_LEFT:
+			sourceX = halfCX;
+			sourceY = (i / 2 ) * quarterCY;
+			if (i % 2 != 0)
+				sourceX = halfCX + quarterCX;
+			break;
+		case VERTICAL_RIGHT:
+			sourceX = 0;
+			sourceY = (i / 2 ) * quarterCY;
+			if (i % 2 != 0)
+				sourceX = quarterCX;
+			break;
+		case HORIZONTAL_BOTTOM:
+			if (i < 4) {
+				sourceX = (float(i) * quarterCX);
+				sourceY = 0;
+			} else {
+				sourceX = (float(i - 4) * quarterCX);
+				sourceY = quarterCY;
+			}
+			break;
+		default: //HORIZONTAL_TOP:
+			if (i < 4) {
+				sourceX = (float(i) * quarterCX);
+				sourceY = halfCY;
+			} else {
+				sourceX = (float(i - 4) * quarterCX);
+				sourceY = halfCY + quarterCY;
+			}
+		}
+	};
+
+	auto calcPreviewProgram = [&](bool program)
+	{
+		switch (multiviewLayout) {
+		case VERTICAL_LEFT:
+			sourceX = 2.0f;
+			sourceY = halfCY + 2.0f;
+			labelX = offset;
+			labelY = halfCY * 1.8f;
+			if (program) {
+				sourceY = 2.0f;
+				labelY = halfCY * 0.8f;
+			}
+			break;
+		case VERTICAL_RIGHT:
+			sourceX = halfCX + 2.0f;
+			sourceY = halfCY + 2.0f;
+			labelX = halfCX + offset;
+			labelY = halfCY * 1.8f;
+			if (program) {
+				sourceY = 2.0f;
+				labelY = halfCY * 0.8f;
+			}
+			break;
+		case HORIZONTAL_BOTTOM:
+			sourceX = 2.0f;
+			sourceY = halfCY + 2.0f;
+			labelX = offset;
+			labelY = halfCY * 1.8f;
+			if (program) {
+				sourceX = halfCX + 2.0f;
+				labelX = halfCX + offset;
+			}
+			break;
+		default: //HORIZONTAL_TOP:
+			sourceX = 2.0f;
+			sourceY = 2.0f;
+			labelX = offset;
+			labelY = halfCY * 0.8f;
+			if (program) {
+				sourceX = halfCX + 2.0f;
+				labelX = halfCX + offset;
+			}
+		}
+	};
+
 	/* ----------------------------- */
 	/* draw sources                  */
 
@@ -334,13 +420,7 @@ void OBSProjector::OBSRenderMultiview(void *data, uint32_t cx, uint32_t cy)
 		if (!label)
 			continue;
 
-		if (i < 4) {
-			sourceX = (float(i) * quarterCX);
-			sourceY = halfCY;
-		} else {
-			sourceX = (float(i - 4) * quarterCX);
-			sourceY = halfCY + quarterCY;
-		}
+		calcBaseSource(i);
 
 		qiX = sourceX + 4.0f;
 		qiY = sourceY + 4.0f;
@@ -399,11 +479,15 @@ void OBSProjector::OBSRenderMultiview(void *data, uint32_t cx, uint32_t cy)
 	/* ----------------------------- */
 	/* draw preview                  */
 
+	obs_source_t *previewLabel = window->multiviewLabels[0];
+	offset = labelOffset(previewLabel, halfCX);
+	calcPreviewProgram(false);
+
 	gs_matrix_push();
-	gs_matrix_translate3f(2.0f, 2.0f, 0.0f);
+	gs_matrix_translate3f(sourceX, sourceY, 0.0f);
 	gs_matrix_scale3f(hiScaleX, hiScaleY, 1.0f);
 
-	setRegion(2.0f, 2.0f, hiCX, hiCY);
+	setRegion(sourceX, sourceY, hiCX, hiCY);
 
 	if (studioMode) {
 		obs_source_video_render(previewSrc);
@@ -418,7 +502,8 @@ void OBSProjector::OBSRenderMultiview(void *data, uint32_t cx, uint32_t cy)
 	/* ----------- */
 
 	gs_matrix_push();
-	gs_matrix_scale3f(0.5f, 0.5f, 1.0f);
+	gs_matrix_translate3f(sourceX, sourceY, 0.0f);
+	gs_matrix_scale3f(hiScaleX, hiScaleY, 1.0f);
 
 	renderVB(solid, window->outerBox, targetCX, targetCY);
 	renderVB(solid, window->innerBox, targetCX, targetCY);
@@ -432,13 +517,11 @@ void OBSProjector::OBSRenderMultiview(void *data, uint32_t cx, uint32_t cy)
 
 	/* ----------- */
 
-	obs_source_t *previewLabel = window->multiviewLabels[0];
-	offset = labelOffset(previewLabel, halfCX);
 	cx = obs_source_get_width(previewLabel);
 	cy = obs_source_get_height(previewLabel);
 
 	gs_matrix_push();
-	gs_matrix_translate3f(offset, (halfCY * 0.8f), 0.0f);
+	gs_matrix_translate3f(labelX, labelY, 0.0f);
 
 	drawBox(cx, cy + int(halfCX * 0.015f), 0xD91F1F1F);
 	obs_source_video_render(previewLabel);
@@ -448,11 +531,15 @@ void OBSProjector::OBSRenderMultiview(void *data, uint32_t cx, uint32_t cy)
 	/* ----------------------------- */
 	/* draw program                  */
 
+	obs_source_t *programLabel = window->multiviewLabels[1];
+	offset = labelOffset(programLabel, halfCX);
+	calcPreviewProgram(true);
+
 	gs_matrix_push();
-	gs_matrix_translate3f(halfCX + 2.0, 2.0f, 0.0f);
+	gs_matrix_translate3f(sourceX, sourceY, 0.0f);
 	gs_matrix_scale3f(hiScaleX, hiScaleY, 1.0f);
 
-	setRegion(halfCX + 2.0f, 2.0f, hiCX, hiCY);
+	setRegion(sourceX, sourceY, hiCX, hiCY);
 	obs_render_main_texture();
 	resetRegion();
 
@@ -461,8 +548,8 @@ void OBSProjector::OBSRenderMultiview(void *data, uint32_t cx, uint32_t cy)
 	/* ----------- */
 
 	gs_matrix_push();
-	gs_matrix_translate3f(halfCX, 0.0f, 0.0f);
-	gs_matrix_scale3f(0.5f, 0.5f, 1.0f);
+	gs_matrix_translate3f(sourceX, sourceY, 0.0f);
+	gs_matrix_scale3f(hiScaleX, hiScaleY, 1.0f);
 
 	renderVB(solid, window->outerBox, targetCX, targetCY);
 
@@ -470,13 +557,11 @@ void OBSProjector::OBSRenderMultiview(void *data, uint32_t cx, uint32_t cy)
 
 	/* ----------- */
 
-	obs_source_t *programLabel = window->multiviewLabels[1];
-	offset = labelOffset(programLabel, halfCX);
 	cx = obs_source_get_width(programLabel);
 	cy = obs_source_get_height(programLabel);
 
 	gs_matrix_push();
-	gs_matrix_translate3f(halfCX + offset, (halfCY * 0.8f), 0.0f);
+	gs_matrix_translate3f(labelX, labelY, 0.0f);
 
 	drawBox(cx, cy + int(halfCX * 0.015f), 0xD91F1F1F);
 	obs_source_video_render(programLabel);
@@ -556,6 +641,129 @@ void OBSProjector::OBSSourceRemoved(void *data, calldata_t *params)
 	UNUSED_PARAMETER(params);
 }
 
+static int getSourceByPosition(int x, int y)
+{
+	struct obs_video_info ovi;
+	obs_get_video_info(&ovi);
+	float ratio = float(ovi.base_width) / float(ovi.base_height);
+
+	QWidget *rec  = QApplication::activeWindow();
+	int     cx    = rec->width();
+	int     cy    = rec->height();
+	int     minX  = 0;
+	int     minY  = 0;
+	int     maxX  = cx;
+	int     maxY  = cy;
+	int     halfX = cx / 2;
+	int     halfY = cy / 2;
+	int     pos   = -1;
+
+	switch (multiviewLayout) {
+	case VERTICAL_LEFT:
+		if (float(cx) / float(cy) > ratio) {
+			int validX = cy * ratio;
+			maxX = halfX + (validX / 2);
+		} else {
+			int validY = cx / ratio;
+			minY = halfY - (validY / 2);
+			maxY = halfY + (validY / 2);
+		}
+
+		minX = halfX;
+
+		if (x < minX || x > maxX || y < minY || y > maxY)
+			break;
+
+		pos = 2 * ((y - minY) / ((maxY - minY) / 4));
+		if (x > minX + ((maxX - minX) / 2))
+			pos++;
+		break;
+	case VERTICAL_RIGHT:
+		if (float(cx) / float(cy) > ratio) {
+			int validX = cy * ratio;
+			minX = halfX - (validX / 2);
+		} else {
+			int validY = cx / ratio;
+			minY = halfY - (validY / 2);
+			maxY = halfY + (validY / 2);
+		}
+
+		maxX = halfX;
+
+		if (x < minX || x > maxX || y < minY || y > maxY)
+			break;
+
+		pos = 2 * ((y - minY) / ((maxY - minY) / 4));
+		if (x > minX + ((maxX - minX) / 2))
+			pos++;
+		break;
+	case HORIZONTAL_BOTTOM:
+		if (float(cx) / float(cy) > ratio) {
+			int validX = cy * ratio;
+			minX = halfX - (validX / 2);
+			maxX = halfX + (validX / 2);
+		} else {
+			int validY = cx / ratio;
+			minY = halfY - (validY / 2);
+		}
+
+		maxY = halfY;
+
+		if (x < minX || x > maxX || y < minY || y > maxY)
+			break;
+
+		pos = (x - minX) / ((maxX - minX) / 4);
+		if (y > minY + ((maxY - minY) / 2))
+			pos += 4;
+		break;
+	default: // HORIZONTAL_TOP
+		if (float(cx) / float(cy) > ratio) {
+			int validX = cy * ratio;
+			minX = halfX - (validX / 2);
+			maxX = halfX + (validX / 2);
+		} else {
+			int validY = cx / ratio;
+			maxY = halfY + (validY / 2);
+		}
+
+		minY = halfY;
+
+		if (x < minX || x > maxX || y < minY || y > maxY)
+			break;
+
+		pos = (x - minX) / ((maxX - minX) / 4);
+		if (y > minY + ((maxY - minY) / 2))
+			pos += 4;
+	}
+
+	return pos;
+}
+
+void OBSProjector::mouseDoubleClickEvent(QMouseEvent *event)
+{
+	OBSQTDisplay::mouseDoubleClickEvent(event);
+
+	if (!config_get_bool(GetGlobalConfig(), "BasicWindow",
+			"TransitionOnDoubleClick"))
+		return;
+
+	OBSBasic *main = (OBSBasic*)obs_frontend_get_main_window();
+	if (!main->IsPreviewProgramMode())
+		return;
+
+	if (event->button() == Qt::LeftButton) {
+		int pos = getSourceByPosition(event->x(), event->y());
+		if (pos < 0)
+			return;
+		OBSSource src = OBSGetStrongRef(multiviewScenes[pos]);
+		if (!src)
+			return;
+
+		if (main->GetProgramSource() != src)
+			main->TransitionToScene(src);
+	}
+}
+
 void OBSProjector::mousePressEvent(QMouseEvent *event)
 {
 	OBSQTDisplay::mousePressEvent(event);
@@ -564,6 +772,19 @@ void OBSProjector::mousePressEvent(QMouseEvent *event)
 		QMenu popup(this);
 		popup.addAction(QTStr("Close"), this, SLOT(EscapeTriggered()));
 		popup.exec(QCursor::pos());
+	}
+
+	if (event->button() == Qt::LeftButton) {
+		int pos = getSourceByPosition(event->x(), event->y());
+		if (pos < 0)
+			return;
+		OBSSource src = OBSGetStrongRef(multiviewScenes[pos]);
+		if (!src)
+			return;
+
+		OBSBasic *main = (OBSBasic*)obs_frontend_get_main_window();
+		if (main->GetCurrentSceneSource() != src)
+			main->SetCurrentScene(src, false);
 	}
 }
 
@@ -623,6 +844,18 @@ void OBSProjector::UpdateMultiview()
 	}
 
 	obs_frontend_source_list_free(&scenes);
+
+	const char *multiviewLayoutText = config_get_string(GetGlobalConfig(),
+			"BasicWindow", "MultiviewLayout");
+
+	if (astrcmpi(multiviewLayoutText, "horizontalbottom") == 0)
+		multiviewLayout = HORIZONTAL_BOTTOM;
+	else if (astrcmpi(multiviewLayoutText, "verticalleft") == 0)
+		multiviewLayout = VERTICAL_LEFT;
+	else if (astrcmpi(multiviewLayoutText, "verticalright") == 0)
+		multiviewLayout = VERTICAL_RIGHT;
+	else
+		multiviewLayout = HORIZONTAL_TOP;
 }
 
 void OBSProjector::UpdateMultiviewProjectors()
