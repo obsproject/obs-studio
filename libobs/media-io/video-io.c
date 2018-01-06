@@ -302,6 +302,8 @@ static inline bool video_input_init(struct video_input *input,
 			.format = video->info.format,
 			.width  = video->info.width,
 			.height = video->info.height,
+			.range = video->info.range,
+			.colorspace = video->info.colorspace
 		};
 
 		int ret = video_scaler_create(&input->scaler,
