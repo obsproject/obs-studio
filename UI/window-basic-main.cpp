@@ -1693,6 +1693,9 @@ void OBSBasic::InitHotkeys()
 	obs_hotkeys_set_sceneitem_hotkeys_translations(
 			Str("SceneItemShow"), Str("SceneItemHide"));
 
+	obs_hotkeys_set_filter_hotkeys_translations(
+			Str("Enable"), Str("Disable"));
+
 	obs_hotkey_enable_callback_rerouting(true);
 	obs_hotkey_set_callback_routing_func(OBSBasic::HotkeyTriggered, this);
 }

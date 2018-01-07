@@ -135,6 +135,9 @@ EXPORT void obs_hotkeys_set_audio_hotkeys_translations(
 EXPORT void obs_hotkeys_set_sceneitem_hotkeys_translations(
 		const char *show, const char *hide);
 
+EXPORT void obs_hotkeys_set_filter_hotkeys_translations(
+		const char *enable, const char *disable);
+
 /* registering hotkeys (giving hotkeys a name and a function) */
 
 typedef void (*obs_hotkey_func)(void *data,

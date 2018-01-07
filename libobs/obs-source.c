@@ -206,7 +206,8 @@ static bool obs_source_hotkey_mute(void *data,
 
 	struct obs_source *source = data;
 
-	if (!pressed || obs_source_muted(source)) return false;
+	if (!pressed || obs_source_muted(source))
+		return false;
 
 	obs_source_set_muted(source, true);
 	return true;
@@ -220,9 +221,40 @@ static bool obs_source_hotkey_unmute(void *data,
 
 	struct obs_source *source = data;
 
-	if (!pressed || !obs_source_muted(source)) return false;
+	if (!pressed || !obs_source_muted(source))
+		return false;
 
 	obs_source_set_muted(source, false);
+	return true;
+}
+
+static bool obs_source_filter_hotkey_enable(void *data,
+		obs_hotkey_pair_id id, obs_hotkey_t *key, bool pressed)
+{
+	UNUSED_PARAMETER(id);
+	UNUSED_PARAMETER(key);
+
+	struct obs_source *source = data;
+
+	if (!pressed || obs_source_enabled(source))
+		return false;
+
+	obs_source_set_enabled(source, true);
+	return true;
+}
+
+static bool obs_source_filter_hotkey_disable(void *data,
+		obs_hotkey_pair_id id, obs_hotkey_t *key, bool pressed)
+{
+	UNUSED_PARAMETER(id);
+	UNUSED_PARAMETER(key);
+
+	struct obs_source *source = data;
+
+	if (!pressed || !obs_source_enabled(source))
+		return false;
+
+	obs_source_set_enabled(source, false);
 	return true;
 }
 
@@ -292,6 +324,22 @@ static void obs_source_init_audio_hotkeys(struct obs_source *source)
 			obs_source_hotkey_push_to_talk, source);
 }
 
+static void obs_source_init_filter_hotkeys(struct obs_source *source)
+{
+	if (source->info.type != OBS_SOURCE_TYPE_FILTER) {
+		source->filter_enable_disable_key = OBS_INVALID_HOTKEY_ID;
+		return;
+	}
+
+	source->filter_enable_disable_key = 
+			obs_hotkey_pair_register_source(source,
+				"libobs.enable", obs->hotkeys.enable,
+				"libobs.disable", obs->hotkeys.disable,
+				obs_source_filter_hotkey_enable,
+				obs_source_filter_hotkey_disable,
+				source, source);
+}
+
 static obs_source_t *obs_source_create_internal(const char *id,
 		const char *name, obs_data_t *settings,
 		obs_data_t *hotkey_data, bool private)
@@ -316,6 +364,7 @@ static obs_source_t *obs_source_create_internal(const char *id,
 	}
 
 	source->mute_unmute_key  = OBS_INVALID_HOTKEY_PAIR_ID;
+	source->filter_enable_disable_key = OBS_INVALID_HOTKEY_PAIR_ID;
 	source->push_to_mute_key = OBS_INVALID_HOTKEY_ID;
 	source->push_to_talk_key = OBS_INVALID_HOTKEY_ID;
 
@@ -336,6 +385,9 @@ static obs_source_t *obs_source_create_internal(const char *id,
 
 	if (!private)
 		obs_source_init_audio_hotkeys(source);
+
+	if (source->info.type == OBS_SOURCE_TYPE_FILTER)
+		obs_source_init_filter_hotkeys(source);
 
 	/* allow the source to be created even if creation fails so that the
 	 * user's data doesn't become lost */
@@ -550,6 +602,7 @@ void obs_source_destroy(struct obs_source *source)
 	obs_hotkey_unregister(source->push_to_talk_key);
 	obs_hotkey_unregister(source->push_to_mute_key);
 	obs_hotkey_pair_unregister(source->mute_unmute_key);
+	obs_hotkey_pair_unregister(source->filter_enable_disable_key);
 
 	for (i = 0; i < source->async_cache.num; i++)
 		obs_source_frame_decref(source->async_cache.array[i].frame);

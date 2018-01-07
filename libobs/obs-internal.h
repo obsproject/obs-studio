@@ -366,6 +366,8 @@ struct obs_core_hotkeys {
 	char                            *push_to_talk;
 	char                            *sceneitem_show;
 	char                            *sceneitem_hide;
+	char                            *enable;
+	char                            *disable;
 };
 
 struct obs_core {
@@ -651,6 +653,7 @@ struct obs_source {
 
 	/* sources specific hotkeys */
 	obs_hotkey_pair_id              mute_unmute_key;
+	obs_hotkey_pair_id              filter_enable_disable_key;
 	obs_hotkey_id                   push_to_mute_key;
 	obs_hotkey_id                   push_to_talk_key;
 	bool                            push_to_mute_enabled;
