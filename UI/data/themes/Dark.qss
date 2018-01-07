@@ -468,10 +468,16 @@ QSlider::handle:disabled {
 /* Volume Control */
 
 VolumeMeter {
-    qproperty-bkColor: rgb(31,30,31); /* veryDark */
-    qproperty-magColor:;
-    qproperty-peakColor:;
-    qproperty-peakHoldColor: rgb(225,224,225); /* veryLight */
+    qproperty-backgroundNominalColor: rgb(38, 127, 38);
+    qproperty-backgroundWarningColor: rgb(127, 127, 38);
+    qproperty-backgroundErrorColor: rgb(127, 38, 38);
+    qproperty-foregroundNominalColor: rgb(76, 255, 76);
+    qproperty-foregroundWarningColor: rgb(255, 255, 76);
+    qproperty-foregroundErrorColor: rgb(255, 76, 76);
+    qproperty-magnitudeColor: rgb(0, 0, 0);
+    qproperty-majorTickColor: rgb(225,224,225); /* veryLight */
+    qproperty-minorTickColor: rgb(122,121,122); /* light */
+    qproperty-peakDecayRate: 23.4; /* Override of the standard PPM Type I rate. */
 }
 
 
