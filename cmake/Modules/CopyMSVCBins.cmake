@@ -123,13 +123,13 @@ file(GLOB CURL_BIN_FILES
 	)
 
 file(GLOB LUA_BIN_FILES
-	"${LUA_INCLUDE_DIR}/../../bin${_bin_suffix}/lua*.dll"
-	"${LUA_INCLUDE_DIR}/../../bin/lua*.dll"
-	"${LUA_INCLUDE_DIR}/../bin${_bin_suffix}/lua*.dll"
-	"${LUA_INCLUDE_DIR}/../bin/lua*.dll"
-	"${LUA_INCLUDE_DIR}/bin${_bin_suffix}/lua*.dll"
-	"${LUA_INCLUDE_DIR}/bin/lua*.dll"
-	"${LUA_INCLUDE_DIR}/lua*.dll"
+	"${LUAJIT_INCLUDE_DIR}/../../bin${_bin_suffix}/lua*.dll"
+	"${LUAJIT_INCLUDE_DIR}/../../bin/lua*.dll"
+	"${LUAJIT_INCLUDE_DIR}/../bin${_bin_suffix}/lua*.dll"
+	"${LUAJIT_INCLUDE_DIR}/../bin/lua*.dll"
+	"${LUAJIT_INCLUDE_DIR}/bin${_bin_suffix}/lua*.dll"
+	"${LUAJIT_INCLUDE_DIR}/bin/lua*.dll"
+	"${LUAJIT_INCLUDE_DIR}/lua*.dll"
 	)
 
 if (ZLIB_LIB)
