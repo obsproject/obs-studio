@@ -49,7 +49,7 @@
 #define TEXT_MODE                obs_module_text("Mode")
 #define TEXT_GAME_CAPTURE        obs_module_text("GameCapture")
 #define TEXT_ANY_FULLSCREEN      obs_module_text("GameCapture.AnyFullscreen")
-#define TEXT_SLI_COMPATIBILITY   obs_module_text("Compatibility")
+#define TEXT_SLI_COMPATIBILITY   obs_module_text("SLIFix")
 #define TEXT_ALLOW_TRANSPARENCY  obs_module_text("AllowTransparency")
 #define TEXT_FORCE_SCALING       obs_module_text("GameCapture.ForceScaling")
 #define TEXT_SCALE_RES           obs_module_text("GameCapture.ScaleRes")
