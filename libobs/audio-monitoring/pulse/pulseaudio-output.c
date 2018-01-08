@@ -238,7 +238,7 @@ static void pulseaudio_source_info(pa_context *c, const pa_source_info *i,
 
 	pa_sample_format_t format = i->sample_spec.format;
 	if (pulseaudio_to_obs_audio_format(format) == AUDIO_FORMAT_UNKNOWN) {
-		format = PA_SAMPLE_S16LE;
+		format = PA_SAMPLE_FLOAT32LE;
 
 		blog(LOG_INFO, "Sample format %s not supported by OBS,"
 				"using %s instead for recording",
