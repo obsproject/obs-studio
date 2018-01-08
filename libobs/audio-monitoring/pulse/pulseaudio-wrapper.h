@@ -173,3 +173,13 @@ int_fast32_t pulseaudio_connect_playback(pa_stream *s, const char *name,
  */
 void pulseaudio_write_callback(pa_stream *p, pa_stream_request_cb_t cb,
 		void *userdata);
+
+/**
+ * Sets a callback function for when an underflow happen
+ *
+ * @param p pa_stream to connect to. NULL for default
+ * @param cb pa_stream_notify_cb_t
+ * @param userdata pointer to userdata the callback will be called with
+ */
+void pulseaudio_set_underflow_callback(pa_stream *p, pa_stream_notify_cb_t cb,
+		void *userdata);
