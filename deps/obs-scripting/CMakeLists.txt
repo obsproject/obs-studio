@@ -7,8 +7,8 @@ if(MSVC)
 endif()
 
 find_package(Luajit QUIET)
-find_package(PythonLibs QUIET 3.4)
-find_package(SWIG QUIET 2)
+find_package(PythonDeps QUIET)
+find_package(SwigDeps QUIET 2)
 
 set(COMPILE_PYTHON FALSE CACHE BOOL "" FORCE)
 set(COMPILE_LUA FALSE CACHE BOOL "" FORCE)
