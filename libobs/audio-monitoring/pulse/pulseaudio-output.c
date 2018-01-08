@@ -61,6 +61,61 @@ static enum audio_format pulseaudio_to_obs_audio_format(
 	}
 }
 
+static pa_channel_map pulseaudio_channel_map(enum speaker_layout layout)
+{
+	pa_channel_map ret;
+
+	ret.map[0] = PA_CHANNEL_POSITION_FRONT_LEFT;
+	ret.map[1] = PA_CHANNEL_POSITION_FRONT_RIGHT;
+	ret.map[2] = PA_CHANNEL_POSITION_FRONT_CENTER;
+	ret.map[3] = PA_CHANNEL_POSITION_LFE;
+	ret.map[4] = PA_CHANNEL_POSITION_REAR_LEFT;
+	ret.map[5] = PA_CHANNEL_POSITION_REAR_RIGHT;
+	ret.map[6] = PA_CHANNEL_POSITION_SIDE_LEFT;
+	ret.map[7] = PA_CHANNEL_POSITION_SIDE_RIGHT;
+
+	switch (layout) {
+	case SPEAKERS_MONO:
+		ret.channels = 1;
+		ret.map[0] = PA_CHANNEL_POSITION_MONO;
+		break;
+
+	case SPEAKERS_STEREO:
+		ret.channels = 2;
+		break;
+
+	case SPEAKERS_2POINT1:
+		ret.channels = 3;
+		ret.map[2] = PA_CHANNEL_POSITION_LFE;
+		break;
+
+	case SPEAKERS_4POINT0:
+		ret.channels = 4;
+		ret.map[3] = PA_CHANNEL_POSITION_REAR_CENTER;
+		break;
+
+	case SPEAKERS_4POINT1:
+		ret.channels = 5;
+		ret.map[4] = PA_CHANNEL_POSITION_REAR_CENTER;
+		break;
+
+	case SPEAKERS_5POINT1:
+		ret.channels = 6;
+		break;
+
+	case SPEAKERS_7POINT1:
+		ret.channels = 8;
+		break;
+
+	case SPEAKERS_UNKNOWN:
+	default:
+		ret.channels = 0;
+		break;
+	}
+
+	return ret;
+}
+
 static void process_byte(void *p, size_t frames, size_t channels, float vol)
 {
 	register char *cur = (char *) p;
@@ -370,8 +425,10 @@ static bool audio_monitor_init(struct audio_monitor *monitor,
 	monitor->speakers = pulseaudio_channels_to_obs_speakers(spec.channels);
 	monitor->bytes_per_frame = pa_frame_size(&spec);
 
+	pa_channel_map channel_map = pulseaudio_channel_map(monitor->speakers);
+
 	monitor->stream = pulseaudio_stream_new(
-			obs_source_get_name(monitor->source), &spec, NULL);
+		obs_source_get_name(monitor->source), &spec, &channel_map);
 	if (!monitor->stream) {
 		blog(LOG_ERROR, "Unable to create stream");
 		return false;
