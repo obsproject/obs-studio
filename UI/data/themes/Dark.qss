@@ -403,6 +403,12 @@ QPushButton:checked {
     background-color: rgb(122,121,122); /* light */
 }
 
+QPushButton::menu-indicator {
+    image: url(./Dark/down_arrow.png);
+    subcontrol-position: right;
+    subcontrol-origin: padding;
+    width: 25px;
+}
 
 /* Sliders */
 
