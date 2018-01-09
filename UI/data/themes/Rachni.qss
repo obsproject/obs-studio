@@ -775,6 +775,13 @@ QPushButton:disabled {
 	color: rgb(162, 161, 162); /* Lighter Gray */
 }
 
+QPushButton::menu-indicator {
+    image: url(./Rachni/down_arrow.png);
+    subcontrol-position: right;
+    subcontrol-origin: padding;
+    width: 25px;
+}
+
 /******************************/
 /* --- Dialog Box Buttons --- */
 /******************************/
