@@ -55,7 +55,8 @@ void gs_duplicator::Start()
 gs_duplicator::gs_duplicator(gs_device_t *device_, int monitor_idx)
 	: gs_obj  (device_, gs_type::gs_duplicator),
 	  texture (nullptr),
-	  idx     (monitor_idx)
+	  idx     (monitor_idx),
+	  nReferences (0)
 {
 	Start();
 }
@@ -116,31 +117,51 @@ EXPORT bool device_get_duplicator_monitor_info(gs_device_t *device,
 	return true;
 }
 
+std::map<int, gs_duplicator*> gs_duplicator::instances;
+
 EXPORT gs_duplicator_t *device_duplicator_create(gs_device_t *device,
 		int monitor_idx)
 {
-	gs_duplicator *duplicator = nullptr;
+	gs_duplicator *duplicator;
 
-	try {
-		duplicator = new gs_duplicator(device, monitor_idx);
-
-	} catch (const char *error) {
-		blog(LOG_DEBUG, "device_duplicator_create: %s",
+	//There can only be one gs_duplicator instance per monitor_idx value.
+	//Search for a matching instance in the map, or create a new one if no
+	//such instance exists yet.
+	map<int, gs_duplicator*>::iterator it = gs_duplicator::instances.find(monitor_idx);
+	if(it != gs_duplicator::instances.end())
+	{
+		duplicator = it->second;
+	}else
+	{
+		try {
+			duplicator = new gs_duplicator(device, monitor_idx);
+			gs_duplicator::instances[monitor_idx] = duplicator;
+		}
+		catch (const char *error) {
+			blog(LOG_DEBUG, "device_duplicator_create: %s",
 				error);
-		return nullptr;
+			return nullptr;
 
-	} catch (HRError error) {
-		blog(LOG_DEBUG, "device_duplicator_create: %s (%08lX)",
+		}
+		catch (HRError error) {
+			blog(LOG_DEBUG, "device_duplicator_create: %s (%08lX)",
 				error.str, error.hr);
-		return nullptr;
+			return nullptr;
+		}
 	}
 
+	duplicator->nReferences++;
 	return duplicator;
 }
 
 EXPORT void gs_duplicator_destroy(gs_duplicator_t *duplicator)
 {
-	delete duplicator;
+	duplicator->nReferences--;
+	if(duplicator->nReferences == 0)
+	{
+		gs_duplicator::instances.erase(duplicator->idx);
+		delete duplicator;
+	}
 }
 
 static inline void copy_texture(gs_duplicator_t *d, ID3D11Texture2D *tex)
