@@ -561,6 +561,8 @@ struct gs_duplicator : gs_obj {
 	ComPtr<IDXGIOutputDuplication> duplicator;
 	gs_texture_2d *texture;
 	int idx;
+	long refs;
+	bool updated;
 
 	void Start();
 
