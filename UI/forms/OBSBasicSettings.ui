@@ -146,7 +146,7 @@
               <x>0</x>
               <y>0</y>
               <width>801</width>
-              <height>1044</height>
+              <height>741</height>
              </rect>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_19">
@@ -733,8 +733,8 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>601</width>
-              <height>640</height>
+              <width>818</width>
+              <height>697</height>
              </rect>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_21">
@@ -3362,7 +3362,7 @@
            </property>
           </widget>
          </item>
-         <item row="7" column="0" colspan="2">
+         <item row="8" column="0" colspan="2">
           <widget class="QScrollArea" name="audioSourceScrollArea">
            <property name="widgetResizable">
             <bool>true</bool>
@@ -3372,14 +3372,14 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>63</width>
-              <height>16</height>
+              <width>800</width>
+              <height>69</height>
              </rect>
             </property>
            </widget>
           </widget>
          </item>
-         <item row="8" column="1">
+         <item row="9" column="1">
           <widget class="QLabel" name="audioMsg">
            <property name="styleSheet">
             <string notr="true">color: rgb(255, 0, 4);</string>
@@ -3392,7 +3392,7 @@
            </property>
           </widget>
          </item>
-         <item row="9" column="1">
+         <item row="10" column="1">
           <widget class="QLabel" name="audioMsg_2">
            <property name="text">
             <string notr="true"/>
@@ -3403,6 +3403,41 @@
            <property name="themeID" stdset="0">
             <string notr="true">warning</string>
            </property>
+          </widget>
+         </item>
+         <item row="7" column="0">
+          <widget class="QLabel" name="label_65">
+           <property name="text">
+            <string>Basic.Settings.Audio.MeterDecayRate</string>
+           </property>
+           <property name="buddy">
+            <cstring>meterDecayRate</cstring>
+           </property>
+          </widget>
+         </item>
+         <item row="7" column="1">
+          <widget class="QComboBox" name="meterDecayRate">
+           <property name="currentText">
+            <string>Basic.Settings.Audio.MeterDecayRate.Fast</string>
+           </property>
+           <property name="currentIndex">
+            <number>0</number>
+           </property>
+           <item>
+            <property name="text">
+             <string>Basic.Settings.Audio.MeterDecayRate.Fast</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>Basic.Settings.Audio.MeterDecayRate.Medium</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>Basic.Settings.Audio.MeterDecayRate.Slow</string>
+            </property>
+           </item>
           </widget>
          </item>
         </layout>
@@ -3756,7 +3791,7 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>803</width>
+              <width>593</width>
               <height>761</height>
              </rect>
             </property>

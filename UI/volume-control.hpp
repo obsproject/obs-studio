@@ -253,4 +253,6 @@ public:
 
 	QString GetName() const;
 	void SetName(const QString &newName);
+
+	void SetMeterDecayRate(qreal q);
 };
