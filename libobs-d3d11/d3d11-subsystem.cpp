@@ -1456,9 +1456,12 @@ void device_present(gs_device_t *device)
 	}
 }
 
+extern "C" void reset_duplicators(void);
+
 void device_flush(gs_device_t *device)
 {
 	device->context->Flush();
+	reset_duplicators();
 }
 
 void device_set_cull_mode(gs_device_t *device, enum gs_cull_mode mode)
