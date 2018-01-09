@@ -410,6 +410,9 @@ void VolumeMeter::setInputPeakHoldDuration(qreal v)
 VolumeMeter::VolumeMeter(QWidget *parent, obs_volmeter_t *obs_volmeter)
 			: QWidget(parent), obs_volmeter(obs_volmeter)
 {
+	// Use a font that can be rendered small.
+	tickFont = QFont("Arial");
+	tickFont.setPixelSize(7);
 	// Default meter color settings, they only show if
 	// there is no stylesheet, do not remove.
 	backgroundNominalColor.setRgb(0x26, 0x7f, 0x26);    // Dark green
@@ -616,31 +619,25 @@ void VolumeMeter::paintTicks(QPainter &painter, int x, int y,
 {
 	qreal scale = width / minimumLevel;
 
-	// Use a font that can be rendered small.
-	QFont font = QFont("Arial");
-	font.setPixelSize(7);
-
-	painter.setFont(font);
+	painter.setFont(tickFont);
 	painter.setPen(majorTickColor);
 
 	// Draw major tick lines and numeric indicators.
-	for (int i = 0; i > minimumLevel; i-= 5) {
+	for (int i = 0; i >= minimumLevel; i-= 5) {
 		int position = x + width - (i * scale) - 1;
-		char str[5];
+		QString str = QString::number(i);
 
-		snprintf(str, sizeof (str), "%i", i);
-
-		if (i == 0 || i == 5)  {
-			painter.drawText(position - 3, height, QString(str));
+		if (i == 0 || i == -5)  {
+			painter.drawText(position - 3, height, str);
 		} else {
-			painter.drawText(position - 5, height, QString(str));
+			painter.drawText(position - 5, height, str);
 		}
 		painter.drawLine(position, y, position, y + 2);
 	}
 
 	// Draw minor tick lines.
 	painter.setPen(minorTickColor);
-	for (int i = 0; i > minimumLevel; i--) {
+	for (int i = 0; i >= minimumLevel; i--) {
 		int position = x + width - (i * scale) - 1;
 
 		if (i % 5 != 0) {
@@ -810,7 +807,7 @@ void VolumeMeter::paintEvent(QPaintEvent *event)
 	bool idle = detectIdle(ts);
 
 	// Draw the ticks in a off-screen buffer when the widget changes size.
-	QSize tickPaintCacheSize = QSize(width - 5, 9);
+	QSize tickPaintCacheSize = QSize(width, 9);
 	if (tickPaintCache == NULL ||
 		tickPaintCache->size() != tickPaintCacheSize) {
 		delete tickPaintCache;
@@ -820,14 +817,14 @@ void VolumeMeter::paintEvent(QPaintEvent *event)
 		tickPaintCache->fill(clearColor);
 
 		QPainter tickPainter(tickPaintCache);
-		paintTicks(tickPainter, 0, 0, tickPaintCacheSize.width(),
+		paintTicks(tickPainter, 6, 0, tickPaintCacheSize.width() - 6,
 			tickPaintCacheSize.height());
 		tickPainter.end();
 	}
 
 	// Actual painting of the widget starts here.
 	QPainter painter(this);
-	painter.drawPixmap(5, height - 9, *tickPaintCache);
+	painter.drawPixmap(0, height - 9, *tickPaintCache);
 
 	for (int channelNr = 0; channelNr < displayNrAudioChannels;
 		channelNr++) {

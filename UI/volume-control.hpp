@@ -115,6 +115,7 @@ private:
 	float displayInputPeakHold[MAX_AUDIO_CHANNELS];
 	uint64_t displayInputPeakHoldLastUpdateTime[MAX_AUDIO_CHANNELS];
 
+	QFont tickFont;
 	QColor backgroundNominalColor;
 	QColor backgroundWarningColor;
 	QColor backgroundErrorColor;
