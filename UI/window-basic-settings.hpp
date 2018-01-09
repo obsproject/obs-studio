@@ -37,6 +37,10 @@ class OBSHotkeyWidget;
 
 #include "ui_OBSBasicSettings.h"
 
+#define VOLUME_METER_RETURN_FAST	23.53
+#define VOLUME_METER_RETURN_MEDIUM	11.76
+#define VOLUME_METER_RETURN_SLOW	8.57
+
 class SilentUpdateCheckBox : public QCheckBox {
 	Q_OBJECT
 

@@ -400,6 +400,16 @@ void OBSBasic::copyActionsDynamicProperties()
 	}
 }
 
+void OBSBasic::UpdateVolumeControlsDecayRate()
+{
+	double meterReturnTime = config_get_double(basicConfig, "Audio",
+			"MeterReturnTime");
+
+	for (size_t i = 0; i < volumes.size(); i++) {
+		volumes[i]->SetMeterDecayRate(meterReturnTime);
+	}
+}
+
 void OBSBasic::ClearVolumeControls()
 {
 	VolControl *control;
@@ -1235,6 +1245,8 @@ bool OBSBasic::InitBasicConfigDefaults()
 	config_set_default_uint  (basicConfig, "Audio", "SampleRate", 44100);
 	config_set_default_string(basicConfig, "Audio", "ChannelSetup",
 			"Stereo");
+	config_set_default_double(basicConfig, "Audio", "MeterReturnTime",
+			VOLUME_METER_RETURN_FAST);
 
 	return true;
 }
@@ -2549,6 +2561,9 @@ void OBSBasic::ActivateAudioSource(OBSSource source)
 
 	VolControl *vol = new VolControl(source, true);
 
+	double meterReturnTime = config_get_double(basicConfig, "Audio",
+			"MeterReturnTime");
+	vol->SetMeterDecayRate(meterReturnTime);
 	vol->setContextMenuPolicy(Qt::CustomContextMenu);
 
 	connect(vol, &QWidget::customContextMenuRequested,

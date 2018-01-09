@@ -56,7 +56,7 @@ void VolControl::VolumeChanged()
 	slider->blockSignals(true);
 	slider->setValue((int) (obs_fader_get_deflection(obs_fader) * 100.0f));
 	slider->blockSignals(false);
-	
+
 	updateText();
 }
 
@@ -107,6 +107,11 @@ void VolControl::SetName(const QString &newName)
 void VolControl::EmitConfigClicked()
 {
 	emit ConfigClicked();
+}
+
+void VolControl::SetMeterDecayRate(qreal q)
+{
+	volMeter->setPeakDecayRate(q);
 }
 
 VolControl::VolControl(OBSSource source_, bool showConfig)
@@ -430,7 +435,7 @@ VolumeMeter::VolumeMeter(QWidget *parent, obs_volmeter_t *obs_volmeter)
 	errorLevel = -9.0;                                  //  -9 dB
 	clipLevel = -0.5;                                   //  -0.5 dB
 	minimumInputLevel = -50.0;                          // -50 dB
-	peakDecayRate = 11.7;                               //  20 dB / 1.7 sec
+	peakDecayRate = 11.76;                              //  20 dB / 1.7 sec
 	magnitudeIntegrationTime = 0.3;                     //  99% in 300 ms
 	peakHoldDuration = 20.0;                            //  20 seconds
 	inputPeakHoldDuration = 1.0;                        //  1 second
@@ -524,7 +529,9 @@ inline void VolumeMeter::calculateBallisticsForChannel(int channelNr,
 		// Attack of peak is immediate.
 		displayPeak[channelNr] = currentPeak[channelNr];
 	} else {
-		// Decay of peak is 20 dB / 1.7 seconds.
+		// Decay of peak is 40 dB / 1.7 seconds for Fast Profile
+		// 20 dB / 1.7 seconds for Medium Profile (Type I PPM)
+		// 24 dB / 2.8 seconds for Slow Profile (Type II PPM)
 		qreal decay = peakDecayRate * timeSinceLastRedraw;
 		displayPeak[channelNr] = CLAMP(displayPeak[channelNr] - decay,
 			currentPeak[channelNr], 0);
