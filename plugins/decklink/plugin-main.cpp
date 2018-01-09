@@ -77,7 +77,7 @@ static void decklink_update(void *data, obs_data_t *settings)
 	int chFmtInt = (int)obs_data_get_int(settings, CHANNEL_FORMAT);
 
 	if (chFmtInt == 7) {
-		chFmtInt = SPEAKERS_7POINT1;
+		chFmtInt = SPEAKERS_5POINT1;
 	} else if (chFmtInt < SPEAKERS_UNKNOWN || chFmtInt > SPEAKERS_7POINT1) {
 		chFmtInt = 2;
 	}
