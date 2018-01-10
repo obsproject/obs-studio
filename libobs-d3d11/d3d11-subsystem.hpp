@@ -23,6 +23,7 @@
 #include <vector>
 #include <string>
 #include <memory>
+#include <map>
 
 #include <windows.h>
 #include <dxgi.h>
@@ -558,9 +559,12 @@ struct gs_vertex_shader : gs_shader {
 };
 
 struct gs_duplicator : gs_obj {
+	static std::map<int, gs_duplicator*> instances;
+
 	ComPtr<IDXGIOutputDuplication> duplicator;
 	gs_texture_2d *texture;
 	int idx;
+	uint32_t nReferences;
 
 	void Start();
 
