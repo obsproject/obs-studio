@@ -316,6 +316,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->centerSnapping,       CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->sourceSnapping,       CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->snapDistance,         DSCROLL_CHANGED,GENERAL_CHANGED);
+	HookWidget(ui->spacingHelpersEnabled, CHECK_CHANGED, GENERAL_CHANGED);
 	HookWidget(ui->doubleClickSwitch,    CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->studioPortraitLayout, CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->multiviewLayout,      COMBO_CHANGED,  GENERAL_CHANGED);
@@ -1064,6 +1065,10 @@ void OBSBasicSettings::LoadGeneralSettings()
 	double snapDistance = config_get_double(GetGlobalConfig(),
 			"BasicWindow", "SnapDistance");
 	ui->snapDistance->setValue(snapDistance);
+
+	bool spacingHelpersEnabled = config_get_bool(GetGlobalConfig(),
+			"BasicWindow", "SpacingHelpersEnabled");
+	ui->spacingHelpersEnabled->setChecked(spacingHelpersEnabled);
 
 	bool warnBeforeStreamStart = config_get_bool(GetGlobalConfig(),
 			"BasicWindow", "WarnBeforeStartingStream");
@@ -2628,6 +2633,10 @@ void OBSBasicSettings::SaveGeneralSettings()
 		config_set_double(GetGlobalConfig(), "BasicWindow",
 				"SnapDistance",
 				ui->snapDistance->value());
+	if (WidgetChanged(ui->spacingHelpersEnabled))
+		config_set_bool(GetGlobalConfig(), "BasicWindow",
+			"SpacingHelpersEnabled",
+			ui->spacingHelpersEnabled->isChecked());
 	if (WidgetChanged(ui->doubleClickSwitch))
 		config_set_bool(GetGlobalConfig(), "BasicWindow",
 				"TransitionOnDoubleClick",

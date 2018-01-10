@@ -146,7 +146,7 @@
               <x>0</x>
               <y>0</y>
               <width>801</width>
-              <height>741</height>
+              <height>764</height>
              </rect>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_19">
@@ -368,16 +368,6 @@
                      </property>
                     </widget>
                    </item>
-                   <item row="4" column="1">
-                    <widget class="QCheckBox" name="centerSnapping">
-                     <property name="text">
-                      <string>Basic.Settings.General.CenterSnapping</string>
-                     </property>
-                     <property name="checked">
-                      <bool>true</bool>
-                     </property>
-                    </widget>
-                   </item>
                    <item row="3" column="1">
                     <widget class="QCheckBox" name="sourceSnapping">
                      <property name="text">
@@ -426,6 +416,26 @@
                       </size>
                      </property>
                     </spacer>
+                   </item>
+                   <item row="4" column="1">
+                    <widget class="QCheckBox" name="centerSnapping">
+                     <property name="text">
+                      <string>Basic.Settings.General.CenterSnapping</string>
+                     </property>
+                     <property name="checked">
+                      <bool>true</bool>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="5" column="1">
+                    <widget class="QCheckBox" name="spacingHelpersEnabled">
+                     <property name="text">
+                      <string>Basic.Settings.General.SpacingHelpersEnabled</string>
+                     </property>
+                     <property name="checked">
+                      <bool>true</bool>
+                     </property>
+                    </widget>
                    </item>
                   </layout>
                  </widget>
@@ -733,7 +743,7 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>818</width>
+              <width>603</width>
               <height>697</height>
              </rect>
             </property>
@@ -3372,7 +3382,7 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>800</width>
+              <width>80</width>
               <height>69</height>
              </rect>
             </property>
@@ -3791,7 +3801,7 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>593</width>
+              <width>596</width>
               <height>761</height>
              </rect>
             </property>
