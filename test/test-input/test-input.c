@@ -8,6 +8,7 @@ extern struct obs_source_info test_filter;
 extern struct obs_source_info async_sync_test;
 extern struct obs_source_info sync_video;
 extern struct obs_source_info sync_audio;
+extern struct obs_source_info async_late_test;
 
 bool obs_module_load(void)
 {
@@ -17,5 +18,6 @@ bool obs_module_load(void)
 	obs_register_source(&async_sync_test);
 	obs_register_source(&sync_video);
 	obs_register_source(&sync_audio);
+	obs_register_source(&async_late_test);
 	return true;
 }
