@@ -416,6 +416,7 @@ void AutoConfigStreamPage::UpdateKeyLink()
 {
 	bool custom = ui->streamType->currentIndex() == 1;
 	QString serviceName = ui->service->currentText();
+	bool isYoutube = false;
 
 	if (custom)
 		serviceName = "";
@@ -433,6 +434,15 @@ void AutoConfigStreamPage::UpdateKeyLink()
 		text += "\">";
 		text += QTStr("Basic.AutoConfig.StreamPage.StreamKey.LinkToSite");
 		text += "</a>";
+
+		isYoutube = true;
+	}
+
+	if (isYoutube) {
+		ui->doBandwidthTest->setChecked(false);
+		ui->doBandwidthTest->setEnabled(false);
+	} else {
+		ui->doBandwidthTest->setEnabled(true);
 	}
 
 	ui->streamKeyLabel->setText(text);
