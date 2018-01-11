@@ -116,7 +116,13 @@ static OBSSource CreateLabel(const char *name, size_t h)
 	obs_data_set_string(settings, "text", text.c_str());
 	obs_data_set_bool(settings, "outline", true);
 
-	OBSSource txtSource = obs_source_create_private("text_ft2_source", name,
+#ifdef _WIN32
+	const char *text_source_id = "text_gdiplus";
+#else
+	const char *text_source_id = "text_ft2_source";
+#endif
+
+	OBSSource txtSource = obs_source_create_private(text_source_id, name,
 			settings);
 	obs_source_release(txtSource);
 
@@ -834,9 +840,6 @@ void OBSProjector::UpdateMultiview()
 		name += std::to_string(curIdx + 1);
 		name += " - ";
 		name += obs_source_get_name(src);
-
-		if (name.size() > 15)
-			name.resize(15);
 
 		multiviewLabels[curIdx + 2] = CreateLabel(name.c_str(), h / 4);
 
