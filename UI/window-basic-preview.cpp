@@ -1178,13 +1178,13 @@ void OBSBasicPreview::DrawSingleSpacingHelper(vec3 &start, vec3 &end,
 	obs_video_info ovi;
 	obs_get_video_info(&ovi);
 
+	bool horizontal = ((end.x - start.x) >= (end.y - start.y));
+
 	float length, lengthPx;
 	length = sqrt(pow(end.x - start.x, 2) + pow(end.y - start.y, 2));
-	if ((end.x - start.x) >= (end.y - start.y)) {
-		// Horizontal line
+	if (horizontal) {
 		lengthPx = length * ovi.base_width;
 	} else {
-		// Vertical line
 		lengthPx = length * ovi.base_height;
 	}
 
@@ -1206,7 +1206,7 @@ void OBSBasicPreview::DrawSingleSpacingHelper(vec3 &start, vec3 &end,
 
 	float minSize = 0.0f;
 	vec3_set(&labelPos, end.x, end.y, end.z);
-	if ((end.x - start.x) >= (end.y - start.y)) {
+	if (horizontal) {
 		// Horizontal line
 		labelPos.x -= (end.x - start.x) / 2;
 		labelPos.x -= labelSize.x / 2;
@@ -1241,6 +1241,12 @@ static void boxCoordsToView(vec3 *coord, matrix4 &boxTransform,
 void OBSBasicPreview::DrawSpacingHelpers(matrix4 &boxTransform, vec3 &viewport,
 	float previewScale)
 {
+	vec4 green;
+	vec4_set(&green, 0.0f, 1.0f, 0.0f, 1.0f);
+
+	gs_effect_t *eff = gs_get_effect();
+	gs_eparam_t *eparam = gs_effect_get_param_by_name(eff, "color");
+
 	gs_matrix_push();
 	gs_matrix_identity();
 	gs_matrix_scale(&viewport);
@@ -1257,51 +1263,46 @@ void OBSBasicPreview::DrawSpacingHelpers(matrix4 &boxTransform, vec3 &viewport,
 	boxCoordsToView(&boxTop, boxTransform, viewport, previewScale);
 	boxCoordsToView(&boxBottom, boxTransform, viewport, previewScale);
 
-	float boxWidth =
-		sqrt(pow(boxLeft.x - boxRight.x, 2) + pow(boxLeft.y - boxRight.y, 2));
-	float boxHeight =
-		sqrt(pow(boxTop.x - boxBottom.x, 2) + pow(boxTop.y - boxBottom.y, 2));
-	if (boxWidth > 0.0f || boxHeight > 0.0f) {
-		// View borders
-		vec3 viewLeft, viewRight, viewTop, viewBottom;
-		vec3_set(&viewLeft, 0.0f, boxLeft.y, 1.0f);
-		vec3_set(&viewRight, 1.0f, boxRight.y, 1.0f);
-		vec3_set(&viewTop, boxTop.x, 0.0f, 1.0f);
-		vec3_set(&viewBottom, boxBottom.x, 1.0f, 1.0f);
+	// View borders
+	vec3 viewLeft, viewRight, viewTop, viewBottom;
+	vec3_set(&viewLeft, 0.0f, boxLeft.y, 1.0f);
+	vec3_set(&viewRight, 1.0f, boxRight.y, 1.0f);
+	vec3_set(&viewTop, boxTop.x, 0.0f, 1.0f);
+	vec3_set(&viewBottom, boxBottom.x, 1.0f, 1.0f);
 
-		// Clip lines to view boundaries
-		vec3_max(&boxLeft, &boxLeft, &viewLeft);
-		vec3_min(&boxRight, &boxRight, &viewRight);
-		vec3_max(&boxTop, &boxTop, &viewTop);
-		vec3_min(&boxBottom, &boxBottom, &viewBottom);
+	// Clip lines to view boundaries
+	vec3_max(&boxLeft, &boxLeft, &viewLeft);
+	vec3_min(&boxRight, &boxRight, &viewRight);
+	vec3_max(&boxTop, &boxTop, &viewTop);
+	vec3_min(&boxBottom, &boxBottom, &viewBottom);
 
-		// Draw lines
-		helperLinesVB->points[0] = viewLeft;
-		helperLinesVB->points[1] = boxLeft;
+	// Draw lines
+	helperLinesVB->points[0] = viewLeft;
+	helperLinesVB->points[1] = boxLeft;
 
-		helperLinesVB->points[2] = viewRight;
-		helperLinesVB->points[3] = boxRight;
+	helperLinesVB->points[2] = viewRight;
+	helperLinesVB->points[3] = boxRight;
 
-		helperLinesVB->points[4] = viewTop;
-		helperLinesVB->points[5] = boxTop;
+	helperLinesVB->points[4] = viewTop;
+	helperLinesVB->points[5] = boxTop;
 
-		helperLinesVB->points[6] = viewBottom;
-		helperLinesVB->points[7] = boxBottom;
+	helperLinesVB->points[6] = viewBottom;
+	helperLinesVB->points[7] = boxBottom;
 
-		gs_vertbuffer_t *vb = gs_vertexbuffer_create(helperLinesVB,
-			GS_DYNAMIC | GS_DUP_BUFFER);
-		gs_load_vertexbuffer(vb);
+	gs_vertbuffer_t *vb = gs_vertexbuffer_create(helperLinesVB,
+		GS_DYNAMIC | GS_DUP_BUFFER);
+	gs_load_vertexbuffer(vb);
 
-		gs_effect_set_vec4(eparam, &green);
-		gs_draw(GS_LINES, 0, 0);
+	gs_effect_set_vec4(eparam, &green);
+	gs_draw(GS_LINES, 0, 0);
 
-		gs_vertexbuffer_destroy(vb);
+	gs_vertexbuffer_destroy(vb);
 
-		DrawSingleSpacingHelper(viewTop, boxTop, viewport);
-		DrawSingleSpacingHelper(boxRight, viewRight, viewport);
-		DrawSingleSpacingHelper(boxBottom, viewBottom, viewport);
-		DrawSingleSpacingHelper(viewLeft, boxLeft, viewport);
-	}
+	// Draw text labels
+	DrawSingleSpacingHelper(viewTop, boxTop, viewport);
+	DrawSingleSpacingHelper(boxRight, viewRight, viewport);
+	DrawSingleSpacingHelper(boxBottom, viewBottom, viewport);
+	DrawSingleSpacingHelper(viewLeft, boxLeft, viewport);
 
 	gs_matrix_pop();
 }
