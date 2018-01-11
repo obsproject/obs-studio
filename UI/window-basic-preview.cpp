@@ -20,6 +20,26 @@ OBSBasicPreview::OBSBasicPreview(QWidget *parent, Qt::WindowFlags flags)
 {
 	ResetScrollingOffset();
 	setMouseTracking(true);
+
+	helperLinesVB = gs_vbdata_create();
+	helperLinesVB->num = 8;
+	helperLinesVB->points =
+		(vec3*)bzalloc(sizeof(struct vec3) * helperLinesVB->num);
+	helperLinesVB->normals =
+		(vec3*)bzalloc(sizeof(struct vec3) * helperLinesVB->num);
+	helperLinesVB->colors =
+		(uint32_t*)bzalloc(sizeof(uint32_t) * helperLinesVB->num);
+
+	helperLinesVB->num_tex = 1;
+	helperLinesVB->tvarray =
+		(gs_tvertarray*)bzalloc(sizeof(struct gs_tvertarray));
+	helperLinesVB->tvarray[0].width = 2;
+	helperLinesVB->tvarray[0].array =
+		bzalloc(sizeof(struct vec2) * helperLinesVB->num);
+}
+
+OBSBasicPreview::~OBSBasicPreview() {
+	gs_vbdata_destroy(helperLinesVB);
 }
 
 vec2 OBSBasicPreview::GetMouseEventPos(QMouseEvent *event)
@@ -1136,29 +1156,6 @@ static void DrawCircleAtPos(float x, float y, matrix4 &matrix,
 	gs_matrix_pop();
 }
 
-static void DrawLine(vec3 &startPos, vec3 &endPos)
-{
-	struct gs_vb_data *vbData = gs_vbdata_create();
-	vbData->num = 2;
-	vbData->points = (vec3*)bzalloc(sizeof(struct vec3) * vbData->num);
-	vbData->normals = (vec3*)bzalloc(sizeof(struct vec3) * vbData->num);
-	vbData->colors = (uint32_t*)bzalloc(sizeof(uint32_t) * vbData->num);
-
-	vbData->points[0] = startPos;
-	vbData->points[1] = endPos;
-
-	vbData->num_tex = 1;
-	vbData->tvarray = (gs_tvertarray*)bzalloc(sizeof(struct gs_tvertarray));
-	vbData->tvarray[0].width = 2;
-	vbData->tvarray[0].array = bzalloc(sizeof(struct vec2) * vbData->num);
-
-	gs_vertbuffer_t *vb = gs_vertexbuffer_create(vbData, GS_DYNAMIC);
-	gs_load_vertexbuffer(vb);
-
-	gs_draw(GS_LINES, 0, 0);
-	gs_vertexbuffer_destroy(vb);
-}
-
 static void DrawLabel(vec3 &pos, obs_source_t *source, vec3 &viewport) {
 	if (!source)
 		return;
@@ -1278,18 +1275,27 @@ void OBSBasicPreview::DrawSpacingHelpers(matrix4 &boxTransform, vec3 &viewport,
 		vec3_max(&boxTop, &boxTop, &viewTop);
 		vec3_min(&boxBottom, &boxBottom, &viewBottom);
 
-		// Draw helper lines
-		vec4 green;
-		vec4_set(&green, 0.0f, 1.0f, 0.0f, 1.0f);
+		// Draw lines
+		helperLinesVB->points[0] = viewLeft;
+		helperLinesVB->points[1] = boxLeft;
 
-		gs_effect_t *eff = gs_get_effect();
-		gs_eparam_t *eparam = gs_effect_get_param_by_name(eff, "color");
+		helperLinesVB->points[2] = viewRight;
+		helperLinesVB->points[3] = boxRight;
+
+		helperLinesVB->points[4] = viewTop;
+		helperLinesVB->points[5] = boxTop;
+
+		helperLinesVB->points[6] = viewBottom;
+		helperLinesVB->points[7] = boxBottom;
+
+		gs_vertbuffer_t *vb = gs_vertexbuffer_create(helperLinesVB,
+			GS_DYNAMIC | GS_DUP_BUFFER);
+		gs_load_vertexbuffer(vb);
+
 		gs_effect_set_vec4(eparam, &green);
+		gs_draw(GS_LINES, 0, 0);
 
-		DrawLine(viewTop, boxTop);
-		DrawLine(viewRight, boxRight);
-		DrawLine(viewBottom, boxBottom);
-		DrawLine(viewLeft, boxLeft);
+		gs_vertexbuffer_destroy(vb);
 
 		DrawSingleSpacingHelper(viewTop, boxTop, viewport);
 		DrawSingleSpacingHelper(boxRight, viewRight, viewport);

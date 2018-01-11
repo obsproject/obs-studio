@@ -57,6 +57,8 @@ private:
 	int32_t      scalingLevel   = 0;
 	float        scalingAmount  = 1.0f;
 
+	struct gs_vb_data *helperLinesVB;
+
 	uint currentSizeLabel;
 	OBSSource sizeLabels[PREVIEW_SPACING_LABEL_COUNT];
 
@@ -91,6 +93,7 @@ private:
 
 public:
 	OBSBasicPreview(QWidget *parent, Qt::WindowFlags flags = 0);
+	~OBSBasicPreview();
 
 	virtual void keyPressEvent(QKeyEvent *event) override;
 	virtual void keyReleaseEvent(QKeyEvent *event) override;
