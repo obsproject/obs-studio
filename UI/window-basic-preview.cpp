@@ -36,10 +36,17 @@ OBSBasicPreview::OBSBasicPreview(QWidget *parent, Qt::WindowFlags flags)
 	helperLinesVB->tvarray[0].width = 2;
 	helperLinesVB->tvarray[0].array =
 		bzalloc(sizeof(struct vec2) * helperLinesVB->num);
+
+	for (int i = 0; i < PREVIEW_SPACING_LABEL_COUNT; i++) {
+		sizeLabels[i] = nullptr;
+	}
 }
 
 OBSBasicPreview::~OBSBasicPreview() {
 	gs_vbdata_destroy(helperLinesVB);
+	for (int i = 0; i < PREVIEW_SPACING_LABEL_COUNT; i++) {
+		obs_source_release(sizeLabels[i]);
+	}
 }
 
 vec2 OBSBasicPreview::GetMouseEventPos(QMouseEvent *event)
@@ -1097,7 +1104,7 @@ void OBSBasicPreview::mouseMoveEvent(QMouseEvent *event)
 	}
 }
 
-OBSSource CreateLabel(const char *name) {
+obs_source_t* CreateLabel(const char *name) {
 	obs_data_t *settings = obs_data_create();
 	obs_data_t *font = obs_data_create();
 
@@ -1116,9 +1123,9 @@ OBSSource CreateLabel(const char *name) {
 	obs_data_set_string(settings, "text", name);
 	obs_data_set_bool(settings, "outline", true);
 
-	OBSSource txtSource = obs_source_create_private("text_ft2_source", name,
+	obs_source_t *txtSource = obs_source_create_private("text_ft2_source", name,
 		settings);
-	obs_source_release(txtSource);
+	obs_source_addref(txtSource);
 
 	obs_data_release(font);
 	obs_data_release(settings);

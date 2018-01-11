@@ -59,8 +59,8 @@ private:
 
 	struct gs_vb_data *helperLinesVB;
 
-	uint currentSizeLabel;
-	OBSSource sizeLabels[PREVIEW_SPACING_LABEL_COUNT];
+	size_t currentSizeLabel;
+	obs_source_t* sizeLabels[PREVIEW_SPACING_LABEL_COUNT];
 
 	static vec2 GetMouseEventPos(QMouseEvent *event);
 	static bool DrawSelectedItem(obs_scene_t *scene, obs_sceneitem_t *item,
