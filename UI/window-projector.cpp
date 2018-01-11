@@ -329,7 +329,7 @@ void OBSProjector::OBSRenderMultiview(void *data, uint32_t cx, uint32_t cy)
 		gs_projection_pop();
 	};
 
-	auto calcBaseSource = [&](int i)
+	auto calcBaseSource = [&](size_t i)
 	{
 		switch (multiviewLayout) {
 		case VERTICAL_LEFT:
