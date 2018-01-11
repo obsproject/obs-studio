@@ -31,53 +31,15 @@ class VolumeMeter : public QWidget
 	Q_PROPERTY(QColor foregroundErrorColor
 		READ getForegroundErrorColor
 		WRITE setForegroundErrorColor DESIGNABLE true)
-	Q_PROPERTY(QColor clipColor
-		READ getClipColor
-		WRITE setClipColor DESIGNABLE true)
-	Q_PROPERTY(QColor magnitudeColor
-		READ getMagnitudeColor
-		WRITE setMagnitudeColor DESIGNABLE true)
+	Q_PROPERTY(QColor loudnessColor
+		READ getLoudnessColor
+		WRITE setLoudnessColor DESIGNABLE true)
 	Q_PROPERTY(QColor majorTickColor
 		READ getMajorTickColor
 		WRITE setMajorTickColor DESIGNABLE true)
 	Q_PROPERTY(QColor minorTickColor
 		READ getMinorTickColor
 		WRITE setMinorTickColor DESIGNABLE true)
-
-	// Levels are denoted in dBFS.
-	Q_PROPERTY(qreal minimumLevel
-		READ getMinimumLevel
-		WRITE setMinimumLevel DESIGNABLE true)
-	Q_PROPERTY(qreal warningLevel
-		READ getWarningLevel
-		WRITE setWarningLevel DESIGNABLE true)
-	Q_PROPERTY(qreal errorLevel
-		READ getErrorLevel
-		WRITE setErrorLevel DESIGNABLE true)
-	Q_PROPERTY(qreal clipLevel
-		READ getClipLevel
-		WRITE setClipLevel DESIGNABLE true)
-	Q_PROPERTY(qreal minimumInputLevel
-		READ getMinimumInputLevel
-		WRITE setMinimumInputLevel DESIGNABLE true)
-
-	// Rates are denoted in dB/second.
-	Q_PROPERTY(qreal peakDecayRate
-		READ getPeakDecayRate
-		WRITE setPeakDecayRate DESIGNABLE true)
-
-	// Time in seconds for the VU meter to integrate over.
-	Q_PROPERTY(qreal magnitudeIntegrationTime
-		READ getMagnitudeIntegrationTime
-		WRITE setMagnitudeIntegrationTime DESIGNABLE true)
-
-	// Duration is denoted in seconds.
-	Q_PROPERTY(qreal peakHoldDuration
-		READ getPeakHoldDuration
-		WRITE setPeakHoldDuration DESIGNABLE true)
-	Q_PROPERTY(qreal inputPeakHoldDuration
-		READ getInputPeakHoldDuration
-		WRITE setInputPeakHoldDuration DESIGNABLE true)
 
 private:
 	obs_volmeter_t *obs_volmeter;
@@ -94,21 +56,27 @@ private:
 
 	void paintInputMeter(QPainter &painter, int x, int y,
 		int width, int height, float peakHold);
-	void paintMeter(QPainter &painter, int x, int y,
+	void paintPeakMeter(QPainter &painter, int x, int y,
 		int width, int height,
-		float magnitude, float peak, float peakHold);
-	void paintTicks(QPainter &painter, int x, int y, int width, int height);
+		float peak, float peakHold);
+	void paintLoudnessMeter(QPainter &painter, int x, int y,
+		int width, int height, float loudness);
+	void paintTicksAndLabels(QPainter &painter, int x, int y, int width);
+	void paintMeter(QPainter &painter, int x, int y, int width, int height,
+		bool bright);
 
 	QMutex dataMutex;
 
 	uint64_t currentLastUpdateTime = 0;
-	float currentMagnitude[MAX_AUDIO_CHANNELS];
+	float currentLoudness;
 	float currentPeak[MAX_AUDIO_CHANNELS];
 	float currentInputPeak[MAX_AUDIO_CHANNELS];
 
-	QPixmap *tickPaintCache = NULL;
+	QPixmap *widgetPaintCache = NULL;
+	QPixmap *meterPaintCache = NULL;
+
 	int displayNrAudioChannels = 0;
-	float displayMagnitude[MAX_AUDIO_CHANNELS];
+	float displayLoudness;
 	float displayPeak[MAX_AUDIO_CHANNELS];
 	float displayPeakHold[MAX_AUDIO_CHANNELS];
 	uint64_t displayPeakHoldLastUpdateTime[MAX_AUDIO_CHANNELS];
@@ -122,17 +90,15 @@ private:
 	QColor foregroundNominalColor;
 	QColor foregroundWarningColor;
 	QColor foregroundErrorColor;
-	QColor clipColor;
-	QColor magnitudeColor;
+	QColor loudnessColor;
 	QColor majorTickColor;
 	QColor minorTickColor;
 	qreal minimumLevel;
 	qreal warningLevel;
 	qreal errorLevel;
-	qreal clipLevel;
+	qreal maximumLevel;
 	qreal minimumInputLevel;
 	qreal peakDecayRate;
-	qreal magnitudeIntegrationTime;
 	qreal peakHoldDuration;
 	qreal inputPeakHoldDuration;
 
@@ -144,9 +110,9 @@ public:
 	~VolumeMeter();
 
 	void setLevels(
-		const float magnitude[MAX_AUDIO_CHANNELS],
 		const float peak[MAX_AUDIO_CHANNELS],
-		const float inputPeak[MAX_AUDIO_CHANNELS]);
+		const float inputPeak[MAX_AUDIO_CHANNELS],
+		float loudness);
 
 	QColor getBackgroundNominalColor() const;
 	void setBackgroundNominalColor(QColor c);
@@ -160,32 +126,12 @@ public:
 	void setForegroundWarningColor(QColor c);
 	QColor getForegroundErrorColor() const;
 	void setForegroundErrorColor(QColor c);
-	QColor getClipColor() const;
-	void setClipColor(QColor c);
-	QColor getMagnitudeColor() const;
-	void setMagnitudeColor(QColor c);
+	QColor getLoudnessColor() const;
+	void setLoudnessColor(QColor c);
 	QColor getMajorTickColor() const;
 	void setMajorTickColor(QColor c);
 	QColor getMinorTickColor() const;
 	void setMinorTickColor(QColor c);
-	qreal getMinimumLevel() const;
-	void setMinimumLevel(qreal v);
-	qreal getWarningLevel() const;
-	void setWarningLevel(qreal v);
-	qreal getErrorLevel() const;
-	void setErrorLevel(qreal v);
-	qreal getClipLevel() const;
-	void setClipLevel(qreal v);
-	qreal getMinimumInputLevel() const;
-	void setMinimumInputLevel(qreal v);
-	qreal getPeakDecayRate() const;
-	void setPeakDecayRate(qreal v);
-	qreal getMagnitudeIntegrationTime() const;
-	void setMagnitudeIntegrationTime(qreal v);
-	qreal getPeakHoldDuration() const;
-	void setPeakHoldDuration(qreal v);
-	qreal getInputPeakHoldDuration() const;
-	void setInputPeakHoldDuration(qreal v);
 
 protected:
 	void paintEvent(QPaintEvent *event);
@@ -227,9 +173,9 @@ private:
 
 	static void OBSVolumeChanged(void *param, float db);
 	static void OBSVolumeLevel(void *data,
-		const float magnitude[MAX_AUDIO_CHANNELS],
 		const float peak[MAX_AUDIO_CHANNELS],
-		const float inputPeak[MAX_AUDIO_CHANNELS]);
+		const float inputPeak[MAX_AUDIO_CHANNELS],
+		float loudness);
 	static void OBSVolumeMuted(void *data, calldata_t *calldata);
 
 	void EmitConfigClicked();

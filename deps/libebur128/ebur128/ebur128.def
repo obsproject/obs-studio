@@ -1,0 +1,26 @@
+LIBRARY EBUR128
+
+EXPORTS
+	ebur128_get_version
+	ebur128_init
+	ebur128_destroy
+	ebur128_set_channel
+	ebur128_change_parameters
+	ebur128_set_max_window
+	ebur128_set_max_history
+	ebur128_add_frames_short
+	ebur128_add_frames_int
+	ebur128_add_frames_float
+	ebur128_add_frames_double
+	ebur128_loudness_global
+	ebur128_loudness_global_multiple
+	ebur128_loudness_momentary
+	ebur128_loudness_shortterm
+	ebur128_loudness_window
+	ebur128_loudness_range
+	ebur128_loudness_range_multiple
+	ebur128_sample_peak
+	ebur128_prev_sample_peak
+	ebur128_true_peak
+	ebur128_prev_true_peak
+	ebur128_relative_threshold
