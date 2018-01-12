@@ -173,9 +173,10 @@ void mp_decode_free(struct mp_decode *d)
 		avcodec_close(d->decoder);
 #endif
 	}
-
-	if (d->frame)
+	if (d->frame) {
+		av_frame_unref(d->frame);
 		av_free(d->frame);
+	}
 
 	memset(d, 0, sizeof(*d));
 }
