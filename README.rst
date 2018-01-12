@@ -31,8 +31,8 @@ Quick Links
 Contributing
 ------------
 
- - If you wish to contribute code to the project, please make sure read
-   the coding and commit guidelines:
+ - If you wish to contribute code to the project, please make sure to
+   read the coding and commit guidelines:
    https://github.com/jp9000/obs-studio/blob/master/CONTRIBUTING.rst
 
  - Developer/API documentation can be found here:
