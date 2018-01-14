@@ -1211,18 +1211,21 @@ Vertex Buffer Functions
 
    Creates a vertex buffer.
 
-   :param data:  Vertex buffer data to create vertex buffer with.
-                 Buffers in this structure should be allocated with
-                 :c:func:`bmalloc()`, :c:func:`bzalloc()`, or
-                 :c:func:`brealloc()`.  Their ownership is passed to the
-                 function, and they should not be destroyed by the
-                 caller once passed
+   :param data:  Vertex buffer data to create vertex buffer with.  The
+                 structure should be created with gs_vbdata_create(),
+                 and then buffers in this structure should be allocated
+                 with :c:func:`bmalloc()`, :c:func:`bzalloc()`, or
+                 :c:func:`brealloc()`.  The ownership of the gs_vb_data
+                 pointer is then passed to the function, and they should
+                 not be destroyed by the caller once passed
 
    :param flags: Creation flags.  Can be 0 or a bitwise-OR combination
                  of any of the following values:
 
                  - GS_DYNAMIC - Can be dynamically updated in real time.
-                 - GS_DUP_BUFFER - Do not pass buffer ownership
+                 - GS_DUP_BUFFER - Do not pass buffer ownership of the
+                   structure or the buffer pointers within the
+                   structure.
 
    :return:      A new vertex buffer object, or *NULL* if failed
 
