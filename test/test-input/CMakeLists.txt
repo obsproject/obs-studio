@@ -16,7 +16,8 @@ set(test-input_SOURCES
 	sync-audio-buffering.c
 	sync-pair-vid.c
 	sync-pair-aud.c
-	test-random.c)
+	test-random.c
+	late-async-source.c)
 
 add_library(test-input MODULE
 	${test-input_SOURCES})

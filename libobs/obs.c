@@ -1020,6 +1020,20 @@ bool obs_reset_audio(const struct obs_audio_info *oai)
 	return obs_init_audio(&ai);
 }
 
+int obs_get_current_audio_buffering()
+{
+	struct obs_audio_info oai;
+	int buffering_ticks, sample_rate;
+
+	if (!obs) return -1;
+	obs_get_audio_info(&oai);
+
+	buffering_ticks = obs->audio.total_buffering_ticks;
+	sample_rate = oai.samples_per_sec;
+
+	return (buffering_ticks * AUDIO_OUTPUT_FRAMES * 1000 / sample_rate);
+}
+
 bool obs_get_video_info(struct obs_video_info *ovi)
 {
 	struct obs_core_video *video = &obs->video;

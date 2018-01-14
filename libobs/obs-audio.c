@@ -323,13 +323,16 @@ static bool audio_buffer_insuffient(struct obs_source *source,
 }
 
 static inline void find_min_ts(struct obs_core_data *data,
-		uint64_t *min_ts)
+		uint64_t *min_ts, struct obs_source **min_ts_source)
 {
 	struct obs_source *source = data->first_audio_source;
 	while (source) {
 		if (!source->audio_pending && source->audio_ts &&
-				source->audio_ts < *min_ts)
+			source->audio_ts < *min_ts)
+		{
 			*min_ts = source->audio_ts;
+			*min_ts_source = source;
+		}
 
 		source = (struct obs_source*)source->next_audio_source;
 	}
@@ -351,11 +354,11 @@ static inline bool mark_invalid_sources(struct obs_core_data *data,
 }
 
 static inline void calc_min_ts(struct obs_core_data *data,
-		size_t sample_rate, uint64_t *min_ts)
+		size_t sample_rate, uint64_t *min_ts, struct obs_source **min_ts_source)
 {
-	find_min_ts(data, min_ts);
+	find_min_ts(data, min_ts, min_ts_source);
 	if (mark_invalid_sources(data, sample_rate, *min_ts))
-		find_min_ts(data, min_ts);
+		find_min_ts(data, min_ts, min_ts_source);
 }
 
 static inline void release_audio_sources(struct obs_core_audio *audio)
@@ -376,6 +379,7 @@ bool audio_callback(void *param,
 	struct ts_info ts = {start_ts_in, end_ts_in};
 	size_t audio_size;
 	uint64_t min_ts;
+	struct obs_source *min_ts_source;
 
 	da_resize(audio->render_order, 0);
 	da_resize(audio->root_nodes, 0);
@@ -425,13 +429,16 @@ bool audio_callback(void *param,
 	/* ------------------------------------------------ */
 	/* get minimum audio timestamp */
 	pthread_mutex_lock(&data->audio_sources_mutex);
-	calc_min_ts(data, sample_rate, &min_ts);
+	calc_min_ts(data, sample_rate, &min_ts, &min_ts_source);
 	pthread_mutex_unlock(&data->audio_sources_mutex);
 
 	/* ------------------------------------------------ */
 	/* if a source has gone backward in time, buffer */
-	if (min_ts < ts.start)
+	if (min_ts < ts.start) {
+		blog(LOG_INFO, "audio from source '%s' is late, buffering required.",
+			min_ts_source->context.name);
 		add_audio_buffering(audio, sample_rate, &ts, min_ts);
+	}
 
 	/* ------------------------------------------------ */
 	/* mix audio */
