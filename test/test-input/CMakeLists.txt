@@ -13,6 +13,7 @@ set(test-input_SOURCES
 	test-input.c
 	test-sinewave.c
 	sync-async-source.c
+	sync-audio-buffering.c
 	sync-pair-vid.c
 	sync-pair-aud.c
 	test-random.c)
