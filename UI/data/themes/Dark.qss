@@ -231,14 +231,24 @@ QTabWidget::tab-bar {
 QTabBar::tab {
     background-color: rgb(88,87,88); /* kindaDark */
     border: none;
+    padding: 5px;
+    min-width: 50px;
+    margin: 1px;
+}
+
+QTabBar::tab:top {
+    border-bottom: 1px transparent;
     border-top-left-radius: 5px;
     border-top-right-radius: 5px;
-    min-width: 8ex;
-    padding-top: 4px;
-    padding-bottom: 4px;
-    padding-left: 10px;
-    padding-right: 10px;
-    margin-right: 1px;
+
+}
+
+QTabBar::tab:bottom {
+    padding-top: 1px;
+    margin-bottom: 4px;
+    border-bottom-left-radius: 5px;
+    border-bottom-right-radius: 5px;
+    height: 14px;
 }
 
 QTabBar::tab:selected {
