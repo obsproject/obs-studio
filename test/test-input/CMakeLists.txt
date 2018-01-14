@@ -12,6 +12,10 @@ set(test-input_SOURCES
 	test-filter.c
 	test-input.c
 	test-sinewave.c
+	sync-async-source.c
+	sync-audio-buffering.c
+	sync-pair-vid.c
+	sync-pair-aud.c
 	test-random.c)
 
 add_library(test-input MODULE

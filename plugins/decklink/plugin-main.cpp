@@ -29,8 +29,10 @@ OBS_MODULE_USE_DEFAULT_LOCALE("decklink", "en-US")
 #define TEXT_CHANNEL_FORMAT             obs_module_text("ChannelFormat")
 #define TEXT_CHANNEL_FORMAT_NONE        obs_module_text("ChannelFormat.None")
 #define TEXT_CHANNEL_FORMAT_2_0CH       obs_module_text("ChannelFormat.2_0ch")
+#define TEXT_CHANNEL_FORMAT_2_1CH       obs_module_text("ChannelFormat.2_1ch")
+#define TEXT_CHANNEL_FORMAT_4_0CH       obs_module_text("ChannelFormat.4_0ch")
+#define TEXT_CHANNEL_FORMAT_4_1CH       obs_module_text("ChannelFormat.4_1ch")
 #define TEXT_CHANNEL_FORMAT_5_1CH       obs_module_text("ChannelFormat.5_1ch")
-#define TEXT_CHANNEL_FORMAT_5_1CH_BACK  obs_module_text("ChannelFormat.5_1chBack")
 #define TEXT_CHANNEL_FORMAT_7_1CH       obs_module_text("ChannelFormat.7_1ch")
 #define TEXT_BUFFERING                  obs_module_text("Buffering")
 
@@ -40,12 +42,14 @@ static void decklink_enable_buffering(DeckLink *decklink, bool enabled)
 {
 	obs_source_t *source = decklink->GetSource();
 	obs_source_set_async_unbuffered(source, !enabled);
+	decklink->buffering = enabled;
 }
 
 static void *decklink_create(obs_data_t *settings, obs_source_t *source)
 {
 	DeckLink *decklink = new DeckLink(source, deviceEnum);
 
+	obs_source_set_async_decoupled(source, true);
 	decklink_enable_buffering(decklink,
 			obs_data_get_bool(settings, BUFFERING));
 
@@ -70,8 +74,15 @@ static void decklink_update(void *data, obs_data_t *settings)
 			COLOR_SPACE);
 	video_range_type colorRange = (video_range_type)obs_data_get_int(settings,
 			COLOR_RANGE);
-	speaker_layout channelFormat = (speaker_layout)obs_data_get_int(settings,
-			CHANNEL_FORMAT);
+	int chFmtInt = (int)obs_data_get_int(settings, CHANNEL_FORMAT);
+
+	if (chFmtInt == 7) {
+		chFmtInt = SPEAKERS_5POINT1;
+	} else if (chFmtInt < SPEAKERS_UNKNOWN || chFmtInt > SPEAKERS_7POINT1) {
+		chFmtInt = 2;
+	}
+
+	speaker_layout channelFormat = (speaker_layout)chFmtInt;
 
 	decklink_enable_buffering(decklink,
 			obs_data_get_bool(settings, BUFFERING));
@@ -88,7 +99,7 @@ static void decklink_update(void *data, obs_data_t *settings)
 
 static void decklink_get_defaults(obs_data_t *settings)
 {
-	obs_data_set_default_bool(settings, BUFFERING, true);
+	obs_data_set_default_bool(settings, BUFFERING, false);
 	obs_data_set_default_int(settings, PIXEL_FORMAT, bmdFormat8BitYUV);
 	obs_data_set_default_int(settings, COLOR_SPACE, VIDEO_CS_DEFAULT);
 	obs_data_set_default_int(settings, COLOR_RANGE, VIDEO_RANGE_DEFAULT);
@@ -152,10 +163,14 @@ static bool decklink_device_changed(obs_properties_t *props,
 		}
 
 		if (device->GetMaxChannel() >= 8) {
+			obs_property_list_add_int(channelList, TEXT_CHANNEL_FORMAT_2_1CH,
+				SPEAKERS_2POINT1);
+			obs_property_list_add_int(channelList, TEXT_CHANNEL_FORMAT_4_0CH,
+					SPEAKERS_4POINT0);
+			obs_property_list_add_int(channelList, TEXT_CHANNEL_FORMAT_4_1CH,
+				SPEAKERS_4POINT1);
 			obs_property_list_add_int(channelList, TEXT_CHANNEL_FORMAT_5_1CH,
 					SPEAKERS_5POINT1);
-			obs_property_list_add_int(channelList, TEXT_CHANNEL_FORMAT_5_1CH_BACK,
-					SPEAKERS_5POINT1_SURROUND);
 			obs_property_list_add_int(channelList, TEXT_CHANNEL_FORMAT_7_1CH,
 					SPEAKERS_7POINT1);
 		}
@@ -251,6 +266,16 @@ static obs_properties_t *decklink_get_properties(void *data)
 			SPEAKERS_UNKNOWN);
 	obs_property_list_add_int(list, TEXT_CHANNEL_FORMAT_2_0CH,
 			SPEAKERS_STEREO);
+	obs_property_list_add_int(list, TEXT_CHANNEL_FORMAT_2_1CH,
+			SPEAKERS_2POINT1);
+	obs_property_list_add_int(list, TEXT_CHANNEL_FORMAT_4_0CH,
+			SPEAKERS_4POINT0);
+	obs_property_list_add_int(list, TEXT_CHANNEL_FORMAT_4_1CH,
+			SPEAKERS_4POINT1);
+	obs_property_list_add_int(list, TEXT_CHANNEL_FORMAT_5_1CH,
+			SPEAKERS_5POINT1);
+	obs_property_list_add_int(list, TEXT_CHANNEL_FORMAT_7_1CH,
+			SPEAKERS_7POINT1);
 
 	obs_properties_add_bool(props, BUFFERING, TEXT_BUFFERING);
 

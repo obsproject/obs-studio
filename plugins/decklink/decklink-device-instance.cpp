@@ -9,7 +9,11 @@
 #define LOG(level, message, ...) blog(level, "%s: " message, \
 		obs_source_get_name(this->decklink->GetSource()), ##__VA_ARGS__)
 
-#define ISSTEREO(flag) ((flag) == SPEAKERS_STEREO)
+#ifdef _WIN32
+#define IS_WIN 1
+#else
+#define IS_WIN 0
+#endif
 
 static inline enum video_format ConvertPixelFormat(BMDPixelFormat format)
 {
@@ -26,8 +30,10 @@ static inline enum video_format ConvertPixelFormat(BMDPixelFormat format)
 static inline int ConvertChannelFormat(speaker_layout format)
 {
 	switch (format) {
+	case SPEAKERS_2POINT1:
+	case SPEAKERS_4POINT0:
+	case SPEAKERS_4POINT1:
 	case SPEAKERS_5POINT1:
-	case SPEAKERS_5POINT1_SURROUND:
 	case SPEAKERS_7POINT1:
 		return 8;
 
@@ -40,13 +46,16 @@ static inline int ConvertChannelFormat(speaker_layout format)
 static inline audio_repack_mode_t ConvertRepackFormat(speaker_layout format)
 {
 	switch (format) {
+	case SPEAKERS_2POINT1:
+		return repack_mode_8to3ch_swap23;
+	case SPEAKERS_4POINT0:
+		return repack_mode_8to4ch_swap23;
+	case SPEAKERS_4POINT1:
+		return repack_mode_8to5ch_swap23;
 	case SPEAKERS_5POINT1:
-	case SPEAKERS_5POINT1_SURROUND:
 		return repack_mode_8to6ch_swap23;
-
 	case SPEAKERS_7POINT1:
-		return repack_mode_8ch_swap23;
-
+		return repack_mode_8ch_swap23_swap46_swap57;
 	default:
 		assert(false && "No repack requested");
 		return (audio_repack_mode_t)-1;
@@ -83,15 +92,29 @@ void DeckLinkDeviceInstance::HandleAudioPacket(
 	currentPacket.frames      = frameCount;
 	currentPacket.timestamp   = timestamp;
 
-	if (!ISSTEREO(channelFormat)) {
+	if (decklink && !decklink->buffering) {
+		currentPacket.timestamp = os_gettime_ns();
+		currentPacket.timestamp -=
+			(uint64_t)frameCount * 1000000000ULL /
+			(uint64_t)currentPacket.samples_per_sec;
+	}
+
+	int maxdevicechannel = device->GetMaxChannel();
+	bool isWin = IS_WIN;
+
+	if (channelFormat != SPEAKERS_UNKNOWN &&
+	    channelFormat != SPEAKERS_MONO &&
+	    channelFormat != SPEAKERS_STEREO &&
+	    maxdevicechannel >= 8 &&
+	    isWin) {
+
 		if (audioRepacker->repack((uint8_t *)bytes, frameCount) < 0) {
 			LOG(LOG_ERROR, "Failed to convert audio packet data");
 			return;
 		}
-
-		currentPacket.data[0]   = (*audioRepacker)->packet_buffer;
+		currentPacket.data[0] = (*audioRepacker)->packet_buffer;
 	} else {
-		currentPacket.data[0]   = (uint8_t *)bytes;
+		currentPacket.data[0] = (uint8_t *)bytes;
 	}
 
 	nextAudioTS = timestamp +
@@ -211,6 +234,9 @@ bool DeckLinkDeviceInstance::StartCapture(DeckLinkDeviceMode *mode_)
 	channelFormat = decklink->GetChannelFormat();
 	currentPacket.speakers = channelFormat;
 
+	int maxdevicechannel = device->GetMaxChannel();
+	bool isWin = IS_WIN;
+
 	if (channelFormat != SPEAKERS_UNKNOWN) {
 		const int channel = ConvertChannelFormat(channelFormat);
 		const HRESULT audioResult = input->EnableAudioInput(
@@ -219,8 +245,14 @@ bool DeckLinkDeviceInstance::StartCapture(DeckLinkDeviceMode *mode_)
 		if (audioResult != S_OK)
 			LOG(LOG_WARNING, "Failed to enable audio input; continuing...");
 
-		if (!ISSTEREO(channelFormat)) {
-			const audio_repack_mode_t repack_mode = ConvertRepackFormat(channelFormat);
+		if (channelFormat != SPEAKERS_UNKNOWN &&
+		    channelFormat != SPEAKERS_MONO &&
+		    channelFormat != SPEAKERS_STEREO &&
+		    maxdevicechannel >= 8 &&
+		    isWin) {
+
+			const audio_repack_mode_t repack_mode = ConvertRepackFormat
+					(channelFormat);
 			audioRepacker = new AudioRepacker(repack_mode);
 		}
 	}

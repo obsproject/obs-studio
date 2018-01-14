@@ -61,6 +61,21 @@ static inline enum audio_format convert_sample_format(int f)
 	return AUDIO_FORMAT_UNKNOWN;
 }
 
+static inline enum speaker_layout convert_speaker_layout(uint8_t channels)
+{
+	switch (channels) {
+	case 0:     return SPEAKERS_UNKNOWN;
+	case 1:     return SPEAKERS_MONO;
+	case 2:     return SPEAKERS_STEREO;
+	case 3:     return SPEAKERS_2POINT1;
+	case 4:     return SPEAKERS_4POINT0;
+	case 5:     return SPEAKERS_4POINT1;
+	case 6:     return SPEAKERS_5POINT1;
+	case 8:     return SPEAKERS_7POINT1;
+	default:    return SPEAKERS_UNKNOWN;
+	}
+}
+
 static inline enum video_colorspace convert_color_space(enum AVColorSpace s)
 {
 	return s == AVCOL_SPC_BT709 ? VIDEO_CS_709 : VIDEO_CS_DEFAULT;
@@ -257,7 +272,7 @@ static void mp_media_next_audio(mp_media_t *m)
 		audio.data[i] = f->data[i];
 
 	audio.samples_per_sec = f->sample_rate;
-	audio.speakers = (enum speaker_layout)f->channels;
+	audio.speakers = convert_speaker_layout(f->channels);
 	audio.format = convert_sample_format(f->format);
 	audio.frames = f->nb_samples;
 	audio.timestamp = m->base_ts + d->frame_pts - m->start_ts +
@@ -357,7 +372,7 @@ static void mp_media_next_video(mp_media_t *m, bool preload)
 	frame->height = f->height;
 	frame->flip = flip;
 
-	if (m->is_network && !d->got_first_keyframe) {
+	if (!m->is_local_file && !d->got_first_keyframe) {
 		if (!f->key_frame)
 			return;
 
@@ -407,18 +422,17 @@ static bool mp_media_reset(mp_media_t *m)
 		? av_rescale_q(seek_pos, AV_TIME_BASE_Q, stream->time_base)
 		: seek_pos;
 
-	if (!m->is_network) {
+	if (m->is_local_file) {
 		int ret = av_seek_frame(m->fmt, 0, seek_target, seek_flags);
 		if (ret < 0) {
 			blog(LOG_WARNING, "MP: Failed to seek: %s",
 					av_err2str(ret));
-			return false;
 		}
 	}
 
-	if (m->has_video && !m->is_network)
+	if (m->has_video && m->is_local_file)
 		mp_decode_flush(&m->v);
-	if (m->has_audio && !m->is_network)
+	if (m->has_audio && m->is_local_file)
 		mp_decode_flush(&m->a);
 
 	int64_t next_ts = mp_media_get_base_pts(m);
@@ -448,7 +462,7 @@ static bool mp_media_reset(mp_media_t *m)
 		m->next_ns = 0;
 	}
 
-	if (!active && !m->is_network && m->v_preload_cb)
+	if (!active && m->is_local_file && m->v_preload_cb)
 		mp_media_next_video(m, true);
 	if (stopping && m->stop_cb)
 		m->stop_cb(m->opaque);
@@ -528,7 +542,7 @@ static bool init_avformat(mp_media_t *m)
 	}
 
 	AVDictionary *opts = NULL;
-	if (m->buffering && m->is_network)
+	if (m->buffering && !m->is_local_file)
 		av_dict_set_int(&opts, "buffer_size", m->buffering, 0);
 
 	m->fmt = avformat_alloc_context();
@@ -674,6 +688,7 @@ bool mp_media_init(mp_media_t *media,
 		mp_stop_cb stop_cb,
 		mp_video_cb v_preload_cb,
 		bool hw_decoding,
+		bool is_local_file,
 		enum video_range_type force_range)
 {
 	memset(media, 0, sizeof(*media));
@@ -685,9 +700,7 @@ bool mp_media_init(mp_media_t *media,
 	media->v_preload_cb = v_preload_cb;
 	media->force_range = force_range;
 	media->buffering = buffering;
-
-	if (path && *path)
-		media->is_network = !!strstr(path, "://");
+	media->is_local_file = is_local_file;
 
 	static bool initialized = false;
 	if (!initialized) {

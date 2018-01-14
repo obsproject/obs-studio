@@ -16,6 +16,9 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
+#if defined(__FreeBSD__)
+#define _GNU_SOURCE
+#endif
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -87,55 +90,105 @@ char *find_libobs_data_file(const char *file)
 
 static void log_processor_cores(void)
 {
-	blog(LOG_INFO, "Processor: %lu logical cores",
-	     sysconf(_SC_NPROCESSORS_ONLN));
+	blog(LOG_INFO, "Physical Cores: %d, Logical Cores: %d",
+			os_get_physical_cores(), os_get_logical_cores());
 }
 
 #if defined(__linux__)
 static void log_processor_info(void)
 {
-	FILE *fp;
 	int physical_id = -1;
 	int last_physical_id = -1;
 	char *line = NULL;
 	size_t linecap = 0;
-	struct dstr processor;
+
+	FILE *fp;
+	struct dstr proc_name;
+	struct dstr proc_speed;
 
 	fp = fopen("/proc/cpuinfo", "r");
 	if (!fp)
 		return;
 
-	dstr_init(&processor);
+	dstr_init(&proc_name);
+	dstr_init(&proc_speed);
 
 	while (getline(&line, &linecap, fp) != -1) {
 		if (!strncmp(line, "model name", 10)) {
 			char *start = strchr(line, ':');
 			if (!start || *(++start) == '\0')
 				continue;
-			dstr_copy(&processor, start);
-			dstr_resize(&processor, processor.len - 1);
-			dstr_depad(&processor);
+
+			dstr_copy(&proc_name, start);
+			dstr_resize(&proc_name, proc_name.len - 1);
+			dstr_depad(&proc_name);
 		}
 
 		if (!strncmp(line, "physical id", 11)) {
 			char *start = strchr(line, ':');
 			if (!start || *(++start) == '\0')
 				continue;
+
 			physical_id = atoi(start);
+		}
+
+		if (!strncmp(line, "cpu MHz", 7)) {
+			char *start = strchr(line, ':');
+			if (!start || *(++start) == '\0')
+				continue;
+
+			dstr_copy(&proc_speed, start);
+			dstr_resize(&proc_speed, proc_speed.len - 1);
+			dstr_depad(&proc_speed);
 		}
 
 		if (*line == '\n' && physical_id != last_physical_id) {
 			last_physical_id = physical_id;
-			blog(LOG_INFO, "Processor: %s", processor.array);
+			blog(LOG_INFO, "CPU Name: %s", proc_name.array);
+			blog(LOG_INFO, "CPU Speed: %sMHz", proc_speed.array);
 		}
 	}
 
 	fclose(fp);
-	dstr_free(&processor);
+	dstr_free(&proc_name);
+	dstr_free(&proc_speed);
 	free(line);
 }
 #elif defined(__FreeBSD__)
-static void log_processor_info(void)
+static void log_processor_speed(void)
+{
+	char *line = NULL;
+	size_t linecap = 0;
+	FILE *fp;
+	struct dstr proc_speed;
+
+	fp = fopen("/var/run/dmesg.boot", "r");
+	if (!fp) {
+		blog(LOG_INFO, "CPU: Missing /var/run/dmesg.boot !");
+		return;
+	}
+
+	dstr_init(&proc_speed);
+
+	while (getline(&line, &linecap, fp) != -1) {
+		if (!strncmp(line, "CPU: ", 5)) {
+			char *start = strrchr(line, '(');
+			if (!start || *(++start) == '\0')
+				continue;
+
+			size_t len = strcspn(start, "-");
+			dstr_ncopy(&proc_speed, start, len);
+		}
+	}
+
+	blog(LOG_INFO, "CPU Speed: %sMHz", proc_speed.array);
+
+	fclose(fp);
+	dstr_free(&proc_speed);
+	free(line);
+}
+
+static void log_processor_name(void)
 {
 	int mib[2];
 	size_t len;
@@ -150,9 +203,15 @@ static void log_processor_info(void)
 		return;
 
 	sysctl(mib, 2, proc, &len, NULL, 0);
-	blog(LOG_INFO, "Processor: %s", proc);
+	blog(LOG_INFO, "CPU Name: %s", proc);
 
 	bfree(proc);
+}
+
+static void log_processor_info(void)
+{
+	log_processor_name();
+	log_processor_speed();
 }
 #endif
 
@@ -162,8 +221,10 @@ static void log_memory_info(void)
 	if (sysinfo(&info) < 0)
 		return;
 
-	blog(LOG_INFO, "Physical Memory: %"PRIu64"MB Total",
-			(uint64_t)info.totalram * info.mem_unit / 1024 / 1024);
+	blog(LOG_INFO, "Physical Memory: %"PRIu64"MB Total, %"PRIu64"MB Free",
+			(uint64_t)info.totalram * info.mem_unit / 1024 / 1024,
+			((uint64_t)info.freeram + (uint64_t)info.bufferram) *
+			info.mem_unit / 1024 / 1024);
 }
 
 static void log_kernel_version(void)
@@ -222,10 +283,10 @@ static void log_distribution_info(void)
 
 void log_system_info(void)
 {
-	log_processor_cores();
 #if defined(__linux__) || defined(__FreeBSD__)
 	log_processor_info();
 #endif
+	log_processor_cores();
 	log_memory_info();
 	log_kernel_version();
 #if defined(__linux__)
@@ -594,7 +655,7 @@ static inline bool fill_keycodes(struct obs_core_hotkeys *hotkeys)
 	context->min_keycode = setup->min_keycode;
 
 	cookie = xcb_get_keyboard_mapping(connection,
-			mincode, maxcode - mincode - 1);
+			mincode, maxcode - mincode + 1);
 
 	reply = xcb_get_keyboard_mapping_reply(connection, cookie, &error);
 
@@ -606,7 +667,7 @@ static inline bool fill_keycodes(struct obs_core_hotkeys *hotkeys)
 	const xcb_keysym_t *keysyms = xcb_get_keyboard_mapping_keysyms(reply);
 	int syms_per_code = (int)reply->keysyms_per_keycode;
 
-	context->num_keysyms = (maxcode - mincode) * syms_per_code;
+	context->num_keysyms = (maxcode - mincode + 1) * syms_per_code;
 	context->syms_per_code = syms_per_code;
 	context->keysyms = bmemdup(keysyms,
 			sizeof(xcb_keysym_t) * context->num_keysyms);

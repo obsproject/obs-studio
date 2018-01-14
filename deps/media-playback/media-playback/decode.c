@@ -24,8 +24,8 @@ static AVCodec *find_hardware_decoder(enum AVCodecID id)
 
 	while (hwa) {
 		if (hwa->id == id) {
-			if (hwa->pix_fmt == AV_PIX_FMT_VDA_VLD ||
-			    hwa->pix_fmt == AV_PIX_FMT_DXVA2_VLD ||
+			if (hwa->pix_fmt == AV_PIX_FMT_VDTOOL ||
+				hwa->pix_fmt == AV_PIX_FMT_DXVA2_VLD ||
 			    hwa->pix_fmt == AV_PIX_FMT_VAAPI_VLD) {
 				c = avcodec_find_decoder_by_name(hwa->name);
 				if (c)
@@ -142,8 +142,8 @@ bool mp_decode_init(mp_media_t *m, enum AVMediaType type, bool hw)
 		return false;
 	}
 
-	if (d->codec->capabilities & CODEC_CAP_TRUNCATED)
-		d->decoder->flags |= CODEC_FLAG_TRUNCATED;
+	if (d->codec->capabilities & CODEC_CAP_TRUNC)
+		d->decoder->flags |= CODEC_FLAG_TRUNC;
 	return true;
 }
 
@@ -167,14 +167,16 @@ void mp_decode_free(struct mp_decode *d)
 	circlebuf_free(&d->packets);
 
 	if (d->decoder) {
-		avcodec_close(d->decoder);
 #if LIBAVFORMAT_VERSION_INT >= AV_VERSION_INT(57, 40, 101)
-		av_free(d->decoder);
+		avcodec_free_context(&d->decoder);
+#else
+		avcodec_close(d->decoder);
 #endif
 	}
-
-	if (d->frame)
+	if (d->frame) {
+		av_frame_unref(d->frame);
 		av_free(d->frame);
+	}
 
 	memset(d, 0, sizeof(*d));
 }

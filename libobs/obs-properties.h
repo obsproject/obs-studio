@@ -194,6 +194,10 @@ EXPORT obs_property_t *obs_properties_add_button(obs_properties_t *props,
 		const char *name, const char *text,
 		obs_property_clicked_t callback);
 
+EXPORT obs_property_t *obs_properties_add_button2(obs_properties_t *props,
+		const char *name, const char *text,
+		obs_property_clicked_t callback, void *priv);
+
 /**
  * Adds a font selection property.
  *
@@ -223,9 +227,13 @@ EXPORT obs_property_t *obs_properties_add_frame_rate(obs_properties_t *props,
  */
 typedef bool (*obs_property_modified_t)(obs_properties_t *props,
 		obs_property_t *property, obs_data_t *settings);
+typedef bool (*obs_property_modified2_t)(void *priv, obs_properties_t *props,
+		obs_property_t *property, obs_data_t *settings);
 
 EXPORT void obs_property_set_modified_callback(obs_property_t *p,
 		obs_property_modified_t modified);
+EXPORT void obs_property_set_modified_callback2(obs_property_t *p,
+		obs_property_modified2_t modified, void *priv);
 
 EXPORT bool obs_property_modified(obs_property_t *p, obs_data_t *settings);
 EXPORT bool obs_property_button_clicked(obs_property_t *p, void *obj);

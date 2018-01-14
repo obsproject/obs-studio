@@ -143,9 +143,10 @@ static inline void frame_rate_data_free(struct frame_rate_data *data)
 struct obs_properties;
 
 struct obs_property {
-	const char              *name;
-	const char              *desc;
-	const char              *long_desc;
+	char                    *name;
+	char                    *desc;
+	char                    *long_desc;
+	void                    *priv;
 	enum obs_property_type  type;
 	bool                    visible;
 	bool                    enabled;
@@ -153,6 +154,7 @@ struct obs_property {
 	struct obs_properties   *parent;
 
 	obs_property_modified_t modified;
+	obs_property_modified2_t modified2;
 
 	struct obs_property     *next;
 };
@@ -222,6 +224,9 @@ static void obs_property_destroy(struct obs_property *property)
 	else if (property->type == OBS_PROPERTY_FRAME_RATE)
 		frame_rate_data_free(get_property_data(property));
 
+	bfree(property->name);
+	bfree(property->desc);
+	bfree(property->long_desc);
 	bfree(property);
 }
 
@@ -277,6 +282,8 @@ void obs_properties_apply_settings(obs_properties_t *props, obs_data_t *settings
 	while (p) {
 		if (p->modified)
 			p->modified(props, p, settings);
+		else if (p->modified2)
+			p->modified2(p->priv, props, p, settings);
 		p = p->next;
 	}
 }
@@ -323,8 +330,8 @@ static inline struct obs_property *new_prop(struct obs_properties *props,
 	p->enabled = true;
 	p->visible = true;
 	p->type    = type;
-	p->name    = name;
-	p->desc    = desc;
+	p->name    = bstrdup(name);
+	p->desc    = bstrdup(desc);
 	propertes_add(props, p);
 
 	return p;
@@ -495,6 +502,20 @@ obs_property_t *obs_properties_add_button(obs_properties_t *props,
 	return p;
 }
 
+obs_property_t *obs_properties_add_button2(obs_properties_t *props,
+		const char *name, const char *text,
+		obs_property_clicked_t callback, void *priv)
+{
+	if (!props || has_prop(props, name)) return NULL;
+
+	struct obs_property *p = new_prop(props, name, text,
+			OBS_PROPERTY_BUTTON);
+	struct button_data *data = get_property_data(p);
+	data->callback = callback;
+	p->priv = priv;
+	return p;
+}
+
 obs_property_t *obs_properties_add_font(obs_properties_t *props,
 		const char *name, const char *desc)
 {
@@ -571,10 +592,24 @@ void obs_property_set_modified_callback(obs_property_t *p,
 	if (p) p->modified = modified;
 }
 
+void obs_property_set_modified_callback2(obs_property_t *p,
+		obs_property_modified2_t modified2, void *priv)
+{
+	if (p) {
+		p->modified2 = modified2;
+		p->priv = priv;
+	}
+}
+
 bool obs_property_modified(obs_property_t *p, obs_data_t *settings)
 {
-	if (p && p->modified)
-		return p->modified(p->parent, p, settings);
+	if (p) {
+		if (p->modified) {
+			return p->modified(p->parent, p, settings);
+		} else if (p->modified2) {
+			return p->modified2(p->priv, p->parent, p, settings);
+		}
+	}
 	return false;
 }
 
@@ -584,9 +619,12 @@ bool obs_property_button_clicked(obs_property_t *p, void *obj)
 	if (p) {
 		struct button_data *data = get_type_data(p,
 				OBS_PROPERTY_BUTTON);
-		if (data && data->callback)
+		if (data && data->callback) {
+			if (p->priv)
+				return data->callback(p->parent, p, p->priv);
 			return data->callback(p->parent, p,
 					(context ? context->data : NULL));
+		}
 	}
 
 	return false;
@@ -604,12 +642,22 @@ void obs_property_set_enabled(obs_property_t *p, bool enabled)
 
 void obs_property_set_description(obs_property_t *p, const char *description)
 {
-	if (p) p->desc = description;
+	if (p) {
+		bfree(p->desc);
+		p->desc = description && *description
+			? bstrdup(description)
+			: NULL;
+	}
 }
 
 void obs_property_set_long_description(obs_property_t *p, const char *long_desc)
 {
-	if (p) p->long_desc = long_desc;
+	if (p) {
+		bfree(p->long_desc);
+		p->long_desc = long_desc && *long_desc
+			? bstrdup(long_desc)
+			: NULL;
+	}
 }
 
 const char *obs_property_name(obs_property_t *p)

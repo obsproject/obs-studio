@@ -43,6 +43,14 @@ static void update_settings(struct window_capture *wc, obs_data_t *s)
 
 	build_window_strings(window, &wc->class, &wc->title, &wc->executable);
 
+	if (wc->title != NULL) {
+		blog(LOG_INFO, "[window-capture: '%s'] update settings:\n"
+				"\texecutable: %s",
+				obs_source_get_name(wc->source),
+				wc->executable);
+		blog(LOG_DEBUG, "\tclass:      %s", wc->class);
+	}
+
 	wc->priority      = (enum window_priority)priority;
 	wc->cursor        = obs_data_get_bool(s, "cursor");
 	wc->use_wildcards = obs_data_get_bool(s, "use_wildcards");

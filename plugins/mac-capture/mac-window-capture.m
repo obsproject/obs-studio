@@ -177,6 +177,15 @@ static inline void window_capture_update_internal(struct window_capture *wc,
 		kCGWindowImageDefault : kCGWindowImageBoundsIgnoreFraming;
 
 	update_window(&wc->window, settings);
+
+	if (wc->window.window_name.length) {
+		blog(LOG_INFO, "[window-capture: '%s'] update settings:\n"
+				"\twindow: %s\n"
+				"\towner:  %s",
+				obs_source_get_name(wc->source),
+				[wc->window.window_name UTF8String],
+				[wc->window.owner_name UTF8String]);
+	}
 }
 
 static void window_capture_update(void *data, obs_data_t *settings)

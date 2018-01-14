@@ -15,8 +15,9 @@ using namespace std;
 
 static void GetWASAPIDefaults(obs_data_t *settings);
 
-#define KSAUDIO_SPEAKER_4POINT1 (KSAUDIO_SPEAKER_QUAD|SPEAKER_LOW_FREQUENCY)
+// Fix inconsistent defs of speaker_surround between avutil & wasapi
 #define KSAUDIO_SPEAKER_2POINT1 (KSAUDIO_SPEAKER_STEREO|SPEAKER_LOW_FREQUENCY)
+#define KSAUDIO_SPEAKER_4POINT1 (KSAUDIO_SPEAKER_QUAD|SPEAKER_LOW_FREQUENCY)
 
 class WASAPISource {
 	ComPtr<IMMDevice>           device;
@@ -241,14 +242,11 @@ void WASAPISource::InitRender()
 static speaker_layout ConvertSpeakerLayout(DWORD layout, WORD channels)
 {
 	switch (layout) {
-	case KSAUDIO_SPEAKER_QUAD:             return SPEAKERS_QUAD;
 	case KSAUDIO_SPEAKER_2POINT1:          return SPEAKERS_2POINT1;
+	case KSAUDIO_SPEAKER_SURROUND:         return SPEAKERS_4POINT0;
 	case KSAUDIO_SPEAKER_4POINT1:          return SPEAKERS_4POINT1;
-	case KSAUDIO_SPEAKER_SURROUND:         return SPEAKERS_SURROUND;
-	case KSAUDIO_SPEAKER_5POINT1:          return SPEAKERS_5POINT1;
-	case KSAUDIO_SPEAKER_5POINT1_SURROUND: return SPEAKERS_5POINT1_SURROUND;
-	case KSAUDIO_SPEAKER_7POINT1:          return SPEAKERS_7POINT1;
-	case KSAUDIO_SPEAKER_7POINT1_SURROUND: return SPEAKERS_7POINT1_SURROUND;
+	case KSAUDIO_SPEAKER_5POINT1_SURROUND: return SPEAKERS_5POINT1;
+	case KSAUDIO_SPEAKER_7POINT1_SURROUND: return SPEAKERS_7POINT1;
 	}
 
 	return (speaker_layout)channels;
@@ -420,6 +418,10 @@ bool WASAPISource::ProcessCaptureData()
 		data.format           = format;
 		data.timestamp        = useDeviceTiming ?
 			ts*100 : os_gettime_ns();
+
+		if (!useDeviceTiming)
+			data.timestamp -= (uint64_t)frames * 1000000000ULL /
+				(uint64_t)sampleRate;
 
 		obs_source_output_audio(source, &data);
 

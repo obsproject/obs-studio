@@ -27,7 +27,7 @@
 #define MT_ obs_module_text
 #define TEXT_SUPPRESS_LEVEL             MT_("NoiseSuppress.SuppressLevel")
 
-#define MAX_PREPROC_CHANNELS            2
+#define MAX_PREPROC_CHANNELS            8
 
 /* -------------------------------------------------------- */
 
@@ -120,11 +120,11 @@ static void noise_suppress_update(void *data, obs_data_t *s)
 	/* One speex state for each channel (limit 2) */
 	ng->copy_buffers[0] = bmalloc(frames * channels * sizeof(float));
 	ng->segment_buffers[0] = bmalloc(frames * channels * sizeof(spx_int16_t));
-
-	if (channels == 2) {
-		ng->copy_buffers[1] = ng->copy_buffers[0] + frames;
-		ng->segment_buffers[1] = ng->segment_buffers[0] + frames;
+	for (size_t c = 1; c < channels; ++c) {
+		ng->copy_buffers[c] = ng->copy_buffers[c-1] + frames;
+		ng->segment_buffers[c] = ng->segment_buffers[c-1] + frames;
 	}
+
 
 	for (size_t i = 0; i < channels; i++)
 		alloc_channel(ng, sample_rate, i, frames);
@@ -155,9 +155,13 @@ static inline void process(struct noise_suppress_data *ng)
 
 	/* Convert to 16bit */
 	for (size_t i = 0; i < ng->channels; i++)
-		for (size_t j = 0; j < ng->frames; j++)
+		for (size_t j = 0; j < ng->frames; j++) {
+			float s = ng->copy_buffers[i][j];
+			if (s > 1.0f) s = 1.0f;
+			else if (s < -1.0f) s = -1.0f;
 			ng->segment_buffers[i][j] = (spx_int16_t)
-				(ng->copy_buffers[i][j] * c_32_to_16);
+				(s * c_32_to_16);
+		}
 
 	/* Execute */
 	for (size_t i = 0; i < ng->channels; i++)

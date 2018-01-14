@@ -16,10 +16,20 @@
 
 #include "ff-util.h"
 
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable : 4244)
+#pragma warning(disable : 4204)
+#endif
+
 #include <libavcodec/avcodec.h>
 #include <libavdevice/avdevice.h>
 #include <libavformat/avformat.h>
 #include <libavutil/log.h>
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
 
 #include <stdbool.h>
 
@@ -68,7 +78,7 @@ static bool get_codecs(const AVCodecDescriptor*** descs, unsigned int *size)
 	unsigned int codec_count = 0;
 	unsigned int i = 0;
 
-	while ((desc = avcodec_descriptor_next(desc)))
+	while ((desc = avcodec_descriptor_next(desc)) != NULL)
 		codec_count++;
 
 	codecs = av_calloc(codec_count, sizeof(AVCodecDescriptor *));
@@ -79,7 +89,7 @@ static bool get_codecs(const AVCodecDescriptor*** descs, unsigned int *size)
 		return false;
 	}
 
-	while ((desc = avcodec_descriptor_next(desc)))
+	while ((desc = avcodec_descriptor_next(desc)) != NULL)
 		codecs[i++] = desc;
 
 	*size = codec_count;
@@ -89,7 +99,7 @@ static bool get_codecs(const AVCodecDescriptor*** descs, unsigned int *size)
 
 static const AVCodec *next_codec_for_id(enum AVCodecID id, const AVCodec *prev)
 {
-    while ((prev = av_codec_next(prev))) {
+    while ((prev = av_codec_next(prev)) != NULL) {
         if (prev->id == id && av_codec_is_encoder(prev))
             return prev;
     }
@@ -156,7 +166,7 @@ static void get_codecs_for_id(const struct ff_format_desc *format_desc,
 		enum AVCodecID id, bool ignore_compatability)
 {
 	const AVCodec *codec = NULL;
-	while ((codec = next_codec_for_id(id, codec)))
+	while ((codec = next_codec_for_id(id, codec)) != NULL)
 		add_codec_to_list(format_desc, first, current, codec->id,
 				codec, ignore_compatability);
 }
@@ -277,7 +287,7 @@ const struct ff_format_desc *ff_format_supported()
 	struct ff_format_desc *desc = NULL;
 	struct ff_format_desc *current = NULL;
 
-	while ((output_format = av_oformat_next(output_format))) {
+	while ((output_format = av_oformat_next(output_format)) != NULL) {
 		struct ff_format_desc *d;
 		if (is_output_device(output_format->priv_class))
 			continue;

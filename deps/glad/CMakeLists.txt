@@ -20,6 +20,14 @@ elseif(NOT APPLE)
 		include/glad/glad_glx.h)
 endif()
 
+set(glad_include_dirs
+	PRIVATE ${OPENGL_INCLUDE_DIR})
+
+if (UNIX AND NOT APPLE)
+list (APPEND glad_include_dirs
+	PRIVATE ${X11_X11_INCLUDE_PATH})
+endif()
+
 add_library(glad SHARED
 	${glad_SOURCES}
 	${glad_PLATFORM_SOURCES})
@@ -29,7 +37,7 @@ set_target_properties(glad PROPERTIES
 	SOVERSION "0")
 target_include_directories(glad
 	PUBLIC include
-	PRIVATE ${X11_X11_INCLUDE_PATH} ${OPENGL_INCLUDE_DIR})
+	${glad_include_dirs})
 target_compile_definitions(glad
 	PRIVATE GLAD_GLAPI_EXPORT_BUILD)
 

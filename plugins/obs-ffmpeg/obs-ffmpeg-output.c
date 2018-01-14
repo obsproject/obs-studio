@@ -63,7 +63,6 @@ struct ffmpeg_data {
 	struct SwsContext  *swscale;
 
 	int64_t            total_frames;
-	AVPicture          dst_picture;
 	AVFrame            *vframe;
 	int                frame_size;
 
@@ -198,15 +197,13 @@ static bool open_video_codec(struct ffmpeg_data *data)
 	data->vframe->colorspace = data->config.color_space;
 	data->vframe->color_range = data->config.color_range;
 
-	ret = avpicture_alloc(&data->dst_picture, context->pix_fmt,
-			context->width, context->height);
+	ret = av_frame_get_buffer(data->vframe, base_get_alignment());
 	if (ret < 0) {
-		blog(LOG_WARNING, "Failed to allocate dst_picture: %s",
+		blog(LOG_WARNING, "Failed to allocate vframe: %s",
 				av_err2str(ret));
 		return false;
 	}
 
-	*((AVPicture*)data->vframe) = data->dst_picture;
 	return true;
 }
 
@@ -260,7 +257,7 @@ static bool create_video_stream(struct ffmpeg_data *data)
 	data->video->time_base = context->time_base;
 
 	if (data->output->oformat->flags & AVFMT_GLOBALHEADER)
-		context->flags |= CODEC_FLAG_GLOBAL_HEADER;
+		context->flags |= CODEC_FLAG_GLOBAL_H;
 
 	if (!open_video_codec(data))
 		return false;
@@ -337,6 +334,11 @@ static bool create_audio_stream(struct ffmpeg_data *data)
 	context->sample_rate = aoi.samples_per_sec;
 	context->channel_layout =
 			av_get_default_channel_layout(context->channels);
+
+	//AVlib default channel layout for 5 channels is 5.0 ; fix for 4.1
+	if (aoi.speakers == SPEAKERS_4POINT1)
+		context->channel_layout = av_get_channel_layout("4.1");
+
 	context->sample_fmt  = data->acodec->sample_fmts ?
 		data->acodec->sample_fmts[0] : AV_SAMPLE_FMT_FLTP;
 
@@ -348,7 +350,7 @@ static bool create_audio_stream(struct ffmpeg_data *data)
 	data->audio_size = get_audio_size(data->audio_format, aoi.speakers, 1);
 
 	if (data->output->oformat->flags & AVFMT_GLOBALHEADER)
-		context->flags |= CODEC_FLAG_GLOBAL_HEADER;
+		context->flags |= CODEC_FLAG_GLOBAL_H;
 
 	return open_audio_codec(data);
 }
@@ -373,20 +375,6 @@ static inline bool open_output_file(struct ffmpeg_data *data)
 	AVOutputFormat *format = data->output->oformat;
 	int ret;
 
-	if ((format->flags & AVFMT_NOFILE) == 0) {
-		ret = avio_open(&data->output->pb, data->config.url,
-				AVIO_FLAG_WRITE);
-		if (ret < 0) {
-			blog(LOG_WARNING, "Couldn't open '%s', %s",
-					data->config.url, av_err2str(ret));
-			return false;
-		}
-	}
-
-	strncpy(data->output->filename, data->config.url,
-			sizeof(data->output->filename));
-	data->output->filename[sizeof(data->output->filename) - 1] = 0;
-
 	AVDictionary *dict = NULL;
 	if ((ret = av_dict_parse_string(&dict, data->config.muxer_settings,
 				"=", " ", 0))) {
@@ -405,15 +393,42 @@ static inline bool open_output_file(struct ffmpeg_data *data)
 						AV_DICT_IGNORE_SUFFIX)))
 			dstr_catf(&str, "\n\t%s=%s", entry->key, entry->value);
 
-		blog(LOG_INFO, "Using muxer settings:%s", str.array);
+		blog(LOG_INFO, "Using muxer settings: %s", str.array);
 		dstr_free(&str);
 	}
+
+	if ((format->flags & AVFMT_NOFILE) == 0) {
+		ret = avio_open2(&data->output->pb, data->config.url,
+				AVIO_FLAG_WRITE, NULL, &dict);
+		if (ret < 0) {
+			blog(LOG_WARNING, "Couldn't open '%s', %s",
+					data->config.url, av_err2str(ret));
+			av_dict_free(&dict);
+			return false;
+		}
+	}
+
+	strncpy(data->output->filename, data->config.url,
+			sizeof(data->output->filename));
+	data->output->filename[sizeof(data->output->filename) - 1] = 0;
 
 	ret = avformat_write_header(data->output, &dict);
 	if (ret < 0) {
 		blog(LOG_WARNING, "Error opening '%s': %s",
 				data->config.url, av_err2str(ret));
 		return false;
+	}
+
+	if (av_dict_count(dict) > 0) {
+		struct dstr str = {0};
+
+		AVDictionaryEntry *entry = NULL;
+		while ((entry = av_dict_get(dict, "", entry,
+						AV_DICT_IGNORE_SUFFIX)))
+			dstr_catf(&str, "\n\t%s=%s", entry->key, entry->value);
+
+		blog(LOG_INFO, "Invalid muxer settings: %s", str.array);
+		dstr_free(&str);
 	}
 
 	av_dict_free(&dict);
@@ -424,7 +439,7 @@ static inline bool open_output_file(struct ffmpeg_data *data)
 static void close_video(struct ffmpeg_data *data)
 {
 	avcodec_close(data->video->codec);
-	avpicture_free(&data->dst_picture);
+	av_frame_unref(data->vframe);
 
 	// This format for some reason derefs video frame
 	// too many times
@@ -632,7 +647,7 @@ static void ffmpeg_output_destroy(void *data)
 	}
 }
 
-static inline void copy_data(AVPicture *pic, const struct video_data *frame,
+static inline void copy_data(AVFrame *pic, const struct video_data *frame,
 		int height, enum AVPixelFormat format)
 {
 	int h_chroma_shift, v_chroma_shift;
@@ -681,15 +696,15 @@ static void receive_video(void *param, struct video_data *frame)
 	if (!!data->swscale)
 		sws_scale(data->swscale, (const uint8_t *const *)frame->data,
 				(const int*)frame->linesize,
-				0, data->config.height, data->dst_picture.data,
-				data->dst_picture.linesize);
+				0, data->config.height, data->vframe->data,
+				data->vframe->linesize);
 	else
-		copy_data(&data->dst_picture, frame, context->height, context->pix_fmt);
-
+		copy_data(data->vframe, frame, context->height, context->pix_fmt);
+#if LIBAVFORMAT_VERSION_MAJOR < 58
 	if (data->output->flags & AVFMT_RAWPICTURE) {
 		packet.flags        |= AV_PKT_FLAG_KEY;
 		packet.stream_index  = data->video->index;
-		packet.data          = data->dst_picture.data[0];
+		packet.data          = data->vframe->data[0];
 		packet.size          = sizeof(AVPicture);
 
 		pthread_mutex_lock(&output->write_mutex);
@@ -698,9 +713,21 @@ static void receive_video(void *param, struct video_data *frame)
 		os_sem_post(output->write_sem);
 
 	} else {
+#endif
 		data->vframe->pts = data->total_frames;
+#if LIBAVFORMAT_VERSION_INT >= AV_VERSION_INT(57, 40, 101)
+		ret = avcodec_send_frame(context, data->vframe);
+		if (ret == 0)
+			ret = avcodec_receive_packet(context, &packet);
+
+		got_packet = (ret == 0);
+
+		if (ret == AVERROR_EOF || ret == AVERROR(EAGAIN))
+			ret = 0;
+#else
 		ret = avcodec_encode_video2(context, &packet, data->vframe,
 				&got_packet);
+#endif
 		if (ret < 0) {
 			blog(LOG_WARNING, "receive_video: Error encoding "
 			                  "video: %s", av_err2str(ret));
@@ -723,8 +750,9 @@ static void receive_video(void *param, struct video_data *frame)
 		} else {
 			ret = 0;
 		}
+#if LIBAVFORMAT_VERSION_MAJOR < 58
 	}
-
+#endif
 	if (ret != 0) {
 		blog(LOG_WARNING, "receive_video: Error writing video: %s",
 				av_err2str(ret));
@@ -758,8 +786,19 @@ static void encode_audio(struct ffmpeg_output *output,
 
 	data->total_samples += data->frame_size;
 
+#if LIBAVFORMAT_VERSION_INT >= AV_VERSION_INT(57, 40, 101)
+	ret = avcodec_send_frame(context, data->aframe);
+	if (ret == 0)
+		ret = avcodec_receive_packet(context, &packet);
+
+	got_packet = (ret == 0);
+
+	if (ret == AVERROR_EOF || ret == AVERROR(EAGAIN))
+		ret = 0;
+#else
 	ret = avcodec_encode_audio2(context, &packet, data->aframe,
 			&got_packet);
+#endif
 	if (ret < 0) {
 		blog(LOG_WARNING, "encode_audio: Error encoding audio: %s",
 				av_err2str(ret));

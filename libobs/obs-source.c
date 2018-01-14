@@ -39,7 +39,7 @@ static inline bool deinterlacing_enabled(const struct obs_source *source)
 	return source->deinterlace_mode != OBS_DEINTERLACE_MODE_DISABLE;
 }
 
-const struct obs_source_info *get_source_info(const char *id)
+struct obs_source_info *get_source_info(const char *id)
 {
 	for (size_t i = 0; i < obs->source_types.num; i++) {
 		struct obs_source_info *info = &obs->source_types.array[i];
@@ -190,6 +190,8 @@ bool obs_source_init(struct obs_source *source)
 		pthread_mutex_unlock(&obs->data.audio_sources_mutex);
 	}
 
+	source->private_settings = obs_data_create();
+
 	obs_context_data_insert(&source->context,
 			&obs->data.sources_mutex,
 			&obs->data.first_source);
@@ -321,8 +323,13 @@ static obs_source_t *obs_source_create_internal(const char *id,
 				private))
 		goto fail;
 
-	if (info && info->get_defaults)
-		info->get_defaults(source->context.settings);
+	if (info) {
+		if (info->get_defaults2)
+			info->get_defaults2(info->type_data,
+					source->context.settings);
+		else if (info->get_defaults)
+			info->get_defaults(source->context.settings);
+	}
 
 	if (!obs_source_init(source))
 		goto fail;
@@ -403,9 +410,11 @@ static void duplicate_filters(obs_source_t *dst, obs_source_t *src,
 		obs_source_t *src_filter = filters.array[i - 1];
 		char *new_name = get_new_filter_name(dst,
 				src_filter->context.name);
+		bool enabled = obs_source_enabled(src_filter);
 
 		obs_source_t *dst_filter = obs_source_duplicate(src_filter,
 				new_name, private);
+		obs_source_set_enabled(dst_filter, enabled);
 
 		bfree(new_name);
 		obs_source_filter_add(dst, dst_filter);
@@ -418,11 +427,7 @@ static void duplicate_filters(obs_source_t *dst, obs_source_t *src,
 
 void obs_source_copy_filters(obs_source_t *dst, obs_source_t *src)
 {
-	duplicate_filters(dst, src, dst->context.private ?
-					OBS_SCENE_DUP_PRIVATE_COPY :
-					OBS_SCENE_DUP_COPY);
-
-	obs_source_release(src);
+	duplicate_filters(dst, src, dst->context.private);
 }
 
 obs_source_t *obs_source_duplicate(obs_source_t *source,
@@ -445,7 +450,6 @@ obs_source_t *obs_source_duplicate(obs_source_t *source,
 				create_private ? OBS_SCENE_DUP_PRIVATE_COPY :
 					OBS_SCENE_DUP_COPY);
 		obs_source_t *new_source = obs_scene_get_source(new_scene);
-		duplicate_filters(new_source, source, create_private);
 		return new_source;
 	}
 
@@ -463,6 +467,8 @@ obs_source_t *obs_source_duplicate(obs_source_t *source,
 	new_source->volume = source->volume;
 	new_source->muted = source->muted;
 	new_source->flags = source->flags;
+
+	obs_data_apply(new_source->private_settings, source->private_settings);
 
 	if (source->info.type != OBS_SOURCE_TYPE_FILTER)
 		duplicate_filters(new_source, source, create_private);
@@ -582,6 +588,7 @@ void obs_source_destroy(struct obs_source *source)
 	pthread_mutex_destroy(&source->audio_cb_mutex);
 	pthread_mutex_destroy(&source->audio_mutex);
 	pthread_mutex_destroy(&source->async_mutex);
+	obs_data_release(source->private_settings);
 	obs_context_data_free(&source->context);
 
 	if (source->owns_info_id)
@@ -688,7 +695,9 @@ bool obs_source_removed(const obs_source_t *source)
 static inline obs_data_t *get_defaults(const struct obs_source_info *info)
 {
 	obs_data_t *settings = obs_data_create();
-	if (info->get_defaults)
+	if (info->get_defaults2)
+		info->get_defaults2(info->type_data, settings);
+	else if (info->get_defaults)
 		info->get_defaults(settings);
 	return settings;
 }
@@ -708,14 +717,18 @@ obs_data_t *obs_get_source_defaults(const char *id)
 obs_properties_t *obs_get_source_properties(const char *id)
 {
 	const struct obs_source_info *info = get_source_info(id);
-	if (info && info->get_properties) {
+	if (info && (info->get_properties || info->get_properties2)) {
 		obs_data_t       *defaults = get_defaults(info);
-		obs_properties_t *properties;
+		obs_properties_t *props;
 
-		properties = info->get_properties(NULL);
-		obs_properties_apply_settings(properties, defaults);
+		if (info->get_properties2)
+			props = info->get_properties2(NULL, info->type_data);
+		else
+			props = info->get_properties(NULL);
+
+		obs_properties_apply_settings(props, defaults);
 		obs_data_release(defaults);
-		return properties;
+		return props;
 	}
 	return NULL;
 }
@@ -723,13 +736,13 @@ obs_properties_t *obs_get_source_properties(const char *id)
 bool obs_is_source_configurable(const char *id)
 {
 	const struct obs_source_info *info = get_source_info(id);
-	return info && info->get_properties;
+	return info && (info->get_properties || info->get_properties2);
 }
 
 bool obs_source_configurable(const obs_source_t *source)
 {
 	return data_valid(source, "obs_source_configurable") &&
-		source->info.get_properties;
+		(source->info.get_properties || source->info.get_properties2);
 }
 
 obs_properties_t *obs_source_properties(const obs_source_t *source)
@@ -737,7 +750,14 @@ obs_properties_t *obs_source_properties(const obs_source_t *source)
 	if (!data_valid(source, "obs_source_properties"))
 		return NULL;
 
-	if (source->info.get_properties) {
+	if (source->info.get_properties2) {
+		obs_properties_t *props;
+		props = source->info.get_properties2(source->context.data,
+				source->info.type_data);
+		obs_properties_apply_settings(props, source->context.settings);
+		return props;
+
+	} else if (source->info.get_properties) {
 		obs_properties_t *props;
 		props = source->info.get_properties(source->context.data);
 		obs_properties_apply_settings(props, source->context.settings);
@@ -1044,6 +1064,9 @@ void obs_source_video_tick(obs_source_t *source, float seconds)
 static inline uint64_t conv_frames_to_time(const size_t sample_rate,
 		const size_t frames)
 {
+	if (!sample_rate)
+		return 0;
+	
 	return (uint64_t)frames * 1000000000ULL / (uint64_t)sample_rate;
 }
 
@@ -1055,6 +1078,10 @@ static inline size_t conv_time_to_frames(const size_t sample_rate,
 
 /* maximum buffer size */
 #define MAX_BUF_SIZE        (1000 * AUDIO_OUTPUT_FRAMES * sizeof(float))
+
+/* time threshold in nanoseconds to ensure audio timing is as seamless as
+ * possible */
+#define TS_SMOOTHING_THRESHOLD 70000000ULL
 
 static inline void reset_audio_timing(obs_source_t *source, uint64_t timestamp,
 		uint64_t os_time)
@@ -1665,9 +1692,13 @@ static void obs_source_update_async_video(obs_source_t *source)
 
 		source->async_rendered = true;
 		if (frame) {
-			source->timing_adjust =
-				os_gettime_ns() - frame->timestamp;
-			source->timing_set = true;
+			if (!source->async_decoupled ||
+			    !source->async_unbuffered) {
+				source->timing_adjust =
+					obs->video.video_time -
+					frame->timestamp;
+				source->timing_set = true;
+			}
 
 			if (source->async_update_texture) {
 				update_async_texture(source, frame,
@@ -4049,4 +4080,46 @@ bool obs_source_async_unbuffered(const obs_source_t *source)
 {
 	return obs_source_valid(source, "obs_source_async_unbuffered") ?
 		source->async_unbuffered : false;
+}
+
+obs_data_t *obs_source_get_private_settings(obs_source_t *source)
+{
+	if (!obs_ptr_valid(source, "obs_source_get_private_settings"))
+		return NULL;
+
+	obs_data_addref(source->private_settings);
+	return source->private_settings;
+}
+
+void obs_source_set_async_decoupled(obs_source_t *source, bool decouple)
+{
+	if (!obs_ptr_valid(source, "obs_source_set_async_decoupled"))
+		return;
+
+	source->async_decoupled = decouple;
+	if (decouple) {
+		pthread_mutex_lock(&source->audio_buf_mutex);
+		source->timing_set = false;
+		reset_audio_data(source, 0);
+		pthread_mutex_unlock(&source->audio_buf_mutex);
+	}
+}
+
+bool obs_source_async_decoupled(const obs_source_t *source)
+{
+	return obs_source_valid(source, "obs_source_async_decoupled") ?
+		source->async_decoupled : false;
+}
+
+/* hidden/undocumented export to allow source type redefinition for scripts */
+EXPORT void obs_enable_source_type(const char *name, bool enable)
+{
+	struct obs_source_info *info = get_source_info(name);
+	if (!info)
+		return;
+
+	if (enable)
+		info->output_flags &= ~OBS_SOURCE_CAP_DISABLED;
+	else
+		info->output_flags |= OBS_SOURCE_CAP_DISABLED;
 }

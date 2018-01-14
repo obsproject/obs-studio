@@ -15,6 +15,9 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
+#include <time.h>
+#include <stdlib.h>
+
 #include "obs.h"
 #include "obs-internal.h"
 #include "graphics/vec4.h"
@@ -35,9 +38,24 @@ static uint64_t tick_sources(uint64_t cur_time, uint64_t last_time)
 	delta_time = cur_time - last_time;
 	seconds = (float)((double)delta_time / 1000000000.0);
 
+	/* ------------------------------------- */
+	/* call tick callbacks                   */
+
+	pthread_mutex_lock(&obs->data.draw_callbacks_mutex);
+
+	for (size_t i = obs->data.tick_callbacks.num; i > 0; i--) {
+		struct tick_callback *callback;
+		callback = obs->data.tick_callbacks.array + (i - 1);
+		callback->tick(callback->param, seconds);
+	}
+
+	pthread_mutex_unlock(&obs->data.draw_callbacks_mutex);
+
+	/* ------------------------------------- */
+	/* call the tick function of each source */
+
 	pthread_mutex_lock(&data->sources_mutex);
 
-	/* call the tick function of each source */
 	source = data->first_source;
 	while (source) {
 		obs_source_video_tick(source, seconds);
@@ -108,9 +126,9 @@ static inline void render_main_texture(struct obs_core_video *video,
 
 	pthread_mutex_lock(&obs->data.draw_callbacks_mutex);
 
-	for (size_t i = 0; i < obs->data.draw_callbacks.num; i++) {
+	for (size_t i = obs->data.draw_callbacks.num; i > 0; i--) {
 		struct draw_callback *callback;
-		callback = obs->data.draw_callbacks.array+i;
+		callback = obs->data.draw_callbacks.array + (i - 1);
 
 		callback->draw(callback->param,
 				video->base_width, video->base_height);
@@ -300,7 +318,7 @@ static inline void stage_output_texture(struct obs_core_video *video,
 		texture_ready = video->textures_converted[prev_texture];
 	} else {
 		texture = video->output_textures[prev_texture];
-		texture_ready = video->output_textures[prev_texture];
+		texture_ready = video->textures_output[prev_texture];
 	}
 
 	unmap_last_surface(video);
@@ -582,7 +600,7 @@ static inline void output_frame(void)
 static const char *tick_sources_name = "tick_sources";
 static const char *render_displays_name = "render_displays";
 static const char *output_frame_name = "output_frame";
-void *obs_video_thread(void *param)
+void *obs_graphics_thread(void *param)
 {
 	uint64_t last_time = 0;
 	uint64_t interval = video_output_get_frame_time(obs->video.video);
@@ -596,8 +614,10 @@ void *obs_video_thread(void *param)
 
 	const char *video_thread_name =
 		profile_store_name(obs_get_profiler_name_store(),
-			"obs_video_thread(%g"NBSP"ms)", interval / 1000000.);
+			"obs_graphics_thread(%g"NBSP"ms)", interval / 1000000.);
 	profile_register_root(video_thread_name, interval);
+
+	srand((unsigned int)time(NULL));
 
 	while (!video_output_stopped(obs->video.video)) {
 		uint64_t frame_start = os_gettime_ns();
@@ -609,13 +629,13 @@ void *obs_video_thread(void *param)
 		last_time = tick_sources(obs->video.video_time, last_time);
 		profile_end(tick_sources_name);
 
-		profile_start(render_displays_name);
-		render_displays();
-		profile_end(render_displays_name);
-
 		profile_start(output_frame_name);
 		output_frame();
 		profile_end(output_frame_name);
+
+		profile_start(render_displays_name);
+		render_displays();
+		profile_end(render_displays_name);
 
 		frame_time_ns = os_gettime_ns() - frame_start;
 

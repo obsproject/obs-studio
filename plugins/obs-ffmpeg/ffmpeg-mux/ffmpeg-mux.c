@@ -29,6 +29,12 @@
 
 #include <libavformat/avformat.h>
 
+#if LIBAVCODEC_VERSION_MAJOR >= 58
+#define CODEC_FLAG_GLOBAL_H AV_CODEC_FLAG_GLOBAL_HEADER
+#else
+#define CODEC_FLAG_GLOBAL_H CODEC_FLAG_GLOBAL_HEADER
+#endif
+
 /* ------------------------------------------------------------------------- */
 
 struct resize_buf {
@@ -312,7 +318,7 @@ static void create_video_stream(struct ffmpeg_mux *ffm)
 	ffm->video_stream->time_base = context->time_base;
 
 	if (ffm->output->oformat->flags & AVFMT_GLOBALHEADER)
-		context->flags |= CODEC_FLAG_GLOBAL_HEADER;
+		context->flags |= CODEC_FLAG_GLOBAL_H;
 }
 
 static void create_audio_stream(struct ffmpeg_mux *ffm, int idx)
@@ -346,9 +352,14 @@ static void create_audio_stream(struct ffmpeg_mux *ffm, int idx)
 	context->extradata_size = ffm->audio_header[idx].size;
 	context->channel_layout =
 			av_get_default_channel_layout(context->channels);
-
+	//AVlib default channel layout for 4 channels is 4.0 ; fix for quad
+	if (context->channels == 4)
+		context->channel_layout = av_get_channel_layout("quad");
+	//AVlib default channel layout for 5 channels is 5.0 ; fix for 4.1
+	if (context->channels == 5)
+		context->channel_layout = av_get_channel_layout("4.1");
 	if (ffm->output->oformat->flags & AVFMT_GLOBALHEADER)
-		context->flags |= CODEC_FLAG_GLOBAL_HEADER;
+		context->flags |= CODEC_FLAG_GLOBAL_H;
 
 	ffm->num_audio_streams++;
 }

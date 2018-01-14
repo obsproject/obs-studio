@@ -379,6 +379,10 @@ bool obs_transition_start(obs_source_t *transition,
 
 	set_source(transition, OBS_TRANSITION_SOURCE_B, dest,
 			activate_transition);
+	if (dest == NULL && same_as_dest && !same_as_source) {
+		transition->transitioning_video = true;
+		transition->transitioning_audio = true;
+	}
 
 	obs_source_dosignal(transition, "source_transition_start",
 			"transition_start");

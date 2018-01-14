@@ -30,7 +30,6 @@ using namespace std;
 #include <shellapi.h>
 #include <shlobj.h>
 #include <Dwmapi.h>
-#include <psapi.h>
 #include <mmdeviceapi.h>
 #include <audiopolicy.h>
 
@@ -212,6 +211,8 @@ void SetProcessPriority(const char *priority)
 		SetPriorityClass(GetCurrentProcess(), ABOVE_NORMAL_PRIORITY_CLASS);
 	else if (strcmp(priority, "Normal") == 0)
 		SetPriorityClass(GetCurrentProcess(), NORMAL_PRIORITY_CLASS);
+	else if (strcmp(priority, "BelowNormal") == 0)
+		SetPriorityClass(GetCurrentProcess(), BELOW_NORMAL_PRIORITY_CLASS);
 	else if (strcmp(priority, "Idle") == 0)
 		SetPriorityClass(GetCurrentProcess(), IDLE_PRIORITY_CLASS);
 }
@@ -260,17 +261,6 @@ bool DisableAudioDucking(bool disable)
 
 	result = sessionControl2->SetDuckingPreference(disable);
 	return SUCCEEDED(result);
-}
-
-uint64_t CurrentMemoryUsage()
-{
-	PROCESS_MEMORY_COUNTERS pmc = {};
-	pmc.cb = sizeof(pmc);
-
-	if (!GetProcessMemoryInfo(GetCurrentProcess(), &pmc, sizeof(pmc)))
-		return 0;
-
-	return (uint64_t)pmc.WorkingSetSize;
 }
 
 struct RunOnceMutexData {

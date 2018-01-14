@@ -67,6 +67,31 @@ QListWidget::item:selected:!active {
     background-color: rgb(48,47,48);
 }
 
+/* Dock Widget */
+
+QDockWidget::title {
+    text-align: center;
+    background-color: QLinearGradient(x1: 0, y1: 0, x2: 0, y2: 1,
+        stop: 0 rgb(86,85,86),
+        stop: 0.1 rgb(82,81,82),
+        stop: 0.5 rgb(78,77,78),
+        stop: 0.9 rgb(74,73,74),
+        stop: 1 rgb(70,69,70));
+}
+
+QDockWidget::close-button, QDockWidget::float-button {
+    border: 1px solid transparent;
+    background: transparent;
+    padding: 0px;
+}
+
+QDockWidget::close-button:hover, QDockWidget::float-button:hover {
+    background: transparent;
+}
+
+QDockWidget::close-button:pressed, QDockWidget::float-button:pressed {
+    padding: 1px -1px -1px 1px;
+}
 
 /* Group Box */
 
@@ -178,6 +203,10 @@ QToolButton:pressed {
 
 * [themeID="configIconSmall"] {
     qproperty-icon: url(./Dark/cogwheel.png);
+}
+
+* [themeID="refreshIconSmall"] {
+    qproperty-icon: url(./Dark/refresh.png);
 }
 
 * [themeID="upArrowIconSmall"] {
@@ -374,6 +403,12 @@ QPushButton:checked {
     background-color: rgb(122,121,122); /* light */
 }
 
+QPushButton::menu-indicator {
+    image: url(./Dark/down_arrow.png);
+    subcontrol-position: right;
+    subcontrol-origin: padding;
+    width: 25px;
+}
 
 /* Sliders */
 
@@ -464,10 +499,16 @@ QSlider::handle:disabled {
 /* Volume Control */
 
 VolumeMeter {
-    qproperty-bkColor: rgb(31,30,31); /* veryDark */
-    qproperty-magColor:;
-    qproperty-peakColor:;
-    qproperty-peakHoldColor: rgb(225,224,225); /* veryLight */
+    qproperty-backgroundNominalColor: rgb(38, 127, 38);
+    qproperty-backgroundWarningColor: rgb(127, 127, 38);
+    qproperty-backgroundErrorColor: rgb(127, 38, 38);
+    qproperty-foregroundNominalColor: rgb(76, 255, 76);
+    qproperty-foregroundWarningColor: rgb(255, 255, 76);
+    qproperty-foregroundErrorColor: rgb(255, 76, 76);
+    qproperty-magnitudeColor: rgb(0, 0, 0);
+    qproperty-majorTickColor: rgb(225,224,225); /* veryLight */
+    qproperty-minorTickColor: rgb(122,121,122); /* light */
+    qproperty-peakDecayRate: 23.4; /* Override of the standard PPM Type I rate. */
 }
 
 

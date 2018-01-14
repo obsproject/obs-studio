@@ -26,6 +26,12 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
+#if LIBAVCODEC_VERSION_MAJOR >= 58
+#define CODEC_FLAG_GLOBAL_H AV_CODEC_FLAG_GLOBAL_HEADER
+#else
+#define CODEC_FLAG_GLOBAL_H CODEC_FLAG_GLOBAL_HEADER
+#endif
+
 struct media_remux_job {
 	int64_t in_size;
 	AVFormatContext *ifmt_ctx, *ofmt_ctx;
@@ -86,7 +92,17 @@ static inline bool init_output(media_remux_job_t job, const char *out_filename)
 			return false;
 		}
 
+#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(57, 48, 101)
+		AVCodecParameters *par = avcodec_parameters_alloc();
+		ret = avcodec_parameters_from_context(par, in_stream->codec);
+		if (ret == 0)
+			ret = avcodec_parameters_to_context(out_stream->codec,
+					par);
+		avcodec_parameters_free(&par);
+#else
 		ret = avcodec_copy_context(out_stream->codec, in_stream->codec);
+#endif
+
 		if (ret < 0) {
 			blog(LOG_ERROR, "media_remux: Failed to copy context");
 			return false;
@@ -95,7 +111,7 @@ static inline bool init_output(media_remux_job_t job, const char *out_filename)
 
 		out_stream->codec->codec_tag = 0;
 		if (job->ofmt_ctx->oformat->flags & AVFMT_GLOBALHEADER)
-			out_stream->codec->flags |= CODEC_FLAG_GLOBAL_HEADER;
+			out_stream->codec->flags |= CODEC_FLAG_GLOBAL_H;
 	}
 
 #ifndef _NDEBUG
@@ -188,7 +204,7 @@ static inline int process_packets(media_remux_job_t job,
 				job->ofmt_ctx->streams[pkt.stream_index]);
 
 		ret = av_interleaved_write_frame(job->ofmt_ctx, &pkt);
-		av_free_packet(&pkt);
+		av_packet_unref(&pkt);
 
 		if (ret < 0) {
 			blog(LOG_ERROR, "media_remux: Error muxing packet: %s",

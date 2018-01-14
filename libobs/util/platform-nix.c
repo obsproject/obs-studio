@@ -33,6 +33,16 @@
 #if !defined(__APPLE__)
 #include <sys/times.h>
 #include <sys/wait.h>
+#ifdef __FreeBSD__
+#include <sys/param.h>
+#include <sys/queue.h>
+#include <sys/socket.h>
+#include <sys/user.h>
+#include <unistd.h>
+#include <libprocstat.h>
+#else
+#include <sys/resource.h>
+#endif
 #include <spawn.h>
 #endif
 
@@ -628,8 +638,6 @@ static int physical_cores = 0;
 static int logical_cores = 0;
 static bool core_count_initialized = false;
 
-/* return sysconf(_SC_NPROCESSORS_ONLN); */
-
 static void os_get_cores_internal(void)
 {
 	if (core_count_initialized)
@@ -639,29 +647,120 @@ static void os_get_cores_internal(void)
 
 	logical_cores = sysconf(_SC_NPROCESSORS_ONLN);
 
-#ifndef __linux__
-	physical_cores = logical_cores;
-#else
-	char *text = os_quick_read_utf8_file("/proc/cpuinfo");
-	char *core_id = text;
+#if defined(__linux__)
+	int physical_id = -1;
+	int last_physical_id = -1;
+	int core_count = 0;
+	char *line = NULL;
+	size_t linecap = 0;
+
+	FILE *fp;
+	struct dstr proc_phys_id;
+	struct dstr proc_phys_ids;
+
+	fp = fopen("/proc/cpuinfo", "r");
+	if (!fp)
+		return;
+
+	dstr_init(&proc_phys_id);
+	dstr_init(&proc_phys_ids);
+
+	while (getline(&line, &linecap, fp) != -1) {
+		if (!strncmp(line, "physical id", 11)) {
+			char *start = strchr(line, ':');
+			if (!start || *(++start) == '\0')
+				continue;
+
+			physical_id = atoi(start);
+			dstr_free(&proc_phys_id);
+			dstr_init(&proc_phys_id);
+			dstr_catf(&proc_phys_id, "%d", physical_id);
+		}
+
+		if (!strncmp(line, "cpu cores", 9)) {
+			char *start = strchr(line, ':');
+			if (!start || *(++start) == '\0')
+				continue;
+
+			if (dstr_is_empty(&proc_phys_ids) ||
+				(!dstr_is_empty(&proc_phys_ids) &&
+				!dstr_find(&proc_phys_ids, proc_phys_id.array))) {
+				dstr_cat_dstr(&proc_phys_ids, &proc_phys_id);
+				dstr_cat(&proc_phys_ids, " ");
+				core_count += atoi(start);
+			}
+		}
+
+		if (*line == '\n' && physical_id != last_physical_id) {
+			last_physical_id = physical_id;
+		}
+	}
+
+	if (core_count == 0)
+		physical_cores = logical_cores;
+	else
+		physical_cores = core_count;
+
+	fclose(fp);
+	dstr_free(&proc_phys_ids);
+	dstr_free(&proc_phys_id);
+	free(line);
+#elif defined(__FreeBSD__)
+	char *text = os_quick_read_utf8_file("/var/run/dmesg.boot");
+	char *core_count = text;
+	int packages = 0;
+	int cores = 0;
+
+	struct dstr proc_packages;
+	struct dstr proc_cores;
+	dstr_init(&proc_packages);
+	dstr_init(&proc_cores);
 
 	if (!text || !*text) {
 		physical_cores = logical_cores;
 		return;
 	}
 
-	for (;;) {
-		core_id = strstr(core_id, "\ncore id");
-		if (!core_id)
-			break;
-		physical_cores++;
-		core_id++;
-	}
+	core_count = strstr(core_count, "\nFreeBSD/SMP: ");
+	if (!core_count)
+		goto FreeBSD_cores_cleanup;
 
-	if (physical_cores == 0)
+	core_count++;
+	core_count = strstr(core_count, "\nFreeBSD/SMP: ");
+	if (!core_count)
+		goto FreeBSD_cores_cleanup;
+
+	core_count = strstr(core_count, ": ");
+	core_count += 2;
+	size_t len = strcspn(core_count, " ");
+	dstr_ncopy(&proc_packages, core_count, len);
+
+	core_count = strstr(core_count, "package(s) x ");
+	if (!core_count)
+		goto FreeBSD_cores_cleanup;
+
+	core_count += 13;
+	len = strcspn(core_count, " ");
+	dstr_ncopy(&proc_cores, core_count, len);
+
+	FreeBSD_cores_cleanup:
+	if (!dstr_is_empty(&proc_packages))
+		packages = atoi(proc_packages.array);
+	if (!dstr_is_empty(&proc_cores))
+		cores = atoi(proc_cores.array);
+
+	if (packages == 0)
 		physical_cores = logical_cores;
+	else if (cores == 0)
+		physical_cores = packages;
+	else
+		physical_cores = packages * cores;
 
+	dstr_free(&proc_cores);
+	dstr_free(&proc_packages);
 	bfree(text);
+#else
+	physical_cores = logical_cores;
 #endif
 }
 
@@ -678,6 +777,120 @@ int os_get_logical_cores(void)
 		os_get_cores_internal();
 	return logical_cores;
 }
+
+#ifdef __FreeBSD__
+uint64_t os_get_sys_free_size(void)
+{
+	uint64_t mem_free = 0;
+	size_t length = sizeof(mem_free);
+	if (sysctlbyname("vm.stats.vm.v_free_count", &mem_free, &length,
+				NULL, 0) < 0)
+		return 0;
+	return mem_free;
+}
+
+static inline bool os_get_proc_memory_usage_internal(struct kinfo_proc *kinfo)
+{
+	int mib[] = {CTL_KERN, KERN_PROC, KERN_PROC_PID, getpid()};
+	size_t length = sizeof(*kinfo);
+	if (sysctl(mib, sizeof(mib) / sizeof(mib[0]), kinfo, &length,
+				NULL, 0) < 0)
+		return false;
+	return true;
+}
+
+bool os_get_proc_memory_usage(os_proc_memory_usage_t *usage)
+{
+	struct kinfo_proc kinfo;
+	if (!os_get_proc_memory_usage_internal(&kinfo))
+		return false;
+
+	usage->resident_size =
+			(uint64_t)kinfo.ki_rssize * sysconf(_SC_PAGESIZE);
+	usage->virtual_size  = (uint64_t)kinfo.ki_size;
+	return true;
+}
+
+uint64_t os_get_proc_resident_size(void)
+{
+	struct kinfo_proc kinfo;
+	if (!os_get_proc_memory_usage_internal(&kinfo))
+		return 0;
+	return (uint64_t)kinfo.ki_rssize * sysconf(_SC_PAGESIZE);
+}
+
+uint64_t os_get_proc_virtual_size(void)
+{
+	struct kinfo_proc kinfo;
+	if (!os_get_proc_memory_usage_internal(&kinfo))
+		return 0;
+	return (uint64_t)kinfo.ki_size;
+}
+#else
+uint64_t os_get_sys_free_size(void) {return 0;}
+
+typedef struct
+{
+	unsigned long virtual_size;
+	unsigned long resident_size;
+	unsigned long share_pages;
+	unsigned long text;
+	unsigned long library;
+	unsigned long data;
+	unsigned long dirty_pages;
+} statm_t;
+
+static inline bool os_get_proc_memory_usage_internal(statm_t *statm)
+{
+	const char *statm_path = "/proc/self/statm";
+
+	FILE *f = fopen(statm_path, "r");
+	if (!f)
+		return false;
+
+	if (fscanf(f, "%ld %ld %ld %ld %ld %ld %ld",
+	    &statm->virtual_size,
+	    &statm->resident_size,
+	    &statm->share_pages,
+	    &statm->text,
+	    &statm->library,
+	    &statm->data,
+	    &statm->dirty_pages) != 7) {
+		fclose(f);
+		return false;
+	}
+
+	fclose(f);
+	return true;
+}
+
+bool os_get_proc_memory_usage(os_proc_memory_usage_t *usage)
+{
+	statm_t statm = {};
+	if (!os_get_proc_memory_usage_internal(&statm))
+		return false;
+
+	usage->resident_size = statm.resident_size;
+	usage->virtual_size  = statm.virtual_size;
+	return true;
+}
+
+uint64_t os_get_proc_resident_size(void)
+{
+	statm_t statm = {};
+	if (!os_get_proc_memory_usage_internal(&statm))
+		return 0;
+	return (uint64_t)statm.resident_size;
+}
+
+uint64_t os_get_proc_virtual_size(void)
+{
+	statm_t statm = {};
+	if (!os_get_proc_memory_usage_internal(&statm))
+		return 0;
+	return (uint64_t)statm.virtual_size;
+}
+#endif
 #endif
 
 uint64_t os_get_free_disk_space(const char *dir)

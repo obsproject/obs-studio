@@ -368,6 +368,13 @@ void gs_effect_set_vec4(gs_eparam_t *param, const struct vec4 *val)
 	effect_setval_inline(param, val, sizeof(struct vec4));
 }
 
+void gs_effect_set_color(gs_eparam_t *param, uint32_t argb)
+{
+	struct vec4 v_color;
+	vec4_from_bgra(&v_color, argb);
+	effect_setval_inline(param, &v_color, sizeof(struct vec4));
+}
+
 void gs_effect_set_texture(gs_eparam_t *param, gs_texture_t *val)
 {
 	effect_setval_inline(param, &val, sizeof(gs_texture_t*));

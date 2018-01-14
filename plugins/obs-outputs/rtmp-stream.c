@@ -178,15 +178,17 @@ static void rtmp_stream_stop(void *data, uint64_t ts)
 		pthread_join(stream->connect_thread, NULL);
 
 	stream->stop_ts = ts / 1000ULL;
-	os_event_signal(stream->stop_event);
 
 	if (ts)
 		stream->shutdown_timeout_ts = ts +
 			(uint64_t)stream->max_shutdown_time_sec * 1000000000ULL;
 
 	if (active(stream)) {
+		os_event_signal(stream->stop_event);
 		if (stream->stop_ts == 0)
 			os_sem_post(stream->send_sem);
+	} else {
+		obs_output_signal_stop(stream->output, OBS_OUTPUT_SUCCESS);
 	}
 }
 
@@ -347,7 +349,8 @@ static int send_packet(struct rtmp_stream *stream,
 		}
 	}
 
-	flv_packet_mux(packet, &data, &size, is_header);
+	flv_packet_mux(packet, is_header ? 0 : stream->start_dts_offset,
+			&data, &size, is_header);
 
 #ifdef TEST_FRAMEDROPS
 	droptest_cap_data_rate(stream, size);
@@ -658,6 +661,14 @@ static int init_send(struct rtmp_stream *stream)
 			obs_data_t *params = obs_encoder_get_settings(vencoder);
 			if (params) {
 				int bitrate = obs_data_get_int(params, "bitrate");
+				if (!bitrate) {
+					warn ("Video encoder didn't return a "
+						"valid bitrate, new network "
+						"code may function poorly. "
+						"Low latency mode disabled.");
+					stream->low_latency_mode = false;
+					bitrate = 10000;
+				}
 				total_bitrate += bitrate;
 				obs_data_release(params);
 			}
@@ -668,6 +679,8 @@ static int init_send(struct rtmp_stream *stream)
 			obs_data_t *params = obs_encoder_get_settings(aencoder);
 			if (params) {
 				int bitrate = obs_data_get_int(params, "bitrate");
+				if (!bitrate)
+					bitrate = 160;
 				total_bitrate += bitrate;
 				obs_data_release(params);
 			}
@@ -866,6 +879,7 @@ static bool init_connect(struct rtmp_stream *stream)
 	stream->total_bytes_sent = 0;
 	stream->dropped_frames   = 0;
 	stream->min_priority     = 0;
+	stream->got_first_video  = false;
 
 	settings = obs_output_get_settings(stream->output);
 	dstr_copy(&stream->path,     obs_service_get_url(service));
@@ -1079,10 +1093,17 @@ static void rtmp_stream_data(void *data, struct encoder_packet *packet)
 	if (disconnected(stream) || !active(stream))
 		return;
 
-	if (packet->type == OBS_ENCODER_VIDEO)
+	if (packet->type == OBS_ENCODER_VIDEO) {
+		if (!stream->got_first_video) {
+			stream->start_dts_offset =
+				get_ms_time(packet, packet->dts);
+			stream->got_first_video = true;
+		}
+
 		obs_parse_avc_packet(&new_packet, packet);
-	else
+	} else {
 		obs_encoder_packet_ref(&new_packet, packet);
+	}
 
 	pthread_mutex_lock(&stream->packets_mutex);
 

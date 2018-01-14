@@ -62,7 +62,7 @@ struct mp_media {
 
 	struct mp_decode v;
 	struct mp_decode a;
-	bool is_network;
+	bool is_local_file;
 	bool has_video;
 	bool has_audio;
 	bool is_file;
@@ -106,6 +106,7 @@ extern bool mp_media_init(mp_media_t *media,
 		mp_stop_cb stop_cb,
 		mp_video_cb v_preload_cb,
 		bool hardware_decoding,
+		bool is_local_file,
 		enum video_range_type force_range);
 extern void mp_media_free(mp_media_t *media);
 

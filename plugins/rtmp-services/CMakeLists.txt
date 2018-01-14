@@ -3,16 +3,19 @@ project(rtmp-services)
 include_directories(${OBS_JANSSON_INCLUDE_DIRS})
 
 set(rtmp-services_SOURCES
+	twitch.c
 	rtmp-common.c
 	rtmp-custom.c
 	rtmp-services-main.c)
 
 set(rtmp-services_HEADERS
+	twitch.h
 	rtmp-format-ver.h)
 
 set(RTMP_SERVICES_URL
 	"https://obsproject.com/obs2_update/rtmp-services"
 	CACHE STRING "Default services package URL")
+option(CHECK_FOR_SERVICE_UPDATES "Checks for service updates" OFF)
 
 configure_file(
 	"${CMAKE_CURRENT_SOURCE_DIR}/lookup-config.h.in"

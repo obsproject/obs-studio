@@ -34,6 +34,8 @@ static void color_grade_filter_update(void *data, obs_data_t *settings)
 	bfree(filter->file);
 	if (path)
 		filter->file = bstrdup(path);
+	else
+		filter->file = NULL;
 
 	obs_enter_graphics();
 	gs_image_file_free(&filter->image);
@@ -75,8 +77,10 @@ static obs_properties_t *color_grade_filter_properties(void *data)
 	if (s && s->file && *s->file) {
 		dstr_copy(&path, s->file);
 	} else {
-		dstr_copy(&path, obs_module_file("LUTs"));
+		char *lut_dir = obs_module_file("LUTs");
+		dstr_copy(&path, lut_dir);
 		dstr_cat_ch(&path, '/');
+		bfree(lut_dir);
 	}
 
 	dstr_replace(&path, "\\", "/");
@@ -90,6 +94,7 @@ static obs_properties_t *color_grade_filter_properties(void *data)
 			TEXT_AMOUNT, 0, 1, 0.01);
 
 	dstr_free(&filter_str);
+	dstr_free(&path);
 
 	UNUSED_PARAMETER(data);
 	return props;

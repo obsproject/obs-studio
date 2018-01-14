@@ -15,6 +15,9 @@ Quick Links for Contributing
  - Development forum:
    https://obsproject.com/forum/list/general-development.21/
 
+ - Developer/API Documentation:
+   https://obsproject.com/docs
+
  - To contribute language translations, do not make pull requests.
    Instead, use crowdin.  Read here for more information:
    https://obsproject.com/forum/threads/how-to-contribute-translations-for-obs.16327/
@@ -59,32 +62,3 @@ Commit Guidlines
      libobs: Fix source not displaying
 
  - If you still need examples, please view the commit history.
-
-Headers
--------
-
-  There's no formal documentation as of yet, so it's recommended to read
-  the headers (which are heavily commented) to learn the API.
-
-  Here are the most important headers to check out::
-
-    libobs/obs.h                Main header
-
-    libobs/obs-module.h         Main header for plugin modules
-
-    libobs/obs-source.h         Creating video/audio sources
-
-    libobs/obs-output.h         Creating outputs
-
-    libobs/obs-encoder.h        Implementing encoders
-
-    libobs/obs-service.h        Implementing custom streaming services
-
-    libobs/graphics/graphics.h  Graphics API
-
-    UI/obs-frontend-api/obs-frontend-api.h
-                                Front-end API
-
-  If you would like to learn from example, examine the default plugins
-  (in the <plugins> subdirectory).  All features of OBS Studio are
-  implemented as plugins.

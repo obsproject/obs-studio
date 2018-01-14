@@ -165,7 +165,10 @@ static void on_audio_playback(void *param, obs_source_t *source,
 	UINT32 pad = 0;
 	monitor->client->lpVtbl->GetCurrentPadding(monitor->client, &pad);
 
-	if (monitor->source_has_video) {
+	bool decouple_audio =
+		source->async_unbuffered && source->async_decoupled;
+
+	if (monitor->source_has_video && !decouple_audio) {
 		uint64_t ts = audio_data->timestamp - ts_offset;
 
 		if (!process_audio_delay(monitor, (float**)(&resample_data[0]),
@@ -226,14 +229,11 @@ static inline void audio_monitor_free(struct audio_monitor *monitor)
 static enum speaker_layout convert_speaker_layout(DWORD layout, WORD channels)
 {
 	switch (layout) {
-	case KSAUDIO_SPEAKER_QUAD:             return SPEAKERS_QUAD;
 	case KSAUDIO_SPEAKER_2POINT1:          return SPEAKERS_2POINT1;
+	case KSAUDIO_SPEAKER_SURROUND:         return SPEAKERS_4POINT0;
 	case KSAUDIO_SPEAKER_4POINT1:          return SPEAKERS_4POINT1;
-	case KSAUDIO_SPEAKER_SURROUND:         return SPEAKERS_SURROUND;
 	case KSAUDIO_SPEAKER_5POINT1:          return SPEAKERS_5POINT1;
-	case KSAUDIO_SPEAKER_5POINT1_SURROUND: return SPEAKERS_5POINT1_SURROUND;
 	case KSAUDIO_SPEAKER_7POINT1:          return SPEAKERS_7POINT1;
-	case KSAUDIO_SPEAKER_7POINT1_SURROUND: return SPEAKERS_7POINT1_SURROUND;
 	}
 
 	return (enum speaker_layout)channels;

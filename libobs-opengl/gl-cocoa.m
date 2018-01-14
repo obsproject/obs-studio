@@ -73,12 +73,14 @@ static NSOpenGLContext *gl_context_create(void)
 struct gl_platform *gl_platform_create(gs_device_t *device, uint32_t adapter)
 {
 	struct gl_platform *plat = bzalloc(sizeof(struct gl_platform));
+	GLint interval = 0;
 
 	plat->context = gl_context_create();
 	if (!plat->context)
 		goto fail;
 
 	[plat->context makeCurrentContext];
+	[plat->context setValues:&interval forParameter:NSOpenGLCPSwapInterval];
 
 	if (!gladLoadGL())
 		goto fail;

@@ -28,11 +28,7 @@
 #include "effect-parser.h"
 #include "effect.h"
 
-#ifdef _MSC_VER
-static __declspec(thread) graphics_t *thread_graphics = NULL;
-#else /* assume GCC or that other compiler we dare not mention */
-static __thread graphics_t *thread_graphics = NULL;
-#endif
+static THREAD_LOCAL graphics_t *thread_graphics = NULL;
 
 static inline bool gs_obj_valid(const void *obj, const char *f,
 		const char *name)
@@ -1468,6 +1464,46 @@ gs_vertbuffer_t *gs_vertexbuffer_create(struct gs_vb_data *data,
 	if (!gs_valid("gs_vertexbuffer_create"))
 		return NULL;
 
+	if (data && data->num && (flags & GS_DUP_BUFFER) != 0) {
+		struct gs_vb_data *new_data = gs_vbdata_create();
+
+		new_data->num = data->num;
+
+#define DUP_VAL(val) \
+		do { \
+			if (data->val) \
+				new_data->val = bmemdup(data->val, \
+						sizeof(*data->val) * \
+						data->num); \
+		} while (false)
+
+		DUP_VAL(points);
+		DUP_VAL(normals);
+		DUP_VAL(tangents);
+		DUP_VAL(colors);
+#undef DUP_VAL
+
+		if (data->tvarray && data->num_tex) {
+			new_data->num_tex = data->num_tex;
+			new_data->tvarray = bzalloc(
+					sizeof(struct gs_tvertarray) *
+					data->num_tex);
+
+			for (size_t i = 0; i < data->num_tex; i++) {
+				struct gs_tvertarray *tv = &data->tvarray[i];
+				struct gs_tvertarray *new_tv =
+					&new_data->tvarray[i];
+				size_t size = tv->width * sizeof(float);
+
+				new_tv->width = tv->width;
+				new_tv->array = bmemdup(tv->array,
+						size * data->num);
+			}
+		}
+
+		data = new_data;
+	}
+
 	return graphics->exports.device_vertexbuffer_create(graphics->device,
 			data, flags);
 }
@@ -1479,6 +1515,13 @@ gs_indexbuffer_t *gs_indexbuffer_create(enum gs_index_type type,
 
 	if (!gs_valid("gs_indexbuffer_create"))
 		return NULL;
+
+	if (indices && num && (flags & GS_DUP_BUFFER) != 0) {
+		size_t size = type == GS_UNSIGNED_SHORT
+			? sizeof(unsigned short)
+			: sizeof(unsigned long);
+		indices = bmemdup(indices, size * num);
+	}
 
 	return graphics->exports.device_indexbuffer_create(graphics->device,
 			type, indices, num, flags);
@@ -2430,6 +2473,16 @@ void gs_vertexbuffer_flush(gs_vertbuffer_t *vertbuffer)
 	thread_graphics->exports.gs_vertexbuffer_flush(vertbuffer);
 }
 
+void gs_vertexbuffer_flush_direct(gs_vertbuffer_t *vertbuffer,
+		const struct gs_vb_data *data)
+{
+	if (!gs_valid_p2("gs_vertexbuffer_flush_direct", vertbuffer, data))
+		return;
+
+	thread_graphics->exports.gs_vertexbuffer_flush_direct(vertbuffer,
+			data);
+}
+
 struct gs_vb_data *gs_vertexbuffer_get_data(const gs_vertbuffer_t *vertbuffer)
 {
 	if (!gs_valid_p("gs_vertexbuffer_get_data", vertbuffer))
@@ -2456,6 +2509,15 @@ void   gs_indexbuffer_flush(gs_indexbuffer_t *indexbuffer)
 		return;
 
 	thread_graphics->exports.gs_indexbuffer_flush(indexbuffer);
+}
+
+void   gs_indexbuffer_flush_direct(gs_indexbuffer_t *indexbuffer,
+		const void *data)
+{
+	if (!gs_valid_p2("gs_indexbuffer_flush_direct", indexbuffer, data))
+		return;
+
+	thread_graphics->exports.gs_indexbuffer_flush_direct(indexbuffer, data);
 }
 
 void  *gs_indexbuffer_get_data(const gs_indexbuffer_t *indexbuffer)

@@ -51,6 +51,9 @@ struct rtmp_stream {
 	struct circlebuf packets;
 	bool             sent_headers;
 
+	bool             got_first_video;
+	int64_t          start_dts_offset;
+
 	volatile bool    connecting;
 	pthread_t        connect_thread;
 

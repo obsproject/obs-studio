@@ -1,16 +1,32 @@
 #include <obs-module.h>
 
+#define TIMING_TIME  0
+#define TIMING_FRAME 1
+
+enum fade_style {
+	FADE_STYLE_FADE_OUT_FADE_IN,
+	FADE_STYLE_CROSS_FADE
+};
+
 struct stinger_info {
 	obs_source_t *source;
 
 	obs_source_t *media_source;
 
 	uint64_t duration_ns;
+	uint64_t duration_frames;
 	uint64_t transition_point_ns;
+	uint64_t transition_point_frame;
 	float transition_point;
 	float transition_a_mul;
 	float transition_b_mul;
 	bool transitioning;
+	bool transition_point_is_frame;
+	int monitoring_type;
+	enum fade_style fade_style;
+
+	float (*mix_a)(void *data, float t);
+	float (*mix_b)(void *data, float t);
 };
 
 static const char *stinger_get_name(void *type_data)
@@ -18,6 +34,11 @@ static const char *stinger_get_name(void *type_data)
 	UNUSED_PARAMETER(type_data);
 	return obs_module_text("StingerTransition");
 }
+
+static float mix_a_fade_in_out(void *data, float t);
+static float mix_b_fade_in_out(void *data, float t);
+static float mix_a_cross_fade(void *data, float t);
+static float mix_b_cross_fade(void *data, float t);
 
 static void stinger_update(void *data, obs_data_t *settings)
 {
@@ -32,9 +53,33 @@ static void stinger_update(void *data, obs_data_t *settings)
 			media_settings);
 	obs_data_release(media_settings);
 
-	int64_t point_ms = obs_data_get_int(settings, "transition_point");
+	int64_t point = obs_data_get_int(settings, "transition_point");
 
-	s->transition_point_ns = (uint64_t)(point_ms * 1000000LL);
+	s->transition_point_is_frame =
+			obs_data_get_int(settings, "tp_type") == TIMING_FRAME;
+
+	if (s->transition_point_is_frame)
+		s->transition_point_frame = (uint64_t)point;
+	else
+		s->transition_point_ns = (uint64_t)(point * 1000000LL);
+
+	s->monitoring_type = (int)obs_data_get_int(settings,"audio_monitoring");
+	obs_source_set_monitoring_type(s->media_source, s->monitoring_type);
+
+	s->fade_style = (enum fade_style)obs_data_get_int(settings,
+			"audio_fade_style");
+
+	switch (s->fade_style) {
+	default:
+	case FADE_STYLE_FADE_OUT_FADE_IN:
+		s->mix_a = mix_a_fade_in_out;
+		s->mix_b = mix_b_fade_in_out;
+		break;
+	case FADE_STYLE_CROSS_FADE:
+		s->mix_a = mix_a_cross_fade;
+		s->mix_b = mix_b_cross_fade;
+		break;
+	}
 }
 
 static void *stinger_create(obs_data_t *settings, obs_source_t *source)
@@ -42,6 +87,8 @@ static void *stinger_create(obs_data_t *settings, obs_source_t *source)
 	struct stinger_info *s = bzalloc(sizeof(*s));
 
 	s->source = source;
+	s->mix_a = mix_a_fade_in_out;
+	s->mix_b = mix_b_fade_in_out;
 
 	obs_transition_enable_fixed(s->source, true, 0);
 	obs_source_update(source, settings);
@@ -96,16 +143,28 @@ static inline float calc_fade(float t, float mul)
 	return t > 1.0f ? 1.0f : t;
 }
 
-static float mix_a(void *data, float t)
+static float mix_a_fade_in_out(void *data, float t)
 {
 	struct stinger_info *s = data;
 	return 1.0f - calc_fade(t, s->transition_a_mul);
 }
 
-static float mix_b(void *data, float t)
+static float mix_b_fade_in_out(void *data, float t)
 {
 	struct stinger_info *s = data;
 	return 1.0f - calc_fade(1.0f - t, s->transition_b_mul);
+}
+
+static float mix_a_cross_fade(void *data, float t)
+{
+	UNUSED_PARAMETER(data);
+	return 1.0f - t;
+}
+
+static float mix_b_cross_fade(void *data, float t)
+{
+	UNUSED_PARAMETER(data);
+	return t;
 }
 
 static bool stinger_audio_render(void *data, uint64_t *ts_out,
@@ -122,7 +181,7 @@ static bool stinger_audio_render(void *data, uint64_t *ts_out,
 	}
 
 	bool success = obs_transition_audio_render(s->source, ts_out,
-		audio, mixers, channels, sample_rate, mix_a, mix_b);
+		audio, mixers, channels, sample_rate, s->mix_a, s->mix_b);
 	if (!ts)
 		return success;
 
@@ -165,12 +224,19 @@ static void stinger_transition_start(void *data)
 		}
 
 		proc_handler_call(ph, "get_duration", &cd);
-
+		proc_handler_call(ph, "get_nb_frames", &cd);
 		s->duration_ns = (uint64_t)calldata_int(&cd, "duration");
+		s->duration_frames = (uint64_t)calldata_int(&cd, "num_frames");
 
-		s->transition_point = (float)(
-			(long double)s->transition_point_ns /
-			(long double)s->duration_ns);
+		if (s->transition_point_is_frame)
+			s->transition_point = (float)(
+				(long double)s->transition_point_frame /
+				(long double)s->duration_frames);
+		else
+			s->transition_point = (float)(
+				(long double)s->transition_point_ns /
+				(long double)s->duration_ns);
+
 		if (s->transition_point > 1.0f)
 			s->transition_point = 1.0f;
 		else if (s->transition_point < 0.001f)
@@ -219,6 +285,21 @@ static void stinger_enum_all_sources(void *data,
 #define FILE_FILTER \
 	"Video Files (*.mp4 *.ts *.mov *.wmv *.flv *.mkv *.avi *.gif *.webm);;"
 
+static bool transition_point_type_modified(obs_properties_t *ppts,
+		obs_property_t *p, obs_data_t *s)
+{
+	int64_t type = obs_data_get_int(s, "tp_type");
+	p = obs_properties_get(ppts, "transition_point");
+
+	if (type == TIMING_TIME)
+		obs_property_set_description(p,
+				obs_module_text("TransitionPoint"));
+	else
+		obs_property_set_description(p,
+				obs_module_text("TransitionPointFrame"));
+	return true;
+}
+
 static obs_properties_t *stinger_properties(void *data)
 {
 	obs_properties_t *ppts = obs_properties_create();
@@ -229,16 +310,51 @@ static obs_properties_t *stinger_properties(void *data)
 			obs_module_text("VideoFile"),
 			OBS_PATH_FILE,
 			FILE_FILTER, NULL);
+	obs_property_t *list = obs_properties_add_list(ppts, "tp_type",
+			obs_module_text("TransitionPointType"),
+			OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
+	obs_property_list_add_int(list,
+			obs_module_text("TransitionPointTypeTime"),
+			TIMING_TIME);
+	obs_property_list_add_int(list,
+			obs_module_text("TransitionPointTypeFrame"),
+			TIMING_FRAME);
+
+	obs_property_set_modified_callback(list, transition_point_type_modified);
+
 	obs_properties_add_int(ppts, "transition_point",
 			obs_module_text("TransitionPoint"),
 			0, 120000, 1);
+
+	obs_property_t *monitor_list = obs_properties_add_list(ppts,
+			"audio_monitoring", obs_module_text("AudioMonitoring"),
+			OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
+	obs_property_list_add_int(monitor_list,
+			obs_module_text("AudioMonitoring.None"),
+			OBS_MONITORING_TYPE_NONE);
+	obs_property_list_add_int(monitor_list,
+			obs_module_text("AudioMonitoring.MonitorOnly"),
+			OBS_MONITORING_TYPE_MONITOR_ONLY);
+	obs_property_list_add_int(monitor_list,
+			obs_module_text("AudioMonitoring.Both"),
+			OBS_MONITORING_TYPE_MONITOR_AND_OUTPUT);
+
+	obs_property_t *audio_fade_style = obs_properties_add_list(ppts,
+			"audio_fade_style", obs_module_text("AudioFadeStyle"),
+			OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
+	obs_property_list_add_int(audio_fade_style,
+			obs_module_text("AudioFadeStyle.FadeOutFadeIn"),
+			FADE_STYLE_FADE_OUT_FADE_IN);
+	obs_property_list_add_int(audio_fade_style,
+			obs_module_text("AudioFadeStyle.CrossFade"),
+			FADE_STYLE_CROSS_FADE);
 
 	UNUSED_PARAMETER(data);
 	return ppts;
 }
 
 struct obs_source_info stinger_transition = {
-	.id = "stinger_transition",
+	.id = "obs_stinger_transition",
 	.type = OBS_SOURCE_TYPE_TRANSITION,
 	.get_name = stinger_get_name,
 	.create = stinger_create,

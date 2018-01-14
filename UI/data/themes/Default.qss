@@ -31,6 +31,10 @@
     qproperty-icon: url(:/res/images/up.png);
 }
 
+* [themeID="refreshIconSmall"] {
+    qproperty-icon: url(:/res/images/refresh.png);
+}
+
 * [themeID="downArrowIconSmall"] {
     qproperty-icon: url(:/res/images/down.png);
 }
@@ -55,10 +59,16 @@ OBSHotkeyLabel[hotkeyPairHover=true] {
 /* Volume Control */
 
 VolumeMeter {
-    qproperty-bkColor: rgb(221, 221, 221);
-    qproperty-magColor: rgb(32, 125, 23);
-    qproperty-peakColor: rgb(62, 241, 43);
-    qproperty-peakHoldColor: rgb(0, 0, 0);
+    qproperty-backgroundNominalColor: rgb(15, 100, 15);
+    qproperty-backgroundWarningColor: rgb(100, 100, 15);
+    qproperty-backgroundErrorColor: rgb(100, 15, 15);
+    qproperty-foregroundNominalColor: rgb(50, 200, 50);
+    qproperty-foregroundWarningColor: rgb(255, 200, 50);
+    qproperty-foregroundErrorColor: rgb(200, 50, 50);
+    qproperty-magnitudeColor: rgb(0, 0, 0);
+    qproperty-majorTickColor: rgb(0, 0, 0);
+    qproperty-minorTickColor: rgb(50, 50, 50);
+    qproperty-peakDecayRate: 23.4; /* Override of the standard PPM Type I rate. */
 }
 
 

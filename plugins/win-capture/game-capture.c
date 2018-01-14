@@ -49,7 +49,7 @@
 #define TEXT_MODE                obs_module_text("Mode")
 #define TEXT_GAME_CAPTURE        obs_module_text("GameCapture")
 #define TEXT_ANY_FULLSCREEN      obs_module_text("GameCapture.AnyFullscreen")
-#define TEXT_SLI_COMPATIBILITY   obs_module_text("Compatibility")
+#define TEXT_SLI_COMPATIBILITY   obs_module_text("SLIFix")
 #define TEXT_ALLOW_TRANSPARENCY  obs_module_text("AllowTransparency")
 #define TEXT_FORCE_SCALING       obs_module_text("GameCapture.ForceScaling")
 #define TEXT_SCALE_RES           obs_module_text("GameCapture.ScaleRes")
@@ -1429,11 +1429,16 @@ static inline void copy_16bit_tex(struct game_capture *gc, int cur_texture,
 
 static void copy_shmem_tex(struct game_capture *gc)
 {
-	int cur_texture = gc->shmem_data->last_tex;
+	int cur_texture;
 	HANDLE mutex = NULL;
 	uint32_t pitch;
 	int next_texture;
 	uint8_t *data;
+
+	if (!gc->shmem_data)
+		return;
+
+	cur_texture = gc->shmem_data->last_tex;
 
 	if (cur_texture < 0 || cur_texture > 1)
 		return;

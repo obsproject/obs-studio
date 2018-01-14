@@ -15,11 +15,13 @@ Quick Links
 
  - Website: https://obsproject.com
 
- - Help/Guides: https://github.com/jp9000/obs-studio/wiki
+ - Help/Documentation/Guides: https://github.com/jp9000/obs-studio/wiki
 
  - Forums: https://obsproject.com/forum/
 
  - Build Instructions: https://github.com/jp9000/obs-studio/wiki/Install-Instructions
+
+ - Developer/API Documentation: https://obsproject.com/docs
 
  - Bug Tracker: https://obsproject.com/mantis/
 
@@ -33,6 +35,9 @@ Contributing
    the coding and commit guidelines:
    https://github.com/jp9000/obs-studio/blob/master/CONTRIBUTING.rst
 
+ - Developer/API documentation can be found here:
+   https://obsproject.com/docs
+
  - If you wish to contribute translations, do not submit pull requests.
    Instead, please use Crowdin.  For more information read this thread:
    https://obsproject.com/forum/threads/how-to-contribute-translations-for-obs.16327/
@@ -41,4 +46,4 @@ Contributing
    our forums or in our community chat.  Please limit support to topics
    you fully understand -- bad advice is worse than no advice.  When it
    comes to something that you don't fully know or understand, please
-   defer to the official help or official channels. 
+   defer to the official help or official channels.

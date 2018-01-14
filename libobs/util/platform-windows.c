@@ -14,16 +14,19 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+#define PSAPI_VERSION 1
 #include <windows.h>
 #include <mmsystem.h>
 #include <shellapi.h>
 #include <shlobj.h>
 #include <intrin.h>
+#include <psapi.h>
 
 #include "base.h"
 #include "platform.h"
 #include "darray.h"
 #include "dstr.h"
+#include "windows/win-registry.h"
 #include "windows/win-version.h"
 
 #include "../../deps/w32-pthreads/pthread.h"
@@ -47,7 +50,7 @@ static inline uint32_t get_winver(void)
 		winver = (ver.major << 16) | ver.minor;
 	}
 
-	return winver;	
+	return winver;
 }
 
 void *os_dlopen(const char *path)
@@ -798,6 +801,32 @@ bool is_64_bit_windows(void)
 #endif
 }
 
+void get_reg_dword(HKEY hkey, LPCWSTR sub_key, LPCWSTR value_name,
+		struct reg_dword *info)
+{
+	struct reg_dword reg = {0};
+	HKEY key;
+	LSTATUS status;
+
+	status = RegOpenKeyEx(hkey, sub_key, 0, KEY_READ, &key);
+
+	if (status != ERROR_SUCCESS) {
+		info->status = status;
+		info->size = 0;
+		info->return_value = 0;
+		return;
+	}
+
+	reg.size = sizeof(reg.return_value);
+
+	reg.status = RegQueryValueExW(key, value_name, NULL, NULL,
+			(LPBYTE)&reg.return_value, &reg.size);
+
+	RegCloseKey(key);
+
+	*info = reg;
+}
+
 #define WINVER_REG_KEY L"SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion"
 
 void get_win_ver(struct win_version_info *info)
@@ -812,7 +841,7 @@ void get_win_ver(struct win_version_info *info)
 		get_dll_ver(L"kernel32", &ver);
 		got_version = true;
 
-		if (ver.major == 10 && ver.revis == 0) {
+		if (ver.major == 10) {
 			HKEY    key;
 			DWORD   size, win10_revision;
 			LSTATUS status;
@@ -827,7 +856,8 @@ void get_win_ver(struct win_version_info *info)
 			status = RegQueryValueExW(key, L"UBR", NULL, NULL,
 					(LPBYTE)&win10_revision, &size);
 			if (status == ERROR_SUCCESS)
-				ver.revis = (int)win10_revision;
+				ver.revis = (int)win10_revision > ver.revis ?
+						(int)win10_revision : ver.revis;
 
 			RegCloseKey(key);
 		}
@@ -945,6 +975,55 @@ int os_get_logical_cores(void)
 	if (!core_count_initialized)
 		os_get_cores_internal();
 	return logical_cores;
+}
+
+static inline bool os_get_sys_memory_usage_internal(MEMORYSTATUSEX *msex)
+{
+	if (!GlobalMemoryStatusEx(msex))
+		return false;
+	return true;
+}
+
+uint64_t os_get_sys_free_size(void)
+{
+	MEMORYSTATUSEX msex = {sizeof(MEMORYSTATUSEX)};
+	if (!os_get_sys_memory_usage_internal(&msex))
+		return 0;
+	return msex.ullAvailPhys;
+}
+
+static inline bool os_get_proc_memory_usage_internal(PROCESS_MEMORY_COUNTERS *pmc)
+{
+	if (!GetProcessMemoryInfo(GetCurrentProcess(), pmc, sizeof(*pmc)))
+		return false;
+	return true;
+}
+
+bool os_get_proc_memory_usage(os_proc_memory_usage_t *usage)
+{
+	PROCESS_MEMORY_COUNTERS pmc = {sizeof(PROCESS_MEMORY_COUNTERS)};
+	if (!os_get_proc_memory_usage_internal(&pmc))
+		return false;
+
+	usage->resident_size = pmc.WorkingSetSize;
+	usage->virtual_size  = pmc.PagefileUsage;
+	return true;
+}
+
+uint64_t os_get_proc_resident_size(void)
+{
+	PROCESS_MEMORY_COUNTERS pmc = {sizeof(PROCESS_MEMORY_COUNTERS)};
+	if (!os_get_proc_memory_usage_internal(&pmc))
+		return 0;
+	return pmc.WorkingSetSize;
+}
+
+uint64_t os_get_proc_virtual_size(void)
+{
+	PROCESS_MEMORY_COUNTERS pmc = {sizeof(PROCESS_MEMORY_COUNTERS)};
+	if (!os_get_proc_memory_usage_internal(&pmc))
+		return 0;
+	return pmc.PagefileUsage;
 }
 
 uint64_t os_get_free_disk_space(const char *dir)

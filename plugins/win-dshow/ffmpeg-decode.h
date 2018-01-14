@@ -49,12 +49,12 @@ struct ffmpeg_decode {
 extern int ffmpeg_decode_init(struct ffmpeg_decode *decode, enum AVCodecID id);
 extern void ffmpeg_decode_free(struct ffmpeg_decode *decode);
 
-extern int ffmpeg_decode_audio(struct ffmpeg_decode *decode,
+extern bool ffmpeg_decode_audio(struct ffmpeg_decode *decode,
 		uint8_t *data, size_t size,
 		struct obs_source_audio *audio,
 		bool *got_output);
 
-extern int ffmpeg_decode_video(struct ffmpeg_decode *decode,
+extern bool ffmpeg_decode_video(struct ffmpeg_decode *decode,
 		uint8_t *data, size_t size, long long *ts,
 		struct obs_source_frame *frame,
 		bool *got_output);

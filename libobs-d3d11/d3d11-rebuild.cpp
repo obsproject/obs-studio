@@ -305,7 +305,11 @@ try {
 			((gs_pixel_shader*)obj)->Rebuild(dev);
 			break;
 		case gs_type::gs_duplicator:
-			((gs_duplicator*)obj)->Start();
+			try {
+				((gs_duplicator*)obj)->Start();
+			} catch (...) {
+				((gs_duplicator*)obj)->Release();
+			}
 			break;
 		case gs_type::gs_swap_chain:
 			((gs_swap_chain*)obj)->Rebuild(dev);

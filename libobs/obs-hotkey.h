@@ -22,9 +22,15 @@ extern "C" {
 #endif
 
 typedef size_t obs_hotkey_id;
-#define OBS_INVALID_HOTKEY_ID (~(obs_hotkey_id)0)
 typedef size_t obs_hotkey_pair_id;
+
+#ifndef SWIG
+#define OBS_INVALID_HOTKEY_ID (~(obs_hotkey_id)0)
 #define OBS_INVALID_HOTKEY_PAIR_ID (~(obs_hotkey_pair_id)0)
+#else
+const size_t OBS_INVALID_HOTKEY_ID = (size_t)-1;
+const size_t OBS_INVALID_HOTKEY_PAIR_ID = (size_t)-1;
+#endif
 
 enum obs_key {
 #define OBS_HOTKEY(x) x,
@@ -68,6 +74,7 @@ EXPORT obs_hotkey_id obs_hotkey_binding_get_hotkey_id(
 EXPORT obs_hotkey_t *obs_hotkey_binding_get_hotkey(
 		obs_hotkey_binding_t *binding);
 
+#ifndef SWIG
 struct obs_hotkeys_translations {
 	const char *insert;
 	const char *del;
@@ -115,6 +122,7 @@ struct obs_hotkeys_translations {
  * the default English translations for that specific operating system. */
 EXPORT void obs_hotkeys_set_translations_s(
 		struct obs_hotkeys_translations *translations, size_t size);
+#endif
 
 #define obs_hotkeys_set_translations(translations) \
 	obs_hotkeys_set_translations_s(translations, \
@@ -277,7 +285,7 @@ EXPORT int obs_key_to_virtual_key(obs_key_t key);
 EXPORT const char *obs_key_to_name(obs_key_t key);
 EXPORT obs_key_t obs_key_from_name(const char *name);
 
-inline bool obs_key_combination_is_empty(obs_key_combination_t combo)
+static inline bool obs_key_combination_is_empty(obs_key_combination_t combo)
 {
 	return !combo.modifiers && combo.key == OBS_KEY_NONE;
 }

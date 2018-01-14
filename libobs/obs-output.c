@@ -283,42 +283,43 @@ static void log_frame_info(struct obs_output *output)
 {
 	struct obs_core_video *video = &obs->video;
 
-	uint32_t encoded_frames  = video_output_get_total_frames(output->video);
-
-	int64_t encoded_temp = (int64_t)encoded_frames
-		- (int64_t)output->starting_frame_count;
-	uint32_t encoded = encoded_temp > 0 ? (uint32_t)encoded_temp : 0;
-
-	int64_t drawn_temp = (int64_t)video->total_frames
-		- (int64_t)output->starting_drawn_count;
-	uint32_t drawn = drawn_temp > 0 ? (uint32_t)drawn_temp : 0;
-
-	int64_t lagged_temp = (int64_t)video->total_frames
-		- (int64_t)output->starting_lagged_count;
-	uint32_t lagged = lagged_temp > 0 ? (uint32_t)lagged_temp : 0;
+	uint32_t drawn  = video->total_frames - output->starting_drawn_count;
+	uint32_t lagged = video->lagged_frames - output->starting_lagged_count;
 
 	int dropped = obs_output_get_frames_dropped(output);
+	int total = output->total_frames;
 
 	double percentage_lagged = 0.0f;
 	double percentage_dropped = 0.0f;
 
-	if (encoded)
-		percentage_dropped = (double)dropped / (double)encoded * 100.0;
 	if (drawn)
 		percentage_lagged = (double)lagged  / (double)drawn * 100.0;
+	if (dropped)
+		percentage_dropped = (double)dropped / (double)total * 100.0;
 
 	blog(LOG_INFO, "Output '%s': stopping", output->context.name);
-	blog(LOG_INFO, "Output '%s': Total encoded frames: %"PRIu32,
-			output->context.name, encoded);
-	blog(LOG_INFO, "Output '%s': Total drawn frames: %"PRIu32,
-			output->context.name, drawn);
+	if (!dropped || !total)
+		blog(LOG_INFO, "Output '%s': Total frames output: %d",
+				output->context.name, total);
+	else
+		blog(LOG_INFO, "Output '%s': Total frames output: %d"
+				" (%d attempted)",
+				output->context.name, total - dropped, total);
+
+	if (!lagged || !drawn)
+		blog(LOG_INFO, "Output '%s': Total drawn frames: %"PRIu32,
+				output->context.name, drawn);
+	else
+		blog(LOG_INFO, "Output '%s': Total drawn frames: %"PRIu32
+				" (%"PRIu32" attempted)",
+				output->context.name, drawn - lagged, drawn);
 
 	if (drawn && lagged)
 		blog(LOG_INFO, "Output '%s': Number of lagged frames due "
 				"to rendering lag/stalls: %"PRIu32" (%0.1f%%)",
 				output->context.name,
 				lagged, percentage_lagged);
-	if (encoded && dropped)
+	if (total && dropped)
 		blog(LOG_INFO, "Output '%s': Number of dropped frames due "
 				"to insufficient bandwidth/connection stalls: "
 				"%d (%0.1f%%)",
@@ -1300,7 +1301,7 @@ static bool initialize_interleaved_packets(struct obs_output *output)
 	}
 
 	/* get new offsets */
-	output->video_offset = video->dts;
+	output->video_offset = video->pts;
 	for (size_t i = 0; i < audio_mixes; i++)
 		output->audio_offsets[i] = audio[i]->dts;
 
@@ -1336,8 +1337,12 @@ static inline void insert_interleaved_packet(struct obs_output *output,
 		struct encoder_packet *cur_packet;
 		cur_packet = output->interleaved_packets.array + idx;
 
-		if (out->dts_usec < cur_packet->dts_usec)
+		if (out->dts_usec == cur_packet->dts_usec &&
+		    out->type == OBS_ENCODER_VIDEO) {
 			break;
+		} else if (out->dts_usec < cur_packet->dts_usec) {
+			break;
+		}
 	}
 
 	da_insert(output->interleaved_packets, idx, out);

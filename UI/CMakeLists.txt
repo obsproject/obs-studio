@@ -1,4 +1,3 @@
-option(ENABLE_UI "Enables the OBS user interfaces" ON)
 if(DISABLE_UI)
 	message(STATUS "UI disabled")
 	return()
@@ -270,6 +269,17 @@ target_link_libraries(obs
 	${FFMPEG_LIBRARIES}
 	${LIBCURL_LIBRARIES}
 	${obs_PLATFORM_LIBRARIES})
+
+if (APPLE)
+	set_property(
+		TARGET obs
+		APPEND
+		PROPERTY INSTALL_RPATH
+		"/usr/local/Cellar/python3/3.6.4/Frameworks/Python.framework/Versions/3.6/lib/"
+		"/Library/Frameworks/Python.framework/Versions/3.6/lib/"
+		"/opt/local/Library/Frameworks/Python.framework/Versions/3.6/lib/"
+	)
+endif()
 
 define_graphic_modules(obs)
 

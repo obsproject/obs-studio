@@ -120,45 +120,51 @@ void gs_vertexbuffer_destroy(gs_vertbuffer_t *vb)
 	}
 }
 
-void gs_vertexbuffer_flush(gs_vertbuffer_t *vb)
+static inline void gs_vertexbuffer_flush_internal(gs_vertbuffer_t *vb,
+		const struct gs_vb_data *data)
 {
 	size_t i;
+	size_t num_tex = data->num_tex < vb->data->num_tex
+		? data->num_tex
+		: vb->data->num_tex;
 
 	if (!vb->dynamic) {
 		blog(LOG_ERROR, "vertex buffer is not dynamic");
 		goto failed;
 	}
 
-	if (!update_buffer(GL_ARRAY_BUFFER, vb->vertex_buffer,
-				vb->data->points,
-				vb->data->num * sizeof(struct vec3)))
-		goto failed;
+	if (data->points) {
+		if (!update_buffer(GL_ARRAY_BUFFER, vb->vertex_buffer,
+					data->points,
+					data->num * sizeof(struct vec3)))
+			goto failed;
+	}
 
-	if (vb->normal_buffer) {
+	if (vb->normal_buffer && data->normals) {
 		if (!update_buffer(GL_ARRAY_BUFFER, vb->normal_buffer,
-					vb->data->normals,
-					vb->data->num * sizeof(struct vec3)))
+					data->normals,
+					data->num * sizeof(struct vec3)))
 			goto failed;
 	}
 
-	if (vb->tangent_buffer) {
+	if (vb->tangent_buffer && data->tangents) {
 		if (!update_buffer(GL_ARRAY_BUFFER, vb->tangent_buffer,
-					vb->data->tangents,
-					vb->data->num * sizeof(struct vec3)))
+					data->tangents,
+					data->num * sizeof(struct vec3)))
 			goto failed;
 	}
 
-	if (vb->color_buffer) {
+	if (vb->color_buffer && data->colors) {
 		if (!update_buffer(GL_ARRAY_BUFFER, vb->color_buffer,
-					vb->data->colors,
-					vb->data->num * sizeof(uint32_t)))
+					data->colors,
+					data->num * sizeof(uint32_t)))
 			goto failed;
 	}
 
-	for (i = 0; i < vb->data->num_tex; i++) {
+	for (i = 0; i < num_tex; i++) {
 		GLuint buffer = vb->uv_buffers.array[i];
-		struct gs_tvertarray *tv = vb->data->tvarray+i;
-		size_t size = vb->data->num * tv->width * sizeof(float);
+		struct gs_tvertarray *tv = data->tvarray+i;
+		size_t size = data->num * tv->width * sizeof(float);
 
 		if (!update_buffer(GL_ARRAY_BUFFER, buffer, tv->array, size))
 			goto failed;
@@ -168,6 +174,17 @@ void gs_vertexbuffer_flush(gs_vertbuffer_t *vb)
 
 failed:
 	blog(LOG_ERROR, "gs_vertexbuffer_flush (GL) failed");
+}
+
+void gs_vertexbuffer_flush(gs_vertbuffer_t *vb)
+{
+	gs_vertexbuffer_flush_internal(vb, vb->data);
+}
+
+void gs_vertexbuffer_flush_direct(gs_vertbuffer_t *vb,
+		const struct gs_vb_data *data)
+{
+	gs_vertexbuffer_flush_internal(vb, data);
 }
 
 struct gs_vb_data *gs_vertexbuffer_get_data(const gs_vertbuffer_t *vb)
