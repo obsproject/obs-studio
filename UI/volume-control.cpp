@@ -733,18 +733,11 @@ void VolumeMeter::paintMeter(QPainter &painter, int x, int y,
 			backgroundErrorColor);
 
 	} else {
+		qreal end = errorLength + warningLength + nominalLength;
 		painter.fillRect(
 			minimumPosition, y,
-			nominalLength, height,
-			foregroundNominalColor);
-		painter.fillRect(
-			warningPosition, y,
-			warningLength, height,
-			foregroundWarningColor);
-		painter.fillRect(
-			errorPosition, y,
-			errorLength, height,
-			foregroundErrorColor);
+			end, height,
+			QBrush(foregroundErrorColor));
 	}
 
 	if (peakHoldPosition - 3 < minimumPosition) {
