@@ -25,7 +25,21 @@
 #include <media-io/media-remux.h>
 #include <util/threading.h>
 
+class QStandardItem;
+class QStandardItemModel;
 class RemuxWorker;
+
+enum RemuxEntryState
+{
+	Empty,
+	Ready,
+	Pending,
+	InProgress,
+	Complete,
+	InvalidPath,
+	Error
+};
+Q_DECLARE_METATYPE(RemuxEntryState);
 
 class OBSRemux : public QDialog {
 	Q_OBJECT
@@ -36,9 +50,6 @@ class OBSRemux : public QDialog {
 	std::unique_ptr<Ui::OBSRemux> ui;
 
 	const char *recPath;
-
-	void BrowseInput();
-	void BrowseOutput();
 
 	bool Stop();
 
@@ -51,13 +62,22 @@ public:
 
 	using job_t = std::shared_ptr<struct media_remux_job>;
 
+protected:
+	void dropEvent(QDropEvent *ev);
+	void dragEnterEvent(QDragEnterEvent *ev);
+
+private:
+	QStandardItemModel *tableModel;
+
 private slots:
-	void inputChanged(const QString &str);
+	void inputCellChanged(QStandardItem *item);
 
 public slots:
 	void updateProgress(float percent);
+	void updateEntryState(int key, RemuxEntryState newState);
 	void remuxFinished(bool success);
 	void Remux();
+	void clearFinished();
 
 signals:
 	void remux();
@@ -66,7 +86,25 @@ signals:
 class RemuxWorker : public QObject {
 	Q_OBJECT
 
-	OBSRemux::job_t job;
+	struct JobInfo
+	{
+		int jobKey;
+
+		QString sourcePath;
+		QString targetPath;
+
+		JobInfo(int key, const QString &source, const QString &target)
+		: jobKey    (key),
+		  sourcePath(source),
+		  targetPath(target)
+		{
+
+		}
+	};
+
+	QList<JobInfo> jobQueue;
+
+	os_event_t *wait;
 	os_event_t *stop;
 
 	float lastProgress;
@@ -80,6 +118,7 @@ private slots:
 
 signals:
 	void updateProgress(float percent);
+	void updateEntryState(int key, RemuxEntryState newState);
 	void remuxFinished(bool success);
 
 	friend class OBSRemux;
