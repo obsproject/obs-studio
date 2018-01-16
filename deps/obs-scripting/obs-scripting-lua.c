@@ -31,12 +31,20 @@
 # define ARCH_DIR "32bit"
 #endif
 
+#ifdef __APPLE__
+# define SO_EXT "dylib"
+#elif _WIN32
+# define SO_EXT "dll"
+#else
+# define SO_EXT "so"
+#endif
+
 static const char *startup_script_template = "\
 for val in pairs(package.preload) do\n\
 	package.preload[val] = nil\n\
 end\n\
-require \"obslua\"\n\
-package.path = package.path .. \"%s\"\n";
+package.cpath = package.cpath .. \";\" .. \"%s\" .. \"/?." SO_EXT "\"\n\
+require \"obslua\"\n";
 
 static const char *get_script_path_func = "\
 function script_path()\n\
@@ -1267,8 +1275,7 @@ void obs_lua_load(void)
 	/* ---------------------------------------------- */
 	/* Initialize Lua startup script                  */
 
-	dstr_printf(&tmp, startup_script_template,
-			dep_paths.array);
+	dstr_printf(&tmp, startup_script_template, SCRIPT_DIR);
 	startup_script = tmp.array;
 
 	dstr_free(&dep_paths);
