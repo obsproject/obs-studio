@@ -271,6 +271,7 @@ target_link_libraries(obs
 	${obs_PLATFORM_LIBRARIES})
 
 if (APPLE)
+	set_target_properties(obs PROPERTIES LINK_FLAGS "-pagezero_size 10000 -image_base 100000000")
 	set_property(
 		TARGET obs
 		APPEND
