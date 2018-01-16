@@ -206,7 +206,7 @@ fail:
 		pthread_mutex_unlock(&data->mutex);
 	}
 
-	if (!success) {
+	if (!success && script) {
 		lua_close(script);
 	}
 
