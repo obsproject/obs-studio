@@ -3908,11 +3908,15 @@ static void custom_audio_render(obs_source_t *source, uint32_t mixers,
 		return;
 
 	for (size_t mix = 0; mix < MAX_AUDIO_MIXES; mix++) {
-		if ((source->audio_mixers & (1 << mix)) == 0) {
+		uint32_t mix_bit = 1 << mix;
+
+		if ((mixers & mix_bit) == 0)
+			continue;
+
+		if ((source->audio_mixers & mix_bit) == 0) {
 			memset(source->audio_output_buf[mix][0], 0,
 					sizeof(float) * AUDIO_OUTPUT_FRAMES *
 					channels);
-			continue;
 		}
 	}
 
