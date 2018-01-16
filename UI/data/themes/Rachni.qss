@@ -1165,6 +1165,21 @@ QSlider::handle:hover {
 QSlider::handle:disabled {
 	background-color: rgb(122, 121, 122);
 }
+/**********************/
+/* --- Table View --- */
+/**********************/
+
+QTableView {
+    gridline-color: rgb(118, 121, 124); /* Light Gray */
+}
+
+QHeaderView::section {
+    background-color: rgb(35, 38, 41); /* Dark Gray */
+    color: rgb(239, 240, 241); /* "White" */
+    border: 1px solid rgb(118, 121, 124); /* Light Gray */
+    border-radius: 2px;
+    padding: 4px;
+}
 
 /****************/
 /* --- Misc --- */
@@ -1190,7 +1205,6 @@ QFrame[frameShape="0"] {
 	border-radius: 2px;
 	border: 1px transparent;
 }
-
 
 /* Misc style tweaks for dark themes */
 * [themeID="error"] {
