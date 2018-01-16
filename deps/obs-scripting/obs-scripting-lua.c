@@ -103,6 +103,8 @@ static bool load_lua_script(struct obs_lua_script *data)
 		goto fail;
 	}
 
+	current_lua_script = data;
+
 	add_lua_source_functions(script);
 	add_hook_functions(script);
 #if UI_ENABLED
@@ -162,8 +164,6 @@ static bool load_lua_script(struct obs_lua_script *data)
 		data->save = luaL_ref(script, LUA_REGISTRYINDEX);
 	else
 		data->save = LUA_REFNIL;
-
-	current_lua_script = data;
 
 	lua_getglobal(script, "script_defaults");
 	if (lua_isfunction(script, -1)) {
