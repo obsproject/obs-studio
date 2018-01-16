@@ -111,6 +111,8 @@ static bool load_lua_script(struct obs_lua_script *data)
 		goto fail;
 	}
 
+	current_lua_script = data;
+
 	add_lua_source_functions(script);
 	add_hook_functions(script);
 #if UI_ENABLED
@@ -171,8 +173,6 @@ static bool load_lua_script(struct obs_lua_script *data)
 	else
 		data->save = LUA_REFNIL;
 
-	current_lua_script = data;
-
 	lua_getglobal(script, "script_defaults");
 	if (lua_isfunction(script, -1)) {
 		ls_push_libobs_obj(obs_data_t, data->base.settings, false);
@@ -214,7 +214,7 @@ fail:
 		pthread_mutex_unlock(&data->mutex);
 	}
 
-	if (!success) {
+	if (!success && script) {
 		lua_close(script);
 	}
 
