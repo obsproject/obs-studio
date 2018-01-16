@@ -8,6 +8,7 @@
 #include <graphics/vec3.h>
 #include <graphics/vec2.h>
 #include <graphics/quat.h>
+#include <graphics/image-file.h>
 #include <obs.h>
 #include <obs-hotkey.h>
 #include <obs-source.h>
@@ -81,6 +82,7 @@ static inline void wrap_blog(int log_level, const char *message)
 %include "graphics/vec3.h"
 %include "graphics/vec2.h"
 %include "graphics/quat.h"
+%include "graphics/image-file.h"
 %include "obs-data.h"
 %include "obs-source.h"
 %include "obs-properties.h"
