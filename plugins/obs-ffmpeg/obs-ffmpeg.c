@@ -4,8 +4,11 @@
 #include <libavutil/log.h>
 #include <libavcodec/avcodec.h>
 #include <pthread.h>
+
+#ifndef __APPLE__
 #include "dynlink_cuda.h"
 #include "nvEncodeAPI.h"
+#endif
 
 #define NVENC_CAP 0x30
 
@@ -119,6 +122,8 @@ static void ffmpeg_log_callback(void* context, int level, const char* format,
 cleanup:
 	destroy_log_context(log_context);
 }
+
+#ifndef __APPLE__
 
 static const char *nvenc_check_name = "nvenc_check";
 
@@ -299,6 +304,8 @@ cleanup:
 	return success;
 }
 
+#endif
+
 bool obs_module_load(void)
 {
 	da_init(active_log_contexts);
@@ -312,10 +319,12 @@ bool obs_module_load(void)
 	obs_register_output(&replay_buffer);
 	obs_register_encoder(&aac_encoder_info);
 	obs_register_encoder(&opus_encoder_info);
+#ifndef __APPLE__
 	if (nvenc_supported()) {
 		blog(LOG_INFO, "NVENC supported");
 		obs_register_encoder(&nvenc_encoder_info);
 	}
+#endif
 	return true;
 }
 
