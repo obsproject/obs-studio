@@ -144,16 +144,16 @@ static bool CopyProfile(const char *fromPartial, const char *to)
 {
 	os_glob_t *glob;
 	char path[512];
+	char dir[512];
 	int ret;
 
-	ret = GetConfigPath(path, sizeof(path), "obs-studio/basic/profiles/");
+	ret = GetConfigPath(dir, sizeof(dir), "obs-studio/basic/profiles/");
 	if (ret <= 0) {
 		blog(LOG_WARNING, "Failed to get profiles config path");
 		return false;
 	}
 
-	strcat(path, fromPartial);
-	strcat(path, "/*");
+	snprintf(path, sizeof(path), "%s%s/*", dir, fromPartial);
 
 	if (os_glob(path, 0, &glob) != 0) {
 		blog(LOG_WARNING, "Failed to glob profile '%s'", fromPartial);
@@ -186,6 +186,7 @@ bool OBSBasic::AddProfile(bool create_new, const char *title, const char *text,
 {
 	std::string newName;
 	std::string newDir;
+	std::string newPath;
 	ConfigFile config;
 
 	if (!GetProfileName(this, newName, newDir, title, text, init_text))
@@ -194,27 +195,29 @@ bool OBSBasic::AddProfile(bool create_new, const char *title, const char *text,
 	std::string curDir = config_get_string(App()->GlobalConfig(),
 			"Basic", "ProfileDir");
 
-	char newPath[512];
-	int ret = GetConfigPath(newPath, 512, "obs-studio/basic/profiles/");
+	char baseDir[512];
+	int ret = GetConfigPath(baseDir, sizeof(baseDir),
+			"obs-studio/basic/profiles/");
 	if (ret <= 0) {
 		blog(LOG_WARNING, "Failed to get profiles config path");
 		return false;
 	}
 
-	strcat(newPath, newDir.c_str());
+	newPath = baseDir;
+	newPath += newDir;
 
-	if (os_mkdir(newPath) < 0) {
+	if (os_mkdir(newPath.c_str()) < 0) {
 		blog(LOG_WARNING, "Failed to create profile directory '%s'",
 				newDir.c_str());
 		return false;
 	}
 
 	if (!create_new)
-		CopyProfile(curDir.c_str(), newPath);
+		CopyProfile(curDir.c_str(), newPath.c_str());
 
-	strcat(newPath, "/basic.ini");
+	newPath += "/basic.ini";
 
-	if (config.Open(newPath, CONFIG_OPEN_ALWAYS) != 0) {
+	if (config.Open(newPath.c_str(), CONFIG_OPEN_ALWAYS) != 0) {
 		blog(LOG_ERROR, "Failed to open new config file '%s'",
 				newDir.c_str());
 		return false;
