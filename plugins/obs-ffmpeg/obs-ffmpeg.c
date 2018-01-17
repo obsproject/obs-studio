@@ -3,6 +3,7 @@
 #include <util/platform.h>
 #include <libavutil/log.h>
 #include <libavcodec/avcodec.h>
+#include <libavformat/avformat.h>
 #include <pthread.h>
 
 OBS_DECLARE_MODULE()
@@ -118,6 +119,7 @@ cleanup:
 
 static bool nvenc_supported(void)
 {
+	av_register_all();
 	AVCodec *nvenc = avcodec_find_encoder_by_name("nvenc_h264");
 	void *lib = NULL;
 
