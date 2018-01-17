@@ -4,6 +4,10 @@
 #include <libavutil/log.h>
 #include <libavcodec/avcodec.h>
 #include <pthread.h>
+#include "dynlink_cuda.h"
+#include "nvEncodeAPI.h"
+
+#define NVENC_CAP 0x30
 
 OBS_DECLARE_MODULE()
 OBS_MODULE_USE_DEFAULT_LOCALE("obs-ffmpeg", "en-US")
@@ -116,13 +120,37 @@ cleanup:
 	destroy_log_context(log_context);
 }
 
+static const char *nvenc_check_name = "nvenc_check";
+
+static inline bool push_context_(tcuCtxPushCurrent_v2 *cuCtxPushCurrent,
+		CUcontext context)
+{
+	return cuCtxPushCurrent(context) == CUDA_SUCCESS;
+}
+
+static inline bool pop_context_(tcuCtxPopCurrent_v2 *cuCtxPopCurrent)
+{
+	CUcontext dummy;
+	return cuCtxPopCurrent(&dummy) == CUDA_SUCCESS;
+}
+
+#define push_context(context) push_context_(cuCtxPushCurrent, context)
+#define pop_context() pop_context_(cuCtxPopCurrent)
+
+typedef NVENCSTATUS (NVENCAPI *NVENCODEAPICREATEINSTANCE)(
+		NV_ENCODE_API_FUNCTION_LIST *functionList);
+
 static bool nvenc_supported(void)
 {
+	profile_start(nvenc_check_name);
 	AVCodec *nvenc = avcodec_find_encoder_by_name("nvenc_h264");
 	void *lib = NULL;
+	void *cudalib = NULL;
+	bool success = false;
 
-	if (!nvenc)
-		return false;
+	if (!nvenc) {
+		goto cleanup;
+	}
 
 #if defined(_WIN32)
 	if (sizeof(void*) == 8) {
@@ -130,11 +158,145 @@ static bool nvenc_supported(void)
 	} else {
 		lib = os_dlopen("nvEncodeAPI.dll");
 	}
+	cudalib = os_dlopen("nvcuda.dll");
 #else
 	lib = os_dlopen("libnvidia-encode.so.1");
+	cudalib = os_dlopen("libcuda.so.1");
 #endif
+	if (!lib || !cudalib) {
+		goto cleanup;
+	}
+
+	/* ------------------------------------------- */
+
+	CUdevice device;
+	CUcontext context;
+	CUresult cu_result;
+	void *nvencoder = NULL;
+	NV_ENC_OPEN_ENCODE_SESSION_EX_PARAMS params = {0};
+	NV_ENCODE_API_FUNCTION_LIST nv = {0};
+	GUID *guids = NULL;
+	int nv_result;
+	int count;
+
+#define GET_CUDA_FUNC(func) \
+	t ## func *func = os_dlsym(cudalib, #func); \
+	do { \
+		if (!func) { \
+			goto cleanup; \
+		} \
+	} while (false)
+
+	GET_CUDA_FUNC(cuInit);
+	GET_CUDA_FUNC(cuDeviceGet);
+	GET_CUDA_FUNC(cuDeviceComputeCapability);
+
+#undef GET_CUDA_FUNC
+
+#define GET_CUDA_V2_FUNC(func) \
+	t ## func ## _v2 *func = os_dlsym(cudalib, #func "_v2"); \
+	do { \
+		if (!func) { \
+			goto cleanup; \
+		} \
+	} while (false)
+
+	GET_CUDA_V2_FUNC(cuCtxCreate);
+	GET_CUDA_V2_FUNC(cuCtxDestroy);
+	GET_CUDA_V2_FUNC(cuCtxPushCurrent);
+	GET_CUDA_V2_FUNC(cuCtxPopCurrent);
+
+#undef GET_CUDA_V2_FUNC
+
+	NVENCODEAPICREATEINSTANCE create_instance = os_dlsym(lib,
+			"NvEncodeAPICreateInstance");
+	if (!create_instance) {
+		goto cleanup;
+	}
+
+	nv.version = NV_ENCODE_API_FUNCTION_LIST_VER;
+	nv_result = create_instance(&nv);
+	if (nv_result != NV_ENC_SUCCESS) {
+		goto cleanup;
+	}
+
+	cu_result = cuInit(0);
+	if (cu_result != CUDA_SUCCESS) {
+		goto cleanup;
+	}
+
+	cu_result = cuDeviceGet(&device, 0);
+	if (cu_result != CUDA_SUCCESS) {
+		goto cleanup;
+	}
+
+	int major, minor;
+	cu_result = cuDeviceComputeCapability(&major, &minor, device);
+	if (cu_result != CUDA_SUCCESS) {
+		goto cleanup;
+	}
+
+	if (((major << 4) | minor) < NVENC_CAP) {
+		goto cleanup;
+	}
+
+	cu_result = cuCtxCreate(&context, 0, device);
+	if (cu_result != CUDA_SUCCESS) {
+		goto cleanup;
+	}
+
+	if (!pop_context()) {
+		goto cleanup2;
+	}
+
+	params.version = NV_ENC_OPEN_ENCODE_SESSION_EX_PARAMS_VER;
+	params.apiVersion = NVENCAPI_VERSION;
+	params.device = context;
+	params.deviceType = NV_ENC_DEVICE_TYPE_CUDA;
+
+	nv_result = nv.nvEncOpenEncodeSessionEx(&params, &nvencoder);
+	if (nv_result != NV_ENC_SUCCESS) {
+		nvencoder = NULL;
+		goto cleanup2;
+	}
+
+	nv_result = nv.nvEncGetEncodeGUIDCount(nvencoder, &count);
+	if (nv_result != NV_ENC_SUCCESS || !count) {
+		goto cleanup3;
+	}
+
+	guids = bzalloc(count * sizeof(GUID));
+
+	nv_result = nv.nvEncGetEncodeGUIDs(nvencoder, guids, count, &count);
+	if (nv_result != NV_ENC_SUCCESS || !count) {
+		goto cleanup3;
+	}
+
+	for (int i = 0; i < count; i++) {
+		int ret = memcmp(&guids[i], &NV_ENC_CODEC_H264_GUID,
+				sizeof(*guids));
+		if (ret == 0) {
+			success = true;
+			break;
+		}
+	}
+
+cleanup3:
+	bfree(guids);
+
+	if (nvencoder && push_context(context)) {
+		nv.nvEncDestroyEncoder(nvencoder);
+		pop_context();
+	}
+
+cleanup2:
+	cuCtxDestroy(context);
+
+cleanup:
 	os_dlclose(lib);
-	return !!lib;
+	os_dlclose(cudalib);
+	profile_end(nvenc_check_name);
+	return success;
 }
 
 bool obs_module_load(void)
