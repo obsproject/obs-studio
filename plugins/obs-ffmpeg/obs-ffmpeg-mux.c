@@ -534,7 +534,8 @@ static void save_replay_proc(void *data, calldata_t *cd)
 static void get_last_replay(void *data, calldata_t *cd)
 {
 	struct ffmpeg_muxer *stream = data;
-	calldata_set_string(cd, "path", stream->path.array);
+	if (!os_atomic_load_bool(&stream->muxing))
+		calldata_set_string(cd, "path", stream->path.array);
 }
 
 static void *replay_buffer_create(obs_data_t *settings, obs_output_t *output)
