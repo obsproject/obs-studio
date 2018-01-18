@@ -3,6 +3,7 @@
 #include <util/platform.h>
 #include <libavutil/log.h>
 #include <libavcodec/avcodec.h>
+#include <libavformat/avformat.h>
 #include <pthread.h>
 
 #ifndef __APPLE__
@@ -147,7 +148,10 @@ typedef NVENCSTATUS (NVENCAPI *NVENCODEAPICREATEINSTANCE)(
 
 static bool nvenc_supported(void)
 {
+	av_register_all();
+
 	profile_start(nvenc_check_name);
+
 	AVCodec *nvenc = avcodec_find_encoder_by_name("nvenc_h264");
 	void *lib = NULL;
 	void *cudalib = NULL;
