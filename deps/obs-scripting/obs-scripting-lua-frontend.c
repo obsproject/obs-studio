@@ -41,7 +41,7 @@ static int get_scene_names(lua_State *script)
 
 	while (name && *name) {
 		lua_pushstring(script, *name);
-		lua_rawseti(script, -2, i++);
+		lua_rawseti(script, -2, ++i);
 		name++;
 	}
 
@@ -54,12 +54,12 @@ static int get_scenes(lua_State *script)
 	struct obs_frontend_source_list list = {0};
 	obs_frontend_get_scenes(&list);
 
-	lua_createtable(script, (int)list.sources.num, 0);
+	lua_newtable(script);
 
 	for (size_t i = 0; i < list.sources.num; i++) {
 		obs_source_t *source = list.sources.array[i];
 		ls_push_libobs_obj(obs_source_t, source, false);
-		lua_rawseti(script, -2, (int)i++);
+		lua_rawseti(script, -2, (int)(i + 1));
 	}
 
 	da_free(list.sources);
@@ -86,12 +86,12 @@ static int get_transitions(lua_State *script)
 	struct obs_frontend_source_list list = {0};
 	obs_frontend_get_transitions(&list);
 
-	lua_createtable(script, (int)list.sources.num, 0);
+	lua_newtable(script);
 
 	for (size_t i = 0; i < list.sources.num; i++) {
 		obs_source_t *source = list.sources.array[i];
 		ls_push_libobs_obj(obs_source_t, source, false);
-		lua_rawseti(script, -2, (int)i++);
+		lua_rawseti(script, -2, (int)(i + 1));
 	}
 
 	da_free(list.sources);
@@ -123,7 +123,7 @@ static int get_scene_collections(lua_State *script)
 
 	while (name && *name) {
 		lua_pushstring(script, *name);
-		lua_rawseti(script, -2, i++);
+		lua_rawseti(script, -2, ++i);
 		name++;
 	}
 
@@ -158,7 +158,7 @@ static int get_profiles(lua_State *script)
 
 	while (name && *name) {
 		lua_pushstring(script, *name);
-		lua_rawseti(script, -2, i++);
+		lua_rawseti(script, -2, ++i);
 		name++;
 	}
 
