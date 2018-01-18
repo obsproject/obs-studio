@@ -94,6 +94,10 @@ static bool load_lua_script(struct obs_lua_script *data)
 	pthread_mutex_lock(&data->mutex);
 
 	luaL_openlibs(script);
+	luaopen_ffi(script);
+
+	lua_pushstring(script, data->dir.array);
+	lua_setglobal(script, "obs_current_script_dir");
 
 	if (luaL_dostring(script, startup_script) != 0) {
 		script_warn(&data->base, "Error executing startup script 1: %s",
