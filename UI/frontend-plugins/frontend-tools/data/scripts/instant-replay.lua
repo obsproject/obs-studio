@@ -70,9 +70,13 @@ function instant_replay(pressed)
 		if obs.obs_output_active(replay_buffer) then
 			attempts = 0
 			obs.timer_add(try_play, 1000)
+		else
+			obs.script_log(obs.LOG_WARNING, "Tried to save an instant replay, but the replay buffer is not active!")
 		end
 
 		obs.obs_output_release(replay_buffer)
+	else
+		obs.script_log(obs.LOG_WARNING, "Tried to save an instant replay, but found no active replay buffer!")
 	end
 end
 
