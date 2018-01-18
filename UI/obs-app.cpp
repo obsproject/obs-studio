@@ -1367,32 +1367,30 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 	OBSApp program(argc, argv, profilerNameStore.get());
 	try {
 		program.AppInit();
-
-		OBSTranslator translator;
-
-		create_log_file(logFile);
 		delete_oldest_file(false, "obs-studio/profiler_data");
 
+		OBSTranslator translator;
 		program.installTranslator(&translator);
 
 #ifdef _WIN32
 		/* --------------------------------------- */
 		/* check and warn if already running       */
 
+		bool cancel_launch = false;
 		bool already_running = false;
 		RunOnceMutex rom = GetRunOnceMutex(already_running);
 
-		if (already_running && !multi) {
-			blog(LOG_WARNING, "\n================================");
-			blog(LOG_WARNING, "Warning: OBS is already running!");
-			blog(LOG_WARNING, "================================\n");
+		if (!already_running) {
+			create_log_file(logFile);
+			goto run;
+		}
 
+		if (!multi) {
 			QMessageBox::StandardButtons buttons(
 					QMessageBox::Yes | QMessageBox::Cancel);
 			QMessageBox mb(QMessageBox::Question,
 					QTStr("AlreadyRunning.Title"),
-					QTStr("AlreadyRunning.Text"),
-					buttons,
+					QTStr("AlreadyRunning.Text"), buttons,
 					nullptr);
 			mb.setButtonText(QMessageBox::Yes,
 					QTStr("AlreadyRunning.LaunchAnyway"));
@@ -1401,23 +1399,31 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 
 			QMessageBox::StandardButton button;
 			button = (QMessageBox::StandardButton)mb.exec();
-			if (button == QMessageBox::Cancel) {
-				blog(LOG_INFO, "User shut down the program "
-						"because OBS was already "
-						"running");
-				return 0;
-			}
+			cancel_launch = button == QMessageBox::Cancel;
+		}
 
-			blog(LOG_WARNING, "User is now running a secondary "
-					"instance of OBS!");
+		if (cancel_launch)
+			return 0;
 
-		} else if (already_running && multi) {
+		create_log_file(logFile);
+
+		if (multi) {
 			blog(LOG_INFO, "User enabled --multi flag and is now "
 					"running multiple instances of OBS.");
+		} else {
+			blog(LOG_WARNING, "================================");
+			blog(LOG_WARNING, "Warning: OBS is already running!");
+			blog(LOG_WARNING, "================================");
+			blog(LOG_WARNING, "User is now running multiple "
+					"instances of OBS!");
 		}
 
 		/* --------------------------------------- */
+run:
+#else
+		create_log_file(logFile);
 #endif
+
 		if (argc > 1) {
 			stringstream stor;
 			stor << argv[1];
@@ -1948,13 +1954,14 @@ int main(int argc, char *argv[])
 			"--startrecording: Automatically start recording.\n" <<
 			"--startreplaybuffer: Start replay buffer.\n\n" <<
 			"--collection <string>: Use specific scene collection."
-				<< "\n" <<
+					<< "\n" <<
 			"--profile <string>: Use specific profile.\n" <<
 			"--scene <string>: Start with specific scene.\n\n" <<
 			"--studio-mode: Enable studio mode.\n" <<
 			"--minimize-to-tray: Minimize to system tray.\n" <<
 			"--portable, -p: Use portable mode.\n" <<
-			"--multi, -m: Don't warn when launching multiple instances.\n\n" <<
+			"--multi, -m: Don't warn when launching multiple " <<
+					"instances.\n\n" <<
 			"--verbose: Make log more verbose.\n" <<
 			"--always-on-top: Start in 'always on top' mode.\n\n" <<
 			"--unfiltered_log: Make log unfiltered.\n\n" <<
