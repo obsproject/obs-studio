@@ -1,32 +1,36 @@
 obs         = obslua
 source_name = ""
 hotkey_id   = obs.OBS_INVALID_HOTKEY_ID
+attempts    = 0
 
 ----------------------------------------------------------
 
--- The "Play Last Replay Buffer" hotkey callback
-function play(pressed)
-	if not pressed then
-		return
-	end
-
+function try_play()
 	local replay_buffer = obs.obs_frontend_get_replay_buffer_output()
 	if replay_buffer == nil then
+		obs.remove_current_callback()
 		return
 	end
-
-	local ph = obs.obs_output_get_proc_handler(replay_buffer)
 
 	-- Call the procedure of the replay buffer named "get_last_replay" to
 	-- get the last replay created by the replay buffer
 	local cd = obs.calldata_create()
+	local ph = obs.obs_output_get_proc_handler(replay_buffer)
 	obs.proc_handler_call(ph, "get_last_replay", cd)
 	local path = obs.calldata_string(cd, "path")
 	obs.calldata_destroy(cd)
 
+	obs.obs_output_release(replay_buffer)
+
 	-- If the path is valid and the source exists, update it with the
-	-- replay file to play back the replay
-	if path ~= nil then
+	-- replay file to play back the replay.  Otherwise, stop attempting to
+	-- replay after 10 seconds
+	if path == nil then
+		attempts = attempts + 1
+		if attempts >= 10 then
+			obs.remove_current_callback()
+		end
+	else
 		local source = obs.obs_get_source_by_name(source_name)
 		if source ~= nil then
 			local settings = obs.obs_data_create()
@@ -43,9 +47,33 @@ function play(pressed)
 			obs.obs_data_release(settings)
 			obs.obs_source_release(source)
 		end
+
+		obs.remove_current_callback()
+	end
+end
+
+-- The "Instant Replay" hotkey callback
+function instant_replay(pressed)
+	if not pressed then
+		return
 	end
 
-	obs.obs_output_release(replay_buffer)
+	local replay_buffer = obs.obs_frontend_get_replay_buffer_output()
+	if replay_buffer ~= nil then
+		-- Call the procedure of the replay buffer named "get_last_replay" to
+		-- get the last replay created by the replay buffer
+		local ph = obs.obs_output_get_proc_handler(replay_buffer)
+		obs.proc_handler_call(ph, "save", nil)
+
+		-- Set a 1-second timer to attempt playback every 1 second
+		-- until the replay is available
+		if obs.obs_output_active(replay_buffer) then
+			attempts = 0
+			obs.timer_add(try_play, 1000)
+		end
+
+		obs.obs_output_release(replay_buffer)
+	end
 end
 
 ----------------------------------------------------------
@@ -58,7 +86,7 @@ end
 -- A function named script_description returns the description shown to
 -- the user
 function script_description()
-	return "Plays the last replay buffer in the specified media source when the user presses a hotkey.\n\nMade by Jim"
+	return "When the \"Instant Replay\" hotkey is triggered, saves a replay with the replay buffer, and then plays it in a media source as soon as the replay is ready.  Requires an active replay buffer.\n\nMade by Jim"
 end
 
 -- A function named script_properties defines the properties that the user
@@ -84,8 +112,8 @@ end
 
 -- A function named script_load will be called on startup
 function script_load(settings)
-	hotkey_id = obs.obs_hotkey_register_frontend("instant_replay.play", "Play Last Replay Buffer", play)
-	local hotkey_save_array = obs.obs_data_get_array(settings, "instant_replay.play")
+	hotkey_id = obs.obs_hotkey_register_frontend("instant_replay.trigger", "Instant Replay", instant_replay)
+	local hotkey_save_array = obs.obs_data_get_array(settings, "instant_replay.trigger")
 	obs.obs_hotkey_load(hotkey_id, hotkey_save_array)
 	obs.obs_data_array_release(hotkey_save_array)
 end
@@ -97,6 +125,6 @@ end
 -- automatically.
 function script_save(settings)
 	local hotkey_save_array = obs.obs_hotkey_save(hotkey_id)
-	obs.obs_data_set_array(settings, "instant_replay.play", hotkey_save_array)
+	obs.obs_data_set_array(settings, "instant_replay.trigger", hotkey_save_array)
 	obs.obs_data_array_release(hotkey_save_array)
 end
