@@ -3405,7 +3405,7 @@
            </property>
           </widget>
          </item>
-         <item row="7" column="0">
+         <item row="11" column="0">
           <widget class="QLabel" name="label_65">
            <property name="text">
             <string>Basic.Settings.Audio.MeterDecayRate</string>
@@ -3415,7 +3415,7 @@
            </property>
           </widget>
          </item>
-         <item row="7" column="1">
+         <item row="11" column="1">
           <widget class="QComboBox" name="meterDecayRate">
            <property name="currentText">
             <string>Basic.Settings.Audio.MeterDecayRate.Fast</string>
@@ -3436,6 +3436,36 @@
            <item>
             <property name="text">
              <string>Basic.Settings.Audio.MeterDecayRate.Slow</string>
+            </property>
+           </item>
+          </widget>
+         </item>
+         <item row="12" column="0">
+          <widget class="QLabel" name="label_66">
+           <property name="text">
+            <string>Basic.Settings.Audio.PeakMeterType</string>
+           </property>
+           <property name="buddy">
+            <cstring>peakMeterType</cstring>
+           </property>
+          </widget>
+         </item>
+         <item row="12" column="1">
+          <widget class="QComboBox" name="peakMeterType">
+           <property name="currentText">
+            <string>Basic.Settings.Audio.PeakMeterType.SamplePeak</string>
+           </property>
+           <property name="currentIndex">
+            <number>0</number>
+           </property>
+           <item>
+            <property name="text">
+             <string>Basic.Settings.Audio.PeakMeterType.SamplePeak</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>Basic.Settings.Audio.PeakMeterType.TruePeak</string>
             </property>
            </item>
           </widget>
