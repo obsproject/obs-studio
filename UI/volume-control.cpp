@@ -114,6 +114,11 @@ void VolControl::SetMeterDecayRate(qreal q)
 	volMeter->setPeakDecayRate(q);
 }
 
+void VolControl::setPeakMeterType(enum obs_peak_meter_type peakMeterType)
+{
+	volMeter->setPeakMeterType(peakMeterType);
+}
+
 VolControl::VolControl(OBSSource source_, bool showConfig)
 	: source        (source_),
 	  levelTotal    (0.0f),
@@ -411,6 +416,39 @@ qreal VolumeMeter::getInputPeakHoldDuration() const
 void VolumeMeter::setInputPeakHoldDuration(qreal v)
 {
 	inputPeakHoldDuration = v;
+}
+
+void VolumeMeter::setPeakMeterType(enum obs_peak_meter_type peakMeterType)
+{
+	obs_volmeter_set_peak_meter_type(obs_volmeter, peakMeterType);
+	switch (peakMeterType) {
+	case TRUE_PEAK_METER:
+		// For true-peak meters EBU has defined the Permitted Maximum,
+		// taking into account the accuracy of the meter and further
+		// processing required by lossy audio compression.
+		//
+		// The alignment level was not specified, but I've adjusted
+		// it compared to a sample-peak meter. Incidently Youtube
+		// uses this new Alignment Level as the maximum integrated
+		// loudness of a video.
+		//
+		//  * Permitted Maximum Level (PML) = -2.0 dBTP
+		//  * Alignment Level (AL) = -13 dBTP
+		setErrorLevel(-2.0);
+		setWarningLevel(-13.0);
+		break;
+
+	case SAMPLE_PEAK_METER:
+	default:
+		// For a sample Peak Meter EBU has the following level
+		// definitions, taking into account inaccuracies of this meter:
+		//
+		//  * Permitted Maximum Level (PML) = -9.0 dBFS
+		//  * Alignment Level (AL) = -20.0 dBFS
+		setErrorLevel(-9.0);
+		setWarningLevel(-20.0);
+		break;
+	}
 }
 
 VolumeMeter::VolumeMeter(QWidget *parent, obs_volmeter_t *obs_volmeter)

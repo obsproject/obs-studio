@@ -388,6 +388,29 @@ void OBSBasic::UpdateVolumeControlsDecayRate()
 	}
 }
 
+void OBSBasic::UpdateVolumeControlsPeakMeterType()
+{
+	uint32_t peakMeterTypeIdx = config_get_uint(basicConfig, "Audio",
+			"PeakMeterType");
+
+	enum obs_peak_meter_type peakMeterType;
+	switch (peakMeterTypeIdx) {
+	case 0:
+		peakMeterType = SAMPLE_PEAK_METER;
+		break;
+	case 1:
+		peakMeterType = TRUE_PEAK_METER;
+		break;
+	default:
+		peakMeterType = SAMPLE_PEAK_METER;
+		break;
+	}
+
+	for (size_t i = 0; i < volumes.size(); i++) {
+		volumes[i]->setPeakMeterType(peakMeterType);
+	}
+}
+
 void OBSBasic::ClearVolumeControls()
 {
 	VolControl *control;
@@ -1153,6 +1176,7 @@ bool OBSBasic::InitBasicConfigDefaults()
 			"Stereo");
 	config_set_default_double(basicConfig, "Audio", "MeterDecayRate",
 			VOLUME_METER_DECAY_FAST);
+	config_set_default_uint  (basicConfig, "Audio", "PeakMeterType", 0);
 
 	return true;
 }
@@ -2507,6 +2531,25 @@ void OBSBasic::ActivateAudioSource(OBSSource source)
 	double meterDecayRate = config_get_double(basicConfig, "Audio",
 			"MeterDecayRate");
 	vol->SetMeterDecayRate(meterDecayRate);
+
+	uint32_t peakMeterTypeIdx = config_get_uint(basicConfig, "Audio",
+			"PeakMeterType");
+
+	enum obs_peak_meter_type peakMeterType;
+	switch (peakMeterTypeIdx) {
+	case 0:
+		peakMeterType = SAMPLE_PEAK_METER;
+		break;
+	case 1:
+		peakMeterType = TRUE_PEAK_METER;
+		break;
+	default:
+		peakMeterType = SAMPLE_PEAK_METER;
+		break;
+	}
+
+	vol->setPeakMeterType(peakMeterType);
+
 	vol->setContextMenuPolicy(Qt::CustomContextMenu);
 
 	connect(vol, &QWidget::customContextMenuRequested,

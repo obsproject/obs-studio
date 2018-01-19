@@ -195,6 +195,7 @@ private:
 	void          CreateDefaultScene(bool firstStart);
 
 	void          UpdateVolumeControlsDecayRate();
+	void          UpdateVolumeControlsPeakMeterType();
 	void          ClearVolumeControls();
 
 	void          UploadLog(const char *subdir, const char *file);
