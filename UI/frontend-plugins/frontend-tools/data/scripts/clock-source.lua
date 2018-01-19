@@ -5,6 +5,22 @@ source_def = {}
 source_def.id = "lua_clock_source"
 source_def.output_flags = bit.bor(obs.OBS_SOURCE_VIDEO, obs.OBS_SOURCE_CUSTOM_DRAW)
 
+function image_source_load(image, file)
+	obs.obs_enter_graphics();
+	obs.gs_image_file_free(image);
+	obs.obs_leave_graphics();
+
+	obs.gs_image_file_init(image, file);
+
+	obs.obs_enter_graphics();
+	obs.gs_image_file_init_texture(image);
+	obs.obs_leave_graphics();
+
+	if not image.loaded then
+		print("failed to load texture " .. file);
+	end
+end
+
 source_def.get_name = function()
 	return "Lua Clock"
 end
@@ -24,24 +40,13 @@ source_def.create = function(source, settings)
 	return data
 end
 
-function image_source_load(image, file)
+source_def.destroy = function(data)
 	obs.obs_enter_graphics();
-	obs.gs_image_file_free(image);
+	obs.gs_image_file_free(data.image);
+	obs.gs_image_file_free(data.hour_image);
+	obs.gs_image_file_free(data.minute_image);
+	obs.gs_image_file_free(data.second_image);
 	obs.obs_leave_graphics();
-
-	obs.gs_image_file_init(image, file);
-
-	obs.obs_enter_graphics();
-	obs.gs_image_file_init_texture(image);
-	obs.obs_leave_graphics();
-
-	if not image.loaded then
-		print("failed to load texture " .. file);
-	end
-end
-
-source_def.update = function(data, settings)
-	image_source_load(data)
 end
 
 source_def.video_render = function(data, effect)
