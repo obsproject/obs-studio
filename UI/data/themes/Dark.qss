@@ -518,7 +518,6 @@ VolumeMeter {
     qproperty-magnitudeColor: rgb(0, 0, 0);
     qproperty-majorTickColor: rgb(225,224,225); /* veryLight */
     qproperty-minorTickColor: rgb(122,121,122); /* light */
-    qproperty-peakDecayRate: 23.4; /* Override of the standard PPM Type I rate. */
 }
 
 

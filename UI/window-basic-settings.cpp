@@ -400,6 +400,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->advRBMegsMax,         SCROLL_CHANGED, OUTPUTS_CHANGED);
 	HookWidget(ui->channelSetup,         COMBO_CHANGED,  AUDIO_RESTART);
 	HookWidget(ui->sampleRate,           COMBO_CHANGED,  AUDIO_RESTART);
+	HookWidget(ui->meterReturnTime,      COMBO_CHANGED,  AUDIO_CHANGED);
 	HookWidget(ui->desktopAudioDevice1,  COMBO_CHANGED,  AUDIO_CHANGED);
 	HookWidget(ui->desktopAudioDevice2,  COMBO_CHANGED,  AUDIO_CHANGED);
 	HookWidget(ui->auxAudioDevice1,      COMBO_CHANGED,  AUDIO_CHANGED);
@@ -2119,6 +2120,8 @@ void OBSBasicSettings::LoadAudioSettings()
 			"SampleRate");
 	const char *speakers = config_get_string(main->Config(), "Audio",
 			"ChannelSetup");
+	double meterReturnTime = config_get_double(main->Config(), "Audio",
+			"MeterReturnTime");
 
 	loading = true;
 
@@ -2146,6 +2149,13 @@ void OBSBasicSettings::LoadAudioSettings()
 		ui->channelSetup->setCurrentIndex(6);
 	else
 		ui->channelSetup->setCurrentIndex(1);
+
+	if (meterReturnTime == VOLUME_METER_RETURN_MEDIUM)
+		ui->meterReturnTime->setCurrentIndex(1);
+	else if (meterReturnTime == VOLUME_METER_RETURN_SLOW)
+		ui->meterReturnTime->setCurrentIndex(2);
+	else
+		ui->meterReturnTime->setCurrentIndex(0);
 
 	LoadAudioDevices();
 	LoadAudioSources();
@@ -3078,6 +3088,28 @@ void OBSBasicSettings::SaveAudioSettings()
 	if (WidgetChanged(ui->channelSetup))
 		config_set_string(main->Config(), "Audio", "ChannelSetup",
 				channelSetup);
+
+	if (WidgetChanged(ui->meterReturnTime)) {
+		double meterReturnTime;
+		switch (ui->meterReturnTime->currentIndex()) {
+		case 0:
+			meterReturnTime = VOLUME_METER_RETURN_FAST;
+			break;
+		case 1:
+			meterReturnTime = VOLUME_METER_RETURN_MEDIUM;
+			break;
+		case 2:
+			meterReturnTime = VOLUME_METER_RETURN_SLOW;
+			break;
+		default:
+			meterReturnTime = VOLUME_METER_RETURN_FAST;
+			break;
+		}
+		config_set_double(main->Config(), "Audio", "MeterReturnTime",
+				meterReturnTime);
+
+		main->UpdateVolumeControlsDecayRate();
+	}
 
 	for (auto &audioSource : audioSources) {
 		auto source  = OBSGetStrongRef(get<0>(audioSource));
