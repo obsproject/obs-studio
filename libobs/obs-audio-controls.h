@@ -235,9 +235,9 @@ EXPORT unsigned int obs_volmeter_get_update_interval(obs_volmeter_t *volmeter);
 EXPORT int obs_volmeter_get_nr_channels(obs_volmeter_t *volmeter);
 
 typedef void (*obs_volmeter_updated_t)(void *param,
-		const float magnitude[MAX_AUDIO_CHANNELS],
 		const float peak[MAX_AUDIO_CHANNELS],
-		const float input_peak[MAX_AUDIO_CHANNELS]);
+		const float input_peak[MAX_AUDIO_CHANNELS],
+		float loudness);
 
 EXPORT void obs_volmeter_add_callback(obs_volmeter_t *volmeter,
 		obs_volmeter_updated_t callback, void *param);

@@ -463,6 +463,7 @@ target_link_libraries(libobs
 		${OBS_JANSSON_IMPORT}
 		${FFMPEG_LIBRARIES}
 		${ZLIB_LIBRARIES}
+		ebur128_static
 	PUBLIC
 		${THREADS_LIBRARIES})
 

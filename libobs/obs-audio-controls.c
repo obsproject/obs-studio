@@ -22,6 +22,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "media-io/audio-math.h"
 #include "obs.h"
 #include "obs-internal.h"
+#include "../../deps/libebur128/ebur128/ebur128.h"
 
 #include "obs-audio-controls.h"
 
@@ -72,8 +73,10 @@ struct obs_volmeter {
 
 	unsigned int           update_ms;
 
-	float                  vol_magnitude[MAX_AUDIO_CHANNELS];
-	float                  vol_peak[MAX_AUDIO_CHANNELS];
+	ebur128_state          *ebur128_state;
+
+	float                  *scratch_samples;
+	size_t                 scratch_nr_samples;
 };
 
 static float cubic_def_to_db(const float def)
@@ -195,14 +198,14 @@ static void signal_volume_changed(struct obs_fader *fader, const float db)
 }
 
 static void signal_levels_updated(struct obs_volmeter *volmeter,
-		const float magnitude[MAX_AUDIO_CHANNELS],
 		const float peak[MAX_AUDIO_CHANNELS],
-		const float input_peak[MAX_AUDIO_CHANNELS])
+		const float input_peak[MAX_AUDIO_CHANNELS],
+		float loudness)
 {
 	pthread_mutex_lock(&volmeter->callback_mutex);
 	for (size_t i = volmeter->callbacks.num; i > 0; i--) {
 		struct meter_cb cb = volmeter->callbacks.array[i - 1];
-		cb.callback(cb.param, magnitude, peak, input_peak);
+		cb.callback(cb.param, peak, input_peak, loudness);
 	}
 	pthread_mutex_unlock(&volmeter->callback_mutex);
 }
@@ -256,46 +259,65 @@ static void volmeter_source_destroyed(void *vptr, calldata_t *calldata)
 	obs_volmeter_detach_source(volmeter);
 }
 
+static void copy_samples(float *dst, size_t dst_stride,
+		float *src, size_t src_stride, size_t size)
+{
+	size_t src_index = 0;
+	size_t dst_index = 0;
+
+	for (size_t i = 0; i < size; i++) {
+		dst[dst_index] = src[src_index];
+		dst_index += dst_stride;
+		src_index += src_stride;
+	}
+}
+
+static void clear_samples(float *dst, size_t dst_stride, size_t size)
+{
+	size_t dst_index = 0;
+
+	for (size_t i = 0; i < size; i++) {
+		dst[dst_index] = 0.0;
+		dst_index += dst_stride;
+	}
+}
+
+static float *volmeter_get_scratch(obs_volmeter_t *volmeter, size_t nr_samples)
+{
+	if (nr_samples >= volmeter->scratch_nr_samples) {
+		if (volmeter->scratch_samples) {
+			free(volmeter->scratch_samples);
+		}
+		volmeter->scratch_samples = malloc(sizeof (float) * nr_samples);
+		volmeter->scratch_nr_samples = nr_samples;
+	}
+	return volmeter->scratch_samples;
+}
+
 static void volmeter_process_audio_data(obs_volmeter_t *volmeter,
 		const struct audio_data *data)
 {
-	int nr_samples = data->frames;
-	int channel_nr = 0;
+	ebur128_state *state = volmeter->ebur128_state;
+	size_t nr_frames = data->frames;
+	size_t nr_channels = state->channels;
+	size_t nr_samples = nr_channels * nr_frames;
 
-	for (size_t plane_nr = 0; plane_nr < MAX_AV_PLANES; plane_nr++) {
-		float *samples = (float *)data->data[plane_nr];
-		if (!samples) {
-			// This plane does not contain data.
-			continue;
+	// Reallocate scratch data if the number of frames has increased.
+	float *dst_samples = volmeter_get_scratch(volmeter, nr_samples);
+
+	// Interleave data.
+	for (size_t channel_nr = 0; channel_nr < nr_channels; channel_nr++) {
+		float *src_samples = (float *)data->data[channel_nr];
+		if (src_samples) {
+			copy_samples(&dst_samples[channel_nr], nr_channels,
+				src_samples, 1, nr_frames);
+		} else {
+			clear_samples(&dst_samples[channel_nr], nr_channels,
+				nr_frames);
 		}
-
-		// For each plane calculate:
-		// * peak = the maximum-absolute of the sample values.
-		// * magnitude = root-mean-square of the sample values.
-		//      A VU meter needs to integrate over 300ms, but this will
-		//	be handled by the ballistics of the meter itself,
-		//	reality. Which makes this calculation independent of
-		//	sample rate or update rate.
-		float peak = 0.0;
-		float sum_of_squares = 0.0;
-		for (int sample_nr = 0; sample_nr < nr_samples; sample_nr++) {
-			float sample = samples[sample_nr];
-
-			peak = fmaxf(peak, fabsf(sample));
-			sum_of_squares += (sample * sample);
-		}
-
-		volmeter->vol_magnitude[channel_nr] = sqrtf(sum_of_squares /
-			nr_samples);
-		volmeter->vol_peak[channel_nr] = peak;
-		channel_nr++;
 	}
 
-	// Clear audio channels that are not in use.
-	for (; channel_nr < MAX_AUDIO_CHANNELS; channel_nr++) {
-		volmeter->vol_magnitude[channel_nr] = 0.0;
-		volmeter->vol_peak[channel_nr] = 0.0;
-	}
+	ebur128_add_frames_float(state, dst_samples, nr_frames);
 }
 
 static void volmeter_source_data_received(void *vptr, obs_source_t *source,
@@ -303,33 +325,37 @@ static void volmeter_source_data_received(void *vptr, obs_source_t *source,
 {
 	struct obs_volmeter *volmeter = (struct obs_volmeter *) vptr;
 	float mul;
-	float magnitude[MAX_AUDIO_CHANNELS];
-	float peak[MAX_AUDIO_CHANNELS];
-	float input_peak[MAX_AUDIO_CHANNELS];
+	double peak;
+	double loudness;
+	float peak_db[MAX_AUDIO_CHANNELS];
+	float input_peak_db[MAX_AUDIO_CHANNELS];
+	float loudness_db;
 
 	pthread_mutex_lock(&volmeter->mutex);
 
 	volmeter_process_audio_data(volmeter, data);
 
-	// Adjust magnitude/peak based on the volume level set by the user.
-	// And convert to dB.
-	mul = muted ? 0.0f : db_to_mul(volmeter->cur_db);
-	for (int channel_nr = 0; channel_nr < MAX_AUDIO_CHANNELS;
-		channel_nr++) {
-		magnitude[channel_nr] = mul_to_db(
-			volmeter->vol_magnitude[channel_nr] * mul);
-		peak[channel_nr] = mul_to_db(
-			volmeter->vol_peak[channel_nr] * mul);
-		input_peak[channel_nr] = mul_to_db(
-			volmeter->vol_peak[channel_nr]);
+	mul = muted ? 0.0 : db_to_mul(volmeter->cur_db);
+	for (int chan_nr = 0; chan_nr < MAX_AUDIO_CHANNELS; chan_nr++) {
+		ebur128_prev_true_peak(volmeter->ebur128_state, chan_nr, &peak);
+
+		// Adjust peak based on the volume level set by the
+		// user, and convert to dB.
+		peak_db[chan_nr] = mul_to_db(peak * mul);
+
+		// The input-peak is NOT adjusted with volume, so that
+		// the user can check the input-gain.
+		input_peak_db[chan_nr] = mul_to_db(peak);
 	}
 
-	// The input-peak is NOT adjusted with volume, so that the user
-	// can check the input-gain.
+	// Adjust loudness based on the volume level set by the
+	// user, it is already in dB (aka LU).
+	ebur128_loudness_shortterm(volmeter->ebur128_state, &loudness);
+	loudness_db = loudness + volmeter->cur_db;
 
 	pthread_mutex_unlock(&volmeter->mutex);
 
-	signal_levels_updated(volmeter, magnitude, peak, input_peak);
+	signal_levels_updated(volmeter, peak_db, input_peak_db, loudness_db);
 
 	UNUSED_PARAMETER(source);
 }
@@ -551,6 +577,79 @@ void obs_fader_remove_callback(obs_fader_t *fader, obs_fader_changed_t callback,
 	pthread_mutex_unlock(&fader->callback_mutex);
 }
 
+static ebur128_state *obs_ebur128_initialize(void)
+{
+	struct obs_audio_info audio_info;
+	ebur128_state *state;
+	
+	if (!obs_get_audio_info(&audio_info)) {
+		audio_info.speakers = SPEAKERS_STEREO;
+		audio_info.samples_per_sec = 48000;
+	}
+
+	state = ebur128_init(
+		get_audio_channels(audio_info.speakers),
+		audio_info.samples_per_sec,
+		EBUR128_MODE_S | EBUR128_MODE_TRUE_PEAK);
+
+	// Maximum window for EBUR128_MODE_S is 3000ms.
+	ebur128_set_max_window(state, 3000);
+	// Maximum history for integration is an hour.
+	ebur128_set_max_history(state, 3600000);
+
+	switch (audio_info.speakers) {
+	case SPEAKERS_MONO:
+		ebur128_set_channel(state, 0, EBUR128_DUAL_MONO);
+		break;
+	case SPEAKERS_STEREO:
+		ebur128_set_channel(state, 0, EBUR128_LEFT);
+		ebur128_set_channel(state, 1, EBUR128_RIGHT);
+		break;
+	case SPEAKERS_2POINT1:
+		ebur128_set_channel(state, 0, EBUR128_LEFT);
+		ebur128_set_channel(state, 1, EBUR128_RIGHT);
+		ebur128_set_channel(state, 2, EBUR128_UNUSED);
+		break;
+	case SPEAKERS_4POINT0:
+		ebur128_set_channel(state, 0, EBUR128_LEFT);
+		ebur128_set_channel(state, 1, EBUR128_RIGHT);
+		ebur128_set_channel(state, 2, EBUR128_CENTER);
+		ebur128_set_channel(state, 3, EBUR128_Mp180);
+		break;
+	case SPEAKERS_4POINT1:
+		ebur128_set_channel(state, 0, EBUR128_LEFT);
+		ebur128_set_channel(state, 1, EBUR128_RIGHT);
+		ebur128_set_channel(state, 2, EBUR128_CENTER);
+		ebur128_set_channel(state, 3, EBUR128_UNUSED);
+		ebur128_set_channel(state, 4, EBUR128_Mp180);
+		break;
+	case SPEAKERS_5POINT1:
+		ebur128_set_channel(state, 0, EBUR128_LEFT);
+		ebur128_set_channel(state, 1, EBUR128_RIGHT);
+		ebur128_set_channel(state, 2, EBUR128_CENTER);
+		ebur128_set_channel(state, 3, EBUR128_UNUSED);
+		ebur128_set_channel(state, 4, EBUR128_LEFT_SURROUND);
+		ebur128_set_channel(state, 5, EBUR128_RIGHT_SURROUND);
+		break;
+	case SPEAKERS_7POINT1:
+		ebur128_set_channel(state, 0, EBUR128_LEFT);
+		ebur128_set_channel(state, 1, EBUR128_RIGHT);
+		ebur128_set_channel(state, 2, EBUR128_CENTER);
+		ebur128_set_channel(state, 3, EBUR128_UNUSED);
+		ebur128_set_channel(state, 4, EBUR128_Mp135);
+		ebur128_set_channel(state, 5, EBUR128_Mm135);
+		ebur128_set_channel(state, 6, EBUR128_Mp090);
+		ebur128_set_channel(state, 7, EBUR128_Mm090);
+		break;
+	case SPEAKERS_UNKNOWN:
+		ebur128_set_channel(state, 0, EBUR128_LEFT);
+		ebur128_set_channel(state, 1, EBUR128_RIGHT);
+		break;
+	}
+
+	return state;
+}
+
 obs_volmeter_t *obs_volmeter_create(enum obs_fader_type type)
 {
 	struct obs_volmeter *volmeter = bzalloc(sizeof(struct obs_volmeter));
@@ -568,6 +667,10 @@ obs_volmeter_t *obs_volmeter_create(enum obs_fader_type type)
 
 	obs_volmeter_set_update_interval(volmeter, 50);
 
+	volmeter->ebur128_state = obs_ebur128_initialize();
+	volmeter->scratch_samples = NULL;
+	volmeter->scratch_nr_samples = 0;
+	
 	return volmeter;
 fail:
 	obs_volmeter_destroy(volmeter);
@@ -579,8 +682,14 @@ void obs_volmeter_destroy(obs_volmeter_t *volmeter)
 	if (!volmeter)
 		return;
 
+
 	obs_volmeter_detach_source(volmeter);
 	da_free(volmeter->callbacks);
+
+	pthread_mutex_lock(&volmeter->mutex);
+	ebur128_destroy(&volmeter->ebur128_state);
+	pthread_mutex_unlock(&volmeter->mutex);
+
 	pthread_mutex_destroy(&volmeter->callback_mutex);
 	pthread_mutex_destroy(&volmeter->mutex);
 
