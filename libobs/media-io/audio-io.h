@@ -55,15 +55,24 @@ enum audio_format {
 	AUDIO_FORMAT_FLOAT_PLANAR,
 };
 
+/**
+ * The speaker layout describes where the speakers are located in the room.
+ * For OBS it dictates:
+ *  *  how many channels are available and
+ *  *  which channels are used for which speakers.
+ *
+ * Standard channel layouts where retrieved from ffmpeg documentation at:
+ *     https://trac.ffmpeg.org/wiki/AudioChannelManipulation
+ */
 enum speaker_layout {
-	SPEAKERS_UNKNOWN,
-	SPEAKERS_MONO,
-	SPEAKERS_STEREO,
-	SPEAKERS_2POINT1,
-	SPEAKERS_4POINT0,
-	SPEAKERS_4POINT1,
-	SPEAKERS_5POINT1,
-	SPEAKERS_7POINT1=8,
+	SPEAKERS_UNKNOWN,   /**< Unknown setting, fallback is stereo. */
+	SPEAKERS_MONO,      /**< Channels: MONO */
+	SPEAKERS_STEREO,    /**< Channels: FL, FR */
+	SPEAKERS_2POINT1,   /**< Channels: FL, FR, LFE */
+	SPEAKERS_4POINT0,   /**< Channels: FL, FR, FC, RC */
+	SPEAKERS_4POINT1,   /**< Channels: FL, FR, FC, LFE, RC */
+	SPEAKERS_5POINT1,   /**< Channels: FL, FR, FC, LFE, RL, RR */
+	SPEAKERS_7POINT1=8, /**< Channels: FL, FR, FC, LFE, RL, RR, SL, SR */
 };
 
 struct audio_data {

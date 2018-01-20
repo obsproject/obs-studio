@@ -93,6 +93,61 @@ static enum speaker_layout pulse_channels_to_obs_speakers(
 	return SPEAKERS_UNKNOWN;
 }
 
+static pa_channel_map pulse_channel_map(enum speaker_layout layout)
+{
+	pa_channel_map ret;
+
+	ret.map[0] = PA_CHANNEL_POSITION_FRONT_LEFT;
+	ret.map[1] = PA_CHANNEL_POSITION_FRONT_RIGHT;
+	ret.map[2] = PA_CHANNEL_POSITION_FRONT_CENTER;
+	ret.map[3] = PA_CHANNEL_POSITION_LFE;
+	ret.map[4] = PA_CHANNEL_POSITION_REAR_LEFT;
+	ret.map[5] = PA_CHANNEL_POSITION_REAR_RIGHT;
+	ret.map[6] = PA_CHANNEL_POSITION_SIDE_LEFT;
+	ret.map[7] = PA_CHANNEL_POSITION_SIDE_RIGHT;
+
+	switch (layout) {
+	case SPEAKERS_MONO:
+		ret.channels = 1;
+		ret.map[0] = PA_CHANNEL_POSITION_MONO;
+		break;
+
+	case SPEAKERS_STEREO:
+		ret.channels = 2;
+		break;
+
+	case SPEAKERS_2POINT1:
+		ret.channels = 3;
+		ret.map[2] = PA_CHANNEL_POSITION_LFE;
+		break;
+
+	case SPEAKERS_4POINT0:
+		ret.channels = 4;
+		ret.map[3] = PA_CHANNEL_POSITION_REAR_CENTER;
+		break;
+
+	case SPEAKERS_4POINT1:
+		ret.channels = 5;
+		ret.map[4] = PA_CHANNEL_POSITION_REAR_CENTER;
+		break;
+
+	case SPEAKERS_5POINT1:
+		ret.channels = 6;
+		break;
+
+	case SPEAKERS_7POINT1:
+		ret.channels = 8;
+		break;
+
+	case SPEAKERS_UNKNOWN:
+	default:
+		ret.channels = 0;
+		break;
+	}
+
+	return ret;
+}
+
 static inline uint64_t samples_to_ns(size_t frames, uint_fast32_t rate)
 {
 	return frames * NSEC_PER_SEC / rate;
@@ -286,8 +341,10 @@ static int_fast32_t pulse_start_recording(struct pulse_data *data)
 	data->speakers = pulse_channels_to_obs_speakers(spec.channels);
 	data->bytes_per_frame = pa_frame_size(&spec);
 
+	pa_channel_map channel_map = pulse_channel_map(data->speakers);
+
 	data->stream = pulse_stream_new(obs_source_get_name(data->source),
-		&spec, NULL);
+		&spec, &channel_map);
 	if (!data->stream) {
 		blog(LOG_ERROR, "Unable to create stream");
 		return -1;
