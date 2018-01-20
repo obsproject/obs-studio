@@ -597,10 +597,71 @@ void OBSBasic::ChangeProfile()
 	config_save_safe(App()->GlobalConfig(), "tmp", nullptr);
 	UpdateTitleBar();
 
+	CheckForSimpleModeX264Fallback();
+
 	blog(LOG_INFO, "Switched to profile '%s' (%s)",
 			newName, newDir);
 	blog(LOG_INFO, "------------------------------------------------");
 
 	if (api)
 		api->on_event(OBS_FRONTEND_EVENT_PROFILE_CHANGED);
+}
+
+void OBSBasic::CheckForSimpleModeX264Fallback()
+{
+	const char *curStreamEncoder = config_get_string(basicConfig,
+			"SimpleOutput", "StreamEncoder");
+	const char *curRecEncoder = config_get_string(basicConfig,
+			"SimpleOutput", "RecEncoder");
+	bool qsv_supported = false;
+	bool amd_supported = false;
+	bool nve_supported = false;
+	bool changed = false;
+	size_t idx = 0;
+	const char *id;
+
+	while (obs_enum_encoder_types(idx++, &id)) {
+		if (strcmp(id, "amd_amf_h264") == 0)
+			amd_supported = true;
+		else if (strcmp(id, "obs_qsv11") == 0)
+			qsv_supported = true;
+		else if (strcmp(id, "ffmpeg_nvenc") == 0)
+			nve_supported = true;
+	}
+
+	auto CheckEncoder = [&] (const char *&name)
+	{
+		if (strcmp(name, SIMPLE_ENCODER_QSV) == 0) {
+			if (!qsv_supported) {
+				changed = true;
+				name = SIMPLE_ENCODER_X264;
+				return false;
+			}
+		} else if (strcmp(name, SIMPLE_ENCODER_NVENC) == 0) {
+			if (!nve_supported) {
+				changed = true;
+				name = SIMPLE_ENCODER_X264;
+				return false;
+			}
+		} else if (strcmp(name, SIMPLE_ENCODER_AMD) == 0) {
+			if (!amd_supported) {
+				changed = true;
+				name = SIMPLE_ENCODER_X264;
+				return false;
+			}
+		}
+
+		return true;
+	};
+
+	if (!CheckEncoder(curStreamEncoder))
+		config_set_string(basicConfig,
+				"SimpleOutput", "StreamEncoder",
+				curStreamEncoder);
+	if (!CheckEncoder(curRecEncoder))
+		config_set_string(basicConfig,
+				"SimpleOutput", "RecEncoder",
+				curRecEncoder);
+	if (changed)
+		config_save_safe(basicConfig, "tmp", nullptr);
 }

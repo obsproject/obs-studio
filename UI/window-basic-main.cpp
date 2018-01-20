@@ -1479,6 +1479,8 @@ void OBSBasic::OBSInit()
 	blog(LOG_INFO, "---------------------------------");
 	obs_post_load_modules();
 
+	CheckForSimpleModeX264Fallback();
+
 	blog(LOG_INFO, STARTUP_SEPARATOR);
 
 	ResetOutputs();
