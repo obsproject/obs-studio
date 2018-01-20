@@ -239,8 +239,12 @@ void ScriptsTool::RefreshLists()
 	ui->scripts->clear();
 
 	for (OBSScript &script : scriptData->scripts) {
+		const char *script_file = obs_script_get_file(script);
 		const char *script_path = obs_script_get_path(script);
-		ui->scripts->addItem(script_path);
+
+		QListWidgetItem *item = new QListWidgetItem(script_file);
+		item->setData(Qt::UserRole, QString(script_path));
+		ui->scripts->addItem(item);
 	}
 }
 
@@ -305,8 +309,13 @@ void ScriptsTool::on_addScripts_clicked()
 
 		obs_script_t *script = obs_script_create(path, NULL);
 		if (script) {
+			const char *script_file = obs_script_get_file(script);
+
 			scriptData->scripts.emplace_back(script);
-			ui->scripts->addItem(file);
+
+			QListWidgetItem *item = new QListWidgetItem(script_file);
+			item->setData(Qt::UserRole, QString(file));
+			ui->scripts->addItem(item);
 		}
 	}
 }
@@ -316,7 +325,8 @@ void ScriptsTool::on_removeScripts_clicked()
 	QList<QListWidgetItem *> items = ui->scripts->selectedItems();
 
 	for (QListWidgetItem *item : items)
-		RemoveScript(item->text().toUtf8().constData());
+		RemoveScript(item->data(Qt::UserRole).toString()
+				.toUtf8().constData());
 	RefreshLists();
 }
 
@@ -324,7 +334,8 @@ void ScriptsTool::on_reloadScripts_clicked()
 {
 	QList<QListWidgetItem *> items = ui->scripts->selectedItems();
 	for (QListWidgetItem *item : items)
-		ReloadScript(item->text().toUtf8().constData());
+		ReloadScript(item->data(Qt::UserRole).toString()
+				.toUtf8().constData());
 
 	on_scripts_currentRowChanged(ui->scripts->currentRow());
 }
@@ -383,7 +394,8 @@ void ScriptsTool::on_scripts_currentRowChanged(int row)
 		return;
 	}
 
-	QByteArray array = ui->scripts->item(row)->text().toUtf8();
+	QByteArray array = ui->scripts->item(row)->data(Qt::UserRole)
+		.toString().toUtf8();
 	const char *path = array.constData();
 
 	obs_script_t *script = scriptData->FindScript(path);
