@@ -185,8 +185,8 @@ static bool nvenc_supported(void)
 	NV_ENC_OPEN_ENCODE_SESSION_EX_PARAMS params = {0};
 	NV_ENCODE_API_FUNCTION_LIST nv = {0};
 	GUID *guids = NULL;
+	uint32_t count;
 	int nv_result;
-	int count;
 
 #define GET_CUDA_FUNC(func) \
 	t ## func *func = os_dlsym(cudalib, #func); \
@@ -281,7 +281,7 @@ static bool nvenc_supported(void)
 		goto cleanup3;
 	}
 
-	for (int i = 0; i < count; i++) {
+	for (uint32_t i = 0; i < count; i++) {
 		int ret = memcmp(&guids[i], &NV_ENC_CODEC_H264_GUID,
 				sizeof(*guids));
 		if (ret == 0) {
