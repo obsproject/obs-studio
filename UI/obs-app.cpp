@@ -1401,6 +1401,14 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 
 		/* --------------------------------------- */
 #endif
+		if (argc > 1) {
+			stringstream stor;
+			stor << argv[1];
+			for (int i = 2; i < argc; ++i) {
+				stor << " " << argv[i];
+			}
+			blog(LOG_INFO, "Command Line Arguments: %s", stor.str().c_str());
+		}
 
 		if (!program.OBSInit())
 			return 0;
