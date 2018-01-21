@@ -9,6 +9,7 @@
 #  PYTHON_INCLUDE_DIR
 
 if(NOT WIN32)
+	set(Python_ADDITIONAL_VERSIONS 3.4)
 	find_package(PythonLibs QUIET 3.4)
 	return()
 endif()

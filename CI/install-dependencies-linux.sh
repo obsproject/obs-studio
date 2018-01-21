@@ -20,6 +20,7 @@ sudo apt-get install -y \
         libgl1-mesa-dev \
         libjack-jackd2-dev \
         libjansson-dev \
+        libluajit-5.1-dev \
         libpulse-dev \
         libqt5x11extras5-dev \
         libspeexdsp-dev \
@@ -35,4 +36,6 @@ sudo apt-get install -y \
         libxcomposite-dev \
         libxinerama-dev \
         pkg-config \
-        qtbase5-dev
+        python3-dev \
+        qtbase5-dev \
+        swig
