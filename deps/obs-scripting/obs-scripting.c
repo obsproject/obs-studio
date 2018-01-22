@@ -150,7 +150,9 @@ bool obs_scripting_load(void)
 
 #if COMPILE_PYTHON
 	obs_python_load();
+#ifndef _WIN32 /* don't risk python startup load issues on windows */
 	obs_scripting_load_python(NULL);
+#endif
 #endif
 
 	scripting_loaded = true;
