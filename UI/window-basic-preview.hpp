@@ -88,8 +88,8 @@ private:
 	void ProcessClick(const vec2 &pos);
 
 	void DrawSingleSpacingHelper(vec3 &start, vec3 &end, vec3 &viewport);
-	void DrawSpacingHelpers(matrix4 &boxTransform, vec3 &viewport,
-		float previewScale);
+	void DrawSpacingHelpers(obs_sceneitem_t* sceneitem,
+		vec3 &viewport, float previewScale);
 
 public:
 	OBSBasicPreview(QWidget *parent, Qt::WindowFlags flags = 0);

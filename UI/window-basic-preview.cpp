@@ -1245,9 +1245,16 @@ static void boxCoordsToView(vec3 *coord, matrix4 &boxTransform,
 	vec3_mulf(coord, coord, previewScale);
 }
 
-void OBSBasicPreview::DrawSpacingHelpers(matrix4 &boxTransform, vec3 &viewport,
-	float previewScale)
+void OBSBasicPreview::DrawSpacingHelpers(obs_sceneitem_t* sceneitem,
+	vec3 &viewport, float previewScale)
 {
+	if (!sceneitem) {
+		return;
+	}
+
+	matrix4 boxTransform;
+	obs_sceneitem_get_box_transform(sceneitem, &boxTransform);
+
 	vec4 green;
 	vec4_set(&green, 0.0f, 1.0f, 0.0f, 1.0f);
 
@@ -1272,10 +1279,16 @@ void OBSBasicPreview::DrawSpacingHelpers(matrix4 &boxTransform, vec3 &viewport,
 
 	// View borders
 	vec3 viewLeft, viewRight, viewTop, viewBottom;
-	vec3_set(&viewLeft, 0.0f, boxLeft.y, 1.0f);
-	vec3_set(&viewRight, 1.0f, boxRight.y, 1.0f);
-	vec3_set(&viewTop, boxTop.x, 0.0f, 1.0f);
-	vec3_set(&viewBottom, boxBottom.x, 1.0f, 1.0f);
+	vec3_set(&viewLeft, -1000.0f, boxLeft.y, 1.0f);
+	vec3_set(&viewRight, 1000.0f, boxRight.y, 1.0f);
+	vec3_set(&viewTop, boxTop.x, -1000.0f, 1.0f);
+	vec3_set(&viewBottom, boxBottom.x, 1000.0f, 1.0f);
+
+	// Clip border coords to view
+	viewLeft.x = qMax(0.0f, viewLeft.x);
+	viewRight.x = qMin(1.0f, viewRight.x);
+	viewTop.y = qMax(0.0f, viewTop.y);
+	viewBottom.y = qMin(1.0f, viewBottom.y);
 
 	// Clip lines to view boundaries
 	vec3_max(&boxLeft, &boxLeft, &viewLeft);
@@ -1413,7 +1426,7 @@ bool OBSBasicPreview::DrawSelectedItem(obs_scene_t *scene,
 	if (spacingHelpersEnabled) {
 		vec3 viewport;
 		vec3_set(&viewport, main->previewCX, main->previewCY, 1.0f);
-		self->DrawSpacingHelpers(boxTransform, viewport, main->previewScale);
+		self->DrawSpacingHelpers(item, viewport, main->previewScale);
 	}
 
 	gs_matrix_pop();
