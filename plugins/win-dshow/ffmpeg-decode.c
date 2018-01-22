@@ -159,7 +159,7 @@ bool ffmpeg_decode_audio(struct ffmpeg_decode *decode,
 
 	if (ret < 0)
 		return false;
-	else if (ret == 0 || !got_frame)
+	else if (!got_frame)
 		return true;
 
 	for (size_t i = 0; i < MAX_AV_PLANES; i++)
@@ -219,7 +219,7 @@ bool ffmpeg_decode_video(struct ffmpeg_decode *decode,
 
 	if (ret < 0)
 		return false;
-	else if (ret == 0 || !got_frame)
+	else if (!got_frame)
 		return true;
 
 	for (size_t i = 0; i < MAX_AV_PLANES; i++) {
