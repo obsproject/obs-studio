@@ -9,7 +9,10 @@ QWidget {
 	font-family: "Open Sans", "Tahoma", "Arial", sans-serif;
 	font-size: 12px;
 	padding: 4px;
+}
 
+#menubar {
+	padding: 2px 8px 0px;
 }
 
 QLabel:link {
@@ -33,7 +36,7 @@ QMenu {
 
 QSizeGrip {
 	background-color: transparent;
-	image: url(./Rachni/sizegrip.png);
+	image: url(./Acri/sizegrip.png);
 }
 
 /* Misc */
@@ -159,6 +162,7 @@ SourceListWidget {
 	margin-left: -7px;
 	margin-right: -7px;
 	margin-top: -8px;
+	margin-bottom: -12px;
 }
 
 #scenesToolbar,
@@ -573,6 +577,13 @@ VolumeMeter {
 }
 
 VolumeMeter {
+
+	qproperty-backgroundNominalColor: #42740c;
+	qproperty-backgroundWarningColor: #988F0F;
+	qproperty-backgroundErrorColor: #802004;
+	qproperty-foregroundNominalColor: #84D82B;
+	qproperty-foregroundWarningColor: #E4D717;
+	qproperty-foregroundErrorColor: #D74116;
 	qproperty-magnitudeColor: rgb(49, 54, 59); /* Blue-gray */
 	qproperty-majorTickColor: rgb(239, 240, 241); /* White */
 	qproperty-minorTickColor: rgb(118, 121, 124); /* Light Gray */
