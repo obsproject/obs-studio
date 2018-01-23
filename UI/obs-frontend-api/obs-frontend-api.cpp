@@ -210,6 +210,11 @@ void obs_frontend_replay_buffer_start(void)
 	if (callbacks_valid()) c->obs_frontend_replay_buffer_start();
 }
 
+void obs_frontend_replay_buffer_save(void)
+{
+	if (callbacks_valid()) c->obs_frontend_replay_buffer_save();
+}
+
 void obs_frontend_replay_buffer_stop(void)
 {
 	if (callbacks_valid()) c->obs_frontend_replay_buffer_stop();
@@ -306,6 +311,20 @@ void obs_frontend_remove_save_callback(obs_frontend_save_cb callback,
 		c->obs_frontend_remove_save_callback(callback, private_data);
 }
 
+void obs_frontend_add_preload_callback(obs_frontend_save_cb callback,
+		void *private_data)
+{
+	if (callbacks_valid())
+		c->obs_frontend_add_preload_callback(callback, private_data);
+}
+
+void obs_frontend_remove_preload_callback(obs_frontend_save_cb callback,
+		void *private_data)
+{
+	if (callbacks_valid())
+		c->obs_frontend_remove_preload_callback(callback, private_data);
+}
+
 void obs_frontend_push_ui_translation(obs_frontend_translate_ui_cb translate)
 {
 	if (callbacks_valid())
@@ -348,6 +367,19 @@ void obs_frontend_set_preview_program_mode(bool enable)
 {
 	if (callbacks_valid())
 		c->obs_frontend_set_preview_program_mode(enable);
+}
+
+void obs_frontend_set_preview_enabled(bool enable)
+{
+	if (callbacks_valid())
+		c->obs_frontend_set_preview_enabled(enable);
+}
+
+bool obs_frontend_preview_enabled(void)
+{
+	return !!callbacks_valid()
+		? c->obs_frontend_preview_enabled()
+		: false;
 }
 
 obs_source_t *obs_frontend_get_current_preview_scene(void)

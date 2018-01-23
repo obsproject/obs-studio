@@ -291,6 +291,7 @@ enum gs_shader_param_type {
 	GS_SHADER_PARAM_TEXTURE,
 };
 
+#ifndef SWIG
 struct gs_shader_param_info {
 	enum gs_shader_param_type type;
 	const char *name;
@@ -327,6 +328,7 @@ EXPORT void gs_shader_set_val(gs_sparam_t *param, const void *val, size_t size);
 EXPORT void gs_shader_set_default(gs_sparam_t *param);
 EXPORT void gs_shader_set_next_sampler(gs_sparam_t *param,
 		gs_samplerstate_t *sampler);
+#endif
 
 /* ---------------------------------------------------
  * effect functions
@@ -340,6 +342,7 @@ EXPORT void gs_shader_set_next_sampler(gs_sparam_t *param,
 	GS_EFFECT_TEXTURE
 };*/
 
+#ifndef SWIG
 struct gs_effect_param_info {
 	const char *name;
 	enum gs_shader_param_type type;
@@ -349,6 +352,7 @@ struct gs_effect_param_info {
 
 	float min, max, inc, mul; */
 };
+#endif
 
 EXPORT void gs_effect_destroy(gs_effect_t *effect);
 
@@ -382,8 +386,11 @@ EXPORT void gs_effect_update_params(gs_effect_t *effect);
 EXPORT gs_eparam_t *gs_effect_get_viewproj_matrix(const gs_effect_t *effect);
 EXPORT gs_eparam_t *gs_effect_get_world_matrix(const gs_effect_t *effect);
 
+#ifndef SWIG
 EXPORT void gs_effect_get_param_info(const gs_eparam_t *param,
 		struct gs_effect_param_info *info);
+#endif
+
 EXPORT void gs_effect_set_bool(gs_eparam_t *param, bool val);
 EXPORT void gs_effect_set_float(gs_eparam_t *param, float val);
 EXPORT void gs_effect_set_int(gs_eparam_t *param, int val);
@@ -397,6 +404,8 @@ EXPORT void gs_effect_set_val(gs_eparam_t *param, const void *val, size_t size);
 EXPORT void gs_effect_set_default(gs_eparam_t *param);
 EXPORT void gs_effect_set_next_sampler(gs_eparam_t *param,
 		gs_samplerstate_t *sampler);
+
+EXPORT void gs_effect_set_color(gs_eparam_t *param, uint32_t argb);
 
 /* ---------------------------------------------------
  * texture render helper functions
@@ -419,6 +428,8 @@ EXPORT gs_texture_t *gs_texrender_get_texture(const gs_texrender_t *texrender);
 #define GS_DYNAMIC       (1<<1)
 #define GS_RENDER_TARGET (1<<2)
 #define GS_GL_DUMMYTEX   (1<<3) /**<< texture with no allocated texture data */
+#define GS_DUP_BUFFER    (1<<4) /**<< do not pass buffer ownership when
+				 *    creating a vertex/index buffer */
 
 /* ---------------- */
 /* global functions */
@@ -716,11 +727,15 @@ EXPORT void     gs_samplerstate_destroy(gs_samplerstate_t *samplerstate);
 
 EXPORT void     gs_vertexbuffer_destroy(gs_vertbuffer_t *vertbuffer);
 EXPORT void     gs_vertexbuffer_flush(gs_vertbuffer_t *vertbuffer);
+EXPORT void     gs_vertexbuffer_flush_direct(gs_vertbuffer_t *vertbuffer,
+		const struct gs_vb_data *data);
 EXPORT struct gs_vb_data *gs_vertexbuffer_get_data(
 		const gs_vertbuffer_t *vertbuffer);
 
 EXPORT void     gs_indexbuffer_destroy(gs_indexbuffer_t *indexbuffer);
 EXPORT void     gs_indexbuffer_flush(gs_indexbuffer_t *indexbuffer);
+EXPORT void     gs_indexbuffer_flush_direct(gs_indexbuffer_t *indexbuffer,
+		const void *data);
 EXPORT void     *gs_indexbuffer_get_data(const gs_indexbuffer_t *indexbuffer);
 EXPORT size_t   gs_indexbuffer_get_num_indices(
 		const gs_indexbuffer_t *indexbuffer);

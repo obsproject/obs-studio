@@ -42,6 +42,10 @@
                     "url": "rtmp://live-fra.twitch.tv/app"
                 },
                 {
+                    "name": "EU: Helsinki, FI",
+                    "url": "rtmp://live-hel.twitch.tv/app"
+                },
+                {
                     "name": "EU: Lisbon, Portugal",
                     "url": "rtmp://live-lis.twitch.tv/app"
                 },
@@ -128,6 +132,10 @@
                 {
                     "name": "US Central: Houston, TX",
                     "url": "rtmp://live-hou.twitch.tv/app"
+                },
+                {
+                    "name": "US Central: Salt Lake City, UT",
+                    "url": "rtmp://live-slc.twitch.tv/app"
                 },
                 {
                     "name": "US East: Ashburn, VA",
@@ -467,6 +475,21 @@
             }
         },
         {
+            "name": "Mobcrush",
+            "servers": [
+                {
+                    "name": "Primary",
+                    "url": "rtmp://live.mobcrush.net/mob"
+                }
+            ],
+            "recommended": {
+                "keyint": 2,
+                "profile": "main",
+                "max video bitrate": 6000,
+                "max audio bitrate": 160
+            }
+        },
+        {
             "name": "DailyMotion",
             "common": true,
             "servers": [
@@ -763,18 +786,6 @@
             }
         },
         {
-            "name": "Coderwall",
-            "servers": [
-                {
-                    "name": "Primary",
-                    "url": "rtmp://live.coderwall.com/coderwall"
-                }
-            ],
-            "recommended": {
-                "max video bitrate": 1500
-            }
-        },
-        {
             "name": "Meridix Live Sports Platform",
             "servers": [
                 {
@@ -885,11 +896,15 @@
             "name": "Picarto",
             "servers": [
                 {
-                    "name": "US East",
+                    "name": "US East (Chicago, USA)",
                     "url": "rtmp://live.us-east1.picarto.tv/golive"
                 },
                 {
-                    "name": "EU West",
+                    "name": "US West (Los Angeles, USA)",
+                    "url": "rtmp://live.us-west1.picarto.tv/golive"
+                },
+                {
+                    "name": "EU West (Düsseldorf, Germany)",
                     "url": "rtmp://live.eu-west1.picarto.tv/golive"
                 }
             ],
@@ -909,7 +924,7 @@
             ]
         },
         {
-            "name": "LiveStream",
+            "name": "Livestream",
             "servers": [
                 {
                     "name": "Primary",
@@ -1102,6 +1117,49 @@
                 "keyint": 2,
                 "profile": "main",
                 "max video bitrate": 20000,
+                "max audio bitrate": 192
+            }
+        },
+        {
+            "name": "Eventials",
+            "servers": [
+                {
+                    "name": "Default",
+                    "url": "rtmp://live.eventials.com/eventialsLiveOrigin"
+                }
+            ],
+            "recommended": {
+                "keyint": 1,
+                "profile": "baseline",
+                "max video bitrate": 900,
+                "max audio bitrate": 192
+            }
+        },
+        {
+            "name": "Lahzenegar - لحظه نگار",
+            "servers": [
+                {
+                    "name": "Primary",
+                    "url": "rtmp://live.lahzenegar.com:80/pro"
+                }
+            ],
+            "recommended": {
+                "max video bitrate": 1000,
+                "max audio bitrate": 96
+            }
+        },
+        {
+            "name": "MyLive",
+            "servers": [
+                {
+                    "name": "Default",
+                    "url": "rtmp://stream.mylive.in.th/live"
+                }
+            ],
+            "recommended": {
+                "keyint": 2,
+                "profile": "main",
+                "max video bitrate": 7000,
                 "max audio bitrate": 192
             }
         }

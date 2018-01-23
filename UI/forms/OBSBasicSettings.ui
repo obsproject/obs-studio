@@ -145,8 +145,8 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>818</width>
-              <height>697</height>
+              <width>801</width>
+              <height>741</height>
              </rect>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_19">
@@ -536,6 +536,64 @@
                       </size>
                      </property>
                     </spacer>
+                   </item>
+                  </layout>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QGroupBox" name="groupBox_11">
+                  <property name="title">
+                   <string>Basic.TogglePreviewProgramMode</string>
+                  </property>
+                  <layout class="QFormLayout" name="formLayout_31">
+                   <property name="fieldGrowthPolicy">
+                    <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+                   </property>
+                   <property name="labelAlignment">
+                    <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                   </property>
+                   <property name="topMargin">
+                    <number>2</number>
+                   </property>
+                   <item row="0" column="1">
+                    <widget class="QCheckBox" name="doubleClickSwitch">
+                     <property name="text">
+                      <string>Basic.Settings.General.SwitchOnDoubleClick</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="0" column="0">
+                    <spacer name="horizontalSpacer_6">
+                     <property name="orientation">
+                      <enum>Qt::Horizontal</enum>
+                     </property>
+                     <property name="sizeHint" stdset="0">
+                      <size>
+                       <width>170</width>
+                       <height>5</height>
+                      </size>
+                     </property>
+                    </spacer>
+                   </item>
+                   <item row="1" column="1">
+                    <widget class="QCheckBox" name="studioPortraitLayout">
+                     <property name="text">
+                      <string>Basic.Settings.General.StudioPortraitLayout</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="2" column="1">
+                    <widget class="QComboBox" name="multiviewLayout"/>
+                   </item>
+                   <item row="2" column="0">
+                    <widget class="QLabel" name="label_64">
+                     <property name="text">
+                      <string>Basic.Settings.General.MultiviewLayout</string>
+                     </property>
+                     <property name="buddy">
+                      <cstring>multiviewLayout</cstring>
+                     </property>
+                    </widget>
                    </item>
                   </layout>
                  </widget>
@@ -3180,6 +3238,31 @@
              <string>Stereo</string>
             </property>
            </item>
+           <item>
+            <property name="text">
+             <string>2.1</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>4.0</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>4.1</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>5.1</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>7.1</string>
+            </property>
+           </item>
           </widget>
          </item>
          <item row="2" column="0">
@@ -3279,7 +3362,7 @@
            </property>
           </widget>
          </item>
-         <item row="7" column="0" colspan="2">
+         <item row="8" column="0" colspan="2">
           <widget class="QScrollArea" name="audioSourceScrollArea">
            <property name="widgetResizable">
             <bool>true</bool>
@@ -3296,7 +3379,7 @@
            </widget>
           </widget>
          </item>
-         <item row="8" column="1">
+         <item row="9" column="1">
           <widget class="QLabel" name="audioMsg">
            <property name="styleSheet">
             <string notr="true">color: rgb(255, 0, 4);</string>
@@ -3307,6 +3390,54 @@
            <property name="wordWrap">
             <bool>true</bool>
            </property>
+          </widget>
+         </item>
+         <item row="10" column="1">
+          <widget class="QLabel" name="audioMsg_2">
+           <property name="text">
+            <string notr="true"/>
+           </property>
+           <property name="wordWrap">
+            <bool>true</bool>
+           </property>
+           <property name="themeID" stdset="0">
+            <string notr="true">warning</string>
+           </property>
+          </widget>
+         </item>
+         <item row="7" column="0">
+          <widget class="QLabel" name="label_65">
+           <property name="text">
+            <string>Basic.Settings.Audio.MeterDecayRate</string>
+           </property>
+           <property name="buddy">
+            <cstring>meterDecayRate</cstring>
+           </property>
+          </widget>
+         </item>
+         <item row="7" column="1">
+          <widget class="QComboBox" name="meterDecayRate">
+           <property name="currentText">
+            <string>Basic.Settings.Audio.MeterDecayRate.Fast</string>
+           </property>
+           <property name="currentIndex">
+            <number>0</number>
+           </property>
+           <item>
+            <property name="text">
+             <string>Basic.Settings.Audio.MeterDecayRate.Fast</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>Basic.Settings.Audio.MeterDecayRate.Medium</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>Basic.Settings.Audio.MeterDecayRate.Slow</string>
+            </property>
+           </item>
           </widget>
          </item>
         </layout>
@@ -3660,7 +3791,7 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>803</width>
+              <width>593</width>
               <height>761</height>
              </rect>
             </property>

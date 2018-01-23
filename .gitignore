@@ -24,6 +24,9 @@
 #xcode
 *.xcodeproj/
 
+#clion
+.idea/
+
 #other stuff (windows stuff, qt moc stuff, etc)
 Release_MD/
 Release/
@@ -41,6 +44,14 @@ depcomp
 install-sh
 Makefile.in
 Makefile
+
+#python
+__pycache__
+
+#sphinx
+/docs/sphinx/_build/*
+!/docs/sphinx/_build/.gitignore
+!/docs/sphinx/Makefile
 
 #random useless file stuff
 *.dmg

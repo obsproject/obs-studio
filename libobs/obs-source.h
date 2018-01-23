@@ -130,6 +130,11 @@ enum obs_source_type {
  */
 #define OBS_SOURCE_DO_NOT_SELF_MONITOR (1<<9)
 
+/**
+ * Source type is currently disabled and should not be shown to the user
+ */
+#define OBS_SOURCE_CAP_DISABLED (1<<10)
+
 /** @} */
 
 typedef void (*obs_source_enum_proc_t)(obs_source_t *parent,
@@ -201,6 +206,7 @@ struct obs_source_info {
 	 * Gets the default settings for this source
 	 *
 	 * @param[out]  settings  Data to assign default settings to
+	 * @deprecated            Use get_defaults2 if type_data is needed
 	 */
 	void (*get_defaults)(obs_data_t *settings);
 
@@ -208,6 +214,7 @@ struct obs_source_info {
 	 * Gets the property information of this source
 	 *
 	 * @return         The properties data
+	 * @deprecated     Use get_properties2 if type_data is needed
 	 */
 	obs_properties_t *(*get_properties)(void *data);
 
@@ -428,6 +435,23 @@ struct obs_source_info {
 
 	void (*transition_start)(void *data);
 	void (*transition_stop)(void *data);
+
+	/**
+	 * Gets the default settings for this source
+	 *
+	 * @param       type_data The type_data variable of this structure
+	 * @param[out]  settings  Data to assign default settings to
+	 */
+	void (*get_defaults2)(void *type_data, obs_data_t *settings);
+
+	/**
+	 * Gets the property information of this source
+	 *
+	 * @param data      Source data
+	 * @param type_data The type_data variable of this structure
+	 * @return          The properties data
+	 */
+	obs_properties_t *(*get_properties2)(void *data, void *type_data);
 };
 
 EXPORT void obs_register_source_s(const struct obs_source_info *info,

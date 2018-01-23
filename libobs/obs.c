@@ -560,7 +560,7 @@ static bool obs_init_data(void)
 		goto fail;
 	if (pthread_mutex_init(&data->services_mutex, &attr) != 0)
 		goto fail;
-	if (pthread_mutex_init(&obs->data.draw_callbacks_mutex, NULL) != 0)
+	if (pthread_mutex_init(&obs->data.draw_callbacks_mutex, &attr) != 0)
 		goto fail;
 	if (!obs_view_init(&data->main_view))
 		goto fail;
@@ -619,6 +619,7 @@ static void obs_free_data(void)
 	pthread_mutex_destroy(&data->services_mutex);
 	pthread_mutex_destroy(&data->draw_callbacks_mutex);
 	da_free(data->draw_callbacks);
+	da_free(data->tick_callbacks);
 }
 
 static const char *obs_signals[] = {
@@ -809,6 +810,7 @@ bool obs_startup(const char *locale, const char *module_config_path,
 void obs_shutdown(void)
 {
 	struct obs_module *module;
+	struct obs_core *core;
 
 	if (!obs)
 		return;
@@ -849,25 +851,27 @@ void obs_shutdown(void)
 	obs->procs = NULL;
 	obs->signals = NULL;
 
-	module = obs->first_module;
+	core = obs;
+	obs = NULL;
+
+	module = core->first_module;
 	while (module) {
 		struct obs_module *next = module->next;
 		free_module(module);
 		module = next;
 	}
-	obs->first_module = NULL;
+	core->first_module = NULL;
 
-	for (size_t i = 0; i < obs->module_paths.num; i++)
-		free_module_path(obs->module_paths.array+i);
-	da_free(obs->module_paths);
+	for (size_t i = 0; i < core->module_paths.num; i++)
+		free_module_path(core->module_paths.array+i);
+	da_free(core->module_paths);
 
-	if (obs->name_store_owned)
-		profiler_name_store_free(obs->name_store);
+	if (core->name_store_owned)
+		profiler_name_store_free(core->name_store);
 
-	bfree(obs->module_config_path);
-	bfree(obs->locale);
-	bfree(obs);
-	obs = NULL;
+	bfree(core->module_config_path);
+	bfree(core->locale);
+	bfree(core);
 
 #ifdef _WIN32
 	uninitialize_com();
@@ -1430,6 +1434,32 @@ void obs_render_main_view(void)
 	obs_view_render(&obs->data.main_view);
 }
 
+void obs_render_main_texture(void)
+{
+	struct obs_core_video *video = &obs->video;
+	gs_texture_t *tex;
+	gs_effect_t *effect;
+	gs_eparam_t *param;
+	int last_tex;
+
+	if (!obs) return;
+
+	last_tex = video->cur_texture == 0
+		? NUM_TEXTURES - 1
+		: video->cur_texture - 1;
+
+	if (!video->textures_rendered[last_tex])
+		return;
+
+	tex = video->render_textures[last_tex];
+	effect = obs_get_base_effect(OBS_EFFECT_DEFAULT);
+	param = gs_effect_get_param_by_name(effect, "image");
+	gs_effect_set_texture(param, tex);
+
+	while (gs_effect_loop(effect, "Draw"))
+		gs_draw_sprite(tex, 0, 0, 0);
+}
+
 void obs_set_master_volume(float volume)
 {
 	struct calldata data = {0};
@@ -1951,6 +1981,34 @@ void obs_get_audio_monitoring_device(const char **name, const char **id)
 		*id = obs->audio.monitoring_device_id;
 }
 
+void obs_add_tick_callback(
+		void (*tick)(void *param, float seconds),
+		void *param)
+{
+	if (!obs)
+		return;
+
+	struct tick_callback data = {tick, param};
+
+	pthread_mutex_lock(&obs->data.draw_callbacks_mutex);
+	da_insert(obs->data.tick_callbacks, 0, &data);
+	pthread_mutex_unlock(&obs->data.draw_callbacks_mutex);
+}
+
+void obs_remove_tick_callback(
+		void (*tick)(void *param, float seconds),
+		void *param)
+{
+	if (!obs)
+		return;
+
+	struct tick_callback data = {tick, param};
+
+	pthread_mutex_lock(&obs->data.draw_callbacks_mutex);
+	da_erase_item(obs->data.tick_callbacks, &data);
+	pthread_mutex_unlock(&obs->data.draw_callbacks_mutex);
+}
+
 void obs_add_main_render_callback(
 		void (*draw)(void *param, uint32_t cx, uint32_t cy),
 		void *param)
@@ -1961,7 +2019,7 @@ void obs_add_main_render_callback(
 	struct draw_callback data = {draw, param};
 
 	pthread_mutex_lock(&obs->data.draw_callbacks_mutex);
-	da_push_back(obs->data.draw_callbacks, &data);
+	da_insert(obs->data.draw_callbacks, 0, &data);
 	pthread_mutex_unlock(&obs->data.draw_callbacks_mutex);
 }
 

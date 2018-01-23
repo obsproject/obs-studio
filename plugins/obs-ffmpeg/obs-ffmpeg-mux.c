@@ -531,6 +531,13 @@ static void save_replay_proc(void *data, calldata_t *cd)
 	UNUSED_PARAMETER(cd);
 }
 
+static void get_last_replay(void *data, calldata_t *cd)
+{
+	struct ffmpeg_muxer *stream = data;
+	if (!os_atomic_load_bool(&stream->muxing))
+		calldata_set_string(cd, "path", stream->path.array);
+}
+
 static void *replay_buffer_create(obs_data_t *settings, obs_output_t *output)
 {
 	UNUSED_PARAMETER(settings);
@@ -544,6 +551,8 @@ static void *replay_buffer_create(obs_data_t *settings, obs_output_t *output)
 
 	proc_handler_t *ph = obs_output_get_proc_handler(output);
 	proc_handler_add(ph, "void save()", save_replay_proc, stream);
+	proc_handler_add(ph, "void get_last_replay(out string path)",
+			get_last_replay, stream);
 
 	return stream;
 }

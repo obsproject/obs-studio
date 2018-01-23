@@ -72,7 +72,7 @@ static obs_properties_t *libfdk_properties(void *unused)
 	obs_properties_t *props = obs_properties_create();
 
 	obs_properties_add_int(props, "bitrate",
-			obs_module_text("Bitrate"), 32, 256, 32);
+			obs_module_text("Bitrate"), 32, 1024, 32);
 	obs_properties_add_bool(props, "afterburner",
 			obs_module_text("Afterburner"));
 
@@ -131,6 +131,16 @@ static void *libfdk_create(obs_data_t *settings, obs_encoder_t *encoder)
 	case 6:
 		mode = MODE_1_2_2_1;
 		break;
+
+        /* lib_fdk-aac > 1.3 required for 7.1 surround;
+         * uncomment if available on linux build
+         */
+#ifndef __linux__
+	case 8:
+		mode = MODE_7_1_REAR_SURROUND;
+		break;
+#endif
+
 	default:
 		blog(LOG_ERROR, "Invalid channel count");
 		goto fail;

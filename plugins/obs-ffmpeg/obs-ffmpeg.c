@@ -3,6 +3,7 @@
 #include <util/platform.h>
 #include <libavutil/log.h>
 #include <libavcodec/avcodec.h>
+#include <libavformat/avformat.h>
 #include <pthread.h>
 
 OBS_DECLARE_MODULE()
@@ -116,13 +117,23 @@ cleanup:
 	destroy_log_context(log_context);
 }
 
+#ifndef __APPLE__
+
+static const char *nvenc_check_name = "nvenc_check";
+
 static bool nvenc_supported(void)
 {
+	av_register_all();
+
+	profile_start(nvenc_check_name);
+
 	AVCodec *nvenc = avcodec_find_encoder_by_name("nvenc_h264");
 	void *lib = NULL;
+	bool success = false;
 
-	if (!nvenc)
-		return false;
+	if (!nvenc) {
+		goto cleanup;
+	}
 
 #if defined(_WIN32)
 	if (sizeof(void*) == 8) {
@@ -133,9 +144,19 @@ static bool nvenc_supported(void)
 #else
 	lib = os_dlopen("libnvidia-encode.so.1");
 #endif
-	os_dlclose(lib);
-	return !!lib;
+
+	/* ------------------------------------------- */
+
+	success = !!lib;
+
+cleanup:
+	if (lib)
+		os_dlclose(lib);
+	profile_end(nvenc_check_name);
+	return success;
 }
+
+#endif
 
 bool obs_module_load(void)
 {
@@ -150,10 +171,12 @@ bool obs_module_load(void)
 	obs_register_output(&replay_buffer);
 	obs_register_encoder(&aac_encoder_info);
 	obs_register_encoder(&opus_encoder_info);
+#ifndef __APPLE__
 	if (nvenc_supported()) {
 		blog(LOG_INFO, "NVENC supported");
 		obs_register_encoder(&nvenc_encoder_info);
 	}
+#endif
 	return true;
 }
 

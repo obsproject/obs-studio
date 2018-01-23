@@ -907,7 +907,7 @@ static bool scene_audio_render(void *data, uint64_t *ts_out,
 
 	item = scene->first_item;
 	while (item) {
-		if (!obs_source_audio_pending(item->source)) {
+		if (!obs_source_audio_pending(item->source) && item->visible) {
 			uint64_t source_ts =
 				obs_source_get_audio_timestamp(item->source);
 
@@ -1094,6 +1094,11 @@ obs_scene_t *obs_scene_duplicate(obs_scene_t *scene, const char *name,
 
 	new_scene = make_private ?
 		obs_scene_create_private(name) : obs_scene_create(name);
+
+	obs_source_copy_filters(new_scene->source, scene->source);
+
+	obs_data_apply(new_scene->source->private_settings,
+			scene->source->private_settings);
 
 	for (size_t i = 0; i < items.num; i++) {
 		item = items.array[i];

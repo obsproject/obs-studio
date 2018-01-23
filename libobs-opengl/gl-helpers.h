@@ -157,5 +157,5 @@ extern bool gl_copy_texture(struct gs_device *device,
 extern bool gl_create_buffer(GLenum target, GLuint *buffer, GLsizeiptr size,
 		const GLvoid *data, GLenum usage);
 
-extern bool update_buffer(GLenum target, GLuint buffer, void *data,
+extern bool update_buffer(GLenum target, GLuint buffer, const void *data,
 		size_t size);

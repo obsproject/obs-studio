@@ -45,6 +45,7 @@
 #include "window-basic-main.hpp"
 #include "window-basic-settings.hpp"
 #include "window-basic-main-outputs.hpp"
+#include "window-projector.hpp"
 
 #include <util/platform.h>
 
@@ -243,6 +244,9 @@ static void PopulateAACBitrates(initializer_list<QComboBox*> boxes)
 	}
 }
 
+void RestrictResetBitrates(initializer_list<QComboBox*> boxes,
+		int maxbitrate);
+
 void OBSBasicSettings::HookWidget(QWidget *widget, const char *signal,
 		const char *slot)
 {
@@ -256,6 +260,7 @@ void OBSBasicSettings::HookWidget(QWidget *widget, const char *signal,
 #define CHECK_CHANGED   SIGNAL(clicked(bool))
 #define SCROLL_CHANGED  SIGNAL(valueChanged(int))
 #define DSCROLL_CHANGED SIGNAL(valueChanged(double))
+#define TOGGLE_CHANGED  SIGNAL(toggled(bool))
 
 #define GENERAL_CHANGED SLOT(GeneralChanged())
 #define STREAM1_CHANGED SLOT(Stream1Changed())
@@ -311,6 +316,9 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->centerSnapping,       CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->sourceSnapping,       CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->snapDistance,         DSCROLL_CHANGED,GENERAL_CHANGED);
+	HookWidget(ui->doubleClickSwitch,    CHECK_CHANGED,  GENERAL_CHANGED);
+	HookWidget(ui->studioPortraitLayout, CHECK_CHANGED,  GENERAL_CHANGED);
+	HookWidget(ui->multiviewLayout,      COMBO_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->outputMode,           COMBO_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->streamType,           COMBO_CHANGED,  STREAM1_CHANGED);
 	HookWidget(ui->simpleOutputPath,     EDIT_CHANGED,   OUTPUTS_CHANGED);
@@ -392,6 +400,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->advRBMegsMax,         SCROLL_CHANGED, OUTPUTS_CHANGED);
 	HookWidget(ui->channelSetup,         COMBO_CHANGED,  AUDIO_RESTART);
 	HookWidget(ui->sampleRate,           COMBO_CHANGED,  AUDIO_RESTART);
+	HookWidget(ui->meterDecayRate,       COMBO_CHANGED,  AUDIO_CHANGED);
 	HookWidget(ui->desktopAudioDevice1,  COMBO_CHANGED,  AUDIO_CHANGED);
 	HookWidget(ui->desktopAudioDevice2,  COMBO_CHANGED,  AUDIO_CHANGED);
 	HookWidget(ui->auxAudioDevice1,      COMBO_CHANGED,  AUDIO_CHANGED);
@@ -587,6 +596,10 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	FillAudioMonitoringDevices();
 #endif
 
+	connect(ui->channelSetup, SIGNAL(currentIndexChanged(int)),
+			this, SLOT(SurroundWarning(int)));
+	connect(ui->channelSetup, SIGNAL(currentIndexChanged(int)),
+			this, SLOT(SpeakerLayoutChanged(int)));
 	connect(ui->simpleOutRecQuality, SIGNAL(currentIndexChanged(int)),
 			this, SLOT(SimpleRecordingQualityChanged()));
 	connect(ui->simpleOutRecQuality, SIGNAL(currentIndexChanged(int)),
@@ -1069,6 +1082,39 @@ void OBSBasicSettings::LoadGeneralSettings()
 			"BasicWindow", "ProjectorAlwaysOnTop");
 	ui->projectorAlwaysOnTop->setChecked(projectorAlwaysOnTop);
 
+	bool doubleClickSwitch = config_get_bool(GetGlobalConfig(),
+			"BasicWindow", "TransitionOnDoubleClick");
+	ui->doubleClickSwitch->setChecked(doubleClickSwitch);
+
+	bool studioPortraitLayout = config_get_bool(GetGlobalConfig(),
+			"BasicWindow", "StudioPortraitLayout");
+	ui->studioPortraitLayout->setChecked(studioPortraitLayout);
+
+	ui->multiviewLayout->addItem(QTStr(
+			"Basic.Settings.General.MultiviewLayout.Horizontal.Top"),
+			QT_UTF8("horizontaltop"));
+	ui->multiviewLayout->addItem(QTStr(
+			"Basic.Settings.General.MultiviewLayout.Horizontal.Bottom"),
+			QT_UTF8("horizontalbottom"));
+	ui->multiviewLayout->addItem(QTStr(
+			"Basic.Settings.General.MultiviewLayout.Vertical.Left"),
+			QT_UTF8("verticalleft"));
+	ui->multiviewLayout->addItem(QTStr(
+			"Basic.Settings.General.MultiviewLayout.Vertical.Right"),
+			QT_UTF8("verticalright"));
+
+	const char *multiviewLayoutText = config_get_string(GetGlobalConfig(),
+			"BasicWindow", "MultiviewLayout");
+
+	if (astrcmpi(multiviewLayoutText, "horizontalbottom") == 0)
+		ui->multiviewLayout->setCurrentIndex(1);
+	else if (astrcmpi(multiviewLayoutText, "verticalleft") == 0)
+		ui->multiviewLayout->setCurrentIndex(2);
+	else if (astrcmpi(multiviewLayoutText, "verticalright") == 0)
+		ui->multiviewLayout->setCurrentIndex(3);
+	else
+		ui->multiviewLayout->setCurrentIndex(0);
+
 	loading = false;
 }
 
@@ -1368,6 +1414,30 @@ void OBSBasicSettings::LoadVideoSettings()
 	loading = false;
 }
 
+static inline bool IsSurround(const char *speakers)
+{
+	static const char *surroundLayouts[] = {
+		"2.1",
+		"4.0",
+		"4.1",
+		"5.1",
+		"7.1",
+		nullptr
+	};
+
+	if (!speakers || !*speakers)
+		return false;
+
+	const char **curLayout = surroundLayouts;
+	for (; *curLayout; ++curLayout) {
+		if (strcmp(*curLayout, speakers) == 0) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
 void OBSBasicSettings::LoadSimpleOutputSettings()
 {
 	const char *path = config_get_string(main->Config(), "SimpleOutput",
@@ -1422,6 +1492,13 @@ void OBSBasicSettings::LoadSimpleOutputSettings()
 
 	int idx = ui->simpleOutRecFormat->findText(format);
 	ui->simpleOutRecFormat->setCurrentIndex(idx);
+
+	const char *speakers = config_get_string(main->Config(), "Audio",
+			"ChannelSetup");
+
+	// restrict list of bitrates when multichannel is OFF
+	if (!IsSurround(speakers))
+		RestrictResetBitrates({ui->simpleOutputABitrate}, 320);
 
 	SetComboByName(ui->simpleOutputABitrate,
 			std::to_string(audioBitrate).c_str());
@@ -1741,6 +1818,20 @@ void OBSBasicSettings::LoadAdvOutputAudioSettings()
 	track5Bitrate = FindClosestAvailableAACBitrate(track5Bitrate);
 	track6Bitrate = FindClosestAvailableAACBitrate(track6Bitrate);
 
+	// restrict list of bitrates when multichannel is OFF
+	const char *speakers = config_get_string(main->Config(), "Audio",
+			"ChannelSetup");
+
+	// restrict list of bitrates when multichannel is OFF
+	if (!IsSurround(speakers)) {
+		RestrictResetBitrates({ui->advOutTrack1Bitrate,
+				ui->advOutTrack2Bitrate,
+				ui->advOutTrack3Bitrate,
+				ui->advOutTrack4Bitrate,
+				ui->advOutTrack5Bitrate,
+				ui->advOutTrack6Bitrate}, 320);
+	}
+
 	SetComboByName(ui->advOutTrack1Bitrate,
 			std::to_string(track1Bitrate).c_str());
 	SetComboByName(ui->advOutTrack2Bitrate,
@@ -2029,6 +2120,8 @@ void OBSBasicSettings::LoadAudioSettings()
 			"SampleRate");
 	const char *speakers = config_get_string(main->Config(), "Audio",
 			"ChannelSetup");
+	double meterDecayRate = config_get_double(main->Config(), "Audio",
+			"MeterDecayRate");
 
 	loading = true;
 
@@ -2044,8 +2137,25 @@ void OBSBasicSettings::LoadAudioSettings()
 
 	if (strcmp(speakers, "Mono") == 0)
 		ui->channelSetup->setCurrentIndex(0);
+	else if (strcmp(speakers, "2.1") == 0)
+		ui->channelSetup->setCurrentIndex(2);
+	else if (strcmp(speakers, "4.0") == 0)
+		ui->channelSetup->setCurrentIndex(3);
+	else if (strcmp(speakers, "4.1") == 0)
+		ui->channelSetup->setCurrentIndex(4);
+	else if (strcmp(speakers, "5.1") == 0)
+		ui->channelSetup->setCurrentIndex(5);
+	else if (strcmp(speakers, "7.1") == 0)
+		ui->channelSetup->setCurrentIndex(6);
 	else
 		ui->channelSetup->setCurrentIndex(1);
+
+	if (meterDecayRate == VOLUME_METER_DECAY_MEDIUM)
+		ui->meterDecayRate->setCurrentIndex(1);
+	else if (meterDecayRate == VOLUME_METER_DECAY_SLOW)
+		ui->meterDecayRate->setCurrentIndex(2);
+	else
+		ui->meterDecayRate->setCurrentIndex(0);
 
 	LoadAudioDevices();
 	LoadAudioSources();
@@ -2519,6 +2629,10 @@ void OBSBasicSettings::SaveGeneralSettings()
 		config_set_double(GetGlobalConfig(), "BasicWindow",
 				"SnapDistance",
 				ui->snapDistance->value());
+	if (WidgetChanged(ui->doubleClickSwitch))
+		config_set_bool(GetGlobalConfig(), "BasicWindow",
+				"TransitionOnDoubleClick",
+				ui->doubleClickSwitch->isChecked());
 
 	config_set_bool(GetGlobalConfig(), "BasicWindow",
 			"WarnBeforeStartingStream",
@@ -2571,6 +2685,22 @@ void OBSBasicSettings::SaveGeneralSettings()
 		config_set_bool(GetGlobalConfig(), "BasicWindow",
 				"SaveProjectors",
 				ui->saveProjectors->isChecked());
+
+	if (WidgetChanged(ui->studioPortraitLayout)) {
+		config_set_bool(GetGlobalConfig(), "BasicWindow",
+				"StudioPortraitLayout",
+				ui->studioPortraitLayout->isChecked());
+
+		main->ResetUI();
+	}
+
+	if (WidgetChanged(ui->multiviewLayout)) {
+		config_set_string(GetGlobalConfig(), "BasicWindow",
+				"MultiviewLayout",
+				QT_TO_UTF8(GetComboData(ui->multiviewLayout)));
+
+		OBSProjector::UpdateMultiviewProjectors();
+	}
 }
 
 void OBSBasicSettings::SaveStream1Settings()
@@ -2918,7 +3048,34 @@ void OBSBasicSettings::SaveAudioSettings()
 	QString sampleRateStr  = ui->sampleRate->currentText();
 	int channelSetupIdx    = ui->channelSetup->currentIndex();
 
-	const char *channelSetup = (channelSetupIdx == 0) ? "Mono" : "Stereo";
+	const char *channelSetup;
+	switch (channelSetupIdx) {
+	case 0:
+		channelSetup = "Mono";
+		break;
+	case 1:
+		channelSetup = "Stereo";
+		break;
+	case 2:
+		channelSetup = "2.1";
+		break;
+	case 3:
+		channelSetup = "4.0";
+		break;
+	case 4:
+		channelSetup = "4.1";
+		break;
+	case 5:
+		channelSetup = "5.1";
+		break;
+	case 6:
+		channelSetup = "7.1";
+		break;
+
+	default:
+		channelSetup = "Stereo";
+		break;
+	}
 
 	int sampleRate = 44100;
 	if (sampleRateStr == "48khz")
@@ -2931,6 +3088,28 @@ void OBSBasicSettings::SaveAudioSettings()
 	if (WidgetChanged(ui->channelSetup))
 		config_set_string(main->Config(), "Audio", "ChannelSetup",
 				channelSetup);
+
+	if (WidgetChanged(ui->meterDecayRate)) {
+		double meterDecayRate;
+		switch (ui->meterDecayRate->currentIndex()) {
+		case 0:
+			meterDecayRate = VOLUME_METER_DECAY_FAST;
+			break;
+		case 1:
+			meterDecayRate = VOLUME_METER_DECAY_MEDIUM;
+			break;
+		case 2:
+			meterDecayRate = VOLUME_METER_DECAY_SLOW;
+			break;
+		default:
+			meterDecayRate = VOLUME_METER_DECAY_FAST;
+			break;
+		}
+		config_set_double(main->Config(), "Audio", "MeterDecayRate",
+				meterDecayRate);
+
+		main->UpdateVolumeControlsDecayRate();
+	}
 
 	for (auto &audioSource : audioSources) {
 		auto source  = OBSGetStrongRef(get<0>(audioSource));
@@ -3434,6 +3613,85 @@ void OBSBasicSettings::AudioChangedRestart()
 void OBSBasicSettings::ReloadAudioSources()
 {
 	LoadAudioSources();
+}
+
+#define MULTI_CHANNEL_WARNING "Basic.Settings.Audio.MultichannelWarning"
+
+void OBSBasicSettings::SpeakerLayoutChanged(int idx)
+{
+	QString speakerLayoutQstr = ui->channelSetup->itemText(idx);
+	std::string speakerLayout = QT_TO_UTF8(speakerLayoutQstr);
+	bool surround = IsSurround(speakerLayout.c_str());
+
+	if (surround) {
+		QString warning =
+			QTStr(MULTI_CHANNEL_WARNING ".Enabled") +
+			QStringLiteral("\n\n") +
+			QTStr(MULTI_CHANNEL_WARNING);
+		/*
+		 * Display all bitrates
+		 */
+		ui->audioMsg_2->setText(warning);
+		PopulateAACBitrates({ui->simpleOutputABitrate,
+				ui->advOutTrack1Bitrate,
+				ui->advOutTrack2Bitrate,
+				ui->advOutTrack3Bitrate,
+				ui->advOutTrack4Bitrate,
+				ui->advOutTrack5Bitrate,
+				ui->advOutTrack6Bitrate});
+	} else {
+		/*
+		 * Reset audio bitrate for simple and adv mode, update list of
+		 * bitrates and save setting.
+		 */
+		ui->audioMsg_2->setText(QString());
+		RestrictResetBitrates({ui->simpleOutputABitrate,
+				ui->advOutTrack1Bitrate,
+				ui->advOutTrack2Bitrate,
+				ui->advOutTrack3Bitrate,
+				ui->advOutTrack4Bitrate,
+				ui->advOutTrack5Bitrate,
+				ui->advOutTrack6Bitrate}, 320);
+
+		SaveCombo(ui->simpleOutputABitrate, "SimpleOutput", "ABitrate");
+		SaveCombo(ui->advOutTrack1Bitrate, "AdvOut", "Track1Bitrate");
+		SaveCombo(ui->advOutTrack2Bitrate, "AdvOut", "Track2Bitrate");
+		SaveCombo(ui->advOutTrack3Bitrate, "AdvOut", "Track3Bitrate");
+		SaveCombo(ui->advOutTrack4Bitrate, "AdvOut", "Track4Bitrate");
+		SaveCombo(ui->advOutTrack5Bitrate, "AdvOut", "Track5Bitrate");
+		SaveCombo(ui->advOutTrack6Bitrate, "AdvOut", "Track6Bitrate");
+	}
+}
+
+/*
+ * resets current bitrate if too large and restricts the number of bitrates
+ * displayed when multichannel OFF
+ */
+
+void RestrictResetBitrates(initializer_list<QComboBox*> boxes, int maxbitrate)
+{
+	for (auto box : boxes) {
+		int idx = box->currentIndex();
+		int max_bitrate = FindClosestAvailableAACBitrate(maxbitrate);
+		int count = box->count();
+		int max_idx = box->findText(QT_UTF8(std::to_string
+				(max_bitrate).c_str()));
+
+		for (int i = (count - 1); i > max_idx; i--)
+			box->removeItem(i);
+
+		if (idx > max_idx) {
+			int default_bitrate = FindClosestAvailableAACBitrate(
+					maxbitrate / 2);
+			int default_idx = box->findText(QT_UTF8(std::to_string
+					(default_bitrate).c_str()));
+
+			box->setCurrentIndex(default_idx);
+			box->setProperty("changed", QVariant(true));
+		} else {
+			box->setCurrentIndex(idx);
+		}
+	}
 }
 
 void OBSBasicSettings::VideoChangedRestart()
@@ -4005,6 +4263,47 @@ void OBSBasicSettings::SimpleRecordingEncoderChanged()
 	simpleOutRecWarning->setObjectName("warningLabel");
 	simpleOutRecWarning->setWordWrap(true);
 	ui->simpleOutInfoLayout->addWidget(simpleOutRecWarning);
+}
+
+void OBSBasicSettings::SurroundWarning(int idx)
+{
+	if (idx == lastChannelSetupIdx || idx == -1)
+		return;
+
+	if (loading) {
+		lastChannelSetupIdx = idx;
+		return;
+	}
+
+	QString speakerLayoutQstr = ui->channelSetup->itemText(idx);
+	bool surround = IsSurround(QT_TO_UTF8(speakerLayoutQstr));
+
+	QString lastQstr = ui->channelSetup->itemText(lastChannelSetupIdx);
+	bool wasSurround = IsSurround(QT_TO_UTF8(lastQstr));
+
+	if (surround && !wasSurround) {
+		QMessageBox::StandardButton button;
+
+		QString warningString =
+			QTStr("Basic.Settings.ProgramRestart") +
+			QStringLiteral("\n\n") +
+			QTStr(MULTI_CHANNEL_WARNING) +
+			QStringLiteral("\n\n") +
+			QTStr(MULTI_CHANNEL_WARNING ".Confirm");
+
+		button = OBSMessageBox::question(this,
+				QTStr(MULTI_CHANNEL_WARNING ".Title"),
+				warningString);
+
+		if (button == QMessageBox::No) {
+			QMetaObject::invokeMethod(ui->channelSetup,
+					"setCurrentIndex", Qt::QueuedConnection,
+					Q_ARG(int, lastChannelSetupIdx));
+			return;
+		}
+	}
+
+	lastChannelSetupIdx = idx;
 }
 
 void OBSBasicSettings::SimpleRecordingQualityLosslessWarning(int idx)

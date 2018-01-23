@@ -141,10 +141,12 @@ bool load_graphics_imports(struct gs_exports *exports, void *module,
 
 	GRAPHICS_IMPORT(gs_vertexbuffer_destroy);
 	GRAPHICS_IMPORT(gs_vertexbuffer_flush);
+	GRAPHICS_IMPORT(gs_vertexbuffer_flush_direct);
 	GRAPHICS_IMPORT(gs_vertexbuffer_get_data);
 
 	GRAPHICS_IMPORT(gs_indexbuffer_destroy);
 	GRAPHICS_IMPORT(gs_indexbuffer_flush);
+	GRAPHICS_IMPORT(gs_indexbuffer_flush_direct);
 	GRAPHICS_IMPORT(gs_indexbuffer_get_data);
 	GRAPHICS_IMPORT(gs_indexbuffer_get_num_indices);
 	GRAPHICS_IMPORT(gs_indexbuffer_get_type);

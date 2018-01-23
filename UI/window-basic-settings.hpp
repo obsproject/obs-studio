@@ -37,6 +37,10 @@ class OBSHotkeyWidget;
 
 #include "ui_OBSBasicSettings.h"
 
+#define VOLUME_METER_DECAY_FAST        23.53
+#define VOLUME_METER_DECAY_MEDIUM      11.76
+#define VOLUME_METER_DECAY_SLOW        8.57
+
 class SilentUpdateCheckBox : public QCheckBox {
 	Q_OBJECT
 
@@ -98,6 +102,7 @@ private:
 	std::string savedTheme;
 
 	int lastSimpleRecQualityIdx = 0;
+	int lastChannelSetupIdx = 0;
 
 	OBSFFFormatDesc formats;
 
@@ -274,6 +279,8 @@ private slots:
 	void AudioChanged();
 	void AudioChangedRestart();
 	void ReloadAudioSources();
+	void SurroundWarning(int idx);
+	void SpeakerLayoutChanged(int idx);
 	void OutputsChanged();
 	void Stream1Changed();
 	void VideoChanged();

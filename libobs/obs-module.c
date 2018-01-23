@@ -89,7 +89,7 @@ int obs_open_module(obs_module_t **module, const char *path,
 
 	mod.module = os_dlopen(path);
 	if (!mod.module) {
-		blog(LOG_WARNING, "Module '%s' not found", path);
+		blog(LOG_WARNING, "Module '%s' not loaded", path);
 		return MODULE_FILE_NOT_FOUND;
 	}
 

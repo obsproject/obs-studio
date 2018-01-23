@@ -312,8 +312,6 @@ obs_properties_t * alsa_get_properties(void *unused)
 
 		obs_property_list_add_string(devices, descr, name);
 
-	obs_property_list_add_string(devices, "Custom", "__custom__");
-
 	next:
 		if (name != NULL)
 			free(name), name = NULL;
@@ -326,6 +324,8 @@ obs_properties_t * alsa_get_properties(void *unused)
 
 		++hint;
 	}
+	obs_property_list_add_string(devices, "Custom", "__custom__");
+
 	snd_device_name_free_hint(hints);
 
 	return props;
@@ -622,13 +622,13 @@ enum audio_format _alsa_to_obs_audio_format(snd_pcm_format_t format)
 enum speaker_layout _alsa_channels_to_obs_speakers(unsigned int channels)
 {
 	switch(channels) {
-	case 1: return SPEAKERS_MONO;
-	case 2: return SPEAKERS_STEREO;
-	case 3: return SPEAKERS_2POINT1;
-	case 4: return SPEAKERS_SURROUND;
-	case 5: return SPEAKERS_4POINT1;
-	case 6: return SPEAKERS_5POINT1;
-	case 8: return SPEAKERS_7POINT1;
+	case 1:   return SPEAKERS_MONO;
+	case 2:   return SPEAKERS_STEREO;
+	case 3:   return SPEAKERS_2POINT1;
+	case 4:   return SPEAKERS_4POINT0;
+	case 5:   return SPEAKERS_4POINT1;
+	case 6:   return SPEAKERS_5POINT1;
+	case 8:   return SPEAKERS_7POINT1;
 	}
 
 	return SPEAKERS_UNKNOWN;

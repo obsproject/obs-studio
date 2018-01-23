@@ -34,5 +34,6 @@ public:
 
 	static bool AskForName(QWidget *parent, const QString &title,
 			const QString &text, std::string &str,
-			const QString &placeHolder = QString(""));
+			const QString &placeHolder = QString(""),
+			int maxSize = 256);
 };

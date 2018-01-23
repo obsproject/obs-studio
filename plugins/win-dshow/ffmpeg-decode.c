@@ -94,6 +94,21 @@ static inline enum audio_format convert_sample_format(int f)
 	return AUDIO_FORMAT_UNKNOWN;
 }
 
+static inline enum speaker_layout convert_speaker_layout(uint8_t channels)
+{
+	switch (channels) {
+	case 0:     return SPEAKERS_UNKNOWN;
+	case 1:     return SPEAKERS_MONO;
+	case 2:     return SPEAKERS_STEREO;
+	case 3:     return SPEAKERS_2POINT1;
+	case 4:     return SPEAKERS_4POINT0;
+	case 5:     return SPEAKERS_4POINT1;
+	case 6:     return SPEAKERS_5POINT1;
+	case 8:     return SPEAKERS_7POINT1;
+	default:    return SPEAKERS_UNKNOWN;
+	}
+}
+
 static inline void copy_data(struct ffmpeg_decode *decode, uint8_t *data,
 		size_t size)
 {
@@ -109,14 +124,14 @@ static inline void copy_data(struct ffmpeg_decode *decode, uint8_t *data,
 	memcpy(decode->packet_buffer, data, size);
 }
 
-int ffmpeg_decode_audio(struct ffmpeg_decode *decode,
+bool ffmpeg_decode_audio(struct ffmpeg_decode *decode,
 		uint8_t *data, size_t size,
 		struct obs_source_audio *audio,
 		bool *got_output)
 {
 	AVPacket packet = {0};
 	int got_frame = false;
-	int len;
+	int ret = 0;
 
 	*got_output = false;
 
@@ -129,32 +144,42 @@ int ffmpeg_decode_audio(struct ffmpeg_decode *decode,
 	if (!decode->frame) {
 		decode->frame = av_frame_alloc();
 		if (!decode->frame)
-			return -1;
+			return false;
 	}
 
-	len = avcodec_decode_audio4(decode->decoder, decode->frame, &got_frame,
-			&packet);
+	if (data && size)
+		ret = avcodec_send_packet(decode->decoder, &packet);
+	if (ret == 0)
+		ret = avcodec_receive_frame(decode->decoder, decode->frame);
 
-	if (len <= 0 || !got_frame)
-		return len;
+	got_frame = (ret == 0);
+
+	if (ret == AVERROR_EOF || ret == AVERROR(EAGAIN))
+		ret = 0;
+
+	if (ret < 0)
+		return false;
+	else if (!got_frame)
+		return true;
 
 	for (size_t i = 0; i < MAX_AV_PLANES; i++)
 		audio->data[i] = decode->frame->data[i];
 
 	audio->samples_per_sec = decode->frame->sample_rate;
-	audio->speakers        = (enum speaker_layout)decode->decoder->channels;
 	audio->format          = convert_sample_format(decode->frame->format);
+	audio->speakers        =
+		convert_speaker_layout((uint8_t)decode->decoder->channels);
 
 	audio->frames = decode->frame->nb_samples;
 
 	if (audio->format == AUDIO_FORMAT_UNKNOWN)
-		return 0;
+		return false;
 
 	*got_output = true;
-	return len;
+	return true;
 }
 
-int ffmpeg_decode_video(struct ffmpeg_decode *decode,
+bool ffmpeg_decode_video(struct ffmpeg_decode *decode,
 		uint8_t *data, size_t size, long long *ts,
 		struct obs_source_frame *frame,
 		bool *got_output)
@@ -162,7 +187,7 @@ int ffmpeg_decode_video(struct ffmpeg_decode *decode,
 	AVPacket packet = {0};
 	int got_frame = false;
 	enum video_format new_format;
-	int len;
+	int ret;
 
 	*got_output = false;
 
@@ -180,14 +205,22 @@ int ffmpeg_decode_video(struct ffmpeg_decode *decode,
 	if (!decode->frame) {
 		decode->frame = av_frame_alloc();
 		if (!decode->frame)
-			return -1;
+			return false;
 	}
 
-	len = avcodec_decode_video2(decode->decoder, decode->frame, &got_frame,
-			&packet);
+	ret = avcodec_send_packet(decode->decoder, &packet);
+	if (ret == 0)
+		ret = avcodec_receive_frame(decode->decoder, decode->frame);
 
-	if (len <= 0 || !got_frame)
-		return len;
+	got_frame = (ret == 0);
+
+	if (ret == AVERROR_EOF || ret == AVERROR(EAGAIN))
+		ret = 0;
+
+	if (ret < 0)
+		return false;
+	else if (!got_frame)
+		return true;
 
 	for (size_t i = 0; i < MAX_AV_PLANES; i++) {
 		frame->data[i]     = decode->frame->data[i];
@@ -213,7 +246,7 @@ int ffmpeg_decode_video(struct ffmpeg_decode *decode,
 			blog(LOG_ERROR, "Failed to get video format "
 			                "parameters for video format %u",
 			                VIDEO_CS_601);
-			return 0;
+			return false;
 		}
 	}
 
@@ -224,8 +257,8 @@ int ffmpeg_decode_video(struct ffmpeg_decode *decode,
 	frame->flip   = false;
 
 	if (frame->format == VIDEO_FORMAT_NONE)
-		return 0;
+		return false;
 
 	*got_output = true;
-	return len;
+	return true;
 }

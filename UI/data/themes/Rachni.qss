@@ -105,6 +105,37 @@ QListWidget::item:hover:!active {
 	border: none;
 }
 
+/***********************/
+/* --- Dock widget --- */
+/***********************/
+
+QDockWidget {
+	background: rgb(49, 54, 59); /* Blue-gray */
+	border: 1px solid rgb(58, 64, 69); /* Light Blue-gray */
+}
+
+QDockWidget::title {
+	text-align: left;
+	background: rgb(35, 38, 41); /* Dark Gray */
+	padding-left: 5px;
+}
+
+
+QDockWidget::close-button, QDockWidget::float-button {
+	border: 1px solid transparent;
+	border-radius: 2px;
+	background: transparent;
+}
+
+QDockWidget::close-button:hover, QDockWidget::float-button:hover {
+	background: rgba(255, 148, 194, 0.25); /* Light Pink (Secondary Light) */
+}
+
+QDockWidget::close-button:pressed, QDockWidget::float-button:pressed {
+	padding: 1px -1px -1px 1px;
+	background: rgba(255, 148, 194, 0.25); /* Light Pink (Secondary Light) */
+}
+
 
 /***********************/
 /* --- Group Boxes --- */
@@ -298,7 +329,6 @@ QTabWidget::tab-bar {
 /********************/
 
 QTabBar {
-	qproperty-drawBase: 0;
 	border-radius: 3px;
 }
 
@@ -324,21 +354,27 @@ QTabBar::close-button:pressed {
 QTabBar::tab {
 	color: rgb(239, 240, 241); /* White */
 	border: 1px solid rgb(118, 121, 124); /* Light Gray */
-	border-bottom: 1px transparent;
 	background-color: rgba(240, 98, 146, 0.5); /* Pink (Secondary) */
 	padding: 5px;
 	min-width: 50px;
+}
+
+QTabBar::tab:top {
+	border-bottom: 1px transparent;
 	border-top-left-radius: 2px;
 	border-top-right-radius: 2px;
+}
+
+QTabBar::tab:bottom {
+	margin-bottom: 4px;
+	border-bottom-left-radius: 2px;
+	border-bottom-right-radius: 2px;
+	height: 12px;
 }
 
 QTabBar::tab:!selected {
 	color: rgb(239, 240, 241); /* White */
 	background-color: rgb(84, 87, 91); /* Gray */
-	border: 1px solid rgb(118, 121, 124); /* Light Gray */
-	border-bottom: 1px transparent;
-	border-top-left-radius: 2px;
-	border-top-right-radius: 2px;
 }
 
 QTabBar::tab:!selected:hover {
@@ -378,6 +414,10 @@ QToolButton:pressed {
 
 * [themeID="configIconSmall"] {
 	qproperty-icon: url(./Dark/cogwheel.png);
+}
+
+* [themeID="refreshIconSmall"] {
+	qproperty-icon: url(./Dark/refresh.png);
 }
 
 * [themeID="upArrowIconSmall"] {
@@ -494,6 +534,16 @@ QLineEdit {
 	border-radius: 2px;
 	color: rgb(239, 240, 241); /* White */
 }
+
+QListWidget QLineEdit {
+	padding-top: 0;
+	padding-bottom: 0;
+	padding-right: 0;
+	padding-left: 2px;
+	border: none;
+	border-radius: none;
+}
+
 
 /**********************/
 /* --- Checkboxes --- */
@@ -670,12 +720,15 @@ QProgressBar::chunk {
 /**************************/
 
 VolumeMeter {
-	qproperty-bkColor: rgb(35, 38, 41); /* Dark Gray */
-	qproperty-magColor: rgb(153, 204, 0);
-	qproperty-peakColor: rgb(96, 128, 0);
-	qproperty-peakHoldColor: rgb(210, 255, 77);
-	qproperty-clipColor1: rgb(230, 40, 50);
-	qproperty-clipColor2: rgb(140, 0, 40);
+	qproperty-backgroundNominalColor: rgb(0, 128, 79);
+	qproperty-backgroundWarningColor: rgb(128, 57, 0);
+	qproperty-backgroundErrorColor: rgb(128, 9, 0);
+	qproperty-foregroundNominalColor: rgb(119, 255, 143);
+	qproperty-foregroundWarningColor: rgb(255, 157, 76);
+	qproperty-foregroundErrorColor: rgb(255, 89, 76);
+	qproperty-magnitudeColor: rgb(49, 54, 59); /* Blue-gray */
+	qproperty-majorTickColor: rgb(239, 240, 241); /* White */
+	qproperty-minorTickColor: rgb(118, 121, 124); /* Light Gray */
 }
 
 /*******************/
@@ -719,6 +772,13 @@ QPushButton:disabled {
 	background-color: rgb(0, 139, 163); /* Dark Cyan (Primary Dark) */
 	border: 1px solid rgb(0, 139, 163); /* Dark Cyan (Primary Dark) */
 	color: rgb(162, 161, 162); /* Lighter Gray */
+}
+
+QPushButton::menu-indicator {
+    image: url(./Rachni/down_arrow.png);
+    subcontrol-position: right;
+    subcontrol-origin: padding;
+    width: 25px;
 }
 
 /******************************/
@@ -794,8 +854,12 @@ QPushButton:pressed#exitButton {
 	border: 1px solid rgb(240, 98, 146); /* Pink (Secondary) */
 }
 
+QPushButton:checked#streamButton,
+QPushButton:checked#recordButton,
 QPushButton:checked[themeID="replayBufferButton"],
-QPushButton:checked#modeSwitch {
+QPushButton:checked#modeSwitch,
+QPushButton:checked#settingsButton,
+QPushButton:checked#exitButton {
 	background-color: rgba(240, 98, 146, 0.5); /* Pink (Secondary) */
 	border: 1px solid rgba(240, 98, 146, 0.5); /* Pink (Secondary) */
 }
@@ -981,7 +1045,6 @@ QSlider::handle:disabled {
 /****************/
 /* --- Misc --- */
 /****************/
-
 
 /* Highlight linked hotkeys */
 OBSHotkeyLabel[hotkeyPairHover=true] {

@@ -145,6 +145,7 @@ struct obs_transform_info {
 	struct vec2          bounds;
 };
 
+#ifndef SWIG
 /**
  * Video initialization structure
  */
@@ -175,6 +176,7 @@ struct obs_video_info {
 
 	enum obs_scale_type scale_type;    /**< How to scale if scaling */
 };
+#endif
 
 /**
  * Audio initialization structure
@@ -281,6 +283,7 @@ EXPORT const char *obs_get_locale(void);
  */
 EXPORT profiler_name_store_t *obs_get_profiler_name_store(void);
 
+#ifndef SWIG
 /**
  * Sets base video output base resolution/fps/format.
  *
@@ -298,6 +301,7 @@ EXPORT profiler_name_store_t *obs_get_profiler_name_store(void);
  *               OBS_VIDEO_FAIL for generic failure
  */
 EXPORT int obs_reset_video(struct obs_video_info *ovi);
+#endif
 
 /**
  * Sets base audio output format/channels/samples/etc
@@ -306,8 +310,10 @@ EXPORT int obs_reset_video(struct obs_video_info *ovi);
  */
 EXPORT bool obs_reset_audio(const struct obs_audio_info *oai);
 
+#ifndef SWIG
 /** Gets the current video settings, returns false if no video */
 EXPORT bool obs_get_video_info(struct obs_video_info *ovi);
+#endif
 
 /** Gets the current audio settings, returns false if no audio */
 EXPORT bool obs_get_audio_info(struct obs_audio_info *oai);
@@ -381,6 +387,7 @@ EXPORT void obs_load_all_modules(void);
  * be called after all modules have been loaded. */
 EXPORT void obs_post_load_modules(void);
 
+#ifndef SWIG
 struct obs_module_info {
 	const char *bin_path;
 	const char *data_path;
@@ -391,6 +398,7 @@ typedef void (*obs_find_module_callback_t)(void *param,
 
 /** Finds all modules within the search paths added by obs_add_module_path. */
 EXPORT void obs_find_modules(obs_find_module_callback_t callback, void *param);
+#endif
 
 typedef void (*obs_enum_module_callback_t)(void *param, obs_module_t *module);
 
@@ -539,9 +547,11 @@ enum obs_base_effect {
 /** Returns a commonly used base effect */
 EXPORT gs_effect_t *obs_get_base_effect(enum obs_base_effect effect);
 
+#ifndef SWIG
 /* DEPRECATED: gets texture_rect default effect */
 DEPRECATED
 EXPORT gs_effect_t *obs_get_default_rect_effect(void);
+#endif
 
 /** Returns the primary obs signal handler */
 EXPORT signal_handler_t *obs_get_signal_handler(void);
@@ -549,8 +559,14 @@ EXPORT signal_handler_t *obs_get_signal_handler(void);
 /** Returns the primary obs procedure handler */
 EXPORT proc_handler_t *obs_get_proc_handler(void);
 
+#ifndef SWIG
 /** Renders the main view */
+DEPRECATED
 EXPORT void obs_render_main_view(void);
+#endif
+
+/** Renders the last main output texture */
+EXPORT void obs_render_main_texture(void);
 
 /** Sets the master user volume */
 EXPORT void obs_set_master_volume(float volume);
@@ -597,6 +613,13 @@ EXPORT void obs_enum_audio_monitoring_devices(obs_enum_audio_device_cb cb,
 
 EXPORT bool obs_set_audio_monitoring_device(const char *name, const char *id);
 EXPORT void obs_get_audio_monitoring_device(const char **name, const char **id);
+
+EXPORT void obs_add_tick_callback(
+		void (*tick)(void *param, float seconds),
+		void *param);
+EXPORT void obs_remove_tick_callback(
+		void (*tick)(void *param, float seconds),
+		void *param);
 
 EXPORT void obs_add_main_render_callback(
 		void (*draw)(void *param, uint32_t cx, uint32_t cy),
@@ -1748,6 +1771,7 @@ EXPORT const char *obs_encoder_get_id(const obs_encoder_t *encoder);
 
 EXPORT uint32_t obs_get_encoder_caps(const char *encoder_id);
 
+#ifndef SWIG
 /** Duplicates an encoder packet */
 DEPRECATED
 EXPORT void obs_duplicate_encoder_packet(struct encoder_packet *dst,
@@ -1755,6 +1779,7 @@ EXPORT void obs_duplicate_encoder_packet(struct encoder_packet *dst,
 
 DEPRECATED
 EXPORT void obs_free_encoder_packet(struct encoder_packet *packet);
+#endif
 
 EXPORT void obs_encoder_packet_ref(struct encoder_packet *dst,
 		struct encoder_packet *src);

@@ -546,7 +546,7 @@ static void *aac_create(obs_data_t *settings, obs_encoder_t *encoder)
 
 	UInt32 rate_control = kAudioCodecBitRateControlMode_Constant;
 
-	if (obs_data_get_bool(settings, "allow he-aac")) {
+	if (obs_data_get_bool(settings, "allow he-aac") && ca->channels != 3) {
 		ca->allowed_formats = &aac_formats;
 	} else {
 		ca->allowed_formats = &aac_lc_formats;
@@ -600,6 +600,35 @@ static void *aac_create(obs_data_t *settings, obs_encoder_t *encoder)
 	STATUS_CHECK(AudioConverterGetProperty(ca->converter,
 			kAudioConverterCurrentOutputStreamDescription,
 			&size, &out));
+
+	/*
+	 * Fix channel map differences between CoreAudio AAC, FFmpeg, Wav
+	 * New channel mappings below assume 2.1, 4.1, 5.1, 7.1 resp.
+	 */
+	if (ca->channels == 3) {
+		SInt32 channelMap3[3] = {2, 0, 1};
+		AudioConverterSetProperty(ca->converter,
+				kAudioConverterChannelMap,
+				sizeof(channelMap3), channelMap3);
+
+	} else if (ca->channels == 5) {
+		SInt32 channelMap5[5] = {2, 0, 1, 3, 4};
+		AudioConverterSetProperty(ca->converter,
+				kAudioConverterChannelMap,
+				sizeof(channelMap5), channelMap5);
+
+	} else if (ca->channels == 6) {
+		SInt32 channelMap6[6] = {2, 0, 1, 4, 5, 3};
+		AudioConverterSetProperty(ca->converter,
+				kAudioConverterChannelMap,
+				sizeof(channelMap6), channelMap6);
+
+	} else if (ca->channels == 8) {
+		SInt32 channelMap8[8] = {2, 0, 1, 6, 7, 4, 5, 3};
+		AudioConverterSetProperty(ca->converter,
+				kAudioConverterChannelMap,
+				sizeof(channelMap8), channelMap8);
+	}
 
 	ca->in_frame_size     = in.mBytesPerFrame;
 	ca->in_packets        = out.mFramesPerPacket / in.mFramesPerPacket;
@@ -877,10 +906,9 @@ static bool aac_extra_data(void *data, uint8_t **extra_data, size_t *size)
 }
 
 static asbd_builder fill_common_asbd_fields(asbd_builder builder,
-		bool in=false)
+		bool in=false, UInt32 channels=2)
 {
-	UInt32 bytes_per_frame = 8;
-	UInt32 channels = 2;
+	UInt32 bytes_per_frame = sizeof(float) * channels;
 	UInt32 bits_per_channel = bytes_per_frame / channels * 8;
 
 	builder.channels_per_frame(channels);
@@ -908,9 +936,9 @@ static AudioStreamBasicDescription get_default_in_asbd()
 		.asbd;
 }
 
-static asbd_builder get_default_out_asbd_builder()
+static asbd_builder get_default_out_asbd_builder(UInt32 channels)
 {
-	return fill_common_asbd_fields(asbd_builder())
+	return fill_common_asbd_fields(asbd_builder(), false, channels)
 		.sample_rate(44100);
 }
 
@@ -975,7 +1003,7 @@ static bool find_best_match(DStr &log, ca_encoder *ca, UInt32 bitrate,
 		log_to_dstr(log, ca, "Trying %s (0x%x)\n",
 				format_id_to_str(format_id), format_id);
 
-		auto out = get_default_out_asbd_builder()
+		auto out = get_default_out_asbd_builder(2)
 			.format_id(format_id)
 			.asbd;
 
@@ -1206,6 +1234,11 @@ static vector<UInt32> get_bitrates(DStr &log, ca_encoder *ca,
 		Float64 samplerate)
 {
 	vector<UInt32> bitrates;
+	struct obs_audio_info aoi;
+	int channels;
+
+	obs_get_audio_info(&aoi);
+	channels = get_audio_channels(aoi.speakers);
 
 	auto handle_bitrate = [&](UInt32 bitrate)
 	{
@@ -1240,7 +1273,7 @@ static vector<UInt32> get_bitrates(DStr &log, ca_encoder *ca,
 				static_cast<uint32_t>(format_id),
 				samplerate);
 
-		auto out = get_default_out_asbd_builder()
+		auto out = get_default_out_asbd_builder(channels)
 			.format_id(format_id)
 			.sample_rate(samplerate)
 			.asbd;

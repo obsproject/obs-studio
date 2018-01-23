@@ -412,6 +412,11 @@ bool OBSApp::InitGlobalConfigDefaults()
 	config_set_default_bool(globalConfig, "BasicWindow",
 			"ShowStatusBar", true);
 
+	if (!config_get_bool(globalConfig, "General", "Pre21Defaults")) {
+		config_set_default_string(globalConfig, "General",
+				"CurrentTheme", "Dark");
+	}
+
 #ifdef _WIN32
 	config_set_default_bool(globalConfig, "Audio", "DisableAudioDucking",
 			true);
@@ -632,6 +637,17 @@ bool OBSApp::InitGlobalConfig()
 		    lastVersion < MAKE_SEMANTIC_VERSION(19, 0, 0);
 
 		config_set_bool(globalConfig, "General", "Pre19Defaults",
+				useOldDefaults);
+		changed = true;
+	}
+
+	if (!config_has_user_value(globalConfig, "General", "Pre21Defaults")) {
+		uint32_t lastVersion = config_get_int(globalConfig, "General",
+				"LastVersion");
+		bool useOldDefaults = lastVersion &&
+		    lastVersion < MAKE_SEMANTIC_VERSION(21, 0, 0);
+
+		config_set_bool(globalConfig, "General", "Pre21Defaults",
 				useOldDefaults);
 		changed = true;
 	}
@@ -1385,6 +1401,14 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 
 		/* --------------------------------------- */
 #endif
+		if (argc > 1) {
+			stringstream stor;
+			stor << argv[1];
+			for (int i = 2; i < argc; ++i) {
+				stor << " " << argv[i];
+			}
+			blog(LOG_INFO, "Command Line Arguments: %s", stor.str().c_str());
+		}
 
 		if (!program.OBSInit())
 			return 0;

@@ -31,9 +31,6 @@
 #define FF_BLOG(level, format, ...) \
 	FF_LOG_S(s->source, level, format, ##__VA_ARGS__)
 
-static bool video_frame(struct ff_frame *frame, void *opaque);
-static bool video_format(AVCodecContext *codec_context, void *opaque);
-
 struct ffmpeg_source {
 	mp_media_t media;
 	bool media_valid;

@@ -878,10 +878,6 @@ static inline uint64_t calc_min_ts(obs_source_t *sources[2])
 	return min_ts;
 }
 
-#define TOTAL_AUDIO_SIZE \
-	(MAX_AUDIO_MIXES * MAX_AUDIO_CHANNELS * \
-	 AUDIO_OUTPUT_FRAMES * sizeof(float))
-
 static inline bool stop_audio(obs_source_t *transition)
 {
 	transition->transitioning_audio = false;

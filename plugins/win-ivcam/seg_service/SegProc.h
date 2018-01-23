@@ -145,8 +145,8 @@ private:
             m_senseManager->QueryCaptureManager()->FilterByStreamProfiles(nullptr);
             m_senseManager->QueryCaptureManager()->FilterByStreamProfiles(nullptr);
 
-            m_senseManager->QueryCaptureManager()->FilterByStreamProfiles(PXCCapture::StreamType::STREAM_TYPE_COLOR, 0, 0, m_fps);
-            m_senseManager->QueryCaptureManager()->FilterByStreamProfiles(PXCCapture::StreamType::STREAM_TYPE_DEPTH, 0, 0, m_fps);
+            m_senseManager->QueryCaptureManager()->FilterByStreamProfiles(PXCCapture::StreamType::STREAM_TYPE_COLOR, 0, 0, (pxcF32)m_fps);
+            m_senseManager->QueryCaptureManager()->FilterByStreamProfiles(PXCCapture::StreamType::STREAM_TYPE_DEPTH, 0, 0, (pxcF32)m_fps);
             
             status = m_senseManager->EnableStreams(&currentProfile);
             if (status != PXC_STATUS_NO_ERROR)
@@ -174,7 +174,7 @@ private:
         std::unique_lock<std::mutex> lck(m_pauseMtx);
         m_senseManager->Close();
 
-        pxcStatus status = senseMgrInit();
+        senseMgrInit();
         m_isPause = false;
         m_cvPause.notify_one();
         return S_OK;
@@ -330,7 +330,7 @@ public:
 
     static DWORD WINAPI LoopStub(LPVOID lpParam)
     {
-        if (!lpParam) return -1;
+        if (!lpParam) return (DWORD)-1;
         return ((CSegProc*)lpParam)->Loop(NULL);
     }
 

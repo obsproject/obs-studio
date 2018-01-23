@@ -8,7 +8,17 @@
 #include <util/windows/CoTaskMemPtr.hpp>
 #include <util/threading.h>
 #include <util/platform.h>
+
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable : 4996)
+#endif
+
 #include <sphelper.h>
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
 
 #include <obs.hpp>
 

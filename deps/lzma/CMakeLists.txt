@@ -31,6 +31,8 @@ add_definitions(
 if(WIN32)
 	if(MSVC)
 		add_compile_options("$<$<CONFIG:RelWithDebInfo>:/MT>")
+		add_compile_options("/wd4244")
+		add_compile_options("/wd4267")
 	endif()
 	add_definitions(
 		-Dinline=_inline
