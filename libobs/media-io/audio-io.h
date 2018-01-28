@@ -168,7 +168,7 @@ static inline bool is_audio_planar(enum audio_format format)
 	return false;
 }
 
-static inline audio_format get_planar_format(audio_format format) {
+static inline enum audio_format get_planar_format(enum audio_format format) {
 	switch (format) {
 	case AUDIO_FORMAT_U8BIT:
 		return AUDIO_FORMAT_U8BIT_PLANAR;
@@ -186,7 +186,7 @@ static inline audio_format get_planar_format(audio_format format) {
 	return format;
 }
 
-static inline audio_format get_interleaved_format(audio_format format) {
+static inline enum audio_format get_interleaved_format(enum audio_format format) {
 	switch (format) {
 	case AUDIO_FORMAT_U8BIT_PLANAR:
 		return AUDIO_FORMAT_U8BIT;
