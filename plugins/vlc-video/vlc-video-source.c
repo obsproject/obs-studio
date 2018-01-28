@@ -18,6 +18,7 @@
 #define S_BEHAVIOR_PAUSE_UNPAUSE       "pause_unpause"
 #define S_BEHAVIOR_ALWAYS_PLAY         "always_play"
 #define S_NETWORK_CACHING              "network_caching"
+#define S_SPEED                        "speed"
 
 #define T_(text) obs_module_text(text)
 #define T_PLAYLIST                     T_("Playlist")
@@ -28,6 +29,7 @@
 #define T_BEHAVIOR_PAUSE_UNPAUSE       T_("PlaybackBehavior.PauseUnpause")
 #define T_BEHAVIOR_ALWAYS_PLAY         T_("PlaybackBehavior.AlwaysPlay")
 #define T_NETWORK_CACHING              T_("NetworkCaching")
+#define T_SPEED                        T_("Speed")
 
 /* ------------------------------------------------------------------------- */
 
@@ -57,12 +59,18 @@ struct vlc_source {
 	enum behavior behavior;
 	bool loop;
 	bool shuffle;
+	float speed;
 
 	obs_hotkey_id play_pause_hotkey;
 	obs_hotkey_id restart_hotkey;
 	obs_hotkey_id stop_hotkey;
 	obs_hotkey_id playlist_next_hotkey;
 	obs_hotkey_id playlist_prev_hotkey;
+	obs_hotkey_id speed_up_fine_hotkey;
+	obs_hotkey_id speed_up_hotkey;
+	obs_hotkey_id speed_down_hotkey;
+	obs_hotkey_id speed_down_fine_hotkey;
+	obs_hotkey_id speed_normal_hotkey;
 };
 
 static libvlc_media_t *get_media(struct darray *array, const char *path)
@@ -503,6 +511,8 @@ static void vlcs_update(void *data, obs_data_t *settings)
 
 	network_caching = (int)obs_data_get_int(settings, S_NETWORK_CACHING);
 
+	c->speed = (float)obs_data_get_double(settings, S_SPEED);
+
 	if (astrcmpi(behavior, S_BEHAVIOR_PAUSE_UNPAUSE) == 0) {
 		c->behavior = BEHAVIOR_PAUSE_UNPAUSE;
 	} else if (astrcmpi(behavior, S_BEHAVIOR_ALWAYS_PLAY) == 0) {
@@ -667,6 +677,24 @@ static void vlcs_playlist_prev(void *data)
 	libvlc_media_list_player_previous_(c->media_list_player);
 }
 
+static void vlcs_speed_change(void *data, const float factor)
+{
+	struct vlc_source *c = data;
+	c->speed *= factor;
+	if (c->speed < 0.03)
+		c->speed = 0.03f;
+	if (c->speed > 64.0)
+		c->speed = 64.0;
+	libvlc_media_player_set_rate_(c->media_player, c->speed);
+}
+
+static void vlcs_speed_normal(void *data)
+{
+	struct vlc_source *c = data;
+	c->speed = 1.0;
+	libvlc_media_player_set_rate_(c->media_player, c->speed);
+}
+
 static void vlcs_play_pause_hotkey(void *data, obs_hotkey_id id,
 		obs_hotkey_t *hotkey, bool pressed)
 {
@@ -727,6 +755,66 @@ static void vlcs_playlist_prev_hotkey(void *data, obs_hotkey_id id,
 		vlcs_playlist_prev(c);
 }
 
+static void vlcs_speed_up_fine_hotkey(void *data, obs_hotkey_id id,
+	obs_hotkey_t *hotkey, bool pressed)
+{
+	UNUSED_PARAMETER(id);
+	UNUSED_PARAMETER(hotkey);
+
+	struct vlc_source *c = data;
+
+	if (pressed)
+		vlcs_speed_change(c, 1.1f);
+}
+
+static void vlcs_speed_up_hotkey(void *data, obs_hotkey_id id,
+	obs_hotkey_t *hotkey, bool pressed)
+{
+	UNUSED_PARAMETER(id);
+	UNUSED_PARAMETER(hotkey);
+
+	struct vlc_source *c = data;
+
+	if (pressed)
+		vlcs_speed_change(c, 1.5f);
+}
+
+static void vlcs_speed_down_hotkey(void *data, obs_hotkey_id id,
+	obs_hotkey_t *hotkey, bool pressed)
+{
+	UNUSED_PARAMETER(id);
+	UNUSED_PARAMETER(hotkey);
+
+	struct vlc_source *c = data;
+
+	if (pressed)
+		vlcs_speed_change(c, 0.6f);
+}
+
+static void vlcs_speed_down_fine_hotkey(void *data, obs_hotkey_id id,
+	obs_hotkey_t *hotkey, bool pressed)
+{
+	UNUSED_PARAMETER(id);
+	UNUSED_PARAMETER(hotkey);
+
+	struct vlc_source *c = data;
+
+	if (pressed)
+		vlcs_speed_change(c, 0.9f);
+}
+
+static void vlcs_speed_normal_hotkey(void *data, obs_hotkey_id id,
+	obs_hotkey_t *hotkey, bool pressed)
+{
+	UNUSED_PARAMETER(id);
+	UNUSED_PARAMETER(hotkey);
+
+	struct vlc_source *c = data;
+
+	if (pressed)
+		vlcs_speed_normal(c);
+}
+
 static void *vlcs_create(obs_data_t *settings, obs_source_t *source)
 {
 	struct vlc_source *c = bzalloc(sizeof(*c));
@@ -756,6 +844,31 @@ static void *vlcs_create(obs_data_t *settings, obs_source_t *source)
 			"VLCSource.PlaylistPrev",
 			obs_module_text("PlaylistPrev"),
 			vlcs_playlist_prev_hotkey, c);
+
+	c->speed_up_fine_hotkey = obs_hotkey_register_source(source,
+		"VLCSource.SpeedUpFine",
+		obs_module_text("SpeedUpFine"),
+		vlcs_speed_up_fine_hotkey, c);
+
+	c->speed_up_hotkey = obs_hotkey_register_source(source,
+		"VLCSource.SpeedUp",
+		obs_module_text("SpeedUp"),
+		vlcs_speed_up_hotkey, c);
+
+	c->speed_down_hotkey = obs_hotkey_register_source(source,
+		"VLCSource.SpeedDown",
+		obs_module_text("SpeedDown"),
+		vlcs_speed_down_hotkey, c);
+
+	c->speed_down_fine_hotkey = obs_hotkey_register_source(source,
+		"VLCSource.SpeedDownFine",
+		obs_module_text("SpeedDownFine"),
+		vlcs_speed_down_hotkey, c);
+
+	c->speed_normal_hotkey = obs_hotkey_register_source(source,
+		"VLCSource.SpeedNormal",
+		obs_module_text("SpeedNormal"),
+		vlcs_speed_normal_hotkey, c);
 
 	pthread_mutex_init_value(&c->mutex);
 	if (pthread_mutex_init(&c->mutex, NULL) != 0)
@@ -805,6 +918,8 @@ static void vlcs_activate(void *data)
 {
 	struct vlc_source *c = data;
 
+	libvlc_media_player_set_rate_(c->media_player, c->speed);
+
 	if (c->behavior == BEHAVIOR_STOP_RESTART) {
 		libvlc_media_list_player_play_(c->media_list_player);
 
@@ -833,6 +948,7 @@ static void vlcs_defaults(obs_data_t *settings)
 	obs_data_set_default_string(settings, S_BEHAVIOR,
 			S_BEHAVIOR_STOP_RESTART);
 	obs_data_set_default_int(settings, S_NETWORK_CACHING, 400);
+	obs_data_set_default_double(settings, S_SPEED, 1.0);
 }
 
 static obs_properties_t *vlcs_properties(void *data)
@@ -902,6 +1018,8 @@ static obs_properties_t *vlcs_properties(void *data)
 
 	obs_properties_add_int(ppts, S_NETWORK_CACHING, T_NETWORK_CACHING,
 			100, 60000, 10);
+
+	obs_properties_add_float_slider(ppts, S_SPEED, T_SPEED, 0.03, 64,	0.1);
 
 	return ppts;
 }
