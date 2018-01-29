@@ -19,6 +19,10 @@ hr "Moving CEF out to preserve linking"
 mv ./rundir/RelWithDebInfo/obs-plugins/CEF.app ./
 mv ./rundir/RelWithDebInfo/obs-plugins/obs-browser.so ./
 
+# Move obslua
+hr "Moving OBS LUA"
+mv ./rundir/RelWithDebInfo/data/obs-scripting/obslua.so ./rundir/RelWithDebInfo/bin/
+
 # Package everything into a nice .app
 hr "Packaging .app"
 STABLE=false
