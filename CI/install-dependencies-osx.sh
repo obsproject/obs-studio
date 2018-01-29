@@ -6,6 +6,9 @@ set -v
 
 git fetch --unshallow
 
+# Fix ruby issue on OSX https://github.com/travis-ci/travis-ci/issues/6307
+rvm get stable
+
 # Leave obs-studio folder
 cd ../
 
