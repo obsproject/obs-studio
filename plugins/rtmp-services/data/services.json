@@ -1175,6 +1175,15 @@
                 "max video bitrate": 1000,
                 "max audio bitrate": 64
             }
+        },
+        {
+            "name": "Vimeo",
+            "servers": [
+                {
+                    "name": "Default",
+                    "url": "rtmp://rtmp.cloud.vimeo.com/live"
+                }
+            ]
         }
     ]
 }
