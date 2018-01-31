@@ -475,6 +475,7 @@ private:
 	static void SceneItemDeselected(void *data, calldata_t *params);
 	static void SourceLoaded(void *data, obs_source_t *source);
 	static void SourceRemoved(void *data, calldata_t *params);
+	static void SourceCreated(void *data, calldata_t *params);
 	static void SourceActivated(void *data, calldata_t *params);
 	static void SourceDeactivated(void *data, calldata_t *params);
 	static void SourceRenamed(void *data, calldata_t *params);
@@ -726,6 +727,17 @@ public:
 
 	virtual int GetProfilePath(char *path, size_t size, const char *file)
 		const override;
+
+private:
+	// Detect whether we're running in QT GUI thread context
+	//
+	// This is used to determine whether to call QMetaObject::invokeMethod with
+	// Qt::AutoConnection or Qt::BlockingQueuedConnection
+	//
+	// If QMetaObject::invokeMethod is called with Qt::BlockingQueuedConnection on
+	// QT GUI thread, a dead lock will occur.
+	//
+	static bool isQtGuiThread();
 
 private:
 	std::unique_ptr<Ui::OBSBasic> ui;

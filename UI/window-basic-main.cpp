@@ -1292,6 +1292,8 @@ void OBSBasic::InitOBSCallbacks()
 			OBSBasic::SourceDeactivated, this);
 	signalHandlers.emplace_back(obs_get_signal_handler(), "source_rename",
 			OBSBasic::SourceRenamed, this);
+	signalHandlers.emplace_back(obs_get_signal_handler(), "source_create",
+		OBSBasic::SourceCreated, this);
 }
 
 void OBSBasic::InitPrimitives()
@@ -1453,9 +1455,6 @@ void OBSBasic::OBSInit()
 	blog(LOG_INFO, "Audio monitoring device:\n\tname: %s\n\tid: %s",
 			device_name, device_id);
 #endif
-
-	InitOBSCallbacks();
-	InitHotkeys();
 
 	api = InitializeAPIInterface(this);
 
@@ -1625,6 +1624,9 @@ void OBSBasic::OBSInit()
 
 	if (config_get_bool(basicConfig, "General", "OpenStatsOnStartup"))
 		on_stats_triggered();
+
+	InitOBSCallbacks();
+	InitHotkeys();
 
 	OBSBasicStats::InitializeValues();
 
@@ -2817,8 +2819,10 @@ void OBSBasic::SceneItemAdded(void *data, calldata_t *params)
 
 	obs_sceneitem_t *item = (obs_sceneitem_t*)calldata_ptr(params, "item");
 
-	QMetaObject::invokeMethod(window, "AddSceneItem",
-			Q_ARG(OBSSceneItem, OBSSceneItem(item)));
+	QMetaObject::invokeMethod(
+		window,
+		"AddSceneItem",
+		Q_ARG(OBSSceneItem, OBSSceneItem(item)));
 }
 
 void OBSBasic::SceneItemRemoved(void *data, calldata_t *params)
@@ -2875,8 +2879,34 @@ void OBSBasic::SourceRemoved(void *data, calldata_t *params)
 
 	if (obs_scene_from_source(source) != NULL)
 		QMetaObject::invokeMethod(static_cast<OBSBasic*>(data),
-				"RemoveScene",
-				Q_ARG(OBSSource, OBSSource(source)));
+			"RemoveScene",
+			isQtGuiThread() ? Qt::AutoConnection : Qt::BlockingQueuedConnection,
+			Q_ARG(OBSSource, OBSSource(source)));
+}
+
+// Detect whether we're running in QT GUI thread context
+//
+// This is used to determine whether to call QMetaObject::invokeMethod with
+// Qt::AutoConnection or Qt::BlockingQueuedConnection
+//
+// If QMetaObject::invokeMethod is called with Qt::BlockingQueuedConnection on
+// QT GUI thread, a dead lock will occur.
+//
+bool OBSBasic::isQtGuiThread()
+{
+	return QThread::currentThread() == QCoreApplication::instance()->thread();
+}
+
+void OBSBasic::SourceCreated(void *data, calldata_t *params)
+{
+	obs_source_t *source = (obs_source_t*)calldata_ptr(params, "source");
+
+	if (obs_scene_from_source(source) != NULL)
+		QMetaObject::invokeMethod(
+			static_cast<OBSBasic*>(data),
+			"AddScene",
+			isQtGuiThread() ? Qt::AutoConnection : Qt::BlockingQueuedConnection,
+			Q_ARG(OBSSource, OBSSource(source)));
 }
 
 void OBSBasic::SourceActivated(void *data, calldata_t *params)
@@ -3642,7 +3672,7 @@ void OBSBasic::on_actionAddScene_triggered()
 
 		obs_scene_t *scene = obs_scene_create(name.c_str());
 		source = obs_scene_get_source(scene);
-		AddScene(source);
+		// AddScene(source);
 		SetCurrentScene(source);
 		obs_scene_release(scene);
 	}
