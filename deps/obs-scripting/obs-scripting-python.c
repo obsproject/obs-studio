@@ -1193,7 +1193,11 @@ static PyObject *py_script_log_internal(PyObject *self, PyObject *args,
 
 	while (endl) {
 		*endl = 0;
-		script_log(&cur_python_script->base, log_level, "%s", start);
+		if (cur_python_script)
+			script_log(&cur_python_script->base, log_level, "%s",
+					start);
+		else
+			script_log(NULL, log_level, "%s", start);
 		*endl = '\n';
 
 		start = endl + 1;

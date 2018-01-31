@@ -28,14 +28,19 @@ void script_log_va(obs_script_t *script, int level, const char *format,
 	const char *lang = "(Unknown)";
 	size_t start_len;
 
-	switch (script->type) {
-	case OBS_SCRIPT_LANG_UNKNOWN: lang = "(Unknown language)"; break;
-	case OBS_SCRIPT_LANG_LUA:     lang = "Lua"; break;
-	case OBS_SCRIPT_LANG_PYTHON:  lang = "Python"; break;
+	if (script) {
+		switch (script->type) {
+		case OBS_SCRIPT_LANG_UNKNOWN: lang = "(Unknown language)"; break;
+		case OBS_SCRIPT_LANG_LUA:     lang = "Lua"; break;
+		case OBS_SCRIPT_LANG_PYTHON:  lang = "Python"; break;
+		}
+
+		start_len = snprintf(msg, sizeof(msg), "[%s: %s] ",
+				lang, script->file.array);
+	} else {
+		start_len = snprintf(msg, sizeof(msg), "[Unknown Script] ");
 	}
 
-	start_len = snprintf(msg, sizeof(msg), "[%s: %s] ",
-			lang, script->file.array);
 	vsnprintf(msg + start_len, sizeof(msg) - start_len, format, args);
 
 	if (callback)
