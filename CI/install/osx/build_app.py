@@ -197,6 +197,8 @@ for path, external, copy_as in inspected:
 	filename = path
 	rpath = ""
 	if external:
+		if copy_as == "Python":
+			continue
 		id_ = "-id '@rpath/%s'"%copy_as
 		filename = prefix + "bin/" +copy_as
 		rpath = "-add_rpath @loader_path/ -add_rpath @executable_path/"

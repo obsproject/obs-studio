@@ -129,7 +129,7 @@ unzip ./n3.2.2.zip
 cd ./FFmpeg-n3.2.2
 mkdir build
 cd ./build
-../configure --extra-ldflags="-mmacosx-version-min=10.9" --enable-shared --disable-static --shlibdir="/tmp/obsdeps/bin" --enable-gpl --disable-doc --enable-libx264 --enable-libopus --enable-libvorbis --enable-libvpx
+../configure --extra-ldflags="-mmacosx-version-min=10.9" --enable-shared --disable-static --shlibdir="/tmp/obsdeps/bin" --enable-gpl --disable-doc --enable-libx264 --enable-libopus --enable-libvorbis --enable-libvpx --disable-outdev=sdl
 make -j 12
 find . -name \*.dylib -exec cp \{\} $DEPS_DEST/bin/ \;
 rsync -avh --include="*/" --include="*.h" --exclude="*" ../* $DEPS_DEST/include/

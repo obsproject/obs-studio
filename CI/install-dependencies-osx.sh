@@ -6,10 +6,6 @@ set -v
 
 git fetch --unshallow
 
-# Fix ruby issue on OSX https://github.com/travis-ci/travis-ci/issues/6307
-gpg --keyserver hkp://keys.gnupg.net --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3
-rvm get stable
-
 # Leave obs-studio folder
 cd ../
 
@@ -21,7 +17,7 @@ sudo installer -pkg ./Packages.pkg -target /
 brew update
 
 #Base OBS Deps and ccache
-brew install qt5 jack speexdsp ccache python3 swig
+brew install qt5 jack speexdsp ccache swig
 
 export PATH=/usr/local/opt/ccache/libexec:$PATH
 ccache -s || echo "CCache is not available."
