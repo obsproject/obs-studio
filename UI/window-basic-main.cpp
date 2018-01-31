@@ -601,7 +601,7 @@ void OBSBasic::CreateDefaultScene(bool firstStart)
 	if (firstStart)
 		CreateFirstRunSources();
 
-	AddScene(obs_scene_get_source(scene));
+	// AddScene(obs_scene_get_source(scene));
 	SetCurrentScene(scene, true);
 	obs_scene_release(scene);
 
@@ -758,6 +758,8 @@ void OBSBasic::Load(const char *file)
 		SaveProject();
 		return;
 	}
+
+	m_isLoading++;
 
 	ClearSceneData();
 	InitDefaultTransitions();
@@ -961,6 +963,8 @@ retryScene:
 	LogScenes();
 
 	disableSaving--;
+
+	--m_isLoading;
 
 	if (api)
 		api->on_event(OBS_FRONTEND_EVENT_SCENE_CHANGED);
@@ -2710,7 +2714,7 @@ void OBSBasic::DuplicateSelectedScene()
 		obs_scene_t *scene = obs_scene_duplicate(curScene,
 				name.c_str(), OBS_SCENE_DUP_REFS);
 		source = obs_scene_get_source(scene);
-		AddScene(source);
+		//AddScene(source);
 		SetCurrentScene(source, true);
 		obs_scene_release(scene);
 
@@ -2878,10 +2882,19 @@ void OBSBasic::SourceRemoved(void *data, calldata_t *params)
 	obs_source_t *source = (obs_source_t*)calldata_ptr(params, "source");
 
 	if (obs_scene_from_source(source) != NULL)
-		QMetaObject::invokeMethod(static_cast<OBSBasic*>(data),
-			"RemoveScene",
-			isQtGuiThread() ? Qt::AutoConnection : Qt::BlockingQueuedConnection,
-			Q_ARG(OBSSource, OBSSource(source)));
+	{
+		if (isQtGuiThread())
+		{
+			static_cast<OBSBasic*>(data)->RemoveScene(source);
+		}
+		else
+		{
+			QMetaObject::invokeMethod(static_cast<OBSBasic*>(data),
+				"RemoveScene",
+				Qt::BlockingQueuedConnection,
+				Q_ARG(OBSSource, OBSSource(source)));
+		}
+	}
 }
 
 // Detect whether we're running in QT GUI thread context
@@ -2902,11 +2915,23 @@ void OBSBasic::SourceCreated(void *data, calldata_t *params)
 	obs_source_t *source = (obs_source_t*)calldata_ptr(params, "source");
 
 	if (obs_scene_from_source(source) != NULL)
-		QMetaObject::invokeMethod(
-			static_cast<OBSBasic*>(data),
-			"AddScene",
-			isQtGuiThread() ? Qt::AutoConnection : Qt::BlockingQueuedConnection,
-			Q_ARG(OBSSource, OBSSource(source)));
+	{
+		if (static_cast<OBSBasic*>(data)->m_isLoading <= 0)
+		{
+			if (isQtGuiThread())
+			{
+				static_cast<OBSBasic*>(data)->AddScene(source);
+			}
+			else
+			{
+				QMetaObject::invokeMethod(
+					static_cast<OBSBasic*>(data),
+					"AddScene",
+					Qt::BlockingQueuedConnection,
+					Q_ARG(OBSSource, OBSSource(source)));
+			}
+		}
+	}
 }
 
 void OBSBasic::SourceActivated(void *data, calldata_t *params)

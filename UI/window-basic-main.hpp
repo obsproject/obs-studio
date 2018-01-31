@@ -125,6 +125,8 @@ private:
 	std::vector<int> multiviewProjectorArray;
 	std::vector<int> previewProjectorArray;
 
+	long m_isLoading = 0;
+
 	bool loaded = false;
 	long disableSaving = 1;
 	bool projectChanged = false;
