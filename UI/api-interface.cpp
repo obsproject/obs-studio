@@ -92,10 +92,10 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 	void obs_frontend_set_current_scene(obs_source_t *scene) override
 	{
 		if (main->IsPreviewProgramMode()) {
-			QMetaObject::invokeMethod(main, "TransitionToScene",
+			QMetaObject::invokeMethod(main, "TransitionToScene", Qt::BlockingQueuedConnection,
 					Q_ARG(OBSSource, OBSSource(scene)));
 		} else {
-			QMetaObject::invokeMethod(main, "SetCurrentScene",
+			QMetaObject::invokeMethod(main, "SetCurrentScene", Qt::BlockingQueuedConnection,
 					Q_ARG(OBSSource, OBSSource(scene)),
 					Q_ARG(bool, false));
 		}
