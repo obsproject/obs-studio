@@ -182,10 +182,7 @@
      <addaction name="actionScaleCanvas"/>
      <addaction name="actionScaleOutput"/>
     </widget>
-    <action name="actionCopySource">
-     <property name="enabled">
-      <bool>false</bool>
-     </property>
+    <action name="actionCopySource">    
      <property name="text">
       <string>Copy</string>
      </property>
