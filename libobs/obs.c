@@ -2071,3 +2071,21 @@ uint32_t obs_get_lagged_frames(void)
 {
 	return obs ? obs->video.lagged_frames : 0;
 }
+
+void start_raw_video(video_t *v, const struct video_scale_info *conversion,
+		void (*callback)(void *param, struct video_data *frame),
+		void *param)
+{
+	struct obs_core_video *video = &obs->video;
+	os_atomic_inc_long(&video->raw_active);
+	video_output_connect(v, conversion, callback, param);
+}
+
+void stop_raw_video(video_t *v,
+		void (*callback)(void *param, struct video_data *frame),
+		void *param)
+{
+	struct obs_core_video *video = &obs->video;
+	os_atomic_dec_long(&video->raw_active);
+	video_output_disconnect(v, callback, param);
+}

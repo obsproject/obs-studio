@@ -248,6 +248,7 @@ struct obs_core_video {
 	gs_samplerstate_t               *point_sampler;
 	gs_stagesurf_t                  *mapped_surface;
 	int                             cur_texture;
+	long                            raw_active;
 
 	uint64_t                        video_time;
 	uint64_t                        video_avg_frame_time_ns;
@@ -408,6 +409,13 @@ extern bool audio_callback(void *param,
 		uint64_t start_ts_in, uint64_t end_ts_in, uint64_t *out_ts,
 		uint32_t mixers, struct audio_output_data *mixes);
 
+extern void start_raw_video(video_t *video,
+		const struct video_scale_info *conversion,
+		void (*callback)(void *param, struct video_data *frame),
+		void *param);
+extern void stop_raw_video(video_t *video,
+		void (*callback)(void *param, struct video_data *frame),
+		void *param);
 
 /* ------------------------------------------------------------------------- */
 /* obs shared context data */

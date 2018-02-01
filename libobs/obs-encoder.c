@@ -189,8 +189,7 @@ static void add_connection(struct obs_encoder *encoder)
 		struct video_scale_info info = {0};
 		get_video_info(encoder, &info);
 
-		video_output_connect(encoder->media, &info, receive_video,
-			encoder);
+		start_raw_video(encoder->media, &info, receive_video, encoder);
 	}
 
 	set_encoder_active(encoder, true);
@@ -202,8 +201,7 @@ static void remove_connection(struct obs_encoder *encoder)
 		audio_output_disconnect(encoder->media, encoder->mixer_idx,
 				receive_audio, encoder);
 	else
-		video_output_disconnect(encoder->media, receive_video,
-				encoder);
+		stop_raw_video(encoder->media, receive_video, encoder);
 
 	obs_encoder_shutdown(encoder);
 	set_encoder_active(encoder, false);

@@ -1541,7 +1541,7 @@ static void hook_data_capture(struct obs_output *output, bool encoded,
 					encoded_callback, output);
 	} else {
 		if (has_video)
-			video_output_connect(output->video,
+			start_raw_video(output->video,
 					get_video_conversion(output),
 					default_raw_video_callback, output);
 		if (has_audio)
@@ -1797,7 +1797,7 @@ static void *end_data_capture_thread(void *data)
 			stop_audio_encoders(output, encoded_callback);
 	} else {
 		if (has_video)
-			video_output_disconnect(output->video,
+			stop_raw_video(output->video,
 					default_raw_video_callback, output);
 		if (has_audio)
 			audio_output_disconnect(output->audio,
