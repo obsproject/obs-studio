@@ -994,6 +994,9 @@ void OBSBasic::SaveService()
 
 	obs_data_release(settings);
 	obs_data_release(data);
+
+	ResetVideo();
+	ResetOutputs();
 }
 
 bool OBSBasic::LoadService()
@@ -3069,7 +3072,12 @@ obs_service_t *OBSBasic::GetService()
 void OBSBasic::SetService(obs_service_t *newService)
 {
 	if (newService)
+	{
 		service = newService;
+
+		ResetVideo();
+		ResetOutputs();
+	}
 }
 
 bool OBSBasic::StreamingActive() const
