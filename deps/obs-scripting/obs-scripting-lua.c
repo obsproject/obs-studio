@@ -1023,6 +1023,7 @@ static void lua_tick(void *param, float seconds)
 	data = first_tick_script;
 	while (data) {
 		lua_State *script = data->script;
+		current_lua_script = data;
 
 		pthread_mutex_lock(&data->mutex);
 
@@ -1033,6 +1034,7 @@ static void lua_tick(void *param, float seconds)
 
 		data = data->next_tick;
 	}
+	current_lua_script = NULL;
 	pthread_mutex_unlock(&tick_mutex);
 
 	/* --------------------------------- */
