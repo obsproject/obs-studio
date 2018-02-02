@@ -1839,8 +1839,33 @@ static void upgrade_settings(void)
 	os_closedir(dir);
 }
 
+// 
+// This is necessary for OBS to behave correctly on dual-monitor set-ups
+// with display DPIs over 96 (for example: 120)
+// More info here: https://bugreports.qt.io/browse/QTBUG-38993
+//
+#if defined(Q_OS_WIN32)
+#include "ShellScalingApi.h"
+#include <QLibrary>
+#endif
+
 int main(int argc, char *argv[])
 {
+// 
+// This is necessary for OBS to behave correctly on dual-monitor set-ups
+// with display DPIs over 96 (for example: 120)
+// More info here: https://bugreports.qt.io/browse/QTBUG-38993
+//
+#if defined(Q_OS_WIN32)
+	typedef BOOL(*SetProcessDpiAwarenessT)(PROCESS_DPI_AWARENESS value);
+	QLibrary user32("user32.dll", NULL);
+	SetProcessDpiAwarenessT SetProcessDpiAwarenessD = (SetProcessDpiAwarenessT)user32.resolve("SetProcessDpiAwarenessInternal");
+	if (SetProcessDpiAwarenessD)
+		SetProcessDpiAwarenessD(PROCESS_DPI_UNAWARE); //Process_DPI_Unaware
+#endif
+	//qputenv("QT_DEVICE_PIXEL_RATIO", QByteArray("1"));
+	//qputenv("QT_AUTO_SCREEN_SCALE_FACTOR", QByteArray("0"));
+
 #ifndef _WIN32
 	signal(SIGPIPE, SIG_IGN);
 #endif
