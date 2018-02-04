@@ -550,6 +550,19 @@ void OBSBasic::Save(const char *file)
 	obs_data_array_release(savedMultiviewProjectorList);
 }
 
+void OBSBasic::DeferSaveBegin()
+{
+	os_atomic_inc_long(&disableSaving);
+}
+
+void OBSBasic::DeferSaveEnd()
+{
+	long result = os_atomic_dec_long(&disableSaving);
+	if (result == 0) {
+		SaveProject();
+	}
+}
+
 static void LoadAudioDevice(const char *name, int channel, obs_data_t *parent)
 {
 	obs_data_t *data = obs_data_get_obj(parent, name);

@@ -150,6 +150,8 @@ EXPORT void obs_frontend_replay_buffer_stop(void);
 EXPORT bool obs_frontend_replay_buffer_active(void);
 
 EXPORT void obs_frontend_save(void);
+EXPORT void obs_frontend_defer_save_begin(void);
+EXPORT void obs_frontend_defer_save_end(void);
 
 EXPORT obs_output_t *obs_frontend_get_streaming_output(void);
 EXPORT obs_output_t *obs_frontend_get_recording_output(void);

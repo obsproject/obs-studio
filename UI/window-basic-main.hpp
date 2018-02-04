@@ -380,6 +380,9 @@ private:
 		obs_data_array_t *savedMultiviewProjectors);
 
 public slots:
+	void DeferSaveBegin();
+	void DeferSaveEnd();
+
 	void StartStreaming();
 	void StopStreaming();
 	void ForceStopStreaming();

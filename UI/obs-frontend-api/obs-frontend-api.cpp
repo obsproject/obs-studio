@@ -297,6 +297,18 @@ void obs_frontend_save(void)
 		c->obs_frontend_save();
 }
 
+void obs_frontend_defer_save_begin(void)
+{
+	if (callbacks_valid())
+		c->obs_frontend_defer_save_begin();
+}
+
+void obs_frontend_defer_save_end(void)
+{
+	if (callbacks_valid())
+		c->obs_frontend_defer_save_end();
+}
+
 void obs_frontend_add_save_callback(obs_frontend_save_cb callback,
 		void *private_data)
 {
