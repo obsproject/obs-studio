@@ -1512,6 +1512,11 @@ void OBSBasic::OBSInit()
 	SET_VISIBILITY("ShowStatusBar", toggleStatusBar);
 #undef SET_VISIBILITY
 
+	// InitOBSCallbacks() MUST be positioned before Load(savePath) since audio devices appear in the
+	// mixer as a result of "source_activate" callback.
+	InitOBSCallbacks();
+	InitHotkeys();
+
 	{
 		ProfileScope("OBSBasic::Load");
 		disableSaving--;
@@ -1631,9 +1636,6 @@ void OBSBasic::OBSInit()
 
 	if (config_get_bool(basicConfig, "General", "OpenStatsOnStartup"))
 		on_stats_triggered();
-
-	InitOBSCallbacks();
-	InitHotkeys();
 
 	OBSBasicStats::InitializeValues();
 
