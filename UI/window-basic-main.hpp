@@ -730,7 +730,7 @@ public:
 	virtual int GetProfilePath(char *path, size_t size, const char *file)
 		const override;
 
-private:
+public:
 	// Detect whether we're running in QT GUI thread context
 	//
 	// This is used to determine whether to call QMetaObject::invokeMethod with
