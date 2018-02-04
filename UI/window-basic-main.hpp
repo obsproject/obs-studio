@@ -126,7 +126,7 @@ private:
 	std::vector<int> previewProjectorArray;
 
 	bool loaded = false;
-	long disableSaving = 1;
+	__declspec(align(64)) long disableSaving = 1; // Must be aligned for os_atomic_inc_long() and os_atomic_dec_long() to behave predictably
 	bool projectChanged = false;
 	bool previewEnabled = true;
 	bool fullscreenInterface = false;
@@ -375,6 +375,18 @@ private:
 		obs_data_array_t *savedMultiviewProjectors);
 
 public slots:
+	void SuspendSaving() {
+		os_atomic_inc_long(&disableSaving);
+	}
+
+	void ResumeSaving() {
+		long result = os_atomic_dec_long(&disableSaving);
+
+		if (result == 0) {
+			SaveProject();
+		}
+	}
+
 	void StartStreaming();
 	void StopStreaming();
 	void ForceStopStreaming();

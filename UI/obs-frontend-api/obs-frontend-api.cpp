@@ -291,6 +291,18 @@ config_t *obs_frontend_get_global_config(void)
 		: nullptr;
 }
 
+void obs_frontend_save_suspend(void)
+{
+	if (callbacks_valid())
+		c->obs_frontend_save_suspend();
+}
+
+void obs_frontend_save_resume(void)
+{
+	if (callbacks_valid())
+		c->obs_frontend_save_resume();
+}
+
 void obs_frontend_save(void)
 {
 	if (callbacks_valid())
