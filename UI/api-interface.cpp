@@ -329,6 +329,16 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 		main->SaveProject();
 	}
 
+	void obs_frontend_save_suspend(void) override
+	{
+		QMetaObject::invokeMethod(main, "SuspendSaving");
+	}
+
+	void obs_frontend_save_resume(void) override
+	{
+		QMetaObject::invokeMethod(main, "ResumeSaving");
+	}
+
 	void obs_frontend_add_save_callback(obs_frontend_save_cb callback,
 			void *private_data) override
 	{
