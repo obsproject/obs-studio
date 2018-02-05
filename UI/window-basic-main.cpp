@@ -601,7 +601,6 @@ void OBSBasic::CreateDefaultScene(bool firstStart)
 	if (firstStart)
 		CreateFirstRunSources();
 
-	// AddScene(obs_scene_get_source(scene));
 	SetCurrentScene(scene, true);
 	obs_scene_release(scene);
 
@@ -2719,7 +2718,6 @@ void OBSBasic::DuplicateSelectedScene()
 		obs_scene_t *scene = obs_scene_duplicate(curScene,
 				name.c_str(), OBS_SCENE_DUP_REFS);
 		source = obs_scene_get_source(scene);
-		//AddScene(source);
 		SetCurrentScene(source, true);
 		obs_scene_release(scene);
 
@@ -3707,7 +3705,6 @@ void OBSBasic::on_actionAddScene_triggered()
 
 		obs_scene_t *scene = obs_scene_create(name.c_str());
 		source = obs_scene_get_source(scene);
-		// AddScene(source);
 		SetCurrentScene(source);
 		obs_scene_release(scene);
 	}
