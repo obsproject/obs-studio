@@ -128,7 +128,7 @@ private:
 	long m_isLoading = 0;
 
 	bool loaded = false;
-	__declspec(align(64)) long disableSaving = 1; // Must be aligned for os_atomic_inc_long() and os_atomic_dec_long() to behave predictably
+	long disableSaving alignas(64) = 1; // Must be aligned for os_atomic_inc_long() and os_atomic_dec_long() to behave predictably
 	bool projectChanged = false;
 	bool previewEnabled = true;
 	bool fullscreenInterface = false;
