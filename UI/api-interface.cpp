@@ -207,12 +207,14 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 
 	void obs_frontend_streaming_start(void) override
 	{
-		QMetaObject::invokeMethod(main, "StartStreaming");
+		QMetaObject::invokeMethod(main, "StartStreaming",
+			Qt::QueuedConnection);
 	}
 
 	void obs_frontend_streaming_stop(void) override
 	{
-		QMetaObject::invokeMethod(main, "StopStreaming");
+		QMetaObject::invokeMethod(main, "StopStreaming",
+			Qt::QueuedConnection);
 	}
 
 	bool obs_frontend_streaming_active(void) override
