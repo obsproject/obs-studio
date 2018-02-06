@@ -15,7 +15,7 @@ ELSE()
 ENDIF()
 
 FIND_PATH(LUAJIT_INCLUDE_DIR
-	NAMES lua.h
+	NAMES lua.h lualib.h
 	HINTS
 		ENV LuajitPath${_LIB_SUFFIX}
 		ENV LuajitPath
