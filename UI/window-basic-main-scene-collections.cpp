@@ -391,14 +391,23 @@ void OBSBasic::on_actionImportSceneCollection_triggered()
 	QFileInfo destinfo(path + filename);
 
 	if (!file.isEmpty() && !file.isNull()) {
-		 if (!destinfo.exists()) {
-			QFile::copy(file, path + filename);
+		const char *filepath = finfo.absoluteFilePath()
+						.toStdString().c_str();
+		obs_data_t *scenedata = obs_data_create_from_json_file(filepath);
+		QString collectionname = obs_data_get_string(scenedata, "name");
+		destinfo.setFile(path + collectionname + ".json");
+
+		if (!destinfo.exists()) {
+			QFile::copy(file, path + collectionname + ".json");
 			RefreshSceneCollections();
 		} else {
 			OBSMessageBox::information(this,
 				QTStr("Basic.MainMenu.SceneCollection.Import"),
 				QTStr("Basic.MainMenu.SceneCollection.Exists"));
 		}
+
+		obs_data_release(scenedata);
+		filepath = nullptr;
 	}
 }
 
