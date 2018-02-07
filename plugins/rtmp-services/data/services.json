@@ -1162,6 +1162,19 @@
                 "max video bitrate": 7000,
                 "max audio bitrate": 192
             }
+        },
+        {
+            "name": "SermonAudio.com",
+            "servers": [
+                {
+                    "name": "Primary",
+                    "url": "rtmp://stream.sermonaudio.com/"
+                }
+            ],
+            "recommended": {
+                "max video bitrate": 1000,
+                "max audio bitrate": 64
+            }
         }
     ]
 }
