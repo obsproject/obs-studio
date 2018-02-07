@@ -37,6 +37,10 @@ endif()
 find_package(Qt5Widgets ${FIND_MODE})
 find_package(FFmpeg REQUIRED COMPONENTS avcodec avutil avformat)
 
+if(APPLE)
+	find_package(Qt5MacExtras REQUIRED)
+endif(APPLE)
+
 if(NOT Qt5Widgets_FOUND)
 	if (ENABLE_UI)
 		message(FATAL_ERROR "Failed to find Qt5")
@@ -271,6 +275,8 @@ target_link_libraries(obs
 	${obs_PLATFORM_LIBRARIES})
 
 if (APPLE)
+	target_link_libraries(obs
+			Qt5::MacExtras)
 	set_target_properties(obs PROPERTIES LINK_FLAGS "-pagezero_size 10000 -image_base 100000000")
 	set_property(
 		TARGET obs
