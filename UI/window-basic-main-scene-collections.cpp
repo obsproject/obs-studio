@@ -409,7 +409,7 @@ void OBSBasic::on_actionImportSceneCollection_triggered()
 		obs_data_set_string(scenedata, "name", name.c_str());
 
 		if (!GetFileSafeName(name.c_str(), file)) {
-			blog(LOG_WARNING, __FUNCTION__ ": Failed to create "
+			blog(LOG_WARNING, "Failed to create "
 					"safe file name for '%s'",
 					name.c_str());
 			return;
@@ -418,7 +418,7 @@ void OBSBasic::on_actionImportSceneCollection_triggered()
 		string filePath = path + file;
 
 		if (!GetClosestUnusedFileName(filePath, "json")) {
-			blog(LOG_WARNING, __FUNCTION__ ": Failed to get "
+			blog(LOG_WARNING, "Failed to get "
 					"closest file name for %s",
 					file.c_str());
 			return;
