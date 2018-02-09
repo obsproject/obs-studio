@@ -271,7 +271,7 @@ static void mp_media_next_audio(mp_media_t *m)
 	for (size_t i = 0; i < MAX_AV_PLANES; i++)
 		audio.data[i] = f->data[i];
 
-	audio.samples_per_sec = f->sample_rate;
+	audio.samples_per_sec = f->sample_rate * m->speed_percentage / 100;
 	audio.speakers = convert_speaker_layout(f->channels);
 	audio.format = convert_sample_format(f->format);
 	audio.frames = f->nb_samples;
@@ -689,7 +689,8 @@ bool mp_media_init(mp_media_t *media,
 		mp_video_cb v_preload_cb,
 		bool hw_decoding,
 		bool is_local_file,
-		enum video_range_type force_range)
+		enum video_range_type force_range,
+		int speed_percentage)
 {
 	memset(media, 0, sizeof(*media));
 	pthread_mutex_init_value(&media->mutex);
@@ -701,6 +702,7 @@ bool mp_media_init(mp_media_t *media,
 	media->force_range = force_range;
 	media->buffering = buffering;
 	media->is_local_file = is_local_file;
+	media->speed_percentage = speed_percentage;
 
 	static bool initialized = false;
 	if (!initialized) {

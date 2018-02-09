@@ -56,6 +56,7 @@ struct ffmpeg_source {
 	bool restart_on_activate;
 	bool close_when_inactive;
 	bool seekable;
+	int speed_percentage;
 };
 
 static bool is_local_file_modified(obs_properties_t *props,
@@ -93,6 +94,7 @@ static void ffmpeg_source_defaults(obs_data_t *settings)
 	obs_data_set_default_bool(settings, "hw_decode", true);
 #endif
 	obs_data_set_default_int(settings, "buffering_mb", 2);
+	obs_data_set_default_int(settings, "speed_percentage", 100);
 }
 
 static const char *media_filter =
@@ -183,6 +185,9 @@ static obs_properties_t *ffmpeg_source_getproperties(void *data)
 
 	obs_properties_add_bool(props, "seekable", obs_module_text("Seekable"));
 
+	obs_properties_add_int_slider(props, "speed_percentage",
+			obs_module_text("SpeedPercentage"), 1, 10000, 1);
+
 	return props;
 }
 
@@ -249,7 +254,8 @@ static void ffmpeg_source_open(struct ffmpeg_source *s)
 				preload_frame,
 				s->is_hw_decoding,
 				s->is_local_file || s->seekable,
-				s->range);
+				s->range,
+				s->speed_percentage);
 }
 
 static void ffmpeg_source_tick(void *data, float seconds)
@@ -322,6 +328,8 @@ static void ffmpeg_source_update(void *data, obs_data_t *settings)
 	s->buffering_mb = (int)obs_data_get_int(settings, "buffering_mb");
 	s->is_local_file = is_local_file;
 	s->seekable = obs_data_get_bool(settings, "seekable");
+	s->speed_percentage = (int)obs_data_get_int(settings,
+			"speed_percentage");
 
 	if (s->media_valid) {
 		mp_media_free(&s->media);
