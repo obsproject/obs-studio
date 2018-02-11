@@ -214,13 +214,24 @@ int device_create(gs_device_t **p_device, uint32_t adapter)
 	if (!device->plat)
 		goto fail;
 
+	const char *glVendor = (const char *)glGetString(GL_VENDOR);
+	const char *glRenderer = (const char *)glGetString(GL_RENDERER);
+
+	blog(LOG_INFO, "Loading up OpenGL on adapter %s %s", glVendor,
+			glRenderer);
+
 	if (!gl_init_extensions(device)) {
 		errorcode = GS_ERROR_NOT_SUPPORTED;
 		goto fail;
 	}
 
-	blog(LOG_INFO, "OpenGL version: %s", glGetString(GL_VERSION));
-	
+	const char *glVersion = (const char *)glGetString(GL_VERSION);
+	const char *glShadingLanguage = (const char *)glGetString(
+			GL_SHADING_LANGUAGE_VERSION);
+
+	blog(LOG_INFO, "OpenGL loaded successfully, version %s, shading "
+			"language %s", glVersion, glShadingLanguage);
+
 	gl_enable(GL_CULL_FACE);
 	
 	device_leave_context(device);
