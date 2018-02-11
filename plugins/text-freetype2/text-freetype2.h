@@ -21,6 +21,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define num_cache_slots 65535
 #define src_glyph srcdata->cacheglyphs[glyph_index]
 
+#define LOAD_INTERVAL_MIN 100
+
 struct glyph_info {
 	float u, v, u2, v2;
 	int32_t w, h, xoff, yoff;
@@ -40,6 +42,8 @@ struct ft2_source {
 	time_t m_timestamp;
 	bool update_file;
 	uint64_t last_checked;
+	uint32_t load_interval;
+	bool load_on_interval;
 
 	uint32_t cx, cy, max_h, custom_width;
 	uint32_t texbuf_x, texbuf_y;
