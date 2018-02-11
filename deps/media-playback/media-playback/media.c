@@ -533,6 +533,8 @@ static int interrupt_callback(void *data)
 static bool init_avformat(mp_media_t *m)
 {
 	AVInputFormat *format = NULL;
+	AVDictionary *opts = NULL;
+	int ret;
 
 	if (m->format_name && *m->format_name) {
 		format = av_find_input_format(m->format_name);
@@ -541,15 +543,21 @@ static bool init_avformat(mp_media_t *m)
 					"'%s'", m->path);
 	}
 
-	AVDictionary *opts = NULL;
 	if (m->buffering && !m->is_local_file)
 		av_dict_set_int(&opts, "buffer_size", m->buffering, 0);
 
+	if ((ret = av_dict_parse_string(&opts, m->input_options,
+		"=", " ", 0))) {
+		blog(LOG_WARNING, "Failed to parse input demuxer settings: %s\n%s",
+				av_err2str(ret), m->input_options);
+		av_dict_free(&opts);
+		return false;
+	}
 	m->fmt = avformat_alloc_context();
 	m->fmt->interrupt_callback.callback = interrupt_callback;
 	m->fmt->interrupt_callback.opaque = m;
 
-	int ret = avformat_open_input(&m->fmt, m->path, format,
+	ret = avformat_open_input(&m->fmt, m->path, format,
 			opts ? &opts : NULL);
 	av_dict_free(&opts);
 
@@ -682,6 +690,7 @@ bool mp_media_init(mp_media_t *media,
 		const char *path,
 		const char *format,
 		int buffering,
+		char *input_options,
 		void *opaque,
 		mp_video_cb v_cb,
 		mp_audio_cb a_cb,
@@ -700,6 +709,7 @@ bool mp_media_init(mp_media_t *media,
 	media->v_preload_cb = v_preload_cb;
 	media->force_range = force_range;
 	media->buffering = buffering;
+	media->input_options = input_options;
 	media->is_local_file = is_local_file;
 
 	static bool initialized = false;
