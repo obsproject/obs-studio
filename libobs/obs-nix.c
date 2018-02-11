@@ -236,6 +236,34 @@ static void log_kernel_version(void)
 	blog(LOG_INFO, "Kernel Version: %s %s", info.sysname, info.release);
 }
 
+static void log_x_info(void)
+{
+	Display *dpy = XOpenDisplay(NULL);
+	if (!dpy) {
+		blog(LOG_INFO, "Unable to open X display");
+		return;
+	}
+
+	int        protocol_version  = ProtocolVersion(dpy);
+	int        protocol_revision = ProtocolRevision(dpy);
+	int        vendor_release    = VendorRelease(dpy);
+	const char *vendor_name      = ServerVendor(dpy);
+
+	if (strstr(vendor_name, "X.Org")) {
+		blog(LOG_INFO, "Window System: X%d.%d, Vendor: %s, Version: %d"
+				".%d.%d", protocol_version, protocol_revision,
+				vendor_name, vendor_release / 10000000,
+				(vendor_release / 100000) % 100,
+				(vendor_release / 1000) % 100);
+	} else {
+		blog(LOG_INFO, "Window System: X%d.%d - vendor string: %s - "
+				"vendor release: %d", protocol_version,
+				protocol_revision, vendor_name, vendor_release);
+	}
+
+	XCloseDisplay(dpy);
+}
+
 #if defined(__linux__)
 static void log_distribution_info(void)
 {
@@ -292,6 +320,7 @@ void log_system_info(void)
 #if defined(__linux__)
 	log_distribution_info();
 #endif
+	log_x_info();
 }
 
 /* So here's how linux works with key mapping:
