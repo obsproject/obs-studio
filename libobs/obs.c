@@ -976,16 +976,18 @@ int obs_reset_video(struct obs_video_info *ovi)
 
 	blog(LOG_INFO, "---------------------------------");
 	blog(LOG_INFO, "video settings reset:\n"
-	               "\tbase resolution:   %dx%d\n"
-	               "\toutput resolution: %dx%d\n"
-	               "\tdownscale filter:  %s\n"
-	               "\tfps:               %d/%d\n"
-	               "\tformat:            %s",
-	               ovi->base_width, ovi->base_height,
-	               ovi->output_width, ovi->output_height,
-	               scale_type_name,
-	               ovi->fps_num, ovi->fps_den,
-		       get_video_format_name(ovi->output_format));
+			"\tbase resolution:   %dx%d\n"
+			"\toutput resolution: %dx%d\n"
+			"\tdownscale filter:  %s\n"
+			"\tfps:               %d/%d\n"
+			"\tformat:            %s\n"
+			"\tcolorspace:        %s\n"
+			"\trange:             %s",
+			ovi->base_width, ovi->base_height, ovi->output_width,
+			ovi->output_height, scale_type_name, ovi->fps_num,
+			ovi->fps_den, get_video_format_name(ovi->output_format),
+			get_video_colorspace_name(ovi->colorspace),
+			get_video_range_name(ovi->range));
 
 	return obs_init_video(ovi);
 }
