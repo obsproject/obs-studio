@@ -576,6 +576,8 @@ void OBSPropertiesView::AddEditableList(obs_property_t *prop,
 	for (size_t i = 0; i < count; i++) {
 		obs_data_t *item = obs_data_array_item(array, i);
 		list->addItem(QT_UTF8(obs_data_get_string(item, "value")));
+		list->setItemSelected(list->item(i), obs_data_get_bool(item, "selected"));
+		list->setItemHidden(list->item(i), obs_data_get_bool(item, "hidden"));
 		obs_data_release(item);
 	}
 
@@ -1690,7 +1692,10 @@ void WidgetInfo::EditableListChanged()
 		obs_data_t *arrayItem = obs_data_create();
 		obs_data_set_string(arrayItem, "value",
 				QT_TO_UTF8(item->text()));
-
+		obs_data_set_bool(arrayItem, "selected",
+			item->isSelected());
+		obs_data_set_bool(arrayItem, "hidden",
+			item->isHidden());
 		obs_data_array_push_back(array, arrayItem);
 		obs_data_release(arrayItem);
 	}
