@@ -137,6 +137,8 @@ private:
 	qreal inputPeakHoldDuration;
 
 	uint64_t lastRedrawTime = 0;
+	uint64_t clipTime = 0;
+	uint64_t clipHoldTime = 3000000000;
 
 public:
 	explicit VolumeMeter(QWidget *parent = 0,
