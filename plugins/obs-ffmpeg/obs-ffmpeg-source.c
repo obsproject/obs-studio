@@ -241,15 +241,23 @@ static void media_stopped(void *opaque)
 
 static void ffmpeg_source_open(struct ffmpeg_source *s)
 {
-	if (s->input && *s->input)
-		s->media_valid = mp_media_init(&s->media,
-				s->input, s->input_format,
-				s->buffering_mb * 1024 * 1024,
-				s, get_frame, get_audio, media_stopped,
-				preload_frame,
-				s->is_hw_decoding,
-				s->is_local_file || s->seekable,
-				s->range);
+	if (s->input && *s->input) {
+		struct mp_media_info info = {
+			.opaque = s,
+			.v_cb = get_frame,
+			.v_preload_cb = preload_frame,
+			.a_cb = get_audio,
+			.stop_cb = media_stopped,
+			.path = s->input,
+			.format = s->input_format,
+			.buffering = s->buffering_mb * 1024 * 1024,
+			.force_range = s->range,
+			.hardware_decoding = s->is_hw_decoding,
+			.is_local_file = s->is_local_file || s->seekable
+		};
+
+		s->media_valid = mp_media_init(&s->media, &info);
+	}
 }
 
 static void ffmpeg_source_tick(void *data, float seconds)
