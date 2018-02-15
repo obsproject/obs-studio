@@ -426,10 +426,10 @@ VolumeMeter::VolumeMeter(QWidget *parent, obs_volmeter_t *obs_volmeter)
 	foregroundNominalColor.setRgb(0x4c, 0xff, 0x4c);    // Bright green
 	foregroundWarningColor.setRgb(0xff, 0xff, 0x4c);    // Bright yellow
 	foregroundErrorColor.setRgb(0xff, 0x4c, 0x4c);      // Bright red
-	clipColor.setRgb(0xff, 0xff, 0xff);                 // Bright white
+	clipColor.setRgb(0xff, 0x4c, 0x4c);                 // Bright red
 	magnitudeColor.setRgb(0x00, 0x00, 0x00);            // Black
-	majorTickColor.setRgb(0xff, 0xff, 0xff);            // Black
-	minorTickColor.setRgb(0xcc, 0xcc, 0xcc);            // Black
+	majorTickColor.setRgb(0xff, 0xff, 0xff);            // White
+	minorTickColor.setRgb(0xcc, 0xcc, 0xcc);            // Lighter Black / Gray
 	minimumLevel = -60.0;                               // -60 dB
 	warningLevel = -20.0;                               // -20 dB
 	errorLevel = -9.0;                                  //  -9 dB
@@ -670,6 +670,9 @@ void VolumeMeter::paintMeter(QPainter &painter, int x, int y,
 	int nominalLength       = warningPosition - minimumPosition;
 	int warningLength       = errorPosition - warningPosition;
 	int errorLength         = maximumPosition - errorPosition;
+
+	int clipPosition        = errorPosition + (errorLength * 3 / 4);
+	int clipLength          = maximumPosition - clipPosition;
 	locker.unlock();
 
 	if (peakPosition < minimumPosition) {
@@ -740,11 +743,29 @@ void VolumeMeter::paintMeter(QPainter &painter, int x, int y,
 			backgroundErrorColor);
 
 	} else {
-		qreal end = errorLength + warningLength + nominalLength;
 		painter.fillRect(
 			minimumPosition, y,
-			end, height,
-			QBrush(foregroundErrorColor));
+			nominalLength, height,
+			foregroundNominalColor);
+		painter.fillRect(
+			warningPosition, y,
+			warningLength, height,
+			foregroundWarningColor);
+		painter.fillRect(
+			errorPosition, y,
+			errorLength, height,
+			foregroundErrorColor);
+		//we've clipped set the new timer
+		clipTime = os_gettime_ns() + clipHoldTime;
+	}
+
+	//draw what we need when we clip
+	if (os_gettime_ns() < clipTime) {
+		painter.fillRect(
+			clipPosition, y,
+			clipLength, height,
+			clipColor
+		);
 	}
 
 	if (peakHoldPosition - 3 < minimumPosition) {
@@ -832,7 +853,10 @@ void VolumeMeter::paintEvent(QPaintEvent *event)
 			5, channelNr * 4, width - 5, 3,
 			displayMagnitude[channelNr], displayPeak[channelNr],
 			displayPeakHold[channelNr]);
-
+		
+		/* //sorry I have no idea what this was meant for
+		//but it overwrites and draws over anything, making each
+		//draw a per frame thing, not what's needed to handle clipping
 		if (!idle) {
 			// By not drawing the input meter boxes the user can
 			// see that the audio stream has been stopped, without
@@ -841,6 +865,7 @@ void VolumeMeter::paintEvent(QPaintEvent *event)
 				0, channelNr * 4, 3, 3,
 				displayInputPeakHold[channelNr]);
 		}
+		*/
 	}
 
 	lastRedrawTime = ts;
