@@ -515,6 +515,10 @@ VolumeMeter {
     qproperty-foregroundNominalColor: rgb(76, 255, 76);
     qproperty-foregroundWarningColor: rgb(255, 255, 76);
     qproperty-foregroundErrorColor: rgb(255, 76, 76);
+	
+	/* clip color */
+	qproperty-clipColor: rgb(255, 80, 80); 
+	
     qproperty-magnitudeColor: rgb(0, 0, 0);
     qproperty-majorTickColor: rgb(225,224,225); /* veryLight */
     qproperty-minorTickColor: rgb(122,121,122); /* light */
