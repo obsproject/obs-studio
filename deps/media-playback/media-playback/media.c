@@ -271,7 +271,7 @@ static void mp_media_next_audio(mp_media_t *m)
 	for (size_t i = 0; i < MAX_AV_PLANES; i++)
 		audio.data[i] = f->data[i];
 
-	audio.samples_per_sec = f->sample_rate;
+	audio.samples_per_sec = f->sample_rate * m->speed / 100;
 	audio.speakers = convert_speaker_layout(f->channels);
 	audio.format = convert_sample_format(f->format);
 	audio.frames = f->nb_samples;
@@ -687,7 +687,11 @@ bool mp_media_init(mp_media_t *media, const struct mp_media_info *info)
 	media->v_preload_cb = info->v_preload_cb;
 	media->force_range = info->force_range;
 	media->buffering = info->buffering;
+	media->speed = info->speed;
 	media->is_local_file = info->is_local_file;
+
+	if (!info->is_local_file || media->speed < 1 || media->speed > 200)
+		media->speed = 100;
 
 	static bool initialized = false;
 	if (!initialized) {
