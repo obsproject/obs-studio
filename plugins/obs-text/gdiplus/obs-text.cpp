@@ -40,6 +40,7 @@ using namespace Gdiplus;
 #define S_FONT                          "font"
 #define S_USE_FILE                      "read_from_file"
 #define S_FILE                          "file"
+#define S_FILE_UPDATE_FREQ              "file_update_freq"
 #define S_TEXT                          "text"
 #define S_COLOR                         "color"
 #define S_GRADIENT                      "gradient"
@@ -75,6 +76,7 @@ using namespace Gdiplus;
 #define T_FONT                          T_("Font")
 #define T_USE_FILE                      T_("ReadFromFile")
 #define T_FILE                          T_("TextFile")
+#define T_FILE_UPDATE_FREQ              T_("TextFileUpdateFrequency")
 #define T_TEXT                          T_("Text")
 #define T_COLOR                         T_("Color")
 #define T_GRADIENT                      T_("Gradient")
@@ -199,6 +201,7 @@ struct TextSource {
 	time_t file_timestamp = 0;
 	bool update_file = false;
 	float update_time_elapsed = 0.0f;
+	float file_update_freq = 1.0f;
 
 	wstring text;
 	wstring face;
@@ -653,6 +656,7 @@ inline void TextSource::Update(obs_data_t *s)
 	uint32_t new_o_size    = obs_data_get_uint32(s, S_OUTLINE_SIZE);
 	bool new_use_file      = obs_data_get_bool(s, S_USE_FILE);
 	const char *new_file   = obs_data_get_string(s, S_FILE);
+	double new_file_freq   = obs_data_get_double(s, S_FILE_UPDATE_FREQ);
 	bool new_chat_mode     = obs_data_get_bool(s, S_CHATLOG_MODE);
 	int new_chat_lines     = (int)obs_data_get_int(s, S_CHATLOG_LINES);
 	bool new_extents       = obs_data_get_bool(s, S_EXTENTS);
@@ -726,6 +730,7 @@ inline void TextSource::Update(obs_data_t *s)
 	if (read_from_file) {
 		file = new_file;
 		file_timestamp = get_modified_timestamp(new_file);
+		file_update_freq = new_file_freq;
 		LoadFileText();
 
 	} else {
@@ -772,7 +777,7 @@ inline void TextSource::Tick(float seconds)
 
 	update_time_elapsed += seconds;
 
-	if (update_time_elapsed >= 1.0f) {
+	if (update_time_elapsed >= file_update_freq) {
 		time_t t = get_modified_timestamp(file.c_str());
 		update_time_elapsed = 0.0f;
 
@@ -818,6 +823,7 @@ static bool use_file_changed(obs_properties_t *props, obs_property_t *p,
 
 	set_vis(use_file, S_TEXT, false);
 	set_vis(use_file, S_FILE, true);
+	set_vis(use_file, S_FILE_UPDATE_FREQ, true);
 	return true;
 }
 
@@ -897,6 +903,7 @@ static obs_properties_t *get_properties(void *data)
 	obs_properties_add_text(props, S_TEXT, T_TEXT, OBS_TEXT_MULTILINE);
 	obs_properties_add_path(props, S_FILE, T_FILE, OBS_PATH_FILE,
 			filter.c_str(), path.c_str());
+	obs_properties_add_float(props, S_FILE_UPDATE_FREQ, T_FILE_UPDATE_FREQ, 0.1f, 10.0f, 0.1f);
 
 	obs_properties_add_bool(props, S_VERTICAL, T_VERTICAL);
 	obs_properties_add_color(props, S_COLOR, T_COLOR);
@@ -1002,6 +1009,7 @@ bool obs_module_load(void)
 		obs_data_set_default_bool(settings, S_EXTENTS_WRAP, true);
 		obs_data_set_default_int(settings, S_EXTENTS_CX, 100);
 		obs_data_set_default_int(settings, S_EXTENTS_CY, 100);
+		obs_data_set_default_double(settings, S_FILE_UPDATE_FREQ, 1.0f);
 
 		obs_data_release(font_obj);
 	};
