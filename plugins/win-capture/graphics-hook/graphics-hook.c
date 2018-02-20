@@ -690,7 +690,7 @@ bool capture_init_shmem(struct shmem_data **data, HWND window,
 	uint32_t  tex_size       = cy * pitch;
 	uint32_t  aligned_header = ALIGN(sizeof(struct shmem_data), 32);
 	uint32_t  aligned_tex    = ALIGN(tex_size, 32);
-	uint32_t  total_size     = aligned_header + aligned_tex * 2;
+	uint32_t  total_size     = aligned_header + aligned_tex * 2 + 32;	// last 32 is for align texture date to 256bit addresses
 	uintptr_t align_pos;
 
 	if (!init_shared_info(total_size)) {
