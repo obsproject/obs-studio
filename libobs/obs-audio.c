@@ -83,7 +83,7 @@ static void ignore_audio(obs_source_t *source, size_t channels,
 {
 	size_t num_floats = source->audio_input_buf[0].size / sizeof(float);
 
-	if (num_floats) {
+	if (num_floats >= AUDIO_OUTPUT_FRAMES) {
 		for (size_t ch = 0; ch < channels; ch++)
 			circlebuf_pop_front(&source->audio_input_buf[ch], NULL,
 					source->audio_input_buf[ch].size);
