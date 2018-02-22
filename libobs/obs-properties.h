@@ -263,7 +263,7 @@ EXPORT double                 obs_property_float_min(obs_property_t *p);
 EXPORT double                 obs_property_float_max(obs_property_t *p);
 EXPORT double                 obs_property_float_step(obs_property_t *p);
 EXPORT enum obs_number_type   obs_property_float_type(obs_property_t *p);
-EXPORT enum obs_text_type     obs_proprety_text_type(obs_property_t *p);
+EXPORT enum obs_text_type     obs_property_text_type(obs_property_t *p);
 EXPORT enum obs_path_type     obs_property_path_type(obs_property_t *p);
 EXPORT const char *           obs_property_path_filter(obs_property_t *p);
 EXPORT const char *           obs_property_path_default_path(obs_property_t *p);
@@ -335,6 +335,11 @@ EXPORT struct media_frames_per_second obs_property_frame_rate_fps_range_min(
 		obs_property_t *p, size_t idx);
 EXPORT struct media_frames_per_second obs_property_frame_rate_fps_range_max(
 		obs_property_t *p, size_t idx);
+
+#ifndef SWIG
+DEPRECATED
+EXPORT enum obs_text_type     obs_proprety_text_type(obs_property_t *p);
+#endif
 
 #ifdef __cplusplus
 }

@@ -383,7 +383,7 @@ Property Enumeration Functions
 
 ---------------------
 
-.. function:: enum obs_text_type     obs_proprety_text_type(obs_property_t *p)
+.. function:: enum obs_text_type     obs_property_text_type(obs_property_t *p)
 
 ---------------------
 
