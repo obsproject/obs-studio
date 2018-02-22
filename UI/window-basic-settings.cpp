@@ -412,7 +412,6 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->fpsType,              COMBO_CHANGED,  VIDEO_CHANGED);
 	HookWidget(ui->fpsCommon,            COMBO_CHANGED,  VIDEO_CHANGED);
 	HookWidget(ui->fpsInteger,           SCROLL_CHANGED, VIDEO_CHANGED);
-	HookWidget(ui->fpsInteger,           SCROLL_CHANGED, VIDEO_CHANGED);
 	HookWidget(ui->fpsNumerator,         SCROLL_CHANGED, VIDEO_CHANGED);
 	HookWidget(ui->fpsDenominator,       SCROLL_CHANGED, VIDEO_CHANGED);
 	HookWidget(ui->renderer,             COMBO_CHANGED,  ADV_RESTART);
