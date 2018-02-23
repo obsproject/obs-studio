@@ -924,9 +924,6 @@ static obs_properties_t *get_properties(void *data)
 	obs_property_list_add_string(p, T_USE_CLOCK, S_USE_CLOCK);
 	obs_property_set_modified_callback(p, source_mode_changed);
 
-	//p = obs_properties_add_bool(props, S_USE_FILE, T_USE_FILE);
-	//obs_property_set_modified_callback(p, use_file_changed);
-
 	string filter;
 	filter += T_FILTER_TEXT_FILES;
 	filter += " (*.txt);;";
