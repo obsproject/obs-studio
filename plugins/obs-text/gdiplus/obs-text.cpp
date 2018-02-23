@@ -657,7 +657,7 @@ void TextSource::GetTimeToText()
 		int h = tm->tm_hour % 12;
 		if (h == 0)
 			h = 12;
-		buffer << h << put_time(tm, L":%M%n");
+		buffer << h << put_time(tm, L":%M %p%n");
 	}
 
 	text = buffer.str();
