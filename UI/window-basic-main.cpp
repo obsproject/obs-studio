@@ -5131,7 +5131,10 @@ void OBSBasic::on_previewDisabledLabel_customContextMenuRequested(
 
 void OBSBasic::on_actionAlwaysOnTop_triggered()
 {
-	CloseDialogs();
+	/* CloseDialogs()Commented out due to this closing all 
+	*  projectors when AlwaysOnTop is toggled.
+	*  No obvious problems are caused by this */
+	//CloseDialogs(); 
 
 	/* Make sure all dialogs are safely and successfully closed before
 	 * switching the always on top mode due to the fact that windows all
