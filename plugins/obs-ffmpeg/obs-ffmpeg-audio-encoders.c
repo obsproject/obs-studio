@@ -20,6 +20,7 @@
 #include <util/darray.h>
 #include <obs-module.h>
 
+#include <libavutil/opt.h>
 #include <libavformat/avformat.h>
 
 #include "obs-ffmpeg-formats.h"
@@ -230,6 +231,7 @@ static void *enc_create(obs_data_t *settings, obs_encoder_t *encoder,
 	}
 
 	if (strcmp(enc->codec->name, "aac") == 0) {
+		av_opt_set(enc->context->priv_data, "aac_coder", "fast", 0);
 	}
 
 	info("bitrate: %" PRId64 ", channels: %d, channel_layout: %x\n",
