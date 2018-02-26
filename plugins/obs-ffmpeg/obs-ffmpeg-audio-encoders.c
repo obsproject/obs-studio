@@ -229,17 +229,7 @@ static void *enc_create(obs_data_t *settings, obs_encoder_t *encoder,
 			enc->context->sample_rate = closest;
 	}
 
-	/* if using FFmpeg's AAC encoder, at least set a cutoff value
-	 * (recommended by konverter) */
 	if (strcmp(enc->codec->name, "aac") == 0) {
-		int cutoff1 = 4000 + (int)enc->context->bit_rate / 8;
-		int cutoff2 = 12000 + (int)enc->context->bit_rate / 8;
-		int cutoff3 = enc->context->sample_rate / 2;
-		int cutoff;
-
-		cutoff = MIN(cutoff1, cutoff2);
-		cutoff = MIN(cutoff, cutoff3);
-		enc->context->cutoff = cutoff;
 	}
 
 	info("bitrate: %" PRId64 ", channels: %d, channel_layout: %x\n",
