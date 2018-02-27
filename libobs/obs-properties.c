@@ -738,7 +738,7 @@ enum obs_number_type obs_property_float_type(obs_property_t *p)
 	return data ? data->type : OBS_NUMBER_SCROLLER;
 }
 
-enum obs_text_type obs_proprety_text_type(obs_property_t *p)
+enum obs_text_type obs_property_text_type(obs_property_t *p)
 {
 	struct text_data *data = get_type_data(p, OBS_PROPERTY_TEXT);
 	return data ? data->type : OBS_TEXT_DEFAULT;
