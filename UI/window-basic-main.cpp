@@ -834,47 +834,6 @@ void OBSBasic::Load(const char *file)
 	ui->transitionDuration->setValue(newDuration);
 	SetTransition(curTransition);
 
-	/* ------------------- */
-
-	obs_data_array_t *savedProjectors = obs_data_get_array(data,
-			"saved_projectors");
-
-	if (savedProjectors)
-		LoadSavedProjectors(savedProjectors);
-
-	obs_data_array_release(savedProjectors);
-
-	/* ------------------- */
-
-	obs_data_array_t *savedPreviewProjectors = obs_data_get_array(data,
-			"saved_preview_projectors");
-
-	if (savedPreviewProjectors)
-		LoadSavedPreviewProjectors(savedPreviewProjectors);
-
-	obs_data_array_release(savedPreviewProjectors);
-
-	/* ------------------- */
-
-	obs_data_array_t *savedStudioProgramProjectors = obs_data_get_array(data,
-			"saved_studio_preview_projectors");
-
-	if (savedStudioProgramProjectors)
-		LoadSavedStudioProgramProjectors(savedStudioProgramProjectors);
-
-	obs_data_array_release(savedStudioProgramProjectors);
-
-	/* ------------------- */
-
-	obs_data_array_t *savedMultiviewProjectors = obs_data_get_array(data,
-			"saved_multiview_projectors");
-
-	if (savedMultiviewProjectors)
-		LoadSavedMultiviewProjectors(savedMultiviewProjectors);
-
-	obs_data_array_release(savedMultiviewProjectors);
-
-
 retryScene:
 	curScene = obs_get_source_by_name(sceneName);
 	curProgramScene = obs_get_source_by_name(programSceneName);
@@ -904,6 +863,49 @@ retryScene:
 
 	obs_data_array_release(sources);
 	obs_data_array_release(sceneOrder);
+
+	/* ------------------- */
+
+	bool projectorSave = config_get_bool(GetGlobalConfig(), "BasicWindow",
+			"SaveProjectors");
+
+	if (projectorSave) {
+		obs_data_array_t *savedProjectors = obs_data_get_array(data,
+				"saved_projectors");
+
+		if (savedProjectors)
+			LoadSavedProjectors(savedProjectors);
+
+		obs_data_array_release(savedProjectors);
+
+		obs_data_array_t *savedPreviewProjectors = obs_data_get_array(
+				data, "saved_preview_projectors");
+
+		if (savedPreviewProjectors)
+			LoadSavedPreviewProjectors(savedPreviewProjectors);
+
+		obs_data_array_release(savedPreviewProjectors);
+
+		obs_data_array_t *savedStudioProgramProjectors;
+		savedStudioProgramProjectors = obs_data_get_array(data,
+				"saved_studio_preview_projectors");
+
+		if (savedStudioProgramProjectors)
+			LoadSavedStudioProgramProjectors(
+					savedStudioProgramProjectors);
+
+		obs_data_array_release(savedStudioProgramProjectors);
+
+		obs_data_array_t *savedMultiviewProjectors = obs_data_get_array(
+				data, "saved_multiview_projectors");
+
+		if (savedMultiviewProjectors)
+			LoadSavedMultiviewProjectors(savedMultiviewProjectors);
+
+		obs_data_array_release(savedMultiviewProjectors);
+	}
+
+	/* ------------------- */
 
 	std::string file_base = strrchr(file, '/') + 1;
 	file_base.erase(file_base.size() - 5, 5);
