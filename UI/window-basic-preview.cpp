@@ -1105,6 +1105,9 @@ bool OBSBasicPreview::DrawSelectedItem(obs_scene_t *scene,
 	if (obs_sceneitem_locked(item))
 		return true;
 
+	if (!SceneItemHasVideo(item))
+		return true;
+
 	if (!obs_sceneitem_selected(item))
 		return true;
 
