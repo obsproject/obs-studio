@@ -8,6 +8,9 @@
 #include <algorithm>
 #include <string>
 #include <memory>
+#include <sstream>
+#include <ctime>
+#include <iomanip>
 
 using namespace std;
 using namespace Gdiplus;
@@ -38,9 +41,12 @@ using namespace Gdiplus;
 /* ------------------------------------------------------------------------- */
 
 #define S_FONT                          "font"
+#define S_SOURCE_MODE                   "source_mode"
 #define S_USE_FILE                      "read_from_file"
+#define S_USE_CLOCK                     "use_clock"
 #define S_FILE                          "file"
 #define S_TEXT                          "text"
+#define S_USE_24HR                      "use_24hr"
 #define S_COLOR                         "color"
 #define S_GRADIENT                      "gradient"
 #define S_GRADIENT_COLOR                "gradient_color"
@@ -73,9 +79,12 @@ using namespace Gdiplus;
 
 #define T_(v)                           obs_module_text(v)
 #define T_FONT                          T_("Font")
+#define T_SOURCE_MODE                   T_("Source")
 #define T_USE_FILE                      T_("ReadFromFile")
+#define T_USE_CLOCK                     T_("UseClock")
 #define T_FILE                          T_("TextFile")
 #define T_TEXT                          T_("Text")
+#define T_USE_24HR                      T_("Use24Hr")
 #define T_COLOR                         T_("Color")
 #define T_GRADIENT                      T_("Gradient")
 #define T_GRADIENT_COLOR                T_("Gradient.Color")
@@ -200,6 +209,9 @@ struct TextSource {
 	bool update_file = false;
 	float update_time_elapsed = 0.0f;
 
+	bool get_clock = false;
+	bool use_24hr = false;
+
 	wstring text;
 	wstring face;
 	int face_size = 0;
@@ -261,6 +273,7 @@ struct TextSource {
 			const Brush &brush);
 	void RenderText();
 	void LoadFileText();
+	void GetTimeToText();
 
 	const char *GetMainString(const char *str);
 
@@ -632,6 +645,24 @@ void TextSource::LoadFileText()
 		text.push_back('\n');
 }
 
+void TextSource::GetTimeToText()
+{
+	time_t t = time(nullptr);
+	struct tm *tm = localtime(&t);
+	wstringstream buffer;
+
+	if (use_24hr) {
+		buffer << put_time(tm, L"%H:%M%n");
+	} else {
+		int h = tm->tm_hour % 12;
+		if (h == 0)
+			h = 12;
+		buffer << h << put_time(tm, L":%M %p%n");
+	}
+
+	text = buffer.str();
+}
+
 #define obs_data_get_uint32 (uint32_t)obs_data_get_int
 
 inline void TextSource::Update(obs_data_t *s)
@@ -651,8 +682,9 @@ inline void TextSource::Update(obs_data_t *s)
 	uint32_t new_o_color   = obs_data_get_uint32(s, S_OUTLINE_COLOR);
 	uint32_t new_o_opacity = obs_data_get_uint32(s, S_OUTLINE_OPACITY);
 	uint32_t new_o_size    = obs_data_get_uint32(s, S_OUTLINE_SIZE);
-	bool new_use_file      = obs_data_get_bool(s, S_USE_FILE);
+	string new_source_mode = obs_data_get_string(s, S_SOURCE_MODE);
 	const char *new_file   = obs_data_get_string(s, S_FILE);
+	bool new_tm_fmt        = obs_data_get_bool(s, S_USE_24HR);
 	bool new_chat_mode     = obs_data_get_bool(s, S_CHATLOG_MODE);
 	int new_chat_lines     = (int)obs_data_get_int(s, S_CHATLOG_LINES);
 	bool new_extents       = obs_data_get_bool(s, S_EXTENTS);
@@ -718,7 +750,10 @@ inline void TextSource::Update(obs_data_t *s)
 		opacity2 = opacity;
 	}
 
-	read_from_file = new_use_file;
+	read_from_file = new_source_mode.compare(S_USE_FILE) == 0;
+	get_clock = new_source_mode.compare(S_USE_CLOCK) == 0;
+
+	use_24hr = new_tm_fmt;
 
 	chatlog_mode = new_chat_mode;
 	chatlog_lines = new_chat_lines;
@@ -728,6 +763,8 @@ inline void TextSource::Update(obs_data_t *s)
 		file_timestamp = get_modified_timestamp(new_file);
 		LoadFileText();
 
+	} else if (get_clock) {
+		GetTimeToText();
 	} else {
 		text = to_wide(GetMainString(new_text));
 
@@ -767,25 +804,29 @@ inline void TextSource::Update(obs_data_t *s)
 
 inline void TextSource::Tick(float seconds)
 {
-	if (!read_from_file)
-		return;
+	if (read_from_file) {
+		update_time_elapsed += seconds;
 
-	update_time_elapsed += seconds;
+		if (update_time_elapsed >= 1.0f) {
+			time_t t = get_modified_timestamp(file.c_str());
+			update_time_elapsed = 0.0f;
 
-	if (update_time_elapsed >= 1.0f) {
-		time_t t = get_modified_timestamp(file.c_str());
-		update_time_elapsed = 0.0f;
+			if (update_file) {
+				LoadFileText();
+				RenderText();
+				update_file = false;
+			}
 
-		if (update_file) {
-			LoadFileText();
-			RenderText();
-			update_file = false;
+			if (file_timestamp != t) {
+				file_timestamp = t;
+				update_file = true;
+			}
 		}
+	}
 
-		if (file_timestamp != t) {
-			file_timestamp = t;
-			update_file = true;
-		}
+	if (get_clock) {
+		GetTimeToText();
+		RenderText();
 	}
 }
 
@@ -811,13 +852,14 @@ OBS_MODULE_USE_DEFAULT_LOCALE("obs-text", "en-US")
 		obs_property_set_visible(p, var == show); \
 	} while (false)
 
-static bool use_file_changed(obs_properties_t *props, obs_property_t *p,
-		obs_data_t *s)
+static bool source_mode_changed(obs_properties_t *props, obs_property_t *p,
+	obs_data_t *s)
 {
-	bool use_file = obs_data_get_bool(s, S_USE_FILE);
+	string source = obs_data_get_string(s, S_SOURCE_MODE);
 
-	set_vis(use_file, S_TEXT, false);
-	set_vis(use_file, S_FILE, true);
+	set_vis(source.compare(S_TEXT), S_TEXT, 0);
+	set_vis(source.compare(S_USE_FILE), S_FILE, 0);
+	set_vis(source.compare(S_USE_CLOCK), S_USE_24HR, 0);
 	return true;
 }
 
@@ -875,8 +917,12 @@ static obs_properties_t *get_properties(void *data)
 
 	obs_properties_add_font(props, S_FONT, T_FONT);
 
-	p = obs_properties_add_bool(props, S_USE_FILE, T_USE_FILE);
-	obs_property_set_modified_callback(p, use_file_changed);
+	p = obs_properties_add_list(props, S_SOURCE_MODE, T_SOURCE_MODE,
+			OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
+	obs_property_list_add_string(p, T_TEXT, S_TEXT);
+	obs_property_list_add_string(p, T_USE_FILE, S_USE_FILE);
+	obs_property_list_add_string(p, T_USE_CLOCK, S_USE_CLOCK);
+	obs_property_set_modified_callback(p, source_mode_changed);
 
 	string filter;
 	filter += T_FILTER_TEXT_FILES;
@@ -897,6 +943,7 @@ static obs_properties_t *get_properties(void *data)
 	obs_properties_add_text(props, S_TEXT, T_TEXT, OBS_TEXT_MULTILINE);
 	obs_properties_add_path(props, S_FILE, T_FILE, OBS_PATH_FILE,
 			filter.c_str(), path.c_str());
+	obs_properties_add_bool(props, S_USE_24HR, T_USE_24HR);
 
 	obs_properties_add_bool(props, S_VERTICAL, T_VERTICAL);
 	obs_properties_add_color(props, S_COLOR, T_COLOR);
@@ -1002,6 +1049,7 @@ bool obs_module_load(void)
 		obs_data_set_default_bool(settings, S_EXTENTS_WRAP, true);
 		obs_data_set_default_int(settings, S_EXTENTS_CX, 100);
 		obs_data_set_default_int(settings, S_EXTENTS_CY, 100);
+		obs_data_set_default_string(settings, S_SOURCE_MODE, S_TEXT);
 
 		obs_data_release(font_obj);
 	};
