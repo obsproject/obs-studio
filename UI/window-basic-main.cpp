@@ -5715,42 +5715,42 @@ void OBSBasic::OpenSavedProjectors()
 	bool projectorSave = config_get_bool(GetGlobalConfig(),
 			"BasicWindow", "SaveProjectors");
 
-	if (projectorSave) {
-		for (size_t i = 0; i < projectorArray.size(); i++) {
-			if (projectorArray.at(i).empty() == false) {
-				OBSSource source = obs_get_source_by_name(
-					projectorArray.at(i).c_str());
+	if (!projectorSave)
+		return;
 
-				if (!source) {
-					RemoveSavedProjectors((int)i);
-					obs_source_release(source);
-					continue;
-				}
+	for (size_t i = 0; i < projectorArray.size(); i++) {
+		if (projectorArray.at(i).empty() == false) {
+			OBSSource source = obs_get_source_by_name(
+				projectorArray.at(i).c_str());
 
-				OpenProjector(source, (int)i, false);
-				obs_source_release(source);
+			if (!source) {
+				RemoveSavedProjectors((int)i);
+				continue;
 			}
+
+			OpenProjector(source, (int)i, false);
+			obs_source_release(source);
 		}
+	}
 
-		for (size_t i = 0; i < studioProgramProjectorArray.size(); i++) {
-			if (studioProgramProjectorArray.at(i) == 1) {
-				OpenProjector(nullptr, (int)i, false, nullptr,
-						ProjectorType::StudioProgram);
-			}
+	for (size_t i = 0; i < studioProgramProjectorArray.size(); i++) {
+		if (studioProgramProjectorArray.at(i) == 1) {
+			OpenProjector(nullptr, (int)i, false, nullptr,
+					ProjectorType::StudioProgram);
 		}
+	}
 
-		for (size_t i = 0; i < previewProjectorArray.size(); i++) {
-			if (previewProjectorArray.at(i) == 1) {
-				OpenProjector(nullptr, (int)i, false, nullptr,
-						ProjectorType::Preview);
-			}
+	for (size_t i = 0; i < previewProjectorArray.size(); i++) {
+		if (previewProjectorArray.at(i) == 1) {
+			OpenProjector(nullptr, (int)i, false, nullptr,
+					ProjectorType::Preview);
 		}
+	}
 
-		for (size_t i = 0; i < multiviewProjectorArray.size(); i++) {
-			if (multiviewProjectorArray.at(i) == 1) {
-				OpenProjector(nullptr, (int)i, false, nullptr,
-						ProjectorType::Multiview);
-			}
+	for (size_t i = 0; i < multiviewProjectorArray.size(); i++) {
+		if (multiviewProjectorArray.at(i) == 1) {
+			OpenProjector(nullptr, (int)i, false, nullptr,
+					ProjectorType::Multiview);
 		}
 	}
 }
