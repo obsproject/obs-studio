@@ -5585,31 +5585,10 @@ void OBSBasic::OpenProjector(obs_source_t *source, int monitor, bool window,
 	if (monitor > 9 || monitor > QGuiApplication::screens().size() - 1)
 		return;
 
-	if (!window) {
-		delete projectors[monitor];
-		projectors[monitor].clear();
-		RemoveSavedProjectors(monitor);
-	}
-
 	OBSProjector *projector = new OBSProjector(nullptr, source, !!window);
 	const char *name = obs_source_get_name(source);
 
-	if (!window) {
-		if (type == ProjectorType::StudioProgram) {
-			studioProgramProjectorArray.at((size_t)monitor) = 1;
-		} else if (type == ProjectorType::Preview) {
-			previewProjectorArray.at((size_t)monitor) = 1;
-		} else if (type == ProjectorType::Multiview) {
-			multiviewProjectorArray.at((size_t)monitor) = 1;
-		} else {
-			projectorArray.at((size_t)monitor) = name;
-		}
-	}
-
-	if (!window) {
-		projector->Init(monitor, false, nullptr, type);
-		projectors[monitor] = projector;
-	} else {
+	if (window) {
 		projector->Init(monitor, true, title, type);
 
 		for (auto &projPtr : windowProjectors) {
@@ -5621,6 +5600,23 @@ void OBSBasic::OpenProjector(obs_source_t *source, int monitor, bool window,
 
 		if (projector)
 			windowProjectors.push_back(projector);
+	} else {
+		delete projectors[monitor];
+		projectors[monitor].clear();
+		RemoveSavedProjectors(monitor);
+
+		if (type == ProjectorType::StudioProgram) {
+			studioProgramProjectorArray.at((size_t)monitor) = 1;
+		} else if (type == ProjectorType::Preview) {
+			previewProjectorArray.at((size_t)monitor) = 1;
+		} else if (type == ProjectorType::Multiview) {
+			multiviewProjectorArray.at((size_t)monitor) = 1;
+		} else {
+			projectorArray.at((size_t)monitor) = name;
+		}
+
+		projector->Init(monitor, false, nullptr, type);
+		projectors[monitor] = projector;
 	}
 }
 
