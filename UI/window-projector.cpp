@@ -135,25 +135,19 @@ static OBSSource CreateLabel(const char *name, size_t h)
 void OBSProjector::Init(int monitor, bool window, QString title,
 		ProjectorType type_)
 {
-	QScreen *screen = QGuiApplication::screens()[monitor];
-
-	if (!window)
-		setGeometry(screen->geometry());
-
 	bool alwaysOnTop = config_get_bool(GetGlobalConfig(),
 			"BasicWindow", "ProjectorAlwaysOnTop");
 	if (alwaysOnTop && !window)
 		SetAlwaysOnTop(this, true);
 
-	if (window)
-		setWindowTitle(title);
-
 	show();
 
-	if (source)
-		obs_source_inc_showing(source);
+	if (window) {
+		setWindowTitle(title);
+	} else {
+		QScreen *screen = QGuiApplication::screens()[monitor];
+		setGeometry(screen->geometry());
 
-	if (!window) {
 		QAction *action = new QAction(this);
 		action->setShortcut(Qt::Key_Escape);
 		addAction(action);
@@ -161,6 +155,9 @@ void OBSProjector::Init(int monitor, bool window, QString title,
 				SLOT(EscapeTriggered()));
 		activateWindow();
 	}
+
+	if (source)
+		obs_source_inc_showing(source);
 
 	savedMonitor = monitor;
 	isWindow     = window;
