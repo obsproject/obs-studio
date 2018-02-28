@@ -5,6 +5,7 @@
 
 enum class ProjectorType {
 	Source,
+	Scene,
 	Preview,
 	StudioProgram,
 	Multiview
