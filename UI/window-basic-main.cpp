@@ -5679,13 +5679,12 @@ void OBSBasic::OpenSourceWindow()
 {
 	int monitor = sender()->property("monitor").toInt();
 	OBSSceneItem item = GetCurrentSceneItem();
-	OBSSource source = obs_sceneitem_get_source(item);
-	QString text = QString::fromUtf8(obs_source_get_name(source));
-
-	QString title = QTStr("SourceWindow") + " - " + text;
-
 	if (!item)
 		return;
+
+	OBSSource source = obs_sceneitem_get_source(item);
+	QString text = QString::fromUtf8(obs_source_get_name(source));
+	QString title = QTStr("SourceWindow") + " - " + text;
 
 	OpenProjector(obs_sceneitem_get_source(item), monitor, true, title);
 }
@@ -5701,13 +5700,12 @@ void OBSBasic::OpenSceneWindow()
 {
 	int monitor = sender()->property("monitor").toInt();
 	OBSScene scene = GetCurrentScene();
-	OBSSource source = obs_scene_get_source(scene);
-	QString text = QString::fromUtf8(obs_source_get_name(source));
-
-	QString title = QTStr("SceneWindow") + " - " + text;
-
 	if (!scene)
 		return;
+
+	OBSSource source = obs_scene_get_source(scene);
+	QString text = QString::fromUtf8(obs_source_get_name(source));
+	QString title = QTStr("SceneWindow") + " - " + text;
 
 	OpenProjector(obs_scene_get_source(scene), monitor, true, title);
 }
