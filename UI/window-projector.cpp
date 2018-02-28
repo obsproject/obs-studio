@@ -588,6 +588,7 @@ void OBSProjector::OBSRender(void *data, uint32_t cx, uint32_t cy)
 		return;
 
 	OBSBasic *main = reinterpret_cast<OBSBasic*>(App()->GetMainWindow());
+	OBSSource source = window->source;
 
 	uint32_t targetCX;
 	uint32_t targetCY;
@@ -595,9 +596,9 @@ void OBSProjector::OBSRender(void *data, uint32_t cx, uint32_t cy)
 	int      newCX, newCY;
 	float    scale;
 
-	if (window->source) {
-		targetCX = std::max(obs_source_get_width(window->source), 1u);
-		targetCY = std::max(obs_source_get_height(window->source), 1u);
+	if (source) {
+		targetCX = std::max(obs_source_get_width(source), 1u);
+		targetCY = std::max(obs_source_get_height(source), 1u);
 	} else {
 		struct obs_video_info ovi;
 		obs_get_video_info(&ovi);
@@ -615,14 +616,12 @@ void OBSProjector::OBSRender(void *data, uint32_t cx, uint32_t cy)
 	gs_ortho(0.0f, float(targetCX), 0.0f, float(targetCY), -100.0f, 100.0f);
 	gs_set_viewport(x, y, newCX, newCY);
 
-	OBSSource source = window->source;
-
 	if (window->type == ProjectorType::Preview &&
 	    main->IsPreviewProgramMode()) {
 		OBSSource curSource = main->GetCurrentSceneSource();
 
-		if (window->source != curSource) {
-			obs_source_dec_showing(window->source);
+		if (source != curSource) {
+			obs_source_dec_showing(source);
 			obs_source_inc_showing(curSource);
 			source = curSource;
 		}
