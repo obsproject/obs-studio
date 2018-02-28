@@ -5692,7 +5692,7 @@ void OBSBasic::OpenSourceWindow()
 void OBSBasic::OpenMultiviewWindow()
 {
 	int monitor = sender()->property("monitor").toInt();
-	OpenProjector(nullptr, monitor, true, "Multiview",
+	OpenProjector(nullptr, monitor, true, QTStr("MultiviewWindowed"),
 			ProjectorType::Multiview);
 }
 
