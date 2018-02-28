@@ -792,11 +792,6 @@ void OBSProjector::mousePressEvent(QMouseEvent *event)
 
 void OBSProjector::EscapeTriggered()
 {
-	if (!isWindow) {
-		OBSBasic *main = (OBSBasic*)obs_frontend_get_main_window();
-		main->RemoveSavedProjectors(savedMonitor);
-	}
-
 	deleteLater();
 }
 

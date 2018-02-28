@@ -68,6 +68,13 @@ enum class QtDataRole {
 	OBSSignals,
 };
 
+struct SavedProjectorInfo {
+	ProjectorType type;
+	int monitor;
+	std::string geometry;
+	std::string name;
+};
+
 struct QuickTransition {
 	QPushButton *button = nullptr;
 	OBSSource source;
@@ -114,11 +121,6 @@ private:
 
 	std::vector<OBSSignal> signalHandlers;
 
-	std::vector<std::string> projectorArray;
-	std::vector<int> studioProgramProjectorArray;
-	std::vector<int> multiviewProjectorArray;
-	std::vector<int> previewProjectorArray;
-
 	bool loaded = false;
 	long disableSaving = 1;
 	bool projectChanged = false;
@@ -163,6 +165,7 @@ private:
 
 	ConfigFile    basicConfig;
 
+	std::vector<SavedProjectorInfo*> savedProjectorsArray;
 	QPointer<QWidget> projectors[10];
 	QList<QPointer<QWidget>> windowProjectors;
 
@@ -246,7 +249,8 @@ private:
 	void ClearSceneData();
 
 	void Nudge(int dist, MoveDir dir);
-	void OpenProjector(obs_source_t *source, int monitor, bool window,
+
+	void OpenProjector(obs_source_t *source, int monitor,
 			QString title = nullptr,
 			ProjectorType type = ProjectorType::Source);
 
@@ -360,18 +364,6 @@ private:
 
 	obs_data_array_t *SaveProjectors();
 	void LoadSavedProjectors(obs_data_array_t *savedProjectors);
-
-	obs_data_array_t *SavePreviewProjectors();
-	void LoadSavedPreviewProjectors(
-		obs_data_array_t *savedPreviewProjectors);
-
-	obs_data_array_t *SaveStudioProgramProjectors();
-	void LoadSavedStudioProgramProjectors(
-		obs_data_array_t *savedStudioProgramProjectors);
-
-	obs_data_array_t *SaveMultiviewProjectors();
-	void LoadSavedMultiviewProjectors(
-		obs_data_array_t *savedMultiviewProjectors);
 
 public slots:
 	void StartStreaming();
@@ -562,7 +554,6 @@ public:
 	void SystemTray(bool firstStarted);
 
 	void OpenSavedProjectors();
-	void RemoveSavedProjectors(int monitor);
 
 protected:
 	virtual void closeEvent(QCloseEvent *event) override;
