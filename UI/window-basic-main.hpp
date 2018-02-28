@@ -29,6 +29,7 @@
 #include "window-basic-transform.hpp"
 #include "window-basic-adv-audio.hpp"
 #include "window-basic-filters.hpp"
+#include "window-projector.hpp"
 
 #include <obs-frontend-internal.hpp>
 
@@ -65,13 +66,6 @@ struct BasicOutputHandler;
 enum class QtDataRole {
 	OBSRef = Qt::UserRole,
 	OBSSignals,
-};
-
-enum class ProjectorType {
-	Source,
-	Preview,
-	StudioProgram,
-	Multiview
 };
 
 struct QuickTransition {

@@ -3,7 +3,7 @@
 #include <QMouseEvent>
 #include <QMenu>
 #include <QScreen>
-#include "window-projector.hpp"
+#include "window-basic-main.hpp"
 #include "display-helpers.hpp"
 #include "qt-wrappers.hpp"
 #include "platform.hpp"

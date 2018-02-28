@@ -2,7 +2,13 @@
 
 #include <obs.hpp>
 #include "qt-display.hpp"
-#include "window-basic-main.hpp"
+
+enum class ProjectorType {
+	Source,
+	Preview,
+	StudioProgram,
+	Multiview
+};
 
 class QMouseEvent;
 
