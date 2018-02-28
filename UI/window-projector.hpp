@@ -53,5 +53,8 @@ public:
 	void Init(int monitor, bool window, QString title,
 			ProjectorType type = ProjectorType::Source);
 
+	OBSSource GetSource();
+	ProjectorType GetProjectorType();
+	int GetMonitor();
 	static void UpdateMultiviewProjectors();
 };

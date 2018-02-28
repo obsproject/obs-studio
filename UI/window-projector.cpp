@@ -857,6 +857,21 @@ void OBSProjector::UpdateMultiview()
 		multiviewLayout = HORIZONTAL_TOP;
 }
 
+OBSSource OBSProjector::GetSource()
+{
+	return source;
+}
+
+ProjectorType OBSProjector::GetProjectorType()
+{
+	return type;
+}
+
+int OBSProjector::GetMonitor()
+{
+	return savedMonitor;
+}
+
 void OBSProjector::UpdateMultiviewProjectors()
 {
 	obs_enter_graphics();
