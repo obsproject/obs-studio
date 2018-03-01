@@ -433,13 +433,30 @@ obs_data_array_t *OBSBasic::SaveProjectors()
 
 		obs_data_t *data = obs_data_create();
 		ProjectorType type = projector->GetProjectorType();
+		switch (type) {
+		case ProjectorType::Scene:
+		case ProjectorType::Source: {
+			obs_source_t *source = projector->GetSource();
+			const char *name = obs_source_get_name(source);
+			obs_data_set_string(data, "name", name);
+			break;
+		}
+		default:
+			break;
+		}
 		obs_data_set_int(data, "monitor", projector->GetMonitor());
 		obs_data_set_int(data, "type", static_cast<int>(type));
+		obs_data_set_string(data, "geometry",
+				projector->saveGeometry().toBase64()
+						.constData());
 		obs_data_array_push_back(savedProjectors, data);
 		obs_data_release(data);
 	};
 
 	for (QPointer<QWidget> &proj : projectors)
+		saveProjector(static_cast<OBSProjector *>(proj.data()));
+
+	for (QPointer<QWidget> &proj : windowProjectors)
 		saveProjector(static_cast<OBSProjector *>(proj.data()));
 
 	return savedProjectors;
@@ -595,6 +612,9 @@ void OBSBasic::LoadSavedProjectors(obs_data_array_t *array)
 		info->monitor = obs_data_get_int(data, "monitor");
 		info->type = static_cast<ProjectorType>(obs_data_get_int(data,
 				"type"));
+		info->geometry = std::string(
+				obs_data_get_string(data, "geometry"));
+		info->name = std::string(obs_data_get_string(data, "name"));
 		savedProjectorsArray.emplace_back(info);
 
 		obs_data_release(data);
@@ -5570,57 +5590,57 @@ void OBSBasic::OpenSavedProjectors()
 		return;
 
 	for (SavedProjectorInfo *info : savedProjectorsArray) {
+		OBSProjector *projector = nullptr;
 		switch (info->type) {
-		case ProjectorType::Source: {
-			OBSSource source = obs_get_source_by_name(
-					info->name.c_str());
-			if (!source)
-				continue;
-
-			QString text = QString::fromUtf8(
-					obs_source_get_name(source));
-			QString title = QTStr("SourceWindow") + " - " + text;
-
-			OpenProjector(source, info->monitor, title,
-					ProjectorType::Source);
-
-			obs_source_release(source);
-			break;
-		}
+		case ProjectorType::Source:
 		case ProjectorType::Scene: {
 			OBSSource source = obs_get_source_by_name(
 					info->name.c_str());
 			if (!source)
 				continue;
 
-			QString text  = QString::fromUtf8(
-					obs_source_get_name(source));
-			QString title = QTStr("SceneWindow") + " - " + text;
+			QString title = nullptr;
+			if (info->monitor < 0)
+				title = QString::fromUtf8(
+						obs_source_get_name(source));
 
-			OpenProjector(source, info->monitor, title,
-					ProjectorType::Scene);
+			projector = OpenProjector(source, info->monitor, title,
+					info->type);
 
 			obs_source_release(source);
 			break;
 		}
 		case ProjectorType::Preview: {
-			OpenProjector(nullptr, info->monitor,
+			projector = OpenProjector(nullptr, info->monitor,
 					QTStr("PreviewWindow"),
 					ProjectorType::Preview);
 			break;
 		}
 		case ProjectorType::StudioProgram: {
-			OpenProjector(nullptr, info->monitor,
+			projector = OpenProjector(nullptr, info->monitor,
 					QTStr("StudioProgramWindow"),
 					ProjectorType::StudioProgram);
 			break;
 		}
 		case ProjectorType::Multiview: {
-			OpenProjector(nullptr, info->monitor,
+			projector = OpenProjector(nullptr, info->monitor,
 					QTStr("MultiviewWindowed"),
 					ProjectorType::Multiview);
 			break;
 		}
+		}
+
+		if (!info->geometry.empty()) {
+			QByteArray byteArray = QByteArray::fromBase64(
+					QByteArray(info->geometry.c_str()));
+			projector->restoreGeometry(byteArray);
+
+			if (!WindowPositionValid(projector->normalGeometry())) {
+				QRect rect = App()->desktop()->geometry();
+				projector->setGeometry(QStyle::alignedRect(
+						Qt::LeftToRight,
+						Qt::AlignCenter, size(), rect));
+			}
 		}
 	}
 }
