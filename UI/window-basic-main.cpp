@@ -1480,8 +1480,6 @@ void OBSBasic::OBSInit()
 
 	SystemTray(true);
 
-	OpenSavedProjectors();
-
 	if (windowState().testFlag(Qt::WindowFullScreen))
 		fullscreenInterface = true;
 
