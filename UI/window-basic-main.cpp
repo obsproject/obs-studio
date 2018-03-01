@@ -2204,6 +2204,8 @@ void OBSBasic::RenameSources(OBSSource source, QString newName,
 			volumes[i]->SetName(newName);
 	}
 
+	OBSProjector::RenameProjector(prevName, newName);
+
 	SaveProject();
 
 	obs_scene_t *scene = obs_scene_from_source(source);
@@ -5538,9 +5540,7 @@ void OBSBasic::OpenSourceWindow()
 		return;
 
 	OBSSource source = obs_sceneitem_get_source(item);
-	QString text = QString::fromUtf8(obs_source_get_name(source));
-	QString title = QTStr("SourceWindow") + " - " + text;
-
+	QString title = QString::fromUtf8(obs_source_get_name(source));
 	OpenProjector(obs_sceneitem_get_source(item), monitor, title);
 }
 
@@ -5559,9 +5559,7 @@ void OBSBasic::OpenSceneWindow()
 		return;
 
 	OBSSource source = obs_scene_get_source(scene);
-	QString text = QString::fromUtf8(obs_source_get_name(source));
-	QString title = QTStr("SceneWindow") + " - " + text;
-
+	QString title = QString::fromUtf8(obs_source_get_name(source));
 	OpenProjector(obs_scene_get_source(scene), monitor, title);
 }
 

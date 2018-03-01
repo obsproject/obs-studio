@@ -3,6 +3,7 @@
 #include <QMouseEvent>
 #include <QMenu>
 #include <QScreen>
+#include "obs-app.hpp"
 #include "window-basic-main.hpp"
 #include "display-helpers.hpp"
 #include "qt-wrappers.hpp"
@@ -13,6 +14,7 @@
 #define VERTICAL_LEFT     2
 #define VERTICAL_RIGHT    3
 
+static QList<OBSProjector *> windowedProjectors;
 static QList<OBSProjector *> multiviewProjectors;
 static bool updatingMultiview = false;
 static int multiviewLayout = HORIZONTAL_TOP;
@@ -89,6 +91,9 @@ OBSProjector::~OBSProjector()
 	if (type == ProjectorType::Multiview)
 		multiviewProjectors.removeAll(this);
 
+	if (isWindow)
+		windowedProjectors.removeAll(this);
+
 	App()->DecrementSleepInhibition();
 }
 
@@ -135,6 +140,10 @@ static OBSSource CreateLabel(const char *name, size_t h)
 void OBSProjector::Init(int monitor, bool window, QString title,
 		ProjectorType type_)
 {
+	savedMonitor = monitor;
+	isWindow     = window;
+	type         = type_;
+
 	bool alwaysOnTop = config_get_bool(GetGlobalConfig(),
 			"BasicWindow", "ProjectorAlwaysOnTop");
 	if (alwaysOnTop && !window)
@@ -143,7 +152,8 @@ void OBSProjector::Init(int monitor, bool window, QString title,
 	show();
 
 	if (window) {
-		setWindowTitle(title);
+		UpdateProjectorTitle(title);
+		windowedProjectors.push_back(this);
 	} else {
 		QScreen *screen = QGuiApplication::screens()[monitor];
 		setGeometry(screen->geometry());
@@ -158,10 +168,6 @@ void OBSProjector::Init(int monitor, bool window, QString title,
 
 	if (source)
 		obs_source_inc_showing(source);
-
-	savedMonitor = monitor;
-	isWindow     = window;
-	type         = type_;
 
 	if (type == ProjectorType::Multiview) {
 		obs_enter_graphics();
@@ -852,6 +858,26 @@ void OBSProjector::UpdateMultiview()
 		multiviewLayout = HORIZONTAL_TOP;
 }
 
+void OBSProjector::UpdateProjectorTitle(QString name)
+{
+	projectorTitle = name;
+
+	QString title = nullptr;
+	switch (type) {
+	case ProjectorType::Scene:
+		title = QTStr("SceneWindow") + " - " + name;
+		break;
+	case ProjectorType::Source:
+		title = QTStr("SourceWindow") + " - " + name;
+		break;
+	default:
+		title = name;
+		break;
+	}
+
+	setWindowTitle(title);
+}
+
 OBSSource OBSProjector::GetSource()
 {
 	return source;
@@ -879,4 +905,11 @@ void OBSProjector::UpdateMultiviewProjectors()
 	obs_enter_graphics();
 	updatingMultiview = false;
 	obs_leave_graphics();
+}
+
+void OBSProjector::RenameProjector(QString oldName, QString newName)
+{
+	for (auto &projector : windowedProjectors)
+		if (projector->projectorTitle == oldName)
+			projector->UpdateProjectorTitle(newName);
 }

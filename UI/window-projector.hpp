@@ -29,6 +29,7 @@ private:
 
 	int savedMonitor = 0;
 	bool isWindow = false;
+	QString projectorTitle;
 	ProjectorType type = ProjectorType::Source;
 	OBSWeakSource multiviewScenes[8];
 	OBSSource     multiviewLabels[10];
@@ -42,6 +43,7 @@ private:
 	bool ready = false;
 
 	void UpdateMultiview();
+	void UpdateProjectorTitle(QString name);
 
 private slots:
 	void EscapeTriggered();
@@ -57,4 +59,5 @@ public:
 	ProjectorType GetProjectorType();
 	int GetMonitor();
 	static void UpdateMultiviewProjectors();
+	static void RenameProjector(QString oldName, QString newName);
 };
