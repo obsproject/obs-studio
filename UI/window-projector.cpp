@@ -19,14 +19,20 @@ static QList<OBSProjector *> multiviewProjectors;
 static bool updatingMultiview = false;
 static int multiviewLayout = HORIZONTAL_TOP;
 
-OBSProjector::OBSProjector(QWidget *widget, obs_source_t *source_, bool window)
+OBSProjector::OBSProjector(QWidget *widget, obs_source_t *source_, int monitor,
+		QString title, ProjectorType type_)
 	: OBSQTDisplay                 (widget,
 	                                Qt::Window),
 	  source                       (source_),
 	  removedSignal                (obs_source_get_signal_handler(source),
 	                                "remove", OBSSourceRemoved, this)
 {
-	if (!window) {
+	projectorTitle = title;
+	savedMonitor   = monitor;
+	isWindow       = savedMonitor < 0;
+	type           = type_;
+
+	if (!isWindow) {
 		setWindowFlags(Qt::FramelessWindowHint |
 				Qt::X11BypassWindowManagerHint);
 	}
@@ -51,10 +57,59 @@ OBSProjector::OBSProjector(QWidget *widget, obs_source_t *source_, bool window)
 
 	bool hideCursor = config_get_bool(GetGlobalConfig(),
 			"BasicWindow", "HideProjectorCursor");
-	if (hideCursor && !window) {
+	if (hideCursor && !isWindow) {
 		QPixmap empty(16, 16);
 		empty.fill(Qt::transparent);
 		setCursor(QCursor(empty));
+	}
+
+	if (type == ProjectorType::Multiview) {
+		obs_enter_graphics();
+		gs_render_start(true);
+		gs_vertex2f(0.001f, 0.001f);
+		gs_vertex2f(0.001f, 0.997f);
+		gs_vertex2f(0.997f, 0.997f);
+		gs_vertex2f(0.997f, 0.001f);
+		gs_vertex2f(0.001f, 0.001f);
+		outerBox = gs_render_save();
+
+		gs_render_start(true);
+		gs_vertex2f(0.04f, 0.04f);
+		gs_vertex2f(0.04f, 0.96f);
+		gs_vertex2f(0.96f, 0.96f);
+		gs_vertex2f(0.96f, 0.04f);
+		gs_vertex2f(0.04f, 0.04f);
+		innerBox = gs_render_save();
+
+		gs_render_start(true);
+		gs_vertex2f(0.15f, 0.04f);
+		gs_vertex2f(0.15f, 0.96f);
+		leftVLine = gs_render_save();
+
+		gs_render_start(true);
+		gs_vertex2f(0.85f, 0.04f);
+		gs_vertex2f(0.85f, 0.96f);
+		rightVLine = gs_render_save();
+
+		gs_render_start(true);
+		gs_vertex2f(0.0f, 0.5f);
+		gs_vertex2f(0.075f, 0.5f);
+		leftLine = gs_render_save();
+
+		gs_render_start(true);
+		gs_vertex2f(0.5f, 0.0f);
+		gs_vertex2f(0.5f, 0.09f);
+		topLine = gs_render_save();
+
+		gs_render_start(true);
+		gs_vertex2f(0.925f, 0.5f);
+		gs_vertex2f(1.0f, 0.5f);
+		rightLine = gs_render_save();
+		obs_leave_graphics();
+
+		UpdateMultiview();
+
+		multiviewProjectors.push_back(this);
 	}
 
 	App()->IncrementSleepInhibition();
@@ -137,25 +192,20 @@ static OBSSource CreateLabel(const char *name, size_t h)
 	return txtSource;
 }
 
-void OBSProjector::Init(int monitor, bool window, QString title,
-		ProjectorType type_)
+void OBSProjector::Init()
 {
-	savedMonitor = monitor;
-	isWindow     = window;
-	type         = type_;
-
 	bool alwaysOnTop = config_get_bool(GetGlobalConfig(),
 			"BasicWindow", "ProjectorAlwaysOnTop");
-	if (alwaysOnTop && !window)
+	if (alwaysOnTop && !isWindow)
 		SetAlwaysOnTop(this, true);
 
 	show();
 
-	if (window) {
-		UpdateProjectorTitle(title);
+	if (isWindow) {
+		UpdateProjectorTitle(projectorTitle);
 		windowedProjectors.push_back(this);
 	} else {
-		QScreen *screen = QGuiApplication::screens()[monitor];
+		QScreen *screen = QGuiApplication::screens()[savedMonitor];
 		setGeometry(screen->geometry());
 
 		QAction *action = new QAction(this);
@@ -168,55 +218,6 @@ void OBSProjector::Init(int monitor, bool window, QString title,
 
 	if (source)
 		obs_source_inc_showing(source);
-
-	if (type == ProjectorType::Multiview) {
-		obs_enter_graphics();
-		gs_render_start(true);
-		gs_vertex2f(0.001f, 0.001f);
-		gs_vertex2f(0.001f, 0.997f);
-		gs_vertex2f(0.997f, 0.997f);
-		gs_vertex2f(0.997f, 0.001f);
-		gs_vertex2f(0.001f, 0.001f);
-		outerBox = gs_render_save();
-
-		gs_render_start(true);
-		gs_vertex2f(0.04f, 0.04f);
-		gs_vertex2f(0.04f, 0.96f);
-		gs_vertex2f(0.96f, 0.96f);
-		gs_vertex2f(0.96f, 0.04f);
-		gs_vertex2f(0.04f, 0.04f);
-		innerBox = gs_render_save();
-
-		gs_render_start(true);
-		gs_vertex2f(0.15f, 0.04f);
-		gs_vertex2f(0.15f, 0.96f);
-		leftVLine = gs_render_save();
-
-		gs_render_start(true);
-		gs_vertex2f(0.85f, 0.04f);
-		gs_vertex2f(0.85f, 0.96f);
-		rightVLine = gs_render_save();
-
-		gs_render_start(true);
-		gs_vertex2f(0.0f, 0.5f);
-		gs_vertex2f(0.075f, 0.5f);
-		leftLine = gs_render_save();
-
-		gs_render_start(true);
-		gs_vertex2f(0.5f, 0.0f);
-		gs_vertex2f(0.5f, 0.09f);
-		topLine = gs_render_save();
-
-		gs_render_start(true);
-		gs_vertex2f(0.925f, 0.5f);
-		gs_vertex2f(1.0f, 0.5f);
-		rightLine = gs_render_save();
-		obs_leave_graphics();
-
-		UpdateMultiview();
-
-		multiviewProjectors.push_back(this);
-	}
 
 	ready = true;
 }

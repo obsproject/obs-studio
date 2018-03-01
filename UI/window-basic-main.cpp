@@ -5448,19 +5448,17 @@ void OBSBasic::NudgeDown()     {Nudge(1,  MoveDir::Down);}
 void OBSBasic::NudgeLeft()     {Nudge(1,  MoveDir::Left);}
 void OBSBasic::NudgeRight()    {Nudge(1,  MoveDir::Right);}
 
-void OBSBasic::OpenProjector(obs_source_t *source, int monitor, QString title,
-		ProjectorType type)
+OBSProjector *OBSBasic::OpenProjector(obs_source_t *source, int monitor,
+		QString title, ProjectorType type)
 {
 	/* seriously?  10 monitors? */
 	if (monitor > 9 || monitor > QGuiApplication::screens().size() - 1)
-		return;
+		return nullptr;
 
-	OBSProjector *projector = new OBSProjector(nullptr, source,
-			title != nullptr);
+	OBSProjector *projector = new OBSProjector(nullptr, source, monitor,
+			title, type);
 
-	if (title != nullptr) {
-		projector->Init(monitor, true, title, type);
-
+	if (monitor < 0) {
 		for (auto &projPtr : windowProjectors) {
 			if (!projPtr) {
 				projPtr = projector;
@@ -5474,9 +5472,11 @@ void OBSBasic::OpenProjector(obs_source_t *source, int monitor, QString title,
 		delete projectors[monitor];
 		projectors[monitor].clear();
 
-		projector->Init(monitor, false, nullptr, type);
 		projectors[monitor] = projector;
 	}
+
+	projector->Init();
+	return projector;
 }
 
 void OBSBasic::OpenStudioProgramProjector()
@@ -5498,7 +5498,8 @@ void OBSBasic::OpenSourceProjector()
 	if (!item)
 		return;
 
-	OpenProjector(obs_sceneitem_get_source(item), monitor, nullptr);
+	OpenProjector(obs_sceneitem_get_source(item), monitor, nullptr,
+			ProjectorType::Source);
 }
 
 void OBSBasic::OpenMultiviewProjector()
@@ -5520,47 +5521,46 @@ void OBSBasic::OpenSceneProjector()
 
 void OBSBasic::OpenStudioProgramWindow()
 {
-	int monitor = sender()->property("monitor").toInt();
-	QString title = QTStr("StudioProgramWindow");
-	OpenProjector(nullptr, monitor, title, ProjectorType::StudioProgram);
+	OpenProjector(nullptr, -1, QTStr("StudioProgramWindow"),
+			ProjectorType::StudioProgram);
 }
 
 void OBSBasic::OpenPreviewWindow()
 {
-	int monitor = sender()->property("monitor").toInt();
-	QString title = QTStr("PreviewWindow");
-	OpenProjector(nullptr, monitor, title, ProjectorType::Preview);
+	OpenProjector(nullptr, -1, QTStr("PreviewWindow"),
+			ProjectorType::Preview);
 }
 
 void OBSBasic::OpenSourceWindow()
 {
-	int monitor = sender()->property("monitor").toInt();
 	OBSSceneItem item = GetCurrentSceneItem();
 	if (!item)
 		return;
 
 	OBSSource source = obs_sceneitem_get_source(item);
 	QString title = QString::fromUtf8(obs_source_get_name(source));
-	OpenProjector(obs_sceneitem_get_source(item), monitor, title);
+
+	OpenProjector(obs_sceneitem_get_source(item), -1, title,
+			ProjectorType::Source);
 }
 
 void OBSBasic::OpenMultiviewWindow()
 {
-	int monitor = sender()->property("monitor").toInt();
-	QString title = QTStr("MultiviewWindowed");
-	OpenProjector(nullptr, monitor, title, ProjectorType::Multiview);
+	OpenProjector(nullptr, -1, QTStr("MultiviewWindowed"),
+			ProjectorType::Multiview);
 }
 
 void OBSBasic::OpenSceneWindow()
 {
-	int monitor = sender()->property("monitor").toInt();
 	OBSScene scene = GetCurrentScene();
 	if (!scene)
 		return;
 
 	OBSSource source = obs_scene_get_source(scene);
 	QString title = QString::fromUtf8(obs_source_get_name(source));
-	OpenProjector(obs_scene_get_source(scene), monitor, title);
+
+	OpenProjector(obs_scene_get_source(scene), -1, title,
+			ProjectorType::Scene);
 }
 
 void OBSBasic::OpenSavedProjectors()

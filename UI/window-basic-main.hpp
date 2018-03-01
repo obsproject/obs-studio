@@ -250,9 +250,8 @@ private:
 
 	void Nudge(int dist, MoveDir dir);
 
-	void OpenProjector(obs_source_t *source, int monitor,
-			QString title = nullptr,
-			ProjectorType type = ProjectorType::Source);
+	OBSProjector *OpenProjector(obs_source_t *source, int monitor,
+			QString title, ProjectorType type);
 
 	void GetAudioSourceFilters();
 	void GetAudioSourceProperties();

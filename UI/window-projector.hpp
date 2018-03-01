@@ -27,8 +27,8 @@ private:
 	void mousePressEvent(QMouseEvent *event) override;
 	void mouseDoubleClickEvent(QMouseEvent *event) override;
 
-	int savedMonitor = 0;
-	bool isWindow = false;
+	int savedMonitor;
+	bool isWindow;
 	QString projectorTitle;
 	ProjectorType type = ProjectorType::Source;
 	OBSWeakSource multiviewScenes[8];
@@ -49,11 +49,11 @@ private slots:
 	void EscapeTriggered();
 
 public:
-	OBSProjector(QWidget *parent, obs_source_t *source, bool window);
+	OBSProjector(QWidget *widget, obs_source_t *source_, int monitor,
+			QString title, ProjectorType type_);
 	~OBSProjector();
 
-	void Init(int monitor, bool window, QString title,
-			ProjectorType type = ProjectorType::Source);
+	void Init();
 
 	OBSSource GetSource();
 	ProjectorType GetProjectorType();
