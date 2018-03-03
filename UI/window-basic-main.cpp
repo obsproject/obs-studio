@@ -129,8 +129,6 @@ static void AddExtraModulePaths()
 #endif
 }
 
-static QList<QKeySequence> DeleteKeys;
-
 OBSBasic::OBSBasic(QWidget *parent)
 	: OBSMainWindow  (parent),
 	  ui             (new Ui::OBSBasic)
@@ -212,15 +210,9 @@ OBSBasic::OBSBasic(QWidget *parent)
 			ui->statusbar, SLOT(UpdateCPUUsage()));
 	cpuUsageTimer->start(3000);
 
-	DeleteKeys =
 #ifdef __APPLE__
-		QList<QKeySequence>{{Qt::Key_Backspace}} <<
-#endif
-		QKeySequence::keyBindings(QKeySequence::Delete);
-
-#ifdef __APPLE__
-	ui->actionRemoveSource->setShortcuts(DeleteKeys);
-	ui->actionRemoveScene->setShortcuts(DeleteKeys);
+	ui->actionRemoveSource->setShortcuts({Qt::Key_Backspace});
+	ui->actionRemoveScene->setShortcuts({Qt::Key_Backspace});
 
 	ui->action_Settings->setMenuRole(QAction::PreferencesRole);
 	ui->actionE_xit->setMenuRole(QAction::QuitRole);
@@ -3496,8 +3488,7 @@ void OBSBasic::on_scenes_customContextMenuRequested(const QPoint &pos)
 		popup.addAction(QTStr("Rename"),
 				this, SLOT(EditSceneName()));
 		popup.addAction(QTStr("Remove"),
-				this, SLOT(RemoveSelectedScene()),
-				DeleteKeys.front());
+				this, SLOT(RemoveSelectedScene()));
 		popup.addSeparator();
 
 		order.addAction(QTStr("Basic.MainMenu.Edit.Order.MoveUp"),
@@ -3866,8 +3857,7 @@ void OBSBasic::CreateSourcePopupMenu(QListWidgetItem *item, bool preview)
 		popup.addAction(QTStr("Rename"), this,
 				SLOT(EditSceneItemName()));
 		popup.addAction(QTStr("Remove"), this,
-				SLOT(on_actionRemoveSource_triggered()),
-				DeleteKeys.front());
+				SLOT(on_actionRemoveSource_triggered()));
 		popup.addSeparator();
 		popup.addMenu(ui->orderMenu);
 		popup.addMenu(ui->transformMenu);
