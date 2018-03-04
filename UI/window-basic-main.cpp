@@ -900,8 +900,10 @@ retryScene:
 
 	disableSaving--;
 
-	if (api)
+	if (api) {
 		api->on_event(OBS_FRONTEND_EVENT_SCENE_CHANGED);
+		api->on_event(OBS_FRONTEND_EVENT_PREVIEW_SCENE_CHANGED);
+	}
 }
 
 #define SERVICE_PATH "service.json"
@@ -2271,6 +2273,11 @@ void OBSBasic::UpdateSceneSelection(OBSSource source)
 			sceneChanging = false;
 
 			UpdateSources(scene);
+
+			OBSScene curScene =
+				GetOBSRef<OBSScene>(ui->scenes->currentItem());
+			if (api && scene != curScene)
+				api->on_event(OBS_FRONTEND_EVENT_PREVIEW_SCENE_CHANGED);
 		}
 	}
 }
@@ -3507,6 +3514,9 @@ void OBSBasic::on_scenes_currentItemChanged(QListWidgetItem *current,
 	}
 
 	SetCurrentScene(source);
+
+	if (api)
+		api->on_event(OBS_FRONTEND_EVENT_PREVIEW_SCENE_CHANGED);
 
 	UNUSED_PARAMETER(prev);
 }
