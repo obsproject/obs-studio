@@ -445,11 +445,12 @@ static void update_params(struct vt_h264_encoder *enc, obs_data_t *settings)
 
 	struct video_scale_info info = { .format = voi->format };
 
+	enc->fullrange = voi->range == VIDEO_RANGE_FULL;
+
 	// also sets the enc->vt_pix_fmt
 	vt_h264_video_info(enc, &info);
 
 	enc->colorspace = voi->colorspace;
-	enc->fullrange = voi->range == VIDEO_RANGE_FULL;
 
 	enc->width = obs_encoder_get_width(enc->encoder);
 	enc->height = obs_encoder_get_height(enc->encoder);
