@@ -1102,28 +1102,20 @@ void OBSBasicSettings::LoadGeneralSettings()
 
 	ui->multiviewLayout->addItem(QTStr(
 			"Basic.Settings.General.MultiviewLayout.Horizontal.Top"),
-			QT_UTF8("horizontaltop"));
+			static_cast<int>(MultiviewLayout::HORIZONTAL_TOP));
 	ui->multiviewLayout->addItem(QTStr(
 			"Basic.Settings.General.MultiviewLayout.Horizontal.Bottom"),
-			QT_UTF8("horizontalbottom"));
+			static_cast<int>(MultiviewLayout::HORIZONTAL_BOTTOM));
 	ui->multiviewLayout->addItem(QTStr(
 			"Basic.Settings.General.MultiviewLayout.Vertical.Left"),
-			QT_UTF8("verticalleft"));
+			static_cast<int>(MultiviewLayout::VERTICAL_LEFT));
 	ui->multiviewLayout->addItem(QTStr(
 			"Basic.Settings.General.MultiviewLayout.Vertical.Right"),
-			QT_UTF8("verticalright"));
+			static_cast<int>(MultiviewLayout::VERTICAL_RIGHT));
 
-	const char *multiviewLayoutText = config_get_string(GetGlobalConfig(),
-			"BasicWindow", "MultiviewLayout");
-
-	if (astrcmpi(multiviewLayoutText, "horizontalbottom") == 0)
-		ui->multiviewLayout->setCurrentIndex(1);
-	else if (astrcmpi(multiviewLayoutText, "verticalleft") == 0)
-		ui->multiviewLayout->setCurrentIndex(2);
-	else if (astrcmpi(multiviewLayoutText, "verticalright") == 0)
-		ui->multiviewLayout->setCurrentIndex(3);
-	else
-		ui->multiviewLayout->setCurrentIndex(0);
+	ui->multiviewLayout->setCurrentIndex(
+			config_get_int(GetGlobalConfig(), "BasicWindow",
+					"MultiviewLayout"));
 
 	loading = false;
 }
@@ -2713,9 +2705,9 @@ void OBSBasicSettings::SaveGeneralSettings()
 	}
 
 	if (WidgetChanged(ui->multiviewLayout)) {
-		config_set_string(GetGlobalConfig(), "BasicWindow",
+		config_set_int(GetGlobalConfig(), "BasicWindow",
 				"MultiviewLayout",
-				QT_TO_UTF8(GetComboData(ui->multiviewLayout)));
+				ui->multiviewLayout->currentData().toInt());
 
 		OBSProjector::UpdateMultiviewProjectors();
 	}

@@ -9,15 +9,10 @@
 #include "qt-wrappers.hpp"
 #include "platform.hpp"
 
-#define HORIZONTAL_TOP    0
-#define HORIZONTAL_BOTTOM 1
-#define VERTICAL_LEFT     2
-#define VERTICAL_RIGHT    3
-
 static QList<OBSProjector *> windowedProjectors;
 static QList<OBSProjector *> multiviewProjectors;
 static bool updatingMultiview = false;
-static int multiviewLayout = HORIZONTAL_TOP;
+static MultiviewLayout multiviewLayout;
 
 OBSProjector::OBSProjector(QWidget *widget, obs_source_t *source_, int monitor,
 		QString title, ProjectorType type_)
@@ -338,19 +333,19 @@ void OBSProjector::OBSRenderMultiview(void *data, uint32_t cx, uint32_t cy)
 	auto calcBaseSource = [&](size_t i)
 	{
 		switch (multiviewLayout) {
-		case VERTICAL_LEFT:
+		case MultiviewLayout::VERTICAL_LEFT:
 			sourceX = halfCX;
 			sourceY = (i / 2 ) * quarterCY;
 			if (i % 2 != 0)
 				sourceX = halfCX + quarterCX;
 			break;
-		case VERTICAL_RIGHT:
+		case MultiviewLayout::VERTICAL_RIGHT:
 			sourceX = 0;
 			sourceY = (i / 2 ) * quarterCY;
 			if (i % 2 != 0)
 				sourceX = quarterCX;
 			break;
-		case HORIZONTAL_BOTTOM:
+		case MultiviewLayout::HORIZONTAL_BOTTOM:
 			if (i < 4) {
 				sourceX = (float(i) * quarterCX);
 				sourceY = 0;
@@ -359,7 +354,7 @@ void OBSProjector::OBSRenderMultiview(void *data, uint32_t cx, uint32_t cy)
 				sourceY = quarterCY;
 			}
 			break;
-		default: //HORIZONTAL_TOP:
+		default: // MultiviewLayout::HORIZONTAL_TOP:
 			if (i < 4) {
 				sourceX = (float(i) * quarterCX);
 				sourceY = halfCY;
@@ -373,7 +368,7 @@ void OBSProjector::OBSRenderMultiview(void *data, uint32_t cx, uint32_t cy)
 	auto calcPreviewProgram = [&](bool program)
 	{
 		switch (multiviewLayout) {
-		case VERTICAL_LEFT:
+		case MultiviewLayout::VERTICAL_LEFT:
 			sourceX = 2.0f;
 			sourceY = halfCY + 2.0f;
 			labelX = offset;
@@ -383,7 +378,7 @@ void OBSProjector::OBSRenderMultiview(void *data, uint32_t cx, uint32_t cy)
 				labelY = halfCY * 0.8f;
 			}
 			break;
-		case VERTICAL_RIGHT:
+		case MultiviewLayout::VERTICAL_RIGHT:
 			sourceX = halfCX + 2.0f;
 			sourceY = halfCY + 2.0f;
 			labelX = halfCX + offset;
@@ -393,7 +388,7 @@ void OBSProjector::OBSRenderMultiview(void *data, uint32_t cx, uint32_t cy)
 				labelY = halfCY * 0.8f;
 			}
 			break;
-		case HORIZONTAL_BOTTOM:
+		case MultiviewLayout::HORIZONTAL_BOTTOM:
 			sourceX = 2.0f;
 			sourceY = halfCY + 2.0f;
 			labelX = offset;
@@ -403,7 +398,7 @@ void OBSProjector::OBSRenderMultiview(void *data, uint32_t cx, uint32_t cy)
 				labelX = halfCX + offset;
 			}
 			break;
-		default: //HORIZONTAL_TOP:
+		default: // MultiviewLayout::HORIZONTAL_TOP:
 			sourceX = 2.0f;
 			sourceY = 2.0f;
 			labelX = offset;
@@ -670,7 +665,7 @@ static int getSourceByPosition(int x, int y)
 	int     pos   = -1;
 
 	switch (multiviewLayout) {
-	case VERTICAL_LEFT:
+	case MultiviewLayout::VERTICAL_LEFT:
 		if (float(cx) / float(cy) > ratio) {
 			int validX = cy * ratio;
 			maxX = halfX + (validX / 2);
@@ -689,7 +684,7 @@ static int getSourceByPosition(int x, int y)
 		if (x > minX + ((maxX - minX) / 2))
 			pos++;
 		break;
-	case VERTICAL_RIGHT:
+	case MultiviewLayout::VERTICAL_RIGHT:
 		if (float(cx) / float(cy) > ratio) {
 			int validX = cy * ratio;
 			minX = halfX - (validX / 2);
@@ -708,7 +703,7 @@ static int getSourceByPosition(int x, int y)
 		if (x > minX + ((maxX - minX) / 2))
 			pos++;
 		break;
-	case HORIZONTAL_BOTTOM:
+	case MultiviewLayout::HORIZONTAL_BOTTOM:
 		if (float(cx) / float(cy) > ratio) {
 			int validX = cy * ratio;
 			minX = halfX - (validX / 2);
@@ -727,7 +722,7 @@ static int getSourceByPosition(int x, int y)
 		if (y > minY + ((maxY - minY) / 2))
 			pos += 4;
 		break;
-	default: // HORIZONTAL_TOP
+	default: // MultiviewLayout::HORIZONTAL_TOP
 		if (float(cx) / float(cy) > ratio) {
 			int validX = cy * ratio;
 			minX = halfX - (validX / 2);
@@ -848,17 +843,8 @@ void OBSProjector::UpdateMultiview()
 
 	obs_frontend_source_list_free(&scenes);
 
-	const char *multiviewLayoutText = config_get_string(GetGlobalConfig(),
-			"BasicWindow", "MultiviewLayout");
-
-	if (astrcmpi(multiviewLayoutText, "horizontalbottom") == 0)
-		multiviewLayout = HORIZONTAL_BOTTOM;
-	else if (astrcmpi(multiviewLayoutText, "verticalleft") == 0)
-		multiviewLayout = VERTICAL_LEFT;
-	else if (astrcmpi(multiviewLayoutText, "verticalright") == 0)
-		multiviewLayout = VERTICAL_RIGHT;
-	else
-		multiviewLayout = HORIZONTAL_TOP;
+	multiviewLayout = static_cast<MultiviewLayout>(config_get_int(
+			GetGlobalConfig(), "BasicWindow", "MultiviewLayout"));
 }
 
 void OBSProjector::UpdateProjectorTitle(QString name)
