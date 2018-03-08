@@ -248,6 +248,21 @@ static inline uint32_t labelOffset(obs_source_t *label, uint32_t cx)
 	return (cx / 2) - w;
 }
 
+static inline void startRegion(int vX, int vY, int vCX, int vCY, float oL,
+		float oR, float oT, float oB)
+{
+	gs_projection_push();
+	gs_viewport_push();
+	gs_set_viewport(vX, vY, vCX, vCY);
+	gs_ortho(oL, oR, oT, oB, -100.0f, 100.0f);
+}
+
+static inline void endRegion()
+{
+	gs_viewport_pop();
+	gs_projection_pop();
+}
+
 void OBSProjector::OBSRenderMultiview(void *data, uint32_t cx, uint32_t cy)
 {
 	OBSProjector *window = (OBSProjector *)data;
@@ -318,16 +333,7 @@ void OBSProjector::OBSRenderMultiview(void *data, uint32_t cx, uint32_t cy)
 		float oR = (x + cx);
 		float oB = (y + cy);
 
-		gs_projection_push();
-		gs_viewport_push();
-		gs_set_viewport(vX, vY, vCX, vCY);
-		gs_ortho(oL, oR, oT, oB, -100.0f, 100.0f);
-	};
-
-	auto resetRegion = [] ()
-	{
-		gs_viewport_pop();
-		gs_projection_pop();
+		startRegion(vX, vY, vCX, vCY, oL, oR, oT, oB);
 	};
 
 	auto calcBaseSource = [&](size_t i)
@@ -413,10 +419,8 @@ void OBSProjector::OBSRenderMultiview(void *data, uint32_t cx, uint32_t cy)
 	/* ----------------------------- */
 	/* draw sources                  */
 
-	gs_projection_push();
-	gs_viewport_push();
-	gs_set_viewport(x, y, targetCX * scale, targetCY * scale);
-	gs_ortho(0.0f, targetCXF, 0.0f, targetCYF, -100.0f, 100.0f);
+	startRegion(x, y, targetCX * scale, targetCY * scale, 0.0f, targetCXF,
+			0.0f, targetCYF);
 
 	for (size_t i = 0; i < 8; i++) {
 		OBSSource src = OBSGetStrongRef(window->multiviewScenes[i]);
@@ -457,7 +461,7 @@ void OBSProjector::OBSRenderMultiview(void *data, uint32_t cx, uint32_t cy)
 
 		setRegion(qiX, qiY, qiCX, qiCY);
 		obs_source_video_render(src);
-		resetRegion();
+		endRegion();
 
 		gs_effect_set_color(color, outerColor);
 		renderVB(solid, window->outerBox, targetCX, targetCY);
@@ -494,14 +498,11 @@ void OBSProjector::OBSRenderMultiview(void *data, uint32_t cx, uint32_t cy)
 	gs_matrix_scale3f(hiScaleX, hiScaleY, 1.0f);
 
 	setRegion(sourceX, sourceY, hiCX, hiCY);
-
-	if (studioMode) {
+	if (studioMode)
 		obs_source_video_render(previewSrc);
-	} else {
+	else
 		obs_render_main_texture();
-	}
-
-	resetRegion();
+	endRegion();
 
 	gs_matrix_pop();
 
@@ -547,7 +548,7 @@ void OBSProjector::OBSRenderMultiview(void *data, uint32_t cx, uint32_t cy)
 
 	setRegion(sourceX, sourceY, hiCX, hiCY);
 	obs_render_main_texture();
-	resetRegion();
+	endRegion();
 
 	gs_matrix_pop();
 
@@ -576,8 +577,7 @@ void OBSProjector::OBSRenderMultiview(void *data, uint32_t cx, uint32_t cy)
 
 	/* ----------------------------- */
 
-	gs_viewport_pop();
-	gs_projection_pop();
+	endRegion();
 }
 
 void OBSProjector::OBSRender(void *data, uint32_t cx, uint32_t cy)
@@ -611,10 +611,8 @@ void OBSProjector::OBSRender(void *data, uint32_t cx, uint32_t cy)
 	newCX = int(scale * float(targetCX));
 	newCY = int(scale * float(targetCY));
 
-	gs_viewport_push();
-	gs_projection_push();
-	gs_ortho(0.0f, float(targetCX), 0.0f, float(targetCY), -100.0f, 100.0f);
-	gs_set_viewport(x, y, newCX, newCY);
+	startRegion(x, y, newCX, newCY, 0.0f, float(targetCX), 0.0f,
+			float(targetCY));
 
 	if (window->type == ProjectorType::Preview &&
 	    main->IsPreviewProgramMode()) {
@@ -627,14 +625,12 @@ void OBSProjector::OBSRender(void *data, uint32_t cx, uint32_t cy)
 		}
 	}
 
-	if (source) {
+	if (source)
 		obs_source_video_render(source);
-	} else {
+	else
 		obs_render_main_texture();
-	}
 
-	gs_projection_pop();
-	gs_viewport_pop();
+	endRegion();
 }
 
 void OBSProjector::OBSSourceRemoved(void *data, calldata_t *params)
