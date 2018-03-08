@@ -1338,12 +1338,11 @@ static inline bool source_has_audio(obs_source_t *source)
 		(OBS_SOURCE_AUDIO | OBS_SOURCE_COMPOSITE)) != 0;
 }
 
-obs_sceneitem_t *obs_scene_add(obs_scene_t *scene, obs_source_t *source)
+static obs_sceneitem_t *obs_scene_add_internal(obs_scene_t *scene,
+		obs_source_t *source, obs_sceneitem_t *insert_after)
 {
 	struct obs_scene_item *last;
 	struct obs_scene_item *item;
-	struct calldata params;
-	uint8_t stack[128];
 	pthread_mutex_t mutex;
 
 	struct item_action action = {
@@ -1403,15 +1402,23 @@ obs_sceneitem_t *obs_scene_add(obs_scene_t *scene, obs_source_t *source)
 
 	full_lock(scene);
 
-	last = scene->first_item;
-	if (!last) {
-		scene->first_item = item;
+	if (insert_after) {
+		obs_sceneitem_t *next = insert_after->next;
+		if (next) next->prev = item;
+		item->next = insert_after->next;
+		item->prev = insert_after;
+		insert_after->next = item;
 	} else {
-		while (last->next)
-			last = last->next;
+		last = scene->first_item;
+		if (!last) {
+			scene->first_item = item;
+		} else {
+			while (last->next)
+				last = last->next;
 
-		last->next = item;
-		item->prev = last;
+			last->next = item;
+			item->prev = last;
+		}
 	}
 
 	full_unlock(scene);
@@ -1419,12 +1426,20 @@ obs_sceneitem_t *obs_scene_add(obs_scene_t *scene, obs_source_t *source)
 	if (!scene->source->context.private)
 		init_hotkeys(scene, item, obs_source_get_name(source));
 
+	return item;
+}
+
+obs_sceneitem_t *obs_scene_add(obs_scene_t *scene, obs_source_t *source)
+{
+	obs_sceneitem_t *item = obs_scene_add_internal(scene, source, NULL);
+	struct calldata params;
+	uint8_t stack[128];
+
 	calldata_init_fixed(&params, stack, sizeof(stack));
 	calldata_set_ptr(&params, "scene", scene);
 	calldata_set_ptr(&params, "item", item);
 	signal_handler_signal(scene->source->context.signals, "item_add",
 			&params);
-
 	return item;
 }
 
