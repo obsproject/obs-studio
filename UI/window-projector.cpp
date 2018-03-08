@@ -435,9 +435,8 @@ void OBSProjector::OBSRenderMultiview(void *data, uint32_t cx, uint32_t cy)
 		/* ----------- */
 
 		if (src == previewSrc || src == programSrc) {
-			uint32_t colorVal = src == programSrc
-				? 0xFFFF0000
-				: 0xFF00FF00;
+			uint32_t colorVal = src == programSrc ? programColor
+					: previewColor;
 
 			gs_matrix_push();
 			gs_matrix_translate3f(sourceX, sourceY, 0.0f);
@@ -446,7 +445,7 @@ void OBSProjector::OBSRenderMultiview(void *data, uint32_t cx, uint32_t cy)
 
 			gs_matrix_push();
 			gs_matrix_translate3f(qiX, qiY, 0.0f);
-			drawBox(qiCX, qiCY, 0xFF000000);
+			drawBox(qiCX, qiCY, backgroundColor);
 			gs_matrix_pop();
 		}
 
@@ -460,7 +459,7 @@ void OBSProjector::OBSRenderMultiview(void *data, uint32_t cx, uint32_t cy)
 		obs_source_video_render(src);
 		resetRegion();
 
-		gs_effect_set_color(color, 0xFFFFFFFF);
+		gs_effect_set_color(color, outerColor);
 		renderVB(solid, window->outerBox, targetCX, targetCY);
 
 		gs_matrix_pop();
@@ -475,13 +474,13 @@ void OBSProjector::OBSRenderMultiview(void *data, uint32_t cx, uint32_t cy)
 		gs_matrix_translate3f(sourceX + offset,
 				(quarterCY * 0.8f) + sourceY, 0.0f);
 
-		drawBox(cx, cy + int(quarterCX * 0.015f), 0xD91F1F1F);
+		drawBox(cx, cy + int(quarterCX * 0.015f), labelColor);
 		obs_source_video_render(label);
 
 		gs_matrix_pop();
 	}
 
-	gs_effect_set_color(color, 0xFFFFFFFF);
+	gs_effect_set_color(color, outerColor);
 
 	/* ----------------------------- */
 	/* draw preview                  */
@@ -530,7 +529,7 @@ void OBSProjector::OBSRenderMultiview(void *data, uint32_t cx, uint32_t cy)
 	gs_matrix_push();
 	gs_matrix_translate3f(labelX, labelY, 0.0f);
 
-	drawBox(cx, cy + int(halfCX * 0.015f), 0xD91F1F1F);
+	drawBox(cx, cy + int(halfCX * 0.015f), labelColor);
 	obs_source_video_render(previewLabel);
 
 	gs_matrix_pop();
@@ -570,7 +569,7 @@ void OBSProjector::OBSRenderMultiview(void *data, uint32_t cx, uint32_t cy)
 	gs_matrix_push();
 	gs_matrix_translate3f(labelX, labelY, 0.0f);
 
-	drawBox(cx, cy + int(halfCX * 0.015f), 0xD91F1F1F);
+	drawBox(cx, cy + int(halfCX * 0.015f), labelColor);
 	obs_source_video_render(programLabel);
 
 	gs_matrix_pop();
