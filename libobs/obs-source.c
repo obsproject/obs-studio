@@ -1720,9 +1720,18 @@ static inline void obs_source_render_async_video(obs_source_t *source)
 
 static inline void obs_source_render_filters(obs_source_t *source)
 {
+	obs_source_t *first_filter;
+
+	pthread_mutex_lock(&source->filter_mutex);
+	first_filter = source->filters.array[0];
+	obs_source_addref(first_filter);
+	pthread_mutex_unlock(&source->filter_mutex);
+
 	source->rendering_filter = true;
-	obs_source_video_render(source->filters.array[0]);
+	obs_source_video_render(first_filter);
 	source->rendering_filter = false;
+
+	obs_source_release(first_filter);
 }
 
 void obs_source_default_render(obs_source_t *source)
