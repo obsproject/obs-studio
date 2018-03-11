@@ -8,6 +8,9 @@
 
 using namespace std;
 
+int64_t numRecGlob = 0; //global counter of recordings number
+int32_t numRec = 0; //per session counter of recordings
+
 static void OBSStreamStarting(void *data, calldata_t *params)
 {
 	BasicOutputHandler *output = static_cast<BasicOutputHandler*>(data);
@@ -835,6 +838,8 @@ bool SimpleOutput::ConfigureRecording(bool updateReplayBuffer)
 				"FilenameFormatting");
 	bool overwriteIfExists = config_get_bool(main->Config(), "Output",
 				"OverwriteIfExists");
+	bool useLocalCounter = config_get_bool(main->Config(), "Output",
+			"UseLocalCounter");
 	const char *rbPrefix = config_get_string(main->Config(), "SimpleOutput",
 				"RecRBPrefix");
 	const char *rbSuffix = config_get_string(main->Config(), "SimpleOutput",
@@ -859,6 +864,25 @@ bool SimpleOutput::ConfigureRecording(bool updateReplayBuffer)
 
 	os_closedir(dir);
 
+	int32_t numRecOut; //counter for numbered filenaming
+
+	numRecGlob = config_get_int(main->Config(), "Output",
+		"NumRecGlobal");
+
+	//count only recordings
+	if (!updateReplayBuffer) {
+		config_set_int(main->Config(), "Output",
+			"NumRecGlobal", ++numRecGlob);
+
+		++numRec;
+	}
+
+	//count recordings only per session
+	if (useLocalCounter)
+		numRecOut = numRec;
+	else
+		numRecOut = (int32_t)numRecGlob;
+
 	string strPath;
 	strPath += path;
 
@@ -866,8 +890,10 @@ bool SimpleOutput::ConfigureRecording(bool updateReplayBuffer)
 	if (lastChar != '/' && lastChar != '\\')
 		strPath += "/";
 
-	strPath += GenerateSpecifiedFilename(ffmpegOutput ? "avi" : format,
+	string sf = GenerateSpecifiedFilename(ffmpegOutput ? "avi" : format,
 			noSpace, filenameFormat);
+	strPath += GenerateNumberedString(updateReplayBuffer ? 0 : 1,
+			numRecOut, sf.c_str());
 	ensure_directory_exists(strPath);
 	if (!overwriteIfExists)
 		FindBestFilename(strPath, noSpace);
@@ -895,6 +921,7 @@ bool SimpleOutput::ConfigureRecording(bool updateReplayBuffer)
 		obs_data_set_string(settings, "directory", path);
 		obs_data_set_string(settings, "format", f.c_str());
 		obs_data_set_string(settings, "extension", format);
+		obs_data_set_int(settings, "recNumber", numRecOut);
 		obs_data_set_int(settings, "max_time_sec", rbTime);
 		obs_data_set_int(settings, "max_size_mb",
 				usingRecordingPreset ? rbSize : 0);
@@ -1539,6 +1566,7 @@ bool AdvancedOutput::StartRecording()
 	const char *filenameFormat;
 	bool noSpace = false;
 	bool overwriteIfExists = false;
+	bool useLocalCounter = false;
 
 	if (!useStreamEncoder) {
 		if (!ffmpegOutput) {
@@ -1562,6 +1590,8 @@ bool AdvancedOutput::StartRecording()
 				"FilenameFormatting");
 		overwriteIfExists = config_get_bool(main->Config(), "Output",
 				"OverwriteIfExists");
+		useLocalCounter = config_get_bool(main->Config(), "Output",
+				"UseLocalCounter");
 		noSpace = config_get_bool(main->Config(), "AdvOut",
 				ffmpegRecording ?
 				"FFFileNameWithoutSpace" :
@@ -1582,6 +1612,21 @@ bool AdvancedOutput::StartRecording()
 
 		os_closedir(dir);
 
+		int32_t numRecOut; //counter for numbered filenaming
+
+		numRecGlob = config_get_int(main->Config(), "Output",
+				"NumRecGlobal");
+		config_set_int(main->Config(), "Output",
+				"NumRecGlobal", ++numRecGlob);
+
+		++numRec;
+
+		//count recordings only per session
+		if (useLocalCounter)
+			numRecOut = numRec;
+		else
+			numRecOut = (int32_t)numRecGlob;
+
 		string strPath;
 		strPath += path;
 
@@ -1589,8 +1634,9 @@ bool AdvancedOutput::StartRecording()
 		if (lastChar != '/' && lastChar != '\\')
 			strPath += "/";
 
-		strPath += GenerateSpecifiedFilename(recFormat, noSpace,
-							filenameFormat);
+		string sf = GenerateSpecifiedFilename(recFormat, noSpace,
+				filenameFormat);
+		strPath += GenerateNumberedString(1, numRecOut, sf.c_str())
 		ensure_directory_exists(strPath);
 		if (!overwriteIfExists)
 			FindBestFilename(strPath, noSpace);
@@ -1628,6 +1674,7 @@ bool AdvancedOutput::StartReplayBuffer()
 	const char *filenameFormat;
 	bool noSpace = false;
 	bool overwriteIfExists = false;
+	bool useLocalCounter = false;
 	const char *rbPrefix;
 	const char *rbSuffix;
 	int rbTime;
@@ -1654,6 +1701,8 @@ bool AdvancedOutput::StartReplayBuffer()
 				"FilenameFormatting");
 		overwriteIfExists = config_get_bool(main->Config(), "Output",
 				"OverwriteIfExists");
+		useLocalCounter = config_get_bool(main->Config(), "Output",
+				"UseLocalCounter");
 		noSpace = config_get_bool(main->Config(), "AdvOut",
 				ffmpegRecording ?
 				"FFFileNameWithoutSpace" :
@@ -1682,6 +1731,17 @@ bool AdvancedOutput::StartReplayBuffer()
 
 		os_closedir(dir);
 
+		int32_t numRecOut; //counter for numbered filenaming
+
+		numRecGlob = config_get_int(main->Config(), "Output",
+				"NumRecGlobal");
+
+		//count recordings only per session
+		if (useLocalCounter)
+			numRecOut = numRec;
+		else
+			numRecOut = (int32_t)numRecGlob;
+
 		string strPath;
 		strPath += path;
 
@@ -1689,8 +1749,9 @@ bool AdvancedOutput::StartReplayBuffer()
 		if (lastChar != '/' && lastChar != '\\')
 			strPath += "/";
 
-		strPath += GenerateSpecifiedFilename(recFormat, noSpace,
+		string sf = GenerateSpecifiedFilename(recFormat, noSpace,
 				filenameFormat);
+		strPath += GenerateNumberedString(0, numRecOut, sf.c_str());
 		ensure_directory_exists(strPath);
 		if (!overwriteIfExists)
 			FindBestFilename(strPath, noSpace);
@@ -1717,6 +1778,7 @@ bool AdvancedOutput::StartReplayBuffer()
 		obs_data_set_string(settings, "directory", path);
 		obs_data_set_string(settings, "format", f.c_str());
 		obs_data_set_string(settings, "extension", recFormat);
+		obs_data_set_int(settings, "recNumber", numRecOut);
 		obs_data_set_int(settings, "max_time_sec", rbTime);
 		obs_data_set_int(settings, "max_size_mb",
 				usesBitrate ? 0 : rbSize);

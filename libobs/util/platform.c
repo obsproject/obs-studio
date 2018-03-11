@@ -26,6 +26,12 @@
 #include "utf8.h"
 #include "dstr.h"
 
+int32_t usrC = 0; //counter for the "%set" items in filenaming
+int32_t usrCR = 0; //counter for the "%set" items in filenaming replays
+
+//valid decimal padded formats
+char dfrmts[] = "%00d%01d%02d%03d%04d%05d%06d%07d%08d%09d";
+
 FILE *os_wfopen(const wchar_t *path, const char *mode)
 {
 	FILE *file = NULL;
@@ -773,4 +779,145 @@ char *os_generate_formatted_filename(const char *extension, bool space,
 		dstr_mid(&sf, &sf, 0, 255);
 
 	return sf.array;
+}
+
+char *os_numbered_string(const int32_t recType, int32_t number,
+		const char *format)
+{
+	/*
+		recType bitfield definitions:
+		-----------------------------
+		0 - unknown type;
+		1 - local recording;
+		2 - replay save;
+		4... - reserved, same as 0;
+	*/
+
+	//in case of unknown type - only first element of the "set" is valid
+	int32_t usrCounter = 1; //to manage "set" iterations
+
+	if (recType & 0x01)
+		usrCounter = ++usrC;
+	if (recType & 0x02) {
+		usrCounter = ++usrCR;
+		number += usrCounter;
+	}
+
+	struct dstr numf;
+	dstr_init_copy(&numf, format);
+
+	//skip empty string
+	if (numf.len == 0)
+		return numf.array;
+
+	char *pfrmt; //pointer to format: "%set", "%d"...
+	size_t frmtL; //length without null
+	size_t frmtPos; //offset of the format "%set", "%d"...
+
+	pfrmt = strstr(numf.array, "%set");
+
+	//any valid "set" format specifier has 6 signs: %set[]
+	while (pfrmt) {
+		frmtL = strlen(pfrmt);
+		frmtPos = numf.len - frmtL;
+
+		char *start = strpbrk(pfrmt, "[");
+		char *end = strpbrk(pfrmt, "]");
+
+		if ((start) && (end) && (start < end)) {
+			size_t startL, endL; //length without null
+			startL = strlen(start);
+			endL = strlen(end);
+
+			struct dstr usrSt; //user's set
+			dstr_init(&usrSt);
+			dstr_ncopy(&usrSt, start + 1, startL - endL);
+			usrSt.array[startL - endL - 1] = ','; //replace "]"
+
+			size_t itemsN = 0; //number of items
+
+			//at least one empty item always exist
+			char *p_ch = strpbrk(usrSt.array, ",");
+			while (p_ch) {
+				++itemsN;
+				p_ch = strpbrk(p_ch + 1, ",");
+			}
+
+			//if (itemsN == 0) itemsN = 1; //never executed
+
+			//find item index in current "set" (use cycled "set")
+			int32_t itemIdx = usrCounter % itemsN;
+			if (itemIdx == 0)
+				itemIdx = (int32_t)itemsN;
+
+			size_t itemL; //item length
+			size_t itemPos = 0; //item offset
+
+			//get item pointer and length according to index
+			itemL = strcspn(usrSt.array, ",");
+			--itemIdx;
+			while (itemIdx) {
+				itemPos = itemPos + itemL + 1;
+				itemL = strcspn(usrSt.array + itemPos, ",");
+				--itemIdx;
+			}
+
+			//shorten the usrSt.array overall length to
+			//the current item, by forcing null-terminating
+			usrSt.array[itemPos + itemL] = 0;
+
+			replace_text(&numf, frmtPos, frmtL - endL + 1,
+					usrSt.array + itemPos);
+
+			dstr_free(&usrSt);
+		}
+		//try next possible format element
+		pfrmt = strstr(numf.array + frmtPos + 4, "%set");
+	}
+
+	pfrmt = strstr(numf.array, "%");
+
+	while (pfrmt) {
+		//skip "%%"
+		if (pfrmt[1] != '%') {
+			frmtL = strlen(pfrmt);
+			frmtPos = numf.len - frmtL;
+
+			//let's try padded format
+			char chkFmt[] = "%00d";
+
+			if (frmtL > 3) {
+				chkFmt[1] = pfrmt[1];
+				chkFmt[2] = pfrmt[2];
+				chkFmt[3] = pfrmt[3];
+
+				if (strstr(dfrmts, chkFmt)) {
+					//"%0Xd..." - padded
+					char chrs[12] = {0}; //32bit+sign+null
+					snprintf(chrs, sizeof(chrs), chkFmt,
+							number);
+
+					replace_text(&numf, frmtPos, 4, chrs);
+
+					goto next_frmt;
+				}
+			}
+
+			if ((frmtL > 1) && (pfrmt[1] == 'd')) {
+				//"%d..." - non-padded
+				char chrs[12] = {0}; //32bit+sign+null
+				snprintf(chrs, sizeof(chrs), "%d", number);
+
+				replace_text(&numf, frmtPos, 2, chrs);
+			}
+		}
+
+	next_frmt:
+		pfrmt = strstr(pfrmt + 1, "%"); //try next format element
+	}
+
+	if (numf.len > 255)
+		dstr_mid(&numf, &numf, 0, 255);
+
+	return numf.array;
 }

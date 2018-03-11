@@ -1205,6 +1205,14 @@ string GenerateTimeDateFilename(const char *extension, bool noSpace)
 	return string(file);
 }
 
+string GenerateNumberedString(const int32_t recType, int32_t number,
+		const char *format)
+{
+	BPtr<char> numname = os_numbered_string(recType, number, format);
+
+	return string(numname);
+}
+
 string GenerateSpecifiedFilename(const char *extension, bool noSpace,
 		const char *format)
 {
