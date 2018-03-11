@@ -169,6 +169,17 @@ EXPORT int os_safe_replace(const char *target_path, const char *from_path,
 EXPORT char *os_generate_formatted_filename(const char *extension, bool space,
 		const char *format);
 
+/*
+	recType bitfield definitions:
+	-----------------------------
+	0 - unknown type;
+	1 - local recording;
+	2 - replay save;
+	4... - reserved, same as 0;
+*/
+EXPORT char *os_numbered_string(const int32_t recType, int32_t number,
+		const char *format);
+
 struct os_inhibit_info;
 typedef struct os_inhibit_info os_inhibit_t;
 

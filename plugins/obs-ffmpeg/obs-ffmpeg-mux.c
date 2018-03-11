@@ -759,9 +759,12 @@ static void replay_buffer_save(struct ffmpeg_muxer *stream)
 	const char *dir = obs_data_get_string(settings, "directory");
 	const char *fmt = obs_data_get_string(settings, "format");
 	const char *ext = obs_data_get_string(settings, "extension");
+	int64_t recNumber = obs_data_get_int(settings, "recNumber");
 	bool space = obs_data_get_bool(settings, "allow_spaces");
 
-	char *filename = os_generate_formatted_filename(ext, space, fmt);
+	char *filename2 = os_generate_formatted_filename(ext, space, fmt);
+	char *filename = os_numbered_string(2, (int32_t)recNumber,
+			filename2);
 
 	dstr_copy(&stream->path, dir);
 	dstr_replace(&stream->path, "\\", "/");
@@ -769,6 +772,7 @@ static void replay_buffer_save(struct ffmpeg_muxer *stream)
 		dstr_cat_ch(&stream->path, '/');
 	dstr_cat(&stream->path, filename);
 
+	bfree(filename2);
 	bfree(filename);
 	obs_data_release(settings);
 
