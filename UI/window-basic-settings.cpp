@@ -429,6 +429,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 #endif
 	HookWidget(ui->filenameFormatting,   EDIT_CHANGED,   ADV_CHANGED);
 	HookWidget(ui->overwriteIfExists,    CHECK_CHANGED,  ADV_CHANGED);
+	HookWidget(ui->useLocalCounter,      CHECK_CHANGED,  ADV_CHANGED);
 	HookWidget(ui->simpleRBPrefix,       EDIT_CHANGED,   ADV_CHANGED);
 	HookWidget(ui->simpleRBSuffix,       EDIT_CHANGED,   ADV_CHANGED);
 	HookWidget(ui->streamDelayEnable,    CHECK_CHANGED,  ADV_CHANGED);
@@ -1550,6 +1551,7 @@ void OBSBasicSettings::LoadAdvOutputStreamingSettings()
 	specCompleter->setFilterMode(Qt::MatchContains);
 	ui->filenameFormatting->setCompleter(specCompleter);
 	ui->filenameFormatting->setToolTip(QTStr("FilenameFormatting.TT"));
+	ui->useLocalCounter->setToolTip(QTStr("LocalCounter.TT"));
 
 	switch (trackIndex) {
 	case 1: ui->advOutTrack1->setChecked(true); break;
@@ -2192,6 +2194,8 @@ void OBSBasicSettings::LoadAdvancedSettings()
 			"FilenameFormatting");
 	bool overwriteIfExists = config_get_bool(main->Config(), "Output",
 			"OverwriteIfExists");
+	bool useLocalCounter = config_get_bool(main->Config(), "Output",
+			"UseLocalCounter");
 	const char *bindIP = config_get_string(main->Config(), "Output",
 			"BindIP");
 	const char *rbPrefix = config_get_string(main->Config(), "SimpleOutput",
@@ -2216,6 +2220,7 @@ void OBSBasicSettings::LoadAdvancedSettings()
 
 	ui->filenameFormatting->setText(filename);
 	ui->overwriteIfExists->setChecked(overwriteIfExists);
+	ui->useLocalCounter->setChecked(useLocalCounter);
 	ui->simpleRBPrefix->setText(rbPrefix);
 	ui->simpleRBSuffix->setText(rbSuffix);
 
@@ -2815,6 +2820,7 @@ void OBSBasicSettings::SaveAdvancedSettings()
 	SaveEdit(ui->simpleRBPrefix, "SimpleOutput", "RecRBPrefix");
 	SaveEdit(ui->simpleRBSuffix, "SimpleOutput", "RecRBSuffix");
 	SaveCheckBox(ui->overwriteIfExists, "Output", "OverwriteIfExists");
+	SaveCheckBox(ui->useLocalCounter, "Output", "UseLocalCounter");
 	SaveCheckBox(ui->streamDelayEnable, "Output", "DelayEnable");
 	SaveSpinBox(ui->streamDelaySec, "Output", "DelaySec");
 	SaveCheckBox(ui->streamDelayPreserve, "Output", "DelayPreserve");
