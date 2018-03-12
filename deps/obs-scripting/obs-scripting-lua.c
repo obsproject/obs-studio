@@ -377,7 +377,7 @@ static void obs_lua_tick_callback(void *priv, float seconds)
 	lock_callback();
 
 	lua_pushnumber(script, (lua_Number)seconds);
-	call_func(obs_lua_tick_callback, 2, 0);
+	call_func(obs_lua_tick_callback, 1, 0);
 
 	unlock_callback();
 }
