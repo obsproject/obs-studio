@@ -312,6 +312,29 @@ void OBSProjector::OBSRenderMultiview(void *data, uint32_t cx, uint32_t cy)
 
 	bool studioMode = main->IsPreviewProgramMode();
 
+	auto renderVB = [solid, color](gs_vertbuffer_t *vb, int cx, int cy,
+			uint32_t colorVal)
+	{
+		if (!vb)
+			return;
+
+		matrix4 transform;
+		matrix4_identity(&transform);
+		transform.x.x = cx;
+		transform.y.y = cy;
+
+		gs_load_vertexbuffer(vb);
+
+		gs_matrix_push();
+		gs_matrix_mul(&transform);
+
+		gs_effect_set_color(color, colorVal);
+		while (gs_effect_loop(solid, "Solid"))
+			gs_draw(GS_LINESTRIP, 0, 0);
+
+		gs_matrix_pop();
+	};
+
 	auto drawBox = [solid, color] (float cx, float cy,
 			uint32_t colorVal)
 	{
@@ -462,8 +485,7 @@ void OBSProjector::OBSRenderMultiview(void *data, uint32_t cx, uint32_t cy)
 		obs_source_video_render(src);
 		endRegion();
 
-		gs_effect_set_color(color, outerColor);
-		renderVB(solid, window->outerBox, targetCX, targetCY);
+		renderVB(window->outerBox, targetCX, targetCY, outerColor);
 
 		gs_matrix_pop();
 
@@ -482,8 +504,6 @@ void OBSProjector::OBSRenderMultiview(void *data, uint32_t cx, uint32_t cy)
 
 		gs_matrix_pop();
 	}
-
-	gs_effect_set_color(color, outerColor);
 
 	/* ----------------------------- */
 	/* draw preview                  */
@@ -511,13 +531,13 @@ void OBSProjector::OBSRenderMultiview(void *data, uint32_t cx, uint32_t cy)
 	gs_matrix_translate3f(sourceX, sourceY, 0.0f);
 	gs_matrix_scale3f(hiScaleX, hiScaleY, 1.0f);
 
-	renderVB(solid, window->outerBox, targetCX, targetCY);
-	renderVB(solid, window->innerBox, targetCX, targetCY);
-	renderVB(solid, window->leftVLine, targetCX, targetCY);
-	renderVB(solid, window->rightVLine, targetCX, targetCY);
-	renderVB(solid, window->leftLine, targetCX, targetCY);
-	renderVB(solid, window->topLine, targetCX, targetCY);
-	renderVB(solid, window->rightLine, targetCX, targetCY);
+	renderVB(window->outerBox, targetCX, targetCY, outerColor);
+	renderVB(window->innerBox, targetCX, targetCY, outerColor);
+	renderVB(window->leftVLine, targetCX, targetCY, outerColor);
+	renderVB(window->rightVLine, targetCX, targetCY, outerColor);
+	renderVB(window->leftLine, targetCX, targetCY, outerColor);
+	renderVB(window->topLine, targetCX, targetCY, outerColor);
+	renderVB(window->rightLine, targetCX, targetCY, outerColor);
 
 	gs_matrix_pop();
 
@@ -557,7 +577,7 @@ void OBSProjector::OBSRenderMultiview(void *data, uint32_t cx, uint32_t cy)
 	gs_matrix_translate3f(sourceX, sourceY, 0.0f);
 	gs_matrix_scale3f(hiScaleX, hiScaleY, 1.0f);
 
-	renderVB(solid, window->outerBox, targetCX, targetCY);
+	renderVB(window->outerBox, targetCX, targetCY, outerColor);
 
 	gs_matrix_pop();
 
