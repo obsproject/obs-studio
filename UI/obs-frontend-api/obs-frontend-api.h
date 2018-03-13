@@ -95,6 +95,7 @@ EXPORT void obs_frontend_set_current_transition(obs_source_t *transition);
 EXPORT char **obs_frontend_get_scene_collections(void);
 EXPORT char *obs_frontend_get_current_scene_collection(void);
 EXPORT void obs_frontend_set_current_scene_collection(const char *collection);
+EXPORT bool obs_frontend_add_scene_collection(const char *name);
 
 EXPORT char **obs_frontend_get_profiles(void);
 EXPORT char *obs_frontend_get_current_profile(void);

@@ -28,6 +28,28 @@
 
 using namespace std;
 
+bool ResolveSceneCollectionFilePath(const char* name, std::string& filePath)
+{
+	char queryPath[512];
+	snprintf(queryPath, sizeof(queryPath),
+		"obs-studio/basic/scenes/%s.json", name);
+
+	char path[512];
+	int ret = GetConfigPath(path, sizeof(path), queryPath);
+
+	if (ret <= 0) {
+		blog(LOG_WARNING, "Failed to get config path for scene collection");
+
+		return false;
+	}
+	else
+	{
+		filePath = path;
+
+		return true;
+	}
+}
+
 void EnumSceneCollections(std::function<bool (const char *, const char *)> &&cb)
 {
 	char path[512];
@@ -152,6 +174,53 @@ static bool GetSceneCollectionName(QWidget *parent, std::string &name,
 	file.erase(file.size() - 5, 5);
 	file.erase(0, file.size() - len);
 	return true;
+}
+
+bool OBSBasic::AddSceneCollection(const char* name)
+{
+	// Check if scene collection exists
+	if (SceneCollectionExists(name))
+		return false;
+
+	// Save current scene collection
+	SaveProjectNow();
+
+	// Change current scene collection name and file path
+	config_set_string(App()->GlobalConfig(), "Basic", "SceneCollection",
+		name);
+	config_set_string(App()->GlobalConfig(), "Basic", "SceneCollectionFile",
+		name);
+
+	// Save new scene collection
+	SaveProjectNow();
+
+	// Refresh menu & title bar
+	if (isQtGuiThread())
+	{
+		RefreshSceneCollections();
+
+		UpdateTitleBar();
+	}
+	else
+	{
+		QMetaObject::invokeMethod(this,
+			"RefreshSceneCollections",
+			Qt::BlockingQueuedConnection);
+
+		QMetaObject::invokeMethod(this,
+			"UpdateTitleBar",
+			Qt::BlockingQueuedConnection);
+	}
+
+	blog(LOG_INFO, "Added scene collection '%s' (clean, %s.json)",
+		name,
+		name);
+	blog(LOG_INFO, "------------------------------------------------");
+
+	if (api) {
+		api->on_event(OBS_FRONTEND_EVENT_SCENE_COLLECTION_LIST_CHANGED);
+		api->on_event(OBS_FRONTEND_EVENT_SCENE_COLLECTION_CHANGED);
+	}
 }
 
 void OBSBasic::AddSceneCollection(bool create_new)
