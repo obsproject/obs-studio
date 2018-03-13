@@ -59,52 +59,6 @@ void FreeWinHttpHandle(HINTERNET handle)
 
 /* ----------------------------------------------------------------------- */
 
-// http://www.codeproject.com/Articles/320748/Haephrati-Elevating-during-runtime
-static bool IsAppRunningAsAdminMode()
-{
-	BOOL  fIsRunAsAdmin        = FALSE;
-	DWORD dwError              = ERROR_SUCCESS;
-	PSID  pAdministratorsGroup = nullptr;
-
-	/* Allocate and initialize a SID of the administrators group. */
-	SID_IDENTIFIER_AUTHORITY NtAuthority = SECURITY_NT_AUTHORITY;
-	if (!AllocateAndInitializeSid(&NtAuthority,
-	                              2,
-	                              SECURITY_BUILTIN_DOMAIN_RID,
-	                              DOMAIN_ALIAS_RID_ADMINS,
-	                              0,
-	                              0,
-	                              0,
-	                              0,
-	                              0,
-	                              0,
-	                              &pAdministratorsGroup)) {
-		dwError = GetLastError();
-		goto Cleanup;
-	}
-
-	/* Determine whether the SID of administrators group is enabled in the
-	 * primary access token of the process. */
-	if (!CheckTokenMembership(nullptr, pAdministratorsGroup,
-				&fIsRunAsAdmin)) {
-		dwError = GetLastError();
-		goto Cleanup;
-	}
-
-Cleanup:
-	/* Centralized cleanup for all allocated resources. */
-	if (pAdministratorsGroup) {
-		FreeSid(pAdministratorsGroup);
-		pAdministratorsGroup = nullptr;
-	}
-
-	/* Throw the error if something failed in the function. */
-	if (ERROR_SUCCESS != dwError)
-		return false;
-
-	return !!fIsRunAsAdmin;
-}
-
 static void Status(const wchar_t *fmt, ...)
 {
 	wchar_t str[512];
@@ -1431,11 +1385,28 @@ static void RestartAsAdmin(LPWSTR lpCmdLine)
 	}
 }
 
+static bool HasElevation()
+{
+	SID_IDENTIFIER_AUTHORITY sia = SECURITY_NT_AUTHORITY;
+	PSID sid = nullptr;
+	BOOL elevated = false;
+	BOOL success;
+
+	success = AllocateAndInitializeSid(&sia, 2, SECURITY_BUILTIN_DOMAIN_RID,
+			DOMAIN_ALIAS_RID_ADMINS, 0, 0, 0, 0, 0, 0, &sid);
+	if (success && sid) {
+		CheckTokenMembership(nullptr, sid, &elevated);
+		FreeSid(sid);
+	}
+
+	return elevated;
+}
+
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR lpCmdLine, int)
 {
 	INITCOMMONCONTROLSEX icce;
 
-	if (!IsAppRunningAsAdminMode()) {
+	if (!HasElevation()) {
 		HANDLE hLowMutex = CreateMutexW(nullptr, true,
 				L"OBSUpdaterRunningAsNonAdminUser");
 
