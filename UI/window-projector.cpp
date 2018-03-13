@@ -523,14 +523,6 @@ void OBSProjector::OBSRenderMultiview(void *data, uint32_t cx, uint32_t cy)
 	}
 	endRegion();
 
-	gs_matrix_pop();
-
-	/* ----------- */
-
-	gs_matrix_push();
-	gs_matrix_translate3f(sourceX, sourceY, 0.0f);
-	gs_matrix_scale3f(hiScaleX, hiScaleY, 1.0f);
-
 	renderVB(window->innerBox, targetCX, targetCY, outerColor);
 	renderVB(window->leftVLine, targetCX, targetCY, outerColor);
 	renderVB(window->rightVLine, targetCX, targetCY, outerColor);
@@ -572,27 +564,14 @@ void OBSProjector::OBSRenderMultiview(void *data, uint32_t cx, uint32_t cy)
 
 	/* ----------- */
 
-	gs_matrix_push();
-	gs_matrix_translate3f(sourceX, sourceY, 0.0f);
-	gs_matrix_scale3f(hiScaleX, hiScaleY, 1.0f);
-
-	gs_matrix_pop();
-
-	/* ----------- */
-
 	cx = obs_source_get_width(programLabel);
 	cy = obs_source_get_height(programLabel);
 
 	gs_matrix_push();
 	gs_matrix_translate3f(labelX, labelY, 0.0f);
-
 	drawBox(cx, cy + int(halfCX * 0.015f), labelColor);
 	obs_source_video_render(programLabel);
-
 	gs_matrix_pop();
-
-	/* ----------------------------- */
-
 	endRegion();
 }
 
