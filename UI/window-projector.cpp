@@ -455,15 +455,17 @@ void OBSProjector::OBSRenderMultiview(void *data, uint32_t cx, uint32_t cy)
 
 		/* ----------- */
 
-		if (src == previewSrc || src == programSrc) {
-			uint32_t colorVal = src == programSrc ? programColor
-					: previewColor;
+		uint32_t colorVal = outerColor;
+		if (src == programSrc)
+			colorVal = programColor;
+		else if (src == previewSrc)
+			colorVal = studioMode ? previewColor : programColor;
 
-			gs_matrix_push();
-			gs_matrix_translate3f(sourceX, sourceY, 0.0f);
-			drawBox(quarterCX, quarterCY, colorVal);
-			gs_matrix_pop();
-		}
+		// Highlight preview/program sources with a proper color
+		gs_matrix_push();
+		gs_matrix_translate3f(sourceX, sourceY, 0.0f);
+		drawBox(quarterCX, quarterCY, colorVal);
+		gs_matrix_pop();
 
 		// Change the background back of the source region
 		gs_matrix_push();
