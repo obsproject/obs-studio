@@ -40,7 +40,6 @@ private:
 	ProjectorType type = ProjectorType::Source;
 	OBSWeakSource multiviewScenes[8];
 	OBSSource     multiviewLabels[10];
-	gs_vertbuffer_t *outerBox = nullptr;
 	gs_vertbuffer_t *innerBox = nullptr;
 	gs_vertbuffer_t *leftVLine = nullptr;
 	gs_vertbuffer_t *rightVLine = nullptr;

@@ -81,13 +81,6 @@ OBSProjector::OBSProjector(QWidget *widget, obs_source_t *source_, int monitor,
 
 	if (type == ProjectorType::Multiview) {
 		obs_enter_graphics();
-		gs_render_start(true);
-		gs_vertex2f(0.001f, 0.001f);
-		gs_vertex2f(0.001f, 0.997f);
-		gs_vertex2f(0.997f, 0.997f);
-		gs_vertex2f(0.997f, 0.001f);
-		gs_vertex2f(0.001f, 0.001f);
-		outerBox = gs_render_save();
 
 		gs_render_start(true);
 		gs_vertex2f(0.04f, 0.04f);
@@ -159,7 +152,6 @@ OBSProjector::~OBSProjector()
 		}
 
 		obs_enter_graphics();
-		gs_vertexbuffer_destroy(outerBox);
 		gs_vertexbuffer_destroy(innerBox);
 		gs_vertexbuffer_destroy(leftVLine);
 		gs_vertexbuffer_destroy(rightVLine);
@@ -335,8 +327,7 @@ void OBSProjector::OBSRenderMultiview(void *data, uint32_t cx, uint32_t cy)
 		gs_matrix_pop();
 	};
 
-	auto drawBox = [solid, color] (float cx, float cy,
-			uint32_t colorVal)
+	auto drawBox = [solid, color](float cx, float cy, uint32_t colorVal)
 	{
 		gs_effect_set_color(color, colorVal);
 		while (gs_effect_loop(solid, "Solid"))
@@ -438,11 +429,15 @@ void OBSProjector::OBSRenderMultiview(void *data, uint32_t cx, uint32_t cy)
 		}
 	};
 
-	/* ----------------------------- */
-	/* draw sources                  */
-
+	// Define the whole usable region for the multiview
 	startRegion(x, y, targetCX * scale, targetCY * scale, 0.0f, targetCXF,
 			0.0f, targetCYF);
+
+	// Change the background color to highlight all sources
+	drawBox(targetCXF, targetCYF, outerColor);
+
+	/* ----------------------------- */
+	/* draw sources                  */
 
 	for (size_t i = 0; i < 8; i++) {
 		OBSSource src = OBSGetStrongRef(window->multiviewScenes[i]);
@@ -468,15 +463,17 @@ void OBSProjector::OBSRenderMultiview(void *data, uint32_t cx, uint32_t cy)
 			gs_matrix_translate3f(sourceX, sourceY, 0.0f);
 			drawBox(quarterCX, quarterCY, colorVal);
 			gs_matrix_pop();
-
-			gs_matrix_push();
-			gs_matrix_translate3f(qiX, qiY, 0.0f);
-			drawBox(qiCX, qiCY, backgroundColor);
-			gs_matrix_pop();
 		}
+
+		// Change the background back of the source region
+		gs_matrix_push();
+		gs_matrix_translate3f(qiX, qiY, 0.0f);
+		drawBox(qiCX, qiCY, backgroundColor);
+		gs_matrix_pop();
 
 		/* ----------- */
 
+		// Draw the actual source
 		gs_matrix_push();
 		gs_matrix_translate3f(qiX, qiY, 0.0f);
 		gs_matrix_scale3f(qiScaleX, qiScaleY, 1.0f);
@@ -484,8 +481,6 @@ void OBSProjector::OBSRenderMultiview(void *data, uint32_t cx, uint32_t cy)
 		setRegion(qiX, qiY, qiCX, qiCY);
 		obs_source_video_render(src);
 		endRegion();
-
-		renderVB(window->outerBox, targetCX, targetCY, outerColor);
 
 		gs_matrix_pop();
 
@@ -517,10 +512,13 @@ void OBSProjector::OBSRenderMultiview(void *data, uint32_t cx, uint32_t cy)
 	gs_matrix_scale3f(hiScaleX, hiScaleY, 1.0f);
 
 	setRegion(sourceX, sourceY, hiCX, hiCY);
-	if (studioMode)
+	if (studioMode) {
+		// Change the background back of the source region
+		drawBox(targetCXF, targetCYF, backgroundColor);
 		obs_source_video_render(previewSrc);
-	else
+	} else {
 		obs_render_main_texture();
+	}
 	endRegion();
 
 	gs_matrix_pop();
@@ -531,7 +529,6 @@ void OBSProjector::OBSRenderMultiview(void *data, uint32_t cx, uint32_t cy)
 	gs_matrix_translate3f(sourceX, sourceY, 0.0f);
 	gs_matrix_scale3f(hiScaleX, hiScaleY, 1.0f);
 
-	renderVB(window->outerBox, targetCX, targetCY, outerColor);
 	renderVB(window->innerBox, targetCX, targetCY, outerColor);
 	renderVB(window->leftVLine, targetCX, targetCY, outerColor);
 	renderVB(window->rightVLine, targetCX, targetCY, outerColor);
@@ -576,8 +573,6 @@ void OBSProjector::OBSRenderMultiview(void *data, uint32_t cx, uint32_t cy)
 	gs_matrix_push();
 	gs_matrix_translate3f(sourceX, sourceY, 0.0f);
 	gs_matrix_scale3f(hiScaleX, hiScaleY, 1.0f);
-
-	renderVB(window->outerBox, targetCX, targetCY, outerColor);
 
 	gs_matrix_pop();
 
