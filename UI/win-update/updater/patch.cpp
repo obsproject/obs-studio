@@ -19,7 +19,13 @@
 #include <stdint.h>
 #include <vector>
 
-#include <lzma.h>
+#ifdef _MSC_VER
+# define restrict __restrict
+# include <lzma.h>
+# undef restrict
+#else
+# include <lzma.h>
+#endif
 
 using namespace std;
 
