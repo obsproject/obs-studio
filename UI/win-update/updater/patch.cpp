@@ -256,7 +256,7 @@ try {
 
 	vector<uint8_t> newData;
 	try {
-		newData.resize(newsize);
+		newData.resize((size_t)newsize);
 	} catch (...) {
 		throw int(-1);
 	}

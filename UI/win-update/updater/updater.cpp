@@ -1171,7 +1171,7 @@ static bool Update(wchar_t *cmdLine)
 	if (!RunDownloadWorkers(2))
 		return false;
 
-	if (completedUpdates != updates.size()) {
+	if ((size_t)completedUpdates != updates.size()) {
 		Status(L"Update failed to download all files.");
 		return false;
 	}
