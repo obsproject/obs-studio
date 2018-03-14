@@ -11,15 +11,15 @@ if(UNIX AND NOT APPLE)
 	include_directories(${X11_INCLUDE_DIR})
 endif()
 
-include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/deps/obs-scripting")
+include_directories(SYSTEM "${obs-studio_BINARY_DIR}/deps/obs-scripting")
 
 configure_file(
 	"${CMAKE_CURRENT_SOURCE_DIR}/frontend-tools-config.h.in"
-	"${CMAKE_BINARY_DIR}/config/frontend-tools-config.h")
+	"${obs-studio_BINARY_DIR}/config/frontend-tools-config.h")
 
 set(frontend-tools_HEADERS
 	${frontend-tools_HEADERS}
-	"${CMAKE_BINARY_DIR}/config/frontend-tools-config.h"
+	"${obs-studio_BINARY_DIR}/config/frontend-tools-config.h"
 	auto-scene-switcher.hpp
 	output-timer.hpp
 	tool-helpers.hpp

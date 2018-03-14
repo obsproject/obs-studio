@@ -1,4 +1,4 @@
-set(OBS_OUTPUT_DIR "${CMAKE_BINARY_DIR}/rundir")
+set(OBS_OUTPUT_DIR "${obs-studio_BINARY_DIR}/rundir")
 
 if(CMAKE_SIZEOF_VOID_P EQUAL 8)
 	set(_lib_suffix 64)
@@ -29,7 +29,7 @@ endif()
 if(DEFINED ENV{obsAdditionalInstallFiles})
 	file(TO_CMAKE_PATH "$ENV{obsAdditionalInstallFiles}" ENV{obsAdditionalInstallFiles})
 else()
-	set(ENV{obsAdditionalInstallFiles} "${CMAKE_SOURCE_DIR}/additional_install_files")
+	set(ENV{obsAdditionalInstallFiles} "${obs-studio_SOURCE_DIR}/additional_install_files")
 endif()
 
 list(APPEND CMAKE_INCLUDE_PATH
@@ -118,7 +118,7 @@ function(obs_finish_bundle)
 
 	install(CODE
 		"if(DEFINED ENV{FIXUP_BUNDLE})
-			execute_process(COMMAND \"${CMAKE_SOURCE_DIR}/cmake/osxbundle/fixup_bundle.sh\" . bin WORKING_DIRECTORY \"\${CMAKE_INSTALL_PREFIX}\")
+			execute_process(COMMAND \"${obs-studio_SOURCE_DIR}/cmake/osxbundle/fixup_bundle.sh\" . bin WORKING_DIRECTORY \"\${CMAKE_INSTALL_PREFIX}\")
 		endif()")
 endfunction()
 
@@ -135,12 +135,12 @@ function(obs_helper_copy_dir target target_configs source dest)
 			"-DTARGET_CONFIGS=${target_configs}"
 			"-DINPUT=${source}"
 			"-DOUTPUT=${dest}"
-			-P "${CMAKE_SOURCE_DIR}/cmake/copy_helper.cmake"
+			-P "${obs-studio_SOURCE_DIR}/cmake/copy_helper.cmake"
 		VERBATIM)
 endfunction()
 
 function(obs_install_additional maintarget)
-	set(addfdir "${CMAKE_SOURCE_DIR}/additional_install_files")
+	set(addfdir "${obs-studio_SOURCE_DIR}/additional_install_files")
 	if(DEFINED ENV{obsAdditionalInstallFiles})
 		set(addfdir "$ENV{obsAdditionalInstallFiles}")
 	endif()
@@ -254,29 +254,29 @@ function(obs_install_additional maintarget)
 
 	obs_helper_copy_dir(${maintarget} ALL
 		"${addfdir}/misc/"
-		"${CMAKE_BINARY_DIR}/rundir/$<CONFIGURATION>/")
+		"${obs-studio_BINARY_DIR}/rundir/$<CONFIGURATION>/")
 	obs_helper_copy_dir(${maintarget} ALL
 		"${addfdir}/data/"
-		"${CMAKE_BINARY_DIR}/rundir/$<CONFIGURATION>/${OBS_DATA_DESTINATION}/")
+		"${obs-studio_BINARY_DIR}/rundir/$<CONFIGURATION>/${OBS_DATA_DESTINATION}/")
 	obs_helper_copy_dir(${maintarget} ALL
 		"${addfdir}/libs${_lib_suffix}/"
-		"${CMAKE_BINARY_DIR}/rundir/$<CONFIGURATION>/${OBS_LIBRARY_DESTINATION}/")
+		"${obs-studio_BINARY_DIR}/rundir/$<CONFIGURATION>/${OBS_LIBRARY_DESTINATION}/")
 	obs_helper_copy_dir(${maintarget} ALL
 		"${addfdir}/exec${_lib_suffix}/"
-		"${CMAKE_BINARY_DIR}/rundir/$<CONFIGURATION>/${OBS_EXECUTABLE_DESTINATION}/")
+		"${obs-studio_BINARY_DIR}/rundir/$<CONFIGURATION>/${OBS_EXECUTABLE_DESTINATION}/")
 
 	obs_helper_copy_dir(${maintarget} "Release;MinSizeRel;RelWithDebInfo"
 		"${addfdir}/exec${_lib_suffix}r/"
-		"${CMAKE_BINARY_DIR}/rundir/$<CONFIGURATION>/${OBS_EXECUTABLE_DESTINATION}/")
+		"${obs-studio_BINARY_DIR}/rundir/$<CONFIGURATION>/${OBS_EXECUTABLE_DESTINATION}/")
 	obs_helper_copy_dir(${maintarget} "Debug"
 		"${addfdir}/exec${_lib_suffix}d/"
-		"${CMAKE_BINARY_DIR}/rundir/$<CONFIGURATION>/${OBS_EXECUTABLE_DESTINATION}/")
+		"${obs-studio_BINARY_DIR}/rundir/$<CONFIGURATION>/${OBS_EXECUTABLE_DESTINATION}/")
 	obs_helper_copy_dir(${maintarget} "Release;MinSizeRel;RelWithDebInfo"
 		"${addfdir}/libs${_lib_suffix}r/"
-		"${CMAKE_BINARY_DIR}/rundir/$<CONFIGURATION>/${OBS_LIBRARY_DESTINATION}/")
+		"${obs-studio_BINARY_DIR}/rundir/$<CONFIGURATION>/${OBS_LIBRARY_DESTINATION}/")
 	obs_helper_copy_dir(${maintarget} "Debug"
 		"${addfdir}/libs${_lib_suffix}d/"
-		"${CMAKE_BINARY_DIR}/rundir/$<CONFIGURATION>/${OBS_LIBRARY_DESTINATION}/")
+		"${obs-studio_BINARY_DIR}/rundir/$<CONFIGURATION>/${OBS_LIBRARY_DESTINATION}/")
 endfunction()
 
 function(export_obs_core target exportname)
@@ -290,10 +290,10 @@ function(export_obs_core target exportname)
 	export(PACKAGE "${exportname}")
 
 	set(CONF_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}")
-	set(CONF_PLUGIN_DEST "${CMAKE_BINARY_DIR}/rundir/${CMAKE_BUILD_TYPE}/obs-plugins/${_lib_suffix}bit")
-	set(CONF_PLUGIN_DEST32 "${CMAKE_BINARY_DIR}/rundir/${CMAKE_BUILD_TYPE}/obs-plugins/32bit")
-	set(CONF_PLUGIN_DEST64 "${CMAKE_BINARY_DIR}/rundir/${CMAKE_BUILD_TYPE}/obs-plugins/64bit")
-	set(CONF_PLUGIN_DATA_DEST "${CMAKE_BINARY_DIR}/rundir/${CMAKE_BUILD_TYPE}/data/obs-plugins")
+	set(CONF_PLUGIN_DEST "${obs-studio_BINARY_DIR}/rundir/${CMAKE_BUILD_TYPE}/obs-plugins/${_lib_suffix}bit")
+	set(CONF_PLUGIN_DEST32 "${obs-studio_BINARY_DIR}/rundir/${CMAKE_BUILD_TYPE}/obs-plugins/32bit")
+	set(CONF_PLUGIN_DEST64 "${obs-studio_BINARY_DIR}/rundir/${CMAKE_BUILD_TYPE}/obs-plugins/64bit")
+	set(CONF_PLUGIN_DATA_DEST "${obs-studio_BINARY_DIR}/rundir/${CMAKE_BUILD_TYPE}/data/obs-plugins")
 	configure_file("${exportname}Config.cmake.in" "${CMAKE_CURRENT_BINARY_DIR}/${exportname}Config.cmake" @ONLY)
 
 	file(RELATIVE_PATH _pdir "${CMAKE_INSTALL_PREFIX}/${OBS_CMAKE_DESTINATION}/${exportname}" "${CMAKE_INSTALL_PREFIX}")
@@ -338,7 +338,7 @@ function(obs_debug_copy_helper target dest)
 			"-DFNAME=$<TARGET_FILE_NAME:${target}>"
 			"-DINPUT=$<TARGET_FILE_DIR:${target}>"
 			"-DOUTPUT=${dest}"
-			-P "${CMAKE_SOURCE_DIR}/cmake/copy_on_debug_helper.cmake"
+			-P "${obs-studio_SOURCE_DIR}/cmake/copy_on_debug_helper.cmake"
 		VERBATIM)
 endfunction()
 

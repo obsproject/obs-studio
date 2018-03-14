@@ -53,8 +53,8 @@ endif()
 
 include_directories(${FFMPEG_INCLUDE_DIRS})
 include_directories(SYSTEM "obs-frontend-api")
-include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/libobs")
-include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/deps/libff")
+include_directories(SYSTEM "${obs-studio_SOURCE_DIR}/libobs")
+include_directories(SYSTEM "${obs-studio_SOURCE_DIR}/deps/libff")
 
 find_package(Libcurl REQUIRED)
 include_directories(${LIBCURL_INCLUDE_DIRS})

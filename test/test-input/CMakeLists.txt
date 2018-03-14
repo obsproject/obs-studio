@@ -1,6 +1,6 @@
 project(test-input)
 
-include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/libobs")
+include_directories(SYSTEM "${obs-studio_SOURCE_DIR}/libobs")
 
 if(MSVC)
 	set(test-input_PLATFORM_DEPS

@@ -1,6 +1,6 @@
 project(win-test)
 
-include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/libobs")
+include_directories(SYSTEM "${obs-studio_SOURCE_DIR}/libobs")
 
 set(win-text_SOURCES
 	test.cpp)

@@ -1,6 +1,6 @@
 # Functions for generating external plugins
 
-set(EXTERNAL_PLUGIN_OUTPUT_DIR "${CMAKE_BINARY_DIR}/rundir")
+set(EXTERNAL_PLUGIN_OUTPUT_DIR "${obs-studio_BINARY_DIR}/rundir")
 
 # Fix XCode includes to ignore warnings on system includes
 function(target_include_directories_system _target)

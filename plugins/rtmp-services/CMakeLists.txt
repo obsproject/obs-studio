@@ -19,10 +19,10 @@ option(CHECK_FOR_SERVICE_UPDATES "Checks for service updates" OFF)
 
 configure_file(
 	"${CMAKE_CURRENT_SOURCE_DIR}/lookup-config.h.in"
-	"${CMAKE_BINARY_DIR}/plugins/rtmp-services/lookup-config.h")
+	"${obs-studio_BINARY_DIR}/plugins/rtmp-services/lookup-config.h")
 
 set(rtmp-services_config_HEADERS
-	"${CMAKE_BINARY_DIR}/plugins/rtmp-services/lookup-config.h")
+	"${obs-studio_BINARY_DIR}/plugins/rtmp-services/lookup-config.h")
 
 add_library(rtmp-services MODULE
 	${rtmp-services_SOURCES}
@@ -35,6 +35,6 @@ target_link_libraries(rtmp-services
 
 target_include_directories(rtmp-services
 	PUBLIC
-		"$<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/plugins/rtmp-services>")
+		"$<BUILD_INTERFACE:${obs-studio_BINARY_DIR}/plugins/rtmp-services>")
 
 install_obs_plugin_with_data(rtmp-services data)

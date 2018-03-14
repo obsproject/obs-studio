@@ -223,10 +223,10 @@ endif()
 
 configure_file(
 	"${CMAKE_CURRENT_SOURCE_DIR}/obsconfig.h.in"
-	"${CMAKE_BINARY_DIR}/config/obsconfig.h")
+	"${obs-studio_BINARY_DIR}/config/obsconfig.h")
 
 set(libobs_config_HEADERS
-	"${CMAKE_BINARY_DIR}/config/obsconfig.h"
+	"${obs-studio_BINARY_DIR}/config/obsconfig.h"
 	obs-config.h)
 
 set(libobs_callback_SOURCES
@@ -423,7 +423,7 @@ source_group("audio-monitoring\\Source Files" FILES ${libobs_audio_monitoring_SO
 source_group("audio-monitoring\\Header Files" FILES ${libobs_audio_monitoring_HEADERS})
 
 if(BUILD_CAPTIONS)
-	include_directories(${CMAKE_SOURCE_DIR}/deps/libcaption)
+	include_directories(${obs-studio_SOURCE_DIR}/deps/libcaption)
 	set(libobs_PLATFORM_DEPS
 		${libobs_PLATFORM_DEPS}
 		caption)
@@ -454,7 +454,7 @@ target_compile_options(libobs
 target_include_directories(libobs
 	PUBLIC
 		"$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>"
-		"$<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/config>"
+		"$<BUILD_INTERFACE:${obs-studio_BINARY_DIR}/config>"
 		"$<INSTALL_INTERFACE:${OBS_INCLUDE_DESTINATION}>")
 target_link_libraries(libobs
 	PRIVATE

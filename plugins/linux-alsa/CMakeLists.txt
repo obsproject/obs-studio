@@ -14,7 +14,7 @@ elseif(NOT ALSA_FOUND)
 endif()
 
 include_directories(
-	SYSTEM "${CMAKE_SOURCE_DIR}/libobs"
+	SYSTEM "${obs-studio_SOURCE_DIR}/libobs"
 	${ALSA_INCLUDE_DIR}
 )
 

@@ -87,7 +87,7 @@ else()
     if(NOT Threads_FOUND AND NOT THREADS_HAVE_PTHREAD_ARG)
       message(STATUS "Check if compiler accepts -pthread")
       try_run(THREADS_PTHREAD_ARG THREADS_HAVE_PTHREAD_ARG
-        ${CMAKE_BINARY_DIR}
+        ${obs-studio_BINARY_DIR}
         ${CMAKE_CURRENT_LIST_DIR}/CheckForPthreads.c
         COMPILE_DEFINITIONS -pthread
         CMAKE_FLAGS -DLINK_LIBRARIES:STRING=-pthread
@@ -99,14 +99,14 @@ else()
         else()
           message(STATUS "Check if compiler accepts -pthread - no")
           file(APPEND
-            ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeError.log
+            ${obs-studio_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeError.log
             "Determining if compiler accepts -pthread returned ${THREADS_PTHREAD_ARG} instead of 2. The compiler had the following output:\n${OUTPUT}\n\n")
           set(THREADS_HAVE_PTHREAD_ARG)
         endif()
       else()
         message(STATUS "Check if compiler accepts -pthread - no")
         file(APPEND
-          ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeError.log
+          ${obs-studio_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeError.log
           "Determining if compiler accepts -pthread failed with the following output:\n${OUTPUT}\n\n")
       endif()
     endif()

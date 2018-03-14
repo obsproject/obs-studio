@@ -4,11 +4,11 @@ set(COMPILE_D3D12_HOOK FALSE CACHE BOOL "Compile D3D12 hook support (required wi
 
 configure_file(
 	"${CMAKE_CURRENT_SOURCE_DIR}/graphics-hook-config.h.in"
-	"${CMAKE_BINARY_DIR}/plugins/win-capture/graphics-hook/config/graphics-hook-config.h")
+	"${obs-studio_BINARY_DIR}/plugins/win-capture/graphics-hook/config/graphics-hook-config.h")
 
 
 set(graphics-hook_HEADERS
-	"${CMAKE_BINARY_DIR}/plugins/win-capture/graphics-hook/config/graphics-hook-config.h"
+	"${obs-studio_BINARY_DIR}/plugins/win-capture/graphics-hook/config/graphics-hook-config.h"
 	graphics-hook.h
 	../graphics-hook-info.h
 	../hook-helpers.h
@@ -38,7 +38,7 @@ add_library(graphics-hook MODULE
 	${graphics-hook_HEADERS})
 
 target_include_directories(graphics-hook PUBLIC
-	"${CMAKE_BINARY_DIR}/plugins/win-capture/graphics-hook/config")
+	"${obs-studio_BINARY_DIR}/plugins/win-capture/graphics-hook/config")
 
 target_link_libraries(graphics-hook
 	ipc-util psapi)

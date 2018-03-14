@@ -15,7 +15,7 @@ project(updater)
 
 include_directories(${OBS_JANSSON_INCLUDE_DIRS})
 include_directories(${LIBLZMA_INCLUDE_DIRS})
-include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/libobs")
+include_directories(SYSTEM "${obs-studio_SOURCE_DIR}/libobs")
 include_directories(${BLAKE2_INCLUDE_DIR})
 
 find_package(ZLIB REQUIRED)

@@ -16,10 +16,10 @@ set(CPACK_PACKAGE_VERSION_PATCH "1")
 set(CPACK_PACKAGE_VERSION "${CPACK_PACKAGE_VERSION_MAJOR}.${CPACK_PACKAGE_VERSION_MINOR}.${CPACK_PACKAGE_VERSION_PATCH}")
 
 if(NOT DEFINED OBS_VERSION_OVERRIDE)
-	if(EXISTS "${CMAKE_SOURCE_DIR}/.git")
+	if(EXISTS "${obs-studio_SOURCE_DIR}/.git")
 		execute_process(COMMAND git describe --always --tags --dirty=-modified
 			OUTPUT_VARIABLE OBS_VERSION
-			WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+			WORKING_DIRECTORY "${obs-studio_SOURCE_DIR}"
 			OUTPUT_STRIP_TRAILING_WHITESPACE)
 	else()
 		set(OBS_VERSION "${CPACK_PACKAGE_VERSION}")
@@ -53,11 +53,11 @@ else()
 endif()
 
 set(CPACK_BUNDLE_NAME "OBS")
-set(CPACK_BUNDLE_PLIST "${CMAKE_SOURCE_DIR}/cmake/osxbundle/Info.plist")
-set(CPACK_BUNDLE_ICON "${CMAKE_SOURCE_DIR}/cmake/osxbundle/obs.icns")
-set(CPACK_BUNDLE_STARTUP_COMMAND "${CMAKE_SOURCE_DIR}/cmake/osxbundle/obslaunch.sh")
+set(CPACK_BUNDLE_PLIST "${obs-studio_SOURCE_DIR}/cmake/osxbundle/Info.plist")
+set(CPACK_BUNDLE_ICON "${obs-studio_SOURCE_DIR}/cmake/osxbundle/obs.icns")
+set(CPACK_BUNDLE_STARTUP_COMMAND "${obs-studio_SOURCE_DIR}/cmake/osxbundle/obslaunch.sh")
 
-set(CPACK_WIX_TEMPLATE "${CMAKE_SOURCE_DIR}/cmake/Modules/WIX.template.in")
+set(CPACK_WIX_TEMPLATE "${obs-studio_SOURCE_DIR}/cmake/Modules/WIX.template.in")
 
 if(INSTALLER_RUN)
 	set(CPACK_PACKAGE_INSTALL_REGISTRY_KEY "OBSStudio")

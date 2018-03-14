@@ -25,7 +25,7 @@ else()
 endif()
 
 include_directories(
-	SYSTEM "${CMAKE_SOURCE_DIR}/libobs"
+	SYSTEM "${obs-studio_SOURCE_DIR}/libobs"
 	${LIBV4L2_INCLUDE_DIRS}
 )
 

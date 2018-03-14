@@ -55,7 +55,7 @@ set(SCRIPTING_ENABLED ON CACHE BOOL "Interal global cmake variable" FORCE)
 
 if(UI_ENABLED)
 	set(EXTRA_LIBS obs-frontend-api)
-	include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/UI/obs-frontend-api")
+	include_directories(SYSTEM "${obs-studio_SOURCE_DIR}/UI/obs-frontend-api")
 endif()
 
 configure_file(
@@ -64,7 +64,7 @@ configure_file(
 
 include(${SWIG_USE_FILE})
 
-include_directories(${CMAKE_SOURCE_DIR}/libobs)
+include_directories(${obs-studio_SOURCE_DIR}/libobs)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 

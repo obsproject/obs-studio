@@ -75,9 +75,9 @@ endif()
 
 configure_file(
 	"${CMAKE_CURRENT_SOURCE_DIR}/obs-outputs-config.h.in"
-	"${CMAKE_BINARY_DIR}/plugins/obs-outputs/config/obs-outputs-config.h")
+	"${obs-studio_BINARY_DIR}/plugins/obs-outputs/config/obs-outputs-config.h")
 
-include_directories("${CMAKE_BINARY_DIR}/plugins/obs-outputs/config")
+include_directories("${obs-studio_BINARY_DIR}/plugins/obs-outputs/config")
 
 if(WIN32)
 	set(obs-outputs_PLATFORM_DEPS
@@ -119,7 +119,7 @@ if(NOT WIN32)
 endif()
 
 set(obs-outputs_HEADERS
-	"${CMAKE_BINARY_DIR}/plugins/obs-outputs/config/obs-outputs-config.h"
+	"${obs-studio_BINARY_DIR}/plugins/obs-outputs/config/obs-outputs-config.h"
 	obs-output-ver.h
 	rtmp-helpers.h
 	rtmp-stream.h

@@ -19,7 +19,7 @@ if(WIN32)
 	endif()
 endif()
 
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/cmake/Modules/")
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${obs-studio_SOURCE_DIR}/cmake/Modules/")
 set(ENABLE_SCRIPTING TRUE CACHE BOOL "Enables scripting")
 set(SCRIPTING_ENABLED OFF CACHE BOOL "Interal global cmake variable" FORCE)
 
@@ -27,10 +27,10 @@ include(ObsHelpers)
 include(ObsCpack)
 include(GNUInstallDirs)
 
-if(MSVC AND NOT EXISTS "${CMAKE_BINARY_DIR}/ALL_BUILD.vcxproj.user")
+if(MSVC AND NOT EXISTS "${obs-studio_BINARY_DIR}/ALL_BUILD.vcxproj.user")
 	file(GENERATE
-		OUTPUT "${CMAKE_BINARY_DIR}/ALL_BUILD.vcxproj.user"
-		INPUT "${CMAKE_SOURCE_DIR}/cmake/ALL_BUILD.vcxproj.user.in")
+		OUTPUT "${obs-studio_BINARY_DIR}/ALL_BUILD.vcxproj.user"
+		INPUT "${obs-studio_SOURCE_DIR}/cmake/ALL_BUILD.vcxproj.user.in")
 endif()
 
 if(NOT CMAKE_BUILD_TYPE)
