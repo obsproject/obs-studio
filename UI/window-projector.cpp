@@ -235,7 +235,15 @@ static inline void renderVB(gs_effect_t *effect, gs_vertbuffer_t *vb,
 static inline uint32_t labelOffset(obs_source_t *label, uint32_t cx)
 {
 	uint32_t w = obs_source_get_width(label);
-	w = uint32_t(float(w) * 0.5f);
+
+	int n; // Number of scenes per row
+	switch (multiviewLayout) {
+	default:
+		n = 4;
+		break;
+	}
+
+	w = uint32_t(w * ((1.0f) / n));
 	return (cx / 2) - w;
 }
 
@@ -393,27 +401,27 @@ void OBSProjector::OBSRenderMultiview(void *data, uint32_t cx, uint32_t cy)
 			sourceX = thickness;
 			sourceY = halfCY + thickness;
 			labelX = offset;
-			labelY = halfCY * 1.8f;
+			labelY = halfCY * 1.85f;
 			if (program) {
 				sourceY = thickness;
-				labelY = halfCY * 0.8f;
+				labelY = halfCY * 0.85f;
 			}
 			break;
 		case MultiviewLayout::VERTICAL_RIGHT_8_SCENES:
 			sourceX = halfCX + thickness;
 			sourceY = halfCY + thickness;
 			labelX = halfCX + offset;
-			labelY = halfCY * 1.8f;
+			labelY = halfCY * 1.85f;
 			if (program) {
 				sourceY = thickness;
-				labelY = halfCY * 0.8f;
+				labelY = halfCY * 0.85f;
 			}
 			break;
 		case MultiviewLayout::HORIZONTAL_BOTTOM_8_SCENES:
 			sourceX = thickness;
 			sourceY = halfCY + thickness;
 			labelX = offset;
-			labelY = halfCY * 1.8f;
+			labelY = halfCY * 1.85f;
 			if (program) {
 				sourceX += halfCX;
 				labelX += halfCX;
@@ -423,7 +431,7 @@ void OBSProjector::OBSRenderMultiview(void *data, uint32_t cx, uint32_t cy)
 			sourceX = thickness;
 			sourceY = thickness;
 			labelX = offset;
-			labelY = halfCY * 0.8f;
+			labelY = halfCY * 0.85f;
 			if (program) {
 				sourceX += halfCX;
 				labelX += halfCX;
@@ -490,13 +498,14 @@ void OBSProjector::OBSRenderMultiview(void *data, uint32_t cx, uint32_t cy)
 				continue;
 
 			offset = labelOffset(label, quarterCX);
-			cx = obs_source_get_width(label);
-			cy = obs_source_get_height(label);
 
 			gs_matrix_push();
 			gs_matrix_translate3f(sourceX + offset,
-					(quarterCY * 0.8f) + sourceY, 0.0f);
-			drawBox(cx, cy + int(quarterCX * 0.015f), labelColor);
+					(quarterCY * 0.85f) + sourceY, 0.0f);
+			gs_matrix_scale3f(hiScaleX, hiScaleY, 1.0f);
+			drawBox(obs_source_get_width(label),
+					obs_source_get_height(label) +
+					int(quarterCX * 0.015f), labelColor);
 			obs_source_video_render(label);
 			gs_matrix_pop();
 		} else {
@@ -541,6 +550,7 @@ void OBSProjector::OBSRenderMultiview(void *data, uint32_t cx, uint32_t cy)
 	// Draw the Label
 	gs_matrix_push();
 	gs_matrix_translate3f(labelX, labelY, 0.0f);
+	gs_matrix_scale3f(hiScaleX, hiScaleY, 1.0f);
 	drawBox(obs_source_get_width(previewLabel),
 			obs_source_get_height(previewLabel) +
 					int(halfCX * 0.015f), labelColor);
@@ -568,6 +578,7 @@ void OBSProjector::OBSRenderMultiview(void *data, uint32_t cx, uint32_t cy)
 	// Draw the Label
 	gs_matrix_push();
 	gs_matrix_translate3f(labelX, labelY, 0.0f);
+	gs_matrix_scale3f(hiScaleX, hiScaleY, 1.0f);
 	drawBox(obs_source_get_width(programLabel),
 			obs_source_get_height(programLabel) +
 					int(halfCX * 0.015f), labelColor);
