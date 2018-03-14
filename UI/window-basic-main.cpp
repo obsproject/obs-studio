@@ -3251,8 +3251,10 @@ int OBSBasic::ResetVideo()
 			ResizeProgram(ovi.base_width, ovi.base_height);
 	}
 
-	if (ret == OBS_VIDEO_SUCCESS)
+	if (ret == OBS_VIDEO_SUCCESS) {
 		OBSBasicStats::InitializeValues();
+		OBSProjector::UpdateMultiviewProjectors();
+	}
 
 	return ret;
 }
