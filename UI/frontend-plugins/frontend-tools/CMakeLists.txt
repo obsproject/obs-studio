@@ -12,6 +12,7 @@ if(UNIX AND NOT APPLE)
 endif()
 
 include_directories(SYSTEM "${obs-studio_BINARY_DIR}/deps/obs-scripting")
+include_directories(SYSTEM "${obs-studio_SOURCE_DIR}/deps/obs-scripting")
 
 configure_file(
 	"${CMAKE_CURRENT_SOURCE_DIR}/frontend-tools-config.h.in"
