@@ -262,13 +262,13 @@ void OBSProjector::OBSRenderMultiview(void *data, uint32_t cx, uint32_t cy)
 		return;
 
 	OBSBasic     *main   = (OBSBasic *)obs_frontend_get_main_window();
-	uint32_t     targetCX, targetCY;
+	uint32_t     thickness = 4;
+	uint32_t     targetCX, targetCY, offset, thicknessx2 = thickness * 2;
 	int          x, y;
 	float        fX, fY, halfCX, halfCY, sourceX, sourceY, labelX, labelY,
 		     quarterCX, quarterCY, scale, targetCXF, targetCYF,
 		     hiCX, hiCY, qiX, qiY, qiCX, qiCY, hiScaleX, hiScaleY,
 		     qiScaleX, qiScaleY;
-	uint32_t     offset;
 
 	gs_effect_t  *solid = obs_get_base_effect(OBS_EFFECT_SOLID);
 	gs_eparam_t  *color = gs_effect_get_param_by_name(solid, "color");
@@ -285,19 +285,19 @@ void OBSProjector::OBSRenderMultiview(void *data, uint32_t cx, uint32_t cy)
 	fX        = float(x);
 	fY        = float(y);
 
-	halfCX    = (targetCXF + 1) / 2;
-	halfCY    = (targetCYF + 1) / 2;
-	hiCX      = (halfCX - 4.0);
-	hiCY      = (halfCY - 4.0);
-	hiScaleX  = hiCX / targetCXF;
-	hiScaleY  = hiCY / targetCYF;
+	halfCX    = targetCXF / 2;
+	halfCY    = targetCYF / 2;
+	hiCX      = halfCX - thicknessx2;
+	hiCY      = halfCY - thicknessx2;
+	hiScaleX  = (halfCX - thicknessx2) / targetCXF;
+	hiScaleY  = (halfCY - thicknessx2) / targetCYF;
 
-	quarterCX = (halfCX + 1) / 2;
-	quarterCY = (halfCY + 1) / 2;
-	qiCX      = (quarterCX - 8.0);
-	qiCY      = (quarterCY - 8.0);
-	qiScaleX  = qiCX / targetCXF;
-	qiScaleY  = qiCY / targetCYF;
+	quarterCX = halfCX / 2;
+	quarterCY = halfCY / 2;
+	qiCX      = quarterCX - thicknessx2;
+	qiCY      = quarterCY - thicknessx2;
+	qiScaleX  = (quarterCX - thicknessx2) / targetCXF;
+	qiScaleY  = (quarterCY - thicknessx2) / targetCYF;
 
 	OBSSource previewSrc = main->GetCurrentSceneSource();
 	OBSSource programSrc = main->GetProgramSource();
@@ -356,7 +356,7 @@ void OBSProjector::OBSRenderMultiview(void *data, uint32_t cx, uint32_t cy)
 			sourceX = halfCX;
 			sourceY = (i / 2 ) * quarterCY;
 			if (i % 2 != 0)
-				sourceX = halfCX + quarterCX;
+				sourceX += quarterCX;
 			break;
 		case MultiviewLayout::VERTICAL_RIGHT_8_SCENES:
 			sourceX = 0;
@@ -382,51 +382,62 @@ void OBSProjector::OBSRenderMultiview(void *data, uint32_t cx, uint32_t cy)
 				sourceY = halfCY + quarterCY;
 			}
 		}
+		qiX = sourceX + thickness;
+		qiY = sourceY + thickness;
 	};
 
 	auto calcPreviewProgram = [&](bool program)
 	{
 		switch (multiviewLayout) {
 		case MultiviewLayout::VERTICAL_LEFT_8_SCENES:
-			sourceX = 2.0f;
-			sourceY = halfCY + 2.0f;
+			sourceX = thickness;
+			sourceY = halfCY + thickness;
 			labelX = offset;
 			labelY = halfCY * 1.8f;
 			if (program) {
-				sourceY = 2.0f;
+				sourceY = thickness;
 				labelY = halfCY * 0.8f;
 			}
 			break;
 		case MultiviewLayout::VERTICAL_RIGHT_8_SCENES:
-			sourceX = halfCX + 2.0f;
-			sourceY = halfCY + 2.0f;
+			sourceX = halfCX + thickness;
+			sourceY = halfCY + thickness;
 			labelX = halfCX + offset;
 			labelY = halfCY * 1.8f;
 			if (program) {
-				sourceY = 2.0f;
+				sourceY = thickness;
 				labelY = halfCY * 0.8f;
 			}
 			break;
 		case MultiviewLayout::HORIZONTAL_BOTTOM_8_SCENES:
-			sourceX = 2.0f;
-			sourceY = halfCY + 2.0f;
+			sourceX = thickness;
+			sourceY = halfCY + thickness;
 			labelX = offset;
 			labelY = halfCY * 1.8f;
 			if (program) {
-				sourceX = halfCX + 2.0f;
-				labelX = halfCX + offset;
+				sourceX += halfCX;
+				labelX += halfCX;
 			}
 			break;
 		default: // MultiviewLayout::HORIZONTAL_TOP_8_SCENES:
-			sourceX = 2.0f;
-			sourceY = 2.0f;
+			sourceX = thickness;
+			sourceY = thickness;
 			labelX = offset;
 			labelY = halfCY * 0.8f;
 			if (program) {
-				sourceX = halfCX + 2.0f;
-				labelX = halfCX + offset;
+				sourceX += halfCX;
+				labelX += halfCX;
 			}
 		}
+	};
+
+	auto paintAreaWithColor = [&](float tx, float ty, float cx, float cy,
+			uint32_t color)
+	{
+		gs_matrix_push();
+		gs_matrix_translate3f(tx, ty, 0.0f);
+		drawBox(cx, cy, color);
+		gs_matrix_pop();
 	};
 
 	// Define the whole usable region for the multiview
@@ -443,63 +454,58 @@ void OBSProjector::OBSRenderMultiview(void *data, uint32_t cx, uint32_t cy)
 		OBSSource src = OBSGetStrongRef(window->multiviewScenes[i]);
 		obs_source *label = window->multiviewLabels[i + 2];
 
-		if (!src)
-			continue;
-		if (!label)
-			continue;
-
+		// Handle all the offsets
 		calcBaseSource(i);
 
-		qiX = sourceX + 4.0f;
-		qiY = sourceY + 4.0f;
+		if (src) {
+			// Chose the proper highlight color
+			uint32_t colorVal = outerColor;
+			if (src == programSrc)
+				colorVal = programColor;
+			else if (src == previewSrc)
+				colorVal = studioMode ? previewColor
+						: programColor;
 
-		/* ----------- */
+			// Paint the background
+			paintAreaWithColor(sourceX, sourceY, quarterCX,
+					quarterCY, colorVal);
+			paintAreaWithColor(qiX, qiY, qiCX, qiCY,
+					backgroundColor);
 
-		uint32_t colorVal = outerColor;
-		if (src == programSrc)
-			colorVal = programColor;
-		else if (src == previewSrc)
-			colorVal = studioMode ? previewColor : programColor;
+			/* ----------- */
 
-		// Highlight preview/program sources with a proper color
-		gs_matrix_push();
-		gs_matrix_translate3f(sourceX, sourceY, 0.0f);
-		drawBox(quarterCX, quarterCY, colorVal);
-		gs_matrix_pop();
+			// Render the source
+			gs_matrix_push();
+			gs_matrix_translate3f(qiX, qiY, 0.0f);
+			gs_matrix_scale3f(qiScaleX, qiScaleY, 1.0f);
+			setRegion(qiX, qiY, qiCX, qiCY);
+			obs_source_video_render(src);
+			endRegion();
+			gs_matrix_pop();
 
-		// Change the background back of the source region
-		gs_matrix_push();
-		gs_matrix_translate3f(qiX, qiY, 0.0f);
-		drawBox(qiCX, qiCY, backgroundColor);
-		gs_matrix_pop();
+			/* ----------- */
 
-		/* ----------- */
+			// Render the label
+			if (!label)
+				continue;
 
-		// Draw the actual source
-		gs_matrix_push();
-		gs_matrix_translate3f(qiX, qiY, 0.0f);
-		gs_matrix_scale3f(qiScaleX, qiScaleY, 1.0f);
+			offset = labelOffset(label, quarterCX);
+			cx = obs_source_get_width(label);
+			cy = obs_source_get_height(label);
 
-		setRegion(qiX, qiY, qiCX, qiCY);
-		obs_source_video_render(src);
-		endRegion();
-
-		gs_matrix_pop();
-
-		/* ----------- */
-
-		offset = labelOffset(label, quarterCX);
-		cx = obs_source_get_width(label);
-		cy = obs_source_get_height(label);
-
-		gs_matrix_push();
-		gs_matrix_translate3f(sourceX + offset,
-				(quarterCY * 0.8f) + sourceY, 0.0f);
-
-		drawBox(cx, cy + int(quarterCX * 0.015f), labelColor);
-		obs_source_video_render(label);
-
-		gs_matrix_pop();
+			gs_matrix_push();
+			gs_matrix_translate3f(sourceX + offset,
+					(quarterCY * 0.8f) + sourceY, 0.0f);
+			drawBox(cx, cy + int(quarterCX * 0.015f), labelColor);
+			obs_source_video_render(label);
+			gs_matrix_pop();
+		} else {
+			// Paint the background
+			paintAreaWithColor(sourceX, sourceY, quarterCX,
+					quarterCY, outerColor);
+			paintAreaWithColor(qiX, qiY, qiCX, qiCY,
+					backgroundColor);
+		}
 	}
 
 	/* ----------------------------- */
@@ -509,40 +515,36 @@ void OBSProjector::OBSRenderMultiview(void *data, uint32_t cx, uint32_t cy)
 	offset = labelOffset(previewLabel, halfCX);
 	calcPreviewProgram(false);
 
+	// Paint the background
+	paintAreaWithColor(sourceX, sourceY, hiCX, hiCY, backgroundColor);
+
+	// Scale and Draw the preview
 	gs_matrix_push();
 	gs_matrix_translate3f(sourceX, sourceY, 0.0f);
 	gs_matrix_scale3f(hiScaleX, hiScaleY, 1.0f);
-
 	setRegion(sourceX, sourceY, hiCX, hiCY);
-	if (studioMode) {
-		// Change the background back of the source region
-		drawBox(targetCXF, targetCYF, backgroundColor);
+	if (studioMode)
 		obs_source_video_render(previewSrc);
-	} else {
+	else
 		obs_render_main_texture();
-	}
-	endRegion();
-
 	renderVB(window->innerBox, targetCX, targetCY, outerColor);
 	renderVB(window->leftVLine, targetCX, targetCY, outerColor);
 	renderVB(window->rightVLine, targetCX, targetCY, outerColor);
 	renderVB(window->leftLine, targetCX, targetCY, outerColor);
 	renderVB(window->topLine, targetCX, targetCY, outerColor);
 	renderVB(window->rightLine, targetCX, targetCY, outerColor);
-
+	endRegion();
 	gs_matrix_pop();
 
 	/* ----------- */
 
-	cx = obs_source_get_width(previewLabel);
-	cy = obs_source_get_height(previewLabel);
-
+	// Draw the Label
 	gs_matrix_push();
 	gs_matrix_translate3f(labelX, labelY, 0.0f);
-
-	drawBox(cx, cy + int(halfCX * 0.015f), labelColor);
+	drawBox(obs_source_get_width(previewLabel),
+			obs_source_get_height(previewLabel) +
+					int(halfCX * 0.015f), labelColor);
 	obs_source_video_render(previewLabel);
-
 	gs_matrix_pop();
 
 	/* ----------------------------- */
@@ -552,24 +554,23 @@ void OBSProjector::OBSRenderMultiview(void *data, uint32_t cx, uint32_t cy)
 	offset = labelOffset(programLabel, halfCX);
 	calcPreviewProgram(true);
 
+	// Scale and Draw the program
 	gs_matrix_push();
 	gs_matrix_translate3f(sourceX, sourceY, 0.0f);
 	gs_matrix_scale3f(hiScaleX, hiScaleY, 1.0f);
-
 	setRegion(sourceX, sourceY, hiCX, hiCY);
 	obs_render_main_texture();
 	endRegion();
-
 	gs_matrix_pop();
 
 	/* ----------- */
 
-	cx = obs_source_get_width(programLabel);
-	cy = obs_source_get_height(programLabel);
-
+	// Draw the Label
 	gs_matrix_push();
 	gs_matrix_translate3f(labelX, labelY, 0.0f);
-	drawBox(cx, cy + int(halfCX * 0.015f), labelColor);
+	drawBox(obs_source_get_width(programLabel),
+			obs_source_get_height(programLabel) +
+					int(halfCX * 0.015f), labelColor);
 	obs_source_video_render(programLabel);
 	gs_matrix_pop();
 	endRegion();
