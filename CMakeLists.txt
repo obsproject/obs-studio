@@ -19,7 +19,7 @@ if(WIN32)
 	endif()
 endif()
 
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/cmake/Modules/")
 set(ENABLE_SCRIPTING TRUE CACHE BOOL "Enables scripting")
 set(SCRIPTING_ENABLED OFF CACHE BOOL "Interal global cmake variable" FORCE)
 
