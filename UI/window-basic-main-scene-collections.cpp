@@ -28,28 +28,6 @@
 
 using namespace std;
 
-bool ResolveSceneCollectionFilePath(const char* name, std::string& filePath)
-{
-	char queryPath[512];
-	snprintf(queryPath, sizeof(queryPath),
-		"obs-studio/basic/scenes/%s.json", name);
-
-	char path[512];
-	int ret = GetConfigPath(path, sizeof(path), queryPath);
-
-	if (ret <= 0) {
-		blog(LOG_WARNING, "Failed to get config path for scene collection");
-
-		return false;
-	}
-	else
-	{
-		filePath = path;
-
-		return true;
-	}
-}
-
 void EnumSceneCollections(std::function<bool (const char *, const char *)> &&cb)
 {
 	char path[512];
