@@ -1647,13 +1647,19 @@ void OBSBasic::OBSInit()
 
 	ui->viewMenu->addSeparator();
 
-	QMenu *multiviewProjectorMenu = new QMenu(QTStr("MultiviewProjector"));
-	AddProjectorMenuMonitors(multiviewProjectorMenu, this,
-			SLOT(OpenMultiviewProjector()));
+	multiviewProjectorMenu = new QMenu(QTStr("MultiviewProjector"));
 	ui->viewMenu->addMenu(multiviewProjectorMenu);
-
+	connect(ui->viewMenu->menuAction(), &QAction::hovered, this,
+			&OBSBasic::UpdateMultiviewProjectorMenu);
 	ui->viewMenu->addAction(QTStr("MultiviewWindowed"),
 			this, SLOT(OpenMultiviewWindow()));
+}
+
+void OBSBasic::UpdateMultiviewProjectorMenu()
+{
+	multiviewProjectorMenu->clear();
+	AddProjectorMenuMonitors(multiviewProjectorMenu, this,
+			SLOT(OpenMultiviewProjector()));
 }
 
 void OBSBasic::InitHotkeys()
