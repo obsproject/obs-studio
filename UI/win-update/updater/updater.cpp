@@ -604,6 +604,11 @@ static inline bool is_64bit_file(const char *file)
 	       strstr(file, "64.exe") != nullptr;
 }
 
+static inline bool has_str(const char *file, const char *str)
+{
+	return (file && str) ? (strstr(file, str) != nullptr) : false;
+}
+
 #define UTF8ToWideBuf(wide, utf8) UTF8ToWide(wide, _countof(wide), utf8)
 #define WideToUTF8Buf(utf8, wide) WideToUTF8(utf8, _countof(utf8), wide)
 
@@ -655,6 +660,12 @@ static bool AddPackageUpdateFiles(json_t *root, size_t idx,
 			continue;
 
 		if (!isWin64 && is_64bit_file(fileUTF8))
+			continue;
+
+		/* ignore update files of opposite arch to reduce download */
+
+		if (( is32bit && has_str(fileUTF8, "/64bit/")) ||
+		    (!is32bit && has_str(fileUTF8, "/32bit/")))
 			continue;
 
 		/* convert strings to wide */
