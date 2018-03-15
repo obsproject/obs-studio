@@ -3520,10 +3520,10 @@ static void AddProjectorMenuMonitors(QMenu *parent, QObject *target,
 		QString str = QString("%1 %2: %3x%4 @ %5,%6").
 			arg(QTStr("Display"),
 			    QString::number(i),
-			    QString::number((int)screenGeometry.width()),
-			    QString::number((int)screenGeometry.height()),
-			    QString::number((int)screenGeometry.x()),
-			    QString::number((int)screenGeometry.y()));
+			    QString::number(screenGeometry.width()),
+			    QString::number(screenGeometry.height()),
+			    QString::number(screenGeometry.x()),
+			    QString::number(screenGeometry.y()));
 
 		action = parent->addAction(str, target, slot);
 		action->setProperty("monitor", i);
