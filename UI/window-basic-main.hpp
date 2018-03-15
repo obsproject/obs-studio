@@ -126,7 +126,7 @@ private:
 	std::vector<int> previewProjectorArray;
 
 	bool loaded = false;
-	__declspec(align(64)) long disableSaving = 1; // Must be aligned for os_atomic_inc_long() and os_atomic_dec_long() to behave predictably
+	long disableSaving = 1;
 	bool projectChanged = false;
 	bool previewEnabled = true;
 	bool fullscreenInterface = false;
