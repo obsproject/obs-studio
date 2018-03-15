@@ -1047,6 +1047,7 @@ static bool UpdateVS2017Redists(json_t *root)
 		DeleteFile(destPath.c_str());
 		Status(L"Update failed: Couldn't verify integrity of %s",
 				L"Visual C++ 2017 Redistributable");
+		return false;
 	}
 
 	/* ------------------------------------------ *
@@ -1070,6 +1071,7 @@ static bool UpdateVS2017Redists(json_t *root)
 		WaitForSingleObject(pi.hProcess, INFINITE);
 		CloseHandle(pi.hProcess);
 	} else {
+		DeleteFile(destPath.c_str());
 		Status(L"Update failed: Could not execute "
 		       L"%s (error code %d)",
 		       L"Visual C++ 2017 Redistributable",
