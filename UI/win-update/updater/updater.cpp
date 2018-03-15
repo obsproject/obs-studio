@@ -57,6 +57,50 @@ void FreeWinHttpHandle(HINTERNET handle)
 
 /* ----------------------------------------------------------------------- */
 
+static inline bool is_64bit_windows(void);
+
+static inline bool HasVS2017Redist2()
+{
+	wchar_t base[MAX_PATH];
+	wchar_t path[MAX_PATH];
+	WIN32_FIND_DATAW wfd;
+	HANDLE handle;
+	int folder = (is32bit && is_64bit_windows())
+		? CSIDL_SYSTEMX86
+		: CSIDL_SYSTEM;
+
+	SHGetFolderPathW(NULL, folder, NULL, SHGFP_TYPE_CURRENT, base);
+
+	StringCbCopyW(path, sizeof(path), base);
+	StringCbCatW(path, sizeof(path), L"\\msvcp140.dll");
+	handle = FindFirstFileW(path, &wfd);
+	if (handle == INVALID_HANDLE_VALUE) {
+		return false;
+	} else {
+		FindClose(handle);
+	}
+
+	StringCbCopyW(path, sizeof(path), base);
+	StringCbCatW(path, sizeof(path), L"\\vcruntime140.dll");
+	handle = FindFirstFileW(path, &wfd);
+	if (handle == INVALID_HANDLE_VALUE) {
+		return false;
+	} else {
+		FindClose(handle);
+	}
+
+	return true;
+}
+
+static bool HasVS2017Redist()
+{
+	PVOID old = nullptr;
+	bool redirect = !!Wow64DisableWow64FsRedirection(&old);
+	bool success = HasVS2017Redist2();
+	if (redirect) Wow64RevertWow64FsRedirection(old);
+	return success;
+}
+
 static void Status(const wchar_t *fmt, ...)
 {
 	wchar_t str[512];
@@ -882,6 +926,153 @@ static wchar_t tempPath[MAX_PATH] = {};
 #define HASH_NULL \
 	L"0000000000000000000000000000000000000000"
 
+static bool UpdateVS2017Redists(json_t *root)
+{
+	/* ------------------------------------------ *
+	 * Initialize session                         */
+
+	const DWORD tlsProtocols = WINHTTP_FLAG_SECURE_PROTOCOL_TLS1_2;
+
+	HttpHandle hSession = WinHttpOpen(L"OBS Studio Updater/2.1",
+	                                  WINHTTP_ACCESS_TYPE_DEFAULT_PROXY,
+	                                  WINHTTP_NO_PROXY_NAME,
+	                                  WINHTTP_NO_PROXY_BYPASS,
+	                                  0);
+	if (!hSession) {
+		Status(L"Update failed: Couldn't open obsproject.com");
+		return false;
+	}
+
+	WinHttpSetOption(hSession, WINHTTP_OPTION_SECURE_PROTOCOLS,
+		(LPVOID)&tlsProtocols, sizeof(tlsProtocols));
+
+	HttpHandle hConnect = WinHttpConnect(hSession, L"obsproject.com",
+			INTERNET_DEFAULT_HTTPS_PORT, 0);
+	if (!hConnect) {
+		Status(L"Update failed: Couldn't connect to obsproject.com");
+		return false;
+	}
+
+	int responseCode;
+
+	DWORD waitResult = WaitForSingleObject(cancelRequested, 0);
+	if (waitResult == WAIT_OBJECT_0) {
+		return false;
+	}
+
+	/* ------------------------------------------ *
+	 * Download redist                            */
+
+	Status(L"Downloading %s", L"Visual C++ 2017 Redistributable");
+
+	const wchar_t *file = (is32bit)
+		? L"vc2017redist_x86.exe"
+		: L"vc2017redist_x64.exe";
+
+	wstring sourceURL;
+	sourceURL += L"https://obsproject.com/downloads/";
+	sourceURL += file;
+
+	wstring destPath;
+	destPath += tempPath;
+	destPath += L"\\";
+	destPath += file;
+
+	if (!HTTPGetFile(hConnect,
+			 sourceURL.c_str(),
+			 destPath.c_str(),
+			 L"Accept-Encoding: gzip",
+			 &responseCode)) {
+
+		DeleteFile(destPath.c_str());
+		Status(L"Update failed: Could not download "
+		       L"%s (error code %d)",
+		       L"Visual C++ 2017 Redistributable",
+		       responseCode);
+		return false;
+	}
+
+	/* ------------------------------------------ *
+	 * Get expected hash                          */
+
+	json_t *redistJson = json_object_get(root, is32bit
+			? "vc2017_redist_x86"
+			: "vc2017_redist_x64");
+	if (!redistJson) {
+		Status(L"Update failed: Could not parse VC2017 redist json");
+		return false;
+	}
+
+	const char *expectedHashUTF8 = json_string_value(redistJson);
+	wchar_t expectedHashWide[BLAKE2_HASH_STR_LENGTH];
+	BYTE expectedHash[BLAKE2_HASH_LENGTH];
+
+	if (!UTF8ToWideBuf(expectedHashWide, expectedHashUTF8)) {
+		DeleteFile(destPath.c_str());
+		Status(L"Update failed: Couldn't convert Json for redist hash");
+		return false;
+	}
+
+	StringToHash(expectedHashWide, expectedHash);
+
+	wchar_t downloadHashWide[BLAKE2_HASH_STR_LENGTH];
+	BYTE downloadHash[BLAKE2_HASH_LENGTH];
+
+	/* ------------------------------------------ *
+	 * Get download hash                          */
+
+	if (!CalculateFileHash(destPath.c_str(), downloadHash)) {
+		DeleteFile(destPath.c_str());
+		Status(L"Update failed: Couldn't verify integrity of %s",
+				L"Visual C++ 2017 Redistributable");
+		return false;
+	}
+
+	/* ------------------------------------------ *
+	 * If hashes do not match, integrity failed   */
+
+	HashToString(downloadHash, downloadHashWide);
+	if (wcscmp(expectedHashWide, downloadHashWide) != 0) {
+		DeleteFile(destPath.c_str());
+		Status(L"Update failed: Couldn't verify integrity of %s",
+				L"Visual C++ 2017 Redistributable");
+	}
+
+	/* ------------------------------------------ *
+	 * If hashes match, install redist            */
+
+	wchar_t commandline[MAX_PATH + MAX_PATH];
+	StringCbPrintf(commandline, sizeof(commandline),
+			L"%s /install /quiet /norestart", destPath.c_str());
+
+	PROCESS_INFORMATION pi = {};
+	STARTUPINFO si = {};
+	si.cb = sizeof(si);
+
+	bool success = !!CreateProcessW(destPath.c_str(), commandline,
+			nullptr, nullptr, false, CREATE_NO_WINDOW,
+			nullptr, nullptr, &si, &pi);
+	if (success) {
+		Status(L"Installing %s...", L"Visual C++ 2017 Redistributable");
+
+		CloseHandle(pi.hThread);
+		WaitForSingleObject(pi.hProcess, INFINITE);
+		CloseHandle(pi.hProcess);
+	} else {
+		Status(L"Update failed: Could not execute "
+		       L"%s (error code %d)",
+		       L"Visual C++ 2017 Redistributable",
+		       (int)GetLastError());
+	}
+
+	waitResult = WaitForSingleObject(cancelRequested, 0);
+	if (waitResult == WAIT_OBJECT_0) {
+		return false;
+	}
+
+	return success;
+}
+
 static bool Update(wchar_t *cmdLine)
 {
 	/* ------------------------------------- *
@@ -1041,6 +1232,15 @@ static bool Update(wchar_t *cmdLine)
 	if (!updates.size()) {
 		Status(L"All available updates are already installed.");
 		return true;
+	}
+
+	/* ------------------------------------- *
+	 * Check for VS2017 redistributables     */
+
+	if (!HasVS2017Redist()) {
+		if (!UpdateVS2017Redists(root)) {
+			return false;
+		}
 	}
 
 	/* ------------------------------------- *
