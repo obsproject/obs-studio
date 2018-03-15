@@ -4249,32 +4249,11 @@ void OBSBasic::UploadLog(const char *file)
 
 	ui->menuLogFiles->setEnabled(false);
 
-	auto data_deleter = [](obs_data_t *d) { obs_data_release(d); };
-	using data_t = unique_ptr<struct obs_data, decltype(data_deleter)>;
-
-	data_t content{obs_data_create(), data_deleter};
-	data_t files{obs_data_create(), data_deleter};
-	data_t request{obs_data_create(), data_deleter};
-
-	obs_data_set_string(content.get(), "content", fileString);
-
-	obs_data_set_obj(files.get(), file, content.get());
-
 	stringstream ss;
 	ss << "OBS " << App()->GetVersionString()
-	   << " log file uploaded at " << CurrentDateTimeString();
-	obs_data_set_string(request.get(), "description", ss.str().c_str());
-	obs_data_set_bool(request.get(), "public", false);
-	obs_data_set_obj(request.get(), "files", files.get());
+	   << " log file uploaded at " << CurrentDateTimeString()
+	   << "\n\n" << fileString;
 
-	const char *json = obs_data_get_json(request.get());
-	if (!json) {
-		blog(LOG_ERROR, "Failed to get JSON data for log upload");
-		return;
-	}
-
-	QBuffer *postData = new QBuffer();
-	postData->setData(json, (int) strlen(json));
 
 	if (logUploadThread) {
 		logUploadThread->wait();
@@ -4282,8 +4261,9 @@ void OBSBasic::UploadLog(const char *file)
 	}
 
 	RemoteTextThread *thread = new RemoteTextThread(
-			"https://api.github.com/gists",
-			"application/json", json);
+			"https://hastebin.com/documents",
+			"text/plain", ss.str().c_str());
+
 	logUploadThread = thread;
 	connect(thread, &RemoteTextThread::Result,
 			this, &OBSBasic::logUploadFinished);
@@ -4343,7 +4323,9 @@ void OBSBasic::logUploadFinished(const QString &text, const QString &error)
 	}
 
 	obs_data_t *returnData = obs_data_create_from_json(QT_TO_UTF8(text));
-	QString logURL         = obs_data_get_string(returnData, "html_url");
+	string resURL = "https://hastebin.com/";
+	resURL += obs_data_get_string(returnData, "key");
+	QString logURL = resURL.c_str();
 	obs_data_release(returnData);
 
 	OBSLogReply logDialog(this, logURL);
