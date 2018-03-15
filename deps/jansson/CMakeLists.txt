@@ -104,10 +104,10 @@ include (CheckTypeSize)
 
 if (MSVC)
    # Turn off Microsofts "security" warnings.
-   add_definitions( "/W3 /D_CRT_SECURE_NO_WARNINGS /wd4005 /wd4996 /nologo" )
+   add_definitions( "/W3 /D_CRT_SECURE_NO_WARNINGS /wd4005 /wd4996 /nologo /MT" )
 
    # Disabled by OBS, options already set by top level CMakeLists
-   if (FALSE)
+   if (TRUE)
       if (JANSSON_STATIC_CRT)
          set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} /MT")
          set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} /MTd")

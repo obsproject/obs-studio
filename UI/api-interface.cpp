@@ -92,12 +92,26 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 	void obs_frontend_set_current_scene(obs_source_t *scene) override
 	{
 		if (main->IsPreviewProgramMode()) {
-			QMetaObject::invokeMethod(main, "TransitionToScene",
+			if (main->isQtGuiThread())
+			{
+				main->TransitionToScene(scene);
+			}
+			else
+			{
+				QMetaObject::invokeMethod(main, "TransitionToScene", Qt::BlockingQueuedConnection,
 					Q_ARG(OBSSource, OBSSource(scene)));
+			}
 		} else {
-			QMetaObject::invokeMethod(main, "SetCurrentScene",
+			if (main->isQtGuiThread())
+			{
+				main->SetCurrentScene(scene, false);
+			}
+			else
+			{
+				QMetaObject::invokeMethod(main, "SetCurrentScene", Qt::BlockingQueuedConnection,
 					Q_ARG(OBSSource, OBSSource(scene)),
 					Q_ARG(bool, false));
+			}
 		}
 	}
 
@@ -167,6 +181,11 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 		}
 	}
 
+	bool obs_frontend_add_scene_collection(const char *name)
+	{
+		return main->AddSceneCollection(name);
+	}
+
 	void obs_frontend_get_profiles(
 			std::vector<std::string> &strings) override
 	{
@@ -207,12 +226,12 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 
 	void obs_frontend_streaming_start(void) override
 	{
-		QMetaObject::invokeMethod(main, "StartStreaming");
+		QMetaObject::invokeMethod(main, "StartStreaming", Qt::QueuedConnection);
 	}
 
 	void obs_frontend_streaming_stop(void) override
 	{
-		QMetaObject::invokeMethod(main, "StopStreaming");
+		QMetaObject::invokeMethod(main, "StopStreaming", Qt::QueuedConnection);
 	}
 
 	bool obs_frontend_streaming_active(void) override
@@ -327,6 +346,16 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 	void obs_frontend_save(void) override
 	{
 		main->SaveProject();
+	}
+
+	void obs_frontend_save_suspend(void) override
+	{
+		QMetaObject::invokeMethod(main, "SuspendSaving");
+	}
+
+	void obs_frontend_save_resume(void) override
+	{
+		QMetaObject::invokeMethod(main, "ResumeSaving");
 	}
 
 	void obs_frontend_add_save_callback(obs_frontend_save_cb callback,

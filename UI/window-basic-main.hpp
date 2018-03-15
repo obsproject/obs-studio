@@ -125,6 +125,8 @@ private:
 	std::vector<int> multiviewProjectorArray;
 	std::vector<int> previewProjectorArray;
 
+	long m_isLoading = 0;
+
 	bool loaded = false;
 	long disableSaving = 1;
 	bool projectChanged = false;
@@ -257,8 +259,13 @@ private:
 	void GetAudioSourceProperties();
 	void VolControlContextMenu();
 
+	bool AddSceneCollection(const char* name);
 	void AddSceneCollection(bool create_new);
+
+private slots:
 	void RefreshSceneCollections();
+
+private:
 	void ChangeSceneCollection();
 	void LogScenes();
 
@@ -377,6 +384,18 @@ private:
 		obs_data_array_t *savedMultiviewProjectors);
 
 public slots:
+	void SuspendSaving() {
+		os_atomic_inc_long(&disableSaving);
+	}
+
+	void ResumeSaving() {
+		long result = os_atomic_dec_long(&disableSaving);
+
+		if (result == 0) {
+			SaveProject();
+		}
+	}
+
 	void StartStreaming();
 	void StopStreaming();
 	void ForceStopStreaming();
@@ -477,6 +496,7 @@ private:
 	static void SceneItemDeselected(void *data, calldata_t *params);
 	static void SourceLoaded(void *data, obs_source_t *source);
 	static void SourceRemoved(void *data, calldata_t *params);
+	static void SourceCreated(void *data, calldata_t *params);
 	static void SourceActivated(void *data, calldata_t *params);
 	static void SourceDeactivated(void *data, calldata_t *params);
 	static void SourceRenamed(void *data, calldata_t *params);
@@ -558,7 +578,10 @@ public:
 	QMenu *AddScaleFilteringMenu(obs_sceneitem_t *item);
 	void CreateSourcePopupMenu(QListWidgetItem *item, bool preview);
 
+public slots:
 	void UpdateTitleBar();
+
+public:
 	void UpdateSceneSelection(OBSSource source);
 
 	void SystemTrayInit();
@@ -728,6 +751,17 @@ public:
 
 	virtual int GetProfilePath(char *path, size_t size, const char *file)
 		const override;
+
+public:
+	// Detect whether we're running in QT GUI thread context
+	//
+	// This is used to determine whether to call QMetaObject::invokeMethod with
+	// Qt::AutoConnection or Qt::BlockingQueuedConnection
+	//
+	// If QMetaObject::invokeMethod is called with Qt::BlockingQueuedConnection on
+	// QT GUI thread, a dead lock will occur.
+	//
+	static bool isQtGuiThread();
 
 private:
 	std::unique_ptr<Ui::OBSBasic> ui;

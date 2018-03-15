@@ -154,6 +154,53 @@ static bool GetSceneCollectionName(QWidget *parent, std::string &name,
 	return true;
 }
 
+bool OBSBasic::AddSceneCollection(const char* name)
+{
+	// Check if scene collection exists
+	if (SceneCollectionExists(name))
+		return false;
+
+	// Save current scene collection
+	SaveProjectNow();
+
+	// Change current scene collection name and file path
+	config_set_string(App()->GlobalConfig(), "Basic", "SceneCollection",
+		name);
+	config_set_string(App()->GlobalConfig(), "Basic", "SceneCollectionFile",
+		name);
+
+	// Save new scene collection
+	SaveProjectNow();
+
+	// Refresh menu & title bar
+	if (isQtGuiThread())
+	{
+		RefreshSceneCollections();
+
+		UpdateTitleBar();
+	}
+	else
+	{
+		QMetaObject::invokeMethod(this,
+			"RefreshSceneCollections",
+			Qt::BlockingQueuedConnection);
+
+		QMetaObject::invokeMethod(this,
+			"UpdateTitleBar",
+			Qt::BlockingQueuedConnection);
+	}
+
+	blog(LOG_INFO, "Added scene collection '%s' (clean, %s.json)",
+		name,
+		name);
+	blog(LOG_INFO, "------------------------------------------------");
+
+	if (api) {
+		api->on_event(OBS_FRONTEND_EVENT_SCENE_COLLECTION_LIST_CHANGED);
+		api->on_event(OBS_FRONTEND_EVENT_SCENE_COLLECTION_CHANGED);
+	}
+}
+
 void OBSBasic::AddSceneCollection(bool create_new)
 {
 	std::string name;
