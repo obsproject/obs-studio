@@ -147,27 +147,23 @@ if (NOT ZLIB_BIN_FILES)
 		)
 endif()
 
-if (CMAKE_CONFIGURATION_TYPES MATCHES "Debug")
-	file(GLOB QT_DEBUG_BIN_FILES
-		"${Qt5Core_DIR}/../../../bin/Qt5Cored.dll"
-		"${Qt5Core_DIR}/../../../bin/Qt5Guid.dll"
-		"${Qt5Core_DIR}/../../../bin/Qt5Widgetsd.dll"
-		"${Qt5Core_DIR}/../../../bin/libGLESv2d.dll"
-		"${Qt5Core_DIR}/../../../bin/libEGLd.dll")
-	file(GLOB QT_DEBUG_PLAT_BIN_FILES
-		"${Qt5Core_DIR}/../../../plugins/platforms/qwindowsd.dll")
-endif()
+file(GLOB QT_DEBUG_BIN_FILES
+	"${Qt5Core_DIR}/../../../bin/Qt5Cored.dll"
+	"${Qt5Core_DIR}/../../../bin/Qt5Guid.dll"
+	"${Qt5Core_DIR}/../../../bin/Qt5Widgetsd.dll"
+	"${Qt5Core_DIR}/../../../bin/libGLESv2d.dll"
+	"${Qt5Core_DIR}/../../../bin/libEGLd.dll")
+file(GLOB QT_DEBUG_PLAT_BIN_FILES
+	"${Qt5Core_DIR}/../../../plugins/platforms/qwindowsd.dll")
 
-if (CMAKE_CONFIGURATION_TYPES MATCHES "Rel")
-	file(GLOB QT_BIN_FILES
-		"${Qt5Core_DIR}/../../../bin/Qt5Core.dll"
-		"${Qt5Core_DIR}/../../../bin/Qt5Gui.dll"
-		"${Qt5Core_DIR}/../../../bin/Qt5Widgets.dll"
-		"${Qt5Core_DIR}/../../../bin/libGLESv2.dll"
-		"${Qt5Core_DIR}/../../../bin/libEGL.dll")
-	file(GLOB QT_PLAT_BIN_FILES
-		"${Qt5Core_DIR}/../../../plugins/platforms/qwindows.dll")
-endif()
+file(GLOB QT_BIN_FILES
+	"${Qt5Core_DIR}/../../../bin/Qt5Core.dll"
+	"${Qt5Core_DIR}/../../../bin/Qt5Gui.dll"
+	"${Qt5Core_DIR}/../../../bin/Qt5Widgets.dll"
+	"${Qt5Core_DIR}/../../../bin/libGLESv2.dll"
+	"${Qt5Core_DIR}/../../../bin/libEGL.dll")
+file(GLOB QT_PLAT_BIN_FILES
+	"${Qt5Core_DIR}/../../../plugins/platforms/qwindows.dll")
 
 file(GLOB QT_ICU_BIN_FILES
 	"${Qt5Core_DIR}/../../../bin/icu*.dll")
