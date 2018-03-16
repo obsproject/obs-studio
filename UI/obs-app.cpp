@@ -1161,9 +1161,9 @@ static void delete_oldest_file(const char *location)
 	}
 }
 
-static void get_last_log(void)
+static void get_last_log(const char *subdir_to_use, std::string &last)
 {
-	BPtr<char>       logDir(GetConfigPathPtr("obs-studio/logs"));
+	BPtr<char>       logDir(GetConfigPathPtr(subdir_to_use));
 	struct os_dirent *entry;
 	os_dir_t         *dir        = os_opendir(logDir);
 	uint64_t         highest_ts = 0;
@@ -1176,8 +1176,8 @@ static void get_last_log(void)
 			uint64_t ts = convert_log_name(entry->d_name);
 
 			if (ts > highest_ts) {
-				lastLogFile = entry->d_name;
-				highest_ts  = ts;
+				last = entry->d_name;
+				highest_ts = ts;
 			}
 		}
 
@@ -1240,7 +1240,7 @@ static void create_log_file(fstream &logFile)
 {
 	stringstream dst;
 
-	get_last_log();
+	get_last_log("obs-studio/logs", lastLogFile);
 
 	currentLogFile = GenerateTimeDateFilename("txt");
 	dst << "obs-studio/logs/" << currentLogFile.c_str();
