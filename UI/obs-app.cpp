@@ -421,6 +421,9 @@ bool OBSApp::InitGlobalConfigDefaults()
 	config_set_default_bool(globalConfig, "BasicWindow",
 			"VerticalVolControl", false);
 
+	config_set_default_bool(globalConfig, "BasicWindow",
+			"MultiviewMouseSwitch", true);
+
 #ifdef _WIN32
 	config_set_default_bool(globalConfig, "Audio", "DisableAudioDucking",
 			true);

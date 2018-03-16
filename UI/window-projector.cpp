@@ -752,6 +752,10 @@ void OBSProjector::mouseDoubleClickEvent(QMouseEvent *event)
 	OBSQTDisplay::mouseDoubleClickEvent(event);
 
 	if (!config_get_bool(GetGlobalConfig(), "BasicWindow",
+			"MultiviewMouseSwitch"))
+		return;
+
+	if (!config_get_bool(GetGlobalConfig(), "BasicWindow",
 			"TransitionOnDoubleClick"))
 		return;
 
@@ -783,6 +787,10 @@ void OBSProjector::mousePressEvent(QMouseEvent *event)
 	}
 
 	if (event->button() == Qt::LeftButton) {
+		if (!config_get_bool(GetGlobalConfig(), "BasicWindow",
+				"MultiviewMouseSwitch"))
+			return;
+
 		int pos = getSourceByPosition(event->x(), event->y());
 		if (pos < 0)
 			return;
