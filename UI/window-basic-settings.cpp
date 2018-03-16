@@ -442,10 +442,13 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->enableNewSocketLoop,  CHECK_CHANGED,  ADV_CHANGED);
 	HookWidget(ui->enableLowLatencyMode, CHECK_CHANGED,  ADV_CHANGED);
 
-#if !defined(_WIN32) && !defined(__APPLE__) && !HAVE_PULSEAUDIO
+#if !defined(_WIN32) && !defined(__APPLE__)
 	delete ui->enableAutoUpdates;
-	delete ui->advAudioGroupBox;
 	ui->enableAutoUpdates = nullptr;
+#endif
+
+#if !defined(_WIN32) && !defined(__APPLE__) && !HAVE_PULSEAUDIO
+	delete ui->advAudioGroupBox;
 	ui->advAudioGroupBox = nullptr;
 #endif
 

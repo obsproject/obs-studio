@@ -1653,6 +1653,11 @@ void OBSBasic::OBSInit()
 			&OBSBasic::UpdateMultiviewProjectorMenu);
 	ui->viewMenu->addAction(QTStr("MultiviewWindowed"),
 			this, SLOT(OpenMultiviewWindow()));
+
+#if !defined(_WIN32) && !defined(__APPLE__)
+	delete ui->actionCheckForUpdates;
+	ui->actionCheckForUpdates = nullptr;
+#endif
 }
 
 void OBSBasic::UpdateMultiviewProjectorMenu()
