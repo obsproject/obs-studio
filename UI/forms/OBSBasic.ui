@@ -137,10 +137,19 @@
      <addaction name="actionUploadLastLog"/>
      <addaction name="actionViewCurrentLog"/>
     </widget>
+    <widget class="QMenu" name="menuCrashLogs">
+     <property name="title">
+      <string>Basic.MainMenu.Help.CrashLogs</string>
+     </property>
+     <addaction name="actionShowCrashLogs"/>
+     <addaction name="actionUploadLastCrashLog"/>
+    </widget>
     <addaction name="actionHelpPortal"/>
     <addaction name="actionWebsite"/>
     <addaction name="separator"/>
     <addaction name="menuLogFiles"/>
+    <addaction name="menuCrashLogs"/>
+    <addaction name="separator"/>
     <addaction name="actionCheckForUpdates"/>
    </widget>
    <widget class="QMenu" name="menuBasic_MainMenu_Edit">
@@ -185,7 +194,7 @@
      <addaction name="actionScaleCanvas"/>
      <addaction name="actionScaleOutput"/>
     </widget>
-    <action name="actionCopySource">    
+    <action name="actionCopySource">
      <property name="text">
       <string>Copy</string>
      </property>
@@ -1580,6 +1589,16 @@
   <action name="actionHelpPortal">
    <property name="text">
     <string>Basic.MainMenu.Help.HelpPortal</string>
+   </property>
+  </action>
+  <action name="actionShowCrashLogs">
+   <property name="text">
+    <string>Basic.MainMenu.Help.CrashLogs.ShowLogs</string>
+   </property>
+  </action>
+  <action name="actionUploadLastCrashLog">
+   <property name="text">
+    <string>Basic.MainMenu.Help.CrashLogs.UploadLastLog</string>
    </property>
   </action>
  </widget>

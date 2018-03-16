@@ -60,6 +60,7 @@ static log_handler_t def_log_handler;
 
 static string currentLogFile;
 static string lastLogFile;
+static string lastCrashLogFile;
 
 bool portable_mode = false;
 static bool multi = false;
@@ -1051,6 +1052,11 @@ const char *OBSApp::GetCurrentLog() const
 	return currentLogFile.c_str();
 }
 
+const char *OBSApp::GetLastCrashLog() const
+{
+	return lastCrashLogFile.c_str();
+}
+
 bool OBSApp::TranslateString(const char *lookupVal, const char **out) const
 {
 	for (obs_frontend_translate_ui_cb cb : translatorHooks) {
@@ -1249,6 +1255,9 @@ static void create_log_file(fstream &logFile)
 	stringstream dst;
 
 	get_last_log(false, "obs-studio/logs", lastLogFile);
+#ifdef _WIN32
+	get_last_log(true, "obs-studio/crashes", lastCrashLogFile);
+#endif
 
 	currentLogFile = GenerateTimeDateFilename("txt");
 	dst << "obs-studio/logs/" << currentLogFile.c_str();

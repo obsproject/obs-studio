@@ -1655,7 +1655,13 @@ void OBSBasic::OBSInit()
 			this, SLOT(OpenMultiviewWindow()));
 
 #if !defined(_WIN32) && !defined(__APPLE__)
+	delete ui->actionShowCrashLogs;
+	delete ui->actionUploadLastCrashLog;
+	delete ui->menuCrashLogs;
 	delete ui->actionCheckForUpdates;
+	ui->actionShowCrashLogs = nullptr;
+	ui->actionUploadLastCrashLog = nullptr;
+	ui->menuCrashLogs = nullptr;
 	ui->actionCheckForUpdates = nullptr;
 #endif
 }
@@ -4315,6 +4321,21 @@ void OBSBasic::on_actionViewCurrentLog_triggered()
 
 	QUrl url = QUrl::fromLocalFile(QT_UTF8(path.c_str()));
 	QDesktopServices::openUrl(url);
+}
+
+void OBSBasic::on_actionShowCrashLogs_triggered()
+{
+	char logDir[512];
+	if (GetConfigPath(logDir, sizeof(logDir), "obs-studio/crashes") <= 0)
+		return;
+
+	QUrl url = QUrl::fromLocalFile(QT_UTF8(logDir));
+	QDesktopServices::openUrl(url);
+}
+
+void OBSBasic::on_actionUploadLastCrashLog_triggered()
+{
+	UploadLog("obs-studio/crashes", App()->GetLastCrashLog());
 }
 
 void OBSBasic::on_actionCheckForUpdates_triggered()
