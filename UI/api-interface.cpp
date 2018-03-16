@@ -167,6 +167,11 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 		}
 	}
 
+	bool obs_frontend_add_scene_collection(const char *name)
+	{
+		return main->AddSceneCollection(name);
+	}
+
 	void obs_frontend_get_profiles(
 			std::vector<std::string> &strings) override
 	{
