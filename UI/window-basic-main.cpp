@@ -1647,13 +1647,19 @@ void OBSBasic::OBSInit()
 
 	ui->viewMenu->addSeparator();
 
-	QMenu *multiviewProjectorMenu = new QMenu(QTStr("MultiviewProjector"));
-	AddProjectorMenuMonitors(multiviewProjectorMenu, this,
-			SLOT(OpenMultiviewProjector()));
+	multiviewProjectorMenu = new QMenu(QTStr("MultiviewProjector"));
 	ui->viewMenu->addMenu(multiviewProjectorMenu);
-
+	connect(ui->viewMenu->menuAction(), &QAction::hovered, this,
+			&OBSBasic::UpdateMultiviewProjectorMenu);
 	ui->viewMenu->addAction(QTStr("MultiviewWindowed"),
 			this, SLOT(OpenMultiviewWindow()));
+}
+
+void OBSBasic::UpdateMultiviewProjectorMenu()
+{
+	multiviewProjectorMenu->clear();
+	AddProjectorMenuMonitors(multiviewProjectorMenu, this,
+			SLOT(OpenMultiviewProjector()));
 }
 
 void OBSBasic::InitHotkeys()
@@ -3520,10 +3526,10 @@ static void AddProjectorMenuMonitors(QMenu *parent, QObject *target,
 		QString str = QString("%1 %2: %3x%4 @ %5,%6").
 			arg(QTStr("Display"),
 			    QString::number(i),
-			    QString::number((int)screenGeometry.width()),
-			    QString::number((int)screenGeometry.height()),
-			    QString::number((int)screenGeometry.x()),
-			    QString::number((int)screenGeometry.y()));
+			    QString::number(screenGeometry.width()),
+			    QString::number(screenGeometry.height()),
+			    QString::number(screenGeometry.x()),
+			    QString::number(screenGeometry.y()));
 
 		action = parent->addAction(str, target, slot);
 		action->setProperty("monitor", i);
@@ -6022,29 +6028,32 @@ void OBSBasic::SystemTrayInit()
 	connect(exit, SIGNAL(triggered()),
 			this, SLOT(close()));
 
-	QMenu *previewProjector = new QMenu(QTStr("PreviewProjector"));
-	AddProjectorMenuMonitors(previewProjector, this,
-			SLOT(OpenPreviewProjector()));
-	QMenu *studioProgramProjector = new QMenu(
-			QTStr("StudioProgramProjector"));
-	AddProjectorMenuMonitors(studioProgramProjector, this,
-			SLOT(OpenStudioProgramProjector()));
-
 	trayMenu = new QMenu;
-	trayMenu->addAction(showHide);
-	trayMenu->addMenu(previewProjector);
-	trayMenu->addMenu(studioProgramProjector);
-	trayMenu->addAction(sysTrayStream);
-	trayMenu->addAction(sysTrayRecord);
-	trayMenu->addAction(sysTrayReplayBuffer);
-	trayMenu->addAction(exit);
-	trayIcon->setContextMenu(trayMenu);
 }
 
 void OBSBasic::IconActivated(QSystemTrayIcon::ActivationReason reason)
 {
-	if (reason == QSystemTrayIcon::Trigger)
+	if (reason == QSystemTrayIcon::Trigger) {
 		ToggleShowHide();
+	} else if (reason == QSystemTrayIcon::Context) {
+		QMenu *previewProjector = new QMenu(QTStr("PreviewProjector"));
+		AddProjectorMenuMonitors(previewProjector, this,
+				SLOT(OpenPreviewProjector()));
+		QMenu *studioProgramProjector = new QMenu(
+				QTStr("StudioProgramProjector"));
+		AddProjectorMenuMonitors(studioProgramProjector, this,
+				SLOT(OpenStudioProgramProjector()));
+
+		trayMenu->clear();
+		trayMenu->addAction(showHide);
+		trayMenu->addMenu(previewProjector);
+		trayMenu->addMenu(studioProgramProjector);
+		trayMenu->addAction(sysTrayStream);
+		trayMenu->addAction(sysTrayRecord);
+		trayMenu->addAction(sysTrayReplayBuffer);
+		trayMenu->addAction(exit);
+		trayMenu->popup(QCursor::pos());
+	}
 }
 
 void OBSBasic::SysTrayNotify(const QString &text,

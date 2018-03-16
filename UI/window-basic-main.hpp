@@ -186,6 +186,9 @@ private:
 	QPointer<QAction>         exit;
 	QPointer<QMenu>           trayMenu;
 
+	QPointer<QMenu> multiviewProjectorMenu;
+	void          UpdateMultiviewProjectorMenu();
+
 	void          DrawBackdrop(float cx, float cy);
 
 	void          SetupEncoders();
