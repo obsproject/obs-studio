@@ -6,6 +6,8 @@
 
 #include <functional>
 
+#include <QThread>
+
 using namespace std;
 
 Q_DECLARE_METATYPE(OBSScene);
@@ -91,13 +93,27 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 
 	void obs_frontend_set_current_scene(obs_source_t *scene) override
 	{
+		const bool isQtGuiThread =
+			QThread::currentThread() ==
+			QCoreApplication::instance()->thread();
+
 		if (main->IsPreviewProgramMode()) {
-			QMetaObject::invokeMethod(main, "TransitionToScene",
-					Q_ARG(OBSSource, OBSSource(scene)));
+			if (isQtGuiThread)
+				main->TransitionToScene(scene);
+			else
+				QMetaObject::invokeMethod(main,
+					"TransitionToScene",
+					Qt::BlockingQueuedConnection,
+ 					Q_ARG(OBSSource, OBSSource(scene)));
 		} else {
-			QMetaObject::invokeMethod(main, "SetCurrentScene",
-					Q_ARG(OBSSource, OBSSource(scene)),
-					Q_ARG(bool, false));
+			if (isQtGuiThread)
+				main->SetCurrentScene(scene, false);
+			else
+				QMetaObject::invokeMethod(main,
+					"SetCurrentScene",
+					Qt::BlockingQueuedConnection,
+ 					Q_ARG(OBSSource, OBSSource(scene)),
+ 					Q_ARG(bool, false));
 		}
 	}
 
