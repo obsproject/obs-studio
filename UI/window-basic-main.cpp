@@ -4231,10 +4231,10 @@ void OBSBasic::on_actionMoveToBottom_triggered()
 	obs_sceneitem_set_order(item, OBS_ORDER_MOVE_BOTTOM);
 }
 
-static BPtr<char> ReadLogFile(const char *log)
+static BPtr<char> ReadLogFile(const char *subdir, const char *log)
 {
 	char logDir[512];
-	if (GetConfigPath(logDir, sizeof(logDir), "obs-studio/logs") <= 0)
+	if (GetConfigPath(logDir, sizeof(logDir), subdir) <= 0)
 		return nullptr;
 
 	string path = (char*)logDir;
@@ -4248,9 +4248,9 @@ static BPtr<char> ReadLogFile(const char *log)
 	return file;
 }
 
-void OBSBasic::UploadLog(const char *file)
+void OBSBasic::UploadLog(const char *subdir, const char *file)
 {
-	BPtr<char> fileString{ReadLogFile(file)};
+	BPtr<char> fileString{ReadLogFile(subdir, file)};
 
 	if (!fileString)
 		return;
@@ -4293,12 +4293,12 @@ void OBSBasic::on_actionShowLogs_triggered()
 
 void OBSBasic::on_actionUploadCurrentLog_triggered()
 {
-	UploadLog(App()->GetCurrentLog());
+	UploadLog("obs-studio/logs", App()->GetCurrentLog());
 }
 
 void OBSBasic::on_actionUploadLastLog_triggered()
 {
-	UploadLog(App()->GetLastLog());
+	UploadLog("obs-studio/logs", App()->GetLastLog());
 }
 
 void OBSBasic::on_actionViewCurrentLog_triggered()

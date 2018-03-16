@@ -199,7 +199,7 @@ private:
 	void          UpdateVolumeControlsDecayRate();
 	void          ClearVolumeControls();
 
-	void          UploadLog(const char *file);
+	void          UploadLog(const char *subdir, const char *file);
 
 	void          Save(const char *file);
 	void          Load(const char *file);
