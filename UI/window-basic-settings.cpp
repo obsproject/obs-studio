@@ -319,6 +319,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->doubleClickSwitch,    CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->studioPortraitLayout, CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->multiviewMouseSwitch, CHECK_CHANGED,  GENERAL_CHANGED);
+	HookWidget(ui->multiviewDrawNames,   CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->multiviewLayout,      COMBO_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->outputMode,           COMBO_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->streamType,           COMBO_CHANGED,  STREAM1_CHANGED);
@@ -1104,6 +1105,10 @@ void OBSBasicSettings::LoadGeneralSettings()
 	bool multiviewMouseSwitch = config_get_bool(GetGlobalConfig(),
 			"BasicWindow", "MultiviewMouseSwitch");
 	ui->multiviewMouseSwitch->setChecked(multiviewMouseSwitch);
+
+	bool multiviewDrawNames = config_get_bool(GetGlobalConfig(),
+			"BasicWindow", "MultiviewDrawNames");
+	ui->multiviewDrawNames->setChecked(multiviewDrawNames);
 
 	ui->multiviewLayout->addItem(QTStr(
 			"Basic.Settings.General.MultiviewLayout.Horizontal.Top"),
@@ -2713,6 +2718,11 @@ void OBSBasicSettings::SaveGeneralSettings()
 		config_set_bool(GetGlobalConfig(), "BasicWindow",
 				"MultiviewMouseSwitch",
 				ui->multiviewMouseSwitch->isChecked());
+
+	if (WidgetChanged(ui->multiviewDrawNames))
+		config_set_bool(GetGlobalConfig(), "BasicWindow",
+				"MultiviewDrawNames",
+				ui->multiviewDrawNames->isChecked());
 
 	if (WidgetChanged(ui->multiviewLayout)) {
 		config_set_int(GetGlobalConfig(), "BasicWindow",

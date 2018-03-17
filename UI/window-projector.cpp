@@ -494,7 +494,8 @@ void OBSProjector::OBSRenderMultiview(void *data, uint32_t cx, uint32_t cy)
 			/* ----------- */
 
 			// Render the label
-			if (!label)
+			if (!label || !config_get_bool(GetGlobalConfig(),
+					"BasicWindow", "MultiviewDrawNames"))
 				continue;
 
 			offset = labelOffset(label, quarterCX);
@@ -548,14 +549,17 @@ void OBSProjector::OBSRenderMultiview(void *data, uint32_t cx, uint32_t cy)
 	/* ----------- */
 
 	// Draw the Label
-	gs_matrix_push();
-	gs_matrix_translate3f(labelX, labelY, 0.0f);
-	gs_matrix_scale3f(hiScaleX, hiScaleY, 1.0f);
-	drawBox(obs_source_get_width(previewLabel),
-			obs_source_get_height(previewLabel) +
-					int(halfCX * 0.015f), labelColor);
-	obs_source_video_render(previewLabel);
-	gs_matrix_pop();
+	if (config_get_bool(GetGlobalConfig(), "BasicWindow",
+			"MultiviewDrawNames")) {
+		gs_matrix_push();
+		gs_matrix_translate3f(labelX, labelY, 0.0f);
+		gs_matrix_scale3f(hiScaleX, hiScaleY, 1.0f);
+		drawBox(obs_source_get_width(previewLabel),
+				obs_source_get_height(previewLabel) +
+				int(halfCX * 0.015f), labelColor);
+		obs_source_video_render(previewLabel);
+		gs_matrix_pop();
+	}
 
 	/* ----------------------------- */
 	/* draw program                  */
@@ -576,14 +580,18 @@ void OBSProjector::OBSRenderMultiview(void *data, uint32_t cx, uint32_t cy)
 	/* ----------- */
 
 	// Draw the Label
-	gs_matrix_push();
-	gs_matrix_translate3f(labelX, labelY, 0.0f);
-	gs_matrix_scale3f(hiScaleX, hiScaleY, 1.0f);
-	drawBox(obs_source_get_width(programLabel),
-			obs_source_get_height(programLabel) +
-					int(halfCX * 0.015f), labelColor);
-	obs_source_video_render(programLabel);
-	gs_matrix_pop();
+	if (config_get_bool(GetGlobalConfig(), "BasicWindow",
+			"MultiviewDrawNames")) {
+		gs_matrix_push();
+		gs_matrix_translate3f(labelX, labelY, 0.0f);
+		gs_matrix_scale3f(hiScaleX, hiScaleY, 1.0f);
+		drawBox(obs_source_get_width(programLabel),
+				obs_source_get_height(programLabel) +
+				int(halfCX * 0.015f), labelColor);
+		obs_source_video_render(programLabel);
+		gs_matrix_pop();
+	}
+
 	endRegion();
 }
 
