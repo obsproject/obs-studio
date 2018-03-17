@@ -1223,6 +1223,15 @@
                     "url": "rtmp://rtmp.cloud.vimeo.com/live"
                 }
             ]
+        },
+        {
+            "name": "Aparat",
+            "servers": [
+                {
+                    "name": "Default",
+                    "url": "rtmp://rtmp.cdn.asset.aparat.com:443/event"
+                }
+            ]
         }
     ]
 }
