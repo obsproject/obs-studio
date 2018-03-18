@@ -1071,12 +1071,13 @@ static bool UpdateVS2017Redists(json_t *root)
 		WaitForSingleObject(pi.hProcess, INFINITE);
 		CloseHandle(pi.hProcess);
 	} else {
-		DeleteFile(destPath.c_str());
 		Status(L"Update failed: Could not execute "
 		       L"%s (error code %d)",
 		       L"Visual C++ 2017 Redistributable",
 		       (int)GetLastError());
 	}
+
+	DeleteFile(destPath.c_str());
 
 	waitResult = WaitForSingleObject(cancelRequested, 0);
 	if (waitResult == WAIT_OBJECT_0) {
