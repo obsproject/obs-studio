@@ -28,3 +28,15 @@ class QListWidgetItem;
 QListWidgetItem *TakeListItem(QListWidget *widget, int row);
 void DeleteListItem(QListWidget *widget, QListWidgetItem *item);
 void ClearListItems(QListWidget *widget);
+
+template<typename QObjectPtr>
+void InsertQObjectByName(std::vector<QObjectPtr> &controls, QObjectPtr control)
+{
+	QString name = control->objectName();
+	auto finder = [name](QObjectPtr elem) {
+		return elem->objectName() > name;
+	};
+	auto found_at = std::find_if(controls.begin(), controls.end(), finder);
+
+	controls.insert(found_at, control);
+}

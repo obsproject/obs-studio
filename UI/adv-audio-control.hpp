@@ -51,6 +51,7 @@ public:
 	virtual ~OBSAdvAudioCtrl();
 
 	inline obs_source_t *GetSource() const {return source;}
+	void ShowAudioControl(QGridLayout *layout);
 
 public slots:
 	void SourceFlagsChanged(uint32_t flags);
