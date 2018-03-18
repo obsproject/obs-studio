@@ -3,7 +3,7 @@
 
 #define TEXT_MONITOR_CAPTURE obs_module_text("MonitorCapture")
 #define TEXT_CAPTURE_CURSOR  obs_module_text("CaptureCursor")
-#define TEXT_COMPATIBILITY   obs_module_text("Compatibility")
+#define TEXT_COMPATIBILITY   obs_module_text("SLIFix")
 #define TEXT_MONITOR         obs_module_text("Monitor")
 #define TEXT_PRIMARY_MONITOR obs_module_text("PrimaryMonitor")
 
