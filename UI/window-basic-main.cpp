@@ -2514,8 +2514,11 @@ void OBSBasic::ActivateAudioSource(OBSSource source)
 	connect(vol, &VolControl::ConfigClicked,
 			this, &OBSBasic::VolControlContextMenu);
 
-	volumes.push_back(vol);
-	ui->volumeWidgets->layout()->addWidget(vol);
+	InsertQObjectByName(volumes, vol);
+
+	for (auto volume : volumes) {
+		ui->volumeWidgets->layout()->addWidget(volume);
+	}
 }
 
 void OBSBasic::DeactivateAudioSource(OBSSource source)

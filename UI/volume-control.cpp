@@ -136,6 +136,7 @@ VolControl::VolControl(OBSSource source_, bool showConfig)
 	font.setPointSize(font.pointSize()-1);
 
 	QString sourceName = obs_source_get_name(source);
+	setObjectName(sourceName);
 
 	nameLabel->setText(sourceName);
 	nameLabel->setFont(font);
