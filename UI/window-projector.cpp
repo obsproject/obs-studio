@@ -82,37 +82,50 @@ OBSProjector::OBSProjector(QWidget *widget, obs_source_t *source_, int monitor,
 	if (type == ProjectorType::Multiview) {
 		obs_enter_graphics();
 
+		// All essential action should be placed inside this area
 		gs_render_start(true);
-		gs_vertex2f(0.04f, 0.04f);
-		gs_vertex2f(0.04f, 0.96f);
-		gs_vertex2f(0.96f, 0.96f);
-		gs_vertex2f(0.96f, 0.04f);
-		gs_vertex2f(0.04f, 0.04f);
-		innerBox = gs_render_save();
+		gs_vertex2f(actionSafePercentage, actionSafePercentage);
+		gs_vertex2f(actionSafePercentage, 1 - actionSafePercentage);
+		gs_vertex2f(1 - actionSafePercentage, 1 - actionSafePercentage);
+		gs_vertex2f(1 - actionSafePercentage, actionSafePercentage);
+		gs_vertex2f(actionSafePercentage, actionSafePercentage);
+		actionSafeMargin = gs_render_save();
 
+		// All graphics should be placed inside this area
 		gs_render_start(true);
-		gs_vertex2f(0.15f, 0.04f);
-		gs_vertex2f(0.15f, 0.96f);
-		leftVLine = gs_render_save();
+		gs_vertex2f(graphicsSafePercentage, graphicsSafePercentage);
+		gs_vertex2f(graphicsSafePercentage, 1 - graphicsSafePercentage);
+		gs_vertex2f(1 - graphicsSafePercentage,
+				1 - graphicsSafePercentage);
+		gs_vertex2f(1 - graphicsSafePercentage, graphicsSafePercentage);
+		gs_vertex2f(graphicsSafePercentage, graphicsSafePercentage);
+		graphicsSafeMargin = gs_render_save();
 
+		// 4:3 safe area for widescreen
 		gs_render_start(true);
-		gs_vertex2f(0.85f, 0.04f);
-		gs_vertex2f(0.85f, 0.96f);
-		rightVLine = gs_render_save();
+		gs_vertex2f(fourByThreeSafePercentage, graphicsSafePercentage);
+		gs_vertex2f(1 - fourByThreeSafePercentage,
+				graphicsSafePercentage);
+		gs_vertex2f(1 - fourByThreeSafePercentage, 1 -
+				graphicsSafePercentage);
+		gs_vertex2f(fourByThreeSafePercentage,
+				1 - graphicsSafePercentage);
+		gs_vertex2f(fourByThreeSafePercentage, graphicsSafePercentage);
+		fourByThreeSafeMargin = gs_render_save();
 
 		gs_render_start(true);
 		gs_vertex2f(0.0f, 0.5f);
-		gs_vertex2f(0.075f, 0.5f);
+		gs_vertex2f(lineLength, 0.5f);
 		leftLine = gs_render_save();
 
 		gs_render_start(true);
 		gs_vertex2f(0.5f, 0.0f);
-		gs_vertex2f(0.5f, 0.09f);
+		gs_vertex2f(0.5f, lineLength);
 		topLine = gs_render_save();
 
 		gs_render_start(true);
-		gs_vertex2f(0.925f, 0.5f);
 		gs_vertex2f(1.0f, 0.5f);
+		gs_vertex2f(1 - lineLength, 0.5f);
 		rightLine = gs_render_save();
 		obs_leave_graphics();
 
@@ -152,9 +165,9 @@ OBSProjector::~OBSProjector()
 		}
 
 		obs_enter_graphics();
-		gs_vertexbuffer_destroy(innerBox);
-		gs_vertexbuffer_destroy(leftVLine);
-		gs_vertexbuffer_destroy(rightVLine);
+		gs_vertexbuffer_destroy(actionSafeMargin);
+		gs_vertexbuffer_destroy(graphicsSafeMargin);
+		gs_vertexbuffer_destroy(fourByThreeSafeMargin);
 		gs_vertexbuffer_destroy(leftLine);
 		gs_vertexbuffer_destroy(topLine);
 		gs_vertexbuffer_destroy(rightLine);
@@ -537,9 +550,9 @@ void OBSProjector::OBSRenderMultiview(void *data, uint32_t cx, uint32_t cy)
 		obs_source_video_render(previewSrc);
 	else
 		obs_render_main_texture();
-	renderVB(window->innerBox, targetCX, targetCY, outerColor);
-	renderVB(window->leftVLine, targetCX, targetCY, outerColor);
-	renderVB(window->rightVLine, targetCX, targetCY, outerColor);
+	renderVB(window->actionSafeMargin, targetCX, targetCY, outerColor);
+	renderVB(window->graphicsSafeMargin, targetCX, targetCY, outerColor);
+	renderVB(window->fourByThreeSafeMargin, targetCX, targetCY, outerColor);
 	renderVB(window->leftLine, targetCX, targetCY, outerColor);
 	renderVB(window->topLine, targetCX, targetCY, outerColor);
 	renderVB(window->rightLine, targetCX, targetCY, outerColor);

@@ -40,12 +40,17 @@ private:
 	ProjectorType type = ProjectorType::Source;
 	OBSWeakSource multiviewScenes[8];
 	OBSSource     multiviewLabels[10];
-	gs_vertbuffer_t *innerBox = nullptr;
-	gs_vertbuffer_t *leftVLine = nullptr;
-	gs_vertbuffer_t *rightVLine = nullptr;
-	gs_vertbuffer_t *leftLine = nullptr;
-	gs_vertbuffer_t *topLine = nullptr;
-	gs_vertbuffer_t *rightLine = nullptr;
+	gs_vertbuffer_t *actionSafeMargin      = nullptr;
+	gs_vertbuffer_t *graphicsSafeMargin    = nullptr;
+	gs_vertbuffer_t *fourByThreeSafeMargin = nullptr;
+	gs_vertbuffer_t *leftLine              = nullptr;
+	gs_vertbuffer_t *topLine               = nullptr;
+	gs_vertbuffer_t *rightLine             = nullptr;
+	float lineLength                = 0.1f;
+	// Rec. ITU-R BT.1848-1 / EBU R 95
+	float actionSafePercentage      = 0.035f; // 3.5%
+	float graphicsSafePercentage    = 0.05f; // 5.0%
+	float fourByThreeSafePercentage = 0.1625f; // 16.25%
 	bool ready = false;
 
 	// argb colors
