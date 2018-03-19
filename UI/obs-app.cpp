@@ -60,6 +60,7 @@ static log_handler_t def_log_handler;
 
 static string currentLogFile;
 static string lastLogFile;
+static string lastCrashLogFile;
 
 bool portable_mode = false;
 static bool multi = false;
@@ -1051,6 +1052,11 @@ const char *OBSApp::GetCurrentLog() const
 	return currentLogFile.c_str();
 }
 
+const char *OBSApp::GetLastCrashLog() const
+{
+	return lastCrashLogFile.c_str();
+}
+
 bool OBSApp::TranslateString(const char *lookupVal, const char **out) const
 {
 	for (obs_frontend_translate_ui_cb cb : translatorHooks) {
@@ -1097,12 +1103,17 @@ static bool expect_token(lexer *lex, const char *str, base_token_type type)
 	return strref_cmp(&token.text, str) == 0;
 }
 
-static uint64_t convert_log_name(const char *name)
+static uint64_t convert_log_name(bool has_prefix, const char *name)
 {
 	BaseLexer  lex;
 	string     year, month, day, hour, minute, second;
 
 	lexer_start(lex, name);
+
+	if (has_prefix) {
+		string temp;
+		if (!get_token(lex, temp, BASETOKEN_ALPHA)) return 0;
+	}
 
 	if (!get_token(lex, year,   BASETOKEN_DIGIT)) return 0;
 	if (!expect_token(lex, "-", BASETOKEN_OTHER)) return 0;
@@ -1120,7 +1131,7 @@ static uint64_t convert_log_name(const char *name)
 	return std::stoull(timestring.str());
 }
 
-static void delete_oldest_file(const char *location)
+static void delete_oldest_file(bool has_prefix, const char *location)
 {
 	BPtr<char>       logDir(GetConfigPathPtr(location));
 	string           oldestLog;
@@ -1138,7 +1149,8 @@ static void delete_oldest_file(const char *location)
 			if (entry->directory || *entry->d_name == '.')
 				continue;
 
-			uint64_t ts = convert_log_name(entry->d_name);
+			uint64_t ts = convert_log_name(has_prefix,
+					entry->d_name);
 
 			if (ts) {
 				if (ts < oldest_ts) {
@@ -1161,9 +1173,10 @@ static void delete_oldest_file(const char *location)
 	}
 }
 
-static void get_last_log(void)
+static void get_last_log(bool has_prefix, const char *subdir_to_use,
+		std::string &last)
 {
-	BPtr<char>       logDir(GetConfigPathPtr("obs-studio/logs"));
+	BPtr<char>       logDir(GetConfigPathPtr(subdir_to_use));
 	struct os_dirent *entry;
 	os_dir_t         *dir        = os_opendir(logDir);
 	uint64_t         highest_ts = 0;
@@ -1173,11 +1186,12 @@ static void get_last_log(void)
 			if (entry->directory || *entry->d_name == '.')
 				continue;
 
-			uint64_t ts = convert_log_name(entry->d_name);
+			uint64_t ts = convert_log_name(has_prefix,
+					entry->d_name);
 
 			if (ts > highest_ts) {
-				lastLogFile = entry->d_name;
-				highest_ts  = ts;
+				last = entry->d_name;
+				highest_ts = ts;
 			}
 		}
 
@@ -1240,7 +1254,10 @@ static void create_log_file(fstream &logFile)
 {
 	stringstream dst;
 
-	get_last_log();
+	get_last_log(false, "obs-studio/logs", lastLogFile);
+#ifdef _WIN32
+	get_last_log(true, "obs-studio/crashes", lastCrashLogFile);
+#endif
 
 	currentLogFile = GenerateTimeDateFilename("txt");
 	dst << "obs-studio/logs/" << currentLogFile.c_str();
@@ -1258,7 +1275,7 @@ static void create_log_file(fstream &logFile)
 #endif
 
 	if (logFile.is_open()) {
-		delete_oldest_file("obs-studio/logs");
+		delete_oldest_file(false, "obs-studio/logs");
 		base_set_log_handler(do_log, &logFile);
 	} else {
 		blog(LOG_ERROR, "Failed to open log file");
@@ -1354,7 +1371,7 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 		OBSTranslator translator;
 
 		create_log_file(logFile);
-		delete_oldest_file("obs-studio/profiler_data");
+		delete_oldest_file(false, "obs-studio/profiler_data");
 
 		program.installTranslator(&translator);
 
@@ -1441,7 +1458,7 @@ static void main_crash_handler(const char *format, va_list args, void *param)
 	vsnprintf(text, MAX_CRASH_REPORT_SIZE, format, args);
 	text[MAX_CRASH_REPORT_SIZE - 1] = 0;
 
-	delete_oldest_file("obs-studio/crashes");
+	delete_oldest_file(true, "obs-studio/crashes");
 
 	string name = "obs-studio/crashes/Crash ";
 	name += GenerateTimeDateFilename("txt");

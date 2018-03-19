@@ -494,9 +494,14 @@ static void script_log(void *, obs_script_t *script, int log_level,
 		const char *message)
 {
 	QString qmsg;
-	qmsg = QStringLiteral("[%1] %2").arg(
-			obs_script_get_file(script),
-			message);
+
+	if (script) {
+		qmsg = QStringLiteral("[%1] %2").arg(
+				obs_script_get_file(script),
+				message);
+	} else {
+		qmsg = QStringLiteral("[Unknown Script] %1").arg(message);
+	}
 
 	QMetaObject::invokeMethod(scriptLogWindow, "AddLogMsg",
 			Q_ARG(int, log_level),

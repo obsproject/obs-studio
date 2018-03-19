@@ -714,6 +714,10 @@
                     "url": "rtmp://seoul.restream.io/live"
                 },
                 {
+                    "name": "Asia (Tokyo, Japan)",
+                    "url": "rtmp://tokyo.restream.io/live"
+                },
+                {
                     "name": "Australia (Sydney)",
                     "url": "rtmp://au.restream.io/live"
                 }
@@ -725,39 +729,74 @@
         {
             "name": "Nood",
             "servers": [
-              {
-                  "name": "EU Central: Frankfurt, Germany",
-                  "url": "rtmp://broadcast-frf.nood.tv/20D2AB/live"
-              },
-              {
-                  "name": "EU North: Amsterdam, Netherlands",
-                  "url": "rtmp://broadcast-ams.nood.tv/20D2AB/live"
-              },
-              {
-                  "name": "EU West: Stockholm, Sweden",
-                  "url": "rtmp://broadcast-arn.nood.tv/20D2AB/live"
-              },
-              {
-                  "name": "US East: Washington, DC",
-                  "url": "rtmp://broadcast-dca.nood.tv/20D2AB/live"
-              },
-              {
-                  "name": "US West: Los Angeles, CA",
-                  "url": "rtmp://broadcast-oxr.nood.tv/20D2AB/live"
-              },
-              {
-                  "name": "Australia: Sydney",
-                  "url": "rtmp://broadcast-syd.nood.tv/20D2AB/live"
-              },
-              {
-                  "name": "Asia: Hong Kong, China",
-                  "url": "rtmp://broadcast-hhp.nood.tv/20D2AB/live"
-              }
+                {
+                    "name": "Global: Fastest (Recommended)",
+                    "url": "rtmp://stream.nood.tv/live_source"
+                },
+                {
+                    "name": "NA East: Ashburn, VA, USA",
+                    "url": "rtmp://us-east-1.stream.nood.tv/live_source"
+                },
+                {
+                    "name": "NA East: Columbus, OH, USA",
+                    "url": "rtmp://us-east-2.stream.nood.tv/live_source"
+                },
+                {
+                    "name": "NA East: Montreal, QC, CAN",
+                    "url": "rtmp://ca-central-1.stream.nood.tv/live_source"
+                },
+                {
+                    "name": "NA West: San Francisco, CA, USA",
+                    "url": "rtmp://us-west-1.stream.nood.tv/live_source"
+                },
+                {
+                    "name": "NA West: Portland, OR, USA",
+                    "url": "rtmp://us-west-2.stream.nood.tv/live_source"
+                },
+                {
+                    "name": "SA East: Sao Paulo, BRA",
+                    "url": "rtmp://sa-east-1.stream.nood.tv/live_source"
+                },
+                {
+                    "name": "EU West: Dublin, IRL",
+                    "url": "rtmp://eu-west-1.stream.nood.tv/live_source"
+                },
+                {
+                    "name": "EU West: London, GBR",
+                    "url": "rtmp://eu-west-2.stream.nood.tv/live_source"
+                },
+                {
+                    "name": "EU West: Paris, FRA",
+                    "url": "rtmp://eu-west-3.stream.nood.tv/live_source"
+                },
+                {
+                    "name": "EU West: Frankfurt, DEU",
+                    "url": "rtmp://eu-central-1.stream.nood.tv/live_source"
+                },
+                {
+                    "name": "Asia North-East: Tokyo, JPN",
+                    "url": "rtmp://ap-northeast-1.stream.nood.tv/live_source"
+                },
+                {
+                    "name": "Asia North-East: Seoul, KOR",
+                    "url": "rtmp://ap-northeast-2.stream.nood.tv/live_source"
+                },
+                {
+                    "name": "Asia South-East: Singapore, SGP",
+                    "url": "rtmp://ap-southeast-1.stream.nood.tv/live_source"
+                },
+                {
+                    "name": "Asia South-East: Sydney, AUS",
+                    "url": "rtmp://ap-southeast-2.stream.nood.tv/live_source"
+                },
+                {
+                    "name": "Asia South: Mumbai, IND",
+                    "url": "rtmp://ap-south-1.stream.nood.tv/live_source"
+                }
             ],
             "recommended": {
                 "keyint": 2,
-                "profile": "main",
-                "max video bitrate": 3500,
+                "max video bitrate": 25000,
                 "max audio bitrate": 192
             }
         },
@@ -1162,6 +1201,37 @@
                 "max video bitrate": 7000,
                 "max audio bitrate": 192
             }
+        },
+        {
+            "name": "SermonAudio.com",
+            "servers": [
+                {
+                    "name": "Primary",
+                    "url": "rtmp://stream.sermonaudio.com/"
+                }
+            ],
+            "recommended": {
+                "max video bitrate": 1000,
+                "max audio bitrate": 64
+            }
+        },
+        {
+            "name": "Vimeo",
+            "servers": [
+                {
+                    "name": "Default",
+                    "url": "rtmp://rtmp.cloud.vimeo.com/live"
+                }
+            ]
+        },
+        {
+            "name": "Aparat",
+            "servers": [
+                {
+                    "name": "Default",
+                    "url": "rtmp://rtmp.cdn.asset.aparat.com:443/event"
+                }
+            ]
         }
     ]
 }

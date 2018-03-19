@@ -15,11 +15,11 @@ Quick Links
 
  - Website: https://obsproject.com
 
- - Help/Documentation/Guides: https://github.com/jp9000/obs-studio/wiki
+ - Help/Documentation/Guides: https://github.com/obsproject/obs-studio/wiki
 
  - Forums: https://obsproject.com/forum/
 
- - Build Instructions: https://github.com/jp9000/obs-studio/wiki/Install-Instructions
+ - Build Instructions: https://github.com/obsproject/obs-studio/wiki/Install-Instructions
 
  - Developer/API Documentation: https://obsproject.com/docs
 
@@ -33,7 +33,7 @@ Contributing
 
  - If you wish to contribute code to the project, please make sure to
    read the coding and commit guidelines:
-   https://github.com/jp9000/obs-studio/blob/master/CONTRIBUTING.rst
+   https://github.com/obsproject/obs-studio/blob/master/CONTRIBUTING.rst
 
  - Developer/API documentation can be found here:
    https://obsproject.com/docs

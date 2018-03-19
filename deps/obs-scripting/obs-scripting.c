@@ -213,6 +213,8 @@ void obs_scripting_unload(void)
 
 	pthread_mutex_destroy(&defer_call_mutex);
 	os_sem_destroy(defer_call_semaphore);
+
+	scripting_loaded = false;
 }
 
 const char **obs_scripting_supported_formats(void)

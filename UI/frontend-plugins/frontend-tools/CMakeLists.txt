@@ -43,7 +43,7 @@ set(frontend-tools_UI
 	forms/output-timer.ui
 	)
 
-if(ENABLE_SCRIPTING)
+if(SCRIPTING_ENABLED)
 	set(frontend-tools_HEADERS
 		${frontend-tools_HEADERS}
 		scripts.hpp

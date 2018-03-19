@@ -738,7 +738,7 @@ enum obs_number_type obs_property_float_type(obs_property_t *p)
 	return data ? data->type : OBS_NUMBER_SCROLLER;
 }
 
-enum obs_text_type obs_proprety_text_type(obs_property_t *p)
+enum obs_text_type obs_property_text_type(obs_property_t *p)
 {
 	struct text_data *data = get_type_data(p, OBS_PROPERTY_TEXT);
 	return data ? data->type : OBS_TEXT_DEFAULT;
@@ -1106,4 +1106,9 @@ struct media_frames_per_second obs_property_frame_rate_fps_range_max(
 	return data && data->ranges.num > idx ?
 		data->ranges.array[idx].max_time :
 		(struct media_frames_per_second){0};
+}
+
+enum obs_text_type obs_proprety_text_type(obs_property_t *p)
+{
+	return obs_property_text_type(p);
 }

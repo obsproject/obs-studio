@@ -145,15 +145,16 @@ struct obs_transform_info {
 	struct vec2          bounds;
 };
 
-#ifndef SWIG
 /**
  * Video initialization structure
  */
 struct obs_video_info {
+#ifndef SWIG
 	/**
 	 * Graphics module to use (usually "libobs-opengl" or "libobs-d3d11")
 	 */
 	const char          *graphics_module;
+#endif
 
 	uint32_t            fps_num;       /**< Output FPS numerator */
 	uint32_t            fps_den;       /**< Output FPS denominator */
@@ -176,7 +177,6 @@ struct obs_video_info {
 
 	enum obs_scale_type scale_type;    /**< How to scale if scaling */
 };
-#endif
 
 /**
  * Audio initialization structure
@@ -283,7 +283,6 @@ EXPORT const char *obs_get_locale(void);
  */
 EXPORT profiler_name_store_t *obs_get_profiler_name_store(void);
 
-#ifndef SWIG
 /**
  * Sets base video output base resolution/fps/format.
  *
@@ -301,7 +300,6 @@ EXPORT profiler_name_store_t *obs_get_profiler_name_store(void);
  *               OBS_VIDEO_FAIL for generic failure
  */
 EXPORT int obs_reset_video(struct obs_video_info *ovi);
-#endif
 
 /**
  * Sets base audio output format/channels/samples/etc
@@ -310,10 +308,8 @@ EXPORT int obs_reset_video(struct obs_video_info *ovi);
  */
 EXPORT bool obs_reset_audio(const struct obs_audio_info *oai);
 
-#ifndef SWIG
 /** Gets the current video settings, returns false if no video */
 EXPORT bool obs_get_video_info(struct obs_video_info *ovi);
-#endif
 
 /** Gets the current audio settings, returns false if no audio */
 EXPORT bool obs_get_audio_info(struct obs_audio_info *oai);

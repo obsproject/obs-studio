@@ -212,8 +212,15 @@ static void config_parse_section(struct config_section *section,
 		strref_clear(&value);
 		config_parse_string(lex, &value, 0);
 
-		if (!strref_is_empty(&value))
+		if (strref_is_empty(&value)) {
+			struct config_item item;
+			item.name  = bstrdup_n(name.array, name.len);
+			item.value = bzalloc(1);
+			darray_push_back(sizeof(struct config_item),
+					&section->items, &item);
+		} else {
 			config_add_item(&section->items, &name, &value);
+		}
 	}
 }
 

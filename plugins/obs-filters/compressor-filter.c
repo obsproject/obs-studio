@@ -432,6 +432,8 @@ static void compressor_tick(void *data, float seconds)
 
 		bfree(new_name);
 	}
+
+	UNUSED_PARAMETER(seconds);
 }
 
 static struct obs_audio_data *compressor_filter_audio(void *data,

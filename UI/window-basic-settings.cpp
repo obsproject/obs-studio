@@ -412,7 +412,6 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->fpsType,              COMBO_CHANGED,  VIDEO_CHANGED);
 	HookWidget(ui->fpsCommon,            COMBO_CHANGED,  VIDEO_CHANGED);
 	HookWidget(ui->fpsInteger,           SCROLL_CHANGED, VIDEO_CHANGED);
-	HookWidget(ui->fpsInteger,           SCROLL_CHANGED, VIDEO_CHANGED);
 	HookWidget(ui->fpsNumerator,         SCROLL_CHANGED, VIDEO_CHANGED);
 	HookWidget(ui->fpsDenominator,       SCROLL_CHANGED, VIDEO_CHANGED);
 	HookWidget(ui->renderer,             COMBO_CHANGED,  ADV_RESTART);
@@ -443,10 +442,13 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->enableNewSocketLoop,  CHECK_CHANGED,  ADV_CHANGED);
 	HookWidget(ui->enableLowLatencyMode, CHECK_CHANGED,  ADV_CHANGED);
 
-#if !defined(_WIN32) && !defined(__APPLE__) && !HAVE_PULSEAUDIO
+#if !defined(_WIN32) && !defined(__APPLE__)
 	delete ui->enableAutoUpdates;
-	delete ui->advAudioGroupBox;
 	ui->enableAutoUpdates = nullptr;
+#endif
+
+#if !defined(_WIN32) && !defined(__APPLE__) && !HAVE_PULSEAUDIO
+	delete ui->advAudioGroupBox;
 	ui->advAudioGroupBox = nullptr;
 #endif
 

@@ -338,6 +338,15 @@ bool mp_decode_next(struct mp_decode *d)
 					d->stream->time_base,
 					(AVRational){1, 1000000000});
 
+		if (d->m->speed != 100) {
+			d->frame_pts = av_rescale_q(d->frame_pts,
+					(AVRational){1, d->m->speed},
+					(AVRational){1, 100});
+			duration = av_rescale_q(duration,
+					(AVRational){1, d->m->speed},
+					(AVRational){1, 100});
+		}
+
 		d->last_duration = duration;
 		d->next_pts = d->frame_pts + duration;
 	}

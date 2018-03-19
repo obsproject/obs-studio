@@ -236,7 +236,7 @@ QWidget *OBSPropertiesView::AddText(obs_property_t *prop, QFormLayout *layout,
 {
 	const char    *name = obs_property_name(prop);
 	const char    *val  = obs_data_get_string(settings, name);
-	obs_text_type type  = obs_proprety_text_type(prop);
+	obs_text_type type  = obs_property_text_type(prop);
 
 	if (type == OBS_TEXT_MULTILINE) {
 		QPlainTextEdit *edit = new QPlainTextEdit(QT_UTF8(val));
@@ -1529,7 +1529,7 @@ void WidgetInfo::FloatChanged(const char *setting)
 
 void WidgetInfo::TextChanged(const char *setting)
 {
-	obs_text_type type  = obs_proprety_text_type(property);
+	obs_text_type type  = obs_property_text_type(property);
 
 	if (type == OBS_TEXT_MULTILINE) {
 		QPlainTextEdit *edit = static_cast<QPlainTextEdit*>(widget);

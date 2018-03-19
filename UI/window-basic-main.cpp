@@ -1647,13 +1647,30 @@ void OBSBasic::OBSInit()
 
 	ui->viewMenu->addSeparator();
 
-	QMenu *multiviewProjectorMenu = new QMenu(QTStr("MultiviewProjector"));
-	AddProjectorMenuMonitors(multiviewProjectorMenu, this,
-			SLOT(OpenMultiviewProjector()));
+	multiviewProjectorMenu = new QMenu(QTStr("MultiviewProjector"));
 	ui->viewMenu->addMenu(multiviewProjectorMenu);
-
+	connect(ui->viewMenu->menuAction(), &QAction::hovered, this,
+			&OBSBasic::UpdateMultiviewProjectorMenu);
 	ui->viewMenu->addAction(QTStr("MultiviewWindowed"),
 			this, SLOT(OpenMultiviewWindow()));
+
+#if !defined(_WIN32) && !defined(__APPLE__)
+	delete ui->actionShowCrashLogs;
+	delete ui->actionUploadLastCrashLog;
+	delete ui->menuCrashLogs;
+	delete ui->actionCheckForUpdates;
+	ui->actionShowCrashLogs = nullptr;
+	ui->actionUploadLastCrashLog = nullptr;
+	ui->menuCrashLogs = nullptr;
+	ui->actionCheckForUpdates = nullptr;
+#endif
+}
+
+void OBSBasic::UpdateMultiviewProjectorMenu()
+{
+	multiviewProjectorMenu->clear();
+	AddProjectorMenuMonitors(multiviewProjectorMenu, this,
+			SLOT(OpenMultiviewProjector()));
 }
 
 void OBSBasic::InitHotkeys()
@@ -2858,8 +2875,6 @@ void OBSBasic::SceneItemSelected(void *data, calldata_t *params)
 	QMetaObject::invokeMethod(window, "SelectSceneItem",
 			Q_ARG(OBSScene, scene), Q_ARG(OBSSceneItem, item),
 			Q_ARG(bool, true));
-
-	window->ui->actionCopySource->setEnabled(true);
 }
 
 void OBSBasic::SceneItemDeselected(void *data, calldata_t *params)
@@ -2873,7 +2888,6 @@ void OBSBasic::SceneItemDeselected(void *data, calldata_t *params)
 			Q_ARG(OBSScene, scene), Q_ARG(OBSSceneItem, item),
 			Q_ARG(bool, false));
 
-	window->ui->actionCopySource->setEnabled(false);
 }
 
 void OBSBasic::SourceLoaded(void *data, obs_source_t *source)
@@ -3523,10 +3537,10 @@ static void AddProjectorMenuMonitors(QMenu *parent, QObject *target,
 		QString str = QString("%1 %2: %3x%4 @ %5,%6").
 			arg(QTStr("Display"),
 			    QString::number(i),
-			    QString::number((int)screenGeometry.width()),
-			    QString::number((int)screenGeometry.height()),
-			    QString::number((int)screenGeometry.x()),
-			    QString::number((int)screenGeometry.y()));
+			    QString::number(screenGeometry.width()),
+			    QString::number(screenGeometry.height()),
+			    QString::number(screenGeometry.x()),
+			    QString::number(screenGeometry.y()));
 
 		action = parent->addAction(str, target, slot);
 		action->setProperty("monitor", i);
@@ -3891,6 +3905,7 @@ void OBSBasic::CreateSourcePopupMenu(QListWidgetItem *item, bool preview)
 		popup.addMenu(addSourceMenu);
 
 	ui->actionCopyFilters->setEnabled(false);
+	ui->actionCopySource->setEnabled(false);
 
 	popup.addSeparator();
 	popup.addAction(ui->actionCopySource);
@@ -3969,6 +3984,7 @@ void OBSBasic::CreateSourcePopupMenu(QListWidgetItem *item, bool preview)
 				SLOT(on_actionSourceProperties_triggered()));
 
 		ui->actionCopyFilters->setEnabled(true);
+		ui->actionCopySource->setEnabled(true);
 	}
 
 	popup.exec(QCursor::pos());
@@ -4221,10 +4237,10 @@ void OBSBasic::on_actionMoveToBottom_triggered()
 	obs_sceneitem_set_order(item, OBS_ORDER_MOVE_BOTTOM);
 }
 
-static BPtr<char> ReadLogFile(const char *log)
+static BPtr<char> ReadLogFile(const char *subdir, const char *log)
 {
 	char logDir[512];
-	if (GetConfigPath(logDir, sizeof(logDir), "obs-studio/logs") <= 0)
+	if (GetConfigPath(logDir, sizeof(logDir), subdir) <= 0)
 		return nullptr;
 
 	string path = (char*)logDir;
@@ -4238,9 +4254,9 @@ static BPtr<char> ReadLogFile(const char *log)
 	return file;
 }
 
-void OBSBasic::UploadLog(const char *file)
+void OBSBasic::UploadLog(const char *subdir, const char *file)
 {
-	BPtr<char> fileString{ReadLogFile(file)};
+	BPtr<char> fileString{ReadLogFile(subdir, file)};
 
 	if (!fileString)
 		return;
@@ -4250,32 +4266,11 @@ void OBSBasic::UploadLog(const char *file)
 
 	ui->menuLogFiles->setEnabled(false);
 
-	auto data_deleter = [](obs_data_t *d) { obs_data_release(d); };
-	using data_t = unique_ptr<struct obs_data, decltype(data_deleter)>;
-
-	data_t content{obs_data_create(), data_deleter};
-	data_t files{obs_data_create(), data_deleter};
-	data_t request{obs_data_create(), data_deleter};
-
-	obs_data_set_string(content.get(), "content", fileString);
-
-	obs_data_set_obj(files.get(), file, content.get());
-
 	stringstream ss;
 	ss << "OBS " << App()->GetVersionString()
-	   << " log file uploaded at " << CurrentDateTimeString();
-	obs_data_set_string(request.get(), "description", ss.str().c_str());
-	obs_data_set_bool(request.get(), "public", false);
-	obs_data_set_obj(request.get(), "files", files.get());
+	   << " log file uploaded at " << CurrentDateTimeString()
+	   << "\n\n" << fileString;
 
-	const char *json = obs_data_get_json(request.get());
-	if (!json) {
-		blog(LOG_ERROR, "Failed to get JSON data for log upload");
-		return;
-	}
-
-	QBuffer *postData = new QBuffer();
-	postData->setData(json, (int) strlen(json));
 
 	if (logUploadThread) {
 		logUploadThread->wait();
@@ -4283,8 +4278,9 @@ void OBSBasic::UploadLog(const char *file)
 	}
 
 	RemoteTextThread *thread = new RemoteTextThread(
-			"https://api.github.com/gists",
-			"application/json", json);
+			"https://hastebin.com/documents",
+			"text/plain", ss.str().c_str());
+
 	logUploadThread = thread;
 	connect(thread, &RemoteTextThread::Result,
 			this, &OBSBasic::logUploadFinished);
@@ -4303,12 +4299,12 @@ void OBSBasic::on_actionShowLogs_triggered()
 
 void OBSBasic::on_actionUploadCurrentLog_triggered()
 {
-	UploadLog(App()->GetCurrentLog());
+	UploadLog("obs-studio/logs", App()->GetCurrentLog());
 }
 
 void OBSBasic::on_actionUploadLastLog_triggered()
 {
-	UploadLog(App()->GetLastLog());
+	UploadLog("obs-studio/logs", App()->GetLastLog());
 }
 
 void OBSBasic::on_actionViewCurrentLog_triggered()
@@ -4325,6 +4321,21 @@ void OBSBasic::on_actionViewCurrentLog_triggered()
 
 	QUrl url = QUrl::fromLocalFile(QT_UTF8(path.c_str()));
 	QDesktopServices::openUrl(url);
+}
+
+void OBSBasic::on_actionShowCrashLogs_triggered()
+{
+	char logDir[512];
+	if (GetConfigPath(logDir, sizeof(logDir), "obs-studio/crashes") <= 0)
+		return;
+
+	QUrl url = QUrl::fromLocalFile(QT_UTF8(logDir));
+	QDesktopServices::openUrl(url);
+}
+
+void OBSBasic::on_actionUploadLastCrashLog_triggered()
+{
+	UploadLog("obs-studio/crashes", App()->GetLastCrashLog());
 }
 
 void OBSBasic::on_actionCheckForUpdates_triggered()
@@ -4344,7 +4355,9 @@ void OBSBasic::logUploadFinished(const QString &text, const QString &error)
 	}
 
 	obs_data_t *returnData = obs_data_create_from_json(QT_TO_UTF8(text));
-	QString logURL         = obs_data_get_string(returnData, "html_url");
+	string resURL = "https://hastebin.com/";
+	resURL += obs_data_get_string(returnData, "key");
+	QString logURL = resURL.c_str();
 	obs_data_release(returnData);
 
 	OBSLogReply logDialog(this, logURL);
@@ -6041,29 +6054,32 @@ void OBSBasic::SystemTrayInit()
 	connect(exit, SIGNAL(triggered()),
 			this, SLOT(close()));
 
-	QMenu *previewProjector = new QMenu(QTStr("PreviewProjector"));
-	AddProjectorMenuMonitors(previewProjector, this,
-			SLOT(OpenPreviewProjector()));
-	QMenu *studioProgramProjector = new QMenu(
-			QTStr("StudioProgramProjector"));
-	AddProjectorMenuMonitors(studioProgramProjector, this,
-			SLOT(OpenStudioProgramProjector()));
-
 	trayMenu = new QMenu;
-	trayMenu->addAction(showHide);
-	trayMenu->addMenu(previewProjector);
-	trayMenu->addMenu(studioProgramProjector);
-	trayMenu->addAction(sysTrayStream);
-	trayMenu->addAction(sysTrayRecord);
-	trayMenu->addAction(sysTrayReplayBuffer);
-	trayMenu->addAction(exit);
-	trayIcon->setContextMenu(trayMenu);
 }
 
 void OBSBasic::IconActivated(QSystemTrayIcon::ActivationReason reason)
 {
-	if (reason == QSystemTrayIcon::Trigger)
+	if (reason == QSystemTrayIcon::Trigger) {
 		ToggleShowHide();
+	} else if (reason == QSystemTrayIcon::Context) {
+		QMenu *previewProjector = new QMenu(QTStr("PreviewProjector"));
+		AddProjectorMenuMonitors(previewProjector, this,
+				SLOT(OpenPreviewProjector()));
+		QMenu *studioProgramProjector = new QMenu(
+				QTStr("StudioProgramProjector"));
+		AddProjectorMenuMonitors(studioProgramProjector, this,
+				SLOT(OpenStudioProgramProjector()));
+
+		trayMenu->clear();
+		trayMenu->addAction(showHide);
+		trayMenu->addMenu(previewProjector);
+		trayMenu->addMenu(studioProgramProjector);
+		trayMenu->addAction(sysTrayStream);
+		trayMenu->addAction(sysTrayRecord);
+		trayMenu->addAction(sysTrayReplayBuffer);
+		trayMenu->addAction(exit);
+		trayMenu->popup(QCursor::pos());
+	}
 }
 
 void OBSBasic::SysTrayNotify(const QString &text,

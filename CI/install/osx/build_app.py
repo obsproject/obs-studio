@@ -1,22 +1,22 @@
 #!/usr/bin/env python
- 
+
 candidate_paths = "bin obs-plugins data".split()
- 
+
 plist_path = "../cmake/osxbundle/Info.plist"
 icon_path = "../cmake/osxbundle/obs.icns"
 run_path = "../cmake/osxbundle/obslaunch.sh"
- 
+
 #not copied
 blacklist = """/usr /System""".split()
- 
+
 #copied
 whitelist = """/usr/local""".split()
- 
+
 #
 #
 #
- 
- 
+
+
 from sys import argv
 from glob import glob
 from subprocess import check_output, call
@@ -33,7 +33,7 @@ def _str_to_bool(s):
         raise ValueError('Need bool; got %r' % s)
     return {'true': True, 'false': False}[s.lower()]
 
-def add_boolean_argument(parser, name, default=False):                                                                                               
+def add_boolean_argument(parser, name, default=False):
     """Add a boolean argument to an ArgumentParser instance."""
     group = parser.add_mutually_exclusive_group()
     group.add_argument(
@@ -58,14 +58,14 @@ def cmd(cmd):
     return subprocess.check_output(shlex.split(cmd)).rstrip('\r\n')
 
 LibTarget = namedtuple("LibTarget", ("path", "external", "copy_as"))
- 
+
 inspect = list()
- 
+
 inspected = set()
- 
+
 build_path = args.dir
 build_path = build_path.replace("\\ ", " ")
- 
+
 def add(name, external=False, copy_as=None):
 	if external and copy_as is None:
 		copy_as = name.split("/")[-1]
@@ -93,7 +93,7 @@ for i in candidate_paths:
 			rel_path = path[len(build_path)+1:]
 			print(repr(path), repr(rel_path))
 			add(rel_path)
- 
+
 def add_plugins(path, replace):
 	for img in glob(path.replace(
 		"lib/QtCore.framework/Versions/5/QtCore",
@@ -114,13 +114,14 @@ while inspect:
 		continue
 	out = check_output("{0}otool -L '{1}'".format(args.prefix, path), shell=True,
 			universal_newlines=True)
- 
+
 	if "QtCore" in path:
 		add_plugins(path, "platforms")
 		add_plugins(path, "imageformats")
 		add_plugins(path, "accessible")
- 
- 
+		add_plugins(path, "styles")
+
+
 	for line in out.split("\n")[1:]:
 		new = line.strip().split(" (")[0]
 		if '@' in new and "sparkle.framework" in new.lower():
@@ -197,6 +198,8 @@ for path, external, copy_as in inspected:
 	filename = path
 	rpath = ""
 	if external:
+		if copy_as == "Python":
+			continue
 		id_ = "-id '@rpath/%s'"%copy_as
 		filename = prefix + "bin/" +copy_as
 		rpath = "-add_rpath @loader_path/ -add_rpath @executable_path/"
@@ -214,7 +217,7 @@ for path, external, copy_as in inspected:
 			print(filename)
 			rpath = "-add_rpath '@loader_path/{}/'".format(ospath.relpath("bin/", ospath.dirname(filename)))
 		filename = prefix + filename
- 
+
 	cmd = "{0}install_name_tool {1} {2} {3} '{4}'".format(args.prefix, changes, id_, rpath, filename)
 	call(cmd, shell=True)
 
