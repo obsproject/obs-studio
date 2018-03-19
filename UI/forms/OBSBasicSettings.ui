@@ -637,9 +637,19 @@
                     </widget>
                    </item>
                    <item row="2" column="1">
+                    <widget class="QCheckBox" name="multiviewDrawAreas">
+                     <property name="text">
+                      <string>Basic.Settings.General.Multiview.DrawSafeAreas</string>
+                     </property>
+                     <property name="checked">
+                      <bool>true</bool>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="3" column="1">
                     <widget class="QComboBox" name="multiviewLayout"/>
                    </item>
-                   <item row="2" column="0">
+                   <item row="3" column="0">
                     <widget class="QLabel" name="label_64">
                      <property name="text">
                       <string>Basic.Settings.General.MultiviewLayout</string>

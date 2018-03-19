@@ -427,6 +427,9 @@ bool OBSApp::InitGlobalConfigDefaults()
 	config_set_default_bool(globalConfig, "BasicWindow",
 			"MultiviewDrawNames", true);
 
+	config_set_default_bool(globalConfig, "BasicWindow",
+			"MultiviewDrawAreas", true);
+
 #ifdef _WIN32
 	config_set_default_bool(globalConfig, "Audio", "DisableAudioDucking",
 			true);

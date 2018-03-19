@@ -550,12 +550,18 @@ void OBSProjector::OBSRenderMultiview(void *data, uint32_t cx, uint32_t cy)
 		obs_source_video_render(previewSrc);
 	else
 		obs_render_main_texture();
-	renderVB(window->actionSafeMargin, targetCX, targetCY, outerColor);
-	renderVB(window->graphicsSafeMargin, targetCX, targetCY, outerColor);
-	renderVB(window->fourByThreeSafeMargin, targetCX, targetCY, outerColor);
-	renderVB(window->leftLine, targetCX, targetCY, outerColor);
-	renderVB(window->topLine, targetCX, targetCY, outerColor);
-	renderVB(window->rightLine, targetCX, targetCY, outerColor);
+	if (config_get_bool(GetGlobalConfig(), "BasicWindow",
+			"MultiviewDrawAreas")) {
+		renderVB(window->actionSafeMargin, targetCX, targetCY,
+				outerColor);
+		renderVB(window->graphicsSafeMargin, targetCX, targetCY,
+				outerColor);
+		renderVB(window->fourByThreeSafeMargin, targetCX, targetCY,
+				outerColor);
+		renderVB(window->leftLine, targetCX, targetCY, outerColor);
+		renderVB(window->topLine, targetCX, targetCY, outerColor);
+		renderVB(window->rightLine, targetCX, targetCY, outerColor);
+	}
 	endRegion();
 	gs_matrix_pop();
 
