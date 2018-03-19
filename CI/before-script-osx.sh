@@ -1,6 +1,10 @@
 # Make sure ccache is found
 export PATH=/usr/local/opt/ccache/libexec:$PATH
 
+cd ./plugins/obs-browser
+git checkout origin/osx
+cd -
+
 mkdir build
 cd build
 cmake -DENABLE_SPARKLE_UPDATER=ON \
