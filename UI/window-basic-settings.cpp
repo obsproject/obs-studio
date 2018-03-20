@@ -2719,28 +2719,37 @@ void OBSBasicSettings::SaveGeneralSettings()
 		main->ResetUI();
 	}
 
-	if (WidgetChanged(ui->multiviewMouseSwitch))
+	bool multiviewChanged = false;
+	if (WidgetChanged(ui->multiviewMouseSwitch)) {
 		config_set_bool(GetGlobalConfig(), "BasicWindow",
 				"MultiviewMouseSwitch",
 				ui->multiviewMouseSwitch->isChecked());
+		multiviewChanged = true;
+	}
 
-	if (WidgetChanged(ui->multiviewDrawNames))
+	if (WidgetChanged(ui->multiviewDrawNames)) {
 		config_set_bool(GetGlobalConfig(), "BasicWindow",
 				"MultiviewDrawNames",
 				ui->multiviewDrawNames->isChecked());
+		multiviewChanged = true;
+	}
 
-	if (WidgetChanged(ui->multiviewDrawAreas))
+	if (WidgetChanged(ui->multiviewDrawAreas)) {
 		config_set_bool(GetGlobalConfig(), "BasicWindow",
 				"MultiviewDrawAreas",
 				ui->multiviewDrawAreas->isChecked());
+		multiviewChanged = true;
+	}
 
 	if (WidgetChanged(ui->multiviewLayout)) {
 		config_set_int(GetGlobalConfig(), "BasicWindow",
 				"MultiviewLayout",
 				ui->multiviewLayout->currentData().toInt());
-
-		OBSProjector::UpdateMultiviewProjectors();
+		multiviewChanged = true;
 	}
+
+	if (multiviewChanged)
+		OBSProjector::UpdateMultiviewProjectors();
 }
 
 void OBSBasicSettings::SaveStream1Settings()

@@ -11,7 +11,8 @@
 
 static QList<OBSProjector *> windowedProjectors;
 static QList<OBSProjector *> multiviewProjectors;
-static bool updatingMultiview = false;
+static bool updatingMultiview = false, drawLabel, drawSafeArea, mouseSwitching,
+		transitionOnDoubleClick;
 static MultiviewLayout multiviewLayout;
 
 OBSProjector::OBSProjector(QWidget *widget, obs_source_t *source_, int monitor,
@@ -473,7 +474,6 @@ void OBSProjector::OBSRenderMultiview(void *data, uint32_t cx, uint32_t cy)
 
 	for (size_t i = 0; i < 8; i++) {
 		OBSSource src = OBSGetStrongRef(window->multiviewScenes[i]);
-		obs_source *label = window->multiviewLabels[i + 2];
 
 		// Handle all the offsets
 		calcBaseSource(i);
@@ -507,8 +507,11 @@ void OBSProjector::OBSRenderMultiview(void *data, uint32_t cx, uint32_t cy)
 			/* ----------- */
 
 			// Render the label
-			if (!label || !config_get_bool(GetGlobalConfig(),
-					"BasicWindow", "MultiviewDrawNames"))
+			if (!drawLabel)
+				continue;
+
+			obs_source *label = window->multiviewLabels[i + 2];
+			if (!label)
 				continue;
 
 			offset = labelOffset(label, quarterCX);
@@ -550,8 +553,7 @@ void OBSProjector::OBSRenderMultiview(void *data, uint32_t cx, uint32_t cy)
 		obs_source_video_render(previewSrc);
 	else
 		obs_render_main_texture();
-	if (config_get_bool(GetGlobalConfig(), "BasicWindow",
-			"MultiviewDrawAreas")) {
+	if (drawSafeArea) {
 		renderVB(window->actionSafeMargin, targetCX, targetCY,
 				outerColor);
 		renderVB(window->graphicsSafeMargin, targetCX, targetCY,
@@ -568,8 +570,7 @@ void OBSProjector::OBSRenderMultiview(void *data, uint32_t cx, uint32_t cy)
 	/* ----------- */
 
 	// Draw the Label
-	if (config_get_bool(GetGlobalConfig(), "BasicWindow",
-			"MultiviewDrawNames")) {
+	if (drawLabel) {
 		gs_matrix_push();
 		gs_matrix_translate3f(labelX, labelY, 0.0f);
 		gs_matrix_scale3f(hiScaleX, hiScaleY, 1.0f);
@@ -599,8 +600,7 @@ void OBSProjector::OBSRenderMultiview(void *data, uint32_t cx, uint32_t cy)
 	/* ----------- */
 
 	// Draw the Label
-	if (config_get_bool(GetGlobalConfig(), "BasicWindow",
-			"MultiviewDrawNames")) {
+	if (drawLabel) {
 		gs_matrix_push();
 		gs_matrix_translate3f(labelX, labelY, 0.0f);
 		gs_matrix_scale3f(hiScaleX, hiScaleY, 1.0f);
@@ -778,12 +778,10 @@ void OBSProjector::mouseDoubleClickEvent(QMouseEvent *event)
 {
 	OBSQTDisplay::mouseDoubleClickEvent(event);
 
-	if (!config_get_bool(GetGlobalConfig(), "BasicWindow",
-			"MultiviewMouseSwitch"))
+	if (!mouseSwitching)
 		return;
 
-	if (!config_get_bool(GetGlobalConfig(), "BasicWindow",
-			"TransitionOnDoubleClick"))
+	if (!transitionOnDoubleClick)
 		return;
 
 	OBSBasic *main = (OBSBasic*)obs_frontend_get_main_window();
@@ -813,11 +811,10 @@ void OBSProjector::mousePressEvent(QMouseEvent *event)
 		popup.exec(QCursor::pos());
 	}
 
-	if (event->button() == Qt::LeftButton) {
-		if (!config_get_bool(GetGlobalConfig(), "BasicWindow",
-				"MultiviewMouseSwitch"))
-			return;
+	if (!mouseSwitching)
+		return;
 
+	if (event->button() == Qt::LeftButton) {
 		int pos = getSourceByPosition(event->x(), event->y());
 		if (pos < 0)
 			return;
@@ -882,6 +879,18 @@ void OBSProjector::UpdateMultiview()
 
 	multiviewLayout = static_cast<MultiviewLayout>(config_get_int(
 			GetGlobalConfig(), "BasicWindow", "MultiviewLayout"));
+
+	drawLabel = config_get_bool(GetGlobalConfig(),
+			"BasicWindow", "MultiviewDrawNames");
+
+	drawSafeArea = config_get_bool(GetGlobalConfig(), "BasicWindow",
+			"MultiviewDrawAreas");
+
+	mouseSwitching = config_get_bool(GetGlobalConfig(), "BasicWindow",
+			"MultiviewMouseSwitch");
+
+	transitionOnDoubleClick = config_get_bool(GetGlobalConfig(),
+			"BasicWindow", "TransitionOnDoubleClick");
 }
 
 void OBSProjector::UpdateProjectorTitle(QString name)
