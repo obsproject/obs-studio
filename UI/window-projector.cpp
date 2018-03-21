@@ -14,6 +14,7 @@ static QList<OBSProjector *> multiviewProjectors;
 static bool updatingMultiview = false, drawLabel, drawSafeArea, mouseSwitching,
 		transitionOnDoubleClick;
 static MultiviewLayout multiviewLayout;
+static size_t maxSrcs, numSrcs;
 
 OBSProjector::OBSProjector(QWidget *widget, obs_source_t *source_, int monitor,
 		QString title, ProjectorType type_)
@@ -452,7 +453,7 @@ void OBSProjector::OBSRenderMultiview(void *data, uint32_t cx, uint32_t cy)
 	/* ----------------------------- */
 	/* draw sources                  */
 
-	for (size_t i = 0; i < 8; i++) {
+	for (size_t i = 0; i < numSrcs; i++) {
 		OBSSource src = OBSGetStrongRef(window->multiviewScenes[i]);
 
 		// Handle all the offsets
@@ -673,22 +674,22 @@ static int getSourceByPosition(int x, int y)
 	int     minY  = 0;
 	int     maxX  = cx;
 	int     maxY  = cy;
-	int     halfX = cx / 2;
-	int     halfY = cy / 2;
+	int     pvwpgmX = cx / 2;
+	int     pvwpgmY = cy / 2;
 	int     pos   = -1;
 
 	switch (multiviewLayout) {
 	case MultiviewLayout::VERTICAL_LEFT_8_SCENES:
 		if (float(cx) / float(cy) > ratio) {
 			int validX = cy * ratio;
-			maxX = halfX + (validX / 2);
+			maxX = pvwpgmX + (validX / 2);
 		} else {
 			int validY = cx / ratio;
-			minY = halfY - (validY / 2);
-			maxY = halfY + (validY / 2);
+			minY = pvwpgmY - (validY / 2);
+			maxY = pvwpgmY + (validY / 2);
 		}
 
-		minX = halfX;
+		minX = pvwpgmX;
 
 		if (x < minX || x > maxX || y < minY || y > maxY)
 			break;
@@ -700,14 +701,14 @@ static int getSourceByPosition(int x, int y)
 	case MultiviewLayout::VERTICAL_RIGHT_8_SCENES:
 		if (float(cx) / float(cy) > ratio) {
 			int validX = cy * ratio;
-			minX = halfX - (validX / 2);
+			minX = pvwpgmX - (validX / 2);
 		} else {
 			int validY = cx / ratio;
-			minY = halfY - (validY / 2);
-			maxY = halfY + (validY / 2);
+			minY = pvwpgmY - (validY / 2);
+			maxY = pvwpgmY + (validY / 2);
 		}
 
-		maxX = halfX;
+		maxX = pvwpgmX;
 
 		if (x < minX || x > maxX || y < minY || y > maxY)
 			break;
@@ -719,14 +720,14 @@ static int getSourceByPosition(int x, int y)
 	case MultiviewLayout::HORIZONTAL_BOTTOM_8_SCENES:
 		if (float(cx) / float(cy) > ratio) {
 			int validX = cy * ratio;
-			minX = halfX - (validX / 2);
-			maxX = halfX + (validX / 2);
+			minX = pvwpgmX - (validX / 2);
+			maxX = pvwpgmX + (validX / 2);
 		} else {
 			int validY = cx / ratio;
-			minY = halfY - (validY / 2);
+			minY = pvwpgmY - (validY / 2);
 		}
 
-		maxY = halfY;
+		maxY = pvwpgmY;
 
 		if (x < minX || x > maxX || y < minY || y > maxY)
 			break;
@@ -738,14 +739,14 @@ static int getSourceByPosition(int x, int y)
 	default: // MultiviewLayout::HORIZONTAL_TOP_8_SCENES
 		if (float(cx) / float(cy) > ratio) {
 			int validX = cy * ratio;
-			minX = halfX - (validX / 2);
-			maxX = halfX + (validX / 2);
+			minX = pvwpgmX - (validX / 2);
+			maxX = pvwpgmX + (validX / 2);
 		} else {
 			int validY = cx / ratio;
-			maxY = halfY + (validY / 2);
+			maxY = pvwpgmY + (validY / 2);
 		}
 
-		minY = halfY;
+		minY = pvwpgmY;
 
 		if (x < minX || x > maxX || y < minY || y > maxY)
 			break;
@@ -848,12 +849,32 @@ void OBSProjector::UpdateMultiview()
 	struct obs_frontend_source_list scenes = {};
 	obs_frontend_get_scenes(&scenes);
 
-	int curIdx = 0;
+	size_t curIdx = 0;
 
 	multiviewLabels[0] = CreateLabel(Str("StudioMode.Preview"), h / 2);
 	multiviewLabels[1] = CreateLabel(Str("StudioMode.Program"), h / 2);
 
-	for (size_t i = 0; i < scenes.sources.num && curIdx < 8; i++) {
+	multiviewLayout = static_cast<MultiviewLayout>(config_get_int(
+			GetGlobalConfig(), "BasicWindow", "MultiviewLayout"));
+
+	drawLabel = config_get_bool(GetGlobalConfig(),
+			"BasicWindow", "MultiviewDrawNames");
+
+	drawSafeArea = config_get_bool(GetGlobalConfig(), "BasicWindow",
+			"MultiviewDrawAreas");
+
+	mouseSwitching = config_get_bool(GetGlobalConfig(), "BasicWindow",
+			"MultiviewMouseSwitch");
+
+	transitionOnDoubleClick = config_get_bool(GetGlobalConfig(),
+			"BasicWindow", "TransitionOnDoubleClick");
+
+	switch(multiviewLayout) {
+		default:
+			maxSrcs = 8;
+	}
+
+	for (size_t i = 0; i < scenes.sources.num && curIdx < maxSrcs; i++) {
 		obs_source_t *src = scenes.sources.array[i];
 		OBSData data = obs_source_get_private_settings(src);
 		obs_data_release(data);
@@ -874,23 +895,9 @@ void OBSProjector::UpdateMultiview()
 
 		curIdx++;
 	}
+	numSrcs = curIdx;
 
 	obs_frontend_source_list_free(&scenes);
-
-	multiviewLayout = static_cast<MultiviewLayout>(config_get_int(
-			GetGlobalConfig(), "BasicWindow", "MultiviewLayout"));
-
-	drawLabel = config_get_bool(GetGlobalConfig(),
-			"BasicWindow", "MultiviewDrawNames");
-
-	drawSafeArea = config_get_bool(GetGlobalConfig(), "BasicWindow",
-			"MultiviewDrawAreas");
-
-	mouseSwitching = config_get_bool(GetGlobalConfig(), "BasicWindow",
-			"MultiviewMouseSwitch");
-
-	transitionOnDoubleClick = config_get_bool(GetGlobalConfig(),
-			"BasicWindow", "TransitionOnDoubleClick");
 }
 
 void OBSProjector::UpdateProjectorTitle(QString name)
