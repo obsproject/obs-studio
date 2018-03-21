@@ -14,10 +14,10 @@ enum class ProjectorType {
 class QMouseEvent;
 
 enum class MultiviewLayout : uint8_t {
-	HORIZONTAL_TOP = 0,
-	HORIZONTAL_BOTTOM = 1,
-	VERTICAL_LEFT = 2,
-	VERTICAL_RIGHT = 3
+	HORIZONTAL_TOP_8_SCENES = 0,
+	HORIZONTAL_BOTTOM_8_SCENES = 1,
+	VERTICAL_LEFT_8_SCENES = 2,
+	VERTICAL_RIGHT_8_SCENES = 3
 };
 
 class OBSProjector : public OBSQTDisplay {

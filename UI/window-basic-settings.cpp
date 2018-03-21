@@ -1102,16 +1102,16 @@ void OBSBasicSettings::LoadGeneralSettings()
 
 	ui->multiviewLayout->addItem(QTStr(
 			"Basic.Settings.General.MultiviewLayout.Horizontal.Top"),
-			static_cast<int>(MultiviewLayout::HORIZONTAL_TOP));
+			static_cast<int>(MultiviewLayout::HORIZONTAL_TOP_8_SCENES));
 	ui->multiviewLayout->addItem(QTStr(
 			"Basic.Settings.General.MultiviewLayout.Horizontal.Bottom"),
-			static_cast<int>(MultiviewLayout::HORIZONTAL_BOTTOM));
+			static_cast<int>(MultiviewLayout::HORIZONTAL_BOTTOM_8_SCENES));
 	ui->multiviewLayout->addItem(QTStr(
 			"Basic.Settings.General.MultiviewLayout.Vertical.Left"),
-			static_cast<int>(MultiviewLayout::VERTICAL_LEFT));
+			static_cast<int>(MultiviewLayout::VERTICAL_LEFT_8_SCENES));
 	ui->multiviewLayout->addItem(QTStr(
 			"Basic.Settings.General.MultiviewLayout.Vertical.Right"),
-			static_cast<int>(MultiviewLayout::VERTICAL_RIGHT));
+			static_cast<int>(MultiviewLayout::VERTICAL_RIGHT_8_SCENES));
 
 	ui->multiviewLayout->setCurrentIndex(
 			config_get_int(GetGlobalConfig(), "BasicWindow",

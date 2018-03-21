@@ -333,19 +333,19 @@ void OBSProjector::OBSRenderMultiview(void *data, uint32_t cx, uint32_t cy)
 	auto calcBaseSource = [&](size_t i)
 	{
 		switch (multiviewLayout) {
-		case MultiviewLayout::VERTICAL_LEFT:
+		case MultiviewLayout::VERTICAL_LEFT_8_SCENES:
 			sourceX = halfCX;
 			sourceY = (i / 2 ) * quarterCY;
 			if (i % 2 != 0)
 				sourceX = halfCX + quarterCX;
 			break;
-		case MultiviewLayout::VERTICAL_RIGHT:
+		case MultiviewLayout::VERTICAL_RIGHT_8_SCENES:
 			sourceX = 0;
 			sourceY = (i / 2 ) * quarterCY;
 			if (i % 2 != 0)
 				sourceX = quarterCX;
 			break;
-		case MultiviewLayout::HORIZONTAL_BOTTOM:
+		case MultiviewLayout::HORIZONTAL_BOTTOM_8_SCENES:
 			if (i < 4) {
 				sourceX = (float(i) * quarterCX);
 				sourceY = 0;
@@ -354,7 +354,7 @@ void OBSProjector::OBSRenderMultiview(void *data, uint32_t cx, uint32_t cy)
 				sourceY = quarterCY;
 			}
 			break;
-		default: // MultiviewLayout::HORIZONTAL_TOP:
+		default: // MultiviewLayout::HORIZONTAL_TOP_8_SCENES:
 			if (i < 4) {
 				sourceX = (float(i) * quarterCX);
 				sourceY = halfCY;
@@ -368,7 +368,7 @@ void OBSProjector::OBSRenderMultiview(void *data, uint32_t cx, uint32_t cy)
 	auto calcPreviewProgram = [&](bool program)
 	{
 		switch (multiviewLayout) {
-		case MultiviewLayout::VERTICAL_LEFT:
+		case MultiviewLayout::VERTICAL_LEFT_8_SCENES:
 			sourceX = 2.0f;
 			sourceY = halfCY + 2.0f;
 			labelX = offset;
@@ -378,7 +378,7 @@ void OBSProjector::OBSRenderMultiview(void *data, uint32_t cx, uint32_t cy)
 				labelY = halfCY * 0.8f;
 			}
 			break;
-		case MultiviewLayout::VERTICAL_RIGHT:
+		case MultiviewLayout::VERTICAL_RIGHT_8_SCENES:
 			sourceX = halfCX + 2.0f;
 			sourceY = halfCY + 2.0f;
 			labelX = halfCX + offset;
@@ -388,7 +388,7 @@ void OBSProjector::OBSRenderMultiview(void *data, uint32_t cx, uint32_t cy)
 				labelY = halfCY * 0.8f;
 			}
 			break;
-		case MultiviewLayout::HORIZONTAL_BOTTOM:
+		case MultiviewLayout::HORIZONTAL_BOTTOM_8_SCENES:
 			sourceX = 2.0f;
 			sourceY = halfCY + 2.0f;
 			labelX = offset;
@@ -398,7 +398,7 @@ void OBSProjector::OBSRenderMultiview(void *data, uint32_t cx, uint32_t cy)
 				labelX = halfCX + offset;
 			}
 			break;
-		default: // MultiviewLayout::HORIZONTAL_TOP:
+		default: // MultiviewLayout::HORIZONTAL_TOP_8_SCENES:
 			sourceX = 2.0f;
 			sourceY = 2.0f;
 			labelX = offset;
@@ -665,7 +665,7 @@ static int getSourceByPosition(int x, int y)
 	int     pos   = -1;
 
 	switch (multiviewLayout) {
-	case MultiviewLayout::VERTICAL_LEFT:
+	case MultiviewLayout::VERTICAL_LEFT_8_SCENES:
 		if (float(cx) / float(cy) > ratio) {
 			int validX = cy * ratio;
 			maxX = halfX + (validX / 2);
@@ -684,7 +684,7 @@ static int getSourceByPosition(int x, int y)
 		if (x > minX + ((maxX - minX) / 2))
 			pos++;
 		break;
-	case MultiviewLayout::VERTICAL_RIGHT:
+	case MultiviewLayout::VERTICAL_RIGHT_8_SCENES:
 		if (float(cx) / float(cy) > ratio) {
 			int validX = cy * ratio;
 			minX = halfX - (validX / 2);
@@ -703,7 +703,7 @@ static int getSourceByPosition(int x, int y)
 		if (x > minX + ((maxX - minX) / 2))
 			pos++;
 		break;
-	case MultiviewLayout::HORIZONTAL_BOTTOM:
+	case MultiviewLayout::HORIZONTAL_BOTTOM_8_SCENES:
 		if (float(cx) / float(cy) > ratio) {
 			int validX = cy * ratio;
 			minX = halfX - (validX / 2);
@@ -722,7 +722,7 @@ static int getSourceByPosition(int x, int y)
 		if (y > minY + ((maxY - minY) / 2))
 			pos += 4;
 		break;
-	default: // MultiviewLayout::HORIZONTAL_TOP
+	default: // MultiviewLayout::HORIZONTAL_TOP_8_SCENES
 		if (float(cx) / float(cy) > ratio) {
 			int validX = cy * ratio;
 			minX = halfX - (validX / 2);

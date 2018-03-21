@@ -598,25 +598,29 @@ bool OBSApp::UpdatePre22MultiviewLayout(const char *layout)
 
 	if (astrcmpi(layout, "horizontaltop") == 0) {
 		config_set_int(globalConfig, "BasicWindow", "MultiviewLayout",
-			static_cast<int>(MultiviewLayout::HORIZONTAL_TOP));
+			static_cast<int>(
+				MultiviewLayout::HORIZONTAL_TOP_8_SCENES));
 		return true;
 	}
 
 	if (astrcmpi(layout, "horizontalbottom") == 0) {
 		config_set_int(globalConfig, "BasicWindow", "MultiviewLayout",
-			static_cast<int>(MultiviewLayout::HORIZONTAL_BOTTOM));
+			static_cast<int>(
+				MultiviewLayout::HORIZONTAL_BOTTOM_8_SCENES));
 		return true;
 	}
 
 	if (astrcmpi(layout, "verticalleft") == 0) {
 		config_set_int(globalConfig, "BasicWindow", "MultiviewLayout",
-			static_cast<int>(MultiviewLayout::VERTICAL_LEFT));
+			static_cast<int>(
+				MultiviewLayout::VERTICAL_LEFT_8_SCENES));
 		return true;
 	}
 
 	if (astrcmpi(layout, "verticalright") == 0) {
 		config_set_int(globalConfig, "BasicWindow", "MultiviewLayout",
-			static_cast<int>(MultiviewLayout::VERTICAL_RIGHT));
+			static_cast<int>(
+				MultiviewLayout::VERTICAL_RIGHT_8_SCENES));
 		return true;
 	}
 
