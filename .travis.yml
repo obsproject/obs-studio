@@ -45,7 +45,7 @@ deploy:
   region: us-west-2
   acl: public_read
   on:
-    repo: jp9000/obs-studio
+    repo: obsproject/obs-studio
     condition: "$TRAVIS_OS_NAME = osx"
     all_branches: true
 
