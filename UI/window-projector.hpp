@@ -48,11 +48,12 @@ private:
 	gs_vertbuffer_t *rightLine             = nullptr;
 	gs_effect_t *solid = nullptr;
 	gs_eparam_t *color = nullptr;
+	// Multiview position helpers
 	float thickness = 4;
 	float offset, thicknessx2 = thickness * 2, halfCX,
 		halfCY, sourceX, sourceY, labelX, labelY, quarterCX, quarterCY,
 		hiCX, hiCY, qiX, qiY, qiCX, qiCY, hiScaleX, hiScaleY, qiScaleX,
-		qiScaleY;
+		qiScaleY, fw, fh, ratio;
 
 	float lineLength                = 0.1f;
 	// Rec. ITU-R BT.1848-1 / EBU R 95

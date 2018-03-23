@@ -290,14 +290,10 @@ void OBSProjector::OBSRenderMultiview(void *data, uint32_t cx, uint32_t cy)
 	OBSBasic     *main   = (OBSBasic *)obs_frontend_get_main_window();
 	uint32_t     targetCX, targetCY;
 	int          x, y;
-	float        targetCXF, targetCYF, scale;
+	float        scale;
 
-	struct obs_video_info ovi;
-	obs_get_video_info(&ovi);
-	targetCX = ovi.base_width;
-	targetCY = ovi.base_height;
-	targetCXF = float(targetCX);
-	targetCYF = float(targetCY);
+	targetCX = (uint32_t)window->fw;
+	targetCY = (uint32_t)window->fh;
 
 	GetScaleAndCenterPos(targetCX, targetCY, cx, cy, x, y, scale);
 
@@ -444,11 +440,11 @@ void OBSProjector::OBSRenderMultiview(void *data, uint32_t cx, uint32_t cy)
 	};
 
 	// Define the whole usable region for the multiview
-	startRegion(x, y, targetCX * scale, targetCY * scale, 0.0f, targetCXF,
-			0.0f, targetCYF);
+	startRegion(x, y, targetCX * scale, targetCY * scale, 0.0f, window->fw,
+			0.0f, window->fh);
 
 	// Change the background color to highlight all sources
-	drawBox(targetCXF, targetCYF, outerColor);
+	drawBox(window->fw, window->fh, outerColor);
 
 	/* ----------------------------- */
 	/* draw sources                  */
@@ -661,12 +657,8 @@ void OBSProjector::OBSSourceRemoved(void *data, calldata_t *params)
 	UNUSED_PARAMETER(params);
 }
 
-static int getSourceByPosition(int x, int y)
+static int getSourceByPosition(int x, int y, float ratio)
 {
-	struct obs_video_info ovi;
-	obs_get_video_info(&ovi);
-	float ratio = float(ovi.base_width) / float(ovi.base_height);
-
 	QWidget *rec  = QApplication::activeWindow();
 	int     cx    = rec->width();
 	int     cy    = rec->height();
@@ -774,7 +766,7 @@ void OBSProjector::mouseDoubleClickEvent(QMouseEvent *event)
 		return;
 
 	if (event->button() == Qt::LeftButton) {
-		int pos = getSourceByPosition(event->x(), event->y());
+		int pos = getSourceByPosition(event->x(), event->y(), ratio);
 		if (pos < 0)
 			return;
 		OBSSource src = OBSGetStrongRef(multiviewScenes[pos]);
@@ -800,7 +792,7 @@ void OBSProjector::mousePressEvent(QMouseEvent *event)
 		return;
 
 	if (event->button() == Qt::LeftButton) {
-		int pos = getSourceByPosition(event->x(), event->y());
+		int pos = getSourceByPosition(event->x(), event->y(), ratio);
 		if (pos < 0)
 			return;
 		OBSSource src = OBSGetStrongRef(multiviewScenes[pos]);
@@ -830,8 +822,9 @@ void OBSProjector::UpdateMultiview()
 
 	uint32_t w  = ovi.base_width;
 	uint32_t h  = ovi.base_height;
-	float    fw = float(w);
-	float    fh = float(h);
+	fw       = float(w);
+	fh       = float(h);
+	ratio    = fw / fh;
 	halfCX   = fw / 2;
 	halfCY   = fh / 2;
 	hiCX     = halfCX - thicknessx2;
