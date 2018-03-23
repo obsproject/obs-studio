@@ -17,7 +17,8 @@ enum class MultiviewLayout : uint8_t {
 	HORIZONTAL_TOP_8_SCENES = 0,
 	HORIZONTAL_BOTTOM_8_SCENES = 1,
 	VERTICAL_LEFT_8_SCENES = 2,
-	VERTICAL_RIGHT_8_SCENES = 3
+	VERTICAL_RIGHT_8_SCENES = 3,
+	HORIZONTAL_TOP_24_SCENES = 4
 };
 
 class OBSProjector : public OBSQTDisplay {
@@ -38,8 +39,8 @@ private:
 	bool isWindow;
 	QString projectorTitle;
 	ProjectorType type = ProjectorType::Source;
-	OBSWeakSource multiviewScenes[8];
-	OBSSource     multiviewLabels[10];
+	std::vector<OBSWeakSource> multiviewScenes;
+	std::vector<OBSSource> multiviewLabels;
 	gs_vertbuffer_t *actionSafeMargin      = nullptr;
 	gs_vertbuffer_t *graphicsSafeMargin    = nullptr;
 	gs_vertbuffer_t *fourByThreeSafeMargin = nullptr;
@@ -50,10 +51,10 @@ private:
 	gs_eparam_t *color = nullptr;
 	// Multiview position helpers
 	float thickness = 4;
-	float offset, thicknessx2 = thickness * 2, halfCX,
-		halfCY, sourceX, sourceY, labelX, labelY, quarterCX, quarterCY,
-		hiCX, hiCY, qiX, qiY, qiCX, qiCY, hiScaleX, hiScaleY, qiScaleX,
-		qiScaleY, fw, fh, ratio;
+	float offset, thicknessx2 = thickness * 2, pvwprgCX,
+		pvwprgCY, sourceX, sourceY, labelX, labelY, scenesCX, scenesCY,
+		ppiCX, ppiCY, siX, siY, siCX, siCY, ppiScaleX, ppiScaleY,
+		siScaleX, siScaleY, fw, fh, ratio;
 
 	float lineLength                = 0.1f;
 	// Rec. ITU-R BT.1848-1 / EBU R 95
