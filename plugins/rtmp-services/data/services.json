@@ -797,7 +797,8 @@
             "recommended": {
                 "keyint": 2,
                 "max video bitrate": 25000,
-                "max audio bitrate": 192
+                "max audio bitrate": 192,
+                "x264opts": "scenecut=0"
             }
         },
         {
