@@ -73,4 +73,4 @@ function(install_plugin_bin_swig target additional_target)
 		VERBATIM)
 endfunction()
 
-install_plugin_bin_swig(obs-scripting _obspython)
+install_plugin_bin_swig(obs-scripting obspython)
