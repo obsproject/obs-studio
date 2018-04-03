@@ -2,6 +2,7 @@
 
 #include <obs.hpp>
 #include <QWidget>
+#include <QPaintEvent>
 #include <QSharedPointer>
 #include <QTimer>
 #include <QMutex>
@@ -109,7 +110,7 @@ private:
 	float currentPeak[MAX_AUDIO_CHANNELS];
 	float currentInputPeak[MAX_AUDIO_CHANNELS];
 
-	QPixmap *tickPaintCache = NULL;
+	QPixmap *tickPaintCache = nullptr;
 	int displayNrAudioChannels = 0;
 	float displayMagnitude[MAX_AUDIO_CHANNELS];
 	float displayPeak[MAX_AUDIO_CHANNELS];
@@ -143,8 +144,8 @@ private:
 	bool clipping = false;
 
 public:
-	explicit VolumeMeter(QWidget *parent = 0,
-		obs_volmeter_t *obs_volmeter = 0);
+	explicit VolumeMeter(QWidget *parent = nullptr,
+		obs_volmeter_t *obs_volmeter = nullptr);
 	~VolumeMeter();
 
 	void setLevels(
@@ -193,7 +194,7 @@ public:
 	void setPeakMeterType(enum obs_peak_meter_type peakMeterType);
 
 protected:
-	void paintEvent(QPaintEvent *event);
+	void paintEvent(QPaintEvent *event) override;
 };
 
 class VolumeMeterTimer : public QTimer {
@@ -206,7 +207,7 @@ public:
 	void RemoveVolControl(VolumeMeter *meter);
 
 protected:
-	virtual void timerEvent(QTimerEvent *event) override;
+	void timerEvent(QTimerEvent *event) override;
 	QList<VolumeMeter*> volumeMeters;
 };
 
@@ -251,7 +252,7 @@ signals:
 	void ConfigClicked();
 
 public:
-	VolControl(OBSSource source, bool showConfig = false);
+	explicit VolControl(OBSSource source, bool showConfig = false);
 	~VolControl();
 
 	inline obs_source_t *GetSource() const {return source;}
