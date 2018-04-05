@@ -17,7 +17,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#include <time.h>
+#include <ctime>
 #include <obs.hpp>
 #include <QGuiApplication>
 #include <QMessageBox>
@@ -25,7 +25,6 @@
 #include <QDesktopServices>
 #include <QFileDialog>
 #include <QDesktopWidget>
-#include <QRect>
 #include <QScreen>
 #include <QColorDialog>
 #include <QWidgetAction>
@@ -36,7 +35,6 @@
 #include <util/platform.h>
 #include <util/profiler.hpp>
 #include <util/dstr.hpp>
-#include <graphics/math-defs.h>
 
 #include "obs-app.hpp"
 #include "platform.hpp"
@@ -49,7 +47,6 @@
 #include "window-basic-main.hpp"
 #include "window-basic-stats.hpp"
 #include "window-basic-main-outputs.hpp"
-#include "window-basic-properties.hpp"
 #include "window-log-reply.hpp"
 #include "window-projector.hpp"
 #include "window-remux.hpp"
@@ -57,7 +54,8 @@
 #include "display-helpers.hpp"
 #include "volume-control.hpp"
 #include "remote-text.hpp"
-#include "source-tree.hpp"
+#include <fstream>
+#include <sstream>
 
 #ifdef _WIN32
 #include "win-update/win-update.hpp"
