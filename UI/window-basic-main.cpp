@@ -1690,6 +1690,8 @@ void OBSBasic::OBSInit()
 
 	multiviewProjectorMenu = new QMenu(QTStr("MultiviewProjector"));
 	ui->viewMenu->addMenu(multiviewProjectorMenu);
+	AddProjectorMenuMonitors(multiviewProjectorMenu, this,
+			SLOT(OpenMultiviewProjector()));
 	connect(ui->viewMenu->menuAction(), &QAction::hovered, this,
 			&OBSBasic::UpdateMultiviewProjectorMenu);
 	ui->viewMenu->addAction(QTStr("MultiviewWindowed"),
@@ -6350,6 +6352,22 @@ void OBSBasic::SystemTrayInit()
 	exit = new QAction(QTStr("Exit"),
 			trayIcon.data());
 
+	trayMenu = new QMenu;
+	previewProjector = new QMenu(QTStr("PreviewProjector"));
+	studioProgramProjector = new QMenu(QTStr("StudioProgramProjector"));
+	AddProjectorMenuMonitors(previewProjector, this,
+			SLOT(OpenPreviewProjector()));
+	AddProjectorMenuMonitors(studioProgramProjector, this,
+			SLOT(OpenStudioProgramProjector()));
+	trayMenu->addAction(showHide);
+	trayMenu->addMenu(previewProjector);
+	trayMenu->addMenu(studioProgramProjector);
+	trayMenu->addAction(sysTrayStream);
+	trayMenu->addAction(sysTrayRecord);
+	trayMenu->addAction(sysTrayReplayBuffer);
+	trayMenu->addAction(exit);
+	trayIcon->setContextMenu(trayMenu);
+
 	if (outputHandler && !outputHandler->replayBuffer)
 		sysTrayReplayBuffer->setEnabled(false);
 
@@ -6367,33 +6385,20 @@ void OBSBasic::SystemTrayInit()
 			this, &OBSBasic::ReplayBufferClicked);
 	connect(exit, SIGNAL(triggered()),
 			this, SLOT(close()));
-
-	trayMenu = new QMenu;
 }
 
 void OBSBasic::IconActivated(QSystemTrayIcon::ActivationReason reason)
 {
-	if (reason == QSystemTrayIcon::Trigger) {
-		ToggleShowHide();
-	} else if (reason == QSystemTrayIcon::Context) {
-		QMenu *previewProjector = new QMenu(QTStr("PreviewProjector"));
-		AddProjectorMenuMonitors(previewProjector, this,
-				SLOT(OpenPreviewProjector()));
-		QMenu *studioProgramProjector = new QMenu(
-				QTStr("StudioProgramProjector"));
-		AddProjectorMenuMonitors(studioProgramProjector, this,
-				SLOT(OpenStudioProgramProjector()));
+	// Refresh projector list
+	previewProjector->clear();
+	studioProgramProjector->clear();
+	AddProjectorMenuMonitors(previewProjector, this,
+			SLOT(OpenPreviewProjector()));
+	AddProjectorMenuMonitors(studioProgramProjector, this,
+			SLOT(OpenStudioProgramProjector()));
 
-		trayMenu->clear();
-		trayMenu->addAction(showHide);
-		trayMenu->addMenu(previewProjector);
-		trayMenu->addMenu(studioProgramProjector);
-		trayMenu->addAction(sysTrayStream);
-		trayMenu->addAction(sysTrayRecord);
-		trayMenu->addAction(sysTrayReplayBuffer);
-		trayMenu->addAction(exit);
-		trayMenu->popup(QCursor::pos());
-	}
+	if (reason == QSystemTrayIcon::Trigger)
+		ToggleShowHide();
 }
 
 void OBSBasic::SysTrayNotify(const QString &text,

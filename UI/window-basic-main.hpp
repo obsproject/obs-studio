@@ -195,8 +195,10 @@ private:
 	QPointer<QAction>         showHide;
 	QPointer<QAction>         exit;
 	QPointer<QMenu>           trayMenu;
+	QPointer<QMenu>           previewProjector;
+	QPointer<QMenu>           studioProgramProjector;
+	QPointer<QMenu>           multiviewProjectorMenu;
 
-	QPointer<QMenu> multiviewProjectorMenu;
 	void          UpdateMultiviewProjectorMenu();
 
 	void          DrawBackdrop(float cx, float cy);
