@@ -13,6 +13,7 @@ set(obs-ffmpeg_HEADERS
 	obs-ffmpeg-formats.h
 	obs-ffmpeg-compat.h
 	closest-pixel-format.h)
+
 set(obs-ffmpeg_SOURCES
 	obs-ffmpeg.c
 	obs-ffmpeg-audio-encoders.c
@@ -20,6 +21,18 @@ set(obs-ffmpeg_SOURCES
 	obs-ffmpeg-output.c
 	obs-ffmpeg-mux.c
 	obs-ffmpeg-source.c)
+
+if(UNIX AND NOT APPLE)
+	find_package(libva QUIET)
+	if(LIBVA_FOUND)
+		list(APPEND obs-ffmpeg_SOURCES
+		obs-ffmpeg-vaapi.c)
+		LIST(APPEND obs-ffmpeg_PLATFORM_DEPS
+			${LIBVA_LBRARIES})
+	else()
+		message(STATUS "libva not found: VAAPI support disabled.")
+	endif()
+endif()
 
 add_library(obs-ffmpeg MODULE
 	${obs-ffmpeg_HEADERS}
