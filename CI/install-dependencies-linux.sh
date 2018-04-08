@@ -1,6 +1,7 @@
 #!/bin/sh
 set -ex
 
+sudo add-apt-repository ppa:jonathonf/ffmpeg-3 -y
 sudo apt-get -qq update
 sudo apt-get install -y \
         build-essential \
@@ -11,6 +12,7 @@ sudo apt-get install -y \
         libavdevice-dev \
         libavfilter-dev \
         libavformat-dev \
+        libavutil-dev \
         libavutil-dev \
         libcurl4-openssl-dev \
         libfdk-aac-dev \
