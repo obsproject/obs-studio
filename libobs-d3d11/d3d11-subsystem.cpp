@@ -166,8 +166,8 @@ gs_swap_chain::gs_swap_chain(gs_device *device, const gs_init_data *data)
 	if (FAILED(hr))
 		throw HRError("Failed to create swap chain", hr);
 
-	const HRESULT res = device->factory->MakeWindowAssociation(hwnd,
-		DXGI_MWA_NO_ALT_ENTER);
+	//ignore Alt+Enter sequence for window
+	device->factory->MakeWindowAssociation(hwnd, DXGI_MWA_NO_ALT_ENTER);
 
 	Init();
 }
