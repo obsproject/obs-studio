@@ -13,13 +13,25 @@ set(obs-ffmpeg_HEADERS
 	obs-ffmpeg-formats.h
 	obs-ffmpeg-compat.h
 	closest-pixel-format.h)
-set(obs-ffmpeg_SOURCES
-	obs-ffmpeg.c
-	obs-ffmpeg-audio-encoders.c
-	obs-ffmpeg-nvenc.c
-	obs-ffmpeg-output.c
-	obs-ffmpeg-mux.c
-	obs-ffmpeg-source.c)
+
+if("${CMAKE_SYSTEM_NAME}" MATCHES "Linux")
+    set(obs-ffmpeg_SOURCES
+    	obs-ffmpeg.c
+    	obs-ffmpeg-audio-encoders.c
+    	obs-ffmpeg-nvenc.c
+    	obs-ffmpeg-vaapi.c
+    	obs-ffmpeg-output.c
+    	obs-ffmpeg-mux.c
+    	obs-ffmpeg-source.c)
+else()
+    set(obs-ffmpeg_SOURCES
+    	obs-ffmpeg.c
+    	obs-ffmpeg-audio-encoders.c
+    	obs-ffmpeg-nvenc.c
+    	obs-ffmpeg-output.c
+    	obs-ffmpeg-mux.c
+    	obs-ffmpeg-source.c)
+endif()
 
 add_library(obs-ffmpeg MODULE
 	${obs-ffmpeg_HEADERS}
