@@ -12,7 +12,7 @@ sudo apt-get install -y \
         libavdevice-ffmpeg-dev \
         libavfilter-ffmpeg-dev \
         libavformat-ffmpeg-dev \
-        libavutil-ffmpeg-dev \
+        libavutil-dev \
         libcurl4-openssl-dev \
         libfdk-aac-dev \
         libfontconfig-dev \
