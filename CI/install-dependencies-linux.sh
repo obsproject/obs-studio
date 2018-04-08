@@ -8,10 +8,11 @@ sudo apt-get install -y \
         checkinstall \
         cmake \
         libasound2-dev \
-        libavcodec-dev \
-        libavdevice-dev \
-        libavfilter-dev \
-        libavformat-dev \
+        libavcodec-ffmpeg-dev \
+        libavdevice-ffmpeg-dev \
+        libavfilter-ffmpeg-dev \
+        libavformat-ffmpeg-dev \
+        libavutil-ffmpeg-dev \
         libavutil-dev \
         libcurl4-openssl-dev \
         libfdk-aac-dev \
@@ -24,8 +25,8 @@ sudo apt-get install -y \
         libpulse-dev \
         libqt5x11extras5-dev \
         libspeexdsp-dev \
-        libswresample-dev \
-        libswscale-dev \
+        libswresample-ffmpeg-dev \
+        libswscale-ffmpeg-dev \
         libudev-dev \
         libv4l-dev \
         libva-dev \
