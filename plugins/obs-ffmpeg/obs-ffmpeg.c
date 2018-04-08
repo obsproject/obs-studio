@@ -183,11 +183,13 @@ bool obs_module_load(void)
 		blog(LOG_INFO, "NVENC supported");
 		obs_register_encoder(&nvenc_encoder_info);
 	}
-#endif
+#ifndef _WIN32
 	if (vaapi_supported()) {
 		blog(LOG_INFO, "FFMPEG VAAPI supported");
 		obs_register_encoder(&vaapi_encoder_info);
 	}
+#endif
+#endif
 	return true;
 }
 
