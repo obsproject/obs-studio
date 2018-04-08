@@ -28,6 +28,7 @@ sudo apt-get install -y \
         libswscale-ffmpeg-dev \
         libudev-dev \
         libv4l-dev \
+        libva-dev \
         libvlc-dev \
         libx11-dev \
         libx264-dev \
