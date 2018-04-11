@@ -32,7 +32,9 @@ OBSProjector::OBSProjector(QWidget *widget, obs_source_t *source_, int monitor,
 	isWindow       = savedMonitor < 0;
 	type           = type_;
 
-	if (!isWindow) {
+	if (isWindow) {
+		setWindowIcon(QIcon(":/res/images/obs.png"));
+	} else {
 		setWindowFlags(Qt::FramelessWindowHint |
 				Qt::X11BypassWindowManagerHint);
 	}
