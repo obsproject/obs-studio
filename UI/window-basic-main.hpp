@@ -724,6 +724,8 @@ private slots:
 	void OpenMultiviewWindow();
 	void OpenSceneWindow();
 
+	void DeferredLoad(const QString &file, int requeueCount);
+
 public slots:
 	void on_actionResetTransform_triggered();
 
