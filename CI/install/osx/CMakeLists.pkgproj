@@ -86,7 +86,7 @@
 																			<key>GID</key>
 																			<integer>80</integer>
 																			<key>PATH</key>
-																			<string>../../../build/plugins/obs-browser/CEF.app</string>
+																			<string>../../../build/plugins/obs-browser/cef-bootstrap</string>
 																			<key>PATH_TYPE</key>
 																			<integer>3</integer>
 																			<key>PERMISSIONS</key>
