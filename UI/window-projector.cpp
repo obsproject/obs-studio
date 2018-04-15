@@ -142,7 +142,7 @@ void OBSProjector::Init(int monitor, bool window, QString title,
 
 	bool alwaysOnTop = config_get_bool(GetGlobalConfig(),
 			"BasicWindow", "ProjectorAlwaysOnTop");
-	if (alwaysOnTop && !window)
+	if (alwaysOnTop)
 		SetAlwaysOnTop(this, true);
 
 	if (window)
