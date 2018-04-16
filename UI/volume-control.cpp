@@ -48,13 +48,13 @@ void VolControl::OBSVolumeMuted(void *data, calldata_t *calldata)
 	bool muted = calldata_bool(calldata, "muted");
 
 	QMetaObject::invokeMethod(volControl, "VolumeMuted",
-			Q_ARG(bool, muted));
+		Q_ARG(bool, muted));
 }
 
 void VolControl::VolumeChanged()
 {
 	slider->blockSignals(true);
-	slider->setValue((int) (obs_fader_get_deflection(obs_fader) * 100.0f));
+	slider->setValue((int)(obs_fader_get_deflection(obs_fader) * 100.0f));
 	slider->blockSignals(false);
 
 	updateText();
@@ -80,7 +80,7 @@ void VolControl::SliderChanged(int vol)
 void VolControl::updateText()
 {
 	QString db = QString::number(obs_fader_get_db(obs_fader), 'f', 1)
-			.append(" dB");
+		.append(" dB");
 	volLabel->setText(db);
 
 	bool muted = obs_source_muted(source);
@@ -115,25 +115,25 @@ void VolControl::SetMeterDecayRate(qreal q)
 }
 
 VolControl::VolControl(OBSSource source_, bool showConfig)
-	: source        (source_),
-	  levelTotal    (0.0f),
-	  levelCount    (0.0f),
-	  obs_fader     (obs_fader_create(OBS_FADER_CUBIC)),
-	  obs_volmeter  (obs_volmeter_create(OBS_FADER_LOG))
+	: source(source_),
+	levelTotal(0.0f),
+	levelCount(0.0f),
+	obs_fader(obs_fader_create(OBS_FADER_CUBIC)),
+	obs_volmeter(obs_volmeter_create(OBS_FADER_LOG))
 {
-	QHBoxLayout *volLayout  = new QHBoxLayout();
+	QHBoxLayout *volLayout = new QHBoxLayout();
 	QVBoxLayout *mainLayout = new QVBoxLayout();
 	QHBoxLayout *textLayout = new QHBoxLayout();
-	QHBoxLayout *botLayout  = new QHBoxLayout();
+	QHBoxLayout *botLayout = new QHBoxLayout();
 
 	nameLabel = new QLabel();
-	volLabel  = new QLabel();
-	volMeter  = new VolumeMeter(0, obs_volmeter);
-	mute      = new MuteCheckBox();
-	slider    = new QSlider(Qt::Horizontal);
+	volLabel = new QLabel();
+	volMeter = new VolumeMeter(0, obs_volmeter);
+	mute = new MuteCheckBox();
+	slider = new QSlider(Qt::Horizontal);
 
 	QFont font = nameLabel->font();
-	font.setPointSize(font.pointSize()-1);
+	font.setPointSize(font.pointSize() - 1);
 
 	QString sourceName = obs_source_get_name(source);
 
@@ -143,18 +143,18 @@ VolControl::VolControl(OBSSource source_, bool showConfig)
 	slider->setMinimum(0);
 	slider->setMaximum(100);
 
-//	slider->setMaximumHeight(13);
+	//	slider->setMaximumHeight(13);
 
 	textLayout->setContentsMargins(0, 0, 0, 0);
 	textLayout->addWidget(nameLabel);
 	textLayout->addWidget(volLabel);
 	textLayout->setAlignment(nameLabel, Qt::AlignLeft);
-	textLayout->setAlignment(volLabel,  Qt::AlignRight);
+	textLayout->setAlignment(volLabel, Qt::AlignRight);
 
 	bool muted = obs_source_muted(source);
 	mute->setChecked(muted);
 	mute->setAccessibleName(
-			QTStr("VolControl.Mute").arg(sourceName));
+		QTStr("VolControl.Mute").arg(sourceName));
 
 	volLayout->addWidget(slider);
 	volLayout->addWidget(mute);
@@ -169,15 +169,15 @@ VolControl::VolControl(OBSSource source_, bool showConfig)
 		config->setProperty("themeID", "configIconSmall");
 		config->setFlat(true);
 		config->setSizePolicy(QSizePolicy::Maximum,
-				QSizePolicy::Maximum);
+			QSizePolicy::Maximum);
 		config->setMaximumSize(22, 22);
 		config->setAutoDefault(false);
 
 		config->setAccessibleName(QTStr("VolControl.Properties")
-				.arg(sourceName));
+			.arg(sourceName));
 
 		connect(config, &QAbstractButton::clicked,
-				this, &VolControl::EmitConfigClicked);
+			this, &VolControl::EmitConfigClicked);
 
 		botLayout->addWidget(config);
 	}
@@ -194,12 +194,12 @@ VolControl::VolControl(OBSSource source_, bool showConfig)
 	obs_volmeter_add_callback(obs_volmeter, OBSVolumeLevel, this);
 
 	signal_handler_connect(obs_source_get_signal_handler(source),
-			"mute", OBSVolumeMuted, this);
+		"mute", OBSVolumeMuted, this);
 
 	QWidget::connect(slider, SIGNAL(valueChanged(int)),
-			this, SLOT(SliderChanged(int)));
+		this, SLOT(SliderChanged(int)));
 	QWidget::connect(mute, SIGNAL(clicked(bool)),
-			this, SLOT(SetMuted(bool)));
+		this, SLOT(SetMuted(bool)));
 
 	obs_fader_attach_source(obs_fader, source);
 	obs_volmeter_attach_source(obs_volmeter, source);
@@ -216,7 +216,7 @@ VolControl::~VolControl()
 	obs_volmeter_remove_callback(obs_volmeter, OBSVolumeLevel, this);
 
 	signal_handler_disconnect(obs_source_get_signal_handler(source),
-			"mute", OBSVolumeMuted, this);
+		"mute", OBSVolumeMuted, this);
 
 	obs_fader_destroy(obs_fader);
 	obs_volmeter_destroy(obs_volmeter);
@@ -413,7 +413,7 @@ void VolumeMeter::setInputPeakHoldDuration(qreal v)
 }
 
 VolumeMeter::VolumeMeter(QWidget *parent, obs_volmeter_t *obs_volmeter)
-			: QWidget(parent), obs_volmeter(obs_volmeter)
+	: QWidget(parent), obs_volmeter(obs_volmeter)
 {
 	// Use a font that can be rendered small.
 	tickFont = QFont("Arial");
@@ -515,8 +515,11 @@ inline bool VolumeMeter::detectIdle(uint64_t ts)
 	float timeSinceLastUpdate = (ts - currentLastUpdateTime) * 0.000000001;
 	if (timeSinceLastUpdate > 0.5) {
 		resetLevels();
+		isIdle = true;
 		return true;
-	} else {
+	}
+	else {
+		isIdle = false;
 		return false;
 	}
 }
@@ -528,7 +531,8 @@ inline void VolumeMeter::calculateBallisticsForChannel(int channelNr,
 		isnan(displayPeak[channelNr])) {
 		// Attack of peak is immediate.
 		displayPeak[channelNr] = currentPeak[channelNr];
-	} else {
+	}
+	else {
 		// Decay of peak is 40 dB / 1.7 seconds for Fast Profile
 		// 20 dB / 1.7 seconds for Medium Profile (Type I PPM)
 		// 24 dB / 2.8 seconds for Slow Profile (Type II PPM)
@@ -543,7 +547,8 @@ inline void VolumeMeter::calculateBallisticsForChannel(int channelNr,
 		// when it was last updated.
 		displayPeakHold[channelNr] = currentPeak[channelNr];
 		displayPeakHoldLastUpdateTime[channelNr] = ts;
-	} else {
+	}
+	else {
 		// The peak and hold falls back to peak
 		// after 20 seconds.
 		qreal timeSinceLastPeak = (uint64_t)(ts -
@@ -560,7 +565,8 @@ inline void VolumeMeter::calculateBallisticsForChannel(int channelNr,
 		// when it was last updated.
 		displayInputPeakHold[channelNr] = currentInputPeak[channelNr];
 		displayInputPeakHoldLastUpdateTime[channelNr] = ts;
-	} else {
+	}
+	else {
 		// The peak and hold falls back to peak after 1 second.
 		qreal timeSinceLastPeak = (uint64_t)(ts -
 			displayInputPeakHoldLastUpdateTime[channelNr]) *
@@ -578,14 +584,15 @@ inline void VolumeMeter::calculateBallisticsForChannel(int channelNr,
 		// NaN and infinite displayMagnitude.
 		displayMagnitude[channelNr] =
 			currentMagnitude[channelNr];
-	} else {
+	}
+	else {
 		// A VU meter will integrate to the new value to 99% in 300 ms.
 		// The calculation here is very simplified and is more accurate
 		// with higher frame-rate.
 		qreal attack = (currentMagnitude[channelNr] -
 			displayMagnitude[channelNr]) *
-				(timeSinceLastRedraw /
-			magnitudeIntegrationTime) * 0.99;
+			(timeSinceLastRedraw /
+				magnitudeIntegrationTime) * 0.99;
 		displayMagnitude[channelNr] = CLAMP(
 			displayMagnitude[channelNr] + attack,
 			minimumLevel, 0);
@@ -603,24 +610,6 @@ inline void VolumeMeter::calculateBallistics(uint64_t ts,
 	}
 }
 
-void VolumeMeter::paintInputMeter(QPainter &painter, int x, int y,
-	int width, int height, float peakHold)
-{
-	QMutexLocker locker(&dataMutex);
-
-	if (peakHold < minimumInputLevel) {
-		painter.fillRect(x, y, width, height, backgroundNominalColor);
-	} else if (peakHold < warningLevel) {
-		painter.fillRect(x, y, width, height, foregroundNominalColor);
-	} else if (peakHold < errorLevel) {
-		painter.fillRect(x, y, width, height, foregroundWarningColor);
-	} else if (peakHold <= clipLevel) {
-		painter.fillRect(x, y, width, height, foregroundErrorColor);
-	} else {
-		painter.fillRect(x, y, width, height, clipColor);
-	}
-}
-
 void VolumeMeter::paintTicks(QPainter &painter, int x, int y,
 	int width, int height)
 {
@@ -630,13 +619,14 @@ void VolumeMeter::paintTicks(QPainter &painter, int x, int y,
 	painter.setPen(majorTickColor);
 
 	// Draw major tick lines and numeric indicators.
-	for (int i = 0; i >= minimumLevel; i-= 5) {
+	for (int i = 0; i >= minimumLevel; i -= 5) {
 		int position = x + width - (i * scale) - 1;
 		QString str = QString::number(i);
 
-		if (i == 0 || i == -5)  {
+		if (i == 0 || i == -5) {
 			painter.drawText(position - 3, height, str);
-		} else {
+		}
+		else {
 			painter.drawText(position - 5, height, str);
 		}
 		painter.drawLine(position, y, position, y + 2);
@@ -659,20 +649,20 @@ void VolumeMeter::paintMeter(QPainter &painter, int x, int y,
 	qreal scale = width / minimumLevel;
 
 	QMutexLocker locker(&dataMutex);
-	int minimumPosition     = x + 0;
-	int maximumPosition     = x + width;
-	int magnitudePosition   = x + width - (magnitude * scale);
-	int peakPosition        = x + width - (peak * scale);
-	int peakHoldPosition    = x + width - (peakHold * scale);
-	int warningPosition     = x + width - (warningLevel * scale);
-	int errorPosition       = x + width - (errorLevel * scale);
+	int minimumPosition = x + 0;
+	int maximumPosition = x + width;
+	int magnitudePosition = x + width - (magnitude * scale);
+	int peakPosition = x + width - (peak * scale);
+	int peakHoldPosition = x + width - (peakHold * scale);
+	int warningPosition = x + width - (warningLevel * scale);
+	int errorPosition = x + width - (errorLevel * scale);
 
-	int nominalLength       = warningPosition - minimumPosition;
-	int warningLength       = errorPosition - warningPosition;
-	int errorLength         = maximumPosition - errorPosition;
+	int nominalLength = warningPosition - minimumPosition;
+	int warningLength = errorPosition - warningPosition;
+	int errorLength = maximumPosition - errorPosition;
 
-	int clipPosition        = errorPosition + (errorLength * 3 / 4);
-	int clipLength          = maximumPosition - clipPosition;
+	int clipPosition = errorPosition + (errorLength * 3 / 4);
+	int clipLength = maximumPosition - clipPosition;
 	locker.unlock();
 
 	if (peakPosition < minimumPosition) {
@@ -689,7 +679,8 @@ void VolumeMeter::paintMeter(QPainter &painter, int x, int y,
 			errorLength, height,
 			backgroundErrorColor);
 
-	} else if (peakPosition < warningPosition) {
+	}
+	else if (peakPosition < warningPosition) {
 		painter.fillRect(
 			minimumPosition, y,
 			peakPosition - minimumPosition, height,
@@ -706,7 +697,8 @@ void VolumeMeter::paintMeter(QPainter &painter, int x, int y,
 			errorLength, height,
 			backgroundErrorColor);
 
-	} else if (peakPosition < errorPosition) {
+	}
+	else if (peakPosition < errorPosition) {
 		painter.fillRect(
 			minimumPosition, y,
 			nominalLength, height,
@@ -724,7 +716,8 @@ void VolumeMeter::paintMeter(QPainter &painter, int x, int y,
 			errorLength, height,
 			backgroundErrorColor);
 
-	} else if (peakPosition < maximumPosition) {
+	}
+	else if (peakPosition < maximumPosition) {
 		painter.fillRect(
 			minimumPosition, y,
 			nominalLength, height,
@@ -742,7 +735,8 @@ void VolumeMeter::paintMeter(QPainter &painter, int x, int y,
 			maximumPosition - peakPosition, height,
 			backgroundErrorColor);
 
-	} else {
+	}
+	else {
 		painter.fillRect(
 			minimumPosition, y,
 			nominalLength, height,
@@ -757,33 +751,40 @@ void VolumeMeter::paintMeter(QPainter &painter, int x, int y,
 			foregroundErrorColor);
 		//we've clipped set the new timer
 		clipTime = os_gettime_ns() + clipHoldTime;
+		hasClipped = true;
 	}
 
 	//draw what we need when we clip
-	if (os_gettime_ns() < clipTime) {
-		painter.fillRect(
-			clipPosition, y,
-			clipLength, height,
-			clipColor
-		);
+	uint64_t now = os_gettime_ns();
+	if (now < clipTime || hasClipped) {
+		if ((now - clipTime) % 1000000000 < 500000000) {
+			painter.fillRect(
+				clipPosition, y,
+				clipLength, height,
+				clipColor
+			);
+		}
 	}
 
 	if (peakHoldPosition - 3 < minimumPosition) {
 		// Peak-hold below minimum, no drawing.
 
-	} else if (peakHoldPosition < warningPosition) {
+	}
+	else if (peakHoldPosition < warningPosition) {
 		painter.fillRect(
-			peakHoldPosition - 3,  y,
+			peakHoldPosition - 3, y,
 			3, height,
 			foregroundNominalColor);
 
-	} else if (peakHoldPosition < errorPosition) {
+	}
+	else if (peakHoldPosition < errorPosition) {
 		painter.fillRect(
 			peakHoldPosition - 3, y,
 			3, height,
 			foregroundWarningColor);
 
-	} else {
+	}
+	else {
 		painter.fillRect(
 			peakHoldPosition - 3, y,
 			3, height,
@@ -793,23 +794,44 @@ void VolumeMeter::paintMeter(QPainter &painter, int x, int y,
 	if (magnitudePosition - 3 < minimumPosition) {
 		// Magnitude below minimum, no drawing.
 
-	} else if (magnitudePosition < warningPosition) {
+	}
+	else if (magnitudePosition < warningPosition) {
 		painter.fillRect(
 			magnitudePosition - 3, y,
 			3, height,
 			magnitudeColor);
 
-	} else if (magnitudePosition < errorPosition) {
+	}
+	else if (magnitudePosition < errorPosition) {
 		painter.fillRect(
 			magnitudePosition - 3, y,
 			3, height,
 			magnitudeColor);
 
-	} else {
+	}
+	else {
 		painter.fillRect(
 			magnitudePosition - 3, y,
 			3, height,
 			magnitudeColor);
+	}
+
+	if (!isIdle) {
+		if (peakHold < minimumInputLevel) {
+			painter.fillRect(minimumPosition, y, 3, height, backgroundNominalColor);
+		}
+		else if (peakHold < warningLevel) {
+			painter.fillRect(minimumPosition, y, 3, height, foregroundNominalColor);
+		}
+		else if (peakHold < errorLevel) {
+			painter.fillRect(minimumPosition, y, 3, height, foregroundWarningColor);
+		}
+		else if (peakHold <= clipLevel) {
+			painter.fillRect(minimumPosition, y, 3, height, foregroundErrorColor);
+		}
+		else {
+			painter.fillRect(minimumPosition, y, 3, height, clipColor);
+		}
 	}
 }
 
@@ -820,7 +842,7 @@ void VolumeMeter::paintEvent(QPaintEvent *event)
 	uint64_t ts = os_gettime_ns();
 	qreal timeSinceLastRedraw = (ts - lastRedrawTime) * 0.000000001;
 
-	int width  = size().width();
+	int width = size().width();
 	int height = size().height();
 
 	handleChannelCofigurationChange();
@@ -853,22 +875,13 @@ void VolumeMeter::paintEvent(QPaintEvent *event)
 			5, channelNr * 4, width - 5, 3,
 			displayMagnitude[channelNr], displayPeak[channelNr],
 			displayPeakHold[channelNr]);
-		
-		/* //sorry I have no idea what this was meant for
-		//but it overwrites and draws over anything, making each
-		//draw a per frame thing, not what's needed to handle clipping
-		if (!idle) {
-			// By not drawing the input meter boxes the user can
-			// see that the audio stream has been stopped, without
-			// having too much visual impact.
-			paintInputMeter(painter,
-				0, channelNr * 4, 3, 3,
-				displayInputPeakHold[channelNr]);
-		}
-		*/
 	}
 
 	lastRedrawTime = ts;
+}
+
+void VolumeMeter::mousePressEvent(QMouseEvent *event){
+	hasClipped = false;
 }
 
 void VolumeMeterTimer::AddVolControl(VolumeMeter *meter)
