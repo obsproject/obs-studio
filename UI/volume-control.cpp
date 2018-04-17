@@ -634,17 +634,20 @@ void VolumeMeter::paintInputMeter(QPainter &painter, int x, int y, int width,
 		int height, float peakHold)
 {
 	QMutexLocker locker(&dataMutex);
+	QColor color;
 
 	if (peakHold < minimumInputLevel)
-		painter.fillRect(x, y, width, height, backgroundNominalColor);
+		color = backgroundNominalColor;
 	else if (peakHold < warningLevel)
-		painter.fillRect(x, y, width, height, foregroundNominalColor);
+		color = foregroundNominalColor;
 	else if (peakHold < errorLevel)
-		painter.fillRect(x, y, width, height, foregroundWarningColor);
+		color = foregroundWarningColor;
 	else if (peakHold <= clipLevel)
-		painter.fillRect(x, y, width, height, foregroundErrorColor);
+		color = foregroundErrorColor;
 	else
-		painter.fillRect(x, y, width, height, clipColor);
+		color = clipColor;
+
+	painter.fillRect(x, y, width, height, color);
 }
 
 void VolumeMeter::paintTicks(QPainter &painter, int x, int y, int width,
@@ -767,15 +770,7 @@ void VolumeMeter::paintMeter(QPainter &painter, int x, int y, int width,
 		painter.fillRect(peakHoldPosition - 3, y, 3, height,
 				foregroundErrorColor);
 
-	if (magnitudePosition - 3 < minimumPosition)
-		;// Magnitude below minimum, no drawing.
-	else if (magnitudePosition < warningPosition)
-		painter.fillRect(magnitudePosition - 3, y, 3, height,
-				magnitudeColor);
-	else if (magnitudePosition < errorPosition)
-		painter.fillRect(magnitudePosition - 3, y, 3, height,
-				magnitudeColor);
-	else
+	if (magnitudePosition - 3 >= minimumPosition)
 		painter.fillRect(magnitudePosition - 3, y, 3, height,
 				magnitudeColor);
 }
