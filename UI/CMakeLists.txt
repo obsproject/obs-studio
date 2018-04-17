@@ -153,6 +153,7 @@ set(obs_SOURCES
 	window-basic-transform.cpp
 	window-basic-preview.cpp
 	window-namedialog.cpp
+	window-scenecollectiondialog.cpp
 	window-log-reply.cpp
 	window-projector.cpp
 	window-remux.cpp
@@ -198,6 +199,7 @@ set(obs_HEADERS
 	window-basic-transform.hpp
 	window-basic-preview.hpp
 	window-namedialog.hpp
+	window-scenecollectiondialog.hpp
 	window-log-reply.hpp
 	window-projector.hpp
 	window-remux.hpp
@@ -227,6 +229,7 @@ set(obs_HEADERS
 
 set(obs_UI
 	forms/NameDialog.ui
+	forms/SceneCollectionDialog.ui
 	forms/AutoConfigStartPage.ui
 	forms/AutoConfigVideoPage.ui
 	forms/AutoConfigStreamPage.ui

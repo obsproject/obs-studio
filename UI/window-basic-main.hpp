@@ -424,6 +424,13 @@ private slots:
 	void AddSceneItem(OBSSceneItem item);
 	void RemoveSceneItem(OBSSceneItem item);
 	void AddScene(OBSSource source);
+	obs_data_t *GetSceneCollectionData(const char *file);
+	void SaveSceneCollectionData(const char *file, obs_data_t *saveData);
+	bool DoesSourceNameExistInSourceArray(const char *sourceName, obs_data_array_t *destSources);
+	bool DoesSourceNameExistInSceneCollection(const char *sourceName, const char *sceneCollection);
+	bool DoesSourceNameExistInSceneCollection(const char *sourceName, obs_data_t *sceneCollectionData);
+	bool AddSceneItemToSourceArray(obs_sceneitem_t *item, obs_data_array_t *&destSources, std::string &sourceNameConflictNames);
+	void AddSceneToSceneCollection(OBSSource source, const char *sceneCollection);
 	void RemoveScene(OBSSource source);
 	void RenameSources(OBSSource source, QString newName, QString prevName);
 
@@ -433,6 +440,7 @@ private slots:
 	void DeactivateAudioSource(OBSSource source);
 
 	void DuplicateSelectedScene();
+	void CopySelectedSceneToSceneCollection();
 	void RemoveSelectedScene();
 	void RemoveSelectedSceneItem();
 

@@ -41,6 +41,7 @@
 #include "item-widget-helpers.hpp"
 #include "window-basic-settings.hpp"
 #include "window-namedialog.hpp"
+#include "window-scenecollectiondialog.hpp"
 #include "window-basic-auto-config.hpp"
 #include "window-basic-source-select.hpp"
 #include "window-basic-main.hpp"
@@ -2244,6 +2245,249 @@ void OBSBasic::AddScene(OBSSource source)
 		api->on_event(OBS_FRONTEND_EVENT_SCENE_LIST_CHANGED);
 }
 
+obs_data_t *OBSBasic::GetSceneCollectionData(const char *file)
+{
+	if (!file || !os_file_exists(file)) {
+		blog(LOG_INFO, "No scene file found");
+		//return;
+	}
+
+	disableSaving++;
+
+	obs_data_t *data = obs_data_create_from_json_file_safe(file, "bak");
+	if (!data) {
+		disableSaving--;
+		blog(LOG_ERROR, "Failed to load '%s'",
+			file);
+		//return;
+	}
+
+	disableSaving--;
+	return data;
+}
+
+void OBSBasic::SaveSceneCollectionData(const char *file, obs_data_t *saveData)
+{
+	if (!obs_data_save_json_safe(saveData, file, "tmp", "bak"))
+		blog(LOG_ERROR, "Could not save scene data to %s", file);
+}
+
+bool OBSBasic::DoesSourceNameExistInSourceArray(const char *sourceName,
+		obs_data_array_t *destSources)
+{
+	// check if source name exists in source array
+	size_t num = obs_data_array_count(destSources);
+	blog(LOG_DEBUG, "sourceName: %s", sourceName);
+	for (size_t i = 0; i < num; i++) {
+		obs_data_t *destSource = obs_data_array_item(destSources, i);
+		const char *destSourceName = obs_data_get_string(destSource,
+				"name");
+		obs_data_release(destSource);
+		blog(LOG_DEBUG, "destSourceName: %s", destSourceName);
+		if (strcmp(destSourceName, sourceName) == 0) {
+			blog(LOG_WARNING, "Source name '%s' already exists in "
+					"target Scene Collection",
+					sourceName);
+			return true;
+		}
+	}
+	return false;
+}
+
+bool OBSBasic::DoesSourceNameExistInSceneCollection(const char *sourceName,
+		const char *sceneCollectionName)
+{
+	bool exists = false;
+	// Try to get Scene Collection JSON file path
+	char savePath[512];
+	char fileName[512];
+	int ret;
+	string sceneCollectionFile;
+
+	// Probably don't need this check
+	if (!sceneCollectionName)
+		throw "Failed to get scene collection name";
+
+	GetFileSafeName(sceneCollectionName, sceneCollectionFile);
+	ret = snprintf(fileName, 512, "obs-studio/basic/scenes/%s.json",
+			sceneCollectionFile.c_str());
+	if (ret <= 0)
+		throw "Failed to create scene collection file name";
+
+	ret = GetConfigPath(savePath, sizeof(savePath), fileName);
+	if (ret <= 0)
+		throw "Failed to get scene collection json file path";
+
+	obs_data_t *loadData = GetSceneCollectionData(savePath);
+	obs_data_array_t *destSources = obs_data_get_array(loadData, "sources");
+
+	// check if source name exists in destination scene collection
+	exists = DoesSourceNameExistInSourceArray(sourceName, destSources);
+
+	obs_data_release(loadData);
+	obs_data_array_release(destSources);
+
+	return exists;
+}
+
+bool OBSBasic::DoesSourceNameExistInSceneCollection(const char *sourceName,
+		obs_data_t *sceneCollectionData)
+{
+	bool exists = false;
+	obs_data_array_t *destSources = obs_data_get_array(sceneCollectionData,
+			"sources");
+
+	// check if source name exists in destination scene collection
+	exists = DoesSourceNameExistInSourceArray(sourceName, destSources);
+
+	obs_data_array_release(destSources);
+
+	return exists;
+}
+
+bool OBSBasic::AddSceneItemToSourceArray(obs_sceneitem_t *item,
+		obs_data_array_t *&destSources,
+		std::string &sourceNameConflictNames)
+{
+	//obs_data_array_t *tempSources = (obs_data_array_t *)destSources;
+	bool sourceNameConflictExists = false;
+	//string sourceNameConflictNames = "";
+
+	obs_source_t *itemSource = obs_sceneitem_get_source(item);
+	obs_data_t *sourceData = obs_save_source(itemSource);
+
+	const char *itemSourceName = obs_source_get_name(itemSource);
+	if (DoesSourceNameExistInSourceArray(itemSourceName, destSources)) {
+		sourceNameConflictExists = true;
+		sourceNameConflictNames += std::string("- ") +
+				itemSourceName + std::string("\n");
+	}
+
+	const char *id = obs_source_get_id(itemSource);
+	if (strcmp(id, "scene") == 0) {
+		auto addSceneItem = [&](obs_sceneitem_t *item)
+		{
+			bool success = AddSceneItemToSourceArray(item, destSources, sourceNameConflictNames);
+			if (!success)
+				sourceNameConflictExists = true;
+
+			return true;
+		};
+		using addSceneItem_t = decltype(addSceneItem);
+		obs_scene_t *copiedScene = obs_scene_from_source(itemSource);
+		obs_scene_enum_items(copiedScene,
+				[](obs_scene_t*, obs_sceneitem_t *item,
+						void *param)
+				{
+					addSceneItem_t *func;
+					func = reinterpret_cast<addSceneItem_t*>(param);
+					(*func)(item);
+					return true;
+				}, &addSceneItem);
+	}
+
+	obs_data_array_push_back(destSources, sourceData);
+	obs_data_release(sourceData);
+	//obs_source_release(itemSource); // causes uncaught exception?
+	return !sourceNameConflictExists;
+}
+
+// Rework of OBSBasic::AddScene
+void OBSBasic::AddSceneToSceneCollection(OBSSource source,
+		const char *sceneCollectionName)
+{
+	const char *copiedSceneName = obs_source_get_name(source);
+	obs_scene_t *copiedScene = obs_scene_from_source(source);
+
+	// Try to get Scene Collection JSON file path
+	char savePath[512];
+	char fileName[512];
+	int ret;
+	string sceneCollectionFile;
+
+	// Probably don't need this check
+	if (!sceneCollectionName)
+		throw "Failed to get scene collection name";
+
+	GetFileSafeName(sceneCollectionName, sceneCollectionFile);
+	ret = snprintf(fileName, 512, "obs-studio/basic/scenes/%s.json",
+			sceneCollectionFile.c_str());
+	if (ret <= 0)
+		throw "Failed to create scene collection file name";
+
+	ret = GetConfigPath(savePath, sizeof(savePath), fileName);
+	if (ret <= 0)
+		throw "Failed to get scene collection json file path";
+
+	// if the above is refactored, we still need savePath and
+	// sceneCollectionFile preserved for later use in this function
+
+	// Get target scene collection data and its sources array
+	obs_data_t *saveData = GetSceneCollectionData(savePath);
+	obs_data_array_t *destSources = obs_data_get_array(saveData, "sources");
+
+	// if the scene already has items (a duplicated scene) add them
+	bool sourceNameConflict = false;
+	int sourceNameConflictNum = 0;
+	string sourceNameConflictNames = "";
+	auto addSceneItem = [&](obs_sceneitem_t *item)
+	{
+		bool success = AddSceneItemToSourceArray(item, destSources, sourceNameConflictNames);
+		if (!success)
+			sourceNameConflict = true;
+
+		return true;
+	};
+
+	using addSceneItem_t = decltype(addSceneItem);
+
+	obs_scene_enum_items(copiedScene,
+			[](obs_scene_t*, obs_sceneitem_t *item, void *param)
+			{
+				addSceneItem_t *func;
+				func = reinterpret_cast<addSceneItem_t*>(param);
+				(*func)(item);
+				return true;
+			}, &addSceneItem);
+
+	// add the scene source itself to the source data array
+	obs_data_t *sceneSourceData = obs_save_source(source);
+	obs_data_array_push_back(destSources, sceneSourceData);
+
+	// add the scene and its sources to saveData
+	obs_data_set_array(saveData, "sources", destSources);
+
+	// if there is a source name conflict with the target scene collection,
+	// abort this attempt and alert the user
+	if (sourceNameConflict) {
+		blog(LOG_WARNING, "A source name associated with the copied "
+				"Scene already exists in the target Scene "
+				"Collection.  Aborting copy operation.");
+		QString text = QTStr("Basic.Main.CopySceneToCollection.NameConflict.Text");
+		text.replace("$1", QT_UTF8(sourceNameConflictNames.c_str()));
+		QMessageBox::warning(this,
+				QTStr("Basic.Main.CopySceneToCollection.NameConflict.Title"),
+				text);
+		goto release_data;
+	}
+
+	SaveSceneCollectionData(savePath, saveData);
+
+	if (!disableSaving) {
+		blog(LOG_INFO, "User copied scene '%s' to "
+				"scene collection '%s' (%s.json)",
+				copiedSceneName,
+				sceneCollectionName,
+				sceneCollectionFile.c_str());
+	}
+
+	release_data:
+	obs_data_release(sceneSourceData);
+	obs_data_release(saveData);
+	obs_data_array_release(destSources);
+	//obs_scene_release(copiedScene); // causes uncaught exception?
+}
+
 void OBSBasic::RemoveScene(OBSSource source)
 {
 	obs_scene_t *scene = obs_scene_from_source(source);
@@ -2785,6 +3029,107 @@ void OBSBasic::DuplicateSelectedScene()
 		SetCurrentScene(source, true);
 		obs_scene_release(scene);
 
+		break;
+	}
+}
+
+// Rework of OBSBasic::DuplicateSelectedScene
+void OBSBasic::CopySelectedSceneToSceneCollection()
+{
+	OBSScene curScene = GetCurrentScene();
+
+	if (!curScene)
+		return;
+
+	OBSSource curSceneSource = obs_scene_get_source(curScene);
+	QString placeHolderText = obs_source_get_name(curSceneSource);
+
+	obs_source_t *source = nullptr;
+	/*QString format{ obs_source_get_name(curSceneSource) };
+	format += " %1";
+	int i = 2;
+	QString placeHolderText = format.arg(i);
+	while ((source = obs_get_source_by_name(QT_TO_UTF8(placeHolderText)))) {
+		obs_source_release(source);
+		placeHolderText = format.arg(++i);
+	}*/
+
+	// Get vector of names of scene collections except the current one
+	vector<string> sceneCollections;
+	api->obs_frontend_get_scene_collections(sceneCollections);
+	char *tmpCurSceneCollection = api->obs_frontend_get_current_scene_collection();
+	string curSceneCollection(tmpCurSceneCollection);
+	bfree(tmpCurSceneCollection);
+	sceneCollections.erase(std::remove(sceneCollections.begin(),
+			sceneCollections.end(), curSceneCollection),
+			sceneCollections.end());
+
+	for (;;) {
+		// pick scene collection to copy to
+		string sceneCollection;
+		bool gotSceneCollection = SceneCollectionDialog::AskForName(this,
+				QTStr("Basic.Main.CopySceneToSceneCollectionDlg.Title"),
+				QTStr("Basic.Main.CopySceneToSceneCollectionDlg.Text"),
+				sceneCollection,
+				sceneCollections);
+		if (!gotSceneCollection)
+			return;
+
+		if (sceneCollection.empty()) {
+			QMessageBox::information(this,
+					QTStr("NoNameEntered.Title"),
+					QTStr("NoNameEntered.Text"));
+			continue;
+		}
+
+
+		string name;
+		bool accepted = NameDialog::AskForName(this,
+				QTStr("Basic.Main.AddSceneDlg.Title"),
+				QTStr("Basic.Main.AddSceneDlg.Text"),
+				name,
+				placeHolderText);
+		if (!accepted)
+			return;
+
+		if (name.empty()) {
+			QMessageBox::information(this,
+					QTStr("NoNameEntered.Title"),
+					QTStr("NoNameEntered.Text"));
+			continue;
+		}
+
+		// checks if source name exists in local scene collection
+		// should instead check if source name exists in target scene collection
+		//obs_source_t *source = obs_get_source_by_name(name.c_str());
+		/*if (source) {
+			QMessageBox::information(this,
+					QTStr("NameExists.Title"),
+					QTStr("NameExists.Text"));
+
+			obs_source_release(source);
+			continue;
+		}*/
+		if (DoesSourceNameExistInSceneCollection(name.c_str(),
+				sceneCollection.c_str())) {
+			// Should this error message be more specific?
+			QMessageBox::information(this,
+					QTStr("NameExists.Title"),
+					QTStr("NameExists.Text"));
+			continue;
+		}
+
+		obs_scene_t *scene = obs_scene_duplicate(curScene,
+				name.c_str(), OBS_SCENE_DUP_REFS);
+		source = obs_scene_get_source(scene);
+		AddSceneToSceneCollection(source, sceneCollection.c_str());
+		//SetCurrentScene(source, true); // probably don't need to switch to the target scene collection
+		obs_scene_release(scene);
+		//obs_source_release(source); // causes uncaught exception?
+
+		// Since this is a non-visible change, do we need this?
+		if (api)
+			api->on_event(OBS_FRONTEND_EVENT_SCENE_LIST_CHANGED);
 		break;
 	}
 }
@@ -3605,6 +3950,8 @@ void OBSBasic::on_scenes_customContextMenuRequested(const QPoint &pos)
 		popup.addAction(QTStr("Remove"),
 				this, SLOT(RemoveSelectedScene()),
 				DeleteKeys.front());
+		popup.addAction(QTStr("Basic.Main.CopySceneToSceneCollection"),
+				this, SLOT(CopySelectedSceneToSceneCollection()));
 		popup.addSeparator();
 
 		order.addAction(QTStr("Basic.MainMenu.Edit.Order.MoveUp"),
