@@ -1452,6 +1452,12 @@ EXPORT void obs_output_force_stop(obs_output_t *output);
 /** Returns whether the output is active */
 EXPORT bool obs_output_active(const obs_output_t *output);
 
+/** Returns output capability flags */
+EXPORT uint32_t obs_output_get_flags(const obs_output_t *output);
+
+/** Returns output capability flags */
+EXPORT uint32_t obs_get_output_flags(const char *id);
+
 /** Gets the default settings for an output type */
 EXPORT obs_data_t *obs_output_defaults(const char *id);
 

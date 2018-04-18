@@ -419,6 +419,18 @@ bool obs_output_active(const obs_output_t *output)
 		(active(output) || reconnecting(output)) : false;
 }
 
+uint32_t obs_output_get_flags(const obs_output_t *output)
+{
+	return obs_output_valid(output, "obs_output_get_flags") ?
+		output->info.flags : 0;
+}
+
+uint32_t obs_get_output_flags(const char *id)
+{
+	const struct obs_output_info *info = find_output(id);
+	return info ? info->flags : 0;
+}
+
 static inline obs_data_t *get_defaults(const struct obs_output_info *info)
 {
 	obs_data_t *settings = obs_data_create();
