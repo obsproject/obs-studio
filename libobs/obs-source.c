@@ -427,6 +427,11 @@ static void duplicate_filters(obs_source_t *dst, obs_source_t *src,
 
 void obs_source_copy_filters(obs_source_t *dst, obs_source_t *src)
 {
+	if (!obs_source_valid(dst, "obs_source_copy_filters"))
+		return;
+	if (!obs_source_valid(src, "obs_source_copy_filters"))
+		return;
+
 	duplicate_filters(dst, src, dst->context.private);
 }
 
