@@ -27,37 +27,6 @@ extern bool load_graphics_offsets(bool is32bit);
 
 #define USE_HOOK_ADDRESS_CACHE false
 
-static DWORD WINAPI init_hooks(LPVOID unused)
-{
-	if (USE_HOOK_ADDRESS_CACHE &&
-	    cached_versions_match() &&
-	    load_cached_graphics_offsets(IS32BIT)) {
-
-		load_cached_graphics_offsets(!IS32BIT);
-		obs_register_source(&game_capture_info);
-
-	} else if (load_graphics_offsets(IS32BIT)) {
-		load_graphics_offsets(!IS32BIT);
-	}
-
-	UNUSED_PARAMETER(unused);
-	return 0;
-}
-
-void wait_for_hook_initialization(void)
-{
-	static bool initialized = false;
-
-	if (!initialized) {
-		if (init_hooks_thread) {
-			WaitForSingleObject(init_hooks_thread, INFINITE);
-			CloseHandle(init_hooks_thread);
-			init_hooks_thread = NULL;
-		}
-		initialized = true;
-	}
-}
-
 bool obs_module_load(void)
 {
 	struct win_version_info ver;
@@ -74,6 +43,15 @@ bool obs_module_load(void)
 
 	win8_or_above = ver.major > 6 || (ver.major == 6 && ver.minor >= 2);
 
+	if (USE_HOOK_ADDRESS_CACHE &&
+	    cached_versions_match() &&
+	    load_cached_graphics_offsets(IS32BIT)) {
+
+		load_cached_graphics_offsets(!IS32BIT);
+	} else if (load_graphics_offsets(IS32BIT)) {
+		load_graphics_offsets(!IS32BIT);
+	}
+
 	obs_enter_graphics();
 
 	if (win8_or_above && gs_get_device_type() == GS_DEVICE_DIRECT3D_11)
@@ -84,8 +62,6 @@ bool obs_module_load(void)
 	obs_leave_graphics();
 
 	obs_register_source(&window_capture_info);
-
-	init_hooks_thread = CreateThread(NULL, 0, init_hooks, NULL, 0, NULL);
 	obs_register_source(&game_capture_info);
 
 	return true;
@@ -93,5 +69,4 @@ bool obs_module_load(void)
 
 void obs_module_unload(void)
 {
-	wait_for_hook_initialization();
 }
