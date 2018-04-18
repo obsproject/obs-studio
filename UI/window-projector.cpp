@@ -24,7 +24,9 @@ OBSProjector::OBSProjector(QWidget *widget, obs_source_t *source_, bool window)
 	  removedSignal                (obs_source_get_signal_handler(source),
 	                                "remove", OBSSourceRemoved, this)
 {
-	if (!window) {
+	if (window) {
+		setWindowIcon(QIcon(":/res/images/obs.png"));
+	} else {
 		setWindowFlags(Qt::FramelessWindowHint |
 				Qt::X11BypassWindowManagerHint);
 	}

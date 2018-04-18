@@ -136,6 +136,7 @@ OBSBasicStats::OBSBasicStats(QWidget *parent)
 	               Qt::WindowMinimizeButtonHint |
 	               Qt::WindowCloseButtonHint);
 	setWindowTitle(QTStr("Basic.Stats"));
+	setWindowIcon(QIcon(":/res/images/obs.png"));
 	setWindowModality(Qt::NonModal);
 	setAttribute(Qt::WA_DeleteOnClose, true);
 
