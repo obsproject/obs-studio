@@ -3245,6 +3245,7 @@ void OBSBasic::CloseDialogs()
 	}
 
 	if (!stats.isNull()) stats->close(); //call close to save Stats geometry
+	if (!remux.isNull()) remux->close();
 }
 
 void OBSBasic::EnumDialogs()
@@ -3384,12 +3385,21 @@ void OBSBasic::on_actionShow_Recordings_triggered()
 
 void OBSBasic::on_actionRemux_triggered()
 {
+	if (!remux.isNull()) {
+		remux->show();
+		remux->raise();
+		return;
+	}
+
 	const char *mode = config_get_string(basicConfig, "Output", "Mode");
 	const char *path = strcmp(mode, "Advanced") ?
 		config_get_string(basicConfig, "SimpleOutput", "FilePath") :
 		config_get_string(basicConfig, "AdvOut", "RecFilePath");
-	OBSRemux remux(path, this);
-	remux.exec();
+
+	OBSRemux *remuxDlg;
+	remuxDlg = new OBSRemux(path, this);
+	remuxDlg->show();
+	remux = remuxDlg;
 }
 
 void OBSBasic::on_action_Settings_triggered()

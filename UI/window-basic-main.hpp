@@ -170,6 +170,7 @@ private:
 	QList<QPointer<QWidget>> windowProjectors;
 
 	QPointer<QWidget> stats;
+	QPointer<QWidget> remux;
 
 	QPointer<QMenu> startStreamMenu;
 
