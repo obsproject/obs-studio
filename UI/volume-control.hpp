@@ -79,6 +79,9 @@ class VolumeMeter : public QWidget
 		READ getInputPeakHoldDuration
 		WRITE setInputPeakHoldDuration DESIGNABLE true)
 
+private slots:
+	void ClipEnding();
+
 private:
 	obs_volmeter_t *obs_volmeter;
 	static QWeakPointer<VolumeMeterTimer> updateTimer;
@@ -137,6 +140,7 @@ private:
 	qreal inputPeakHoldDuration;
 
 	uint64_t lastRedrawTime = 0;
+	bool clipping = false;
 
 public:
 	explicit VolumeMeter(QWidget *parent = 0,
