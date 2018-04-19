@@ -51,6 +51,8 @@ public:
 
 	using job_t = std::shared_ptr<struct media_remux_job>;
 
+	void Init();
+
 private slots:
 	void inputChanged(const QString &str);
 
