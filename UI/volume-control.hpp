@@ -13,74 +13,74 @@ class VolumeMeterTimer;
 class VolumeMeter : public QWidget
 {
 	Q_OBJECT
-	Q_PROPERTY(QColor backgroundNominalColor
-		READ getBackgroundNominalColor
-		WRITE setBackgroundNominalColor DESIGNABLE true)
-	Q_PROPERTY(QColor backgroundWarningColor
-		READ getBackgroundWarningColor
-		WRITE setBackgroundWarningColor DESIGNABLE true)
-	Q_PROPERTY(QColor backgroundErrorColor
-		READ getBackgroundErrorColor
-		WRITE setBackgroundErrorColor DESIGNABLE true)
-	Q_PROPERTY(QColor foregroundNominalColor
-		READ getForegroundNominalColor
-		WRITE setForegroundNominalColor DESIGNABLE true)
-	Q_PROPERTY(QColor foregroundWarningColor
-		READ getForegroundWarningColor
-		WRITE setForegroundWarningColor DESIGNABLE true)
-	Q_PROPERTY(QColor foregroundErrorColor
-		READ getForegroundErrorColor
-		WRITE setForegroundErrorColor DESIGNABLE true)
-	Q_PROPERTY(QColor clipColor
-		READ getClipColor
-		WRITE setClipColor DESIGNABLE true)
-	Q_PROPERTY(QColor magnitudeColor
-		READ getMagnitudeColor
-		WRITE setMagnitudeColor DESIGNABLE true)
-	Q_PROPERTY(QColor majorTickColor
-		READ getMajorTickColor
-		WRITE setMajorTickColor DESIGNABLE true)
-	Q_PROPERTY(QColor minorTickColor
-		READ getMinorTickColor
-		WRITE setMinorTickColor DESIGNABLE true)
+		Q_PROPERTY(QColor backgroundNominalColor
+			READ getBackgroundNominalColor
+			WRITE setBackgroundNominalColor DESIGNABLE true)
+		Q_PROPERTY(QColor backgroundWarningColor
+			READ getBackgroundWarningColor
+			WRITE setBackgroundWarningColor DESIGNABLE true)
+		Q_PROPERTY(QColor backgroundErrorColor
+			READ getBackgroundErrorColor
+			WRITE setBackgroundErrorColor DESIGNABLE true)
+		Q_PROPERTY(QColor foregroundNominalColor
+			READ getForegroundNominalColor
+			WRITE setForegroundNominalColor DESIGNABLE true)
+		Q_PROPERTY(QColor foregroundWarningColor
+			READ getForegroundWarningColor
+			WRITE setForegroundWarningColor DESIGNABLE true)
+		Q_PROPERTY(QColor foregroundErrorColor
+			READ getForegroundErrorColor
+			WRITE setForegroundErrorColor DESIGNABLE true)
+		Q_PROPERTY(QColor clipColor
+			READ getClipColor
+			WRITE setClipColor DESIGNABLE true)
+		Q_PROPERTY(QColor magnitudeColor
+			READ getMagnitudeColor
+			WRITE setMagnitudeColor DESIGNABLE true)
+		Q_PROPERTY(QColor majorTickColor
+			READ getMajorTickColor
+			WRITE setMajorTickColor DESIGNABLE true)
+		Q_PROPERTY(QColor minorTickColor
+			READ getMinorTickColor
+			WRITE setMinorTickColor DESIGNABLE true)
 
-	// Levels are denoted in dBFS.
-	Q_PROPERTY(qreal minimumLevel
-		READ getMinimumLevel
-		WRITE setMinimumLevel DESIGNABLE true)
-	Q_PROPERTY(qreal warningLevel
-		READ getWarningLevel
-		WRITE setWarningLevel DESIGNABLE true)
-	Q_PROPERTY(qreal errorLevel
-		READ getErrorLevel
-		WRITE setErrorLevel DESIGNABLE true)
-	Q_PROPERTY(qreal clipLevel
-		READ getClipLevel
-		WRITE setClipLevel DESIGNABLE true)
-	Q_PROPERTY(qreal minimumInputLevel
-		READ getMinimumInputLevel
-		WRITE setMinimumInputLevel DESIGNABLE true)
+		// Levels are denoted in dBFS.
+		Q_PROPERTY(qreal minimumLevel
+			READ getMinimumLevel
+			WRITE setMinimumLevel DESIGNABLE true)
+		Q_PROPERTY(qreal warningLevel
+			READ getWarningLevel
+			WRITE setWarningLevel DESIGNABLE true)
+		Q_PROPERTY(qreal errorLevel
+			READ getErrorLevel
+			WRITE setErrorLevel DESIGNABLE true)
+		Q_PROPERTY(qreal clipLevel
+			READ getClipLevel
+			WRITE setClipLevel DESIGNABLE true)
+		Q_PROPERTY(qreal minimumInputLevel
+			READ getMinimumInputLevel
+			WRITE setMinimumInputLevel DESIGNABLE true)
 
-	// Rates are denoted in dB/second.
-	Q_PROPERTY(qreal peakDecayRate
-		READ getPeakDecayRate
-		WRITE setPeakDecayRate DESIGNABLE true)
+		// Rates are denoted in dB/second.
+		Q_PROPERTY(qreal peakDecayRate
+			READ getPeakDecayRate
+			WRITE setPeakDecayRate DESIGNABLE true)
 
-	// Time in seconds for the VU meter to integrate over.
-	Q_PROPERTY(qreal magnitudeIntegrationTime
-		READ getMagnitudeIntegrationTime
-		WRITE setMagnitudeIntegrationTime DESIGNABLE true)
+		// Time in seconds for the VU meter to integrate over.
+		Q_PROPERTY(qreal magnitudeIntegrationTime
+			READ getMagnitudeIntegrationTime
+			WRITE setMagnitudeIntegrationTime DESIGNABLE true)
 
-	// Duration is denoted in seconds.
-	Q_PROPERTY(qreal peakHoldDuration
-		READ getPeakHoldDuration
-		WRITE setPeakHoldDuration DESIGNABLE true)
-	Q_PROPERTY(qreal inputPeakHoldDuration
-		READ getInputPeakHoldDuration
-		WRITE setInputPeakHoldDuration DESIGNABLE true)
+		// Duration is denoted in seconds.
+		Q_PROPERTY(qreal peakHoldDuration
+			READ getPeakHoldDuration
+			WRITE setPeakHoldDuration DESIGNABLE true)
+		Q_PROPERTY(qreal inputPeakHoldDuration
+			READ getInputPeakHoldDuration
+			WRITE setInputPeakHoldDuration DESIGNABLE true)
 
 private:
-	obs_volmeter_t *obs_volmeter;
+	obs_volmeter_t * obs_volmeter;
 	static QWeakPointer<VolumeMeterTimer> updateTimer;
 	QSharedPointer<VolumeMeterTimer> updateTimerRef;
 
@@ -88,12 +88,10 @@ private:
 	inline void handleChannelCofigurationChange();
 	inline bool detectIdle(uint64_t ts);
 	inline void calculateBallistics(uint64_t ts,
-		qreal timeSinceLastRedraw=0.0);
+		qreal timeSinceLastRedraw = 0.0);
 	inline void calculateBallisticsForChannel(int channelNr,
 		uint64_t ts, qreal timeSinceLastRedraw);
 
-	void paintInputMeter(QPainter &painter, int x, int y,
-		int width, int height, float peakHold);
 	void paintMeter(QPainter &painter, int x, int y,
 		int width, int height,
 		float magnitude, float peak, float peakHold);
@@ -137,6 +135,10 @@ private:
 	qreal inputPeakHoldDuration;
 
 	uint64_t lastRedrawTime = 0;
+	uint64_t clipTime = 0;
+	uint64_t clipHoldTime = 3000000000;
+	bool hasClipped = false;
+	bool isIdle;
 
 public:
 	explicit VolumeMeter(QWidget *parent = 0,
@@ -189,6 +191,7 @@ public:
 
 protected:
 	void paintEvent(QPaintEvent *event);
+	void mousePressEvent(QMouseEvent *event);
 };
 
 class VolumeMeterTimer : public QTimer {
@@ -234,7 +237,7 @@ private:
 
 	void EmitConfigClicked();
 
-private slots:
+	private slots:
 	void VolumeChanged();
 	void VolumeMuted(bool muted);
 
@@ -249,7 +252,7 @@ public:
 	VolControl(OBSSource source, bool showConfig = false);
 	~VolControl();
 
-	inline obs_source_t *GetSource() const {return source;}
+	inline obs_source_t *GetSource() const { return source; }
 
 	QString GetName() const;
 	void SetName(const QString &newName);
