@@ -2,7 +2,14 @@
 
 #include <obs.hpp>
 #include "qt-display.hpp"
-#include "window-basic-main.hpp"
+
+enum class ProjectorType {
+	Source,
+	Scene,
+	Preview,
+	StudioProgram,
+	Multiview
+};
 
 class QMouseEvent;
 
@@ -20,8 +27,9 @@ private:
 	void mousePressEvent(QMouseEvent *event) override;
 	void mouseDoubleClickEvent(QMouseEvent *event) override;
 
-	int savedMonitor = 0;
-	bool isWindow = false;
+	int savedMonitor;
+	bool isWindow;
+	QString projectorTitle;
 	ProjectorType type = ProjectorType::Source;
 	OBSWeakSource multiviewScenes[8];
 	OBSSource     multiviewLabels[10];
@@ -35,16 +43,21 @@ private:
 	bool ready = false;
 
 	void UpdateMultiview();
+	void UpdateProjectorTitle(QString name);
 
 private slots:
 	void EscapeTriggered();
 
 public:
-	OBSProjector(QWidget *parent, obs_source_t *source, bool window);
+	OBSProjector(QWidget *widget, obs_source_t *source_, int monitor,
+			QString title, ProjectorType type_);
 	~OBSProjector();
 
-	void Init(int monitor, bool window, QString title,
-			ProjectorType type = ProjectorType::Source);
+	void Init();
 
+	OBSSource GetSource();
+	ProjectorType GetProjectorType();
+	int GetMonitor();
 	static void UpdateMultiviewProjectors();
+	static void RenameProjector(QString oldName, QString newName);
 };

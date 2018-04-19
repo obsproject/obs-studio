@@ -3,7 +3,8 @@
 #include <QMouseEvent>
 #include <QMenu>
 #include <QScreen>
-#include "window-projector.hpp"
+#include "obs-app.hpp"
+#include "window-basic-main.hpp"
 #include "display-helpers.hpp"
 #include "qt-wrappers.hpp"
 #include "platform.hpp"
@@ -13,18 +14,25 @@
 #define VERTICAL_LEFT     2
 #define VERTICAL_RIGHT    3
 
+static QList<OBSProjector *> windowedProjectors;
 static QList<OBSProjector *> multiviewProjectors;
 static bool updatingMultiview = false;
 static int multiviewLayout = HORIZONTAL_TOP;
 
-OBSProjector::OBSProjector(QWidget *widget, obs_source_t *source_, bool window)
+OBSProjector::OBSProjector(QWidget *widget, obs_source_t *source_, int monitor,
+		QString title, ProjectorType type_)
 	: OBSQTDisplay                 (widget,
 	                                Qt::Window),
 	  source                       (source_),
 	  removedSignal                (obs_source_get_signal_handler(source),
 	                                "remove", OBSSourceRemoved, this)
 {
-	if (!window) {
+	projectorTitle = title;
+	savedMonitor   = monitor;
+	isWindow       = savedMonitor < 0;
+	type           = type_;
+
+	if (!isWindow) {
 		setWindowFlags(Qt::FramelessWindowHint |
 				Qt::X11BypassWindowManagerHint);
 	}
@@ -49,122 +57,11 @@ OBSProjector::OBSProjector(QWidget *widget, obs_source_t *source_, bool window)
 
 	bool hideCursor = config_get_bool(GetGlobalConfig(),
 			"BasicWindow", "HideProjectorCursor");
-	if (hideCursor && !window) {
+	if (hideCursor && !isWindow) {
 		QPixmap empty(16, 16);
 		empty.fill(Qt::transparent);
 		setCursor(QCursor(empty));
 	}
-
-	App()->IncrementSleepInhibition();
-	resize(480, 270);
-}
-
-OBSProjector::~OBSProjector()
-{
-	bool isMultiview = type == ProjectorType::Multiview;
-	obs_display_remove_draw_callback(GetDisplay(),
-			isMultiview ? OBSRenderMultiview : OBSRender, this);
-
-	if (source)
-		obs_source_dec_showing(source);
-
-	if (isMultiview) {
-		for (OBSWeakSource &weakSrc : multiviewScenes) {
-			OBSSource src = OBSGetStrongRef(weakSrc);
-			if (src)
-				obs_source_dec_showing(src);
-		}
-
-		obs_enter_graphics();
-		gs_vertexbuffer_destroy(outerBox);
-		gs_vertexbuffer_destroy(innerBox);
-		gs_vertexbuffer_destroy(leftVLine);
-		gs_vertexbuffer_destroy(rightVLine);
-		gs_vertexbuffer_destroy(leftLine);
-		gs_vertexbuffer_destroy(topLine);
-		gs_vertexbuffer_destroy(rightLine);
-		obs_leave_graphics();
-	}
-
-	if (type == ProjectorType::Multiview)
-		multiviewProjectors.removeAll(this);
-
-	App()->DecrementSleepInhibition();
-}
-
-static OBSSource CreateLabel(const char *name, size_t h)
-{
-	obs_data_t *settings = obs_data_create();
-	obs_data_t *font     = obs_data_create();
-
-	std::string text;
-	text += " ";
-	text += name;
-	text += " ";
-
-#if defined(_WIN32)
-	obs_data_set_string(font, "face", "Arial");
-#elif defined(__APPLE__)
-	obs_data_set_string(font, "face", "Helvetica");
-#else
-	obs_data_set_string(font, "face", "Monospace");
-#endif
-	obs_data_set_int(font, "flags", 1); // Bold text
-	obs_data_set_int(font, "size", int(h / 9.81));
-
-	obs_data_set_obj(settings, "font", font);
-	obs_data_set_string(settings, "text", text.c_str());
-	obs_data_set_bool(settings, "outline", false);
-
-#ifdef _WIN32
-	const char *text_source_id = "text_gdiplus";
-#else
-	const char *text_source_id = "text_ft2_source";
-#endif
-
-	OBSSource txtSource = obs_source_create_private(text_source_id, name,
-			settings);
-	obs_source_release(txtSource);
-
-	obs_data_release(font);
-	obs_data_release(settings);
-
-	return txtSource;
-}
-
-void OBSProjector::Init(int monitor, bool window, QString title,
-		ProjectorType type_)
-{
-	QScreen *screen = QGuiApplication::screens()[monitor];
-
-	if (!window)
-		setGeometry(screen->geometry());
-
-	bool alwaysOnTop = config_get_bool(GetGlobalConfig(),
-			"BasicWindow", "ProjectorAlwaysOnTop");
-	if (alwaysOnTop && !window)
-		SetAlwaysOnTop(this, true);
-
-	if (window)
-		setWindowTitle(title);
-
-	show();
-
-	if (source)
-		obs_source_inc_showing(source);
-
-	if (!window) {
-		QAction *action = new QAction(this);
-		action->setShortcut(Qt::Key_Escape);
-		addAction(action);
-		connect(action, SIGNAL(triggered()), this,
-				SLOT(EscapeTriggered()));
-		activateWindow();
-	}
-
-	savedMonitor = monitor;
-	isWindow     = window;
-	type         = type_;
 
 	if (type == ProjectorType::Multiview) {
 		obs_enter_graphics();
@@ -214,6 +111,113 @@ void OBSProjector::Init(int monitor, bool window, QString title,
 
 		multiviewProjectors.push_back(this);
 	}
+
+	App()->IncrementSleepInhibition();
+	resize(480, 270);
+}
+
+OBSProjector::~OBSProjector()
+{
+	bool isMultiview = type == ProjectorType::Multiview;
+	obs_display_remove_draw_callback(GetDisplay(),
+			isMultiview ? OBSRenderMultiview : OBSRender, this);
+
+	if (source)
+		obs_source_dec_showing(source);
+
+	if (isMultiview) {
+		for (OBSWeakSource &weakSrc : multiviewScenes) {
+			OBSSource src = OBSGetStrongRef(weakSrc);
+			if (src)
+				obs_source_dec_showing(src);
+		}
+
+		obs_enter_graphics();
+		gs_vertexbuffer_destroy(outerBox);
+		gs_vertexbuffer_destroy(innerBox);
+		gs_vertexbuffer_destroy(leftVLine);
+		gs_vertexbuffer_destroy(rightVLine);
+		gs_vertexbuffer_destroy(leftLine);
+		gs_vertexbuffer_destroy(topLine);
+		gs_vertexbuffer_destroy(rightLine);
+		obs_leave_graphics();
+	}
+
+	if (type == ProjectorType::Multiview)
+		multiviewProjectors.removeAll(this);
+
+	if (isWindow)
+		windowedProjectors.removeAll(this);
+
+	App()->DecrementSleepInhibition();
+}
+
+static OBSSource CreateLabel(const char *name, size_t h)
+{
+	obs_data_t *settings = obs_data_create();
+	obs_data_t *font     = obs_data_create();
+
+	std::string text;
+	text += " ";
+	text += name;
+	text += " ";
+
+#if defined(_WIN32)
+	obs_data_set_string(font, "face", "Arial");
+#elif defined(__APPLE__)
+	obs_data_set_string(font, "face", "Helvetica");
+#else
+	obs_data_set_string(font, "face", "Monospace");
+#endif
+	obs_data_set_int(font, "flags", 1); // Bold text
+	obs_data_set_int(font, "size", int(h / 9.81));
+
+	obs_data_set_obj(settings, "font", font);
+	obs_data_set_string(settings, "text", text.c_str());
+	obs_data_set_bool(settings, "outline", false);
+
+#ifdef _WIN32
+	const char *text_source_id = "text_gdiplus";
+#else
+	const char *text_source_id = "text_ft2_source";
+#endif
+
+	OBSSource txtSource = obs_source_create_private(text_source_id, name,
+			settings);
+	obs_source_release(txtSource);
+
+	obs_data_release(font);
+	obs_data_release(settings);
+
+	return txtSource;
+}
+
+void OBSProjector::Init()
+{
+	bool alwaysOnTop = config_get_bool(GetGlobalConfig(),
+			"BasicWindow", "ProjectorAlwaysOnTop");
+	if (alwaysOnTop && !isWindow)
+		SetAlwaysOnTop(this, true);
+
+	show();
+
+	if (isWindow) {
+		UpdateProjectorTitle(projectorTitle);
+		windowedProjectors.push_back(this);
+	} else {
+		QScreen *screen = QGuiApplication::screens()[savedMonitor];
+		setGeometry(screen->geometry());
+
+		QAction *action = new QAction(this);
+		action->setShortcut(Qt::Key_Escape);
+		addAction(action);
+		connect(action, SIGNAL(triggered()), this,
+				SLOT(EscapeTriggered()));
+		activateWindow();
+	}
+
+	if (source)
+		obs_source_inc_showing(source);
 
 	ready = true;
 }
@@ -588,6 +592,7 @@ void OBSProjector::OBSRender(void *data, uint32_t cx, uint32_t cy)
 		return;
 
 	OBSBasic *main = reinterpret_cast<OBSBasic*>(App()->GetMainWindow());
+	OBSSource source = window->source;
 
 	uint32_t targetCX;
 	uint32_t targetCY;
@@ -595,9 +600,9 @@ void OBSProjector::OBSRender(void *data, uint32_t cx, uint32_t cy)
 	int      newCX, newCY;
 	float    scale;
 
-	if (window->source) {
-		targetCX = std::max(obs_source_get_width(window->source), 1u);
-		targetCY = std::max(obs_source_get_height(window->source), 1u);
+	if (source) {
+		targetCX = std::max(obs_source_get_width(source), 1u);
+		targetCY = std::max(obs_source_get_height(source), 1u);
 	} else {
 		struct obs_video_info ovi;
 		obs_get_video_info(&ovi);
@@ -615,14 +620,12 @@ void OBSProjector::OBSRender(void *data, uint32_t cx, uint32_t cy)
 	gs_ortho(0.0f, float(targetCX), 0.0f, float(targetCY), -100.0f, 100.0f);
 	gs_set_viewport(x, y, newCX, newCY);
 
-	OBSSource source = window->source;
-
 	if (window->type == ProjectorType::Preview &&
 	    main->IsPreviewProgramMode()) {
 		OBSSource curSource = main->GetCurrentSceneSource();
 
-		if (window->source != curSource) {
-			obs_source_dec_showing(window->source);
+		if (source != curSource) {
+			obs_source_dec_showing(source);
 			obs_source_inc_showing(curSource);
 			source = curSource;
 		}
@@ -796,11 +799,6 @@ void OBSProjector::mousePressEvent(QMouseEvent *event)
 
 void OBSProjector::EscapeTriggered()
 {
-	if (!isWindow) {
-		OBSBasic *main = (OBSBasic*)obs_frontend_get_main_window();
-		main->RemoveSavedProjectors(savedMonitor);
-	}
-
 	deleteLater();
 }
 
@@ -861,6 +859,41 @@ void OBSProjector::UpdateMultiview()
 		multiviewLayout = HORIZONTAL_TOP;
 }
 
+void OBSProjector::UpdateProjectorTitle(QString name)
+{
+	projectorTitle = name;
+
+	QString title = nullptr;
+	switch (type) {
+	case ProjectorType::Scene:
+		title = QTStr("SceneWindow") + " - " + name;
+		break;
+	case ProjectorType::Source:
+		title = QTStr("SourceWindow") + " - " + name;
+		break;
+	default:
+		title = name;
+		break;
+	}
+
+	setWindowTitle(title);
+}
+
+OBSSource OBSProjector::GetSource()
+{
+	return source;
+}
+
+ProjectorType OBSProjector::GetProjectorType()
+{
+	return type;
+}
+
+int OBSProjector::GetMonitor()
+{
+	return savedMonitor;
+}
+
 void OBSProjector::UpdateMultiviewProjectors()
 {
 	obs_enter_graphics();
@@ -873,4 +906,11 @@ void OBSProjector::UpdateMultiviewProjectors()
 	obs_enter_graphics();
 	updatingMultiview = false;
 	obs_leave_graphics();
+}
+
+void OBSProjector::RenameProjector(QString oldName, QString newName)
+{
+	for (auto &projector : windowedProjectors)
+		if (projector->projectorTitle == oldName)
+			projector->UpdateProjectorTitle(newName);
 }
