@@ -808,8 +808,11 @@ retryScene:
 		obs_data_array_t *savedProjectors = obs_data_get_array(data,
 				"saved_projectors");
 
-		if (savedProjectors)
+		if (savedProjectors) {
 			LoadSavedProjectors(savedProjectors);
+			OpenSavedProjectors();
+			activateWindow();
+		}
 
 		obs_data_array_release(savedProjectors);
 	}
@@ -5622,12 +5625,6 @@ void OBSBasic::OpenSceneWindow()
 
 void OBSBasic::OpenSavedProjectors()
 {
-	bool projectorSave = config_get_bool(GetGlobalConfig(),
-			"BasicWindow", "SaveProjectors");
-
-	if (!projectorSave)
-		return;
-
 	for (SavedProjectorInfo *info : savedProjectorsArray) {
 		OBSProjector *projector = nullptr;
 		switch (info->type) {
