@@ -10,7 +10,7 @@
 #define TEXT_MATCH_CLASS    obs_module_text("WindowCapture.Priority.Class")
 #define TEXT_MATCH_EXE      obs_module_text("WindowCapture.Priority.Exe")
 #define TEXT_CAPTURE_CURSOR obs_module_text("CaptureCursor")
-#define TEXT_COMPATIBILITY  obs_module_text("Compatibility")
+#define TEXT_COMPATIBILITY  obs_module_text("SLIFix")
 
 struct window_capture {
 	obs_source_t         *source;
