@@ -564,6 +564,10 @@ EXPORT void obs_render_main_view(void);
 /** Renders the last main output texture */
 EXPORT void obs_render_main_texture(void);
 
+/** Returns the last main output texture.  This can return NULL if the texture
+ * is unavailable. */
+EXPORT gs_texture_t *obs_get_main_texture(void);
+
 /** Sets the master user volume */
 EXPORT void obs_set_master_volume(float volume);
 

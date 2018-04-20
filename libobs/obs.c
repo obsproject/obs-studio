@@ -1468,6 +1468,23 @@ void obs_render_main_texture(void)
 		gs_draw_sprite(tex, 0, 0, 0);
 }
 
+gs_texture_t *obs_get_main_texture(void)
+{
+	struct obs_core_video *video = &obs->video;
+	int last_tex;
+
+	if (!obs) return NULL;
+
+	last_tex = video->cur_texture == 0
+		? NUM_TEXTURES - 1
+		: video->cur_texture - 1;
+
+	if (!video->textures_rendered[last_tex])
+		return NULL;
+
+	return video->render_textures[last_tex];
+}
+
 void obs_set_master_volume(float volume)
 {
 	struct calldata data = {0};
