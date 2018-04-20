@@ -1,6 +1,6 @@
 project(osx-text)
 
-include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/libobs")
+include_directories(SYSTEM "${obs-studio_SOURCE_DIR}/libobs")
 
 find_library(COCOA Cocoa)
 include_directories(${COCOA})

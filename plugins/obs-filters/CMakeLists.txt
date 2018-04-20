@@ -11,12 +11,12 @@ else()
 endif()
 
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/obs-filters-config.h.in"
-	"${CMAKE_BINARY_DIR}/plugins/obs-filters/config/obs-filters-config.h")
+	"${obs-studio_BINARY_DIR}/plugins/obs-filters/config/obs-filters-config.h")
 
 set(obs-filters_config_HEADERS
-	"${CMAKE_BINARY_DIR}/plugins/obs-filters/config/obs-filters-config.h")
+	"${obs-studio_BINARY_DIR}/plugins/obs-filters/config/obs-filters-config.h")
 include_directories(${LIBSPEEXDSP_INCLUDE_DIRS}
-	"${CMAKE_BINARY_DIR}/plugins/obs-filters/config")
+	"${obs-studio_BINARY_DIR}/plugins/obs-filters/config")
 
 if(MSVC)
 	set(obs-filters_PLATFORM_DEPS

@@ -10,7 +10,7 @@ find_package(XCB COMPONENTS XCB SHM XFIXES XINERAMA REQUIRED)
 find_package(X11_XCB REQUIRED)
 
 include_directories(SYSTEM
-	"${CMAKE_SOURCE_DIR}/libobs"
+	"${obs-studio_SOURCE_DIR}/libobs"
 	${X11_Xcomposite_INCLUDE_PATH}
 	${X11_X11_INCLUDE_PATH}
 	${XCB_INCLUDE_DIRS}

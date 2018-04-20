@@ -1,6 +1,6 @@
 project(obs-frontend-api)
 
-include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/libobs")
+include_directories(SYSTEM "${obs-studio_SOURCE_DIR}/libobs")
 
 add_definitions(-DLIBOBS_EXPORTS)
 

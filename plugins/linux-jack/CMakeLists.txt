@@ -14,7 +14,7 @@ elseif(NOT JACK_FOUND)
 endif()
 
 include_directories(
-	SYSTEM "${CMAKE_SOURCE_DIR}/libobs"
+	SYSTEM "${obs-studio_SOURCE_DIR}/libobs"
 	${JACK_INCLUDE_DIR}
 )
 

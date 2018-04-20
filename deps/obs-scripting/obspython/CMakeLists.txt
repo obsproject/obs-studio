@@ -15,7 +15,7 @@ if(MSVC)
 endif()
 
 include_directories(${PYTHON_INCLUDE_DIR})
-include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/libobs")
+include_directories(SYSTEM "${obs-studio_SOURCE_DIR}/libobs")
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
 #add_definitions( -DSWIG_TYPE_TABLE=libobs )

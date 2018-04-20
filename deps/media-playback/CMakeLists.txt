@@ -4,7 +4,7 @@ find_package(FFmpeg REQUIRED
 	COMPONENTS avcodec avdevice avutil avformat)
 
 include_directories(
-	${CMAKE_SOURCE_DIR}/libobs
+	${obs-studio_SOURCE_DIR}/libobs
 	${FFMPEG_INCLUDE_DIRS}
 	)
 

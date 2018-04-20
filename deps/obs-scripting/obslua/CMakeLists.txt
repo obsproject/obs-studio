@@ -13,7 +13,7 @@ if(MSVC)
 	add_compile_options("/wd4267")
 endif()
 
-include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/libobs")
+include_directories(SYSTEM "${obs-studio_SOURCE_DIR}/libobs")
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
 SWIG_ADD_MODULE(obslua lua obslua.i ../cstrcache.cpp ../cstrcache.h)
