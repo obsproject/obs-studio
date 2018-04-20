@@ -36,6 +36,8 @@
 std::string CurrentTimeString();
 std::string CurrentDateTimeString();
 std::string GenerateTimeDateFilename(const char *extension, bool noSpace=false);
+std::string GenerateNumberedString(const int32_t recType, int32_t number,
+					const char *format);
 std::string GenerateSpecifiedFilename(const char *extension, bool noSpace,
 					const char *format);
 QObject *CreateShortcutFilter();
