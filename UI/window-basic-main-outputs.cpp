@@ -895,6 +895,8 @@ bool SimpleOutput::ConfigureRecording(bool updateReplayBuffer)
 		obs_data_set_string(settings, "directory", path);
 		obs_data_set_string(settings, "format", f.c_str());
 		obs_data_set_string(settings, "extension", format);
+		obs_data_set_bool(settings, "overwrite", overwriteIfExists);
+		obs_data_set_bool(settings, "allow_spaces", !noSpace);
 		obs_data_set_int(settings, "max_time_sec", rbTime);
 		obs_data_set_int(settings, "max_size_mb",
 				usingRecordingPreset ? rbSize : 0);
@@ -1717,6 +1719,8 @@ bool AdvancedOutput::StartReplayBuffer()
 		obs_data_set_string(settings, "directory", path);
 		obs_data_set_string(settings, "format", f.c_str());
 		obs_data_set_string(settings, "extension", recFormat);
+		obs_data_set_bool(settings, "overwrite", overwriteIfExists);
+		obs_data_set_bool(settings, "allow_spaces", !noSpace);
 		obs_data_set_int(settings, "max_time_sec", rbTime);
 		obs_data_set_int(settings, "max_size_mb",
 				usesBitrate ? 0 : rbSize);

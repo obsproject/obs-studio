@@ -712,6 +712,42 @@ error:
 	return NULL;
 }
 
+static void FindBestFilename(struct dstr* pathToFile, bool space)
+{
+	int num = 2;
+
+	if (!os_file_exists(pathToFile->array))
+		return;
+
+	struct dstr testPath;
+	dstr_init_copy(&testPath, pathToFile->array);
+
+	const char *ext = strrchr(testPath.array, '.');
+	if (!ext) {
+		dstr_free(&testPath);
+		return;
+	}
+
+	//position of the extention
+	const size_t extPos = testPath.len - strlen(ext);
+
+	for (;;) {
+		char chrs[15] = {0}; //32bit + sign + " ()" + null
+		space ? snprintf(chrs, sizeof(chrs), " (%d)", num++) :
+				snprintf(chrs, sizeof(chrs), "_%d", num++);
+
+		dstr_insert(&testPath, extPos, chrs);
+
+		if (!os_file_exists(testPath.array)) {
+			dstr_copy_dstr(pathToFile, &testPath);
+			dstr_free(&testPath);
+			return;
+		}
+
+		dstr_copy_dstr(&testPath, pathToFile);
+	}
+}
+
 static void replay_buffer_save(struct ffmpeg_muxer *stream)
 {
 	const size_t size = sizeof(struct encoder_packet);
@@ -759,6 +795,7 @@ static void replay_buffer_save(struct ffmpeg_muxer *stream)
 	const char *dir = obs_data_get_string(settings, "directory");
 	const char *fmt = obs_data_get_string(settings, "format");
 	const char *ext = obs_data_get_string(settings, "extension");
+	bool overwriteIfExists = obs_data_get_bool(settings, "overwrite");
 	bool space = obs_data_get_bool(settings, "allow_spaces");
 
 	char *filename = os_generate_formatted_filename(ext, space, fmt);
@@ -768,6 +805,9 @@ static void replay_buffer_save(struct ffmpeg_muxer *stream)
 	if (dstr_end(&stream->path) != '/')
 		dstr_cat_ch(&stream->path, '/');
 	dstr_cat(&stream->path, filename);
+
+	if (!overwriteIfExists)
+		FindBestFilename(&stream->path, space);
 
 	bfree(filename);
 	obs_data_release(settings);
