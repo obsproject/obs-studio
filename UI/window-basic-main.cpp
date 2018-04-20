@@ -129,8 +129,6 @@ static void AddExtraModulePaths()
 #endif
 }
 
-static QList<QKeySequence> DeleteKeys;
-
 OBSBasic::OBSBasic(QWidget *parent)
 	: OBSMainWindow  (parent),
 	  ui             (new Ui::OBSBasic)
@@ -212,15 +210,9 @@ OBSBasic::OBSBasic(QWidget *parent)
 			ui->statusbar, SLOT(UpdateCPUUsage()));
 	cpuUsageTimer->start(3000);
 
-	DeleteKeys =
 #ifdef __APPLE__
-		QList<QKeySequence>{{Qt::Key_Backspace}} <<
-#endif
-		QKeySequence::keyBindings(QKeySequence::Delete);
-
-#ifdef __APPLE__
-	ui->actionRemoveSource->setShortcuts(DeleteKeys);
-	ui->actionRemoveScene->setShortcuts(DeleteKeys);
+	ui->actionRemoveSource->setShortcuts({Qt::Key_Backspace});
+	ui->actionRemoveScene->setShortcuts({Qt::Key_Backspace});
 
 	ui->action_Settings->setMenuRole(QAction::PreferencesRole);
 	ui->actionE_xit->setMenuRole(QAction::QuitRole);
@@ -291,6 +283,25 @@ OBSBasic::OBSBasic(QWidget *parent)
 						size(), rect));
 		}
 	}
+
+	QAction *renameScene = new QAction(ui->scenesDock);
+	renameScene->setShortcutContext(Qt::WidgetWithChildrenShortcut);
+	connect(renameScene, SIGNAL(triggered()), this, SLOT(EditSceneName()));
+	ui->scenesDock->addAction(renameScene);
+
+	QAction *renameSource = new QAction(ui->sourcesDock);
+	renameSource->setShortcutContext(Qt::WidgetWithChildrenShortcut);
+	connect(renameSource, SIGNAL(triggered()), this,
+			SLOT(EditSceneItemName()));
+	ui->sourcesDock->addAction(renameSource);
+
+#ifdef __APPLE__
+	renameScene->setShortcut({Qt::Key_Return});
+	renameSource->setShortcut({Qt::Key_Return});
+#else
+	renameScene->setShortcut({Qt::Key_F2});
+	renameSource->setShortcut({Qt::Key_F2});
+#endif
 }
 
 static void SaveAudioDevice(const char *name, int channel, obs_data_t *parent,
@@ -3496,8 +3507,7 @@ void OBSBasic::on_scenes_customContextMenuRequested(const QPoint &pos)
 		popup.addAction(QTStr("Rename"),
 				this, SLOT(EditSceneName()));
 		popup.addAction(QTStr("Remove"),
-				this, SLOT(RemoveSelectedScene()),
-				DeleteKeys.front());
+				this, SLOT(RemoveSelectedScene()));
 		popup.addSeparator();
 
 		order.addAction(QTStr("Basic.MainMenu.Edit.Order.MoveUp"),
@@ -3689,6 +3699,9 @@ void OBSBasic::on_sources_itemSelectionChanged()
 void OBSBasic::EditSceneItemName()
 {
 	QListWidgetItem *item = GetTopSelectedSourceItem();
+	if (!item)
+		return;
+
 	Qt::ItemFlags flags   = item->flags();
 	OBSSceneItem sceneItem= GetOBSRef<OBSSceneItem>(item);
 	obs_source_t *source  = obs_sceneitem_get_source(sceneItem);
@@ -3866,8 +3879,7 @@ void OBSBasic::CreateSourcePopupMenu(QListWidgetItem *item, bool preview)
 		popup.addAction(QTStr("Rename"), this,
 				SLOT(EditSceneItemName()));
 		popup.addAction(QTStr("Remove"), this,
-				SLOT(on_actionRemoveSource_triggered()),
-				DeleteKeys.front());
+				SLOT(on_actionRemoveSource_triggered()));
 		popup.addSeparator();
 		popup.addMenu(ui->orderMenu);
 		popup.addMenu(ui->transformMenu);
@@ -4330,11 +4342,10 @@ void OBSBasic::SceneNameEdited(QWidget *editor,
 		QAbstractItemDelegate::EndEditHint endHint)
 {
 	OBSScene  scene = GetCurrentScene();
-	QLineEdit *edit = qobject_cast<QLineEdit*>(editor);
-	string    text  = QT_TO_UTF8(edit->text().trimmed());
-
 	if (!scene)
 		return;
+	QLineEdit *edit = qobject_cast<QLineEdit*>(editor);
+	string    text  = QT_TO_UTF8(edit->text().trimmed());
 
 	obs_source_t *source = obs_scene_get_source(scene);
 	RenameListItem(this, ui->scenes, source, text);
@@ -4349,15 +4360,20 @@ void OBSBasic::SceneItemNameEdited(QWidget *editor,
 		QAbstractItemDelegate::EndEditHint endHint)
 {
 	OBSSceneItem item  = GetCurrentSceneItem();
-	QLineEdit    *edit = qobject_cast<QLineEdit*>(editor);
-	string       text  = QT_TO_UTF8(edit->text().trimmed());
-
 	if (!item)
 		return;
 
-	obs_source_t *source = obs_sceneitem_get_source(item);
-	RenameListItem(this, ui->sources, source, text);
+	QLineEdit *edit = qobject_cast<QLineEdit *>(editor);
+	if (!edit)
+		goto end;
+	{
+		string text = QT_TO_UTF8(edit->text().trimmed());
 
+		obs_source_t *source = obs_sceneitem_get_source(item);
+		RenameListItem(this, ui->sources, source, text);
+	}
+
+end:
 	QListWidgetItem *listItem = ui->sources->currentItem();
 	listItem->setText(QString());
 	SetupVisibilityItem(ui->sources, listItem, item);
