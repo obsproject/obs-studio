@@ -3,6 +3,7 @@ source_name   = ""
 total_seconds = 0
 
 cur_seconds   = 0
+format_text   = ""
 last_text     = ""
 stop_text     = ""
 activated     = false
@@ -15,7 +16,11 @@ function set_time_text()
 	local total_minutes = math.floor(cur_seconds / 60)
 	local minutes       = math.floor(total_minutes % 60)
 	local hours         = math.floor(total_minutes / 60)
-	local text          = string.format("%02d:%02d:%02d", hours, minutes, seconds)
+
+	-- Format text
+	local text          = string.gsub(format_text, "$h", hours > 9 and hours or "0" .. hours)
+	text                = string.gsub(text, "$m", minutes > 9 and minutes or "0" .. minutes)
+	text                = string.gsub(text, "$s", seconds > 9 and seconds or "0" .. seconds)
 
 	if cur_seconds < 1 then
 		text = stop_text
@@ -105,7 +110,8 @@ end
 -- can change for the entire script module itself
 function script_properties()
 	local props = obs.obs_properties_create()
-	obs.obs_properties_add_int(props, "duration", "Duration (minutes)", 1, 100000, 1)
+	obs.obs_properties_add_int(props, "duration", "Duration (seconds)", 1, 3600000, 1)
+	obs.obs_properties_add_text(props, "format_text", "Output Format", obs.OBS_TEXT_DEFAULT)
 
 	local p = obs.obs_properties_add_list(props, "source", "Text Source", obs.OBS_COMBO_TYPE_EDITABLE, obs.OBS_COMBO_FORMAT_STRING)
 	local sources = obs.obs_enum_sources()
@@ -129,14 +135,16 @@ end
 -- A function named script_description returns the description shown to
 -- the user
 function script_description()
-	return "Sets a text source to act as a countdown timer when the source is active.\n\nMade by Jim"
+	return "Sets a text source to act as a countdown timer when the source is active.\n\n" ..
+         "Output Format: $h = hours, $m = minutes, $s = seconds\n\nMade by Jim"
 end
 
 -- A function named script_update will be called when settings are changed
 function script_update(settings)
 	activate(false)
 
-	total_seconds = obs.obs_data_get_int(settings, "duration") * 60
+	total_seconds = obs.obs_data_get_int(settings, "duration")
+	format_text = obs.obs_data_get_string(settings, "format_text")
 	source_name = obs.obs_data_get_string(settings, "source")
 	stop_text = obs.obs_data_get_string(settings, "stop_text")
 
@@ -145,7 +153,8 @@ end
 
 -- A function named script_defaults will be called to set the default settings
 function script_defaults(settings)
-	obs.obs_data_set_default_int(settings, "duration", 5)
+	obs.obs_data_set_default_int(settings, "duration", 300)
+	obs.obs_data_set_default_string(settings, "format_text", "$h:$m:$s")
 	obs.obs_data_set_default_string(settings, "stop_text", "Starting soon (tm)")
 end
 
