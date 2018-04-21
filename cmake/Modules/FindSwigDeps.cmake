@@ -18,6 +18,7 @@ if(WIN32)
 			${DepsPath}
 			${_PYTHON_INCLUDE_DIRS}
 		PATH_SUFFIXES
+			../swig/Lib
 			swig/Lib
 			)
 
@@ -34,6 +35,7 @@ if(WIN32)
 			${DepsPath}
 			${_PYTHON_INCLUDE_DIRS}
 		PATH_SUFFIXES
+			../swig
 			swig
 			)
 endif()

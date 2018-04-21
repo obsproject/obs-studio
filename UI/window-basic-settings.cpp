@@ -401,6 +401,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->advRBMegsMax,         SCROLL_CHANGED, OUTPUTS_CHANGED);
 	HookWidget(ui->channelSetup,         COMBO_CHANGED,  AUDIO_RESTART);
 	HookWidget(ui->sampleRate,           COMBO_CHANGED,  AUDIO_RESTART);
+	HookWidget(ui->meterDecayRate,       COMBO_CHANGED,  AUDIO_CHANGED);
 	HookWidget(ui->desktopAudioDevice1,  COMBO_CHANGED,  AUDIO_CHANGED);
 	HookWidget(ui->desktopAudioDevice2,  COMBO_CHANGED,  AUDIO_CHANGED);
 	HookWidget(ui->auxAudioDevice1,      COMBO_CHANGED,  AUDIO_CHANGED);
@@ -411,7 +412,6 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->downscaleFilter,      COMBO_CHANGED,  VIDEO_CHANGED);
 	HookWidget(ui->fpsType,              COMBO_CHANGED,  VIDEO_CHANGED);
 	HookWidget(ui->fpsCommon,            COMBO_CHANGED,  VIDEO_CHANGED);
-	HookWidget(ui->fpsInteger,           SCROLL_CHANGED, VIDEO_CHANGED);
 	HookWidget(ui->fpsInteger,           SCROLL_CHANGED, VIDEO_CHANGED);
 	HookWidget(ui->fpsNumerator,         SCROLL_CHANGED, VIDEO_CHANGED);
 	HookWidget(ui->fpsDenominator,       SCROLL_CHANGED, VIDEO_CHANGED);
@@ -444,10 +444,13 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->enableNewSocketLoop,  CHECK_CHANGED,  ADV_CHANGED);
 	HookWidget(ui->enableLowLatencyMode, CHECK_CHANGED,  ADV_CHANGED);
 
-#if !defined(_WIN32) && !defined(__APPLE__) && !HAVE_PULSEAUDIO
+#if !defined(_WIN32) && !defined(__APPLE__)
 	delete ui->enableAutoUpdates;
-	delete ui->advAudioGroupBox;
 	ui->enableAutoUpdates = nullptr;
+#endif
+
+#if !defined(_WIN32) && !defined(__APPLE__) && !HAVE_PULSEAUDIO
+	delete ui->advAudioGroupBox;
 	ui->advAudioGroupBox = nullptr;
 #endif
 
@@ -2134,6 +2137,8 @@ void OBSBasicSettings::LoadAudioSettings()
 			"SampleRate");
 	const char *speakers = config_get_string(main->Config(), "Audio",
 			"ChannelSetup");
+	double meterDecayRate = config_get_double(main->Config(), "Audio",
+			"MeterDecayRate");
 
 	loading = true;
 
@@ -2161,6 +2166,13 @@ void OBSBasicSettings::LoadAudioSettings()
 		ui->channelSetup->setCurrentIndex(6);
 	else
 		ui->channelSetup->setCurrentIndex(1);
+
+	if (meterDecayRate == VOLUME_METER_DECAY_MEDIUM)
+		ui->meterDecayRate->setCurrentIndex(1);
+	else if (meterDecayRate == VOLUME_METER_DECAY_SLOW)
+		ui->meterDecayRate->setCurrentIndex(2);
+	else
+		ui->meterDecayRate->setCurrentIndex(0);
 
 	LoadAudioDevices();
 	LoadAudioSources();
@@ -3095,6 +3107,28 @@ void OBSBasicSettings::SaveAudioSettings()
 	if (WidgetChanged(ui->channelSetup))
 		config_set_string(main->Config(), "Audio", "ChannelSetup",
 				channelSetup);
+
+	if (WidgetChanged(ui->meterDecayRate)) {
+		double meterDecayRate;
+		switch (ui->meterDecayRate->currentIndex()) {
+		case 0:
+			meterDecayRate = VOLUME_METER_DECAY_FAST;
+			break;
+		case 1:
+			meterDecayRate = VOLUME_METER_DECAY_MEDIUM;
+			break;
+		case 2:
+			meterDecayRate = VOLUME_METER_DECAY_SLOW;
+			break;
+		default:
+			meterDecayRate = VOLUME_METER_DECAY_FAST;
+			break;
+		}
+		config_set_double(main->Config(), "Audio", "MeterDecayRate",
+				meterDecayRate);
+
+		main->UpdateVolumeControlsDecayRate();
+	}
 
 	for (auto &audioSource : audioSources) {
 		auto source  = OBSGetStrongRef(get<0>(audioSource));

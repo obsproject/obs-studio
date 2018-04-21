@@ -88,6 +88,17 @@ static inline void calldata_clear(struct calldata *data)
 	}
 }
 
+static inline calldata_t *calldata_create(void)
+{
+	return (calldata_t*)bzalloc(sizeof(struct calldata));
+}
+
+static inline void calldata_destroy(calldata_t *cd)
+{
+	calldata_free(cd);
+	bfree(cd);
+}
+
 /* ------------------------------------------------------------------------- */
 /* NOTE: 'get' functions return true only if parameter exists, and is the
  *       same type.  They return false otherwise. */

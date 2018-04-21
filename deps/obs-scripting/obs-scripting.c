@@ -150,7 +150,9 @@ bool obs_scripting_load(void)
 
 #if COMPILE_PYTHON
 	obs_python_load();
+#ifndef _WIN32 /* don't risk python startup load issues on windows */
 	obs_scripting_load_python(NULL);
+#endif
 #endif
 
 	scripting_loaded = true;
@@ -211,6 +213,8 @@ void obs_scripting_unload(void)
 
 	pthread_mutex_destroy(&defer_call_mutex);
 	os_sem_destroy(defer_call_semaphore);
+
+	scripting_loaded = false;
 }
 
 const char **obs_scripting_supported_formats(void)

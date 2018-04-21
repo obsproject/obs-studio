@@ -79,6 +79,9 @@ class VolumeMeter : public QWidget
 		READ getInputPeakHoldDuration
 		WRITE setInputPeakHoldDuration DESIGNABLE true)
 
+private slots:
+	void ClipEnding();
+
 private:
 	obs_volmeter_t *obs_volmeter;
 	static QWeakPointer<VolumeMeterTimer> updateTimer;
@@ -115,6 +118,7 @@ private:
 	float displayInputPeakHold[MAX_AUDIO_CHANNELS];
 	uint64_t displayInputPeakHoldLastUpdateTime[MAX_AUDIO_CHANNELS];
 
+	QFont tickFont;
 	QColor backgroundNominalColor;
 	QColor backgroundWarningColor;
 	QColor backgroundErrorColor;
@@ -136,6 +140,7 @@ private:
 	qreal inputPeakHoldDuration;
 
 	uint64_t lastRedrawTime = 0;
+	bool clipping = false;
 
 public:
 	explicit VolumeMeter(QWidget *parent = 0,
@@ -252,4 +257,6 @@ public:
 
 	QString GetName() const;
 	void SetName(const QString &newName);
+
+	void SetMeterDecayRate(qreal q);
 };

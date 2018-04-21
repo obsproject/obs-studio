@@ -35,12 +35,12 @@ import os\n\
 import obspython\n\
 class stdout_logger(object):\n\
 	def write(self, message):\n\
-		obspython.script_log(obspython.LOG_INFO, message)\n\
+		obspython.script_log_no_endl(obspython.LOG_INFO, message)\n\
 	def flush(self):\n\
 		pass\n\
 class stderr_logger(object):\n\
 	def write(self, message):\n\
-		obspython.script_log(obspython.LOG_ERROR, message)\n\
+		obspython.script_log_no_endl(obspython.LOG_ERROR, message)\n\
 	def flush(self):\n\
 		pass\n\
 os.environ['PYTHONUNBUFFERED'] = '1'\n\
@@ -1164,7 +1164,8 @@ static PyObject *sceneitem_list_release(PyObject *self, PyObject *args)
 
 struct dstr cur_py_log_chunk = {0};
 
-static PyObject *py_script_log(PyObject *self, PyObject *args)
+static PyObject *py_script_log_internal(PyObject *self, PyObject *args,
+		bool add_endl)
 {
 	static bool calling_self = false;
 	int log_level;
@@ -1184,13 +1185,19 @@ static PyObject *py_script_log(PyObject *self, PyObject *args)
 		goto fail;
 
 	dstr_cat(&cur_py_log_chunk, msg);
+	if (add_endl)
+		dstr_cat(&cur_py_log_chunk, "\n");
 
 	const char *start = cur_py_log_chunk.array;
 	char *endl = strchr(start, '\n');
 
 	while (endl) {
 		*endl = 0;
-		script_log(&cur_python_script->base, log_level, "%s", start);
+		if (cur_python_script)
+			script_log(&cur_python_script->base, log_level, "%s",
+					start);
+		else
+			script_log(NULL, log_level, "%s", start);
 		*endl = '\n';
 
 		start = endl + 1;
@@ -1210,6 +1217,16 @@ fail:
 	return python_none();
 }
 
+static PyObject *py_script_log_no_endl(PyObject *self, PyObject *args)
+{
+	return py_script_log_internal(self, args, false);
+}
+
+static PyObject *py_script_log(PyObject *self, PyObject *args)
+{
+	return py_script_log_internal(self, args, true);
+}
+
 /* -------------------------------------------- */
 
 static void add_hook_functions(PyObject *module)
@@ -1217,6 +1234,7 @@ static void add_hook_functions(PyObject *module)
 	static PyMethodDef funcs[] = {
 #define DEF_FUNC(n, c) {n, c, METH_VARARGS, NULL}
 
+		DEF_FUNC("script_log_no_endl", py_script_log_no_endl),
 		DEF_FUNC("script_log", py_script_log),
 		DEF_FUNC("timer_remove", timer_remove),
 		DEF_FUNC("timer_add", timer_add),
@@ -1577,6 +1595,8 @@ void obs_python_load(void)
 
 extern void add_python_frontend_funcs(PyObject *module);
 
+static bool python_loaded_at_all = false;
+
 bool obs_scripting_load_python(const char *python_path)
 {
 	if (python_loaded)
@@ -1649,6 +1669,8 @@ bool obs_scripting_load_python(const char *python_path)
 	/* ---------------------------------------------- */
 	/* Load main interface module                     */
 
+	add_to_python_path(SCRIPT_DIR);
+
 	py_obspython = PyImport_ImportModule("obspython");
 	bool success = !py_error();
 	if (!success) {
@@ -1676,6 +1698,8 @@ out:
 		obs_python_unload();
 	}
 
+	python_loaded_at_all = success;
+
 	if (python_loaded)
 		obs_add_tick_callback(python_tick, NULL);
 
@@ -1684,6 +1708,9 @@ out:
 
 void obs_python_unload(void)
 {
+	if (!python_loaded_at_all)
+		return;
+
 	if (python_loaded && Py_IsInitialized()) {
 		PyGILState_Ensure();
 
@@ -1702,4 +1729,6 @@ void obs_python_unload(void)
 	pthread_mutex_destroy(&tick_mutex);
 	pthread_mutex_destroy(&timer_mutex);
 	dstr_free(&cur_py_log_chunk);
+
+	python_loaded_at_all = false;
 }

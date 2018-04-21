@@ -2061,7 +2061,8 @@ static struct caption_text *caption_text_new(const char *text, size_t bytes,
 		struct caption_text *tail, struct caption_text **head)
 {
 	struct caption_text *next = bzalloc(sizeof(struct caption_text));
-	snprintf(&next->text[0], CAPTION_LINE_BYTES + 1, "%.*s", bytes, text);
+	snprintf(&next->text[0], CAPTION_LINE_BYTES + 1, "%.*s",
+			(int)bytes, text);
 
 	if (!*head) {
 		*head = next;

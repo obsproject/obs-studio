@@ -59,6 +59,7 @@ static int ctx_visual_attribs[] = {
 	GLX_STENCIL_SIZE, 0,
 	GLX_DEPTH_SIZE, 0,
 	GLX_BUFFER_SIZE, 32,
+	GLX_ALPHA_SIZE, 8,
 	GLX_DOUBLEBUFFER, true,
 	GLX_X_RENDERABLE, true,
 	None

@@ -45,15 +45,31 @@ function(install_plugin_bin_swig target additional_target)
 	set_target_properties(${additional_target} PROPERTIES
 		PREFIX "")
 
+	if (APPLE)
+		set_property(
+				TARGET ${additional_target}
+				APPEND
+				PROPERTY INSTALL_RPATH
+				"/usr/local/Cellar/python3/3.6.4_2/Frameworks/Python.framework/Versions/3.6/lib/"
+				"/Library/Frameworks/Python.framework/Versions/3.6/lib/"
+				"/opt/local/Library/Frameworks/Python.framework/Versions/3.6/lib/"
+		)
+	endif()
+
+	install(FILES "${CMAKE_CURRENT_BINARY_DIR}/obspython.py"
+		DESTINATION "${OBS_SCRIPT_PLUGIN_DESTINATION}")
+	install(TARGETS "${additional_target}"
+		LIBRARY DESTINATION "${OBS_SCRIPT_PLUGIN_DESTINATION}")
+
 	add_custom_command(TARGET ${additional_target} POST_BUILD
 		COMMAND "${CMAKE_COMMAND}" -E copy
 			"${CMAKE_CURRENT_BINARY_DIR}/obspython.py"
-			"${OBS_OUTPUT_DIR}/$<CONFIGURATION>/bin/${_bit_suffix}/obspython.py"
+			"${OBS_OUTPUT_DIR}/$<CONFIGURATION>/data/obs-scripting/${_bit_suffix}/obspython.py"
 		VERBATIM)
 	add_custom_command(TARGET ${additional_target} POST_BUILD
 		COMMAND "${CMAKE_COMMAND}" -E copy
 			"$<TARGET_FILE:${additional_target}>"
-			"${OBS_OUTPUT_DIR}/$<CONFIGURATION>/bin/${_bit_suffix}$<TARGET_FILE_NAME:${additional_target}>"
+			"${OBS_OUTPUT_DIR}/$<CONFIGURATION>/data/obs-scripting/${_bit_suffix}$<TARGET_FILE_NAME:${additional_target}>"
 		VERBATIM)
 endfunction()
 

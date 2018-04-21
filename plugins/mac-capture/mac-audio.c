@@ -89,6 +89,9 @@ static bool find_device_id_by_uid(struct coreaudio_data *ca)
 	if (!ca->device_uid)
 		ca->device_uid = bstrdup("default");
 
+	ca->default_device = false;
+	ca->no_devices = false;
+
 	/* have to do this because mac output devices don't actually exist */
 	if (astrcmpi(ca->device_uid, "default") == 0) {
 		if (ca->input) {

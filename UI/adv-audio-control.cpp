@@ -13,7 +13,7 @@
 #define NSEC_PER_MSEC 1000000
 #endif
 
-OBSAdvAudioCtrl::OBSAdvAudioCtrl(QGridLayout *layout, obs_source_t *source_)
+OBSAdvAudioCtrl::OBSAdvAudioCtrl(QGridLayout *, obs_source_t *source_)
 	: source(source_)
 {
 	QHBoxLayout *hlayout;
@@ -155,20 +155,7 @@ OBSAdvAudioCtrl::OBSAdvAudioCtrl(QGridLayout *layout, obs_source_t *source_)
 	QWidget::connect(mixer6, SIGNAL(clicked(bool)),
 			this, SLOT(mixer6Changed(bool)));
 
-	int lastRow = layout->rowCount();
-
-	idx = 0;
-	layout->addWidget(nameLabel, lastRow, idx++);
-	layout->addWidget(volume, lastRow, idx++);
-	layout->addWidget(forceMonoContainer, lastRow, idx++);
-	layout->addWidget(panningContainer, lastRow, idx++);
-	layout->addWidget(syncOffset, lastRow, idx++);
-#if defined(_WIN32) || defined(__APPLE__) || HAVE_PULSEAUDIO
-	layout->addWidget(monitoringType, lastRow, idx++);
-#endif
-	layout->addWidget(mixerContainer, lastRow, idx++);
-	layout->layout()->setAlignment(mixerContainer,
-			Qt::AlignHCenter | Qt::AlignVCenter);
+	setObjectName(sourceName);
 }
 
 OBSAdvAudioCtrl::~OBSAdvAudioCtrl()
@@ -182,6 +169,24 @@ OBSAdvAudioCtrl::~OBSAdvAudioCtrl()
 	monitoringType->deleteLater();
 #endif
 	mixerContainer->deleteLater();
+}
+
+void OBSAdvAudioCtrl::ShowAudioControl(QGridLayout *layout)
+{
+	int lastRow = layout->rowCount();
+	int idx = 0;
+
+	layout->addWidget(nameLabel, lastRow, idx++);
+	layout->addWidget(volume, lastRow, idx++);
+	layout->addWidget(forceMonoContainer, lastRow, idx++);
+	layout->addWidget(panningContainer, lastRow, idx++);
+	layout->addWidget(syncOffset, lastRow, idx++);
+#if defined(_WIN32) || defined(__APPLE__) || HAVE_PULSEAUDIO
+	layout->addWidget(monitoringType, lastRow, idx++);
+#endif
+	layout->addWidget(mixerContainer, lastRow, idx++);
+	layout->layout()->setAlignment(mixerContainer,
+		Qt::AlignHCenter | Qt::AlignVCenter);
 }
 
 /* ------------------------------------------------------------------------- */

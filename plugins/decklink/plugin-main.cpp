@@ -74,8 +74,15 @@ static void decklink_update(void *data, obs_data_t *settings)
 			COLOR_SPACE);
 	video_range_type colorRange = (video_range_type)obs_data_get_int(settings,
 			COLOR_RANGE);
-	speaker_layout channelFormat = (speaker_layout)obs_data_get_int(settings,
-			CHANNEL_FORMAT);
+	int chFmtInt = (int)obs_data_get_int(settings, CHANNEL_FORMAT);
+
+	if (chFmtInt == 7) {
+		chFmtInt = SPEAKERS_5POINT1;
+	} else if (chFmtInt < SPEAKERS_UNKNOWN || chFmtInt > SPEAKERS_7POINT1) {
+		chFmtInt = 2;
+	}
+
+	speaker_layout channelFormat = (speaker_layout)chFmtInt;
 
 	decklink_enable_buffering(decklink,
 			obs_data_get_bool(settings, BUFFERING));

@@ -31,12 +31,20 @@
 # define ARCH_DIR "32bit"
 #endif
 
+#ifdef __APPLE__
+# define SO_EXT "dylib"
+#elif _WIN32
+# define SO_EXT "dll"
+#else
+# define SO_EXT "so"
+#endif
+
 static const char *startup_script_template = "\
 for val in pairs(package.preload) do\n\
 	package.preload[val] = nil\n\
 end\n\
-require \"obslua\"\n\
-package.path = package.path .. \"%s\"\n";
+package.cpath = package.cpath .. \";\" .. \"%s\" .. \"/?." SO_EXT "\"\n\
+require \"obslua\"\n";
 
 static const char *get_script_path_func = "\
 function script_path()\n\
@@ -86,6 +94,7 @@ static bool load_lua_script(struct obs_lua_script *data)
 	pthread_mutex_lock(&data->mutex);
 
 	luaL_openlibs(script);
+	luaopen_ffi(script);
 
 	if (luaL_dostring(script, startup_script) != 0) {
 		script_warn(&data->base, "Error executing startup script 1: %s",
@@ -102,6 +111,8 @@ static bool load_lua_script(struct obs_lua_script *data)
 				lua_tostring(script, -1));
 		goto fail;
 	}
+
+	current_lua_script = data;
 
 	add_lua_source_functions(script);
 	add_hook_functions(script);
@@ -163,8 +174,6 @@ static bool load_lua_script(struct obs_lua_script *data)
 	else
 		data->save = LUA_REFNIL;
 
-	current_lua_script = data;
-
 	lua_getglobal(script, "script_defaults");
 	if (lua_isfunction(script, -1)) {
 		ls_push_libobs_obj(obs_data_t, data->base.settings, false);
@@ -206,7 +215,7 @@ fail:
 		pthread_mutex_unlock(&data->mutex);
 	}
 
-	if (!success) {
+	if (!success && script) {
 		lua_close(script);
 	}
 
@@ -368,7 +377,7 @@ static void obs_lua_tick_callback(void *priv, float seconds)
 	lock_callback();
 
 	lua_pushnumber(script, (lua_Number)seconds);
-	call_func(obs_lua_tick_callback, 2, 0);
+	call_func(obs_lua_tick_callback, 1, 0);
 
 	unlock_callback();
 }
@@ -569,6 +578,32 @@ static int enum_sources(lua_State *script)
 	obs_enum_sources(enum_sources_proc, script);
 	return 1;
 }
+
+/* -------------------------------------------- */
+
+static bool source_enum_filters_proc(obs_source_t *source, obs_source_t *filter, void *param)
+{
+	lua_State *script = param;
+
+	obs_source_get_ref(filter);
+	ls_push_libobs_obj(obs_source_t, filter, false);
+
+	size_t idx = lua_rawlen(script, -2);
+	lua_rawseti(script, -2, (int)idx + 1);
+	return true;
+}
+
+static int source_enum_filters(lua_State *script)
+{
+	obs_source_t *source;
+	if (!ls_get_libobs_obj(obs_source_t, 1, &source))
+		return 0;
+
+	lua_newtable(script);
+	obs_source_enum_filters(source, source_enum_filters_proc, script);
+	return 1;
+}
+
 
 /* -------------------------------------------- */
 
@@ -963,6 +998,7 @@ static void add_hook_functions(lua_State *script)
 	add_func("timer_remove", timer_remove);
 	add_func("timer_add", timer_add);
 	add_func("obs_enum_sources", enum_sources);
+	add_func("obs_source_enum_filters", source_enum_filters);
 	add_func("obs_scene_enum_items", scene_enum_items);
 	add_func("source_list_release", source_list_release);
 	add_func("sceneitem_list_release", sceneitem_list_release);
@@ -1014,6 +1050,7 @@ static void lua_tick(void *param, float seconds)
 	data = first_tick_script;
 	while (data) {
 		lua_State *script = data->script;
+		current_lua_script = data;
 
 		pthread_mutex_lock(&data->mutex);
 
@@ -1024,6 +1061,7 @@ static void lua_tick(void *param, float seconds)
 
 		data = data->next_tick;
 	}
+	current_lua_script = NULL;
 	pthread_mutex_unlock(&tick_mutex);
 
 	/* --------------------------------- */
@@ -1267,8 +1305,7 @@ void obs_lua_load(void)
 	/* ---------------------------------------------- */
 	/* Initialize Lua startup script                  */
 
-	dstr_printf(&tmp, startup_script_template,
-			dep_paths.array);
+	dstr_printf(&tmp, startup_script_template, SCRIPT_DIR);
 	startup_script = tmp.array;
 
 	dstr_free(&dep_paths);

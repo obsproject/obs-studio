@@ -166,6 +166,9 @@ gs_swap_chain::gs_swap_chain(gs_device *device, const gs_init_data *data)
 	if (FAILED(hr))
 		throw HRError("Failed to create swap chain", hr);
 
+	/* Ignore Alt+Enter */
+	device->factory->MakeWindowAssociation(hwnd, DXGI_MWA_NO_ALT_ENTER);
+
 	Init();
 }
 
@@ -1456,9 +1459,12 @@ void device_present(gs_device_t *device)
 	}
 }
 
+extern "C" void reset_duplicators(void);
+
 void device_flush(gs_device_t *device)
 {
 	device->context->Flush();
+	reset_duplicators();
 }
 
 void device_set_cull_mode(gs_device_t *device, enum gs_cull_mode mode)

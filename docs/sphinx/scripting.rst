@@ -11,10 +11,10 @@ option, which will bring up the scripting dialog.  Scripts can be added,
 removed, and reloaded in real time while the program is running.
 
 **NOTE:** On windows, currently only Python 3.6 is supported.  To use
-Python on windows, you must install Python 3.6 64bit for OBS 64bit
-(64bit is the default for OBS), or Python 3.6 32bit if using OBS 32bit.
-Then, in the scripting dialog, you can manually set the path to your
-Python 3.6 install in the "Python Settings" tab.
+Python on windows, you must download and install Python 3.6.x "x86-64"
+for OBS 64bit (64bit is the default), or Python 3.6.x "x86" if using OBS
+32bit.  Then, in the scripting dialog, you must set the path to the
+Python 3.6.x install in the "Python Settings" tab.
 
 All API bindings are provided through the **obspython** module in
 Python, and the **obslua** module in Lua.

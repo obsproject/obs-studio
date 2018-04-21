@@ -1,5 +1,15 @@
 #!/usr/bin/env bash
 
+exists()
+{
+  command -v "$1" >/dev/null 2>&1
+}
+
+if ! exists nasm; then
+    echo "nasm not found. Try brew install nasm"
+    exit
+fi
+
 CURDIR=$(pwd)
 
 # the temp directory
@@ -22,6 +32,7 @@ DEPS_DEST=$WORK_DIR/obsdeps
 mkdir $DEPS_DEST
 mkdir $DEPS_DEST/bin
 mkdir $DEPS_DEST/include
+mkdir $DEPS_DEST/lib
 
 # OSX COMPAT
 export MACOSX_DEPLOYMENT_TARGET=10.9
@@ -80,6 +91,7 @@ cd $WORK_DIR
 # x264
 git clone git://git.videolan.org/x264.git
 cd ./x264
+git checkout origin/stable
 mkdir build
 cd ./build
 ../configure --extra-ldflags="-mmacosx-version-min=10.9" --enable-static --prefix="/tmp/obsdeps"
@@ -117,11 +129,21 @@ unzip ./n3.2.2.zip
 cd ./FFmpeg-n3.2.2
 mkdir build
 cd ./build
-../configure --extra-ldflags="-mmacosx-version-min=10.9" --enable-shared --disable-static --shlibdir="/tmp/obsdeps/bin" --enable-gpl --disable-doc --enable-libx264 --enable-libopus --enable-libvorbis --enable-libvpx
+../configure --extra-ldflags="-mmacosx-version-min=10.9" --enable-shared --disable-static --shlibdir="/tmp/obsdeps/bin" --enable-gpl --disable-doc --enable-libx264 --enable-libopus --enable-libvorbis --enable-libvpx --disable-outdev=sdl
 make -j 12
 find . -name \*.dylib -exec cp \{\} $DEPS_DEST/bin/ \;
 rsync -avh --include="*/" --include="*.h" --exclude="*" ../* $DEPS_DEST/include/
 rsync -avh --include="*/" --include="*.h" --exclude="*" ./* $DEPS_DEST/include/
+
+#luajit
+curl -L -O https://luajit.org/download/LuaJIT-2.0.5.tar.gz
+tar -xf LuaJIT-2.0.5.tar.gz
+cd LuaJIT-2.0.5
+make PREFIX=/tmp/obsdeps
+make PREFIX=/tmp/obsdeps install
+find /tmp/obsdeps/lib -name libluajit\*.dylib -exec cp \{\} $DEPS_DEST/lib/ \;
+rsync -avh --include="*/" --include="*.h" --exclude="*" src/* $DEPS_DEST/include/
+make PREFIX=/tmp/obsdeps uninstall
 
 cd $WORK_DIR
 

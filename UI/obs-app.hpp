@@ -116,6 +116,8 @@ public:
 	const char *GetLastLog() const;
 	const char *GetCurrentLog() const;
 
+	const char *GetLastCrashLog() const;
+
 	std::string GetVersionString() const;
 	bool IsPortableMode();
 

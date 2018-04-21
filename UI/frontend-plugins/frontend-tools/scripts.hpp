@@ -17,6 +17,7 @@ public:
 
 public slots:
 	void AddLogMsg(int log_level, QString msg);
+	void ClearWindow();
 	void Clear();
 	void ScrollChanged(int val);
 };

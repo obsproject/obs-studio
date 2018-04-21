@@ -1,4 +1,9 @@
 cmake_minimum_required(VERSION 2.8)
+
+if(NOT ENABLE_SCRIPTING)
+	return()
+endif()
+
 project(obs-scripting)
 
 if(MSVC)
@@ -46,7 +51,7 @@ else()
 	endif()
 endif()
 
-set(ENABLE_SCRIPTING ON CACHE BOOL "" FORCE)
+set(SCRIPTING_ENABLED ON CACHE BOOL "Interal global cmake variable" FORCE)
 
 if(UI_ENABLED)
 	set(EXTRA_LIBS obs-frontend-api)

@@ -4,12 +4,15 @@
 
 #include <QFileDialog>
 #include <QPlainTextEdit>
+#include <QHBoxLayout>
 #include <QVBoxLayout>
 #include <QScrollBar>
+#include <QPushButton>
 #include <QFontDatabase>
 #include <QFont>
 #include <QDialogButtonBox>
 #include <QResizeEvent>
+#include <QAction>
 
 #include <obs.hpp>
 #include <obs-module.h>
@@ -87,13 +90,21 @@ ScriptLogWindow::ScriptLogWindow() : QWidget(nullptr)
 	edit->setFont(fixedFont);
 	edit->setWordWrapMode(QTextOption::NoWrap);
 
-	QDialogButtonBox *buttonBox = new QDialogButtonBox(
-			QDialogButtonBox::Close);
-	connect(buttonBox, &QDialogButtonBox::rejected, this, &QWidget::hide);
+	QHBoxLayout *buttonLayout = new QHBoxLayout();
+	QPushButton *clearButton = new QPushButton(tr("Clear"));
+	connect(clearButton, &QPushButton::clicked,
+			this, &ScriptLogWindow::ClearWindow);
+	QPushButton *closeButton = new QPushButton(tr("Close"));
+	connect(closeButton, &QPushButton::clicked,
+			this, &QDialog::hide);
+
+	buttonLayout->addStretch();
+	buttonLayout->addWidget(clearButton);
+	buttonLayout->addWidget(closeButton);
 
 	QVBoxLayout *layout = new QVBoxLayout();
 	layout->addWidget(edit);
-	layout->addWidget(buttonBox);
+	layout->addLayout(buttonLayout);
 
 	setLayout(layout);
 	scriptLogWidget = edit;
@@ -154,6 +165,12 @@ void ScriptLogWindow::AddLogMsg(int log_level, QString msg)
 		show();
 		raise();
 	}
+}
+
+void ScriptLogWindow::ClearWindow()
+{
+	Clear();
+	scriptLogWidget->setPlainText(QString());
 }
 
 void ScriptLogWindow::Clear()
@@ -223,8 +240,12 @@ void ScriptsTool::RefreshLists()
 	ui->scripts->clear();
 
 	for (OBSScript &script : scriptData->scripts) {
+		const char *script_file = obs_script_get_file(script);
 		const char *script_path = obs_script_get_path(script);
-		ui->scripts->addItem(script_path);
+
+		QListWidgetItem *item = new QListWidgetItem(script_file);
+		item->setData(Qt::UserRole, QString(script_path));
+		ui->scripts->addItem(item);
 	}
 }
 
@@ -289,8 +310,13 @@ void ScriptsTool::on_addScripts_clicked()
 
 		obs_script_t *script = obs_script_create(path, NULL);
 		if (script) {
+			const char *script_file = obs_script_get_file(script);
+
 			scriptData->scripts.emplace_back(script);
-			ui->scripts->addItem(file);
+
+			QListWidgetItem *item = new QListWidgetItem(script_file);
+			item->setData(Qt::UserRole, QString(file));
+			ui->scripts->addItem(item);
 		}
 	}
 }
@@ -300,7 +326,8 @@ void ScriptsTool::on_removeScripts_clicked()
 	QList<QListWidgetItem *> items = ui->scripts->selectedItems();
 
 	for (QListWidgetItem *item : items)
-		RemoveScript(item->text().toUtf8().constData());
+		RemoveScript(item->data(Qt::UserRole).toString()
+				.toUtf8().constData());
 	RefreshLists();
 }
 
@@ -308,7 +335,8 @@ void ScriptsTool::on_reloadScripts_clicked()
 {
 	QList<QListWidgetItem *> items = ui->scripts->selectedItems();
 	for (QListWidgetItem *item : items)
-		ReloadScript(item->text().toUtf8().constData());
+		ReloadScript(item->data(Qt::UserRole).toString()
+				.toUtf8().constData());
 
 	on_scripts_currentRowChanged(ui->scripts->currentRow());
 }
@@ -367,7 +395,8 @@ void ScriptsTool::on_scripts_currentRowChanged(int row)
 		return;
 	}
 
-	QByteArray array = ui->scripts->item(row)->text().toUtf8();
+	QByteArray array = ui->scripts->item(row)->data(Qt::UserRole)
+		.toString().toUtf8();
 	const char *path = array.constData();
 
 	obs_script_t *script = scriptData->FindScript(path);
@@ -466,9 +495,14 @@ static void script_log(void *, obs_script_t *script, int log_level,
 		const char *message)
 {
 	QString qmsg;
-	qmsg = QStringLiteral("[%1] %2").arg(
-			obs_script_get_file(script),
-			message);
+
+	if (script) {
+		qmsg = QStringLiteral("[%1] %2").arg(
+				obs_script_get_file(script),
+				message);
+	} else {
+		qmsg = QStringLiteral("[Unknown Script] %1").arg(message);
+	}
 
 	QMetaObject::invokeMethod(scriptLogWindow, "AddLogMsg",
 			Q_ARG(int, log_level),

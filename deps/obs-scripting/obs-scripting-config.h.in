@@ -16,6 +16,7 @@
 #define OFF 0
 #endif
 
+#define SCRIPT_DIR     "@OBS_SCRIPT_PLUGIN_PATH@"
 #define PYTHON_LIB     "@PYTHON_LIB@"
 #define COMPILE_LUA    @LUAJIT_FOUND@
 #define COMPILE_PYTHON @PYTHON_FOUND@

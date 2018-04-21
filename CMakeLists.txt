@@ -20,7 +20,8 @@ if(WIN32)
 endif()
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
-set(ENABLE_SCRIPTING OFF CACHE BOOL "" FORCE)
+set(ENABLE_SCRIPTING TRUE CACHE BOOL "Enables scripting")
+set(SCRIPTING_ENABLED OFF CACHE BOOL "Interal global cmake variable" FORCE)
 
 include(ObsHelpers)
 include(ObsCpack)
@@ -59,7 +60,7 @@ elseif(MSVC)
 	endif()
 
 	# Disable pointless constant condition warnings
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /wd4127 /wd4201")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /wd4127 /wd4201 /wd4456 /wd4457 /wd4458 /wd4459 /wd4595")
 endif()
 
 if(WIN32)

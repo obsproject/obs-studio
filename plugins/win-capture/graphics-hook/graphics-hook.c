@@ -690,7 +690,7 @@ bool capture_init_shmem(struct shmem_data **data, HWND window,
 	uint32_t  tex_size       = cy * pitch;
 	uint32_t  aligned_header = ALIGN(sizeof(struct shmem_data), 32);
 	uint32_t  aligned_tex    = ALIGN(tex_size, 32);
-	uint32_t  total_size     = aligned_header + aligned_tex * 2;
+	uint32_t  total_size     = aligned_header + aligned_tex * 2 + 32;
 	uintptr_t align_pos;
 
 	if (!init_shared_info(total_size)) {
@@ -705,6 +705,9 @@ bool capture_init_shmem(struct shmem_data **data, HWND window,
 	align_pos += aligned_header;
 	align_pos &= ~(32 - 1);
 	align_pos -= (uintptr_t)shmem_info;
+
+	if (align_pos < sizeof(struct shmem_data))
+		align_pos += 32;
 
 	(*data)->last_tex = -1;
 	(*data)->tex1_offset = (uint32_t)align_pos;

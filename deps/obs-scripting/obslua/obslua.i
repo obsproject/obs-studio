@@ -8,6 +8,7 @@
 #include <graphics/vec3.h>
 #include <graphics/vec2.h>
 #include <graphics/quat.h>
+#include <graphics/image-file.h>
 #include <obs.h>
 #include <obs-hotkey.h>
 #include <obs-source.h>
@@ -58,6 +59,7 @@ static inline void wrap_blog(int log_level, const char *message)
 %ignore obs_add_main_render_callback;
 %ignore obs_remove_main_render_callback;
 %ignore obs_enum_sources;
+%ignore obs_source_enum_filters;
 %ignore obs_properties_add_button;
 %ignore obs_property_set_modified_callback;
 %ignore signal_handler_connect;
@@ -81,6 +83,7 @@ static inline void wrap_blog(int log_level, const char *message)
 %include "graphics/vec3.h"
 %include "graphics/vec2.h"
 %include "graphics/quat.h"
+%include "graphics/image-file.h"
 %include "obs-data.h"
 %include "obs-source.h"
 %include "obs-properties.h"

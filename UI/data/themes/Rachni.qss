@@ -105,6 +105,37 @@ QListWidget::item:hover:!active {
 	border: none;
 }
 
+/***********************/
+/* --- Dock widget --- */
+/***********************/
+
+QDockWidget {
+	background: rgb(49, 54, 59); /* Blue-gray */
+	border: 1px solid rgb(58, 64, 69); /* Light Blue-gray */
+}
+
+QDockWidget::title {
+	text-align: left;
+	background: rgb(35, 38, 41); /* Dark Gray */
+	padding-left: 5px;
+}
+
+
+QDockWidget::close-button, QDockWidget::float-button {
+	border: 1px solid transparent;
+	border-radius: 2px;
+	background: transparent;
+}
+
+QDockWidget::close-button:hover, QDockWidget::float-button:hover {
+	background: rgba(255, 148, 194, 0.25); /* Light Pink (Secondary Light) */
+}
+
+QDockWidget::close-button:pressed, QDockWidget::float-button:pressed {
+	padding: 1px -1px -1px 1px;
+	background: rgba(255, 148, 194, 0.25); /* Light Pink (Secondary Light) */
+}
+
 
 /***********************/
 /* --- Group Boxes --- */
@@ -698,7 +729,6 @@ VolumeMeter {
 	qproperty-magnitudeColor: rgb(49, 54, 59); /* Blue-gray */
 	qproperty-majorTickColor: rgb(239, 240, 241); /* White */
 	qproperty-minorTickColor: rgb(118, 121, 124); /* Light Gray */
-	qproperty-peakDecayRate: 23.4; /* Override of the standard PPM Type I rate. */
 }
 
 /*******************/
@@ -742,6 +772,13 @@ QPushButton:disabled {
 	background-color: rgb(0, 139, 163); /* Dark Cyan (Primary Dark) */
 	border: 1px solid rgb(0, 139, 163); /* Dark Cyan (Primary Dark) */
 	color: rgb(162, 161, 162); /* Lighter Gray */
+}
+
+QPushButton::menu-indicator {
+    image: url(./Rachni/down_arrow.png);
+    subcontrol-position: right;
+    subcontrol-origin: padding;
+    width: 25px;
 }
 
 /******************************/

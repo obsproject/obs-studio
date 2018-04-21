@@ -56,7 +56,7 @@ void VolControl::VolumeChanged()
 	slider->blockSignals(true);
 	slider->setValue((int) (obs_fader_get_deflection(obs_fader) * 100.0f));
 	slider->blockSignals(false);
-	
+
 	updateText();
 }
 
@@ -109,6 +109,11 @@ void VolControl::EmitConfigClicked()
 	emit ConfigClicked();
 }
 
+void VolControl::SetMeterDecayRate(qreal q)
+{
+	volMeter->setPeakDecayRate(q);
+}
+
 VolControl::VolControl(OBSSource source_, bool showConfig)
 	: source        (source_),
 	  levelTotal    (0.0f),
@@ -131,6 +136,7 @@ VolControl::VolControl(OBSSource source_, bool showConfig)
 	font.setPointSize(font.pointSize()-1);
 
 	QString sourceName = obs_source_get_name(source);
+	setObjectName(sourceName);
 
 	nameLabel->setText(sourceName);
 	nameLabel->setFont(font);
@@ -410,6 +416,9 @@ void VolumeMeter::setInputPeakHoldDuration(qreal v)
 VolumeMeter::VolumeMeter(QWidget *parent, obs_volmeter_t *obs_volmeter)
 			: QWidget(parent), obs_volmeter(obs_volmeter)
 {
+	// Use a font that can be rendered small.
+	tickFont = QFont("Arial");
+	tickFont.setPixelSize(7);
 	// Default meter color settings, they only show if
 	// there is no stylesheet, do not remove.
 	backgroundNominalColor.setRgb(0x26, 0x7f, 0x26);    // Dark green
@@ -427,7 +436,7 @@ VolumeMeter::VolumeMeter(QWidget *parent, obs_volmeter_t *obs_volmeter)
 	errorLevel = -9.0;                                  //  -9 dB
 	clipLevel = -0.5;                                   //  -0.5 dB
 	minimumInputLevel = -50.0;                          // -50 dB
-	peakDecayRate = 11.7;                               //  20 dB / 1.7 sec
+	peakDecayRate = 11.76;                              //  20 dB / 1.7 sec
 	magnitudeIntegrationTime = 0.3;                     //  99% in 300 ms
 	peakHoldDuration = 20.0;                            //  20 seconds
 	inputPeakHoldDuration = 1.0;                        //  1 second
@@ -521,7 +530,9 @@ inline void VolumeMeter::calculateBallisticsForChannel(int channelNr,
 		// Attack of peak is immediate.
 		displayPeak[channelNr] = currentPeak[channelNr];
 	} else {
-		// Decay of peak is 20 dB / 1.7 seconds.
+		// Decay of peak is 40 dB / 1.7 seconds for Fast Profile
+		// 20 dB / 1.7 seconds for Medium Profile (Type I PPM)
+		// 24 dB / 2.8 seconds for Slow Profile (Type II PPM)
 		qreal decay = peakDecayRate * timeSinceLastRedraw;
 		displayPeak[channelNr] = CLAMP(displayPeak[channelNr] - decay,
 			currentPeak[channelNr], 0);
@@ -616,37 +627,38 @@ void VolumeMeter::paintTicks(QPainter &painter, int x, int y,
 {
 	qreal scale = width / minimumLevel;
 
-	// Use a font that can be rendered small.
-	QFont font = QFont("Arial");
-	font.setPixelSize(7);
-
-	painter.setFont(font);
+	painter.setFont(tickFont);
 	painter.setPen(majorTickColor);
 
 	// Draw major tick lines and numeric indicators.
-	for (int i = 0; i > minimumLevel; i-= 5) {
+	for (int i = 0; i >= minimumLevel; i-= 5) {
 		int position = x + width - (i * scale) - 1;
-		char str[5];
+		QString str = QString::number(i);
 
-		snprintf(str, sizeof (str), "%i", i);
-
-		if (i == 0 || i == 5)  {
-			painter.drawText(position - 3, height, QString(str));
+		if (i == 0 || i == -5)  {
+			painter.drawText(position - 3, height, str);
 		} else {
-			painter.drawText(position - 5, height, QString(str));
+			painter.drawText(position - 5, height, str);
 		}
 		painter.drawLine(position, y, position, y + 2);
 	}
 
 	// Draw minor tick lines.
 	painter.setPen(minorTickColor);
-	for (int i = 0; i > minimumLevel; i--) {
+	for (int i = 0; i >= minimumLevel; i--) {
 		int position = x + width - (i * scale) - 1;
 
 		if (i % 5 != 0) {
 			painter.drawLine(position, y, position, y + 1);
 		}
 	}
+}
+
+#define CLIP_FLASH_DURATION_MS 1000
+
+void VolumeMeter::ClipEnding()
+{
+	clipping = false;
 }
 
 void VolumeMeter::paintMeter(QPainter &painter, int x, int y,
@@ -667,6 +679,10 @@ void VolumeMeter::paintMeter(QPainter &painter, int x, int y,
 	int warningLength       = errorPosition - warningPosition;
 	int errorLength         = maximumPosition - errorPosition;
 	locker.unlock();
+
+	if (clipping) {
+		peakPosition = maximumPosition;
+	}
 
 	if (peakPosition < minimumPosition) {
 		painter.fillRect(
@@ -736,18 +752,17 @@ void VolumeMeter::paintMeter(QPainter &painter, int x, int y,
 			backgroundErrorColor);
 
 	} else {
+		if (!clipping) {
+			QTimer::singleShot(CLIP_FLASH_DURATION_MS, this,
+					SLOT(ClipEnding()));
+			clipping = true;
+		}
+
+		qreal end = errorLength + warningLength + nominalLength;
 		painter.fillRect(
 			minimumPosition, y,
-			nominalLength, height,
-			foregroundNominalColor);
-		painter.fillRect(
-			warningPosition, y,
-			warningLength, height,
-			foregroundWarningColor);
-		painter.fillRect(
-			errorPosition, y,
-			errorLength, height,
-			foregroundErrorColor);
+			end, height,
+			QBrush(foregroundErrorColor));
 	}
 
 	if (peakHoldPosition - 3 < minimumPosition) {
@@ -810,7 +825,7 @@ void VolumeMeter::paintEvent(QPaintEvent *event)
 	bool idle = detectIdle(ts);
 
 	// Draw the ticks in a off-screen buffer when the widget changes size.
-	QSize tickPaintCacheSize = QSize(width - 5, 9);
+	QSize tickPaintCacheSize = QSize(width, 9);
 	if (tickPaintCache == NULL ||
 		tickPaintCache->size() != tickPaintCacheSize) {
 		delete tickPaintCache;
@@ -820,14 +835,14 @@ void VolumeMeter::paintEvent(QPaintEvent *event)
 		tickPaintCache->fill(clearColor);
 
 		QPainter tickPainter(tickPaintCache);
-		paintTicks(tickPainter, 0, 0, tickPaintCacheSize.width(),
+		paintTicks(tickPainter, 6, 0, tickPaintCacheSize.width() - 6,
 			tickPaintCacheSize.height());
 		tickPainter.end();
 	}
 
 	// Actual painting of the widget starts here.
 	QPainter painter(this);
-	painter.drawPixmap(5, height - 9, *tickPaintCache);
+	painter.drawPixmap(0, height - 9, *tickPaintCache);
 
 	for (int channelNr = 0; channelNr < displayNrAudioChannels;
 		channelNr++) {
