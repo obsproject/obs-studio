@@ -38,7 +38,7 @@
        </property>
        <property name="maximumSize">
         <size>
-         <width>135</width>
+         <width>165</width>
          <height>16777215</height>
         </size>
        </property>
@@ -94,6 +94,15 @@
         <property name="icon">
          <iconset resource="obs.qrc">
           <normaloff>:/settings/images/settings/video-display-3.png</normaloff>:/settings/images/settings/video-display-3.png</iconset>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>Basic.Settings.ScreenShots</string>
+        </property>
+        <property name="icon">
+         <iconset resource="obs.qrc">
+          <normaloff>:/settings/images/settings/screenshot.png</normaloff>:/settings/images/settings/screenshot.png</iconset>
         </property>
        </item>
        <item>
@@ -3700,6 +3709,59 @@
          </item>
         </layout>
        </widget>
+
+       <widget class="QWidget" name="screenshotsPage">
+        <layout class="QFormLayout" name="formLayout_1003">
+         <property name="fieldGrowthPolicy">
+          <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+         </property>
+         <property name="labelAlignment">
+          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+         </property>
+         <item row="0" column="0">
+          <widget class="QLabel" name="label_1008">
+           <property name="minimumSize">
+            <size>
+             <width>170</width>
+             <height>0</height>
+            </size>
+           </property>
+           <property name="text">
+            <string>Basic.Settings.ScreenShots.SavePath</string>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+           </property>
+           <property name="buddy">
+            <cstring>screenshotOutputPath</cstring>
+           </property>
+          </widget>
+         </item>
+                <item row="0" column="1">
+                <layout class="QHBoxLayout" name="horizontalLayout_1005">
+                <item>
+                <widget class="QLineEdit" name="screenshotOutputPath">
+                <property name="enabled">
+                        <bool>true</bool>
+                </property>
+                </widget>
+                </item>
+                <item>
+                <widget class="QPushButton" name="screenshotOutputBrowse">
+                <property name="enabled">
+                        <bool>true</bool>
+                </property>
+                <property name="text">
+                        <string>Browse</string>
+                </property>
+                </widget>
+                </item>
+                </layout>
+                </item>
+        </layout>
+       </widget>
+
+	      
        <widget class="QScrollArea" name="hotkeyPage">
         <property name="widgetResizable">
          <bool>true</bool>

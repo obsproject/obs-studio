@@ -31,6 +31,7 @@ bool GetDataFilePath(const char *data, std::string &path);
 bool InitApplicationBundle();
 
 std::string GetDefaultVideoSavePath();
+std::string GetDefaultScreenShotsSavePath();
 
 std::vector<std::string> GetPreferredLocales();
 
