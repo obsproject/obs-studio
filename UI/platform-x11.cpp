@@ -69,6 +69,11 @@ string GetDefaultVideoSavePath()
 	return string(getenv("HOME"));
 }
 
+string GetDefaultScreenShotsSavePath()
+{
+	return string(getenv("HOME"));
+}
+
 vector<string> GetPreferredLocales()
 {
 	setlocale(LC_ALL, "");

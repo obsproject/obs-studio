@@ -67,6 +67,13 @@
 #include <QScreen>
 #include <QWindow>
 
+extern "C" {
+	#include <libavcodec/avcodec.h>
+	#include <libavformat/avformat.h>
+	#include <libavutil/imgutils.h>
+	#include <libswscale/swscale.h>
+};
+
 using namespace std;
 
 namespace {
@@ -1154,6 +1161,9 @@ bool OBSBasic::InitBasicConfigDefaults()
 	config_set_default_double(basicConfig, "Audio", "MeterDecayRate",
 			VOLUME_METER_DECAY_FAST);
 
+	config_set_default_string(basicConfig, "ScreenShots", "FilePath",
+		GetDefaultScreenShotsSavePath().c_str());
+
 	return true;
 }
 
@@ -1551,6 +1561,12 @@ void OBSBasic::OBSInit()
 	ui->viewMenu->addAction(QTStr("MultiviewWindowed"),
 			this, SLOT(OpenMultiviewWindow()));
 
+	/* ----------------------- */
+	/* Init save screenshot    */
+
+	ui->menuTools->addAction(QTStr("SaveScreenshot"),
+		this, SLOT(SaveScreenshotHandler()));
+
 #if !defined(_WIN32) && !defined(__APPLE__)
 	delete ui->actionShowCrashLogs;
 	delete ui->actionUploadLastCrashLog;
@@ -1594,6 +1610,207 @@ void OBSBasic::DeferredLoad(const QString &file, int requeueCount)
 	}
 
 	Load(QT_TO_UTF8(file));
+}
+
+void OBSBasic::SaveScreenshotHandler()
+{
+	const bool noSpace = true;
+
+	// Calculate output file path
+	std::string strOutputFilePath =
+		config_get_string(Config(), "ScreenShots", "FilePath");
+
+	char lastChar = strOutputFilePath.back();
+	if (lastChar != '/' && lastChar != '\\')
+		strOutputFilePath += "/";
+
+	// TODO: Take this out to configuration
+	strOutputFilePath += GenerateSpecifiedFilename("png", noSpace, "%CCYY-%MM-%DD %hh-%mm-%ss");
+
+	replace(strOutputFilePath.begin(), strOutputFilePath.end(), '\\', '/');
+
+	// Get & ensure directory exists
+	size_t last = strOutputFilePath.rfind('/');
+	if (last == string::npos)
+		return;
+
+	string directory = strOutputFilePath.substr(0, last);
+	os_mkdirs(directory.c_str());
+
+	// Save screenshot to specified file path
+	bool success = SaveScreenshotToFile(strOutputFilePath.c_str());
+
+	if (success)
+	{
+		// TODO: Audio/visual feedback
+	}
+}
+
+bool OBSBasic::SaveScreenshotToFile(const char* outputFilePath)
+{
+	bool success = false;
+
+	obs_video_info video_info;
+
+	if (obs_get_video_info(&video_info))
+	{
+		uint32_t	width = video_info.base_width;
+		uint32_t	height = video_info.base_height;
+
+		uint8_t*	image_data_ptr = NULL;
+		size_t		image_data_buffer_length = 0;
+		uint32_t	image_data_linesize = 0;
+
+		obs_enter_graphics();
+
+		// Create rendering target backbuffer
+		gs_texrender_t* texrender_obj = gs_texrender_create(GS_RGBA, GS_ZS_NONE);
+
+		// Set active rendering target backbuffer
+		if (gs_texrender_begin(texrender_obj, width, height))
+		{
+			// Clear rendering target backbuffer
+			struct vec4 clear_color;
+
+			vec4_zero(&clear_color);
+			gs_clear(GS_CLEAR_COLOR, &clear_color, 0.0f, 0);
+			gs_ortho(0.0f, (float)width, 0.0f, (float)height,
+				-100.0f, 100.0f);
+
+			// Render main output to active rendering target backbuffer
+			obs_render_main_texture();
+
+			// Get a reference to the active backbuffer
+			gs_texture_t *rendered_texture = gs_texrender_get_texture(texrender_obj);
+
+			// Create a stage surface for copying backbuffer surfaces to RAM
+			gs_stagesurf_t* stage_surface =
+				gs_stagesurface_create(width, height, GS_RGBA);
+
+			// Copy VRAM backbuffer to RAM
+			gs_stage_texture(stage_surface, rendered_texture);
+
+			// Get a reference to the screenshot image data
+			uint8_t* tmp_image_data_ptr = NULL;
+
+			gs_stagesurface_map(stage_surface, &tmp_image_data_ptr, &image_data_linesize);
+
+			// Copy screenshot data aside for later processing
+			image_data_buffer_length = image_data_linesize * height;
+			image_data_ptr = (uint8_t*)bmalloc(image_data_buffer_length);
+			memcpy(image_data_ptr, tmp_image_data_ptr, image_data_buffer_length);
+
+			// Release the reference to screenshot image data
+			gs_stagesurface_unmap(stage_surface);
+
+			// Destroy staging surface
+			gs_stagesurface_destroy(stage_surface);
+
+			// Release active rendering target backbuffer
+			gs_texrender_end(texrender_obj);
+		}
+
+		// Destroy rendering surface backbuffer
+		gs_texrender_destroy(texrender_obj);
+
+		// Leave graphics context
+		obs_leave_graphics();
+
+		// If we managed to get screenshot image data
+		if (image_data_ptr != NULL)
+		{
+			// Write PNG output using libavcodec
+			AVCodec* codec =
+				avcodec_find_encoder(AV_CODEC_ID_PNG);
+
+			if (codec != NULL)
+			{
+				AVCodecContext* codec_context =
+					avcodec_alloc_context3(codec);
+
+				if (codec_context != NULL)
+				{
+					codec_context->width = width;
+					codec_context->height = height;
+					codec_context->pix_fmt = AV_PIX_FMT_RGB24;
+					codec_context->time_base.num = 1;
+					codec_context->time_base.den = 1000;
+					codec_context->codec_id = codec->id;
+
+					if (avcodec_open2(codec_context, codec, NULL) == 0)
+					{
+						AVFrame* frame = av_frame_alloc();
+
+						if (frame != NULL)
+						{
+							frame->pts = 1;
+							frame->format = AV_PIX_FMT_RGBA;
+							frame->width = width;
+							frame->height = height;
+							// frame->sample_aspect_ratio.den = 1;
+
+							if (av_image_alloc(&frame->data[0], &frame->linesize[0], codec_context->width, codec_context->height, codec_context->pix_fmt, 32) >= 0)
+							{
+								// Copy image data, converting RGBA to image format expected by PNG encoder
+								struct SwsContext* swsc =
+									sws_getContext(frame->width, frame->height, AV_PIX_FMT_RGBA, frame->width, frame->height, codec_context->pix_fmt, 0, NULL, NULL, NULL);
+
+								if (swsc != NULL)
+								{
+									// Transform RGBA to RGB24
+									if (sws_scale(swsc, (const uint8_t * const *)&image_data_ptr, (const int *)&image_data_linesize, 0, frame->height, frame->data, frame->linesize) >= 0)
+									{
+										// frame->extended_data = frame->data;
+
+										AVPacket pkt;
+
+										av_init_packet(&pkt);
+										pkt.data = NULL;
+										pkt.size = 0;
+
+										int got_output = 0;
+										if (avcodec_encode_video2(codec_context, &pkt, frame, &got_output) == 0)
+										{
+											if (got_output)
+											{
+												FILE* of = fopen(outputFilePath, "wb");
+												fwrite(pkt.data, pkt.size, 1, of);
+												fclose(of);
+
+												success = true;
+
+												av_free_packet(&pkt);
+											} // encoding to PNG produced no output
+										} // failed encoding to PNG
+									} // failed transforming RGBA buffer to RGB24 buffer
+
+									sws_freeContext(swsc);
+									swsc = NULL;
+								} // failed acquiring SWS context
+
+								av_freep(&frame->data[0]);
+								frame->data[0] = NULL;
+							} // failed allocating image data buffer
+
+							av_frame_free(&frame);
+							frame = NULL;
+						} // failed allocating frame
+
+						avcodec_close(codec_context);
+					} // failed opening PNG encoder
+
+					avcodec_free_context(&codec_context);
+					codec_context = NULL;
+				} // failed allocating PNG encoder context
+
+				// no need to free AVCodec* codec
+			} // PNG codec not found
+
+			bfree(image_data_ptr);
+		} // no image_data_ptr
+	}
+
+	return success;
 }
 
 void OBSBasic::UpdateMultiviewProjectorMenu()
@@ -1807,6 +2024,23 @@ void OBSBasic::CreateHotkeys()
 			"OBSBasic.Transition",
 			Str("Transition"), transition, this);
 	LoadHotkey(transitionHotkey, "OBSBasic.Transition");
+
+	takeScreenShotHotkey = obs_hotkey_register_frontend(
+		"OBSBasic.SaveMainOutputScreenShot",
+		Str("Basic.Main.SaveMainOutputScreenShot"),
+		[](void* data, obs_hotkey_id, obs_hotkey_t*, bool pressed)
+		{
+			OBSBasic &basic = *static_cast<OBSBasic*>(data);
+
+			if (pressed)
+			{
+				basic.SaveScreenshotHandler();
+			}
+		},
+		this);
+
+	LoadHotkey(takeScreenShotHotkey,
+		"OBSBasic.SaveMainOutputScreenShot");
 }
 
 void OBSBasic::ClearHotkeys()
@@ -1814,6 +2048,7 @@ void OBSBasic::ClearHotkeys()
 	obs_hotkey_pair_unregister(streamingHotkeys);
 	obs_hotkey_pair_unregister(recordingHotkeys);
 	obs_hotkey_pair_unregister(replayBufHotkeys);
+	obs_hotkey_unregister(takeScreenShotHotkey);
 	obs_hotkey_unregister(forceStreamingStopHotkey);
 	obs_hotkey_unregister(togglePreviewProgramHotkey);
 	obs_hotkey_unregister(transitionHotkey);

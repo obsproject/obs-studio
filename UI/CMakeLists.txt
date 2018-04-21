@@ -35,7 +35,7 @@ else()
 endif()
 
 find_package(Qt5Widgets ${FIND_MODE})
-find_package(FFmpeg REQUIRED COMPONENTS avcodec avutil avformat)
+find_package(FFmpeg REQUIRED COMPONENTS avcodec avutil avformat swscale swresample)
 
 if(APPLE)
 	find_package(Qt5MacExtras REQUIRED)
