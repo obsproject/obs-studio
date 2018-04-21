@@ -44,9 +44,6 @@ void OBSHotkeyEdit::keyPressEvent(QKeyEvent *event)
 	obs_key_combination_t new_key;
 
 	switch (event->key()) {
-	case Qt::Key_Shift:
-	case Qt::Key_Control:
-	case Qt::Key_Alt:
 	case Qt::Key_Meta:
 		new_key.key = OBS_KEY_NONE;
 		break;
@@ -57,6 +54,80 @@ void OBSHotkeyEdit::keyPressEvent(QKeyEvent *event)
 		new_key.key = obs_key_from_virtual_key(57);
 		break;
 #endif
+
+	/* Blacklist shortcuts */
+	case Qt::Key_Delete:
+		new_key.key = OBS_KEY_NONE;
+		break;
+	case Qt::Key_F11:
+		new_key.key = OBS_KEY_NONE;
+		break;
+	case Qt::Key_Left:
+		new_key.key = OBS_KEY_NONE;
+		break;
+	case Qt::Key_Right:
+		new_key.key = OBS_KEY_NONE;
+		break;
+	case Qt::Key_Shift:
+		new_key.key = OBS_KEY_NONE;
+		break;
+	case Qt::Key_Alt:
+		new_key.key = OBS_KEY_NONE;
+		break;
+	case Qt::Key_Control:
+		new_key.key = OBS_KEY_NONE;
+		break;
+	case Qt::Key_Space:
+		new_key.key = OBS_KEY_NONE;
+		break;
+	case (Qt::Key_V):
+		if (event->modifiers() == Qt::ControlModifier)
+			new_key.key = OBS_KEY_NONE;
+		break;
+	case (Qt::Key_C):
+		if (event->modifiers() == Qt::ControlModifier)
+			new_key.key = OBS_KEY_NONE;
+		break;
+	case (Qt::Key_E):
+		if (event->modifiers() == Qt::ControlModifier)
+			new_key.key = OBS_KEY_NONE;
+		break;
+	case (Qt::Key_R):
+		if (event->modifiers() == Qt::ControlModifier)
+			new_key.key = OBS_KEY_NONE;
+		break;
+	case (Qt::Key_F):
+		if (event->modifiers() == Qt::ControlModifier)
+			new_key.key = OBS_KEY_NONE;
+		break;
+	case (Qt::Key_S):
+		if (event->modifiers() == Qt::ControlModifier)
+			new_key.key = OBS_KEY_NONE;
+		break;
+	case (Qt::Key_D):
+		if (event->modifiers() == Qt::ControlModifier)
+			new_key.key = OBS_KEY_NONE;
+		break;
+	case (Qt::Key_Up):
+		if (event->modifiers() == Qt::ControlModifier)
+			new_key.key = OBS_KEY_NONE;
+		else
+			new_key.key = OBS_KEY_NONE;
+		break;
+	case (Qt::Key_Down):
+		if (event->modifiers() == Qt::ControlModifier)
+			new_key.key = OBS_KEY_NONE;
+		else
+			new_key.key = OBS_KEY_NONE;
+		break;
+	case (Qt::Key_Home):
+		if (event->modifiers() == Qt::ControlModifier)
+			new_key.key = OBS_KEY_NONE;
+		break;
+	case (Qt::Key_End):
+		if (event->modifiers() == Qt::ControlModifier)
+			new_key.key = OBS_KEY_NONE;
+		break;
 
 	default:
 		new_key.key =

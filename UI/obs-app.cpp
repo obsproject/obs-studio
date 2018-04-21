@@ -972,14 +972,6 @@ bool OBSApp::OBSInit()
 
 		mainWindow->OBSInit();
 
-		connect(this, &QGuiApplication::applicationStateChanged,
-				[](Qt::ApplicationState state)
-				{
-					obs_hotkey_enable_background_press(
-						state != Qt::ApplicationActive);
-				});
-		obs_hotkey_enable_background_press(
-				applicationState() != Qt::ApplicationActive);
 		return true;
 	} else {
 		return false;
