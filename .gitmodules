@@ -1,6 +1,6 @@
 [submodule "plugins/win-dshow/libdshowcapture"]
 	path = plugins/win-dshow/libdshowcapture
-	url = https://github.com/jp9000/libdshowcapture.git
+	url = https://github.com/obsproject/libdshowcapture.git
 [submodule "plugins/mac-syphon/syphon-framework"]
 	path = plugins/mac-syphon/syphon-framework
 	url = https://github.com/palana/Syphon-Framework.git
@@ -9,10 +9,10 @@
 	url = https://github.com/Xaymar/obs-studio_amf-encoder-plugin.git
 [submodule "plugins/obs-browser"]
 	path = plugins/obs-browser
-	url = https://github.com/kc5nra/obs-browser.git
+	url = https://github.com/obsproject/obs-browser.git
 [submodule "plugins/obs-vst"]
 	path = plugins/obs-vst
-	url = https://github.com/DDRBoxman/obs-vst.git
+	url = https://github.com/obsproject/obs-vst.git
 [submodule "plugins/obs-outputs/ftl-sdk"]
 	path = plugins/obs-outputs/ftl-sdk
 	url = https://github.com/Mixer/ftl-sdk.git
