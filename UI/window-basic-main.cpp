@@ -3910,6 +3910,8 @@ void OBSBasic::CreateSourcePopupMenu(QListWidgetItem *item, bool preview)
 
 		ui->actionCopyFilters->setEnabled(true);
 		ui->actionCopySource->setEnabled(true);
+	} else {
+		ui->actionPasteFilters->setEnabled(false);
 	}
 
 	popup.exec(QCursor::pos());
