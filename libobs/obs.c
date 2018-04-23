@@ -2089,3 +2089,24 @@ void stop_raw_video(video_t *v,
 	os_atomic_dec_long(&video->raw_active);
 	video_output_disconnect(v, callback, param);
 }
+
+void obs_add_raw_video_callback(
+		const struct video_scale_info *conversion,
+		void (*callback)(void *param, struct video_data *frame),
+		void *param)
+{
+	struct obs_core_video *video = &obs->video;
+	if (!obs)
+		return;
+	start_raw_video(video->video, conversion, callback, param);
+}
+
+void obs_remove_raw_video_callback(
+		void (*callback)(void *param, struct video_data *frame),
+		void *param)
+{
+	struct obs_core_video *video = &obs->video;
+	if (!obs)
+		return;
+	stop_raw_video(video->video, callback, param);
+}
