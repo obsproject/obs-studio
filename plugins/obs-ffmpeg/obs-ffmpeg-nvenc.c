@@ -142,11 +142,8 @@ static bool nvenc_update(void *data, obs_data_t *settings)
 	int spstrength = (int)obs_data_get_int(settings, "spatialaqstrength");
 	int rclookahead = (int)obs_data_get_int(settings, "rclookahead");
 	int surfaces = (int)obs_data_get_int(settings, "surfaces");
-	int ref = (int)obs_data_get_int(settings, "ref");
 	bool spatialaq = obs_data_get_bool(settings, "spatialaq");
 	bool temporalaq = obs_data_get_bool(settings, "temporalaq");
-	bool noscenecut = obs_data_get_bool(settings, "noscenecut");
-	bool badapt = obs_data_get_bool(settings, "badapt");
 	bool forcedidr = obs_data_get_bool(settings, "forcedidr");
 
 	video_t *video = obs_encoder_video(enc->encoder);
@@ -192,7 +189,12 @@ static bool nvenc_update(void *data, obs_data_t *settings)
 		enc->context->rc_min_rate = bitrate * 1000;
 		cqp = 0;
 	}
-
+	
+	if (rclookahead > 0)
+	{
+		av_opt_set_int(enc->context->priv_data, "b_adapt", false, 0);
+		av_opt_set_int(enc->context->priv_data, "no-scenecut", true, 0);
+	}
 
 	av_opt_set(enc->context->priv_data, "level", level, 0);
 	av_opt_set_int(enc->context->priv_data, "2pass", twopass, 0);
@@ -202,8 +204,6 @@ static bool nvenc_update(void *data, obs_data_t *settings)
 	av_opt_set_int(enc->context->priv_data, "aq-strength", spstrength, 0);
 	av_opt_set_int(enc->context->priv_data, "rc-lookahead", rclookahead, 0);
 	av_opt_set_int(enc->context->priv_data, "surfaces", surfaces, 0);
-	av_opt_set_int(enc->context->priv_data, "no-scenecut", noscenecut, 0);
-	av_opt_set_int(enc->context->priv_data, "b_adapt", badapt, 0);
 	av_opt_set_int(enc->context->priv_data, "forced-idr", forcedidr, 0);
 
 	enc->context->bit_rate = bitrate * 1000;
@@ -244,8 +244,6 @@ static bool nvenc_update(void *data, obs_data_t *settings)
 		"\tsurfaces:     %d\n"
 		"\tspatialaq:    %s\n"
 		"\ttemporalaq:   %s\n"
-		"\tno-scenecut:  %s\n"
-		"\tb-adapt:      %s\n"
 		"\tforced-idr:   %s\n",
 		rc, bitrate, cqp, enc->context->gop_size,
 		preset, profile, level,
@@ -255,8 +253,6 @@ static bool nvenc_update(void *data, obs_data_t *settings)
 		gpu, spstrength, rclookahead, surfaces,
 		spatialaq ? "true" : "false",
 		temporalaq ? "true" : "false",
-		noscenecut ? "true" : "false",
-		badapt ? "true" : "false",
 		forcedidr ? "true" : "false");
 
 	return nvenc_init_codec(enc);
@@ -434,8 +430,6 @@ static void nvenc_defaults(obs_data_t *settings)
 	obs_data_set_default_int(settings, "bf", 2);
 	obs_data_set_default_bool(settings, "spatialaq", false);
 	obs_data_set_default_bool(settings, "temporalaq", false);
-	obs_data_set_default_bool(settings, "noscenecut", false);
-	obs_data_set_default_bool(settings, "badapt", true);
 	obs_data_set_default_bool(settings, "forcedidr", false);
 	obs_data_set_default_int(settings, "spatialaqstrength", 1);
 	obs_data_set_default_int(settings, "rclookahead", 0);
@@ -555,10 +549,6 @@ static obs_properties_t *nvenc_properties(void *unused)
 		obs_module_text("NVENC.SpatialAQ"));
 	obs_properties_add_bool(props, "temporalaq",
 		obs_module_text("NVENC.TemporalAQ"));
-	obs_properties_add_bool(props, "noscenecut",
-		obs_module_text("NVENC.noscenecut"));
-	obs_properties_add_bool(props, "badapt",
-		obs_module_text("NVENC.badapt"));
 	obs_properties_add_bool(props, "forcedidr",
 		obs_module_text("NVENC.forcedidr"));
 	obs_properties_add_int(props, "spatialaqstrength",
