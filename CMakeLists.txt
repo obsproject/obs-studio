@@ -123,7 +123,7 @@ if(NOT INSTALLER_RUN)
 	add_subdirectory(UI)
 	add_subdirectory(plugins)
 	if (BUILD_TESTS)
-		add_subdirectory(test)
+		add_subdirectory(tests)
 	endif()
 
 	add_subdirectory(cmake/helper_subdir)
