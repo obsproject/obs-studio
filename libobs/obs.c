@@ -776,7 +776,6 @@ static bool obs_init(const char *locale, const char *module_config_path,
 }
 
 #ifdef _WIN32
-extern void initialize_crash_handler(void);
 extern void initialize_com(void);
 extern void uninitialize_com(void);
 #endif
@@ -795,7 +794,6 @@ bool obs_startup(const char *locale, const char *module_config_path,
 	}
 
 #ifdef _WIN32
-	initialize_crash_handler();
 	initialize_com();
 #endif
 
