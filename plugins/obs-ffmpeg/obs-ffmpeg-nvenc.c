@@ -139,6 +139,12 @@ static bool nvenc_update(void *data, obs_data_t *settings)
 	int gpu = (int)obs_data_get_int(settings, "gpu");
 	bool cbr_override = obs_data_get_bool(settings, "cbr");
 	int bf = (int)obs_data_get_int(settings, "bf");
+	int spstrength = (int)obs_data_get_int(settings, "spatialaqstrength");
+	int rclookahead = (int)obs_data_get_int(settings, "rclookahead");
+	int surfaces = (int)obs_data_get_int(settings, "surfaces");
+	bool spatialaq = obs_data_get_bool(settings, "spatialaq");
+	bool temporalaq = obs_data_get_bool(settings, "temporalaq");
+	bool forcedidr = obs_data_get_bool(settings, "forcedidr");
 
 	video_t *video = obs_encoder_video(enc->encoder);
 	const struct video_output_info *voi = video_output_get_info(video);
@@ -183,11 +189,22 @@ static bool nvenc_update(void *data, obs_data_t *settings)
 		enc->context->rc_min_rate = bitrate * 1000;
 		cqp = 0;
 	}
-
+	
+	if (rclookahead > 0)
+	{
+		av_opt_set_int(enc->context->priv_data, "b_adapt", false, 0);
+		av_opt_set_int(enc->context->priv_data, "no-scenecut", true, 0);
+	}
 
 	av_opt_set(enc->context->priv_data, "level", level, 0);
 	av_opt_set_int(enc->context->priv_data, "2pass", twopass, 0);
 	av_opt_set_int(enc->context->priv_data, "gpu", gpu, 0);
+	av_opt_set_int(enc->context->priv_data, "spatial-aq", spatialaq, 0);
+	av_opt_set_int(enc->context->priv_data, "temporal-aq", temporalaq, 0);
+	av_opt_set_int(enc->context->priv_data, "aq-strength", spstrength, 0);
+	av_opt_set_int(enc->context->priv_data, "rc-lookahead", rclookahead, 0);
+	av_opt_set_int(enc->context->priv_data, "surfaces", surfaces, 0);
+	av_opt_set_int(enc->context->priv_data, "forced-idr", forcedidr, 0);
 
 	enc->context->bit_rate = bitrate * 1000;
 	enc->context->rc_buffer_size = bitrate * 1000;
@@ -210,24 +227,33 @@ static bool nvenc_update(void *data, obs_data_t *settings)
 	enc->height = enc->context->height;
 
 	info("settings:\n"
-	     "\trate_control: %s\n"
-	     "\tbitrate:      %d\n"
-	     "\tcqp:          %d\n"
-	     "\tkeyint:       %d\n"
-	     "\tpreset:       %s\n"
-	     "\tprofile:      %s\n"
-	     "\tlevel:        %s\n"
-	     "\twidth:        %d\n"
-	     "\theight:       %d\n"
-	     "\t2-pass:       %s\n"
-	     "\tb-frames:     %d\n"
-	     "\tGPU:          %d\n",
-	     rc, bitrate, cqp, enc->context->gop_size,
-	     preset, profile, level,
-	     enc->context->width, enc->context->height,
-	     twopass ? "true" : "false",
-	     enc->context->max_b_frames,
-	     gpu);
+		"\trate_control: %s\n"
+		"\tbitrate:      %d\n"
+		"\tcqp:          %d\n"
+		"\tkeyint:       %d\n"
+		"\tpreset:       %s\n"
+		"\tprofile:      %s\n"
+		"\tlevel:        %s\n"
+		"\twidth:        %d\n"
+		"\theight:       %d\n"
+		"\t2-pass:       %s\n"
+		"\tb-frames:     %d\n"
+		"\tGPU:          %d\n"
+		"\taq strength:  %d\n"
+		"\trc-lookahead: %d\n"
+		"\tsurfaces:     %d\n"
+		"\tspatialaq:    %s\n"
+		"\ttemporalaq:   %s\n"
+		"\tforced-idr:   %s\n",
+		rc, bitrate, cqp, enc->context->gop_size,
+		preset, profile, level,
+		enc->context->width, enc->context->height,
+		twopass ? "true" : "false",
+		enc->context->max_b_frames,
+		gpu, spstrength, rclookahead, surfaces,
+		spatialaq ? "true" : "false",
+		temporalaq ? "true" : "false",
+		forcedidr ? "true" : "false");
 
 	return nvenc_init_codec(enc);
 }
@@ -402,6 +428,12 @@ static void nvenc_defaults(obs_data_t *settings)
 	obs_data_set_default_bool(settings, "2pass", true);
 	obs_data_set_default_int(settings, "gpu", 0);
 	obs_data_set_default_int(settings, "bf", 2);
+	obs_data_set_default_bool(settings, "spatialaq", false);
+	obs_data_set_default_bool(settings, "temporalaq", false);
+	obs_data_set_default_bool(settings, "forcedidr", false);
+	obs_data_set_default_int(settings, "spatialaqstrength", 1);
+	obs_data_set_default_int(settings, "rclookahead", 0);
+	obs_data_set_default_int(settings, "surfaces", 32);
 }
 
 static bool rate_control_modified(obs_properties_t *ppts, obs_property_t *p,
@@ -512,7 +544,22 @@ static obs_properties_t *nvenc_properties(void *unused)
 	obs_properties_add_int(props, "gpu", obs_module_text("GPU"), 0, 8, 1);
 
 	obs_properties_add_int(props, "bf", obs_module_text("BFrames"),
-			0, 4, 1);
+		0, 4, 1);
+	obs_properties_add_bool(props, "spatialaq",
+		obs_module_text("NVENC.SpatialAQ"));
+	obs_properties_add_bool(props, "temporalaq",
+		obs_module_text("NVENC.TemporalAQ"));
+	obs_properties_add_bool(props, "forcedidr",
+		obs_module_text("NVENC.forcedidr"));
+	obs_properties_add_int(props, "spatialaqstrength",
+		obs_module_text("NVENC.SpatialStrength"),
+		1, 15, 1);
+	obs_properties_add_int(props, "rclookahead",
+		obs_module_text("NVENC.rclookahead"),
+		0, 32, 1);
+	obs_properties_add_int(props, "surfaces",
+		obs_module_text("NVENC.surfaces"),
+		32, 64, 1);
 
 	return props;
 }
