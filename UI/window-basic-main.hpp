@@ -203,6 +203,15 @@ private:
 	void          Save(const char *file);
 	void          Load(const char *file);
 
+	os_event_t*   screenshotInactiveEvent;
+	void          SaveScreenshotToFile(const char *outputFilePath,
+			void(*completed_callback)(bool, void *),
+			void* completed_callback_data);
+
+public slots:
+	void          SaveScreenshotHandler();
+
+private:
 	void          InitHotkeys();
 	void          CreateHotkeys();
 	void          ClearHotkeys();
@@ -280,6 +289,8 @@ private:
 	obs_hotkey_pair_id streamingHotkeys, recordingHotkeys,
 	                   replayBufHotkeys;
 	obs_hotkey_id forceStreamingStopHotkey;
+
+	obs_hotkey_id takeScreenShotHotkey;
 
 	void InitDefaultTransitions();
 	void InitTransition(obs_source_t *transition);

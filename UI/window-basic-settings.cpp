@@ -270,6 +270,7 @@ void OBSBasicSettings::HookWidget(QWidget *widget, const char *signal,
 #define VIDEO_RESTART   SLOT(VideoChangedRestart())
 #define VIDEO_RES       SLOT(VideoChangedResolution())
 #define VIDEO_CHANGED   SLOT(VideoChanged())
+#define SCREENSHOTS_CHANGED SLOT(ScreenShotsChanged())
 #define ADV_CHANGED     SLOT(AdvancedChanged())
 #define ADV_RESTART     SLOT(AdvancedChangedRestart())
 
@@ -418,6 +419,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->fpsInteger,           SCROLL_CHANGED, VIDEO_CHANGED);
 	HookWidget(ui->fpsNumerator,         SCROLL_CHANGED, VIDEO_CHANGED);
 	HookWidget(ui->fpsDenominator,       SCROLL_CHANGED, VIDEO_CHANGED);
+	HookWidget(ui->screenshotOutputPath, EDIT_CHANGED,   SCREENSHOTS_CHANGED);
 	HookWidget(ui->renderer,             COMBO_CHANGED,  ADV_RESTART);
 	HookWidget(ui->adapter,              COMBO_CHANGED,  ADV_RESTART);
 	HookWidget(ui->colorFormat,          COMBO_CHANGED,  ADV_CHANGED);
@@ -1456,6 +1458,19 @@ static inline bool IsSurround(const char *speakers)
 	}
 
 	return false;
+}
+
+void OBSBasicSettings::LoadScreenShotSettings()
+{
+	const char *path = config_get_string(main->Config(), "ScreenShots",
+			"FilePath");
+
+	ui->screenshotOutputPath->setText(path);
+}
+
+void OBSBasicSettings::SaveScreenShotSettings()
+{
+	SaveEdit(ui->screenshotOutputPath, "ScreenShots", "FilePath");
 }
 
 void OBSBasicSettings::LoadSimpleOutputSettings()
@@ -2604,6 +2619,8 @@ void OBSBasicSettings::LoadSettings(bool changedOnly)
 		LoadHotkeySettings();
 	if (!changedOnly || advancedChanged)
 		LoadAdvancedSettings();
+	if (!changedOnly || screenshotsChanged)
+		LoadScreenShotSettings();
 }
 
 void OBSBasicSettings::SaveGeneralSettings()
@@ -3280,6 +3297,8 @@ void OBSBasicSettings::SaveSettings()
 		SaveHotkeySettings();
 	if (advancedChanged)
 		SaveAdvancedSettings();
+	if (screenshotsChanged)
+		SaveScreenShotSettings();
 
 	if (videoChanged || advancedChanged)
 		main->ResetVideo();
@@ -3300,6 +3319,8 @@ void OBSBasicSettings::SaveSettings()
 			AddChangedVal(changed, "audio");
 		if (videoChanged)
 			AddChangedVal(changed, "video");
+		if (screenshotsChanged)
+			AddChangedVal(changed, "screenshots");
 		if (hotkeysChanged)
 			AddChangedVal(changed, "hotkeys");
 		if (advancedChanged)
@@ -3417,6 +3438,19 @@ void OBSBasicSettings::on_simpleOutputBrowse_clicked()
 		return;
 
 	ui->simpleOutputPath->setText(dir);
+}
+
+void OBSBasicSettings::on_screenshotOutputBrowse_clicked()
+{
+	QString dir = QFileDialog::getExistingDirectory(this,
+			QTStr("Basic.Settings.ScreenShots.SelectDirectory"),
+			ui->screenshotOutputPath->text(),
+			QFileDialog::ShowDirsOnly |
+			QFileDialog::DontResolveSymlinks);
+	if (dir.isEmpty())
+		return;
+
+	ui->screenshotOutputPath->setText(dir);
 }
 
 void OBSBasicSettings::on_advOutRecPathBrowse_clicked()
@@ -3792,6 +3826,15 @@ void OBSBasicSettings::VideoChanged()
 {
 	if (!loading) {
 		videoChanged = true;
+		sender()->setProperty("changed", QVariant(true));
+		EnableApplyButton(true);
+	}
+}
+
+void OBSBasicSettings::ScreenShotsChanged()
+{
+	if (!loading) {
+		screenshotsChanged = true;
 		sender()->setProperty("changed", QVariant(true));
 		EnableApplyButton(true);
 	}

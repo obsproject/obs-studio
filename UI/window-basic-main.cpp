@@ -67,6 +67,15 @@
 #include <QScreen>
 #include <QWindow>
 
+#include <obs.h>
+
+extern "C" {
+#include <libavcodec/avcodec.h>
+#include <libavformat/avformat.h>
+#include <libavutil/imgutils.h>
+#include <libswscale/swscale.h>
+};
+
 using namespace std;
 
 namespace {
@@ -283,6 +292,12 @@ OBSBasic::OBSBasic(QWidget *parent)
 						size(), rect));
 		}
 	}
+
+	// Prepare "screenshot inactive" event for concurrency
+	// management and graceful shutdown.
+	os_event_init(&screenshotInactiveEvent,
+			OS_EVENT_TYPE_AUTO);
+	os_event_signal(screenshotInactiveEvent);
 }
 
 static void SaveAudioDevice(const char *name, int channel, obs_data_t *parent,
@@ -1179,6 +1194,9 @@ bool OBSBasic::InitBasicConfigDefaults()
 			VOLUME_METER_DECAY_FAST);
 	config_set_default_uint  (basicConfig, "Audio", "PeakMeterType", 0);
 
+	config_set_default_string(basicConfig, "ScreenShots", "FilePath",
+			GetDefaultScreenShotsSavePath().c_str());
+
 	return true;
 }
 
@@ -1593,6 +1611,12 @@ void OBSBasic::OBSInit()
 	ui->viewMenu->addAction(QTStr("MultiviewWindowed"),
 			this, SLOT(OpenMultiviewWindow()));
 
+	/* ----------------------- */
+	/* Init save screenshot    */
+
+	ui->menuTools->addAction(QTStr("SaveScreenshot"),
+			this, SLOT(SaveScreenshotHandler()));
+
 #if !defined(_WIN32) && !defined(__APPLE__)
 	delete ui->actionShowCrashLogs;
 	delete ui->actionUploadLastCrashLog;
@@ -1646,6 +1670,382 @@ void OBSBasic::UpdateMultiviewProjectorMenu()
 	multiviewProjectorMenu->clear();
 	AddProjectorMenuMonitors(multiviewProjectorMenu, this,
 			SLOT(OpenMultiviewProjector()));
+}
+
+static bool isSaveScreenshotInProgress = false;
+
+void OBSBasic::SaveScreenshotHandler()
+{
+	if (os_event_try(screenshotInactiveEvent)) {
+		// Prevent more than one screenshot to be taken
+		// in parallel.
+		return;
+	}
+
+	const bool noSpace = true;
+
+	// Calculate output file path
+	std::string strOutputFilePath =
+		config_get_string(Config(), "ScreenShots", "FilePath");
+
+	char lastChar = strOutputFilePath.back();
+	if (lastChar != '/' && lastChar != '\\')
+		strOutputFilePath += "/";
+
+	// TODO: Take this out to configuration
+	strOutputFilePath += GenerateSpecifiedFilename("png", noSpace,
+			"%CCYY-%MM-%DD %hh-%mm-%ss");
+
+	replace(strOutputFilePath.begin(), strOutputFilePath.end(), '\\', '/');
+
+	// Get & ensure directory exists
+	size_t last = strOutputFilePath.rfind('/');
+	if (last == string::npos) {
+		return;
+	}
+
+	string directory = strOutputFilePath.substr(0, last);
+	os_mkdirs(directory.c_str());
+
+	auto completed_callback = [] (bool success, void* data) -> void
+	{
+		OBSBasic* self = reinterpret_cast<OBSBasic*>(data);
+
+		if (success) {
+			// TODO: Audio/visual feedback
+		}
+
+		// Screenshot code completed running
+		os_event_signal(self->screenshotInactiveEvent);
+	};
+
+	// Save screenshot to specified file path
+	SaveScreenshotToFile(strOutputFilePath.c_str(),
+			completed_callback,
+			this);
+}
+
+/*
+ * Use libavcodec to save an input RGBA buffer to PNG
+ *
+ * @param outputFilePath		PNG file path to write to
+ * @param width				image_data_ptr buffer width (pixels)
+ * @param height			image_data_ptr buffer height (pixels)
+ * @param image_data_ptr		RGBA buffer containing image data
+ * @param image_data_linesize		line size (pitch)
+ *
+ * @returns				true on success, otherwise false
+ *
+ * @note				used by OBSBasic::SaveScreenshotToFile
+ */
+static bool SaveRGBABufferToPNGFile(
+		const char  *outputFilePath,
+		uint32_t    width,
+		uint32_t    height,
+		uint8_t     *image_data_ptr,
+		uint32_t    image_data_linesize)
+{
+	bool              success = false;
+
+	AVCodec           *codec         = nullptr;
+	AVCodecContext    *codec_context = nullptr;
+	AVFrame           *frame         = nullptr;
+	struct SwsContext *sws_context   = nullptr;
+	AVPacket          pkt;
+	int               got_output     = 0;
+	int               ret            = 0;
+
+	if (image_data_ptr == NULL)
+		goto err_no_image_data;
+
+	// Write PNG output using libavcodec
+	codec = avcodec_find_encoder(AV_CODEC_ID_PNG);
+
+	if (codec == NULL)
+		goto err_png_codec_not_found;
+
+	codec_context = avcodec_alloc_context3(codec);
+
+	if (codec_context == NULL)
+		goto err_png_encoder_context_alloc;
+
+	codec_context->width = width;
+	codec_context->height = height;
+	codec_context->pix_fmt = AV_PIX_FMT_RGB24;
+	codec_context->time_base.num = 1;
+	codec_context->time_base.den = 1000;
+	codec_context->codec_id = codec->id;
+
+	if (avcodec_open2(codec_context, codec, NULL) != 0)
+		goto err_png_encoder_open;
+
+	frame = av_frame_alloc();
+
+	if (frame == NULL)
+		goto err_av_frame_alloc;
+
+	frame->pts = 1;
+	frame->format = AV_PIX_FMT_RGBA;
+	frame->width = width;
+	frame->height = height;
+
+	ret = av_image_alloc(
+		frame->data,
+		frame->linesize,
+		codec_context->width,
+		codec_context->height,
+		codec_context->pix_fmt,
+		32);
+
+	if (ret < 0)
+		goto err_av_image_alloc;
+
+	// Copy image data, converting RGBA to
+	// image format expected by PNG encoder
+	sws_context = sws_getContext(
+			frame->width,
+			frame->height,
+			AV_PIX_FMT_RGBA,
+			frame->width,
+			frame->height,
+			codec_context->pix_fmt,
+			0,
+			nullptr,
+			nullptr,
+			nullptr);
+
+	if (sws_context == NULL)
+		goto err_sws_getContext;
+
+	// Transform RGBA to RGB24
+	ret = sws_scale(
+			sws_context,
+			(const uint8_t * const *)&image_data_ptr,
+			(const int *)&image_data_linesize,
+			0,
+			frame->height,
+			frame->data,
+			frame->linesize);
+
+	if (ret < 0)
+		goto err_sws_scale;
+
+	av_init_packet(&pkt);
+	pkt.data = NULL;
+	pkt.size = 0;
+
+	ret = avcodec_encode_video2(codec_context, &pkt, frame, &got_output);
+
+	if (ret == 0 && got_output) {
+		FILE *of = os_fopen(outputFilePath, "wb");
+
+		if (of != NULL) {
+			fwrite(pkt.data, pkt.size, 1, of);
+			fclose(of);
+
+			// We're done!
+			success = true;
+		} // Failed opening output file
+
+		av_free_packet(&pkt);
+	} // failed encoding to PNG
+
+err_sws_scale:
+	// Failed transforming RGBA buffer to RGB24 buffer
+	sws_freeContext(sws_context);
+	sws_context = nullptr;
+
+err_sws_getContext:
+	// Failed acquiring SWS context
+	av_freep(frame->data);
+	frame->data[0] = nullptr;
+
+err_av_image_alloc:
+	// Failed allocating image data buffer
+	av_frame_free(&frame);
+	frame = nullptr;
+
+err_av_frame_alloc:
+	// Failed allocating frame
+	avcodec_close(codec_context);
+
+err_png_encoder_open:
+	// Failed opening PNG encoder
+	avcodec_free_context(&codec_context);
+	codec_context = nullptr;
+
+err_png_encoder_context_alloc:
+	// failed allocating PNG encoder context
+	// no need to free AVCodec* codec
+err_png_codec_not_found:
+	// PNG encoder not found
+err_no_image_data:
+	// image_data_ptr == nullptr
+
+	return success;
+}
+
+/*
+ * Save a screen shot to file.
+ *
+ * NOTE: This function is not re-entrant. Take care not to
+ *       Invoke it in parallel across multiple threads.
+ *
+ * This is an asynchronous multi-stage process.
+ *
+ * We start by allocating a stage surface and subscribing to
+ * the tick callback by obs_add_tick_callback(). Here the
+ * asynchronous multi-stage process begins:
+ *
+ * Stage 1:
+ *
+ *   Copy the backbuffer to the stage surface.
+ *
+ * Stage 2:
+ *
+ *   Map the stage surface to a buffer, unsubscribe from
+ *   the tick callback, and invoke stage 3 as a separate
+ *   thread.
+ *
+ * Stage 3:
+ *
+ *   Save buffer data as PNG, release previously allocated
+ *   buffer & staging surface and signal the calling thread
+ *   that we are done.
+ *
+ * All this is necessary because if you stage then map without
+ * waiting at least a frame, it will cause all graphics calls
+ * to immediately flush, and will stall on the map call.
+ *
+ * Graphics calls are asynchronous by nature, otherwise it would
+ * likely cause a noticeable hitch in the user's graphics,
+ * depending on the video card.
+ *
+ * Viewers in turn would see that as well.
+ */
+void OBSBasic::SaveScreenshotToFile(const char *outputFilePath,
+		void (*completed_callback)(bool, void *),
+		void* completed_callback_data)
+{
+	obs_video_info video_info;
+
+	if (!obs_get_video_info(&video_info))
+		return;
+
+	// This structure holds data interchanged with the
+	// callback function
+	struct local_context {
+		uint32_t       width; // frame width
+		uint32_t       height; // frame height
+		uint8_t        *image_data_ptr; // actual image data
+		uint32_t       image_data_linesize; // image data pitch
+
+		int            stepIndex = 0; // step of the process
+
+		gs_stagesurf_t *stage_surf; // staging surface
+		std::string    outputFilePath; // output PNG file path
+
+		// reference to the callback function
+		void           (*tick_callback_ref)(void *, float);
+
+		// on completion callback
+		void           (*completed_callback)(bool, void *);
+		void           *completed_callback_data;
+	};
+
+	local_context *callback_data = new local_context();
+
+	// initialize callback function input
+	callback_data->completed_callback = completed_callback;
+	callback_data->completed_callback_data = completed_callback_data;
+	callback_data->outputFilePath = outputFilePath;
+	callback_data->width = video_info.base_width;
+	callback_data->height = video_info.base_height;
+
+	// Create stage surface
+	obs_enter_graphics();
+	callback_data->stage_surf = gs_stagesurface_create(
+			callback_data->width, callback_data->height,
+			GS_RGBA);
+	obs_leave_graphics();
+
+	// Set up our callback function body for
+	// obs_add_tick_callback()
+	callback_data->tick_callback_ref = [] (void *param,
+			float seconds)
+	{
+		local_context *args =
+			(local_context *)param;
+
+		// Worker function to be spawned after locking
+		// the graphics buffer.
+		auto save_worker_function = [args]() {
+			// Stage 3:
+			// Save acquired image data to PNG, release
+			// graphics buffer & staging surface, and
+			// signal the calling thread we are done.
+
+			bool result = SaveRGBABufferToPNGFile(
+					args->outputFilePath.c_str(),
+					args->width,
+					args->height,
+					args->image_data_ptr,
+					args->image_data_linesize);
+
+			// Release previously allocated gfx objects
+			obs_enter_graphics();
+			gs_stagesurface_unmap(args->stage_surf);
+			gs_stagesurface_destroy(args->stage_surf);
+			obs_leave_graphics();
+
+			// Signal the calling function we're done
+			args->completed_callback(
+					result,
+					args->completed_callback_data);
+
+			delete args;
+		};
+
+		switch (args->stepIndex) {
+		case 0:
+			// Stage 1:
+			// Copy the backbuffer to the stage surface
+			obs_enter_graphics();
+			gs_stage_texture(args->stage_surf,
+					obs_get_main_texture());
+			obs_leave_graphics();
+
+			// Increment our step number for the next
+			// call of the callback.
+			++args->stepIndex;
+			break;
+		case 1:
+			// Stage 2:
+			// Remove tick callback and map staging
+			// surface to a data pointer.
+			obs_remove_tick_callback(
+					args->tick_callback_ref, args);
+
+			// Lock the raw data to the image data buffer
+			obs_enter_graphics();
+			gs_stagesurface_map(args->stage_surf,
+					&args->image_data_ptr,
+					&args->image_data_linesize);
+			obs_leave_graphics();
+
+			// Spawn a thread to perform the save
+			// operation and release the allocated
+			// buffer & staging surface.
+			std::thread save_thread = std::thread(
+					save_worker_function);
+			save_thread.detach();
+			break;
+		}
+	};
+
+	// Add tick callback
+	obs_add_tick_callback(callback_data->tick_callback_ref,
+			callback_data);
 }
 
 void OBSBasic::InitHotkeys()
@@ -1852,6 +2252,25 @@ void OBSBasic::CreateHotkeys()
 			"OBSBasic.Transition",
 			Str("Transition"), transition, this);
 	LoadHotkey(transitionHotkey, "OBSBasic.Transition");
+
+	auto screenshot_cb = [] (void *data, obs_hotkey_id, obs_hotkey_t*,
+			bool pressed)
+	{
+		OBSBasic &basic = *static_cast<OBSBasic*>(data);
+
+		if (pressed) {
+			basic.SaveScreenshotHandler();
+		}
+	};
+
+	takeScreenShotHotkey = obs_hotkey_register_frontend(
+		"OBSBasic.SaveMainOutputScreenShot",
+		Str("Basic.Main.SaveMainOutputScreenShot"),
+		screenshot_cb,
+		this);
+
+	LoadHotkey(takeScreenShotHotkey,
+		"OBSBasic.SaveMainOutputScreenShot");
 }
 
 void OBSBasic::ClearHotkeys()
@@ -1859,6 +2278,7 @@ void OBSBasic::ClearHotkeys()
 	obs_hotkey_pair_unregister(streamingHotkeys);
 	obs_hotkey_pair_unregister(recordingHotkeys);
 	obs_hotkey_pair_unregister(replayBufHotkeys);
+	obs_hotkey_unregister(takeScreenShotHotkey);
 	obs_hotkey_unregister(forceStreamingStopHotkey);
 	obs_hotkey_unregister(togglePreviewProgramHotkey);
 	obs_hotkey_unregister(transitionHotkey);
@@ -1866,6 +2286,10 @@ void OBSBasic::ClearHotkeys()
 
 OBSBasic::~OBSBasic()
 {
+	// Ensure clean completion / shutdown of async screenshot
+	os_event_wait(screenshotInactiveEvent);
+	os_event_destroy(screenshotInactiveEvent);
+
 	if (updateCheckThread && updateCheckThread->isRunning())
 		updateCheckThread->wait();
 

@@ -95,6 +95,7 @@ private:
 	bool outputsChanged = false;
 	bool audioChanged = false;
 	bool videoChanged = false;
+	bool screenshotsChanged = false;
 	bool hotkeysChanged = false;
 	bool advancedChanged = false;
 	int  pageIndex = 0;
@@ -155,7 +156,7 @@ private:
 	{
 		return generalChanged || outputsChanged || stream1Changed ||
 			audioChanged || videoChanged || advancedChanged ||
-			hotkeysChanged;
+			hotkeysChanged || screenshotsChanged;
 	}
 
 	inline void EnableApplyButton(bool en)
@@ -170,6 +171,7 @@ private:
 		outputsChanged = false;
 		audioChanged   = false;
 		videoChanged   = false;
+		screenshotsChanged = false;
 		hotkeysChanged = false;
 		advancedChanged= false;
 		EnableApplyButton(false);
@@ -206,6 +208,10 @@ private:
 	/* general */
 	void LoadLanguageList();
 	void LoadThemeList();
+
+	/* screenshots */
+	void LoadScreenShotSettings();
+	void SaveScreenShotSettings();
 
 	/* output */
 	void LoadSimpleOutputSettings();
@@ -256,6 +262,7 @@ private slots:
 	void on_buttonBox_clicked(QAbstractButton *button);
 
 	void on_streamType_currentIndexChanged(int idx);
+	void on_screenshotOutputBrowse_clicked();
 	void on_simpleOutputBrowse_clicked();
 	void on_advOutRecPathBrowse_clicked();
 	void on_advOutFFPathBrowse_clicked();
@@ -284,6 +291,7 @@ private slots:
 	void OutputsChanged();
 	void Stream1Changed();
 	void VideoChanged();
+	void ScreenShotsChanged();
 	void VideoChangedResolution();
 	void VideoChangedRestart();
 	void HotkeysChanged();
