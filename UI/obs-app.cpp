@@ -1900,6 +1900,7 @@ int main(int argc, char *argv[])
 #endif
 
 #ifdef _WIN32
+	obs_init_win32_crash_handler();
 	SetErrorMode(SEM_FAILCRITICALERRORS);
 	load_debug_privilege();
 	base_set_crash_handler(main_crash_handler, nullptr);
