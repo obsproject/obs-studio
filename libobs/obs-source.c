@@ -1298,7 +1298,8 @@ static void source_output_audio_data(obs_source_t *source,
 		source->last_sync_offset = sync_offset;
 	}
 
-	if (source->monitoring_type != OBS_MONITORING_TYPE_MONITOR_ONLY) {
+	// TODO: Make monitoring work when stream is muted
+	if (source->user_muted && source->monitoring_active) {
 		if (push_back && source->audio_ts)
 			source_output_audio_push_back(source, &in);
 		else
@@ -4060,19 +4061,19 @@ void obs_source_remove_audio_capture_callback(obs_source_t *source,
 	pthread_mutex_unlock(&source->audio_cb_mutex);
 }
 
-void obs_source_set_monitoring_type(obs_source_t *source,
-		enum obs_monitoring_type type)
+void obs_source_set_monitoring_active(obs_source_t *source,
+		bool active)
 {
 	bool was_on;
 	bool now_on;
 
-	if (!obs_source_valid(source, "obs_source_set_monitoring_type"))
+	if (!obs_source_valid(source, "obs_source_set_monitoring_active"))
 		return;
-	if (source->monitoring_type == type)
+	if (source->monitoring_active == active)
 		return;
 
-	was_on = source->monitoring_type != OBS_MONITORING_TYPE_NONE;
-	now_on = type != OBS_MONITORING_TYPE_NONE;
+	was_on = source->monitoring_active;
+	now_on = active;
 
 	if (was_on != now_on) {
 		if (!was_on) {
@@ -4083,14 +4084,14 @@ void obs_source_set_monitoring_type(obs_source_t *source,
 		}
 	}
 
-	source->monitoring_type = type;
+	source->monitoring_active = active;
 }
 
-enum obs_monitoring_type obs_source_get_monitoring_type(
+bool obs_source_get_monitoring(
 		const obs_source_t *source)
 {
-	return obs_source_valid(source, "obs_source_get_monitoring_type") ?
-		source->monitoring_type : OBS_MONITORING_TYPE_NONE;
+	return obs_source_valid(source, "obs_source_get_monitoring") ?
+		source->monitoring_active : false;
 }
 
 void obs_source_set_async_unbuffered(obs_source_t *source, bool unbuffered)

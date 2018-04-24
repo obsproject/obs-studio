@@ -1518,7 +1518,7 @@ static obs_source_t *obs_load_source_type(obs_data_t *source_data)
 	uint32_t     mixers;
 	int          di_order;
 	int          di_mode;
-	int          monitoring_type;
+	bool         monitoring_active;
 
 	source = obs_source_create(id, name, settings, hotkeys);
 
@@ -1570,9 +1570,9 @@ static obs_source_t *obs_load_source_type(obs_data_t *source_data)
 	obs_source_set_deinterlace_field_order(source,
 			(enum obs_deinterlace_field_order)di_order);
 
-	monitoring_type = (int)obs_data_get_int(source_data, "monitoring_type");
-	obs_source_set_monitoring_type(source,
-			(enum obs_monitoring_type)monitoring_type);
+	monitoring_active = (bool)obs_data_get_bool(source_data, "monitoring_active");
+	obs_source_set_monitoring_active(source,
+			monitoring_active);
 
 	obs_data_release(source->private_settings);
 	source->private_settings =
@@ -1676,7 +1676,7 @@ obs_data_t *obs_save_source(obs_source_t *source)
 	uint64_t   ptm_delay   = obs_source_get_push_to_mute_delay(source);
 	bool       push_to_talk= obs_source_push_to_talk_enabled(source);
 	uint64_t   ptt_delay   = obs_source_get_push_to_talk_delay(source);
-	int        m_type      = (int)obs_source_get_monitoring_type(source);
+	int        m_active    = (bool)obs_source_get_monitoring(source);
 	int        di_mode     = (int)obs_source_get_deinterlace_mode(source);
 	int        di_order    =
 		(int)obs_source_get_deinterlace_field_order(source);
@@ -1706,7 +1706,7 @@ obs_data_t *obs_save_source(obs_source_t *source)
 	obs_data_set_obj   (source_data, "hotkeys",  hotkey_data);
 	obs_data_set_int   (source_data, "deinterlace_mode", di_mode);
 	obs_data_set_int   (source_data, "deinterlace_field_order", di_order);
-	obs_data_set_int   (source_data, "monitoring_type", m_type);
+	obs_data_set_int   (source_data, "monitoring_active", m_active);
 
 	obs_data_set_obj(source_data, "private_settings",
 			source->private_settings);

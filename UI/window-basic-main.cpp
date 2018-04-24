@@ -647,17 +647,8 @@ static bool LogSceneItem(obs_scene_t*, obs_sceneitem_t *item, void*)
 
 	blog(LOG_INFO, "    - source: '%s' (%s)", name, id);
 
-	obs_monitoring_type monitoring_type =
-		obs_source_get_monitoring_type(source);
-
-	if (monitoring_type != OBS_MONITORING_TYPE_NONE) {
-		const char *type =
-			(monitoring_type == OBS_MONITORING_TYPE_MONITOR_ONLY)
-			? "monitor only"
-			: "monitor and output";
-
-		blog(LOG_INFO, "        - monitoring: %s", type);
-	}
+	if (obs_source_get_monitoring(source))
+		blog(LOG_INFO, "        - monitoring: active");
 
 	obs_source_enum_filters(source, LogFilter, (void*)(intptr_t)2);
 	return true;
@@ -2321,14 +2312,6 @@ void OBSBasic::GetAudioSourceProperties()
 	CreatePropertiesWindow(source);
 }
 
-void OBSBasic::MonitorOnlyToggled(bool checked)
-{
-	QAction *action = reinterpret_cast<QAction*>(sender());
-	VolControl *vol = action->property("volControl").value<VolControl*>();
-
-	vol->SetMonitorOnly(checked);
-}
-
 void OBSBasic::HideAudioControl()
 {
 	QAction *action = reinterpret_cast<QAction*>(sender());
@@ -2425,24 +2408,6 @@ void OBSBasic::VolControlContextMenu()
 
 	/* ------------------- */
 
-	QAction monitorOnlyAction(
-			QTStr("Basic.AdvAudio.Monitoring.MonitorOnly"), this);
-	monitorOnlyAction.setCheckable(true);
-
-	int mt = obs_source_get_monitoring_type(vol->GetSource());
-
-	switch (mt) {
-	case OBS_MONITORING_TYPE_NONE:
-		monitorOnlyAction.setChecked(false);
-		break;
-	case OBS_MONITORING_TYPE_MONITOR_ONLY:
-		monitorOnlyAction.setChecked(true);
-		break;
-	case OBS_MONITORING_TYPE_MONITOR_AND_OUTPUT:
-		monitorOnlyAction.setChecked(false);
-		break;
-	}
-
 	QAction hideAction(QTStr("Hide"), this);
 	QAction unhideAllAction(QTStr("UnhideAll"), this);
 	QAction mixerRenameAction(QTStr("Rename"), this);
@@ -2453,9 +2418,6 @@ void OBSBasic::VolControlContextMenu()
 
 	/* ------------------- */
 
-	connect(&monitorOnlyAction, &QAction::triggered,
-			this, &OBSBasic::MonitorOnlyToggled,
-			Qt::DirectConnection);
 	connect(&hideAction, &QAction::triggered,
 			this, &OBSBasic::HideAudioControl,
 			Qt::DirectConnection);
@@ -2478,8 +2440,6 @@ void OBSBasic::VolControlContextMenu()
 
 	/* ------------------- */
 
-	monitorOnlyAction.setProperty("volControl",
-			QVariant::fromValue<VolControl*>(vol));
 	hideAction.setProperty("volControl",
 			QVariant::fromValue<VolControl*>(vol));
 	mixerRenameAction.setProperty("volControl",
@@ -2493,8 +2453,6 @@ void OBSBasic::VolControlContextMenu()
 	/* ------------------- */
 
 	QMenu popup(this);
-	popup.addAction(&monitorOnlyAction);
-	popup.addSeparator();
 	popup.addAction(&unhideAllAction);
 	popup.addAction(&hideAction);
 	popup.addAction(&mixerRenameAction);

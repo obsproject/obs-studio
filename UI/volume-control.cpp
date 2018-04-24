@@ -74,38 +74,10 @@ void VolControl::SetMuted(bool checked)
 
 void VolControl::SetMonitor(bool checked)
 {
-	headphonesChecked = checked;
+	obs_source_set_monitoring_active(source, checked);
 
-	SetMonitorType();
-}
-
-void VolControl::SetMonitorOnly(bool checked)
-{
-	monitorOnlyChecked = checked;
-
-	SetMonitorType();
-}
-
-void VolControl::SetMonitorType()
-{
-	const char *type = nullptr;
-
-	if (!headphonesChecked) {
-		obs_source_set_monitoring_type(source,
-				OBS_MONITORING_TYPE_NONE);
-		type = "none";
-	} else if (headphonesChecked && monitorOnlyChecked) {
-		obs_source_set_monitoring_type(source,
-				OBS_MONITORING_TYPE_MONITOR_ONLY);
-		type = "monitor only";
-	} else if (headphonesChecked && !monitorOnlyChecked) {
-		obs_source_set_monitoring_type(source,
-				OBS_MONITORING_TYPE_MONITOR_AND_OUTPUT);
-		type = "monitor and output";
-	}
-
-	blog(LOG_INFO, "User changed audio monitoring for source '%s' to: %s",
-			obs_source_get_name(source), type);
+	blog(LOG_INFO, "User changed audio monitoring for source '%s' to: %d",
+			obs_source_get_name(source), checked);
 }
 
 void VolControl::SliderChanged(int vol)
@@ -198,19 +170,7 @@ VolControl::VolControl(OBSSource source_, bool showConfig)
 	headphone->setAccessibleName(
 			QTStr("VolControl.Headphones").arg(sourceName));
 
-	int mt = obs_source_get_monitoring_type(source);
-
-	switch (mt) {
-	case OBS_MONITORING_TYPE_NONE:
-		headphone->setChecked(false);
-		break;
-	case OBS_MONITORING_TYPE_MONITOR_ONLY:
-		headphone->setChecked(true);
-		break;
-	case OBS_MONITORING_TYPE_MONITOR_AND_OUTPUT:
-		headphone->setChecked(true);
-		break;
-	}
+	headphone->setChecked(obs_source_get_monitoring(source));
 
 	volLayout->addWidget(slider);
 	volLayout->addWidget(mute);
