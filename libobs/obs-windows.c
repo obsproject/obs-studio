@@ -788,6 +788,13 @@ void reset_win32_symbol_paths(void)
 	da_free(paths);
 }
 
+extern void initialize_crash_handler(void);
+
+void obs_init_win32_crash_handler(void)
+{
+	initialize_crash_handler();
+}
+
 void initialize_com(void)
 {
 	CoInitializeEx(0, COINIT_MULTITHREADED);
