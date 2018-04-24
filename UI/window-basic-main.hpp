@@ -121,6 +121,8 @@ private:
 
 	std::vector<OBSSignal> signalHandlers;
 
+	long m_isLoading = 0;
+
 	bool loaded = false;
 	long disableSaving = 1;
 	bool projectChanged = false;
@@ -469,6 +471,7 @@ private:
 	static void SceneItemDeselected(void *data, calldata_t *params);
 	static void SourceLoaded(void *data, obs_source_t *source);
 	static void SourceRemoved(void *data, calldata_t *params);
+	static void SourceCreated(void *data, calldata_t *params);
 	static void SourceActivated(void *data, calldata_t *params);
 	static void SourceDeactivated(void *data, calldata_t *params);
 	static void SourceRenamed(void *data, calldata_t *params);
