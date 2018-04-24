@@ -153,11 +153,11 @@ failed:
 	return !ver_mismatch;
 }
 
-bool load_graphics_offsets(bool is32bit)
+bool load_graphics_offsets(bool is32bit, const char *config_path)
 {
 	char *offset_exe_path = NULL;
 	struct dstr offset_exe = {0};
-	char *config_ini = NULL;
+	struct dstr config_ini = {0};
 	struct dstr str = {0};
 	os_process_pipe_t *pp;
 	bool success = false;
@@ -188,10 +188,12 @@ bool load_graphics_offsets(bool is32bit)
 		dstr_ncat(&str, data, len);
 	}
 
-	config_ini = obs_module_config_path(is32bit ? "32.ini" : "64.ini");
-	os_quick_write_utf8_file_safe(config_ini, str.array, str.len, false,
+	dstr_copy(&config_ini, config_path);
+	dstr_cat(&config_ini, is32bit ? "32.ini" : "64.ini");
+
+	os_quick_write_utf8_file_safe(config_ini.array, str.array, str.len, false,
 			"tmp", NULL);
-	bfree(config_ini);
+	dstr_free(&config_ini);
 
 	success = load_offsets_from_string(is32bit ? &offsets32 : &offsets64,
 			str.array);
@@ -208,17 +210,18 @@ error:
 	return success;
 }
 
-bool load_cached_graphics_offsets(bool is32bit)
+bool load_cached_graphics_offsets(bool is32bit, const char *config_path)
 {
-	char *config_ini = NULL;
+	struct dstr config_ini = {0};
 	bool success;
 
-	config_ini = obs_module_config_path(is32bit ? "32.ini" : "64.ini");
+	dstr_copy(&config_ini, config_path);
+	dstr_cat(&config_ini, is32bit ? "32.ini" : "64.ini");
 	success = load_offsets_from_file(is32bit ? &offsets32 : &offsets64,
-			config_ini);
+			config_ini.array);
 	if (!success)
-		success = load_graphics_offsets(is32bit);
+		success = load_graphics_offsets(is32bit, config_path);
 
-	bfree(config_ini);
+	dstr_free(&config_ini);
 	return success;
 }
