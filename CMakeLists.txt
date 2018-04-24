@@ -101,8 +101,11 @@ elseif(UNIX)
 	endif()
 endif()
 
-option(BUILD_TESTS "Build test directory (includes test sources and possibly a platform test executable)" FALSE)
+option(BUILD_TESTS "Build test directory for unit-tests" FALSE)
 mark_as_advanced(BUILD_TESTS)
+
+option(BUILD_EXAMPLES "Build examples directory (includes example sources and possibly a platform test executable)" FALSE)
+mark_as_advanced(BUILD_EXAMPLES)
 
 if(NOT INSTALLER_RUN)
 	option(ENABLE_UI "Enables the OBS user interfaces" ON)
@@ -124,6 +127,9 @@ if(NOT INSTALLER_RUN)
 	add_subdirectory(plugins)
 	if (BUILD_TESTS)
 		add_subdirectory(tests)
+	endif()
+	if (BUILD_EXAMPLES)
+		add_subdirectory(examples)
 	endif()
 
 	add_subdirectory(cmake/helper_subdir)
