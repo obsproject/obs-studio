@@ -1307,7 +1307,7 @@ static void source_output_audio_data(obs_source_t *source,
 
 	pthread_mutex_unlock(&source->audio_buf_mutex);
 
-	source_signal_audio_data(source, data, source_muted(source, os_time) && !source->monitoring_active);
+	source_signal_audio_data(source, data, !source->monitoring_active && source_muted(source, os_time));
 }
 
 enum convert_type {
