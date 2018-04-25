@@ -406,6 +406,8 @@ public slots:
 	void SetCurrentScene(OBSSource scene, bool force = false,
 			bool direct = false);
 
+	void MonitorOnlyToggled(bool checked);
+
 private slots:
 	void AddSceneItem(OBSSceneItem item);
 	void RemoveSceneItem(OBSSceneItem item);

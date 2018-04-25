@@ -2,6 +2,7 @@
 #include "qt-wrappers.hpp"
 #include "obs-app.hpp"
 #include "mute-checkbox.hpp"
+#include "headphone-checkbox.hpp"
 #include "slider-absoluteset-style.hpp"
 #include <obs-audio-controls.h>
 #include <util/platform.h>
@@ -71,6 +72,42 @@ void VolControl::SetMuted(bool checked)
 	obs_source_set_muted(source, checked);
 }
 
+void VolControl::SetMonitor(bool checked)
+{
+	headphonesChecked = checked;
+
+	SetMonitorType();
+}
+
+void VolControl::SetMonitorOnly(bool checked)
+{
+	monitorOnlyChecked = checked;
+
+	SetMonitorType();
+}
+
+void VolControl::SetMonitorType()
+{
+	const char *type = nullptr;
+
+	if (!headphonesChecked) {
+		obs_source_set_monitoring_type(source,
+				OBS_MONITORING_TYPE_NONE);
+		type = "none";
+	} else if (headphonesChecked && monitorOnlyChecked) {
+		obs_source_set_monitoring_type(source,
+				OBS_MONITORING_TYPE_MONITOR_ONLY);
+		type = "monitor only";
+	} else if (headphonesChecked && !monitorOnlyChecked) {
+		obs_source_set_monitoring_type(source,
+				OBS_MONITORING_TYPE_MONITOR_AND_OUTPUT);
+		type = "monitor and output";
+	}
+
+	blog(LOG_INFO, "User changed audio monitoring for source '%s' to: %s",
+			obs_source_get_name(source), type);
+}
+
 void VolControl::SliderChanged(int vol)
 {
 	obs_fader_set_deflection(obs_fader, float(vol) * 0.01f);
@@ -130,6 +167,7 @@ VolControl::VolControl(OBSSource source_, bool showConfig)
 	volLabel  = new QLabel();
 	volMeter  = new VolumeMeter(0, obs_volmeter);
 	mute      = new MuteCheckBox();
+	headphone = new HeadphoneCheckBox();
 	slider    = new QSlider(Qt::Horizontal);
 
 	QFont font = nameLabel->font();
@@ -157,8 +195,26 @@ VolControl::VolControl(OBSSource source_, bool showConfig)
 	mute->setAccessibleName(
 			QTStr("VolControl.Mute").arg(sourceName));
 
+	headphone->setAccessibleName(
+			QTStr("VolControl.Headphones").arg(sourceName));
+
+	int mt = obs_source_get_monitoring_type(source);
+
+	switch (mt) {
+	case OBS_MONITORING_TYPE_NONE:
+		headphone->setChecked(false);
+		break;
+	case OBS_MONITORING_TYPE_MONITOR_ONLY:
+		headphone->setChecked(true);
+		break;
+	case OBS_MONITORING_TYPE_MONITOR_AND_OUTPUT:
+		headphone->setChecked(true);
+		break;
+	}
+
 	volLayout->addWidget(slider);
 	volLayout->addWidget(mute);
+	volLayout->addWidget(headphone);
 	volLayout->setSpacing(5);
 
 	botLayout->setContentsMargins(0, 0, 0, 0);
@@ -201,6 +257,8 @@ VolControl::VolControl(OBSSource source_, bool showConfig)
 			this, SLOT(SliderChanged(int)));
 	QWidget::connect(mute, SIGNAL(clicked(bool)),
 			this, SLOT(SetMuted(bool)));
+	QWidget::connect(headphone, SIGNAL(clicked(bool)),
+			this, SLOT(SetMonitor(bool)));
 
 	obs_fader_attach_source(obs_fader, source);
 	obs_volmeter_attach_source(obs_volmeter, source);

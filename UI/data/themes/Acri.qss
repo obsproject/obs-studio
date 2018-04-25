@@ -719,10 +719,44 @@ MuteCheckBox::indicator:unchecked:disabled {
 	image: url(./Dark/unmute.png);
 }
 
+HeadphoneCheckBox {
+	outline: none;
+}
+
+HeadphoneCheckBox::indicator:checked {
+	image: url(./Dark/headphones_checked.png);
+}
+
+HeadphoneCheckBox::indicator:unchecked {
+	image: url(./Dark/headphones_unchecked.png);
+}
+
+HeadphoneCheckBox::indicator:unchecked:hover {
+	image: url(./Dark/headphones_unchecked.png);
+}
+
+HeadphoneCheckBox::indicator:unchecked:focus {
+	image: url(./Dark/headphones_unchecked.png);
+}
+HeadphoneCheckBox::indicator:checked:hover {
+	image: url(./Dark/headphones_checked.png);
+}
+
+HeadphoneCheckBox::indicator:checked:focus {
+	image: url(./Dark/headphones_checked.png);
+}
+
+HeadphoneCheckBox::indicator:checked:disabled {
+	image: url(./Dark/headphones_checked.png);
+}
+
+HeadphoneCheckBox::indicator:unchecked:disabled {
+	image: url(./Dark/headphones_unchecked.png);
+}
+
 OBSHotkeyLabel[hotkeyPairHover=true] {
 	color: rgba(27, 96, 166);
 }
-
 
 /* Label warning/error */
 
