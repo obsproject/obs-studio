@@ -1298,8 +1298,7 @@ static void source_output_audio_data(obs_source_t *source,
 		source->last_sync_offset = sync_offset;
 	}
 
-	// TODO: Make monitoring work when stream is muted
-	if (source->user_muted && source->monitoring_active) {
+	if (!(source->user_muted && source->monitoring_active)) {
 		if (push_back && source->audio_ts)
 			source_output_audio_push_back(source, &in);
 		else
@@ -1308,7 +1307,7 @@ static void source_output_audio_data(obs_source_t *source,
 
 	pthread_mutex_unlock(&source->audio_buf_mutex);
 
-	source_signal_audio_data(source, data, source_muted(source, os_time));
+	source_signal_audio_data(source, data, source_muted(source, os_time) && !source->monitoring_active);
 }
 
 enum convert_type {
