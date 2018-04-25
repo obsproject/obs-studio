@@ -3389,7 +3389,7 @@ void OBSBasic::on_actionRemux_triggered()
 		config_get_string(basicConfig, "SimpleOutput", "FilePath") :
 		config_get_string(basicConfig, "AdvOut", "RecFilePath");
 	OBSRemux remux(path, this);
-	remux.exec();
+	remux.Init();
 }
 
 void OBSBasic::on_action_Settings_triggered()

@@ -37,6 +37,9 @@ OBSRemux::OBSRemux(const char *path, QWidget *parent)
 	  ui      (new Ui::OBSRemux),
 	  recPath (path)
 {
+	setModal(false);
+	setSizeGripEnabled(true);
+
 	ui->setupUi(this);
 
 	ui->progressBar->setVisible(false);
@@ -97,6 +100,14 @@ bool OBSRemux::Stop()
 	}
 
 	return false;
+}
+
+void OBSRemux::Init()
+{
+	show();
+	raise();
+	activateWindow();
+	exec();
 }
 
 OBSRemux::~OBSRemux()
