@@ -276,6 +276,12 @@ EXPORT void obs_set_locale(const char *locale);
 /** @return the current locale */
 EXPORT const char *obs_get_locale(void);
 
+/** Initialize the Windows-specific crash handler */
+
+#ifdef _WIN32
+EXPORT void obs_init_win32_crash_handler(void);
+#endif
+
 /**
  * Returns the profiler name store (see util/profiler.h) used by OBS, which is
  * either a name store passed to obs_startup, an internal name store, or NULL
