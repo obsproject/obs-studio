@@ -132,6 +132,10 @@ static bool initialize_codec(struct enc_encoder *enc)
 		warn("Failed to open AAC codec: %s", av_err2str(ret));
 		return false;
 	}
+	enc->aframe->format = enc->context->sample_fmt;
+	enc->aframe->channels = enc->context->channels;
+	enc->aframe->channel_layout = enc->context->channel_layout;
+	enc->aframe->sample_rate = enc->context->sample_rate;
 
 	enc->frame_size = enc->context->frame_size;
 	if (!enc->frame_size)
