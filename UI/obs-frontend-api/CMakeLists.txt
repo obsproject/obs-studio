@@ -26,4 +26,5 @@ if(UNIX AND NOT APPLE)
 			)
 endif()
 
+install_obs_headers(obs-frontend-api.h)
 install_obs_core(obs-frontend-api)
