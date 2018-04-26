@@ -139,6 +139,9 @@ static bool nvenc_update(void *data, obs_data_t *settings)
 	int gpu = (int)obs_data_get_int(settings, "gpu");
 	bool cbr_override = obs_data_get_bool(settings, "cbr");
 	int bf = (int)obs_data_get_int(settings, "bf");
+	bool rclookahead = obs_data_get_bool(settings, "rclookahead");
+	const char *spatialaq = obs_data_get_string(settings, "spatialaq");
+	bool temporalaq = obs_data_get_bool(settings, "temporalaq");
 
 	video_t *video = obs_encoder_video(enc->encoder);
 	const struct video_output_info *voi = video_output_get_info(video);
@@ -177,17 +180,40 @@ static bool nvenc_update(void *data, obs_data_t *settings)
 		av_opt_set(enc->context->priv_data, "preset",
 				hp ? "losslesshp" : "lossless", 0);
 
-	} else if (astrcmpi(rc, "vbr") != 0) { /* CBR by default */
+	else if (astrcmpi(rc, "cbr") == 0) { /* CBR by default */
 		av_opt_set_int(enc->context->priv_data, "cbr", true, 0);
 		enc->context->rc_max_rate = bitrate * 1000;
 		enc->context->rc_min_rate = bitrate * 1000;
 		cqp = 0;
 	}
+	else if (astrcmpi(rc, "vbr") == 0) {
+		enc->context->rc_max_rate = bitrate * 1000;
+	}
+	
+	if (rclookahead == true) {
+		av_opt_set_int(enc->context->priv_data, "b_adapt", false, 0);
+		av_opt_set_int(enc->context->priv_data, "no-scenecut", true, 0);
+		av_opt_set_int(enc->context->priv_data, "rc-lookahead", 20, 0);
+	}
 
+	if (astrcmpi(spatialaq, "disabled") != 0) {
+		av_opt_set_int(enc->context->priv_data, "spatial-aq", true, 0);
+		if (astrcmpi(spatialaq, "very weak") == 0)
+			av_opt_set_int(enc->context->priv_data, "aq-strength", 3, 0);
+		else if (astrcmpi(spatialaq, "weak") == 0)
+			av_opt_set_int(enc->context->priv_data, "aq-strength", 6, 0);
+		else if (astrcmpi(spatialaq, "medium") == 0)
+			av_opt_set_int(enc->context->priv_data, "aq-strength", 9, 0);
+		else if (astrcmpi(spatialaq, "strong") == 0)
+			av_opt_set_int(enc->context->priv_data, "aq-strength", 12, 0);
+		else if (astrcmpi(spatialaq, "very strong") == 0)
+			av_opt_set_int(enc->context->priv_data, "aq-strength", 15, 0);
+	}
 
 	av_opt_set(enc->context->priv_data, "level", level, 0);
 	av_opt_set_int(enc->context->priv_data, "2pass", twopass, 0);
 	av_opt_set_int(enc->context->priv_data, "gpu", gpu, 0);
+	av_opt_set_int(enc->context->priv_data, "temporal-aq", temporalaq, 0);
 
 	enc->context->bit_rate = bitrate * 1000;
 	enc->context->rc_buffer_size = bitrate * 1000;
@@ -221,13 +247,17 @@ static bool nvenc_update(void *data, obs_data_t *settings)
 	     "\theight:       %d\n"
 	     "\t2-pass:       %s\n"
 	     "\tb-frames:     %d\n"
-	     "\tGPU:          %d\n",
+	     "\tGPU:          %d\n"
+	     "\trc-lookahead: %s\n"
+	     "\tspatialaq:    %s\n"
+	     "\ttemporalaq:   %s\n",
 	     rc, bitrate, cqp, enc->context->gop_size,
 	     preset, profile, level,
 	     enc->context->width, enc->context->height,
 	     twopass ? "true" : "false",
 	     enc->context->max_b_frames,
-	     gpu);
+	     gpu, rclookahead ? "true" : "false",
+	     spatialaq,temporalaq ? "true" : "false");
 
 	return nvenc_init_codec(enc);
 }
@@ -402,6 +432,9 @@ static void nvenc_defaults(obs_data_t *settings)
 	obs_data_set_default_bool(settings, "2pass", true);
 	obs_data_set_default_int(settings, "gpu", 0);
 	obs_data_set_default_int(settings, "bf", 2);
+	obs_data_set_default_string(settings, "spatialaq", "disabled");
+	obs_data_set_default_bool(settings, "temporalaq", false);
+	obs_data_set_default_bool(settings, "rclookahead", false);
 }
 
 static bool rate_control_modified(obs_properties_t *ppts, obs_property_t *p,
@@ -507,8 +540,21 @@ static obs_properties_t *nvenc_properties(void *unused)
 	add_profile("5.1" );
 #undef add_profile
 
+	p = obs_properties_add_list(props, "spatialaq", obs_module_text("Spatial AQ"),
+		OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
+	obs_property_list_add_string(p, "disabled", "disabled");
+	obs_property_list_add_string(p, "very weak", "very weak");
+	obs_property_list_add_string(p, "weak", "weak");
+	obs_property_list_add_string(p, "medium", "medium");
+	obs_property_list_add_string(p, "strong", "strong");
+	obs_property_list_add_string(p, "very strong", "very strong");
+
 	obs_properties_add_bool(props, "2pass",
 			obs_module_text("NVENC.Use2Pass"));
+	obs_properties_add_bool(props, "temporalaq",
+		obs_module_text("NVENC.TemporalAQ"));
+	obs_properties_add_bool(props, "rclookahead",
+		obs_module_text("NVENC.RCLookahead"));
 	obs_properties_add_int(props, "gpu", obs_module_text("GPU"), 0, 8, 1);
 
 	obs_properties_add_int(props, "bf", obs_module_text("BFrames"),
