@@ -28,6 +28,8 @@ using namespace Gdiplus;
 	else if (val > max_val) val = max_val;
 #endif
 
+#define MIN_LOAD_INTERVAL 100
+
 #define MIN_SIZE_CX 2
 #define MIN_SIZE_CY 2
 #define MAX_SIZE_CX 16384
@@ -39,6 +41,8 @@ using namespace Gdiplus;
 
 #define S_FONT                          "font"
 #define S_USE_FILE                      "read_from_file"
+#define S_LOAD_ON_INTERVAL              "load_on_interval"
+#define S_LOAD_INTERVAL                 "load_interval"
 #define S_FILE                          "file"
 #define S_TEXT                          "text"
 #define S_COLOR                         "color"
@@ -74,6 +78,8 @@ using namespace Gdiplus;
 #define T_(v)                           obs_module_text(v)
 #define T_FONT                          T_("Font")
 #define T_USE_FILE                      T_("ReadFromFile")
+#define T_LOAD_ON_INTERVAL              T_("LoadOnInterval")
+#define T_LOAD_INTERVAL                 T_("LoadInterval")
 #define T_FILE                          T_("TextFile")
 #define T_TEXT                          T_("Text")
 #define T_COLOR                         T_("Color")
@@ -199,6 +205,9 @@ struct TextSource {
 	time_t file_timestamp = 0;
 	bool update_file = false;
 	float update_time_elapsed = 0.0f;
+	bool load_on_interval = false;
+	int load_interval = 250;
+//	uint64_t file_last_upated = 0;
 
 	wstring text;
 	wstring face;
@@ -653,6 +662,8 @@ inline void TextSource::Update(obs_data_t *s)
 	uint32_t new_o_size    = obs_data_get_uint32(s, S_OUTLINE_SIZE);
 	bool new_use_file      = obs_data_get_bool(s, S_USE_FILE);
 	const char *new_file   = obs_data_get_string(s, S_FILE);
+	bool new_load_on_interval  = obs_data_get_bool(s, S_LOAD_ON_INTERVAL);
+	int new_load_interval  = obs_data_get_int(s, S_LOAD_INTERVAL);
 	bool new_chat_mode     = obs_data_get_bool(s, S_CHATLOG_MODE);
 	int new_chat_lines     = (int)obs_data_get_int(s, S_CHATLOG_LINES);
 	bool new_extents       = obs_data_get_bool(s, S_EXTENTS);
@@ -719,6 +730,8 @@ inline void TextSource::Update(obs_data_t *s)
 	}
 
 	read_from_file = new_use_file;
+	load_on_interval = new_load_on_interval;
+	load_interval = new_load_interval;
 
 	chatlog_mode = new_chat_mode;
 	chatlog_lines = new_chat_lines;
@@ -772,19 +785,27 @@ inline void TextSource::Tick(float seconds)
 
 	update_time_elapsed += seconds;
 
-	if (update_time_elapsed >= 1.0f) {
-		time_t t = get_modified_timestamp(file.c_str());
-		update_time_elapsed = 0.0f;
-
-		if (update_file) {
+	if (load_on_interval == true) {
+		if ( update_time_elapsed > load_interval /1000.0f ) {
+			update_time_elapsed = 0.0f;
 			LoadFileText();
 			RenderText();
-			update_file = false;
 		}
+	} else {
+		if (update_time_elapsed >= 1.0f) {
+			time_t t = get_modified_timestamp(file.c_str());
+			update_time_elapsed = 0.0f;
 
-		if (file_timestamp != t) {
-			file_timestamp = t;
-			update_file = true;
+			if (update_file) {
+				LoadFileText();
+				RenderText();
+				update_file = false;
+			}
+
+			if (file_timestamp != t) {
+				file_timestamp = t;
+				update_file = true;
+			}
 		}
 	}
 }
@@ -818,6 +839,20 @@ static bool use_file_changed(obs_properties_t *props, obs_property_t *p,
 
 	set_vis(use_file, S_TEXT, false);
 	set_vis(use_file, S_FILE, true);
+	set_vis(use_file, S_LOAD_INTERVAL, false);
+	set_vis(use_file, S_LOAD_ON_INTERVAL, true);
+	if (!use_file) obs_data_set_bool(s, S_LOAD_ON_INTERVAL, false);
+
+	return true;
+}
+
+static bool load_on_interval_changed(obs_properties_t *props, obs_property_t *p,
+		obs_data_t *s)
+{
+	bool load_on_interval = obs_data_get_bool(s, S_LOAD_ON_INTERVAL);
+
+	set_vis(load_on_interval, S_LOAD_INTERVAL, true);
+	
 	return true;
 }
 
@@ -897,6 +932,12 @@ static obs_properties_t *get_properties(void *data)
 	obs_properties_add_text(props, S_TEXT, T_TEXT, OBS_TEXT_MULTILINE);
 	obs_properties_add_path(props, S_FILE, T_FILE, OBS_PATH_FILE,
 			filter.c_str(), path.c_str());
+
+	p = obs_properties_add_bool(props, S_LOAD_ON_INTERVAL, T_LOAD_ON_INTERVAL);
+	obs_property_set_modified_callback(p, load_on_interval_changed);
+	obs_property_set_long_description(p,
+		obs_module_text("LoadOnIntervalDescription"));
+	obs_properties_add_int(props, S_LOAD_INTERVAL, T_LOAD_INTERVAL, 100, 1000, 1);
 
 	obs_properties_add_bool(props, S_VERTICAL, T_VERTICAL);
 	obs_properties_add_color(props, S_COLOR, T_COLOR);
@@ -999,6 +1040,8 @@ bool obs_module_load(void)
 		obs_data_set_default_int(settings, S_OUTLINE_COLOR, 0xFFFFFF);
 		obs_data_set_default_int(settings, S_OUTLINE_OPACITY, 100);
 		obs_data_set_default_int(settings, S_CHATLOG_LINES, 6);
+		obs_data_set_default_int(settings, S_LOAD_INTERVAL, 250);
+		obs_data_set_default_bool(settings, S_LOAD_ON_INTERVAL, false);
 		obs_data_set_default_bool(settings, S_EXTENTS_WRAP, true);
 		obs_data_set_default_int(settings, S_EXTENTS_CX, 100);
 		obs_data_set_default_int(settings, S_EXTENTS_CY, 100);

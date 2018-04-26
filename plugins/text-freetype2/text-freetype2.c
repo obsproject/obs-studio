@@ -111,12 +111,44 @@ static uint32_t ft2_source_get_height(void *data)
 	return srcdata->cy;
 }
 
+static bool is_file_input_active( obs_properties_t *props,
+		obs_property_t *prop, obs_data_t *settings)
+{
+	UNUSED_PARAMETER(prop);
+
+	bool enabled = obs_data_get_bool(settings, "from_file");
+	obs_property_t *load_on = obs_properties_get(props, "load_on_interval");
+	obs_property_set_visible(load_on, enabled);
+	if (!enabled) {
+		obs_property_t *load_int = obs_properties_get(props, "load_interval");
+		obs_property_set_visible(load_int, false);
+		obs_data_set_bool(settings, "load_on_interval", false);
+	}
+
+	return true;
+}
+
+static bool is_load_interval_active( obs_properties_t *props,
+		obs_property_t *prop, obs_data_t *settings)
+{
+	UNUSED_PARAMETER(prop);
+
+	bool enabled = obs_data_get_bool(settings, "from_file");
+	bool load_bool = obs_data_get_bool(settings, "load_on_interval");
+
+	obs_property_t *load_int = obs_properties_get(props, "load_interval");
+	obs_property_set_visible(load_int, enabled & load_bool);
+
+	return true;
+}
+
+
 static obs_properties_t *ft2_source_properties(void *unused)
 {
 	UNUSED_PARAMETER(unused);
 
 	obs_properties_t *props = obs_properties_create();
-	//obs_property_t *prop;
+	obs_property_t *prop;
 
 	// TODO:
 	//	Scrolling. Can't think of a way to do it with the render
@@ -124,17 +156,31 @@ static obs_properties_t *ft2_source_properties(void *unused)
 	//	Better/pixel shader outline/drop shadow
 	//	Some way to pull text files from network, I dunno
 
+
+
 	obs_properties_add_font(props, "font",
 		obs_module_text("Font"));
 
 	obs_properties_add_text(props, "text",
 		obs_module_text("Text"), OBS_TEXT_MULTILINE);
 
-	obs_properties_add_bool(props, "from_file",
+	prop = obs_properties_add_bool(props, "from_file",
 		obs_module_text("ReadFromFile"));
+
+	obs_property_set_modified_callback(prop, is_file_input_active);
 
 	obs_properties_add_bool(props, "log_mode",
 		obs_module_text("ChatLogMode"));
+
+	prop = obs_properties_add_bool(props, "load_on_interval",
+		obs_module_text("LoadOnInterval"));
+
+	obs_property_set_modified_callback(prop, is_load_interval_active);
+	obs_property_set_long_description(prop,
+		obs_module_text("LoadOnIntervalDescription"));
+
+	obs_properties_add_int(props, "load_interval",
+		obs_module_text("LoadInterval"), 100, 10000, 1);
 
 	obs_properties_add_path(props,
 		"text_file", obs_module_text("TextFile"),
@@ -231,27 +277,63 @@ static void ft2_source_render(void *data, gs_effect_t *effect)
 static void ft2_video_tick(void *data, float seconds)
 {
 	struct ft2_source *srcdata = data;
+	uint64_t now;
+
 	if (srcdata == NULL) return;
 	if (!srcdata->from_file || !srcdata->text_file) return;
 
-	if (os_gettime_ns() - srcdata->last_checked >= 1000000000) {
-		time_t t = get_modified_timestamp(srcdata->text_file);
-		srcdata->last_checked = os_gettime_ns();
+	now = os_gettime_ns();
 
-		if (srcdata->update_file) {
-			if (srcdata->log_mode)
+	/*
+	 * Two modes of loading the text file contents;
+	 *
+	 * fixed-interval method:
+	 *		No attempt is made to test the modified status
+	 *		of the file, it's loaded if the time difference
+	 *		between the prior load and now is greater than 
+	 *		the predefined interval (in milliseconds).
+	 *
+	 *	original per-second and modified-test method:
+	 *		If over a second has passed, and if the modified
+	 *		timestamp has changed, then we reload the file
+	 *
+	 * Apologies for the duplicate inner code, for now during
+	 * preliminary testing I wanted to ensure there were no
+	 * unintentional side-effects.
+	 *
+	 */
+	if (srcdata->load_on_interval == true) {
+		if (now -srcdata->last_checked >= (srcdata->load_interval *1000000)) {
+			srcdata->last_checked = now;
+			if (srcdata->log_mode) {
 				read_from_end(srcdata, srcdata->text_file);
-			else
+			} else {
 				load_text_from_file(srcdata,
 					srcdata->text_file);
+			}
 			cache_glyphs(srcdata, srcdata->text);
 			set_up_vertex_buffer(srcdata);
-			srcdata->update_file = false;
 		}
+	} else {
+		if (now - srcdata->last_checked >= 1000000000) {
+			time_t t = get_modified_timestamp(srcdata->text_file);
+			srcdata->last_checked = now;
 
-		if (srcdata->m_timestamp != t) {
-			srcdata->m_timestamp = t;
-			srcdata->update_file = true;
+			if (srcdata->update_file) {
+				if (srcdata->log_mode)
+					read_from_end(srcdata, srcdata->text_file);
+				else
+					load_text_from_file(srcdata,
+						srcdata->text_file);
+				cache_glyphs(srcdata, srcdata->text);
+				set_up_vertex_buffer(srcdata);
+				srcdata->update_file = false;
+			}
+
+			if (srcdata->m_timestamp != t) {
+				srcdata->m_timestamp = t;
+				srcdata->update_file = true;
+			}
 		}
 	}
 
@@ -310,6 +392,10 @@ static void ft2_source_update(void *data, obs_data_t *settings)
 			vbuf_needs_update = true;
 		srcdata->custom_width = 0;
 	}
+
+	srcdata->load_on_interval = obs_data_get_bool(settings, "load_on_interval");
+	srcdata->load_interval = (uint32_t)obs_data_get_int(settings, "load_interval");
+	if (srcdata->load_interval < LOAD_INTERVAL_MIN) srcdata->load_interval = LOAD_INTERVAL_MIN;
 
 	if (word_wrap != srcdata->word_wrap) {
 		srcdata->word_wrap = word_wrap;
