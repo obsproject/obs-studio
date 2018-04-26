@@ -989,9 +989,9 @@ enum obs_monitoring_type {
 	OBS_MONITORING_TYPE_MONITOR_AND_OUTPUT
 };
 
-EXPORT void obs_source_set_monitoring_type(obs_source_t *source,
-		enum obs_monitoring_type type);
-EXPORT enum obs_monitoring_type obs_source_get_monitoring_type(
+EXPORT void obs_source_set_monitoring_active(obs_source_t *source,
+		bool active);
+EXPORT bool obs_source_get_monitoring(
 		const obs_source_t *source);
 
 /** Gets private front-end settings data.  This data is saved/loaded

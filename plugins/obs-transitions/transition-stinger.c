@@ -64,7 +64,20 @@ static void stinger_update(void *data, obs_data_t *settings)
 		s->transition_point_ns = (uint64_t)(point * 1000000LL);
 
 	s->monitoring_type = (int)obs_data_get_int(settings,"audio_monitoring");
-	obs_source_set_monitoring_type(s->media_source, s->monitoring_type);
+	switch (s->monitoring_type) {
+		case OBS_MONITORING_TYPE_NONE:
+			obs_source_set_monitoring_active(s->media_source, false);
+			obs_source_set_muted(s->media_source, false);
+			break;
+		case OBS_MONITORING_TYPE_MONITOR_ONLY:
+			obs_source_set_monitoring_active(s->media_source, true); //TODO: Fix
+			obs_source_set_muted(s->media_source, true);
+			break;
+		case OBS_MONITORING_TYPE_MONITOR_AND_OUTPUT:
+			obs_source_set_monitoring_active(s->media_source, true);  //TODO: Fix
+			obs_source_set_muted(s->media_source, false);
+			break;
+	}
 
 	s->fade_style = (enum fade_style)obs_data_get_int(settings,
 			"audio_fade_style");
