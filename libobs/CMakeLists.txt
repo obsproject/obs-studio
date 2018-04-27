@@ -13,6 +13,13 @@ endif()
 
 if(UNIX)
 	if (NOT APPLE)
+		find_package(X11_XCB REQUIRED)
+		find_package(XCB OPTIONAL_COMPONENTS XINPUT)
+		if (XCB_XINPUT_FOUND)
+			set(USE_XINPUT "1")
+		else()
+			set(USE_XINPUT "0")
+		endif()
 		find_package(PulseAudio)
 		if (NOT "${PULSEAUDIO_LIBRARY}" STREQUAL "")
 			message(STATUS "Found PulseAudio - Audio Monitor enabled")
@@ -22,14 +29,13 @@ if(UNIX)
 		endif()
 	else()
 		set(HAVE_PULSEAUDIO "0")
+		set(USE_XINPUT "0")
 	endif()
 	find_package(DBus QUIET)
-	if (NOT APPLE)
-		find_package(X11_XCB REQUIRED)
-	endif()
 else()
 	set(HAVE_DBUS "0")
 	set(HAVE_PULSEAUDIO "0")
+	set(USE_XINPUT "0")
 endif()
 
 find_package(ImageMagick QUIET COMPONENTS MagickCore)
@@ -198,6 +204,16 @@ elseif(UNIX)
 	set(libobs_PLATFORM_DEPS
 		${libobs_PLATFORM_DEPS}
 		${X11_XCB_LIBRARIES})
+
+	if(USE_XINPUT)
+		include_directories(
+			${XCB_XINPUT_INCLUDE_DIR})
+		add_definitions(
+			${XCB_DEFINITIONS})
+		set(libobs_PLATFORM_DEPS
+			${XCB_XINPUT_LIBRARY}
+			${libobs_PLATFORM_DEPS})
+	endif()
 
 	if(HAVE_PULSEAUDIO)
 		set(libobs_PLATFORM_DEPS

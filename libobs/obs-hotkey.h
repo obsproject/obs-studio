@@ -32,6 +32,8 @@ const size_t OBS_INVALID_HOTKEY_ID = (size_t)-1;
 const size_t OBS_INVALID_HOTKEY_PAIR_ID = (size_t)-1;
 #endif
 
+#define XINPUT_MOUSE_LEN 33
+
 enum obs_key {
 #define OBS_HOTKEY(x) x,
 #include "obs-hotkeys.h"
