@@ -15,10 +15,38 @@
 /* TODO: make C++ math classes and clean up code here later */
 
 OBSBasicPreview::OBSBasicPreview(QWidget *parent, Qt::WindowFlags flags)
-	: OBSQTDisplay(parent, flags)
+	: OBSQTDisplay(parent, flags),
+	  currentSizeLabel(0)
 {
 	ResetScrollingOffset();
 	setMouseTracking(true);
+
+	helperLinesVB = gs_vbdata_create();
+	helperLinesVB->num = 8;
+	helperLinesVB->points =
+		(vec3*)bzalloc(sizeof(struct vec3) * helperLinesVB->num);
+	helperLinesVB->normals =
+		(vec3*)bzalloc(sizeof(struct vec3) * helperLinesVB->num);
+	helperLinesVB->colors =
+		(uint32_t*)bzalloc(sizeof(uint32_t) * helperLinesVB->num);
+
+	helperLinesVB->num_tex = 1;
+	helperLinesVB->tvarray =
+		(gs_tvertarray*)bzalloc(sizeof(struct gs_tvertarray));
+	helperLinesVB->tvarray[0].width = 2;
+	helperLinesVB->tvarray[0].array =
+		bzalloc(sizeof(struct vec2) * helperLinesVB->num);
+
+	for (int i = 0; i < PREVIEW_SPACING_LABEL_COUNT; i++) {
+		sizeLabels[i] = nullptr;
+	}
+}
+
+OBSBasicPreview::~OBSBasicPreview() {
+	gs_vbdata_destroy(helperLinesVB);
+	for (int i = 0; i < PREVIEW_SPACING_LABEL_COUNT; i++) {
+		obs_source_release(sizeLabels[i]);
+	}
 }
 
 vec2 OBSBasicPreview::GetMouseEventPos(QMouseEvent *event)
@@ -1076,6 +1104,50 @@ void OBSBasicPreview::mouseMoveEvent(QMouseEvent *event)
 	}
 }
 
+obs_source_t* CreateLabel(const char *name) {
+	obs_data_t *settings = obs_data_create();
+	obs_data_t *font = obs_data_create();
+
+#if defined(_WIN32)
+	obs_data_set_string(font, "face", "Arial");
+#elif defined(__APPLE__)
+	obs_data_set_string(font, "face", "Helvetica");
+#else
+	obs_data_set_string(font, "face", "Monospace");
+#endif
+
+	obs_data_set_int(font, "flags", 0);
+	obs_data_set_int(font, "size", 1);
+
+	obs_data_set_obj(settings, "font", font);
+	obs_data_set_string(settings, "text", name);
+	obs_data_set_bool(settings, "outline", true);
+
+	obs_source_t *txtSource = obs_source_create_private("text_ft2_source", name,
+		settings);
+	obs_source_addref(txtSource);
+
+	obs_data_release(font);
+	obs_data_release(settings);
+
+	return txtSource;
+}
+
+static void SetLabelText(obs_source_t *source, const char *text, int fontSize) {
+	if (!source)
+		return;
+
+	obs_data_t *settings = obs_source_get_settings(source);
+	obs_data_t *font = obs_data_get_obj(settings, "font");
+
+	obs_data_set_string(settings, "text", text);
+	obs_data_set_int(font, "size", fontSize);
+	obs_source_update(source, settings);
+
+	obs_data_release(font);
+	obs_data_release(settings);
+}
+
 static void DrawCircleAtPos(float x, float y, matrix4 &matrix,
 		float previewScale)
 {
@@ -1088,6 +1160,170 @@ static void DrawCircleAtPos(float x, float y, matrix4 &matrix,
 	gs_matrix_translate(&pos);
 	gs_matrix_scale3f(HANDLE_RADIUS, HANDLE_RADIUS, 1.0f);
 	gs_draw(GS_LINESTRIP, 0, 0);
+	gs_matrix_pop();
+}
+
+static void DrawLabel(vec3 &pos, obs_source_t *source, vec3 &viewport) {
+	if (!source)
+		return;
+
+	vec3_mul(&pos, &pos, &viewport);
+
+	gs_matrix_push();
+	gs_matrix_identity();
+	gs_matrix_translate(&pos);
+	obs_source_video_render(source);
+	gs_matrix_pop();
+}
+
+void OBSBasicPreview::DrawSingleSpacingHelper(vec3 &start, vec3 &end,
+	vec3 &viewport)
+{
+	const float labelMargin = 0.005f;
+	const float virtualLabelSizeFactor = 1.05f;
+
+	obs_video_info ovi;
+	obs_get_video_info(&ovi);
+
+	bool horizontal = ((end.x - start.x) >= (end.y - start.y));
+
+	float length, lengthPx;
+	length = sqrt(pow(end.x - start.x, 2) + pow(end.y - start.y, 2));
+	if (horizontal) {
+		lengthPx = length * ovi.base_width;
+	} else {
+		lengthPx = length * ovi.base_height;
+	}
+
+	std::string lengthStr;
+	lengthStr = std::to_string((int)lengthPx) + " px";
+
+	if (!sizeLabels[currentSizeLabel]) {
+		sizeLabels[currentSizeLabel] = CreateLabel("Spacing Helper");
+	}
+	obs_source_t* sizeLabel = sizeLabels[currentSizeLabel];
+	SetLabelText(sizeLabel, lengthStr.c_str(), 12);
+
+	vec3 labelSize, labelPos;
+	vec3_set(&labelSize,
+		obs_source_get_width(sizeLabel),
+		obs_source_get_height(sizeLabel),
+		1.0f);
+	vec3_div(&labelSize, &labelSize, &viewport);
+
+	float minSize = 0.0f;
+	vec3_set(&labelPos, end.x, end.y, end.z);
+	if (horizontal) {
+		// Horizontal line
+		labelPos.x -= (end.x - start.x) / 2;
+		labelPos.x -= labelSize.x / 2;
+		labelPos.y += labelMargin;
+		minSize = labelSize.x * virtualLabelSizeFactor;
+	} else {
+		// Vertical line
+		labelPos.y -= (end.y - start.y) / 2;
+		labelPos.y -= labelSize.y / 2;
+		labelPos.x += labelMargin;
+		minSize = labelSize.y * virtualLabelSizeFactor;
+	}
+
+	if (abs(length) >= minSize) {
+		DrawLabel(labelPos, sizeLabel, viewport);
+	}
+
+	currentSizeLabel++;
+	if (currentSizeLabel > (PREVIEW_SPACING_LABEL_COUNT - 1)) {
+		currentSizeLabel = 0;
+	}
+}
+
+static void boxCoordsToView(vec3 *coord, matrix4 &boxTransform,
+	vec3 &viewport, float previewScale)
+{
+	vec3_transform(coord, coord, &boxTransform);
+	vec3_div(coord, coord, &viewport);
+	vec3_mulf(coord, coord, previewScale);
+}
+
+void OBSBasicPreview::DrawSpacingHelpers(obs_sceneitem_t* sceneitem,
+	vec3 &viewport, float previewScale)
+{
+	if (!sceneitem) {
+		return;
+	}
+
+	matrix4 boxTransform;
+	obs_sceneitem_get_box_transform(sceneitem, &boxTransform);
+
+	vec4 green;
+	vec4_set(&green, 0.0f, 1.0f, 0.0f, 1.0f);
+
+	gs_effect_t *eff = gs_get_effect();
+	gs_eparam_t *eparam = gs_effect_get_param_by_name(eff, "color");
+
+	gs_matrix_push();
+	gs_matrix_identity();
+	gs_matrix_scale(&viewport);
+
+	// Compute positions of TRBL points of item box
+	vec3 boxLeft, boxRight, boxTop, boxBottom;
+	vec3_set(&boxLeft, 0.0f, 0.5f, 1.0f);
+	vec3_set(&boxRight, 1.0f, 0.5f, 1.0f);
+	vec3_set(&boxTop, 0.5f, 0.0f, 1.0f);
+	vec3_set(&boxBottom, 0.5f, 1.0f, 1.0f);
+
+	boxCoordsToView(&boxLeft, boxTransform, viewport, previewScale);
+	boxCoordsToView(&boxRight, boxTransform, viewport, previewScale);
+	boxCoordsToView(&boxTop, boxTransform, viewport, previewScale);
+	boxCoordsToView(&boxBottom, boxTransform, viewport, previewScale);
+
+	// View borders
+	vec3 viewLeft, viewRight, viewTop, viewBottom;
+	vec3_set(&viewLeft, -1000.0f, boxLeft.y, 1.0f);
+	vec3_set(&viewRight, 1000.0f, boxRight.y, 1.0f);
+	vec3_set(&viewTop, boxTop.x, -1000.0f, 1.0f);
+	vec3_set(&viewBottom, boxBottom.x, 1000.0f, 1.0f);
+
+	// Clip border coords to view
+	viewLeft.x = qMax(0.0f, viewLeft.x);
+	viewRight.x = qMin(1.0f, viewRight.x);
+	viewTop.y = qMax(0.0f, viewTop.y);
+	viewBottom.y = qMin(1.0f, viewBottom.y);
+
+	// Clip lines to view boundaries
+	vec3_max(&boxLeft, &boxLeft, &viewLeft);
+	vec3_min(&boxRight, &boxRight, &viewRight);
+	vec3_max(&boxTop, &boxTop, &viewTop);
+	vec3_min(&boxBottom, &boxBottom, &viewBottom);
+
+	// Draw lines
+	helperLinesVB->points[0] = viewLeft;
+	helperLinesVB->points[1] = boxLeft;
+
+	helperLinesVB->points[2] = viewRight;
+	helperLinesVB->points[3] = boxRight;
+
+	helperLinesVB->points[4] = viewTop;
+	helperLinesVB->points[5] = boxTop;
+
+	helperLinesVB->points[6] = viewBottom;
+	helperLinesVB->points[7] = boxBottom;
+
+	gs_vertbuffer_t *vb = gs_vertexbuffer_create(helperLinesVB,
+		GS_DYNAMIC | GS_DUP_BUFFER);
+	gs_load_vertexbuffer(vb);
+
+	gs_effect_set_vec4(eparam, &green);
+	gs_draw(GS_LINES, 0, 0);
+
+	gs_vertexbuffer_destroy(vb);
+
+	// Draw text labels
+	DrawSingleSpacingHelper(viewTop, boxTop, viewport);
+	DrawSingleSpacingHelper(boxRight, viewRight, viewport);
+	DrawSingleSpacingHelper(boxBottom, viewBottom, viewport);
+	DrawSingleSpacingHelper(viewLeft, boxLeft, viewport);
+
 	gs_matrix_pop();
 }
 
@@ -1111,8 +1347,11 @@ bool OBSBasicPreview::DrawSelectedItem(obs_scene_t *scene,
 	if (!obs_sceneitem_selected(item))
 		return true;
 
+	OBSBasicPreview* self =
+		reinterpret_cast<OBSBasicPreview*>(param);
 	OBSBasic *main = reinterpret_cast<OBSBasic*>(App()->GetMainWindow());
 
+	// -- Draw box --
 	matrix4 boxTransform;
 	matrix4 invBoxTransform;
 	obs_sceneitem_get_box_transform(item, &boxTransform);
@@ -1180,6 +1419,14 @@ bool OBSBasicPreview::DrawSelectedItem(obs_scene_t *scene,
 	} else {
 		gs_load_vertexbuffer(main->box);
 		gs_draw(GS_LINESTRIP, 0, 0);
+	}
+
+	bool spacingHelpersEnabled = config_get_bool(GetGlobalConfig(),
+		"BasicWindow", "SpacingHelpersEnabled");
+	if (spacingHelpersEnabled) {
+		vec3 viewport;
+		vec3_set(&viewport, main->previewCX, main->previewCY, 1.0f);
+		self->DrawSpacingHelpers(item, viewport, main->previewScale);
 	}
 
 	gs_matrix_pop();

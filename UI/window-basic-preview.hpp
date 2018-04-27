@@ -16,6 +16,8 @@ class QMouseEvent;
 
 #define ZOOM_SENSITIVITY 1.125f
 
+#define PREVIEW_SPACING_LABEL_COUNT 4
+
 enum class ItemHandle : uint32_t {
 	None         = 0,
 	TopLeft      = ITEM_TOP | ITEM_LEFT,
@@ -55,6 +57,11 @@ private:
 	int32_t      scalingLevel   = 0;
 	float        scalingAmount  = 1.0f;
 
+	struct gs_vb_data *helperLinesVB;
+
+	size_t currentSizeLabel;
+	obs_source_t* sizeLabels[PREVIEW_SPACING_LABEL_COUNT];
+
 	static vec2 GetMouseEventPos(QMouseEvent *event);
 	static bool DrawSelectedItem(obs_scene_t *scene, obs_sceneitem_t *item,
 		void *param);
@@ -80,8 +87,13 @@ private:
 
 	void ProcessClick(const vec2 &pos);
 
+	void DrawSingleSpacingHelper(vec3 &start, vec3 &end, vec3 &viewport);
+	void DrawSpacingHelpers(obs_sceneitem_t* sceneitem,
+		vec3 &viewport, float previewScale);
+
 public:
 	OBSBasicPreview(QWidget *parent, Qt::WindowFlags flags = 0);
+	~OBSBasicPreview();
 
 	virtual void keyPressEvent(QKeyEvent *event) override;
 	virtual void keyReleaseEvent(QKeyEvent *event) override;
