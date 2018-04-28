@@ -161,6 +161,7 @@ set(obs_SOURCES
 	item-widget-helpers.cpp
 	visibility-checkbox.cpp
 	locked-checkbox.cpp
+	horizontal-scroll-area.cpp
 	vertical-scroll-area.cpp
 	visibility-item-widget.cpp
 	slider-absoluteset-style.cpp
@@ -209,6 +210,7 @@ set(obs_HEADERS
 	item-widget-helpers.hpp
 	visibility-checkbox.hpp
 	locked-checkbox.hpp
+	horizontal-scroll-area.hpp
 	vertical-scroll-area.hpp
 	visibility-item-widget.hpp
 	slider-absoluteset-style.hpp

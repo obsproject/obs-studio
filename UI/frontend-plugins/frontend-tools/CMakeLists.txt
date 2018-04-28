@@ -25,6 +25,7 @@ set(frontend-tools_HEADERS
 	tool-helpers.hpp
 	../../properties-view.hpp
 	../../properties-view.moc.hpp
+	../../horizontal-scroll-area.hpp
 	../../vertical-scroll-area.hpp
 	../../double-slider.hpp
 	)
@@ -34,6 +35,7 @@ set(frontend-tools_SOURCES
 	frontend-tools.c
 	output-timer.cpp
 	../../properties-view.cpp
+	../../horizontal-scroll-area.cpp
 	../../vertical-scroll-area.cpp
 	../../double-slider.cpp
 	)
