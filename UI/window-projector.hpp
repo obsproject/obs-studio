@@ -67,8 +67,6 @@ public:
 			QString title, ProjectorType type_);
 	~OBSProjector();
 
-	void Init();
-
 	OBSSource GetSource();
 	ProjectorType GetProjectorType();
 	int GetMonitor();

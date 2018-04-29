@@ -22,16 +22,30 @@ OBSProjector::OBSProjector(QWidget *widget, obs_source_t *source_, int monitor,
 	  removedSignal                (obs_source_get_signal_handler(source),
 	                                "remove", OBSSourceRemoved, this)
 {
-	projectorTitle = title;
+	projectorTitle = std::move(title);
 	savedMonitor   = monitor;
 	isWindow       = savedMonitor < 0;
 	type           = type_;
 
 	if (isWindow) {
 		setWindowIcon(QIcon(":/res/images/obs.png"));
+
+		UpdateProjectorTitle(projectorTitle);
+		windowedProjectors.push_back(this);
+
+		resize(480, 270);
 	} else {
 		setWindowFlags(Qt::FramelessWindowHint |
 				Qt::X11BypassWindowManagerHint);
+
+		QScreen *screen = QGuiApplication::screens()[savedMonitor];
+		setGeometry(screen->geometry());
+
+		QAction *action = new QAction(this);
+		action->setShortcut(Qt::Key_Escape);
+		addAction(action);
+		connect(action, SIGNAL(triggered()), this,
+				SLOT(EscapeTriggered()));
 	}
 
 	setAttribute(Qt::WA_DeleteOnClose, true);
@@ -51,6 +65,11 @@ OBSProjector::OBSProjector(QWidget *widget, obs_source_t *source_, int monitor,
 	};
 
 	connect(this, &OBSQTDisplay::DisplayCreated, addDrawCallback);
+
+	bool alwaysOnTop = config_get_bool(GetGlobalConfig(), "BasicWindow",
+			"ProjectorAlwaysOnTop");
+	if (alwaysOnTop && !isWindow)
+		SetAlwaysOnTop(this, true);
 
 	bool hideCursor = config_get_bool(GetGlobalConfig(),
 			"BasicWindow", "HideProjectorCursor");
@@ -110,7 +129,17 @@ OBSProjector::OBSProjector(QWidget *widget, obs_source_t *source_, int monitor,
 	}
 
 	App()->IncrementSleepInhibition();
-	resize(480, 270);
+
+	if (source)
+		obs_source_inc_showing(source);
+
+	ready = true;
+
+	show();
+
+	// We need it here to allow keyboard input in X11 to listen to Escape
+	if (!isWindow)
+		activateWindow();
 }
 
 OBSProjector::~OBSProjector()
@@ -187,36 +216,6 @@ static OBSSource CreateLabel(const char *name, size_t h)
 	obs_data_release(settings);
 
 	return txtSource;
-}
-
-void OBSProjector::Init()
-{
-	bool alwaysOnTop = config_get_bool(GetGlobalConfig(),
-			"BasicWindow", "ProjectorAlwaysOnTop");
-	if (alwaysOnTop && !isWindow)
-		SetAlwaysOnTop(this, true);
-
-	show();
-
-	if (isWindow) {
-		UpdateProjectorTitle(projectorTitle);
-		windowedProjectors.push_back(this);
-	} else {
-		QScreen *screen = QGuiApplication::screens()[savedMonitor];
-		setGeometry(screen->geometry());
-
-		QAction *action = new QAction(this);
-		action->setShortcut(Qt::Key_Escape);
-		addAction(action);
-		connect(action, SIGNAL(triggered()), this,
-				SLOT(EscapeTriggered()));
-		activateWindow();
-	}
-
-	if (source)
-		obs_source_inc_showing(source);
-
-	ready = true;
 }
 
 static inline void renderVB(gs_effect_t *effect, gs_vertbuffer_t *vb,

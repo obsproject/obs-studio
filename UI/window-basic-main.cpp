@@ -5672,7 +5672,6 @@ OBSProjector *OBSBasic::OpenProjector(obs_source_t *source, int monitor,
 		projectors[monitor] = projector;
 	}
 
-	projector->Init();
 	return projector;
 }
 
