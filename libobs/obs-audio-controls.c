@@ -302,7 +302,7 @@ static inline __m128 abs_ps(__m128 v)
 
 /* x4(d, c, b, a)  -->  max(a, b, c, d)
  */
-inline float hmax_ps(__m128 x4)
+static inline float hmax_ps(__m128 x4)
 {
 	float x4_mem[4];
 	_mm_store_ps(x4_mem, x4);
