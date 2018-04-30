@@ -593,7 +593,6 @@ void OBSBasic::CreateDefaultScene(bool firstStart)
 	if (firstStart)
 		CreateFirstRunSources();
 
-	AddScene(obs_scene_get_source(scene));
 	SetCurrentScene(scene, true);
 	obs_scene_release(scene);
 
@@ -718,6 +717,8 @@ void OBSBasic::Load(const char *file)
 		SaveProject();
 		return;
 	}
+
+	m_isLoading++;
 
 	ClearSceneData();
 	InitDefaultTransitions();
@@ -900,6 +901,8 @@ retryScene:
 	LogScenes();
 
 	disableSaving--;
+
+	--m_isLoading;
 
 	if (api)
 		api->on_event(OBS_FRONTEND_EVENT_SCENE_CHANGED);
@@ -1234,6 +1237,8 @@ void OBSBasic::InitOBSCallbacks()
 			OBSBasic::SourceDeactivated, this);
 	signalHandlers.emplace_back(obs_get_signal_handler(), "source_rename",
 			OBSBasic::SourceRenamed, this);
+	signalHandlers.emplace_back(obs_get_signal_handler(), "source_create",
+		OBSBasic::SourceCreated, this);
 }
 
 void OBSBasic::InitPrimitives()
@@ -1396,9 +1401,6 @@ void OBSBasic::OBSInit()
 			device_name, device_id);
 #endif
 
-	InitOBSCallbacks();
-	InitHotkeys();
-
 	api = InitializeAPIInterface(this);
 
 	AddExtraModulePaths();
@@ -1449,6 +1451,9 @@ void OBSBasic::OBSInit()
 	SET_VISIBILITY("ShowListboxToolbars", toggleListboxToolbars);
 	SET_VISIBILITY("ShowStatusBar", toggleStatusBar);
 #undef SET_VISIBILITY
+
+	InitOBSCallbacks();
+	InitHotkeys();
 
 	TimedCheckForUpdates();
 	loaded = true;
@@ -2712,7 +2717,6 @@ void OBSBasic::DuplicateSelectedScene()
 		obs_scene_t *scene = obs_scene_duplicate(curScene,
 				name.c_str(), OBS_SCENE_DUP_REFS);
 		source = obs_scene_get_source(scene);
-		AddScene(source);
 		SetCurrentScene(source, true);
 		obs_scene_release(scene);
 
@@ -2821,8 +2825,10 @@ void OBSBasic::SceneItemAdded(void *data, calldata_t *params)
 
 	obs_sceneitem_t *item = (obs_sceneitem_t*)calldata_ptr(params, "item");
 
-	QMetaObject::invokeMethod(window, "AddSceneItem",
-			Q_ARG(OBSSceneItem, OBSSceneItem(item)));
+	QMetaObject::invokeMethod(
+		window,
+		"AddSceneItem",
+		Q_ARG(OBSSceneItem, OBSSceneItem(item)));
 }
 
 void OBSBasic::SceneItemRemoved(void *data, calldata_t *params)
@@ -2872,12 +2878,46 @@ void OBSBasic::SourceLoaded(void *data, obs_source_t *source)
 
 void OBSBasic::SourceRemoved(void *data, calldata_t *params)
 {
+	const bool isQtGuiThread =
+		QThread::currentThread() ==
+		QCoreApplication::instance()->thread();
+
 	obs_source_t *source = (obs_source_t*)calldata_ptr(params, "source");
 
 	if (obs_scene_from_source(source) != NULL)
-		QMetaObject::invokeMethod(static_cast<OBSBasic*>(data),
+	{
+		if (isQtGuiThread) {
+			static_cast<OBSBasic*>(data)->RemoveScene(source);
+		} else {
+			QMetaObject::invokeMethod(static_cast<OBSBasic*>(data),
 				"RemoveScene",
+				Qt::BlockingQueuedConnection,
 				Q_ARG(OBSSource, OBSSource(source)));
+		}
+	}
+}
+
+void OBSBasic::SourceCreated(void *data, calldata_t *params)
+{
+	const bool isQtGuiThread =
+		QThread::currentThread() ==
+		QCoreApplication::instance()->thread();
+
+	obs_source_t *source = (obs_source_t*)calldata_ptr(params, "source");
+
+	if (obs_scene_from_source(source) != NULL) {
+		if (static_cast<OBSBasic*>(data)->m_isLoading <= 0) {
+			if (isQtGuiThread) {
+				static_cast<OBSBasic*>(data)->AddScene(source);
+			} else {
+				QMetaObject::invokeMethod(
+					static_cast<OBSBasic*>(data),
+					"AddScene",
+					Qt::BlockingQueuedConnection,
+					Q_ARG(OBSSource, OBSSource(source)));
+			}
+		}
+	}
 }
 
 void OBSBasic::SourceActivated(void *data, calldata_t *params)
@@ -3652,7 +3692,6 @@ void OBSBasic::on_actionAddScene_triggered()
 
 		obs_scene_t *scene = obs_scene_create(name.c_str());
 		source = obs_scene_get_source(scene);
-		AddScene(source);
 		SetCurrentScene(source);
 		obs_scene_release(scene);
 	}

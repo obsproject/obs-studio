@@ -347,10 +347,14 @@ static obs_source_t *obs_source_create_internal(const char *id,
 
 	blog(LOG_DEBUG, "%ssource '%s' (%s) created",
 			private ? "private " : "", name, id);
-	obs_source_dosignal(source, "source_create", NULL);
 
 	source->flags = source->default_flags;
 	source->enabled = true;
+
+	if (!private) {
+		obs_source_dosignal(source, "source_create", NULL);
+	}
+
 	return source;
 
 fail:
