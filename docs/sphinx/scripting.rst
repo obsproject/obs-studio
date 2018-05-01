@@ -144,7 +144,7 @@ and define its keys the same way you would define an
             return "My Source"
     end
 
-    info.create = function(source, settings)
+    info.create = function(settings, source)
             -- typically source data would be stored as a table
             local my_source_data = {}
 
