@@ -1450,6 +1450,15 @@ void OBSBasic::OBSInit()
 	SET_VISIBILITY("ShowStatusBar", toggleStatusBar);
 #undef SET_VISIBILITY
 
+#ifndef __APPLE__
+	{
+		ProfileScope("OBSBasic::Load");
+		disableSaving--;
+		Load(savePath);
+		disableSaving++;
+	}
+#endif
+
 	TimedCheckForUpdates();
 	loaded = true;
 
@@ -1470,6 +1479,9 @@ void OBSBasic::OBSInit()
 	}
 #endif
 
+#ifndef __APPLE__
+	RefreshSceneCollections();
+#endif
 	RefreshProfiles();
 	disableSaving--;
 
@@ -1585,6 +1597,7 @@ void OBSBasic::OBSInit()
 	ui->actionCheckForUpdates = nullptr;
 #endif
 
+#ifdef __APPLE__
 	/* This is an incredibly unpleasant hack for macOS to isolate CEF
 	 * initialization until after all tasks related to Qt startup and main
 	 * window initialization have completed.  There is a macOS-specific bug
@@ -1604,6 +1617,7 @@ void OBSBasic::OBSInit()
 			Qt::QueuedConnection,
 			Q_ARG(QString, QT_UTF8(savePath)),
 			Q_ARG(int, 10));
+#endif
 }
 
 void OBSBasic::DeferredLoad(const QString &file, int requeueCount)
