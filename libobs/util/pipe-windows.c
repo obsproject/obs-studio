@@ -54,10 +54,40 @@ static inline bool create_process(const char *cmd_line, HANDLE stdin_handle,
 	si.hStdInput = stdin_handle;
 	si.hStdOutput = stdout_handle;
 
+	/* Don't assume the location of obs */
+	LPCTSTR lpWorkingDirectory = NULL;
+	HMODULE hObsModule = GetModuleHandle(TEXT("obs.dll"));
+	DWORD dwError = ERROR_SUCCESS;
+	TCHAR *szPathBuffer = NULL;
+	DWORD nPathSize;
+	DWORD nBufferSize;
+
+	/* Spin until we get a buffer big enough for a path up to max path size for NTFS. */
+	for (int i = 1; i < 127; ++i) {
+		nBufferSize = MAX_PATH * i;
+		szPathBuffer = brealloc(szPathBuffer, sizeof(TCHAR) * nBufferSize);
+		nPathSize = GetModuleFileName(hObsModule, szPathBuffer, nBufferSize);
+		dwError = GetLastError();
+
+		/* Windows XP might return ERROR_SUCCESS on too short of a buffer. */
+		if (nPathSize == nBufferSize || dwError == ERROR_INSUFFICIENT_BUFFER) {
+			continue;
+		}
+
+		if (dwError == ERROR_SUCCESS)
+			break;
+	}
+
+	if (dwError == ERROR_SUCCESS) {
+		TCHAR *szPathEnd = wcsrchr(szPathBuffer, '\\');
+		szPathEnd[0] = '\0';
+		lpWorkingDirectory = &szPathBuffer[0];
+	}
+
 	os_utf8_to_wcs_ptr(cmd_line, 0, &cmd_line_w);
 	if (cmd_line_w) {
 		success = !!CreateProcessW(NULL, cmd_line_w, NULL, NULL, true,
-				CREATE_NO_WINDOW, NULL, NULL, &si, &pi);
+				CREATE_NO_WINDOW, NULL, szPathBuffer, &si, &pi);
 
 		if (success) {
 			*process = pi.hProcess;
@@ -66,6 +96,8 @@ static inline bool create_process(const char *cmd_line, HANDLE stdin_handle,
 
 		bfree(cmd_line_w);
 	}
+
+	bfree(szPathBuffer);
 
 	return success;
 }
