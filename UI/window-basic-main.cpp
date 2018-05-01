@@ -1470,7 +1470,6 @@ void OBSBasic::OBSInit()
 	}
 #endif
 
-	RefreshSceneCollections();
 	RefreshProfiles();
 	disableSaving--;
 
@@ -1618,6 +1617,7 @@ void OBSBasic::DeferredLoad(const QString &file, int requeueCount)
 	}
 
 	Load(QT_TO_UTF8(file));
+	RefreshSceneCollections();
 }
 
 void OBSBasic::UpdateMultiviewProjectorMenu()
