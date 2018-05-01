@@ -279,10 +279,8 @@ static int get_nr_channels_from_audio_data(const struct audio_data *data)
 
 /* x(d, c, b, a) --> (|d|, |c|, |b|, |a|)
  */
-static inline __m128 abs_ps(__m128 v)
-{
-	return _mm_andnot_ps(_mm_set1_ps(-0.f), v);
-}
+#define abs_ps(v) \
+	_mm_andnot_ps(_mm_set1_ps(-0.f), v)
 
 /* Take cross product of a vector with a matrix resulting in vector.
  */
@@ -302,17 +300,15 @@ static inline __m128 abs_ps(__m128 v)
 
 /* x4(d, c, b, a)  -->  max(a, b, c, d)
  */
-static inline float hmax_ps(__m128 x4)
-{
-	float x4_mem[4];
-	_mm_store_ps(x4_mem, x4);
-
-	float r = x4_mem[0];
-	r = fmaxf(r, x4_mem[1]);
-	r = fmaxf(r, x4_mem[2]);
-	r = fmaxf(r, x4_mem[3]);
-	return r;
-}
+#define hmax_ps(r, x4) \
+	do { \
+		float x4_mem[4]; \
+		_mm_store_ps(x4_mem, x4); \
+		r = x4_mem[0]; \
+		r = fmaxf(r, x4_mem[1]); \
+		r = fmaxf(r, x4_mem[2]); \
+		r = fmaxf(r, x4_mem[3]); \
+	} while (false)
 
 /* Calculate the true peak over a set of samples.
  * The algorithm implements 5x oversampling by using Whittaker–Shannon
@@ -365,7 +361,9 @@ static float get_true_peak(__m128 previous_samples, const float *samples,
 		peak = _mm_max_ps(peak, abs_ps(intrp_samples));
 	}
 
-	return hmax_ps(peak);
+	float r;
+	hmax_ps(r, peak);
+	return r;
 }
 
 /* points contain the first four samples to calculate the sinc interpolation
@@ -379,7 +377,10 @@ static float get_sample_peak(__m128 previous_samples, const float *samples,
 		__m128 new_work = _mm_load_ps(&samples[i]);
 		peak = _mm_max_ps(peak, abs_ps(new_work));
 	}
-	return hmax_ps(peak);
+
+	float r;
+	hmax_ps(r, peak);
+	return r;
 }
 
 static void volmeter_process_peak_last_samples(obs_volmeter_t *volmeter,
