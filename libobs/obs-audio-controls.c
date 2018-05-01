@@ -303,7 +303,7 @@ static int get_nr_channels_from_audio_data(const struct audio_data *data)
 #define hmax_ps(r, x4) \
 	do { \
 		float x4_mem[4]; \
-		_mm_store_ps(x4_mem, x4); \
+		_mm_storeu_ps(x4_mem, x4); \
 		r = x4_mem[0]; \
 		r = fmaxf(r, x4_mem[1]); \
 		r = fmaxf(r, x4_mem[2]); \
