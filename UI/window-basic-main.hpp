@@ -259,8 +259,13 @@ private:
 	void GetAudioSourceProperties();
 	void VolControlContextMenu();
 
+	bool AddSceneCollection(const char* name);
 	void AddSceneCollection(bool create_new);
+
+private slots:
 	void RefreshSceneCollections();
+
+private:
 	void ChangeSceneCollection();
 	void LogScenes();
 
@@ -551,7 +556,10 @@ public:
 	QMenu *AddScaleFilteringMenu(obs_sceneitem_t *item);
 	void CreateSourcePopupMenu(QListWidgetItem *item, bool preview);
 
+public slots:
 	void UpdateTitleBar();
+
+public:
 	void UpdateSceneSelection(OBSSource source);
 
 	void SystemTrayInit();
