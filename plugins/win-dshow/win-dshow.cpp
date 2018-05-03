@@ -147,6 +147,23 @@ public:
 	}
 };
 
+class OSEvent
+{
+public:
+	OSEvent() { os_event_init(&m_event, OS_EVENT_TYPE_AUTO); }
+	~OSEvent() { os_event_destroy(m_event); }
+
+	void Wait() { os_event_wait(m_event); }
+	int Wait(unsigned long milliseconds) { return os_event_timedwait(m_event, milliseconds); }
+
+	void Signal() { os_event_signal(m_event); }
+
+	void Reset() { os_event_reset(m_event); }
+
+private:
+	os_event_t* m_event;
+};
+
 enum class Action {
 	None,
 	Activate,
@@ -183,11 +200,24 @@ struct DShowInput {
 	CriticalSection mutex;
 	vector<Action> actions;
 
+	OSEvent m_actionEvent_Activate;
+
 	inline void QueueAction(Action action)
 	{
 		CriticalScope scope(mutex);
 		actions.push_back(action);
 		ReleaseSemaphore(semaphore, 1, nullptr);
+	}
+
+	inline void ResetWaitForActivate()
+	{
+		m_actionEvent_Activate.Reset();
+	}
+
+	inline void WaitForActivateIfSet(obs_data_t* settings, const char* key)
+	{
+		if (obs_data_get_bool(settings, key))
+			m_actionEvent_Activate.Wait();
 	}
 
 	inline DShowInput(obs_source_t *source_, obs_data_t *settings)
@@ -214,8 +244,11 @@ struct DShowInput {
 
 		if (obs_data_get_bool(settings, "active")) {
 			bool showing = obs_source_showing(source);
-			if (!deactivateWhenNotShowing || showing)
+			if (!deactivateWhenNotShowing || showing) {
 				QueueAction(Action::Activate);
+
+				WaitForActivateIfSet(settings, "synchronous_create");
+			}
 
 			active = true;
 		}
@@ -312,6 +345,8 @@ void DShowInput::DShowLoop()
 							nullptr);
 				}
 				obs_data_release(settings);
+
+				m_actionEvent_Activate.Signal();
 				break;
 			}
 
@@ -1074,8 +1109,14 @@ static void DestroyDShowInput(void *data)
 static void UpdateDShowInput(void *data, obs_data_t *settings)
 {
 	DShowInput *input = reinterpret_cast<DShowInput*>(data);
-	if (input->active)
+
+	if (input->active) {
+		input->ResetWaitForActivate();
+
 		input->QueueAction(Action::Activate);
+
+		input->WaitForActivateIfSet(settings, "synchronous_update");
+	}
 
 	UNUSED_PARAMETER(settings);
 }
@@ -1090,6 +1131,8 @@ static void GetDShowDefaults(obs_data_t *settings)
 	obs_data_set_default_string(settings, COLOR_RANGE, "partial");
 	obs_data_set_default_int(settings, AUDIO_OUTPUT_MODE,
 			(int)AudioMode::Capture);
+	obs_data_set_default_bool(settings, "synchronous_create", false);
+	obs_data_set_default_bool(settings, "synchronous_update", false);
 }
 
 struct Resolution {
