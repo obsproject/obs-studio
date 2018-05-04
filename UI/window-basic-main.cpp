@@ -2880,7 +2880,7 @@ void OBSBasic::SourceCreated(void *data, calldata_t *params)
 
 	if (obs_scene_from_source(source) != NULL)
 		QMetaObject::invokeMethod(static_cast<OBSBasic*>(data),
-				"AddScene",
+				"AddScene", WaitConnection(),
 				Q_ARG(OBSSource, OBSSource(source)));
 }
 
