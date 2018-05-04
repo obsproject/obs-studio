@@ -167,6 +167,19 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 		}
 	}
 
+	bool obs_frontend_add_scene_collection(
+			const char *name) override
+	{
+		bool success = false;
+		QMetaObject::invokeMethod(main,
+				"AddSceneCollection",
+				WaitConnection(),
+				Q_RETURN_ARG(bool, success),
+				Q_ARG(bool, true),
+				Q_ARG(QString, QT_UTF8(name)));
+		return success;
+	}
+
 	void obs_frontend_get_profiles(
 			std::vector<std::string> &strings) override
 	{

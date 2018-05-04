@@ -26,6 +26,7 @@ struct obs_frontend_callbacks {
 	virtual char *obs_frontend_get_current_scene_collection(void)=0;
 	virtual void obs_frontend_set_current_scene_collection(
 			const char *collection)=0;
+	virtual bool obs_frontend_add_scene_collection(const char *name)=0;
 
 	virtual void obs_frontend_get_profiles(
 			std::vector<std::string> &strings)=0;

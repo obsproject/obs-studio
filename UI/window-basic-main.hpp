@@ -259,7 +259,6 @@ private:
 	void GetAudioSourceProperties();
 	void VolControlContextMenu();
 
-	void AddSceneCollection(bool create_new);
 	void RefreshSceneCollections();
 	void ChangeSceneCollection();
 	void LogScenes();
@@ -406,6 +405,10 @@ public slots:
 			bool direct = false, bool quickTransition = false);
 	void SetCurrentScene(OBSSource scene, bool force = false,
 			bool direct = false);
+
+	bool AddSceneCollection(
+			bool create_new,
+			const QString &name = QString());
 
 private slots:
 	void AddSceneItem(OBSSceneItem item);

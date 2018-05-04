@@ -154,13 +154,19 @@ static bool GetSceneCollectionName(QWidget *parent, std::string &name,
 	return true;
 }
 
-void OBSBasic::AddSceneCollection(bool create_new)
+bool OBSBasic::AddSceneCollection(bool create_new, const QString &qname)
 {
 	std::string name;
 	std::string file;
 
-	if (!GetSceneCollectionName(this, name, file))
-		return;
+	if (qname.isEmpty()) {
+		if (!GetSceneCollectionName(this, name, file))
+			return false;
+	} else {
+		name = QT_TO_UTF8(qname);
+		if (SceneCollectionExists(name.c_str()))
+			return false;
+	}
 
 	SaveProjectNow();
 
@@ -185,6 +191,8 @@ void OBSBasic::AddSceneCollection(bool create_new)
 		api->on_event(OBS_FRONTEND_EVENT_SCENE_COLLECTION_LIST_CHANGED);
 		api->on_event(OBS_FRONTEND_EVENT_SCENE_COLLECTION_CHANGED);
 	}
+
+	return true;
 }
 
 void OBSBasic::RefreshSceneCollections()
