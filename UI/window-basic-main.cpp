@@ -593,7 +593,6 @@ void OBSBasic::CreateDefaultScene(bool firstStart)
 	if (firstStart)
 		CreateFirstRunSources();
 
-	AddScene(obs_scene_get_source(scene));
 	SetCurrentScene(scene, true);
 	obs_scene_release(scene);
 
@@ -768,7 +767,7 @@ void OBSBasic::Load(const char *file)
 	LoadAudioDevice(AUX_AUDIO_2,     4, data);
 	LoadAudioDevice(AUX_AUDIO_3,     5, data);
 
-	obs_load_sources(sources, OBSBasic::SourceLoaded, this);
+	obs_load_sources(sources, nullptr, nullptr);
 
 	if (transitions)
 		LoadTransitions(transitions);
@@ -1226,6 +1225,8 @@ void OBSBasic::InitOBSCallbacks()
 	ProfileScope("OBSBasic::InitOBSCallbacks");
 
 	signalHandlers.reserve(signalHandlers.size() + 6);
+	signalHandlers.emplace_back(obs_get_signal_handler(), "source_create",
+			OBSBasic::SourceCreated, this);
 	signalHandlers.emplace_back(obs_get_signal_handler(), "source_remove",
 			OBSBasic::SourceRemoved, this);
 	signalHandlers.emplace_back(obs_get_signal_handler(), "source_activate",
@@ -2726,7 +2727,6 @@ void OBSBasic::DuplicateSelectedScene()
 		obs_scene_t *scene = obs_scene_duplicate(curScene,
 				name.c_str(), OBS_SCENE_DUP_REFS);
 		source = obs_scene_get_source(scene);
-		AddScene(source);
 		SetCurrentScene(source, true);
 		obs_scene_release(scene);
 
@@ -2874,12 +2874,12 @@ void OBSBasic::SceneItemDeselected(void *data, calldata_t *params)
 
 }
 
-void OBSBasic::SourceLoaded(void *data, obs_source_t *source)
+void OBSBasic::SourceCreated(void *data, calldata_t *params)
 {
-	OBSBasic *window = static_cast<OBSBasic*>(data);
+	obs_source_t *source = (obs_source_t*)calldata_ptr(params, "source");
 
 	if (obs_scene_from_source(source) != NULL)
-		QMetaObject::invokeMethod(window,
+		QMetaObject::invokeMethod(static_cast<OBSBasic*>(data),
 				"AddScene",
 				Q_ARG(OBSSource, OBSSource(source)));
 }
@@ -3666,7 +3666,6 @@ void OBSBasic::on_actionAddScene_triggered()
 
 		obs_scene_t *scene = obs_scene_create(name.c_str());
 		source = obs_scene_get_source(scene);
-		AddScene(source);
 		SetCurrentScene(source);
 		obs_scene_release(scene);
 	}
