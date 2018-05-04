@@ -93,9 +93,11 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 	{
 		if (main->IsPreviewProgramMode()) {
 			QMetaObject::invokeMethod(main, "TransitionToScene",
+					WaitConnection(),
 					Q_ARG(OBSSource, OBSSource(scene)));
 		} else {
 			QMetaObject::invokeMethod(main, "SetCurrentScene",
+					WaitConnection(),
 					Q_ARG(OBSSource, OBSSource(scene)),
 					Q_ARG(bool, false));
 		}
