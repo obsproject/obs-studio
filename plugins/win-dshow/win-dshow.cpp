@@ -150,6 +150,7 @@ public:
 enum class Action {
 	None,
 	Activate,
+	ActivateBlock,
 	Deactivate,
 	Shutdown,
 	ConfigVideo,
@@ -179,6 +180,7 @@ struct DShowInput {
 	obs_source_audio audio;
 
 	WinHandle semaphore;
+	WinHandle activated_event;
 	WinHandle thread;
 	CriticalSection mutex;
 	vector<Action> actions;
@@ -188,6 +190,16 @@ struct DShowInput {
 		CriticalScope scope(mutex);
 		actions.push_back(action);
 		ReleaseSemaphore(semaphore, 1, nullptr);
+	}
+
+	inline void QueueActivate(obs_data_t *settings)
+	{
+		bool block = obs_data_get_bool(settings, "synchronous_activate");
+		QueueAction(block ? Action::ActivateBlock : Action::Activate);
+		if (block) {
+			obs_data_erase(settings, "synchronous_activate");
+			WaitForSingleObject(activated_event, INFINITE);
+		}
 	}
 
 	inline DShowInput(obs_source_t *source_, obs_data_t *settings)
@@ -204,6 +216,10 @@ struct DShowInput {
 		if (!semaphore)
 			throw "Failed to create semaphore";
 
+		activated_event = CreateEvent(nullptr, false, false, nullptr);
+		if (!activated_event)
+			throw "Failed to create activated_event";
+
 		thread = CreateThread(nullptr, 0, DShowThread, this, 0,
 				nullptr);
 		if (!thread)
@@ -215,7 +231,7 @@ struct DShowInput {
 		if (obs_data_get_bool(settings, "active")) {
 			bool showing = obs_source_showing(source);
 			if (!deactivateWhenNotShowing || showing)
-				QueueAction(Action::Activate);
+				QueueActivate(settings);
 
 			active = true;
 		}
@@ -304,13 +320,18 @@ void DShowInput::DShowLoop()
 
 		switch (action) {
 		case Action::Activate:
+		case Action::ActivateBlock:
 			{
+				bool block = action == Action::ActivateBlock;
+
 				obs_data_t *settings;
 				settings = obs_source_get_settings(source);
 				if (!Activate(settings)) {
 					obs_source_output_video(source,
 							nullptr);
 				}
+				if (block)
+					SetEvent(activated_event);
 				obs_data_release(settings);
 				break;
 			}
@@ -1075,9 +1096,7 @@ static void UpdateDShowInput(void *data, obs_data_t *settings)
 {
 	DShowInput *input = reinterpret_cast<DShowInput*>(data);
 	if (input->active)
-		input->QueueAction(Action::Activate);
-
-	UNUSED_PARAMETER(settings);
+		input->QueueActivate(settings);
 }
 
 static void GetDShowDefaults(obs_data_t *settings)
