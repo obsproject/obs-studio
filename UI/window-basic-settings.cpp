@@ -442,6 +442,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->bindToIP,             COMBO_CHANGED,  ADV_CHANGED);
 	HookWidget(ui->enableNewSocketLoop,  CHECK_CHANGED,  ADV_CHANGED);
 	HookWidget(ui->enableLowLatencyMode, CHECK_CHANGED,  ADV_CHANGED);
+	HookWidget(ui->disableFocusHotkeys,  CHECK_CHANGED,  ADV_CHANGED);
 
 #if !defined(_WIN32) && !defined(__APPLE__)
 	delete ui->enableAutoUpdates;
@@ -702,11 +703,17 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	SimpleRecordingQualityChanged();
 
 	UpdateAutomaticReplayBufferCheckboxes();
+
+	App()->EnableInFocusHotkeys(false);
 }
 
 OBSBasicSettings::~OBSBasicSettings()
 {
+	bool disableHotkeysInFocus = config_get_bool(App()->GlobalConfig(),
+			"General", "DisableHotkeysInFocus");
+
 	main->EnableOutputs(true);
+	App()->EnableInFocusHotkeys(!disableHotkeysInFocus);
 }
 
 void OBSBasicSettings::SaveCombo(QComboBox *widget, const char *section,
@@ -2280,6 +2287,10 @@ void OBSBasicSettings::LoadAdvancedSettings()
 	ui->enableLowLatencyMode->setChecked(enableLowLatencyMode);
 #endif
 
+	bool disableFocusHotkeys = config_get_bool(App()->GlobalConfig(),
+			"General", "DisableHotkeysInFocus");
+	ui->disableFocusHotkeys->setChecked(disableFocusHotkeys);
+
 	loading = false;
 }
 
@@ -2788,6 +2799,10 @@ void OBSBasicSettings::SaveAdvancedSettings()
 	SaveCheckBox(ui->enableNewSocketLoop, "Output", "NewSocketLoopEnable");
 	SaveCheckBox(ui->enableLowLatencyMode, "Output", "LowLatencyEnable");
 #endif
+
+	bool disableFocusHotkeys = ui->disableFocusHotkeys->isChecked();
+	config_set_bool(App()->GlobalConfig(), "General",
+			"DisableHotkeysInFocus", disableFocusHotkeys);
 
 #ifdef __APPLE__
 	if (WidgetChanged(ui->disableOSXVSync)) {

@@ -916,6 +916,9 @@ void OBSApp::AppInit()
 		EnableOSXVSync(false);
 #endif
 
+	enableHotkeysInFocus = !config_get_bool(globalConfig, "General",
+			"DisableHotkeysInFocus");
+
 	move_basic_to_profiles();
 	move_basic_to_scene_collections();
 
@@ -940,6 +943,18 @@ static bool StartupOBS(const char *locale, profiler_name_store_t *store)
 		return false;
 
 	return obs_startup(locale, path, store);
+}
+
+inline void OBSApp::ResetHotkeyState(bool inFocus)
+{
+	obs_hotkey_enable_background_press(
+			inFocus || enableHotkeysInFocus);
+}
+
+void OBSApp::EnableInFocusHotkeys(bool enable)
+{
+	enableHotkeysInFocus = enable;
+	ResetHotkeyState(applicationState() != Qt::ApplicationActive);
 }
 
 bool OBSApp::OBSInit()
@@ -973,13 +988,12 @@ bool OBSApp::OBSInit()
 		mainWindow->OBSInit();
 
 		connect(this, &QGuiApplication::applicationStateChanged,
-				[](Qt::ApplicationState state)
+				[this](Qt::ApplicationState state)
 				{
-					obs_hotkey_enable_background_press(
+					ResetHotkeyState(
 						state != Qt::ApplicationActive);
 				});
-		obs_hotkey_enable_background_press(
-				applicationState() != Qt::ApplicationActive);
+		ResetHotkeyState(applicationState() != Qt::ApplicationActive);
 		return true;
 	} else {
 		return false;
