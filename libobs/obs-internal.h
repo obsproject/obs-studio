@@ -704,9 +704,6 @@ extern bool obs_source_init_context(struct obs_source *source,
 		obs_data_t *settings, const char *name,
 		obs_data_t *hotkey_data, bool private);
 
-extern void obs_source_save(obs_source_t *source);
-extern void obs_source_load(obs_source_t *source);
-
 extern bool obs_transition_init(obs_source_t *transition);
 extern void obs_transition_free(obs_source_t *transition);
 extern void obs_transition_tick(obs_source_t *transition);
