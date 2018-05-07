@@ -404,7 +404,7 @@ void load_text_from_file(struct ft2_source *srcdata, const char *filename)
 void read_from_end(struct ft2_source *srcdata, const char *filename)
 {
 	FILE *tmp_file = NULL;
-	uint32_t filesize = 0, cur_pos = 0;
+	uint32_t filesize = 0, cur_pos = 0, log_lines = 0;
 	char *tmp_read = NULL;
 	uint16_t value = 0, line_breaks = 0;
 	size_t bytes_read;
@@ -428,8 +428,9 @@ void read_from_end(struct ft2_source *srcdata, const char *filename)
 	fseek(tmp_file, 0, SEEK_END);
 	filesize = (uint32_t)ftell(tmp_file);
 	cur_pos = filesize;
+	log_lines = srcdata->log_lines;
 
-	while (line_breaks <= 6 && cur_pos != 0) {
+	while (line_breaks <= log_lines && cur_pos != 0) {
 		if (!utf16) cur_pos--;
 		else cur_pos -= 2;
 		fseek(tmp_file, cur_pos, SEEK_SET);
