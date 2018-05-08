@@ -172,7 +172,7 @@ static void ft2_source_destroy(void *data)
 		FT_Done_Face(srcdata->font_face);
 		srcdata->font_face = NULL;
 	}
-	
+
 	for (uint32_t i = 0; i < num_cache_slots; i++) {
 		if (srcdata->cacheglyphs[i] != NULL) {
 			bfree(srcdata->cacheglyphs[i]);
@@ -389,7 +389,7 @@ static void ft2_source_update(void *data, obs_data_t *settings)
 		goto error;
 	}
 	else {
-		FT_Set_Pixel_Sizes(srcdata->font_face, 0, srcdata->font_size); 
+		FT_Set_Pixel_Sizes(srcdata->font_face, 0, srcdata->font_size);
 		FT_Select_Charmap(srcdata->font_face, FT_ENCODING_UNICODE);
 	}
 
