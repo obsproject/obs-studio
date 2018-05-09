@@ -78,6 +78,8 @@ private:
 
 	std::deque<obs_frontend_translate_ui_cb> translatorHooks;
 
+	bool UpdatePre22MultiviewLayout(const char *layout);
+
 	bool InitGlobalConfig();
 	bool InitGlobalConfigDefaults();
 	bool InitLocale();

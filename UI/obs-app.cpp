@@ -591,6 +591,38 @@ static string GetSceneCollectionFileFromName(const char *name)
 	return outputPath;
 }
 
+bool OBSApp::UpdatePre22MultiviewLayout(const char *layout)
+{
+	if (!layout)
+		return false;
+
+	if (astrcmpi(layout, "horizontaltop") == 0) {
+		config_set_int(globalConfig, "BasicWindow", "MultiviewLayout",
+			static_cast<int>(MultiviewLayout::HORIZONTAL_TOP));
+		return true;
+	}
+
+	if (astrcmpi(layout, "horizontalbottom") == 0) {
+		config_set_int(globalConfig, "BasicWindow", "MultiviewLayout",
+			static_cast<int>(MultiviewLayout::HORIZONTAL_BOTTOM));
+		return true;
+	}
+
+	if (astrcmpi(layout, "verticalleft") == 0) {
+		config_set_int(globalConfig, "BasicWindow", "MultiviewLayout",
+			static_cast<int>(MultiviewLayout::VERTICAL_LEFT));
+		return true;
+	}
+
+	if (astrcmpi(layout, "verticalright") == 0) {
+		config_set_int(globalConfig, "BasicWindow", "MultiviewLayout",
+			static_cast<int>(MultiviewLayout::VERTICAL_RIGHT));
+		return true;
+	}
+
+	return false;
+}
+
 bool OBSApp::InitGlobalConfig()
 {
 	char path[512];
@@ -654,6 +686,13 @@ bool OBSApp::InitGlobalConfig()
 		config_set_bool(globalConfig, "General", "Pre21Defaults",
 				useOldDefaults);
 		changed = true;
+	}
+
+	if (config_has_user_value(globalConfig, "BasicWindow",
+			"MultiviewLayout")) {
+		const char *layout = config_get_string(globalConfig,
+				"BasicWindow", "MultiviewLayout");
+		changed |= UpdatePre22MultiviewLayout(layout);
 	}
 
 	if (changed)
