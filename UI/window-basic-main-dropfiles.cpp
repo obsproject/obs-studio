@@ -11,6 +11,10 @@
 
 using namespace std;
 
+static const char *sourceExtensions[] = {
+	"json", nullptr
+};
+
 static const char *textExtensions[] = {
 	"txt", "log", nullptr
 };
@@ -64,6 +68,7 @@ void OBSBasic::AddDropSource(const char *data, DropType image)
 {
 	OBSBasic *main = reinterpret_cast<OBSBasic*>(App()->GetMainWindow());
 	obs_data_t *settings = obs_data_create();
+	obs_data_t *json_settings = nullptr;
 	obs_source_t *source = nullptr;
 	const char *type = nullptr;
 	QString name;
@@ -105,10 +110,17 @@ void OBSBasic::AddDropSource(const char *data, DropType image)
 		name = QUrl::fromLocalFile(QString(data)).fileName();
 		type = "browser_source";
 		break;
+	case DropType_Source:
+		json_settings = obs_data_create_from_json_file(data);
+		settings = obs_data_get_obj(json_settings, "settings");
+		name = obs_data_get_string(json_settings, "name");
+		type = obs_data_get_string(json_settings, "id");
+		break;
 	}
 
 	if (!obs_source_get_display_name(type)) {
 		obs_data_release(settings);
+		obs_data_release(json_settings);
 		return;
 	}
 
@@ -124,6 +136,7 @@ void OBSBasic::AddDropSource(const char *data, DropType image)
 	}
 
 	obs_data_release(settings);
+	obs_data_release(json_settings);
 }
 
 void OBSBasic::dragEnterEvent(QDragEnterEvent *event)
@@ -181,6 +194,7 @@ if (found) \
 			CHECK_SUFFIX(htmlExtensions, DropType_Html);
 			CHECK_SUFFIX(imageExtensions, DropType_Image);
 			CHECK_SUFFIX(mediaExtensions, DropType_Media);
+			CHECK_SUFFIX(sourceExtensions, DropType_Source);
 
 #undef CHECK_SUFFIX
 		}
