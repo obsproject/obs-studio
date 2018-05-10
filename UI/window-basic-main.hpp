@@ -244,6 +244,7 @@ private:
 	void TempStreamOutput(const char *url, const char *key,
 			int vBitrate, int aBitrate);
 
+	void ExportSourceJson(obs_source_t *source);
 	void CreateInteractionWindow(obs_source_t *source);
 	void CreatePropertiesWindow(obs_source_t *source);
 	void CreateFiltersWindow(obs_source_t *source);
@@ -610,6 +611,7 @@ private slots:
 	void on_scenes_itemDoubleClicked(QListWidgetItem *item);
 	void on_actionAddSource_triggered();
 	void on_actionRemoveSource_triggered();
+	void on_actionSourceExportJson_triggered();
 	void on_actionInteract_triggered();
 	void on_actionSourceProperties_triggered();
 	void on_actionSourceUp_triggered();
