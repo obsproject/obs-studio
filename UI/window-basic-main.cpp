@@ -2067,6 +2067,27 @@ void OBSBasic::InsertSceneItem(obs_sceneitem_t *item)
 	SetupVisibilityItem(ui->sources, listItem, item);
 }
 
+void OBSBasic::CreateSourceJson(obs_source_t *source)
+{
+	obs_data_t *json_output = obs_data_create();
+
+	const char *name = (char *)obs_source_get_name(source);
+	const char *id = (char *)obs_source_get_id(source);
+	obs_data_t *settings = obs_source_get_settings(source);
+
+	obs_data_set_obj(json_output, "settings", settings);
+	obs_data_set_string(json_output, "name", name);
+	obs_data_set_string(json_output, "id", id);
+
+	const char *json_text = (char *)obs_data_get_json(json_output);
+
+	QClipboard *clipboard = QApplication::clipboard();
+	clipboard->setText(json_text);
+
+	obs_data_release(json_output);
+	obs_data_release(settings);
+}
+
 void OBSBasic::CreateInteractionWindow(obs_source_t *source)
 {
 	if (interaction)
@@ -3963,6 +3984,9 @@ void OBSBasic::CreateSourcePopupMenu(QListWidgetItem *item, bool preview)
 		popup.addAction(sourceWindow);
 		popup.addSeparator();
 
+		popup.addAction(QTStr("Export"), this,
+			SLOT(on_actionSourceExport_triggered()));
+
 		action = popup.addAction(QTStr("Interact"), this,
 				SLOT(on_actionInteract_triggered()));
 
@@ -4174,6 +4198,15 @@ void OBSBasic::on_actionRemoveSource_triggered()
 				obs_sceneitem_remove(item);
 		}
 	}
+}
+
+void OBSBasic::on_actionSourceExport_triggered()
+{
+	OBSSceneItem item = GetCurrentSceneItem();
+	OBSSource source = obs_sceneitem_get_source(item);
+
+	if (source)
+		CreateSourceJson(source);
 }
 
 void OBSBasic::on_actionInteract_triggered()
