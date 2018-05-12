@@ -130,25 +130,20 @@ void get_window_class(struct dstr *class, HWND hwnd)
 
 /* not capturable or internal windows */
 static const char *internal_microsoft_exes[] = {
-	"applicationframehost",
-	"shellexperiencehost",
-	"winstore.app",
-	"searchui",
+	"applicationframehost.exe",
+	"shellexperiencehost.exe",
+	"winstore.app.exe",
+	"searchui.exe",
 	NULL
 };
 
 static bool is_microsoft_internal_window_exe(const char *exe)
 {
-	char cur_exe[MAX_PATH];
-
 	if (!exe)
 		return false;
 
-	for (const char **vals = internal_microsoft_exes; *vals; vals++) {
-		strcpy(cur_exe, *vals);
-		strcat(cur_exe, ".exe");
-
-		if (strcmpi(cur_exe, exe) == 0)
+	for (const char **vals = internal_microsoft_exes; *vals; ++vals) {
+		if (strcmpi(*vals, exe) == 0)
 			return true;
 	}
 
