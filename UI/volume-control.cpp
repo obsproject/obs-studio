@@ -531,6 +531,7 @@ VolumeMeter::VolumeMeter(QWidget *parent, obs_volmeter_t *obs_volmeter,
 VolumeMeter::~VolumeMeter()
 {
 	updateTimerRef->RemoveVolControl(this);
+	delete tickPaintCache;
 }
 
 void VolumeMeter::setLevels(const float magnitude[MAX_AUDIO_CHANNELS],
