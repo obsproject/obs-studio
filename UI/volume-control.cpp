@@ -434,8 +434,8 @@ void VolumeMeter::setPeakMeterType(enum obs_peak_meter_type peakMeterType)
 		//
 		//  * Permitted Maximum Level (PML) = -2.0 dBTP
 		//  * Alignment Level (AL) = -13 dBTP
-		setErrorLevel(-2.0);
-		setWarningLevel(-13.0);
+		setErrorLevel(-4.0);
+		setWarningLevel(-18.0);
 		break;
 
 	case SAMPLE_PEAK_METER:
@@ -445,8 +445,8 @@ void VolumeMeter::setPeakMeterType(enum obs_peak_meter_type peakMeterType)
 		//
 		//  * Permitted Maximum Level (PML) = -9.0 dBFS
 		//  * Alignment Level (AL) = -20.0 dBFS
-		setErrorLevel(-9.0);
-		setWarningLevel(-20.0);
+		setErrorLevel(-6.0);
+		setWarningLevel(-18.0);
 		break;
 	}
 }
