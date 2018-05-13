@@ -9,6 +9,7 @@
 #include <QSlider>
 #include <QLabel>
 #include <QPainter>
+#include <QStyleFactory>
 
 using namespace std;
 
@@ -246,7 +247,17 @@ VolControl::VolControl(OBSSource source_, bool showConfig, bool vertical)
 	obs_fader_attach_source(obs_fader, source);
 	obs_volmeter_attach_source(obs_volmeter, source);
 
-	slider->setStyle(new SliderAbsoluteSetStyle(slider->style()));
+	QString styleName = slider->style()->objectName();
+	QStyle *style;
+	style = QStyleFactory::create(styleName);
+	if (!style) {
+		style = new SliderAbsoluteSetStyle();
+	} else {
+		style = new SliderAbsoluteSetStyle(style);
+	}
+
+	style->setParent(slider);
+	slider->setStyle(style);
 
 	/* Call volume changed once to init the slider position and label */
 	VolumeChanged();
