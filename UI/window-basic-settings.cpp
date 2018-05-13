@@ -714,7 +714,7 @@ OBSBasicSettings::~OBSBasicSettings()
 {
 	bool disableHotkeysInFocus = config_get_bool(App()->GlobalConfig(),
 			"General", "DisableHotkeysInFocus");
-
+	delete ui->filenameFormatting->completer();
 	main->EnableOutputs(true);
 	App()->EnableInFocusHotkeys(!disableHotkeysInFocus);
 }
