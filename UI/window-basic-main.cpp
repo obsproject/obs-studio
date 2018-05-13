@@ -1857,6 +1857,7 @@ OBSBasic::~OBSBasic()
 	if (updateCheckThread && updateCheckThread->isRunning())
 		updateCheckThread->wait();
 
+	delete trayMenu;
 	delete programOptions;
 	delete program;
 
