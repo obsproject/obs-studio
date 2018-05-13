@@ -13,7 +13,7 @@ add_subdirectory(obs-frontend-api)
 
 project(obs)
 
-set(ENABLE_WIN_UPDATER FALSE CACHE BOOL "Enable the windows updater")
+set(DISABLE_UPDATE_MODULE TRUE CACHE BOOL "Disables building the update module")
 
 if(DEFINED QTDIR${_lib_suffix})
 	list(APPEND CMAKE_PREFIX_PATH "${QTDIR${_lib_suffix}}")
@@ -78,10 +78,6 @@ if(WIN32)
 		crypt32
 		blake2
 		${OBS_JANSSON_IMPORT})
-
-	if(ENABLE_WIN_UPDATER)
-		add_definitions(-DENABLE_WIN_UPDATER)
-	endif()
 elseif(APPLE)
 	set(obs_PLATFORM_SOURCES
 		platform-osx.mm)
