@@ -423,28 +423,29 @@ void VolumeMeter::setPeakMeterType(enum obs_peak_meter_type peakMeterType)
 	obs_volmeter_set_peak_meter_type(obs_volmeter, peakMeterType);
 	switch (peakMeterType) {
 	case TRUE_PEAK_METER:
-		// For true-peak meters EBU has defined the Permitted Maximum,
-		// taking into account the accuracy of the meter and further
-		// processing required by lossy audio compression.
+		// Here, "true-peak" level according to ITU-R BS.1770, Annex 2.
 		//
-		// The alignment level was not specified, but I've adjusted
-		// it compared to a sample-peak meter. Incidently Youtube
-		// uses this new Alignment Level as the maximum integrated
-		// loudness of a video.
+		// Permitted Maximum Level (PML) = -1.0 dBFS (a)
+		// Alignment Level (AL) = -18 dBFS (b)
 		//
-		//  * Permitted Maximum Level (PML) = -2.0 dBTP
-		//  * Alignment Level (AL) = -13 dBTP
+		// a) recommended -1 dB Full Scale (EBU R128)
+		//    and -3dB for possible operator error (EBU 68-2000);
+		// b) recommended 1:8 of max possible value (EBU 68-2000)
+		//    or -18 dB.
 		setErrorLevel(-4.0);
 		setWarningLevel(-18.0);
 		break;
 
 	case SAMPLE_PEAK_METER:
 	default:
-		// For a sample Peak Meter EBU has the following level
-		// definitions, taking into account inaccuracies of this meter:
+		// Permitted Maximum Level (PML) = -3.0 dBFS (a)
+		// Alignment Level (AL) = -18 dBFS (b)
 		//
-		//  * Permitted Maximum Level (PML) = -9.0 dBFS
-		//  * Alignment Level (AL) = -20.0 dBFS
+		// a) recommended -3 dB Full Scale (EBU 68-2000) because of
+		//    maximum theoretical inaccuracy of the sample meter
+		//    and -3dB for possible operator error (EBU 68-2000);
+		// b) recommended 1:8 of max possible value (EBU 68-2000)
+		//    or -18 dB.
 		setErrorLevel(-6.0);
 		setWarningLevel(-18.0);
 		break;
