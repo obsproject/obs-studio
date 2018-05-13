@@ -635,7 +635,7 @@
             "servers": [
                 {
                     "name": "Default",
-                    "url": "rtmp://rtmp-api.facebook.com:80/rtmp/"
+                    "url": "rtmp://live-api.facebook.com:80/rtmp/"
                 }
             ],
             "recommended": {
