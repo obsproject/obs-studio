@@ -55,7 +55,7 @@
 #include "volume-control.hpp"
 #include "remote-text.hpp"
 
-#if defined(_WIN32) && defined(ENABLE_WIN_UPDATER)
+#ifdef _WIN32
 #include "win-update/win-update.hpp"
 #endif
 
@@ -2636,7 +2636,7 @@ void OBSBasic::TimedCheckForUpdates()
 #ifdef UPDATE_SPARKLE
 	init_sparkle_updater(config_get_bool(App()->GlobalConfig(), "General",
 				"UpdateToUndeployed"));
-#elif ENABLE_WIN_UPDATER
+#elif _WIN32
 	long long lastUpdate = config_get_int(App()->GlobalConfig(), "General",
 			"LastUpdateCheck");
 	uint32_t lastVersion = config_get_int(App()->GlobalConfig(), "General",
@@ -2660,7 +2660,7 @@ void OBSBasic::CheckForUpdates(bool manualUpdate)
 {
 #ifdef UPDATE_SPARKLE
 	trigger_sparkle_update();
-#elif ENABLE_WIN_UPDATER
+#elif _WIN32
 	ui->actionCheckForUpdates->setEnabled(false);
 
 	if (updateCheckThread && updateCheckThread->isRunning())
