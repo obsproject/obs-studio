@@ -413,12 +413,8 @@ void OBSBasic::UpdateVolumeControlsPeakMeterType()
 
 void OBSBasic::ClearVolumeControls()
 {
-	VolControl *control;
-
-	for (size_t i = 0; i < volumes.size(); i++) {
-		control = volumes[i];
-		delete control;
-	}
+	for (auto &vol : volumes)
+		delete vol;
 
 	volumes.clear();
 }
