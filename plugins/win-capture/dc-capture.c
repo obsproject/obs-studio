@@ -24,7 +24,7 @@ static inline void init_textures(struct dc_capture *capture)
 
 void dc_capture_init(struct dc_capture *capture, int x, int y,
 		uint32_t width, uint32_t height, bool cursor,
-		bool compatibility)
+		bool compatibility, bool anicursor)
 {
 	memset(capture, 0, sizeof(struct dc_capture));
 
@@ -33,6 +33,7 @@ void dc_capture_init(struct dc_capture *capture, int x, int y,
 	capture->width          = width;
 	capture->height         = height;
 	capture->capture_cursor = cursor;
+	capture->anicursor      = anicursor;
 
 	obs_enter_graphics();
 
@@ -161,7 +162,9 @@ static void draw_cursor(struct dc_capture *capture, HDC hdc, HWND window)
 		pos.y = ci->ptScreenPos.y - (int)ii.yHotspot - win_pos.y;
 
 		static int32_t istep = 0; //animated frame(step) number
-		istep = getAniCurNextStep(&icon, istep);
+
+		if (capture->anicursor)
+			istep = getAniCurNextStep(&icon, istep);
 
 		DrawIconEx(hdc, pos.x, pos.y, icon, 0, 0, istep, NULL,
 				DI_NORMAL);
