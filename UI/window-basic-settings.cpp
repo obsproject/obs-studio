@@ -1800,14 +1800,12 @@ void OBSBasicSettings::LoadAdvOutputFFmpegSettings()
 	SelectEncoder(ui->advOutFFAEncoder, aEncoder, aEncoderId);
 	ui->advOutFFACfg->setText(aEncCustom);
 
-	switch (audioTrack) {
-	case 1: ui->advOutFFTrack1->setChecked(true); break;
-	case 2: ui->advOutFFTrack2->setChecked(true); break;
-	case 3: ui->advOutFFTrack3->setChecked(true); break;
-	case 4: ui->advOutFFTrack4->setChecked(true); break;
-	case 5: ui->advOutFFTrack5->setChecked(true); break;
-	case 6: ui->advOutFFTrack6->setChecked(true); break;
-	}
+	ui->advOutFFTrack1->setChecked(audioTrack & (1 << 0));
+	ui->advOutFFTrack2->setChecked(audioTrack & (1 << 1));
+	ui->advOutFFTrack3->setChecked(audioTrack & (1 << 2));
+	ui->advOutFFTrack4->setChecked(audioTrack & (1 << 3));
+	ui->advOutFFTrack5->setChecked(audioTrack & (1 << 4));
+	ui->advOutFFTrack6->setChecked(audioTrack & (1 << 5));
 }
 
 void OBSBasicSettings::LoadAdvOutputAudioSettings()
@@ -3128,11 +3126,13 @@ void OBSBasicSettings::SaveOutputSettings()
 	SaveSpinBox(ui->advOutFFABitrate, "AdvOut", "FFABitrate");
 	SaveEncoder(ui->advOutFFAEncoder, "AdvOut", "FFAEncoder");
 	SaveEdit(ui->advOutFFACfg, "AdvOut", "FFACustom");
-	SaveTrackIndex(main->Config(), "AdvOut", "FFAudioTrack",
-			ui->advOutFFTrack1, ui->advOutFFTrack2,
-			ui->advOutFFTrack3, ui->advOutFFTrack4,
-			ui->advOutFFTrack5, ui->advOutFFTrack6);
-
+	config_set_int(main->Config(), "AdvOut", "FFAudioTrack",
+			(ui->advOutFFTrack1->isChecked() ? (1 << 0) : 0) |
+			(ui->advOutFFTrack2->isChecked() ? (1 << 1) : 0) |
+			(ui->advOutFFTrack3->isChecked() ? (1 << 2) : 0) |
+			(ui->advOutFFTrack4->isChecked() ? (1 << 3) : 0) |
+			(ui->advOutFFTrack5->isChecked() ? (1 << 4) : 0) |
+			(ui->advOutFFTrack6->isChecked() ? (1 << 5) : 0));
 	SaveCombo(ui->advOutTrack1Bitrate, "AdvOut", "Track1Bitrate");
 	SaveCombo(ui->advOutTrack2Bitrate, "AdvOut", "Track2Bitrate");
 	SaveCombo(ui->advOutTrack3Bitrate, "AdvOut", "Track3Bitrate");
