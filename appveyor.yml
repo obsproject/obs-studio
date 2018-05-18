@@ -10,8 +10,8 @@ install:
   - set DepsPath32=%CD%\dependencies2015\win32
   - set DepsPath64=%CD%\dependencies2015\win64
   - set VLCPath=%CD%\vlc
-  - set QTDIR32=C:\Qt\5.7\msvc2015
-  - set QTDIR64=C:\Qt\5.7\msvc2015_64
+  - set QTDIR32=C:\Qt\5.10.1\msvc2015
+  - set QTDIR64=C:\Qt\5.10.1\msvc2015_64
   - set build_config=RelWithDebInfo
   - move "C:\Program Files (x86)\Windows Kits\10\Include\10.0.14393.0\um\d3d11on12*" "C:\Program Files (x86)\Windows Kits\8.1\Include\um"
   - move "C:\Program Files (x86)\Windows Kits\10\Include\10.0.14393.0\um\d3d12*" "C:\Program Files (x86)\Windows Kits\8.1\Include\um"
