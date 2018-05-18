@@ -218,7 +218,7 @@ static bool obs_init_textures(struct obs_video_info *ovi)
 gs_effect_t *obs_load_effect(gs_effect_t **effect, const char *file)
 {
 	if (!*effect) {
-		char *filename = find_libobs_data_file(file);
+		char *filename = obs_find_data_file(file);
 		*effect = gs_effect_create_from_file(filename, NULL);
 		bfree(filename);
 	}
@@ -250,49 +250,49 @@ static int obs_init_graphics(struct obs_video_info *ovi)
 
 	gs_enter_context(video->graphics);
 
-	char *filename = find_libobs_data_file("default.effect");
+	char *filename = obs_find_data_file("default.effect");
 	video->default_effect = gs_effect_create_from_file(filename,
 			NULL);
 	bfree(filename);
 
 	if (gs_get_device_type() == GS_DEVICE_OPENGL) {
-		filename = find_libobs_data_file("default_rect.effect");
+		filename = obs_find_data_file("default_rect.effect");
 		video->default_rect_effect = gs_effect_create_from_file(
 				filename, NULL);
 		bfree(filename);
 	}
 
-	filename = find_libobs_data_file("opaque.effect");
+	filename = obs_find_data_file("opaque.effect");
 	video->opaque_effect = gs_effect_create_from_file(filename,
 			NULL);
 	bfree(filename);
 
-	filename = find_libobs_data_file("solid.effect");
+	filename = obs_find_data_file("solid.effect");
 	video->solid_effect = gs_effect_create_from_file(filename,
 			NULL);
 	bfree(filename);
 
-	filename = find_libobs_data_file("format_conversion.effect");
+	filename = obs_find_data_file("format_conversion.effect");
 	video->conversion_effect = gs_effect_create_from_file(filename,
 			NULL);
 	bfree(filename);
 
-	filename = find_libobs_data_file("bicubic_scale.effect");
+	filename = obs_find_data_file("bicubic_scale.effect");
 	video->bicubic_effect = gs_effect_create_from_file(filename,
 			NULL);
 	bfree(filename);
 
-	filename = find_libobs_data_file("lanczos_scale.effect");
+	filename = obs_find_data_file("lanczos_scale.effect");
 	video->lanczos_effect = gs_effect_create_from_file(filename,
 			NULL);
 	bfree(filename);
 
-	filename = find_libobs_data_file("bilinear_lowres_scale.effect");
+	filename = obs_find_data_file("bilinear_lowres_scale.effect");
 	video->bilinear_lowres_effect = gs_effect_create_from_file(filename,
 			NULL);
 	bfree(filename);
 
-	filename = find_libobs_data_file("premultiplied_alpha.effect");
+	filename = obs_find_data_file("premultiplied_alpha.effect");
 	video->premultiplied_alpha_effect = gs_effect_create_from_file(filename,
 			NULL);
 	bfree(filename);
@@ -779,6 +779,50 @@ static bool obs_init(const char *locale, const char *module_config_path,
 extern void initialize_com(void);
 extern void uninitialize_com(void);
 #endif
+
+/* Separate from actual context initialization
+ * since this can be set before startup and persist
+ * after shutdown. */
+static DARRAY(struct dstr) core_module_paths = {0};
+
+char *obs_find_data_file(const char *file)
+{
+	struct dstr path = {0};
+
+	const char *result = find_libobs_data_file(file);
+	if (result)
+		return result;
+
+	for (int i = 0; i < core_module_paths.num; ++i) {
+		if (check_path(file, core_module_paths.array[i].array, &path))
+			return path.array;
+	}
+
+	dstr_free(&path);
+	return NULL;
+}
+
+void obs_add_data_path(const char *path)
+{
+	struct dstr *new_path = da_push_back_new(core_module_paths);
+	dstr_init_copy(new_path, path);
+	da_push_back(core_module_paths, new_path);
+}
+
+bool obs_remove_data_path(const char *path)
+{
+	for (int i = 0; i < core_module_paths.num; ++i) {
+		int result = dstr_cmp(&core_module_paths.array[i], path);
+
+		if (result == 0) {
+			dstr_free(&core_module_paths.array[i]);
+			da_erase(core_module_paths, i);
+			return true;
+		}
+	}
+
+	return false;
+}
 
 static const char *obs_startup_name = "obs_startup";
 bool obs_startup(const char *locale, const char *module_config_path,
