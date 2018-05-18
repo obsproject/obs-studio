@@ -242,6 +242,32 @@ struct obs_source_frame {
 /* ------------------------------------------------------------------------- */
 /* OBS context */
 
+/** 
+ * Find a core libobs data file
+ * @param path name of the base file
+ * @return A string containing the full path to the file.
+ *          Use bfree after use.
+ */
+EXPORT char *obs_find_data_file(const char *file);
+
+/**
+ * Add a path to search libobs data files in.
+ * @param path Full path to directory to look in.
+ *             The string is copied.
+ */
+EXPORT void obs_add_data_path(const char *path);
+
+/**
+ * Remove a path from libobs core data paths.
+ * @param path The path to compare to currently set paths.
+ *             It does not need to be the same pointer, but
+ *             the path string must match an entry fully.
+ * @return Whether or not the path was successfully removed.
+ *         If false, the path could not be found.
+ */
+EXPORT bool obs_remove_data_path(const char *path);
+
+
 /**
  * Initializes OBS
  *
