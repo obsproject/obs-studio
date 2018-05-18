@@ -4281,7 +4281,7 @@ void OBSBasic::UploadLog(const char *subdir, const char *file)
 	}
 
 	RemoteTextThread *thread = new RemoteTextThread(
-			"https://hastebin.com/documents",
+			"https://obsproject.com/logs/upload",
 			"text/plain", ss.str().c_str());
 
 	logUploadThread = thread;
@@ -4358,8 +4358,7 @@ void OBSBasic::logUploadFinished(const QString &text, const QString &error)
 	}
 
 	obs_data_t *returnData = obs_data_create_from_json(QT_TO_UTF8(text));
-	string resURL = "https://hastebin.com/";
-	resURL += obs_data_get_string(returnData, "key");
+	string resURL = obs_data_get_string(returnData, "url");
 	QString logURL = resURL.c_str();
 	obs_data_release(returnData);
 
