@@ -1,4 +1,3 @@
-#define PSAPI_VERSION 1
 #include <obs.h>
 #include <util/dstr.h>
 
