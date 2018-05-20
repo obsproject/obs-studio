@@ -2,6 +2,7 @@
 
 #include <obs.hpp>
 #include <QWidget>
+#include <QPaintEvent>
 #include <QSharedPointer>
 #include <QTimer>
 #include <QMutex>
@@ -95,12 +96,15 @@ private:
 	inline void calculateBallisticsForChannel(int channelNr,
 		uint64_t ts, qreal timeSinceLastRedraw);
 
-	void paintInputMeter(QPainter &painter, int x, int y,
-		int width, int height, float peakHold);
-	void paintMeter(QPainter &painter, int x, int y,
-		int width, int height,
-		float magnitude, float peak, float peakHold);
-	void paintTicks(QPainter &painter, int x, int y, int width, int height);
+	void paintInputMeter(QPainter &painter, int x, int y, int width,
+			int height, float peakHold);
+	void paintHMeter(QPainter &painter, int x, int y, int width, int height,
+			float magnitude, float peak, float peakHold);
+	void paintHTicks(QPainter &painter, int x, int y, int width,
+			int height);
+	void paintVMeter(QPainter &painter, int x, int y, int width, int height,
+			float magnitude, float peak, float peakHold);
+	void paintVTicks(QPainter &painter, int x, int y, int height);
 
 	QMutex dataMutex;
 
@@ -109,7 +113,7 @@ private:
 	float currentPeak[MAX_AUDIO_CHANNELS];
 	float currentInputPeak[MAX_AUDIO_CHANNELS];
 
-	QPixmap *tickPaintCache = NULL;
+	QPixmap *tickPaintCache = nullptr;
 	int displayNrAudioChannels = 0;
 	float displayMagnitude[MAX_AUDIO_CHANNELS];
 	float displayPeak[MAX_AUDIO_CHANNELS];
@@ -141,10 +145,12 @@ private:
 
 	uint64_t lastRedrawTime = 0;
 	bool clipping = false;
+	bool vertical;
 
 public:
-	explicit VolumeMeter(QWidget *parent = 0,
-		obs_volmeter_t *obs_volmeter = 0);
+	explicit VolumeMeter(QWidget *parent = nullptr,
+			obs_volmeter_t *obs_volmeter = nullptr,
+			bool vertical = false);
 	~VolumeMeter();
 
 	void setLevels(
@@ -193,7 +199,7 @@ public:
 	void setPeakMeterType(enum obs_peak_meter_type peakMeterType);
 
 protected:
-	void paintEvent(QPaintEvent *event);
+	void paintEvent(QPaintEvent *event) override;
 };
 
 class VolumeMeterTimer : public QTimer {
@@ -206,7 +212,7 @@ public:
 	void RemoveVolControl(VolumeMeter *meter);
 
 protected:
-	virtual void timerEvent(QTimerEvent *event) override;
+	void timerEvent(QTimerEvent *event) override;
 	QList<VolumeMeter*> volumeMeters;
 };
 
@@ -229,6 +235,7 @@ private:
 	float           levelCount;
 	obs_fader_t     *obs_fader;
 	obs_volmeter_t  *obs_volmeter;
+	bool            vertical;
 
 	static void OBSVolumeChanged(void *param, float db);
 	static void OBSVolumeLevel(void *data,
@@ -251,7 +258,8 @@ signals:
 	void ConfigClicked();
 
 public:
-	VolControl(OBSSource source, bool showConfig = false);
+	explicit VolControl(OBSSource source, bool showConfig = false,
+			bool vertical = false);
 	~VolControl();
 
 	inline obs_source_t *GetSource() const {return source;}

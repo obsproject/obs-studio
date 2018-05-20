@@ -258,6 +258,7 @@ private:
 	void GetAudioSourceFilters();
 	void GetAudioSourceProperties();
 	void VolControlContextMenu();
+	void ToggleVolControlLayout();
 
 	void RefreshSceneCollections();
 	void ChangeSceneCollection();
@@ -455,7 +456,8 @@ private slots:
 
 	void MixerRenameSource();
 
-	void on_mixerScrollArea_customContextMenuRequested();
+	void on_vMixerScrollArea_customContextMenuRequested();
+	void on_hMixerScrollArea_customContextMenuRequested();
 
 	void on_actionCopySource_triggered();
 	void on_actionPasteRef_triggered();
@@ -714,6 +716,8 @@ private slots:
 	void OpenSceneWindow();
 
 	void DeferredLoad(const QString &file, int requeueCount);
+
+	void StackedMixerAreaContextMenuRequested();
 
 public slots:
 	void on_actionResetTransform_triggered();
