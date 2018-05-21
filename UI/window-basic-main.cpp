@@ -3775,6 +3775,8 @@ void OBSBasic::ChangeSceneIndex(bool relative, int offset, int invalidIdx)
 	item->setSelected(true);
 
 	sceneChanging = false;
+
+	OBSProjector::UpdateMultiviewProjectors();
 }
 
 void OBSBasic::on_actionSceneUp_triggered()
