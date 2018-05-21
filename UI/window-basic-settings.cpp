@@ -318,6 +318,9 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->snapDistance,         DSCROLL_CHANGED,GENERAL_CHANGED);
 	HookWidget(ui->doubleClickSwitch,    CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->studioPortraitLayout, CHECK_CHANGED,  GENERAL_CHANGED);
+	HookWidget(ui->multiviewMouseSwitch, CHECK_CHANGED,  GENERAL_CHANGED);
+	HookWidget(ui->multiviewDrawNames,   CHECK_CHANGED,  GENERAL_CHANGED);
+	HookWidget(ui->multiviewDrawAreas,   CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->multiviewLayout,      COMBO_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->outputMode,           COMBO_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->streamType,           COMBO_CHANGED,  STREAM1_CHANGED);
@@ -1100,30 +1103,37 @@ void OBSBasicSettings::LoadGeneralSettings()
 			"BasicWindow", "StudioPortraitLayout");
 	ui->studioPortraitLayout->setChecked(studioPortraitLayout);
 
+	bool multiviewMouseSwitch = config_get_bool(GetGlobalConfig(),
+			"BasicWindow", "MultiviewMouseSwitch");
+	ui->multiviewMouseSwitch->setChecked(multiviewMouseSwitch);
+
+	bool multiviewDrawNames = config_get_bool(GetGlobalConfig(),
+			"BasicWindow", "MultiviewDrawNames");
+	ui->multiviewDrawNames->setChecked(multiviewDrawNames);
+
+	bool multiviewDrawAreas = config_get_bool(GetGlobalConfig(),
+			"BasicWindow", "MultiviewDrawAreas");
+	ui->multiviewDrawAreas->setChecked(multiviewDrawAreas);
+
 	ui->multiviewLayout->addItem(QTStr(
 			"Basic.Settings.General.MultiviewLayout.Horizontal.Top"),
-			QT_UTF8("horizontaltop"));
+			static_cast<int>(MultiviewLayout::HORIZONTAL_TOP_8_SCENES));
 	ui->multiviewLayout->addItem(QTStr(
 			"Basic.Settings.General.MultiviewLayout.Horizontal.Bottom"),
-			QT_UTF8("horizontalbottom"));
+			static_cast<int>(MultiviewLayout::HORIZONTAL_BOTTOM_8_SCENES));
 	ui->multiviewLayout->addItem(QTStr(
 			"Basic.Settings.General.MultiviewLayout.Vertical.Left"),
-			QT_UTF8("verticalleft"));
+			static_cast<int>(MultiviewLayout::VERTICAL_LEFT_8_SCENES));
 	ui->multiviewLayout->addItem(QTStr(
 			"Basic.Settings.General.MultiviewLayout.Vertical.Right"),
-			QT_UTF8("verticalright"));
+			static_cast<int>(MultiviewLayout::VERTICAL_RIGHT_8_SCENES));
+	ui->multiviewLayout->addItem(QTStr(
+			"Basic.Settings.General.MultiviewLayout.Horizontal.Extended.Top"),
+			static_cast<int>(MultiviewLayout::HORIZONTAL_TOP_24_SCENES));
 
-	const char *multiviewLayoutText = config_get_string(GetGlobalConfig(),
-			"BasicWindow", "MultiviewLayout");
-
-	if (astrcmpi(multiviewLayoutText, "horizontalbottom") == 0)
-		ui->multiviewLayout->setCurrentIndex(1);
-	else if (astrcmpi(multiviewLayoutText, "verticalleft") == 0)
-		ui->multiviewLayout->setCurrentIndex(2);
-	else if (astrcmpi(multiviewLayoutText, "verticalright") == 0)
-		ui->multiviewLayout->setCurrentIndex(3);
-	else
-		ui->multiviewLayout->setCurrentIndex(0);
+	ui->multiviewLayout->setCurrentIndex(
+			config_get_int(GetGlobalConfig(), "BasicWindow",
+					"MultiviewLayout"));
 
 	loading = false;
 }
@@ -2712,13 +2722,37 @@ void OBSBasicSettings::SaveGeneralSettings()
 		main->ResetUI();
 	}
 
-	if (WidgetChanged(ui->multiviewLayout)) {
-		config_set_string(GetGlobalConfig(), "BasicWindow",
-				"MultiviewLayout",
-				QT_TO_UTF8(GetComboData(ui->multiviewLayout)));
-
-		OBSProjector::UpdateMultiviewProjectors();
+	bool multiviewChanged = false;
+	if (WidgetChanged(ui->multiviewMouseSwitch)) {
+		config_set_bool(GetGlobalConfig(), "BasicWindow",
+				"MultiviewMouseSwitch",
+				ui->multiviewMouseSwitch->isChecked());
+		multiviewChanged = true;
 	}
+
+	if (WidgetChanged(ui->multiviewDrawNames)) {
+		config_set_bool(GetGlobalConfig(), "BasicWindow",
+				"MultiviewDrawNames",
+				ui->multiviewDrawNames->isChecked());
+		multiviewChanged = true;
+	}
+
+	if (WidgetChanged(ui->multiviewDrawAreas)) {
+		config_set_bool(GetGlobalConfig(), "BasicWindow",
+				"MultiviewDrawAreas",
+				ui->multiviewDrawAreas->isChecked());
+		multiviewChanged = true;
+	}
+
+	if (WidgetChanged(ui->multiviewLayout)) {
+		config_set_int(GetGlobalConfig(), "BasicWindow",
+				"MultiviewLayout",
+				ui->multiviewLayout->currentData().toInt());
+		multiviewChanged = true;
+	}
+
+	if (multiviewChanged)
+		OBSProjector::UpdateMultiviewProjectors();
 }
 
 void OBSBasicSettings::SaveStream1Settings()

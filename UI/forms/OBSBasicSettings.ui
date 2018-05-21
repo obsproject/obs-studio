@@ -582,10 +582,74 @@
                      </property>
                     </widget>
                    </item>
+                  </layout>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QGroupBox" name="groupBoxMultiview">
+                  <property name="title">
+                   <string>Basic.Settings.General.Multiview</string>
+                  </property>
+                  <layout class="QFormLayout" name="formLayoutMultiview">
+                   <property name="fieldGrowthPolicy">
+                    <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+                   </property>
+                   <property name="labelAlignment">
+                    <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                   </property>
+                   <property name="topMargin">
+                    <number>2</number>
+                   </property>
+                   <item row="0" column="0">
+                    <spacer name="horizontalSpacerMultiview">
+                     <property name="orientation">
+                      <enum>Qt::Horizontal</enum>
+                     </property>
+                     <property name="sizeType">
+                      <enum>QSizePolicy::Fixed</enum>
+                     </property>
+                     <property name="sizeHint" stdset="0">
+                      <size>
+                       <width>170</width>
+                       <height>5</height>
+                      </size>
+                     </property>
+                    </spacer>
+                   </item>
+                   <item row="0" column="1">
+                    <widget class="QCheckBox" name="multiviewMouseSwitch">
+                     <property name="text">
+                      <string>Basic.Settings.General.Multiview.MouseSwitch</string>
+                     </property>
+                     <property name="checked">
+                      <bool>true</bool>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="1" column="1">
+                    <widget class="QCheckBox" name="multiviewDrawNames">
+                     <property name="text">
+                      <string>Basic.Settings.General.Multiview.DrawSourceNames</string>
+                     </property>
+                     <property name="checked">
+                      <bool>true</bool>
+                     </property>
+                    </widget>
+                   </item>
                    <item row="2" column="1">
+                    <widget class="QCheckBox" name="multiviewDrawAreas">
+                     <property name="text">
+                      <string>Basic.Settings.General.Multiview.DrawSafeAreas</string>
+                     </property>
+                     <property name="checked">
+                      <bool>true</bool>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="3" column="1">
                     <widget class="QComboBox" name="multiviewLayout"/>
                    </item>
-                   <item row="2" column="0">
+                   <item row="3" column="0">
                     <widget class="QLabel" name="label_64">
                      <property name="text">
                       <string>Basic.Settings.General.MultiviewLayout</string>

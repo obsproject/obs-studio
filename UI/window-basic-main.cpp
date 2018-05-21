@@ -3251,8 +3251,10 @@ int OBSBasic::ResetVideo()
 			ResizeProgram(ovi.base_width, ovi.base_height);
 	}
 
-	if (ret == OBS_VIDEO_SUCCESS)
+	if (ret == OBS_VIDEO_SUCCESS) {
 		OBSBasicStats::InitializeValues();
+		OBSProjector::UpdateMultiviewProjectors();
+	}
 
 	return ret;
 }
@@ -3773,6 +3775,8 @@ void OBSBasic::ChangeSceneIndex(bool relative, int offset, int invalidIdx)
 	item->setSelected(true);
 
 	sceneChanging = false;
+
+	OBSProjector::UpdateMultiviewProjectors();
 }
 
 void OBSBasic::on_actionSceneUp_triggered()
@@ -5672,7 +5676,6 @@ OBSProjector *OBSBasic::OpenProjector(obs_source_t *source, int monitor,
 		projectors[monitor] = projector;
 	}
 
-	projector->Init();
 	return projector;
 }
 

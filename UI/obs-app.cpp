@@ -421,6 +421,15 @@ bool OBSApp::InitGlobalConfigDefaults()
 	config_set_default_bool(globalConfig, "BasicWindow",
 			"VerticalVolControl", false);
 
+	config_set_default_bool(globalConfig, "BasicWindow",
+			"MultiviewMouseSwitch", true);
+
+	config_set_default_bool(globalConfig, "BasicWindow",
+			"MultiviewDrawNames", true);
+
+	config_set_default_bool(globalConfig, "BasicWindow",
+			"MultiviewDrawAreas", true);
+
 #ifdef _WIN32
 	config_set_default_bool(globalConfig, "Audio", "DisableAudioDucking",
 			true);
@@ -591,6 +600,42 @@ static string GetSceneCollectionFileFromName(const char *name)
 	return outputPath;
 }
 
+bool OBSApp::UpdatePre22MultiviewLayout(const char *layout)
+{
+	if (!layout)
+		return false;
+
+	if (astrcmpi(layout, "horizontaltop") == 0) {
+		config_set_int(globalConfig, "BasicWindow", "MultiviewLayout",
+			static_cast<int>(
+				MultiviewLayout::HORIZONTAL_TOP_8_SCENES));
+		return true;
+	}
+
+	if (astrcmpi(layout, "horizontalbottom") == 0) {
+		config_set_int(globalConfig, "BasicWindow", "MultiviewLayout",
+			static_cast<int>(
+				MultiviewLayout::HORIZONTAL_BOTTOM_8_SCENES));
+		return true;
+	}
+
+	if (astrcmpi(layout, "verticalleft") == 0) {
+		config_set_int(globalConfig, "BasicWindow", "MultiviewLayout",
+			static_cast<int>(
+				MultiviewLayout::VERTICAL_LEFT_8_SCENES));
+		return true;
+	}
+
+	if (astrcmpi(layout, "verticalright") == 0) {
+		config_set_int(globalConfig, "BasicWindow", "MultiviewLayout",
+			static_cast<int>(
+				MultiviewLayout::VERTICAL_RIGHT_8_SCENES));
+		return true;
+	}
+
+	return false;
+}
+
 bool OBSApp::InitGlobalConfig()
 {
 	char path[512];
@@ -654,6 +699,13 @@ bool OBSApp::InitGlobalConfig()
 		config_set_bool(globalConfig, "General", "Pre21Defaults",
 				useOldDefaults);
 		changed = true;
+	}
+
+	if (config_has_user_value(globalConfig, "BasicWindow",
+			"MultiviewLayout")) {
+		const char *layout = config_get_string(globalConfig,
+				"BasicWindow", "MultiviewLayout");
+		changed |= UpdatePre22MultiviewLayout(layout);
 	}
 
 	if (changed)
