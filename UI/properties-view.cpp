@@ -638,9 +638,14 @@ void OBSPropertiesView::AddColor(obs_property_t *prop, QFormLayout *layout,
 	button->setText(QTStr("Basic.PropertiesWindow.SelectColor"));
 	button->setToolTip(QT_UTF8(obs_property_long_description(prop)));
 
+	QPalette palette = QPalette(color);
 	colorLabel->setFrameStyle(QFrame::Sunken | QFrame::Panel);
 	colorLabel->setText(color.name(QColor::HexArgb));
-	colorLabel->setPalette(QPalette(color));
+	colorLabel->setPalette(palette);
+	colorLabel->setStyleSheet(
+		QString("background-color :%1; color: %2;")
+			.arg(palette.color(QPalette::Window).name(QColor::HexArgb))
+			.arg(palette.color(QPalette::WindowText).name(QColor::HexArgb)));
 	colorLabel->setAutoFillBackground(true);
 	colorLabel->setAlignment(Qt::AlignCenter);
 	colorLabel->setToolTip(QT_UTF8(obs_property_long_description(prop)));
@@ -1636,7 +1641,12 @@ bool WidgetInfo::ColorChanged(const char *setting)
 
 	QLabel *label = static_cast<QLabel*>(widget);
 	label->setText(color.name(QColor::HexArgb));
-	label->setPalette(QPalette(color));
+	QPalette palette = QPalette(color);
+	label->setPalette(palette);
+	label->setStyleSheet(
+		QString("background-color :%1; color: %2;")
+			.arg(palette.color(QPalette::Window).name(QColor::HexArgb))
+			.arg(palette.color(QPalette::WindowText).name(QColor::HexArgb)));
 
 	obs_data_set_int(view->settings, setting, color_to_int(color));
 
