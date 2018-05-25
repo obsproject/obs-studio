@@ -186,6 +186,7 @@ private:
 
 	QPointer<QMenu> startStreamMenu;
 
+	QPointer<QPushButton> transitionButton;
 	QPointer<QPushButton> replayBufferButton;
 
 	QScopedPointer<QSystemTrayIcon> trayIcon;
@@ -310,6 +311,8 @@ private:
 	obs_data_array_t *SaveQuickTransitions();
 	void ClearQuickTransitionWidgets();
 	void RefreshQuickTransitions();
+	void DisableQuickTransitionWidgets();
+	void EnableQuickTransitionWidgets();
 	void CreateDefaultQuickTransitions();
 
 	QMenu *CreatePerSceneTransitionMenu();
