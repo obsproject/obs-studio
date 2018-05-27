@@ -1237,6 +1237,20 @@
                     "url": "rtmp://rtmp.cdn.asset.aparat.com:443/event"
                 }
             ]
+        },
+        {
+            "name": "Instagram",
+            "servers": [
+                {
+                    "name": "Primary Server",
+                    "url": "rtmp://live-upload.instagram.com:80/rtmp/"
+                }
+            ],
+            "recommended": {
+                "keyint": 2,
+                "max video bitrate": 4000,
+                "max audio bitrate": 160
+            }
         }
     ]
 }
