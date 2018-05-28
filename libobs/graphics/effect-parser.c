@@ -491,13 +491,40 @@ static inline int ep_parse_func_param(struct effect_parser *ep,
 		struct ep_func *func, struct ep_var *var)
 {
 	int code;
+	bool var_type_keyword = false;
 
 	if (!cf_next_valid_token(&ep->cfp))
 		return PARSE_EOF;
 
-	code = ep_check_for_keyword(ep, "uniform", &var->uniform);
+	code = ep_check_for_keyword(ep, "in", &var_type_keyword);
 	if (code == PARSE_EOF)
 		return PARSE_EOF;
+	else if (var_type_keyword)
+		var->var_type = EP_VAR_IN;
+
+	if (!var_type_keyword) {
+		code = ep_check_for_keyword(ep, "inout", &var_type_keyword);
+		if (code == PARSE_EOF)
+			return PARSE_EOF;
+		else if (var_type_keyword)
+			var->var_type = EP_VAR_INOUT;
+	}
+
+	if (!var_type_keyword) {
+		code = ep_check_for_keyword(ep, "out", &var_type_keyword);
+		if (code == PARSE_EOF)
+			return PARSE_EOF;
+		else if (var_type_keyword)
+			var->var_type = EP_VAR_OUT;
+	}
+
+	if (!var_type_keyword) {
+		code = ep_check_for_keyword(ep, "uniform", &var_type_keyword);
+		if (code == PARSE_EOF)
+			return PARSE_EOF;
+		else if (var_type_keyword)
+			var->var_type = EP_VAR_UNIFORM;
+	}
 
 	code = cf_get_name(&ep->cfp, &var->type, "type", ")");
 	if (code != PARSE_SUCCESS)
@@ -1083,8 +1110,14 @@ static inline void ep_write_func_sampler_deps(struct effect_parser *ep,
 
 static inline void ep_write_var(struct dstr *shader, struct ep_var *var)
 {
-	if (var->uniform)
+	if (var->var_type == EP_VAR_INOUT)
+		dstr_cat(shader, "inout ");
+	else if (var->var_type == EP_VAR_OUT)
+		dstr_cat(shader, "out ");
+	else if (var->var_type == EP_VAR_UNIFORM)
 		dstr_cat(shader, "uniform ");
+	// The "in" input modifier is implied by default, so leave it blank
+	// in that case.
 
 	dstr_cat(shader, var->type);
 	dstr_cat(shader, " ");
