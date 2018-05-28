@@ -82,6 +82,20 @@ static void *video_thread(void *data)
 	return NULL;
 }
 
+static GstFlowReturn new_sample (GstElement *appsink, GstElement *data) 
+{
+     GstSample *sample = NULL;
+	blog(LOG_DEBUG,"sample received");
+	 GstElement *piappsink = gst_bin_get_by_name (GST_BIN (data), "sink");
+     /* Retrieve the buffer */
+     g_signal_emit_by_name (piappsink, "pull-sample", &sample,NULL);
+     if (sample) 
+     {
+          g_print ("*");
+          gst_sample_unref (sample);
+     }
+}
+
 static void *my_create(obs_data_t *settings, obs_source_t *source)
 {
 	struct my_tex *rt = bzalloc(sizeof(struct my_tex));
@@ -100,11 +114,17 @@ static void *my_create(obs_data_t *settings, obs_source_t *source)
 	rt->initialized = true;
 
 	GstElement *pipeline;
+	GstElement *appsink;
 	GstBus *bus;
 	GstMessage *msg;
 	char argc, argv;
 	gst_init (&argc, &argv);
-	pipeline = gst_parse_launch ("videotestsrc ! appsink ", NULL);
+	pipeline = gst_parse_launch ("videotestsrc ! appsink name=sink ", NULL);
+
+	appsink = gst_bin_get_by_name (GST_BIN (pipeline), "sink");
+	g_object_set (appsink, "sync", TRUE, NULL); 
+    g_object_set (appsink, "emit-signals", TRUE, NULL);
+    g_signal_connect (appsink , "new-sample", G_CALLBACK (new_sample),pipeline);
 
   	/* Start playing */
 	gst_element_set_state (pipeline, GST_STATE_PLAYING);
