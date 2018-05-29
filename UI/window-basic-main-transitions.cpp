@@ -26,6 +26,8 @@
 #include "menu-button.hpp"
 #include "qt-wrappers.hpp"
 
+#include "obs-hotkey.h"
+
 using namespace std;
 
 Q_DECLARE_METATYPE(OBSScene);
@@ -96,6 +98,18 @@ void OBSBasic::AddQuickTransitionHotkey(QuickTransition *qt)
 	qt->hotkey = obs_hotkey_register_frontend(hotkeyId->array,
 			QT_TO_UTF8(hotkeyName), quickTransition,
 			(void*)(uintptr_t)qt->id);
+}
+
+void QuickTransition::SourceRenamed(void *param, calldata_t *data)
+{
+	QuickTransition *qt = reinterpret_cast<QuickTransition*>(param);
+
+	QString hotkeyName = QTStr("QuickTransitions.HotkeyName")
+		.arg(MakeQuickTransitionText(qt));
+
+	obs_hotkey_set_description(qt->hotkey, QT_TO_UTF8(hotkeyName));
+
+	UNUSED_PARAMETER(data);
 }
 
 void OBSBasic::TriggerQuickTransition(int id)

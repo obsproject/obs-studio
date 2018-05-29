@@ -84,10 +84,17 @@ struct QuickTransition {
 
 	inline QuickTransition() {}
 	inline QuickTransition(OBSSource source_, int duration_, int id_)
-		: source   (source_),
-		  duration (duration_),
-		  id       (id_)
+		: source        (source_),
+		  duration      (duration_),
+		  id            (id_),
+		  renamedSignal (std::make_shared<OBSSignal>(
+					obs_source_get_signal_handler(source),
+					"rename", SourceRenamed, this))
 	{}
+
+private:
+	static void SourceRenamed(void *param, calldata_t *data);
+	std::shared_ptr<OBSSignal> renamedSignal;
 };
 
 class OBSBasic : public OBSMainWindow {
