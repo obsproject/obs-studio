@@ -380,10 +380,12 @@ bool WASAPISource::ProcessCaptureData()
 {
 	HRESULT res;
 	LPBYTE  buffer;
+	LPBYTE  nBuffer;
 	UINT32  frames;
 	DWORD   flags;
 	UINT64  pos, ts;
 	UINT    captureSize = 0;
+	size_t  bufferSize = 0;
 
 	while (true) {
 		res = capture->GetNextPacketSize(&captureSize);
@@ -411,7 +413,6 @@ bool WASAPISource::ProcessCaptureData()
 		}
 
 		obs_source_audio data = {};
-		data.data[0]          = (const uint8_t*)buffer;
 		data.frames           = (uint32_t)frames;
 		data.speakers         = speakers;
 		data.samples_per_sec  = sampleRate;
@@ -422,9 +423,18 @@ bool WASAPISource::ProcessCaptureData()
 		if (!useDeviceTiming)
 			data.timestamp -= (uint64_t)frames * 1000000000ULL /
 				(uint64_t)sampleRate;
+	
+		bufferSize = (frames *
+			get_audio_channels(speakers) *
+			get_audio_bytes_per_channel(format));
+
+		nBuffer = (LPBYTE)bmemdup(buffer, bufferSize);
+
+		data.data[0] = (const uint8_t*)nBuffer;
 
 		obs_source_output_audio(source, &data);
 
+		bfree(nBuffer);
 		capture->ReleaseBuffer(frames);
 	}
 
@@ -574,8 +584,7 @@ void RegisterWASAPIInput()
 	obs_source_info info = {};
 	info.id              = "wasapi_input_capture";
 	info.type            = OBS_SOURCE_TYPE_INPUT;
-	info.output_flags    = OBS_SOURCE_AUDIO |
-	                       OBS_SOURCE_DO_NOT_DUPLICATE;
+	info.output_flags    = OBS_SOURCE_AUDIO;
 	info.get_name        = GetWASAPIInputName;
 	info.create          = CreateWASAPIInput;
 	info.destroy         = DestroyWASAPISource;
@@ -591,7 +600,6 @@ void RegisterWASAPIOutput()
 	info.id              = "wasapi_output_capture";
 	info.type            = OBS_SOURCE_TYPE_INPUT;
 	info.output_flags    = OBS_SOURCE_AUDIO |
-	                       OBS_SOURCE_DO_NOT_DUPLICATE |
 	                       OBS_SOURCE_DO_NOT_SELF_MONITOR;
 	info.get_name        = GetWASAPIOutputName;
 	info.create          = CreateWASAPIOutput;
