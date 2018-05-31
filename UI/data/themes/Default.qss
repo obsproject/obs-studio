@@ -161,3 +161,29 @@ OBSBasicSettings {
     qproperty-hotkeysIcon: url(:settings/images/settings/hotkeys.svg);
     qproperty-advancedIcon: url(:settings/images/settings/advanced.svg);
 }
+
+/* Media icons */
+
+* [themeID="playIcon"] {
+    qproperty-icon: url(:res/images/media_play.png);
+}
+
+* [themeID="pauseIcon"] {
+    qproperty-icon: url(:/res/images/media_pause.png);
+}
+
+* [themeID="restartIcon"] {
+    qproperty-icon: url(:/res/images/media_restart.png);
+}
+
+* [themeID="stopIcon"] {
+    qproperty-icon: url(:/res/images/media_stop.png);
+}
+
+* [themeID="nextIcon"] {
+    qproperty-icon: url(:/res/images/media_next.png);
+}
+
+* [themeID="previousIcon"] {
+    qproperty-icon: url(:/res/images/media_previous.png);
+}

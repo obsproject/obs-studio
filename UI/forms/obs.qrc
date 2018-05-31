@@ -25,6 +25,12 @@
     <file>images/unlocked_mask_2x.png</file>
     <file>images/collapse.png</file>
     <file>images/expand.png</file>
+    <file>images/media_play.png</file>
+    <file>images/media_pause.png</file>
+    <file>images/media_next.png</file>
+    <file>images/media_previous.png</file>
+    <file>images/media_restart.png</file>
+    <file>images/media_stop.png</file>
   </qresource>
   <qresource prefix="/settings">
     <file>images/settings/output.svg</file>

@@ -337,6 +337,7 @@ OBSBasic::OBSBasic(QWidget *parent)
 	assignDockToggle(ui->transitionsDock, ui->toggleTransitions);
 	assignDockToggle(ui->controlsDock, ui->toggleControls);
 	assignDockToggle(statsDock, ui->toggleStats);
+	assignDockToggle(ui->mediaControlsDock, ui->toggleMediaControls);
 
 	//hide all docking panes
 	ui->toggleScenes->setChecked(false);
@@ -345,6 +346,7 @@ OBSBasic::OBSBasic(QWidget *parent)
 	ui->toggleTransitions->setChecked(false);
 	ui->toggleControls->setChecked(false);
 	ui->toggleStats->setChecked(false);
+	ui->toggleMediaControls->setChecked(false);
 
 	QPoint curPos;
 
@@ -1772,6 +1774,13 @@ void OBSBasic::OBSInit()
 		on_stats_triggered();
 
 	OBSBasicStats::InitializeValues();
+
+	OBSSource source = obs_sceneitem_get_source(GetCurrentSceneItem());
+
+	OBSBasicMediaControls *mediaControls =
+			new OBSBasicMediaControls(ui->mediaControlsDock,
+			source);
+	ui->mediaControlsDock->setWidget(mediaControls);
 
 	/* ----------------------- */
 	/* Add multiview menu      */
@@ -6473,7 +6482,8 @@ void OBSBasic::on_resetUI_triggered()
 		ui->sourcesDock,
 		ui->mixerDock,
 		ui->transitionsDock,
-		ui->controlsDock
+		ui->controlsDock,
+		ui->mediaControlsDock
 	};
 
 	QList<int> sizes {
@@ -6491,6 +6501,7 @@ void OBSBasic::on_resetUI_triggered()
 	ui->controlsDock->setVisible(true);
 	statsDock->setVisible(false);
 	statsDock->setFloating(true);
+	ui->mediaControlsDock->setVisible(false);
 
 	resizeDocks(docks, {cy, cy, cy, cy, cy}, Qt::Vertical);
 	resizeDocks(docks, sizes, Qt::Horizontal);
@@ -6509,6 +6520,7 @@ void OBSBasic::on_lockUI_toggled(bool lock)
 	ui->transitionsDock->setFeatures(features);
 	ui->controlsDock->setFeatures(features);
 	statsDock->setFeatures(features);
+	ui->mediaControlsDock->setFeatures(features);
 
 	for (int i = extraDocks.size() - 1; i >= 0 ; i--) {
 		if (!extraDocks[i]) {

@@ -44,6 +44,17 @@ enum obs_balance_type {
 	OBS_BALANCE_TYPE_LINEAR,
 };
 
+enum obs_media_state {
+	OBS_MEDIA_STATE_NONE,
+	OBS_MEDIA_STATE_PLAYING,
+	OBS_MEDIA_STATE_OPENING,
+	OBS_MEDIA_STATE_BUFFERING,
+	OBS_MEDIA_STATE_PAUSED,
+	OBS_MEDIA_STATE_STOPPED,
+	OBS_MEDIA_STATE_ENDED,
+	OBS_MEDIA_STATE_ERROR
+};
+
 /**
  * @name Source output flags
  *
@@ -457,6 +468,16 @@ struct obs_source_info {
 	 * @return          The properties data
 	 */
 	obs_properties_t *(*get_properties2)(void *data, void *type_data);
+
+	void (*media_play_pause)(void *data);
+	void (*media_restart)(void *data);
+	void (*media_stop)(void *data);
+	void (*media_next)(void *data);
+	void (*media_previous)(void *data);
+	uint32_t (*media_get_duration)(void *data);
+	uint32_t (*media_get_time)(void *data);
+	void (*media_set_time)(void *data, uint32_t seconds);
+	enum obs_media_state (*media_get_state)(void *data);
 };
 
 EXPORT void obs_register_source_s(const struct obs_source_info *info,

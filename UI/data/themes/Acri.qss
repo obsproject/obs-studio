@@ -927,3 +927,29 @@ OBSBasicSettings {
     qproperty-hotkeysIcon: url(./Dark/settings/hotkeys.svg);
     qproperty-advancedIcon: url(./Dark/settings/advanced.svg);
 }
+
+/* Media icons */
+
+* [themeID="playIcon"] {
+    qproperty-icon: url(./Dark/media_play.png);
+}
+
+* [themeID="pauseIcon"] {
+    qproperty-icon: url(./Dark/media_pause.png);
+}
+
+* [themeID="restartIcon"] {
+    qproperty-icon: url(./Dark/media_restart.png);
+}
+
+* [themeID="stopIcon"] {
+    qproperty-icon: url(./Dark/media_stop.png);
+}
+
+* [themeID="nextIcon"] {
+    qproperty-icon: url(./Dark/media_next.png);
+}
+
+* [themeID="previousIcon"] {
+    qproperty-icon: url(./Dark/media_previous.png);
+}

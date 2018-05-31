@@ -1244,6 +1244,17 @@ EXPORT bool obs_source_async_unbuffered(const obs_source_t *source);
 EXPORT void obs_source_set_async_decoupled(obs_source_t *source, bool decouple);
 EXPORT bool obs_source_async_decoupled(const obs_source_t *source);
 
+/** Media controls */
+EXPORT void obs_source_media_play_pause(obs_source_t *source);
+EXPORT void obs_source_media_restart(obs_source_t *source);
+EXPORT void obs_source_media_stop(obs_source_t *source);
+EXPORT void obs_source_media_next(obs_source_t *source);
+EXPORT void obs_source_media_previous(obs_source_t *source);
+EXPORT uint32_t obs_source_media_get_duration(obs_source_t *source);
+EXPORT uint32_t obs_source_media_get_time(obs_source_t *source);
+EXPORT void obs_source_media_set_time(obs_source_t *source, uint32_t ms);
+EXPORT enum obs_media_state obs_source_media_get_state(obs_source_t *source);
+
 /* ------------------------------------------------------------------------- */
 /* Transition-specific functions */
 enum obs_transition_target {

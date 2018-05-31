@@ -30,6 +30,7 @@
 #include "window-basic-transform.hpp"
 #include "window-basic-adv-audio.hpp"
 #include "window-basic-filters.hpp"
+#include "window-basic-media-controls.hpp"
 #include "window-projector.hpp"
 #include "window-basic-about.hpp"
 #include "auth-base.hpp"
@@ -46,6 +47,7 @@ class QMessageBox;
 class QListWidgetItem;
 class VolControl;
 class OBSBasicStats;
+class OBSBasicMediaControls;
 
 #include "ui_OBSBasic.h"
 #include "ui_ColorSelect.h"
