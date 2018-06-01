@@ -464,6 +464,10 @@ static inline void render_item(struct obs_scene_item *item)
 	if (item->item_render) {
 		uint32_t width  = obs_source_get_width(item->source);
 		uint32_t height = obs_source_get_height(item->source);
+
+		if (!width || !height)
+			return;
+
 		uint32_t cx = calc_cx(item, width);
 		uint32_t cy = calc_cy(item, height);
 
