@@ -32,7 +32,9 @@ struct obs_scene_item {
 	volatile long         ref;
 	volatile bool         removed;
 
+	bool                  is_group;
 	bool                  update_transform;
+	bool                  update_group_resize;
 
 	int64_t               id;
 
@@ -40,6 +42,7 @@ struct obs_scene_item {
 	struct obs_source     *source;
 	volatile long         active_refs;
 	volatile long         defer_update;
+	volatile long         defer_group_resize;
 	bool                  user_visible;
 	bool                  visible;
 	bool                  selected;
@@ -82,6 +85,7 @@ struct obs_scene_item {
 
 struct obs_scene {
 	struct obs_source     *source;
+	struct obs_scene_item *group_sceneitem;
 
 	bool                  custom_size;
 	uint32_t              cx;
