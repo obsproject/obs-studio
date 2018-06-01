@@ -382,6 +382,8 @@ static void update_item_transform(struct obs_scene_item *item)
 	calldata_init_fixed(&params, stack, sizeof(stack));
 	calldata_set_ptr(&params, "item", item);
 	signal_parent(item->parent, "item_transform", &params);
+
+	os_atomic_set_bool(&item->update_transform, false);
 }
 
 static inline bool source_size_changed(struct obs_scene_item *item)
@@ -521,6 +523,33 @@ static void scene_video_tick(void *data, float seconds)
 	UNUSED_PARAMETER(seconds);
 }
 
+/* assumes video lock */
+static void update_transforms_and_prune_sources(obs_scene_t *scene,
+		struct darray *remove_items)
+{
+	struct obs_scene_item *item = scene->first_item;
+
+	while (item) {
+		if (obs_source_removed(item->source)) {
+			struct obs_scene_item *del_item = item;
+			item = item->next;
+
+			remove_without_release(del_item);
+			darray_push_back(sizeof(struct obs_scene_item*),
+					remove_items, &del_item);
+			continue;
+		}
+
+		if (os_atomic_load_bool(&item->update_transform) ||
+		    source_size_changed(item)) {
+
+			update_item_transform(item);
+		}
+
+		item = item->next;
+	}
+}
+
 static void scene_video_render(void *data, gs_effect_t *effect)
 {
 	DARRAY(struct obs_scene_item*) remove_items;
@@ -530,24 +559,12 @@ static void scene_video_render(void *data, gs_effect_t *effect)
 	da_init(remove_items);
 
 	video_lock(scene);
-	item = scene->first_item;
 
 	gs_blend_state_push();
 	gs_reset_blend_state();
 
+	item = scene->first_item;
 	while (item) {
-		if (obs_source_removed(item->source)) {
-			struct obs_scene_item *del_item = item;
-			item = item->next;
-
-			remove_without_release(del_item);
-			da_push_back(remove_items, &del_item);
-			continue;
-		}
-
-		if (source_size_changed(item))
-			update_item_transform(item);
-
 		if (item->user_visible)
 			render_item(item);
 
@@ -1551,7 +1568,7 @@ void obs_sceneitem_set_pos(obs_sceneitem_t *item, const struct vec2 *pos)
 {
 	if (item) {
 		vec2_copy(&item->pos, pos);
-		update_item_transform(item);
+		os_atomic_set_bool(&item->update_transform, true);
 	}
 }
 
@@ -1559,7 +1576,7 @@ void obs_sceneitem_set_rot(obs_sceneitem_t *item, float rot)
 {
 	if (item) {
 		item->rot = rot;
-		update_item_transform(item);
+		os_atomic_set_bool(&item->update_transform, true);
 	}
 }
 
@@ -1567,7 +1584,7 @@ void obs_sceneitem_set_scale(obs_sceneitem_t *item, const struct vec2 *scale)
 {
 	if (item) {
 		vec2_copy(&item->scale, scale);
-		update_item_transform(item);
+		os_atomic_set_bool(&item->update_transform, true);
 	}
 }
 
@@ -1575,7 +1592,7 @@ void obs_sceneitem_set_alignment(obs_sceneitem_t *item, uint32_t alignment)
 {
 	if (item) {
 		item->align = alignment;
-		update_item_transform(item);
+		os_atomic_set_bool(&item->update_transform, true);
 	}
 }
 
@@ -1671,7 +1688,7 @@ void obs_sceneitem_set_bounds_type(obs_sceneitem_t *item,
 {
 	if (item) {
 		item->bounds_type = type;
-		update_item_transform(item);
+		os_atomic_set_bool(&item->update_transform, true);
 	}
 }
 
@@ -1680,7 +1697,7 @@ void obs_sceneitem_set_bounds_alignment(obs_sceneitem_t *item,
 {
 	if (item) {
 		item->bounds_align = alignment;
-		update_item_transform(item);
+		os_atomic_set_bool(&item->update_transform, true);
 	}
 }
 
@@ -1688,7 +1705,7 @@ void obs_sceneitem_set_bounds(obs_sceneitem_t *item, const struct vec2 *bounds)
 {
 	if (item) {
 		item->bounds = *bounds;
-		update_item_transform(item);
+		os_atomic_set_bool(&item->update_transform, true);
 	}
 }
 
@@ -1755,7 +1772,7 @@ void obs_sceneitem_set_info(obs_sceneitem_t *item,
 		item->bounds_type  = info->bounds_type;
 		item->bounds_align = info->bounds_alignment;
 		item->bounds       = info->bounds;
-		update_item_transform(item);
+		os_atomic_set_bool(&item->update_transform, true);
 	}
 }
 
@@ -1966,7 +1983,7 @@ void obs_sceneitem_set_crop(obs_sceneitem_t *item,
 	if (item->crop.bottom < 0) item->crop.bottom = 0;
 	obs_leave_graphics();
 
-	update_item_transform(item);
+	os_atomic_set_bool(&item->update_transform, true);
 }
 
 void obs_sceneitem_get_crop(const obs_sceneitem_t *item,
@@ -2000,7 +2017,7 @@ void obs_sceneitem_set_scale_filter(obs_sceneitem_t *item,
 
 	obs_leave_graphics();
 
-	update_item_transform(item);
+	os_atomic_set_bool(&item->update_transform, true);
 }
 
 enum obs_scale_type obs_sceneitem_get_scale_filter(
@@ -2024,7 +2041,7 @@ void obs_sceneitem_defer_update_end(obs_sceneitem_t *item)
 		return;
 
 	if (os_atomic_dec_long(&item->defer_update) == 0)
-		update_item_transform(item);
+		os_atomic_set_bool(&item->update_transform, true);
 }
 
 int64_t obs_sceneitem_get_id(const obs_sceneitem_t *item)

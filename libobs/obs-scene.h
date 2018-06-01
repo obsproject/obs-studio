@@ -32,6 +32,8 @@ struct obs_scene_item {
 	volatile long         ref;
 	volatile bool         removed;
 
+	bool                  update_transform;
+
 	int64_t               id;
 
 	struct obs_scene      *parent;
