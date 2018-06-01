@@ -20,6 +20,9 @@
 #include "graphics/math-defs.h"
 #include "obs-scene.h"
 
+static void signal_parent(obs_scene_t *parent, const char *name,
+		calldata_t *params);
+
 /* NOTE: For proper mutex lock order (preventing mutual cross-locks), never
  * lock the graphics mutex inside either of the scene mutexes.
  *
@@ -48,11 +51,9 @@ static inline void signal_item_remove(struct obs_scene_item *item)
 	uint8_t stack[128];
 
 	calldata_init_fixed(&params, stack, sizeof(stack));
-	calldata_set_ptr(&params, "scene", item->parent);
 	calldata_set_ptr(&params, "item", item);
 
-	signal_handler_signal(item->parent->source->context.signals,
-			"item_remove", &params);
+	signal_parent(item->parent, "item_remove", &params);
 }
 
 static const char *scene_getname(void *unused)
@@ -379,10 +380,8 @@ static void update_item_transform(struct obs_scene_item *item)
 	/* ----------------------- */
 
 	calldata_init_fixed(&params, stack, sizeof(stack));
-	calldata_set_ptr(&params, "scene", item->parent);
 	calldata_set_ptr(&params, "item", item);
-	signal_handler_signal(item->parent->source->context.signals,
-			"item_transform", &params);
+	signal_parent(item->parent, "item_transform", &params);
 }
 
 static inline bool source_size_changed(struct obs_scene_item *item)
@@ -1519,6 +1518,13 @@ obs_source_t *obs_sceneitem_get_source(const obs_sceneitem_t *item)
 	return item ? item->source : NULL;
 }
 
+static void signal_parent(obs_scene_t *parent, const char *command,
+		calldata_t *params)
+{
+	calldata_set_ptr(params, "scene", parent);
+	signal_handler_signal(parent->source->context.signals, command, params);
+}
+
 void obs_sceneitem_select(obs_sceneitem_t *item, bool select)
 {
 	struct calldata params;
@@ -1531,10 +1537,9 @@ void obs_sceneitem_select(obs_sceneitem_t *item, bool select)
 	item->selected = select;
 
 	calldata_init_fixed(&params, stack, sizeof(stack));
-	calldata_set_ptr(&params, "scene", item->parent);
 	calldata_set_ptr(&params, "item",  item);
-	signal_handler_signal(item->parent->source->context.signals,
-			command, &params);
+
+	signal_parent(item->parent, command, &params);
 }
 
 bool obs_sceneitem_selected(const obs_sceneitem_t *item)
@@ -1583,10 +1588,7 @@ static inline void signal_reorder(struct obs_scene_item *item)
 	command = "reorder";
 
 	calldata_init_fixed(&params, stack, sizeof(stack));
-	calldata_set_ptr(&params, "scene", item->parent);
-
-	signal_handler_signal(item->parent->source->context.signals,
-			command, &params);
+	signal_parent(item->parent, command, &params);
 }
 
 void obs_sceneitem_set_order(obs_sceneitem_t *item,
@@ -1807,12 +1809,10 @@ bool obs_sceneitem_set_visible(obs_sceneitem_t *item, bool visible)
 	item->user_visible = visible;
 
 	calldata_init_fixed(&cd, stack, sizeof(stack));
-	calldata_set_ptr(&cd, "scene", item->parent);
 	calldata_set_ptr(&cd, "item", item);
 	calldata_set_bool(&cd, "visible", visible);
 
-	signal_handler_signal(item->parent->source->context.signals,
-			"item_visible", &cd);
+	signal_parent(item->parent, "item_visible", &cd);
 
 	if (source_has_audio(item->source)) {
 		pthread_mutex_lock(&item->actions_mutex);
