@@ -64,14 +64,11 @@ static const char *scene_getname(void *unused)
 static void *scene_create(obs_data_t *settings, struct obs_source *source)
 {
 	pthread_mutexattr_t attr;
-	struct obs_scene *scene = bmalloc(sizeof(struct obs_scene));
-	scene->source     = source;
-	scene->first_item = NULL;
+	struct obs_scene *scene = bzalloc(sizeof(struct obs_scene));
+	scene->source = source;
 
 	signal_handler_add_array(obs_source_get_signal_handler(source),
 			obs_scene_signals);
-
-	scene->id_counter = 0;
 
 	if (pthread_mutexattr_init(&attr) != 0)
 		goto fail;
