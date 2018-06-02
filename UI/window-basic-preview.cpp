@@ -1076,15 +1076,17 @@ void OBSBasicPreview::mouseMoveEvent(QMouseEvent *event)
 	}
 }
 
-static void DrawCircleAtPos(float x, float y, matrix4 &matrix,
-		float previewScale)
+static void DrawCircleAtPos(float x, float y)
 {
 	struct vec3 pos;
 	vec3_set(&pos, x, y, 0.0f);
+
+	struct matrix4 matrix;
+	gs_matrix_get(&matrix);
 	vec3_transform(&pos, &pos, &matrix);
-	vec3_mulf(&pos, &pos, previewScale);
 
 	gs_matrix_push();
+	gs_matrix_identity();
 	gs_matrix_translate(&pos);
 	gs_matrix_scale3f(HANDLE_RADIUS, HANDLE_RADIUS, 1.0f);
 	gs_draw(GS_LINESTRIP, 0, 0);
@@ -1142,18 +1144,17 @@ bool OBSBasicPreview::DrawSelectedItem(obs_scene_t *scene,
 
 	gs_load_vertexbuffer(main->circle);
 
-	DrawCircleAtPos(0.0f, 0.0f, boxTransform, main->previewScale);
-	DrawCircleAtPos(0.0f, 1.0f, boxTransform, main->previewScale);
-	DrawCircleAtPos(1.0f, 0.0f, boxTransform, main->previewScale);
-	DrawCircleAtPos(1.0f, 1.0f, boxTransform, main->previewScale);
-	DrawCircleAtPos(0.5f, 0.0f, boxTransform, main->previewScale);
-	DrawCircleAtPos(0.0f, 0.5f, boxTransform, main->previewScale);
-	DrawCircleAtPos(0.5f, 1.0f, boxTransform, main->previewScale);
-	DrawCircleAtPos(1.0f, 0.5f, boxTransform, main->previewScale);
-
 	gs_matrix_push();
-	gs_matrix_scale3f(main->previewScale, main->previewScale, 1.0f);
 	gs_matrix_mul(&boxTransform);
+
+	DrawCircleAtPos(0.0f, 0.0f);
+	DrawCircleAtPos(0.0f, 1.0f);
+	DrawCircleAtPos(1.0f, 0.0f);
+	DrawCircleAtPos(1.0f, 1.0f);
+	DrawCircleAtPos(0.5f, 0.0f);
+	DrawCircleAtPos(0.0f, 0.5f);
+	DrawCircleAtPos(0.5f, 1.0f);
+	DrawCircleAtPos(1.0f, 0.5f);
 
 	obs_sceneitem_crop crop;
 	obs_sceneitem_get_crop(item, &crop);
@@ -1208,8 +1209,12 @@ void OBSBasicPreview::DrawSceneEditing()
 
 	OBSScene scene = main->GetCurrentScene();
 
-	if (scene)
+	if (scene) {
+		gs_matrix_push();
+		gs_matrix_scale3f(main->previewScale, main->previewScale, 1.0f);
 		obs_scene_enum_items(scene, DrawSelectedItem, this);
+		gs_matrix_pop();
+	}
 
 	gs_load_vertexbuffer(nullptr);
 
