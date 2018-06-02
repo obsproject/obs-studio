@@ -129,6 +129,8 @@ static void AddExtraModulePaths()
 #endif
 }
 
+extern obs_frontend_callbacks *InitializeAPIInterface(OBSBasic *main);
+
 OBSBasic::OBSBasic(QWidget *parent)
 	: OBSMainWindow  (parent),
 	  ui             (new Ui::OBSBasic)
@@ -136,6 +138,8 @@ OBSBasic::OBSBasic(QWidget *parent)
 	setAttribute(Qt::WA_NativeWindow);
 
 	setAcceptDrops(true);
+
+	api = InitializeAPIInterface(this);
 
 	ui->setupUi(this);
 	ui->previewDisabledLabel->setVisible(false);
@@ -1335,8 +1339,6 @@ static void AddProjectorMenuMonitors(QMenu *parent, QObject *target,
 #define SHUTDOWN_SEPARATOR \
 	"==== Shutting down =================================================="
 
-extern obs_frontend_callbacks *InitializeAPIInterface(OBSBasic *main);
-
 #define UNSUPPORTED_ERROR \
 	"Failed to initialize video:\n\nRequired graphics API functionality " \
 	"not found.  Your GPU may not be supported."
@@ -1401,8 +1403,6 @@ void OBSBasic::OBSInit()
 
 	InitOBSCallbacks();
 	InitHotkeys();
-
-	api = InitializeAPIInterface(this);
 
 	AddExtraModulePaths();
 	blog(LOG_INFO, "---------------------------------");
