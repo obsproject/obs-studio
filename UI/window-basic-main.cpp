@@ -5604,44 +5604,40 @@ void OBSBasic::TogglePreview()
 	EnablePreviewDisplay(previewEnabled);
 }
 
+static bool nudge_callback(obs_scene_t*, obs_sceneitem_t *item, void *param)
+{
+	if (obs_sceneitem_locked(item))
+		return true;
+
+	struct vec2 &offset = *reinterpret_cast<struct vec2*>(param);
+	struct vec2 pos;
+
+	if (!obs_sceneitem_selected(item)) {
+		return true;
+	}
+
+	obs_sceneitem_get_pos(item, &pos);
+	vec2_add(&pos, &pos, &offset);
+	obs_sceneitem_set_pos(item, &pos);
+	return true;
+}
+
 void OBSBasic::Nudge(int dist, MoveDir dir)
 {
 	if (ui->preview->Locked())
 		return;
 
-	struct MoveInfo {
-		float dist;
-		MoveDir dir;
-	} info = {(float)dist, dir};
+	struct vec2 offset;
+	vec2_set(&offset, 0.0f, 0.0f);
 
-	auto func = [] (obs_scene_t*, obs_sceneitem_t *item, void *param)
-	{
-		if (obs_sceneitem_locked(item))
-			return true;
+	switch (dir) {
+	case MoveDir::Up:    offset.y = (float)-dist; break;
+	case MoveDir::Down:  offset.y = (float) dist; break;
+	case MoveDir::Left:  offset.x = (float)-dist; break;
+	case MoveDir::Right: offset.x = (float) dist; break;
+	}
 
-		MoveInfo *info = reinterpret_cast<MoveInfo*>(param);
-		struct vec2 dir;
-		struct vec2 pos;
-
-		vec2_set(&dir, 0.0f, 0.0f);
-
-		if (!obs_sceneitem_selected(item))
-			return true;
-
-		switch (info->dir) {
-		case MoveDir::Up:    dir.y = -info->dist; break;
-		case MoveDir::Down:  dir.y =  info->dist; break;
-		case MoveDir::Left:  dir.x = -info->dist; break;
-		case MoveDir::Right: dir.x =  info->dist; break;
-		}
-
-		obs_sceneitem_get_pos(item, &pos);
-		vec2_add(&pos, &pos, &dir);
-		obs_sceneitem_set_pos(item, &pos);
-		return true;
-	};
-
-	obs_scene_enum_items(GetCurrentScene(), func, &info);
+	obs_scene_enum_items(GetCurrentScene(), nudge_callback, &offset);
 }
 
 void OBSBasic::NudgeUp()       {Nudge(1,  MoveDir::Up);}
