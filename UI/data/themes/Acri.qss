@@ -94,7 +94,8 @@ QMenuBar::item:selected {
 }
 
 /* Listbox item */
-QListWidget::item {
+QListWidget::item,
+SourceTree::item {
 	padding: 4px 2px;
 	margin-bottom: 2px;
 	margin-top: 0px;
@@ -108,11 +109,6 @@ QListWidget QLineEdit {
 	 padding-left: 2px;
 	 border: none;
 	 border-radius: none;
-}
-
-SourceListWidget::item {
-	margin-bottom: 1px;
-	padding: -4px 2px;
 }
 
 /* Dock stuff */
@@ -157,6 +153,23 @@ SourceListWidget {
 	border-bottom: 2px solid #2f2f2f;
 }
 
+SourceTree {
+	border: none;
+	border-bottom: 1px solid #2f2f2f;
+}
+
+SourceTree QLabel {
+	padding: 2px 0px;
+	margin: -2px 4px -2px;
+}
+
+SourceTree QLineEdit {
+	background-color: #0c101e;
+	padding: 2px;
+	margin: -2px 6px -2px 3px;
+	font-size: 12px;
+}
+
 #scenesFrame,
 #sourcesFrame {
 	margin-left: -7px;
@@ -179,13 +192,15 @@ SourceListWidget {
 }
 
 /* Listbox item selected, unfocused */
-QListWidget::item:hover {
+QListWidget::item:hover,
+SourceTree::item:hover {
 	background-color: #212121;
 	border: 1px solid #333336;
 }
 
 /* Listbox item selected */
-QListWidget::item:selected {
+QListWidget::item:selected,
+SourceTree::item:selected {
 	background-color: #131a30;
 	border: 1px solid #252a45;
 }
@@ -727,6 +742,30 @@ OBSHotkeyLabel[hotkeyPairHover=true] {
 }
 
 
+/* Group Collapse Checkbox */
+
+SourceTreeSubItemCheckBox {
+    background: transparent;
+    outline: none;
+    padding: 0px;
+}
+
+SourceTreeSubItemCheckBox::indicator {
+    width: 12px;
+    height: 12px;
+}
+
+SourceTreeSubItemCheckBox::indicator:checked,
+SourceTreeSubItemCheckBox::indicator:checked:hover {
+    image: url(./Dark/expand.png);
+}
+
+SourceTreeSubItemCheckBox::indicator:unchecked,
+SourceTreeSubItemCheckBox::indicator:unchecked:hover {
+    image: url(./Dark/collapse.png);
+}
+
+
 /* Label warning/error */
 
 QLabel#warningLabel {
@@ -751,10 +790,6 @@ OBSBasicProperties,
 #OBSBasicSettings,
 #OBSBasicFilters {
 	background: #101010;
-}
-
-#OBSBasicSourceSelect #sourceList {
-	border-bottom: 2px solid #333336;
 }
 
 FocusList::item {

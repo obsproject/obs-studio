@@ -551,6 +551,27 @@ OBSHotkeyLabel[hotkeyPairHover=true] {
 }
 
 
+/* Group Collapse Checkbox */
+
+SourceTreeSubItemCheckBox {
+    background: transparent;
+    outline: none;
+}
+
+SourceTreeSubItemCheckBox::indicator {
+    width: 10px;
+    height: 10px;
+}
+
+SourceTreeSubItemCheckBox::indicator:checked {
+    image: url(./Dark/expand.png);
+}
+
+SourceTreeSubItemCheckBox::indicator:unchecked {
+    image: url(./Dark/collapse.png);
+}
+
+
 /* Label warning/error */
 
 QLabel#warningLabel {

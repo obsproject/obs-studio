@@ -17,6 +17,8 @@
     <file>images/tray_active.png</file>
     <file>images/locked_mask.png</file>
     <file>images/unlocked_mask.png</file>
+    <file>images/collapse.png</file>
+    <file>images/expand.png</file>
   </qresource>
   <qresource prefix="/settings">
     <file>images/settings/advanced.png</file>

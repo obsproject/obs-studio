@@ -39,6 +39,8 @@ struct SceneFindData {
 	OBSSceneItem item;
 	bool         selectBelow;
 
+	obs_sceneitem_t *group = nullptr;
+
 	SceneFindData(const SceneFindData &) = delete;
 	SceneFindData(SceneFindData &&) = delete;
 	SceneFindData& operator=(const SceneFindData &) = delete;
@@ -214,10 +216,25 @@ static bool CheckItemSelected(obs_scene_t *scene, obs_sceneitem_t *item,
 
 	if (!SceneItemHasVideo(item))
 		return true;
+	if (obs_sceneitem_is_group(item)) {
+		data->group = item;
+		obs_sceneitem_group_enum_items(item, CheckItemSelected, param);
+		data->group = nullptr;
+
+		if (data->item) {
+			return false;
+		}
+	}
 
 	vec3_set(&pos3, data->pos.x, data->pos.y, 0.0f);
 
 	obs_sceneitem_get_box_transform(item, &transform);
+
+	if (data->group) {
+		matrix4 parent_transform;
+		obs_sceneitem_get_draw_transform(data->group, &parent_transform);
+		matrix4_mul(&transform, &transform, &parent_transform);
+	}
 
 	matrix4_inv(&transform, &transform);
 	vec3_transform(&transformedPos, &pos3, &transform);
@@ -268,10 +285,35 @@ struct HandleFindData {
 static bool FindHandleAtPos(obs_scene_t *scene, obs_sceneitem_t *item,
 		void *param)
 {
-	if (!obs_sceneitem_selected(item))
-		return true;
-
 	HandleFindData *data = reinterpret_cast<HandleFindData*>(param);
+
+	if (!obs_sceneitem_selected(item)) {
+		if (obs_sceneitem_is_group(item)) {
+			matrix4 transform;
+			vec3 new_pos3;
+			vec3_set(&new_pos3, data->pos.x, data->pos.y, 0.0f);
+			vec3_divf(&new_pos3, &new_pos3, data->scale);
+
+			obs_sceneitem_get_draw_transform(item, &transform);
+			matrix4_inv(&transform, &transform);
+			vec3_transform(&new_pos3, &new_pos3, &transform);
+
+			vec2 new_pos;
+			vec2_set(&new_pos, new_pos3.x, new_pos3.y);
+			HandleFindData findData(new_pos, 1.0f);
+			findData.item = data->item;
+			findData.handle = data->handle;
+
+			obs_sceneitem_group_enum_items(item, FindHandleAtPos,
+					&findData);
+
+			data->item = findData.item;
+			data->handle = findData.handle;
+		}
+
+		return true;
+	}
+
 	matrix4        transform;
 	vec3           pos3;
 	float          closestHandle = HANDLE_SEL_RADIUS;
@@ -377,6 +419,15 @@ void OBSBasicPreview::GetStretchHandleData(const vec2 &pos)
 				startCrop.left - startCrop.right);
 		cropSize.y = float(obs_source_get_height(source) -
 				startCrop.top - startCrop.bottom);
+
+		stretchGroup = obs_sceneitem_get_group(stretchItem);
+		if (stretchGroup) {
+			obs_sceneitem_get_draw_transform(stretchGroup,
+					&invGroupTransform);
+			matrix4_inv(&invGroupTransform,
+					&invGroupTransform);
+			obs_sceneitem_defer_group_resize_begin(stretchGroup);
+		}
 	}
 }
 
@@ -482,6 +533,9 @@ static bool select_one(obs_scene_t *scene, obs_sceneitem_t *item, void *param)
 {
 	obs_sceneitem_t *selectedItem =
 		reinterpret_cast<obs_sceneitem_t*>(param);
+	if (obs_sceneitem_is_group(item))
+		obs_sceneitem_group_enum_items(item, select_one, param);
+
 	obs_sceneitem_select(item, (selectedItem == item));
 
 	UNUSED_PARAMETER(scene);
@@ -534,10 +588,15 @@ void OBSBasicPreview::mouseReleaseEvent(QMouseEvent *event)
 		if (!mouseMoved)
 			ProcessClick(pos);
 
-		stretchItem = nullptr;
-		mouseDown   = false;
-		mouseMoved  = false;
-		cropping    = false;
+		if (stretchGroup) {
+			obs_sceneitem_defer_group_resize_end(stretchGroup);
+		}
+
+		stretchItem  = nullptr;
+		stretchGroup = nullptr;
+		mouseDown    = false;
+		mouseMoved   = false;
+		cropping     = false;
 	}
 }
 
@@ -692,9 +751,22 @@ static bool move_items(obs_scene_t *scene, obs_sceneitem_t *item, void *param)
 	if (obs_sceneitem_locked(item))
 		return true;
 
+	bool selected = obs_sceneitem_selected(item);
 	vec2 *offset = reinterpret_cast<vec2*>(param);
 
-	if (obs_sceneitem_selected(item)) {
+	if (obs_sceneitem_is_group(item) && !selected) {
+		matrix4 transform;
+		vec3 new_offset;
+		vec3_set(&new_offset, offset->x, offset->y, 0.0f);
+
+		obs_sceneitem_get_draw_transform(item, &transform);
+		vec4_set(&transform.t, 0.0f, 0.0f, 0.0f, 1.0f);
+		matrix4_inv(&transform, &transform);
+		vec3_transform(&new_offset, &new_offset, &transform);
+		obs_sceneitem_group_enum_items(item, move_items, &new_offset);
+	}
+
+	if (selected) {
 		vec2 pos;
 		obs_sceneitem_get_pos(item, &pos);
 		vec2_add(&pos, &pos, offset);
@@ -1063,6 +1135,17 @@ void OBSBasicPreview::mouseMoveEvent(QMouseEvent *event)
 		pos.y = std::round(pos.y);
 
 		if (stretchHandle != ItemHandle::None) {
+			obs_sceneitem_t *group = obs_sceneitem_get_group(
+					stretchItem);
+			if (group) {
+				vec3 group_pos;
+				vec3_set(&group_pos, pos.x, pos.y, 0.0f);
+				vec3_transform(&group_pos, &group_pos,
+						&invGroupTransform);
+				pos.x = group_pos.x;
+				pos.y = group_pos.y;
+			}
+
 			if (cropping)
 				CropItem(pos);
 			else
@@ -1109,6 +1192,16 @@ bool OBSBasicPreview::DrawSelectedItem(obs_scene_t *scene,
 
 	if (!SceneItemHasVideo(item))
 		return true;
+
+	if (obs_sceneitem_is_group(item)) {
+		matrix4 mat;
+		obs_sceneitem_get_draw_transform(item, &mat);
+
+		gs_matrix_push();
+		gs_matrix_mul(&mat);
+		obs_sceneitem_group_enum_items(item, DrawSelectedItem, param);
+		gs_matrix_pop();
+	}
 
 	if (!obs_sceneitem_selected(item))
 		return true;
