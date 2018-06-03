@@ -232,7 +232,7 @@ OBSBasic::OBSBasic(QWidget *parent)
 	addNudge(Qt::Key_Left, SLOT(NudgeLeft()));
 	addNudge(Qt::Key_Right, SLOT(NudgeRight()));
 
-	auto assignDockToggle = [this](QDockWidget *dock, QAction *action)
+	auto assignDockToggle = [] (QDockWidget *dock, QAction *action)
 	{
 		auto handleWindowToggle = [action] (bool vis)
 		{
@@ -3686,7 +3686,7 @@ void OBSBasic::on_scenes_customContextMenuRequested(const QPoint &pos)
 		multiviewAction->setCheckable(true);
 		multiviewAction->setChecked(show);
 
-		auto showInMultiview = [this] (OBSData data)
+		auto showInMultiview = [] (OBSData data)
 		{
 			bool show = obs_data_get_bool(data,
 					"show_in_multiview");
