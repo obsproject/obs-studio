@@ -121,10 +121,10 @@ static obs_properties_t *scroll_filter_properties(void *data)
 
 	obs_properties_add_float_slider(props, "speed_x",
 			obs_module_text("ScrollFilter.SpeedX"),
-			-500.0f, 500.0f, 1.0f);
+			-500.0, 500.0, 1.0);
 	obs_properties_add_float_slider(props, "speed_y",
 			obs_module_text("ScrollFilter.SpeedY"),
-			-500.0f, 500.0f, 1.0f);
+			-500.0, 500.0, 1.0);
 
 	p = obs_properties_add_bool(props, "limit_cx",
 			obs_module_text("ScrollFilter.LimitWidth"));
