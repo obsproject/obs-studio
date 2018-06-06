@@ -130,6 +130,16 @@ static obs_properties_t *ft2_source_properties(void *unused)
 	obs_properties_add_text(props, "text",
 		obs_module_text("Text"), OBS_TEXT_MULTILINE);
 
+	obs_property_t *alignmentProp = obs_properties_add_list(props,
+	                "alignment", obs_module_text("Alignment"),
+	                OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
+	obs_property_list_add_int(alignmentProp, "Left",
+	                TEXT_ALIGNMENT_LEFT);
+	obs_property_list_add_int(alignmentProp, "Center",
+	                TEXT_ALIGNMENT_CENTER);
+	obs_property_list_add_int(alignmentProp, "Right",
+	                TEXT_ALIGNMENT_RIGHT);
+
 	obs_properties_add_bool(props, "from_file",
 		obs_module_text("ReadFromFile"));
 
@@ -296,6 +306,7 @@ static void ft2_source_update(void *data, obs_data_t *settings)
 
 	srcdata->drop_shadow = obs_data_get_bool(settings, "drop_shadow");
 	srcdata->outline_text = obs_data_get_bool(settings, "outline");
+	srcdata->alignment = obs_data_get_int(settings, "alignment");
 	word_wrap = obs_data_get_bool(settings, "word_wrap");
 
 	color[0] = (uint32_t)obs_data_get_int(settings, "color1");
@@ -480,6 +491,8 @@ static void *ft2_source_create(obs_data_t *settings, obs_source_t *source)
 
 	obs_data_set_default_int(settings, "color1", 0xFFFFFFFF);
 	obs_data_set_default_int(settings, "color2", 0xFFFFFFFF);
+
+	obs_data_set_default_int(settings, "alignment", TEXT_ALIGNMENT_LEFT);
 
 	ft2_source_update(srcdata, settings);
 

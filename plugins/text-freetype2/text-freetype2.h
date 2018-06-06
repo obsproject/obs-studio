@@ -21,10 +21,18 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define num_cache_slots 65535
 #define src_glyph srcdata->cacheglyphs[glyph_index]
 
+#define max_aligned_lines 256
+
 struct glyph_info {
 	float u, v, u2, v2;
 	int32_t w, h, xoff, yoff;
 	int32_t xadv;
+};
+
+enum text_alignment {
+	TEXT_ALIGNMENT_LEFT,
+	TEXT_ALIGNMENT_CENTER,
+	TEXT_ALIGNMENT_RIGHT,
 };
 
 struct ft2_source {
@@ -41,6 +49,11 @@ struct ft2_source {
 	bool update_file;
 	uint64_t last_checked;
 
+	// in pixels
+	uint32_t lines_width[max_aligned_lines];
+	uint32_t max_line_width;
+
+	enum text_alignment alignment;
 	uint32_t cx, cy, max_h, custom_width;
 	uint32_t texbuf_x, texbuf_y;
 	uint32_t color[2];
