@@ -111,7 +111,7 @@ void OBSBasic::AddDropSource(const char *data, DropType image)
 		name = obs_source_get_display_name(type);
 	source = obs_source_create(type,
 				   GenerateSourceName(QT_TO_UTF8(name)).c_str(),
-				   settings, nullptr);
+				   settings, nullptr, false);
 	if (source) {
 		OBSScene scene = main->GetCurrentScene();
 		obs_scene_add(scene, source);

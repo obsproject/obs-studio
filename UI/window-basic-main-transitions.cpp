@@ -117,7 +117,7 @@ void OBSBasic::TriggerQuickTransition(int id)
 	QuickTransition *qt = GetQuickTransition(id);
 
 	if (qt && previewProgramMode) {
-		OBSScene scene = GetCurrentScene();
+		OBSScene scene = GetCurrentScene(false);
 		obs_source_t *source = obs_scene_get_source(scene);
 
 		ui->transitionDuration->setValue(qt->duration);
@@ -668,7 +668,7 @@ void OBSBasic::SetCurrentScene(OBSSource scene, bool force, bool direct)
 		}
 	}
 
-	if (obs_scene_get_source(GetCurrentScene()) != scene) {
+	if (obs_scene_get_source(GetCurrentScene(false)) != scene) {
 		for (int i = 0; i < ui->scenes->count(); i++) {
 			QListWidgetItem *item = ui->scenes->item(i);
 			OBSScene itemScene = GetOBSRef<OBSScene>(item);
@@ -728,7 +728,7 @@ void OBSBasic::CreateProgramDisplay()
 void OBSBasic::TransitionClicked()
 {
 	if (previewProgramMode)
-		TransitionToScene(GetCurrentScene());
+		TransitionToScene(GetCurrentScene(false));
 }
 
 void OBSBasic::CreateProgramOptions()
@@ -1205,7 +1205,7 @@ void OBSBasic::SetPreviewProgramMode(bool enabled)
 		CreateProgramDisplay();
 		CreateProgramOptions();
 
-		OBSScene curScene = GetCurrentScene();
+		OBSScene curScene = GetCurrentScene(false);
 
 		obs_scene_t *dup;
 		if (sceneDuplicationMode) {

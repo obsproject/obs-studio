@@ -184,7 +184,7 @@ bool AddNew(QWidget *parent, const char *id, const char *name,
 					   QTStr("NameExists.Text"));
 
 	} else {
-		source = obs_source_create(id, name, NULL, nullptr);
+		source = obs_source_create(id, name, NULL, nullptr, false);
 
 		if (source) {
 			AddSourceData data;
@@ -234,6 +234,11 @@ void OBSBasicSourceSelect::on_buttonBox_accepted()
 
 void OBSBasicSourceSelect::on_buttonBox_rejected()
 {
+	OBSBasic *main = reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
+
+	if (main->IsDownstreamKeyerActive())
+		main->RemoveDownstreamKeyer();
+
 	done(DialogCode::Rejected);
 }
 

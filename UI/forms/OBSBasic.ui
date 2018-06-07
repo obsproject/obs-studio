@@ -302,6 +302,7 @@
      <addaction name="resetUI"/>
      <addaction name="lockUI"/>
      <addaction name="separator"/>
+     <addaction name="toggleDSK"/>
      <addaction name="toggleScenes"/>
      <addaction name="toggleSources"/>
      <addaction name="toggleMixer"/>
@@ -341,7 +342,140 @@
    <addaction name="menuBasic_MainMenu_Help"/>
   </widget>
   <widget class="OBSBasicStatusBar" name="statusbar"/>
-  <widget class="OBSDock" name="scenesDock">
+  <widget class="QDockWidget" name="dskDock">
+   <property name="features">
+    <set>QDockWidget::AllDockWidgetFeatures</set>
+   </property>
+   <property name="windowTitle">
+    <string>DownstreamKeyer</string>
+   </property>
+   <attribute name="dockWidgetArea">
+    <number>8</number>
+   </attribute>
+   <widget class="QWidget" name="dockWidgetContents_6">
+    <layout class="QVBoxLayout" name="verticalLayout_5">
+     <property name="leftMargin">
+      <number>4</number>
+     </property>
+     <property name="topMargin">
+      <number>4</number>
+     </property>
+     <property name="rightMargin">
+      <number>4</number>
+     </property>
+     <property name="bottomMargin">
+      <number>4</number>
+     </property>
+     <item>
+      <widget class="QFrame" name="dskFrame">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="minimumSize">
+        <size>
+         <width>160</width>
+         <height>0</height>
+        </size>
+       </property>
+       <property name="frameShape">
+        <enum>QFrame::StyledPanel</enum>
+       </property>
+       <property name="frameShadow">
+        <enum>QFrame::Sunken</enum>
+       </property>
+       <layout class="QVBoxLayout" name="verticalLayout_17">
+        <property name="spacing">
+         <number>0</number>
+        </property>
+        <property name="leftMargin">
+         <number>0</number>
+        </property>
+        <property name="topMargin">
+         <number>0</number>
+        </property>
+        <property name="rightMargin">
+         <number>0</number>
+        </property>
+        <property name="bottomMargin">
+         <number>0</number>
+        </property>
+        <item>
+         <widget class="SourceTree" name="dskWidget">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="contextMenuPolicy">
+           <enum>Qt::CustomContextMenu</enum>
+          </property>
+          <property name="frameShape">
+           <enum>QFrame::NoFrame</enum>
+          </property>
+          <property name="showDropIndicator" stdset="0">
+           <bool>true</bool>
+          </property>
+          <property name="dragEnabled">
+           <bool>true</bool>
+          </property>
+          <property name="dragDropMode">
+           <enum>QAbstractItemView::InternalMove</enum>
+          </property>
+          <property name="defaultDropAction">
+           <enum>Qt::TargetMoveAction</enum>
+          </property>
+          <property name="selectionMode">
+           <enum>QAbstractItemView::ExtendedSelection</enum>
+          </property>
+          <addaction name="actionRemoveSource"/>
+         </widget>
+        </item>
+        <item>
+         <widget class="QToolBar" name="dskToolbar">
+          <property name="iconSize">
+           <size>
+            <width>16</width>
+            <height>16</height>
+           </size>
+          </property>
+          <property name="floatable">
+           <bool>false</bool>
+          </property>
+          <addaction name="actionDSKAddSource"/>
+          <addaction name="actionDSKRemoveSource"/>
+          <addaction name="actionDSKSourceProperties"/>
+          <addaction name="separator"/>
+          <addaction name="actionDSKSourceUp"/>
+          <addaction name="actionDSKSourceDown"/>
+         </widget>
+        </item>
+        <item>
+         <spacer name="dskFixedSizeHSpacer">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeType">
+           <enum>QSizePolicy::Fixed</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>150</width>
+            <height>0</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+       </layout>
+      </widget>
+     </item>
+    </layout>
+   </widget>
+  </widget>
+  <widget class="QDockWidget" name="scenesDock">
    <property name="features">
     <set>QDockWidget::AllDockWidgetFeatures</set>
    </property>
@@ -1125,6 +1259,18 @@
     <string notr="true">addIconSmall</string>
    </property>
   </action>
+   <action name="actionDSKAddSource">
+   <property name="icon">
+    <iconset resource="obs.qrc">
+     <normaloff>:/res/images/add.png</normaloff>:/res/images/add.png</iconset>
+   </property>
+   <property name="text">
+    <string>Add</string>
+   </property>
+   <property name="themeID" stdset="0">
+    <string notr="true">addIconSmall</string>
+   </property>
+  </action>
   <action name="actionAddSource">
    <property name="icon">
     <iconset resource="obs.qrc">
@@ -1155,7 +1301,7 @@
     <string notr="true">removeIconSmall</string>
    </property>
   </action>
-  <action name="actionRemoveSource">
+  <action name="actionDSKRemoveSource">
    <property name="icon">
     <iconset resource="obs.qrc">
      <normaloff>:/res/images/list_remove.png</normaloff>:/res/images/list_remove.png</iconset>
@@ -1188,7 +1334,70 @@
     <string notr="true">propertiesIconSmall</string>
    </property>
   </action>
+  <action name="actionRemoveSource">
+   <property name="icon">
+    <iconset resource="obs.qrc">
+     <normaloff>:/res/images/list_remove.png</normaloff>:/res/images/list_remove.png</iconset>
+   </property>
+   <property name="text">
+    <string>Remove</string>
+   </property>
+   <property name="shortcut">
+    <string>Del</string>
+   </property>
+   <property name="shortcutContext">
+    <enum>Qt::WidgetWithChildrenShortcut</enum>
+   </property>
+   <property name="themeID" stdset="0">
+    <string notr="true">removeIconSmall</string>
+   </property>
+  </action>
+  <action name="actionDSKSourceProperties">
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="obs.qrc">
+     <normaloff>:/res/images/properties.png</normaloff>:/res/images/properties.png</iconset>
+   </property>
+   <property name="text">
+    <string>Properties</string>
+   </property>
+   <property name="themeID" stdset="0">
+    <string notr="true">propertiesIconSmall</string>
+   </property>
+  </action>
+  <action name="actionDSKSourceProperties">
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="obs.qrc">
+     <normaloff>:/res/images/properties.png</normaloff>:/res/images/properties.png</iconset>
+   </property>
+   <property name="text">
+    <string>Properties</string>
+   </property>
+   <property name="themeID" stdset="0">
+    <string notr="true">propertiesIconSmall</string>
+   </property>
+  </action>
   <action name="actionSceneUp">
+   <property name="icon">
+    <iconset resource="obs.qrc">
+     <normaloff>:/res/images/up.png</normaloff>:/res/images/up.png</iconset>
+   </property>
+   <property name="text">
+    <string>MoveUp</string>
+   </property>
+   <property name="themeID" stdset="0">
+    <string notr="true">upArrowIconSmall</string>
+   </property>
+  </action>
+  <action name="actionDSKSourceUp">
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
    <property name="icon">
     <iconset resource="obs.qrc">
      <normaloff>:/res/images/up.png</normaloff>:/res/images/up.png</iconset>
@@ -1216,6 +1425,21 @@
    </property>
   </action>
   <action name="actionSceneDown">
+   <property name="icon">
+    <iconset resource="obs.qrc">
+     <normaloff>:/res/images/down.png</normaloff>:/res/images/down.png</iconset>
+   </property>
+   <property name="text">
+    <string>MoveDown</string>
+   </property>
+   <property name="themeID" stdset="0">
+    <string notr="true">downArrowIconSmall</string>
+   </property>
+  </action>
+  <action name="actionDSKSourceDown">
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
    <property name="icon">
     <iconset resource="obs.qrc">
      <normaloff>:/res/images/down.png</normaloff>:/res/images/down.png</iconset>
@@ -1604,6 +1828,17 @@
    </property>
    <property name="text">
     <string>Basic.MainMenu.View.Docks.LockUI</string>
+   </property>
+  </action>
+  <action name="toggleDSK">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>DownstreamKeyer</string>
    </property>
   </action>
   <action name="toggleScenes">

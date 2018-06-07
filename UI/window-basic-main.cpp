@@ -192,6 +192,26 @@ extern void RegisterTwitchAuth();
 extern void RegisterMixerAuth();
 extern void RegisterRestreamAuth();
 
+static int CountDSKItems()
+{
+	OBSBasic *main = reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
+	int count = 0;
+
+	auto countItems = [](obs_scene_t *scene, obs_sceneitem_t *item,
+			     void *param) {
+		if (!item)
+			return true;
+
+		(*reinterpret_cast<int *>(param))++;
+
+		UNUSED_PARAMETER(scene);
+		return true;
+	};
+
+	obs_scene_enum_items(main->GetDSKScene(), countItems, &count);
+	return count;
+}
+
 OBSBasic::OBSBasic(QWidget *parent)
 	: OBSMainWindow(parent), ui(new Ui::OBSBasic)
 {
@@ -250,6 +270,7 @@ OBSBasic::OBSBasic(QWidget *parent)
 
 	ui->scenes->setAttribute(Qt::WA_MacShowFocusRect, false);
 	ui->sources->setAttribute(Qt::WA_MacShowFocusRect, false);
+	ui->dskWidget->setAttribute(Qt::WA_MacShowFocusRect, false);
 
 	ui->scenes->setItemDelegate(new SceneRenameDelegate(ui->scenes));
 
@@ -325,6 +346,7 @@ OBSBasic::OBSBasic(QWidget *parent)
 	addNudge(Qt::Key_Left, SLOT(NudgeLeft()));
 	addNudge(Qt::Key_Right, SLOT(NudgeRight()));
 
+	assignDockToggle(ui->dskDock, ui->toggleDSK);
 	assignDockToggle(ui->scenesDock, ui->toggleScenes);
 	assignDockToggle(ui->sourcesDock, ui->toggleSources);
 	assignDockToggle(ui->mixerDock, ui->toggleMixer);
@@ -496,6 +518,14 @@ void OBSBasic::copyActionsDynamicProperties()
 			temp->setProperty(y, x->property(y));
 		}
 	}
+
+	for (QAction *x : ui->dskToolbar->actions()) {
+		QWidget *temp = ui->dskToolbar->widgetForAction(x);
+
+		for (QByteArray &y : x->dynamicPropertyNames()) {
+			temp->setProperty(y, x->property(y));
+		}
+	}
 }
 
 void OBSBasic::UpdateVolumeControlsDecayRate()
@@ -595,7 +625,7 @@ obs_data_array_t *OBSBasic::SaveProjectors()
 
 void OBSBasic::Save(const char *file)
 {
-	OBSScene scene = GetCurrentScene();
+	OBSScene scene = GetCurrentScene(false);
 	OBSSource curProgramScene = OBSGetStrongRef(programScene);
 	if (!curProgramScene)
 		curProgramScene = obs_scene_get_source(scene);
@@ -704,7 +734,7 @@ void OBSBasic::CreateDefaultScene(bool firstStart)
 	ui->transitionDuration->setValue(300);
 	SetTransition(fadeTransition);
 
-	obs_scene_t *scene = obs_scene_create(Str("Basic.Scene"));
+	obs_scene_t *scene = obs_scene_create(Str("Basic.Scene"), false);
 
 	if (firstStart)
 		CreateFirstRunSources();
@@ -848,6 +878,7 @@ void OBSBasic::Load(const char *file)
 		return;
 	}
 
+	usingDSK = false;
 	ClearSceneData();
 	InitDefaultTransitions();
 
@@ -1789,6 +1820,27 @@ void OBSBasic::OBSInit()
 	QMetaObject::invokeMethod(this, "DeferredSysTrayLoad",
 				  Qt::QueuedConnection, Q_ARG(int, 10));
 #endif
+
+	connect(ui->dskWidget, SIGNAL(clicked(const QModelIndex)), this,
+		SLOT(DownstreamKeyerClicked(QModelIndex)));
+	connect(ui->sources, SIGNAL(clicked(const QModelIndex)), this,
+		SLOT(SourceTreeClicked(QModelIndex)));
+}
+
+void OBSBasic::DownstreamKeyerClicked(QModelIndex index)
+{
+	usingDSK = true;
+	ui->sources->clearSelection();
+
+	UNUSED_PARAMETER(index);
+}
+
+void OBSBasic::SourceTreeClicked(QModelIndex index)
+{
+	usingDSK = false;
+	ui->dskWidget->clearSelection();
+
+	UNUSED_PARAMETER(index);
 }
 
 void OBSBasic::OnFirstLoad()
@@ -2353,8 +2405,31 @@ OBSSource OBSBasic::GetProgramSource()
 
 OBSScene OBSBasic::GetCurrentScene()
 {
-	QListWidgetItem *item = ui->scenes->currentItem();
-	return item ? GetOBSRef<OBSScene>(item) : nullptr;
+	if (!usingDSK) {
+		QListWidgetItem *item = ui->scenes->currentItem();
+		return item ? GetOBSRef<OBSScene>(item) : nullptr;
+	} else {
+		return GetDSKScene();
+	}
+}
+
+OBSScene OBSBasic::GetCurrentScene(bool dsk)
+{
+	if (!dsk) {
+		QListWidgetItem *item = ui->scenes->currentItem();
+		return item ? GetOBSRef<OBSScene>(item) : nullptr;
+	} else {
+		return GetDSKScene();
+	}
+}
+
+OBSScene OBSBasic::GetDSKScene()
+{
+	OBSSource source = obs_get_output_source(7);
+	OBSScene scene = obs_scene_from_source(source);
+	obs_source_release(source);
+
+	return scene;
 }
 
 OBSSceneItem OBSBasic::GetSceneItem(QListWidgetItem *item)
@@ -2364,7 +2439,10 @@ OBSSceneItem OBSBasic::GetSceneItem(QListWidgetItem *item)
 
 OBSSceneItem OBSBasic::GetCurrentSceneItem()
 {
-	return ui->sources->Get(GetTopSelectedSourceItem());
+	if (!usingDSK)
+		return ui->sources->Get(GetTopSelectedSourceItem());
+	else
+		return ui->dskWidget->Get(GetTopSelectedDSKSourceItem());
 }
 
 void OBSBasic::UpdatePreviewScalingMenu()
@@ -2418,32 +2496,70 @@ void OBSBasic::CreateFiltersWindow(obs_source_t *source)
 	filters->setAttribute(Qt::WA_DeleteOnClose, true);
 }
 
+static bool ShowSource(void *data, obs_hotkey_pair_id id, obs_hotkey_t *key,
+		       bool pressed)
+{
+	UNUSED_PARAMETER(id);
+	UNUSED_PARAMETER(key);
+	obs_source_t *source = static_cast<obs_source_t *>(data);
+	if (!pressed || obs_source_enabled(source) || !source)
+		return false;
+	obs_source_set_enabled(source, true);
+	return true;
+}
+
+static bool HideSource(void *data, obs_hotkey_pair_id id, obs_hotkey_t *key,
+		       bool pressed)
+{
+	UNUSED_PARAMETER(id);
+	UNUSED_PARAMETER(key);
+	obs_source_t *source = static_cast<obs_source_t *>(data);
+	if (!pressed || !obs_source_enabled(source) || !source)
+		return false;
+	obs_source_set_enabled(source, false);
+	return true;
+}
+
 /* Qt callbacks for invokeMethod */
 
 void OBSBasic::AddScene(OBSSource source)
 {
 	const char *name = obs_source_get_name(source);
 	obs_scene_t *scene = obs_scene_from_source(source);
+	bool dsk = obs_source_is_dsk(source);
+
+	if (dsk)
+		obs_set_output_source(7, source);
 
 	QListWidgetItem *item = new QListWidgetItem(QT_UTF8(name));
 	SetOBSRef(item, OBSScene(scene));
 	ui->scenes->addItem(item);
 
-	obs_hotkey_register_source(
-		source, "OBSBasic.SelectScene",
-		Str("Basic.Hotkeys.SelectScene"),
-		[](void *data, obs_hotkey_id, obs_hotkey_t *, bool pressed) {
-			OBSBasic *main = reinterpret_cast<OBSBasic *>(
-				App()->GetMainWindow());
+	if (!dsk) {
+		obs_hotkey_register_source(
+			source, "OBSBasic.SelectScene",
+			Str("Basic.Hotkeys.SelectScene"),
+			[](void *data, obs_hotkey_id, obs_hotkey_t *,
+			   bool pressed) {
+				OBSBasic *main = reinterpret_cast<OBSBasic *>(
+					App()->GetMainWindow());
 
-			auto potential_source =
-				static_cast<obs_source_t *>(data);
-			auto source = obs_source_get_ref(potential_source);
-			if (source && pressed)
-				main->SetCurrentScene(source);
-			obs_source_release(source);
-		},
-		static_cast<obs_source_t *>(source));
+				auto potential_source =
+					static_cast<obs_source_t *>(data);
+
+				auto source =
+					obs_source_get_ref(potential_source);
+				if (source && pressed)
+					main->SetCurrentScene(source);
+				obs_source_release(source);
+			},
+			static_cast<obs_source_t *>(source));
+	} else {
+		obs_hotkey_pair_register_source(source, "OBSBasic.Show",
+						Str("Show"), "OBSBasic.Hide",
+						Str("Hide"), ShowSource,
+						HideSource, source, source);
+	}
 
 	signal_handler_t *handler = obs_source_get_signal_handler(source);
 
@@ -2480,6 +2596,8 @@ void OBSBasic::AddScene(OBSSource source)
 			return true;
 		},
 		&addSceneItem);
+
+	item->setHidden(dsk);
 
 	SaveProject();
 
@@ -2548,8 +2666,10 @@ void OBSBasic::AddSceneItem(OBSSceneItem item)
 {
 	obs_scene_t *scene = obs_sceneitem_get_scene(item);
 
-	if (GetCurrentScene() == scene)
+	if (GetCurrentScene(false) == scene)
 		ui->sources->Add(item);
+	else if (GetCurrentScene(true) == scene)
+		ui->dskWidget->Add(item);
 
 	SaveProject();
 
@@ -2617,18 +2737,26 @@ void OBSBasic::RenameSources(OBSSource source, QString newName,
 	SaveProject();
 
 	obs_scene_t *scene = obs_scene_from_source(source);
-	if (scene)
-		OBSProjector::UpdateMultiviewProjectors();
+	if (!scene)
+		return;
+
+	OBSProjector::UpdateMultiviewProjectors();
 }
 
 void OBSBasic::SelectSceneItem(OBSScene scene, OBSSceneItem item, bool select)
 {
-	SignalBlocker sourcesSignalBlocker(ui->sources);
+	if (!usingDSK)
+		SignalBlocker sourcesSignalBlocker(ui->sources);
+	else
+		SignalBlocker sourcesSignalBlocker(ui->dskWidget);
 
 	if (scene != GetCurrentScene() || ignoreSelectionUpdate)
 		return;
 
-	ui->sources->SelectItem(item, select);
+	if (!usingDSK)
+		ui->sources->SelectItem(item, select);
+	else
+		ui->dskWidget->SelectItem(item, select);
 }
 
 static inline bool SourceMixerHidden(obs_source_t *source)
@@ -3146,10 +3274,13 @@ void OBSBasic::RemoveSelectedSceneItem()
 
 void OBSBasic::ReorderSources(OBSScene scene)
 {
-	if (scene != GetCurrentScene() || ui->sources->IgnoreReorder())
-		return;
+	if (scene == GetCurrentScene() && !ui->sources->IgnoreReorder()) {
+		if (!usingDSK)
+			ui->sources->ReorderItems();
+		else
+			ui->dskWidget->ReorderItems();
+	}
 
-	ui->sources->ReorderItems();
 	SaveProject();
 }
 
@@ -3325,10 +3456,14 @@ void OBSBasic::RenderMain(void *data, uint32_t cx, uint32_t cy)
 	window->DrawBackdrop(float(ovi.base_width), float(ovi.base_height));
 
 	if (window->IsPreviewProgramMode()) {
-		OBSScene scene = window->GetCurrentScene();
+		OBSScene scene = window->GetCurrentScene(false);
+		OBSScene dskScene = window->GetCurrentScene(true);
 		obs_source_t *source = obs_scene_get_source(scene);
+		obs_source_t *dskSource = obs_scene_get_source(dskScene);
 		if (source)
 			obs_source_video_render(source);
+		if (dskSource)
+			obs_source_video_render(dskSource);
 	} else {
 		obs_render_main_texture();
 	}
@@ -3598,7 +3733,7 @@ void OBSBasic::ResetAudioDevice(const char *sourceId, const char *deviceId,
 		settings = obs_data_create();
 		obs_data_set_string(settings, "device_id", deviceId);
 		source = obs_source_create(sourceId, deviceDesc, settings,
-					   nullptr);
+					   nullptr, false);
 		obs_data_release(settings);
 
 		obs_set_output_source(channel, source);
@@ -3696,6 +3831,7 @@ void OBSBasic::ClearSceneData()
 	ClearVolumeControls();
 	ClearListItems(ui->scenes);
 	ui->sources->Clear();
+	ui->dskWidget->Clear();
 	ClearQuickTransitions();
 	ui->transitions->clear();
 
@@ -3705,6 +3841,8 @@ void OBSBasic::ClearSceneData()
 	obs_set_output_source(3, nullptr);
 	obs_set_output_source(4, nullptr);
 	obs_set_output_source(5, nullptr);
+	obs_set_output_source(6, nullptr);
+	obs_set_output_source(7, nullptr);
 	lastScene = nullptr;
 	swapScene = nullptr;
 	programScene = nullptr;
@@ -4067,7 +4205,7 @@ void OBSBasic::on_actionAddScene_triggered()
 			return;
 		}
 
-		obs_scene_t *scene = obs_scene_create(name.c_str());
+		obs_scene_t *scene = obs_scene_create(name.c_str(), false);
 		source = obs_scene_get_source(scene);
 		SetCurrentScene(source);
 		obs_scene_release(scene);
@@ -4290,7 +4428,7 @@ ColorSelect::ColorSelect(QWidget *parent)
 	ui->setupUi(this);
 }
 
-void OBSBasic::CreateSourcePopupMenu(int idx, bool preview)
+void OBSBasic::CreateSourcePopupMenu(int idx, bool preview, bool dsk)
 {
 	QMenu popup(this);
 	delete previewProjectorSource;
@@ -4336,15 +4474,32 @@ void OBSBasic::CreateSourcePopupMenu(int idx, bool preview)
 	ui->actionCopyFilters->setEnabled(false);
 	ui->actionCopySource->setEnabled(false);
 
-	if (ui->sources->MultipleBaseSelected()) {
-		popup.addSeparator();
-		popup.addAction(QTStr("Basic.Main.GroupItems"), ui->sources,
-				SLOT(GroupSelectedItems()));
+	if (!dsk) {
+		if (ui->sources->MultipleBaseSelected()) {
+			popup.addSeparator();
+			popup.addAction(QTStr("Basic.Main.GroupItems"),
+					ui->sources,
+					SLOT(GroupSelectedItems()));
 
-	} else if (ui->sources->GroupsSelected()) {
-		popup.addSeparator();
-		popup.addAction(QTStr("Basic.Main.Ungroup"), ui->sources,
-				SLOT(UngroupSelectedGroups()));
+		} else if (ui->sources->GroupsSelected()) {
+			popup.addSeparator();
+			popup.addAction(QTStr("Basic.Main.Ungroup"),
+					ui->sources,
+					SLOT(UngroupSelectedGroups()));
+		}
+	} else {
+		if (ui->dskWidget->MultipleBaseSelected()) {
+			popup.addSeparator();
+			popup.addAction(QTStr("Basic.Main.GroupItems"),
+					ui->dskWidget,
+					SLOT(GroupSelectedItems()));
+
+		} else if (ui->dskWidget->GroupsSelected()) {
+			popup.addSeparator();
+			popup.addAction(QTStr("Basic.Main.Ungroup"),
+					ui->dskWidget,
+					SLOT(UngroupSelectedGroups()));
+		}
 	}
 
 	popup.addSeparator();
@@ -4362,7 +4517,13 @@ void OBSBasic::CreateSourcePopupMenu(int idx, bool preview)
 		if (addSourceMenu)
 			popup.addSeparator();
 
-		OBSSceneItem sceneItem = ui->sources->Get(idx);
+		OBSSceneItem sceneItem;
+
+		if (!dsk)
+			sceneItem = ui->sources->Get(idx);
+		else
+			sceneItem = ui->dskWidget->Get(idx);
+
 		obs_source_t *source = obs_sceneitem_get_source(sceneItem);
 		uint32_t flags = obs_source_get_output_flags(source);
 		bool isAsyncVideo = (flags & OBS_SOURCE_ASYNC_VIDEO) ==
@@ -4454,6 +4615,14 @@ void OBSBasic::on_sources_customContextMenuRequested(const QPoint &pos)
 	if (ui->scenes->count()) {
 		QModelIndex idx = ui->sources->indexAt(pos);
 		CreateSourcePopupMenu(idx.row(), false);
+	}
+}
+
+void OBSBasic::on_dskWidget_customContextMenuRequested(const QPoint &pos)
+{
+	if (ui->scenes->count()) {
+		QModelIndex idx = ui->dskWidget->indexAt(pos);
+		CreateSourcePopupMenu(idx.row(), false, true);
 	}
 }
 
@@ -4585,11 +4754,6 @@ void OBSBasic::AddSourcePopupMenu(const QPoint &pos)
 		popup->exec(pos);
 }
 
-void OBSBasic::on_actionAddSource_triggered()
-{
-	AddSourcePopupMenu(QCursor::pos());
-}
-
 static bool remove_items(obs_scene_t *, obs_sceneitem_t *item, void *param)
 {
 	vector<OBSSceneItem> &items =
@@ -4603,11 +4767,66 @@ static bool remove_items(obs_scene_t *, obs_sceneitem_t *item, void *param)
 	return true;
 };
 
+bool OBSBasic::IsDownstreamKeyerActive()
+{
+	return usingDSK;
+}
+
+void OBSBasic::RemoveDownstreamKeyer()
+{
+	if (CountDSKItems() == 0)
+		RemoveScene(obs_scene_get_source(GetDSKScene()));
+}
+
+void OBSBasic::on_actionDSKAddSource_triggered()
+{
+	usingDSK = true;
+
+	if (CountDSKItems() == 0) {
+		OBSScene scene = obs_scene_create(Str("DownstreamKeyer"), true);
+		obs_scene_release(scene);
+	}
+
+	AddSourcePopupMenu(QCursor::pos());
+}
+
+void OBSBasic::on_actionDSKRemoveSource_triggered()
+{
+	usingDSK = true;
+	on_actionRemoveSource_triggered();
+}
+
+void OBSBasic::on_actionDSKSourceProperties_triggered()
+{
+	usingDSK = true;
+	on_actionSourceProperties_triggered();
+}
+
+void OBSBasic::on_actionDSKSourceUp_triggered()
+{
+	usingDSK = true;
+	on_actionSourceUp_triggered();
+}
+
+void OBSBasic::on_actionDSKSourceDown_triggered()
+{
+	usingDSK = true;
+	on_actionSourceDown_triggered();
+}
+
+void OBSBasic::on_actionAddSource_triggered()
+{
+	usingDSK = false;
+	AddSourcePopupMenu(QCursor::pos());
+}
+
 void OBSBasic::on_actionRemoveSource_triggered()
 {
 	vector<OBSSceneItem> items;
 
-	obs_scene_enum_items(GetCurrentScene(), remove_items, &items);
+	OBSScene scene = GetCurrentScene();
+
+	obs_scene_enum_items(scene, remove_items, &items);
 
 	if (!items.size())
 		return;
@@ -4640,6 +4859,13 @@ void OBSBasic::on_actionRemoveSource_triggered()
 				obs_sceneitem_remove(item);
 		}
 	}
+
+	if (CountDSKItems() == 0 && usingDSK) {
+		RemoveScene(obs_scene_get_source(GetDSKScene()));
+		obs_set_output_source(7, nullptr);
+	}
+
+	usingDSK = false;
 }
 
 void OBSBasic::on_actionInteract_triggered()
@@ -4658,18 +4884,22 @@ void OBSBasic::on_actionSourceProperties_triggered()
 
 	if (source)
 		CreatePropertiesWindow(source);
+
+	usingDSK = false;
 }
 
 void OBSBasic::on_actionSourceUp_triggered()
 {
 	OBSSceneItem item = GetCurrentSceneItem();
 	obs_sceneitem_set_order(item, OBS_ORDER_MOVE_UP);
+	usingDSK = false;
 }
 
 void OBSBasic::on_actionSourceDown_triggered()
 {
 	OBSSceneItem item = GetCurrentSceneItem();
 	obs_sceneitem_set_order(item, OBS_ORDER_MOVE_DOWN);
+	usingDSK = false;
 }
 
 void OBSBasic::on_actionMoveUp_triggered()
@@ -5680,9 +5910,23 @@ int OBSBasic::GetTopSelectedSourceItem()
 	return selectedItems.count() ? selectedItems[0].row() : -1;
 }
 
+int OBSBasic::GetTopSelectedDSKSourceItem()
+{
+	QModelIndexList selectedItems =
+		ui->dskWidget->selectionModel()->selectedIndexes();
+	return selectedItems.count() ? selectedItems[0].row() : -1;
+}
+
 void OBSBasic::on_preview_customContextMenuRequested(const QPoint &pos)
 {
-	CreateSourcePopupMenu(GetTopSelectedSourceItem(), true);
+	int idx;
+
+	if (!usingDSK)
+		idx = GetTopSelectedSourceItem();
+	else
+		idx = GetTopSelectedDSKSourceItem();
+
+	CreateSourcePopupMenu(idx, true);
 
 	UNUSED_PARAMETER(pos);
 }
@@ -6543,12 +6787,13 @@ void OBSBasic::on_resetUI_triggered()
 
 	int mixerSize = cx - (cx22_5 * 2 + cx5 * 2);
 
-	QList<QDockWidget *> docks{ui->scenesDock, ui->sourcesDock,
-				   ui->mixerDock, ui->transitionsDock,
-				   ui->controlsDock};
+	QList<QDockWidget *> docks{ui->dskDock,         ui->scenesDock,
+				   ui->sourcesDock,     ui->mixerDock,
+				   ui->transitionsDock, ui->controlsDock};
 
 	QList<int> sizes{cx22_5, cx22_5, mixerSize, cx5, cx5};
 
+	ui->dskDock->setVisible(false);
 	ui->scenesDock->setVisible(true);
 	ui->sourcesDock->setVisible(true);
 	ui->mixerDock->setVisible(true);
@@ -6576,6 +6821,7 @@ void OBSBasic::on_lockUI_toggled(bool lock)
 	ui->mixerDock->setFeatures(mainFeatures);
 	ui->transitionsDock->setFeatures(mainFeatures);
 	ui->controlsDock->setFeatures(mainFeatures);
+	ui->dskDock->setFeatures(features);
 	statsDock->setFeatures(features);
 
 	for (int i = extraDocks.size() - 1; i >= 0; i--) {

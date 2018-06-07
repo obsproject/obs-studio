@@ -535,7 +535,14 @@ static bool enumItem(obs_scene_t *, obs_sceneitem_t *item, void *ptr)
 
 void SourceTreeModel::SceneChanged()
 {
-	OBSScene scene = GetCurrentScene();
+	OBSBasic *main = reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
+
+	OBSScene scene;
+
+	if (this->parent() == main->ui->dskWidget)
+		scene = main->GetDSKScene();
+	else
+		scene = main->GetCurrentScene(false);
 
 	beginResetModel();
 	items.clear();

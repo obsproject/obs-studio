@@ -322,6 +322,7 @@ private:
 	void SaveProjectNow();
 
 	int GetTopSelectedSourceItem();
+	int GetTopSelectedDSKSourceItem();
 
 	obs_hotkey_pair_id streamingHotkeys, recordingHotkeys, replayBufHotkeys,
 		togglePreviewHotkeys;
@@ -418,6 +419,10 @@ private:
 
 	bool NoSourcesConfirmation();
 
+	bool usingDSK = false;
+	bool IsDownstreamKeyerActive();
+	void RemoveDownstreamKeyer();
+
 public slots:
 	void DeferSaveBegin();
 	void DeferSaveEnd();
@@ -466,9 +471,6 @@ public slots:
 	void UpdatePatronJson(const QString &text, const QString &error);
 
 private slots:
-	void AddSceneItem(OBSSceneItem item);
-	void AddScene(OBSSource source);
-	void RemoveScene(OBSSource source);
 	void RenameSources(OBSSource source, QString newName, QString prevName);
 
 	void SelectSceneItem(OBSScene scene, OBSSceneItem item, bool select);
@@ -534,6 +536,9 @@ private slots:
 	void SceneCopyFilters();
 	void ScenePasteFilters();
 
+	void DownstreamKeyerClicked(QModelIndex index);
+	void SourceTreeClicked(QModelIndex index);
+
 private:
 	/* OBS Callbacks */
 	static void SceneReordered(void *data, calldata_t *params);
@@ -550,7 +555,6 @@ private:
 	void ResizePreview(uint32_t cx, uint32_t cy);
 
 	void AddSource(const char *id);
-	QMenu *CreateAddSourcePopupMenu();
 	void AddSourcePopupMenu(const QPoint &pos);
 	void copyActionsDynamicProperties();
 
@@ -561,12 +565,14 @@ private:
 public:
 	OBSSource GetProgramSource();
 	OBSScene GetCurrentScene();
+	OBSScene GetCurrentScene(bool dsk);
+	OBSScene GetDSKScene();
 
 	void SysTrayNotify(const QString &text, QSystemTrayIcon::MessageIcon n);
 
 	inline OBSSource GetCurrentSceneSource()
 	{
-		OBSScene curScene = GetCurrentScene();
+		OBSScene curScene = GetCurrentScene(false);
 		return OBSSource(obs_scene_get_source(curScene));
 	}
 
@@ -630,7 +636,8 @@ public:
 	QMenu *AddBackgroundColorMenu(QMenu *menu, QWidgetAction *widgetAction,
 				      ColorSelect *select,
 				      obs_sceneitem_t *item);
-	void CreateSourcePopupMenu(int idx, bool preview);
+
+	void CreateSourcePopupMenu(int idx, bool preview, bool dsk = false);
 
 	void UpdateTitleBar();
 	void UpdateSceneSelection(OBSSource source);
@@ -647,6 +654,8 @@ public:
 	QAction *AddDockWidget(QDockWidget *dock);
 
 	static OBSBasic *Get();
+
+	QMenu *CreateAddSourcePopupMenu();
 
 protected:
 	virtual void closeEvent(QCloseEvent *event) override;
@@ -692,6 +701,7 @@ private slots:
 	void on_actionSceneUp_triggered();
 	void on_actionSceneDown_triggered();
 	void on_sources_customContextMenuRequested(const QPoint &pos);
+	void on_dskWidget_customContextMenuRequested(const QPoint &pos);
 	void on_scenes_itemDoubleClicked(QListWidgetItem *item);
 	void on_actionAddSource_triggered();
 	void on_actionRemoveSource_triggered();
@@ -699,6 +709,11 @@ private slots:
 	void on_actionSourceProperties_triggered();
 	void on_actionSourceUp_triggered();
 	void on_actionSourceDown_triggered();
+	void on_actionDSKAddSource_triggered();
+	void on_actionDSKRemoveSource_triggered();
+	void on_actionDSKSourceProperties_triggered();
+	void on_actionDSKSourceUp_triggered();
+	void on_actionDSKSourceDown_triggered();
 
 	void on_actionMoveUp_triggered();
 	void on_actionMoveDown_triggered();
@@ -806,6 +821,9 @@ private slots:
 
 public slots:
 	void on_actionResetTransform_triggered();
+	void AddScene(OBSSource source);
+	void RemoveScene(OBSSource source);
+	void AddSceneItem(OBSSceneItem item);
 
 	bool StreamingActive();
 	bool RecordingActive();
@@ -824,7 +842,6 @@ public:
 
 	static void InitBrowserPanelSafeBlock();
 
-private:
 	std::unique_ptr<Ui::OBSBasic> ui;
 };
 

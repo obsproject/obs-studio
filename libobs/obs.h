@@ -823,7 +823,7 @@ EXPORT const char *obs_source_get_display_name(const char *id);
  */
 EXPORT obs_source_t *obs_source_create(const char *id, const char *name,
 				       obs_data_t *settings,
-				       obs_data_t *hotkey_data);
+				       obs_data_t *hotkey_data, bool dsk);
 
 EXPORT obs_source_t *obs_source_create_private(const char *id, const char *name,
 					       obs_data_t *settings);
@@ -1406,7 +1406,7 @@ EXPORT void obs_transition_swap_end(obs_source_t *tr_dest,
  *   A scene is a source which is a container of other sources with specific
  * display orientations.  Scenes can also be used like any other source.
  */
-EXPORT obs_scene_t *obs_scene_create(const char *name);
+EXPORT obs_scene_t *obs_scene_create(const char *name, bool dsk);
 
 EXPORT obs_scene_t *obs_scene_create_private(const char *name);
 
@@ -2149,6 +2149,8 @@ static inline void obs_source_frame_destroy(struct obs_source_frame *frame)
 
 EXPORT void obs_source_frame_copy(struct obs_source_frame *dst,
 				  const struct obs_source_frame *src);
+
+EXPORT bool obs_source_is_dsk(obs_source_t *source);
 
 #ifdef __cplusplus
 }
