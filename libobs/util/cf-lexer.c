@@ -76,11 +76,12 @@ char *cf_literal_to_str(const char *literal, size_t count)
 	if (literal[0] != '\"' && literal[0] != '\'')
 		return NULL;
 
-	str = bmalloc(count - 1);
-	temp_src = literal;
+	/* strip leading and trailing quote characters */
+	str = bzalloc(--count);
+	temp_src = literal + 1;
 	temp_dst = str;
 
-	while (*temp_src) {
+	while (*temp_src && --count > 0) {
 		if (*temp_src == '\\') {
 			temp_src++;
 			cf_convert_from_escape_literal(&temp_dst, &temp_src);
