@@ -586,6 +586,13 @@ General Output Functions
 
 ---------------------
 
+.. function:: uint32_t obs_output_get_flags(const obs_output_t *output)
+              uint32_t obs_get_output_flags(const char *id)
+
+   :return: The output capability flags
+
+---------------------
+
 Functions used by outputs
 -------------------------
 

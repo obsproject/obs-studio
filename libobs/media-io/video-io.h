@@ -124,6 +124,28 @@ static inline const char *get_video_format_name(enum video_format format)
 	return "None";
 }
 
+static inline const char *get_video_colorspace_name(enum video_colorspace cs)
+{
+	switch (cs) {
+	case VIDEO_CS_709: return "709";
+	case VIDEO_CS_601:
+	case VIDEO_CS_DEFAULT:;
+	}
+
+	return "601";
+}
+
+static inline const char *get_video_range_name(enum video_range_type range)
+{
+	switch (range) {
+	case VIDEO_RANGE_FULL: return "Full";
+	case VIDEO_RANGE_PARTIAL:
+	case VIDEO_RANGE_DEFAULT:;
+	}
+
+	return "Partial";
+}
+
 enum video_scale_type {
 	VIDEO_SCALE_DEFAULT,
 	VIDEO_SCALE_POINT,

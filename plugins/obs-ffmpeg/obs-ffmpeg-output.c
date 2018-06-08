@@ -290,6 +290,11 @@ static bool open_audio_codec(struct ffmpeg_data *data)
 		return false;
 	}
 
+	data->aframe->format = context->sample_fmt;
+	data->aframe->channels = context->channels;
+	data->aframe->channel_layout = context->channel_layout;
+	data->aframe->sample_rate = context->sample_rate;
+
 	context->strict_std_compliance = -2;
 
 	ret = avcodec_open2(context, data->acodec, NULL);

@@ -12,6 +12,7 @@
 #include <QFont>
 #include <QDialogButtonBox>
 #include <QResizeEvent>
+#include <QAction>
 
 #include <obs.hpp>
 #include <obs-module.h>

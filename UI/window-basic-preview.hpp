@@ -35,11 +35,13 @@ private:
 	obs_sceneitem_crop startCrop;
 	vec2         startItemPos;
 	vec2         cropSize;
+	OBSSceneItem stretchGroup;
 	OBSSceneItem stretchItem;
 	ItemHandle   stretchHandle = ItemHandle::None;
 	vec2         stretchItemSize;
 	matrix4      screenToItem;
 	matrix4      itemToScreen;
+	matrix4      invGroupTransform;
 
 	vec2         startPos;
 	vec2         lastMoveOffset;

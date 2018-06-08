@@ -930,7 +930,7 @@ static void *status_thread(void *data)
 					p->nack_reqs -stream->last_nack_count;
 			stream->last_nack_count = p->nack_reqs;
 
-			int log_level = p->nack_reqs > 2 ? LOG_INFO : LOG_DEBUG;
+			int log_level = p->nack_reqs > 0 ? LOG_INFO : LOG_DEBUG;
 
 			blog(log_level, "Avg packet send per second %3.1f, "
 					"total nack requests %d",
@@ -941,7 +941,7 @@ static void *status_thread(void *data)
 			ftl_packet_stats_instant_msg_t *p =
 				&status.msg.ipkt_stats;
 
-			int log_level = p->avg_rtt > 200 ? LOG_INFO : LOG_DEBUG;
+			int log_level = p->avg_rtt > 20 ? LOG_INFO : LOG_DEBUG;
 
 			blog(log_level, "avg transmit delay %dms "
 					"(min: %d, max: %d), "
@@ -954,7 +954,7 @@ static void *status_thread(void *data)
 			ftl_video_frame_stats_msg_t *v =
 				&status.msg.video_stats;
 
-			int log_level = v->queue_fullness > 5 ?
+			int log_level = v->queue_fullness > 0 ?
 				LOG_INFO : LOG_DEBUG;
 
 			blog(log_level, "Queue an average of %3.2f fps "

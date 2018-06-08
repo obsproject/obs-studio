@@ -101,6 +101,23 @@ Scene Item Crop Structure (obs_sceneitem_crop)
    Bottom crop value.
 
 
+Scene Item Order Info Structure (*obs_sceneitem_order_info)
+----------------------------------------------
+
+.. type:: struct obs_sceneitem_order_info
+
+   Scene item order info structure.
+
+.. member:: obs_sceneitem_t *obs_sceneitem_order_info.group
+
+   Specifies the group this scene item belongs to, or *NULL* if none.
+
+.. member:: obs_sceneitem_t *obs_sceneitem_order_info.item
+
+   Specifies the scene item.
+
+
+
 .. _scene_signal_reference:
 
 Scene Signals
@@ -220,6 +237,12 @@ General Scene Functions
 .. function:: bool obs_scene_reorder_items(obs_scene_t *scene, obs_sceneitem_t * const *item_order, size_t item_order_size)
 
    Reorders items within a scene.
+
+---------------------
+
+.. function:: bool obs_scene_reorder_items2(obs_scene_t *scene, struct obs_sceneitem_order_info *item_order, size_t item_order_size)
+
+   Reorders items within a scene with groups and group sub-items.
 
 ---------------------
 
@@ -412,3 +435,119 @@ Scene Item Functions
    :return: An incremented reference to the private settings of the
             scene item.  Allows the front-end to set custom information
             which is saved with the scene item
+
+---------------------
+
+
+.. _scene_item_group_reference:
+
+Scene Item Group Functions
+--------------------------
+
+.. function:: obs_sceneitem_t *obs_scene_add_group(obs_scene_t *scene, const char *name)
+
+   Adds a group with the specified name.
+
+   :param scene: Scene to add the group to
+   :param name:  Name of the group
+   :return:      The new group's scene item
+
+---------------------
+
+.. function:: obs_sceneitem_t *obs_scene_insert_group(obs_scene_t *scene, const char *name, obs_sceneitem_t **items, size_t count)
+
+   Creates a group out of the specified scene items.  The group will be
+   inserted at the top scene item.
+
+   :param scene: Scene to add the group to
+   :param name:  Name of the group
+   :param items: Array of scene items to put in a group
+   :param count: Number of scene items in the array
+   :return:      The new group's scene item
+
+---------------------
+
+.. function:: obs_sceneitem_t *obs_scene_get_group(obs_scene_t *scene, const char *name)
+
+   Finds a group within a scene by its name.
+
+   :param scene: Scene to find the group within
+   :param name:  The name of the group to find
+   :return:      The group scene item, or *NULL* if not found
+
+---------------------
+
+.. function:: bool obs_sceneitem_is_group(obs_sceneitem_t *item)
+
+   :param item: Scene item
+   :return:     *true* if scene item is a group, *false* otherwise
+
+---------------------
+
+.. function:: obs_scene_t *obs_sceneitem_group_get_scene(const obs_sceneitem_t *group)
+
+   :param group: Group scene item
+   :return:      Scene of the group, or *NULL* if not a group
+
+---------------------
+
+.. function:: void obs_sceneitem_group_ungroup(obs_sceneitem_t *group)
+
+   Ungroups the specified group.  Scene items within the group will be
+   placed where the group was.
+
+---------------------
+
+.. function:: void obs_sceneitem_group_add_item(obs_sceneitem_t *group, obs_sceneitem_t *item)
+
+   Adds a scene item to a group.
+
+---------------------
+
+.. function:: void obs_sceneitem_group_remove_item(obs_sceneitem_t *item)
+
+   Rmoves a scene item from a group.  The item will be placed before the
+   group in the main scene.
+
+---------------------
+
+.. function:: obs_sceneitem_t *obs_sceneitem_get_group(obs_sceneitem_t *item)
+
+   Returns the parent group of a scene item.
+
+   :param item: Scene item to get the group of
+   :return:     The parent group of the scene item, or *NULL* if not in
+                a group
+
+---------------------
+
+.. function:: obs_sceneitem_t *obs_sceneitem_group_from_scene(obs_scene_t *scene)
+
+   :return: The group associated with the scene, or *NULL* if the
+            specified scene is not a group.
+
+---------------------
+
+.. function:: obs_sceneitem_t *obs_sceneitem_group_from_source(obs_source_t *source)
+
+   :return: The group associated with the scene's source, or *NULL* if
+            the specified source is not a group.
+
+---------------------
+
+.. function:: void obs_sceneitem_group_enum_items(obs_sceneitem_t *group, bool (*callback)(obs_scene_t*, obs_sceneitem_t*, void*), void *param)
+
+   Enumerates scene items within a group.
+
+---------------------
+
+.. function:: void obs_sceneitem_defer_group_resize_begin(obs_sceneitem_t *item)
+.. function:: void obs_sceneitem_defer_group_resize_end(obs_sceneitem_t *item)
+
+   Allows the ability to call any one of the transform functions on
+   scene items within a group without updating the internal matrices of
+   the group until obs_sceneitem_defer_group_resize_end has been called.
+
+   This is necessary if the user is resizing items while they are within
+   a group, as the group's transform will automatically update its
+   transform every frame otherwise.

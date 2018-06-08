@@ -657,6 +657,20 @@ static void ss_video_tick(void *data, float seconds)
 	if (ss->pause_on_deactivate || ss->manual || ss->stop || ss->paused)
 		return;
 
+	/* ----------------------------------------------------- */
+	/* fade to transparency when the file list becomes empty */
+	if (!ss->files.num) {
+		obs_source_t* active_transition_source =
+			obs_transition_get_active_source(ss->transition);
+
+		if (active_transition_source) {
+			obs_source_release(active_transition_source);
+			do_transition(ss, true);
+		}
+	}
+
+	/* ----------------------------------------------------- */
+	/* do transition when slide time reached                 */
 	ss->elapsed += seconds;
 
 	if (ss->elapsed > ss->slide_time) {

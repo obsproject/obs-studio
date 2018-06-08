@@ -93,9 +93,11 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 	{
 		if (main->IsPreviewProgramMode()) {
 			QMetaObject::invokeMethod(main, "TransitionToScene",
+					WaitConnection(),
 					Q_ARG(OBSSource, OBSSource(scene)));
 		} else {
 			QMetaObject::invokeMethod(main, "SetCurrentScene",
+					WaitConnection(),
 					Q_ARG(OBSSource, OBSSource(scene)),
 					Q_ARG(bool, false));
 		}
@@ -165,6 +167,19 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 				}
 			}
 		}
+	}
+
+	bool obs_frontend_add_scene_collection(
+			const char *name) override
+	{
+		bool success = false;
+		QMetaObject::invokeMethod(main,
+				"AddSceneCollection",
+				WaitConnection(),
+				Q_RETURN_ARG(bool, success),
+				Q_ARG(bool, true),
+				Q_ARG(QString, QT_UTF8(name)));
+		return success;
 	}
 
 	void obs_frontend_get_profiles(
@@ -327,6 +342,16 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 	void obs_frontend_save(void) override
 	{
 		main->SaveProject();
+	}
+
+	void obs_frontend_defer_save_begin(void) override
+	{
+		QMetaObject::invokeMethod(main, "DeferSaveBegin");
+	}
+
+	void obs_frontend_defer_save_end(void) override
+	{
+		QMetaObject::invokeMethod(main, "DeferSaveEnd");
 	}
 
 	void obs_frontend_add_save_callback(obs_frontend_save_cb callback,

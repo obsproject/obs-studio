@@ -248,6 +248,7 @@ struct obs_core_video {
 	gs_samplerstate_t               *point_sampler;
 	gs_stagesurf_t                  *mapped_surface;
 	int                             cur_texture;
+	long                            raw_active;
 
 	uint64_t                        video_time;
 	uint64_t                        video_avg_frame_time_ns;
@@ -408,6 +409,13 @@ extern bool audio_callback(void *param,
 		uint64_t start_ts_in, uint64_t end_ts_in, uint64_t *out_ts,
 		uint32_t mixers, struct audio_output_data *mixes);
 
+extern void start_raw_video(video_t *video,
+		const struct video_scale_info *conversion,
+		void (*callback)(void *param, struct video_data *frame),
+		void *param);
+extern void stop_raw_video(video_t *video,
+		void (*callback)(void *param, struct video_data *frame),
+		void *param);
 
 /* ------------------------------------------------------------------------- */
 /* obs shared context data */
@@ -695,9 +703,6 @@ extern struct obs_source_info *get_source_info(const char *id);
 extern bool obs_source_init_context(struct obs_source *source,
 		obs_data_t *settings, const char *name,
 		obs_data_t *hotkey_data, bool private);
-
-extern void obs_source_save(obs_source_t *source);
-extern void obs_source_load(obs_source_t *source);
 
 extern bool obs_transition_init(obs_source_t *transition);
 extern void obs_transition_free(obs_source_t *transition);

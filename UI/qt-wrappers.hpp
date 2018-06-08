@@ -17,8 +17,10 @@
 
 #pragma once
 
+#include <QApplication>
 #include <QMessageBox>
 #include <QWidget>
+#include <QThread>
 #include <obs.hpp>
 
 #include <memory>
@@ -79,3 +81,10 @@ public:
 };
 
 void DeleteLayout(QLayout *layout);
+
+static inline Qt::ConnectionType WaitConnection()
+{
+	return QThread::currentThread() == qApp->thread()
+		? Qt::DirectConnection
+		: Qt::BlockingQueuedConnection;
+}

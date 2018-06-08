@@ -140,7 +140,7 @@ static bool thread_is_suspended(DWORD process_id, DWORD thread_id)
 	OBS_SYSTEM_PROCESS_INFORMATION2 *spi = data;
 
 	for (;;) {
-		if (spi->UniqueProcessId == (HANDLE)process_id) {
+		if (spi->UniqueProcessId == (HANDLE)(DWORD_PTR)process_id) {
 			break;
 		}
 
@@ -156,7 +156,7 @@ static bool thread_is_suspended(DWORD process_id, DWORD thread_id)
 	sti = (OBS_SYSTEM_THREAD_INFORMATION*)((BYTE*)spi + sizeof(*spi));
 
 	for (ULONG i = 0; i < spi->ThreadCount; i++) {
-		if (sti[i].UniqueThreadId == (HANDLE)thread_id) {
+		if (sti[i].UniqueThreadId == (HANDLE)(DWORD_PTR)thread_id) {
 			info = &sti[i];
 			break;
 		}

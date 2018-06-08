@@ -108,6 +108,10 @@ static void gl_write_var(struct gl_shader_parser *glsp, struct shader_var *var)
 		dstr_cat(&glsp->gl_string, "uniform ");
 	else if (var->var_type == SHADER_VAR_CONST)
 		dstr_cat(&glsp->gl_string, "const ");
+	else if (var->var_type == SHADER_VAR_INOUT)
+		dstr_cat(&glsp->gl_string, "inout ");
+	else if (var->var_type == SHADER_VAR_OUT)
+		dstr_cat(&glsp->gl_string, "out ");
 
 	gl_write_type(glsp, var->type);
 	dstr_cat(&glsp->gl_string, " ");

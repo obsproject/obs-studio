@@ -37,8 +37,11 @@ static uint32_t winver = 0;
 
 static inline uint64_t get_clockfreq(void)
 {
-	if (!have_clockfreq)
+	if (!have_clockfreq) {
 		QueryPerformanceFrequency(&clock_freq);
+		have_clockfreq = true;
+	}
+
 	return clock_freq.QuadPart;
 }
 

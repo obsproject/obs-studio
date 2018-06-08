@@ -21,6 +21,7 @@
 #   XCB_GLX_FOUND        XCB_GLX_INCLUDE_DIR        XCB_GLX_LIBRARY
 #   XCB_SHM_FOUND        XCB_SHM_INCLUDE_DIR        XCB_SHM_LIBRARY
 #   XCB_XV_FOUND         XCB_XV_INCLUDE_DIR         XCB_XV_LIBRARY
+#   XCB_XINPUT_FOUND     XCB_XINPUT_INCLUDE_DIR     XCB_XINPUT_LIBRARY
 #   XCB_SYNC_FOUND       XCB_SYNC_INCLUDE_DIR       XCB_SYNC_LIBRARY
 #   XCB_XTEST_FOUND      XCB_XTEST_INCLUDE_DIR      XCB_XTEST_LIBRARY
 #   XCB_ICCCM_FOUND      XCB_ICCCM_INCLUDE_DIR      XCB_ICCCM_LIBRARY
@@ -54,6 +55,7 @@ set(knownComponents XCB
                     XFIXES
                     XTEST
                     XV
+                    XINPUT
                     XINERAMA)
 
 unset(unknownComponents)
@@ -112,6 +114,8 @@ foreach(comp ${comps})
             list(APPEND pkgConfigModules "xcb-xtest")
         elseif("${comp}" STREQUAL "XV")
             list(APPEND pkgConfigModules "xcb-xv")
+        elseif("${comp}" STREQUAL "XINPUT")
+            list(APPEND pkgConfigModules "xcb-xinput")
         elseif("${comp}" STREQUAL "XINERAMA")
             list(APPEND pkgConfigModules "xcb-xinerama")
         endif()
@@ -190,6 +194,9 @@ macro(_XCB_HANDLE_COMPONENT _comp)
     elseif("${_comp}" STREQUAL "XV")
         set(_header "xcb/xv.h")
         set(_lib "xcb-xv")
+    elseif("${_comp}" STREQUAL "XINPUT")
+        set(_header "xcb/xinput.h")
+        set(_lib "xcb-xinput")
     elseif("${_comp}" STREQUAL "XINERAMA")
         set(_header "xcb/xinerama.h")
         set(_lib "xcb-xinerama")

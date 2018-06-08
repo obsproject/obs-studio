@@ -347,10 +347,14 @@ static obs_source_t *obs_source_create_internal(const char *id,
 
 	blog(LOG_DEBUG, "%ssource '%s' (%s) created",
 			private ? "private " : "", name, id);
-	obs_source_dosignal(source, "source_create", NULL);
 
 	source->flags = source->default_flags;
 	source->enabled = true;
+
+	if (!private) {
+		obs_source_dosignal(source, "source_create", NULL);
+	}
+
 	return source;
 
 fail:
@@ -427,6 +431,11 @@ static void duplicate_filters(obs_source_t *dst, obs_source_t *src,
 
 void obs_source_copy_filters(obs_source_t *dst, obs_source_t *src)
 {
+	if (!obs_source_valid(dst, "obs_source_copy_filters"))
+		return;
+	if (!obs_source_valid(src, "obs_source_copy_filters"))
+		return;
+
 	duplicate_filters(dst, src, dst->context.private);
 }
 
@@ -1720,9 +1729,18 @@ static inline void obs_source_render_async_video(obs_source_t *source)
 
 static inline void obs_source_render_filters(obs_source_t *source)
 {
+	obs_source_t *first_filter;
+
+	pthread_mutex_lock(&source->filter_mutex);
+	first_filter = source->filters.array[0];
+	obs_source_addref(first_filter);
+	pthread_mutex_unlock(&source->filter_mutex);
+
 	source->rendering_filter = true;
-	obs_source_video_render(source->filters.array[0]);
+	obs_source_video_render(first_filter);
 	source->rendering_filter = false;
+
+	obs_source_release(first_filter);
 }
 
 void obs_source_default_render(obs_source_t *source)

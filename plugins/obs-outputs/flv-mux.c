@@ -74,7 +74,7 @@ static bool build_flv_meta_data(obs_output_t *context,
 	enc_str(&enc, end, "onMetaData");
 
 	*enc++ = AMF_ECMA_ARRAY;
-	enc    = AMF_EncodeInt32(enc, end, a_idx == 0 ? 14 : 9);
+	enc    = AMF_EncodeInt32(enc, end, a_idx == 0 ? 20 : 15);
 
 	enc_num_val(&enc, end, "duration", 0.0);
 	enc_num_val(&enc, end, "fileSize", 0.0);

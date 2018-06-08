@@ -50,7 +50,7 @@ static inline bool create_process(const char *cmd_line, HANDLE stdin_handle,
 	bool success = false;
 
 	si.cb = sizeof(si);
-	si.dwFlags = STARTF_USESTDHANDLES;
+	si.dwFlags = STARTF_USESTDHANDLES | STARTF_FORCEOFFFEEDBACK;
 	si.hStdInput = stdin_handle;
 	si.hStdOutput = stdout_handle;
 

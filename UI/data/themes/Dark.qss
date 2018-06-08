@@ -423,9 +423,9 @@ QPushButton::menu-indicator {
 /* Sliders */
 
 QSlider::groove:horizontal {
-    background-color: QLinearGradient(x1: 0, y1: 0, x2: 0, y2: 1,
-        stop: 0 rgb(31,30,31), /* veryDark */
-        stop: 0.75 rgb(50, 49, 50));
+    background-color: QLinearGradient(x1: 0, y1: 1, x2: 0, y2: 0,
+        stop: 0 rgb(50, 49, 50), /* dark */
+        stop: 0.75 rgb(88,87,88)); /* kindaDark */
     height: 4px;
     border: none;
     border-radius: 2px;
@@ -450,32 +450,37 @@ QSlider::handle:horizontal:pressed {
         stop: 1 rgb(162,161,162)); /* light */
 }
 
+QSlider::sub-page:horizontal {
+    background-color: rgb(42,130,218); /* blue */
+    border-radius: 2px;
+}
+
 QSlider::sub-page:horizontal:disabled {
-    background-color: QLinearGradient(x1: 0, y1: 0, x2: 0, y2: 1,
+    background-color: QLinearGradient(x1: 0, y1: 1, x2: 0, y2: 0,
         stop: 0 rgb(31,30,31), /* veryDark */
-        stop: 0.75 rgb(50, 49, 50));
+        stop: 0.75 rgb(50, 49, 50)); /* dark */
     border-radius: 2px;
 }
 
 QSlider::groove:vertical {
-    background-color: QLinearGradient(x1: 0, y1: 0, x2: 1, y2: 0,
-        stop: 0 rgb(31,30,31), /* veryDark */
-        stop: 0.75 rgb(50, 49, 50));
+    background-color: QLinearGradient(x1: 1, y1: 0, x2: 0, y2: 0,
+        stop: 0 rgb(50, 49, 50), /* dark */
+        stop: 0.75 rgb(88,87,88)); /* kindaDark */
     width: 4px;
     border: none;
     border-radius: 2px;
 }
 
 QSlider::handle:vertical {
-    background-color: QLinearGradient(x1: 0, y1: 0, x2: 1, y2: 0,
+    background-color: QLinearGradient(x1: 1, y1: 0, x2: 0, y2: 0,
         stop: 0 rgb(240,239,240), /* lighter */
         stop: 0.25 rgb(200,199,200),
         stop: 1 rgb(162,161,162)); /* light */
     border: 1px solid rgb(58,57,58); /* dark */
-    border-radius: 4px;
+    border-radius: 3px;
     width: 10px;
     height: 18px;
-    margin: -3px 0; /* handle is placed by default on the contents rect of the groove. Expand outside the groove */
+    margin: 0 -3px; /* handle is placed by default on the contents rect of the groove. Expand outside the groove */
 }
 
 QSlider::handle:vertical:pressed {
@@ -485,10 +490,15 @@ QSlider::handle:vertical:pressed {
         stop: 1 rgb(162,161,162)); /* light */
 }
 
-QSlider::sub-page:vertical:disabled {
-    background-color: QLinearGradient(x1: 0, y1: 0, x2: 1, y2: 0,
+QSlider::add-page:vertical {
+    background-color: rgb(42,130,218); /* blue */
+    border-radius: 2px;
+}
+
+QSlider::add-page:vertical:disabled {
+    background-color: QLinearGradient(x1: 1, y1: 0, x2: 0, y2: 0,
         stop: 0 rgb(31,30,31), /* veryDark */
-        stop: 0.75 rgb(50, 49, 50));
+        stop: 0.75 rgb(50, 49, 50)); /* dark */
     border-radius: 2px;
 }
 
@@ -496,15 +506,9 @@ QSlider::handle:hover {
     background-color: rgb(200,199,200); /* veryLight */
 }
 
-QSlider::sub-page {
-    background-color: rgb(42,130,218); /* blue */
-    border-radius: 2px;
-}
-
 QSlider::handle:disabled {
     background-color: rgb(122,121,122); /* light */
 }
-
 
 /* Volume Control */
 
@@ -544,6 +548,27 @@ MuteCheckBox::indicator:unchecked {
 
 OBSHotkeyLabel[hotkeyPairHover=true] {
     color: red;
+}
+
+
+/* Group Collapse Checkbox */
+
+SourceTreeSubItemCheckBox {
+    background: transparent;
+    outline: none;
+}
+
+SourceTreeSubItemCheckBox::indicator {
+    width: 10px;
+    height: 10px;
+}
+
+SourceTreeSubItemCheckBox::indicator:checked {
+    image: url(./Dark/expand.png);
+}
+
+SourceTreeSubItemCheckBox::indicator:unchecked {
+    image: url(./Dark/collapse.png);
 }
 
 

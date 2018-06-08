@@ -22,6 +22,8 @@ endif()
 if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/ftl-sdk/CMakeLists.txt")
 	find_package(Libcurl REQUIRED)
 
+	add_definitions(-DFTL_STATIC_COMPILE)
+
 	include_directories(${LIBCURL_INCLUDE_DIRS})
 
 	set(ftl_SOURCES
