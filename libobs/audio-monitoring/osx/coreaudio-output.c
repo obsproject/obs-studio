@@ -1,5 +1,5 @@
 #include <AudioUnit/AudioUnit.h>
-#include <AudioToolBox/AudioQueue.h>
+#include <AudioToolbox/AudioQueue.h>
 #include <CoreFoundation/CFString.h>
 #include <CoreAudio/CoreAudio.h>
 
