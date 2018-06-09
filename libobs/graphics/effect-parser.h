@@ -20,6 +20,7 @@
 #include "../util/darray.h"
 #include "../util/cf-parser.h"
 #include "graphics.h"
+#include "shader-parser.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -72,6 +73,7 @@ struct ep_param {
 	struct gs_effect_param *param;
 	bool is_const, is_property, is_uniform, is_texture, written;
 	int writeorder, array_count;
+	DARRAY(struct ep_param) annotations;
 };
 
 extern void ep_param_writevar(struct dstr *dst, struct darray *use_params);
@@ -91,6 +93,7 @@ static inline void ep_param_init(struct ep_param *epp,
 	epp->array_count = 0;
 	da_init(epp->default_val);
 	da_init(epp->properties);
+	da_init(epp->annotations);
 }
 
 static inline void ep_param_free(struct ep_param *epp)
@@ -99,6 +102,10 @@ static inline void ep_param_free(struct ep_param *epp)
 	bfree(epp->name);
 	da_free(epp->default_val);
 	da_free(epp->properties);
+
+	for (size_t i = 0; i < epp->annotations.num; i++)
+		ep_param_free(epp->annotations.array + i);
+	da_free(epp->annotations);
 }
 
 /* ------------------------------------------------------------------------- */

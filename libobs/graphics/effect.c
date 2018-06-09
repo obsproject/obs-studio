@@ -286,6 +286,63 @@ gs_eparam_t *gs_effect_get_param_by_name(const gs_effect_t *effect,
 	return NULL;
 }
 
+size_t gs_param_get_num_annotations(const gs_eparam_t *param)
+{
+	return param ? param->annotations.num : 0;
+}
+
+gs_eparam_t *gs_param_get_annotation_by_idx(const gs_eparam_t *param,
+		size_t annotation)
+{
+	if (!param) return NULL;
+	
+	struct gs_effect_param *params = param->annotations.array;
+	if (annotation > param->annotations.num)
+		return NULL;
+
+	return params + annotation;
+}
+
+gs_eparam_t *gs_param_get_annotation_by_name(const gs_eparam_t *param,
+		const char *name)
+{
+	if (!param) return NULL;
+	struct gs_effect_param *params = param->annotations.array;
+
+	for (size_t i = 0; i < param->annotations.num; i++) {
+		struct gs_effect_param *g_param = params + i;
+		if (strcmp(g_param->name, name) == 0)
+			return g_param;
+	}
+	return NULL;
+}
+
+gs_epass_t *gs_technique_get_pass_by_idx(const gs_technique_t *technique,
+		size_t pass)
+{
+	if (!technique) return NULL;
+	struct gs_effect_pass *passes = technique->passes.array;
+
+	if (pass > technique->passes.num)
+		return NULL;
+
+	return passes + pass;
+}
+
+gs_epass_t *gs_technique_get_pass_by_name(const gs_technique_t *technique,
+		const char *name)
+{
+	if (!technique) return NULL;
+	struct gs_effect_pass *passes = technique->passes.array;
+
+	for (size_t i = 0; i < technique->passes.num; i++) {
+		struct gs_effect_pass *g_pass = passes + i;
+		if (strcmp(g_pass->name, name) == 0)
+			return g_pass;
+	}
+	return NULL;
+}
+
 gs_eparam_t *gs_effect_get_viewproj_matrix(const gs_effect_t *effect)
 {
 	return effect ? effect->view_proj : NULL;
