@@ -41,7 +41,7 @@ static bool obs_enum_audio_monitoring_device(obs_enum_audio_device_cb cb,
 	addr.mSelector = kAudioDevicePropertyDeviceUID;
 	stat = AudioObjectGetPropertyData(id, &addr, 0, NULL, &size, &cf_uid);
 	if (!success(stat, "get audio device UID"))
-		return true;
+		goto fail;
 
 	addr.mSelector = kAudioDevicePropertyDeviceNameCFString;
 	stat = AudioObjectGetPropertyData(id, &addr, 0, NULL, &size, &cf_name);
