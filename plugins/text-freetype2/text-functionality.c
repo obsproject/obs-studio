@@ -146,19 +146,19 @@ skip_word_wrap:;
 	len = wcslen(srcdata->text);
 	uint32_t current_line_width = 0;
 	uint32_t current_line_index = 0;
-	if (srcdata->custom_width < 100) {
+	if (srcdata->custom_width < 100)
 		srcdata->max_line_width = 0;
-	} else {
+	else
 		srcdata->max_line_width = srcdata->custom_width;
-	}
+
 	for (uint32_t i = 0; i <= len; i++) {
 		if (srcdata->text[i] == L'\n' || i == len) {
-			if (current_line_width > srcdata->max_line_width) {
+			if (current_line_width > srcdata->max_line_width)
 				srcdata->max_line_width = current_line_width;
-			}
+
 			if (current_line_index < max_aligned_lines) {
 				srcdata->lines_width[current_line_index] =
-				        current_line_width;
+					current_line_width;
 				current_line_index++;
 			}
 			current_line_width = 0;
@@ -175,17 +175,16 @@ skip_word_wrap:;
 
 uint32_t get_dx_for_line(struct ft2_source *srcdata, int line_index)
 {
-	if (line_index >= max_aligned_lines) {
+	if (line_index >= max_aligned_lines)
 		return 0;
-	}
 
 	switch (srcdata->alignment) {
 	case TEXT_ALIGNMENT_CENTER:
 		return (srcdata->max_line_width -
-		        srcdata->lines_width[line_index]) / 2;
+			srcdata->lines_width[line_index]) / 2;
 	case TEXT_ALIGNMENT_RIGHT:
 		return srcdata->max_line_width -
-		        srcdata->lines_width[line_index];
+			srcdata->lines_width[line_index];
 	default:
 		return 0;
 	}
@@ -203,7 +202,8 @@ void fill_vertex_buffer(struct ft2_source *srcdata)
 
 	uint32_t current_line_index = 0;
 	uint32_t dx = get_dx_for_line(srcdata, 0);
-	uint32_t dy = srcdata->max_h, max_y = dy;
+	uint32_t dy = srcdata->max_h;
+	uint32_t max_y = dy;
 	uint32_t cur_glyph = 0;
 	size_t len = wcslen(srcdata->text);
 

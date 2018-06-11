@@ -131,14 +131,14 @@ static obs_properties_t *ft2_source_properties(void *unused)
 		obs_module_text("Text"), OBS_TEXT_MULTILINE);
 
 	obs_property_t *alignmentProp = obs_properties_add_list(props,
-	                "alignment", obs_module_text("Alignment"),
-	                OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
+			"alignment", obs_module_text("Alignment"),
+			OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
 	obs_property_list_add_int(alignmentProp, "Left",
-	                TEXT_ALIGNMENT_LEFT);
+			TEXT_ALIGNMENT_LEFT);
 	obs_property_list_add_int(alignmentProp, "Center",
-	                TEXT_ALIGNMENT_CENTER);
+			TEXT_ALIGNMENT_CENTER);
 	obs_property_list_add_int(alignmentProp, "Right",
-	                TEXT_ALIGNMENT_RIGHT);
+			TEXT_ALIGNMENT_RIGHT);
 
 	obs_properties_add_bool(props, "from_file",
 		obs_module_text("ReadFromFile"));
