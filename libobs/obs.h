@@ -1991,6 +1991,8 @@ static inline void obs_source_frame_destroy(struct obs_source_frame *frame)
 	}
 }
 
+EXPORT void obs_source_frame_copy(struct obs_source_frame *dst,
+		const struct obs_source_frame *src);
 
 #ifdef __cplusplus
 }
