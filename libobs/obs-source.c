@@ -2288,6 +2288,12 @@ static void copy_frame_data(struct obs_source_frame *dst,
 	}
 }
 
+void obs_source_frame_copy(struct obs_source_frame *dst,
+		const struct obs_source_frame *src)
+{
+	copy_frame_data(dst, src);
+}
+
 static inline bool async_texture_changed(struct obs_source *source,
 		const struct obs_source_frame *frame)
 {
