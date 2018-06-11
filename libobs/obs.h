@@ -886,6 +886,14 @@ EXPORT obs_source_t *obs_filter_get_parent(const obs_source_t *filter);
  */
 EXPORT obs_source_t *obs_filter_get_target(const obs_source_t *filter);
 
+/**
+ * If the source is a filter, return the texture from the previous
+ * filter in the chain.
+ * Only guaranteed to be valid inside of a video_render, filter_audio,
+ * filter_video, and filter_remove callbacks.
+ */
+EXPORT gs_texture_t *obs_filter_get_texture(const obs_source_t *filter);
+
 /** Used to directly render a non-async source without any filter processing */
 EXPORT void obs_source_default_render(obs_source_t *source);
 

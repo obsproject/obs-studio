@@ -1948,6 +1948,18 @@ obs_source_t *obs_filter_get_target(const obs_source_t *filter)
 		filter->filter_target : NULL;
 }
 
+gs_texture_t *obs_filter_get_texture(const obs_source_t *filter)
+{
+	if (!obs_ptr_valid(filter, "obs_filter_get_texrender"))
+		return NULL;
+
+	if (!obs_ptr_valid(filter->filter_texrender,
+			"obs_filter_get_texrender"))
+		return NULL;
+
+	return gs_texrender_get_texture(filter->filter_texrender);
+}
+
 static bool filter_compatible(obs_source_t *source, obs_source_t *filter)
 {
 	uint32_t s_caps = source->info.output_flags;

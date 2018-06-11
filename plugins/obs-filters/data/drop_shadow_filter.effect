@@ -1,0 +1,141 @@
+uniform float4x4 ViewProj;
+uniform texture2d image;
+
+uniform float2 image_uv_offset;
+uniform float2 image_uv_scale;
+uniform float2 image_uv_pixel_interval;
+uniform float2 shadow_uv_pixel_interval;
+
+uniform float2 offset;
+uniform float4 shadow_color;
+uniform texture2d shadow;
+
+uniform float kawase_distance;
+
+sampler_state textureSampler {
+	Filter    = Linear;
+	AddressU  = Border;
+	AddressV  = Border;
+	BorderColor = 00000000;
+};
+
+struct VertData {
+	float4 pos : POSITION;
+	float2 shadow_uv : TEXCOORD0;
+};
+
+VertData VSDefault(VertData v_in)
+{
+	VertData vert_out;
+	vert_out.pos = mul(float4(v_in.pos.xyz, 1.0), ViewProj);
+	vert_out.shadow_uv = v_in.shadow_uv;
+	return vert_out;
+}
+
+float4 SampleImageRGBA(float2 uv)
+{
+	return image.Sample(textureSampler, uv);
+}
+
+float SampleImageAlpha(float2 uv)
+{
+	return image.Sample(textureSampler, uv).a;
+}
+
+float SampleShadow(float2 uv)
+{
+	return shadow.Sample(textureSampler, uv).a;
+}
+
+float SampleShadowFromImage(float2 image_uv)
+{
+	float2 uv = image_uv + image_uv_pixel_interval * offset;
+	float2 distance = image_uv_pixel_interval *
+			float2(kawase_distance, kawase_distance);
+
+	float x = 0.0;
+	x += SampleImageAlpha(uv + distance * float2(-1.0, -1.0));
+	x += SampleImageAlpha(uv + distance * float2( 1.0, -1.0));
+	x += SampleImageAlpha(uv + distance * float2( 1.0,  1.0));
+	x += SampleImageAlpha(uv + distance * float2(-1.0,  1.0));
+
+	return x * 0.25;
+}
+
+float SampleShadowFromShadow(float2 shadow_uv)
+{
+	float2 distance = shadow_uv_pixel_interval *
+			float2(kawase_distance, kawase_distance);
+
+	float x = 0.0;
+	x += SampleShadow(shadow_uv + distance * float2(-1.0, -1.0));
+	x += SampleShadow(shadow_uv + distance * float2( 1.0, -1.0));
+	x += SampleShadow(shadow_uv + distance * float2( 1.0,  1.0));
+	x += SampleShadow(shadow_uv + distance * float2(-1.0,  1.0));
+
+	return x * 0.25;
+}
+
+float4 compositOver(float4 src, float4 dst)
+{
+	float3 src_color = src.rgb * src.a;
+	float3 dst_color = dst.rgb * dst.a;
+
+	float3 result_color = src_color + dst_color * (1.0 - src.a);
+	float result_alpha = src.a + dst.a * (1.0 - src.a);
+
+	return float4(result_color / result_alpha, result_alpha);
+}
+
+float4 PSFirstPass(VertData v_in) : TARGETS
+{
+	float2 image_uv = v_in.shadow_uv * image_uv_scale + image_uv_offset;
+
+	float shadow_intensity = SampleShadowFromImage(image_uv);
+	return float4(0.0, 0.0, 0.0, shadow_intensity);
+}
+
+float4 PSBlurPass(VertData v_in) : TARGETS
+{
+	float shadow_intensity = SampleShadowFromShadow(v_in.shadow_uv);
+	return float4(0.0, 0.0, 0.0, shadow_intensity);
+}
+
+float4 PSDrawDropShadow(VertData v_in) : TARGETS
+{
+	float2 image_uv = v_in.shadow_uv * image_uv_scale + image_uv_offset;
+	float4 source_pixel = SampleImageRGBA(image_uv);
+
+	float shadow_intensity = SampleShadowFromShadow(v_in.shadow_uv);
+	float4 shadow_pixel = float4(
+			shadow_color.rgb, shadow_color.a * shadow_intensity);
+
+	return compositOver(source_pixel, shadow_pixel);
+}
+
+technique FirstPass
+{
+	pass p1
+	{
+		vertex_shader = VSDefault(v_in);
+		pixel_shader  = PSFirstPass(v_in);
+	}
+}
+
+technique BlurPass
+{
+	pass p1
+	{
+		vertex_shader = VSDefault(v_in);
+		pixel_shader  = PSBlurPass(v_in);
+	}
+}
+
+technique Draw
+{
+	pass p0
+	{
+		vertex_shader = VSDefault(v_in);
+		pixel_shader  = PSDrawDropShadow(v_in);
+	}
+}
