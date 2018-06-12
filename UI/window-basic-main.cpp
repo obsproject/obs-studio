@@ -1613,6 +1613,8 @@ void OBSBasic::OBSInit()
 			Q_ARG(QString, QT_UTF8(savePath)),
 			Q_ARG(int, 10));
 #endif
+
+	InitVisibilityTransitions();
 }
 
 void OBSBasic::DeferredLoad(const QString &file, int requeueCount)
@@ -1856,6 +1858,8 @@ OBSBasic::~OBSBasic()
 {
 	if (updateCheckThread && updateCheckThread->isRunning())
 		updateCheckThread->wait();
+
+	DestroyVisibilityTransitions();
 
 	delete programOptions;
 	delete program;
@@ -3835,6 +3839,10 @@ void OBSBasic::CreateSourcePopupMenu(int idx, bool preview)
 
 	ui->actionCopyFilters->setEnabled(false);
 	ui->actionCopySource->setEnabled(false);
+
+	popup.addSeparator();
+	QMenu *transitionMenu = CreateVisibilityTransitionMenu();
+	popup.addMenu(transitionMenu);
 
 	if (ui->sources->MultipleBaseSelected()) {
 		popup.addSeparator();
@@ -6134,4 +6142,85 @@ void OBSBasic::on_stats_triggered()
 	statsDlg = new OBSBasicStats(nullptr);
 	statsDlg->show();
 	stats = statsDlg;
+}
+
+static bool CreateVisTr(void *param, obs_source_t *source)
+{
+	if (!source)
+		return true;
+
+	OBSBasic *main = reinterpret_cast<OBSBasic*>(App()->GetMainWindow());
+
+	obs_data_t *data = obs_source_get_private_settings(source);
+	const char *trName = obs_data_get_string(data, "vis_transition");
+	obs_data_release(data);
+
+	if (strcmp(trName, "") == 0)
+		return true;
+
+	OBSSource transition = main->FindTransition(trName);
+
+	if (transition)
+		obs_source_create_visibility_transition(source, transition);
+
+	UNUSED_PARAMETER(param);
+
+	return true;
+}
+
+static bool DeleteVisTr(void *param, obs_source_t *source)
+{
+	if (!source)
+		return true;
+
+	OBSSource transition = obs_source_get_visibility_transition(source);
+
+	if (transition)
+		obs_source_release(transition);
+
+	UNUSED_PARAMETER(param);
+
+	return true;
+}
+
+void OBSBasic::InitVisibilityTransitions()
+{
+	obs_enum_sources(CreateVisTr, nullptr);
+
+	for (int i = 0; i < ui->scenes->count(); i++) {
+		QListWidgetItem *item = ui->scenes->item(i);
+		OBSScene scene = GetOBSRef<OBSScene>(item);
+		obs_source_t *source = obs_scene_get_source(scene);
+
+		obs_data_t *data = obs_source_get_private_settings(source);
+		const char *trName = obs_data_get_string(data,
+				"vis_transition");
+		obs_data_release(data);
+
+		if (strcmp(trName, "") == 0)
+			continue;
+
+		OBSSource transition = FindTransition(trName);
+
+		if (transition)
+			obs_source_create_visibility_transition(source,
+					transition);
+	}
+}
+
+void OBSBasic::DestroyVisibilityTransitions()
+{
+	obs_enum_sources(DeleteVisTr, nullptr);
+
+	for (int i = 0; i < ui->scenes->count(); i++) {
+		QListWidgetItem *item = ui->scenes->item(i);
+		OBSScene scene = GetOBSRef<OBSScene>(item);
+		obs_source_t *source = obs_scene_get_source(scene);
+
+		obs_source_t *transition = obs_source_get_visibility_transition(
+				source);
+
+		if (transition)
+			obs_source_release(transition);
+	}
 }

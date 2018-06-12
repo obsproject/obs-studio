@@ -589,9 +589,20 @@ static void scene_video_render(void *data, gs_effect_t *effect)
 	gs_blend_state_push();
 	gs_reset_blend_state();
 
+	bool tr_video = false;
+	bool tr_audio = false;
+
 	item = scene->first_item;
+
 	while (item) {
-		if (item->user_visible)
+		if (item->source->vis_transition) {
+			tr_video = item->source->vis_transition->
+					transitioning_video;
+			tr_audio = item->source->vis_transition->
+					transitioning_audio;
+		}
+
+		if (item->user_visible || (tr_video || tr_audio))
 			render_item(item);
 
 		item = item->next;
@@ -623,8 +634,8 @@ static void set_visibility(struct obs_scene_item *item, bool vis)
 	}
 
 	os_atomic_set_long(&item->active_refs, vis ? 1 : 0);
-	item->visible = vis;
 	item->user_visible = vis;
+	item->visible = vis;
 
 	pthread_mutex_unlock(&item->actions_mutex);
 }
@@ -1926,6 +1937,10 @@ bool obs_sceneitem_set_visible(obs_sceneitem_t *item, bool visible)
 	if (!item->parent)
 		return false;
 
+	obs_source_do_transition(item->source, visible);
+
+	item->user_visible = visible;
+
 	if (visible) {
 		if (os_atomic_inc_long(&item->active_refs) == 1) {
 			if (!obs_source_add_active_child(item->parent->source,
@@ -1935,8 +1950,6 @@ bool obs_sceneitem_set_visible(obs_sceneitem_t *item, bool visible)
 			}
 		}
 	}
-
-	item->user_visible = visible;
 
 	calldata_init_fixed(&cd, stack, sizeof(stack));
 	calldata_set_ptr(&cd, "item", item);

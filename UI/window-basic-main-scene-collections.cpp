@@ -487,9 +487,13 @@ void OBSBasic::ChangeSceneCollection()
 		return;
 	}
 
+	DestroyVisibilityTransitions();
+
 	SaveProjectNow();
 
 	Load(fileName.c_str());
+
+	collectionChange = true;
 	RefreshSceneCollections();
 
 	const char *newName = config_get_string(App()->GlobalConfig(),
@@ -500,6 +504,8 @@ void OBSBasic::ChangeSceneCollection()
 	blog(LOG_INFO, "Switched to scene collection '%s' (%s.json)",
 			newName, newFile);
 	blog(LOG_INFO, "------------------------------------------------");
+
+	InitVisibilityTransitions();
 
 	UpdateTitleBar();
 

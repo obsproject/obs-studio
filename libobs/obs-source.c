@@ -141,6 +141,7 @@ bool obs_source_init(struct obs_source *source)
 	source->volume = 1.0f;
 	source->sync_offset = 0;
 	pthread_mutex_init_value(&source->filter_mutex);
+	pthread_mutex_init_value(&source->vis_transition_mutex);
 	pthread_mutex_init_value(&source->async_mutex);
 	pthread_mutex_init_value(&source->audio_mutex);
 	pthread_mutex_init_value(&source->audio_buf_mutex);
@@ -151,6 +152,8 @@ bool obs_source_init(struct obs_source *source)
 	if (pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE) != 0)
 		return false;
 	if (pthread_mutex_init(&source->filter_mutex, &attr) != 0)
+		return false;
+	if (pthread_mutex_init(&source->vis_transition_mutex, &attr) != 0)
 		return false;
 	if (pthread_mutex_init(&source->audio_buf_mutex, NULL) != 0)
 		return false;
@@ -592,6 +595,7 @@ void obs_source_destroy(struct obs_source *source)
 	da_free(source->async_frames);
 	da_free(source->filters);
 	pthread_mutex_destroy(&source->filter_mutex);
+	pthread_mutex_destroy(&source->vis_transition_mutex);
 	pthread_mutex_destroy(&source->audio_actions_mutex);
 	pthread_mutex_destroy(&source->audio_buf_mutex);
 	pthread_mutex_destroy(&source->audio_cb_mutex);
@@ -1743,6 +1747,22 @@ static inline void obs_source_render_filters(obs_source_t *source)
 	obs_source_release(first_filter);
 }
 
+static inline void obs_source_render_vis_transition(obs_source_t *source)
+{
+	obs_source_t *vis_transition;
+
+	pthread_mutex_lock(&source->vis_transition_mutex);
+	vis_transition = source->vis_transition;
+	obs_source_addref(vis_transition);
+	pthread_mutex_unlock(&source->vis_transition_mutex);
+
+	source->rendering_vis_transition = true;
+	obs_source_video_render(vis_transition);
+	source->rendering_vis_transition = false;
+
+	obs_source_release(vis_transition);
+}
+
 void obs_source_default_render(obs_source_t *source)
 {
 	gs_effect_t    *effect     = obs->video.default_effect;
@@ -1793,14 +1813,29 @@ static inline void render_video(obs_source_t *source)
 		obs_source_update_async_video(source);
 	}
 
-	if (!source->context.data || !source->enabled) {
+	bool tr_video = false;
+	bool tr_audio = false;
+
+	if (source->vis_transition) {
+			tr_video = source->vis_transition->transitioning_video;
+			tr_audio = source->vis_transition->transitioning_audio;
+	}
+
+	if ((source->context.data && source->enabled) || (tr_video
+			|| tr_audio)) {
+		goto render;
+	} else {
 		if (source->filter_parent)
 			obs_source_skip_video_filter(source);
 		return;
 	}
 
+render:
 	if (source->filters.num && !source->rendering_filter)
 		obs_source_render_filters(source);
+
+	else if (source->vis_transition && !source->rendering_vis_transition)
+		obs_source_render_vis_transition(source);
 
 	else if (source->info.video_render)
 		obs_source_main_render(source);
@@ -3554,6 +3589,8 @@ void obs_source_set_enabled(obs_source_t *source, bool enabled)
 	if (!obs_source_valid(source, "obs_source_set_enabled"))
 		return;
 
+	obs_source_do_transition(source, enabled);
+
 	source->enabled = enabled;
 
 	calldata_init_fixed(&data, stack, sizeof(stack));
@@ -4151,4 +4188,78 @@ EXPORT void obs_enable_source_type(const char *name, bool enable)
 		info->output_flags &= ~OBS_SOURCE_CAP_DISABLED;
 	else
 		info->output_flags |= OBS_SOURCE_CAP_DISABLED;
+}
+
+void obs_source_create_visibility_transition(obs_source_t *source,
+		obs_source_t *transition)
+{
+	if (!source || !transition)
+		return;
+
+	obs_source_t *new_tr = NULL;
+	obs_source_t *old_tr = NULL;
+
+	new_tr = obs_source_duplicate(transition, NULL, true);
+
+	if (new_tr) {
+		old_tr = source->vis_transition;
+		source->vis_transition = new_tr;
+	}
+
+	if (old_tr)
+		obs_source_release(old_tr);
+
+	source->vis_transition = new_tr;
+
+	obs_source_add_active_child(source, source->vis_transition);
+
+	int cx = obs_source_get_base_width(source);
+	int cy = obs_source_get_base_height(source);
+
+	if (source->vis_transition) {
+		obs_transition_set_size(source->vis_transition, cx, cy);
+		obs_transition_set_alignment(source->vis_transition,
+				OBS_ALIGN_CENTER);
+		obs_transition_set_scale_type(source->vis_transition,
+				OBS_TRANSITION_SCALE_ASPECT);
+	}
+
+	obs_transition_set(source->vis_transition, source);
+}
+
+obs_source_t *obs_source_get_visibility_transition(obs_source_t *source)
+{
+	if (!obs_source_valid(source, "obs_source_get_visibility_transition"))
+		return NULL;
+
+	return source->vis_transition;
+}
+
+void obs_source_do_transition(obs_source_t *source, bool visible)
+{
+	if (!obs_source_valid(source, "obs_source_do_transition"))
+		return;
+
+	obs_source_t *transition = obs_source_get_visibility_transition(source);
+
+	obs_data_t *data = obs_source_get_private_settings(source);
+	int duration = (int)obs_data_get_int(data, "vis_transition_duration");
+	obs_data_release(data);
+
+	if (duration == 0)
+		duration = 300;
+
+	if (transition) {
+		if (!visible) {
+			obs_transition_set(transition, source);
+			obs_transition_start(transition,
+					OBS_TRANSITION_MODE_AUTO, duration,
+					NULL);
+		} else {
+			obs_transition_set(transition, NULL);
+			obs_transition_start(transition,
+					OBS_TRANSITION_MODE_AUTO, duration,
+					source);
+		}
+	}
 }

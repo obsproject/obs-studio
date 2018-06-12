@@ -276,7 +276,6 @@ private:
 
 	void InitDefaultTransitions();
 	void InitTransition(obs_source_t *transition);
-	obs_source_t *FindTransition(const char *name);
 	OBSSource GetCurrentTransition();
 	obs_data_array_t *SaveTransitions();
 	void LoadTransitions(obs_data_array_t *transitions);
@@ -296,6 +295,7 @@ private:
 	void CreateDefaultQuickTransitions();
 
 	QMenu *CreatePerSceneTransitionMenu();
+	QMenu *CreateVisibilityTransitionMenu();
 
 	QuickTransition *GetQuickTransition(int id);
 	int GetQuickTransitionIdx(int id);
@@ -558,6 +558,11 @@ public:
 	void CreateInteractionWindow(obs_source_t *source);
 	void CreatePropertiesWindow(obs_source_t *source);
 	void CreateFiltersWindow(obs_source_t *source);
+
+	obs_source_t *FindTransition(const char *name);
+	void InitVisibilityTransitions();
+	void DestroyVisibilityTransitions();
+	bool collectionChange = false;
 
 protected:
 	virtual void closeEvent(QCloseEvent *event) override;

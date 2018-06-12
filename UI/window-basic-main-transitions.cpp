@@ -228,6 +228,25 @@ obs_source_t *OBSBasic::FindTransition(const char *name)
 	return nullptr;
 }
 
+static bool SetVisTr(obs_scene_t *scene, obs_sceneitem_t *item, void *data)
+{
+	if (!item)
+		return true;
+
+	obs_source_t *source = obs_sceneitem_get_source(item);
+	obs_source_t *tr = obs_source_get_visibility_transition(source);
+
+	if (!tr)
+		return true;
+
+	obs_transition_set(tr, source);
+
+	UNUSED_PARAMETER(scene);
+	UNUSED_PARAMETER(data);
+
+	return true;
+}
+
 void OBSBasic::TransitionToScene(OBSScene scene, bool force, bool direct)
 {
 	obs_source_t *source = obs_scene_get_source(scene);
@@ -276,8 +295,10 @@ void OBSBasic::TransitionToScene(OBSSource source, bool force, bool direct,
 {
 	obs_scene_t *scene = obs_scene_from_source(source);
 	bool usingPreviewProgram = IsPreviewProgramMode();
-	if (!scene)
+	if (!scene) {
+		collectionChange = false;
 		return;
+	}
 
 	OBSWeakSource lastProgramScene;
 	
@@ -288,8 +309,10 @@ void OBSBasic::TransitionToScene(OBSSource source, bool force, bool direct,
 		if (swapScenesMode && !force && !direct) {
 			OBSSource newScene = OBSGetStrongRef(lastProgramScene);
 
-			if (!sceneDuplicationMode && newScene == source)
+			if (!sceneDuplicationMode && newScene == source) {
+				collectionChange = false;
 				return;
+			}
 
 			if (newScene && newScene != GetCurrentSceneSource())
 				swapScene = lastProgramScene;
@@ -340,6 +363,11 @@ void OBSBasic::TransitionToScene(OBSSource source, bool force, bool direct,
 		if (!success)
 			TransitionFullyStopped();
 	}
+
+	if (!collectionChange)
+		obs_scene_enum_items(scene, SetVisTr, nullptr);
+
+	collectionChange = false;
 
 	if (usingPreviewProgram && sceneDuplicationMode)
 		obs_scene_release(scene);
@@ -871,6 +899,95 @@ QMenu *OBSBasic::CreatePerSceneTransitionMenu()
 
 		if (!name || !*name)
 			name = Str("None");
+
+		action = menu->addAction(QT_UTF8(name));
+		action->setProperty("transition_index", i);
+		action->setCheckable(true);
+		action->setChecked(match);
+
+		connect(action, &QAction::triggered,
+				std::bind(setTransition, action));
+	}
+
+	QWidgetAction *durationAction = new QWidgetAction(menu);
+	durationAction->setDefaultWidget(duration);
+
+	menu->addSeparator();
+	menu->addAction(durationAction);
+	return menu;
+}
+
+QMenu *OBSBasic::CreateVisibilityTransitionMenu()
+{
+	OBSSceneItem si = GetCurrentSceneItem();
+	obs_source_t *source = obs_sceneitem_get_source(si);
+
+	QMenu *menu = new QMenu(QTStr("VisibilityTransition"));
+	QAction *action;
+
+	OBSData data = obs_source_get_private_settings(source);
+	obs_data_set_default_int(data, "vis_transition_duration", 300);
+	obs_data_release(data);
+
+	const char *curTransition = obs_data_get_string(data, "vis_transition");
+	int curDuration = (int)obs_data_get_int(data,
+			"vis_transition_duration");
+
+	QSpinBox *duration = new QSpinBox(menu);
+	duration->setMinimum(50);
+	duration->setSuffix("ms");
+	duration->setMaximum(20000);
+	duration->setSingleStep(50);
+	duration->setValue(curDuration);
+
+	auto setTransition = [this] (QAction *action)
+	{
+		OBSBasic *main = reinterpret_cast<OBSBasic*>(
+				App()->GetMainWindow());
+
+		int idx = action->property("transition_index").toInt();
+		OBSSceneItem sceneItem = main->GetCurrentSceneItem();
+		OBSSource source = obs_sceneitem_get_source(sceneItem);
+		OBSData data = obs_source_get_private_settings(source);
+
+		OBSSource tr = GetTransitionComboItem(ui->transitions, idx);
+		const char *name = obs_source_get_name(tr);
+
+		if (idx == 0)
+			obs_data_set_string(data, "vis_transition", "");
+		else
+			obs_data_set_string(data, "vis_transition", name);
+
+		obs_data_release(data);
+
+		if (tr)
+			obs_source_create_visibility_transition(source, tr);
+	};
+
+	auto setDuration = [this] (int duration)
+	{
+		OBSBasic *main = reinterpret_cast<OBSBasic*>(
+				App()->GetMainWindow());
+
+		OBSSceneItem item = main->GetCurrentSceneItem();
+		obs_source_t *source = obs_sceneitem_get_source(item);
+		OBSData data = obs_source_get_private_settings(source);
+		obs_data_set_int(data, "vis_transition_duration", duration);
+
+		obs_data_release(data);
+	};
+
+	connect(duration, (void (QSpinBox::*)(int))&QSpinBox::valueChanged,
+			setDuration);
+
+	for (int i = 0; i < ui->transitions->count(); i++) {
+		const char *name = "";
+
+		OBSSource tr;
+		tr = GetTransitionComboItem(ui->transitions, i);
+		name = obs_source_get_name(tr);
+
+		bool match = (name && strcmp(name, curTransition) == 0);
 
 		action = menu->addAction(QT_UTF8(name));
 		action->setProperty("transition_index", i);

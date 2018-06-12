@@ -692,6 +692,9 @@ struct obs_source {
 	enum obs_transition_mode        transition_mode;
 	enum obs_transition_scale_type  transition_scale_type;
 	struct matrix4                  transition_matrices[2];
+	struct obs_source               *vis_transition;
+	bool                            rendering_vis_transition;
+	pthread_mutex_t                 vis_transition_mutex;
 
 	struct audio_monitor            *monitor;
 	enum obs_monitoring_type        monitoring_type;

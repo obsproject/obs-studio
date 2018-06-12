@@ -1965,6 +1965,14 @@ EXPORT const char *obs_service_get_output_type(const obs_service_t *service);
 EXPORT void obs_source_frame_init(struct obs_source_frame *frame,
 		enum video_format format, uint32_t width, uint32_t height);
 
+/* ------------------------------------------------------------------------- */
+/* Source visibility transitions */
+EXPORT void obs_source_create_visibility_transition(obs_source_t *source,
+		obs_source_t *transition);
+EXPORT obs_source_t *obs_source_get_visibility_transition(
+		obs_source_t *source);
+EXPORT void obs_source_do_transition(obs_source_t *source, bool visible);
+
 static inline void obs_source_frame_free(struct obs_source_frame *frame)
 {
 	if (frame) {
