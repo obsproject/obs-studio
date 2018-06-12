@@ -1,4 +1,5 @@
 #include "graphics.h"
+#include "../util/platform.h"
 
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
@@ -235,4 +236,98 @@ uint8_t *gs_create_texture_file_data(const char *file,
 	}
 
 	return data;
+}
+
+
+uint32_t
+gs_texture_save_buffer_to_file(const char *buffer, int width,
+		int height, const char *file)
+{
+	AVOutputFormat *format = av_guess_format(NULL, file, NULL);
+	if (!format) {
+		blog(LOG_ERROR, "Unable to determine output format "
+				"for filename %s", file);
+		return 0;
+	}
+
+	enum AVCodecID codecId = av_guess_codec(format, NULL, file, NULL,
+			AVMEDIA_TYPE_VIDEO);
+	if (codecId == AV_CODEC_ID_NONE) {
+		blog(LOG_ERROR, "Unable to determine codec for filename "
+				"%s using format %s", file, format->name);
+		return 0;
+	}
+	else if (codecId != AV_CODEC_ID_PNG) {
+		blog(LOG_WARNING, "FFmpeg wants to encode %s using codec ID "
+				"%d, but only PNG (%d) is currently "
+				"supported. Saving this image will probably "
+				"fail.", file, codecId, AV_CODEC_ID_PNG);
+	}
+
+	AVCodec *encoder = avcodec_find_encoder(codecId);
+	if (!encoder) {
+		blog(LOG_ERROR, "Unable to find an encoder for codecId %d",
+				codecId);
+		return 0;
+	}
+	AVCodecContext *context = avcodec_alloc_context3(encoder);
+	if (!context) {
+		blog(LOG_ERROR, "Unable to create an encoding context");
+		return 0;
+	}
+
+	context->width = width;
+	context->height = height;
+	context->pix_fmt = AV_PIX_FMT_RGBA;
+	context->compression_level = 0;
+	context->time_base = (AVRational) { 1, 1 }; // Needs to be nonzero?
+
+	if (avcodec_open2(context, encoder, NULL) < 0) {
+		blog(LOG_ERROR, "Unable to create encoder %s", encoder->name);
+		return 0;
+	}
+
+	AVFrame *inputFrame = av_frame_alloc();
+	inputFrame->width = width;
+	inputFrame->height = height;
+	inputFrame->format = AV_PIX_FMT_RGBA;
+
+	if (av_frame_get_buffer(inputFrame, 1) < 0) {
+		blog(LOG_ERROR, "Unable to create a frame");
+		av_frame_free(&inputFrame);
+		avcodec_free_context(&context);
+		return 0;
+	}
+
+	av_frame_make_writable(inputFrame);
+	memcpy(inputFrame->data[0], buffer, width * height * 4);
+
+	AVPacket *outputPacket = av_packet_alloc();
+
+	uint32_t success = 0;
+	if (avcodec_send_frame(context, inputFrame) >= 0 &&
+			avcodec_receive_packet(context, outputPacket) >= 0) {
+		success = 1;
+
+		FILE *outFile = os_fopen(file, "wb");
+		if (outFile) {
+			fwrite(outputPacket->data, 1,
+					outputPacket->size, outFile);
+			fclose(outFile);
+		}
+		else {
+			blog(LOG_ERROR, "Failed to open output file at %s",
+					file);
+		}
+	}
+	else {
+		blog(LOG_ERROR, "Failed to encode image");
+	}
+	
+
+	av_frame_free(&inputFrame);
+	av_packet_free(&outputPacket);
+	avcodec_free_context(&context);
+
+	return success;
 }

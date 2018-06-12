@@ -3826,6 +3826,12 @@ void OBSBasic::CreateSourcePopupMenu(int idx, bool preview)
 
 		popup.addAction(previewWindow);
 
+		QAction *screenshot = popup.addAction(
+				QTStr("Basic.Main.TakeScreenshot"),
+				this, SLOT(TakeScreenshot()));
+
+		popup.addAction(screenshot);
+
 		popup.addSeparator();
 	}
 
@@ -5681,6 +5687,70 @@ void OBSBasic::OpenSavedProjectors()
 	}
 }
 
+void OBSBasic::TakeScreenshot()
+{
+	gs_texture_t *currentTexture = obs_get_main_texture();
+
+	const char *filenameFormat = config_get_string(basicConfig, "Output",
+			"FilenameFormatting");
+	QString path = "";
+	bool noSpace = false;
+
+	const char *mode = config_get_string(basicConfig, "Output", "Mode");
+	if (strcmp(mode, "Advanced")) {
+		// Basic output
+		path = config_get_string(basicConfig, "SimpleOutput",
+				"FilePath");
+		noSpace = config_get_bool(basicConfig, "SimpleOutput",
+				"FileNameWithoutSpace");
+	}
+	else {
+		// Advanced output
+		path = config_get_string(basicConfig, "AdvOut", "RecFilePath");
+		noSpace = config_get_bool(basicConfig, "AdvOut",
+			"RecFileNameWithoutSpace");
+	}
+
+	os_dir_t *dir = path.size() > 0
+			? os_opendir(path.toLatin1().data())
+			: nullptr;
+
+	if (!dir) {
+		if (isVisible())
+			OBSMessageBox::information(this,
+					QTStr("Output.BadPath.Title"),
+					QTStr("Output.BadPath.Text"));
+		else
+			SysTrayNotify(QTStr("Output.BadPath.Text"),
+					QSystemTrayIcon::Warning);
+	}
+	else {
+		if (*path.rbegin() != '/' && *path.rbegin() != '\\')
+			path += '/';
+
+		path += GenerateSpecifiedFilename("png", noSpace,
+				filenameFormat).c_str();
+
+		obs_enter_graphics();
+		int saveResult = gs_texture_save_to_file(currentTexture,
+				path.toLatin1().data());
+		obs_leave_graphics();
+
+		if (!saveResult) {
+			QString title = QTStr(
+					"Basic.Main.TakeScreenshot.ErrorTitle");
+			QString message = QTStr(
+					"Basic.Main.TakeScreenshot.ErrorMessage");
+			OBSMessageBox::information(this, title, message);
+		}
+		else
+			blog(LOG_INFO, "Screenshot successfully saved to %s",
+					path.toLatin1().data());
+	}
+
+	os_closedir(dir);
+}
+
 void OBSBasic::on_actionFullscreenInterface_triggered()
 {
 	if (!fullscreenInterface)
@@ -6120,6 +6190,11 @@ void OBSBasic::on_autoConfigure_triggered()
 	test.setModal(true);
 	test.show();
 	test.exec();
+}
+
+void OBSBasic::on_actionTakeScreenshot_triggered()
+{
+	TakeScreenshot();
 }
 
 void OBSBasic::on_stats_triggered()

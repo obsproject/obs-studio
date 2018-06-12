@@ -909,6 +909,77 @@ gs_texture_t *gs_texture_create_from_file(const char *file)
 	return tex;
 }
 
+// This is a helper to interpret the raw texture data and format it as
+// desired (probably PNG). It is expected to be implemented by whatever
+// imaging subsystem this build is using (FFMpeg or ImageMagick).
+// The buffer will be sent in as RGBA data, and will not be aligned
+// to any byte boundaries. Thus, the size of the buffer will always
+// be width * height * 4.
+extern uint32_t gs_texture_save_buffer_to_file(const char *buffer, int width,
+		int height, const char *file);
+
+uint32_t gs_texture_save_to_file(gs_texture_t *texture, const char *file)
+{
+	if (!gs_valid_p("gs_texture_save_to_file", texture))
+		return 0;
+
+	int width = gs_texture_get_width(texture);
+	int height = gs_texture_get_height(texture);
+	uint8_t *buffer = NULL;
+
+	// To ensure that we have a texture that is allocated properly to be
+	// mapped into CPU memory, we need to copy it into a locally-created
+	// staging texture. This also ensures that its data gets formatted
+	// as RGBA, which the saving function expects. This surface is
+	// temporary and will be deleted after this call completes.
+	uint8_t *stageBuffer = NULL;
+	int stagePitch = 0;
+	gs_stagesurf_t *stageSurface =
+			gs_stagesurface_create(width, height, GS_RGBA);
+	if (!stageSurface)
+		return 0;
+
+	gs_stage_texture(stageSurface, texture);
+
+	if (gs_stagesurface_map(stageSurface, &stageBuffer, &stagePitch)) {
+		buffer = bzalloc(width * height * 4);
+
+		if (stagePitch == width * 4)
+			// If the row pitch of the mapped texture matches
+			// the width of the image, just copy it all at once.
+			// This is the case on OpenGL.
+			memcpy(buffer, stageBuffer, width * height * 4);
+		else {
+			// If the row pitch is different from the width of the
+			// image, that means it's been aligned to some size by
+			// the hardware. This happens on DX11. For simplicity,
+			// we'll copy it row by row, truncating the padding
+			// from each row. That way, its alignment will be
+			// consistent in the save logic regardless of the
+			// graphics backend.
+			for (int row = 0; row < height; row++)
+				memcpy(&buffer[row * width * 4],
+						&stageBuffer[row * stagePitch],
+						width * 4);
+		}
+
+		gs_stagesurface_unmap(stageSurface);
+	}
+	gs_stagesurface_destroy(stageSurface);
+
+	// If we successfully copied a buffer out of the hardware, send it
+	// on to be encoded into an image file.
+	if (buffer == NULL)
+		return 0;
+
+	int success = gs_texture_save_buffer_to_file(buffer, width, height,
+			file);
+
+	bfree(buffer);
+
+	return success;
+}
+
 static inline void assign_sprite_rect(float *start, float *end, float size,
 		bool flip)
 {

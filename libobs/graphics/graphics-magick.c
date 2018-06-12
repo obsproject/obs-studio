@@ -67,3 +67,13 @@ uint8_t *gs_create_texture_file_data(const char *file,
 
 	return data;
 }
+
+uint32_t
+gs_texture_save_buffer_to_file(const char *buffer, int width,
+	int height, const char *file)
+{
+	blog(LOG_ERROR, "Saving textures to file is not currently"
+			"supported in the ImageMagick backend.");
+
+	return 0;
+}
