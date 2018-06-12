@@ -237,8 +237,8 @@ static void stinger_transition_start(void *data)
 				(long double)s->transition_point_ns /
 				(long double)s->duration_ns);
 
-		if (s->transition_point > 1.0f)
-			s->transition_point = 1.0f;
+		if (s->transition_point > 0.999f)
+			s->transition_point = 0.999f;
 		else if (s->transition_point < 0.001f)
 			s->transition_point = 0.001f;
 
