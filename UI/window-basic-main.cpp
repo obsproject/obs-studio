@@ -1560,9 +1560,8 @@ void OBSBasic::OBSInit()
 		}
 	}
 
-	bool vertical = config_get_bool(App()->GlobalConfig(), "BasicWindow",
-			"VerticalVolControl");
-	ui->stackedMixerArea->setCurrentIndex(vertical);
+	ToggleMixerLayout(config_get_bool(App()->GlobalConfig(), "BasicWindow",
+			"VerticalVolControl"));
 
 	if (config_get_bool(basicConfig, "General", "OpenStatsOnStartup"))
 		on_stats_triggered();
@@ -2524,13 +2523,24 @@ void OBSBasic::StackedMixerAreaContextMenuRequested()
 	popup.exec(QCursor::pos());
 }
 
+void OBSBasic::ToggleMixerLayout(bool vertical)
+{
+	if (vertical) {
+		ui->stackedMixerArea->setMinimumSize(180, 220);
+		ui->stackedMixerArea->setCurrentIndex(1);
+	} else {
+		ui->stackedMixerArea->setMinimumSize(220, 0);
+		ui->stackedMixerArea->setCurrentIndex(0);
+	}
+}
+
 void OBSBasic::ToggleVolControlLayout()
 {
 	bool vertical = !config_get_bool(GetGlobalConfig(), "BasicWindow",
 			"VerticalVolControl");
 	config_set_bool(GetGlobalConfig(), "BasicWindow", "VerticalVolControl",
 			vertical);
-	ui->stackedMixerArea->setCurrentIndex(vertical);
+	ToggleMixerLayout(vertical);
 
 	// We need to store it so we can delete current and then add
 	// at the right order

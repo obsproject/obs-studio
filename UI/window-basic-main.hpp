@@ -252,6 +252,7 @@ private:
 	void GetAudioSourceProperties();
 	void VolControlContextMenu();
 	void ToggleVolControlLayout();
+	void ToggleMixerLayout(bool vertical);
 
 	void RefreshSceneCollections();
 	void ChangeSceneCollection();

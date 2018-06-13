@@ -617,12 +617,6 @@
      <item>
       <widget class="QStackedWidget" name="stackedMixerArea">
        <widget class="VScrollArea" name="hMixerScrollArea">
-        <property name="minimumSize">
-         <size>
-          <width>175</width>
-          <height>220</height>
-         </size>
-        </property>
         <property name="contextMenuPolicy">
          <enum>Qt::CustomContextMenu</enum>
         </property>
