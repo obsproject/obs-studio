@@ -72,6 +72,8 @@ private:
 
 	bool isAsync;
 
+	int noPreviewMargin;
+
 private slots:
 	void AddFilter(OBSSource filter);
 	void RemoveFilter(OBSSource filter);
