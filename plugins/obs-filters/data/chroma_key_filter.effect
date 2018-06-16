@@ -11,8 +11,9 @@ uniform float contrast;
 uniform float brightness;
 uniform float gamma;
 
-uniform float2 chroma_key;
-uniform float4 key_rgb;
+uniform float2 chroma_key1;
+uniform float2 chroma_key2;
+uniform float2 chroma_key3;
 uniform float2 pixel_size;
 uniform float similarity;
 uniform float smoothness;
@@ -45,7 +46,10 @@ float4 CalcColor(float4 rgba)
 float GetChromaDist(float3 rgb)
 {
 	float4 yuvx = mul(float4(rgb.rgb, 1.0), yuv_mat);
-	return distance(chroma_key, yuvx.yz);
+	float d1 = distance(chroma_key1, yuvx.yz);
+	float d2 = distance(chroma_key2, yuvx.yz);
+	float d3 = distance(chroma_key3, yuvx.yz);
+	return min(min(d1, d2), d3);
 }
 
 float4 SampleTexture(float2 uv)
