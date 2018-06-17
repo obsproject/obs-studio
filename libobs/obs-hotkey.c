@@ -79,6 +79,62 @@ obs_hotkey_t *obs_hotkey_binding_get_hotkey(obs_hotkey_binding_t *binding)
 	return binding->hotkey;
 }
 
+static inline bool find_id(obs_hotkey_id id, size_t *idx);
+void obs_hotkey_set_name(obs_hotkey_id id, const char *name)
+{
+	size_t idx;
+
+	if (!find_id(id, &idx))
+		return;
+
+	obs_hotkey_t *hotkey = &obs->hotkeys.hotkeys.array[idx];
+	bfree(hotkey->name);
+	hotkey->name = bstrdup(name);
+}
+
+void obs_hotkey_set_description(obs_hotkey_id id, const char *desc)
+{
+	size_t idx;
+
+	if (!find_id(id, &idx))
+		return;
+
+	obs_hotkey_t *hotkey = &obs->hotkeys.hotkeys.array[idx];
+	bfree(hotkey->description);
+	hotkey->description = bstrdup(desc);
+}
+
+static inline bool find_pair_id(obs_hotkey_pair_id id, size_t *idx);
+void obs_hotkey_pair_set_names(obs_hotkey_pair_id id,
+		const char *name0, const char *name1)
+{
+	size_t idx;
+	obs_hotkey_pair_t pair;
+
+	if (!find_pair_id(id, &idx))
+		return;
+
+	pair = obs->hotkeys.hotkey_pairs.array[idx];
+
+	obs_hotkey_set_name(pair.id[0], name0);
+	obs_hotkey_set_name(pair.id[1], name1);
+}
+
+void obs_hotkey_pair_set_descriptions(obs_hotkey_pair_id id,
+		const char *desc0, const char *desc1)
+{
+	size_t idx;
+	obs_hotkey_pair_t pair;
+
+	if (!find_pair_id(id, &idx))
+		return;
+
+	pair = obs->hotkeys.hotkey_pairs.array[idx];
+
+	obs_hotkey_set_description(pair.id[0], desc0);
+	obs_hotkey_set_description(pair.id[1], desc1);
+}
+
 static void hotkey_signal(const char *signal, obs_hotkey_t *hotkey)
 {
 	calldata_t data;

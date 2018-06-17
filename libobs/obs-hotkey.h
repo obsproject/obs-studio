@@ -60,6 +60,8 @@ enum obs_hotkey_registerer_type {
 };
 typedef enum obs_hotkey_registerer_type obs_hotkey_registerer_t;
 
+/* getter functions */
+
 EXPORT obs_hotkey_id obs_hotkey_get_id(const obs_hotkey_t *key);
 EXPORT const char *obs_hotkey_get_name(const obs_hotkey_t *key);
 EXPORT const char *obs_hotkey_get_description(const obs_hotkey_t *key);
@@ -75,6 +77,15 @@ EXPORT obs_hotkey_id obs_hotkey_binding_get_hotkey_id(
 		obs_hotkey_binding_t *binding);
 EXPORT obs_hotkey_t *obs_hotkey_binding_get_hotkey(
 		obs_hotkey_binding_t *binding);
+
+/* setter functions */
+
+EXPORT void obs_hotkey_set_name(obs_hotkey_id id, const char *name);
+EXPORT void obs_hotkey_set_description(obs_hotkey_id id, const char *desc);
+EXPORT void obs_hotkey_pair_set_names(obs_hotkey_pair_id id,
+		const char *name0, const char *name1);
+EXPORT void obs_hotkey_pair_set_descriptions(obs_hotkey_pair_id id,
+		const char *desc0, const char *desc1);
 
 #ifndef SWIG
 struct obs_hotkeys_translations {

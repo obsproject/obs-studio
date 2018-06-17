@@ -1449,6 +1449,44 @@ static void init_hotkeys(obs_scene_t *scene, obs_sceneitem_t *item,
 	dstr_free(&hide_desc);
 }
 
+static void sceneitem_rename_hotkey(const obs_sceneitem_t *scene_item,
+		const char *new_name)
+{
+	struct dstr show = { 0 };
+	struct dstr hide = { 0 };
+	struct dstr show_desc = { 0 };
+	struct dstr hide_desc = { 0 };
+
+	dstr_copy(&show, "libobs.show_scene_item.%1");
+	dstr_replace(&show, "%1", new_name);
+	dstr_copy(&hide, "libobs.hide_scene_item.%1");
+	dstr_replace(&hide, "%1", new_name);
+
+	obs_hotkey_pair_set_names(scene_item->toggle_visibility,
+			show.array, hide.array);
+
+	dstr_copy(&show_desc, obs->hotkeys.sceneitem_show);
+	dstr_replace(&show_desc, "%1", new_name);
+	dstr_copy(&hide_desc, obs->hotkeys.sceneitem_hide);
+	dstr_replace(&hide_desc, "%1", new_name);
+
+	obs_hotkey_pair_set_descriptions(scene_item->toggle_visibility,
+			show_desc.array, hide_desc.array);
+
+	dstr_free(&show);
+	dstr_free(&hide);
+	dstr_free(&show_desc);
+	dstr_free(&hide_desc);
+}
+
+static void sceneitem_renamed(void *param, calldata_t *data)
+{
+	obs_sceneitem_t *scene_item = param;
+	const char *name = calldata_string(data, "new_name");
+
+	sceneitem_rename_hotkey(scene_item, name);
+}
+
 static inline bool source_has_audio(obs_source_t *source)
 {
 	return (source->info.output_flags &
@@ -1545,6 +1583,9 @@ static obs_sceneitem_t *obs_scene_add_internal(obs_scene_t *scene,
 	if (!scene->source->context.private)
 		init_hotkeys(scene, item, obs_source_get_name(source));
 
+	signal_handler_connect(obs_source_get_signal_handler(source), "rename",
+			sceneitem_renamed, item);
+
 	return item;
 }
 
@@ -1574,6 +1615,9 @@ static void obs_sceneitem_destroy(obs_sceneitem_t *item)
 		obs_data_release(item->private_settings);
 		obs_hotkey_pair_unregister(item->toggle_visibility);
 		pthread_mutex_destroy(&item->actions_mutex);
+		signal_handler_disconnect(
+				obs_source_get_signal_handler(item->source),
+				"rename", sceneitem_renamed, item);
 		if (item->source)
 			obs_source_release(item->source);
 		da_free(item->audio_actions);
