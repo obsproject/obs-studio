@@ -147,27 +147,27 @@ if (NOT ZLIB_BIN_FILES)
 		)
 endif()
 
-if (CMAKE_CONFIGURATION_TYPES MATCHES "Debug")
-	file(GLOB QT_DEBUG_BIN_FILES
-		"${Qt5Core_DIR}/../../../bin/Qt5Cored.dll"
-		"${Qt5Core_DIR}/../../../bin/Qt5Guid.dll"
-		"${Qt5Core_DIR}/../../../bin/Qt5Widgetsd.dll"
-		"${Qt5Core_DIR}/../../../bin/libGLESv2d.dll"
-		"${Qt5Core_DIR}/../../../bin/libEGLd.dll")
-	file(GLOB QT_DEBUG_PLAT_BIN_FILES
-		"${Qt5Core_DIR}/../../../plugins/platforms/qwindowsd.dll")
-endif()
+file(GLOB QT_DEBUG_BIN_FILES
+	"${Qt5Core_DIR}/../../../bin/Qt5Cored.dll"
+	"${Qt5Core_DIR}/../../../bin/Qt5Guid.dll"
+	"${Qt5Core_DIR}/../../../bin/Qt5Widgetsd.dll"
+	"${Qt5Core_DIR}/../../../bin/libGLESv2d.dll"
+	"${Qt5Core_DIR}/../../../bin/libEGLd.dll")
+file(GLOB QT_DEBUG_PLAT_BIN_FILES
+	"${Qt5Core_DIR}/../../../plugins/platforms/qwindowsd.dll")
+file(GLOB QT_DEBUG_STYLES_BIN_FILES
+	"${Qt5Core_DIR}/../../../plugins/styles/qwindowsvistastyled.dll")
 
-if (CMAKE_CONFIGURATION_TYPES MATCHES "Rel")
-	file(GLOB QT_BIN_FILES
-		"${Qt5Core_DIR}/../../../bin/Qt5Core.dll"
-		"${Qt5Core_DIR}/../../../bin/Qt5Gui.dll"
-		"${Qt5Core_DIR}/../../../bin/Qt5Widgets.dll"
-		"${Qt5Core_DIR}/../../../bin/libGLESv2.dll"
-		"${Qt5Core_DIR}/../../../bin/libEGL.dll")
-	file(GLOB QT_PLAT_BIN_FILES
-		"${Qt5Core_DIR}/../../../plugins/platforms/qwindows.dll")
-endif()
+file(GLOB QT_BIN_FILES
+	"${Qt5Core_DIR}/../../../bin/Qt5Core.dll"
+	"${Qt5Core_DIR}/../../../bin/Qt5Gui.dll"
+	"${Qt5Core_DIR}/../../../bin/Qt5Widgets.dll"
+	"${Qt5Core_DIR}/../../../bin/libGLESv2.dll"
+	"${Qt5Core_DIR}/../../../bin/libEGL.dll")
+file(GLOB QT_PLAT_BIN_FILES
+	"${Qt5Core_DIR}/../../../plugins/platforms/qwindows.dll")
+file(GLOB QT_STYLES_BIN_FILES
+	"${Qt5Core_DIR}/../../../plugins/styles/qwindowsvistastyle.dll")
 
 file(GLOB QT_ICU_BIN_FILES
 	"${Qt5Core_DIR}/../../../bin/icu*.dll")
@@ -190,16 +190,21 @@ set(ALL_DBG_BIN_FILES
 	${QT_DEBUG_BIN_FILES})
 
 set(ALL_PLATFORM_BIN_FILES)
-
 set(ALL_PLATFORM_REL_BIN_FILES
 	${QT_PLAT_BIN_FILES})
-
 set(ALL_PLATFORM_DBG_BIN_FILES
 	${QT_DEBUG_PLAT_BIN_FILES})
 
+set(ALL_STYLES_BIN_FILES)
+set(ALL_STYLES_REL_BIN_FILES
+	${QT_STYLES_BIN_FILES})
+set(ALL_STYLES_DBG_BIN_FILES
+	${QT_DEBUG_STYLES_BIN_FILES})
+
 foreach(list
 		ALL_BASE_BIN_FILES ALL_REL_BIN_FILES ALL_DBG_BIN_FILES
-		ALL_PLATFORM_BIN_FILES ALL_PLATFORM_REL_BIN_FILES ALL_PLATFORM_DBG_BIN_FILES)
+		ALL_PLATFORM_BIN_FILES ALL_PLATFORM_REL_BIN_FILES ALL_PLATFORM_DBG_BIN_FILES
+		ALL_STYLES_BIN_FILES ALL_STYLES_REL_BIN_FILES ALL_STYLES_DBG_BIN_FILES)
 	if(${list})
 		list(REMOVE_DUPLICATES ${list})
 	endif()
@@ -215,8 +220,10 @@ message(STATUS "ssl files: ${SSL_BIN_FILES}")
 message(STATUS "zlib files: ${ZLIB_BIN_FILES}")
 message(STATUS "QT Debug files: ${QT_DEBUG_BIN_FILES}")
 message(STATUS "QT Debug Platform files: ${QT_DEBUG_PLAT_BIN_FILES}")
+message(STATUS "QT Debug Styles files: ${QT_DEBUG_STYLES_BIN_FILES}")
 message(STATUS "QT Release files: ${QT_BIN_FILES}")
 message(STATUS "QT Release Platform files: ${QT_PLAT_BIN_FILES}")
+message(STATUS "QT Release Styles files: ${QT_STYLES_BIN_FILES}")
 message(STATUS "QT ICU files: ${QT_ICU_BIN_FILES}")
 
 foreach(BinFile ${ALL_BASE_BIN_FILES})
@@ -247,6 +254,21 @@ endforeach()
 foreach(BinFile ${ALL_PLATFORM_DBG_BIN_FILES})
 	make_directory("${CMAKE_SOURCE_DIR}/additional_install_files/exec${_bin_suffix}d/platforms")
 	file(COPY "${BinFile}" DESTINATION "${CMAKE_SOURCE_DIR}/additional_install_files/exec${_bin_suffix}d/platforms/")
+endforeach()
+
+foreach(BinFile ${ALL_STYLES_BIN_FILES})
+	make_directory("${CMAKE_SOURCE_DIR}/additional_install_files/exec${_bin_suffix}/styles")
+	file(COPY "${BinFile}" DESTINATION "${CMAKE_SOURCE_DIR}/additional_install_files/exec${_bin_suffix}/styles/")
+endforeach()
+
+foreach(BinFile ${ALL_STYLES_REL_BIN_FILES})
+	make_directory("${CMAKE_SOURCE_DIR}/additional_install_files/exec${_bin_suffix}r/styles")
+	file(COPY "${BinFile}" DESTINATION "${CMAKE_SOURCE_DIR}/additional_install_files/exec${_bin_suffix}r/styles/")
+endforeach()
+
+foreach(BinFile ${ALL_STYLES_DBG_BIN_FILES})
+	make_directory("${CMAKE_SOURCE_DIR}/additional_install_files/exec${_bin_suffix}d/styles")
+	file(COPY "${BinFile}" DESTINATION "${CMAKE_SOURCE_DIR}/additional_install_files/exec${_bin_suffix}d/styles/")
 endforeach()
 
 set(COPIED_DEPENDENCIES TRUE CACHE BOOL "Dependencies have been copied, set to false to copy again" FORCE)

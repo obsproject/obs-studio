@@ -1,5 +1,11 @@
 #!/usr/bin/env bash
 
+# This script builds a tar file that contains a bunch of deps that OBS needs for
+# advanced functionality on OSX. Currently this tar file is pulled down off of s3
+# and used in the CI build process on travis.
+# Mostly this sets build flags to compile with older SDKS and make sure that 
+# the libs are portable.
+
 exists()
 {
   command -v "$1" >/dev/null 2>&1

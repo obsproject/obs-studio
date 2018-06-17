@@ -59,6 +59,7 @@ static inline void wrap_blog(int log_level, const char *message)
 %ignore obs_add_main_render_callback;
 %ignore obs_remove_main_render_callback;
 %ignore obs_enum_sources;
+%ignore obs_source_enum_filters;
 %ignore obs_properties_add_button;
 %ignore obs_property_set_modified_callback;
 %ignore signal_handler_connect;

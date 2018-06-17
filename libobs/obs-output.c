@@ -419,6 +419,18 @@ bool obs_output_active(const obs_output_t *output)
 		(active(output) || reconnecting(output)) : false;
 }
 
+uint32_t obs_output_get_flags(const obs_output_t *output)
+{
+	return obs_output_valid(output, "obs_output_get_flags") ?
+		output->info.flags : 0;
+}
+
+uint32_t obs_get_output_flags(const char *id)
+{
+	const struct obs_output_info *info = find_output(id);
+	return info ? info->flags : 0;
+}
+
 static inline obs_data_t *get_defaults(const struct obs_output_info *info)
 {
 	obs_data_t *settings = obs_data_create();
@@ -1541,7 +1553,7 @@ static void hook_data_capture(struct obs_output *output, bool encoded,
 					encoded_callback, output);
 	} else {
 		if (has_video)
-			video_output_connect(output->video,
+			start_raw_video(output->video,
 					get_video_conversion(output),
 					default_raw_video_callback, output);
 		if (has_audio)
@@ -1797,7 +1809,7 @@ static void *end_data_capture_thread(void *data)
 			stop_audio_encoders(output, encoded_callback);
 	} else {
 		if (has_video)
-			video_output_disconnect(output->video,
+			stop_raw_video(output->video,
 					default_raw_video_callback, output);
 		if (has_audio)
 			audio_output_disconnect(output->audio,
@@ -2061,7 +2073,8 @@ static struct caption_text *caption_text_new(const char *text, size_t bytes,
 		struct caption_text *tail, struct caption_text **head)
 {
 	struct caption_text *next = bzalloc(sizeof(struct caption_text));
-	snprintf(&next->text[0], CAPTION_LINE_BYTES + 1, "%.*s", bytes, text);
+	snprintf(&next->text[0], CAPTION_LINE_BYTES + 1, "%.*s",
+			(int)bytes, text);
 
 	if (!*head) {
 		*head = next;

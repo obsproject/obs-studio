@@ -424,10 +424,11 @@ static void vt_h264_video_info(void *data, struct video_scale_info *info)
 		enc->vt_pix_fmt = enc->fullrange ?
 				  kCVPixelFormatType_420YpCbCr8PlanarFullRange
 				: kCVPixelFormatType_420YpCbCr8Planar;
-	} else if (info->format == VIDEO_FORMAT_I444) {
-		enc->obs_pix_fmt = info->format;
-		enc->vt_pix_fmt = kCVPixelFormatType_444YpCbCr10;
+		return;
 	}
+
+	if (info->format == VIDEO_FORMAT_I444)
+		VT_BLOG(LOG_WARNING, "I444 color format not supported");
 
 	// Anything else, return default
 	enc->obs_pix_fmt = VIDEO_FORMAT_NV12;
@@ -445,11 +446,12 @@ static void update_params(struct vt_h264_encoder *enc, obs_data_t *settings)
 
 	struct video_scale_info info = { .format = voi->format };
 
+	enc->fullrange = voi->range == VIDEO_RANGE_FULL;
+
 	// also sets the enc->vt_pix_fmt
 	vt_h264_video_info(enc, &info);
 
 	enc->colorspace = voi->colorspace;
-	enc->fullrange = voi->range == VIDEO_RANGE_FULL;
 
 	enc->width = obs_encoder_get_width(enc->encoder);
 	enc->height = obs_encoder_get_height(enc->encoder);

@@ -148,6 +148,13 @@ void obs_frontend_set_current_scene_collection(const char *collection)
 		c->obs_frontend_set_current_scene_collection(collection);
 }
 
+bool obs_frontend_add_scene_collection(const char *name)
+{
+	return callbacks_valid()
+		? c->obs_frontend_add_scene_collection(name)
+		: false;
+}
+
 char **obs_frontend_get_profiles(void)
 {
 	if (!callbacks_valid())
@@ -295,6 +302,18 @@ void obs_frontend_save(void)
 {
 	if (callbacks_valid())
 		c->obs_frontend_save();
+}
+
+void obs_frontend_defer_save_begin(void)
+{
+	if (callbacks_valid())
+		c->obs_frontend_defer_save_begin();
+}
+
+void obs_frontend_defer_save_end(void)
+{
+	if (callbacks_valid())
+		c->obs_frontend_defer_save_end();
 }
 
 void obs_frontend_add_save_callback(obs_frontend_save_cb callback,

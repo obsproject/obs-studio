@@ -60,6 +60,7 @@ struct ft2_source {
 	gs_effect_t *draw_effect;
 	bool outline_text, drop_shadow;
 	bool log_mode, word_wrap;
+	uint32_t log_lines;
 
 	obs_source_t *src;
 };

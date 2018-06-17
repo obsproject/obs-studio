@@ -377,7 +377,7 @@ static void obs_lua_tick_callback(void *priv, float seconds)
 	lock_callback();
 
 	lua_pushnumber(script, (lua_Number)seconds);
-	call_func(obs_lua_tick_callback, 2, 0);
+	call_func(obs_lua_tick_callback, 1, 0);
 
 	unlock_callback();
 }
@@ -578,6 +578,32 @@ static int enum_sources(lua_State *script)
 	obs_enum_sources(enum_sources_proc, script);
 	return 1;
 }
+
+/* -------------------------------------------- */
+
+static bool source_enum_filters_proc(obs_source_t *source, obs_source_t *filter, void *param)
+{
+	lua_State *script = param;
+
+	obs_source_get_ref(filter);
+	ls_push_libobs_obj(obs_source_t, filter, false);
+
+	size_t idx = lua_rawlen(script, -2);
+	lua_rawseti(script, -2, (int)idx + 1);
+	return true;
+}
+
+static int source_enum_filters(lua_State *script)
+{
+	obs_source_t *source;
+	if (!ls_get_libobs_obj(obs_source_t, 1, &source))
+		return 0;
+
+	lua_newtable(script);
+	obs_source_enum_filters(source, source_enum_filters_proc, script);
+	return 1;
+}
+
 
 /* -------------------------------------------- */
 
@@ -972,6 +998,7 @@ static void add_hook_functions(lua_State *script)
 	add_func("timer_remove", timer_remove);
 	add_func("timer_add", timer_add);
 	add_func("obs_enum_sources", enum_sources);
+	add_func("obs_source_enum_filters", source_enum_filters);
 	add_func("obs_scene_enum_items", scene_enum_items);
 	add_func("source_list_release", source_list_release);
 	add_func("sceneitem_list_release", sceneitem_list_release);

@@ -196,6 +196,18 @@ Signals are used for all event-based callbacks.
 
 ---------------------
 
+.. function:: void signal_handler_connect_ref(signal_handler_t *handler, const char *signal, signal_callback_t callback, void *data)
+
+   Connect a callback to a signal on a signal handler, and increments
+   the handler's internal reference counter, preventing it from being
+   destroyed until the signal has been disconnected.
+
+   :param handler:  Signal handler object
+   :param callback: Signal callback
+   :param data:     Private data passed the callback
+
+---------------------
+
 .. function:: void signal_handler_disconnect(signal_handler_t *handler, const char *signal, signal_callback_t callback, void *data)
 
    Disconnects a callback from a signal on a signal handler.

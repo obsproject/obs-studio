@@ -218,7 +218,7 @@ static bool obs_init_textures(struct obs_video_info *ovi)
 gs_effect_t *obs_load_effect(gs_effect_t **effect, const char *file)
 {
 	if (!*effect) {
-		char *filename = find_libobs_data_file(file);
+		char *filename = obs_find_data_file(file);
 		*effect = gs_effect_create_from_file(filename, NULL);
 		bfree(filename);
 	}
@@ -250,49 +250,49 @@ static int obs_init_graphics(struct obs_video_info *ovi)
 
 	gs_enter_context(video->graphics);
 
-	char *filename = find_libobs_data_file("default.effect");
+	char *filename = obs_find_data_file("default.effect");
 	video->default_effect = gs_effect_create_from_file(filename,
 			NULL);
 	bfree(filename);
 
 	if (gs_get_device_type() == GS_DEVICE_OPENGL) {
-		filename = find_libobs_data_file("default_rect.effect");
+		filename = obs_find_data_file("default_rect.effect");
 		video->default_rect_effect = gs_effect_create_from_file(
 				filename, NULL);
 		bfree(filename);
 	}
 
-	filename = find_libobs_data_file("opaque.effect");
+	filename = obs_find_data_file("opaque.effect");
 	video->opaque_effect = gs_effect_create_from_file(filename,
 			NULL);
 	bfree(filename);
 
-	filename = find_libobs_data_file("solid.effect");
+	filename = obs_find_data_file("solid.effect");
 	video->solid_effect = gs_effect_create_from_file(filename,
 			NULL);
 	bfree(filename);
 
-	filename = find_libobs_data_file("format_conversion.effect");
+	filename = obs_find_data_file("format_conversion.effect");
 	video->conversion_effect = gs_effect_create_from_file(filename,
 			NULL);
 	bfree(filename);
 
-	filename = find_libobs_data_file("bicubic_scale.effect");
+	filename = obs_find_data_file("bicubic_scale.effect");
 	video->bicubic_effect = gs_effect_create_from_file(filename,
 			NULL);
 	bfree(filename);
 
-	filename = find_libobs_data_file("lanczos_scale.effect");
+	filename = obs_find_data_file("lanczos_scale.effect");
 	video->lanczos_effect = gs_effect_create_from_file(filename,
 			NULL);
 	bfree(filename);
 
-	filename = find_libobs_data_file("bilinear_lowres_scale.effect");
+	filename = obs_find_data_file("bilinear_lowres_scale.effect");
 	video->bilinear_lowres_effect = gs_effect_create_from_file(filename,
 			NULL);
 	bfree(filename);
 
-	filename = find_libobs_data_file("premultiplied_alpha.effect");
+	filename = obs_find_data_file("premultiplied_alpha.effect");
 	video->premultiplied_alpha_effect = gs_effect_create_from_file(filename,
 			NULL);
 	bfree(filename);
@@ -776,10 +776,53 @@ static bool obs_init(const char *locale, const char *module_config_path,
 }
 
 #ifdef _WIN32
-extern void initialize_crash_handler(void);
 extern void initialize_com(void);
 extern void uninitialize_com(void);
 #endif
+
+/* Separate from actual context initialization
+ * since this can be set before startup and persist
+ * after shutdown. */
+static DARRAY(struct dstr) core_module_paths = {0};
+
+char *obs_find_data_file(const char *file)
+{
+	struct dstr path = {0};
+
+	const char *result = find_libobs_data_file(file);
+	if (result)
+		return result;
+
+	for (int i = 0; i < core_module_paths.num; ++i) {
+		if (check_path(file, core_module_paths.array[i].array, &path))
+			return path.array;
+	}
+
+	dstr_free(&path);
+	return NULL;
+}
+
+void obs_add_data_path(const char *path)
+{
+	struct dstr *new_path = da_push_back_new(core_module_paths);
+	dstr_init_copy(new_path, path);
+	da_push_back(core_module_paths, new_path);
+}
+
+bool obs_remove_data_path(const char *path)
+{
+	for (int i = 0; i < core_module_paths.num; ++i) {
+		int result = dstr_cmp(&core_module_paths.array[i], path);
+
+		if (result == 0) {
+			dstr_free(&core_module_paths.array[i]);
+			da_erase(core_module_paths, i);
+			return true;
+		}
+	}
+
+	return false;
+}
 
 static const char *obs_startup_name = "obs_startup";
 bool obs_startup(const char *locale, const char *module_config_path,
@@ -795,7 +838,6 @@ bool obs_startup(const char *locale, const char *module_config_path,
 	}
 
 #ifdef _WIN32
-	initialize_crash_handler();
 	initialize_com();
 #endif
 
@@ -974,18 +1016,26 @@ int obs_reset_video(struct obs_video_info *ovi)
 		break;
 	}
 
+	bool yuv = format_is_yuv(ovi->output_format);
+	const char *yuv_format = get_video_colorspace_name(ovi->colorspace);
+	const char *yuv_range = get_video_range_name(ovi->range);
+
 	blog(LOG_INFO, "---------------------------------");
 	blog(LOG_INFO, "video settings reset:\n"
 	               "\tbase resolution:   %dx%d\n"
 	               "\toutput resolution: %dx%d\n"
 	               "\tdownscale filter:  %s\n"
 	               "\tfps:               %d/%d\n"
-	               "\tformat:            %s",
+	               "\tformat:            %s\n"
+	               "\tYUV mode:          %s%s%s",
 	               ovi->base_width, ovi->base_height,
 	               ovi->output_width, ovi->output_height,
 	               scale_type_name,
 	               ovi->fps_num, ovi->fps_den,
-		       get_video_format_name(ovi->output_format));
+	               get_video_format_name(ovi->output_format),
+	               yuv ? yuv_format : "None",
+		       yuv ? "/" : "",
+	               yuv ? yuv_range : "");
 
 	return obs_init_video(ovi);
 }
@@ -1460,6 +1510,23 @@ void obs_render_main_texture(void)
 		gs_draw_sprite(tex, 0, 0, 0);
 }
 
+gs_texture_t *obs_get_main_texture(void)
+{
+	struct obs_core_video *video = &obs->video;
+	int last_tex;
+
+	if (!obs) return NULL;
+
+	last_tex = video->cur_texture == 0
+		? NUM_TEXTURES - 1
+		: video->cur_texture - 1;
+
+	if (!video->textures_rendered[last_tex])
+		return NULL;
+
+	return video->render_textures[last_tex];
+}
+
 void obs_set_master_volume(float volume)
 {
 	struct calldata data = {0};
@@ -1619,7 +1686,8 @@ void obs_load_sources(obs_data_array_t *array, obs_load_source_cb cb,
 			if (source->info.type == OBS_SOURCE_TYPE_TRANSITION)
 				obs_transition_load(source, source_data);
 			obs_source_load(source);
-			cb(private_data, source);
+			if (cb)
+				cb(private_data, source);
 		}
 		obs_data_release(source_data);
 	}
@@ -2045,4 +2113,43 @@ uint32_t obs_get_total_frames(void)
 uint32_t obs_get_lagged_frames(void)
 {
 	return obs ? obs->video.lagged_frames : 0;
+}
+
+void start_raw_video(video_t *v, const struct video_scale_info *conversion,
+		void (*callback)(void *param, struct video_data *frame),
+		void *param)
+{
+	struct obs_core_video *video = &obs->video;
+	os_atomic_inc_long(&video->raw_active);
+	video_output_connect(v, conversion, callback, param);
+}
+
+void stop_raw_video(video_t *v,
+		void (*callback)(void *param, struct video_data *frame),
+		void *param)
+{
+	struct obs_core_video *video = &obs->video;
+	os_atomic_dec_long(&video->raw_active);
+	video_output_disconnect(v, callback, param);
+}
+
+void obs_add_raw_video_callback(
+		const struct video_scale_info *conversion,
+		void (*callback)(void *param, struct video_data *frame),
+		void *param)
+{
+	struct obs_core_video *video = &obs->video;
+	if (!obs)
+		return;
+	start_raw_video(video->video, conversion, callback, param);
+}
+
+void obs_remove_raw_video_callback(
+		void (*callback)(void *param, struct video_data *frame),
+		void *param)
+{
+	struct obs_core_video *video = &obs->video;
+	if (!obs)
+		return;
+	stop_raw_video(video->video, callback, param);
 }

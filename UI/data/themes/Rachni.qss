@@ -701,6 +701,30 @@ MuteCheckBox::indicator:unchecked:disabled {
 	image: url(./Dark/unmute.png);
 }
 
+/****************************/
+/* --- Group Checkboxes --- */
+/****************************/
+
+SourceTreeSubItemCheckBox {
+    background: transparent;
+    outline: none;
+}
+
+SourceTreeSubItemCheckBox::indicator {
+    width: 10px;
+    height: 10px;
+}
+
+SourceTreeSubItemCheckBox::indicator:checked,
+SourceTreeSubItemCheckBox::indicator:checked:hover {
+    image: url(./Dark/expand.png);
+}
+
+SourceTreeSubItemCheckBox::indicator:unchecked,
+SourceTreeSubItemCheckBox::indicator:unchecked:hover {
+    image: url(./Dark/collapse.png);
+}
+
 /*************************/
 /* --- Progress bars --- */
 /*************************/
@@ -1022,20 +1046,60 @@ QSlider::handle:horizontal:pressed {
 	stop: 1 rgb(162, 161, 162));
 }
 
+QSlider::sub-page:horizontal {
+	background-color: rgb(0, 188, 212); /* Cyan (Primary) */
+	border-radius: 2px;
+}
+
 QSlider::sub-page:horizontal:disabled {
 	background-color: QLinearGradient(x1: 0, y1: 0, x2: 0, y2: 1,
 	stop: 0 rgb(35, 38, 41), /* Dark Gray */
+	stop: 0.75 rgb(35, 38, 41)); /* Dark Gray */
+	border-radius: 2px;
+}
+
+QSlider::groove:vertical {
+	background-color: QLinearGradient(x1: 1, y1: 0, x2: 0, y2: 0,
+	stop: 0 rgb(35, 38, 41), /* Dark Gray */
 	stop: 0.75 rgb(50, 49, 50));
+	width: 4px;
+	border: none;
+	border-radius: 2px;
+}
+
+QSlider::handle:vertical {
+	background-color: QLinearGradient(x1: 1, y1: 0, x2: 0, y2: 0,
+	stop: 0 rgb(240, 239, 240),
+	stop: 0.25 rgb(200, 199, 200),
+	stop: 1 rgb(162, 161, 162));
+	border: 1px solid rgb(58, 57, 58);
+	border-radius: 3px;
+	width: 10px;
+	height: 18px;
+	margin: 0 -3px;
+}
+
+QSlider::handle:vertical:pressed {
+	background-color: QLinearGradient(x1: 1, y1: 0, x2: 0, y2: 0,
+	stop: 0 rgb(240, 239, 240),
+	stop: 0.25 rgb(200, 199, 200),
+	stop: 1 rgb(162, 161, 162));
+}
+
+QSlider::add-page:vertical {
+	background-color: rgb(0, 188, 212); /* Cyan (Primary) */
+	border-radius: 2px;
+}
+
+QSlider::add-page:vertical:disabled {
+	background-color: QLinearGradient(x1: 1, y1: 0, x2: 0, y2: 0,
+	stop: 0 rgb(35, 38, 41), /* Dark Gray */
+	stop: 0.75 rgb(35, 38, 41)); /* Dark Gray */
 	border-radius: 2px;
 }
 
 QSlider::handle:hover {
 	background-color: rgb(200, 199, 200);
-}
-
-QSlider::sub-page {
-	background-color: rgb(0, 188, 212); /* Cyan (Primary) */
-	border-radius: 2px;
 }
 
 QSlider::handle:disabled {

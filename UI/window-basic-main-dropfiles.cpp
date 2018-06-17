@@ -107,8 +107,10 @@ void OBSBasic::AddDropSource(const char *data, DropType image)
 		break;
 	}
 
-	if (!obs_source_get_display_name(type))
+	if (!obs_source_get_display_name(type)) {
+		obs_data_release(settings);
 		return;
+	}
 
 	if (name.isEmpty())
 		name = obs_source_get_display_name(type);

@@ -351,16 +351,16 @@ static obs_properties_t *color_correction_filter_properties(void *data)
 	obs_properties_t *props = obs_properties_create();
 
 	obs_properties_add_float_slider(props, SETTING_GAMMA,
-			TEXT_GAMMA, -3.0f, 3.0f, 0.01f);
+			TEXT_GAMMA, -3.0, 3.0, 0.01);
 
 	obs_properties_add_float_slider(props, SETTING_CONTRAST,
-			TEXT_CONTRAST, -2.0f, 2.0f, 0.01f);
+			TEXT_CONTRAST, -2.0, 2.0, 0.01);
 	obs_properties_add_float_slider(props, SETTING_BRIGHTNESS,
-			TEXT_BRIGHTNESS, -1.0f, 1.0f, 0.01f);
+			TEXT_BRIGHTNESS, -1.0, 1.0, 0.01);
 	obs_properties_add_float_slider(props, SETTING_SATURATION,
-			TEXT_SATURATION, -1.0f, 5.0f, 0.01f);
+			TEXT_SATURATION, -1.0, 5.0, 0.01);
 	obs_properties_add_float_slider(props, SETTING_HUESHIFT,
-			TEXT_HUESHIFT, -180.0f, 180.0f, 0.01f);
+			TEXT_HUESHIFT, -180.0, 180.0, 0.01);
 	obs_properties_add_int_slider(props, SETTING_OPACITY,
 			TEXT_OPACITY, 0, 100, 1);
 

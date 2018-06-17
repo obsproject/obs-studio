@@ -16,6 +16,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
+#include "obs-internal.h"
 #if defined(__FreeBSD__)
 #define _GNU_SOURCE
 #endif
@@ -28,13 +29,13 @@
 #include <sys/sysinfo.h>
 #include <sys/utsname.h>
 #include <xcb/xcb.h>
+#if USE_XINPUT
+#include <xcb/xinput.h>
+#endif
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <X11/Xlib-xcb.h>
-#include <X11/keysym.h>
 #include <inttypes.h>
-#include "util/dstr.h"
-#include "obs-internal.h"
 
 const char *get_module_extension(void)
 {
@@ -236,6 +237,34 @@ static void log_kernel_version(void)
 	blog(LOG_INFO, "Kernel Version: %s %s", info.sysname, info.release);
 }
 
+static void log_x_info(void)
+{
+	Display *dpy = XOpenDisplay(NULL);
+	if (!dpy) {
+		blog(LOG_INFO, "Unable to open X display");
+		return;
+	}
+
+	int        protocol_version  = ProtocolVersion(dpy);
+	int        protocol_revision = ProtocolRevision(dpy);
+	int        vendor_release    = VendorRelease(dpy);
+	const char *vendor_name      = ServerVendor(dpy);
+
+	if (strstr(vendor_name, "X.Org")) {
+		blog(LOG_INFO, "Window System: X%d.%d, Vendor: %s, Version: %d"
+				".%d.%d", protocol_version, protocol_revision,
+				vendor_name, vendor_release / 10000000,
+				(vendor_release / 100000) % 100,
+				(vendor_release / 1000) % 100);
+	} else {
+		blog(LOG_INFO, "Window System: X%d.%d - vendor string: %s - "
+				"vendor release: %d", protocol_version,
+				protocol_revision, vendor_name, vendor_release);
+	}
+
+	XCloseDisplay(dpy);
+}
+
 #if defined(__linux__)
 static void log_distribution_info(void)
 {
@@ -292,6 +321,7 @@ void log_system_info(void)
 #if defined(__linux__)
 	log_distribution_info();
 #endif
+	log_x_info();
 }
 
 /* So here's how linux works with key mapping:
@@ -327,6 +357,12 @@ struct obs_hotkeys_platform {
 	xcb_keysym_t *keysyms;
 	int num_keysyms;
 	int syms_per_code;
+
+#if USE_XINPUT
+	bool pressed[XINPUT_MOUSE_LEN];
+	bool update[XINPUT_MOUSE_LEN];
+	bool button_pressed[XINPUT_MOUSE_LEN];
+#endif
 };
 
 #define MOUSE_1 (1<<16)
@@ -707,6 +743,54 @@ error1:
 	return error != NULL || reply == NULL;
 }
 
+static xcb_screen_t *default_screen(obs_hotkeys_platform_t *context,
+		xcb_connection_t *connection)
+{
+	int def_screen_idx = XDefaultScreen(context->display);
+	xcb_screen_iterator_t iter;
+
+	iter = xcb_setup_roots_iterator(xcb_get_setup(connection));
+	while (iter.rem) {
+		if (def_screen_idx-- == 0)
+			return iter.data;
+
+		xcb_screen_next(&iter);
+	}
+
+	return NULL;
+}
+
+static inline xcb_window_t root_window(obs_hotkeys_platform_t *context,
+		xcb_connection_t *connection)
+{
+	xcb_screen_t *screen = default_screen(context, connection);
+	if (screen)
+		return screen->root;
+	return 0;
+}
+
+#if USE_XINPUT
+static inline void registerMouseEvents(struct obs_core_hotkeys *hotkeys)
+{
+	obs_hotkeys_platform_t *context    = hotkeys->platform_context;
+	xcb_connection_t       *connection = XGetXCBConnection(
+			context->display);
+	xcb_window_t           window      = root_window(context, connection);
+
+	struct {
+		xcb_input_event_mask_t    head;
+		xcb_input_xi_event_mask_t mask;
+	} mask;
+	mask.head.deviceid = XCB_INPUT_DEVICE_ALL_MASTER;
+	mask.head.mask_len = sizeof(mask.mask) / sizeof(uint32_t);
+	mask.mask          = XCB_INPUT_XI_EVENT_MASK_RAW_BUTTON_PRESS |
+			XCB_INPUT_XI_EVENT_MASK_RAW_BUTTON_RELEASE;
+
+	xcb_input_xi_select_events(connection, window, 1, &mask.head);
+	xcb_flush(connection);
+}
+#endif
+
 bool obs_hotkeys_platform_init(struct obs_core_hotkeys *hotkeys)
 {
 	Display *display = XOpenDisplay(NULL);
@@ -716,6 +800,9 @@ bool obs_hotkeys_platform_init(struct obs_core_hotkeys *hotkeys)
 	hotkeys->platform_context = bzalloc(sizeof(obs_hotkeys_platform_t));
 	hotkeys->platform_context->display = display;
 
+#if USE_XINPUT
+	registerMouseEvents(hotkeys);
+#endif
 	fill_base_keysyms(hotkeys);
 	fill_keycodes(hotkeys);
 	return true;
@@ -735,41 +822,147 @@ void obs_hotkeys_platform_free(struct obs_core_hotkeys *hotkeys)
 	hotkeys->platform_context = NULL;
 }
 
-static xcb_screen_t *default_screen(obs_hotkeys_platform_t *context,
-		xcb_connection_t *connection)
-{
-	int def_screen_idx = XDefaultScreen(context->display);
-	xcb_screen_iterator_t iter;
-
-	iter = xcb_setup_roots_iterator(xcb_get_setup(connection));
-	while (iter.rem) {
-		if (def_screen_idx-- == 0) {
-			return iter.data;
-			break;
-		}
-
-		xcb_screen_next(&iter);
-	}
-
-	return NULL;
-}
-
-static inline xcb_window_t root_window(obs_hotkeys_platform_t *context,
-		xcb_connection_t *connection)
-{
-	xcb_screen_t *screen = default_screen(context, connection);
-	if (screen)
-		return screen->root;
-	return 0;
-}
-
 static bool mouse_button_pressed(xcb_connection_t *connection,
 		obs_hotkeys_platform_t *context, obs_key_t key)
 {
+	bool ret = false;
+
+#if USE_XINPUT
+	memset(context->pressed, 0, XINPUT_MOUSE_LEN);
+	memset(context->update, 0, XINPUT_MOUSE_LEN);
+
+	xcb_generic_event_t *ev;
+	while ((ev = xcb_poll_for_event(connection))) {
+		if ((ev->response_type & ~80) == XCB_GE_GENERIC) {
+			switch (((xcb_ge_event_t *) ev)->event_type) {
+			case XCB_INPUT_RAW_BUTTON_PRESS: {
+				xcb_input_raw_button_press_event_t *mot;
+				mot = (xcb_input_raw_button_press_event_t *) ev;
+				if (mot->detail < XINPUT_MOUSE_LEN) {
+					context->pressed[mot->detail-1] = true;
+					context->update[mot->detail-1]  = true;
+				} else {
+					blog(LOG_WARNING, "Unsupported button");
+				}
+				break;
+			}
+			case XCB_INPUT_RAW_BUTTON_RELEASE: {
+				xcb_input_raw_button_release_event_t *mot;
+				mot = (xcb_input_raw_button_release_event_t *) ev;
+				if (mot->detail < XINPUT_MOUSE_LEN)
+					context->update[mot->detail-1]  = true;
+				else
+					blog(LOG_WARNING, "Unsupported button");
+				break;
+			}
+			default:
+				break;
+			}
+		}
+		free(ev);
+	}
+
+	// Mouse 2 for OBS is Right Click and Mouse 3 is Wheel Click.
+	// Mouse Wheel axis clicks (xinput mot->detail 4 5 6 7) are ignored.
+	switch (key) {
+	case OBS_KEY_MOUSE1:
+		ret = context->pressed[0] || context->button_pressed[0];
+		break;
+	case OBS_KEY_MOUSE2:
+		ret = context->pressed[2] || context->button_pressed[2];
+		break;
+	case OBS_KEY_MOUSE3:
+		ret = context->pressed[1] || context->button_pressed[1];
+		break;
+	case OBS_KEY_MOUSE4:
+		ret = context->pressed[7] || context->button_pressed[7];
+		break;
+	case OBS_KEY_MOUSE5:
+		ret = context->pressed[8] || context->button_pressed[8];
+		break;
+	case OBS_KEY_MOUSE6:
+		ret = context->pressed[9] || context->button_pressed[9];
+		break;
+	case OBS_KEY_MOUSE7:
+		ret = context->pressed[10] || context->button_pressed[10];
+		break;
+	case OBS_KEY_MOUSE8:
+		ret = context->pressed[11] || context->button_pressed[11];
+		break;
+	case OBS_KEY_MOUSE9:
+		ret = context->pressed[12] || context->button_pressed[12];
+		break;
+	case OBS_KEY_MOUSE10:
+		ret = context->pressed[13] || context->button_pressed[13];
+		break;
+	case OBS_KEY_MOUSE11:
+		ret = context->pressed[14] || context->button_pressed[14];
+		break;
+	case OBS_KEY_MOUSE12:
+		ret = context->pressed[15] || context->button_pressed[15];
+		break;
+	case OBS_KEY_MOUSE13:
+		ret = context->pressed[16] || context->button_pressed[16];
+		break;
+	case OBS_KEY_MOUSE14:
+		ret = context->pressed[17] || context->button_pressed[17];
+		break;
+	case OBS_KEY_MOUSE15:
+		ret = context->pressed[18] || context->button_pressed[18];
+		break;
+	case OBS_KEY_MOUSE16:
+		ret = context->pressed[19] || context->button_pressed[19];
+		break;
+	case OBS_KEY_MOUSE17:
+		ret = context->pressed[20] || context->button_pressed[20];
+		break;
+	case OBS_KEY_MOUSE18:
+		ret = context->pressed[21] || context->button_pressed[21];
+		break;
+	case OBS_KEY_MOUSE19:
+		ret = context->pressed[22] || context->button_pressed[22];
+		break;
+	case OBS_KEY_MOUSE20:
+		ret = context->pressed[23] || context->button_pressed[23];
+		break;
+	case OBS_KEY_MOUSE21:
+		ret = context->pressed[24] || context->button_pressed[24];
+		break;
+	case OBS_KEY_MOUSE22:
+		ret = context->pressed[25] || context->button_pressed[25];
+		break;
+	case OBS_KEY_MOUSE23:
+		ret = context->pressed[26] || context->button_pressed[26];
+		break;
+	case OBS_KEY_MOUSE24:
+		ret = context->pressed[27] || context->button_pressed[27];
+		break;
+	case OBS_KEY_MOUSE25:
+		ret = context->pressed[28] || context->button_pressed[28];
+		break;
+	case OBS_KEY_MOUSE26:
+		ret = context->pressed[29] || context->button_pressed[29];
+		break;
+	case OBS_KEY_MOUSE27:
+		ret = context->pressed[30] || context->button_pressed[30];
+		break;
+	case OBS_KEY_MOUSE28:
+		ret = context->pressed[31] || context->button_pressed[31];
+		break;
+	case OBS_KEY_MOUSE29:
+		ret = context->pressed[32] || context->button_pressed[32];
+		break;
+	default:
+		break;
+	}
+
+	for (int i = 0; i != XINPUT_MOUSE_LEN; i++)
+		if (context->update[i])
+			context->button_pressed[i] = context->pressed[i];
+#else
 	xcb_generic_error_t *error = NULL;
 	xcb_query_pointer_cookie_t qpc;
 	xcb_query_pointer_reply_t *reply;
-	bool ret = false;
 
 	qpc = xcb_query_pointer(connection, root_window(context, connection));
 	reply = xcb_query_pointer_reply(connection, qpc, &error);
@@ -789,6 +982,7 @@ static bool mouse_button_pressed(xcb_connection_t *connection,
 
 	free(reply);
 	free(error);
+#endif
 	return ret;
 }
 

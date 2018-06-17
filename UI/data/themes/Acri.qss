@@ -94,7 +94,8 @@ QMenuBar::item:selected {
 }
 
 /* Listbox item */
-QListWidget::item {
+QListWidget::item,
+SourceTree::item {
 	padding: 4px 2px;
 	margin-bottom: 2px;
 	margin-top: 0px;
@@ -108,11 +109,6 @@ QListWidget QLineEdit {
 	 padding-left: 2px;
 	 border: none;
 	 border-radius: none;
-}
-
-SourceListWidget::item {
-	margin-bottom: 1px;
-	padding: -4px 2px;
 }
 
 /* Dock stuff */
@@ -157,6 +153,23 @@ SourceListWidget {
 	border-bottom: 2px solid #2f2f2f;
 }
 
+SourceTree {
+	border: none;
+	border-bottom: 1px solid #2f2f2f;
+}
+
+SourceTree QLabel {
+	padding: 2px 0px;
+	margin: -2px 4px -2px;
+}
+
+SourceTree QLineEdit {
+	background-color: #0c101e;
+	padding: 2px;
+	margin: -2px 6px -2px 3px;
+	font-size: 12px;
+}
+
 #scenesFrame,
 #sourcesFrame {
 	margin-left: -7px;
@@ -179,13 +192,15 @@ SourceListWidget {
 }
 
 /* Listbox item selected, unfocused */
-QListWidget::item:hover {
+QListWidget::item:hover,
+SourceTree::item:hover {
 	background-color: #212121;
 	border: 1px solid #333336;
 }
 
 /* Listbox item selected */
-QListWidget::item:selected {
+QListWidget::item:selected,
+SourceTree::item:selected {
 	background-color: #131a30;
 	border: 1px solid #252a45;
 }
@@ -505,16 +520,20 @@ QSlider::handle:horizontal {
 }
 
 QSlider::handle:horizontal:pressed {
-	background-color: QLinearGradient(x1: 0, y1: 1, x2: 0, y2: 0,
+	background-color: QLinearGradient(x1: 0, y1: 0, x2: 0, y2: 1,
 		stop: 0 rgb(240,239,240),
 		stop: 0.25 rgb(200,199,200),
 		stop: 1 rgb(162,161,162));
 }
 
+QSlider::sub-page:horizontal {
+	background-color: #2a3a75;
+}
+
 QSlider::sub-page:horizontal:disabled {
-	background-color: QLinearGradient(x1: 0, y1: 0, x2: 0, y2: 1,
-		stop: 0 rgb(31,30,31),
-		stop: 0.75 rgb(50, 49, 50));
+	background-color: QLinearGradient(x1: 0, y1: 1, x2: 0, y2: 0,
+		stop: 0 rgb(26,25,26),
+		stop: 0.75 rgb(10, 10, 10));
 	border-radius: 2px;
 }
 
@@ -533,23 +552,27 @@ QSlider::handle:vertical {
 		stop: 0.25 rgb(200,199,200),
 		stop: 1 rgb(162,161,162));
 	border: 1px solid rgb(24,24,25);
-	border-radius: 4px;
+	border-radius: 3px;
 	width: 10px;
 	height: 18px;
-	margin: -3px 0; /* handle is placed by default on the contents rect of the groove. Expand outside the groove */
+	margin: 0 -3px; /* handle is placed by default on the contents rect of the groove. Expand outside the groove */
 }
 
 QSlider::handle:vertical:pressed {
-	background-color: QLinearGradient(x1: 1, y1: 0, x2: 0, y2: 0,
+	background-color: QLinearGradient(x1: 0, y1: 0, x2: 1, y2: 0,
 		stop: 0 rgb(240,239,240),
 		stop: 0.25 rgb(200,199,200),
 		stop: 1 rgb(162,161,162));
 }
 
-QSlider::sub-page:vertical:disabled {
+QSlider::add-page:vertical {
+	background-color: #2a3a75;
+}
+
+QSlider::add-page:vertical:disabled {
 	background-color: QLinearGradient(x1: 0, y1: 0, x2: 1, y2: 0,
-		stop: 0 rgb(31,30,31),
-		stop: 0.75 rgb(50, 49, 50));
+		stop: 0 rgb(26,25,26),
+		stop: 0.75 rgb(10, 10, 10));
 	border-radius: 2px;
 }
 
@@ -557,14 +580,9 @@ QSlider::handle:hover {
 	background-color: rgb(200,199,200);
 }
 
-QSlider::sub-page {
-	background-color: #2a3a75;
-}
-
 QSlider::handle:disabled {
 	background-color: rgb(15,15,16);
 }
-
 
 /* Volume Control */
 
@@ -724,6 +742,30 @@ OBSHotkeyLabel[hotkeyPairHover=true] {
 }
 
 
+/* Group Collapse Checkbox */
+
+SourceTreeSubItemCheckBox {
+    background: transparent;
+    outline: none;
+    padding: 0px;
+}
+
+SourceTreeSubItemCheckBox::indicator {
+    width: 12px;
+    height: 12px;
+}
+
+SourceTreeSubItemCheckBox::indicator:checked,
+SourceTreeSubItemCheckBox::indicator:checked:hover {
+    image: url(./Dark/expand.png);
+}
+
+SourceTreeSubItemCheckBox::indicator:unchecked,
+SourceTreeSubItemCheckBox::indicator:unchecked:hover {
+    image: url(./Dark/collapse.png);
+}
+
+
 /* Label warning/error */
 
 QLabel#warningLabel {
@@ -748,10 +790,6 @@ OBSBasicProperties,
 #OBSBasicSettings,
 #OBSBasicFilters {
 	background: #101010;
-}
-
-#OBSBasicSourceSelect #sourceList {
-	border-bottom: 2px solid #333336;
 }
 
 FocusList::item {

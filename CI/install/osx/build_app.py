@@ -82,6 +82,16 @@ for i in candidate_paths:
 	print("Checking " + i)
 	for root, dirs, files in walk(build_path+"/"+i):
 		for file_ in files:
+			if ".ini" in file_:
+				continue
+			if ".png" in file_:
+				continue
+			if ".effect" in file_:
+				continue
+			if ".py" in file_:
+				continue
+			if ".json" in file_:
+				continue
 			path = root + "/" + file_
 			try:
 				out = check_output("{0}otool -L '{1}'".format(args.prefix, path), shell=True,

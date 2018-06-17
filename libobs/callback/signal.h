@@ -58,6 +58,8 @@ static inline bool signal_handler_add_array(signal_handler_t *handler,
 
 EXPORT void signal_handler_connect(signal_handler_t *handler,
 		const char *signal, signal_callback_t callback, void *data);
+EXPORT void signal_handler_connect_ref(signal_handler_t *handler,
+		const char *signal, signal_callback_t callback, void *data);
 EXPORT void signal_handler_disconnect(signal_handler_t *handler,
 		const char *signal, signal_callback_t callback, void *data);
 

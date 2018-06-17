@@ -20,6 +20,7 @@
 #include <util/darray.h>
 #include <obs-module.h>
 
+#include <libavutil/opt.h>
 #include <libavformat/avformat.h>
 
 #include "obs-ffmpeg-formats.h"
@@ -62,10 +63,10 @@ static inline uint64_t convert_speaker_layout(enum speaker_layout layout)
 	case SPEAKERS_UNKNOWN:          return 0;
 	case SPEAKERS_MONO:             return AV_CH_LAYOUT_MONO;
 	case SPEAKERS_STEREO:           return AV_CH_LAYOUT_STEREO;
-	case SPEAKERS_2POINT1:          return AV_CH_LAYOUT_2_1;
+	case SPEAKERS_2POINT1:          return AV_CH_LAYOUT_SURROUND;
 	case SPEAKERS_4POINT0:          return AV_CH_LAYOUT_4POINT0;
 	case SPEAKERS_4POINT1:          return AV_CH_LAYOUT_4POINT1;
-	case SPEAKERS_5POINT1:          return AV_CH_LAYOUT_5POINT1;
+	case SPEAKERS_5POINT1:          return AV_CH_LAYOUT_5POINT1_BACK;
 	case SPEAKERS_7POINT1:          return AV_CH_LAYOUT_7POINT1;
 	}
 
@@ -78,10 +79,10 @@ static inline enum speaker_layout convert_ff_channel_layout(uint64_t  channel_la
 	switch (channel_layout) {
 	case AV_CH_LAYOUT_MONO:              return SPEAKERS_MONO;
 	case AV_CH_LAYOUT_STEREO:            return SPEAKERS_STEREO;
-	case AV_CH_LAYOUT_2_1:               return SPEAKERS_2POINT1;
+	case AV_CH_LAYOUT_SURROUND:          return SPEAKERS_2POINT1;
 	case AV_CH_LAYOUT_4POINT0:           return SPEAKERS_4POINT0;
 	case AV_CH_LAYOUT_4POINT1:           return SPEAKERS_4POINT1;
-	case AV_CH_LAYOUT_5POINT1:           return SPEAKERS_5POINT1;
+	case AV_CH_LAYOUT_5POINT1_BACK:      return SPEAKERS_5POINT1;
 	case AV_CH_LAYOUT_7POINT1:           return SPEAKERS_7POINT1;
 	}
 
@@ -131,6 +132,10 @@ static bool initialize_codec(struct enc_encoder *enc)
 		warn("Failed to open AAC codec: %s", av_err2str(ret));
 		return false;
 	}
+	enc->aframe->format = enc->context->sample_fmt;
+	enc->aframe->channels = enc->context->channels;
+	enc->aframe->channel_layout = enc->context->channel_layout;
+	enc->aframe->sample_rate = enc->context->sample_rate;
 
 	enc->frame_size = enc->context->frame_size;
 	if (!enc->frame_size)
@@ -229,17 +234,8 @@ static void *enc_create(obs_data_t *settings, obs_encoder_t *encoder,
 			enc->context->sample_rate = closest;
 	}
 
-	/* if using FFmpeg's AAC encoder, at least set a cutoff value
-	 * (recommended by konverter) */
 	if (strcmp(enc->codec->name, "aac") == 0) {
-		int cutoff1 = 4000 + (int)enc->context->bit_rate / 8;
-		int cutoff2 = 12000 + (int)enc->context->bit_rate / 8;
-		int cutoff3 = enc->context->sample_rate / 2;
-		int cutoff;
-
-		cutoff = MIN(cutoff1, cutoff2);
-		cutoff = MIN(cutoff, cutoff3);
-		enc->context->cutoff = cutoff;
+		av_opt_set(enc->context->priv_data, "aac_coder", "fast", 0);
 	}
 
 	info("bitrate: %" PRId64 ", channels: %d, channel_layout: %x\n",

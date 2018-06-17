@@ -69,6 +69,27 @@ enum obs_fader_type {
 };
 
 /**
+ * @brief Peak meter types
+ */
+enum obs_peak_meter_type {
+	/**
+	 * @brief A simple peak meter measuring the maximum of all samples.
+	 *
+	 * This was a very common type of peak meter used for audio, but
+	 * is not very accurate with regards to further audio processing.
+	 */
+	SAMPLE_PEAK_METER,
+
+	/**
+	 * @brief An accurate peak meter measure the maximum of inter-samples.
+	 *
+	 * This meter is more computational intensive due to 4x oversampling
+	 * to determine the true peak to an accuracy of +/- 0.5 dB.
+	 */
+	TRUE_PEAK_METER
+};
+
+/**
  * @brief Create a fader
  * @param type the type of the fader
  * @return pointer to the fader object
@@ -199,6 +220,14 @@ EXPORT bool obs_volmeter_attach_source(obs_volmeter_t *volmeter,
  * @param volmeter pointer to the volume meter object
  */
 EXPORT void obs_volmeter_detach_source(obs_volmeter_t *volmeter);
+
+/**
+ * @brief Set the peak meter type for the volume meter
+ * @param volmeter pointer to the volume meter object
+ * @param peak_meter_type set if true-peak needs to be measured.
+ */
+EXPORT void obs_volmeter_set_peak_meter_type(obs_volmeter_t *volmeter,
+		enum obs_peak_meter_type peak_meter_type);
 
 /**
  * @brief Set the update interval for the volume meter

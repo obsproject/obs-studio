@@ -37,9 +37,17 @@ struct dstr;
 /* ------------------------------------------------------------------------- */
 /* effect parser var data */
 
+enum ep_var_type {
+	EP_VAR_NONE,
+	EP_VAR_IN = EP_VAR_NONE,
+	EP_VAR_INOUT,
+	EP_VAR_OUT,
+	EP_VAR_UNIFORM
+};
+
 struct ep_var {
 	char *type, *name, *mapping;
-	bool uniform;
+	enum ep_var_type var_type;
 };
 
 static inline void ep_var_init(struct ep_var *epv)

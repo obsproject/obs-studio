@@ -318,6 +318,9 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->snapDistance,         DSCROLL_CHANGED,GENERAL_CHANGED);
 	HookWidget(ui->doubleClickSwitch,    CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->studioPortraitLayout, CHECK_CHANGED,  GENERAL_CHANGED);
+	HookWidget(ui->multiviewMouseSwitch, CHECK_CHANGED,  GENERAL_CHANGED);
+	HookWidget(ui->multiviewDrawNames,   CHECK_CHANGED,  GENERAL_CHANGED);
+	HookWidget(ui->multiviewDrawAreas,   CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->multiviewLayout,      COMBO_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->outputMode,           COMBO_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->streamType,           COMBO_CHANGED,  STREAM1_CHANGED);
@@ -401,6 +404,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->channelSetup,         COMBO_CHANGED,  AUDIO_RESTART);
 	HookWidget(ui->sampleRate,           COMBO_CHANGED,  AUDIO_RESTART);
 	HookWidget(ui->meterDecayRate,       COMBO_CHANGED,  AUDIO_CHANGED);
+	HookWidget(ui->peakMeterType,        COMBO_CHANGED,  AUDIO_CHANGED);
 	HookWidget(ui->desktopAudioDevice1,  COMBO_CHANGED,  AUDIO_CHANGED);
 	HookWidget(ui->desktopAudioDevice2,  COMBO_CHANGED,  AUDIO_CHANGED);
 	HookWidget(ui->auxAudioDevice1,      COMBO_CHANGED,  AUDIO_CHANGED);
@@ -411,7 +415,6 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->downscaleFilter,      COMBO_CHANGED,  VIDEO_CHANGED);
 	HookWidget(ui->fpsType,              COMBO_CHANGED,  VIDEO_CHANGED);
 	HookWidget(ui->fpsCommon,            COMBO_CHANGED,  VIDEO_CHANGED);
-	HookWidget(ui->fpsInteger,           SCROLL_CHANGED, VIDEO_CHANGED);
 	HookWidget(ui->fpsInteger,           SCROLL_CHANGED, VIDEO_CHANGED);
 	HookWidget(ui->fpsNumerator,         SCROLL_CHANGED, VIDEO_CHANGED);
 	HookWidget(ui->fpsDenominator,       SCROLL_CHANGED, VIDEO_CHANGED);
@@ -442,11 +445,15 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->bindToIP,             COMBO_CHANGED,  ADV_CHANGED);
 	HookWidget(ui->enableNewSocketLoop,  CHECK_CHANGED,  ADV_CHANGED);
 	HookWidget(ui->enableLowLatencyMode, CHECK_CHANGED,  ADV_CHANGED);
+	HookWidget(ui->disableFocusHotkeys,  CHECK_CHANGED,  ADV_CHANGED);
+
+#if !defined(_WIN32) && !defined(__APPLE__)
+	delete ui->enableAutoUpdates;
+	ui->enableAutoUpdates = nullptr;
+#endif
 
 #if !defined(_WIN32) && !defined(__APPLE__) && !HAVE_PULSEAUDIO
-	delete ui->enableAutoUpdates;
 	delete ui->advAudioGroupBox;
-	ui->enableAutoUpdates = nullptr;
 	ui->advAudioGroupBox = nullptr;
 #endif
 
@@ -699,11 +706,17 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	SimpleRecordingQualityChanged();
 
 	UpdateAutomaticReplayBufferCheckboxes();
+
+	App()->EnableInFocusHotkeys(false);
 }
 
 OBSBasicSettings::~OBSBasicSettings()
 {
+	bool disableHotkeysInFocus = config_get_bool(App()->GlobalConfig(),
+			"General", "DisableHotkeysInFocus");
+
 	main->EnableOutputs(true);
+	App()->EnableInFocusHotkeys(!disableHotkeysInFocus);
 }
 
 void OBSBasicSettings::SaveCombo(QComboBox *widget, const char *section,
@@ -1090,30 +1103,37 @@ void OBSBasicSettings::LoadGeneralSettings()
 			"BasicWindow", "StudioPortraitLayout");
 	ui->studioPortraitLayout->setChecked(studioPortraitLayout);
 
+	bool multiviewMouseSwitch = config_get_bool(GetGlobalConfig(),
+			"BasicWindow", "MultiviewMouseSwitch");
+	ui->multiviewMouseSwitch->setChecked(multiviewMouseSwitch);
+
+	bool multiviewDrawNames = config_get_bool(GetGlobalConfig(),
+			"BasicWindow", "MultiviewDrawNames");
+	ui->multiviewDrawNames->setChecked(multiviewDrawNames);
+
+	bool multiviewDrawAreas = config_get_bool(GetGlobalConfig(),
+			"BasicWindow", "MultiviewDrawAreas");
+	ui->multiviewDrawAreas->setChecked(multiviewDrawAreas);
+
 	ui->multiviewLayout->addItem(QTStr(
 			"Basic.Settings.General.MultiviewLayout.Horizontal.Top"),
-			QT_UTF8("horizontaltop"));
+			static_cast<int>(MultiviewLayout::HORIZONTAL_TOP_8_SCENES));
 	ui->multiviewLayout->addItem(QTStr(
 			"Basic.Settings.General.MultiviewLayout.Horizontal.Bottom"),
-			QT_UTF8("horizontalbottom"));
+			static_cast<int>(MultiviewLayout::HORIZONTAL_BOTTOM_8_SCENES));
 	ui->multiviewLayout->addItem(QTStr(
 			"Basic.Settings.General.MultiviewLayout.Vertical.Left"),
-			QT_UTF8("verticalleft"));
+			static_cast<int>(MultiviewLayout::VERTICAL_LEFT_8_SCENES));
 	ui->multiviewLayout->addItem(QTStr(
 			"Basic.Settings.General.MultiviewLayout.Vertical.Right"),
-			QT_UTF8("verticalright"));
+			static_cast<int>(MultiviewLayout::VERTICAL_RIGHT_8_SCENES));
+	ui->multiviewLayout->addItem(QTStr(
+			"Basic.Settings.General.MultiviewLayout.Horizontal.Extended.Top"),
+			static_cast<int>(MultiviewLayout::HORIZONTAL_TOP_24_SCENES));
 
-	const char *multiviewLayoutText = config_get_string(GetGlobalConfig(),
-			"BasicWindow", "MultiviewLayout");
-
-	if (astrcmpi(multiviewLayoutText, "horizontalbottom") == 0)
-		ui->multiviewLayout->setCurrentIndex(1);
-	else if (astrcmpi(multiviewLayoutText, "verticalleft") == 0)
-		ui->multiviewLayout->setCurrentIndex(2);
-	else if (astrcmpi(multiviewLayoutText, "verticalright") == 0)
-		ui->multiviewLayout->setCurrentIndex(3);
-	else
-		ui->multiviewLayout->setCurrentIndex(0);
+	ui->multiviewLayout->setCurrentIndex(
+			config_get_int(GetGlobalConfig(), "BasicWindow",
+					"MultiviewLayout"));
 
 	loading = false;
 }
@@ -2122,6 +2142,8 @@ void OBSBasicSettings::LoadAudioSettings()
 			"ChannelSetup");
 	double meterDecayRate = config_get_double(main->Config(), "Audio",
 			"MeterDecayRate");
+	uint32_t peakMeterTypeIdx = config_get_uint(main->Config(), "Audio",
+			"PeakMeterType");
 
 	loading = true;
 
@@ -2156,6 +2178,8 @@ void OBSBasicSettings::LoadAudioSettings()
 		ui->meterDecayRate->setCurrentIndex(2);
 	else
 		ui->meterDecayRate->setCurrentIndex(0);
+
+	ui->peakMeterType->setCurrentIndex(peakMeterTypeIdx);
 
 	LoadAudioDevices();
 	LoadAudioSources();
@@ -2272,6 +2296,10 @@ void OBSBasicSettings::LoadAdvancedSettings()
 	ui->enableNewSocketLoop->setChecked(enableNewSocketLoop);
 	ui->enableLowLatencyMode->setChecked(enableLowLatencyMode);
 #endif
+
+	bool disableFocusHotkeys = config_get_bool(App()->GlobalConfig(),
+			"General", "DisableHotkeysInFocus");
+	ui->disableFocusHotkeys->setChecked(disableFocusHotkeys);
 
 	loading = false;
 }
@@ -2694,13 +2722,37 @@ void OBSBasicSettings::SaveGeneralSettings()
 		main->ResetUI();
 	}
 
-	if (WidgetChanged(ui->multiviewLayout)) {
-		config_set_string(GetGlobalConfig(), "BasicWindow",
-				"MultiviewLayout",
-				QT_TO_UTF8(GetComboData(ui->multiviewLayout)));
-
-		OBSProjector::UpdateMultiviewProjectors();
+	bool multiviewChanged = false;
+	if (WidgetChanged(ui->multiviewMouseSwitch)) {
+		config_set_bool(GetGlobalConfig(), "BasicWindow",
+				"MultiviewMouseSwitch",
+				ui->multiviewMouseSwitch->isChecked());
+		multiviewChanged = true;
 	}
+
+	if (WidgetChanged(ui->multiviewDrawNames)) {
+		config_set_bool(GetGlobalConfig(), "BasicWindow",
+				"MultiviewDrawNames",
+				ui->multiviewDrawNames->isChecked());
+		multiviewChanged = true;
+	}
+
+	if (WidgetChanged(ui->multiviewDrawAreas)) {
+		config_set_bool(GetGlobalConfig(), "BasicWindow",
+				"MultiviewDrawAreas",
+				ui->multiviewDrawAreas->isChecked());
+		multiviewChanged = true;
+	}
+
+	if (WidgetChanged(ui->multiviewLayout)) {
+		config_set_int(GetGlobalConfig(), "BasicWindow",
+				"MultiviewLayout",
+				ui->multiviewLayout->currentData().toInt());
+		multiviewChanged = true;
+	}
+
+	if (multiviewChanged)
+		OBSProjector::UpdateMultiviewProjectors();
 }
 
 void OBSBasicSettings::SaveStream1Settings()
@@ -2781,6 +2833,10 @@ void OBSBasicSettings::SaveAdvancedSettings()
 	SaveCheckBox(ui->enableNewSocketLoop, "Output", "NewSocketLoopEnable");
 	SaveCheckBox(ui->enableLowLatencyMode, "Output", "LowLatencyEnable");
 #endif
+
+	bool disableFocusHotkeys = ui->disableFocusHotkeys->isChecked();
+	config_set_bool(App()->GlobalConfig(), "General",
+			"DisableHotkeysInFocus", disableFocusHotkeys);
 
 #ifdef __APPLE__
 	if (WidgetChanged(ui->disableOSXVSync)) {
@@ -3109,6 +3165,14 @@ void OBSBasicSettings::SaveAudioSettings()
 				meterDecayRate);
 
 		main->UpdateVolumeControlsDecayRate();
+	}
+
+	if (WidgetChanged(ui->peakMeterType)) {
+		uint32_t peakMeterTypeIdx = ui->peakMeterType->currentIndex();
+		config_set_uint(main->Config(), "Audio", "PeakMeterType",
+				peakMeterTypeIdx);
+
+		main->UpdateVolumeControlsPeakMeterType();
 	}
 
 	for (auto &audioSource : audioSources) {

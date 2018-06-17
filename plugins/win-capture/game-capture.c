@@ -456,7 +456,7 @@ static bool hotkey_start(void *data, obs_hotkey_pair_id id,
 	if (pressed && gc->config.mode == CAPTURE_MODE_HOTKEY) {
 		info("Activate hotkey pressed");
 		os_atomic_set_long(&gc->hotkey_window,
-				(long)GetForegroundWindow());
+				(long)(uintptr_t)GetForegroundWindow());
 		os_atomic_set_bool(&gc->deactivate_hook, true);
 		os_atomic_set_bool(&gc->activate_hook_now, true);
 	}
@@ -1582,7 +1582,8 @@ static void game_capture_tick(void *data, float seconds)
 	bool activate_now = os_atomic_set_bool(&gc->activate_hook_now, false);
 
 	if (activate_now) {
-		HWND hwnd = (HWND)os_atomic_load_long(&gc->hotkey_window);
+		HWND hwnd = (HWND)(uintptr_t)os_atomic_load_long(
+				&gc->hotkey_window);
 
 		if (is_uwp_window(hwnd))
 			hwnd = get_uwp_actual_window(hwnd);

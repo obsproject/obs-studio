@@ -433,6 +433,18 @@ Video, Audio, and Graphics
    Adds/removes a main rendering callback.  Allows custom rendering to
    the main stream/recording output.
 
+---------------------
+
+.. function:: void obs_add_raw_video_callback(const struct video_scale_info *conversion, void (*callback)(void *param, struct video_data *frame), void *param)
+              void obs_remove_raw_video_callback(void (*callback)(void *param, struct video_data *frame), void *param)
+
+   Adds/removes a raw video callback.  Allows the ability to obtain raw
+   video frames without necessarily using an output.
+
+   :param conversion: Specifies conversion requirements.  Can be NULL.
+   :param callback:   The callback that receives raw video frames.
+   :param param:      The private data associated with the callback.
+
 
 Primary signal/procedure handlers
 ---------------------------------
