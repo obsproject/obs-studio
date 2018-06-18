@@ -1856,6 +1856,8 @@ OBSBasic::~OBSBasic()
 	if (updateCheckThread && updateCheckThread->isRunning())
 		updateCheckThread->wait();
 
+	delete multiviewProjectorMenu;
+	delete trayMenu;
 	delete programOptions;
 	delete program;
 
