@@ -32,7 +32,7 @@ static bool obs_enum_audio_monitoring_device(obs_enum_audio_device_cb cb,
 	/* check to see if it's a mac input device */
 	if (!allow_inputs) {
 		AudioObjectGetPropertyDataSize(id, &addr, 0, NULL, &size);
-		if (!size)
+		if (size)
 			return true;
 	}
 
@@ -41,7 +41,7 @@ static bool obs_enum_audio_monitoring_device(obs_enum_audio_device_cb cb,
 	addr.mSelector = kAudioDevicePropertyDeviceUID;
 	stat = AudioObjectGetPropertyData(id, &addr, 0, NULL, &size, &cf_uid);
 	if (!success(stat, "get audio device UID"))
-		return true;
+		goto fail;
 
 	addr.mSelector = kAudioDevicePropertyDeviceNameCFString;
 	stat = AudioObjectGetPropertyData(id, &addr, 0, NULL, &size, &cf_name);
