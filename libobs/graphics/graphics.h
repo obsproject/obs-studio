@@ -412,6 +412,10 @@ EXPORT void gs_effect_set_vec4(gs_eparam_t *param, const struct vec4 *val);
 EXPORT void gs_effect_set_texture(gs_eparam_t *param, gs_texture_t *val);
 EXPORT void gs_effect_set_val(gs_eparam_t *param, const void *val, size_t size);
 EXPORT void gs_effect_set_default(gs_eparam_t *param);
+EXPORT size_t gs_effect_get_val_size(gs_eparam_t *param);
+EXPORT void *gs_effect_get_val(gs_eparam_t *param);
+EXPORT size_t gs_effect_get_default_val_size(gs_eparam_t *param);
+EXPORT void *gs_effect_get_default_val(gs_eparam_t *param);
 EXPORT void gs_effect_set_next_sampler(gs_eparam_t *param,
 		gs_samplerstate_t *sampler);
 

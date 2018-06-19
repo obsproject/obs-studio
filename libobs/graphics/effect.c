@@ -389,6 +389,45 @@ static inline void effect_setval_inline(gs_eparam_t *param,
 	}
 }
 
+#ifndef min
+#define min(a,b) (((a) < (b)) ? (a) : (b))
+#endif
+static inline void effect_getval_inline(gs_eparam_t *param, void *data,
+		size_t size)
+{
+	if (!param) {
+		blog(LOG_ERROR, "effect_getval_inline: invalid param");
+		return;
+	}
+
+	if (!data) {
+		blog(LOG_ERROR, "effect_getval_inline: invalid data");
+		return;
+	}
+
+	size_t bytes = min(size, param->cur_val.num);
+
+	memcpy(data, param->cur_val.array, bytes);
+}
+
+static inline void effect_getdefaultval_inline(gs_eparam_t *param, void *data,
+		size_t size)
+{
+	if (!param) {
+		blog(LOG_ERROR, "effect_getdefaultval_inline: invalid param");
+		return;
+	}
+
+	if (!data) {
+		blog(LOG_ERROR, "effect_getdefaultval_inline: invalid data");
+		return;
+	}
+
+	size_t bytes = min(size, param->default_val.num);
+
+	memcpy(data, param->default_val.array, bytes);
+}
+
 void gs_effect_set_bool(gs_eparam_t *param, bool val)
 {
 	int b_val = (int)val;
@@ -440,6 +479,54 @@ void gs_effect_set_texture(gs_eparam_t *param, gs_texture_t *val)
 void gs_effect_set_val(gs_eparam_t *param, const void *val, size_t size)
 {
 	effect_setval_inline(param, val, size);
+}
+
+void *gs_effect_get_val(gs_eparam_t *param)
+{
+	if (!param) {
+		blog(LOG_ERROR, "gs_effect_get_val: invalid param");
+		return NULL;
+	}
+	size_t size = param->cur_val.num;
+	void *data;
+
+	if (size)
+		data = (void*)bzalloc(size);
+	else
+		return NULL;
+
+	effect_getval_inline(param, data, size);
+
+	return data;
+}
+
+size_t gs_effect_get_val_size(gs_eparam_t *param)
+{
+	return param ? param->cur_val.num : 0;
+}
+
+void *gs_effect_get_default_val(gs_eparam_t *param)
+{
+	if (!param) {
+		blog(LOG_ERROR, "gs_effect_get_default_val: invalid param");
+		return NULL;
+	}
+	size_t size = param->default_val.num;
+	void *data;
+
+	if (size)
+		data = (void*)bzalloc(size);
+	else
+		return NULL;
+
+	effect_getdefaultval_inline(param, data, size);
+
+	return data;
+}
+
+size_t gs_effect_get_default_val_size(gs_eparam_t *param)
+{
+	return param ? param->default_val.num : 0;
 }
 
 void gs_effect_set_default(gs_eparam_t *param)
