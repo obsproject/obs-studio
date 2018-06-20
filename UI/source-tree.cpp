@@ -640,15 +640,15 @@ Qt::DropActions SourceTreeModel::supportedDropActions() const
 QString SourceTreeModel::GetNewGroupName()
 {
 	OBSScene scene = GetCurrentScene();
-	QString name;
+	QString name = QTStr("Group");
 
-	int i = 1;
+	int i = 2;
 	for (;;) {
-		name = QTStr("Basic.Main.Group").arg(QString::number(i++));
 		obs_sceneitem_t *group = obs_scene_get_group(scene,
 				QT_TO_UTF8(name));
 		if (!group)
 			break;
+		name = QTStr("Basic.Main.Group").arg(QString::number(i++));
 	}
 
 	return name;
