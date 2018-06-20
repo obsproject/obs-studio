@@ -1072,9 +1072,11 @@ bool obs_reset_audio(const struct obs_audio_info *oai)
 
 bool obs_get_video_info(struct obs_video_info *ovi)
 {
+	if (!obs) return false;
+
 	struct obs_core_video *video = &obs->video;
 
-	if (!obs || !video->graphics)
+	if (!video || !video->graphics)
 		return false;
 
 	*ovi = video->ovi;
@@ -1083,10 +1085,12 @@ bool obs_get_video_info(struct obs_video_info *ovi)
 
 bool obs_get_audio_info(struct obs_audio_info *oai)
 {
+	if (!obs) return false;
+
 	struct obs_core_audio *audio = &obs->audio;
 	const struct audio_output_info *info;
 
-	if (!obs || !oai || !audio->audio)
+	if (!oai || !audio || !audio->audio)
 		return false;
 
 	info = audio_output_get_info(audio->audio);
@@ -1486,13 +1490,13 @@ void obs_render_main_view(void)
 
 void obs_render_main_texture(void)
 {
+	if (!obs) return;
+
 	struct obs_core_video *video = &obs->video;
 	gs_texture_t *tex;
 	gs_effect_t *effect;
 	gs_eparam_t *param;
 	int last_tex;
-
-	if (!obs) return;
 
 	last_tex = video->cur_texture == 0
 		? NUM_TEXTURES - 1
@@ -1512,10 +1516,10 @@ void obs_render_main_texture(void)
 
 gs_texture_t *obs_get_main_texture(void)
 {
+	if (!obs) return NULL;
+
 	struct obs_core_video *video = &obs->video;
 	int last_tex;
-
-	if (!obs) return NULL;
 
 	last_tex = video->cur_texture == 0
 		? NUM_TEXTURES - 1
@@ -1952,8 +1956,7 @@ void obs_context_data_setname(struct obs_context_data *context,
 
 profiler_name_store_t *obs_get_profiler_name_store(void)
 {
-	if (!obs)
-		return NULL;
+	if (!obs) return NULL;
 
 	return obs->name_store;
 }
@@ -1982,8 +1985,8 @@ enum obs_obj_type obs_obj_get_type(void *obj)
 const char *obs_obj_get_id(void *obj)
 {
 	struct obs_context_data *context = obj;
-	if (!context)
-		return NULL;
+
+	if (!context) return NULL;
 
 	switch (context->type) {
 	case OBS_OBJ_TYPE_SOURCE:  return ((obs_source_t*)obj)->info.id;
@@ -1999,8 +2002,7 @@ const char *obs_obj_get_id(void *obj)
 bool obs_obj_invalid(void *obj)
 {
 	struct obs_context_data *context = obj;
-	if (!context)
-		return true;
+	if (!context) return true;
 
 	return !context->data;
 }
@@ -2040,8 +2042,7 @@ bool obs_set_audio_monitoring_device(const char *name, const char *id)
 
 void obs_get_audio_monitoring_device(const char **name, const char **id)
 {
-	if (!obs)
-		return;
+	if (!obs) return;
 
 	if (name)
 		*name = obs->audio.monitoring_device_name;
@@ -2053,8 +2054,7 @@ void obs_add_tick_callback(
 		void (*tick)(void *param, float seconds),
 		void *param)
 {
-	if (!obs)
-		return;
+	if (!obs) return;
 
 	struct tick_callback data = {tick, param};
 
@@ -2067,8 +2067,7 @@ void obs_remove_tick_callback(
 		void (*tick)(void *param, float seconds),
 		void *param)
 {
-	if (!obs)
-		return;
+	if (!obs) return;
 
 	struct tick_callback data = {tick, param};
 
@@ -2081,8 +2080,7 @@ void obs_add_main_render_callback(
 		void (*draw)(void *param, uint32_t cx, uint32_t cy),
 		void *param)
 {
-	if (!obs)
-		return;
+	if (!obs) return;
 
 	struct draw_callback data = {draw, param};
 
@@ -2095,8 +2093,7 @@ void obs_remove_main_render_callback(
 		void (*draw)(void *param, uint32_t cx, uint32_t cy),
 		void *param)
 {
-	if (!obs)
-		return;
+	if (!obs) return;
 
 	struct draw_callback data = {draw, param};
 
@@ -2138,9 +2135,10 @@ void obs_add_raw_video_callback(
 		void (*callback)(void *param, struct video_data *frame),
 		void *param)
 {
+	if (!obs) return;
+
 	struct obs_core_video *video = &obs->video;
-	if (!obs)
-		return;
+
 	start_raw_video(video->video, conversion, callback, param);
 }
 
@@ -2148,8 +2146,9 @@ void obs_remove_raw_video_callback(
 		void (*callback)(void *param, struct video_data *frame),
 		void *param)
 {
+	if (!obs) return;
+
 	struct obs_core_video *video = &obs->video;
-	if (!obs)
-		return;
+
 	stop_raw_video(video->video, callback, param);
 }
