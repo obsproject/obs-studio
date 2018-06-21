@@ -1,5 +1,4 @@
 #include <QFormLayout>
-#include <QStackedLayout>
 #include <QScrollBar>
 #include <QLabel>
 #include <QCheckBox>
@@ -651,26 +650,10 @@ void OBSPropertiesView::AddColor(obs_property_t *prop, QFormLayout *layout,
 	colorLabel->setAlignment(Qt::AlignCenter);
 	colorLabel->setToolTip(QT_UTF8(obs_property_long_description(prop)));
 
-	QFrame *backdrop = new QLabel;
-	backdrop->setFrameStyle(QFrame::Sunken | QFrame::Panel);
-	backdrop->setPalette(palette);
-	backdrop->setStyleSheet(
-		"background: qlineargradient(x1:0, y1:0, x2:1, y2:1,"
-			"stop:0 #cccccc, stop:0.45 #cccccc,"
-			"stop:0.55 #444444, stop:1 #444444)");
-	backdrop->setAutoFillBackground(true);
-
-	QStackedLayout *stackLayout = new QStackedLayout;
-	stackLayout->setContentsMargins(0, 0, 0, 0);
-	stackLayout->setStackingMode(QStackedLayout::StackAll);
-
-	stackLayout->addWidget(backdrop);
-	stackLayout->addWidget(colorLabel);
-
 	QHBoxLayout *subLayout = new QHBoxLayout;
 	subLayout->setContentsMargins(0, 0, 0, 0);
 
-	subLayout->addItem(stackLayout);
+	subLayout->addWidget(colorLabel);
 	subLayout->addWidget(button);
 
 	WidgetInfo *info = new WidgetInfo(this, prop, colorLabel);
