@@ -638,6 +638,8 @@ void OBSPropertiesView::AddColor(obs_property_t *prop, QFormLayout *layout,
 	button->setText(QTStr("Basic.PropertiesWindow.SelectColor"));
 	button->setToolTip(QT_UTF8(obs_property_long_description(prop)));
 
+	color.setAlpha(255);
+
 	QPalette palette = QPalette(color);
 	colorLabel->setFrameStyle(QFrame::Sunken | QFrame::Panel);
 	colorLabel->setText(color.name(QColor::HexArgb));
@@ -1635,6 +1637,7 @@ bool WidgetInfo::ColorChanged(const char *setting)
 #endif
 
 	color = QColorDialog::getColor(color, view, QT_UTF8(desc), options);
+	color.setAlpha(255);
 
 	if (!color.isValid())
 		return false;
