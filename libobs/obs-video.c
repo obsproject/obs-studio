@@ -117,7 +117,7 @@ static inline void render_main_texture(struct obs_core_video *video,
 	profile_start(render_main_texture_name);
 
 	struct vec4 clear_color;
-	vec4_set(&clear_color, 0.0f, 0.0f, 0.0f, 1.0f);
+	vec4_set(&clear_color, 0.0f, 0.0f, 0.0f, 0.0f);
 
 	gs_set_render_target(video->render_textures[cur_texture], NULL);
 	gs_clear(GS_CLEAR_COLOR, &clear_color, 1.0f, 0);
@@ -207,7 +207,14 @@ static inline void render_output_texture(struct obs_core_video *video,
 		1.0f / (float)video->base_height);
 
 	gs_effect_t    *effect  = get_scale_effect(video, width, height);
-	gs_technique_t *tech    = gs_effect_get_technique(effect, "DrawMatrix");
+	gs_technique_t *tech;
+
+	if (video->ovi.output_format == VIDEO_FORMAT_RGBA) {
+		tech = gs_effect_get_technique(effect, "Draw");
+	} else {
+		tech = gs_effect_get_technique(effect, "DrawMatrix");
+	}
+
 	gs_eparam_t    *image   = gs_effect_get_param_by_name(effect, "image");
 	gs_eparam_t    *matrix  = gs_effect_get_param_by_name(effect,
 			"color_matrix");

@@ -1,4 +1,4 @@
-#include "decklink-device-instance.hpp"
+﻿#include "decklink-device-instance.hpp"
 #include "audio-repack.hpp"
 
 #include "DecklinkInput.hpp"
@@ -312,6 +312,18 @@ bool DeckLinkDeviceInstance::StartOutput(DeckLinkDeviceMode *mode_)
 
 	mode = mode_;
 
+
+	IDeckLinkKeyer *deckLinkKeyer = nullptr;
+	if (device->GetKeyer(&deckLinkKeyer)) {
+		int keyerMode = device->GetKeyerMode();
+		if (keyerMode) {
+			deckLinkKeyer->Enable(keyerMode == 1);
+			deckLinkKeyer->SetLevel(255);
+		} else {
+			deckLinkKeyer->Disable();
+		}
+	}
+
 	auto decklinkOutput = dynamic_cast<DeckLinkOutput*>(decklink);
 	if (decklinkOutput == nullptr)
 		return false;
@@ -319,8 +331,8 @@ bool DeckLinkDeviceInstance::StartOutput(DeckLinkDeviceMode *mode_)
 	HRESULT result;
 	result = output->CreateVideoFrame(decklinkOutput->GetWidth(),
 			decklinkOutput->GetHeight(),
-			decklinkOutput->GetWidth() * 2,
-			bmdFormat8BitYUV,
+			decklinkOutput->GetWidth() * 4,
+			bmdFormat8BitBGRA,
 			bmdFrameFlagDefault,
 			&decklinkOutputFrame);
 	if (result != S_OK) {
@@ -362,7 +374,7 @@ void DeckLinkDeviceInstance::DisplayVideoFrame(video_data *frame)
 	uint8_t *outData = frame->data[0];
 
 	std::copy(outData, outData + (decklinkOutput->GetWidth() *
-			decklinkOutput->GetHeight() * 2), destData);
+			decklinkOutput->GetHeight() * 4), destData);
 
 	output->DisplayVideoFrameSync(decklinkOutputFrame);
 }
