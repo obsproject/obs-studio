@@ -45,7 +45,7 @@ interface IDeckLinkEncoderConfiguration_v10_5;
 [
     object,
     uuid(67455668-0848-45DF-8D8E-350A77C9A028),
-    local,
+    local, 
     helpstring("DeckLink Encoder Configuration interface. Obtained from IDeckLinkEncoderInput")
 ] interface IDeckLinkEncoderConfiguration_v10_5 : IUnknown
 {
