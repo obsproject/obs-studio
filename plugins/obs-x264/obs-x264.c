@@ -363,7 +363,7 @@ static inline const char *get_x264_colorspace_name(enum video_colorspace cs)
 	switch (cs) {
 	case VIDEO_CS_DEFAULT:
 	case VIDEO_CS_601:
-		return "bt470bg";
+		return "undef";
 	case VIDEO_CS_709:;
 	}
 
