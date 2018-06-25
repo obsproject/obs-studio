@@ -23,7 +23,7 @@ Copyright(c) 2005-2014 Intel Corporation. All Rights Reserved.
  * Windows implementation of OS-specific utility functions
  */
 
-mfxStatus Initialize(mfxIMPL impl, mfxVersion ver, MFXVideoSession* pSession, mfxFrameAllocator* pmfxAllocator, bool bCreateSharedHandles, bool dx9hack)
+mfxStatus Initialize(mfxIMPL impl, mfxVersion ver, MFXVideoSession* pSession, mfxFrameAllocator* pmfxAllocator, mfxHDL *deviceHandle, bool bCreateSharedHandles, bool dx9hack)
 {
     bCreateSharedHandles; // (Hugh) Currently unused
     pmfxAllocator; // (Hugh) Currently unused
@@ -37,12 +37,15 @@ mfxStatus Initialize(mfxIMPL impl, mfxVersion ver, MFXVideoSession* pSession, mf
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
         // Create DirectX device context
-        mfxHDL deviceHandle;
-        sts = CreateHWDevice(*pSession, &deviceHandle, NULL, bCreateSharedHandles);
-        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+        if (deviceHandle == NULL || *deviceHandle == NULL) {
+            sts = CreateHWDevice(*pSession, deviceHandle, NULL, bCreateSharedHandles);
+            MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+        }
+
+        if (deviceHandle == NULL || *deviceHandle == NULL) return MFX_ERR_DEVICE_FAILED;
 
         // Provide device manager to Media SDK
-        sts = pSession->SetHandle(DEVICE_MGR_TYPE, deviceHandle);
+        sts = pSession->SetHandle(DEVICE_MGR_TYPE, *deviceHandle);
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
         pmfxAllocator->pthis  = *pSession; // We use Media SDK session ID as the allocation identifier
@@ -62,12 +65,14 @@ mfxStatus Initialize(mfxIMPL impl, mfxVersion ver, MFXVideoSession* pSession, mf
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
         // Create DirectX device context
-        mfxHDL deviceHandle;
-        sts = DX9_CreateHWDevice(*pSession, &deviceHandle, NULL, bCreateSharedHandles);
-        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+        if (deviceHandle == NULL || *deviceHandle == NULL ) {
+            sts = DX9_CreateHWDevice(*pSession, deviceHandle, NULL, false);
+            MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+        }
+        if (*deviceHandle == NULL) return MFX_ERR_DEVICE_FAILED;
 
         // Provide device manager to Media SDK
-        sts = pSession->SetHandle(MFX_HANDLE_D3D9_DEVICE_MANAGER, deviceHandle);
+        sts = pSession->SetHandle(MFX_HANDLE_D3D9_DEVICE_MANAGER, *deviceHandle);
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
         pmfxAllocator->pthis  = *pSession; // We use Media SDK session ID as the allocation identifier
