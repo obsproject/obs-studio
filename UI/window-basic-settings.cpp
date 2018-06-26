@@ -410,6 +410,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->auxAudioDevice1,      COMBO_CHANGED,  AUDIO_CHANGED);
 	HookWidget(ui->auxAudioDevice2,      COMBO_CHANGED,  AUDIO_CHANGED);
 	HookWidget(ui->auxAudioDevice3,      COMBO_CHANGED,  AUDIO_CHANGED);
+	HookWidget(ui->auxAudioDevice4,      COMBO_CHANGED,  AUDIO_CHANGED);
 	HookWidget(ui->baseResolution,       CBEDIT_CHANGED, VIDEO_RES);
 	HookWidget(ui->outputResolution,     CBEDIT_CHANGED, VIDEO_RES);
 	HookWidget(ui->downscaleFilter,      COMBO_CHANGED,  VIDEO_CHANGED);
@@ -2004,6 +2005,7 @@ void OBSBasicSettings::LoadAudioDevices()
 		LoadListValues(ui->auxAudioDevice1, inputs, 3);
 		LoadListValues(ui->auxAudioDevice2, inputs, 4);
 		LoadListValues(ui->auxAudioDevice3, inputs, 5);
+		LoadListValues(ui->auxAudioDevice4, inputs, 6);
 		obs_properties_destroy(input_props);
 	}
 
@@ -3266,6 +3268,8 @@ void OBSBasicSettings::SaveAudioSettings()
 			"Basic.AuxDevice2", 4);
 	UpdateAudioDevice(true, ui->auxAudioDevice3,
 			"Basic.AuxDevice3", 5);
+	UpdateAudioDevice(true, ui->auxAudioDevice4,
+			"Basic.AuxDevice4", 6);
 	main->SaveProject();
 }
 

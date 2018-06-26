@@ -368,6 +368,7 @@ static obs_data_t *GenerateSaveData(obs_data_array_t *sceneOrder,
 	SaveAudioDevice(AUX_AUDIO_1,     3, saveData, audioSources);
 	SaveAudioDevice(AUX_AUDIO_2,     4, saveData, audioSources);
 	SaveAudioDevice(AUX_AUDIO_3,     5, saveData, audioSources);
+	SaveAudioDevice(AUX_AUDIO_4,     6, saveData, audioSources);
 
 	/* -------------------------------- */
 	/* save non-group sources           */
@@ -833,6 +834,7 @@ void OBSBasic::Load(const char *file)
 	LoadAudioDevice(AUX_AUDIO_1,     3, data);
 	LoadAudioDevice(AUX_AUDIO_2,     4, data);
 	LoadAudioDevice(AUX_AUDIO_3,     5, data);
+	LoadAudioDevice(AUX_AUDIO_4,     6, data);
 
 	if (!sources) {
 		sources = groups;

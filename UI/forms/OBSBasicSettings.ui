@@ -3426,7 +3426,7 @@
            </property>
           </widget>
          </item>
-         <item row="7" column="0">
+         <item row="8" column="0">
           <widget class="QLabel" name="label_65">
            <property name="text">
             <string>Basic.Settings.Audio.MeterDecayRate</string>
@@ -3436,7 +3436,7 @@
            </property>
           </widget>
          </item>
-         <item row="7" column="1">
+         <item row="8" column="1">
           <widget class="QComboBox" name="meterDecayRate">
            <property name="currentText">
             <string>Basic.Settings.Audio.MeterDecayRate.Fast</string>
@@ -3461,14 +3461,17 @@
            </item>
           </widget>
          </item>
-         <item row="8" column="0">
+         <item row="9" column="0">
           <widget class="QLabel" name="label_66">
            <property name="text">
             <string>Basic.Settings.Audio.PeakMeterType</string>
            </property>
+           <property name="buddy">
+            <cstring>peakMeterType</cstring>
+           </property>
           </widget>
          </item>
-         <item row="8" column="1">
+         <item row="9" column="1">
           <widget class="QComboBox" name="peakMeterType">
            <property name="currentIndex">
             <number>0</number>
@@ -3485,7 +3488,7 @@
            </item>
           </widget>
          </item>
-         <item row="9" column="0" colspan="2">
+         <item row="10" column="0" colspan="2">
           <widget class="QScrollArea" name="audioSourceScrollArea">
            <property name="widgetResizable">
             <bool>true</bool>
@@ -3502,7 +3505,7 @@
            </widget>
           </widget>
          </item>
-         <item row="10" column="1">
+         <item row="11" column="1">
           <widget class="QLabel" name="audioMsg">
            <property name="text">
             <string notr="true"/>
@@ -3515,7 +3518,7 @@
            </property>
           </widget>
          </item>
-         <item row="11" column="1">
+         <item row="12" column="1">
           <widget class="QLabel" name="audioMsg_2">
            <property name="text">
             <string notr="true"/>
@@ -3528,7 +3531,7 @@
            </property>
           </widget>
          </item>
-         <item row="12" column="1">
+         <item row="13" column="1">
           <spacer name="verticalSpacer_3">
            <property name="orientation">
             <enum>Qt::Vertical</enum>
@@ -3540,6 +3543,23 @@
             </size>
            </property>
           </spacer>
+         </item>
+         <item row="7" column="1">
+          <widget class="QComboBox" name="auxAudioDevice4">
+           <property name="enabled">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item row="7" column="0">
+          <widget class="QLabel" name="label_67">
+           <property name="text">
+            <string>Basic.Settings.Audio.AuxDevice4</string>
+           </property>
+           <property name="buddy">
+            <cstring>auxAudioDevice4</cstring>
+           </property>
+          </widget>
          </item>
         </layout>
        </widget>
@@ -3823,14 +3843,14 @@
              <verstretch>0</verstretch>
             </sizepolicy>
            </property>
-           <property name="themeID" stdset="0">
-            <string>error</string>
-           </property>
            <property name="text">
             <string notr="true"/>
            </property>
            <property name="wordWrap">
             <bool>true</bool>
+           </property>
+           <property name="themeID" stdset="0">
+            <string>error</string>
            </property>
           </widget>
          </item>
@@ -3845,8 +3865,8 @@
           <rect>
            <x>0</x>
            <y>0</y>
-           <width>818</width>
-           <height>697</height>
+           <width>98</width>
+           <height>28</height>
           </rect>
          </property>
          <layout class="QFormLayout" name="hotkeyLayout">
@@ -3892,7 +3912,7 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>803</width>
+              <width>594</width>
               <height>807</height>
              </rect>
             </property>
@@ -4668,27 +4688,27 @@
            </property>
            <item>
             <widget class="QLabel" name="advancedMsg">
-             <property name="themeID" stdset="0">
-              <string>error</string>
-             </property>
              <property name="text">
               <string notr="true"/>
              </property>
              <property name="wordWrap">
               <bool>true</bool>
+             </property>
+             <property name="themeID" stdset="0">
+              <string>error</string>
              </property>
             </widget>
            </item>
            <item>
             <widget class="QLabel" name="advancedMsg2">
-             <property name="themeID" stdset="0">
-              <string>error</string>
-             </property>
              <property name="text">
               <string notr="true"/>
              </property>
              <property name="wordWrap">
               <bool>true</bool>
+             </property>
+             <property name="themeID" stdset="0">
+              <string>error</string>
              </property>
             </widget>
            </item>
