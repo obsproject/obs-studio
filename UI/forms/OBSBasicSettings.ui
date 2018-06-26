@@ -3426,6 +3426,23 @@
            </property>
           </widget>
          </item>
+         <item row="7" column="0">
+          <widget class="QLabel" name="label_601">
+           <property name="text">
+            <string>Basic.Settings.Audio.AuxDevice4</string>
+           </property>
+           <property name="buddy">
+            <cstring>auxAudioDevice4</cstring>
+           </property>
+          </widget>
+         </item>
+         <item row="7" column="1">
+          <widget class="QComboBox" name="auxAudioDevice4">
+           <property name="enabled">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
          <item row="9" column="0" colspan="2">
           <widget class="QScrollArea" name="audioSourceScrollArea">
            <property name="widgetResizable">
@@ -4737,6 +4754,7 @@
   <tabstop>auxAudioDevice1</tabstop>
   <tabstop>auxAudioDevice2</tabstop>
   <tabstop>auxAudioDevice3</tabstop>
+  <tabstop>auxAudioDevice4</tabstop>
   <tabstop>audioSourceScrollArea</tabstop>
   <tabstop>baseResolution</tabstop>
   <tabstop>outputResolution</tabstop>
