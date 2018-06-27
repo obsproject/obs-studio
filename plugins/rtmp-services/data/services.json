@@ -668,6 +668,10 @@
             "common": true,
             "servers": [
                 {
+                    "name": "Autodetect",
+                    "url": "rtmp://live.restream.io/live"
+                },
+                {
                     "name": "EU-West (London, GB)",
                     "url": "rtmp://eu-london.restream.io/live"
                 },
