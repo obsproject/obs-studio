@@ -369,6 +369,8 @@ private:
 	obs_data_array_t *SaveProjectors();
 	void LoadSavedProjectors(obs_data_array_t *savedProjectors);
 
+	bool NoSourcesConfirmation();
+
 public slots:
 	void DeferSaveBegin();
 	void DeferSaveEnd();
