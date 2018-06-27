@@ -1611,7 +1611,15 @@ void OBSBasic::OBSInit()
 			Qt::QueuedConnection,
 			Q_ARG(QString, QT_UTF8(savePath)),
 			Q_ARG(int, 10));
+#else
+	OnFirstLoad();
 #endif
+}
+
+void OBSBasic::OnFirstLoad()
+{
+	if (api)
+		api->on_event(OBS_FRONTEND_EVENT_FINISHED_LOADING);
 }
 
 void OBSBasic::DeferredLoad(const QString &file, int requeueCount)
@@ -1626,6 +1634,7 @@ void OBSBasic::DeferredLoad(const QString &file, int requeueCount)
 
 	Load(QT_TO_UTF8(file));
 	RefreshSceneCollections();
+	OnFirstLoad();
 }
 
 void OBSBasic::UpdateMultiviewProjectorMenu()

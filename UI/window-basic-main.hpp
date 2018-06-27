@@ -223,6 +223,8 @@ private:
 
 	void          InitPrimitives();
 
+	void 	      OnFirstLoad();
+
 	OBSSceneItem  GetSceneItem(QListWidgetItem *item);
 	OBSSceneItem  GetCurrentSceneItem();
 
