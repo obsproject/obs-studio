@@ -372,6 +372,8 @@ private:
 
 	void ReceivedIntroJson(const QString &text);
 
+	bool NoSourcesConfirmation();
+
 public slots:
 	void DeferSaveBegin();
 	void DeferSaveEnd();

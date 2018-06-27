@@ -143,6 +143,26 @@ static void AddExtraModulePaths()
 
 extern obs_frontend_callbacks *InitializeAPIInterface(OBSBasic *main);
 
+static int CountVideoSources()
+{
+	int count = 0;
+
+	auto countSources = [] (void *param, obs_source_t *source)
+	{
+		if (!source)
+			return true;
+
+		uint32_t flags = obs_source_get_output_flags(source);
+		if ((flags & OBS_SOURCE_VIDEO) != 0)
+			(*reinterpret_cast<int*>(param))++;
+
+		return true;
+	};
+
+	obs_enum_sources(countSources, &count);
+	return count;
+}
+
 OBSBasic::OBSBasic(QWidget *parent)
 	: OBSMainWindow  (parent),
 	  ui             (new Ui::OBSBasic)
@@ -4936,6 +4956,11 @@ void OBSBasic::StartReplayBuffer()
 	if (disableOutputsRef)
 		return;
 
+	if (!NoSourcesConfirmation()) {
+		replayBufferButton->setChecked(false);
+		return;
+	}
+
 	obs_output_t *output = outputHandler->replayBuffer;
 	obs_data_t *hotkeys = obs_hotkeys_save_output(output);
 	obs_data_array_t *bindings = obs_data_get_array(hotkeys,
@@ -5065,6 +5090,28 @@ void OBSBasic::ReplayBufferStop(int code)
 	OnDeactivate();
 }
 
+bool OBSBasic::NoSourcesConfirmation()
+{
+	if (CountVideoSources() == 0 && isVisible()) {
+		QString msg;
+		msg = QTStr("NoSources.Text");
+		msg += "\n\n";
+		msg += QTStr("NoSources.Text.AddSource");
+
+		QMessageBox messageBox(QMessageBox::Question,
+				QTStr("NoSources.title"),
+				msg,
+				QMessageBox::Yes | QMessageBox::No,
+				this);
+		messageBox.setDefaultButton(QMessageBox::No);
+
+		if (QMessageBox::No == messageBox.exec())
+			return false;
+	}
+
+	return true;
+}
+
 void OBSBasic::on_streamButton_clicked()
 {
 	if (outputHandler->StreamingActive()) {
@@ -5085,6 +5132,11 @@ void OBSBasic::on_streamButton_clicked()
 
 		StopStreaming();
 	} else {
+		if (!NoSourcesConfirmation()) {
+			ui->streamButton->setChecked(false);
+			return;
+		}
+
 		bool confirm = config_get_bool(GetGlobalConfig(), "BasicWindow",
 				"WarnBeforeStartingStream");
 
@@ -5106,10 +5158,16 @@ void OBSBasic::on_streamButton_clicked()
 
 void OBSBasic::on_recordButton_clicked()
 {
-	if (outputHandler->RecordingActive())
+	if (outputHandler->RecordingActive()) {
 		StopRecording();
-	else
+	} else {
+		if (!NoSourcesConfirmation()) {
+			ui->recordButton->setChecked(false);
+			return;
+		}
+
 		StartRecording();
+	}
 }
 
 void OBSBasic::on_settingsButton_clicked()
