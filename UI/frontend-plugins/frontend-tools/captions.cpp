@@ -1,3 +1,4 @@
+#include <QAction>
 #include <QMessageBox>
 
 #include <windows.h>

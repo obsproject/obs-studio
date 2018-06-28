@@ -1,7 +1,7 @@
 /**********************************************************************************************/
 /* The MIT License                                                                            */
 /*                                                                                            */
-/* Copyright 2016-2016 Twitch Interactive, Inc. or its affiliates. All Rights Reserved.       */
+/* Copyright 2016-2017 Twitch Interactive, Inc. or its affiliates. All Rights Reserved.       */
 /*                                                                                            */
 /* Permission is hereby granted, free of charge, to any person obtaining a copy               */
 /* of this software and associated documentation files (the "Software"), to deal              */
@@ -23,65 +23,73 @@
 /**********************************************************************************************/
 #ifndef LIBCAPTION_SRT_H
 #define LIBCAPTION_SRT_H
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-#include "eia608.h"
 #include "caption.h"
+#include "eia608.h"
+#include "vtt.h"
 
 // timestamp and duration are in seconds
-typedef struct _srt_t {
-    struct _srt_t* next;
-    double timestamp;
-    double duration;
-    size_t aloc;
-} srt_t;
-
-
-
+typedef vtt_t srt_t;
+typedef vtt_block_t srt_cue_t;
 
 /*! \brief
     \param
 */
-srt_t* srt_new (const utf8_char_t* data, size_t size, double timestamp, srt_t* prev, srt_t** head);
+srt_t* srt_new();
 /*! \brief
     \param
 */
-srt_t* srt_free_head (srt_t* head);
+srt_t* srt_free_head(srt_t* head);
 // returns the head of the link list. must bee freed when done
 /*! \brief
     \param
 */
-srt_t* srt_parse (const utf8_char_t* data, size_t size);
+srt_t* srt_parse(const utf8_char_t* data, size_t size);
 /*! \brief
     \param
 */
-void srt_free (srt_t* srt);
+void srt_free(srt_t* srt);
 
 /*! \brief
     \param
 */
-static inline srt_t* srt_next (srt_t* srt) { return srt->next; }
-/*! \brief
-    \param
-*/
-static inline utf8_char_t* srt_data (srt_t* srt) { return (utf8_char_t*) (srt) + sizeof (srt_t); }
-// This only converts teh surrent SRT, It does not walk the list
-/*! \brief
-    \param
-*/
-int srt_to_caption_frame (srt_t* srt, caption_frame_t* frame);
+static inline vtt_block_t* srt_next(vtt_block_t* srt) { return srt->next; }
 
-// returns teh new srt. Head is not tracher internally.
 /*! \brief
     \param
 */
-srt_t* srt_from_caption_frame (caption_frame_t* frame, srt_t* prev, srt_t** head);
-/*! \brief
-    \param
-*/
-void srt_dump (srt_t* srt);
-/*! \brief
-    \param
-*/
-void vtt_dump (srt_t* srt);
+static inline utf8_char_t* srt_cue_data(srt_cue_t* cue) { return vtt_block_data(cue); }
 
+/*! \brief
+    \param
+*/
+static inline srt_cue_t* srt_cue_from_caption_frame(caption_frame_t* frame, srt_t* srt) { return vtt_cue_from_caption_frame(frame, srt); };
+
+/*! \brief
+    \param
+*/
+static inline void srt_cue_free_head(srt_t* srt) { vtt_cue_free_head(srt); };
+
+/*! \brief
+    \param
+*/
+static inline srt_cue_t* srt_cue_new(srt_t* srt, const utf8_char_t* data, size_t size) { return vtt_block_new(srt, data, size, VTT_CUE); };
+
+/*! \brief
+    \param
+*/
+static inline int srt_cue_to_caption_frame(srt_cue_t* cue, caption_frame_t* frame) { return vtt_cue_to_caption_frame(cue, frame); };
+
+void srt_dump(srt_t* srt);
+/*! \brief
+    \param
+*/
+void vtt_dump(srt_t* srt);
+
+#ifdef __cplusplus
+}
+#endif
 #endif
