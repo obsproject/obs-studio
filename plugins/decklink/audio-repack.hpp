@@ -8,7 +8,7 @@ class AudioRepacker {
 public:
 	inline AudioRepacker(audio_repack_mode_t repack_mode)
 	{
-		audio_repack_init(&arepack, repack_mode, 16);
+		audio_repack_init(&arepack, repack_mode, 32);
 	}
 	inline ~AudioRepacker()
 	{
