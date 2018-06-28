@@ -2098,29 +2098,10 @@ void obs_output_output_caption_text1(obs_output_t *output, const char *text)
 
 	pthread_mutex_lock(&output->caption_mutex);
 
-
-	for (size_t r = 0; (*text) && size && r < SCREEN_ROWS;) {
-		// skip whitespace at start of line
-		while (size && utf8_char_whitespace(text)) {
-			size_t s = utf8_char_length(text);
-			text += s, size -= s;
-		}
-
-		// get charcter count for wrap (or orest of line)
-		utf8_size_t char_count = utf8_wrap_length(text, SCREEN_COLS);
-		size_t line_length = utf8_string_length(text, char_count);
-
-		if (char_count) {
-			output->caption_tail = caption_text_new(
-				text,
-				line_length,
-				output->caption_tail,
-				&output->caption_head);
-		}
-
-		text += line_length;
-		size -= line_length;
-	}
+	output->caption_tail = caption_text_new(
+		text, size,
+		output->caption_tail,
+		&output->caption_head);
 
 	pthread_mutex_unlock(&output->caption_mutex);
 }
