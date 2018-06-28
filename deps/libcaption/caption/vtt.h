@@ -21,106 +21,123 @@
 /* OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN                  */
 /* THE SOFTWARE.                                                                              */
 /**********************************************************************************************/
-#ifndef LIBCAPTION_UTF8_H
-#define LIBCAPTION_UTF8_H
+#ifndef LIBCAPTION_VTT_H
+#define LIBCAPTION_VTT_H
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#include <inttypes.h>
-#include <stddef.h>
+#include "caption.h"
+#include "eia608.h"
 
-// These types exist to make the code more self dcoumenting
-// utf8_char_t point is a null teminate string of utf8 encodecd chars
-//
-// utf8_size_t is the length of a string in chars
-// size_t is bytes
-typedef char utf8_char_t;
-typedef size_t utf8_size_t;
-/*! \brief
-    \param
+enum VTT_BLOCK_TYPE {
+    VTT_REGION = 0,
+    VTT_STYLE = 1,
+    VTT_NOTE = 2,
+    VTT_CUE = 3
+};
 
-    Skiped continuation bytes
-*/
+// CUE represents a block of caption text
+typedef struct _vtt_block_t {
+    struct _vtt_block_t* next;
+    enum VTT_BLOCK_TYPE type;
+    // CUE-Only
+    double timestamp;
+    double duration; // -1.0 for no duration
+    char* cue_settings;
+    char* cue_id;
+    // Standard block data
+    size_t text_size;
+    char* block_text;
+} vtt_block_t;
 
-const utf8_char_t* utf8_char_next(const utf8_char_t* c);
-/*! \brief
-    \param
-
-    returnes the length of the char in bytes
-*/
-size_t utf8_char_length(const utf8_char_t* c);
-
-/*! \brief
-    \param
-
-    returns 1 if first charcter is white space
-*/
-int utf8_char_whitespace(const utf8_char_t* c);
-
-/*! \brief
-    \param
-
-    returns length of the string in bytes
-    size is number of charcter to count (0 to count until NULL term)
-*/
-size_t utf8_string_length(const utf8_char_t* data, utf8_size_t size);
-/*! \brief
-    \param
-*/
-size_t utf8_char_copy(utf8_char_t* dst, const utf8_char_t* src);
+// VTT files are a collection of REGION, STYLE and CUE blocks.
+// XXX: Comments (NOTE blocks) are ignored
+typedef struct _vtt_t {
+    vtt_block_t* region_head;
+    vtt_block_t* region_tail;
+    vtt_block_t* style_head;
+    vtt_block_t* style_tail;
+    vtt_block_t* cue_head;
+    vtt_block_t* cue_tail;
+} vtt_t;
 
 /*! \brief
     \param
-
-    returnes the number of utf8 charcters in a string givne the numbe of bytes
-    to coutn until the a null terminator, pass 0 for size
 */
-utf8_size_t utf8_char_count(const char* data, size_t size);
+vtt_t* vtt_new();
 /*! \brief
     \param
-
-    returnes the length of the line in bytes triming not printable characters at the end
 */
-utf8_size_t utf8_trimmed_length(const utf8_char_t* data, utf8_size_t charcters);
-/*! \brief
-    \param
-
-    returns the length in bytes of the line including the new line charcter(s)
-    auto detects between windows(CRLF), unix(LF), mac(CR) and riscos (LFCR) line endings
-*/
-size_t utf8_line_length(const utf8_char_t* data);
-/*! \brief
-    \param
-
-    returns number of chars to include before split
-*/
-utf8_size_t utf8_wrap_length(const utf8_char_t* data, utf8_size_t size);
+void vtt_free(vtt_t* vtt);
 
 /*! \brief
     \param
-
-    returns number of new lines in the string
 */
-int utf8_line_count(const utf8_char_t* data);
+vtt_block_t* vtt_block_new(vtt_t* vtt, const utf8_char_t* data, size_t size, enum VTT_BLOCK_TYPE type);
 
 /*! \brief
     \param
-    size in/out. In the the max seize, out is the size read;
-    returns number of new lins in teh string
 */
-#define UFTF_DEFAULT_MAX_FILE_SIZE = (50 * 1024 * 1024);
-
-utf8_char_t* utf8_load_text_file(const char* path, size_t* size);
+void vtt_cue_free_head(vtt_t* vtt);
 
 /*! \brief
     \param
-
-    Compares 2 strings up to max len
 */
-#ifndef strnstr
-char* strnstr(const char* string1, const char* string2, size_t len);
-#endif
+void vtt_style_free_head(vtt_t* vtt);
+
+/*! \brief
+    \param
+*/
+void vtt_region_free_head(vtt_t* vtt);
+
+// returns a vtt_t, containing linked lists of blocks. must be freed when done
+/*! \brief
+    \param
+*/
+vtt_t* vtt_parse(const utf8_char_t* data, size_t size);
+
+/*! \brief
+    \param
+*/
+vtt_t* _vtt_parse(const utf8_char_t* data, size_t size, int srt_mode);
+
+/*! \brief
+    \param
+*/
+static inline vtt_block_t* vtt_cue_next(vtt_block_t* block) { return block->next; }
+
+/*! \brief
+    \param
+*/
+static inline utf8_char_t* vtt_block_data(vtt_block_t* block) { return (utf8_char_t*)(block) + sizeof(vtt_block_t); }
+
+/*! \brief
+    \param
+*/
+static inline void vtt_crack_time(double tt, int* hh, int* mm, int* ss, int* ms)
+{
+    (*ms) = (int)((int64_t)(tt * 1000) % 1000);
+    (*ss) = (int)((int64_t)(tt) % 60);
+    (*mm) = (int)((int64_t)(tt / (60)) % 60);
+    (*hh) = (int)((int64_t)(tt / (60 * 60)));
+}
+
+// This only converts the current CUE, it does not walk the list
+/*! \brief
+    \param
+*/
+int vtt_cue_to_caption_frame(vtt_block_t* cue, caption_frame_t* frame);
+
+// returns the new cue
+/*! \brief
+    \param
+*/
+vtt_block_t* vtt_cue_from_caption_frame(caption_frame_t* frame, vtt_t* vtt);
+/*! \brief
+    \param
+*/
+void vtt_dump(vtt_t* vtt);
 
 #ifdef __cplusplus
 }
