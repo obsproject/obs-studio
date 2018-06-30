@@ -2686,7 +2686,7 @@ static bool sceneitems_match2(obs_scene_t *scene,
 		struct obs_sceneitem_order_info *new = &items[i];
 		struct obs_sceneitem_order_info *old = &cur_items[i];
 
-		if (new->group != old->group || new->item != new->item) {
+		if (new->group != old->group || new->item != old->item) {
 			bfree(cur_items);
 			return false;
 		}
