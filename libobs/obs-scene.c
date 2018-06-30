@@ -2705,7 +2705,6 @@ bool obs_scene_reorder_items2(obs_scene_t *scene,
 	obs_scene_addref(scene);
 	full_lock(scene);
 
-	bool order_matches = true;
 	if (sceneitems_match2(scene, item_order, item_order_size)) {
 		full_unlock(scene);
 		obs_scene_release(scene);
