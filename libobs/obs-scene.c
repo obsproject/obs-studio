@@ -2672,7 +2672,6 @@ static void build_current_order_info(obs_scene_t *scene,
 static bool sceneitems_match2(obs_scene_t *scene,
 		struct obs_sceneitem_order_info *items, size_t size)
 {
-	obs_sceneitem_t *item = scene->first_item;
 	struct obs_sceneitem_order_info *cur_items;
 	size_t cur_size;
 
