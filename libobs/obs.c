@@ -793,7 +793,7 @@ char *obs_find_data_file(const char *file)
 	if (result)
 		return result;
 
-	for (int i = 0; i < core_module_paths.num; ++i) {
+	for (size_t i = 0; i < core_module_paths.num; ++i) {
 		if (check_path(file, core_module_paths.array[i].array, &path))
 			return path.array;
 	}
@@ -811,7 +811,7 @@ void obs_add_data_path(const char *path)
 
 bool obs_remove_data_path(const char *path)
 {
-	for (int i = 0; i < core_module_paths.num; ++i) {
+	for (size_t i = 0; i < core_module_paths.num; ++i) {
 		int result = dstr_cmp(&core_module_paths.array[i], path);
 
 		if (result == 0) {
