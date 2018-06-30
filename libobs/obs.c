@@ -789,7 +789,7 @@ char *obs_find_data_file(const char *file)
 {
 	struct dstr path = {0};
 
-	const char *result = find_libobs_data_file(file);
+	char *result = find_libobs_data_file(file);
 	if (result)
 		return result;
 
