@@ -2644,11 +2644,6 @@ static void build_current_order_info(obs_scene_t *scene,
 
 	obs_sceneitem_t *item = scene->first_item;
 	while (item) {
-		struct obs_sceneitem_order_info info = {
-			.group = NULL,
-			.item = item
-		};
-
 		da_push_back(items, &item);
 
 		if (item->is_group) {
@@ -2659,8 +2654,6 @@ static void build_current_order_info(obs_scene_t *scene,
 			obs_sceneitem_t *sub_item = sub_scene->first_item;
 
 			while (sub_item) {
-				info.group = item;
-				info.item = sub_item;
 				da_push_back(items, &item);
 
 				sub_item = sub_item->next;
