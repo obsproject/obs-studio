@@ -2235,7 +2235,7 @@ obs_data_t *obs_sceneitem_get_private_settings(obs_sceneitem_t *item)
 	return item->private_settings;
 }
 
-static inline transform_val(struct vec2 *v2, struct matrix4 *transform)
+static inline void transform_val(struct vec2 *v2, struct matrix4 *transform)
 {
 	struct vec3 v;
 	vec3_set(&v, v2->x, v2->y, 0.0f);
