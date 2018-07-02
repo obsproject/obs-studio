@@ -193,10 +193,10 @@ static bool audio_monitor_init(struct audio_monitor *monitor,
 	}
 
 	if (strcmp(uid, "default") != 0) {
-		CFStringRef cf_uid = CFStringCreateWithBytesNoCopy(NULL,
+		CFStringRef cf_uid = CFStringCreateWithBytes(NULL,
 				(const UInt8*)uid, strlen(uid),
 				kCFStringEncodingUTF8,
-				false, NULL);
+				false);
 
 		stat = AudioQueueSetProperty(monitor->queue,
 				kAudioQueueProperty_CurrentDevice,
