@@ -200,7 +200,7 @@ static bool audio_monitor_init(struct audio_monitor *monitor,
 
 		stat = AudioQueueSetProperty(monitor->queue,
 				kAudioQueueProperty_CurrentDevice,
-				cf_uid, sizeof(cf_uid));
+				&cf_uid, sizeof(cf_uid));
 		CFRelease(cf_uid);
 
 		if (!success(stat, "set current device")) {
