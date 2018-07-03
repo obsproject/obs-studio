@@ -851,6 +851,42 @@ bool obs_startup(const char *locale, const char *module_config_path,
 	return success;
 }
 
+static struct obs_cmdline_args cmdline_args = {0, NULL};
+void obs_set_cmdline_args(int argc, char **argv)
+{
+	char *data;
+	size_t len;
+	int i;
+
+	/* Once argc is set (non-zero) we shouldn't call again */
+	if (cmdline_args.argc)
+		return;
+
+	cmdline_args.argc = argc;
+
+	/* Safely copy over argv */
+	len = 0;
+	for (i = 0; i < argc; i++)
+		len += strlen(argv[i]) + 1;
+
+	cmdline_args.argv = bmalloc(sizeof(char *) * (argc + 1) + len);
+	data = (char *) cmdline_args.argv + sizeof(char *) * (argc + 1);
+
+	for (i = 0; i < argc; i++) {
+		cmdline_args.argv[i] = data;
+		len = strlen(argv[i]) + 1;
+		memcpy(data, argv[i], len);
+		data += len;
+	}
+
+	cmdline_args.argv[argc] = NULL;
+}
+
+struct obs_cmdline_args obs_get_cmdline_args(void)
+{
+	return cmdline_args;
+}
+
 void obs_shutdown(void)
 {
 	struct obs_module *module;
@@ -916,6 +952,7 @@ void obs_shutdown(void)
 	bfree(core->module_config_path);
 	bfree(core->locale);
 	bfree(core);
+	bfree(cmdline_args.argv);
 
 #ifdef _WIN32
 	uninitialize_com();

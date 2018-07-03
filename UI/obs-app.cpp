@@ -1981,6 +1981,8 @@ int main(int argc, char *argv[])
 	move_to_xdg();
 #endif
 
+	obs_set_cmdline_args(argc, argv);
+
 	for (int i = 1; i < argc; i++) {
 		if (arg_is(argv[i], "--portable", "-p")) {
 			portable_mode = true;
