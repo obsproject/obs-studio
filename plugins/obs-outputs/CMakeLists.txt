@@ -1,20 +1,21 @@
 project(obs-outputs)
 
-option(USE_SSL "Enable rtmps support with OpenSSL" OFF)
+option(WITH_RTMPS "Enable rtmps support with mbedTLS" OFF)
 
-if (USE_SSL)
-	find_package(SSL QUIET)
+if (WITH_RTMPS)
+	find_package(MbedTLS QUIET)
 	find_package(ZLIB QUIET)
 endif()
 
-if (SSL_FOUND AND ZLIB_FOUND)
-	add_definitions(-DCRYPTO -DUSE_OPENSSL)
-	include_directories(${SSL_INCLUDE_DIRS} ${ZLIB_INCLUDE_DIRS})
+if (MBEDTLS_FOUND AND ZLIB_FOUND)
+	message (STATUS "mbedTLS libraries found: ${MBEDTLS_LIBRARIES}")
+	add_definitions(-DCRYPTO -DUSE_MBEDTLS)
+	include_directories(${MBEDTLS_INCLUDE_DIRS} ${ZLIB_INCLUDE_DIRS})
 else()
-	if (USE_SSL)
-		message(WARNING "SSL enabled by user, but OpenSSL was not found")
+	if (WITH_RTMPS)
+		message(WARNING "RTMPS enabled by user, but mbedTLS was not found")
 	endif()
-	unset(SSL_LIBRARIES)
+	unset(MBEDTLS_LIBRARIES)
 	unset(ZLIB_LIBRARIES)
 	add_definitions(-DNO_CRYPTO)
 endif()
@@ -133,7 +134,7 @@ set(obs-outputs_SOURCES
 	flv-output.c
 	flv-mux.c
 	net-if.c)
-	
+
 add_library(obs-outputs MODULE
 	${ftl_SOURCES}
 	${ftl_HEADERS}
@@ -143,7 +144,7 @@ add_library(obs-outputs MODULE
 	${obs-outputs_librtmp_HEADERS})
 target_link_libraries(obs-outputs
 	libobs
-	${SSL_LIBRARIES}
+	${MBEDTLS_LIBRARIES}
 	${ZLIB_LIBRARIES}
 	${ftl_IMPORTS}
 	${obs-outputs_PLATFORM_DEPS})

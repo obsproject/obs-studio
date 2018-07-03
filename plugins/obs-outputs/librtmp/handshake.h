@@ -24,7 +24,28 @@
 
 /* This file is #included in rtmp.c, it is not meant to be compiled alone */
 
-#ifdef USE_POLARSSL
+#if defined(USE_MBEDTLS)
+#include <mbedtls/md.h>
+#include <mbedtls/arc4.h>
+#ifndef SHA256_DIGEST_LENGTH
+#define SHA256_DIGEST_LENGTH	32
+#endif
+typedef mbedtls_md_context_t *HMAC_CTX;
+#define HMAC_setup(ctx, key, len)	ctx = malloc(sizeof(mbedtls_md_context_t)); mbedtls_md_init(ctx); \
+  mbedtls_md_setup(ctx, mbedtls_md_info_from_type(MBEDTLS_MD_SHA256), 1); \
+  mbedtls_md_hmac_starts(ctx, (const unsigned char *)key, len)
+#define HMAC_crunch(ctx, buf, len) mbedtls_md_hmac_update(ctx, buf, len)
+#define HMAC_finish(ctx, dig, dlen)	dlen = SHA256_DIGEST_LENGTH; mbedtls_md_hmac_finish(ctx, dig)
+#define HMAC_close(ctx) mbedtls_md_free(ctx); free(ctx); ctx = NULL
+
+typedef mbedtls_arc4_context*	RC4_handle;
+#define RC4_alloc(h)	*h = malloc(sizeof(mbedtls_arc4_context)); mbedtls_arc4_init(*h)
+#define RC4_setkey(h,l,k)	mbedtls_arc4_setup(h,k,l)
+#define RC4_encrypt(h,l,d)	mbedtls_arc4_crypt(h,l,(unsigned char *)d,(unsigned char *)d)
+#define RC4_encrypt2(h,l,s,d)	mbedtls_arc4_crypt(h,l,(unsigned char *)s,(unsigned char *)d)
+#define RC4_free(h)	mbedtls_arc4_free(h); free(h); h = NULL
+
+#elif defined(USE_POLARSSL)
 #include <polarssl/sha2.h>
 #include <polarssl/arc4.h>
 #ifndef SHA256_DIGEST_LENGTH
@@ -148,6 +169,8 @@ typedef unsigned int (getoff)(uint8_t *buf, unsigned int len);
 static unsigned int
 GetDHOffset2(uint8_t *handshake, unsigned int len)
 {
+    (void) len;
+
     unsigned int offset = 0;
     uint8_t *ptr = handshake + 768;
     unsigned int res;
@@ -177,6 +200,8 @@ GetDHOffset2(uint8_t *handshake, unsigned int len)
 static unsigned int
 GetDigestOffset2(uint8_t *handshake, unsigned int len)
 {
+    (void) len;
+
     unsigned int offset = 0;
     uint8_t *ptr = handshake + 772;
     unsigned int res;
@@ -206,6 +231,8 @@ GetDigestOffset2(uint8_t *handshake, unsigned int len)
 static unsigned int
 GetDHOffset1(uint8_t *handshake, unsigned int len)
 {
+    (void) len;
+
     unsigned int offset = 0;
     uint8_t *ptr = handshake + 1532;
     unsigned int res;
@@ -235,6 +262,8 @@ GetDHOffset1(uint8_t *handshake, unsigned int len)
 static unsigned int
 GetDigestOffset1(uint8_t *handshake, unsigned int len)
 {
+    (void) len;
+
     unsigned int offset = 0;
     uint8_t *ptr = handshake + 8;
     unsigned int res;
@@ -1128,6 +1157,7 @@ HandShake(RTMP * r, int FP9HandShake)
                      __FUNCTION__);
         }
     }
+    // TODO(mgoulet): Should this have a HMAC_finish here?
 
     RTMP_Log(RTMP_LOGDEBUG, "%s: Handshaking finished....", __FUNCTION__);
     return TRUE;
@@ -1481,6 +1511,8 @@ SHandShake(RTMP * r)
                      __FUNCTION__);
         }
     }
+
+    // TODO(mgoulet): Should this have an Rc4_free?
 
     RTMP_Log(RTMP_LOGDEBUG, "%s: Handshaking finished....", __FUNCTION__);
     return TRUE;

@@ -30,7 +30,20 @@
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #endif
 
-#ifdef USE_POLARSSL
+#if defined(USE_MBEDTLS)
+#include <mbedtls/md.h>
+#ifndef SHA256_DIGEST_LENGTH
+#define SHA256_DIGEST_LENGTH	32
+#endif
+typedef mbedtls_md_context_t *HMAC_CTX;
+#define HMAC_setup(ctx, key, len)	ctx = malloc(sizeof(mbedtls_md_context_t)); mbedtls_md_init(ctx); \
+  mbedtls_md_setup(ctx, mbedtls_md_info_from_type(MBEDTLS_MD_SHA256), 1); \
+  mbedtls_md_hmac_starts(ctx, (const unsigned char *)key, len)
+#define HMAC_crunch(ctx, buf, len) mbedtls_md_hmac_update(ctx, buf, len)
+#define HMAC_finish(ctx, dig, dlen)	dlen = SHA256_DIGEST_LENGTH; mbedtls_md_hmac_finish(ctx, dig)
+#define HMAC_close(ctx) free(ctx); mbedtls_md_free(ctx); ctx = NULL
+
+#elif defined(USE_POLARSSL)
 #include <polarssl/sha2.h>
 #ifndef SHA256_DIGEST_LENGTH
 #define SHA256_DIGEST_LENGTH	32
@@ -40,6 +53,7 @@
 #define HMAC_crunch(ctx, buf, len)	sha2_hmac_update(&ctx, buf, len)
 #define HMAC_finish(ctx, dig, dlen)	dlen = SHA256_DIGEST_LENGTH; sha2_hmac_finish(&ctx, dig)
 #define HMAC_close(ctx)
+
 #elif defined(USE_GNUTLS)
 #include <nettle/hmac.h>
 #ifndef SHA256_DIGEST_LENGTH
@@ -51,6 +65,7 @@
 #define HMAC_crunch(ctx, buf, len)	hmac_sha256_update(&ctx, len, buf)
 #define HMAC_finish(ctx, dig, dlen)	dlen = SHA256_DIGEST_LENGTH; hmac_sha256_digest(&ctx, SHA256_DIGEST_LENGTH, dig)
 #define HMAC_close(ctx)
+
 #else	/* USE_OPENSSL */
 #include <openssl/ssl.h>
 #include <openssl/sha.h>
@@ -161,8 +176,17 @@ HTTP_get(struct HTTP_ctx *http, const char *url, HTTP_read_callback *cb)
         goto leave;
 #else
         TLS_client(RTMP_TLS_ctx, sb.sb_ssl);
+
+#if defined(USE_MBEDTLS)
+        mbedtls_net_context *server_fd = &RTMP_TLS_ctx->net;
+        server_fd->fd = sb.sb_socket;
+        TLS_setfd(sb.sb_ssl, server_fd);
+#else
         TLS_setfd(sb.sb_ssl, sb.sb_socket);
-        if (TLS_connect(sb.sb_ssl) < 0)
+#endif
+
+        int connect_return = TLS_connect(sb.sb_ssl);
+        if (connect_return < 0)
         {
             RTMP_Log(RTMP_LOGERROR, "%s, TLS_Connect failed", __FUNCTION__);
             ret = HTTPRES_LOST_CONNECTION;
