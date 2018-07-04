@@ -653,7 +653,7 @@
             "servers": [
                 {
                     "name": "Default",
-                    "url": "rtmp://rtmp-api.facebook.com:80/rtmp/"
+                    "url": "rtmps://rtmp-api.facebook.com:443/rtmp/"
                 }
             ],
             "recommended": {
