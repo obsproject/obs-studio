@@ -165,6 +165,9 @@ public:
 	{
 		translatorHooks.pop_front();
 	}
+
+signals:
+	void StyleChanged();
 };
 
 int GetConfigPath(char *path, size_t size, const char *name);

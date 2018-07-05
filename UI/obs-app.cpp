@@ -994,6 +994,7 @@ bool OBSApp::SetTheme(std::string name, std::string path)
 	setStyleSheet(mpath);
 	ParseExtraThemeData(path.c_str());
 
+	emit StyleChanged();
 	return true;
 }
 
