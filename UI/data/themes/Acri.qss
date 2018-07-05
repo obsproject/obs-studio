@@ -1,3 +1,37 @@
+/* OBSTheme, main QApplication palette and QML values */
+OBSTheme {
+    window: #181819;
+    windowText: rgb(225,224,225);
+    base: rgb(18,18,21);
+    alternateBase: rgb(0,0,0);
+    text: rgb(225,224,225);
+    button: #162458;
+    buttonText: rgb(225,224,225);
+    brightText: #484848;
+
+    light: #162458;
+    mid: #181819;
+    dark: rgb(18,18,21);
+    shadow: rgb(0,0,0);
+
+    highlight: #252458;
+    highlightText: #FFFFFF;
+
+    link: #605ee6;
+    linkVisited: #605ee6;
+}
+
+OBSTheme::disabled {
+    text: #484848;
+    buttonText: #484848;
+    brightText: #484848;
+}
+
+OBSTheme::inactive {
+    highlight: rgb(48,47,48);
+    highlightText: rgb(255, 255, 255);
+}
+
 /* General style, we override only what is needed. */
 QWidget {
 	background-color: #181819;
