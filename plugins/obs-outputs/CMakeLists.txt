@@ -7,15 +7,15 @@ if (WITH_RTMPS)
 	find_package(ZLIB QUIET)
 endif()
 
-if (MBEDTLS_FOUND AND ZLIB_FOUND)
-	message (STATUS "mbedTLS libraries found: ${MBEDTLS_LIBRARIES}")
+if (LIBMBEDTLS_FOUND AND ZLIB_FOUND)
+	message (STATUS "mbedTLS libraries found: ${LIBMBEDTLS_LIBRARIES}")
 	add_definitions(-DCRYPTO -DUSE_MBEDTLS)
-	include_directories(${MBEDTLS_INCLUDE_DIRS} ${ZLIB_INCLUDE_DIRS})
+	include_directories(${LIBMBEDTLS_INCLUDE_DIRS} ${ZLIB_INCLUDE_DIRS})
 else()
 	if (WITH_RTMPS)
 		message(WARNING "RTMPS enabled by user, but mbedTLS was not found")
 	endif()
-	unset(MBEDTLS_LIBRARIES)
+	unset(LIBMBEDTLS_LIBRARIES)
 	unset(ZLIB_LIBRARIES)
 	add_definitions(-DNO_CRYPTO)
 endif()
@@ -144,7 +144,7 @@ add_library(obs-outputs MODULE
 	${obs-outputs_librtmp_HEADERS})
 target_link_libraries(obs-outputs
 	libobs
-	${MBEDTLS_LIBRARIES}
+	${LIBMBEDTLS_LIBRARIES}
 	${ZLIB_LIBRARIES}
 	${ftl_IMPORTS}
 	${obs-outputs_PLATFORM_DEPS})
