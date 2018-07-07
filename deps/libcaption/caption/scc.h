@@ -1,7 +1,7 @@
 /**********************************************************************************************/
 /* The MIT License                                                                            */
 /*                                                                                            */
-/* Copyright 2016-2016 Twitch Interactive, Inc. or its affiliates. All Rights Reserved.       */
+/* Copyright 2016-2017 Twitch Interactive, Inc. or its affiliates. All Rights Reserved.       */
 /*                                                                                            */
 /* Permission is hereby granted, free of charge, to any person obtaining a copy               */
 /* of this software and associated documentation files (the "Software"), to deal              */
@@ -23,9 +23,25 @@
 /**********************************************************************************************/
 #ifndef LIBCAPTION_SCC_H
 #define LIBCAPTION_SCC_H
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #include "eia608.h"
 
-int scc_to_608 (const char* line, double* pts, uint16_t* cc, int cc_max);
+typedef struct _scc_t {
+    double timestamp;
+    unsigned int cc_aloc;
+    unsigned int cc_size;
+    uint16_t cc_data[];
+} scc_t;
 
+scc_t* scc_new(int cc_count);
+scc_t* scc_free(scc_t* scc);
+
+size_t scc_to_608(scc_t** scc, const utf8_char_t* data);
+
+#ifdef __cplusplus
+}
+#endif
 #endif
