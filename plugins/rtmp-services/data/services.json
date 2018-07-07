@@ -806,6 +806,46 @@
             }
         },
         {
+            "name": "Castr.io",
+            "servers": [
+                {
+                    "name": "Chicago US",
+                    "url": "rtmp://cg.castr.io"
+                },
+                {
+                    "name": "Los Angeles US",
+                    "url": "rtmp://la.castr.io"
+                },
+                {
+                    "name": "Montreal CA",
+                    "url": "rtmp://qc.castr.io"
+                },
+                {
+                    "name": "London UK",
+                    "url": "rtmp://uk.castr.io"
+                },
+                {
+                    "name": "Frankfurt DE",
+                    "url": "rtmp://de.castr.io"
+                },
+                {
+                    "name": "Moscow RU",
+                    "url": "rtmp://ru.castr.io"
+                },
+                {
+                    "name": "Singapore",
+                    "url": "rtmp://sg.castr.io"
+                },
+                {
+                    "name": "Sydney AU",
+                    "url": "rtmp://au.castr.io"
+                }
+            ],
+            "recommended": {
+                "keyint": 2
+            }
+        },
+        {
             "name": "Boomstream",
             "servers": [
                 {
