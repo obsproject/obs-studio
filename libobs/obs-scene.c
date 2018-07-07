@@ -2235,7 +2235,7 @@ obs_data_t *obs_sceneitem_get_private_settings(obs_sceneitem_t *item)
 	return item->private_settings;
 }
 
-static inline transform_val(struct vec2 *v2, struct matrix4 *transform)
+static inline void transform_val(struct vec2 *v2, struct matrix4 *transform)
 {
 	struct vec3 v;
 	vec3_set(&v, v2->x, v2->y, 0.0f);
@@ -2644,11 +2644,6 @@ static void build_current_order_info(obs_scene_t *scene,
 
 	obs_sceneitem_t *item = scene->first_item;
 	while (item) {
-		struct obs_sceneitem_order_info info = {
-			.group = NULL,
-			.item = item
-		};
-
 		da_push_back(items, &item);
 
 		if (item->is_group) {
@@ -2659,8 +2654,6 @@ static void build_current_order_info(obs_scene_t *scene,
 			obs_sceneitem_t *sub_item = sub_scene->first_item;
 
 			while (sub_item) {
-				info.group = item;
-				info.item = sub_item;
 				da_push_back(items, &item);
 
 				sub_item = sub_item->next;
@@ -2679,7 +2672,6 @@ static void build_current_order_info(obs_scene_t *scene,
 static bool sceneitems_match2(obs_scene_t *scene,
 		struct obs_sceneitem_order_info *items, size_t size)
 {
-	obs_sceneitem_t *item = scene->first_item;
 	struct obs_sceneitem_order_info *cur_items;
 	size_t cur_size;
 
@@ -2693,7 +2685,7 @@ static bool sceneitems_match2(obs_scene_t *scene,
 		struct obs_sceneitem_order_info *new = &items[i];
 		struct obs_sceneitem_order_info *old = &cur_items[i];
 
-		if (new->group != old->group || new->item != new->item) {
+		if (new->group != old->group || new->item != old->item) {
 			bfree(cur_items);
 			return false;
 		}
@@ -2713,7 +2705,6 @@ bool obs_scene_reorder_items2(obs_scene_t *scene,
 	obs_scene_addref(scene);
 	full_lock(scene);
 
-	bool order_matches = true;
 	if (sceneitems_match2(scene, item_order, item_order_size)) {
 		full_unlock(scene);
 		obs_scene_release(scene);
