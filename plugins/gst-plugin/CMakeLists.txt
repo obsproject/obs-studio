@@ -1,5 +1,5 @@
 
-project(my-plugin)
+project(gst-plugin)
 
 # - Try to find GStreamer and its plugins
 # Once done, this will define
@@ -134,13 +134,13 @@ mark_as_advanced(
 )
 
 
-set(my-plugin_SOURCES
-	my-plugin.c)
+set(gst-plugin_SOURCES
+	gst-plugin.c)
 
-add_library(my-plugin MODULE
-	${my-plugin_SOURCES})
+add_library(gst-plugin MODULE
+	${gst-plugin_SOURCES})
 
-include_directories(my-plugin PRIVATE ${GSTREAMER_INCLUDE_DIRS}
+include_directories(gst-plugin PRIVATE ${GSTREAMER_INCLUDE_DIRS}
 	"${GSTREAMER_INCLUDE_DIRS}/gstreamer"
 	${GSTREAMER_LIBRARIES}
 	${GSTREAMER_BASE_INCLUDE_DIRS}
@@ -148,12 +148,12 @@ include_directories(my-plugin PRIVATE ${GSTREAMER_INCLUDE_DIRS}
 	${GSTREAMER_BASE_LIBRARIES}
 	${GLIB_INCLUDE_DIRS})
 
-target_link_libraries(my-plugin
+target_link_libraries(gst-plugin
 	libobs
-	${my-plugin_PLATFORM_DEPS}
+	${gst-plugin_PLATFORM_DEPS}
 	${GSTREAMER_LIBRARIES}
 	${GSTREAMER_BASE_INCLUDE_DIRS}
 	${GSTREAMER_BASE_LIBRARIES}
 	${GLIB_INCLUDE_DIRS})
 
-install_obs_plugin(my-plugin)
+install_obs_plugin(gst-plugin)

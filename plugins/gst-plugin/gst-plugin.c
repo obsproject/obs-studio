@@ -20,7 +20,7 @@ struct my_tex {
 static const char *my_getname(void *unused)
 {
 	UNUSED_PARAMETER(unused);
-	return "My Plugin";
+	return "GStreamer OBS Plugin";
 }
 
 static void my_destroy(void *data)
@@ -96,22 +96,9 @@ static GstFlowReturn new_sample (GstElement *appsink, GstElement *data)
      }
 }
 
-static void *my_create(obs_data_t *settings, obs_source_t *source)
+static void my_source_activate(void *data)
 {
-	struct my_tex *rt = bzalloc(sizeof(struct my_tex));
-	rt->source = source;
-
-	if (os_event_init(&rt->stop_signal, OS_EVENT_TYPE_MANUAL) != 0) {
-		my_destroy(rt);
-		return NULL;
-	}
-
-	if (pthread_create(&rt->thread, NULL, video_thread, rt) != 0) {
-		my_destroy(rt);
-		return NULL;
-	}
-
-	rt->initialized = true;
+	struct gst_plugin *rt = data;
 
 	GstElement *pipeline;
 	GstElement *appsink;
@@ -119,7 +106,7 @@ static void *my_create(obs_data_t *settings, obs_source_t *source)
 	GstMessage *msg;
 	char argc, argv;
 	gst_init (&argc, &argv);
-	pipeline = gst_parse_launch ("videotestsrc ! appsink name=sink ", NULL);
+	pipeline = gst_parse_launch ("videotestsrc ! autovideosink ", NULL);
 
 	appsink = gst_bin_get_by_name (GST_BIN (pipeline), "sink");
 	g_object_set (appsink, "sync", TRUE, NULL); 
@@ -129,33 +116,44 @@ static void *my_create(obs_data_t *settings, obs_source_t *source)
   	/* Start playing */
 	gst_element_set_state (pipeline, GST_STATE_PLAYING);
 
-	/* Wait until error or EOS */
+	
 	bus = gst_element_get_bus (pipeline);
-	msg = gst_bus_timed_pop_filtered (bus, GST_CLOCK_TIME_NONE, GST_MESSAGE_ERROR | GST_MESSAGE_EOS);
+	/* Wait until error or EOS */
+	//msg = gst_bus_timed_pop_filtered (bus, GST_CLOCK_TIME_NONE, GST_MESSAGE_ERROR | GST_MESSAGE_EOS);
 
-	/* Free resources */
+	/* Free resources 
 	if (msg != NULL)
 		gst_message_unref (msg);
 	gst_object_unref (bus);
 	gst_element_set_state (pipeline, GST_STATE_NULL);
 	gst_object_unref (pipeline);
-
-	UNUSED_PARAMETER(settings);
-	UNUSED_PARAMETER(source);
-	return rt;
+	*/
+	return;
 }
 
-struct obs_source_info my_plugin = {
-	.id           = "my-plugin",
+
+
+
+static void *my_create(obs_data_t *settings, obs_source_t *source)
+{
+	
+	UNUSED_PARAMETER(settings);
+	UNUSED_PARAMETER(source);
+	return;
+}
+
+struct obs_source_info gst_plugin = {
+	.id           = "gst-plugin",
 	.type         = OBS_SOURCE_TYPE_INPUT,
 	.output_flags = OBS_SOURCE_ASYNC_VIDEO,
 	.get_name     = my_getname,
 	.create       = my_create,
 	.destroy      = my_destroy,
+	.activate       = my_source_activate,
 };
 
 
 bool obs_module_load(void)
 {
-	obs_register_source(&my_plugin);
+	obs_register_source(&gst_plugin);
 }
