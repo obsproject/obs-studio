@@ -133,6 +133,12 @@ mark_as_advanced(
     GSTREAMER_VIDEO_LIBRARIES
 )
 
+ message( "found = ${GSTREAMER_FOUND}" )
+    message( "dirs = ${GSTREAMER_INCLUDE_DIRS}" )
+    message( "libs = ${GSTREAMER_LIBRARIES}" )
+    message( "base dir include = ${GSTREAMER_BASE_INCLUDE_DIRS}" )
+    message( "base dir libraries = ${GSTREAMER_BASE_LIBRARIES}" )
+
 
 set(gst-plugin_SOURCES
 	gst-plugin.c)
@@ -152,8 +158,6 @@ target_link_libraries(gst-plugin
 	libobs
 	${gst-plugin_PLATFORM_DEPS}
 	${GSTREAMER_LIBRARIES}
-	${GSTREAMER_BASE_INCLUDE_DIRS}
-	${GSTREAMER_BASE_LIBRARIES}
-	${GLIB_INCLUDE_DIRS})
+	${GSTREAMER_BASE_LIBRARIES})
 
 install_obs_plugin(gst-plugin)

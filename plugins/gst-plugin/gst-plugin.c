@@ -10,22 +10,22 @@
 
 OBS_DECLARE_MODULE()
 
-struct my_tex {
+struct gst_tex {
 	obs_source_t *source;
 	os_event_t   *stop_signal;
 	pthread_t    thread;
 	bool         initialized;
 };
 
-static const char *my_getname(void *unused)
+static const char *gst_getname(void *unused)
 {
 	UNUSED_PARAMETER(unused);
 	return "GStreamer OBS Plugin";
 }
 
-static void my_destroy(void *data)
+static void gst_destroy(void *data)
 {
-	struct my_tex *rt = data;
+	struct gst_tex *rt = data;
 
 	if (rt) {
 		if (rt->initialized) {
@@ -57,7 +57,7 @@ static inline void fill_texture(uint32_t *pixels)
 
 static void *video_thread(void *data)
 {
-	struct my_tex   *rt = data;
+	struct gst_tex   *rt = data;
 	uint32_t            pixels[20*20];
 	uint64_t            cur_time = os_gettime_ns();
 
@@ -69,6 +69,21 @@ static void *video_thread(void *data)
 		.format   = VIDEO_FORMAT_BGRX
 	};
 
+	GstElement *pipeline;
+	GstElement *appsink;
+	GstBus *bus;
+	GstMessage *msg;
+	char argc, argv;
+	gst_init (&argc, &argv);
+	pipeline = gst_parse_launch ("videotestsrc ! autovideosink ", NULL);
+
+  	//Start playing 
+	gst_element_set_state (pipeline, GST_STATE_PLAYING);
+
+	
+	bus = gst_element_get_bus (pipeline);
+	
+
 	while (os_event_try(rt->stop_signal) == EAGAIN) {
 		fill_texture(pixels);
 
@@ -79,15 +94,18 @@ static void *video_thread(void *data)
 		os_sleepto_ns(cur_time += 250000000);
 	}
 
+	gst_element_set_state (pipeline, GST_STATE_NULL);
+	gst_object_unref (pipeline);
+
 	return NULL;
 }
-
+/*
 static GstFlowReturn new_sample (GstElement *appsink, GstElement *data) 
 {
      GstSample *sample = NULL;
 	blog(LOG_DEBUG,"sample received");
 	 GstElement *piappsink = gst_bin_get_by_name (GST_BIN (data), "sink");
-     /* Retrieve the buffer */
+     // Retrieve the buffer 
      g_signal_emit_by_name (piappsink, "pull-sample", &sample,NULL);
      if (sample) 
      {
@@ -95,8 +113,8 @@ static GstFlowReturn new_sample (GstElement *appsink, GstElement *data)
           gst_sample_unref (sample);
      }
 }
-
-static void my_source_activate(void *data)
+*/
+/*static void gst_source_activate(void *data)
 {
 	struct gst_plugin *rt = data;
 
@@ -113,43 +131,55 @@ static void my_source_activate(void *data)
     g_object_set (appsink, "emit-signals", TRUE, NULL);
     g_signal_connect (appsink , "new-sample", G_CALLBACK (new_sample),pipeline);
 
-  	/* Start playing */
+  	/* Start playing 
 	gst_element_set_state (pipeline, GST_STATE_PLAYING);
 
 	
 	bus = gst_element_get_bus (pipeline);
-	/* Wait until error or EOS */
-	//msg = gst_bus_timed_pop_filtered (bus, GST_CLOCK_TIME_NONE, GST_MESSAGE_ERROR | GST_MESSAGE_EOS);
+	/* Wait until error or EOS 
+	msg = gst_bus_timed_pop_filtered (bus, GST_CLOCK_TIME_NONE, GST_MESSAGE_ERROR | GST_MESSAGE_EOS);
 
-	/* Free resources 
+	// Free resources 
 	if (msg != NULL)
 		gst_message_unref (msg);
 	gst_object_unref (bus);
 	gst_element_set_state (pipeline, GST_STATE_NULL);
 	gst_object_unref (pipeline);
-	*/
+	
 	return;
 }
+*/
 
-
-
-
-static void *my_create(obs_data_t *settings, obs_source_t *source)
+static void *gst_create(obs_data_t *settings, obs_source_t *source)
 {
 	
+	struct gst_tex *rt = bzalloc(sizeof(struct gst_tex));
+	rt->source = source;
+
+	if (os_event_init(&rt->stop_signal, OS_EVENT_TYPE_MANUAL) != 0) {
+		gst_destroy(rt);
+		return NULL;
+	}
+
+	if (pthread_create(&rt->thread, NULL, video_thread, rt) != 0) {
+		gst_destroy(rt);
+		return NULL;
+	}
+
+	rt->initialized = true;
+
 	UNUSED_PARAMETER(settings);
 	UNUSED_PARAMETER(source);
-	return;
+	return rt;
 }
 
 struct obs_source_info gst_plugin = {
 	.id           = "gst-plugin",
 	.type         = OBS_SOURCE_TYPE_INPUT,
 	.output_flags = OBS_SOURCE_ASYNC_VIDEO,
-	.get_name     = my_getname,
-	.create       = my_create,
-	.destroy      = my_destroy,
-	.activate       = my_source_activate,
+	.get_name     = gst_getname,
+	.create       = gst_create,
+	.destroy      = gst_destroy
 };
 
 
