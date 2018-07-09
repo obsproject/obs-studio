@@ -1277,6 +1277,19 @@
                     "url": "rtmp://rtmp.cdn.asset.aparat.com:443/event"
                 }
             ]
+        },
+        {
+            "name": "KakaoTV",
+            "servers": [
+                {
+                    "name": "Default",
+                    "url": "rtmp://rtmp.play.kakao.com/kakaotv"
+                }
+            ],
+            "recommended": {
+                "max video bitrate": 8000,
+                "max audio bitrate": 192
+            }
         }
     ]
 }
