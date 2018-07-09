@@ -147,10 +147,10 @@ add_library(gst-plugin MODULE
 	${gst-plugin_SOURCES})
 
 include_directories(gst-plugin PRIVATE ${GSTREAMER_INCLUDE_DIRS}
-	"${GSTREAMER_INCLUDE_DIRS}/gstreamer"
+	"${GSTREAMER_INCLUDE_DIRS}"
 	${GSTREAMER_LIBRARIES}
 	${GSTREAMER_BASE_INCLUDE_DIRS}
-	"${GSTREAMER_BASE_INCLUDE_DIRS}/gstreamer"
+	"${GSTREAMER_BASE_INCLUDE_DIRS}"
 	${GSTREAMER_BASE_LIBRARIES}
 	${GLIB_INCLUDE_DIRS})
 
@@ -158,6 +158,7 @@ target_link_libraries(gst-plugin
 	libobs
 	${gst-plugin_PLATFORM_DEPS}
 	${GSTREAMER_LIBRARIES}
-	${GSTREAMER_BASE_LIBRARIES})
+	${GSTREAMER_BASE_LIBRARIES}
+    ${GSTREAMER_APP_LIBRARIES})
 
 install_obs_plugin(gst-plugin)

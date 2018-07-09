@@ -5,8 +5,7 @@
 #include <obs-module.h>
 #include <gst/gst.h> 
 #include <glib.h> 
-
-
+#include <gst/app/gstappsink.h>
 
 OBS_DECLARE_MODULE()
 
@@ -57,40 +56,72 @@ static inline void fill_texture(uint32_t *pixels)
 
 static void *video_thread(void *data)
 {
-	struct gst_tex   *rt = data;
-	uint32_t            pixels[20*20];
-	uint64_t            cur_time = os_gettime_ns();
-
-	struct obs_source_frame frame = {
-		.data     = {[0] = (uint8_t*)pixels},
-		.linesize = {[0] = 20*4},
-		.width    = 20,
-		.height   = 20,
-		.format   = VIDEO_FORMAT_BGRX
-	};
-
 	GstElement *pipeline;
 	GstElement *appsink;
 	GstBus *bus;
 	GstMessage *msg;
+	GstSample *gstSample;
+	GstBuffer *gstBuf;
+	GstMapInfo map;
+	GstCaps *caps;
+    GstStructure *s;
+	gint width, height;
 	char argc, argv;
+	gboolean res;
+
+
+	struct gst_tex   *rt = data;
+	uint8_t  pixels[720000];
+	uint64_t cur_time = os_gettime_ns();
+
+	struct obs_source_frame frame = {
+		.data     = {[0] = (uint8_t *)pixels},
+		.linesize[0] = 800*3,
+		.width    = 800,
+		.height   = 600,
+		.format   = VIDEO_FORMAT_BGRX
+	};
+
 	gst_init (&argc, &argv);
-	pipeline = gst_parse_launch ("videotestsrc ! autovideosink ", NULL);
+	pipeline = gst_parse_launch ("videotestsrc pattern=18 ! videoconvert ! video/x-raw,fornat=BGRx,width=800,height=600 ! queue ! appsink name=sink ", NULL);
+
+	appsink = gst_bin_get_by_name (GST_BIN (pipeline), "sink");
+	//g_object_set (appsink, "sync", TRUE, NULL); 
+    //g_object_set (appsink, "emit-signals", TRUE, NULL);
+    ///g_signal_connect (appsink , "new-sample", G_CALLBACK (new_sample),pipeline);
 
   	//Start playing 
 	gst_element_set_state (pipeline, GST_STATE_PLAYING);
 
 	
 	bus = gst_element_get_bus (pipeline);
-	
 
 	while (os_event_try(rt->stop_signal) == EAGAIN) {
-		fill_texture(pixels);
-
-		frame.timestamp = cur_time;
-
-		obs_source_output_video(rt->source, &frame);
-
+		//fill_texture(pixels);
+		blog(LOG_INFO, "GST Sample: waiting");
+		gstSample = gst_app_sink_pull_sample(appsink);
+		blog(LOG_INFO, "GST Sample: have");
+		caps = gst_sample_get_caps (gstSample);
+		s = gst_caps_get_structure (caps, 0);
+		res = gst_structure_get_int (s, "width", &width);
+		res |= gst_structure_get_int (s, "height", &height);
+		blog(LOG_INFO, "GST Sample: width: %d",width);
+		blog(LOG_INFO, "GST Sample: height: %d", height);
+		
+		gstBuf = gst_sample_get_buffer(gstSample);
+		if (gst_buffer_extract(gstBuf, 0, &pixels, 720000) > 0) {
+		//if (gst_buffer_map (gstBuf, &map, GST_MAP_READ)) {
+			blog(LOG_INFO, "GST Sample: address %u", map.data);
+			blog(LOG_INFO, "GST Sample: datasize: %u", map.size);
+			//pixels = *map.data;
+			blog(LOG_INFO, "copying %d bytes from %u to %u",map.size, map.data,*pixels);
+			//memcpy(pixels,&map.data,map.size);
+			frame.timestamp = cur_time;
+			
+			obs_source_output_video(rt->source, &frame);
+			//gst_buffer_unmap (gstBuf, &map);
+		}
+		gst_sample_unref (gstSample);
 		os_sleepto_ns(cur_time += 250000000);
 	}
 
