@@ -125,6 +125,13 @@ void obs_frontend_set_current_transition(obs_source_t *transition)
 		c->obs_frontend_set_current_transition(transition);
 }
 
+obs_source_t *obs_frontend_find_transition(const char *name)
+{
+	return !!callbacks_valid()
+		? c->obs_frontend_find_transition(name)
+		: nullptr;
+}
+
 char **obs_frontend_get_scene_collections(void)
 {
 	if (!callbacks_valid())

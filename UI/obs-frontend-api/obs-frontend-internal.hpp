@@ -20,6 +20,7 @@ struct obs_frontend_callbacks {
 	virtual obs_source_t *obs_frontend_get_current_transition(void)=0;
 	virtual void obs_frontend_set_current_transition(
 			obs_source_t *transition)=0;
+	virtual obs_source_t *obs_frontend_find_transition(const char *name)=0;
 
 	virtual void obs_frontend_get_scene_collections(
 			std::vector<std::string> &strings)=0;

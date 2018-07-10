@@ -130,6 +130,14 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 				Q_ARG(OBSSource, OBSSource(transition)));
 	}
 
+	obs_source_t *obs_frontend_find_transition(const char *name) override
+	{
+		OBSSource tr = main->FindTransition(name);
+
+		obs_source_addref(tr);
+		return tr;
+	}
+
 	void obs_frontend_get_scene_collections(
 			std::vector<std::string> &strings) override
 	{

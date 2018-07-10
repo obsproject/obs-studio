@@ -92,6 +92,7 @@ EXPORT void obs_frontend_get_transitions(
 		struct obs_frontend_source_list *sources);
 EXPORT obs_source_t *obs_frontend_get_current_transition(void);
 EXPORT void obs_frontend_set_current_transition(obs_source_t *transition);
+EXPORT obs_source_t *obs_frontend_find_transition(const char *name);
 
 EXPORT char **obs_frontend_get_scene_collections(void);
 EXPORT char *obs_frontend_get_current_scene_collection(void);
