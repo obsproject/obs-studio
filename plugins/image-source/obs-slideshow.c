@@ -4,6 +4,10 @@
 #include <util/darray.h>
 #include <util/dstr.h>
 
+#ifdef FRONTEND_API_FOR_PLUGINS
+#include <obs-frontend-api.h>
+#endif
+
 #define do_log(level, format, ...) \
 	blog(level, "[slideshow: '%s'] " format, \
 			obs_source_get_name(ss->source), ##__VA_ARGS__)
@@ -283,6 +287,8 @@ static void ss_update(void *data, obs_data_t *settings)
 	ss->manual = (astrcmpi(mode, S_MODE_MANUAL) == 0);
 
 	tr_name = obs_data_get_string(settings, S_TRANSITION);
+
+#ifndef FRONTEND_API_FOR_PLUGINS
 	if (astrcmpi(tr_name, TR_CUT) == 0)
 		tr_name = "cut_transition";
 	else if (astrcmpi(tr_name, TR_SWIPE) == 0)
@@ -292,12 +298,22 @@ static void ss_update(void *data, obs_data_t *settings)
 	else
 		tr_name = "fade_transition";
 
+	if (!ss->tr_name || strcmp(tr_name, ss->tr_name) != 0)
+		new_tr = obs_source_create_private(tr_name, NULL, NULL);
+#else
+	obs_source_t *tr = obs_frontend_find_transition(tr_name);
+
+	if (!tr)
+		new_tr = obs_source_create_private("cut_transition",
+				NULL, NULL);
+	else
+		new_tr = obs_source_duplicate(tr, tr_name, true);
+
+	obs_source_release(tr);
+#endif
 	ss->randomize = obs_data_get_bool(settings, S_RANDOMIZE);
 	ss->loop = obs_data_get_bool(settings, S_LOOP);
 	ss->hide = obs_data_get_bool(settings, S_HIDE);
-
-	if (!ss->tr_name || strcmp(tr_name, ss->tr_name) != 0)
-		new_tr = obs_source_create_private(tr_name, NULL, NULL);
 
 	new_duration = (uint32_t)obs_data_get_int(settings, S_SLIDE_TIME);
 	new_speed = (uint32_t)obs_data_get_int(settings, S_TR_SPEED);
@@ -834,10 +850,25 @@ static obs_properties_t *ss_properties(void *data)
 
 	p = obs_properties_add_list(ppts, S_TRANSITION, T_TRANSITION,
 			OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
+
+#ifndef FRONTEND_API_FOR_PLUGINS
 	obs_property_list_add_string(p, T_TR_CUT, TR_CUT);
 	obs_property_list_add_string(p, T_TR_FADE, TR_FADE);
 	obs_property_list_add_string(p, T_TR_SWIPE, TR_SWIPE);
 	obs_property_list_add_string(p, T_TR_SLIDE, TR_SLIDE);
+#else
+	struct obs_frontend_source_list list = {0};
+	obs_frontend_get_transitions(&list);
+
+	for (size_t i = 0; i < list.sources.num; i++) {
+		obs_source_t *source = list.sources.array[i];
+		const char *name = obs_source_get_name(source);
+
+		obs_property_list_add_string(p, name, name);
+	}
+
+	obs_frontend_source_list_free(&list);
+#endif
 
 	obs_properties_add_int(ppts, S_SLIDE_TIME, T_SLIDE_TIME,
 			50, 3600000, 50);

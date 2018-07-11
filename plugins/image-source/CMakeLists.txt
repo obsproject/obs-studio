@@ -16,4 +16,9 @@ target_link_libraries(image-source
 	libobs
 	${image-source_PLATFORM_DEPS})
 
+if (FRONTEND_API_FOR_PLUGINS)
+	target_link_libraries(image-source
+		obs-frontend-api)
+endif()
+
 install_obs_plugin_with_data(image-source data)

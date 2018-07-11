@@ -65,6 +65,13 @@ if(WIN32 OR APPLE)
 	endif()
 endif()
 
+option(FRONTEND_API_FOR_PLUGINS "Add frontend api for plugins" OFF)
+
+if (FRONTEND_API_FOR_PLUGINS)
+	include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/UI/obs-frontend-api")
+	add_definitions(-DFRONTEND_API_FOR_PLUGINS=${FRONTEND_API_FOR_PLUGINS})
+endif()
+
 add_subdirectory(image-source)
 add_subdirectory(obs-x264)
 add_subdirectory(obs-libfdk)
