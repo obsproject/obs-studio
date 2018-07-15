@@ -2711,6 +2711,14 @@ void OBSBasic::CheckForUpdates(bool manualUpdate)
 void OBSBasic::updateCheckFinished()
 {
 	ui->actionCheckForUpdates->setEnabled(true);
+
+	if (updateCheckThread && updateCheckThread->isRunning())
+		updateCheckThread->wait();
+
+	if (updateCheckThread && !updateCheckThread->isRunning()) {
+		delete updateCheckThread;
+		updateCheckThread = nullptr;
+	}
 }
 
 void OBSBasic::DuplicateSelectedScene()
