@@ -184,7 +184,8 @@ OBSBasic::OBSBasic(QWidget *parent)
 	connect(windowHandle(), &QWindow::screenChanged, displayResize);
 	connect(ui->preview, &OBSQTDisplay::DisplayResized, displayResize);
 
-	installEventFilter(CreateShortcutFilter());
+	shortcutFilter = CreateShortcutFilter();
+	installEventFilter(shortcutFilter);
 
 	stringstream name;
 	name << "OBS " << App()->GetVersionString();
@@ -1869,6 +1870,12 @@ OBSBasic::~OBSBasic()
 	delete trayMenu;
 	delete programOptions;
 	delete program;
+
+	if (shortcutFilter) {
+		removeEventFilter(shortcutFilter);
+		delete shortcutFilter;
+		shortcutFilter = nullptr;
+	}
 
 	/* XXX: any obs data must be released before calling obs_shutdown.
 	 * currently, we can't automate this with C++ RAII because of the

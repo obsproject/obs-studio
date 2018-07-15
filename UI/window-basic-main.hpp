@@ -366,6 +366,8 @@ private:
 
 	QByteArray startingDockLayout;
 
+	QObject *shortcutFilter;
+
 	obs_data_array_t *SaveProjectors();
 	void LoadSavedProjectors(obs_data_array_t *savedProjectors);
 

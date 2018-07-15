@@ -565,7 +565,8 @@ AutoConfig::AutoConfig(QWidget *parent)
 	OBSBasic *main = reinterpret_cast<OBSBasic*>(parent);
 	main->EnableOutputs(false);
 
-	installEventFilter(CreateShortcutFilter());
+	shortcutFilter = CreateShortcutFilter();
+	installEventFilter(shortcutFilter);
 
 	std::string serviceType;
 	GetServiceInfo(serviceType, serviceName, server, key);
@@ -676,6 +677,12 @@ AutoConfig::~AutoConfig()
 {
 	OBSBasic *main = reinterpret_cast<OBSBasic*>(App()->GetMainWindow());
 	main->EnableOutputs(true);
+
+	if (shortcutFilter) {
+		removeEventFilter(shortcutFilter);
+		delete shortcutFilter;
+		shortcutFilter = nullptr;
+	}
 }
 
 void AutoConfig::TestHardwareEncoding()

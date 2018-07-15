@@ -105,6 +105,7 @@ class AutoConfig : public QWizard {
 	void SaveStreamSettings();
 	void SaveSettings();
 
+	QObject *shortcutFilter;
 public:
 	AutoConfig(QWidget *parent);
 	~AutoConfig();

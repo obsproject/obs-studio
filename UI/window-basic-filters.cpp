@@ -71,7 +71,8 @@ OBSBasicFilters::OBSBasicFilters(QWidget *parent, OBSSource source_)
 	const char *name = obs_source_get_name(source);
 	setWindowTitle(QTStr("Basic.Filters.Title").arg(QT_UTF8(name)));
 
-	installEventFilter(CreateShortcutFilter());
+	shortcutFilter = CreateShortcutFilter();
+	installEventFilter(shortcutFilter);
 
 	connect(ui->asyncFilters->itemDelegate(),
 			SIGNAL(closeEditor(QWidget*,
@@ -134,6 +135,12 @@ OBSBasicFilters::~OBSBasicFilters()
 {
 	ClearListItems(ui->asyncFilters);
 	ClearListItems(ui->effectFilters);
+
+	if (shortcutFilter) {
+		removeEventFilter(shortcutFilter);
+		delete shortcutFilter;
+		shortcutFilter = nullptr;
+	}
 }
 
 void OBSBasicFilters::Init()
