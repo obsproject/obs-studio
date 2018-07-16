@@ -1239,6 +1239,10 @@ obs_scene_t *obs_scene_duplicate(obs_scene_t *scene, const char *name,
 	obs_data_apply(new_scene->source->private_settings,
 			scene->source->private_settings);
 
+	/* never duplicate sub-items for groups */
+	if (scene->is_group)
+		make_unique = false;
+
 	for (size_t i = 0; i < items.num; i++) {
 		item = items.array[i];
 		source = make_unique ?
@@ -1292,6 +1296,9 @@ obs_scene_t *obs_scene_duplicate(obs_scene_t *scene, const char *name,
 	for (size_t i = 0; i < items.num; i++)
 		obs_sceneitem_release(items.array[i]);
 
+	if (new_scene->is_group)
+		resize_scene(new_scene);
+
 	da_free(items);
 	return new_scene;
 }
@@ -1316,6 +1323,14 @@ obs_source_t *obs_scene_get_source(const obs_scene_t *scene)
 obs_scene_t *obs_scene_from_source(const obs_source_t *source)
 {
 	if (!source || source->info.id != scene_info.id)
+		return NULL;
+
+	return source->context.data;
+}
+
+obs_scene_t *obs_group_from_source(const obs_source_t *source)
+{
+	if (!source || source->info.id != group_info.id)
 		return NULL;
 
 	return source->context.data;
