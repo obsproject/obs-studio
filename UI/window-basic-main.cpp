@@ -6106,8 +6106,6 @@ void OBSBasic::on_actionCopySource_triggered()
 	OBSSceneItem item = GetCurrentSceneItem();
 	if (!item)
 		return;
-	if (!!obs_sceneitem_is_group(item))
-		return;
 
 	on_actionCopyTransform_triggered();
 
@@ -6127,6 +6125,11 @@ void OBSBasic::on_actionCopySource_triggered()
 
 void OBSBasic::on_actionPasteRef_triggered()
 {
+	/* do not allow duplicate refs of the same group in the same scene */
+	OBSScene scene = GetCurrentScene();
+	if (!!obs_scene_get_group(scene, copyString))
+		return;
+
 	OBSBasicSourceSelect::SourcePaste(copyString, copyVisible, false);
 	on_actionPasteTransform_triggered();
 }
