@@ -228,16 +228,10 @@ void SourceTreeItem::ExitEditMode(bool save)
 	/* ----------------------------------------- */
 	/* check for existing source                 */
 
-	bool exists = false;
-
-	if (obs_sceneitem_is_group(sceneitem)) {
-		exists = !!obs_scene_get_group(scene, newName.c_str());
-	} else {
-		obs_source_t *existingSource =
-			obs_get_source_by_name(newName.c_str());
-		obs_source_release(existingSource);
-		exists = !!existingSource;
-	}
+	obs_source_t *existingSource =
+		obs_get_source_by_name(newName.c_str());
+	obs_source_release(existingSource);
+	bool exists = !!existingSource;
 
 	if (exists) {
 		OBSMessageBox::information(main,
@@ -550,11 +544,15 @@ void SourceTreeModel::ReorderItems()
 
 void SourceTreeModel::Add(obs_sceneitem_t *item)
 {
-	beginInsertRows(QModelIndex(), 0, 0);
-	items.insert(0, item);
-	endInsertRows();
+	if (obs_sceneitem_is_group(item)) {
+		SceneChanged();
+	} else {
+		beginInsertRows(QModelIndex(), 0, 0);
+		items.insert(0, item);
+		endInsertRows();
 
-	st->UpdateWidget(createIndex(0, 0, nullptr), item);
+		st->UpdateWidget(createIndex(0, 0, nullptr), item);
+	}
 }
 
 void SourceTreeModel::Remove(obs_sceneitem_t *item)
@@ -652,8 +650,8 @@ QString SourceTreeModel::GetNewGroupName()
 
 	int i = 2;
 	for (;;) {
-		obs_sceneitem_t *group = obs_scene_get_group(scene,
-				QT_TO_UTF8(name));
+		obs_source_t *group = obs_get_source_by_name(QT_TO_UTF8(name));
+		obs_source_release(group);
 		if (!group)
 			break;
 		name = QTStr("Basic.Main.Group").arg(QString::number(i++));

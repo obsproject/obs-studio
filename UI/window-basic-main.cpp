@@ -315,8 +315,14 @@ static obs_data_t *GenerateSaveData(obs_data_array_t *sceneOrder,
 	SaveAudioDevice(AUX_AUDIO_2,     4, saveData, audioSources);
 	SaveAudioDevice(AUX_AUDIO_3,     5, saveData, audioSources);
 
+	/* -------------------------------- */
+	/* save non-group sources           */
+
 	auto FilterAudioSources = [&](obs_source_t *source)
 	{
+		if (obs_source_is_group(source))
+			return false;
+
 		return find(begin(audioSources), end(audioSources), source) ==
 				end(audioSources);
 	};
@@ -327,6 +333,18 @@ static obs_data_t *GenerateSaveData(obs_data_array_t *sceneOrder,
 	{
 		return (*static_cast<FilterAudioSources_t*>(data))(source);
 	}, static_cast<void*>(&FilterAudioSources));
+
+	/* -------------------------------- */
+	/* save group sources separately    */
+
+	/* saving separately ensures they won't be loaded in older versions */
+	obs_data_array_t *groupsArray = obs_save_sources_filtered(
+			[](void*, obs_source_t *source)
+	{
+		return obs_source_is_group(source);
+	}, nullptr);
+
+	/* -------------------------------- */
 
 	obs_source_t *transition = obs_get_output_source(0);
 	obs_source_t *currentScene = obs_scene_get_source(scene);
@@ -341,10 +359,12 @@ static obs_data_t *GenerateSaveData(obs_data_array_t *sceneOrder,
 	obs_data_set_array(saveData, "scene_order", sceneOrder);
 	obs_data_set_string(saveData, "name", sceneCollection);
 	obs_data_set_array(saveData, "sources", sourcesArray);
+	obs_data_set_array(saveData, "groups", groupsArray);
 	obs_data_set_array(saveData, "quick_transitions", quickTransitionData);
 	obs_data_set_array(saveData, "transitions", transitions);
 	obs_data_set_array(saveData, "saved_projectors", savedProjectorList);
 	obs_data_array_release(sourcesArray);
+	obs_data_array_release(groupsArray);
 
 	obs_data_set_string(saveData, "current_transition",
 			obs_source_get_name(transition));
@@ -719,6 +739,7 @@ void OBSBasic::Load(const char *file)
 
 	obs_data_array_t *sceneOrder = obs_data_get_array(data, "scene_order");
 	obs_data_array_t *sources    = obs_data_get_array(data, "sources");
+	obs_data_array_t *groups     = obs_data_get_array(data, "groups");
 	obs_data_array_t *transitions= obs_data_get_array(data, "transitions");
 	const char       *sceneName = obs_data_get_string(data,
 			"current_scene");
@@ -758,6 +779,13 @@ void OBSBasic::Load(const char *file)
 	LoadAudioDevice(AUX_AUDIO_1,     3, data);
 	LoadAudioDevice(AUX_AUDIO_2,     4, data);
 	LoadAudioDevice(AUX_AUDIO_3,     5, data);
+
+	if (!sources) {
+		sources = groups;
+		groups = nullptr;
+	} else {
+		obs_data_array_push_back_array(sources, groups);
+	}
 
 	obs_load_sources(sources, nullptr, nullptr);
 
@@ -803,6 +831,7 @@ retryScene:
 	obs_source_release(curProgramScene);
 
 	obs_data_array_release(sources);
+	obs_data_array_release(groups);
 	obs_data_array_release(sceneOrder);
 
 	/* ------------------- */
@@ -4043,8 +4072,9 @@ QMenu *OBSBasic::CreateAddSourcePopupMenu()
 
 	popup->addSeparator();
 	QAction *addGroup = new QAction(QTStr("Group"), this);
+	addGroup->setData(QT_UTF8("group"));
 	connect(addGroup, SIGNAL(triggered(bool)),
-			ui->sources, SLOT(AddGroup()));
+			this, SLOT(AddSourceFromAction()));
 	popup->addAction(addGroup);
 
 	if (!foundDeprecated) {
