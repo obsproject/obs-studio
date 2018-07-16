@@ -1125,18 +1125,28 @@ const struct obs_source_info scene_info =
 	.enum_all_sources = scene_enum_all_sources
 };
 
-obs_scene_t *obs_scene_create(const char *name)
+static inline obs_scene_t *create_id(const char *id, const char *name)
 {
-	struct obs_source *source = obs_source_create("scene", name, NULL,
+	struct obs_source *source = obs_source_create(id, name, NULL,
 			NULL);
 	return source->context.data;
 }
 
-obs_scene_t *obs_scene_create_private(const char *name)
+static inline obs_scene_t *create_private_id(const char *id, const char *name)
 {
-	struct obs_source *source = obs_source_create_private("scene", name,
+	struct obs_source *source = obs_source_create_private(id, name,
 			NULL);
 	return source->context.data;
+}
+
+obs_scene_t *obs_scene_create(const char *name)
+{
+	return create_id("scene", name);
+}
+
+obs_scene_t *obs_scene_create_private(const char *name)
+{
+	return create_private_id("scene", name);
 }
 
 static obs_source_t *get_child_at_idx(obs_scene_t *scene, size_t idx)
@@ -1209,8 +1219,9 @@ obs_scene_t *obs_scene_duplicate(obs_scene_t *scene, const char *name,
 
 	/* --------------------------------- */
 
-	new_scene = make_private ?
-		obs_scene_create_private(name) : obs_scene_create(name);
+	new_scene = make_private
+		? create_private_id(scene->source->info.id, name)
+		: create_id(scene->source->info.id, name);
 
 	obs_source_copy_filters(new_scene->source, scene->source);
 
@@ -2396,7 +2407,7 @@ obs_sceneitem_t *obs_scene_insert_group(obs_scene_t *scene,
 			return NULL;
 	}
 
-	obs_scene_t *sub_scene = obs_scene_create_private(name);
+	obs_scene_t *sub_scene = create_private_id("scene", name);
 	obs_sceneitem_t *last_item = items ? items[count - 1] : NULL;
 
 	obs_sceneitem_t *item = obs_scene_add_internal(
