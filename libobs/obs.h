@@ -1447,12 +1447,14 @@ EXPORT void obs_sceneitem_group_ungroup(obs_sceneitem_t *group);
 
 EXPORT void obs_sceneitem_group_add_item(obs_sceneitem_t *group,
 		obs_sceneitem_t *item);
-EXPORT void obs_sceneitem_group_remove_item(obs_sceneitem_t *item);
+EXPORT void obs_sceneitem_group_remove_item(obs_sceneitem_t *group,
+		obs_sceneitem_t *item);
 
-EXPORT obs_sceneitem_t *obs_sceneitem_get_group(obs_sceneitem_t *item);
+EXPORT obs_sceneitem_t *obs_sceneitem_get_group(obs_scene_t *scene,
+		obs_sceneitem_t *item);
 
-EXPORT obs_sceneitem_t *obs_sceneitem_group_from_scene(obs_scene_t *scene);
-EXPORT obs_sceneitem_t *obs_sceneitem_group_from_source(obs_source_t *source);
+EXPORT bool obs_source_is_group(const obs_source_t *source);
+EXPORT bool obs_scene_is_group(const obs_scene_t *scene);
 
 EXPORT void obs_sceneitem_group_enum_items(obs_sceneitem_t *group,
 		bool (*callback)(obs_scene_t*, obs_sceneitem_t*, void*),

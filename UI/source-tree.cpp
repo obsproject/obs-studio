@@ -917,7 +917,7 @@ void SourceTree::dropEvent(QDropEvent *event)
 
 	obs_sceneitem_t *dropGroup = itemIsGroup
 		? dropItem
-		: obs_sceneitem_get_group(dropItem);
+		: obs_sceneitem_get_group(scene, dropItem);
 
 	/* not a group if moving above the group */
 	if (indicator == QAbstractItemView::AboveItem && itemIsGroup)
@@ -966,7 +966,7 @@ void SourceTree::dropEvent(QDropEvent *event)
 		: stm->items[row];
 	if (hasGroups) {
 		if (!itemBelow ||
-		    obs_sceneitem_get_group(itemBelow) != dropGroup) {
+		    obs_sceneitem_get_group(scene, itemBelow) != dropGroup) {
 			indicator = QAbstractItemView::BelowItem;
 			dropGroup = nullptr;
 			dropOnCollapsed = false;
@@ -1006,7 +1006,8 @@ void SourceTree::dropEvent(QDropEvent *event)
 				for (int j = items.size() - 1; j >= 0; j--) {
 					obs_sceneitem_t *subitem = items[j];
 					obs_sceneitem_t *subitemGroup =
-						obs_sceneitem_get_group(subitem);
+						obs_sceneitem_get_group(scene,
+								subitem);
 
 					if (subitemGroup == item) {
 						QModelIndex idx =
@@ -1117,7 +1118,7 @@ void SourceTree::dropEvent(QDropEvent *event)
 			if (!hasGroups && i >= firstIdx && i <= lastIdx)
 				group = dropGroup;
 			else
-				group = obs_sceneitem_get_group(item);
+				group = obs_sceneitem_get_group(scene, item);
 
 			if (lastGroup && lastGroup != group) {
 				insertLastGroup();

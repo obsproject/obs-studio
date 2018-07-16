@@ -530,9 +530,8 @@ static void scene_video_tick(void *data, float seconds)
 
 /* assumes video lock */
 static void update_transforms_and_prune_sources(obs_scene_t *scene,
-		struct darray *remove_items)
+		struct darray *remove_items, obs_sceneitem_t *group_sceneitem)
 {
-	obs_sceneitem_t *group_sceneitem = scene->group_sceneitem;
 	struct obs_scene_item *item = scene->first_item;
 	bool rebuild_group = group_sceneitem &&
 		os_atomic_load_bool(&group_sceneitem->update_group_resize);
@@ -554,7 +553,7 @@ static void update_transforms_and_prune_sources(obs_scene_t *scene,
 
 			video_lock(group_scene);
 			update_transforms_and_prune_sources(group_scene,
-					remove_items);
+					remove_items, item);
 			video_unlock(group_scene);
 		}
 
@@ -568,8 +567,8 @@ static void update_transforms_and_prune_sources(obs_scene_t *scene,
 		item = item->next;
 	}
 
-	if (rebuild_group && scene->group_sceneitem)
-		resize_group(scene->group_sceneitem);
+	if (rebuild_group && group_sceneitem)
+		resize_group(group_sceneitem);
 }
 
 static void scene_video_render(void *data, gs_effect_t *effect)
@@ -582,8 +581,9 @@ static void scene_video_render(void *data, gs_effect_t *effect)
 
 	video_lock(scene);
 
-	if (!scene->group_sceneitem) {
-		update_transforms_and_prune_sources(scene, &remove_items.da);
+	if (!scene->is_group) {
+		update_transforms_and_prune_sources(scene, &remove_items.da,
+				NULL);
 	}
 
 	gs_blend_state_push();
@@ -671,7 +671,7 @@ static void scene_load_item(struct obs_scene *scene, obs_data_t *item_data)
 
 	if (is_group) {
 		item->is_group = true;
-		((obs_scene_t *)source->context.data)->group_sceneitem = item;
+		((obs_scene_t *)source->context.data)->is_group = true;
 	}
 
 	obs_data_set_default_int(item_data, "align",
@@ -779,7 +779,8 @@ static void scene_load(void *data, obs_data_t *settings)
 static void scene_save(void *data, obs_data_t *settings);
 
 static void scene_save_item(obs_data_array_t *array,
-		struct obs_scene_item *item, bool group_item_backup)
+		struct obs_scene_item *item,
+		struct obs_scene_item *backup_group)
 {
 	obs_data_t *item_data = obs_data_create();
 	const char *name     = obs_source_get_name(item->source);
@@ -788,9 +789,8 @@ static void scene_save_item(obs_data_array_t *array,
 	struct vec2 scale = item->scale;
 	float rot = item->rot;
 
-	if (group_item_backup) {
-		obs_sceneitem_t *group = item->parent->group_sceneitem;
-		get_ungrouped_transform(group, &pos, &scale, &rot);
+	if (backup_group) {
+		get_ungrouped_transform(backup_group, &pos, &scale, &rot);
 	}
 
 	obs_data_set_string(item_data, "name",         name);
@@ -809,7 +809,7 @@ static void scene_save_item(obs_data_array_t *array,
 	obs_data_set_int  (item_data, "crop_bottom",  (int)item->crop.bottom);
 	obs_data_set_int  (item_data, "id",           item->id);
 	obs_data_set_bool (item_data, "is_group",     item->is_group);
-	obs_data_set_bool (item_data, "group_item_backup", group_item_backup);
+	obs_data_set_bool (item_data, "group_item_backup", !!backup_group);
 
 	if (item->is_group) {
 		obs_data_t *group_data = obs_data_create();
@@ -825,7 +825,7 @@ static void scene_save_item(obs_data_array_t *array,
 
 		group_item = group_scene->first_item;
 		while (group_item) {
-			scene_save_item(array, group_item, true);
+			scene_save_item(array, group_item, item);
 			group_item = group_item->next;
 		}
 
@@ -865,7 +865,7 @@ static void scene_save(void *data, obs_data_t *settings)
 
 	item = scene->first_item;
 	while (item) {
-		scene_save_item(array, item, false);
+		scene_save_item(array, item, NULL);
 		item = item->next;
 	}
 
@@ -1687,16 +1687,6 @@ static void signal_parent(obs_scene_t *parent, const char *command,
 {
 	calldata_set_ptr(params, "scene", parent);
 	signal_handler_signal(parent->source->context.signals, command, params);
-
-	if (parent->group_sceneitem) {
-		parent = parent->group_sceneitem->parent;
-		if (!parent)
-			return;
-
-		calldata_set_ptr(params, "scene", parent);
-		signal_handler_signal(parent->source->context.signals, command,
-				params);
-	}
 }
 
 void obs_sceneitem_select(obs_sceneitem_t *item, bool select)
@@ -2271,13 +2261,13 @@ static void get_ungrouped_transform(obs_sceneitem_t *group,
 	*rot += group->rot;
 }
 
-static void remove_group_transform(obs_sceneitem_t *item)
+static void remove_group_transform(obs_sceneitem_t *group,
+		obs_sceneitem_t *item)
 {
 	obs_scene_t *parent = item->parent;
-	if (!parent || !parent->group_sceneitem)
+	if (!parent || !group)
 		return;
 
-	obs_sceneitem_t *group = parent->group_sceneitem;
 	get_ungrouped_transform(group, &item->pos, &item->scale, &item->rot);
 
 	update_item_transform(item);
@@ -2411,7 +2401,6 @@ obs_sceneitem_t *obs_scene_insert_group(obs_scene_t *scene,
 
 	obs_sceneitem_t *item = obs_scene_add_internal(
 			scene, sub_scene->source, last_item, true);
-	sub_scene->group_sceneitem = item;
 	sub_scene->custom_size = true;
 
 	obs_scene_release(sub_scene);
@@ -2427,7 +2416,7 @@ obs_sceneitem_t *obs_scene_insert_group(obs_scene_t *scene,
 
 	for (size_t i = count; i > 0; i--) {
 		size_t idx = i - 1;
-		remove_group_transform(items[idx]);
+		remove_group_transform(item, items[idx]);
 		detach_sceneitem(items[idx]);
 	}
 	for (size_t i = 0; i < count; i++) {
@@ -2480,17 +2469,6 @@ obs_sceneitem_t *obs_scene_get_group(obs_scene_t *scene, const char *name)
 	return group;
 }
 
-obs_sceneitem_t *obs_sceneitem_group_from_scene(obs_scene_t *scene)
-{
-	return scene ? scene->group_sceneitem : NULL;
-}
-
-obs_sceneitem_t *obs_sceneitem_group_from_source(obs_source_t *source)
-{
-	obs_scene_t *scene = obs_scene_from_source(source);
-	return obs_sceneitem_group_from_scene(scene);
-}
-
 bool obs_sceneitem_is_group(obs_sceneitem_t *item)
 {
 	return item && item->is_group;
@@ -2517,7 +2495,7 @@ void obs_sceneitem_group_ungroup(obs_sceneitem_t *item)
 	first = subscene->first_item;
 	last = first;
 	while (last) {
-		remove_group_transform(last);
+		remove_group_transform(item, last);
 		last->parent = scene;
 		if (!last->next)
 			break;
@@ -2567,7 +2545,7 @@ void obs_sceneitem_group_add_item(obs_sceneitem_t *group, obs_sceneitem_t *item)
 	/* ------------------------- */
 
 	full_lock(scene);
-	remove_group_transform(item);
+	remove_group_transform(group, item);
 	detach_sceneitem(item);
 
 	/* ------------------------- */
@@ -2596,41 +2574,38 @@ void obs_sceneitem_group_add_item(obs_sceneitem_t *group, obs_sceneitem_t *item)
 	full_unlock(scene);
 }
 
-void obs_sceneitem_group_remove_item(obs_sceneitem_t *item)
+void obs_sceneitem_group_remove_item(obs_sceneitem_t *group,
+		obs_sceneitem_t *item)
 {
-	if (!item)
+	if (!item || !group || !group->is_group)
 		return;
 
 	obs_scene_t *groupscene = item->parent;
-	obs_sceneitem_t *groupitem = groupscene->group_sceneitem;
-	if (!groupitem)
-		return;
-
-	obs_scene_t *scene = groupitem->parent;
+	obs_scene_t *scene = group->parent;
 
 	/* ------------------------- */
 
 	full_lock(scene);
 	full_lock(groupscene);
-	remove_group_transform(item);
+	remove_group_transform(group, item);
 	detach_sceneitem(item);
 
 	/* ------------------------- */
 
-	if (groupitem->prev) {
-		groupitem->prev->next = item;
-		item->prev = groupitem->prev;
+	if (group->prev) {
+		group->prev->next = item;
+		item->prev = group->prev;
 	} else {
 		scene->first_item = item;
 		item->prev = NULL;
 	}
-	groupitem->prev = item;
-	item->next = groupitem;
+	group->prev = item;
+	item->next = group;
 	item->parent = scene;
 
 	/* ------------------------- */
 
-	resize_group(groupitem);
+	resize_group(group);
 	full_unlock(groupscene);
 	full_unlock(scene);
 }
@@ -2695,6 +2670,23 @@ static bool sceneitems_match2(obs_scene_t *scene,
 	return true;
 }
 
+static obs_sceneitem_t *get_sceneitem_parent_group(obs_scene_t *scene,
+		obs_sceneitem_t *group_subitem)
+{
+	if (group_subitem->is_group)
+		return NULL;
+
+	obs_sceneitem_t *item = scene->first_item;
+	while (item) {
+		if (item->is_group &&
+		    item->source->context.data == group_subitem->parent)
+			return item;
+		item = item->next;
+	}
+
+	return NULL;
+}
+
 bool obs_scene_reorder_items2(obs_scene_t *scene,
 		struct obs_sceneitem_order_info *item_order,
 		size_t item_order_size)
@@ -2714,7 +2706,9 @@ bool obs_scene_reorder_items2(obs_scene_t *scene,
 	for (size_t i = 0; i < item_order_size; i++) {
 		struct obs_sceneitem_order_info *info = &item_order[i];
 		if (!info->item->is_group) {
-			remove_group_transform(info->item);
+			obs_sceneitem_t *group =
+				get_sceneitem_parent_group(scene, info->item);
+			remove_group_transform(group, info->item);
 		}
 	}
 
@@ -2783,16 +2777,38 @@ bool obs_scene_reorder_items2(obs_scene_t *scene,
 	return true;
 }
 
-obs_sceneitem_t *obs_sceneitem_get_group(obs_sceneitem_t *item)
+obs_sceneitem_t *obs_sceneitem_get_group(obs_scene_t *scene,
+		obs_sceneitem_t *group_subitem)
 {
-	return item && item->parent ? item->parent->group_sceneitem : NULL;
+	if (!scene || !group_subitem || group_subitem->is_group)
+		return NULL;
+
+	full_lock(scene);
+	obs_sceneitem_t *group = get_sceneitem_parent_group(scene,
+			group_subitem);
+	full_unlock(scene);
+
+	return group;
+}
+
+bool obs_source_is_group(const obs_source_t *source)
+{
+	if (!source || source->info.id != scene_info.id)
+		return false;
+
+	return ((obs_scene_t *)source->context.data)->is_group;
+}
+
+bool obs_scene_is_group(const obs_scene_t *scene)
+{
+	return scene ? scene->is_group : false;
 }
 
 void obs_sceneitem_group_enum_items(obs_sceneitem_t *group,
 		bool (*callback)(obs_scene_t*, obs_sceneitem_t*, void*),
 		void *param)
 {
-	if (!group)
+	if (!group || !group->is_group)
 		return;
 
 	obs_scene_t *scene = obs_scene_from_source(group->source);
