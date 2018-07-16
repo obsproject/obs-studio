@@ -2310,25 +2310,19 @@ static void apply_group_transform(obs_sceneitem_t *item, obs_sceneitem_t *group)
 	update_item_transform(item);
 }
 
-/* assumes group scene and parent scene is locked */
-static void resize_group(obs_sceneitem_t *group)
+static bool resize_scene_base(obs_scene_t *scene,
+		struct vec2 *minv,
+		struct vec2 *maxv,
+		struct vec2 *scale)
 {
-	obs_scene_t *scene = group->source->context.data;
-	struct vec2 minv;
-	struct vec2 maxv;
-	struct vec2 scale;
-
-	if (os_atomic_load_long(&group->defer_group_resize) > 0)
-		return;
-
-	vec2_set(&minv, M_INFINITE, M_INFINITE);
-	vec2_set(&maxv, -M_INFINITE, -M_INFINITE);
+	vec2_set(minv, M_INFINITE, M_INFINITE);
+	vec2_set(maxv, -M_INFINITE, -M_INFINITE);
 
 	obs_sceneitem_t *item = scene->first_item;
 	if (!item) {
 		scene->cx = 0;
 		scene->cy = 0;
-		return;
+		return false;
 	}
 
 	while (item) {
@@ -2337,10 +2331,10 @@ static void resize_group(obs_sceneitem_t *group)
 			struct vec3 v; \
 			vec3_set(&v, x_val, y_val, 0.0f); \
 			vec3_transform(&v, &v, &item->box_transform); \
-			if (v.x < minv.x) minv.x = v.x; \
-			if (v.y < minv.y) minv.y = v.y; \
-			if (v.x > maxv.x) maxv.x = v.x; \
-			if (v.y > maxv.y) maxv.y = v.y; \
+			if (v.x < minv->x) minv->x = v.x; \
+			if (v.y < minv->y) minv->y = v.y; \
+			if (v.x > maxv->x) maxv->x = v.x; \
+			if (v.y > maxv->y) maxv->y = v.y; \
 		} while (false)
 
 		get_min_max(0.0f, 0.0f);
@@ -2354,14 +2348,38 @@ static void resize_group(obs_sceneitem_t *group)
 
 	item = scene->first_item;
 	while (item) {
-		vec2_sub(&item->pos, &item->pos, &minv);
+		vec2_sub(&item->pos, &item->pos, minv);
 		update_item_transform(item);
 		item = item->next;
 	}
 
-	vec2_sub(&scale, &maxv, &minv);
-	scene->cx = (uint32_t)ceilf(scale.x);
-	scene->cy = (uint32_t)ceilf(scale.y);
+	vec2_sub(scale, maxv, minv);
+	scene->cx = (uint32_t)ceilf(scale->x);
+	scene->cy = (uint32_t)ceilf(scale->y);
+	return true;
+}
+
+static void resize_scene(obs_scene_t *scene)
+{
+	struct vec2 minv;
+	struct vec2 maxv;
+	struct vec2 scale;
+	resize_scene_base(scene, &minv, &maxv, &scale);
+}
+
+/* assumes group scene and parent scene is locked */
+static void resize_group(obs_sceneitem_t *group)
+{
+	obs_scene_t *scene = group->source->context.data;
+	struct vec2 minv;
+	struct vec2 maxv;
+	struct vec2 scale;
+
+	if (os_atomic_load_long(&group->defer_group_resize) > 0)
+		return;
+
+	if (!resize_scene_base(scene, &minv, &maxv, &scale))
+		return;
 
 	if (group->bounds_type == OBS_BOUNDS_NONE) {
 		struct vec2 new_pos;
