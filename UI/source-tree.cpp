@@ -112,7 +112,13 @@ void SourceTreeItem::ReconnectSignals()
 		obs_sceneitem_t *curItem =
 			(obs_sceneitem_t*)calldata_ptr(cd, "item");
 
-		if (!curItem || curItem == this_->sceneitem) {
+		if (curItem == this_->sceneitem) {
+			QMetaObject::invokeMethod(this_->tree,
+					"Remove",
+					Q_ARG(OBSSceneItem, curItem));
+			curItem = nullptr;
+		}
+		if (!curItem) {
 			this_->DisconnectSignals();
 			this_->sceneitem = nullptr;
 		}
@@ -130,6 +136,12 @@ void SourceTreeItem::ReconnectSignals()
 					Q_ARG(bool, visible));
 	};
 
+	auto reorderGroup = [] (void *data, calldata_t*)
+	{
+		SourceTreeItem *this_ = reinterpret_cast<SourceTreeItem*>(data);
+		QMetaObject::invokeMethod(this_->tree, "ReorderItems");
+	};
+
 	obs_scene_t *scene = obs_sceneitem_get_scene(sceneitem);
 	obs_source_t *sceneSource = obs_scene_get_source(scene);
 	signal_handler_t *signal = obs_source_get_signal_handler(sceneSource);
@@ -137,6 +149,14 @@ void SourceTreeItem::ReconnectSignals()
 	sceneRemoveSignal.Connect(signal, "remove", removeItem, this);
 	itemRemoveSignal.Connect(signal, "item_remove", removeItem, this);
 	visibleSignal.Connect(signal, "item_visible", itemVisible, this);
+
+	if (obs_sceneitem_is_group(sceneitem)) {
+		obs_source_t *source = obs_sceneitem_get_source(sceneitem);
+		signal = obs_source_get_signal_handler(source);
+
+		groupReorderSignal.Connect(signal, "reorder", reorderGroup,
+				this);
+	}
 
 	/* --------------------------------------------------------- */
 
@@ -1272,6 +1292,23 @@ bool SourceTree::GroupedItemsSelected() const
 	}
 
 	return false;
+}
+
+void SourceTree::Remove(OBSSceneItem item)
+{
+	OBSBasic *main = reinterpret_cast<OBSBasic*>(App()->GetMainWindow());
+	GetStm()->Remove(item);
+	main->SaveProject();
+
+	if (!main->SavingDisabled()) {
+		obs_scene_t *scene = obs_sceneitem_get_scene(item);
+		obs_source_t *sceneSource = obs_scene_get_source(scene);
+		obs_source_t *itemSource = obs_sceneitem_get_source(item);
+		blog(LOG_INFO, "User Removed source '%s' (%s) from scene '%s'",
+				obs_source_get_name(itemSource),
+				obs_source_get_id(itemSource),
+				obs_source_get_name(sceneSource));
+	}
 }
 
 void SourceTree::GroupSelectedItems()

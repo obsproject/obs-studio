@@ -62,6 +62,7 @@ private:
 	OBSSceneItem sceneitem;
 	OBSSignal sceneRemoveSignal;
 	OBSSignal itemRemoveSignal;
+	OBSSignal groupReorderSignal;
 	OBSSignal visibleSignal;
 	OBSSignal renameSignal;
 	OBSSignal removeSignal;
@@ -143,11 +144,9 @@ public:
 	explicit SourceTree(QWidget *parent = nullptr);
 
 	inline bool IgnoreReorder() const {return ignoreReorder;}
-	inline void ReorderItems() {GetStm()->ReorderItems();}
 	inline void Clear() {GetStm()->Clear();}
 
 	inline void Add(obs_sceneitem_t *item) {GetStm()->Add(item);}
-	inline void Remove(obs_sceneitem_t *item) {GetStm()->Remove(item);}
 	inline OBSSceneItem Get(int idx) {return GetStm()->Get(idx);}
 	inline QString GetNewGroupName() {return GetStm()->GetNewGroupName();}
 
@@ -158,6 +157,8 @@ public:
 	bool GroupedItemsSelected() const;
 
 public slots:
+	inline void ReorderItems() {GetStm()->ReorderItems();}
+	void Remove(OBSSceneItem item);
 	void GroupSelectedItems();
 	void UngroupSelectedGroups();
 	void AddGroup();

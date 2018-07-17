@@ -2137,8 +2137,6 @@ void OBSBasic::AddScene(OBSSource source)
 	container.handlers.assign({
 		std::make_shared<OBSSignal>(handler, "item_add",
 					OBSBasic::SceneItemAdded, this),
-		std::make_shared<OBSSignal>(handler, "item_remove",
-					OBSBasic::SceneItemRemoved, this),
 		std::make_shared<OBSSignal>(handler, "item_select",
 					OBSBasic::SceneItemSelected, this),
 		std::make_shared<OBSSignal>(handler, "item_deselect",
@@ -2230,23 +2228,6 @@ void OBSBasic::AddSceneItem(OBSSceneItem item)
 		obs_source_t *sceneSource = obs_scene_get_source(scene);
 		obs_source_t *itemSource = obs_sceneitem_get_source(item);
 		blog(LOG_INFO, "User added source '%s' (%s) to scene '%s'",
-				obs_source_get_name(itemSource),
-				obs_source_get_id(itemSource),
-				obs_source_get_name(sceneSource));
-	}
-}
-
-void OBSBasic::RemoveSceneItem(OBSSceneItem item)
-{
-	ui->sources->Remove(item);
-
-	SaveProject();
-
-	if (!disableSaving) {
-		obs_scene_t *scene = obs_sceneitem_get_scene(item);
-		obs_source_t *sceneSource = obs_scene_get_source(scene);
-		obs_source_t *itemSource = obs_sceneitem_get_source(item);
-		blog(LOG_INFO, "User Removed source '%s' (%s) from scene '%s'",
 				obs_source_get_name(itemSource),
 				obs_source_get_id(itemSource),
 				obs_source_get_name(sceneSource));
@@ -2850,16 +2831,6 @@ void OBSBasic::SceneItemAdded(void *data, calldata_t *params)
 	obs_sceneitem_t *item = (obs_sceneitem_t*)calldata_ptr(params, "item");
 
 	QMetaObject::invokeMethod(window, "AddSceneItem",
-			Q_ARG(OBSSceneItem, OBSSceneItem(item)));
-}
-
-void OBSBasic::SceneItemRemoved(void *data, calldata_t *params)
-{
-	OBSBasic *window = static_cast<OBSBasic*>(data);
-
-	obs_sceneitem_t *item = (obs_sceneitem_t*)calldata_ptr(params, "item");
-
-	QMetaObject::invokeMethod(window, "RemoveSceneItem",
 			Q_ARG(OBSSceneItem, OBSSceneItem(item)));
 }
 
