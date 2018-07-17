@@ -537,9 +537,27 @@
             "servers": [
                 {
                     "name": "Primary",
-                    "url": "rtmp://www.gameplank.tv/live"
+                    "url": "rtmp://live.gameplank.tv/app"
+                },
+                {
+                    "name": "US: Oregon",
+                    "url": "rtmp://live-or.gameplank.tv/app"
+                },
+                {
+                    "name": "US: Virginia",
+                    "url": "rtmp://live-va.gameplank.tv/app"
+                },
+                {
+                    "name": "UK: London",
+                    "url": "rtmp://live-ldn.gameplank.tv/app"
                 }
-            ]
+            ],
+            "recommended": {
+                "keyint": 1,
+                "max video bitrate": 1500,
+                "max audio bitrate": 160,
+                "x264opts": "scenecut=0"
+            }
         },
         {
             "name": "Vaughn Live / iNSTAGIB",
