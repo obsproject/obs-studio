@@ -436,6 +436,8 @@ static void add_file(struct vlc_source *c, struct darray *array,
 					network_caching_option.array);
 			dstr_free(&network_caching_option);
 		}
+		
+		libvlc_media_add_option_(new_media,":avcodec-hw=any");
 
 		data.path = new_path.array;
 		data.media = new_media;
