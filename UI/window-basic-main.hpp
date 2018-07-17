@@ -535,6 +535,11 @@ public:
 		cy = previewCY;
 	}
 
+	inline bool SavingDisabled() const
+	{
+		return disableSaving;
+	}
+
 	inline double GetCPUUsage() const
 	{
 		return os_cpu_usage_info_query(cpuUsageInfo);
