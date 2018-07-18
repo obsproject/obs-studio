@@ -559,6 +559,10 @@ void OBSBasic::RenameTransition()
 		int idx = ui->transitions->findData(variant);
 		if (idx != -1) {
 			ui->transitions->setItemText(idx, QT_UTF8(name.c_str()));
+
+			if (api)
+				api->on_event(OBS_FRONTEND_EVENT_TRANSITION_LIST_CHANGED);
+
 			ClearQuickTransitionWidgets();
 			RefreshQuickTransitions();
 		}
