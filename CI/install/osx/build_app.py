@@ -45,7 +45,7 @@ parser.add_argument('-d', '--base-dir', dest='dir', default='rundir/RelWithDebIn
 parser.add_argument('-n', '--build-number', dest='build_number', default='0')
 parser.add_argument('-k', '--public-key', dest='public_key', default='OBSPublicDSAKey.pem')
 parser.add_argument('-f', '--sparkle-framework', dest='sparkle', default=None)
-parser.add_argument('-b', '--base-url', dest='base_url', default='https://builds.catchexception.org/obs-studio')
+parser.add_argument('-b', '--base-url', dest='base_url', default='https://obsproject.com/osx_update')
 parser.add_argument('-u', '--user', dest='user', default='jp9000')
 parser.add_argument('-c', '--channel', dest='channel', default='master')
 add_boolean_argument(parser, 'stable', default=False)
