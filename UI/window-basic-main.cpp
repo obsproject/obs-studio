@@ -4954,8 +4954,10 @@ void OBSBasic::on_streamButton_clicked()
 						QTStr("ConfirmStop.Title"),
 						QTStr("ConfirmStop.Text"));
 
-			if (button == QMessageBox::No)
+			if (button == QMessageBox::No) {
+				ui->streamButton->setChecked(true);
 				return;
+			}
 		}
 
 		StopStreaming();
@@ -4969,8 +4971,10 @@ void OBSBasic::on_streamButton_clicked()
 						QTStr("ConfirmStart.Title"),
 						QTStr("ConfirmStart.Text"));
 
-			if (button == QMessageBox::No)
+			if (button == QMessageBox::No) {
+				ui->streamButton->setChecked(false);
 				return;
+			}
 		}
 
 		StartStreaming();
