@@ -314,6 +314,7 @@
      <string>Basic.MainMenu.Tools</string>
     </property>
     <addaction name="autoConfigure"/>
+    <addaction name="actionTakeScreenshot"/>
     <addaction name="separator"/>
    </widget>
    <addaction name="menu_File"/>
@@ -1648,6 +1649,14 @@
   <action name="actionUploadLastCrashLog">
    <property name="text">
     <string>Basic.MainMenu.Help.CrashLogs.UploadLastLog</string>
+   </property>
+  </action>
+  <action name="actionTakeScreenshot">
+   <property name="text">
+    <string>Basic.Main.TakeScreenshot</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Shift+S</string>
    </property>
   </action>
  </widget>

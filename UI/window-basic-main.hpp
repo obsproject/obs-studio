@@ -676,6 +676,7 @@ private slots:
 	void on_modeSwitch_clicked();
 
 	void on_autoConfigure_triggered();
+	void on_actionTakeScreenshot_triggered();
 	void on_stats_triggered();
 
 	void on_resetUI_triggered();
@@ -718,6 +719,8 @@ private slots:
 	void OpenSourceWindow();
 	void OpenMultiviewWindow();
 	void OpenSceneWindow();
+
+	void TakeScreenshot();
 
 	void DeferredLoad(const QString &file, int requeueCount);
 
