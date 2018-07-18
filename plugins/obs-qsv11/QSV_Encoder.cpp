@@ -81,11 +81,13 @@ void qsv_encoder_version(unsigned short *major, unsigned short *minor)
 qsv_t *qsv_encoder_open(qsv_param_t *pParams)
 {
 	bool false_value = false;
+	/*
 	if (!is_active.compare_exchange_strong(false_value, true)) {
 		do_log(LOG_ERROR, "Cannot have more than one encoder "
 				"active at a time");
 		return NULL;
 	}
+	*/
 
 	QSV_Encoder_Internal *pEncoder = new QSV_Encoder_Internal(impl, ver);
 	mfxStatus sts = pEncoder->Open(pParams);

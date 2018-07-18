@@ -104,6 +104,7 @@ static int64_t          g_pts2dtsShift;
 static int64_t          g_prevDts;
 static bool             g_bFirst;
 
+
 static const char *obs_qsv_getname(void *type_data)
 {
 	UNUSED_PARAMETER(type_data);
@@ -115,7 +116,10 @@ static void obs_qsv_stop(void *data);
 static void clear_data(struct obs_qsv *obsqsv)
 {
 	if (obsqsv->context) {
+		EnterCriticalSection(&g_QsvCs);
 		qsv_encoder_close(obsqsv->context);
+		LeaveCriticalSection(&g_QsvCs);
+
 		// bfree(obsqsv->sei);
 		bfree(obsqsv->extra_data);
 
@@ -463,7 +467,9 @@ static void *obs_qsv_create(obs_data_t *settings, obs_encoder_t *encoder)
 	obsqsv->encoder = encoder;
 
 	if (update_settings(obsqsv, settings)) {
+		EnterCriticalSection(&g_QsvCs);
 		obsqsv->context = qsv_encoder_open(&obsqsv->params);
+		LeaveCriticalSection(&g_QsvCs);
 
 		if (obsqsv->context == NULL)
 			warn("qsv failed to load");
