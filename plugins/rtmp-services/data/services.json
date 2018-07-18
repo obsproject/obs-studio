@@ -537,9 +537,27 @@
             "servers": [
                 {
                     "name": "Primary",
-                    "url": "rtmp://www.gameplank.tv/live"
+                    "url": "rtmp://live.gameplank.tv/app"
+                },
+                {
+                    "name": "US: Oregon",
+                    "url": "rtmp://live-or.gameplank.tv/app"
+                },
+                {
+                    "name": "US: Virginia",
+                    "url": "rtmp://live-va.gameplank.tv/app"
+                },
+                {
+                    "name": "UK: London",
+                    "url": "rtmp://live-ldn.gameplank.tv/app"
                 }
-            ]
+            ],
+            "recommended": {
+                "keyint": 1,
+                "max video bitrate": 1500,
+                "max audio bitrate": 160,
+                "x264opts": "scenecut=0"
+            }
         },
         {
             "name": "Vaughn Live / iNSTAGIB",
@@ -807,6 +825,46 @@
                 "max video bitrate": 25000,
                 "max audio bitrate": 192,
                 "x264opts": "scenecut=0"
+            }
+        },
+        {
+            "name": "Castr.io",
+            "servers": [
+                {
+                    "name": "Chicago US",
+                    "url": "rtmp://cg.castr.io"
+                },
+                {
+                    "name": "Los Angeles US",
+                    "url": "rtmp://la.castr.io"
+                },
+                {
+                    "name": "Montreal CA",
+                    "url": "rtmp://qc.castr.io"
+                },
+                {
+                    "name": "London UK",
+                    "url": "rtmp://uk.castr.io"
+                },
+                {
+                    "name": "Frankfurt DE",
+                    "url": "rtmp://de.castr.io"
+                },
+                {
+                    "name": "Moscow RU",
+                    "url": "rtmp://ru.castr.io"
+                },
+                {
+                    "name": "Singapore",
+                    "url": "rtmp://sg.castr.io"
+                },
+                {
+                    "name": "Sydney AU",
+                    "url": "rtmp://au.castr.io"
+                }
+            ],
+            "recommended": {
+                "keyint": 2
             }
         },
         {
@@ -1241,6 +1299,19 @@
                     "url": "rtmp://rtmp.cdn.asset.aparat.com:443/event"
                 }
             ]
+        },
+        {
+            "name": "KakaoTV",
+            "servers": [
+                {
+                    "name": "Default",
+                    "url": "rtmp://rtmp.play.kakao.com/kakaotv"
+                }
+            ],
+            "recommended": {
+                "max video bitrate": 8000,
+                "max audio bitrate": 192
+            }
         }
     ]
 }

@@ -22,7 +22,7 @@
 
 #if BUILD_CAPTIONS
 #include <caption/caption.h>
-#include <caption/avc.h>
+#include <caption/mpeg.h>
 #endif
 
 static inline bool active(const struct obs_output *output)
@@ -989,7 +989,7 @@ static bool add_caption(struct obs_output *output, struct encoder_packet *out)
 	if (out->priority > 1)
 		return false;
 
-	sei_init(&sei);
+	sei_init(&sei, 0.0);
 
 	da_init(out_data);
 	da_push_back_array(out_data, &ref, sizeof(ref));
@@ -2094,34 +2094,14 @@ void obs_output_output_caption_text1(obs_output_t *output, const char *text)
 
 	// split text into 32 character strings
 	int size = (int)strlen(text);
-	int r;
-	size_t char_count;
-	size_t line_length = 0;
-	size_t trimmed_length = 0;
-
 	blog(LOG_DEBUG, "Caption text: %s", text);
 
 	pthread_mutex_lock(&output->caption_mutex);
 
-	for (r = 0 ; 0 < size && CAPTION_LINE_CHARS > r; ++r) {
-		line_length = utf8_line_length(text);
-		trimmed_length = utf8_trimmed_length(text, line_length);
-		char_count = utf8_char_count(text, trimmed_length);
-
-		if (SCREEN_COLS < char_count) {
-			char_count = utf8_wrap_length(text, CAPTION_LINE_CHARS);
-			line_length = utf8_string_length(text, char_count + 1);
-		}
-
-		output->caption_tail = caption_text_new(
-				text,
-				line_length,
-				output->caption_tail,
-				&output->caption_head);
-
-		text += line_length;
-		size -= (int)line_length;
-	}
+	output->caption_tail = caption_text_new(
+			text, size,
+			output->caption_tail,
+			&output->caption_head);
 
 	pthread_mutex_unlock(&output->caption_mutex);
 }

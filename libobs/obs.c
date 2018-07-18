@@ -741,6 +741,7 @@ static inline void obs_free_hotkeys(void)
 }
 
 extern const struct obs_source_info scene_info;
+extern const struct obs_source_info group_info;
 
 extern void log_system_info(void);
 
@@ -771,6 +772,7 @@ static bool obs_init(const char *locale, const char *module_config_path,
 		obs->module_config_path = bstrdup(module_config_path);
 	obs->locale = bstrdup(locale);
 	obs_register_source(&scene_info);
+	obs_register_source(&group_info);
 	add_default_module_paths();
 	return true;
 }
@@ -789,11 +791,11 @@ char *obs_find_data_file(const char *file)
 {
 	struct dstr path = {0};
 
-	const char *result = find_libobs_data_file(file);
+	char *result = find_libobs_data_file(file);
 	if (result)
 		return result;
 
-	for (int i = 0; i < core_module_paths.num; ++i) {
+	for (size_t i = 0; i < core_module_paths.num; ++i) {
 		if (check_path(file, core_module_paths.array[i].array, &path))
 			return path.array;
 	}
@@ -811,7 +813,7 @@ void obs_add_data_path(const char *path)
 
 bool obs_remove_data_path(const char *path)
 {
-	for (int i = 0; i < core_module_paths.num; ++i) {
+	for (size_t i = 0; i < core_module_paths.num; ++i) {
 		int result = dstr_cmp(&core_module_paths.array[i], path);
 
 		if (result == 0) {
@@ -1304,10 +1306,14 @@ void obs_enum_sources(bool (*enum_proc)(void*, obs_source_t*), void *param)
 		obs_source_t *next_source =
 			(obs_source_t*)source->context.next;
 
-		if ((source->info.type == OBS_SOURCE_TYPE_INPUT) != 0 &&
-		    !source->context.private &&
-		    !enum_proc(param, source))
+		if (source->info.id == group_info.id &&
+		    !enum_proc(param, source)) {
 			break;
+		} else if (source->info.type == OBS_SOURCE_TYPE_INPUT &&
+		           !source->context.private &&
+		           !enum_proc(param, source)) {
+			break;
+		}
 
 		source = next_source;
 	}

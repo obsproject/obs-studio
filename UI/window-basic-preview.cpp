@@ -420,7 +420,7 @@ void OBSBasicPreview::GetStretchHandleData(const vec2 &pos)
 		cropSize.y = float(obs_source_get_height(source) -
 				startCrop.top - startCrop.bottom);
 
-		stretchGroup = obs_sceneitem_get_group(stretchItem);
+		stretchGroup = obs_sceneitem_get_group(scene, stretchItem);
 		if (stretchGroup) {
 			obs_sceneitem_get_draw_transform(stretchGroup,
 					&invGroupTransform);
@@ -1135,8 +1135,11 @@ void OBSBasicPreview::mouseMoveEvent(QMouseEvent *event)
 		pos.y = std::round(pos.y);
 
 		if (stretchHandle != ItemHandle::None) {
+			OBSBasic *main = reinterpret_cast<OBSBasic*>(
+					App()->GetMainWindow());
+			OBSScene scene = main->GetCurrentScene();
 			obs_sceneitem_t *group = obs_sceneitem_get_group(
-					stretchItem);
+					scene, stretchItem);
 			if (group) {
 				vec3 group_pos;
 				vec3_set(&group_pos, pos.x, pos.y, 0.0f);

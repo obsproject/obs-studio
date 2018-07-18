@@ -38,6 +38,25 @@ bool OBSBasicSourceSelect::EnumSources(void *data, obs_source_t *source)
 	return true;
 }
 
+bool OBSBasicSourceSelect::EnumGroups(void *data, obs_source_t *source)
+{
+	OBSBasicSourceSelect *window = static_cast<OBSBasicSourceSelect*>(data);
+	const char *name = obs_source_get_name(source);
+	const char *id   = obs_source_get_id(source);
+
+	if (strcmp(id, window->id) == 0) {
+		OBSBasic *main = reinterpret_cast<OBSBasic*>(
+				App()->GetMainWindow());
+		OBSScene scene = main->GetCurrentScene();
+
+		obs_sceneitem_t *existing = obs_scene_get_group(scene, name);
+		if (!existing)
+			window->ui->sourceList->addItem(QT_UTF8(name));
+	}
+
+	return true;
+}
+
 void OBSBasicSourceSelect::OBSSourceAdded(void *data, calldata_t *calldata)
 {
 	OBSBasicSourceSelect *window = static_cast<OBSBasicSourceSelect*>(data);
@@ -277,6 +296,8 @@ OBSBasicSourceSelect::OBSBasicSourceSelect(OBSBasic *parent, const char *id_)
 			const char *name = obs_source_get_name(sceneSource);
 			ui->sourceList->addItem(QT_UTF8(name));
 		}
+	} else if (strcmp(id_, "group") == 0) {
+		obs_enum_sources(EnumGroups, this);
 	} else {
 		obs_enum_sources(EnumSources, this);
 	}

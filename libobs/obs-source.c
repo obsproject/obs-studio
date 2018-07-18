@@ -439,6 +439,8 @@ void obs_source_copy_filters(obs_source_t *dst, obs_source_t *src)
 	duplicate_filters(dst, src, dst->context.private);
 }
 
+extern obs_scene_t *obs_group_from_source(const obs_source_t *source);
+
 obs_source_t *obs_source_duplicate(obs_source_t *source,
 		const char *new_name, bool create_private)
 {
@@ -455,6 +457,11 @@ obs_source_t *obs_source_duplicate(obs_source_t *source,
 
 	if (source->info.type == OBS_SOURCE_TYPE_SCENE) {
 		obs_scene_t *scene = obs_scene_from_source(source);
+		if (!scene)
+			scene = obs_group_from_source(source);
+		if (!scene)
+			return NULL;
+
 		obs_scene_t *new_scene = obs_scene_duplicate(scene, new_name,
 				create_private ? OBS_SCENE_DUP_PRIVATE_COPY :
 					OBS_SCENE_DUP_COPY);

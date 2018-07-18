@@ -159,6 +159,8 @@ EXPORT obs_data_t *obs_data_array_item(obs_data_array_t *array, size_t idx);
 EXPORT size_t obs_data_array_push_back(obs_data_array_t *array, obs_data_t *obj);
 EXPORT void obs_data_array_insert(obs_data_array_t *array, size_t idx,
 		obs_data_t *obj);
+EXPORT void obs_data_array_push_back_array(obs_data_array_t *array,
+		obs_data_array_t *array2);
 EXPORT void obs_data_array_erase(obs_data_array_t *array, size_t idx);
 
 /* ------------------------------------------------------------------------- */
