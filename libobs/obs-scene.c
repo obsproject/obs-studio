@@ -30,6 +30,8 @@ static void get_ungrouped_transform(obs_sceneitem_t *group,
 		struct vec2 *pos,
 		struct vec2 *scale,
 		float *rot);
+static inline bool crop_enabled(const struct obs_sceneitem_crop *crop);
+static inline bool item_texture_enabled(const struct obs_scene_item *item);
 
 /* NOTE: For proper mutex lock order (preventing mutual cross-locks), never
  * lock the graphics mutex inside either of the scene mutexes.
@@ -403,6 +405,18 @@ static void update_item_transform(struct obs_scene_item *item)
 	calldata_init_fixed(&params, stack, sizeof(stack));
 	calldata_set_ptr(&params, "item", item);
 	signal_parent(item->parent, "item_transform", &params);
+
+	if (item->item_render && !item_texture_enabled(item)) {
+		obs_enter_graphics();
+		gs_texrender_destroy(item->item_render);
+		item->item_render = NULL;
+		obs_leave_graphics();
+
+	} else if (!item->item_render && item_texture_enabled(item)) {
+		obs_enter_graphics();
+		item->item_render = gs_texrender_create(GS_RGBA, GS_ZS_NONE);
+		obs_leave_graphics();
+	}
 
 	os_atomic_set_bool(&item->update_transform, false);
 }
@@ -2135,8 +2149,6 @@ static inline bool crop_equal(const struct obs_sceneitem_crop *crop1,
 void obs_sceneitem_set_crop(obs_sceneitem_t *item,
 		const struct obs_sceneitem_crop *crop)
 {
-	bool item_tex_now_enabled;
-
 	if (!obs_ptr_valid(item, "obs_sceneitem_set_crop"))
 		return;
 	if (!obs_ptr_valid(crop, "obs_sceneitem_set_crop"))
@@ -2144,26 +2156,12 @@ void obs_sceneitem_set_crop(obs_sceneitem_t *item,
 	if (crop_equal(crop, &item->crop))
 		return;
 
-	item_tex_now_enabled = crop_enabled(crop) ||
-		scale_filter_enabled(item) || item_is_scene(item);
-
-	obs_enter_graphics();
-
-	if (!item_tex_now_enabled) {
-		gs_texrender_destroy(item->item_render);
-		item->item_render = NULL;
-
-	} else if (!item->item_render) {
-		item->item_render = gs_texrender_create(GS_RGBA, GS_ZS_NONE);
-	}
-
 	memcpy(&item->crop, crop, sizeof(*crop));
 
 	if (item->crop.left < 0) item->crop.left = 0;
 	if (item->crop.right < 0) item->crop.right = 0;
 	if (item->crop.top < 0) item->crop.top = 0;
 	if (item->crop.bottom < 0) item->crop.bottom = 0;
-	obs_leave_graphics();
 
 	os_atomic_set_bool(&item->update_transform, true);
 }
@@ -2186,18 +2184,6 @@ void obs_sceneitem_set_scale_filter(obs_sceneitem_t *item,
 		return;
 
 	item->scale_filter = filter;
-
-	obs_enter_graphics();
-
-	if (!item_texture_enabled(item)) {
-		gs_texrender_destroy(item->item_render);
-		item->item_render = NULL;
-
-	} else if (!item->item_render) {
-		item->item_render = gs_texrender_create(GS_RGBA, GS_ZS_NONE);
-	}
-
-	obs_leave_graphics();
 
 	os_atomic_set_bool(&item->update_transform, true);
 }
