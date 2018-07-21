@@ -30,6 +30,42 @@
 
 using namespace std;
 
+class OBSPathEdit : public QLineEdit {
+protected:
+	bool eventFilter(QObject *obj, QEvent *evt)
+	{
+		QLineEdit *edit = qobject_cast<QLineEdit*>(obj);
+		if (evt->type() == QEvent::KeyPress) {
+			QKeyEvent *keyEvent = static_cast<QKeyEvent*>(evt);
+			switch (keyEvent->key()) {
+			case Qt::Key_Enter:
+			case Qt::Key_Return:
+				returnPressed();
+				return true;
+			default:
+				return false;
+			}
+		}
+		return false;
+	}
+public:
+	OBSPathEdit(QWidget *parent = Q_NULLPTR) : QLineEdit(parent)
+	{
+		installEventFilter(this);
+	}
+
+	OBSPathEdit(const QString &str, QWidget *parent = Q_NULLPTR)
+			: QLineEdit(str, parent)
+	{
+		installEventFilter(this);
+	}
+
+	~OBSPathEdit()
+	{
+		removeEventFilter(this);
+	}
+};
+
 static inline QColor color_from_int(long long val)
 {
 	return QColor( val        & 0xff,
@@ -288,8 +324,10 @@ void OBSPropertiesView::AddPath(obs_property_t *prop, QFormLayout *layout,
 	const char  *name      = obs_property_name(prop);
 	const char  *val       = obs_data_get_string(settings, name);
 	QLayout     *subLayout = new QHBoxLayout();
-	QLineEdit   *edit      = new QLineEdit();
 	QPushButton *button    = new QPushButton(QTStr("Browse"));
+	obs_path_type type = obs_property_path_type(prop);
+	QLineEdit   *edit = (type & OBS_PATH_EDITABLE) ? new OBSPathEdit()
+			: new QLineEdit();
 
 	if (!obs_property_enabled(prop)) {
 		edit->setEnabled(false);
@@ -298,7 +336,7 @@ void OBSPropertiesView::AddPath(obs_property_t *prop, QFormLayout *layout,
 
 	button->setProperty("themeID", "settingsButtons");
 	edit->setText(QT_UTF8(val));
-	edit->setReadOnly(true);
+	edit->setReadOnly(!(type & OBS_PATH_EDITABLE));
 	edit->setToolTip(QT_UTF8(obs_property_long_description(prop)));
 
 	subLayout->addWidget(edit);
@@ -306,6 +344,13 @@ void OBSPropertiesView::AddPath(obs_property_t *prop, QFormLayout *layout,
 
 	WidgetInfo *info = new WidgetInfo(this, prop, edit);
 	connect(button, SIGNAL(clicked()), info, SLOT(ControlChanged()));
+	if (type & OBS_PATH_EDITABLE) {
+		connect(edit, SIGNAL(editingFinished()), info,
+				SLOT(ControlChangedText()));
+		connect(edit, SIGNAL(returnPressed()), info,
+				SLOT(ControlChangedText()));
+	}
+
 	children.emplace_back(info);
 
 	*label = new QLabel(QT_UTF8(obs_property_description(prop)));
@@ -1776,6 +1821,24 @@ void WidgetInfo::ControlChanged()
 		view->lastFocused = setting;
 		QMetaObject::invokeMethod(view, "RefreshProperties",
 				Qt::QueuedConnection);
+	}
+}
+
+void WidgetInfo::ControlChangedText()
+{
+	const char *setting = obs_property_name(property);
+	QLineEdit  *edit = static_cast<QLineEdit*>(widget);
+	obs_data_set_string(view->settings, setting, QT_TO_UTF8(edit->text()));
+
+	if (view->callback && !view->deferUpdate)
+		view->callback(view->obj, view->settings);
+
+	view->SignalChanged();
+
+	if (obs_property_modified(property, view->settings)) {
+		view->lastFocused = setting;
+		QMetaObject::invokeMethod(view, "RefreshProperties",
+			Qt::QueuedConnection);
 	}
 }
 
