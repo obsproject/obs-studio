@@ -55,17 +55,15 @@ float4 SampleTexture(float2 uv)
 
 float GetBoxFilteredChromaDist(float3 rgb, float2 texCoord)
 {
-	float distVal = GetChromaDist(rgb);
-	distVal += GetChromaDist(SampleTexture(texCoord-pixel_size).rgb);
-	distVal += GetChromaDist(SampleTexture(texCoord-float2(pixel_size.x, 0.0)).rgb);
-	distVal += GetChromaDist(SampleTexture(texCoord-float2(pixel_size.x, -pixel_size.y)).rgb);
-
-	distVal += GetChromaDist(SampleTexture(texCoord-float2(0.0, pixel_size.y)).rgb);
-	distVal += GetChromaDist(SampleTexture(texCoord+float2(0.0, pixel_size.y)).rgb);
-
-	distVal += GetChromaDist(SampleTexture(texCoord+float2(pixel_size.x, -pixel_size.y)).rgb);
-	distVal += GetChromaDist(SampleTexture(texCoord+float2(pixel_size.x, 0.0)).rgb);
-	distVal += GetChromaDist(SampleTexture(texCoord+pixel_size).rgb);
+	float2 h_pixel_size = pixel_size / 2.0;
+	float2 point_0 = float2(pixel_size.x, h_pixel_size.y);
+	float2 point_1 = float2(h_pixel_size.x, -pixel_size.y);
+	float distVal = GetChromaDist(SampleTexture(texCoord-point_0).rgb);
+	distVal += GetChromaDist(SampleTexture(texCoord+point_0).rgb);
+	distVal += GetChromaDist(SampleTexture(texCoord-point_1).rgb);
+	distVal += GetChromaDist(SampleTexture(texCoord+point_1).rgb);
+	distVal *= 2.0;
+	distVal += GetChromaDist(rgb);
 	return distVal / 9.0;
 }
 
