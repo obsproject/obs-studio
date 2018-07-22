@@ -35,3 +35,11 @@ test: off
 cache:
   - dependencies2017.zip
   - vlc.zip
+
+notifications:
+  - provider: Webhook
+    url:
+      secure: BLEDxxmp70GxksVCy0tJB0X0g16DLAQq9AdyyKJhmyL3ssNNdY3euEerli/74aCp
+    headers:
+      Authorization:
+        secure: 7v/3fDIDHee0yDdk18xs/Afm7+xI4TfhzxAJ7slFjdfugCK2IbWRumXsDWkR3kyS
