@@ -63,6 +63,7 @@ notifications:
   webhooks:
     urls:
       - secure: T5RBY818nO40nr5eC8pdrCfAdQKGkjQdbyYw7mfFrhxWxgt/U5tyKXpX0l9zNGfobS0SnLSqF71OrfW04V97oijXx3q5Y24xV6mSrlLQZOq19+XvGp82LDpkVd4yi2N0kBYpoANB9Pkof4jWT/rKfdQCQttluOLjgr5SM0uWHRg=
+      - secure: EVI2cu5OnNxVTl4jdVppps7O869gGN1PDcSi8fqq/HJVM5kif8iDe4wCrIKv6yWrK3dSNwRgBAwpcPZglRJnKRh23PdFoCdnTjgzBQlmjUR6BYlunQvoKR9mVX6AdT8zrFDgmtC4aOtGD2paptpqt+Equo25KrLwv+qOHJOTrSQ=
     on_success: change
     on_failure: always
 
