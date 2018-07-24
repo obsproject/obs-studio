@@ -334,19 +334,24 @@ static inline uint32_t calc_cy(const struct obs_scene_item *item,
 
 static void update_item_transform(struct obs_scene_item *item)
 {
-	uint32_t        width         = obs_source_get_width(item->source);
-	uint32_t        height        = obs_source_get_height(item->source);
-	uint32_t        cx            = calc_cx(item, width);
-	uint32_t        cy            = calc_cy(item, height);
+	uint32_t        width;
+	uint32_t        height;
+	uint32_t        cx;
+	uint32_t        cy;
 	struct vec2     base_origin;
 	struct vec2     origin;
-	struct vec2     scale         = item->scale;
+	struct vec2     scale;
 	struct calldata params;
 	uint8_t         stack[128];
 
 	if (os_atomic_load_long(&item->defer_update) > 0)
 		return;
 
+	width             = obs_source_get_width(item->source);
+	height            = obs_source_get_height(item->source);
+	cx                = calc_cx(item, width);
+	cy                = calc_cy(item, height);
+	scale             = item->scale;
 	item->last_width  = width;
 	item->last_height = height;
 
