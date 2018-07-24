@@ -1768,11 +1768,19 @@ bool obs_sceneitem_selected(const obs_sceneitem_t *item)
 	return item ? item->selected : false;
 }
 
+#define do_update_transform(item) \
+	do { \
+		if (!item->parent || item->parent->is_group) \
+			os_atomic_set_bool(&item->update_transform, true); \
+		else \
+			update_item_transform(item, false); \
+	} while (false)
+
 void obs_sceneitem_set_pos(obs_sceneitem_t *item, const struct vec2 *pos)
 {
 	if (item) {
 		vec2_copy(&item->pos, pos);
-		os_atomic_set_bool(&item->update_transform, true);
+		do_update_transform(item);
 	}
 }
 
@@ -1780,7 +1788,7 @@ void obs_sceneitem_set_rot(obs_sceneitem_t *item, float rot)
 {
 	if (item) {
 		item->rot = rot;
-		os_atomic_set_bool(&item->update_transform, true);
+		do_update_transform(item);
 	}
 }
 
@@ -1788,7 +1796,7 @@ void obs_sceneitem_set_scale(obs_sceneitem_t *item, const struct vec2 *scale)
 {
 	if (item) {
 		vec2_copy(&item->scale, scale);
-		os_atomic_set_bool(&item->update_transform, true);
+		do_update_transform(item);
 	}
 }
 
@@ -1796,7 +1804,7 @@ void obs_sceneitem_set_alignment(obs_sceneitem_t *item, uint32_t alignment)
 {
 	if (item) {
 		item->align = alignment;
-		os_atomic_set_bool(&item->update_transform, true);
+		do_update_transform(item);
 	}
 }
 
@@ -1892,7 +1900,7 @@ void obs_sceneitem_set_bounds_type(obs_sceneitem_t *item,
 {
 	if (item) {
 		item->bounds_type = type;
-		os_atomic_set_bool(&item->update_transform, true);
+		do_update_transform(item);
 	}
 }
 
@@ -1901,7 +1909,7 @@ void obs_sceneitem_set_bounds_alignment(obs_sceneitem_t *item,
 {
 	if (item) {
 		item->bounds_align = alignment;
-		os_atomic_set_bool(&item->update_transform, true);
+		do_update_transform(item);
 	}
 }
 
@@ -1909,7 +1917,7 @@ void obs_sceneitem_set_bounds(obs_sceneitem_t *item, const struct vec2 *bounds)
 {
 	if (item) {
 		item->bounds = *bounds;
-		os_atomic_set_bool(&item->update_transform, true);
+		do_update_transform(item);
 	}
 }
 
@@ -1976,7 +1984,7 @@ void obs_sceneitem_set_info(obs_sceneitem_t *item,
 		item->bounds_type  = info->bounds_type;
 		item->bounds_align = info->bounds_alignment;
 		item->bounds       = info->bounds;
-		os_atomic_set_bool(&item->update_transform, true);
+		do_update_transform(item);
 	}
 }
 
@@ -2217,7 +2225,7 @@ void obs_sceneitem_defer_update_end(obs_sceneitem_t *item)
 		return;
 
 	if (os_atomic_dec_long(&item->defer_update) == 0)
-		os_atomic_set_bool(&item->update_transform, true);
+		do_update_transform(item);
 }
 
 void obs_sceneitem_defer_group_resize_begin(obs_sceneitem_t *item)
