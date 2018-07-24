@@ -332,7 +332,7 @@ static inline uint32_t calc_cy(const struct obs_scene_item *item,
 	return (crop_cy > height) ? 2 : (height - crop_cy);
 }
 
-static void update_item_transform(struct obs_scene_item *item)
+static void update_item_transform(struct obs_scene_item *item, bool update_tex)
 {
 	uint32_t        width;
 	uint32_t        height;
@@ -410,6 +410,9 @@ static void update_item_transform(struct obs_scene_item *item)
 	calldata_init_fixed(&params, stack, sizeof(stack));
 	calldata_set_ptr(&params, "item", item);
 	signal_parent(item->parent, "item_transform", &params);
+
+	if (!update_tex)
+		return;
 
 	if (item->item_render && !item_texture_enabled(item)) {
 		obs_enter_graphics();
@@ -595,7 +598,7 @@ static void update_transforms_and_prune_sources(obs_scene_t *scene,
 		if (os_atomic_load_bool(&item->update_transform) ||
 		    source_size_changed(item)) {
 
-			update_item_transform(item);
+			update_item_transform(item, true);
 			rebuild_group = true;
 		}
 
@@ -759,7 +762,7 @@ static void scene_load_item(struct obs_scene *scene, obs_data_t *item_data)
 
 	obs_source_release(source);
 
-	update_item_transform(item);
+	update_item_transform(item, false);
 }
 
 static void scene_load(void *data, obs_data_t *settings)
@@ -2296,7 +2299,7 @@ static void remove_group_transform(obs_sceneitem_t *group,
 
 	get_ungrouped_transform(group, &item->pos, &item->scale, &item->rot);
 
-	update_item_transform(item);
+	update_item_transform(item, false);
 }
 
 static void apply_group_transform(obs_sceneitem_t *item, obs_sceneitem_t *group)
@@ -2322,7 +2325,7 @@ static void apply_group_transform(obs_sceneitem_t *item, obs_sceneitem_t *group)
 	item->scale.y = vec4_len(&mat.y);
 	item->rot -= group->rot;
 
-	update_item_transform(item);
+	update_item_transform(item, false);
 }
 
 static bool resize_scene_base(obs_scene_t *scene,
@@ -2364,7 +2367,7 @@ static bool resize_scene_base(obs_scene_t *scene,
 	item = scene->first_item;
 	while (item) {
 		vec2_sub(&item->pos, &item->pos, minv);
-		update_item_transform(item);
+		update_item_transform(item, false);
 		item = item->next;
 	}
 
@@ -2419,7 +2422,7 @@ static void resize_group(obs_sceneitem_t *group)
 
 	os_atomic_set_bool(&group->update_group_resize, false);
 
-	update_item_transform(group);
+	update_item_transform(group, false);
 }
 
 obs_sceneitem_t *obs_scene_add_group(obs_scene_t *scene, const char *name)
