@@ -1,6 +1,6 @@
 project(obs-outputs)
 
-option(WITH_RTMPS "Enable rtmps support with mbedTLS" OFF)
+option(WITH_RTMPS "Enable rtmps support with mbedTLS" ON)
 
 if (WITH_RTMPS)
 	find_package(MbedTLS QUIET)

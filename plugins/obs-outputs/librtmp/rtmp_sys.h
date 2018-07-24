@@ -125,7 +125,7 @@ typedef tls_ctx *TLS_CTX;
   mbedtls_ssl_init(s);\
   mbedtls_ssl_setup(s, &ctx->conf);\
 	mbedtls_ssl_config_defaults(&ctx->conf, MBEDTLS_SSL_IS_CLIENT, MBEDTLS_SSL_TRANSPORT_STREAM, MBEDTLS_SSL_PRESET_DEFAULT);\
-  mbedtls_ssl_conf_authmode(&ctx->conf, MBEDTLS_SSL_VERIFY_NONE);\
+  mbedtls_ssl_conf_authmode(&ctx->conf, MBEDTLS_SSL_VERIFY_REQUIRED);\
 	mbedtls_ssl_conf_rng(&ctx->conf, mbedtls_ctr_drbg_random, &ctx->ctr_drbg)
 
 #define TLS_server(ctx,s)\
@@ -133,7 +133,7 @@ typedef tls_ctx *TLS_CTX;
   mbedtls_ssl_init(s);\
   mbedtls_ssl_setup(s, ctx->conf);\
 	mbedtls_ssl_conf_endpoint(ctx->conf, MBEDTLS_SSL_IS_SERVER);\
-  mbedtls_ssl_conf_authmode(ctx->conf, MBEDTLS_SSL_VERIFY_NONE);\
+  mbedtls_ssl_conf_authmode(ctx->conf, MBEDTLS_SSL_VERIFY_REQUIRED);\
 	mbedtls_ssl_conf_rng(ctx->conf, mbedtls_ctr_drbg_random, ctx->ctr_drbg);\
 	mbedtls_ssl_conf_own_cert(ctx->conf, &ctx->cert, &ctx->key);\
 	mbedtls_ssl_conf_dh_param_bin(ctx->conf,\
