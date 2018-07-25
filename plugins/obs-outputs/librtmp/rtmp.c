@@ -41,6 +41,13 @@
 #endif
 
 #if defined(USE_MBEDTLS)
+#if defined(_WIN32)
+#include <windows.h>
+#include <wincrypt.h>
+#elif defined(__APPLE__)
+#include <Security/Security.h>
+#endif
+
 #include <mbedtls/ctr_drbg.h>
 #include <mbedtls/md5.h>
 #include <mbedtls/base64.h>
@@ -75,7 +82,8 @@ static const char *my_dhm_G = "4";
 #include <openssl/bio.h>
 #include <openssl/buffer.h>
 #endif
-TLS_CTX RTMP_TLS_ctx;
+
+TLS_CTX RTMP_TLS_ctx = NULL;
 #endif
 
 #define RTMP_SIG_SIZE 1536
@@ -267,6 +275,81 @@ RTMP_LibVersion()
 }
 
 void
+RTMP_TLS_LoadCerts() {
+#ifdef USE_MBEDTLS
+    mbedtls_x509_crt *chain = RTMP_TLS_ctx->cacert = calloc(1, sizeof(struct mbedtls_x509_crt));
+    mbedtls_x509_crt_init(chain);
+
+#if defined(_WIN32)
+    HCERTSTORE hCertStore;
+    PCCERT_CONTEXT pCertContext = NULL;
+
+    if (!(hCertStore = CertOpenSystemStore(NULL, "CA"))) {
+        goto error;
+    }
+
+    while (pCertContext = CertEnumCertificatesInStore(hCertStore, pCertContext)) {
+        mbedtls_x509_crt_parse_der(chain,
+                                   (unsigned char *)pCertContext->pbCertEncoded,
+                                   pCertContext->cbCertEncoded);
+    }
+
+    CertFreeCertificateContext(pCertContext);
+    CertCloseStore(hCertStore, 0);
+#elif defined(__APPLE__)
+    SecKeychainRef keychain_ref;
+    CFMutableDictionaryRef search_settings_ref;
+    CFArrayRef result_ref;
+
+    if (SecKeychainOpen("/System/Library/Keychains/SystemRootCertificates.keychain",
+                        &keychain_ref)
+        != errSecSuccess) {
+      goto error;
+    }
+
+    search_settings_ref = CFDictionaryCreateMutable(NULL, 0, NULL, NULL);
+    CFDictionarySetValue(search_settings_ref, kSecClass, kSecClassCertificate);
+    CFDictionarySetValue(search_settings_ref, kSecMatchLimit, kSecMatchLimitAll);
+    CFDictionarySetValue(search_settings_ref, kSecReturnRef, kCFBooleanTrue);
+    CFDictionarySetValue(search_settings_ref, kSecMatchSearchList,
+                         CFArrayCreate(NULL, (const void **)&keychain_ref, 1, NULL));
+
+    if (SecItemCopyMatching(search_settings_ref, (CFTypeRef *)&result_ref)
+        != errSecSuccess) {
+      goto error;
+    }
+
+    for (CFIndex i = 0; i < CFArrayGetCount(result_ref); i++) {
+      SecCertificateRef item_ref = (SecCertificateRef)
+                                   CFArrayGetValueAtIndex(result_ref, i);
+      CFDataRef data_ref;
+
+      if ((data_ref = SecCertificateCopyData(item_ref))) {
+        mbedtls_x509_crt_parse_der(chain,
+                                   (unsigned char *)CFDataGetBytePtr(data_ref),
+                                   CFDataGetLength(data_ref));
+        CFRelease(data_ref);
+      }
+    }
+
+    CFRelease(keychain_ref);
+#elif defined(__linux__)
+    if (mbedtls_x509_crt_parse_path(chain, "/etc/ssl/certs/") != 0) {
+        goto error;
+    }
+#endif
+
+    mbedtls_ssl_conf_ca_chain(&RTMP_TLS_ctx->conf, chain, NULL);
+    return;
+
+error:
+    mbedtls_x509_crt_free(chain);
+    free(chain);
+    RTMP_TLS_ctx->cacert = NULL;
+#endif /* USE_MBEDTLS */
+}
+
+void
 RTMP_TLS_Init()
 {
 #ifdef CRYPTO
@@ -284,6 +367,7 @@ RTMP_TLS_Init()
                           (const unsigned char *)pers,
                           strlen(pers));
 
+    RTMP_TLS_LoadCerts();
 #elif defined(USE_POLARSSL)
     /* Do this regardless of NO_SSL, we use havege for rtmpe too */
     RTMP_TLS_ctx = calloc(1,sizeof(struct tls_ctx));
@@ -318,6 +402,13 @@ RTMP_TLS_Free() {
     mbedtls_ssl_config_free(&RTMP_TLS_ctx->conf);
     mbedtls_ctr_drbg_free(&RTMP_TLS_ctx->ctr_drbg);
     mbedtls_entropy_free(&RTMP_TLS_ctx->entropy);
+
+    if (RTMP_TLS_ctx->cacert) {
+        mbedtls_x509_crt_free(RTMP_TLS_ctx->cacert);
+        free(RTMP_TLS_ctx->cacert);
+        RTMP_TLS_ctx->cacert = NULL;
+    }
+
     // NO mbedtls_net_free() BECAUSE WE SET IT UP BY HAND!
     free(RTMP_TLS_ctx);
     RTMP_TLS_ctx = NULL;

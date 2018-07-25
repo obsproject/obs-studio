@@ -107,6 +107,7 @@ typedef struct tls_ctx
     mbedtls_ctr_drbg_context ctr_drbg;
     mbedtls_ssl_config conf;
     mbedtls_ssl_session ssn;
+    mbedtls_x509_crt *cacert;
     mbedtls_net_context net;
 } tls_ctx;
 

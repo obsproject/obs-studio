@@ -93,6 +93,16 @@ if(MSVC)
 		w32-pthreads)
 endif()
 
+if(APPLE)
+	find_library(FOUNDATION_FRAMEWORK Foundation)
+	find_library(SECURITY_FRAMEWORK Security)
+
+	set(obs-outputs_PLATFORM_DEPS
+		${obs-outputs_PLATFORM_DEPS}
+		${FOUNDATION_FRAMEWORK}
+		${SECURITY_FRAMEWORK})
+endif()
+
 set(obs-outputs_librtmp_HEADERS
 	librtmp/amf.h
 	librtmp/bytes.h
