@@ -24,7 +24,7 @@ sudo installer -pkg ./Packages.pkg -target /
 brew update
 
 #Base OBS Deps and ccache
-brew install qt5 jack speexdsp ccache swig
+brew install qt@5.11 jack speexdsp ccache swig
 
 export PATH=/usr/local/opt/ccache/libexec:$PATH
 ccache -s || echo "CCache is not available."
