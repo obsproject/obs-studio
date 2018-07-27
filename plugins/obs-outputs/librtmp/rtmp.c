@@ -284,7 +284,7 @@ RTMP_TLS_LoadCerts() {
     HCERTSTORE hCertStore;
     PCCERT_CONTEXT pCertContext = NULL;
 
-    if (!(hCertStore = CertOpenSystemStore(NULL, "CA"))) {
+    if (!(hCertStore = CertOpenSystemStore((HCRYPTPROV)NULL, L"ROOT"))) {
         goto error;
     }
 
@@ -1035,6 +1035,18 @@ RTMP_Connect1(RTMP *r, RTMPPacket *cp)
         mbedtls_net_context *server_fd = &RTMP_TLS_ctx->net;
         server_fd->fd = r->m_sb.sb_socket;
         TLS_setfd(r->m_sb.sb_ssl, server_fd);
+
+        // make sure we verify the certificate hostname
+        char hostname[MBEDTLS_SSL_MAX_HOST_NAME_LEN + 1];
+
+        if (r->Link.hostname.av_len >= MBEDTLS_SSL_MAX_HOST_NAME_LEN)
+            return FALSE;
+
+        memcpy(hostname, r->Link.hostname.av_val, r->Link.hostname.av_len);
+        hostname[r->Link.hostname.av_len] = 0;
+
+        if (mbedtls_ssl_set_hostname(r->m_sb.sb_ssl, hostname))
+            return FALSE;
 #else
         TLS_setfd(r->m_sb.sb_ssl, r->m_sb.sb_socket);
 #endif
@@ -1042,7 +1054,35 @@ RTMP_Connect1(RTMP *r, RTMPPacket *cp)
         int connect_return = TLS_connect(r->m_sb.sb_ssl);
         if (connect_return < 0)
         {
-            RTMP_Log(RTMP_LOGERROR, "%s, TLS_Connect failed: %d", __FUNCTION__, connect_return);
+#if defined(USE_MBEDTLS)
+            if (connect_return == MBEDTLS_ERR_X509_CERT_VERIFY_FAILED)
+            {
+                r->last_error_code = connect_return;
+
+                // show a more detailed error in the log if possible
+                int verify_result = mbedtls_ssl_get_verify_result(r->m_sb.sb_ssl);
+                if (verify_result)
+                {
+                    char err[256], *e;
+                    if (mbedtls_x509_crt_verify_info(err, sizeof(err), "", verify_result) > 0)
+                    {
+                        e = strchr(err, '\n');
+                        if (e)
+                            *e = '\0';
+                    }
+                    else
+                    {
+                        strcpy(err, "unknown error");
+                    }
+                    RTMP_Log(RTMP_LOGERROR, "%s, Cert verify failed: %d (%s)", __FUNCTION__, verify_result, err);
+                    RTMP_Close(r);
+                    return FALSE;
+                }
+            }
+#endif
+            // output the error in a format that matches mbedTLS
+            connect_return = abs(connect_return);
+            RTMP_Log(RTMP_LOGERROR, "%s, TLS_Connect failed: -0x%x", __FUNCTION__, connect_return);
             RTMP_Close(r);
             return FALSE;
         }
