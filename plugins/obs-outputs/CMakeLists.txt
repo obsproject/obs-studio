@@ -85,6 +85,12 @@ if(WIN32)
 		ws2_32
 		winmm
 		Iphlpapi)
+
+	if (WITH_RTMPS)
+		SET(obs-outputs_PLATFORM_DEPS
+			${obs-outputs_PLATFORM_DEPS}
+			crypt32)
+	endif()
 endif()
 
 if(MSVC)
@@ -93,7 +99,7 @@ if(MSVC)
 		w32-pthreads)
 endif()
 
-if(APPLE)
+if(APPLE AND WITH_RTMPS)
 	find_library(FOUNDATION_FRAMEWORK Foundation)
 	find_library(SECURITY_FRAMEWORK Security)
 
