@@ -1786,7 +1786,7 @@ void OBSBasic::CreateHotkeys()
 	[](void *data, obs_hotkey_pair_id, obs_hotkey_t*, bool pressed) \
 	{ \
 		OBSBasic &basic = *static_cast<OBSBasic*>(data); \
-		if (pred && pressed) { \
+		if ((pred) && pressed) { \
 			blog(LOG_INFO, log_action " due to hotkey"); \
 			method(); \
 			return true; \
@@ -1799,9 +1799,11 @@ void OBSBasic::CreateHotkeys()
 			Str("Basic.Main.StartStreaming"),
 			"OBSBasic.StopStreaming",
 			Str("Basic.Main.StopStreaming"),
-			MAKE_CALLBACK(!basic.outputHandler->StreamingActive(),
+			MAKE_CALLBACK(!basic.outputHandler->StreamingActive() &&
+				basic.ui->streamButton->isEnabled(),
 				basic.StartStreaming, "Starting stream"),
-			MAKE_CALLBACK(basic.outputHandler->StreamingActive(),
+			MAKE_CALLBACK(basic.outputHandler->StreamingActive() &&
+				basic.ui->streamButton->isEnabled(),
 				basic.StopStreaming, "Stopping stream"),
 			this, this);
 	LoadHotkeyPair(streamingHotkeys,
@@ -1827,9 +1829,11 @@ void OBSBasic::CreateHotkeys()
 			Str("Basic.Main.StartRecording"),
 			"OBSBasic.StopRecording",
 			Str("Basic.Main.StopRecording"),
-			MAKE_CALLBACK(!basic.outputHandler->RecordingActive(),
+			MAKE_CALLBACK(!basic.outputHandler->RecordingActive() &&
+				!basic.ui->recordButton->isChecked(),
 				basic.StartRecording, "Starting recording"),
-			MAKE_CALLBACK(basic.outputHandler->RecordingActive(),
+			MAKE_CALLBACK(basic.outputHandler->RecordingActive() &&
+				basic.ui->recordButton->isChecked(),
 				basic.StopRecording, "Stopping recording"),
 			this, this);
 	LoadHotkeyPair(recordingHotkeys,
