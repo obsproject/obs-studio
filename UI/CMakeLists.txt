@@ -55,6 +55,8 @@ include_directories(${FFMPEG_INCLUDE_DIRS})
 include_directories(SYSTEM "obs-frontend-api")
 include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/libobs")
 include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/deps/libff")
+include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/deps/json11")
+include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/plugins/obs-browser/panel")
 
 find_package(Libcurl REQUIRED)
 include_directories(${LIBCURL_INCLUDE_DIRS})
@@ -127,6 +129,7 @@ endif()
 set(obs_SOURCES
 	${obs_PLATFORM_SOURCES}
 	${obs_libffutil_SOURCES}
+	../deps/json11/json11.cpp
 	obs-app.cpp
 	api-interface.cpp
 	window-basic-main.cpp
@@ -178,6 +181,7 @@ set(obs_SOURCES
 set(obs_HEADERS
 	${obs_PLATFORM_HEADERS}
 	${obs_libffutil_HEADERS}
+	../deps/json11/json11.hpp
 	obs-app.hpp
 	platform.hpp
 	window-main.hpp

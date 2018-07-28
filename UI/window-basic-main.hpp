@@ -139,6 +139,7 @@ private:
 	bool copyVisible = true;
 
 	QPointer<QThread> updateCheckThread;
+	QPointer<QThread> introCheckThread;
 	QPointer<QThread> logUploadThread;
 
 	QPointer<OBSBasicInteraction> interaction;
@@ -368,6 +369,8 @@ private:
 
 	obs_data_array_t *SaveProjectors();
 	void LoadSavedProjectors(obs_data_array_t *savedProjectors);
+
+	void ReceivedIntroJson(const QString &text);
 
 public slots:
 	void DeferSaveBegin();

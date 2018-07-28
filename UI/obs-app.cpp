@@ -367,6 +367,7 @@ bool OBSApp::InitGlobalConfigDefaults()
 	config_set_default_string(globalConfig, "General", "Language",
 			DEFAULT_LANG);
 	config_set_default_uint(globalConfig, "General", "MaxLogs", 10);
+	config_set_default_int(globalConfig, "General", "InfoIncrement", -1);
 	config_set_default_string(globalConfig, "General", "ProcessPriority",
 			"Normal");
 	config_set_default_bool(globalConfig, "General", "EnableAutoUpdates",
