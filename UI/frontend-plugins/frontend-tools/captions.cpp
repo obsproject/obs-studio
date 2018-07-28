@@ -1,4 +1,5 @@
 #include <QMessageBox>
+#include <QAction>
 
 #include <windows.h>
 #include <obs-frontend-api.h>
