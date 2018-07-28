@@ -496,13 +496,11 @@ QWidget *OBSPropertiesView::AddList(obs_property_t *prop, bool &warning)
 	combo->setToolTip(QT_UTF8(obs_property_long_description(prop)));
 
 	string value = from_obs_data(settings, name, format);
+	idx = combo->findData(QByteArray(value.c_str()));
 
 	if (format == OBS_COMBO_FORMAT_STRING &&
-			type == OBS_COMBO_TYPE_EDITABLE) {
-		combo->lineEdit()->setText(QT_UTF8(value.c_str()));
-	} else {
-		idx = combo->findData(QByteArray(value.c_str()));
-	}
+			type == OBS_COMBO_TYPE_EDITABLE)	
+		combo->lineEdit()->setText(combo->itemText(idx));
 
 	if (type == OBS_COMBO_TYPE_EDITABLE)
 		return NewWidget(prop, combo,
@@ -575,7 +573,9 @@ void OBSPropertiesView::AddEditableList(obs_property_t *prop,
 
 	for (size_t i = 0; i < count; i++) {
 		obs_data_t *item = obs_data_array_item(array, i);
-		list->addItem(QT_UTF8(obs_data_get_string(item, "value")));
+		list->addItem(QT_UTF8(obs_data_get_string(item, "name")));
+		list->item((int)i)->setData(Qt::UserRole,
+				obs_data_get_string(item, "value"));
 		list->setItemSelected(list->item((int)i),
 				obs_data_get_bool(item, "selected"));
 		list->setItemHidden(list->item((int)i),
@@ -1592,7 +1592,11 @@ void WidgetInfo::ListChanged(const char *setting)
 	QVariant         data;
 
 	if (type == OBS_COMBO_TYPE_EDITABLE) {
-		data = combo->currentText().toUtf8();
+		int index = combo->currentIndex();
+		if (index != -1)
+			data = combo->itemData(index);
+		if (data.type() == QVariant::Invalid)
+			data = combo->currentText().toUtf8();
 	} else {
 		int index = combo->currentIndex();
 		if (index != -1)
@@ -1705,12 +1709,19 @@ void WidgetInfo::EditableListChanged()
 	for (int i = 0; i < list->count(); i++) {
 		QListWidgetItem *item = list->item(i);
 		obs_data_t *arrayItem = obs_data_create();
-		obs_data_set_string(arrayItem, "value",
+		QVariant data = item->data(Qt::UserRole);
+		if(data.type() == QVariant::Invalid)
+			obs_data_set_string(arrayItem, "value",
+					QT_TO_UTF8(item->text()));
+		else
+			obs_data_set_string(arrayItem, "value",
+					data.toByteArray().constData());
+		obs_data_set_string(arrayItem, "name",
 				QT_TO_UTF8(item->text()));
 		obs_data_set_bool(arrayItem, "selected",
-			item->isSelected());
+				item->isSelected());
 		obs_data_set_bool(arrayItem, "hidden",
-			item->isHidden());
+				item->isHidden());
 		obs_data_array_push_back(array, arrayItem);
 		obs_data_release(arrayItem);
 	}
