@@ -22,5 +22,9 @@
 	<true/>
 	<key>LSAppNapIsDisabled</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+ 	<string>OBS needs to access the camera to enable camera sources to work.</string>
+ 	<key>NSMicrophoneUsageDescription</key>
+ 	<string>OBS needs to access the microphone to enable audio input.</string>
 </dict>
 </plist>
