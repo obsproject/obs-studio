@@ -20,7 +20,7 @@ else()
 endif()
 
 # If we're on MacOS or Linux, please try to statically-link mbedtls.
-if(APPLE OR UNIX)
+if(STATIC_MBEDTLS AND (APPLE OR UNIX))
 	set(_MBEDTLS_LIBRARIES libmbedtls.a)
 	set(_MBEDCRYPTO_LIBRARIES libmbedcrypto.a)
 	set(_MBEDX509_LIBRARIES libmbedx509.a)
@@ -141,11 +141,3 @@ endif()
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(Libmbedtls DEFAULT_MSG MBEDTLS_LIBRARIES MBEDTLS_INCLUDE_DIRS)
 mark_as_advanced(MBEDTLS_INCLUDE_DIR MBEDTLS_LIBRARIES MBEDTLS_INCLUDE_DIRS)
-
-# Finally, if we're on Linux, we need to tell the linker to include the whole
-# static library within whatever *.so file we're generating.
-# Make sure that libmbed*.a is built with `-fPIC`!
-if(MBEDTLS_LIBRARIES AND (UNIX AND NOT APPLE))
-	set(LIBMBEDTLS_LIBRARIES -Wl,--whole-archive ${LIBMBEDTLS_LIBRARIES} -Wl,--no-whole-archive)
-	set(MBEDTLS_LIBRARIES ${LIBMBEDTLS_LIBRARIES})
-endif()
