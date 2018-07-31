@@ -109,15 +109,26 @@ MODULE_EXPORT void obs_module_free_locale(void);
 /** Optional: Use this macro in a module to use default locale handling. */
 #define OBS_MODULE_USE_DEFAULT_LOCALE(module_name, default_locale) \
 	lookup_t *obs_module_lookup = NULL; \
+	lookup_t *obs_app_lookup = NULL; \
 	const char *obs_module_text(const char *val) \
 	{ \
 		const char *out = val; \
 		text_lookup_getstr(obs_module_lookup, val, &out); \
 		return out; \
 	} \
+	const char *obs_app_text(const char * val) \
+	{ \
+		const char *out = val; \
+		text_lookup_getstr(obs_app_lookup, val, &out); \
+		return out; \
+	} \
 	bool obs_module_get_string(const char *val, const char **out) \
 	{ \
 		return text_lookup_getstr(obs_module_lookup, val, out); \
+	} \
+	bool obs_app_get_string(const char *val, const char **out) \
+	{ \
+		return text_lookup_getstr(obs_app_lookup, val, out); \
 	} \
 	void obs_module_set_locale(const char *locale) \
 	{ \
@@ -125,14 +136,22 @@ MODULE_EXPORT void obs_module_free_locale(void);
 		obs_module_lookup = obs_module_load_locale( \
 				obs_current_module(), \
 				default_locale, locale); \
+		if (obs_app_lookup) text_lookup_destroy(obs_app_lookup); \
+		obs_app_lookup = obs_app_load_locale( \
+				obs_current_module(), \
+				default_locale, locale); \
 	} \
 	void obs_module_free_locale(void) \
 	{ \
 		text_lookup_destroy(obs_module_lookup); \
+		text_lookup_destroy(obs_app_lookup); \
 	}
 
 /** Helper function for looking up locale if default locale handler was used */
 MODULE_EXTERN const char *obs_module_text(const char *lookup_string);
+
+/** Helper function for looking up qt strings */
+MODULE_EXTERN const char *obs_app_text(const char *lookup_string);
 
 /** Helper function for looking up locale if default locale handler was used,
  * returns true if text found, otherwise false */

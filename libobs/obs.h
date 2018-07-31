@@ -437,6 +437,12 @@ EXPORT void obs_enum_modules(obs_enum_module_callback_t callback, void *param);
 EXPORT lookup_t *obs_module_load_locale(obs_module_t *module,
 		const char *default_locale, const char *locale);
 
+/** Helper function for using default app locale
+* @param  module  The module this function was run from (optional)
+*/
+EXPORT lookup_t *obs_app_load_locale(obs_module_t *module,
+		const char *default_locale, const char *locale);
+
 /**
  * Returns the location of a plugin module data file.
  *
