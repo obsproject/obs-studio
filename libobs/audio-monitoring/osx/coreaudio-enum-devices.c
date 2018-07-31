@@ -25,16 +25,14 @@ static bool obs_enum_audio_monitoring_device(obs_enum_audio_device_cb cb,
 
 	AudioObjectPropertyAddress addr = {
 		kAudioDevicePropertyStreams,
-		kAudioDevicePropertyScopeInput,
+		kAudioDevicePropertyScopeOutput,
 		kAudioObjectPropertyElementMaster
 	};
 
-	/* check to see if it's a mac input device */
-	if (!allow_inputs) {
-		AudioObjectGetPropertyDataSize(id, &addr, 0, NULL, &size);
-		if (size)
-			return true;
-	}
+	/* Check if the device is capable of audio output. */
+	AudioObjectGetPropertyDataSize(id, &addr, 0, NULL, &size);
+	if (!allow_inputs && !size)
+		return true;
 
 	size = sizeof(CFStringRef);
 
