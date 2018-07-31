@@ -3788,6 +3788,16 @@ static inline void multiply_output_audio(obs_source_t *source, size_t mix,
 {
 	register float *out = source->audio_output_buf[mix][0];
 	register float *end = out + AUDIO_OUTPUT_FRAMES * channels;
+	register float *sse_end = end - 4;
+	__m128 s128;
+	__m128 m128;
+
+	m128 = _mm_set1_ps(vol);
+	while (out < sse_end){
+		s128 = _mm_load_ps(out);
+		_mm_store_ps(out, _mm_mul_ps(s128, m128));
+		out += 4;
+	}
 
 	while (out < end)
 		*(out++) *= vol;
@@ -3799,8 +3809,18 @@ static inline void multiply_vol_data(obs_source_t *source, size_t mix,
 	for (size_t ch = 0; ch < channels; ch++) {
 		register float *out = source->audio_output_buf[mix][ch];
 		register float *end = out + AUDIO_OUTPUT_FRAMES;
+		register float *sse_end = end - 4;
 		register float *vol = vol_data;
+		__m128 s128;
+		__m128 m128;
 
+		while (out < sse_end) {
+			s128 = _mm_load_ps(out);
+			m128 = _mm_load_ps(vol);
+			_mm_store_ps(out, _mm_mul_ps(s128, m128));
+			out += 4;
+			vol += 4;
+		}
 		while (out < end)
 			*(out++) *= *(vol++);
 	}
@@ -3824,7 +3844,7 @@ static inline void apply_audio_action(obs_source_t *source,
 static void apply_audio_actions(obs_source_t *source, size_t channels,
 		size_t sample_rate)
 {
-	float *vol_data = malloc(sizeof(float) * AUDIO_OUTPUT_FRAMES);
+	float *vol_data = bmalloc(sizeof(float) * AUDIO_OUTPUT_FRAMES);
 	float cur_vol = get_source_volume(source, source->audio_ts);
 	size_t frame_num = 0;
 
@@ -3866,7 +3886,7 @@ static void apply_audio_actions(obs_source_t *source, size_t channels,
 			multiply_vol_data(source, mix, channels, vol_data);
 	}
 
-	free(vol_data);
+	bfree(vol_data);
 }
 
 static void apply_audio_volume(obs_source_t *source, uint32_t mixers,
