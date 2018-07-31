@@ -143,6 +143,52 @@ static void AddExtraModulePaths()
 
 extern obs_frontend_callbacks *InitializeAPIInterface(OBSBasic *main);
 
+static int CountSources()
+{
+	vector<OBSSource> sources;
+
+	auto countSources = [] (void *param, obs_source_t *source)
+	{
+		if (!source)
+			return true;
+
+		vector<OBSSource> &sources =
+			*reinterpret_cast<vector<OBSSource>*>(param);
+
+		sources.emplace_back(source);
+
+		return true;
+	};
+
+	obs_enum_sources(countSources, &sources);
+
+	return sources.size();
+}
+
+static int CountAudioOnlySources()
+{
+	vector<OBSSource> sources;
+
+	auto countSources = [] (void *param, obs_source_t *source)
+	{
+		if (!source)
+			return true;
+
+		vector<OBSSource> &sources =
+			*reinterpret_cast<vector<OBSSource>*>(param);
+
+		uint32_t flags = obs_source_get_output_flags(source);
+		if ((flags & OBS_SOURCE_VIDEO) == 0)
+			sources.emplace_back(source);
+
+		return true;
+	};
+
+	obs_enum_sources(countSources, &sources);
+
+	return sources.size();
+}
+
 OBSBasic::OBSBasic(QWidget *parent)
 	: OBSMainWindow  (parent),
 	  ui             (new Ui::OBSBasic)
@@ -4936,6 +4982,11 @@ void OBSBasic::StartReplayBuffer()
 	if (disableOutputsRef)
 		return;
 
+	if (!NoSourcesConfirmation()) {
+		replayBufferButton->setChecked(false);
+		return;
+	}
+
 	obs_output_t *output = outputHandler->replayBuffer;
 	obs_data_t *hotkeys = obs_hotkeys_save_output(output);
 	obs_data_array_t *bindings = obs_data_get_array(hotkeys,
@@ -5065,6 +5116,48 @@ void OBSBasic::ReplayBufferStop(int code)
 	OnDeactivate();
 }
 
+bool OBSBasic::NoSourcesConfirmation()
+{
+	bool showNoSourcesConfirmation = config_get_bool(App()->GlobalConfig(),
+			"General", "ShowNoSourcesConfirmation");
+
+	if (showNoSourcesConfirmation)
+		return true;
+
+	if (CountSources() - CountAudioOnlySources() == 0 &&
+				isVisible()) {
+			QCheckBox *cb = new QCheckBox(QTStr("DoNotShowAgain"));
+			QString msg;
+			msg = QTStr("NoSources.Text");
+			msg += "\n\n";
+			msg += QTStr("NoSources.Text.AddSource");
+
+			QMessageBox messageBox(QMessageBox::Question,
+					QTStr("NoSources.title"),
+					msg,
+					QMessageBox::Yes | QMessageBox::No,
+					this);
+			messageBox.setDefaultButton(QMessageBox::No);
+			messageBox.setCheckBox(cb);
+
+			connect(cb, &QCheckBox::stateChanged, [this](int state){
+				if (static_cast<Qt::CheckState>(state) ==
+						Qt::CheckState::Checked)
+					config_set_bool(App()->GlobalConfig(),
+						"General",
+						"ShowNoSourcesConfirmation",
+						true);
+			});
+
+			if (QMessageBox::No == messageBox.exec())
+				return false;
+
+		return true;
+	} else {
+		return true;
+	}
+}
+
 void OBSBasic::on_streamButton_clicked()
 {
 	if (outputHandler->StreamingActive()) {
@@ -5085,6 +5178,10 @@ void OBSBasic::on_streamButton_clicked()
 
 		StopStreaming();
 	} else {
+		if (!NoSourcesConfirmation()) {
+			ui->streamButton->setChecked(false);
+		}
+
 		bool confirm = config_get_bool(GetGlobalConfig(), "BasicWindow",
 				"WarnBeforeStartingStream");
 
@@ -5106,10 +5203,16 @@ void OBSBasic::on_streamButton_clicked()
 
 void OBSBasic::on_recordButton_clicked()
 {
-	if (outputHandler->RecordingActive())
+	if (outputHandler->RecordingActive()) {
 		StopRecording();
-	else
+	} else {
+		if (!NoSourcesConfirmation()) {
+			ui->recordButton->setChecked(false);
+			return;
+		}
+
 		StartRecording();
+	}
 }
 
 void OBSBasic::on_settingsButton_clicked()
