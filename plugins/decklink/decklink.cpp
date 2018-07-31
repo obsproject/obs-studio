@@ -75,6 +75,7 @@ bool DeckLink::Activate(DeckLinkDevice *device, long long modeId)
 	if (isActive)
 		instance->StopCapture();
 
+	isCapturing = false;
 	if (!same)
 		instance.Set(new DeckLinkDeviceInstance(this, device));
 
@@ -94,6 +95,8 @@ bool DeckLink::Activate(DeckLinkDevice *device, long long modeId)
 
 	os_atomic_inc_long(&activateRefs);
 	SaveSettings();
+	id = modeId;
+	isCapturing = true;
 	return true;
 }
 
@@ -102,9 +105,15 @@ void DeckLink::Deactivate(void)
 	std::lock_guard<std::recursive_mutex> lock(deviceMutex);
 	if (instance)
 		instance->StopCapture();
+	isCapturing = false;
 	instance = nullptr;
 
 	os_atomic_dec_long(&activateRefs);
+}
+
+bool DeckLink::Capturing(void)
+{
+	return isCapturing;
 }
 
 void DeckLink::SaveSettings()

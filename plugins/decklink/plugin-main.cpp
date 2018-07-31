@@ -16,6 +16,7 @@ OBS_MODULE_USE_DEFAULT_LOCALE("decklink", "en-US")
 #define COLOR_SPACE     "color_space"
 #define COLOR_RANGE     "color_range"
 #define BUFFERING       "buffering"
+#define DEACTIVATE_WNS  "deactivate_when_not_showing"
 
 #define TEXT_DEVICE                     obs_module_text("Device")
 #define TEXT_MODE                       obs_module_text("Mode")
@@ -35,6 +36,7 @@ OBS_MODULE_USE_DEFAULT_LOCALE("decklink", "en-US")
 #define TEXT_CHANNEL_FORMAT_5_1CH       obs_module_text("ChannelFormat.5_1ch")
 #define TEXT_CHANNEL_FORMAT_7_1CH       obs_module_text("ChannelFormat.7_1ch")
 #define TEXT_BUFFERING                  obs_module_text("Buffering")
+#define TEXT_DWNS                       obs_module_text("DeactivateWhenNotShowing")
 
 static DeckLinkDeviceDiscovery *deviceEnum = nullptr;
 
@@ -43,6 +45,11 @@ static void decklink_enable_buffering(DeckLink *decklink, bool enabled)
 	obs_source_t *source = decklink->GetSource();
 	obs_source_set_async_unbuffered(source, !enabled);
 	decklink->buffering = enabled;
+}
+
+static void decklink_deactivate_when_not_showing(DeckLink *decklink, bool dwns)
+{
+	decklink->dwns = dwns;
 }
 
 static void *decklink_create(obs_data_t *settings, obs_source_t *source)
@@ -87,6 +94,9 @@ static void decklink_update(void *data, obs_data_t *settings)
 	decklink_enable_buffering(decklink,
 			obs_data_get_bool(settings, BUFFERING));
 
+	decklink_deactivate_when_not_showing(decklink,
+			obs_data_get_bool(settings, DEACTIVATE_WNS));
+
 	ComPtr<DeckLinkDevice> device;
 	device.Set(deviceEnum->FindByHash(hash));
 
@@ -95,6 +105,30 @@ static void decklink_update(void *data, obs_data_t *settings)
 	decklink->SetColorRange(colorRange);
 	decklink->SetChannelFormat(channelFormat);
 	decklink->Activate(device, id);
+	decklink->hash = std::string(hash);
+}
+
+static void decklink_show(void *data)
+{
+	DeckLink *decklink = (DeckLink *)data;
+	obs_source_t *source = decklink->GetSource();
+	bool showing = obs_source_showing(source);
+	if (decklink->dwns && showing && !decklink->Capturing()) {
+		ComPtr<DeckLinkDevice> device;
+		device.Set(deviceEnum->FindByHash(decklink->hash.c_str()));
+
+		decklink->Activate(device, decklink->id);
+	}
+}
+
+static void decklink_hide(void *data)
+{
+	DeckLink *decklink = (DeckLink *)data;
+	obs_source_t *source = decklink->GetSource();
+	bool showing = obs_source_showing(source);
+	if (decklink->dwns && showing)
+		decklink->Deactivate();
+
 }
 
 static void decklink_get_defaults(obs_data_t *settings)
@@ -279,6 +313,8 @@ static obs_properties_t *decklink_get_properties(void *data)
 
 	obs_properties_add_bool(props, BUFFERING, TEXT_BUFFERING);
 
+	obs_properties_add_bool(props, DEACTIVATE_WNS, TEXT_DWNS);
+
 	UNUSED_PARAMETER(data);
 	return props;
 }
@@ -300,6 +336,8 @@ bool obs_module_load(void)
 	info.get_name       = decklink_get_name;
 	info.get_properties = decklink_get_properties;
 	info.update         = decklink_update;
+	info.show           = decklink_show;
+	info.hide           = decklink_hide;
 
 	obs_register_source(&info);
 
