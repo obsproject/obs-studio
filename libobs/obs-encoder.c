@@ -293,6 +293,14 @@ obs_data_t *obs_encoder_defaults(const char *id)
 	return (info) ? get_defaults(info) : NULL;
 }
 
+obs_data_t *obs_encoder_get_defaults(const obs_encoder_t *encoder)
+{
+	if (!obs_encoder_valid(encoder, "obs_encoder_defaults"))
+		return NULL;
+
+	return get_defaults(&encoder->info);
+}
+
 obs_properties_t *obs_get_encoder_properties(const char *id)
 {
 	const struct obs_encoder_info *ei = find_encoder(id);

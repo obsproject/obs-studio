@@ -28,6 +28,44 @@
 /* rgb(42,130,218); /* blue */
 
 
+/* Custom theme information.  This will set the application's QPalette, as
+ * well as pass to QML via the OBSTheme object.
+ * Can also use OBSTheme::disabled, OBSTheme::active, and OBSTheme::inactive.
+ * Using it without will set all three (making 'active' a bit redundant) */
+OBSTheme {
+    window: rgb(58,57,58); /* dark */
+    windowText: rgb(225,224,225); /* veryLight */
+    base: rgb(31,30,31); /* veryDark */
+    alternateBase: rgb(11,10,11); /* veryVeryDark */
+    text: rgb(225,224,225); /* veryLight */
+    button: rgb(88,87,88); /* kindaDark */
+    buttonText: rgb(225,224,225); /* veryLight */
+    brightText: rgb(200,199,200); /* lighter */
+
+    light: rgb(88,87,88); /* kindaDark */
+    mid: rgb(58,57,58); /* dark */
+    dark: rgb(31,30,31); /* veryDark */
+    shadow: rgb(11,10,11); /* veryVeryDark */
+
+    highlight: rgb(42,130,218); /* blue */
+    highlightText: rgb(0,0,0);
+
+    link: rgb(42,130,218); /* blue */
+    linkVisited: rgb(42,130,218); /* blue */
+}
+
+OBSTheme::disabled {
+    text: rgb(200,199,200); /* lighter */
+    buttonText: rgb(200,199,200); /* lighter */
+    brightText: rgb(200,199,200); /* lighter */
+}
+
+OBSTheme::inactive {
+    highlight: rgb(48,47,48);
+    highlightText: rgb(255, 255, 255);
+}
+
+
 /* General style, we override only what is needed. */
 QWidget {
     background-color: rgb(58,57,58); /* dark */

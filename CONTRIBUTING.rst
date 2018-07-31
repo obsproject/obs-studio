@@ -39,8 +39,8 @@ Coding Guidelines
 
  - 80 columns max
 
-Commit Guidlines
-----------------
+Commit Guidelines
+-----------------
 
  - OBS Studio uses the 50/72 standard for commits.  50 characters max
    for the title (excluding module prefix), an empty line, and then a

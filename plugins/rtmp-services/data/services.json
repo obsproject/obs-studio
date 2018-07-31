@@ -1312,6 +1312,18 @@
                 "max video bitrate": 8000,
                 "max audio bitrate": 192
             }
+        },
+        {
+            "name": "Piczel.tv",
+            "servers": [
+                {
+                    "name": "Default",
+                    "url": "rtmp://piczel.tv:1935/live"
+                }
+            ],
+            "recommended": {
+                "max video bitrate": 5000
+            }
         }
     ]
 }

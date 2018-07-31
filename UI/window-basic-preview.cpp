@@ -928,9 +928,6 @@ void OBSBasicPreview::CropItem(const vec2 &pos)
 	uint32_t align = obs_sceneitem_get_alignment(stretchItem);
 	vec3 tl, br, pos3;
 
-	if (boundsType != OBS_BOUNDS_NONE) /* TODO */
-		return;
-
 	vec3_zero(&tl);
 	vec3_set(&br, stretchItemSize.x, stretchItemSize.y, 0.0f);
 
@@ -1035,7 +1032,8 @@ void OBSBasicPreview::CropItem(const vec2 &pos)
 
 	obs_sceneitem_defer_update_begin(stretchItem);
 	obs_sceneitem_set_crop(stretchItem, &crop);
-	obs_sceneitem_set_pos(stretchItem, (vec2*)&newPos);
+	if (boundsType == OBS_BOUNDS_NONE)
+		obs_sceneitem_set_pos(stretchItem, (vec2*)&newPos);
 	obs_sceneitem_defer_update_end(stretchItem);
 }
 

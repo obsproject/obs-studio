@@ -69,6 +69,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define info(format, ...)  do_log(LOG_INFO,    format, ##__VA_ARGS__)
 #define debug(format, ...) do_log(LOG_DEBUG,   format, ##__VA_ARGS__)
 
+mfxHDL QSV_Encoder_Internal::g_DX_Handle = NULL;
+mfxU16 QSV_Encoder_Internal::g_numEncodersOpen = 0;
+
 QSV_Encoder_Internal::QSV_Encoder_Internal(mfxIMPL& impl, mfxVersion& version) :
 	m_pmfxENC(NULL),
 	m_nSPSBufferSize(100),
@@ -152,10 +155,10 @@ mfxStatus QSV_Encoder_Internal::Open(qsv_param_t * pParams)
 
 	if (m_bUseD3D11)
 		// Use D3D11 surface
-		sts = Initialize(m_impl, m_ver, &m_session, &m_mfxAllocator, false, false);
+		sts = Initialize(m_impl, m_ver, &m_session, &m_mfxAllocator, &g_DX_Handle, false, false);
 	else if (m_bD3D9HACK)
 		// Use hack
-		sts = Initialize(m_impl, m_ver, &m_session, &m_mfxAllocator, false, true);
+		sts = Initialize(m_impl, m_ver, &m_session, &m_mfxAllocator, &g_DX_Handle, false, true);
 	else
 		sts = Initialize(m_impl, m_ver, &m_session, NULL);
 
@@ -182,6 +185,9 @@ mfxStatus QSV_Encoder_Internal::Open(qsv_param_t * pParams)
 	sts = InitBitstream();
 	MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
+	if (sts >= MFX_ERR_NONE) {
+		g_numEncodersOpen++;
+	}
 	return sts;
 }
 
@@ -598,11 +604,15 @@ mfxStatus QSV_Encoder_Internal::ClearData()
 	delete m_pmfxENC;
 	m_pmfxENC = NULL;
 
-	if (m_bUseD3D11 || m_bD3D9HACK)
+	if (sts >= MFX_ERR_NONE) {
+		g_numEncodersOpen--;
+	}
+
+	if ((m_bUseD3D11 || m_bD3D9HACK) && (g_numEncodersOpen <= 0)) {
 		Release();
-
+		g_DX_Handle = NULL;
+	}
 	m_session.Close();
-
 	return sts;
 }
 

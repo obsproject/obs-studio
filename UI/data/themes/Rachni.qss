@@ -40,6 +40,44 @@
 /***************************************************************************/
 
 
+/************************/
+/* ---- Main Theme ---- */
+/************************/
+
+OBSTheme {
+    window: rgb(49, 54, 59); /* Blue-gray */
+    windowText: rgb(239, 240, 241); /* White */
+    base: rgb(0, 139, 163); /* Dark Cyan (Primary Dark) */
+    alternateBase: rgb(186, 45, 101); /* Dark Pink (Secondary Dark) */
+    text: rgb(239, 240, 241); /* White */
+    button: rgb(0, 188, 212); /* Cyan (Primary) */
+    buttonText: rgb(239, 240, 241); /* White */
+    brightText: rgb(255, 148, 194); /* Light Pink (Secondary Light) */
+
+    light: rgb(162, 161, 162); /* Lighter Gray */
+    mid: rgb(118, 121, 124); /* Light Grey */
+    dark: rgb(84, 87, 91); /* Gray */
+    shadow: rgb(35, 38, 41); /* Dark Gray */
+
+    highlight: rgb(98, 238, 255); /* Light Cyan (Primary Light) */
+    highlightText: rgb(0,0,0);
+
+    link: rgb(98, 238, 255); /* Light Cyan (Primary Light) */
+    linkVisited: rgb(98, 238, 255); /* Light Cyan (Primary Light) */
+}
+
+OBSTheme::disabled {
+    text: rgb(255, 148, 194); /* Light Pink (Secondary Light) */
+    buttonText: rgb(255, 148, 194); /* Light Pink (Secondary Light) */
+    brightText: rgb(255, 148, 194); /* Light Pink (Secondary Light) */
+}
+
+OBSTheme::inactive {
+    highlight: rgb(0, 188, 212); /* Cyan (Primary) */
+    highlightText: rgb(239, 240, 241); /* White */
+}
+
+
 /*************************/
 /* --- General style --- */
 /*************************/

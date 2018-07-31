@@ -1815,6 +1815,7 @@ EXPORT enum video_format obs_encoder_get_preferred_video_format(
 
 /** Gets the default settings for an encoder type */
 EXPORT obs_data_t *obs_encoder_defaults(const char *id);
+EXPORT obs_data_t *obs_encoder_get_defaults(const obs_encoder_t *encoder);
 
 /** Returns the property list, if any.  Free with obs_properties_destroy */
 EXPORT obs_properties_t *obs_get_encoder_properties(const char *id);
