@@ -4855,7 +4855,9 @@ void OBSBasic::StartRecording()
 		api->on_event(OBS_FRONTEND_EVENT_RECORDING_STARTING);
 
 	SaveProject();
-	outputHandler->StartRecording();
+
+	if (!outputHandler->StartRecording())
+		ui->recordButton->setChecked(false);
 }
 
 void OBSBasic::RecordStopping()
@@ -4979,7 +4981,8 @@ void OBSBasic::StartReplayBuffer()
 		api->on_event(OBS_FRONTEND_EVENT_REPLAY_BUFFER_STARTING);
 
 	SaveProject();
-	outputHandler->StartReplayBuffer();
+	if (!outputHandler->StartReplayBuffer())
+		replayBufferButton->setChecked(false);
 }
 
 void OBSBasic::ReplayBufferStopping()
