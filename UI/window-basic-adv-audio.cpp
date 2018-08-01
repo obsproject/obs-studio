@@ -82,7 +82,8 @@ OBSBasicAdvAudio::OBSBasicAdvAudio(QWidget *parent)
 
 	connect(closeButton, &QPushButton::clicked, [this] () {close();});
 
-	installEventFilter(CreateShortcutFilter());
+	shortcutFilter = CreateShortcutFilter();
+	installEventFilter(shortcutFilter);
 
 	/* enum user scene/sources */
 	obs_enum_sources(EnumSources, this);
@@ -97,6 +98,12 @@ OBSBasicAdvAudio::OBSBasicAdvAudio(QWidget *parent)
 OBSBasicAdvAudio::~OBSBasicAdvAudio()
 {
 	OBSBasic *main = reinterpret_cast<OBSBasic*>(parent());
+
+	if (shortcutFilter) {
+		removeEventFilter(shortcutFilter);
+		delete shortcutFilter;
+		shortcutFilter = nullptr;
+	}
 
 	for (size_t i = 0; i < controls.size(); ++i)
 		delete controls[i];

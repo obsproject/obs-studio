@@ -28,9 +28,10 @@ class NameDialog : public QDialog {
 
 private:
 	std::unique_ptr<Ui::NameDialog> ui;
-
+	QObject *shortcutFilter;
 public:
 	NameDialog(QWidget *parent);
+	~NameDialog();
 
 	static bool AskForName(QWidget *parent, const QString &title,
 			const QString &text, std::string &str,

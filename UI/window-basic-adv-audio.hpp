@@ -18,6 +18,8 @@ private:
 	OBSSignal sourceAddedSignal;
 	OBSSignal sourceRemovedSignal;
 
+	QObject *shortcutFilter;
+
 	std::vector<OBSAdvAudioCtrl*> controls;
 
 	inline void AddAudioSource(obs_source_t *source);

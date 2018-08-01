@@ -28,7 +28,17 @@ NameDialog::NameDialog(QWidget *parent)
 {
 	ui->setupUi(this);
 
-	installEventFilter(CreateShortcutFilter());
+	shortcutFilter = CreateShortcutFilter();
+	installEventFilter(shortcutFilter);
+}
+
+NameDialog::~NameDialog()
+{
+	if (shortcutFilter) {
+		removeEventFilter(shortcutFilter);
+		delete shortcutFilter;
+		shortcutFilter = nullptr;
+	}
 }
 
 static bool IsWhitespace(char ch)
