@@ -138,9 +138,9 @@ private:
 	const char *copyFiltersString;
 	bool copyVisible = true;
 
-	QPointer<QThread> updateCheckThread;
-	QPointer<QThread> introCheckThread;
-	QPointer<QThread> logUploadThread;
+	QScopedPointer<QThread> updateCheckThread;
+	QScopedPointer<QThread> introCheckThread;
+	QScopedPointer<QThread> logUploadThread;
 
 	QPointer<OBSBasicInteraction> interaction;
 	QPointer<OBSBasicProperties> properties;
@@ -184,7 +184,7 @@ private:
 
 	QPointer<QPushButton> replayBufferButton;
 
-	QPointer<QSystemTrayIcon> trayIcon;
+	QScopedPointer<QSystemTrayIcon> trayIcon;
 	QPointer<QAction>         sysTrayStream;
 	QPointer<QAction>         sysTrayRecord;
 	QPointer<QAction>         sysTrayReplayBuffer;

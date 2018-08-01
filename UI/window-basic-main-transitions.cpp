@@ -750,7 +750,7 @@ void OBSBasic::CreateProgramOptions()
 	programOptions->setLayout(layout);
 
 	auto onAdd = [this] () {
-		QPointer<QMenu> menu = CreateTransitionMenu(this, nullptr);
+		QScopedPointer<QMenu> menu(CreateTransitionMenu(this, nullptr));
 		menu->exec(QCursor::pos());
 	};
 

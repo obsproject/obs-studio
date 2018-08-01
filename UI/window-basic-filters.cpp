@@ -569,7 +569,7 @@ static bool QueryRemove(QWidget *parent, obs_source_t *source)
 
 void OBSBasicFilters::on_addAsyncFilter_clicked()
 {
-	QPointer<QMenu> popup = CreateAddFilterPopupMenu(true);
+	QScopedPointer<QMenu> popup(CreateAddFilterPopupMenu(true));
 	if (popup)
 		popup->exec(QCursor::pos());
 }
@@ -611,7 +611,7 @@ void OBSBasicFilters::on_asyncFilters_currentRowChanged(int row)
 
 void OBSBasicFilters::on_addEffectFilter_clicked()
 {
-	QPointer<QMenu> popup = CreateAddFilterPopupMenu(false);
+	QScopedPointer<QMenu> popup(CreateAddFilterPopupMenu(false));
 	if (popup)
 		popup->exec(QCursor::pos());
 }

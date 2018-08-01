@@ -233,7 +233,7 @@ OBSBasic::OBSBasic(QWidget *parent)
 
 	cpuUsageInfo = os_cpu_usage_info_start();
 	cpuUsageTimer = new QTimer(this);
-	connect(cpuUsageTimer, SIGNAL(timeout()),
+	connect(cpuUsageTimer.data(), SIGNAL(timeout()),
 			ui->statusbar, SLOT(UpdateCPUUsage()));
 	cpuUsageTimer->start(3000);
 
@@ -1694,7 +1694,7 @@ void OBSBasic::OnFirstLoad()
 					this, &OBSBasic::ReceivedIntroJson);
 		}
 		if (wnit) {
-			introCheckThread = wnit;
+			introCheckThread.reset(wnit);
 			introCheckThread->start();
 		}
 	}
@@ -2852,7 +2852,7 @@ void OBSBasic::CheckForUpdates(bool manualUpdate)
 	if (updateCheckThread && updateCheckThread->isRunning())
 		return;
 
-	updateCheckThread = new AutoUpdateThread(manualUpdate);
+	updateCheckThread.reset(new AutoUpdateThread(manualUpdate));
 	updateCheckThread->start();
 #endif
 
@@ -4227,7 +4227,7 @@ void OBSBasic::AddSourcePopupMenu(const QPoint &pos)
 		return;
 	}
 
-	QPointer<QMenu> popup = CreateAddSourcePopupMenu();
+	QScopedPointer<QMenu> popup(CreateAddSourcePopupMenu());
 	if (popup)
 		popup->exec(pos);
 }
@@ -4381,14 +4381,13 @@ void OBSBasic::UploadLog(const char *subdir, const char *file)
 
 	if (logUploadThread) {
 		logUploadThread->wait();
-		delete logUploadThread;
 	}
 
 	RemoteTextThread *thread = new RemoteTextThread(
 			"https://obsproject.com/logs/upload",
 			"text/plain", ss.str().c_str());
 
-	logUploadThread = thread;
+	logUploadThread.reset(thread);
 	connect(thread, &RemoteTextThread::Result,
 			this, &OBSBasic::logUploadFinished);
 	logUploadThread->start();
@@ -6143,25 +6142,26 @@ void OBSBasic::ToggleShowHide()
 
 void OBSBasic::SystemTrayInit()
 {
-	trayIcon = new QSystemTrayIcon(QIcon(":/res/images/obs.png"),
-			this);
+	trayIcon.reset(new QSystemTrayIcon(QIcon(":/res/images/obs.png"),
+			this));
 	trayIcon->setToolTip("OBS Studio");
 
 	showHide = new QAction(QTStr("Basic.SystemTray.Show"),
-			trayIcon);
+			trayIcon.data());
 	sysTrayStream = new QAction(QTStr("Basic.Main.StartStreaming"),
-			trayIcon);
+			trayIcon.data());
 	sysTrayRecord = new QAction(QTStr("Basic.Main.StartRecording"),
-			trayIcon);
+			trayIcon.data());
 	sysTrayReplayBuffer = new QAction(QTStr("Basic.Main.StartReplayBuffer"),
-			trayIcon);
+			trayIcon.data());
 	exit = new QAction(QTStr("Exit"),
-			trayIcon);
+			trayIcon.data());
 
 	if (outputHandler && !outputHandler->replayBuffer)
 		sysTrayReplayBuffer->setEnabled(false);
 
-	connect(trayIcon, SIGNAL(activated(QSystemTrayIcon::ActivationReason)),
+	connect(trayIcon.data(),
+			SIGNAL(activated(QSystemTrayIcon::ActivationReason)),
 			this,
 			SLOT(IconActivated(QSystemTrayIcon::ActivationReason)));
 	connect(showHide, SIGNAL(triggered()),
