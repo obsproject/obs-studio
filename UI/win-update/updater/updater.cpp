@@ -324,6 +324,8 @@ struct update_t {
 		memcpy(hash, from.hash, sizeof(hash));
 		memcpy(downloadhash, from.downloadhash, sizeof(downloadhash));
 		memcpy(my_hash, from.my_hash, sizeof(my_hash));
+
+		return *this;
 	}
 };
 
