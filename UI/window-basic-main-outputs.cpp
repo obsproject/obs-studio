@@ -854,6 +854,8 @@ bool SimpleOutput::ConfigureRecording(bool updateReplayBuffer)
 		else
 			main->SysTrayNotify(QTStr("Output.BadPath.Text"),
 					QSystemTrayIcon::Warning);
+
+		main->ui->recordButton->setChecked(false);
 		return false;
 	}
 
@@ -930,6 +932,7 @@ bool SimpleOutput::StartRecording()
 		QMessageBox::critical(main,
 			QTStr("Output.StartRecordingFailed"),
 			error_reason);
+		main->ui->recordButton->setChecked(false);
 		return false;
 	}
 
@@ -1592,6 +1595,8 @@ bool AdvancedOutput::StartRecording()
 			else
 				main->SysTrayNotify(QTStr("Output.BadPath.Text"),
 						QSystemTrayIcon::Warning);
+
+			main->ui->recordButton->setChecked(false);
 			return false;
 		}
 
@@ -1630,6 +1635,7 @@ bool AdvancedOutput::StartRecording()
 		QMessageBox::critical(main,
 				QTStr("Output.StartRecordingFailed"),
 				error_reason);
+		main->ui->recordButton->setChecked(false);
 		return false;
 	}
 
