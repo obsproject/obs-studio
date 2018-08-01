@@ -39,6 +39,23 @@ SourceTreeItem::SourceTreeItem(SourceTree *tree_, OBSSceneItem sceneitem_)
 	obs_source_t *source = obs_sceneitem_get_source(sceneitem);
 	const char *name = obs_source_get_name(source);
 
+	obs_data_t *privData = obs_sceneitem_get_private_settings(sceneitem);
+	int preset = obs_data_get_int(privData, "color-preset");
+
+	if (preset == 1) {
+		const char *color = obs_data_get_string(privData, "color");
+		std::string col = "background: ";
+		col += color;
+		setStyleSheet(col.c_str());
+	} else if (preset > 1) {
+		setStyleSheet("");
+		setProperty("bgColor", preset - 1);
+	} else {
+		setStyleSheet("background: none");
+	}
+
+	obs_data_release(privData);
+
 	vis = new VisibilityCheckBox();
 	vis->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
 	vis->setMaximumSize(16, 16);
@@ -86,6 +103,16 @@ SourceTreeItem::SourceTreeItem(SourceTree *tree_, OBSSceneItem sceneitem_)
 
 	connect(vis, &QAbstractButton::clicked, setItemVisible);
 	connect(lock, &QAbstractButton::clicked, setItemLocked);
+}
+
+void SourceTreeItem::paintEvent(QPaintEvent *event)
+{
+	QStyleOption opt;
+	opt.init(this);
+	QPainter p(this);
+	style()->drawPrimitive(QStyle::PE_Widget, &opt, &p, this);
+
+	QWidget::paintEvent(event);
 }
 
 void SourceTreeItem::DisconnectSignals()
@@ -836,6 +863,15 @@ SourceTree::SourceTree(QWidget *parent_) : QListView(parent_)
 {
 	SourceTreeModel *stm_ = new SourceTreeModel(this);
 	setModel(stm_);
+	setStyleSheet(QString(
+		"*[bgColor=\"1\"]{background-color:rgba(255,68,68,33%);}" \
+		"*[bgColor=\"2\"]{background-color:rgba(255,255,68,33%);}" \
+		"*[bgColor=\"3\"]{background-color:rgba(68,255,68,33%);}" \
+		"*[bgColor=\"4\"]{background-color:rgba(68,255,255,33%);}" \
+		"*[bgColor=\"5\"]{background-color:rgba(68,68,255,33%);}" \
+		"*[bgColor=\"6\"]{background-color:rgba(255,68,255,33%);}" \
+		"*[bgColor=\"7\"]{background-color:rgba(68,68,68,33%);}" \
+		"*[bgColor=\"8\"]{background-color:rgba(255,255,255,33%);}"));
 }
 
 void SourceTree::ResetWidgets()

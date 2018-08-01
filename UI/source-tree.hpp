@@ -67,6 +67,8 @@ private:
 	OBSSignal renameSignal;
 	OBSSignal removeSignal;
 
+	virtual void paintEvent(QPaintEvent* event) override;
+
 private slots:
 	void EnterEditMode();
 	void ExitEditMode(bool save);
@@ -134,13 +136,13 @@ class SourceTree : public QListView {
 		return reinterpret_cast<SourceTreeModel *>(model());
 	}
 
+public:
 	inline SourceTreeItem *GetItemWidget(int idx)
 	{
 		QWidget *widget = indexWidget(GetStm()->createIndex(idx, 0));
 		return reinterpret_cast<SourceTreeItem *>(widget);
 	}
 
-public:
 	explicit SourceTree(QWidget *parent = nullptr);
 
 	inline bool IgnoreReorder() const {return ignoreReorder;}
