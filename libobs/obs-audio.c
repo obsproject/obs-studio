@@ -67,11 +67,19 @@ static inline void mix_audio(struct audio_output_data *mixes,
 			register float *mix = mixes[mix_idx].data[ch];
 			register float *aud =
 				source->audio_output_buf[mix_idx][ch];
-			register float *end;
-
+			register float *end = aud + total_floats;
+			register float *sse_end = end - 4;
 			mix += start_point;
-			end = aud + total_floats;
+			__m128 s128;
+			__m128 m128;
 
+			while (aud < sse_end) {
+				s128 = _mm_load_ps(aud);
+				m128 = _mm_load_ps(mix);
+				_mm_store_ps(mix, _mm_add_ps(s128, m128));
+				aud += 4;
+				mix += 4;
+			}
 			while (aud < end)
 				*(mix++) += *(aud++);
 		}
