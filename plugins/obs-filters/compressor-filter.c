@@ -442,6 +442,9 @@ static struct obs_audio_data *compressor_filter_audio(void *data,
 	struct compressor_data *cd = data;
 
 	const uint32_t num_samples = audio->frames;
+	if (num_samples == 0)
+		return audio;
+
 	float **samples = (float**)audio->data;
 
 	pthread_mutex_lock(&cd->sidechain_update_mutex);
