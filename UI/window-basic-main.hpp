@@ -651,6 +651,7 @@ private slots:
 
 	void on_actionHelpPortal_triggered();
 	void on_actionWebsite_triggered();
+	void on_actionDiscord_triggered();
 
 	void on_preview_customContextMenuRequested(const QPoint &pos);
 	void on_program_customContextMenuRequested(const QPoint &pos);

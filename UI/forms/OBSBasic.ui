@@ -146,6 +146,7 @@
     </widget>
     <addaction name="actionHelpPortal"/>
     <addaction name="actionWebsite"/>
+    <addaction name="actionDiscord"/>
     <addaction name="separator"/>
     <addaction name="menuLogFiles"/>
     <addaction name="menuCrashLogs"/>
@@ -1648,6 +1649,11 @@
   <action name="actionUploadLastCrashLog">
    <property name="text">
     <string>Basic.MainMenu.Help.CrashLogs.UploadLastLog</string>
+   </property>
+  </action>
+  <action name="actionDiscord">
+   <property name="text">
+    <string>Basic.MainMenu.Help.Discord</string>
    </property>
   </action>
  </widget>

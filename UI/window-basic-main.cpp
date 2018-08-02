@@ -5251,6 +5251,12 @@ void OBSBasic::on_actionWebsite_triggered()
 	QDesktopServices::openUrl(url);
 }
 
+void OBSBasic::on_actionDiscord_triggered()
+{
+	QUrl url = QUrl("https://discord.gg/obsproject", QUrl::TolerantMode);
+	QDesktopServices::openUrl(url);
+}
+
 void OBSBasic::on_actionShowSettingsFolder_triggered()
 {
 	char path[512];
