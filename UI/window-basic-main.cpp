@@ -27,6 +27,9 @@
 #include <QDesktopWidget>
 #include <QRect>
 #include <QScreen>
+#include <QColorDialog>
+#include <QWidgetAction>
+#include <QSizePolicy>
 
 #include <util/dstr.h>
 #include <util/util.hpp>
@@ -61,6 +64,7 @@
 #endif
 
 #include "ui_OBSBasic.h"
+#include "ui_ColorSelect.h"
 
 #include <fstream>
 #include <sstream>
@@ -3959,6 +3963,63 @@ QMenu *OBSBasic::AddScaleFilteringMenu(obs_sceneitem_t *item)
 	return menu;
 }
 
+QMenu *OBSBasic::AddBackgroundColorMenu(obs_sceneitem_t *item)
+{
+	QMenu *menu = new QMenu(QTStr("ChangeBG"));
+	QAction *action;
+
+	menu->setStyleSheet(QString(
+		"*[bgColor=\"1\"]{background-color:rgba(255,68,68,33%);}" \
+		"*[bgColor=\"2\"]{background-color:rgba(255,255,68,33%);}" \
+		"*[bgColor=\"3\"]{background-color:rgba(68,255,68,33%);}" \
+		"*[bgColor=\"4\"]{background-color:rgba(68,255,255,33%);}" \
+		"*[bgColor=\"5\"]{background-color:rgba(68,68,255,33%);}" \
+		"*[bgColor=\"6\"]{background-color:rgba(255,68,255,33%);}" \
+		"*[bgColor=\"7\"]{background-color:rgba(68,68,68,33%);}" \
+		"*[bgColor=\"8\"]{background-color:rgba(255,255,255,33%);}"));
+
+	obs_data_t *privData = obs_sceneitem_get_private_settings(item);
+	obs_data_release(privData);
+
+	obs_data_set_default_int(privData, "color-preset", 0);
+	int preset = obs_data_get_int(privData, "color-preset");
+
+	action = menu->addAction(QTStr("Clear"), this,
+		+ SLOT(ColorChange()));
+	action->setCheckable(true);
+	action->setProperty("bgColor", 0);
+	action->setChecked(preset == 0);
+
+	action = menu->addAction(QTStr("CustomColor"), this,
+		+ SLOT(ColorChange()));
+	action->setCheckable(true);
+	action->setProperty("bgColor", 1);
+	action->setChecked(preset == 1);
+
+	menu->addSeparator();
+
+	QWidgetAction *widgetAction = new QWidgetAction(menu);
+	ColorSelect *select = new ColorSelect(menu);
+	widgetAction->setDefaultWidget(select);
+
+	for (int i = 1; i < 9; i++) {
+		stringstream button;
+		button << "preset" << i;
+		QPushButton *colorButton = select->findChild<QPushButton *>(
+				button.str().c_str());
+		if (preset == i + 1)
+			colorButton->setStyleSheet("border: 2px solid black");
+
+		colorButton->setProperty("bgColor", i);
+		select->connect(colorButton, SIGNAL(released()), this,
+				SLOT(ColorChange()));
+	}
+
+	menu->addAction(widgetAction);
+
+	return menu;
+}
+
 void OBSBasic::CreateSourcePopupMenu(int idx, bool preview)
 {
 	QMenu popup(this);
@@ -4035,6 +4096,7 @@ void OBSBasic::CreateSourcePopupMenu(int idx, bool preview)
 			OBS_SOURCE_AUDIO;
 		QAction *action;
 
+		popup.addMenu(AddBackgroundColorMenu(sceneItem));
 		popup.addAction(QTStr("Rename"), this,
 				SLOT(EditSceneItemName()));
 		popup.addAction(QTStr("Remove"), this,
@@ -6327,6 +6389,180 @@ void OBSBasic::on_actionPasteFilters_triggered()
 	obs_source_copy_filters(dstSource, source);
 }
 
+static void ConfirmColor(SourceTree *sources, const QColor &color,
+		QModelIndexList selectedItems)
+{
+	for (int x = 0; x < selectedItems.count(); x++) {
+		SourceTreeItem *treeItem = sources
+			->GetItemWidget(selectedItems[x].row());
+		treeItem->setStyleSheet("background: "
+			+ color.name(QColor::HexArgb));
+		treeItem->style()->unpolish(treeItem);
+		treeItem->style()->polish(treeItem);
+
+		OBSSceneItem sceneItem = sources->Get(
+			selectedItems[x].row());
+		obs_data_t *privData =
+			obs_sceneitem_get_private_settings(sceneItem);
+		obs_data_set_int(privData, "color-preset", 1);
+		obs_data_set_string(privData, "color",
+			QT_TO_UTF8(color.name(
+				QColor::HexArgb)));
+		obs_data_release(privData);
+	}
+}
+
+void OBSBasic::ColorChange()
+{
+	QModelIndexList selectedItems =
+		ui->sources->selectionModel()->selectedIndexes();
+	QAction *action = qobject_cast<QAction*>(sender());
+	QPushButton *colorButton = qobject_cast<QPushButton*>(sender());
+
+	if (selectedItems.count() == 0)
+		return;
+
+	if (colorButton) {
+		int preset = colorButton->property("bgColor").value<int>();
+
+		for (int x = 0; x < selectedItems.count(); x++) {
+			SourceTreeItem *treeItem = ui->sources
+					->GetItemWidget(selectedItems[x].row());
+			treeItem->setStyleSheet("");
+			treeItem->setProperty("bgColor", preset);
+			treeItem->style()->unpolish(treeItem);
+			treeItem->style()->polish(treeItem);
+
+			OBSSceneItem sceneItem = ui->sources->Get(
+					selectedItems[x].row());
+			obs_data_t *privData =
+				obs_sceneitem_get_private_settings(sceneItem);
+			obs_data_set_int(privData, "color-preset", preset + 1);
+			obs_data_set_string(privData, "color", "");
+			obs_data_release(privData);
+		}
+
+		for (int i = 1; i < 9; i++) {
+			stringstream button;
+			button << "preset" << i;
+			QPushButton *cButton = colorButton->parentWidget()
+				->findChild<QPushButton *>(button.str().c_str());
+			cButton->setStyleSheet("border: 1px solid black");
+		}
+
+		colorButton->setStyleSheet("border: 2px solid black");
+	} else if (action) {
+		int preset = action->property("bgColor").value<int>();
+
+		if (preset == 1) {
+			OBSSceneItem curSceneItem = GetCurrentSceneItem();
+			SourceTreeItem *curTreeItem =
+				GetItemWidgetFromSceneItem(curSceneItem);
+			obs_data_t *curPrivData =
+				obs_sceneitem_get_private_settings(curSceneItem);
+
+			int oldPreset = obs_data_get_int(
+				curPrivData, "color-preset");
+			const QString oldSheet = curTreeItem->styleSheet();
+
+			auto liveChangeColor = [=](const QColor &color) {
+				if (color.isValid()) {
+					curTreeItem->setStyleSheet(
+						"background: "
+						+ color.name(QColor::HexArgb));
+				}
+			};
+
+			auto changedColor = [=](const QColor &color) {
+				if (color.isValid()) {
+					ConfirmColor(ui->sources, color,
+						selectedItems);
+				}
+			};
+
+			auto rejected = [=]() {
+				if (oldPreset == 1) {
+					curTreeItem->setStyleSheet(oldSheet);
+					curTreeItem->setProperty("bgColor", 0);
+				} else if (oldPreset == 0) {
+					curTreeItem->setStyleSheet(
+						"background: none");
+					curTreeItem->setProperty("bgColor", 0);
+				} else {
+					curTreeItem->setStyleSheet("");
+					curTreeItem->setProperty("bgColor",
+						oldPreset - 1);
+				}
+
+				curTreeItem->style()->unpolish(curTreeItem);
+				curTreeItem->style()->polish(curTreeItem);
+			};
+
+			QColorDialog::ColorDialogOptions options =
+				QColorDialog::ShowAlphaChannel;
+
+			const char *oldColor = obs_data_get_string(curPrivData,
+					"color");
+			const char *customColor = *oldColor != 0 ? oldColor
+				: "#55FF0000";
+#ifdef __APPLE__
+			options |= QColorDialog::DontUseNativeDialog;
+#endif
+
+			QColorDialog *colorDialog = new QColorDialog(this);
+			colorDialog->setOptions(options);
+			colorDialog->setCurrentColor(
+					QColor(customColor));
+			connect(colorDialog, &QColorDialog::currentColorChanged,
+					liveChangeColor);
+			connect(colorDialog, &QColorDialog::colorSelected,
+					changedColor);
+			connect(colorDialog, &QColorDialog::rejected,
+					rejected);
+			colorDialog->open();
+
+			obs_data_release(curPrivData);
+		} else {
+			for (int x = 0; x < selectedItems.count(); x++) {
+				SourceTreeItem *treeItem = ui->sources
+					->GetItemWidget(selectedItems[x].row());
+				treeItem->setStyleSheet("background: none");
+				treeItem->setProperty("bgColor", preset);
+				treeItem->style()->unpolish(treeItem);
+				treeItem->style()->polish(treeItem);
+
+				OBSSceneItem sceneItem = ui->sources->Get(
+					selectedItems[x].row());
+				obs_data_t *privData =
+					obs_sceneitem_get_private_settings(
+						sceneItem);
+				obs_data_set_int(privData, "color-preset",
+					preset);
+				obs_data_set_string(privData, "color", "");
+				obs_data_release(privData);
+			}
+		}
+	}
+}
+
+SourceTreeItem *OBSBasic::GetItemWidgetFromSceneItem(
+		obs_sceneitem_t *sceneItem)
+{
+	int i = 0;
+	SourceTreeItem *treeItem = ui->sources->GetItemWidget(i);
+	OBSSceneItem item = ui->sources->Get(i);
+	int64_t id = obs_sceneitem_get_id(sceneItem);
+	while (treeItem && obs_sceneitem_get_id(item) != id) {
+		i++;
+		treeItem = ui->sources->GetItemWidget(i);
+		item = ui->sources->Get(i);
+	}
+	if(treeItem)
+		return treeItem;
+
+	return nullptr;
+}
+
 void OBSBasic::on_autoConfigure_triggered()
 {
 	AutoConfig test(this);
@@ -6347,4 +6583,11 @@ void OBSBasic::on_stats_triggered()
 	statsDlg = new OBSBasicStats(nullptr);
 	statsDlg->show();
 	stats = statsDlg;
+}
+
+ColorSelect::ColorSelect(QWidget *parent)
+	: QWidget(parent),
+	  ui(new Ui::ColorSelect)
+{
+	ui->setupUi(this);
 }

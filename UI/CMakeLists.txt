@@ -236,6 +236,7 @@ set(obs_UI
 	forms/AutoConfigVideoPage.ui
 	forms/AutoConfigStreamPage.ui
 	forms/AutoConfigTestPage.ui
+	forms/ColorSelect.ui
 	forms/OBSLicenseAgreement.ui
 	forms/OBSLogReply.ui
 	forms/OBSBasic.ui
