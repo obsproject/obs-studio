@@ -24,7 +24,7 @@ sudo installer -pkg ./Packages.pkg -target /
 brew update
 
 #Base OBS Deps and ccache
-brew install qt@5.11 jack speexdsp ccache swig
+brew install qt@5.11 jack speexdsp ccache swig mbedtls
 
 export PATH=/usr/local/opt/ccache/libexec:$PATH
 ccache -s || echo "CCache is not available."
@@ -41,7 +41,7 @@ unzip -q ./vlc-master.zip
 
 # Get sparkle
 hr "Downloading Sparkle framework"
-wget --quiet --retry-connrefused --waitretry=1 -O sparkle.tar.bz2 https://github.com/sparkle-project/Sparkle/releases/download/1.16.0/Sparkle-1.16.0.tar.bz2
+wget --quiet --retry-connrefused --waitretry=1 -O sparkle.tar.bz2 https://github.com/sparkle-project/Sparkle/releases/download/1.20.0/Sparkle-1.20.0.tar.bz2
 mkdir ./sparkle
 tar -xf ./sparkle.tar.bz2 -C ./sparkle
 sudo cp -R ./sparkle/Sparkle.framework /Library/Frameworks/Sparkle.framework
