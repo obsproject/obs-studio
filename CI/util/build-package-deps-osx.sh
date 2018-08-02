@@ -41,7 +41,7 @@ mkdir $DEPS_DEST/include
 mkdir $DEPS_DEST/lib
 
 # OSX COMPAT
-export MACOSX_DEPLOYMENT_TARGET=10.9
+export MACOSX_DEPLOYMENT_TARGET=10.11
 
 # If you need an olders SDK and Xcode won't give it to you
 # https://github.com/phracker/MacOSX-SDKs
@@ -100,10 +100,10 @@ cd ./x264
 git checkout origin/stable
 mkdir build
 cd ./build
-../configure --extra-ldflags="-mmacosx-version-min=10.9" --enable-static --prefix="/tmp/obsdeps"
+../configure --extra-ldflags="-mmacosx-version-min=10.11" --enable-static --prefix="/tmp/obsdeps"
 make -j 12
 make install
-../configure --extra-ldflags="-mmacosx-version-min=10.9" --enable-shared --libdir="/tmp/obsdeps/bin" --prefix="/tmp/obsdeps"
+../configure --extra-ldflags="-mmacosx-version-min=10.11" --enable-shared --libdir="/tmp/obsdeps/bin" --prefix="/tmp/obsdeps"
 make -j 12
 ln -f -s libx264.*.dylib libx264.dylib
 find . -name \*.dylib -exec cp \{\} $DEPS_DEST/bin/ \;
@@ -135,7 +135,7 @@ unzip ./n3.2.2.zip
 cd ./FFmpeg-n3.2.2
 mkdir build
 cd ./build
-../configure --extra-ldflags="-mmacosx-version-min=10.9" --enable-shared --disable-static --shlibdir="/tmp/obsdeps/bin" --enable-gpl --disable-doc --enable-libx264 --enable-libopus --enable-libvorbis --enable-libvpx --disable-outdev=sdl
+../configure --extra-ldflags="-mmacosx-version-min=10.11" --enable-shared --disable-static --shlibdir="/tmp/obsdeps/bin" --enable-gpl --disable-doc --enable-libx264 --enable-libopus --enable-libvorbis --enable-libvpx --disable-outdev=sdl
 make -j 12
 find . -name \*.dylib -exec cp \{\} $DEPS_DEST/bin/ \;
 rsync -avh --include="*/" --include="*.h" --exclude="*" ../* $DEPS_DEST/include/
