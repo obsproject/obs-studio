@@ -520,8 +520,10 @@ extern void gl_getclientsize(const struct gs_swap_chain *swap,
 	xcb_window_t window = swap->wi->window;
 
 	xcb_get_geometry_reply_t *geometry = get_window_geometry(xcb_conn, window);
-	*width = geometry->width;
-	*height = geometry->height;
+	if (geometry) {
+		*width  = geometry->width;
+		*height = geometry->height;
+	}
 
 	free(geometry);
 }
