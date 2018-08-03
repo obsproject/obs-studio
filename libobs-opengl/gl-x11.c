@@ -323,10 +323,16 @@ error:
 
 static int x_error_handler(Display *display, XErrorEvent *error)
 {
-	char str[512];
-	XGetErrorText(display, error->error_code, str, sizeof(str));
+	char str1[512];
+	char str2[512];
+	char str3[512];
+	XGetErrorText(display, error->error_code, str1, sizeof(str1));
+	XGetErrorText(display, error->request_code, str2, sizeof(str2));
+	XGetErrorText(display, error->minor_code, str3, sizeof(str3));
 
-	blog(LOG_ERROR, "X Error: %s", str);
+	blog(LOG_ERROR, "X Error: %s, Major opcode: %s, "
+			"Minor opcode: %s, Serial: %lu",
+			str1, str2, str3, error->serial);
 	return 0;
 }
 
