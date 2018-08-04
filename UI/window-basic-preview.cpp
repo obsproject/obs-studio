@@ -65,6 +65,22 @@ static bool CloseFloat(float a, float b, float epsilon=0.01)
 	return abs(a-b) <= epsilon;
 }
 
+static bool DeselectGroupItem(obs_scene_t *scene, obs_sceneitem_t *item,
+		void *param)
+{
+	OBSBasic *main = reinterpret_cast<OBSBasic*>(App()->GetMainWindow());
+	obs_source_t* src = obs_frontend_get_current_scene();
+	obs_scene_t * scn = obs_scene_from_source(src);
+	QMetaObject::invokeMethod(main, "SelectSceneItem",
+			Q_ARG(OBSScene, scn), Q_ARG(OBSSceneItem, item),
+			Q_ARG(bool, false));
+	obs_source_release(src);
+
+	UNUSED_PARAMETER(scene);
+	UNUSED_PARAMETER(param);
+	return true;
+}
+
 static bool FindItemAtPos(obs_scene_t *scene, obs_sceneitem_t *item,
 		void *param)
 {
@@ -79,6 +95,8 @@ static bool FindItemAtPos(obs_scene_t *scene, obs_sceneitem_t *item,
 		return true;
 	if (obs_sceneitem_locked(item))
 		return true;
+	if (data->selectBelow && obs_sceneitem_is_group(item))
+		obs_sceneitem_group_enum_items(item, DeselectGroupItem, param);
 
 	vec3_set(&pos3, data->pos.x, data->pos.y, 0.0f);
 
