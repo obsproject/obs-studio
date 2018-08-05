@@ -236,6 +236,10 @@ EXPORT void obs_hotkey_pair_load(obs_hotkey_pair_id id, obs_data_array_t *data0,
 
 EXPORT obs_data_array_t *obs_hotkey_save(obs_hotkey_id id);
 
+EXPORT void obs_hotkey_pair_save(obs_hotkey_pair_id id,
+		obs_data_array_t **p_data0,
+		obs_data_array_t **p_data1);
+
 EXPORT obs_data_t *obs_hotkeys_save_encoder(obs_encoder_t *encoder);
 
 EXPORT obs_data_t *obs_hotkeys_save_output(obs_output_t *output);
