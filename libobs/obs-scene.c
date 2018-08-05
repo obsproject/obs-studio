@@ -32,6 +32,8 @@ static void get_ungrouped_transform(obs_sceneitem_t *group,
 		float *rot);
 static inline bool crop_enabled(const struct obs_sceneitem_crop *crop);
 static inline bool item_texture_enabled(const struct obs_scene_item *item);
+static void init_hotkeys(obs_scene_t *scene, obs_sceneitem_t *item,
+		const char *name);
 
 /* NOTE: For proper mutex lock order (preventing mutual cross-locks), never
  * lock the graphics mutex inside either of the scene mutexes.
@@ -2565,8 +2567,11 @@ void obs_sceneitem_group_ungroup(obs_sceneitem_t *item)
 
 	obs_scene_t *scene = item->parent;
 	obs_scene_t *subscene = item->source->context.data;
+	obs_sceneitem_t *insert_after = item;
 	obs_sceneitem_t *first;
 	obs_sceneitem_t *last;
+
+	full_lock(scene);
 
 	/* ------------------------- */
 
@@ -2574,39 +2579,25 @@ void obs_sceneitem_group_ungroup(obs_sceneitem_t *item)
 	first = subscene->first_item;
 	last = first;
 	while (last) {
+		obs_sceneitem_t *dst;
+
 		remove_group_transform(item, last);
-		last->parent = scene;
+		dst = obs_scene_add_internal(scene, last->source, insert_after);
+		duplicate_item_data(dst, last, true, true, true);
+		apply_group_transform(last, item);
+
 		if (!last->next)
 			break;
+
+		insert_after = dst;
 		last = last->next;
 	}
-	subscene->first_item = NULL;
-	subscene->cx = 0;
-	subscene->cy = 0;
 	full_unlock(subscene);
 
 	/* ------------------------- */
 
-	full_lock(scene);
-	if (last) {
-		if (item->prev) {
-			first->prev = item->prev;
-			item->prev->next = first;
-		} else {
-			scene->first_item = first;
-			first->prev = NULL;
-		}
-		last->next = item->next;
-		if (last->next)
-			last->next->prev = last;
-		item->next = item->prev = NULL;
-		item->parent = NULL;
-	} else {
-		detach_sceneitem(item);
-	}
+	detach_sceneitem(item);
 	full_unlock(scene);
-
-	/* ------------------------- */
 
 	obs_sceneitem_release(item);
 }
