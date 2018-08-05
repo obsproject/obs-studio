@@ -346,6 +346,7 @@ static void do_log(int log_level, const char *msg, va_list args, void *param)
 	}
 #else
 	def_log_handler(log_level, msg, args2, nullptr);
+	va_end(args2);
 #endif
 
 	if (log_level <= LOG_INFO || log_verbose) {
