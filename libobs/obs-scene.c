@@ -1222,6 +1222,59 @@ static inline obs_source_t *new_ref(obs_source_t *source)
 	return source;
 }
 
+static inline void duplicate_item_data(struct obs_scene_item *dst,
+		struct obs_scene_item *src, bool defer_texture_update,
+		bool duplicate_hotkeys, bool duplicate_private_data)
+{
+	struct obs_scene *dst_scene = dst->parent;
+
+	if (!src->user_visible)
+		set_visibility(dst, false);
+
+	dst->selected = src->selected;
+	dst->pos = src->pos;
+	dst->rot = src->rot;
+	dst->scale = src->scale;
+	dst->align = src->align;
+	dst->last_width = src->last_width;
+	dst->last_height = src->last_height;
+	dst->output_scale = src->output_scale;
+	dst->scale_filter = src->scale_filter;
+	dst->box_transform = src->box_transform;
+	dst->draw_transform = src->draw_transform;
+	dst->bounds_type = src->bounds_type;
+	dst->bounds_align = src->bounds_align;
+	dst->bounds = src->bounds;
+
+	if (duplicate_hotkeys && !dst_scene->source->context.private) {
+		obs_data_array_t *data0 = NULL;
+		obs_data_array_t *data1 = NULL;
+
+		obs_hotkey_pair_save(src->toggle_visibility, &data0, &data1);
+		obs_hotkey_pair_load(dst->toggle_visibility, data0, data1);
+
+		obs_data_array_release(data0);
+		obs_data_array_release(data1);
+	}
+
+	obs_sceneitem_set_crop(dst, &src->crop);
+
+	if (defer_texture_update) {
+		os_atomic_set_bool(&dst->update_transform, true);
+	} else {
+		if (!dst->item_render && item_texture_enabled(dst)) {
+			obs_enter_graphics();
+			dst->item_render = gs_texrender_create(
+					GS_RGBA, GS_ZS_NONE);
+			obs_leave_graphics();
+		}
+	}
+
+	if (duplicate_private_data) {
+		obs_data_apply(dst->private_settings, src->private_settings);
+	}
+}
+
 obs_scene_t *obs_scene_duplicate(obs_scene_t *scene, const char *name,
 		enum obs_scene_duplicate_type type)
 {
@@ -1280,36 +1333,8 @@ obs_scene_t *obs_scene_duplicate(obs_scene_t *scene, const char *name,
 				continue;
 			}
 
-			if (!item->user_visible)
-				set_visibility(new_item, false);
-
-			new_item->selected = item->selected;
-			new_item->pos = item->pos;
-			new_item->rot = item->rot;
-			new_item->scale = item->scale;
-			new_item->align = item->align;
-			new_item->last_width = item->last_width;
-			new_item->last_height = item->last_height;
-			new_item->output_scale = item->output_scale;
-			new_item->scale_filter = item->scale_filter;
-			new_item->box_transform = item->box_transform;
-			new_item->draw_transform = item->draw_transform;
-			new_item->bounds_type = item->bounds_type;
-			new_item->bounds_align = item->bounds_align;
-			new_item->bounds = item->bounds;
-
-			new_item->toggle_visibility =
-					OBS_INVALID_HOTKEY_PAIR_ID;
-
-			obs_sceneitem_set_crop(new_item, &item->crop);
-
-			if (!new_item->item_render &&
-			    item_texture_enabled(new_item)) {
-				obs_enter_graphics();
-				new_item->item_render = gs_texrender_create(
-						GS_RGBA, GS_ZS_NONE);
-				obs_leave_graphics();
-			}
+			duplicate_item_data(new_item, item, false, false,
+					false);
 
 			obs_source_release(source);
 		}
