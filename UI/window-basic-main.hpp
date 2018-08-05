@@ -42,7 +42,6 @@
 class QMessageBox;
 class QListWidgetItem;
 class VolControl;
-class QNetworkReply;
 class OBSBasicStats;
 
 #include "ui_OBSBasic.h"
