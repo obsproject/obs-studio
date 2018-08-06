@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+set -e
+
 # This script builds a tar file that contains a bunch of deps that OBS needs for
 # advanced functionality on OSX. Currently this tar file is pulled down off of s3
 # and used in the CI build process on travis.
@@ -84,11 +86,12 @@ cd $WORK_DIR
 
 # libvpx
 curl -L -O https://chromium.googlesource.com/webm/libvpx/+archive/v1.7.0.tar.gz
-tar -xf libvpx-1.7.0.tar.gz
-cd ./libvpx-1.7.0
-mkdir build
+mkdir -p ./libvpx-v1.7.0
+tar -xf v1.7.0.tar.gz -C $PWD/libvpx-v1.7.0
+cd ./libvpx-v1.7.0
+mkdir -p build
 cd ./build
-../configure --disable-shared --libdir="/tmp/obsdeps/bin"
+../configure --disable-shared --prefix="/tmp/obsdeps" --libdir="/tmp/obsdeps/lib"
 make -j 12
 make install
 
@@ -135,7 +138,7 @@ unzip ./n4.0.2.zip
 cd ./FFmpeg-n4.0.2
 mkdir build
 cd ./build
-../configure --extra-ldflags="-mmacosx-version-min=10.11" --enable-shared --disable-static --shlibdir="/tmp/obsdeps/bin" --enable-gpl --disable-doc --enable-libx264 --enable-libopus --enable-libvorbis --enable-libvpx --disable-outdev=sdl
+../configure --pkg-config-flags="--static" --extra-ldflags="-mmacosx-version-min=10.11" --enable-shared --disable-static --shlibdir="/tmp/obsdeps/bin" --enable-gpl --disable-doc --enable-libx264 --enable-libopus --enable-libvorbis --enable-libvpx --disable-outdev=sdl
 make -j 12
 find . -name \*.dylib -exec cp \{\} $DEPS_DEST/bin/ \;
 rsync -avh --include="*/" --include="*.h" --exclude="*" ../* $DEPS_DEST/include/
