@@ -73,6 +73,7 @@ mfxHDL QSV_Encoder_Internal::g_DX_Handle = NULL;
 mfxU16 QSV_Encoder_Internal::g_numEncodersOpen = 0;
 
 QSV_Encoder_Internal::QSV_Encoder_Internal(mfxIMPL& impl, mfxVersion& version) :
+	m_pmfxSurfaces(NULL),
 	m_pmfxENC(NULL),
 	m_nSPSBufferSize(100),
 	m_nPPSBufferSize(100),
