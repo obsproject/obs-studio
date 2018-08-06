@@ -26,6 +26,37 @@ static inline const char *get_string_val(json_t *service, const char *key);
 
 extern void twitch_ingests_refresh(int seconds);
 
+static void ensure_valid_url(struct rtmp_common *service, json_t *json,
+		obs_data_t *settings)
+{
+	json_t *servers = json_object_get(json, "servers");
+	const char *top_url = NULL;
+	json_t *server;
+	size_t index;
+
+	if (!service->server || !servers || !json_is_array(servers))
+		return;
+
+	json_array_foreach (servers, index, server) {
+		const char *url = get_string_val(server, "url");
+		if (!url)
+			continue;
+
+		if (!top_url)
+			top_url = url;
+
+		if (astrcmpi(service->server, url) == 0)
+			return;
+	}
+
+	/* server was not found in server list, use first server instead */
+	if (top_url) {
+		bfree(service->server);
+		service->server = bstrdup(top_url);
+		obs_data_set_string(settings, "server", top_url);
+	}
+}
+
 static void rtmp_common_update(void *data, obs_data_t *settings)
 {
 	struct rtmp_common *service = data;
@@ -50,6 +81,8 @@ static void rtmp_common_update(void *data, obs_data_t *settings)
 				if (out)
 					service->output = bstrdup(out);
 			}
+
+			ensure_valid_url(service, serv, settings);
 		}
 	}
 	json_decref(root);
