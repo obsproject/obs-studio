@@ -1098,6 +1098,46 @@ bool obs_get_audio_info(struct obs_audio_info *oai)
 	return true;
 }
 
+bool obs_get_stream_tracks(uint32_t *tracks)
+{
+	struct obs_core_audio *audio = &obs->audio;
+	if (!obs)
+		return false;
+
+	*tracks = audio->stream_tracks;
+	return true;
+}
+
+bool obs_get_recording_tracks(uint32_t *tracks)
+{
+	struct obs_core_audio *audio = &obs->audio;
+	if (!obs)
+		return false;
+
+	*tracks = audio->recording_tracks;
+	return true;
+}
+
+bool obs_set_stream_tracks(uint32_t tracks)
+{
+	struct obs_core_audio *audio = &obs->audio;
+	if (!obs)
+		return false;
+
+	audio->stream_tracks = tracks;
+	return true;
+}
+
+bool obs_set_recording_tracks(uint32_t tracks)
+{
+	struct obs_core_audio *audio = &obs->audio;
+	if (!obs)
+		return false;
+
+	audio->recording_tracks = tracks;
+	return true;
+}
+
 bool obs_enum_source_types(size_t idx, const char **id)
 {
 	if (!obs) return false;

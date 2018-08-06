@@ -3420,6 +3420,23 @@ void obs_source_set_audio_mixers(obs_source_t *source, uint32_t mixers)
 	source->audio_mixers = mixers;
 }
 
+void obs_source_update_audio_mixers(obs_source_t *source)
+{
+	struct calldata data;
+	uint8_t stack[128];
+
+	if (!obs_source_valid(source, "obs_source_set_audio_mixers"))
+		return;
+	if ((source->info.output_flags & OBS_SOURCE_AUDIO) == 0)
+		return;
+
+	calldata_init_fixed(&data, stack, sizeof(stack));
+	calldata_set_ptr(&data, "source", source);
+	calldata_set_int(&data, "mixers", source->audio_mixers);
+
+	signal_handler_signal(source->context.signals, "audio_mixers", &data);
+}
+
 uint32_t obs_source_get_audio_mixers(const obs_source_t *source)
 {
 	if (!obs_source_valid(source, "obs_source_get_audio_mixers"))
