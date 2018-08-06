@@ -957,6 +957,7 @@ void VolumeMeter::paintEvent(QPaintEvent *event)
 	uint64_t ts = os_gettime_ns();
 	qreal timeSinceLastRedraw = (ts - lastRedrawTime) * 0.000000001;
 
+	QColor backgroundColor = palette().color(QWidget::backgroundRole());
 	const QRect rect = event->region().boundingRect();
 	int width  = rect.width();
 	int height = rect.height();
@@ -995,6 +996,8 @@ void VolumeMeter::paintEvent(QPaintEvent *event)
 
 	// Actual painting of the widget starts here.
 	QPainter painter(this);
+	// Fill with background color
+	painter.fillRect(0, 0, width, height, backgroundColor);
 	if (vertical) {
 		// Invert the Y axis to ease the math
 		painter.translate(0, height);
