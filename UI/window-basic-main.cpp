@@ -1426,6 +1426,17 @@ void OBSBasic::OBSInit()
 	if (!ResetAudio())
 		throw "Failed to initialize audio";
 
+	int trackIndex = config_get_int(basicConfig, "AdvOut",
+			"TrackIndex");
+	if (trackIndex >= 1 && trackIndex <= MAX_AUDIO_MIXES)
+		obs_set_stream_tracks(1 << (trackIndex - 1));
+	else
+		obs_set_stream_tracks(0);
+
+	int rec_tracks = config_get_int(basicConfig, "AdvOut",
+			"RecTracks");
+	obs_set_recording_tracks(rec_tracks);
+
 	ret = ResetVideo();
 
 	switch (ret) {

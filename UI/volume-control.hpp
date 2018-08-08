@@ -222,6 +222,18 @@ class MuteCheckBox;
 
 class VolControl : public QWidget {
 	Q_OBJECT
+	Q_PROPERTY(bool recordSelected
+		READ isRecordSelected
+		WRITE setRecordSelected
+		NOTIFY recordToggled
+		USER true
+		DESIGNABLE true)
+	Q_PROPERTY(bool streamSelected
+		READ isStreamSelected
+		WRITE setStreamSelected
+		NOTIFY streamToggled
+		USER true
+		DESIGNABLE true)
 
 private:
 	OBSSource source;
@@ -236,6 +248,8 @@ private:
 	obs_fader_t     *obs_fader;
 	obs_volmeter_t  *obs_volmeter;
 	bool            vertical;
+	bool            recordSelected;
+	bool            streamSelected;
 
 	static void OBSVolumeChanged(void *param, float db);
 	static void OBSVolumeLevel(void *data,
@@ -243,6 +257,7 @@ private:
 		const float peak[MAX_AUDIO_CHANNELS],
 		const float inputPeak[MAX_AUDIO_CHANNELS]);
 	static void OBSVolumeMuted(void *data, calldata_t *calldata);
+	static void OBSMixersChanged(void *data, calldata_t *calldata);
 
 	void EmitConfigClicked();
 
@@ -254,9 +269,14 @@ private slots:
 	void SliderChanged(int vol);
 	void updateText();
 
+	void setRecordSelected(bool selected);
+	void setStreamSelected(bool selected);
+
 signals:
 	void ConfigClicked();
 
+	void streamToggled(bool checked);
+	void recordToggled(bool checked);
 public:
 	explicit VolControl(OBSSource source, bool showConfig = false,
 			bool vertical = false);
@@ -269,4 +289,6 @@ public:
 
 	void SetMeterDecayRate(qreal q);
 	void setPeakMeterType(enum obs_peak_meter_type peakMeterType);
+	bool isRecordSelected() {return recordSelected;}
+	bool isStreamSelected() {return streamSelected;}
 };
