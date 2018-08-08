@@ -39,9 +39,9 @@ typedef mbedtls_md_context_t *HMAC_CTX;
 #define HMAC_setup(ctx, key, len)	ctx = malloc(sizeof(mbedtls_md_context_t)); mbedtls_md_init(ctx); \
   mbedtls_md_setup(ctx, mbedtls_md_info_from_type(MBEDTLS_MD_SHA256), 1); \
   mbedtls_md_hmac_starts(ctx, (const unsigned char *)key, len)
-#define HMAC_crunch(ctx, buf, len) mbedtls_md_hmac_update(ctx, buf, len)
-#define HMAC_finish(ctx, dig, dlen)	dlen = SHA256_DIGEST_LENGTH; mbedtls_md_hmac_finish(ctx, dig)
-#define HMAC_close(ctx) free(ctx); mbedtls_md_free(ctx); ctx = NULL
+#define HMAC_crunch(ctx, buf, len)	mbedtls_md_hmac_update(ctx, buf, len)
+#define HMAC_finish(ctx, dig)		mbedtls_md_hmac_finish(ctx, dig)
+#define HMAC_close(ctx) free(ctx);	mbedtls_md_free(ctx); ctx = NULL
 
 #elif defined(USE_POLARSSL)
 #include <polarssl/sha2.h>
@@ -51,7 +51,7 @@ typedef mbedtls_md_context_t *HMAC_CTX;
 #define HMAC_CTX	sha2_context
 #define HMAC_setup(ctx, key, len)	sha2_hmac_starts(&ctx, (unsigned char *)key, len, 0)
 #define HMAC_crunch(ctx, buf, len)	sha2_hmac_update(&ctx, buf, len)
-#define HMAC_finish(ctx, dig, dlen)	dlen = SHA256_DIGEST_LENGTH; sha2_hmac_finish(&ctx, dig)
+#define HMAC_finish(ctx, dig)		sha2_hmac_finish(&ctx, dig)
 #define HMAC_close(ctx)
 
 #elif defined(USE_GNUTLS)
@@ -63,7 +63,7 @@ typedef mbedtls_md_context_t *HMAC_CTX;
 #define HMAC_CTX	struct hmac_sha256_ctx
 #define HMAC_setup(ctx, key, len)	hmac_sha256_set_key(&ctx, len, key)
 #define HMAC_crunch(ctx, buf, len)	hmac_sha256_update(&ctx, len, buf)
-#define HMAC_finish(ctx, dig, dlen)	dlen = SHA256_DIGEST_LENGTH; hmac_sha256_digest(&ctx, SHA256_DIGEST_LENGTH, dig)
+#define HMAC_finish(ctx, dig)		hmac_sha256_digest(&ctx, SHA256_DIGEST_LENGTH, dig)
 #define HMAC_close(ctx)
 
 #else	/* USE_OPENSSL */
@@ -73,7 +73,7 @@ typedef mbedtls_md_context_t *HMAC_CTX;
 #include <openssl/rc4.h>
 #define HMAC_setup(ctx, key, len)	HMAC_CTX_init(&ctx); HMAC_Init_ex(&ctx, (unsigned char *)key, len, EVP_sha256(), 0)
 #define HMAC_crunch(ctx, buf, len)	HMAC_Update(&ctx, (unsigned char *)buf, len)
-#define HMAC_finish(ctx, dig, dlen)	HMAC_Final(&ctx, (unsigned char *)dig, &dlen);
+#define HMAC_finish(ctx, dig, len)	HMAC_Final(&ctx, (unsigned char *)dig, &len);
 #define HMAC_close(ctx)	HMAC_CTX_cleanup(&ctx)
 #endif
 
@@ -658,7 +658,11 @@ RTMP_HashSWF(const char *url, unsigned int *size, unsigned char *hash,
 
         if (!in.first)
         {
+#if defined(USE_MBEDTLS) || defined(USE_POLARSSL) || defined(USE_GNUTLS)
+            HMAC_finish(in.ctx, hash);
+#else
             HMAC_finish(in.ctx, hash, hlen);
+#endif
             *size = in.size;
 
             fprintf(f, "date: %s\n", date);
