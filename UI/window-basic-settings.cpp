@@ -430,6 +430,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 #endif
 #ifdef _WIN32
 	HookWidget(ui->disableAudioDucking,  CHECK_CHANGED,  ADV_CHANGED);
+	HookWidget(ui->browserHWAccel,       CHECK_CHANGED,  ADV_RESTART);
 #endif
 	HookWidget(ui->filenameFormatting,   EDIT_CHANGED,   ADV_CHANGED);
 	HookWidget(ui->overwriteIfExists,    CHECK_CHANGED,  ADV_CHANGED);
@@ -500,6 +501,8 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	delete ui->advancedGeneralGroupBox;
 	delete ui->enableNewSocketLoop;
 	delete ui->enableLowLatencyMode;
+	delete ui->browserHWAccel;
+	delete ui->sourcesGroup;
 #if defined(__APPLE__) || HAVE_PULSEAUDIO
 	delete ui->disableAudioDucking;
 #endif
@@ -512,6 +515,8 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	ui->advancedGeneralGroupBox = nullptr;
 	ui->enableNewSocketLoop = nullptr;
 	ui->enableLowLatencyMode = nullptr;
+	ui->browserHWAccel = nullptr;
+	ui->sourcesGroup = nullptr;
 #if defined(__APPLE__) || HAVE_PULSEAUDIO
 	ui->disableAudioDucking = nullptr;
 #endif
@@ -2295,6 +2300,10 @@ void OBSBasicSettings::LoadAdvancedSettings()
 
 	ui->enableNewSocketLoop->setChecked(enableNewSocketLoop);
 	ui->enableLowLatencyMode->setChecked(enableLowLatencyMode);
+
+	bool browserHWAccel = config_get_bool(App()->GlobalConfig(),
+			"General", "BrowserHWAccel");
+	ui->browserHWAccel->setChecked(browserHWAccel);
 #endif
 
 	bool disableFocusHotkeys = config_get_bool(App()->GlobalConfig(),
@@ -2832,6 +2841,10 @@ void OBSBasicSettings::SaveAdvancedSettings()
 
 	SaveCheckBox(ui->enableNewSocketLoop, "Output", "NewSocketLoopEnable");
 	SaveCheckBox(ui->enableLowLatencyMode, "Output", "LowLatencyEnable");
+
+	bool browserHWAccel = ui->browserHWAccel->isChecked();
+	config_set_bool(App()->GlobalConfig(), "General",
+			"BrowserHWAccel", browserHWAccel);
 #endif
 
 	bool disableFocusHotkeys = ui->disableFocusHotkeys->isChecked();
