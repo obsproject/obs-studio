@@ -2493,7 +2493,7 @@ obs_sceneitem_t *obs_scene_insert_group(obs_scene_t *scene,
 
 	full_lock(scene);
 	full_lock(sub_scene);
-	sub_scene->first_item = items ? items[0] : NULL;
+	sub_scene->first_item = items[0];
 
 	for (size_t i = count; i > 0; i--) {
 		size_t idx = i - 1;
