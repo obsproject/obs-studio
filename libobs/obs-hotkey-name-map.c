@@ -322,6 +322,7 @@ void trie_print_size(obs_hotkey_name_map_t *trie)
 static const char* obs_key_names[] = {
 #define OBS_HOTKEY(x) #x,
 #include "obs-hotkeys.h"
+#include "obs-midikeys.h"
 #undef OBS_HOTKEY
 };
 

@@ -37,6 +37,8 @@
 #include <util/threading.h>
 #include <util/util.hpp>
 
+#include "RtMidi.h"
+
 #include <QPointer>
 
 class QMessageBox;

@@ -155,6 +155,7 @@ set(obs_SOURCES
 	window-log-reply.cpp
 	window-projector.cpp
 	window-remux.cpp
+	RtMidi.cpp
 	source-tree.cpp
 	properties-view.cpp
 	focus-list.cpp
@@ -203,6 +204,7 @@ set(obs_HEADERS
 	window-log-reply.hpp
 	window-projector.hpp
 	window-remux.hpp
+	RtMidi.h
 	source-tree.hpp
 	properties-view.hpp
 	properties-view.moc.hpp
