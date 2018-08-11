@@ -13,7 +13,7 @@ include_directories(
 
 if(WIN32)
 	if(MSVC)
-		add_compile_options("$<$<CONFIG:RelWithDebInfo>:/MT>")
+		add_compile_options($<IF:$<CONFIG:Debug>,/MTd,/MT> /Zl)
 	endif()
 	add_definitions(
 		-Dinline=_inline
