@@ -143,6 +143,9 @@ bool media_remux_job_create(media_remux_job_t *job, const char *in_filename,
 	if (!os_file_exists(in_filename))
 		return false;
 
+	if (strcmp(in_filename, out_filename) == 0)
+		return false;
+
 	*job = (media_remux_job_t)bzalloc(sizeof(struct media_remux_job));
 	if (!*job)
 		return false;
