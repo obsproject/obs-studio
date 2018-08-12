@@ -44,6 +44,7 @@ public:
 	{
 		return message & 0x7F;
 	}
+
 	obs_key_t getKey()
 	{
 		int m = _message.at(0);
@@ -53,11 +54,11 @@ public:
 		case 0x80: // note off
 		case 0x90: // note on
 		case 0xA0: // polymorphic pressure
-			return (obs_key_t)(OBS_MIDI_KEY_CN1 + dataMask(_message.at(1)) );
+			return (obs_key_t)(OBS_MIDI_KEY_CN1_CHANNEL0 + dataMask(_message.at(1)) + 128 * l);
 		case 0xB0: // control change
-			return (obs_key_t)(OBS_MIDI_CONTROL0 + dataMask(_message.at(1)) );
+			return (obs_key_t)(OBS_MIDI_CONTROL0_CHANNEL0 + dataMask(_message.at(1)) + 128 * l);
 		case 0xC0:
-			return (obs_key_t)(OBS_MIDI_PROGRAM0 + dataMask(_message.at(1)) );
+			return (obs_key_t)(OBS_MIDI_PROGRAM0 + l);
 		case 0xE0:
 			return (obs_key_t)(OBS_MIDI_PITCH_WHEEL0 + l);
 		default:
