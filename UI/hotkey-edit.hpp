@@ -26,7 +26,7 @@
 #include <obs.hpp>
 
 class OBSHotkeyWidget;
-class QMidiEvent;
+class QHotkeyEvent;
 
 class OBSHotkeyLabel : public QLabel {
 	Q_OBJECT
@@ -65,7 +65,7 @@ public:
 	bool                  changed = false;
 	bool                  event(QEvent *e) override;
 
-	void midiPressEvent(QMidiEvent *event);
+	void hotkeyPressEvent(QHotkeyEvent *event);
 protected:
 	OBSSignal             layoutChanged;
 

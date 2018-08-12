@@ -180,15 +180,12 @@ QObject *CreateShortcutFilter()
 			return true;
 		};
 
-		auto midi_event = [&](QMidiEvent *event)
+		auto hotkey_event = [&](QHotkeyEvent *event)
 		{
 			obs_key_combination_t hotkey = { 0, OBS_KEY_NONE };
-			bool pressed = false;
-			std::vector<uint8_t> message = event->getMessage();
 			hotkey.key = event->getKey();
-			if (event->notePressed() || event->controlPressed())
-				pressed = true;
-
+			hotkey.modifiers = event->getModifiers();
+			bool pressed = event->pressed();
 			if(pressed)
 				blog(LOG_INFO, "injecting %s pressed",
 						obs_key_to_name(hotkey.key));
@@ -208,8 +205,8 @@ QObject *CreateShortcutFilter()
 		case QEvent::KeyPress:
 		case QEvent::KeyRelease:
 			return key_event(static_cast<QKeyEvent*>(event));
-		case QMidiEvent::midiType:
-			return midi_event(static_cast<QMidiEvent*>(event));
+		case QHotkeyEvent::hotkeyType:
+			return hotkey_event(static_cast<QHotkeyEvent*>(event));
 		default:
 			return false;
 		}

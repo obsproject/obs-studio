@@ -167,12 +167,10 @@ static int CountVideoSources()
 	return count;
 }
 
-
-static RtMidiIn *midiin = nullptr;
-
 static void midicallback(double deltatime, std::vector<uint8_t> *message,
 		void *userData)
 {
+	UNUSED_PARAMETER(userData);
 	QMidiEvent *midiEvent = nullptr;
 	size_t nBytes = message->size();
 
@@ -208,17 +206,56 @@ static void midicallback(double deltatime, std::vector<uint8_t> *message,
 	}
 }
 
-static void MidiInit(int deviceIndex)
+int obs_get_midi_ports()
+{
+	return midiin ? midiin->getPortCount() : 0;
+}
+
+char * obs_get_midi_port_name(int i)
+{
+	int ports = obs_get_midi_ports();
+	if (i >= 0 && i < ports) {
+		try {
+			std::string name = midiin->getPortName(i);
+			return bstrdup(name.c_str());
+		} catch (RtMidiError &error) {
+			blog(LOG_WARNING, "midi: [%i] (error) %s", i,
+				error.getMessage().c_str());
+		}
+	}
+	return nullptr;
+}
+
+int obs_get_midi_port_by_name(const char *name)
+{
+	if (!midiin)
+		midiin = new RtMidiIn();
+	if(!name || !*name)
+		return -1;
+	uint32_t count = midiin->getPortCount();
+	for (uint32_t i = 0; i < count; i++) {
+		try {
+			if (strcmp(name, midiin->getPortName(i).c_str()) == 0)
+				return i;
+		} catch (RtMidiError &error) {
+			blog(LOG_WARNING, "midi: [%i] (error) %s", i,
+				error.getMessage().c_str());
+		}
+	}
+	return -1;
+}
+
+void MidiInit(int deviceIndex)
 {
 	if (midiin)
 		delete midiin;
 	midiin = new RtMidiIn();
 	blog(LOG_INFO, "midi: initializing...");
 	/* Check available ports */
-	unsigned int nPorts = midiin->getPortCount();
+	uint32_t nPorts = midiin->getPortCount();
 	if (nPorts == 0) {
 		blog(LOG_INFO, "midi: no ports available");
-		goto cleanup;
+		return;
 	} else {
 		blog(LOG_INFO, "midi: %i ports available", nPorts);
 		for (uint32_t i = 0; i < nPorts; i++) {
@@ -239,9 +276,6 @@ static void MidiInit(int deviceIndex)
 		midiin->ignoreTypes(true, true, true);
 		return;
 	}
-cleanup:
-	delete midiin;
-	midiin = nullptr;
 }
 
 OBSBasic::OBSBasic(QWidget *parent)
@@ -391,8 +425,6 @@ OBSBasic::OBSBasic(QWidget *parent)
 						size(), rect));
 		}
 	}
-
-	MidiInit(1);
 }
 
 static void SaveAudioDevice(const char *name, int channel, obs_data_t *parent,
@@ -1726,6 +1758,14 @@ void OBSBasic::OBSInit()
 			&OBSBasic::UpdateMultiviewProjectorMenu);
 	ui->viewMenu->addAction(QTStr("MultiviewWindowed"),
 			this, SLOT(OpenMultiviewWindow()));
+
+	/* ----------------------- */
+	/* Start midi device       */
+
+	const char *midiDevice = config_get_string(basicConfig, "Audio",
+			"MidiDevice");
+	int midiPort = obs_get_midi_port_by_name(midiDevice);
+	MidiInit(midiPort);
 
 #if !defined(_WIN32) && !defined(__APPLE__)
 	delete ui->actionShowCrashLogs;

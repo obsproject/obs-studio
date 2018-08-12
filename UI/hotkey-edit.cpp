@@ -69,10 +69,11 @@ void OBSHotkeyEdit::keyPressEvent(QKeyEvent *event)
 	HandleNewKey(new_key);
 }
 
-void OBSHotkeyEdit::midiPressEvent(QMidiEvent *event)
+void OBSHotkeyEdit::hotkeyPressEvent(QHotkeyEvent *event)
 {
 	obs_key_combination_t new_key = { 0, OBS_KEY_NONE };
 	new_key.key = event->getKey();
+	new_key.modifiers = event->getModifiers();
 	HandleNewKey(new_key);
 }
 
@@ -198,8 +199,8 @@ bool OBSHotkeyEdit::event(QEvent *e)
 	case QEvent::KeyPress:
 		keyPressEvent(static_cast<QKeyEvent*>(e));
 		return false;
-	case QMidiEvent::midiType:
-		midiPressEvent(static_cast<QMidiEvent*>(e));
+	case QHotkeyEvent::hotkeyType:
+		hotkeyPressEvent(static_cast<QHotkeyEvent*>(e));
 		return false;
 	default:
 		return ret;

@@ -18,13 +18,48 @@ public:
 		const=0;
 };
 
-class QMidiEvent : public QEvent {
+class QHotkeyEvent : public QEvent {
+	obs_key_t _key;
+	uint32_t _modifiers;
+	bool _pressed;
+public:
+	static const QEvent::Type hotkeyType = static_cast<QEvent::Type>(QEvent::User + 0x4B45);
+	QHotkeyEvent(obs_key_t key, bool pressed, uint32_t modifiers = 0) :
+		QEvent(hotkeyType)
+	{
+		_key = key;
+		_pressed = pressed;
+		_modifiers = modifiers;
+	}
+	QHotkeyEvent(void* data) :
+		QEvent(hotkeyType)
+	{
+		UNUSED_PARAMETER(data);
+		_key = OBS_KEY_NONE;
+		_pressed = false;
+		_modifiers = 0;
+	}
+	virtual obs_key_t getKey()
+	{
+		return _key;
+	}
+	virtual bool pressed()
+	{
+		return _pressed;
+	}
+	virtual uint32_t getModifiers()
+	{
+		return _modifiers;
+	}
+};
+
+class QMidiEvent : public QHotkeyEvent {
 	std::vector<uint8_t> _message;
 	double _deltaTime;
 public:
-	static const QEvent::Type midiType = static_cast<QEvent::Type>(QEvent::User + 0x4D49);
+	//static const QEvent::Type midiType = static_cast<QEvent::Type>(QEvent::User + 0x4D49);
 	QMidiEvent(std::vector<uint8_t> message, double deltatime) :
-			QEvent(midiType)
+			QHotkeyEvent(nullptr)
 	{
 		_message = message;
 		_deltaTime = deltatime;
@@ -51,11 +86,11 @@ public:
 		int h = m & 0xF0;
 		int l = m & 0x0F;
 		switch (h) {
-		case 0x80: // note off
-		case 0x90: // note on
-		case 0xA0: // polymorphic pressure
+		case 0x80: /* note off */
+		case 0x90: /* note on */
+		case 0xA0: /* polymorphic pressure */
 			return (obs_key_t)(OBS_MIDI_KEY_CN1_CHANNEL0 + dataMask(_message.at(1)) + 128 * l);
-		case 0xB0: // control change
+		case 0xB0: /* control change */
 			return (obs_key_t)(OBS_MIDI_CONTROL0_CHANNEL0 + dataMask(_message.at(1)) + 128 * l);
 		case 0xC0:
 			return (obs_key_t)(OBS_MIDI_PROGRAM0 + l);
@@ -89,7 +124,6 @@ public:
 	{
 		int m = _message.at(0);
 		int h = m & 0xF0;
-		int l = m & 0x0F;
 		if (h == 0xB0) {
 			int m1 = _message.at(1);
 			if (m1 < 64)
