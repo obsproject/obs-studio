@@ -110,6 +110,20 @@ elseif(UNIX)
 
         set(obs_PLATFORM_LIBRARIES
                 Qt5::X11Extras)
+
+	if("${CMAKE_SYSTEM_NAME}" MATCHES "Linux")
+		find_package(ALSA)
+		if(NOT ALSA_FOUND)
+			message(FATAL_ERROR "ALSA not found")
+		endif()
+
+	include_directories(${ALSA_INCLUDE_DIR})
+
+	set(obs_PLATFORM_LIBRARIES
+		${obs_PLATFORM_LIBRARIES}
+		${ALSA_LIBRARY})
+
+	endif()
 endif()
 
 set(obs_libffutil_SOURCES

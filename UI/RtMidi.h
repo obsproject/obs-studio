@@ -57,8 +57,8 @@
 //#pragma comment(lib, "")
 #define __linux_alsa__
 #elif __linux__
- //#pragma comment(lib, "")
-#define __linux_alsa__
+#pragma comment(lib, "libasound.so.2")
+#define __LINUX_ALSA__
 #elif __APPLE__
  //#pragma comment(lib, "")
 #define __MACOSX_CORE__
