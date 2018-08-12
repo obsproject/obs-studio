@@ -173,16 +173,24 @@ static RtMidiIn *midiin = nullptr;
 static void midicallback(double deltatime, std::vector<uint8_t> *message,
 		void *userData)
 {
-	QMidiEvent *midiEvent = new QMidiEvent(*message, deltatime);
+	QMidiEvent *midiEvent = nullptr;
 	size_t nBytes = message->size();
-	if (nBytes > 0)
-		blog(LOG_DEBUG, "midi message (%s):", obs_key_to_name(midiEvent->getKey()));
+
+	if (nBytes > 0) {
+		midiEvent = new QMidiEvent(*message, deltatime);
+		blog(LOG_DEBUG, "midi message (%s):",
+				obs_key_to_name(midiEvent->getKey()));
+	} else {
+		return;
+	}
+
 	for (size_t i = 0; i < nBytes; i++) {
-		int val = (int)message->at(i);
+		uint8_t val = message->at(i);
 		blog(LOG_DEBUG, "%i (0x%x)", val, val);
 	}
-	if (nBytes > 0)
-		blog(LOG_DEBUG, "midi timestamp: %f\n", deltatime);
+
+	blog(LOG_DEBUG, "midi timestamp: %f\n", deltatime);
+
 	/* todo: figure out how to post events properly */
 	QWidget *widget = App()->focusWidget();
 	if (widget) {
@@ -192,7 +200,11 @@ static void midicallback(double deltatime, std::vector<uint8_t> *message,
 		else
 			App()->postEvent(App()->activeWindow(), midiEvent);
 	} else {
-		App()->postEvent(App()->activeWindow(), midiEvent);
+		widget = App()->activeWindow();
+		if (widget)
+			App()->postEvent(widget, midiEvent);
+		else
+			App()->postEvent(App()->GetMainWindow(), midiEvent);
 	}
 }
 
@@ -202,7 +214,7 @@ static void MidiInit(int deviceIndex)
 		delete midiin;
 	midiin = new RtMidiIn();
 	blog(LOG_INFO, "midi: initializing...");
-	// Check available ports.
+	/* Check available ports */
 	unsigned int nPorts = midiin->getPortCount();
 	if (nPorts == 0) {
 		blog(LOG_INFO, "midi: no ports available");
@@ -214,16 +226,17 @@ static void MidiInit(int deviceIndex)
 				blog(LOG_INFO, "midi: [%i] %s", i,
 						midiin->getPortName(i).c_str());
 			} catch (RtMidiError &error) {
-				blog(LOG_INFO, "midi: [%i] (error) %s", i,
+				blog(LOG_WARNING, "midi: [%i] (error) %s", i,
 						error.getMessage().c_str());
 			}
 		}
 	}
-	if (deviceIndex < nPorts) {
+	/* Valid device? Start listening to midi */
+	if (deviceIndex >=0 && deviceIndex < nPorts) {
 		midiin->openPort(deviceIndex);
 		midiin->setCallback(&midicallback);
-		// Don't ignore sysex, timing, or active sensing messages.
-		midiin->ignoreTypes(false, false, false);
+		/* ignore sysex, timing, and active sensing messages. */
+		midiin->ignoreTypes(true, true, true);
 		return;
 	}
 cleanup:
