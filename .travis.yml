@@ -20,6 +20,7 @@ env:
 matrix:
   include:
     - os: osx
+      osx_image: xcode9.4
       env:
        - CMAKE_PREFIX_PATH=/usr/local/opt/qt5/lib/cmake
        - CEF_BUILD_VERSION=3.3282.1726.gc8368c8

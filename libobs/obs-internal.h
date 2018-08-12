@@ -331,6 +331,8 @@ struct obs_core_data {
 
 	long long                       unnamed_index;
 
+	obs_data_t                      *private_data;
+
 	volatile bool                   valid;
 };
 

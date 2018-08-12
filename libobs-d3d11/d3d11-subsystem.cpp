@@ -1787,7 +1787,6 @@ bool gs_texture_map(gs_texture_t *tex, uint8_t **ptr, uint32_t *linesize)
 	gs_texture_2d *tex2d = static_cast<gs_texture_2d*>(tex);
 
 	D3D11_MAPPED_SUBRESOURCE map;
-	ZeroMemory(&map, sizeof(D3D11_MAPPED_SUBRESOURCE));
 	hr = tex2d->device->context->Map(tex2d->texture, 0,
 			D3D11_MAP_WRITE_DISCARD, 0, &map);
 	if (FAILED(hr))

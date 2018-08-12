@@ -565,6 +565,7 @@ static bool obs_init_data(void)
 	if (!obs_view_init(&data->main_view))
 		goto fail;
 
+	data->private_data = obs_data_create();
 	data->valid = true;
 
 fail:
@@ -620,6 +621,7 @@ static void obs_free_data(void)
 	pthread_mutex_destroy(&data->draw_callbacks_mutex);
 	da_free(data->draw_callbacks);
 	da_free(data->tick_callbacks);
+	obs_data_release(data->private_data);
 }
 
 static const char *obs_signals[] = {
@@ -2158,4 +2160,32 @@ void obs_remove_raw_video_callback(
 	if (!obs)
 		return;
 	stop_raw_video(video->video, callback, param);
+}
+
+void obs_apply_private_data(obs_data_t *settings)
+{
+	if (!obs || !settings)
+		return;
+
+	obs_data_apply(obs->data.private_data, settings);
+}
+
+void obs_set_private_data(obs_data_t *settings)
+{
+	if (!obs)
+		return;
+
+	obs_data_clear(obs->data.private_data);
+	if (settings)
+		obs_data_apply(obs->data.private_data, settings);
+}
+
+obs_data_t *obs_get_private_data(void)
+{
+	if (!obs)
+		return NULL;
+
+	obs_data_t *private_data = obs->data.private_data;
+	obs_data_addref(private_data);
+	return private_data;
 }

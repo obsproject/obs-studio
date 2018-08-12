@@ -118,12 +118,12 @@ static void clear_data(struct obs_qsv *obsqsv)
 	if (obsqsv->context) {
 		EnterCriticalSection(&g_QsvCs);
 		qsv_encoder_close(obsqsv->context);
+		obsqsv->context = NULL;
 		LeaveCriticalSection(&g_QsvCs);
 
 		// bfree(obsqsv->sei);
 		bfree(obsqsv->extra_data);
 
-		obsqsv->context = NULL;
 		// obsqsv->sei = NULL;
 		obsqsv->extra_data = NULL;
 	}
