@@ -27,6 +27,23 @@ include(ObsHelpers)
 include(ObsCpack)
 include(GNUInstallDirs)
 
+# Must be a string in the format of "x.x.x-rcx"
+if(DEFINED RELEASE_CANDIDATE)
+	set(OBS_VERSION "${RELEASE_CANDIDATE}")
+	string(REPLACE "-rc" "." RC_SPLIT ${RELEASE_CANDIDATE})
+	string(REPLACE "." ";" RC_SPLIT ${RC_SPLIT})
+	message(WARNING "******************************************************************************\nRelease candidate deteced, OBS_VERSION is now: ${OBS_VERSION}\n******************************************************************************")
+	list(GET RC_SPLIT 0 OBS_RELEASE_CANDIDATE_MAJOR)
+	list(GET RC_SPLIT 1 OBS_RELEASE_CANDIDATE_MINOR)
+	list(GET RC_SPLIT 2 OBS_RELEASE_CANDIDATE_PATCH)
+	list(GET RC_SPLIT 3 OBS_RELEASE_CANDIDATE)
+else()
+	set(OBS_RELEASE_CANDIDATE_MAJOR 0)
+	set(OBS_RELEASE_CANDIDATE_MINOR 0)
+	set(OBS_RELEASE_CANDIDATE_PATCH 0)
+	set(OBS_RELEASE_CANDIDATE 0)
+endif()
+
 if(MSVC AND NOT EXISTS "${CMAKE_BINARY_DIR}/ALL_BUILD.vcxproj.user")
 	file(GENERATE
 		OUTPUT "${CMAKE_BINARY_DIR}/ALL_BUILD.vcxproj.user"
