@@ -451,6 +451,8 @@ void SourceTreeModel::OBSFrontendEvent(enum obs_frontend_event event, void *ptr)
 
 void SourceTreeModel::Clear()
 {
+	st->areaWindow->stop();
+
 	beginResetModel();
 	items.clear();
 	endResetModel();
@@ -485,6 +487,8 @@ void SourceTreeModel::SceneChanged()
 {
 	OBSScene scene = GetCurrentScene();
 
+	st->areaWindow->stop();
+
 	beginResetModel();
 	items.clear();
 	obs_scene_enum_items(scene, enumItem, &items);
@@ -494,6 +498,8 @@ void SourceTreeModel::SceneChanged()
 	st->ResetWidgets();
 
 	for (int i = 0; i < items.count(); i++) {
+		st->areaWindow->start(items[i]);
+
 		bool select = obs_sceneitem_selected(items[i]);
 		QModelIndex index = createIndex(i, 0);
 
@@ -600,6 +606,7 @@ void SourceTreeModel::Add(obs_sceneitem_t *item)
 
 		st->UpdateWidget(createIndex(0, 0, nullptr), item);
 	}
+	st->areaWindow->start(item);
 }
 
 void SourceTreeModel::Remove(obs_sceneitem_t *item)
@@ -640,6 +647,8 @@ void SourceTreeModel::Remove(obs_sceneitem_t *item)
 
 	if (is_group)
 		UpdateGroupState(true);
+
+	st->areaWindow->remove(item);
 }
 
 OBSSceneItem SourceTreeModel::Get(int idx)
@@ -861,6 +870,8 @@ void SourceTreeModel::UpdateGroupState(bool update)
 
 SourceTree::SourceTree(QWidget *parent_) : QListView(parent_)
 {
+	areaWindow = new AreaWindow(this);
+
 	SourceTreeModel *stm_ = new SourceTreeModel(this);
 	setModel(stm_);
 	setStyleSheet(QString(
