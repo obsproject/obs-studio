@@ -16,3 +16,7 @@
 [submodule "plugins/obs-outputs/ftl-sdk"]
 	path = plugins/obs-outputs/ftl-sdk
 	url = https://github.com/Mixer/ftl-sdk.git
+[submodule "plugins/obs-ndi"]
+	path = plugins/obs-ndi
+	url = https://github.com/stream-labs/obs-ndi.git
+	branch = streamlabs-obs
