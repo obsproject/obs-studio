@@ -1738,13 +1738,21 @@ void OBSBasic::ReceivedIntroJson(const QString &text)
 		const std::string &version = item["version"].string_value();
 		const std::string &url = item["url"].string_value();
 		int increment = item["increment"].int_value();
+		int rc = item["RC"].int_value();
 
 		int major = 0;
 		int minor = 0;
 
 		sscanf(version.c_str(), "%d.%d", &major, &minor);
+#if OBS_RELEASE_CANDIDATE > 0
+		if (major == OBS_RELEASE_CANDIDATE_MAJOR &&
+		    minor == OBS_RELEASE_CANDIDATE_MINOR &&
+		    rc == OBS_RELEASE_CANDIDATE) {
+#else
 		if (major == LIBOBS_API_MAJOR_VER &&
-		    minor == LIBOBS_API_MINOR_VER) {
+		    minor == LIBOBS_API_MINOR_VER &&
+		    rc == 0) {
+#endif
 			info_url = url;
 			info_increment = increment;
 		}
@@ -1755,12 +1763,21 @@ void OBSBasic::ReceivedIntroJson(const QString &text)
 		return;
 	}
 
+#if OBS_RELEASE_CANDIDATE > 0
+	uint32_t lastVersion = config_get_int(App()->GlobalConfig(), "General",
+			"LastRCVersion");
+#else
 	uint32_t lastVersion = config_get_int(App()->GlobalConfig(), "General",
 			"LastVersion");
+#endif
 
 	int current_version_increment = -1;
 
+#if OBS_RELEASE_CANDIDATE > 0
+	if (lastVersion < OBS_RELEASE_CANDIDATE_VER) {
+#else
 	if (lastVersion < LIBOBS_API_VER) {
+#endif
 		config_set_int(App()->GlobalConfig(), "General",
 				"InfoIncrement", -1);
 	} else {
@@ -2097,6 +2114,10 @@ OBSBasic::~OBSBasic()
 
 	config_set_int(App()->GlobalConfig(), "General", "LastVersion",
 			LIBOBS_API_VER);
+#if OBS_RELEASE_CANDIDATE > 0
+	config_set_int(App()->GlobalConfig(), "General", "LastRCVersion",
+			OBS_RELEASE_CANDIDATE_VER);
+#endif
 
 	bool alwaysOnTop = IsAlwaysOnTop(this);
 
