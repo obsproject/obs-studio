@@ -1795,7 +1795,7 @@ void OBSBasic::ReceivedIntroJson(const QString &text)
 
 	QDialog dlg(this);
 	dlg.setWindowTitle("What's New");
-	dlg.resize(600, 600);
+	dlg.resize(700, 600);
 
 	QCefWidget *cefWidget = create_browser_widget(nullptr, info_url);
 	if (!cefWidget) {
