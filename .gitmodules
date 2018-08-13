@@ -12,7 +12,7 @@
 	url = https://github.com/obsproject/obs-browser.git
 [submodule "plugins/obs-vst"]
 	path = plugins/obs-vst
-	url = https://github.com/obsproject/obs-vst.git
+	url = https://github.com/stream-labs/obs-vst.git
 [submodule "plugins/obs-outputs/ftl-sdk"]
 	path = plugins/obs-outputs/ftl-sdk
 	url = https://github.com/Mixer/ftl-sdk.git
