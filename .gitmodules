@@ -9,7 +9,7 @@
 	url = https://github.com/obsproject/obs-amd-encoder.git
 [submodule "plugins/obs-browser"]
 	path = plugins/obs-browser
-	url = https://github.com/obsproject/obs-browser.git
+	url = https://github.com/stream-labs/obs-browser.git
 [submodule "plugins/obs-vst"]
 	path = plugins/obs-vst
 	url = https://github.com/stream-labs/obs-vst.git
