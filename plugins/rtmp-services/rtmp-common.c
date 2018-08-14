@@ -36,6 +36,8 @@ static void ensure_valid_url(struct rtmp_common *service, json_t *json,
 
 	if (!service->server || !servers || !json_is_array(servers))
 		return;
+	if (astrcmpi(service->server, "auto") == 0)
+		return;
 
 	json_array_foreach (servers, index, server) {
 		const char *url = get_string_val(server, "url");
