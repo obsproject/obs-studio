@@ -321,7 +321,7 @@ bool SourceTreeItem::eventFilter(QObject *object, QEvent *event)
 	} else if (event->type() == QEvent::FocusOut) {
 		QMetaObject::invokeMethod(this, "ExitEditMode",
 				Qt::QueuedConnection,
-				Q_ARG(bool, false));
+				Q_ARG(bool, true));
 		return true;
 	}
 
