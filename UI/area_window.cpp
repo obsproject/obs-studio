@@ -3,23 +3,37 @@
 #include <Windows.h>
 
 namespace area_window {
+namespace {
+
+struct window_sizing {
+	int x{};
+	int y{};
+	int w{};
+	int h{};
+
+	auto operator== (const window_sizing& r) const
+	{
+		return x == r.x && y == r.y && w == r.w && h == r.h;
+	}
+	auto operator!= (const window_sizing& r) const
+	{
+		return !(*this == r);
+	}
+};
 
 struct AreaData {
 	OBSSceneItem item;
 	OBSSignal transformSignal;
 
 	HWND window{};
-	int width{};
-	int height{};
-	obs_sceneitem_crop rect{};
+	window_sizing size{};
 };
-
 static AreaData area;
 
 #define AREA_WINDOW_CLASS_NAME L"OBS_AREA_WINDOW"
 #define AREA_WINDOW_COLOR_KEY RGB(0xFF, 0x20, 0xFF)
 
-static void paint_window()
+void paint_window()
 {
 	RECT window_rect;
 	GetClientRect(area.window, &window_rect);
@@ -43,7 +57,7 @@ static void paint_window()
 	EndPaint(area.window, &p);
 }
 
-static LRESULT CALLBACK window_proc(HWND window, UINT message, WPARAM wParam, LPARAM lParam)
+LRESULT CALLBACK window_proc(HWND window, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	switch (message) {
 	case WM_CLOSE:
@@ -62,7 +76,7 @@ static LRESULT CALLBACK window_proc(HWND window, UINT message, WPARAM wParam, LP
 	return DefWindowProc(window, message, wParam, lParam);
 }
 
-static void create_area_class()
+void create_area_class()
 {
 	static bool registered = false;
 	if (registered) return;
@@ -85,43 +99,31 @@ static void create_area_class()
 	RegisterClassExW(&window_class);
 }
 
-static void create_window()
+void create_window()
 {
 	create_area_class();
+	const auto& s = area.size;
+
 	const DWORD exStyle = WS_EX_LAYERED | WS_EX_TRANSPARENT | WS_EX_TOPMOST | WS_EX_NOACTIVATE;
 	const DWORD style = WS_POPUP;
-	const BOOL hasMenu = FALSE;
-
-	RECT rect;
-	rect.left = area.rect.left;
-	rect.top = area.rect.top;
-	rect.right = area.width - area.rect.right;
-	rect.bottom = area.height - area.rect.bottom;
-	AdjustWindowRectEx(&rect, style, hasMenu, exStyle);
-	int width = 4 + rect.right - rect.left;
-	int height = 4 + rect.bottom - rect.top;
-	int x = rect.left - 2;
-	int y = rect.top - 2;
-
 	const auto windowName = nullptr;
-	const HWND parentWindow = nullptr;
+	const auto parentWindow = HWND{};
 	const auto menu = HMENU{};
 	const auto customParam = nullptr;
-	const HINSTANCE instance = GetModuleHandle(nullptr);
-	const HWND hwnd = CreateWindowExW(
+	const auto instance = GetModuleHandle(nullptr);
+	const auto hwnd = CreateWindowExW(
 				exStyle,
 				AREA_WINDOW_CLASS_NAME,
 				windowName,
 				style,
-				x,
-				y,
-				width,
-				height,
+				s.x,
+				s.y,
+				s.w,
+				s.h,
 				parentWindow,
 				menu,
 				instance,
 				customParam);
-
 	area.window = hwnd;
 
 	const BYTE alpha = 0u;
@@ -132,51 +134,81 @@ static void create_window()
 	UpdateWindow(hwnd);
 }
 
-static void destroy_window()
+void move_window()
+{
+	auto repaint = true;
+	const auto& s = area.size;
+	MoveWindow(area.window, s.x, s.y, s.w, s.h, repaint);
+}
+
+void destroy_window()
 {
 	if (!area.window) return;
 	DestroyWindow(area.window);
 	area.window = nullptr;
 }
 
+auto compute_window_sizing() -> window_sizing
+{
+	window_sizing r{};
+
+	auto source = obs_sceneitem_get_source(area.item);
+	auto sourceWidth = obs_source_get_width(source);
+	auto sourceHeight = obs_source_get_height(source);
+
+	if (sourceWidth == 0 || sourceHeight == 0) return r;
+
+	obs_sceneitem_crop crop;
+	obs_sceneitem_get_crop(area.item, &crop);
+
+	obs_transform_info osi;
+	obs_sceneitem_get_info(area.item, &osi);
+
+	auto scene = obs_sceneitem_get_scene(area.item);
+	auto sceneSource = obs_scene_get_source(scene);
+	auto sceneWidth = obs_source_get_width(sceneSource);
+	auto sceneHeight = obs_source_get_height(sceneSource);
+
+	auto minX = max(0, -osi.pos.x / osi.scale.x);
+	auto minY = max(0, -osi.pos.y / osi.scale.y);
+	auto maxWidth = (sceneWidth) / osi.scale.x;
+	auto maxHeight = (sceneHeight) / osi.scale.y;
+
+	r.x = minX + crop.left;
+	r.y = minY + crop.top;
+	r.w = min(maxWidth, sourceWidth - crop.left - crop.right);
+	r.h = min(maxHeight, sourceHeight - crop.top - crop.bottom);
+
+	// we want to make sure we paint arround the area => add 2 pixels
+	r.x -= 2;
+	r.y -= 2;
+	r.w += 4;
+	r.h += 4;
+	return r;
+}
+
+} // namespace
 } // namespace area_window
 
 void AreaWindow::update()
 {
 	using namespace area_window;
 
-	auto source = obs_sceneitem_get_source(area.item);
-	auto sourceWidth = obs_source_get_width(source);
-	auto sourceHeight = obs_source_get_height(source);
-
-	if (sourceWidth == 0 || sourceHeight == 0) return;
-
-	struct obs_sceneitem_crop crop;
-	obs_sceneitem_get_crop(area.item, &crop);
+	auto size = compute_window_sizing();
+	if (size.w == 0 || size.h == 0) return;
 
 	if (!area.window) {
-		area.width = sourceWidth;
-		area.height = sourceHeight;
-		memcpy(&area.rect, &crop, sizeof(crop));
-
+		area.size = size;
 		create_window();
 	}
-	else if (sourceWidth != area.width || sourceHeight != area.height ||
-			 crop.left != area.rect.left || crop.top != area.rect.top ||
-			 crop.right != area.rect.right || crop.bottom != area.rect.bottom) {
-
-		area.width = sourceWidth;
-		area.height = sourceHeight;
-		memcpy(&area.rect, &crop, sizeof(crop));
-
-		int width = area.width - crop.left - crop.right;
-		int height = area.height - crop.top - crop.bottom;
-		bool repaint = true;
-		MoveWindow(area.window, crop.left - 2, crop.top - 2, width + 4, height + 4, repaint);
+	else if (size != area.size) {
+		area.size = size;
+		move_window();
 	}
 }
 
-static void OnItemTransform(void *param, calldata_t *data) {
+static void OnItemTransform(void *param, calldata_t *data)
+{
 	using namespace area_window;
 	auto window = static_cast<AreaWindow*>(param);
 	OBSSceneItem item = (obs_sceneitem_t*)calldata_ptr(data, "item");
@@ -195,11 +227,11 @@ void AreaWindow::start(obs_sceneitem_t *item)
 	if (area.item) stop();
 	if (!item) return;
 
-
 	area.item = OBSSceneItem(item);
 	auto scene = obs_sceneitem_get_scene(item);
 	auto sceneSource = obs_scene_get_source(scene);
 	area.transformSignal.Connect(obs_source_get_signal_handler(sceneSource), "item_transform", OnItemTransform, this);
+	// TODO: find a way to recognize that output size has changed
 
 	update();
 }
