@@ -1372,6 +1372,7 @@ void OBSBasic::ResetOutputs()
 					&OBSBasic::ReplayBufferClicked);
 
 			replayBufferButton->setProperty("themeID", "replayBufferButton");
+			replayBufferButton->setCheckable(true);
 			ui->buttonsVLayout->insertWidget(2, replayBufferButton);
 		}
 
