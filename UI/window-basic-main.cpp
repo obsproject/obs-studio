@@ -1366,6 +1366,7 @@ void OBSBasic::ResetOutputs()
 			replayBufferButton = new QPushButton(
 					QTStr("Basic.Main.StartReplayBuffer"),
 					this);
+			replayBufferButton->setCheckable(true);
 			connect(replayBufferButton.data(),
 					&QPushButton::clicked,
 					this,
