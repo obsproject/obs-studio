@@ -2321,8 +2321,8 @@ static void get_ungrouped_transform(obs_sceneitem_t *group,
 	vec4_set(&mat.t, 0.0f, 0.0f, 0.0f, 1.0f);
 	matrix4_mul(&mat, &mat, &transform);
 
-	scale->x = vec4_len(&mat.x);
-	scale->y = vec4_len(&mat.y);
+	scale->x = vec4_len(&mat.x) * (scale->x > 0.0f ? 1.0f : -1.0f);
+	scale->y = vec4_len(&mat.y) * (scale->y > 0.0f ? 1.0f : -1.0f);
 	*rot += group->rot;
 }
 
@@ -2357,8 +2357,8 @@ static void apply_group_transform(obs_sceneitem_t *item, obs_sceneitem_t *group)
 	vec4_set(&mat.t, 0.0f, 0.0f, 0.0f, 1.0f);
 	matrix4_mul(&mat, &mat, &transform);
 
-	item->scale.x = vec4_len(&mat.x);
-	item->scale.y = vec4_len(&mat.y);
+	item->scale.x = vec4_len(&mat.x) * (item->scale.x > 0.0f ? 1.0f : -1.0f);
+	item->scale.y = vec4_len(&mat.y) * (item->scale.y > 0.0f ? 1.0f : -1.0f);
 	item->rot -= group->rot;
 
 	update_item_transform(item, false);
