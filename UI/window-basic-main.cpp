@@ -5509,36 +5509,38 @@ void OBSBasic::on_actionPasteTransform_triggered()
 	obs_scene_enum_items(GetCurrentScene(), func, nullptr);
 }
 
+static bool reset_tr(obs_scene_t *scene, obs_sceneitem_t *item, void *param)
+{
+	if (obs_sceneitem_is_group(item))
+		obs_sceneitem_group_enum_items(item, reset_tr, nullptr);
+	if (!obs_sceneitem_selected(item))
+		return true;
+
+	obs_sceneitem_defer_update_begin(item);
+
+	obs_transform_info info;
+	vec2_set(&info.pos, 0.0f, 0.0f);
+	vec2_set(&info.scale, 1.0f, 1.0f);
+	info.rot = 0.0f;
+	info.alignment = OBS_ALIGN_TOP | OBS_ALIGN_LEFT;
+	info.bounds_type = OBS_BOUNDS_NONE;
+	info.bounds_alignment = OBS_ALIGN_CENTER;
+	vec2_set(&info.bounds, 0.0f, 0.0f);
+	obs_sceneitem_set_info(item, &info);
+
+	obs_sceneitem_crop crop = {};
+	obs_sceneitem_set_crop(item, &crop);
+
+	obs_sceneitem_defer_update_end(item);
+
+	UNUSED_PARAMETER(scene);
+	UNUSED_PARAMETER(param);
+	return true;
+}
+
 void OBSBasic::on_actionResetTransform_triggered()
 {
-	auto func = [] (obs_scene_t *scene, obs_sceneitem_t *item, void *param)
-	{
-		if (!obs_sceneitem_selected(item))
-			return true;
-
-		obs_sceneitem_defer_update_begin(item);
-
-		obs_transform_info info;
-		vec2_set(&info.pos, 0.0f, 0.0f);
-		vec2_set(&info.scale, 1.0f, 1.0f);
-		info.rot = 0.0f;
-		info.alignment = OBS_ALIGN_TOP | OBS_ALIGN_LEFT;
-		info.bounds_type = OBS_BOUNDS_NONE;
-		info.bounds_alignment = OBS_ALIGN_CENTER;
-		vec2_set(&info.bounds, 0.0f, 0.0f);
-		obs_sceneitem_set_info(item, &info);
-
-		obs_sceneitem_crop crop = {};
-		obs_sceneitem_set_crop(item, &crop);
-
-		obs_sceneitem_defer_update_end(item);
-
-		UNUSED_PARAMETER(scene);
-		UNUSED_PARAMETER(param);
-		return true;
-	};
-
-	obs_scene_enum_items(GetCurrentScene(), func, nullptr);
+	obs_scene_enum_items(GetCurrentScene(), reset_tr, nullptr);
 }
 
 static void GetItemBox(obs_sceneitem_t *item, vec3 &tl, vec3 &br)
