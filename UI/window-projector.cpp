@@ -927,7 +927,7 @@ void OBSProjector::UpdateMultiview()
 	siScaleY  = (scenesCY - thicknessx2) / fh;
 
 	numSrcs = 0;
-	int i = 0;
+	size_t i = 0;
 	while (i < scenes.sources.num && numSrcs < maxSrcs) {
 		obs_source_t *src = scenes.sources.array[i++];
 		OBSData data = obs_source_get_private_settings(src);
