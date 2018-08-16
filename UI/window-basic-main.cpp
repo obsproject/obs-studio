@@ -5589,6 +5589,9 @@ static void SetItemTL(obs_sceneitem_t *item, const vec3 &tl)
 static bool RotateSelectedSources(obs_scene_t *scene, obs_sceneitem_t *item,
 		void *param)
 {
+	if (obs_sceneitem_is_group(item))
+		obs_sceneitem_group_enum_items(item, RotateSelectedSources,
+				param);
 	if (!obs_sceneitem_selected(item))
 		return true;
 
@@ -5601,10 +5604,11 @@ static bool RotateSelectedSources(obs_scene_t *scene, obs_sceneitem_t *item,
 	else if (rot <= -360.0f) rot += 360.0f;
 	obs_sceneitem_set_rot(item, rot);
 
+	obs_sceneitem_force_update_transform(item);
+
 	SetItemTL(item, tl);
 
 	UNUSED_PARAMETER(scene);
-	UNUSED_PARAMETER(param);
 	return true;
 };
 
@@ -5631,6 +5635,9 @@ static bool MultiplySelectedItemScale(obs_scene_t *scene, obs_sceneitem_t *item,
 {
 	vec2 &mul = *reinterpret_cast<vec2*>(param);
 
+	if (obs_sceneitem_is_group(item))
+		obs_sceneitem_group_enum_items(item, MultiplySelectedItemScale,
+				param);
 	if (!obs_sceneitem_selected(item))
 		return true;
 
@@ -5640,6 +5647,8 @@ static bool MultiplySelectedItemScale(obs_scene_t *scene, obs_sceneitem_t *item,
 	obs_sceneitem_get_scale(item, &scale);
 	vec2_mul(&scale, &scale, &mul);
 	obs_sceneitem_set_scale(item, &scale);
+
+	obs_sceneitem_force_update_transform(item);
 
 	SetItemTL(item, tl);
 
