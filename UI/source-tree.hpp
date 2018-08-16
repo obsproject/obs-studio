@@ -63,6 +63,7 @@ private:
 	OBSSignal sceneRemoveSignal;
 	OBSSignal itemRemoveSignal;
 	OBSSignal groupReorderSignal;
+	OBSSignal deselectSignal;
 	OBSSignal visibleSignal;
 	OBSSignal renameSignal;
 	OBSSignal removeSignal;
@@ -77,6 +78,8 @@ private slots:
 	void Renamed(const QString &name);
 
 	void ExpandClicked(bool checked);
+
+	void Deselect();
 };
 
 class SourceTreeModel : public QAbstractListModel {
