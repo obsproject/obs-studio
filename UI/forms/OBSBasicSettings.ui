@@ -3426,49 +3426,6 @@
            </property>
           </widget>
          </item>
-         <item row="9" column="0" colspan="2">
-          <widget class="QScrollArea" name="audioSourceScrollArea">
-           <property name="widgetResizable">
-            <bool>true</bool>
-           </property>
-           <widget class="QWidget" name="audioSourceWidget">
-            <property name="geometry">
-             <rect>
-              <x>0</x>
-              <y>0</y>
-              <width>800</width>
-              <height>69</height>
-             </rect>
-            </property>
-           </widget>
-          </widget>
-         </item>
-         <item row="10" column="1">
-          <widget class="QLabel" name="audioMsg">
-           <property name="styleSheet">
-            <string notr="true">color: rgb(255, 0, 4);</string>
-           </property>
-           <property name="text">
-            <string notr="true"/>
-           </property>
-           <property name="wordWrap">
-            <bool>true</bool>
-           </property>
-          </widget>
-         </item>
-         <item row="11" column="1">
-          <widget class="QLabel" name="audioMsg_2">
-           <property name="text">
-            <string notr="true"/>
-           </property>
-           <property name="wordWrap">
-            <bool>true</bool>
-           </property>
-           <property name="themeID" stdset="0">
-            <string notr="true">warning</string>
-           </property>
-          </widget>
-         </item>
          <item row="7" column="0">
           <widget class="QLabel" name="label_65">
            <property name="text">
@@ -3504,6 +3461,13 @@
            </item>
           </widget>
          </item>
+         <item row="8" column="0">
+          <widget class="QLabel" name="label_66">
+           <property name="text">
+            <string>Basic.Settings.Audio.PeakMeterType</string>
+           </property>
+          </widget>
+         </item>
          <item row="8" column="1">
           <widget class="QComboBox" name="peakMeterType">
            <property name="currentIndex">
@@ -3521,12 +3485,61 @@
            </item>
           </widget>
          </item>
-         <item row="8" column="0">
-          <widget class="QLabel" name="label_66">
+         <item row="9" column="0" colspan="2">
+          <widget class="QScrollArea" name="audioSourceScrollArea">
+           <property name="widgetResizable">
+            <bool>true</bool>
+           </property>
+           <widget class="QWidget" name="audioSourceWidget">
+            <property name="geometry">
+             <rect>
+              <x>0</x>
+              <y>0</y>
+              <width>800</width>
+              <height>69</height>
+             </rect>
+            </property>
+           </widget>
+          </widget>
+         </item>
+         <item row="10" column="1">
+          <widget class="QLabel" name="audioMsg">
            <property name="text">
-            <string>Basic.Settings.Audio.PeakMeterType</string>
+            <string notr="true"/>
+           </property>
+           <property name="wordWrap">
+            <bool>true</bool>
+           </property>
+           <property name="themeID" stdset="0">
+            <string>error</string>
            </property>
           </widget>
+         </item>
+         <item row="11" column="1">
+          <widget class="QLabel" name="audioMsg_2">
+           <property name="text">
+            <string notr="true"/>
+           </property>
+           <property name="wordWrap">
+            <bool>true</bool>
+           </property>
+           <property name="themeID" stdset="0">
+            <string notr="true">warning</string>
+           </property>
+          </widget>
+         </item>
+         <item row="12" column="1">
+          <spacer name="verticalSpacer_3">
+           <property name="orientation">
+            <enum>Qt::Vertical</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>20</width>
+             <height>40</height>
+            </size>
+           </property>
+          </spacer>
          </item>
         </layout>
        </widget>
