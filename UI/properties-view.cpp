@@ -1198,9 +1198,9 @@ static void UpdateFPSLabels(OBSFrameRatePropertyWidget *w)
 	if (!valid_fps) {
 		w->currentFPS->setHidden(true);
 		w->timePerFrame->setHidden(true);
-		if (!option)
-			w->warningLabel->setStyleSheet(
-					"QLabel { color: red; }");
+		if (!option) {
+			w->warningLabel->setProperty("themeID", "error");
+		}
 
 		return;
 	}
@@ -1210,9 +1210,9 @@ static void UpdateFPSLabels(OBSFrameRatePropertyWidget *w)
 
 	media_frames_per_second match{};
 	if (!option && !matches_ranges(match, *valid_fps, w->fps_ranges, true))
-		w->warningLabel->setStyleSheet("QLabel { color: red; }");
+		w->warningLabel->setProperty("themeID", "error");
 	else
-		w->warningLabel->setStyleSheet("");
+		w->warningLabel->setProperty("themeID", "");
 
 	auto convert_to_fps = media_frames_per_second_to_fps;
 	auto convert_to_frame_interval =
