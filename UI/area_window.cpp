@@ -1,5 +1,6 @@
 #include "area_window.hpp"
 
+#ifdef _WIN32
 #include <Windows.h>
 
 namespace area_window {
@@ -252,3 +253,14 @@ void AreaWindow::remove(obs_sceneitem_t *item)
 	using namespace area_window;
 	if (area.item == item) stop();
 }
+
+#else
+
+// TODO: support other platforms
+
+void AreaWindow::update() {}
+void AreaWindow::start(obs_sceneitem_t *item) {}
+void AreaWindow::stop() {}
+void AreaWindow::remove(obs_sceneitem_t *item) {}
+
+#endif
