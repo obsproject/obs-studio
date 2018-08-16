@@ -2885,3 +2885,12 @@ void obs_sceneitem_group_enum_items(obs_sceneitem_t *group,
 	if (scene)
 		obs_scene_enum_items(scene, callback, param);
 }
+
+void obs_sceneitem_force_update_transform(obs_sceneitem_t *item)
+{
+	if (!item)
+		return;
+
+	if (os_atomic_set_bool(&item->update_transform, false))
+		update_item_transform(item, false);
+}

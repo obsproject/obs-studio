@@ -1427,6 +1427,8 @@ EXPORT void obs_sceneitem_set_scale_filter(obs_sceneitem_t *item,
 EXPORT enum obs_scale_type obs_sceneitem_get_scale_filter(
 		obs_sceneitem_t *item);
 
+EXPORT void obs_sceneitem_force_update_transform(obs_sceneitem_t *item);
+
 EXPORT void obs_sceneitem_defer_update_begin(obs_sceneitem_t *item);
 EXPORT void obs_sceneitem_defer_update_end(obs_sceneitem_t *item);
 
