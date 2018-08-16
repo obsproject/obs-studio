@@ -482,6 +482,32 @@ void GenerateGUID(string &guid)
 	HashToString(junk, &guid[0]);
 }
 
+string GetProgramGUID()
+{
+	static mutex m;
+	lock_guard<mutex> lock(m);
+
+	/* NOTE: this is an arbitrary random number that we use to count the
+	 * number of unique OBS installations and is not associated with any
+	 * kind of identifiable information */
+	const char *pguid = config_get_string(GetGlobalConfig(),
+			"General", "InstallGUID");
+	string guid;
+	if (pguid)
+		guid = pguid;
+
+	if (guid.empty()) {
+		GenerateGUID(guid);
+
+		if (!guid.empty())
+			config_set_string(GetGlobalConfig(),
+					"General", "InstallGUID",
+					guid.c_str());
+	}
+
+	return guid;
+}
+
 void AutoUpdateThread::infoMsg(const QString &title, const QString &text)
 {
 	OBSMessageBox::information(App()->GetMainWindow(), title, text);
@@ -609,24 +635,7 @@ try {
 	/* ----------------------------------- *
 	 * get current install GUID            */
 
-	/* NOTE: this is an arbitrary random number that we use to count the
-	 * number of unique OBS installations and is not associated with any
-	 * kind of identifiable information */
-	const char *pguid = config_get_string(GetGlobalConfig(),
-			"General", "InstallGUID");
-	string guid;
-	if (pguid)
-		guid = pguid;
-
-	if (guid.empty()) {
-		GenerateGUID(guid);
-
-		if (!guid.empty())
-			config_set_string(GetGlobalConfig(),
-					"General", "InstallGUID",
-					guid.c_str());
-	}
-
+	string guid = GetProgramGUID();
 	if (!guid.empty()) {
 		string header = "X-OBS2-GUID: ";
 		header += guid;
@@ -829,20 +838,7 @@ try {
 	/* ----------------------------------- *
 	 * get current install GUID            */
 
-	const char *pguid = config_get_string(GetGlobalConfig(),
-			"General", "InstallGUID");
-	string guid;
-	if (pguid)
-		guid = pguid;
-
-	if (guid.empty()) {
-		GenerateGUID(guid);
-
-		if (!guid.empty())
-			config_set_string(GetGlobalConfig(),
-					"General", "InstallGUID",
-					guid.c_str());
-	}
+	string guid = GetProgramGUID();
 
 	if (!guid.empty()) {
 		string header = "X-OBS2-GUID: ";

@@ -113,16 +113,6 @@ static vec3 GetTransformedPos(float x, float y, const matrix4 &mat)
 	return result;
 }
 
-static vec3 GetTransformedPosScaled(float x, float y, const matrix4 &mat,
-		float scale)
-{
-	vec3 result;
-	vec3_set(&result, x, y, 0.0f);
-	vec3_transform(&result, &result, &mat);
-	vec3_mulf(&result, &result, scale);
-	return result;
-}
-
 static inline vec2 GetOBSScreenSize()
 {
 	obs_video_info ovi;
@@ -265,8 +255,9 @@ bool OBSBasicPreview::SelectedAtPos(const vec2 &pos)
 }
 
 struct HandleFindData {
-	const vec2   &pos;
-	const float  scale;
+	const vec2    &pos;
+	const float   radius;
+	matrix4       parent_xform;
 
 	OBSSceneItem item;
 	ItemHandle   handle = ItemHandle::None;
@@ -276,39 +267,36 @@ struct HandleFindData {
 	HandleFindData& operator=(const HandleFindData &) = delete;
 	HandleFindData& operator=(HandleFindData &&) = delete;
 
-	inline HandleFindData(const vec2 &pos_, float scale_)
-		: pos   (pos_),
-		  scale (scale_)
-	{}
+	inline HandleFindData(const vec2 &pos_, float scale)
+		: pos    (pos_),
+		  radius (HANDLE_SEL_RADIUS / scale)
+	{
+		matrix4_identity(&parent_xform);
+	}
+
+	inline HandleFindData(const HandleFindData &hfd,
+			obs_sceneitem_t *parent)
+		: pos    (hfd.pos),
+		  radius (hfd.radius),
+		  item   (hfd.item),
+		  handle (hfd.handle)
+	{
+		obs_sceneitem_get_draw_transform(parent, &parent_xform);
+	}
 };
 
 static bool FindHandleAtPos(obs_scene_t *scene, obs_sceneitem_t *item,
 		void *param)
 {
-	HandleFindData *data = reinterpret_cast<HandleFindData*>(param);
+	HandleFindData &data = *reinterpret_cast<HandleFindData*>(param);
 
 	if (!obs_sceneitem_selected(item)) {
 		if (obs_sceneitem_is_group(item)) {
-			matrix4 transform;
-			vec3 new_pos3;
-			vec3_set(&new_pos3, data->pos.x, data->pos.y, 0.0f);
-			vec3_divf(&new_pos3, &new_pos3, data->scale);
-
-			obs_sceneitem_get_draw_transform(item, &transform);
-			matrix4_inv(&transform, &transform);
-			vec3_transform(&new_pos3, &new_pos3, &transform);
-
-			vec2 new_pos;
-			vec2_set(&new_pos, new_pos3.x, new_pos3.y);
-			HandleFindData findData(new_pos, 1.0f);
-			findData.item = data->item;
-			findData.handle = data->handle;
-
+			HandleFindData newData(data, item);
 			obs_sceneitem_group_enum_items(item, FindHandleAtPos,
-					&findData);
-
-			data->item = findData.item;
-			data->handle = findData.handle;
+					&newData);
+			data.item = newData.item;
+			data.handle = newData.handle;
 		}
 
 		return true;
@@ -316,23 +304,23 @@ static bool FindHandleAtPos(obs_scene_t *scene, obs_sceneitem_t *item,
 
 	matrix4        transform;
 	vec3           pos3;
-	float          closestHandle = HANDLE_SEL_RADIUS;
+	float          closestHandle = data.radius;
 
-	vec3_set(&pos3, data->pos.x, data->pos.y, 0.0f);
+	vec3_set(&pos3, data.pos.x, data.pos.y, 0.0f);
 
 	obs_sceneitem_get_box_transform(item, &transform);
 
 	auto TestHandle = [&] (float x, float y, ItemHandle handle)
 	{
-		vec3 handlePos = GetTransformedPosScaled(x, y, transform,
-				data->scale);
+		vec3 handlePos = GetTransformedPos(x, y, transform);
+		vec3_transform(&handlePos, &handlePos, &data.parent_xform);
 
 		float dist = vec3_dist(&handlePos, &pos3);
-		if (dist < HANDLE_SEL_RADIUS) {
+		if (dist < data.radius) {
 			if (dist < closestHandle) {
 				closestHandle = dist;
-				data->handle  = handle;
-				data->item    = item;
+				data.handle   = handle;
+				data.item     = item;
 			}
 		}
 	};
@@ -381,7 +369,10 @@ void OBSBasicPreview::GetStretchHandleData(const vec2 &pos)
 	if (!scene)
 		return;
 
-	HandleFindData data(pos, main->previewScale / main->devicePixelRatio());
+	float scale = main->previewScale / main->devicePixelRatio();
+	vec2 scaled_pos = pos;
+	vec2_divf(&scaled_pos, &scaled_pos, scale);
+	HandleFindData data(scaled_pos, scale);
 	obs_scene_enum_items(scene, FindHandleAtPos, &data);
 
 	stretchItem     = std::move(data.item);
