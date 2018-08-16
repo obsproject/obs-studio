@@ -5677,6 +5677,9 @@ static bool CenterAlignSelectedItems(obs_scene_t *scene, obs_sceneitem_t *item,
 {
 	obs_bounds_type boundsType = *reinterpret_cast<obs_bounds_type*>(param);
 
+	if (obs_sceneitem_is_group(item))
+		obs_sceneitem_group_enum_items(item, CenterAlignSelectedItems,
+				param);
 	if (!obs_sceneitem_selected(item))
 		return true;
 
@@ -5714,39 +5717,38 @@ void OBSBasic::on_actionStretchToScreen_triggered()
 			&boundsType);
 }
 
+static bool center_to_scene(obs_scene_t *, obs_sceneitem_t *item, void *)
+{
+	vec3 tl, br, itemCenter, screenCenter, offset;
+	obs_video_info ovi;
+
+	if (obs_sceneitem_is_group(item))
+		obs_sceneitem_group_enum_items(item, center_to_scene, nullptr);
+	if (!obs_sceneitem_selected(item))
+		return true;
+
+	obs_get_video_info(&ovi);
+
+	vec3_set(&screenCenter, float(ovi.base_width),
+			float(ovi.base_height), 0.0f);
+	vec3_mulf(&screenCenter, &screenCenter, 0.5f);
+
+	GetItemBox(item, tl, br);
+
+	vec3_sub(&itemCenter, &br, &tl);
+	vec3_mulf(&itemCenter, &itemCenter, 0.5f);
+	vec3_add(&itemCenter, &itemCenter, &tl);
+
+	vec3_sub(&offset, &screenCenter, &itemCenter);
+	vec3_add(&tl, &tl, &offset);
+
+	SetItemTL(item, tl);
+	return true;
+};
+
 void OBSBasic::on_actionCenterToScreen_triggered()
 {
-	auto func = [] (obs_scene_t *scene, obs_sceneitem_t *item, void *param)
-	{
-		vec3 tl, br, itemCenter, screenCenter, offset;
-		obs_video_info ovi;
-
-		if (!obs_sceneitem_selected(item))
-			return true;
-
-		obs_get_video_info(&ovi);
-
-		vec3_set(&screenCenter, float(ovi.base_width),
-				float(ovi.base_height), 0.0f);
-		vec3_mulf(&screenCenter, &screenCenter, 0.5f);
-
-		GetItemBox(item, tl, br);
-
-		vec3_sub(&itemCenter, &br, &tl);
-		vec3_mulf(&itemCenter, &itemCenter, 0.5f);
-		vec3_add(&itemCenter, &itemCenter, &tl);
-
-		vec3_sub(&offset, &screenCenter, &itemCenter);
-		vec3_add(&tl, &tl, &offset);
-
-		SetItemTL(item, tl);
-
-		UNUSED_PARAMETER(scene);
-		UNUSED_PARAMETER(param);
-		return true;
-	};
-
-	obs_scene_enum_items(GetCurrentScene(), func, nullptr);
+	obs_scene_enum_items(GetCurrentScene(), center_to_scene, nullptr);
 }
 
 void OBSBasic::EnablePreviewDisplay(bool enable)
