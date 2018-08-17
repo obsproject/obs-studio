@@ -63,4 +63,5 @@ RunOnceMutex GetRunOnceMutex(bool &already_running);
 
 #ifdef __APPLE__
 void EnableOSXVSync(bool enable);
+void EnableOSXDockIcon(bool enable);
 #endif
