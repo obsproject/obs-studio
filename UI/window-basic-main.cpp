@@ -1594,7 +1594,9 @@ void OBSBasic::OBSInit()
 	ui->lockUI->setChecked(docksLocked);
 	ui->lockUI->blockSignals(false);
 
+#ifndef __APPLE__
 	SystemTray(true);
+#endif
 
 	if (windowState().testFlag(Qt::WindowFullScreen))
 		fullscreenInterface = true;
@@ -1719,6 +1721,10 @@ void OBSBasic::DeferredLoad(const QString &file, int requeueCount)
 	Load(QT_TO_UTF8(file));
 	RefreshSceneCollections();
 	OnFirstLoad();
+
+	/* Minimizng to tray on initial startup does not work on mac
+	 * unless it is done in the deferred load */
+	SystemTray(true);
 }
 
 /* shows a "what's new" page on startup of new versions using CEF */
@@ -6204,6 +6210,10 @@ void OBSBasic::SetShowing(bool showing)
 
 		setVisible(false);
 
+#ifdef __APPLE__
+		EnableOSXDockIcon(false);
+#endif
+
 	} else if (showing && !isVisible()) {
 		if (showHide)
 			showHide->setText(QTStr("Basic.SystemTray.Hide"));
@@ -6213,6 +6223,14 @@ void OBSBasic::SetShowing(bool showing)
 			EnablePreviewDisplay(true);
 
 		setVisible(true);
+
+#ifdef __APPLE__
+		EnableOSXDockIcon(true);
+#endif
+
+		/* raise and activate window to ensure it is on top */
+		raise();
+		activateWindow();
 
 		/* show all child dialogs that was visible earlier */
 		if (!visDialogs.isEmpty()) {
@@ -6341,6 +6359,9 @@ void OBSBasic::SystemTray(bool firstStarted)
 			QTimer::singleShot(50, this, SLOT(hide()));
 			EnablePreviewDisplay(false);
 			setVisible(false);
+#ifdef __APPLE__
+			EnableOSXDockIcon(false);
+#endif
 			opt_minimize_tray = false;
 		}
 	} else if (sysTrayEnabled) {

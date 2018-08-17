@@ -168,3 +168,11 @@ void EnableOSXVSync(bool enable)
 		deferred_updates(enable ? 1 : 0);
 	}
 }
+
+void EnableOSXDockIcon(bool enable)
+{
+	if (enable)
+		[NSApp setActivationPolicy:NSApplicationActivationPolicyRegular];
+	else
+		[NSApp setActivationPolicy:NSApplicationActivationPolicyProhibited];
+}
