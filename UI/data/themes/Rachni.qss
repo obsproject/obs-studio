@@ -45,38 +45,70 @@
 /************************/
 
 OBSTheme {
-    window: rgb(49, 54, 59); /* Blue-gray */
-    windowText: rgb(239, 240, 241); /* White */
-    base: rgb(0, 139, 163); /* Dark Cyan (Primary Dark) */
-    alternateBase: rgb(186, 45, 101); /* Dark Pink (Secondary Dark) */
-    text: rgb(239, 240, 241); /* White */
-    button: rgb(0, 188, 212); /* Cyan (Primary) */
-    buttonText: rgb(239, 240, 241); /* White */
-    brightText: rgb(255, 148, 194); /* Light Pink (Secondary Light) */
+	window: rgb(49, 54, 59); /* Blue-gray */
+	windowText: rgb(239, 240, 241); /* White */
+	base: rgb(0, 139, 163); /* Dark Cyan (Primary Dark) */
+	alternateBase: rgb(186, 45, 101); /* Dark Pink (Secondary Dark) */
+	text: rgb(239, 240, 241); /* White */
+	button: rgb(0, 188, 212); /* Cyan (Primary) */
+	buttonText: rgb(239, 240, 241); /* White */
+	brightText: rgb(255, 148, 194); /* Light Pink (Secondary Light) */
 
-    light: rgb(162, 161, 162); /* Lighter Gray */
-    mid: rgb(118, 121, 124); /* Light Grey */
-    dark: rgb(84, 87, 91); /* Gray */
-    shadow: rgb(35, 38, 41); /* Dark Gray */
+	light: rgb(162, 161, 162); /* Lighter Gray */
+	mid: rgb(118, 121, 124); /* Light Grey */
+	dark: rgb(84, 87, 91); /* Gray */
+	shadow: rgb(35, 38, 41); /* Dark Gray */
 
-    highlight: rgb(98, 238, 255); /* Light Cyan (Primary Light) */
-    highlightText: rgb(0,0,0);
+	highlight: rgb(98, 238, 255); /* Light Cyan (Primary Light) */
+	highlightText: rgb(0,0,0);
 
-    link: rgb(98, 238, 255); /* Light Cyan (Primary Light) */
-    linkVisited: rgb(98, 238, 255); /* Light Cyan (Primary Light) */
+	link: rgb(98, 238, 255); /* Light Cyan (Primary Light) */
+	linkVisited: rgb(98, 238, 255); /* Light Cyan (Primary Light) */
 }
 
 OBSTheme::disabled {
-    text: rgb(255, 148, 194); /* Light Pink (Secondary Light) */
-    buttonText: rgb(255, 148, 194); /* Light Pink (Secondary Light) */
-    brightText: rgb(255, 148, 194); /* Light Pink (Secondary Light) */
+	text: rgb(118, 121, 124); /* Light Gray */
+	buttonText: rgb(118, 121, 124); /* Light Gray */
+	brightText: rgb(118, 121, 124); /* Light Gray */
 }
 
 OBSTheme::inactive {
-    highlight: rgb(0, 188, 212); /* Cyan (Primary) */
-    highlightText: rgb(239, 240, 241); /* White */
+	highlight: rgb(0, 188, 212); /* Cyan (Primary) */
+	highlightText: rgb(239, 240, 241); /* White */
 }
 
+
+/************************/
+/* ---- SourceTree ---- */
+/************************/
+
+SourceTree::item:selected:!active {
+	color: rgb(239, 240, 241); /* White */
+	background-color: rgba(255, 148, 194, 0.25); /* Light Pink (Secondary Light) */
+	border: none;
+}
+
+SourceTree::item:selected {
+	background-color: rgba(240, 98, 146, 0.5); /* Pink (Secondary) */
+	border: none;
+}
+
+SourceTree::item:hover,
+SourceTree::item:disabled:hover,
+SourceTree::item:hover:!active {
+	background-color: rgb(0, 188, 212); /* Cyan (Primary) */
+	color: rgb(239, 240, 241); /* White */
+	border: none;
+}
+
+SourceTree QLineEdit {
+	padding-top: 0;
+	padding-bottom: 0;
+	padding-right: 0;
+	padding-left: 2px;
+	border: none;
+	border-radius: none;
+}
 
 /*************************/
 /* --- General style --- */
@@ -573,16 +605,6 @@ QLineEdit {
 	color: rgb(239, 240, 241); /* White */
 }
 
-QListWidget QLineEdit {
-	padding-top: 0;
-	padding-bottom: 0;
-	padding-right: 0;
-	padding-left: 2px;
-	border: none;
-	border-radius: none;
-}
-
-
 /**********************/
 /* --- Checkboxes --- */
 /**********************/
@@ -744,23 +766,23 @@ MuteCheckBox::indicator:unchecked:disabled {
 /****************************/
 
 SourceTreeSubItemCheckBox {
-    background: transparent;
-    outline: none;
+	background: transparent;
+	outline: none;
 }
 
 SourceTreeSubItemCheckBox::indicator {
-    width: 10px;
-    height: 10px;
+	width: 10px;
+	height: 10px;
 }
 
 SourceTreeSubItemCheckBox::indicator:checked,
 SourceTreeSubItemCheckBox::indicator:checked:hover {
-    image: url(./Dark/expand.png);
+	image: url(./Dark/expand.png);
 }
 
 SourceTreeSubItemCheckBox::indicator:unchecked,
 SourceTreeSubItemCheckBox::indicator:unchecked:hover {
-    image: url(./Dark/collapse.png);
+	image: url(./Dark/collapse.png);
 }
 
 /*************************/
@@ -837,10 +859,10 @@ QPushButton:disabled {
 }
 
 QPushButton::menu-indicator {
-    image: url(./Rachni/down_arrow.png);
-    subcontrol-position: right;
-    subcontrol-origin: padding;
-    width: 25px;
+	image: url(./Rachni/down_arrow.png);
+	subcontrol-position: right;
+	subcontrol-origin: padding;
+	width: 25px;
 }
 
 /******************************/
@@ -1171,6 +1193,14 @@ QFrame[frameShape="0"] {
 
 
 /* Misc style tweaks for dark themes */
+* [themeID="error"] {
+	color: rgb(255, 89, 76); /* Red Error */
+}
+
+* [themeID="warning"] {
+	color: rgb(255, 148, 194); /* Light Pink (Secondary Light) */
+}
+
 QStatusBar::item {
 	border: none;
 }

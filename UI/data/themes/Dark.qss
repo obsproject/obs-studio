@@ -50,8 +50,8 @@ OBSTheme {
     highlight: rgb(42,130,218); /* blue */
     highlightText: rgb(0,0,0);
 
-    link: rgb(42,130,218); /* blue */
-    linkVisited: rgb(42,130,218); /* blue */
+    link: rgb(114, 162, 255); /* OBS blue */
+    linkVisited: rgb(114, 162, 255); /* OBS blue */
 }
 
 OBSTheme::disabled {

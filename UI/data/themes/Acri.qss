@@ -43,6 +43,7 @@ QWidget {
 	font-family: "Open Sans", "Tahoma", "Arial", sans-serif;
 	font-size: 12px;
 	padding: 4px;
+	overflow: auto;
 }
 
 #menubar {
@@ -77,6 +78,14 @@ QSizeGrip {
 
 QWidget::disabled {
 	color: #484848;
+}
+
+* [themeID="error"] {
+	color: #d91740;
+}
+
+* [themeID="warning"] {
+	color: #d9af17;
 }
 
 /* Dropdown menus, Scenes box, Sources box */
@@ -502,10 +511,12 @@ QPushButton {
 
 QPushButton::flat {
 	background-color: rgb(24,24,25);
+	border: none;
 }
 
 QPushButton:checked {
-	background-color: #202b52;
+	background-color: #581624;
+	border-color: #84162d;
 }
 
 QPushButton:hover {
@@ -520,6 +531,11 @@ QPushButton:pressed {
 QPushButton:disabled {
 	border: 1px solid #232426;
 	background-color: #1a1a1b;
+}
+
+QPushButton::flat:hover,
+QPushButton::flat:disabled {
+	border: none;
 }
 
 /* Progress Bar */
@@ -833,13 +849,6 @@ OBSBasicProperties,
 
 FocusList::item {
 	padding: 0px 2px;
-}
-
-#transitionsContainer QPushButton,
-#mixerDock QPushButton,
-#effectWidget QPushButton,
-#asyncWidget QPushButton {
-	border: none;
 }
 
 #fpsTypes {
