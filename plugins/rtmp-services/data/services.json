@@ -1324,6 +1324,15 @@
             "recommended": {
                 "max video bitrate": 5000
             }
+        },
+        {
+            "name": "DTube",
+            "servers": [
+                {
+                    "name": "Default",
+                    "url": "rtmp://stream.dtube.top/live/"
+                }
+            ]
         }
     ]
 }
