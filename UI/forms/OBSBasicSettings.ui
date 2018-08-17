@@ -3823,8 +3823,8 @@
              <verstretch>0</verstretch>
             </sizepolicy>
            </property>
-           <property name="styleSheet">
-            <string notr="true">color: rgb(255, 0, 4);</string>
+           <property name="themeID" stdset="0">
+            <string>error</string>
            </property>
            <property name="text">
             <string notr="true"/>
@@ -4668,8 +4668,8 @@
            </property>
            <item>
             <widget class="QLabel" name="advancedMsg">
-             <property name="styleSheet">
-              <string notr="true">color: rgb(255, 0, 4);</string>
+             <property name="themeID" stdset="0">
+              <string>error</string>
              </property>
              <property name="text">
               <string notr="true"/>
@@ -4681,8 +4681,8 @@
            </item>
            <item>
             <widget class="QLabel" name="advancedMsg2">
-             <property name="styleSheet">
-              <string notr="true">color: rgb(255, 0, 4);</string>
+             <property name="themeID" stdset="0">
+              <string>error</string>
              </property>
              <property name="text">
               <string notr="true"/>
