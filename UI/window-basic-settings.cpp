@@ -4319,12 +4319,6 @@ void OBSBasicSettings::SimpleRecordingEncoderChanged()
 				warning += "\n\n";
 			warning += SIMPLE_OUTPUT_WARNING("Encoder");
 		}
-
-		if (streamEnc == enc && enc == SIMPLE_ENCODER_QSV) {
-			if (!warning.isEmpty())
-				warning += "\n\n";
-			warning += SIMPLE_OUTPUT_WARNING("MultipleQSV");
-		}
 	}
 
 	if (ui->simpleOutRecFormat->currentText().compare("mp4") == 0) {
