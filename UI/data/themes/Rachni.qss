@@ -1214,3 +1214,23 @@ QToolTip {
 	background-color: rgb(49, 54, 59); /* Blue-gray */
 	color: rgb(240, 98, 146); /* Pink (Secondary) */
 }
+
+/* About dialog */
+
+* [themeID="aboutName"] {
+	font-size: 36px;
+	font-weight: bold;
+}
+
+* [themeID="aboutVersion"] {
+	font-size: 16px;
+	margin-bottom: 20px;
+}
+
+* [themeID="aboutInfo"] {
+	margin-bottom: 20px;
+}
+
+* [themeID="aboutHLayout"] {
+	background-color: rgb(35, 38, 41); /* Dark Gray */
+}

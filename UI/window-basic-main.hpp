@@ -30,6 +30,7 @@
 #include "window-basic-adv-audio.hpp"
 #include "window-basic-filters.hpp"
 #include "window-projector.hpp"
+#include "window-basic-about.hpp"
 
 #include <obs-frontend-internal.hpp>
 
@@ -147,6 +148,7 @@ private:
 	QPointer<OBSBasicTransform> transformWindow;
 	QPointer<OBSBasicAdvAudio> advAudioWindow;
 	QPointer<OBSBasicFilters> filters;
+	QPointer<OBSAbout> about;
 
 	QPointer<QTimer>    cpuUsageTimer;
 	os_cpu_usage_info_t *cpuUsageInfo = nullptr;
@@ -476,6 +478,8 @@ private slots:
 	void ColorChange();
 
 	SourceTreeItem *GetItemWidgetFromSceneItem(obs_sceneitem_t *sceneItem);
+
+	void on_actionShowAbout_triggered();
 
 private:
 	/* OBS Callbacks */

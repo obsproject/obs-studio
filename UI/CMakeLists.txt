@@ -151,6 +151,7 @@ set(obs_SOURCES
 	window-basic-adv-audio.cpp
 	window-basic-transform.cpp
 	window-basic-preview.cpp
+	window-basic-about.cpp
 	window-namedialog.cpp
 	window-log-reply.cpp
 	window-projector.cpp
@@ -194,6 +195,7 @@ set(obs_HEADERS
 	window-basic-auto-config.hpp
 	window-basic-main-outputs.hpp
 	window-basic-source-select.hpp
+	window-basic-about.hpp
 	window-license-agreement.hpp
 	window-basic-status-bar.hpp
 	window-basic-adv-audio.hpp
@@ -228,7 +230,8 @@ set(obs_HEADERS
 	source-label.hpp
 	remote-text.hpp
 	audio-encoders.hpp
-	qt-wrappers.hpp)
+	qt-wrappers.hpp
+	clickable-label.hpp)
 
 set(obs_UI
 	forms/NameDialog.ui
@@ -246,7 +249,8 @@ set(obs_UI
 	forms/OBSBasicSourceSelect.ui
 	forms/OBSBasicInteraction.ui
 	forms/OBSUpdate.ui
-	forms/OBSRemux.ui)
+	forms/OBSRemux.ui
+	forms/OBSAbout.ui)
 
 set(obs_QRC
 	forms/obs.qrc)
@@ -298,6 +302,7 @@ define_graphic_modules(obs)
 
 install_obs_core(obs)
 install_obs_data(obs data obs-studio)
+install_obs_data_file(obs ../AUTHORS obs-studio/authors)
 
 if (UNIX AND UNIX_STRUCTURE AND NOT APPLE)
 	install(FILES dist/obs.desktop DESTINATION ${CMAKE_INSTALL_FULL_DATAROOTDIR}/applications)
