@@ -44,6 +44,10 @@ FIND_PATH(LUAJIT_INCLUDE_DIR
 		include/luajit-2.0
 		luajit2.0
 		include/luajit2.0
+		luajit-2.1
+		include/luajit-2.1
+		luajit2.1
+		include/luajit2.1
 		)
 
 find_library(LUAJIT_LIB
