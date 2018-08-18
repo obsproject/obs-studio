@@ -214,12 +214,14 @@ static void image_source_tick(void *data, float seconds)
 
 
 static const char *image_filter =
-	"All formats (*.bmp *.tga *.png *.jpeg *.jpg *.gif);;"
+	"All formats (*.bmp *.tga *.png *.jpeg *.jpg *.gif *.psd);;"
 	"BMP Files (*.bmp);;"
 	"Targa Files (*.tga);;"
 	"PNG Files (*.png);;"
 	"JPEG Files (*.jpeg *.jpg);;"
-	"GIF Files (*.gif)";
+	"GIF Files (*.gif);;"
+	"PSD Files (*.psd);;"
+	"All Files (*.*)";
 
 static obs_properties_t *image_source_properties(void *data)
 {
