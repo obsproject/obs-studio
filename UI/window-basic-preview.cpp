@@ -600,30 +600,52 @@ static bool AddItemBounds(obs_scene_t *scene, obs_sceneitem_t *item,
 		void *param)
 {
 	SelectedItemBounds *data = reinterpret_cast<SelectedItemBounds*>(param);
+	vec3 t[4];
 
+	auto add_bounds = [data, &t] ()
+	{
+		for (const vec3 &v : t) {
+			if (data->first) {
+				vec3_copy(&data->tl, &v);
+				vec3_copy(&data->br, &v);
+				data->first = false;
+			} else {
+				vec3_min(&data->tl, &data->tl, &v);
+				vec3_max(&data->br, &data->br, &v);
+			}
+		}
+	};
+
+	if (obs_sceneitem_is_group(item)) {
+		SelectedItemBounds sib;
+		obs_sceneitem_group_enum_items(item, AddItemBounds, &sib);
+
+		if (!sib.first) {
+			matrix4 xform;
+			obs_sceneitem_get_draw_transform(item, &xform);
+
+			vec3_set(&t[0], sib.tl.x, sib.tl.y, 0.0f);
+			vec3_set(&t[1], sib.tl.x, sib.br.y, 0.0f);
+			vec3_set(&t[2], sib.br.x, sib.tl.y, 0.0f);
+			vec3_set(&t[3], sib.br.x, sib.br.y, 0.0f);
+			vec3_transform(&t[0], &t[0], &xform);
+			vec3_transform(&t[1], &t[1], &xform);
+			vec3_transform(&t[2], &t[2], &xform);
+			vec3_transform(&t[3], &t[3], &xform);
+			add_bounds();
+		}
+	}
 	if (!obs_sceneitem_selected(item))
 		return true;
 
 	matrix4 boxTransform;
 	obs_sceneitem_get_box_transform(item, &boxTransform);
 
-	vec3 t[4] = {
-		GetTransformedPos(0.0f, 0.0f, boxTransform),
-		GetTransformedPos(1.0f, 0.0f, boxTransform),
-		GetTransformedPos(0.0f, 1.0f, boxTransform),
-		GetTransformedPos(1.0f, 1.0f, boxTransform)
-	};
-
-	for (const vec3 &v : t) {
-		if (data->first) {
-			vec3_copy(&data->tl, &v);
-			vec3_copy(&data->br, &v);
-			data->first = false;
-		} else {
-			vec3_min(&data->tl, &data->tl, &v);
-			vec3_max(&data->br, &data->br, &v);
-		}
-	}
+	t[0] = GetTransformedPos(0.0f, 0.0f, boxTransform);
+	t[1] = GetTransformedPos(1.0f, 0.0f, boxTransform);
+	t[2] = GetTransformedPos(0.0f, 1.0f, boxTransform);
+	t[3] = GetTransformedPos(1.0f, 1.0f, boxTransform);
+	add_bounds();
 
 	UNUSED_PARAMETER(scene);
 	return true;
