@@ -725,13 +725,13 @@ error:
 	HANDLE_ERROR(size, obs_service_info, info);
 }
 
-void obs_regsiter_modal_ui_s(const struct obs_modal_ui *info, size_t size)
+void obs_register_modal_ui_s(const struct obs_modal_ui *info, size_t size)
 {
 #define CHECK_REQUIRED_VAL_(info, val, func) \
 	CHECK_REQUIRED_VAL(struct obs_modal_ui, info, val, func)
-	CHECK_REQUIRED_VAL_(info, task,   obs_regsiter_modal_ui);
-	CHECK_REQUIRED_VAL_(info, target, obs_regsiter_modal_ui);
-	CHECK_REQUIRED_VAL_(info, exec,   obs_regsiter_modal_ui);
+	CHECK_REQUIRED_VAL_(info, task,   obs_register_modal_ui);
+	CHECK_REQUIRED_VAL_(info, target, obs_register_modal_ui);
+	CHECK_REQUIRED_VAL_(info, exec,   obs_register_modal_ui);
 #undef CHECK_REQUIRED_VAL_
 
 	REGISTER_OBS_DEF(size, obs_modal_ui, obs->modal_ui_callbacks, info);
@@ -741,13 +741,13 @@ error:
 	HANDLE_ERROR(size, obs_modal_ui, info);
 }
 
-void obs_regsiter_modeless_ui_s(const struct obs_modeless_ui *info, size_t size)
+void obs_register_modeless_ui_s(const struct obs_modeless_ui *info, size_t size)
 {
 #define CHECK_REQUIRED_VAL_(info, val, func) \
 	CHECK_REQUIRED_VAL(struct obs_modeless_ui, info, val, func)
-	CHECK_REQUIRED_VAL_(info, task,   obs_regsiter_modeless_ui);
-	CHECK_REQUIRED_VAL_(info, target, obs_regsiter_modeless_ui);
-	CHECK_REQUIRED_VAL_(info, create, obs_regsiter_modeless_ui);
+	CHECK_REQUIRED_VAL_(info, task,   obs_register_modeless_ui);
+	CHECK_REQUIRED_VAL_(info, target, obs_register_modeless_ui);
+	CHECK_REQUIRED_VAL_(info, create, obs_register_modeless_ui);
 #undef CHECK_REQUIRED_VAL_
 
 	REGISTER_OBS_DEF(size, obs_modeless_ui, obs->modeless_ui_callbacks,
