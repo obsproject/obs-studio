@@ -2656,7 +2656,7 @@ void OBSBasic::VolControlContextMenu()
 
 	/* ------------------- */
 
-	QMenu popup(this);
+	QMenu popup;
 	popup.addAction(&unhideAllAction);
 	popup.addAction(&hideAction);
 	popup.addAction(&mixerRenameAction);
@@ -2708,7 +2708,7 @@ void OBSBasic::StackedMixerAreaContextMenuRequested()
 
 	/* ------------------- */
 
-	QMenu popup(this);
+	QMenu popup;
 	popup.addAction(&unhideAllAction);
 	popup.addSeparator();
 	popup.addAction(&toggleControlLayoutAction);
