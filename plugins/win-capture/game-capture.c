@@ -923,6 +923,8 @@ static const char *blacklisted_exes[] = {
 	"shellexperiencehost",
 	"winstore.app",
 	"searchui",
+	"lockapp",
+	"windowsinternal.composableshell.experiences.textinput.inputapp",
 	NULL
 };
 
