@@ -1,4 +1,4 @@
-#ifdef _WIN32
+#if defined(_WIN32) || defined(_WIN64)
 #include <windows.h>
 #endif
 
@@ -128,7 +128,7 @@ static bool load_vlc_funcs(void)
 
 static bool load_libvlc_module(void)
 {
-#ifdef _WIN32
+#if defined(_WIN32) || defined(_WIN64)
 	char    *path_utf8 = NULL;
 	wchar_t path[1024];
 	LSTATUS status;
