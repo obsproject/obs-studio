@@ -414,7 +414,7 @@ static void add_file(struct vlc_source *c, struct darray *array,
 	new_files.da = *array;
 
 	dstr_copy(&new_path, path);
-#ifdef _WIN32
+#if defined(_WIN32) || defined(_WIN64)
 	if (!is_url)
 		dstr_replace(&new_path, "/", "\\");
 #endif
