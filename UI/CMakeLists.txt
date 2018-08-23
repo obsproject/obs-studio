@@ -80,6 +80,8 @@ if(WIN32)
 		crypt32
 		blake2
 		${OBS_JANSSON_IMPORT})
+		
+		add_definitions(-DWINDOWS_MIDI)
 elseif(APPLE)
 	set(obs_PLATFORM_SOURCES
 		platform-osx.mm)
@@ -114,15 +116,28 @@ elseif(UNIX)
 	if("${CMAKE_SYSTEM_NAME}" MATCHES "Linux")
 		find_package(ALSA)
 		if(NOT ALSA_FOUND)
-			message(FATAL_ERROR "ALSA not found")
+			message(STATUS "ALSA not found")
+		else(ALSA_FOUND)
+			add_definitions(-DLINUX_MIDI)
+			include_directories(${ALSA_INCLUDE_DIR})
+
+			set(obs_PLATFORM_LIBRARIES
+				${obs_PLATFORM_LIBRARIES}
+				${ALSA_LIBRARY})
 		endif()
+		
+	elseif("${CMAKE_SYSTEM_NAME}" MATCHES "FreeBSD")
+		find_package(ALSA)
+		if(NOT ALSA_FOUND)
+			message(STATUS "ALSA not found")
+		else(ALSA_FOUND)
+			add_definitions(-DFREEBSD_MIDI)
+			include_directories(${ALSA_INCLUDE_DIR})
 
-	include_directories(${ALSA_INCLUDE_DIR})
-
-	set(obs_PLATFORM_LIBRARIES
-		${obs_PLATFORM_LIBRARIES}
-		${ALSA_LIBRARY})
-
+			set(obs_PLATFORM_LIBRARIES
+				${obs_PLATFORM_LIBRARIES}
+				${ALSA_LIBRARY})
+		endif()
 	endif()
 endif()
 

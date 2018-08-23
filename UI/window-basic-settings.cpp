@@ -459,6 +459,11 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	ui->advAudioGroupBox = nullptr;
 #endif
 
+#if defined(__RTMIDI_DUMMY__)
+	delete ui->midiDevice;
+	ui->midiDevice = nullptr;
+#endif
+
 #ifdef _WIN32
 	uint32_t winVer = GetWindowsVersion();
 	if (winVer > 0 && winVer < 0x602) {
@@ -2271,7 +2276,7 @@ void OBSBasicSettings::LoadAdvancedSettings()
 
 	if (!SetComboByValue(ui->bindToIP, bindIP))
 		SetInvalidValue(ui->bindToIP, bindIP, bindIP);
-
+#if !defined(__RTMIDI_DUMMY__)
 	size_t count = obs_get_midi_ports();
 	ui->midiDevice->clear();
 	ui->midiDevice->addItem(QTStr("None"), QTStr("None"));
@@ -2287,7 +2292,7 @@ void OBSBasicSettings::LoadAdvancedSettings()
 	if (video_output_active(obs_get_video())) {
 		ui->advancedVideoContainer->setEnabled(false);
 	}
-
+#endif 
 #ifdef __APPLE__
 	bool disableOSXVSync = config_get_bool(App()->GlobalConfig(),
 			"Video", "DisableOSXVSync");

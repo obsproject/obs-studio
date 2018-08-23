@@ -1759,6 +1759,7 @@ void OBSBasic::OBSInit()
 	ui->viewMenu->addAction(QTStr("MultiviewWindowed"),
 			this, SLOT(OpenMultiviewWindow()));
 
+#if !defined(__RTMIDI_DUMMY__)
 	/* ----------------------- */
 	/* Start midi device       */
 
@@ -1766,7 +1767,7 @@ void OBSBasic::OBSInit()
 			"MidiDevice");
 	int midiPort = obs_get_midi_port_by_name(midiDevice);
 	MidiInit(midiPort);
-
+#endif
 #if !defined(_WIN32) && !defined(__APPLE__)
 	delete ui->actionShowCrashLogs;
 	delete ui->actionUploadLastCrashLog;
