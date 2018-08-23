@@ -7,10 +7,17 @@
 
 VisibilityCheckBox::VisibilityCheckBox() : QCheckBox()
 {
-	checkedImage =
-		QPixmap::fromImage(QImage(":/res/images/visible_mask.png"));
-	uncheckedImage =
-		QPixmap::fromImage(QImage(":/res/images/invisible_mask.png"));
+	QString checkedFile;
+	QString uncheckedFile;
+	if (devicePixelRatio() >= 2) {
+		checkedFile = ":/res/images/visible_mask@2x.png";
+		uncheckedFile = ":/res/images/invisible_mask@2x.png";
+	} else {
+		checkedFile = ":/res/images/visible_mask.png";
+		uncheckedFile = ":/res/images/invisible_mask.png";
+	}
+	checkedImage = QPixmap::fromImage(QImage(checkedFile));
+	uncheckedImage = QPixmap::fromImage(QImage(uncheckedFile));
 	setMinimumSize(16, 16);
 
 	setStyleSheet("outline: none;");
@@ -31,6 +38,5 @@ void VisibilityCheckBox::paintEvent(QPaintEvent *event)
 			palette().color(foregroundRole()));
 
 	QPainter p(this);
-	p.drawPixmap(0, 0, image.width(), image.height(),
-			QPixmap::fromImage(image));
+	p.drawPixmap(0, 0, 16, 16, QPixmap::fromImage(image));
 }

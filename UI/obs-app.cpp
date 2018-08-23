@@ -1213,6 +1213,8 @@ bool OBSApp::OBSInit()
 {
 	ProfileScope("OBSApp::OBSInit");
 
+	setAttribute(Qt::AA_UseHighDpiPixmaps);
+
 	bool licenseAccepted = config_get_bool(globalConfig, "General",
 			"LicenseAccepted");
 	OBSLicenseAgreement agreement(nullptr);

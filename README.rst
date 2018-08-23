@@ -47,3 +47,9 @@ Contributing
    you fully understand -- bad advice is worse than no advice.  When it
    comes to something that you don't fully know or understand, please
    defer to the official help or official channels.
+
+Credits
+-------
+ - Icons made by [Freepik](http://www.freepik.com) from
+   [www.flaticon.com](https://www.flaticon.com/) is licensed by
+   [CC 3.0 BY](http://creativecommons.org/licenses/by/3.0/)
