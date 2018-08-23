@@ -1,9 +1,9 @@
 image: Visual Studio 2017
 environment:
   CURL_VERSION: 7.56.1
+  CEF_VERSION: 3.3440.1805.gbe070f9
 
 install:
-  - set CEF_VERSION=3.3440.1805.gbe070f9
   - git submodule update --init --recursive
   - if exist dependencies2017.zip (curl -kLO https://obsproject.com/downloads/dependencies2017.zip -f --retry 5 -z dependencies2017.zip) else (curl -kLO https://obsproject.com/downloads/dependencies2017.zip -f --retry 5 -C -)
   - if exist vlc.zip (curl -kLO https://obsproject.com/downloads/vlc.zip -f --retry 5 -z vlc.zip) else (curl -kLO https://obsproject.com/downloads/vlc.zip -f --retry 5 -C -)
@@ -42,8 +42,8 @@ test: off
 cache:
   - dependencies2017.zip
   - vlc.zip
-  - cef_binary_3.3440.1805.gbe070f9_windows32.zip
-  - cef_binary_3.3440.1805.gbe070f9_windows64.zip
+  - 'cef_binary_%CEF_VERSION%_windows32.zip'
+  - 'cef_binary_%CEF_VERSION%_windows64.zip'
 
 notifications:
   - provider: Webhook
