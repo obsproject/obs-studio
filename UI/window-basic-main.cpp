@@ -167,7 +167,7 @@ static int CountVideoSources()
 	return count;
 }
 
-static void midicallback(double deltatime, std::vector<uint8_t> *message,
+static void MIDICallback(double deltatime, std::vector<uint8_t> *message,
 		void *userData)
 {
 	UNUSED_PARAMETER(userData);
@@ -176,7 +176,7 @@ static void midicallback(double deltatime, std::vector<uint8_t> *message,
 
 	if (nBytes > 0) {
 		midiEvent = new QMidiEvent(*message, deltatime);
-		blog(LOG_DEBUG, "midi message (%s):",
+		blog(LOG_DEBUG, "MIDI message (%s):",
 				obs_key_to_name(midiEvent->getKey()));
 	} else {
 		return;
@@ -187,12 +187,12 @@ static void midicallback(double deltatime, std::vector<uint8_t> *message,
 		blog(LOG_DEBUG, "%i (0x%x)", val, val);
 	}
 
-	blog(LOG_DEBUG, "midi timestamp: %f\n", deltatime);
+	blog(LOG_DEBUG, "MIDI timestamp: %f\n", deltatime);
 
 	/* todo: figure out how to post events properly */
 	QWidget *widget = App()->focusWidget();
 	if (widget) {
-		const char* n = widget->metaObject()->className();
+		const char *n = widget->metaObject()->className();
 		if (strcmp(n, "OBSHotkeyEdit") == 0)
 			App()->postEvent(widget, midiEvent);
 		else
@@ -206,40 +206,40 @@ static void midicallback(double deltatime, std::vector<uint8_t> *message,
 	}
 }
 
-int obs_get_midi_ports()
+int GetMidiPorts()
 {
-	return midiin ? midiin->getPortCount() : 0;
+	return midiIn ? midiIn->getPortCount() : 0;
 }
 
-char * obs_get_midi_port_name(int i)
+char *GetMidiPortName(int i)
 {
-	int ports = obs_get_midi_ports();
+	int ports = GetMidiPorts();
 	if (i >= 0 && i < ports) {
 		try {
-			std::string name = midiin->getPortName(i);
+			std::string name = midiIn->getPortName(i);
 			return bstrdup(name.c_str());
 		} catch (RtMidiError &error) {
-			blog(LOG_WARNING, "midi: [%i] (error) %s", i,
-				error.getMessage().c_str());
+			blog(LOG_WARNING, "MIDI: [%i] (error) %s", i,
+					error.getMessage().c_str());
 		}
 	}
 	return nullptr;
 }
 
-int obs_get_midi_port_by_name(const char *name)
+int GetMidiPortByName(const char *name)
 {
-	if (!midiin)
-		midiin = new RtMidiIn();
+	if (!midiIn)
+		midiIn = new RtMidiIn();
 	if(!name || !*name)
 		return -1;
-	uint32_t count = midiin->getPortCount();
+	uint32_t count = midiIn->getPortCount();
 	for (uint32_t i = 0; i < count; i++) {
 		try {
-			if (strcmp(name, midiin->getPortName(i).c_str()) == 0)
+			if (strcmp(name, midiIn->getPortName(i).c_str()) == 0)
 				return i;
 		} catch (RtMidiError &error) {
-			blog(LOG_WARNING, "midi: [%i] (error) %s", i,
-				error.getMessage().c_str());
+			blog(LOG_WARNING, "MIDI: [%i] (error) %s", i,
+					error.getMessage().c_str());
 		}
 	}
 	return -1;
@@ -247,33 +247,33 @@ int obs_get_midi_port_by_name(const char *name)
 
 void MidiInit(int deviceIndex)
 {
-	if (midiin)
-		delete midiin;
-	midiin = new RtMidiIn();
-	blog(LOG_INFO, "midi: initializing...");
+	if (midiIn)
+		delete midiIn;
+	midiIn = new RtMidiIn();
+	blog(LOG_INFO, "MIDI: initializing...");
 	/* Check available ports */
-	uint32_t nPorts = midiin->getPortCount();
+	uint32_t nPorts = midiIn->getPortCount();
 	if (nPorts == 0) {
-		blog(LOG_INFO, "midi: no ports available");
+		blog(LOG_INFO, "MIDI: no ports available");
 		return;
 	} else {
-		blog(LOG_INFO, "midi: %i ports available", nPorts);
+		blog(LOG_INFO, "MIDI: %i ports available", nPorts);
 		for (uint32_t i = 0; i < nPorts; i++) {
 			try {
-				blog(LOG_INFO, "midi: [%i] %s", i,
-						midiin->getPortName(i).c_str());
+				blog(LOG_INFO, "MIDI: [%i] %s", i,
+						midiIn->getPortName(i).c_str());
 			} catch (RtMidiError &error) {
-				blog(LOG_WARNING, "midi: [%i] (error) %s", i,
+				blog(LOG_WARNING, "MIDI: [%i] (error) %s", i,
 						error.getMessage().c_str());
 			}
 		}
 	}
-	/* Valid device? Start listening to midi */
+	/* Valid device? Start listening to MIDI */
 	if (deviceIndex >=0 && deviceIndex < nPorts) {
-		midiin->openPort(deviceIndex);
-		midiin->setCallback(&midicallback);
-		/* ignore sysex, timing, and active sensing messages. */
-		midiin->ignoreTypes(true, true, true);
+		midiIn->openPort(deviceIndex);
+		midiIn->setCallback(&MIDICallback);
+		/* ignore SysEx, timing, and active sensing messages. */
+		midiIn->ignoreTypes(true, true, true);
 		return;
 	}
 }
@@ -1765,7 +1765,7 @@ void OBSBasic::OBSInit()
 
 	const char *midiDevice = config_get_string(basicConfig, "Audio",
 			"MidiDevice");
-	int midiPort = obs_get_midi_port_by_name(midiDevice);
+	int midiPort = GetMidiPortByName(midiDevice);
 	MidiInit(midiPort);
 #endif
 #if !defined(_WIN32) && !defined(__APPLE__)
@@ -2163,7 +2163,7 @@ OBSBasic::~OBSBasic()
 	delete trayMenu;
 	delete programOptions;
 	delete program;
-	delete midiin;
+	delete midiIn;
 
 	/* XXX: any obs data must be released before calling obs_shutdown.
 	 * currently, we can't automate this with C++ RAII because of the

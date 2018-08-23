@@ -763,8 +763,8 @@ private:
 	std::unique_ptr<Ui::ColorSelect> ui;
 };
 
-static RtMidiIn *midiin = nullptr;
-int obs_get_midi_ports();
-char * obs_get_midi_port_name(int i);
-int obs_get_midi_port_by_name(const char *name);
+static RtMidiIn *midiIn = nullptr;
+int GetMidiPorts();
+char *GetMidiPortName(int i);
+int GetMidiPortByName(const char *name);
 void MidiInit(int deviceIndex);

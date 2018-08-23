@@ -23,16 +23,17 @@ class QHotkeyEvent : public QEvent {
 	uint32_t _modifiers;
 	bool _pressed;
 public:
-	static const QEvent::Type hotkeyType = static_cast<QEvent::Type>(QEvent::User + 0x4B45);
+	static const QEvent::Type hotkeyType =
+			static_cast<QEvent::Type>(QEvent::User + 0x4B45);
 	QHotkeyEvent(obs_key_t key, bool pressed, uint32_t modifiers = 0) :
-		QEvent(hotkeyType)
+			QEvent(hotkeyType)
 	{
 		_key = key;
 		_pressed = pressed;
 		_modifiers = modifiers;
 	}
 	QHotkeyEvent(void* data) :
-		QEvent(hotkeyType)
+			QEvent(hotkeyType)
 	{
 		UNUSED_PARAMETER(data);
 		_key = OBS_KEY_NONE;
@@ -57,7 +58,6 @@ class QMidiEvent : public QHotkeyEvent {
 	std::vector<uint8_t> _message;
 	double _deltaTime;
 public:
-	//static const QEvent::Type midiType = static_cast<QEvent::Type>(QEvent::User + 0x4D49);
 	QMidiEvent(std::vector<uint8_t> message, double deltatime) :
 			QHotkeyEvent(nullptr)
 	{

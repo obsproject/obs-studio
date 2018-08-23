@@ -2277,11 +2277,11 @@ void OBSBasicSettings::LoadAdvancedSettings()
 	if (!SetComboByValue(ui->bindToIP, bindIP))
 		SetInvalidValue(ui->bindToIP, bindIP, bindIP);
 #if !defined(__RTMIDI_DUMMY__)
-	size_t count = obs_get_midi_ports();
+	size_t count = GetMidiPorts();
 	ui->midiDevice->clear();
 	ui->midiDevice->addItem(QTStr("None"), QTStr("None"));
 	for (size_t i = 0; i < count; i++) {
-		char *name = obs_get_midi_port_name(i);
+		char *name = GetMidiPortName(i);
 		ui->midiDevice->addItem(QT_UTF8(name), name);
 		bfree(name);
 	}
@@ -2933,7 +2933,7 @@ void OBSBasicSettings::SaveAdvancedSettings()
 	
 	if (lastMidiDevice != newMidiDevice) {
 		const char *midiName = newMidiDevice.toStdString().c_str();
-		int midiPort = obs_get_midi_port_by_name(midiName);
+		int midiPort = GetMidiPortByName(midiName);
 		MidiInit(midiPort);
 	}
 	
