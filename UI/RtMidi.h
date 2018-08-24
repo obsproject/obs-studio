@@ -50,26 +50,6 @@
 #include <string>
 #include <vector>
 
-#if _WIN32 || _WIN64
-#if WINDOWS_MIDI
-#pragma comment(lib, "winmm.lib")
-#define __WINDOWS_MM__
-#endif
-#elif __FreeBSD__
-#if FREEBSD_MIDI
-#pragma comment(lib, "libasound.so.2")
-#define __LINUX_ALSA__
-#endif
-#elif __linux__
-#if LINUX_MIDI
-#pragma comment(lib, "libasound.so.2")
-#define __LINUX_ALSA__
-#endif
-#elif __APPLE__
- //#pragma comment(lib, "")
-//#define __MACOSX_CORE__
-#endif
-
 /************************************************************************/
 /*! \class RtMidiError
     \brief Exception handling class for RtMidi.
