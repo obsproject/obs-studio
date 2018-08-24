@@ -571,6 +571,8 @@ private slots:
 
 	void SelectSceneItem(OBSScene scene, OBSSceneItem item, bool select);
 
+	void UpdateContextBar();
+
 	void ActivateAudioSource(OBSSource source);
 	void DeactivateAudioSource(OBSSource source);
 
@@ -899,6 +901,7 @@ private slots:
 	void on_actionAlwaysOnTop_triggered();
 
 	void on_toggleListboxToolbars_toggled(bool visible);
+	void on_toggleContextToolbars_toggled(bool visible);
 	void on_toggleStatusBar_toggled(bool visible);
 	void on_toggleSourceIcons_toggled(bool visible);
 
@@ -909,6 +912,20 @@ private slots:
 	void on_transitionDuration_valueChanged(int value);
 
 	void on_modeSwitch_clicked();
+
+	// Source Context Buttons
+	void on_sourcePropertiesButton_clicked();
+	void on_sourceFiltersButton_clicked();
+	void on_sourceRotateRightButton_clicked();
+	void on_sourceRotateLeftButton_clicked();
+	void on_sourceFlipHorizontallyButton_clicked();
+	void on_sourceFlipVerticallyButton_clicked();
+	void on_sourceFitScreenButton_clicked();
+	void on_sourceFillScreenButton_clicked();
+	void on_sourceCenterButton_clicked();
+	void on_contextVisibilityCheckBox_clicked(bool visible);
+	void on_contextLockedCheckBox_clicked(bool locked);
+	void on_sourceEditTransformButton_clicked();
 
 	void on_autoConfigure_triggered();
 	void on_stats_triggered();
@@ -964,6 +981,8 @@ private slots:
 
 public slots:
 	void on_actionResetTransform_triggered();
+	void on_sourceVisibleChanged();
+	void on_sourceLockChanged();
 
 	bool StreamingActive();
 	bool RecordingActive();

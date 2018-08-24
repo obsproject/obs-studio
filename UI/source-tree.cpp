@@ -126,11 +126,15 @@ SourceTreeItem::SourceTreeItem(SourceTree *tree_, OBSSceneItem sceneitem_)
 	auto setItemVisible = [this](bool checked) {
 		SignalBlocker sourcesSignalBlocker(this);
 		obs_sceneitem_set_visible(sceneitem, checked);
+		QMetaObject::invokeMethod(OBSBasic::Get(),
+					  "on_sourceVisibleChanged");
 	};
 
 	auto setItemLocked = [this](bool checked) {
 		SignalBlocker sourcesSignalBlocker(this);
 		obs_sceneitem_set_locked(sceneitem, checked);
+		QMetaObject::invokeMethod(OBSBasic::Get(),
+					  "on_sourceLockChanged");
 	};
 
 	connect(vis, &QAbstractButton::clicked, setItemVisible);

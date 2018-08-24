@@ -42,6 +42,7 @@
 #include "window-basic-settings.hpp"
 #include "crash-report.hpp"
 #include "platform.hpp"
+#include "obs-proxy-style.hpp"
 
 #include <fstream>
 
@@ -1066,6 +1067,7 @@ bool OBSApp::SetTheme(std::string name, std::string path)
 	QString mpath = QString("file:///") + path.c_str();
 	setPalette(defaultPalette);
 	setStyleSheet(mpath);
+	setStyle(new OBSProxyStyle);
 	ParseExtraThemeData(path.c_str());
 
 	emit StyleChanged();

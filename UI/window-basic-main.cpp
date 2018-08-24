@@ -352,6 +352,8 @@ OBSBasic::OBSBasic(QWidget *parent)
 
 	QPoint curPos;
 
+	this->UpdateContextBar();
+
 	//restore parent window geometry
 	const char *geometry = config_get_string(App()->GlobalConfig(),
 						 "BasicWindow", "geometry");
@@ -1655,6 +1657,18 @@ void OBSBasic::OBSInit()
 		GetGlobalConfig(), "BasicWindow", "ShowSourceIcons");
 	ui->toggleSourceIcons->setChecked(sourceIconsVisible);
 
+	if (config_has_user_value(App()->GlobalConfig(), "BasicWindow",
+				  "ShowContextToolbars")) {
+		bool visible = config_get_bool(App()->GlobalConfig(),
+					       "BasicWindow",
+					       "ShowContextToolbars");
+		ui->toggleContextToolbars->setChecked(visible);
+		this->ui->contextContainer->setVisible(visible);
+	} else {
+		ui->toggleContextToolbars->setChecked(true);
+		this->ui->contextContainer->setVisible(true);
+	}
+
 	{
 		ProfileScope("OBSBasic::Load");
 		disableSaving--;
@@ -2710,6 +2724,8 @@ void OBSBasic::RenameSources(OBSSource source, QString newName,
 	obs_scene_t *scene = obs_scene_from_source(source);
 	if (scene)
 		OBSProjector::UpdateMultiviewProjectors();
+
+	this->UpdateContextBar();
 }
 
 void OBSBasic::SelectSceneItem(OBSScene scene, OBSSceneItem item, bool select)
@@ -2720,6 +2736,60 @@ void OBSBasic::SelectSceneItem(OBSScene scene, OBSSceneItem item, bool select)
 		return;
 
 	ui->sources->SelectItem(item, select);
+
+	this->UpdateContextBar();
+}
+
+void OBSBasic::UpdateContextBar()
+{
+	if (GetCurrentSceneItem()) {
+		OBSSceneItem item = GetCurrentSceneItem();
+
+		obs_source_t *source = obs_sceneitem_get_source(item);
+		const char *name = obs_source_get_name(source);
+		ui->contextSourceLabel->setText(name);
+
+		bool visible = obs_sceneitem_visible(item);
+		ui->contextVisibilityCheckBox->setChecked(visible);
+		ui->contextVisibilityCheckBox->setEnabled(true);
+
+		bool enabled = !obs_sceneitem_locked(item);
+		ui->contextLockedCheckBox->setChecked(!enabled);
+		ui->contextLockedCheckBox->setEnabled(true);
+
+		uint32_t flags = obs_source_get_output_flags(source);
+		bool hasVideo = (flags & OBS_SOURCE_VIDEO) != 0;
+		ui->sourceRotateLeftButton->setEnabled(enabled && hasVideo);
+		ui->sourceRotateRightButton->setEnabled(enabled && hasVideo);
+		ui->sourceFlipHorizontallyButton->setEnabled(enabled &&
+							     hasVideo);
+		ui->sourceFlipVerticallyButton->setEnabled(enabled && hasVideo);
+		ui->sourceFillScreenButton->setEnabled(enabled && hasVideo);
+		ui->sourceFitScreenButton->setEnabled(enabled && hasVideo);
+		ui->sourceCenterButton->setEnabled(enabled && hasVideo);
+		ui->sourceEditTransformButton->setEnabled(enabled && hasVideo);
+
+		ui->sourceFiltersButton->setEnabled(true);
+		ui->sourcePropertiesButton->setEnabled(true);
+	} else {
+		ui->contextSourceLabel->setText(
+			QTStr("ContextBar.NoSelectedSource"));
+		ui->contextVisibilityCheckBox->setEnabled(false);
+		ui->contextVisibilityCheckBox->setChecked(false);
+		ui->contextLockedCheckBox->setEnabled(false);
+		ui->contextLockedCheckBox->setChecked(false);
+		ui->sourceRotateLeftButton->setEnabled(false);
+		ui->sourceRotateRightButton->setEnabled(false);
+		ui->sourceFlipHorizontallyButton->setEnabled(false);
+		ui->sourceFlipVerticallyButton->setEnabled(false);
+		ui->sourceFillScreenButton->setEnabled(false);
+		ui->sourceFitScreenButton->setEnabled(false);
+		ui->sourceCenterButton->setEnabled(false);
+		ui->sourceEditTransformButton->setEnabled(false);
+
+		ui->sourceFiltersButton->setEnabled(false);
+		ui->sourcePropertiesButton->setEnabled(false);
+	}
 }
 
 static inline bool SourceMixerHidden(obs_source_t *source)
@@ -4107,6 +4177,8 @@ void OBSBasic::on_scenes_currentItemChanged(QListWidgetItem *current,
 
 	if (api)
 		api->on_event(OBS_FRONTEND_EVENT_PREVIEW_SCENE_CHANGED);
+
+	this->UpdateContextBar();
 
 	UNUSED_PARAMETER(prev);
 }
@@ -6070,6 +6142,74 @@ void OBSBasic::on_actionAlwaysOnTop_triggered()
 				  Qt::QueuedConnection);
 }
 
+void OBSBasic::on_sourcePropertiesButton_clicked()
+{
+	on_actionSourceProperties_triggered();
+}
+
+void OBSBasic::on_sourceFiltersButton_clicked()
+{
+	OpenFilters();
+}
+
+void OBSBasic::on_sourceRotateRightButton_clicked()
+{
+	on_actionRotate90CW_triggered();
+}
+
+void OBSBasic::on_sourceRotateLeftButton_clicked()
+{
+	on_actionRotate90CCW_triggered();
+}
+
+void OBSBasic::on_sourceFlipHorizontallyButton_clicked()
+{
+	on_actionFlipHorizontal_triggered();
+}
+
+void OBSBasic::on_sourceFlipVerticallyButton_clicked()
+{
+	on_actionFlipVertical_triggered();
+}
+
+void OBSBasic::on_sourceFitScreenButton_clicked()
+{
+	on_actionFitToScreen_triggered();
+}
+
+void OBSBasic::on_sourceFillScreenButton_clicked()
+{
+	on_actionStretchToScreen_triggered();
+}
+
+void OBSBasic::on_sourceCenterButton_clicked()
+{
+	on_actionCenterToScreen_triggered();
+}
+
+void OBSBasic::on_contextVisibilityCheckBox_clicked(bool visible)
+{
+	OBSSceneItem sceneitem = GetCurrentSceneItem();
+	if (sceneitem) {
+		obs_sceneitem_set_visible(sceneitem, visible);
+		UpdateContextBar();
+	}
+}
+
+void OBSBasic::on_contextLockedCheckBox_clicked(bool locked)
+{
+	OBSSceneItem sceneitem = GetCurrentSceneItem();
+	if (sceneitem) {
+		obs_sceneitem_set_locked(sceneitem, locked);
+		UpdateContextBar();
+	}
+}
+
+void OBSBasic::on_sourceEditTransformButton_clicked()
+{
+	on_actionEditTransform_triggered();
+}
+
 void OBSBasic::ToggleAlwaysOnTop()
 {
 	bool isAlwaysOnTop = IsAlwaysOnTop(this);
@@ -6240,6 +6380,16 @@ static bool reset_tr(obs_scene_t *scene, obs_sceneitem_t *item, void *param)
 void OBSBasic::on_actionResetTransform_triggered()
 {
 	obs_scene_enum_items(GetCurrentScene(), reset_tr, nullptr);
+}
+
+void OBSBasic::on_sourceVisibleChanged()
+{
+	UpdateContextBar();
+}
+
+void OBSBasic::on_sourceLockChanged()
+{
+	UpdateContextBar();
 }
 
 static void GetItemBox(obs_sceneitem_t *item, vec3 &tl, vec3 &br)
@@ -6905,6 +7055,13 @@ void OBSBasic::on_toggleListboxToolbars_toggled(bool visible)
 
 	config_set_bool(App()->GlobalConfig(), "BasicWindow",
 			"ShowListboxToolbars", visible);
+}
+
+void OBSBasic::on_toggleContextToolbars_toggled(bool visible)
+{
+	config_set_bool(App()->GlobalConfig(), "BasicWindow",
+			"ShowContextToolbars", visible);
+	this->ui->contextContainer->setVisible(visible);
 }
 
 void OBSBasic::on_toggleStatusBar_toggled(bool visible)

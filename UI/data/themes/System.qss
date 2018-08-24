@@ -267,3 +267,52 @@ QSlider::handle:horizontal[themeID="tBarSlider"] {
 	height: 80px;
 	margin: -24px -12px;
 }
+
+/* Source Context */
+#contextContainer {
+    margin: 0px;
+}
+
+#contextContainer QPushButton {
+    padding: 0px;
+}
+
+QPushButton#sourcePropertiesButton {
+    qproperty-icon: url(:/res/images/settings/general.svg);
+}
+
+QPushButton#sourceFiltersButton {
+    qproperty-icon: url(:/res/images/filter.svg);
+}
+
+QPushButton#sourceRotateLeftButton {
+    qproperty-icon: url(:res/images/rotate_left.svg);
+}
+
+QPushButton#sourceRotateRightButton {
+    qproperty-icon: url(:res/images/rotate_right.svg);
+}
+
+QPushButton#sourceFlipHorizontallyButton {
+    qproperty-icon: url(:res/images/flip_horz.svg);
+}
+
+QPushButton#sourceFlipVerticallyButton {
+    qproperty-icon: url(:res/images/flip_vert.svg);
+}
+
+QPushButton#sourceFillScreenButton {
+    qproperty-icon: url(:res/images/fill_frame.svg);
+}
+
+QPushButton#sourceFitScreenButton {
+    qproperty-icon: url(:res/images/fit.svg);
+}
+
+QPushButton#sourceCenterButton {
+    qproperty-icon: url(:res/images/center.svg);
+}
+
+QPushButton#sourceEditTransformButton {
+    qproperty-icon: url(./Dark/edit_transform.svg);
+}

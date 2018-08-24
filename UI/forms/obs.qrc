@@ -1,7 +1,16 @@
 <RCC>
   <qresource prefix="/res">
+    <file>images/edit_transform.svg</file>
     <file>images/save.svg</file>
     <file>images/media-pause.svg</file>
+    <file>images/filter.svg</file>
+    <file>images/center.svg</file>
+    <file>images/fit.svg</file>
+    <file>images/fill_frame.svg</file>
+    <file>images/flip_horz.svg</file>
+    <file>images/flip_vert.svg</file>
+    <file>images/rotate_left.svg</file>
+    <file>images/rotate_right.svg</file>
     <file>images/mute.svg</file>
     <file>images/refresh.svg</file>
     <file>images/no_sources.svg</file>

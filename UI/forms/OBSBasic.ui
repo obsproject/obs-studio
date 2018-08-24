@@ -38,6 +38,12 @@
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QVBoxLayout" name="verticalLayout">
+    <property name="spacing">
+     <number>6</number>
+    </property>
+    <property name="bottomMargin">
+     <number>6</number>
+    </property>
     <item>
      <layout class="QHBoxLayout" name="horizontalLayout_2">
       <item>
@@ -180,6 +186,347 @@
       </item>
      </layout>
     </item>
+    <item>
+     <widget class="QWidget" name="contextContainer" native="true">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="minimumSize">
+       <size>
+        <width>0</width>
+        <height>24</height>
+       </size>
+      </property>
+      <property name="maximumSize">
+       <size>
+        <width>16777215</width>
+        <height>24</height>
+       </size>
+      </property>
+      <layout class="QHBoxLayout" name="horizontalLayout">
+       <property name="spacing">
+        <number>0</number>
+       </property>
+       <property name="sizeConstraint">
+        <enum>QLayout::SetDefaultConstraint</enum>
+       </property>
+       <property name="leftMargin">
+        <number>0</number>
+       </property>
+       <property name="topMargin">
+        <number>0</number>
+       </property>
+       <property name="rightMargin">
+        <number>0</number>
+       </property>
+       <property name="bottomMargin">
+        <number>0</number>
+       </property>
+       <item>
+        <widget class="QWidget" name="contextSubContainer" native="true">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="minimumSize">
+          <size>
+           <width>0</width>
+           <height>0</height>
+          </size>
+         </property>
+         <layout class="QHBoxLayout" name="horizontalLayout_5">
+          <property name="leftMargin">
+           <number>0</number>
+          </property>
+          <property name="topMargin">
+           <number>0</number>
+          </property>
+          <property name="rightMargin">
+           <number>0</number>
+          </property>
+          <property name="bottomMargin">
+           <number>0</number>
+          </property>
+          <item>
+           <widget class="QLabel" name="contextSourceLabel">
+            <property name="minimumSize">
+             <size>
+              <width>150</width>
+              <height>0</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>150</width>
+              <height>16</height>
+             </size>
+            </property>
+            <property name="text">
+             <string>TextLabel</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="VisibilityCheckBox" name="contextVisibilityCheckBox">
+            <property name="maximumSize">
+             <size>
+              <width>16</width>
+              <height>16</height>
+             </size>
+            </property>
+            <property name="text">
+             <string/>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="LockedCheckBox" name="contextLockedCheckBox">
+            <property name="maximumSize">
+             <size>
+              <width>16</width>
+              <height>16</height>
+             </size>
+            </property>
+            <property name="text">
+             <string/>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Line" name="line_3">
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="sourcePropertiesButton">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="toolTip">
+             <string>Properties</string>
+            </property>
+            <property name="text">
+             <string>Properties</string>
+            </property>
+            <property name="icon">
+             <iconset resource="obs.qrc">
+              <normaloff>:/settings/images/settings/general.svg</normaloff>:/settings/images/settings/general.svg</iconset>
+            </property>
+            <property name="flat">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="sourceFiltersButton">
+            <property name="toolTip">
+             <string>Filters</string>
+            </property>
+            <property name="text">
+             <string>Filters</string>
+            </property>
+            <property name="icon">
+             <iconset resource="obs.qrc">
+              <normaloff>:/res/images/filter.svg</normaloff>:/res/images/filter.svg</iconset>
+            </property>
+            <property name="flat">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QWidget" name="contextTransformIcons" native="true">
+            <property name="minimumSize">
+             <size>
+              <width>100</width>
+              <height>0</height>
+             </size>
+            </property>
+            <layout class="QHBoxLayout" name="horizontalLayout_6">
+             <property name="spacing">
+              <number>6</number>
+             </property>
+             <property name="leftMargin">
+              <number>0</number>
+             </property>
+             <property name="topMargin">
+              <number>0</number>
+             </property>
+             <property name="rightMargin">
+              <number>0</number>
+             </property>
+             <property name="bottomMargin">
+              <number>0</number>
+             </property>
+             <item>
+              <widget class="Line" name="line">
+               <property name="orientation">
+                <enum>Qt::Vertical</enum>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QPushButton" name="sourceRotateLeftButton">
+               <property name="toolTip">
+                <string>Rotate Left</string>
+               </property>
+               <property name="text">
+                <string/>
+               </property>
+               <property name="icon">
+                <iconset resource="obs.qrc">
+                 <normaloff>:/res/images/rotate_left.svg</normaloff>:/res/images/rotate_left.svg</iconset>
+               </property>
+               <property name="flat">
+                <bool>true</bool>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QPushButton" name="sourceRotateRightButton">
+               <property name="toolTip">
+                <string>Rotate Right</string>
+               </property>
+               <property name="text">
+                <string/>
+               </property>
+               <property name="icon">
+                <iconset resource="obs.qrc">
+                 <normaloff>:/res/images/rotate_right.svg</normaloff>:/res/images/rotate_right.svg</iconset>
+               </property>
+               <property name="flat">
+                <bool>true</bool>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QPushButton" name="sourceFlipHorizontallyButton">
+               <property name="toolTip">
+                <string>Flip Horizontally</string>
+               </property>
+               <property name="text">
+                <string/>
+               </property>
+               <property name="icon">
+                <iconset resource="obs.qrc">
+                 <normaloff>:/res/images/flip_horz.svg</normaloff>:/res/images/flip_horz.svg</iconset>
+               </property>
+               <property name="flat">
+                <bool>true</bool>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QPushButton" name="sourceFlipVerticallyButton">
+               <property name="toolTip">
+                <string>Flip Vertically</string>
+               </property>
+               <property name="text">
+                <string/>
+               </property>
+               <property name="icon">
+                <iconset resource="obs.qrc">
+                 <normaloff>:/res/images/flip_vert.svg</normaloff>:/res/images/flip_vert.svg</iconset>
+               </property>
+               <property name="flat">
+                <bool>true</bool>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="Line" name="line_2">
+               <property name="orientation">
+                <enum>Qt::Vertical</enum>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QPushButton" name="sourceFillScreenButton">
+               <property name="toolTip">
+                <string>Stretch To Screen</string>
+               </property>
+               <property name="text">
+                <string/>
+               </property>
+               <property name="icon">
+                <iconset resource="obs.qrc">
+                 <normaloff>:/res/images/fill_frame.svg</normaloff>:/res/images/fill_frame.svg</iconset>
+               </property>
+               <property name="flat">
+                <bool>true</bool>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QPushButton" name="sourceFitScreenButton">
+               <property name="toolTip">
+                <string>Fit To Screen</string>
+               </property>
+               <property name="text">
+                <string/>
+               </property>
+               <property name="icon">
+                <iconset resource="obs.qrc">
+                 <normaloff>:/res/images/fit.svg</normaloff>:/res/images/fit.svg</iconset>
+               </property>
+               <property name="flat">
+                <bool>true</bool>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QPushButton" name="sourceCenterButton">
+               <property name="toolTip">
+                <string>Center</string>
+               </property>
+               <property name="text">
+                <string/>
+               </property>
+               <property name="icon">
+                <iconset resource="obs.qrc">
+                 <normaloff>:/res/images/center.svg</normaloff>:/res/images/center.svg</iconset>
+               </property>
+               <property name="flat">
+                <bool>true</bool>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QPushButton" name="sourceEditTransformButton">
+               <property name="toolTip">
+                <string>Edit Transform</string>
+               </property>
+               <property name="text">
+                <string/>
+               </property>
+               <property name="icon">
+                <iconset resource="obs.qrc">
+                 <normaloff>:/res/images/edit_transform.svg</normaloff>:/res/images/edit_transform.svg</iconset>
+               </property>
+               <property name="flat">
+                <bool>true</bool>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </item>
    </layout>
   </widget>
   <widget class="QMenuBar" name="menubar">
@@ -188,7 +535,7 @@
      <x>0</x>
      <y>0</y>
      <width>1079</width>
-     <height>21</height>
+     <height>22</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_File">
@@ -366,6 +713,7 @@
       <string>Basic.MainMenu.View.Toolbars</string>
      </property>
      <addaction name="toggleListboxToolbars"/>
+     <addaction name="toggleContextToolbars"/>
     </widget>
     <widget class="QMenu" name="viewMenuDocks">
      <property name="title">
@@ -426,6 +774,9 @@
    </attribute>
    <widget class="QWidget" name="dockWidgetContents_2">
     <layout class="QVBoxLayout" name="verticalLayout_6">
+     <property name="spacing">
+      <number>6</number>
+     </property>
      <property name="leftMargin">
       <number>4</number>
      </property>
@@ -729,7 +1080,7 @@
           <rect>
            <x>0</x>
            <y>0</y>
-           <width>80</width>
+           <width>87</width>
            <height>16</height>
           </rect>
          </property>
@@ -1800,6 +2151,14 @@
     <string>Basic.MainMenu.View.SourceIcons</string>
    </property>
   </action>
+  <action name="toggleContextToolbars">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Basic.MainMenu.View.Toolbars.Context</string>
+   </property>
+  </action>
  </widget>
  <customwidgets>
   <customwidget>
@@ -1845,6 +2204,16 @@
    <class>RecordButton</class>
    <extends>QPushButton</extends>
    <header>record-button.hpp</header>
+  </customwidget>
+  <customwidget>
+   <class>LockedCheckBox</class>
+   <extends>QCheckBox</extends>
+   <header>locked-checkbox.hpp</header>
+  </customwidget>
+  <customwidget>
+   <class>VisibilityCheckBox</class>
+   <extends>QCheckBox</extends>
+   <header>visibility-checkbox.hpp</header>
   </customwidget>
  </customwidgets>
  <resources>
