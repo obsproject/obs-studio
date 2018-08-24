@@ -5,7 +5,7 @@
 
 #include <util/c99defs.h>
 
-LockedCheckBox::LockedCheckBox() : QCheckBox()
+LockedCheckBox::LockedCheckBox(QWidget *parent) : QCheckBox(parent)
 {
 	QString lockedFile;
 	QString unlockedFile;
@@ -18,6 +18,7 @@ LockedCheckBox::LockedCheckBox() : QCheckBox()
 	}
 	lockedImage = QPixmap::fromImage(QImage(lockedFile));
 	unlockedImage = QPixmap::fromImage(QImage(unlockedFile));
+
 	setMinimumSize(16, 16);
 
 	setStyleSheet("outline: none;");

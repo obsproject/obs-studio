@@ -1,5 +1,13 @@
 <RCC>
   <qresource prefix="/res">
+    <file>images/filter.svg</file>
+    <file>images/center.svg</file>
+    <file>images/fit.svg</file>
+    <file>images/fill_frame.svg</file>
+    <file>images/flip_horz.svg</file>
+    <file>images/flip_vert.svg</file>
+    <file>images/rotate_left.svg</file>
+    <file>images/rotate_right.svg</file>
     <file>images/mute.png</file>
     <file>images/unmute.png</file>
     <file>images/refresh.png</file>

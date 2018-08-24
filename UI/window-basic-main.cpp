@@ -350,6 +350,14 @@ OBSBasic::OBSBasic(QWidget *parent)
 
 	QPoint curPos;
 
+	// hide context buttons
+	QListIterator<QObject *> i(ui->contextContainer->children());
+	while (i.hasNext())
+	{
+		QWidget* b = (QWidget*)( i.next() );
+		b->hide();
+	}
+
 	//restore parent window geometry
 	const char *geometry = config_get_string(App()->GlobalConfig(),
 			"BasicWindow", "geometry");
@@ -2683,6 +2691,24 @@ void OBSBasic::SelectSceneItem(OBSScene scene, OBSSceneItem item, bool select)
 
 	if (scene != GetCurrentScene() || ignoreSelectionUpdate)
 		return;
+
+	if (GetCurrentSceneItem()) {
+	    // Show Context Items
+		QListIterator<QObject *> i(ui->contextContainer->children());
+		while (i.hasNext())
+		{
+			auto b = (QWidget*)( i.next() );
+			b->show();
+		}
+	} else {
+	    // Hide Context Items
+		QListIterator<QObject *> i(ui->contextContainer->children());
+		while (i.hasNext())
+		{
+			auto b = (QWidget*)( i.next() );
+			b->hide();
+		}
+	}
 
 	ui->sources->SelectItem(item, select);
 }
@@ -5774,6 +5800,51 @@ void OBSBasic::on_actionAlwaysOnTop_triggered()
 
 	QMetaObject::invokeMethod(this, "ToggleAlwaysOnTop",
 			Qt::QueuedConnection);
+}
+
+void OBSBasic::on_sourcePropertiesButton_clicked()
+{
+	on_actionSourceProperties_triggered();
+}
+
+void OBSBasic::on_sourceFiltersButton_clicked()
+{
+	OpenFilters();
+}
+
+void OBSBasic::on_sourceRotateRightButton_clicked()
+{
+	on_actionRotate90CW_triggered();
+}
+
+void OBSBasic::on_sourceRotateLeftButton_clicked()
+{
+	on_actionRotate90CCW_triggered();
+}
+
+void OBSBasic::on_sourceFlipHorizontallyButton_clicked()
+{
+	on_actionFlipHorizontal_triggered();
+}
+
+void OBSBasic::on_sourceFlipVerticallyButton_clicked()
+{
+	on_actionFlipVertical_triggered();
+}
+
+void OBSBasic::on_sourceFitScreenButton_clicked()
+{
+	on_actionFitToScreen_triggered();
+}
+
+void OBSBasic::on_sourceFillScreenButton_clicked()
+{
+	on_actionStretchToScreen_triggered();
+}
+
+void OBSBasic::on_sourceCenterButton_clicked()
+{
+	on_actionCenterToScreen_triggered();
 }
 
 void OBSBasic::ToggleAlwaysOnTop()

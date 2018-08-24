@@ -12,7 +12,7 @@ class VisibilityCheckBox : public QCheckBox {
 	QPixmap uncheckedImage;
 
 public:
-	VisibilityCheckBox();
+	VisibilityCheckBox(QWidget *parent = 0);
 
 protected:
 	void paintEvent(QPaintEvent *event) override;

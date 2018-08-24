@@ -56,6 +56,7 @@ configure_file(
 set(CMAKE_INCLUDE_CURRENT_DIR TRUE)
 set(CMAKE_AUTOMOC TRUE)
 
+find_package(Qt5Widgets ${FIND_MODE})
 find_package(Qt5Svg ${FIND_MODE})
 
 find_package(FFmpeg REQUIRED COMPONENTS avcodec avutil avformat)
@@ -72,7 +73,6 @@ if(NOT Qt5Widgets_FOUND)
 		return()
 	endif()
 endif()
-
 
 include_directories(${FFMPEG_INCLUDE_DIRS})
 include_directories(${CMAKE_CURRENT_BINARY_DIR})

@@ -217,6 +217,52 @@ QScrollBar::left-arrow:horizontal, QScrollBar::right-arrow:horizontal, QScrollBa
     color: none;
 }
 
+/* Source Context */
+#contextContainer {
+    margin: 0px;
+    padding: 0px;
+}
+
+#contextContainer QPushButton {
+    padding: 3px;
+    margin: 0px;
+}
+
+QPushButton#sourcePropertiesButton {
+    qproperty-icon: url(./Dark/cogwheel.png);
+}
+
+QPushButton#sourceFiltersButton {
+    qproperty-icon: url(./Dark/filter.svg);
+}
+
+QPushButton#sourceRotateLeftButton {
+    qproperty-icon: url(./Dark/rotate_left.svg);
+}
+
+QPushButton#sourceRotateRightButton {
+    qproperty-icon: url(./Dark/rotate_right.svg);
+}
+
+QPushButton#sourceFlipHorizontallyButton {
+    qproperty-icon: url(./Dark/flip_horz.svg);
+}
+
+QPushButton#sourceFlipVerticallyButton {
+    qproperty-icon: url(./Dark/flip_vert.svg);
+}
+
+QPushButton#sourceFillScreenButton {
+    qproperty-icon: url(./Dark/fill_frame.svg);
+}
+
+QPushButton#sourceFitScreenButton {
+    qproperty-icon: url(./Dark/fit.svg);
+}
+
+QPushButton#sourceCenterButton {
+    qproperty-icon: url(./Dark/center.svg);
+}
 
 /* Scenes and Sources toolbar */
 

@@ -5,7 +5,7 @@
 
 #include <util/c99defs.h>
 
-VisibilityCheckBox::VisibilityCheckBox() : QCheckBox()
+VisibilityCheckBox::VisibilityCheckBox(QWidget *parent) : QCheckBox(parent)
 {
 	QString checkedFile;
 	QString uncheckedFile;
@@ -18,6 +18,7 @@ VisibilityCheckBox::VisibilityCheckBox() : QCheckBox()
 	}
 	checkedImage = QPixmap::fromImage(QImage(checkedFile));
 	uncheckedImage = QPixmap::fromImage(QImage(uncheckedFile));
+
 	setMinimumSize(16, 16);
 
 	setStyleSheet("outline: none;");
