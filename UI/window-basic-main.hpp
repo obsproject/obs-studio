@@ -379,7 +379,8 @@ private:
 	QModelIndexList GetAllSelectedSourceItems();
 
 	obs_hotkey_pair_id streamingHotkeys, recordingHotkeys, pauseHotkeys,
-		replayBufHotkeys, vcamHotkeys, togglePreviewHotkeys;
+		replayBufHotkeys, vcamHotkeys, togglePreviewHotkeys,
+		contextBarHotkeys;
 	obs_hotkey_id forceStreamingStopHotkey;
 
 	void InitDefaultTransitions();
@@ -585,6 +586,8 @@ public slots:
 
 	void UpdatePatronJson(const QString &text, const QString &error);
 
+	void ShowContextBar();
+	void HideContextBar();
 	void PauseRecording();
 	void UnpauseRecording();
 
@@ -928,6 +931,7 @@ private slots:
 	void on_actionAlwaysOnTop_triggered();
 
 	void on_toggleListboxToolbars_toggled(bool visible);
+	void on_toggleContextBar_toggled(bool visible);
 	void on_toggleStatusBar_toggled(bool visible);
 	void on_toggleSourceIcons_toggled(bool visible);
 
@@ -937,6 +941,10 @@ private slots:
 	void on_transitionDuration_valueChanged(int value);
 
 	void on_modeSwitch_clicked();
+
+	// Source Context Buttons
+	void on_sourcePropertiesButton_clicked();
+	void on_sourceFiltersButton_clicked();
 
 	void on_autoConfigure_triggered();
 	void on_stats_triggered();
@@ -998,6 +1006,8 @@ public slots:
 	bool StreamingActive();
 	bool RecordingActive();
 	bool ReplayBufferActive();
+
+	void UpdateContextBar();
 
 public:
 	explicit OBSBasic(QWidget *parent = 0);
