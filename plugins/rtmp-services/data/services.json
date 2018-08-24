@@ -1140,9 +1140,9 @@
                 }
             ],
             "recommended": {
-                "keyint": 2,
-                "max video bitrate": 800,
-                "max audio bitrate": 96
+                "keyint": 3,
+                "max video bitrate": 4000,
+                "max audio bitrate": 128
             }
         },
         {
