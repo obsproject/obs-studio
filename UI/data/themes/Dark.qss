@@ -86,7 +86,7 @@ QWidget::disabled {
     color: 2px solid rgb(200,199,200); /* lighter */
 }
 
-QAbstractItemView {
+QAbstractItemView, QStackedWidget#stackedMixerArea QWidget {
     background-color: rgb(31,30,31); /* veryDark */
 }
 
@@ -148,10 +148,7 @@ QGroupBox {
 }
 
 QScrollBar:vertical {
-    background-color: QLinearGradient(x1: 0, y1: 0, x2: 1, y2: 0,
-        stop: 0 rgb(31,30,31), /* veryDark */
-        stop: 0.75 rgb(54, 53, 54),
-        stop: 1 rgb(58,57,58)); /* dark */
+    background-color: rgb(58,57,58); /* dark */
     width: 14px;
 }
 
@@ -179,10 +176,7 @@ QScrollBar::up-arrow:vertical, QScrollBar::down-arrow:vertical, QScrollBar::add-
 }
 
 QScrollBar:horizontal {
-    background-color: QLinearGradient(x1: 0, y1: 0, x2: 0, y2: 1,
-        stop: 0 rgb(31,30,31), /* veryDark */
-        stop: 0.75 rgb(54, 53, 54),
-        stop: 1 rgb(58,57,58)); /* dark */
+    background-color: rgb(58,57,58); /* dark */
     height: 14px;
 }
 
@@ -319,6 +313,13 @@ QComboBox {
     padding-left: 10px;
 }
 
+QComboBox:hover {
+    background-color: QLinearGradient(x1: 0, y1: 0, x2: 0, y2: 1,
+        stop: 0 rgb(111, 110, 101),
+        stop: 0.25 rgb(100, 99, 100),
+        stop: 1 rgb(88,87,88)); 
+}
+
 QComboBox::drop-down {
     border:none;
     border-left: 1px solid rgba(31,30,31,155); /* veryDark */
@@ -357,7 +358,12 @@ QComboBox::down-arrow:editable {
 QLineEdit, QTextEdit, QPlainTextEdit {
     background-color: rgb(31,30,31); /* veryDark */
     border: none;
-    padding-left: 2px;
+    border-radius: 3px;
+    padding: 2px 2px 3px 7px;
+}
+
+OBSHotkeyWidget QLineEdit {
+    margin: 0px 3px 0px 0px;
 }
 
 
@@ -366,9 +372,9 @@ QLineEdit, QTextEdit, QPlainTextEdit {
 QSpinBox, QDoubleSpinBox {
     background-color: rgb(31,30,31); /* veryDark */
     border: none;
-    padding-left: 2px;
-    padding-right: 15px;
-    margin-right: 10px;
+    border-radius: 3px;
+    margin: 0px 3px 0px 0px;
+    padding: 2px 2px 3px 7px;
 }
 
 QSpinBox::up-button, QDoubleSpinBox::up-button {
@@ -456,6 +462,10 @@ QPushButton::menu-indicator {
     subcontrol-position: right;
     subcontrol-origin: padding;
     width: 25px;
+}
+
+QPushButton[themeID="hotkeyButtons"] {
+    margin: 1px  2px;
 }
 
 /* Sliders */
