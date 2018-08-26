@@ -200,11 +200,12 @@ void OBSRemux::updateProgress(float percent)
 
 void OBSRemux::remuxFinished(bool success)
 {
+	worker->job.reset();
+
 	OBSMessageBox::information(this, QTStr("Remux.FinishedTitle"),
 			success ?
 			QTStr("Remux.Finished") : QTStr("Remux.FinishedError"));
 
-	worker->job.reset();
 	ui->progressBar->setVisible(false);
 	ui->buttonBox->button(QDialogButtonBox::Ok)->
 			setEnabled(true);
