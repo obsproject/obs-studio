@@ -435,9 +435,12 @@ bool OBSApp::InitGlobalConfigDefaults()
 			"MultiviewDrawAreas", true);
 
 #ifdef _WIN32
+	uint32_t winver = GetWindowsVersion();
+
 	config_set_default_bool(globalConfig, "Audio", "DisableAudioDucking",
 			true);
-	config_set_default_bool(globalConfig, "General", "BrowserHWAccel", true);
+	config_set_default_bool(globalConfig, "General", "BrowserHWAccel",
+			winver > 0x601);
 #endif
 
 #ifdef __APPLE__
