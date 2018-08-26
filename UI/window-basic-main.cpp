@@ -806,6 +806,7 @@ void OBSBasic::Load(const char *file)
 		blog(LOG_INFO, "No scene file found, creating default scene");
 		CreateDefaultScene(true);
 		SaveProject();
+		NoSourcesMessage();
 		return;
 	}
 
@@ -998,6 +999,8 @@ retryScene:
 	}
 
 	LogScenes();
+
+	NoSourcesMessage();
 
 	disableSaving--;
 
@@ -2506,8 +2509,9 @@ void OBSBasic::AddSceneItem(OBSSceneItem item)
 				obs_source_get_name(itemSource),
 				obs_source_get_id(itemSource),
 				obs_source_get_name(sceneSource));
-		
+
 		obs_scene_enum_items(scene, select_one, (obs_sceneitem_t*)item);
+		NoSourcesMessage();
 	}
 }
 
@@ -5341,6 +5345,31 @@ void OBSBasic::ReplayBufferStop(int code)
 		api->on_event(OBS_FRONTEND_EVENT_REPLAY_BUFFER_STOPPED);
 
 	OnDeactivate();
+}
+
+void OBSBasic::NoSourcesMessage()
+{
+	if (!ui->sources->property("no_sources").isValid()) {
+		QLabel *sourcesLabelInitial = new QLabel(QTStr("NoSources.Label"), ui->sources);
+		sourcesLabelInitial->setObjectName("noSourcesLabel");
+		sourcesLabelInitial->setAlignment(Qt::AlignCenter);
+		sourcesLabelInitial->setMinimumSize(160, 40);
+		sourcesLabelInitial->setAttribute(Qt::WA_TransparentForMouseEvents);
+		sourcesLabelInitial->setStyleSheet("background: transparent;");
+		sourcesLabelInitial->show();
+		// TODO Add listener for "displayResized" and update the width of the label
+	}
+
+	ui->sources->setProperty("no_sources", CountVideoSources() == 0);
+	QLabel *sourcesLabel = ui->sources->findChild<QLabel *>("noSourcesLabel");
+	if (CountVideoSources() == 0) {
+		sourcesLabel->setGeometry(ui->sources->geometry());
+		sourcesLabel->show();
+	} else {
+		sourcesLabel->hide();
+	}
+	ui->sources->style()->unpolish(ui->sources);
+	ui->sources->style()->polish(ui->sources);
 }
 
 bool OBSBasic::NoSourcesConfirmation()

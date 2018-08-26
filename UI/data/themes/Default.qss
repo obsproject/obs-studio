@@ -51,6 +51,12 @@ MuteCheckBox::indicator:unchecked {
     image: url(:/res/images/unmute.png);
 }
 
+SourceTree[no_sources="true"] {
+    background-image: url(:/res/images/no_sources.png);
+    background-position: center center;
+    background-repeat: no-repeat;
+}
+
 SourceTreeSubItemCheckBox {
     background: transparent;
     outline: none;

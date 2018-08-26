@@ -82,6 +82,12 @@ OBSTheme::inactive {
 /* ---- SourceTree ---- */
 /************************/
 
+SourceTree[no_sources="true"] {
+    background-image: url(./Dark/no_sources.png);
+    background-position: center center;
+    background-repeat: no-repeat;
+}
+
 SourceTree::item:selected:!active {
 	color: rgb(239, 240, 241); /* White */
 	background-color: rgba(255, 148, 194, 0.25); /* Light Pink (Secondary Light) */

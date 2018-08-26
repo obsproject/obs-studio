@@ -688,3 +688,11 @@ QLabel#errorLabel {
 * [themeID="displayBackgroundColor"] {
     qproperty-displayBackgroundColor: rgb(76, 76, 76);
 }
+
+/* No Sources background */
+
+SourceTree[no_sources="true"] {
+    background-image: url(./Dark/no_sources.png);
+    background-position: center center;
+    background-repeat: no-repeat;
+}

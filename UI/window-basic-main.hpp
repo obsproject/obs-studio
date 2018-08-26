@@ -402,6 +402,7 @@ private:
 
 	void ReceivedIntroJson(const QString &text);
 
+	void NoSourcesMessage();
 	bool NoSourcesConfirmation();
 
 public slots:

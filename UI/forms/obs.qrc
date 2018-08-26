@@ -25,6 +25,7 @@
     <file>images/unlocked_mask@2x.png</file>
     <file>images/collapse.png</file>
     <file>images/expand.png</file>
+    <file>images/no_sources.png</file>
   </qresource>
   <qresource prefix="/settings">
     <file>images/settings/advanced.png</file>

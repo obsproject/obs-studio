@@ -196,6 +196,12 @@ SourceListWidget {
 	border-bottom: 2px solid #2f2f2f;
 }
 
+SourceTree[no_sources="true"] {
+	background-image: url(./Dark/no_sources.png);
+	background-position: center center;
+	background-repeat: no-repeat;
+}
+
 SourceTree {
 	border: none;
 	border-bottom: 1px solid #2f2f2f;
@@ -211,6 +217,11 @@ SourceTree QLineEdit {
 	padding: 2px;
 	margin: -2px 6px -2px 3px;
 	font-size: 12px;
+}
+
+#noSourcesLabel {
+	margin: 6px 4px;
+	height: 88px;
 }
 
 #scenesFrame,
