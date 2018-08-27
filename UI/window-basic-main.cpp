@@ -2388,6 +2388,19 @@ void OBSBasic::RemoveScene(OBSSource source)
 		api->on_event(OBS_FRONTEND_EVENT_SCENE_LIST_CHANGED);
 }
 
+static bool select_one(obs_scene_t *scene, obs_sceneitem_t *item, void *param)
+{
+	obs_sceneitem_t *selectedItem =
+		reinterpret_cast<obs_sceneitem_t*>(param);
+	if (obs_sceneitem_is_group(item))
+		obs_sceneitem_group_enum_items(item, select_one, param);
+
+	obs_sceneitem_select(item, (selectedItem == item));
+
+	UNUSED_PARAMETER(scene);
+	return true;
+}
+
 void OBSBasic::AddSceneItem(OBSSceneItem item)
 {
 	obs_scene_t  *scene  = obs_sceneitem_get_scene(item);
@@ -2404,6 +2417,8 @@ void OBSBasic::AddSceneItem(OBSSceneItem item)
 				obs_source_get_name(itemSource),
 				obs_source_get_id(itemSource),
 				obs_source_get_name(sceneSource));
+		
+		obs_scene_enum_items(scene, select_one, (obs_sceneitem_t*)item);
 	}
 }
 
