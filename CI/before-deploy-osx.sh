@@ -43,7 +43,7 @@ sudo install_name_tool -change \
 sudo install_name_tool -change \
 	@rpath/Frameworks/Chromium\ Embedded\ Framework.framework/Chromium\ Embedded\ Framework \
 	../../Frameworks/Chromium\ Embedded\ Framework.framework/Chromium\ Embedded\ Framework \
-	OBS.app/Contents/Resources/obs-plugins/cef-bootstrap
+	OBS.app/Contents/Resources/obs-plugins/obs-browser-page
 
 # Package app
 hr "Generating .pkg"
