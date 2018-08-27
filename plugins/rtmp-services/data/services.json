@@ -233,14 +233,6 @@
                     "url": "rtmp://live.lhr.hitbox.tv/push"
                 },
                 {
-                    "name": "EU-Central: Nurnberg, Germany",
-                    "url": "rtmp://live.nbg.hitbox.tv/push"
-                },
-                {
-                    "name": "EU-East: Vienna, Austria",
-                    "url": "rtmp://live.vie.hitbox.tv/push"
-                },
-                {
                     "name": "EU-South: Milan, Italia",
                     "url": "rtmp://live.mxp.hitbox.tv/push"
                 },
@@ -490,25 +482,6 @@
             }
         },
         {
-            "name": "DailyMotion",
-            "common": true,
-            "servers": [
-                {
-                    "name": "Primary",
-                    "url": "rtmp://publish.dailymotion.com/publish-dm"
-                }
-            ]
-        },
-        {
-            "name": "WatchPeopleCode.com",
-            "servers": [
-                {
-                    "name": "Primary",
-                    "url": "rtmp://streaming.watchpeoplecode.com/live"
-                }
-            ]
-        },
-        {
             "name": "Web.TV",
             "servers": [
                 {
@@ -531,33 +504,6 @@
                     "url": "rtmp://msk.goodgame.ru:1940/live"
                 }
             ]
-        },
-        {
-            "name": "GamePlank",
-            "servers": [
-                {
-                    "name": "Primary",
-                    "url": "rtmp://live.gameplank.tv/app"
-                },
-                {
-                    "name": "US: Oregon",
-                    "url": "rtmp://live-or.gameplank.tv/app"
-                },
-                {
-                    "name": "US: Virginia",
-                    "url": "rtmp://live-va.gameplank.tv/app"
-                },
-                {
-                    "name": "UK: London",
-                    "url": "rtmp://live-ldn.gameplank.tv/app"
-                }
-            ],
-            "recommended": {
-                "keyint": 1,
-                "max video bitrate": 1500,
-                "max audio bitrate": 160,
-                "x264opts": "scenecut=0"
-            }
         },
         {
             "name": "Vaughn Live / iNSTAGIB",
@@ -917,51 +863,9 @@
                 {
                     "name": "Asia : Singapore",
                     "url": "rtmp://rtmpmanager-aws-sg.afreeca.tv/live"
-                },
-                {
-                    "name": "Asia : South Korea",
-                    "url": "rtmp://rtmpmanager-en-ko.afreeca.tv/live"
                 }
             ],
             "recommended": {
-                "keyint": 1,
-                "profile": "main",
-                "max video bitrate": 5000,
-                "max audio bitrate": 192
-            }
-        },
-        {
-            "name": "アフリカTV",
-            "servers": [
-                {
-                "name": "Japan",
-                "url": "rtmp://rtmpmanager-aws-jp.afreeca.tv/live/"
-                },
-                {
-                "name": "South Korea",
-                "url": "rtmp://rtmpmanager-jp.afreeca.tv/live/"
-                }
-            ],
-            "recommended": {
-                "keyint": 1,
-                "profile": "main",
-                "max video bitrate": 5000,
-                "max audio bitrate": 192
-            }
-        },
-        {
-            "name": "艾菲卡TV",
-            "servers": [
-                {
-                "name": "Taiwan",
-                "url": "rtmp://rtmpmanager-gcp-tw.afreeca.tv/live/"
-                },
-                {
-                    "name": "South Korea",
-                    "url": "rtmp://rtmpmanager-tw-ko.afreeca.tv/live/"
-                }
-            ],
-             "recommended": {
                 "keyint": 1,
                 "profile": "main",
                 "max video bitrate": 5000,
