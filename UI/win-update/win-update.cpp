@@ -8,6 +8,7 @@
 #include <QMessageBox>
 
 #include <string>
+#include <mutex>
 
 #include <util/windows/WinHandle.hpp>
 #include <util/util.hpp>
