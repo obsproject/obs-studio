@@ -4519,14 +4519,14 @@ RTMP_Close(RTMP *r)
     r->m_customSendParam = NULL;
 
 #if defined(CRYPTO) || defined(USE_ONLY_MD5)
-    for (int idx = 0; idx < r->Link.nStreams; idx++)
-    {
-        free(r->Link.streams[idx].playpath.av_val);
-        r->Link.streams[idx].playpath.av_val = NULL;
-    }
-
     if (!(r->Link.protocol & RTMP_FEATURE_WRITE) || (r->Link.pFlags & RTMP_PUB_CLEAN))
     {
+        for (int idx = 0; idx < r->Link.nStreams; idx++)
+        {
+            free(r->Link.streams[idx].playpath.av_val);
+            r->Link.streams[idx].playpath.av_val = NULL;
+        }
+
         r->Link.curStreamIdx = 0;
         r->Link.nStreams = 0;
     }
