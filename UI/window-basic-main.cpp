@@ -1615,8 +1615,6 @@ void OBSBasic::OBSInit()
 	if (!first_run && !has_last_version && !Active()) {
 		QString msg;
 		msg = QTStr("Basic.FirstStartup.RunWizard");
-		msg += "\n\n";
-		msg += QTStr("Basic.FirstStartup.RunWizard.BetaWarning");
 
 		QMessageBox::StandardButton button =
 			OBSMessageBox::question(this, QTStr("Basic.AutoConfig"),
