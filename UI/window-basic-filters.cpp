@@ -133,6 +133,7 @@ OBSBasicFilters::OBSBasicFilters(QWidget *parent, OBSSource source_)
 					addDrawCallback);
 	} else {
 		ui->rightLayout->setContentsMargins(0, noPreviewMargin, 0, 0);
+		ui->rightContainerLayout->insertStretch(1);
 		ui->preview->hide();
 	}
 }
