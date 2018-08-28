@@ -289,6 +289,7 @@ OBSBasic::OBSBasic(QWidget *parent)
 	assignDockToggle(ui->mixerDock, ui->toggleMixer);
 	assignDockToggle(ui->transitionsDock, ui->toggleTransitions);
 	assignDockToggle(ui->controlsDock, ui->toggleControls);
+	assignDockToggle(ui->statsDock, ui->toggleStats);
 
 	//hide all docking panes
 	ui->toggleScenes->setChecked(false);
@@ -296,6 +297,7 @@ OBSBasic::OBSBasic(QWidget *parent)
 	ui->toggleMixer->setChecked(false);
 	ui->toggleTransitions->setChecked(false);
 	ui->toggleControls->setChecked(false);
+	ui->toggleStats->setChecked(false);
 
 	//restore parent window geometry
 	const char *geometry = config_get_string(App()->GlobalConfig(),
@@ -1572,6 +1574,10 @@ void OBSBasic::OBSInit()
 #ifndef _WIN32
 	show();
 #endif
+
+	/* setup stats dock */
+	OBSBasicStats *statsDlg = new OBSBasicStats(ui->statsDock, false);
+	ui->statsDock->setWidget(statsDlg);
 
 	const char *dockStateStr = config_get_string(App()->GlobalConfig(),
 			"BasicWindow", "DockState");
@@ -6095,7 +6101,8 @@ void OBSBasic::on_resetUI_triggered()
 		ui->sourcesDock,
 		ui->mixerDock,
 		ui->transitionsDock,
-		ui->controlsDock
+		ui->controlsDock,
+		ui->statsDock
 	};
 
 	QList<int> sizes {
@@ -6111,6 +6118,7 @@ void OBSBasic::on_resetUI_triggered()
 	ui->mixerDock->setVisible(true);
 	ui->transitionsDock->setVisible(true);
 	ui->controlsDock->setVisible(true);
+	ui->statsDock->setVisible(true);
 
 	resizeDocks(docks, {cy, cy, cy, cy, cy}, Qt::Vertical);
 	resizeDocks(docks, sizes, Qt::Horizontal);
@@ -6128,6 +6136,7 @@ void OBSBasic::on_lockUI_toggled(bool lock)
 	ui->mixerDock->setFeatures(features);
 	ui->transitionsDock->setFeatures(features);
 	ui->controlsDock->setFeatures(features);
+	ui->statsDock->setFeatures(features);
 }
 
 void OBSBasic::on_toggleListboxToolbars_toggled(bool visible)

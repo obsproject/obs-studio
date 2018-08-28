@@ -55,7 +55,7 @@ class OBSBasicStats : public QWidget {
 	virtual void closeEvent(QCloseEvent *event) override;
 
 public:
-	OBSBasicStats(QWidget *parent = nullptr);
+	OBSBasicStats(QWidget *parent = nullptr, bool closable = true);
 	~OBSBasicStats();
 
 	static void InitializeValues();
