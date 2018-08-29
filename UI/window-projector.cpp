@@ -695,14 +695,16 @@ void OBSProjector::OBSSourceRemoved(void *data, calldata_t *params)
 
 static int getSourceByPosition(int x, int y, float ratio)
 {
-	QWidget *rec  = QApplication::activeWindow();
+	int pos = -1;
+	QWidget *rec = QApplication::activeWindow();
+	if (!rec)
+		return pos;
 	int     cx    = rec->width();
 	int     cy    = rec->height();
 	int     minX  = 0;
 	int     minY  = 0;
 	int     maxX  = cx;
 	int     maxY  = cy;
-	int     pos   = -1;
 
 	switch (multiviewLayout) {
 	case MultiviewLayout::HORIZONTAL_TOP_24_SCENES:
