@@ -72,6 +72,12 @@ OBSBasicFilters::OBSBasicFilters(QWidget *parent, OBSSource source_)
 	const char *name = obs_source_get_name(source);
 	setWindowTitle(QTStr("Basic.Filters.Title").arg(QT_UTF8(name)));
 
+#ifndef QT_NO_SHORTCUT
+	ui->actionRemoveFilter->setShortcut(QApplication::translate("OBSBasicFilters", "Del", nullptr));
+#endif // QT_NO_SHORTCUT
+
+	addAction(ui->actionRemoveFilter);
+
 	installEventFilter(CreateShortcutFilter());
 
 	connect(ui->asyncFilters->itemDelegate(),
@@ -666,6 +672,14 @@ void OBSBasicFilters::on_effectFilters_GotFocus()
 void OBSBasicFilters::on_effectFilters_currentRowChanged(int row)
 {
 	UpdatePropertiesView(row, false);
+}
+
+void OBSBasicFilters::on_actionRemoveFilter_triggered()
+{
+	if (ui->asyncFilters->hasFocus())
+		on_removeAsyncFilter_clicked();
+	else if (ui->effectFilters->hasFocus())
+		on_removeEffectFilter_clicked();
 }
 
 void OBSBasicFilters::CustomContextMenu(const QPoint &pos, bool async)
