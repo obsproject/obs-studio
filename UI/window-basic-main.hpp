@@ -78,7 +78,7 @@ struct SavedProjectorInfo {
 struct QuickTransition {
 	QPushButton *button = nullptr;
 	OBSSource source;
-	obs_hotkey_id hotkey = 0;
+	obs_hotkey_id hotkey = OBS_INVALID_HOTKEY_ID;
 	int duration = 0;
 	int id = 0;
 
