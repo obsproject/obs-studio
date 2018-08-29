@@ -149,6 +149,7 @@ public:
 	explicit SourceTree(QWidget *parent = nullptr);
 
 	inline bool IgnoreReorder() const {return ignoreReorder;}
+	inline void Reset() {GetStm()->SceneChanged();}
 	inline void Clear() {GetStm()->Clear();}
 
 	inline void Add(obs_sceneitem_t *item) {GetStm()->Add(item);}
