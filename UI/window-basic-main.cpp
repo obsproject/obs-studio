@@ -1515,7 +1515,6 @@ void OBSBasic::OBSInit()
 		ProfileScope("OBSBasic::Load");
 		disableSaving--;
 		Load(savePath);
-		ui->sources->Reset();
 		disableSaving++;
 	}
 #endif
