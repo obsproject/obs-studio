@@ -956,7 +956,7 @@ retryScene:
 
 	disableSaving--;
 
-	if (api && loaded) {
+	if (api) {
 		api->on_event(OBS_FRONTEND_EVENT_SCENE_CHANGED);
 		api->on_event(OBS_FRONTEND_EVENT_PREVIEW_SCENE_CHANGED);
 	}
