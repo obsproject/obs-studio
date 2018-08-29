@@ -7,6 +7,7 @@ mkdir build
 cd build
 cmake -DENABLE_SPARKLE_UPDATER=ON \
 -DCMAKE_OSX_DEPLOYMENT_TARGET=10.11 \
+-DQTDIR=/usr/local/Cellar/qt/5.10.1 \
 -DDepsPath=/tmp/obsdeps \
 -DVLCPath=$PWD/../../vlc-master \
 -DBUILD_BROWSER=ON \
