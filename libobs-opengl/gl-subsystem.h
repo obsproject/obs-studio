@@ -36,7 +36,7 @@ enum copy_type {
 	COPY_TYPE_FBO_BLIT
 };
 
-static inline GLint convert_gs_format(enum gs_color_format format)
+static inline GLenum convert_gs_format(enum gs_color_format format)
 {
 	switch (format) {
 	case GS_A8:          return GL_RED;
@@ -51,6 +51,7 @@ static inline GLint convert_gs_format(enum gs_color_format format)
 	case GS_RGBA32F:     return GL_RGBA;
 	case GS_RG16F:       return GL_RG;
 	case GS_RG32F:       return GL_RG;
+	case GS_R8G8:        return GL_RG;
 	case GS_R16F:        return GL_RED;
 	case GS_R32F:        return GL_RED;
 	case GS_DXT1:        return GL_RGB;
@@ -62,7 +63,7 @@ static inline GLint convert_gs_format(enum gs_color_format format)
 	return 0;
 }
 
-static inline GLint convert_gs_internal_format(enum gs_color_format format)
+static inline GLenum convert_gs_internal_format(enum gs_color_format format)
 {
 	switch (format) {
 	case GS_A8:          return GL_R8; /* NOTE: use GL_TEXTURE_SWIZZLE_x */
@@ -77,6 +78,7 @@ static inline GLint convert_gs_internal_format(enum gs_color_format format)
 	case GS_RGBA32F:     return GL_RGBA32F;
 	case GS_RG16F:       return GL_RG16F;
 	case GS_RG32F:       return GL_RG32F;
+	case GS_R8G8:        return GL_R16;
 	case GS_R16F:        return GL_R16F;
 	case GS_R32F:        return GL_R32F;
 	case GS_DXT1:        return GL_COMPRESSED_RGBA_S3TC_DXT1_EXT;
@@ -103,6 +105,7 @@ static inline GLenum get_gl_format_type(enum gs_color_format format)
 	case GS_RGBA32F:     return GL_FLOAT;
 	case GS_RG16F:       return GL_UNSIGNED_SHORT;
 	case GS_RG32F:       return GL_FLOAT;
+	case GS_R8G8:        return GL_UNSIGNED_SHORT;
 	case GS_R16F:        return GL_UNSIGNED_SHORT;
 	case GS_R32F:        return GL_FLOAT;
 	case GS_DXT1:        return GL_UNSIGNED_BYTE;
@@ -399,7 +402,7 @@ struct gs_texture {
 	enum gs_color_format format;
 	GLenum               gl_format;
 	GLenum               gl_target;
-	GLint                gl_internal_format;
+	GLenum               gl_internal_format;
 	GLenum               gl_type;
 	GLuint               texture;
 	uint32_t             levels;
