@@ -1557,7 +1557,7 @@
   </action>
   <action name="autoConfigure">
    <property name="text">
-    <string>Basic.AutoConfig.Beta</string>
+    <string>Basic.AutoConfig</string>
    </property>
   </action>
   <action name="stats">
