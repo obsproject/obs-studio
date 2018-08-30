@@ -817,7 +817,10 @@ void OBSBasic::CreateProgramOptions()
 
 void OBSBasic::on_modeSwitch_clicked()
 {
-	SetPreviewProgramMode(!IsPreviewProgramMode());
+	bool studioMode = IsPreviewProgramMode();
+	SetPreviewProgramMode(!studioMode);
+
+	SetPreviewVisCheckBoxEnabled(!!studioMode);
 }
 
 static inline void ResetQuickTransitionText(QuickTransition *qt)

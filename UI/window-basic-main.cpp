@@ -58,6 +58,8 @@
 #include "volume-control.hpp"
 #include "remote-text.hpp"
 #include "source-tree.hpp"
+#include "visibility-checkbox.hpp"
+#include "locked-checkbox.hpp"
 
 #ifdef _WIN32
 #include "win-update/win-update.hpp"
@@ -179,6 +181,21 @@ OBSBasic::OBSBasic(QWidget *parent)
 
 	ui->setupUi(this);
 	ui->previewDisabledLabel->setVisible(false);
+
+	QHBoxLayout *topHLayout = new QHBoxLayout();
+
+	previewVis = new VisibilityCheckBox();
+	previewLock = new LockedCheckBox();
+
+	previewVis->setMaximumSize(16, 16);
+	previewLock->setMaximumSize(16, 16);
+
+	topHLayout->addStretch();
+	topHLayout->addWidget(previewVis);
+	topHLayout->addWidget(previewLock);
+	topHLayout->setMargin(0);
+
+	ui->topWidget->setLayout(topHLayout);
 
 	startingDockLayout = saveState();
 
@@ -862,6 +879,7 @@ retryScene:
 	SetCurrentScene(curScene, true);
 	if (IsPreviewProgramMode())
 		TransitionToScene(curProgramScene, true);
+
 	obs_source_release(curScene);
 	obs_source_release(curProgramScene);
 
@@ -907,6 +925,7 @@ retryScene:
 	bool previewLocked = obs_data_get_bool(data, "preview_locked");
 	ui->preview->SetLocked(previewLocked);
 	ui->actionLockPreview->setChecked(previewLocked);
+	previewLock->setChecked(previewLocked);
 
 	/* ---------------------- */
 
@@ -1648,6 +1667,19 @@ void OBSBasic::OBSInit()
 			&OBSBasic::UpdateMultiviewProjectorMenu);
 	ui->viewMenu->addAction(QTStr("MultiviewWindowed"),
 			this, SLOT(OpenMultiviewWindow()));
+
+	previewVis->setChecked(previewEnabled);
+
+	connect(previewVis, SIGNAL(clicked()), this,
+			SLOT(TogglePreview()));
+
+	connect(previewLock, SIGNAL(clicked()), this,
+			SLOT(on_actionLockPreview_triggered()));
+
+	if (IsPreviewProgramMode() == true)
+		SetPreviewVisCheckBoxEnabled(false);
+	else
+		SetPreviewVisCheckBoxEnabled(true);
 
 #if !defined(_WIN32) && !defined(__APPLE__)
 	delete ui->actionShowCrashLogs;
@@ -4080,7 +4112,6 @@ void OBSBasic::CreateSourcePopupMenu(int idx, bool preview)
 				obs_display_enabled(ui->preview->GetDisplay()));
 		if (IsPreviewProgramMode())
 			action->setEnabled(false);
-
 		popup.addAction(ui->actionLockPreview);
 		popup.addMenu(ui->scalingMenu);
 
@@ -5785,6 +5816,12 @@ void OBSBasic::TogglePreview()
 {
 	previewEnabled = !previewEnabled;
 	EnablePreviewDisplay(previewEnabled);
+	previewVis->setChecked(previewEnabled);
+}
+
+void OBSBasic::SetPreviewVisCheckBoxEnabled(bool enable)
+{
+	previewVis->setEnabled(enable);
 }
 
 static bool nudge_callback(obs_scene_t*, obs_sceneitem_t *item, void *param)
@@ -6147,8 +6184,9 @@ void OBSBasic::on_toggleStatusBar_toggled(bool visible)
 
 void OBSBasic::on_actionLockPreview_triggered()
 {
-	ui->preview->ToggleLocked();
 	ui->actionLockPreview->setChecked(ui->preview->Locked());
+	ui->preview->ToggleLocked();
+	previewLock->setChecked(ui->preview->Locked());
 }
 
 void OBSBasic::on_scalingMenu_aboutToShow()
