@@ -135,3 +135,9 @@ QLabel#errorLabel {
 * [themeID="aboutHLayout"] {
 	background-color: rgb(169, 169, 169);
 }
+
+/* Preview background color */
+
+* [themeID="displayBackgroundColor"] {
+    qproperty-displayBackgroundColor: rgb(76, 76, 76);
+}

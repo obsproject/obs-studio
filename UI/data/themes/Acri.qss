@@ -880,3 +880,9 @@ FocusList::item {
 * [themeID="aboutHLayout"] {
 	background-color: rgb(8, 8, 11);
 }
+
+/* Preview background color */
+
+* [themeID="displayBackgroundColor"] {
+    qproperty-displayBackgroundColor: #28282A;
+}

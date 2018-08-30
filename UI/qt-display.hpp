@@ -5,6 +5,8 @@
 
 class OBSQTDisplay : public QWidget {
 	Q_OBJECT
+	Q_PROPERTY(QColor displayBackgroundColor WRITE SetDisplayBackgroundColor
+			NOTIFY SetDisplayBackgroundColor)
 
 	OBSDisplay display;
 
@@ -23,4 +25,9 @@ public:
 	virtual QPaintEngine *paintEngine() const override;
 
 	inline obs_display_t *GetDisplay() const {return display;}
+
+	uint32_t backgroundColor;
+
+private slots:
+	void SetDisplayBackgroundColor(const QColor &color);
 };
