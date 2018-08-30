@@ -57,12 +57,15 @@ OBSBasicFilters::OBSBasicFilters(QWidget *parent, OBSSource source_)
 	  renameSourceSignal           (obs_source_get_signal_handler(source),
 	                                "rename",
 	                                OBSBasicFilters::SourceRenamed, this),
-	  noPreviewMargin               (13)
+	  noPreviewMargin               (13),
+	  verticalSpacer                (new QSpacerItem(0, 0))
 {
 	main = reinterpret_cast<OBSBasic*>(parent);
 
 	ui->setupUi(this);
 	UpdateFilters();
+
+	ui->rightContainerLayout->insertSpacerItem(1, verticalSpacer);
 
 	ui->asyncFilters->setItemDelegate(
 			new VisibilityItemDelegate(ui->asyncFilters));
@@ -127,13 +130,16 @@ OBSBasicFilters::OBSBasicFilters(QWidget *parent, OBSSource source_)
 
 	if ((caps & OBS_SOURCE_VIDEO) != 0) {
 		ui->rightLayout->setContentsMargins(0, 0, 0, 0);
+		verticalSpacer->changeSize(0, 0, QSizePolicy::Minimum,
+				QSizePolicy::Minimum);
 		ui->preview->show();
 		if (drawable_type)
 			connect(ui->preview, &OBSQTDisplay::DisplayCreated,
-					addDrawCallback);
+				addDrawCallback);
 	} else {
 		ui->rightLayout->setContentsMargins(0, noPreviewMargin, 0, 0);
-		ui->rightContainerLayout->insertStretch(1);
+		verticalSpacer->changeSize(0, 0, QSizePolicy::Minimum,
+				QSizePolicy::Expanding);
 		ui->preview->hide();
 	}
 }
@@ -186,6 +192,19 @@ void OBSBasicFilters::UpdatePropertiesView(int row, bool async)
 			"update_properties",
 			OBSBasicFilters::UpdateProperties,
 			this);
+
+	uint32_t caps = obs_source_get_output_flags(filter);
+	if ((caps & OBS_SOURCE_VIDEO)) {
+		ui->rightLayout->setContentsMargins(0, 0, 0, 0);
+		verticalSpacer->changeSize(0, 0, QSizePolicy::Minimum,
+			QSizePolicy::Minimum);
+		ui->preview->show();
+	} else {
+		ui->rightLayout->setContentsMargins(0, noPreviewMargin, 0, 0);
+		verticalSpacer->changeSize(0, 0, QSizePolicy::Minimum,
+			QSizePolicy::Expanding);
+		ui->preview->hide();
+	}
 
 	obs_data_release(settings);
 

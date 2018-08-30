@@ -74,6 +74,8 @@ private:
 
 	int noPreviewMargin;
 
+	QSpacerItem *verticalSpacer = nullptr;
+
 private slots:
 	void AddFilter(OBSSource filter);
 	void RemoveFilter(OBSSource filter);
