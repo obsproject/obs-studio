@@ -24,7 +24,7 @@ static inline void init_textures(struct dc_capture *capture)
 
 void dc_capture_init(struct dc_capture *capture, int x, int y,
 		uint32_t width, uint32_t height, bool cursor,
-		bool compatibility)
+		bool compatibility, bool anicursor)
 {
 	memset(capture, 0, sizeof(struct dc_capture));
 
@@ -33,6 +33,7 @@ void dc_capture_init(struct dc_capture *capture, int x, int y,
 	capture->width          = width;
 	capture->height         = height;
 	capture->capture_cursor = cursor;
+	capture->anicursor      = anicursor;
 
 	obs_enter_graphics();
 
@@ -80,6 +81,63 @@ void dc_capture_free(struct dc_capture *capture)
 	memset(capture, 0, sizeof(struct dc_capture));
 }
 
+static int32_t getAniCurNextStep(HICON *icon, int32_t istep) {
+	static HICON hLastCur = NULL;
+	static float rFrameDur = 0;  //rendered frame interval in seconds
+	float aniFrameDur;           //animation frame interval in seconds
+	int32_t dur = 1;             //duration of the frame in jiffies,
+	                             // 1 jif = 1/60 s
+	uint32_t num_steps = 1;      //number of blits to render whole .ani
+	static uint64_t renderDurMs = 0; //render call interval in ms
+	static uint64_t last_ticks = 0;  //previous call time in ms
+
+	//try to detect cursor change and reset animation
+	if (*icon != hLastCur) {
+		blog(LOG_DEBUG, "Cursor was changed");
+		istep = 0;
+		renderDurMs = 0; //reset rendered interval
+		last_ticks = 0;
+	}
+
+	hLastCur = *icon;
+
+	//get duration of the animated frame
+	if (GetCFI((HCURSOR)*icon, 0L, istep, &dur, &num_steps)) {
+		if (num_steps < 2) { //no animation
+			num_steps = 1;
+			rFrameDur = 0; //prepare to the next cursor
+		}
+
+		if (dur < 1) dur = 1; //keep frame duration in bounds
+
+	} else
+		return 0; //animation not supported
+
+	if (last_ticks == 0)
+		last_ticks = GetTickCount64() - 10; //initial conditions
+
+	//not precise timer used because min .ani frame duraton is 1/60 s
+	renderDurMs = GetTickCount64() - last_ticks;
+	last_ticks += renderDurMs;
+
+	rFrameDur += (float)renderDurMs / 1000;
+	aniFrameDur = (float)dur / 60;
+
+	//make sure that next animation frame is needs to be rendered
+	if (aniFrameDur <= rFrameDur) {
+		istep += (int32_t)(rFrameDur * 60 / dur);
+		rFrameDur = rFrameDur - aniFrameDur; //remainder
+
+		//rendered fps < .ani fps, do not accumulate remainder
+		if (rFrameDur > aniFrameDur)
+			rFrameDur = 0;
+	}
+
+	istep = istep % num_steps; //recalculate in case of the loop overflow
+
+	return istep;
+}
+
 static void draw_cursor(struct dc_capture *capture, HDC hdc, HWND window)
 {
 	HICON      icon;
@@ -90,7 +148,7 @@ static void draw_cursor(struct dc_capture *capture, HDC hdc, HWND window)
 	if (!(capture->ci.flags & CURSOR_SHOWING))
 		return;
 
-	icon = CopyIcon(capture->ci.hCursor);
+	icon = (HICON)capture->ci.hCursor;
 	if (!icon)
 		return;
 
@@ -103,14 +161,17 @@ static void draw_cursor(struct dc_capture *capture, HDC hdc, HWND window)
 		pos.x = ci->ptScreenPos.x - (int)ii.xHotspot - win_pos.x;
 		pos.y = ci->ptScreenPos.y - (int)ii.yHotspot - win_pos.y;
 
-		DrawIconEx(hdc, pos.x, pos.y, icon, 0, 0, 0, NULL,
+		static int32_t istep = 0; //animated frame(step) number
+
+		if (capture->anicursor)
+			istep = getAniCurNextStep(&icon, istep);
+
+		DrawIconEx(hdc, pos.x, pos.y, icon, 0, 0, istep, NULL,
 				DI_NORMAL);
 
 		DeleteObject(ii.hbmColor);
 		DeleteObject(ii.hbmMask);
 	}
-
-	DestroyIcon(icon);
 }
 
 static inline HDC dc_capture_get_dc(struct dc_capture *capture)

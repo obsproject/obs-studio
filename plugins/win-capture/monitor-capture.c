@@ -72,7 +72,7 @@ static void update_monitor(struct monitor_capture *capture,
 
 	dc_capture_init(&capture->data, monitor.rect.left, monitor.rect.top,
 			width, height, capture->capture_cursor,
-			capture->compatibility);
+			capture->compatibility, false); /* TODO: anicursor */
 }
 
 static inline void update_settings(struct monitor_capture *capture,
