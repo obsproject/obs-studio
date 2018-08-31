@@ -92,10 +92,11 @@ void gs_cubetexture_destroy(gs_texture_t *tex)
 	if (!tex)
 		return;
 
-	if (tex->texture) {
-		glDeleteTextures(1, &tex->texture);
-		gl_success("glDeleteTextures");
-	}
+	if (tex->texture)
+		gl_delete_textures(1, &tex->texture);
+
+	if (tex->fbo)
+		fbo_info_destroy(tex->fbo);
 
 	bfree(tex);
 }
