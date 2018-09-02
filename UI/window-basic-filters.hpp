@@ -100,6 +100,10 @@ private slots:
 	void on_effectFilters_customContextMenuRequested(const QPoint &pos);
 	void on_effectFilters_GotFocus();
 
+	void on_actionRemoveFilter_triggered();
+	void on_actionMoveUp_triggered();
+	void on_actionMoveDown_triggered();
+
 	void AsyncFilterNameEdited(QWidget *editor,
 			QAbstractItemDelegate::EndEditHint endHint);
 	void EffectFilterNameEdited(QWidget *editor,
