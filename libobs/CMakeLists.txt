@@ -399,6 +399,7 @@ set(libobs_libobs_HEADERS
 	obs-interaction.h
 	obs-hotkey.h
 	obs-hotkeys.h
+	obs-midikeys.h
 	obs-module.h
 	obs-scene.h
 	obs-source.h
