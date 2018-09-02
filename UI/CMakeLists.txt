@@ -146,7 +146,6 @@ set(obs_SOURCES
 	window-basic-main-transitions.cpp
 	window-basic-main-dropfiles.cpp
 	window-basic-main-profiles.cpp
-	window-license-agreement.cpp
 	window-basic-status-bar.cpp
 	window-basic-adv-audio.cpp
 	window-basic-transform.cpp
@@ -196,7 +195,6 @@ set(obs_HEADERS
 	window-basic-main-outputs.hpp
 	window-basic-source-select.hpp
 	window-basic-about.hpp
-	window-license-agreement.hpp
 	window-basic-status-bar.hpp
 	window-basic-adv-audio.hpp
 	window-basic-transform.hpp
@@ -240,7 +238,6 @@ set(obs_UI
 	forms/AutoConfigStreamPage.ui
 	forms/AutoConfigTestPage.ui
 	forms/ColorSelect.ui
-	forms/OBSLicenseAgreement.ui
 	forms/OBSLogReply.ui
 	forms/OBSBasic.ui
 	forms/OBSBasicTransform.ui
