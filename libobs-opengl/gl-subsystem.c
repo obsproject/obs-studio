@@ -259,16 +259,10 @@ fail:
 void device_destroy(gs_device_t *device)
 {
 	if (device) {
-		size_t i;
-
-		for (i = 0; i < device->fbos.num; i++)
-			fbo_info_destroy(device->fbos.array[i]);
-
 		while (device->first_program)
 			gs_program_destroy(device->first_program);
 
 		da_free(device->proj_stack);
-		da_free(device->fbos);
 		gl_platform_destroy(device->plat);
 		bfree(device);
 	}
@@ -658,46 +652,37 @@ static bool get_tex_dimensions(gs_texture_t *tex, uint32_t *width,
  * This automatically manages FBOs so that render targets are always given
  * an FBO that matches their width/height/format to maximize optimization
  */
-struct fbo_info *get_fbo(struct gs_device *device,
-		uint32_t width, uint32_t height, enum gs_color_format format)
+struct fbo_info *get_fbo(gs_texture_t *tex, uint32_t width, uint32_t height)
 {
-	size_t i;
+	if (tex->fbo && tex->fbo->width  == width &&
+			tex->fbo->height == height &&
+			tex->fbo->format == tex->format)
+		return tex->fbo;
+
 	GLuint fbo;
-	struct fbo_info *ptr;
-
-	for (i = 0; i < device->fbos.num; i++) {
-		ptr = device->fbos.array[i];
-
-		if (ptr->width  == width && ptr->height == height &&
-		    ptr->format == format)
-			return ptr;
-	}
-
 	glGenFramebuffers(1, &fbo);
 	if (!gl_success("glGenFramebuffers"))
 		return NULL;
 
-	ptr = bmalloc(sizeof(struct fbo_info));
-	ptr->fbo                 = fbo;
-	ptr->width               = width;
-	ptr->height              = height;
-	ptr->format              = format;
-	ptr->cur_render_target   = NULL;
-	ptr->cur_render_side     = 0;
-	ptr->cur_zstencil_buffer = NULL;
+	tex->fbo = bmalloc(sizeof(struct fbo_info));
+	tex->fbo->fbo                 = fbo;
+	tex->fbo->width               = width;
+	tex->fbo->height              = height;
+	tex->fbo->format              = tex->format;
+	tex->fbo->cur_render_target   = NULL;
+	tex->fbo->cur_render_side     = 0;
+	tex->fbo->cur_zstencil_buffer = NULL;
 
-	da_push_back(device->fbos, &ptr);
-	return ptr;
+	return tex->fbo;
 }
 
-static inline struct fbo_info *get_fbo_by_tex(struct gs_device *device,
-		gs_texture_t *tex)
+static inline struct fbo_info *get_fbo_by_tex(gs_texture_t *tex)
 {
 	uint32_t width, height;
 	if (!get_tex_dimensions(tex, &width, &height))
 		return NULL;
 
-	return get_fbo(device, width, height, tex->format);
+	return get_fbo(tex, width, height);
 }
 
 static bool set_current_fbo(gs_device_t *device, struct fbo_info *fbo)
@@ -783,7 +768,7 @@ static bool set_target(gs_device_t *device, gs_texture_t *tex, int side,
 	if (!tex)
 		return set_current_fbo(device, NULL);
 
-	fbo = get_fbo_by_tex(device, tex);
+	fbo = get_fbo_by_tex(tex);
 	if (!fbo)
 		return false;
 
@@ -885,9 +870,8 @@ void device_copy_texture_region(gs_device_t *device,
 		goto fail;
 	}
 
-	if (!gl_copy_texture(device, dst->texture, dst->gl_target, dst_x, dst_y,
-				src->texture, src->gl_target, src_x, src_y,
-				nw, nh, src->format))
+	if (!gl_copy_texture(device, dst, dst_x, dst_y, src, src_x, src_y, nw,
+			nh))
 		goto fail;
 
 	return;

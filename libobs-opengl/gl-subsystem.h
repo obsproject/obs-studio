@@ -409,6 +409,7 @@ struct gs_texture {
 	bool                 gen_mipmaps;
 
 	gs_samplerstate_t    *cur_sampler;
+	struct fbo_info      *fbo;
 };
 
 struct gs_texture_2d {
@@ -501,12 +502,11 @@ struct gs_device {
 
 	DARRAY(struct matrix4)   proj_stack;
 
-	DARRAY(struct fbo_info*) fbos;
 	struct fbo_info          *cur_fbo;
 };
 
-extern struct fbo_info *get_fbo(struct gs_device *device,
-		uint32_t width, uint32_t height, enum gs_color_format format);
+extern struct fbo_info *get_fbo(gs_texture_t *tex, uint32_t width,
+		uint32_t height);
 
 extern void                  gl_update(gs_device_t *device);
 
