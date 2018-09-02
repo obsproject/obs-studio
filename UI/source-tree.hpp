@@ -47,6 +47,7 @@ class SourceTreeItem : public QWidget {
 
 public:
 	explicit SourceTreeItem(SourceTree *tree, OBSSceneItem sceneitem);
+	bool IsEditing();
 
 private:
 	QSpacerItem *spacer = nullptr;

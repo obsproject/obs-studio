@@ -244,6 +244,11 @@ void SourceTreeItem::mouseDoubleClickEvent(QMouseEvent *event)
 	}
 }
 
+bool SourceTreeItem::IsEditing()
+{
+	return editor != nullptr;
+}
+
 void SourceTreeItem::EnterEditMode()
 {
 	setFocusPolicy(Qt::StrongFocus);
@@ -1279,10 +1284,14 @@ void SourceTree::Edit(int row)
 	if (row < 0 || row >= stm->items.count())
 		return;
 
-	QWidget *widget = indexWidget(stm->createIndex(row, 0));
+	QModelIndex index = stm->createIndex(row, 0);
+	QWidget *widget = indexWidget(index);
 	SourceTreeItem *itemWidget = reinterpret_cast<SourceTreeItem *>(widget);
+	if (itemWidget->IsEditing())
+		return;
+
 	itemWidget->EnterEditMode();
-	edit(stm->createIndex(row, 0));
+	edit(index);
 }
 
 bool SourceTree::MultipleBaseSelected() const
