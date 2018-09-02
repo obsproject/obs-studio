@@ -101,7 +101,6 @@ elseif(APPLE)
 			${SPARKLE})
 		add_definitions(-DUPDATE_SPARKLE=1)
 	endif()
-
 elseif(UNIX)
         find_package(Qt5X11Extras REQUIRED)
 
@@ -111,6 +110,11 @@ elseif(UNIX)
         set(obs_PLATFORM_LIBRARIES
                 Qt5::X11Extras)
 endif()
+
+set(obs_PLATFORM_LIBRARIES
+	${obs_PLATFORM_LIBRARIES}
+	rtmidi
+	)
 
 set(obs_libffutil_SOURCES
 	../deps/libff/libff/ff-util.c
