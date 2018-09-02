@@ -1237,6 +1237,21 @@
                     "url": "rtmp://stream.dtube.top/live/"
                 }
             ]
+        },
+        {
+            "name": "STAGE TEN",
+            "servers": [
+                {
+                    "name": "STAGE TEN",
+                    "url": "rtmp://app-rtmp.stageten.tv/stageten"
+                }
+            ],
+            "recommended": {
+                "keyint": 2,
+                "profile": "baseline",
+                "max video bitrate": 4000,
+                "max audio bitrate": 128
+            }
         }
     ]
 }
