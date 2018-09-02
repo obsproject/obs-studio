@@ -79,7 +79,10 @@ if(WIN32)
 	set(obs_PLATFORM_LIBRARIES
 		crypt32
 		blake2
+		winmm
 		${OBS_JANSSON_IMPORT})
+
+	add_definitions(-D__WINDOWS_MM__)
 elseif(APPLE)
 	set(obs_PLATFORM_SOURCES
 		platform-osx.mm)
@@ -101,7 +104,21 @@ elseif(APPLE)
 			${SPARKLE})
 		add_definitions(-DUPDATE_SPARKLE=1)
 	endif()
+	
+	find_library(COREMIDI CoreMIDI)
+	include_directories(${COREMIDI})
+	find_library(COREAUDIO CoreAudio)
+	include_directories(${COREAUDIO})
+	find_library(COREFOUNDATION CoreFoundation)
+	include_directories(${COREFOUNDATION})
 
+	set(obs_PLATFORM_LIBRARIES
+		${obs_PLATFORM_LIBRARIES}
+		${COREMIDI}
+		${COREAUDIO}
+		${COREFOUNDATION})
+
+	add_definitions(-D__MACOSX_CORE__)
 elseif(UNIX)
         find_package(Qt5X11Extras REQUIRED)
 
@@ -110,7 +127,25 @@ elseif(UNIX)
 
         set(obs_PLATFORM_LIBRARIES
                 Qt5::X11Extras)
+
+	find_package(ALSA)
+	if(NOT ALSA_FOUND)
+		message(STATUS "ALSA not found: MIDI disabled")
+		remove_definitions(-D__LINUX_ALSA__)
+	else(ALSA_FOUND)
+		add_definitions(-D__LINUX_ALSA__)
+		include_directories(${ALSA_INCLUDE_DIR})
+
+		set(obs_PLATFORM_LIBRARIES
+			${obs_PLATFORM_LIBRARIES}
+			${ALSA_LIBRARY})
+	endif()
 endif()
+
+set(obs_PLATFORM_LIBRARIES
+	${obs_PLATFORM_LIBRARIES}
+	rtmidi
+	)
 
 set(obs_libffutil_SOURCES
 	../deps/libff/libff/ff-util.c

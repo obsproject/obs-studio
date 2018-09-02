@@ -444,6 +444,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->reconnectMaxRetries,  SCROLL_CHANGED, ADV_CHANGED);
 	HookWidget(ui->processPriority,      COMBO_CHANGED,  ADV_CHANGED);
 	HookWidget(ui->bindToIP,             COMBO_CHANGED,  ADV_CHANGED);
+	HookWidget(ui->midiDevice,           COMBO_CHANGED,  ADV_CHANGED);
 	HookWidget(ui->enableNewSocketLoop,  CHECK_CHANGED,  ADV_CHANGED);
 	HookWidget(ui->enableLowLatencyMode, CHECK_CHANGED,  ADV_CHANGED);
 	HookWidget(ui->disableFocusHotkeys,  CHECK_CHANGED,  ADV_CHANGED);
@@ -456,6 +457,11 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 #if !defined(_WIN32) && !defined(__APPLE__) && !HAVE_PULSEAUDIO
 	delete ui->advAudioGroupBox;
 	ui->advAudioGroupBox = nullptr;
+#endif
+
+#if defined(__RTMIDI_DUMMY__)
+	delete ui->midiDevice;
+	ui->midiDevice = nullptr;
 #endif
 
 #ifdef _WIN32
@@ -2224,6 +2230,8 @@ void OBSBasicSettings::LoadAdvancedSettings()
 			"OverwriteIfExists");
 	const char *bindIP = config_get_string(main->Config(), "Output",
 			"BindIP");
+	const char *midiDevice = config_get_string(main->Config(), "Audio",
+			"MidiDevice");
 	const char *rbPrefix = config_get_string(main->Config(), "SimpleOutput",
 			"RecRBPrefix");
 	const char *rbSuffix = config_get_string(main->Config(), "SimpleOutput",
@@ -2268,11 +2276,23 @@ void OBSBasicSettings::LoadAdvancedSettings()
 
 	if (!SetComboByValue(ui->bindToIP, bindIP))
 		SetInvalidValue(ui->bindToIP, bindIP, bindIP);
+#if !defined(__RTMIDI_DUMMY__)
+	size_t count = GetMidiPorts();
+	ui->midiDevice->clear();
+	ui->midiDevice->addItem(QTStr("None"), QTStr("None"));
+	for (size_t i = 0; i < count; i++) {
+		char *name = GetMidiPortName(i);
+		ui->midiDevice->addItem(QT_UTF8(name), name);
+		bfree(name);
+	}
+
+	if (!SetComboByValue(ui->midiDevice, midiDevice))
+		SetInvalidValue(ui->midiDevice, midiDevice, midiDevice);
 
 	if (video_output_active(obs_get_video())) {
 		ui->advancedVideoContainer->setEnabled(false);
 	}
-
+#endif 
 #ifdef __APPLE__
 	bool disableOSXVSync = config_get_bool(App()->GlobalConfig(),
 			"Video", "DisableOSXVSync");
@@ -2826,6 +2846,8 @@ void OBSBasicSettings::SaveAdvancedSettings()
 {
 	QString lastMonitoringDevice = config_get_string(main->Config(),
 			"Audio", "MonitoringDeviceId");
+	QString lastMidiDevice = config_get_string(main->Config(),
+			"Audio", "MidiDevice");
 
 #ifdef _WIN32
 	if (WidgetChanged(ui->renderer))
@@ -2892,6 +2914,7 @@ void OBSBasicSettings::SaveAdvancedSettings()
 	SaveSpinBox(ui->reconnectRetryDelay, "Output", "RetryDelay");
 	SaveSpinBox(ui->reconnectMaxRetries, "Output", "MaxRetries");
 	SaveComboData(ui->bindToIP, "Output", "BindIP");
+	SaveComboData(ui->midiDevice, "Audio", "MidiDevice");
 
 #if defined(_WIN32) || defined(__APPLE__) || HAVE_PULSEAUDIO
 	QString newDevice = ui->monitoringDevice->currentData().toString();
@@ -2906,6 +2929,14 @@ void OBSBasicSettings::SaveAdvancedSettings()
 				QT_TO_UTF8(newDevice));
 	}
 #endif
+	QString newMidiDevice = ui->midiDevice->currentData().toString();
+	
+	if (lastMidiDevice != newMidiDevice) {
+		const char *midiName = newMidiDevice.toStdString().c_str();
+		int midiPort = GetMidiPortByName(midiName);
+		MidiInit(midiPort);
+	}
+	
 }
 
 static inline const char *OutputModeFromIdx(int idx)

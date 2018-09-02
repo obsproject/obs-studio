@@ -37,6 +37,8 @@
 #include <util/threading.h>
 #include <util/util.hpp>
 
+#include "RtMidi.h"
+
 #include <QPointer>
 
 class QMessageBox;
@@ -760,3 +762,9 @@ public:
 private:
 	std::unique_ptr<Ui::ColorSelect> ui;
 };
+
+static RtMidiIn *midiIn = nullptr;
+int GetMidiPorts();
+char *GetMidiPortName(int i);
+int GetMidiPortByName(const char *name);
+void MidiInit(int deviceIndex);

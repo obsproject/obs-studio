@@ -37,6 +37,7 @@ const size_t OBS_INVALID_HOTKEY_PAIR_ID = (size_t)-1;
 enum obs_key {
 #define OBS_HOTKEY(x) x,
 #include "obs-hotkeys.h"
+#include "obs-midikeys.h"
 #undef OBS_HOTKEY
 	OBS_KEY_LAST_VALUE //not an actual key
 };

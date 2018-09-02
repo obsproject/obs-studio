@@ -181,6 +181,21 @@ QObject *CreateShortcutFilter()
 			return true;
 		};
 
+		auto hotkey_event = [&](QHotkeyEvent *event)
+		{
+			obs_key_combination_t hotkey = { 0, OBS_KEY_NONE };
+			hotkey.key = event->getKey();
+			hotkey.modifiers = event->getModifiers();
+			bool pressed = event->pressed();
+			if(pressed)
+				blog(LOG_INFO, "injecting %s pressed",
+						obs_key_to_name(hotkey.key));
+			else
+				blog(LOG_INFO, "injecting %s released",
+						obs_key_to_name(hotkey.key));
+			obs_hotkey_inject_event(hotkey, pressed);
+			return true;
+		};
 		switch (event->type()) {
 		case QEvent::MouseButtonPress:
 		case QEvent::MouseButtonRelease:
@@ -191,7 +206,8 @@ QObject *CreateShortcutFilter()
 		case QEvent::KeyPress:
 		case QEvent::KeyRelease:
 			return key_event(static_cast<QKeyEvent*>(event));
-
+		case QHotkeyEvent::hotkeyType:
+			return hotkey_event(static_cast<QHotkeyEvent*>(event));
 		default:
 			return false;
 		}

@@ -4632,6 +4632,67 @@
                   </layout>
                  </widget>
                 </item>
+                <item>
+                 <widget class="QGroupBox" name="groupBox_18">
+                  <property name="title">
+                   <string>Basic.Settings.Advanced.Midi</string>
+                  </property>
+                  <layout class="QFormLayout" name="formLayout_35">
+                   <item row="0" column="0">
+                    <widget class="QLabel" name="midiDeviceLabel">
+                     <property name="text">
+                      <string>Basic.Settings.Advanced.Midi.Device</string>
+                     </property>
+                     <property name="buddy">
+                      <cstring>midiDevice</cstring>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="0" column="1">
+                    <widget class="QComboBox" name="midiDevice"/>
+                   </item>
+                   <item row="1" column="0">
+                    <spacer name="horizontalSpacer_15">
+                     <property name="orientation">
+                      <enum>Qt::Horizontal</enum>
+                     </property>
+                     <property name="sizeHint" stdset="0">
+                      <size>
+                       <width>170</width>
+                       <height>0</height>
+                      </size>
+                     </property>
+                    </spacer>
+                   </item>
+                  </layout>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QLabel" name="advancedMsg">
+                  <property name="styleSheet">
+                   <string notr="true">color: rgb(255, 0, 4);</string>
+                  </property>
+                  <property name="text">
+                   <string notr="true"/>
+                  </property>
+                  <property name="wordWrap">
+                   <bool>true</bool>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QLabel" name="advancedMsg2">
+                  <property name="styleSheet">
+                   <string notr="true">color: rgb(255, 0, 4);</string>
+                  </property>
+                  <property name="text">
+                   <string notr="true"/>
+                  </property>
+                  <property name="wordWrap">
+                   <bool>true</bool>
+                  </property>
+                 </widget>
+                </item>
                </layout>
               </widget>
              </item>
