@@ -515,20 +515,20 @@ void OBSBasicFilters::OBSSourceReordered(void *param, calldata_t *data)
 	UNUSED_PARAMETER(data);
 }
 
-void OBSBasicFilters::SourceRemoved(void *data, calldata_t *params)
+void OBSBasicFilters::SourceRemoved(void *param, calldata_t *data)
 {
-	UNUSED_PARAMETER(params);
+	UNUSED_PARAMETER(data);
 
-	QMetaObject::invokeMethod(static_cast<OBSBasicFilters*>(data),
+	QMetaObject::invokeMethod(static_cast<OBSBasicFilters*>(param),
 	                "close");
 }
 
-void OBSBasicFilters::SourceRenamed(void *data, calldata_t *params)
+void OBSBasicFilters::SourceRenamed(void *param, calldata_t *data)
 {
-	const char *name = calldata_string(params, "new_name");
+	const char *name = calldata_string(data, "new_name");
 	QString title = QTStr("Basic.Filters.Title").arg(QT_UTF8(name));
 
-	QMetaObject::invokeMethod(static_cast<OBSBasicFilters*>(data),
+	QMetaObject::invokeMethod(static_cast<OBSBasicFilters*>(param),
 	                "setWindowTitle", Q_ARG(QString, title));
 }
 
