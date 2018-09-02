@@ -1,4 +1,5 @@
 #pragma once
+#include "area_window.hpp"
 
 #include <QList>
 #include <QVector>
@@ -127,6 +128,7 @@ class SourceTree : public QListView {
 	Q_OBJECT
 
 	bool ignoreReorder = false;
+	QPointer<AreaWindow> areaWindow;
 
 	friend class SourceTreeModel;
 	friend class SourceTreeItem;
