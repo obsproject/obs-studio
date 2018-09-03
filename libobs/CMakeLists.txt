@@ -447,6 +447,14 @@ if(BUILD_CAPTIONS)
 endif()
 
 add_library(libobs SHARED ${libobs_SOURCES} ${libobs_HEADERS})
+if(UNIX AND NOT APPLE)
+	set(DEST_DIR "${CMAKE_INSTALL_PREFIX}")
+	foreach(LIB "obs" "rt")
+		set(PRIVATE_LIBS "${PRIVATE_LIBS} -l${LIB}")
+	endforeach()
+	CONFIGURE_FILE("libobs.pc.in" "libobs.pc" @ONLY)
+	install(FILES "${CMAKE_CURRENT_BINARY_DIR}/libobs.pc" DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/pkgconfig")
+endif()
 
 set_target_properties(libobs PROPERTIES
 	OUTPUT_NAME obs
