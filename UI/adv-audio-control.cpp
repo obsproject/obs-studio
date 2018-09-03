@@ -4,7 +4,6 @@
 #include <QSpinBox>
 #include <QComboBox>
 #include <QCheckBox>
-#include <QSlider>
 #include "qt-wrappers.hpp"
 #include "obs-app.hpp"
 #include "adv-audio-control.hpp"
@@ -32,7 +31,7 @@ OBSAdvAudioCtrl::OBSAdvAudioCtrl(QGridLayout *, obs_source_t *source_)
 	nameLabel                      = new QLabel();
 	volume                         = new QSpinBox();
 	forceMono                      = new QCheckBox();
-	balance                        = new QSlider(Qt::Horizontal);
+	balance                        = new BalanceSlider();
 #if defined(_WIN32) || defined(__APPLE__) || HAVE_PULSEAUDIO
 	monitoringType                 = new QComboBox();
 #endif
@@ -82,6 +81,7 @@ OBSAdvAudioCtrl::OBSAdvAudioCtrl(QGridLayout *, obs_source_t *source_)
 	forceMonoContainer->layout()->setAlignment(forceMono,
 			Qt::AlignHCenter | Qt::AlignVCenter);
 
+	balance->setOrientation(Qt::Horizontal);
 	balance->setMinimum(0);
 	balance->setMaximum(100);
 	balance->setTickPosition(QSlider::TicksAbove);
@@ -153,6 +153,8 @@ OBSAdvAudioCtrl::OBSAdvAudioCtrl(QGridLayout *, obs_source_t *source_)
 			this, SLOT(downmixMonoChanged(bool)));
 	QWidget::connect(balance, SIGNAL(valueChanged(int)),
 			this, SLOT(balanceChanged(int)));
+	QWidget::connect(balance, SIGNAL(doubleClicked()),
+			this, SLOT(ResetBalance()));
 	QWidget::connect(syncOffset, SIGNAL(valueChanged(int)),
 			this, SLOT(syncOffsetChanged(int)));
 #if defined(_WIN32) || defined(__APPLE__) || HAVE_PULSEAUDIO
@@ -313,6 +315,12 @@ void OBSAdvAudioCtrl::balanceChanged(int val)
 
 	obs_source_set_balance_value(source, bal);
 }
+
+void OBSAdvAudioCtrl::ResetBalance()
+{
+	balance->setValue(50);
+}
+
 
 void OBSAdvAudioCtrl::syncOffsetChanged(int milliseconds)
 {

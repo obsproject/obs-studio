@@ -3,12 +3,12 @@
 #include <obs.hpp>
 #include <QWidget>
 #include <QPointer>
+#include "balance-slider.hpp"
 
 class QGridLayout;
 class QLabel;
 class QSpinBox;
 class QCheckBox;
-class QSlider;
 class QComboBox;
 
 class OBSAdvAudioCtrl : public QObject {
@@ -24,7 +24,7 @@ private:
 	QPointer<QLabel>       nameLabel;
 	QPointer<QSpinBox>     volume;
 	QPointer<QCheckBox>    forceMono;
-	QPointer<QSlider>      balance;
+	QPointer<BalanceSlider>balance;
 	QPointer<QLabel>       labelL;
 	QPointer<QLabel>       labelR;
 	QPointer<QSpinBox>     syncOffset;
@@ -70,4 +70,5 @@ public slots:
 	void mixer4Changed(bool checked);
 	void mixer5Changed(bool checked);
 	void mixer6Changed(bool checked);
+	void ResetBalance();
 };
