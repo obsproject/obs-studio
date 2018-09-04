@@ -28,6 +28,7 @@ set(frontend-tools_HEADERS
 	../../horizontal-scroll-area.hpp
 	../../vertical-scroll-area.hpp
 	../../double-slider.hpp
+	../../obs-slider.hpp
 	)
 set(frontend-tools_SOURCES
 	${frontend-tools_SOURCES}

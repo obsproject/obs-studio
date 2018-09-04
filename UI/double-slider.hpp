@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QSlider>
+#include <QMouseEvent>
 
 class DoubleSlider : public QSlider {
 	Q_OBJECT
@@ -15,8 +16,16 @@ public:
 
 signals:
 	void doubleValChanged(double val);
+	void doubleClicked();
 
 public slots:
 	void intValChanged(int val);
 	void setDoubleVal(double val);
+
+protected:
+	void mouseDoubleClickEvent(QMouseEvent *event)
+	{
+		emit doubleClicked();
+		event->accept();
+	}
 };

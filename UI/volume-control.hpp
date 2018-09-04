@@ -7,6 +7,7 @@
 #include <QTimer>
 #include <QMutex>
 #include <QList>
+#include "obs-slider.hpp"
 
 class QPushButton;
 class VolumeMeterTimer;
@@ -217,7 +218,6 @@ protected:
 };
 
 class QLabel;
-class QSlider;
 class MuteCheckBox;
 
 class VolControl : public QWidget {
@@ -228,7 +228,7 @@ private:
 	QLabel          *nameLabel;
 	QLabel          *volLabel;
 	VolumeMeter     *volMeter;
-	QSlider         *slider;
+	OBSSlider       *slider;
 	MuteCheckBox    *mute;
 	QPushButton     *config = nullptr;
 	float           levelTotal;
@@ -253,6 +253,7 @@ private slots:
 	void SetMuted(bool checked);
 	void SliderChanged(int vol);
 	void updateText();
+	void ResetSlider();
 
 signals:
 	void ConfigClicked();

@@ -6,7 +6,6 @@
 #include <QFontDialog>
 #include <QLineEdit>
 #include <QSpinBox>
-#include <QSlider>
 #include <QDoubleSpinBox>
 #include <QComboBox>
 #include <QListWidget>
@@ -19,6 +18,7 @@
 #include <QMenu>
 #include <QStackedWidget>
 #include "double-slider.hpp"
+#include "obs-slider.hpp"
 #include "qt-wrappers.hpp"
 #include "properties-view.hpp"
 #include "properties-view.moc.hpp"
@@ -320,6 +320,7 @@ void OBSPropertiesView::AddInt(obs_property_t *prop, QFormLayout *layout,
 
 	const char *name = obs_property_name(prop);
 	int        val   = (int)obs_data_get_int(settings, name);
+	int        defaultVal = (int)obs_data_get_default_int(settings, name);
 	QSpinBox   *spin = new QSpinBox();
 
 	if (!obs_property_enabled(prop))
@@ -339,7 +340,7 @@ void OBSPropertiesView::AddInt(obs_property_t *prop, QFormLayout *layout,
 	children.emplace_back(info);
 
 	if (type == OBS_NUMBER_SLIDER) {
-		QSlider *slider = new QSlider();
+		OBSSlider *slider = new OBSSlider();
 		slider->setMinimum(minVal);
 		slider->setMaximum(maxVal);
 		slider->setPageStep(stepVal);
@@ -349,6 +350,10 @@ void OBSPropertiesView::AddInt(obs_property_t *prop, QFormLayout *layout,
 
 		connect(slider, SIGNAL(valueChanged(int)),
 				spin, SLOT(setValue(int)));
+		connect(slider, &OBSSlider::doubleClicked,
+				this, [=] () {
+				spin->setValue(defaultVal);
+		});
 		connect(spin, SIGNAL(valueChanged(int)),
 				slider, SLOT(setValue(int)));
 	}
@@ -369,6 +374,7 @@ void OBSPropertiesView::AddFloat(obs_property_t *prop, QFormLayout *layout,
 
 	const char     *name = obs_property_name(prop);
 	double         val   = obs_data_get_double(settings, name);
+	double         defaultVal = obs_data_get_default_double(settings, name);
 	QDoubleSpinBox *spin = new QDoubleSpinBox();
 
 	if (!obs_property_enabled(prop))
@@ -395,6 +401,10 @@ void OBSPropertiesView::AddFloat(obs_property_t *prop, QFormLayout *layout,
 
 		connect(slider, SIGNAL(doubleValChanged(double)),
 				spin, SLOT(setValue(double)));
+		connect(slider, &DoubleSlider::doubleClicked,
+				this, [=] () {
+				spin->setValue(defaultVal);
+		});
 		connect(spin, SIGNAL(valueChanged(double)),
 				slider, SLOT(setDoubleVal(double)));
 	}
