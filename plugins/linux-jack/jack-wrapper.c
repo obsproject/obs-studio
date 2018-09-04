@@ -103,7 +103,7 @@ int_fast32_t jack_init(struct jack_data* data)
 		sizeof(jack_port_t*) * data->channels);
 	for (unsigned int i = 0; i < data->channels; ++i) {
 		char port_name[10] = {'\0'};
-		snprintf(port_name, sizeof(port_name), "in_%d", i+1);
+		snprintf(port_name, sizeof(port_name), "in_%u", i+1);
 
 		data->jack_ports[i] = jack_port_register(data->jack_client,
 			port_name, JACK_DEFAULT_AUDIO_TYPE, JackPortIsInput, 0);
