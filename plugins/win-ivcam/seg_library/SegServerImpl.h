@@ -56,8 +56,8 @@ private:
     LPCTSTR m_sharedBuffer;
 
     SegServerImpl();
-    SegServerImpl(SegServerImpl const& src);
-    SegServerImpl& operator=(const SegServerImpl & src);
+    SegServerImpl(SegServerImpl const& src) = delete;
+    SegServerImpl& operator=(const SegServerImpl & src) = delete;
 
 public:
     virtual ~SegServerImpl();
