@@ -29,7 +29,8 @@
 extern "C" {
 #endif
 
-#define OBS_ENCODER_CAP_DEPRECATED             (1<<0)
+#define OBS_ENCODER_CAP_DEPRECATED             		(1<<0)
+#define OBS_ENCODER_CAP_SUPPORTS_ENCODER_FEEDBACK	(1<<1)
 
 /** Specifies the encoder type */
 enum obs_encoder_type {
@@ -229,6 +230,15 @@ struct obs_encoder_info {
 	 * @param[in/out]  info  Video format information
 	 */
 	void (*get_video_info)(void *data, struct video_scale_info *info);
+
+	/**
+	 * Sets a new target bitrate for the encoder
+	 *
+	 * @param[in]		data 		Data associated with this encoder context
+	 * @param[in]		bitrate		New target bitrate for encoder
+	 */
+	void(*encoder_feedback)(void * data, unsigned int bitrate);
+	
 
 	void *type_data;
 	void (*free_type_data)(void *type_data);

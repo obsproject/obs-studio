@@ -50,6 +50,8 @@ struct obs_output_info {
 	void (*encoded_packet)(void *data, struct encoder_packet *packet);
 
 	/* optional */
+	bool(*drop_source_frame)(void* data);
+
 	void (*update)(void *data, obs_data_t *settings);
 
 	void (*get_defaults)(obs_data_t *settings);

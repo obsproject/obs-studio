@@ -164,7 +164,39 @@ static void zixi_auto_bonding_scan(struct zixi_stream* stream){
 }
 static void zixi_encoder_feedback(int total_bps, bool force_iframe, void* param){
 	struct zixi_stream* stream = (struct zixi_stream*)param;
-	
+	int to_encoder = total_bps;
+	info("zixi_encoder_feedback -> %d", total_bps);
+	if (stream->encoder_control. last_sent_encoder_feedback != total_bps && 
+		!disconnected(stream) && 
+		!connecting(stream) && 
+		active(stream) &&
+		stream->encoder_control.can_send_encoder_feedback &&
+		os_atomic_load_bool(&stream->encoder_control.safe_to_event)) {
+
+		if (to_encoder <= (stream->video_bitrate / 2)) {
+			to_encoder = stream->video_bitrate / 2;
+		}
+
+		if (stream->encoder_control.last_sent_encoder_feedback != to_encoder){
+			stream->encoder_control.last_sent_encoder_feedback = to_encoder;
+			obs_encoder_t* encoder = obs_output_get_video_encoder(stream->output);
+			obs_encoder_feedback(encoder, to_encoder);
+		}
+
+		pthread_mutex_lock(&stream->encoder_control_mutex);
+		float factor = 1.0f;
+		if ((float)total_bps <= ((float)stream->video_bitrate / 2)) {
+			factor = (float)total_bps / (stream->video_bitrate / 2); // 1 if total_bps = "vid bitrate"/2, 0.5 if total_bps = "vid bitrate"/4
+		} 
+		if (factor != stream->encoder_control.decimation_factor) {
+			info("zixi_encoder_feedback -> %.02f factor", factor);
+			stream->encoder_control.decimation_factor = factor;
+			stream->encoder_control.total_raw_frames = 0;
+			stream->encoder_control.sent_to_encoder_frames = 0;
+		}
+		pthread_mutex_unlock(&stream->encoder_control_mutex);
+	}
+
 }
 static inline bool get_next_packet(struct zixi_stream *stream,
 struct encoder_packet *packet)
@@ -1019,7 +1051,7 @@ static bool zixi_stream_start(void * data) {
 	}
 	
 	stream->max_video_bitrate = max_vbitrate;
-	stream->encoder_control.encoder_feedback = false;
+	stream->encoder_control.encoder_feedback = obs_get_encoder_caps(encoder) & OBS_ENCODER_CAP_SUPPORTS_ENCODER_FEEDBACK;
 	
 	audio_t* audio = obs_get_audio();
 	uint32_t channels = audio_output_get_channels(audio);
@@ -1250,6 +1282,7 @@ struct obs_output_info zixi_output = {
 	.start = zixi_stream_start,
 	.stop = zixi_stream_stop,
 	.get_congestion = zixi_get_congestion,
+	.drop_source_frame = zixi_input_control,
 	.encoded_packet = zixi_stream_data,
 	.get_defaults = zixi_stream_defaults,
 	.get_properties = zixi_stream_properties,
