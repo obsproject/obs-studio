@@ -36,9 +36,6 @@ OBSProjector::OBSProjector(QWidget *widget, obs_source_t *source_, int monitor,
 		windowedProjectors.push_back(this);
 
 		resize(480, 270);
-
-		SetAlwaysOnTop(this, config_get_bool(GetGlobalConfig(),
-				"BasicWindow", "ProjectorAlwaysOnTop"));
 	} else {
 		setWindowFlags(Qt::FramelessWindowHint |
 				Qt::X11BypassWindowManagerHint);
@@ -51,9 +48,10 @@ OBSProjector::OBSProjector(QWidget *widget, obs_source_t *source_, int monitor,
 		addAction(action);
 		connect(action, SIGNAL(triggered()), this,
 				SLOT(EscapeTriggered()));
-
-		SetAlwaysOnTop(this, true);
 	}
+
+	SetAlwaysOnTop(this, config_get_bool(GetGlobalConfig(),
+			"BasicWindow", "ProjectorAlwaysOnTop"));
 
 	setAttribute(Qt::WA_DeleteOnClose, true);
 
