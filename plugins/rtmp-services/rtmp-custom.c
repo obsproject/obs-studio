@@ -4,6 +4,7 @@ struct rtmp_custom {
 	char *server, *key;
 	bool use_auth;
 	char *username, *password;
+	char * output;
 };
 
 static const char *rtmp_custom_name(void *unused)
@@ -18,12 +19,20 @@ static void rtmp_custom_update(void *data, obs_data_t *settings)
 
 	bfree(service->server);
 	bfree(service->key);
+	bfree(service->username);
+	bfree(service->password);
 
 	service->server = bstrdup(obs_data_get_string(settings, "server"));
 	service->key    = bstrdup(obs_data_get_string(settings, "key"));
 	service->use_auth = obs_data_get_bool(settings, "use_auth");
 	service->username = bstrdup(obs_data_get_string(settings, "username"));
 	service->password = bstrdup(obs_data_get_string(settings, "password"));
+	if (!service->output || strcmp(service->output, "rtmp_output") != 0) {
+		if (service->output) {
+			bfree(service->output);
+		}
+		service->output = bstrdup("rtmp_output");
+	}
 }
 
 static void rtmp_custom_destroy(void *data)
@@ -34,6 +43,7 @@ static void rtmp_custom_destroy(void *data)
 	bfree(service->key);
 	bfree(service->username);
 	bfree(service->password);
+	bfree(service->output);
 	bfree(service);
 }
 
@@ -106,9 +116,15 @@ static const char *rtmp_custom_password(void *data)
 	return service->password;
 }
 
+static const char *rtmp_custom_get_output_type(void *data)
+{
+	struct rtmp_custom *service = data;
+	return service->output;
+}
 struct obs_service_info rtmp_custom_service = {
 	.id             = "rtmp_custom",
 	.get_name       = rtmp_custom_name,
+	.get_output_type = rtmp_custom_get_output_type,
 	.create         = rtmp_custom_create,
 	.destroy        = rtmp_custom_destroy,
 	.update         = rtmp_custom_update,

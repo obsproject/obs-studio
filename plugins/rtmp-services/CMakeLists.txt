@@ -24,6 +24,22 @@ configure_file(
 set(rtmp-services_config_HEADERS
 	"${CMAKE_BINARY_DIR}/plugins/rtmp-services/lookup-config.h")
 
+if (BUILD_ZIXI_OUTPUT)
+	set(rtmp-services_SOURCES
+		${rtmp-services_SOURCES}
+		rtmp-to-zixi.c)
+	set(rtmp-services_HEADERS
+		${rtmp-services_HEADERS}
+		rtmp-to-zixi.h)
+		
+	set (rtmp-services_INCLUDES
+		"$<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/plugins/rtmp-services>"
+		"$<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/plugins/zixi>")
+else()
+	set (rtmp-services_INCLUDES
+		"$<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/plugins/rtmp-services>")
+endif()	
+
 add_library(rtmp-services MODULE
 	${rtmp-services_SOURCES}
 	${rtmp-services_HEADERS}
@@ -32,6 +48,10 @@ target_link_libraries(rtmp-services
 	libobs
 	file-updater
 	${OBS_JANSSON_IMPORT})
+	
+if (BUILD_ZIXI_OUTPUT)
+	target_compile_definitions(rtmp-services PUBLIC ENABLE_ZIXI)
+endif()
 
 target_include_directories(rtmp-services
 	PUBLIC
