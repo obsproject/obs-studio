@@ -122,7 +122,12 @@ while inspect:
 	path = target.path
 	if path[0] == "@":
 		continue
-	out = check_output("{0}otool -L '{1}'".format(args.prefix, path), shell=True,
+
+	if "libzixiFeeder.dylib" in path:
+		target = LibTarget(target.path, True, "libzixiFeeder.dylib")
+		path = target.path;
+	else:
+		out = check_output("{0}otool -L '{1}'".format(args.prefix, path), shell=True,
 			universal_newlines=True)
 
 	if "QtCore" in path:

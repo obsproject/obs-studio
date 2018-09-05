@@ -13,10 +13,16 @@ if(NOT COPY_DEPENDENCIES)
 	return()
 endif()
 
-if(CMAKE_SIZEOF_VOID_P EQUAL 8)
-	set(_bin_suffix 64)
-else()
-	set(_bin_suffix 32)
+if (BUILD_ZIXI_OUTPUT)
+	if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+		set(_bin_suffix 64)
+		file (GLOB ZIXI_BIN_FILES
+				"${CMAKE_CURRENT_SOURCE_DIR}/plugins/zixi-output/lib/win/64/feeder_interface-x64.dll")
+	else()
+		set(_bin_suffix 32)
+		file (GLOB ZIXI_BIN_FILES
+				"${CMAKE_CURRENT_SOURCE_DIR}/plugins/zixi-output/lib/win/32/feeder_interface-Win32.dll")
+	endif()
 endif()
 
 file(GLOB FFMPEG_BIN_FILES
@@ -189,7 +195,11 @@ set(ALL_REL_BIN_FILES
 set(ALL_DBG_BIN_FILES
 	${QT_DEBUG_BIN_FILES})
 
-set(ALL_PLATFORM_BIN_FILES)
+if (BUILD_ZIXI_OUTPUT)
+	set(ALL_PLATFORM_BIN_FILES 
+		${ZIXI_BIN_FILES})
+endif()
+
 set(ALL_PLATFORM_REL_BIN_FILES
 	${QT_PLAT_BIN_FILES})
 set(ALL_PLATFORM_DBG_BIN_FILES
@@ -225,6 +235,9 @@ message(STATUS "QT Release files: ${QT_BIN_FILES}")
 message(STATUS "QT Release Platform files: ${QT_PLAT_BIN_FILES}")
 message(STATUS "QT Release Styles files: ${QT_STYLES_BIN_FILES}")
 message(STATUS "QT ICU files: ${QT_ICU_BIN_FILES}")
+if (BUILD_ZIXI_OUTPUT)
+	message(STATUS "Zixi Files: ${ZIXI_BIN_FILES}")
+endif()
 
 foreach(BinFile ${ALL_BASE_BIN_FILES})
 	message(STATUS "copying ${BinFile} to ${CMAKE_SOURCE_DIR}/additional_install_files/exec${_bin_suffix}")
