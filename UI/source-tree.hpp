@@ -169,9 +169,12 @@ public slots:
 	void UngroupSelectedGroups();
 	void AddGroup();
 	void Edit(int idx);
+signals:
+	void noSourceLeftClick(const QPoint &pos);
 
 protected:
 	virtual void mouseDoubleClickEvent(QMouseEvent *event) override;
+	virtual void mousePressEvent(QMouseEvent *event) override;
 	virtual void dropEvent(QDropEvent *event) override;
 
 	virtual void selectionChanged(const QItemSelection &selected, const QItemSelection &deselected) override;

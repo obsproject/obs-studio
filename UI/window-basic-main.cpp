@@ -216,8 +216,13 @@ OBSBasic::OBSBasic(QWidget *parent)
 			ResizePreview(ovi.base_width, ovi.base_height);
 	};
 
+	auto noSourceClick = [this](const QPoint &pos) {
+		on_sources_customContextMenuRequested(pos);
+	};
+
 	connect(windowHandle(), &QWindow::screenChanged, displayResize);
 	connect(ui->preview, &OBSQTDisplay::DisplayResized, displayResize);
+	connect(ui->sources, &SourceTree::noSourceLeftClick, noSourceClick);
 
 	installEventFilter(CreateShortcutFilter());
 
