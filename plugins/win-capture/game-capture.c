@@ -727,7 +727,7 @@ static inline bool init_hook_info(struct game_capture *gc)
 
 	if (gc->config.force_shmem) {
 		warn("init_hook_info: user is forcing shared memory "
-			"(compatibility mode)");
+			"(multi-adapter compatibility mode)");
 	}
 
 	gc->global_hook_info->offsets = gc->process_is_64bit ?
