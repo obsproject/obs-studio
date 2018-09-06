@@ -960,6 +960,15 @@ void SourceTree::mouseDoubleClickEvent(QMouseEvent *event)
 		QListView::mouseDoubleClickEvent(event);
 }
 
+void SourceTree::mousePressEvent(QMouseEvent *event)
+{
+	SourceTreeModel *stm = GetStm();
+	if (event->button() == Qt::LeftButton && !stm->items.count())
+		emit noSourceLeftClick(event->pos());
+	else
+		QListView::mousePressEvent(event);
+}
+
 void SourceTree::dropEvent(QDropEvent *event)
 {
 	if (event->source() != this) {
