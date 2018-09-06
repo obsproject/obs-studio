@@ -374,6 +374,11 @@ private:
 
 	bool NoSourcesConfirmation();
 
+	VisibilityCheckBox *previewVis;
+	LockedCheckBox *previewLock;
+
+	void SetPreviewVisCheckBoxEnabled(bool enable);
+
 public slots:
 	void DeferSaveBegin();
 	void DeferSaveEnd();
