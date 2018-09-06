@@ -496,13 +496,11 @@ QWidget *OBSPropertiesView::AddList(obs_property_t *prop, bool &warning)
 	combo->setToolTip(QT_UTF8(obs_property_long_description(prop)));
 
 	string value = from_obs_data(settings, name, format);
+	idx = combo->findData(QByteArray(value.c_str()));
 
 	if (format == OBS_COMBO_FORMAT_STRING &&
-			type == OBS_COMBO_TYPE_EDITABLE) {
-		combo->lineEdit()->setText(QT_UTF8(value.c_str()));
-	} else {
-		idx = combo->findData(QByteArray(value.c_str()));
-	}
+			type == OBS_COMBO_TYPE_EDITABLE)	
+		combo->lineEdit()->setText(combo->itemText(idx));
 
 	if (type == OBS_COMBO_TYPE_EDITABLE)
 		return NewWidget(prop, combo,
@@ -575,7 +573,9 @@ void OBSPropertiesView::AddEditableList(obs_property_t *prop,
 
 	for (size_t i = 0; i < count; i++) {
 		obs_data_t *item = obs_data_array_item(array, i);
-		list->addItem(QT_UTF8(obs_data_get_string(item, "value")));
+		list->addItem(QT_UTF8(obs_data_get_string(item, "name")));
+		list->item((int)i)->setData(Qt::UserRole,
+				obs_data_get_string(item, "value"));
 		list->setItemSelected(list->item((int)i),
 				obs_data_get_bool(item, "selected"));
 		list->setItemHidden(list->item((int)i),
@@ -1592,7 +1592,11 @@ void WidgetInfo::ListChanged(const char *setting)
 	QVariant         data;
 
 	if (type == OBS_COMBO_TYPE_EDITABLE) {
-		data = combo->currentText().toUtf8();
+		int index = combo->currentIndex();
+		if (index != -1)
+			data = combo->itemData(index);
+		if (data.type() == QVariant::Invalid)
+			data = combo->currentText().toUtf8();
 	} else {
 		int index = combo->currentIndex();
 		if (index != -1)
@@ -1712,12 +1716,19 @@ void WidgetInfo::EditableListChanged()
 	for (int i = 0; i < list->count(); i++) {
 		QListWidgetItem *item = list->item(i);
 		obs_data_t *arrayItem = obs_data_create();
-		obs_data_set_string(arrayItem, "value",
+		QVariant data = item->data(Qt::UserRole);
+		if(data.type() == QVariant::Invalid)
+			obs_data_set_string(arrayItem, "value",
+					QT_TO_UTF8(item->text()));
+		else
+			obs_data_set_string(arrayItem, "value",
+					data.toByteArray().constData());
+		obs_data_set_string(arrayItem, "name",
 				QT_TO_UTF8(item->text()));
 		obs_data_set_bool(arrayItem, "selected",
-			item->isSelected());
+				item->isSelected());
 		obs_data_set_bool(arrayItem, "hidden",
-			item->isHidden());
+				item->isHidden());
 		obs_data_array_push_back(array, arrayItem);
 		obs_data_release(arrayItem);
 	}
@@ -1788,6 +1799,8 @@ void WidgetInfo::ControlChanged()
 
 class EditableItemDialog : public QDialog {
 	QLineEdit *edit;
+	QLineEdit *edit_name;
+	QLabel *edit_name_label;
 	QString filter;
 	QString default_path;
 
@@ -1808,7 +1821,7 @@ class EditableItemDialog : public QDialog {
 	}
 
 public:
-	EditableItemDialog(QWidget *parent, const QString &text,
+	EditableItemDialog(QWidget *parent, const QString &text, const QString &name_text,
 			bool browse, const char *filter_ = nullptr,
 			const char *default_path_ = nullptr)
 		: QDialog              (parent),
@@ -1816,19 +1829,32 @@ public:
 		  default_path         (QT_UTF8(default_path_))
 	{
 		QHBoxLayout *topLayout = new QHBoxLayout();
+		QHBoxLayout *midLayout = new QHBoxLayout();
 		QVBoxLayout *mainLayout = new QVBoxLayout();
 
 		edit = new QLineEdit();
 		edit->setText(text);
-		topLayout->addWidget(edit);
-		topLayout->setAlignment(edit, Qt::AlignVCenter);
+
+		edit_name = new QLineEdit();
+		edit_name->setText(name_text);
+
+		edit_name_label = new QLabel();
+		edit_name_label->setText(QTStr("Name"));
+
+		topLayout->addWidget(edit_name_label);
+		topLayout->setAlignment(edit_name_label, Qt::AlignVCenter);
+		topLayout->addWidget(edit_name);
+		topLayout->setAlignment(edit_name, Qt::AlignVCenter);
+
+		midLayout->addWidget(edit);
+		midLayout->setAlignment(edit, Qt::AlignVCenter);
 
 		if (browse) {
 			QPushButton *browseButton =
 				new QPushButton(QTStr("Browse"));
 			browseButton->setProperty("themeID", "settingsButtons");
-			topLayout->addWidget(browseButton);
-			topLayout->setAlignment(browseButton, Qt::AlignVCenter);
+			midLayout->addWidget(browseButton);
+			midLayout->setAlignment(browseButton, Qt::AlignVCenter);
 
 			connect(browseButton, &QPushButton::clicked, this,
 					&EditableItemDialog::BrowseClicked);
@@ -1842,6 +1868,7 @@ public:
 		buttonBox->setCenterButtons(true);
 
 		mainLayout->addLayout(topLayout);
+		mainLayout->addLayout(midLayout);
 		mainLayout->addWidget(buttonBox);
 
 		setLayout(mainLayout);
@@ -1852,6 +1879,7 @@ public:
 	}
 
 	inline QString GetText() const {return edit->text();}
+	inline QString GetName() const {return edit_name->text();}
 };
 
 void WidgetInfo::EditListAdd()
@@ -1895,7 +1923,7 @@ void WidgetInfo::EditListAddText()
 	QListWidget *list = reinterpret_cast<QListWidget*>(widget);
 	const char *desc = obs_property_description(property);
 
-	EditableItemDialog dialog(widget->window(), QString(), false);
+	EditableItemDialog dialog(widget->window(), QString(), QString(), false);
 	auto title = QTStr("Basic.PropertiesWindow.AddEditableListEntry").arg(
 			QT_UTF8(desc));
 	dialog.setWindowTitle(title);
@@ -1906,7 +1934,11 @@ void WidgetInfo::EditListAddText()
 	if (text.isEmpty())
 		return;
 
-	list->addItem(text);
+	QListWidgetItem *item = new QListWidgetItem();
+	item->setData(Qt::UserRole, text);
+	item->setText(dialog.GetName());
+
+	list->addItem(item);
 	EditableListChanged();
 }
 
@@ -1928,7 +1960,13 @@ void WidgetInfo::EditListAddFiles()
 	if (files.count() == 0)
 		return;
 
-	list->addItems(files);
+	for (size_t i = 0; i < files.count(); i++) {
+		QListWidgetItem *item = new QListWidgetItem();
+		item->setData(Qt::UserRole, files[i]);
+		item->setText(files[i]);
+		list->addItem(item);
+	}
+
 	EditableListChanged();
 }
 
@@ -1948,7 +1986,10 @@ void WidgetInfo::EditListAddDir()
 	if (dir.isEmpty())
 		return;
 
-	list->addItem(dir);
+	QListWidgetItem *item = new QListWidgetItem();
+	item->setData(Qt::UserRole, dir);
+	item->setText(dir);
+	list->addItem(item);
 	EditableListChanged();
 }
 
@@ -1987,8 +2028,8 @@ void WidgetInfo::EditListEdit()
 		EditableListChanged();
 		return;
 	}
-
-	EditableItemDialog dialog(widget->window(), item->text(),
+	QVariant data = item->data(Qt::UserRole);
+	EditableItemDialog dialog(widget->window(), data.toString(), item->text(),
 			type != OBS_EDITABLE_LIST_TYPE_STRINGS, filter);
 	auto title = QTStr("Basic.PropertiesWindow.EditEditableListEntry").arg(
 			QT_UTF8(desc));
@@ -2000,7 +2041,9 @@ void WidgetInfo::EditListEdit()
 	if (text.isEmpty())
 		return;
 
-	item->setText(text);
+	QString name = dialog.GetName();
+	item->setText(name);
+	item->setData(Qt::UserRole, text);
 	EditableListChanged();
 }
 
