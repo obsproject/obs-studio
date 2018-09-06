@@ -28,7 +28,7 @@ static void setThemeID(QWidget *widget, const QString &themeID)
 	}
 }
 
-OBSBasicStats::OBSBasicStats(QWidget *parent)
+OBSBasicStats::OBSBasicStats(QWidget *parent, bool closeable)
 	: QWidget             (parent),
 	  cpu_info            (os_cpu_usage_info_start()),
 	  timer               (this)
@@ -75,13 +75,15 @@ OBSBasicStats::OBSBasicStats(QWidget *parent)
 	newStat("SkippedFrames", skippedFrames, 2);
 
 	/* --------------------------------------------- */
-
-	QPushButton *closeButton = new QPushButton(QTStr("Close"));
+	QPushButton *closeButton = nullptr;
+	if(closeable)
+		closeButton = new QPushButton(QTStr("Close"));
 	QPushButton *resetButton = new QPushButton(QTStr("Reset"));
 	QHBoxLayout *buttonLayout = new QHBoxLayout;
 	buttonLayout->addStretch();
 	buttonLayout->addWidget(resetButton);
-	buttonLayout->addWidget(closeButton);
+	if(closeable)
+		buttonLayout->addWidget(closeButton);
 
 	/* --------------------------------------------- */
 
@@ -125,16 +127,15 @@ OBSBasicStats::OBSBasicStats(QWidget *parent)
 	setLayout(mainLayout);
 
 	/* --------------------------------------------- */
-
-	connect(closeButton, &QPushButton::clicked, [this] () {close();});
+	if(closeable)
+		connect(closeButton, &QPushButton::clicked,
+				[this] () {close();});
 	connect(resetButton, &QPushButton::clicked, [this] () {Reset();});
 
 	installEventFilter(CreateShortcutFilter());
 
 	resize(800, 280);
-	setWindowFlags(Qt::Window |
-	               Qt::WindowMinimizeButtonHint |
-	               Qt::WindowCloseButtonHint);
+
 	setWindowTitle(QTStr("Basic.Stats"));
 	setWindowIcon(QIcon(":/res/images/obs.png"));
 	setWindowModality(Qt::NonModal);
