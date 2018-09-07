@@ -143,7 +143,7 @@ static bool GetProfileName(QWidget *parent, std::string &name,
 static bool CopyProfile(const char *fromPartial, const char *to)
 {
 	os_glob_t *glob;
-	char path[512];
+	char path[514];
 	char dir[512];
 	int ret;
 
