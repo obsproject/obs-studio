@@ -39,7 +39,6 @@
 #include "obs-app.hpp"
 #include "window-basic-main.hpp"
 #include "window-basic-settings.hpp"
-#include "window-license-agreement.hpp"
 #include "crash-report.hpp"
 #include "platform.hpp"
 
@@ -1218,56 +1217,42 @@ bool OBSApp::OBSInit()
 
 	setAttribute(Qt::AA_UseHighDpiPixmaps);
 
-	bool licenseAccepted = config_get_bool(globalConfig, "General",
-			"LicenseAccepted");
-	OBSLicenseAgreement agreement(nullptr);
-
-	if (licenseAccepted || agreement.exec() == QDialog::Accepted) {
-		if (!licenseAccepted) {
-			config_set_bool(globalConfig, "General",
-					"LicenseAccepted", true);
-			config_save(globalConfig);
-		}
-
-		if (!StartupOBS(locale.c_str(), GetProfilerNameStore()))
-			return false;
+	if (!StartupOBS(locale.c_str(), GetProfilerNameStore()))
+		return false;
 
 #ifdef _WIN32
-		bool browserHWAccel = config_get_bool(globalConfig, "General",
-				"BrowserHWAccel");
+	bool browserHWAccel = config_get_bool(globalConfig, "General",
+			"BrowserHWAccel");
 
-		obs_data_t *settings = obs_data_create();
-		obs_data_set_bool(settings, "BrowserHWAccel", browserHWAccel);
-		obs_apply_private_data(settings);
-		obs_data_release(settings);
+	obs_data_t *settings = obs_data_create();
+	obs_data_set_bool(settings, "BrowserHWAccel", browserHWAccel);
+	obs_apply_private_data(settings);
+	obs_data_release(settings);
 
-		blog(LOG_INFO, "Browser Hardware Acceleration: %s",
-				browserHWAccel ? "true" : "false");
+	blog(LOG_INFO, "Browser Hardware Acceleration: %s",
+			browserHWAccel ? "true" : "false");
 #endif
 
-		blog(LOG_INFO, "Portable mode: %s",
-				portable_mode ? "true" : "false");
+	blog(LOG_INFO, "Portable mode: %s",
+			portable_mode ? "true" : "false");
 
-		setQuitOnLastWindowClosed(false);
+	setQuitOnLastWindowClosed(false);
 
-		mainWindow = new OBSBasic();
+	mainWindow = new OBSBasic();
 
-		mainWindow->setAttribute(Qt::WA_DeleteOnClose, true);
-		connect(mainWindow, SIGNAL(destroyed()), this, SLOT(quit()));
+	mainWindow->setAttribute(Qt::WA_DeleteOnClose, true);
+	connect(mainWindow, SIGNAL(destroyed()), this, SLOT(quit()));
 
-		mainWindow->OBSInit();
+	mainWindow->OBSInit();
 
-		connect(this, &QGuiApplication::applicationStateChanged,
-				[this](Qt::ApplicationState state)
-				{
-					ResetHotkeyState(
-						state != Qt::ApplicationActive);
-				});
-		ResetHotkeyState(applicationState() != Qt::ApplicationActive);
-		return true;
-	} else {
-		return false;
-	}
+	connect(this, &QGuiApplication::applicationStateChanged,
+			[this](Qt::ApplicationState state)
+			{
+				ResetHotkeyState(
+					state != Qt::ApplicationActive);
+			});
+	ResetHotkeyState(applicationState() != Qt::ApplicationActive);
+	return true;
 }
 
 string OBSApp::GetVersionString() const

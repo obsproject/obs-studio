@@ -7,7 +7,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1079</width>
+    <width>1238</width>
     <height>730</height>
    </rect>
   </property>
@@ -105,8 +105,8 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1079</width>
-     <height>21</height>
+     <width>1238</width>
+     <height>22</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_File">
@@ -152,6 +152,8 @@
     <addaction name="menuCrashLogs"/>
     <addaction name="separator"/>
     <addaction name="actionCheckForUpdates"/>
+    <addaction name="actionShowAbout"/>
+    <addaction name="separator"/>
    </widget>
    <widget class="QMenu" name="menuBasic_MainMenu_Edit">
     <property name="title">
@@ -642,7 +644,7 @@
           <rect>
            <x>0</x>
            <y>0</y>
-           <width>230</width>
+           <width>78</width>
            <height>16</height>
           </rect>
          </property>
@@ -696,7 +698,7 @@
            <x>0</x>
            <y>0</y>
            <width>16</width>
-           <height>230</height>
+           <height>28</height>
           </rect>
          </property>
          <property name="sizePolicy">
@@ -1681,6 +1683,11 @@
    </property>
    <property name="text">
     <string>Basic.Stats</string>
+   </property>
+  </action>
+  <action name="actionShowAbout">
+   <property name="text">
+    <string>Basic.MainMenu.Help.About</string>
    </property>
   </action>
  </widget>

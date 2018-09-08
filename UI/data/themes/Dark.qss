@@ -636,3 +636,23 @@ QLabel#errorLabel {
     color: rgb(0, 192, 0);
     font-weight: bold;
 }
+
+/* About dialog */
+
+* [themeID="aboutName"] {
+    font-size: 36px;
+    font-weight: bold;
+}
+
+* [themeID="aboutVersion"] {
+    font-size: 16px;
+    margin-bottom: 20px;
+}
+
+* [themeID="aboutInfo"] {
+    margin-bottom: 20px;
+}
+
+* [themeID="aboutHLayout"] {
+    background-color: rgb(31, 30, 31); /* veryDark */
+}
