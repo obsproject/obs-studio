@@ -62,6 +62,10 @@ public:
 
 	bool Activate(DeckLinkDevice *device, long long modeId);
 	void Deactivate();
+	bool Capturing();
 
 	bool buffering = false;
+	bool dwns = false;
+	std::string hash;
+	long long id;
 };
