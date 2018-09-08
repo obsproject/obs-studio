@@ -207,6 +207,7 @@ set(obs_HEADERS
 	properties-view.hpp
 	properties-view.moc.hpp
 	display-helpers.hpp
+	balance-slider.hpp
 	double-slider.hpp
 	focus-list.hpp
 	menu-button.hpp

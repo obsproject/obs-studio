@@ -16,6 +16,7 @@
 ******************************************************************************/
 
 #include <inttypes.h>
+#include <math.h>
 
 #include "media-io/format-conversion.h"
 #include "media-io/video-frame.h"
@@ -140,6 +141,7 @@ bool obs_source_init(struct obs_source *source)
 	source->user_volume = 1.0f;
 	source->volume = 1.0f;
 	source->sync_offset = 0;
+	source->balance = 0.5f;
 	pthread_mutex_init_value(&source->filter_mutex);
 	pthread_mutex_init_value(&source->async_mutex);
 	pthread_mutex_init_value(&source->audio_mutex);
@@ -2589,6 +2591,37 @@ static void downmix_to_mono_planar(struct obs_source *source, uint32_t frames)
 	}
 }
 
+static void process_audio_balancing(struct obs_source *source, uint32_t frames,
+		float balance, enum obs_balance_type type)
+{
+	float **data = (float**)source->audio_data.data;
+
+	switch(type) {
+	case OBS_BALANCE_TYPE_SINE_LAW:
+		for (uint32_t frame = 0; frame < frames; frame++) {
+			data[0][frame] = data[0][frame] *
+				sinf((1.0f - balance) * (M_PI/2.0f));
+			data[1][frame] = data[1][frame] *
+				sinf(balance * (M_PI/2.0f));
+		}
+		break;
+	case OBS_BALANCE_TYPE_SQUARE_LAW:
+		for (uint32_t frame = 0; frame < frames; frame++) {
+			data[0][frame] = data[0][frame] * sqrtf(1.0f - balance);
+			data[1][frame] = data[1][frame] * sqrtf(balance);
+		}
+		break;
+	case OBS_BALANCE_TYPE_LINEAR:
+		for (uint32_t frame = 0; frame < frames; frame++) {
+			data[0][frame] = data[0][frame] * (1.0f - balance);
+			data[1][frame] = data[1][frame] * balance;
+		}
+		break;
+	default:
+		break;
+	}
+}
+
 /* resamples/remixes new audio to the designated main audio output format */
 static void process_audio(obs_source_t *source,
 		const struct obs_source_audio *audio)
@@ -2621,6 +2654,13 @@ static void process_audio(obs_source_t *source,
 	}
 
 	mono_output = audio_output_get_channels(obs->audio.audio) == 1;
+
+	if ((!mono_output && source->sample_info.speakers == SPEAKERS_STEREO) ||
+			!(source->balance <= 0.51f &&
+			  source->balance >= 0.49f)) {
+		process_audio_balancing(source, frames, source->balance,
+				OBS_BALANCE_TYPE_SINE_LAW);
+	}
 
 	if (!mono_output && (source->flags & OBS_SOURCE_FLAG_FORCE_MONO) != 0)
 		downmix_to_mono_planar(source, frames);
@@ -4164,4 +4204,26 @@ EXPORT void obs_enable_source_type(const char *name, bool enable)
 		info->output_flags &= ~OBS_SOURCE_CAP_DISABLED;
 	else
 		info->output_flags |= OBS_SOURCE_CAP_DISABLED;
+}
+
+enum speaker_layout obs_source_get_speaker_layout(obs_source_t *source)
+{
+	if (!obs_source_valid(source, "obs_source_get_audio_channels"))
+		return SPEAKERS_UNKNOWN;
+
+	return source->sample_info.speakers;
+}
+
+void obs_source_set_balance_value(obs_source_t *source, float balance)
+{
+	if (!obs_source_valid(source, "obs_source_set_balance_value"))
+		return;
+
+	source->balance = balance;
+}
+
+float obs_source_get_balance_value(const obs_source_t *source)
+{
+	return obs_source_valid(source, "obs_source_get_balance_value") ?
+		source->balance : 0.5f;
 }

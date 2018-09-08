@@ -893,6 +893,15 @@ EXPORT void obs_source_set_volume(obs_source_t *source, float volume);
 /** Gets the user volume for a source that has audio output */
 EXPORT float obs_source_get_volume(const obs_source_t *source);
 
+/* Gets speaker layout of a source */
+EXPORT enum speaker_layout obs_source_get_speaker_layout(obs_source_t *source);
+
+/** Sets the balance value for a stereo audio source */
+EXPORT void obs_source_set_balance_value(obs_source_t *source, float balance);
+
+/** Gets the balance value for a stereo audio source */
+EXPORT float obs_source_get_balance_value(const obs_source_t *source);
+
 /** Sets the audio sync offset (in nanoseconds) for a source */
 EXPORT void obs_source_set_sync_offset(obs_source_t *source, int64_t offset);
 
