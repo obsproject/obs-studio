@@ -12,6 +12,8 @@ OBSAbout::OBSAbout(QWidget *parent)
 {
 	ui->setupUi(this);
 
+	setFixedSize(size());
+
 	QString bitness;
 
 	if(sizeof(void*) == 4)
