@@ -503,6 +503,50 @@ cleanup:
 	return lookup;
 }
 
+lookup_t *obs_app_load_locale(obs_module_t *module, const char *default_locale,
+		const char *locale)
+{
+	struct dstr str    = {0};
+	lookup_t    *lookup = NULL;
+
+	if (!default_locale || !locale) {
+		blog(LOG_WARNING, "obs_app_load_locale: Invalid parameters");
+		return NULL;
+	}
+
+	const char *m_file = module ? module->file : "(NONE)";
+
+	dstr_copy(&str, OBS_DATA_PATH);
+	dstr_cat(&str, "/obs-studio/locale/");
+	dstr_cat(&str, default_locale);
+	dstr_cat(&str, ".ini");
+
+	if (os_file_exists(str.array))
+		lookup = text_lookup_create(str.array);
+
+	if (!lookup) {
+		blog(LOG_WARNING, "Failed to load '%s' text for app: %s",
+				default_locale, m_file);
+		goto cleanup;
+	}
+
+	if (astrcmpi(locale, default_locale) == 0)
+		goto cleanup;
+
+	dstr_copy(&str, OBS_DATA_PATH);
+	dstr_cat(&str, "/obs-studio/locale/");
+	dstr_cat(&str, locale);
+	dstr_cat(&str, ".ini");
+
+	if (!(os_file_exists(str.array) && text_lookup_add(lookup, str.array)))
+		blog(LOG_WARNING, "Failed to load '%s' text for app: %s",
+				locale, m_file);
+
+cleanup:
+	dstr_free(&str);
+	return lookup;
+}
+
 #define REGISTER_OBS_DEF(size_var, structure, dest, info)                 \
 	do {                                                              \
 		struct structure data = {0};                              \
