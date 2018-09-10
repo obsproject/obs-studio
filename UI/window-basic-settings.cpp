@@ -2423,6 +2423,47 @@ void OBSBasicSettings::LoadHotkeySettings(obs_hotkey_id ignoreKey)
 	widget->setLayout(layout);
 	ui->hotkeyPage->setWidget(widget);
 
+	auto filterLayout = new QGridLayout();
+	auto filterWidget = new QWidget();
+	filterWidget->setLayout(filterLayout);
+
+	auto filterLabel = new QLabel(QTStr("Basic.Settings.Hotkeys.Filter"));
+	auto filter = new QLineEdit();
+
+	auto setRowVisible = [=](int row, bool visible, QLayoutItem *label) {
+		label->widget()->setVisible(visible);
+
+		auto field = layout->itemAt(row, QFormLayout::FieldRole);
+		if (field)
+			field->widget()->setVisible(visible);
+	};
+
+	auto searchFunction = [=](const QString &text) {
+		for (int i = 0; i < layout->rowCount(); i++) {
+			auto label = layout->itemAt(i, QFormLayout::LabelRole);
+			if (label) {
+				OBSHotkeyLabel *item =
+					qobject_cast<OBSHotkeyLabel*>(
+					label->widget());
+				if(item) {
+					if (item->text().toLower()
+						.contains(text.toLower()))
+						setRowVisible(i, true, label);
+					else
+						setRowVisible(i, false, label);
+				}
+			}
+		}
+	};
+
+	connect(filter, &QLineEdit::textChanged,
+		this, searchFunction);
+
+	filterLayout->addWidget(filterLabel, 0, 0);
+	filterLayout->addWidget(filter, 0, 1);
+
+	layout->addRow(filterWidget);
+
 	using namespace std;
 	using encoders_elem_t =
 		tuple<OBSEncoder, QPointer<QLabel>, QPointer<QWidget>>;
