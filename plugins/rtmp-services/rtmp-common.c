@@ -6,12 +6,19 @@
 #include "rtmp-format-ver.h"
 #include "twitch.h"
 
+#ifdef ENABLE_ZIXI
+#include "rtmp-to-zixi.h"
+#endif
 struct rtmp_common {
 	char *service;
 	char *server;
 	char *key;
 
 	char *output;
+#ifdef ENABLE_ZIXI
+	bool		  zixi_fwd;
+	struct zixi_settings zixi_settings;
+#endif
 };
 
 static const char *rtmp_common_getname(void *unused)
@@ -73,6 +80,30 @@ static void rtmp_common_update(void *data, obs_data_t *settings)
 	service->key     = bstrdup(obs_data_get_string(settings, "key"));
 	service->output  = NULL;
 
+#ifdef ENABLE_ZIXI
+	zixi_clear_settings(&service->zixi_settings);
+	memset(&service->zixi_settings, 0, sizeof(struct zixi_settings));
+	service->zixi_fwd = obs_data_get_bool(settings, "zixi_fwd");
+	if (service->zixi_fwd) {
+		update_zixi_settings(&service->zixi_fwd, settings, service->server, service->key, NULL,NULL);
+
+		if (!service->output || strcmp(service->output, "zixi_output") != 0) {
+			if (service->output) {
+				bfree(service->output);
+			}
+			service->output = bstrdup("zixi_output");
+		}
+	} else {
+#endif
+		if (!service->output || strcmp(service->output, "rtmp_output") != 0) {
+			if (service->output) {
+				bfree(service->output);
+			}
+			service->output = bstrdup("rtmp_output");
+		}
+#ifdef ENABLE_ZIXI
+	}
+#endif
 	json_t *root = open_services_file();
 	if (root) {
 		json_t *serv = find_service(root, service->service);
@@ -97,6 +128,10 @@ static void rtmp_common_destroy(void *data)
 {
 	struct rtmp_common *service = data;
 
+#ifdef ENABLE_ZIXI
+	zixi_clear_settings(&service->zixi_settings);
+#endif
+	
 	bfree(service->service);
 	bfree(service->server);
 	bfree(service->output);
@@ -330,7 +365,7 @@ static void fill_servers(obs_property_t *servers_prop, json_t *service,
 		obs_property_list_add_string(servers_prop,
 				obs_module_text("Server.Auto"), "auto");
 	}
-	if (strcmp(name, "Twitch") == 0) {
+	if (name && strcmp(name, "Twitch") == 0) {
 		if (fill_twitch_servers(servers_prop))
 			return;
 	}
@@ -434,6 +469,9 @@ static obs_properties_t *rtmp_common_properties(void *unused)
 
 	obs_properties_add_text(ppts, "key", obs_module_text("StreamKey"),
 			OBS_TEXT_PASSWORD);
+#ifdef ENABLE_ZIXI
+	add_zixi_fwd_properties(ppts);
+#endif
 	return ppts;
 }
 
@@ -565,12 +603,22 @@ static const char *rtmp_common_key(void *data)
 	return service->key;
 }
 
+static void rtmp_common_get_defaults(obs_data_t *settings) {
+#ifdef ENABLE_ZIXI
+	zixi_fill_defaults(settings);
+#else
+	UNUSED_PARAMETER(settings);
+#endif
+}
+
+
 struct obs_service_info rtmp_common_service = {
 	.id             = "rtmp_common",
 	.get_name       = rtmp_common_getname,
 	.create         = rtmp_common_create,
 	.destroy        = rtmp_common_destroy,
 	.update         = rtmp_common_update,
+	.get_defaults   = rtmp_common_get_defaults,
 	.get_properties = rtmp_common_properties,
 	.get_url        = rtmp_common_url,
 	.get_key        = rtmp_common_key,

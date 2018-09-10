@@ -74,6 +74,8 @@ static inline bool obs_object_valid(const void *obj, const char *f,
 #define obs_encoder_valid obs_ptr_valid
 #define obs_service_valid obs_ptr_valid
 
+
+typedef bool(*obs_encoder_input_control)(void*);
 /* ------------------------------------------------------------------------- */
 /* modules */
 
@@ -978,6 +980,10 @@ struct obs_encoder {
 	int64_t                         offset_usec;
 	uint64_t                        first_raw_ts;
 	uint64_t                        start_ts;
+
+
+	obs_encoder_input_control		input_control;
+	void *							input_control_arg;
 
 	pthread_mutex_t                 outputs_mutex;
 	DARRAY(obs_output_t*)            outputs;

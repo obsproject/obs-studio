@@ -1904,6 +1904,9 @@ EXPORT void *obs_encoder_get_type_data(obs_encoder_t *encoder);
 EXPORT const char *obs_encoder_get_id(const obs_encoder_t *encoder);
 
 EXPORT uint32_t obs_get_encoder_caps(const char *encoder_id);
+EXPORT void obs_encoder_feedback(const obs_encoder_t* encoder, unsigned int bitrate);
+
+EXPORT void obs_encoder_set_input_control(obs_encoder_t* encoder,  obs_output_t* output);
 
 #ifndef SWIG
 /** Duplicates an encoder packet */

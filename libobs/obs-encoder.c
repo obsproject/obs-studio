@@ -794,6 +794,13 @@ static inline void do_encode(struct obs_encoder *encoder,
 	pkt.timebase_den = encoder->timebase_den;
 	pkt.encoder = encoder;
 
+	if (encoder->input_control) {
+		if (!encoder->input_control(encoder->input_control_arg)){
+			profile_end(do_encode_name);
+			return;
+		}
+	}
+
 	profile_start(encoder->profile_encoder_encode_name);
 	success = encoder->info.encode(encoder->context.data, frame, &pkt,
 			&received);
@@ -1199,4 +1206,12 @@ uint32_t obs_get_encoder_caps(const char *encoder_id)
 {
 	struct obs_encoder_info *info = find_encoder(encoder_id);
 	return info ? info->caps : 0;
+}
+
+void obs_encoder_feedback(const obs_encoder_t* encoder, unsigned int bitrate){
+	if (!obs_encoder_valid(encoder, "obs_encoder_feedback"))
+		return;
+
+	if (encoder->info.encoder_feedback)
+		encoder->info.encoder_feedback(encoder->context.data, bitrate);
 }

@@ -558,7 +558,9 @@ size_t obs_output_get_mixer(const obs_output_t *output)
 	return obs_output_valid(output, "obs_output_get_mixer") ?
 		output->mixer_idx : 0;
 }
-
+bool obs_output_supports_feedback(const obs_output_t* output) {
+	return output->info.drop_source_frame != NULL;
+}
 void obs_output_remove_encoder(struct obs_output *output,
 		struct obs_encoder *encoder)
 {
@@ -573,6 +575,10 @@ void obs_output_remove_encoder(struct obs_output *output,
 				output->audio_encoders[i] = NULL;
 		}
 	}
+}
+void obs_encoder_set_input_control(obs_encoder_t *encoder,  obs_output_t *output) {
+	encoder->input_control_arg = output->context.data;
+	encoder->input_control = output->info.drop_source_frame;
 }
 
 void obs_output_set_video_encoder(obs_output_t *output, obs_encoder_t *encoder)
@@ -590,6 +596,10 @@ void obs_output_set_video_encoder(obs_output_t *output, obs_encoder_t *encoder)
 	obs_encoder_remove_output(output->video_encoder, output);
 	obs_encoder_add_output(encoder, output);
 	output->video_encoder = encoder;
+
+	if (obs_output_supports_feedback(output)) {
+		obs_encoder_set_input_control(encoder, output);
+	}
 
 	/* set the preferred resolution on the encoder */
 	if (output->scaled_width && output->scaled_height)
