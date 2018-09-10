@@ -748,7 +748,8 @@ EXPORT void obs_view_render(obs_view_t *view);
  * @return                The new display context, or NULL if failed.
  */
 EXPORT obs_display_t *obs_display_create(
-		const struct gs_init_data *graphics_data);
+		const struct gs_init_data *graphics_data,
+		uint32_t backround_color);
 
 /** Destroys a display context */
 EXPORT void obs_display_destroy(obs_display_t *display);

@@ -1234,3 +1234,9 @@ QToolTip {
 * [themeID="aboutHLayout"] {
 	background-color: rgb(35, 38, 41); /* Dark Gray */
 }
+
+/* Preview background color */
+
+* [themeID="displayBackgroundColor"] {
+    qproperty-displayBackgroundColor: rgb(35, 38, 41);
+}

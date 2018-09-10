@@ -6,6 +6,20 @@
 #include <QResizeEvent>
 #include <QShowEvent>
 
+static inline long long color_to_int(QColor color)
+{
+	auto shift = [&](unsigned val, int shift)
+	{
+		return ((val & 0xff) << shift);
+	};
+
+	return  shift(color.red(),    0) |
+		shift(color.green(),  8) |
+		shift(color.blue(),  16) |
+		shift(color.alpha(), 24);
+}
+
+
 OBSQTDisplay::OBSQTDisplay(QWidget *parent, Qt::WindowFlags flags)
 	: QWidget(parent, flags)
 {
@@ -39,6 +53,14 @@ OBSQTDisplay::OBSQTDisplay(QWidget *parent, Qt::WindowFlags flags)
 
 	connect(windowHandle(), &QWindow::visibleChanged, windowVisible);
 	connect(windowHandle(), &QWindow::screenChanged, sizeChanged);
+
+	this->setProperty("themeID", "displayBackgroundColor");
+}
+
+void OBSQTDisplay::SetDisplayBackgroundColor(const QColor &color)
+{
+	backgroundColor = (uint32_t)color_to_int(color);
+	obs_display_set_background_color(display, backgroundColor);
 }
 
 void OBSQTDisplay::CreateDisplay()
@@ -56,7 +78,7 @@ void OBSQTDisplay::CreateDisplay()
 
 	QTToGSWindow(winId(), info.window);
 
-	display = obs_display_create(&info);
+	display = obs_display_create(&info, backgroundColor);
 
 	emit DisplayCreated(this);
 }
