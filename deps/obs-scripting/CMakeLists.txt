@@ -62,10 +62,12 @@ find_package(SwigDeps QUIET 2)
 
 if(NOT SWIG_FOUND)
 	message(STATUS "Scripting: SWIG not found; scripting disabled")
+	return()
 endif()
 
 if(NOT PYTHONLIBS_FOUND AND NOT LUAJIT_FOUND)
 	message(STATUS "Scripting: Neither Python 3 nor Luajit was found; scripting plugin disabled")
+	return()
 endif()
 
 set(SCRIPTING_ENABLED ON CACHE BOOL "Interal global cmake variable" FORCE)
