@@ -22,9 +22,12 @@ else()
 		ipc-util/pipe-posix.c)
 endif()
 
-if(MSVC)
-	add_compile_options("$<$<CONFIG:RelWithDebInfo>:/MT>")
-endif()
+# Omit default library names for object libraries
+# This is useful when we can't determine what type
+# of runtime the resulting binary is going to use.
+if (WIN32 AND MSVC)
+	add_compile_options($<IF:$<CONFIG:Debug>,/MTd,/MT> /Zl)
+endif ()
 
 add_library(ipc-util STATIC
 	${ipc-util_SOURCES}
