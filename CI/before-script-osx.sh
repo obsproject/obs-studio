@@ -11,4 +11,5 @@ cmake -DENABLE_SPARKLE_UPDATER=ON \
 -DDepsPath=/tmp/obsdeps \
 -DVLCPath=$PWD/../../vlc-master \
 -DBUILD_BROWSER=ON \
+-DBROWSER_DEPLOY=ON \
 -DCEF_ROOT_DIR=$PWD/../../cef_binary_${CEF_BUILD_VERSION}_macosx64 ..
