@@ -18,12 +18,14 @@ private:
 	OBSSource              source;
 
 	QPointer<QWidget>      forceMonoContainer;
+	QPointer<QWidget>      invertPolarityContainer;
 	QPointer<QWidget>      mixerContainer;
 	QPointer<QWidget>      balanceContainer;
 
 	QPointer<QLabel>       nameLabel;
 	QPointer<QSpinBox>     volume;
 	QPointer<QCheckBox>    forceMono;
+	QPointer<QCheckBox>    invertPolarity;
 	QPointer<BalanceSlider>balance;
 	QPointer<QLabel>       labelL;
 	QPointer<QLabel>       labelR;
@@ -61,6 +63,7 @@ public slots:
 
 	void volumeChanged(int percentage);
 	void downmixMonoChanged(bool checked);
+	void invertPolarityChanged(bool checked);
 	void balanceChanged(int val);
 	void syncOffsetChanged(int milliseconds);
 	void monitoringTypeChanged(int index);

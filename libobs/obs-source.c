@@ -2591,6 +2591,17 @@ static void downmix_to_mono_planar(struct obs_source *source, uint32_t frames)
 	}
 }
 
+static void invert_polarity(struct obs_source *source, uint32_t frames)
+{
+	size_t channels = audio_output_get_channels(obs->audio.audio);
+	float **data = (float**)source->audio_data.data;
+
+	for (size_t channel = 0; channel < channels; channel++) {
+		for (uint32_t frame = 0; frame < frames; frame++)
+			data[channel][frame] *= -1;
+	}
+}
+			
 static void process_audio_balancing(struct obs_source *source, uint32_t frames,
 		float balance, enum obs_balance_type type)
 {
@@ -2664,6 +2675,9 @@ static void process_audio(obs_source_t *source,
 
 	if (!mono_output && (source->flags & OBS_SOURCE_FLAG_FORCE_MONO) != 0)
 		downmix_to_mono_planar(source, frames);
+
+	if ((source->flags & OBS_SOURCE_FLAG_INVERT_POLARITY) != 0)
+		invert_polarity(source, frames);
 }
 
 void obs_source_output_audio(obs_source_t *source,

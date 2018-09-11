@@ -860,6 +860,7 @@ General Source Functions
               uint32_t obs_source_get_flags(const obs_source_t *source)
 
    :param flags: OBS_SOURCE_FLAG_FORCE_MONO Forces audio to mono
+                 OBS_SOURCE_FLAG_INVERT_POLARITY Flip the audio upside down
 
 ---------------------
 

@@ -24,6 +24,7 @@ OBSAdvAudioCtrl::OBSAdvAudioCtrl(QGridLayout *, obs_source_t *source_)
 	uint32_t mixers = obs_source_get_audio_mixers(source);
 
 	forceMonoContainer             = new QWidget();
+	invertPolarityContainer        = new QWidget();
 	mixerContainer                 = new QWidget();
 	balanceContainer               = new QWidget();
 	labelL                         = new QLabel();
@@ -31,6 +32,7 @@ OBSAdvAudioCtrl::OBSAdvAudioCtrl(QGridLayout *, obs_source_t *source_)
 	nameLabel                      = new QLabel();
 	volume                         = new QSpinBox();
 	forceMono                      = new QCheckBox();
+	invertPolarity                 = new QCheckBox();
 	balance                        = new BalanceSlider();
 #if defined(_WIN32) || defined(__APPLE__) || HAVE_PULSEAUDIO
 	monitoringType                 = new QComboBox();
@@ -57,6 +59,9 @@ OBSAdvAudioCtrl::OBSAdvAudioCtrl(QGridLayout *, obs_source_t *source_)
 	forceMonoContainer->setLayout(hlayout);
 	hlayout = new QHBoxLayout();
 	hlayout->setContentsMargins(0, 0, 0, 0);
+	invertPolarityContainer->setLayout(hlayout);
+	hlayout = new QHBoxLayout();
+	hlayout->setContentsMargins(0, 0, 0, 0);
 	mixerContainer->setLayout(hlayout);
 	hlayout = new QHBoxLayout();
 	hlayout->setContentsMargins(0, 0, 0, 0);
@@ -81,6 +86,12 @@ OBSAdvAudioCtrl::OBSAdvAudioCtrl(QGridLayout *, obs_source_t *source_)
 	forceMonoContainer->layout()->setAlignment(forceMono,
 			Qt::AlignHCenter | Qt::AlignVCenter);
 
+	invertPolarity->setChecked((flags & OBS_SOURCE_FLAG_INVERT_POLARITY) != 0);
+
+	invertPolarityContainer->layout()->addWidget(invertPolarity);
+	invertPolarityContainer->layout()->setAlignment(invertPolarity,
+			Qt::AlignHCenter | Qt::AlignVCenter);
+			
 	balance->setOrientation(Qt::Horizontal);
 	balance->setMinimum(0);
 	balance->setMaximum(100);
@@ -151,6 +162,8 @@ OBSAdvAudioCtrl::OBSAdvAudioCtrl(QGridLayout *, obs_source_t *source_)
 			this, SLOT(volumeChanged(int)));
 	QWidget::connect(forceMono, SIGNAL(clicked(bool)),
 			this, SLOT(downmixMonoChanged(bool)));
+	QWidget::connect(invertPolarity, SIGNAL(clicked(bool)),
+			this, SLOT(invertPolarityChanged(bool)));
 	QWidget::connect(balance, SIGNAL(valueChanged(int)),
 			this, SLOT(balanceChanged(int)));
 	QWidget::connect(balance, SIGNAL(doubleClicked()),
@@ -182,6 +195,7 @@ OBSAdvAudioCtrl::~OBSAdvAudioCtrl()
 	nameLabel->deleteLater();
 	volume->deleteLater();
 	forceMonoContainer->deleteLater();
+	invertPolarityContainer->deleteLater();
 	balanceContainer->deleteLater();
 	syncOffset->deleteLater();
 #if defined(_WIN32) || defined(__APPLE__) || HAVE_PULSEAUDIO
@@ -198,6 +212,7 @@ void OBSAdvAudioCtrl::ShowAudioControl(QGridLayout *layout)
 	layout->addWidget(nameLabel, lastRow, idx++);
 	layout->addWidget(volume, lastRow, idx++);
 	layout->addWidget(forceMonoContainer, lastRow, idx++);
+	layout->addWidget(invertPolarityContainer, lastRow, idx++);
 	layout->addWidget(balanceContainer, lastRow, idx++);
 	layout->addWidget(syncOffset, lastRow, idx++);
 #if defined(_WIN32) || defined(__APPLE__) || HAVE_PULSEAUDIO
@@ -253,7 +268,9 @@ static inline void setCheckboxState(QCheckBox *checkbox, bool checked)
 void OBSAdvAudioCtrl::SourceFlagsChanged(uint32_t flags)
 {
 	bool forceMonoVal = (flags & OBS_SOURCE_FLAG_FORCE_MONO) != 0;
+	bool invertPolarityVal = (flags & OBS_SOURCE_FLAG_INVERT_POLARITY) != 0;
 	setCheckboxState(forceMono, forceMonoVal);
+	setCheckboxState(invertPolarity, invertPolarityVal);
 }
 
 void OBSAdvAudioCtrl::SourceVolumeChanged(float value)
@@ -297,6 +314,21 @@ void OBSAdvAudioCtrl::downmixMonoChanged(bool checked)
 			flags |= OBS_SOURCE_FLAG_FORCE_MONO;
 		else
 			flags &= ~OBS_SOURCE_FLAG_FORCE_MONO;
+
+		obs_source_set_flags(source, flags);
+	}
+}
+
+void OBSAdvAudioCtrl::invertPolarityChanged(bool checked)
+{
+	uint32_t flags = obs_source_get_flags(source);
+	bool invertPolarityActive = (flags & OBS_SOURCE_FLAG_INVERT_POLARITY) != 0;
+
+	if (invertPolarityActive != checked) {
+		if (checked)
+			flags |= OBS_SOURCE_FLAG_INVERT_POLARITY;
+		else
+			flags &= ~OBS_SOURCE_FLAG_INVERT_POLARITY;
 
 		obs_source_set_flags(source, flags);
 	}

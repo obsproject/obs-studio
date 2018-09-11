@@ -955,6 +955,8 @@ EXPORT bool obs_source_showing(const obs_source_t *source);
 #define OBS_SOURCE_FLAG_UNUSED_1               (1<<0)
 /** Specifies to force audio to mono */
 #define OBS_SOURCE_FLAG_FORCE_MONO             (1<<1)
+/** Specifies to flip the audio upside down */
+#define OBS_SOURCE_FLAG_INVERT_POLARITY        (1<<2)
 
 /**
  * Sets source flags.  Note that these are different from the main output
