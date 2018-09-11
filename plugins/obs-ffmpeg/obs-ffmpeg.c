@@ -8,6 +8,10 @@
 
 OBS_DECLARE_MODULE()
 OBS_MODULE_USE_DEFAULT_LOCALE("obs-ffmpeg", "en-US")
+MODULE_EXPORT const char *obs_module_description(void)
+{
+	return "FFmpeg based sources/outputs/encoders";
+}
 
 extern struct obs_source_info  ffmpeg_source;
 extern struct obs_output_info  ffmpeg_output;

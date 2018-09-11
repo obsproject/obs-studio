@@ -5,6 +5,10 @@
 
 OBS_DECLARE_MODULE()
 OBS_MODULE_USE_DEFAULT_LOCALE("win-capture", "en-US")
+MODULE_EXPORT const char *obs_module_description(void)
+{
+	return "Windows game/screen/window capture";
+}
 
 extern struct obs_source_info duplicator_capture_info;
 extern struct obs_source_info monitor_capture_info;
