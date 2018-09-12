@@ -20,6 +20,10 @@
 #include "graphics.h"
 #include "libnsgif/libnsgif.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 struct gs_image_file {
 	gs_texture_t *texture;
 	enum gs_color_format format;
@@ -51,3 +55,7 @@ EXPORT void gs_image_file_init_texture(gs_image_file_t *image);
 EXPORT bool gs_image_file_tick(gs_image_file_t *image,
 		uint64_t elapsed_time_ns);
 EXPORT void gs_image_file_update_texture(gs_image_file_t *image);
+
+#ifdef __cplusplus
+}
+#endif
