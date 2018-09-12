@@ -33,7 +33,7 @@ set(seg_service_SOURCES
 	)
 
 if(MSVC)
-	add_compile_options("$<$<CONFIG:RelWithDebInfo>:/MT>")
+	add_compile_options($<IF:$<CONFIG:Debug>,/MTd,/MT>)
 endif()
 
 add_executable(seg_service WIN32

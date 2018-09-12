@@ -10,7 +10,7 @@ set(inject-helper_SOURCES
 	inject-helper.c)
 
 if(MSVC)
-	add_compile_options("$<$<CONFIG:RelWithDebInfo>:/MT>")
+	add_compile_options($<IF:$<CONFIG:Debug>,/MTd,/MT>)
 endif()
 
 add_executable(inject-helper
