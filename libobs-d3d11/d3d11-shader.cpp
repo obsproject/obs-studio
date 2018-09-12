@@ -137,8 +137,11 @@ void gs_shader::BuildConstantBuffer()
 		case GS_SHADER_PARAM_BOOL:
 		case GS_SHADER_PARAM_INT:
 		case GS_SHADER_PARAM_FLOAT:     size = sizeof(float);   break;
+		case GS_SHADER_PARAM_INT2:
 		case GS_SHADER_PARAM_VEC2:      size = sizeof(vec2);    break;
+		case GS_SHADER_PARAM_INT3:
 		case GS_SHADER_PARAM_VEC3:      size = sizeof(float)*3; break;
+		case GS_SHADER_PARAM_INT4:
 		case GS_SHADER_PARAM_VEC4:      size = sizeof(vec4);    break;
 		case GS_SHADER_PARAM_MATRIX4X4:
 			size = sizeof(float)*4*4;

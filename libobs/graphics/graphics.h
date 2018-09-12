@@ -267,6 +267,7 @@ typedef struct gs_shader           gs_shader_t;
 typedef struct gs_shader_param     gs_sparam_t;
 typedef struct gs_effect           gs_effect_t;
 typedef struct gs_effect_technique gs_technique_t;
+typedef struct gs_effect_pass      gs_epass_t;
 typedef struct gs_effect_param     gs_eparam_t;
 typedef struct gs_device           gs_device_t;
 typedef struct graphics_subsystem  graphics_t;
@@ -368,11 +369,20 @@ EXPORT bool gs_technique_begin_pass(gs_technique_t *technique, size_t pass);
 EXPORT bool gs_technique_begin_pass_by_name(gs_technique_t *technique,
 		const char *name);
 EXPORT void gs_technique_end_pass(gs_technique_t *technique);
+EXPORT gs_epass_t *gs_technique_get_pass_by_idx(const gs_technique_t *technique,
+		size_t pass);
+EXPORT gs_epass_t *gs_technique_get_pass_by_name(
+		const gs_technique_t *technique, const char *name);
 
 EXPORT size_t gs_effect_get_num_params(const gs_effect_t *effect);
 EXPORT gs_eparam_t *gs_effect_get_param_by_idx(const gs_effect_t *effect,
 		size_t param);
 EXPORT gs_eparam_t *gs_effect_get_param_by_name(const gs_effect_t *effect,
+		const char *name);
+EXPORT size_t gs_param_get_num_annotations(const gs_eparam_t *param);
+EXPORT gs_eparam_t *gs_param_get_annotation_by_idx(const gs_eparam_t *param,
+		size_t annotation);
+EXPORT gs_eparam_t *gs_param_get_annotation_by_name(const gs_eparam_t *param,
 		const char *name);
 
 /** Helper function to simplify effect usage.  Use with a while loop that
@@ -402,6 +412,10 @@ EXPORT void gs_effect_set_vec4(gs_eparam_t *param, const struct vec4 *val);
 EXPORT void gs_effect_set_texture(gs_eparam_t *param, gs_texture_t *val);
 EXPORT void gs_effect_set_val(gs_eparam_t *param, const void *val, size_t size);
 EXPORT void gs_effect_set_default(gs_eparam_t *param);
+EXPORT size_t gs_effect_get_val_size(gs_eparam_t *param);
+EXPORT void *gs_effect_get_val(gs_eparam_t *param);
+EXPORT size_t gs_effect_get_default_val_size(gs_eparam_t *param);
+EXPORT void *gs_effect_get_default_val(gs_eparam_t *param);
 EXPORT void gs_effect_set_next_sampler(gs_eparam_t *param,
 		gs_samplerstate_t *sampler);
 

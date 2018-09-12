@@ -21,6 +21,39 @@
 #include "effect-parser.h"
 #include "effect.h"
 
+static inline bool ep_parse_param_assign(struct effect_parser *ep,
+		struct ep_param *param);
+
+static enum gs_shader_param_type get_effect_param_type(const char *type)
+{
+	if (strcmp(type, "float") == 0)
+		return GS_SHADER_PARAM_FLOAT;
+	else if (strcmp(type, "float2") == 0)
+		return GS_SHADER_PARAM_VEC2;
+	else if (strcmp(type, "float3") == 0)
+		return GS_SHADER_PARAM_VEC3;
+	else if (strcmp(type, "float4") == 0)
+		return GS_SHADER_PARAM_VEC4;
+	else if (strcmp(type, "int2") == 0)
+		return GS_SHADER_PARAM_INT2;
+	else if (strcmp(type, "int3") == 0)
+		return GS_SHADER_PARAM_INT3;
+	else if (strcmp(type, "int4") == 0)
+		return GS_SHADER_PARAM_INT4;
+	else if (astrcmp_n(type, "texture", 7) == 0)
+		return GS_SHADER_PARAM_TEXTURE;
+	else if (strcmp(type, "float4x4") == 0)
+		return GS_SHADER_PARAM_MATRIX4X4;
+	else if (strcmp(type, "bool") == 0)
+		return GS_SHADER_PARAM_BOOL;
+	else if (strcmp(type, "int") == 0)
+		return GS_SHADER_PARAM_INT;
+	else if (strcmp(type, "string") == 0)
+		return GS_SHADER_PARAM_STRING;
+
+	return GS_SHADER_PARAM_UNKNOWN;
+}
+
 void ep_free(struct effect_parser *ep)
 {
 	size_t i;
@@ -87,6 +120,18 @@ static inline struct ep_param *ep_getparam(struct effect_parser *ep,
 	for (i = 0; i < ep->params.num; i++) {
 		if (strcmp(name, ep->params.array[i].name) == 0)
 			return ep->params.array+i;
+	}
+
+	return NULL;
+}
+
+static inline struct ep_param *ep_getannotation(struct ep_param *param,
+		const char *name)
+{
+	size_t i;
+	for (i = 0; i < param->annotations.num; i++) {
+		if (strcmp(name, param->annotations.array[i].name) == 0)
+			return param->annotations.array+i;
 	}
 
 	return NULL;
@@ -262,6 +307,145 @@ error:
 	ep_struct_free(&eps);
 }
 
+static inline int ep_parse_param_annotation_var(struct effect_parser *ep,
+		struct ep_param *var)
+{
+	int code;
+
+	/* -------------------------------------- */
+	/* variable type */
+
+	if (!cf_next_valid_token(&ep->cfp))
+		return PARSE_EOF;
+
+	if (cf_token_is(&ep->cfp, ";"))
+		return PARSE_CONTINUE;
+	if (cf_token_is(&ep->cfp, ">"))
+		return PARSE_BREAK;
+
+	code = cf_token_is_type(&ep->cfp, CFTOKEN_NAME, "type name", ";");
+	if (code != PARSE_SUCCESS)
+		return code;
+
+	bfree(var->type);
+	cf_copy_token(&ep->cfp, &var->type);
+
+	/* -------------------------------------- */
+	/* variable name */
+
+	if (!cf_next_valid_token(&ep->cfp))
+		return PARSE_EOF;
+
+	if (cf_token_is(&ep->cfp, ";")) {
+		cf_adderror_expecting(&ep->cfp, "variable name");
+		return PARSE_UNEXPECTED_CONTINUE;
+	}
+	if (cf_token_is(&ep->cfp, ">")) {
+		cf_adderror_expecting(&ep->cfp, "variable name");
+		return PARSE_UNEXPECTED_BREAK;
+	}
+
+	code = cf_token_is_type(&ep->cfp, CFTOKEN_NAME, "variable name", ";");
+	if (code != PARSE_SUCCESS)
+		return code;
+
+	bfree(var->name);
+	cf_copy_token(&ep->cfp, &var->name);
+
+	/* -------------------------------------- */
+	/* variable mapping if any (POSITION, TEXCOORD, etc) */
+
+	if (!cf_next_valid_token(&ep->cfp))
+		return PARSE_EOF;
+
+	if (cf_token_is(&ep->cfp, ":")) {
+		cf_adderror_expecting(&ep->cfp, "= or ;");
+		return PARSE_UNEXPECTED_BREAK;
+	} else if (cf_token_is(&ep->cfp, ">")) {
+		cf_adderror_expecting(&ep->cfp, "= or ;");
+		return PARSE_UNEXPECTED_BREAK;
+	} else if (cf_token_is(&ep->cfp, "=")) {
+		if (!ep_parse_param_assign(ep, var)) {
+			cf_adderror_expecting(&ep->cfp, "assignment value");
+			return PARSE_UNEXPECTED_BREAK;
+		}
+	}
+
+	/* -------------------------------------- */
+
+	if (!cf_token_is(&ep->cfp, ";")) {
+		if (!cf_go_to_valid_token(&ep->cfp, ";", ">")) {
+			cf_adderror_expecting(&ep->cfp, "; or >");
+			return PARSE_EOF;
+		}
+		return PARSE_CONTINUE;
+	}
+
+	return PARSE_SUCCESS;
+}
+
+static int ep_parse_annotations(struct effect_parser *ep,
+		struct darray *annotations)
+{
+	if (!cf_token_is(&ep->cfp, "<")) {
+		cf_adderror_expecting(&ep->cfp, "<");
+		goto error;
+	}
+
+	/* get annotation variables */
+	while (true) {
+		bool do_break = false;
+		struct ep_param var;
+
+		ep_param_init(&var, bstrdup(""), bstrdup(""), false, false,
+				false);
+
+		switch (ep_parse_param_annotation_var(ep, &var)) {
+		case PARSE_UNEXPECTED_CONTINUE:
+			cf_adderror_syntax_error(&ep->cfp);
+			/* Falls through. */
+		case PARSE_CONTINUE:
+			ep_param_free(&var);
+			continue;
+
+		case PARSE_UNEXPECTED_BREAK:
+			cf_adderror_syntax_error(&ep->cfp);
+			/* Falls through. */
+		case PARSE_BREAK:
+			ep_param_free(&var);
+			do_break = true;
+			break;
+
+		case PARSE_EOF:
+			ep_param_free(&var);
+			goto error;
+		}
+
+		if (do_break)
+			break;
+
+		darray_push_back(sizeof(struct ep_param), annotations, &var);
+	}
+
+	if (!cf_token_is(&ep->cfp, ">")) {
+		cf_adderror_expecting(&ep->cfp, ">");
+		goto error;
+	}
+	if (!cf_next_valid_token(&ep->cfp))
+		goto error;
+
+	return true;
+
+error:
+	return false;
+}
+
+static int ep_parse_param_annotations(struct effect_parser *ep,
+		struct ep_param *param)
+{
+	return ep_parse_annotations(ep, &param->annotations.da);
+}
+
 static inline int ep_parse_pass_command_call(struct effect_parser *ep,
 		struct darray *call)
 {
@@ -328,7 +512,7 @@ static int ep_parse_pass(struct effect_parser *ep, struct ep_pass *pass)
 
 	if (!cf_token_is(&ep->cfp, "{")) {
 		pass->name = bstrdup_n(ep->cfp.cur_token->str.array,
-		                        ep->cfp.cur_token->str.len);
+					ep->cfp.cur_token->str.len);
 		if (!cf_next_valid_token(&ep->cfp)) return PARSE_EOF;
 	}
 
@@ -356,9 +540,19 @@ static void ep_parse_technique(struct effect_parser *ep)
 
 	if (cf_next_name(&ep->cfp, &ept.name, "name", ";") != PARSE_SUCCESS)
 		goto error;
-	if (cf_next_token_should_be(&ep->cfp, "{", ";", NULL) != PARSE_SUCCESS)
-		goto error;
 
+	if (!cf_next_valid_token(&ep->cfp))
+		return;
+
+	if (!cf_token_is(&ep->cfp, "{")) {
+		if (!cf_go_to_token(&ep->cfp, ";", NULL)) {
+			cf_adderror_expecting(&ep->cfp, ";");
+			return;
+		}
+
+		cf_adderror_expecting(&ep->cfp, "{");
+		goto error;
+	}
 	if (!cf_next_valid_token(&ep->cfp))
 		goto error;
 
@@ -756,6 +950,30 @@ static inline int ep_parse_param_assign_texture(struct effect_parser *ep,
 	return PARSE_SUCCESS;
 }
 
+static inline int ep_parse_param_assign_string(struct effect_parser *ep,
+		struct ep_param *param)
+{
+	int code;
+	char *str = NULL;
+
+	if (!cf_next_valid_token(&ep->cfp))
+		return PARSE_EOF;
+
+	code = cf_token_is_type(&ep->cfp, CFTOKEN_STRING, "string", ";");
+	if (code != PARSE_SUCCESS)
+		return code;
+
+	str = cf_literal_to_str(ep->cfp.cur_token->str.array,
+			ep->cfp.cur_token->str.len);
+
+	if (str) {
+		da_copy_array(param->default_val, str, strlen(str) + 1);
+		bfree(str);
+	}
+
+	return PARSE_SUCCESS;
+}
+
 static inline int ep_parse_param_assign_intfloat(struct effect_parser *ep,
 		struct ep_param *param, bool is_float)
 {
@@ -789,30 +1007,51 @@ static inline int ep_parse_param_assign_intfloat(struct effect_parser *ep,
 	return PARSE_SUCCESS;
 }
 
-/*
- * parses assignment for float1, float2, float3, float4, and any combination
- * for float3x3, float4x4, etc
- */
-static inline int ep_parse_param_assign_float_array(struct effect_parser *ep,
+static inline int ep_parse_param_assign_bool(struct effect_parser *ep,
 		struct ep_param *param)
 {
-	const char *float_type = param->type+5;
-	int float_count = 0, code, i;
+	if (!cf_next_valid_token(&ep->cfp))
+		return PARSE_EOF;
+
+	if (cf_token_is(&ep->cfp, "true")) {
+		long l = 1;
+		da_push_back_array(param->default_val, &l, sizeof(long));
+		return PARSE_SUCCESS;
+	} else if (cf_token_is(&ep->cfp, "false")) {
+		long l = 0;
+		da_push_back_array(param->default_val, &l, sizeof(long));
+		return PARSE_SUCCESS;
+	}
+
+	cf_adderror_expecting(&ep->cfp, "true or false");
+
+	return PARSE_EOF;
+}
+
+/*
+ * parses assignment for float1, float2, float3, float4, int1, int2, int3, int4,
+ * and any combination for float3x3, float4x4, int3x3, int4x4, etc
+*/
+static inline int ep_parse_param_assign_intfloat_array(struct effect_parser *ep,
+		struct ep_param *param, bool is_float)
+{
+	const char *intfloat_type = param->type + (is_float ? 5 : 3);
+	int intfloat_count = 0, code, i;
 
 	/* -------------------------------------------- */
 
-	if (float_type[0] < '1' || float_type[0] > '4')
+	if (intfloat_type[0] < '1' || intfloat_type[0] > '4')
 		cf_adderror(&ep->cfp, "Invalid row count", LEX_ERROR,
 				NULL, NULL, NULL);
 
-	float_count = float_type[0]-'0';
+	intfloat_count = intfloat_type[0]-'0';
 
-	if (float_type[1] == 'x') {
-		if (float_type[2] < '1' || float_type[2] > '4')
+	if (intfloat_type[1] == 'x') {
+		if (intfloat_type[2] < '1' || intfloat_type[2] > '4')
 			cf_adderror(&ep->cfp, "Invalid column count",
 					LEX_ERROR, NULL, NULL, NULL);
 
-		float_count *= float_type[2]-'0';
+		intfloat_count *= intfloat_type[2]-'0';
 	}
 
 	/* -------------------------------------------- */
@@ -820,10 +1059,10 @@ static inline int ep_parse_param_assign_float_array(struct effect_parser *ep,
 	code = cf_next_token_should_be(&ep->cfp, "{", ";", NULL);
 	if (code != PARSE_SUCCESS) return code;
 
-	for (i = 0; i < float_count; i++) {
-		char *next = ((i+1) < float_count) ? "," : "}";
+	for (i = 0; i < intfloat_count; i++) {
+		char *next = ((i+1) < intfloat_count) ? "," : "}";
 
-		code = ep_parse_param_assign_intfloat(ep, param, true);
+		code = ep_parse_param_assign_intfloat(ep, param, is_float);
 		if (code != PARSE_SUCCESS) return code;
 
 		code = cf_next_token_should_be(&ep->cfp, next, ";", NULL);
@@ -842,8 +1081,14 @@ static int ep_parse_param_assignment_val(struct effect_parser *ep,
 		return ep_parse_param_assign_intfloat(ep, param, false);
 	else if (strcmp(param->type, "float") == 0)
 		return ep_parse_param_assign_intfloat(ep, param, true);
+	else if (astrcmp_n(param->type, "int", 3) == 0)
+		return ep_parse_param_assign_intfloat_array(ep, param, false);
 	else if (astrcmp_n(param->type, "float", 5) == 0)
-		return ep_parse_param_assign_float_array(ep, param);
+		return ep_parse_param_assign_intfloat_array(ep, param, true);
+	else if (astrcmp_n(param->type, "string", 6) == 0)
+		return ep_parse_param_assign_string(ep, param);
+	else if (strcmp(param->type, "bool") == 0)
+		return ep_parse_param_assign_bool(ep, param);
 
 	cf_adderror(&ep->cfp, "Invalid type '$1' used for assignment",
 			LEX_ERROR, param->type, NULL, NULL);
@@ -878,6 +1123,9 @@ static void ep_parse_param(struct effect_parser *ep,
 	if (cf_token_is(&ep->cfp, ";"))
 		goto complete;
 	if (cf_token_is(&ep->cfp, "[") && !ep_parse_param_array(ep, &param))
+		goto error;
+	if (cf_token_is(&ep->cfp, "<") && !ep_parse_param_annotations(ep,
+			&param))
 		goto error;
 	if (cf_token_is(&ep->cfp, "=") && !ep_parse_param_assign(ep, &param))
 		goto error;
@@ -945,7 +1193,6 @@ static void ep_parse_other(struct effect_parser *ep)
 		goto error;
 	if (cf_next_name(&ep->cfp, &name, "name", ";") != PARSE_SUCCESS)
 		goto error;
-
 	if (!cf_next_valid_token(&ep->cfp))
 		goto error;
 
@@ -1339,6 +1586,35 @@ static void ep_makeshaderstring(struct effect_parser *ep,
 	ep_reset_written(ep);
 }
 
+static void ep_compile_annotations(struct darray *ep_annotations,
+	struct darray *gsp_annotations, struct effect_parser *ep)
+{
+	darray_resize(sizeof(struct gs_effect_param),
+		gsp_annotations, ep_annotations->num);
+
+	size_t i;
+	for (i = 0; i < ep_annotations->num; i++) {
+		struct gs_effect_param *param = ((struct gs_effect_param *)
+				gsp_annotations->array)+i;
+		struct ep_param *param_in = ((struct ep_param *)
+				ep_annotations->array)+i;
+
+		param->name = bstrdup(param_in->name);
+		param->section = EFFECT_ANNOTATION;
+		param->effect = ep->effect;
+		da_move(param->default_val, param_in->default_val);
+
+		param->type = get_effect_param_type(param_in->type);
+	}
+}
+
+static void ep_compile_param_annotations(struct ep_param *ep_param_input,
+	struct gs_effect_param *gs_effect_input, struct effect_parser *ep)
+{
+	ep_compile_annotations(&(ep_param_input->annotations.da),
+			&(gs_effect_input->annotations.da), ep);
+}
+
 static void ep_compile_param(struct effect_parser *ep, size_t idx)
 {
 	struct gs_effect_param *param;
@@ -1353,27 +1629,14 @@ static void ep_compile_param(struct effect_parser *ep, size_t idx)
 	param->effect  = ep->effect;
 	da_move(param->default_val, param_in->default_val);
 
-	if (strcmp(param_in->type, "bool") == 0)
-		param->type = GS_SHADER_PARAM_BOOL;
-	else if (strcmp(param_in->type, "float") == 0)
-		param->type = GS_SHADER_PARAM_FLOAT;
-	else if (strcmp(param_in->type, "int") == 0)
-		param->type = GS_SHADER_PARAM_INT;
-	else if (strcmp(param_in->type, "float2") == 0)
-		param->type = GS_SHADER_PARAM_VEC2;
-	else if (strcmp(param_in->type, "float3") == 0)
-		param->type = GS_SHADER_PARAM_VEC3;
-	else if (strcmp(param_in->type, "float4") == 0)
-		param->type = GS_SHADER_PARAM_VEC4;
-	else if (strcmp(param_in->type, "float4x4") == 0)
-		param->type = GS_SHADER_PARAM_MATRIX4X4;
-	else if (param_in->is_texture)
-		param->type = GS_SHADER_PARAM_TEXTURE;
+	param->type = get_effect_param_type(param_in->type);
 
 	if (strcmp(param_in->name, "ViewProj") == 0)
 		ep->effect->view_proj = param;
 	else if (strcmp(param_in->name, "World") == 0)
 		ep->effect->world = param;
+
+	ep_compile_param_annotations(param_in, param, ep);
 }
 
 static bool ep_compile_pass_shaderparams(struct effect_parser *ep,
