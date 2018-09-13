@@ -1837,11 +1837,12 @@ void obs_source_video_render(obs_source_t *source)
 static uint32_t get_base_width(const obs_source_t *source)
 {
 	bool is_filter = !!source->filter_parent;
+	bool func_valid = source->context.data && source->info.get_width;
 
 	if (source->info.type == OBS_SOURCE_TYPE_TRANSITION) {
 		return source->enabled ? source->transition_actual_cx : 0;
 
-	} else if (source->info.get_width && (!is_filter || source->enabled)) {
+	} else if (func_valid && (!is_filter || source->enabled)) {
 		return source->info.get_width(source->context.data);
 
 	} else if (is_filter) {
@@ -1854,11 +1855,12 @@ static uint32_t get_base_width(const obs_source_t *source)
 static uint32_t get_base_height(const obs_source_t *source)
 {
 	bool is_filter = !!source->filter_parent;
+	bool func_valid = source->context.data && source->info.get_height;
 
 	if (source->info.type == OBS_SOURCE_TYPE_TRANSITION) {
 		return source->enabled ? source->transition_actual_cy : 0;
 
-	} else if (source->info.get_height && (!is_filter || source->enabled)) {
+	} else if (func_valid && (!is_filter || source->enabled)) {
 		return source->info.get_height(source->context.data);
 
 	} else if (is_filter) {
