@@ -1146,16 +1146,22 @@
             }
         },
         {
-            "name": "Lahzenegar - لحظه نگار",
+            "name": "Lahzenegar - StreamG | لحظه‌نگار - استریمجی",
             "servers": [
                 {
                     "name": "Primary",
-                    "url": "rtmp://live.lahzenegar.com:80/pro"
+                    "url": "rtmp://rtmp.lahzecdn.com/pro"
+                },
+                {
+                    "name": "Iran",
+                    "url": "rtmp://rtmp-iran.lahzecdn.com/pro"
                 }
             ],
             "recommended": {
-                "max video bitrate": 1000,
-                "max audio bitrate": 96
+                "keyint": 2,
+                "profile": "main",
+                "max video bitrate": 2800,
+                "max audio bitrate": 128
             }
         },
         {
