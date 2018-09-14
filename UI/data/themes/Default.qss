@@ -133,7 +133,7 @@ QLabel#errorLabel {
 }
 
 * [themeID="aboutHLayout"] {
-	background-color: rgb(169, 169, 169);
+	background-color: #DCD9D7;
 }
 
 /* Preview background color */
