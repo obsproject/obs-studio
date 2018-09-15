@@ -9,12 +9,6 @@
 #define LOG(level, message, ...) blog(level, "%s: " message, \
 		obs_source_get_name(this->decklink->GetSource()), ##__VA_ARGS__)
 
-#ifdef _WIN32
-#define IS_WIN 1
-#else
-#define IS_WIN 0
-#endif
-
 static inline enum video_format ConvertPixelFormat(BMDPixelFormat format)
 {
 	switch (format) {
@@ -47,15 +41,14 @@ static inline audio_repack_mode_t ConvertRepackFormat(speaker_layout format)
 {
 	switch (format) {
 	case SPEAKERS_2POINT1:
-		return repack_mode_8to3ch_swap23;
+		return repack_mode_8to3ch;
 	case SPEAKERS_4POINT0:
-		return repack_mode_8to4ch_swap23;
+		return repack_mode_8to4ch;
 	case SPEAKERS_4POINT1:
-		return repack_mode_8to5ch_swap23;
+		return repack_mode_8to5ch;
 	case SPEAKERS_5POINT1:
-		return repack_mode_8to6ch_swap23;
+		return repack_mode_8to6ch;
 	case SPEAKERS_7POINT1:
-		return repack_mode_8ch_swap23_swap46_swap57;
 	default:
 		assert(false && "No repack requested");
 		return (audio_repack_mode_t)-1;
@@ -68,7 +61,7 @@ DeckLinkDeviceInstance::DeckLinkDeviceInstance(DeckLink *decklink_,
 {
 	currentPacket.samples_per_sec = 48000;
 	currentPacket.speakers        = SPEAKERS_STEREO;
-	currentPacket.format          = AUDIO_FORMAT_16BIT;
+	currentPacket.format          = AUDIO_FORMAT_32BIT;
 }
 
 DeckLinkDeviceInstance::~DeckLinkDeviceInstance()
@@ -100,13 +93,12 @@ void DeckLinkDeviceInstance::HandleAudioPacket(
 	}
 
 	int maxdevicechannel = device->GetMaxChannel();
-	bool isWin = IS_WIN;
 
 	if (channelFormat != SPEAKERS_UNKNOWN &&
 	    channelFormat != SPEAKERS_MONO &&
 	    channelFormat != SPEAKERS_STEREO &&
-	    maxdevicechannel >= 8 &&
-	    isWin) {
+	    channelFormat != SPEAKERS_7POINT1 &&
+	    maxdevicechannel >= 8) {
 
 		if (audioRepacker->repack((uint8_t *)bytes, frameCount) < 0) {
 			LOG(LOG_ERROR, "Failed to convert audio packet data");
@@ -235,12 +227,11 @@ bool DeckLinkDeviceInstance::StartCapture(DeckLinkDeviceMode *mode_)
 	currentPacket.speakers = channelFormat;
 
 	int maxdevicechannel = device->GetMaxChannel();
-	bool isWin = IS_WIN;
 
 	if (channelFormat != SPEAKERS_UNKNOWN) {
 		const int channel = ConvertChannelFormat(channelFormat);
 		const HRESULT audioResult = input->EnableAudioInput(
-				bmdAudioSampleRate48kHz, bmdAudioSampleType16bitInteger,
+				bmdAudioSampleRate48kHz, bmdAudioSampleType32bitInteger,
 				channel);
 		if (audioResult != S_OK)
 			LOG(LOG_WARNING, "Failed to enable audio input; continuing...");
@@ -248,8 +239,8 @@ bool DeckLinkDeviceInstance::StartCapture(DeckLinkDeviceMode *mode_)
 		if (channelFormat != SPEAKERS_UNKNOWN &&
 		    channelFormat != SPEAKERS_MONO &&
 		    channelFormat != SPEAKERS_STEREO &&
-		    maxdevicechannel >= 8 &&
-		    isWin) {
+		    channelFormat != SPEAKERS_7POINT1 &&
+		    maxdevicechannel >= 8) {
 
 			const audio_repack_mode_t repack_mode = ConvertRepackFormat
 					(channelFormat);
