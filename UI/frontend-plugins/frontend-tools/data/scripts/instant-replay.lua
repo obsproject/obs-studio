@@ -29,7 +29,7 @@ function try_play()
 
 	-- If the path is valid and the source exists, update it with the
 	-- replay file to play back the replay.  Otherwise, stop attempting to
-	-- replay after 10 seconds
+	-- replay after 10 retries
 	if path == nil then
 		attempts = attempts + 1
 		if attempts >= 10 then
@@ -84,11 +84,11 @@ function instant_replay(pressed)
 		local ph = obs.obs_output_get_proc_handler(replay_buffer)
 		obs.proc_handler_call(ph, "save", nil)
 
-		-- Set a 1-second timer to attempt playback every 1 second
+		-- Set a 2-second timer to attempt playback every 1 second
 		-- until the replay is available
 		if obs.obs_output_active(replay_buffer) then
 			attempts = 0
-			obs.timer_add(try_play, 1000)
+			obs.timer_add(try_play, 2000)
 		else
 			obs.script_log(obs.LOG_WARNING, "Tried to save an instant replay, but the replay buffer is not active!")
 		end
