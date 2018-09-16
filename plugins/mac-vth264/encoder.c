@@ -6,6 +6,8 @@
 #include <VideoToolbox/VTVideoEncoderList.h>
 #include <CoreMedia/CoreMedia.h>
 
+#include <util/apple/cfstring-utils.h>
+
 #include <assert.h>
 
 #define VT_LOG(level, format, ...) \
@@ -74,23 +76,20 @@ struct vt_h264_encoder
 static void log_osstatus(int log_level, struct vt_h264_encoder *enc,
 		const char *context, OSStatus code)
 {
+	char *c_str = NULL;
 	CFErrorRef err = CFErrorCreate(kCFAllocatorDefault,
 			kCFErrorDomainOSStatus, code, NULL);
 	CFStringRef str = CFErrorCopyDescription(err);
 
-	CFIndex length = CFStringGetLength(str);
-	CFIndex max_size = CFStringGetMaximumSizeForEncoding(length,
-			kCFStringEncodingUTF8);
-
-	char *c_str = malloc(max_size);
-	if (CFStringGetCString(str, c_str, max_size, kCFStringEncodingUTF8)) {
+	c_str = cfstr_copy_cstr(str, kCFStringEncodingUTF8);
+	if (c_str) {
 		if (enc)
 			VT_BLOG(log_level, "Error in %s: %s", context, c_str);
 		else
 			VT_LOG(log_level, "Error in %s: %s", context, c_str);
 	}
 
-	free(c_str);
+	bfree(c_str);
 	CFRelease(str);
 	CFRelease(err);
 }
