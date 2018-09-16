@@ -149,6 +149,7 @@ private:
 	QPointer<OBSBasicTransform> transformWindow;
 	QPointer<OBSBasicAdvAudio> advAudioWindow;
 	QPointer<OBSBasicFilters> filters;
+	QPointer<QDockWidget> statsDock;
 	QPointer<OBSAbout> about;
 
 	QPointer<QTimer>    cpuUsageTimer;

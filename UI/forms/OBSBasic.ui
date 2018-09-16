@@ -7,7 +7,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1238</width>
+    <width>1079</width>
     <height>730</height>
    </rect>
   </property>
@@ -105,8 +105,8 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1238</width>
-     <height>22</height>
+     <width>1079</width>
+     <height>21</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_File">
@@ -644,7 +644,7 @@
           <rect>
            <x>0</x>
            <y>0</y>
-           <width>78</width>
+           <width>230</width>
            <height>16</height>
           </rect>
          </property>
@@ -698,7 +698,7 @@
            <x>0</x>
            <y>0</y>
            <width>16</width>
-           <height>28</height>
+           <height>230</height>
           </rect>
          </property>
          <property name="sizePolicy">
@@ -1100,21 +1100,6 @@
      </item>
     </layout>
    </widget>
-  </widget>
-  <widget class="QDockWidget" name="statsDock">
-   <property name="minimumSize">
-    <size>
-     <width>168</width>
-     <height>103</height>
-    </size>
-   </property>
-   <property name="windowTitle">
-    <string>Basic.Stats</string>
-   </property>
-   <attribute name="dockWidgetArea">
-    <number>2</number>
-   </attribute>
-   <widget class="QWidget" name="dockWidgetContents"/>
   </widget>
   <action name="actionAddScene">
    <property name="icon">

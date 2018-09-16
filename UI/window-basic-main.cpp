@@ -182,6 +182,15 @@ OBSBasic::OBSBasic(QWidget *parent)
 
 	startingDockLayout = saveState();
 
+	statsDock = new QDockWidget();
+	statsDock->setObjectName(QStringLiteral("statsDock"));
+	statsDock->setFeatures(QDockWidget::AllDockWidgetFeatures);
+	statsDock->setWindowTitle(QTStr("Basic.Stats"));
+	addDockWidget(Qt::BottomDockWidgetArea, statsDock);
+	statsDock->setVisible(false);
+	statsDock->setFloating(true);
+	statsDock->resize(700, 200);
+
 	copyActionsDynamicProperties();
 
 	char styleSheetPath[512];
@@ -306,7 +315,7 @@ OBSBasic::OBSBasic(QWidget *parent)
 	assignDockToggle(ui->mixerDock, ui->toggleMixer);
 	assignDockToggle(ui->transitionsDock, ui->toggleTransitions);
 	assignDockToggle(ui->controlsDock, ui->toggleControls);
-	assignDockToggle(ui->statsDock, ui->toggleStats);
+	assignDockToggle(statsDock, ui->toggleStats);
 
 	//hide all docking panes
 	ui->toggleScenes->setChecked(false);
@@ -315,6 +324,8 @@ OBSBasic::OBSBasic(QWidget *parent)
 	ui->toggleTransitions->setChecked(false);
 	ui->toggleControls->setChecked(false);
 	ui->toggleStats->setChecked(false);
+
+	QPoint curPos;
 
 	//restore parent window geometry
 	const char *geometry = config_get_string(App()->GlobalConfig(),
@@ -332,7 +343,19 @@ OBSBasic::OBSBasic(QWidget *parent)
 						Qt::AlignCenter,
 						size(), rect));
 		}
+
+		curPos = pos();
+	} else {
+		QRect desktopRect = QGuiApplication::primaryScreen()->geometry();
+		QSize adjSize = desktopRect.size() / 2 - size() / 2;
+		curPos = QPoint(adjSize.width(), adjSize.height());
 	}
+
+	QPoint curSize(width(), height());
+	QPoint statsDockSize(statsDock->width(), statsDock->height());
+	QPoint statsDockPos = curSize / 2 - statsDockSize / 2;
+	QPoint newPos = curPos + statsDockPos;
+	statsDock->move(newPos);
 }
 
 static void SaveAudioDevice(const char *name, int channel, obs_data_t *parent,
@@ -1595,8 +1618,8 @@ void OBSBasic::OBSInit()
 #endif
 
 	/* setup stats dock */
-	OBSBasicStats *statsDlg = new OBSBasicStats(ui->statsDock, false);
-	ui->statsDock->setWidget(statsDlg);
+	OBSBasicStats *statsDlg = new OBSBasicStats(statsDock, false);
+	statsDock->setWidget(statsDlg);
 
 	const char *dockStateStr = config_get_string(App()->GlobalConfig(),
 			"BasicWindow", "DockState");
@@ -6121,8 +6144,7 @@ void OBSBasic::on_resetUI_triggered()
 		ui->sourcesDock,
 		ui->mixerDock,
 		ui->transitionsDock,
-		ui->controlsDock,
-		ui->statsDock
+		ui->controlsDock
 	};
 
 	QList<int> sizes {
@@ -6138,7 +6160,8 @@ void OBSBasic::on_resetUI_triggered()
 	ui->mixerDock->setVisible(true);
 	ui->transitionsDock->setVisible(true);
 	ui->controlsDock->setVisible(true);
-	ui->statsDock->setVisible(true);
+	statsDock->setVisible(false);
+	statsDock->setFloating(true);
 
 	resizeDocks(docks, {cy, cy, cy, cy, cy}, Qt::Vertical);
 	resizeDocks(docks, sizes, Qt::Horizontal);
@@ -6156,7 +6179,7 @@ void OBSBasic::on_lockUI_toggled(bool lock)
 	ui->mixerDock->setFeatures(features);
 	ui->transitionsDock->setFeatures(features);
 	ui->controlsDock->setFeatures(features);
-	ui->statsDock->setFeatures(features);
+	statsDock->setFeatures(features);
 }
 
 void OBSBasic::on_toggleListboxToolbars_toggled(bool visible)
