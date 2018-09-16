@@ -1366,6 +1366,10 @@ static obs_properties_t *aac_properties(void *data)
 
 OBS_DECLARE_MODULE()
 OBS_MODULE_USE_DEFAULT_LOCALE("coreaudio-encoder", "en-US")
+MODULE_EXPORT const char *obs_module_description(void)
+{
+	return "Apple CoreAudio based encoder";
+}
 
 bool obs_module_load(void)
 {

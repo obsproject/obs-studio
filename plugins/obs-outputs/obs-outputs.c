@@ -9,6 +9,10 @@
 
 OBS_DECLARE_MODULE()
 OBS_MODULE_USE_DEFAULT_LOCALE("obs-outputs", "en-US")
+MODULE_EXPORT const char *obs_module_description(void)
+{
+	return "OBS core RTMP/FLV/null/FTL outputs";
+}
 
 extern struct obs_output_info rtmp_output_info;
 extern struct obs_output_info null_output_info;

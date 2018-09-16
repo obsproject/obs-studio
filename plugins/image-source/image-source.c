@@ -270,6 +270,10 @@ static struct obs_source_info image_source_info = {
 
 OBS_DECLARE_MODULE()
 OBS_MODULE_USE_DEFAULT_LOCALE("image-source", "en-US")
+MODULE_EXPORT const char *obs_module_description(void)
+{
+	return "Image/color/slideshow sources";
+}
 
 extern struct obs_source_info slideshow_info;
 extern struct obs_source_info color_source_info;

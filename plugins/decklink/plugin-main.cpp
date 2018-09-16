@@ -6,6 +6,10 @@
 
 OBS_DECLARE_MODULE()
 OBS_MODULE_USE_DEFAULT_LOCALE("decklink", "en-US")
+MODULE_EXPORT const char *obs_module_description(void)
+{
+	return "Blackmagic DeckLink source";
+}
 
 #define DEVICE_HASH     "device_hash"
 #define DEVICE_NAME     "device_name"

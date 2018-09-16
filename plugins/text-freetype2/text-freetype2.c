@@ -28,6 +28,10 @@ FT_Library ft2_lib;
 
 OBS_DECLARE_MODULE()
 OBS_MODULE_USE_DEFAULT_LOCALE("text-freetype2", "en-US")
+MODULE_EXPORT const char *obs_module_description(void)
+{
+	return "FreeType2 text source";
+}
 
 uint32_t texbuf_w = 2048, texbuf_h = 2048;
 

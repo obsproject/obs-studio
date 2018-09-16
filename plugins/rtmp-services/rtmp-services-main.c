@@ -10,6 +10,10 @@
 
 OBS_DECLARE_MODULE()
 OBS_MODULE_USE_DEFAULT_LOCALE("rtmp-services", "en-US")
+MODULE_EXPORT const char *obs_module_description(void)
+{
+	return "OBS core RTMP services";
+}
 
 #define RTMP_SERVICES_LOG_STR "[rtmp-services plugin] "
 #define RTMP_SERVICES_VER_STR "rtmp-services plugin (libobs " OBS_VERSION ")"
