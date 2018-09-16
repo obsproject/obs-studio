@@ -1,0 +1,3 @@
+[submodule "Spout2"]
+	path = Spout2
+	url = https://github.com/leadedge/Spout2.git
