@@ -3,14 +3,9 @@
 
 #include "../../obs-internal.h"
 #include "../../util/dstr.h"
+#include "../../util/apple/cfstring-utils.h"
 
 #include "mac-helpers.h"
-
-static inline bool cf_to_cstr(CFStringRef ref, char *buf, size_t size)
-{
-	if (!ref) return false;
-	return (bool)CFStringGetCString(ref, buf, size, kCFStringEncodingUTF8);
-}
 
 static bool obs_enum_audio_monitoring_device(obs_enum_audio_device_cb cb,
 		void *data, AudioDeviceID id, bool allow_inputs)
@@ -18,8 +13,8 @@ static bool obs_enum_audio_monitoring_device(obs_enum_audio_device_cb cb,
 	UInt32      size    = 0;
 	CFStringRef cf_name = NULL;
 	CFStringRef cf_uid  = NULL;
-	char        name[1024];
-	char        uid[1024];
+	char        *name = NULL;
+	char        *uid = NULL;
 	OSStatus    stat;
 	bool        cont = true;
 
@@ -46,12 +41,14 @@ static bool obs_enum_audio_monitoring_device(obs_enum_audio_device_cb cb,
 	if (!success(stat, "get audio device name"))
 		goto fail;
 
-	if (!cf_to_cstr(cf_name, name, sizeof(name))) {
+	name = cfstr_copy_cstr(cf_name, kCFStringEncodingUTF8);
+	if (!name) {
 		blog(LOG_WARNING, "%s: failed to convert name", __FUNCTION__);
 		goto fail;
 	}
 
-	if (!cf_to_cstr(cf_uid, uid, sizeof(uid))) {
+	uid = cfstr_copy_cstr(cf_uid, kCFStringEncodingUTF8);
+	if (!uid) {
 		blog(LOG_WARNING, "%s: failed to convert uid", __FUNCTION__);
 		goto fail;
 	}
@@ -59,6 +56,8 @@ static bool obs_enum_audio_monitoring_device(obs_enum_audio_device_cb cb,
 	cont = cb(data, name, uid);
 
 fail:
+	bfree(name);
+	bfree(uid);
 	if (cf_name)
 		CFRelease(cf_name);
 	if (cf_uid)
