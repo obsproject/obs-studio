@@ -14,7 +14,6 @@ include_directories(${COREAUDIO}
 
 set(mac-capture_HEADERS
 	audio-device-enum.h
-	mac-helpers.h
 	window-utils.h)
 
 set(mac-capture_SOURCES

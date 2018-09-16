@@ -7,8 +7,8 @@
 #include <obs-module.h>
 #include <util/threading.h>
 #include <util/c99defs.h>
+#include <util/apple/cfstring-utils.h>
 
-#include "mac-helpers.h"
 #include "audio-device-enum.h"
 
 #define PROPERTY_DEFAULT_DEVICE kAudioHardwarePropertyDefaultInputDevice
@@ -496,7 +496,7 @@ static bool coreaudio_get_device_name(struct coreaudio_data *ca)
 {
 	CFStringRef cf_name = NULL;
 	UInt32 size = sizeof(CFStringRef);
-	char name[1024];
+	char *name = NULL;
 
 	const AudioObjectPropertyAddress addr = {
 		kAudioDevicePropertyDeviceNameCFString,
@@ -512,14 +512,15 @@ static bool coreaudio_get_device_name(struct coreaudio_data *ca)
 		return false;
 	}
 
-	if (!cf_to_cstr(cf_name, name, 1024)) {
+	name = cfstr_copy_cstr(cf_name, kCFStringEncodingUTF8);
+	if (!name) {
 		blog(LOG_WARNING, "[coreaudio_get_device_name] failed to "
 		                  "convert name to cstr for some reason");
 		return false;
 	}
 
 	bfree(ca->device_name);
-	ca->device_name = bstrdup(name);
+	ca->device_name = name;
 
 	if (cf_name)
 		CFRelease(cf_name);
