@@ -1,6 +1,7 @@
 /*
- * Copyright (c) 2013-2014 Ruwen Hahn <palana@stunned.de>
+ * Copyright (c) 2013-2018 Ruwen Hahn <palana@stunned.de>
  *                         Hugh "Jim" Bailey <obs.jim@gmail.com>
+ *                         Marvin Scholz <epirat07@gmail.com>
  *
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -32,6 +33,8 @@
 #include <IOKit/pwr_mgt/IOPMLib.h>
 
 #import <Cocoa/Cocoa.h>
+
+#include "apple/cfstring-utils.h"
 
 /* clock function selection taken from libc++ */
 static uint64_t ns_time_simple()
@@ -416,4 +419,91 @@ uint64_t os_get_proc_virtual_size(void)
 	if (!os_get_proc_memory_usage_internal(&taskinfo))
 		return 0;
 	return taskinfo.virtual_size;
+}
+
+/* Obtains a copy of the contents of a CFString in specified encoding.
+ * Returns char* (must be bfree'd by caller) or NULL on failure.
+ */
+char *cfstr_copy_cstr(CFStringRef cfstring, CFStringEncoding cfstring_encoding)
+{
+	if (!cfstring)
+		return NULL;
+
+	// Try the quick way to obtain the buffer
+	const char *tmp_buffer = CFStringGetCStringPtr(cfstring,
+			cfstring_encoding);
+
+	if (tmp_buffer != NULL)
+		return bstrdup(tmp_buffer);
+
+	// The quick way did not work, try the more expensive one
+	CFIndex length = CFStringGetLength(cfstring);
+	CFIndex max_size =
+		CFStringGetMaximumSizeForEncoding(length, cfstring_encoding);
+
+	// If result would exceed LONG_MAX, kCFNotFound is returned
+	if (max_size == kCFNotFound)
+		return NULL;
+
+	// Account for the null terminator
+	max_size++;
+
+	char *buffer = bmalloc(max_size);
+
+	if (buffer == NULL) {
+		return NULL;
+	}
+
+	// Copy CFString in requested encoding to buffer
+	Boolean success =
+		CFStringGetCString(cfstring, buffer, max_size, cfstring_encoding);
+
+	if (!success) {
+		bfree(buffer);
+		buffer = NULL;
+	}
+	return buffer;
+}
+
+/* Copies the contents of a CFString in specified encoding to a given dstr.
+ * Returns true on success or false on failure.
+ * In case of failure, the dstr capacity but not size is changed.
+ */
+bool cfstr_copy_dstr(CFStringRef cfstring,
+	CFStringEncoding cfstring_encoding, struct dstr *str)
+{
+	if (!cfstring)
+		return false;
+
+	// Try the quick way to obtain the buffer
+	const char *tmp_buffer = CFStringGetCStringPtr(cfstring,
+			cfstring_encoding);
+
+	if (tmp_buffer != NULL) {
+		dstr_copy(str, tmp_buffer);
+		return true;
+	}
+
+	// The quick way did not work, try the more expensive one
+	CFIndex length = CFStringGetLength(cfstring);
+	CFIndex max_size =
+		CFStringGetMaximumSizeForEncoding(length, cfstring_encoding);
+
+	// If result would exceed LONG_MAX, kCFNotFound is returned
+	if (max_size == kCFNotFound)
+		return NULL;
+
+	// Account for the null terminator
+	max_size++;
+
+	dstr_ensure_capacity(str, max_size);
+
+	// Copy CFString in requested encoding to dstr buffer
+	Boolean success = CFStringGetCString(
+		cfstring, str->array, max_size, cfstring_encoding);
+
+	if (success)
+		dstr_resize(str, max_size);
+
+	return (bool)success;
 }
