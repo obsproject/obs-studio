@@ -10,6 +10,7 @@
 
 #ifndef _WIN32
 #include <AudioToolbox/AudioToolbox.h>
+#include <util/apple/cfstring-utils.h>
 #endif
 
 #define CA_LOG(level, format, ...) \
@@ -257,17 +258,8 @@ static DStr osstatus_to_dstr(OSStatus code)
 			kCFErrorDomainOSStatus, code, NULL)};
 	cf_ptr<CFStringRef> str{CFErrorCopyDescription(err.get())};
 
-	CFIndex length   = CFStringGetLength(str.get());
-	CFIndex max_size = CFStringGetMaximumSizeForEncoding(length,
-			kCFStringEncodingUTF8);
-
-	dstr_ensure_capacity(result, max_size);
-
-	if (result->array && CFStringGetCString(str.get(), result->array,
-				max_size, kCFStringEncodingUTF8)) {
-		dstr_resize(result, strlen(result->array));
+	if (cfstr_copy_dstr(str.get(), kCFStringEncodingUTF8, result))
 		return result;
-	}
 #endif
 
 	const char *code_str = code_to_str(code);
