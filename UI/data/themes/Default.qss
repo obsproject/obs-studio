@@ -141,3 +141,58 @@ QLabel#errorLabel {
 * [themeID="displayBackgroundColor"] {
     qproperty-displayBackgroundColor: rgb(76, 76, 76);
 }
+
+/* ScrollBars */
+
+::corner {
+    background-color: rgb(58,57,58); /* dark */
+    border: none;
+}
+
+QScrollBar:vertical {
+    background-color: transparent;
+    width: 14px;
+}
+
+QScrollBar::handle:vertical {
+    background-color: #c6c6c6;
+    min-height: 20px;
+    margin: 2px;
+    border-radius: 5px;
+    border-width: 0px;
+}
+
+QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
+    border: none;
+    background: none;
+}
+
+QScrollBar::up-arrow:vertical, QScrollBar::down-arrow:vertical, QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
+    border: none;
+    background: none;
+    color: none;
+}
+
+QScrollBar:horizontal {
+    background-color: transparent;
+    height: 14px;
+}
+
+QScrollBar::handle:horizontal {
+    background-color: #c6c6c6;
+    min-width: 20px;
+    margin: 2px;
+    border-radius: 5px;
+    border-width: 0px;
+}
+
+QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {
+    border: none;
+    background: none;
+}
+
+QScrollBar::left-arrow:horizontal, QScrollBar::right-arrow:horizontal, QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal {
+    border: none;
+    background: none;
+    color: none;
+}
