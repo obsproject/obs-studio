@@ -283,7 +283,7 @@ QScrollBar::up-arrow:vertical, QScrollBar::down-arrow:vertical, QScrollBar::add-
 
 QScrollBar:horizontal {
 	background-color: transparent;
-	height: 10px;
+	height: 20px;
 	margin-left: -3px;
 	margin-right: -3px;
 }
@@ -291,7 +291,7 @@ QScrollBar:horizontal {
 QScrollBar::handle:horizontal {
 	background-color: #2f2f2f;
 	min-width: 20px;
-	margin: 0px 0px -3px;
+	margin: 3px 0px;
 	border-radius: 0px;
 	border: none;
 }

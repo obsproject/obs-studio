@@ -150,6 +150,7 @@ QGroupBox {
 QScrollBar:vertical {
     background-color: rgb(58,57,58); /* dark */
     width: 14px;
+    margin: 0px;
 }
 
 QScrollBar::handle:vertical {
@@ -178,6 +179,7 @@ QScrollBar::up-arrow:vertical, QScrollBar::down-arrow:vertical, QScrollBar::add-
 QScrollBar:horizontal {
     background-color: rgb(58,57,58); /* dark */
     height: 14px;
+    margin: 0px;
 }
 
 QScrollBar::handle:horizontal {
