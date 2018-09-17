@@ -2346,7 +2346,7 @@ static void clean_cache(obs_source_t *source)
 }
 
 #define MAX_ASYNC_FRAMES 30
-
+//if return value is not null then do (os_atomic_dec_long(&output->refs) == 0) && obs_source_frame_destroy(output)
 static inline struct obs_source_frame *cache_video(struct obs_source *source,
 		const struct obs_source_frame *frame)
 {
@@ -2403,11 +2403,6 @@ static inline struct obs_source_frame *cache_video(struct obs_source *source,
 
 	copy_frame_data(new_frame, frame);
 
-	if (os_atomic_dec_long(&new_frame->refs) == 0) {
-		obs_source_frame_destroy(new_frame);
-		new_frame = NULL;
-	}
-
 	return new_frame;
 }
 
@@ -2426,13 +2421,17 @@ void obs_source_output_video(obs_source_t *source,
 		cache_video(source, frame) : NULL;
 
 	/* ------------------------------------------- */
-
+	pthread_mutex_lock(&source->async_mutex);
 	if (output) {
-		pthread_mutex_lock(&source->async_mutex);
-		da_push_back(source->async_frames, &output);
-		pthread_mutex_unlock(&source->async_mutex);
-		source->async_active = true;
+		if (os_atomic_dec_long(&output->refs) == 0) {
+			obs_source_frame_destroy(output);
+			output = NULL;
+		} else {
+			da_push_back(source->async_frames, &output);
+			source->async_active = true;
+		}
 	}
+	pthread_mutex_unlock(&source->async_mutex);
 }
 
 static inline bool preload_frame_changed(obs_source_t *source,
