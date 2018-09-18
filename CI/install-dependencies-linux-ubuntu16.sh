@@ -38,3 +38,20 @@ sudo apt-get install -y \
         python3-dev \
         qtbase5-dev \
         swig
+
+
+# build mbedTLS
+cd ~/projects
+mkdir mbedtls
+cd mbedtls
+mbedtlsPath=$PWD
+curl -L -O https://github.com/ARMmbed/mbedtls/archive/mbedtls-2.12.0.tar.gz
+tar -xf mbedtls-2.12.0.tar.gz
+mkdir build
+cd ./build
+cmake -DENABLE_TESTING=Off -DUSE_SHARED_MBEDTLS_LIBRARY=On ../mbedtls-mbedtls-2.12.0
+make -j 12
+sudo make install
+
+# return to OBS build dir
+cd $APPVEYOR_BUILD_FOLDER
