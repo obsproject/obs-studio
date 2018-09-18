@@ -1,15 +1,23 @@
-image: Visual Studio 2017
+image:
+ - Ubuntu
+ - Visual Studio 2017
+
 environment:
   CURL_VERSION: 7.56.1
   CEF_VERSION: 3.3440.1805.gbe070f9
+  APPVEYOR_YML_DISABLE_PS_LINUX: true
 
 install:
   - git submodule update --init --recursive
   - cmd: C:\projects\obs-studio\CI\install-script-win.cmd
+  - sh: ./CI/install-dependencies-linux-ubuntu16.sh
+  - sh: ./CI/before-script-linux.sh
+  - sh: ./CI/install-script-linux.sh
 
 build_script:
   - cmd: call msbuild /m /p:Configuration=%build_config% C:\projects\obs-studio\build32\obs-studio.sln /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
   - cmd: call msbuild /m /p:Configuration=%build_config% C:\projects\obs-studio\build64\obs-studio.sln /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
+  - sh: cd ./build && make -j4 && cd -
 
 before_deploy:
   - cmd: C:\projects\obs-studio\CI\before-deploy-win.cmd
