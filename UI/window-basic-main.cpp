@@ -70,7 +70,7 @@
 #include <QScreen>
 #include <QWindow>
 
-#ifdef _WIN32
+#if defined(_WIN32) && defined(WITH_OBS_BROWSER)
 #include <browser-panel.hpp>
 #endif
 
@@ -79,7 +79,7 @@
 using namespace json11;
 using namespace std;
 
-#ifdef _WIN32
+#if defined(_WIN32) && defined(WITH_OBS_BROWSER)
 static CREATE_BROWSER_WIDGET_PROC create_browser_widget = nullptr;
 #endif
 
@@ -1507,7 +1507,7 @@ void OBSBasic::OBSInit()
 	blog(LOG_INFO, "---------------------------------");
 	obs_post_load_modules();
 
-#ifdef _WIN32
+#if defined(_WIN32) && defined(WITH_OBS_BROWSER)
 	create_browser_widget = obs_browser_init_panel();
 #endif
 
@@ -1738,7 +1738,7 @@ void OBSBasic::OnFirstLoad()
 	if (api)
 		api->on_event(OBS_FRONTEND_EVENT_FINISHED_LOADING);
 
-#ifdef _WIN32
+#if defined(_WIN32) && defined(WITH_OBS_BROWSER)
 	/* Attempt to load init screen if available */
 	if (create_browser_widget) {
 		WhatsNewInfoThread *wnit = new WhatsNewInfoThread();
@@ -1850,13 +1850,7 @@ void OBSBasic::ReceivedIntroJson(const QString &text)
 	dlg.setWindowTitle("What's New");
 	dlg.resize(700, 600);
 
-	QCefWidget *cefWidget = create_browser_widget(nullptr, info_url);
-	if (!cefWidget) {
-		return;
-	}
 
-	connect(cefWidget, SIGNAL(titleChanged(const QString &)),
-			&dlg, SLOT(setWindowTitle(const QString &)));
 
 	QPushButton *close = new QPushButton(QTStr("Close"));
 	connect(close, &QAbstractButton::clicked,
@@ -1868,7 +1862,17 @@ void OBSBasic::ReceivedIntroJson(const QString &text)
 	bottomLayout->addStretch();
 
 	QVBoxLayout *topLayout = new QVBoxLayout(&dlg);
+
+#if defined(_WIN32) && defined(WITH_OBS_BROWSER)
+		QCefWidget *cefWidget = create_browser_widget(nullptr, info_url);
+		if (!cefWidget)
+			return;
+	}
+	connect(cefWidget, SIGNAL(titleChanged(const QString &)),
+			&dlg, SLOT(setWindowTitle(const QString &)));
 	topLayout->addWidget(cefWidget);
+#endif
+
 	topLayout->addLayout(bottomLayout);
 
 	dlg.exec();
