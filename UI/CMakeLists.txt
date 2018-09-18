@@ -7,6 +7,10 @@ else()
 	set(FIND_MODE QUIET)
 endif()
 
+if(BROWSER_AVAILABLE_INTERNAL)
+	add_definitions(-DBROWSER_AVAILABLE)
+endif()
+
 add_subdirectory(obs-frontend-api)
 
 # ----------------------------------------------------------------------------
@@ -56,7 +60,9 @@ include_directories(SYSTEM "obs-frontend-api")
 include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/libobs")
 include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/deps/libff")
 include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/deps/json11")
-include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/plugins/obs-browser/panel")
+if(BROWSER_AVAILABLE_INTERNAL)
+	include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/plugins/obs-browser/panel")
+endif()
 
 find_package(Libcurl REQUIRED)
 include_directories(${LIBCURL_INCLUDE_DIRS})

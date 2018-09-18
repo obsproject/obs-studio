@@ -70,16 +70,13 @@
 #include <QScreen>
 #include <QWindow>
 
-#ifdef _WIN32
-#include <browser-panel.hpp>
-#endif
-
 #include <json11.hpp>
 
 using namespace json11;
 using namespace std;
 
-#ifdef _WIN32
+#if defined(_WIN32) && defined(BROWSER_AVAILABLE)
+#include <browser-panel.hpp>
 static CREATE_BROWSER_WIDGET_PROC create_browser_widget = nullptr;
 #endif
 
@@ -1507,7 +1504,7 @@ void OBSBasic::OBSInit()
 	blog(LOG_INFO, "---------------------------------");
 	obs_post_load_modules();
 
-#ifdef _WIN32
+#if defined(_WIN32) && defined(BROWSER_AVAILABLE)
 	create_browser_widget = obs_browser_init_panel();
 #endif
 
@@ -1738,7 +1735,7 @@ void OBSBasic::OnFirstLoad()
 	if (api)
 		api->on_event(OBS_FRONTEND_EVENT_FINISHED_LOADING);
 
-#ifdef _WIN32
+#if defined(_WIN32) && defined(BROWSER_AVAILABLE)
 	/* Attempt to load init screen if available */
 	if (create_browser_widget) {
 		WhatsNewInfoThread *wnit = new WhatsNewInfoThread();
@@ -1776,6 +1773,7 @@ void OBSBasic::DeferredLoad(const QString &file, int requeueCount)
 /* shows a "what's new" page on startup of new versions using CEF */
 void OBSBasic::ReceivedIntroJson(const QString &text)
 {
+#ifdef BROWSER_AVAILABLE
 #ifdef _WIN32
 	std::string err;
 	Json json = Json::parse(QT_TO_UTF8(text), err);
@@ -1872,6 +1870,9 @@ void OBSBasic::ReceivedIntroJson(const QString &text)
 	topLayout->addLayout(bottomLayout);
 
 	dlg.exec();
+#else
+	UNUSED_PARAMETER(text);
+#endif
 #else
 	UNUSED_PARAMETER(text);
 #endif
