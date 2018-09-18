@@ -19,26 +19,9 @@ project(obs)
 
 set(DISABLE_UPDATE_MODULE TRUE CACHE BOOL "Disables building the update module")
 
-if(DEFINED QTDIR${_lib_suffix})
-	list(APPEND CMAKE_PREFIX_PATH "${QTDIR${_lib_suffix}}")
-elseif(DEFINED QTDIR)
-	list(APPEND CMAKE_PREFIX_PATH "${QTDIR}")
-elseif(DEFINED ENV{QTDIR${_lib_suffix}})
-	list(APPEND CMAKE_PREFIX_PATH "$ENV{QTDIR${_lib_suffix}}")
-elseif(DEFINED ENV{QTDIR})
-	list(APPEND CMAKE_PREFIX_PATH "$ENV{QTDIR}")
-endif()
-
 set(CMAKE_INCLUDE_CURRENT_DIR TRUE)
 set(CMAKE_AUTOMOC TRUE)
 
-if(CMAKE_SIZEOF_VOID_P EQUAL 8)
-	set(_lib_suffix 64)
-else()
-	set(_lib_suffix 32)
-endif()
-
-find_package(Qt5Widgets ${FIND_MODE})
 find_package(FFmpeg REQUIRED COMPONENTS avcodec avutil avformat)
 
 if(APPLE)
