@@ -4227,6 +4227,21 @@ void OBSBasic::CreateSourcePopupMenu(int idx, bool preview)
 			popup.addSeparator();
 		}
 
+		QAction *resizeOutput = popup.addAction(
+				QTStr("ResizeOutputSizeOfSource"), this,
+				SLOT(ResizeOutputSizeOfSource()));
+
+		int width = obs_source_get_width(source);
+		int height = obs_source_get_height(source);
+
+		resizeOutput->setEnabled(!(ui->streamButton->isChecked() ||
+				ui->recordButton->isChecked() ||
+				(replayBufferButton &&
+				replayBufferButton->isChecked())));
+
+		if (width == 0 || height == 0)
+			resizeOutput->setEnabled(false);
+
 		popup.addMenu(AddScaleFilteringMenu(sceneItem));
 		popup.addSeparator();
 
@@ -6731,6 +6746,39 @@ void OBSBasic::on_actionShowAbout_triggered()
 	about->show();
 
 	about->setAttribute(Qt::WA_DeleteOnClose, true);
+}
+
+void OBSBasic::ResizeOutputSizeOfSource()
+{
+	if (ui->streamButton->isChecked() || ui->recordButton->isChecked() ||
+			(replayBufferButton && replayBufferButton->isChecked()))
+		return;
+
+	QMessageBox resize_output(this);
+	resize_output.setText(QTStr("ResizeOutputSizeOfSource.Text") +
+			"\n\n" + QTStr("ResizeOutputSizeOfSource.Continue"));
+	QAbstractButton *Yes = resize_output.addButton(QTStr("Yes"),
+			QMessageBox::YesRole);
+	resize_output.addButton(QTStr("No"), QMessageBox::NoRole);
+	resize_output.setIcon(QMessageBox::Warning);
+	resize_output.setWindowTitle(QTStr("ResizeOutputSizeOfSource"));
+	resize_output.exec();
+
+	if (resize_output.clickedButton() != Yes)
+		return;
+
+	OBSSource source = obs_sceneitem_get_source(GetCurrentSceneItem());
+
+	int width = obs_source_get_width(source);
+	int height = obs_source_get_height(source);
+
+	config_set_uint(basicConfig, "Video", "BaseCX", width);
+	config_set_uint(basicConfig, "Video", "BaseCY", height);
+	config_set_uint(basicConfig, "Video", "OutputCX", width);
+	config_set_uint(basicConfig, "Video", "OutputCY", height);
+
+	ResetVideo();
+	on_actionFitToScreen_triggered();
 }
 
 ColorSelect::ColorSelect(QWidget *parent)
