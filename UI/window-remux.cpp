@@ -641,6 +641,8 @@ OBSRemux::OBSRemux(const char *path, QWidget *parent)
 {
 	setAcceptDrops(true);
 
+	setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
+
 	ui->setupUi(this);
 
 	ui->progressBar->setVisible(false);
