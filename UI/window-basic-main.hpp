@@ -507,6 +507,8 @@ private:
 
 	static void HotkeyTriggered(void *data, obs_hotkey_id id, bool pressed);
 
+	void AutoRemux();
+
 public:
 	OBSSource GetProgramSource();
 	OBSScene GetCurrentScene();

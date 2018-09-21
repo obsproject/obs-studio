@@ -5018,6 +5018,23 @@ void OBSBasic::StreamingStop(int code, QString last_error)
 	}
 }
 
+void OBSBasic::AutoRemux()
+{
+	const char *mode = config_get_string(basicConfig, "Output", "Mode");
+	const char *path = strcmp(mode, "Advanced") ?
+	config_get_string(basicConfig, "SimpleOutput", "FilePath") :
+	config_get_string(basicConfig, "AdvOut", "RecFilePath");
+	std::string s(path);
+	s += "/";
+	s += remuxFilename;
+	const QString &str = QString::fromStdString(s);
+	QString file = str.section(".", 0, 0);
+
+	OBSRemux *remux = new OBSRemux(path, this, true);
+	remux->show();
+	remux->AutoRemux(str, file + ".mp4");
+}
+
 void OBSBasic::StartRecording()
 {
 	if (outputHandler->RecordingActive())
@@ -5115,6 +5132,9 @@ void OBSBasic::RecordingStop(int code)
 
 	if (api)
 		api->on_event(OBS_FRONTEND_EVENT_RECORDING_STOPPED);
+
+	if (remuxAfterRecord)
+		AutoRemux();
 
 	OnDeactivate();
 }

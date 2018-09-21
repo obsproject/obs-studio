@@ -31,6 +31,7 @@
 #include <QStandardItemModel>
 #include <QStyledItemDelegate>
 #include <QToolButton>
+#include <QTimer>
 
 #include "qt-wrappers.hpp"
 
@@ -632,12 +633,13 @@ void RemuxQueueModel::finishEntry(bool success)
   The actual remux window implementation
 **********************************************************/
 
-OBSRemux::OBSRemux(const char *path, QWidget *parent)
+OBSRemux::OBSRemux(const char *path, QWidget *parent, bool autoRemux_)
 	: QDialog   (parent),
 	  queueModel(new RemuxQueueModel),
 	  worker    (new RemuxWorker()),
 	  ui        (new Ui::OBSRemux),
-	  recPath   (path)
+	  recPath   (path),
+	  autoRemux (autoRemux_)
 {
 	setAcceptDrops(true);
 
@@ -650,6 +652,13 @@ OBSRemux::OBSRemux(const char *path, QWidget *parent)
 			setEnabled(false);
 	ui->buttonBox->button(QDialogButtonBox::RestoreDefaults)->
 			setEnabled(false);
+
+	if (autoRemux) {
+		resize(280, 40);
+		ui->tableView->hide();
+		ui->buttonBox->hide();
+		ui->label->hide();
+	}
 
 	ui->progressBar->setMinimum(0);
 	ui->progressBar->setMaximum(1000);
@@ -862,7 +871,14 @@ void OBSRemux::beginRemux()
 	setAcceptDrops(false);
 
 	remuxNextEntry();
+}
 
+void OBSRemux::AutoRemux(QString inFile, QString outFile)
+{
+	if (inFile != "" && outFile != "" && autoRemux) {
+		emit remux(inFile, outFile);
+		autoRemuxFile = inFile;
+	}
 }
 
 void OBSRemux::remuxNextEntry()
@@ -875,12 +891,15 @@ void OBSRemux::remuxNextEntry()
 	} else {
 		queueModel->endProcessing();
 
-		OBSMessageBox::information(this, QTStr("Remux.FinishedTitle"),
-				queueModel->checkForErrors()
-				? QTStr("Remux.FinishedError")
-				: QTStr("Remux.Finished"));
+		if (!autoRemux) {
+			OBSMessageBox::information(this,
+					QTStr("Remux.FinishedTitle"),
+					queueModel->checkForErrors()
+					? QTStr("Remux.FinishedError")
+					: QTStr("Remux.Finished"));
+		}
 
-		ui->progressBar->setVisible(false);
+		ui->progressBar->setVisible(autoRemux);
 		ui->buttonBox->button(QDialogButtonBox::Ok)->
 				setText(QTStr("Remux.Remux"));
 		ui->buttonBox->button(QDialogButtonBox::RestoreDefaults)->
@@ -914,7 +933,16 @@ void OBSRemux::updateProgress(float percent)
 
 void OBSRemux::remuxFinished(bool success)
 {
+	ui->buttonBox->button(QDialogButtonBox::Ok)->
+			setEnabled(true);
+
 	queueModel->finishEntry(success);
+
+	if (autoRemux && autoRemuxFile != "") {
+		QFile::remove(autoRemuxFile);
+		QTimer::singleShot(3000, this, SLOT(close()));
+	}
+
 	remuxNextEntry();
 }
 
