@@ -447,6 +447,22 @@ if(BUILD_CAPTIONS)
 endif()
 
 add_library(libobs SHARED ${libobs_SOURCES} ${libobs_HEADERS})
+if(UNIX)
+	if (NOT APPLE)
+		set(DEST_DIR "${CMAKE_INSTALL_PREFIX}")
+		foreach(LIB "obs" "rt")
+			set(PRIVATE_LIBS "${PRIVATE_LIBS} -l${LIB}")
+		endforeach()
+		if ("${CMAKE_SYSTEM_NAME}" STREQUAL "FreeBSD")
+			set(LIBDATA "libdata")
+		else()
+			set(LIBDATA "share/libdata")
+		endif()
+		CONFIGURE_FILE("libobs.pc.in" "libobs.pc" @ONLY)
+		set(INSTALL_PKGCONFIG_DIR "${CMAKE_INSTALL_PREFIX}/${LIBDATA}/pkgconfig" CACHE PATH "Installation directory for pkgconfig (.pc) files")
+		install(FILES "${CMAKE_CURRENT_BINARY_DIR}/libobs.pc" DESTINATION "${INSTALL_PKGCONFIG_DIR}")
+	endif()
+endif()
 
 set_target_properties(libobs PROPERTIES
 	OUTPUT_NAME obs
