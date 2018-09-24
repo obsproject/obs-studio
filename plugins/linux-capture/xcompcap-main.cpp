@@ -357,7 +357,9 @@ void XCompcapMain::updateSettings(obs_data_t *settings)
 	}
 
 	if (cf == GS_BGRX) {
-		p->swapRedBlue = !p->swapRedBlue;
+		if (settings) {
+			p->swapRedBlue = !p->swapRedBlue;
+		}
 		p->draw_opaque = true;
 	}
 
@@ -444,13 +446,14 @@ void XCompcapMain::updateSettings(obs_data_t *settings)
 	GLXFBConfig config;
 	bool found = false;
 	for (int i = 0; i < nelem; i++) {
-		int visual;
 		config = configs[i];
-		glXGetFBConfigAttrib(xdisp, config, GLX_VISUAL_ID, &visual);
-		if ((int)attr.visual->visualid == visual) {
+		XVisualInfo *visual = glXGetVisualFromFBConfig(xdisp, config);
+		if (attr.visual->visualid == visual->visualid) {
 			found = true;
+			XFree(visual);
 			break;
 		}
+		XFree(visual);
 	}
 
 	if (!found) {
@@ -488,7 +491,7 @@ void XCompcapMain::updateSettings(obs_data_t *settings)
 		None
 	};
 
-	const int *attribs = has_alpha ? attribs_alpha : attribs_no_alpha;
+	const int *attribs = cf == GS_RGBA ? attribs_alpha : attribs_no_alpha;
 
 	p->glxpixmap = glXCreatePixmap(xdisp, config, p->pixmap, attribs);
 
