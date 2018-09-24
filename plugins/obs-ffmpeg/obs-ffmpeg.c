@@ -20,6 +20,7 @@ extern struct obs_output_info  replay_buffer;
 extern struct obs_encoder_info aac_encoder_info;
 extern struct obs_encoder_info opus_encoder_info;
 extern struct obs_encoder_info nvenc_encoder_info;
+extern struct obs_encoder_info vaapi_encoder_info;
 
 static DARRAY(struct log_context {
 	void *context;
@@ -162,6 +163,12 @@ cleanup:
 
 #endif
 
+static bool vaapi_supported(void)
+{
+	AVCodec *vaenc = avcodec_find_encoder_by_name("h264_vaapi");
+	return !!vaenc;
+}
+
 bool obs_module_load(void)
 {
 	da_init(active_log_contexts);
@@ -180,6 +187,12 @@ bool obs_module_load(void)
 		blog(LOG_INFO, "NVENC supported");
 		obs_register_encoder(&nvenc_encoder_info);
 	}
+#ifndef _WIN32
+	if (vaapi_supported()) {
+		blog(LOG_INFO, "FFMPEG VAAPI supported");
+		obs_register_encoder(&vaapi_encoder_info);
+	}
+#endif
 #endif
 	return true;
 }
