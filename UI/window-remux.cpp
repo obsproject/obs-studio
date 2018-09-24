@@ -577,8 +577,11 @@ void RemuxQueueModel::endProcessing()
 	}
 
 	// Signal that the insertion point exists again.
-	beginInsertRows(QModelIndex(), queue.length(), queue.length());
-	endInsertRows();
+
+	if (!autoRemux) {
+		beginInsertRows(QModelIndex(), queue.length(), queue.length());
+		endInsertRows();
+	}
 
 	isProcessing = false;
 
@@ -821,7 +824,7 @@ void OBSRemux::dropEvent(QDropEvent *ev)
 		QMessageBox::information(nullptr,
 				QTStr("Remux.NoFilesAddedTitle"),
 				QTStr("Remux.NoFilesAdded"), QMessageBox::Ok);
-	} else {
+	} else if (!autoRemux) {
 		QModelIndex insertIndex = queueModel->index(
 				queueModel->rowCount() - 1,
 				RemuxEntryColumn::InputPath);
@@ -889,6 +892,7 @@ void OBSRemux::remuxNextEntry()
 	if (queueModel->beginNextEntry(inputPath, outputPath)) {
 		emit remux(inputPath, outputPath);
 	} else {
+		queueModel->autoRemux = autoRemux;
 		queueModel->endProcessing();
 
 		if (!autoRemux) {
