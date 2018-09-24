@@ -1259,7 +1259,7 @@
                 "max audio bitrate": 128
             }
         },
-		{
+        {
             "name": "Vimm.TV",
             "servers": [
                 {
@@ -1267,7 +1267,20 @@
                     "url": "rtmp://www.vimm.tv/live"
                 }
             ]
+        },
+        {
+            "name": "DLive",
+            "servers": [
+                {
+                    "name": "Default",
+                    "url": "rtmp://stream.dlive.tv/live"
+                }
+            ],
+            "recommend": {
+                "keyint": 2,
+                "max video bitrate": 6000,
+                "max audio bitrate": 160
+            }
         }
-		
     ]
 }
