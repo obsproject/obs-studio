@@ -120,7 +120,8 @@ class OBSBasic : public OBSMainWindow {
 		DropType_Text,
 		DropType_Image,
 		DropType_Media,
-		DropType_Html
+		DropType_Html,
+		DropType_Source
 	};
 
 private:
