@@ -1,14 +1,19 @@
 #pragma once
 
+#define LOG(level, message, ...) blog(level, "%s: " message, "decklink", ##__VA_ARGS__)
+
+#include <obs-module.h>
 #include "decklink-device.hpp"
+#include "../../libobs/media-io/video-scaler.h"
 
 class AudioRepacker;
+class DecklinkBase;
 
 class DeckLinkDeviceInstance : public IDeckLinkInputCallback {
 protected:
 	struct obs_source_frame currentFrame;
 	struct obs_source_audio currentPacket;
-	DeckLink                *decklink = nullptr;
+	DecklinkBase            *decklink = nullptr;
 	DeckLinkDevice          *device = nullptr;
 	DeckLinkDeviceMode      *mode = nullptr;
 	BMDDisplayMode          displayMode = bmdModeNTSC;
@@ -17,12 +22,15 @@ protected:
 	video_colorspace        activeColorSpace = VIDEO_CS_DEFAULT;
 	video_range_type        colorRange = VIDEO_RANGE_DEFAULT;
 	ComPtr<IDeckLinkInput>  input;
+	ComPtr<IDeckLinkOutput> output;
 	volatile long           refCount = 1;
 	int64_t                 audioOffset = 0;
 	uint64_t                nextAudioTS = 0;
 	uint64_t                lastVideoTS = 0;
 	AudioRepacker           *audioRepacker = nullptr;
 	speaker_layout          channelFormat = SPEAKERS_STEREO;
+
+	IDeckLinkMutableVideoFrame *decklinkOutputFrame;
 
 	void FinalizeStream();
 	void SetupVideoFormat(DeckLinkDeviceMode *mode_);
@@ -33,7 +41,7 @@ protected:
 			const uint64_t timestamp);
 
 public:
-	DeckLinkDeviceInstance(DeckLink *decklink, DeckLinkDevice *device);
+	DeckLinkDeviceInstance(DecklinkBase *decklink, DeckLinkDevice *device);
 	virtual ~DeckLinkDeviceInstance();
 
 	inline DeckLinkDevice *GetDevice() const {return device;}
@@ -52,6 +60,9 @@ public:
 	bool StartCapture(DeckLinkDeviceMode *mode);
 	bool StopCapture(void);
 
+	bool StartOutput(DeckLinkDeviceMode *mode_);
+	bool StopOutput(void);
+
 	HRESULT STDMETHODCALLTYPE VideoInputFrameArrived(
 			IDeckLinkVideoInputFrame *videoFrame,
 			IDeckLinkAudioInputPacket *audioPacket);
@@ -63,4 +74,7 @@ public:
 	ULONG STDMETHODCALLTYPE AddRef(void);
 	HRESULT STDMETHODCALLTYPE QueryInterface(REFIID iid, LPVOID *ppv);
 	ULONG STDMETHODCALLTYPE Release(void);
+
+	void DisplayVideoFrame(video_data *frame);
+	void WriteAudio(audio_data *frames);
 };
