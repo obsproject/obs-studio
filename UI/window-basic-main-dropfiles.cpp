@@ -11,6 +11,10 @@
 
 using namespace std;
 
+static const char *sourceExtensions[] = {
+	"json", nullptr
+};
+
 static const char *textExtensions[] = {
 	"txt", "log", nullptr
 };
@@ -60,10 +64,31 @@ static string GenerateSourceName(const char *base)
 	}
 }
 
+void EnumSceneCollections(std::function<bool(const char *, const char *)> &&cb);
+
+static bool SceneCollectionExists(const char *findName)
+{
+	bool found = false;
+	auto func = [&](const char *name, const char*)
+	{
+		if (strcmp(name, findName) == 0) {
+			found = true;
+			return false;
+		}
+
+		return true;
+	};
+
+	EnumSceneCollections(func);
+	return found;
+}
+
 void OBSBasic::AddDropSource(const char *data, DropType image)
 {
 	OBSBasic *main = reinterpret_cast<OBSBasic*>(App()->GetMainWindow());
 	obs_data_t *settings = obs_data_create();
+	obs_data_t *json_settings = nullptr;
+	const char *current_scene = nullptr;
 	obs_source_t *source = nullptr;
 	const char *type = nullptr;
 	QString name;
@@ -105,10 +130,70 @@ void OBSBasic::AddDropSource(const char *data, DropType image)
 		name = QUrl::fromLocalFile(QString(data)).fileName();
 		type = "browser_source";
 		break;
+	case DropType_Source:
+		json_settings = obs_data_create_from_json_file(data);
+		settings = obs_data_get_obj(json_settings, "settings");
+		name = obs_data_get_string(json_settings, "name");
+		type = obs_data_get_string(json_settings, "id");
+		current_scene = obs_data_get_string(json_settings, "current_scene");
+		break;
+	}
+
+	if (current_scene && strcmp(current_scene, "") != 0 ) {
+		char path[512];
+
+		int ret = GetConfigPath(path, 512, "obs-studio/basic/scenes/");
+		if (ret <= 0) {
+			blog(LOG_WARNING, "Failed to get scene collection config path");
+			return;
+		}
+
+		OBSData scenedata = obs_data_create_from_json_file(data);
+		obs_data_release(scenedata);
+
+		string origName = obs_data_get_string(scenedata, "name");
+		string name = origName;
+		string file;
+		int inc = 1;
+
+		while (SceneCollectionExists(name.c_str())) {
+			name = origName + " (" + to_string(++inc) + ")";
+		}
+
+		obs_data_set_string(scenedata, "name", name.c_str());
+
+		if (!GetFileSafeName(name.c_str(), file)) {
+			blog(LOG_WARNING, "Failed to create "
+				"safe file name for '%s'",
+				name.c_str());
+			obs_data_release(settings);
+			obs_data_release(json_settings);
+			return;
+		}
+
+		string filePath = path + file;
+
+		if (!GetClosestUnusedFileName(filePath, "json")) {
+			blog(LOG_WARNING, "Failed to get "
+				"closest file name for %s",
+				file.c_str());
+			obs_data_release(settings);
+			obs_data_release(json_settings);
+			return;
+		}
+
+		obs_data_save_json_safe(scenedata, filePath.c_str(),
+			"tmp", "bak");
+		RefreshSceneCollections();
+
+		obs_data_release(settings);
+		obs_data_release(json_settings);
+		return;
 	}
 
 	if (!obs_source_get_display_name(type)) {
 		obs_data_release(settings);
+		obs_data_release(json_settings);
 		return;
 	}
 
@@ -124,6 +209,7 @@ void OBSBasic::AddDropSource(const char *data, DropType image)
 	}
 
 	obs_data_release(settings);
+	obs_data_release(json_settings);
 }
 
 void OBSBasic::dragEnterEvent(QDragEnterEvent *event)
@@ -181,6 +267,7 @@ if (found) \
 			CHECK_SUFFIX(htmlExtensions, DropType_Html);
 			CHECK_SUFFIX(imageExtensions, DropType_Image);
 			CHECK_SUFFIX(mediaExtensions, DropType_Media);
+			CHECK_SUFFIX(sourceExtensions, DropType_Source);
 
 #undef CHECK_SUFFIX
 		}
