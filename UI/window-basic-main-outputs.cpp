@@ -685,28 +685,37 @@ bool SimpleOutput::StartStreaming(obs_service_t *service)
 				obs_output_get_signal_handler(streamOutput),
 				"stop", OBSStopStreaming, this);
 
-		const char *codec =
-			obs_output_get_supported_audio_codecs(streamOutput);
-		if (!codec) {
-			return false;
-		}
+		bool isEncoded = obs_output_get_flags(streamOutput)
+			& OBS_OUTPUT_ENCODED;
 
-		if (strcmp(codec, "aac") != 0) {
-			const char *id = FindAudioEncoderFromCodec(codec);
-			int audioBitrate = GetAudioBitrate();
-			obs_data_t *settings = obs_data_create();
-			obs_data_set_int(settings, "bitrate", audioBitrate);
-
-			aacStreaming = obs_audio_encoder_create(id,
-					"alt_audio_enc", nullptr, 0, nullptr);
-			obs_encoder_release(aacStreaming);
-			if (!aacStreaming)
+		if (isEncoded) {
+			const char *codec =
+				obs_output_get_supported_audio_codecs(
+					streamOutput);
+			if (!codec) {
 				return false;
+			}
 
-			obs_encoder_update(aacStreaming, settings);
-			obs_encoder_set_audio(aacStreaming, obs_get_audio());
+			if (strcmp(codec, "aac") != 0) {
+				const char *id = FindAudioEncoderFromCodec(
+					codec);
+				int audioBitrate = GetAudioBitrate();
+				obs_data_t *settings = obs_data_create();
+				obs_data_set_int(settings, "bitrate",
+					audioBitrate);
 
-			obs_data_release(settings);
+				aacStreaming = obs_audio_encoder_create(id,
+					"alt_audio_enc", nullptr, 0, nullptr);
+				obs_encoder_release(aacStreaming);
+				if (!aacStreaming)
+					return false;
+
+				obs_encoder_update(aacStreaming, settings);
+				obs_encoder_set_audio(aacStreaming,
+					obs_get_audio());
+
+				obs_data_release(settings);
+			}
 		}
 
 		outputType = type;
