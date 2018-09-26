@@ -32,6 +32,22 @@ BMDDisplayMode DeckLinkDeviceMode::GetDisplayMode(void) const
 	return bmdModeUnknown;
 }
 
+int DeckLinkDeviceMode::GetWidth()
+{
+	if (mode != nullptr)
+		return mode->GetWidth();
+
+	return 0;
+}
+
+int DeckLinkDeviceMode::GetHeight()
+{
+	if (mode != nullptr)
+		return mode->GetHeight();
+
+	return 0;
+}
+
 BMDDisplayModeFlags DeckLinkDeviceMode::GetDisplayModeFlags(void) const
 {
 	if (mode != nullptr)

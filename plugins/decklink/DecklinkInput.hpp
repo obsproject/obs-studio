@@ -1,40 +1,19 @@
 #pragma once
 
-#include "platform.hpp"
+#include "DecklinkBase.h"
 
-#include <obs-module.h>
-
-#include <map>
-#include <vector>
-#include <mutex>
-
-class DeckLinkDeviceDiscovery;
-class DeckLinkDeviceInstance;
-class DeckLinkDevice;
-class DeckLinkDeviceMode;
-
-class DeckLink {
+class DeckLinkInput : public DecklinkBase {
 protected:
-	ComPtr<DeckLinkDeviceInstance>        instance;
-	DeckLinkDeviceDiscovery               *discovery;
 	bool                                  isCapturing = false;
 	obs_source_t                          *source;
-	volatile long                         activateRefs = 0;
-	std::recursive_mutex                  deviceMutex;
-	BMDPixelFormat                        pixelFormat = bmdFormat8BitYUV;
-	video_colorspace                      colorSpace = VIDEO_CS_DEFAULT;
-	video_range_type                      colorRange = VIDEO_RANGE_DEFAULT;
-	speaker_layout                        channelFormat = SPEAKERS_STEREO;
 
 	void SaveSettings();
 	static void DevicesChanged(void *param, DeckLinkDevice *device,
 			bool added);
 
 public:
-	DeckLink(obs_source_t *source, DeckLinkDeviceDiscovery *discovery);
-	virtual ~DeckLink(void);
-
-	DeckLinkDevice *GetDevice() const;
+	DeckLinkInput(obs_source_t *source, DeckLinkDeviceDiscovery *discovery);
+	virtual ~DeckLinkInput(void);
 
 	long long GetActiveModeId(void) const;
 	obs_source_t *GetSource(void) const;

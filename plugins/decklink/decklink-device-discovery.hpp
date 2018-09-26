@@ -1,9 +1,10 @@
 #pragma once
 
+#include <obs-module.h>
+#include "platform.hpp"
+
 #include <vector>
 #include <mutex>
-
-#include "decklink.hpp"
 
 class DeckLinkDevice;
 

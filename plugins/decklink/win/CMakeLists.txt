@@ -16,8 +16,12 @@ set(win-decklink-sdk_HEADERS
 	)
 
 set(win-decklink_HEADERS
+	../decklink-devices.hpp
+	../DecklinkOutput.hpp
+	../const.h
 	../platform.hpp
-	../decklink.hpp
+	../DecklinkInput.hpp
+	../DecklinkBase.h
 	../decklink-device-instance.hpp
 	../decklink-device-discovery.hpp
 	../decklink-device.hpp
@@ -28,25 +32,34 @@ set(win-decklink_HEADERS
 
 set(win-decklink_SOURCES
 	../plugin-main.cpp
-	../decklink.cpp
+	../decklink-devices.cpp
+	../DecklinkOutput.cpp
+	../decklink-source.cpp
+	../decklink-output.cpp
+	../DecklinkInput.cpp
+	../DecklinkBase.cpp
 	../decklink-device-instance.cpp
 	../decklink-device-discovery.cpp
 	../decklink-device.cpp
 	../decklink-device-mode.cpp
 	../audio-repack.c
-	platform.cpp)
+	platform.cpp
+	)
 
 add_idl_files(win-decklink-sdk_GENERATED_FILES
-	${win-decklink-sdk_IDLS})
+	${win-decklink-sdk_IDLS}
+	)
 
 include_directories(
-	${CMAKE_CURRENT_BINARY_DIR})
+	${CMAKE_CURRENT_BINARY_DIR}
+)
 
 add_library(win-decklink MODULE
 	${win-decklink_SOURCES}
 	${win-decklink_HEADERS}
 	${win-decklink-sdk_HEADERS}
-	${win-decklink-sdk_GENERATED_FILES})
+	${win-decklink-sdk_GENERATED_FILES}
+	)
 
 target_link_libraries(win-decklink
 	libobs)
