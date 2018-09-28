@@ -916,6 +916,14 @@ void obs_shutdown(void)
 
 #undef FREE_REGISTERED_TYPES
 
+	module = obs->first_module;
+	while (module) {
+		struct obs_module *next = module->next;
+		free_module(module);
+		module = next;
+	}
+	obs->first_module = NULL;
+
 	da_free(obs->input_types);
 	da_free(obs->filter_types);
 	da_free(obs->transition_types);
@@ -935,14 +943,6 @@ void obs_shutdown(void)
 
 	core = obs;
 	obs = NULL;
-
-	module = core->first_module;
-	while (module) {
-		struct obs_module *next = module->next;
-		free_module(module);
-		module = next;
-	}
-	core->first_module = NULL;
 
 	for (size_t i = 0; i < core->module_paths.num; i++)
 		free_module_path(core->module_paths.array+i);
