@@ -455,6 +455,24 @@ static void program_set_param_data(struct gs_program *program,
 			gl_success("glUniform1iv");
 		}
 
+	} else if (pp->param->type == GS_SHADER_PARAM_INT2) {
+		if (validate_param(pp, sizeof(int) * 2)) {
+			glUniform2iv(pp->obj, 1, (int*)array);
+			gl_success("glUniform2iv");
+		}
+
+	} else if (pp->param->type == GS_SHADER_PARAM_INT3) {
+		if (validate_param(pp, sizeof(int) * 3)) {
+			glUniform3iv(pp->obj, 1, (int*)array);
+			gl_success("glUniform3iv");
+		}
+
+	} else if (pp->param->type == GS_SHADER_PARAM_INT4) {
+		if (validate_param(pp, sizeof(int) * 4)) {
+			glUniform4iv(pp->obj, 1, (int*)array);
+			gl_success("glUniform4iv");
+		}
+
 	} else if (pp->param->type == GS_SHADER_PARAM_FLOAT) {
 		if (validate_param(pp, sizeof(float))) {
 			glUniform1fv(pp->obj, 1, (float*)array);
@@ -698,6 +716,9 @@ void gs_shader_set_val(gs_sparam_t *param, const void *val, size_t size)
 	case GS_SHADER_PARAM_FLOAT:     expected_size = sizeof(float); break;
 	case GS_SHADER_PARAM_BOOL:
 	case GS_SHADER_PARAM_INT:       expected_size = sizeof(int); break;
+	case GS_SHADER_PARAM_INT2:	expected_size = sizeof(int) * 2; break;
+	case GS_SHADER_PARAM_INT3:	expected_size = sizeof(int) * 3; break;
+	case GS_SHADER_PARAM_INT4:	expected_size = sizeof(int) * 4; break;
 	case GS_SHADER_PARAM_VEC2:      expected_size = sizeof(float)*2; break;
 	case GS_SHADER_PARAM_VEC3:      expected_size = sizeof(float)*3; break;
 	case GS_SHADER_PARAM_VEC4:      expected_size = sizeof(float)*4; break;
