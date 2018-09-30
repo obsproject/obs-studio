@@ -556,6 +556,10 @@ EXPORT obs_source_t *obs_get_output_source(uint32_t channel);
 EXPORT void obs_enum_sources(bool (*enum_proc)(void*, obs_source_t*),
 		void *param);
 
+/** Enumerates scenes */
+EXPORT void obs_enum_scenes(bool (*enum_proc)(void*, obs_source_t*),
+	void *param);
+
 /** Enumerates outputs */
 EXPORT void obs_enum_outputs(bool (*enum_proc)(void*, obs_output_t*),
 		void *param);
