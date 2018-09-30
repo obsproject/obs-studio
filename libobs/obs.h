@@ -568,6 +568,10 @@ EXPORT void obs_enum_encoders(bool (*enum_proc)(void*, obs_encoder_t*),
 EXPORT void obs_enum_services(bool (*enum_proc)(void*, obs_service_t*),
 		void *param);
 
+/** Enumerates scenes */
+EXPORT void obs_enum_scenes(bool(*enum_proc)(void*, obs_source_t*),
+	void *param);
+
 /**
  * Gets a source by its name.
  *

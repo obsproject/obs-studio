@@ -1404,6 +1404,31 @@ void obs_enum_services(bool (*enum_proc)(void*, obs_service_t*), void *param)
 			enum_proc, param);
 }
 
+void obs_enum_scenes(bool(*enum_proc)(void*, obs_source_t*), void *param)
+{
+	obs_source_t *source;
+
+	if (!obs) return;
+
+	pthread_mutex_lock(&obs->data.sources_mutex);
+	source = obs->data.first_source;
+
+	while (source) {
+		obs_source_t *next_source =
+			(obs_source_t*)source->context.next;
+
+		if (source->info.type == OBS_SOURCE_TYPE_SCENE &&
+			!source->context.private &&
+			!enum_proc(param, source)) {
+			break;
+		}
+
+		source = next_source;
+	}
+
+	pthread_mutex_unlock(&obs->data.sources_mutex);
+}
+
 static inline void *get_context_by_name(void *vfirst, const char *name,
 		pthread_mutex_t *mutex, void *(*addref)(void*))
 {
