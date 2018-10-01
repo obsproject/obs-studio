@@ -18,6 +18,7 @@ struct gpu_delay_filter_data {
 	uint32_t                       cy;
 	bool                           target_valid;
 	bool                           processed_frame;
+	obs_hotkey_id                  panic;
 };
 
 static const char *gpu_delay_filter_get_name(void *unused)
@@ -147,10 +148,22 @@ static obs_properties_t *gpu_delay_filter_properties(void *data)
 {
 	obs_properties_t *props = obs_properties_create();
 
-	obs_properties_add_int(props, S_DELAY_MS, T_DELAY_MS, 0, 500, 1);
+	obs_properties_add_int(props, S_DELAY_MS, T_DELAY_MS, 0, 20000, 1);
 
 	UNUSED_PARAMETER(data);
 	return props;
+}
+
+static bool dump_frames(void *data, obs_hotkey_pair_id id, obs_hotkey_t *key,
+	bool pressed)
+{
+	UNUSED_PARAMETER(id);
+	UNUSED_PARAMETER(key);
+
+	struct gpu_delay_filter_data *f = (struct gpu_delay_filter_data *)data;
+
+	f->interval_ns = 0;
+	free_textures(f);
 }
 
 static void *gpu_delay_filter_create(obs_data_t *settings, obs_source_t *context)
@@ -159,6 +172,9 @@ static void *gpu_delay_filter_create(obs_data_t *settings, obs_source_t *context
 	f->context = context;
 
 	obs_source_update(context, settings);
+
+	f->panic = obs_hotkey_register_filter(f->context, "panic",
+			obs_module_text("Panic"), dump_frames, f);
 	return f;
 }
 

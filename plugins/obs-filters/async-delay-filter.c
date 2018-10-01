@@ -31,6 +31,8 @@ struct async_delay_data {
 	bool                           audio_delay_reached;
 	bool                           reset_video;
 	bool                           reset_audio;
+
+	obs_hotkey_id                  panic;
 };
 
 static const char *async_delay_filter_name(void *unused)
@@ -85,6 +87,20 @@ static void async_delay_filter_update(void *data, obs_data_t *settings)
 	filter->audio_delay_reached = false;
 }
 
+static bool dump_frames(void *data, obs_hotkey_pair_id id, obs_hotkey_t *key,
+	bool pressed)
+{
+	UNUSED_PARAMETER(id);
+	UNUSED_PARAMETER(key);
+
+	struct async_delay_data *filter = (struct gpu_delay_filter_data *)data;
+
+	filter->reset_audio = true;
+	filter->reset_video = true;
+	filter->video_delay_reached = false;
+	filter->audio_delay_reached = false;
+}
+
 static void *async_delay_filter_create(obs_data_t *settings,
 		obs_source_t *context)
 {
@@ -96,6 +112,9 @@ static void *async_delay_filter_create(obs_data_t *settings,
 
 	obs_get_audio_info(&oai);
 	filter->samplerate = oai.samples_per_sec;
+
+	filter->panic = obs_hotkey_register_filter(filter->context, "panic",
+			obs_module_text("Panic"), dump_frames, filter);
 
 	return filter;
 }

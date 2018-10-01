@@ -275,6 +275,22 @@ obs_hotkey_id obs_hotkey_register_source(obs_source_t *source, const char *name,
 	return id;
 }
 
+obs_hotkey_id obs_hotkey_register_filter(obs_source_t *filter, const char *name,
+	const char *description, obs_hotkey_func func, void *data)
+{
+	if (!filter || !filter->context.private || !lock())
+		return OBS_INVALID_HOTKEY_ID;
+
+	obs_hotkey_id id = obs_hotkey_register_internal(
+			OBS_HOTKEY_REGISTERER_SOURCE,
+			obs_source_get_weak_source(filter),
+			&filter->context, name, description,
+			func, data);
+
+	unlock();
+	return id;
+}
+
 static inline void fixup_pair_pointers(void);
 
 static obs_hotkey_pair_t *create_hotkey_pair(struct obs_context_data *context,

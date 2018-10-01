@@ -172,6 +172,10 @@ EXPORT obs_hotkey_id obs_hotkey_register_source(obs_source_t *source,
 		const char *name, const char *description,
 		obs_hotkey_func func, void *data);
 
+EXPORT obs_hotkey_id obs_hotkey_register_filter(obs_source_t *filter,
+	const char *name, const char *description,
+	obs_hotkey_func func, void *data);
+
 typedef bool (*obs_hotkey_active_func)(void *data,
 		obs_hotkey_pair_id id, obs_hotkey_t *hotkey, bool pressed);
 
