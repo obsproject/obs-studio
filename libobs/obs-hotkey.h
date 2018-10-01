@@ -267,6 +267,8 @@ EXPORT void obs_enum_hotkey_bindings(obs_hotkey_binding_enum_func func,
 
 EXPORT void obs_hotkey_inject_event(obs_key_combination_t hotkey, bool pressed);
 
+EXPORT void obs_hotkey_func_invoke(const obs_hotkey_t *key, bool pressed);
+
 EXPORT void obs_hotkey_enable_background_press(bool enable);
 
 EXPORT void obs_hotkey_enable_strict_modifiers(bool enable);
