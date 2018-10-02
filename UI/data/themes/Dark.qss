@@ -575,6 +575,28 @@ VolumeMeter {
 }
 
 
+#mixerDock VScrollArea,
+#mixerDock HScrollArea {
+    background: rgb(31,30,31);
+}
+
+VolControl[streamSelected="true"][recordSelected="false"] QWidget{
+	background-color: rgb(42,105,43);
+}
+
+VolControl[streamSelected="true"][recordSelected="true"] QWidget{
+	background-color: rgb(42,105,43);
+}
+
+VolControl[recordSelected="true"] QWidget {
+	background-color: rgb(105,42,43);
+}
+
+VolControl QWidget{
+	background-color: rgb(41,40,41);
+}
+
+
 /* Status Bar */
 
 QStatusBar::item {

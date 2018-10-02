@@ -370,6 +370,10 @@ EXPORT bool obs_get_video_info(struct obs_video_info *ovi);
 /** Gets the current audio settings, returns false if no audio */
 EXPORT bool obs_get_audio_info(struct obs_audio_info *oai);
 
+EXPORT bool obs_get_stream_tracks(uint32_t *tracks);
+EXPORT bool obs_get_recording_tracks(uint32_t *tracks);
+EXPORT bool obs_set_stream_tracks(uint32_t tracks);
+EXPORT bool obs_set_recording_tracks(uint32_t tracks);
 /**
  * Opens a plugin module directly from a specific path.
  *
@@ -975,6 +979,11 @@ EXPORT uint32_t obs_source_get_flags(const obs_source_t *source);
  * the source's audio should be applied to.
  */
 EXPORT void obs_source_set_audio_mixers(obs_source_t *source, uint32_t mixers);
+
+/**
+* Sends audio mixer update signal
+*/
+EXPORT void obs_source_update_audio_mixers(obs_source_t *source);
 
 /** Gets audio mixer flags */
 EXPORT uint32_t obs_source_get_audio_mixers(const obs_source_t *source);

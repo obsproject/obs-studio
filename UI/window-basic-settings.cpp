@@ -2998,12 +2998,19 @@ static void SaveTrackIndex(config_t *config, const char *section,
 		QAbstractButton *check5,
 		QAbstractButton *check6)
 {
-	if (check1->isChecked()) config_set_int(config, section, name, 1);
-	else if (check2->isChecked()) config_set_int(config, section, name, 2);
-	else if (check3->isChecked()) config_set_int(config, section, name, 3);
-	else if (check4->isChecked()) config_set_int(config, section, name, 4);
-	else if (check5->isChecked()) config_set_int(config, section, name, 5);
-	else if (check6->isChecked()) config_set_int(config, section, name, 6);
+	int trackIndex = 0;
+	if (check1->isChecked()) trackIndex = 1;
+	else if (check2->isChecked()) trackIndex = 2;
+	else if (check3->isChecked()) trackIndex = 3;
+	else if (check4->isChecked()) trackIndex = 4;
+	else if (check5->isChecked()) trackIndex = 5;
+	else if (check6->isChecked()) trackIndex = 6;
+	config_set_int(config, section, name, trackIndex);
+
+	if (trackIndex >= 1 && trackIndex <= MAX_AUDIO_MIXES)
+		obs_set_stream_tracks(1 << (trackIndex - 1));
+	else
+		obs_set_stream_tracks(0);
 }
 
 void OBSBasicSettings::SaveFormat(QComboBox *combo)
@@ -3048,6 +3055,20 @@ void OBSBasicSettings::SaveEncoder(QComboBox *combo, const char *section,
 		config_set_string(main->Config(), section, value, cd.name);
 	else
 		config_set_string(main->Config(), section, value, nullptr);
+}
+
+static void UpdateAudioMixes(int streamTrack, uint32_t recTracks)
+{
+	if (streamTrack >= 1 && streamTrack <= MAX_AUDIO_MIXES)
+		obs_set_stream_tracks(1 << (streamTrack - 1));
+	else
+		obs_set_stream_tracks(0);
+
+	obs_set_recording_tracks(recTracks);
+	obs_enum_sources([](void *data, obs_source_t *source) {
+		obs_source_update_audio_mixers(source);
+		return true;
+	}, nullptr);
 }
 
 void OBSBasicSettings::SaveOutputSettings()
@@ -3108,13 +3129,13 @@ void OBSBasicSettings::SaveOutputSettings()
 	SaveCombo(ui->advOutRecRescale, "AdvOut", "RecRescaleRes");
 	SaveEdit(ui->advOutMuxCustom, "AdvOut", "RecMuxerCustom");
 
-	config_set_int(main->Config(), "AdvOut", "RecTracks",
-			(ui->advOutRecTrack1->isChecked() ? (1<<0) : 0) |
-			(ui->advOutRecTrack2->isChecked() ? (1<<1) : 0) |
-			(ui->advOutRecTrack3->isChecked() ? (1<<2) : 0) |
-			(ui->advOutRecTrack4->isChecked() ? (1<<3) : 0) |
-			(ui->advOutRecTrack5->isChecked() ? (1<<4) : 0) |
-			(ui->advOutRecTrack6->isChecked() ? (1<<5) : 0));
+	int recTracks = (ui->advOutRecTrack1->isChecked() ? (1 << 0) : 0) |
+			(ui->advOutRecTrack2->isChecked() ? (1 << 1) : 0) |
+			(ui->advOutRecTrack3->isChecked() ? (1 << 2) : 0) |
+			(ui->advOutRecTrack4->isChecked() ? (1 << 3) : 0) |
+			(ui->advOutRecTrack5->isChecked() ? (1 << 4) : 0) |
+			(ui->advOutRecTrack6->isChecked() ? (1 << 5) : 0);
+	config_set_int(main->Config(), "AdvOut", "RecTracks", recTracks);
 
 	config_set_bool(main->Config(), "AdvOut", "FFOutputToFile",
 			ui->advOutFFType->currentIndex() == 0 ? true : false);
@@ -3158,6 +3179,9 @@ void OBSBasicSettings::SaveOutputSettings()
 	WriteJsonData(streamEncoderProps, "streamEncoder.json");
 	WriteJsonData(recordEncoderProps, "recordEncoder.json");
 	main->ResetOutputs();
+
+	int trackIndex = config_get_int(main->Config(), "AdvOut", "TrackIndex");
+	UpdateAudioMixes(trackIndex, recTracks);
 }
 
 void OBSBasicSettings::SaveAudioSettings()

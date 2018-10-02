@@ -44,6 +44,29 @@ void VolControl::OBSVolumeMuted(void *data, calldata_t *calldata)
 			Q_ARG(bool, muted));
 }
 
+void VolControl::OBSMixersChanged(void *data, calldata_t *calldata)
+{
+	VolControl *volControl = static_cast<VolControl*>(data);
+	uint32_t mix_mask = 0;
+	for (size_t i = 0; i < MAX_AUDIO_MIXES; i++)
+		mix_mask |= (1 << i);
+
+	uint32_t mixers = (uint32_t)calldata_int(calldata, "mixers") & mix_mask;
+
+	uint32_t streamTracks = 0;
+	uint32_t recTracks = 0;
+	if (!obs_get_stream_tracks(&streamTracks))
+		streamTracks = 0;
+	if (!obs_get_recording_tracks(&recTracks))
+		recTracks = 0;
+	streamTracks &= mix_mask;
+	recTracks &= mix_mask;
+	bool stream_selected = (mixers & streamTracks);
+	bool rec_selected = (mixers & recTracks);
+	volControl->setStreamSelected(stream_selected);
+	volControl->setRecordSelected(rec_selected);
+}
+
 void VolControl::VolumeChanged()
 {
 	slider->blockSignals(true);
@@ -112,6 +135,24 @@ void VolControl::setPeakMeterType(enum obs_peak_meter_type peakMeterType)
 	volMeter->setPeakMeterType(peakMeterType);
 }
 
+void VolControl::setRecordSelected(bool selected)
+{
+	recordSelected = selected;
+	/* force style sheet recalculation */
+	QString qss = this->styleSheet();
+	this->setStyleSheet("/* */");
+	this->setStyleSheet(qss);
+}
+
+void VolControl::setStreamSelected(bool selected)
+{
+	streamSelected = selected;
+	/* force style sheet recalculation */
+	QString qss = this->styleSheet();
+	this->setStyleSheet("/* */");
+	this->setStyleSheet(qss);
+}
+
 VolControl::VolControl(OBSSource source_, bool showConfig, bool vertical)
 		: source      (std::move(source_)),
 		levelTotal    (0.0f),
@@ -125,6 +166,9 @@ VolControl::VolControl(OBSSource source_, bool showConfig, bool vertical)
 	mute      = new MuteCheckBox();
 	QString sourceName = obs_source_get_name(source);
 	setObjectName(sourceName);
+
+	QWidget *container = new QWidget(this);
+	QVBoxLayout *containerLayout = new QVBoxLayout;
 
 	if (showConfig) {
 		config = new QPushButton(this);
@@ -188,6 +232,7 @@ VolControl::VolControl(OBSSource source_, bool showConfig, bool vertical)
 		mainLayout->addItem(meterLayout);
 		mainLayout->addItem(controlLayout);
 
+		container->setMaximumWidth(110);
 		setMaximumWidth(110);
 	} else {
 		QHBoxLayout *volLayout  = new QHBoxLayout;
@@ -219,7 +264,11 @@ VolControl::VolControl(OBSSource source_, bool showConfig, bool vertical)
 		mainLayout->addItem(botLayout);
 	}
 
-	setLayout(mainLayout);
+	containerLayout->setSpacing(0);
+	containerLayout->setMargin(0);
+	container->setLayout(mainLayout);
+	containerLayout->addWidget(container);
+	setLayout(containerLayout);
 
 	QFont font = nameLabel->font();
 	font.setPointSize(font.pointSize()-1);
@@ -236,8 +285,9 @@ VolControl::VolControl(OBSSource source_, bool showConfig, bool vertical)
 	obs_fader_add_callback(obs_fader, OBSVolumeChanged, this);
 	obs_volmeter_add_callback(obs_volmeter, OBSVolumeLevel, this);
 
-	signal_handler_connect(obs_source_get_signal_handler(source),
-			"mute", OBSVolumeMuted, this);
+	signal_handler_t *sh = obs_source_get_signal_handler(source);
+	signal_handler_connect(sh, "mute", OBSVolumeMuted, this);
+	signal_handler_connect(sh, "audio_mixers", OBSMixersChanged, this);
 
 	QWidget::connect(slider, SIGNAL(valueChanged(int)),
 			this, SLOT(SliderChanged(int)));
@@ -259,6 +309,8 @@ VolControl::VolControl(OBSSource source_, bool showConfig, bool vertical)
 	style->setParent(slider);
 	slider->setStyle(style);
 
+	obs_source_update_audio_mixers(source);
+
 	/* Call volume changed once to init the slider position and label */
 	VolumeChanged();
 }
@@ -270,6 +322,9 @@ VolControl::~VolControl()
 
 	signal_handler_disconnect(obs_source_get_signal_handler(source),
 			"mute", OBSVolumeMuted, this);
+
+	signal_handler_disconnect(obs_source_get_signal_handler(source),
+			"audio_mixers", OBSMixersChanged, this);
 
 	obs_fader_destroy(obs_fader);
 	obs_volmeter_destroy(obs_volmeter);
@@ -961,6 +1016,8 @@ void VolumeMeter::paintEvent(QPaintEvent *event)
 	int width  = rect.width();
 	int height = rect.height();
 
+	QColor backgroundColor = palette().color(QWidget::backgroundRole());
+
 	handleChannelCofigurationChange();
 	calculateBallistics(ts, timeSinceLastRedraw);
 	bool idle = detectIdle(ts);
@@ -995,6 +1052,8 @@ void VolumeMeter::paintEvent(QPaintEvent *event)
 
 	// Actual painting of the widget starts here.
 	QPainter painter(this);
+	// Fill background color
+	painter.fillRect(0, 0, width, height, backgroundColor);
 	if (vertical) {
 		// Invert the Y axis to ease the math
 		painter.translate(0, height);
