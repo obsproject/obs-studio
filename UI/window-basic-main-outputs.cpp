@@ -1311,6 +1311,7 @@ inline void AdvancedOutput::SetupFFmpeg()
 	const char *aEncCustom = config_get_string(main->Config(), "AdvOut",
 			"FFACustom");
 	obs_data_t *settings = obs_data_create();
+	int number_mixes = 0;
 
 	obs_data_set_string(settings, "url", url);
 	obs_data_set_string(settings, "format_name", formatName);
@@ -1336,8 +1337,13 @@ inline void AdvancedOutput::SetupFFmpeg()
 			obs_data_set_int(settings, "scale_height", height);
 		}
 	}
-
-	obs_output_set_mixer(fileOutput, aTrack - 1);
+	for (int i = 0; i < MAX_AUDIO_MIXES; i++) {
+		if ((aTrack & (1 << i)) != 0)
+			number_mixes++;
+	}
+	obs_data_set_int(settings, "number_mixes", number_mixes);
+	// atrack is a bitmask storing the indexes of the mixes selected.
+	obs_data_set_int(settings, "audio_tracks", aTrack);
 	obs_output_set_media(fileOutput, obs_get_video(), obs_get_audio());
 	obs_output_update(fileOutput, settings);
 

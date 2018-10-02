@@ -71,6 +71,8 @@ struct obs_output_info {
 	/* only used with encoded outputs, separated with semicolon */
 	const char *encoded_video_codecs;
 	const char *encoded_audio_codecs;
+	/* raw audio for ffmpeg multi track */
+	void (*raw_audio2)(void *data, int idx, struct audio_data *frames);
 };
 
 EXPORT void obs_register_output_s(const struct obs_output_info *info,
