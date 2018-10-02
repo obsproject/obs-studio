@@ -186,6 +186,7 @@ private:
 
 	QPointer<QMenu> startStreamMenu;
 
+	QPointer<QPushButton> transitionButton;
 	QPointer<QPushButton> replayBufferButton;
 
 	QScopedPointer<QSystemTrayIcon> trayIcon;

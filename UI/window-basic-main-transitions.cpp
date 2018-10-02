@@ -254,6 +254,9 @@ void OBSBasic::TransitionStopped()
 		OBSSource scene = OBSGetStrongRef(swapScene);
 		if (scene)
 			SetCurrentScene(scene);
+
+		// Make sure we re-enable the transition button
+		transitionButton->setEnabled(true);
 	}
 
 	if (api) {
@@ -294,7 +297,7 @@ void OBSBasic::TransitionToScene(OBSSource source, bool force, bool direct,
 		return;
 
 	OBSWeakSource lastProgramScene;
-	
+
 	if (usingPreviewProgram) {
 		lastProgramScene = programScene;
 		programScene = OBSGetWeakRef(source);
@@ -707,8 +710,20 @@ void OBSBasic::CreateProgramDisplay()
 
 void OBSBasic::TransitionClicked()
 {
-	if (previewProgramMode)
-		TransitionToScene(GetCurrentScene());
+	if (previewProgramMode) {
+		obs_source_t *transition = GetCurrentTransition();
+
+		// Checking if transition is ongoing first
+		if (obs_transition_get_time(transition) >= 1.0f) {
+			OBSScene scene = GetCurrentScene();
+			TransitionToScene(scene);
+		}
+
+		// If transition has begun, disable transition button
+		if (obs_transition_get_time(transition) < 1.0f) {
+			transitionButton->setEnabled(false);
+		}
+	}
 }
 
 void OBSBasic::CreateProgramOptions()
@@ -725,7 +740,7 @@ void OBSBasic::CreateProgramOptions()
 	QHBoxLayout *mainButtonLayout = new QHBoxLayout();
 	mainButtonLayout->setSpacing(2);
 
-	QPushButton *transitionButton = new QPushButton(QTStr("Transition"));
+	transitionButton = new QPushButton(QTStr("Transition"));
 	QHBoxLayout *quickTransitions = new QHBoxLayout();
 	quickTransitions->setSpacing(2);
 
@@ -809,7 +824,7 @@ void OBSBasic::CreateProgramOptions()
 		menu.exec(QCursor::pos());
 	};
 
-	connect(transitionButton, &QAbstractButton::clicked,
+	connect(transitionButton.data(), &QAbstractButton::clicked,
 			this, &OBSBasic::TransitionClicked);
 	connect(addQuickTransition, &QAbstractButton::clicked, onAdd);
 	connect(configTransitions, &QAbstractButton::clicked, onConfig);
