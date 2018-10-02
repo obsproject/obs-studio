@@ -47,6 +47,7 @@ public:
 public slots:
 
 	void ControlChanged();
+	void ControlChangedText();
 
 	/* editable list */
 	void EditListAdd();
