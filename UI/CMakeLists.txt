@@ -250,6 +250,7 @@ add_executable(obs WIN32
 	${obs_HEADERS}
 	${obs_UI_HEADERS}
 	${obs_QRC_SOURCES})
+cppcheck_add_project(obs)
 
 if(WIN32)
 	if(CMAKE_SIZEOF_VOID_P EQUAL 8)
