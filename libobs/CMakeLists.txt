@@ -447,6 +447,7 @@ if(BUILD_CAPTIONS)
 endif()
 
 add_library(libobs SHARED ${libobs_SOURCES} ${libobs_HEADERS})
+cppcheck_add_project(libobs)
 if(UNIX AND NOT APPLE)
 	set(DEST_DIR "${CMAKE_INSTALL_PREFIX}")
 	foreach(LIB "obs" "rt")
