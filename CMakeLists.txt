@@ -28,6 +28,7 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 set(ENABLE_SCRIPTING TRUE CACHE BOOL "Enables scripting")
 set(SCRIPTING_ENABLED OFF CACHE BOOL "Interal global cmake variable" FORCE)
 
+include(CppCheck)
 include(ObsHelpers)
 include(ObsCpack)
 include(GNUInstallDirs)
@@ -125,6 +126,14 @@ endif()
 
 option(BUILD_TESTS "Build test directory (includes test sources and possibly a platform test executable)" FALSE)
 mark_as_advanced(BUILD_TESTS)
+
+set(cppcheck_excludes "")
+list(APPEND cppcheck_excludes ${QTDIR}/)
+list(APPEND cppcheck_excludes ${DepsPath}/)
+list(APPEND cppcheck_excludes ${PROJECT_BINARY_DIR}/)
+cppcheck(
+	EXCLUDE ${cppcheck_excludes}
+)
 
 if(NOT INSTALLER_RUN)
 	option(ENABLE_UI "Enables the OBS user interfaces" ON)

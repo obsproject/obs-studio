@@ -457,6 +457,7 @@ function(install_obs_bin target mode)
 endfunction()
 
 function(install_obs_plugin target)
+	cppcheck_add_project(${target})
 	if(APPLE)
 		set(_bit_suffix "")
 	elseif(CMAKE_SIZEOF_VOID_P EQUAL 8)
@@ -484,7 +485,7 @@ function(install_obs_plugin target)
 			VERBATIM)
 	endif()
 
-	install_obs_pdb(PLUGIN ${target})
+	install_obs_pdb(PLUGIN ${target})	
 endfunction()
 
 function(install_obs_data target datadir datadest)
@@ -529,6 +530,7 @@ function(install_obs_data_file target datafile datadest)
 endfunction()
 
 function(install_obs_datatarget target datadest)
+	cppcheck_add_project(${target})
 	install(TARGETS ${target}
 		LIBRARY DESTINATION "${OBS_DATA_DESTINATION}/${datadest}"
 		RUNTIME DESTINATION "${OBS_DATA_DESTINATION}/${datadest}")
