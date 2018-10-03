@@ -24,6 +24,7 @@ set(libobs-d3d11_HEADERS
 add_library(libobs-d3d11 MODULE
 	${libobs-d3d11_SOURCES}
 	${libobs-d3d11_HEADERS})
+cppcheck_add_project(libobs-d3d11)
 set_target_properties(libobs-d3d11
 	PROPERTIES
 		OUTPUT_NAME libobs-d3d11
