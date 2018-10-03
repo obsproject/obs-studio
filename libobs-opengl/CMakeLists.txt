@@ -76,6 +76,7 @@ else()
 		${libobs-opengl_SOURCES}
 		${libobs-opengl_HEADERS})
 endif()
+cppcheck_add_project(libobs-opengl)
 
 if(WIN32 OR APPLE)
 set_target_properties(libobs-opengl
