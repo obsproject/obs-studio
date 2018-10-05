@@ -1302,8 +1302,8 @@ inline void AdvancedOutput::SetupFFmpeg()
 			"FFVCustom");
 	int aBitrate = config_get_int(main->Config(), "AdvOut",
 			"FFABitrate");
-	int aTrack = config_get_int(main->Config(), "AdvOut",
-			"FFAudioTrack");
+	int aMixes = config_get_int(main->Config(), "AdvOut",
+			"FFAudioMixes");
 	const char *aEncoder = config_get_string(main->Config(), "AdvOut",
 			"FFAEncoder");
 	int aEncoderId = config_get_int(main->Config(), "AdvOut",
@@ -1337,7 +1337,7 @@ inline void AdvancedOutput::SetupFFmpeg()
 		}
 	}
 
-	obs_output_set_mixer(fileOutput, aTrack - 1);
+	obs_output_set_mixers(fileOutput, aMixes);
 	obs_output_set_media(fileOutput, obs_get_video(), obs_get_audio());
 	obs_output_update(fileOutput, settings);
 

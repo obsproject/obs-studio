@@ -1115,6 +1115,21 @@ bool OBSBasic::InitBasicConfigDefaults()
 		cy = 1080;
 	}
 
+	bool changed = false;
+
+	/* ----------------------------------------------------- */
+	/* move over old FFmpeg track settings                   */
+	if (config_has_user_value(basicConfig, "AdvOut", "FFAudioTrack") &&
+	    !config_has_user_value(basicConfig, "AdvOut", "Pre22.1Settings")) {
+
+		int track = (int)config_get_int(basicConfig, "AdvOut",
+				"FFAudioTrack");
+		config_set_int(basicConfig, "AdvOut", "FFAudioMixes",
+				1LL << (track - 1));
+		config_set_bool(basicConfig, "AdvOut", "Pre22.1Settings", true);
+		changed = true;
+	}
+
 	/* ----------------------------------------------------- */
 	/* move over mixer values in advanced if older config */
 	if (config_has_user_value(basicConfig, "AdvOut", "RecTrackIndex") &&
@@ -1125,8 +1140,13 @@ bool OBSBasic::InitBasicConfigDefaults()
 		track = 1ULL << (track - 1);
 		config_set_uint(basicConfig, "AdvOut", "RecTracks", track);
 		config_remove_value(basicConfig, "AdvOut", "RecTrackIndex");
-		config_save_safe(basicConfig, "tmp", nullptr);
+		changed = true;
 	}
+
+	/* ----------------------------------------------------- */
+
+	if (changed)
+		config_save_safe(basicConfig, "tmp", nullptr);
 
 	/* ----------------------------------------------------- */
 
@@ -1186,7 +1206,7 @@ bool OBSBasic::InitBasicConfigDefaults()
 	config_set_default_bool  (basicConfig, "AdvOut", "FFIgnoreCompat",
 			false);
 	config_set_default_uint  (basicConfig, "AdvOut", "FFABitrate", 160);
-	config_set_default_uint  (basicConfig, "AdvOut", "FFAudioTrack", 1);
+	config_set_default_uint  (basicConfig, "AdvOut", "FFAudioMixes", 1);
 
 	config_set_default_uint  (basicConfig, "AdvOut", "Track1Bitrate", 160);
 	config_set_default_uint  (basicConfig, "AdvOut", "Track2Bitrate", 160);

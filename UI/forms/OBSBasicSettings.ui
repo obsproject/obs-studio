@@ -2247,7 +2247,7 @@
                              <number>0</number>
                             </property>
                             <item>
-                             <widget class="QRadioButton" name="advOutFFTrack1">
+                             <widget class="QCheckBox" name="advOutFFTrack1">
                               <property name="text">
                                <string notr="true">1</string>
                               </property>
@@ -2257,35 +2257,35 @@
                              </widget>
                             </item>
                             <item>
-                             <widget class="QRadioButton" name="advOutFFTrack2">
+                             <widget class="QCheckBox" name="advOutFFTrack2">
                               <property name="text">
                                <string notr="true">2</string>
                               </property>
                              </widget>
                             </item>
                             <item>
-                             <widget class="QRadioButton" name="advOutFFTrack3">
+                             <widget class="QCheckBox" name="advOutFFTrack3">
                               <property name="text">
                                <string notr="true">3</string>
                               </property>
                              </widget>
                             </item>
                             <item>
-                             <widget class="QRadioButton" name="advOutFFTrack4">
+                             <widget class="QCheckBox" name="advOutFFTrack4">
                               <property name="text">
                                <string notr="true">4</string>
                               </property>
                              </widget>
                             </item>
                             <item>
-                             <widget class="QRadioButton" name="advOutFFTrack5">
+                             <widget class="QCheckBox" name="advOutFFTrack5">
                               <property name="text">
                                <string notr="true">5</string>
                               </property>
                              </widget>
                             </item>
                             <item>
-                             <widget class="QRadioButton" name="advOutFFTrack6">
+                             <widget class="QCheckBox" name="advOutFFTrack6">
                               <property name="text">
                                <string notr="true">6</string>
                               </property>
