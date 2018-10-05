@@ -444,6 +444,8 @@ EXPORT gs_texture_t *gs_texrender_get_texture(const gs_texrender_t *texrender);
 #define GS_GL_DUMMYTEX   (1<<3) /**<< texture with no allocated texture data */
 #define GS_DUP_BUFFER    (1<<4) /**<< do not pass buffer ownership when
 				 *    creating a vertex/index buffer */
+#define GS_SHARED_TEX    (1<<5)
+#define GS_SHARED_KM_TEX (1<<6)
 
 /* ---------------- */
 /* global functions */
@@ -794,6 +796,24 @@ EXPORT void gs_texture_release_dc(gs_texture_t *gdi_tex);
 
 /** creates a windows shared texture from a texture handle */
 EXPORT gs_texture_t *gs_texture_open_shared(uint32_t handle);
+
+#define GS_INVALID_HANDLE (uint32_t)-1
+EXPORT uint32_t gs_texture_get_shared_handle(gs_texture_t *tex);
+
+#define GS_WAIT_INFINITE (uint32_t)-1
+
+/**
+ * acquires a lock on a keyed mutex texture.
+ * returns -1 on generic failure, ETIMEDOUT if timed out
+ */
+EXPORT int gs_texture_acquire_sync(gs_texture_t *tex, uint64_t key, uint32_t ms);
+
+/**
+ * releases a lock on a keyed mutex texture to another device.
+ * return 0 on success, -1 on error
+ */
+EXPORT int gs_texture_release_sync(gs_texture_t *tex, uint64_t key);
+
 #endif
 
 /* inline functions used by modules */

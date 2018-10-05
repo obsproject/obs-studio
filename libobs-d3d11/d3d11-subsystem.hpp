@@ -344,13 +344,14 @@ struct gs_texture_2d : gs_texture {
 	ComPtr<IDXGISurface1>            gdiSurface;
 
 	uint32_t        width = 0, height = 0;
+	uint32_t        flags = 0;
 	DXGI_FORMAT     dxgiFormat = DXGI_FORMAT_UNKNOWN;
 	bool            isRenderTarget = false;
 	bool            isGDICompatible = false;
 	bool            isDynamic = false;
 	bool            isShared = false;
 	bool            genMipmaps = false;
-	uint32_t        sharedHandle = 0;
+	uint32_t        sharedHandle = GS_INVALID_HANDLE;
 
 	vector<vector<uint8_t>> data;
 	vector<D3D11_SUBRESOURCE_DATA> srd;
@@ -382,7 +383,7 @@ struct gs_texture_2d : gs_texture {
 	gs_texture_2d(gs_device_t *device, uint32_t width, uint32_t height,
 			gs_color_format colorFormat, uint32_t levels,
 			const uint8_t **data, uint32_t flags,
-			gs_texture_type type, bool gdiCompatible, bool shared);
+			gs_texture_type type, bool gdiCompatible);
 
 	gs_texture_2d(gs_device_t *device, uint32_t handle);
 };
