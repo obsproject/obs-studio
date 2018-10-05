@@ -544,19 +544,46 @@ audio_t *obs_output_audio(const obs_output_t *output)
 		output->audio : NULL;
 }
 
+static inline size_t get_first_mixer(const obs_output_t *output)
+{
+	for (size_t i = 0; i < MAX_AUDIO_MIXES; i++) {
+		if ((((size_t)1 << i) & output->mixer_mask) != 0) {
+			return i;
+		}
+	}
+
+	return 0;
+}
+
 void obs_output_set_mixer(obs_output_t *output, size_t mixer_idx)
 {
 	if (!obs_output_valid(output, "obs_output_set_mixer"))
 		return;
 
 	if (!active(output))
-		output->mixer_idx = mixer_idx;
+		output->mixer_mask = (size_t)1 << mixer_idx;
 }
 
 size_t obs_output_get_mixer(const obs_output_t *output)
 {
-	return obs_output_valid(output, "obs_output_get_mixer") ?
-		output->mixer_idx : 0;
+	if (!obs_output_valid(output, "obs_output_get_mixer"))
+		return 0;
+
+	return get_first_mixer(output);
+}
+
+void obs_output_set_mixers(obs_output_t *output, size_t mixers)
+{
+	if (!obs_output_valid(output, "obs_output_set_mixers"))
+		return;
+
+	output->mixer_mask = mixers;
+}
+
+size_t obs_output_get_mixers(const obs_output_t *output)
+{
+	return obs_output_valid(output, "obs_output_get_mixers") ?
+		output->mixer_mask : 0;
 }
 
 void obs_output_remove_encoder(struct obs_output *output,
@@ -1476,6 +1503,7 @@ static void default_raw_video_callback(void *param, struct video_data *frame)
 	output->total_frames++;
 }
 
+
 static void default_raw_audio_callback(void *param, size_t mix_idx,
 		struct audio_data *frames)
 {
@@ -1483,9 +1511,10 @@ static void default_raw_audio_callback(void *param, size_t mix_idx,
 	if (!data_active(output))
 		return;
 
-	output->info.raw_audio(output->context.data, frames);
-
-	UNUSED_PARAMETER(mix_idx);
+	if (output->info.raw_audio2)
+		output->info.raw_audio2(output->context.data, mix_idx, frames);
+	else
+		output->info.raw_audio(output->context.data, frames);
 }
 
 static inline void start_audio_encoders(struct obs_output *output,
@@ -1496,6 +1525,25 @@ static inline void start_audio_encoders(struct obs_output *output,
 	for (size_t i = 0; i < num_mixes; i++) {
 		obs_encoder_start(output->audio_encoders[i],
 				encoded_callback, output);
+	}
+}
+
+static inline void start_raw_audio(obs_output_t *output)
+{
+	if (output->info.raw_audio2) {
+		for (int idx = 0; idx < MAX_AUDIO_MIXES; idx++) {
+			if ((output->mixer_mask & ((size_t)1 << idx)) != 0) {
+				audio_output_connect(output->audio, idx,
+						get_audio_conversion(output),
+						default_raw_audio_callback,
+						output);
+			}
+		}
+	} else {
+		audio_output_connect(output->audio, get_first_mixer(output),
+				     get_audio_conversion(output),
+				     default_raw_audio_callback,
+				     output);
 	}
 }
 
@@ -1557,9 +1605,7 @@ static void hook_data_capture(struct obs_output *output, bool encoded,
 					get_video_conversion(output),
 					default_raw_video_callback, output);
 		if (has_audio)
-			audio_output_connect(output->audio, output->mixer_idx,
-					get_audio_conversion(output),
-					default_raw_audio_callback, output);
+			start_raw_audio(output);
 	}
 }
 
@@ -1786,6 +1832,25 @@ static inline void stop_audio_encoders(obs_output_t *output,
 	}
 }
 
+static inline void stop_raw_audio(obs_output_t *output)
+{
+	if (output->info.raw_audio2) {
+		for (int idx = 0; idx < MAX_AUDIO_MIXES; idx++) {
+			if ((output->mixer_mask & ((size_t)1 << idx)) != 0) {
+				audio_output_disconnect(output->audio,
+						     idx,
+						     default_raw_audio_callback,
+						     output);
+			}
+		}
+	} else {
+		audio_output_disconnect(output->audio,
+				     get_first_mixer(output),
+				     default_raw_audio_callback,
+				     output);
+	}
+}
+
 static void *end_data_capture_thread(void *data)
 {
 	bool encoded, has_video, has_audio, has_service;
@@ -1812,9 +1877,7 @@ static void *end_data_capture_thread(void *data)
 			stop_raw_video(output->video,
 					default_raw_video_callback, output);
 		if (has_audio)
-			audio_output_disconnect(output->audio,
-					output->mixer_idx,
-					default_raw_audio_callback, output);
+			stop_raw_audio(output);
 	}
 
 	if (has_service)

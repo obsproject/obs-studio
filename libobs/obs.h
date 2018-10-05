@@ -1632,6 +1632,12 @@ EXPORT void obs_output_set_mixer(obs_output_t *output, size_t mixer_idx);
 /** Gets the current audio mixer for non-encoded outputs */
 EXPORT size_t obs_output_get_mixer(const obs_output_t *output);
 
+/** Sets the current audio mixes (mask) for a non-encoded multi-track output */
+EXPORT void obs_output_set_mixers(obs_output_t *output, size_t mixers);
+
+/** Gets the current audio mixes (mask) for a non-encoded multi-track output */
+EXPORT size_t obs_output_get_mixers(const obs_output_t *output);
+
 /**
  * Sets the current video encoder associated with this output,
  * required for encoded outputs

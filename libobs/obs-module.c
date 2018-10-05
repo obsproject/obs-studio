@@ -675,9 +675,15 @@ void obs_register_output_s(const struct obs_output_info *info, size_t size)
 			CHECK_REQUIRED_VAL_(info, raw_video,
 					obs_register_output);
 
-		if (info->flags & OBS_OUTPUT_AUDIO)
-			CHECK_REQUIRED_VAL_(info, raw_audio,
-					obs_register_output);
+		if (info->flags & OBS_OUTPUT_AUDIO) {
+			if (info->flags & OBS_OUTPUT_MULTI_TRACK) {
+				CHECK_REQUIRED_VAL_(info, raw_audio2,
+						obs_register_output);
+			} else {
+				CHECK_REQUIRED_VAL_(info, raw_audio,
+						obs_register_output);
+			}
+		}
 	}
 #undef CHECK_REQUIRED_VAL_
 
