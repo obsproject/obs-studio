@@ -1541,9 +1541,8 @@ static inline void start_raw_audio(obs_output_t *output)
 		}
 	} else {
 		audio_output_connect(output->audio, get_first_mixer(output),
-				     get_audio_conversion(output),
-				     default_raw_audio_callback,
-				     output);
+				get_audio_conversion(output),
+				default_raw_audio_callback, output);
 	}
 }
 
@@ -1838,16 +1837,13 @@ static inline void stop_raw_audio(obs_output_t *output)
 		for (int idx = 0; idx < MAX_AUDIO_MIXES; idx++) {
 			if ((output->mixer_mask & ((size_t)1 << idx)) != 0) {
 				audio_output_disconnect(output->audio,
-						     idx,
-						     default_raw_audio_callback,
-						     output);
+						idx, default_raw_audio_callback,
+						output);
 			}
 		}
 	} else {
-		audio_output_disconnect(output->audio,
-				     get_first_mixer(output),
-				     default_raw_audio_callback,
-				     output);
+		audio_output_disconnect(output->audio, get_first_mixer(output),
+				default_raw_audio_callback, output);
 	}
 }
 
