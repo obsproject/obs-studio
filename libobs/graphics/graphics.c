@@ -2692,4 +2692,38 @@ gs_texture_t *gs_texture_open_shared(uint32_t handle)
 	return NULL;
 }
 
+uint32_t gs_texture_get_shared_handle(gs_texture_t *tex)
+{
+	graphics_t *graphics = thread_graphics;
+	if (!gs_valid("gs_texture_get_shared_handle"))
+		return GS_INVALID_HANDLE;
+
+	if (graphics->exports.device_texture_get_shared_handle)
+		return graphics->exports.device_texture_get_shared_handle(tex);
+	return GS_INVALID_HANDLE;
+}
+
+int gs_texture_acquire_sync(gs_texture_t *tex, uint64_t key, uint32_t ms)
+{
+	graphics_t *graphics = thread_graphics;
+	if (!gs_valid("gs_texture_acquire_sync"))
+		return -1;
+
+	if (graphics->exports.device_texture_acquire_sync)
+		return graphics->exports.device_texture_acquire_sync(tex,
+				key, ms);
+	return -1;
+}
+
+int gs_texture_release_sync(gs_texture_t *tex, uint64_t key)
+{
+	graphics_t *graphics = thread_graphics;
+	if (!gs_valid("gs_texture_release_sync"))
+		return -1;
+
+	if (graphics->exports.device_texture_release_sync)
+		return graphics->exports.device_texture_release_sync(tex, key);
+	return -1;
+}
+
 #endif

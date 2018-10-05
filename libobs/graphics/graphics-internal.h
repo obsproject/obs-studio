@@ -261,6 +261,10 @@ struct gs_exports {
 
 	gs_texture_t *(*device_texture_open_shared)(gs_device_t *device,
 				uint32_t handle);
+	uint32_t (*device_texture_get_shared_handle)(gs_texture_t *tex);
+	int (*device_texture_acquire_sync)(gs_texture_t *tex, uint64_t key,
+			uint32_t ms);
+	int (*device_texture_release_sync)(gs_texture_t *tex, uint64_t key);
 #endif
 };
 

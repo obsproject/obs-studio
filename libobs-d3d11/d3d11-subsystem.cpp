@@ -736,8 +736,7 @@ gs_texture_t *device_texture_create(gs_device_t *device, uint32_t width,
 	gs_texture *texture = NULL;
 	try {
 		texture = new gs_texture_2d(device, width, height, color_format,
-				levels, data, flags, GS_TEXTURE_2D, false,
-				false);
+				levels, data, flags, GS_TEXTURE_2D, false);
 	} catch (HRError error) {
 		blog(LOG_ERROR, "device_texture_create (D3D11): %s (%08lX)",
 				error.str, error.hr);
@@ -756,8 +755,7 @@ gs_texture_t *device_cubetexture_create(gs_device_t *device, uint32_t size,
 	gs_texture *texture = NULL;
 	try {
 		texture = new gs_texture_2d(device, size, size, color_format,
-				levels, data, flags, GS_TEXTURE_CUBE, false,
-				false);
+				levels, data, flags, GS_TEXTURE_CUBE, false);
 	} catch (HRError error) {
 		blog(LOG_ERROR, "device_cubetexture_create (D3D11): %s "
 		                "(%08lX)",
@@ -2063,7 +2061,7 @@ extern "C" EXPORT gs_texture_t *device_texture_create_gdi(gs_device_t *device,
 	try {
 		texture = new gs_texture_2d(device, width, height, GS_BGRA,
 				1, nullptr, GS_RENDER_TARGET, GS_TEXTURE_2D,
-				true, false);
+				true);
 	} catch (HRError error) {
 		blog(LOG_ERROR, "device_texture_create_gdi (D3D11): %s (%08lX)",
 				error.str, error.hr);
@@ -2131,4 +2129,48 @@ extern "C" EXPORT gs_texture_t *device_texture_open_shared(gs_device_t *device,
 	}
 
 	return texture;
+}
+
+extern "C" EXPORT uint32_t device_texture_get_shared_handle(gs_texture_t *tex)
+{
+	gs_texture_2d *tex2d = reinterpret_cast<gs_texture_2d *>(tex);
+	if (tex->type != GS_TEXTURE_2D)
+		return GS_INVALID_HANDLE;
+
+	return tex2d->isShared ? tex2d->sharedHandle : GS_INVALID_HANDLE;
+}
+
+extern "C" EXPORT int device_texture_acquire_sync(gs_texture_t *tex,
+		uint64_t key, uint32_t ms)
+{
+	gs_texture_2d *tex2d = reinterpret_cast<gs_texture_2d *>(tex);
+	if (tex->type != GS_TEXTURE_2D)
+		return -1;
+
+	ComQIPtr<IDXGIKeyedMutex> keyedMutex(tex2d->texture);
+	if (!keyedMutex)
+		return -1;
+
+	HRESULT hr = keyedMutex->AcquireSync(key, ms);
+	if (hr == S_OK)
+		return 0;
+	else if (hr == WAIT_TIMEOUT)
+		return ETIMEDOUT;
+
+	return -1;
+}
+
+extern "C" EXPORT int device_texture_release_sync(gs_texture_t *tex,
+		uint64_t key)
+{
+	gs_texture_2d *tex2d = reinterpret_cast<gs_texture_2d *>(tex);
+	if (tex->type != GS_TEXTURE_2D)
+		return -1;
+
+	ComQIPtr<IDXGIKeyedMutex> keyedMutex(tex2d->texture);
+	if (!keyedMutex)
+		return -1;
+
+	HRESULT hr = keyedMutex->ReleaseSync(key);
+	return hr == S_OK ? 0 : -1;
 }

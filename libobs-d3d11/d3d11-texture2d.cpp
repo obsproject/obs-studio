@@ -96,6 +96,11 @@ void gs_texture_2d::InitTexture(const uint8_t **data)
 	if (isGDICompatible)
 		td.MiscFlags |= D3D11_RESOURCE_MISC_GDI_COMPATIBLE;
 
+	if ((flags & GS_SHARED_KM_TEX) != 0)
+		td.MiscFlags |= D3D11_RESOURCE_MISC_SHARED_KEYEDMUTEX;
+	else if ((flags & GS_SHARED_TEX) != 0)
+		td.MiscFlags |= D3D11_RESOURCE_MISC_SHARED;
+
 	if (data) {
 		BackupTexture(data);
 		InitSRD(srd);
@@ -111,6 +116,25 @@ void gs_texture_2d::InitTexture(const uint8_t **data)
 				(void**)gdiSurface.Assign());
 		if (FAILED(hr))
 			throw HRError("Failed to create GDI surface", hr);
+	}
+
+	if (isShared) {
+		ComPtr<IDXGIResource> dxgi_res;
+		hr = texture->QueryInterface(__uuidof(IDXGIResource),
+				(void**)&dxgi_res);
+		if (FAILED(hr)) {
+			blog(LOG_WARNING, "InitTexture: Failed to query "
+					"interface: %08lX", hr);
+		} else {
+			HANDLE handle;
+			hr = dxgi_res->GetSharedHandle(&handle);
+			if (FAILED(hr)) {
+				blog(LOG_WARNING, "InitTexture: Failed to "
+						"get shared handle: %08lX", hr);
+			} else {
+				sharedHandle = (uint32_t)(uintptr_t)handle;
+			}
+		}
 	}
 }
 
@@ -164,20 +188,24 @@ void gs_texture_2d::InitRenderTargets()
 	}
 }
 
+#define SHARED_FLAGS (GS_SHARED_TEX | GS_SHARED_KM_TEX)
+
 gs_texture_2d::gs_texture_2d(gs_device_t *device, uint32_t width,
 		uint32_t height, gs_color_format colorFormat, uint32_t levels,
-		const uint8_t **data, uint32_t flags, gs_texture_type type,
-		bool gdiCompatible, bool shared)
+		const uint8_t **data, uint32_t flags_, gs_texture_type type,
+		bool gdiCompatible)
 	: gs_texture      (device, gs_type::gs_texture_2d, type, levels,
 	                   colorFormat),
 	  width           (width),
 	  height          (height),
+	  flags           (flags_),
 	  dxgiFormat      (ConvertGSTextureFormat(format)),
-	  isRenderTarget  ((flags & GS_RENDER_TARGET) != 0),
+	  isRenderTarget  ((flags_ & GS_RENDER_TARGET) != 0),
 	  isGDICompatible (gdiCompatible),
-	  isDynamic       ((flags & GS_DYNAMIC) != 0),
-	  isShared        (shared),
-	  genMipmaps      ((flags & GS_BUILD_MIPMAPS) != 0)
+	  isDynamic       ((flags_ & GS_DYNAMIC) != 0),
+	  isShared        ((flags_ & SHARED_FLAGS) != 0),
+	  genMipmaps      ((flags_ & GS_BUILD_MIPMAPS) != 0),
+	  sharedHandle    (GS_INVALID_HANDLE)
 {
 	InitTexture(data);
 	InitResourceView();
