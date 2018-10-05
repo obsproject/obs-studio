@@ -180,6 +180,7 @@ bool load_graphics_imports(struct gs_exports *exports, void *module,
 #elif _WIN32
 	GRAPHICS_IMPORT(device_gdi_texture_available);
 	GRAPHICS_IMPORT(device_shared_texture_available);
+	GRAPHICS_IMPORT_OPTIONAL(device_nv12_available);
 	GRAPHICS_IMPORT_OPTIONAL(device_get_duplicator_monitor_info);
 	GRAPHICS_IMPORT_OPTIONAL(device_duplicator_create);
 	GRAPHICS_IMPORT_OPTIONAL(gs_duplicator_destroy);
@@ -192,6 +193,8 @@ bool load_graphics_imports(struct gs_exports *exports, void *module,
 	GRAPHICS_IMPORT_OPTIONAL(device_texture_get_shared_handle);
 	GRAPHICS_IMPORT_OPTIONAL(device_texture_acquire_sync);
 	GRAPHICS_IMPORT_OPTIONAL(device_texture_release_sync);
+	GRAPHICS_IMPORT_OPTIONAL(device_texture_create_nv12);
+	GRAPHICS_IMPORT_OPTIONAL(device_stagesurface_create_nv12);
 #endif
 
 	return success;

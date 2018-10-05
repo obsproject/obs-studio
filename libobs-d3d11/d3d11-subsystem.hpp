@@ -27,7 +27,7 @@
 #include <windows.h>
 #include <dxgi.h>
 #include <dxgi1_2.h>
-#include <d3d11.h>
+#include <d3d11_1.h>
 #include <d3dcompiler.h>
 
 #include <util/base.h>
@@ -80,6 +80,7 @@ static inline DXGI_FORMAT ConvertGSTextureFormat(gs_color_format format)
 	case GS_DXT1:        return DXGI_FORMAT_BC1_UNORM;
 	case GS_DXT3:        return DXGI_FORMAT_BC2_UNORM;
 	case GS_DXT5:        return DXGI_FORMAT_BC3_UNORM;
+	case GS_R8G8:        return DXGI_FORMAT_R8G8_UNORM;
 	}
 
 	return DXGI_FORMAT_UNKNOWN;
@@ -90,6 +91,7 @@ static inline gs_color_format ConvertDXGITextureFormat(DXGI_FORMAT format)
 	switch ((unsigned long)format) {
 	case DXGI_FORMAT_A8_UNORM:           return GS_A8;
 	case DXGI_FORMAT_R8_UNORM:           return GS_R8;
+	case DXGI_FORMAT_R8G8_UNORM:         return GS_R8G8;
 	case DXGI_FORMAT_R8G8B8A8_UNORM:     return GS_RGBA;
 	case DXGI_FORMAT_B8G8R8X8_UNORM:     return GS_BGRX;
 	case DXGI_FORMAT_B8G8R8A8_UNORM:     return GS_BGRA;
@@ -353,6 +355,10 @@ struct gs_texture_2d : gs_texture {
 	bool            genMipmaps = false;
 	uint32_t        sharedHandle = GS_INVALID_HANDLE;
 
+	gs_texture_2d   *pairedNV12texture = nullptr;
+	bool            nv12 = false;
+	bool            chroma = false;
+
 	vector<vector<uint8_t>> data;
 	vector<D3D11_SUBRESOURCE_DATA> srd;
 	D3D11_TEXTURE2D_DESC td = {};
@@ -383,8 +389,11 @@ struct gs_texture_2d : gs_texture {
 	gs_texture_2d(gs_device_t *device, uint32_t width, uint32_t height,
 			gs_color_format colorFormat, uint32_t levels,
 			const uint8_t **data, uint32_t flags,
-			gs_texture_type type, bool gdiCompatible);
+			gs_texture_type type, bool gdiCompatible,
+			bool nv12 = false);
 
+	gs_texture_2d(gs_device_t *device, ID3D11Texture2D *nv12,
+			uint32_t flags);
 	gs_texture_2d(gs_device_t *device, uint32_t handle);
 };
 
@@ -437,6 +446,7 @@ struct gs_stage_surface : gs_obj {
 
 	gs_stage_surface(gs_device_t *device, uint32_t width, uint32_t height,
 			gs_color_format colorFormat);
+	gs_stage_surface(gs_device_t *device, uint32_t width, uint32_t height);
 };
 
 struct gs_sampler_state : gs_obj {
@@ -780,6 +790,7 @@ struct gs_device {
 	ComPtr<ID3D11Device>        device;
 	ComPtr<ID3D11DeviceContext> context;
 	uint32_t                    adpIdx = 0;
+	bool                        nv12Supported = false;
 
 	gs_texture_2d               *curRenderTarget = nullptr;
 	gs_zstencil_buffer          *curZStencilBuffer = nullptr;

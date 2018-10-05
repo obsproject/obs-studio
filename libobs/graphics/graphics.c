@@ -2591,6 +2591,18 @@ bool gs_shared_texture_available(void)
 	return thread_graphics->exports.device_shared_texture_available();
 }
 
+bool gs_nv12_available(void)
+{
+	if (!gs_valid("gs_nv12_available"))
+		return false;
+
+	if (!thread_graphics->exports.device_nv12_available)
+		return false;
+
+	return thread_graphics->exports.device_nv12_available(
+			thread_graphics->device);
+}
+
 bool gs_get_duplicator_monitor_info(int monitor_idx,
 		struct gs_monitor_info *monitor_info)
 {
@@ -2724,6 +2736,66 @@ int gs_texture_release_sync(gs_texture_t *tex, uint64_t key)
 	if (graphics->exports.device_texture_release_sync)
 		return graphics->exports.device_texture_release_sync(tex, key);
 	return -1;
+}
+
+bool gs_texture_create_nv12(gs_texture_t **tex_y, gs_texture_t **tex_uv,
+		uint32_t width, uint32_t height, uint32_t flags)
+{
+	graphics_t *graphics = thread_graphics;
+	bool success = false;
+
+	if (!gs_valid("gs_texture_create_nv12"))
+		return false;
+
+	if ((width & 1) == 1 || (height & 1) == 1) {
+		blog(LOG_ERROR, "NV12 textures must have dimensions "
+				"divisible by 2.");
+		return false;
+	}
+
+	if (graphics->exports.device_texture_create_nv12) {
+		success = graphics->exports.device_texture_create_nv12(
+				graphics->device, tex_y, tex_uv,
+				width, height, flags);
+		if (success)
+			return true;
+	}
+
+	*tex_y = gs_texture_create(width, height, GS_R8, 1, NULL, flags);
+	*tex_uv = gs_texture_create(width / 2, height / 2, GS_R8G8, 1, NULL,
+			flags);
+
+	if (!*tex_y || !*tex_uv) {
+		if (*tex_y)
+			gs_texture_destroy(*tex_y);
+		if (*tex_uv)
+			gs_texture_destroy(*tex_uv);
+		*tex_y = NULL;
+		*tex_uv = NULL;
+		return false;
+	}
+
+	return true;
+}
+
+gs_stagesurf_t *gs_stagesurface_create_nv12(uint32_t width, uint32_t height)
+{
+	graphics_t *graphics = thread_graphics;
+
+	if (!gs_valid("gs_stagesurface_create_nv12"))
+		return NULL;
+
+	if ((width & 1) == 1 || (height & 1) == 1) {
+		blog(LOG_ERROR, "NV12 textures must have dimensions "
+				"divisible by 2.");
+		return NULL;
+	}
+
+	if (graphics->exports.device_stagesurface_create_nv12)
+		return graphics->exports.device_stagesurface_create_nv12(
+				graphics->device, width, height);
+
+	return NULL;
 }
 
 #endif

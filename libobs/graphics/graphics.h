@@ -71,7 +71,8 @@ enum gs_color_format {
 	GS_R32F,
 	GS_DXT1,
 	GS_DXT3,
-	GS_DXT5
+	GS_DXT5,
+	GS_R8G8,
 };
 
 enum gs_zstencil_format {
@@ -770,6 +771,7 @@ EXPORT bool     gs_texture_rebind_iosurface(gs_texture_t *texture,
 
 EXPORT bool gs_gdi_texture_available(void);
 EXPORT bool gs_shared_texture_available(void);
+EXPORT bool gs_nv12_available(void);
 
 struct gs_duplicator;
 typedef struct gs_duplicator gs_duplicator_t;
@@ -814,6 +816,12 @@ EXPORT int gs_texture_acquire_sync(gs_texture_t *tex, uint64_t key, uint32_t ms)
  */
 EXPORT int gs_texture_release_sync(gs_texture_t *tex, uint64_t key);
 
+EXPORT bool gs_texture_create_nv12(gs_texture_t **tex_y, gs_texture_t **tex_uv,
+		uint32_t width, uint32_t height, uint32_t flags);
+
+EXPORT gs_stagesurf_t *gs_stagesurface_create_nv12(
+		uint32_t width, uint32_t height);
+
 #endif
 
 /* inline functions used by modules */
@@ -838,6 +846,7 @@ static inline uint32_t gs_get_format_bpp(enum gs_color_format format)
 	case GS_DXT1:        return 4;
 	case GS_DXT3:        return 8;
 	case GS_DXT5:        return 8;
+	case GS_R8G8:        return 16;
 	case GS_UNKNOWN:     return 0;
 	}
 

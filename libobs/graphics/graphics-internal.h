@@ -242,6 +242,7 @@ struct gs_exports {
 #elif _WIN32
 	bool (*device_gdi_texture_available)(void);
 	bool (*device_shared_texture_available)(void);
+	bool (*device_nv12_available)(gs_device_t *device);
 
 	bool (*device_get_duplicator_monitor_info)(gs_device_t *device,
 			int monitor_idx, struct gs_monitor_info *monitor_info);
@@ -265,6 +266,12 @@ struct gs_exports {
 	int (*device_texture_acquire_sync)(gs_texture_t *tex, uint64_t key,
 			uint32_t ms);
 	int (*device_texture_release_sync)(gs_texture_t *tex, uint64_t key);
+	bool (*device_texture_create_nv12)(gs_device_t *device,
+			gs_texture_t **tex_y, gs_texture_t **tex_uv,
+			uint32_t width, uint32_t height, uint32_t flags);
+
+	gs_stagesurf_t *(*device_stagesurface_create_nv12)(gs_device_t *device,
+		uint32_t width, uint32_t height);
 #endif
 };
 
