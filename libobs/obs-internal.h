@@ -231,10 +231,12 @@ struct obs_core_video {
 	gs_texture_t                    *render_textures[NUM_TEXTURES];
 	gs_texture_t                    *output_textures[NUM_TEXTURES];
 	gs_texture_t                    *convert_textures[NUM_TEXTURES];
+	gs_texture_t                    *convert_uv_textures[NUM_TEXTURES];
 	bool                            textures_rendered[NUM_TEXTURES];
 	bool                            textures_output[NUM_TEXTURES];
 	bool                            textures_copied[NUM_TEXTURES];
 	bool                            textures_converted[NUM_TEXTURES];
+	bool                            using_nv12_tex;
 	struct circlebuf                vframe_info_buffer;
 	gs_effect_t                     *default_effect;
 	gs_effect_t                     *default_rect_effect;

@@ -310,6 +310,55 @@ end:
 	profile_end(render_convert_texture_name);
 }
 
+static void render_nv12(struct obs_core_video *video, gs_texture_t *target,
+		int cur_texture, int prev_texture, const char *tech_name,
+		uint32_t width, uint32_t height)
+{
+	gs_texture_t *texture = video->output_textures[prev_texture];
+
+	gs_effect_t    *effect  = video->conversion_effect;
+	gs_eparam_t    *image   = gs_effect_get_param_by_name(effect, "image");
+	gs_technique_t *tech    = gs_effect_get_technique(effect, tech_name);
+	size_t         passes, i;
+
+	gs_effect_set_texture(image, texture);
+
+	gs_set_render_target(target, NULL);
+	set_render_size(width, height);
+
+	gs_enable_blending(false);
+	passes = gs_technique_begin(tech);
+	for (i = 0; i < passes; i++) {
+		gs_technique_begin_pass(tech, i);
+		gs_draw_sprite(texture, 0, width, height);
+		gs_technique_end_pass(tech);
+	}
+	gs_technique_end(tech);
+	gs_enable_blending(true);
+}
+
+static const char *render_convert_nv12_name = "render_convert_texture_nv12";
+static void render_convert_texture_nv12(struct obs_core_video *video,
+		int cur_texture, int prev_texture)
+{
+	profile_start(render_convert_nv12_name);
+
+	if (!video->textures_output[prev_texture])
+		goto end;
+
+	render_nv12(video, video->convert_textures[cur_texture],
+			cur_texture, prev_texture, "NV12_Y",
+			video->output_width, video->output_height);
+	render_nv12(video, video->convert_uv_textures[cur_texture],
+			cur_texture, prev_texture, "NV12_UV",
+			video->output_width / 2, video->output_height / 2);
+
+	video->textures_converted[cur_texture] = true;
+
+end:
+	profile_end(render_convert_nv12_name);
+}
+
 static const char *stage_output_texture_name = "stage_output_texture";
 static inline void stage_output_texture(struct obs_core_video *video,
 		int cur_texture, int prev_texture)
@@ -353,8 +402,15 @@ static inline void render_video(struct obs_core_video *video, bool raw_active,
 
 	if (raw_active) {
 		render_output_texture(video, cur_texture, prev_texture);
-		if (video->gpu_conversion)
-			render_convert_texture(video, cur_texture, prev_texture);
+
+		if (video->gpu_conversion) {
+			if (video->using_nv12_tex)
+				render_convert_texture_nv12(video,
+						cur_texture, prev_texture);
+			else
+				render_convert_texture(video,
+						cur_texture, prev_texture);
+		}
 
 		stage_output_texture(video, cur_texture, prev_texture);
 	}
@@ -454,6 +510,27 @@ static void set_gpu_converted_data(struct obs_core_video *video,
 		}
 
 		video_frame_copy(output, &frame, info->format, info->height);
+
+	} else if (video->using_nv12_tex) {
+		int width = (int)info->width;
+		int height = (int)info->height;
+		int width_d2 = width / 2;
+		int height_d2 = height / 2;
+		int height_d4 = height_d2 / 2;
+		uint8_t *out_y = output->data[0];
+		uint8_t *out_uv = output->data[1];
+		uint8_t *in = input->data[0];
+
+		for (size_t y = 0; y < height; y++) {
+			memcpy(out_y, in, width);
+			out_y += output->linesize[0];
+			in += input->linesize[0];
+		}
+		for (size_t y = 0; y < height_d2; y++) {
+			memcpy(out_uv, in, width);
+			out_uv += output->linesize[0];
+			in += input->linesize[0];
+		}
 
 	} else {
 		fix_gpu_converted_alignment(video, output, input);

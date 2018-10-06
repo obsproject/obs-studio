@@ -713,6 +713,8 @@ EXPORT uint64_t obs_get_average_frame_time_ns(void);
 EXPORT uint32_t obs_get_total_frames(void);
 EXPORT uint32_t obs_get_lagged_frames(void);
 
+EXPORT bool obs_nv12_tex_active(void);
+
 EXPORT void obs_apply_private_data(obs_data_t *settings);
 EXPORT void obs_set_private_data(obs_data_t *settings);
 EXPORT obs_data_t *obs_get_private_data(void);
