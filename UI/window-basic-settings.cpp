@@ -1373,7 +1373,7 @@ void OBSBasicSettings::LoadVideoSettings()
 {
 	loading = true;
 
-	if (video_output_active(obs_get_video())) {
+	if (obs_video_active()) {
 		ui->videoPage->setEnabled(false);
 		ui->videoMsg->setText(
 				QTStr("Basic.Settings.Video.CurrentlyActive"));
@@ -1850,7 +1850,7 @@ void OBSBasicSettings::LoadOutputSettings()
 	LoadAdvOutputFFmpegSettings();
 	LoadAdvOutputAudioSettings();
 
-	if (video_output_active(obs_get_video())) {
+	if (obs_video_active()) {
 		ui->outputMode->setEnabled(false);
 		ui->outputModeLabel->setEnabled(false);
 		ui->simpleRecordingGroupBox->setEnabled(false);
@@ -2228,7 +2228,7 @@ void OBSBasicSettings::LoadAdvancedSettings()
 	if (!SetComboByValue(ui->bindToIP, bindIP))
 		SetInvalidValue(ui->bindToIP, bindIP, bindIP);
 
-	if (video_output_active(obs_get_video())) {
+	if (obs_video_active()) {
 		ui->advancedVideoContainer->setEnabled(false);
 	}
 

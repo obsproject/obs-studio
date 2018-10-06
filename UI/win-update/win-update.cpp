@@ -586,7 +586,7 @@ try {
 
 	auto ActiveOrGameCaptureLocked = [this] ()
 	{
-		if (video_output_active(obs_get_video())) {
+		if (obs_video_active()) {
 			if (manualUpdate)
 				info(QTStr("Updater.Running.Title"),
 				     QTStr("Updater.Running.Text"));
