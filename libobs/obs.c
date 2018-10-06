@@ -164,17 +164,38 @@ static bool obs_init_gpu_conversion(struct obs_video_info *ovi)
 
 	calc_gpu_conversion_sizes(ovi);
 
+	video->using_nv12_tex = ovi->output_format == VIDEO_FORMAT_NV12
+		? gs_nv12_available() : false;
+
 	if (!video->conversion_height) {
 		blog(LOG_INFO, "GPU conversion not available for format: %u",
 				(unsigned int)ovi->output_format);
 		video->gpu_conversion = false;
+		video->using_nv12_tex = false;
+		blog(LOG_INFO, "NV12 texture support not available");
 		return true;
 	}
 
+	if (video->using_nv12_tex)
+		blog(LOG_INFO, "NV12 texture support enabled");
+	else
+		blog(LOG_INFO, "NV12 texture support not available");
+
 	for (size_t i = 0; i < NUM_TEXTURES; i++) {
-		video->convert_textures[i] = gs_texture_create(
-				ovi->output_width, video->conversion_height,
-				GS_RGBA, 1, NULL, GS_RENDER_TARGET);
+		if (video->using_nv12_tex) {
+			gs_texture_create_nv12(
+					&video->convert_textures[i],
+					&video->convert_uv_textures[i],
+					ovi->output_width, ovi->output_height,
+					GS_RENDER_TARGET | GS_SHARED_TEX);
+			if (!video->convert_uv_textures[i])
+				return false;
+		} else {
+			video->convert_textures[i] = gs_texture_create(
+					ovi->output_width,
+					video->conversion_height,
+					GS_RGBA, 1, NULL, GS_RENDER_TARGET);
+		}
 
 		if (!video->convert_textures[i])
 			return false;
@@ -191,11 +212,19 @@ static bool obs_init_textures(struct obs_video_info *ovi)
 	size_t i;
 
 	for (i = 0; i < NUM_TEXTURES; i++) {
-		video->copy_surfaces[i] = gs_stagesurface_create(
-				ovi->output_width, output_height, GS_RGBA);
+		if (video->using_nv12_tex) {
+			video->copy_surfaces[i] = gs_stagesurface_create_nv12(
+					ovi->output_width, ovi->output_height);
+			if (!video->copy_surfaces[i])
+				return false;
 
-		if (!video->copy_surfaces[i])
-			return false;
+		} else {
+			video->copy_surfaces[i] = gs_stagesurface_create(
+					ovi->output_width, output_height,
+					GS_RGBA);
+			if (!video->copy_surfaces[i])
+				return false;
+		}
 
 		video->render_textures[i] = gs_texture_create(
 				ovi->base_width, ovi->base_height,
@@ -431,12 +460,14 @@ static void obs_free_video(void)
 			gs_stagesurface_destroy(video->copy_surfaces[i]);
 			gs_texture_destroy(video->render_textures[i]);
 			gs_texture_destroy(video->convert_textures[i]);
+			gs_texture_destroy(video->convert_uv_textures[i]);
 			gs_texture_destroy(video->output_textures[i]);
 
-			video->copy_surfaces[i]    = NULL;
-			video->render_textures[i]  = NULL;
-			video->convert_textures[i] = NULL;
-			video->output_textures[i]  = NULL;
+			video->copy_surfaces[i]       = NULL;
+			video->render_textures[i]     = NULL;
+			video->convert_textures[i]    = NULL;
+			video->convert_uv_textures[i] = NULL;
+			video->output_textures[i]     = NULL;
 		}
 
 		gs_leave_context();
@@ -2266,4 +2297,13 @@ bool obs_video_active(void)
 		return false;
 
 	return os_atomic_load_long(&video->raw_active) > 0;
+}
+
+bool obs_nv12_tex_active(void)
+{
+	struct obs_core_video *video = &obs->video;
+	if (!obs)
+		return false;
+
+	return video->using_nv12_tex;
 }
