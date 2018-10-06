@@ -1014,7 +1014,7 @@ int obs_reset_video(struct obs_video_info *ovi)
 	if (!obs) return OBS_VIDEO_FAIL;
 
 	/* don't allow changing of video settings if active. */
-	if (obs->video.video && video_output_active(obs->video.video))
+	if (obs->video.video && obs_video_active())
 		return OBS_VIDEO_CURRENTLY_ACTIVE;
 
 	if (!size_valid(ovi->output_width, ovi->output_height) ||
@@ -2257,4 +2257,13 @@ obs_data_t *obs_get_private_data(void)
 	obs_data_t *private_data = obs->data.private_data;
 	obs_data_addref(private_data);
 	return private_data;
+}
+
+bool obs_video_active(void)
+{
+	struct obs_core_video *video = &obs->video;
+	if (!obs)
+		return false;
+
+	return os_atomic_load_long(&video->raw_active) > 0;
 }
