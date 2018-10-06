@@ -238,6 +238,7 @@ struct obs_core_video {
 	bool                            textures_converted[NUM_TEXTURES];
 	bool                            using_nv12_tex;
 	struct circlebuf                vframe_info_buffer;
+	struct circlebuf                vframe_info_buffer_gpu;
 	gs_effect_t                     *default_effect;
 	gs_effect_t                     *default_rect_effect;
 	gs_effect_t                     *opaque_effect;
@@ -251,6 +252,9 @@ struct obs_core_video {
 	gs_stagesurf_t                  *mapped_surface;
 	int                             cur_texture;
 	long                            raw_active;
+	long                            gpu_encoder_active;
+	pthread_mutex_t                 gpu_encoder_mutex;
+	DARRAY(obs_encoder_t *)         gpu_encoders;
 
 	uint64_t                        video_time;
 	uint64_t                        video_avg_frame_time_ns;
@@ -1011,6 +1015,12 @@ extern void obs_encoder_add_output(struct obs_encoder *encoder,
 		struct obs_output *output);
 extern void obs_encoder_remove_output(struct obs_encoder *encoder,
 		struct obs_output *output);
+
+extern void start_gpu_encode(obs_encoder_t *encoder);
+extern void stop_gpu_encode(obs_encoder_t *encoder);
+
+extern void send_off_encoder_packet(obs_encoder_t *encoder, bool success,
+		bool received, struct encoder_packet *pkt);
 
 void obs_encoder_destroy(obs_encoder_t *encoder);
 

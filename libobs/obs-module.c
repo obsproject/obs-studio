@@ -707,7 +707,11 @@ void obs_register_encoder_s(const struct obs_encoder_info *info, size_t size)
 	CHECK_REQUIRED_VAL_(info, get_name, obs_register_encoder);
 	CHECK_REQUIRED_VAL_(info, create,   obs_register_encoder);
 	CHECK_REQUIRED_VAL_(info, destroy,  obs_register_encoder);
-	CHECK_REQUIRED_VAL_(info, encode,   obs_register_encoder);
+
+	if ((info->caps & OBS_ENCODER_CAP_PASS_TEXTURE) != 0)
+		CHECK_REQUIRED_VAL_(info, encode_texture, obs_register_encoder);
+	else
+		CHECK_REQUIRED_VAL_(info, encode, obs_register_encoder);
 
 	if (info->type == OBS_ENCODER_AUDIO)
 		CHECK_REQUIRED_VAL_(info, get_frame_size, obs_register_encoder);

@@ -383,7 +383,62 @@ end:
 	profile_end(stage_output_texture_name);
 }
 
-static inline void render_video(struct obs_core_video *video, bool raw_active,
+static inline void encode_gpu(obs_encoder_t *encoder, gs_texture_t *texture,
+		struct obs_vframe_info *vframe_info)
+{
+	struct obs_encoder *pair = encoder->paired_encoder;
+
+	if (!encoder->first_received && pair) {
+		if (!pair->first_received ||
+		    pair->first_raw_ts > vframe_info->timestamp) {
+			return;
+		}
+	}
+
+	if (!encoder->start_ts)
+		encoder->start_ts = vframe_info->timestamp;
+
+	struct encoder_packet pkt = {0};
+	bool received = false;
+	bool success;
+
+	pkt.timebase_num = encoder->timebase_num;
+	pkt.timebase_den = encoder->timebase_den;
+	pkt.encoder = encoder;
+
+	success = encoder->info.encode_texture(encoder->context.data,
+			texture, encoder->cur_pts, &pkt, &received);
+	send_off_encoder_packet(encoder, success, received, &pkt);
+
+	encoder->cur_pts += encoder->timebase_num;
+}
+
+static const char *output_gpu_encoders_name = "output_gpu_encoders";
+static void output_gpu_encoders(struct obs_core_video *video, int prev_texture)
+{
+	profile_start(output_gpu_encoders_name);
+
+	gs_texture_t *texture = video->convert_textures[prev_texture];
+	if (!video->textures_converted[prev_texture])
+		goto end;
+
+	struct obs_vframe_info vframe_info;
+	circlebuf_pop_front(&video->vframe_info_buffer_gpu, &vframe_info,
+			sizeof(vframe_info));
+
+	pthread_mutex_lock(&video->gpu_encoder_mutex);
+	for (size_t i = video->gpu_encoders.num; i > 0; i--) {
+		obs_encoder_t *encoder = video->gpu_encoders.array[i - 1];
+		encode_gpu(encoder, texture, &vframe_info);
+	}
+	pthread_mutex_unlock(&video->gpu_encoder_mutex);
+
+end:
+	profile_end(output_gpu_encoders_name);
+}
+
+static inline void render_video(struct obs_core_video *video,
+		bool raw_active, bool gpu_active,
 		int cur_texture, int prev_texture)
 {
 	gs_begin_scene();
@@ -393,9 +448,15 @@ static inline void render_video(struct obs_core_video *video, bool raw_active,
 
 	render_main_texture(video, cur_texture);
 
-	if (raw_active) {
+	if (raw_active || gpu_active) {
 		render_output_texture(video, cur_texture, prev_texture);
 
+		if (gpu_active) {
+			gs_flush();
+		}
+	}
+
+	if (raw_active || gpu_active) {
 		if (video->gpu_conversion) {
 			if (video->using_nv12_tex)
 				render_convert_texture_nv12(video,
@@ -405,7 +466,12 @@ static inline void render_video(struct obs_core_video *video, bool raw_active,
 						cur_texture, prev_texture);
 		}
 
-		stage_output_texture(video, cur_texture, prev_texture);
+		if (gpu_active) {
+			gs_flush();
+			output_gpu_encoders(video, prev_texture);
+		}
+		if (raw_active)
+			stage_output_texture(video, cur_texture, prev_texture);
 	}
 
 	gs_set_render_target(NULL, NULL);
@@ -602,7 +668,8 @@ static inline void output_video_data(struct obs_core_video *video,
 	}
 }
 
-static inline void video_sleep(struct obs_core_video *video, bool active,
+static inline void video_sleep(struct obs_core_video *video,
+		bool raw_active, bool gpu_active,
 		uint64_t *p_time, uint64_t interval_ns)
 {
 	struct obs_vframe_info vframe_info;
@@ -623,9 +690,13 @@ static inline void video_sleep(struct obs_core_video *video, bool active,
 
 	vframe_info.timestamp = cur_time;
 	vframe_info.count = count;
-	if (active)
+
+	if (raw_active)
 		circlebuf_push_back(&video->vframe_info_buffer, &vframe_info,
 				sizeof(vframe_info));
+	if (gpu_active)
+		circlebuf_push_back(&video->vframe_info_buffer_gpu,
+				&vframe_info, sizeof(vframe_info));
 }
 
 static const char *output_frame_gs_context_name = "gs_context(video->graphics)";
@@ -633,12 +704,13 @@ static const char *output_frame_render_video_name = "render_video";
 static const char *output_frame_download_frame_name = "download_frame";
 static const char *output_frame_gs_flush_name = "gs_flush";
 static const char *output_frame_output_video_data_name = "output_video_data";
-static inline void output_frame(bool raw_active)
+static inline void output_frame(bool raw_active, bool gpu_active)
 {
 	struct obs_core_video *video = &obs->video;
 	int cur_texture  = video->cur_texture;
 	int prev_texture = cur_texture == 0 ? NUM_TEXTURES-1 : cur_texture-1;
 	struct video_data frame;
+	bool active = raw_active || gpu_active;
 	bool frame_ready;
 
 	memset(&frame, 0, sizeof(struct video_data));
@@ -647,7 +719,7 @@ static inline void output_frame(bool raw_active)
 	gs_enter_context(video->graphics);
 
 	profile_start(output_frame_render_video_name);
-	render_video(video, raw_active, cur_texture, prev_texture);
+	render_video(video, raw_active, gpu_active, cur_texture, prev_texture);
 	profile_end(output_frame_render_video_name);
 
 	if (raw_active) {
@@ -680,15 +752,27 @@ static inline void output_frame(bool raw_active)
 
 #define NBSP "\xC2\xA0"
 
-static void clear_frame_data(void)
+static void clear_base_frame_data(void)
 {
 	struct obs_core_video *video = &obs->video;
-	memset(video->textures_rendered, 0, sizeof(video->textures_rendered));
-	memset(video->textures_output, 0, sizeof(video->textures_output));
 	memset(video->textures_copied, 0, sizeof(video->textures_copied));
 	memset(video->textures_converted, 0, sizeof(video->textures_converted));
 	circlebuf_free(&video->vframe_info_buffer);
 	video->cur_texture = 0;
+}
+
+static void clear_raw_frame_data(void)
+{
+	struct obs_core_video *video = &obs->video;
+	memset(video->textures_copied, 0, sizeof(video->textures_copied));
+	memset(video->textures_converted, 0, sizeof(video->textures_converted));
+	circlebuf_free(&video->vframe_info_buffer);
+}
+
+static void clear_gpu_frame_data(void)
+{
+	struct obs_core_video *video = &obs->video;
+	circlebuf_free(&video->vframe_info_buffer_gpu);
 }
 
 static const char *tick_sources_name = "tick_sources";
@@ -701,7 +785,9 @@ void *obs_graphics_thread(void *param)
 	uint64_t frame_time_total_ns = 0;
 	uint64_t fps_total_ns = 0;
 	uint32_t fps_total_frames = 0;
+	bool gpu_was_active = false;
 	bool raw_was_active = false;
+	bool was_active = false;
 
 	obs->video.video_time = os_gettime_ns();
 
@@ -718,10 +804,18 @@ void *obs_graphics_thread(void *param)
 		uint64_t frame_start = os_gettime_ns();
 		uint64_t frame_time_ns;
 		bool raw_active = obs->video.raw_active > 0;
+		bool gpu_active = obs->video.gpu_encoder_active > 0;
+		bool active = raw_active || gpu_active;
 
+		if (!was_active && active)
+			clear_base_frame_data();
 		if (!raw_was_active && raw_active)
-			clear_frame_data();
+			clear_raw_frame_data();
+		if (!gpu_was_active && gpu_active)
+			clear_gpu_frame_data();
 		raw_was_active = raw_active;
+		gpu_was_active = gpu_active;
+		was_active = active;
 
 		profile_start(video_thread_name);
 
@@ -730,7 +824,7 @@ void *obs_graphics_thread(void *param)
 		profile_end(tick_sources_name);
 
 		profile_start(output_frame_name);
-		output_frame(raw_active);
+		output_frame(raw_active, gpu_active);
 		profile_end(output_frame_name);
 
 		profile_start(render_displays_name);
@@ -743,8 +837,8 @@ void *obs_graphics_thread(void *param)
 
 		profile_reenable_thread();
 
-		video_sleep(&obs->video, raw_active, &obs->video.video_time,
-				interval);
+		video_sleep(&obs->video, raw_active, gpu_active,
+				&obs->video.video_time, interval);
 
 		frame_time_total_ns += frame_time_ns;
 		fps_total_ns += (obs->video.video_time - last_time);

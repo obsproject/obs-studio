@@ -177,6 +177,12 @@ static inline bool has_scaling(const struct obs_encoder *encoder)
 		 video_height != encoder->scaled_height);
 }
 
+static inline bool gpu_encode_available(const struct obs_encoder *encoder)
+{
+    return (encoder->info.caps & OBS_ENCODER_CAP_PASS_TEXTURE) != 0 &&
+		obs->video.using_nv12_tex;
+}
+
 static void add_connection(struct obs_encoder *encoder)
 {
 	if (encoder->info.type == OBS_ENCODER_AUDIO) {
@@ -189,7 +195,12 @@ static void add_connection(struct obs_encoder *encoder)
 		struct video_scale_info info = {0};
 		get_video_info(encoder, &info);
 
-		start_raw_video(encoder->media, &info, receive_video, encoder);
+		if (gpu_encode_available(encoder)) {
+			start_gpu_encode(encoder);
+		} else {
+			start_raw_video(encoder->media, &info, receive_video,
+					encoder);
+		}
 	}
 
 	set_encoder_active(encoder, true);
@@ -197,11 +208,16 @@ static void add_connection(struct obs_encoder *encoder)
 
 static void remove_connection(struct obs_encoder *encoder)
 {
-	if (encoder->info.type == OBS_ENCODER_AUDIO)
+	if (encoder->info.type == OBS_ENCODER_AUDIO) {
 		audio_output_disconnect(encoder->media, encoder->mixer_idx,
 				receive_audio, encoder);
-	else
-		stop_raw_video(encoder->media, receive_video, encoder);
+	} else {
+		if (gpu_encode_available(encoder)) {
+			stop_gpu_encode(encoder);
+		} else {
+			stop_raw_video(encoder->media, receive_video, encoder);
+		}
+	}
 
 	obs_encoder_shutdown(encoder);
 	set_encoder_active(encoder, false);
@@ -776,6 +792,40 @@ static void full_stop(struct obs_encoder *encoder)
 	}
 }
 
+void send_off_encoder_packet(obs_encoder_t *encoder, bool success,
+		bool received, struct encoder_packet *pkt)
+{
+	if (!success) {
+		full_stop(encoder);
+		blog(LOG_ERROR, "Error encoding with encoder '%s'",
+				encoder->context.name);
+		return;
+	}
+
+	if (received) {
+		if (!encoder->first_received) {
+			encoder->offset_usec = packet_dts_usec(pkt);
+			encoder->first_received = true;
+		}
+
+		/* we use system time here to ensure sync with other encoders,
+		 * you do not want to use relative timestamps here */
+		pkt->dts_usec = encoder->start_ts / 1000 +
+			packet_dts_usec(pkt) - encoder->offset_usec;
+		pkt->sys_dts_usec = pkt->dts_usec;
+
+		pthread_mutex_lock(&encoder->callbacks_mutex);
+
+		for (size_t i = encoder->callbacks.num; i > 0; i--) {
+			struct encoder_callback *cb;
+			cb = encoder->callbacks.array+(i-1);
+			send_packet(encoder, cb, pkt);
+		}
+
+		pthread_mutex_unlock(&encoder->callbacks_mutex);
+	}
+}
+
 static const char *do_encode_name = "do_encode";
 static inline void do_encode(struct obs_encoder *encoder,
 		struct encoder_frame *frame)
@@ -798,37 +848,8 @@ static inline void do_encode(struct obs_encoder *encoder,
 	success = encoder->info.encode(encoder->context.data, frame, &pkt,
 			&received);
 	profile_end(encoder->profile_encoder_encode_name);
-	if (!success) {
-		full_stop(encoder);
-		blog(LOG_ERROR, "Error encoding with encoder '%s'",
-				encoder->context.name);
-		goto error;
-	}
+	send_off_encoder_packet(encoder, success, received, &pkt);
 
-	if (received) {
-		if (!encoder->first_received) {
-			encoder->offset_usec = packet_dts_usec(&pkt);
-			encoder->first_received = true;
-		}
-
-		/* we use system time here to ensure sync with other encoders,
-		 * you do not want to use relative timestamps here */
-		pkt.dts_usec = encoder->start_ts / 1000 +
-			packet_dts_usec(&pkt) - encoder->offset_usec;
-		pkt.sys_dts_usec = pkt.dts_usec;
-
-		pthread_mutex_lock(&encoder->callbacks_mutex);
-
-		for (size_t i = encoder->callbacks.num; i > 0; i--) {
-			struct encoder_callback *cb;
-			cb = encoder->callbacks.array+(i-1);
-			send_packet(encoder, cb, &pkt);
-		}
-
-		pthread_mutex_unlock(&encoder->callbacks_mutex);
-	}
-
-error:
 	profile_end(do_encode_name);
 }
 

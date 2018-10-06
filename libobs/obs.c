@@ -380,6 +380,7 @@ static int obs_init_video(struct obs_video_info *ovi)
 {
 	struct obs_core_video *video = &obs->video;
 	struct video_output_info vi;
+	pthread_mutexattr_t attr;
 	int errorcode;
 
 	make_video_info(&vi, ovi);
@@ -412,6 +413,13 @@ static int obs_init_video(struct obs_video_info *ovi)
 		return OBS_VIDEO_FAIL;
 
 	gs_leave_context();
+
+	if (pthread_mutexattr_init(&attr) != 0)
+		return OBS_VIDEO_FAIL;
+	if (pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE) != 0)
+		return OBS_VIDEO_FAIL;
+	if (pthread_mutex_init(&video->gpu_encoder_mutex, NULL) < 0)
+		return OBS_VIDEO_FAIL;
 
 	errorcode = pthread_create(&video->video_thread, NULL,
 			obs_graphics_thread, obs);
@@ -473,6 +481,7 @@ static void obs_free_video(void)
 		gs_leave_context();
 
 		circlebuf_free(&video->vframe_info_buffer);
+		circlebuf_free(&video->vframe_info_buffer_gpu);
 
 		memset(&video->textures_rendered, 0,
 				sizeof(video->textures_rendered));
@@ -483,6 +492,11 @@ static void obs_free_video(void)
 		memset(&video->textures_converted, 0,
 				sizeof(video->textures_converted));
 
+		pthread_mutex_destroy(&video->gpu_encoder_mutex);
+		pthread_mutex_init_value(&video->gpu_encoder_mutex);
+		da_free(video->gpu_encoders);
+
+		video->gpu_encoder_active = 0;
 		video->cur_texture = 0;
 	}
 }
@@ -784,6 +798,7 @@ static bool obs_init(const char *locale, const char *module_config_path,
 	obs = bzalloc(sizeof(struct obs_core));
 
 	pthread_mutex_init_value(&obs->audio.monitoring_mutex);
+	pthread_mutex_init_value(&obs->video.gpu_encoder_mutex);
 
 	obs->name_store_owned = !store;
 	obs->name_store = store ? store : profiler_name_store_create();
@@ -2290,13 +2305,36 @@ obs_data_t *obs_get_private_data(void)
 	return private_data;
 }
 
+void start_gpu_encode(obs_encoder_t *encoder)
+{
+	struct obs_core_video *video = &obs->video;
+
+	pthread_mutex_lock(&video->gpu_encoder_mutex);
+	da_push_back(video->gpu_encoders, &encoder);
+	pthread_mutex_unlock(&video->gpu_encoder_mutex);
+
+	os_atomic_inc_long(&video->gpu_encoder_active);
+}
+
+void stop_gpu_encode(obs_encoder_t *encoder)
+{
+	struct obs_core_video *video = &obs->video;
+
+	pthread_mutex_lock(&video->gpu_encoder_mutex);
+	da_erase_item(video->gpu_encoders, &encoder);
+	pthread_mutex_unlock(&video->gpu_encoder_mutex);
+
+	os_atomic_dec_long(&video->gpu_encoder_active);
+}
+
 bool obs_video_active(void)
 {
 	struct obs_core_video *video = &obs->video;
 	if (!obs)
 		return false;
 
-	return os_atomic_load_long(&video->raw_active) > 0;
+	return os_atomic_load_long(&video->raw_active) > 0 ||
+	       os_atomic_load_long(&video->gpu_encoder_active) > 0;
 }
 
 bool obs_nv12_tex_active(void)
