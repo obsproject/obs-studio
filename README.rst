@@ -1,6 +1,10 @@
 OBS Studio <https://obsproject.com>
 ===================================
 
+.. image:: https://travis-ci.org/obsproject/obs-studio.svg?branch=master
+   :alt: OBS Studio Build Status - Travis CI
+   :target: https://travis-ci.org/obsproject/obs-studio
+
 What is OBS Studio?
 -------------------
 
