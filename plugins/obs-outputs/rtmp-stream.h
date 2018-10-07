@@ -30,11 +30,18 @@
 #define OPT_BIND_IP "bind_ip"
 #define OPT_NEWSOCKETLOOP_ENABLED "new_socket_loop_enabled"
 #define OPT_LOWLATENCY_ENABLED "low_latency_mode_enabled"
+#define OPT_DYN_BITRATE "dynamic_bitrate"
+#define OPT_DYN_BITRATE_DOWN "dynamic_bitrate_down"
+#define OPT_DYN_BITRATE_UP "dynamic_bitrate_up"
+#define OPT_DYN_BITRATE_THRESHOLD "dynamic_bitrate_threshold"
+#define OPT_DYN_BITRATE_REC_TIME_MS "dynamic_bitrate_recovery_time_ms"
+#define OPT_DYN_BITRATE_DEC_TIME_MS "dynamic_bitrate_decrease_time_ms"
+#define OPT_DYN_BITRATE_FLOOR "dynamic_bitrate_floor"
 
 //#define TEST_FRAMEDROPS
 
 #ifdef TEST_FRAMEDROPS
-
+#define SEC_TO_NS 1000000000ULL
 #define DROPTEST_MAX_KBPS 3000
 #define DROPTEST_MAX_BYTES (DROPTEST_MAX_KBPS * 1000 / 8)
 
@@ -88,6 +95,34 @@ struct rtmp_stream {
 	struct circlebuf droptest_info;
 	size_t           droptest_size;
 #endif
+
+	/* dynamic bitrate variables */
+	bool             enable_dyn_br;
+	int              dynamic_br;
+	int              initial_br;
+	uint64_t         last_adj_time;
+	float            last_congest;
+	float            mean_congest;
+	size_t           congest_idx;
+	bool             inc_just_attempted;
+	bool             allow_inc_earlier;
+	int              br_dec_rate;   /* percentage at which bitrate will
+					   decrease every dec_poll_time. */
+	int              br_inc_rate;   /* percentage at which bitrate will
+					   increase every inc_poll_time. */
+	uint64_t         inc_poll_time; /* time in milliseconds after which a
+					   bitrate increase can be attempted
+					   (if congestion has stopped). */
+	uint64_t         dec_poll_time; /* time in milliseconds between allowed
+					   decreases in bitrate (if congestion
+					   has been detected). */
+	int              dyn_threshold; /* congestion threshold percentage in
+					   which bitrate is decreased. */
+	int              br_floor;      /* minimum percentage of initial
+					   bitrate that it can be lowered to
+					   (50% on default). */
+	enum br_state    br_state;      /* stores the dynamic bitrate state for
+					   UI status bar. */
 
 	RTMP             rtmp;
 

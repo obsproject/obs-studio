@@ -1401,10 +1401,10 @@
                       </property>
                      </widget>
                     </item>
-                    <item row="5" column="1">
+                    <item row="6" column="1">
                      <widget class="QComboBox" name="simpleOutPreset"/>
                     </item>
-                    <item row="5" column="0">
+                    <item row="6" column="0">
                      <widget class="QLabel" name="label_24">
                       <property name="enabled">
                        <bool>true</bool>
@@ -1417,7 +1417,7 @@
                       </property>
                      </widget>
                     </item>
-                    <item row="6" column="0">
+                    <item row="7" column="0">
                      <widget class="QLabel" name="label_23">
                       <property name="text">
                        <string>Basic.Settings.Output.CustomEncoderSettings</string>
@@ -1427,13 +1427,23 @@
                       </property>
                      </widget>
                     </item>
-                    <item row="6" column="1">
+                    <item row="7" column="1">
                      <widget class="QLineEdit" name="simpleOutCustom"/>
                     </item>
                     <item row="4" column="1">
                      <widget class="QCheckBox" name="simpleOutEnforce">
                       <property name="text">
                        <string>Basic.Settings.Output.EnforceBitrate</string>
+                      </property>
+                     </widget>
+                    </item>
+                    <item row="5" column="1">
+                     <widget class="QCheckBox" name="simpleOutDynamic">
+                      <property name="toolTip">
+                       <string>Basic.Settings.Output.DynamicBitrate.Tooltip</string>
+                      </property>
+                      <property name="text">
+                       <string>Basic.Settings.Output.DynamicBitrate</string>
                       </property>
                      </widget>
                     </item>
@@ -1921,7 +1931,182 @@
                              </property>
                             </widget>
                            </item>
-                           <item row="4" column="0">
+                           <item row="4" column="1">
+                            <widget class="QCheckBox" name="advOutDyn">
+                             <property name="toolTip">
+                              <string>Basic.Settings.Output.Adv.DynamicBitrate.Tooltip</string>
+                             </property>
+                             <property name="text">
+                              <string>Basic.Settings.Output.Adv.DynamicBitrate</string>
+                             </property>
+                            </widget>
+                           </item>
+                           <item row="5" column="1">
+                            <widget class="QWidget" name="widget_dyn" native="true">
+                             <property name="minimumSize">
+                              <size>
+                               <width>0</width>
+                               <height>0</height>
+                              </size>
+                             </property>
+                             <layout class="QGridLayout" name="gridLayout">
+                              <item row="0" column="0">
+                               <widget class="QSpinBox" name="advOutDynDown">
+                                <property name="toolTip">
+                                 <string>Basic.Settings.Output.Adv.DynamicBitrate.Down.Tooltip</string>
+                                </property>
+                                <property name="maximum">
+                                 <number>50</number>
+                                </property>
+                                <property name="value">
+                                 <number>20</number>
+                                </property>
+                               </widget>
+                              </item>
+                              <item row="0" column="1">
+                               <widget class="QLabel" name="label_72">
+                                <property name="text">
+                                 <string>Basic.Settings.Output.Adv.Dyn.Down</string>
+                                </property>
+                               </widget>
+                              </item>
+                              <item row="0" column="2">
+                               <widget class="QSpinBox" name="advOutDynUp">
+                                <property name="enabled">
+                                 <bool>true</bool>
+                                </property>
+                                <property name="toolTip">
+                                 <string>Basic.Settings.Output.Adv.DynamicBitrate.Up.Tooltip</string>
+                                </property>
+                                <property name="layoutDirection">
+                                 <enum>Qt::LeftToRight</enum>
+                                </property>
+                                <property name="alignment">
+                                 <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+                                </property>
+                                <property name="maximum">
+                                 <number>50</number>
+                                </property>
+                                <property name="value">
+                                 <number>5</number>
+                                </property>
+                                <property name="displayIntegerBase">
+                                 <number>10</number>
+                                </property>
+                               </widget>
+                              </item>
+                              <item row="0" column="3">
+                               <widget class="QLabel" name="label_73">
+                                <property name="text">
+                                 <string>Basic.Settings.Output.Adv.Dyn.Up</string>
+                                </property>
+                               </widget>
+                              </item>
+                              <item row="1" column="0">
+                               <widget class="QSpinBox" name="advOutDynDecreaseTime">
+                                <property name="toolTip">
+                                 <string>Basic.Settings.Output.Adv.DynamicBitrate.DecreaseTime.Tooltip</string>
+                                </property>
+                                <property name="maximum">
+                                 <number>2000</number>
+                                </property>
+                                <property name="singleStep">
+                                 <number>10</number>
+                                </property>
+                                <property name="value">
+                                 <number>500</number>
+                                </property>
+                               </widget>
+                              </item>
+                              <item row="1" column="1">
+                               <widget class="QLabel" name="label_70">
+                                <property name="text">
+                                 <string>Basic.Settings.Output.Adv.Dyn.Decrease.Time</string>
+                                </property>
+                               </widget>
+                              </item>
+                              <item row="1" column="2">
+                               <widget class="QSpinBox" name="advOutDynRecoveryTime">
+                                <property name="toolTip">
+                                 <string>Basic.Settings.Output.Adv.DynamicBitrate.RecoveryTime.Tooltip</string>
+                                </property>
+                                <property name="maximum">
+                                 <number>30000</number>
+                                </property>
+                                <property name="singleStep">
+                                 <number>10</number>
+                                </property>
+                                <property name="value">
+                                 <number>5000</number>
+                                </property>
+                               </widget>
+                              </item>
+                              <item row="1" column="3">
+                               <widget class="QLabel" name="label_69">
+                                <property name="text">
+                                 <string>Basic.Settings.Output.Adv.Dyn.Recovery.Time</string>
+                                </property>
+                               </widget>
+                              </item>
+                              <item row="2" column="0">
+                               <widget class="QSpinBox" name="advOutDynThreshold">
+                                <property name="toolTip">
+                                 <string>Basic.Settings.Output.Adv.DynamicBitrate.Threshold.Tooltip</string>
+                                </property>
+                                <property name="maximum">
+                                 <number>25</number>
+                                </property>
+                                <property name="minimum">
+                                 <number>1</number>
+                                </property>
+                                <property name="value">
+                                 <number>3</number>
+                                </property>
+                                <property name="displayIntegerBase">
+                                 <number>10</number>
+                                </property>
+                               </widget>
+                              </item>
+                              <item row="2" column="1">
+                               <widget class="QLabel" name="label_68">
+                                <property name="text">
+                                 <string>Basic.Settings.Output.Adv.Dyn.Threshold</string>
+                                </property>
+                               </widget>
+                              </item>
+                              <item row="2" column="2">
+                               <widget class="QSpinBox" name="advOutDynFloor">
+                                <property name="toolTip">
+                                 <string>Basic.Settings.Output.Adv.DynamicBitrate.Floor.Tooltip</string>
+                                </property>
+                                <property name="value">
+                                 <number>50</number>
+                                </property>
+                               </widget>
+                              </item>
+                              <item row="2" column="3">
+                               <widget class="QLabel" name="label_71">
+                                <property name="text">
+                                 <string>Basic.Settings.Output.Adv.Dyn.Floor</string>
+                                </property>
+                               </widget>
+                              </item>
+                             </layout>
+                             <zorder>advOutDynUp</zorder>
+                             <zorder>label_72</zorder>
+                             <zorder>label_73</zorder>
+                             <zorder>advOutDynDown</zorder>
+                             <zorder>advOutDynDecreaseTime</zorder>
+                             <zorder>advOutDynRecoveryTime</zorder>
+                             <zorder>label_69</zorder>
+                             <zorder>label_70</zorder>
+                             <zorder>advOutDynThreshold</zorder>
+                             <zorder>label_68</zorder>
+                             <zorder>advOutDynFloor</zorder>
+                             <zorder>label_71</zorder>
+                            </widget>
+                           </item>
+                           <item row="7" column="0">
                             <widget class="QCheckBox" name="advOutUseRescale">
                              <property name="sizePolicy">
                               <sizepolicy hsizetype="Minimum" vsizetype="Expanding">
@@ -1937,7 +2122,7 @@
                              </property>
                             </widget>
                            </item>
-                           <item row="4" column="1">
+                           <item row="7" column="1">
                             <widget class="QComboBox" name="advOutRescale">
                              <property name="enabled">
                               <bool>false</bool>
@@ -5292,6 +5477,8 @@
   <tabstop>simpleOutEnforce</tabstop>
   <tabstop>simpleOutPreset</tabstop>
   <tabstop>simpleOutCustom</tabstop>
+  <tabstop>simpleOutEnforce</tabstop>
+  <tabstop>simpleOutDynamic</tabstop>
   <tabstop>simpleOutputPath</tabstop>
   <tabstop>simpleOutputBrowse</tabstop>
   <tabstop>simpleNoSpace</tabstop>
@@ -5311,6 +5498,7 @@
   <tabstop>advOutTrack6</tabstop>
   <tabstop>advOutEncoder</tabstop>
   <tabstop>advOutApplyService</tabstop>
+  <tabstop>advOutDyn</tabstop>
   <tabstop>advOutUseRescale</tabstop>
   <tabstop>advOutRescale</tabstop>
   <tabstop>advOutRecType</tabstop>
@@ -5625,6 +5813,22 @@
    </hints>
   </connection>
   <connection>
+   <sender>simpleOutAdvanced</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>simpleOutDynamic</receiver>
+   <slot>setVisible(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>683</x>
+     <y>189</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>683</x>
+     <y>243</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
    <sender>systemTrayEnabled</sender>
    <signal>toggled(bool)</signal>
    <receiver>systemTrayWhenStarted</receiver>
@@ -5861,6 +6065,214 @@
     <hint type="destinationlabel">
      <x>454</x>
      <y>87</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>advOutDyn</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>advOutDynUp</receiver>
+   <slot>setVisible(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>663</x>
+     <y>209</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>674</x>
+     <y>236</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>advOutDyn</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>advOutDynDown</receiver>
+   <slot>setVisible(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>663</x>
+     <y>209</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>424</x>
+     <y>236</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>advOutDyn</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>label_72</receiver>
+   <slot>setVisible(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>663</x>
+     <y>209</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>225</x>
+     <y>123</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>advOutDyn</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>label_73</receiver>
+   <slot>setVisible(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>663</x>
+     <y>209</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>814</x>
+     <y>236</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>advOutDyn</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>advOutDynThreshold</receiver>
+   <slot>setVisible(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>663</x>
+     <y>209</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>435</x>
+     <y>277</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>advOutDyn</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>advOutDynRecoveryTime</receiver>
+   <slot>setVisible(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>663</x>
+     <y>209</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>721</x>
+     <y>277</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>advOutDyn</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>label_68</receiver>
+   <slot>setVisible(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>663</x>
+     <y>209</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>578</x>
+     <y>277</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>advOutDyn</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>label_69</receiver>
+   <slot>setVisible(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>663</x>
+     <y>209</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>862</x>
+     <y>277</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>advOutDyn</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>advOutDynDecreaseTime</receiver>
+   <slot>setVisible(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>663</x>
+     <y>209</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>442</x>
+     <y>277</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>advOutDyn</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>label_70</receiver>
+   <slot>setVisible(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>663</x>
+     <y>209</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>607</x>
+     <y>277</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>advOutDyn</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>widget_dyn</receiver>
+   <slot>setVisible(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>213</x>
+     <y>88</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>213</x>
+     <y>88</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>advOutDyn</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>advOutDynFloor</receiver>
+   <slot>setVisible(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>762</x>
+     <y>209</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>804</x>
+     <y>306</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>advOutDyn</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>label_71</receiver>
+   <slot>setVisible(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>762</x>
+     <y>209</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>978</x>
+     <y>306</y>
     </hint>
    </hints>
   </connection>

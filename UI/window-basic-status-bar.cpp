@@ -17,7 +17,10 @@ OBSBasicStatusBar::OBSBasicStatusBar(QWidget *parent)
 	  transparentPixmap (20, 20),
 	  greenPixmap       (20, 20),
 	  grayPixmap        (20, 20),
-	  redPixmap         (20, 20)
+	  redPixmap         (20, 20),
+	  dynPixmap         (20, 20),
+	  dynPixmapUp       (20, 20),
+	  dynPixmapDown     (20, 20)
 {
 	streamTime->setText(QString("LIVE: 00:00:00"));
 	recordTime->setText(QString("REC: 00:00:00"));
@@ -33,6 +36,9 @@ OBSBasicStatusBar::OBSBasicStatusBar(QWidget *parent)
 	kbps = new QLabel(brWidget);
 	brLayout->addWidget(kbps);
 
+	dynStatus = new QLabel(brWidget);
+	brLayout->addWidget(dynStatus);
+
 	brWidget->setLayout(brLayout);
 
 	delayInfo->setAlignment(Qt::AlignRight);
@@ -47,6 +53,8 @@ OBSBasicStatusBar::OBSBasicStatusBar(QWidget *parent)
 	cpuUsage->setAlignment(Qt::AlignVCenter);
 	kbps->setAlignment(Qt::AlignRight);
 	kbps->setAlignment(Qt::AlignVCenter);
+	dynStatus->setAlignment(Qt::AlignRight);
+	dynStatus->setAlignment(Qt::AlignVCenter);
 
 	delayInfo->setIndent(20);
 	droppedFrames->setIndent(20);
@@ -54,6 +62,7 @@ OBSBasicStatusBar::OBSBasicStatusBar(QWidget *parent)
 	recordTime->setIndent(20);
 	cpuUsage->setIndent(20);
 	kbps->setIndent(10);
+	dynStatus->setIndent(20);
 
 	addPermanentWidget(droppedFrames);
 	addPermanentWidget(streamTime);
@@ -68,6 +77,25 @@ OBSBasicStatusBar::OBSBasicStatusBar(QWidget *parent)
 	redPixmap.fill(QColor(255, 0, 0));
 
 	statusSquare->setPixmap(transparentPixmap);
+
+	dynPixmap = QPixmap::fromImage(QImage(":/res/images/dyn.png"));
+	dynPixmapUp = QPixmap::fromImage(QImage(":/res/images/dynup.png"));
+	dynPixmapDown = QPixmap::fromImage(QImage(":/res/images/dyndown.png"));
+	variableBitrateEnabled = GetDynamicBitrateSetting();
+
+	dynStatus->setPixmap(transparentPixmap);
+}
+
+bool OBSBasicStatusBar::GetDynamicBitrateSetting()
+{
+	obs_data_t *settings = streamOutput != nullptr ?
+			obs_output_get_settings(streamOutput) : nullptr;
+	bool dyn = false;
+	if (settings) {
+		dyn = obs_data_get_bool(settings, OPT_DYN_BITRATE);
+		obs_data_release(settings);
+	}
+	return dyn;
 }
 
 void OBSBasicStatusBar::Activate()
@@ -91,6 +119,8 @@ void OBSBasicStatusBar::Activate()
 
 		if (streamOutput) {
 			statusSquare->setPixmap(grayPixmap);
+			variableBitrateEnabled = GetDynamicBitrateSetting();
+			dynStatus->setPixmap(transparentPixmap);
 		}
 	}
 }
@@ -126,6 +156,7 @@ void OBSBasicStatusBar::Deactivate()
 		overloadedNotify = true;
 
 		statusSquare->setPixmap(transparentPixmap);
+		dynStatus->setPixmap(transparentPixmap);
 	}
 }
 
@@ -307,6 +338,36 @@ void OBSBasicStatusBar::UpdateDroppedFrames()
 	lastCongestion = congestion;
 }
 
+void OBSBasicStatusBar::UpdateDynamicBitrateStatus()
+{
+	if (!streamOutput)
+		return;
+
+	br_state state = obs_output_get_bitrate_state(streamOutput);
+	switch (state) {
+	case BITRATE_EQUAL_INITIAL_BITRATE:
+		dynStatus->setPixmap(transparentPixmap);
+		break;
+	case BITRATE_SWITCHING_UP:
+		dynStatus->setPixmap(dynPixmapUp);
+		dynStatus->setToolTip(QTStr(
+				"Basic.StatusBar.DynamicBitrate.Up"));
+		break;
+	case BITRATE_SWITCHING_DOWN:
+		dynStatus->setPixmap(dynPixmapDown);
+		dynStatus->setToolTip(QTStr(
+				"Basic.StatusBar.DynamicBitrate.Down"));
+		break;
+	case BITRATE_SWITCHING_STATIONARY:
+		dynStatus->setPixmap(dynPixmap);
+		dynStatus->setToolTip(QTStr(
+				"Basic.StatusBar.DynamicBitrate.Stationary"));
+		break;
+	default:
+		dynStatus->setPixmap(transparentPixmap);
+	}
+}
+
 void OBSBasicStatusBar::OBSOutputReconnect(void *data, calldata_t *params)
 {
 	OBSBasicStatusBar *statusBar =
@@ -384,6 +445,11 @@ void OBSBasicStatusBar::UpdateStatusBar()
 		UpdateRecordTime();
 
 	UpdateDroppedFrames();
+	variableBitrateEnabled = GetDynamicBitrateSetting();
+	if (variableBitrateEnabled)
+		UpdateDynamicBitrateStatus();
+	else
+		dynStatus->setPixmap(transparentPixmap);
 
 	int skipped = video_output_get_skipped_frames(obs_get_video());
 	int total   = video_output_get_total_frames(obs_get_video());

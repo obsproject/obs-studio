@@ -423,6 +423,7 @@ void SimpleOutput::Update()
 			"UseAdvanced");
 	bool enforceBitrate = config_get_bool(main->Config(), "SimpleOutput",
 			"EnforceBitrate");
+
 	const char *custom = config_get_string(main->Config(),
 			"SimpleOutput", "x264Settings");
 	const char *encoder = config_get_string(main->Config(), "SimpleOutput",
@@ -781,6 +782,10 @@ bool SimpleOutput::StartStreaming(obs_service_t *service)
 			"NewSocketLoopEnable");
 	bool enableLowLatencyMode = config_get_bool(main->Config(), "Output",
 			"LowLatencyEnable");
+	bool advanced = config_get_bool(main->Config(), "SimpleOutput",
+			"UseAdvanced");
+	bool dynamicBitrate = config_get_bool(main->Config(), "SimpleOutput",
+			"DynBitrate");
 
 	obs_data_t *settings = obs_data_create();
 	obs_data_set_string(settings, "bind_ip", bindIP);
@@ -788,6 +793,9 @@ bool SimpleOutput::StartStreaming(obs_service_t *service)
 			enableNewSocketLoop);
 	obs_data_set_bool(settings, "low_latency_mode_enabled",
 			enableLowLatencyMode);
+	if (advanced)
+		obs_data_set_bool(settings, "dynamic_bitrate", dynamicBitrate);
+
 	obs_output_update(streamOutput, settings);
 	obs_data_release(settings);
 
@@ -1588,6 +1596,20 @@ bool AdvancedOutput::StartStreaming(obs_service_t *service)
 			"NewSocketLoopEnable");
 	bool enableLowLatencyMode = config_get_bool(main->Config(), "Output",
 			"LowLatencyEnable");
+	bool dynBitrate = config_get_bool(main->Config(), "AdvOut",
+			"DynBitrate");
+	int dynBitrateDown = config_get_int(main->Config(), "AdvOut",
+			"DynBitrateDown");
+	int dynBitrateUp = config_get_int(main->Config(), "AdvOut",
+			"DynBitrateUp");
+	int dynBitrateThreshold = config_get_int(main->Config(), "AdvOut",
+			"DynBitrateThreshold");
+	int dynBitrateRecTimeMS = config_get_int(main->Config(), "AdvOut",
+			"DynBitrateRecTimeMS");
+	int dynBitrateDecTimeMS = config_get_int(main->Config(), "AdvOut",
+			"DynBitrateDecTimeMS");
+	int dynBitrateFloor = config_get_int(main->Config(), "AdvOut",
+			"DynBitrateFloor");
 
 	obs_data_t *settings = obs_data_create();
 	obs_data_set_string(settings, "bind_ip", bindIP);
@@ -1595,6 +1617,18 @@ bool AdvancedOutput::StartStreaming(obs_service_t *service)
 			enableNewSocketLoop);
 	obs_data_set_bool(settings, "low_latency_mode_enabled",
 			enableLowLatencyMode);
+	obs_data_set_bool(settings, "dynamic_bitrate", dynBitrate);
+	obs_data_set_int(settings, "dynamic_bitrate_down", dynBitrateDown);
+	obs_data_set_int(settings, "dynamic_bitrate_up", dynBitrateUp);
+	obs_data_set_int(settings, "dynamic_bitrate_threshold",
+			dynBitrateThreshold);
+	obs_data_set_int(settings, "dynamic_bitrate_recovery_time_ms",
+			dynBitrateRecTimeMS);
+	obs_data_set_int(settings, "dynamic_bitrate_decrease_time_ms",
+			dynBitrateDecTimeMS);
+	obs_data_set_int(settings, "dynamic_bitrate_floor",
+			dynBitrateFloor);
+
 	obs_output_update(streamOutput, settings);
 	obs_data_release(settings);
 

@@ -1218,6 +1218,8 @@ bool OBSBasic::InitBasicConfigDefaults()
 			false);
 	config_set_default_bool  (basicConfig, "SimpleOutput", "EnforceBitrate",
 			true);
+	config_set_default_bool  (basicConfig, "SimpleOutput", "DynamicBitrate",
+			false);
 	config_set_default_string(basicConfig, "SimpleOutput", "Preset",
 			"veryfast");
 	config_set_default_string(basicConfig, "SimpleOutput", "NVENCPreset",
@@ -1232,6 +1234,20 @@ bool OBSBasic::InitBasicConfigDefaults()
 
 	config_set_default_bool  (basicConfig, "AdvOut", "ApplyServiceSettings",
 			true);
+	config_set_default_bool  (basicConfig, "AdvOut",
+			"DynBitrate", false);
+	config_set_default_int   (basicConfig, "AdvOut",
+			"DynBitrateDown", 20);
+	config_set_default_int   (basicConfig, "AdvOut",
+			"DynBitrateUp", 5);
+	config_set_default_int   (basicConfig, "AdvOut",
+			"DynBitrateThreshold", 3);
+	config_set_default_int   (basicConfig, "AdvOut",
+			"DynBitrateRecTimeMS", 5000);
+	config_set_default_int   (basicConfig, "AdvOut",
+			"DynBitrateDecTimeMS", 500);
+	config_set_default_int   (basicConfig, "AdvOut",
+			"DynBitrateFloor", 50);
 	config_set_default_bool  (basicConfig, "AdvOut", "UseRescale", false);
 	config_set_default_uint  (basicConfig, "AdvOut", "TrackIndex", 1);
 	config_set_default_string(basicConfig, "AdvOut", "Encoder", "obs_x264");
