@@ -974,7 +974,8 @@ void register_encoders()
 		.get_properties = vt_h264_properties,
 		.get_defaults   = vt_h264_defaults,
 		.get_video_info = vt_h264_video_info,
-		.get_extra_data = vt_h264_extra_data
+		.get_extra_data = vt_h264_extra_data,
+		.caps           = OBS_ENCODER_VIDEO_DYN
 	};
 
 	for(size_t i = 0; i < vt_encoders.num; i++) {
