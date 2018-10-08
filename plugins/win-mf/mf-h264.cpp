@@ -529,6 +529,7 @@ void RegisterMFH264Encoders()
 	info.get_sei_data = MFH264_GetSEIData;
 	info.get_video_info = MFH264_GetVideoInfo;
 	info.codec = "h264";
+	info.caps = OBS_ENCODER_VIDEO_DYN;
 
 	auto encoders = EncoderDescriptor::Enumerate();
 	for (auto e : encoders) {
