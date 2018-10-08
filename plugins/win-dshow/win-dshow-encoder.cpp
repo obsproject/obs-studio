@@ -343,6 +343,7 @@ void RegisterDShowEncoders()
 	info.get_properties    = GetDShowEncoderProperties;
 	info.get_extra_data    = GetDShowExtraData;
 	info.get_video_info    = GetDShowVideoInfo;
+	info.caps              = 0;
 
 	vector<DeviceId> devices;
 	DShow::VideoEncoder::EnumEncoders(devices);
