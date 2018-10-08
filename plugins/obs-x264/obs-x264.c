@@ -107,6 +107,7 @@ static void obs_x264_defaults(obs_data_t *settings)
 	obs_data_set_default_string(settings, "profile",     "");
 	obs_data_set_default_string(settings, "tune",        "");
 	obs_data_set_default_string(settings, "x264opts",    "");
+	obs_data_set_default_int   (settings, "i_nal_hrd", X264_NAL_HRD_NONE);
 }
 
 static inline void add_strings(obs_property_t *list, const char *const *strings)
@@ -496,6 +497,7 @@ static void update_params(struct obs_x264 *obsx264, obs_data_t *settings,
 			obsx264->params.rc.b_filler = true;
 #else
 			obsx264->params.i_nal_hrd = X264_NAL_HRD_CBR;
+			obs_data_set_int(settings, "i_nal_hrd", X264_NAL_HRD_CBR);
 #endif
 		}
 	} else {
@@ -780,5 +782,6 @@ struct obs_encoder_info obs_x264_encoder = {
 	.get_defaults   = obs_x264_defaults,
 	.get_extra_data = obs_x264_extra_data,
 	.get_sei_data   = obs_x264_sei,
-	.get_video_info = obs_x264_video_info
+	.get_video_info = obs_x264_video_info,
+	.caps           = OBS_ENCODER_VIDEO_DYN
 };
