@@ -741,5 +741,6 @@ struct obs_encoder_info obs_qsv_encoder = {
 	.get_defaults = obs_qsv_defaults,
 	.get_extra_data = obs_qsv_extra_data,
 	.get_sei_data = obs_qsv_sei,
-	.get_video_info = obs_qsv_video_info
+	.get_video_info = obs_qsv_video_info,
+	.caps = OBS_ENCODER_VIDEO_DYN
 };
