@@ -179,6 +179,11 @@ static bool vaapi_supported(void)
 }
 #endif
 
+#ifdef _WIN32
+extern void jim_nvenc_load(void);
+extern void jim_nvenc_unload(void);
+#endif
+
 bool obs_module_load(void)
 {
 	da_init(active_log_contexts);
@@ -196,6 +201,9 @@ bool obs_module_load(void)
 	if (nvenc_supported()) {
 		blog(LOG_INFO, "NVENC supported");
 		obs_register_encoder(&nvenc_encoder_info);
+#ifdef _WIN32
+		jim_nvenc_load();
+#endif
 	}
 #if !defined(_WIN32) && defined(LIBAVUTIL_VAAPI_AVAILABLE)
 	if (vaapi_supported()) {
@@ -224,4 +232,8 @@ void obs_module_unload(void)
 
 	da_free(active_log_contexts);
 	da_free(cached_log_contexts);
+
+#ifdef _WIN32
+	jim_nvenc_unload();
+#endif
 }
