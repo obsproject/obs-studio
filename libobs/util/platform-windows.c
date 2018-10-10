@@ -875,6 +875,11 @@ void get_win_ver(struct win_version_info *info)
 	*info = ver;
 }
 
+uint32_t get_win_ver_int(void)
+{
+	return get_winver();
+}
+
 struct os_inhibit_info {
 	bool active;
 };
