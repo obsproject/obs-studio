@@ -32,6 +32,7 @@ struct win_version_info {
 EXPORT bool is_64_bit_windows(void);
 EXPORT bool get_dll_ver(const wchar_t *lib, struct win_version_info *info);
 EXPORT void get_win_ver(struct win_version_info *info);
+EXPORT uint32_t get_win_ver_int(void);
 
 #ifdef __cplusplus
 }
