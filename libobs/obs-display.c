@@ -230,10 +230,11 @@ bool obs_display_enabled(obs_display_t *display)
 	return display ? display->enabled : false;
 }
 
-void obs_display_set_background_color(obs_display_t *display, uint32_t color)
+void obs_display_set_background_color(obs_display_t *display, uint32_t color,
+		bool projector)
 {
 	if (display) {
-		if (color)
+		if (color || projector)
 			display->background_color = color;
 		else
 			display->background_color = 0x4c4c4c;

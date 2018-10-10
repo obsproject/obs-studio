@@ -60,7 +60,7 @@ OBSQTDisplay::OBSQTDisplay(QWidget *parent, Qt::WindowFlags flags)
 void OBSQTDisplay::SetDisplayBackgroundColor(const QColor &color)
 {
 	backgroundColor = (uint32_t)color_to_int(color);
-	obs_display_set_background_color(display, backgroundColor);
+	obs_display_set_background_color(display, backgroundColor, false);
 }
 
 void OBSQTDisplay::CreateDisplay()
