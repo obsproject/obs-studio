@@ -255,9 +255,14 @@ bool obs_output_actual_start(obs_output_t *output)
 bool obs_output_start(obs_output_t *output)
 {
 	bool encoded;
+	bool has_service;
 	if (!obs_output_valid(output, "obs_output_start"))
 		return false;
 	if (!output->context.data)
+		return false;
+
+	has_service = (output->info.flags & OBS_OUTPUT_SERVICE) != 0;
+	if (has_service && !obs_service_initialize(output->service, output))
 		return false;
 
 	encoded = (output->info.flags & OBS_OUTPUT_ENCODED) != 0;
@@ -1745,8 +1750,6 @@ bool obs_output_initialize_encoders(obs_output_t *output, uint32_t flags)
 			&has_service);
 
 	if (!encoded)
-		return false;
-	if (has_service && !obs_service_initialize(output->service, output))
 		return false;
 	if (has_video && !obs_encoder_initialize(output->video_encoder))
 		return false;
