@@ -1935,6 +1935,9 @@ EXPORT void obs_encoder_packet_ref(struct encoder_packet *dst,
 		struct encoder_packet *src);
 EXPORT void obs_encoder_packet_release(struct encoder_packet *packet);
 
+EXPORT void *obs_encoder_create_rerouted(obs_encoder_t *encoder,
+		const char *reroute_id);
+
 
 /* ------------------------------------------------------------------------- */
 /* Stream Services */
