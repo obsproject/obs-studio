@@ -946,6 +946,9 @@ struct obs_encoder {
 	struct obs_encoder_info         info;
 	struct obs_weak_encoder         *control;
 
+	/* allows re-routing to another encoder */
+	struct obs_encoder_info         orig_info;
+
 	pthread_mutex_t                 init_mutex;
 
 	uint32_t                        samplerate;

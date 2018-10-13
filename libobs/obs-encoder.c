@@ -64,8 +64,8 @@ static bool init_encoder(struct obs_encoder *encoder, const char *name,
 	if (pthread_mutex_init(&encoder->outputs_mutex, NULL) != 0)
 		return false;
 
-	if (encoder->info.get_defaults)
-		encoder->info.get_defaults(encoder->context.settings);
+	if (encoder->orig_info.get_defaults)
+		encoder->orig_info.get_defaults(encoder->context.settings);
 
 	return true;
 }
@@ -90,8 +90,10 @@ static struct obs_encoder *create_encoder(const char *id,
 		encoder->info.id      = bstrdup(id);
 		encoder->info.type    = type;
 		encoder->owns_info_id = true;
+		encoder->orig_info    = encoder->info;
 	} else {
 		encoder->info = *ei;
+		encoder->orig_info = *ei;
 	}
 
 	success = init_encoder(encoder, name, settings, hotkey_data);
@@ -337,9 +339,9 @@ obs_properties_t *obs_encoder_properties(const obs_encoder_t *encoder)
 	if (!obs_encoder_valid(encoder, "obs_encoder_properties"))
 		return NULL;
 
-	if (encoder->info.get_properties) {
+	if (encoder->orig_info.get_properties) {
 		obs_properties_t *props;
-		props = encoder->info.get_properties(encoder->context.data);
+		props = encoder->orig_info.get_properties(encoder->context.data);
 		obs_properties_apply_settings(props, encoder->context.settings);
 		return props;
 	}
@@ -404,6 +406,8 @@ static void intitialize_audio_encoder(struct obs_encoder *encoder)
 	reset_audio_buffers(encoder);
 }
 
+static THREAD_LOCAL bool can_reroute = false;
+
 static inline bool obs_encoder_initialize_internal(obs_encoder_t *encoder)
 {
 	if (encoder_active(encoder))
@@ -413,17 +417,43 @@ static inline bool obs_encoder_initialize_internal(obs_encoder_t *encoder)
 
 	obs_encoder_shutdown(encoder);
 
-	if (encoder->info.create)
-		encoder->context.data = encoder->info.create(
+	if (encoder->orig_info.create) {
+		can_reroute = true;
+		encoder->info = encoder->orig_info;
+		encoder->context.data = encoder->orig_info.create(
 				encoder->context.settings, encoder);
+		can_reroute = false;
+	}
 	if (!encoder->context.data)
 		return false;
 
-	if (encoder->info.type == OBS_ENCODER_AUDIO)
+	if (encoder->orig_info.type == OBS_ENCODER_AUDIO)
 		intitialize_audio_encoder(encoder);
 
 	encoder->initialized = true;
 	return true;
+}
+
+void *obs_encoder_create_rerouted(obs_encoder_t *encoder, const char *reroute_id)
+{
+	if (!obs_ptr_valid(encoder, "obs_encoder_reroute"))
+		return NULL;
+	if (!obs_ptr_valid(reroute_id, "obs_encoder_reroute"))
+		return NULL;
+	if (!can_reroute)
+		return NULL;
+
+	const struct obs_encoder_info *ei = find_encoder(reroute_id);
+	if (ei) {
+		if (ei->type != encoder->orig_info.type ||
+		    astrcmpi(ei->codec, encoder->orig_info.codec) != 0) {
+			return NULL;
+		}
+		encoder->info = *ei;
+		return encoder->info.create(encoder->context.settings, encoder);
+	}
+
+	return NULL;
 }
 
 bool obs_encoder_initialize(obs_encoder_t *encoder)
@@ -1207,13 +1237,13 @@ bool obs_weak_encoder_references_encoder(obs_weak_encoder_t *weak,
 void *obs_encoder_get_type_data(obs_encoder_t *encoder)
 {
 	return obs_encoder_valid(encoder, "obs_encoder_get_type_data")
-		? encoder->info.type_data : NULL;
+		? encoder->orig_info.type_data : NULL;
 }
 
 const char *obs_encoder_get_id(const obs_encoder_t *encoder)
 {
 	return obs_encoder_valid(encoder, "obs_encoder_get_id")
-		? encoder->info.id : NULL;
+		? encoder->orig_info.id : NULL;
 }
 
 uint32_t obs_get_encoder_caps(const char *encoder_id)
