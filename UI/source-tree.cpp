@@ -129,6 +129,12 @@ void SourceTreeItem::DisconnectSignals()
 	removeSignal.Disconnect();
 }
 
+void SourceTreeItem::Clear()
+{
+	DisconnectSignals();
+	sceneitem = nullptr;
+}
+
 void SourceTreeItem::ReconnectSignals()
 {
 	if (!sceneitem)
@@ -150,10 +156,8 @@ void SourceTreeItem::ReconnectSignals()
 					Q_ARG(OBSSceneItem, curItem));
 			curItem = nullptr;
 		}
-		if (!curItem) {
-			this_->DisconnectSignals();
-			this_->sceneitem = nullptr;
-		}
+		if (!curItem)
+			QMetaObject::invokeMethod(this_, "Clear");
 	};
 
 	auto itemVisible = [] (void *data, calldata_t *cd)

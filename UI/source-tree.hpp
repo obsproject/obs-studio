@@ -72,6 +72,8 @@ private:
 	virtual void paintEvent(QPaintEvent* event) override;
 
 private slots:
+	void Clear();
+
 	void EnterEditMode();
 	void ExitEditMode(bool save);
 
