@@ -1961,6 +1961,8 @@ EXPORT bool obs_weak_service_references_service(obs_weak_service_t *weak,
 
 EXPORT const char *obs_service_get_name(const obs_service_t *service);
 
+EXPORT void *obs_service_query(const obs_service_t *service, int query_id, ...);
+
 /** Gets the default settings for a service */
 EXPORT obs_data_t *obs_service_defaults(const char *id);
 
