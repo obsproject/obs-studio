@@ -4911,6 +4911,9 @@ void OBSBasic::StreamDelayStopping(int sec)
 	ui->streamButton->setMenu(startStreamMenu);
 
 	ui->statusbar->StreamDelayStopping(sec);
+
+	if (api)
+		api->on_event(OBS_FRONTEND_EVENT_STREAMING_STOPPING);
 }
 
 void OBSBasic::StreamingStart()
