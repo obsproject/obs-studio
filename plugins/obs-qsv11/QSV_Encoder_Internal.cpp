@@ -266,8 +266,9 @@ bool QSV_Encoder_Internal::InitParams(qsv_param_t * pParams)
 		m_co2.MBBRC = MFX_CODINGOPTION_ON;
 	if (pParams->nRateControl == MFX_RATECONTROL_LA_ICQ ||
 	    pParams->nRateControl == MFX_RATECONTROL_LA)
-
 		m_co2.LookAheadDepth = pParams->nLADEPTH;
+	if (pParams->nbFrames > 1)
+		m_co2.BRefType = MFX_B_REF_PYRAMID;
 	extendedBuffers[iBuffers++] = (mfxExtBuffer*)& m_co2;
 
 	if (iBuffers > 0) {
