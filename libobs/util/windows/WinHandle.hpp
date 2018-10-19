@@ -26,7 +26,7 @@ class WinHandle {
 	}
 
 public:
-	inline WinHandle()               : handle(NULL)    {}
+	inline WinHandle()               : handle(INVALID_HANDLE_VALUE) {}
 	inline WinHandle(HANDLE handle_) : handle(handle_) {}
 	inline ~WinHandle()                                {Clear();}
 
