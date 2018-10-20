@@ -1000,6 +1000,8 @@ struct obs_encoder {
 	DARRAY(struct encoder_callback) callbacks;
 
 	const char                      *profile_encoder_encode_name;
+
+	uint64_t                        gpu_lock_key;
 };
 
 extern struct obs_encoder_info *find_encoder(const char *id);
