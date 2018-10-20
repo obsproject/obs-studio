@@ -70,6 +70,8 @@ static bool init_encoder(struct obs_encoder *encoder, const char *name,
 	return true;
 }
 
+static uint64_t gpu_lock_key_counter = 1;
+
 static struct obs_encoder *create_encoder(const char *id,
 		enum obs_encoder_type type, const char *name,
 		obs_data_t *settings, size_t mixer_idx, obs_data_t *hotkey_data)
@@ -95,6 +97,9 @@ static struct obs_encoder *create_encoder(const char *id,
 		encoder->info = *ei;
 		encoder->orig_info = *ei;
 	}
+
+	if (encoder->info.caps & OBS_ENCODER_CAP_PASS_TEXTURE)
+		encoder->gpu_lock_key = gpu_lock_key_counter++;
 
 	success = init_encoder(encoder, name, settings, hotkey_data);
 	if (!success) {

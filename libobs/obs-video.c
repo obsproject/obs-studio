@@ -406,8 +406,14 @@ static inline void encode_gpu(obs_encoder_t *encoder, gs_texture_t *texture,
 	pkt.timebase_den = encoder->timebase_den;
 	pkt.encoder = encoder;
 
-	success = encoder->info.encode_texture(encoder->context.data,
-			texture, encoder->cur_pts, &pkt, &received);
+	for (int i = 0; i < vframe_info->count; i++) {
+		gs_texture_release_sync(texture, encoder->gpu_lock_key);
+		success = encoder->info.encode_texture(encoder->context.data,
+				texture, encoder->gpu_lock_key,
+				encoder->cur_pts, &pkt, &received);
+		gs_texture_acquire_sync(texture, 0, GS_WAIT_INFINITE);
+	}
+
 	send_off_encoder_packet(encoder, success, received, &pkt);
 
 	encoder->cur_pts += encoder->timebase_num;
