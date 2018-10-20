@@ -1184,14 +1184,25 @@ static void source_output_audio_place(obs_source_t *source,
 	if ((buf_placement + size) > MAX_BUF_SIZE)
 		return;
 
-	for (size_t i = 0; i < channels; i++) {
-		circlebuf_place(&source->audio_input_buf[i], buf_placement,
-				in->data[i], size);
-		circlebuf_pop_back(&source->audio_input_buf[i], NULL,
-				source->audio_input_buf[i].size -
-				(buf_placement + size));
+	if (source->monitoring_type != OBS_MONITORING_TYPE_MONITOR_ONLY) {
+		for (size_t i = 0; i < channels; i++) {
+			circlebuf_place(&source->audio_input_buf[i],
+					buf_placement, in->data[i], size);
+			circlebuf_pop_back(&source->audio_input_buf[i], NULL,
+					source->audio_input_buf[i].size -
+					(buf_placement + size));
+		}
+	} else {
+		uint8_t *mute_buf = (uint8_t*)bzalloc(size);
+		for (size_t i = 0; i < channels; i++) {
+			circlebuf_place(&source->audio_input_buf[i],
+					buf_placement, mute_buf, size);
+			circlebuf_pop_back(&source->audio_input_buf[i], NULL,
+					source->audio_input_buf[i].size -
+					(buf_placement + size));
+		}
+		bfree(mute_buf);
 	}
-
 	source->last_audio_input_buf_size = 0;
 }
 
@@ -1206,9 +1217,15 @@ static inline void source_output_audio_push_back(obs_source_t *source,
 	if ((source->audio_input_buf[0].size + size) > MAX_BUF_SIZE)
 		return;
 
-	for (size_t i = 0; i < channels; i++)
-		circlebuf_push_back(&source->audio_input_buf[i],
-				in->data[i], size);
+	if (source->monitoring_type != OBS_MONITORING_TYPE_MONITOR_ONLY) {
+		for (size_t i = 0; i < channels; i++)
+			circlebuf_push_back(&source->audio_input_buf[i],
+					in->data[i], size);
+	} else {
+		for (size_t i = 0; i < channels; i++)
+			circlebuf_push_back_zero(&source->audio_input_buf[i],
+					size);
+	}
 
 	/* reset audio input buffer size to ensure that audio doesn't get
 	 * perpetually cut */
@@ -1311,12 +1328,10 @@ static void source_output_audio_data(obs_source_t *source,
 		source->last_sync_offset = sync_offset;
 	}
 
-	if (source->monitoring_type != OBS_MONITORING_TYPE_MONITOR_ONLY) {
-		if (push_back && source->audio_ts)
-			source_output_audio_push_back(source, &in);
-		else
-			source_output_audio_place(source, &in);
-	}
+	if (push_back && source->audio_ts)
+		source_output_audio_push_back(source, &in);
+	else
+		source_output_audio_place(source, &in);
 
 	pthread_mutex_unlock(&source->audio_buf_mutex);
 
