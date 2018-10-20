@@ -412,7 +412,8 @@ static bool init_encoder(struct nvenc_data *enc, obs_data_t *settings)
 	vui_params->videoSignalTypePresentFlag = 1;
 	vui_params->videoFullRangeFlag = (voi->range == VIDEO_RANGE_FULL);
 	vui_params->colourDescriptionPresentFlag = 1;
-	vui_params->colourPrimaries = (voi->colorspace == VIDEO_CS_709) ? 1 : 5;
+	vui_params->colourMatrix = (voi->colorspace == VIDEO_CS_709) ? 1 : 5;
+	vui_params->colourPrimaries = 1;
 	vui_params->transferCharacteristics = 1;
 
 	enc->bframes = bf > 0;
