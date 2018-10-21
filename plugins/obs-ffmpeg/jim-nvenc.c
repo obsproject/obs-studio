@@ -204,24 +204,27 @@ static inline int nv_get_cap(struct nvenc_data *enc, NV_ENC_CAPS cap)
 static bool nvenc_update(void *data, obs_data_t *settings)
 {
 	struct nvenc_data *enc = data;
+	if (nv_get_cap(enc, NV_ENC_CAPS_SUPPORT_DYN_BITRATE_CHANGE)) {
+		/* Only support reconfiguration of CBR bitrate */
+		if (enc->cbr) {
+			int bitrate = (int)obs_data_get_int(settings, "bitrate");
 
-	/* Only support reconfiguration of CBR bitrate */
-	if (enc->cbr) {
-		int bitrate = (int)obs_data_get_int(settings, "bitrate");
+			enc->config.rcParams.averageBitRate = bitrate * 1000;
+			enc->config.rcParams.maxBitRate     = bitrate * 1000;
 
-		enc->config.rcParams.averageBitRate = bitrate * 1000;
-		enc->config.rcParams.maxBitRate     = bitrate * 1000;
+			NV_ENC_RECONFIGURE_PARAMS params = {0};
+			params.version                   = NV_ENC_RECONFIGURE_PARAMS_VER;
+			params.reInitEncodeParams        = enc->params;
 
-		NV_ENC_RECONFIGURE_PARAMS params = {0};
-		params.version                   = NV_ENC_RECONFIGURE_PARAMS_VER;
-		params.reInitEncodeParams        = enc->params;
-
-		if (FAILED(nv.nvEncReconfigureEncoder(enc->session, &params))) {
-			return false;
+			if (FAILED(nv.nvEncReconfigureEncoder(enc->session, &params))) {
+				return false;
+			}
 		}
+		return true;
+	} else {
+		info("This nvidia GPU does not support dynamic bitrate.\n");
 	}
-
-	return true;
+	return false;
 }
 
 static HANDLE get_lib(const char *lib)
