@@ -702,6 +702,11 @@ OBSRemux::OBSRemux(const char *path, QWidget *parent, bool autoRemux_)
 	connect(ui->streamableOptions, SIGNAL(currentIndexChanged(int)),
 			this, SLOT(muxOptChaged()));
 
+	// load last streamable file format selection
+	int curIdx = (int)config_get_int(App()->GlobalConfig(),
+			"Remux", "RemuxStreamableOpt");
+	ui->streamableOptions->setCurrentIndex(curIdx);
+
 	worker->moveToThread(&remuxer);
 	remuxer.start();
 
@@ -966,6 +971,10 @@ void OBSRemux::muxOptChaged()
 {
 	int remuxOpt = ui->streamableOptions->currentIndex();
 
+	// save current streamable file format selection
+	config_set_int(App()->GlobalConfig(),
+		"Remux", "RemuxStreamableOpt", remuxOpt);
+
 	switch (remuxOpt) {
 	case 1:
 		ui->streamableOptions->setToolTip(QTStr(
@@ -1018,7 +1027,12 @@ void RemuxWorker::remux(const QString &source, const QString &target)
 			QT_TO_UTF8(source),
 			QT_TO_UTF8(target))) {
 
-		int remuxOpt = 0;
+		// Use last saved streamable file format selection:
+		// 0 - Disabled
+		// 1 - FastStart
+		// 2 - Selfcontained Fragmented
+		int remuxOpt = (int)config_get_int(App()->GlobalConfig(),
+			"Remux", "RemuxStreamableOpt");
 
 		success = media_remux_job_process(mr_job, callback,
 				this, remuxOpt);
