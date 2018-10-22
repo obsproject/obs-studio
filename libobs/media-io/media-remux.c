@@ -222,7 +222,7 @@ static inline int process_packets(media_remux_job_t job,
 }
 
 bool media_remux_job_process(media_remux_job_t job,
-		media_remux_progress_callback callback, void *data)
+		media_remux_progress_callback callback, void *data, int opt)
 {
 	int ret;
 	bool success = false;
@@ -230,7 +230,46 @@ bool media_remux_job_process(media_remux_job_t job,
 	if (!job)
 		return success;
 
-	ret = avformat_write_header(job->ofmt_ctx, NULL);
+	AVDictionary *dict = NULL; // muxer params
+
+	if (opt > 0) {
+		// Fill dictionary only for MP4 and MOV files
+		bool is_mp4 = strcmp(job->ofmt_ctx->oformat->name, "mp4");
+		bool is_mov = strcmp(job->ofmt_ctx->oformat->name, "mov");
+
+		if (is_mp4 || is_mov) {
+			switch (opt) {
+			case 1:
+				// 'moov' box to the beginning
+				ret = av_dict_set(&dict, "movflags",
+						"faststart", 0);
+				if (ret < 0)
+					blog(LOG_ERROR, "media_remux: Error \
+							to set muxing keys: \
+							%s", av_err2str(ret));
+				break;
+			case 2:
+				// write selfcontained fragmented file
+				ret = av_dict_set(&dict, "movflags",
+						"frag_keyframe", 0);
+				if (ret < 0)
+					blog(LOG_ERROR, "media_remux: Error \
+							to set muxing keys: \
+							%s", av_err2str(ret));
+
+				ret = av_dict_set(&dict, "min_frag_duration",
+						"4000000", 0);
+				if (ret < 0)
+					blog(LOG_ERROR, "media_remux: Error \
+							to set muxing keys: \
+							%s", av_err2str(ret));
+				break;
+			}
+		}	
+	}
+
+	ret = avformat_write_header(job->ofmt_ctx, &dict);
+	av_dict_free(&dict);
 	if (ret < 0) {
 		blog(LOG_ERROR, "media_remux: Error opening output file: %s",
 				av_err2str(ret));
