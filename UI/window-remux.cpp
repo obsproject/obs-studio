@@ -699,6 +699,8 @@ OBSRemux::OBSRemux(const char *path, QWidget *parent, bool autoRemux_)
 			SIGNAL(clicked()), this, SLOT(clearAll()));
 	connect(ui->buttonBox->button(QDialogButtonBox::Close),
 			SIGNAL(clicked()), this, SLOT(close()));
+	connect(ui->streamableOptions, SIGNAL(currentIndexChanged(int)),
+			this, SLOT(muxOptChaged()));
 
 	worker->moveToThread(&remuxer);
 	remuxer.start();
@@ -960,6 +962,25 @@ void OBSRemux::clearAll()
 	queueModel->clearAll();
 }
 
+void OBSRemux::muxOptChaged()
+{
+	int remuxOpt = ui->streamableOptions->currentIndex();
+
+	switch (remuxOpt) {
+	case 1:
+		ui->streamableOptions->setToolTip(QTStr(
+				"Remux.ToolTip.MP4withFastStart"));
+		break;
+	case 2:
+		ui->streamableOptions->setToolTip(QTStr(
+				"Remux.ToolTip.MP4selfcontainedFragmented"));
+		break;
+	default:
+		ui->streamableOptions->setToolTip(QTStr(""));
+		break;
+	}
+}
+
 /**********************************************************
   Worker thread - Executes the libobs remux operation as a
                   background process.
@@ -997,8 +1018,10 @@ void RemuxWorker::remux(const QString &source, const QString &target)
 			QT_TO_UTF8(source),
 			QT_TO_UTF8(target))) {
 
+		int remuxOpt = 0;
+
 		success = media_remux_job_process(mr_job, callback,
-			this);
+				this, remuxOpt);
 
 		media_remux_job_destroy(mr_job);
 

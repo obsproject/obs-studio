@@ -84,6 +84,7 @@ public slots:
 	bool stopRemux();
 	void clearFinished();
 	void clearAll();
+	void muxOptChaged();
 
 signals:
 	void remux(const QString &source, const QString &target);
