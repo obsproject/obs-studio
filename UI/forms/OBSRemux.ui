@@ -21,20 +21,6 @@
      </property>
     </widget>
    </item>
-   <item row="3" column="0">
-    <layout class="QHBoxLayout" name="horizontalLayout_4">
-     <property name="spacing">
-      <number>6</number>
-     </property>
-     <item>
-      <widget class="QDialogButtonBox" name="buttonBox">
-       <property name="standardButtons">
-        <set>QDialogButtonBox::Close|QDialogButtonBox::Ok|QDialogButtonBox::Reset|QDialogButtonBox::RestoreDefaults</set>
-       </property>
-      </widget>
-     </item>
-    </layout>
-   </item>
    <item row="1" column="0">
     <widget class="QTableView" name="tableView">
      <property name="selectionMode">
@@ -60,6 +46,78 @@
       <number>24</number>
      </property>
     </widget>
+   </item>
+  <item row="3" column="0">
+   <layout class="QFormLayout" name="RemuxOptionsFormLayout">
+    <item row="0" column="0">
+     <widget class="QLabel" name="streamableLabel">
+      <property name="text">
+       <string>Remux.StreamableFileFormat</string>
+      </property>
+      <property name="toolTip">
+       <string>Remux.ToolTip.StreamableFileFormat</string>
+      </property>
+     </widget>
+    </item>
+    <item row="0" column="1">
+     <widget class="QComboBox" name="streamableOptions">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="currentIndex">
+       <number>0</number>
+      </property>
+      <item>
+       <property name="text">
+        <string>Remux.MP4notStreamable</string>
+       </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>Remux.MP4withFastStart</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>Remux.MP4selfcontainedFragmented</string>
+        </property>
+       </item>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item row="4" column="0">
+    <spacer name="RemuxVerticalSpacer">
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
+     </property>
+     <property name="sizeType">
+      <enum>QSizePolicy::Minimum</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>20</width>
+       <height>10</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
+   <item row="5" column="0">
+    <layout class="QHBoxLayout" name="horizontalLayout_4">
+     <property name="spacing">
+      <number>6</number>
+     </property>
+     <item>
+      <widget class="QDialogButtonBox" name="buttonBox">
+       <property name="standardButtons">
+        <set>QDialogButtonBox::Close|QDialogButtonBox::Ok|QDialogButtonBox::Reset|QDialogButtonBox::RestoreDefaults</set>
+       </property>
+      </widget>
+     </item>
+    </layout>
    </item>
   </layout>
  </widget>
