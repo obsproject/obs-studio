@@ -383,6 +383,7 @@ end:
 	profile_end(stage_output_texture_name);
 }
 
+#ifdef _WIN32
 static inline void encode_gpu(obs_encoder_t *encoder, gs_texture_t *texture,
 		struct obs_vframe_info *vframe_info)
 {
@@ -442,9 +443,10 @@ static void output_gpu_encoders(struct obs_core_video *video, int prev_texture)
 end:
 	profile_end(output_gpu_encoders_name);
 }
+#endif
 
 static inline void render_video(struct obs_core_video *video,
-		bool raw_active, bool gpu_active,
+		bool raw_active, const bool gpu_active,
 		int cur_texture, int prev_texture)
 {
 	gs_begin_scene();
@@ -457,9 +459,11 @@ static inline void render_video(struct obs_core_video *video,
 	if (raw_active || gpu_active) {
 		render_output_texture(video, cur_texture, prev_texture);
 
+#ifdef _WIN32
 		if (gpu_active) {
 			gs_flush();
 		}
+#endif
 	}
 
 	if (raw_active || gpu_active) {
@@ -472,10 +476,12 @@ static inline void render_video(struct obs_core_video *video,
 						cur_texture, prev_texture);
 		}
 
+#ifdef _WIN32
 		if (gpu_active) {
 			gs_flush();
 			output_gpu_encoders(video, prev_texture);
 		}
+#endif
 		if (raw_active)
 			stage_output_texture(video, cur_texture, prev_texture);
 	}
@@ -675,7 +681,7 @@ static inline void output_video_data(struct obs_core_video *video,
 }
 
 static inline void video_sleep(struct obs_core_video *video,
-		bool raw_active, bool gpu_active,
+		bool raw_active, const bool gpu_active,
 		uint64_t *p_time, uint64_t interval_ns)
 {
 	struct obs_vframe_info vframe_info;
@@ -710,7 +716,7 @@ static const char *output_frame_render_video_name = "render_video";
 static const char *output_frame_download_frame_name = "download_frame";
 static const char *output_frame_gs_flush_name = "gs_flush";
 static const char *output_frame_output_video_data_name = "output_video_data";
-static inline void output_frame(bool raw_active, bool gpu_active)
+static inline void output_frame(bool raw_active, const bool gpu_active)
 {
 	struct obs_core_video *video = &obs->video;
 	int cur_texture  = video->cur_texture;
@@ -775,11 +781,13 @@ static void clear_raw_frame_data(void)
 	circlebuf_free(&video->vframe_info_buffer);
 }
 
+#ifdef _WIN32
 static void clear_gpu_frame_data(void)
 {
 	struct obs_core_video *video = &obs->video;
 	circlebuf_free(&video->vframe_info_buffer_gpu);
 }
+#endif
 
 static const char *tick_sources_name = "tick_sources";
 static const char *render_displays_name = "render_displays";
@@ -810,15 +818,21 @@ void *obs_graphics_thread(void *param)
 		uint64_t frame_start = os_gettime_ns();
 		uint64_t frame_time_ns;
 		bool raw_active = obs->video.raw_active > 0;
+#ifdef _WIN32
 		bool gpu_active = obs->video.gpu_encoder_active > 0;
+#else
+		const bool gpu_active = 0;
+#endif
 		bool active = raw_active || gpu_active;
 
 		if (!was_active && active)
 			clear_base_frame_data();
 		if (!raw_was_active && raw_active)
 			clear_raw_frame_data();
+#ifdef _WIN32
 		if (!gpu_was_active && gpu_active)
 			clear_gpu_frame_data();
+#endif
 		raw_was_active = raw_active;
 		gpu_was_active = gpu_active;
 		was_active = active;

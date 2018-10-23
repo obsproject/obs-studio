@@ -759,6 +759,8 @@ EXPORT size_t   gs_indexbuffer_get_num_indices(
 EXPORT enum gs_index_type gs_indexbuffer_get_type(
 		const gs_indexbuffer_t *indexbuffer);
 
+EXPORT bool     gs_nv12_available(void);
+
 #ifdef __APPLE__
 
 /** platform specific function for creating (GL_TEXTURE_RECTANGLE) textures
@@ -771,7 +773,6 @@ EXPORT bool     gs_texture_rebind_iosurface(gs_texture_t *texture,
 
 EXPORT bool gs_gdi_texture_available(void);
 EXPORT bool gs_shared_texture_available(void);
-EXPORT bool gs_nv12_available(void);
 
 struct gs_duplicator;
 typedef struct gs_duplicator gs_duplicator_t;

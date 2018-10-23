@@ -2545,6 +2545,18 @@ enum gs_index_type gs_indexbuffer_get_type(const gs_indexbuffer_t *indexbuffer)
 	return thread_graphics->exports.gs_indexbuffer_get_type(indexbuffer);
 }
 
+bool gs_nv12_available(void)
+{
+	if (!gs_valid("gs_nv12_available"))
+		return false;
+
+	if (!thread_graphics->exports.device_nv12_available)
+		return false;
+
+	return thread_graphics->exports.device_nv12_available(
+			thread_graphics->device);
+}
+
 #ifdef __APPLE__
 
 /** Platform specific functions */
@@ -2589,18 +2601,6 @@ bool gs_shared_texture_available(void)
 		return false;
 
 	return thread_graphics->exports.device_shared_texture_available();
-}
-
-bool gs_nv12_available(void)
-{
-	if (!gs_valid("gs_nv12_available"))
-		return false;
-
-	if (!thread_graphics->exports.device_nv12_available)
-		return false;
-
-	return thread_graphics->exports.device_nv12_available(
-			thread_graphics->device);
 }
 
 bool gs_get_duplicator_monitor_info(int monitor_idx,
@@ -2704,6 +2704,7 @@ gs_texture_t *gs_texture_open_shared(uint32_t handle)
 	return NULL;
 }
 
+#ifdef _WIN32
 uint32_t gs_texture_get_shared_handle(gs_texture_t *tex)
 {
 	graphics_t *graphics = thread_graphics;
@@ -2797,5 +2798,6 @@ gs_stagesurf_t *gs_stagesurface_create_nv12(uint32_t width, uint32_t height)
 
 	return NULL;
 }
+#endif
 
 #endif

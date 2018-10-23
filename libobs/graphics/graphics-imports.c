@@ -171,6 +171,8 @@ bool load_graphics_imports(struct gs_exports *exports, void *module,
 	GRAPHICS_IMPORT(gs_shader_set_default);
 	GRAPHICS_IMPORT(gs_shader_set_next_sampler);
 
+	GRAPHICS_IMPORT_OPTIONAL(device_nv12_available);
+
 	/* OSX/Cocoa specific functions */
 #ifdef __APPLE__
 	GRAPHICS_IMPORT_OPTIONAL(device_texture_create_from_iosurface);
@@ -180,7 +182,6 @@ bool load_graphics_imports(struct gs_exports *exports, void *module,
 #elif _WIN32
 	GRAPHICS_IMPORT(device_gdi_texture_available);
 	GRAPHICS_IMPORT(device_shared_texture_available);
-	GRAPHICS_IMPORT_OPTIONAL(device_nv12_available);
 	GRAPHICS_IMPORT_OPTIONAL(device_get_duplicator_monitor_info);
 	GRAPHICS_IMPORT_OPTIONAL(device_duplicator_create);
 	GRAPHICS_IMPORT_OPTIONAL(gs_duplicator_destroy);

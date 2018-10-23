@@ -232,6 +232,8 @@ struct gs_exports {
 	void (*gs_shader_set_next_sampler)(gs_sparam_t *param,
 			gs_samplerstate_t *sampler);
 
+	bool (*device_nv12_available)(gs_device_t *device);
+
 #ifdef __APPLE__
 	/* OSX/Cocoa specific functions */
 	gs_texture_t *(*device_texture_create_from_iosurface)(gs_device_t *dev,
@@ -242,7 +244,6 @@ struct gs_exports {
 #elif _WIN32
 	bool (*device_gdi_texture_available)(void);
 	bool (*device_shared_texture_available)(void);
-	bool (*device_nv12_available)(gs_device_t *device);
 
 	bool (*device_get_duplicator_monitor_info)(gs_device_t *device,
 			int monitor_idx, struct gs_monitor_info *monitor_info);

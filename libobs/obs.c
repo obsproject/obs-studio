@@ -182,6 +182,7 @@ static bool obs_init_gpu_conversion(struct obs_video_info *ovi)
 		blog(LOG_INFO, "NV12 texture support not available");
 
 	for (size_t i = 0; i < NUM_TEXTURES; i++) {
+#ifdef _WIN32
 		if (video->using_nv12_tex) {
 			gs_texture_create_nv12(
 					&video->convert_textures[i],
@@ -194,11 +195,14 @@ static bool obs_init_gpu_conversion(struct obs_video_info *ovi)
 			gs_texture_acquire_sync(video->convert_uv_textures[i],
 					0, GS_WAIT_INFINITE);
 		} else {
+#endif
 			video->convert_textures[i] = gs_texture_create(
 					ovi->output_width,
 					video->conversion_height,
 					GS_RGBA, 1, NULL, GS_RENDER_TARGET);
+#ifdef _WIN32
 		}
+#endif
 
 		if (!video->convert_textures[i])
 			return false;
@@ -215,6 +219,7 @@ static bool obs_init_textures(struct obs_video_info *ovi)
 	size_t i;
 
 	for (i = 0; i < NUM_TEXTURES; i++) {
+#ifdef _WIN32
 		if (video->using_nv12_tex) {
 			video->copy_surfaces[i] = gs_stagesurface_create_nv12(
 					ovi->output_width, ovi->output_height);
@@ -222,12 +227,15 @@ static bool obs_init_textures(struct obs_video_info *ovi)
 				return false;
 
 		} else {
+#endif
 			video->copy_surfaces[i] = gs_stagesurface_create(
 					ovi->output_width, output_height,
 					GS_RGBA);
 			if (!video->copy_surfaces[i])
 				return false;
+#ifdef _WIN32
 		}
+#endif
 
 		video->render_textures[i] = gs_texture_create(
 				ovi->base_width, ovi->base_height,
