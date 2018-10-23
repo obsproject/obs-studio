@@ -390,8 +390,135 @@ static bool nvenc_encode(void *data, struct encoder_frame *frame,
 	return true;
 }
 
-extern void nvenc_defaults(obs_data_t *settings);
-extern obs_properties_t *nvenc_properties(void *unused);
+void nvenc_defaults(obs_data_t *settings)
+{
+	obs_data_set_default_int(settings, "bitrate", 2500);
+	obs_data_set_default_int(settings, "keyint_sec", 0);
+	obs_data_set_default_int(settings, "cqp", 23);
+	obs_data_set_default_string(settings, "rate_control", "CBR");
+	obs_data_set_default_string(settings, "preset", "default");
+	obs_data_set_default_string(settings, "profile", "main");
+	obs_data_set_default_string(settings, "level", "auto");
+	obs_data_set_default_bool(settings, "2pass", true);
+	obs_data_set_default_bool(settings, "temporal_aq", true);
+	obs_data_set_default_int(settings, "gpu", 0);
+	obs_data_set_default_int(settings, "bf", 2);
+}
+
+static bool rate_control_modified(obs_properties_t *ppts, obs_property_t *p,
+		obs_data_t *settings)
+{
+	const char *rc = obs_data_get_string(settings, "rate_control");
+	bool cqp = astrcmpi(rc, "CQP") == 0;
+	bool lossless = astrcmpi(rc, "lossless") == 0;
+	size_t count;
+
+	p = obs_properties_get(ppts, "bitrate");
+	obs_property_set_visible(p, !cqp && !lossless);
+	p = obs_properties_get(ppts, "cqp");
+	obs_property_set_visible(p, cqp);
+
+	p = obs_properties_get(ppts, "preset");
+	count = obs_property_list_item_count(p);
+
+	for (size_t i = 0; i < count; i++) {
+		bool compatible = (i == 0 || i == 2);
+		obs_property_list_item_disable(p, i, lossless && !compatible);
+	}
+
+	return true;
+}
+
+obs_properties_t *nvenc_properties(void *unused)
+{
+	UNUSED_PARAMETER(unused);
+
+	obs_properties_t *props = obs_properties_create();
+	obs_property_t *p;
+
+	p = obs_properties_add_list(props, "rate_control",
+			obs_module_text("RateControl"),
+			OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
+	obs_property_list_add_string(p, "CBR", "CBR");
+	obs_property_list_add_string(p, "VBR", "VBR");
+	obs_property_list_add_string(p, "CQP", "CQP");
+	obs_property_list_add_string(p, obs_module_text("Lossless"),
+			"lossless");
+
+	obs_property_set_modified_callback(p, rate_control_modified);
+
+	obs_properties_add_int(props, "bitrate",
+			obs_module_text("Bitrate"), 50, 300000, 50);
+
+	obs_properties_add_int(props, "cqp", "CQP", 0, 50, 1);
+
+	obs_properties_add_int(props, "keyint_sec",
+			obs_module_text("KeyframeIntervalSec"), 0, 10, 1);
+
+	p = obs_properties_add_list(props, "preset", obs_module_text("Preset"),
+			OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
+
+#define add_preset(val) \
+	obs_property_list_add_string(p, obs_module_text("NVENC.Preset." val), \
+			val)
+	add_preset("default");
+	add_preset("hq");
+	add_preset("hp");
+	add_preset("bd");
+	add_preset("ll");
+	add_preset("llhq");
+	add_preset("llhp");
+#undef add_preset
+
+	p = obs_properties_add_list(props, "profile", obs_module_text("Profile"),
+			OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
+
+#define add_profile(val) \
+	obs_property_list_add_string(p, val, val)
+	add_profile("high");
+	add_profile("main");
+	add_profile("baseline");
+	add_profile("high444p");
+
+	p = obs_properties_add_list(props, "level",
+			obs_module_text("NVENC.Level"), OBS_COMBO_TYPE_LIST,
+			OBS_COMBO_FORMAT_STRING);
+	add_profile("auto");
+	add_profile("1"   );
+	add_profile("1.0" );
+	add_profile("1b"  );
+	add_profile("1.0b");
+	add_profile("1.1" );
+	add_profile("1.2" );
+	add_profile("1.3" );
+	add_profile("2"   );
+	add_profile("2.0" );
+	add_profile("2.1" );
+	add_profile("2.2" );
+	add_profile("3"   );
+	add_profile("3.0" );
+	add_profile("3.1" );
+	add_profile("3.2" );
+	add_profile("4"   );
+	add_profile("4.0" );
+	add_profile("4.1" );
+	add_profile("4.2" );
+	add_profile("5"   );
+	add_profile("5.0" );
+	add_profile("5.1" );
+#undef add_profile
+
+	obs_properties_add_bool(props, "2pass",
+			obs_module_text("NVENC.Use2Pass"));
+	obs_properties_add_bool(props, "temporal_aq",
+			obs_module_text("NVENC.TemporalAQ"));
+	obs_properties_add_int(props, "gpu", obs_module_text("GPU"), 0, 8, 1);
+
+	obs_properties_add_int(props, "bf", obs_module_text("BFrames"),
+			0, 4, 1);
+
+	return props;
+}
 
 static bool nvenc_extra_data(void *data, uint8_t **extra_data, size_t *size)
 {
