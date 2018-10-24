@@ -1281,6 +1281,15 @@
                 "max video bitrate": 6000,
                 "max audio bitrate": 160
             }
+        },
+        {
+            "name": "Linkstream.live",
+            "servers": [
+                {
+                    "name": "Linkstream Live Ingest Point",
+                    "url": "rtmp://hadamard.streaming.linkstream.live:80/live"
+                }
+            ]
         }
     ]
 }
