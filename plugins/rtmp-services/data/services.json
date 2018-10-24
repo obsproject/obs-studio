@@ -209,6 +209,16 @@
             }
         },
         {
+            "name": "Linksream.live",
+            "common": true,
+            "servers": [
+                {
+                    "name": "Linkstream Live Ingest Point",
+                    "url": "rtmp://hadamard.streaming.linkstream.live:80/live"
+                }
+            ]
+        },
+        {
             "name": "Smashcast",
             "common": true,
             "servers": [
