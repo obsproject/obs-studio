@@ -1744,8 +1744,9 @@ void WidgetInfo::TogglePasswordText(bool show)
 
 void WidgetInfo::ControlChanged()
 {
-	const char        *setting = obs_property_name(property);
-	obs_property_type type     = obs_property_get_type(property);
+	const char        *setting  = obs_property_name(property);
+	obs_property_type type      = obs_property_get_type(property);
+	bool              transient = obs_property_transient(property);
 
 	switch (type) {
 	case OBS_PROPERTY_INVALID: return;
@@ -1773,6 +1774,8 @@ void WidgetInfo::ControlChanged()
 			return;
 		break;
 	}
+
+	obs_data_set_transient(view->settings, setting, transient);
 
 	if (view->callback && !view->deferUpdate)
 		view->callback(view->obj, view->settings);
