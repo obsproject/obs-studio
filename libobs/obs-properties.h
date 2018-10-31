@@ -240,6 +240,7 @@ EXPORT bool obs_property_button_clicked(obs_property_t *p, void *obj);
 
 EXPORT void obs_property_set_visible(obs_property_t *p, bool visible);
 EXPORT void obs_property_set_enabled(obs_property_t *p, bool enabled);
+EXPORT void obs_property_set_transient(obs_property_t *p, bool transient);
 
 EXPORT void obs_property_set_description(obs_property_t *p,
 		const char *description);
@@ -252,6 +253,7 @@ EXPORT const char *           obs_property_long_description(obs_property_t *p);
 EXPORT enum obs_property_type obs_property_get_type(obs_property_t *p);
 EXPORT bool                   obs_property_enabled(obs_property_t *p);
 EXPORT bool                   obs_property_visible(obs_property_t *p);
+EXPORT bool                   obs_property_transient(obs_property_t *p);
 
 EXPORT bool                   obs_property_next(obs_property_t **p);
 

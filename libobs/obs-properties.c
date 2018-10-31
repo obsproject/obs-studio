@@ -150,6 +150,7 @@ struct obs_property {
 	enum obs_property_type  type;
 	bool                    visible;
 	bool                    enabled;
+	bool                    transient;
 
 	struct obs_properties   *parent;
 
@@ -326,12 +327,13 @@ static inline struct obs_property *new_prop(struct obs_properties *props,
 	struct obs_property *p;
 
 	p = bzalloc(sizeof(struct obs_property) + data_size);
-	p->parent  = props;
-	p->enabled = true;
-	p->visible = true;
-	p->type    = type;
-	p->name    = bstrdup(name);
-	p->desc    = bstrdup(desc);
+	p->parent    = props;
+	p->enabled   = true;
+	p->visible   = true;
+	p->transient = false;
+	p->type      = type;
+	p->name      = bstrdup(name);
+	p->desc      = bstrdup(desc);
 	propertes_add(props, p);
 
 	return p;
@@ -640,6 +642,11 @@ void obs_property_set_enabled(obs_property_t *p, bool enabled)
 	if (p) p->enabled = enabled;
 }
 
+void obs_property_set_transient(obs_property_t *p, bool transient)
+{
+	if (p) p->transient = transient;
+}
+
 void obs_property_set_description(obs_property_t *p, const char *description)
 {
 	if (p) {
@@ -688,6 +695,11 @@ bool obs_property_enabled(obs_property_t *p)
 bool obs_property_visible(obs_property_t *p)
 {
 	return p ? p->visible : false;
+}
+
+bool obs_property_transient(obs_property_t *p)
+{
+	return p ? p->transient : false;
 }
 
 int obs_property_int_min(obs_property_t *p)

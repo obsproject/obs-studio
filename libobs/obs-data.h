@@ -89,6 +89,7 @@ EXPORT void obs_data_set_bool(obs_data_t *data, const char *name, bool val);
 EXPORT void obs_data_set_obj(obs_data_t *data, const char *name, obs_data_t *obj);
 EXPORT void obs_data_set_array(obs_data_t *data, const char *name,
 		obs_data_array_t *array);
+EXPORT void obs_data_set_transient(obs_data_t *data, const char *name, bool val);
 
 /*
  * Default value functions.
@@ -169,10 +170,12 @@ EXPORT void obs_data_array_erase(obs_data_array_t *array, size_t idx);
 EXPORT bool obs_data_has_user_value(obs_data_t *data, const char *name);
 EXPORT bool obs_data_has_default_value(obs_data_t *data, const char *name);
 EXPORT bool obs_data_has_autoselect_value(obs_data_t *data, const char *name);
+EXPORT bool obs_data_is_transient_value(obs_data_t *data, const char *name);
 
 EXPORT bool obs_data_item_has_user_value(obs_data_item_t *data);
 EXPORT bool obs_data_item_has_default_value(obs_data_item_t *data);
 EXPORT bool obs_data_item_has_autoselect_value(obs_data_item_t *data);
+EXPORT bool obs_data_item_is_transient_value(obs_data_item_t *data);
 
 /* ------------------------------------------------------------------------- */
 /* Clearing data values */
@@ -229,6 +232,7 @@ EXPORT void obs_data_item_set_autoselect_obj(obs_data_item_t **item,
 		obs_data_t *val);
 EXPORT void obs_data_item_set_autoselect_array(obs_data_item_t **item,
 		obs_data_array_t *val);
+EXPORT void obs_data_item_set_transient(obs_data_item_t *item, bool val);
 
 /* Item get functions */
 EXPORT const char *obs_data_item_get_string(obs_data_item_t *item);
