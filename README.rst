@@ -5,6 +5,10 @@ OBS Studio <https://obsproject.com>
    :alt: OBS Studio Build Status - Travis CI
    :target: https://travis-ci.org/obsproject/obs-studio
 
+.. image:: https://ci.appveyor.com/api/projects/status/github/obsproject/obs-studio?branch=master&svg=true
+   :alt: OBS Studio Build Status - AppVeyor CI
+   :target: https://ci.appveyor.com/project/jp9000/obs-studio/branch/master
+
 What is OBS Studio?
 -------------------
 
