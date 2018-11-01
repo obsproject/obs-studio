@@ -69,6 +69,7 @@ struct editable_list_data {
 
 struct button_data {
 	obs_property_clicked_t callback;
+	obs_property_clicked3_t callback3;
 };
 
 struct frame_rate_option {
@@ -518,6 +519,20 @@ obs_property_t *obs_properties_add_button2(obs_properties_t *props,
 	return p;
 }
 
+obs_property_t *obs_properties_add_button3(obs_properties_t *props,
+		const char *name, const char *text,
+		obs_property_clicked3_t callback, void *priv)
+{
+	if (!props || has_prop(props, name)) return NULL;
+
+	struct obs_property *p = new_prop(props, name, text,
+			OBS_PROPERTY_BUTTON);
+	struct button_data *data = get_property_data(p);
+	data->callback3 = callback;
+	p->priv = priv;
+	return p;
+}
+
 obs_property_t *obs_properties_add_font(obs_properties_t *props,
 		const char *name, const char *desc)
 {
@@ -617,17 +632,24 @@ bool obs_property_modified(obs_property_t *p, obs_data_t *settings)
 
 bool obs_property_button_clicked(obs_property_t *p, void *obj)
 {
+	return obs_property_button_clicked3(p, NULL, obj);
+}
+
+bool obs_property_button_clicked3(obs_property_t *p, obs_data_t *settings, void *obj)
+{
 	struct obs_context_data *context = obj;
-	if (p) {
-		struct button_data *data = get_type_data(p,
-				OBS_PROPERTY_BUTTON);
-		if (data && data->callback) {
-			if (p->priv)
-				return data->callback(p->parent, p, p->priv);
-			return data->callback(p->parent, p,
-					(context ? context->data : NULL));
-		}
-	}
+	if (!p) return false;
+	struct button_data *data = get_type_data(p, OBS_PROPERTY_BUTTON);
+	if (!data) return false;
+
+	void * priv = p->priv;
+	if (!priv)
+		priv = context ? context->data : NULL;
+
+	if (data->callback)
+		return data->callback(p->parent, p, priv);
+	else if (data->callback3)
+		return data->callback3(p->parent, p, settings, priv);
 
 	return false;
 }

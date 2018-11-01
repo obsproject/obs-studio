@@ -139,6 +139,10 @@ EXPORT void obs_properties_apply_settings(obs_properties_t *props,
 typedef bool (*obs_property_clicked_t)(obs_properties_t *props,
 		obs_property_t *property, void *data);
 
+typedef bool(*obs_property_clicked3_t)(obs_properties_t *props,
+		obs_property_t *property, obs_data_t *settings, void *data);
+
+
 EXPORT obs_property_t *obs_properties_add_bool(obs_properties_t *props,
 		const char *name, const char *description);
 
@@ -198,6 +202,10 @@ EXPORT obs_property_t *obs_properties_add_button2(obs_properties_t *props,
 		const char *name, const char *text,
 		obs_property_clicked_t callback, void *priv);
 
+EXPORT obs_property_t *obs_properties_add_button3(obs_properties_t *props,
+		const char *name, const char *text,
+		obs_property_clicked3_t callback, void *priv);
+
 /**
  * Adds a font selection property.
  *
@@ -237,6 +245,8 @@ EXPORT void obs_property_set_modified_callback2(obs_property_t *p,
 
 EXPORT bool obs_property_modified(obs_property_t *p, obs_data_t *settings);
 EXPORT bool obs_property_button_clicked(obs_property_t *p, void *obj);
+EXPORT bool obs_property_button_clicked3(obs_property_t *p,
+				obs_data_t *settings, void *obj);
 
 EXPORT void obs_property_set_visible(obs_property_t *p, bool visible);
 EXPORT void obs_property_set_enabled(obs_property_t *p, bool enabled);
