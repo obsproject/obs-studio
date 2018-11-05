@@ -452,19 +452,106 @@ void OBSBasic::on_actionExportSceneCollection_triggered()
 		return;
 	}
 
-	QString exportFile = QFileDialog::getSaveFileName(
-			this,
+	int count = 0;
+
+	QDialog diag(this);
+	diag.setModal(true);
+	diag.setWindowTitle(QTStr("Basic.MainMenu.SceneCollection.Export"));
+	QVBoxLayout *layout = new QVBoxLayout();
+	std::vector<QCheckBox *> checkboxes;
+
+	auto copyFile = [](QString fileDest, QString fileSrc) {
+		if (fileSrc.isEmpty() || fileSrc.isNull())
+			return;
+		if (fileSrc == fileDest)
+			return;
+		if (!QFile::exists(fileSrc))
+			return;
+		if (!fileDest.isEmpty() && !fileDest.isNull()) {
+			if (QFile::exists(fileDest))
+				QFile::remove(fileDest);
+
+			QFile::copy(fileSrc, fileDest);
+
+			blog(LOG_DEBUG, "Copied %s to %s",
+					(fileSrc.toStdString()).c_str(),
+					(fileDest.toStdString()).c_str());
+		}
+	};
+
+	auto addSceneCollection = [&diag, &count, &layout, &checkboxes]
+			(const char *name, const char *path) {
+		/*Gets the file name (including .json extension)*/
+		std::string file = strrchr(path, '/') + 1;
+		/*Removes .json extension*/
+		file.erase(file.size() - 5, 5);
+
+		QCheckBox *checkbox = new QCheckBox(name, &diag);
+		checkbox->setProperty("file_path", QT_UTF8(path));
+		checkbox->setProperty("file_name", QT_UTF8(file.c_str()));
+		checkbox->setTristate(false);
+		checkbox->setCheckable(true);
+		checkbox->setChecked(true);
+
+		layout->addWidget(checkbox);
+		checkboxes.push_back(checkbox);
+		count++;
+		return true;
+	};
+	
+	EnumSceneCollections(addSceneCollection);
+
+	if (count == 0)
+		return;
+
+	QPushButton *acceptExport = new QPushButton(QTStr("&Export"));
+	connect(acceptExport, &QAbstractButton::clicked, &diag,
+			&QDialog::accept);
+
+	QPushButton *rejectExport = new QPushButton(QTStr("&Close"));
+	connect(rejectExport, &QAbstractButton::clicked, &diag,
+			&QDialog::reject);
+
+	QHBoxLayout *bottomLayout = new QHBoxLayout();
+	bottomLayout->addStretch();
+	bottomLayout->addWidget(acceptExport);
+	bottomLayout->addWidget(rejectExport);
+
+	layout->addLayout(bottomLayout);
+
+	diag.setLayout(layout);
+
+	/* Export scenes */
+	if (diag.exec()) {
+		std::vector<std::pair<QString, QString>> exportScenes;
+		exportScenes.reserve(checkboxes.size());
+		for (size_t i = 0; i < checkboxes.size(); i++) {
+			QCheckBox *checkbox = checkboxes[i];
+			/* Add this scene to export */
+			if (!checkbox->isChecked())
+				continue;
+
+			QVariant qfile = checkbox->property("file_path");
+			QVariant qname = checkbox->property("file_name");
+			exportScenes.push_back(std::pair<QString, QString>(
+					qfile.value<QString>(),
+					qname.value<QString>()));
+		}
+		if (!exportScenes.size())
+			return;
+
+		QString dir = QFileDialog::getExistingDirectory(this,
 			QTStr("Basic.MainMenu.SceneCollection.Export"),
-			home + "/" + currentFile,
-			"JSON Files (*.json)");
+			home, QFileDialog::ShowDirsOnly
+			| QFileDialog::DontResolveSymlinks);
 
-	string file = QT_TO_UTF8(exportFile);
+		if (dir.isEmpty() || dir.isNull())
+			return;
 
-	if (!exportFile.isEmpty() && !exportFile.isNull()) {
-		if (QFile::exists(exportFile))
-			QFile::remove(exportFile);
-
-		QFile::copy(path + currentFile + ".json", exportFile);
+		for (size_t i = 0; i < exportScenes.size(); i++)
+			copyFile(dir + "/" + exportScenes[i].second + ".json",
+					exportScenes[i].first);
+		blog(LOG_DEBUG, "Scenes exported");
 	}
 }
 
