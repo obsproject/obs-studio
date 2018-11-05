@@ -1,0 +1,48 @@
+version: 22.0.3-sl.{build}
+
+image:
+- Visual Studio 2017
+
+clone_depth: 1
+
+environment:
+  matrix:
+    - BuildConfig: RelWithDebInfo
+
+  CURL_VERSION: 7.56.1
+  CmakeGenerator: Visual Studio 15 2017
+  DepsPath32: $(APPVEYOR_BUILD_FOLDER)\dependencies2017\win32
+  DepsPath64: $(APPVEYOR_BUILD_FOLDER)\dependencies2017\win64
+  BuildPath32: $(APPVEYOR_BUILD_FOLDER)\build32
+  BuildPath64: $(APPVEYOR_BUILD_FOLDER)\build64
+  InstallPath: $(APPVEYOR_BUILD_FOLDER)\packed_build
+  CefVersion: 3.3396.1779.g36f9eab
+  CefDirName: cef_binary_$(CefVersion)_windows64
+  CefPath: $(APPVEYOR_BUILD_FOLDER)\$(CefDirName)
+  CefBuildPath: $(CefPath)\build
+  CefZip: $(CefDirName).zip
+  CefUrl: https://s3-us-west-2.amazonaws.com/streamlabs-cef-dist/$(CefZip)
+  ReleaseArtifact: windows-x86_64-$(BuildConfig)-$(APPVEYOR_BUILD_VERSION).7z
+  DependenciesUrl: https://obsproject.com/downloads/dependencies2017.zip
+
+install:
+  - git submodule update --init --recursive --jobs 2
+
+  - mkdir "%BuildPath32%"
+  - mkdir "%BuildPath64%"
+
+build_script:
+  - cmd: CI\win-build.cmd
+
+after_build:
+  - 7z a "%ReleaseArtifact%" "%InstallPath%\*"
+
+artifacts:
+  - path: $(ReleaseArtifact)
+    name: Release Artifact
+
+test: off
+
+cache:
+  - $(AMFZip)
+  - $(CefZip)
