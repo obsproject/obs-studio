@@ -526,42 +526,126 @@ void OBSBasic::on_actionExportProfile_triggered()
 		return;
 	}
 
-	QString dir = QFileDialog::getExistingDirectory(
-			this,
-			QTStr("Basic.MainMenu.Profile.Export"),
-			home,
-			QFileDialog::ShowDirsOnly |
-			QFileDialog::DontResolveSymlinks);
+	auto copyProfile = [](QString folderDest, QString folderSrc)
+	{
+		if (folderDest.isEmpty() || folderDest.isNull())
+			return;
+		if (folderSrc.isEmpty() || folderSrc.isNull())
+			return;
+		if (folderDest == folderSrc)
+			return;
 
-	if (!dir.isEmpty() && !dir.isNull()) {
-		QString outputDir = dir + "/" + currentProfile;
-		QString inputPath = QString::fromUtf8(path);
-		QDir folder(outputDir);
+		QDir folder(folderDest);
 
 		if (!folder.exists()) {
-			folder.mkpath(outputDir);
+			folder.mkpath(folderDest);
 		} else {
-			if (QFile::exists(outputDir + "/basic.ini"))
-				QFile::remove(outputDir + "/basic.ini");
+			if (QFile::exists(folderDest + "/basic.ini"))
+				QFile::remove(folderDest + "/basic.ini");
 
-			if (QFile::exists(outputDir + "/service.json"))
-				QFile::remove(outputDir + "/service.json");
+			if (QFile::exists(folderDest + "/service.json"))
+				QFile::remove(folderDest + "/service.json");
 
-			if (QFile::exists(outputDir + "/streamEncoder.json"))
-				QFile::remove(outputDir + "/streamEncoder.json");
+			if (QFile::exists(folderDest + "/streamEncoder.json"))
+				QFile::remove(folderDest + "/streamEncoder.json");
 
-			if (QFile::exists(outputDir + "/recordEncoder.json"))
-				QFile::remove(outputDir + "/recordEncoder.json");
+			if (QFile::exists(folderDest + "/recordEncoder.json"))
+				QFile::remove(folderDest + "/recordEncoder.json");
 		}
 
-		QFile::copy(inputPath + currentProfile + "/basic.ini",
-				outputDir + "/basic.ini");
-		QFile::copy(inputPath + currentProfile + "/service.json",
-				outputDir + "/service.json");
-		QFile::copy(inputPath + currentProfile + "/streamEncoder.json",
-				outputDir + "/streamEncoder.json");
-		QFile::copy(inputPath + currentProfile + "/recordEncoder.json",
-				outputDir + "/recordEncoder.json");
+		QFile::copy(folderSrc + "/basic.ini",
+			folderDest + "/basic.ini");
+		QFile::copy(folderSrc + "/service.json",
+			folderDest + "/service.json");
+		QFile::copy(folderSrc + "/streamEncoder.json",
+			folderDest + "/streamEncoder.json");
+		QFile::copy(folderSrc + "/recordEncoder.json",
+			folderDest + "/recordEncoder.json");
+
+		blog(LOG_DEBUG, "Copied %s to %s",
+				(folderSrc.toStdString()).c_str(),
+				(folderDest.toStdString()).c_str());
+	};
+
+	int count = 0;
+
+	QDialog diag(this);
+	diag.setModal(true);
+	diag.setWindowTitle(QTStr("Basic.MainMenu.Profile.Export"));
+	QVBoxLayout *layout = new QVBoxLayout();
+	std::vector<QCheckBox *> checkboxes;
+
+	auto addProfile = [&diag, &layout, &checkboxes, &count]
+			(const char *name, const char *path) {
+		/*Gets the folder name*/
+		std::string file = strrchr(path, '/') + 1;
+
+		QCheckBox *checkbox = new QCheckBox(name, &diag);
+		checkbox->setProperty("folder_path", QT_UTF8(path));
+		checkbox->setProperty("folder_name", QT_UTF8(file.c_str()));
+		checkbox->setTristate(false);
+		checkbox->setCheckable(true);
+		checkbox->setChecked(true);
+
+		layout->addWidget(checkbox);
+		checkboxes.push_back(checkbox);
+		count++;
+		return true;
+	};
+
+	EnumProfiles(addProfile);
+
+	if (count == 0)
+		return;
+
+	QPushButton *acceptExport = new QPushButton(QTStr("&Export"));
+	connect(acceptExport, &QAbstractButton::clicked, &diag,
+			&QDialog::accept);
+
+	QPushButton *rejectExport = new QPushButton(QTStr("&Close"));
+	connect(rejectExport, &QAbstractButton::clicked, &diag,
+			&QDialog::reject);
+
+	QHBoxLayout *bottomLayout = new QHBoxLayout();
+	bottomLayout->addStretch();
+	bottomLayout->addWidget(acceptExport);
+	bottomLayout->addWidget(rejectExport);
+
+	layout->addLayout(bottomLayout);
+
+	diag.setLayout(layout);
+
+	if (diag.exec()) {
+		std::vector<std::pair<QString, QString>> exportProfiles;
+		exportProfiles.reserve(checkboxes.size());
+		for (size_t i = 0; i < checkboxes.size(); i++) {
+			QCheckBox *checkbox = checkboxes[i];
+			if (!checkbox->isChecked())
+				continue;
+			/* Add this profile to export */
+			QVariant qfolder = checkbox->property("folder_path");
+			QVariant qname = checkbox->property("folder_name");
+			exportProfiles.push_back(std::pair<QString, QString>(
+					qfolder.value<QString>(),
+					qname.value<QString>()));
+		}
+		/* Iterate through files to export */
+		if (!exportProfiles.size())
+			return;
+
+		QString dir = QFileDialog::getExistingDirectory(this,
+				QTStr("Basic.MainMenu.Profile.Export"),
+				home, QFileDialog::ShowDirsOnly |
+				QFileDialog::DontResolveSymlinks);
+
+		if (dir.isEmpty() || dir.isNull())
+			return;
+
+		for (size_t i = 0; i < exportProfiles.size(); i++)
+			copyProfile((dir + "/" + exportProfiles[i].second),
+					exportProfiles[i].first);
+
+		blog(LOG_DEBUG, "Profiles exported");
 	}
 }
 
