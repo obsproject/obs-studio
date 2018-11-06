@@ -51,6 +51,7 @@ private:
 	bool         mouseMoved     = false;
 	bool         mouseOverItems = false;
 	bool         cropping       = false;
+	bool         rotating       = false;
 	bool         locked         = false;
 	bool         scrollMode     = false;
 	bool         fixedScaling   = false;
@@ -79,9 +80,9 @@ private:
 
 	static void SnapItemMovement(vec2 &offset);
 	void MoveItems(const vec2 &pos);
+	void RotateItem(const vec2 &pos);
 
 	void ProcessClick(const vec2 &pos);
-
 public:
 	OBSBasicPreview(QWidget *parent, Qt::WindowFlags flags = 0);
 

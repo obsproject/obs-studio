@@ -11,6 +11,9 @@
 
 #define HANDLE_RADIUS     4.0f
 #define HANDLE_SEL_RADIUS (HANDLE_RADIUS * 1.5f)
+#if !defined(FLT_EPSILON)
+#define FLT_EPSILON      1.192092896e-07F
+#endif
 
 /* TODO: make C++ math classes and clean up code here later */
 
@@ -496,6 +499,7 @@ void OBSBasicPreview::mousePressEvent(QMouseEvent *event)
 	float y = float(event->y()) - main->previewY / pixelRatio;
 	Qt::KeyboardModifiers modifiers = QGuiApplication::keyboardModifiers();
 	bool altDown = (modifiers & Qt::AltModifier);
+	bool shiftDown = (modifiers & Qt::ShiftModifier);
 
 	OBSQTDisplay::mousePressEvent(event);
 
@@ -508,6 +512,8 @@ void OBSBasicPreview::mousePressEvent(QMouseEvent *event)
 
 	if (altDown)
 		cropping = true;
+	else if (shiftDown)
+		rotating = true;
 
 	vec2_set(&startPos, x, y);
 	GetStretchHandleData(startPos);
@@ -588,6 +594,7 @@ void OBSBasicPreview::mouseReleaseEvent(QMouseEvent *event)
 		mouseDown    = false;
 		mouseMoved   = false;
 		cropping     = false;
+		rotating     = false;
 	}
 }
 
@@ -1050,6 +1057,62 @@ void OBSBasicPreview::CropItem(const vec2 &pos)
 	obs_sceneitem_defer_update_end(stretchItem);
 }
 
+void OBSBasicPreview::RotateItem(const vec2 &pos)
+{
+	uint32_t stretchFlags = (uint32_t)stretchHandle;
+	if (stretchHandle == ItemHandle::None)
+		return;
+	float rad, handlerad;
+	vec3 alignmentPoint, handlePoint;
+
+	vec3_zero(&alignmentPoint);
+	vec3_zero(&handlePoint);
+
+	vec2 size = stretchItemSize;
+
+	uint32_t alignment = obs_sceneitem_get_alignment(stretchItem);
+
+	if (alignment & OBS_ALIGN_LEFT)
+		alignmentPoint.x = 0;
+	else if (alignment & OBS_ALIGN_RIGHT)
+		alignmentPoint.x = size.x;
+	else
+		alignmentPoint.x = size.x / 2.0;
+
+	if (alignment & OBS_ALIGN_TOP)
+		alignmentPoint.y = 0;
+	else if (alignment & OBS_ALIGN_BOTTOM)
+		alignmentPoint.y = size.y;
+	else
+		alignmentPoint.y = size.y / 2.0;
+
+	if (stretchFlags & ITEM_LEFT)
+		handlePoint.x = 0;
+	else if (stretchFlags & ITEM_RIGHT)
+		handlePoint.x = size.x;
+	else
+		handlePoint.x = size.x / 2.0;
+
+	if (stretchFlags & ITEM_TOP)
+		handlePoint.y = 0;
+	else if (stretchFlags & ITEM_BOTTOM)
+		handlePoint.y = size.y;
+	else
+		handlePoint.y = size.y / 2.0;
+
+	if (alignmentPoint.x == handlePoint.x && alignmentPoint.y == handlePoint.y)
+		return;
+
+	handlerad = -atan2f(handlePoint.y - alignmentPoint.y,
+			handlePoint.x - alignmentPoint.x);
+
+	vec3_transform(&alignmentPoint, &alignmentPoint, &itemToScreen);
+
+	rad = atan2f(pos.y - alignmentPoint.y, pos.x - alignmentPoint.x);
+
+	obs_sceneitem_set_rot(stretchItem, DEG(rad + handlerad));
+}
+
 void OBSBasicPreview::StretchItem(const vec2 &pos)
 {
 	Qt::KeyboardModifiers modifiers = QGuiApplication::keyboardModifiers();
@@ -1162,7 +1225,9 @@ void OBSBasicPreview::mouseMoveEvent(QMouseEvent *event)
 
 			if (cropping)
 				CropItem(pos);
-			else
+			else if (rotating) {
+				RotateItem(pos);
+			} else
 				StretchItem(pos);
 
 		} else if (mouseOverItems) {
@@ -1190,6 +1255,46 @@ static void DrawCircleAtPos(float x, float y)
 	gs_matrix_pop();
 }
 
+static void DrawAtPos(float x, float y, float rad = 0)
+{
+	struct vec3 pos;
+	vec3_set(&pos, x, y, 0.0f);
+
+	struct matrix4 matrix;
+	gs_matrix_get(&matrix);
+	vec3_transform(&pos, &pos, &matrix);
+
+	gs_matrix_push();
+	gs_matrix_identity();
+	gs_matrix_translate(&pos);
+	gs_matrix_scale3f(HANDLE_RADIUS, HANDLE_RADIUS, 1.0f);
+	gs_matrix_rotaa4f(0, 0, 1, atan2f(y - 0.5, x - 0.5) + rad);
+	gs_draw(GS_LINESTRIP, 0, 0);
+	gs_matrix_pop();
+}
+
+static void DrawAtPosColor(float x, float y, vec4 color, float rad = 0)
+{
+	struct vec3 pos;
+	vec3_set(&pos, x, y, 0.0f);
+
+	struct matrix4 matrix;
+	gs_matrix_get(&matrix);
+	vec3_transform(&pos, &pos, &matrix);
+
+	gs_effect_t *eff = gs_get_effect();
+	gs_eparam_t *param = gs_effect_get_param_by_name(eff, "color");
+	gs_effect_set_vec4(param, &color);
+
+	gs_matrix_push();
+	gs_matrix_identity();
+	gs_matrix_translate(&pos);
+	gs_matrix_scale3f(HANDLE_RADIUS, HANDLE_RADIUS, 1.0f);
+	gs_matrix_rotaa4f(0, 0, 1, atan2f(y - 0.5, x - 0.5) + rad);
+	gs_draw(GS_LINESTRIP, 0, 0);
+	gs_matrix_pop();
+}
+
 static inline bool crop_enabled(const obs_sceneitem_crop *crop)
 {
 	return crop->left > 0  ||
@@ -1201,6 +1306,30 @@ static inline bool crop_enabled(const obs_sceneitem_crop *crop)
 bool OBSBasicPreview::DrawSelectedItem(obs_scene_t *scene,
 		obs_sceneitem_t *item, void *param)
 {
+	static gs_vertbuffer_t *rotationAnchor = nullptr;
+	static gs_vertbuffer_t *rotationAnchor2 = nullptr;
+	static gs_vertbuffer_t *rotationCenter = nullptr;
+
+	if (!rotationAnchor || !rotationAnchor2) {
+		const float d = 1.75;
+		obs_enter_graphics();
+		/* Custom handle primatives */
+		gs_vertex2f(-d, 0);
+		gs_vertex2f(-d, -d);
+		gs_vertex2f(0, -d);
+		gs_vertex2f(-1.0, -1.0);
+		gs_vertex2f(-d, 0);;
+		rotationAnchor = gs_render_save();
+
+		gs_vertex2f(d, 0);
+		gs_vertex2f(d, d);
+		gs_vertex2f(0, d);
+		gs_vertex2f(1.0, 1.0);
+		gs_vertex2f(d, 0);
+		rotationAnchor2 = gs_render_save();
+		obs_leave_graphics();
+	}
+
 	if (obs_sceneitem_locked(item))
 		return true;
 
@@ -1221,6 +1350,8 @@ bool OBSBasicPreview::DrawSelectedItem(obs_scene_t *scene,
 		return true;
 
 	OBSBasic *main = reinterpret_cast<OBSBasic*>(App()->GetMainWindow());
+	if (!rotationCenter)
+		rotationCenter = main->circle;
 
 	matrix4 boxTransform;
 	matrix4 invBoxTransform;
@@ -1249,19 +1380,66 @@ bool OBSBasicPreview::DrawSelectedItem(obs_scene_t *scene,
 	obs_transform_info info;
 	obs_sceneitem_get_info(item, &info);
 
-	gs_load_vertexbuffer(main->circle);
+	gs_load_vertexbuffer(rotationCenter);
 
 	gs_matrix_push();
 	gs_matrix_mul(&boxTransform);
 
-	DrawCircleAtPos(0.0f, 0.0f);
-	DrawCircleAtPos(0.0f, 1.0f);
-	DrawCircleAtPos(1.0f, 0.0f);
-	DrawCircleAtPos(1.0f, 1.0f);
-	DrawCircleAtPos(0.5f, 0.0f);
-	DrawCircleAtPos(0.0f, 0.5f);
-	DrawCircleAtPos(0.5f, 1.0f);
-	DrawCircleAtPos(1.0f, 0.5f);
+	float rot = M_PI / 4;
+
+	obs_sceneitem_get_alignment(item);
+
+	vec4 default_color;
+	vec4 highlight_color;
+	vec4_set(&default_color, 1.0, 0.0, 0.0, 1.0);
+	vec4_set(&highlight_color, 0.6, 0.4, 0.8, 1.0);
+
+	auto drawHandle = [&info, &default_color, &highlight_color, &rot]
+		(float x, float y, uint32_t alignment, uint32_t alignment_2) {
+		if (info.alignment & alignment && info.alignment & alignment_2)
+			DrawAtPosColor(x, y, highlight_color, rot);
+		else
+			DrawAtPosColor(x, y, default_color, rot);
+	};
+
+	drawHandle(0.0f, 0.0f, OBS_ALIGN_LEFT, OBS_ALIGN_TOP);
+	drawHandle(0.0f, 1.0f, OBS_ALIGN_LEFT, OBS_ALIGN_BOTTOM);
+	drawHandle(1.0f, 0.0f, OBS_ALIGN_RIGHT, OBS_ALIGN_TOP);
+	drawHandle(1.0f, 1.0f, OBS_ALIGN_RIGHT, OBS_ALIGN_BOTTOM);
+	drawHandle(0.5f, 0.0f, OBS_ALIGN_CENTER, OBS_ALIGN_TOP);
+	drawHandle(0.0f, 0.5f, OBS_ALIGN_LEFT, OBS_ALIGN_CENTER);
+	drawHandle(0.5f, 1.0f, OBS_ALIGN_CENTER, OBS_ALIGN_BOTTOM);
+	drawHandle(1.0f, 0.5f, OBS_ALIGN_RIGHT, OBS_ALIGN_CENTER);
+
+	float rotated = obs_sceneitem_get_rot(item);
+
+	if (abs(fmod(rotated, 360.0)) > FLT_EPSILON) {
+		gs_matrix_pop();
+
+		gs_load_vertexbuffer(rotationAnchor);
+
+		gs_matrix_push();
+		gs_matrix_mul(&boxTransform);
+
+		rot = rot + RAD(rotated);
+
+		drawHandle(0.0f, 0.0f, OBS_ALIGN_LEFT, OBS_ALIGN_TOP);
+		drawHandle(0.0f, 1.0f, OBS_ALIGN_LEFT, OBS_ALIGN_BOTTOM);
+		drawHandle(1.0f, 0.0f, OBS_ALIGN_RIGHT, OBS_ALIGN_TOP);
+		drawHandle(1.0f, 1.0f, OBS_ALIGN_RIGHT, OBS_ALIGN_BOTTOM);
+
+		gs_matrix_pop();
+
+		gs_load_vertexbuffer(rotationAnchor2);
+
+		gs_matrix_push();
+		gs_matrix_mul(&boxTransform);
+
+		drawHandle(0.0f, 0.0f, OBS_ALIGN_LEFT, OBS_ALIGN_TOP);
+		drawHandle(0.0f, 1.0f, OBS_ALIGN_LEFT, OBS_ALIGN_BOTTOM);
+		drawHandle(1.0f, 0.0f, OBS_ALIGN_RIGHT, OBS_ALIGN_TOP);
+		drawHandle(1.0f, 1.0f, OBS_ALIGN_RIGHT, OBS_ALIGN_BOTTOM);
+	}
 
 	obs_sceneitem_crop crop;
 	obs_sceneitem_get_crop(item, &crop);
