@@ -185,7 +185,7 @@ static void nv_texture_free(struct nvenc_data *enc, struct nv_texture *nvtex)
 static const char *nvenc_get_name(void *type_data)
 {
 	UNUSED_PARAMETER(type_data);
-	return "NVIDIA NvEnc H.264 (Beta)";
+	return "NVIDIA NVENC H.264 (Beta)";
 }
 
 static inline int nv_get_cap(struct nvenc_data *enc, NV_ENC_CAPS cap)
