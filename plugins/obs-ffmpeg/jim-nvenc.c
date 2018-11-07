@@ -319,10 +319,8 @@ static bool init_encoder(struct nvenc_data *enc, obs_data_t *settings)
 	const char *preset = obs_data_get_string(settings, "preset");
 	const char *profile = obs_data_get_string(settings, "profile");
 	const char *level = obs_data_get_string(settings, "level");
-	bool temporal_aq = obs_data_get_bool(settings, "temporal_aq");
-	bool lookahead = obs_data_get_bool(settings, "la");
-	int la_depth = (int)obs_data_get_int(settings, "la_depth");
-	bool twopass = obs_data_get_bool(settings, "2pass");
+	bool psycho_aq = obs_data_get_bool(settings, "psycho_aq");
+	bool lookahead = obs_data_get_bool(settings, "lookahead");
 	int gpu = (int)obs_data_get_int(settings, "gpu");
 	int bf = (int)obs_data_get_int(settings, "bf");
 	NVENCSTATUS err;
@@ -337,11 +335,16 @@ static bool init_encoder(struct nvenc_data *enc, obs_data_t *settings)
 	/* get preset                 */
 
 	GUID nv_preset = NV_ENC_PRESET_DEFAULT_GUID;
+	bool twopass = false;
 	bool hp = false;
 	bool ll = false;
 
 	if (astrcmpi(preset, "hq") == 0) {
 		nv_preset = NV_ENC_PRESET_HQ_GUID;
+
+	} else if (astrcmpi(preset, "mp") == 0) {
+		nv_preset = NV_ENC_PRESET_HQ_GUID;
+		twopass = true;
 
 	} else if (astrcmpi(preset, "hp") == 0) {
 		nv_preset = NV_ENC_PRESET_HP_GUID;
@@ -365,6 +368,11 @@ static bool init_encoder(struct nvenc_data *enc, obs_data_t *settings)
 		nv_preset = hp
 			? NV_ENC_PRESET_LOSSLESS_HP_GUID
 			: NV_ENC_PRESET_LOSSLESS_DEFAULT_GUID;
+	}
+
+	if (astrcmpi(rc, "cqp") == 0) {
+		nv_preset = NV_ENC_PRESET_HQ_GUID;
+		rc = "hq";
 	}
 
 	/* -------------------------- */
@@ -425,13 +433,13 @@ static bool init_encoder(struct nvenc_data *enc, obs_data_t *settings)
 
 	/* lookahead */
 	if (!hp && lookahead && nv_get_cap(enc, NV_ENC_CAPS_SUPPORT_LOOKAHEAD)) {
-		config->rcParams.lookaheadDepth = (uint16_t)la_depth;
+		config->rcParams.lookaheadDepth = lookahead ? 8 : 0;
 	}
 
-	/* temporal aq */
+	/* psycho aq */
 	if (nv_get_cap(enc, NV_ENC_CAPS_SUPPORT_TEMPORAL_AQ)) {
-		config->rcParams.enableAQ = temporal_aq;
-		config->rcParams.enableTemporalAQ = temporal_aq;
+		config->rcParams.enableAQ = psycho_aq;
+		config->rcParams.enableTemporalAQ = psycho_aq;
 	}
 
 	/* -------------------------- */
@@ -440,13 +448,10 @@ static bool init_encoder(struct nvenc_data *enc, obs_data_t *settings)
 	enc->cbr = false;
 
 	if (astrcmpi(rc, "cqp") == 0) {
-		nv_preset = NV_ENC_PRESET_HQ_GUID;
-		config->rcParams.rateControlMode = NV_ENC_PARAMS_RC_CONSTQP;
-		config->rcParams.constQP.qpInterP = cqp;
-		config->rcParams.constQP.qpInterB = cqp;
-		config->rcParams.constQP.qpIntra = cqp;
+		config->rcParams.rateControlMode = NV_ENC_PARAMS_RC_VBR;
+		config->rcParams.targetQuality = cqp;
 		config->rcParams.averageBitRate = 0;
-		config->rcParams.maxBitRate = 0;
+		config->rcParams.maxBitRate = 40000000;
 
 	} else if (astrcmpi(rc, "lossless") == 0) {
 		config->rcParams.rateControlMode = NV_ENC_PARAMS_RC_CONSTQP;

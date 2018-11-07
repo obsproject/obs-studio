@@ -134,8 +134,6 @@ static bool nvenc_update(void *data, obs_data_t *settings)
 	int keyint_sec = (int)obs_data_get_int(settings, "keyint_sec");
 	const char *preset = obs_data_get_string(settings, "preset");
 	const char *profile = obs_data_get_string(settings, "profile");
-	const char *level = obs_data_get_string(settings, "level");
-	bool twopass = obs_data_get_bool(settings, "2pass");
 	int gpu = (int)obs_data_get_int(settings, "gpu");
 	bool cbr_override = obs_data_get_bool(settings, "cbr");
 	int bf = (int)obs_data_get_int(settings, "bf");
@@ -157,6 +155,13 @@ static bool nvenc_update(void *data, obs_data_t *settings)
 	info.format = voi->format;
 	info.colorspace = voi->colorspace;
 	info.range = voi->range;
+
+	bool twopass = false;
+
+	if (astrcmpi(preset, "mq") == 0) {
+		twopass = true;
+		preset = "hq";
+	}
 
 	nvenc_video_info(enc, &info);
 	av_opt_set_int(enc->context->priv_data, "cbr", false, 0);
@@ -185,7 +190,7 @@ static bool nvenc_update(void *data, obs_data_t *settings)
 	}
 
 
-	av_opt_set(enc->context->priv_data, "level", level, 0);
+	av_opt_set(enc->context->priv_data, "level", "auto", 0);
 	av_opt_set_int(enc->context->priv_data, "2pass", twopass, 0);
 	av_opt_set_int(enc->context->priv_data, "gpu", gpu, 0);
 
@@ -216,14 +221,13 @@ static bool nvenc_update(void *data, obs_data_t *settings)
 	     "\tkeyint:       %d\n"
 	     "\tpreset:       %s\n"
 	     "\tprofile:      %s\n"
-	     "\tlevel:        %s\n"
 	     "\twidth:        %d\n"
 	     "\theight:       %d\n"
 	     "\t2-pass:       %s\n"
 	     "\tb-frames:     %d\n"
 	     "\tGPU:          %d\n",
 	     rc, bitrate, cqp, enc->context->gop_size,
-	     preset, profile, level,
+	     preset, profile,
 	     enc->context->width, enc->context->height,
 	     twopass ? "true" : "false",
 	     enc->context->max_b_frames,
@@ -396,11 +400,9 @@ void nvenc_defaults(obs_data_t *settings)
 	obs_data_set_default_int(settings, "keyint_sec", 0);
 	obs_data_set_default_int(settings, "cqp", 23);
 	obs_data_set_default_string(settings, "rate_control", "CBR");
-	obs_data_set_default_string(settings, "preset", "default");
-	obs_data_set_default_string(settings, "profile", "main");
-	obs_data_set_default_string(settings, "level", "auto");
-	obs_data_set_default_bool(settings, "2pass", true);
-	obs_data_set_default_bool(settings, "temporal_aq", true);
+	obs_data_set_default_string(settings, "preset", "hq");
+	obs_data_set_default_string(settings, "profile", "high");
+	obs_data_set_default_bool(settings, "psycho_aq", true);
 	obs_data_set_default_int(settings, "gpu", 0);
 	obs_data_set_default_int(settings, "bf", 2);
 }
@@ -440,8 +442,7 @@ obs_properties_t *nvenc_properties(void *unused)
 			obs_module_text("RateControl"),
 			OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
 	obs_property_list_add_string(p, "CBR", "CBR");
-	obs_property_list_add_string(p, "VBR", "VBR");
-	obs_property_list_add_string(p, "CQP", "CQP");
+	obs_property_list_add_string(p, "CQ", "CQP");
 	obs_property_list_add_string(p, obs_module_text("Lossless"),
 			"lossless");
 
@@ -450,7 +451,8 @@ obs_properties_t *nvenc_properties(void *unused)
 	obs_properties_add_int(props, "bitrate",
 			obs_module_text("Bitrate"), 50, 300000, 50);
 
-	obs_properties_add_int(props, "cqp", "CQP", 0, 50, 1);
+	obs_properties_add_int(props, "cqp", obs_module_text("NVENC.CQLevel"),
+			0, 50, 1);
 
 	obs_properties_add_int(props, "keyint_sec",
 			obs_module_text("KeyframeIntervalSec"), 0, 10, 1);
@@ -461,10 +463,10 @@ obs_properties_t *nvenc_properties(void *unused)
 #define add_preset(val) \
 	obs_property_list_add_string(p, obs_module_text("NVENC.Preset." val), \
 			val)
-	add_preset("default");
+	add_preset("mq");
 	add_preset("hq");
+	add_preset("default");
 	add_preset("hp");
-	add_preset("bd");
 	add_preset("ll");
 	add_preset("llhq");
 	add_preset("llhp");
@@ -478,40 +480,12 @@ obs_properties_t *nvenc_properties(void *unused)
 	add_profile("high");
 	add_profile("main");
 	add_profile("baseline");
-	add_profile("high444p");
-
-	p = obs_properties_add_list(props, "level",
-			obs_module_text("NVENC.Level"), OBS_COMBO_TYPE_LIST,
-			OBS_COMBO_FORMAT_STRING);
-	add_profile("auto");
-	add_profile("1"   );
-	add_profile("1.0" );
-	add_profile("1b"  );
-	add_profile("1.0b");
-	add_profile("1.1" );
-	add_profile("1.2" );
-	add_profile("1.3" );
-	add_profile("2"   );
-	add_profile("2.0" );
-	add_profile("2.1" );
-	add_profile("2.2" );
-	add_profile("3"   );
-	add_profile("3.0" );
-	add_profile("3.1" );
-	add_profile("3.2" );
-	add_profile("4"   );
-	add_profile("4.0" );
-	add_profile("4.1" );
-	add_profile("4.2" );
-	add_profile("5"   );
-	add_profile("5.0" );
-	add_profile("5.1" );
 #undef add_profile
 
-	obs_properties_add_bool(props, "2pass",
-			obs_module_text("NVENC.Use2Pass"));
-	obs_properties_add_bool(props, "temporal_aq",
-			obs_module_text("NVENC.TemporalAQ"));
+	obs_properties_add_bool(props, "lookahead",
+			obs_module_text("NVENC.LookAhead"));
+	obs_properties_add_bool(props, "psycho_aq",
+			obs_module_text("NVENC.PsychoVisualTuning"));
 	obs_properties_add_int(props, "gpu", obs_module_text("GPU"), 0, 8, 1);
 
 	obs_properties_add_int(props, "bf", obs_module_text("BFrames"),
