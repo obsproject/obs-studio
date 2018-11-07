@@ -1,30 +1,35 @@
-/*********************************************************************************
+/******************************************************************************\
+Copyright (c) 2005-2018, Intel Corporation
+All rights reserved.
 
-INTEL CORPORATION PROPRIETARY INFORMATION
-This software is supplied under the terms of a license agreement or nondisclosure
-agreement with Intel Corporation and may not be copied or disclosed except in
-accordance with the terms of that agreement
-Copyright(c) 2011-2015 Intel Corporation. All Rights Reserved.
+Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
 
-**********************************************************************************/
+1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
 
-// #include "mfx_samples_config.h"
+2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+
+3. Neither the name of the copyright holder nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+This sample was distributed or derived from the Intel's Media Samples package.
+The original version of this sample may be obtained from https://software.intel.com/en-us/intel-media-server-studio
+or https://software.intel.com/en-us/media-client-solutions-support.
+\**********************************************************************************/
+
+#include "common_utils.h"
 
 #if defined(WIN32) || defined(WIN64)
 
-//prefast signature used in combaseapi.h
+//prefast singnature used in combaseapi.h
 #ifndef _PREFAST_
     #pragma warning(disable:4068)
 #endif
 
-#include "device_directx9.h"
-// #include "igfx_s3dcontrol.h"
+#include "d3d_device.h"
+#include "d3d_allocator.h"
 
 #include "atlbase.h"
-
-// Macros
-#define MSDK_ZERO_MEMORY(VAR)                    {memset(&VAR, 0, sizeof(VAR));}
-#define MSDK_MEMCPY_VAR(dstVarName, src, count) memcpy_s(&(dstVarName), sizeof(dstVarName), (src), (count))
 
 CD3D9Device::CD3D9Device()
 {
@@ -35,7 +40,6 @@ CD3D9Device::CD3D9Device()
     m_resetToken = 0;
 
     m_nViews = 0;
-    m_pS3DControl = NULL;
 
     MSDK_ZERO_MEMORY(m_backBufferDesc);
     m_pDXVAVPS = NULL;
@@ -142,7 +146,7 @@ mfxStatus CD3D9Device::FillD3DPP(mfxHDL hWindow, mfxU16 nViews, D3DPRESENT_PARAM
 
     D3DPP.Flags                      = D3DPRESENTFLAG_VIDEO;
     D3DPP.FullScreen_RefreshRateInHz = D3DPRESENT_RATE_DEFAULT;
-    D3DPP.PresentationInterval       = D3DPRESENT_INTERVAL_ONE; // note that this setting leads to an implicit timeBeginPeriod call
+    D3DPP.PresentationInterval       = D3DPRESENT_INTERVAL_IMMEDIATE; // note that this setting leads to an implicit timeBeginPeriod call
     D3DPP.BackBufferCount            = 1;
     D3DPP.BackBufferFormat           = (m_bIsA2rgb10) ? D3DFMT_A2R10G10B10 : D3DFMT_X8R8G8B8;
 
@@ -198,7 +202,7 @@ mfxStatus CD3D9Device::Init(
 
     ZeroMemory(&m_D3DPP, sizeof(m_D3DPP));
     sts = FillD3DPP(hWindow, nViews, m_D3DPP);
-    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+    MSDK_CHECK_STATUS(sts, "FillD3DPP failed");
 
     hr = m_pD3D9->CreateDeviceEx(
         nAdapterNum,
@@ -278,7 +282,6 @@ void CD3D9Device::Close()
     MSDK_SAFE_RELEASE(m_pDeviceManager9);
     MSDK_SAFE_RELEASE(m_pD3DD9);
     MSDK_SAFE_RELEASE(m_pD3D9);
-    m_pS3DControl = NULL;
 }
 
 CD3D9Device::~CD3D9Device()
@@ -294,23 +297,12 @@ mfxStatus CD3D9Device::GetHandle(mfxHandleType type, mfxHDL *pHdl)
 
         return MFX_ERR_NONE;
     }
-    else if (MFX_HANDLE_GFXS3DCONTROL == type && pHdl != NULL)
-    {
-        *pHdl = m_pS3DControl;
-
-        return MFX_ERR_NONE;
-    }
     return MFX_ERR_UNSUPPORTED;
 }
 
 mfxStatus CD3D9Device::SetHandle(mfxHandleType type, mfxHDL hdl)
 {
-    if (MFX_HANDLE_GFXS3DCONTROL == type && hdl != NULL)
-    {
-        m_pS3DControl = (IGFXS3DControl*)hdl;
-        return MFX_ERR_NONE;
-    }
-    else if (MFX_HANDLE_DEVICEWINDOW == type && hdl != NULL) //for render window handle
+    if (MFX_HANDLE_DEVICEWINDOW == type && hdl != NULL) //for render window handle
     {
         m_D3DPP.hDeviceWindow = (HWND)hdl;
         return MFX_ERR_NONE;
@@ -322,16 +314,13 @@ mfxStatus CD3D9Device::RenderFrame(mfxFrameSurface1 * pSurface, mfxFrameAllocato
 {
     HRESULT hr = S_OK;
 
-    if (!(1 == m_nViews || (2 == m_nViews && NULL != m_pS3DControl)))
+    // Rendering of MVC is not supported
+    if (2 == m_nViews)
         return MFX_ERR_UNDEFINED_BEHAVIOR;
 
     MSDK_CHECK_POINTER(pSurface, MFX_ERR_NULL_PTR);
     MSDK_CHECK_POINTER(m_pDeviceManager9, MFX_ERR_NOT_INITIALIZED);
     MSDK_CHECK_POINTER(pmfxAlloc, MFX_ERR_NULL_PTR);
-
-    // don't try to render second view if output rect changed since first view
-    if (2 == m_nViews && (0 != pSurface->Info.FrameId.ViewId))
-        return MFX_ERR_NONE;
 
     hr = m_pD3DD9->TestCooperativeLevel();
 
@@ -367,7 +356,7 @@ mfxStatus CD3D9Device::RenderFrame(mfxFrameSurface1 * pSurface, mfxFrameAllocato
         return MFX_ERR_UNKNOWN;
     }
 
-    if (SUCCEEDED(hr)&& (1 == m_nViews || pSurface->Info.FrameId.ViewId == 1))
+    if (SUCCEEDED(hr))
     {
         hr = m_pD3DD9->Present(NULL, NULL, NULL, NULL);
     }
@@ -375,25 +364,15 @@ mfxStatus CD3D9Device::RenderFrame(mfxFrameSurface1 * pSurface, mfxFrameAllocato
     return SUCCEEDED(hr) ? MFX_ERR_NONE : MFX_ERR_DEVICE_FAILED;
 }
 
-/*
 mfxStatus CD3D9Device::CreateVideoProcessors()
 {
-    if (!(1 == m_nViews || (2 == m_nViews && NULL != m_pS3DControl)))
+    if (2 == m_nViews)
         return MFX_ERR_UNDEFINED_BEHAVIOR;
 
    MSDK_SAFE_RELEASE(m_pDXVAVP_Left);
    MSDK_SAFE_RELEASE(m_pDXVAVP_Right);
 
    HRESULT hr ;
-
-   if (2 == m_nViews && NULL != m_pS3DControl)
-   {
-       hr = m_pS3DControl->SetDevice(m_pDeviceManager9);
-       if (FAILED(hr))
-       {
-           return MFX_ERR_DEVICE_FAILED;
-       }
-   }
 
    ZeroMemory(&m_backBufferDesc, sizeof(m_backBufferDesc));
    IDirect3DSurface9 *backBufferTmp = NULL;
@@ -410,31 +389,6 @@ mfxStatus CD3D9Device::CreateVideoProcessors()
            (void**)&m_pDXVAVPS);
    }
 
-   if (2 == m_nViews)
-   {
-        // Activate L channel
-        if (SUCCEEDED(hr))
-        {
-           hr = m_pS3DControl->SelectLeftView();
-        }
-
-        if (SUCCEEDED(hr))
-        {
-           // Create VPP device for the L channel
-           hr = m_pDXVAVPS->CreateVideoProcessor(DXVA2_VideoProcProgressiveDevice,
-               &m_VideoDesc,
-               m_D3DPP.BackBufferFormat,
-               1,
-               &m_pDXVAVP_Left);
-        }
-
-        // Activate R channel
-        if (SUCCEEDED(hr))
-        {
-           hr = m_pS3DControl->SelectRightView();
-        }
-
-   }
    if (SUCCEEDED(hr))
    {
        hr = m_pDXVAVPS->CreateVideoProcessor(DXVA2_VideoProcProgressiveDevice,
@@ -446,6 +400,5 @@ mfxStatus CD3D9Device::CreateVideoProcessors()
 
    return SUCCEEDED(hr) ? MFX_ERR_NONE : MFX_ERR_DEVICE_FAILED;
 }
-*/
 
 #endif // #if defined(WIN32) || defined(WIN64)

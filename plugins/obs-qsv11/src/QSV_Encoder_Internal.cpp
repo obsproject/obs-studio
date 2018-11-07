@@ -1,58 +1,20 @@
-/*
+/******************************************************************************
+ Copyright (C) 2013-2014 Intel Corporation
 
-This file is provided under a dual BSD/GPLv2 license.  When using or
-redistributing this file, you may do so under either license.
+ This program is free software: you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation, either version 2 of the License, or
+ (at your option) any later version.
 
-GPL LICENSE SUMMARY
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
 
-Copyright(c) Oct. 2015 Intel Corporation.
-
-This program is free software; you can redistribute it and/or modify
-it under the terms of version 2 of the GNU General Public License as
-published by the Free Software Foundation.
-
-This program is distributed in the hope that it will be useful, but
-WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-General Public License for more details.
-
-Contact Information:
-
-Seung-Woo Kim, seung-woo.kim@intel.com
-705 5th Ave S #500, Seattle, WA 98104
-
-BSD LICENSE
-
-Copyright(c) <date> Intel Corporation.
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions
-are met:
-
-* Redistributions of source code must retain the above copyright
-notice, this list of conditions and the following disclaimer.
-
-* Redistributions in binary form must reproduce the above copyright
-notice, this list of conditions and the following disclaimer in
-the documentation and/or other materials provided with the
-distribution.
-
-* Neither the name of Intel Corporation nor the names of its
-contributors may be used to endorse or promote products derived
-from this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-*/
+ You should have received a copy of the GNU General Public License
+ along with this program.  If not, write to the Free Software
+ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ ******************************************************************************/
 
 #include "QSV_Encoder_Internal.h"
 #include "QSV_Encoder.h"
@@ -84,6 +46,8 @@ QSV_Encoder_Internal::QSV_Encoder_Internal(mfxIMPL& impl, mfxVersion& version) :
 {
 	mfxIMPL tempImpl;
 	mfxStatus sts;
+
+	m_mfxAllocator = new GeneralAllocator();
 
 	m_bIsWindows8OrGreater = IsWindows8OrGreater();
 	m_bUseD3D11 = false;
@@ -156,10 +120,10 @@ mfxStatus QSV_Encoder_Internal::Open(qsv_param_t * pParams)
 
 	if (m_bUseD3D11)
 		// Use D3D11 surface
-		sts = Initialize(m_impl, m_ver, &m_session, &m_mfxAllocator, &g_DX_Handle, false, false);
+		sts = Initialize(m_impl, m_ver, &m_session, m_mfxAllocator, g_DX_Handle, false, false);
 	else if (m_bD3D9HACK)
 		// Use hack
-		sts = Initialize(m_impl, m_ver, &m_session, &m_mfxAllocator, &g_DX_Handle, false, true);
+		sts = Initialize(m_impl, m_ver, &m_session, m_mfxAllocator, g_DX_Handle, false, true);
 	else
 		sts = Initialize(m_impl, m_ver, &m_session, NULL);
 
@@ -189,6 +153,7 @@ mfxStatus QSV_Encoder_Internal::Open(qsv_param_t * pParams)
 	if (sts >= MFX_ERR_NONE) {
 		g_numEncodersOpen++;
 	}
+
 	return sts;
 }
 
@@ -304,7 +269,7 @@ mfxStatus QSV_Encoder_Internal::AllocateSurfaces()
 
 	// Allocate required surfaces
 	if (m_bUseD3D11 || m_bD3D9HACK) {
-		sts = m_mfxAllocator.Alloc(m_mfxAllocator.pthis, &EncRequest,
+		sts = m_mfxAllocator->Alloc(m_mfxAllocator->pthis, &EncRequest,
 				&m_mfxResponse);
 		MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
@@ -477,7 +442,7 @@ mfxStatus QSV_Encoder_Internal::Encode(uint64_t ts, uint8_t *pDataY,
 		nTaskIdx);
 #endif
 
-	int nSurfIdx = GetFreeSurfaceIndex(m_pmfxSurfaces, m_nSurfNum);
+	int nSurfIdx = GetFreeSurfaceIndex(*m_pmfxSurfaces, m_nSurfNum);
 #if 0
 	info("MSDK Encode:\n"
 		"\tnSurfIdx: %d",
@@ -510,7 +475,7 @@ mfxStatus QSV_Encoder_Internal::Encode(uint64_t ts, uint8_t *pDataY,
 			nTaskIdx);
 #endif
 
-		nSurfIdx = GetFreeSurfaceIndex(m_pmfxSurfaces, m_nSurfNum);
+		nSurfIdx = GetFreeSurfaceIndex(*m_pmfxSurfaces, m_nSurfNum);
 #if 0
 		info("MSDK Encode:\n"
 			"\tnSurfIdx: %d",
@@ -520,7 +485,7 @@ mfxStatus QSV_Encoder_Internal::Encode(uint64_t ts, uint8_t *pDataY,
 
 	mfxFrameSurface1 *pSurface = m_pmfxSurfaces[nSurfIdx];
 	if (m_bUseD3D11 || m_bD3D9HACK) {
-		sts = m_mfxAllocator.Lock(m_mfxAllocator.pthis,
+		sts = m_mfxAllocator->Lock(m_mfxAllocator->pthis,
 				pSurface->Data.MemId, &(pSurface->Data));
 		MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 	}
@@ -530,7 +495,7 @@ mfxStatus QSV_Encoder_Internal::Encode(uint64_t ts, uint8_t *pDataY,
 	pSurface->Data.TimeStamp = ts;
 
 	if (m_bUseD3D11 || m_bD3D9HACK) {
-		sts = m_mfxAllocator.Unlock(m_mfxAllocator.pthis,
+		sts = m_mfxAllocator->Unlock(m_mfxAllocator->pthis,
 				pSurface->Data.MemId, &(pSurface->Data));
 		MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 	}
@@ -581,7 +546,7 @@ mfxStatus QSV_Encoder_Internal::ClearData()
 	sts = m_pmfxENC->Close();
 
 	if (m_bUseD3D11 || m_bD3D9HACK)
-		m_mfxAllocator.Free(m_mfxAllocator.pthis, &m_mfxResponse);
+		m_mfxAllocator->Free(m_mfxAllocator->pthis, &m_mfxResponse);
 
 	for (int i = 0; i < m_nSurfNum; i++) {
 		if (!m_bUseD3D11 && !m_bD3D9HACK)
