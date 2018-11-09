@@ -144,6 +144,7 @@ private:
 	qreal inputPeakHoldDuration;
 
 	uint64_t lastRedrawTime = 0;
+	int channels = 0;
 	bool clipping = false;
 	bool vertical;
 

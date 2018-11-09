@@ -528,6 +528,8 @@ VolumeMeter::VolumeMeter(QWidget *parent, obs_volmeter_t *obs_volmeter,
 	peakHoldDuration = 20.0;                            //  20 seconds
 	inputPeakHoldDuration = 1.0;                        //  1 second
 
+	channels = (int)audio_output_get_channels(obs_get_audio());
+
 	handleChannelCofigurationChange();
 	updateTimerRef = updateTimer.toStrongRef();
 	if (!updateTimerRef) {
@@ -1007,16 +1009,22 @@ void VolumeMeter::paintEvent(QPaintEvent *event)
 
 	for (int channelNr = 0; channelNr < displayNrAudioChannels;
 		channelNr++) {
+
+		int channelNrFixed = (displayNrAudioChannels == 1 &&
+		                      channels > 2)
+			? 2
+			: channelNr;
+
 		if (vertical)
 			paintVMeter(painter, channelNr * 4, 8, 3, height - 10,
-					displayMagnitude[channelNr],
-					displayPeak[channelNr],
-					displayPeakHold[channelNr]);
+					displayMagnitude[channelNrFixed],
+					displayPeak[channelNrFixed],
+					displayPeakHold[channelNrFixed]);
 		else
 			paintHMeter(painter, 5, channelNr * 4, width - 5, 3,
-					displayMagnitude[channelNr],
-					displayPeak[channelNr],
-					displayPeakHold[channelNr]);
+					displayMagnitude[channelNrFixed],
+					displayPeak[channelNrFixed],
+					displayPeakHold[channelNrFixed]);
 
 		if (idle)
 			continue;
@@ -1026,10 +1034,10 @@ void VolumeMeter::paintEvent(QPaintEvent *event)
 		// having too much visual impact.
 		if (vertical)
 			paintInputMeter(painter, channelNr * 4, 3, 3, 3,
-					displayInputPeakHold[channelNr]);
+					displayInputPeakHold[channelNrFixed]);
 		else
 			paintInputMeter(painter, 0, channelNr * 4, 3, 3,
-					displayInputPeakHold[channelNr]);
+					displayInputPeakHold[channelNrFixed]);
 	}
 
 	lastRedrawTime = ts;
