@@ -7,7 +7,13 @@ clone_depth: 1
 
 environment:
   matrix:
-    - BuildConfig: RelWithDebInfo
+    - CefBuildConfig: Release
+      BuildConfig: RelWithDebInfo
+      ReleaseName: release
+
+    - CefBuildConfig: Debug
+      BuildConfig: Debug
+      ReleaseName: debug
 
   CURL_VERSION: 7.56.1
   CmakeGenerator: Visual Studio 15 2017
@@ -22,7 +28,7 @@ environment:
   CefBuildPath: $(CefPath)\build
   CefZip: $(CefDirName).zip
   CefUrl: https://s3-us-west-2.amazonaws.com/streamlabs-cef-dist/$(CefZip)
-  ReleaseArtifact: windows-x86_64-$(BuildConfig)-$(APPVEYOR_BUILD_VERSION).7z
+  ReleaseArtifact: windows-x86_64-$(ReleaseName)-$(APPVEYOR_BUILD_VERSION).7z
   DependenciesUrl: https://obsproject.com/downloads/dependencies2017.zip
 
 install:

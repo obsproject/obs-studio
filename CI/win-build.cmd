@@ -12,7 +12,7 @@ cmake ^
 
 cmake ^
 	--build "%CefBuildPath%" ^
-	--config Release ^
+	--config %CefBuildConfig% ^
 	--target libcef_dll_wrapper ^
 	-- /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
 
