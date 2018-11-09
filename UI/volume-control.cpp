@@ -1007,16 +1007,25 @@ void VolumeMeter::paintEvent(QPaintEvent *event)
 
 	for (int channelNr = 0; channelNr < displayNrAudioChannels;
 		channelNr++) {
+		int outputNrAudioChannels;
+		int channelNrFixed;
+		struct obs_audio_info audio_info;
+		if (obs_get_audio_info(&audio_info)) {
+			outputNrAudioChannels = get_audio_channels(audio_info.speakers);
+		} else {
+			outputNrAudioChannels = 2;
+		}
+		channelNrFixed = (displayNrAudioChannels == 1 &&  outputNrAudioChannels > 2 )? 2 : channelNr;
 		if (vertical)
 			paintVMeter(painter, channelNr * 4, 8, 3, height - 10,
-					displayMagnitude[channelNr],
-					displayPeak[channelNr],
-					displayPeakHold[channelNr]);
+					displayMagnitude[channelNrFixed],
+					displayPeak[channelNrFixed],
+					displayPeakHold[channelNrFixed]);
 		else
 			paintHMeter(painter, 5, channelNr * 4, width - 5, 3,
-					displayMagnitude[channelNr],
-					displayPeak[channelNr],
-					displayPeakHold[channelNr]);
+					displayMagnitude[channelNrFixed],
+					displayPeak[channelNrFixed],
+					displayPeakHold[channelNrFixed]);
 
 		if (idle)
 			continue;
@@ -1026,10 +1035,10 @@ void VolumeMeter::paintEvent(QPaintEvent *event)
 		// having too much visual impact.
 		if (vertical)
 			paintInputMeter(painter, channelNr * 4, 3, 3, 3,
-					displayInputPeakHold[channelNr]);
+					displayInputPeakHold[channelNrFixed]);
 		else
 			paintInputMeter(painter, 0, channelNr * 4, 3, 3,
-					displayInputPeakHold[channelNr]);
+					displayInputPeakHold[channelNrFixed]);
 	}
 
 	lastRedrawTime = ts;
