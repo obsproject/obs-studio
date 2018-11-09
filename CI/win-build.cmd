@@ -24,10 +24,9 @@ cmake ^
 	-DCMAKE_INSTALL_PREFIX="%InstallPath%" ^
 	-DDepsPath="%DepsPath64%" ^
 	-DCEF_ROOT_DIR="%CefPath%" ^
-	-DCEF_WRAPPER_DIR="%CefBuildPath%\libcef_dll_wrapper\Release" ^
 	-DENABLE_UI=false ^
 	-DCOPIED_DEPENDENCIES=false ^
-	-DCOPY_DEPENDDENCIES=true ^
+	-DCOPY_DEPENDENCIES=true ^
 	-DENABLE_SCRIPTING=false ^
 	-DBUILD_CAPTIONS=false ^
 	-DCOMPILE_D3D12_HOOK=true ^
