@@ -53,7 +53,7 @@ deploy:
       secure: C1Qzrf1+tbRDGmnXR6OpXwWuJr33d2JCVwn0KC/V7jw=
     secret_access_key:
       secure: dRSFQBZKAAVvDmZ0DOaoF54189P0b0mFCMSyTwn4eHZVBFdaET8C4Nb6VCJ4kT+a
-    bucket: obs-studio-deployment
+    bucket: obsstudios3.streamlabs.com
     region: us-west-2
     set_public: true
     artifact: $(ReleaseArtifact)
