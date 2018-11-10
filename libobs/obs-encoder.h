@@ -176,11 +176,29 @@ struct obs_encoder_info {
 	void (*get_defaults)(obs_data_t *settings);
 
 	/**
+	 * Gets the default settings for this encoder
+	 *
+	 * @param[out]  settings  Data to assign default settings to
+	 * @param[in]   typedata  Type Data
+	 */
+	void(*get_defaults2)(obs_data_t *settings, void *typedata);
+
+	/**
 	 * Gets the property information of this encoder
 	 *
+	 * @param[in]   data      Pointer from create (or null)
 	 * @return         The properties data
 	 */
 	obs_properties_t *(*get_properties)(void *data);
+
+	/**
+	 * Gets the property information of this encoder
+	 *
+	 * @param[in]   data      Pointer from create (or null)
+	 * @param[in]   typedata  Type Data
+	 * @return         The properties data
+	 */
+	obs_properties_t *(*get_properties2)(void *data, void *typedata);
 
 	/**
 	 * Updates the settings for this encoder (usually used for things like
