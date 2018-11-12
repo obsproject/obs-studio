@@ -136,7 +136,7 @@ void set_up_vertex_buffer(struct ft2_source *srcdata)
 	next_char:;
 		glyph_index = FT_Get_Char_Index(srcdata->font_face,
 			srcdata->text[i]);
-		word_width += src_glyph->xadv;
+		word_width += src_glyph->xadv + srcdata->additional_char_spacing;
 	eos_skip:;
 	}
 
@@ -165,7 +165,7 @@ skip_word_wrap:;
 		} else {
 			glyph_index = FT_Get_Char_Index(srcdata->font_face,
 				srcdata->text[i]);
-			current_line_width += src_glyph->xadv;
+			current_line_width += src_glyph->xadv + srcdata->additional_char_spacing;
 		}
 	}
 
@@ -222,7 +222,7 @@ void fill_vertex_buffer(struct ft2_source *srcdata)
 		current_line_index++;
 		dx = get_dx_for_line(srcdata, current_line_index);
 		i++;
-		dy += srcdata->max_h + 4;
+		dy += srcdata->max_h + 4 + srcdata->additional_line_spacing;
 		if (i == wcslen(srcdata->text)) goto skip_glyph;
 		if (srcdata->text[i] == L'\n') goto add_linebreak;
 	draw_glyph:;
@@ -236,9 +236,9 @@ void fill_vertex_buffer(struct ft2_source *srcdata)
 
 		if (srcdata->custom_width < 100) goto skip_custom_width;
 
-		if (dx + src_glyph->xadv > srcdata->custom_width) {
+		if (dx + src_glyph->xadv + srcdata->additional_char_spacing > srcdata->custom_width) {
 			dx = 0;
-			dy += srcdata->max_h + 4;
+			dy += srcdata->max_h + 4 + srcdata->additional_line_spacing;
 		}
 
 	skip_custom_width:;
@@ -256,7 +256,7 @@ void fill_vertex_buffer(struct ft2_source *srcdata)
 		set_rect_colors2(col + (cur_glyph * 6),
 			srcdata->color[0],
 			srcdata->color[1]);
-		dx += src_glyph->xadv;
+		dx += src_glyph->xadv + srcdata->additional_char_spacing;
 		if (dy - (float)src_glyph->yoff + src_glyph->h > max_y)
 			max_y = dy - src_glyph->yoff + src_glyph->h;
 		cur_glyph++;

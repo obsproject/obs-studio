@@ -54,6 +54,7 @@ struct ft2_source {
 	uint32_t max_line_width;
 
 	enum text_alignment alignment;
+	int32_t additional_char_spacing, additional_line_spacing;
 	uint32_t cx, cy, max_h, custom_width;
 	uint32_t texbuf_x, texbuf_y;
 	uint32_t color[2];

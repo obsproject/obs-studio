@@ -140,6 +140,11 @@ static obs_properties_t *ft2_source_properties(void *unused)
 	obs_property_list_add_int(alignmentProp, "Right",
 			TEXT_ALIGNMENT_RIGHT);
 
+	obs_properties_add_int(props,
+		"additional_char_spacing", obs_module_text("Additional char spacing"), -1000, 1000, 1);
+	obs_properties_add_int(props,
+		"additional_line_spacing", obs_module_text("Additional line spacing"), -1000, 1000, 1);
+
 	obs_properties_add_bool(props, "from_file",
 		obs_module_text("ReadFromFile"));
 
@@ -307,6 +312,8 @@ static void ft2_source_update(void *data, obs_data_t *settings)
 	srcdata->drop_shadow = obs_data_get_bool(settings, "drop_shadow");
 	srcdata->outline_text = obs_data_get_bool(settings, "outline");
 	srcdata->alignment = obs_data_get_int(settings, "alignment");
+	srcdata->additional_char_spacing = obs_data_get_int(settings, "additional_char_spacing");
+	srcdata->additional_line_spacing = obs_data_get_int(settings, "additional_line_spacing");
 	word_wrap = obs_data_get_bool(settings, "word_wrap");
 
 	color[0] = (uint32_t)obs_data_get_int(settings, "color1");
@@ -493,6 +500,8 @@ static void *ft2_source_create(obs_data_t *settings, obs_source_t *source)
 	obs_data_set_default_int(settings, "color2", 0xFFFFFFFF);
 
 	obs_data_set_default_int(settings, "alignment", TEXT_ALIGNMENT_LEFT);
+	obs_data_set_default_int(settings, "additional_char_spacing", 0);
+	obs_data_set_default_int(settings, "additional_line_spacing", 0);
 
 	ft2_source_update(srcdata, settings);
 
