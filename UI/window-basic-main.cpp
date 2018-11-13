@@ -715,6 +715,17 @@ void OBSBasic::LoadSceneListOrder(obs_data_array_t *array)
 
 void OBSBasic::LoadSavedProjectors(obs_data_array_t *array)
 {
+	/*
+	without clear savedProjectorsArray,the projectors window will more and more when ChangeSceneCollection.
+	ty add.20181113.
+	*/
+	for (SavedProjectorInfo *info : savedProjectorsArray) 
+	{
+		delete info;
+		info = nullptr;
+	}
+	savedProjectorsArray.clear();
+	
 	size_t num = obs_data_array_count(array);
 
 	for (size_t i = 0; i < num; i++) {
