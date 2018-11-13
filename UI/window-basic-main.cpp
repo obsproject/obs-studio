@@ -716,6 +716,11 @@ void OBSBasic::LoadSceneListOrder(obs_data_array_t *array)
 
 void OBSBasic::LoadSavedProjectors(obs_data_array_t *array)
 {
+	for (SavedProjectorInfo *info : savedProjectorsArray) {
+		delete info;
+	}
+	savedProjectorsArray.clear();
+
 	size_t num = obs_data_array_count(array);
 
 	for (size_t i = 0; i < num; i++) {
