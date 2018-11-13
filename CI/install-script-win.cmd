@@ -9,8 +9,8 @@ if exist cef_binary_%CEF_VERSION%_windows64.zip (curl -kLO https://obsproject.co
 set DepsPath32=%CD%\dependencies2017\win32
 set DepsPath64=%CD%\dependencies2017\win64
 set VLCPath=%CD%\vlc
-set QTDIR32=C:\Qt\5.11.1\msvc2015
-set QTDIR64=C:\Qt\5.11.1\msvc2017_64
+set QTDIR32=C:\Qt\5.11\msvc2015
+set QTDIR64=C:\Qt\5.11\msvc2017_64
 set CEF_32=%CD%\CEF_32\cef_binary_%CEF_VERSION%_windows32
 set CEF_64=%CD%\CEF_64\cef_binary_%CEF_VERSION%_windows64
 set build_config=RelWithDebInfo
