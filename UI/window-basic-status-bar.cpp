@@ -2,6 +2,7 @@
 #include <QHBoxLayout>
 #include <QPainter>
 #include <QPixmap>
+#include <QMessageBox>
 #include "obs-app.hpp"
 #include "window-basic-main.hpp"
 #include "window-basic-status-bar.hpp"
@@ -70,6 +71,19 @@ OBSBasicStatusBar::OBSBasicStatusBar(QWidget *parent)
 	statusSquare->setPixmap(transparentPixmap);
 }
 
+void OBSBasicStatusBar::ShowAlert(QString title, QString message)
+{
+	QMessageBox *msgBox = new QMessageBox(this);
+	msgBox->setTextFormat(Qt::RichText);
+	msgBox->setAttribute(Qt::WA_DeleteOnClose);
+	msgBox->setStandardButtons(QMessageBox::Ok);
+	msgBox->setWindowTitle(title);
+	msgBox->setText(message);
+	msgBox->setIcon(QMessageBox::Warning);
+	msgBox->setModal(false);
+	msgBox->open(this, nullptr);
+}
+
 void OBSBasicStatusBar::Activate()
 {
 	if (!active) {
@@ -124,6 +138,8 @@ void OBSBasicStatusBar::Deactivate()
 		reconnectTimeout = 0;
 		active = false;
 		overloadedNotify = true;
+		droppingFramesNotify = true;
+		lowFPSNotify = true;
 
 		statusSquare->setPixmap(transparentPixmap);
 	}
@@ -198,10 +214,33 @@ void OBSBasicStatusBar::UpdateCPUUsage()
 	if (!main)
 		return;
 
+	struct obs_video_info ovi = {};
+	obs_get_video_info(&ovi);
+
+	/* ------------------------------------------- */
+	/* general usage                               */
+
+	double curFPS = obs_get_active_fps();
+	double obsFPS = (double)ovi.fps_num / (double)ovi.fps_den;
+
 	QString text;
+
+	if (curFPS < (obsFPS * 0.8) && lowFPSNotify && active) {
+		if (main->isVisible())
+			ShowAlert(QTStr("LowFPS.Title"),
+					QTStr("LowFPS") + " " +
+					QTStr("ToLearnMore") + " " +
+					"<a href=\"https://obsproject.com/wiki/GPU-overload-issues\">GPU Overload Issues</a>");
+		else
+			main->SysTrayNotify(QTStr("LowFPS"),
+					QSystemTrayIcon::Warning);
+
+		lowFPSNotify = false;
+	}
+
 	text += QString("CPU: ") +
 		QString::number(main->GetCPUUsage(), 'f', 1) + QString("%, ") +
-		QString::number(obs_get_active_fps(), 'f', 2) + QString(" fps");
+		QString::number(curFPS, 'f', 2) + QString(" fps");;
 
 	cpuUsage->setText(text);
 	cpuUsage->setMinimumWidth(cpuUsage->width());
@@ -269,6 +308,8 @@ void OBSBasicStatusBar::UpdateDroppedFrames()
 	if (!totalFrames)
 		return;
 
+	OBSBasic *main = qobject_cast<OBSBasic*>(parent());
+
 	QString text = QTStr("DroppedFrames");
 	text = text.arg(QString::number(totalDropped),
 			QString::number(percent, 'f', 1));
@@ -287,8 +328,20 @@ void OBSBasicStatusBar::UpdateDroppedFrames()
 
 	if (avgCongestion < EPSILON) {
 		statusSquare->setPixmap(greenPixmap);
-	} else if (fabsf(avgCongestion - 1.0f) < EPSILON) {
+	} else if (fabsf(avgCongestion - 1.0f) < EPSILON &&
+			droppingFramesNotify) {
 		statusSquare->setPixmap(redPixmap);
+
+		if (main->isVisible())
+			ShowAlert(QTStr("DroppingFrames.Title"),
+					QTStr("DroppingFrames") + " " +
+					QTStr("ToLearnMore") + " " +
+					"<a href=\"https://obsproject.com/wiki/Dropped-Frames-and-General-Connection-Issues\">Dropped Frames and General Connection Issues</a>");
+		else
+			main->SysTrayNotify(QTStr("DroppingFrames"),
+					QSystemTrayIcon::Warning);
+
+		droppingFramesNotify = false;
 	} else {
 		QPixmap pixmap(20, 20);
 
@@ -395,12 +448,16 @@ void OBSBasicStatusBar::UpdateStatusBar()
 	double percentage = double(skipped) / double(total) * 100.0;
 
 	if (diff > 10 && percentage >= 0.1f) {
-		showMessage(QTStr("HighResourceUsage"), 4000);
-		if (!main->isVisible() && overloadedNotify) {
+		if (!main->isVisible() && overloadedNotify)
 			main->SysTrayNotify(QTStr("HighResourceUsage"),
 					QSystemTrayIcon::Warning);
-			overloadedNotify = false;
-		}
+		else if (main->isVisible() && overloadedNotify)
+			ShowAlert(QTStr("HighResourceUsage.Title"),
+					QTStr("HighResourceUsage") + " " +
+					QTStr("ToLearnMore") + " " +
+					"<a href=\"https://obsproject.com/wiki/General-Performance-and-Encoding-Issues\">General Performance And Encoding Issues</a>");
+
+		overloadedNotify = false;
 	}
 
 	lastSkippedFrameCount = skipped;

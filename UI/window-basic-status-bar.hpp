@@ -24,6 +24,8 @@ private:
 	obs_output_t *recordOutput = nullptr;
 	bool active = false;
 	bool overloadedNotify = true;
+	bool droppingFramesNotify = true;
+	bool lowFPSNotify = true;
 
 	int retries = 0;
 	int totalStreamSeconds = 0;
@@ -65,6 +67,8 @@ private:
 
 	static void OBSOutputReconnect(void *data, calldata_t *params);
 	static void OBSOutputReconnectSuccess(void *data, calldata_t *params);
+
+	void ShowAlert(QString title, QString message);
 
 private slots:
 	void Reconnect(int seconds);
