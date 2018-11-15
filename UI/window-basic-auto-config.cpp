@@ -210,6 +210,11 @@ bool AutoConfigVideoPage::validatePage()
 
 /* ------------------------------------------------------------------------- */
 
+enum class ListOpt : int {
+	ShowAll = 1,
+	Custom
+};
+
 AutoConfigStreamPage::AutoConfigStreamPage(QWidget *parent)
 	: QWizardPage (parent),
 	  ui          (new Ui_AutoConfigStreamPage)
@@ -218,16 +223,11 @@ AutoConfigStreamPage::AutoConfigStreamPage(QWidget *parent)
 	ui->bitrateLabel->setVisible(false);
 	ui->bitrate->setVisible(false);
 
-	ui->streamType->addItem(obs_service_get_display_name("rtmp_common"));
-	ui->streamType->addItem(obs_service_get_display_name("rtmp_custom"));
-
 	setTitle(QTStr("Basic.AutoConfig.StreamPage"));
 	setSubTitle(QTStr("Basic.AutoConfig.StreamPage.SubTitle"));
 
 	LoadServices(false);
 
-	connect(ui->streamType, SIGNAL(currentIndexChanged(int)),
-			this, SLOT(ServiceChanged()));
 	connect(ui->service, SIGNAL(currentIndexChanged(int)),
 			this, SLOT(ServiceChanged()));
 	connect(ui->customServer, SIGNAL(textChanged(const QString &)),
@@ -238,8 +238,6 @@ AutoConfigStreamPage::AutoConfigStreamPage(QWidget *parent)
 	connect(ui->service, SIGNAL(currentIndexChanged(int)),
 			this, SLOT(UpdateServerList()));
 
-	connect(ui->streamType, SIGNAL(currentIndexChanged(int)),
-			this, SLOT(UpdateKeyLink()));
 	connect(ui->service, SIGNAL(currentIndexChanged(int)),
 			this, SLOT(UpdateKeyLink()));
 
@@ -270,12 +268,17 @@ int AutoConfigStreamPage::nextId() const
 	return AutoConfig::TestPage;
 }
 
+inline bool AutoConfigStreamPage::IsCustom() const
+{
+	return ui->service->currentData().toInt() == (int)ListOpt::Custom;
+}
+
 bool AutoConfigStreamPage::validatePage()
 {
 	OBSData service_settings = obs_data_create();
 	obs_data_release(service_settings);
 
-	wiz->customServer = ui->streamType->currentIndex() == 1;
+	wiz->customServer = IsCustom();
 
 	const char *serverType = wiz->customServer
 		? "rtmp_custom"
@@ -360,7 +363,8 @@ void AutoConfigStreamPage::on_show_clicked()
 
 void AutoConfigStreamPage::ServiceChanged()
 {
-	bool showMore = ui->service->currentData().toBool();
+	bool showMore =
+		ui->service->currentData().toInt() == (int)ListOpt::ShowAll;
 	if (showMore)
 		return;
 
@@ -368,17 +372,11 @@ void AutoConfigStreamPage::ServiceChanged()
 	bool regionBased = service == "Twitch" ||
 	                   service == "Smashcast";
 	bool testBandwidth = ui->doBandwidthTest->isChecked();
-	bool custom = ui->streamType->currentIndex() == 1;
+	bool custom = IsCustom();
 
 	/* Test three closest servers if "Auto" is available for Twitch */
 	if (service == "Twitch" && wiz->twitchAuto)
 		regionBased = false;
-
-	ui->service->setVisible(!custom);
-	ui->serviceLabel->setVisible(!custom);
-
-	ui->formLayout->removeWidget(ui->serviceLabel);
-	ui->formLayout->removeWidget(ui->service);
 
 	ui->formLayout->removeWidget(ui->serverLabel);
 	ui->formLayout->removeWidget(ui->serverStackedWidget);
@@ -392,8 +390,6 @@ void AutoConfigStreamPage::ServiceChanged()
 		ui->serverStackedWidget->setVisible(true);
 		ui->serverLabel->setVisible(true);
 	} else {
-		ui->formLayout->insertRow(1, ui->serviceLabel, ui->service);
-
 		if (!testBandwidth)
 			ui->formLayout->insertRow(2, ui->serverLabel,
 					ui->serverStackedWidget);
@@ -414,7 +410,7 @@ void AutoConfigStreamPage::ServiceChanged()
 
 void AutoConfigStreamPage::UpdateKeyLink()
 {
-	bool custom = ui->streamType->currentIndex() == 1;
+	bool custom = IsCustom();
 	QString serviceName = ui->service->currentText();
 	bool isYoutube = false;
 
@@ -487,8 +483,12 @@ void AutoConfigStreamPage::LoadServices(bool showAll)
 	if (!showAll) {
 		ui->service->addItem(
 			QTStr("Basic.AutoConfig.StreamPage.Service.ShowAll"),
-			QVariant(true));
+			QVariant((int)ListOpt::ShowAll));
 	}
+
+	ui->service->insertItem(0,
+			QTStr("Basic.AutoConfig.StreamPage.Service.Custom"),
+			QVariant((int)ListOpt::Custom));
 
 	obs_properties_destroy(props);
 
@@ -498,7 +498,8 @@ void AutoConfigStreamPage::LoadServices(bool showAll)
 void AutoConfigStreamPage::UpdateServerList()
 {
 	QString serviceName = ui->service->currentText();
-	bool showMore = ui->service->currentData().toBool();
+	bool showMore =
+		ui->service->currentData().toInt() == (int)ListOpt::ShowAll;
 
 	if (showMore) {
 		LoadServices(true);
@@ -536,7 +537,7 @@ void AutoConfigStreamPage::UpdateCompleted()
 	if (ui->key->text().isEmpty()) {
 		ready = false;
 	} else {
-		bool custom = ui->streamType->currentIndex() == 1;
+		bool custom = IsCustom();
 		if (custom) {
 			ready = !ui->customServer->text().isEmpty();
 		} else {
@@ -646,7 +647,9 @@ AutoConfig::AutoConfig(QWidget *parent)
 		serverList->setCurrentIndex(idx);
 	} else {
 		streamPage->ui->customServer->setText(server.c_str());
-		streamPage->ui->streamType->setCurrentIndex(1);
+		int idx = streamPage->ui->service->findData(
+				QVariant((int)ListOpt::Custom));
+		streamPage->ui->service->setCurrentIndex(idx);
 	}
 
 	if (!key.empty())
