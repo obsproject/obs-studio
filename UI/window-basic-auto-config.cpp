@@ -223,6 +223,20 @@ AutoConfigStreamPage::AutoConfigStreamPage(QWidget *parent)
 	ui->bitrateLabel->setVisible(false);
 	ui->bitrate->setVisible(false);
 
+	int vertSpacing = ui->topLayout->verticalSpacing();
+
+	QMargins m = ui->topLayout->contentsMargins();
+	m.setBottom(vertSpacing / 2);
+	ui->topLayout->setContentsMargins(m);
+
+	m = ui->loginPageLayout->contentsMargins();
+	m.setTop(vertSpacing / 2);
+	ui->loginPageLayout->setContentsMargins(m);
+
+	m = ui->streamkeyPageLayout->contentsMargins();
+	m.setTop(vertSpacing / 2);
+	ui->streamkeyPageLayout->setContentsMargins(m);
+
 	setTitle(QTStr("Basic.AutoConfig.StreamPage"));
 	setSubTitle(QTStr("Basic.AutoConfig.StreamPage.SubTitle"));
 
@@ -378,11 +392,11 @@ void AutoConfigStreamPage::ServiceChanged()
 	if (service == "Twitch" && wiz->twitchAuto)
 		regionBased = false;
 
-	ui->formLayout->removeWidget(ui->serverLabel);
-	ui->formLayout->removeWidget(ui->serverStackedWidget);
+	ui->streamkeyPageLayout->removeWidget(ui->serverLabel);
+	ui->streamkeyPageLayout->removeWidget(ui->serverStackedWidget);
 
 	if (custom) {
-		ui->formLayout->insertRow(1, ui->serverLabel,
+		ui->streamkeyPageLayout->insertRow(1, ui->serverLabel,
 				ui->serverStackedWidget);
 
 		ui->region->setVisible(false);
@@ -391,7 +405,7 @@ void AutoConfigStreamPage::ServiceChanged()
 		ui->serverLabel->setVisible(true);
 	} else {
 		if (!testBandwidth)
-			ui->formLayout->insertRow(2, ui->serverLabel,
+			ui->streamkeyPageLayout->insertRow(2, ui->serverLabel,
 					ui->serverStackedWidget);
 
 		ui->region->setVisible(regionBased && testBandwidth);
