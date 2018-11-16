@@ -69,6 +69,11 @@ if(WIN32)
 		crypt32
 		blake2
 		${OBS_JANSSON_IMPORT})
+		
+	if(CMAKE_SIZEOF_VOID_P EQUAL 4)
+		set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /LARGEADDRESSAWARE")
+		message(STATUS "win32 x86 open large address aware.taojingyi2006@126.com add")
+	endif()
 elseif(APPLE)
 	set(obs_PLATFORM_SOURCES
 		platform-osx.mm)
