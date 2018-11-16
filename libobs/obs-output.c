@@ -1556,7 +1556,7 @@ static void reset_packet_data(obs_output_t *output)
 	output->video_offset     = 0;
 
 	for (size_t i = 0; i < MAX_AUDIO_MIXES; i++)
-		output->audio_offsets[0] = 0;
+		output->audio_offsets[i] = 0;
 
 	free_packets(output);
 }
