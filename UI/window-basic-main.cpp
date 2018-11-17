@@ -74,7 +74,7 @@
 using namespace json11;
 using namespace std;
 
-#if defined(_WIN32) && defined(BROWSER_AVAILABLE)
+#ifdef BROWSER_AVAILABLE
 #include <browser-panel.hpp>
 static CREATE_BROWSER_WIDGET_PROC create_browser_widget = nullptr;
 #endif
@@ -1530,7 +1530,7 @@ void OBSBasic::OBSInit()
 	blog(LOG_INFO, "---------------------------------");
 	obs_post_load_modules();
 
-#if defined(_WIN32) && defined(BROWSER_AVAILABLE)
+#ifdef BROWSER_AVAILABLE
 	create_browser_widget = obs_browser_init_panel();
 #endif
 
@@ -1761,7 +1761,7 @@ void OBSBasic::OnFirstLoad()
 	if (api)
 		api->on_event(OBS_FRONTEND_EVENT_FINISHED_LOADING);
 
-#if defined(_WIN32) && defined(BROWSER_AVAILABLE)
+#ifdef BROWSER_AVAILABLE
 	/* Attempt to load init screen if available */
 	if (create_browser_widget) {
 		WhatsNewInfoThread *wnit = new WhatsNewInfoThread();
