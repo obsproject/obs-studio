@@ -20,6 +20,3 @@
 	path = plugins/obs-ndi
 	url = https://github.com/stream-labs/obs-ndi.git
 	branch = streamlabs-obs
-[submodule "plugins/facemask-plugin"]
-	path = plugins/facemask-plugin
-	url = https://github.com/stream-labs/facemask-plugin.git
