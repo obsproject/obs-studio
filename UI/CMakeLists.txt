@@ -7,7 +7,7 @@ else()
 	set(FIND_MODE QUIET)
 endif()
 
-if(BROWSER_AVAILABLE_INTERNAL)
+if(BROWSER_AVAILABLE_INTERNAL AND WIN32)
 	add_definitions(-DBROWSER_AVAILABLE)
 endif()
 
