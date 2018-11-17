@@ -185,7 +185,7 @@ static void nv_texture_free(struct nvenc_data *enc, struct nv_texture *nvtex)
 static const char *nvenc_get_name(void *type_data)
 {
 	UNUSED_PARAMETER(type_data);
-	return "NVIDIA NVENC H.264 (Beta)";
+	return "NVIDIA NVENC H.264 (new)";
 }
 
 static inline int nv_get_cap(struct nvenc_data *enc, NV_ENC_CAPS cap)
@@ -314,15 +314,16 @@ static bool init_encoder(struct nvenc_data *enc, obs_data_t *settings)
 {
 	const char *rc = obs_data_get_string(settings, "rate_control");
 	int bitrate = (int)obs_data_get_int(settings, "bitrate");
+	int max_bitrate = (int)obs_data_get_int(settings, "max_bitrate");
 	int cqp = (int)obs_data_get_int(settings, "cqp");
 	int keyint_sec = (int)obs_data_get_int(settings, "keyint_sec");
 	const char *preset = obs_data_get_string(settings, "preset");
 	const char *profile = obs_data_get_string(settings, "profile");
-	const char *level = obs_data_get_string(settings, "level");
 	bool psycho_aq = obs_data_get_bool(settings, "psycho_aq");
 	bool lookahead = obs_data_get_bool(settings, "lookahead");
 	int gpu = (int)obs_data_get_int(settings, "gpu");
 	int bf = (int)obs_data_get_int(settings, "bf");
+	bool vbr = astrcmpi(rc, "VBR") == 0;
 	NVENCSTATUS err;
 
 	video_t *video = obs_encoder_video(enc->encoder);
@@ -336,43 +337,16 @@ static bool init_encoder(struct nvenc_data *enc, obs_data_t *settings)
 
 	GUID nv_preset = NV_ENC_PRESET_DEFAULT_GUID;
 	bool twopass = false;
-	bool hp = false;
-	bool ll = false;
 
 	if (astrcmpi(preset, "hq") == 0) {
 		nv_preset = NV_ENC_PRESET_HQ_GUID;
 
-	} else if (astrcmpi(preset, "mp") == 0) {
+	} else if (astrcmpi(preset, "mq") == 0) {
 		nv_preset = NV_ENC_PRESET_HQ_GUID;
 		twopass = true;
 
 	} else if (astrcmpi(preset, "hp") == 0) {
 		nv_preset = NV_ENC_PRESET_HP_GUID;
-		hp = true;
-
-	} else if (astrcmpi(preset, "ll") == 0) {
-		nv_preset = NV_ENC_PRESET_LOW_LATENCY_DEFAULT_GUID;
-		ll = true;
-
-	} else if (astrcmpi(preset, "llhq") == 0) {
-		nv_preset = NV_ENC_PRESET_LOW_LATENCY_HQ_GUID;
-		ll = true;
-
-	} else if (astrcmpi(preset, "llhp") == 0) {
-		nv_preset = NV_ENC_PRESET_LOW_LATENCY_HP_GUID;
-		hp = true;
-		ll = true;
-	}
-
-	if (astrcmpi(rc, "lossless") == 0) {
-		nv_preset = hp
-			? NV_ENC_PRESET_LOSSLESS_HP_GUID
-			: NV_ENC_PRESET_LOSSLESS_DEFAULT_GUID;
-	}
-
-	if (astrcmpi(rc, "cqp") == 0) {
-		nv_preset = NV_ENC_PRESET_HQ_GUID;
-		rc = "hq";
 	}
 
 	/* -------------------------- */
@@ -418,7 +392,7 @@ static bool init_encoder(struct nvenc_data *enc, obs_data_t *settings)
 	params->maxEncodeWidth = voi->width;
 	params->maxEncodeHeight = voi->height;
 	config->rcParams.averageBitRate = bitrate * 1000;
-	config->rcParams.maxBitRate = bitrate * 1000;
+	config->rcParams.maxBitRate = vbr ? max_bitrate * 1000 : bitrate * 1000;
 	config->gopLength = gop_size;
 	config->frameIntervalP = 1 + bf;
 	h264_config->idrPeriod = gop_size;
@@ -432,8 +406,9 @@ static bool init_encoder(struct nvenc_data *enc, obs_data_t *settings)
 	enc->bframes = bf > 0;
 
 	/* lookahead */
-	if (!hp && lookahead && nv_get_cap(enc, NV_ENC_CAPS_SUPPORT_LOOKAHEAD)) {
-		config->rcParams.lookaheadDepth = lookahead ? 8 : 0;
+	if (lookahead && nv_get_cap(enc, NV_ENC_CAPS_SUPPORT_LOOKAHEAD)) {
+		config->rcParams.lookaheadDepth = 8;
+		config->rcParams.enableLookahead = 1;
 	}
 
 	/* psycho aq */
@@ -446,22 +421,14 @@ static bool init_encoder(struct nvenc_data *enc, obs_data_t *settings)
 	/* rate control               */
 
 	enc->cbr = false;
+	config->rcParams.rateControlMode = twopass ? NV_ENC_PARAMS_RC_VBR_HQ : NV_ENC_PARAMS_RC_VBR;
 
 	if (astrcmpi(rc, "cqp") == 0) {
-		config->rcParams.rateControlMode = NV_ENC_PARAMS_RC_VBR;
 		config->rcParams.targetQuality = cqp;
 		config->rcParams.averageBitRate = 0;
 		config->rcParams.maxBitRate = 40000000;
 
-	} else if (astrcmpi(rc, "lossless") == 0) {
-		config->rcParams.rateControlMode = NV_ENC_PARAMS_RC_CONSTQP;
-		config->rcParams.constQP.qpInterP = 0;
-		config->rcParams.constQP.qpInterB = 0;
-		config->rcParams.constQP.qpIntra = 0;
-		config->rcParams.averageBitRate = 0;
-		config->rcParams.maxBitRate = 0;
-
-	} else { /* Default to CBR */
+	} else if (astrcmpi(rc, "vbr") != 0) { /* CBR by default */
 		enc->cbr = true;
 		h264_config->outputBufferingPeriodSEI = 1;
 		h264_config->outputPictureTimingSEI = 1;
@@ -499,14 +466,13 @@ static bool init_encoder(struct nvenc_data *enc, obs_data_t *settings)
 	     "\tkeyint:       %d\n"
 	     "\tpreset:       %s\n"
 	     "\tprofile:      %s\n"
-	     "\tlevel:        %s\n"
 	     "\twidth:        %d\n"
 	     "\theight:       %d\n"
 	     "\t2-pass:       %s\n"
 	     "\tb-frames:     %d\n"
 	     "\tGPU:          %d\n",
 	     rc, (int)config->rcParams.maxBitRate, cqp, gop_size,
-	     preset, profile, level,
+	     preset, profile,
 	     enc->cx, enc->cy,
 	     twopass ? "true" : "false",
 	     bf, gpu);

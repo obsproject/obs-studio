@@ -172,16 +172,6 @@ static bool nvenc_update(void *data, obs_data_t *settings)
 		bitrate = 0;
 		enc->context->global_quality = cqp;
 
-	} else if (astrcmpi(rc, "lossless") == 0) {
-		bitrate = 0;
-		cqp = 0;
-
-		bool hp = (astrcmpi(preset, "hp") == 0 ||
-		           astrcmpi(preset, "llhp") == 0);
-
-		av_opt_set(enc->context->priv_data, "preset",
-				hp ? "losslesshp" : "lossless", 0);
-
 	} else if (astrcmpi(rc, "vbr") != 0) { /* CBR by default */
 		av_opt_set_int(enc->context->priv_data, "cbr", true, 0);
 		enc->context->rc_max_rate = bitrate * 1000;
@@ -397,8 +387,9 @@ static bool nvenc_encode(void *data, struct encoder_frame *frame,
 void nvenc_defaults(obs_data_t *settings)
 {
 	obs_data_set_default_int(settings, "bitrate", 2500);
+	obs_data_set_default_int(settings, "max_bitrate", 5000);
 	obs_data_set_default_int(settings, "keyint_sec", 0);
-	obs_data_set_default_int(settings, "cqp", 23);
+	obs_data_set_default_int(settings, "cqp", 20);
 	obs_data_set_default_string(settings, "rate_control", "CBR");
 	obs_data_set_default_string(settings, "preset", "hq");
 	obs_data_set_default_string(settings, "profile", "high");
@@ -412,21 +403,14 @@ static bool rate_control_modified(obs_properties_t *ppts, obs_property_t *p,
 {
 	const char *rc = obs_data_get_string(settings, "rate_control");
 	bool cqp = astrcmpi(rc, "CQP") == 0;
-	bool lossless = astrcmpi(rc, "lossless") == 0;
-	size_t count;
+	bool vbr = astrcmpi(rc, "VBR") == 0;
 
 	p = obs_properties_get(ppts, "bitrate");
-	obs_property_set_visible(p, !cqp && !lossless);
+	obs_property_set_visible(p, !cqp);
+	p = obs_properties_get(ppts, "max_bitrate");
+	obs_property_set_visible(p, vbr);
 	p = obs_properties_get(ppts, "cqp");
 	obs_property_set_visible(p, cqp);
-
-	p = obs_properties_get(ppts, "preset");
-	count = obs_property_list_item_count(p);
-
-	for (size_t i = 0; i < count; i++) {
-		bool compatible = (i == 0 || i == 2);
-		obs_property_list_item_disable(p, i, lossless && !compatible);
-	}
 
 	return true;
 }
@@ -439,23 +423,24 @@ obs_properties_t *nvenc_properties(void *unused)
 	obs_property_t *p;
 
 	p = obs_properties_add_list(props, "rate_control",
-			obs_module_text("RateControl"),
+			obs_module_text("Rate Control"),
 			OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
 	obs_property_list_add_string(p, "CBR", "CBR");
 	obs_property_list_add_string(p, "CQ", "CQP");
-	obs_property_list_add_string(p, obs_module_text("Lossless"),
-			"lossless");
+	obs_property_list_add_string(p, "VBR", "VBR");
 
 	obs_property_set_modified_callback(p, rate_control_modified);
 
 	obs_properties_add_int(props, "bitrate",
 			obs_module_text("Bitrate"), 50, 300000, 50);
+	obs_properties_add_int(props, "max_bitrate",
+		obs_module_text("Max Bitrate"), 50, 300000, 50);
 
 	obs_properties_add_int(props, "cqp", obs_module_text("NVENC.CQLevel"),
-			0, 50, 1);
+			14, 30, 1);
 
 	obs_properties_add_int(props, "keyint_sec",
-			obs_module_text("KeyframeIntervalSec"), 0, 10, 1);
+			obs_module_text("Keyframe Interval (seconds, 0=auto)"), 0, 10, 1);
 
 	p = obs_properties_add_list(props, "preset", obs_module_text("Preset"),
 			OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
@@ -467,9 +452,6 @@ obs_properties_t *nvenc_properties(void *unused)
 	add_preset("hq");
 	add_preset("default");
 	add_preset("hp");
-	add_preset("ll");
-	add_preset("llhq");
-	add_preset("llhp");
 #undef add_preset
 
 	p = obs_properties_add_list(props, "profile", obs_module_text("Profile"),
@@ -488,7 +470,7 @@ obs_properties_t *nvenc_properties(void *unused)
 			obs_module_text("NVENC.PsychoVisualTuning"));
 	obs_properties_add_int(props, "gpu", obs_module_text("GPU"), 0, 8, 1);
 
-	obs_properties_add_int(props, "bf", obs_module_text("BFrames"),
+	obs_properties_add_int(props, "bf", obs_module_text("Max B-Frames"),
 			0, 4, 1);
 
 	return props;
