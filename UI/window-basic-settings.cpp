@@ -476,7 +476,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	}
 
 #define PROCESS_PRIORITY(val) \
-	{"Basic.Settings.Advanced.General.ProcessPriority." ## val , val}
+	{"Basic.Settings.Advanced.General.ProcessPriority." val , val}
 
 	static struct ProcessPriority {
 		const char *name;
