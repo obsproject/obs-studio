@@ -542,7 +542,7 @@ void TextSource::RenderText()
 		stat = graphics_bitmap.Clear(Color(0));
 		warn_stat("graphics_bitmap.Clear");
 
-		SolidBrush bk_brush = Color(full_bk_color);
+		SolidBrush bk_brush(full_bk_color);
 		stat = graphics_bitmap.FillRectangle(&bk_brush, box);
 		warn_stat("graphics_bitmap.FillRectangle");
 	} else {
