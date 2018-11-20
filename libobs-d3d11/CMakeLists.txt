@@ -15,7 +15,8 @@ set(libobs-d3d11_SOURCES
 	d3d11-vertexbuffer.cpp
 	d3d11-duplicator.cpp
 	d3d11-rebuild.cpp
-	d3d11-zstencilbuffer.cpp)
+	d3d11-zstencilbuffer.cpp
+	d3d11-new.cpp)
 
 set(libobs-d3d11_HEADERS
 	d3d11-shaderprocessor.hpp

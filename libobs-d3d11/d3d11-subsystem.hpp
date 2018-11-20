@@ -17,7 +17,6 @@
 
 #pragma once
 
-#include <util/AlignedNew.hpp>
 #include <util/windows/win-version.h>
 
 #include <vector>
