@@ -177,7 +177,7 @@ static bool nvenc_update(void *data, obs_data_t *settings)
 		cqp = 0;
 
 		bool hp = (astrcmpi(preset, "hp") == 0 ||
-			astrcmpi(preset, "llhp") == 0);
+		           astrcmpi(preset, "llhp") == 0);
 
 		av_opt_set(enc->context->priv_data, "preset",
 				hp ? "losslesshp" : "lossless", 0);
@@ -456,7 +456,7 @@ obs_properties_t *nvenc_properties(void *unused)
 	obs_properties_add_int(props, "bitrate",
 			obs_module_text("Bitrate"), 50, 300000, 50);
 	obs_properties_add_int(props, "max_bitrate",
-		obs_module_text("Max Bitrate"), 50, 300000, 50);
+			obs_module_text("Max Bitrate"), 50, 300000, 50);
 
 	obs_properties_add_int(props, "cqp", obs_module_text("NVENC.CQLevel"),
 			14, 30, 1);
