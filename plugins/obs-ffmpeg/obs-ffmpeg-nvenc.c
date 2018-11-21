@@ -492,7 +492,7 @@ obs_properties_t *nvenc_properties(void *unused)
 			obs_module_text("NVENC.PsychoVisualTuning"));
 	obs_properties_add_int(props, "gpu", obs_module_text("GPU"), 0, 8, 1);
 
-	obs_properties_add_int(props, "bf", obs_module_text("Max B-Frames"),
+	obs_properties_add_int(props, "bf", obs_module_text("BFrames"),
 			0, 4, 1);
 
 	return props;
