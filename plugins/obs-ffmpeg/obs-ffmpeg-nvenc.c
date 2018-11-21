@@ -177,10 +177,10 @@ static bool nvenc_update(void *data, obs_data_t *settings)
 		cqp = 0;
 
 		bool hp = (astrcmpi(preset, "hp") == 0 ||
-			astrcmpi(preset, "llhp") == 0);
+			   astrcmpi(preset, "llhp") == 0);
 
 		av_opt_set(enc->context->priv_data, "preset",
-			hp ? "losslesshp" : "lossless", 0);
+				hp ? "losslesshp" : "lossless", 0);
 
 	} else if (astrcmpi(rc, "vbr") != 0) { /* CBR by default */
 		av_opt_set_int(enc->context->priv_data, "cbr", true, 0);
@@ -449,7 +449,7 @@ obs_properties_t *nvenc_properties(void *unused)
 	obs_property_list_add_string(p, "CQ", "CQP");
 	obs_property_list_add_string(p, "VBR", "VBR");
 	obs_property_list_add_string(p, obs_module_text("Lossless"),
-		"lossless");
+			"lossless");
 
 	obs_property_set_modified_callback(p, rate_control_modified);
 
