@@ -177,7 +177,7 @@ static bool nvenc_update(void *data, obs_data_t *settings)
 		cqp = 0;
 
 		bool hp = (astrcmpi(preset, "hp") == 0 ||
-			   astrcmpi(preset, "llhp") == 0);
+			astrcmpi(preset, "llhp") == 0);
 
 		av_opt_set(enc->context->priv_data, "preset",
 				hp ? "losslesshp" : "lossless", 0);
