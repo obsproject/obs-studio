@@ -456,7 +456,7 @@ obs_properties_t *nvenc_properties(void *unused)
 	obs_properties_add_int(props, "bitrate",
 			obs_module_text("Bitrate"), 50, 300000, 50);
 	obs_properties_add_int(props, "max_bitrate",
-			obs_module_text("Max Bitrate"), 50, 300000, 50);
+			obs_module_text("MaxBitrate"), 50, 300000, 50);
 
 	obs_properties_add_int(props, "cqp", obs_module_text("NVENC.CQLevel"),
 			14, 30, 1);
