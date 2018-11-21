@@ -172,6 +172,16 @@ static bool nvenc_update(void *data, obs_data_t *settings)
 		bitrate = 0;
 		enc->context->global_quality = cqp;
 
+	} else if (astrcmpi(rc, "lossless") == 0) {
+		bitrate = 0;
+		cqp = 0;
+
+		bool hp = (astrcmpi(preset, "hp") == 0 ||
+			astrcmpi(preset, "llhp") == 0);
+
+		av_opt_set(enc->context->priv_data, "preset",
+			hp ? "losslesshp" : "lossless", 0);
+
 	} else if (astrcmpi(rc, "vbr") != 0) { /* CBR by default */
 		av_opt_set_int(enc->context->priv_data, "cbr", true, 0);
 		enc->context->rc_max_rate = bitrate * 1000;
@@ -404,13 +414,23 @@ static bool rate_control_modified(obs_properties_t *ppts, obs_property_t *p,
 	const char *rc = obs_data_get_string(settings, "rate_control");
 	bool cqp = astrcmpi(rc, "CQP") == 0;
 	bool vbr = astrcmpi(rc, "VBR") == 0;
+	bool lossless = astrcmpi(rc, "lossless") == 0;
+	size_t count;
 
 	p = obs_properties_get(ppts, "bitrate");
-	obs_property_set_visible(p, !cqp);
+	obs_property_set_visible(p, !cqp && !lossless);
 	p = obs_properties_get(ppts, "max_bitrate");
 	obs_property_set_visible(p, vbr);
 	p = obs_properties_get(ppts, "cqp");
 	obs_property_set_visible(p, cqp);
+
+	p = obs_properties_get(ppts, "preset");
+	count = obs_property_list_item_count(p);
+
+	for (size_t i = 0; i < count; i++) {
+		bool compatible = (i == 0 || i == 3);
+		obs_property_list_item_disable(p, i, lossless && !compatible);
+	}
 
 	return true;
 }
@@ -428,6 +448,8 @@ obs_properties_t *nvenc_properties(void *unused)
 	obs_property_list_add_string(p, "CBR", "CBR");
 	obs_property_list_add_string(p, "CQ", "CQP");
 	obs_property_list_add_string(p, "VBR", "VBR");
+	obs_property_list_add_string(p, obs_module_text("Lossless"),
+		"lossless");
 
 	obs_property_set_modified_callback(p, rate_control_modified);
 

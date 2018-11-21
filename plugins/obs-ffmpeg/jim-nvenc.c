@@ -337,6 +337,7 @@ static bool init_encoder(struct nvenc_data *enc, obs_data_t *settings)
 
 	GUID nv_preset = NV_ENC_PRESET_DEFAULT_GUID;
 	bool twopass = false;
+	bool hp = false;
 
 	if (astrcmpi(preset, "hq") == 0) {
 		nv_preset = NV_ENC_PRESET_HQ_GUID;
@@ -347,6 +348,13 @@ static bool init_encoder(struct nvenc_data *enc, obs_data_t *settings)
 
 	} else if (astrcmpi(preset, "hp") == 0) {
 		nv_preset = NV_ENC_PRESET_HP_GUID;
+		hp = true;
+	}
+
+	if (astrcmpi(rc, "lossless") == 0) {
+		nv_preset = hp
+			? NV_ENC_PRESET_LOSSLESS_HP_GUID
+			: NV_ENC_PRESET_LOSSLESS_DEFAULT_GUID;
 	}
 
 	/* -------------------------- */
@@ -427,6 +435,15 @@ static bool init_encoder(struct nvenc_data *enc, obs_data_t *settings)
 		config->rcParams.targetQuality = cqp;
 		config->rcParams.averageBitRate = 0;
 		config->rcParams.maxBitRate = 40000000;
+
+	}
+	else if (astrcmpi(rc, "lossless") == 0) {
+		config->rcParams.rateControlMode = NV_ENC_PARAMS_RC_CONSTQP;
+		config->rcParams.constQP.qpInterP = 0;
+		config->rcParams.constQP.qpInterB = 0;
+		config->rcParams.constQP.qpIntra = 0;
+		config->rcParams.averageBitRate = 0;
+		config->rcParams.maxBitRate = 0;
 
 	} else if (astrcmpi(rc, "vbr") != 0) { /* CBR by default */
 		enc->cbr = true;
