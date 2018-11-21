@@ -443,7 +443,7 @@ obs_properties_t *nvenc_properties(void *unused)
 	obs_property_t *p;
 
 	p = obs_properties_add_list(props, "rate_control",
-			obs_module_text("Rate Control"),
+			obs_module_text("RateControl"),
 			OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
 	obs_property_list_add_string(p, "CBR", "CBR");
 	obs_property_list_add_string(p, "CQ", "CQP");
@@ -462,7 +462,7 @@ obs_properties_t *nvenc_properties(void *unused)
 			14, 30, 1);
 
 	obs_properties_add_int(props, "keyint_sec",
-			obs_module_text("Keyframe Interval (seconds, 0=auto)"), 0, 10, 1);
+			obs_module_text("KeyframeIntervalSec"), 0, 10, 1);
 
 	p = obs_properties_add_list(props, "preset", obs_module_text("Preset"),
 			OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
