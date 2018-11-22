@@ -2,7 +2,9 @@
 Version=1.0
 Name=OBS
 GenericName=Streaming/Recording Software
+GenericName[fr]=Logiciel d'enregistrement/diffusion
 Comment=Free and Open Source Streaming/Recording Software
+Comment[fr]=Logiciel d'enregistrement et de diffusion gratuit et à code source ouvert
 Comment[ru]=Бесплатная программа с открытым кодом для записи/трансляции видео
 Exec=obs
 Icon=obs
