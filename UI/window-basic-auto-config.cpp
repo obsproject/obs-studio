@@ -12,6 +12,12 @@
 #include "ui_AutoConfigVideoPage.h"
 #include "ui_AutoConfigStreamPage.h"
 
+#ifdef BROWSER_AVAILABLE
+#include <browser-panel.hpp>
+#include <window-twitch-login.hpp>
+extern CREATE_BROWSER_WIDGET_PROC create_browser_widget;
+#endif
+
 #define wiz reinterpret_cast<AutoConfig*>(wizard())
 
 /* ------------------------------------------------------------------------- */
@@ -212,7 +218,7 @@ bool AutoConfigVideoPage::validatePage()
 
 enum class ListOpt : int {
 	ShowAll = 1,
-	Custom
+	Custom,
 };
 
 AutoConfigStreamPage::AutoConfigStreamPage(QWidget *parent)
@@ -222,6 +228,7 @@ AutoConfigStreamPage::AutoConfigStreamPage(QWidget *parent)
 	ui->setupUi(this);
 	ui->bitrateLabel->setVisible(false);
 	ui->bitrate->setVisible(false);
+	ui->connectAccount2->setVisible(false);
 
 	int vertSpacing = ui->topLayout->verticalSpacing();
 
@@ -375,6 +382,45 @@ void AutoConfigStreamPage::on_show_clicked()
 	}
 }
 
+void AutoConfigStreamPage::on_connectAccount_clicked()
+{
+#ifdef BROWSER_AVAILABLE
+	TwitchLogin login(this);
+	if (login.exec() == QDialog::Rejected) {
+		ui->stackedWidget->setCurrentIndex((int)Section::StreamKey);
+		UpdateCompleted();
+		return;
+	}
+
+	wiz->authToken = login.GetToken().toUtf8().constData();
+	ui->streamKeyWidget->setVisible(false);
+	ui->streamKeyLabel->setVisible(false);
+	ui->connectAccount2->setVisible(false);
+	ui->stackedWidget->setCurrentIndex((int)Section::StreamKey);
+#endif
+}
+
+void AutoConfigStreamPage::on_useStreamKey_clicked()
+{
+	ui->stackedWidget->setCurrentIndex((int)Section::StreamKey);
+	UpdateCompleted();
+}
+
+static inline bool is_auth_service(const std::string &service)
+{
+	static const char *auth_services[] = {
+		"Twitch"
+	};
+
+	for (const char *auth_service : auth_services) {
+		if (service == auth_service) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
 void AutoConfigStreamPage::ServiceChanged()
 {
 	bool showMore =
@@ -387,6 +433,26 @@ void AutoConfigStreamPage::ServiceChanged()
 	                   service == "Smashcast";
 	bool testBandwidth = ui->doBandwidthTest->isChecked();
 	bool custom = IsCustom();
+
+#ifdef BROWSER_AVAILABLE
+	if (!!create_browser_widget) {
+		if (lastService != service.c_str()) {
+			bool can_auth = is_auth_service(service);
+			int page = can_auth
+				? (int)Section::Connect
+				: (int)Section::StreamKey;
+
+			ui->stackedWidget->setCurrentIndex(page);
+			ui->connectAccount2->setVisible(can_auth);
+			ui->streamKeyWidget->setVisible(true);
+			ui->streamKeyLabel->setVisible(true);
+			ui->connectAccount2->setVisible(can_auth);
+			wiz->authToken.clear();
+		}
+	} else {
+		ui->connectAccount2->setVisible(false);
+	}
+#endif
 
 	/* Test three closest servers if "Auto" is available for Twitch */
 	if (service == "Twitch" && wiz->twitchAuto)
@@ -548,7 +614,8 @@ void AutoConfigStreamPage::UpdateServerList()
 
 void AutoConfigStreamPage::UpdateCompleted()
 {
-	if (ui->key->text().isEmpty()) {
+	if (ui->stackedWidget->currentIndex() == (int)Section::Connect ||
+	    (ui->key->text().isEmpty() && wiz->authToken.empty())) {
 		ready = false;
 	} else {
 		bool custom = IsCustom();

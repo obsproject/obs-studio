@@ -105,6 +105,15 @@ elseif(UNIX)
                 Qt5::X11Extras)
 endif()
 
+if(BROWSER_AVAILABLE_INTERNAL)
+	list(APPEND obs_PLATFORM_SOURCES
+		window-twitch-login.cpp
+		)
+	list(APPEND obs_PLATFORM_HEADERS
+		window-twitch-login.hpp
+		)
+endif()
+
 set(obs_libffutil_SOURCES
 	../deps/libff/libff/ff-util.c
 	)

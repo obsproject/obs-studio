@@ -76,7 +76,7 @@ using namespace std;
 
 #ifdef BROWSER_AVAILABLE
 #include <browser-panel.hpp>
-static CREATE_BROWSER_WIDGET_PROC create_browser_widget = nullptr;
+CREATE_BROWSER_WIDGET_PROC create_browser_widget = nullptr;
 #endif
 
 namespace {
