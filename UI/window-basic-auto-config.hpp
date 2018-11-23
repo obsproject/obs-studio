@@ -78,6 +78,8 @@ class AutoConfig : public QWizard {
 	std::string server;
 	std::string key;
 
+	std::string authToken;
+
 	bool hardwareEncodingAvailable = false;
 	bool nvencAvailable = false;
 	bool qsvAvailable = false;
@@ -155,6 +157,11 @@ class AutoConfigStreamPage : public QWizardPage {
 
 	friend class AutoConfig;
 
+	enum class Section : int {
+		Connect,
+		StreamKey,
+	};
+
 	Ui_AutoConfigStreamPage *ui;
 	QString lastService;
 	bool ready = false;
@@ -172,6 +179,8 @@ public:
 
 public slots:
 	void on_show_clicked();
+	void on_connectAccount_clicked();
+	void on_useStreamKey_clicked();
 	void ServiceChanged();
 	void UpdateKeyLink();
 	void UpdateServerList();
