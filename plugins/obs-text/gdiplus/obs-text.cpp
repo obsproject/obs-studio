@@ -197,7 +197,6 @@ struct TextSource {
 	bool read_from_file = false;
 	string file;
 	time_t file_timestamp = 0;
-	bool update_file = false;
 	float update_time_elapsed = 0.0f;
 
 	wstring text;
@@ -776,15 +775,10 @@ inline void TextSource::Tick(float seconds)
 		time_t t = get_modified_timestamp(file.c_str());
 		update_time_elapsed = 0.0f;
 
-		if (update_file) {
-			LoadFileText();
-			RenderText();
-			update_file = false;
-		}
-
 		if (file_timestamp != t) {
 			file_timestamp = t;
-			update_file = true;
+			LoadFileText();
+			RenderText();
 		}
 	}
 }
