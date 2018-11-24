@@ -71,6 +71,10 @@ void RemoteTextThread::run()
 		curl_easy_setopt(curl.get(), CURLOPT_WRITEDATA,
 				&str);
 
+		if (timeoutSec)
+			curl_easy_setopt(curl.get(), CURLOPT_TIMEOUT,
+					timeoutSec);
+
 #if LIBCURL_VERSION_NUM >= 0x072400
 		// A lot of servers don't yet support ALPN
 		curl_easy_setopt(curl.get(), CURLOPT_SSL_ENABLE_ALPN, 0);
@@ -118,7 +122,8 @@ bool GetRemoteFile(
 	const char *contentType,
 	const char *postData,
 	std::vector<std::string> extraHeaders,
-	std::string *signature)
+	std::string *signature,
+	int timeoutSec)
 {
 	vector<string> header_in_list;
 	char error_in[CURL_ERROR_SIZE];
@@ -165,6 +170,10 @@ bool GetRemoteFile(
 			curl_easy_setopt(curl.get(), CURLOPT_HEADERDATA,
 					&header_in_list);
 		}
+
+		if (timeoutSec)
+			curl_easy_setopt(curl.get(), CURLOPT_TIMEOUT,
+					timeoutSec);
 
 #if LIBCURL_VERSION_NUM >= 0x072400
 		// A lot of servers don't yet support ALPN
