@@ -71,6 +71,10 @@ void RemoteTextThread::run()
 		curl_easy_setopt(curl.get(), CURLOPT_WRITEDATA,
 				&str);
 
+		if (timeoutSec)
+			curl_easy_setopt(curl.get(), CURLOPT_TIMEOUT,
+					timeoutSec);
+
 #if LIBCURL_VERSION_NUM >= 0x072400
 		// A lot of servers don't yet support ALPN
 		curl_easy_setopt(curl.get(), CURLOPT_SSL_ENABLE_ALPN, 0);
