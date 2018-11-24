@@ -61,6 +61,9 @@ void RemoteTextThread::run()
 					contentTypeString.c_str());
 		}
 
+		for (std::string &h : extraHeaders)
+			header = curl_slist_append(header, h.c_str());
+
 		curl_easy_setopt(curl.get(), CURLOPT_URL, url.c_str());
 		curl_easy_setopt(curl.get(), CURLOPT_HTTPHEADER,
 				header);
