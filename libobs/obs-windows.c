@@ -82,7 +82,7 @@ static void log_processor_info(void)
 	DWORD   size, speed;
 	LSTATUS status;
 
-	memset(data, 0, 1024);
+	memset(data, 0, sizeof(data));
 
 	status = RegOpenKeyW(HKEY_LOCAL_MACHINE,
 			L"HARDWARE\\DESCRIPTION\\System\\CentralProcessor\\0",
@@ -90,7 +90,7 @@ static void log_processor_info(void)
 	if (status != ERROR_SUCCESS)
 		return;
 
-	size = 1024;
+	size = sizeof(data);
 	status = RegQueryValueExW(key, L"ProcessorNameString", NULL, NULL,
 			(LPBYTE)data, &size);
 	if (status == ERROR_SUCCESS) {
