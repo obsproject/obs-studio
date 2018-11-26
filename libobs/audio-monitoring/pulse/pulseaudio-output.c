@@ -434,17 +434,20 @@ static bool audio_monitor_init(struct audio_monitor *monitor,
 		return false;
 	}
 
+	monitor->buffer_size =
+			monitor->channels * sizeof(float) *
+			info->samples_per_sec / 100 * 3;
+
+	monitor->attr.tlength = monitor->buffer_size;
 	monitor->attr.fragsize = (uint32_t) -1;
 	monitor->attr.maxlength = (uint32_t) -1;
 	monitor->attr.minreq = (uint32_t) -1;
 	monitor->attr.prebuf = (uint32_t) -1;
-	monitor->attr.tlength = pa_usec_to_bytes(25000, &spec);
 
-	monitor->buffer_size = monitor->bytes_per_frame *
-			pa_usec_to_bytes(5000, &spec);
-
-	pa_stream_flags_t flags = PA_STREAM_INTERPOLATE_TIMING |
-			PA_STREAM_AUTO_TIMING_UPDATE;
+	pa_stream_flags_t flags = PA_STREAM_INTERPOLATE_TIMING
+			| PA_STREAM_NOT_MONOTONIC
+			| PA_STREAM_AUTO_TIMING_UPDATE
+			| PA_STREAM_FIX_RATE;
 
 	if (pthread_mutex_init(&monitor->playback_mutex, NULL) != 0) {
 		blog(LOG_WARNING, "%s: %s", __FUNCTION__,
