@@ -31,6 +31,7 @@
 #include "window-basic-filters.hpp"
 #include "window-projector.hpp"
 #include "window-basic-about.hpp"
+#include "auth-base.hpp"
 
 #include <obs-frontend-internal.hpp>
 
@@ -106,6 +107,7 @@ class OBSBasic : public OBSMainWindow {
 	friend class OBSBasicStatusBar;
 	friend class OBSBasicSourceSelect;
 	friend class OBSBasicSettings;
+	friend class Auth;
 	friend struct OBSStudioAPI;
 
 	enum class MoveDir {
@@ -125,6 +127,8 @@ class OBSBasic : public OBSMainWindow {
 
 private:
 	obs_frontend_callbacks *api = nullptr;
+
+	std::unique_ptr<Auth> auth;
 
 	std::vector<VolControl*> volumes;
 
@@ -594,6 +598,8 @@ public:
 	void CreateInteractionWindow(obs_source_t *source);
 	void CreatePropertiesWindow(obs_source_t *source);
 	void CreateFiltersWindow(obs_source_t *source);
+
+	static OBSBasic *Get();
 
 protected:
 	virtual void closeEvent(QCloseEvent *event) override;

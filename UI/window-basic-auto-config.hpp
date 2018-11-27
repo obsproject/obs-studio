@@ -8,6 +8,7 @@
 #include <condition_variable>
 #include <utility>
 #include <thread>
+#include <memory>
 #include <vector>
 #include <string>
 #include <mutex>
