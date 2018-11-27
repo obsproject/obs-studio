@@ -125,7 +125,8 @@ bool GetRemoteFile(
 	const char *contentType,
 	const char *postData,
 	std::vector<std::string> extraHeaders,
-	std::string *signature)
+	std::string *signature,
+	int timeoutSec)
 {
 	vector<string> header_in_list;
 	char error_in[CURL_ERROR_SIZE];
@@ -173,6 +174,10 @@ bool GetRemoteFile(
 					&header_in_list);
 		}
 
+		if (timeoutSec)
+			curl_easy_setopt(curl.get(), CURLOPT_TIMEOUT,
+					timeoutSec);
+
 #if LIBCURL_VERSION_NUM >= 0x072400
 		// A lot of servers don't yet support ALPN
 		curl_easy_setopt(curl.get(), CURLOPT_SSL_ENABLE_ALPN, 0);
@@ -204,4 +209,34 @@ bool GetRemoteFile(
 	}
 
 	return code == CURLE_OK;
+}
+
+bool GetRemoteFileSafeBlock(
+	const char *url,
+	std::string &str,
+	std::string &error,
+	long *responseCode,
+	const char *contentType,
+	const char *postData,
+	std::vector<std::string> extraHeaders,
+	std::string *signature,
+	int timeoutSec)
+{
+	QEventLoop eventLoop;
+	bool ret = false;
+
+	auto func = [&] ()
+	{
+		ret = GetRemoteFile(url, str, error, responseCode, contentType,
+				postData, extraHeaders, signature, timeoutSec);
+		QMetaObject::invokeMethod(&eventLoop, "quit",
+				Qt::QueuedConnection);
+	};
+
+	QScopedPointer<QThread> thread(QThread::create(func));
+	thread->start();
+	eventLoop.exec();
+	thread->wait();
+
+	return ret;
 }

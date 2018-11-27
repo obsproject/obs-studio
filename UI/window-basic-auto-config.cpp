@@ -14,7 +14,7 @@
 
 #ifdef BROWSER_AVAILABLE
 #include <browser-panel.hpp>
-#include <window-twitch-login.hpp>
+#include <auth-twitch.hpp>
 extern CREATE_BROWSER_WIDGET_PROC create_browser_widget;
 #endif
 
@@ -392,11 +392,22 @@ void AutoConfigStreamPage::on_connectAccount_clicked()
 		return;
 	}
 
+	wiz->authToken = QT_TO_UTF8(login.GetToken());
+
+	TwitchAuth auth(wiz->authToken.c_str());
+
+	std::string error;
+	if (auth.GetChannelInfo(error))
+		ui->key->setText(auth.key().c_str());
+
+	bool validKey = !auth.key().empty();
+
 	wiz->authToken = login.GetToken().toUtf8().constData();
-	ui->streamKeyWidget->setVisible(false);
-	ui->streamKeyLabel->setVisible(false);
-	ui->connectAccount2->setVisible(false);
+	ui->streamKeyWidget->setVisible(!validKey);
+	ui->streamKeyLabel->setVisible(!validKey);
+	ui->connectAccount2->setVisible(!validKey);
 	ui->stackedWidget->setCurrentIndex((int)Section::StreamKey);
+	UpdateCompleted();
 #endif
 }
 

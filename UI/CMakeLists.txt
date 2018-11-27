@@ -107,10 +107,10 @@ endif()
 
 if(BROWSER_AVAILABLE_INTERNAL)
 	list(APPEND obs_PLATFORM_SOURCES
-		window-twitch-login.cpp
+		auth-twitch.cpp
 		)
 	list(APPEND obs_PLATFORM_HEADERS
-		window-twitch-login.hpp
+		auth-twitch.hpp
 		)
 endif()
 
@@ -157,6 +157,7 @@ set(obs_SOURCES
 	window-log-reply.cpp
 	window-projector.cpp
 	window-remux.cpp
+	auth-base.cpp
 	source-tree.cpp
 	properties-view.cpp
 	focus-list.cpp
@@ -205,6 +206,7 @@ set(obs_HEADERS
 	window-log-reply.hpp
 	window-projector.hpp
 	window-remux.hpp
+	auth-base.hpp
 	source-tree.hpp
 	properties-view.hpp
 	properties-view.moc.hpp
