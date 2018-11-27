@@ -338,6 +338,7 @@ static bool init_encoder(struct nvenc_data *enc, obs_data_t *settings)
 	GUID nv_preset = NV_ENC_PRESET_DEFAULT_GUID;
 	bool twopass = false;
 	bool hp = false;
+	bool ll = false;
 
 	if (astrcmpi(preset, "hq") == 0) {
 		nv_preset = NV_ENC_PRESET_HQ_GUID;
@@ -349,6 +350,19 @@ static bool init_encoder(struct nvenc_data *enc, obs_data_t *settings)
 	} else if (astrcmpi(preset, "hp") == 0) {
 		nv_preset = NV_ENC_PRESET_HP_GUID;
 		hp = true;
+
+	} else if (astrcmpi(preset, "ll") == 0) {
+		nv_preset = NV_ENC_PRESET_LOW_LATENCY_DEFAULT_GUID;
+		ll = true;
+
+	} else if (astrcmpi(preset, "llhq") == 0) {
+		nv_preset = NV_ENC_PRESET_LOW_LATENCY_HQ_GUID;
+		ll = true;
+
+	} else if (astrcmpi(preset, "llhp") == 0) {
+		nv_preset = NV_ENC_PRESET_LOW_LATENCY_HP_GUID;
+		hp = true;
+		ll = true;
 	}
 
 	if (astrcmpi(rc, "lossless") == 0) {

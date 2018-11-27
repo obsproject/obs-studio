@@ -474,6 +474,9 @@ obs_properties_t *nvenc_properties(void *unused)
 	add_preset("hq");
 	add_preset("default");
 	add_preset("hp");
+	add_preset("ll");
+	add_preset("llhq");
+	add_preset("llhp");
 #undef add_preset
 
 	p = obs_properties_add_list(props, "profile", obs_module_text("Profile"),
