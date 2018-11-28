@@ -699,7 +699,7 @@
             }
         },
         {
-            "name": "Restream.io - FTL (beta)",
+            "name": "Restream.io - FTL",
             "common": true,
             "servers": [
                 {
