@@ -6,6 +6,7 @@
 typedef SSIZE_T ssize_t;
 #endif
 
+#include <libvlc_picture.h> //data types for libvlc_media.h
 #include <libvlc_media.h>
 #include <libvlc_events.h>
 #include <libvlc_media_list.h>
