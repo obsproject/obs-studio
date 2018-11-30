@@ -23,10 +23,14 @@ environment:
   BuildPath64: $(APPVEYOR_BUILD_FOLDER)\build64
   InstallPath: $(APPVEYOR_BUILD_FOLDER)\packed_build
 <<<<<<< HEAD
+<<<<<<< HEAD
   CefVersion: 3.3578.1859.g3563564
 =======
   CefVersion: 3.3578.1855.g8f96ed2
 >>>>>>> Update browser-source cef version to 3578 (#17)
+=======
+  CefVersion: 3.3396.1779.g36f9eab
+>>>>>>> Revert browser source manually back to cef 3396
   CefDirName: cef_binary_$(CefVersion)_windows64
   CefPath: $(APPVEYOR_BUILD_FOLDER)\$(CefDirName)
   CefBuildPath: $(CefPath)\build
