@@ -6,11 +6,7 @@
 typedef SSIZE_T ssize_t;
 #endif
 
-#include <libvlc_media.h>
-#include <libvlc_events.h>
-#include <libvlc_media_list.h>
-#include <libvlc_media_player.h>
-#include <libvlc_media_list_player.h>
+#include <vlc.h> // load all new type definitions (if any)
 
 extern libvlc_instance_t *libvlc;
 extern uint64_t time_start;
