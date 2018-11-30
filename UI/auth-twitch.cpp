@@ -189,7 +189,24 @@ Auth *TwitchAuth::Clone() const
 	return auth;
 }
 
+void TwitchAuth::LoadUI()
+{
+}
+
 Auth *TwitchAuth::Login(QWidget *parent)
 {
+	TwitchLogin login(parent);
+	if (login.exec() == QDialog::Rejected) {
+		return nullptr;
+	}
+
+	TwitchAuth auth;
+	auth.token = QT_TO_UTF8(login.GetToken());
+
+	std::string error;
+	if (auth.GetChannelInfo(error)) {
+		return auth.Clone();
+	}
+
 	return nullptr;
 }

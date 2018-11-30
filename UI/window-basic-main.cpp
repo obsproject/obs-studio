@@ -162,6 +162,27 @@ static int CountVideoSources()
 	return count;
 }
 
+void assignDockToggle(QDockWidget *dock, QAction *action)
+{
+	auto handleWindowToggle = [action] (bool vis)
+	{
+		action->blockSignals(true);
+		action->setChecked(vis);
+		action->blockSignals(false);
+	};
+	auto handleMenuToggle = [dock] (bool check)
+	{
+		dock->blockSignals(true);
+		dock->setVisible(check);
+		dock->blockSignals(false);
+	};
+
+	dock->connect(dock->toggleViewAction(), &QAction::toggled,
+			handleWindowToggle);
+	dock->connect(action, &QAction::toggled,
+			handleMenuToggle);
+}
+
 OBSBasic::OBSBasic(QWidget *parent)
 	: OBSMainWindow  (parent),
 	  ui             (new Ui::OBSBasic)
@@ -283,27 +304,6 @@ OBSBasic::OBSBasic(QWidget *parent)
 	addNudge(Qt::Key_Down, SLOT(NudgeDown()));
 	addNudge(Qt::Key_Left, SLOT(NudgeLeft()));
 	addNudge(Qt::Key_Right, SLOT(NudgeRight()));
-
-	auto assignDockToggle = [] (QDockWidget *dock, QAction *action)
-	{
-		auto handleWindowToggle = [action] (bool vis)
-		{
-			action->blockSignals(true);
-			action->setChecked(vis);
-			action->blockSignals(false);
-		};
-		auto handleMenuToggle = [dock] (bool check)
-		{
-			dock->blockSignals(true);
-			dock->setVisible(check);
-			dock->blockSignals(false);
-		};
-
-		dock->connect(dock->toggleViewAction(), &QAction::toggled,
-				handleWindowToggle);
-		dock->connect(action, &QAction::toggled,
-				handleMenuToggle);
-	};
 
 	assignDockToggle(ui->scenesDock, ui->toggleScenes);
 	assignDockToggle(ui->sourcesDock, ui->toggleSources);
@@ -1769,6 +1769,8 @@ void OBSBasic::OnFirstLoad()
 		}
 	}
 #endif
+
+	Auth::Load();
 }
 
 void OBSBasic::DeferredLoad(const QString &file, int requeueCount)
@@ -3652,6 +3654,7 @@ void OBSBasic::closeEvent(QCloseEvent *event)
 
 	signalHandlers.clear();
 
+	Auth::Save();
 	SaveProjectNow();
 
 	if (api)
@@ -3661,6 +3664,7 @@ void OBSBasic::closeEvent(QCloseEvent *event)
 
 	/* Clear all scene data (dialogs, widgets, widget sub-items, scenes,
 	 * sources, etc) so that all references are released before shutdown */
+	auth.reset();
 	ClearSceneData();
 
 	App()->quit();
@@ -6822,6 +6826,13 @@ void OBSBasic::ResizeOutputSizeOfSource()
 
 	ResetVideo();
 	on_actionFitToScreen_triggered();
+}
+
+QAction *OBSBasic::AddDockWidgetMenu(QDockWidget *dock)
+{
+	QAction *action = ui->viewMenuDocks->addAction(dock->windowTitle());
+	assignDockToggle(dock, action);
+	return action;
 }
 
 OBSBasic *OBSBasic::Get()
