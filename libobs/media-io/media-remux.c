@@ -265,7 +265,7 @@ bool media_remux_job_process(media_remux_job_t job,
 							%s", av_err2str(ret));
 				break;
 			}
-		}	
+		}
 	}
 
 	ret = avformat_write_header(job->ofmt_ctx, &dict);
