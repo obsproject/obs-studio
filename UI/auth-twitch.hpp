@@ -35,16 +35,11 @@ class TwitchAuth : public Auth {
 	std::string key_;
 	std::string id_;
 
-	virtual Auth::Type type() const override {return Auth::Type::Twitch;}
 	virtual void SaveInternal() override;
 	virtual bool LoadInternal() override;
-	virtual Auth *Clone() const override;
 
 public:
 	inline explicit TwitchAuth() {}
-	inline explicit TwitchAuth(const char *token_)
-		: token(token_)
-	{}
 
 	bool GetChannelInfo(std::string &error);
 	bool SetChannelInfo(std::string &error);
@@ -56,6 +51,11 @@ public:
 
 	inline void setTitle(const std::string &title) {title_ = title;}
 	inline void setGame(const std::string &game) {game_ = game;}
+
+	virtual Auth::Type type() const override {return Auth::Type::Twitch;}
+	virtual Auth *Clone() const override;
+
+	virtual void LoadUI() override;
 
 	static Auth *Login(QWidget *parent);
 };

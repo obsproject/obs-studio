@@ -18,6 +18,9 @@ class Ui_AutoConfigVideoPage;
 class Ui_AutoConfigStreamPage;
 class Ui_AutoConfigTestPage;
 
+class AutoConfigStreamPage;
+class Auth;
+
 class AutoConfig : public QWizard {
 	Q_OBJECT
 
@@ -61,6 +64,8 @@ class AutoConfig : public QWizard {
 
 	static inline const char *GetEncoderId(Encoder enc);
 
+	AutoConfigStreamPage *streamPage = nullptr;
+
 	Service service = Service::Other;
 	Quality recordingQuality = Quality::Stream;
 	Encoder recordingEncoder = Encoder::Stream;
@@ -78,8 +83,6 @@ class AutoConfig : public QWizard {
 	std::string serverName;
 	std::string server;
 	std::string key;
-
-	std::string authToken;
 
 	bool hardwareEncodingAvailable = false;
 	bool nvencAvailable = false;
@@ -163,6 +166,8 @@ class AutoConfigStreamPage : public QWizardPage {
 		StreamKey,
 	};
 
+	std::unique_ptr<Auth> auth;
+
 	Ui_AutoConfigStreamPage *ui;
 	QString lastService;
 	bool ready = false;
@@ -177,6 +182,9 @@ public:
 	virtual bool isComplete() const override;
 	virtual int nextId() const override;
 	virtual bool validatePage() override;
+
+	void OnAuthConnected();
+	void OnTwitchConnected();
 
 public slots:
 	void on_show_clicked();

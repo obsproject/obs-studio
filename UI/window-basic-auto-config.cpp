@@ -382,32 +382,41 @@ void AutoConfigStreamPage::on_show_clicked()
 	}
 }
 
+void AutoConfigStreamPage::OnTwitchConnected()
+{
+	TwitchAuth *twitch = reinterpret_cast<TwitchAuth*>(auth.get());
+
+	if (twitch) {
+		bool validKey = !twitch->key().empty();
+
+		ui->key->setText(QT_UTF8(twitch->key().c_str()));
+		ui->streamKeyWidget->setVisible(!validKey);
+		ui->streamKeyLabel->setVisible(!validKey);
+		ui->connectAccount2->setVisible(!validKey);
+	}
+
+	ui->stackedWidget->setCurrentIndex((int)Section::StreamKey);
+	UpdateCompleted();
+}
+
+void AutoConfigStreamPage::OnAuthConnected()
+{
+	std::string service = QT_TO_UTF8(ui->service->currentText());
+	if (service == "Twitch") {
+		OnTwitchConnected();
+	}
+}
+
 void AutoConfigStreamPage::on_connectAccount_clicked()
 {
 #ifdef BROWSER_AVAILABLE
-	TwitchLogin login(this);
-	if (login.exec() == QDialog::Rejected) {
-		ui->stackedWidget->setCurrentIndex((int)Section::StreamKey);
-		UpdateCompleted();
-		return;
+	std::string service = QT_TO_UTF8(ui->service->currentText());
+	if (service == "Twitch") {
+		auth.reset(TwitchAuth::Login(this));
 	}
 
-	wiz->authToken = QT_TO_UTF8(login.GetToken());
-
-	TwitchAuth auth(wiz->authToken.c_str());
-
-	std::string error;
-	if (auth.GetChannelInfo(error))
-		ui->key->setText(auth.key().c_str());
-
-	bool validKey = !auth.key().empty();
-
-	wiz->authToken = login.GetToken().toUtf8().constData();
-	ui->streamKeyWidget->setVisible(!validKey);
-	ui->streamKeyLabel->setVisible(!validKey);
-	ui->connectAccount2->setVisible(!validKey);
-	ui->stackedWidget->setCurrentIndex((int)Section::StreamKey);
-	UpdateCompleted();
+	if (!!auth)
+		OnAuthConnected();
 #endif
 }
 
@@ -458,7 +467,7 @@ void AutoConfigStreamPage::ServiceChanged()
 			ui->streamKeyWidget->setVisible(true);
 			ui->streamKeyLabel->setVisible(true);
 			ui->connectAccount2->setVisible(can_auth);
-			wiz->authToken.clear();
+			auth.reset();
 		}
 	} else {
 		ui->connectAccount2->setVisible(false);
@@ -626,7 +635,7 @@ void AutoConfigStreamPage::UpdateServerList()
 void AutoConfigStreamPage::UpdateCompleted()
 {
 	if (ui->stackedWidget->currentIndex() == (int)Section::Connect ||
-	    (ui->key->text().isEmpty() && wiz->authToken.empty())) {
+	    (ui->key->text().isEmpty() && !auth)) {
 		ready = false;
 	} else {
 		bool custom = IsCustom();
@@ -665,7 +674,7 @@ AutoConfig::AutoConfig(QWidget *parent)
 #ifdef _WIN32
 	setWizardStyle(QWizard::ModernStyle);
 #endif
-	AutoConfigStreamPage *streamPage = new AutoConfigStreamPage();
+	streamPage = new AutoConfigStreamPage();
 
 	setPage(StartPage, new AutoConfigStartPage());
 	setPage(VideoPage, new AutoConfigVideoPage());
@@ -729,6 +738,13 @@ AutoConfig::AutoConfig(QWidget *parent)
 
 	streamPage->UpdateServerList();
 	streamPage->UpdateKeyLink();
+
+#ifdef BROWSER_AVAILABLE
+	if (!!main->auth) {
+		streamPage->auth.reset(main->auth->Clone());
+		streamPage->OnAuthConnected();
+	}
+#endif
 
 	if (!customServer) {
 		QComboBox *serverList = streamPage->ui->server;
@@ -883,6 +899,9 @@ void AutoConfig::SaveStreamSettings()
 
 	main->SetService(newService);
 	main->SaveService();
+	main->auth.swap(streamPage->auth);
+	if (!!main->auth)
+		main->auth->LoadUI();
 
 	/* ---------------------------------- */
 	/* save stream settings               */

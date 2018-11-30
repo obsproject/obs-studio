@@ -4,7 +4,6 @@ class Auth {
 protected:
 	virtual void SaveInternal()=0;
 	virtual bool LoadInternal()=0;
-	virtual Auth *Clone() const=0;
 	const char *typeName();
 
 public:
@@ -15,6 +14,9 @@ public:
 	};
 
 	virtual Type type() const=0;
+	virtual Auth *Clone() const=0;
+	virtual void LoadUI() {}
+
 	static bool Load();
 	static void Save();
 };

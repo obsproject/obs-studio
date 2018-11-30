@@ -118,6 +118,7 @@ class OBSBasic : public OBSMainWindow {
 	friend class OBSBasicSourceSelect;
 	friend class OBSBasicSettings;
 	friend class Auth;
+	friend class AutoConfig;
 	friend struct OBSStudioAPI;
 
 	enum class MoveDir {
@@ -620,6 +621,8 @@ public:
 	void CreateInteractionWindow(obs_source_t *source);
 	void CreatePropertiesWindow(obs_source_t *source);
 	void CreateFiltersWindow(obs_source_t *source);
+
+	QAction *AddDockWidgetMenu(QDockWidget *dock);
 
 	static OBSBasic *Get();
 
