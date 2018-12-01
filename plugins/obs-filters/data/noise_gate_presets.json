@@ -1,0 +1,23 @@
+{
+	"low noise" : {
+		"open_threshold" : -60.0,
+		"close_threshold" : -60.0,
+		"attack_time" : 25,
+		"hold_time" : 100,
+		"release_time" : 125,
+	},
+	"mid noise" : {
+		"open_threshold" : -70.0,
+		"close_threshold" : -60.0,
+		"attack_time" : 25,
+		"hold_time" : 100,
+		"release_time" : 125,
+	},
+	"high noise" : {
+		"open_threshold" : -26.0,
+		"close_threshold" : -32.0,
+		"attack_time" : 25,
+		"hold_time" : 200,
+		"release_time" : 150,
+	}
+}

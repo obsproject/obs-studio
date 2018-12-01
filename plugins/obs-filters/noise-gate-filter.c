@@ -14,6 +14,8 @@
 #define S_ATTACK_TIME                  "attack_time"
 #define S_HOLD_TIME                    "hold_time"
 #define S_RELEASE_TIME                 "release_time"
+#define S_PRESET                        "preset"
+#define T_CUSTOM                        "{custom}"
 
 #define MT_ obs_module_text
 #define TEXT_OPEN_THRESHOLD            MT_("NoiseGate.OpenThreshold")
@@ -21,6 +23,7 @@
 #define TEXT_ATTACK_TIME               MT_("NoiseGate.AttackTime")
 #define TEXT_HOLD_TIME                 MT_("NoiseGate.HoldTime")
 #define TEXT_RELEASE_TIME              MT_("NoiseGate.ReleaseTime")
+#define TEXT_PRESET                    MT_("NoiseGate.Preset")
 
 struct noise_gate_data {
 	obs_source_t *context;
@@ -155,27 +158,114 @@ static struct obs_audio_data *noise_gate_filter_audio(void *data,
 
 static void noise_gate_defaults(obs_data_t *s)
 {
-	obs_data_set_default_double(s, S_OPEN_THRESHOLD, -26.0);
-	obs_data_set_default_double(s, S_CLOSE_THRESHOLD, -32.0);
-	obs_data_set_default_int   (s, S_ATTACK_TIME, 25);
-	obs_data_set_default_int   (s, S_HOLD_TIME, 200);
-	obs_data_set_default_int   (s, S_RELEASE_TIME, 150);
+	obs_data_set_default_string(s, S_PRESET, "low noise");
+
+	char *preset_file = obs_module_file("noise_gate_preset.json");
+	obs_data_t *presets = obs_data_create_from_json_file_safe(preset_file,
+			"bak");
+	obs_data_t *default_preset = obs_data_get_obj(presets, "vocals");
+
+	obs_data_item_t *item = NULL;
+	for (item = obs_data_first(default_preset); item;
+		obs_data_item_next(&item)) {
+		enum obs_data_type type = obs_data_item_gettype(item);
+		const char *name = obs_data_item_get_name(item);
+
+		if (!obs_data_item_has_user_value(item))
+			continue;
+
+		if (type == OBS_DATA_NUMBER) {
+			enum obs_data_type n = obs_data_item_numtype(item);
+			if (n == OBS_DATA_NUM_DOUBLE) {
+				obs_data_set_default_int(s, name,
+						obs_data_item_get_int(item));
+			} else if (n == OBS_DATA_NUM_INT) {
+				obs_data_set_default_double(s, name,
+						obs_data_item_get_double(item));
+			}
+		}
+	}
+
+	obs_data_release(default_preset);
+	obs_data_release(presets);
+	bfree(preset_file);
+}
+
+static bool presets_changed(obs_properties_t *props, obs_property_t *prop,
+		obs_data_t *settings)
+{
+	char *preset = bstrdup(obs_data_get_string(settings, S_PRESET));
+	char *preset_file = obs_module_file("noise_gate_presets.json");
+	obs_data_t *presets = obs_data_create_from_json_file_safe(preset_file,
+			"bak");
+	obs_data_t *preset_data = NULL;
+
+	obs_property_list_clear(prop);
+	obs_property_list_add_string(prop, MT_(T_CUSTOM), T_CUSTOM);
+
+	obs_data_item_t *item = NULL;
+	for (item = obs_data_first(presets); item; obs_data_item_next(&item)) {
+		enum obs_data_type type = obs_data_item_gettype(item);
+		const char *name = obs_data_item_get_name(item);
+
+		if (!obs_data_item_has_user_value(item))
+			continue;
+
+		if (type == OBS_DATA_OBJECT)
+			obs_property_list_add_string(prop, MT_(name), name);
+	}
+
+	if (preset && strcmp(preset, T_CUSTOM) != 0) {
+		preset_data = obs_data_get_obj(presets, preset);
+		obs_data_erase(preset_data, S_PRESET);
+		obs_data_apply(settings, preset_data);
+		obs_data_release(preset_data);
+	}
+
+	obs_data_release(presets);
+	bfree(preset);
+	bfree(preset_file);
+
+	return true;
+}
+
+static bool settings_changed(obs_properties_t *props, obs_property_t *prop,
+		obs_data_t *settings)
+{
+	obs_data_set_string(settings, S_PRESET, T_CUSTOM);
+	return false;
 }
 
 static obs_properties_t *noise_gate_properties(void *data)
 {
 	obs_properties_t *ppts = obs_properties_create();
+	obs_property_t *prop = NULL;
 
-	obs_properties_add_float_slider(ppts, S_CLOSE_THRESHOLD,
+	obs_property_t *presets = obs_properties_add_list(ppts, S_PRESET,
+			TEXT_PRESET, OBS_COMBO_TYPE_LIST,
+			OBS_COMBO_FORMAT_STRING);
+
+	obs_property_set_modified_callback(presets, presets_changed);
+
+	prop = obs_properties_add_float_slider(ppts, S_CLOSE_THRESHOLD,
 			TEXT_CLOSE_THRESHOLD, VOL_MIN, VOL_MAX, 1.0);
-	obs_properties_add_float_slider(ppts, S_OPEN_THRESHOLD,
+	obs_property_set_modified_callback(prop, settings_changed);
+
+	prop = obs_properties_add_float_slider(ppts, S_OPEN_THRESHOLD,
 			TEXT_OPEN_THRESHOLD, VOL_MIN, VOL_MAX, 1.0);
-	obs_properties_add_int(ppts, S_ATTACK_TIME, TEXT_ATTACK_TIME,
+	obs_property_set_modified_callback(prop, settings_changed);
+
+	prop = obs_properties_add_int(ppts, S_ATTACK_TIME, TEXT_ATTACK_TIME,
 			0, 10000, 1);
-	obs_properties_add_int(ppts, S_HOLD_TIME, TEXT_HOLD_TIME,
+	obs_property_set_modified_callback(prop, settings_changed);
+
+	prop = obs_properties_add_int(ppts, S_HOLD_TIME, TEXT_HOLD_TIME,
 			0, 10000, 1);
-	obs_properties_add_int(ppts, S_RELEASE_TIME, TEXT_RELEASE_TIME,
+	obs_property_set_modified_callback(prop, settings_changed);
+
+	prop = obs_properties_add_int(ppts, S_RELEASE_TIME, TEXT_RELEASE_TIME,
 			0, 10000, 1);
+	obs_property_set_modified_callback(prop, settings_changed);
 
 	UNUSED_PARAMETER(data);
 	return ppts;
