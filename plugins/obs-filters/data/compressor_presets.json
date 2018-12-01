@@ -1,0 +1,23 @@
+{
+	"vocals" : {
+		"ratio" : 4.0,
+		"threshold" : -15.0,
+		"attack_time" : 6,
+		"release_time" : 60,
+		"output_gain" : 0.0
+	},
+	"aggressive vocals" : {
+		"ratio" : 4.4,
+		"threshold" : -21.7,
+		"attack_time" : 23,
+		"release_time" : 67,
+		"output_gain" : 0.0
+	},
+	"modern vocals" : {
+		"ratio" : 5.2,
+		"threshold" : -21.7,
+		"attack_time" : 10,
+		"release_time" : 49,
+		"output_gain" : 0.0
+	}
+}

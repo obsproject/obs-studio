@@ -31,6 +31,8 @@
 #define S_RELEASE_TIME                  "release_time"
 #define S_OUTPUT_GAIN                   "output_gain"
 #define S_SIDECHAIN_SOURCE              "sidechain_source"
+#define S_PRESET                        "preset"
+#define T_CUSTOM                        "{custom}"
 
 #define MT_ obs_module_text
 #define TEXT_RATIO                      MT_("Compressor.Ratio")
@@ -39,6 +41,7 @@
 #define TEXT_RELEASE_TIME               MT_("Compressor.ReleaseTime")
 #define TEXT_OUTPUT_GAIN                MT_("Compressor.OutputGain")
 #define TEXT_SIDECHAIN_SOURCE           MT_("Compressor.SidechainSource")
+#define TEXT_PRESET                     MT_("Compressor.Preset")
 
 #define MIN_RATIO                       1.0
 #define MAX_RATIO                       32.0
@@ -462,12 +465,38 @@ static struct obs_audio_data *compressor_filter_audio(void *data,
 
 static void compressor_defaults(obs_data_t *s)
 {
-	obs_data_set_default_double(s, S_RATIO, 10.0f);
-	obs_data_set_default_double(s, S_THRESHOLD, -18.0f);
-	obs_data_set_default_int(s, S_ATTACK_TIME, 6);
-	obs_data_set_default_int(s, S_RELEASE_TIME, 60);
-	obs_data_set_default_double(s, S_OUTPUT_GAIN, 0.0f);
+	obs_data_set_default_string(s, S_PRESET, "vocals");
 	obs_data_set_default_string(s, S_SIDECHAIN_SOURCE, "none");
+
+	char *preset_file = obs_module_file("compressor_presets.json");
+	obs_data_t *presets = obs_data_create_from_json_file_safe(preset_file,
+			"bak");
+	obs_data_t *default_preset = obs_data_get_obj(presets, "vocals");
+
+	obs_data_item_t *item = NULL;
+	for (item = obs_data_first(default_preset); item;
+			obs_data_item_next(&item)) {
+		enum obs_data_type type = obs_data_item_gettype(item);
+		const char *name = obs_data_item_get_name(item);
+
+		if (!obs_data_item_has_user_value(item))
+			continue;
+
+		if (type == OBS_DATA_NUMBER) {
+			enum obs_data_type n = obs_data_item_numtype(item);
+			if (n == OBS_DATA_NUM_DOUBLE) {
+				obs_data_set_default_int(s, name,
+						obs_data_item_get_int(item));
+			} else if (n == OBS_DATA_NUM_INT) {
+				obs_data_set_default_double(s, name,
+						obs_data_item_get_double(item));
+			}
+		}
+	}
+
+	obs_data_release(default_preset);
+	obs_data_release(presets);
+	bfree(preset_file);
 }
 
 struct sidechain_prop_info {
@@ -490,25 +519,86 @@ static bool add_sources(void *data, obs_source_t *source)
 	return true;
 }
 
+static bool presets_changed(obs_properties_t *props, obs_property_t *prop,
+		obs_data_t *settings)
+{
+	char *preset = bstrdup(obs_data_get_string(settings, S_PRESET));
+	char *preset_file = obs_module_file("compressor_presets.json");
+	obs_data_t *presets = obs_data_create_from_json_file_safe(preset_file,
+			"bak");
+	obs_data_t *preset_data = NULL;
+
+	obs_property_list_clear(prop);
+	obs_property_list_add_string(prop, MT_(T_CUSTOM), T_CUSTOM);
+
+	obs_data_item_t *item = NULL;
+	for (item = obs_data_first(presets); item; obs_data_item_next(&item)) {
+		enum obs_data_type type = obs_data_item_gettype(item);
+		const char *name = obs_data_item_get_name(item);
+
+		if (!obs_data_item_has_user_value(item))
+			continue;
+
+		if (type == OBS_DATA_OBJECT)
+			obs_property_list_add_string(prop, MT_(name), name);
+	}
+
+	if (preset && strcmp(preset, T_CUSTOM) != 0) {
+		preset_data = obs_data_get_obj(presets, preset);
+		obs_data_erase(preset_data, S_PRESET);
+		obs_data_erase(preset_data, S_SIDECHAIN_SOURCE);
+		obs_data_apply(settings, preset_data);
+		obs_data_release(preset_data);
+	}
+
+	obs_data_release(presets);
+	bfree(preset);
+	bfree(preset_file);
+
+	return true;
+}
+
+static bool setting_changed(obs_properties_t *props, obs_property_t *prop,
+		obs_data_t *settings)
+{
+	obs_data_set_string(settings, S_PRESET, T_CUSTOM);
+	return false;
+}
+
 static obs_properties_t *compressor_properties(void *data)
 {
 	struct compressor_data *cd = data;
 	obs_properties_t *props = obs_properties_create();
 	obs_source_t *parent = NULL;
+	obs_property_t *prop = NULL;
 
 	if (cd)
 		parent = obs_filter_get_parent(cd->context);
 
-	obs_properties_add_float_slider(props, S_RATIO,
+	obs_property_t *presets = obs_properties_add_list(props, S_PRESET,
+			TEXT_PRESET, OBS_COMBO_TYPE_LIST,
+			OBS_COMBO_FORMAT_STRING);
+	obs_property_set_modified_callback(presets, presets_changed);
+
+	prop = obs_properties_add_float_slider(props, S_RATIO,
 		TEXT_RATIO, MIN_RATIO, MAX_RATIO, 0.5);
-	obs_properties_add_float_slider(props, S_THRESHOLD,
+	obs_property_set_modified_callback(prop, setting_changed);
+
+	prop = obs_properties_add_float_slider(props, S_THRESHOLD,
 		TEXT_THRESHOLD, MIN_THRESHOLD_DB, MAX_THRESHOLD_DB, 0.1);
-	obs_properties_add_int_slider(props, S_ATTACK_TIME,
+	obs_property_set_modified_callback(props, setting_changed);
+
+	prop = obs_properties_add_int_slider(props, S_ATTACK_TIME,
 		TEXT_ATTACK_TIME, MIN_ATK_RLS_MS, MAX_ATK_MS, 1);
-	obs_properties_add_int_slider(props, S_RELEASE_TIME,
+	obs_property_set_modified_callback(props, setting_changed);
+
+	prop = obs_properties_add_int_slider(props, S_RELEASE_TIME,
 		TEXT_RELEASE_TIME, MIN_ATK_RLS_MS, MAX_RLS_MS, 1);
-	obs_properties_add_float_slider(props, S_OUTPUT_GAIN,
+	obs_property_set_modified_callback(prop, setting_changed);
+
+	prop = obs_properties_add_float_slider(props, S_OUTPUT_GAIN,
 		TEXT_OUTPUT_GAIN, MIN_OUTPUT_GAIN_DB, MAX_OUTPUT_GAIN_DB, 0.1);
+	obs_property_set_modified_callback(prop, setting_changed);
 
 	obs_property_t *sources = obs_properties_add_list(props,
 			S_SIDECHAIN_SOURCE, TEXT_SIDECHAIN_SOURCE,
