@@ -2,6 +2,7 @@
 set -ex
 
 sudo add-apt-repository ppa:jonathonf/ffmpeg-3 -y
+sudo add-apt-repository ppa:beineri/opt-qt593-trusty -y
 sudo apt-get -qq update
 sudo apt-get install -y \
         build-essential \
@@ -22,7 +23,7 @@ sudo apt-get install -y \
         libjansson-dev \
         libluajit-5.1-dev \
         libpulse-dev \
-        libqt5x11extras5-dev \
+        libpython3.4-stdlib \
         libspeexdsp-dev \
         libswresample-dev \
         libswscale-dev \
@@ -38,5 +39,6 @@ sudo apt-get install -y \
         libxinerama-dev \
         pkg-config \
         python3-dev \
-        qtbase5-dev \
+        qt59base \
+        qt59x11extras \
         swig
