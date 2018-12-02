@@ -15,6 +15,10 @@ export VERSION=$(git rev-parse --short HEAD) # linuxdeployqt uses this for namin
 ./linuxdeployqt-continuous-x86_64.AppImage appdir/usr/share/applications/*.desktop -bundle-non-qt-libs -qmake=/usr/lib/x86_64-linux-gnu/qt5/bin/qmake
 ./linuxdeployqt-continuous-x86_64.AppImage --appimage-extract ; export PATH=./squashfs-root/usr/bin:$PATH # Get patchelf
 patchelf --set-rpath '$ORIGIN' appdir/usr/lib/libobs-opengl.so.0 # This is loaded by obs with dlopen(), so linuxdeployqt can't know about it
+# FIXME: This version of Qt seems to have a bug since it tries to load platforms from the current working directory (cwd)
+# rather than from the prefix defined in qt.conf
+# me@host:~$ strace ./squashfs-root/AppRun 2>&1 | grep platforms
+# stat("/home/me/platforms/.", 0x7ffe8aca3130) = -1 ENOENT (No such file or directory)
 ./linuxdeployqt-continuous-x86_64.AppImage appdir/usr/share/applications/*.desktop -appimage -qmake=/usr/lib/x86_64-linux-gnu/qt5/bin/qmake
 
 # TODO: The next line should be replaced by a native upload mechanism defined in .travis.yml,
