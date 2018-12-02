@@ -1,6 +1,7 @@
 #!/bin/sh
 set -ex
 
+cd ./build
 make -j$(nproc)
 make DESTDIR=appdir -j$(nproc) install ; find appdir/
 
