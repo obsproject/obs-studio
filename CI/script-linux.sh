@@ -2,7 +2,9 @@
 set -ex
 
 # Compile and install to an AppDir
-. /opt/qt*/bin/qt*-env.sh
+export LD_LIBRARY_PATH=/opt/qt59/lib/x86_64-linux-gnu:/opt/qt59/lib:$LD_LIBRARY_PATH
+export PKG_CONFIG_PATH=/opt/qt59/lib/pkgconfig:$PKG_CONFIG_PATH
+export PATH=/opt/qt59/bin:$PATH
 cd ./build
 make -j$(nproc)
 make DESTDIR=appdir -j$(nproc) install ; find appdir/
