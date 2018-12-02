@@ -32,9 +32,9 @@ matrix:
     - os: linux
       dist: trusty
       sudo: required
-      before_install: bash "./CI/install-dependencies-linux.sh"
-      before_script: bash "./CI/before-script-linux.sh"
-      script: bash "./CI/script-linux.sh"
+      before_install: "./CI/install-dependencies-linux.sh"
+      before_script: "./CI/before-script-linux.sh"
+      script: "./CI/script-linux.sh"
 
 deploy:
   provider: s3
