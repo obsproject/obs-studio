@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 set -ex
 
 source /opt/qt*/bin/qt*-env.sh
