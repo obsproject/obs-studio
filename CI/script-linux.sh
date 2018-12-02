@@ -1,8 +1,8 @@
-#!/bin/bash
+#!/bin/sh
 set -ex
 
 # Compile and install to an AppDir
-source /opt/qt*/bin/qt*-env.sh
+. /opt/qt*/bin/qt*-env.sh
 cd ./build
 make -j$(nproc)
 make DESTDIR=appdir -j$(nproc) install ; find appdir/
