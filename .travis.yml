@@ -27,14 +27,14 @@ matrix:
       before_install: "./CI/install-dependencies-osx.sh"
       before_script: "./CI/before-script-osx.sh"
       before_deploy: "./CI/before-deploy-osx.sh"
-
+      script: cd ./build && make -j4 && cd -
+      
     - os: linux
       dist: trusty
       sudo: required
       before_install: "./CI/install-dependencies-linux.sh"
       before_script: "./CI/before-script-linux.sh"
-
-script: cd ./build && make -j4 && cd -
+      script: "./CI/script-linux.sh"
 
 deploy:
   provider: s3
