@@ -14,7 +14,7 @@ unset QTDIR; unset QT_PLUGIN_PATH ; unset LD_LIBRARY_PATH
 export VERSION=$(git rev-parse --short HEAD) # linuxdeployqt uses this for naming the file
 ./linuxdeployqt-continuous-x86_64.AppImage appdir/usr/share/applications/*.desktop -bundle-non-qt-libs -qmake=/usr/lib/x86_64-linux-gnu/qt5/bin/qmake
 ./linuxdeployqt-continuous-x86_64.AppImage --appimage-extract ; export PATH=./squashfs-root/usr/bin:$PATH # Get patchelf
-patchelf --set-rpath '$ORIGIN' appdir/usr/lib/libobs-opengl.so.0
+patchelf --set-rpath '$ORIGIN' appdir/usr/lib/libobs-opengl.so.0 # This is loaded by obs with dlopen(), so linuxdeployqt can't know about it
 ./linuxdeployqt-continuous-x86_64.AppImage appdir/usr/share/applications/*.desktop -appimage -qmake=/usr/lib/x86_64-linux-gnu/qt5/bin/qmake
 
 # TODO: The next line should be replaced by a native upload mechanism defined in .travis.yml,
