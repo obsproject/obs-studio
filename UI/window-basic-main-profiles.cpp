@@ -25,6 +25,10 @@
 #include "window-namedialog.hpp"
 #include "qt-wrappers.hpp"
 
+extern void DestroyPanelCookieManager();
+extern void DeletePanelCookies(const char *profile);
+extern void DuplicateCurrentCookieProfile(const std::string &newProfile);
+
 void EnumProfiles(std::function<bool (const char *, const char *)> &&cb)
 {
 	char path[512];
@@ -229,8 +233,12 @@ bool OBSBasic::AddProfile(bool create_new, const char *title, const char *text,
 			newDir.c_str());
 
 	Auth::Save();
-	if (create_new)
+	if (create_new) {
 		auth.reset();
+		DestroyPanelCookieManager();
+	} else {
+		DuplicateCurrentCookieProfile(newName);
+	}
 
 	config_set_string(config, "General", "Name", newName.c_str());
 	config.SaveSafe("tmp");
@@ -238,8 +246,9 @@ bool OBSBasic::AddProfile(bool create_new, const char *title, const char *text,
 	InitBasicConfigDefaults();
 	RefreshProfiles();
 
-	if (create_new)
+	if (create_new) {
 		ResetProfileData();
+	}
 
 	blog(LOG_INFO, "Created profile '%s' (%s, %s)", newName.c_str(),
 			create_new ? "clean" : "duplicate", newDir.c_str());
@@ -452,6 +461,8 @@ void OBSBasic::on_actionRemoveProfile_triggered()
 
 	Auth::Save();
 	auth.reset();
+	DestroyPanelCookieManager();
+	DeletePanelCookies(oldName.c_str());
 
 	config.Swap(basicConfig);
 	InitBasicConfigDefaults();
@@ -614,6 +625,7 @@ void OBSBasic::ChangeProfile()
 
 	Auth::Save();
 	auth.reset();
+	DestroyPanelCookieManager();
 
 	config.Swap(basicConfig);
 	InitBasicConfigDefaults();

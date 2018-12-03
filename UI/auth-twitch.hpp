@@ -2,6 +2,7 @@
 
 #include <QDialog>
 #include <string>
+#include <memory>
 
 #include "auth-base.hpp"
 
@@ -25,12 +26,20 @@ public slots:
 	void urlChanged(const QString &url);
 };
 
+class TwitchChat;
+
 class TwitchAuth : public Auth {
 	friend class TwitchLogin;
+
+	QSharedPointer<TwitchChat> chat;
+	bool uiLoaded = false;
+
+	QSharedPointer<QAction> chatMenu;
 
 	std::string token;
 
 	std::string title_;
+	std::string name_;
 	std::string game_;
 	std::string key_;
 	std::string id_;
@@ -39,13 +48,14 @@ class TwitchAuth : public Auth {
 	virtual bool LoadInternal() override;
 
 public:
-	inline explicit TwitchAuth() {}
+	TwitchAuth();
 
-	bool GetChannelInfo(std::string &error);
-	bool SetChannelInfo(std::string &error);
+	bool GetChannelInfo();
+	bool SetChannelInfo();
 
 	inline const std::string &title() const {return title_;}
 	inline const std::string &game() const {return game_;}
+	inline const std::string &name() const {return name_;}
 	inline const std::string &key() const {return key_;}
 	inline const std::string &id() const {return id_;}
 
