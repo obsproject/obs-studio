@@ -109,6 +109,15 @@ using namespace Gdiplus;
 #define T_VALIGN_CENTER                 T_ALIGN_CENTER
 #define T_VALIGN_BOTTOM                 T_("VerticalAlignment.Bottom")
 
+#define T_GROUP_CONTENT                 T_("PropertyGroup.Content")
+#define T_GROUP_ALIGNMENT               T_("PropertyGroup.Alignment")
+#define T_GROUP_FOREGROUND              T_("PropertyGroup.Foreground")
+#define T_GROUP_GRADIENT                T_("PropertyGroup.Gradient")
+#define T_GROUP_BACKGROUND              T_("PropertyGroup.Background")
+#define T_GROUP_OUTLINE                 T_("PropertyGroup.Outline")
+#define T_GROUP_CHATLOG                 T_("PropertyGroup.ChatlogMode")
+#define T_GROUP_CUSTOMEXTENTS           T_("PropertyGroup.CustomExtents")
+
 /* ------------------------------------------------------------------------- */
 
 static inline DWORD get_alpha_val(uint32_t opacity)
@@ -877,6 +886,8 @@ static obs_properties_t *get_properties(void *data)
 	obs_properties_t *props = obs_properties_create();
 	obs_property_t *p;
 
+	// Content group
+	obs_properties_begin_group(props, T_GROUP_CONTENT);
 	obs_properties_add_font(props, S_FONT, T_FONT);
 
 	p = obs_properties_add_bool(props, S_USE_FILE, T_USE_FILE);
@@ -901,11 +912,33 @@ static obs_properties_t *get_properties(void *data)
 	obs_properties_add_text(props, S_TEXT, T_TEXT, OBS_TEXT_MULTILINE);
 	obs_properties_add_path(props, S_FILE, T_FILE, OBS_PATH_FILE,
 			filter.c_str(), path.c_str());
+	obs_properties_end_group(props);
+
+	// Alignment group
+	obs_properties_begin_group(props, T_GROUP_ALIGNMENT);
+	p = obs_properties_add_list(props, S_ALIGN, T_ALIGN,
+		OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
+	obs_property_list_add_string(p, T_ALIGN_LEFT, S_ALIGN_LEFT);
+	obs_property_list_add_string(p, T_ALIGN_CENTER, S_ALIGN_CENTER);
+	obs_property_list_add_string(p, T_ALIGN_RIGHT, S_ALIGN_RIGHT);
+
+	p = obs_properties_add_list(props, S_VALIGN, T_VALIGN,
+		OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
+	obs_property_list_add_string(p, T_VALIGN_TOP, S_VALIGN_TOP);
+	obs_property_list_add_string(p, T_VALIGN_CENTER, S_VALIGN_CENTER);
+	obs_property_list_add_string(p, T_VALIGN_BOTTOM, S_VALIGN_BOTTOM);
 
 	obs_properties_add_bool(props, S_VERTICAL, T_VERTICAL);
+	obs_properties_end_group(props);
+
+	// Foreground group
+	obs_properties_begin_group(props, T_GROUP_FOREGROUND);
 	obs_properties_add_color(props, S_COLOR, T_COLOR);
 	obs_properties_add_int_slider(props, S_OPACITY, T_OPACITY, 0, 100, 1);
+	obs_properties_end_group(props);
 
+	// Gradient group
+	obs_properties_begin_group(props, T_GROUP_GRADIENT);
 	p = obs_properties_add_bool(props, S_GRADIENT, T_GRADIENT);
 	obs_property_set_modified_callback(p, gradient_changed);
 
@@ -914,23 +947,17 @@ static obs_properties_t *get_properties(void *data)
 			T_GRADIENT_OPACITY, 0, 100, 1);
 	obs_properties_add_float_slider(props, S_GRADIENT_DIR,
 			T_GRADIENT_DIR, 0, 360, 0.1);
-	
+	obs_properties_end_group(props);
+
+	// Background group
+	obs_properties_begin_group(props, T_GROUP_BACKGROUND);
 	obs_properties_add_color(props, S_BKCOLOR, T_BKCOLOR);
 	obs_properties_add_int_slider(props, S_BKOPACITY, T_BKOPACITY,
 			0, 100, 1);
+	obs_properties_end_group(props);
 
-	p = obs_properties_add_list(props, S_ALIGN, T_ALIGN,
-			OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
-	obs_property_list_add_string(p, T_ALIGN_LEFT,   S_ALIGN_LEFT);
-	obs_property_list_add_string(p, T_ALIGN_CENTER, S_ALIGN_CENTER);
-	obs_property_list_add_string(p, T_ALIGN_RIGHT,  S_ALIGN_RIGHT);
-
-	p = obs_properties_add_list(props, S_VALIGN, T_VALIGN,
-			OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
-	obs_property_list_add_string(p, T_VALIGN_TOP,    S_VALIGN_TOP);
-	obs_property_list_add_string(p, T_VALIGN_CENTER, S_VALIGN_CENTER);
-	obs_property_list_add_string(p, T_VALIGN_BOTTOM, S_VALIGN_BOTTOM);
-
+	// Outline group
+	obs_properties_begin_group(props, T_GROUP_OUTLINE);
 	p = obs_properties_add_bool(props, S_OUTLINE, T_OUTLINE);
 	obs_property_set_modified_callback(p, outline_changed);
 
@@ -938,19 +965,26 @@ static obs_properties_t *get_properties(void *data)
 	obs_properties_add_color(props, S_OUTLINE_COLOR, T_OUTLINE_COLOR);
 	obs_properties_add_int_slider(props, S_OUTLINE_OPACITY,
 			T_OUTLINE_OPACITY, 0, 100, 1);
+	obs_properties_end_group(props);
 
+	// Chatlog mode group
+	obs_properties_begin_group(props, T_GROUP_CHATLOG);
 	p = obs_properties_add_bool(props, S_CHATLOG_MODE, T_CHATLOG_MODE);
 	obs_property_set_modified_callback(p, chatlog_mode_changed);
 
 	obs_properties_add_int(props, S_CHATLOG_LINES, T_CHATLOG_LINES,
 			1, 1000, 1);
+	obs_properties_end_group(props);
 
+	// Custom extents group
+	obs_properties_begin_group(props, T_GROUP_CUSTOMEXTENTS);
 	p = obs_properties_add_bool(props, S_EXTENTS, T_EXTENTS);
 	obs_property_set_modified_callback(p, extents_modified);
 
 	obs_properties_add_int(props, S_EXTENTS_CX, T_EXTENTS_CX, 32, 8000, 1);
 	obs_properties_add_int(props, S_EXTENTS_CY, T_EXTENTS_CY, 32, 8000, 1);
 	obs_properties_add_bool(props, S_EXTENTS_WRAP, T_EXTENTS_WRAP);
+	obs_properties_end_group(props);
 
 	return props;
 }

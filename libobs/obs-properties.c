@@ -140,6 +140,12 @@ static inline void frame_rate_data_free(struct frame_rate_data *data)
 	da_free(data->ranges);
 }
 
+struct obs_property_group {
+	char *name;
+
+	struct obs_property_group *next;
+};
+
 struct obs_properties;
 
 struct obs_property {
@@ -152,6 +158,8 @@ struct obs_property {
 	bool                    enabled;
 
 	struct obs_properties   *parent;
+
+	struct obs_property_group *group;
 
 	obs_property_modified_t modified;
 	obs_property_modified2_t modified2;
@@ -166,13 +174,20 @@ struct obs_properties {
 
 	struct obs_property     *first_property;
 	struct obs_property     **last;
+
+	struct obs_property_group *first_group;
+	struct obs_property_group **last_group;
+
+	struct obs_property_group *in_progress_group;
 };
+
 
 obs_properties_t *obs_properties_create(void)
 {
 	struct obs_properties *props;
 	props = bzalloc(sizeof(struct obs_properties));
 	props->last = &props->first_property;
+	props->last_group = &props->first_group;
 	return props;
 }
 
@@ -230,13 +245,26 @@ static void obs_property_destroy(struct obs_property *property)
 	bfree(property);
 }
 
+static void obs_property_group_destroy(struct obs_property_group *group)
+{
+	bfree(group->name);
+	bfree(group);
+}
+
 void obs_properties_destroy(obs_properties_t *props)
 {
 	if (props) {
 		struct obs_property *p = props->first_property;
+		struct obs_property_group *g = props->first_group;
 
 		if (props->destroy && props->param)
 			props->destroy(props->param);
+
+		while (g) {
+			struct obs_property_group *next = g->next;
+			obs_property_group_destroy(g);
+			g = next;
+		}
 
 		while (p) {
 			struct obs_property *next = p->next;
@@ -332,6 +360,7 @@ static inline struct obs_property *new_prop(struct obs_properties *props,
 	p->type    = type;
 	p->name    = bstrdup(name);
 	p->desc    = bstrdup(desc);
+	p->group   = props->in_progress_group;
 	propertes_add(props, p);
 
 	return p;
@@ -555,6 +584,54 @@ obs_property_t *obs_properties_add_frame_rate(obs_properties_t *props,
 
 /* ------------------------------------------------------------------------- */
 
+obs_property_group_t *obs_properties_add_group(obs_properties_t *props,
+		const char *name)
+{
+	obs_property_group_t *g = bzalloc(sizeof(obs_property_group_t));
+	g->name = bstrdup(name);
+
+	*props->last_group = g;
+	props->last_group = &g->next;
+
+	return g;
+}
+
+obs_property_group_t *obs_properties_begin_group(obs_properties_t *props,
+		const char *name)
+{
+	obs_property_group_t *g = obs_properties_add_group(props, name);
+
+	props->in_progress_group = g;
+
+	return g;
+}
+
+void obs_properties_end_group(obs_properties_t *props)
+{
+	props->in_progress_group = NULL;
+}
+
+obs_property_group_t *obs_properties_first_group(obs_properties_t *props)
+{
+	return props->first_group;
+}
+
+bool obs_property_group_next(obs_property_group_t **g)
+{
+	if (!g || !*g)
+		return false;
+
+	*g = (*g)->next;
+	return *g != NULL;
+}
+
+const char *obs_property_group_name(obs_property_group_t *group)
+{
+	return group ? group->name : NULL;
+}
+
+/* ------------------------------------------------------------------------- */
+
 static inline bool is_combo(struct obs_property *p)
 {
 	return p->type == OBS_PROPERTY_LIST;
@@ -660,6 +737,11 @@ void obs_property_set_long_description(obs_property_t *p, const char *long_desc)
 	}
 }
 
+void obs_property_set_group(obs_property_t *p, obs_property_group_t *group)
+{
+	if (p) p->group = group;
+}
+
 const char *obs_property_name(obs_property_t *p)
 {
 	return p ? p->name : NULL;
@@ -673,6 +755,11 @@ const char *obs_property_description(obs_property_t *p)
 const char *obs_property_long_description(obs_property_t *p)
 {
 	return p ? p->long_desc : NULL;
+}
+
+obs_property_group_t *obs_property_group(obs_property_t *p)
+{
+	return p ? p->group : NULL;
 }
 
 enum obs_property_type obs_property_get_type(obs_property_t *p)

@@ -4,6 +4,7 @@
 #include <obs.hpp>
 #include <vector>
 #include <memory>
+#include <unordered_set>
 
 class QFormLayout;
 class OBSPropertiesView;
@@ -59,12 +60,34 @@ public slots:
 	void EditListDown();
 };
 
+class GroupInfo : public QObject {
+	Q_OBJECT
+
+	friend class OBSPropertiesView;
+
+private:
+	OBSPropertiesView    *view;
+	obs_property_group_t *group;
+	QWidget              *widget;
+
+public:
+	inline GroupInfo(OBSPropertiesView *view_,
+			obs_property_group_t *group_, QWidget *widget_)
+		: view(view_), group(group_), widget(widget_)
+	{}
+
+public slots:
+
+	void Toggled(int state);
+};
+
 /* ------------------------------------------------------------------------- */
 
 class OBSPropertiesView : public VScrollArea {
 	Q_OBJECT
 
 	friend class WidgetInfo;
+	friend class GroupInfo;
 
 	using properties_delete_t = decltype(&obs_properties_destroy);
 	using properties_t =
@@ -80,9 +103,11 @@ private:
 	PropertiesUpdateCallback                 callback = nullptr;
 	int                                      minSize;
 	std::vector<std::unique_ptr<WidgetInfo>> children;
+	std::vector<std::unique_ptr<GroupInfo>>  groups;
 	std::string                              lastFocused;
 	QWidget                                  *lastWidget = nullptr;
 	bool                                     deferUpdate;
+	std::unordered_set<obs_property_group_t *> collapsedGroups;
 
 	QWidget *NewWidget(obs_property_t *prop, QWidget *widget,
 			const char *signal);
@@ -104,6 +129,9 @@ private:
 			QFormLayout *layout, QLabel *&label);
 
 	void AddProperty(obs_property_t *property, QFormLayout *layout);
+
+	QFormLayout *AddGroup(obs_property_group_t *group, QFormLayout *layout,
+			bool collapsed);
 
 	void resizeEvent(QResizeEvent *event) override;
 

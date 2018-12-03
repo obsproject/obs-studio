@@ -100,8 +100,10 @@ enum obs_number_type {
 
 struct obs_properties;
 struct obs_property;
+struct obs_property_group;
 typedef struct obs_properties obs_properties_t;
 typedef struct obs_property   obs_property_t;
+typedef struct obs_property_group obs_property_group_t;
 
 /* ------------------------------------------------------------------------- */
 
@@ -218,6 +220,23 @@ EXPORT obs_property_t *obs_properties_add_editable_list(obs_properties_t *props,
 EXPORT obs_property_t *obs_properties_add_frame_rate(obs_properties_t *props,
 		const char *name, const char *description);
 
+/**
+ * API for managing groups within the properties.
+ */
+
+EXPORT obs_property_group_t *obs_properties_add_group(obs_properties_t *props,
+		const char *name);
+
+EXPORT obs_property_group_t *obs_properties_begin_group(obs_properties_t *props,
+		const char *name);
+EXPORT void obs_properties_end_group(obs_properties_t *props);
+
+EXPORT obs_property_group_t *obs_properties_first_group(obs_properties_t *props);
+
+EXPORT bool obs_property_group_next(obs_property_group_t **group);
+
+EXPORT const char *obs_property_group_name(obs_property_group_t *group);
+
 /* ------------------------------------------------------------------------- */
 
 /**
@@ -245,10 +264,13 @@ EXPORT void obs_property_set_description(obs_property_t *p,
 		const char *description);
 EXPORT void obs_property_set_long_description(obs_property_t *p,
 		const char *long_description);
+EXPORT void obs_property_set_group(obs_property_t *p,
+		obs_property_group_t *group);
 
 EXPORT const char *           obs_property_name(obs_property_t *p);
 EXPORT const char *           obs_property_description(obs_property_t *p);
 EXPORT const char *           obs_property_long_description(obs_property_t *p);
+EXPORT obs_property_group_t * obs_property_group(obs_property_t *p);
 EXPORT enum obs_property_type obs_property_get_type(obs_property_t *p);
 EXPORT bool                   obs_property_enabled(obs_property_t *p);
 EXPORT bool                   obs_property_visible(obs_property_t *p);

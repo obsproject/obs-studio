@@ -18,6 +18,7 @@
 #include <QDialogButtonBox>
 #include <QMenu>
 #include <QStackedWidget>
+#include <QGroupBox>
 #include "double-slider.hpp"
 #include "qt-wrappers.hpp"
 #include "properties-view.hpp"
@@ -27,6 +28,7 @@
 #include <cstdlib>
 #include <initializer_list>
 #include <string>
+#include <unordered_map>
 
 using namespace std;
 
@@ -98,6 +100,8 @@ void OBSPropertiesView::ReloadProperties()
 	uint32_t flags = obs_properties_get_flags(properties.get());
 	deferUpdate = (flags & OBS_PROPERTIES_DEFER_UPDATE) != 0;
 
+	collapsedGroups.clear();
+
 	RefreshProperties();
 }
 
@@ -124,11 +128,30 @@ void OBSPropertiesView::RefreshProperties()
 
 	layout->setLabelAlignment(Qt::AlignRight);
 
+
+	std::unordered_map<obs_property_group_t *, QFormLayout *> groupMap;
+
 	obs_property_t *property = obs_properties_first(properties.get());
 	bool hasNoProperties = !property;
 
 	while (property) {
-		AddProperty(property, layout);
+		obs_property_group_t *group = obs_property_group(property);
+		if (group) {
+			bool collapsed = collapsedGroups.find(group)
+					!= collapsedGroups.end();
+
+			if (groupMap.find(group) == groupMap.end())
+				groupMap[group] = AddGroup(group, layout,
+						collapsed);
+
+			// AddGroup() will return nullptr if the group
+			// is collapsed. That gets stored in the map
+			// like any other value.
+			if (groupMap[group] != nullptr)
+				AddProperty(property, groupMap[group]);
+		}
+		else
+			AddProperty(property, layout);
 		obs_property_next(&property);
 	}
 
@@ -1408,6 +1431,43 @@ void OBSPropertiesView::AddProperty(obs_property_t *property,
 			lastWidget = widget;
 }
 
+QFormLayout *OBSPropertiesView::AddGroup(obs_property_group_t *group,
+		QFormLayout *layout, bool collapsed)
+{
+	QFrame *rootFrame = new QFrame(widget);
+	rootFrame->setProperty("themeID", "propertyGroup");
+	layout->setWidget(layout->rowCount(),
+			QFormLayout::SpanningRole, rootFrame);
+
+	QVBoxLayout *rootLayout = new QVBoxLayout;
+	rootLayout->setSpacing(0);
+	rootLayout->setContentsMargins(0, 0, 0, 0);
+	rootFrame->setLayout(rootLayout);
+
+	QCheckBox *checkBox = new QCheckBox(rootFrame);
+	checkBox->setText(obs_property_group_name(group));
+	checkBox->setChecked(collapsed);
+	checkBox->setProperty("themeID", "propertyGroupTitle");
+	rootLayout->addWidget(checkBox);
+
+	QFormLayout *contentsLayout = nullptr;
+	if (!collapsed) {
+		QFrame *contentsFrame = new QFrame(rootFrame);
+		contentsFrame->setProperty("themeID", "propertyGroupContents");
+		contentsFrame->setVisible(!collapsed);
+
+		contentsLayout = new QFormLayout;
+		contentsFrame->setLayout(contentsLayout);
+		rootLayout->addWidget(contentsFrame);
+	}
+
+	GroupInfo *info = new GroupInfo(this, group, rootFrame);
+	connect(checkBox, SIGNAL(stateChanged(int)), info, SLOT(Toggled(int)));
+	groups.emplace_back(info);
+
+	return contentsLayout;
+}
+
 void OBSPropertiesView::SignalChanged()
 {
 	emit Changed();
@@ -2052,4 +2112,14 @@ void WidgetInfo::EditListDown()
 	}
 
 	EditableListChanged();
+}
+
+void GroupInfo::Toggled(int state)
+{
+	if (state == Qt::Checked)
+		view->collapsedGroups.insert(group);
+	else
+		view->collapsedGroups.erase(group);
+
+	view->RefreshProperties();
 }
