@@ -459,6 +459,9 @@ QVariant RemuxQueueModel::getIcon(RemuxEntryState state)
 		icon = style->standardIcon(
 			QStyle::SP_MessageBoxWarning);
 		break;
+
+	default:
+		break;
 	}
 
 	return icon;
