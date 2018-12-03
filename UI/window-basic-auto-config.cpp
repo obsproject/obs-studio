@@ -15,8 +15,9 @@
 #ifdef BROWSER_AVAILABLE
 #include <browser-panel.hpp>
 #include <auth-twitch.hpp>
-extern CREATE_BROWSER_WIDGET_PROC create_browser_widget;
 #endif
+
+extern QCef *cef;
 
 #define wiz reinterpret_cast<AutoConfig*>(wizard())
 
@@ -455,7 +456,7 @@ void AutoConfigStreamPage::ServiceChanged()
 	bool custom = IsCustom();
 
 #ifdef BROWSER_AVAILABLE
-	if (!!create_browser_widget) {
+	if (cef) {
 		if (lastService != service.c_str()) {
 			bool can_auth = is_auth_service(service);
 			int page = can_auth
@@ -657,6 +658,11 @@ void AutoConfigStreamPage::UpdateCompleted()
 AutoConfig::AutoConfig(QWidget *parent)
 	: QWizard(parent)
 {
+#ifdef BROWSER_AVAILABLE
+	if (cef)
+		cef->init_browser();
+#endif
+
 	calldata_t cd = {0};
 	calldata_set_int(&cd, "seconds", 5);
 

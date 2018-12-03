@@ -77,8 +77,15 @@ using namespace std;
 
 #ifdef BROWSER_AVAILABLE
 #include <browser-panel.hpp>
-CREATE_BROWSER_WIDGET_PROC create_browser_widget = nullptr;
 #endif
+
+struct QCef;
+struct QCefCookieManager;
+
+QCef              *cef           = nullptr;
+QCefCookieManager *panel_cookies = nullptr;
+
+void DestroyPanelCookieManager();
 
 namespace {
 
@@ -1525,7 +1532,7 @@ void OBSBasic::OBSInit()
 	obs_post_load_modules();
 
 #ifdef BROWSER_AVAILABLE
-	create_browser_widget = obs_browser_init_panel();
+	cef = obs_browser_init_panel();
 #endif
 
 	CheckForSimpleModeX264Fallback();
@@ -1757,7 +1764,7 @@ void OBSBasic::OnFirstLoad()
 
 #ifdef BROWSER_AVAILABLE
 	/* Attempt to load init screen if available */
-	if (create_browser_widget) {
+	if (cef) {
 		WhatsNewInfoThread *wnit = new WhatsNewInfoThread();
 		if (wnit) {
 			connect(wnit, &WhatsNewInfoThread::Result,
@@ -1870,7 +1877,7 @@ void OBSBasic::ReceivedIntroJson(const QString &text)
 	dlg.setWindowTitle("What's New");
 	dlg.resize(700, 600);
 
-	QCefWidget *cefWidget = create_browser_widget(nullptr, info_url);
+	QCefWidget *cefWidget = cef->create_widget(nullptr, info_url);
 	if (!cefWidget) {
 		return;
 	}
@@ -2225,6 +2232,12 @@ OBSBasic::~OBSBasic()
 			SetAeroEnabled(true);
 		}
 	}
+#endif
+
+#ifdef BROWSER_AVAILABLE
+	DestroyPanelCookieManager();
+	delete cef;
+	cef = nullptr;
 #endif
 }
 
