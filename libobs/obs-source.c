@@ -2484,7 +2484,9 @@ void obs_source_show_preloaded_video(obs_source_t *source)
 	source->async_active = true;
 
 	pthread_mutex_lock(&source->audio_buf_mutex);
-	sys_ts = os_gettime_ns();
+	sys_ts = (source->monitoring_type != OBS_MONITORING_TYPE_MONITOR_ONLY)
+		? os_gettime_ns()
+		: 0;
 	reset_audio_timing(source, source->last_frame_ts, sys_ts);
 	reset_audio_data(source, sys_ts);
 	pthread_mutex_unlock(&source->audio_buf_mutex);
