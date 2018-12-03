@@ -6111,7 +6111,7 @@ void OBSBasic::OpenSavedProjectors()
 		}
 		}
 
-		if (projector && !info->geometry.empty()) {
+		if (projector && !info->geometry.empty() && info->monitor < 0) {
 			QByteArray byteArray = QByteArray::fromBase64(
 					QByteArray(info->geometry.c_str()));
 			projector->restoreGeometry(byteArray);
