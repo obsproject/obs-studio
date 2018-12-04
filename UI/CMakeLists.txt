@@ -69,6 +69,10 @@ if(WIN32)
 		crypt32
 		blake2
 		${OBS_JANSSON_IMPORT})
+
+	if(CMAKE_SIZEOF_VOID_P EQUAL 4)
+		set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /LARGEADDRESSAWARE")
+	endif()
 elseif(APPLE)
 	set(obs_PLATFORM_SOURCES
 		platform-osx.mm)
