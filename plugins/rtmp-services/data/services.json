@@ -1425,6 +1425,20 @@
                 "max video bitrate": 6000,
                 "max audio bitrate": 160
             }
+        },
+        {
+            "name": "Bongacams",
+            "servers": [
+                {
+                    "name": "Default",
+                    "url": "rtmp://origin.bcrncdn.com:1934/live"
+                }
+            ],
+            "recommend": {
+                "keyint": 2,
+                "max video bitrate": 6000,
+                "max audio bitrate": 192
+            }
         }
     ]
 }
