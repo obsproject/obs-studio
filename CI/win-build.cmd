@@ -1,3 +1,5 @@
+@echo on
+
 if not exist "dependencies2017.zip" appveyor DownloadFile "%DependenciesUrl%"
 if not exist "%CefZip%" appveyor DownloadFile "%CefUrl%" -FileName "%CefZip%"
 7z x "%CefZip%"
@@ -34,10 +36,12 @@ cmake ^
 	-DBROWSER_FRONTEND_API_SUPPORT=false ^
 	-DBROWSER_PANEL_SUPPORT=false ^
 	-DBROWSER_USE_STATIC_CRT=false ^
-	-DEXPERIMENTAL_SHARED_TEXTURE_SUPPORT=false
+	-DEXPERIMENTAL_SHARED_TEXTURE_SUPPORT=true
 
 cmake ^
 	--build "%BuildPath64%" ^
 	--target install ^
 	--config %BuildConfig% ^
 	-- /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
+
+@echo off
