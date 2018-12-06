@@ -1333,39 +1333,6 @@
             }
         },
         {
-            "name": "DTube",
-            "servers": [
-                {
-                    "name": "Default",
-                    "url": "rtmp://stream.dtube.top/live/"
-                }
-            ]
-        },
-        {
-            "name": "STAGE TEN",
-            "servers": [
-                {
-                    "name": "STAGE TEN",
-                    "url": "rtmp://app-rtmp.stageten.tv/stageten"
-                }
-            ],
-            "recommended": {
-                "keyint": 2,
-                "profile": "baseline",
-                "max video bitrate": 4000,
-                "max audio bitrate": 128
-            }
-        },
-        {
-            "name": "Vimm.TV",
-            "servers": [
-                {
-                    "name": "Default",
-                    "url": "rtmp://www.vimm.tv/live"
-                }
-            ]
-        },
-        {
             "name": "DLive",
             "servers": [
                 {
@@ -1378,15 +1345,6 @@
                 "max video bitrate": 6000,
                 "max audio bitrate": 160
             }
-        },
-        {
-            "name": "Linkstream.live",
-            "servers": [
-                {
-                    "name": "Linkstream Live Ingest Point",
-                    "url": "rtmp://hadamard.streaming.linkstream.live:80/live"
-                }
-            ]
         },
         {
             "name": "Lightcast.com",
