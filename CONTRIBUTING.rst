@@ -9,6 +9,8 @@ Quick Links for Contributing
 
  - Our bug tracker (linked to forum accounts):
    https://obsproject.com/mantis/
+ 
+ - Discord Server Link: http://discord.gg/obsproject
 
  - Development IRC channel: #obs-dev on QuakeNet
  
@@ -21,6 +23,9 @@ Quick Links for Contributing
  - To contribute language translations, do not make pull requests.
    Instead, use crowdin.  Read here for more information:
    https://obsproject.com/forum/threads/how-to-contribute-translations-for-obs.16327/
+   
+   
+
 
 Coding Guidelines
 -----------------
