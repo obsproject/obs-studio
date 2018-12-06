@@ -5,6 +5,7 @@
 #include <map>
 #include <string>
 #include <vector>
+#include <stdint.h>
 
 class DeckLinkDevice {
 	ComPtr<IDeckLink>                         device;
