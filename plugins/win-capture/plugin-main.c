@@ -29,6 +29,8 @@ extern bool load_graphics_offsets(bool is32bit, const char *config_path);
 #define IS32BIT true
 #endif
 
+/* note, need to enable cache writing in load-graphics-offsets.c if you turn
+ * this back on*/
 #define USE_HOOK_ADDRESS_CACHE false
 
 static DWORD WINAPI init_hooks(LPVOID param)

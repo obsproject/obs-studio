@@ -194,12 +194,15 @@ bool load_graphics_offsets(bool is32bit, const char *config_path)
 		goto error;
 	}
 
+	// uncomment this if you enable USE_HOOK_ADDRESS_CACHE
+/*
 	dstr_copy(&config_ini, config_path);
 	dstr_cat(&config_ini, is32bit ? "32.ini" : "64.ini");
 
 	os_quick_write_utf8_file_safe(config_ini.array, str.array, str.len, false,
 			"tmp", NULL);
 	dstr_free(&config_ini);
+*/
 
 	success = load_offsets_from_string(is32bit ? &offsets32 : &offsets64,
 			str.array);
