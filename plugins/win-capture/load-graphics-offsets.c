@@ -161,7 +161,7 @@ bool load_graphics_offsets(bool is32bit, const char *config_path)
 	struct dstr str = {0};
 	os_process_pipe_t *pp;
 	bool success = false;
-	char data[128];
+	char data[2048];
 
 #ifndef _WIN64
 	if (!is32bit && !is_64_bit_windows()) {
@@ -181,11 +181,17 @@ bool load_graphics_offsets(bool is32bit, const char *config_path)
 	}
 
 	for (;;) {
-		size_t len = os_process_pipe_read(pp, (uint8_t*)data, 128);
+		size_t len = os_process_pipe_read(pp, (uint8_t*)data, sizeof(data));
 		if (!len)
 			break;
 
 		dstr_ncat(&str, data, len);
+	}
+
+	if (dstr_is_empty(&str)) {
+		blog(LOG_INFO, "load_graphics_offsets: Failed to read "
+				"from '%s'", offset_exe.array);
+		goto error;
 	}
 
 	dstr_copy(&config_ini, config_path);
