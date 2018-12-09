@@ -19,6 +19,7 @@
 #include <QThread>
 #include <QMessageBox>
 #include "window-basic-main.hpp"
+#include "qt-wrappers.hpp"
 
 #ifdef BROWSER_AVAILABLE
 #include <browser-panel.hpp>
@@ -42,7 +43,7 @@ static void InitBrowserSafeBlockEvent()
 				Qt::QueuedConnection);
 	};
 
-	QScopedPointer<QThread> thread(QThread::create(wait));
+	QScopedPointer<QThread> thread(CreateQThread(wait));
 	thread->start();
 	eventLoop.exec();
 	thread->wait();
@@ -62,7 +63,7 @@ static void InitBrowserSafeBlockMsgBox()
 		QMetaObject::invokeMethod(&dlg, "accept", Qt::QueuedConnection);
 	};
 
-	QScopedPointer<QThread> thread(QThread::create(wait));
+	QScopedPointer<QThread> thread(CreateQThread(wait));
 	thread->start();
 	dlg.exec();
 	thread->wait();

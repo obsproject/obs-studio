@@ -233,7 +233,7 @@ bool GetRemoteFileSafeBlock(
 				Qt::QueuedConnection);
 	};
 
-	QScopedPointer<QThread> thread(QThread::create(func));
+	QScopedPointer<QThread> thread(CreateQThread(func));
 	thread->start();
 	eventLoop.exec();
 	thread->wait();

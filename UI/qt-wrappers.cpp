@@ -203,3 +203,23 @@ void DeleteLayout(QLayout *layout)
 
 	delete layout;
 }
+
+class QuickThread : public QThread {
+public:
+	explicit inline QuickThread(std::function<void()> func_)
+		: func(func_)
+	{}
+
+private:
+	virtual void run() override
+	{
+		func();
+	}
+
+	std::function<void()> func;
+};
+
+QThread *CreateQThread(std::function<void()> func)
+{
+	return new QuickThread(func);
+}
