@@ -17,6 +17,7 @@
 #include <auth-twitch.hpp>
 #endif
 
+struct QCef;
 extern QCef *cef;
 
 #define wiz reinterpret_cast<AutoConfig*>(wizard())
@@ -385,6 +386,7 @@ void AutoConfigStreamPage::on_show_clicked()
 
 void AutoConfigStreamPage::OnTwitchConnected()
 {
+#ifdef BROWSER_AVAILABLE
 	TwitchAuth *twitch = reinterpret_cast<TwitchAuth*>(auth.get());
 
 	if (twitch) {
@@ -398,6 +400,7 @@ void AutoConfigStreamPage::OnTwitchConnected()
 
 	ui->stackedWidget->setCurrentIndex((int)Section::StreamKey);
 	UpdateCompleted();
+#endif
 }
 
 void AutoConfigStreamPage::OnAuthConnected()
