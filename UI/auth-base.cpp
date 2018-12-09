@@ -1,6 +1,9 @@
 #include "auth-base.hpp"
 #include "window-basic-main.hpp"
+
+#ifdef BROWSER_AVAILABLE
 #include "auth-twitch.hpp"
+#endif
 
 const char *Auth::typeName()
 {
@@ -16,7 +19,9 @@ bool Auth::Load()
 	Auth *auth = nullptr;
 
 	if (astrcmpi(typeStr, "Twitch") == 0) {
+#ifdef BROWSER_AVAILABLE
 		auth = new TwitchAuth;
+#endif
 	}
 
 	main->auth.reset(auth);
