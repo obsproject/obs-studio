@@ -128,7 +128,7 @@ void DeletePanelCookies(const char *profile)
 	QDir dir(path.c_str());
 	dir.removeRecursively();
 #else
-	UNUSED_PARAMETER(profiles);
+	UNUSED_PARAMETER(profile);
 #endif
 }
 
