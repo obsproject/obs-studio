@@ -1,0 +1,107 @@
+uniform float4x4 ViewProj;
+uniform float4x4 color_matrix;
+uniform float3 color_range_min = {0.0, 0.0, 0.0};
+uniform float3 color_range_max = {1.0, 1.0, 1.0};
+uniform texture2d image;
+uniform texture2d key_image;
+#define root3 (1.7320508075688772935274463415059)
+
+sampler_state def_sampler {
+	Filter   = Linear;
+	AddressU = Clamp;
+	AddressV = Clamp;
+};
+
+struct VertInOut {
+	float4 pos : POSITION;
+	float2 uv  : TEXCOORD0;
+};
+
+VertInOut VSDefault(VertInOut vert_in)
+{
+	VertInOut vert_out;
+	vert_out.pos = mul(float4(vert_in.pos.xyz, 1.0), ViewProj);
+	vert_out.uv  = vert_in.uv;
+	return vert_out;
+}
+
+/* thank you Xaymar https://www.xaymar.com/2017/07/06/how-to-converting-rgb-to-yuv-and-yuv-to-rgb/ */
+float4 RGBtoYUV(float4 rgba) {
+	float4 yuva;
+	yuva.r = rgba.r * 0.2126 + 0.7152 * rgba.g + 0.0722 * rgba.b;
+	yuva.g = (rgba.b - yuva.r) / 1.8556;
+	yuva.b = (rgba.r - yuva.r) / 1.5748;
+	yuva.a = rgba.a;
+	
+	yuva.gb += 0.5;
+	
+	return yuva;
+}
+
+float4 PSDrawBare(VertInOut vert_in) : TARGET
+{
+	float alpha = key_image.Sample(def_sampler, vert_in.uv).a;
+	return float4(image.Sample(def_sampler, vert_in.uv).rgb, alpha);
+}
+
+float4 PSDrawMatrix(VertInOut vert_in) : TARGET
+{
+	float alpha = key_image.Sample(def_sampler, vert_in.uv).a;
+	float4 yuv = image.Sample(def_sampler, vert_in.uv);
+	yuv.xyz = clamp(yuv.xyz, color_range_min, color_range_max);
+	float4 rgba = saturate(mul(float4(yuv.xyz, 1.0), color_matrix));
+	return float4(rgba.rgb, alpha);
+}
+
+float4 PSDrawBareWhite(VertInOut vert_in) : TARGET
+{
+	float4 alpha = key_image.Sample(def_sampler, vert_in.uv);
+	return float4(image.Sample(def_sampler, vert_in.uv).rgb, distance(float3(0,0,0), RGBtoYUV(alpha).xyz) / root3);
+}
+
+float4 PSDrawMatrixWhite(VertInOut vert_in) : TARGET
+{
+	float4 alpha = key_image.Sample(def_sampler, vert_in.uv);
+	alpha.xyz = clamp(alpha.xyz, color_range_min, color_range_max);
+	
+	float4 yuv = image.Sample(def_sampler, vert_in.uv);
+	yuv.xyz = clamp(yuv.xyz, color_range_min, color_range_max);
+	float4 rgba = saturate(mul(float4(yuv.xyz, 1.0), color_matrix));
+	return float4(rgba.rgb, distance(float3(0,0,0), alpha.xyz) / root3);
+}
+
+technique Draw
+{
+	pass
+	{
+		vertex_shader = VSDefault(vert_in);
+		pixel_shader  = PSDrawBare(vert_in);
+	}
+}
+
+technique DrawMatrix
+{
+	pass
+	{
+		vertex_shader = VSDefault(vert_in);
+		pixel_shader  = PSDrawMatrix(vert_in);
+	}
+}
+
+technique DrawWhiteKey
+{
+	pass
+	{
+		vertex_shader = VSDefault(vert_in);
+		pixel_shader  = PSDrawBareWhite(vert_in);
+	}
+}
+
+technique DrawMatrixWhiteKey
+{
+	pass
+	{
+		vertex_shader = VSDefault(vert_in);
+		pixel_shader  = PSDrawMatrixWhiteKey(vert_in);
+	}
+}

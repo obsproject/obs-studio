@@ -285,6 +285,9 @@ struct obs_core_video {
 	gs_effect_t                     *deinterlace_yadif_2x_effect;
 
 	struct obs_video_info           ovi;
+
+	gs_effect_t                     *transparent_effect;
+	gs_effect_t                     *keyer_effect;
 };
 
 struct audio_monitor;

@@ -297,6 +297,16 @@ static int obs_init_graphics(struct obs_video_info *ovi)
 			NULL);
 	bfree(filename);
 
+	filename = obs_find_data_file("transparent.effect");
+	video->transparent_effect = gs_effect_create_from_file(filename,
+		NULL);
+	bfree(filename);
+
+	filename = obs_find_data_file("keyer.effect");
+	video->keyer_effect = gs_effect_create_from_file(filename,
+		NULL);
+	bfree(filename);
+
 	video->point_sampler = gs_samplerstate_create(&point_sampler);
 
 	obs->video.transparent_texture = gs_texture_create(2, 2, GS_RGBA, 1,
@@ -1524,6 +1534,10 @@ gs_effect_t *obs_get_base_effect(enum obs_base_effect effect)
 		return obs->video.bilinear_lowres_effect;
 	case OBS_EFFECT_PREMULTIPLIED_ALPHA:
 		return obs->video.premultiplied_alpha_effect;
+	case OBS_EFFECT_TRANSPARENT:
+		return obs->video.transparent_effect;
+	case OBS_EFFECT_KEYER:
+		return obs->video.keyer_effect;
 	}
 
 	return NULL;

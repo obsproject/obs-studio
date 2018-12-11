@@ -598,6 +598,8 @@ enum obs_base_effect {
 	OBS_EFFECT_LANCZOS,            /**< Lanczos downscale */
 	OBS_EFFECT_BILINEAR_LOWRES,    /**< Bilinear low resolution downscale */
 	OBS_EFFECT_PREMULTIPLIED_ALPHA,/**< Premultiplied alpha */
+	OBS_EFFECT_TRANSPARENT,        /**< RGB/YUV (alpha set via float) */
+	OBS_EFFECT_KEYER,              /**< RGB/YUV (alpha set via texture)*/
 };
 
 /** Returns a commonly used base effect */
