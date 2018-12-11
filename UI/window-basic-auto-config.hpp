@@ -166,7 +166,7 @@ class AutoConfigStreamPage : public QWizardPage {
 		StreamKey,
 	};
 
-	std::unique_ptr<Auth> auth;
+	std::shared_ptr<Auth> auth;
 
 	Ui_AutoConfigStreamPage *ui;
 	QString lastService;

@@ -63,9 +63,8 @@ public:
 	inline void setGame(const std::string &game) {game_ = game;}
 
 	virtual Auth::Type type() const override {return Auth::Type::Twitch;}
-	virtual Auth *Clone() const override;
 
 	virtual void LoadUI() override;
 
-	static Auth *Login(QWidget *parent);
+	static std::shared_ptr<Auth> Login(QWidget *parent);
 };

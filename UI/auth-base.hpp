@@ -14,7 +14,6 @@ public:
 	};
 
 	virtual Type type() const=0;
-	virtual Auth *Clone() const=0;
 	virtual void LoadUI() {}
 
 	static bool Load();

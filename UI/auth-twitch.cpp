@@ -224,13 +224,6 @@ bool TwitchAuth::LoadInternal()
 	return !token.empty();
 }
 
-Auth *TwitchAuth::Clone() const
-{
-	TwitchAuth *auth = new TwitchAuth;
-	*auth = *this;
-	return auth;
-}
-
 class TwitchChat : public QDockWidget {
 public:
 	inline TwitchChat() : QDockWidget() {}
@@ -271,20 +264,20 @@ void TwitchAuth::LoadUI()
 	uiLoaded = true;
 }
 
-Auth *TwitchAuth::Login(QWidget *parent)
+std::shared_ptr<Auth> TwitchAuth::Login(QWidget *parent)
 {
 	TwitchLogin login(parent);
 	if (login.exec() == QDialog::Rejected) {
 		return nullptr;
 	}
 
-	TwitchAuth auth;
-	auth.token = QT_TO_UTF8(login.GetToken());
+	std::shared_ptr<TwitchAuth> auth = std::make_shared<TwitchAuth>();
+	auth->token = QT_TO_UTF8(login.GetToken());
 
 	std::string error;
-	if (auth.GetChannelInfo()) {
-		return auth.Clone();
+	if (auth->GetChannelInfo()) {
+		return auth;
 	}
 
-	return nullptr;
+	return std::shared_ptr<Auth>();
 }

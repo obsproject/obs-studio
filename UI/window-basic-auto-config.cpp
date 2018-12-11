@@ -416,7 +416,7 @@ void AutoConfigStreamPage::on_connectAccount_clicked()
 #ifdef BROWSER_AVAILABLE
 	std::string service = QT_TO_UTF8(ui->service->currentText());
 	if (service == "Twitch") {
-		auth.reset(TwitchAuth::Login(this));
+		auth = TwitchAuth::Login(this);
 	}
 
 	if (!!auth)
@@ -750,7 +750,7 @@ AutoConfig::AutoConfig(QWidget *parent)
 
 #ifdef BROWSER_AVAILABLE
 	if (!!main->auth) {
-		streamPage->auth.reset(main->auth->Clone());
+		streamPage->auth = main->auth;
 		streamPage->OnAuthConnected();
 	}
 #endif

@@ -139,7 +139,7 @@ class OBSBasic : public OBSMainWindow {
 private:
 	obs_frontend_callbacks *api = nullptr;
 
-	std::unique_ptr<Auth> auth;
+	std::shared_ptr<Auth> auth;
 
 	std::vector<VolControl*> volumes;
 
