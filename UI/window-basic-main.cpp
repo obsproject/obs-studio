@@ -4762,6 +4762,9 @@ void OBSBasic::StartStreaming()
 	}
 
 	if (!outputHandler->StartStreaming(service)) {
+		QString message = !outputHandler->lastError.empty()
+			? QTStr(outputHandler->lastError.c_str())
+			: QTStr("Output.StartFailedGeneric");
 		ui->streamButton->setText(QTStr("Basic.Main.StartStreaming"));
 		ui->streamButton->setEnabled(true);
 		ui->streamButton->setChecked(false);
@@ -4771,9 +4774,8 @@ void OBSBasic::StartStreaming()
 			sysTrayStream->setEnabled(true);
 		}
 
-		QMessageBox::critical(this,
-				QTStr("Output.StartStreamFailed"),
-				QTStr("Output.StartFailedGeneric"));
+		QMessageBox::critical(this, QTStr("Output.StartStreamFailed"),
+				message);
 		return;
 	}
 

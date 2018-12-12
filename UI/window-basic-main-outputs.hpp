@@ -15,6 +15,7 @@ struct BasicOutputHandler {
 	OBSBasic               *main;
 
 	std::string            outputType;
+	std::string            lastError;
 
 	OBSSignal              startRecording;
 	OBSSignal              stopRecording;
