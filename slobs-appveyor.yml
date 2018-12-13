@@ -26,6 +26,7 @@ environment:
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
   CefVersion: 3.3578.1859.g3563564
 =======
   CefVersion: 3.3578.1855.g8f96ed2
@@ -39,6 +40,9 @@ environment:
 =======
   CefVersion: 3.3396.1779.g36f9eab
 >>>>>>> Revert "Revert "Revert "Re-enable obs-browser hardware accel support"""
+=======
+  CefVersion: 3.3578.1859.g3563564
+>>>>>>> Update libcef in browser source (#25)
   CefDirName: cef_binary_$(CefVersion)_windows64
   CefPath: $(APPVEYOR_BUILD_FOLDER)\$(CefDirName)
   CefBuildPath: $(CefPath)\build
