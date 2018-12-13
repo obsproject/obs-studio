@@ -22,7 +22,7 @@ environment:
   BuildPath32: $(APPVEYOR_BUILD_FOLDER)\build32
   BuildPath64: $(APPVEYOR_BUILD_FOLDER)\build64
   InstallPath: $(APPVEYOR_BUILD_FOLDER)\packed_build
-  CefVersion: 3.3396.1779.g36f9eab
+  CefVersion: 3.3578.1859.g3563564
   CefDirName: cef_binary_$(CefVersion)_windows64
   CefPath: $(APPVEYOR_BUILD_FOLDER)\$(CefDirName)
   CefBuildPath: $(CefPath)\build
