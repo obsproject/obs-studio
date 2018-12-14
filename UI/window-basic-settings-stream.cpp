@@ -401,8 +401,10 @@ void OBSBasicSettings::on_disconnectAccount_clicked()
 	main->auth.reset();
 	auth.reset();
 
+#ifdef BROWSER_AVAILABLE
 	if (panel_cookies)
 		panel_cookies->DeleteCookies("twitch.tv", std::string());
+#endif
 
 	ui->streamKeyWidget->setVisible(true);
 	ui->streamKeyLabel->setVisible(true);
