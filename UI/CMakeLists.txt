@@ -143,6 +143,7 @@ set(obs_SOURCES
 	window-basic-auto-config.cpp
 	window-basic-main-outputs.cpp
 	window-basic-source-select.cpp
+	window-basic-settings-stream.cpp
 	window-basic-auto-config-test.cpp
 	window-basic-main-scene-collections.cpp
 	window-basic-main-transitions.cpp

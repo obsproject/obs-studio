@@ -467,7 +467,6 @@ void AutoConfigStreamPage::ServiceChanged()
 				: (int)Section::StreamKey;
 
 			ui->stackedWidget->setCurrentIndex(page);
-			ui->connectAccount2->setVisible(can_auth);
 			ui->streamKeyWidget->setVisible(true);
 			ui->streamKeyLabel->setVisible(true);
 			ui->connectAccount2->setVisible(can_auth);
@@ -476,6 +475,8 @@ void AutoConfigStreamPage::ServiceChanged()
 	} else {
 		ui->connectAccount2->setVisible(false);
 	}
+#else
+	ui->connectAccount2->setVisible(false);
 #endif
 
 	/* Test three closest servers if "Auto" is available for Twitch */
@@ -578,12 +579,6 @@ void AutoConfigStreamPage::LoadServices(bool showAll)
 	for (QString &name : names)
 		ui->service->addItem(name);
 
-	if (!lastService.isEmpty()) {
-		int idx = ui->service->findText(lastService);
-		if (idx != -1)
-			ui->service->setCurrentIndex(idx);
-	}
-
 	if (!showAll) {
 		ui->service->addItem(
 			QTStr("Basic.AutoConfig.StreamPage.Service.ShowAll"),
@@ -593,6 +588,12 @@ void AutoConfigStreamPage::LoadServices(bool showAll)
 	ui->service->insertItem(0,
 			QTStr("Basic.AutoConfig.StreamPage.Service.Custom"),
 			QVariant((int)ListOpt::Custom));
+
+	if (!lastService.isEmpty()) {
+		int idx = ui->service->findText(lastService);
+		if (idx != -1)
+			ui->service->setCurrentIndex(idx);
+	}
 
 	obs_properties_destroy(props);
 
@@ -908,7 +909,7 @@ void AutoConfig::SaveStreamSettings()
 
 	main->SetService(newService);
 	main->SaveService();
-	main->auth.swap(streamPage->auth);
+	main->auth = streamPage->auth;
 	if (!!main->auth)
 		main->auth->LoadUI();
 

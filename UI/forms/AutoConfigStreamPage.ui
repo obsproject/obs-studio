@@ -44,19 +44,6 @@
       <property name="labelAlignment">
        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
       </property>
-      <item row="1" column="0">
-       <widget class="QLabel" name="serviceLabel">
-        <property name="text">
-         <string>Basic.AutoConfig.StreamPage.Service</string>
-        </property>
-        <property name="buddy">
-         <cstring>service</cstring>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="1">
-       <widget class="QComboBox" name="service"/>
-      </item>
       <item row="0" column="0">
        <spacer name="horizontalSpacer_6">
         <property name="orientation">
@@ -72,6 +59,19 @@
          </size>
         </property>
        </spacer>
+      </item>
+      <item row="1" column="0">
+       <widget class="QLabel" name="serviceLabel">
+        <property name="text">
+         <string>Basic.AutoConfig.StreamPage.Service</string>
+        </property>
+        <property name="buddy">
+         <cstring>service</cstring>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="1">
+       <widget class="QComboBox" name="service"/>
       </item>
      </layout>
     </widget>
@@ -244,6 +244,44 @@
          </property>
         </widget>
        </item>
+       <item row="1" column="1">
+        <widget class="QWidget" name="streamKeyWidget" native="true">
+         <layout class="QHBoxLayout" name="horizontalLayout_4">
+          <property name="leftMargin">
+           <number>0</number>
+          </property>
+          <property name="topMargin">
+           <number>0</number>
+          </property>
+          <property name="rightMargin">
+           <number>0</number>
+          </property>
+          <property name="bottomMargin">
+           <number>0</number>
+          </property>
+          <item>
+           <widget class="QLineEdit" name="key">
+            <property name="inputMask">
+             <string notr="true"/>
+            </property>
+            <property name="text">
+             <string notr="true"/>
+            </property>
+            <property name="echoMode">
+             <enum>QLineEdit::Password</enum>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="show">
+            <property name="text">
+             <string>Show</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
        <item row="2" column="0">
         <widget class="QLabel" name="bitrateLabel">
          <property name="text">
@@ -351,44 +389,6 @@
          <property name="text">
           <string>Basic.AutoConfig.StreamPage.ConnectAccount</string>
          </property>
-        </widget>
-       </item>
-       <item row="1" column="1">
-        <widget class="QWidget" name="streamKeyWidget" native="true">
-         <layout class="QHBoxLayout" name="horizontalLayout_4">
-          <property name="leftMargin">
-           <number>0</number>
-          </property>
-          <property name="topMargin">
-           <number>0</number>
-          </property>
-          <property name="rightMargin">
-           <number>0</number>
-          </property>
-          <property name="bottomMargin">
-           <number>0</number>
-          </property>
-          <item>
-           <widget class="QLineEdit" name="key">
-            <property name="inputMask">
-             <string notr="true"/>
-            </property>
-            <property name="text">
-             <string notr="true"/>
-            </property>
-            <property name="echoMode">
-             <enum>QLineEdit::Password</enum>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QPushButton" name="show">
-            <property name="text">
-             <string>Show</string>
-            </property>
-           </widget>
-          </item>
-         </layout>
         </widget>
        </item>
       </layout>

@@ -145,8 +145,8 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>804</width>
-              <height>1072</height>
+              <width>801</width>
+              <height>836</height>
              </rect>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_19">
@@ -686,89 +686,322 @@
           <number>0</number>
          </property>
          <item>
-          <widget class="QWidget" name="streamContainer" native="true">
+          <widget class="QWidget" name="widget_5" native="true">
            <property name="sizePolicy">
-            <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
+            <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
              <horstretch>0</horstretch>
              <verstretch>0</verstretch>
             </sizepolicy>
            </property>
-           <layout class="QVBoxLayout" name="verticalLayout_6">
-            <property name="leftMargin">
-             <number>0</number>
+           <layout class="QFormLayout" name="topStreamLayout">
+            <property name="fieldGrowthPolicy">
+             <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
             </property>
-            <property name="topMargin">
-             <number>0</number>
+            <property name="labelAlignment">
+             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
             </property>
-            <property name="rightMargin">
-             <number>0</number>
-            </property>
-            <property name="bottomMargin">
-             <number>0</number>
-            </property>
-            <item alignment="Qt::AlignTop">
-             <widget class="QWidget" name="widget_5" native="true">
-              <property name="sizePolicy">
-               <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
-                <horstretch>0</horstretch>
-                <verstretch>0</verstretch>
-               </sizepolicy>
+            <item row="2" column="0">
+             <widget class="QLabel" name="serviceLabel">
+              <property name="text">
+               <string>Basic.AutoConfig.StreamPage.Service</string>
               </property>
-              <layout class="QVBoxLayout" name="verticalLayout_7">
-               <property name="leftMargin">
-                <number>0</number>
+              <property name="buddy">
+               <cstring>service</cstring>
+              </property>
+             </widget>
+            </item>
+            <item row="2" column="1">
+             <widget class="QComboBox" name="service">
+              <property name="maxVisibleItems">
+               <number>20</number>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="0">
+             <spacer name="horizontalSpacer_17">
+              <property name="orientation">
+               <enum>Qt::Horizontal</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>170</width>
+                <height>0</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+           </layout>
+          </widget>
+         </item>
+         <item>
+          <widget class="QStackedWidget" name="streamStackWidget">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="currentIndex">
+            <number>1</number>
+           </property>
+           <widget class="QWidget" name="loginPage">
+            <layout class="QFormLayout" name="loginPageLayout">
+             <item row="0" column="0">
+              <spacer name="horizontalSpacer_20">
+               <property name="orientation">
+                <enum>Qt::Horizontal</enum>
                </property>
-               <property name="topMargin">
-                <number>0</number>
+               <property name="sizeType">
+                <enum>QSizePolicy::Fixed</enum>
                </property>
-               <property name="rightMargin">
-                <number>0</number>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>170</width>
+                 <height>19</height>
+                </size>
                </property>
-               <property name="bottomMargin">
-                <number>0</number>
-               </property>
+              </spacer>
+             </item>
+             <item row="0" column="1">
+              <layout class="QHBoxLayout" name="horizontalLayout_16">
                <item>
-                <widget class="QWidget" name="widget_6" native="true">
-                 <layout class="QFormLayout" name="formLayout_8">
-                  <property name="fieldGrowthPolicy">
-                   <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
-                  </property>
-                  <item row="0" column="0">
-                   <widget class="QLabel" name="label_21">
-                    <property name="minimumSize">
-                     <size>
-                      <width>170</width>
-                      <height>0</height>
-                     </size>
-                    </property>
-                    <property name="text">
-                     <string>Basic.Settings.Stream.StreamType</string>
-                    </property>
-                    <property name="alignment">
-                     <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-                    </property>
-                    <property name="buddy">
-                     <cstring>streamType</cstring>
-                    </property>
-                   </widget>
-                  </item>
-                  <item row="0" column="1">
-                   <widget class="QComboBox" name="streamType"/>
-                  </item>
-                 </layout>
-                </widget>
-               </item>
-               <item>
-                <widget class="Line" name="line">
-                 <property name="orientation">
-                  <enum>Qt::Horizontal</enum>
+                <widget class="QPushButton" name="connectAccount">
+                 <property name="text">
+                  <string>Basic.AutoConfig.StreamPage.ConnectAccount</string>
                  </property>
                 </widget>
                </item>
+               <item>
+                <spacer name="horizontalSpacer_21">
+                 <property name="orientation">
+                  <enum>Qt::Horizontal</enum>
+                 </property>
+                 <property name="sizeHint" stdset="0">
+                  <size>
+                   <width>40</width>
+                   <height>10</height>
+                  </size>
+                 </property>
+                </spacer>
+               </item>
               </layout>
-             </widget>
-            </item>
-           </layout>
+             </item>
+             <item row="1" column="0">
+              <spacer name="horizontalSpacer_22">
+               <property name="orientation">
+                <enum>Qt::Horizontal</enum>
+               </property>
+               <property name="sizeType">
+                <enum>QSizePolicy::Fixed</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>170</width>
+                 <height>19</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+             <item row="1" column="1">
+              <layout class="QHBoxLayout" name="horizontalLayout_17">
+               <item>
+                <widget class="QPushButton" name="useStreamKey">
+                 <property name="text">
+                  <string>Basic.AutoConfig.StreamPage.UseStreamKey</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <spacer name="horizontalSpacer_23">
+                 <property name="orientation">
+                  <enum>Qt::Horizontal</enum>
+                 </property>
+                 <property name="sizeHint" stdset="0">
+                  <size>
+                   <width>40</width>
+                   <height>20</height>
+                  </size>
+                 </property>
+                </spacer>
+               </item>
+              </layout>
+             </item>
+            </layout>
+           </widget>
+           <widget class="QWidget" name="streamKeyPage">
+            <layout class="QFormLayout" name="streamkeyPageLayout">
+             <property name="fieldGrowthPolicy">
+              <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+             </property>
+             <property name="labelAlignment">
+              <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+             </property>
+             <item row="0" column="0">
+              <widget class="QLabel" name="serverLabel">
+               <property name="text">
+                <string>Basic.AutoConfig.StreamPage.Server</string>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="1">
+              <widget class="QStackedWidget" name="serverStackedWidget">
+               <property name="currentIndex">
+                <number>0</number>
+               </property>
+               <widget class="QWidget" name="servicePage">
+                <layout class="QHBoxLayout" name="horizontalLayout_21">
+                 <property name="leftMargin">
+                  <number>0</number>
+                 </property>
+                 <property name="topMargin">
+                  <number>0</number>
+                 </property>
+                 <property name="rightMargin">
+                  <number>0</number>
+                 </property>
+                 <property name="bottomMargin">
+                  <number>0</number>
+                 </property>
+                 <item>
+                  <widget class="QComboBox" name="server"/>
+                 </item>
+                </layout>
+               </widget>
+               <widget class="QWidget" name="customPage">
+                <layout class="QHBoxLayout" name="horizontalLayout_22">
+                 <property name="leftMargin">
+                  <number>0</number>
+                 </property>
+                 <property name="topMargin">
+                  <number>0</number>
+                 </property>
+                 <property name="rightMargin">
+                  <number>0</number>
+                 </property>
+                 <property name="bottomMargin">
+                  <number>0</number>
+                 </property>
+                 <item>
+                  <widget class="QLineEdit" name="customServer"/>
+                 </item>
+                </layout>
+               </widget>
+              </widget>
+             </item>
+             <item row="1" column="0">
+              <widget class="QLabel" name="streamKeyLabel">
+               <property name="text">
+                <string>Basic.AutoConfig.StreamPage.StreamKey</string>
+               </property>
+               <property name="openExternalLinks">
+                <bool>true</bool>
+               </property>
+               <property name="buddy">
+                <cstring>key</cstring>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="1">
+              <widget class="QWidget" name="streamKeyWidget" native="true">
+               <layout class="QHBoxLayout" name="horizontalLayout_11">
+                <property name="leftMargin">
+                 <number>0</number>
+                </property>
+                <property name="topMargin">
+                 <number>0</number>
+                </property>
+                <property name="rightMargin">
+                 <number>0</number>
+                </property>
+                <property name="bottomMargin">
+                 <number>0</number>
+                </property>
+                <item>
+                 <widget class="QLineEdit" name="key">
+                  <property name="inputMask">
+                   <string notr="true"/>
+                  </property>
+                  <property name="text">
+                   <string notr="true"/>
+                  </property>
+                  <property name="echoMode">
+                   <enum>QLineEdit::Password</enum>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QPushButton" name="show">
+                  <property name="text">
+                   <string>Show</string>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </widget>
+             </item>
+             <item row="2" column="0">
+              <spacer name="horizontalSpacer_18">
+               <property name="orientation">
+                <enum>Qt::Horizontal</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>170</width>
+                 <height>8</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+             <item row="2" column="1">
+              <layout class="QHBoxLayout" name="horizontalLayout_15">
+               <item>
+                <widget class="QPushButton" name="connectAccount2">
+                 <property name="text">
+                  <string>Basic.AutoConfig.StreamPage.ConnectAccount</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <spacer name="horizontalSpacer_19">
+                 <property name="orientation">
+                  <enum>Qt::Horizontal</enum>
+                 </property>
+                 <property name="sizeHint" stdset="0">
+                  <size>
+                   <width>40</width>
+                   <height>20</height>
+                  </size>
+                 </property>
+                </spacer>
+               </item>
+              </layout>
+             </item>
+             <item row="3" column="1">
+              <layout class="QHBoxLayout" name="horizontalLayout_23">
+               <item>
+                <widget class="QPushButton" name="disconnectAccount">
+                 <property name="text">
+                  <string>Basic.AutoConfig.StreamPage.DisconnectAccount</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <spacer name="horizontalSpacer_24">
+                 <property name="orientation">
+                  <enum>Qt::Horizontal</enum>
+                 </property>
+                 <property name="sizeHint" stdset="0">
+                  <size>
+                   <width>40</width>
+                   <height>20</height>
+                  </size>
+                 </property>
+                </spacer>
+               </item>
+              </layout>
+             </item>
+            </layout>
+           </widget>
           </widget>
          </item>
         </layout>
@@ -797,8 +1030,8 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>813</width>
-              <height>770</height>
+              <width>601</width>
+              <height>640</height>
              </rect>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_21">
@@ -3913,7 +4146,7 @@
               <x>0</x>
               <y>0</y>
               <width>594</width>
-              <height>807</height>
+              <height>833</height>
              </rect>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_23">
@@ -4751,7 +4984,6 @@
  </widget>
  <tabstops>
   <tabstop>listWidget</tabstop>
-  <tabstop>streamType</tabstop>
   <tabstop>outputMode</tabstop>
   <tabstop>simpleOutputVBitrate</tabstop>
   <tabstop>simpleOutputABitrate</tabstop>
@@ -4939,8 +5171,8 @@
      <y>16</y>
     </hint>
     <hint type="destinationlabel">
-     <x>250</x>
-     <y>39</y>
+     <x>401</x>
+     <y>64</y>
     </hint>
    </hints>
   </connection>
@@ -4951,12 +5183,12 @@
    <slot>setVisible(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>250</x>
-     <y>39</y>
+     <x>251</x>
+     <y>64</y>
     </hint>
     <hint type="destinationlabel">
-     <x>250</x>
-     <y>39</y>
+     <x>251</x>
+     <y>64</y>
     </hint>
    </hints>
   </connection>
@@ -4967,12 +5199,12 @@
    <slot>setVisible(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>250</x>
-     <y>39</y>
+     <x>251</x>
+     <y>64</y>
     </hint>
     <hint type="destinationlabel">
-     <x>250</x>
-     <y>39</y>
+     <x>251</x>
+     <y>64</y>
     </hint>
    </hints>
   </connection>
@@ -4983,12 +5215,12 @@
    <slot>setVisible(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>250</x>
-     <y>39</y>
+     <x>251</x>
+     <y>64</y>
     </hint>
     <hint type="destinationlabel">
-     <x>250</x>
-     <y>39</y>
+     <x>251</x>
+     <y>64</y>
     </hint>
    </hints>
   </connection>
@@ -4999,12 +5231,12 @@
    <slot>setVisible(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>250</x>
-     <y>39</y>
+     <x>251</x>
+     <y>64</y>
     </hint>
     <hint type="destinationlabel">
-     <x>250</x>
-     <y>39</y>
+     <x>251</x>
+     <y>64</y>
     </hint>
    </hints>
   </connection>
@@ -5015,12 +5247,12 @@
    <slot>setCurrentIndex(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>232</x>
-     <y>41</y>
+     <x>260</x>
+     <y>73</y>
     </hint>
     <hint type="destinationlabel">
-     <x>241</x>
-     <y>30</y>
+     <x>242</x>
+     <y>85</y>
     </hint>
    </hints>
   </connection>
@@ -5031,12 +5263,12 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>259</x>
-     <y>60</y>
+     <x>260</x>
+     <y>85</y>
     </hint>
     <hint type="destinationlabel">
-     <x>228</x>
-     <y>50</y>
+     <x>229</x>
+     <y>85</y>
     </hint>
    </hints>
   </connection>
@@ -5047,12 +5279,12 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>259</x>
-     <y>39</y>
+     <x>260</x>
+     <y>64</y>
     </hint>
     <hint type="destinationlabel">
-     <x>228</x>
-     <y>29</y>
+     <x>229</x>
+     <y>64</y>
     </hint>
    </hints>
   </connection>
@@ -5063,12 +5295,12 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>168</x>
-     <y>56</y>
+     <x>260</x>
+     <y>85</y>
     </hint>
     <hint type="destinationlabel">
-     <x>228</x>
-     <y>50</y>
+     <x>229</x>
+     <y>85</y>
     </hint>
    </hints>
   </connection>
@@ -5079,12 +5311,12 @@
    <slot>setCurrentIndex(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>250</x>
-     <y>50</y>
+     <x>260</x>
+     <y>85</y>
     </hint>
     <hint type="destinationlabel">
-     <x>250</x>
-     <y>52</y>
+     <x>260</x>
+     <y>85</y>
     </hint>
    </hints>
   </connection>
@@ -5095,12 +5327,12 @@
    <slot>setVisible(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>250</x>
-     <y>39</y>
+     <x>251</x>
+     <y>64</y>
     </hint>
     <hint type="destinationlabel">
-     <x>250</x>
-     <y>39</y>
+     <x>251</x>
+     <y>64</y>
     </hint>
    </hints>
   </connection>
@@ -5111,11 +5343,11 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>950</x>
+     <x>933</x>
      <y>579</y>
     </hint>
     <hint type="destinationlabel">
-     <x>950</x>
+     <x>933</x>
      <y>602</y>
     </hint>
    </hints>
@@ -5127,11 +5359,11 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>950</x>
+     <x>933</x>
      <y>579</y>
     </hint>
     <hint type="destinationlabel">
-     <x>950</x>
+     <x>933</x>
      <y>625</y>
     </hint>
    </hints>
@@ -5159,7 +5391,7 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>950</x>
+     <x>933</x>
      <y>340</y>
     </hint>
     <hint type="destinationlabel">
@@ -5175,11 +5407,11 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>950</x>
+     <x>933</x>
      <y>340</y>
     </hint>
     <hint type="destinationlabel">
-     <x>950</x>
+     <x>933</x>
      <y>366</y>
     </hint>
    </hints>
@@ -5191,11 +5423,11 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>950</x>
+     <x>933</x>
      <y>340</y>
     </hint>
     <hint type="destinationlabel">
-     <x>950</x>
+     <x>933</x>
      <y>389</y>
     </hint>
    </hints>
@@ -5207,11 +5439,11 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>950</x>
+     <x>933</x>
      <y>340</y>
     </hint>
     <hint type="destinationlabel">
-     <x>950</x>
+     <x>933</x>
      <y>412</y>
     </hint>
    </hints>
@@ -5223,11 +5455,11 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>950</x>
+     <x>933</x>
      <y>340</y>
     </hint>
     <hint type="destinationlabel">
-     <x>950</x>
+     <x>933</x>
      <y>435</y>
     </hint>
    </hints>
@@ -5239,11 +5471,11 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>950</x>
+     <x>933</x>
      <y>222</y>
     </hint>
     <hint type="destinationlabel">
-     <x>950</x>
+     <x>933</x>
      <y>245</y>
     </hint>
    </hints>
@@ -5255,11 +5487,11 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>950</x>
+     <x>933</x>
      <y>268</y>
     </hint>
     <hint type="destinationlabel">
-     <x>950</x>
+     <x>933</x>
      <y>291</y>
     </hint>
    </hints>
@@ -5325,6 +5557,22 @@
     <hint type="destinationlabel">
      <x>250</x>
      <y>39</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>connectAccount2</sender>
+   <signal>clicked()</signal>
+   <receiver>connectAccount</receiver>
+   <slot>click()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>484</x>
+     <y>142</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>454</x>
+     <y>87</y>
     </hint>
    </hints>
   </connection>

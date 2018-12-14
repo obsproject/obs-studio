@@ -20,12 +20,15 @@
 
 #include <util/util.hpp>
 #include <QDialog>
+#include <QPointer>
 #include <memory>
 #include <string>
 
 #include <libff/ff-util.h>
 
-#include <obs.h>
+#include <obs.hpp>
+
+#include "auth-base.hpp"
 
 class OBSBasic;
 class QAbstractButton;
@@ -89,6 +92,8 @@ private:
 	OBSBasic *main;
 
 	std::unique_ptr<Ui::OBSBasicSettings> ui;
+
+	std::shared_ptr<Auth> auth;
 
 	bool generalChanged = false;
 	bool stream1Changed = false;
@@ -185,7 +190,6 @@ private:
 
 	bool QueryChanges();
 
-	void LoadServiceTypes();
 	void LoadEncoderTypes();
 	void LoadColorRanges();
 	void LoadFormats();
@@ -206,6 +210,22 @@ private:
 	/* general */
 	void LoadLanguageList();
 	void LoadThemeList();
+
+	/* stream */
+	void InitStreamPage();
+	inline bool IsCustomService() const;
+	void LoadServices(bool showAll);
+	void OnTwitchConnected();
+	void OnAuthConnected();
+	QString lastService;
+private slots:
+	void UpdateServerList();
+	void UpdateKeyLink();
+	void on_show_clicked();
+	void on_connectAccount_clicked();
+	void on_disconnectAccount_clicked();
+	void on_useStreamKey_clicked();
+private:
 
 	/* output */
 	void LoadSimpleOutputSettings();
@@ -255,7 +275,7 @@ private slots:
 	void on_listWidget_itemSelectionChanged();
 	void on_buttonBox_clicked(QAbstractButton *button);
 
-	void on_streamType_currentIndexChanged(int idx);
+	void on_service_currentIndexChanged();
 	void on_simpleOutputBrowse_clicked();
 	void on_advOutRecPathBrowse_clicked();
 	void on_advOutFFPathBrowse_clicked();

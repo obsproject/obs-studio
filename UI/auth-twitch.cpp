@@ -235,7 +235,7 @@ void TwitchAuth::LoadUI()
 {
 	if (uiLoaded)
 		return;
-	if (name_.empty() && !GetChannelInfo())
+	if (!GetChannelInfo())
 		return;
 
 	OBSBasic::InitBrowserPanelSafeBlock(false);
