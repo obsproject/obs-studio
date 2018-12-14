@@ -46,6 +46,8 @@ configure_file(
 set(CMAKE_INCLUDE_CURRENT_DIR TRUE)
 set(CMAKE_AUTOMOC TRUE)
 
+find_package(Qt5Svg ${FIND_MODE})
+
 find_package(FFmpeg REQUIRED COMPONENTS avcodec avutil avformat)
 
 if(APPLE)
@@ -330,6 +332,7 @@ endif()
 target_link_libraries(obs
 	libobs
 	Qt5::Widgets
+	Qt5::Svg
 	obs-frontend-api
 	${FFMPEG_LIBRARIES}
 	${LIBCURL_LIBRARIES}

@@ -44,8 +44,8 @@
        </property>
        <property name="iconSize">
         <size>
-         <width>48</width>
-         <height>48</height>
+         <width>32</width>
+         <height>32</height>
         </size>
        </property>
        <property name="currentRow">
@@ -57,7 +57,7 @@
         </property>
         <property name="icon">
          <iconset resource="obs.qrc">
-          <normaloff>:/settings/images/settings/system-settings-3.png</normaloff>:/settings/images/settings/system-settings-3.png</iconset>
+          <normaloff>:/settings/images/settings/general.svg</normaloff>:/settings/images/settings/general.svg</iconset>
         </property>
        </item>
        <item>
@@ -66,7 +66,7 @@
         </property>
         <property name="icon">
          <iconset resource="obs.qrc">
-          <normaloff>:/settings/images/settings/network.png</normaloff>:/settings/images/settings/network.png</iconset>
+          <normaloff>:/settings/images/settings/stream.svg</normaloff>:/settings/images/settings/stream.svg</iconset>
         </property>
        </item>
        <item>
@@ -75,7 +75,7 @@
         </property>
         <property name="icon">
          <iconset resource="obs.qrc">
-          <normaloff>:/settings/images/settings/network-bluetooth.png</normaloff>:/settings/images/settings/network-bluetooth.png</iconset>
+          <normaloff>:/settings/images/settings/output.svg</normaloff>:/settings/images/settings/output.svg</iconset>
         </property>
        </item>
        <item>
@@ -84,7 +84,7 @@
         </property>
         <property name="icon">
          <iconset resource="obs.qrc">
-          <normaloff>:/settings/images/settings/decibel_audio_player.png</normaloff>:/settings/images/settings/decibel_audio_player.png</iconset>
+          <normaloff>:/settings/images/settings/audio.svg</normaloff>:/settings/images/settings/audio.svg</iconset>
         </property>
        </item>
        <item>
@@ -93,7 +93,7 @@
         </property>
         <property name="icon">
          <iconset resource="obs.qrc">
-          <normaloff>:/settings/images/settings/video-display-3.png</normaloff>:/settings/images/settings/video-display-3.png</iconset>
+          <normaloff>:/settings/images/settings/video.svg</normaloff>:/settings/images/settings/video.svg</iconset>
         </property>
        </item>
        <item>
@@ -102,7 +102,7 @@
         </property>
         <property name="icon">
          <iconset resource="obs.qrc">
-          <normaloff>:/settings/images/settings/preferences-desktop-keyboard-shortcuts.png</normaloff>:/settings/images/settings/preferences-desktop-keyboard-shortcuts.png</iconset>
+          <normaloff>:/settings/images/settings/hotkeys.svg</normaloff>:/settings/images/settings/hotkeys.svg</iconset>
         </property>
        </item>
        <item>
@@ -111,7 +111,7 @@
         </property>
         <property name="icon">
          <iconset resource="obs.qrc">
-          <normaloff>:/settings/images/settings/advanced.png</normaloff>:/settings/images/settings/advanced.png</iconset>
+          <normaloff>:/settings/images/settings/advanced.svg</normaloff>:/settings/images/settings/advanced.svg</iconset>
         </property>
        </item>
       </widget>
@@ -144,9 +144,9 @@
             <property name="geometry">
              <rect>
               <x>0</x>
-              <y>-540</y>
-              <width>804</width>
-              <height>1264</height>
+              <y>0</y>
+              <width>808</width>
+              <height>989</height>
              </rect>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_19">
@@ -1154,8 +1154,8 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>890</width>
-              <height>791</height>
+              <width>747</width>
+              <height>808</height>
              </rect>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_21">
@@ -4269,8 +4269,8 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>867</width>
-              <height>1061</height>
+              <width>765</width>
+              <height>993</height>
              </rect>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_23">
