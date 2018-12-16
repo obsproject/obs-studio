@@ -110,8 +110,11 @@ void OBSBasic::InitBrowserPanelSafeBlock(bool showDialog)
 void DestroyPanelCookieManager()
 {
 #ifdef BROWSER_AVAILABLE
-	delete panel_cookies;
-	panel_cookies = nullptr;
+	if (panel_cookies) {
+		panel_cookies->FlushStore();
+		delete panel_cookies;
+		panel_cookies = nullptr;
+	}
 #endif
 }
 
