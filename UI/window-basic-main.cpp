@@ -70,9 +70,11 @@
 #include <QScreen>
 #include <QWindow>
 
+#if defined(BROWSER_AVAILABLE)
 #include <json11.hpp>
-
 using namespace json11;
+#endif
+
 using namespace std;
 
 #if defined(_WIN32) && defined(BROWSER_AVAILABLE)
