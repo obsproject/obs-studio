@@ -119,10 +119,25 @@ if(MSVC)
 		)
 endif()
 
+# compatibility with MS VS2013, no Browser Source
+if(MSVC)
+	if(BROWSER_AVAILABLE_INTERNAL)
+		set(obs_C11_SOURCES
+			../deps/json11/json11.cpp)
+		set(obs_C11_HEADERS
+			../deps/json11/json11.hpp)
+	endif()
+else()
+	set(obs_C11_SOURCES
+		../deps/json11/json11.cpp)
+	set(obs_C11_HEADERS
+		../deps/json11/json11.hpp)
+endif()
+
 set(obs_SOURCES
 	${obs_PLATFORM_SOURCES}
 	${obs_libffutil_SOURCES}
-	../deps/json11/json11.cpp
+	${obs_C11_SOURCES}
 	obs-app.cpp
 	api-interface.cpp
 	window-basic-main.cpp
@@ -174,7 +189,7 @@ set(obs_SOURCES
 set(obs_HEADERS
 	${obs_PLATFORM_HEADERS}
 	${obs_libffutil_HEADERS}
-	../deps/json11/json11.hpp
+	${obs_C11_HEADERS}
 	obs-app.hpp
 	platform.hpp
 	window-main.hpp
