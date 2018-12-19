@@ -145,6 +145,8 @@ private:
 
 	std::vector<OBSSignal> signalHandlers;
 
+	QList<QPointer<QDockWidget>> extraDocks;
+
 	bool loaded = false;
 	long disableSaving = 1;
 	bool projectChanged = false;

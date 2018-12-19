@@ -6236,6 +6236,36 @@ int OBSBasic::GetProfilePath(char *path, size_t size, const char *file) const
 
 void OBSBasic::on_resetUI_triggered()
 {
+	/* prune deleted extra docks */
+	for (int i = extraDocks.size() - 1; i >= 0 ; i--) {
+		if (!extraDocks[i]) {
+			extraDocks.removeAt(i);
+		}
+	}
+
+	if (extraDocks.size()) {
+		QMessageBox::StandardButton button = QMessageBox::question(
+				this,
+				QTStr("ResetUIWarning.Title"),
+				QTStr("ResetUIWarning.Text"));
+
+		if (button == QMessageBox::No)
+			return;
+	}
+
+	/* undock/hide/center extra docks */
+	for (int i = extraDocks.size() - 1; i >= 0 ; i--) {
+		if (extraDocks[i]) {
+			extraDocks[i]->setVisible(true);
+			extraDocks[i]->setFloating(true);
+			extraDocks[i]->move(
+					frameGeometry().topLeft() +
+					rect().center() -
+					extraDocks[i]->rect().center());
+			extraDocks[i]->setVisible(false);
+		}
+	}
+
 	restoreState(startingDockLayout);
 
 #if QT_VERSION >= QT_VERSION_CHECK(5, 6, 0)
@@ -6880,6 +6910,15 @@ QAction *OBSBasic::AddDockWidgetMenu(QDockWidget *dock)
 	QAction *action = ui->viewMenuDocks->addAction(dock->windowTitle());
 	action->setCheckable(true);
 	assignDockToggle(dock, action);
+	extraDocks.push_back(dock);
+
+	/* prune deleted docks */
+	for (int i = extraDocks.size() - 1; i >= 0 ; i--) {
+		if (!extraDocks[i]) {
+			extraDocks.removeAt(i);
+		}
+	}
+
 	return action;
 }
 
