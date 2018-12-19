@@ -6,6 +6,8 @@ protected:
 	virtual bool LoadInternal()=0;
 	const char *typeName();
 
+	bool firstLoad = true;
+
 public:
 	virtual ~Auth() {}
 
