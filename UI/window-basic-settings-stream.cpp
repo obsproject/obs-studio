@@ -77,7 +77,8 @@ void OBSBasicSettings::LoadStream1Settings()
 	} else {
 		int idx = ui->service->findText(service);
 		if (idx == -1) {
-			ui->service->insertItem(1, service);
+			if (service && *service)
+				ui->service->insertItem(1, service);
 			idx = 1;
 		}
 		ui->service->setCurrentIndex(idx);
