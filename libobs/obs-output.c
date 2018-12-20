@@ -82,7 +82,10 @@ static const char *output_signals[] = {
 	"void deactivate(ptr output)",
 	"void reconnect(ptr output)",
 	"void reconnect_success(ptr output)",
-	NULL,
+	"void writing(ptr output)",
+	"void wrote(ptr output)",
+	"void writing_error(ptr output)",
+	NULL
 };
 
 static bool init_output_handlers(struct obs_output *output, const char *name,
