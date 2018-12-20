@@ -234,6 +234,16 @@ public:
 	QScopedPointer<QCefWidget> widget;
 };
 
+static const char *ffz_script = "\
+var ffz = document.createElement('script');\
+ffz.setAttribute('src','https://cdn.frankerfacez.com/script/script.min.js');\
+document.head.appendChild(ffz);";
+
+static const char *bttv_script = "\
+var bttv = document.createElement('script');\
+bttv.setAttribute('src','https://cdn.betterttv.net/betterttv.js');\
+document.head.appendChild(bttv);";
+
 void TwitchAuth::LoadUI()
 {
 	if (uiLoaded)
@@ -257,6 +267,12 @@ void TwitchAuth::LoadUI()
 
 	QCefWidget *browser = cef->create_widget(nullptr, url, panel_cookies);
 	chat->setWidget(browser);
+
+	std::string script;
+	script += ffz_script;
+	script += bttv_script;
+
+	browser->setStartupScript(script);
 
 	main->addDockWidget(Qt::RightDockWidgetArea, chat.data());
 	chatMenu.reset(main->AddDockWidgetMenu(chat.data()));
