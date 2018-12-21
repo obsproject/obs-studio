@@ -2329,12 +2329,46 @@ void OBSBasic::CreateInteractionWindow(obs_source_t *source)
 
 void OBSBasic::CreatePropertiesWindow(obs_source_t *source)
 {
+	static enum Qt::DockWidgetArea dockArea = Qt::RightDockWidgetArea;
 	if (properties)
 		properties->close();
 
-	properties = new OBSBasicProperties(this, source);
-	properties->Init();
-	properties->setAttribute(Qt::WA_DeleteOnClose, true);
+	const char *id = obs_source_get_id(source);
+
+	QWidget *widget = static_cast<QWidget *>(
+		obs_create_ui(id, "properties", "qt", source, this));
+
+	auto updateDock = [=](Qt::DockWidgetArea _dockArea) {
+		dockArea = _dockArea;
+	};
+	if (widget) {
+		QDockWidget *dock = new QDockWidget(this);
+		QObject::connect(dock, &QDockWidget::dockLocationChanged,
+				updateDock);
+
+		dock->setWindowTitle("Properties");
+		QVBoxLayout *verticalLayout = new QVBoxLayout();
+		dock->setLayout(verticalLayout);
+		dock->setWidget(widget);
+		properties = dock;
+		addDockWidget(dockArea, dock);
+		properties->show();
+		properties->setAttribute(Qt::WA_DeleteOnClose, true);
+	} else {
+		QDockWidget *dock = new QDockWidget(this);
+		QObject::connect(dock, &QDockWidget::dockLocationChanged,
+				updateDock);
+
+		dock->setWindowTitle("Properties");
+		QVBoxLayout *verticalLayout = new QVBoxLayout();
+		dock->setLayout(verticalLayout);
+		OBSBasicProperties *props = new OBSBasicProperties(this, source);
+		dock->setWidget(props);
+		properties = dock;
+		addDockWidget(dockArea, dock);
+		props->Init();
+		properties->setAttribute(Qt::WA_DeleteOnClose, true);
+	}
 }
 
 void OBSBasic::CreateFiltersWindow(obs_source_t *source)

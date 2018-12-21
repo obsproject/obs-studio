@@ -76,7 +76,9 @@ struct obs_modal_ui {
  *
  * @param  info  Pointer to the modal definition structure
  */
-EXPORT void obs_register_modal_ui(const struct obs_modal_ui *info);
+EXPORT void obs_register_modal_ui_s(const struct obs_modal_ui *info, size_t size);
+#define obs_register_modal_ui(info) \
+	obs_register_modal_ui_s(info, sizeof(struct obs_modal_ui))
 
 /* ------------------------------------------------------------------------- */
 
@@ -115,7 +117,9 @@ struct obs_modeless_ui {
  *
  * @param  info  Pointer to the modal definition structure
  */
-EXPORT void obs_register_modeless_ui(const struct obs_modeless_ui *info);
+EXPORT void obs_register_modeless_ui_s(const struct obs_modeless_ui *info, size_t size);
+#define obs_register_modeless_ui(info) \
+	obs_register_modeless_ui_s(info, sizeof(struct obs_modeless_ui))
 
 /* ------------------------------------------------------------------------- */
 

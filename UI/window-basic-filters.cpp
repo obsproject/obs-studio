@@ -173,11 +173,18 @@ inline OBSSource OBSBasicFilters::GetFilter(int row, bool async)
 
 void OBSBasicFilters::UpdatePropertiesView(int row, bool async)
 {
-	if (view) {
+	if(customView || view)
 		updatePropertiesSignal.Disconnect();
+
+	if (view) {
 		ui->rightLayout->removeWidget(view);
 		view->deleteLater();
 		view = nullptr;
+	}
+	if (customView) {
+		ui->rightLayout->removeWidget(customView);
+		customView->deleteLater();
+		customView = nullptr;
 	}
 
 	OBSSource filter = GetFilter(row, async);
@@ -190,6 +197,10 @@ void OBSBasicFilters::UpdatePropertiesView(int row, bool async)
 			(PropertiesReloadCallback)obs_source_properties,
 			(PropertiesUpdateCallback)obs_source_update);
 
+	const char *id = obs_source_get_id(filter);
+	QWidget *gui = static_cast<QWidget*>(obs_create_ui(id, "properties",
+			"qt", source, this));
+
 	updatePropertiesSignal.Connect(obs_source_get_signal_handler(filter),
 			"update_properties",
 			OBSBasicFilters::UpdateProperties,
@@ -197,10 +208,30 @@ void OBSBasicFilters::UpdatePropertiesView(int row, bool async)
 
 	obs_data_release(settings);
 
-	view->setMaximumHeight(250);
-	view->setMinimumHeight(150);
-	ui->rightLayout->addWidget(view);
-	view->show();
+	QVBoxLayout *layout = new QVBoxLayout();
+	QDockWidget *dock = new QDockWidget(this);
+	dock->setWindowTitle("Properties");
+	customView = dock;
+	customView->setLayout(layout);
+	auto floatingChanged = [=](const bool _floating) {
+		customView->setMinimumHeight(150);
+		if (_floating)
+			customView->setMaximumHeight(QWIDGETSIZE_MAX);
+		else
+			customView->setMaximumHeight(250);
+		customView->updateGeometry();
+	};
+	if (gui) {
+		dock->setWidget(gui);
+		connect(dock, &QDockWidget::topLevelChanged, floatingChanged);
+		ui->rightLayout->addWidget(customView);
+		customView->show();
+	} else {
+		dock->setWidget(view);
+		connect(dock, &QDockWidget::topLevelChanged, floatingChanged);
+		ui->rightLayout->addWidget(dock);
+		customView->show();
+	}
 }
 
 void OBSBasicFilters::UpdateProperties(void *data, calldata_t *)

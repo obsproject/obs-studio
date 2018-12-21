@@ -38,6 +38,7 @@ private:
 	std::unique_ptr<Ui::OBSBasicFilters> ui;
 	OBSSource source;
 	OBSPropertiesView *view = nullptr;
+	QWidget *customView = nullptr;
 
 	OBSSignal addSignal;
 	OBSSignal removeSignal;

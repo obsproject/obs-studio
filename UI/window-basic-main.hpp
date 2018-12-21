@@ -145,7 +145,7 @@ private:
 	QScopedPointer<QThread> logUploadThread;
 
 	QPointer<OBSBasicInteraction> interaction;
-	QPointer<OBSBasicProperties> properties;
+	QPointer<QWidget> properties;
 	QPointer<OBSBasicTransform> transformWindow;
 	QPointer<OBSBasicAdvAudio> advAudioWindow;
 	QPointer<OBSBasicFilters> filters;
