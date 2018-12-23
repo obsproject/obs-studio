@@ -262,6 +262,7 @@ void TwitchAuth::LoadUI()
 	chat.reset(new TwitchChat());
 	chat->setObjectName("twitchChat");
 	chat->resize(300, 600);
+	chat->setMinimumSize(200, 300);
 	chat->setWindowTitle(QTStr("TwitchAuth.Chat"));
 	chat->setAllowedAreas(Qt::AllDockWidgetAreas);
 
