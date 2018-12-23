@@ -391,6 +391,13 @@
          </property>
         </widget>
        </item>
+       <item row="7" column="1">
+        <widget class="QPushButton" name="disconnectAccount">
+         <property name="text">
+          <string>Basic.AutoConfig.StreamPage.DisconnectAccount</string>
+         </property>
+        </widget>
+       </item>
       </layout>
      </widget>
     </widget>

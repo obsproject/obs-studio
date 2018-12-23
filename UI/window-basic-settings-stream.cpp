@@ -104,13 +104,6 @@ void OBSBasicSettings::LoadStream1Settings()
 
 	UpdateKeyLink();
 
-#ifdef BROWSER_AVAILABLE
-	if (!!main->auth) {
-		auth = main->auth;
-		OnAuthConnected();
-	}
-#endif
-
 	loading = false;
 }
 
@@ -266,7 +259,6 @@ void OBSBasicSettings::on_service_currentIndexChanged()
 			ui->streamKeyWidget->setVisible(true);
 			ui->streamKeyLabel->setVisible(true);
 			ui->connectAccount2->setVisible(can_auth);
-			auth.reset();
 		}
 	} else {
 		ui->connectAccount2->setVisible(false);
@@ -285,6 +277,15 @@ void OBSBasicSettings::on_service_currentIndexChanged()
 	} else {
 		ui->serverStackedWidget->setCurrentIndex(0);
 	}
+
+#ifdef BROWSER_AVAILABLE
+	auth.reset();
+
+	if (!!main->auth && service == main->auth->typeName()) {
+		auth = main->auth;
+		OnAuthConnected();
+	}
+#endif
 }
 
 void OBSBasicSettings::UpdateServerList()

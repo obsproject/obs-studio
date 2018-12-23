@@ -189,6 +189,7 @@ public:
 public slots:
 	void on_show_clicked();
 	void on_connectAccount_clicked();
+	void on_disconnectAccount_clicked();
 	void on_useStreamKey_clicked();
 	void ServiceChanged();
 	void UpdateKeyLink();

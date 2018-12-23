@@ -4,7 +4,6 @@ class Auth {
 protected:
 	virtual void SaveInternal()=0;
 	virtual bool LoadInternal()=0;
-	const char *typeName();
 
 	bool firstLoad = true;
 
@@ -16,6 +15,7 @@ public:
 	};
 
 	virtual Type type() const=0;
+	const char *typeName();
 	virtual void LoadUI() {}
 
 	static bool Load();

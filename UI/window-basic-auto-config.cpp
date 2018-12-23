@@ -18,7 +18,10 @@
 #endif
 
 struct QCef;
-extern QCef *cef;
+struct QCefCookieManager;
+
+extern QCef              *cef;
+extern QCefCookieManager *panel_cookies;
 
 #define wiz reinterpret_cast<AutoConfig*>(wizard())
 
@@ -231,6 +234,7 @@ AutoConfigStreamPage::AutoConfigStreamPage(QWidget *parent)
 	ui->bitrateLabel->setVisible(false);
 	ui->bitrate->setVisible(false);
 	ui->connectAccount2->setVisible(false);
+	ui->disconnectAccount->setVisible(false);
 
 	int vertSpacing = ui->topLayout->verticalSpacing();
 
@@ -392,10 +396,13 @@ void AutoConfigStreamPage::OnTwitchConnected()
 	if (twitch) {
 		bool validKey = !twitch->key().empty();
 
-		ui->key->setText(QT_UTF8(twitch->key().c_str()));
+		if (validKey)
+			ui->key->setText(QT_UTF8(twitch->key().c_str()));
+
 		ui->streamKeyWidget->setVisible(!validKey);
 		ui->streamKeyLabel->setVisible(!validKey);
 		ui->connectAccount2->setVisible(!validKey);
+		ui->disconnectAccount->setVisible(validKey);
 	}
 
 	ui->stackedWidget->setCurrentIndex((int)Section::StreamKey);
@@ -422,6 +429,39 @@ void AutoConfigStreamPage::on_connectAccount_clicked()
 	if (!!auth)
 		OnAuthConnected();
 #endif
+}
+
+#define DISCONNECT_COMFIRM_TITLE \
+	"Basic.AutoConfig.StreamPage.DisconnectAccount.Confirm.Title"
+#define DISCONNECT_COMFIRM_TEXT \
+	"Basic.AutoConfig.StreamPage.DisconnectAccount.Confirm.Text"
+
+void AutoConfigStreamPage::on_disconnectAccount_clicked()
+{
+	QMessageBox::StandardButton button;
+
+	button = OBSMessageBox::question(this,
+			QTStr(DISCONNECT_COMFIRM_TITLE),
+			QTStr(DISCONNECT_COMFIRM_TEXT));
+
+	if (button == QMessageBox::No) {
+		return;
+	}
+
+	OBSBasic *main = OBSBasic::Get();
+
+	main->auth.reset();
+	auth.reset();
+
+#ifdef BROWSER_AVAILABLE
+	if (panel_cookies)
+		panel_cookies->DeleteCookies("twitch.tv", std::string());
+#endif
+
+	ui->streamKeyWidget->setVisible(true);
+	ui->streamKeyLabel->setVisible(true);
+	ui->connectAccount2->setVisible(true);
+	ui->disconnectAccount->setVisible(false);
 }
 
 void AutoConfigStreamPage::on_useStreamKey_clicked()
@@ -457,6 +497,8 @@ void AutoConfigStreamPage::ServiceChanged()
 	                   service == "Smashcast";
 	bool testBandwidth = ui->doBandwidthTest->isChecked();
 	bool custom = IsCustom();
+
+	ui->disconnectAccount->setVisible(false);
 
 #ifdef BROWSER_AVAILABLE
 	if (cef) {
@@ -509,6 +551,16 @@ void AutoConfigStreamPage::ServiceChanged()
 
 	ui->bitrateLabel->setHidden(testBandwidth);
 	ui->bitrate->setHidden(testBandwidth);
+
+#ifdef BROWSER_AVAILABLE
+	OBSBasic *main = OBSBasic::Get();
+	auth.reset();
+
+	if (!!main->auth && service == main->auth->typeName()) {
+		auth = main->auth;
+		OnAuthConnected();
+	}
+#endif
 
 	UpdateCompleted();
 }
@@ -749,13 +801,6 @@ AutoConfig::AutoConfig(QWidget *parent)
 	streamPage->UpdateServerList();
 	streamPage->UpdateKeyLink();
 
-#ifdef BROWSER_AVAILABLE
-	if (!!main->auth) {
-		streamPage->auth = main->auth;
-		streamPage->OnAuthConnected();
-	}
-#endif
-
 	if (!customServer) {
 		QComboBox *serverList = streamPage->ui->server;
 		int idx = serverList->findData(QString(server.c_str()));
@@ -775,7 +820,6 @@ AutoConfig::AutoConfig(QWidget *parent)
 
 	int bitrate = config_get_int(main->Config(), "SimpleOutput", "VBitrate");
 	streamPage->ui->bitrate->setValue(bitrate);
-	streamPage->lastService.clear();
 	streamPage->ServiceChanged();
 
 	streamPage->ui->preferHardware->setChecked(os_get_physical_cores() <= 4);
