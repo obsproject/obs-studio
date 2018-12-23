@@ -775,6 +775,7 @@ AutoConfig::AutoConfig(QWidget *parent)
 
 	int bitrate = config_get_int(main->Config(), "SimpleOutput", "VBitrate");
 	streamPage->ui->bitrate->setValue(bitrate);
+	streamPage->lastService.clear();
 	streamPage->ServiceChanged();
 
 	streamPage->ui->preferHardware->setChecked(os_get_physical_cores() <= 4);
