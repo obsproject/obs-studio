@@ -189,7 +189,7 @@ void OBSBasicProperties::on_buttonBox_clicked(QAbstractButton *button)
 		if (!view->DeferUpdate())
 			obs_source_update(source, nullptr);
 
-		view->RefreshProperties();
+		view->ReloadProperties();
 	}
 }
 
