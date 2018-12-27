@@ -292,7 +292,7 @@ static inline void circlebuf_pop_front(struct circlebuf *cb, void *data,
 static inline void circlebuf_pop_back(struct circlebuf *cb, void *data,
 		size_t size)
 {
-	circlebuf_peek_front(cb, data, size);
+	circlebuf_peek_back(cb, data, size);
 
 	cb->size -= size;
 	if (!cb->size) {
