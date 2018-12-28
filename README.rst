@@ -9,6 +9,10 @@ OBS Studio <https://obsproject.com>
    :alt: OBS Studio Build Status - AppVeyor CI
    :target: https://ci.appveyor.com/project/jp9000/obs-studio/branch/master
 
+.. image:: https://discordapp.com/api/guilds/348973006581923840/widget.png?style=shield
+   :alt: OBS Studio Discord Server
+   :target: https://obsproject.com/discord
+
 What is OBS Studio?
 -------------------
 
