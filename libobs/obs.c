@@ -854,7 +854,7 @@ bool obs_startup(const char *locale, const char *module_config_path,
 }
 
 static struct obs_cmdline_args cmdline_args = {0, NULL};
-void obs_set_cmdline_args(int argc, char **argv)
+void obs_set_cmdline_args(int argc, const char * const *argv)
 {
 	char *data;
 	size_t len;

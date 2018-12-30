@@ -305,7 +305,7 @@ EXPORT const char *obs_get_version_string(void);
  * @param  argv  An array of command line arguments, copied from main() and ends
  *               with NULL.
  */
-EXPORT void obs_set_cmdline_args(int argc, char **argv);
+EXPORT void obs_set_cmdline_args(int argc, const char * const *argv);
 
 /**
  * Get the argc/argv used to start OBS
