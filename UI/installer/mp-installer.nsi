@@ -42,6 +42,10 @@ RequestExecutionLevel admin
 !define MUI_FINISHPAGE_RUN_TEXT "Launch OBS Studio ${SHORTVERSION}"
 !define MUI_FINISHPAGE_RUN_FUNCTION "LaunchOBS"
 
+; GPL is not an EULA, no need to agree to it.
+!define MUI_LICENSEPAGE_BUTTON $(^NextBtn)
+!define MUI_LICENSEPAGE_TEXT_BOTTOM "You are now aware of your rights. Click Next to continue."
+
 !define MUI_PAGE_CUSTOMFUNCTION_LEAVE PreReqCheck
 
 !insertmacro MUI_PAGE_WELCOME
