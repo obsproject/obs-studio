@@ -467,10 +467,15 @@ uint64_t os_gettime_ns(void)
 static inline int try_lock_shmem_tex(int id)
 {
 	int next = id == 0 ? 1 : 0;
+	DWORD wait_result = WAIT_FAILED;
 
-	if (WaitForSingleObject(tex_mutexes[id], 0) == WAIT_OBJECT_0) {
+	wait_result = WaitForSingleObject(tex_mutexes[id], 0);
+	if (wait_result == WAIT_OBJECT_0 || wait_result == WAIT_ABANDONED) {
 		return id;
-	} else if (WaitForSingleObject(tex_mutexes[next], 0) == WAIT_OBJECT_0) {
+	}
+
+	wait_result = WaitForSingleObject(tex_mutexes[next], 0);
+	if (wait_result == WAIT_OBJECT_0 || wait_result == WAIT_ABANDONED) {
 		return next;
 	}
 
