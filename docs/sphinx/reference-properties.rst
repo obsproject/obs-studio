@@ -131,6 +131,28 @@ Property Object Functions
 
 ---------------------
 
+.. function:: obs_property_t *obs_properties_add_int_dial(obs_properties_t *props, const char *name, const char *description, int min, int max, int step)
+
+   :param    name:        Setting identifier string
+   :param    description: Localized name shown to user
+   :param    min:         Minimum value
+   :param    max:         Maximum value
+   :param    step:        Step value
+   :return:               The property
+
+---------------------
+
+.. function:: obs_property_t *obs_properties_add_float_dial(obs_properties_t *props, const char *name, const char *description, double min, double max, double step)
+
+   :param    name:        Setting identifier string
+   :param    description: Localized name shown to user
+   :param    min:         Minimum value
+   :param    max:         Maximum value
+   :param    step:        Step value
+   :return:               The property
+
+---------------------
+
 .. function:: obs_property_t *obs_properties_add_text(obs_properties_t *props, const char *name, const char *description, enum obs_text_type type)
 
    :param    name:        Setting identifier string

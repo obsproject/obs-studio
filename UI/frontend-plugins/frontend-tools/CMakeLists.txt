@@ -28,6 +28,7 @@ set(frontend-tools_HEADERS
 	../../horizontal-scroll-area.hpp
 	../../vertical-scroll-area.hpp
 	../../double-slider.hpp
+	../../double-dial.hpp
 	)
 set(frontend-tools_SOURCES
 	${frontend-tools_SOURCES}
@@ -38,6 +39,7 @@ set(frontend-tools_SOURCES
 	../../horizontal-scroll-area.cpp
 	../../vertical-scroll-area.cpp
 	../../double-slider.cpp
+	../../double-dial.cpp
 	)
 set(frontend-tools_UI
 	${frontend-tools_UI}

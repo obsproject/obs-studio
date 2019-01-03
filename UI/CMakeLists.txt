@@ -152,6 +152,7 @@ set(obs_SOURCES
 	properties-view.cpp
 	focus-list.cpp
 	menu-button.cpp
+	double-dial.cpp
 	double-slider.cpp
 	volume-control.cpp
 	adv-audio-control.cpp
@@ -201,6 +202,7 @@ set(obs_HEADERS
 	properties-view.moc.hpp
 	display-helpers.hpp
 	balance-slider.hpp
+	double-dial.hpp
 	double-slider.hpp
 	focus-list.hpp
 	menu-button.hpp

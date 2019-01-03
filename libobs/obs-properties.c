@@ -432,6 +432,19 @@ obs_property_t *obs_properties_add_float_slider(obs_properties_t *props,
 	return add_flt(props, name, desc, min, max, step, OBS_NUMBER_SLIDER);
 }
 
+obs_property_t *obs_properties_add_int_dial(obs_properties_t *props,
+	const char *name, const char *desc, int min, int max, int step)
+{
+	return add_int(props, name, desc, min, max, step, OBS_NUMBER_DIAL);
+}
+
+obs_property_t *obs_properties_add_float_dial(obs_properties_t *props,
+	const char *name, const char *desc,
+	double min, double max, double step)
+{
+	return add_flt(props, name, desc, min, max, step, OBS_NUMBER_DIAL);
+}
+
 obs_property_t *obs_properties_add_text(obs_properties_t *props,
 		const char *name, const char *desc, enum obs_text_type type)
 {

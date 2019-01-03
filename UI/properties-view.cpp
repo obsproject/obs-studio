@@ -7,6 +7,7 @@
 #include <QLineEdit>
 #include <QSpinBox>
 #include <QSlider>
+#include <QDial>
 #include <QDoubleSpinBox>
 #include <QComboBox>
 #include <QListWidget>
@@ -19,6 +20,7 @@
 #include <QMenu>
 #include <QStackedWidget>
 #include "double-slider.hpp"
+#include "double-dial.hpp"
 #include "qt-wrappers.hpp"
 #include "properties-view.hpp"
 #include "properties-view.moc.hpp"
@@ -351,6 +353,18 @@ void OBSPropertiesView::AddInt(obs_property_t *prop, QFormLayout *layout,
 				spin, SLOT(setValue(int)));
 		connect(spin, SIGNAL(valueChanged(int)),
 				slider, SLOT(setValue(int)));
+	} else if (type == OBS_NUMBER_DIAL) {
+		QDial *dial = new QDial();
+		dial->setMinimum(minVal);
+		dial->setMaximum(maxVal);
+		dial->setPageStep(stepVal);
+		dial->setValue(val);
+		subLayout->addWidget(dial);
+
+		connect(dial, SIGNAL(valueChanged(int)),
+			spin, SLOT(setValue(int)));
+		connect(spin, SIGNAL(valueChanged(int)),
+			dial, SLOT(setValue(int)));
 	}
 
 	connect(spin, SIGNAL(valueChanged(int)), info, SLOT(ControlChanged()));
@@ -397,6 +411,15 @@ void OBSPropertiesView::AddFloat(obs_property_t *prop, QFormLayout *layout,
 				spin, SLOT(setValue(double)));
 		connect(spin, SIGNAL(valueChanged(double)),
 				slider, SLOT(setDoubleVal(double)));
+	} else if (type == OBS_NUMBER_DIAL) {
+		DoubleDial *dial = new DoubleDial();
+		dial->setDoubleConstraints(minVal, maxVal, stepVal, val);
+		subLayout->addWidget(dial);
+
+		connect(dial, SIGNAL(doubleValChanged(double)),
+			spin, SLOT(setValue(double)));
+		connect(spin, SIGNAL(valueChanged(double)),
+			dial, SLOT(setDoubleVal(double)));
 	}
 
 	connect(spin, SIGNAL(valueChanged(double)), info,

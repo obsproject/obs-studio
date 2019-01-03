@@ -90,7 +90,8 @@ enum obs_text_type {
 
 enum obs_number_type {
 	OBS_NUMBER_SCROLLER,
-	OBS_NUMBER_SLIDER
+	OBS_NUMBER_SLIDER,
+	OBS_NUMBER_DIAL
 };
 
 #define OBS_FONT_BOLD      (1<<0)
@@ -155,6 +156,14 @@ EXPORT obs_property_t *obs_properties_add_int_slider(obs_properties_t *props,
 		int min, int max, int step);
 
 EXPORT obs_property_t *obs_properties_add_float_slider(obs_properties_t *props,
+		const char *name, const char *description,
+		double min, double max, double step);
+
+EXPORT obs_property_t *obs_properties_add_int_dial(obs_properties_t *props,
+		const char *name, const char *description,
+		int min, int max, int step);
+
+EXPORT obs_property_t *obs_properties_add_float_dial(obs_properties_t *props,
 		const char *name, const char *description,
 		double min, double max, double step);
 
