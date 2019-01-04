@@ -1646,6 +1646,9 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 
 	ScopeProfiler prof{run_program_init};
 
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 6, 0))
+	QGuiApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
+#endif
 	QCoreApplication::addLibraryPath(".");
 
 	OBSApp program(argc, argv, profilerNameStore.get());
