@@ -19,6 +19,7 @@ public:
 	uint32_t audio_samplerate;
 	size_t audio_planes;
 	size_t audio_size;
+	int keyerMode;
 
 	DeckLinkOutput(obs_output_t *output, DeckLinkDeviceDiscovery *discovery);
 	virtual ~DeckLinkOutput(void);

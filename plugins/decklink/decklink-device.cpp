@@ -1,4 +1,4 @@
-#include <sstream>
+﻿#include <sstream>
 
 #include "decklink-device.hpp"
 
@@ -97,6 +97,10 @@ bool DeckLinkDevice::Init()
 		}
 	}
 
+	// get keyer support
+	attributes->GetFlag(BMDDeckLinkSupportsExternalKeying, &supportsExternalKeyer);
+	attributes->GetFlag(BMDDeckLinkSupportsInternalKeying, &supportsInternalKeyer);
+
 	decklink_string_t decklinkModelName;
 	decklink_string_t decklinkDisplayName;
 
@@ -152,6 +156,27 @@ bool DeckLinkDevice::GetOutput(IDeckLinkOutput **output)
 	return true;
 }
 
+bool DeckLinkDevice::GetKeyer(IDeckLinkKeyer **deckLinkKeyer)
+{
+	if (device->QueryInterface(IID_IDeckLinkKeyer, (void**)deckLinkKeyer) != S_OK)
+	{
+		fprintf(stderr, "Could not obtain the IDeckLinkKeyer interface\n");
+		return false;
+	}
+
+	return true;
+}
+
+void DeckLinkDevice::SetKeyerMode(int newKeyerMode)
+{
+	keyerMode = newKeyerMode;
+}
+
+int DeckLinkDevice::GetKeyerMode(void)
+{
+	return keyerMode;
+}
+
 DeckLinkDeviceMode *DeckLinkDevice::FindInputMode(long long id)
 {
 	return inputModeIdMap[id];
@@ -180,6 +205,16 @@ const std::vector<DeckLinkDeviceMode *>& DeckLinkDevice::GetInputModes(void) con
 const std::vector<DeckLinkDeviceMode *>& DeckLinkDevice::GetOutputModes(void) const
 {
 	return outputModes;
+}
+
+const bool DeckLinkDevice::GetSupportsExternalKeyer(void) const
+{
+	return supportsExternalKeyer;
+}
+
+const bool DeckLinkDevice::GetSupportsInternalKeyer(void) const
+{
+	return supportsInternalKeyer;
 }
 
 const std::string& DeckLinkDevice::GetName(void) const
