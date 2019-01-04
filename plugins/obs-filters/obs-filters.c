@@ -26,6 +26,7 @@ extern struct obs_source_info noise_suppress_filter;
 extern struct obs_source_info invert_polarity_filter;
 extern struct obs_source_info noise_gate_filter;
 extern struct obs_source_info compressor_filter;
+extern struct obs_source_info limiter_filter;
 
 bool obs_module_load(void)
 {
@@ -47,5 +48,6 @@ bool obs_module_load(void)
 	obs_register_source(&invert_polarity_filter);
 	obs_register_source(&noise_gate_filter);
 	obs_register_source(&compressor_filter);
+	obs_register_source(&limiter_filter);
 	return true;
 }
