@@ -61,7 +61,12 @@ static bool decklink_output_start(void *data)
 	decklink->SetSize(mode->GetWidth(), mode->GetHeight());
 
 	struct video_scale_info to = {};
-	to.format = VIDEO_FORMAT_BGRA;
+
+	if (decklink->keyerMode != 0) {
+		to.format = VIDEO_FORMAT_BGRA;
+	} else {
+		to.format = VIDEO_FORMAT_UYVY;
+	}
 	to.width = mode->GetWidth();
 	to.height =  mode->GetHeight();
 
