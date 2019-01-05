@@ -85,6 +85,68 @@ qsv_t *qsv_encoder_open(qsv_param_t *pParams)
 	QSV_Encoder_Internal *pEncoder = new QSV_Encoder_Internal(impl, ver);
 	mfxStatus sts = pEncoder->Open(pParams);
 	if (sts != MFX_ERR_NONE) {
+
+#define WARN_ERR_IMPL(err, str, err_name) case err: \
+		do_log(LOG_WARNING, str " (" err_name ")"); break;
+#define WARN_ERR(err, str) WARN_ERR_IMPL(err, str, #err)
+
+		switch (sts) {
+		WARN_ERR(MFX_ERR_UNKNOWN, "Unknown QSV error");
+		WARN_ERR(MFX_ERR_NOT_INITIALIZED,
+			"Member functions called without initialization");
+		WARN_ERR(MFX_ERR_INVALID_HANDLE,
+			"Invalid session or MemId handle");
+		WARN_ERR(MFX_ERR_NULL_PTR,
+			"NULL pointer in the input or output arguments");
+		WARN_ERR(MFX_ERR_UNDEFINED_BEHAVIOR, "Undefined behavior");
+		WARN_ERR(MFX_ERR_NOT_ENOUGH_BUFFER,
+			"Insufficient buffer for input or output.");
+		WARN_ERR(MFX_ERR_NOT_FOUND,
+			"Specified object/item/sync point not found.");
+		WARN_ERR(MFX_ERR_MEMORY_ALLOC, "Gailed to allocate memory");
+		WARN_ERR(MFX_ERR_LOCK_MEMORY,
+			"failed to lock the memory block "
+			"(external allocator).");
+		WARN_ERR(MFX_ERR_UNSUPPORTED,
+			"Unsupported configurations, parameters, or features");
+		WARN_ERR(MFX_ERR_INVALID_VIDEO_PARAM,
+			"Incompatible video parameters detected");
+		WARN_ERR(MFX_WRN_VIDEO_PARAM_CHANGED,
+			"The decoder detected a new sequence header in the "
+			"bitstream. Video parameters may have changed.");
+		WARN_ERR(MFX_WRN_VALUE_NOT_CHANGED,
+			"The parameter has been clipped to its value range");
+		WARN_ERR(MFX_WRN_OUT_OF_RANGE,
+			"The parameter is out of valid value range");
+		WARN_ERR(MFX_WRN_INCOMPATIBLE_VIDEO_PARAM,
+			"Incompatible video parameters detected");
+		WARN_ERR(MFX_WRN_FILTER_SKIPPED,
+			"The SDK VPP has skipped one or more optional filters "
+			"requested by the application");
+		WARN_ERR(MFX_ERR_ABORTED, "The asynchronous operation aborted");
+		WARN_ERR(MFX_ERR_MORE_DATA,
+			"Need more bitstream at decoding input, encoding "
+			"input, or video processing input frames");
+		WARN_ERR(MFX_ERR_MORE_SURFACE, "Need more frame surfaces at "
+			"decoding or video processing output");
+		WARN_ERR(MFX_ERR_MORE_BITSTREAM,
+			"Need more bitstream buffers at the encoding output");
+		WARN_ERR(MFX_WRN_IN_EXECUTION,
+			"Synchronous operation still running");
+		WARN_ERR(MFX_ERR_DEVICE_FAILED,
+			"Hardware device returned unexpected errors");
+		WARN_ERR(MFX_ERR_DEVICE_LOST,"Hardware device was lost");
+		WARN_ERR(MFX_WRN_DEVICE_BUSY,
+			"Hardware device is currently busy");
+		WARN_ERR(MFX_WRN_PARTIAL_ACCELERATION,
+			"The hardware does not support the specified "
+			"configuration. Encoding, decoding, or video "
+			"processing may be partially accelerated");
+		}
+
+#undef WARN_ERR
+#undef WARN_ERR_IMPL
+
 		delete pEncoder;
 		if (pEncoder)
 			is_active.store(false);
