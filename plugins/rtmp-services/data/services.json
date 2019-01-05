@@ -1043,41 +1043,73 @@
             "name": "Chaturbate",
             "servers": [
                 {
-                    "name": "Default Global Auto Select - Recommended",
+                    "name": "Global Main Fastest - Recommended",
                     "url": "rtmp://live.stream.highwebmedia.com/live-origin"
                 },
                 {
-                    "name": "US West",
-                    "url": "rtmp://live-us-west.stream.highwebmedia.com/live-origin"
+                    "name": "Global Backup",
+                    "url": "rtmp://live-backup.stream.highwebmedia.com/live-origin"
                 },
                 {
-                    "name": "US Central",
-                    "url": "rtmp://live-us-central.stream.highwebmedia.com/live-origin"
+                    "name": "US West: Seattle, WA",
+                    "url": "rtmp://live-sea.stream.highwebmedia.com/live-origin"
                 },
                 {
-                    "name": "US East",
-                    "url": "rtmp://live-us-east.stream.highwebmedia.com/live-origin"
+                    "name": "US West: Phoenix, AZ",
+                    "url": "rtmp://live-phx.stream.highwebmedia.com/live-origin"
                 },
                 {
-                    "name": "Europe West",
-                    "url": "rtmp://live-eu-west.stream.highwebmedia.com/live-origin"
+                    "name": "US Central: Salt Lake City, UT",
+                    "url": "rtmp://live-slc.stream.highwebmedia.com/live-origin"
                 },
                 {
-                    "name": "Europe East",
-                    "url": "rtmp://live-eu-east.stream.highwebmedia.com/live-origin"
+                    "name": "US Central: Chicago, IL",
+                    "url": "rtmp://live-chi.stream.highwebmedia.com/live-origin"
                 },
                 {
-                    "name": "Asia/Pacific South",
-                    "url": "rtmp://live-as-south.stream.highwebmedia.com/live-origin"
+                    "name": "US East: Atlanta, GA",
+                    "url": "rtmp://live-atl.stream.highwebmedia.com/live-origin"
                 },
                 {
-                    "name": "Asia/Pacific North-East",
-                    "url": "rtmp://live-as-northeast.stream.highwebmedia.com/live-origin"
+                    "name": "US East: Ashburn, VA",
+                    "url": "rtmp://live-ash.stream.highwebmedia.com/live-origin"
+                },
+                {
+                    "name": "South America: Sao Paulo, Brazil",
+                    "url": "rtmp://live-gru.stream.highwebmedia.com/live-origin"
+                },
+                {
+                    "name": "EU: Amsterdam, NL",
+                    "url": "rtmp://live-nld.stream.highwebmedia.com/live-origin"
+                },
+                {
+                    "name": "EU: Alblasserdam, NL",
+                    "url": "rtmp://live-alb.stream.highwebmedia.com/live-origin"
+                },
+                {
+                    "name": "EU: Frankfurt, DE",
+                    "url": "rtmp://live-fra.stream.highwebmedia.com/live-origin"
+                },
+                {
+                    "name": "EU: Belgrade, Serbia",
+                    "url": "rtmp://live-srb.stream.highwebmedia.com/live-origin"
+                },
+                {
+                    "name": "Asia: Singapore",
+                    "url": "rtmp://live-sin.stream.highwebmedia.com/live-origin"
+                },
+                {
+                    "name": "Asia: Tokyo, Japan",
+                    "url": "rtmp://live-nrt.stream.highwebmedia.com/live-origin"
+                },
+                {
+                    "name": "Australia: Sydney",
+                    "url": "rtmp://live-syd.stream.highwebmedia.com/live-origin"
                 }
             ],
             "recommended": {
                 "keyint": 2,
-                "max video bitrate": 20000,
+                "max video bitrate": 50000,
                 "max audio bitrate": 192
             }
         },
