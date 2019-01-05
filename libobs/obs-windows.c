@@ -220,6 +220,10 @@ static void log_gaming_features(void)
 			L"HistoricalCaptureEnabled", &game_dvr_bg_recording);
 	get_reg_dword(HKEY_CURRENT_USER, WIN10_GAME_MODE_REG_KEY,
 			L"AllowAutoGameMode", &game_mode_enabled);
+	if (game_mode_enabled.status != ERROR_SUCCESS) {
+		get_reg_dword(HKEY_CURRENT_USER, WIN10_GAME_MODE_REG_KEY,
+				L"AutoGameModeEnabled", &game_mode_enabled);
+	}
 
 	blog(LOG_INFO, "Windows 10 Gaming Features:");
 	if (game_bar_enabled.status == ERROR_SUCCESS) {
