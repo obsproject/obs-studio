@@ -692,10 +692,10 @@
                     "name": "Asia (Tokyo, Japan)",
                     "url": "rtmp://tokyo.restream.io/live"
                 },
-		{
-		    "name": "India (Bangalore),
-		    "url": "rtmp://india.restream.io/live"
-		},
+                {
+                    "name": "India (Bangalore)",
+                    "url": "rtmp://india.restream.io/live"
+                },
                 {
                     "name": "Australia (Sydney)",
                     "url": "rtmp://au.restream.io/live"
@@ -1402,6 +1402,21 @@
             ],
             "recommended": {
                 "max video bitrate": 5000
+            }
+        },
+        {
+            "name": "STAGE TEN",
+            "servers": [
+                {
+                    "name": "STAGE TEN",
+                    "url": "rtmps://app-rtmp.stageten.tv:443/stageten"
+                }
+            ],
+            "recommended": {
+                "keyint": 2,
+                "profile": "baseline",
+                "max video bitrate": 4000,
+                "max audio bitrate": 128
             }
         },
         {
