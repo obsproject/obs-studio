@@ -92,6 +92,13 @@ struct CodecDesc {
 Q_DECLARE_METATYPE(FormatDesc)
 Q_DECLARE_METATYPE(CodecDesc)
 
+void CheckHWScalingSupport(const QString& encoder, QCheckBox* rescaleWidget, QCheckBox* hwRescaleWidget)
+{
+	bool hwScaling = obs_encoder_hw_scaling_supported(encoder.toStdString().c_str());
+	hwRescaleWidget->setEnabled(hwScaling && rescaleWidget->isChecked());
+	hwRescaleWidget->setChecked(hwScaling && hwRescaleWidget->isChecked());
+}
+
 /* parses "[width]x[height]", string, i.e. 1024x768 */
 static bool ConvertResText(const char *res, uint32_t &cx, uint32_t &cy)
 {
@@ -343,6 +350,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->advOutEncoder,        COMBO_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advOutUseRescale,     CHECK_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advOutRescale,        CBEDIT_CHANGED, OUTPUTS_CHANGED);
+	HookWidget(ui->advOutUseHWRescale,   CHECK_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advOutTrack1,         CHECK_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advOutTrack2,         CHECK_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advOutTrack3,         CHECK_CHANGED,  OUTPUTS_CHANGED);
@@ -357,6 +365,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->advOutRecEncoder,     COMBO_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advOutRecUseRescale,  CHECK_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advOutRecRescale,     CBEDIT_CHANGED, OUTPUTS_CHANGED);
+	HookWidget(ui->advOutRecUseHWRescale,CHECK_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advOutMuxCustom,      EDIT_CHANGED,   OUTPUTS_CHANGED);
 	HookWidget(ui->advOutRecTrack1,      CHECK_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advOutRecTrack2,      CHECK_CHANGED,  OUTPUTS_CHANGED);
@@ -1561,6 +1570,8 @@ void OBSBasicSettings::LoadAdvOutputStreamingSettings()
 			"Rescale");
 	const char *rescaleRes = config_get_string(main->Config(), "AdvOut",
 			"RescaleRes");
+	bool hwScaling = config_get_bool(main->Config(), "AdvOut",
+			"UseHWRescale");
 	int trackIndex = config_get_int(main->Config(), "AdvOut",
 			"TrackIndex");
 	bool applyServiceSettings = config_get_bool(main->Config(), "AdvOut",
@@ -1570,6 +1581,7 @@ void OBSBasicSettings::LoadAdvOutputStreamingSettings()
 	ui->advOutUseRescale->setChecked(rescale);
 	ui->advOutRescale->setEnabled(rescale);
 	ui->advOutRescale->setCurrentText(rescaleRes);
+	ui->advOutUseHWRescale->setChecked(rescale && hwScaling);
 
 	QStringList specList = QTStr("FilenameFormatting.completer").split(
 				QRegularExpression("\n"));
@@ -1661,6 +1673,8 @@ void OBSBasicSettings::LoadAdvOutputRecordingSettings()
 			"RecFileNameWithoutSpace");
 	bool rescale = config_get_bool(main->Config(), "AdvOut",
 			"RecRescale");
+	bool hwRescale = config_get_bool(main->Config(), "AdvOut",
+			"RecHWRescale");
 	const char *rescaleRes = config_get_string(main->Config(), "AdvOut",
 			"RecRescaleRes");
 	const char *muxCustom = config_get_string(main->Config(), "AdvOut",
@@ -1672,6 +1686,7 @@ void OBSBasicSettings::LoadAdvOutputRecordingSettings()
 	ui->advOutRecPath->setText(path);
 	ui->advOutNoSpace->setChecked(noSpace);
 	ui->advOutRecUseRescale->setChecked(rescale);
+	ui->advOutRecUseHWRescale->setChecked(rescale && hwRescale);
 	ui->advOutRecRescale->setCurrentText(rescaleRes);
 	ui->advOutMuxCustom->setText(muxCustom);
 
@@ -1894,6 +1909,9 @@ void OBSBasicSettings::LoadOutputSettings()
 	LoadAdvOutputRecordingEncoderProperties();
 	LoadAdvOutputFFmpegSettings();
 	LoadAdvOutputAudioSettings();
+
+	on_advOutUseRescale_clicked();		//run hw scaling option in dependence of selected streaming encoder
+	on_advOutRecUseRescale_clicked();	//run hw scaling option in dependence of selected recording encoder
 
 	if (video_output_active(obs_get_video())) {
 		ui->outputMode->setEnabled(false);
@@ -3087,6 +3105,7 @@ void OBSBasicSettings::SaveOutputSettings()
 	SaveCheckBox(ui->advOutApplyService, "AdvOut", "ApplyServiceSettings");
 	SaveComboData(ui->advOutEncoder, "AdvOut", "Encoder");
 	SaveCheckBox(ui->advOutUseRescale, "AdvOut", "Rescale");
+	SaveCheckBox(ui->advOutUseHWRescale, "AdvOut", "UseHWRescale");
 	SaveCombo(ui->advOutRescale, "AdvOut", "RescaleRes");
 	SaveTrackIndex(main->Config(), "AdvOut", "TrackIndex",
 			ui->advOutTrack1, ui->advOutTrack2,
@@ -3103,6 +3122,7 @@ void OBSBasicSettings::SaveOutputSettings()
 	SaveCombo(ui->advOutRecFormat, "AdvOut", "RecFormat");
 	SaveComboData(ui->advOutRecEncoder, "AdvOut", "RecEncoder");
 	SaveCheckBox(ui->advOutRecUseRescale, "AdvOut", "RecRescale");
+	SaveCheckBox(ui->advOutRecUseHWRescale, "AdvOut", "RecHWRescale");
 	SaveCombo(ui->advOutRecRescale, "AdvOut", "RecRescaleRes");
 	SaveEdit(ui->advOutMuxCustom, "AdvOut", "RecMuxerCustom");
 
@@ -3516,6 +3536,8 @@ void OBSBasicSettings::on_advOutEncoder_currentIndexChanged(int idx)
 	QString encoder = GetComboData(ui->advOutEncoder);
 	bool loadSettings = encoder == curAdvStreamEncoder;
 
+	on_advOutUseRescale_clicked(); //reset HW scaling option in dependence of selected encoder
+
 	delete streamEncoderProps;
 	streamEncoderProps = CreateEncoderPropertyView(QT_TO_UTF8(encoder),
 			loadSettings ? "streamEncoder.json" : nullptr, true);
@@ -3531,6 +3553,7 @@ void OBSBasicSettings::on_advOutRecEncoder_currentIndexChanged(int idx)
 
 	ui->advOutRecUseRescale->setEnabled(idx > 0);
 	ui->advOutRecRescaleContainer->setEnabled(idx > 0);
+	ui->advOutRecUseHWRescale->setEnabled(idx > 0);
 
 	delete recordEncoderProps;
 	recordEncoderProps = nullptr;
@@ -3538,6 +3561,8 @@ void OBSBasicSettings::on_advOutRecEncoder_currentIndexChanged(int idx)
 	if (idx > 0) {
 		QString encoder = GetComboData(ui->advOutRecEncoder);
 		bool loadSettings = encoder == curAdvRecordEncoder;
+
+		on_advOutRecUseRescale_clicked(); //reset HW scaling option in dependence of selected encoder
 
 		recordEncoderProps = CreateEncoderPropertyView(
 				QT_TO_UTF8(encoder),
@@ -4484,4 +4509,19 @@ void OBSBasicSettings::on_disableOSXVSync_clicked()
 		ui->resetOSXVSync->setEnabled(disable);
 	}
 #endif
+}
+
+void  OBSBasicSettings::on_advOutRecUseRescale_clicked()
+{
+	if (ui->advOutRecEncoder->currentIndex() != 0)
+	{
+		QString encoder = GetComboData(ui->advOutRecEncoder);
+		CheckHWScalingSupport(encoder, ui->advOutRecUseRescale, ui->advOutRecUseHWRescale);
+	}
+}
+
+void OBSBasicSettings::on_advOutUseRescale_clicked()
+{
+	QString encoder = GetComboData(ui->advOutEncoder);
+	CheckHWScalingSupport(encoder, ui->advOutUseRescale, ui->advOutUseHWRescale);
 }

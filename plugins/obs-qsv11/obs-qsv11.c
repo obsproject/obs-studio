@@ -160,6 +160,7 @@ static void obs_qsv_defaults(obs_data_t *settings)
 
 	obs_data_set_default_int(settings, "keyint_sec", 3);
 	obs_data_set_default_int(settings, "bframes", 1);
+	obs_data_set_default_bool(settings, "mbbrc", true);
 }
 
 static inline void add_strings(obs_property_t *list, const char *const *strings)
@@ -300,6 +301,8 @@ static void update_params(struct obs_qsv *obsqsv, obs_data_t *settings)
 	video_t *video = obs_encoder_video(obsqsv->encoder);
 	const struct video_output_info *voi = video_output_get_info(video);
 
+	int conversion_width = obs_data_get_int(settings, "conversion_width");
+	int conversion_height = obs_data_get_int(settings, "conversion_height");
 	const char *target_usage = obs_data_get_string(settings, "target_usage");
 	const char *profile = obs_data_get_string(settings, "profile");
 	const char *rate_control = obs_data_get_string(settings, "rate_control");
@@ -384,6 +387,19 @@ static void update_params(struct obs_qsv *obsqsv, obs_data_t *settings)
 	obsqsv->params.nKeyIntSec = (mfxU16)keyint_sec;
 	obsqsv->params.nICQQuality = (mfxU16)icq_quality;
 	obsqsv->params.bMBBRC = mbbrc;
+	obsqsv->params.nConversionWidth = (mfxU16)conversion_width;
+	obsqsv->params.nConversionHeight = (mfxU16)conversion_height;
+
+    if (voi->format == VIDEO_FORMAT_NV12)
+    {
+        obsqsv->params.nFourCC = MFX_FOURCC_NV12;
+        obsqsv->params.nChromaFormat = MFX_CHROMAFORMAT_YUV420;
+    }
+    else if (voi->format == VIDEO_FORMAT_RGBA)
+    {
+        obsqsv->params.nFourCC = MFX_FOURCC_RGB4;
+        obsqsv->params.nChromaFormat = MFX_CHROMAFORMAT_YUV444;
+    }
 
 	info("settings:\n\trate_control:   %s", rate_control);
 
@@ -572,7 +588,9 @@ static bool obs_qsv_sei(void *data, uint8_t **sei,size_t *size)
 
 static inline bool valid_format(enum video_format format)
 {
-	return format == VIDEO_FORMAT_NV12;
+    enum qsv_cpu_platform qsv_platform = qsv_get_cpu_platform();
+	return ((format == VIDEO_FORMAT_NV12) ||
+        (qsv_platform >= QSV_CPU_PLATFORM_SKL) && (format == VIDEO_FORMAT_RGBA));
 }
 
 static inline void cap_resolution(obs_encoder_t *encoder,
@@ -603,6 +621,10 @@ static void obs_qsv_video_info(void *data, struct video_scale_info *info)
 
 	pref_format = obs_encoder_get_preferred_video_format(obsqsv->encoder);
 
+    if (obsqsv->context)
+    {
+        pref_format = qsv_encoder_get_video_format(obsqsv->context);
+    }
 	if (!valid_format(pref_format)) {
 		pref_format = valid_format(info->format) ?
 			info->format : VIDEO_FORMAT_NV12;
@@ -748,6 +770,11 @@ static bool obs_qsv_encode(void *data, struct encoder_frame *frame,
 	return true;
 }
 
+static bool obs_qsv_is_hw_scaling_supported(void *data)
+{
+	return true;
+}
+
 struct obs_encoder_info obs_qsv_encoder = {
 	.id = "obs_qsv11",
 	.type = OBS_ENCODER_VIDEO,
@@ -761,5 +788,6 @@ struct obs_encoder_info obs_qsv_encoder = {
 	.get_defaults = obs_qsv_defaults,
 	.get_extra_data = obs_qsv_extra_data,
 	.get_sei_data = obs_qsv_sei,
-	.get_video_info = obs_qsv_video_info
+	.get_video_info = obs_qsv_video_info,
+	.is_hw_scaling_supported = obs_qsv_is_hw_scaling_supported
 };

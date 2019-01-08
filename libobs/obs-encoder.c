@@ -41,6 +41,12 @@ const char *obs_encoder_get_display_name(const char *id)
 	return ei ? ei->get_name(ei->type_data) : NULL;
 }
 
+bool obs_encoder_hw_scaling_supported(const char *id)
+{
+	struct obs_encoder_info *ei = find_encoder(id);
+	return ei ? ei->is_hw_scaling_supported ? ei->is_hw_scaling_supported(ei->type_data) : false : false;
+}
+
 static bool init_encoder(struct obs_encoder *encoder, const char *name,
 		obs_data_t *settings, obs_data_t *hotkey_data)
 {
@@ -1199,4 +1205,13 @@ uint32_t obs_get_encoder_caps(const char *encoder_id)
 {
 	struct obs_encoder_info *info = find_encoder(encoder_id);
 	return info ? info->caps : 0;
+}
+
+bool obs_encoder_set_internal_scaling_params(obs_encoder_t *encoder, int video_width, int video_height)
+{
+	if (!obs_encoder_valid(encoder, "obs_encoder_set_scaled_size"))
+		return false;
+	obs_data_set_int(encoder->context.settings, "conversion_width", video_width);
+	obs_data_set_int(encoder->context.settings, "conversion_height", video_height);
+	return true;
 }

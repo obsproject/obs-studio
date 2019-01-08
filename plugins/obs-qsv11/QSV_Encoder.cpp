@@ -84,6 +84,14 @@ qsv_t *qsv_encoder_open(qsv_param_t *pParams)
 
 	QSV_Encoder_Internal *pEncoder = new QSV_Encoder_Internal(impl, ver);
 	mfxStatus sts = pEncoder->Open(pParams);
+
+    if ((sts == MFX_ERR_UNSUPPORTED) && (pParams->nFourCC == MFX_FOURCC_RGB4))
+    {
+        pParams->nFourCC == MFX_FOURCC_NV12;
+        pParams->nChromaFormat == MFX_CHROMAFORMAT_YUV420;
+        sts = pEncoder->Reset(pParams);
+    }
+
 	if (sts != MFX_ERR_NONE) {
 		delete pEncoder;
 		if (pEncoder)
@@ -103,16 +111,14 @@ int qsv_encoder_headers(qsv_t *pContext, uint8_t **pSPS, uint8_t **pPPS,
 	return 0;
 }
 
-int qsv_encoder_encode(qsv_t * pContext, uint64_t ts, uint8_t *pDataY,
-		uint8_t *pDataUV, uint32_t strideY, uint32_t strideUV,
+int qsv_encoder_encode(qsv_t * pContext, uint64_t ts, uint8_t *pData1stPlane,
+		uint8_t *pData2ndPlane, uint32_t stride1stPlane, uint32_t stride2ndPlane,
 		mfxBitstream **pBS)
 {
 	QSV_Encoder_Internal *pEncoder = (QSV_Encoder_Internal *)pContext;
 	mfxStatus sts = MFX_ERR_NONE;
 
-	if (pDataY != NULL && pDataUV != NULL)
-		sts = pEncoder->Encode(ts, pDataY, pDataUV, strideY, strideUV,
-				pBS);
+	sts = pEncoder->Encode(ts, pData1stPlane, pData2ndPlane, stride1stPlane, stride2ndPlane, pBS);
 
 	if (sts == MFX_ERR_NONE)
 		return 0;
@@ -229,6 +235,25 @@ enum qsv_cpu_platform qsv_get_cpu_platform()
 	case 0x5e:
 		return QSV_CPU_PLATFORM_SKL;
 	}
+
 	//assume newer revisions are at least as capable as Skylake
 	return QSV_CPU_PLATFORM_INTEL;
+}
+
+unsigned int qsv_encoder_get_video_format(qsv_t * pContext)
+{
+    QSV_Encoder_Internal *pEncoder = (QSV_Encoder_Internal *)pContext;
+    
+    mfxU32 fourCC;
+    mfxStatus sts = MFX_ERR_NONE;
+
+    sts = pEncoder->GetCurrentFourCC(fourCC);
+    if (sts == MFX_ERR_NONE)
+    {
+        if (fourCC == MFX_FOURCC_NV12)
+            return VIDEO_FORMAT_NV12;
+        else if (fourCC == MFX_FOURCC_RGB4)
+            return VIDEO_FORMAT_RGBA;
+    }
+    return VIDEO_FORMAT_NONE;
 }

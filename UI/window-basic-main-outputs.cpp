@@ -1207,6 +1207,9 @@ inline void AdvancedOutput::SetupStreaming()
 			"Rescale");
 	const char *rescaleRes = config_get_string(main->Config(), "AdvOut",
 			"RescaleRes");
+	bool hwScaling = config_get_bool(main->Config(), "AdvOut",
+			"UseHWRescale");
+
 	unsigned int cx = 0;
 	unsigned int cy = 0;
 
@@ -1217,7 +1220,11 @@ inline void AdvancedOutput::SetupStreaming()
 		}
 	}
 
-	obs_encoder_set_scaled_size(h264Streaming, cx, cy);
+	if (rescale && hwScaling)
+		obs_encoder_set_internal_scaling_params(h264Streaming, cx, cy);
+	else
+		obs_encoder_set_scaled_size(h264Streaming, cx, cy);
+
 	obs_encoder_set_video(h264Streaming, obs_get_video());
 }
 
@@ -1229,6 +1236,8 @@ inline void AdvancedOutput::SetupRecording()
 			"RecMuxerCustom");
 	bool rescale = config_get_bool(main->Config(), "AdvOut",
 			"RecRescale");
+	bool hwScaling = config_get_bool(main->Config(), "AdvOut",
+			"RecHWRescale");
 	const char *rescaleRes = config_get_string(main->Config(), "AdvOut",
 			"RecRescaleRes");
 	int tracks = config_get_int(main->Config(), "AdvOut", "RecTracks");
@@ -1250,7 +1259,11 @@ inline void AdvancedOutput::SetupRecording()
 			}
 		}
 
-		obs_encoder_set_scaled_size(h264Recording, cx, cy);
+		if (rescale && hwScaling)
+			obs_encoder_set_internal_scaling_params(h264Recording, cx, cy);
+		else
+			obs_encoder_set_scaled_size(h264Recording, cx, cy);
+
 		obs_encoder_set_video(h264Recording, obs_get_video());
 		obs_output_set_video_encoder(fileOutput, h264Recording);
 		if (replayBuffer)

@@ -73,13 +73,14 @@ public:
 			**pBS);
 	mfxStatus    ClearData();
 	mfxStatus    Reset(qsv_param_t *pParams);
+    mfxStatus    GetCurrentFourCC(mfxU32& fourCC);
 
 protected:
-	bool         InitParams(qsv_param_t * pParams);
+	bool         InitParams(qsv_param_t * pParams, bool& processingIsNeeded);
 	mfxStatus    AllocateSurfaces();
 	mfxStatus    GetVideoParam();
 	mfxStatus    InitBitstream();
-	mfxStatus    LoadNV12(mfxFrameSurface1 *pSurface, uint8_t *pDataY,
+	mfxStatus    LoadSysMem(mfxFrameSurface1 *pSurface, uint8_t *pDataY,
 			uint8_t *pDataUV, uint32_t strideY, uint32_t strideUV);
 	mfxStatus    Drain();
 	int          GetFreeTaskIndex(Task* pTaskPool, mfxU16 nPoolSize);
@@ -90,10 +91,15 @@ private:
 	MFXVideoSession                m_session;
 	mfxFrameAllocator              m_mfxAllocator;
 	mfxVideoParam                  m_mfxEncParams;
+	mfxVideoParam                  m_mfxVPPParams;
 	mfxFrameAllocResponse          m_mfxResponse;
-	mfxFrameSurface1**             m_pmfxSurfaces;
-	mfxU16                         m_nSurfNum;
+    mfxFrameAllocResponse          m_mfxVPPResponse;
+	mfxFrameSurface1**             m_pmfxEncInSurfaces;
+	mfxU16                         m_nmfxEncInSurfNum;
+	mfxFrameSurface1**             m_pmfxVPPInSurfaces;
+	mfxU16                         m_nmfxVPPInSurfNum;
 	MFXVideoENCODE*                m_pmfxENC;
+	MFXVideoVPP*                   m_pmfxVPP;
 	mfxU8                          m_SPSBuffer[100];
 	mfxU8                          m_PPSBuffer[100];
 	mfxU16                         m_nSPSBufferSize;
@@ -101,6 +107,7 @@ private:
 	mfxVideoParam                  m_parameter;
 	mfxExtCodingOption2            m_co2;
 	mfxExtCodingOption             m_co;
+    mfxExtVPPScaling               m_vppScaling;
 	mfxU16                         m_nTaskPool;
 	Task*                          m_pTaskPool;
 	int                            m_nTaskIdx;

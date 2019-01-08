@@ -230,6 +230,14 @@ struct obs_encoder_info {
 	 */
 	void (*get_video_info)(void *data, struct video_scale_info *info);
 
+	/**
+	* Get information about support of internal HW scaling
+	*
+	* @param          data  Data associated with this encoder context
+	* @returns		  true if internal HW scaling is supported, false if not
+	*/
+	bool(*is_hw_scaling_supported)(void *data);
+
 	void *type_data;
 	void (*free_type_data)(void *type_data);
 

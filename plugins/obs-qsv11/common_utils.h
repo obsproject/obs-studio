@@ -39,10 +39,11 @@ Copyright(c) 2005-2014 Intel Corporation. All Rights Reserved.
 #define MSDK_ALIGN16(value)             (((value + 15) >> 4) << 4)
 #define MSDK_SAFE_RELEASE(X)            {if (X) { X->Release(); X = NULL; }}
 #define MSDK_MAX(A, B)                  (((A) > (B)) ? (A) : (B))
+#define MSDK_GET_SHARED_RESULT(P1, P2)  {if (MFX_ERR_NONE != (P1)) {P2 = P1; }}
 
 // Usage of the following two macros are only required for certain Windows DirectX11 use cases
-#define WILL_READ  0x1000
-#define WILL_WRITE 0x2000
+#define WILL_READ  0xA000
+#define WILL_WRITE 0x8000
 
 // =================================================================
 // Intel Media SDK memory allocator entrypoints....

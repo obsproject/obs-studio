@@ -266,6 +266,8 @@ private slots:
 	void on_advOutFFAEncoder_currentIndexChanged(int idx);
 	void on_advOutFFVEncoder_currentIndexChanged(int idx);
 	void on_advOutFFType_currentIndexChanged(int idx);
+	void on_advOutRecUseRescale_clicked();
+	void on_advOutUseRescale_clicked();
 
 	void on_colorFormat_currentIndexChanged(const QString &text);
 

@@ -547,5 +547,6 @@ struct obs_encoder_info nvenc_encoder_info = {
 	.get_properties = nvenc_properties,
 	.get_extra_data = nvenc_extra_data,
 	.get_sei_data   = nvenc_sei_data,
-	.get_video_info = nvenc_video_info
+	.get_video_info = nvenc_video_info,
+	.is_hw_scaling_supported = NULL
 };

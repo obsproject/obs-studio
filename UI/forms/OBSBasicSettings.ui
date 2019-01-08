@@ -1578,6 +1578,13 @@
                              </property>
                             </widget>
                            </item>
+                           <item row="5" column="1">
+                            <widget class="QCheckBox" name="advOutUseHWRescale">
+                             <property name="text">
+                              <string>Basic.Settings.Output.Adv.UseHWRescale</string>
+                             </property>
+                            </widget>
+                           </item>
                           </layout>
                          </widget>
                         </item>
@@ -1922,6 +1929,13 @@
                                  </property>
                                  <property name="editable">
                                   <bool>true</bool>
+                                 </property>
+                                </widget>
+                               </item>
+                               <item row="7" column="1">
+                                <widget class="QCheckBox" name="advOutRecUseHWRescale">
+                                 <property name="text">
+                                  <string>Basic.Settings.Output.Adv.UseHWRescale</string>
                                  </property>
                                 </widget>
                                </item>

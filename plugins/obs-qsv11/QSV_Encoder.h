@@ -118,7 +118,11 @@ typedef struct
 	mfxU16 nKeyIntSec;
 	mfxU16 nbFrames;
 	mfxU16 nICQQuality;
-	bool   bMBBRC;  
+	bool   bMBBRC;
+    mfxU32 nFourCC;
+    mfxU16 nChromaFormat;
+	mfxU16 nConversionWidth;
+	mfxU16 nConversionHeight;
 } qsv_param_t;
 
 enum qsv_cpu_platform {
@@ -130,7 +134,7 @@ enum qsv_cpu_platform {
 	QSV_CPU_PLATFORM_CHT,
 	QSV_CPU_PLATFORM_HSW,
 	QSV_CPU_PLATFORM_BDW,
-	QSV_CPU_PLATFORM_SKL,  
+	QSV_CPU_PLATFORM_SKL,
 	QSV_CPU_PLATFORM_INTEL
 };
 
@@ -147,6 +151,7 @@ int qsv_encoder_encode(qsv_t *, uint64_t, uint8_t *, uint8_t *, uint32_t,
 int qsv_encoder_headers(qsv_t *, uint8_t **pSPS, uint8_t **pPPS,
 		uint16_t *pnSPS, uint16_t *pnPPS);
 enum qsv_cpu_platform qsv_get_cpu_platform();
+unsigned int qsv_encoder_get_video_format(qsv_t * pContext);
 
 #ifdef __cplusplus
 }

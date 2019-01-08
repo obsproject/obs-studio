@@ -1,6 +1,6 @@
 /******************************************************************************* *\
 
-Copyright (C) 2010-2016 Intel Corporation.  All rights reserved.
+Copyright (C) 2007-2016 Intel Corporation.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -24,88 +24,21 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-File Name: mfxjpeg.h
+File Name: mfxvp9.h
 
 *******************************************************************************/
-#ifndef __MFX_JPEG_H__
-#define __MFX_JPEG_H__
+#ifndef __MFXVP9_H__
+#define __MFXVP9_H__
 
 #include "mfxdefs.h"
 
 #ifdef __cplusplus
-extern "C"
-{
-#endif /* __cplusplus */
-
-/* CodecId */
-enum {
-    MFX_CODEC_JPEG    = MFX_MAKEFOURCC('J','P','E','G')
-};
-
-/* CodecProfile, CodecLevel */
-enum
-{
-    MFX_PROFILE_JPEG_BASELINE      = 1
-};
-
-enum
-{
-    MFX_ROTATION_0      = 0,
-    MFX_ROTATION_90     = 1,
-    MFX_ROTATION_180    = 2,
-    MFX_ROTATION_270    = 3
-};
-
-enum {
-    MFX_EXTBUFF_JPEG_QT      = MFX_MAKEFOURCC('J','P','G','Q'),
-    MFX_EXTBUFF_JPEG_HUFFMAN = MFX_MAKEFOURCC('J','P','G','H')
-};
-
-enum {
-    MFX_JPEG_COLORFORMAT_UNKNOWN = 0,
-    MFX_JPEG_COLORFORMAT_YCbCr   = 1,
-    MFX_JPEG_COLORFORMAT_RGB     = 2
-};
-
-enum {
-    MFX_SCANTYPE_UNKNOWN        = 0,
-    MFX_SCANTYPE_INTERLEAVED    = 1,
-    MFX_SCANTYPE_NONINTERLEAVED = 2
-};
-
-enum {
-    MFX_CHROMAFORMAT_JPEG_SAMPLING = 6
-};
-
-typedef struct {
-    mfxExtBuffer    Header;
-
-    mfxU16  reserved[7];
-    mfxU16  NumTable;
-
-    mfxU16    Qm[4][64];
-} mfxExtJPEGQuantTables;
-
-typedef struct {
-    mfxExtBuffer    Header;
-
-    mfxU16  reserved[2];
-    mfxU16  NumDCTable;
-    mfxU16  NumACTable;
-
-    struct {
-        mfxU8   Bits[16];
-        mfxU8   Values[12];
-    } DCTables[4];
-
-    struct {
-        mfxU8   Bits[16];
-        mfxU8   Values[162];
-    } ACTables[4];
-} mfxExtJPEGHuffmanTables;
+extern "C" {
+#endif
 
 #ifdef __cplusplus
 } // extern "C"
-#endif /* __cplusplus */
+#endif
 
-#endif // __MFX_JPEG_H__
+#endif
+

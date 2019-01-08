@@ -1916,6 +1916,24 @@ EXPORT const char *obs_encoder_get_id(const obs_encoder_t *encoder);
 
 EXPORT uint32_t obs_get_encoder_caps(const char *encoder_id);
 
+/**
+* Check if encoder supports internal HW scaling
+*
+* @param  encoder        Video encoder ID
+* @return				 true if internal HW scaling is supported, or false if not.
+*/
+EXPORT bool obs_encoder_hw_scaling_supported(const char *encoder);
+
+/**
+* Set input video params for internal HW scaling
+*
+* @param  encoder        Video encoder
+* @param  video_width    Width of input frames
+* @param  video_height   Height of input frames
+* @return				 true if successful, or false if not.
+*/
+EXPORT bool obs_encoder_set_internal_scaling_params(obs_encoder_t *encoder, int video_width, int video_height);
+
 #ifndef SWIG
 /** Duplicates an encoder packet */
 DEPRECATED
