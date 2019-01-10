@@ -2405,7 +2405,7 @@ void OBSBasicSettings::LoadHotkeySettings(obs_hotkey_id ignoreKey)
 	layout->setVerticalSpacing(0);
 	layout->setFieldGrowthPolicy(QFormLayout::AllNonFixedFieldsGrow);
 	layout->setLabelAlignment(
-			Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
+			Qt::AlignLeft |Qt::AlignLeading|Qt::AlignVCenter);
 
 	auto widget = new QWidget();
 	widget->setLayout(layout);
@@ -2420,7 +2420,6 @@ void OBSBasicSettings::LoadHotkeySettings(obs_hotkey_id ignoreKey)
 
 	auto setRowVisible = [=](int row, bool visible, QLayoutItem *label) {
 		label->widget()->setVisible(visible);
-
 		auto field = layout->itemAt(row, QFormLayout::FieldRole);
 		if (field)
 			field->widget()->setVisible(visible);

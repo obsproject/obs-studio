@@ -122,7 +122,7 @@ void OBSPropertiesView::RefreshProperties()
 	QSizePolicy policy(QSizePolicy::Preferred, QSizePolicy::Preferred);
 	//widget->setSizePolicy(policy);
 
-	layout->setLabelAlignment(Qt::AlignRight);
+	layout->setLabelAlignment(Qt::AlignLeft);
 
 	obs_property_t *property = obs_properties_first(properties.get());
 	bool hasNoProperties = !property;
@@ -1392,7 +1392,7 @@ void OBSPropertiesView::AddProperty(obs_property_t *property,
 
 	if (label && minSize) {
 		label->setMinimumWidth(minSize);
-		label->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+		label->setAlignment(Qt::AlignLeft|Qt::AlignLeading|Qt::AlignVCenter);
 	}
 
 	if (label && !obs_property_enabled(property))

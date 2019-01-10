@@ -101,6 +101,12 @@ QLabel#errorLabel {
     font-weight: bold;
 }
 
+/* Obs source label */
+
+OBSSourceLabel {
+    font-weight: bold;
+}
+
 * [themeID="warning"] {
     color: rgb(192, 128, 0);
     font-weight: bold;
@@ -160,4 +166,8 @@ OBSBasicSettings {
     qproperty-videoIcon: url(:settings/images/settings/video.svg);
     qproperty-hotkeysIcon: url(:settings/images/settings/hotkeys.svg);
     qproperty-advancedIcon: url(:settings/images/settings/advanced.svg);
+}
+/* groupbox titles */
+QGroupBox {
+    font-weight: bold;
 }

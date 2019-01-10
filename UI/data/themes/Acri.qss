@@ -843,6 +843,12 @@ QLabel#errorLabel {
 	font-weight: bold;
 }
 
+/* Obs source label */
+
+OBSSourceLabel {
+	font-weight: bold;
+}
+
 /* Settings Menu */
 
 #buttonBox {

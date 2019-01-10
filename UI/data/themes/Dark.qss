@@ -147,8 +147,9 @@ QGroupBox {
     border: 1px solid rgb(31,30,31); /* veryDark */;
     border-radius: 5px;
     padding-top: 16px;
+    font-weight: bold;
+    margin-top: 20px;
 }
-
 
 /* ScrollBars */
 
@@ -645,7 +646,6 @@ SourceTreeSubItemCheckBox::indicator:unchecked {
     image: url(./Dark/collapse.png);
 }
 
-
 /* Label warning/error */
 
 QLabel#warningLabel {
@@ -655,6 +655,12 @@ QLabel#warningLabel {
 
 QLabel#errorLabel {
     color: rgb(192, 0, 0);
+    font-weight: bold;
+}
+
+/* Obs source label */
+
+OBSSourceLabel {
     font-weight: bold;
 }
 
