@@ -65,6 +65,7 @@ public:
 	virtual Auth::Type type() const override {return Auth::Type::Twitch;}
 
 	virtual void LoadUI() override;
+	virtual void OnStreamConfig() override;
 
 	static std::shared_ptr<Auth> Login(QWidget *parent);
 };

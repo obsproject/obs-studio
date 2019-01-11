@@ -597,6 +597,8 @@ public:
 	void SaveService();
 	bool LoadService();
 
+	inline Auth *GetAuth() {return auth.get();}
+
 	inline void EnableOutputs(bool enable)
 	{
 		if (enable) {

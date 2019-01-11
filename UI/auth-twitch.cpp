@@ -309,3 +309,16 @@ std::shared_ptr<Auth> TwitchAuth::Login(QWidget *parent)
 
 	return std::shared_ptr<Auth>();
 }
+
+void TwitchAuth::OnStreamConfig()
+{
+	OBSBasic *main = OBSBasic::Get();
+	obs_service_t *service = main->GetService();
+
+	obs_data_t *settings = obs_service_get_settings(service);
+
+	obs_data_set_string(settings, "key", key().c_str());
+	obs_service_update(service, settings);
+
+	obs_data_release(settings);
+}

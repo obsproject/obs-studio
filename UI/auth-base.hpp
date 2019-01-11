@@ -18,6 +18,8 @@ public:
 	const char *typeName();
 	virtual void LoadUI() {}
 
+	virtual void OnStreamConfig() {}
+
 	static bool Load();
 	static void Save();
 };
