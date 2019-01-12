@@ -6320,6 +6320,14 @@ void OBSBasic::on_lockUI_toggled(bool lock)
 	ui->transitionsDock->setFeatures(features);
 	ui->controlsDock->setFeatures(features);
 	statsDock->setFeatures(features);
+
+	for (int i = extraDocks.size() - 1; i >= 0 ; i--) {
+		if (!extraDocks[i]) {
+			extraDocks.removeAt(i);
+		} else {
+			extraDocks[i]->setFeatures(features);
+		}
+	}
 }
 
 void OBSBasic::on_toggleListboxToolbars_toggled(bool visible)
@@ -6911,6 +6919,13 @@ QAction *OBSBasic::AddDockWidgetMenu(QDockWidget *dock)
 	action->setCheckable(true);
 	assignDockToggle(dock, action);
 	extraDocks.push_back(dock);
+
+	bool lock = ui->lockUI->isChecked();
+	QDockWidget::DockWidgetFeatures features = lock
+		? QDockWidget::NoDockWidgetFeatures
+		: QDockWidget::AllDockWidgetFeatures;
+
+	dock->setFeatures(features);
 
 	/* prune deleted docks */
 	for (int i = extraDocks.size() - 1; i >= 0 ; i--) {
