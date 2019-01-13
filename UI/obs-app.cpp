@@ -1232,6 +1232,8 @@ bool OBSApp::OBSInit()
 	obs_apply_private_data(settings);
 	obs_data_release(settings);
 
+	blog(LOG_INFO, "Current Date/Time: %s", CurrentDateTimeString().c_str());
+
 	blog(LOG_INFO, "Browser Hardware Acceleration: %s",
 			browserHWAccel ? "true" : "false");
 #endif
