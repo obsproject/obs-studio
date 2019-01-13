@@ -101,7 +101,7 @@ OBSAdvAudioCtrl::OBSAdvAudioCtrl(QGridLayout *, obs_source_t *source_)
 	balance->setValue((int)bal);
 
 	int64_t cur_sync = obs_source_get_sync_offset(source);
-	syncOffset->setMinimum(-20000);
+	syncOffset->setMinimum(-950);
 	syncOffset->setMaximum(20000);
 	syncOffset->setValue(int(cur_sync / NSEC_PER_MSEC));
 
