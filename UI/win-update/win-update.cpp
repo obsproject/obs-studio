@@ -242,7 +242,7 @@ try {
 	return true;
 
 } catch (string text) {
-	blog(LOG_WARNING, "%s: %s", __FUNCTION__, text.c_str());
+	blog(LOG_DEBUG, "%s: %s", __FUNCTION__, text.c_str());
 	return false;
 }
 
