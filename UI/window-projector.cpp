@@ -671,6 +671,7 @@ void OBSProjector::OBSRender(void *data, uint32_t cx, uint32_t cy)
 			obs_source_dec_showing(source);
 			obs_source_inc_showing(curSource);
 			source = curSource;
+			window->source = source;
 		}
 	}
 
