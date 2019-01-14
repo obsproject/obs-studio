@@ -886,6 +886,10 @@
                     "url": "rtmp://la.castr.io"
                 },
                 {
+                    "name": "New York US",
+                    "url": "rtmp://ny.castr.io"
+                },
+                {
                     "name": "Montreal CA",
                     "url": "rtmp://qc.castr.io"
                 },
@@ -898,6 +902,10 @@
                     "url": "rtmp://de.castr.io"
                 },
                 {
+                    "name": "Frankfurt DE 2",
+                    "url": "rtmp://fr.castr.io"
+                },
+                {
                     "name": "Moscow RU",
                     "url": "rtmp://ru.castr.io"
                 },
@@ -908,6 +916,34 @@
                 {
                     "name": "Sydney AU",
                     "url": "rtmp://au.castr.io"
+                },
+                {
+                    "name": "Brazil",
+                    "url": "rtmp://br.castr.io"
+                },
+                {
+                    "name": "US Central",
+                    "url": "rtmp://us-central.castr.io"
+                },
+                {
+                    "name": "US West",
+                    "url": "rtmp://us-west.castr.io"
+                },
+                {
+                    "name": "US East",
+                    "url": "rtmp://us-east.castr.io"
+                },
+                {
+                    "name": "US South",
+                    "url": "rtmp://us-south.castr.io"
+                },
+                {
+                    "name": "South America",
+                    "url": "rtmp://south-am.castr.io"
+                },
+                {
+                    "name": "EU Central",
+                    "url": "rtmp://eu-central.castr.io"
                 }
             ],
             "recommended": {
