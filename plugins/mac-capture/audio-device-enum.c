@@ -1,7 +1,8 @@
 #include <CoreFoundation/CFString.h>
 #include <CoreAudio/CoreAudio.h>
 
-#include "mac-helpers.h"
+#include <util/apple/cfstring-utils.h>
+
 #include "audio-device-enum.h"
 
 /* ugh, because mac has no means of capturing output, we have to basically
@@ -114,9 +115,9 @@ static bool coreaudio_enum_add_device(void *param, CFStringRef cf_name,
 
 	memset(&item, 0, sizeof(item));
 
-	if (!cf_to_dstr(cf_name, &item.name))
+	if (!cfstr_copy_dstr(cf_name, kCFStringEncodingUTF8, &item.name))
 		goto fail;
-	if (!cf_to_dstr(cf_uid,  &item.value))
+	if (!cfstr_copy_dstr(cf_uid,  kCFStringEncodingUTF8, &item.value))
 		goto fail;
 
 	if (data->input || !device_is_input(item.value.array))

@@ -82,7 +82,7 @@ static void log_processor_info(void)
 	DWORD   size, speed;
 	LSTATUS status;
 
-	memset(data, 0, 1024);
+	memset(data, 0, sizeof(data));
 
 	status = RegOpenKeyW(HKEY_LOCAL_MACHINE,
 			L"HARDWARE\\DESCRIPTION\\System\\CentralProcessor\\0",
@@ -90,7 +90,7 @@ static void log_processor_info(void)
 	if (status != ERROR_SUCCESS)
 		return;
 
-	size = 1024;
+	size = sizeof(data);
 	status = RegQueryValueExW(key, L"ProcessorNameString", NULL, NULL,
 			(LPBYTE)data, &size);
 	if (status == ERROR_SUCCESS) {
@@ -220,6 +220,10 @@ static void log_gaming_features(void)
 			L"HistoricalCaptureEnabled", &game_dvr_bg_recording);
 	get_reg_dword(HKEY_CURRENT_USER, WIN10_GAME_MODE_REG_KEY,
 			L"AllowAutoGameMode", &game_mode_enabled);
+	if (game_mode_enabled.status != ERROR_SUCCESS) {
+		get_reg_dword(HKEY_CURRENT_USER, WIN10_GAME_MODE_REG_KEY,
+				L"AutoGameModeEnabled", &game_mode_enabled);
+	}
 
 	blog(LOG_INFO, "Windows 10 Gaming Features:");
 	if (game_bar_enabled.status == ERROR_SUCCESS) {

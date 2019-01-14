@@ -124,7 +124,7 @@ void device_stage_texture(gs_device_t *device, gs_stagesurf_t *dst,
 	if (!gl_bind_buffer(GL_PIXEL_PACK_BUFFER, dst->pack_buffer))
 		goto failed;
 
-	fbo = get_fbo(device, dst->width, dst->height, dst->format);
+	fbo = get_fbo(src, dst->width, dst->height);
 
 	if (!gl_get_integer_v(GL_READ_FRAMEBUFFER_BINDING, &last_fbo))
 		goto failed_unbind_buffer;
@@ -152,6 +152,8 @@ failed_unbind_buffer:
 failed:
 	if (!success)
 		blog(LOG_ERROR, "device_stage_texture (GL) failed");
+
+	UNUSED_PARAMETER(device);
 }
 
 #else

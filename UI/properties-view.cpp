@@ -1663,11 +1663,18 @@ bool WidgetInfo::FontChanged(const char *setting)
 	uint32_t   flags;
 	QFont      font;
 
+	QFontDialog::FontDialogOptions options;
+
+#ifdef __APPLE__
+	options = QFontDialog::DontUseNativeDialog;
+#endif
+
 	if (!font_obj) {
-		font = QFontDialog::getFont(&success, view);
+		QFont initial;
+		font = QFontDialog::getFont(&success, initial, view, "Pick a Font", options);
 	} else {
 		MakeQFont(font_obj, font);
-		font = QFontDialog::getFont(&success, font, view);
+		font = QFontDialog::getFont(&success, font, view, "Pick a Font", options);
 		obs_data_release(font_obj);
 	}
 

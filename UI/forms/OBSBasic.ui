@@ -146,11 +146,14 @@
     </widget>
     <addaction name="actionHelpPortal"/>
     <addaction name="actionWebsite"/>
+    <addaction name="actionDiscord"/>
     <addaction name="separator"/>
     <addaction name="menuLogFiles"/>
     <addaction name="menuCrashLogs"/>
     <addaction name="separator"/>
     <addaction name="actionCheckForUpdates"/>
+    <addaction name="actionShowAbout"/>
+    <addaction name="separator"/>
    </widget>
    <widget class="QMenu" name="menuBasic_MainMenu_Edit">
     <property name="title">
@@ -292,6 +295,7 @@
      <addaction name="toggleMixer"/>
      <addaction name="toggleTransitions"/>
      <addaction name="toggleControls"/>
+     <addaction name="toggleStats"/>
     </widget>
     <action name="actionFullscreenInterface">
      <property name="text">
@@ -1556,7 +1560,7 @@
   </action>
   <action name="autoConfigure">
    <property name="text">
-    <string>Basic.AutoConfig.Beta</string>
+    <string>Basic.AutoConfig</string>
    </property>
   </action>
   <action name="stats">
@@ -1648,6 +1652,27 @@
   <action name="actionUploadLastCrashLog">
    <property name="text">
     <string>Basic.MainMenu.Help.CrashLogs.UploadLastLog</string>
+   </property>
+  </action>
+  <action name="actionDiscord">
+   <property name="text">
+    <string>Basic.MainMenu.Help.Discord</string>
+   </property>
+  </action>
+  <action name="toggleStats">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Basic.Stats</string>
+   </property>
+  </action>
+  <action name="actionShowAbout">
+   <property name="text">
+    <string>Basic.MainMenu.Help.About</string>
    </property>
   </action>
  </widget>

@@ -4,30 +4,44 @@
     <file>images/unmute.png</file>
     <file>images/refresh.png</file>
     <file>images/configuration21_16.png</file>
+    <file>images/configuration21_16@2x.png</file>
     <file>images/invisible_mask.png</file>
+    <file>images/invisible_mask@2x.png</file>
     <file>images/visible_mask.png</file>
+    <file>images/visible_mask@2x.png</file>
     <file>images/list_remove.png</file>
     <file>images/add.png</file>
     <file>images/down.png</file>
     <file>images/editscene.png</file>
     <file>images/live.png</file>
     <file>images/properties.png</file>
+    <file>images/properties@2x.png</file>
     <file>images/up.png</file>
     <file>images/obs.png</file>
     <file>images/tray_active.png</file>
     <file>images/locked_mask.png</file>
+    <file>images/locked_mask@2x.png</file>
     <file>images/unlocked_mask.png</file>
+    <file>images/unlocked_mask@2x.png</file>
     <file>images/collapse.png</file>
     <file>images/expand.png</file>
   </qresource>
   <qresource prefix="/settings">
     <file>images/settings/advanced.png</file>
+    <file>images/settings/advanced@2x.png</file>
     <file>images/settings/network.png</file>
+    <file>images/settings/network@2x.png</file>
     <file>images/settings/video-display-3.png</file>
+    <file>images/settings/video-display-3@2x.png</file>
     <file>images/settings/decibel_audio_player.png</file>
+    <file>images/settings/decibel_audio_player@2x.png</file>
     <file>images/settings/applications-system-2.png</file>
+    <file>images/settings/applications-system-2@2x.png</file>
     <file>images/settings/system-settings-3.png</file>
+    <file>images/settings/system-settings-3@2x.png</file>
     <file>images/settings/network-bluetooth.png</file>
+    <file>images/settings/network-bluetooth@2x.png</file>
     <file>images/settings/preferences-desktop-keyboard-shortcuts.png</file>
+    <file>images/settings/preferences-desktop-keyboard-shortcuts@2x.png</file>
   </qresource>
 </RCC>

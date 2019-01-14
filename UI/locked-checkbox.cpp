@@ -7,10 +7,17 @@
 
 LockedCheckBox::LockedCheckBox() : QCheckBox()
 {
-	lockedImage =
-		QPixmap::fromImage(QImage(":/res/images/locked_mask.png"));
-	unlockedImage =
-		QPixmap::fromImage(QImage(":/res/images/unlocked_mask.png"));
+	QString lockedFile;
+	QString unlockedFile;
+	if (devicePixelRatio() >= 2) {
+		lockedFile = ":/res/images/locked_mask@2x.png";
+		unlockedFile = ":/res/images/unlocked_mask@2x.png";
+	} else {
+		lockedFile = ":/res/images/locked_mask.png";
+		unlockedFile = ":/res/images/unlocked_mask.png";
+	}
+	lockedImage = QPixmap::fromImage(QImage(lockedFile));
+	unlockedImage = QPixmap::fromImage(QImage(unlockedFile));
 	setMinimumSize(16, 16);
 
 	setStyleSheet("outline: none;");
@@ -31,6 +38,5 @@ void LockedCheckBox::paintEvent(QPaintEvent *event)
 			palette().color(foregroundRole()));
 
 	QPainter p(this);
-	p.drawPixmap(0, 0, image.width(), image.height(),
-			QPixmap::fromImage(image));
+	p.drawPixmap(0, 0, 16, 16, QPixmap::fromImage(image));
 }

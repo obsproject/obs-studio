@@ -35,6 +35,7 @@
 #define SETTING_LIMIT_FRAMERATE  "limit_framerate"
 #define SETTING_CAPTURE_OVERLAYS "capture_overlays"
 #define SETTING_ANTI_CHEAT_HOOK  "anti_cheat_hook"
+#define SETTING_HOOK_RATE        "hook_rate"
 
 /* deprecated */
 #define SETTING_ANY_FULLSCREEN   "capture_any_fullscreen"
@@ -62,6 +63,11 @@
 #define TEXT_LIMIT_FRAMERATE     obs_module_text("GameCapture.LimitFramerate")
 #define TEXT_CAPTURE_OVERLAYS    obs_module_text("GameCapture.CaptureOverlays")
 #define TEXT_ANTI_CHEAT_HOOK     obs_module_text("GameCapture.AntiCheatHook")
+#define TEXT_HOOK_RATE           obs_module_text("GameCapture.HookRate")
+#define TEXT_HOOK_RATE_SLOW      obs_module_text("GameCapture.HookRate.Slow")
+#define TEXT_HOOK_RATE_NORMAL    obs_module_text("GameCapture.HookRate.Normal")
+#define TEXT_HOOK_RATE_FAST      obs_module_text("GameCapture.HookRate.Fast")
+#define TEXT_HOOK_RATE_FASTEST   obs_module_text("GameCapture.HookRate.Fastest")
 
 #define TEXT_MODE_ANY            TEXT_ANY_FULLSCREEN
 #define TEXT_MODE_WINDOW         obs_module_text("GameCapture.CaptureWindow")
@@ -79,6 +85,13 @@ enum capture_mode {
 	CAPTURE_MODE_HOTKEY
 };
 
+enum hook_rate {
+	HOOK_RATE_SLOW,
+	HOOK_RATE_NORMAL,
+	HOOK_RATE_FAST,
+	HOOK_RATE_FASTEST
+};
+
 struct game_capture_config {
 	char                          *title;
 	char                          *class;
@@ -94,6 +107,7 @@ struct game_capture_config {
 	bool                          limit_framerate;
 	bool                          capture_overlays;
 	bool                          anticheat_hook;
+	enum hook_rate                hook_rate;
 };
 
 struct game_capture {
@@ -266,6 +280,22 @@ static inline HANDLE open_process(DWORD desired_access, bool inherit_handle,
 	return open_process_proc(desired_access, inherit_handle, process_id);
 }
 
+static inline float hook_rate_to_float(enum hook_rate rate)
+{
+	switch (rate) {
+	case HOOK_RATE_SLOW:
+		return 2.0f;
+	case HOOK_RATE_FAST:
+		return 0.5f;
+	case HOOK_RATE_FASTEST:
+		return 0.1f;
+	case HOOK_RATE_NORMAL:
+		/* FALLTHROUGH */
+	default:
+		return 1.0f;
+	}
+}
+
 static void stop_capture(struct game_capture *gc)
 {
 	ipc_pipe_server_free(&gc->pipe);
@@ -390,6 +420,8 @@ static inline void get_config(struct game_capture_config *cfg,
 			SETTING_CAPTURE_OVERLAYS);
 	cfg->anticheat_hook = obs_data_get_bool(settings,
 			SETTING_ANTI_CHEAT_HOOK);
+	cfg->hook_rate = (enum hook_rate)obs_data_get_int(settings,
+			SETTING_HOOK_RATE);
 
 	scale_str = obs_data_get_string(settings, SETTING_SCALE_RES);
 	ret = sscanf(scale_str, "%"PRIu32"x%"PRIu32,
@@ -504,7 +536,8 @@ static void game_capture_update(void *data, obs_data_t *settings)
 
 	free_config(&gc->config);
 	gc->config = cfg;
-	gc->retry_interval = DEFAULT_RETRY_INTERVAL;
+	gc->retry_interval = DEFAULT_RETRY_INTERVAL *
+			hook_rate_to_float(gc->config.hook_rate);
 	gc->wait_for_target_startup = false;
 
 	dstr_free(&gc->title);
@@ -537,7 +570,8 @@ static void *game_capture_create(obs_data_t *settings, obs_source_t *source)
 
 	gc->source = source;
 	gc->initial_config = true;
-	gc->retry_interval = DEFAULT_RETRY_INTERVAL;
+	gc->retry_interval = DEFAULT_RETRY_INTERVAL *
+			hook_rate_to_float(gc->config.hook_rate);
 	gc->hotkey_pair = obs_hotkey_pair_register_source(
 			gc->source,
 			HOTKEY_START, TEXT_HOTKEY_START,
@@ -727,7 +761,7 @@ static inline bool init_hook_info(struct game_capture *gc)
 
 	if (gc->config.force_shmem) {
 		warn("init_hook_info: user is forcing shared memory "
-			"(compatibility mode)");
+			"(multi-adapter compatibility mode)");
 	}
 
 	gc->global_hook_info->offsets = gc->process_is_64bit ?
@@ -923,6 +957,8 @@ static const char *blacklisted_exes[] = {
 	"shellexperiencehost",
 	"winstore.app",
 	"searchui",
+	"lockapp",
+	"windowsinternal.composableshell.experiences.textinput.inputapp",
 	NULL
 };
 
@@ -1042,7 +1078,8 @@ static void setup_window(struct game_capture *gc, HWND window)
 	 * (such as steam) need a little bit of time to load.  ultimately this
 	 * helps prevent crashes */
 	if (gc->wait_for_target_startup) {
-		gc->retry_interval = 3.0f;
+		gc->retry_interval = 3.0f *
+				hook_rate_to_float(gc->config.hook_rate);
 		gc->wait_for_target_startup = false;
 	} else {
 		gc->next_window = window;
@@ -1593,7 +1630,7 @@ static void game_capture_tick(void *data, float seconds)
 			get_window_class(&gc->class, hwnd);
 
 			gc->priority = WINDOW_PRIORITY_CLASS;
-			gc->retry_time = 10.0f;
+			gc->retry_time = 10.0f * hook_rate_to_float(gc->config.hook_rate);
 			gc->activate_hook = true;
 		} else {
 			deactivate = false;
@@ -1612,7 +1649,7 @@ static void game_capture_tick(void *data, float seconds)
 		return;
 
 	} else if (!gc->showing) {
-		gc->retry_time = 10.0f;
+		gc->retry_time = 10.0f * hook_rate_to_float(gc->config.hook_rate);
 	}
 
 	if (gc->hook_stop && object_signalled(gc->hook_stop)) {
@@ -1638,7 +1675,8 @@ static void game_capture_tick(void *data, float seconds)
 			gc->error_acquiring = true;
 
 		} else if (!gc->capturing) {
-			gc->retry_interval = ERROR_RETRY_INTERVAL;
+			gc->retry_interval = ERROR_RETRY_INTERVAL *
+					hook_rate_to_float(gc->config.hook_rate);
 			stop_capture(gc);
 		}
 	}
@@ -1653,7 +1691,8 @@ static void game_capture_tick(void *data, float seconds)
 			debug("init_capture_data failed");
 
 		if (result != CAPTURE_RETRY && !gc->capturing) {
-			gc->retry_interval = ERROR_RETRY_INTERVAL;
+			gc->retry_interval = ERROR_RETRY_INTERVAL *
+					hook_rate_to_float(gc->config.hook_rate);
 			stop_capture(gc);
 		}
 	}
@@ -1757,13 +1796,13 @@ static void game_capture_render(void *data, gs_effect_t *effect)
 static uint32_t game_capture_width(void *data)
 {
 	struct game_capture *gc = data;
-	return gc->active ? gc->global_hook_info->cx : 0;
+	return gc->active ? gc->cx : 0;
 }
 
 static uint32_t game_capture_height(void *data)
 {
 	struct game_capture *gc = data;
-	return gc->active ? gc->global_hook_info->cy : 0;
+	return gc->active ? gc->cy : 0;
 }
 
 static const char *game_capture_name(void *unused)
@@ -1785,6 +1824,8 @@ static void game_capture_defaults(obs_data_t *settings)
 	obs_data_set_default_bool(settings, SETTING_LIMIT_FRAMERATE, false);
 	obs_data_set_default_bool(settings, SETTING_CAPTURE_OVERLAYS, false);
 	obs_data_set_default_bool(settings, SETTING_ANTI_CHEAT_HOOK, true);
+	obs_data_set_default_int(settings, SETTING_HOOK_RATE,
+			(int)HOOK_RATE_NORMAL);
 }
 
 static bool mode_callback(obs_properties_t *ppts,
@@ -1999,6 +2040,14 @@ static obs_properties_t *game_capture_properties(void *data)
 
 	obs_properties_add_bool(ppts, SETTING_CAPTURE_OVERLAYS,
 			TEXT_CAPTURE_OVERLAYS);
+
+	p = obs_properties_add_list(ppts, SETTING_HOOK_RATE,
+			TEXT_HOOK_RATE, OBS_COMBO_TYPE_LIST,
+			OBS_COMBO_FORMAT_INT);
+	obs_property_list_add_int(p, TEXT_HOOK_RATE_SLOW,    HOOK_RATE_SLOW);
+	obs_property_list_add_int(p, TEXT_HOOK_RATE_NORMAL,  HOOK_RATE_NORMAL);
+	obs_property_list_add_int(p, TEXT_HOOK_RATE_FAST,    HOOK_RATE_FAST);
+	obs_property_list_add_int(p, TEXT_HOOK_RATE_FASTEST, HOOK_RATE_FASTEST);
 
 	UNUSED_PARAMETER(data);
 	return ppts;

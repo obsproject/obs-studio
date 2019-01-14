@@ -4,23 +4,28 @@
 
 Q_DECLARE_METATYPE(OBSSceneItem);
 
-static OBSSceneItem FindASelectedItem(OBSScene scene)
+static bool find_sel(obs_scene_t *, obs_sceneitem_t *item, void *param)
 {
-	auto func = [] (obs_scene_t *scene, obs_sceneitem_t *item, void *param)
-	{
-		OBSSceneItem &dst = *reinterpret_cast<OBSSceneItem*>(param);
+	OBSSceneItem &dst = *reinterpret_cast<OBSSceneItem*>(param);
 
-		if (obs_sceneitem_selected(item)) {
-			dst = item;
+	if (obs_sceneitem_selected(item)) {
+		dst = item;
+		return false;
+	}
+	if (obs_sceneitem_is_group(item)) {
+		obs_sceneitem_group_enum_items(item, find_sel, param);
+		if (!!dst) {
 			return false;
 		}
+	}
 
-		UNUSED_PARAMETER(scene);
-		return true;
-	};
+	return true;
+};
 
+static OBSSceneItem FindASelectedItem(OBSScene scene)
+{
 	OBSSceneItem item;
-	obs_scene_enum_items(scene, func, &item);
+	obs_scene_enum_items(scene, find_sel, &item);
 	return item;
 }
 
@@ -63,9 +68,10 @@ OBSBasicTransform::OBSBasicTransform(OBSBasic *parent)
 
 	installEventFilter(CreateShortcutFilter());
 
-	OBSScene curScene = main->GetCurrentScene();
-	SetScene(curScene);
-	SetItem(FindASelectedItem(curScene));
+	OBSSceneItem item = FindASelectedItem(main->GetCurrentScene());
+	OBSScene scene = obs_sceneitem_get_scene(item);
+	SetScene(scene);
+	SetItem(item);
 
 	channelChangedSignal.Connect(obs_get_signal_handler(), "channel_change",
 			OBSChannelChanged, this);

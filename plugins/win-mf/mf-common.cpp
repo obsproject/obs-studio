@@ -24,6 +24,7 @@ static void DBGMSG(PCWSTR format, ...)
 		MF_LOG(LOG_INFO, "%s", cmsg);
 		bfree(cmsg);
 	}
+	va_end(args);
 }
 
 #ifndef IF_EQUAL_RETURN

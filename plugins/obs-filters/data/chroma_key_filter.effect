@@ -55,17 +55,15 @@ float4 SampleTexture(float2 uv)
 
 float GetBoxFilteredChromaDist(float3 rgb, float2 texCoord)
 {
-	float distVal = GetChromaDist(rgb);
-	distVal += GetChromaDist(SampleTexture(texCoord-pixel_size).rgb);
-	distVal += GetChromaDist(SampleTexture(texCoord-float2(pixel_size.x, 0.0)).rgb);
-	distVal += GetChromaDist(SampleTexture(texCoord-float2(pixel_size.x, -pixel_size.y)).rgb);
-
-	distVal += GetChromaDist(SampleTexture(texCoord-float2(0.0, pixel_size.y)).rgb);
-	distVal += GetChromaDist(SampleTexture(texCoord+float2(0.0, pixel_size.y)).rgb);
-
-	distVal += GetChromaDist(SampleTexture(texCoord+float2(pixel_size.x, -pixel_size.y)).rgb);
-	distVal += GetChromaDist(SampleTexture(texCoord+float2(pixel_size.x, 0.0)).rgb);
-	distVal += GetChromaDist(SampleTexture(texCoord+pixel_size).rgb);
+	float2 h_pixel_size = pixel_size / 2.0;
+	float2 point_0 = float2(pixel_size.x, h_pixel_size.y);
+	float2 point_1 = float2(h_pixel_size.x, -pixel_size.y);
+	float distVal = GetChromaDist(SampleTexture(texCoord-point_0).rgb);
+	distVal += GetChromaDist(SampleTexture(texCoord+point_0).rgb);
+	distVal += GetChromaDist(SampleTexture(texCoord-point_1).rgb);
+	distVal += GetChromaDist(SampleTexture(texCoord+point_1).rgb);
+	distVal *= 2.0;
+	distVal += GetChromaDist(rgb);
 	return distVal / 9.0;
 }
 
@@ -76,6 +74,7 @@ float4 ProcessChromaKey(float4 rgba, VertData v_in)
 	float fullMask = pow(saturate(baseMask / smoothness), 1.5);
 	float spillVal = pow(saturate(baseMask / spill), 1.5);
 
+	rgba.rgba *= color;
 	rgba.a *= fullMask;
 
 	float desat = (rgba.r * 0.2126 + rgba.g * 0.7152 + rgba.b * 0.0722);
@@ -86,7 +85,7 @@ float4 ProcessChromaKey(float4 rgba, VertData v_in)
 
 float4 PSChromaKeyRGBA(VertData v_in) : TARGET
 {
-	float4 rgba = image.Sample(textureSampler, v_in.uv) * color;
+	float4 rgba = image.Sample(textureSampler, v_in.uv);
 	return ProcessChromaKey(rgba, v_in);
 }
 

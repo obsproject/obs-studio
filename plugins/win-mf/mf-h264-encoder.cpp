@@ -66,7 +66,8 @@ H264Encoder::H264Encoder(const obs_encoder_t *encoder,
 	framerateNum(framerateNum),
 	framerateDen(framerateDen),
 	initialBitrate(bitrate),
-	profile(profile)
+	profile(profile),
+	createOutputSample(false)
 {}
 
 H264Encoder::~H264Encoder()

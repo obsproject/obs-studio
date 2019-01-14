@@ -804,6 +804,10 @@ static ULONG_PTR gdip_token = 0;
 
 OBS_DECLARE_MODULE()
 OBS_MODULE_USE_DEFAULT_LOCALE("obs-text", "en-US")
+MODULE_EXPORT const char *obs_module_description(void)
+{
+	return "Windows GDI+ text source";
+}
 
 #define set_vis(var, val, show) \
 	do { \

@@ -27,21 +27,21 @@
 /*
  * Increment if major breaking API changes
  */
-#define LIBOBS_API_MAJOR_VER  21
+#define LIBOBS_API_MAJOR_VER  22
 
 /*
  * Increment if backward-compatible additions
  *
  * Reset to zero each major version
  */
-#define LIBOBS_API_MINOR_VER  1
+#define LIBOBS_API_MINOR_VER  0
 
 /*
  * Increment if backward-compatible bug fix
  *
  * Reset to zero each major or minor version
  */
-#define LIBOBS_API_PATCH_VER  0
+#define LIBOBS_API_PATCH_VER  3
 
 #define MAKE_SEMANTIC_VERSION(major, minor, patch) \
                              ((major << 24) | \
@@ -61,6 +61,11 @@
 # define OBS_INSTALL_PREFIX ""
 # define OBS_PLUGIN_DESTINATION "obs-plugins"
 # define OBS_RELATIVE_PREFIX "../../"
+# define OBS_RELEASE_CANDIDATE_MAJOR 0
+# define OBS_RELEASE_CANDIDATE_MINOR 0
+# define OBS_RELEASE_CANDIDATE_PATCH 0
+# define OBS_RELEASE_CANDIDATE_VER 0
+# define OBS_RELEASE_CANDIDATE 0
 #endif
 
 #define OBS_INSTALL_DATA_PATH OBS_INSTALL_PREFIX OBS_DATA_PATH

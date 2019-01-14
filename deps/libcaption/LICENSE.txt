@@ -1,6 +1,6 @@
 The MIT License
 
-Copyright 2016-2016 Twitch Interactive, Inc. or its affiliates. All Rights Reserved.
+Copyright 2016-2017 Twitch Interactive, Inc. or its affiliates. All Rights Reserved.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

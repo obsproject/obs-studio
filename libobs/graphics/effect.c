@@ -286,6 +286,63 @@ gs_eparam_t *gs_effect_get_param_by_name(const gs_effect_t *effect,
 	return NULL;
 }
 
+size_t gs_param_get_num_annotations(const gs_eparam_t *param)
+{
+	return param ? param->annotations.num : 0;
+}
+
+gs_eparam_t *gs_param_get_annotation_by_idx(const gs_eparam_t *param,
+		size_t annotation)
+{
+	if (!param) return NULL;
+	
+	struct gs_effect_param *params = param->annotations.array;
+	if (annotation > param->annotations.num)
+		return NULL;
+
+	return params + annotation;
+}
+
+gs_eparam_t *gs_param_get_annotation_by_name(const gs_eparam_t *param,
+		const char *name)
+{
+	if (!param) return NULL;
+	struct gs_effect_param *params = param->annotations.array;
+
+	for (size_t i = 0; i < param->annotations.num; i++) {
+		struct gs_effect_param *g_param = params + i;
+		if (strcmp(g_param->name, name) == 0)
+			return g_param;
+	}
+	return NULL;
+}
+
+gs_epass_t *gs_technique_get_pass_by_idx(const gs_technique_t *technique,
+		size_t pass)
+{
+	if (!technique) return NULL;
+	struct gs_effect_pass *passes = technique->passes.array;
+
+	if (pass > technique->passes.num)
+		return NULL;
+
+	return passes + pass;
+}
+
+gs_epass_t *gs_technique_get_pass_by_name(const gs_technique_t *technique,
+		const char *name)
+{
+	if (!technique) return NULL;
+	struct gs_effect_pass *passes = technique->passes.array;
+
+	for (size_t i = 0; i < technique->passes.num; i++) {
+		struct gs_effect_pass *g_pass = passes + i;
+		if (strcmp(g_pass->name, name) == 0)
+			return g_pass;
+	}
+	return NULL;
+}
+
 gs_eparam_t *gs_effect_get_viewproj_matrix(const gs_effect_t *effect)
 {
 	return effect ? effect->view_proj : NULL;
@@ -330,6 +387,45 @@ static inline void effect_setval_inline(gs_eparam_t *param,
 		memcpy(param->cur_val.array, data, size);
 		param->changed = true;
 	}
+}
+
+#ifndef min
+#define min(a,b) (((a) < (b)) ? (a) : (b))
+#endif
+static inline void effect_getval_inline(gs_eparam_t *param, void *data,
+		size_t size)
+{
+	if (!param) {
+		blog(LOG_ERROR, "effect_getval_inline: invalid param");
+		return;
+	}
+
+	if (!data) {
+		blog(LOG_ERROR, "effect_getval_inline: invalid data");
+		return;
+	}
+
+	size_t bytes = min(size, param->cur_val.num);
+
+	memcpy(data, param->cur_val.array, bytes);
+}
+
+static inline void effect_getdefaultval_inline(gs_eparam_t *param, void *data,
+		size_t size)
+{
+	if (!param) {
+		blog(LOG_ERROR, "effect_getdefaultval_inline: invalid param");
+		return;
+	}
+
+	if (!data) {
+		blog(LOG_ERROR, "effect_getdefaultval_inline: invalid data");
+		return;
+	}
+
+	size_t bytes = min(size, param->default_val.num);
+
+	memcpy(data, param->default_val.array, bytes);
 }
 
 void gs_effect_set_bool(gs_eparam_t *param, bool val)
@@ -383,6 +479,54 @@ void gs_effect_set_texture(gs_eparam_t *param, gs_texture_t *val)
 void gs_effect_set_val(gs_eparam_t *param, const void *val, size_t size)
 {
 	effect_setval_inline(param, val, size);
+}
+
+void *gs_effect_get_val(gs_eparam_t *param)
+{
+	if (!param) {
+		blog(LOG_ERROR, "gs_effect_get_val: invalid param");
+		return NULL;
+	}
+	size_t size = param->cur_val.num;
+	void *data;
+
+	if (size)
+		data = (void*)bzalloc(size);
+	else
+		return NULL;
+
+	effect_getval_inline(param, data, size);
+
+	return data;
+}
+
+size_t gs_effect_get_val_size(gs_eparam_t *param)
+{
+	return param ? param->cur_val.num : 0;
+}
+
+void *gs_effect_get_default_val(gs_eparam_t *param)
+{
+	if (!param) {
+		blog(LOG_ERROR, "gs_effect_get_default_val: invalid param");
+		return NULL;
+	}
+	size_t size = param->default_val.num;
+	void *data;
+
+	if (size)
+		data = (void*)bzalloc(size);
+	else
+		return NULL;
+
+	effect_getdefaultval_inline(param, data, size);
+
+	return data;
+}
+
+size_t gs_effect_get_default_val_size(gs_eparam_t *param)
+{
+	return param ? param->default_val.num : 0;
 }
 
 void gs_effect_set_default(gs_eparam_t *param)

@@ -2,6 +2,7 @@ obs         = obslua
 source_name = ""
 hotkey_id   = obs.OBS_INVALID_HOTKEY_ID
 attempts    = 0
+last_replay = ""
 
 ----------------------------------------------------------
 
@@ -22,27 +23,45 @@ function try_play()
 
 	obs.obs_output_release(replay_buffer)
 
+	if path == last_replay then
+		path = nil
+	end
+
 	-- If the path is valid and the source exists, update it with the
 	-- replay file to play back the replay.  Otherwise, stop attempting to
-	-- replay after 10 seconds
+	-- replay after 10 retries
 	if path == nil then
 		attempts = attempts + 1
 		if attempts >= 10 then
 			obs.remove_current_callback()
 		end
 	else
+		last_replay = path
 		local source = obs.obs_get_source_by_name(source_name)
 		if source ~= nil then
 			local settings = obs.obs_data_create()
-			obs.obs_data_set_string(settings, "local_file", path)
-			obs.obs_data_set_bool(settings, "is_local_file", true)
-			obs.obs_data_set_bool(settings, "close_when_inactive", true)
-			obs.obs_data_set_bool(settings, "restart_on_activate", true)
+			source_id = obs.obs_source_get_id(source)
+			if source_id == "ffmpeg_source" then
+				obs.obs_data_set_string(settings, "local_file", path)
+				obs.obs_data_set_bool(settings, "is_local_file", true)
 
-			-- updating will automatically cause the source to
-			-- refresh if the source is currently active, otherwise
-			-- the source will play whenever its scene is activated
-			obs.obs_source_update(source, settings)
+				-- updating will automatically cause the source to
+				-- refresh if the source is currently active
+				obs.obs_source_update(source, settings)
+			elseif source_id == "vlc_source" then
+				-- "playlist"
+				array = obs.obs_data_array_create()
+				item = obs.obs_data_create()
+				obs.obs_data_set_string(item, "value", path)
+				obs.obs_data_array_push_back(array, item)
+				obs.obs_data_set_array(settings, "playlist", array)
+
+				-- updating will automatically cause the source to
+				-- refresh if the source is currently active
+				obs.obs_source_update(source, settings)
+				obs.obs_data_release(item)
+				obs.obs_data_array_release(array)
+			end
 
 			obs.obs_data_release(settings)
 			obs.obs_source_release(source)
@@ -65,11 +84,11 @@ function instant_replay(pressed)
 		local ph = obs.obs_output_get_proc_handler(replay_buffer)
 		obs.proc_handler_call(ph, "save", nil)
 
-		-- Set a 1-second timer to attempt playback every 1 second
+		-- Set a 2-second timer to attempt playback every 1 second
 		-- until the replay is available
 		if obs.obs_output_active(replay_buffer) then
 			attempts = 0
-			obs.timer_add(try_play, 1000)
+			obs.timer_add(try_play, 2000)
 		else
 			obs.script_log(obs.LOG_WARNING, "Tried to save an instant replay, but the replay buffer is not active!")
 		end
@@ -90,7 +109,7 @@ end
 -- A function named script_description returns the description shown to
 -- the user
 function script_description()
-	return "When the \"Instant Replay\" hotkey is triggered, saves a replay with the replay buffer, and then plays it in a media source as soon as the replay is ready.  Requires an active replay buffer.\n\nMade by Jim"
+	return "When the \"Instant Replay\" hotkey is triggered, saves a replay with the replay buffer, and then plays it in a media source as soon as the replay is ready.  Requires an active replay buffer.\n\nMade by Jim and Exeldro"
 end
 
 -- A function named script_properties defines the properties that the user
@@ -106,6 +125,11 @@ function script_properties()
 			if source_id == "ffmpeg_source" then
 				local name = obs.obs_source_get_name(source)
 				obs.obs_property_list_add_string(p, name, name)
+			elseif source_id == "vlc_source" then
+				local name = obs.obs_source_get_name(source)
+				obs.obs_property_list_add_string(p, name, name)
+			else
+				-- obs.script_log(obs.LOG_INFO, source_id)
 			end
 		end
 	end

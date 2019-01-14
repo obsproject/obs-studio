@@ -860,6 +860,30 @@ obs_data_array_t *obs_hotkey_save(obs_hotkey_id id)
 	return result;
 }
 
+void obs_hotkey_pair_save(obs_hotkey_pair_id id,
+		obs_data_array_t **p_data0,
+		obs_data_array_t **p_data1)
+{
+	if ((!p_data0 && !p_data1) || !lock())
+		return;
+
+	size_t idx;
+	if (!find_pair_id(id, &idx))
+		goto unlock;
+
+	obs_hotkey_pair_t *pair = &obs->hotkeys.hotkey_pairs.array[idx];
+
+	if (p_data0 && find_id(pair->id[0], &idx)) {
+		*p_data0 = save_hotkey(&obs->hotkeys.hotkeys.array[idx]);
+	}
+	if (p_data1 && find_id(pair->id[1], &idx)) {
+		*p_data1 = save_hotkey(&obs->hotkeys.hotkeys.array[idx]);
+	}
+
+unlock:
+	unlock();
+}
+
 static inline bool enum_save_hotkey(void *data,
 		size_t idx, obs_hotkey_t *hotkey)
 {

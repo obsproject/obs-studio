@@ -80,7 +80,76 @@
 
 #include "rtmp.h"
 
-#ifdef USE_POLARSSL
+#if defined(USE_MBEDTLS)
+#include <mbedtls/version.h>
+#include <mbedtls/net.h>
+#include <mbedtls/ssl.h>
+#include <mbedtls/ctr_drbg.h>
+#include <mbedtls/entropy.h>
+
+#define my_dhm_P \
+    "E4004C1F94182000103D883A448B3F80" \
+    "2CE4B44A83301270002C20D0321CFD00" \
+    "11CCEF784C26A400F43DFB901BCA7538" \
+    "F2C6B176001CF5A0FD16D2C48B1D0C1C" \
+    "F6AC8E1DA6BCC3B4E1F96B0564965300" \
+    "FFA1D0B601EB2800F489AA512C4B248C" \
+    "01F76949A60BB7F00A40B1EAB64BDD48" \
+    "E8A700D60B7F1200FA8E77B0A979DABF"
+
+#define my_dhm_G "4"
+
+#define	SSL_SET_SESSION(S,resume,timeout,ctx)	mbedtls_ssl_set_session(S,ctx)
+
+typedef struct tls_ctx
+{
+    mbedtls_entropy_context entropy;
+    mbedtls_ctr_drbg_context ctr_drbg;
+    mbedtls_ssl_config conf;
+    mbedtls_ssl_session ssn;
+    mbedtls_x509_crt *cacert;
+    mbedtls_net_context net;
+} tls_ctx;
+
+typedef struct tls_server_ctx
+{
+  mbedtls_ssl_config *conf;
+  mbedtls_ctr_drbg_context *ctr_drbg;
+  mbedtls_pk_context key;
+  mbedtls_x509_crt cert;
+} tls_server_ctx;
+
+typedef tls_ctx *TLS_CTX;
+
+#define TLS_client(ctx,s)	\
+  s = malloc(sizeof(mbedtls_ssl_context));\
+  mbedtls_ssl_init(s);\
+  mbedtls_ssl_setup(s, &ctx->conf);\
+	mbedtls_ssl_config_defaults(&ctx->conf, MBEDTLS_SSL_IS_CLIENT, MBEDTLS_SSL_TRANSPORT_STREAM, MBEDTLS_SSL_PRESET_DEFAULT);\
+  mbedtls_ssl_conf_authmode(&ctx->conf, MBEDTLS_SSL_VERIFY_REQUIRED);\
+	mbedtls_ssl_conf_rng(&ctx->conf, mbedtls_ctr_drbg_random, &ctx->ctr_drbg)
+
+#define TLS_server(ctx,s)\
+  s = malloc(sizeof(mbedtls_ssl_context));\
+  mbedtls_ssl_init(s);\
+  mbedtls_ssl_setup(s, ctx->conf);\
+	mbedtls_ssl_conf_endpoint(ctx->conf, MBEDTLS_SSL_IS_SERVER);\
+  mbedtls_ssl_conf_authmode(ctx->conf, MBEDTLS_SSL_VERIFY_REQUIRED);\
+	mbedtls_ssl_conf_rng(ctx->conf, mbedtls_ctr_drbg_random, ctx->ctr_drbg);\
+	mbedtls_ssl_conf_own_cert(ctx->conf, &ctx->cert, &ctx->key);\
+	mbedtls_ssl_conf_dh_param_bin(ctx->conf,\
+    (const unsigned char *)my_dhm_P, strlen(my_dhm_P),\
+    (const unsigned char *)my_dhm_G, strlen(my_dhm_G))
+
+#define TLS_setfd(s,fd)	mbedtls_ssl_set_bio(s, fd, mbedtls_net_send, mbedtls_net_recv, NULL)
+#define TLS_connect(s)	mbedtls_ssl_handshake(s)
+#define TLS_accept(s)	mbedtls_ssl_handshake(s)
+#define TLS_read(s,b,l)	mbedtls_ssl_read(s,(unsigned char *)b,l)
+#define TLS_write(s,b,l)	mbedtls_ssl_write(s,(unsigned char *)b,l)
+#define TLS_shutdown(s)	mbedtls_ssl_close_notify(s)
+#define TLS_close(s)	mbedtls_ssl_free(s); free(s)
+
+#elif defined(USE_POLARSSL)
 #include <polarssl/version.h>
 #include <polarssl/net.h>
 #include <polarssl/ssl.h>
@@ -127,6 +196,7 @@ typedef struct tls_server_ctx
 #define TLS_write(s,b,l)	ssl_write(s,(unsigned char *)b,l)
 #define TLS_shutdown(s)	ssl_close_notify(s)
 #define TLS_close(s)	ssl_free(s); free(s)
+
 
 #elif defined(USE_GNUTLS)
 #include <gnutls/gnutls.h>

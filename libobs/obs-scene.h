@@ -85,8 +85,8 @@ struct obs_scene_item {
 
 struct obs_scene {
 	struct obs_source     *source;
-	struct obs_scene_item *group_sceneitem;
 
+	bool                  is_group;
 	bool                  custom_size;
 	uint32_t              cx;
 	uint32_t              cy;

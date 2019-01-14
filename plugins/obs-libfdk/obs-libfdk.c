@@ -9,7 +9,6 @@
 
 #include <fdk-aac/aacenc_lib.h>
 
-
 static const char *libfdk_get_error(AACENC_ERROR err)
 {
 	switch(err) {
@@ -224,7 +223,7 @@ static bool libfdk_encode(void *data, struct encoder_frame *frame,
 	void *in_ptr;
 	void *out_ptr;
 	AACENC_ERROR err;
-
+	int64_t encoderDelay;
 
 	in_ptr = frame->data[0];
 	in_size = enc->frame_size_bytes;
@@ -261,10 +260,13 @@ static bool libfdk_encode(void *data, struct encoder_frame *frame,
 	}
 
 	*received_packet = true;
-
-	packet->pts  = enc->total_samples -
-	               enc->info.encoderDelay; // TODO: Just a guess, find out if that's actualy right
-	packet->dts  = enc->total_samples - enc->info.encoderDelay;
+#if (AACENCODER_LIB_VL0 >= 4)
+	encoderDelay= enc->info.nDelay;
+#else
+	encoderDelay= enc->info.encoderDelay;
+#endif
+	packet->pts  = enc->total_samples - encoderDelay;
+	packet->dts  = enc->total_samples - encoderDelay;
 	packet->data = enc->packet_buffer;
 	packet->size = out_args.numOutBytes;
 	packet->type = OBS_ENCODER_AUDIO;

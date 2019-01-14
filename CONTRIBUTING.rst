@@ -10,7 +10,9 @@ Quick Links for Contributing
  - Our bug tracker (linked to forum accounts):
    https://obsproject.com/mantis/
 
- - Development IRC channel: #obs-dev on QuakeNet
+ - Discord Server: https://obsproject.com/discord
+
+ - Development chat: #development on the Discord server (see above)
  
  - Development forum:
    https://obsproject.com/forum/list/general-development.21/
@@ -39,8 +41,8 @@ Coding Guidelines
 
  - 80 columns max
 
-Commit Guidlines
-----------------
+Commit Guidelines
+-----------------
 
  - OBS Studio uses the 50/72 standard for commits.  50 characters max
    for the title (excluding module prefix), an empty line, and then a

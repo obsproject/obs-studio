@@ -117,6 +117,18 @@ Output Definition Structure (obs_output_info)
    This is called when the output recieves raw audio data.  Only applies
    to outputs that are not encoded.
 
+   **This callback must be used with single-track raw outputs.**
+
+   :param frames: The raw audio frames
+
+.. member:: void (*obs_output_info.raw_audio2)(void *data, size_t idx, struct audio_data *frames)
+
+   This is called when the output recieves raw audio data.  Only applies
+   to outputs that are not encoded.
+
+   **This callback must be used with multi-track raw outputs.**
+
+   :param idx:    The audio track index
    :param frames: The raw audio frames
 
 .. member:: void (*obs_output_info.encoded_packet)(void *data, struct encoder_packet *packet)
@@ -472,7 +484,19 @@ General Output Functions
 .. function:: void obs_output_set_mixer(obs_output_t *output, size_t mixer_idx)
               size_t obs_output_get_mixer(const obs_output_t *output)
 
-   Sets/gets the current audio mixer for non-encoded outputs.
+   Sets/gets the current audio mixer for non-encoded outputs.  For
+   multi-track outputs, this would be the equivalent of setting the mask
+   only for the specified mixer index.
+
+---------------------
+
+.. function:: void obs_output_set_mixers(obs_output_t *output, size_t mixers)
+              size_t obs_output_get_mixers(const obs_output_t *output)
+
+   Sets/gets the current audio mixers (via mask) for non-encoded
+   multi-track outputs.  If used with single-track outputs, the
+   single-track output will use either the first set mixer track in the
+   bitmask, or the first track if none is set in the bitmask.
 
 ---------------------
 

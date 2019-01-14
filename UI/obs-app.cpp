@@ -24,9 +24,10 @@
 #include <sstream>
 #include <mutex>
 #include <util/bmem.h>
-#include <util/dstr.h>
+#include <util/dstr.hpp>
 #include <util/platform.h>
 #include <util/profiler.hpp>
+#include <util/cf-parser.h>
 #include <obs-config.h>
 #include <obs.hpp>
 
@@ -38,7 +39,6 @@
 #include "obs-app.hpp"
 #include "window-basic-main.hpp"
 #include "window-basic-settings.hpp"
-#include "window-license-agreement.hpp"
 #include "crash-report.hpp"
 #include "platform.hpp"
 
@@ -77,8 +77,12 @@ string opt_starting_collection;
 string opt_starting_profile;
 string opt_starting_scene;
 
-// AMD PowerXpress High Performance Flags
+bool remuxAfterRecord = false;
+string remuxFilename;
+
+// GPU hint exports for AMD/NVIDIA laptops
 #ifdef _MSC_VER
+extern "C" __declspec(dllexport) DWORD NvOptimusEnablement = 1;
 extern "C" __declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
 #endif
 
@@ -345,6 +349,7 @@ static void do_log(int log_level, const char *msg, va_list args, void *param)
 	}
 #else
 	def_log_handler(log_level, msg, args2, nullptr);
+	va_end(args2);
 #endif
 
 	if (log_level <= LOG_INFO || log_verbose) {
@@ -366,6 +371,7 @@ bool OBSApp::InitGlobalConfigDefaults()
 	config_set_default_string(globalConfig, "General", "Language",
 			DEFAULT_LANG);
 	config_set_default_uint(globalConfig, "General", "MaxLogs", 10);
+	config_set_default_int(globalConfig, "General", "InfoIncrement", -1);
 	config_set_default_string(globalConfig, "General", "ProcessPriority",
 			"Normal");
 	config_set_default_bool(globalConfig, "General", "EnableAutoUpdates",
@@ -431,8 +437,12 @@ bool OBSApp::InitGlobalConfigDefaults()
 			"MultiviewDrawAreas", true);
 
 #ifdef _WIN32
+	uint32_t winver = GetWindowsVersion();
+
 	config_set_default_bool(globalConfig, "Audio", "DisableAudioDucking",
 			true);
+	config_set_default_bool(globalConfig, "General", "BrowserHWAccel",
+			winver > 0x601);
 #endif
 
 #ifdef __APPLE__
@@ -782,6 +792,192 @@ bool OBSApp::InitLocale()
 	return true;
 }
 
+void OBSApp::AddExtraThemeColor(QPalette &pal, int group,
+		const char *name, uint32_t color)
+{
+	std::function<void(QPalette::ColorGroup)> func;
+
+#define DEF_PALETTE_ASSIGN(name) \
+	do { \
+		func = [&] (QPalette::ColorGroup group) \
+		{ \
+			pal.setColor(group, QPalette::name, \
+					QColor::fromRgb(color)); \
+		}; \
+	} while (false)
+
+	if (astrcmpi(name, "alternateBase") == 0) {
+		DEF_PALETTE_ASSIGN(AlternateBase);
+	} else if (astrcmpi(name, "base") == 0) {
+		DEF_PALETTE_ASSIGN(Base);
+	} else if (astrcmpi(name, "brightText") == 0) {
+		DEF_PALETTE_ASSIGN(BrightText);
+	} else if (astrcmpi(name, "button") == 0) {
+		DEF_PALETTE_ASSIGN(Button);
+	} else if (astrcmpi(name, "buttonText") == 0) {
+		DEF_PALETTE_ASSIGN(ButtonText);
+	} else if (astrcmpi(name, "brightText") == 0) {
+		DEF_PALETTE_ASSIGN(BrightText);
+	} else if (astrcmpi(name, "dark") == 0) {
+		DEF_PALETTE_ASSIGN(Dark);
+	} else if (astrcmpi(name, "highlight") == 0) {
+		DEF_PALETTE_ASSIGN(Highlight);
+	} else if (astrcmpi(name, "highlightedText") == 0) {
+		DEF_PALETTE_ASSIGN(HighlightedText);
+	} else if (astrcmpi(name, "light") == 0) {
+		DEF_PALETTE_ASSIGN(Light);
+	} else if (astrcmpi(name, "link") == 0) {
+		DEF_PALETTE_ASSIGN(Link);
+	} else if (astrcmpi(name, "linkVisited") == 0) {
+		DEF_PALETTE_ASSIGN(LinkVisited);
+	} else if (astrcmpi(name, "mid") == 0) {
+		DEF_PALETTE_ASSIGN(Mid);
+	} else if (astrcmpi(name, "midlight") == 0) {
+		DEF_PALETTE_ASSIGN(Midlight);
+	} else if (astrcmpi(name, "shadow") == 0) {
+		DEF_PALETTE_ASSIGN(Shadow);
+	} else if (astrcmpi(name, "text") == 0 ||
+	           astrcmpi(name, "foreground") == 0) {
+		DEF_PALETTE_ASSIGN(Text);
+	} else if (astrcmpi(name, "toolTipBase") == 0) {
+		DEF_PALETTE_ASSIGN(ToolTipBase);
+	} else if (astrcmpi(name, "toolTipText") == 0) {
+		DEF_PALETTE_ASSIGN(ToolTipText);
+	} else if (astrcmpi(name, "windowText") == 0) {
+		DEF_PALETTE_ASSIGN(WindowText);
+	} else if (astrcmpi(name, "window") == 0 ||
+	           astrcmpi(name, "background") == 0) {
+		DEF_PALETTE_ASSIGN(Window);
+	} else {
+		return;
+	}
+
+#undef DEF_PALETTE_ASSIGN
+
+	switch (group) {
+	case QPalette::Disabled:
+	case QPalette::Active:
+	case QPalette::Inactive:
+		func((QPalette::ColorGroup)group);
+		break;
+	default:
+		func((QPalette::ColorGroup)QPalette::Disabled);
+		func((QPalette::ColorGroup)QPalette::Active);
+		func((QPalette::ColorGroup)QPalette::Inactive);
+	}
+}
+
+struct CFParser {
+	cf_parser cfp = {};
+	inline ~CFParser() {cf_parser_free(&cfp);}
+	inline operator cf_parser*() {return &cfp;}
+	inline cf_parser *operator->() {return &cfp;}
+};
+
+void OBSApp::ParseExtraThemeData(const char *path)
+{
+	BPtr<char> data = os_quick_read_utf8_file(path);
+	QPalette pal = palette();
+	CFParser cfp;
+	int ret;
+
+	cf_parser_parse(cfp, data, path);
+
+	while (cf_go_to_token(cfp, "OBSTheme", nullptr)) {
+		if (!cf_next_token(cfp)) return;
+
+		int group = -1;
+
+		if (cf_token_is(cfp, ":")) {
+			ret = cf_next_token_should_be(cfp, ":", nullptr,
+					nullptr);
+			if (ret != PARSE_SUCCESS) continue;
+
+			if (!cf_next_token(cfp)) return;
+
+			if (cf_token_is(cfp, "disabled")) {
+				group = QPalette::Disabled;
+			} else if (cf_token_is(cfp, "active")) {
+				group = QPalette::Active;
+			} else if (cf_token_is(cfp, "inactive")) {
+				group = QPalette::Inactive;
+			} else {
+				continue;
+			}
+
+			if (!cf_next_token(cfp)) return;
+		}
+
+		if (!cf_token_is(cfp, "{")) continue;
+
+		for (;;) {
+			if (!cf_next_token(cfp)) return;
+
+			ret = cf_token_is_type(cfp, CFTOKEN_NAME, "name",
+					nullptr);
+			if (ret != PARSE_SUCCESS)
+				break;
+
+			DStr name;
+			dstr_copy_strref(name, &cfp->cur_token->str);
+
+			ret = cf_next_token_should_be(cfp, ":", ";",
+					nullptr);
+			if (ret != PARSE_SUCCESS) continue;
+
+			if (!cf_next_token(cfp)) return;
+
+			const char *array;
+			uint32_t color = 0;
+
+			if (cf_token_is(cfp, "#")) {
+				array = cfp->cur_token->str.array;
+				color = strtol(array + 1, nullptr, 16);
+
+			} else if (cf_token_is(cfp, "rgb")) {
+				ret = cf_next_token_should_be(cfp, "(", ";",
+						nullptr);
+				if (ret != PARSE_SUCCESS) continue;
+				if (!cf_next_token(cfp)) return;
+
+				array = cfp->cur_token->str.array;
+				color |= strtol(array, nullptr, 10) << 16;
+
+				ret = cf_next_token_should_be(cfp, ",", ";",
+						nullptr);
+				if (ret != PARSE_SUCCESS) continue;
+				if (!cf_next_token(cfp)) return;
+
+				array = cfp->cur_token->str.array;
+				color |= strtol(array, nullptr, 10) << 8;
+
+				ret = cf_next_token_should_be(cfp, ",", ";",
+						nullptr);
+				if (ret != PARSE_SUCCESS) continue;
+				if (!cf_next_token(cfp)) return;
+
+				array = cfp->cur_token->str.array;
+				color |= strtol(array, nullptr, 10);
+
+			} else if (cf_token_is(cfp, "white")) {
+				color = 0xFFFFFF;
+
+			} else if (cf_token_is(cfp, "black")) {
+				color = 0;
+			}
+
+			if (!cf_go_to_token(cfp, ";", nullptr)) return;
+
+			AddExtraThemeColor(pal, group, name->array, color);
+		}
+
+		ret = cf_token_should_be(cfp, "}", "}", nullptr);
+		if (ret != PARSE_SUCCESS) continue;
+	}
+
+	setPalette(pal);
+}
+
 bool OBSApp::SetTheme(std::string name, std::string path)
 {
 	theme = name;
@@ -803,12 +999,18 @@ bool OBSApp::SetTheme(std::string name, std::string path)
 	}
 
 	QString mpath = QString("file:///") + path.c_str();
+	setPalette(defaultPalette);
 	setStyleSheet(mpath);
+	ParseExtraThemeData(path.c_str());
+
+	emit StyleChanged();
 	return true;
 }
 
 bool OBSApp::InitTheme()
 {
+	defaultPalette = palette();
+
 	const char *themeName = config_get_string(globalConfig, "General",
 			"CurrentTheme");
 	if (!themeName) {
@@ -1016,43 +1218,46 @@ bool OBSApp::OBSInit()
 {
 	ProfileScope("OBSApp::OBSInit");
 
-	bool licenseAccepted = config_get_bool(globalConfig, "General",
-			"LicenseAccepted");
-	OBSLicenseAgreement agreement(nullptr);
+	setAttribute(Qt::AA_UseHighDpiPixmaps);
 
-	if (licenseAccepted || agreement.exec() == QDialog::Accepted) {
-		if (!licenseAccepted) {
-			config_set_bool(globalConfig, "General",
-					"LicenseAccepted", true);
-			config_save(globalConfig);
-		}
-
-		if (!StartupOBS(locale.c_str(), GetProfilerNameStore()))
-			return false;
-
-		blog(LOG_INFO, "Portable mode: %s",
-				portable_mode ? "true" : "false");
-
-		setQuitOnLastWindowClosed(false);
-
-		mainWindow = new OBSBasic();
-
-		mainWindow->setAttribute(Qt::WA_DeleteOnClose, true);
-		connect(mainWindow, SIGNAL(destroyed()), this, SLOT(quit()));
-
-		mainWindow->OBSInit();
-
-		connect(this, &QGuiApplication::applicationStateChanged,
-				[this](Qt::ApplicationState state)
-				{
-					ResetHotkeyState(
-						state != Qt::ApplicationActive);
-				});
-		ResetHotkeyState(applicationState() != Qt::ApplicationActive);
-		return true;
-	} else {
+	if (!StartupOBS(locale.c_str(), GetProfilerNameStore()))
 		return false;
-	}
+
+#ifdef _WIN32
+	bool browserHWAccel = config_get_bool(globalConfig, "General",
+			"BrowserHWAccel");
+
+	obs_data_t *settings = obs_data_create();
+	obs_data_set_bool(settings, "BrowserHWAccel", browserHWAccel);
+	obs_apply_private_data(settings);
+	obs_data_release(settings);
+
+	blog(LOG_INFO, "Current Date/Time: %s", CurrentDateTimeString().c_str());
+
+	blog(LOG_INFO, "Browser Hardware Acceleration: %s",
+			browserHWAccel ? "true" : "false");
+#endif
+
+	blog(LOG_INFO, "Portable mode: %s",
+			portable_mode ? "true" : "false");
+
+	setQuitOnLastWindowClosed(false);
+
+	mainWindow = new OBSBasic();
+
+	mainWindow->setAttribute(Qt::WA_DeleteOnClose, true);
+	connect(mainWindow, SIGNAL(destroyed()), this, SLOT(quit()));
+
+	mainWindow->OBSInit();
+
+	connect(this, &QGuiApplication::applicationStateChanged,
+			[this](Qt::ApplicationState state)
+			{
+				ResetHotkeyState(
+					state != Qt::ApplicationActive);
+			});
+	ResetHotkeyState(applicationState() != Qt::ApplicationActive);
+	return true;
 }
 
 string OBSApp::GetVersionString() const
@@ -1071,7 +1276,9 @@ string OBSApp::GetVersionString() const
 
 #ifdef _WIN32
 	if (sizeof(void*) == 8)
-		ver << "64bit, ";
+		ver << "64-bit, ";
+	else
+		ver << "32-bit, ";
 
 	ver << "windows)";
 #elif __APPLE__
@@ -1291,8 +1498,18 @@ string GenerateTimeDateFilename(const char *extension, bool noSpace)
 string GenerateSpecifiedFilename(const char *extension, bool noSpace,
 		const char *format)
 {
+	OBSBasic *main = reinterpret_cast<OBSBasic*>(App()->GetMainWindow());
+	bool autoRemux = config_get_bool(main->Config(), "Video", "AutoRemux");
+
+	if ((strcmp(extension, "mp4") == 0) && autoRemux)
+		extension = "mkv";
+
 	BPtr<char> filename = os_generate_formatted_filename(extension,
 			!noSpace, format);
+
+	remuxFilename = string(filename);
+	remuxAfterRecord = autoRemux;
+
 	return string(filename);
 }
 
@@ -1980,6 +2197,8 @@ int main(int argc, char *argv[])
 #if defined(USE_XDG) && defined(IS_UNIX)
 	move_to_xdg();
 #endif
+
+	obs_set_cmdline_args(argc, argv);
 
 	for (int i = 1; i < argc; i++) {
 		if (arg_is(argv[i], "--portable", "-p")) {

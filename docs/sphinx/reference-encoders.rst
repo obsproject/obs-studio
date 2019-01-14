@@ -407,6 +407,7 @@ General Encoder Functions
 ---------------------
 
 .. function:: obs_data_t *obs_encoder_defaults(const char *id)
+              obs_data_t *obs_encoder_get_defaults(const obs_encoder_t *encoder)
 
    :return: An incremented reference to the encoder's default settings
 

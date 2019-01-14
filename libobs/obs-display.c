@@ -46,16 +46,18 @@ bool obs_display_init(struct obs_display *display,
 		return false;
 	}
 
-	display->background_color = 0x4C4C4C;
 	display->enabled = true;
 	return true;
 }
 
-obs_display_t *obs_display_create(const struct gs_init_data *graphics_data)
+obs_display_t *obs_display_create(const struct gs_init_data *graphics_data,
+		uint32_t background_color)
 {
 	struct obs_display *display = bzalloc(sizeof(struct obs_display));
 
 	gs_enter_context(obs->video.graphics);
+
+	display->background_color = background_color;
 
 	if (!obs_display_init(display, graphics_data)) {
 		obs_display_destroy(display);

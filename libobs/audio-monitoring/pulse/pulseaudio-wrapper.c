@@ -307,14 +307,15 @@ int_fast32_t pulseaudio_connect_playback(pa_stream *s, const char *name,
 		return -1;
 
 	size_t dev_len = strlen(name) - 8;
-	char device[dev_len];
+	char *device = bzalloc(dev_len + 1);
 	memcpy(device, name, dev_len);
-	device[dev_len] = '\0';
 
 	pulseaudio_lock();
 	int_fast32_t ret = pa_stream_connect_playback(s, device, attr, flags,
 			NULL, NULL);
 	pulseaudio_unlock();
+
+	bfree(device);
 	return ret;
 }
 

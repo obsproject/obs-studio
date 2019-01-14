@@ -30,6 +30,10 @@ extern "C" void obs_module_unload(void)
 }
 
 OBS_DECLARE_MODULE()
+MODULE_EXPORT const char *obs_module_description(void)
+{
+	return "Windows Media Foundations H.264/AAC encoder";
+}
 
 #if ENABLE_WINMF
 OBS_MODULE_USE_DEFAULT_LOCALE("win-mf", "en-US")

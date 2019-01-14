@@ -565,6 +565,7 @@ static bool obs_init_data(void)
 	if (!obs_view_init(&data->main_view))
 		goto fail;
 
+	data->private_data = obs_data_create();
 	data->valid = true;
 
 fail:
@@ -620,6 +621,7 @@ static void obs_free_data(void)
 	pthread_mutex_destroy(&data->draw_callbacks_mutex);
 	da_free(data->draw_callbacks);
 	da_free(data->tick_callbacks);
+	obs_data_release(data->private_data);
 }
 
 static const char *obs_signals[] = {
@@ -741,6 +743,7 @@ static inline void obs_free_hotkeys(void)
 }
 
 extern const struct obs_source_info scene_info;
+extern const struct obs_source_info group_info;
 
 extern void log_system_info(void);
 
@@ -771,6 +774,7 @@ static bool obs_init(const char *locale, const char *module_config_path,
 		obs->module_config_path = bstrdup(module_config_path);
 	obs->locale = bstrdup(locale);
 	obs_register_source(&scene_info);
+	obs_register_source(&group_info);
 	add_default_module_paths();
 	return true;
 }
@@ -789,11 +793,11 @@ char *obs_find_data_file(const char *file)
 {
 	struct dstr path = {0};
 
-	const char *result = find_libobs_data_file(file);
+	char *result = find_libobs_data_file(file);
 	if (result)
 		return result;
 
-	for (int i = 0; i < core_module_paths.num; ++i) {
+	for (size_t i = 0; i < core_module_paths.num; ++i) {
 		if (check_path(file, core_module_paths.array[i].array, &path))
 			return path.array;
 	}
@@ -811,7 +815,7 @@ void obs_add_data_path(const char *path)
 
 bool obs_remove_data_path(const char *path)
 {
-	for (int i = 0; i < core_module_paths.num; ++i) {
+	for (size_t i = 0; i < core_module_paths.num; ++i) {
 		int result = dstr_cmp(&core_module_paths.array[i], path);
 
 		if (result == 0) {
@@ -847,6 +851,42 @@ bool obs_startup(const char *locale, const char *module_config_path,
 		obs_shutdown();
 
 	return success;
+}
+
+static struct obs_cmdline_args cmdline_args = {0, NULL};
+void obs_set_cmdline_args(int argc, const char * const *argv)
+{
+	char *data;
+	size_t len;
+	int i;
+
+	/* Once argc is set (non-zero) we shouldn't call again */
+	if (cmdline_args.argc)
+		return;
+
+	cmdline_args.argc = argc;
+
+	/* Safely copy over argv */
+	len = 0;
+	for (i = 0; i < argc; i++)
+		len += strlen(argv[i]) + 1;
+
+	cmdline_args.argv = bmalloc(sizeof(char *) * (argc + 1) + len);
+	data = (char *) cmdline_args.argv + sizeof(char *) * (argc + 1);
+
+	for (i = 0; i < argc; i++) {
+		cmdline_args.argv[i] = data;
+		len = strlen(argv[i]) + 1;
+		memcpy(data, argv[i], len);
+		data += len;
+	}
+
+	cmdline_args.argv[argc] = NULL;
+}
+
+struct obs_cmdline_args obs_get_cmdline_args(void)
+{
+	return cmdline_args;
 }
 
 void obs_shutdown(void)
@@ -914,6 +954,7 @@ void obs_shutdown(void)
 	bfree(core->module_config_path);
 	bfree(core->locale);
 	bfree(core);
+	bfree(cmdline_args.argv);
 
 #ifdef _WIN32
 	uninitialize_com();
@@ -1304,10 +1345,39 @@ void obs_enum_sources(bool (*enum_proc)(void*, obs_source_t*), void *param)
 		obs_source_t *next_source =
 			(obs_source_t*)source->context.next;
 
-		if ((source->info.type == OBS_SOURCE_TYPE_INPUT) != 0 &&
-		    !source->context.private &&
-		    !enum_proc(param, source))
+		if (source->info.id == group_info.id &&
+		    !enum_proc(param, source)) {
 			break;
+		} else if (source->info.type == OBS_SOURCE_TYPE_INPUT &&
+		           !source->context.private &&
+		           !enum_proc(param, source)) {
+			break;
+		}
+
+		source = next_source;
+	}
+
+	pthread_mutex_unlock(&obs->data.sources_mutex);
+}
+
+void obs_enum_scenes(bool (*enum_proc)(void*, obs_source_t*), void *param)
+{
+	obs_source_t *source;
+
+	if (!obs) return;
+
+	pthread_mutex_lock(&obs->data.sources_mutex);
+	source = obs->data.first_source;
+
+	while (source) {
+		obs_source_t *next_source =
+			(obs_source_t*)source->context.next;
+
+		if (source->info.type == OBS_SOURCE_TYPE_SCENE &&
+		    !source->context.private &&
+		    !enum_proc(param, source)) {
+			break;
+		}
 
 		source = next_source;
 	}
@@ -1555,6 +1625,7 @@ static obs_source_t *obs_load_source_type(obs_data_t *source_data)
 	obs_data_t   *settings = obs_data_get_obj(source_data, "settings");
 	obs_data_t   *hotkeys  = obs_data_get_obj(source_data, "hotkeys");
 	double       volume;
+	double       balance;
 	int64_t      sync;
 	uint32_t     flags;
 	uint32_t     mixers;
@@ -1569,6 +1640,10 @@ static obs_source_t *obs_load_source_type(obs_data_t *source_data)
 	obs_data_set_default_double(source_data, "volume", 1.0);
 	volume = obs_data_get_double(source_data, "volume");
 	obs_source_set_volume(source, (float)volume);
+
+	obs_data_set_default_double(source_data, "balance", 0.5);
+	balance = obs_data_get_double(source_data, "balance");
+	obs_source_set_balance_value(source, (float)balance);
 
 	sync = obs_data_get_int(source_data, "sync");
 	obs_source_set_sync_offset(source, sync);
@@ -1708,6 +1783,7 @@ obs_data_t *obs_save_source(obs_source_t *source)
 	obs_data_t *hotkey_data = source->context.hotkey_data;
 	obs_data_t *hotkeys;
 	float      volume      = obs_source_get_volume(source);
+	float      balance     = obs_source_get_balance_value(source);
 	uint32_t   mixers      = obs_source_get_audio_mixers(source);
 	int64_t    sync        = obs_source_get_sync_offset(source);
 	uint32_t   flags       = obs_source_get_flags(source);
@@ -1740,6 +1816,7 @@ obs_data_t *obs_save_source(obs_source_t *source)
 	obs_data_set_int   (source_data, "sync",     sync);
 	obs_data_set_int   (source_data, "flags",    flags);
 	obs_data_set_double(source_data, "volume",   volume);
+	obs_data_set_double(source_data, "balance",  balance);
 	obs_data_set_bool  (source_data, "enabled",  enabled);
 	obs_data_set_bool  (source_data, "muted",    muted);
 	obs_data_set_bool  (source_data, "push-to-mute", push_to_mute);
@@ -2010,7 +2087,7 @@ bool obs_set_audio_monitoring_device(const char *name, const char *id)
 	if (!obs || !name || !id || !*name || !*id)
 		return false;
 
-#if defined(_WIN32) || HAVE_PULSEAUDIO
+#if defined(_WIN32) || HAVE_PULSEAUDIO || defined(__APPLE__)
 	pthread_mutex_lock(&obs->audio.monitoring_mutex);
 
 	if (strcmp(id, obs->audio.monitoring_device_id) == 0) {
@@ -2152,4 +2229,32 @@ void obs_remove_raw_video_callback(
 	if (!obs)
 		return;
 	stop_raw_video(video->video, callback, param);
+}
+
+void obs_apply_private_data(obs_data_t *settings)
+{
+	if (!obs || !settings)
+		return;
+
+	obs_data_apply(obs->data.private_data, settings);
+}
+
+void obs_set_private_data(obs_data_t *settings)
+{
+	if (!obs)
+		return;
+
+	obs_data_clear(obs->data.private_data);
+	if (settings)
+		obs_data_apply(obs->data.private_data, settings);
+}
+
+obs_data_t *obs_get_private_data(void)
+{
+	if (!obs)
+		return NULL;
+
+	obs_data_t *private_data = obs->data.private_data;
+	obs_data_addref(private_data);
+	return private_data;
 }

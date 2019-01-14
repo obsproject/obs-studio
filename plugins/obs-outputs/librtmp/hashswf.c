@@ -30,7 +30,20 @@
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #endif
 
-#ifdef USE_POLARSSL
+#if defined(USE_MBEDTLS)
+#include <mbedtls/md.h>
+#ifndef SHA256_DIGEST_LENGTH
+#define SHA256_DIGEST_LENGTH	32
+#endif
+typedef mbedtls_md_context_t *HMAC_CTX;
+#define HMAC_setup(ctx, key, len)	ctx = malloc(sizeof(mbedtls_md_context_t)); mbedtls_md_init(ctx); \
+  mbedtls_md_setup(ctx, mbedtls_md_info_from_type(MBEDTLS_MD_SHA256), 1); \
+  mbedtls_md_hmac_starts(ctx, (const unsigned char *)key, len)
+#define HMAC_crunch(ctx, buf, len)	mbedtls_md_hmac_update(ctx, buf, len)
+#define HMAC_finish(ctx, dig)		mbedtls_md_hmac_finish(ctx, dig)
+#define HMAC_close(ctx) free(ctx);	mbedtls_md_free(ctx); ctx = NULL
+
+#elif defined(USE_POLARSSL)
 #include <polarssl/sha2.h>
 #ifndef SHA256_DIGEST_LENGTH
 #define SHA256_DIGEST_LENGTH	32
@@ -38,8 +51,9 @@
 #define HMAC_CTX	sha2_context
 #define HMAC_setup(ctx, key, len)	sha2_hmac_starts(&ctx, (unsigned char *)key, len, 0)
 #define HMAC_crunch(ctx, buf, len)	sha2_hmac_update(&ctx, buf, len)
-#define HMAC_finish(ctx, dig, dlen)	dlen = SHA256_DIGEST_LENGTH; sha2_hmac_finish(&ctx, dig)
+#define HMAC_finish(ctx, dig)		sha2_hmac_finish(&ctx, dig)
 #define HMAC_close(ctx)
+
 #elif defined(USE_GNUTLS)
 #include <nettle/hmac.h>
 #ifndef SHA256_DIGEST_LENGTH
@@ -49,8 +63,9 @@
 #define HMAC_CTX	struct hmac_sha256_ctx
 #define HMAC_setup(ctx, key, len)	hmac_sha256_set_key(&ctx, len, key)
 #define HMAC_crunch(ctx, buf, len)	hmac_sha256_update(&ctx, len, buf)
-#define HMAC_finish(ctx, dig, dlen)	dlen = SHA256_DIGEST_LENGTH; hmac_sha256_digest(&ctx, SHA256_DIGEST_LENGTH, dig)
+#define HMAC_finish(ctx, dig)		hmac_sha256_digest(&ctx, SHA256_DIGEST_LENGTH, dig)
 #define HMAC_close(ctx)
+
 #else	/* USE_OPENSSL */
 #include <openssl/ssl.h>
 #include <openssl/sha.h>
@@ -58,7 +73,7 @@
 #include <openssl/rc4.h>
 #define HMAC_setup(ctx, key, len)	HMAC_CTX_init(&ctx); HMAC_Init_ex(&ctx, (unsigned char *)key, len, EVP_sha256(), 0)
 #define HMAC_crunch(ctx, buf, len)	HMAC_Update(&ctx, (unsigned char *)buf, len)
-#define HMAC_finish(ctx, dig, dlen)	HMAC_Final(&ctx, (unsigned char *)dig, &dlen);
+#define HMAC_finish(ctx, dig, len)	HMAC_Final(&ctx, (unsigned char *)dig, &len);
 #define HMAC_close(ctx)	HMAC_CTX_cleanup(&ctx)
 #endif
 
@@ -161,8 +176,17 @@ HTTP_get(struct HTTP_ctx *http, const char *url, HTTP_read_callback *cb)
         goto leave;
 #else
         TLS_client(RTMP_TLS_ctx, sb.sb_ssl);
+
+#if defined(USE_MBEDTLS)
+        mbedtls_net_context *server_fd = &RTMP_TLS_ctx->net;
+        server_fd->fd = sb.sb_socket;
+        TLS_setfd(sb.sb_ssl, server_fd);
+#else
         TLS_setfd(sb.sb_ssl, sb.sb_socket);
-        if (TLS_connect(sb.sb_ssl) < 0)
+#endif
+
+        int connect_return = TLS_connect(sb.sb_ssl);
+        if (connect_return < 0)
         {
             RTMP_Log(RTMP_LOGERROR, "%s, TLS_Connect failed", __FUNCTION__);
             ret = HTTPRES_LOST_CONNECTION;
@@ -318,21 +342,21 @@ swfcrunch(void *ptr, size_t size, size_t nmemb, void *stream)
     {
         unsigned char out[CHUNK];
         i->zs->next_in = (unsigned char *)p;
-        i->zs->avail_in = len;
+        i->zs->avail_in = (uInt)len;
         do
         {
             i->zs->avail_out = CHUNK;
             i->zs->next_out = out;
             inflate(i->zs, Z_NO_FLUSH);
             len = CHUNK - i->zs->avail_out;
-            i->size += len;
+            i->size += (int)len;
             HMAC_crunch(i->ctx, out, len);
         }
         while (i->zs->avail_out == 0);
     }
     else
     {
-        i->size += len;
+        i->size += (int)len;
         HMAC_crunch(i->ctx, (unsigned char *)p, len);
     }
     return size * nmemb;
@@ -469,7 +493,7 @@ RTMP_HashSWF(const char *url, unsigned int *size, unsigned char *hash,
     home.av_val = "\\UserData";
 #else
     hpre.av_val = getenv("HOMEDRIVE");
-    hpre.av_len = strlen(hpre.av_val);
+    hpre.av_len = (int)strlen(hpre.av_val);
     home.av_val = getenv("HOMEPATH");
 #endif
 #define DIRSEP	"\\"
@@ -482,7 +506,7 @@ RTMP_HashSWF(const char *url, unsigned int *size, unsigned char *hash,
 #endif
     if (!home.av_val)
         home.av_val = ".";
-    home.av_len = strlen(home.av_val);
+    home.av_len = (int)strlen(home.av_val);
 
     /* SWF hash info is cached in a fixed-format file.
      * url: <url of SWF file>
@@ -528,7 +552,7 @@ RTMP_HashSWF(const char *url, unsigned int *size, unsigned char *hash,
             if (strncmp(buf + 5, url, hlen))
                 continue;
             r1 = strrchr(buf, '/');
-            i = strlen(r1);
+            i = (int)strlen(r1);
             r1[--i] = '\0';
             if (strncmp(r1, file, i))
                 continue;
@@ -543,7 +567,7 @@ RTMP_HashSWF(const char *url, unsigned int *size, unsigned char *hash,
                 else if (!strncmp(buf, "hash: ", 6))
                 {
                     unsigned char *ptr = hash, *in = (unsigned char *)buf + 6;
-                    int l = strlen((char *)in) - 1;
+                    int l = (int)strlen((char *)in) - 1;
                     for (i = 0; i < l; i += 2)
                         *ptr++ = (HEX2BIN(in[i]) << 4) | HEX2BIN(in[i + 1]);
                     got++;
@@ -625,7 +649,7 @@ RTMP_HashSWF(const char *url, unsigned int *size, unsigned char *hash,
             if (q)
                 i = q - url;
             else
-                i = strlen(url);
+                i = (int)strlen(url);
 
             fprintf(f, "url: %.*s\n", i, url);
         }
@@ -634,7 +658,11 @@ RTMP_HashSWF(const char *url, unsigned int *size, unsigned char *hash,
 
         if (!in.first)
         {
+#if defined(USE_MBEDTLS) || defined(USE_POLARSSL) || defined(USE_GNUTLS)
+            HMAC_finish(in.ctx, hash);
+#else
             HMAC_finish(in.ctx, hash, hlen);
+#endif
             *size = in.size;
 
             fprintf(f, "date: %s\n", date);

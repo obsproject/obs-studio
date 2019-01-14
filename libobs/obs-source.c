@@ -16,6 +16,7 @@
 ******************************************************************************/
 
 #include <inttypes.h>
+#include <math.h>
 
 #include "media-io/format-conversion.h"
 #include "media-io/video-frame.h"
@@ -140,6 +141,7 @@ bool obs_source_init(struct obs_source *source)
 	source->user_volume = 1.0f;
 	source->volume = 1.0f;
 	source->sync_offset = 0;
+	source->balance = 0.5f;
 	pthread_mutex_init_value(&source->filter_mutex);
 	pthread_mutex_init_value(&source->async_mutex);
 	pthread_mutex_init_value(&source->audio_mutex);
@@ -439,6 +441,8 @@ void obs_source_copy_filters(obs_source_t *dst, obs_source_t *src)
 	duplicate_filters(dst, src, dst->context.private);
 }
 
+extern obs_scene_t *obs_group_from_source(const obs_source_t *source);
+
 obs_source_t *obs_source_duplicate(obs_source_t *source,
 		const char *new_name, bool create_private)
 {
@@ -455,6 +459,11 @@ obs_source_t *obs_source_duplicate(obs_source_t *source,
 
 	if (source->info.type == OBS_SOURCE_TYPE_SCENE) {
 		obs_scene_t *scene = obs_scene_from_source(source);
+		if (!scene)
+			scene = obs_group_from_source(source);
+		if (!scene)
+			return NULL;
+
 		obs_scene_t *new_scene = obs_scene_duplicate(scene, new_name,
 				create_private ? OBS_SCENE_DUP_PRIVATE_COPY :
 					OBS_SCENE_DUP_COPY);
@@ -1828,11 +1837,12 @@ void obs_source_video_render(obs_source_t *source)
 static uint32_t get_base_width(const obs_source_t *source)
 {
 	bool is_filter = !!source->filter_parent;
+	bool func_valid = source->context.data && source->info.get_width;
 
 	if (source->info.type == OBS_SOURCE_TYPE_TRANSITION) {
 		return source->enabled ? source->transition_actual_cx : 0;
 
-	} else if (source->info.get_width && (!is_filter || source->enabled)) {
+	} else if (func_valid && (!is_filter || source->enabled)) {
 		return source->info.get_width(source->context.data);
 
 	} else if (is_filter) {
@@ -1845,11 +1855,12 @@ static uint32_t get_base_width(const obs_source_t *source)
 static uint32_t get_base_height(const obs_source_t *source)
 {
 	bool is_filter = !!source->filter_parent;
+	bool func_valid = source->context.data && source->info.get_height;
 
 	if (source->info.type == OBS_SOURCE_TYPE_TRANSITION) {
 		return source->enabled ? source->transition_actual_cy : 0;
 
-	} else if (source->info.get_height && (!is_filter || source->enabled)) {
+	} else if (func_valid && (!is_filter || source->enabled)) {
 		return source->info.get_height(source->context.data);
 
 	} else if (is_filter) {
@@ -2335,7 +2346,7 @@ static void clean_cache(obs_source_t *source)
 }
 
 #define MAX_ASYNC_FRAMES 30
-
+//if return value is not null then do (os_atomic_dec_long(&output->refs) == 0) && obs_source_frame_destroy(output)
 static inline struct obs_source_frame *cache_video(struct obs_source *source,
 		const struct obs_source_frame *frame)
 {
@@ -2392,11 +2403,6 @@ static inline struct obs_source_frame *cache_video(struct obs_source *source,
 
 	copy_frame_data(new_frame, frame);
 
-	if (os_atomic_dec_long(&new_frame->refs) == 0) {
-		obs_source_frame_destroy(new_frame);
-		new_frame = NULL;
-	}
-
 	return new_frame;
 }
 
@@ -2415,13 +2421,17 @@ void obs_source_output_video(obs_source_t *source,
 		cache_video(source, frame) : NULL;
 
 	/* ------------------------------------------- */
-
+	pthread_mutex_lock(&source->async_mutex);
 	if (output) {
-		pthread_mutex_lock(&source->async_mutex);
-		da_push_back(source->async_frames, &output);
-		pthread_mutex_unlock(&source->async_mutex);
-		source->async_active = true;
+		if (os_atomic_dec_long(&output->refs) == 0) {
+			obs_source_frame_destroy(output);
+			output = NULL;
+		} else {
+			da_push_back(source->async_frames, &output);
+			source->async_active = true;
+		}
 	}
+	pthread_mutex_unlock(&source->async_mutex);
 }
 
 static inline bool preload_frame_changed(obs_source_t *source,
@@ -2474,7 +2484,9 @@ void obs_source_show_preloaded_video(obs_source_t *source)
 	source->async_active = true;
 
 	pthread_mutex_lock(&source->audio_buf_mutex);
-	sys_ts = os_gettime_ns();
+	sys_ts = (source->monitoring_type != OBS_MONITORING_TYPE_MONITOR_ONLY)
+		? os_gettime_ns()
+		: 0;
 	reset_audio_timing(source, source->last_frame_ts, sys_ts);
 	reset_audio_data(source, sys_ts);
 	pthread_mutex_unlock(&source->audio_buf_mutex);
@@ -2582,6 +2594,37 @@ static void downmix_to_mono_planar(struct obs_source *source, uint32_t frames)
 	}
 }
 
+static void process_audio_balancing(struct obs_source *source, uint32_t frames,
+		float balance, enum obs_balance_type type)
+{
+	float **data = (float**)source->audio_data.data;
+
+	switch(type) {
+	case OBS_BALANCE_TYPE_SINE_LAW:
+		for (uint32_t frame = 0; frame < frames; frame++) {
+			data[0][frame] = data[0][frame] *
+				sinf((1.0f - balance) * (M_PI/2.0f));
+			data[1][frame] = data[1][frame] *
+				sinf(balance * (M_PI/2.0f));
+		}
+		break;
+	case OBS_BALANCE_TYPE_SQUARE_LAW:
+		for (uint32_t frame = 0; frame < frames; frame++) {
+			data[0][frame] = data[0][frame] * sqrtf(1.0f - balance);
+			data[1][frame] = data[1][frame] * sqrtf(balance);
+		}
+		break;
+	case OBS_BALANCE_TYPE_LINEAR:
+		for (uint32_t frame = 0; frame < frames; frame++) {
+			data[0][frame] = data[0][frame] * (1.0f - balance);
+			data[1][frame] = data[1][frame] * balance;
+		}
+		break;
+	default:
+		break;
+	}
+}
+
 /* resamples/remixes new audio to the designated main audio output format */
 static void process_audio(obs_source_t *source,
 		const struct obs_source_audio *audio)
@@ -2614,6 +2657,12 @@ static void process_audio(obs_source_t *source,
 	}
 
 	mono_output = audio_output_get_channels(obs->audio.audio) == 1;
+
+	if (!mono_output && source->sample_info.speakers == SPEAKERS_STEREO &&
+	    (source->balance > 0.51f || source->balance < 0.49f)) {
+		process_audio_balancing(source, frames, source->balance,
+				OBS_BALANCE_TYPE_SINE_LAW);
+	}
 
 	if (!mono_output && (source->flags & OBS_SOURCE_FLAG_FORCE_MONO) != 0)
 		downmix_to_mono_planar(source, frames);
@@ -4157,4 +4206,26 @@ EXPORT void obs_enable_source_type(const char *name, bool enable)
 		info->output_flags &= ~OBS_SOURCE_CAP_DISABLED;
 	else
 		info->output_flags |= OBS_SOURCE_CAP_DISABLED;
+}
+
+enum speaker_layout obs_source_get_speaker_layout(obs_source_t *source)
+{
+	if (!obs_source_valid(source, "obs_source_get_audio_channels"))
+		return SPEAKERS_UNKNOWN;
+
+	return source->sample_info.speakers;
+}
+
+void obs_source_set_balance_value(obs_source_t *source, float balance)
+{
+	if (!obs_source_valid(source, "obs_source_set_balance_value"))
+		return;
+
+	source->balance = balance;
+}
+
+float obs_source_get_balance_value(const obs_source_t *source)
+{
+	return obs_source_valid(source, "obs_source_get_balance_value") ?
+		source->balance : 0.5f;
 }

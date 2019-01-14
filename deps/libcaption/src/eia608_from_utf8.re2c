@@ -1,0 +1,164 @@
+/**********************************************************************************************/
+/* The MIT License                                                                            */
+/*                                                                                            */
+/* Copyright 2016-2017 Twitch Interactive, Inc. or its affiliates. All Rights Reserved.       */
+/*                                                                                            */
+/* Permission is hereby granted, free of charge, to any person obtaining a copy               */
+/* of this software and associated documentation files (the "Software"), to deal              */
+/* in the Software without restriction, including without limitation the rights               */
+/* to use, copy, modify, merge, publish, distribute, sublicense, and/or sell                  */
+/* copies of the Software, and to permit persons to whom the Software is                      */
+/* furnished to do so, subject to the following conditions:                                   */
+/*                                                                                            */
+/* The above copyright notice and this permission notice shall be included in                 */
+/* all copies or substantial portions of the Software.                                        */
+/*                                                                                            */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR                 */
+/* IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,                   */
+/* FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE                */
+/* AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER                     */
+/* LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,              */
+/* OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN                  */
+/* THE SOFTWARE.                                                                              */
+/**********************************************************************************************/
+#include "utf8.h"
+#include <ctype.h>
+#include <stdint.h>
+
+uint16_t _eia608_from_utf8 (const utf8_char_t* s)
+{
+    const unsigned char* YYMARKER = 0;
+    const unsigned char* YYCURSOR = (const unsigned char*) s;
+
+    if (0==s) { return 0x0000;}
+
+    /*!re2c
+    re2c:yyfill:enable = 0;
+    re2c:indent:string = "    ";
+    re2c:define:YYCTYPE = "unsigned char";
+
+    /*Ascii Exceptions*/
+    "\x00" { /*NULL*/ return 0x0000; }
+    "\x27" { /*APOSTROPHE -> RIGHT_SINGLE_QUOTATION_MARK*/ return 0x1229; }
+    "\x2A" { /*ASTERISK*/ return 0x1228; }
+    "\x5C" { /*REVERSE_SOLIDUS*/ return 0x132B; }
+    "\x5E" { /*CIRCUMFLEX_ACCENT*/ return 0x132C; }
+    "\x5F" { /*LOW_LINE*/ return 0x132D; }
+    /*Map GRAVE_ACCENT to a LEFT_SINGLE_QUOTATION_MARK so we have a cc_data for every printable ASCII value*/
+    "\x60" { /*GRAVE_ACCENT -> LEFT_SINGLE_QUOTATION_MARK*/ return 0x1226; }
+    "\x7B" { /*LEFT_CURLY_BRACKET*/ return 0x1329; }
+    "\x7C" { /*VERTICAL_LINE*/ return 0x132E; }
+    "\x7D" { /*RIGHT_CURLY_BRACKET*/ return 0x132A; }
+    "\x7E" { /*TILDE*/ return 0x132F; }
+    /*There is a control equivalent. Haven't decided if we want to handle that here or not*/
+    "\x7F" { /*DEL/BACKSPACE. Need to set bits 9 and 12! return 0x1421;*/ return 0x0000; }
+
+    /* Rules are processed top to bottom. So All single byte chars MUST be above this line!*/
+    [\x20-\x7F] { /*ASCII range*/ return (s[0]<<8) &0xFF00; } /* Should we use yych instead of s[0]?*/
+
+    /*This is the second half of the ascii exceptions*/
+    "\xC3\xA1" { /*LATIN_SMALL_LETTER_A_WITH_ACUTE*/ return 0x2A00; }
+    "\xC3\xA9" { /*LATIN_SMALL_LETTER_E_WITH_ACUTE*/ return 0x5C00; }
+    "\xC3\xAD" { /*LATIN_SMALL_LETTER_I_WITH_ACUTE*/ return 0x5E00; }
+    "\xC3\xB3" { /*LATIN_SMALL_LETTER_O_WITH_ACUTE*/ return 0x5F00; }
+    "\xC3\xBA" { /*LATIN_SMALL_LETTER_U_WITH_ACUTE*/ return 0x6000; }
+    "\xC3\xA7" { /*LATIN_SMALL_LETTER_C_WITH_CEDILLA*/ return 0x7B00; }
+    "\xC3\xB7" { /*DIVISION_SIGN*/ return 0x7C00; }
+    "\xC3\x91" { /*LATIN_CAPITAL_LETTER_N_WITH_TILDE*/ return 0x7D00; }
+    "\xC3\xB1" { /*LATIN_SMALL_LETTER_N_WITH_TILDE*/ return 0x7E00; }
+    "\xE2\x96\x88" { /*FULL_BLOCK*/ return 0x7F00; }
+
+    /*Special North American character set*/
+    "\xC2\xAE" { /*REGISTERED_SIGN*/ return 0x1130; }
+    "\xC2\xB0" { /*DEGREE_SIGN*/ return 0x1131; }
+    "\xC2\xBD" { /*VULGAR_FRACTION_ONE_HALF*/ return 0x1132; }
+    "\xC2\xBF" { /*INVERTED_QUESTION_MARK*/ return 0x1133; }
+    "\xE2\x84\xA2" { /*TRADE_MARK_SIGN*/ return 0x1134; }
+    "\xC2\xA2" { /*CENT_SIGN*/ return 0x1135; }
+    "\xC2\xA3" { /*POUND_SIGN*/ return 0x1136; }
+    "\xE2\x99\xAA" { /*EIGHTH_NOTE*/ return 0x1137; }
+    "\xC3\xA0" { /*LATIN_SMALL_LETTER_A_WITH_GRAVE*/ return 0x1138; }
+    "\xC2\xA0" { /*NO_BREAK_SPACE*/ return 0x1139; }
+    "\xC3\xA8" { /*LATIN_SMALL_LETTER_E_WITH_GRAVE*/ return 0x113A; }
+    "\xC3\xA2" { /*LATIN_SMALL_LETTER_A_WITH_CIRCUMFLEX*/ return 0x113B; }
+    "\xC3\xAA" { /*LATIN_SMALL_LETTER_E_WITH_CIRCUMFLEX*/ return 0x113C; }
+    "\xC3\xAE" { /*LATIN_SMALL_LETTER_I_WITH_CIRCUMFLEX*/ return 0x113D; }
+    "\xC3\xB4" { /*LATIN_SMALL_LETTER_O_WITH_CIRCUMFLEX*/ return 0x113E; }
+    "\xC3\xBB" { /*LATIN_SMALL_LETTER_U_WITH_CIRCUMFLEX*/ return 0x113F; }
+
+    /*Extended Spanish/Miscellaneous*/
+    "\xC3\x81" { /*LATIN_CAPITAL_LETTER_A_WITH_ACUTE*/ return 0x1220; }
+    "\xC3\x89" { /*LATIN_CAPITAL_LETTER_E_WITH_ACUTE*/ return 0x1221; }
+    "\xC3\x93" { /*LATIN_CAPITAL_LETTER_O_WITH_ACUTE*/ return 0x1222; }
+    "\xC3\x9A" { /*LATIN_CAPITAL_LETTER_U_WITH_ACUTE*/ return 0x1223; }
+    "\xC3\x9C" { /*LATIN_CAPITAL_LETTER_U_WITH_DIAERESIS*/ return 0x1224; }
+    "\xC3\xBC" { /*LATIN_SMALL_LETTER_U_WITH_DIAERESIS*/ return 0x1225; }
+    "\xE2\x80\x98" { /*LEFT_SINGLE_QUOTATION_MARK*/ return 0x1226; }
+    "\xC2\xA1" { /*INVERTED_EXCLAMATION_MARK*/ return 0x1227; }
+    /*ASTERISK handled in ASCII mapping*/
+    "\xE2\x80\x99" { /*RIGHT_SINGLE_QUOTATION_MARK -> APOSTROPHE*/ return 0x2700; }
+    "\xE2\x80\x94" { /*EM_DASH*/ return 0x122A; }
+    "\xC2\xA9" { /*COPYRIGHT_SIGN*/ return 0x122B; }
+    "\xE2\x84\xA0" { /*SERVICE_MARK*/ return 0x122C; }
+    "\xE2\x80\xA2" { /*BULLET*/ return 0x122D; }
+    "\xE2\x80\x9C" { /*LEFT_DOUBLE_QUOTATION_MARK*/ return 0x122E; }
+    "\xE2\x80\x9D" { /*RIGHT_DOUBLE_QUOTATION_MARK*/ return 0x122F; }
+
+    /*Extended French*/
+    "\xC3\x80" { /*LATIN_CAPITAL_LETTER_A_WITH_GRAVE*/ return 0x1230; }
+    "\xC3\x82" { /*LATIN_CAPITAL_LETTER_A_WITH_CIRCUMFLEX*/ return 0x1231; }
+    "\xC3\x87" { /*LATIN_CAPITAL_LETTER_C_WITH_CEDILLA*/ return 0x1232; }
+    "\xC3\x88" { /*LATIN_CAPITAL_LETTER_E_WITH_GRAVE*/ return 0x1233; }
+    "\xC3\x8A" { /*LATIN_CAPITAL_LETTER_E_WITH_CIRCUMFLEX*/ return 0x1234; }
+    "\xC3\x8B" { /*LATIN_CAPITAL_LETTER_E_WITH_DIAERESIS*/ return 0x1235; }
+    "\xC3\xAB" { /*LATIN_SMALL_LETTER_E_WITH_DIAERESIS*/ return 0x1236; }
+    "\xC3\x8E" { /*LATIN_CAPITAL_LETTER_I_WITH_CIRCUMFLEX*/ return 0x1237; }
+    "\xC3\x8F" { /*LATIN_CAPITAL_LETTER_I_WITH_DIAERESIS*/ return 0x1238; }
+    "\xC3\xAF" { /*LATIN_SMALL_LETTER_I_WITH_DIAERESIS*/ return 0x1239; }
+    "\xC3\x94" { /*LATIN_CAPITAL_LETTER_O_WITH_CIRCUMFLEX*/ return 0x123A; }
+    "\xC3\x99" { /*LATIN_CAPITAL_LETTER_U_WITH_GRAVE*/ return 0x123B; }
+    "\xC3\xB9" { /*LATIN_SMALL_LETTER_U_WITH_GRAVE*/ return 0x123C; }
+    "\xC3\x9B" { /*LATIN_CAPITAL_LETTER_U_WITH_CIRCUMFLEX*/ return 0x123D; }
+    "\xC2\xAB" { /*LEFT_POINTING_DOUBLE_ANGLE_QUOTATION_MARK*/ return 0x123E; }
+    "\xC2\xBB" { /*RIGHT_POINTING_DOUBLE_ANGLE_QUOTATION_MARK*/ return 0x123F; }
+
+    /*Portuguese*/
+    "\xC3\x83" { /*LATIN_CAPITAL_LETTER_A_WITH_TILDE*/ return 0x1320; }
+    "\xC3\xA3" { /*LATIN_SMALL_LETTER_A_WITH_TILDE*/ return 0x1321; }
+    "\xC3\x8D" { /*LATIN_CAPITAL_LETTER_I_WITH_ACUTE*/ return 0x1322; }
+    "\xC3\x8C" { /*LATIN_CAPITAL_LETTER_I_WITH_GRAVE*/ return 0x1323; }
+    "\xC3\xAC" { /*LATIN_SMALL_LETTER_I_WITH_GRAVE*/ return 0x1324; }
+    "\xC3\x92" { /*LATIN_CAPITAL_LETTER_O_WITH_GRAVE*/ return 0x1325; }
+    "\xC3\xB2" { /*LATIN_SMALL_LETTER_O_WITH_GRAVE*/ return 0x1326; }
+    "\xC3\x95" { /*LATIN_CAPITAL_LETTER_O_WITH_TILDE*/ return 0x1327; }
+    "\xC3\xB5" { /*LATIN_SMALL_LETTER_O_WITH_TILDE*/ return 0x1328; }
+    /*LEFT_CURLY_BRACKET handled in ASCII mapping*/
+    /*RIGHT_CURLY_BRACKET handled in ASCII mapping*/
+    /*REVERSE_SOLIDUS handled in ASCII mapping*/
+    /*CIRCUMFLEX_ACCENT handled in ASCII mapping*/
+    /*LOW_LINE handled in ASCII mapping*/
+    /*VERTICAL_LINE handled in ASCII mapping*/
+    /*TILDE handled in ASCII mapping*/
+
+    /*German/Danish*/
+    "\xC3\x84" { /*LATIN_CAPITAL_LETTER_A_WITH_DIAERESIS*/ return 0x1330; }
+    "\xC3\xA4" { /*LATIN_SMALL_LETTER_A_WITH_DIAERESIS*/ return 0x1331; }
+    "\xC3\x96" { /*LATIN_CAPITAL_LETTER_O_WITH_DIAERESIS*/ return 0x1332; }
+    "\xC3\xB6" { /*LATIN_SMALL_LETTER_O_WITH_DIAERESIS*/ return 0x1333; }
+    "\xC3\x9F" { /*LATIN_SMALL_LETTER_SHARP_S*/ return 0x1334; }
+    "\xC2\xA5" { /*YEN_SIGN*/ return 0x1335; }
+    "\xC2\xA4" { /*CURRENCY_SIGN*/ return 0x1336; }
+    "\xC2\xA6" { /*BROKEN_BAR*/ return 0x1337; }
+    "\xC3\x85" { /*LATIN_CAPITAL_LETTER_A_WITH_RING_ABOVE*/ return 0x1338; }
+    "\xC3\xA5" { /*LATIN_SMALL_LETTER_A_WITH_RING_ABOVE*/ return 0x1339; }
+    "\xC3\x98" { /*LATIN_CAPITAL_LETTER_O_WITH_STROKE*/ return 0x133A; }
+    "\xC3\xB8" { /*LATIN_SMALL_LETTER_O_WITH_STROKE*/ return 0x133B; }
+    "\xE2\x94\x8C" { /*EIA608_CHAR_BOX_DRAWINGS_LIGHT_DOWN_AND_RIGHT*/ return 0x133C; }
+    "\xE2\x94\x90" { /*EIA608_CHAR_BOX_DRAWINGS_LIGHT_DOWN_AND_LEFT*/ return 0x133D; }
+    "\xE2\x94\x94" { /*EIA608_CHAR_BOX_DRAWINGS_LIGHT_UP_AND_RIGHT*/ return 0x133E; }
+    "\xE2\x94\x98" { /*EIA608_CHAR_BOX_DRAWINGS_LIGHT_UP_AND_LEFT*/ return 0x133F; }
+
+    /*Default rule*/
+    * { /*DEFAULT_RULE*/ return 0x0000; }
+    */
+}

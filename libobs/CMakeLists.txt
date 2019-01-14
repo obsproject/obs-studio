@@ -116,7 +116,8 @@ elseif(APPLE)
 		util/platform-nix.c
 		util/platform-cocoa.m)
 	set(libobs_PLATFORM_HEADERS
-		util/threading-posix.h)
+		util/threading-posix.h
+		util/apple/cfstring-utils.h)
 	set(libobs_audio_monitoring_SOURCES
 		audio-monitoring/osx/coreaudio-enum-devices.c
 		audio-monitoring/osx/coreaudio-output.c
@@ -446,6 +447,14 @@ if(BUILD_CAPTIONS)
 endif()
 
 add_library(libobs SHARED ${libobs_SOURCES} ${libobs_HEADERS})
+if(UNIX AND NOT APPLE)
+	set(DEST_DIR "${CMAKE_INSTALL_PREFIX}")
+	foreach(LIB "obs" "rt")
+		set(PRIVATE_LIBS "${PRIVATE_LIBS} -l${LIB}")
+	endforeach()
+	CONFIGURE_FILE("libobs.pc.in" "libobs.pc" @ONLY)
+	install(FILES "${CMAKE_CURRENT_BINARY_DIR}/libobs.pc" DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/pkgconfig")
+endif()
 
 set_target_properties(libobs PROPERTIES
 	OUTPUT_NAME obs
@@ -455,7 +464,12 @@ target_compile_definitions(libobs
 	PUBLIC
 		HAVE_OBSCONFIG_H)
 
-if(NOT MSVC)
+if(CMAKE_SYSTEM_PROCESSOR MATCHES "^(powerpc|ppc)64le")
+	target_compile_options(libobs
+		PUBLIC
+			-mvsx)
+	add_compile_definitions(NO_WARN_X86_INTRINSICS)
+elseif(NOT MSVC)
 	target_compile_options(libobs
 		PUBLIC
 			-mmmx

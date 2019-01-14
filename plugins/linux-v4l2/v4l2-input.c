@@ -329,7 +329,11 @@ static void v4l2_device_list(obs_property_t *prop, obs_data_t *settings)
 			continue;
 		}
 
-		obs_property_list_add_string(prop, (char *) video_cap.card,
+		/* make sure device names are unique */
+		char unique_device_name[68];
+		sprintf(unique_device_name, "%s (%s)", video_cap.card,
+				video_cap.bus_info);
+		obs_property_list_add_string(prop, unique_device_name,
 				device.array);
 		blog(LOG_INFO, "Found device '%s' at %s", video_cap.card,
 				device.array);

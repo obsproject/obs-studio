@@ -148,6 +148,7 @@ struct XCompcapMain_private
 	bool lockX;
 	bool include_border;
 	bool exclude_alpha;
+	bool draw_opaque;
 
 	double window_check_time = 0.0;
 
@@ -251,6 +252,9 @@ static void xcc_cleanup(XCompcapMain_private *p)
 	XDisplayLock xlock;
 
 	if (p->gltex) {
+		GLuint gltex = *(GLuint*)gs_texture_get_obj(p->gltex);
+		glBindTexture(GL_TEXTURE_2D, gltex);
+		glXReleaseTexImageEXT(xdisp, p->glxpixmap, GLX_FRONT_LEFT_EXT);
 		gs_texture_destroy(p->gltex);
 		p->gltex = 0;
 	}
@@ -301,6 +305,7 @@ void XCompcapMain::updateSettings(obs_data_t *settings)
 		p->show_cursor = obs_data_get_bool(settings, "show_cursor");
 		p->include_border = obs_data_get_bool(settings, "include_border");
 		p->exclude_alpha = obs_data_get_bool(settings, "exclude_alpha");
+		p->draw_opaque = false;
 	} else {
 		p->win = prevWin;
 	}
@@ -346,6 +351,90 @@ void XCompcapMain::updateSettings(obs_data_t *settings)
 	if (p->exclude_alpha) {
 		cf = GS_BGRX;
 	}
+
+	bool has_alpha = true;
+
+	const int attrs[] =
+	{
+		GLX_BIND_TO_TEXTURE_RGBA_EXT, GL_TRUE,
+		GLX_DRAWABLE_TYPE, GLX_PIXMAP_BIT,
+		GLX_BIND_TO_TEXTURE_TARGETS_EXT, GLX_TEXTURE_2D_BIT_EXT,
+		GLX_ALPHA_SIZE, 8,
+		GLX_DOUBLEBUFFER, GL_FALSE,
+		None
+	};
+
+	int nelem = 0;
+	GLXFBConfig *configs = glXGetFBConfigs(xdisp,
+			XCompcap::getRootWindowScreen(attr.root),
+			&nelem);
+
+	if (nelem <= 0) {
+		blog(LOG_ERROR, "no fb configs available");
+		p->win = 0;
+		p->height = 0;
+		p->width = 0;
+		return;
+	}
+
+	GLXFBConfig config;
+	for (int i = 0; i < nelem; i++) {
+		config = configs[i];
+		XVisualInfo *visual = glXGetVisualFromFBConfig(xdisp, config);
+		if (!visual)
+			continue;
+
+		if (attr.visual->visualid != visual->visualid) {
+			XFree(visual);
+			continue;
+		}
+		XFree(visual);
+
+		int value;
+		glXGetFBConfigAttrib(xdisp, config, GLX_ALPHA_SIZE, &value);
+		if (value != 8)
+			has_alpha = false;
+
+		break;
+	}
+
+	XFree(configs);
+	configs = glXChooseFBConfig(xdisp,
+			XCompcap::getRootWindowScreen(attr.root),
+			attrs, &nelem);
+
+	if (nelem <= 0) {
+		blog(LOG_ERROR, "no matching fb config found");
+		p->win = 0;
+		p->height = 0;
+		p->width = 0;
+		return;
+	}
+	bool found = false;
+	for (int i = 0; i < nelem; i++) {
+		config = configs[i];
+		XVisualInfo *visual = glXGetVisualFromFBConfig(xdisp, config);
+		if (!visual)
+			continue;
+
+		if (attr.depth != visual->depth) {
+			XFree(visual);
+			continue;
+		}
+		XFree(visual);
+		found = true;
+		break;
+	}
+	if (!found)
+		config = configs[0];
+
+	if (cf == GS_BGRX || !has_alpha) {
+		p->draw_opaque = true;
+	}
+
+	int inverted;
+	glXGetFBConfigAttrib(xdisp, config, GLX_Y_INVERTED_EXT, &inverted);
+	p->inverted = inverted != 0;
 
 	p->border = attr.border_width;
 
@@ -395,32 +484,6 @@ void XCompcapMain::updateSettings(obs_data_t *settings)
 		glBindTexture(GL_TEXTURE_2D, 0);
 	}
 
-	const int attrs[] =
-	{
-		GLX_BIND_TO_TEXTURE_RGBA_EXT, GL_TRUE,
-		GLX_DRAWABLE_TYPE, GLX_PIXMAP_BIT,
-		GLX_BIND_TO_TEXTURE_TARGETS_EXT, GLX_TEXTURE_2D_BIT_EXT,
-		GLX_ALPHA_SIZE, 8,
-		GLX_DOUBLEBUFFER, GL_FALSE,
-		None
-	};
-
-	int nelem = 0;
-	GLXFBConfig* configs = glXChooseFBConfig(xdisp,
-			XCompcap::getRootWindowScreen(attr.root),
-			attrs, &nelem);
-
-	if (nelem <= 0) {
-		blog(LOG_ERROR, "no matching fb config found");
-		p->win = 0;
-		p->height = 0;
-		p->width = 0;
-		return;
-	}
-
-	glXGetFBConfigAttrib(xdisp, configs[0], GLX_Y_INVERTED_EXT, &nelem);
-	p->inverted = nelem != 0;
-
 	xlock.resetError();
 
 	p->pixmap = XCompositeNameWindowPixmap(xdisp, p->win);
@@ -433,14 +496,23 @@ void XCompcapMain::updateSettings(obs_data_t *settings)
 		return;
 	}
 
-	const int attribs[] =
+	const int attribs_alpha[] =
 	{
 		GLX_TEXTURE_TARGET_EXT, GLX_TEXTURE_2D_EXT,
 		GLX_TEXTURE_FORMAT_EXT, GLX_TEXTURE_FORMAT_RGBA_EXT,
 		None
 	};
 
-	p->glxpixmap = glXCreatePixmap(xdisp, configs[0], p->pixmap, attribs);
+	const int attribs_no_alpha[] =
+	{
+		GLX_TEXTURE_TARGET_EXT, GLX_TEXTURE_2D_EXT,
+		GLX_TEXTURE_FORMAT_EXT, GLX_TEXTURE_FORMAT_RGB_EXT,
+		None
+	};
+
+	const int *attribs = cf == GS_RGBA ? attribs_alpha : attribs_no_alpha;
+
+	p->glxpixmap = glXCreatePixmap(xdisp, config, p->pixmap, attribs);
 
 	if (xlock.gotError()) {
 		blog(LOG_ERROR, "glXCreatePixmap failed: %s",
@@ -466,10 +538,14 @@ void XCompcapMain::updateSettings(obs_data_t *settings)
 	if (!p->windowName.empty()) {
 		blog(LOG_INFO, "[window-capture: '%s'] update settings:\n"
 				"\ttitle: %s\n"
-				"\tclass: %s",
+				"\tclass: %s\n"
+				"\tHas alpha: %s\n"
+				"\tFound proper GLXFBConfig: %s\n",
 				obs_source_get_name(p->source),
 				XCompcap::getWindowName(p->win).c_str(),
-				XCompcap::getWindowClass(p->win).c_str());
+				XCompcap::getWindowClass(p->win).c_str(),
+				has_alpha ? "yes" : "no",
+				found ? "yes" : "no");
 		blog(LOG_DEBUG, "\n"
 				"\tid:    %s",
 				std::to_string((long long)p->win).c_str());
@@ -563,7 +639,10 @@ void XCompcapMain::render(gs_effect_t *effect)
 
 	PLock lock(&p->lock, true);
 
-	effect = obs_get_base_effect(OBS_EFFECT_OPAQUE);
+	if (p->draw_opaque)
+		effect = obs_get_base_effect(OBS_EFFECT_OPAQUE);
+	else
+		effect = obs_get_base_effect(OBS_EFFECT_DEFAULT);
 
 	if (!lock.isLocked() || !p->tex)
 		return;

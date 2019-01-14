@@ -69,7 +69,11 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define info(format, ...)  do_log(LOG_INFO,    format, ##__VA_ARGS__)
 #define debug(format, ...) do_log(LOG_DEBUG,   format, ##__VA_ARGS__)
 
+mfxHDL QSV_Encoder_Internal::g_DX_Handle = NULL;
+mfxU16 QSV_Encoder_Internal::g_numEncodersOpen = 0;
+
 QSV_Encoder_Internal::QSV_Encoder_Internal(mfxIMPL& impl, mfxVersion& version) :
+	m_pmfxSurfaces(NULL),
 	m_pmfxENC(NULL),
 	m_nSPSBufferSize(100),
 	m_nPPSBufferSize(100),
@@ -152,10 +156,10 @@ mfxStatus QSV_Encoder_Internal::Open(qsv_param_t * pParams)
 
 	if (m_bUseD3D11)
 		// Use D3D11 surface
-		sts = Initialize(m_impl, m_ver, &m_session, &m_mfxAllocator, false, false);
+		sts = Initialize(m_impl, m_ver, &m_session, &m_mfxAllocator, &g_DX_Handle, false, false);
 	else if (m_bD3D9HACK)
 		// Use hack
-		sts = Initialize(m_impl, m_ver, &m_session, &m_mfxAllocator, false, true);
+		sts = Initialize(m_impl, m_ver, &m_session, &m_mfxAllocator, &g_DX_Handle, false, true);
 	else
 		sts = Initialize(m_impl, m_ver, &m_session, NULL);
 
@@ -182,6 +186,9 @@ mfxStatus QSV_Encoder_Internal::Open(qsv_param_t * pParams)
 	sts = InitBitstream();
 	MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
+	if (sts >= MFX_ERR_NONE) {
+		g_numEncodersOpen++;
+	}
 	return sts;
 }
 
@@ -189,6 +196,7 @@ mfxStatus QSV_Encoder_Internal::Open(qsv_param_t * pParams)
 bool QSV_Encoder_Internal::InitParams(qsv_param_t * pParams)
 {
 	memset(&m_mfxEncParams, 0, sizeof(m_mfxEncParams));
+
 
 	m_mfxEncParams.mfx.CodecId = MFX_CODEC_AVC;
 	m_mfxEncParams.mfx.GopOptFlag = MFX_GOP_STRICT;
@@ -204,6 +212,7 @@ bool QSV_Encoder_Internal::InitParams(qsv_param_t * pParams)
 	m_mfxEncParams.mfx.FrameInfo.CropY = 0;
 	m_mfxEncParams.mfx.FrameInfo.CropW = pParams->nWidth;
 	m_mfxEncParams.mfx.FrameInfo.CropH = pParams->nHeight;
+	m_mfxEncParams.mfx.GopRefDist = pParams->nbFrames + 1;
 
 	m_mfxEncParams.mfx.RateControlMethod = pParams->nRateControl;
 
@@ -235,6 +244,10 @@ bool QSV_Encoder_Internal::InitParams(qsv_param_t * pParams)
 	case MFX_RATECONTROL_LA_ICQ:
 		m_mfxEncParams.mfx.ICQQuality = pParams->nICQQuality;
 		break;
+	case MFX_RATECONTROL_LA_HRD:
+		m_mfxEncParams.mfx.TargetKbps = pParams->nTargetBitRate;
+		m_mfxEncParams.mfx.MaxKbps = pParams->nTargetBitRate;
+		break;
 	default:
 		break;
 	}
@@ -245,28 +258,17 @@ bool QSV_Encoder_Internal::InitParams(qsv_param_t * pParams)
 
 	static mfxExtBuffer* extendedBuffers[2];
 	int iBuffers = 0;
-	if (pParams->nAsyncDepth == 1) {
-		m_mfxEncParams.mfx.NumRefFrame = 1;
-		// low latency, I and P frames only
-		m_mfxEncParams.mfx.GopRefDist = 1;
-		memset(&m_co, 0, sizeof(mfxExtCodingOption));
-		m_co.Header.BufferId = MFX_EXTBUFF_CODING_OPTION;
-		m_co.Header.BufferSz = sizeof(mfxExtCodingOption);
-		m_co.MaxDecFrameBuffering = 1;
-		extendedBuffers[iBuffers++] = (mfxExtBuffer*)&m_co;
-	}
-	else
-		m_mfxEncParams.mfx.GopRefDist = pParams->nbFrames + 1;
 
+	memset(&m_co2, 0, sizeof(mfxExtCodingOption2));
+	m_co2.Header.BufferId = MFX_EXTBUFF_CODING_OPTION2;
+	m_co2.Header.BufferSz = sizeof(m_co2);
+	if (pParams->bMBBRC)
+		m_co2.MBBRC = MFX_CODINGOPTION_ON;
 	if (pParams->nRateControl == MFX_RATECONTROL_LA_ICQ ||
-	    pParams->nRateControl == MFX_RATECONTROL_LA) {
+	    pParams->nRateControl == MFX_RATECONTROL_LA)
 
-		memset(&m_co2, 0, sizeof(mfxExtCodingOption2));
-		m_co2.Header.BufferId = MFX_EXTBUFF_CODING_OPTION;
-		m_co2.Header.BufferSz = sizeof(m_co2);
 		m_co2.LookAheadDepth = pParams->nLADEPTH;
-		extendedBuffers[iBuffers++] = (mfxExtBuffer*)& m_co2;
-	}
+	extendedBuffers[iBuffers++] = (mfxExtBuffer*)& m_co2;
 
 	if (iBuffers > 0) {
 		m_mfxEncParams.ExtParam = extendedBuffers;
@@ -598,11 +600,15 @@ mfxStatus QSV_Encoder_Internal::ClearData()
 	delete m_pmfxENC;
 	m_pmfxENC = NULL;
 
-	if (m_bUseD3D11 || m_bD3D9HACK)
+	if (sts >= MFX_ERR_NONE) {
+		g_numEncodersOpen--;
+	}
+
+	if ((m_bUseD3D11 || m_bD3D9HACK) && (g_numEncodersOpen <= 0)) {
 		Release();
-
+		g_DX_Handle = NULL;
+	}
 	m_session.Close();
-
 	return sts;
 }
 

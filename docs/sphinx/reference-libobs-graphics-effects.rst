@@ -154,6 +154,36 @@ HLSL format.
 
 ---------------------
 
+.. function:: size_t gs_param_get_num_annotations(const gs_eparam_t *param)
+
+   Gets the number of annotations associated with the parameter.
+
+   :param param:  Param object
+   :return:       Number of annotations the param has
+
+---------------------
+
+.. function:: gs_eparam_t *gs_param_get_annotation_by_idx(const gs_eparam_t *param, size_t annotation)
+
+   Gets an annotation of a param by its index.
+
+   :param param:  Param object
+   :param param:  Annotation index
+   :return:       The effect parameter object (annotation), or *NULL* if index
+                  invalid
+
+---------------------
+
+.. function:: gs_eparam_t *gs_param_get_annotation_by_name(const gs_eparam_t *pardam, const char *annotation)
+
+   Gets parameter of an effect by its name.
+
+   :param param:  Param object
+   :param name:   Name of the annotation
+   :return:       The effect parameter object (annotation), or *NULL* if not found
+
+---------------------
+
 .. function:: bool gs_effect_loop(gs_effect_t *effect, const char *name)
 
    Helper function that automatically begins techniques/passes.
@@ -332,3 +362,39 @@ HLSL format.
 
    :param param:   Effect parameter
    :param sampler: Sampler state object
+
+---------------------
+
+.. function:: void *gs_effect_get_val(gs_eparam_t *param)
+
+   Returns a copy of the param's current value.
+
+   :param param:   Effect parameter
+   :return:        A pointer to the copied byte value of the param's current value. Freed with :c:func:`bfree()`.
+
+---------------------
+
+.. function:: void gs_effect_get_default_val(gs_eparam_t *param)
+
+   Returns a copy of the param's default value.
+
+   :param param:   Effect parameter
+   :return:        A pointer to the copied byte value of the param's default value. Freed with :c:func:`bfree()`.
+
+---------------------
+
+.. function:: size_t gs_effect_get_val_size(gs_eparam_t *param)
+
+   Returns the size in bytes of the param's current value.
+
+   :param param:   Effect parameter
+   :return:        The size in bytes of the param's current value.
+
+---------------------
+
+.. function:: size_t gs_effect_get_default_val_size(gs_eparam_t *param)
+
+   Returns the size in bytes of the param's default value.
+
+   :param param:   Effect parameter
+   :return:        The size in bytes of the param's default value.

@@ -410,6 +410,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->auxAudioDevice1,      COMBO_CHANGED,  AUDIO_CHANGED);
 	HookWidget(ui->auxAudioDevice2,      COMBO_CHANGED,  AUDIO_CHANGED);
 	HookWidget(ui->auxAudioDevice3,      COMBO_CHANGED,  AUDIO_CHANGED);
+	HookWidget(ui->auxAudioDevice4,      COMBO_CHANGED,  AUDIO_CHANGED);
 	HookWidget(ui->baseResolution,       CBEDIT_CHANGED, VIDEO_RES);
 	HookWidget(ui->outputResolution,     CBEDIT_CHANGED, VIDEO_RES);
 	HookWidget(ui->downscaleFilter,      COMBO_CHANGED,  VIDEO_CHANGED);
@@ -430,6 +431,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 #endif
 #ifdef _WIN32
 	HookWidget(ui->disableAudioDucking,  CHECK_CHANGED,  ADV_CHANGED);
+	HookWidget(ui->browserHWAccel,       CHECK_CHANGED,  ADV_RESTART);
 #endif
 	HookWidget(ui->filenameFormatting,   EDIT_CHANGED,   ADV_CHANGED);
 	HookWidget(ui->overwriteIfExists,    CHECK_CHANGED,  ADV_CHANGED);
@@ -446,6 +448,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->enableNewSocketLoop,  CHECK_CHANGED,  ADV_CHANGED);
 	HookWidget(ui->enableLowLatencyMode, CHECK_CHANGED,  ADV_CHANGED);
 	HookWidget(ui->disableFocusHotkeys,  CHECK_CHANGED,  ADV_CHANGED);
+	HookWidget(ui->autoRemux,            CHECK_CHANGED,  ADV_CHANGED);
 
 #if !defined(_WIN32) && !defined(__APPLE__)
 	delete ui->enableAutoUpdates;
@@ -500,6 +503,8 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	delete ui->advancedGeneralGroupBox;
 	delete ui->enableNewSocketLoop;
 	delete ui->enableLowLatencyMode;
+	delete ui->browserHWAccel;
+	delete ui->sourcesGroup;
 #if defined(__APPLE__) || HAVE_PULSEAUDIO
 	delete ui->disableAudioDucking;
 #endif
@@ -512,6 +517,8 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	ui->advancedGeneralGroupBox = nullptr;
 	ui->enableNewSocketLoop = nullptr;
 	ui->enableLowLatencyMode = nullptr;
+	ui->browserHWAccel = nullptr;
+	ui->sourcesGroup = nullptr;
 #if defined(__APPLE__) || HAVE_PULSEAUDIO
 	ui->disableAudioDucking = nullptr;
 #endif
@@ -1767,8 +1774,8 @@ void OBSBasicSettings::LoadAdvOutputFFmpegSettings()
 			"FFVCustom");
 	int audioBitrate = config_get_int(main->Config(), "AdvOut",
 			"FFABitrate");
-	int audioTrack = config_get_int(main->Config(), "AdvOut",
-			"FFAudioTrack");
+	int audioMixes = config_get_int(main->Config(), "AdvOut",
+			"FFAudioMixes");
 	const char *aEncoder = config_get_string(main->Config(), "AdvOut",
 			"FFAEncoder");
 	int aEncoderId = config_get_int(main->Config(), "AdvOut",
@@ -1794,14 +1801,12 @@ void OBSBasicSettings::LoadAdvOutputFFmpegSettings()
 	SelectEncoder(ui->advOutFFAEncoder, aEncoder, aEncoderId);
 	ui->advOutFFACfg->setText(aEncCustom);
 
-	switch (audioTrack) {
-	case 1: ui->advOutFFTrack1->setChecked(true); break;
-	case 2: ui->advOutFFTrack2->setChecked(true); break;
-	case 3: ui->advOutFFTrack3->setChecked(true); break;
-	case 4: ui->advOutFFTrack4->setChecked(true); break;
-	case 5: ui->advOutFFTrack5->setChecked(true); break;
-	case 6: ui->advOutFFTrack6->setChecked(true); break;
-	}
+	ui->advOutFFTrack1->setChecked(audioMixes & (1 << 0));
+	ui->advOutFFTrack2->setChecked(audioMixes & (1 << 1));
+	ui->advOutFFTrack3->setChecked(audioMixes & (1 << 2));
+	ui->advOutFFTrack4->setChecked(audioMixes & (1 << 3));
+	ui->advOutFFTrack5->setChecked(audioMixes & (1 << 4));
+	ui->advOutFFTrack6->setChecked(audioMixes & (1 << 5));
 }
 
 void OBSBasicSettings::LoadAdvOutputAudioSettings()
@@ -1999,6 +2004,7 @@ void OBSBasicSettings::LoadAudioDevices()
 		LoadListValues(ui->auxAudioDevice1, inputs, 3);
 		LoadListValues(ui->auxAudioDevice2, inputs, 4);
 		LoadListValues(ui->auxAudioDevice3, inputs, 5);
+		LoadListValues(ui->auxAudioDevice4, inputs, 6);
 		obs_properties_destroy(input_props);
 	}
 
@@ -2229,6 +2235,8 @@ void OBSBasicSettings::LoadAdvancedSettings()
 			"RecRBTime");
 	int rbSize = config_get_int(main->Config(), "AdvOut",
 			"RecRBSize");
+	bool autoRemux = config_get_bool(main->Config(), "Video",
+			"AutoRemux");
 
 	loading = true;
 
@@ -2255,6 +2263,7 @@ void OBSBasicSettings::LoadAdvancedSettings()
 	ui->streamDelaySec->setValue(delaySec);
 	ui->streamDelayPreserve->setChecked(preserveDelay);
 	ui->streamDelayEnable->setChecked(enableDelay);
+	ui->autoRemux->setChecked(autoRemux);
 
 
 	SetComboByName(ui->colorFormat, videoColorFormat);
@@ -2295,6 +2304,10 @@ void OBSBasicSettings::LoadAdvancedSettings()
 
 	ui->enableNewSocketLoop->setChecked(enableNewSocketLoop);
 	ui->enableLowLatencyMode->setChecked(enableLowLatencyMode);
+
+	bool browserHWAccel = config_get_bool(App()->GlobalConfig(),
+			"General", "BrowserHWAccel");
+	ui->browserHWAccel->setChecked(browserHWAccel);
 #endif
 
 	bool disableFocusHotkeys = config_get_bool(App()->GlobalConfig(),
@@ -2413,6 +2426,47 @@ void OBSBasicSettings::LoadHotkeySettings(obs_hotkey_id ignoreKey)
 	auto widget = new QWidget();
 	widget->setLayout(layout);
 	ui->hotkeyPage->setWidget(widget);
+
+	auto filterLayout = new QGridLayout();
+	auto filterWidget = new QWidget();
+	filterWidget->setLayout(filterLayout);
+
+	auto filterLabel = new QLabel(QTStr("Basic.Settings.Hotkeys.Filter"));
+	auto filter = new QLineEdit();
+
+	auto setRowVisible = [=](int row, bool visible, QLayoutItem *label) {
+		label->widget()->setVisible(visible);
+
+		auto field = layout->itemAt(row, QFormLayout::FieldRole);
+		if (field)
+			field->widget()->setVisible(visible);
+	};
+
+	auto searchFunction = [=](const QString &text) {
+		for (int i = 0; i < layout->rowCount(); i++) {
+			auto label = layout->itemAt(i, QFormLayout::LabelRole);
+			if (label) {
+				OBSHotkeyLabel *item =
+					qobject_cast<OBSHotkeyLabel*>(
+					label->widget());
+				if(item) {
+					if (item->text().toLower()
+						.contains(text.toLower()))
+						setRowVisible(i, true, label);
+					else
+						setRowVisible(i, false, label);
+				}
+			}
+		}
+	};
+
+	connect(filter, &QLineEdit::textChanged,
+		this, searchFunction);
+
+	filterLayout->addWidget(filterLabel, 0, 0);
+	filterLayout->addWidget(filter, 0, 1);
+
+	layout->addRow(filterWidget);
 
 	using namespace std;
 	using encoders_elem_t =
@@ -2832,6 +2886,10 @@ void OBSBasicSettings::SaveAdvancedSettings()
 
 	SaveCheckBox(ui->enableNewSocketLoop, "Output", "NewSocketLoopEnable");
 	SaveCheckBox(ui->enableLowLatencyMode, "Output", "LowLatencyEnable");
+
+	bool browserHWAccel = ui->browserHWAccel->isChecked();
+	config_set_bool(App()->GlobalConfig(), "General",
+			"BrowserHWAccel", browserHWAccel);
 #endif
 
 	bool disableFocusHotkeys = ui->disableFocusHotkeys->isChecked();
@@ -2879,6 +2937,7 @@ void OBSBasicSettings::SaveAdvancedSettings()
 	SaveSpinBox(ui->reconnectRetryDelay, "Output", "RetryDelay");
 	SaveSpinBox(ui->reconnectMaxRetries, "Output", "MaxRetries");
 	SaveComboData(ui->bindToIP, "Output", "BindIP");
+	SaveCheckBox(ui->autoRemux, "Video", "AutoRemux");
 
 #if defined(_WIN32) || defined(__APPLE__) || HAVE_PULSEAUDIO
 	QString newDevice = ui->monitoringDevice->currentData().toString();
@@ -3072,11 +3131,13 @@ void OBSBasicSettings::SaveOutputSettings()
 	SaveSpinBox(ui->advOutFFABitrate, "AdvOut", "FFABitrate");
 	SaveEncoder(ui->advOutFFAEncoder, "AdvOut", "FFAEncoder");
 	SaveEdit(ui->advOutFFACfg, "AdvOut", "FFACustom");
-	SaveTrackIndex(main->Config(), "AdvOut", "FFAudioTrack",
-			ui->advOutFFTrack1, ui->advOutFFTrack2,
-			ui->advOutFFTrack3, ui->advOutFFTrack4,
-			ui->advOutFFTrack5, ui->advOutFFTrack6);
-
+	config_set_int(main->Config(), "AdvOut", "FFAudioMixes",
+			(ui->advOutFFTrack1->isChecked() ? (1 << 0) : 0) |
+			(ui->advOutFFTrack2->isChecked() ? (1 << 1) : 0) |
+			(ui->advOutFFTrack3->isChecked() ? (1 << 2) : 0) |
+			(ui->advOutFFTrack4->isChecked() ? (1 << 3) : 0) |
+			(ui->advOutFFTrack5->isChecked() ? (1 << 4) : 0) |
+			(ui->advOutFFTrack6->isChecked() ? (1 << 5) : 0));
 	SaveCombo(ui->advOutTrack1Bitrate, "AdvOut", "Track1Bitrate");
 	SaveCombo(ui->advOutTrack2Bitrate, "AdvOut", "Track2Bitrate");
 	SaveCombo(ui->advOutTrack3Bitrate, "AdvOut", "Track3Bitrate");
@@ -3212,6 +3273,8 @@ void OBSBasicSettings::SaveAudioSettings()
 			"Basic.AuxDevice2", 4);
 	UpdateAudioDevice(true, ui->auxAudioDevice3,
 			"Basic.AuxDevice3", 5);
+	UpdateAudioDevice(true, ui->auxAudioDevice4,
+			"Basic.AuxDevice4", 6);
 	main->SaveProject();
 }
 
@@ -3856,6 +3919,13 @@ void OBSBasicSettings::AdvOutRecCheckWarnings()
 		if (!warningMsg.isEmpty())
 			warningMsg += "\n\n";
 		warningMsg += QTStr("OutputWarnings.MP4Recording");
+		ui->autoRemux->setText(
+				QTStr("Basic.Settings.Advanced.AutoRemux")
+				+ " " +
+				QTStr("Basic.Settings.Advanced.AutoRemux.MP4"));
+	} else {
+		ui->autoRemux->setText(
+				QTStr("Basic.Settings.Advanced.AutoRemux"));
 	}
 
 	delete advOutRecWarning;
@@ -4185,6 +4255,9 @@ void OBSBasicSettings::AdvReplayBufferChanged()
 	int vbitrate = (int)obs_data_get_int(settings, "bitrate");
 	const char *rateControl = obs_data_get_string(settings, "rate_control");
 
+	if (!rateControl)
+		rateControl = "";
+
 	bool lossless = strcmp(rateControl, "lossless") == 0 ||
 			ui->advOutRecType->currentIndex() == 1;
 	bool replayBufferEnabled = ui->advReplayBuf->isChecked();
@@ -4209,9 +4282,6 @@ void OBSBasicSettings::AdvReplayBufferChanged()
 			1000 / 8 / 1024 / 1024;
 	if (memMB < 1)
 		memMB = 1;
-
-	if (!rateControl)
-		rateControl = "";
 
 	bool varRateControl = (astrcmpi(rateControl, "CBR") == 0 ||
 	                       astrcmpi(rateControl, "VBR") == 0 ||
@@ -4306,18 +4376,19 @@ void OBSBasicSettings::SimpleRecordingEncoderChanged()
 				warning += "\n\n";
 			warning += SIMPLE_OUTPUT_WARNING("Encoder");
 		}
-
-		if (streamEnc == enc && enc == SIMPLE_ENCODER_QSV) {
-			if (!warning.isEmpty())
-				warning += "\n\n";
-			warning += SIMPLE_OUTPUT_WARNING("MultipleQSV");
-		}
 	}
 
 	if (ui->simpleOutRecFormat->currentText().compare("mp4") == 0) {
 		if (!warning.isEmpty())
 			warning += "\n\n";
 		warning += QTStr("OutputWarnings.MP4Recording");
+		ui->autoRemux->setText(
+				QTStr("Basic.Settings.Advanced.AutoRemux")
+				+ " " +
+				QTStr("Basic.Settings.Advanced.AutoRemux.MP4"));
+	} else {
+		ui->autoRemux->setText(
+				QTStr("Basic.Settings.Advanced.AutoRemux"));
 	}
 
 	if (warning.isEmpty())

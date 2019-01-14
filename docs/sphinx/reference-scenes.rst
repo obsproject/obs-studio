@@ -279,6 +279,12 @@ Scene Item Functions
 
 ---------------------
 
+.. function:: int64_t obs_sceneitem_get_id(const obs_sceneitem_t *item)
+
+   :return: The unique numeric identifier of the scene item.
+
+---------------------
+
 .. function:: void obs_sceneitem_set_pos(obs_sceneitem_t *item, const struct vec2 *pos)
               void obs_sceneitem_get_pos(const obs_sceneitem_t *item, struct vec2 *pos)
 

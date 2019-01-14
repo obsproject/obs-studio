@@ -40,7 +40,20 @@
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #endif
 
-#ifdef USE_POLARSSL
+#if defined(USE_MBEDTLS)
+#if defined(_WIN32)
+#include <windows.h>
+#include <wincrypt.h>
+#elif defined(__APPLE__)
+#include <Security/Security.h>
+#endif
+
+#include <mbedtls/ctr_drbg.h>
+#include <mbedtls/md5.h>
+#include <mbedtls/base64.h>
+#define MD5_DIGEST_LENGTH 16
+
+#elif defined(USE_POLARSSL)
 #include <polarssl/havege.h>
 #include <polarssl/md5.h>
 #include <polarssl/base64.h>
@@ -57,7 +70,6 @@ static const char *my_dhm_P =
     "E8A700D60B7F1200FA8E77B0A979DABF";
 
 static const char *my_dhm_G = "4";
-
 #elif defined(USE_GNUTLS)
 #include <gnutls/gnutls.h>
 #define MD5_DIGEST_LENGTH 16
@@ -70,7 +82,8 @@ static const char *my_dhm_G = "4";
 #include <openssl/bio.h>
 #include <openssl/buffer.h>
 #endif
-TLS_CTX RTMP_TLS_ctx;
+
+TLS_CTX RTMP_TLS_ctx = NULL;
 #endif
 
 #define RTMP_SIG_SIZE 1536
@@ -226,9 +239,15 @@ RTMPPacket_Reset(RTMPPacket *p)
 }
 
 int
-RTMPPacket_Alloc(RTMPPacket *p, int nSize)
+RTMPPacket_Alloc(RTMPPacket *p, uint32_t nSize)
 {
-    char *ptr = calloc(1, nSize + RTMP_MAX_HEADER_SIZE);
+    char *ptr;
+#if ARCH_BITS == 32
+    if (nSize > SIZE_MAX - RTMP_MAX_HEADER_SIZE)
+        return FALSE;
+#endif
+
+    ptr = calloc(1, nSize + RTMP_MAX_HEADER_SIZE);
     if (!ptr)
         return FALSE;
     p->m_body = ptr + RTMP_MAX_HEADER_SIZE;
@@ -262,10 +281,100 @@ RTMP_LibVersion()
 }
 
 void
+RTMP_TLS_LoadCerts() {
+#ifdef USE_MBEDTLS
+    mbedtls_x509_crt *chain = RTMP_TLS_ctx->cacert = calloc(1, sizeof(struct mbedtls_x509_crt));
+    mbedtls_x509_crt_init(chain);
+
+#if defined(_WIN32)
+    HCERTSTORE hCertStore;
+    PCCERT_CONTEXT pCertContext = NULL;
+
+    if (!(hCertStore = CertOpenSystemStore((HCRYPTPROV)NULL, L"ROOT"))) {
+        goto error;
+    }
+
+    while (pCertContext = CertEnumCertificatesInStore(hCertStore, pCertContext)) {
+        mbedtls_x509_crt_parse_der(chain,
+                                   (unsigned char *)pCertContext->pbCertEncoded,
+                                   pCertContext->cbCertEncoded);
+    }
+
+    CertFreeCertificateContext(pCertContext);
+    CertCloseStore(hCertStore, 0);
+#elif defined(__APPLE__)
+    SecKeychainRef keychain_ref;
+    CFMutableDictionaryRef search_settings_ref;
+    CFArrayRef result_ref;
+
+    if (SecKeychainOpen("/System/Library/Keychains/SystemRootCertificates.keychain",
+                        &keychain_ref)
+        != errSecSuccess) {
+      goto error;
+    }
+
+    search_settings_ref = CFDictionaryCreateMutable(NULL, 0, NULL, NULL);
+    CFDictionarySetValue(search_settings_ref, kSecClass, kSecClassCertificate);
+    CFDictionarySetValue(search_settings_ref, kSecMatchLimit, kSecMatchLimitAll);
+    CFDictionarySetValue(search_settings_ref, kSecReturnRef, kCFBooleanTrue);
+    CFDictionarySetValue(search_settings_ref, kSecMatchSearchList,
+                         CFArrayCreate(NULL, (const void **)&keychain_ref, 1, NULL));
+
+    if (SecItemCopyMatching(search_settings_ref, (CFTypeRef *)&result_ref)
+        != errSecSuccess) {
+      goto error;
+    }
+
+    for (CFIndex i = 0; i < CFArrayGetCount(result_ref); i++) {
+      SecCertificateRef item_ref = (SecCertificateRef)
+                                   CFArrayGetValueAtIndex(result_ref, i);
+      CFDataRef data_ref;
+
+      if ((data_ref = SecCertificateCopyData(item_ref))) {
+        mbedtls_x509_crt_parse_der(chain,
+                                   (unsigned char *)CFDataGetBytePtr(data_ref),
+                                   CFDataGetLength(data_ref));
+        CFRelease(data_ref);
+      }
+    }
+
+    CFRelease(keychain_ref);
+#elif defined(__linux__)
+    if (mbedtls_x509_crt_parse_path(chain, "/etc/ssl/certs/") != 0) {
+        goto error;
+    }
+#endif
+
+    mbedtls_ssl_conf_ca_chain(&RTMP_TLS_ctx->conf, chain, NULL);
+    return;
+
+error:
+    mbedtls_x509_crt_free(chain);
+    free(chain);
+    RTMP_TLS_ctx->cacert = NULL;
+#endif /* USE_MBEDTLS */
+}
+
+void
 RTMP_TLS_Init()
 {
 #ifdef CRYPTO
-#ifdef USE_POLARSSL
+#if defined(USE_MBEDTLS)
+    const char * pers = "RTMP_TLS";
+    RTMP_TLS_ctx = calloc(1,sizeof(struct tls_ctx));
+
+    mbedtls_ssl_config_init(&RTMP_TLS_ctx->conf);
+    mbedtls_ctr_drbg_init(&RTMP_TLS_ctx->ctr_drbg);
+    mbedtls_entropy_init(&RTMP_TLS_ctx->entropy);
+
+    mbedtls_ctr_drbg_seed(&RTMP_TLS_ctx->ctr_drbg,
+                          mbedtls_entropy_func,
+                          &RTMP_TLS_ctx->entropy,
+                          (const unsigned char *)pers,
+                          strlen(pers));
+
+    RTMP_TLS_LoadCerts();
+#elif defined(USE_POLARSSL)
     /* Do this regardless of NO_SSL, we use havege for rtmpe too */
     RTMP_TLS_ctx = calloc(1,sizeof(struct tls_ctx));
     havege_init(&RTMP_TLS_ctx->hs);
@@ -289,6 +398,26 @@ RTMP_TLS_Init()
     SSL_CTX_set_options(RTMP_TLS_ctx, SSL_OP_ALL);
     SSL_CTX_set_default_verify_paths(RTMP_TLS_ctx);
 #endif
+#else
+#endif
+}
+
+void
+RTMP_TLS_Free() {
+#ifdef USE_MBEDTLS
+    mbedtls_ssl_config_free(&RTMP_TLS_ctx->conf);
+    mbedtls_ctr_drbg_free(&RTMP_TLS_ctx->ctr_drbg);
+    mbedtls_entropy_free(&RTMP_TLS_ctx->entropy);
+
+    if (RTMP_TLS_ctx->cacert) {
+        mbedtls_x509_crt_free(RTMP_TLS_ctx->cacert);
+        free(RTMP_TLS_ctx->cacert);
+        RTMP_TLS_ctx->cacert = NULL;
+    }
+
+    // NO mbedtls_net_free() BECAUSE WE SET IT UP BY HAND!
+    free(RTMP_TLS_ctx);
+    RTMP_TLS_ctx = NULL;
 #endif
 }
 
@@ -299,7 +428,27 @@ RTMP_TLS_AllocServerContext(const char* cert, const char* key)
 #ifdef CRYPTO
     if (!RTMP_TLS_ctx)
         RTMP_TLS_Init();
-#ifdef USE_POLARSSL
+#if defined(USE_MBEDTLS)
+    tls_server_ctx *tc = ctx = calloc(1, sizeof(struct tls_server_ctx));
+    tc->conf = &RTMP_TLS_ctx->conf;
+    tc->ctr_drbg = &RTMP_TLS_ctx->ctr_drbg;
+
+    mbedtls_x509_crt_init(&tc->cert);
+    if (mbedtls_x509_crt_parse_file(&tc->cert, cert))
+    {
+        free(tc);
+        return NULL;
+    }
+
+    mbedtls_pk_init(&tc->key);
+    if (mbedtls_pk_parse_keyfile(&tc->key, key, NULL))
+    {
+        mbedtls_x509_crt_free(&tc->cert);
+        mbedtls_pk_free(&tc->key);
+        free(tc);
+        return NULL;
+    }
+#elif defined(USE_POLARSSL)
     tls_server_ctx *tc = ctx = calloc(1, sizeof(struct tls_server_ctx));
     tc->dhm_P = my_dhm_P;
     tc->dhm_G = my_dhm_G;
@@ -346,7 +495,11 @@ void
 RTMP_TLS_FreeServerContext(void *ctx)
 {
 #ifdef CRYPTO
-#ifdef USE_POLARSSL
+#if defined(USE_MBEDTLS)
+    mbedtls_x509_crt_free(&((tls_server_ctx*)ctx)->cert);
+    mbedtls_pk_free(&((tls_server_ctx*)ctx)->key);
+    free(ctx);
+#elif defined(USE_POLARSSL)
     x509_free(&((tls_server_ctx*)ctx)->cert);
     rsa_free(&((tls_server_ctx*)ctx)->key);
     free(ctx);
@@ -370,6 +523,10 @@ RTMP_Alloc()
 void
 RTMP_Free(RTMP *r)
 {
+#if defined(CRYPTO) && defined(USE_MBEDTLS)
+  if (RTMP_TLS_ctx)
+    RTMP_TLS_Free();
+#endif
     free(r);
 }
 
@@ -846,9 +1003,20 @@ int
 RTMP_TLS_Accept(RTMP *r, void *ctx)
 {
 #if defined(CRYPTO) && !defined(NO_SSL)
-    TLS_server(ctx, r->m_sb.sb_ssl);
+    tls_server_ctx *srv_ctx = ctx;
+    TLS_server(srv_ctx, r->m_sb.sb_ssl);
+
+#if defined(USE_MBEDTLS)
+    mbedtls_net_context *client_fd = &RTMP_TLS_ctx->net;
+    mbedtls_net_init(client_fd);
+    client_fd->fd = r->m_sb.sb_socket;
+    TLS_setfd(r->m_sb.sb_ssl, client_fd);
+#else
     TLS_setfd(r->m_sb.sb_ssl, r->m_sb.sb_socket);
-    if (TLS_accept(r->m_sb.sb_ssl) < 0)
+#endif
+
+    int connect_return = TLS_connect(r->m_sb.sb_ssl);
+    if (connect_return < 0)
     {
         RTMP_Log(RTMP_LOGERROR, "%s, TLS_Connect failed", __FUNCTION__);
         return FALSE;
@@ -868,10 +1036,59 @@ RTMP_Connect1(RTMP *r, RTMPPacket *cp)
     {
 #if defined(CRYPTO) && !defined(NO_SSL)
         TLS_client(RTMP_TLS_ctx, r->m_sb.sb_ssl);
+
+#if defined(USE_MBEDTLS)
+        mbedtls_net_context *server_fd = &RTMP_TLS_ctx->net;
+        server_fd->fd = r->m_sb.sb_socket;
+        TLS_setfd(r->m_sb.sb_ssl, server_fd);
+
+        // make sure we verify the certificate hostname
+        char hostname[MBEDTLS_SSL_MAX_HOST_NAME_LEN + 1];
+
+        if (r->Link.hostname.av_len >= MBEDTLS_SSL_MAX_HOST_NAME_LEN)
+            return FALSE;
+
+        memcpy(hostname, r->Link.hostname.av_val, r->Link.hostname.av_len);
+        hostname[r->Link.hostname.av_len] = 0;
+
+        if (mbedtls_ssl_set_hostname(r->m_sb.sb_ssl, hostname))
+            return FALSE;
+#else
         TLS_setfd(r->m_sb.sb_ssl, r->m_sb.sb_socket);
-        if (TLS_connect(r->m_sb.sb_ssl) < 0)
+#endif
+
+        int connect_return = TLS_connect(r->m_sb.sb_ssl);
+        if (connect_return < 0)
         {
-            RTMP_Log(RTMP_LOGERROR, "%s, TLS_Connect failed", __FUNCTION__);
+#if defined(USE_MBEDTLS)
+            if (connect_return == MBEDTLS_ERR_X509_CERT_VERIFY_FAILED)
+            {
+                r->last_error_code = connect_return;
+
+                // show a more detailed error in the log if possible
+                int verify_result = mbedtls_ssl_get_verify_result(r->m_sb.sb_ssl);
+                if (verify_result)
+                {
+                    char err[256], *e;
+                    if (mbedtls_x509_crt_verify_info(err, sizeof(err), "", verify_result) > 0)
+                    {
+                        e = strchr(err, '\n');
+                        if (e)
+                            *e = '\0';
+                    }
+                    else
+                    {
+                        strcpy(err, "unknown error");
+                    }
+                    RTMP_Log(RTMP_LOGERROR, "%s, Cert verify failed: %d (%s)", __FUNCTION__, verify_result, err);
+                    RTMP_Close(r);
+                    return FALSE;
+                }
+            }
+#endif
+            // output the error in a format that matches mbedTLS
+            connect_return = abs(connect_return);
+            RTMP_Log(RTMP_LOGERROR, "%s, TLS_Connect failed: -0x%x", __FUNCTION__, connect_return);
             RTMP_Close(r);
             return FALSE;
         }
@@ -879,7 +1096,6 @@ RTMP_Connect1(RTMP *r, RTMPPacket *cp)
         RTMP_Log(RTMP_LOGERROR, "%s, no SSL/TLS support", __FUNCTION__);
         RTMP_Close(r);
         return FALSE;
-
 #endif
     }
     if (r->Link.protocol & RTMP_FEATURE_HTTP)
@@ -1108,7 +1324,7 @@ RTMP_GetNextMediaPacket(RTMP *r, RTMPPacket *packet)
     while (!bHasMediaPacket && RTMP_IsConnected(r)
             && RTMP_ReadPacket(r, packet))
     {
-        if (!RTMPPacket_IsReady(packet))
+        if (!RTMPPacket_IsReady(packet) || !packet->m_nBodySize)
         {
             continue;
         }
@@ -2398,7 +2614,19 @@ b64enc(const unsigned char *input, int length, char *output, int maxsize)
 {
     (void)maxsize;
 
-#ifdef USE_POLARSSL
+#if defined(USE_MBEDTLS)
+    size_t osize;
+    if(mbedtls_base64_encode((unsigned char *) output, maxsize, &osize, input, length) == 0)
+    {
+        output[osize] = '\0';
+        return 1;
+    }
+    else
+    {
+        RTMP_Log(RTMP_LOGDEBUG, "%s, error", __FUNCTION__);
+        return 0;
+    }
+#elif defined(USE_POLARSSL)
     size_t buf_size = maxsize;
     if(base64_encode((unsigned char *) output, &buf_size, input, length) == 0)
     {
@@ -2457,7 +2685,13 @@ b64enc(const unsigned char *input, int length, char *output, int maxsize)
     return 1;
 }
 
-#ifdef USE_POLARSSL
+#if defined(USE_MBEDTLS)
+typedef	mbedtls_md5_context MD5_CTX;
+#define MD5_Init(ctx)	mbedtls_md5_init(ctx); mbedtls_md5_starts(ctx)
+#define MD5_Update(ctx,data,len)	mbedtls_md5_update(ctx,(unsigned char *)data,len)
+#define MD5_Final(dig,ctx)	mbedtls_md5_finish(ctx,dig); mbedtls_md5_free(ctx)
+
+#elif defined(USE_POLARSSL)
 #define MD5_CTX	md5_context
 #define MD5_Init(ctx)	md5_starts(ctx)
 #define MD5_Update(ctx,data,len)	md5_update(ctx,(unsigned char *)data,len)
@@ -3713,7 +3947,6 @@ RTMP_ReadPacket(RTMP *r, RTMPPacket *packet)
         {
             packet->m_nBodySize = AMF_DecodeInt24(header + 3);
             packet->m_nBytesRead = 0;
-            RTMPPacket_Free(packet);
 
             if (nSize > 6)
             {
@@ -4288,14 +4521,14 @@ RTMP_Close(RTMP *r)
     r->m_customSendParam = NULL;
 
 #if defined(CRYPTO) || defined(USE_ONLY_MD5)
-    for (int idx = 0; idx < r->Link.nStreams; idx++)
-    {
-        free(r->Link.streams[idx].playpath.av_val);
-        r->Link.streams[idx].playpath.av_val = NULL;
-    }
-
     if (!(r->Link.protocol & RTMP_FEATURE_WRITE) || (r->Link.pFlags & RTMP_PUB_CLEAN))
     {
+        for (int idx = 0; idx < r->Link.nStreams; idx++)
+        {
+            free(r->Link.streams[idx].playpath.av_val);
+            r->Link.streams[idx].playpath.av_val = NULL;
+        }
+
         r->Link.curStreamIdx = 0;
         r->Link.nStreams = 0;
     }

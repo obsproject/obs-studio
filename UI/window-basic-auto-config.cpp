@@ -578,7 +578,7 @@ AutoConfig::AutoConfig(QWidget *parent)
 	setPage(VideoPage, new AutoConfigVideoPage());
 	setPage(StreamPage, streamPage);
 	setPage(TestPage, new AutoConfigTestPage());
-	setWindowTitle(QTStr("Basic.AutoConfig.Beta"));
+	setWindowTitle(QTStr("Basic.AutoConfig"));
 
 	obs_video_info ovi;
 	obs_get_video_info(&ovi);

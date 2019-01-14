@@ -438,6 +438,15 @@ static void set_output_error(struct rtmp_stream *stream)
 	}
 #endif
 
+	// non platform-specific errors
+	if (!msg) {
+		switch (stream->rtmp.last_error_code) {
+		case -0x2700:
+			msg = obs_module_text("SSLCertVerifyFailed");
+			break;
+		}
+	}
+
 	obs_output_set_last_error(stream->output, msg);
 }
 

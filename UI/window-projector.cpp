@@ -50,6 +50,9 @@ OBSProjector::OBSProjector(QWidget *widget, obs_source_t *source_, int monitor,
 				SLOT(EscapeTriggered()));
 	}
 
+	SetAlwaysOnTop(this, config_get_bool(GetGlobalConfig(),
+			"BasicWindow", "ProjectorAlwaysOnTop"));
+
 	setAttribute(Qt::WA_DeleteOnClose, true);
 
 	//disable application quit when last window closed
@@ -67,11 +70,6 @@ OBSProjector::OBSProjector(QWidget *widget, obs_source_t *source_, int monitor,
 	};
 
 	connect(this, &OBSQTDisplay::DisplayCreated, addDrawCallback);
-
-	bool alwaysOnTop = config_get_bool(GetGlobalConfig(), "BasicWindow",
-			"ProjectorAlwaysOnTop");
-	if (alwaysOnTop && !isWindow)
-		SetAlwaysOnTop(this, true);
 
 	bool hideCursor = config_get_bool(GetGlobalConfig(),
 			"BasicWindow", "HideProjectorCursor");
@@ -673,6 +671,7 @@ void OBSProjector::OBSRender(void *data, uint32_t cx, uint32_t cy)
 			obs_source_dec_showing(source);
 			obs_source_inc_showing(curSource);
 			source = curSource;
+			window->source = source;
 		}
 	}
 
@@ -695,14 +694,16 @@ void OBSProjector::OBSSourceRemoved(void *data, calldata_t *params)
 
 static int getSourceByPosition(int x, int y, float ratio)
 {
-	QWidget *rec  = QApplication::activeWindow();
+	int pos = -1;
+	QWidget *rec = QApplication::activeWindow();
+	if (!rec)
+		return pos;
 	int     cx    = rec->width();
 	int     cy    = rec->height();
 	int     minX  = 0;
 	int     minY  = 0;
 	int     maxX  = cx;
 	int     maxY  = cy;
-	int     pos   = -1;
 
 	switch (multiviewLayout) {
 	case MultiviewLayout::HORIZONTAL_TOP_24_SCENES:
@@ -927,8 +928,9 @@ void OBSProjector::UpdateMultiview()
 	siScaleY  = (scenesCY - thicknessx2) / fh;
 
 	numSrcs = 0;
-	while (numSrcs < scenes.sources.num && numSrcs < maxSrcs) {
-		obs_source_t *src = scenes.sources.array[numSrcs];
+	size_t i = 0;
+	while (i < scenes.sources.num && numSrcs < maxSrcs) {
+		obs_source_t *src = scenes.sources.array[i++];
 		OBSData data = obs_source_get_private_settings(src);
 		obs_data_release(data);
 
