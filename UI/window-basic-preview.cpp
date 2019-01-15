@@ -3,11 +3,13 @@
 
 #include <algorithm>
 #include <cmath>
+#include <string>
 #include <graphics/vec4.h>
 #include <graphics/matrix4.h>
 #include "window-basic-preview.hpp"
 #include "window-basic-main.hpp"
 #include "obs-app.hpp"
+#include "platform.hpp"
 
 #define HANDLE_RADIUS     4.0f
 #define HANDLE_SEL_RADIUS (HANDLE_RADIUS * 1.5f)
@@ -22,6 +24,13 @@ OBSBasicPreview::OBSBasicPreview(QWidget *parent, Qt::WindowFlags flags)
 {
 	ResetScrollingOffset();
 	setMouseTracking(true);
+}
+
+OBSBasicPreview::~OBSBasicPreview()
+{
+	if (overflow) {
+		gs_texture_destroy(overflow);
+	}
 }
 
 vec2 OBSBasicPreview::GetMouseEventPos(QMouseEvent *event)
@@ -1213,6 +1222,92 @@ static inline bool crop_enabled(const obs_sceneitem_crop *crop)
 	       crop->bottom > 0;
 }
 
+bool OBSBasicPreview::DrawSelectedOverflow(obs_scene_t *scene,
+	obs_sceneitem_t *item, void *param)
+{
+	if (obs_sceneitem_locked(item))
+		return true;
+
+	if (!SceneItemHasVideo(item))
+		return true;
+
+	bool select = config_get_bool(GetGlobalConfig(), "BasicWindow",
+		"OverflowSelectionHidden");
+
+	if (!select && !obs_sceneitem_visible(item))
+		return true;
+
+	if (obs_sceneitem_is_group(item)) {
+		matrix4 mat;
+		obs_sceneitem_get_draw_transform(item, &mat);
+
+		gs_matrix_push();
+		gs_matrix_mul(&mat);
+		obs_sceneitem_group_enum_items(item, DrawSelectedOverflow, param);
+		gs_matrix_pop();
+	}
+
+	bool always = config_get_bool(GetGlobalConfig(), "BasicWindow",
+		"OverflowAlwaysVisible");
+
+	if (!always && !obs_sceneitem_selected(item))
+		return true;
+
+	OBSBasicPreview *prev = reinterpret_cast<OBSBasicPreview*>(param);
+
+	matrix4 boxTransform;
+	matrix4 invBoxTransform;
+	obs_sceneitem_get_box_transform(item, &boxTransform);
+	matrix4_inv(&invBoxTransform, &boxTransform);
+
+	vec3 bounds[] = {
+		{{{0.f, 0.f, 0.f}}},
+		{{{1.f, 0.f, 0.f}}},
+		{{{0.f, 1.f, 0.f}}},
+		{{{1.f, 1.f, 0.f}}},
+	};
+
+	bool visible = std::all_of(std::begin(bounds), std::end(bounds),
+		[&](const vec3 &b)
+	{
+		vec3 pos;
+		vec3_transform(&pos, &b, &boxTransform);
+		vec3_transform(&pos, &pos, &invBoxTransform);
+		return CloseFloat(pos.x, b.x) && CloseFloat(pos.y, b.y);
+	});
+
+	if (!visible)
+		return true;
+
+	obs_transform_info info;
+	obs_sceneitem_get_info(item, &info);
+
+	gs_effect_t    *solid = obs_get_base_effect(OBS_EFFECT_REPEAT);
+	gs_eparam_t    *image = gs_effect_get_param_by_name(solid, "image");
+	gs_eparam_t    *scale = gs_effect_get_param_by_name(solid, "scale");
+
+	vec2 s;
+	vec2_set(&s, boxTransform.x.x / 96, boxTransform.y.y / 96);
+
+	gs_effect_set_vec2(scale, &s);
+	gs_effect_set_texture(image, prev->overflow);
+
+	gs_matrix_push();
+	gs_matrix_mul(&boxTransform);
+
+	obs_sceneitem_crop crop;
+	obs_sceneitem_get_crop(item, &crop);
+
+	while (gs_effect_loop(solid, "Draw")) {
+		gs_draw_sprite(prev->overflow, 0, 1, 1);
+	}
+
+	gs_matrix_pop();
+
+	UNUSED_PARAMETER(scene);
+	return true;
+}
+
 bool OBSBasicPreview::DrawSelectedItem(obs_scene_t *scene,
 		obs_sceneitem_t *item, void *param)
 {
@@ -1310,6 +1405,37 @@ bool OBSBasicPreview::DrawSelectedItem(obs_scene_t *scene,
 	UNUSED_PARAMETER(scene);
 	UNUSED_PARAMETER(param);
 	return true;
+}
+
+void OBSBasicPreview::DrawOverflow()
+{
+	if (locked)
+		return;
+
+	bool hidden = config_get_bool(GetGlobalConfig(), "BasicWindow",
+		"OverflowHidden");
+
+	if (hidden)
+		return;
+
+	if (!overflow) {
+		std::string path;
+		GetDataFilePath("images/overflow.png", path);
+		overflow = gs_texture_create_from_file(path.c_str());
+	}
+
+	OBSBasic *main = reinterpret_cast<OBSBasic*>(App()->GetMainWindow());
+
+	OBSScene scene = main->GetCurrentScene();
+
+	if (scene) {
+		gs_matrix_push();
+		gs_matrix_scale3f(main->previewScale, main->previewScale, 1.0f);
+		obs_scene_enum_items(scene, DrawSelectedOverflow, this);
+		gs_matrix_pop();
+	}
+
+	gs_load_vertexbuffer(nullptr);
 }
 
 void OBSBasicPreview::DrawSceneEditing()

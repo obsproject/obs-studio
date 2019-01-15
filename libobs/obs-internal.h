@@ -255,6 +255,7 @@ struct obs_core_video {
 	gs_effect_t                     *default_rect_effect;
 	gs_effect_t                     *opaque_effect;
 	gs_effect_t                     *solid_effect;
+	gs_effect_t                     *repeat_effect;
 	gs_effect_t                     *conversion_effect;
 	gs_effect_t                     *bicubic_effect;
 	gs_effect_t                     *lanczos_effect;
