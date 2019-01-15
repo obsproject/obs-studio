@@ -1,6 +1,10 @@
 #pragma once
 
-class Auth {
+#include <QObject>
+
+class Auth : public QObject {
+	Q_OBJECT
+
 protected:
 	virtual void SaveInternal()=0;
 	virtual bool LoadInternal()=0;

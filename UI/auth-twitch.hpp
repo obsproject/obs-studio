@@ -29,6 +29,8 @@ public slots:
 class TwitchChat;
 
 class TwitchAuth : public Auth {
+	Q_OBJECT
+
 	friend class TwitchLogin;
 
 	QSharedPointer<TwitchChat> chat;
@@ -68,4 +70,7 @@ public:
 	virtual void OnStreamConfig() override;
 
 	static std::shared_ptr<Auth> Login(QWidget *parent);
+
+public slots:
+	void OnFFZPopup(const QString &url);
 };

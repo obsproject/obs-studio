@@ -82,6 +82,9 @@ void TwitchLogin::urlChanged(const QString &url)
 
 TwitchAuth::TwitchAuth()
 {
+	cef->add_popup_url_callback(
+			"https://twitch.tv/popout/frankerfacez/chat?ffz-settings",
+			this, "OnFFZPopup");
 }
 
 #define CLIENT_ID_HEADER "Client-ID: selj7uigdty0j5ijt41glcce29ehb4"
@@ -321,4 +324,40 @@ void TwitchAuth::OnStreamConfig()
 	obs_service_update(service, settings);
 
 	obs_data_release(settings);
+}
+
+void TwitchAuth::OnFFZPopup(const QString &url)
+{
+	QDialog dlg(OBSBasic::Get());
+	dlg.setWindowTitle("FFZ Settings");
+	dlg.resize(800, 600);
+
+	QCefWidget *cefWidget = cef->create_widget(nullptr, QT_TO_UTF8(url));
+	if (!cefWidget) {
+		return;
+	}
+
+	std::string script;
+	script += ffz_script;
+	script += bttv_script;
+
+	cefWidget->setStartupScript(script);
+
+	connect(cefWidget, SIGNAL(titleChanged(const QString &)),
+			&dlg, SLOT(setWindowTitle(const QString &)));
+
+	QPushButton *close = new QPushButton(QTStr("Close"));
+	connect(close, &QAbstractButton::clicked,
+			&dlg, &QDialog::accept);
+
+	QHBoxLayout *bottomLayout = new QHBoxLayout();
+	bottomLayout->addStretch();
+	bottomLayout->addWidget(close);
+	bottomLayout->addStretch();
+
+	QVBoxLayout *topLayout = new QVBoxLayout(&dlg);
+	topLayout->addWidget(cefWidget);
+	topLayout->addLayout(bottomLayout);
+
+	dlg.exec();
 }
