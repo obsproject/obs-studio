@@ -4,6 +4,9 @@
 *.dylib
 *.so
 
+#dependencies
+/dependencies/
+
 #cmake
 /cmbuild/
 /build/
