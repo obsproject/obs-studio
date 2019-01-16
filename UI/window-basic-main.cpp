@@ -2133,6 +2133,7 @@ OBSBasic::~OBSBasic()
 	delete multiviewProjectorMenu;
 	delete previewProjector;
 	delete studioProgramProjector;
+	delete scaleFilteringMenu;
 	delete trayMenu;
 	delete programOptions;
 	delete program;
@@ -4059,9 +4060,8 @@ void OBSBasic::SetScaleFilter()
 	obs_sceneitem_set_scale_filter(sceneItem, mode);
 }
 
-QMenu *OBSBasic::AddScaleFilteringMenu(obs_sceneitem_t *item)
+QMenu *OBSBasic::AddScaleFilteringMenu(QMenu *menu, obs_sceneitem_t *item)
 {
-	QMenu *menu = new QMenu(QTStr("ScaleFiltering"));
 	obs_scale_type scaleFilter = obs_sceneitem_get_scale_filter(item);
 	QAction *action;
 
@@ -4144,6 +4144,7 @@ void OBSBasic::CreateSourcePopupMenu(int idx, bool preview)
 	QMenu popup(this);
 	QPointer<QMenu> previewProjector;
 	QPointer<QMenu> sourceProjector;
+	delete scaleFilteringMenu;
 
 	if (preview) {
 		QAction *action = popup.addAction(
@@ -4264,7 +4265,8 @@ void OBSBasic::CreateSourcePopupMenu(int idx, bool preview)
 		if (width == 0 || height == 0)
 			resizeOutput->setEnabled(false);
 
-		popup.addMenu(AddScaleFilteringMenu(sceneItem));
+		scaleFilteringMenu = new QMenu(QTStr("ScaleFiltering"));
+		popup.addMenu(AddScaleFilteringMenu(scaleFilteringMenu, sceneItem));
 		popup.addSeparator();
 
 		popup.addMenu(sourceProjector);

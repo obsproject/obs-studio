@@ -199,6 +199,7 @@ private:
 	QPointer<QMenu>           previewProjector;
 	QPointer<QMenu>           studioProgramProjector;
 	QPointer<QMenu>           multiviewProjectorMenu;
+	QPointer<QMenu>           scaleFilteringMenu;
 
 	void          UpdateMultiviewProjectorMenu();
 
@@ -579,7 +580,7 @@ public:
 	}
 
 	QMenu *AddDeinterlacingMenu(obs_source_t *source);
-	QMenu *AddScaleFilteringMenu(obs_sceneitem_t *item);
+	QMenu *AddScaleFilteringMenu(QMenu *menu, obs_sceneitem_t *item);
 	QMenu *AddBackgroundColorMenu(obs_sceneitem_t *item);
 	void CreateSourcePopupMenu(int idx, bool preview);
 
