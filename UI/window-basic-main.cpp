@@ -2133,6 +2133,7 @@ OBSBasic::~OBSBasic()
 	delete multiviewProjectorMenu;
 	delete previewProjector;
 	delete studioProgramProjector;
+	delete sourceProjector;
 	delete scaleFilteringMenu;
 	delete trayMenu;
 	delete programOptions;
@@ -4143,7 +4144,7 @@ void OBSBasic::CreateSourcePopupMenu(int idx, bool preview)
 {
 	QMenu popup(this);
 	QPointer<QMenu> previewProjector;
-	QPointer<QMenu> sourceProjector;
+	delete sourceProjector;
 	delete scaleFilteringMenu;
 
 	if (preview) {
