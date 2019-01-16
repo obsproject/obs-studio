@@ -199,6 +199,8 @@ private:
 	QPointer<QMenu>           previewProjector;
 	QPointer<QMenu>           studioProgramProjector;
 	QPointer<QMenu>           multiviewProjectorMenu;
+	QPointer<QMenu>           previewProjectorSource;
+	QPointer<QMenu>           previewProjectorMain;
 	QPointer<QMenu>           sourceProjector;
 	QPointer<QMenu>           scaleFilteringMenu;
 

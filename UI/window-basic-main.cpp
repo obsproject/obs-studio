@@ -2133,6 +2133,8 @@ OBSBasic::~OBSBasic()
 	delete multiviewProjectorMenu;
 	delete previewProjector;
 	delete studioProgramProjector;
+	delete previewProjectorSource;
+	delete previewProjectorMain;
 	delete sourceProjector;
 	delete scaleFilteringMenu;
 	delete trayMenu;
@@ -4143,7 +4145,7 @@ QMenu *OBSBasic::AddBackgroundColorMenu(obs_sceneitem_t *item)
 void OBSBasic::CreateSourcePopupMenu(int idx, bool preview)
 {
 	QMenu popup(this);
-	QPointer<QMenu> previewProjector;
+	delete previewProjectorSource;
 	delete sourceProjector;
 	delete scaleFilteringMenu;
 
@@ -4160,11 +4162,11 @@ void OBSBasic::CreateSourcePopupMenu(int idx, bool preview)
 		popup.addAction(ui->actionLockPreview);
 		popup.addMenu(ui->scalingMenu);
 
-		previewProjector = new QMenu(QTStr("PreviewProjector"));
-		AddProjectorMenuMonitors(previewProjector, this,
+		previewProjectorSource = new QMenu(QTStr("PreviewProjector"));
+		AddProjectorMenuMonitors(previewProjectorSource, this,
 				SLOT(OpenPreviewProjector()));
 
-		popup.addMenu(previewProjector);
+		popup.addMenu(previewProjectorSource);
 
 		QAction *previewWindow = popup.addAction(
 				QTStr("PreviewWindow"),
@@ -5476,7 +5478,7 @@ void OBSBasic::on_previewDisabledLabel_customContextMenuRequested(
 		const QPoint &pos)
 {
 	QMenu popup(this);
-	QPointer<QMenu> previewProjector;
+	delete previewProjectorMain;
 
 	QAction *action = popup.addAction(
 			QTStr("Basic.Main.PreviewConextMenu.Enable"),
@@ -5484,15 +5486,15 @@ void OBSBasic::on_previewDisabledLabel_customContextMenuRequested(
 	action->setCheckable(true);
 	action->setChecked(obs_display_enabled(ui->preview->GetDisplay()));
 
-	previewProjector = new QMenu(QTStr("PreviewProjector"));
-	AddProjectorMenuMonitors(previewProjector, this,
+	previewProjectorMain = new QMenu(QTStr("PreviewProjector"));
+	AddProjectorMenuMonitors(previewProjectorMain, this,
 			SLOT(OpenPreviewProjector()));
 
 	QAction *previewWindow = popup.addAction(
 			QTStr("PreviewWindow"),
 			this, SLOT(OpenPreviewWindow()));
 
-	popup.addMenu(previewProjector);
+	popup.addMenu(previewProjectorMain);
 	popup.addAction(previewWindow);
 	popup.exec(QCursor::pos());
 
