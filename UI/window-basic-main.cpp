@@ -2140,6 +2140,7 @@ OBSBasic::~OBSBasic()
 	delete colorWidgetAction;
 	delete colorSelect;
 	delete deinterlaceMenu;
+	delete perSceneTransitionMenu;
 	delete trayMenu;
 	delete programOptions;
 	delete program;
@@ -3853,8 +3854,9 @@ void OBSBasic::on_scenes_customContextMenuRequested(const QPoint &pos)
 
 		popup.addSeparator();
 
-		QMenu *transitionMenu = CreatePerSceneTransitionMenu();
-		popup.addMenu(transitionMenu);
+		delete perSceneTransitionMenu;
+		perSceneTransitionMenu = CreatePerSceneTransitionMenu();
+		popup.addMenu(perSceneTransitionMenu);
 
 		/* ---------------------- */
 
