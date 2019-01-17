@@ -216,6 +216,7 @@ private:
 	QPointer<QMenu>           colorMenu;
 	QPointer<QWidgetAction>   colorWidgetAction;
 	QPointer<ColorSelect>     colorSelect;
+	QPointer<QMenu>           deinterlaceMenu;
 
 	void          UpdateMultiviewProjectorMenu();
 
@@ -595,7 +596,7 @@ public:
 		}
 	}
 
-	QMenu *AddDeinterlacingMenu(obs_source_t *source);
+	QMenu *AddDeinterlacingMenu(QMenu *menu, obs_source_t *source);
 	QMenu *AddScaleFilteringMenu(QMenu *menu, obs_sceneitem_t *item);
 	QMenu *AddBackgroundColorMenu(QMenu *menu, QWidgetAction *widgetAction,
 			ColorSelect *select, obs_sceneitem_t *item);

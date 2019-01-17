@@ -2139,6 +2139,7 @@ OBSBasic::~OBSBasic()
 	delete colorMenu;
 	delete colorWidgetAction;
 	delete colorSelect;
+	delete deinterlaceMenu;
 	delete trayMenu;
 	delete programOptions;
 	delete program;
@@ -4013,9 +4014,8 @@ void OBSBasic::SetDeinterlacingOrder()
 	obs_source_set_deinterlace_field_order(source, order);
 }
 
-QMenu *OBSBasic::AddDeinterlacingMenu(obs_source_t *source)
+QMenu *OBSBasic::AddDeinterlacingMenu(QMenu *menu, obs_source_t *source)
 {
-	QMenu *menu = new QMenu(QTStr("Deinterlacing"));
 	obs_deinterlace_mode deinterlaceMode =
 		obs_source_get_deinterlace_mode(source);
 	obs_deinterlace_field_order deinterlaceOrder =
@@ -4158,6 +4158,7 @@ void OBSBasic::CreateSourcePopupMenu(int idx, bool preview)
 	delete colorMenu;
 	delete colorWidgetAction;
 	delete colorSelect;
+	delete deinterlaceMenu;
 
 	if (preview) {
 		QAction *action = popup.addAction(
@@ -4263,7 +4264,8 @@ void OBSBasic::CreateSourcePopupMenu(int idx, bool preview)
 		}
 
 		if (isAsyncVideo) {
-			popup.addMenu(AddDeinterlacingMenu(source));
+			deinterlaceMenu = new QMenu(QTStr("Deinterlacing"));
+			popup.addMenu(AddDeinterlacingMenu(deinterlaceMenu, source));
 			popup.addSeparator();
 		}
 
