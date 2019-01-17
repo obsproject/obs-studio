@@ -2131,6 +2131,8 @@ OBSBasic::~OBSBasic()
 		updateCheckThread->wait();
 
 	delete multiviewProjectorMenu;
+	delete previewProjector;
+	delete studioProgramProjector;
 	delete trayMenu;
 	delete programOptions;
 	delete program;
