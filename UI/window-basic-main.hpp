@@ -19,6 +19,7 @@
 
 #include <QBuffer>
 #include <QAction>
+#include <QWidgetAction>
 #include <QSystemTrayIcon>
 #include <obs.hpp>
 #include <vector>
@@ -97,6 +98,15 @@ struct QuickTransition {
 private:
 	static void SourceRenamed(void *param, calldata_t *data);
 	std::shared_ptr<OBSSignal> renamedSignal;
+};
+
+class ColorSelect : public QWidget {
+
+public:
+	explicit ColorSelect(QWidget *parent = 0);
+
+private:
+	std::unique_ptr<Ui::ColorSelect> ui;
 };
 
 class OBSBasic : public OBSMainWindow {
@@ -203,6 +213,9 @@ private:
 	QPointer<QMenu>           previewProjectorMain;
 	QPointer<QMenu>           sourceProjector;
 	QPointer<QMenu>           scaleFilteringMenu;
+	QPointer<QMenu>           colorMenu;
+	QPointer<QWidgetAction>   colorWidgetAction;
+	QPointer<ColorSelect>     colorSelect;
 
 	void          UpdateMultiviewProjectorMenu();
 
@@ -584,7 +597,8 @@ public:
 
 	QMenu *AddDeinterlacingMenu(obs_source_t *source);
 	QMenu *AddScaleFilteringMenu(QMenu *menu, obs_sceneitem_t *item);
-	QMenu *AddBackgroundColorMenu(obs_sceneitem_t *item);
+	QMenu *AddBackgroundColorMenu(QMenu *menu, QWidgetAction *widgetAction,
+			ColorSelect *select, obs_sceneitem_t *item);
 	void CreateSourcePopupMenu(int idx, bool preview);
 
 	void UpdateTitleBar();
@@ -769,13 +783,4 @@ public:
 
 private:
 	std::unique_ptr<Ui::OBSBasic> ui;
-};
-
-class ColorSelect : public QWidget {
-
-public:
-	explicit ColorSelect(QWidget *parent = 0);
-
-private:
-	std::unique_ptr<Ui::ColorSelect> ui;
 };

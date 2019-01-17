@@ -27,7 +27,6 @@
 #include <QDesktopWidget>
 #include <QScreen>
 #include <QColorDialog>
-#include <QWidgetAction>
 #include <QSizePolicy>
 
 #include <util/dstr.h>
@@ -2137,6 +2136,9 @@ OBSBasic::~OBSBasic()
 	delete previewProjectorMain;
 	delete sourceProjector;
 	delete scaleFilteringMenu;
+	delete colorMenu;
+	delete colorWidgetAction;
+	delete colorSelect;
 	delete trayMenu;
 	delete programOptions;
 	delete program;
@@ -4085,9 +4087,9 @@ QMenu *OBSBasic::AddScaleFilteringMenu(QMenu *menu, obs_sceneitem_t *item)
 	return menu;
 }
 
-QMenu *OBSBasic::AddBackgroundColorMenu(obs_sceneitem_t *item)
+QMenu *OBSBasic::AddBackgroundColorMenu(QMenu *menu, QWidgetAction *widgetAction,
+		ColorSelect *select, obs_sceneitem_t *item)
 {
-	QMenu *menu = new QMenu(QTStr("ChangeBG"));
 	QAction *action;
 
 	menu->setStyleSheet(QString(
@@ -4120,8 +4122,6 @@ QMenu *OBSBasic::AddBackgroundColorMenu(obs_sceneitem_t *item)
 
 	menu->addSeparator();
 
-	QWidgetAction *widgetAction = new QWidgetAction(menu);
-	ColorSelect *select = new ColorSelect(menu);
 	widgetAction->setDefaultWidget(select);
 
 	for (int i = 1; i < 9; i++) {
@@ -4142,12 +4142,22 @@ QMenu *OBSBasic::AddBackgroundColorMenu(obs_sceneitem_t *item)
 	return menu;
 }
 
+ColorSelect::ColorSelect(QWidget *parent)
+	: QWidget(parent),
+	ui(new Ui::ColorSelect)
+{
+	ui->setupUi(this);
+}
+
 void OBSBasic::CreateSourcePopupMenu(int idx, bool preview)
 {
 	QMenu popup(this);
 	delete previewProjectorSource;
 	delete sourceProjector;
 	delete scaleFilteringMenu;
+	delete colorMenu;
+	delete colorWidgetAction;
+	delete colorSelect;
 
 	if (preview) {
 		QAction *action = popup.addAction(
@@ -4219,7 +4229,11 @@ void OBSBasic::CreateSourcePopupMenu(int idx, bool preview)
 			OBS_SOURCE_AUDIO;
 		QAction *action;
 
-		popup.addMenu(AddBackgroundColorMenu(sceneItem));
+		colorMenu = new QMenu(QTStr("ChangeBG"));
+		colorWidgetAction = new QWidgetAction(colorMenu);
+		colorSelect = new ColorSelect(colorMenu);
+		popup.addMenu(AddBackgroundColorMenu(colorMenu,
+				colorWidgetAction, colorSelect, sceneItem));
 		popup.addAction(QTStr("Rename"), this,
 				SLOT(EditSceneItemName()));
 		popup.addAction(QTStr("Remove"), this,
@@ -6829,11 +6843,4 @@ void OBSBasic::ResizeOutputSizeOfSource()
 
 	ResetVideo();
 	on_actionFitToScreen_triggered();
-}
-
-ColorSelect::ColorSelect(QWidget *parent)
-	: QWidget(parent),
-	  ui(new Ui::ColorSelect)
-{
-	ui->setupUi(this);
 }
