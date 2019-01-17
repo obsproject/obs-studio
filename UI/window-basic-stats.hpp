@@ -59,4 +59,6 @@ public:
 	~OBSBasicStats();
 
 	static void InitializeValues();
+private:
+	QPointer<QObject> shortcutFilter;
 };
