@@ -222,7 +222,9 @@ OBSBasic::OBSBasic(QWidget *parent)
 	connect(windowHandle(), &QWindow::screenChanged, displayResize);
 	connect(ui->preview, &OBSQTDisplay::DisplayResized, displayResize);
 
-	installEventFilter(CreateShortcutFilter());
+	delete shortcutFilter;
+	shortcutFilter = CreateShortcutFilter();
+	installEventFilter(shortcutFilter);
 
 	stringstream name;
 	name << "OBS " << App()->GetVersionString();
@@ -2142,6 +2144,7 @@ OBSBasic::~OBSBasic()
 	delete colorSelect;
 	delete deinterlaceMenu;
 	delete perSceneTransitionMenu;
+	delete shortcutFilter;
 	delete trayMenu;
 	delete programOptions;
 	delete program;

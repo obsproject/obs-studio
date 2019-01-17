@@ -219,6 +219,7 @@ private:
 	QPointer<ColorSelect>     colorSelect;
 	QPointer<QMenu>           deinterlaceMenu;
 	QPointer<QMenu>           perSceneTransitionMenu;
+	QPointer<QObject>         shortcutFilter;
 
 	void          UpdateMultiviewProjectorMenu();
 
