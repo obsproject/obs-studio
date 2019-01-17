@@ -211,6 +211,7 @@ private:
 	QPointer<QMenu>           multiviewProjectorMenu;
 	QPointer<QMenu>           previewProjectorSource;
 	QPointer<QMenu>           previewProjectorMain;
+	QPointer<QMenu>           sceneProjectorMenu;
 	QPointer<QMenu>           sourceProjector;
 	QPointer<QMenu>           scaleFilteringMenu;
 	QPointer<QMenu>           colorMenu;

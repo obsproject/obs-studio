@@ -2135,6 +2135,7 @@ OBSBasic::~OBSBasic()
 	delete previewProjectorSource;
 	delete previewProjectorMain;
 	delete sourceProjector;
+	delete sceneProjectorMenu;
 	delete scaleFilteringMenu;
 	delete colorMenu;
 	delete colorWidgetAction;
@@ -3808,7 +3809,6 @@ static void AddProjectorMenuMonitors(QMenu *parent, QObject *target,
 void OBSBasic::on_scenes_customContextMenuRequested(const QPoint &pos)
 {
 	QListWidgetItem *item = ui->scenes->itemAt(pos);
-	QPointer<QMenu> sceneProjectorMenu;
 
 	QMenu popup(this);
 	QMenu order(QTStr("Basic.MainMenu.Edit.Order"), this);
@@ -3838,6 +3838,7 @@ void OBSBasic::on_scenes_customContextMenuRequested(const QPoint &pos)
 
 		popup.addSeparator();
 
+		delete sceneProjectorMenu;
 		sceneProjectorMenu = new QMenu(QTStr("SceneProjector"));
 		AddProjectorMenuMonitors(sceneProjectorMenu, this,
 				SLOT(OpenSceneProjector()));
