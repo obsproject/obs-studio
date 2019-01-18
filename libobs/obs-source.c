@@ -21,6 +21,7 @@
 #include "media-io/format-conversion.h"
 #include "media-io/video-frame.h"
 #include "media-io/audio-io.h"
+#include "media-io/audio-math.h"
 #include "util/threading.h"
 #include "util/platform.h"
 #include "callback/calldata.h"
@@ -78,6 +79,7 @@ static const char *source_signals[] = {
 	"void transition_start(ptr source)",
 	"void transition_video_stop(ptr source)",
 	"void transition_stop(ptr source)",
+	"void filter_audio(ptr in_peak, ptr in_mag, ptr out_peak, ptr out_mag)",
 	NULL
 };
 
@@ -2492,19 +2494,127 @@ void obs_source_show_preloaded_video(obs_source_t *source)
 	pthread_mutex_unlock(&source->audio_buf_mutex);
 }
 
+static inline void analyze_audio_channels(struct obs_audio_data *in,
+	long long *ch)
+{
+	*ch = 0;
+	if (!in)
+		return;
+	for (uint32_t i = 0; i < MAX_AV_PLANES; i++) {
+		if (in->data[i])
+			*ch += 1;
+	}
+}
+
+static inline void analyze_audio_peaks(struct obs_audio_data *in,
+	float* magnitude, float* peak)
+{
+	if (!in) {
+		memset(magnitude, 0, sizeof(float)*MAX_AV_PLANES);
+		memset(peak, 0, sizeof(float)*MAX_AV_PLANES);
+		for (size_t i = 0; i < MAX_AV_PLANES; i++) {
+			peak[i] = mul_to_db(peak[i]);
+			magnitude[i] = mul_to_db(magnitude[i]);
+		}
+		return;
+	}
+	for (size_t i = 0; i < MAX_AV_PLANES; i++) {
+		peak[i] = 0.0f;
+		magnitude[i] = 0.0f;
+		if (!in->data[i])
+			continue;
+		float **data = (float**)in->data;
+		for (uint32_t j = 0; j < in->frames; j++) {
+			float p = fabsf(data[i][j]);
+			if (p > peak[i])
+				peak[i] = p;
+		}
+		float sum = 0.0f;
+		for (uint32_t j = 0; j < in->frames; j++) {
+			float sample = data[i][j];
+			sum += sample * sample;
+		}
+		magnitude[i] = sqrtf(sum / in->frames);
+	}
+	for (size_t i = 0; i < MAX_AV_PLANES; i++) {
+		peak[i] = mul_to_db(peak[i]);
+		magnitude[i] = mul_to_db(magnitude[i]);
+	}
+}
+
+static inline void copy_peak_data(float* input_mag, float* input_peak,
+	float *output_mag, float *output_peak)
+{
+	memcpy(input_mag, output_mag, sizeof(float)*MAX_AV_PLANES);
+	memcpy(input_peak, output_peak, sizeof(float)*MAX_AV_PLANES);
+}
+
+static inline void signal_filter_audio(struct calldata *data, float* input_mag,
+	float* input_peak, float *output_mag, float *output_peak,
+	long long channels, obs_source_t *filter)
+{
+	calldata_set_ptr(data, "in_peak", input_peak);
+	calldata_set_ptr(data, "in_mag", input_mag);
+	calldata_set_ptr(data, "out_peak", output_peak);
+	calldata_set_ptr(data, "out_mag", output_mag);
+	calldata_set_int(data, "channels", channels);
+
+	signal_handler_t *sh = obs_source_get_signal_handler(filter);
+	signal_handler_signal(sh, "filter_audio", data);
+}
+
 static inline struct obs_audio_data *filter_async_audio(obs_source_t *source,
-		struct obs_audio_data *in)
+	struct obs_audio_data *in)
 {
 	size_t i;
+	bool processed_filter = false;
+	float input_peak[MAX_AV_PLANES] = { 0 };
+	float input_mag[MAX_AV_PLANES] = { 0 };
+	float output_peak[MAX_AV_PLANES] = { 0 };
+	float output_mag[MAX_AV_PLANES] = { 0 };
+
+	long long channels = 0;
+	struct calldata data;
+	uint8_t stack[192];
+	calldata_init_fixed(&data, stack, sizeof(stack));
+
 	for (i = source->filters.num; i > 0; i--) {
 		struct obs_source *filter = source->filters.array[i-1];
 
-		if (!filter->enabled)
+		if (!filter->enabled) {
+			if (!processed_filter) {
+				analyze_audio_channels(in, &channels);
+				analyze_audio_peaks(in, &input_mag[0],
+						&input_peak[0]);
+				processed_filter = true;
+			} else {
+				copy_peak_data(&input_mag[0], &input_peak[0],
+					&output_mag[0], &output_peak[0]);
+			}
+			copy_peak_data(&output_mag[0], &output_peak[0],
+				&input_mag[0], &input_peak[0]);
+			signal_filter_audio(&data, &input_mag[0], &input_peak[0],
+					&output_mag[0], &output_peak[0],
+					channels, filter);
 			continue;
-
+		}
 		if (filter->context.data && filter->info.filter_audio) {
+			if (!processed_filter) {
+				analyze_audio_channels(in, &channels);
+				analyze_audio_peaks(in, &input_mag[0],
+					&input_peak[0]);
+				processed_filter = true;
+			} else {
+				copy_peak_data(&input_mag[0], &input_peak[0],
+					&output_mag[0], &output_peak[0]);
+			}
 			in = filter->info.filter_audio(filter->context.data,
 					in);
+			analyze_audio_peaks(in, &output_mag[0], &output_peak[0]);
+			signal_filter_audio(&data, &input_mag[0], &input_peak[0],
+					&output_mag[0], &output_peak[0],
+					channels, filter);
+			
 			if (!in)
 				return NULL;
 		}

@@ -23,6 +23,7 @@
 #include <obs.hpp>
 
 #include "properties-view.hpp"
+#include "OBSAudioMeter.hpp"
 
 class OBSBasic;
 class QMenu;
@@ -38,6 +39,8 @@ private:
 	std::unique_ptr<Ui::OBSBasicFilters> ui;
 	OBSSource source;
 	OBSPropertiesView *view = nullptr;
+	OBSAudioMeter *beforeMeter = nullptr;
+	OBSAudioMeter *afterMeter = nullptr;
 
 	OBSSignal addSignal;
 	OBSSignal removeSignal;
@@ -46,6 +49,7 @@ private:
 	OBSSignal removeSourceSignal;
 	OBSSignal renameSourceSignal;
 	OBSSignal updatePropertiesSignal;
+	OBSSignal updateMetersSignal;
 
 	inline OBSSource GetFilter(int row, bool async);
 
@@ -58,6 +62,7 @@ private:
 	static void SourceRemoved(void *param, calldata_t *data);
 	static void SourceRenamed(void *param, calldata_t *data);
 	static void UpdateProperties(void *data, calldata_t *params);
+	static void UpdateMeters(void *data, calldata_t *params);
 	static void DrawPreview(void *data, uint32_t cx, uint32_t cy);
 
 	QMenu *CreateAddFilterPopupMenu(bool async);
@@ -108,12 +113,12 @@ private slots:
 			QAbstractItemDelegate::EndEditHint endHint);
 	void EffectFilterNameEdited(QWidget *editor,
 			QAbstractItemDelegate::EndEditHint endHint);
-
 public:
 	OBSBasicFilters(QWidget *parent, OBSSource source_);
 	~OBSBasicFilters();
 
 	void Init();
+	void setPeakInfo(calldata_t *params);
 
 protected:
 	virtual void closeEvent(QCloseEvent *event) override;

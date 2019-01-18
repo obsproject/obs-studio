@@ -173,6 +173,19 @@ inline OBSSource OBSBasicFilters::GetFilter(int row, bool async)
 
 void OBSBasicFilters::UpdatePropertiesView(int row, bool async)
 {
+	updateMetersSignal.Disconnect();
+	if (!beforeMeter) {
+		beforeMeter = new OBSAudioMeter();
+		beforeMeter->setLayout(false);
+		beforeMeter->setTickOptions(OBSAudioMeter::bottom, true);
+		ui->rightLayout->addWidget(beforeMeter);
+	}
+	if (!afterMeter) {
+		afterMeter = new OBSAudioMeter();
+		afterMeter->setLayout(false);
+		afterMeter->setTickOptions(OBSAudioMeter::top, false);
+		ui->rightLayout->addWidget(afterMeter);
+	}
 	if (view) {
 		updatePropertiesSignal.Disconnect();
 		ui->rightLayout->removeWidget(view);
@@ -181,21 +194,33 @@ void OBSBasicFilters::UpdatePropertiesView(int row, bool async)
 	}
 
 	OBSSource filter = GetFilter(row, async);
-	if (!filter)
+	if (!filter) {
+		beforeMeter->hide();
+		afterMeter->hide();
 		return;
-
+	}
+	uint32_t flags = obs_source_get_output_flags(filter);
 	obs_data_t *settings = obs_source_get_settings(filter);
 
 	view = new OBSPropertiesView(settings, filter,
 			(PropertiesReloadCallback)obs_source_properties,
 			(PropertiesUpdateCallback)obs_source_update);
 
-	updatePropertiesSignal.Connect(obs_source_get_signal_handler(filter),
-			"update_properties",
-			OBSBasicFilters::UpdateProperties,
-			this);
+	signal_handler_t *sh = obs_source_get_signal_handler(filter);
+	updatePropertiesSignal.Connect(sh, "update_properties",
+			OBSBasicFilters::UpdateProperties, this);
 
 	obs_data_release(settings);
+
+	if (flags & OBS_SOURCE_AUDIO) {
+		updateMetersSignal.Connect(sh, "filter_audio",
+			OBSBasicFilters::UpdateMeters, this);
+		beforeMeter->show();
+		afterMeter->show();
+	} else {
+		beforeMeter->hide();
+		afterMeter->hide();
+	}
 
 	view->setMaximumHeight(250);
 	view->setMinimumHeight(150);
@@ -207,6 +232,30 @@ void OBSBasicFilters::UpdateProperties(void *data, calldata_t *)
 {
 	QMetaObject::invokeMethod(static_cast<OBSBasicFilters*>(data)->view,
 			"ReloadProperties");
+}
+
+void OBSBasicFilters::setPeakInfo(calldata_t *params)
+{
+	float *in_peak = (float*)calldata_ptr(params, "in_peak");
+	float *in_mag = (float*)calldata_ptr(params, "in_mag");
+	float *out_peak = (float*)calldata_ptr(params, "out_peak");
+	float *out_mag = (float*)calldata_ptr(params, "out_mag");
+	long long channels = calldata_int(params, "channels");
+	if (beforeMeter) {
+		beforeMeter->setChannels(channels);
+		if(in_mag && in_peak)
+			beforeMeter->setLevels(in_mag, in_peak, in_peak);
+	}
+	if (afterMeter) {
+		afterMeter->setChannels(channels);
+		if(out_mag && out_peak)
+			afterMeter->setLevels(out_mag, out_peak, out_peak);
+	}
+}
+
+void OBSBasicFilters::UpdateMeters(void *data, calldata_t *params)
+{
+	static_cast<OBSBasicFilters*>(data)->setPeakInfo(params);
 }
 
 void OBSBasicFilters::AddFilter(OBSSource filter)
