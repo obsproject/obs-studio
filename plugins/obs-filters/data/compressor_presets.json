@@ -19,5 +19,12 @@
 		"attack_time" : 10,
 		"release_time" : 49,
 		"output_gain" : 0.0
+	},
+	"ducking" : {
+		"ratio" : 32,
+		"threshold" : -36,
+		"attack_time" : 100,
+		"release_time" : 500,
+		"output_gain" : 0.0
 	}
 }
