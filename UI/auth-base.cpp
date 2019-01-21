@@ -5,13 +5,6 @@
 #include "auth-twitch.hpp"
 #endif
 
-const char *Auth::typeName()
-{
-	if (type() == Auth::Type::Twitch)
-		return "Twitch";
-	return nullptr;
-}
-
 bool Auth::Load()
 {
 	OBSBasic *main = OBSBasic::Get();
@@ -46,7 +39,7 @@ void Auth::Save()
 		return;
 	}
 
-	config_set_string(main->Config(), "Auth", "Type", auth->typeName());
+	config_set_string(main->Config(), "Auth", "Type", auth->type());
 	auth->SaveInternal();
 	config_save_safe(main->Config(), "tmp", nullptr);
 }

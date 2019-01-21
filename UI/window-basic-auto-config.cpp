@@ -556,7 +556,7 @@ void AutoConfigStreamPage::ServiceChanged()
 	OBSBasic *main = OBSBasic::Get();
 	auth.reset();
 
-	if (!!main->auth && service == main->auth->typeName()) {
+	if (!!main->auth && service == main->auth->type()) {
 		auth = main->auth;
 		OnAuthConnected();
 	}

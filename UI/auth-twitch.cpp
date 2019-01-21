@@ -206,9 +206,9 @@ try {
 void TwitchAuth::SaveInternal()
 {
 	OBSBasic *main = OBSBasic::Get();
-	config_set_string(main->Config(), typeName(), "Token", token.c_str());
-	config_set_string(main->Config(), typeName(), "Name", name_.c_str());
-	config_set_string(main->Config(), typeName(), "DockState",
+	config_set_string(main->Config(), type(), "Token", token.c_str());
+	config_set_string(main->Config(), type(), "Name", name_.c_str());
+	config_set_string(main->Config(), type(), "DockState",
 			main->saveState().toBase64().constData());
 }
 
@@ -224,8 +224,8 @@ static inline std::string get_config_str(
 bool TwitchAuth::LoadInternal()
 {
 	OBSBasic *main = OBSBasic::Get();
-	token = get_config_str(main, typeName(), "Token");
-	name_ = get_config_str(main, typeName(), "Name");
+	token = get_config_str(main, type(), "Token");
+	name_ = get_config_str(main, type(), "Name");
 	firstLoad = false;
 	return !token.empty();
 }
@@ -286,7 +286,7 @@ void TwitchAuth::LoadUI()
 		chat->setVisible(true);
 	} else {
 		const char *dockStateStr = config_get_string(main->Config(),
-				typeName(), "DockState");
+				type(), "DockState");
 		QByteArray dockState =
 			QByteArray::fromBase64(QByteArray(dockStateStr));
 		main->restoreState(dockState);

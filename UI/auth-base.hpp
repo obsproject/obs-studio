@@ -14,12 +14,7 @@ protected:
 public:
 	virtual ~Auth() {}
 
-	enum class Type {
-		Twitch
-	};
-
-	virtual Type type() const=0;
-	const char *typeName();
+	virtual const char *type() const=0;
 	virtual void LoadUI() {}
 
 	virtual void OnStreamConfig() {}

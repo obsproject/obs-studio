@@ -64,7 +64,7 @@ public:
 	inline void setTitle(const std::string &title) {title_ = title;}
 	inline void setGame(const std::string &game) {game_ = game;}
 
-	virtual Auth::Type type() const override {return Auth::Type::Twitch;}
+	virtual const char *type() const override {return "Twitch";}
 
 	virtual void LoadUI() override;
 	virtual void OnStreamConfig() override;

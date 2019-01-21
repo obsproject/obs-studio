@@ -281,7 +281,7 @@ void OBSBasicSettings::on_service_currentIndexChanged()
 #ifdef BROWSER_AVAILABLE
 	auth.reset();
 
-	if (!!main->auth && service == main->auth->typeName()) {
+	if (!!main->auth && service == main->auth->type()) {
 		auth = main->auth;
 		OnAuthConnected();
 	}
