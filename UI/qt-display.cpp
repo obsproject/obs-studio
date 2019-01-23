@@ -19,6 +19,13 @@ static inline long long color_to_int(QColor color)
 		shift(color.alpha(), 24);
 }
 
+static inline QColor rgba_to_color(uint32_t rgba)
+{
+	return QColor::fromRgb(rgba & 0xFF,
+	                       (rgba >> 8) & 0xFF,
+	                       (rgba >> 16) & 0xFF,
+	                       (rgba >> 24) & 0xFF);
+}
 
 OBSQTDisplay::OBSQTDisplay(QWidget *parent, Qt::WindowFlags flags)
 	: QWidget(parent, flags)
@@ -53,13 +60,25 @@ OBSQTDisplay::OBSQTDisplay(QWidget *parent, Qt::WindowFlags flags)
 
 	connect(windowHandle(), &QWindow::visibleChanged, windowVisible);
 	connect(windowHandle(), &QWindow::screenChanged, sizeChanged);
+}
 
-	this->setProperty("themeID", "displayBackgroundColor");
+QColor OBSQTDisplay::GetDisplayBackgroundColor() const
+{
+	return rgba_to_color(backgroundColor);
 }
 
 void OBSQTDisplay::SetDisplayBackgroundColor(const QColor &color)
 {
-	backgroundColor = (uint32_t)color_to_int(color);
+	uint32_t newBackgroundColor = (uint32_t)color_to_int(color);
+
+	if (newBackgroundColor != backgroundColor) {
+		backgroundColor = newBackgroundColor;
+		UpdateDisplayBackgroundColor();
+	}
+}
+
+void OBSQTDisplay::UpdateDisplayBackgroundColor()
+{
 	obs_display_set_background_color(display, backgroundColor);
 }
 
