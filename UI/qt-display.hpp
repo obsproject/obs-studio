@@ -8,8 +8,8 @@
 
 class OBSQTDisplay : public QWidget {
 	Q_OBJECT
-	Q_PROPERTY(QColor displayBackgroundColor WRITE SetDisplayBackgroundColor
-			NOTIFY SetDisplayBackgroundColor)
+	Q_PROPERTY(QColor displayBackgroudColor READ getDisplayGNDColor
+			WRITE setDisplayGNDColor)
 
 	OBSDisplay display;
 
@@ -29,8 +29,12 @@ public:
 
 	inline obs_display_t *GetDisplay() const {return display;}
 
-	uint32_t backgroundColor = GREY_COLOR_BACKGROUND;
+	uint32_t displayGNDColor = GREY_COLOR_BACKGROUND;
 
-private slots:
-	void SetDisplayBackgroundColor(const QColor &color);
+	QColor getDisplayGNDColor() const;
+	void setDisplayGNDColor(QColor color);
+	void updateDisplayGNDColor();
+
+private:
+	QColor m_displayGNDColor;
 };
