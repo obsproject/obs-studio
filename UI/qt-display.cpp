@@ -53,14 +53,26 @@ OBSQTDisplay::OBSQTDisplay(QWidget *parent, Qt::WindowFlags flags)
 
 	connect(windowHandle(), &QWindow::visibleChanged, windowVisible);
 	connect(windowHandle(), &QWindow::screenChanged, sizeChanged);
-
-	this->setProperty("themeID", "displayBackgroundColor");
 }
 
-void OBSQTDisplay::SetDisplayBackgroundColor(const QColor &color)
+QColor OBSQTDisplay::getDisplayGNDColor() const
 {
-	backgroundColor = (uint32_t)color_to_int(color);
-	obs_display_set_background_color(display, backgroundColor);
+	return m_displayGNDColor;
+}
+
+void OBSQTDisplay::setDisplayGNDColor(QColor color)
+{
+	// Only when color actually changed - apply it
+	if (color != m_displayGNDColor) {
+		m_displayGNDColor = color;
+		displayGNDColor = (uint32_t)color_to_int(m_displayGNDColor);
+		updateDisplayGNDColor();
+	}
+}
+
+void OBSQTDisplay::updateDisplayGNDColor()
+{
+	obs_display_set_background_color(display, displayGNDColor);
 }
 
 void OBSQTDisplay::CreateDisplay()
@@ -78,7 +90,7 @@ void OBSQTDisplay::CreateDisplay()
 
 	QTToGSWindow(winId(), info.window);
 
-	display = obs_display_create(&info, backgroundColor);
+	display = obs_display_create(&info, displayGNDColor);
 
 	emit DisplayCreated(this);
 }
