@@ -264,6 +264,14 @@ QToolButton:pressed {
     qproperty-icon: url(./Dark/media-pause.svg);
 }
 
+* [themeID="loadPreset"] {
+    qproperty-icon: url(./Dark/load_preset.png);
+}
+
+* [themeID="savePreset"] {
+    qproperty-icon: url(./Dark/save_preset.png);
+}
+
 
 /* Tab Widget */
 

@@ -62,7 +62,7 @@ private:
 
 	QMenu *CreateAddFilterPopupMenu(bool async);
 
-	void AddNewFilter(const char *id);
+	void AddNewFilter(const char *id, obs_data_t *settings = nullptr);
 	void ReorderFilter(QListWidget *list, obs_source_t *filter, size_t idx);
 
 	void CustomContextMenu(const QPoint &pos, bool async);
@@ -84,10 +84,15 @@ private slots:
 
 	void AddFilterFromAction();
 
+	void AsyncLoad();
+	void EffectLoad();
+
 	void on_addAsyncFilter_clicked();
 	void on_removeAsyncFilter_clicked();
 	void on_moveAsyncFilterUp_clicked();
 	void on_moveAsyncFilterDown_clicked();
+	void on_loadAsyncPreset_clicked();
+	void on_saveAsyncPreset_clicked();
 	void on_asyncFilters_currentRowChanged(int row);
 	void on_asyncFilters_customContextMenuRequested(const QPoint &pos);
 	void on_asyncFilters_GotFocus();
@@ -96,6 +101,8 @@ private slots:
 	void on_removeEffectFilter_clicked();
 	void on_moveEffectFilterUp_clicked();
 	void on_moveEffectFilterDown_clicked();
+	void on_loadEffectPreset_clicked();
+	void on_saveEffectPreset_clicked();
 	void on_effectFilters_currentRowChanged(int row);
 	void on_effectFilters_customContextMenuRequested(const QPoint &pos);
 	void on_effectFilters_GotFocus();

@@ -184,6 +184,58 @@
                </property>
               </widget>
              </item>
+             <item>
+              <widget class="QPushButton" name="loadAsyncPreset">
+               <property name="maximumSize">
+                <size>
+                 <width>22</width>
+                 <height>22</height>
+                </size>
+               </property>
+               <property name="text">
+                <string/>
+               </property>
+               <property name="icon">
+                <iconset resource="obs.qrc">
+                 <normaloff>:/res/images/load_preset.png</normaloff>:/res/images/load_preset.png</iconset>
+               </property>
+               <property name="autoDefault">
+                <bool>false</bool>
+               </property>
+               <property name="flat">
+                <bool>true</bool>
+               </property>
+               <property name="themeID" stdset="0">
+                <string>loadPreset</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QPushButton" name="saveAsyncPreset">
+               <property name="maximumSize">
+                <size>
+                 <width>22</width>
+                 <height>22</height>
+                </size>
+               </property>
+               <property name="text">
+                <string/>
+               </property>
+               <property name="icon">
+                <iconset resource="obs.qrc">
+                 <normaloff>:/res/images/save_preset.png</normaloff>:/res/images/save_preset.png</iconset>
+               </property>
+               <property name="autoDefault">
+                <bool>false</bool>
+               </property>
+               <property name="flat">
+                <bool>true</bool>
+               </property>
+               <property name="themeID" stdset="0">
+                <string>savePreset</string>
+               </property>
+              </widget>
+             </item>
             </layout>
            </widget>
           </item>
@@ -357,6 +409,58 @@
                </property>
                <property name="themeID" stdset="0">
                 <string>downArrowIconSmall</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QPushButton" name="loadEffectPreset">
+               <property name="maximumSize">
+                <size>
+                 <width>22</width>
+                 <height>22</height>
+                </size>
+               </property>
+               <property name="text">
+                <string/>
+               </property>
+               <property name="icon">
+                <iconset resource="obs.qrc">
+                 <normaloff>:/res/images/load_preset.png</normaloff>:/res/images/load_preset.png</iconset>
+               </property>
+               <property name="autoDefault">
+                <bool>false</bool>
+               </property>
+               <property name="flat">
+                <bool>true</bool>
+               </property>
+               <property name="themeID" stdset="0">
+                <string>loadPreset</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QPushButton" name="saveEffectPreset">
+               <property name="maximumSize">
+                <size>
+                 <width>22</width>
+                 <height>22</height>
+                </size>
+               </property>
+               <property name="text">
+                <string/>
+               </property>
+               <property name="icon">
+                <iconset resource="obs.qrc">
+                 <normaloff>:/res/images/save_preset.png</normaloff>:/res/images/save_preset.png</iconset>
+               </property>
+               <property name="autoDefault">
+                <bool>false</bool>
+               </property>
+               <property name="flat">
+                <bool>true</bool>
+               </property>
+               <property name="themeID" stdset="0">
+                <string>savePreset</string>
                </property>
               </widget>
              </item>

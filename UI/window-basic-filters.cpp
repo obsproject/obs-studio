@@ -30,6 +30,7 @@
 #include <string>
 #include <QMenu>
 #include <QVariant>
+#include <QFileDialog>
 
 using namespace std;
 
@@ -417,7 +418,7 @@ QMenu *OBSBasicFilters::CreateAddFilterPopupMenu(bool async)
 	return popup;
 }
 
-void OBSBasicFilters::AddNewFilter(const char *id)
+void OBSBasicFilters::AddNewFilter(const char *id, obs_data_t *settings)
 {
 	if (id && *id) {
 		obs_source_t *existing_filter;
@@ -444,7 +445,7 @@ void OBSBasicFilters::AddNewFilter(const char *id)
 			OBSMessageBox::warning(this, QTStr("NameExists.Title"),
 					       QTStr("NameExists.Text"));
 			obs_source_release(existing_filter);
-			AddNewFilter(id);
+			AddNewFilter(id, settings);
 			return;
 		}
 
@@ -457,6 +458,9 @@ void OBSBasicFilters::AddNewFilter(const char *id)
 			     "User added filter '%s' (%s) "
 			     "to source '%s'",
 			     name.c_str(), id, sourceName);
+
+			if (settings)
+				obs_source_update(filter, settings);
 
 			obs_source_filter_add(source, filter);
 			obs_source_release(filter);
@@ -612,6 +616,174 @@ void OBSBasicFilters::on_moveAsyncFilterDown_clicked()
 					    OBS_ORDER_MOVE_DOWN);
 }
 
+void OBSBasicFilters::AsyncLoad()
+{
+	QString path = QFileDialog::getOpenFileName(
+		this, QTStr("Basic.Filters.FilterPreset.Load"), nullptr,
+		QTStr("Basic.Filters.FilterPreset.FileType").append(" (*.ofp)"));
+
+	blog(LOG_INFO, path.toStdString().c_str());
+
+	OBSData loaded =
+		obs_data_create_from_json_file(path.toStdString().c_str());
+	if (!loaded)
+		return;
+
+	const char *type = obs_data_get_string(loaded, "type");
+	OBSData newSettings = obs_data_get_obj(loaded, "settings");
+
+	OBSSource filter = GetFilter(ui->asyncFilters->currentRow(), true);
+	if (filter && strcmp(obs_source_get_id(filter), type) == 0) {
+		OBSData settings = obs_source_get_settings(filter);
+		obs_data_clear(settings);
+
+		obs_source_update(filter, newSettings);
+		obs_data_release(settings);
+	} else {
+		OBSMessageBox::information(
+			this, QTStr("Basic.Filters.FilterMismatch.Title"),
+			QTStr("Basic.Filters.FilterMismatch.Text"));
+	}
+
+	obs_data_release(newSettings);
+	obs_data_release(loaded);
+
+	view->RefreshProperties();
+}
+
+void OBSBasicFilters::EffectLoad()
+{
+	QString path = QFileDialog::getOpenFileName(
+		this, QTStr("Basic.Filters.FilterPreset.Load"), nullptr,
+		QTStr("Basic.Filters.FilterPreset.FileType").append(" (*.ofp)"));
+
+	blog(LOG_INFO, path.toStdString().c_str());
+
+	OBSData loaded =
+		obs_data_create_from_json_file(path.toStdString().c_str());
+	if (!loaded)
+		return;
+
+	const char *type = obs_data_get_string(loaded, "type");
+	OBSData newSettings = obs_data_get_obj(loaded, "settings");
+
+	OBSSource filter = GetFilter(ui->effectFilters->currentRow(), false);
+	if (filter && strcmp(obs_source_get_id(filter), type) == 0) {
+		OBSData settings = obs_source_get_settings(filter);
+		obs_data_clear(settings);
+
+		obs_source_update(filter, newSettings);
+		obs_data_release(settings);
+	} else {
+		OBSMessageBox::information(
+			this, QTStr("Basic.Filters.FilterMismatch.Title"),
+			QTStr("Basic.Filters.FilterMismatch.Text"));
+	}
+
+	obs_data_release(newSettings);
+	obs_data_release(loaded);
+
+	view->RefreshProperties();
+}
+
+void OBSBasicFilters::on_loadAsyncPreset_clicked()
+{
+	QString path = QFileDialog::getOpenFileName(
+		this, QTStr("Basic.Filters.FilterPreset.Load"), nullptr,
+		QTStr("Basic.Filters.FilterPreset.FileType").append(" (*.ofp)"));
+
+	blog(LOG_INFO, path.toStdString().c_str());
+
+	OBSData loaded =
+		obs_data_create_from_json_file(path.toStdString().c_str());
+	if (!loaded)
+		return;
+
+	const char *type = obs_data_get_string(loaded, "type");
+	OBSData newSettings = obs_data_get_obj(loaded, "settings");
+
+	OBSSource selected = GetFilter(ui->asyncFilters->currentRow(), true);
+
+	AddNewFilter(type, newSettings);
+
+	obs_data_release(newSettings);
+	obs_data_release(loaded);
+
+	if (selected)
+		view->RefreshProperties();
+}
+
+void OBSBasicFilters::on_saveAsyncPreset_clicked()
+{
+	OBSSource filter = GetFilter(ui->asyncFilters->currentRow(), true);
+	if (filter) {
+		QString path = QFileDialog::getSaveFileName(
+			this, QTStr("Basic.Filters.FilterPreset.Save"), nullptr,
+			QTStr("Basic.Filters.FilterPreset.FileType")
+				.append(" (*.ofp)"));
+
+		OBSData savedData = obs_data_create();
+		OBSData settings = obs_source_get_settings(filter);
+
+		obs_data_set_obj(savedData, "settings", settings);
+		obs_data_set_string(savedData, "type",
+				    obs_source_get_id(filter));
+		obs_data_save_json(savedData, path.toStdString().c_str());
+
+		obs_data_release(settings);
+		obs_data_release(savedData);
+	}
+}
+
+void OBSBasicFilters::on_loadEffectPreset_clicked()
+{
+	QString path = QFileDialog::getOpenFileName(
+		this, QTStr("Basic.Filters.FilterPreset.Load"), nullptr,
+		QTStr("Basic.Filters.FilterPreset.FileType").append(" (*.ofp)"));
+
+	blog(LOG_INFO, path.toStdString().c_str());
+
+	OBSData loaded =
+		obs_data_create_from_json_file(path.toStdString().c_str());
+	if (!loaded)
+		return;
+
+	const char *type = obs_data_get_string(loaded, "type");
+	OBSData newSettings = obs_data_get_obj(loaded, "settings");
+
+	OBSSource selected = GetFilter(ui->effectFilters->currentRow(), false);
+
+	AddNewFilter(type, newSettings);
+
+	obs_data_release(newSettings);
+	obs_data_release(loaded);
+
+	if (selected)
+		view->RefreshProperties();
+}
+
+void OBSBasicFilters::on_saveEffectPreset_clicked()
+{
+	OBSSource filter = GetFilter(ui->effectFilters->currentRow(), false);
+	if (filter) {
+		QString path = QFileDialog::getSaveFileName(
+			this, QTStr("Basic.Filters.FilterPreset.Save"), nullptr,
+			QTStr("Basic.Filters.FilterPreset.FileType")
+				.append(" (*.ofp)"));
+
+		OBSData savedData = obs_data_create();
+		OBSData settings = obs_source_get_settings(filter);
+
+		obs_data_set_obj(savedData, "settings", settings);
+		obs_data_set_string(savedData, "type",
+				    obs_source_get_id(filter));
+		obs_data_save_json(savedData, path.toStdString().c_str());
+
+		obs_data_release(settings);
+		obs_data_release(savedData);
+	}
+}
+
 void OBSBasicFilters::on_asyncFilters_GotFocus()
 {
 	UpdatePropertiesView(ui->asyncFilters->currentRow(), true);
@@ -707,9 +879,19 @@ void OBSBasicFilters::CustomContextMenu(const QPoint &pos, bool async)
 			async ? SLOT(on_removeAsyncFilter_clicked())
 			      : SLOT(on_removeEffectFilter_clicked());
 
+		const char *loadSlot = async ? SLOT(AsyncLoad())
+					     : SLOT(EffectLoad());
+		const char *saveSlot =
+			async ? SLOT(on_saveAsyncPreset_clicked())
+			      : SLOT(on_saveEffectPreset_clicked());
+
 		popup.addSeparator();
 		popup.addAction(QTStr("Rename"), this, renameSlot);
 		popup.addAction(QTStr("Remove"), this, removeSlot);
+
+		popup.addSeparator();
+		popup.addAction(QTStr("Preset.Load"), this, loadSlot);
+		popup.addAction(QTStr("Preset.Save"), this, saveSlot);
 	}
 
 	popup.exec(QCursor::pos());

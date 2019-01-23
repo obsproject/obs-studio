@@ -17,6 +17,8 @@
     <file>images/visible.svg</file>
     <file>images/trash.svg</file>
     <file>images/revert.svg</file>
+    <file>images/load_preset.png</file>
+    <file>images/save_preset.png</file>
   </qresource>
   <qresource prefix="/settings">
     <file>images/settings/output.svg</file>
