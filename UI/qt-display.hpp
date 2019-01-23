@@ -3,6 +3,9 @@
 #include <QWidget>
 #include <obs.hpp>
 
+// Color format #AABBGGRR
+#define GREY_COLOR_BACKGROUND 0xFF4C4C4C
+
 class OBSQTDisplay : public QWidget {
 	Q_OBJECT
 	Q_PROPERTY(QColor displayBackgroundColor WRITE SetDisplayBackgroundColor
@@ -26,7 +29,7 @@ public:
 
 	inline obs_display_t *GetDisplay() const {return display;}
 
-	uint32_t backgroundColor;
+	uint32_t backgroundColor = GREY_COLOR_BACKGROUND;
 
 private slots:
 	void SetDisplayBackgroundColor(const QColor &color);
