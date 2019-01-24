@@ -692,6 +692,10 @@
                     "name": "Asia (Tokyo, Japan)",
                     "url": "rtmp://tokyo.restream.io/live"
                 },
+		{
+		    "name": "India (Bangalore),
+		    "url": "rtmp://india.restream.io/live"
+		},
                 {
                     "name": "Australia (Sydney)",
                     "url": "rtmp://au.restream.io/live"
