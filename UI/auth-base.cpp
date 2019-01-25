@@ -43,6 +43,7 @@ bool Auth::Load()
 {
 	OBSBasic *main = OBSBasic::Get();
 	const char *typeStr = config_get_string(main->Config(), "Auth", "Type");
+	if (!typeStr) typeStr = "";
 
 	main->auth = Create(typeStr);
 	if (main->auth) {
