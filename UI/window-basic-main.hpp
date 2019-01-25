@@ -120,7 +120,8 @@ class OBSBasic : public OBSMainWindow {
 		DropType_Text,
 		DropType_Image,
 		DropType_Media,
-		DropType_Html
+		DropType_Html,
+		DropType_Source
 	};
 
 private:
@@ -594,7 +595,7 @@ public:
 	void CreateInteractionWindow(obs_source_t *source);
 	void CreatePropertiesWindow(obs_source_t *source);
 	void CreateFiltersWindow(obs_source_t *source);
-
+	void ExportSourceJson(obs_source_t *source);
 protected:
 	virtual void closeEvent(QCloseEvent *event) override;
 	virtual void changeEvent(QEvent *event) override;
@@ -644,6 +645,8 @@ private slots:
 	void on_actionSourceProperties_triggered();
 	void on_actionSourceUp_triggered();
 	void on_actionSourceDown_triggered();
+	void on_actionExportSourceJson_triggered();
+	void on_actionImportSourceJson_triggered();
 
 	void on_actionMoveUp_triggered();
 	void on_actionMoveDown_triggered();

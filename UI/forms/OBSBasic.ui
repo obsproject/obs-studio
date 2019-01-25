@@ -570,6 +570,9 @@
           <addaction name="separator"/>
           <addaction name="actionSourceUp"/>
           <addaction name="actionSourceDown"/>
+          <addaction name="separator"/>
+          <addaction name="actionImportSourceJson"/>
+          <addaction name="actionExportSourceJson"/>
          </widget>
         </item>
         <item>
@@ -1125,6 +1128,18 @@
     <string notr="true">addIconSmall</string>
    </property>
   </action>
+  <action name="actionImportSourceJson">
+   <property name="icon">
+    <iconset resource="obs.qrc">
+     <normaloff>:/res/images/load_preset.png</normaloff>:/res/images/load_preset.png</iconset>
+   </property>
+   <property name="text">
+    <string>Load</string>
+   </property>
+   <property name="themeID" stdset="0">
+    <string notr="true">loadIconSmall</string>
+   </property>
+  </action>
   <action name="actionRemoveScene">
    <property name="icon">
     <iconset resource="obs.qrc">
@@ -1673,6 +1688,18 @@
   <action name="actionShowAbout">
    <property name="text">
     <string>Basic.MainMenu.Help.About</string>
+   </property>
+  </action>
+  <action name="actionExportSourceJson">
+   <property name="icon">
+    <iconset resource="obs.qrc">
+     <normaloff>:/res/images/save_preset.png</normaloff>:/res/images/save_preset.png</iconset>
+   </property>
+   <property name="text">
+    <string>Save</string>
+   </property>
+   <property name="themeID" stdset="0">
+    <string notr="true">saveIconSmall</string>
    </property>
   </action>
  </widget>

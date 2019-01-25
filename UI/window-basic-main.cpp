@@ -3174,6 +3174,103 @@ void OBSBasic::SourceRenamed(void *data, calldata_t *params)
 	blog(LOG_INFO, "Source '%s' renamed to '%s'", prevName, newName);
 }
 
+void OBSBasic::on_actionImportSourceJson_triggered()
+{
+	QString path = QFileDialog::getOpenFileName(this,
+			QTStr("Basic.Sources.SourcesPreset.Load"), nullptr,
+			QTStr("Basic.Sources.SourcesPreset.FileType").append(
+					" (*.osp)"));
+	if (path.isEmpty() || path.isNull())
+		return;
+
+	const char *file  = QT_TO_UTF8(path);
+	OBSData data      = obs_data_create_from_json_file_safe(file, "bak");
+	OBSData settings  = obs_data_get_obj(data, "settings");
+	const char *id    = obs_data_get_string(data, "id");
+	const char *cname = obs_data_get_string(data, "name");
+	const char *dname = obs_source_get_display_name(id);
+	std::string name  = cname;
+
+	obs_source_t *source = nullptr;
+	do {
+		if (name.empty())
+			name = dname;
+		obs_source_release(source);
+		source = obs_get_source_by_name(name.c_str());
+		if (source) {
+			const char *eid = obs_source_get_id(source);
+			if (strcmp(eid, id) == 0) {
+				QString confirmText =
+					QTStr("ConfirmSourceUpdate.Text");
+				confirmText.replace("$1", name.c_str());
+				QMessageBox::StandardButton button =
+					OBSMessageBox::question(this,
+					QTStr("ConfirmSourceUpdate.Title"),
+					confirmText);
+				if (button == QMessageBox::Yes) {
+					OBSData previousSettings =
+						obs_source_get_settings(source);
+					obs_data_clear(previousSettings);
+					obs_source_update(source, settings);
+					obs_data_release(previousSettings);
+
+					obs_data_release(data);
+					obs_data_release(settings);
+					return;
+				}
+			}
+			bool success = NameDialog::AskForName(this,
+					QTStr("Basic.Sources.AddSource.Title"),
+					QTStr("Basic.Sources.AddSource.Text"),
+					name, QT_UTF8(name.c_str()));
+			if (!success) {
+				obs_source_release(source);
+				return;
+			}
+		}
+	} while (source);
+
+	OBSScene scene = GetCurrentScene();
+	source = obs_source_create(id, name.c_str(), settings, nullptr);
+	if(scene)
+		obs_scene_add(scene, source);
+	obs_data_release(data);
+	obs_data_release(settings);
+}
+
+void OBSBasic::on_actionExportSourceJson_triggered()
+{
+	OBSSceneItem item = GetCurrentSceneItem();
+	OBSSource source = obs_sceneitem_get_source(item);
+
+	if (source)
+		ExportSourceJson(source);
+}
+
+void OBSBasic::ExportSourceJson(obs_source_t *source)
+{
+	QString home = QDir::homePath();
+	obs_data_t *json_output = obs_data_create();
+
+	const char *name = (char *)obs_source_get_name(source);
+	const char *id = (char *)obs_source_get_id(source);
+	obs_data_t *settings = obs_source_get_settings(source);
+
+	obs_data_set_obj(json_output, "settings", settings);
+	obs_data_set_string(json_output, "name", name);
+	obs_data_set_string(json_output, "id", id);
+
+	QString exportFile = QFileDialog::getSaveFileName(this,
+		QTStr("Basic.MainMenu.File.Export"),
+		home + "/" + name, "OBS Source Preset (*.osp)");
+
+	if (!exportFile.isEmpty() && !exportFile.isNull())
+		obs_data_save_json(json_output, QT_TO_UTF8(exportFile));
+
+	obs_data_release(json_output);
+	obs_data_release(settings);
+}
+
 void OBSBasic::DrawBackdrop(float cx, float cy)
 {
 	if (!box)

@@ -225,6 +225,14 @@ QToolButton:pressed {
     border-radius: none;
 }
 
+* [themeID="loadIconSmall"] {
+    qproperty-icon: url(./Dark/load_preset.png);
+}
+
+* [themeID="saveIconSmall"] {
+    qproperty-icon: url(./Dark/save_preset.png);
+}
+
 * [themeID="addIconSmall"] {
     qproperty-icon: url(./Dark/plus.png);
 }
