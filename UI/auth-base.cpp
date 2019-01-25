@@ -1,26 +1,53 @@
 #include "auth-base.hpp"
 #include "window-basic-main.hpp"
 
-#ifdef BROWSER_AVAILABLE
-#include "auth-twitch.hpp"
-#endif
+#include <vector>
+#include <map>
+
+struct AuthInfo {
+	Auth::Def def;
+	Auth::create_cb create;
+};
+
+static std::vector<AuthInfo> authDefs;
+
+void Auth::RegisterAuth(const Def &d, create_cb create)
+{
+	AuthInfo info = {d, create};
+	authDefs.push_back(info);
+}
+
+std::shared_ptr<Auth> Auth::Create(const std::string &service)
+{
+	for (auto &a : authDefs) {
+		if (service.find(a.def.service) != std::string::npos) {
+			return a.create();
+		}
+	}
+
+	return nullptr;
+}
+
+Auth::Type Auth::AuthType(const std::string &service)
+{
+	for (auto &a : authDefs) {
+		if (service.find(a.def.service) != std::string::npos) {
+			return a.def.type;
+		}
+	}
+
+	return Type::None;
+}
 
 bool Auth::Load()
 {
 	OBSBasic *main = OBSBasic::Get();
 	const char *typeStr = config_get_string(main->Config(), "Auth", "Type");
-	Auth *auth = nullptr;
 
-	if (astrcmpi(typeStr, "Twitch") == 0) {
-#ifdef BROWSER_AVAILABLE
-		auth = new TwitchAuth;
-#endif
-	}
-
-	main->auth.reset(auth);
-	if (auth) {
-		if (auth->LoadInternal()) {
-			auth->LoadUI();
+	main->auth = Create(typeStr);
+	if (main->auth) {
+		if (main->auth->LoadInternal()) {
+			main->auth->LoadUI();
 			return true;
 		}
 	}
@@ -39,7 +66,7 @@ void Auth::Save()
 		return;
 	}
 
-	config_set_string(main->Config(), "Auth", "Type", auth->type());
+	config_set_string(main->Config(), "Auth", "Type", auth->service());
 	auth->SaveInternal();
 	config_save_safe(main->Config(), "tmp", nullptr);
 }

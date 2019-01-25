@@ -184,7 +184,7 @@ public:
 	virtual bool validatePage() override;
 
 	void OnAuthConnected();
-	void OnTwitchConnected();
+	void OnOAuthStreamKeyConnected();
 
 public slots:
 	void on_show_clicked();

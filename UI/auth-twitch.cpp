@@ -12,6 +12,9 @@
 
 #include <json11.hpp>
 
+#include "ui-config.h"
+#include "obf.h"
+
 using namespace json11;
 
 #include <browser-panel.hpp>
@@ -22,82 +25,24 @@ extern QCefCookieManager *panel_cookies;
 
 #define TWITCH_AUTH_URL \
 	"https://obsproject.com/app-auth/twitch?action=redirect"
+#define ACCEPT_HEADER \
+	"Accept: application/vnd.twitchtv.v5+json"
 
-TwitchLogin::TwitchLogin(QWidget *parent)
-	: QDialog(parent)
-{
-	setWindowTitle("Auth");
-	resize(700, 700);
-
-	OBSBasic::InitBrowserPanelSafeBlock(true);
-
-	cefWidget = cef->create_widget(nullptr, TWITCH_AUTH_URL, panel_cookies);
-	if (!cefWidget) {
-		fail = true;
-		return;
-	}
-
-	connect(cefWidget, SIGNAL(titleChanged(const QString &)),
-			this, SLOT(setWindowTitle(const QString &)));
-	connect(cefWidget, SIGNAL(urlChanged(const QString &)),
-			this, SLOT(urlChanged(const QString &)));
-
-	QPushButton *close = new QPushButton(QTStr("Cancel"));
-	connect(close, &QAbstractButton::clicked,
-			this, &QDialog::reject);
-
-	QHBoxLayout *bottomLayout = new QHBoxLayout();
-	bottomLayout->addStretch();
-	bottomLayout->addWidget(close);
-	bottomLayout->addStretch();
-
-	QVBoxLayout *topLayout = new QVBoxLayout(this);
-	topLayout->addWidget(cefWidget);
-	topLayout->addLayout(bottomLayout);
-}
-
-TwitchLogin::~TwitchLogin()
-{
-	delete cefWidget;
-}
-
-void TwitchLogin::urlChanged(const QString &url)
-{
-	int token_idx = url.indexOf("access_token=");
-	if (token_idx == -1)
-		return;
-
-	token_idx += 13;
-
-	int next_idx = url.indexOf("&", token_idx);
-	if (next_idx != -1)
-		token = url.mid(token_idx, next_idx - token_idx);
-	else
-		token = url.right(url.size() - token_idx);
-
-	accept();
-}
+static Auth::Def twitchDef = {
+	"Twitch",
+	Auth::Type::OAuth_StreamKey
+};
 
 /* ------------------------------------------------------------------------- */
 
-TwitchAuth::TwitchAuth()
+TwitchAuth::TwitchAuth(const Def &d)
+	: OAuthStreamKey(d)
 {
 	cef->add_popup_url_callback(
 			"https://twitch.tv/popout/frankerfacez/chat?ffz-settings",
 			this, "OnFFZPopup");
+	implicit = true;
 }
-
-#define CLIENT_ID_HEADER "Client-ID: selj7uigdty0j5ijt41glcce29ehb4"
-#define ACCEPT_HEADER    "Accept: application/vnd.twitchtv.v5+json"
-
-struct ErrorInfo {
-	std::string message;
-	std::string error;
-
-	ErrorInfo(std::string message_, std::string error_)
-		: message(message_), error(error_)
-	{}
-};
 
 bool TwitchAuth::GetChannelInfo()
 try {
@@ -108,8 +53,11 @@ try {
 	auth += "Authorization: OAuth ";
 	auth += token;
 
+	std::string client_id = TWITCH_CLIENTID;
+	deobfuscate_str(&client_id[0], TWITCH_HASH);
+
 	std::vector<std::string> headers;
-	headers.push_back(CLIENT_ID_HEADER);
+	headers.push_back(std::string("Client-ID: ") + client_id);
 	headers.push_back(ACCEPT_HEADER);
 	headers.push_back(std::move(auth));
 
@@ -133,66 +81,8 @@ try {
 	if (!error.empty())
 		throw ErrorInfo("Failed to parse json", error);
 
-	title_ = json["status"].string_value();
-	game_  = json["game"].string_value();
-	name_  = json["name"].string_value();
-	key_   = json["stream_key"].string_value();
-	id_    = json["_id"].string_value();
-
-	return true;
-} catch (ErrorInfo info) {
-	blog(LOG_DEBUG, "%s: %s: %s",
-			__FUNCTION__,
-			info.message.c_str(),
-			info.error.c_str());
-	return false;
-}
-
-bool TwitchAuth::SetChannelInfo()
-try {
-	if (token.empty() || id_.empty())
-		return false;
-
-	std::string auth;
-	auth += "Authorization: OAuth ";
-	auth += token;
-
-	std::string url;
-	url += "https://api.twitch.tv/kraken/channels/";
-	url += id_;
-
-	std::vector<std::string> headers;
-	headers.push_back(CLIENT_ID_HEADER);
-	headers.push_back(ACCEPT_HEADER);
-	headers.push_back(std::move(auth));
-
-	Json obj = Json::object {
-		{"status", title_},
-		{"game", game_}
-	};
-
-	std::string output;
-	std::string error;
-
-	bool success = GetRemoteFileSafeBlock(
-			url.c_str(),
-			output,
-			error,
-			nullptr,
-			"application/json",
-			obj.dump().c_str(),
-			headers,
-			nullptr,
-			5);
-	if (!success || output.empty())
-		throw ErrorInfo("Failed to post text to remote", error);
-
-	Json json = Json::parse(output, error);
-	if (!error.empty())
-		throw ErrorInfo("Failed to parse json", error);
-
-	title_ = json["status"].string_value();
-	game_  = json["game"].string_value();
+	name = json["name"].string_value();
+	key_ = json["stream_key"].string_value();
 
 	return true;
 } catch (ErrorInfo info) {
@@ -206,10 +96,10 @@ try {
 void TwitchAuth::SaveInternal()
 {
 	OBSBasic *main = OBSBasic::Get();
-	config_set_string(main->Config(), type(), "Token", token.c_str());
-	config_set_string(main->Config(), type(), "Name", name_.c_str());
-	config_set_string(main->Config(), type(), "DockState",
+	config_set_string(main->Config(), service(), "Name", name.c_str());
+	config_set_string(main->Config(), service(), "DockState",
 			main->saveState().toBase64().constData());
+	OAuthStreamKey::SaveInternal();
 }
 
 static inline std::string get_config_str(
@@ -224,10 +114,9 @@ static inline std::string get_config_str(
 bool TwitchAuth::LoadInternal()
 {
 	OBSBasic *main = OBSBasic::Get();
-	token = get_config_str(main, type(), "Token");
-	name_ = get_config_str(main, type(), "Name");
+	name = get_config_str(main, service(), "Name");
 	firstLoad = false;
-	return !token.empty();
+	return OAuthStreamKey::LoadInternal();
 }
 
 class TwitchChat : public QDockWidget {
@@ -259,7 +148,7 @@ void TwitchAuth::LoadUI()
 
 	std::string url;
 	url += "https://www.twitch.tv/popout/";
-	url += name();
+	url += name;
 	url += "/chat?darkpopout";
 
 	chat.reset(new TwitchChat());
@@ -286,7 +175,7 @@ void TwitchAuth::LoadUI()
 		chat->setVisible(true);
 	} else {
 		const char *dockStateStr = config_get_string(main->Config(),
-				type(), "DockState");
+				service(), "DockState");
 		QByteArray dockState =
 			QByteArray::fromBase64(QByteArray(dockStateStr));
 		main->restoreState(dockState);
@@ -297,20 +186,21 @@ void TwitchAuth::LoadUI()
 
 std::shared_ptr<Auth> TwitchAuth::Login(QWidget *parent)
 {
-	TwitchLogin login(parent);
+	OAuthLogin login(parent, TWITCH_AUTH_URL, true);
 	if (login.exec() == QDialog::Rejected) {
 		return nullptr;
 	}
 
-	std::shared_ptr<TwitchAuth> auth = std::make_shared<TwitchAuth>();
-	auth->token = QT_TO_UTF8(login.GetToken());
+	std::shared_ptr<TwitchAuth> auth =
+		std::make_shared<TwitchAuth>(twitchDef);
+	auth->token = QT_TO_UTF8(login.GetCode());
 
 	std::string error;
 	if (auth->GetChannelInfo()) {
 		return auth;
 	}
 
-	return std::shared_ptr<Auth>();
+	return nullptr;
 }
 
 void TwitchAuth::OnStreamConfig()
@@ -320,7 +210,7 @@ void TwitchAuth::OnStreamConfig()
 
 	obs_data_t *settings = obs_service_get_settings(service);
 
-	obs_data_set_string(settings, "key", key().c_str());
+	obs_data_set_string(settings, "key", key_.c_str());
 	obs_service_update(service, settings);
 
 	obs_data_release(settings);
@@ -360,4 +250,24 @@ void TwitchAuth::OnFFZPopup(const QString &url)
 	topLayout->addLayout(bottomLayout);
 
 	dlg.exec();
+}
+
+static std::shared_ptr<Auth> CreateTwitchAuth()
+{
+	return std::make_shared<TwitchAuth>(twitchDef);
+}
+
+static void DeleteCookies()
+{
+	if (panel_cookies)
+		panel_cookies->DeleteCookies("twitch.tv", std::string());
+}
+
+void RegisterTwitchAuth()
+{
+	OAuth::RegisterOAuth(
+			twitchDef,
+			CreateTwitchAuth,
+			TwitchAuth::Login,
+			DeleteCookies);
 }

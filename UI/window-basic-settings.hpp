@@ -215,7 +215,7 @@ private:
 	void InitStreamPage();
 	inline bool IsCustomService() const;
 	void LoadServices(bool showAll);
-	void OnTwitchConnected();
+	void OnOAuthStreamKeyConnected();
 	void OnAuthConnected();
 	QString lastService;
 private slots:

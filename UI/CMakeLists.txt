@@ -19,6 +19,30 @@ project(obs)
 
 set(DISABLE_UPDATE_MODULE TRUE CACHE BOOL "Disables building the update module")
 
+if(NOT DEFINED TWITCH_CLIENTID OR "${TWITCH_CLIENTID}" STREQUAL "" OR
+   NOT DEFINED TWITCH_HASH     OR "${TWITCH_HASH}"     STREQUAL "")
+	set(TWITCH_ENABLED FALSE)
+	set(TWITCH_CLIENTID "")
+	set(TWITCH_HASH "0")
+else()
+	set(TWITCH_ENABLED TRUE)
+endif()
+
+if(NOT DEFINED MIXER_CLIENTID OR "${MIXER_CLIENTID}" STREQUAL "" OR
+   NOT DEFINED MIXER_SECRETID OR "${MIXER_SECRETID}" STREQUAL "" OR
+   NOT DEFINED MIXER_HASH     OR "${MIXER_HASH}"     STREQUAL "")
+	set(MIXER_ENABLED FALSE)
+	set(MIXER_CLIENTID "")
+	set(MIXER_SECRETID "")
+	set(MIXER_HASH "0")
+else()
+	set(MIXER_ENABLED TRUE)
+endif()
+
+configure_file(
+	"${CMAKE_CURRENT_SOURCE_DIR}/ui-config.h.in"
+	"${CMAKE_CURRENT_BINARY_DIR}/ui-config.h")
+
 set(CMAKE_INCLUDE_CURRENT_DIR TRUE)
 set(CMAKE_AUTOMOC TRUE)
 
@@ -39,6 +63,7 @@ endif()
 
 
 include_directories(${FFMPEG_INCLUDE_DIRS})
+include_directories(${CMAKE_CURRENT_BINARY_DIR})
 include_directories(SYSTEM "obs-frontend-api")
 include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/libobs")
 include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/deps/libff")
@@ -107,11 +132,31 @@ endif()
 
 if(BROWSER_AVAILABLE_INTERNAL)
 	list(APPEND obs_PLATFORM_SOURCES
-		auth-twitch.cpp
+		obf.c
+		auth-oauth.cpp
 		)
 	list(APPEND obs_PLATFORM_HEADERS
-		auth-twitch.hpp
+		obf.h
+		auth-oauth.hpp
 		)
+
+	if(TWITCH_ENABLED)
+		list(APPEND obs_PLATFORM_SOURCES
+			auth-twitch.cpp
+			)
+		list(APPEND obs_PLATFORM_HEADERS
+			auth-twitch.hpp
+			)
+	endif()
+
+	if(MIXER_ENABLED)
+		list(APPEND obs_PLATFORM_SOURCES
+			auth-mixer.cpp
+			)
+		list(APPEND obs_PLATFORM_HEADERS
+			auth-mixer.hpp
+			)
+	endif()
 endif()
 
 set(obs_libffutil_SOURCES

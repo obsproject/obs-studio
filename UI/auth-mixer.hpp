@@ -1,23 +1,21 @@
 #pragma once
 
-#include <QDialog>
-#include <string>
-#include <memory>
-
 #include "auth-oauth.hpp"
 
-class TwitchChat;
+class MixerChat;
 
-class TwitchAuth : public OAuthStreamKey {
+class MixerAuth : public OAuthStreamKey {
 	Q_OBJECT
 
-	friend class TwitchLogin;
-
-	QSharedPointer<TwitchChat> chat;
+	QSharedPointer<MixerChat> chat;
 	QSharedPointer<QAction> chatMenu;
 	bool uiLoaded = false;
 
 	std::string name;
+	std::string id;
+
+	bool TokenExpired();
+	bool GetToken(const std::string &auth_code = std::string());
 
 	virtual void SaveInternal() override;
 	virtual bool LoadInternal() override;
@@ -28,7 +26,7 @@ class TwitchAuth : public OAuthStreamKey {
 	virtual void OnStreamConfig() override;
 
 public:
-	TwitchAuth(const Def &d);
+	MixerAuth(const Def &d);
 
 	static std::shared_ptr<Auth> Login(QWidget *parent);
 

@@ -7,7 +7,7 @@
 
 #ifdef BROWSER_AVAILABLE
 #include <browser-panel.hpp>
-#include <auth-twitch.hpp>
+#include "auth-oauth.hpp"
 #endif
 
 struct QCef;
@@ -221,17 +221,7 @@ void OBSBasicSettings::LoadServices(bool showAll)
 
 static inline bool is_auth_service(const std::string &service)
 {
-	static const char *auth_services[] = {
-		"Twitch"
-	};
-
-	for (const char *auth_service : auth_services) {
-		if (service == auth_service) {
-			return true;
-		}
-	}
-
-	return false;
+	return Auth::AuthType(service) != Auth::Type::None;
 }
 
 void OBSBasicSettings::on_service_currentIndexChanged()
@@ -281,7 +271,8 @@ void OBSBasicSettings::on_service_currentIndexChanged()
 #ifdef BROWSER_AVAILABLE
 	auth.reset();
 
-	if (!!main->auth && service == main->auth->type()) {
+	if (!!main->auth &&
+	    service.find(main->auth->service()) != std::string::npos) {
 		auth = main->auth;
 		OnAuthConnected();
 	}
@@ -336,16 +327,16 @@ void OBSBasicSettings::on_show_clicked()
 	}
 }
 
-void OBSBasicSettings::OnTwitchConnected()
+void OBSBasicSettings::OnOAuthStreamKeyConnected()
 {
 #ifdef BROWSER_AVAILABLE
-	TwitchAuth *twitch = reinterpret_cast<TwitchAuth*>(auth.get());
+	OAuthStreamKey *a = reinterpret_cast<OAuthStreamKey*>(auth.get());
 
-	if (twitch) {
-		bool validKey = !twitch->key().empty();
+	if (a) {
+		bool validKey = !a->key().empty();
 
 		if (validKey)
-			ui->key->setText(QT_UTF8(twitch->key().c_str()));
+			ui->key->setText(QT_UTF8(a->key().c_str()));
 
 		ui->streamKeyWidget->setVisible(!validKey);
 		ui->streamKeyLabel->setVisible(!validKey);
@@ -360,8 +351,10 @@ void OBSBasicSettings::OnTwitchConnected()
 void OBSBasicSettings::OnAuthConnected()
 {
 	std::string service = QT_TO_UTF8(ui->service->currentText());
-	if (service == "Twitch") {
-		OnTwitchConnected();
+	Auth::Type type = Auth::AuthType(service);
+
+	if (type == Auth::Type::OAuth_StreamKey) {
+		OnOAuthStreamKeyConnected();
 	}
 
 	if (!loading) {
@@ -374,10 +367,8 @@ void OBSBasicSettings::on_connectAccount_clicked()
 {
 #ifdef BROWSER_AVAILABLE
 	std::string service = QT_TO_UTF8(ui->service->currentText());
-	if (service == "Twitch") {
-		auth = TwitchAuth::Login(this);
-	}
 
+	auth = OAuthStreamKey::Login(this, service);
 	if (!!auth)
 		OnAuthConnected();
 #endif
@@ -403,10 +394,8 @@ void OBSBasicSettings::on_disconnectAccount_clicked()
 	main->auth.reset();
 	auth.reset();
 
-#ifdef BROWSER_AVAILABLE
-	if (panel_cookies)
-		panel_cookies->DeleteCookies("twitch.tv", std::string());
-#endif
+	std::string service = QT_TO_UTF8(ui->service->currentText());
+	OAuth::DeleteCookies(service);
 
 	ui->streamKeyWidget->setVisible(true);
 	ui->streamKeyLabel->setVisible(true);
