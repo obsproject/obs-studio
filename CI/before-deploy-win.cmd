@@ -4,6 +4,6 @@ robocopy C:\projects\obs-studio\build64\rundir\RelWithDebInfo C:\projects\obs-st
 cd C:projects\obs-studio\build\
 mkdir deps
 robocopy C:\projects\obs-studio\deps C:projects\obs-studio\build\deps /E
-cd C:\projects\obs-studio\deps
+cd C:\projects\obs-studio\build\deps
 dir
 7z a build.zip C:\projects\obs-studio\build\*
