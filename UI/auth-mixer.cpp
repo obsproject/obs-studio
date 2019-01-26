@@ -387,8 +387,10 @@ static std::shared_ptr<Auth> CreateMixerAuth()
 
 static void DeleteCookies()
 {
-	if (panel_cookies)
+	if (panel_cookies) {
 		panel_cookies->DeleteCookies("mixer.com", std::string());
+		panel_cookies->DeleteCookies("microsoft.com", std::string());
+	}
 }
 
 void RegisterMixerAuth()

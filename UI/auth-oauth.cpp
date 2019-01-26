@@ -68,6 +68,9 @@ void OAuthLogin::urlChanged(const QString &url)
 	if (code_idx == -1)
 		return;
 
+	if (url.left(22) != "https://obsproject.com")
+		return;
+
 	code_idx += (int)uri.size();
 
 	int next_idx = url.indexOf("&", code_idx);
