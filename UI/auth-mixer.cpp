@@ -312,6 +312,8 @@ void MixerAuth::LoadUI()
 std::shared_ptr<Auth> MixerAuth::Login(QWidget *parent)
 {
 	OAuthLogin login(parent, MIXER_AUTH_URL, false);
+	cef->add_popup_whitelist_url("about:blank", &login);
+
 	if (login.exec() == QDialog::Rejected) {
 		return nullptr;
 	}

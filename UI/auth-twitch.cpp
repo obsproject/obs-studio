@@ -38,9 +38,9 @@ static Auth::Def twitchDef = {
 TwitchAuth::TwitchAuth(const Def &d)
 	: OAuthStreamKey(d)
 {
-	cef->add_popup_url_callback(
+	cef->add_popup_whitelist_url(
 			"https://twitch.tv/popout/frankerfacez/chat?ffz-settings",
-			this, "OnFFZPopup");
+			this);
 	implicit = true;
 }
 
