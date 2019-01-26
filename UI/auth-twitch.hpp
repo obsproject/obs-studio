@@ -31,7 +31,4 @@ public:
 	TwitchAuth(const Def &d);
 
 	static std::shared_ptr<Auth> Login(QWidget *parent);
-
-public slots:
-	void OnFFZPopup(const QString &url);
 };
