@@ -42,6 +42,10 @@ TwitchAuth::TwitchAuth(const Def &d)
 			"https://twitch.tv/popout/frankerfacez/chat?ffz-settings",
 			this);
 	implicit = true;
+	uiLoadTimer.setSingleShot(true);
+	uiLoadTimer.setInterval(500);
+	connect(&uiLoadTimer, &QTimer::timeout,
+			this, &TwitchAuth::TryLoadSecondaryUIPanes);
 }
 
 bool TwitchAuth::GetChannelInfo()
@@ -81,12 +85,16 @@ try {
 	if (!error.empty())
 		throw ErrorInfo("Failed to parse json", error);
 
+	error = json["error"].string_value();
+	if (!error.empty())
+		throw ErrorInfo(error, json["error_description"].string_value());
+
 	name = json["name"].string_value();
 	key_ = json["stream_key"].string_value();
 
 	return true;
 } catch (ErrorInfo info) {
-	blog(LOG_DEBUG, "%s: %s: %s",
+	blog(LOG_WARNING, "%s: %s: %s",
 			__FUNCTION__,
 			info.message.c_str(),
 			info.error.c_str());
@@ -119,11 +127,17 @@ bool TwitchAuth::LoadInternal()
 	return OAuthStreamKey::LoadInternal();
 }
 
-class TwitchChat : public QDockWidget {
+class TwitchWidget : public QDockWidget {
 public:
-	inline TwitchChat() : QDockWidget() {}
+	inline TwitchWidget() : QDockWidget() {}
 
 	QScopedPointer<QCefWidget> widget;
+
+	inline void SetWidget(QCefWidget *widget_)
+	{
+		setWidget(widget_);
+		widget.reset(widget_);
+	}
 };
 
 static const char *ffz_script = "\
@@ -132,9 +146,14 @@ ffz.setAttribute('src','https://cdn.frankerfacez.com/script/script.min.js');\
 document.head.appendChild(ffz);";
 
 static const char *bttv_script = "\
+localStorage.setItem('bttv_darkenedMode', true);\
 var bttv = document.createElement('script');\
 bttv.setAttribute('src','https://cdn.betterttv.net/betterttv.js');\
 document.head.appendChild(bttv);";
+
+static const char *referrer_script1 = "\
+Object.defineProperty(document, 'referrer', {get : function() { return '";
+static const char *referrer_script2 = "'; }});";
 
 void TwitchAuth::LoadUI()
 {
@@ -146,29 +165,34 @@ void TwitchAuth::LoadUI()
 	OBSBasic::InitBrowserPanelSafeBlock(false);
 	OBSBasic *main = OBSBasic::Get();
 
+	QCefWidget *browser;
 	std::string url;
-	url += "https://www.twitch.tv/popout/";
-	url += name;
-	url += "/chat?darkpopout";
+	std::string script;
 
-	chat.reset(new TwitchChat());
+	/* ----------------------------------- */
+
+	url = "https://www.twitch.tv/popout/";
+	url += name;
+	url += "/chat";
+
+	chat.reset(new TwitchWidget());
 	chat->setObjectName("twitchChat");
 	chat->resize(300, 600);
 	chat->setMinimumSize(200, 300);
 	chat->setWindowTitle(QTStr("TwitchAuth.Chat"));
 	chat->setAllowedAreas(Qt::AllDockWidgetAreas);
 
-	QCefWidget *browser = cef->create_widget(nullptr, url, panel_cookies);
-	chat->setWidget(browser);
+	browser = cef->create_widget(nullptr, url, panel_cookies);
+	chat->SetWidget(browser);
 
-	std::string script;
+	script = bttv_script;
 	script += ffz_script;
-	script += bttv_script;
-
 	browser->setStartupScript(script);
 
 	main->addDockWidget(Qt::RightDockWidgetArea, chat.data());
 	chatMenu.reset(main->AddDockWidgetMenu(chat.data()));
+
+	/* ----------------------------------- */
 
 	chat->setFloating(true);
 	if (firstLoad) {
@@ -181,7 +205,89 @@ void TwitchAuth::LoadUI()
 		main->restoreState(dockState);
 	}
 
+	TryLoadSecondaryUIPanes();
+
 	uiLoaded = true;
+}
+
+void TwitchAuth::LoadSecondaryUIPanes()
+{
+	OBSBasic *main = OBSBasic::Get();
+
+	QCefWidget *browser;
+	std::string url;
+	std::string script;
+
+	/* ----------------------------------- */
+
+	url = "https://www.twitch.tv/popout/";
+	url += name;
+	url += "/dashboard/live/stream-info";
+
+	info.reset(new TwitchWidget());
+	info->setObjectName("twitchInfo");
+	info->resize(300, 600);
+	info->setMinimumSize(200, 300);
+	info->setWindowTitle(QTStr("TwitchAuth.Info"));
+	info->setAllowedAreas(Qt::AllDockWidgetAreas);
+
+	browser = cef->create_widget(nullptr, url, panel_cookies);
+	info->SetWidget(browser);
+
+	script = "localStorage.setItem('twilight.theme', 1);";
+	script += referrer_script1;
+	script += "https://www.twitch.tv/";
+	script += name;
+	script += "/dashboard/live";
+	script += referrer_script2;
+	browser->setStartupScript(script);
+
+	main->addDockWidget(Qt::RightDockWidgetArea, info.data());
+	infoMenu.reset(main->AddDockWidgetMenu(info.data()));
+
+	/* ----------------------------------- */
+
+	info->setFloating(true);
+	if (firstLoad) {
+		info->setVisible(true);
+	} else {
+		const char *dockStateStr = config_get_string(main->Config(),
+				service(), "DockState");
+		QByteArray dockState =
+			QByteArray::fromBase64(QByteArray(dockStateStr));
+		main->restoreState(dockState);
+	}
+}
+
+/* Twitch.tv has an OAuth for itself.  If we try to load multiple panel pages
+ * at once before it's OAuth'ed itself, they will all try to perform the auth
+ * process at the same time, get their own request codes, and only the last
+ * code will be valid -- so one or more panels are guaranteed to fail.
+ *
+ * To solve this, we want to load just one panel first (the chat), and then all
+ * subsequent panels should only be loaded once we know that Twitch has auth'ed
+ * itself (if the cookie "auth-token" exists for twitch.tv).
+ *
+ * This is annoying to deal with. */
+void TwitchAuth::TryLoadSecondaryUIPanes()
+{
+	QPointer<TwitchAuth> this_ = this;
+
+	auto cb = [this_] (bool found)
+	{
+		if (!this_) {
+			return;
+		}
+
+		if (!found) {
+			QMetaObject::invokeMethod(&this_->uiLoadTimer,
+					"start");
+		} else {
+			QMetaObject::invokeMethod(this_, "LoadSecondaryUIPanes");
+		}
+	};
+
+	panel_cookies->CheckForCookie("https://www.twitch.tv", "auth-token", cb);
 }
 
 std::shared_ptr<Auth> TwitchAuth::Login(QWidget *parent)
