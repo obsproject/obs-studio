@@ -34,6 +34,7 @@ environment:
 install:
   - git submodule update --init --recursive --jobs 2
 
+  - dir
   - mkdir "%BuildPath32%"
   - mkdir "%BuildPath64%"
 
@@ -42,7 +43,7 @@ build_script:
 
 after_build:
   - mkdir "%InstallPath%\deps\w32-pthreads"
-  - robocopy $(APPVEYOR_BUILD_FOLDER)\deps\w32-pthreads "%InstallPath%\deps\w32-pthreads" pthread.h
+  - robocopy $(APPVEYOR_BUILD_FOLDER)deps\w32-pthreads "%InstallPath%\deps\w32-pthreads" pthread.h
   - cd "%InstallPath%\deps\w32-pthreads"
   - dir
   - 7z a "%ReleaseArtifact%" "%InstallPath%\*"
