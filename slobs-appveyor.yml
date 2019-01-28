@@ -41,6 +41,10 @@ build_script:
   - cmd: CI\win-build.cmd
 
 after_build:
+  - mkdir "%InstallPath%\deps\w32-pthreads"
+  - robocopy $(APPVEYOR_BUILD_FOLDER)\deps\w32-pthreads "%InstallPath%\deps\w32-pthreads" pthread.h
+  - cd "%InstallPath%\deps\w32-pthreads"
+  - dir
   - 7z a "%ReleaseArtifact%" "%InstallPath%\*"
 
 artifacts:
