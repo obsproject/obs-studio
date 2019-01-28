@@ -39,7 +39,7 @@ Auth::Type Auth::AuthType(const std::string &service)
 	return Type::None;
 }
 
-bool Auth::Load()
+void Auth::Load()
 {
 	OBSBasic *main = OBSBasic::Get();
 	const char *typeStr = config_get_string(main->Config(), "Auth", "Type");
@@ -49,10 +49,8 @@ bool Auth::Load()
 	if (main->auth) {
 		if (main->auth->LoadInternal()) {
 			main->auth->LoadUI();
-			return true;
 		}
 	}
-	return false;
 }
 
 void Auth::Save()

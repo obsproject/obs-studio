@@ -27,8 +27,10 @@ extern QCefCookieManager *panel_cookies;
 
 #define MIXER_AUTH_URL \
 	"https://obsproject.com/app-auth/mixer_post.php?action=redirect"
-#define MIXER_REDIRECT_URI \
-	"https://obsproject.com/app-auth/mixer_post.php"
+#define MIXER_TOKEN_URL \
+	"https://obsproject.com/app-auth/mixer-token.php"
+
+#define MIXER_SCOPE_VERSION 1
 
 static Auth::Def mixerDef = {
 	"Mixer",
@@ -51,42 +53,62 @@ bool MixerAuth::TokenExpired()
 	return false;
 }
 
-bool MixerAuth::GetToken(const std::string &auth_code)
+bool MixerAuth::RetryLogin()
+{
+	OAuthLogin login(OBSBasic::Get(), MIXER_AUTH_URL, false);
+	cef->add_popup_whitelist_url("about:blank", &login);
+
+	if (login.exec() == QDialog::Rejected) {
+		return false;
+	}
+
+	return GetToken(QT_TO_UTF8(login.GetCode()), true);
+}
+
+bool MixerAuth::GetToken(const std::string &auth_code, bool retry)
 try {
 	std::string output;
 	std::string error;
 	std::string desc;
+
+	if (currentScopeVer > 0 && currentScopeVer < MIXER_SCOPE_VERSION) {
+		if (RetryLogin()) {
+			return true;
+		} else {
+			QString title = QTStr("Auth.InvalidScope.Title");
+			QString text = QTStr("Auth.InvalidScope.Text")
+				.arg("Mixer");
+
+			QMessageBox::warning(OBSBasic::Get(), title, text);
+		}
+	}
 
 	if (auth_code.empty() && !TokenExpired()) {
 		return true;
 	}
 
 	std::string client_id = MIXER_CLIENTID;
-	std::string secret_id = MIXER_SECRETID;
 	deobfuscate_str(&client_id[0], MIXER_HASH);
-	deobfuscate_str(&secret_id[0], MIXER_HASH);
 
-	Json::object input_json {
-		{"client_id", client_id},
-		{"client_secret", secret_id},
-	};
+	std::string post_data;
+	post_data += "action=redirect&client_id=";
+	post_data += client_id;
 
 	if (!auth_code.empty()) {
-		input_json["grant_type"] = "authorization_code";
-		input_json["code"] = auth_code;
-		input_json["redirect_uri"] = MIXER_REDIRECT_URI;
+		post_data += "&grant_type=authorization_code&code=";
+		post_data += auth_code;
 	} else {
-		input_json["grant_type"] = "refresh_token";
-		input_json["refresh_token"] = refresh_token;
+		post_data += "&grant_type=refresh_token&refresh_token=";
+		post_data += refresh_token;
 	}
 
 	bool success = GetRemoteFileSafeBlock(
-			"https://mixer.com/api/v1/oauth/token",
+			MIXER_TOKEN_URL,
 			output,
 			error,
 			nullptr,
-			"application/json",
-			Json(input_json).dump().c_str(),
+			"application/x-www-form-urlencoded",
+			post_data.c_str(),
 			std::vector<std::string>(),
 			nullptr,
 			5);
@@ -97,9 +119,20 @@ try {
 	if (!error.empty())
 		throw ErrorInfo("Failed to parse json", error);
 
+	/* -------------------------- */
+	/* error handling             */
+
 	error = json["error"].string_value();
+	if (!retry && error == "invalid_grant") {
+		if (RetryLogin()) {
+			return true;
+		}
+	}
 	if (!error.empty())
 		throw ErrorInfo(error, json["error_description"].string_value());
+
+	/* -------------------------- */
+	/* success!                   */
 
 	expire_time = (uint64_t)time(nullptr) + json["expires_in"].int_value();
 	token       = json["access_token"].string_value();
@@ -111,11 +144,21 @@ try {
 		if (refresh_token.empty())
 			throw ErrorInfo("Failed to get refresh token from "
 					"remote", error);
+
+		currentScopeVer = MIXER_SCOPE_VERSION;
 	}
 
 	return true;
 
 } catch (ErrorInfo info) {
+	if (!retry) {
+		QString title = QTStr("Auth.AuthFailure.Title");
+		QString text = QTStr("Auth.AuthFailure.Text")
+			.arg("Mixer", info.message.c_str(), info.error.c_str());
+
+		QMessageBox::warning(OBSBasic::Get(), title, text);
+	}
+
 	blog(LOG_WARNING, "%s: %s: %s",
 			__FUNCTION__,
 			info.message.c_str(),
@@ -206,7 +249,7 @@ try {
 	if (!error.empty())
 		throw ErrorInfo(error, json["error_description"].string_value());
 
-	key_ = json["streamKey"].string_value();
+	key_ = id + "-" + json["streamKey"].string_value();
 
 	return true;
 } catch (ErrorInfo info) {
@@ -224,6 +267,7 @@ void MixerAuth::SaveInternal()
 	config_set_string(main->Config(), service(), "Id", id.c_str());
 	config_set_string(main->Config(), service(), "DockState",
 			main->saveState().toBase64().constData());
+	config_set_int(main->Config(), service(), "ScopeVer", currentScopeVer);
 	OAuthStreamKey::SaveInternal();
 }
 
@@ -241,6 +285,8 @@ bool MixerAuth::LoadInternal()
 	OBSBasic *main = OBSBasic::Get();
 	name = get_config_str(main, service(), "Name");
 	id = get_config_str(main, service(), "Id");
+	currentScopeVer = (int)config_get_int(main->Config(), service(),
+			"scope_ver");
 	firstLoad = false;
 	return OAuthStreamKey::LoadInternal();
 }
@@ -280,7 +326,7 @@ void MixerAuth::LoadUI()
 	chat->setObjectName("mixerChat");
 	chat->resize(300, 600);
 	chat->setMinimumSize(200, 300);
-	chat->setWindowTitle(QTStr("MixerAuth.Chat"));
+	chat->setWindowTitle(QTStr("Auth.Chat"));
 	chat->setAllowedAreas(Qt::AllDockWidgetAreas);
 
 	QCefWidget *browser = cef->create_widget(nullptr, url, panel_cookies);
