@@ -44,131 +44,12 @@ MixerAuth::MixerAuth(const Def &d)
 {
 }
 
-bool MixerAuth::TokenExpired()
-{
-	if (token.empty())
-		return true;
-	if ((uint64_t)time(nullptr) > expire_time - 5)
-		return true;
-	return false;
-}
-
-bool MixerAuth::RetryLogin()
-{
-	OAuthLogin login(OBSBasic::Get(), MIXER_AUTH_URL, false);
-	cef->add_popup_whitelist_url("about:blank", &login);
-
-	if (login.exec() == QDialog::Rejected) {
-		return false;
-	}
-
-	return GetToken(QT_TO_UTF8(login.GetCode()), true);
-}
-
-bool MixerAuth::GetToken(const std::string &auth_code, bool retry)
+bool MixerAuth::GetChannelInfo()
 try {
-	std::string output;
-	std::string error;
-	std::string desc;
-
-	if (currentScopeVer > 0 && currentScopeVer < MIXER_SCOPE_VERSION) {
-		if (RetryLogin()) {
-			return true;
-		} else {
-			QString title = QTStr("Auth.InvalidScope.Title");
-			QString text = QTStr("Auth.InvalidScope.Text")
-				.arg("Mixer");
-
-			QMessageBox::warning(OBSBasic::Get(), title, text);
-		}
-	}
-
-	if (auth_code.empty() && !TokenExpired()) {
-		return true;
-	}
-
 	std::string client_id = MIXER_CLIENTID;
 	deobfuscate_str(&client_id[0], MIXER_HASH);
 
-	std::string post_data;
-	post_data += "action=redirect&client_id=";
-	post_data += client_id;
-
-	if (!auth_code.empty()) {
-		post_data += "&grant_type=authorization_code&code=";
-		post_data += auth_code;
-	} else {
-		post_data += "&grant_type=refresh_token&refresh_token=";
-		post_data += refresh_token;
-	}
-
-	bool success = GetRemoteFileSafeBlock(
-			MIXER_TOKEN_URL,
-			output,
-			error,
-			nullptr,
-			"application/x-www-form-urlencoded",
-			post_data.c_str(),
-			std::vector<std::string>(),
-			nullptr,
-			5);
-	if (!success || output.empty())
-		throw ErrorInfo("Failed to get token from remote", error);
-
-	Json json = Json::parse(output, error);
-	if (!error.empty())
-		throw ErrorInfo("Failed to parse json", error);
-
-	/* -------------------------- */
-	/* error handling             */
-
-	error = json["error"].string_value();
-	if (!retry && error == "invalid_grant") {
-		if (RetryLogin()) {
-			return true;
-		}
-	}
-	if (!error.empty())
-		throw ErrorInfo(error, json["error_description"].string_value());
-
-	/* -------------------------- */
-	/* success!                   */
-
-	expire_time = (uint64_t)time(nullptr) + json["expires_in"].int_value();
-	token       = json["access_token"].string_value();
-	if (token.empty())
-		throw ErrorInfo("Failed to get token from remote", error);
-
-	if (!auth_code.empty()) {
-		refresh_token = json["refresh_token"].string_value();
-		if (refresh_token.empty())
-			throw ErrorInfo("Failed to get refresh token from "
-					"remote", error);
-
-		currentScopeVer = MIXER_SCOPE_VERSION;
-	}
-
-	return true;
-
-} catch (ErrorInfo info) {
-	if (!retry) {
-		QString title = QTStr("Auth.AuthFailure.Title");
-		QString text = QTStr("Auth.AuthFailure.Text")
-			.arg("Mixer", info.message.c_str(), info.error.c_str());
-
-		QMessageBox::warning(OBSBasic::Get(), title, text);
-	}
-
-	blog(LOG_WARNING, "%s: %s: %s",
-			__FUNCTION__,
-			info.message.c_str(),
-			info.error.c_str());
-	return false;
-}
-
-bool MixerAuth::GetChannelInfo()
-try {
-	if (!GetToken())
+	if (!GetToken(MIXER_TOKEN_URL, client_id, MIXER_SCOPE_VERSION))
 		return false;
 	if (token.empty())
 		return false;
@@ -178,9 +59,6 @@ try {
 	std::string auth;
 	auth += "Authorization: Bearer ";
 	auth += token;
-
-	std::string client_id = MIXER_CLIENTID;
-	deobfuscate_str(&client_id[0], MIXER_HASH);
 
 	std::vector<std::string> headers;
 	headers.push_back(std::string("Client-ID: ") + client_id);
@@ -267,7 +145,6 @@ void MixerAuth::SaveInternal()
 	config_set_string(main->Config(), service(), "Id", id.c_str());
 	config_set_string(main->Config(), service(), "DockState",
 			main->saveState().toBase64().constData());
-	config_set_int(main->Config(), service(), "ScopeVer", currentScopeVer);
 	OAuthStreamKey::SaveInternal();
 }
 
@@ -285,8 +162,6 @@ bool MixerAuth::LoadInternal()
 	OBSBasic *main = OBSBasic::Get();
 	name = get_config_str(main, service(), "Name");
 	id = get_config_str(main, service(), "Id");
-	currentScopeVer = (int)config_get_int(main->Config(), service(),
-			"scope_ver");
 	firstLoad = false;
 	return OAuthStreamKey::LoadInternal();
 }
@@ -297,16 +172,6 @@ public:
 
 	QScopedPointer<QCefWidget> widget;
 };
-
-static const char *ffz_script = "\
-var ffz = document.createElement('script');\
-ffz.setAttribute('src','https://cdn.frankerfacez.com/script/script.min.js');\
-document.head.appendChild(ffz);";
-
-static const char *bttv_script = "\
-var bttv = document.createElement('script');\
-bttv.setAttribute('src','https://cdn.betterttv.net/betterttv.js');\
-document.head.appendChild(bttv);";
 
 void MixerAuth::LoadUI()
 {
@@ -332,12 +197,6 @@ void MixerAuth::LoadUI()
 	QCefWidget *browser = cef->create_widget(nullptr, url, panel_cookies);
 	chat->setWidget(browser);
 
-	std::string script;
-	script += ffz_script;
-	script += bttv_script;
-
-	browser->setStartupScript(script);
-
 	main->addDockWidget(Qt::RightDockWidgetArea, chat.data());
 	chatMenu.reset(main->AddDockWidgetMenu(chat.data()));
 
@@ -355,6 +214,23 @@ void MixerAuth::LoadUI()
 	uiLoaded = true;
 }
 
+bool MixerAuth::RetryLogin()
+{
+	OAuthLogin login(OBSBasic::Get(), MIXER_AUTH_URL, false);
+	cef->add_popup_whitelist_url("about:blank", &login);
+
+	if (login.exec() == QDialog::Rejected) {
+		return false;
+	}
+
+	std::shared_ptr<MixerAuth> auth = std::make_shared<MixerAuth>(mixerDef);
+	std::string client_id = MIXER_CLIENTID;
+	deobfuscate_str(&client_id[0], MIXER_HASH);
+
+	return GetToken(MIXER_TOKEN_URL, client_id, MIXER_SCOPE_VERSION,
+			QT_TO_UTF8(login.GetCode()), true);
+}
+
 std::shared_ptr<Auth> MixerAuth::Login(QWidget *parent)
 {
 	OAuthLogin login(parent, MIXER_AUTH_URL, false);
@@ -365,7 +241,12 @@ std::shared_ptr<Auth> MixerAuth::Login(QWidget *parent)
 	}
 
 	std::shared_ptr<MixerAuth> auth = std::make_shared<MixerAuth>(mixerDef);
-	if (!auth->GetToken(QT_TO_UTF8(login.GetCode()))) {
+
+	std::string client_id = TWITCH_CLIENTID;
+	deobfuscate_str(&client_id[0], TWITCH_HASH);
+
+	if (!auth->GetToken(MIXER_TOKEN_URL, client_id, MIXER_SCOPE_VERSION,
+				QT_TO_UTF8(login.GetCode()))) {
 		return nullptr;
 	}
 
@@ -375,19 +256,6 @@ std::shared_ptr<Auth> MixerAuth::Login(QWidget *parent)
 	}
 
 	return nullptr;
-}
-
-void MixerAuth::OnStreamConfig()
-{
-	OBSBasic *main = OBSBasic::Get();
-	obs_service_t *service = main->GetService();
-
-	obs_data_t *settings = obs_service_get_settings(service);
-
-	obs_data_set_string(settings, "key", key().c_str());
-	obs_service_update(service, settings);
-
-	obs_data_release(settings);
 }
 
 static std::shared_ptr<Auth> CreateMixerAuth()

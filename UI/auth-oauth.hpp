@@ -48,9 +48,17 @@ protected:
 	std::string token;
 	bool implicit = false;
 	uint64_t expire_time = 0;
+	int currentScopeVer = 0;
 
 	virtual void SaveInternal() override;
 	virtual bool LoadInternal() override;
+
+	virtual bool RetryLogin()=0;
+	bool TokenExpired();
+	bool GetToken(const char *url, const std::string &client_id,
+			int scope_ver,
+			const std::string &auth_code = std::string(),
+			bool retry = false);
 };
 
 class OAuthStreamKey : public OAuth {
@@ -63,4 +71,6 @@ public:
 	inline OAuthStreamKey(const Def &d) : OAuth(d) {}
 
 	inline const std::string &key() const {return key_;}
+
+	virtual void OnStreamConfig() override;
 };

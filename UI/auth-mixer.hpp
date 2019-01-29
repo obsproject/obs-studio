@@ -13,12 +13,8 @@ class MixerAuth : public OAuthStreamKey {
 
 	std::string name;
 	std::string id;
-	int currentScopeVer = 0;
 
-	bool TokenExpired();
-	bool RetryLogin();
-	bool GetToken(const std::string &auth_code = std::string(),
-			bool retry = false);
+	virtual bool RetryLogin() override;
 
 	virtual void SaveInternal() override;
 	virtual bool LoadInternal() override;
@@ -26,7 +22,6 @@ class MixerAuth : public OAuthStreamKey {
 	bool GetChannelInfo();
 
 	virtual void LoadUI() override;
-	virtual void OnStreamConfig() override;
 
 public:
 	MixerAuth(const Def &d);

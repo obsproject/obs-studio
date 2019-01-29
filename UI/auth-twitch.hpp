@@ -21,12 +21,8 @@ class TwitchAuth : public OAuthStreamKey {
 	bool uiLoaded = false;
 
 	std::string name;
-	int currentScopeVer = 0;
 
-	bool TokenExpired();
-	bool RetryLogin();
-	bool GetToken(const std::string &auth_code = std::string(),
-			bool retry = false);
+	virtual bool RetryLogin() override;
 
 	virtual void SaveInternal() override;
 	virtual bool LoadInternal() override;
@@ -34,7 +30,6 @@ class TwitchAuth : public OAuthStreamKey {
 	bool GetChannelInfo();
 
 	virtual void LoadUI() override;
-	virtual void OnStreamConfig() override;
 
 public:
 	TwitchAuth(const Def &d);

@@ -127,6 +127,7 @@ void OAuth::SaveInternal()
 			refresh_token.c_str());
 	config_set_string(main->Config(), service(), "Token", token.c_str());
 	config_set_uint(main->Config(), service(), "ExpireTime", expire_time);
+	config_set_int(main->Config(), service(), "ScopeVer", currentScopeVer);
 }
 
 static inline std::string get_config_str(
@@ -144,7 +145,130 @@ bool OAuth::LoadInternal()
 	refresh_token = get_config_str(main, service(), "RefreshToken");
 	token = get_config_str(main, service(), "Token");
 	expire_time = config_get_uint(main->Config(), service(), "ExpireTime");
+	currentScopeVer = (int)config_get_int(main->Config(), service(),
+			"ScopeVer");
 	return implicit
 		? !token.empty()
 		: !refresh_token.empty();
+}
+
+bool OAuth::TokenExpired()
+{
+	if (token.empty())
+		return true;
+	if ((uint64_t)time(nullptr) > expire_time - 5)
+		return true;
+	return false;
+}
+
+bool OAuth::GetToken(const char *url, const std::string &client_id,
+		int scope_ver, const std::string &auth_code, bool retry)
+try {
+	std::string output;
+	std::string error;
+	std::string desc;
+
+	if (currentScopeVer > 0 && currentScopeVer < scope_ver) {
+		if (RetryLogin()) {
+			return true;
+		} else {
+			QString title = QTStr("Auth.InvalidScope.Title");
+			QString text = QTStr("Auth.InvalidScope.Text")
+				.arg(service());
+
+			QMessageBox::warning(OBSBasic::Get(), title, text);
+		}
+	}
+
+	if (auth_code.empty() && !TokenExpired()) {
+		return true;
+	}
+
+	std::string post_data;
+	post_data += "action=redirect&client_id=";
+	post_data += client_id;
+
+	if (!auth_code.empty()) {
+		post_data += "&grant_type=authorization_code&code=";
+		post_data += auth_code;
+	} else {
+		post_data += "&grant_type=refresh_token&refresh_token=";
+		post_data += refresh_token;
+	}
+
+	bool success = GetRemoteFileSafeBlock(
+			url,
+			output,
+			error,
+			nullptr,
+			"application/x-www-form-urlencoded",
+			post_data.c_str(),
+			std::vector<std::string>(),
+			nullptr,
+			5);
+	if (!success || output.empty())
+		throw ErrorInfo("Failed to get token from remote", error);
+
+	Json json = Json::parse(output, error);
+	if (!error.empty())
+		throw ErrorInfo("Failed to parse json", error);
+
+	/* -------------------------- */
+	/* error handling             */
+
+	error = json["error"].string_value();
+	if (!retry && error == "invalid_grant") {
+		if (RetryLogin()) {
+			return true;
+		}
+	}
+	if (!error.empty())
+		throw ErrorInfo(error, json["error_description"].string_value());
+
+	/* -------------------------- */
+	/* success!                   */
+
+	expire_time = (uint64_t)time(nullptr) + json["expires_in"].int_value();
+	token       = json["access_token"].string_value();
+	if (token.empty())
+		throw ErrorInfo("Failed to get token from remote", error);
+
+	if (!auth_code.empty()) {
+		refresh_token = json["refresh_token"].string_value();
+		if (refresh_token.empty())
+			throw ErrorInfo("Failed to get refresh token from "
+					"remote", error);
+
+		currentScopeVer = scope_ver;
+	}
+
+	return true;
+
+} catch (ErrorInfo info) {
+	if (!retry) {
+		QString title = QTStr("Auth.AuthFailure.Title");
+		QString text = QTStr("Auth.AuthFailure.Text")
+			.arg(service(), info.message.c_str(), info.error.c_str());
+
+		QMessageBox::warning(OBSBasic::Get(), title, text);
+	}
+
+	blog(LOG_WARNING, "%s: %s: %s",
+			__FUNCTION__,
+			info.message.c_str(),
+			info.error.c_str());
+	return false;
+}
+
+void OAuthStreamKey::OnStreamConfig()
+{
+	OBSBasic *main = OBSBasic::Get();
+	obs_service_t *service = main->GetService();
+
+	obs_data_t *settings = obs_service_get_settings(service);
+
+	obs_data_set_string(settings, "key", key_.c_str());
+	obs_service_update(service, settings);
+
+	obs_data_release(settings);
 }
