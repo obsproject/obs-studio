@@ -1654,7 +1654,7 @@ void OBSBasic::OBSInit()
 	}
 
 	config_set_default_bool(App()->GlobalConfig(), "BasicWindow",
-			"DocksLocked", true);
+			"DocksLocked", false);
 
 	bool docksLocked = config_get_bool(App()->GlobalConfig(),
 			"BasicWindow", "DocksLocked");
