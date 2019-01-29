@@ -35,9 +35,6 @@ install:
   - git submodule update --init --recursive --jobs 2
   - mkdir "%InstallPath%\deps\w32-pthreads"
   - copy C:\projects\obs-studio\deps\w32-pthreads\pthread.h "%InstallPath%\deps\w32-pthreads" 
-  - cd %InstallPath%\deps\w32-pthreads
-  - dir
-  - cd C:\projects\obs-studio
   - mkdir "%BuildPath32%"
   - mkdir "%BuildPath64%"
 
