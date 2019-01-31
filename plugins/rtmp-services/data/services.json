@@ -1429,6 +1429,20 @@
                 "max video bitrate": 6000,
                 "max audio bitrate": 192
             }
+        },
+        {
+            "name": "Camplace",
+            "servers": [
+                {
+                    "name": "Camplace - Default",
+                    "url": "rtmp://rtmp.camplace.com"
+                }
+            ],
+            "recommend": {
+                "keyint": 2,
+                "max video bitrate": 3000,
+                "max audio bitrate": 128
+            }
         }
     ]
 }
