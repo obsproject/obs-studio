@@ -18,10 +18,10 @@ class DeckLinkDevice {
 	std::string                               name;
 	std::string                               displayName;
 	std::string                               hash;
-	int32_t                                   maxChannel;
-	decklink_bool_t                           supportsExternalKeyer;
-	decklink_bool_t                           supportsInternalKeyer;
-	int                                       keyerMode;
+	int32_t                                   maxChannel = 0;
+	decklink_bool_t                           supportsExternalKeyer = false;
+	decklink_bool_t                           supportsInternalKeyer = false;
+	int                                       keyerMode = 0;
 	volatile long                             refCount = 1;
 
 public:
