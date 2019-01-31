@@ -266,7 +266,7 @@ struct TextSource {
 
 	inline void Update(obs_data_t *settings);
 	inline void Tick(float seconds);
-	inline void Render(gs_effect_t *effect);
+	inline void Render();
 };
 
 static time_t get_modified_timestamp(const char *filename)
@@ -789,13 +789,22 @@ inline void TextSource::Tick(float seconds)
 	}
 }
 
-inline void TextSource::Render(gs_effect_t *effect)
+inline void TextSource::Render()
 {
 	if (!tex)
 		return;
 
+	gs_effect_t *effect = obs_get_base_effect(OBS_EFFECT_PREMULTIPLIED_ALPHA);
+	gs_technique_t *tech  = gs_effect_get_technique(effect, "Draw");
+
+	gs_technique_begin(tech);
+	gs_technique_begin_pass(tech, 0);
+
 	gs_effect_set_texture(gs_effect_get_param_by_name(effect, "image"), tex);
 	gs_draw_sprite(tex, 0, cx, cy);
+
+	gs_technique_end_pass(tech);
+	gs_technique_end(tech);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -914,7 +923,7 @@ static obs_properties_t *get_properties(void *data)
 			T_GRADIENT_OPACITY, 0, 100, 1);
 	obs_properties_add_float_slider(props, S_GRADIENT_DIR,
 			T_GRADIENT_DIR, 0, 360, 0.1);
-	
+
 	obs_properties_add_color(props, S_BKCOLOR, T_BKCOLOR);
 	obs_properties_add_int_slider(props, S_BKOPACITY, T_BKOPACITY,
 			0, 100, 1);
@@ -1017,9 +1026,9 @@ bool obs_module_load(void)
 	{
 		reinterpret_cast<TextSource*>(data)->Tick(seconds);
 	};
-	si.video_render = [] (void *data, gs_effect_t *effect)
+	si.video_render = [] (void *data, gs_effect_t*)
 	{
-		reinterpret_cast<TextSource*>(data)->Render(effect);
+		reinterpret_cast<TextSource*>(data)->Render();
 	};
 
 	obs_register_source(&si);
