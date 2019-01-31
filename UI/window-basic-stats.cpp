@@ -132,7 +132,9 @@ OBSBasicStats::OBSBasicStats(QWidget *parent, bool closeable)
 				[this] () {close();});
 	connect(resetButton, &QPushButton::clicked, [this] () {Reset();});
 
-	installEventFilter(CreateShortcutFilter());
+	delete shortcutFilter;
+	shortcutFilter = CreateShortcutFilter();
+	installEventFilter(shortcutFilter);
 
 	resize(800, 280);
 
@@ -181,6 +183,7 @@ void OBSBasicStats::closeEvent(QCloseEvent *event)
 
 OBSBasicStats::~OBSBasicStats()
 {
+	delete shortcutFilter;
 	os_cpu_usage_info_destroy(cpu_info);
 }
 
