@@ -187,6 +187,9 @@ void MixerAuth::LoadUI()
 	url += "https://mixer.com/embed/chat/";
 	url += id;
 
+	QSize size = main->frameSize();
+	QPoint pos = main->pos();
+
 	chat.reset(new MixerChat());
 	chat->setObjectName("mixerChat");
 	chat->resize(300, 600);
@@ -200,7 +203,11 @@ void MixerAuth::LoadUI()
 	main->addDockWidget(Qt::RightDockWidgetArea, chat.data());
 	chatMenu.reset(main->AddDockWidgetMenu(chat.data()));
 
+	/* ----------------------------------- */
+
 	chat->setFloating(true);
+	chat->move(pos.x() + size.width() - chat->width() - 50, pos.y() + 50);
+
 	if (firstLoad) {
 		chat->setVisible(true);
 	} else {

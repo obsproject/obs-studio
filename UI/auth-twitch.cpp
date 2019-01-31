@@ -182,6 +182,9 @@ void TwitchAuth::LoadUI()
 	url += name;
 	url += "/chat";
 
+	QSize size = main->frameSize();
+	QPoint pos = main->pos();
+
 	chat.reset(new TwitchWidget());
 	chat->setObjectName("twitchChat");
 	chat->resize(300, 600);
@@ -202,6 +205,8 @@ void TwitchAuth::LoadUI()
 	/* ----------------------------------- */
 
 	chat->setFloating(true);
+	chat->move(pos.x() + size.width() - chat->width() - 50, pos.y() + 50);
+
 	if (firstLoad) {
 		chat->setVisible(true);
 	} else {
@@ -231,9 +236,11 @@ void TwitchAuth::LoadSecondaryUIPanes()
 	url += name;
 	url += "/dashboard/live/stream-info";
 
+	QPoint pos = main->pos();
+
 	info.reset(new TwitchWidget());
 	info->setObjectName("twitchInfo");
-	info->resize(300, 600);
+	info->resize(300, 650);
 	info->setMinimumSize(200, 300);
 	info->setWindowTitle(QTStr("Auth.StreamInfo"));
 	info->setAllowedAreas(Qt::AllDockWidgetAreas);
@@ -255,6 +262,8 @@ void TwitchAuth::LoadSecondaryUIPanes()
 	/* ----------------------------------- */
 
 	info->setFloating(true);
+	info->move(pos.x() + 50, pos.y() + 50);
+
 	if (firstLoad) {
 		info->setVisible(true);
 	} else {
