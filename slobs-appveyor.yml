@@ -33,6 +33,7 @@ environment:
 
 install:
   - git submodule update --init --recursive --jobs 2
+
   - mkdir "%BuildPath32%"
   - mkdir "%BuildPath64%"
 
@@ -40,8 +41,6 @@ build_script:
   - cmd: CI\win-build.cmd
 
 after_build:
-  - mkdir "%InstallPath%\deps\w32-pthreads"
-  - copy C:\projects\obs-studio\deps\w32-pthreads\pthread.h "%InstallPath%\deps\w32-pthreads" 
   - 7z a "%ReleaseArtifact%" "%InstallPath%\*"
 
 artifacts:
