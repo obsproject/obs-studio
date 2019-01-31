@@ -142,6 +142,7 @@ struct twitch_ingest twitch_ingest(size_t idx)
 	struct twitch_ingest ingest;
 
 	if (cur_ingests.num <= idx) {
+		blog(LOG_WARNING, "Invalid response from Twitch's ingests API");
 		ingest.name = NULL;
 		ingest.url = NULL;
 	} else {
