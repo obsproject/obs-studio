@@ -41,7 +41,7 @@ build_script:
 
 after_build:
   - mkdir "%InstallPath%\deps\w32-pthreads"
-  - copy C:\projects\obs-studio\deps\w32-pthreads "%InstallPath%\deps\w32-pthreads" 
+  - copy C:\projects\obs-studio\deps\w32-pthreads\pthread.h "%InstallPath%\deps\w32-pthreads" 
   - 7z a "%ReleaseArtifact%" "%InstallPath%\*"
 
 artifacts:
