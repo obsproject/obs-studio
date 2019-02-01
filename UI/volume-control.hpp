@@ -79,6 +79,18 @@ class VolumeMeter : public QWidget
 	Q_PROPERTY(qreal inputPeakHoldDuration
 		READ getInputPeakHoldDuration
 		WRITE setInputPeakHoldDuration DESIGNABLE true)
+	Q_PROPERTY(qreal barThickness
+		READ getBarThickness
+		WRITE setBarThickness DESIGNABLE true)
+	Q_PROPERTY(qreal barSpacing
+		READ getBarSpacing
+		WRITE setBarSpacing DESIGNABLE true)
+	Q_PROPERTY(qreal inputMeterThickness
+		READ getInputMeterThickness
+		WRITE setInputMeterThickness DESIGNABLE true)
+	Q_PROPERTY(qreal inputMeterSpacing
+		READ getInputMeterSpacing
+		WRITE setInputMeterSpacing DESIGNABLE true)
 
 private slots:
 	void ClipEnding();
@@ -142,6 +154,12 @@ private:
 	qreal magnitudeIntegrationTime;
 	qreal peakHoldDuration;
 	qreal inputPeakHoldDuration;
+	qreal barThickness;
+	qreal barSpacing;
+	qreal inputMeterThickness;
+	qreal inputMeterSpacing;
+	int barLength;
+	int inputMeterLength;
 
 	uint64_t lastRedrawTime = 0;
 	int channels = 0;
@@ -196,6 +214,14 @@ public:
 	qreal getPeakHoldDuration() const;
 	void setPeakHoldDuration(qreal v);
 	qreal getInputPeakHoldDuration() const;
+	void setBarThickness(qreal v);
+	qreal getBarThickness() const;
+	void setBarSpacing(qreal v);
+	qreal getBarSpacing() const;
+	void setInputMeterThickness(qreal v);
+	qreal getInputMeterThickness() const;
+	void setInputMeterSpacing(qreal v);
+	qreal getInputMeterSpacing() const;
 	void setInputPeakHoldDuration(qreal v);
 	void setPeakMeterType(enum obs_peak_meter_type peakMeterType);
 

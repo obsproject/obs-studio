@@ -465,6 +465,50 @@ void VolumeMeter::setInputPeakHoldDuration(qreal v)
 	inputPeakHoldDuration = v;
 }
 
+qreal VolumeMeter::getBarThickness() const
+{
+	return barThickness;
+}
+
+void VolumeMeter::setBarThickness(qreal v)
+{
+	barThickness = v < 1.0 ? 1.0 : v;
+	barLength = barThickness + barSpacing;
+}
+
+qreal VolumeMeter::getBarSpacing() const
+{
+	return barSpacing;
+}
+
+void VolumeMeter::setBarSpacing(qreal v)
+{
+	barSpacing = v < 0.0 ? 0.0 : v;
+	barLength = barThickness + barSpacing;
+}
+
+qreal VolumeMeter::getInputMeterThickness() const
+{
+	return inputMeterThickness;
+}
+
+void VolumeMeter::setInputMeterThickness(qreal v)
+{
+	inputMeterThickness = v < 0.0 ? 0.0 : v;
+	inputMeterLength = inputMeterThickness + inputMeterSpacing;
+}
+
+qreal VolumeMeter::getInputMeterSpacing() const
+{
+	return inputMeterSpacing;
+}
+
+void VolumeMeter::setInputMeterSpacing(qreal v)
+{
+	inputMeterSpacing = v < 0.0 ? 0.0 : v;
+	inputMeterLength = inputMeterThickness + inputMeterSpacing;
+}
+
 void VolumeMeter::setPeakMeterType(enum obs_peak_meter_type peakMeterType)
 {
 	obs_volmeter_set_peak_meter_type(obs_volmeter, peakMeterType);
@@ -527,6 +571,11 @@ VolumeMeter::VolumeMeter(QWidget *parent, obs_volmeter_t *obs_volmeter,
 	magnitudeIntegrationTime = 0.3;                     //  99% in 300 ms
 	peakHoldDuration = 20.0;                            //  20 seconds
 	inputPeakHoldDuration = 1.0;                        //  1 second
+
+	setBarSpacing(1.0);
+	setBarThickness(3.0);
+	setInputMeterSpacing(2.0);
+	setInputMeterThickness(3.0);
 
 	channels = (int)audio_output_get_channels(obs_get_audio());
 
@@ -595,9 +644,9 @@ inline void VolumeMeter::handleChannelCofigurationChange()
 		// Make room for 3 pixels meter, with one pixel between each.
 		// Then 9/13 pixels for ticks and numbers.
 		if (vertical)
-			setMinimumSize(displayNrAudioChannels * 4 + 14, 130);
+			setMinimumSize(displayNrAudioChannels * barLength + 14, 130);
 		else
-			setMinimumSize(130, displayNrAudioChannels * 4 + 8);
+			setMinimumSize(130, displayNrAudioChannels * barLength + 8);
 
 		resetLevels();
 	}
@@ -985,11 +1034,11 @@ void VolumeMeter::paintEvent(QPaintEvent *event)
 		if (vertical) {
 			tickPainter.translate(0, height);
 			tickPainter.scale(1, -1);
-			paintVTicks(tickPainter, 0, 11,
-					tickPaintCacheSize.height() - 11);
+			paintVTicks(tickPainter, 0, ((inputMeterLength) + 3 + 2 + 1),
+					tickPaintCacheSize.height() - ((inputMeterLength) + 3 + 2 + 1));
 		} else {
-			paintHTicks(tickPainter, 6, 0,
-					tickPaintCacheSize.width() - 6,
+			paintHTicks(tickPainter, inputMeterLength + 1, 0,
+					tickPaintCacheSize.width() - (inputMeterLength + 1),
 					tickPaintCacheSize.height());
 		}
 		tickPainter.end();
@@ -1001,7 +1050,7 @@ void VolumeMeter::paintEvent(QPaintEvent *event)
 		// Invert the Y axis to ease the math
 		painter.translate(0, height);
 		painter.scale(1, -1);
-		painter.drawPixmap(displayNrAudioChannels * 4 - 1, 7,
+		painter.drawPixmap(displayNrAudioChannels * (barLength) - 1, (inputMeterLength + 3) - 1,
 				*tickPaintCache);
 	} else {
 		painter.drawPixmap(0, height - 9, *tickPaintCache);
@@ -1016,12 +1065,14 @@ void VolumeMeter::paintEvent(QPaintEvent *event)
 			: channelNr;
 
 		if (vertical)
-			paintVMeter(painter, channelNr * 4, 8, 3, height - 10,
+			paintVMeter(painter, channelNr * (barLength), inputMeterLength + 3, (int)barThickness,
+					height - (inputMeterLength + 3 + 2),
 					displayMagnitude[channelNrFixed],
 					displayPeak[channelNrFixed],
 					displayPeakHold[channelNrFixed]);
 		else
-			paintHMeter(painter, 5, channelNr * 4, width - 5, 3,
+			paintHMeter(painter, inputMeterLength, channelNr * (barLength),
+					width - inputMeterLength, (int)barThickness,
 					displayMagnitude[channelNrFixed],
 					displayPeak[channelNrFixed],
 					displayPeakHold[channelNrFixed]);
@@ -1032,12 +1083,14 @@ void VolumeMeter::paintEvent(QPaintEvent *event)
 		// By not drawing the input meter boxes the user can
 		// see that the audio stream has been stopped, without
 		// having too much visual impact.
-		if (vertical)
-			paintInputMeter(painter, channelNr * 4, 3, 3, 3,
+		if (inputMeterThickness > 0) {
+			if (vertical)
+				paintInputMeter(painter, channelNr * (barLength), 3, barThickness, inputMeterThickness,
 					displayInputPeakHold[channelNrFixed]);
-		else
-			paintInputMeter(painter, 0, channelNr * 4, 3, 3,
+			else
+				paintInputMeter(painter, 0, channelNr * (barLength), inputMeterThickness, barThickness,
 					displayInputPeakHold[channelNrFixed]);
+		}
 	}
 
 	lastRedrawTime = ts;
