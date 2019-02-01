@@ -207,12 +207,12 @@ const std::vector<DeckLinkDeviceMode *>& DeckLinkDevice::GetOutputModes(void) co
 	return outputModes;
 }
 
-const bool DeckLinkDevice::GetSupportsExternalKeyer(void) const
+bool DeckLinkDevice::GetSupportsExternalKeyer(void) const
 {
 	return supportsExternalKeyer;
 }
 
-const bool DeckLinkDevice::GetSupportsInternalKeyer(void) const
+bool DeckLinkDevice::GetSupportsInternalKeyer(void) const
 {
 	return supportsInternalKeyer;
 }
