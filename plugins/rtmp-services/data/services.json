@@ -1134,24 +1134,6 @@
             }
         },
         {
-            "name": "LiveEdu.tv",
-            "common": true,
-            "servers": [
-                {
-                    "name": "US",
-                    "url": "rtmp://usmedia11.liveedu.tv/livecodingtv"
-                },
-                {
-                    "name": "EU",
-                    "url": "rtmp://eumedia8.liveedu.tv/livecodingtv"
-                },
-                {
-                    "name": "Asia",
-                    "url": "rtmp://apmedia1.liveedu.tv/livecodingtv"
-                }
-            ]
-        },
-        {
             "name": "Twitter / Periscope",
             "common": true,
             "servers": [
