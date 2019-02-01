@@ -39,8 +39,8 @@ public:
 	const std::string& GetHash(void) const;
 	const std::vector<DeckLinkDeviceMode *>& GetInputModes(void) const;
 	const std::vector<DeckLinkDeviceMode *>& GetOutputModes(void) const;
-	const bool GetSupportsExternalKeyer(void) const;
-	const bool GetSupportsInternalKeyer(void) const;
+	bool GetSupportsExternalKeyer(void) const;
+	bool GetSupportsInternalKeyer(void) const;
 	int GetKeyerMode(void);
 	void SetKeyerMode(int newKeyerMode);
 	const std::string& GetName(void) const;
