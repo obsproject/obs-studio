@@ -26,8 +26,8 @@
 #include "qt-wrappers.hpp"
 
 extern void DestroyPanelCookieManager();
-extern void DeletePanelCookies(const char *profile);
-extern void DuplicateCurrentCookieProfile(const std::string &newProfile);
+extern void DuplicateCurrentCookieProfile(ConfigFile &config);
+extern void CheckExistingCookieId();
 
 void EnumProfiles(std::function<bool (const char *, const char *)> &&cb)
 {
@@ -186,7 +186,7 @@ static bool CopyProfile(const char *fromPartial, const char *to)
 }
 
 bool OBSBasic::AddProfile(bool create_new, const char *title, const char *text,
-		const char *init_text)
+		const char *init_text, bool rename)
 {
 	std::string newName;
 	std::string newDir;
@@ -236,8 +236,8 @@ bool OBSBasic::AddProfile(bool create_new, const char *title, const char *text,
 	if (create_new) {
 		auth.reset();
 		DestroyPanelCookieManager();
-	} else {
-		DuplicateCurrentCookieProfile(newName);
+	} else if (!rename) {
+		DuplicateCurrentCookieProfile(config);
 	}
 
 	config_set_string(config, "General", "Name", newName.c_str());
@@ -393,7 +393,7 @@ void OBSBasic::on_actionRenameProfile_triggered()
 
 	/* Duplicate and delete in case there are any issues in the process */
 	bool success = AddProfile(false, Str("RenameProfile.Title"),
-			Str("AddProfile.Text"), curName.c_str());
+			Str("AddProfile.Text"), curName.c_str(), true);
 	if (success) {
 		DeleteProfile(curName.c_str(), curDir.c_str());
 		RefreshProfiles();
@@ -462,7 +462,6 @@ void OBSBasic::on_actionRemoveProfile_triggered()
 	Auth::Save();
 	auth.reset();
 	DestroyPanelCookieManager();
-	DeletePanelCookies(oldName.c_str());
 
 	config.Swap(basicConfig);
 	InitBasicConfigDefaults();

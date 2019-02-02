@@ -1114,6 +1114,8 @@ static const double scaled_vals[] =
 	0.0
 };
 
+extern void CheckExistingCookieId();
+
 bool OBSBasic::InitBasicConfigDefaults()
 {
 	QList<QScreen*> screens = QGuiApplication::screens();
@@ -1318,6 +1320,8 @@ bool OBSBasic::InitBasicConfigDefaults()
 	config_set_default_double(basicConfig, "Audio", "MeterDecayRate",
 			VOLUME_METER_DECAY_FAST);
 	config_set_default_uint  (basicConfig, "Audio", "PeakMeterType", 0);
+
+	CheckExistingCookieId();
 
 	return true;
 }

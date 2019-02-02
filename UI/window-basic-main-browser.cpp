@@ -21,6 +21,8 @@
 #include "window-basic-main.hpp"
 #include "qt-wrappers.hpp"
 
+#include <random>
+
 #ifdef BROWSER_AVAILABLE
 #include <browser-panel.hpp>
 #endif
@@ -69,6 +71,8 @@ static void InitBrowserSafeBlockMsgBox()
 	thread->wait();
 }
 
+void CheckExistingCookieId();
+
 static void InitPanelCookieManager()
 {
 	if (!cef)
@@ -76,12 +80,15 @@ static void InitPanelCookieManager()
 	if (panel_cookies)
 		return;
 
-	const char *profile = config_get_string(App()->GlobalConfig(),
-			"Basic", "Profile");
+	CheckExistingCookieId();
+
+	OBSBasic *main = OBSBasic::Get();
+	const char *cookie_id = config_get_string(main->Config(),
+			"Panels", "CookieId");
 
 	std::string sub_path;
 	sub_path += "obs_profile_cookies/";
-	sub_path += profile;
+	sub_path += cookie_id;
 
 	panel_cookies = cef->create_cookie_manager(sub_path);
 }
@@ -118,36 +125,70 @@ void DestroyPanelCookieManager()
 #endif
 }
 
-void DeletePanelCookies(const char *profile)
+static std::string GenId()
 {
-#ifdef BROWSER_AVAILABLE
-	if (!cef)
-		return;
+	std::random_device rd;
+	std::mt19937_64 e2(rd());
+	std::uniform_int_distribution<uint64_t> dist(0, 0xFFFFFFFFFFFFFFFF);
 
-	std::string sub_path;
-	sub_path += "obs_profile_cookies/";
-	sub_path += profile;
+	uint64_t id = dist(e2);
 
-	std::string path = cef->get_cookie_path(sub_path);
-	QDir dir(path.c_str());
-	dir.removeRecursively();
-#else
-	UNUSED_PARAMETER(profile);
-#endif
+	char id_str[20];
+	snprintf(id_str, sizeof(id_str), "%16llX", (unsigned long long)id);
+	return std::string(id_str);
 }
 
-void DuplicateCurrentCookieProfile(const std::string &newProfile)
+void DuplicateCurrentCookieProfile(ConfigFile &config)
 {
 #ifdef BROWSER_AVAILABLE
 	if (panel_cookies) {
-		std::string sub_path;
-		sub_path += "cookies\\";
-		sub_path += newProfile;
+		OBSBasic *main = OBSBasic::Get();
+		const char *cookie_id = config_get_string(main->Config(),
+				"Panels", "CookieId");
 
-		panel_cookies->FlushStore();
-		panel_cookies->SetStoragePath(sub_path);
+		std::string src_path;
+		src_path += "obs_profile_cookies/";
+		src_path += cookie_id;
+
+		std::string new_id = GenId();
+
+		std::string dst_path;
+		dst_path += "obs_profile_cookies/";
+		dst_path += new_id;
+		dst_path = cef->get_cookie_path(dst_path);
+
+		BPtr<char> src_path_full = cef->get_cookie_path(src_path);
+		BPtr<char> dst_path_full = cef->get_cookie_path(dst_path);
+
+		QDir srcDir(src_path_full.Get());
+		QDir dstDir(dst_path_full.Get());
+
+		if (!srcDir.exists())
+			return;
+		if (!dstDir.exists())
+			dstDir.mkdir(dst_path_full.Get());
+
+		QStringList files = srcDir.entryList(QDir::Files);
+		for (const QString &file : files) {
+			QString src = QString(src_path_full);
+			QString dst = QString(dst_path_full);
+			src += QDir::separator() + file;
+			dst += QDir::separator() + file;
+			QFile::copy(src, dst);
+		}
+
+		config_set_string(config, "Panels", "CookieId", new_id.c_str());
 	}
 #else
 	UNUSED_PARAMETER(newProfile);
 #endif
+}
+
+void CheckExistingCookieId()
+{
+	OBSBasic *main = OBSBasic::Get();
+	if (config_has_user_value(main->Config(), "Panels", "CookieId"))
+		return;
+
+	config_set_string(main->Config(), "Panels", "CookieId", GenId().c_str());
 }
