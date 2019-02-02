@@ -317,6 +317,7 @@
     <property name="title">
      <string>Basic.MainMenu.Tools</string>
     </property>
+    <addaction name="actionPlugins"/>
     <addaction name="autoConfigure"/>
     <addaction name="separator"/>
    </widget>
@@ -1657,6 +1658,11 @@
   <action name="actionDiscord">
    <property name="text">
     <string>Basic.MainMenu.Help.Discord</string>
+   </property>
+  </action>
+  <action name="actionPlugins">
+   <property name="text">
+    <string>Basic.MainMenu.Tools.Plugins</string>
    </property>
   </action>
   <action name="toggleStats">

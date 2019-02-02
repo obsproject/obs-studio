@@ -5440,6 +5440,12 @@ void OBSBasic::on_actionWebsite_triggered()
 	QDesktopServices::openUrl(url);
 }
 
+void OBSBasic::on_actionPlugins_triggered()
+{
+	QUrl url = QUrl("https://obsproject.com/forum/resources/categories/obs-studio-plugins.6/", QUrl::TolerantMode);
+	QDesktopServices::openUrl(url);
+}
+
 void OBSBasic::on_actionDiscord_triggered()
 {
 	QUrl url = QUrl("https://obsproject.com/discord", QUrl::TolerantMode);
