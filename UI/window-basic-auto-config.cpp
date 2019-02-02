@@ -501,6 +501,9 @@ void AutoConfigStreamPage::ServiceChanged()
 			ui->streamKeyLabel->setVisible(true);
 			ui->connectAccount2->setVisible(can_auth);
 			auth.reset();
+
+			if (lastService.isEmpty())
+				lastService = service.c_str();
 		}
 	} else {
 		ui->connectAccount2->setVisible(false);
@@ -789,6 +792,7 @@ AutoConfig::AutoConfig(QWidget *parent)
 
 	streamPage->UpdateServerList();
 	streamPage->UpdateKeyLink();
+	streamPage->lastService.clear();
 
 	if (!customServer) {
 		QComboBox *serverList = streamPage->ui->server;
