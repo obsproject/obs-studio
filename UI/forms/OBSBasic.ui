@@ -147,6 +147,7 @@
     <addaction name="actionHelpPortal"/>
     <addaction name="actionWebsite"/>
     <addaction name="actionDiscord"/>
+    <addaction name="actionShortcuts"/>
     <addaction name="separator"/>
     <addaction name="menuLogFiles"/>
     <addaction name="menuCrashLogs"/>
@@ -1643,6 +1644,11 @@
   <action name="actionHelpPortal">
    <property name="text">
     <string>Basic.MainMenu.Help.HelpPortal</string>
+   </property>
+  </action>
+  <action name="actionShortcuts">
+   <property name="text">
+    <string>Basic.MainMenu.Help.KeyboardShortcuts</string>
    </property>
   </action>
   <action name="actionShowCrashLogs">
