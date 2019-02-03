@@ -454,7 +454,10 @@ void AutoConfigStreamPage::on_disconnectAccount_clicked()
 	auth.reset();
 
 	std::string service = QT_TO_UTF8(ui->service->currentText());
+
+#ifdef BROWSER_AVAILABLE
 	OAuth::DeleteCookies(service);
+#endif
 
 	ui->streamKeyWidget->setVisible(true);
 	ui->streamKeyLabel->setVisible(true);

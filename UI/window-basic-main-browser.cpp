@@ -180,7 +180,7 @@ void DuplicateCurrentCookieProfile(ConfigFile &config)
 		config_set_string(config, "Panels", "CookieId", new_id.c_str());
 	}
 #else
-	UNUSED_PARAMETER(newProfile);
+	UNUSED_PARAMETER(config);
 #endif
 }
 
