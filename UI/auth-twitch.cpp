@@ -230,13 +230,22 @@ void TwitchAuth::LoadSecondaryUIPanes()
 	std::string url;
 	std::string script;
 
+	QPoint pos = main->pos();
+
+	script = "localStorage.setItem('twilight.theme', 1);";
+	script += referrer_script1;
+	script += "https://www.twitch.tv/";
+	script += name;
+	script += "/dashboard/live";
+	script += referrer_script2;
+	script += bttv_script;
+	script += ffz_script;
+
 	/* ----------------------------------- */
 
 	url = "https://www.twitch.tv/popout/";
 	url += name;
 	url += "/dashboard/live/stream-info";
-
-	QPoint pos = main->pos();
 
 	info.reset(new TwitchWidget());
 	info->setObjectName("twitchInfo");
@@ -247,13 +256,6 @@ void TwitchAuth::LoadSecondaryUIPanes()
 
 	browser = cef->create_widget(nullptr, url, panel_cookies);
 	info->SetWidget(browser);
-
-	script = "localStorage.setItem('twilight.theme', 1);";
-	script += referrer_script1;
-	script += "https://www.twitch.tv/";
-	script += name;
-	script += "/dashboard/live";
-	script += referrer_script2;
 	browser->setStartupScript(script);
 
 	main->addDockWidget(Qt::RightDockWidgetArea, info.data());
@@ -261,11 +263,34 @@ void TwitchAuth::LoadSecondaryUIPanes()
 
 	/* ----------------------------------- */
 
+	url = "https://www.twitch.tv/popout/";
+	url += name;
+	url += "/dashboard/live/stats";
+
+	stat.reset(new TwitchWidget());
+	stat->setObjectName("twitchStats");
+	stat->resize(200, 200);
+	stat->setMinimumSize(200, 200);
+	stat->setWindowTitle(QTStr("TwitchAuth.Stats"));
+	stat->setAllowedAreas(Qt::AllDockWidgetAreas);
+
+	browser = cef->create_widget(nullptr, url, panel_cookies);
+	stat->SetWidget(browser);
+	browser->setStartupScript(script);
+
+	main->addDockWidget(Qt::RightDockWidgetArea, stat.data());
+	statMenu.reset(main->AddDockWidgetMenu(stat.data()));
+
+	/* ----------------------------------- */
+
 	info->setFloating(true);
+	stat->setFloating(true);
+
 	info->move(pos.x() + 50, pos.y() + 50);
 
 	if (firstLoad) {
 		info->setVisible(true);
+		stat->setVisible(false);
 	} else {
 		const char *dockStateStr = config_get_string(main->Config(),
 				service(), "DockState");
