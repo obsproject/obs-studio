@@ -12,6 +12,14 @@ OBS Studio <https://obsproject.com>
 .. image:: https://discordapp.com/api/guilds/348973006581923840/widget.png?style=shield
    :alt: OBS Studio Discord Server
    :target: https://obsproject.com/discord
+ 
+.. image:: https://opencollective.com/obsproject/backers/badge.svg
+    :alt: Backers on Open Collective
+    :target: #backers
+
+.. image:: https://opencollective.com/obsproject/sponsors/badge.svg
+    :alt: Sponsors on Open Collective
+    :target: #sponsors
 
 What is OBS Studio?
 -------------------
@@ -65,3 +73,37 @@ Credits
  - Icons made by `Freepik <https://www.freepik.com>`_ from
    `Flaticon <https://www.flaticon.com/>`_ are licensed under
    `CC 3.0 BY <https://creativecommons.org/licenses/by/3.0/>`_.
+
+
+
+Contributors
+~~~~~~~~~~~~~
+
+This project exists thanks to all the people who contribute! 
+
+.. image:: https://opencollective.com/obsproject/contributors.svg?width=890&button=false
+
+Backers
+~~~~~~~~~~~~~
+
+
+Thank you to all our backers! `Become a backer`__.
+
+.. image:: https://opencollective.com/obsproject/backers.svg?width=890
+    :target: https://opencollective.com/obsproject#backers
+
+__ Backer_
+.. _Backer: https://opencollective.com/obsproject#backer
+
+Sponsors
+~~~~~~~~~~~~~
+
+Support us by becoming a sponsor. Your logo will show up here with a link to your website. `Become a sponsor`__.
+
+.. image:: https://opencollective.com/obsproject/sponsor/0/avatar.svg
+    :target: https://opencollective.com/obsproject/sponsor/0/website
+
+__ Sponsor_
+.. _Sponsor: https://opencollective.com/obsproject#sponsor
+
+
