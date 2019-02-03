@@ -1254,3 +1254,33 @@ QToolTip {
 * [themeID="displayBackgroundColor"] {
     qproperty-displayBackgroundColor: rgb(35, 38, 41);
 }
+
+/*******************/
+/* Property groups */
+/*******************/
+
+QFrame[themeID="propertyGroupContents"] {
+	border-width: 0px 1px 1px 1px;
+	border-style: solid;
+	border-color: palette(shadow);
+	border-radius: 0px;
+}
+
+* [themeID="propertyGroupTitle"] {
+	margin: 0px;
+	padding: 4px;
+	background: palette(shadow);
+}
+
+QCheckBox[themeID="propertyGroupTitle"]::indicator {
+	width: 16px;
+	height: 16px;
+}
+
+QCheckBox[themeID="propertyGroupTitle"]::indicator:checked {
+	image: url(./Dark/expand.png);
+}
+
+QCheckBox[themeID="propertyGroupTitle"]::indicator:unchecked {
+	image: url(./Dark/collapse.png);
+}

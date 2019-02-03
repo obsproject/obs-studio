@@ -688,3 +688,33 @@ QLabel#errorLabel {
 * [themeID="displayBackgroundColor"] {
     qproperty-displayBackgroundColor: rgb(76, 76, 76);
 }
+
+* [themeID="propertyGroupContents"] {
+    border-width: 0px 2px 2px 2px;
+    border-style: solid;
+    border-color: rgb(70,69,70);
+    border-radius: 0px 0px 5px 5px;
+}
+
+* [themeID="propertyGroupTitle"] {
+    padding: 4px;
+    background-color: QLinearGradient(x1: 0, y1: 0, x2: 0, y2: 1,
+        stop: 0 rgb(86,85,86),
+        stop: 0.1 rgb(82,81,82),
+        stop: 0.5 rgb(78,77,78),
+        stop: 0.9 rgb(74,73,74),
+        stop: 1 rgb(70,69,70));
+}
+
+QCheckBox[themeID="propertyGroupTitle"]::indicator {
+    width: 16px;
+    height: 16px;
+}
+
+QCheckBox[themeID="propertyGroupTitle"]::indicator:checked {
+    image: url(./Dark/expand.png);
+}
+
+QCheckBox[themeID="propertyGroupTitle"]::indicator:unchecked {
+    image: url(./Dark/collapse.png);
+}

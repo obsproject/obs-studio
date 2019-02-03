@@ -141,3 +141,31 @@ QLabel#errorLabel {
 * [themeID="displayBackgroundColor"] {
     qproperty-displayBackgroundColor: rgb(76, 76, 76);
 }
+
+/* Property groups */
+
+* [themeID="propertyGroupContents"] {
+    border-width: 0px 1px 1px 1px;
+    border-color: palette(mid);
+    border-style: solid;
+}
+
+* [themeID="propertyGroupTitle"] {
+    padding: 4px;
+    background-color: palette(midlight);
+    border: 1px solid palette(mid);
+}
+
+QCheckBox[themeID="propertyGroupTitle"]::indicator {
+    width: 16px;
+    height: 16px;
+}
+
+QCheckBox[themeID="propertyGroupTitle"]::indicator:checked {
+    image: url(:/res/images/expand.png);
+}
+
+QCheckBox[themeID="propertyGroupTitle"]::indicator:unchecked {
+    image: url(:/res/images/collapse.png);
+}
+

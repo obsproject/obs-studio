@@ -34,6 +34,7 @@
 #include <QScreen>
 #include <QStandardItemModel>
 #include <QSpacerItem>
+#include <QGroupBox>
 
 #include "audio-encoders.hpp"
 #include "hotkey-edit.hpp"
@@ -724,6 +725,10 @@ OBSBasicSettings::~OBSBasicSettings()
 	delete ui->filenameFormatting->completer();
 	main->EnableOutputs(true);
 	App()->EnableInFocusHotkeys(!disableHotkeysInFocus);
+	if(groups)
+		for (size_t i = 0; i < groups->size(); i++)
+			groups->at(i)->deleteLater();
+	delete groups;
 }
 
 void OBSBasicSettings::SaveCombo(QComboBox *widget, const char *section,
@@ -2352,10 +2357,10 @@ static QLabel *makeLabel(const OBSSource &source, Func &&)
 }
 
 template <typename Func, typename T>
-static inline void AddHotkeys(QFormLayout &layout,
+static inline void AddHotkeysSources(QFormLayout &layout,
 		Func &&getName, std::vector<
-			std::tuple<T, QPointer<QLabel>, QPointer<QWidget>>
-		> &hotkeys)
+		std::tuple<T, QPointer<QLabel>, QPointer<QWidget>>
+		> &hotkeys, std::vector<GroupWidget*> *groups)
 {
 	if (hotkeys.empty())
 		return;
@@ -2381,21 +2386,99 @@ static inline void AddHotkeys(QFormLayout &layout,
 				getName(o_b);
 	});
 
+	std::vector<std::tuple<std::string, GroupWidget*>> sourceList;
+	std::vector<std::tuple<std::string, GroupWidget*>> filterList;
+
 	string prevName;
+	GroupWidget *keyGroup = nullptr;
 	for (const auto &hotkey : hotkeys) {
 		const auto &o = get<0>(hotkey);
 		const char *name = getName(o);
 		if (prevName != name) {
 			prevName = name;
-			layout.setItem(layout.rowCount(),
-					QFormLayout::SpanningRole,
-					new QSpacerItem(0, 10));
-			layout.addRow(makeLabel(o, getName));
-		}
+			QLabel *l = makeLabel(o, getName);
+			keyGroup = new GroupWidget(name, l);
+			layout.addRow(keyGroup);
+			groups->push_back(keyGroup);
 
+			obs_source_type t = obs_source_get_type(o);
+			std::tuple<std::string, GroupWidget*> item;
+			if (t == OBS_SOURCE_TYPE_FILTER) {
+				obs_source_t *parent = obs_filter_get_parent(o);
+				const char *parentName =
+					obs_source_get_name(parent);
+				std::get<0>(item) = parentName;
+				std::get<1>(item) = keyGroup;
+				filterList.push_back(item);
+			} else {
+				std::get<0>(item) = l->text().toStdString();
+				std::get<1>(item) = keyGroup;
+				sourceList.push_back(item);
+			}
+		}
 		auto hlabel = get<1>(hotkey);
 		auto widget = get<2>(hotkey);
-		layout.addRow(hlabel, widget);
+		keyGroup->addRow(hlabel, widget);
+	}
+
+	for (const auto &filter : filterList) {
+		std::string filterName = get<0>(filter);
+		for (const auto &source : sourceList) {
+			std::string sourceName = get<0>(source);
+			if (filterName.compare(sourceName) == 0) {
+				GroupWidget *s = get<1>(source);
+				GroupWidget *f = get<1>(filter);
+				s->addWidget(f);
+				break;
+			}
+		}
+	}
+}
+
+template <typename Func, typename T>
+static inline void AddHotkeys(QFormLayout &layout,
+	Func &&getName, std::vector<
+	std::tuple<T, QPointer<QLabel>, QPointer<QWidget>>
+	> &hotkeys, std::vector<GroupWidget*> *groups)
+{
+	if (hotkeys.empty())
+		return;
+
+	auto line = new QFrame();
+	line->setFrameShape(QFrame::HLine);
+	line->setFrameShadow(QFrame::Sunken);
+
+	layout.setItem(layout.rowCount(), QFormLayout::SpanningRole,
+		new QSpacerItem(0, 10));
+	layout.addRow(line);
+
+	using tuple_type =
+		std::tuple<T, QPointer<QLabel>, QPointer<QWidget>>;
+
+	stable_sort(begin(hotkeys), end(hotkeys),
+		[&](const tuple_type &a, const tuple_type &b) {
+		const auto &o_a = get<0>(a);
+		const auto &o_b = get<0>(b);
+		return o_a != o_b &&
+			string(getName(o_a)) <
+			getName(o_b);
+	});
+
+	string prevName;
+	GroupWidget *keyGroup = nullptr;
+	for (const auto &hotkey : hotkeys) {
+		const auto &o = get<0>(hotkey);
+		const char *name = getName(o);
+		if (prevName != name) {
+			prevName = name;
+			QLabel *l = makeLabel(o, getName);
+			keyGroup = new GroupWidget(name, l);
+			layout.addRow(keyGroup);
+			groups->push_back(keyGroup);
+		}
+		auto hlabel = get<1>(hotkey);
+		auto widget = get<2>(hotkey);
+		keyGroup->addRow(hlabel, widget);
 	}
 }
 
@@ -2417,6 +2500,9 @@ void OBSBasicSettings::LoadHotkeySettings(obs_hotkey_id ignoreKey)
 		return true;
 	}, &keys);
 
+	if (!groups)
+		groups = new vector<GroupWidget*>();
+	groups->clear();
 	auto layout = new QFormLayout();
 	layout->setVerticalSpacing(0);
 	layout->setFieldGrowthPolicy(QFormLayout::AllNonFixedFieldsGrow);
@@ -2443,20 +2529,39 @@ void OBSBasicSettings::LoadHotkeySettings(obs_hotkey_id ignoreKey)
 	};
 
 	auto searchFunction = [=](const QString &text) {
-		for (int i = 0; i < layout->rowCount(); i++) {
+		const QString ltext = text.toLower();
+		for (int i = 1; i < layout->rowCount(); i++) {
 			auto label = layout->itemAt(i, QFormLayout::LabelRole);
-			if (label) {
-				OBSHotkeyLabel *item =
-					qobject_cast<OBSHotkeyLabel*>(
+			if (!label)
+				continue;
+
+			OBSHotkeyLabel *item = qobject_cast<OBSHotkeyLabel*>(
 					label->widget());
-				if(item) {
-					if (item->text().toLower()
-						.contains(text.toLower()))
-						setRowVisible(i, true, label);
-					else
-						setRowVisible(i, false, label);
-				}
+			if (!item)
+				continue;
+			if (item->text().toLower().contains(ltext))
+				setRowVisible(i, true, label);
+			else
+				setRowVisible(i, false, label);
+		}
+
+		for (size_t i = 0; i < groups->size(); i++) {
+			GroupWidget *g = groups->at(i);
+			if (!g)
+				continue;
+			std::vector<QLabel*> labels = g->getLabels();
+			std::vector<QWidget*> widgets = g->getWidgets();
+			bool has_item = false;
+			for (size_t j = 0; j < labels.size(); j++) {
+				if (!widgets[j] || !labels[j])
+					continue;
+				if (labels[j]->text().toLower().contains(ltext))
+					has_item = true;
 			}
+			if (has_item || g->text().toLower().contains(ltext))
+				g->show();
+			else
+				g->hide();
 		}
 	};
 
@@ -2635,11 +2740,11 @@ void OBSBasicSettings::LoadHotkeySettings(obs_hotkey_id ignoreKey)
 		Update(label2, name2, label1, name1);
 	}
 
-	AddHotkeys(*layout, obs_output_get_name, outputs);
-	AddHotkeys(*layout, obs_source_get_name, scenes);
-	AddHotkeys(*layout, obs_source_get_name, sources);
-	AddHotkeys(*layout, obs_encoder_get_name, encoders);
-	AddHotkeys(*layout, obs_service_get_name, services);
+	AddHotkeys(*layout, obs_output_get_name, outputs, groups);
+	AddHotkeys(*layout, obs_source_get_name, scenes, groups);
+	AddHotkeysSources(*layout, obs_source_get_name, sources, groups);
+	AddHotkeys(*layout, obs_encoder_get_name, encoders, groups);
+	AddHotkeys(*layout, obs_service_get_name, services, groups);
 }
 
 void OBSBasicSettings::LoadSettings(bool changedOnly)

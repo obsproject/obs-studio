@@ -82,6 +82,98 @@ using OBSFFCodecDesc = std::unique_ptr<const ff_codec_desc,
 using OBSFFFormatDesc = std::unique_ptr<const ff_format_desc,
 		OBSFFDeleter>;
 
+class GroupWidget : public QWidget {
+	Q_OBJECT
+private:
+	std::vector<QWidget *> widgets;
+	std::vector<QLabel *> labels;
+	QVBoxLayout *v;
+
+	QFrame *rootFrame;
+	QVBoxLayout *rootLayout;
+	QFormLayout *layout;
+	QCheckBox *checkBox;
+	QFormLayout *contentsLayout;
+	QFrame *contentsFrame;
+public:
+	inline GroupWidget(std::string sourceName, QWidget *parent = nullptr)
+		: QWidget(parent)
+	{
+		v = new QVBoxLayout(this);
+		rootFrame = new QFrame();
+		rootFrame->setProperty("themeID", "propertyGroup");
+		v->addWidget(rootFrame);
+
+		rootLayout = new QVBoxLayout();
+		rootLayout->setSpacing(0);
+		rootLayout->setContentsMargins(0, 0, 0, 0);
+		rootFrame->setLayout(rootLayout);
+
+		checkBox = new QCheckBox(rootFrame);
+		/*TODO: Make label follow along w/ SourceLabel*/
+		checkBox->setText(QString::fromUtf8(sourceName.c_str()));
+		checkBox->setProperty("themeID", "propertyGroupTitle");
+		rootLayout->addWidget(checkBox);
+
+		contentsLayout = nullptr;
+
+		contentsFrame = new QFrame(rootFrame);
+		contentsFrame->setProperty("themeID", "propertyGroupContents");
+
+		contentsLayout = new QFormLayout();
+		contentsFrame->setLayout(contentsLayout);
+		rootLayout->addWidget(contentsFrame);
+
+		connect(checkBox, &QCheckBox::stateChanged, this,
+				&GroupWidget::Toggled);
+	}
+
+	void setChecked(bool checked)
+	{
+		if (checkBox)
+			checkBox->setChecked(checked);
+	}
+
+	void addRow(QLabel *l, QWidget *w)
+	{
+		widgets.push_back(w);
+		labels.push_back(l);
+		l->setMaximumWidth(170);
+		l->setMinimumWidth(170);
+
+		contentsLayout->addRow(l, w);
+	}
+
+	void addWidget(QWidget *w)
+	{
+		widgets.push_back(w);
+		contentsLayout->addRow(w);
+	}
+
+	QString text()
+	{
+		return checkBox ? QString(checkBox->text()) : QString("");
+	}
+
+	std::vector<QWidget*> getWidgets()
+	{
+		return widgets;
+	}
+
+	std::vector<QLabel*> getLabels()
+	{
+		return labels;
+	}
+public slots:
+	void Toggled(int state)
+	{
+		if (state == Qt::Checked)
+			contentsFrame->hide();
+		else
+			contentsFrame->show();
+	}
+};
+
 class OBSBasicSettings : public QDialog {
 	Q_OBJECT
 
@@ -130,6 +222,7 @@ private:
 	OBSSignal sourceCreated;
 	OBSSignal channelChanged;
 
+	std::vector<GroupWidget*> *groups = nullptr;
 	std::vector<std::pair<bool, QPointer<OBSHotkeyWidget>>> hotkeys;
 	OBSSignal hotkeyRegistered;
 	OBSSignal hotkeyUnregistered;

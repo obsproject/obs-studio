@@ -886,3 +886,45 @@ FocusList::item {
 * [themeID="displayBackgroundColor"] {
     qproperty-displayBackgroundColor: #28282A;
 }
+
+/* Property groups */
+
+QFrame[themeID="propertyGroupContents"] {
+	border-bottom: 2px solid #2f2f2f;
+	margin-bottom: 3px;
+	background-image: url(./Acri/bot_hook.png);
+	background-origin: margin;
+	background-clip: margin;
+	background-position: bottom left;
+	background-repeat: none;
+}
+
+* [themeID="propertyGroupTitle"] {
+	border-bottom: 2px solid #2f2f2f;
+	margin-left: 5px;
+	margin-right: 5px;
+	padding-top: 0px;
+	padding-bottom: 6px;
+	text-align: left;
+	font-size: 14px;
+	font-weight: bold;
+	background-image: url(./Acri/top_hook.png);
+	background-origin: padding;
+	background-clip: padding;
+	background-position: bottom left;
+	background-repeat: none;
+}
+
+QCheckBox[themeID="propertyGroupTitle"]::indicator {
+	width: 16px;
+	height: 16px;
+}
+
+QCheckBox[themeID="propertyGroupTitle"]::indicator:checked {
+	image: url(./Dark/expand.png);
+}
+
+QCheckBox[themeID="propertyGroupTitle"]::indicator:unchecked {
+	image: url(./Dark/collapse.png);
+}
+
