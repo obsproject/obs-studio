@@ -89,8 +89,9 @@ void OBSBasicSettings::LoadStream1Settings()
 	if (strcmp(type, "rtmp_common") == 0) {
 		int idx = ui->server->findData(server);
 		if (idx == -1) {
-			ui->service->insertItem(0, server, server);
-			idx = 1;
+			if (server && *server)
+				ui->server->insertItem(0, server, server);
+			idx = 0;
 		}
 		ui->server->setCurrentIndex(idx);
 	}
