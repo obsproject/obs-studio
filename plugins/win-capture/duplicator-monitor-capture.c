@@ -271,7 +271,7 @@ static bool get_monitor_props(obs_property_t *monitor_list, int monitor_idx)
 		return false;
 
 	dstr_catf(&monitor_desc, "%s %d: %ldx%ld @ %ld,%ld",
-			TEXT_MONITOR, monitor_idx,
+			TEXT_MONITOR, monitor_idx + 1,
 			info.cx, info.cy, info.x, info.y);
 
 	obs_property_list_add_int(monitor_list, monitor_desc.array,
