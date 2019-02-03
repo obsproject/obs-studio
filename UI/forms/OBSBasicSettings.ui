@@ -137,6 +137,12 @@
          </property>
          <item>
           <widget class="QScrollArea" name="scrollArea_2">
+           <property name="frameShape">
+             <enum>QFrame::NoFrame</enum>
+           </property>
+           <property name="frameShadow">
+            <enum>QFrame::Plain</enum>
+           </property>
            <property name="widgetResizable">
             <bool>true</bool>
            </property>
