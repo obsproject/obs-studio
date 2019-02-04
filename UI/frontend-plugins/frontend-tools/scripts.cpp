@@ -230,6 +230,14 @@ void ScriptsTool::ReloadScript(const char *path)
 		const char *script_path = obs_script_get_path(script);
 		if (strcmp(script_path, path) == 0) {
 			obs_script_reload(script);
+
+			OBSData settings = obs_data_create();
+			obs_data_release(settings);
+
+			obs_properties_t *prop =
+				obs_script_get_properties(script);
+			obs_properties_apply_settings(prop, settings);
+
 			break;
 		}
 	}
@@ -317,6 +325,13 @@ void ScriptsTool::on_addScripts_clicked()
 			QListWidgetItem *item = new QListWidgetItem(script_file);
 			item->setData(Qt::UserRole, QString(file));
 			ui->scripts->addItem(item);
+
+			OBSData settings = obs_data_create();
+			obs_data_release(settings);
+
+			obs_properties_t *prop =
+				obs_script_get_properties(script);
+			obs_properties_apply_settings(prop, settings);
 		}
 	}
 }
