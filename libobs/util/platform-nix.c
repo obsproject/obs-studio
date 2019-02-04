@@ -848,7 +848,7 @@ static inline bool os_get_proc_memory_usage_internal(statm_t *statm)
 	if (!f)
 		return false;
 
-	if (fscanf(f, "%ld %ld %ld %ld %ld %ld %ld",
+	if (fscanf(f, "%lu %lu %lu %lu %lu %lu %lu",
 	    &statm->virtual_size,
 	    &statm->resident_size,
 	    &statm->share_pages,
