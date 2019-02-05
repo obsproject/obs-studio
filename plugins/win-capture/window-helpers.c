@@ -169,7 +169,14 @@ static void add_window(obs_property_t *p, HWND hwnd, add_window_cb callback)
 		dstr_free(&exe);
 		return;
 	}
+
 	get_window_title(&title, hwnd);
+	if (dstr_cmp(&exe, "explorer.exe") == 0 && dstr_is_empty(&title)) {
+		dstr_free(&exe);
+		dstr_free(&title);
+		return;
+	}
+
 	get_window_class(&class, hwnd);
 
 	if (callback && !callback(title.array, class.array, exe.array)) {
