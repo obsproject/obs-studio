@@ -7,6 +7,12 @@
 #include <libavformat/avformat.h>
 #include <pthread.h>
 
+#ifdef _WIN32
+#include <dxgi.h>
+#include <util/dstr.h>
+#include <util/windows/win-version.h>
+#endif
+
 OBS_DECLARE_MODULE()
 OBS_MODULE_USE_DEFAULT_LOCALE("obs-ffmpeg", "en-US")
 MODULE_EXPORT const char *obs_module_description(void)
@@ -134,6 +140,89 @@ cleanup:
 
 static const char *nvenc_check_name = "nvenc_check";
 
+#ifdef _WIN32
+static const wchar_t *blacklisted_adapters[] = {
+	L"920M",
+	L"940M",
+	L"820M",
+	L"840M",
+	L"1030",
+	L"MX130"
+};
+
+static const size_t num_blacklisted =
+	sizeof(blacklisted_adapters) / sizeof(blacklisted_adapters[0]);
+
+static bool is_blacklisted(const wchar_t *name)
+{
+	for (size_t i = 0; i < num_blacklisted; i++) {
+		const wchar_t *blacklisted_adapter = blacklisted_adapters[i];
+		if (wstrstri(blacklisted_adapter, name)) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+typedef HRESULT (*create_dxgi_proc)(const IID *, IDXGIFactory1 **);
+
+static bool nvenc_device_available(void)
+{
+	static HMODULE dxgi = NULL;
+	static create_dxgi_proc create = NULL;
+	IDXGIFactory1 *factory;
+	IDXGIAdapter1 *adapter;
+	bool available = false;
+	HRESULT hr;
+	UINT i = 0;
+
+	if (!dxgi) {
+		dxgi = GetModuleHandleW(L"dxgi");
+		if (!dxgi) {
+			dxgi = LoadLibraryW(L"dxgi");
+			if (!dxgi) {
+				return true;
+			}
+		}
+	}
+
+	if (!create) {
+		create = (create_dxgi_proc)GetProcAddress(dxgi,
+				"CreateDXGIFactory1");
+		if (!create) {
+			return true;
+		}
+	}
+
+	hr = create(&IID_IDXGIFactory1, &factory);
+	if (FAILED(hr)) {
+		return true;
+	}
+
+	while (factory->lpVtbl->EnumAdapters1(factory, i++, &adapter) == S_OK) {
+		DXGI_ADAPTER_DESC desc;
+
+		hr = adapter->lpVtbl->GetDesc(adapter, &desc);
+		adapter->lpVtbl->Release(adapter);
+
+		if (FAILED(hr)) {
+			continue;
+		}
+
+		if (wstrstri(desc.Description, L"nvidia") &&
+		    !is_blacklisted(desc.Description)) {
+			available = true;
+			goto finish;
+		}
+	}
+
+finish:
+	factory->lpVtbl->Release(factory);
+	return available;
+}
+#endif
+
 static bool nvenc_supported(void)
 {
 	av_register_all();
@@ -149,6 +238,10 @@ static bool nvenc_supported(void)
 	}
 
 #if defined(_WIN32)
+	if (!nvenc_device_available()) {
+		goto cleanup;
+	}
+
 	if (sizeof(void*) == 8) {
 		lib = os_dlopen("nvEncodeAPI64.dll");
 	} else {
