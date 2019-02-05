@@ -352,6 +352,9 @@ static struct obs_audio_data *expander_filter_audio(void *data,
 static bool presets_changed(obs_properties_t *props, obs_property_t *prop,
 	obs_data_t *settings)
 {
+	UNUSED_PARAMETER(props);
+	UNUSED_PARAMETER(prop);
+	UNUSED_PARAMETER(settings);
 	return true;
 }
 
