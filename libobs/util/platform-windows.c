@@ -50,7 +50,7 @@ static inline uint32_t get_winver(void)
 	if (!winver) {
 		struct win_version_info ver;
 		get_win_ver(&ver);
-		winver = (ver.major << 16) | ver.minor;
+		winver = (ver.major << 8) | ver.minor;
 	}
 
 	return winver;
