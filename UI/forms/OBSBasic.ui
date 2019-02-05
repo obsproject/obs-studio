@@ -136,6 +136,7 @@
      <addaction name="actionUploadCurrentLog"/>
      <addaction name="actionUploadLastLog"/>
      <addaction name="actionViewCurrentLog"/>
+     <addaction name="actionViewTailLog"/>
     </widget>
     <widget class="QMenu" name="menuCrashLogs">
      <property name="title">
@@ -1673,6 +1674,11 @@
   <action name="actionShowAbout">
    <property name="text">
     <string>Basic.MainMenu.Help.About</string>
+   </property>
+  </action>
+  <action name="actionViewTailLog">
+   <property name="text">
+    <string>Basic.MainMenu.Help.Logs.TailLog</string>
    </property>
   </action>
  </widget>

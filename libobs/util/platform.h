@@ -45,9 +45,11 @@ EXPORT int64_t os_ftelli64(FILE *file);
 
 EXPORT size_t os_fread_mbs(FILE *file, char **pstr);
 EXPORT size_t os_fread_utf8(FILE *file, char **pstr);
+EXPORT size_t os_fread_utf8_tail(FILE *file, char **pstr, uint32_t lines);
 
 /* functions purely for convenience */
 EXPORT char *os_quick_read_utf8_file(const char *path);
+EXPORT char *os_quick_tail_utf8_file(const char *path, uint32_t lines);
 EXPORT bool os_quick_write_utf8_file(const char *path, const char *str,
 		size_t len, bool marker);
 EXPORT bool os_quick_write_utf8_file_safe(const char *path, const char *str,

@@ -209,6 +209,93 @@ size_t os_fread_utf8(FILE *file, char **pstr)
 	return len;
 }
 
+
+size_t os_fread_utf8_tail(FILE *file, char **pstr, uint32_t lines)
+{
+	size_t size = 0;
+	size_t len = 0;
+	char buf[128];
+
+	*pstr = NULL;
+
+	if (lines < 1)
+		return len;
+
+	fseek(file, 0, SEEK_END);
+	size = (size_t)os_ftelli64(file);
+
+	uint32_t linecount = 0;
+	if (size > 0) {
+		char bom[3];
+		char *utf8str;
+		off_t offset;
+
+		bom[0] = 0;
+		bom[1] = 0;
+		bom[2] = 0;
+
+		/* remove the ghastly BOM if present */ 
+		fseek(file, 0, SEEK_SET);
+		size_t size_read = fread(bom, 1, 3, file);
+		(void)size_read;
+
+		offset = (astrcmp_n(bom, "\xEF\xBB\xBF", 3) == 0) ? 3 : 0;
+
+		size -= offset;
+		if (size == 0)
+			return 0;
+
+		size_t remaining = size;
+		int32_t buf_size;
+		bool last_line = false;
+		bool keep_reading = true;
+		do {
+			if (remaining >= 128)
+				buf_size = 128;
+			else
+				buf_size = remaining;
+
+			/* read characters from file into buffer */
+			remaining -= buf_size;
+			fseek(file, (offset + remaining), SEEK_SET);
+			fread(buf, 1, buf_size, file);
+
+			/* process line endings in buffer s*/
+			for (int i = (buf_size - 1); i >= 0; i--) {
+				if (!last_line) {
+					if (buf[i] == '\n') {
+						linecount++;
+						if (linecount >= lines) {
+							last_line = true;
+							continue;
+						}
+					}
+				} else {
+					if (buf[i] == '\n') {
+						remaining += (i + 1);
+						keep_reading = false;
+						break;
+					}
+				}
+			}
+		} while (remaining > 0 && keep_reading);
+
+		utf8str = bmalloc((size - remaining) + 1);
+		fseek(file, (offset + remaining), SEEK_SET);
+		size_read = fread(utf8str, 1, (size - remaining), file);
+
+		if (size_read == 0) {
+			bfree(utf8str);
+			return 0;
+		}
+
+		utf8str[(size - remaining)] = 0;
+		*pstr = utf8str;
+	}
+
+	return len;
+}
+
 char *os_quick_read_mbs_file(const char *path)
 {
 	FILE *f = os_fopen(path, "rb");
@@ -232,6 +319,20 @@ char *os_quick_read_utf8_file(const char *path)
 		return NULL;
 
 	os_fread_utf8(f, &file_string);
+	fclose(f);
+
+	return file_string;
+}
+
+char *os_quick_tail_utf8_file(const char *path, uint32_t lines)
+{
+	FILE *f = os_fopen(path, "rb");
+	char *file_string = NULL;
+
+	if (!f)
+		return NULL;
+
+	os_fread_utf8_tail(f, &file_string, lines);
 	fclose(f);
 
 	return file_string;

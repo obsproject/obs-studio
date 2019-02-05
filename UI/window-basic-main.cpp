@@ -4589,6 +4589,24 @@ static BPtr<char> ReadLogFile(const char *subdir, const char *log)
 	return file;
 }
 
+static BPtr<char> TailLogFile(const char *subdir, const char *log, uint32_t lines)
+{
+	//size_t os_fread_utf8_tail(FILE *file, char **pstr, uint32_t lines)
+	char logDir[512];
+	if (GetConfigPath(logDir, sizeof(logDir), subdir) <= 0)
+		return nullptr;
+
+	string path = (char*)logDir;
+	path += "/";
+	path += log;
+
+	BPtr<char> file = os_quick_tail_utf8_file(path.c_str(), 20);
+	if (!file)
+		blog(LOG_WARNING, "Failed to read log file %s", path.c_str());
+
+	return file;
+}
+
 void OBSBasic::UploadLog(const char *subdir, const char *file)
 {
 	BPtr<char> fileString{ReadLogFile(subdir, file)};
@@ -4639,6 +4657,23 @@ void OBSBasic::on_actionUploadCurrentLog_triggered()
 void OBSBasic::on_actionUploadLastLog_triggered()
 {
 	UploadLog("obs-studio/logs", App()->GetLastLog());
+}
+
+void OBSBasic::on_actionViewTailLog_triggered()
+{
+	char logDir[512];
+	if (GetConfigPath(logDir, sizeof(logDir), "obs-studio/logs") <= 0)
+		return;
+
+	const char* log = App()->GetCurrentLog();
+
+	string path = (char*)logDir;
+	path += "/";
+	path += log;
+
+	LogViewer *logView = new LogViewer(path.c_str());
+	logView->setAttribute(Qt::WA_DeleteOnClose, true);
+	logView->show();
 }
 
 void OBSBasic::on_actionViewCurrentLog_triggered()

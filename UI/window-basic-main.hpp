@@ -21,6 +21,7 @@
 #include <QAction>
 #include <QWidgetAction>
 #include <QSystemTrayIcon>
+#include <QPlainTextEdit>
 #include <obs.hpp>
 #include <vector>
 #include <memory>
@@ -107,6 +108,66 @@ public:
 
 private:
 	std::unique_ptr<Ui::ColorSelect> ui;
+};
+
+class LogViewer : public QWidget {
+	Q_OBJECT
+private:
+	std::string filePath;
+	BPtr<char> bStr;
+	QCheckBox *checkBox;
+	QSpinBox *lines;
+	int count;
+	QPlainTextEdit *viewer;
+	QVBoxLayout *v;
+	QTimer *timer;
+public slots:
+	void tail()
+	{
+		if (!checkBox->isChecked())
+			bStr = os_quick_tail_utf8_file(filePath.c_str(), count);
+		else
+			bStr = os_quick_read_utf8_file(filePath.c_str());
+		viewer->setPlainText(bStr.Get());
+		viewer->moveCursor(QTextCursor::MoveOperation::End);
+	}
+
+	void linesChanged(int lineCount)
+	{
+		count = lineCount;
+		tail();
+	}
+public:
+	LogViewer(const char *path, QWidget *parent = nullptr) : QWidget(parent)
+	{
+		count = 20;
+		filePath = path;
+		v = new QVBoxLayout();
+		QHBoxLayout *h = new QHBoxLayout();
+		checkBox = new QCheckBox();
+		checkBox->setText(QTStr("Basic.LogViewer.WholeFile"));
+		lines = new QSpinBox();
+		lines->setMinimum(1);
+		lines->setValue(count);
+		lines->setMaximum(INT_MAX);
+		h->addWidget(checkBox);
+		h->addWidget(lines);
+		v->addLayout(h);
+
+		bStr = os_quick_tail_utf8_file(filePath.c_str(), 20);
+
+		viewer = new QPlainTextEdit(bStr.Get());
+		v->addWidget(viewer);
+		viewer->moveCursor(QTextCursor::MoveOperation::End);
+
+		this->setLayout(v);
+		timer = new QTimer(this);
+		connect(timer, SIGNAL(timeout()), this, SLOT(tail()));
+		connect(lines, SIGNAL(valueChanged(int)), this,
+				SLOT(linesChanged(int)));
+		connect(checkBox, SIGNAL(toggled()), this, SLOT(tail()));
+		timer->start(2000);
+	}
 };
 
 class OBSBasic : public OBSMainWindow {
@@ -634,6 +695,7 @@ private slots:
 	void on_actionUploadCurrentLog_triggered();
 	void on_actionUploadLastLog_triggered();
 	void on_actionViewCurrentLog_triggered();
+	void on_actionViewTailLog_triggered();
 	void on_actionCheckForUpdates_triggered();
 
 	void on_actionShowCrashLogs_triggered();
