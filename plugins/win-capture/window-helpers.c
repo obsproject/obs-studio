@@ -132,23 +132,20 @@ void get_window_class(struct dstr *class, HWND hwnd)
 static const char *internal_microsoft_exes[] = {
 	"applicationframehost",
 	"shellexperiencehost",
+	"windowsinternal",
 	"winstore.app",
 	"searchui",
+	"lockapp",
 	NULL
 };
 
 static bool is_microsoft_internal_window_exe(const char *exe)
 {
-	char cur_exe[MAX_PATH];
-
 	if (!exe)
 		return false;
 
 	for (const char **vals = internal_microsoft_exes; *vals; vals++) {
-		strcpy(cur_exe, *vals);
-		strcat(cur_exe, ".exe");
-
-		if (strcmpi(cur_exe, exe) == 0)
+		if (astrcmpi_n(exe, *vals, strlen(*vals)) == 0)
 			return true;
 	}
 
