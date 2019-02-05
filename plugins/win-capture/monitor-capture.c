@@ -198,7 +198,7 @@ static BOOL CALLBACK enum_monitor_props(HMONITOR handle, HDC hdc, LPRECT rect,
 	dstr_catf(&monitor_desc,
 		format_string.array,
 		TEXT_MONITOR,
-		monitor_id,
+		monitor_id + 1,
 		resolution.array);
 
 	obs_property_list_add_int(monitor_list,
