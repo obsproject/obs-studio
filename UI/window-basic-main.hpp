@@ -140,6 +140,8 @@ private:
 
 	std::vector<OBSSignal> signalHandlers;
 
+	QList<QPointer<QDockWidget>> extraDocks;
+
 	bool loaded = false;
 	long disableSaving = 1;
 	bool projectChanged = false;
@@ -616,6 +618,8 @@ public:
 	void CreateInteractionWindow(obs_source_t *source);
 	void CreatePropertiesWindow(obs_source_t *source);
 	void CreateFiltersWindow(obs_source_t *source);
+
+	QAction *AddDockWidget(QDockWidget *dock);
 
 	static OBSBasic *Get();
 
