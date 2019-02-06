@@ -161,6 +161,27 @@ static int CountVideoSources()
 	return count;
 }
 
+void assignDockToggle(QDockWidget *dock, QAction *action)
+{
+	auto handleWindowToggle = [action] (bool vis)
+	{
+		action->blockSignals(true);
+		action->setChecked(vis);
+		action->blockSignals(false);
+	};
+	auto handleMenuToggle = [dock] (bool check)
+	{
+		dock->blockSignals(true);
+		dock->setVisible(check);
+		dock->blockSignals(false);
+	};
+
+	dock->connect(dock->toggleViewAction(), &QAction::toggled,
+			handleWindowToggle);
+	dock->connect(action, &QAction::toggled,
+			handleMenuToggle);
+}
+
 OBSBasic::OBSBasic(QWidget *parent)
 	: OBSMainWindow  (parent),
 	  ui             (new Ui::OBSBasic)
@@ -284,27 +305,6 @@ OBSBasic::OBSBasic(QWidget *parent)
 	addNudge(Qt::Key_Down, SLOT(NudgeDown()));
 	addNudge(Qt::Key_Left, SLOT(NudgeLeft()));
 	addNudge(Qt::Key_Right, SLOT(NudgeRight()));
-
-	auto assignDockToggle = [] (QDockWidget *dock, QAction *action)
-	{
-		auto handleWindowToggle = [action] (bool vis)
-		{
-			action->blockSignals(true);
-			action->setChecked(vis);
-			action->blockSignals(false);
-		};
-		auto handleMenuToggle = [dock] (bool check)
-		{
-			dock->blockSignals(true);
-			dock->setVisible(check);
-			dock->blockSignals(false);
-		};
-
-		dock->connect(dock->toggleViewAction(), &QAction::toggled,
-				handleWindowToggle);
-		dock->connect(action, &QAction::toggled,
-				handleMenuToggle);
-	};
 
 	assignDockToggle(ui->scenesDock, ui->toggleScenes);
 	assignDockToggle(ui->sourcesDock, ui->toggleSources);
