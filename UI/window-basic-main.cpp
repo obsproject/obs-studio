@@ -6857,3 +6857,8 @@ void OBSBasic::ResizeOutputSizeOfSource()
 	ResetVideo();
 	on_actionFitToScreen_triggered();
 }
+
+OBSBasic *OBSBasic::Get()
+{
+	return reinterpret_cast<OBSBasic*>(App()->GetMainWindow());
+}
