@@ -223,6 +223,10 @@ finish:
 }
 #endif
 
+#ifdef _WIN32
+extern bool load_nvenc_lib(void);
+#endif
+
 static bool nvenc_supported(void)
 {
 	av_register_all();
@@ -241,11 +245,9 @@ static bool nvenc_supported(void)
 	if (!nvenc_device_available()) {
 		goto cleanup;
 	}
-
-	if (sizeof(void*) == 8) {
-		lib = os_dlopen("nvEncodeAPI64.dll");
-	} else {
-		lib = os_dlopen("nvEncodeAPI.dll");
+	if (load_nvenc_lib()) {
+		success = true;
+		goto finish;
 	}
 #else
 	lib = os_dlopen("libnvidia-encode.so.1");
@@ -258,6 +260,7 @@ static bool nvenc_supported(void)
 cleanup:
 	if (lib)
 		os_dlclose(lib);
+finish:
 	profile_end(nvenc_check_name);
 	return success;
 }
@@ -270,6 +273,11 @@ static bool vaapi_supported(void)
 	AVCodec *vaenc = avcodec_find_encoder_by_name("h264_vaapi");
 	return !!vaenc;
 }
+#endif
+
+#ifdef _WIN32
+extern void jim_nvenc_load(void);
+extern void jim_nvenc_unload(void);
 #endif
 
 bool obs_module_load(void)
@@ -288,6 +296,11 @@ bool obs_module_load(void)
 #ifndef __APPLE__
 	if (nvenc_supported()) {
 		blog(LOG_INFO, "NVENC supported");
+#ifdef _WIN32
+		if (get_win_ver_int() > 0x0601) {
+			jim_nvenc_load();
+		}
+#endif
 		obs_register_encoder(&nvenc_encoder_info);
 	}
 #if !defined(_WIN32) && defined(LIBAVUTIL_VAAPI_AVAILABLE)
@@ -317,4 +330,8 @@ void obs_module_unload(void)
 
 	da_free(active_log_contexts);
 	da_free(cached_log_contexts);
+
+#ifdef _WIN32
+	jim_nvenc_unload();
+#endif
 }
