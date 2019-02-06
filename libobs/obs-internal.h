@@ -1015,6 +1015,10 @@ extern void obs_encoder_add_output(struct obs_encoder *encoder,
 extern void obs_encoder_remove_output(struct obs_encoder *encoder,
 		struct obs_output *output);
 
+extern void do_encode(struct obs_encoder *encoder, struct encoder_frame *frame);
+extern void send_off_encoder_packet(obs_encoder_t *encoder, bool success,
+		bool received, struct encoder_packet *pkt);
+
 void obs_encoder_destroy(obs_encoder_t *encoder);
 
 /* ------------------------------------------------------------------------- */
