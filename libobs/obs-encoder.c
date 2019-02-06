@@ -179,6 +179,12 @@ static inline bool has_scaling(const struct obs_encoder *encoder)
 		 video_height != encoder->scaled_height);
 }
 
+static inline bool gpu_encode_available(const struct obs_encoder *encoder)
+{
+    return (encoder->info.caps & OBS_ENCODER_CAP_PASS_TEXTURE) != 0 &&
+		obs->video.using_nv12_tex;
+}
+
 static void add_connection(struct obs_encoder *encoder)
 {
 	if (encoder->info.type == OBS_ENCODER_AUDIO) {
@@ -191,7 +197,12 @@ static void add_connection(struct obs_encoder *encoder)
 		struct video_scale_info info = {0};
 		get_video_info(encoder, &info);
 
-		start_raw_video(encoder->media, &info, receive_video, encoder);
+		if (gpu_encode_available(encoder)) {
+			start_gpu_encode(encoder);
+		} else {
+			start_raw_video(encoder->media, &info, receive_video,
+					encoder);
+		}
 	}
 
 	set_encoder_active(encoder, true);
@@ -199,11 +210,16 @@ static void add_connection(struct obs_encoder *encoder)
 
 static void remove_connection(struct obs_encoder *encoder)
 {
-	if (encoder->info.type == OBS_ENCODER_AUDIO)
+	if (encoder->info.type == OBS_ENCODER_AUDIO) {
 		audio_output_disconnect(encoder->media, encoder->mixer_idx,
 				receive_audio, encoder);
-	else
-		stop_raw_video(encoder->media, receive_video, encoder);
+	} else {
+		if (gpu_encode_available(encoder)) {
+			stop_gpu_encode(encoder);
+		} else {
+			stop_raw_video(encoder->media, receive_video, encoder);
+		}
+	}
 
 	obs_encoder_shutdown(encoder);
 	set_encoder_active(encoder, false);
@@ -813,7 +829,7 @@ static inline void send_packet(struct obs_encoder *encoder,
 		cb->new_packet(cb->param, packet);
 }
 
-static void full_stop(struct obs_encoder *encoder)
+void full_stop(struct obs_encoder *encoder)
 {
 	if (encoder) {
 		pthread_mutex_lock(&encoder->callbacks_mutex);

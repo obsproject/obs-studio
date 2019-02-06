@@ -38,6 +38,8 @@
 
 #define NUM_TEXTURES 2
 #define MICROSECOND_DEN 1000000
+#define NUM_ENCODE_TEXTURES 3
+#define NUM_ENCODE_TEXTURE_FRAMES_TO_WAIT 1
 
 static inline int64_t packet_dts_usec(struct encoder_packet *packet)
 {
@@ -225,6 +227,16 @@ struct obs_vframe_info {
 	int count;
 };
 
+struct obs_tex_frame {
+	gs_texture_t *tex;
+	gs_texture_t *tex_uv;
+	uint32_t handle;
+	uint64_t timestamp;
+	uint64_t lock_key;
+	int count;
+	bool released;
+};
+
 struct obs_core_video {
 	graphics_t                      *graphics;
 	gs_stagesurf_t                  *copy_surfaces[NUM_TEXTURES];
@@ -238,6 +250,7 @@ struct obs_core_video {
 	bool                            textures_converted[NUM_TEXTURES];
 	bool                            using_nv12_tex;
 	struct circlebuf                vframe_info_buffer;
+	struct circlebuf                vframe_info_buffer_gpu;
 	gs_effect_t                     *default_effect;
 	gs_effect_t                     *default_rect_effect;
 	gs_effect_t                     *opaque_effect;
@@ -251,6 +264,15 @@ struct obs_core_video {
 	gs_stagesurf_t                  *mapped_surface;
 	int                             cur_texture;
 	long                            raw_active;
+	long                            gpu_encoder_active;
+	pthread_mutex_t                 gpu_encoder_mutex;
+	struct circlebuf                gpu_encoder_queue;
+	struct circlebuf                gpu_encoder_avail_queue;
+	DARRAY(obs_encoder_t *)         gpu_encoders;
+	os_sem_t                        *gpu_encode_semaphore;
+	pthread_t                       gpu_encode_thread;
+	bool                            gpu_encode_thread_initialized;
+	volatile bool                   gpu_encode_stop;
 
 	uint64_t                        video_time;
 	uint64_t                        video_avg_frame_time_ns;
@@ -1014,6 +1036,9 @@ extern void obs_encoder_add_output(struct obs_encoder *encoder,
 		struct obs_output *output);
 extern void obs_encoder_remove_output(struct obs_encoder *encoder,
 		struct obs_output *output);
+
+extern bool start_gpu_encode(obs_encoder_t *encoder);
+extern void stop_gpu_encode(obs_encoder_t *encoder);
 
 extern void do_encode(struct obs_encoder *encoder, struct encoder_frame *frame);
 extern void send_off_encoder_packet(obs_encoder_t *encoder, bool success,

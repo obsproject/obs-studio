@@ -384,6 +384,7 @@ set(libobs_libobs_SOURCES
 	obs-view.c
 	obs-scene.c
 	obs-audio.c
+	obs-video-gpu-encode.c
 	obs-video.c)
 set(libobs_libobs_HEADERS
 	${libobs_PLATFORM_HEADERS}
