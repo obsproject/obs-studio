@@ -254,6 +254,7 @@ private:
 	bool          InitService();
 
 	bool          InitBasicConfigDefaults();
+	void          InitBasicConfigDefaults2();
 	bool          InitBasicConfig();
 
 	void          InitOBSCallbacks();

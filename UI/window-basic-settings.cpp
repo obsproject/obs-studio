@@ -3913,7 +3913,7 @@ void OBSBasicSettings::UpdateStreamDelayEstimate()
 	UpdateAutomaticReplayBufferCheckboxes();
 }
 
-static bool EncoderAvailable(const char *encoder)
+bool EncoderAvailable(const char *encoder)
 {
 	const char *val;
 	int i = 0;
