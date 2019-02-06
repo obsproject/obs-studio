@@ -60,7 +60,7 @@ struct nvenc_encoder {
 static const char *nvenc_getname(void *unused)
 {
 	UNUSED_PARAMETER(unused);
-	return "NVENC H.264";
+	return "NVIDIA NVENC H.264";
 }
 
 static inline bool valid_format(enum video_format format)
