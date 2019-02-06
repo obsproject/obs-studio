@@ -202,6 +202,11 @@ EXPORT double video_output_get_frame_rate(const video_t *video);
 EXPORT uint32_t video_output_get_skipped_frames(const video_t *video);
 EXPORT uint32_t video_output_get_total_frames(const video_t *video);
 
+extern void video_output_inc_texture_encoders(video_t *video);
+extern void video_output_dec_texture_encoders(video_t *video);
+extern void video_output_inc_texture_frames(video_t *video);
+extern void video_output_inc_texture_skipped_frames(video_t *video);
+
 
 #ifdef __cplusplus
 }
