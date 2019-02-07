@@ -159,7 +159,7 @@ static void obs_qsv_defaults(obs_data_t *settings)
 	obs_data_set_default_int(settings, "la_depth", 15);
 
 	obs_data_set_default_int(settings, "keyint_sec", 3);
-	obs_data_set_default_int(settings, "bframes", 1);
+	obs_data_set_default_int(settings, "bframes", 3);
 }
 
 static inline void add_strings(obs_property_t *list, const char *const *strings)
@@ -630,8 +630,20 @@ static void parse_packet(struct obs_qsv *obsqsv, struct encoder_packet *packet, 
 	packet->size = obsqsv->packet_data.num;
 	packet->type = OBS_ENCODER_VIDEO;
 	packet->pts = pBS->TimeStamp * fps_num / 90000;
-	packet->keyframe = (pBS->FrameType &
-			(MFX_FRAMETYPE_I | MFX_FRAMETYPE_REF));
+
+	packet->keyframe = (pBS->FrameType & MFX_FRAMETYPE_IDR);
+
+	uint16_t frameType = pBS->FrameType;
+	uint8_t priority;
+
+	if (frameType & MFX_FRAMETYPE_I)
+		priority = OBS_NAL_PRIORITY_HIGHEST;
+	else if ((frameType & MFX_FRAMETYPE_P) || (frameType & MFX_FRAMETYPE_REF))
+		priority = OBS_NAL_PRIORITY_HIGH;
+	else
+		priority = OBS_NAL_PRIORITY_DISPOSABLE;
+
+	packet->priority = priority;
 
 	/* ------------------------------------ */
 
@@ -647,15 +659,9 @@ static void parse_packet(struct obs_qsv *obsqsv, struct encoder_packet *packet, 
 
 		type = start[0] & 0x1F;
 		if (type == OBS_NAL_SLICE_IDR || type == OBS_NAL_SLICE) {
-			uint8_t prev_type = (start[0] >> 5) & 0x3;
 			start[0] &= ~(3 << 5);
-
-			if (pBS->FrameType & MFX_FRAMETYPE_I)
-				start[0] |= OBS_NAL_PRIORITY_HIGHEST << 5;
-			else if (pBS->FrameType & MFX_FRAMETYPE_P)
-				start[0] |= OBS_NAL_PRIORITY_HIGH << 5;
-			else
-				start[0] |= prev_type << 5;
+			//0 for non-ref frames and not equal to 0 for ref frames
+			start[0] |= priority << 5;
 		}
 
 		start = (uint8_t*)obs_avc_find_startcode(start, end);

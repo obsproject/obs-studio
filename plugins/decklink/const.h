@@ -9,6 +9,7 @@
 #define BUFFERING       "buffering"
 #define DEACTIVATE_WNS  "deactivate_when_not_showing"
 #define AUTO_START      "auto_start"
+#define KEYER           "keyer"
 
 #define TEXT_DEVICE                 obs_module_text("Device")
 #define TEXT_MODE                   obs_module_text("Mode")
@@ -30,3 +31,4 @@
 #define TEXT_BUFFERING              obs_module_text("Buffering")
 #define TEXT_DWNS                   obs_module_text("DeactivateWhenNotShowing")
 #define TEXT_AUTO_START             obs_module_text("AutoStart")
+#define TEXT_ENABLE_KEYER           obs_module_text("Keyer")

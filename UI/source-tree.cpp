@@ -695,8 +695,14 @@ int SourceTreeModel::rowCount(const QModelIndex &parent) const
 	return parent.isValid() ? 0 : items.count();
 }
 
-QVariant SourceTreeModel::data(const QModelIndex &, int) const
+QVariant SourceTreeModel::data(const QModelIndex &index, int role) const
 {
+	if (role == Qt::AccessibleTextRole) {
+		OBSSceneItem item = items[index.row()];
+		obs_source_t *source = obs_sceneitem_get_source(item);
+		return QVariant(QT_UTF8(obs_source_get_name(source)));
+	}
+
 	return QVariant();
 }
 

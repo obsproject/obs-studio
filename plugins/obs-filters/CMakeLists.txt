@@ -49,7 +49,9 @@ set(obs-filters_SOURCES
 	noise-gate-filter.c
 	mask-filter.c
 	invert-audio-polarity.c
-	compressor-filter.c)
+	compressor-filter.c
+	limiter-filter.c
+	expander-filter.c)
 
 add_library(obs-filters MODULE
 	${obs-filters_SOURCES}

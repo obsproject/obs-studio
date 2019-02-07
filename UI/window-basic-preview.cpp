@@ -11,6 +11,9 @@
 
 #define HANDLE_RADIUS     4.0f
 #define HANDLE_SEL_RADIUS (HANDLE_RADIUS * 1.5f)
+#if QT_VERSION >= QT_VERSION_CHECK(5, 6, 0)
+#define SUPPORTS_FRACTIONAL_SCALING
+#endif
 
 /* TODO: make C++ math classes and clean up code here later */
 
@@ -24,7 +27,11 @@ OBSBasicPreview::OBSBasicPreview(QWidget *parent, Qt::WindowFlags flags)
 vec2 OBSBasicPreview::GetMouseEventPos(QMouseEvent *event)
 {
 	OBSBasic *main = reinterpret_cast<OBSBasic*>(App()->GetMainWindow());
+#ifdef SUPPORTS_FRACTIONAL_SCALING
+	float pixelRatio = main->devicePixelRatioF();
+#else
 	float pixelRatio = main->devicePixelRatio();
+#endif
 	float scale = pixelRatio / main->previewScale;
 	vec2 pos;
 	vec2_set(&pos,
@@ -369,7 +376,11 @@ void OBSBasicPreview::GetStretchHandleData(const vec2 &pos)
 	if (!scene)
 		return;
 
+#ifdef SUPPORTS_FRACTIONAL_SCALING
+	float scale = main->previewScale / main->devicePixelRatioF();
+#else
 	float scale = main->previewScale / main->devicePixelRatio();
+#endif
 	vec2 scaled_pos = pos;
 	vec2_divf(&scaled_pos, &scaled_pos, scale);
 	HandleFindData data(scaled_pos, scale);
@@ -491,7 +502,11 @@ void OBSBasicPreview::mousePressEvent(QMouseEvent *event)
 	}
 
 	OBSBasic *main = reinterpret_cast<OBSBasic*>(App()->GetMainWindow());
+#ifdef SUPPORTS_FRACTIONAL_SCALING
+	float pixelRatio = main->devicePixelRatioF();
+#else
 	float pixelRatio = main->devicePixelRatio();
+#endif
 	float x = float(event->x()) - main->previewX / pixelRatio;
 	float y = float(event->y()) - main->previewY / pixelRatio;
 	Qt::KeyboardModifiers modifiers = QGuiApplication::keyboardModifiers();

@@ -439,6 +439,8 @@ void OBSBasic::on_actionImportSceneCollection_triggered()
 
 void OBSBasic::on_actionExportSceneCollection_triggered()
 {
+	SaveProjectNow();
+
 	char path[512];
 
 	QString home = QDir::homePath();

@@ -21,7 +21,8 @@ static const char *rtmp_common_getname(void *unused)
 }
 
 static json_t *open_services_file(void);
-static inline json_t *find_service(json_t *root, const char *name);
+static inline json_t *find_service(json_t *root, const char *name,
+		const char **p_new_name);
 static inline const char *get_string_val(json_t *service, const char *key);
 
 extern void twitch_ingests_refresh(int seconds);
@@ -75,7 +76,14 @@ static void rtmp_common_update(void *data, obs_data_t *settings)
 
 	json_t *root = open_services_file();
 	if (root) {
-		json_t *serv = find_service(root, service->service);
+		const char *new_name;
+		json_t *serv = find_service(root, service->service, &new_name);
+
+		if (new_name) {
+			bfree(service->service);
+			service->service = bstrdup(new_name);
+		}
+
 		if (serv) {
 			json_t *rec = json_object_get(serv, "recommended");
 			if (rec && json_is_object(rec)) {
@@ -191,7 +199,7 @@ static void add_services(obs_property_t *list, json_t *root, bool show_all,
 		add_service(list, service, show_all, cur_service);
 	}
 
-	service = find_service(root, cur_service);
+	service = find_service(root, cur_service, NULL);
 	if (!service && cur_service && *cur_service) {
 		obs_property_list_insert_string(list, 0, cur_service,
 				cur_service);
@@ -346,16 +354,32 @@ static void fill_servers(obs_property_t *servers_prop, json_t *service,
 	}
 }
 
-static inline json_t *find_service(json_t *root, const char *name)
+static inline json_t *find_service(json_t *root, const char *name,
+		const char **p_new_name)
 {
 	size_t index;
 	json_t *service;
+
+	if (p_new_name) *p_new_name = NULL;
 
 	json_array_foreach (root, index, service) {
 		const char *cur_name = get_string_val(service, "name");
 
 		if (strcmp(name, cur_name) == 0)
 			return service;
+
+		/* check for alternate names */
+		json_t *alt_names = json_object_get(service, "alt_names");
+		size_t alt_name_idx;
+		json_t *alt_name_obj;
+
+		json_array_foreach (alt_names, alt_name_idx, alt_name_obj) {
+			const char *alt_name = json_string_value(alt_name_obj);
+			if (alt_name && strcmp(name, alt_name) == 0) {
+				if (p_new_name) *p_new_name = cur_name;
+				return service;
+			}
+		}
 	}
 
 	return NULL;
@@ -367,11 +391,12 @@ static bool service_selected(obs_properties_t *props, obs_property_t *p,
 	const char *name = obs_data_get_string(settings, "service");
 	json_t *root     = obs_properties_get_param(props);
 	json_t *service;
+	const char *new_name;
 
 	if (!name || !*name)
 		return false;
 
-	service = find_service(root, name);
+	service = find_service(root, name, &new_name);
 	if (!service) {
 		const char *server = obs_data_get_string(settings, "server");
 
@@ -382,6 +407,10 @@ static bool service_selected(obs_properties_t *props, obs_property_t *p,
 		obs_property_list_insert_string(p, 0, server, server);
 		obs_property_list_item_disable(p, 0, true);
 		return true;
+	}
+	if (new_name) {
+		name = new_name;
+		obs_data_set_string(settings, "service", name);
 	}
 
 	fill_servers(obs_properties_get(props, "server"), service, name);
@@ -498,7 +527,7 @@ static void apply_audio_encoder_settings(obs_data_t *settings,
 static void initialize_output(struct rtmp_common *service, json_t *root,
 		obs_data_t *video_settings, obs_data_t *audio_settings)
 {
-	json_t        *json_service = find_service(root, service->service);
+	json_t        *json_service = find_service(root, service->service, NULL);
 	json_t        *recommended;
 
 	if (!json_service) {

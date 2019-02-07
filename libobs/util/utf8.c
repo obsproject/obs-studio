@@ -41,7 +41,7 @@ size_t utf8_to_wchar(const char *in, size_t insize, wchar_t *out,
 	if (has_utf8_bom(in)) {
 		if (i_insize >= 3) {
 			in += 3;
-			insize -= 3;
+			i_insize -= 3;
 		}
 	}
 

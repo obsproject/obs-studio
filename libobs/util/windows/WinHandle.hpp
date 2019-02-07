@@ -17,7 +17,7 @@
 #pragma once
 
 class WinHandle {
-	HANDLE handle;
+	HANDLE handle = INVALID_HANDLE_VALUE;
 
 	inline void Clear()
 	{
@@ -26,7 +26,7 @@ class WinHandle {
 	}
 
 public:
-	inline WinHandle()               : handle(NULL)    {}
+	inline WinHandle()                                 {}
 	inline WinHandle(HANDLE handle_) : handle(handle_) {}
 	inline ~WinHandle()                                {Clear();}
 

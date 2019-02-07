@@ -589,6 +589,9 @@ void OBSProjector::OBSRenderMultiview(void *data, uint32_t cx, uint32_t cy)
 	window->offset = labelOffset(programLabel, window->pvwprgCX);
 	calcPreviewProgram(true);
 
+	paintAreaWithColor(window->sourceX, window->sourceY, window->ppiCX,
+		window->ppiCY, backgroundColor);
+
 	// Scale and Draw the program
 	gs_matrix_push();
 	gs_matrix_translate3f(window->sourceX, window->sourceY, 0.0f);
@@ -671,6 +674,7 @@ void OBSProjector::OBSRender(void *data, uint32_t cx, uint32_t cy)
 			obs_source_dec_showing(source);
 			obs_source_inc_showing(curSource);
 			source = curSource;
+			window->source = source;
 		}
 	}
 

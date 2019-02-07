@@ -234,6 +234,23 @@ struct obs_encoder_info {
 	void (*free_type_data)(void *type_data);
 
 	uint32_t caps;
+
+	/**
+	 * Gets the default settings for this encoder
+	 *
+	 * @param[out]  settings  Data to assign default settings to
+	 * @param[in]   typedata  Type Data
+	 */
+	void (*get_defaults2)(obs_data_t *settings, void *type_data);
+
+	/**
+	 * Gets the property information of this encoder
+	 *
+	 * @param[in]   data      Pointer from create (or null)
+	 * @param[in]   typedata  Type Data
+	 * @return                The properties data
+	 */
+	obs_properties_t *(*get_properties2)(void *data, void *type_data);
 };
 
 EXPORT void obs_register_encoder_s(const struct obs_encoder_info *info,

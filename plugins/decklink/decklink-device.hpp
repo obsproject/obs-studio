@@ -1,10 +1,13 @@
-#pragma once
+﻿#pragma once
 
 #include "decklink-device-mode.hpp"
 
 #include <map>
 #include <string>
 #include <vector>
+#include <stdint.h>
+
+
 
 class DeckLinkDevice {
 	ComPtr<IDeckLink>                         device;
@@ -15,7 +18,10 @@ class DeckLinkDevice {
 	std::string                               name;
 	std::string                               displayName;
 	std::string                               hash;
-	int32_t                                   maxChannel;
+	int32_t                                   maxChannel = 0;
+	decklink_bool_t                           supportsExternalKeyer = false;
+	decklink_bool_t                           supportsInternalKeyer = false;
+	int                                       keyerMode = 0;
 	volatile long                             refCount = 1;
 
 public:
@@ -33,11 +39,16 @@ public:
 	const std::string& GetHash(void) const;
 	const std::vector<DeckLinkDeviceMode *>& GetInputModes(void) const;
 	const std::vector<DeckLinkDeviceMode *>& GetOutputModes(void) const;
+	bool GetSupportsExternalKeyer(void) const;
+	bool GetSupportsInternalKeyer(void) const;
+	int GetKeyerMode(void);
+	void SetKeyerMode(int newKeyerMode);
 	const std::string& GetName(void) const;
 	int32_t GetMaxChannel(void) const;
 
 	bool GetInput(IDeckLinkInput **input);
 	bool GetOutput(IDeckLinkOutput **output);
+	bool GetKeyer(IDeckLinkKeyer **keyer);
 
 	inline bool IsDevice(IDeckLink *device_)
 	{

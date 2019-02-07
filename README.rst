@@ -1,14 +1,26 @@
 OBS Studio <https://obsproject.com>
 ===================================
 
+.. image:: https://travis-ci.org/obsproject/obs-studio.svg?branch=master
+   :alt: OBS Studio Build Status - Travis CI
+   :target: https://travis-ci.org/obsproject/obs-studio
+
+.. image:: https://ci.appveyor.com/api/projects/status/github/obsproject/obs-studio?branch=master&svg=true
+   :alt: OBS Studio Build Status - AppVeyor CI
+   :target: https://ci.appveyor.com/project/jp9000/obs-studio/branch/master
+
+.. image:: https://discordapp.com/api/guilds/348973006581923840/widget.png?style=shield
+   :alt: OBS Studio Discord Server
+   :target: https://obsproject.com/discord
+
 What is OBS Studio?
 -------------------
 
   OBS Studio is software designed for capturing, compositing, encoding,
   recording, and streaming video content, efficiently.
 
-  It's distributed under the GNU General Public License v2 - see the
-  accompanying COPYING file for more details.
+  It's distributed under the GNU General Public License v2 (or any later
+  version) - see the accompanying COPYING file for more details.
 
 Quick Links
 -----------

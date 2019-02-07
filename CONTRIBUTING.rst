@@ -10,7 +10,9 @@ Quick Links for Contributing
  - Our bug tracker (linked to forum accounts):
    https://obsproject.com/mantis/
 
- - Development IRC channel: #obs-dev on QuakeNet
+ - Discord Server: https://obsproject.com/discord
+
+ - Development chat: #development on the Discord server (see above)
  
  - Development forum:
    https://obsproject.com/forum/list/general-development.21/

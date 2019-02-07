@@ -92,6 +92,12 @@ void *os_dlopen(const char *path)
 
 	if (!h_library) {
 		DWORD error = GetLastError();
+
+		/* don't print error for libraries that aren't meant to be
+		 * dynamically linked */
+		if (error == ERROR_PROC_NOT_FOUND)
+			return NULL;
+
 		char *message = NULL;
 
 		FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM |

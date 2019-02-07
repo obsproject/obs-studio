@@ -252,6 +252,9 @@ static void xcc_cleanup(XCompcapMain_private *p)
 	XDisplayLock xlock;
 
 	if (p->gltex) {
+		GLuint gltex = *(GLuint*)gs_texture_get_obj(p->gltex);
+		glBindTexture(GL_TEXTURE_2D, gltex);
+		glXReleaseTexImageEXT(xdisp, p->glxpixmap, GLX_FRONT_LEFT_EXT);
 		gs_texture_destroy(p->gltex);
 		p->gltex = 0;
 	}
@@ -351,17 +354,87 @@ void XCompcapMain::updateSettings(obs_data_t *settings)
 
 	bool has_alpha = true;
 
-	if (attr.depth < 32) {
-		cf = GS_BGRX;
-		has_alpha = false;
+	const int attrs[] =
+	{
+		GLX_BIND_TO_TEXTURE_RGBA_EXT, GL_TRUE,
+		GLX_DRAWABLE_TYPE, GLX_PIXMAP_BIT,
+		GLX_BIND_TO_TEXTURE_TARGETS_EXT, GLX_TEXTURE_2D_BIT_EXT,
+		GLX_ALPHA_SIZE, 8,
+		GLX_DOUBLEBUFFER, GL_FALSE,
+		None
+	};
+
+	int nelem = 0;
+	GLXFBConfig *configs = glXGetFBConfigs(xdisp,
+			XCompcap::getRootWindowScreen(attr.root),
+			&nelem);
+
+	if (nelem <= 0) {
+		blog(LOG_ERROR, "no fb configs available");
+		p->win = 0;
+		p->height = 0;
+		p->width = 0;
+		return;
 	}
 
-	if (cf == GS_BGRX) {
-		if (settings) {
-			p->swapRedBlue = !p->swapRedBlue;
+	GLXFBConfig config;
+	for (int i = 0; i < nelem; i++) {
+		config = configs[i];
+		XVisualInfo *visual = glXGetVisualFromFBConfig(xdisp, config);
+		if (!visual)
+			continue;
+
+		if (attr.visual->visualid != visual->visualid) {
+			XFree(visual);
+			continue;
 		}
+		XFree(visual);
+
+		int value;
+		glXGetFBConfigAttrib(xdisp, config, GLX_ALPHA_SIZE, &value);
+		if (value != 8)
+			has_alpha = false;
+
+		break;
+	}
+
+	XFree(configs);
+	configs = glXChooseFBConfig(xdisp,
+			XCompcap::getRootWindowScreen(attr.root),
+			attrs, &nelem);
+
+	if (nelem <= 0) {
+		blog(LOG_ERROR, "no matching fb config found");
+		p->win = 0;
+		p->height = 0;
+		p->width = 0;
+		return;
+	}
+	bool found = false;
+	for (int i = 0; i < nelem; i++) {
+		config = configs[i];
+		XVisualInfo *visual = glXGetVisualFromFBConfig(xdisp, config);
+		if (!visual)
+			continue;
+
+		if (attr.depth != visual->depth) {
+			XFree(visual);
+			continue;
+		}
+		XFree(visual);
+		found = true;
+		break;
+	}
+	if (!found)
+		config = configs[0];
+
+	if (cf == GS_BGRX || !has_alpha) {
 		p->draw_opaque = true;
 	}
+
+	int inverted;
+	glXGetFBConfigAttrib(xdisp, config, GLX_Y_INVERTED_EXT, &inverted);
+	p->inverted = inverted != 0;
 
 	p->border = attr.border_width;
 
@@ -410,60 +483,6 @@ void XCompcapMain::updateSettings(obs_data_t *settings)
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_R, GL_BLUE);
 		glBindTexture(GL_TEXTURE_2D, 0);
 	}
-
-	const int attrs_alpha[] =
-	{
-		GLX_BIND_TO_TEXTURE_RGBA_EXT, GL_TRUE,
-		GLX_DRAWABLE_TYPE, GLX_PIXMAP_BIT,
-		GLX_BIND_TO_TEXTURE_TARGETS_EXT, GLX_TEXTURE_2D_BIT_EXT,
-		GLX_ALPHA_SIZE, 8,
-		None
-	};
-
-	const int attrs_no_alpha[] =
-	{
-		GLX_BIND_TO_TEXTURE_RGB_EXT, GL_TRUE,
-		GLX_DRAWABLE_TYPE, GLX_PIXMAP_BIT,
-		GLX_BIND_TO_TEXTURE_TARGETS_EXT, GLX_TEXTURE_2D_BIT_EXT,
-		None
-	};
-
-	const int *attrs = has_alpha ? attrs_alpha : attrs_no_alpha;
-
-	int nelem = 0;
-	GLXFBConfig* configs = glXChooseFBConfig(xdisp,
-			XCompcap::getRootWindowScreen(attr.root),
-			attrs, &nelem);
-
-	if (nelem <= 0) {
-		blog(LOG_ERROR, "no matching fb config found");
-		p->win = 0;
-		p->height = 0;
-		p->width = 0;
-		return;
-	}
-
-	GLXFBConfig config;
-	bool found = false;
-	for (int i = 0; i < nelem; i++) {
-		config = configs[i];
-		XVisualInfo *visual = glXGetVisualFromFBConfig(xdisp, config);
-		if (attr.visual->visualid == visual->visualid) {
-			found = true;
-			XFree(visual);
-			break;
-		}
-		XFree(visual);
-	}
-
-	if (!found) {
-		config = configs[0];
-		p->draw_opaque = true;
-	}
-
-	int inverted;
-	glXGetFBConfigAttrib(xdisp, config, GLX_Y_INVERTED_EXT, &inverted);
-	p->inverted = inverted != 0;
 
 	xlock.resetError();
 
@@ -521,7 +540,7 @@ void XCompcapMain::updateSettings(obs_data_t *settings)
 				"\ttitle: %s\n"
 				"\tclass: %s\n"
 				"\tHas alpha: %s\n"
-				"\tFound exact GLXFBConfig: %s",
+				"\tFound proper GLXFBConfig: %s\n",
 				obs_source_get_name(p->source),
 				XCompcap::getWindowName(p->win).c_str(),
 				XCompcap::getWindowClass(p->win).c_str(),

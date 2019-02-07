@@ -26,6 +26,10 @@
 #include <util/threading.h>
 #include "ffmpeg-mux/ffmpeg-mux.h"
 
+#ifdef _WIN32
+#include "util/windows/win-version.h"
+#endif
+
 #include <libavformat/avformat.h>
 
 #define do_log(level, format, ...) \
@@ -290,6 +294,16 @@ static bool ffmpeg_mux_start(void *data)
 		struct dstr error_message;
 		dstr_init_copy(&error_message,
 			obs_module_text("UnableToWritePath"));
+#ifdef _WIN32
+		// special warning for Windows 10 users about Defender
+		struct win_version_info ver;
+		get_win_ver(&ver);
+		if (ver.major >= 10) {
+			dstr_cat(&error_message, "\n\n");
+			dstr_cat(&error_message,
+				obs_module_text("WarnWindowsDefender"));
+		}
+#endif
 		dstr_replace(&error_message, "%1", path);
 		obs_output_set_last_error(stream->output,
 			error_message.array);

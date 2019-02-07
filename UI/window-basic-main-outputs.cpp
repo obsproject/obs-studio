@@ -242,6 +242,8 @@ void SimpleOutput::LoadRecordingPreset_Lossless()
 	obs_data_set_string(settings, "video_encoder", "utvideo");
 	obs_data_set_string(settings, "audio_encoder", "pcm_s16le");
 
+	int aMixes = 1;
+	obs_output_set_mixers(fileOutput, aMixes);
 	obs_output_update(fileOutput, settings);
 	obs_data_release(settings);
 }

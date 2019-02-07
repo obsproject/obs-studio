@@ -22,6 +22,7 @@ static void *decklink_output_create(obs_data_t *settings, obs_output_t *output)
 
 	decklinkOutput->deviceHash = obs_data_get_string(settings, DEVICE_HASH);
 	decklinkOutput->modeID = obs_data_get_int(settings, MODE_ID);
+	decklinkOutput->keyerMode = obs_data_get_int(settings, KEYER);
 
 	return decklinkOutput;
 }
@@ -32,6 +33,7 @@ static void decklink_output_update(void *data, obs_data_t *settings)
 
 	decklink->deviceHash = obs_data_get_string(settings, DEVICE_HASH);
 	decklink->modeID = obs_data_get_int(settings, MODE_ID);
+	decklink->keyerMode = obs_data_get_int(settings, KEYER);
 }
 
 static bool decklink_output_start(void *data)
@@ -59,12 +61,18 @@ static bool decklink_output_start(void *data)
 	decklink->SetSize(mode->GetWidth(), mode->GetHeight());
 
 	struct video_scale_info to = {};
-	to.format = VIDEO_FORMAT_UYVY;
+
+	if (decklink->keyerMode != 0) {
+		to.format = VIDEO_FORMAT_BGRA;
+	} else {
+		to.format = VIDEO_FORMAT_UYVY;
+	}
 	to.width = mode->GetWidth();
 	to.height =  mode->GetHeight();
 
 	obs_output_set_video_conversion(decklink->GetOutput(), &to);
 
+	device->SetKeyerMode(decklink->keyerMode);
 	decklink->Activate(device, decklink->modeID);
 
 	struct audio_convert_info conversion = {};
@@ -172,8 +180,10 @@ static bool decklink_output_device_changed(obs_properties_t *props,
 	}
 
 	obs_property_t *modeList = obs_properties_get(props, MODE_ID);
+	obs_property_t *keyerList = obs_properties_get(props, KEYER);
 
 	obs_property_list_clear(modeList);
+	obs_property_list_clear(keyerList);
 
 	ComPtr<DeckLinkDevice> device;
 	device.Set(deviceEnum->FindByHash(hash));
@@ -181,6 +191,7 @@ static bool decklink_output_device_changed(obs_properties_t *props,
 	if (!device) {
 		obs_property_list_add_int(modeList, mode, modeId);
 		obs_property_list_item_disable(modeList, 0, true);
+		obs_property_list_item_disable(keyerList, 0, true);
 	} else {
 		const std::vector<DeckLinkDeviceMode*> &modes =
 				device->GetOutputModes();
@@ -189,6 +200,16 @@ static bool decklink_output_device_changed(obs_properties_t *props,
 			obs_property_list_add_int(modeList,
 					mode->GetName().c_str(),
 					mode->GetId());
+		}
+
+		obs_property_list_add_int(keyerList, "Disabled", 0);
+
+		if (device->GetSupportsExternalKeyer()) {
+			obs_property_list_add_int(keyerList, "External", 1);
+		}
+
+		if (device->GetSupportsInternalKeyer()) {
+			obs_property_list_add_int(keyerList, "Internal", 2);
 		}
 	}
 
@@ -210,6 +231,8 @@ static obs_properties_t *decklink_output_properties(void *unused)
 			MODE_ID, TEXT_MODE, OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
 
 	obs_properties_add_bool(props, AUTO_START, TEXT_AUTO_START);
+
+	obs_properties_add_list(props, KEYER, TEXT_ENABLE_KEYER, OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
 
 	return props;
 }

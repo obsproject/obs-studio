@@ -1556,6 +1556,9 @@ static void ep_makeshaderstring(struct effect_parser *ep,
 
 	dstr_init(&call_str);
 
+	if (!token)
+		return;
+
 	while (token->type != CFTOKEN_NONE && is_whitespace(*token->str.array))
 		token++;
 
@@ -1755,13 +1758,17 @@ static bool ep_compile_pass(struct effect_parser *ep,
 	pass->section = EFFECT_PASS;
 
 	if (!ep_compile_pass_shader(ep, tech, pass, pass_in, idx,
-				GS_SHADER_VERTEX))
+				GS_SHADER_VERTEX)) {
 		success = false;
-
+		blog(LOG_ERROR, "Pass (%i) <%s> missing vertex shader!",
+				idx, pass->name ? pass->name : "");
+	}
 	if (!ep_compile_pass_shader(ep, tech, pass, pass_in, idx,
-				GS_SHADER_PIXEL))
+				GS_SHADER_PIXEL)) {
 		success = false;
-
+		blog(LOG_ERROR, "Pass (%i) <%s> missing pixel shader!",
+				idx, pass->name ? pass->name : "");
+	}
 	return success;
 }
 

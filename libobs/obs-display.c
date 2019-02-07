@@ -57,10 +57,7 @@ obs_display_t *obs_display_create(const struct gs_init_data *graphics_data,
 
 	gs_enter_context(obs->video.graphics);
 
-	if (background_color)
-		display->background_color = background_color;
-	else
-		display->background_color = 0x4c4c4c;
+	display->background_color = background_color;
 
 	if (!obs_display_init(display, graphics_data)) {
 		obs_display_destroy(display);
@@ -232,10 +229,6 @@ bool obs_display_enabled(obs_display_t *display)
 
 void obs_display_set_background_color(obs_display_t *display, uint32_t color)
 {
-	if (display) {
-		if (color)
-			display->background_color = color;
-		else
-			display->background_color = 0x4c4c4c;
-	}
+	if (display)
+		display->background_color = color;
 }

@@ -312,15 +312,37 @@ bool DeckLinkDeviceInstance::StartOutput(DeckLinkDeviceMode *mode_)
 
 	mode = mode_;
 
+	int keyerMode = device->GetKeyerMode();
+
+	IDeckLinkKeyer *deckLinkKeyer = nullptr;
+	if (device->GetKeyer(&deckLinkKeyer)) {
+		if (keyerMode) {
+			deckLinkKeyer->Enable(keyerMode == 1);
+			deckLinkKeyer->SetLevel(255);
+		} else {
+			deckLinkKeyer->Disable();
+		}
+	}
+
 	auto decklinkOutput = dynamic_cast<DeckLinkOutput*>(decklink);
 	if (decklinkOutput == nullptr)
 		return false;
 
+	int rowBytes = decklinkOutput->GetWidth() * 2;
+	if (decklinkOutput->keyerMode != 0) {
+		rowBytes = decklinkOutput->GetWidth() * 4;
+	}
+
+	BMDPixelFormat pixelFormat = bmdFormat8BitYUV;
+	if (keyerMode != 0) {
+		pixelFormat = bmdFormat8BitBGRA;
+	}
+
 	HRESULT result;
 	result = output->CreateVideoFrame(decklinkOutput->GetWidth(),
 			decklinkOutput->GetHeight(),
-			decklinkOutput->GetWidth() * 2,
-			bmdFormat8BitYUV,
+			rowBytes,
+			pixelFormat,
 			bmdFrameFlagDefault,
 			&decklinkOutputFrame);
 	if (result != S_OK) {
@@ -361,8 +383,13 @@ void DeckLinkDeviceInstance::DisplayVideoFrame(video_data *frame)
 
 	uint8_t *outData = frame->data[0];
 
-	std::copy(outData, outData + (decklinkOutput->GetWidth() *
-			decklinkOutput->GetHeight() * 2), destData);
+	int rowBytes = decklinkOutput->GetWidth() * 2;
+	if (device->GetKeyerMode()) {
+		rowBytes = decklinkOutput->GetWidth() * 4;
+	}
+
+	std::copy(outData, outData + (decklinkOutput->GetHeight() *
+		rowBytes), destData);
 
 	output->DisplayVideoFrameSync(decklinkOutputFrame);
 }

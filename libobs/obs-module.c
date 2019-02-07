@@ -26,7 +26,7 @@ extern const char *get_module_extension(void);
 
 static inline int req_func_not_found(const char *name, const char *path)
 {
-	blog(LOG_ERROR, "Required module function '%s' in module '%s' not "
+	blog(LOG_DEBUG, "Required module function '%s' in module '%s' not "
 	                "found, loading of module failed",
 	                name, path);
 	return MODULE_MISSING_EXPORTS;
