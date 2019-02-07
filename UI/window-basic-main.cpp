@@ -191,6 +191,7 @@ void assignDockToggle(QDockWidget *dock, QAction *action)
 			handleMenuToggle);
 }
 
+extern void RegisterTwitchAuth();
 extern void RegisterMixerAuth();
 
 OBSBasic::OBSBasic(QWidget *parent)
@@ -199,6 +200,9 @@ OBSBasic::OBSBasic(QWidget *parent)
 {
 	setAttribute(Qt::WA_NativeWindow);
 
+#if TWITCH_ENABLED
+	RegisterTwitchAuth();
+#endif
 #if MIXER_ENABLED
 	RegisterMixerAuth();
 #endif
