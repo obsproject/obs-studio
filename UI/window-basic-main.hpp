@@ -301,7 +301,7 @@ private:
 	void LoadProfile();
 	void ResetProfileData();
 	bool AddProfile(bool create_new, const char *title, const char *text,
-			const char *init_text = nullptr);
+			const char *init_text = nullptr, bool rename = false);
 	void DeleteProfile(const char *profile_name, const char *profile_dir);
 	void RefreshProfiles();
 	void ChangeProfile();

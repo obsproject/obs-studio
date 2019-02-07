@@ -25,6 +25,10 @@
 #include "window-namedialog.hpp"
 #include "qt-wrappers.hpp"
 
+extern void DestroyPanelCookieManager();
+extern void DuplicateCurrentCookieProfile(ConfigFile &config);
+extern void CheckExistingCookieId();
+
 void EnumProfiles(std::function<bool (const char *, const char *)> &&cb)
 {
 	char path[512];
@@ -182,7 +186,7 @@ static bool CopyProfile(const char *fromPartial, const char *to)
 }
 
 bool OBSBasic::AddProfile(bool create_new, const char *title, const char *text,
-		const char *init_text)
+		const char *init_text, bool rename)
 {
 	std::string newName;
 	std::string newDir;
@@ -227,6 +231,12 @@ bool OBSBasic::AddProfile(bool create_new, const char *title, const char *text,
 			newName.c_str());
 	config_set_string(App()->GlobalConfig(), "Basic", "ProfileDir",
 			newDir.c_str());
+
+	if (create_new) {
+		DestroyPanelCookieManager();
+	} else if (!rename) {
+		DuplicateCurrentCookieProfile(config);
+	}
 
 	config_set_string(config, "General", "Name", newName.c_str());
 	config.SaveSafe("tmp");
@@ -380,7 +390,7 @@ void OBSBasic::on_actionRenameProfile_triggered()
 
 	/* Duplicate and delete in case there are any issues in the process */
 	bool success = AddProfile(false, Str("RenameProfile.Title"),
-			Str("AddProfile.Text"), curName.c_str());
+			Str("AddProfile.Text"), curName.c_str(), true);
 	if (success) {
 		DeleteProfile(curName.c_str(), curDir.c_str());
 		RefreshProfiles();
@@ -445,6 +455,8 @@ void OBSBasic::on_actionRemoveProfile_triggered()
 			newName.c_str());
 	config_set_string(App()->GlobalConfig(), "Basic", "ProfileDir",
 			newDir);
+
+	DestroyPanelCookieManager();
 
 	config.Swap(basicConfig);
 	InitBasicConfigDefaults();
@@ -602,6 +614,8 @@ void OBSBasic::ChangeProfile()
 	config_set_string(App()->GlobalConfig(), "Basic", "Profile", newName);
 	config_set_string(App()->GlobalConfig(), "Basic", "ProfileDir",
 			newDir);
+
+	DestroyPanelCookieManager();
 
 	config.Swap(basicConfig);
 	InitBasicConfigDefaults();

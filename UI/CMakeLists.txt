@@ -140,6 +140,7 @@ set(obs_SOURCES
 	window-basic-main-transitions.cpp
 	window-basic-main-dropfiles.cpp
 	window-basic-main-profiles.cpp
+	window-basic-main-browser.cpp
 	window-basic-status-bar.cpp
 	window-basic-adv-audio.cpp
 	window-basic-transform.cpp
