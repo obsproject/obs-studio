@@ -17,6 +17,8 @@ class Ui_AutoConfigVideoPage;
 class Ui_AutoConfigStreamPage;
 class Ui_AutoConfigTestPage;
 
+class AutoConfigStreamPage;
+
 class AutoConfig : public QWizard {
 	Q_OBJECT
 
@@ -59,6 +61,8 @@ class AutoConfig : public QWizard {
 	};
 
 	static inline const char *GetEncoderId(Encoder enc);
+
+	AutoConfigStreamPage *streamPage = nullptr;
 
 	Service service = Service::Other;
 	Quality recordingQuality = Quality::Stream;
@@ -154,6 +158,10 @@ class AutoConfigStreamPage : public QWizardPage {
 	Q_OBJECT
 
 	friend class AutoConfig;
+
+	enum class Section : int {
+		StreamKey,
+	};
 
 	Ui_AutoConfigStreamPage *ui;
 	QString lastService;

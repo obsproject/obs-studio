@@ -223,6 +223,16 @@ AutoConfigStreamPage::AutoConfigStreamPage(QWidget *parent)
 	ui->bitrateLabel->setVisible(false);
 	ui->bitrate->setVisible(false);
 
+	int vertSpacing = ui->topLayout->verticalSpacing();
+
+	QMargins m = ui->topLayout->contentsMargins();
+	m.setBottom(vertSpacing / 2);
+	ui->topLayout->setContentsMargins(m);
+
+	m = ui->streamkeyPageLayout->contentsMargins();
+	m.setTop(vertSpacing / 2);
+	ui->streamkeyPageLayout->setContentsMargins(m);
+
 	setTitle(QTStr("Basic.AutoConfig.StreamPage"));
 	setSubTitle(QTStr("Basic.AutoConfig.StreamPage.SubTitle"));
 
@@ -378,11 +388,11 @@ void AutoConfigStreamPage::ServiceChanged()
 	if (service == "Twitch" && wiz->twitchAuto)
 		regionBased = false;
 
-	ui->formLayout->removeWidget(ui->serverLabel);
-	ui->formLayout->removeWidget(ui->serverStackedWidget);
+	ui->streamkeyPageLayout->removeWidget(ui->serverLabel);
+	ui->streamkeyPageLayout->removeWidget(ui->serverStackedWidget);
 
 	if (custom) {
-		ui->formLayout->insertRow(1, ui->serverLabel,
+		ui->streamkeyPageLayout->insertRow(1, ui->serverLabel,
 				ui->serverStackedWidget);
 
 		ui->region->setVisible(false);
@@ -391,7 +401,7 @@ void AutoConfigStreamPage::ServiceChanged()
 		ui->serverLabel->setVisible(true);
 	} else {
 		if (!testBandwidth)
-			ui->formLayout->insertRow(2, ui->serverLabel,
+			ui->streamkeyPageLayout->insertRow(2, ui->serverLabel,
 					ui->serverStackedWidget);
 
 		ui->region->setVisible(regionBased && testBandwidth);
@@ -474,12 +484,6 @@ void AutoConfigStreamPage::LoadServices(bool showAll)
 	for (QString &name : names)
 		ui->service->addItem(name);
 
-	if (!lastService.isEmpty()) {
-		int idx = ui->service->findText(lastService);
-		if (idx != -1)
-			ui->service->setCurrentIndex(idx);
-	}
-
 	if (!showAll) {
 		ui->service->addItem(
 			QTStr("Basic.AutoConfig.StreamPage.Service.ShowAll"),
@@ -489,6 +493,12 @@ void AutoConfigStreamPage::LoadServices(bool showAll)
 	ui->service->insertItem(0,
 			QTStr("Basic.AutoConfig.StreamPage.Service.Custom"),
 			QVariant((int)ListOpt::Custom));
+
+	if (!lastService.isEmpty()) {
+		int idx = ui->service->findText(lastService);
+		if (idx != -1)
+			ui->service->setCurrentIndex(idx);
+	}
 
 	obs_properties_destroy(props);
 
@@ -573,7 +583,7 @@ AutoConfig::AutoConfig(QWidget *parent)
 #ifdef _WIN32
 	setWizardStyle(QWizard::ModernStyle);
 #endif
-	AutoConfigStreamPage *streamPage = new AutoConfigStreamPage();
+	streamPage = new AutoConfigStreamPage();
 
 	setPage(StartPage, new AutoConfigStartPage());
 	setPage(VideoPage, new AutoConfigVideoPage());
@@ -637,6 +647,7 @@ AutoConfig::AutoConfig(QWidget *parent)
 
 	streamPage->UpdateServerList();
 	streamPage->UpdateKeyLink();
+	streamPage->lastService.clear();
 
 	if (!customServer) {
 		QComboBox *serverList = streamPage->ui->server;

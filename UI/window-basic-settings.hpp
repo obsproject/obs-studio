@@ -20,12 +20,13 @@
 
 #include <util/util.hpp>
 #include <QDialog>
+#include <QPointer>
 #include <memory>
 #include <string>
 
 #include <libff/ff-util.h>
 
-#include <obs.h>
+#include <obs.hpp>
 
 class OBSBasic;
 class QAbstractButton;
@@ -185,7 +186,6 @@ private:
 
 	bool QueryChanges();
 
-	void LoadServiceTypes();
 	void LoadEncoderTypes();
 	void LoadColorRanges();
 	void LoadFormats();
@@ -206,6 +206,17 @@ private:
 	/* general */
 	void LoadLanguageList();
 	void LoadThemeList();
+
+	/* stream */
+	void InitStreamPage();
+	inline bool IsCustomService() const;
+	void LoadServices(bool showAll);
+	QString lastService;
+private slots:
+	void UpdateServerList();
+	void UpdateKeyLink();
+	void on_show_clicked();
+private:
 
 	/* output */
 	void LoadSimpleOutputSettings();
@@ -255,7 +266,7 @@ private slots:
 	void on_listWidget_itemSelectionChanged();
 	void on_buttonBox_clicked(QAbstractButton *button);
 
-	void on_streamType_currentIndexChanged(int idx);
+	void on_service_currentIndexChanged(int idx);
 	void on_simpleOutputBrowse_clicked();
 	void on_advOutRecPathBrowse_clicked();
 	void on_advOutFFPathBrowse_clicked();
@@ -305,6 +316,8 @@ private slots:
 	void AdvReplayBufferChanged();
 
 	void SimpleStreamingEncoderChanged();
+
+	OBSService SpawnTempService();
 
 protected:
 	virtual void closeEvent(QCloseEvent *event);
