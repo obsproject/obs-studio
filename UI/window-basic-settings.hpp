@@ -28,6 +28,8 @@
 
 #include <obs.hpp>
 
+#include "auth-base.hpp"
+
 class OBSBasic;
 class QAbstractButton;
 class QComboBox;
@@ -90,6 +92,8 @@ private:
 	OBSBasic *main;
 
 	std::unique_ptr<Ui::OBSBasicSettings> ui;
+
+	std::shared_ptr<Auth> auth;
 
 	bool generalChanged = false;
 	bool stream1Changed = false;
@@ -211,11 +215,16 @@ private:
 	void InitStreamPage();
 	inline bool IsCustomService() const;
 	void LoadServices(bool showAll);
+	void OnOAuthStreamKeyConnected();
+	void OnAuthConnected();
 	QString lastService;
 private slots:
 	void UpdateServerList();
 	void UpdateKeyLink();
 	void on_show_clicked();
+	void on_connectAccount_clicked();
+	void on_disconnectAccount_clicked();
+	void on_useStreamKey_clicked();
 private:
 
 	/* output */

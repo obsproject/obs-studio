@@ -5,12 +5,24 @@
 #include "window-basic-main.hpp"
 #include "qt-wrappers.hpp"
 
+#ifdef BROWSER_AVAILABLE
+#include <browser-panel.hpp>
+#include "auth-oauth.hpp"
+#endif
+
+struct QCef;
+struct QCefCookieManager;
+
+extern QCef              *cef;
+extern QCefCookieManager *panel_cookies;
+
 enum class ListOpt : int {
 	ShowAll = 1,
 	Custom,
 };
 
 enum class Section : int {
+	Connect,
 	StreamKey,
 };
 
@@ -21,11 +33,18 @@ inline bool OBSBasicSettings::IsCustomService() const
 
 void OBSBasicSettings::InitStreamPage()
 {
+	ui->connectAccount2->setVisible(false);
+	ui->disconnectAccount->setVisible(false);
+
 	int vertSpacing = ui->topStreamLayout->verticalSpacing();
 
 	QMargins m = ui->topStreamLayout->contentsMargins();
 	m.setBottom(vertSpacing / 2);
 	ui->topStreamLayout->setContentsMargins(m);
+
+	m = ui->loginPageLayout->contentsMargins();
+	m.setTop(vertSpacing / 2);
+	ui->loginPageLayout->setContentsMargins(m);
 
 	m = ui->streamkeyPageLayout->contentsMargins();
 	m.setTop(vertSpacing / 2);
@@ -124,6 +143,9 @@ void OBSBasicSettings::SaveStream1Settings()
 
 	main->SetService(newService);
 	main->SaveService();
+	main->auth = auth;
+	if (!!main->auth)
+		main->auth->LoadUI();
 }
 
 void OBSBasicSettings::UpdateKeyLink()
@@ -203,6 +225,11 @@ void OBSBasicSettings::LoadServices(bool showAll)
 	ui->service->blockSignals(false);
 }
 
+static inline bool is_auth_service(const std::string &service)
+{
+	return Auth::AuthType(service) != Auth::Type::None;
+}
+
 void OBSBasicSettings::on_service_currentIndexChanged(int)
 {
 	bool showMore =
@@ -212,6 +239,29 @@ void OBSBasicSettings::on_service_currentIndexChanged(int)
 
 	std::string service = QT_TO_UTF8(ui->service->currentText());
 	bool custom = IsCustomService();
+
+	ui->disconnectAccount->setVisible(false);
+
+#ifdef BROWSER_AVAILABLE
+	if (cef) {
+		if (lastService != service.c_str()) {
+			QString key = ui->key->text();
+			bool can_auth = is_auth_service(service);
+			int page = can_auth && (!loading || key.isEmpty())
+				? (int)Section::Connect
+				: (int)Section::StreamKey;
+
+			ui->streamStackWidget->setCurrentIndex(page);
+			ui->streamKeyWidget->setVisible(true);
+			ui->streamKeyLabel->setVisible(true);
+			ui->connectAccount2->setVisible(can_auth);
+		}
+	} else {
+		ui->connectAccount2->setVisible(false);
+	}
+#else
+	ui->connectAccount2->setVisible(false);
+#endif
 
 	if (custom) {
 		ui->streamkeyPageLayout->insertRow(1, ui->serverLabel,
@@ -223,6 +273,16 @@ void OBSBasicSettings::on_service_currentIndexChanged(int)
 	} else {
 		ui->serverStackedWidget->setCurrentIndex(0);
 	}
+
+#ifdef BROWSER_AVAILABLE
+	auth.reset();
+
+	if (!!main->auth &&
+	    service.find(main->auth->service()) != std::string::npos) {
+		auth = main->auth;
+		OnAuthConnected();
+	}
+#endif
 }
 
 void OBSBasicSettings::UpdateServerList()
@@ -297,4 +357,89 @@ OBSService OBSBasicSettings::SpawnTempService()
 	obs_service_release(newService);
 
 	return newService;
+}
+
+void OBSBasicSettings::OnOAuthStreamKeyConnected()
+{
+#ifdef BROWSER_AVAILABLE
+	OAuthStreamKey *a = reinterpret_cast<OAuthStreamKey*>(auth.get());
+
+	if (a) {
+		bool validKey = !a->key().empty();
+
+		if (validKey)
+			ui->key->setText(QT_UTF8(a->key().c_str()));
+
+		ui->streamKeyWidget->setVisible(!validKey);
+		ui->streamKeyLabel->setVisible(!validKey);
+		ui->connectAccount2->setVisible(!validKey);
+		ui->disconnectAccount->setVisible(validKey);
+	}
+
+	ui->streamStackWidget->setCurrentIndex((int)Section::StreamKey);
+#endif
+}
+
+void OBSBasicSettings::OnAuthConnected()
+{
+	std::string service = QT_TO_UTF8(ui->service->currentText());
+	Auth::Type type = Auth::AuthType(service);
+
+	if (type == Auth::Type::OAuth_StreamKey) {
+		OnOAuthStreamKeyConnected();
+	}
+
+	if (!loading) {
+		stream1Changed = true;
+		EnableApplyButton(true);
+	}
+}
+
+void OBSBasicSettings::on_connectAccount_clicked()
+{
+#ifdef BROWSER_AVAILABLE
+	std::string service = QT_TO_UTF8(ui->service->currentText());
+
+	auth = OAuthStreamKey::Login(this, service);
+	if (!!auth)
+		OnAuthConnected();
+#endif
+}
+
+#define DISCONNECT_COMFIRM_TITLE \
+	"Basic.AutoConfig.StreamPage.DisconnectAccount.Confirm.Title"
+#define DISCONNECT_COMFIRM_TEXT \
+	"Basic.AutoConfig.StreamPage.DisconnectAccount.Confirm.Text"
+
+void OBSBasicSettings::on_disconnectAccount_clicked()
+{
+	QMessageBox::StandardButton button;
+
+	button = OBSMessageBox::question(this,
+			QTStr(DISCONNECT_COMFIRM_TITLE),
+			QTStr(DISCONNECT_COMFIRM_TEXT));
+
+	if (button == QMessageBox::No) {
+		return;
+	}
+
+	main->auth.reset();
+	auth.reset();
+
+	std::string service = QT_TO_UTF8(ui->service->currentText());
+
+#ifdef BROWSER_AVAILABLE
+	OAuth::DeleteCookies(service);
+#endif
+
+	ui->streamKeyWidget->setVisible(true);
+	ui->streamKeyLabel->setVisible(true);
+	ui->connectAccount2->setVisible(true);
+	ui->disconnectAccount->setVisible(false);
+	ui->key->setText("");
+}
+
+void OBSBasicSettings::on_useStreamKey_clicked()
+{
+	ui->streamStackWidget->setCurrentIndex((int)Section::StreamKey);
 }

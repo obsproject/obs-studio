@@ -118,6 +118,8 @@ class OBSBasic : public OBSMainWindow {
 	friend class OBSBasicSourceSelect;
 	friend class OBSBasicSettings;
 	friend class Auth;
+	friend class AutoConfig;
+	friend class AutoConfigStreamPage;
 	friend struct OBSStudioAPI;
 
 	enum class MoveDir {

@@ -8,6 +8,7 @@
 #include <condition_variable>
 #include <utility>
 #include <thread>
+#include <memory>
 #include <vector>
 #include <string>
 #include <mutex>
@@ -18,6 +19,7 @@ class Ui_AutoConfigStreamPage;
 class Ui_AutoConfigTestPage;
 
 class AutoConfigStreamPage;
+class Auth;
 
 class AutoConfig : public QWizard {
 	Q_OBJECT
@@ -160,8 +162,11 @@ class AutoConfigStreamPage : public QWizardPage {
 	friend class AutoConfig;
 
 	enum class Section : int {
+		Connect,
 		StreamKey,
 	};
+
+	std::shared_ptr<Auth> auth;
 
 	Ui_AutoConfigStreamPage *ui;
 	QString lastService;
@@ -178,8 +183,14 @@ public:
 	virtual int nextId() const override;
 	virtual bool validatePage() override;
 
+	void OnAuthConnected();
+	void OnOAuthStreamKeyConnected();
+
 public slots:
 	void on_show_clicked();
+	void on_connectAccount_clicked();
+	void on_disconnectAccount_clicked();
+	void on_useStreamKey_clicked();
 	void ServiceChanged();
 	void UpdateKeyLink();
 	void UpdateServerList();
