@@ -132,3 +132,28 @@ void DuplicateCurrentCookieProfile(ConfigFile &config)
 	UNUSED_PARAMETER(config);
 #endif
 }
+
+void OBSBasic::InitBrowserPanelSafeBlock(bool showDialog)
+{
+#ifdef BROWSER_AVAILABLE
+	if (!cef)
+		return;
+	if (cef->init_browser()) {
+		InitPanelCookieManager();
+		return;
+	}
+
+	if (showDialog)
+		ExecuteFuncSafeBlockMsgBox(
+				[] {cef->wait_for_browser_init();},
+				QTStr("BrowserPanelInit.Title"),
+				QTStr("BrowserPanelInit.Text"));
+	else
+		ExecuteFuncSafeBlock(
+				[] {cef->wait_for_browser_init();});
+
+	InitPanelCookieManager();
+#else
+	UNUSED_PARAMETER(showDialog);
+#endif
+}

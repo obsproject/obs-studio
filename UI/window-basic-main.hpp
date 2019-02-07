@@ -791,6 +791,8 @@ public:
 	virtual int GetProfilePath(char *path, size_t size, const char *file)
 		const override;
 
+	static void InitBrowserPanelSafeBlock(bool showDialog);
+
 private:
 	std::unique_ptr<Ui::OBSBasic> ui;
 };
