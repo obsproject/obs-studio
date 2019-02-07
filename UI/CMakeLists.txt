@@ -105,6 +105,15 @@ elseif(UNIX)
                 Qt5::X11Extras)
 endif()
 
+if(BROWSER_AVAILABLE_INTERNAL)
+	list(APPEND obs_PLATFORM_SOURCES
+		auth-oauth.cpp
+		)
+	list(APPEND obs_PLATFORM_HEADERS
+		auth-oauth.hpp
+		)
+endif()
+
 set(obs_libffutil_SOURCES
 	../deps/libff/libff/ff-util.c
 	)
@@ -150,6 +159,7 @@ set(obs_SOURCES
 	window-log-reply.cpp
 	window-projector.cpp
 	window-remux.cpp
+	auth-base.cpp
 	source-tree.cpp
 	properties-view.cpp
 	focus-list.cpp
@@ -198,6 +208,7 @@ set(obs_HEADERS
 	window-log-reply.hpp
 	window-projector.hpp
 	window-remux.hpp
+	auth-base.hpp
 	source-tree.hpp
 	properties-view.hpp
 	properties-view.moc.hpp

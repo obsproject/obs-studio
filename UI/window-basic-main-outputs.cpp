@@ -651,6 +651,10 @@ bool SimpleOutput::StartStreaming(obs_service_t *service)
 	if (!Active())
 		SetupOutputs();
 
+	Auth *auth = main->GetAuth();
+	if (auth)
+		auth->OnStreamConfig();
+
 	/* --------------------- */
 
 	const char *type = obs_service_get_output_type(service);
@@ -1425,6 +1429,10 @@ bool AdvancedOutput::StartStreaming(obs_service_t *service)
 
 	if (!Active())
 		SetupOutputs();
+
+	Auth *auth = main->GetAuth();
+	if (auth)
+		auth->OnStreamConfig();
 
 	/* --------------------- */
 

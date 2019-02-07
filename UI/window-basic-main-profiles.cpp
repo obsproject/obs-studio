@@ -232,7 +232,9 @@ bool OBSBasic::AddProfile(bool create_new, const char *title, const char *text,
 	config_set_string(App()->GlobalConfig(), "Basic", "ProfileDir",
 			newDir.c_str());
 
+	Auth::Save();
 	if (create_new) {
+		auth.reset();
 		DestroyPanelCookieManager();
 	} else if (!rename) {
 		DuplicateCurrentCookieProfile(config);
@@ -456,6 +458,8 @@ void OBSBasic::on_actionRemoveProfile_triggered()
 	config_set_string(App()->GlobalConfig(), "Basic", "ProfileDir",
 			newDir);
 
+	Auth::Save();
+	auth.reset();
 	DestroyPanelCookieManager();
 
 	config.Swap(basicConfig);
@@ -470,6 +474,8 @@ void OBSBasic::on_actionRemoveProfile_triggered()
 	blog(LOG_INFO, "------------------------------------------------");
 
 	UpdateTitleBar();
+
+	Auth::Load();
 
 	if (api) {
 		api->on_event(OBS_FRONTEND_EVENT_PROFILE_LIST_CHANGED);
@@ -615,6 +621,8 @@ void OBSBasic::ChangeProfile()
 	config_set_string(App()->GlobalConfig(), "Basic", "ProfileDir",
 			newDir);
 
+	Auth::Save();
+	auth.reset();
 	DestroyPanelCookieManager();
 
 	config.Swap(basicConfig);
@@ -623,6 +631,8 @@ void OBSBasic::ChangeProfile()
 	RefreshProfiles();
 	config_save_safe(App()->GlobalConfig(), "tmp", nullptr);
 	UpdateTitleBar();
+
+	Auth::Load();
 
 	CheckForSimpleModeX264Fallback();
 

@@ -1786,6 +1786,8 @@ void OBSBasic::OnFirstLoad()
 		}
 	}
 #endif
+
+	Auth::Load();
 }
 
 void OBSBasic::DeferredLoad(const QString &file, int requeueCount)
@@ -3656,10 +3658,6 @@ void OBSBasic::closeEvent(QCloseEvent *event)
 				"BasicWindow", "geometry",
 				saveGeometry().toBase64().constData());
 
-	config_set_string(App()->GlobalConfig(),
-			"BasicWindow", "DockState",
-			saveState().toBase64().constData());
-
 	if (outputHandler && outputHandler->Active()) {
 		SetShowing(true);
 
@@ -3688,7 +3686,13 @@ void OBSBasic::closeEvent(QCloseEvent *event)
 
 	signalHandlers.clear();
 
+	Auth::Save();
 	SaveProjectNow();
+	auth.reset();
+
+	config_set_string(App()->GlobalConfig(),
+			"BasicWindow", "DockState",
+			saveState().toBase64().constData());
 
 	if (api)
 		api->on_event(OBS_FRONTEND_EVENT_EXIT);
