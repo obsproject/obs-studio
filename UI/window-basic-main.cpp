@@ -78,6 +78,8 @@ using namespace std;
 #include <browser-panel.hpp>
 #endif
 
+#include "ui-config.h"
+
 struct QCef;
 struct QCefCookieManager;
 
@@ -189,11 +191,17 @@ void assignDockToggle(QDockWidget *dock, QAction *action)
 			handleMenuToggle);
 }
 
+extern void RegisterMixerAuth();
+
 OBSBasic::OBSBasic(QWidget *parent)
 	: OBSMainWindow  (parent),
 	  ui             (new Ui::OBSBasic)
 {
 	setAttribute(Qt::WA_NativeWindow);
+
+#if MIXER_ENABLED
+	RegisterMixerAuth();
+#endif
 
 	setAcceptDrops(true);
 

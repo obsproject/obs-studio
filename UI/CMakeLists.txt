@@ -19,6 +19,20 @@ project(obs)
 
 set(DISABLE_UPDATE_MODULE TRUE CACHE BOOL "Disables building the update module")
 
+if(NOT DEFINED MIXER_CLIENTID OR "${MIXER_CLIENTID}" STREQUAL "" OR
+   NOT DEFINED MIXER_HASH     OR "${MIXER_HASH}"     STREQUAL "" OR
+   NOT BROWSER_AVAILABLE_INTERNAL)
+	set(MIXER_ENABLED FALSE)
+	set(MIXER_CLIENTID "")
+	set(MIXER_HASH "0")
+else()
+	set(MIXER_ENABLED TRUE)
+endif()
+
+configure_file(
+	"${CMAKE_CURRENT_SOURCE_DIR}/ui-config.h.in"
+	"${CMAKE_CURRENT_BINARY_DIR}/ui-config.h")
+
 set(CMAKE_INCLUDE_CURRENT_DIR TRUE)
 set(CMAKE_AUTOMOC TRUE)
 
@@ -39,6 +53,7 @@ endif()
 
 
 include_directories(${FFMPEG_INCLUDE_DIRS})
+include_directories(${CMAKE_CURRENT_BINARY_DIR})
 include_directories(SYSTEM "obs-frontend-api")
 include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/libobs")
 include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/deps/libff")
@@ -114,6 +129,15 @@ if(BROWSER_AVAILABLE_INTERNAL)
 		obf.h
 		auth-oauth.hpp
 		)
+
+	if(MIXER_ENABLED)
+		list(APPEND obs_PLATFORM_SOURCES
+			auth-mixer.cpp
+			)
+		list(APPEND obs_PLATFORM_HEADERS
+			auth-mixer.hpp
+			)
+	endif()
 endif()
 
 set(obs_libffutil_SOURCES
