@@ -438,6 +438,10 @@ static bool init_encoder(struct nvenc_data *enc, obs_data_t *settings)
 		config->rcParams.enableTemporalAQ = psycho_aq;
 	}
 
+	/* b-frames as reference */
+	if (nv_get_cap(enc, NV_ENC_CAPS_SUPPORT_BFRAME_REF_MODE))
+		h264_config->useBFramesAsRef = NV_ENC_BFRAME_REF_MODE_MIDDLE;
+
 	/* -------------------------- */
 	/* rate control               */
 
