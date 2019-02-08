@@ -3757,20 +3757,23 @@ void OBSBasic::on_actionShow_Recordings_triggered()
 
 void OBSBasic::on_actionRemux_triggered()
 {
-	if (!remux.isNull()) {
-		remux->show();
-		remux->raise();
-		return;
-	}
-
 	const char *mode = config_get_string(basicConfig, "Output", "Mode");
 	const char *path = strcmp(mode, "Advanced") ?
 		config_get_string(basicConfig, "SimpleOutput", "FilePath") :
 		config_get_string(basicConfig, "AdvOut", "RecFilePath");
 
+	if (!remux.isNull()) {
+		OBSRemux *dlg = static_cast<OBSRemux *>(remux.data());
+		dlg->updatePath(path);
+		remux->show();
+		remux->raise();
+		return;
+	}
+
 	OBSRemux *remuxDlg;
 	remuxDlg = new OBSRemux(path, this);
 	remuxDlg->show();
+	
 	remux = remuxDlg;
 }
 

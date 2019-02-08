@@ -210,6 +210,10 @@ public:
 				&localOption, painter);
 	}
 
+	void updatePath(const QString &path)
+	{
+		defaultPath = path;
+	}
 private:
 	bool isOutput;
 	QString defaultPath;
@@ -672,9 +676,9 @@ OBSRemux::OBSRemux(const char *path, QWidget *parent, bool autoRemux_)
 
 	ui->tableView->setModel(queueModel);
 	ui->tableView->setItemDelegateForColumn(RemuxEntryColumn::InputPath,
-			new RemuxEntryPathItemDelegate(false, recPath));
+			new RemuxEntryPathItemDelegate(false, recPath.c_str()));
 	ui->tableView->setItemDelegateForColumn(RemuxEntryColumn::OutputPath,
-			new RemuxEntryPathItemDelegate(true, recPath));
+			new RemuxEntryPathItemDelegate(true, recPath.c_str()));
 	ui->tableView->horizontalHeader()->setSectionResizeMode(
 			QHeaderView::ResizeMode::Stretch);
 	ui->tableView->horizontalHeader()->setSectionResizeMode(
@@ -731,6 +735,20 @@ OBSRemux::OBSRemux(const char *path, QWidget *parent, bool autoRemux_)
 	QMetaObject::invokeMethod(ui->tableView,
 			"setCurrentIndex", Qt::QueuedConnection,
 			Q_ARG(const QModelIndex &, index));
+}
+
+void OBSRemux::updatePath(const char *path)
+{
+	recPath = path;
+	QAbstractItemDelegate *in = ui->tableView->itemDelegateForColumn(
+			RemuxEntryColumn::InputPath);
+	QAbstractItemDelegate *out = ui->tableView->itemDelegateForColumn(
+			RemuxEntryColumn::OutputPath);
+
+	static_cast<RemuxEntryPathItemDelegate*>(in)->updatePath(
+			QString::fromStdString(recPath));
+	static_cast<RemuxEntryPathItemDelegate*>(out)->updatePath(
+			QString::fromStdString(recPath));
 }
 
 bool OBSRemux::stopRemux()

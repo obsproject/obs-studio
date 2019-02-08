@@ -51,7 +51,7 @@ class OBSRemux : public QDialog {
 
 	std::unique_ptr<Ui::OBSRemux> ui;
 
-	const char *recPath;
+	std::string recPath;
 
 	virtual void closeEvent(QCloseEvent *event) override;
 	virtual void reject() override;
@@ -63,6 +63,8 @@ public:
 	explicit OBSRemux(const char *recPath, QWidget *parent = nullptr,
 			bool autoRemux = false);
 	virtual ~OBSRemux() override;
+
+	void updatePath(const char *recPath);
 
 	using job_t = std::shared_ptr<struct media_remux_job>;
 
