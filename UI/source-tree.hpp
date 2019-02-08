@@ -142,11 +142,21 @@ class SourceTree : public QListView {
 		return reinterpret_cast<SourceTreeModel *>(model());
 	}
 
+	SourceTreeItem *currentHover;
+
 public:
 	inline SourceTreeItem *GetItemWidget(int idx)
 	{
 		QWidget *widget = indexWidget(GetStm()->createIndex(idx, 0));
 		return reinterpret_cast<SourceTreeItem *>(widget);
+	}
+
+	inline SourceTreeItem *GetHoveredItem()
+	{
+		if (underMouse()) {
+			return currentHover;
+		}
+		return nullptr;
 	}
 
 	explicit SourceTree(QWidget *parent = nullptr);
@@ -175,6 +185,7 @@ public slots:
 protected:
 	virtual void mouseDoubleClickEvent(QMouseEvent *event) override;
 	virtual void dropEvent(QDropEvent *event) override;
+	virtual void mouseMoveEvent(QMouseEvent *event) override;
 
 	virtual void selectionChanged(const QItemSelection &selected, const QItemSelection &deselected) override;
 };

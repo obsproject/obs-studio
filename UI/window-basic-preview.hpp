@@ -43,6 +43,8 @@ private:
 	matrix4      itemToScreen;
 	matrix4      invGroupTransform;
 
+	gs_texture_t *overflow = nullptr;
+
 	vec2         startPos;
 	vec2         lastMoveOffset;
 	vec2         scrollingFrom;
@@ -54,10 +56,13 @@ private:
 	bool         locked         = false;
 	bool         scrollMode     = false;
 	bool         fixedScaling   = false;
+	OBSSceneItem hovered        = nullptr;
 	int32_t      scalingLevel   = 0;
 	float        scalingAmount  = 1.0f;
 
 	static vec2 GetMouseEventPos(QMouseEvent *event);
+	static bool DrawSelectedOverflow(obs_scene_t *scene,
+		obs_sceneitem_t *item, void *param);
 	static bool DrawSelectedItem(obs_scene_t *scene, obs_sceneitem_t *item,
 		void *param);
 
@@ -84,6 +89,7 @@ private:
 
 public:
 	OBSBasicPreview(QWidget *parent, Qt::WindowFlags flags = 0);
+	~OBSBasicPreview();
 
 	virtual void keyPressEvent(QKeyEvent *event) override;
 	virtual void keyReleaseEvent(QKeyEvent *event) override;
@@ -93,7 +99,9 @@ public:
 	virtual void mousePressEvent(QMouseEvent *event) override;
 	virtual void mouseReleaseEvent(QMouseEvent *event) override;
 	virtual void mouseMoveEvent(QMouseEvent *event) override;
+	virtual void leaveEvent(QEvent *event) override;
 
+	void DrawOverflow();
 	void DrawSceneEditing();
 
 	inline void SetLocked(bool newLockedVal) {locked = newLockedVal;}

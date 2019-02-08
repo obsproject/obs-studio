@@ -541,6 +541,58 @@
                  </widget>
                 </item>
                 <item>
+                 <widget class="QGroupBox" name="groupBox_18">
+                  <property name="title">
+                   <string>StudioMode.Preview</string>
+                  </property>
+                  <layout class="QFormLayout" name="formLayout_35">
+                   <property name="fieldGrowthPolicy">
+                    <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+                   </property>
+                   <property name="labelAlignment">
+                    <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                   </property>
+                   <property name="topMargin">
+                    <number>2</number>
+                   </property>
+                   <item row="1" column="1">
+                    <widget class="QCheckBox" name="overflowAlwaysVisible">
+                     <property name="text">
+                      <string>Basic.Settings.General.OverflowAlwaysVisible</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="0" column="0">
+                    <spacer name="horizontalSpacer_25">
+                     <property name="orientation">
+                      <enum>Qt::Horizontal</enum>
+                     </property>
+                     <property name="sizeHint" stdset="0">
+                      <size>
+                       <width>170</width>
+                       <height>5</height>
+                      </size>
+                     </property>
+                    </spacer>
+                   </item>
+                   <item row="2" column="1">
+                    <widget class="QCheckBox" name="overflowSelectionHide">
+                     <property name="text">
+                      <string>Basic.Settings.General.OverflowSelectionHidden</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="0" column="1">
+                    <widget class="QCheckBox" name="overflowHide">
+                     <property name="text">
+                      <string>Basic.Settings.General.OverflowHidden</string>
+                     </property>
+                    </widget>
+                   </item>
+                  </layout>
+                 </widget>
+                </item>
+                <item>
                  <widget class="QGroupBox" name="groupBox_11">
                   <property name="title">
                    <string>Basic.TogglePreviewProgramMode</string>

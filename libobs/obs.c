@@ -309,6 +309,11 @@ static int obs_init_graphics(struct obs_video_info *ovi)
 			NULL);
 	bfree(filename);
 
+	filename = obs_find_data_file("repeat.effect");
+	video->repeat_effect = gs_effect_create_from_file(filename,
+		NULL);
+	bfree(filename);
+
 	filename = obs_find_data_file("format_conversion.effect");
 	video->conversion_effect = gs_effect_create_from_file(filename,
 			NULL);
@@ -1570,6 +1575,8 @@ gs_effect_t *obs_get_base_effect(enum obs_base_effect effect)
 		return obs->video.opaque_effect;
 	case OBS_EFFECT_SOLID:
 		return obs->video.solid_effect;
+	case OBS_EFFECT_REPEAT:
+		return obs->video.repeat_effect;
 	case OBS_EFFECT_BICUBIC:
 		return obs->video.bicubic_effect;
 	case OBS_EFFECT_LANCZOS:
