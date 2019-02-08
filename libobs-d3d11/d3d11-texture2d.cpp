@@ -179,10 +179,10 @@ void gs_texture_2d::InitResourceView()
 
 	if (type == GS_TEXTURE_CUBE) {
 		resourceDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURECUBE;
-		resourceDesc.TextureCube.MipLevels = genMipmaps ? -1 : levels;
+		resourceDesc.TextureCube.MipLevels = (genMipmaps || !levels) ? -1 : levels;
 	} else {
 		resourceDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
-		resourceDesc.Texture2D.MipLevels = genMipmaps ? -1 : levels;
+		resourceDesc.Texture2D.MipLevels = (genMipmaps || !levels) ? -1 : levels;
 	}
 
 	hr = device->device->CreateShaderResourceView(texture, &resourceDesc,
