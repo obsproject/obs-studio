@@ -253,8 +253,6 @@ static bool init_d3d11(struct nvenc_data *enc, obs_data_t *settings)
 	ID3D11DeviceContext     *context;
 	HRESULT                 hr;
 
-	int gpu = (int)obs_data_get_int(settings, "gpu");
-
 	if (!dxgi || !d3d11) {
 		return false;
 	}
@@ -275,7 +273,7 @@ static bool init_d3d11(struct nvenc_data *enc, obs_data_t *settings)
 		return false;
 	}
 
-	hr = factory->lpVtbl->EnumAdapters(factory, gpu, &adapter);
+	hr = factory->lpVtbl->EnumAdapters(factory, 0, &adapter);
 	factory->lpVtbl->Release(factory);
 	if (FAILED(hr)) {
 		error_hr("EnumAdapters failed");
@@ -320,7 +318,6 @@ static bool init_encoder(struct nvenc_data *enc, obs_data_t *settings)
 	const char *profile = obs_data_get_string(settings, "profile");
 	bool psycho_aq = obs_data_get_bool(settings, "psycho_aq");
 	bool lookahead = obs_data_get_bool(settings, "lookahead");
-	int gpu = (int)obs_data_get_int(settings, "gpu");
 	int bf = (int)obs_data_get_int(settings, "bf");
 	bool vbr = astrcmpi(rc, "VBR") == 0;
 	NVENCSTATUS err;
@@ -505,16 +502,14 @@ static bool init_encoder(struct nvenc_data *enc, obs_data_t *settings)
 	     "\t2-pass:       %s\n"
 	     "\tb-frames:     %d\n"
 	     "\tlookahead:    %s\n"
-	     "\tpsycho_aq:    %s\n"
-	     "\tGPU:          %d\n",
+	     "\tpsycho_aq:    %s\n",
 	     rc, bitrate, cqp, gop_size,
 	     preset, profile,
 	     enc->cx, enc->cy,
 	     twopass ? "true" : "false",
 	     bf,
 	     lookahead ? "true" : "false",
-	     psycho_aq ? "true" : "false",
-	     gpu);
+	     psycho_aq ? "true" : "false");
 
 	return true;
 }
@@ -557,6 +552,13 @@ static void *nvenc_create(obs_data_t *settings, obs_encoder_t *encoder)
 	struct nvenc_data *enc = bzalloc(sizeof(*enc));
 	enc->encoder = encoder;
 	enc->first_packet = true;
+
+	/* this encoder requires shared textures, this cannot be used on a
+	 * gpu other than the one OBS is currently running on. */
+	int gpu = (int)obs_data_get_int(settings, "gpu");
+	if (gpu != 0) {
+		goto fail;
+	}
 
 	if (!obs_nv12_tex_active()) {
 		goto fail;
