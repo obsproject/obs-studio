@@ -415,7 +415,19 @@ bool audio_callback(void *param,
 
 	source = data->first_audio_source;
 	while (source) {
-		push_audio_tree(NULL, source, audio);
+
+		// If this source was released and is currently being destroyed, there is a possibility
+		// that it wasn't already removed from the obs audio array, if we are on this situation
+		// the ref counting will be equal to -1.
+		// We can safelly test it here without causing any other issue because, if the source still
+		// exists on the obs audio array, this means that the thread responsible for destroying
+		// it is behind or locked on the 'audio_sources_mutex', the same mutex we locked above,
+		// it won't continue the deletion process until we unlock this mutex, so we can assume
+		// it's reference will be valid and the check can be made.
+		if (source->control->ref.refs > -1) {
+			push_audio_tree(NULL, source, audio);
+		}
+
 		source = (struct obs_source*)source->next_audio_source;
 	}
 
@@ -466,9 +478,14 @@ bool audio_callback(void *param,
 
 	source = data->first_audio_source;
 	while (source) {
-		pthread_mutex_lock(&source->audio_buf_mutex);
-		discard_audio(audio, source, channels, sample_rate, &ts);
-		pthread_mutex_unlock(&source->audio_buf_mutex);
+
+		// See the comment on the very fist lock of the 'first_audio_source' mutex on this
+		// same method to an explanation why this is done.
+		if (source->control->ref.refs > -1) {
+			pthread_mutex_lock(&source->audio_buf_mutex);
+			discard_audio(audio, source, channels, sample_rate, &ts);
+			pthread_mutex_unlock(&source->audio_buf_mutex);
+		}
 
 		source = (struct obs_source*)source->next_audio_source;
 	}
