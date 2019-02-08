@@ -170,6 +170,7 @@ ffz.setAttribute('src','https://cdn.frankerfacez.com/script/script.min.js');\
 document.head.appendChild(ffz);";
 
 static const char *bttv_script = "\
+localStorage.setItem('bttv_clickTwitchEmotes', true);\
 localStorage.setItem('bttv_darkenedMode', true);\
 var bttv = document.createElement('script');\
 bttv.setAttribute('src','https://cdn.betterttv.net/betterttv.js');\
