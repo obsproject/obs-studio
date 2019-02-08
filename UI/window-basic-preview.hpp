@@ -56,6 +56,7 @@ private:
 	bool         locked         = false;
 	bool         scrollMode     = false;
 	bool         fixedScaling   = false;
+	OBSSceneItem hovered        = nullptr;
 	int32_t      scalingLevel   = 0;
 	float        scalingAmount  = 1.0f;
 
@@ -98,6 +99,7 @@ public:
 	virtual void mousePressEvent(QMouseEvent *event) override;
 	virtual void mouseReleaseEvent(QMouseEvent *event) override;
 	virtual void mouseMoveEvent(QMouseEvent *event) override;
+	virtual void leaveEvent(QEvent *event) override;
 
 	void DrawOverflow();
 	void DrawSceneEditing();

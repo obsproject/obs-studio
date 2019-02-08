@@ -35,6 +35,7 @@ SourceTreeItem::SourceTreeItem(SourceTree *tree_, OBSSceneItem sceneitem_)
 	  sceneitem    (sceneitem_)
 {
 	setAttribute(Qt::WA_TranslucentBackground);
+	setMouseTracking(true);
 
 	obs_source_t *source = obs_sceneitem_get_source(sceneitem);
 	const char *name = obs_source_get_name(source);
@@ -911,6 +912,8 @@ SourceTree::SourceTree(QWidget *parent_) : QListView(parent_)
 		"*[bgColor=\"6\"]{background-color:rgba(255,68,255,33%);}" \
 		"*[bgColor=\"7\"]{background-color:rgba(68,68,68,33%);}" \
 		"*[bgColor=\"8\"]{background-color:rgba(255,255,255,33%);}"));
+
+	setMouseTracking(true);
 }
 
 void SourceTree::ResetWidgets()
@@ -1262,6 +1265,15 @@ void SourceTree::dropEvent(QDropEvent *event)
 	event->setDropAction(Qt::CopyAction);
 
 	QListView::dropEvent(event);
+}
+
+void SourceTree::mouseMoveEvent(QMouseEvent *event)
+{
+	QPoint pos = event->pos();
+	SourceTreeItem *item = qobject_cast<SourceTreeItem *>
+		(childAt(pos));
+
+	currentHover = item;
 }
 
 void SourceTree::selectionChanged(

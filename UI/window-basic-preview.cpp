@@ -612,6 +612,9 @@ void OBSBasicPreview::mouseReleaseEvent(QMouseEvent *event)
 		mouseDown    = false;
 		mouseMoved   = false;
 		cropping     = false;
+
+		OBSSceneItem item = GetItemAtPos(pos, true);
+		hovered = item;
 	}
 }
 
@@ -1158,6 +1161,8 @@ void OBSBasicPreview::mouseMoveEvent(QMouseEvent *event)
 		return;
 
 	if (mouseDown) {
+		hovered = nullptr;
+
 		vec2 pos = GetMouseEventPos(event);
 
 		if (!mouseMoved && !mouseOverItems &&
@@ -1194,10 +1199,22 @@ void OBSBasicPreview::mouseMoveEvent(QMouseEvent *event)
 		}
 
 		mouseMoved = true;
+	} else {
+		vec2 pos = GetMouseEventPos(event);
+		OBSSceneItem item = GetItemAtPos(pos, true);
+
+		hovered = item;
 	}
 }
 
-static void DrawCircleAtPos(float x, float y)
+void OBSBasicPreview::leaveEvent(QEvent *event)
+{
+	hovered = nullptr;
+
+	UNUSED_PARAMETER(event);
+}
+
+static void DrawSquareAtPos(float x, float y)
 {
 	struct vec3 pos;
 	vec3_set(&pos, x, y, 0.0f);
@@ -1209,9 +1226,71 @@ static void DrawCircleAtPos(float x, float y)
 	gs_matrix_push();
 	gs_matrix_identity();
 	gs_matrix_translate(&pos);
-	gs_matrix_scale3f(HANDLE_RADIUS, HANDLE_RADIUS, 1.0f);
-	gs_draw(GS_LINESTRIP, 0, 0);
+
+	gs_matrix_translate3f(-HANDLE_RADIUS, -HANDLE_RADIUS, 0.0f);
+	gs_matrix_scale3f(HANDLE_RADIUS*2, HANDLE_RADIUS*2, 1.0f);
+	gs_draw(GS_TRISTRIP, 0, 0);
 	gs_matrix_pop();
+}
+
+static void DrawLine(float x1, float y1, float x2, float y2, float thickness)
+{
+	struct matrix4 matrix;
+	gs_matrix_get(&matrix);
+
+	float ySide = (y1 == y2) ? (y1 < 0.5f ? 1.0f : -1.0f) : 0.0f;
+	float xSide = (x1 == x2) ? (x1 < 0.5f ? 1.0f : -1.0f) : 0.0f;
+
+	gs_render_start(true);
+
+	gs_vertex2f(x1, y1);
+	gs_vertex2f(x1 + (xSide * (thickness / matrix.x.x)),
+		y1 + (ySide * (thickness / matrix.y.y)));
+	gs_vertex2f(x2 + (xSide * (thickness / matrix.x.x)),
+		y2 + (ySide * (thickness / matrix.y.y)));
+	gs_vertex2f(x2, y2);
+	gs_vertex2f(x1, y1);
+
+	gs_vertbuffer_t *line = gs_render_save();
+
+	gs_load_vertexbuffer(line);
+	gs_draw(GS_TRISTRIP, 0, 0);
+	gs_vertexbuffer_destroy(line);
+}
+
+static void DrawRect(float thickness)
+{
+	struct matrix4 matrix;
+	gs_matrix_get(&matrix);
+
+	gs_render_start(true);
+
+	gs_vertex2f(0.0f, 0.0f);
+	gs_vertex2f(0.0f + (thickness / matrix.x.x), 0.0f);
+	gs_vertex2f(0.0f + (thickness / matrix.x.x), 1.0f);
+	gs_vertex2f(0.0f, 1.0f);
+	gs_vertex2f(0.0f, 0.0f);
+	gs_vertex2f(0.0f, 1.0f);
+	gs_vertex2f(0.0f, 1.0f - (thickness / matrix.y.y));
+	gs_vertex2f(1.0f, 1.0f - (thickness / matrix.y.y));
+	gs_vertex2f(1.0f, 1.0f);
+	gs_vertex2f(0.0f, 1.0f);
+	gs_vertex2f(1.0f, 1.0f);
+	gs_vertex2f(1.0f - (thickness / matrix.x.x), 1.0f);
+	gs_vertex2f(1.0f - (thickness / matrix.x.x), 0.0f);
+	gs_vertex2f(1.0f, 0.0f);
+	gs_vertex2f(1.0f, 1.0f);
+	gs_vertex2f(1.0f, 0.0f);
+	gs_vertex2f(1.0f, 0.0f + (thickness / matrix.y.y));
+	gs_vertex2f(0.0f, 0.0f + (thickness / matrix.y.y));
+	gs_vertex2f(0.0f, 0.0f);
+	gs_vertex2f(1.0f, 0.0f);
+
+	gs_vertbuffer_t *rect = gs_render_save();
+
+	gs_load_vertexbuffer(rect);
+	gs_draw(GS_TRISTRIP, 0, 0);
+	gs_vertexbuffer_destroy(rect);
 }
 
 static inline bool crop_enabled(const obs_sceneitem_crop *crop)
@@ -1327,10 +1406,17 @@ bool OBSBasicPreview::DrawSelectedItem(obs_scene_t *scene,
 		gs_matrix_pop();
 	}
 
-	if (!obs_sceneitem_selected(item))
-		return true;
-
 	OBSBasic *main = reinterpret_cast<OBSBasic*>(App()->GetMainWindow());
+	OBSBasicPreview *prev = reinterpret_cast<OBSBasicPreview*>(param);
+
+	SourceTreeItem *hovItem = main->ui->sources->GetHoveredItem();
+	SourceTreeItem *curItem = main->GetItemWidgetFromSceneItem(item);
+
+	bool hover = (curItem && hovItem == curItem) || prev->hovered == item;
+	bool selected = obs_sceneitem_selected(item);
+
+	if (!selected && !hover)
+		return true;
 
 	matrix4 boxTransform;
 	matrix4 invBoxTransform;
@@ -1343,6 +1429,14 @@ bool OBSBasicPreview::DrawSelectedItem(obs_scene_t *scene,
 		{{{0.f, 1.f, 0.f}}},
 		{{{1.f, 1.f, 0.f}}},
 	};
+
+	vec4 red;
+	vec4 green;
+	vec4 blue;
+
+	vec4_set(&red, 1.0f, 0.0f, 0.0f, 1.0f);
+	vec4_set(&green, 0.0f, 1.0f, 0.0f, 1.0f);
+	vec4_set(&blue, 0.0f, 0.5f, 1.0f, 1.0f);
 
 	bool visible = std::all_of(std::begin(bounds), std::end(bounds),
 			[&](const vec3 &b)
@@ -1359,45 +1453,50 @@ bool OBSBasicPreview::DrawSelectedItem(obs_scene_t *scene,
 	obs_transform_info info;
 	obs_sceneitem_get_info(item, &info);
 
-	gs_load_vertexbuffer(main->circle);
-
 	gs_matrix_push();
 	gs_matrix_mul(&boxTransform);
-
-	DrawCircleAtPos(0.0f, 0.0f);
-	DrawCircleAtPos(0.0f, 1.0f);
-	DrawCircleAtPos(1.0f, 0.0f);
-	DrawCircleAtPos(1.0f, 1.0f);
-	DrawCircleAtPos(0.5f, 0.0f);
-	DrawCircleAtPos(0.0f, 0.5f);
-	DrawCircleAtPos(0.5f, 1.0f);
-	DrawCircleAtPos(1.0f, 0.5f);
 
 	obs_sceneitem_crop crop;
 	obs_sceneitem_get_crop(item, &crop);
 
+	gs_effect_t *eff = gs_get_effect();
+	gs_eparam_t *colParam = gs_effect_get_param_by_name(eff, "color");
+
 	if (info.bounds_type == OBS_BOUNDS_NONE && crop_enabled(&crop)) {
-		vec4 color;
-		gs_effect_t *eff = gs_get_effect();
-		gs_eparam_t *param = gs_effect_get_param_by_name(eff, "color");
+#define DRAW_SIDE(side, x1, y1, x2, y2) \
+		if (hover && !selected) \
+			gs_effect_set_vec4(colParam, &blue); \
+		else if (crop.side > 0) \
+			gs_effect_set_vec4(colParam, &green); \
+		DrawLine(x1, y1, x2, y2, HANDLE_RADIUS / 2); \
+		gs_effect_set_vec4(colParam, &red);
 
-#define DRAW_SIDE(side, vb) \
-		if (crop.side > 0) \
-			vec4_set(&color, 0.0f, 1.0f, 0.0f, 1.0f); \
-		else \
-			vec4_set(&color, 1.0f, 0.0f, 0.0f, 1.0f); \
-		gs_effect_set_vec4(param, &color); \
-		gs_load_vertexbuffer(main->vb); \
-		gs_draw(GS_LINESTRIP, 0, 0);
-
-		DRAW_SIDE(left,   boxLeft);
-		DRAW_SIDE(top,    boxTop);
-		DRAW_SIDE(right,  boxRight);
-		DRAW_SIDE(bottom, boxBottom);
+		DRAW_SIDE(left,   0.0f, 0.0f, 0.0f, 1.0f);
+		DRAW_SIDE(top,    0.0f, 0.0f, 1.0f, 0.0f);
+		DRAW_SIDE(right,  1.0f, 0.0f, 1.0f, 1.0f);
+		DRAW_SIDE(bottom, 0.0f, 1.0f, 1.0f, 1.0f);
 #undef DRAW_SIDE
 	} else {
-		gs_load_vertexbuffer(main->box);
-		gs_draw(GS_LINESTRIP, 0, 0);
+		if (!selected) {
+			gs_effect_set_vec4(colParam, &blue);
+			DrawRect(HANDLE_RADIUS / 2);
+		} else {
+			DrawRect(HANDLE_RADIUS / 2);
+		}
+	}
+
+	gs_load_vertexbuffer(main->box);
+	gs_effect_set_vec4(colParam, &red);
+
+	if (selected) {
+		DrawSquareAtPos(0.0f, 0.0f);
+		DrawSquareAtPos(0.0f, 1.0f);
+		DrawSquareAtPos(1.0f, 0.0f);
+		DrawSquareAtPos(1.0f, 1.0f);
+		DrawSquareAtPos(0.5f, 0.0f);
+		DrawSquareAtPos(0.0f, 0.5f);
+		DrawSquareAtPos(0.5f, 1.0f);
+		DrawSquareAtPos(1.0f, 0.5f);
 	}
 
 	gs_matrix_pop();
