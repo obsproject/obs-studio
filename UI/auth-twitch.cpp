@@ -248,6 +248,7 @@ void TwitchAuth::LoadSecondaryUIPanes()
 	std::string url;
 	std::string script;
 
+	QSize size = main->frameSize();
 	QPoint pos = main->pos();
 
 	script = "localStorage.setItem('twilight.theme', 1);";
@@ -304,7 +305,11 @@ void TwitchAuth::LoadSecondaryUIPanes()
 	info->setFloating(true);
 	stat->setFloating(true);
 
+	QSize statSize = stat->frameSize();
+
 	info->move(pos.x() + 50, pos.y() + 50);
+	stat->move(pos.x() + size.width()  / 2 - statSize.width()  / 2,
+	           pos.y() + size.height() / 2 - statSize.height() / 2);
 
 	if (firstLoad) {
 		info->setVisible(true);
