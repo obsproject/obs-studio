@@ -1274,6 +1274,8 @@ void SourceTree::mouseMoveEvent(QMouseEvent *event)
 		(childAt(pos));
 
 	currentHover = item;
+
+	QListView::mouseMoveEvent(event);
 }
 
 void SourceTree::selectionChanged(
