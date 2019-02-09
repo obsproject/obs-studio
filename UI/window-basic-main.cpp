@@ -3856,7 +3856,7 @@ static void AddProjectorMenuMonitors(QMenu *parent, QObject *target,
 		QRect screenGeometry = screens[i]->geometry();
 		QString str = QString("%1 %2: %3x%4 @ %5,%6").
 			arg(QTStr("Display"),
-			    QString::number(i),
+			    QString::number(i + 1),
 			    QString::number(screenGeometry.width()),
 			    QString::number(screenGeometry.height()),
 			    QString::number(screenGeometry.x()),
