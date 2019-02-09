@@ -152,6 +152,15 @@ QSizeGrip {
 	height: 12px;
 }
 
+QListWidget QLineEdit {
+    padding-top: 0;
+    padding-bottom: 0;
+    padding-right: 0;
+    padding-left: 2px;
+    border: none;
+    border-radius: none;
+}
+
 /***********************/
 /* --- List widget --- */
 /***********************/
