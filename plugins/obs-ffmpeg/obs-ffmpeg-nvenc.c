@@ -489,10 +489,16 @@ obs_properties_t *nvenc_properties(void *unused)
 	add_profile("baseline");
 #undef add_profile
 
-	obs_properties_add_bool(props, "lookahead",
+	p = obs_properties_add_bool(props, "lookahead",
 			obs_module_text("NVENC.LookAhead"));
-	obs_properties_add_bool(props, "psycho_aq",
+	obs_property_set_long_description(p,
+			obs_module_text("NVENC.LookAhead.ToolTip"));
+
+	p = obs_properties_add_bool(props, "psycho_aq",
 			obs_module_text("NVENC.PsychoVisualTuning"));
+	obs_property_set_long_description(p,
+			obs_module_text("NVENC.PsychoVisualTuning.ToolTip"));
+
 	obs_properties_add_int(props, "gpu", obs_module_text("GPU"), 0, 8, 1);
 
 	obs_properties_add_int(props, "bf", obs_module_text("BFrames"),
