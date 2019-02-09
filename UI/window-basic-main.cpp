@@ -1688,8 +1688,19 @@ void OBSBasic::OBSInit()
 			on_resetUI_triggered();
 	}
 
-	config_set_default_bool(App()->GlobalConfig(), "BasicWindow",
-			"DocksLocked", false);
+	bool pre23Defaults = config_get_bool(App()->GlobalConfig(),
+			"General", "Pre23Defaults");
+	if (pre23Defaults) {
+		bool resetDockLock23 = config_get_bool(App()->GlobalConfig(),
+				"General", "ResetDockLock23");
+		if (!resetDockLock23) {
+			config_set_bool(App()->GlobalConfig(),
+					"General", "ResetDockLock23", true);
+			config_remove_value(App()->GlobalConfig(),
+					"BasicWindow", "DocksLocked");
+			config_save_safe(App()->GlobalConfig(), "tmp", nullptr);
+		}
+	}
 
 	bool docksLocked = config_get_bool(App()->GlobalConfig(),
 			"BasicWindow", "DocksLocked");
