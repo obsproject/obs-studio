@@ -58,7 +58,7 @@
 /* ------------------------------------------------------------------------- */
 
 #define MOD(a,b) ((((a)%(b))+(b))%(b))
-#define MAX_LOADED 11 /* needs to be an odd number */
+#define MAX_LOADED 15 /* needs to be an odd number */
 
 struct image_file_data {
 	char *path;
