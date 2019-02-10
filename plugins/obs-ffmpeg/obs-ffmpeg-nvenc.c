@@ -446,7 +446,7 @@ obs_properties_t *nvenc_properties(void *unused)
 			obs_module_text("RateControl"),
 			OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
 	obs_property_list_add_string(p, "CBR", "CBR");
-	obs_property_list_add_string(p, "CQ", "CQP");
+	obs_property_list_add_string(p, "CQP", "CQP");
 	obs_property_list_add_string(p, "VBR", "VBR");
 	obs_property_list_add_string(p, obs_module_text("Lossless"),
 			"lossless");
