@@ -44,6 +44,8 @@ uniform int       int_v_plane_offset;
 
 uniform texture2d image;
 
+uniform float     element_size = 4.0; // PIXEL_SIZE
+
 sampler_state def_sampler {
 	Filter   = Linear;
 	AddressU = Clamp;
@@ -68,10 +70,20 @@ VertInOut VSDefault(VertInOut vert_in)
 
 float4 PSNV12(VertInOut vert_in) : TARGET
 {
-	float v_mul = floor(vert_in.uv.y * input_height);
+	// row # of the vert. buffer whom element belongs to
+	float row_y = floor(vert_in.uv.y * input_height);
 
-	float byte_offset = floor((v_mul + vert_in.uv.x) * width) * 4.0;
-	byte_offset += PRECISION_OFFSET;
+	// column # of the vert. buffer whom element belongs to
+	float col_x = floor(vert_in.uv.x * width); 
+
+	// simplify calculations
+	float optim_calc = col_x * element_size * width_i;
+
+	// normalized coordinates
+	float lum_u = optim_calc - floor(optim_calc);
+
+	// element offset, expanded rows
+	float byte_offset = (row_y * width + col_x) * element_size;
 
 	float2 sample_pos[4];
 
@@ -79,9 +91,8 @@ float4 PSNV12(VertInOut vert_in) : TARGET
 #ifdef DEBUGGING
 		return float4(1.0, 1.0, 1.0, 1.0);
 #endif
-
-		float lum_u = floor(fmod(byte_offset, width)) * width_i;
-		float lum_v = floor(byte_offset * width_i)    * height_i;
+		// normalized coordinates
+		float lum_v = floor(byte_offset * width_i) * height_i;
 
 		/* move to texel centers to sample the 4 pixels properly */
 		lum_u += width_i  * 0.5;
@@ -107,8 +118,10 @@ float4 PSNV12(VertInOut vert_in) : TARGET
 
 		float new_offset = byte_offset - u_plane_offset;
 
-		float ch_u = floor(fmod(new_offset, width)) * width_i;
-		float ch_v = floor(new_offset * width_i)    * height_d2_i;
+		// normalized coordinates
+		float ch_u = lum_u; // width of the plane is never changes
+		float ch_v = floor(new_offset * width_i) * height_d2_i;
+
 		float width_i2 = width_i*2.0;
 
 		/* move to the borders of each set of 4 pixels to force it
@@ -138,10 +151,14 @@ float2 PSNV12_UV(VertInOut vert_in) : TARGET
 
 float4 PSPlanar420(VertInOut vert_in) : TARGET
 {
-	float v_mul = floor(vert_in.uv.y * input_height);
+	// row # of the vert. buffer whom element belongs to
+	float row_y = floor(vert_in.uv.y * input_height);
 
-	float byte_offset = floor((v_mul + vert_in.uv.x) * width) * 4.0;
-	byte_offset += PRECISION_OFFSET;
+	// column # of the vert. buffer whom element belongs to
+	float col_x = floor(vert_in.uv.x * width); 
+
+	// element offset, expanded rows
+	float byte_offset = (row_y * width + col_x) * element_size;
 
 	float2 sample_pos[4];
 
@@ -150,8 +167,12 @@ float4 PSPlanar420(VertInOut vert_in) : TARGET
 		return float4(1.0, 1.0, 1.0, 1.0);
 #endif
 
-		float lum_u = floor(fmod(byte_offset, width)) * width_i;
-		float lum_v = floor(byte_offset * width_i)    * height_i;
+		// simplify calculations
+		float optim_calc = col_x * element_size * width_i;
+
+		// normalized coordinates
+		float lum_u = optim_calc - floor(optim_calc);
+		float lum_v = floor(byte_offset * width_i) * height_i;
 
 		/* move to texel centers to sample the 4 pixels properly */
 		lum_u += width_i  * 0.5;
@@ -173,8 +194,13 @@ float4 PSPlanar420(VertInOut vert_in) : TARGET
 				((byte_offset < v_plane_offset) ?
 				u_plane_offset : v_plane_offset);
 
-		float ch_u = floor(fmod(new_offset, width_d2)) * width_d2_i;
-		float ch_v = floor(new_offset * width_d2_i)    * height_d2_i;
+		// simplify calculations
+		float optim_calc = col_x * element_size * width_d2_i;
+
+		// normalized coordinates
+		float ch_u = optim_calc - floor(optim_calc);
+		float ch_v = floor(new_offset * width_d2_i) * height_d2_i;
+
 		float width_i2 = width_i*2.0;
 
 		/* move to the borders of each set of 4 pixels to force it
@@ -222,10 +248,14 @@ float4 PSPlanar420(VertInOut vert_in) : TARGET
 
 float4 PSPlanar444(VertInOut vert_in) : TARGET
 {
-	float v_mul = floor(vert_in.uv.y * input_height);
+	// row # of the vert. buffer whom element belongs to
+	float row_y = floor(vert_in.uv.y * input_height);
 
-	float byte_offset = floor((v_mul + vert_in.uv.x) * width) * 4.0;
-	byte_offset += PRECISION_OFFSET;
+	// column # of the vert. buffer whom element belongs to
+	float col_x = floor(vert_in.uv.x * width); 
+
+	// element offset, expanded rows
+	float byte_offset = (row_y * width + col_x) * element_size;
 
 	float new_byte_offset = byte_offset;
 
@@ -236,8 +266,12 @@ float4 PSPlanar444(VertInOut vert_in) : TARGET
 
 	float2 sample_pos[4];
 
-	float u_val = floor(fmod(new_byte_offset, width)) * width_i;
-	float v_val = floor(new_byte_offset * width_i)    * height_i;
+	// simplify calculations
+	float optim_calc = col_x * element_size * width_i;
+
+	// normalized coordinates
+	float u_val = optim_calc - floor(optim_calc);
+	float v_val = floor(new_byte_offset * width_i) * height_i;
 
 	/* move to texel centers to sample the 4 pixels properly */
 	u_val += width_i  * 0.5;
