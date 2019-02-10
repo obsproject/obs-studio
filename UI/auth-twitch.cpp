@@ -145,6 +145,9 @@ static inline std::string get_config_str(
 
 bool TwitchAuth::LoadInternal()
 {
+	if (!cef)
+		return false;
+
 	OBSBasic *main = OBSBasic::Get();
 	name = get_config_str(main, service(), "Name");
 	firstLoad = false;

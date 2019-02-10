@@ -181,6 +181,9 @@ static inline std::string get_config_str(
 
 bool MixerAuth::LoadInternal()
 {
+	if (!cef)
+		return false;
+
 	OBSBasic *main = OBSBasic::Get();
 	name = get_config_str(main, service(), "Name");
 	id = get_config_str(main, service(), "Id");
