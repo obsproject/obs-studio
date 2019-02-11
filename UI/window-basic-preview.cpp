@@ -1587,3 +1587,8 @@ void OBSBasicPreview::SetScalingAmount(float newScalingAmountVal) {
 	scrollingOffset.y *= newScalingAmountVal / scalingAmount;
 	scalingAmount = newScalingAmountVal;
 }
+
+OBSBasicPreview *OBSBasicPreview::Get()
+{
+	return OBSBasic::Get()->ui->preview;
+}

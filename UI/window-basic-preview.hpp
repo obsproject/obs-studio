@@ -91,6 +91,8 @@ public:
 	OBSBasicPreview(QWidget *parent, Qt::WindowFlags flags = 0);
 	~OBSBasicPreview();
 
+	static OBSBasicPreview *Get();
+
 	virtual void keyPressEvent(QKeyEvent *event) override;
 	virtual void keyReleaseEvent(QKeyEvent *event) override;
 
