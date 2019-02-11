@@ -1270,12 +1270,19 @@ void SourceTree::dropEvent(QDropEvent *event)
 void SourceTree::mouseMoveEvent(QMouseEvent *event)
 {
 	QPoint pos = event->pos();
-	SourceTreeItem *item = qobject_cast<SourceTreeItem *>
-		(childAt(pos));
+	SourceTreeItem *item = qobject_cast<SourceTreeItem *>(childAt(pos));
 
-	currentHover = item;
+	OBSBasicPreview *preview = OBSBasicPreview::Get();
+	preview->hoveredListItem = !!item ? item->sceneitem : nullptr;
 
 	QListView::mouseMoveEvent(event);
+}
+
+void SourceTree::leaveEvent(QEvent *event)
+{
+	OBSBasicPreview *preview = OBSBasicPreview::Get();
+	preview->hoveredListItem = nullptr;
+	QListView::leaveEvent(event);
 }
 
 void SourceTree::selectionChanged(
