@@ -29,7 +29,9 @@ OBSBasicPreview::OBSBasicPreview(QWidget *parent, Qt::WindowFlags flags)
 OBSBasicPreview::~OBSBasicPreview()
 {
 	if (overflow) {
+		obs_enter_graphics();
 		gs_texture_destroy(overflow);
+		obs_leave_graphics();
 	}
 }
 
