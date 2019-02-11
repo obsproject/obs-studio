@@ -1918,9 +1918,10 @@ void OBSBasic::ReceivedIntroJson(const QString &text)
 	config_set_int(App()->GlobalConfig(), "General",
 			"InfoIncrement", info_increment);
 
-	QDialog dlg(this);
-	dlg.setWindowTitle("What's New");
-	dlg.resize(700, 600);
+	QDialog *dlg = new QDialog(this);
+	dlg->setAttribute(Qt::WA_DeleteOnClose, true);
+	dlg->setWindowTitle("What's New");
+	dlg->resize(700, 600);
 
 	QCefWidget *cefWidget = cef->create_widget(nullptr, info_url);
 	if (!cefWidget) {
@@ -1928,22 +1929,22 @@ void OBSBasic::ReceivedIntroJson(const QString &text)
 	}
 
 	connect(cefWidget, SIGNAL(titleChanged(const QString &)),
-			&dlg, SLOT(setWindowTitle(const QString &)));
+			dlg, SLOT(setWindowTitle(const QString &)));
 
 	QPushButton *close = new QPushButton(QTStr("Close"));
 	connect(close, &QAbstractButton::clicked,
-			&dlg, &QDialog::accept);
+			dlg, &QDialog::accept);
 
 	QHBoxLayout *bottomLayout = new QHBoxLayout();
 	bottomLayout->addStretch();
 	bottomLayout->addWidget(close);
 	bottomLayout->addStretch();
 
-	QVBoxLayout *topLayout = new QVBoxLayout(&dlg);
+	QVBoxLayout *topLayout = new QVBoxLayout(dlg);
 	topLayout->addWidget(cefWidget);
 	topLayout->addLayout(bottomLayout);
 
-	dlg.exec();
+	dlg->show();
 #else
 	UNUSED_PARAMETER(text);
 #endif
