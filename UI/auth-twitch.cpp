@@ -202,7 +202,7 @@ void TwitchAuth::LoadUI()
 
 	url = "https://www.twitch.tv/popout/";
 	url += name;
-	url += "/dashboard/live/chat";
+	url += "/chat";
 
 	QSize size = main->frameSize();
 	QPoint pos = main->pos();
@@ -217,12 +217,7 @@ void TwitchAuth::LoadUI()
 	browser = cef->create_widget(nullptr, url, panel_cookies);
 	chat->SetWidget(browser);
 
-	script = referrer_script1;
-	script += "https://www.twitch.tv/";
-	script += name;
-	script += "/dashboard/live";
-	script += referrer_script2;
-	script += bttv_script;
+	script = bttv_script;
 	script += ffz_script;
 	browser->setStartupScript(script);
 
