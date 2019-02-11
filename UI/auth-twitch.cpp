@@ -175,6 +175,7 @@ document.head.appendChild(ffz);";
 static const char *bttv_script = "\
 localStorage.setItem('bttv_clickTwitchEmotes', true);\
 localStorage.setItem('bttv_darkenedMode', true);\
+localStorage.setItem('bttv_bttvGIFEmotes', true);\
 var bttv = document.createElement('script');\
 bttv.setAttribute('src','https://cdn.betterttv.net/betterttv.js');\
 document.head.appendChild(bttv);";
