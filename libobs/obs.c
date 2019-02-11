@@ -2365,6 +2365,8 @@ void stop_gpu_encode(obs_encoder_t *encoder)
 		call_free = true;
 	pthread_mutex_unlock(&video->gpu_encoder_mutex);
 
+	os_event_wait(video->gpu_encode_inactive);
+
 	if (call_free) {
 		stop_gpu_encoding_thread(video);
 
