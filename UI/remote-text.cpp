@@ -65,6 +65,7 @@ void RemoteTextThread::run()
 			header = curl_slist_append(header, h.c_str());
 
 		curl_easy_setopt(curl.get(), CURLOPT_URL, url.c_str());
+		curl_easy_setopt(curl.get(), CURLOPT_ACCEPT_ENCODING, "");
 		curl_easy_setopt(curl.get(), CURLOPT_HTTPHEADER,
 				header);
 		curl_easy_setopt(curl.get(), CURLOPT_ERRORBUFFER,
@@ -159,6 +160,7 @@ bool GetRemoteFile(
 			header = curl_slist_append(header, h.c_str());
 
 		curl_easy_setopt(curl.get(), CURLOPT_URL, url);
+		curl_easy_setopt(curl.get(), CURLOPT_ACCEPT_ENCODING, "");
 		curl_easy_setopt(curl.get(), CURLOPT_HTTPHEADER,
 				header);
 		curl_easy_setopt(curl.get(), CURLOPT_ERRORBUFFER,
