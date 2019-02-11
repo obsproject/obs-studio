@@ -894,6 +894,10 @@ static void receive_audio(void *param, size_t mix_idx, struct audio_data *frame)
 	struct audio_data in;
 	int track_order;
 
+	// codec doesn't support audio or none configured
+	if (!data->audio_streams)
+		return;
+
 	/* check that the track was selected */
 	if ((data->audio_tracks & (1 << mix_idx)) == 0)
 		return;
