@@ -531,6 +531,7 @@ static void obs_free_graphics(void)
 		gs_effect_destroy(video->solid_effect);
 		gs_effect_destroy(video->conversion_effect);
 		gs_effect_destroy(video->bicubic_effect);
+		gs_effect_destroy(video->repeat_effect);
 		gs_effect_destroy(video->lanczos_effect);
 		gs_effect_destroy(video->bilinear_lowres_effect);
 		video->default_effect = NULL;
