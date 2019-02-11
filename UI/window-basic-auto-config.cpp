@@ -548,7 +548,6 @@ void AutoConfigStreamPage::ServiceChanged()
 
 #ifdef BROWSER_AVAILABLE
 	OBSBasic *main = OBSBasic::Get();
-	auth.reset();
 
 	if (!!main->auth &&
 	    service.find(main->auth->service()) != std::string::npos) {
