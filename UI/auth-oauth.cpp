@@ -27,6 +27,7 @@ OAuthLogin::OAuthLogin(QWidget *parent, const std::string &url, bool token)
 	  get_token (token)
 {
 	setWindowTitle("Auth");
+	setMinimumSize(400, 400);
 	resize(700, 700);
 
 	OBSBasic::InitBrowserPanelSafeBlock(true);
