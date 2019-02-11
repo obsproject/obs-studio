@@ -466,6 +466,8 @@ static void output_gpu_encoders(struct obs_core_video *video, bool raw_active,
 
 	if (!video->textures_converted[prev_texture])
 		goto end;
+	if (!video->vframe_info_buffer_gpu.size)
+		goto end;
 
 	struct obs_vframe_info vframe_info;
 	circlebuf_pop_front(&video->vframe_info_buffer_gpu, &vframe_info,
