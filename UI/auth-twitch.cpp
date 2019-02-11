@@ -292,8 +292,8 @@ void TwitchAuth::LoadSecondaryUIPanes()
 
 	stat.reset(new TwitchWidget());
 	stat->setObjectName("twitchStats");
-	stat->resize(200, 200);
-	stat->setMinimumSize(200, 200);
+	stat->resize(200, 250);
+	stat->setMinimumSize(200, 150);
 	stat->setWindowTitle(QTStr("TwitchAuth.Stats"));
 	stat->setAllowedAreas(Qt::AllDockWidgetAreas);
 
