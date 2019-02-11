@@ -30,6 +30,10 @@ OAuthLogin::OAuthLogin(QWidget *parent, const std::string &url, bool token)
 	setMinimumSize(400, 400);
 	resize(700, 700);
 
+	Qt::WindowFlags flags = windowFlags();
+	Qt::WindowFlags helpFlag = Qt::WindowContextHelpButtonHint;
+	setWindowFlags(flags & (~helpFlag));
+
 	OBSBasic::InitBrowserPanelSafeBlock(true);
 
 	cefWidget = cef->create_widget(nullptr, url, panel_cookies);

@@ -1923,6 +1923,10 @@ void OBSBasic::ReceivedIntroJson(const QString &text)
 	dlg->setWindowTitle("What's New");
 	dlg->resize(700, 600);
 
+	Qt::WindowFlags flags = dlg->windowFlags();
+	Qt::WindowFlags helpFlag = Qt::WindowContextHelpButtonHint;
+	dlg->setWindowFlags(flags & (~helpFlag));
+
 	QCefWidget *cefWidget = cef->create_widget(nullptr, info_url);
 	if (!cefWidget) {
 		return;
