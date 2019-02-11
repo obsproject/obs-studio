@@ -20,6 +20,7 @@ OBSData load_settings()
 	char *path = obs_module_get_config_path(obs_current_module(),
 			"decklinkOutputProps.json");
 	BPtr<char> jsonData = os_quick_read_utf8_file(path);
+	bfree(path);
 	if (!!jsonData) {
 		obs_data_t *data = obs_data_create_from_json(jsonData);
 		OBSData dataRet(data);
