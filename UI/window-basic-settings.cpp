@@ -3477,14 +3477,14 @@ void OBSBasicSettings::on_advOutEncoder_currentIndexChanged(int idx)
 void OBSBasicSettings::on_advOutRecEncoder_currentIndexChanged(int idx)
 {
 	if (!loading) {
-		ui->advOutRecUseRescale->setEnabled(idx > 0);
-		ui->advOutRecRescaleContainer->setEnabled(idx > 0);
-
 		delete recordEncoderProps;
 		recordEncoderProps = nullptr;
 	}
 
 	if (idx <= 0) {
+		ui->advOutRecUseRescale->setChecked(false);
+		ui->advOutRecUseRescale->setEnabled(false);
+		ui->advOutRecRescaleContainer->setEnabled(false);
 		return;
 	}
 
@@ -3506,10 +3506,10 @@ void OBSBasicSettings::on_advOutRecEncoder_currentIndexChanged(int idx)
 	if (caps & OBS_ENCODER_CAP_PASS_TEXTURE) {
 		ui->advOutRecUseRescale->setChecked(false);
 		ui->advOutRecUseRescale->setEnabled(false);
-		ui->advOutRecRescale->setEnabled(false);
+		ui->advOutRecRescaleContainer->setEnabled(false);
 	} else {
 		ui->advOutRecUseRescale->setEnabled(true);
-		ui->advOutRecRescale->setEnabled(true);
+		ui->advOutRecRescaleContainer->setEnabled(true);
 	}
 }
 
