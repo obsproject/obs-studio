@@ -106,11 +106,6 @@ static void *gpu_encode_thread(void *unused)
 			encoder->cur_pts += encoder->timebase_num;
 		}
 
-		for (size_t i = 0; i < encoders.num; i++)
-			obs_encoder_release(encoders.array[i]);
-
-		da_resize(encoders, 0);
-
 		/* -------------- */
 
 		pthread_mutex_lock(&video->gpu_encoder_mutex);
@@ -131,7 +126,14 @@ static void *gpu_encode_thread(void *unused)
 
 		pthread_mutex_unlock(&video->gpu_encoder_mutex);
 
+		/* -------------- */
+
 		os_event_signal(video->gpu_encode_inactive);
+
+		for (size_t i = 0; i < encoders.num; i++)
+			obs_encoder_release(encoders.array[i]);
+
+		da_resize(encoders, 0);
 	}
 
 	da_free(encoders);

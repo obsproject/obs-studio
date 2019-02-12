@@ -271,11 +271,13 @@ void obs_encoder_destroy(obs_encoder_t *encoder)
 
 		obs_context_data_remove(&encoder->context);
 
+		pthread_mutex_lock(&encoder->init_mutex);
 		pthread_mutex_lock(&encoder->callbacks_mutex);
 		destroy = encoder->callbacks.num == 0;
 		if (!destroy)
 			encoder->destroy_on_stop = true;
 		pthread_mutex_unlock(&encoder->callbacks_mutex);
+		pthread_mutex_unlock(&encoder->init_mutex);
 
 		if (destroy)
 			obs_encoder_actually_destroy(encoder);
