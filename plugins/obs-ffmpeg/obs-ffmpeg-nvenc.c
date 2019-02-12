@@ -515,6 +515,7 @@ obs_properties_t *nvenc_properties(void *unused)
 
 obs_properties_t *nvenc_properties_ffmpeg(void *unused)
 {
+	UNUSED_PARAMETER(unused);
 	return nvenc_properties_internal(true);
 }
 
