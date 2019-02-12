@@ -1192,6 +1192,8 @@ bool OBSBasic::InitBasicConfigDefaults()
 			true);
 	config_set_default_string(basicConfig, "SimpleOutput", "Preset",
 			"veryfast");
+	config_set_default_string(basicConfig, "SimpleOutput", "NVENCPreset",
+			"hq");
 	config_set_default_string(basicConfig, "SimpleOutput", "RecQuality",
 			"Stream");
 	config_set_default_bool(basicConfig, "SimpleOutput", "RecRB", false);
