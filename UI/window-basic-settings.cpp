@@ -282,6 +282,8 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 
 	ui->setupUi(this);
 
+	setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
+
 	main->EnableOutputs(false);
 
 	PopulateAACBitrates({ui->simpleOutputABitrate,

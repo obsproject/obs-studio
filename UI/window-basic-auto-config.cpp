@@ -732,6 +732,7 @@ AutoConfig::AutoConfig(QWidget *parent)
 	setPage(StreamPage, streamPage);
 	setPage(TestPage, new AutoConfigTestPage());
 	setWindowTitle(QTStr("Basic.AutoConfig"));
+	setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
 
 	obs_video_info ovi;
 	obs_get_video_info(&ovi);

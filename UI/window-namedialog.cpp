@@ -45,6 +45,7 @@ bool NameDialog::AskForName(QWidget *parent, const QString &title,
 
 	NameDialog dialog(parent);
 	dialog.setWindowTitle(title);
+	dialog.setWindowFlags(dialog.windowFlags() & ~Qt::WindowContextHelpButtonHint);
 	dialog.ui->label->setText(text);
 	dialog.ui->userText->setMaxLength(maxSize);
 	dialog.ui->userText->setText(placeHolder);

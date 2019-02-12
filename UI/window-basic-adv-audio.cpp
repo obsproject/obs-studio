@@ -89,6 +89,7 @@ OBSBasicAdvAudio::OBSBasicAdvAudio(QWidget *parent)
 
 	resize(1000, 340);
 	setWindowTitle(QTStr("Basic.AdvAudio"));
+	setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
 	setSizeGripEnabled(true);
 	setWindowModality(Qt::NonModal);
 	setAttribute(Qt::WA_DeleteOnClose, true);
