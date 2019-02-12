@@ -226,7 +226,8 @@ set(obs_SOURCES
 	source-label.cpp
 	remote-text.cpp
 	audio-encoders.cpp
-	qt-wrappers.cpp)
+	qt-wrappers.cpp
+	window-cefwidgetdialog.cpp)
 
 set(obs_HEADERS
 	${obs_PLATFORM_HEADERS}
@@ -281,10 +282,12 @@ set(obs_HEADERS
 	remote-text.hpp
 	audio-encoders.hpp
 	qt-wrappers.hpp
-	clickable-label.hpp)
+	clickable-label.hpp
+	window-cefwidgetdialog.hpp)
 
 set(obs_UI
 	forms/NameDialog.ui
+	forms/CefWidgetDialog.ui
 	forms/AutoConfigStartPage.ui
 	forms/AutoConfigVideoPage.ui
 	forms/AutoConfigStreamPage.ui

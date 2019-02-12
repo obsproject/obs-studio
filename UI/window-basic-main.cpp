@@ -41,6 +41,7 @@
 #include "item-widget-helpers.hpp"
 #include "window-basic-settings.hpp"
 #include "window-namedialog.hpp"
+#include "window-cefwidgetdialog.hpp"
 #include "window-basic-auto-config.hpp"
 #include "window-basic-source-select.hpp"
 #include "window-basic-main.hpp"
@@ -394,7 +395,8 @@ static obs_data_t *GenerateSaveData(obs_data_array_t *sceneOrder,
 		obs_data_array_t *quickTransitionData, int transitionDuration,
 		obs_data_array_t *transitions,
 		OBSScene &scene, OBSSource &curProgramScene,
-		obs_data_array_t *savedProjectorList)
+		obs_data_array_t *savedProjectorList,
+		obs_data_array_t *customBrowserPanels)
 {
 	obs_data_t *saveData = obs_data_create();
 
@@ -456,6 +458,9 @@ static obs_data_t *GenerateSaveData(obs_data_array_t *sceneOrder,
 	obs_data_set_array(saveData, "quick_transitions", quickTransitionData);
 	obs_data_set_array(saveData, "transitions", transitions);
 	obs_data_set_array(saveData, "saved_projectors", savedProjectorList);
+#ifdef BROWSER_AVAILABLE
+	obs_data_set_array(saveData, "custom_brower_panels", customBrowserPanels);
+#endif
 	obs_data_array_release(sourcesArray);
 	obs_data_array_release(groupsArray);
 
@@ -465,6 +470,127 @@ static obs_data_t *GenerateSaveData(obs_data_array_t *sceneOrder,
 	obs_source_release(transition);
 
 	return saveData;
+}
+
+void OBSBasic::on_actionAddCefWidget_triggered()
+{
+#ifdef BROWSER_AVAILABLE
+	std::string path = "";
+	QStringList urls = QStringList();
+	QStringList titles = QStringList();
+
+	bool success = CefWidgetDialog::OpenDialog(this, QTStr("CefWidgetDialog.Title"),
+		&customCefWidgets, &urls, &titles);
+
+	if (!success)
+		return;
+
+	OBSBasic::InitBrowserPanelSafeBlock();
+
+	const auto manageCefWidget = [=](QString path, QString title, bool add) {
+		if (add) {
+			if (path.isEmpty() || path.isNull() || title.isEmpty()
+				|| title.isNull())
+				return;
+			QWidget *found = nullptr;
+			std::string url = path.toStdString();
+			for (QPointer<QWidget> widget : customCefWidgets) {
+				QString widgetTitle = widget.data()->windowTitle();
+				QString url = widget.data()->property("url").toString();
+				if (widgetTitle == title) {
+					if (url != path)
+						return;
+					found = widget.data();
+					break;
+				}
+			}
+
+			if (found) {
+				found->show();
+				found->raise();
+				return;
+			}
+
+			QCefWidget *cefWidget = cef->create_widget(nullptr, url, panel_cookies);
+			cefWidget->setMinimumSize(150, 150);
+
+			QDockWidget *widget = new QDockWidget(this);
+			widget->setObjectName(title);
+			widget->setProperty("url", path);
+			widget->setWidget(cefWidget);
+			widget->setAllowedAreas(Qt::AllDockWidgetAreas);
+
+			widget->setWindowTitle(title);
+			widget->resize(450, 600);
+			widget->setFloating(true);
+			widget->setVisible(true);
+
+			QAction *action = AddDockWidget(widget);
+			customCefWidgets.push_back(widget);
+			customCefActions.push_back(action);
+
+			SavedCefWidgetInfo *info = new SavedCefWidgetInfo();
+			info->url = url;
+			info->title = title.toStdString();
+			savedCefWidgetsArray.emplace_back(info);
+		} else {
+			if (title.isEmpty() || title.isNull())
+				return;
+			QWidget *found = nullptr;
+			QAction *action = nullptr;
+			std::string u = path.toStdString();
+			std::string t = title.toStdString();
+			for (int i = 0; i < customCefWidgets.count(); i++) {
+				QPointer<QWidget> widget = customCefWidgets[i];
+				QPointer<QAction> toggle = customCefActions[i];
+				QString widgetTitle = widget.data()->windowTitle();
+				if (widgetTitle == title) {
+					found = widget.data();
+					action = toggle.data();
+					ui->viewMenuDocks->removeAction(action);
+					customCefWidgets.removeAt(i);
+					customCefActions.removeAt(i);
+					found->deleteLater();
+					action->deleteLater();
+					return;
+				}
+			}
+		}
+	};
+
+	QStringList currentUrls;
+	QStringList currentTitles;
+	currentUrls.reserve(customCefWidgets.count());
+	currentTitles.reserve(customCefWidgets.count());
+	for (QPointer<QDockWidget> widget : customCefWidgets) {
+		QString title = widget.data()->windowTitle();
+		QString url = widget.data()->property("url").toString();
+		if (!url.isEmpty() && !title.isEmpty()) {
+			currentUrls.push_back(url);
+			currentTitles.push_back(title);
+		}
+	}
+
+	/* Add new Cef Widgets */
+	for (int i = 0; i < urls.count(); i++) {
+		int idx = currentTitles.indexOf(titles[i]);
+		if (idx >= 0) {
+			if (currentUrls.at(idx) != urls[i]) {
+				QCefWidget *cefwidget = (QCefWidget *)customCefWidgets.at(idx)->widget();
+				cefwidget->setURL(urls[i].toStdString());
+				customCefWidgets.at(idx)->setProperty("url", urls[i]);
+			}
+			currentUrls.removeAt(idx);
+			currentTitles.removeAt(idx);
+		} else {
+			manageCefWidget(urls[i], titles[i], true);
+		}
+	}
+
+	/* Remove Cef Widgets */
+	for (int i = 0; i < currentTitles.count(); i++)
+		manageCefWidget(currentUrls[i], currentTitles[i], false);
+#endif
 }
 
 void OBSBasic::copyActionsDynamicProperties()
@@ -582,6 +708,34 @@ obs_data_array_t *OBSBasic::SaveProjectors()
 	return savedProjectors;
 }
 
+obs_data_array_t *OBSBasic::SaveCustomCefWidgets()
+{
+#ifdef BROWSER_AVAILABLE
+	obs_data_array_t *savedBrowsers = obs_data_array_create();
+
+	auto saveBrowser = [=](QCefWidget *cefWidget) {
+		std::string title = cefWidget->windowTitle().toStdString();
+		std::string url = cefWidget->property("url").toString().toStdString();
+		if (title.empty() || url.empty())
+			return;
+		obs_data_t *data = obs_data_create();
+
+		obs_data_set_string(data, "url", url.c_str());
+		obs_data_set_string(data, "title", title.c_str());
+
+		obs_data_array_push_back(savedBrowsers, data);
+		obs_data_release(data);
+	};
+
+	for (QPointer<QWidget> widget : customCefWidgets)
+		saveBrowser(static_cast<QCefWidget *>(widget.data()));
+
+	return savedBrowsers;
+#else
+	return nullptr;
+#endif
+}
+
 void OBSBasic::Save(const char *file)
 {
 	OBSScene scene = GetCurrentScene();
@@ -593,9 +747,11 @@ void OBSBasic::Save(const char *file)
 	obs_data_array_t *transitions = SaveTransitions();
 	obs_data_array_t *quickTrData = SaveQuickTransitions();
 	obs_data_array_t *savedProjectorList = SaveProjectors();
+	obs_data_array_t *savedBrowserPanels = SaveCustomCefWidgets();
 	obs_data_t *saveData = GenerateSaveData(sceneOrder, quickTrData,
 			ui->transitionDuration->value(), transitions,
-			scene, curProgramScene, savedProjectorList);
+			scene, curProgramScene, savedProjectorList,
+			savedBrowserPanels);
 
 	obs_data_set_bool(saveData, "preview_locked", ui->preview->Locked());
 	obs_data_set_bool(saveData, "scaling_enabled",
@@ -622,6 +778,7 @@ void OBSBasic::Save(const char *file)
 	obs_data_array_release(quickTrData);
 	obs_data_array_release(transitions);
 	obs_data_array_release(savedProjectorList);
+	obs_data_array_release(savedBrowserPanels);
 }
 
 void OBSBasic::DeferSaveBegin()
@@ -758,6 +915,58 @@ void OBSBasic::LoadSavedProjectors(obs_data_array_t *array)
 	}
 }
 
+void OBSBasic::LoadCefWidgets(obs_data_array_t *array)
+{
+#ifdef BROWSER_AVAILABLE
+	/* Clear existing widgets */
+	for (SavedCefWidgetInfo *info : savedCefWidgetsArray)
+		delete info;
+
+	savedCefWidgetsArray.clear();
+
+	size_t num = obs_data_array_count(array);
+
+	OBSBasic::InitBrowserPanelSafeBlock();
+
+	const char *dockStr = config_get_string(App()->GlobalConfig(),
+		"BasicWindow", "DockState");
+	QByteArray dockState = QByteArray::fromBase64(QByteArray(dockStr));
+
+	for (size_t i = 0; i < num; i++) {
+		obs_data_t *data = obs_data_array_item(array, i);
+
+		SavedCefWidgetInfo *info = new SavedCefWidgetInfo();
+		info->url = std::string(obs_data_get_string(data, "url"));
+		info->title = std::string(obs_data_get_string(data, "title"));
+		savedCefWidgetsArray.emplace_back(info);
+
+		QDockWidget *widget = new QDockWidget(this);
+		widget->setObjectName(QString::fromStdString(info->title));
+		widget->setMinimumSize(150, 150);
+		widget->setProperty("url", QString::fromStdString(info->url));
+		widget->setAllowedAreas(Qt::AllDockWidgetAreas);
+		widget->setWindowTitle(QString::fromStdString(info->title));
+
+		QCefWidget *cefWidget = cef->create_widget(nullptr, info->url,
+			panel_cookies);
+		cefWidget->setMinimumSize(150, 150);
+
+		widget->setWidget(cefWidget);
+
+		addDockWidget(Qt::RightDockWidgetArea, widget);
+		QAction *action = AddDockWidget(widget);
+		customCefWidgets.push_back(widget);
+		customCefActions.push_back(action);
+
+		obs_data_release(data);
+	}
+
+	restoreState(dockState);
+#else
+	UNUSED_PARAMETER(array);
+#endif
+}
+
 static void LogFilter(obs_source_t*, obs_source_t *filter, void *v_val)
 {
 	const char *name = obs_source_get_name(filter);
@@ -839,6 +1048,8 @@ void OBSBasic::Load(const char *file)
 	obs_data_array_t *sources    = obs_data_get_array(data, "sources");
 	obs_data_array_t *groups     = obs_data_get_array(data, "groups");
 	obs_data_array_t *transitions= obs_data_get_array(data, "transitions");
+	obs_data_array_t *cefWidgets = obs_data_get_array(data,
+			"custom_brower_panels");
 	const char       *sceneName = obs_data_get_string(data,
 			"current_scene");
 	const char       *programSceneName = obs_data_get_string(data,
@@ -892,7 +1103,10 @@ void OBSBasic::Load(const char *file)
 		LoadTransitions(transitions);
 	if (sceneOrder)
 		LoadSceneListOrder(sceneOrder);
+	if (cefWidgets)
+		LoadCefWidgets(cefWidgets);
 
+	obs_data_array_release(cefWidgets);
 	obs_data_array_release(transitions);
 
 	curTransition = FindTransition(transitionName);
