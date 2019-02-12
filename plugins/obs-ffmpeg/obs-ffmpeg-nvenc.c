@@ -435,10 +435,8 @@ static bool rate_control_modified(obs_properties_t *ppts, obs_property_t *p,
 	return true;
 }
 
-obs_properties_t *nvenc_properties(void *unused)
+obs_properties_t *nvenc_properties_internal(bool ffmpeg)
 {
-	UNUSED_PARAMETER(unused);
-
 	obs_properties_t *props = obs_properties_create();
 	obs_property_t *p;
 
@@ -489,15 +487,17 @@ obs_properties_t *nvenc_properties(void *unused)
 	add_profile("baseline");
 #undef add_profile
 
-	p = obs_properties_add_bool(props, "lookahead",
-			obs_module_text("NVENC.LookAhead"));
-	obs_property_set_long_description(p,
-			obs_module_text("NVENC.LookAhead.ToolTip"));
+	if (!ffmpeg) {
+		p = obs_properties_add_bool(props, "lookahead",
+				obs_module_text("NVENC.LookAhead"));
+		obs_property_set_long_description(p,
+				obs_module_text("NVENC.LookAhead.ToolTip"));
 
-	p = obs_properties_add_bool(props, "psycho_aq",
-			obs_module_text("NVENC.PsychoVisualTuning"));
-	obs_property_set_long_description(p,
-			obs_module_text("NVENC.PsychoVisualTuning.ToolTip"));
+		p = obs_properties_add_bool(props, "psycho_aq",
+				obs_module_text("NVENC.PsychoVisualTuning"));
+		obs_property_set_long_description(p,
+				obs_module_text("NVENC.PsychoVisualTuning.ToolTip"));
+	}
 
 	obs_properties_add_int(props, "gpu", obs_module_text("GPU"), 0, 8, 1);
 
@@ -505,6 +505,17 @@ obs_properties_t *nvenc_properties(void *unused)
 			0, 4, 1);
 
 	return props;
+}
+
+obs_properties_t *nvenc_properties(void *unused)
+{
+	UNUSED_PARAMETER(unused);
+	return nvenc_properties_internal(false);
+}
+
+obs_properties_t *nvenc_properties_ffmpeg(void *unused)
+{
+	return nvenc_properties_internal(true);
 }
 
 static bool nvenc_extra_data(void *data, uint8_t **extra_data, size_t *size)
@@ -534,7 +545,7 @@ struct obs_encoder_info nvenc_encoder_info = {
 	.destroy        = nvenc_destroy,
 	.encode         = nvenc_encode,
 	.get_defaults   = nvenc_defaults,
-	.get_properties = nvenc_properties,
+	.get_properties = nvenc_properties_ffmpeg,
 	.get_extra_data = nvenc_extra_data,
 	.get_sei_data   = nvenc_sei_data,
 	.get_video_info = nvenc_video_info
