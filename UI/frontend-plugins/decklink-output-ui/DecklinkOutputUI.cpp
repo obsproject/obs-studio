@@ -10,6 +10,8 @@ DecklinkOutputUI::DecklinkOutputUI(QWidget *parent)
 {
 	ui->setupUi(this);
 
+	setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
+
 	propertiesView = nullptr;
 
 	connect(ui->startOutput, SIGNAL(released()), this, SLOT(StartOutput()));
