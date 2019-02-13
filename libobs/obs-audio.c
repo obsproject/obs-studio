@@ -334,7 +334,7 @@ static inline const char *find_min_ts(struct obs_core_data *data,
 				source->audio_ts < *min_ts) {
 			*min_ts = source->audio_ts;
 			buffering_source = source;
-               }
+		}
 
 		source = (struct obs_source*)source->next_audio_source;
 	}
