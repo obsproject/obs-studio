@@ -126,6 +126,16 @@ float4 PSNV12(VertInOut vert_in) : TARGET
 	}
 }
 
+float PSNV12_Y(VertInOut vert_in) : TARGET
+{
+	return image.Sample(def_sampler, vert_in.uv.xy).y;
+}
+
+float2 PSNV12_UV(VertInOut vert_in) : TARGET
+{
+	return image.Sample(def_sampler, vert_in.uv.xy).xz;
+}
+
 float4 PSPlanar420(VertInOut vert_in) : TARGET
 {
 	float v_mul = floor(vert_in.uv.y * input_height);
@@ -336,6 +346,24 @@ technique NV12
 	{
 		vertex_shader = VSDefault(vert_in);
 		pixel_shader  = PSNV12(vert_in);
+	}
+}
+
+technique NV12_Y
+{
+	pass
+	{
+		vertex_shader = VSDefault(vert_in);
+		pixel_shader  = PSNV12_Y(vert_in);
+	}
+}
+
+technique NV12_UV
+{
+	pass
+	{
+		vertex_shader = VSDefault(vert_in);
+		pixel_shader  = PSNV12_UV(vert_in);
 	}
 }
 

@@ -64,8 +64,8 @@ static bool init_encoder(struct obs_encoder *encoder, const char *name,
 	if (pthread_mutex_init(&encoder->outputs_mutex, NULL) != 0)
 		return false;
 
-	if (encoder->info.get_defaults)
-		encoder->info.get_defaults(encoder->context.settings);
+	if (encoder->orig_info.get_defaults)
+		encoder->orig_info.get_defaults(encoder->context.settings);
 
 	return true;
 }
@@ -90,8 +90,10 @@ static struct obs_encoder *create_encoder(const char *id,
 		encoder->info.id      = bstrdup(id);
 		encoder->info.type    = type;
 		encoder->owns_info_id = true;
+		encoder->orig_info    = encoder->info;
 	} else {
 		encoder->info = *ei;
+		encoder->orig_info = *ei;
 	}
 
 	success = init_encoder(encoder, name, settings, hotkey_data);
@@ -177,6 +179,12 @@ static inline bool has_scaling(const struct obs_encoder *encoder)
 		 video_height != encoder->scaled_height);
 }
 
+static inline bool gpu_encode_available(const struct obs_encoder *encoder)
+{
+    return (encoder->info.caps & OBS_ENCODER_CAP_PASS_TEXTURE) != 0 &&
+		obs->video.using_nv12_tex;
+}
+
 static void add_connection(struct obs_encoder *encoder)
 {
 	if (encoder->info.type == OBS_ENCODER_AUDIO) {
@@ -189,7 +197,12 @@ static void add_connection(struct obs_encoder *encoder)
 		struct video_scale_info info = {0};
 		get_video_info(encoder, &info);
 
-		start_raw_video(encoder->media, &info, receive_video, encoder);
+		if (gpu_encode_available(encoder)) {
+			start_gpu_encode(encoder);
+		} else {
+			start_raw_video(encoder->media, &info, receive_video,
+					encoder);
+		}
 	}
 
 	set_encoder_active(encoder, true);
@@ -197,11 +210,16 @@ static void add_connection(struct obs_encoder *encoder)
 
 static void remove_connection(struct obs_encoder *encoder)
 {
-	if (encoder->info.type == OBS_ENCODER_AUDIO)
+	if (encoder->info.type == OBS_ENCODER_AUDIO) {
 		audio_output_disconnect(encoder->media, encoder->mixer_idx,
 				receive_audio, encoder);
-	else
-		stop_raw_video(encoder->media, receive_video, encoder);
+	} else {
+		if (gpu_encode_available(encoder)) {
+			stop_gpu_encode(encoder);
+		} else {
+			stop_raw_video(encoder->media, receive_video, encoder);
+		}
+	}
 
 	obs_encoder_shutdown(encoder);
 	set_encoder_active(encoder, false);
@@ -253,11 +271,13 @@ void obs_encoder_destroy(obs_encoder_t *encoder)
 
 		obs_context_data_remove(&encoder->context);
 
+		pthread_mutex_lock(&encoder->init_mutex);
 		pthread_mutex_lock(&encoder->callbacks_mutex);
 		destroy = encoder->callbacks.num == 0;
 		if (!destroy)
 			encoder->destroy_on_stop = true;
 		pthread_mutex_unlock(&encoder->callbacks_mutex);
+		pthread_mutex_unlock(&encoder->init_mutex);
 
 		if (destroy)
 			obs_encoder_actually_destroy(encoder);
@@ -329,16 +349,17 @@ obs_properties_t *obs_encoder_properties(const obs_encoder_t *encoder)
 	if (!obs_encoder_valid(encoder, "obs_encoder_properties"))
 		return NULL;
 
-	if (encoder->info.get_properties2) {
+	if (encoder->orig_info.get_properties2) {
 		obs_properties_t *props;
-		props = encoder->info.get_properties2(encoder->context.data,
-				encoder->info.type_data);
+		props = encoder->orig_info.get_properties2(
+				encoder->context.data,
+				encoder->orig_info.type_data);
 		obs_properties_apply_settings(props, encoder->context.settings);
 		return props;
 
-	} else if (encoder->info.get_properties) {
+	} else if (encoder->orig_info.get_properties) {
 		obs_properties_t *props;
-		props = encoder->info.get_properties(encoder->context.data);
+		props = encoder->orig_info.get_properties(encoder->context.data);
 		obs_properties_apply_settings(props, encoder->context.settings);
 		return props;
 	}
@@ -404,6 +425,8 @@ static void intitialize_audio_encoder(struct obs_encoder *encoder)
 	reset_audio_buffers(encoder);
 }
 
+static THREAD_LOCAL bool can_reroute = false;
+
 static inline bool obs_encoder_initialize_internal(obs_encoder_t *encoder)
 {
 	if (encoder_active(encoder))
@@ -413,17 +436,43 @@ static inline bool obs_encoder_initialize_internal(obs_encoder_t *encoder)
 
 	obs_encoder_shutdown(encoder);
 
-	if (encoder->info.create)
-		encoder->context.data = encoder->info.create(
+	if (encoder->orig_info.create) {
+		can_reroute = true;
+		encoder->info = encoder->orig_info;
+		encoder->context.data = encoder->orig_info.create(
 				encoder->context.settings, encoder);
+		can_reroute = false;
+	}
 	if (!encoder->context.data)
 		return false;
 
-	if (encoder->info.type == OBS_ENCODER_AUDIO)
+	if (encoder->orig_info.type == OBS_ENCODER_AUDIO)
 		intitialize_audio_encoder(encoder);
 
 	encoder->initialized = true;
 	return true;
+}
+
+void *obs_encoder_create_rerouted(obs_encoder_t *encoder, const char *reroute_id)
+{
+	if (!obs_ptr_valid(encoder, "obs_encoder_reroute"))
+		return NULL;
+	if (!obs_ptr_valid(reroute_id, "obs_encoder_reroute"))
+		return NULL;
+	if (!can_reroute)
+		return NULL;
+
+	const struct obs_encoder_info *ei = find_encoder(reroute_id);
+	if (ei) {
+		if (ei->type != encoder->orig_info.type ||
+		    astrcmpi(ei->codec, encoder->orig_info.codec) != 0) {
+			return NULL;
+		}
+		encoder->info = *ei;
+		return encoder->info.create(encoder->context.settings, encoder);
+	}
+
+	return NULL;
 }
 
 bool obs_encoder_initialize(obs_encoder_t *encoder)
@@ -782,7 +831,7 @@ static inline void send_packet(struct obs_encoder *encoder,
 		cb->new_packet(cb->param, packet);
 }
 
-static void full_stop(struct obs_encoder *encoder)
+void full_stop(struct obs_encoder *encoder)
 {
 	if (encoder) {
 		pthread_mutex_lock(&encoder->callbacks_mutex);
@@ -792,9 +841,42 @@ static void full_stop(struct obs_encoder *encoder)
 	}
 }
 
+void send_off_encoder_packet(obs_encoder_t *encoder, bool success,
+		bool received, struct encoder_packet *pkt)
+{
+	if (!success) {
+		full_stop(encoder);
+		blog(LOG_ERROR, "Error encoding with encoder '%s'",
+				encoder->context.name);
+		return;
+	}
+
+	if (received) {
+		if (!encoder->first_received) {
+			encoder->offset_usec = packet_dts_usec(pkt);
+			encoder->first_received = true;
+		}
+
+		/* we use system time here to ensure sync with other encoders,
+		 * you do not want to use relative timestamps here */
+		pkt->dts_usec = encoder->start_ts / 1000 +
+			packet_dts_usec(pkt) - encoder->offset_usec;
+		pkt->sys_dts_usec = pkt->dts_usec;
+
+		pthread_mutex_lock(&encoder->callbacks_mutex);
+
+		for (size_t i = encoder->callbacks.num; i > 0; i--) {
+			struct encoder_callback *cb;
+			cb = encoder->callbacks.array+(i-1);
+			send_packet(encoder, cb, pkt);
+		}
+
+		pthread_mutex_unlock(&encoder->callbacks_mutex);
+	}
+}
+
 static const char *do_encode_name = "do_encode";
-static inline void do_encode(struct obs_encoder *encoder,
-		struct encoder_frame *frame)
+void do_encode(struct obs_encoder *encoder, struct encoder_frame *frame)
 {
 	profile_start(do_encode_name);
 	if (!encoder->profile_encoder_encode_name)
@@ -814,37 +896,8 @@ static inline void do_encode(struct obs_encoder *encoder,
 	success = encoder->info.encode(encoder->context.data, frame, &pkt,
 			&received);
 	profile_end(encoder->profile_encoder_encode_name);
-	if (!success) {
-		full_stop(encoder);
-		blog(LOG_ERROR, "Error encoding with encoder '%s'",
-				encoder->context.name);
-		goto error;
-	}
+	send_off_encoder_packet(encoder, success, received, &pkt);
 
-	if (received) {
-		if (!encoder->first_received) {
-			encoder->offset_usec = packet_dts_usec(&pkt);
-			encoder->first_received = true;
-		}
-
-		/* we use system time here to ensure sync with other encoders,
-		 * you do not want to use relative timestamps here */
-		pkt.dts_usec = encoder->start_ts / 1000 +
-			packet_dts_usec(&pkt) - encoder->offset_usec;
-		pkt.sys_dts_usec = pkt.dts_usec;
-
-		pthread_mutex_lock(&encoder->callbacks_mutex);
-
-		for (size_t i = encoder->callbacks.num; i > 0; i--) {
-			struct encoder_callback *cb;
-			cb = encoder->callbacks.array+(i-1);
-			send_packet(encoder, cb, &pkt);
-		}
-
-		pthread_mutex_unlock(&encoder->callbacks_mutex);
-	}
-
-error:
 	profile_end(do_encode_name);
 }
 
@@ -1202,13 +1255,13 @@ bool obs_weak_encoder_references_encoder(obs_weak_encoder_t *weak,
 void *obs_encoder_get_type_data(obs_encoder_t *encoder)
 {
 	return obs_encoder_valid(encoder, "obs_encoder_get_type_data")
-		? encoder->info.type_data : NULL;
+		? encoder->orig_info.type_data : NULL;
 }
 
 const char *obs_encoder_get_id(const obs_encoder_t *encoder)
 {
 	return obs_encoder_valid(encoder, "obs_encoder_get_id")
-		? encoder->info.id : NULL;
+		? encoder->orig_info.id : NULL;
 }
 
 uint32_t obs_get_encoder_caps(const char *encoder_id)

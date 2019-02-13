@@ -72,6 +72,8 @@ private:
 	virtual void paintEvent(QPaintEvent* event) override;
 
 private slots:
+	void Clear();
+
 	void EnterEditMode();
 	void ExitEditMode(bool save);
 
@@ -173,6 +175,8 @@ public slots:
 protected:
 	virtual void mouseDoubleClickEvent(QMouseEvent *event) override;
 	virtual void dropEvent(QDropEvent *event) override;
+	virtual void mouseMoveEvent(QMouseEvent *event) override;
+	virtual void leaveEvent(QEvent *event) override;
 
 	virtual void selectionChanged(const QItemSelection &selected, const QItemSelection &deselected) override;
 };

@@ -74,10 +74,19 @@
 using namespace json11;
 using namespace std;
 
-#if defined(_WIN32) && defined(BROWSER_AVAILABLE)
+#ifdef BROWSER_AVAILABLE
 #include <browser-panel.hpp>
-static CREATE_BROWSER_WIDGET_PROC create_browser_widget = nullptr;
 #endif
+
+#include "ui-config.h"
+
+struct QCef;
+struct QCefCookieManager;
+
+QCef              *cef           = nullptr;
+QCefCookieManager *panel_cookies = nullptr;
+
+void DestroyPanelCookieManager();
 
 namespace {
 
@@ -161,11 +170,42 @@ static int CountVideoSources()
 	return count;
 }
 
+void assignDockToggle(QDockWidget *dock, QAction *action)
+{
+	auto handleWindowToggle = [action] (bool vis)
+	{
+		action->blockSignals(true);
+		action->setChecked(vis);
+		action->blockSignals(false);
+	};
+	auto handleMenuToggle = [dock] (bool check)
+	{
+		dock->blockSignals(true);
+		dock->setVisible(check);
+		dock->blockSignals(false);
+	};
+
+	dock->connect(dock->toggleViewAction(), &QAction::toggled,
+			handleWindowToggle);
+	dock->connect(action, &QAction::toggled,
+			handleMenuToggle);
+}
+
+extern void RegisterTwitchAuth();
+extern void RegisterMixerAuth();
+
 OBSBasic::OBSBasic(QWidget *parent)
 	: OBSMainWindow  (parent),
 	  ui             (new Ui::OBSBasic)
 {
 	setAttribute(Qt::WA_NativeWindow);
+
+#if TWITCH_ENABLED
+	RegisterTwitchAuth();
+#endif
+#if MIXER_ENABLED
+	RegisterMixerAuth();
+#endif
 
 	setAcceptDrops(true);
 
@@ -284,27 +324,6 @@ OBSBasic::OBSBasic(QWidget *parent)
 	addNudge(Qt::Key_Down, SLOT(NudgeDown()));
 	addNudge(Qt::Key_Left, SLOT(NudgeLeft()));
 	addNudge(Qt::Key_Right, SLOT(NudgeRight()));
-
-	auto assignDockToggle = [] (QDockWidget *dock, QAction *action)
-	{
-		auto handleWindowToggle = [action] (bool vis)
-		{
-			action->blockSignals(true);
-			action->setChecked(vis);
-			action->blockSignals(false);
-		};
-		auto handleMenuToggle = [dock] (bool check)
-		{
-			dock->blockSignals(true);
-			dock->setVisible(check);
-			dock->blockSignals(false);
-		};
-
-		dock->connect(dock->toggleViewAction(), &QAction::toggled,
-				handleWindowToggle);
-		dock->connect(action, &QAction::toggled,
-				handleMenuToggle);
-	};
 
 	assignDockToggle(ui->scenesDock, ui->toggleScenes);
 	assignDockToggle(ui->sourcesDock, ui->toggleSources);
@@ -1095,6 +1114,8 @@ static const double scaled_vals[] =
 	0.0
 };
 
+extern void CheckExistingCookieId();
+
 bool OBSBasic::InitBasicConfigDefaults()
 {
 	QList<QScreen*> screens = QGuiApplication::screens();
@@ -1164,8 +1185,6 @@ bool OBSBasic::InitBasicConfigDefaults()
 			"flv");
 	config_set_default_uint  (basicConfig, "SimpleOutput", "VBitrate",
 			2500);
-	config_set_default_string(basicConfig, "SimpleOutput", "StreamEncoder",
-			SIMPLE_ENCODER_X264);
 	config_set_default_uint  (basicConfig, "SimpleOutput", "ABitrate", 160);
 	config_set_default_bool  (basicConfig, "SimpleOutput", "UseAdvanced",
 			false);
@@ -1173,10 +1192,10 @@ bool OBSBasic::InitBasicConfigDefaults()
 			true);
 	config_set_default_string(basicConfig, "SimpleOutput", "Preset",
 			"veryfast");
+	config_set_default_string(basicConfig, "SimpleOutput", "NVENCPreset",
+			"hq");
 	config_set_default_string(basicConfig, "SimpleOutput", "RecQuality",
 			"Stream");
-	config_set_default_string(basicConfig, "SimpleOutput", "RecEncoder",
-			SIMPLE_ENCODER_X264);
 	config_set_default_bool(basicConfig, "SimpleOutput", "RecRB", false);
 	config_set_default_int(basicConfig, "SimpleOutput", "RecRBTime", 20);
 	config_set_default_int(basicConfig, "SimpleOutput", "RecRBSize", 512);
@@ -1300,7 +1319,23 @@ bool OBSBasic::InitBasicConfigDefaults()
 			VOLUME_METER_DECAY_FAST);
 	config_set_default_uint  (basicConfig, "Audio", "PeakMeterType", 0);
 
+	CheckExistingCookieId();
+
 	return true;
+}
+
+extern bool EncoderAvailable(const char *encoder);
+
+void OBSBasic::InitBasicConfigDefaults2()
+{
+	bool oldEncDefaults = config_get_bool(App()->GlobalConfig(),
+			"General", "Pre23Defaults");
+	bool useNV = EncoderAvailable("ffmpeg_nvenc") && !oldEncDefaults;
+
+	config_set_default_string(basicConfig, "SimpleOutput", "StreamEncoder",
+			useNV ? SIMPLE_ENCODER_NVENC : SIMPLE_ENCODER_X264);
+	config_set_default_string(basicConfig, "SimpleOutput", "RecEncoder",
+			useNV ? SIMPLE_ENCODER_NVENC : SIMPLE_ENCODER_X264);
 }
 
 bool OBSBasic::InitBasicConfig()
@@ -1530,9 +1565,11 @@ void OBSBasic::OBSInit()
 	blog(LOG_INFO, "---------------------------------");
 	obs_post_load_modules();
 
-#if defined(_WIN32) && defined(BROWSER_AVAILABLE)
-	create_browser_widget = obs_browser_init_panel();
+#ifdef BROWSER_AVAILABLE
+	cef = obs_browser_init_panel();
 #endif
+
+	InitBasicConfigDefaults2();
 
 	CheckForSimpleModeX264Fallback();
 
@@ -1653,8 +1690,19 @@ void OBSBasic::OBSInit()
 			on_resetUI_triggered();
 	}
 
-	config_set_default_bool(App()->GlobalConfig(), "BasicWindow",
-			"DocksLocked", true);
+	bool pre23Defaults = config_get_bool(App()->GlobalConfig(),
+			"General", "Pre23Defaults");
+	if (pre23Defaults) {
+		bool resetDockLock23 = config_get_bool(App()->GlobalConfig(),
+				"General", "ResetDockLock23");
+		if (!resetDockLock23) {
+			config_set_bool(App()->GlobalConfig(),
+					"General", "ResetDockLock23", true);
+			config_remove_value(App()->GlobalConfig(),
+					"BasicWindow", "DocksLocked");
+			config_save_safe(App()->GlobalConfig(), "tmp", nullptr);
+		}
+	}
 
 	bool docksLocked = config_get_bool(App()->GlobalConfig(),
 			"BasicWindow", "DocksLocked");
@@ -1761,9 +1809,9 @@ void OBSBasic::OnFirstLoad()
 	if (api)
 		api->on_event(OBS_FRONTEND_EVENT_FINISHED_LOADING);
 
-#if defined(_WIN32) && defined(BROWSER_AVAILABLE)
+#ifdef BROWSER_AVAILABLE
 	/* Attempt to load init screen if available */
-	if (create_browser_widget) {
+	if (cef) {
 		WhatsNewInfoThread *wnit = new WhatsNewInfoThread();
 		if (wnit) {
 			connect(wnit, &WhatsNewInfoThread::Result,
@@ -1775,6 +1823,8 @@ void OBSBasic::OnFirstLoad()
 		}
 	}
 #endif
+
+	Auth::Load();
 }
 
 void OBSBasic::DeferredLoad(const QString &file, int requeueCount)
@@ -1870,32 +1920,37 @@ void OBSBasic::ReceivedIntroJson(const QString &text)
 	config_set_int(App()->GlobalConfig(), "General",
 			"InfoIncrement", info_increment);
 
-	QDialog dlg(this);
-	dlg.setWindowTitle("What's New");
-	dlg.resize(700, 600);
+	QDialog *dlg = new QDialog(this);
+	dlg->setAttribute(Qt::WA_DeleteOnClose, true);
+	dlg->setWindowTitle("What's New");
+	dlg->resize(700, 600);
 
-	QCefWidget *cefWidget = create_browser_widget(nullptr, info_url);
+	Qt::WindowFlags flags = dlg->windowFlags();
+	Qt::WindowFlags helpFlag = Qt::WindowContextHelpButtonHint;
+	dlg->setWindowFlags(flags & (~helpFlag));
+
+	QCefWidget *cefWidget = cef->create_widget(nullptr, info_url);
 	if (!cefWidget) {
 		return;
 	}
 
 	connect(cefWidget, SIGNAL(titleChanged(const QString &)),
-			&dlg, SLOT(setWindowTitle(const QString &)));
+			dlg, SLOT(setWindowTitle(const QString &)));
 
 	QPushButton *close = new QPushButton(QTStr("Close"));
 	connect(close, &QAbstractButton::clicked,
-			&dlg, &QDialog::accept);
+			dlg, &QDialog::accept);
 
 	QHBoxLayout *bottomLayout = new QHBoxLayout();
 	bottomLayout->addStretch();
 	bottomLayout->addWidget(close);
 	bottomLayout->addStretch();
 
-	QVBoxLayout *topLayout = new QVBoxLayout(&dlg);
+	QVBoxLayout *topLayout = new QVBoxLayout(dlg);
 	topLayout->addWidget(cefWidget);
 	topLayout->addLayout(bottomLayout);
 
-	dlg.exec();
+	dlg->show();
 #else
 	UNUSED_PARAMETER(text);
 #endif
@@ -2242,6 +2297,12 @@ OBSBasic::~OBSBasic()
 			SetAeroEnabled(true);
 		}
 	}
+#endif
+
+#ifdef BROWSER_AVAILABLE
+	DestroyPanelCookieManager();
+	delete cef;
+	cef = nullptr;
 #endif
 }
 
@@ -3235,6 +3296,16 @@ void OBSBasic::RenderMain(void *data, uint32_t cx, uint32_t cy)
 	gs_viewport_push();
 	gs_projection_push();
 
+	QSize previewSize = GetPixelSize(window->ui->preview);
+	float right  = float(previewSize.width())  - window->previewX;
+	float bottom = float(previewSize.height()) - window->previewY;
+
+	gs_ortho(-window->previewX, right,
+		-window->previewY, bottom,
+		-100.0f, 100.0f);
+
+	window->ui->preview->DrawOverflow();
+
 	/* --------------------------------------- */
 
 	gs_ortho(0.0f, float(ovi.base_width), 0.0f, float(ovi.base_height),
@@ -3243,6 +3314,7 @@ void OBSBasic::RenderMain(void *data, uint32_t cx, uint32_t cy)
 			window->previewCX, window->previewCY);
 
 	window->DrawBackdrop(float(ovi.base_width), float(ovi.base_height));
+
 
 	if (window->IsPreviewProgramMode()) {
 		OBSScene scene = window->GetCurrentScene();
@@ -3256,9 +3328,6 @@ void OBSBasic::RenderMain(void *data, uint32_t cx, uint32_t cy)
 
 	/* --------------------------------------- */
 
-	QSize previewSize = GetPixelSize(window->ui->preview);
-	float right  = float(previewSize.width())  - window->previewX;
-	float bottom = float(previewSize.height()) - window->previewY;
 
 	gs_ortho(-window->previewX, right,
 	         -window->previewY, bottom,
@@ -3639,10 +3708,6 @@ void OBSBasic::closeEvent(QCloseEvent *event)
 				"BasicWindow", "geometry",
 				saveGeometry().toBase64().constData());
 
-	config_set_string(App()->GlobalConfig(),
-			"BasicWindow", "DockState",
-			saveState().toBase64().constData());
-
 	if (outputHandler && outputHandler->Active()) {
 		SetShowing(true);
 
@@ -3671,7 +3736,13 @@ void OBSBasic::closeEvent(QCloseEvent *event)
 
 	signalHandlers.clear();
 
+	Auth::Save();
 	SaveProjectNow();
+	auth.reset();
+
+	config_set_string(App()->GlobalConfig(),
+			"BasicWindow", "DockState",
+			saveState().toBase64().constData());
 
 	if (api)
 		api->on_event(OBS_FRONTEND_EVENT_EXIT);
@@ -3803,7 +3874,7 @@ static void AddProjectorMenuMonitors(QMenu *parent, QObject *target,
 		QRect screenGeometry = screens[i]->geometry();
 		QString str = QString("%1 %2: %3x%4 @ %5,%6").
 			arg(QTStr("Display"),
-			    QString::number(i),
+			    QString::number(i + 1),
 			    QString::number(screenGeometry.width()),
 			    QString::number(screenGeometry.height()),
 			    QString::number(screenGeometry.x()),
@@ -6219,6 +6290,36 @@ int OBSBasic::GetProfilePath(char *path, size_t size, const char *file) const
 
 void OBSBasic::on_resetUI_triggered()
 {
+	/* prune deleted extra docks */
+	for (int i = extraDocks.size() - 1; i >= 0 ; i--) {
+		if (!extraDocks[i]) {
+			extraDocks.removeAt(i);
+		}
+	}
+
+	if (extraDocks.size()) {
+		QMessageBox::StandardButton button = QMessageBox::question(
+				this,
+				QTStr("ResetUIWarning.Title"),
+				QTStr("ResetUIWarning.Text"));
+
+		if (button == QMessageBox::No)
+			return;
+	}
+
+	/* undock/hide/center extra docks */
+	for (int i = extraDocks.size() - 1; i >= 0 ; i--) {
+		if (extraDocks[i]) {
+			extraDocks[i]->setVisible(true);
+			extraDocks[i]->setFloating(true);
+			extraDocks[i]->move(
+					frameGeometry().topLeft() +
+					rect().center() -
+					extraDocks[i]->rect().center());
+			extraDocks[i]->setVisible(false);
+		}
+	}
+
 	restoreState(startingDockLayout);
 
 #if QT_VERSION >= QT_VERSION_CHECK(5, 6, 0)
@@ -6273,6 +6374,14 @@ void OBSBasic::on_lockUI_toggled(bool lock)
 	ui->transitionsDock->setFeatures(features);
 	ui->controlsDock->setFeatures(features);
 	statsDock->setFeatures(features);
+
+	for (int i = extraDocks.size() - 1; i >= 0 ; i--) {
+		if (!extraDocks[i]) {
+			extraDocks.removeAt(i);
+		} else {
+			extraDocks[i]->setFeatures(features);
+		}
+	}
 }
 
 void OBSBasic::on_toggleListboxToolbars_toggled(bool visible)
@@ -6856,4 +6965,33 @@ void OBSBasic::ResizeOutputSizeOfSource()
 
 	ResetVideo();
 	on_actionFitToScreen_triggered();
+}
+
+QAction *OBSBasic::AddDockWidget(QDockWidget *dock)
+{
+	QAction *action = ui->viewMenuDocks->addAction(dock->windowTitle());
+	action->setCheckable(true);
+	assignDockToggle(dock, action);
+	extraDocks.push_back(dock);
+
+	bool lock = ui->lockUI->isChecked();
+	QDockWidget::DockWidgetFeatures features = lock
+		? QDockWidget::NoDockWidgetFeatures
+		: QDockWidget::AllDockWidgetFeatures;
+
+	dock->setFeatures(features);
+
+	/* prune deleted docks */
+	for (int i = extraDocks.size() - 1; i >= 0 ; i--) {
+		if (!extraDocks[i]) {
+			extraDocks.removeAt(i);
+		}
+	}
+
+	return action;
+}
+
+OBSBasic *OBSBasic::Get()
+{
+	return reinterpret_cast<OBSBasic*>(App()->GetMainWindow());
 }

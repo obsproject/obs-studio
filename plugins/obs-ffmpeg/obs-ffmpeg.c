@@ -7,6 +7,12 @@
 #include <libavformat/avformat.h>
 #include <pthread.h>
 
+#ifdef _WIN32
+#include <dxgi.h>
+#include <util/dstr.h>
+#include <util/windows/win-version.h>
+#endif
+
 OBS_DECLARE_MODULE()
 OBS_MODULE_USE_DEFAULT_LOCALE("obs-ffmpeg", "en-US")
 MODULE_EXPORT const char *obs_module_description(void)
@@ -134,6 +140,93 @@ cleanup:
 
 static const char *nvenc_check_name = "nvenc_check";
 
+#ifdef _WIN32
+static const wchar_t *blacklisted_adapters[] = {
+	L"920M",
+	L"940M",
+	L"820M",
+	L"840M",
+	L"1030",
+	L"MX130"
+};
+
+static const size_t num_blacklisted =
+	sizeof(blacklisted_adapters) / sizeof(blacklisted_adapters[0]);
+
+static bool is_blacklisted(const wchar_t *name)
+{
+	for (size_t i = 0; i < num_blacklisted; i++) {
+		const wchar_t *blacklisted_adapter = blacklisted_adapters[i];
+		if (wstrstri(blacklisted_adapter, name)) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+typedef HRESULT (*create_dxgi_proc)(const IID *, IDXGIFactory1 **);
+
+static bool nvenc_device_available(void)
+{
+	static HMODULE dxgi = NULL;
+	static create_dxgi_proc create = NULL;
+	IDXGIFactory1 *factory;
+	IDXGIAdapter1 *adapter;
+	bool available = false;
+	HRESULT hr;
+	UINT i = 0;
+
+	if (!dxgi) {
+		dxgi = GetModuleHandleW(L"dxgi");
+		if (!dxgi) {
+			dxgi = LoadLibraryW(L"dxgi");
+			if (!dxgi) {
+				return true;
+			}
+		}
+	}
+
+	if (!create) {
+		create = (create_dxgi_proc)GetProcAddress(dxgi,
+				"CreateDXGIFactory1");
+		if (!create) {
+			return true;
+		}
+	}
+
+	hr = create(&IID_IDXGIFactory1, &factory);
+	if (FAILED(hr)) {
+		return true;
+	}
+
+	while (factory->lpVtbl->EnumAdapters1(factory, i++, &adapter) == S_OK) {
+		DXGI_ADAPTER_DESC desc;
+
+		hr = adapter->lpVtbl->GetDesc(adapter, &desc);
+		adapter->lpVtbl->Release(adapter);
+
+		if (FAILED(hr)) {
+			continue;
+		}
+
+		if (wstrstri(desc.Description, L"nvidia") &&
+		    !is_blacklisted(desc.Description)) {
+			available = true;
+			goto finish;
+		}
+	}
+
+finish:
+	factory->lpVtbl->Release(factory);
+	return available;
+}
+#endif
+
+#ifdef _WIN32
+extern bool load_nvenc_lib(void);
+#endif
+
 static bool nvenc_supported(void)
 {
 	av_register_all();
@@ -149,10 +242,12 @@ static bool nvenc_supported(void)
 	}
 
 #if defined(_WIN32)
-	if (sizeof(void*) == 8) {
-		lib = os_dlopen("nvEncodeAPI64.dll");
-	} else {
-		lib = os_dlopen("nvEncodeAPI.dll");
+	if (!nvenc_device_available()) {
+		goto cleanup;
+	}
+	if (load_nvenc_lib()) {
+		success = true;
+		goto finish;
 	}
 #else
 	lib = os_dlopen("libnvidia-encode.so.1");
@@ -165,6 +260,7 @@ static bool nvenc_supported(void)
 cleanup:
 	if (lib)
 		os_dlclose(lib);
+finish:
 	profile_end(nvenc_check_name);
 	return success;
 }
@@ -177,6 +273,11 @@ static bool vaapi_supported(void)
 	AVCodec *vaenc = avcodec_find_encoder_by_name("h264_vaapi");
 	return !!vaenc;
 }
+#endif
+
+#ifdef _WIN32
+extern void jim_nvenc_load(void);
+extern void jim_nvenc_unload(void);
 #endif
 
 bool obs_module_load(void)
@@ -195,6 +296,11 @@ bool obs_module_load(void)
 #ifndef __APPLE__
 	if (nvenc_supported()) {
 		blog(LOG_INFO, "NVENC supported");
+#ifdef _WIN32
+		if (get_win_ver_int() > 0x0601) {
+			jim_nvenc_load();
+		}
+#endif
 		obs_register_encoder(&nvenc_encoder_info);
 	}
 #if !defined(_WIN32) && defined(LIBAVUTIL_VAAPI_AVAILABLE)
@@ -224,4 +330,8 @@ void obs_module_unload(void)
 
 	da_free(active_log_contexts);
 	da_free(cached_log_contexts);
+
+#ifdef _WIN32
+	jim_nvenc_unload();
+#endif
 }

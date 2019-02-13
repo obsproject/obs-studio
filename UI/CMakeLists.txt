@@ -7,7 +7,7 @@ else()
 	set(FIND_MODE QUIET)
 endif()
 
-if(BROWSER_AVAILABLE_INTERNAL)
+if(BROWSER_AVAILABLE_INTERNAL AND WIN32)
 	add_definitions(-DBROWSER_AVAILABLE)
 endif()
 
@@ -18,6 +18,30 @@ add_subdirectory(obs-frontend-api)
 project(obs)
 
 set(DISABLE_UPDATE_MODULE TRUE CACHE BOOL "Disables building the update module")
+
+if(NOT DEFINED TWITCH_CLIENTID OR "${TWITCH_CLIENTID}" STREQUAL "" OR
+   NOT DEFINED TWITCH_HASH     OR "${TWITCH_HASH}"     STREQUAL "" OR
+   NOT BROWSER_AVAILABLE_INTERNAL)
+	set(TWITCH_ENABLED FALSE)
+	set(TWITCH_CLIENTID "")
+	set(TWITCH_HASH "0")
+else()
+	set(TWITCH_ENABLED TRUE)
+endif()
+
+if(NOT DEFINED MIXER_CLIENTID OR "${MIXER_CLIENTID}" STREQUAL "" OR
+   NOT DEFINED MIXER_HASH     OR "${MIXER_HASH}"     STREQUAL "" OR
+   NOT BROWSER_AVAILABLE_INTERNAL)
+	set(MIXER_ENABLED FALSE)
+	set(MIXER_CLIENTID "")
+	set(MIXER_HASH "0")
+else()
+	set(MIXER_ENABLED TRUE)
+endif()
+
+configure_file(
+	"${CMAKE_CURRENT_SOURCE_DIR}/ui-config.h.in"
+	"${CMAKE_CURRENT_BINARY_DIR}/ui-config.h")
 
 set(CMAKE_INCLUDE_CURRENT_DIR TRUE)
 set(CMAKE_AUTOMOC TRUE)
@@ -39,6 +63,7 @@ endif()
 
 
 include_directories(${FFMPEG_INCLUDE_DIRS})
+include_directories(${CMAKE_CURRENT_BINARY_DIR})
 include_directories(SYSTEM "obs-frontend-api")
 include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/libobs")
 include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/deps/libff")
@@ -105,6 +130,35 @@ elseif(UNIX)
                 Qt5::X11Extras)
 endif()
 
+if(BROWSER_AVAILABLE_INTERNAL)
+	list(APPEND obs_PLATFORM_SOURCES
+		obf.c
+		auth-oauth.cpp
+		)
+	list(APPEND obs_PLATFORM_HEADERS
+		obf.h
+		auth-oauth.hpp
+		)
+
+	if(TWITCH_ENABLED)
+		list(APPEND obs_PLATFORM_SOURCES
+			auth-twitch.cpp
+			)
+		list(APPEND obs_PLATFORM_HEADERS
+			auth-twitch.hpp
+			)
+	endif()
+
+	if(MIXER_ENABLED)
+		list(APPEND obs_PLATFORM_SOURCES
+			auth-mixer.cpp
+			)
+		list(APPEND obs_PLATFORM_HEADERS
+			auth-mixer.hpp
+			)
+	endif()
+endif()
+
 set(obs_libffutil_SOURCES
 	../deps/libff/libff/ff-util.c
 	)
@@ -134,11 +188,13 @@ set(obs_SOURCES
 	window-basic-auto-config.cpp
 	window-basic-main-outputs.cpp
 	window-basic-source-select.cpp
+	window-basic-settings-stream.cpp
 	window-basic-auto-config-test.cpp
 	window-basic-main-scene-collections.cpp
 	window-basic-main-transitions.cpp
 	window-basic-main-dropfiles.cpp
 	window-basic-main-profiles.cpp
+	window-basic-main-browser.cpp
 	window-basic-status-bar.cpp
 	window-basic-adv-audio.cpp
 	window-basic-transform.cpp
@@ -148,6 +204,7 @@ set(obs_SOURCES
 	window-log-reply.cpp
 	window-projector.cpp
 	window-remux.cpp
+	auth-base.cpp
 	source-tree.cpp
 	properties-view.cpp
 	focus-list.cpp
@@ -196,6 +253,7 @@ set(obs_HEADERS
 	window-log-reply.hpp
 	window-projector.hpp
 	window-remux.hpp
+	auth-base.hpp
 	source-tree.hpp
 	properties-view.hpp
 	properties-view.moc.hpp

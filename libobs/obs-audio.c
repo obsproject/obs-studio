@@ -31,8 +31,8 @@ static void push_audio_tree(obs_source_t *parent, obs_source_t *source, void *p)
 	struct obs_core_audio *audio = p;
 
 	if (da_find(audio->render_order, &source, 0) == DARRAY_INVALID) {
-		obs_source_addref(source);
-		da_push_back(audio->render_order, &source);
+		obs_source_t *s = obs_source_get_ref(source);
+		if (s) da_push_back(audio->render_order, &s);
 	}
 
 	UNUSED_PARAMETER(parent);
@@ -334,7 +334,7 @@ static inline const char *find_min_ts(struct obs_core_data *data,
 				source->audio_ts < *min_ts) {
 			*min_ts = source->audio_ts;
 			buffering_source = source;
-               }
+		}
 
 		source = (struct obs_source*)source->next_audio_source;
 	}

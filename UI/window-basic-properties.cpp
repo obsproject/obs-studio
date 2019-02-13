@@ -64,6 +64,8 @@ OBSBasicProperties::OBSBasicProperties(QWidget *parent, OBSSource source_)
 	else
 		resize(720, 580);
 
+	setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
+
 	QMetaObject::connectSlotsByName(this);
 
 	/* The OBSData constructor increments the reference once */

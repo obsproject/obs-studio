@@ -535,6 +535,9 @@ EXPORT audio_t *obs_get_audio(void);
 /** Gets the main video output handler for this OBS context */
 EXPORT video_t *obs_get_video(void);
 
+/** Returns true if video is active, false otherwise */
+EXPORT bool obs_video_active(void);
+
 /** Sets the primary output source for a channel. */
 EXPORT void obs_set_output_source(uint32_t channel, obs_source_t *source);
 
@@ -598,6 +601,7 @@ enum obs_base_effect {
 	OBS_EFFECT_LANCZOS,            /**< Lanczos downscale */
 	OBS_EFFECT_BILINEAR_LOWRES,    /**< Bilinear low resolution downscale */
 	OBS_EFFECT_PREMULTIPLIED_ALPHA,/**< Premultiplied alpha */
+	OBS_EFFECT_REPEAT,             /**< RGB/YUV (repeating) */
 };
 
 /** Returns a commonly used base effect */
@@ -709,6 +713,8 @@ EXPORT uint64_t obs_get_average_frame_time_ns(void);
 
 EXPORT uint32_t obs_get_total_frames(void);
 EXPORT uint32_t obs_get_lagged_frames(void);
+
+EXPORT bool obs_nv12_tex_active(void);
 
 EXPORT void obs_apply_private_data(obs_data_t *settings);
 EXPORT void obs_set_private_data(obs_data_t *settings);
@@ -1929,6 +1935,9 @@ EXPORT void obs_free_encoder_packet(struct encoder_packet *packet);
 EXPORT void obs_encoder_packet_ref(struct encoder_packet *dst,
 		struct encoder_packet *src);
 EXPORT void obs_encoder_packet_release(struct encoder_packet *packet);
+
+EXPORT void *obs_encoder_create_rerouted(obs_encoder_t *encoder,
+		const char *reroute_id);
 
 
 /* ------------------------------------------------------------------------- */

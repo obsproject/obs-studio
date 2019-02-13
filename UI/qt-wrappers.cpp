@@ -203,3 +203,63 @@ void DeleteLayout(QLayout *layout)
 
 	delete layout;
 }
+
+class QuickThread : public QThread {
+public:
+	explicit inline QuickThread(std::function<void()> func_)
+		: func(func_)
+	{}
+
+private:
+	virtual void run() override
+	{
+		func();
+	}
+
+	std::function<void()> func;
+};
+
+QThread *CreateQThread(std::function<void()> func)
+{
+	return new QuickThread(func);
+}
+
+void ExecuteFuncSafeBlock(std::function<void()> func)
+{
+	QEventLoop eventLoop;
+
+	auto wait = [&] ()
+	{
+		func();
+		QMetaObject::invokeMethod(&eventLoop, "quit",
+				Qt::QueuedConnection);
+	};
+
+	QScopedPointer<QThread> thread(CreateQThread(wait));
+	thread->start();
+	eventLoop.exec();
+	thread->wait();
+}
+
+void ExecuteFuncSafeBlockMsgBox(
+		std::function<void()> func,
+		const QString &title,
+		const QString &text)
+{
+	QMessageBox dlg;
+	dlg.setWindowFlags(dlg.windowFlags() & ~Qt::WindowCloseButtonHint);
+	dlg.setWindowTitle(title);
+	dlg.setText(text);
+	dlg.setStandardButtons(0);
+
+	auto wait = [&] ()
+	{
+		func();
+		QMetaObject::invokeMethod(&dlg, "accept", Qt::QueuedConnection);
+	};
+
+	QScopedPointer<QThread> thread(CreateQThread(wait));
+	thread->start();
+	dlg.exec();
+	thread->wait();
+}

@@ -25,6 +25,10 @@
 #include "window-namedialog.hpp"
 #include "qt-wrappers.hpp"
 
+extern void DestroyPanelCookieManager();
+extern void DuplicateCurrentCookieProfile(ConfigFile &config);
+extern void CheckExistingCookieId();
+
 void EnumProfiles(std::function<bool (const char *, const char *)> &&cb)
 {
 	char path[512];
@@ -182,7 +186,7 @@ static bool CopyProfile(const char *fromPartial, const char *to)
 }
 
 bool OBSBasic::AddProfile(bool create_new, const char *title, const char *text,
-		const char *init_text)
+		const char *init_text, bool rename)
 {
 	std::string newName;
 	std::string newDir;
@@ -228,10 +232,19 @@ bool OBSBasic::AddProfile(bool create_new, const char *title, const char *text,
 	config_set_string(App()->GlobalConfig(), "Basic", "ProfileDir",
 			newDir.c_str());
 
+	Auth::Save();
+	if (create_new) {
+		auth.reset();
+		DestroyPanelCookieManager();
+	} else if (!rename) {
+		DuplicateCurrentCookieProfile(config);
+	}
+
 	config_set_string(config, "General", "Name", newName.c_str());
 	config.SaveSafe("tmp");
 	config.Swap(basicConfig);
 	InitBasicConfigDefaults();
+	InitBasicConfigDefaults2();
 	RefreshProfiles();
 
 	if (create_new)
@@ -380,7 +393,7 @@ void OBSBasic::on_actionRenameProfile_triggered()
 
 	/* Duplicate and delete in case there are any issues in the process */
 	bool success = AddProfile(false, Str("RenameProfile.Title"),
-			Str("AddProfile.Text"), curName.c_str());
+			Str("AddProfile.Text"), curName.c_str(), true);
 	if (success) {
 		DeleteProfile(curName.c_str(), curDir.c_str());
 		RefreshProfiles();
@@ -446,8 +459,13 @@ void OBSBasic::on_actionRemoveProfile_triggered()
 	config_set_string(App()->GlobalConfig(), "Basic", "ProfileDir",
 			newDir);
 
+	Auth::Save();
+	auth.reset();
+	DestroyPanelCookieManager();
+
 	config.Swap(basicConfig);
 	InitBasicConfigDefaults();
+	InitBasicConfigDefaults2();
 	ResetProfileData();
 	DeleteProfile(oldName.c_str(), oldDir.c_str());
 	RefreshProfiles();
@@ -458,6 +476,8 @@ void OBSBasic::on_actionRemoveProfile_triggered()
 	blog(LOG_INFO, "------------------------------------------------");
 
 	UpdateTitleBar();
+
+	Auth::Load();
 
 	if (api) {
 		api->on_event(OBS_FRONTEND_EVENT_PROFILE_LIST_CHANGED);
@@ -603,12 +623,19 @@ void OBSBasic::ChangeProfile()
 	config_set_string(App()->GlobalConfig(), "Basic", "ProfileDir",
 			newDir);
 
+	Auth::Save();
+	auth.reset();
+	DestroyPanelCookieManager();
+
 	config.Swap(basicConfig);
 	InitBasicConfigDefaults();
+	InitBasicConfigDefaults2();
 	ResetProfileData();
 	RefreshProfiles();
 	config_save_safe(App()->GlobalConfig(), "tmp", nullptr);
 	UpdateTitleBar();
+
+	Auth::Load();
 
 	CheckForSimpleModeX264Fallback();
 

@@ -258,6 +258,17 @@ void gs_device::InitDevice(uint32_t adapterIdx)
 	if (FAILED(hr))
 		throw UnsupportedHWError("Failed to create device", hr);
 
+	ComQIPtr<ID3D11Device1> d3d11_1(device);
+	if (!!d3d11_1) {
+		D3D11_FEATURE_DATA_D3D11_OPTIONS opts = {};
+		hr = d3d11_1->CheckFeatureSupport(
+				D3D11_FEATURE_D3D11_OPTIONS,
+				&opts, sizeof(opts));
+		if (SUCCEEDED(hr)) {
+			nv12Supported = !!opts.ExtendedResourceSharing;
+		}
+	}
+
 	blog(LOG_INFO, "D3D11 loaded successfully, feature level used: %u",
 			(unsigned int)levelUsed);
 }
@@ -736,8 +747,7 @@ gs_texture_t *device_texture_create(gs_device_t *device, uint32_t width,
 	gs_texture *texture = NULL;
 	try {
 		texture = new gs_texture_2d(device, width, height, color_format,
-				levels, data, flags, GS_TEXTURE_2D, false,
-				false);
+				levels, data, flags, GS_TEXTURE_2D, false);
 	} catch (HRError error) {
 		blog(LOG_ERROR, "device_texture_create (D3D11): %s (%08lX)",
 				error.str, error.hr);
@@ -756,8 +766,7 @@ gs_texture_t *device_cubetexture_create(gs_device_t *device, uint32_t size,
 	gs_texture *texture = NULL;
 	try {
 		texture = new gs_texture_2d(device, size, size, color_format,
-				levels, data, flags, GS_TEXTURE_CUBE, false,
-				false);
+				levels, data, flags, GS_TEXTURE_CUBE, false);
 	} catch (HRError error) {
 		blog(LOG_ERROR, "device_cubetexture_create (D3D11): %s "
 		                "(%08lX)",
@@ -1317,7 +1326,7 @@ void device_stage_texture(gs_device_t *device, gs_stagesurf_t *dst,
 			throw "Source texture must be a 2D texture";
 		if (!dst)
 			throw "Destination surface is NULL";
-		if (dst->format != src->format)
+		if (dst->format != GS_UNKNOWN && dst->format != src->format)
 			throw "Source and destination formats do not match";
 		if (dst->width  != src2d->width ||
 		    dst->height != src2d->height)
@@ -2056,6 +2065,11 @@ extern "C" EXPORT bool device_shared_texture_available(void)
 	return true;
 }
 
+extern "C" EXPORT bool device_nv12_available(gs_device_t *device)
+{
+	return device->nv12Supported;
+}
+
 extern "C" EXPORT gs_texture_t *device_texture_create_gdi(gs_device_t *device,
 		uint32_t width, uint32_t height)
 {
@@ -2063,7 +2077,7 @@ extern "C" EXPORT gs_texture_t *device_texture_create_gdi(gs_device_t *device,
 	try {
 		texture = new gs_texture_2d(device, width, height, GS_BGRA,
 				1, nullptr, GS_RENDER_TARGET, GS_TEXTURE_2D,
-				true, false);
+				true);
 	} catch (HRError error) {
 		blog(LOG_ERROR, "device_texture_create_gdi (D3D11): %s (%08lX)",
 				error.str, error.hr);
@@ -2131,4 +2145,98 @@ extern "C" EXPORT gs_texture_t *device_texture_open_shared(gs_device_t *device,
 	}
 
 	return texture;
+}
+
+extern "C" EXPORT uint32_t device_texture_get_shared_handle(gs_texture_t *tex)
+{
+	gs_texture_2d *tex2d = reinterpret_cast<gs_texture_2d *>(tex);
+	if (tex->type != GS_TEXTURE_2D)
+		return GS_INVALID_HANDLE;
+
+	return tex2d->isShared ? tex2d->sharedHandle : GS_INVALID_HANDLE;
+}
+
+extern "C" EXPORT int device_texture_acquire_sync(gs_texture_t *tex,
+		uint64_t key, uint32_t ms)
+{
+	gs_texture_2d *tex2d = reinterpret_cast<gs_texture_2d *>(tex);
+	if (tex->type != GS_TEXTURE_2D)
+		return -1;
+
+	ComQIPtr<IDXGIKeyedMutex> keyedMutex(tex2d->texture);
+	if (!keyedMutex)
+		return -1;
+
+	HRESULT hr = keyedMutex->AcquireSync(key, ms);
+	if (hr == S_OK)
+		return 0;
+	else if (hr == WAIT_TIMEOUT)
+		return ETIMEDOUT;
+
+	return -1;
+}
+
+extern "C" EXPORT int device_texture_release_sync(gs_texture_t *tex,
+		uint64_t key)
+{
+	gs_texture_2d *tex2d = reinterpret_cast<gs_texture_2d *>(tex);
+	if (tex->type != GS_TEXTURE_2D)
+		return -1;
+
+	ComQIPtr<IDXGIKeyedMutex> keyedMutex(tex2d->texture);
+	if (!keyedMutex)
+		return -1;
+
+	HRESULT hr = keyedMutex->ReleaseSync(key);
+	return hr == S_OK ? 0 : -1;
+}
+
+extern "C" EXPORT bool device_texture_create_nv12(gs_device_t *device,
+		gs_texture_t **p_tex_y, gs_texture_t **p_tex_uv,
+		uint32_t width, uint32_t height, uint32_t flags)
+{
+	if (!device->nv12Supported)
+		return false;
+
+	*p_tex_y = nullptr;
+	*p_tex_uv = nullptr;
+
+	gs_texture_2d *tex_y;
+	gs_texture_2d *tex_uv;
+
+	try {
+		tex_y = new gs_texture_2d(device, width, height, GS_R8, 1,
+				nullptr, flags, GS_TEXTURE_2D, false, true);
+		tex_uv = new gs_texture_2d(device, tex_y->texture, flags);
+
+	} catch (HRError error) {
+		blog(LOG_ERROR, "gs_texture_create_nv12 (D3D11): %s (%08lX)",
+				error.str, error.hr);
+		LogD3D11ErrorDetails(error, device);
+		return false;
+
+	} catch (const char *error) {
+		blog(LOG_ERROR, "gs_texture_create_nv12 (D3D11): %s", error);
+		return false;
+	}
+
+	*p_tex_y = tex_y;
+	*p_tex_uv = tex_uv;
+	return true;
+}
+
+extern "C" EXPORT gs_stagesurf_t *device_stagesurface_create_nv12(
+		gs_device_t *device, uint32_t width, uint32_t height)
+{
+	gs_stage_surface *surf = NULL;
+	try {
+		surf = new gs_stage_surface(device, width, height);
+	} catch (HRError error) {
+		blog(LOG_ERROR, "device_stagesurface_create (D3D11): %s "
+		                "(%08lX)",
+				error.str, error.hr);
+		LogD3D11ErrorDetails(error, device);
+	}
+
+	return surf;
 }

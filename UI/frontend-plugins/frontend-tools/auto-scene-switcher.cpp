@@ -89,6 +89,8 @@ SceneSwitcher::SceneSwitcher(QWidget *parent)
 {
 	ui->setupUi(this);
 
+	setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
+
 	lock_guard<mutex> lock(switcher->m);
 
 	switcher->Prune();

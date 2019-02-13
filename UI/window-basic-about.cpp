@@ -14,6 +14,8 @@ OBSAbout::OBSAbout(QWidget *parent)
 
 	setFixedSize(size());
 
+	setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
+
 	QString bitness;
 
 	if(sizeof(void*) == 4)

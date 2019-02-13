@@ -8,6 +8,8 @@
 
 using namespace std;
 
+extern bool EncoderAvailable(const char *encoder);
+
 static void OBSStreamStarting(void *data, calldata_t *params)
 {
 	BasicOutputHandler *output = static_cast<BasicOutputHandler*>(data);
@@ -302,7 +304,10 @@ void SimpleOutput::LoadRecordingPreset()
 		} else if (strcmp(encoder, SIMPLE_ENCODER_AMD) == 0) {
 			LoadRecordingPreset_h264("amd_amf_h264");
 		} else if (strcmp(encoder, SIMPLE_ENCODER_NVENC) == 0) {
-			LoadRecordingPreset_h264("ffmpeg_nvenc");
+			const char *id = EncoderAvailable("jim_nvenc")
+				? "jim_nvenc"
+				: "ffmpeg_nvenc";
+			LoadRecordingPreset_h264(id);
 		}
 		usingRecordingPreset = true;
 
@@ -317,14 +322,22 @@ SimpleOutput::SimpleOutput(OBSBasic *main_) : BasicOutputHandler(main_)
 {
 	const char *encoder = config_get_string(main->Config(), "SimpleOutput",
 			"StreamEncoder");
-	if (strcmp(encoder, SIMPLE_ENCODER_QSV) == 0)
+
+	if (strcmp(encoder, SIMPLE_ENCODER_QSV) == 0) {
 		LoadStreamingPreset_h264("obs_qsv11");
-	else if (strcmp(encoder, SIMPLE_ENCODER_AMD) == 0)
+
+	} else if (strcmp(encoder, SIMPLE_ENCODER_AMD) == 0) {
 		LoadStreamingPreset_h264("amd_amf_h264");
-	else if (strcmp(encoder, SIMPLE_ENCODER_NVENC) == 0)
-		LoadStreamingPreset_h264("ffmpeg_nvenc");
-	else
+
+	} else if (strcmp(encoder, SIMPLE_ENCODER_NVENC) == 0) {
+		const char *id = EncoderAvailable("jim_nvenc")
+			? "jim_nvenc"
+			: "ffmpeg_nvenc";
+		LoadStreamingPreset_h264(id);
+
+	} else {
 		LoadStreamingPreset_h264("obs_x264");
+	}
 
 	if (!CreateAACEncoder(aacStreaming, aacStreamEncID, GetAudioBitrate(),
 				"simple_aac", 0))
@@ -650,6 +663,10 @@ bool SimpleOutput::StartStreaming(obs_service_t *service)
 {
 	if (!Active())
 		SetupOutputs();
+
+	Auth *auth = main->GetAuth();
+	if (auth)
+		auth->OnStreamConfig();
 
 	/* --------------------- */
 
@@ -1425,6 +1442,10 @@ bool AdvancedOutput::StartStreaming(obs_service_t *service)
 
 	if (!Active())
 		SetupOutputs();
+
+	Auth *auth = main->GetAuth();
+	if (auth)
+		auth->OnStreamConfig();
 
 	/* --------------------- */
 

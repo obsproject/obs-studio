@@ -8,6 +8,7 @@
 #include <condition_variable>
 #include <utility>
 #include <thread>
+#include <memory>
 #include <vector>
 #include <string>
 #include <mutex>
@@ -16,6 +17,9 @@ class Ui_AutoConfigStartPage;
 class Ui_AutoConfigVideoPage;
 class Ui_AutoConfigStreamPage;
 class Ui_AutoConfigTestPage;
+
+class AutoConfigStreamPage;
+class Auth;
 
 class AutoConfig : public QWizard {
 	Q_OBJECT
@@ -59,6 +63,8 @@ class AutoConfig : public QWizard {
 	};
 
 	static inline const char *GetEncoderId(Encoder enc);
+
+	AutoConfigStreamPage *streamPage = nullptr;
 
 	Service service = Service::Other;
 	Quality recordingQuality = Quality::Stream;
@@ -155,11 +161,19 @@ class AutoConfigStreamPage : public QWizardPage {
 
 	friend class AutoConfig;
 
+	enum class Section : int {
+		Connect,
+		StreamKey,
+	};
+
+	std::shared_ptr<Auth> auth;
+
 	Ui_AutoConfigStreamPage *ui;
 	QString lastService;
 	bool ready = false;
 
 	void LoadServices(bool showAll);
+	inline bool IsCustom() const;
 
 public:
 	AutoConfigStreamPage(QWidget *parent = nullptr);
@@ -169,8 +183,14 @@ public:
 	virtual int nextId() const override;
 	virtual bool validatePage() override;
 
+	void OnAuthConnected();
+	void OnOAuthStreamKeyConnected();
+
 public slots:
 	void on_show_clicked();
+	void on_connectAccount_clicked();
+	void on_disconnectAccount_clicked();
+	void on_useStreamKey_clicked();
 	void ServiceChanged();
 	void UpdateKeyLink();
 	void UpdateServerList();

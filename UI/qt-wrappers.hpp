@@ -23,6 +23,7 @@
 #include <QThread>
 #include <obs.hpp>
 
+#include <functional>
 #include <memory>
 #include <vector>
 
@@ -63,6 +64,14 @@ QDataStream &operator<<(QDataStream &out, const OBSScene &scene);
 QDataStream &operator>>(QDataStream &in, OBSScene &scene);
 QDataStream &operator<<(QDataStream &out, const OBSSceneItem &si);
 QDataStream &operator>>(QDataStream &in, OBSSceneItem &si);
+
+QThread *CreateQThread(std::function<void()> func);
+
+void ExecuteFuncSafeBlock(std::function<void()> func);
+void ExecuteFuncSafeBlockMsgBox(
+		std::function<void()> func,
+		const QString &title,
+		const QString &text);
 
 class SignalBlocker {
 	QWidget *widget;

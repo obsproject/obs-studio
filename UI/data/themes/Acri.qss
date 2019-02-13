@@ -42,7 +42,6 @@ QWidget {
 	outline: none;
 	font-family: "Open Sans", "Tahoma", "Arial", sans-serif;
 	font-size: 12px;
-	padding: 4px;
 	overflow: auto;
 }
 
@@ -56,6 +55,7 @@ QLabel:link {
 
 QMenu {
 	border: 1px solid #333336;
+	padding: 4px;
 }
 
 * [frameShape="1"], * [frameShape="2"], * [frameShape="3"], * [frameShape="4"], * [frameShape="5"], * [frameShape="6"] {
@@ -156,7 +156,7 @@ QListWidget QLineEdit {
 
 /* Dock stuff */
 QDockWidget {
-	background: transparent;
+	background: #181819;
 	border: none;
 	font-size: 14px;
 	font-weight: bold;
@@ -260,6 +260,7 @@ QScrollBar:vertical {
 	width: 20px;
 	margin-top: -3px;
 	margin-bottom: -3px;
+	padding: 4px;
 }
 
 QScrollBar::handle:vertical {
@@ -273,6 +274,7 @@ QScrollBar::handle:vertical {
 QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
 	border: none;
 	background: none;
+	height: 0;
 }
 
 QScrollBar::up-arrow:vertical, QScrollBar::down-arrow:vertical, QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
@@ -286,6 +288,7 @@ QScrollBar:horizontal {
 	height: 20px;
 	margin-left: -3px;
 	margin-right: -3px;
+	padding: 4px;
 }
 
 QScrollBar::handle:horizontal {
@@ -299,6 +302,7 @@ QScrollBar::handle:horizontal {
 QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {
 	border: none;
 	background: none;
+	width: 0;
 }
 
 QScrollBar::left-arrow:horizontal, QScrollBar::right-arrow:horizontal, QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal {
@@ -434,6 +438,7 @@ QComboBox::down-arrow:editable {
 QLineEdit, QTextEdit, QPlainTextEdit {
 	background-color: rgb(8,8,11);
 	border: none;
+	padding: 4px;
 	padding-left: 2px;
 }
 
@@ -442,6 +447,7 @@ QLineEdit, QTextEdit, QPlainTextEdit {
 QSpinBox, QDoubleSpinBox {
 	background-color: rgb(8,8,11);
 	border: none;
+	padding: 4px;
 	padding-left: 2px;
 	padding-right: 15px;
 	margin-right: 10px;
@@ -672,6 +678,10 @@ QStatusBar::item {
 }
 
 /* Checkboxes */
+QCheckBox {
+	padding: 4px;
+}
+
 QCheckBox::indicator,
 QGroupBox::indicator {
 	width: 20px;
@@ -863,14 +873,25 @@ FocusList::item {
 
 /* About dialog */
 
+#OBSAbout #icon {
+	padding: 0;
+}
+
+#OBSAbout QTextBrowser {
+	background: transparent;
+	padding: 2px 0;
+}
+
 * [themeID="aboutName"] {
 	font-size: 36px;
 	font-weight: bold;
+	padding: 0;
 }
 
 * [themeID="aboutVersion"] {
 	font-size: 16px;
 	margin-bottom: 20px;
+	padding: 0;
 }
 
 * [themeID="aboutInfo"] {
