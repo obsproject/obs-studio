@@ -31,8 +31,8 @@ static void push_audio_tree(obs_source_t *parent, obs_source_t *source, void *p)
 	struct obs_core_audio *audio = p;
 
 	if (da_find(audio->render_order, &source, 0) == DARRAY_INVALID) {
-		obs_source_addref(source);
-		da_push_back(audio->render_order, &source);
+		obs_source_t *s = obs_source_get_ref(source);
+		if (s) da_push_back(audio->render_order, &s);
 	}
 
 	UNUSED_PARAMETER(parent);
