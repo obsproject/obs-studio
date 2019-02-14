@@ -51,9 +51,9 @@ artifacts:
 deploy:
   - provider: S3
     access_key_id:
-      secure: C1Qzrf1+tbRDGmnXR6OpXwWuJr33d2JCVwn0KC/V7jw=
+      secure: 80Jl7kcnucSWpDReQ3K6JK/R9vVwnAQYADH2MVSNYts=
     secret_access_key:
-      secure: Y4L7veNSMuKu/WwIhk/5kjZog0yyZIVcOCTPhzO83gnz15Mco2B1/60nSXssF5mX
+      secure: tGpzwrP05lsjPbKNChsVCZUW9d+CCKac08aL1e5nOHhkaOYVgCZxqJDy0J1cV9cd
     bucket: obsstudios3.streamlabs.com
     region: us-west-2
     set_public: true
