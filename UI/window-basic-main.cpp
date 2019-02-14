@@ -1917,6 +1917,9 @@ void OBSBasic::ReceivedIntroJson(const QString &text)
 		return;
 	}
 
+	cef->init_browser();
+	ExecuteFuncSafeBlock([] {cef->wait_for_browser_init();});
+
 	config_set_int(App()->GlobalConfig(), "General",
 			"InfoIncrement", info_increment);
 
