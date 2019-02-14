@@ -1,4 +1,4 @@
-version: 22.0.3-sl.{build}
+version: 23.0.0-rc1-sl.{build}
 
 image:
 - Visual Studio 2017
