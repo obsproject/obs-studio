@@ -88,6 +88,15 @@ void DestroyPanelCookieManager()
 #endif
 }
 
+void DeleteCookies()
+{
+#ifdef BROWSER_AVAILABLE
+	if (panel_cookies) {
+		panel_cookies->DeleteCookies("", "");
+	}
+#endif
+}
+
 void DuplicateCurrentCookieProfile(ConfigFile &config)
 {
 #ifdef BROWSER_AVAILABLE
