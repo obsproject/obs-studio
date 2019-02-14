@@ -33,6 +33,7 @@ private:
 	void ListChanged(const char *setting);
 	bool ColorChanged(const char *setting);
 	bool FontChanged(const char *setting);
+	void GroupChanged(const char *setting);
 	void EditableListChanged();
 	void ButtonClicked();
 
@@ -102,6 +103,8 @@ private:
 	void AddFont(obs_property_t *prop, QFormLayout *layout, QLabel *&label);
 	void AddFrameRate(obs_property_t *prop, bool &warning,
 			QFormLayout *layout, QLabel *&label);
+
+	void AddGroup(obs_property_t *prop, QFormLayout *layout);
 
 	void AddProperty(obs_property_t *property, QFormLayout *layout);
 
