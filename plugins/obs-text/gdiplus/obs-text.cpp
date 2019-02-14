@@ -1078,7 +1078,7 @@ void text_tick(void *data, float seconds)
 
 void text_render(void *data, gs_effect_t *effect)
 {
-	reinterpret_cast<TextSource*>(data)->Render(effect);
+	reinterpret_cast<TextSource*>(data)->Render();
 }
 
 bool obs_module_load(void)
