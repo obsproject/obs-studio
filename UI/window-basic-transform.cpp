@@ -46,6 +46,8 @@ OBSBasicTransform::OBSBasicTransform(OBSBasic *parent)
 {
 	ui->setupUi(this);
 
+	setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
+
 	HookWidget(ui->positionX,    DSCROLL_CHANGED, SLOT(OnControlChanged()));
 	HookWidget(ui->positionY,    DSCROLL_CHANGED, SLOT(OnControlChanged()));
 	HookWidget(ui->rotation,     DSCROLL_CHANGED, SLOT(OnControlChanged()));
