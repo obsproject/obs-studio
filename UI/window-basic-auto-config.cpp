@@ -463,6 +463,7 @@ void AutoConfigStreamPage::on_disconnectAccount_clicked()
 	ui->streamKeyLabel->setVisible(true);
 	ui->connectAccount2->setVisible(true);
 	ui->disconnectAccount->setVisible(false);
+	ui->key->setText("");
 }
 
 void AutoConfigStreamPage::on_useStreamKey_clicked()
