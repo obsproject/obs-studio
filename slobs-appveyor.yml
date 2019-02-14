@@ -73,12 +73,12 @@ deploy:
     access_key_id:
       secure: C1Qzrf1+tbRDGmnXR6OpXwWuJr33d2JCVwn0KC/V7jw=
     secret_access_key:
-      secure: dRSFQBZKAAVvDmZ0DOaoF54189P0b0mFCMSyTwn4eHZVBFdaET8C4Nb6VCJ4kT+a
+      secure: Y4L7veNSMuKu/WwIhk/5kjZog0yyZIVcOCTPhzO83gnz15Mco2B1/60nSXssF5mX
     bucket: obsstudios3.streamlabs.com
     region: us-west-2
     set_public: true
     artifact: $(ReleaseArtifact)
     on:
-      branch: streamlabs
+      branch: streamlabs-23.0.0-rc1
 
 test: off
