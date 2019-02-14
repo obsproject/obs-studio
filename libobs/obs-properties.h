@@ -55,6 +55,7 @@ enum obs_property_type {
 	OBS_PROPERTY_FONT,
 	OBS_PROPERTY_EDITABLE_LIST,
 	OBS_PROPERTY_FRAME_RATE,
+	OBS_PROPERTY_GROUP,
 };
 
 enum obs_combo_format {
@@ -93,6 +94,12 @@ enum obs_number_type {
 	OBS_NUMBER_SLIDER
 };
 
+enum obs_group_type {
+	OBS_COMBO_INVALID,
+	OBS_GROUP_NORMAL,
+	OBS_GROUP_CHECKABLE,
+};
+
 #define OBS_FONT_BOLD      (1<<0)
 #define OBS_FONT_ITALIC    (1<<1)
 #define OBS_FONT_UNDERLINE (1<<2)
@@ -121,6 +128,8 @@ EXPORT obs_property_t *obs_properties_first(obs_properties_t *props);
 
 EXPORT obs_property_t *obs_properties_get(obs_properties_t *props,
 		const char *property);
+
+EXPORT obs_properties_t *obs_properties_get_parent(obs_properties_t *props);
 
 /** Remove a property from a properties list.
  *
@@ -230,6 +239,11 @@ EXPORT obs_property_t *obs_properties_add_editable_list(obs_properties_t *props,
 
 EXPORT obs_property_t *obs_properties_add_frame_rate(obs_properties_t *props,
 		const char *name, const char *description);
+
+EXPORT obs_property_t *obs_properties_add_group(obs_properties_t *props,
+	const char *name, const char *description, enum obs_group_type type,
+	obs_properties_t *group);
+
 
 /* ------------------------------------------------------------------------- */
 
@@ -348,6 +362,9 @@ EXPORT struct media_frames_per_second obs_property_frame_rate_fps_range_min(
 		obs_property_t *p, size_t idx);
 EXPORT struct media_frames_per_second obs_property_frame_rate_fps_range_max(
 		obs_property_t *p, size_t idx);
+
+EXPORT enum obs_group_type obs_property_group_type(obs_property_t *p);
+EXPORT obs_properties_t *obs_property_group_content(obs_property_t *p);
 
 #ifndef SWIG
 DEPRECATED
