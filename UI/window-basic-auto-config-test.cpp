@@ -796,8 +796,17 @@ void AutoConfigTestPage::FindIdealHardwareResolution()
 		if (!force && rate > maxDataRate)
 			return;
 
-		int minBitrate = EstimateMinBitrate(cx, cy, fps_num, fps_den)
-			* 114 / 100;
+		AutoConfig::Encoder encType = wiz->streamingEncoder;
+		bool nvenc = encType == AutoConfig::Encoder::NVENC;
+
+		int minBitrate = EstimateMinBitrate(cx, cy, fps_num, fps_den);
+
+		/* most hardware encoders don't have a good quality to bitrate
+		 * ratio, so increase the minimum bitrate estimate for them.
+		 * NVENC currently is the exception because of the improvements
+		 * its made to its quality in recent generations. */
+		if (!nvenc) minBitrate = minBitrate * 114 / 100;
+
 		if (wiz->type == AutoConfig::Type::Recording)
 			force = true;
 		if (force || wiz->idealBitrate >= minBitrate)
@@ -854,9 +863,6 @@ void AutoConfigTestPage::TestStreamEncoderThread()
 		}
 	}
 
-	if (preferHardware && !softwareTested && wiz->hardwareEncodingAvailable)
-		FindIdealHardwareResolution();
-
 	if (!softwareTested) {
 		if (wiz->nvencAvailable)
 			wiz->streamingEncoder = AutoConfig::Encoder::NVENC;
@@ -867,6 +873,9 @@ void AutoConfigTestPage::TestStreamEncoderThread()
 	} else {
 		wiz->streamingEncoder = AutoConfig::Encoder::x264;
 	}
+
+	if (preferHardware && !softwareTested && wiz->hardwareEncodingAvailable)
+		FindIdealHardwareResolution();
 
 	QMetaObject::invokeMethod(this, "NextStage");
 }
