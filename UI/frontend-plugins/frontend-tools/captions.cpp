@@ -90,6 +90,8 @@ CaptionsDialog::CaptionsDialog(QWidget *parent) :
 {
 	ui->setupUi(this);
 
+	setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
+
 	auto cb = [this] (obs_source_t *source)
 	{
 		uint32_t caps = obs_source_get_output_flags(source);
