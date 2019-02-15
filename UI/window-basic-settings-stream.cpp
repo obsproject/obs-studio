@@ -1,6 +1,7 @@
 #include <QMessageBox>
 
 #include "window-basic-settings.hpp"
+#include "obs-frontend-api.h"
 #include "obs-app.hpp"
 #include "window-basic-main.hpp"
 #include "qt-wrappers.hpp"
@@ -104,6 +105,9 @@ void OBSBasicSettings::LoadStream1Settings()
 	obs_data_release(settings);
 
 	UpdateKeyLink();
+
+	bool streamActive = obs_frontend_streaming_active();
+	ui->streamPage->setEnabled(!streamActive);
 
 	loading = false;
 }
