@@ -262,10 +262,19 @@ bool os_quick_write_utf8_file(const char *path, const char *str, size_t len,
 	if (!f)
 		return false;
 
-	if (marker)
-		fwrite("\xEF\xBB\xBF", 1, 3, f);
-	if (len)
-		fwrite(str, 1, len, f);
+	if (marker) {
+		if (fwrite("\xEF\xBB\xBF", 3, 1, f) != 1) {
+			fclose(f);
+			return false;
+		}
+	}
+
+	if (len) {
+		if (fwrite(str, len, 1, f) != 1) {
+			fclose(f);
+			return false;
+		}
+	}
 	fflush(f);
 	fclose(f);
 
@@ -292,6 +301,8 @@ bool os_quick_write_utf8_file_safe(const char *path, const char *str,
 	dstr_cat(&temp_path, temp_ext);
 
 	if (!os_quick_write_utf8_file(temp_path.array, str, len, marker)) {
+		blog(LOG_ERROR, "os_quick_write_utf8_file_safe: failed to "
+			"write to %s", temp_path.array);
 		goto cleanup;
 	}
 

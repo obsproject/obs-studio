@@ -405,9 +405,15 @@ int config_save(config_t *config)
 	}
 
 #ifdef _WIN32
-	fwrite("\xEF\xBB\xBF", 1, 3, f);
+	if (fwrite("\xEF\xBB\xBF", 3, 1, f) != 1) {
+		fclose(f);
+		return CONFIG_ERROR;
+	}
 #endif
-	fwrite(str.array, 1, str.len, f);
+	if (fwrite(str.array, str.len, 1, f) != 1) {
+		fclose(f);
+		return CONFIG_ERROR;
+	}
 	fclose(f);
 
 	pthread_mutex_unlock(&config->mutex);
@@ -444,6 +450,8 @@ int config_save_safe(config_t *config, const char *temp_ext,
 	config->file = file;
 
 	if (ret != CONFIG_SUCCESS) {
+		blog(LOG_ERROR, "config_save_safe: failed to "
+			"write to %s", temp_file.array);
 		goto cleanup;
 	}
 
