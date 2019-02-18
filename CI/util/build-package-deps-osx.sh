@@ -49,9 +49,9 @@ export MACOSX_DEPLOYMENT_TARGET=10.11
 # https://github.com/phracker/MacOSX-SDKs
 
 # libopus
-curl -L -O https://ftp.osuosl.org/pub/xiph/releases/opus/opus-1.2.1.tar.gz
-tar -xf opus-1.2.1.tar.gz
-cd ./opus-1.2.1
+curl -L -O https://ftp.osuosl.org/pub/xiph/releases/opus/opus-1.3.tar.gz
+tar -xf opus-1.3.tar.gz
+cd ./opus-1.3
 mkdir build
 cd ./build
 ../configure --disable-shared --enable-static --prefix="/tmp/obsdeps"
@@ -85,10 +85,10 @@ make install
 cd $WORK_DIR
 
 # libvpx
-curl -L -O https://chromium.googlesource.com/webm/libvpx/+archive/v1.7.0.tar.gz
-mkdir -p ./libvpx-v1.7.0
-tar -xf v1.7.0.tar.gz -C $PWD/libvpx-v1.7.0
-cd ./libvpx-v1.7.0
+curl -L -O https://chromium.googlesource.com/webm/libvpx/+archive/v1.8.0.tar.gz
+mkdir -p ./libvpx-v1.8.0
+tar -xf v1.8.0.tar.gz -C $PWD/libvpx-v1.8.0
+cd ./libvpx-v1.8.0
 mkdir -p build
 cd ./build
 ../configure --disable-shared --prefix="/tmp/obsdeps" --libdir="/tmp/obsdeps/lib"
@@ -133,9 +133,9 @@ export LDFLAGS="-L/tmp/obsdeps/lib"
 export CFLAGS="-I/tmp/obsdeps/include"
 
 # FFMPEG
-curl -L -O https://github.com/FFmpeg/FFmpeg/archive/n4.0.2.zip
-unzip ./n4.0.2.zip
-cd ./FFmpeg-n4.0.2
+curl -L -O https://github.com/FFmpeg/FFmpeg/archive/n4.1.1.zip
+unzip ./n4.1.1.zip
+cd ./FFmpeg-n4.1.1
 mkdir build
 cd ./build
 ../configure --pkg-config-flags="--static" --extra-ldflags="-mmacosx-version-min=10.11" --enable-shared --disable-static --shlibdir="/tmp/obsdeps/bin" --enable-gpl --disable-doc --enable-libx264 --enable-libopus --enable-libvorbis --enable-libvpx --disable-outdev=sdl
