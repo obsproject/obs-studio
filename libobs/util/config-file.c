@@ -359,6 +359,7 @@ int config_save(config_t *config)
 	FILE *f;
 	struct dstr str, tmp;
 	size_t i, j;
+	int ret = CONFIG_ERROR;
 
 	if (!config)
 		return CONFIG_ERROR;
@@ -405,15 +406,15 @@ int config_save(config_t *config)
 	}
 
 #ifdef _WIN32
-	if (fwrite("\xEF\xBB\xBF", 3, 1, f) != 1) {
-		fclose(f);
-		return CONFIG_ERROR;
-	}
+	if (fwrite("\xEF\xBB\xBF", 3, 1, f) != 1)
+		goto cleanup;
 #endif
-	if (fwrite(str.array, str.len, 1, f) != 1) {
-		fclose(f);
-		return CONFIG_ERROR;
-	}
+	if (fwrite(str.array, str.len, 1, f) != 1)
+		goto cleanup;
+
+	ret = CONFIG_SUCCESS;
+
+cleanup:
 	fclose(f);
 
 	pthread_mutex_unlock(&config->mutex);
@@ -421,7 +422,7 @@ int config_save(config_t *config)
 	dstr_free(&tmp);
 	dstr_free(&str);
 
-	return CONFIG_SUCCESS;
+	return ret;
 }
 
 int config_save_safe(config_t *config, const char *temp_ext,
