@@ -91,6 +91,40 @@ void gs_texture_2d::Rebuild(ID3D11Device *dev)
 	}
 }
 
+void gs_texture_2d::RebuildNV12_Y(ID3D11Device *dev)
+{
+	gs_texture_2d *tex_uv = pairedNV12texture;
+	HRESULT hr;
+
+	hr = dev->CreateTexture2D(&td, nullptr, &texture);
+	if (FAILED(hr))
+		throw HRError("Failed to create 2D texture", hr);
+
+	hr = dev->CreateShaderResourceView(texture, &resourceDesc, &shaderRes);
+	if (FAILED(hr))
+		throw HRError("Failed to create resource view", hr);
+
+	if (isRenderTarget)
+		InitRenderTargets();
+
+	tex_uv->RebuildNV12_UV(dev);
+}
+
+void gs_texture_2d::RebuildNV12_UV(ID3D11Device *dev)
+{
+	gs_texture_2d *tex_y = pairedNV12texture;
+	HRESULT hr;
+
+	texture = tex_y->texture;
+
+	hr = dev->CreateShaderResourceView(texture, &resourceDesc, &shaderRes);
+	if (FAILED(hr))
+		throw HRError("Failed to create resource view", hr);
+
+	if (isRenderTarget)
+		InitRenderTargets();
+}
+
 void gs_zstencil_buffer::Rebuild(ID3D11Device *dev)
 {
 	HRESULT hr;
@@ -287,7 +321,14 @@ try {
 			((gs_index_buffer*)obj)->Rebuild(dev);
 			break;
 		case gs_type::gs_texture_2d:
-			((gs_texture_2d*)obj)->Rebuild(dev);
+			{
+				gs_texture_2d *tex = (gs_texture_2d*)obj;
+				if (!tex->nv12) {
+					tex->Rebuild(dev);
+				} else if (!tex->chroma) {
+					tex->RebuildNV12_Y(dev);
+				}
+			}
 			break;
 		case gs_type::gs_zstencil_buffer:
 			((gs_zstencil_buffer*)obj)->Rebuild(dev);

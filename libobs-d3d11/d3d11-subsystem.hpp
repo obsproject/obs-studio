@@ -371,6 +371,8 @@ struct gs_texture_2d : gs_texture {
 
 	void RebuildSharedTextureFallback();
 	void Rebuild(ID3D11Device *dev);
+	void RebuildNV12_Y(ID3D11Device *dev);
+	void RebuildNV12_UV(ID3D11Device *dev);
 
 	inline void Release()
 	{
