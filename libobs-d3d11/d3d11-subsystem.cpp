@@ -2220,6 +2220,9 @@ extern "C" EXPORT bool device_texture_create_nv12(gs_device_t *device,
 		return false;
 	}
 
+	tex_y->pairedNV12texture = tex_uv;
+	tex_uv->pairedNV12texture = tex_y;
+
 	*p_tex_y = tex_y;
 	*p_tex_uv = tex_uv;
 	return true;
