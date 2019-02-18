@@ -2,12 +2,14 @@
 
 #include "auth-oauth.hpp"
 
-class RestreamChat;
+class RestreamWidget;
 
 class RestreamAuth : public OAuthStreamKey {
 	Q_OBJECT
 
-	QSharedPointer<RestreamChat> chat;
+	QSharedPointer<RestreamWidget> chat;
+	//QSharedPointer<RestreamWidget> info;
+	//QSharedPointer<RestreamWidget> stat;
 	QSharedPointer<QAction> chatMenu;
 	bool uiLoaded = false;
 

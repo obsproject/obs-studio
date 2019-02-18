@@ -125,17 +125,70 @@ bool RestreamAuth::LoadInternal()
 	return OAuthStreamKey::LoadInternal();
 }
 
-class RestreamChat : public QDockWidget {
+class RestreamWidget : public QDockWidget {
 public:
-	inline RestreamChat() : QDockWidget() {}
+	inline RestreamWidget() : QDockWidget() {}
 
 	QScopedPointer<QCefWidget> widget;
+
+	inline void SetWidget(QCefWidget *widget_)
+	{
+		setWidget(widget_);
+		widget.reset(widget_);
+	}
 };
 
 void RestreamAuth::LoadUI()
 {
-    if (!GetStreamKey())
-	return;
+	if (uiLoaded)
+		return;
+
+	if (!GetStreamKey())
+		return;
+
+	OBSBasic::InitBrowserPanelSafeBlock(true);
+	OBSBasic *main = OBSBasic::Get();
+
+	QCefWidget *browser;
+	std::string url;
+	std::string script;
+
+	/* ----------------------------------- */
+
+	url = "https://restream.io/chat-application";
+	//url += "/chat";
+
+	QSize size = main->frameSize();
+	QPoint pos = main->pos();
+
+	chat.reset(new RestreamWidget());
+	chat->setObjectName("restreamChat");
+	chat->resize(420, 600);
+	chat->setMinimumSize(380, 300);
+	chat->setWindowTitle(QTStr("Auth.Chat"));
+	chat->setAllowedAreas(Qt::AllDockWidgetAreas);
+
+	browser = cef->create_widget(nullptr, url, panel_cookies);
+	chat->SetWidget(browser);
+
+	main->addDockWidget(Qt::RightDockWidgetArea, chat.data());
+	chatMenu.reset(main->AddDockWidget(chat.data()));
+
+	chat->setFloating(true);
+	chat->move(pos.x() + size.width() - chat->width() - 50, pos.y() + 50);
+
+	if (firstLoad) {
+		chat->setVisible(true);
+	}
+	else {
+		const char *dockStateStr = config_get_string(main->Config(),
+			service(), "DockState");
+		QByteArray dockState =
+			QByteArray::fromBase64(QByteArray(dockStateStr));
+		main->restoreState(dockState);
+	}
+
+	uiLoaded = true;
 }
 
 bool RestreamAuth::RetryLogin()
