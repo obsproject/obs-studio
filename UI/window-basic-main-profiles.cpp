@@ -242,6 +242,7 @@ bool OBSBasic::AddProfile(bool create_new, const char *title, const char *text,
 	}
 
 	config_set_string(config, "General", "Name", newName.c_str());
+	basicConfig.SaveSafe("tmp");
 	config.SaveSafe("tmp");
 	config.Swap(basicConfig);
 	InitBasicConfigDefaults();
