@@ -908,6 +908,8 @@ static obs_properties_t *ss_properties(void *data)
 
 	/* ----------------- */
 
+	obs_properties_set_flags(ppts, OBS_PROPERTIES_DEFER_UPDATE);
+
 	obs_get_video_info(&ovi);
 	cx = (int)ovi.base_width;
 	cy = (int)ovi.base_height;
