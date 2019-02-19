@@ -6998,3 +6998,24 @@ OBSBasic *OBSBasic::Get()
 {
 	return reinterpret_cast<OBSBasic*>(App()->GetMainWindow());
 }
+
+bool OBSBasic::StreamingActive()
+{
+	if (!outputHandler)
+		return false;
+	return outputHandler->StreamingActive();
+}
+
+bool OBSBasic::RecordingActive()
+{
+	if (!outputHandler)
+		return false;
+	return outputHandler->RecordingActive();
+}
+
+bool OBSBasic::ReplayBufferActive()
+{
+	if (!outputHandler)
+		return false;
+	return outputHandler->ReplayBufferActive();
+}
