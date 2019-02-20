@@ -276,6 +276,9 @@ try {
 
 void OAuthStreamKey::OnStreamConfig()
 {
+	if (key_.empty())
+		return;
+
 	OBSBasic *main = OBSBasic::Get();
 	obs_service_t *service = main->GetService();
 
