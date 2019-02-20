@@ -5152,9 +5152,10 @@ void OBSBasic::StreamingStop(int code, QString last_error)
 void OBSBasic::AutoRemux()
 {
 	const char *mode = config_get_string(basicConfig, "Output", "Mode");
-	const char *path = strcmp(mode, "Advanced") ?
-	config_get_string(basicConfig, "SimpleOutput", "FilePath") :
-	config_get_string(basicConfig, "AdvOut", "RecFilePath");
+	const char *path = strcmp(mode, "Advanced") != 0
+		? config_get_string(basicConfig, "SimpleOutput", "FilePath")
+		: config_get_string(basicConfig, "AdvOut", "RecFilePath");
+
 	std::string s(path);
 	s += "/";
 	s += remuxFilename;
