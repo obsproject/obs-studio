@@ -1714,6 +1714,8 @@ EXPORT const char *obs_output_get_id(const obs_output_t *output);
 #if BUILD_CAPTIONS
 EXPORT void obs_output_output_caption_text1(obs_output_t *output,
 		const char *text);
+EXPORT void obs_output_output_caption_text2(obs_output_t *output,
+		const char *text, double display_duration);
 #endif
 
 EXPORT float obs_output_get_congestion(obs_output_t *output);
