@@ -340,6 +340,8 @@ static void render_nv12(struct obs_core_video *video, gs_texture_t *target,
 	}
 	gs_technique_end(tech);
 	gs_enable_blending(true);
+
+	UNUSED_PARAMETER(cur_texture);
 }
 
 static const char *render_convert_nv12_name = "render_convert_texture_nv12";
@@ -625,11 +627,9 @@ static void set_gpu_converted_data(struct obs_core_video *video,
 		video_frame_copy(output, &frame, info->format, info->height);
 
 	} else if (video->using_nv12_tex) {
-		int width = (int)info->width;
-		int height = (int)info->height;
-		int width_d2 = width / 2;
-		int height_d2 = height / 2;
-		int height_d4 = height_d2 / 2;
+		size_t width = info->width;
+		size_t height = info->height;
+		size_t height_d2 = height / 2;
 		uint8_t *out_y = output->data[0];
 		uint8_t *out_uv = output->data[1];
 		uint8_t *in = input->data[0];
@@ -764,8 +764,7 @@ static inline void output_frame(bool raw_active, const bool gpu_active)
 	int cur_texture  = video->cur_texture;
 	int prev_texture = cur_texture == 0 ? NUM_TEXTURES-1 : cur_texture-1;
 	struct video_data frame;
-	bool active = raw_active || gpu_active;
-	bool frame_ready;
+	bool frame_ready = 0;
 
 	memset(&frame, 0, sizeof(struct video_data));
 
@@ -841,7 +840,9 @@ void *obs_graphics_thread(void *param)
 	uint64_t frame_time_total_ns = 0;
 	uint64_t fps_total_ns = 0;
 	uint32_t fps_total_frames = 0;
+#ifdef _WIN32
 	bool gpu_was_active = false;
+#endif
 	bool raw_was_active = false;
 	bool was_active = false;
 
@@ -861,11 +862,12 @@ void *obs_graphics_thread(void *param)
 		uint64_t frame_time_ns;
 		bool raw_active = obs->video.raw_active > 0;
 #ifdef _WIN32
-		bool gpu_active = obs->video.gpu_encoder_active > 0;
+		const bool gpu_active = obs->video.gpu_encoder_active > 0;
+		const bool active = raw_active || gpu_active;
 #else
 		const bool gpu_active = 0;
+		const bool active = raw_active;
 #endif
-		bool active = raw_active || gpu_active;
 
 		if (!was_active && active)
 			clear_base_frame_data();
@@ -874,9 +876,10 @@ void *obs_graphics_thread(void *param)
 #ifdef _WIN32
 		if (!gpu_was_active && gpu_active)
 			clear_gpu_frame_data();
+
+		gpu_was_active = gpu_active;
 #endif
 		raw_was_active = raw_active;
-		gpu_was_active = gpu_active;
 		was_active = active;
 
 		profile_start(video_thread_name);

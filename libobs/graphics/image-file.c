@@ -62,6 +62,8 @@ static inline int get_full_decoded_gif_size(gs_image_file_t *image)
 static inline void *alloc_mem(gs_image_file_t *image, uint64_t *mem_usage,
 		size_t size)
 {
+	UNUSED_PARAMETER(image);
+
 	if (mem_usage)
 		*mem_usage += size;
 	return bzalloc(size);
