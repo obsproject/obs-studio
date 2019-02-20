@@ -4361,10 +4361,7 @@ void OBSBasic::CreateSourcePopupMenu(int idx, bool preview)
 		int width = obs_source_get_width(source);
 		int height = obs_source_get_height(source);
 
-		resizeOutput->setEnabled(!(ui->streamButton->isChecked() ||
-				ui->recordButton->isChecked() ||
-				(replayBufferButton &&
-				replayBufferButton->isChecked())));
+		resizeOutput->setEnabled(!obs_video_active());
 
 		if (width == 0 || height == 0)
 			resizeOutput->setEnabled(false);
