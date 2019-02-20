@@ -269,7 +269,7 @@ struct gs_vertex_buffer : gs_obj {
 		uvBuffers.clear();
 	}
 
-	inline void Rebuild();
+	void Rebuild();
 
 	gs_vertex_buffer(gs_device_t *device, struct gs_vb_data *data,
 			uint32_t flags);
@@ -296,7 +296,7 @@ struct gs_index_buffer : gs_obj {
 
 	void InitBuffer();
 
-	inline void Rebuild(ID3D11Device *dev);
+	void Rebuild(ID3D11Device *dev);
 
 	inline void Release() {indexBuffer.Release();}
 
@@ -312,7 +312,7 @@ struct gs_texture : gs_obj {
 	ComPtr<ID3D11ShaderResourceView> shaderRes;
 	D3D11_SHADER_RESOURCE_VIEW_DESC resourceDesc = {};
 
-	inline void Rebuild(ID3D11Device *dev);
+	void Rebuild(ID3D11Device *dev);
 
 	inline gs_texture(gs_texture_type type, uint32_t levels,
 			gs_color_format format)
@@ -370,7 +370,9 @@ struct gs_texture_2d : gs_texture {
 	void BackupTexture(const uint8_t **data);
 
 	void RebuildSharedTextureFallback();
-	inline void Rebuild(ID3D11Device *dev);
+	void Rebuild(ID3D11Device *dev);
+	void RebuildNV12_Y(ID3D11Device *dev);
+	void RebuildNV12_UV(ID3D11Device *dev);
 
 	inline void Release()
 	{
@@ -410,7 +412,7 @@ struct gs_zstencil_buffer : gs_obj {
 
 	void InitBuffer();
 
-	inline void Rebuild(ID3D11Device *dev);
+	void Rebuild(ID3D11Device *dev);
 
 	inline void Release()
 	{
@@ -437,7 +439,7 @@ struct gs_stage_surface : gs_obj {
 	gs_color_format format;
 	DXGI_FORMAT     dxgiFormat;
 
-	inline void Rebuild(ID3D11Device *dev);
+	void Rebuild(ID3D11Device *dev);
 
 	inline void Release()
 	{
@@ -454,7 +456,7 @@ struct gs_sampler_state : gs_obj {
 	D3D11_SAMPLER_DESC         sd = {};
 	gs_sampler_info            info;
 
-	inline void Rebuild(ID3D11Device *dev);
+	void Rebuild(ID3D11Device *dev);
 
 	inline void Release() {state.Release();}
 
@@ -543,7 +545,7 @@ struct gs_vertex_shader : gs_shader {
 	bool     hasTangents;
 	uint32_t nTexUnits;
 
-	inline void Rebuild(ID3D11Device *dev);
+	void Rebuild(ID3D11Device *dev);
 
 	inline void Release()
 	{
@@ -590,7 +592,7 @@ struct gs_pixel_shader : gs_shader {
 	ComPtr<ID3D11PixelShader> shader;
 	vector<unique_ptr<ShaderSampler>> samplers;
 
-	inline void Rebuild(ID3D11Device *dev);
+	void Rebuild(ID3D11Device *dev);
 
 	inline void Release()
 	{
@@ -626,7 +628,7 @@ struct gs_swap_chain : gs_obj {
 	void Resize(uint32_t cx, uint32_t cy);
 	void Init();
 
-	inline void Rebuild(ID3D11Device *dev);
+	void Rebuild(ID3D11Device *dev);
 
 	inline void Release()
 	{
@@ -673,7 +675,7 @@ struct SavedBlendState : BlendState {
 	ComPtr<ID3D11BlendState> state;
 	D3D11_BLEND_DESC         bd;
 
-	inline void Rebuild(ID3D11Device *dev);
+	void Rebuild(ID3D11Device *dev);
 
 	inline void Release()
 	{
@@ -730,7 +732,7 @@ struct SavedZStencilState : ZStencilState {
 	ComPtr<ID3D11DepthStencilState> state;
 	D3D11_DEPTH_STENCIL_DESC        dsd;
 
-	inline void Rebuild(ID3D11Device *dev);
+	void Rebuild(ID3D11Device *dev);
 
 	inline void Release()
 	{
@@ -765,7 +767,7 @@ struct SavedRasterState : RasterState {
 	ComPtr<ID3D11RasterizerState> state;
 	D3D11_RASTERIZER_DESC         rd;
 
-	inline void Rebuild(ID3D11Device *dev);
+	void Rebuild(ID3D11Device *dev);
 
 	inline void Release()
 	{

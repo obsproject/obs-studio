@@ -1917,6 +1917,9 @@ void OBSBasic::ReceivedIntroJson(const QString &text)
 		return;
 	}
 
+	cef->init_browser();
+	ExecuteFuncSafeBlock([] {cef->wait_for_browser_init();});
+
 	config_set_int(App()->GlobalConfig(), "General",
 			"InfoIncrement", info_increment);
 
@@ -5149,18 +5152,42 @@ void OBSBasic::StreamingStop(int code, QString last_error)
 void OBSBasic::AutoRemux()
 {
 	const char *mode = config_get_string(basicConfig, "Output", "Mode");
-	const char *path = strcmp(mode, "Advanced") ?
-	config_get_string(basicConfig, "SimpleOutput", "FilePath") :
-	config_get_string(basicConfig, "AdvOut", "RecFilePath");
-	std::string s(path);
-	s += "/";
-	s += remuxFilename;
-	const QString &str = QString::fromStdString(s);
-	QString file = str.section(".", 0, 0);
+	bool advanced = astrcmpi(mode, "Advanced") == 0;
+
+	const char *path = !advanced
+		? config_get_string(basicConfig, "SimpleOutput", "FilePath")
+		: config_get_string(basicConfig, "AdvOut", "RecFilePath");
+
+	/* do not save if using FFmpeg output in advanced output mode */
+	if (advanced) {
+		const char *type = config_get_string(basicConfig, "AdvOut",
+				"RecType");
+		if (astrcmpi(type, "FFmpeg") == 0) {
+			return;
+		}
+	}
+
+	QString input;
+	input += path;
+	input += "/";
+	input += remuxFilename.c_str();
+
+	QFileInfo fi(remuxFilename.c_str());
+
+	/* do not remux if lossless */
+	if (fi.suffix().compare("avi", Qt::CaseInsensitive) == 0) {
+		return;
+	}
+
+	QString output;
+	output += path;
+	output += "/";
+	output += fi.completeBaseName();
+	output += ".mp4";
 
 	OBSRemux *remux = new OBSRemux(path, this, true);
 	remux->show();
-	remux->AutoRemux(str, file + ".mp4");
+	remux->AutoRemux(input, output);
 }
 
 void OBSBasic::StartRecording()
@@ -6994,4 +7021,25 @@ QAction *OBSBasic::AddDockWidget(QDockWidget *dock)
 OBSBasic *OBSBasic::Get()
 {
 	return reinterpret_cast<OBSBasic*>(App()->GetMainWindow());
+}
+
+bool OBSBasic::StreamingActive()
+{
+	if (!outputHandler)
+		return false;
+	return outputHandler->StreamingActive();
+}
+
+bool OBSBasic::RecordingActive()
+{
+	if (!outputHandler)
+		return false;
+	return outputHandler->RecordingActive();
+}
+
+bool OBSBasic::ReplayBufferActive()
+{
+	if (!outputHandler)
+		return false;
+	return outputHandler->ReplayBufferActive();
 }

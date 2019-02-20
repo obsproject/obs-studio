@@ -176,7 +176,7 @@ static enum video_format convert_vlc_video_format(char *chroma, bool *full)
 
 	/* 4:4:4 formats */
 	CHROMA_TEST("I444", VIDEO_FORMAT_I444);
-	CHROMA_CONV_FULL("J444", "J444", VIDEO_FORMAT_I444);
+	CHROMA_CONV_FULL("J444", "RGBA", VIDEO_FORMAT_RGBA);
 	CHROMA_CONV("YUVA", "RGBA", VIDEO_FORMAT_RGBA);
 
 	/* 4:4:0 formats */

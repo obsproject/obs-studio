@@ -88,12 +88,21 @@ void DestroyPanelCookieManager()
 #endif
 }
 
+void DeleteCookies()
+{
+#ifdef BROWSER_AVAILABLE
+	if (panel_cookies) {
+		panel_cookies->DeleteCookies("", "");
+	}
+#endif
+}
+
 void DuplicateCurrentCookieProfile(ConfigFile &config)
 {
 #ifdef BROWSER_AVAILABLE
 	if (cef) {
 		OBSBasic *main = OBSBasic::Get();
-		const char *cookie_id = config_get_string(main->Config(),
+		std::string cookie_id = config_get_string(main->Config(),
 				"Panels", "CookieId");
 
 		std::string src_path;
@@ -126,7 +135,10 @@ void DuplicateCurrentCookieProfile(ConfigFile &config)
 			}
 		}
 
-		config_set_string(config, "Panels", "CookieId", new_id.c_str());
+		config_set_string(config, "Panels", "CookieId",
+				cookie_id.c_str());
+		config_set_string(main->Config(), "Panels", "CookieId",
+				new_id.c_str());
 	}
 #else
 	UNUSED_PARAMETER(config);

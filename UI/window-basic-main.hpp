@@ -789,6 +789,10 @@ private slots:
 public slots:
 	void on_actionResetTransform_triggered();
 
+	bool StreamingActive();
+	bool RecordingActive();
+	bool ReplayBufferActive();
+
 public:
 	explicit OBSBasic(QWidget *parent = 0);
 	virtual ~OBSBasic();

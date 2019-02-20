@@ -463,6 +463,7 @@ void AutoConfigStreamPage::on_disconnectAccount_clicked()
 	ui->streamKeyLabel->setVisible(true);
 	ui->connectAccount2->setVisible(true);
 	ui->disconnectAccount->setVisible(false);
+	ui->key->setText("");
 }
 
 void AutoConfigStreamPage::on_useStreamKey_clicked()
@@ -813,12 +814,17 @@ AutoConfig::AutoConfig(QWidget *parent)
 	streamPage->ui->bitrate->setValue(bitrate);
 	streamPage->ServiceChanged();
 
-	streamPage->ui->preferHardware->setChecked(os_get_physical_cores() <= 4);
-
 	TestHardwareEncoding();
 	if (!hardwareEncodingAvailable) {
 		delete streamPage->ui->preferHardware;
 		streamPage->ui->preferHardware = nullptr;
+	} else {
+		/* Newer generations of NVENC have a high enough quality to
+		 * bitrate ratio that if NVENC is available, it makes sense to
+		 * just always prefer hardware encoding by default */
+		bool preferHardware = nvencAvailable ||
+		                      os_get_physical_cores() <= 4;
+		streamPage->ui->preferHardware->setChecked(preferHardware);
 	}
 
 	setOptions(0);

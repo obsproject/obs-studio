@@ -331,6 +331,9 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->server,               COMBO_CHANGED,  STREAM1_CHANGED);
 	HookWidget(ui->customServer,         EDIT_CHANGED,   STREAM1_CHANGED);
 	HookWidget(ui->key,                  EDIT_CHANGED,   STREAM1_CHANGED);
+	HookWidget(ui->useAuth,              CHECK_CHANGED,  STREAM1_CHANGED);
+	HookWidget(ui->authUsername,         EDIT_CHANGED,   STREAM1_CHANGED);
+	HookWidget(ui->authPw,               EDIT_CHANGED,   STREAM1_CHANGED);
 	HookWidget(ui->outputMode,           COMBO_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->simpleOutputPath,     EDIT_CHANGED,   OUTPUTS_CHANGED);
 	HookWidget(ui->simpleNoSpace,        CHECK_CHANGED,  OUTPUTS_CHANGED);
@@ -3466,11 +3469,11 @@ void OBSBasicSettings::on_advOutEncoder_currentIndexChanged(int idx)
 
 	if (caps & OBS_ENCODER_CAP_PASS_TEXTURE) {
 		ui->advOutUseRescale->setChecked(false);
-		ui->advOutUseRescale->setEnabled(false);
-		ui->advOutRescale->setEnabled(false);
+		ui->advOutUseRescale->setVisible(false);
+		ui->advOutRescale->setVisible(false);
 	} else {
-		ui->advOutUseRescale->setEnabled(true);
-		ui->advOutRescale->setEnabled(true);
+		ui->advOutUseRescale->setVisible(true);
+		ui->advOutRescale->setVisible(true);
 	}
 
 	UNUSED_PARAMETER(idx);
@@ -3485,8 +3488,8 @@ void OBSBasicSettings::on_advOutRecEncoder_currentIndexChanged(int idx)
 
 	if (idx <= 0) {
 		ui->advOutRecUseRescale->setChecked(false);
-		ui->advOutRecUseRescale->setEnabled(false);
-		ui->advOutRecRescaleContainer->setEnabled(false);
+		ui->advOutRecUseRescale->setVisible(false);
+		ui->advOutRecRescaleContainer->setVisible(false);
 		return;
 	}
 
@@ -3507,11 +3510,11 @@ void OBSBasicSettings::on_advOutRecEncoder_currentIndexChanged(int idx)
 
 	if (caps & OBS_ENCODER_CAP_PASS_TEXTURE) {
 		ui->advOutRecUseRescale->setChecked(false);
-		ui->advOutRecUseRescale->setEnabled(false);
-		ui->advOutRecRescaleContainer->setEnabled(false);
+		ui->advOutRecUseRescale->setVisible(false);
+		ui->advOutRecRescaleContainer->setVisible(false);
 	} else {
-		ui->advOutRecUseRescale->setEnabled(true);
-		ui->advOutRecRescaleContainer->setEnabled(true);
+		ui->advOutRecUseRescale->setVisible(true);
+		ui->advOutRecRescaleContainer->setVisible(true);
 	}
 }
 

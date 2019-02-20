@@ -445,19 +445,14 @@ static bool init_encoder(struct nvenc_data *enc, obs_data_t *settings)
 		? NV_ENC_PARAMS_RC_VBR_HQ
 		: NV_ENC_PARAMS_RC_VBR;
 
-	if (astrcmpi(rc, "cqp") == 0) {
-		config->rcParams.targetQuality = cqp;
-		config->rcParams.averageBitRate = 0;
-		config->rcParams.maxBitRate = 0;
-		enc->can_change_bitrate = false;
+	if (astrcmpi(rc, "cqp") == 0 || astrcmpi(rc, "lossless") == 0) {
+		if (astrcmpi(rc, "lossless") == 0)
+			cqp = 0;
 
-	} else if (astrcmpi(rc, "lossless") == 0) {
 		config->rcParams.rateControlMode = NV_ENC_PARAMS_RC_CONSTQP;
-		config->rcParams.constQP.qpInterP = 0;
-		config->rcParams.constQP.qpInterB = 0;
-		config->rcParams.constQP.qpIntra = 0;
-		config->rcParams.averageBitRate = 0;
-		config->rcParams.maxBitRate = 0;
+		config->rcParams.constQP.qpInterP = cqp;
+		config->rcParams.constQP.qpInterB = cqp;
+		config->rcParams.constQP.qpIntra = cqp;
 		enc->can_change_bitrate = false;
 
 	} else if (astrcmpi(rc, "vbr") != 0) { /* CBR by default */

@@ -28,6 +28,7 @@
 extern void DestroyPanelCookieManager();
 extern void DuplicateCurrentCookieProfile(ConfigFile &config);
 extern void CheckExistingCookieId();
+extern void DeleteCookies();
 
 void EnumProfiles(std::function<bool (const char *, const char *)> &&cb)
 {
@@ -241,6 +242,7 @@ bool OBSBasic::AddProfile(bool create_new, const char *title, const char *text,
 	}
 
 	config_set_string(config, "General", "Name", newName.c_str());
+	basicConfig.SaveSafe("tmp");
 	config.SaveSafe("tmp");
 	config.Swap(basicConfig);
 	InitBasicConfigDefaults();
@@ -461,6 +463,7 @@ void OBSBasic::on_actionRemoveProfile_triggered()
 
 	Auth::Save();
 	auth.reset();
+	DeleteCookies();
 	DestroyPanelCookieManager();
 
 	config.Swap(basicConfig);
