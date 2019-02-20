@@ -47,12 +47,12 @@
 #define TEXT_PRESETS_EXP                MT_("expander.Presets.Expander")
 #define TEXT_PRESETS_GATE               MT_("expander.Presets.Gate")
 
-#define MIN_RATIO                       1.0
-#define MAX_RATIO                       20.0
-#define MIN_THRESHOLD_DB                -60.0
+#define MIN_RATIO                       1.0f
+#define MAX_RATIO                       20.0f
+#define MIN_THRESHOLD_DB                -60.0f
 #define MAX_THRESHOLD_DB                0.0f
-#define MIN_OUTPUT_GAIN_DB              -32.0
-#define MAX_OUTPUT_GAIN_DB              32.0
+#define MIN_OUTPUT_GAIN_DB              -32.0f
+#define MAX_OUTPUT_GAIN_DB              32.0f
 #define MIN_ATK_RLS_MS                  1
 #define MAX_RLS_MS                      1000
 #define MAX_ATK_MS                      100
@@ -101,36 +101,36 @@ enum {
 static void resize_env_buffer(struct expander_data *cd, size_t len)
 {
 	cd->envelope_buf_len = len;
-	for (int i = 0; i < MAX_AUDIO_CHANNELS; i++) {
-		cd->envelope_buf[i] = brealloc(cd->envelope_buf[i], len * sizeof(float));
-	}
+	for (int i = 0; i < MAX_AUDIO_CHANNELS; i++)
+		cd->envelope_buf[i] = brealloc(cd->envelope_buf[i],
+				cd->envelope_buf_len * sizeof(float));
 }
 
 static void resize_runaverage_buffer(struct expander_data *cd, size_t len)
 {
 	cd->runaverage_len = len;
-	for (int i = 0; i < MAX_AUDIO_CHANNELS; i++) {
-		cd->runaverage[i] = brealloc(cd->runaverage[i], len * sizeof(float));
-	}
+	for (int i = 0; i < MAX_AUDIO_CHANNELS; i++)
+		cd->runaverage[i] = brealloc(cd->runaverage[i],
+				cd->runaverage_len * sizeof(float));
 }
 
 static void resize_env_in_buffer(struct expander_data *cd, size_t len)
 {
 	cd->env_in_len = len;
-	cd->env_in = brealloc(cd->env_in, len * sizeof(float));
+	cd->env_in = brealloc(cd->env_in, cd->env_in_len * sizeof(float));
 }
 
 static void resize_gaindB_buffer(struct expander_data *cd, size_t len)
 {
 	cd->gaindB_len = len;
-	for (int i = 0; i < MAX_AUDIO_CHANNELS; i++) {
-		cd->gaindB[i] = brealloc(cd->gaindB[i], len * sizeof(float));
-	}
+	for (int i = 0; i < MAX_AUDIO_CHANNELS; i++)
+		cd->gaindB[i] = brealloc(cd->gaindB[i],
+				cd->gaindB_len * sizeof(float));
 }
 
 static inline float gain_coefficient(uint32_t sample_rate, float time)
 {
-	return (float)exp(-1.0f / (sample_rate * time));
+	return expf(-1.0f / (sample_rate * time));
 }
 
 static const char *expander_name(void *unused)
@@ -249,22 +249,21 @@ static void expander_destroy(void *data)
 static void analyze_envelope(struct expander_data *cd,
 	float **samples, const uint32_t num_samples)
 {
-	if (cd->envelope_buf_len < num_samples) {
+	if (cd->envelope_buf_len < num_samples)
 		resize_env_buffer(cd, num_samples);
-	}
-	if (cd->runaverage_len < num_samples) {
+	if (cd->runaverage_len < num_samples)
 		resize_runaverage_buffer(cd, num_samples);
-	}
-	if (cd->env_in_len < num_samples) {
+	if (cd->env_in_len < num_samples)
 		resize_env_in_buffer(cd, num_samples);
-	}
 
 	// 10 ms RMS window
-	const float rmscoef = exp2f((float)-100.0 / (float)cd->sample_rate);
+	const float rmscoef = exp2f(-100.0f / cd->sample_rate);
 
 	for (int i = 0; i < MAX_AUDIO_CHANNELS; i++) {
-		memset(cd->envelope_buf[i], 0, num_samples * sizeof(cd->envelope_buf[i][0]));
-		memset(cd->runaverage[i], 0, num_samples * sizeof(cd->runaverage[i][0]));
+		memset(cd->envelope_buf[i], 0,
+				num_samples * sizeof(cd->envelope_buf[i][0]));
+		memset(cd->runaverage[i], 0,
+				num_samples * sizeof(cd->runaverage[i][0]));
 	}
 	memset(cd->env_in, 0, num_samples * sizeof(cd->env_in[0]));
 
@@ -275,16 +274,15 @@ static void analyze_envelope(struct expander_data *cd,
 		float *envelope_buf = cd->envelope_buf[chan];
 		float *runave = cd->runaverage[chan];
 		float *env_in = cd->env_in;
-		float RMSdet = 0;
 
 		if (cd->detector == RMS_DETECT) {
 			runave[0] = rmscoef * cd->runave[chan] +
-				(1 - rmscoef) * powf(samples[chan][0], 2.0);
+				(1 - rmscoef) * powf(samples[chan][0], 2.0f);
 			env_in[0] = sqrtf(fmaxf(runave[0], 0));
 			for (uint32_t i = 1; i < num_samples; ++i) {
 				runave[i] = rmscoef * runave[i - 1] +
 					(1 - rmscoef) *
-					powf(samples[chan][i], 2.0);
+					powf(samples[chan][i], 2.0f);
 				env_in[i] = sqrtf(runave[i]);
 			}
 		} else if (cd->detector == PEAK_DETECT) {
@@ -305,7 +303,6 @@ static void analyze_envelope(struct expander_data *cd,
 static inline void process_expansion(struct expander_data *cd,
 	float **samples, uint32_t num_samples)
 {
-
 	const float attack_gain = cd->attack_gain;
 	const float release_gain = cd->release_gain;
 
@@ -318,24 +315,29 @@ static inline void process_expansion(struct expander_data *cd,
 		for (size_t i = 0; i < num_samples; ++i) {
 			// gain stage of expansion
 			float env_db = mul_to_db(cd->envelope_buf[chan][i]);
-			float gain = cd->threshold - env_db > 0 ?
-					fmaxf(cd->slope * (cd->threshold - env_db),
-					-60.0) : 0;
+			float gain = cd->threshold - env_db > 0.0f ?
+					fmaxf(cd->slope *
+					(cd->threshold - env_db), -60.0f) :
+					0.0f;
 			// ballistics (attack/release)
 			if (i > 0) {
 				if (gain > cd->gaindB[chan][i - 1])
-					cd->gaindB[chan][i] = attack_gain * cd->gaindB[chan][i - 1]
-					+ (1 - attack_gain) * gain;
+					cd->gaindB[chan][i] = attack_gain *
+					cd->gaindB[chan][i - 1] +
+					(1.0f - attack_gain) * gain;
 				else
-					cd->gaindB[chan][i] = release_gain * cd->gaindB[chan][i - 1]
-					+ (1 - release_gain) * gain;
+					cd->gaindB[chan][i] = release_gain *
+					cd->gaindB[chan][i - 1] +
+					(1.0f - release_gain) * gain;
 			} else {
 				if (gain > cd->gaindB_buf[chan])
-					cd->gaindB[chan][i] = attack_gain * cd->gaindB_buf[chan]
-					+ (1 - attack_gain) * gain;
+					cd->gaindB[chan][i] = attack_gain *
+					cd->gaindB_buf[chan] +
+					(1.0f - attack_gain) * gain;
 				else
-					cd->gaindB[chan][i] = release_gain * cd->gaindB_buf[chan]
-					+ (1 - release_gain) * gain;
+					cd->gaindB[chan][i] = release_gain *
+					cd->gaindB_buf[chan] +
+					(1.0f - release_gain) * gain;
 			}
 
 			gain = db_to_mul(fminf(0, cd->gaindB[chan][i]));
@@ -373,12 +375,7 @@ static bool presets_changed(obs_properties_t *props, obs_property_t *prop,
 
 static obs_properties_t *expander_properties(void *data)
 {
-	struct expander_data *cd = data;
 	obs_properties_t *props = obs_properties_create();
-	obs_source_t *parent = NULL;
-
-	if (cd)
-		parent = obs_filter_get_parent(cd->context);
 
 	obs_property_t *presets = obs_properties_add_list(props, S_PRESETS,
 			TEXT_PRESETS, OBS_COMBO_TYPE_LIST,
