@@ -5152,9 +5152,20 @@ void OBSBasic::StreamingStop(int code, QString last_error)
 void OBSBasic::AutoRemux()
 {
 	const char *mode = config_get_string(basicConfig, "Output", "Mode");
-	const char *path = strcmp(mode, "Advanced") != 0
+	bool advanced = astrcmpi(mode, "Advanced") == 0;
+
+	const char *path = !advanced
 		? config_get_string(basicConfig, "SimpleOutput", "FilePath")
 		: config_get_string(basicConfig, "AdvOut", "RecFilePath");
+
+	/* do not save if using FFmpeg output in advanced output mode */
+	if (advanced) {
+		const char *type = config_get_string(basicConfig, "AdvOut",
+				"RecType");
+		if (astrcmpi(type, "FFmpeg") == 0) {
+			return;
+		}
+	}
 
 	QString input;
 	input += path;
@@ -5162,6 +5173,11 @@ void OBSBasic::AutoRemux()
 	input += remuxFilename.c_str();
 
 	QFileInfo fi(remuxFilename.c_str());
+
+	/* do not remux if lossless */
+	if (fi.suffix().compare("avi", Qt::CaseInsensitive) == 0) {
+		return;
+	}
 
 	QString output;
 	output += path;
