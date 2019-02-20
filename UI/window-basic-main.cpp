@@ -1738,7 +1738,9 @@ void OBSBasic::OBSInit()
 					msg);
 
 		if (button == QMessageBox::Yes) {
-			on_autoConfigure_triggered();
+			QMetaObject::invokeMethod(this,
+					"on_autoConfigure_triggered",
+					Qt::QueuedConnection);
 		} else {
 			msg = QTStr("Basic.FirstStartup.RunWizard.NoClicked");
 			OBSMessageBox::information(this,
