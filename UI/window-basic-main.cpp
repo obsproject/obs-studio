@@ -5156,15 +5156,22 @@ void OBSBasic::AutoRemux()
 		? config_get_string(basicConfig, "SimpleOutput", "FilePath")
 		: config_get_string(basicConfig, "AdvOut", "RecFilePath");
 
-	std::string s(path);
-	s += "/";
-	s += remuxFilename;
-	const QString &str = QString::fromStdString(s);
-	QString file = str.section(".", 0, 0);
+	QString input;
+	input += path;
+	input += "/";
+	input += remuxFilename.c_str();
+
+	QFileInfo fi(remuxFilename.c_str());
+
+	QString output;
+	output += path;
+	output += "/";
+	output += fi.completeBaseName();
+	output += ".mp4";
 
 	OBSRemux *remux = new OBSRemux(path, this, true);
 	remux->show();
-	remux->AutoRemux(str, file + ".mp4");
+	remux->AutoRemux(input, output);
 }
 
 void OBSBasic::StartRecording()
