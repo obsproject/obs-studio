@@ -969,7 +969,7 @@ bool obs_module_load(void)
 	obs_source_info si = {};
 	si.id = "text_gdiplus";
 	si.type = OBS_SOURCE_TYPE_INPUT;
-	si.output_flags = OBS_SOURCE_VIDEO;
+	si.output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_CUSTOM_DRAW;
 	si.get_properties = get_properties;
 
 	si.get_name = [] (void*)
