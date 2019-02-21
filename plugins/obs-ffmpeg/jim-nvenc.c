@@ -593,9 +593,6 @@ static void nvenc_destroy(void *data)
 {
 	struct nvenc_data *enc = data;
 
-	for (size_t i = 0; i < enc->textures.num; i++) {
-		nv_texture_free(enc, &enc->textures.array[i]);
-	}
 	if (enc->encode_started) {
 		size_t next_bitstream = enc->next_bitstream;
 		HANDLE next_event = enc->bitstreams.array[next_bitstream].event;
@@ -605,6 +602,9 @@ static void nvenc_destroy(void *data)
 		params.completionEvent = next_event;
 		nv.nvEncEncodePicture(enc->session, &params);
 		get_encoded_packet(enc, true);
+	}
+	for (size_t i = 0; i < enc->textures.num; i++) {
+		nv_texture_free(enc, &enc->textures.array[i]);
 	}
 	for (size_t i = 0; i < enc->bitstreams.num; i++) {
 		nv_bitstream_free(enc, &enc->bitstreams.array[i]);
