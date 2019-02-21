@@ -90,7 +90,7 @@ try {
 				5);
 	};
 
-	ExecuteFuncSafeBlockMsgBox(
+	ExecThreadedWithoutBlocking(
 			func,
 			QTStr("Auth.LoadingChannel.Title"),
 			QTStr("Auth.LoadingChannel.Text").arg(service()));
@@ -191,7 +191,7 @@ void TwitchAuth::LoadUI()
 	if (!GetChannelInfo())
 		return;
 
-	OBSBasic::InitBrowserPanelSafeBlock(true);
+	OBSBasic::InitBrowserPanelSafeBlock();
 	OBSBasic *main = OBSBasic::Get();
 
 	QCefWidget *browser;

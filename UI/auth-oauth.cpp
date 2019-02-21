@@ -34,7 +34,7 @@ OAuthLogin::OAuthLogin(QWidget *parent, const std::string &url, bool token)
 	Qt::WindowFlags helpFlag = Qt::WindowContextHelpButtonHint;
 	setWindowFlags(flags & (~helpFlag));
 
-	OBSBasic::InitBrowserPanelSafeBlock(true);
+	OBSBasic::InitBrowserPanelSafeBlock();
 
 	cefWidget = cef->create_widget(nullptr, url, panel_cookies);
 	if (!cefWidget) {
@@ -216,7 +216,7 @@ try {
 				5);
 	};
 
-	ExecuteFuncSafeBlockMsgBox(
+	ExecThreadedWithoutBlocking(
 			func,
 			QTStr("Auth.Authing.Title"),
 			QTStr("Auth.Authing.Text").arg(service()));

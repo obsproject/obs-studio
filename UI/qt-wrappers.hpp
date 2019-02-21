@@ -73,6 +73,14 @@ void ExecuteFuncSafeBlockMsgBox(
 		const QString &title,
 		const QString &text);
 
+/* allows executing without message boxes if starting up, otherwise with a
+ * message box */
+void EnableThreadedMessageBoxes(bool enable);
+void ExecThreadedWithoutBlocking(
+		std::function<void()> func,
+		const QString &title,
+		const QString &text);
+
 class SignalBlocker {
 	QWidget *widget;
 	bool blocked;

@@ -280,6 +280,8 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 {
 	string path;
 
+	EnableThreadedMessageBoxes(true);
+
 	ui->setupUi(this);
 
 	setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
@@ -735,6 +737,8 @@ OBSBasicSettings::~OBSBasicSettings()
 	delete ui->filenameFormatting->completer();
 	main->EnableOutputs(true);
 	App()->EnableInFocusHotkeys(!disableHotkeysInFocus);
+
+	EnableThreadedMessageBoxes(false);
 }
 
 void OBSBasicSettings::SaveCombo(QComboBox *widget, const char *section,
