@@ -1,0 +1,37 @@
+# Starter pipeline
+# Start with a minimal pipeline that you can customize to build and deploy your code.
+# Add steps that build, run tests, deploy, and more:
+# https://aka.ms/yaml
+
+pool:
+  vmImage: 'macOS-10.13'
+
+variables:
+  CMAKE_PREFIX_PATH: /usr/local/opt/qt5/lib/cmake
+  CEF_BUILD_VERSION: 3.3282.1726.gc8368c8
+
+steps:
+- script: git submodule update --init --recursive
+  displayName: 'Checkout Submodules'
+
+- script: ./CI/install-dependencies-osx.sh
+  displayName: 'Install Dependencies'
+
+- script: ./CI/before-script-osx.sh
+  displayName: 'Cmake'
+
+- bash: |
+    cd ./build
+    make -j4
+    cd -
+  displayName: 'Build'
+
+- script: ./CI/before-deploy-osx.sh
+  condition: ne(variables['Build.Reason'], 'PullRequest')
+  displayName: 'Before Deploy'
+
+- task: PublishBuildArtifacts@1
+  condition: ne(variables['Build.Reason'], 'PullRequest')
+  inputs:
+    pathtoPublish: './nightly'
+    artifactName: build
