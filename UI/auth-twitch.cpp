@@ -102,8 +102,16 @@ try {
 		throw ErrorInfo("Failed to parse json", error);
 
 	error = json["error"].string_value();
-	if (!error.empty())
+	if (!error.empty()) {
+		if (error == "Unauthorized") {
+			if (RetryLogin()) {
+				return GetChannelInfo();
+			}
+			throw ErrorInfo(error,
+					json["message"].string_value());
+		}
 		throw ErrorInfo(error, json["error_description"].string_value());
+	}
 
 	name = json["name"].string_value();
 	key_ = json["stream_key"].string_value();
