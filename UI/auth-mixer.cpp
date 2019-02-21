@@ -141,7 +141,20 @@ try {
 	if (!error.empty())
 		throw ErrorInfo(error, json["error_description"].string_value());
 
-	key_ = id + "-" + json["streamKey"].string_value();
+	std::string key_suffix = json["streamKey"].string_value();
+
+	/* Mixer does not throw an error; instead it gives you the channel data
+	 * json without the data you normally have privileges for, which means
+	 * it'll be an empty stream key usually.  So treat empty stream key as
+	 * an error. */
+	if (key_suffix.empty()) {
+		if (RetryLogin()) {
+			return GetChannelInfo();
+		}
+		throw ErrorInfo("Auth Failure", "Could not get channel data");
+	}
+
+	key_ = id + "-" + key_suffix;
 
 	return true;
 } catch (ErrorInfo info) {
