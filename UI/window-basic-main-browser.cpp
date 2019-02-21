@@ -160,7 +160,5 @@ void OBSBasic::InitBrowserPanelSafeBlock()
 			QTStr("BrowserPanelInit.Title"),
 			QTStr("BrowserPanelInit.Text"));
 	InitPanelCookieManager();
-#else
-	UNUSED_PARAMETER();
 #endif
 }
