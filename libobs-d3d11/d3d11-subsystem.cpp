@@ -570,14 +570,26 @@ static inline void LogAdapterMonitors(IDXGIAdapter1 *adapter)
 			continue;
 
 		RECT rect = desc.DesktopCoordinates;
+
+		MONITORINFOEXA moninfo;
+		moninfo.cbSize = sizeof(MONITORINFOEXA);
+		GetMonitorInfoA(desc.Monitor, &moninfo);
+		DISPLAY_DEVICEA ddev;
+		ddev.cb = sizeof(ddev);
+		EnumDisplayDevicesA(moninfo.szDevice, 0, &ddev, 1);
+		DEVMODEA dmode;
+		EnumDisplaySettingsA(moninfo.szDevice, ENUM_CURRENT_SETTINGS, &dmode);
+
 		blog(LOG_INFO, "\t  output %u: "
 				"pos={%d, %d}, "
-				"size={%d, %d}, "
-				"attached=%s",
+				"size={%d, %d @ %d}, "
+				"attached=%s, "
+				"name=%s",
 				i,
 				rect.left, rect.top,
-				rect.right - rect.left, rect.bottom - rect.top,
-				desc.AttachedToDesktop ? "true" : "false");
+				rect.right - rect.left, rect.bottom - rect.top, dmode.dmDisplayFrequency,
+				desc.AttachedToDesktop ? "true" : "false",
+				ddev.DeviceString);
 	}
 }
 
