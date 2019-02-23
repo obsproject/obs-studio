@@ -117,6 +117,7 @@ static void reset_capture_data(struct duplicator_capture *capture)
 	capture->x = monitor_info.x;
 	capture->y = monitor_info.y;
 	capture->rot = monitor_info.rotation_degrees;
+	bfree(monitor_info.monitor_name);
 }
 
 static void free_capture_data(struct duplicator_capture *capture)
@@ -270,14 +271,35 @@ static bool get_monitor_props(obs_property_t *monitor_list, int monitor_idx)
 	if (!gs_get_duplicator_monitor_info(monitor_idx, &info))
 		return false;
 
-	dstr_catf(&monitor_desc, "%s %d: %ldx%ld @ %ld,%ld",
-			TEXT_MONITOR, monitor_idx + 1,
+	struct dstr format_str = { 0 };
+	dstr_copy(&format_str, "%s: %ldx%ld @ %ld,%ld");
+
+	struct dstr m = { 0 };
+	dstr_copy(&m, info.monitor_name);
+	if (dstr_cmp(&m, "Generic PnP Monitor") == 0 || dstr_is_empty(&m)) {
+		struct dstr d = { 0 };
+		dstr_catf(&d, "%s %d", TEXT_MONITOR, monitor_idx + 1);
+		dstr_free(&m);
+		dstr_copy_dstr(&m, &d);
+		dstr_free(&d);
+	} else {
+		dstr_replace(&m, "(", " (");
+	}
+
+	if (info.flags & MONITORINFOF_PRIMARY)
+		dstr_catf(&format_str, " (%s)", TEXT_PRIMARY_MONITOR);
+
+	dstr_catf(&monitor_desc, format_str.array,
+			m.array,
 			info.cx, info.cy, info.x, info.y);
 
 	obs_property_list_add_int(monitor_list, monitor_desc.array,
 			monitor_idx);
 
+	bfree(info.monitor_name);
 	dstr_free(&monitor_desc);
+	dstr_free(&format_str);
+	dstr_free(&m);
 
 	return true;
 }

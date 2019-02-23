@@ -1,4 +1,5 @@
 #include <util/dstr.h>
+#include <util/platform.h>
 #include "dc-capture.h"
 
 #define TEXT_MONITOR_CAPTURE obs_module_text("MonitorCapture")
@@ -172,7 +173,7 @@ static BOOL CALLBACK enum_monitor_props(HMONITOR handle, HDC hdc, LPRECT rect,
 	UNUSED_PARAMETER(rect);
 
 	obs_property_t *monitor_list = (obs_property_t*)param;
-	MONITORINFO mi;
+	MONITORINFOEX mi;
 	size_t monitor_id = 0;
 	struct dstr monitor_desc = { 0 };
 	struct dstr resolution = { 0 };
@@ -183,6 +184,17 @@ static BOOL CALLBACK enum_monitor_props(HMONITOR handle, HDC hdc, LPRECT rect,
 	mi.cbSize = sizeof(mi);
 	GetMonitorInfo(handle, &mi);
 
+	DISPLAY_DEVICE ddev;
+	ddev.cb = sizeof(ddev);
+	EnumDisplayDevices(mi.szDevice, 0, &ddev, 1);
+
+	char *devname = NULL;
+#ifdef UNICODE
+	os_wcs_to_utf8_ptr(ddev.DeviceString, 128, &devname);
+#else
+	devname = (char*)bstrdup(ddev.DeviceString);
+#endif
+
 	dstr_catf(&resolution,
 		"%dx%d @ %d,%d",
 		mi.rcMonitor.right - mi.rcMonitor.left,
@@ -190,15 +202,27 @@ static BOOL CALLBACK enum_monitor_props(HMONITOR handle, HDC hdc, LPRECT rect,
 		mi.rcMonitor.left,
 		mi.rcMonitor.top);
 
-	dstr_copy(&format_string, "%s %d: %s");
+	dstr_copy(&format_string, "%s: %s");
 	if (mi.dwFlags == MONITORINFOF_PRIMARY) {
 		dstr_catf(&format_string, " (%s)", TEXT_PRIMARY_MONITOR);
 	}
 
+	struct dstr m = { 0 };
+	dstr_copy(&m, devname);
+	dstr_replace(&m, "(", " (");
+	if (dstr_cmp(&m, "Generic PnP Monitor") == 0 || dstr_is_empty(&m)) {
+		struct dstr d = { 0 };
+		dstr_catf(&d, "%s %d", TEXT_MONITOR, monitor_id + 1);
+		dstr_free(&m);
+		dstr_copy_dstr(&m, &d);
+		dstr_free(&d);
+	} else {
+		dstr_replace(&m, "(", " (");
+	}
+
 	dstr_catf(&monitor_desc,
 		format_string.array,
-		TEXT_MONITOR,
-		monitor_id + 1,
+		m.array,
 		resolution.array);
 
 	obs_property_list_add_int(monitor_list,
@@ -207,6 +231,7 @@ static BOOL CALLBACK enum_monitor_props(HMONITOR handle, HDC hdc, LPRECT rect,
 	dstr_free(&monitor_desc);
 	dstr_free(&resolution);
 	dstr_free(&format_string);
+	bfree(devname);
 
 	return TRUE;
 }

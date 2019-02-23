@@ -16,6 +16,7 @@
 ******************************************************************************/
 
 #include "d3d11-subsystem.hpp"
+#include "util/platform.h"
 #include <map>
 
 static inline bool get_monitor(gs_device_t *device, int monitor_idx,
@@ -32,6 +33,15 @@ static inline bool get_monitor(gs_device_t *device, int monitor_idx,
 	}
 
 	return true;
+}
+
+static inline void get_display_device(DXGI_OUTPUT_DESC *desc,
+		MONITORINFOEXW *moninfo, DISPLAY_DEVICEW *ddev)
+{
+	moninfo->cbSize = sizeof(MONITORINFOEXW);
+	GetMonitorInfoW(desc->Monitor, moninfo);
+	ddev->cb = sizeof(*ddev);
+	EnumDisplayDevicesW(moninfo->szDevice, 0, ddev, 1);
 }
 
 void gs_duplicator::Start()
@@ -92,6 +102,10 @@ EXPORT bool device_get_duplicator_monitor_info(gs_device_t *device,
 		return false;
 	}
 
+	DISPLAY_DEVICEW ddev;
+	MONITORINFOEXW monitorinf;
+	get_display_device(&desc, &monitorinf, &ddev);
+
 	switch (desc.Rotation) {
 	case DXGI_MODE_ROTATION_UNSPECIFIED:
 	case DXGI_MODE_ROTATION_IDENTITY:
@@ -115,6 +129,11 @@ EXPORT bool device_get_duplicator_monitor_info(gs_device_t *device,
 	info->y = desc.DesktopCoordinates.top;
 	info->cx = desc.DesktopCoordinates.right - info->x;
 	info->cy = desc.DesktopCoordinates.bottom - info->y;
+
+	os_wcs_to_utf8_ptr(&ddev.DeviceString[0], 128,
+			&info->monitor_name);
+
+	info->flags = monitorinf.dwFlags;
 
 	return true;
 }
