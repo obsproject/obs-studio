@@ -441,10 +441,15 @@ static void ss_update(void *data, obs_data_t *settings)
 		ss->transition = new_tr;
 	}
 
-	if (new_duration < 50)
-		new_duration = 50;
-	if (new_speed > (new_duration - 50))
-		new_speed = new_duration - 50;
+	if (strcmp(tr_name, "cut_transition") != 0) {
+		if (new_duration < 100)
+			new_duration = 100;
+
+		new_duration += new_speed;
+	} else {
+		if (new_duration < 50)
+			new_duration = 50;
+	}
 
 	ss->tr_speed = new_speed;
 	ss->tr_name = tr_name;
@@ -589,7 +594,7 @@ static void ss_next_slide(void *data)
 {
 	struct slideshow *ss = data;
 
-	if (!ss->paths.num)
+	if (!ss->paths.num || obs_transition_get_time(ss->transition) < 1.0f)
 		return;
 
 	if (++ss->cur_item >= (int)ss->paths.num)
@@ -602,7 +607,7 @@ static void ss_previous_slide(void *data)
 {
 	struct slideshow *ss = data;
 
-	if (!ss->paths.num)
+	if (!ss->paths.num || obs_transition_get_time(ss->transition) < 1.0f)
 		return;
 
 	if (--ss->cur_item < 0)
