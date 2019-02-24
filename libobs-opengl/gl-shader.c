@@ -220,8 +220,20 @@ static bool gl_shader_init(struct gs_shader *shader,
 	if (!gl_success("glGetShaderiv"))
 		return false;
 
-	if (!compiled)
+	if (!compiled) {
+		GLint infoLength = 0;
+		glGetShaderiv(shader->obj, GL_INFO_LOG_LENGTH, &infoLength);
+
+		char *infoLog = malloc(sizeof(char) * infoLength);
+
+		GLsizei returnedLength = 0;
+		glGetShaderInfoLog(shader->obj, infoLength, &returnedLength, infoLog);
+		blog(LOG_ERROR, "Error compiling shader:\n%s\n", infoLog);
+
+		free(infoLog);
+
 		success = false;
+	}
 
 	gl_get_shader_info(shader->obj, file, error_string);
 
