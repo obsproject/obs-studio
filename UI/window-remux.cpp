@@ -482,7 +482,7 @@ void RemuxQueueModel::checkInputPath(int row)
 
 		if (entry.state == RemuxEntryState::Ready)
 			entry.targetPath = fileInfo.path() + QDir::separator()
-				+ fileInfo.baseName() + ".mp4";
+				+ fileInfo.completeBaseName() + ".mp4";
 	}
 
 	if (entry.state == RemuxEntryState::Ready && isProcessing)
