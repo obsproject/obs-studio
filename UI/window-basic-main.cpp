@@ -60,6 +60,7 @@
 
 #ifdef _WIN32
 #include "win-update/win-update.hpp"
+#include "windows.h"
 #endif
 
 #include "ui_OBSBasic.h"
@@ -4131,10 +4132,33 @@ void OBSBasic::AddProjectorMenuMonitors(QMenu *parent, QObject *target,
 	QAction *action;
 	QList<QScreen *> screens = QGuiApplication::screens();
 	for (int i = 0; i < screens.size(); i++) {
-		QRect screenGeometry = screens[i]->geometry();
+		QScreen *screen = screens[i];
+		QRect screenGeometry = screen->geometry();
+		QString name = "";
+#ifdef _WIN32
+		DISPLAY_DEVICEA ddev;
+		ddev.cb = sizeof(ddev);
+		EnumDisplayDevicesA(screen->name().toStdString().c_str(), 0,
+				    &ddev, 1);
+		name = ddev.DeviceString;
+#elif defined(__APPLE__)
+		name = screen->name();
+#elif QT_VERSION >= QT_VERSION_CHECK(5, 9, 0)
+		name = screen->model().simplified();
+
+		if (name.length() > 1 && name.endsWith("-"))
+			name.chop(1);
+#endif
+		name = name.simplified();
+
+		if (name.length() == 0) {
+			name = QString("%1 %2")
+				       .arg(QTStr("Display"))
+				       .arg(QString::number(i + 1));
+		}
 		QString str =
-			QString("%1 %2: %3x%4 @ %5,%6")
-				.arg(QTStr("Display"), QString::number(i + 1),
+			QString("%1: %2x%3 @ %4,%5")
+				.arg(name,
 				     QString::number(screenGeometry.width()),
 				     QString::number(screenGeometry.height()),
 				     QString::number(screenGeometry.x()),
