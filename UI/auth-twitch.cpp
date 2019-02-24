@@ -206,6 +206,11 @@ void TwitchAuth::LoadUI()
 	std::string url;
 	std::string script;
 
+	std::string moderation_tools_url;
+	moderation_tools_url = "https://www.twitch.tv/";
+	moderation_tools_url += name;
+	moderation_tools_url += "/dashboard/settings/moderation?no-reload=true";
+
 	/* ----------------------------------- */
 
 	url = "https://www.twitch.tv/popout/";
@@ -224,6 +229,7 @@ void TwitchAuth::LoadUI()
 
 	browser = cef->create_widget(nullptr, url, panel_cookies);
 	chat->SetWidget(browser);
+	cef->add_force_popup_url(moderation_tools_url, chat.data());
 
 	script = bttv_script;
 	script += ffz_script;
