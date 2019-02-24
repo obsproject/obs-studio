@@ -3875,11 +3875,34 @@ static void AddProjectorMenuMonitors(QMenu *parent, QObject *target,
 {
 	QAction *action;
 	QList<QScreen*> screens = QGuiApplication::screens();
+
+	obs_enter_graphics();
 	for (int i = 0; i < screens.size(); i++) {
 		QRect screenGeometry = screens[i]->geometry();
-		QString str = QString("%1 %2: %3x%4 @ %5,%6").
-			arg(QTStr("Display"),
-			    QString::number(i + 1),
+		QString name = "";
+#ifdef _WIN32
+		struct gs_monitor_info info;
+		if (gs_get_duplicator_monitor_info(i, &info)) {
+			name = QString::fromUtf8(info.monitor_name);
+			bfree(info.monitor_name);
+		} else {
+			// TODO When duplicator is not set, we're in OpenGL
+			// mode and will need EnumDisplayDevices or similar
+		}
+#else
+		name = screens[i]->model();
+#endif
+
+		if (name == "Generic PnP Monitor" || name == "") {
+			name = QString("%1 %2").
+				arg(QTStr("Display"),
+					QString::number(i + 1));
+		} else {
+			name.replace("(", " (");
+		}
+
+		QString str = QString("%1: %2x%3 @ %4,%5").
+			arg(name,
 			    QString::number(screenGeometry.width()),
 			    QString::number(screenGeometry.height()),
 			    QString::number(screenGeometry.x()),
@@ -3888,6 +3911,7 @@ static void AddProjectorMenuMonitors(QMenu *parent, QObject *target,
 		action = parent->addAction(str, target, slot);
 		action->setProperty("monitor", i);
 	}
+	obs_leave_graphics();
 }
 
 void OBSBasic::on_scenes_customContextMenuRequested(const QPoint &pos)
