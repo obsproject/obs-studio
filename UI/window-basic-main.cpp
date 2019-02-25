@@ -5322,6 +5322,7 @@ void OBSBasic::StartReplayBuffer()
 		OBSMessageBox::information(this,
 				RP_NO_HOTKEY_TITLE,
 				RP_NO_HOTKEY_TEXT);
+		replayBufferButton->setChecked(false);
 		return;
 	}
 
