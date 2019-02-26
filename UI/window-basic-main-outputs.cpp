@@ -1236,8 +1236,13 @@ inline void AdvancedOutput::SetupStreaming()
 			"Rescale");
 	const char *rescaleRes = config_get_string(main->Config(), "AdvOut",
 			"RescaleRes");
+	uint32_t caps = obs_encoder_get_caps(h264Streaming);
 	unsigned int cx = 0;
 	unsigned int cy = 0;
+
+	if ((caps & OBS_ENCODER_CAP_PASS_TEXTURE) != 0) {
+		rescale = false;
+	}
 
 	if (rescale && rescaleRes && *rescaleRes) {
 		if (sscanf(rescaleRes, "%ux%u", &cx, &cy) != 2) {
@@ -1272,6 +1277,11 @@ inline void AdvancedOutput::SetupRecording()
 			obs_output_set_video_encoder(replayBuffer,
 					h264Streaming);
 	} else {
+		uint32_t caps = obs_encoder_get_caps(h264Recording);
+		if ((caps & OBS_ENCODER_CAP_PASS_TEXTURE) != 0) {
+			rescale = false;
+		}
+
 		if (rescale && rescaleRes && *rescaleRes) {
 			if (sscanf(rescaleRes, "%ux%u", &cx, &cy) != 2) {
 				cx = 0;
