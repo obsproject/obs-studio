@@ -1068,70 +1068,6 @@ bool obs_module_load(void)
 	obs_source_info si = { 0 };
 	si.id = "text_gdiplus";
 	si.type = OBS_SOURCE_TYPE_INPUT;
-<<<<<<< HEAD
-	si.output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_CUSTOM_DRAW;
-	si.get_properties = get_properties;
-
-	si.get_name = [] (void*)
-	{
-		return obs_module_text("TextGDIPlus");
-	};
-	si.create = [] (obs_data_t *settings, obs_source_t *source)
-	{
-		return (void*)new TextSource(source, settings);
-	};
-	si.destroy = [] (void *data)
-	{
-		delete reinterpret_cast<TextSource*>(data);
-	};
-	si.get_width = [] (void *data)
-	{
-		return reinterpret_cast<TextSource*>(data)->cx;
-	};
-	si.get_height = [] (void *data)
-	{
-		return reinterpret_cast<TextSource*>(data)->cy;
-	};
-	si.get_defaults = [] (obs_data_t *settings)
-	{
-		obs_data_t *font_obj = obs_data_create();
-		obs_data_set_default_string(font_obj, "face", "Arial");
-		obs_data_set_default_int(font_obj, "size", 36);
-
-		obs_data_set_default_obj(settings, S_FONT, font_obj);
-		obs_data_set_default_string(settings, S_ALIGN, S_ALIGN_LEFT);
-		obs_data_set_default_string(settings, S_VALIGN, S_VALIGN_TOP);
-		obs_data_set_default_int(settings, S_COLOR, 0xFFFFFF);
-		obs_data_set_default_int(settings, S_OPACITY, 100);
-		obs_data_set_default_int(settings, S_GRADIENT_COLOR, 0xFFFFFF);
-		obs_data_set_default_int(settings, S_GRADIENT_OPACITY, 100);
-		obs_data_set_default_double(settings, S_GRADIENT_DIR, 90.0);
-		obs_data_set_default_int(settings, S_BKCOLOR, 0x000000);
-		obs_data_set_default_int(settings, S_BKOPACITY, 0);
-		obs_data_set_default_int(settings, S_OUTLINE_SIZE, 2);
-		obs_data_set_default_int(settings, S_OUTLINE_COLOR, 0xFFFFFF);
-		obs_data_set_default_int(settings, S_OUTLINE_OPACITY, 100);
-		obs_data_set_default_int(settings, S_CHATLOG_LINES, 6);
-		obs_data_set_default_bool(settings, S_EXTENTS_WRAP, true);
-		obs_data_set_default_int(settings, S_EXTENTS_CX, 100);
-		obs_data_set_default_int(settings, S_EXTENTS_CY, 100);
-		obs_data_set_default_int(settings, S_TRANSFORM, S_TRANSFORM_NONE);
-
-		obs_data_release(font_obj);
-	};
-	si.update = [] (void *data, obs_data_t *settings)
-	{
-		reinterpret_cast<TextSource*>(data)->Update(settings);
-	};
-	si.video_tick = [] (void *data, float seconds)
-	{
-		reinterpret_cast<TextSource*>(data)->Tick(seconds);
-	};
-	si.video_render = [] (void *data, gs_effect_t*)
-	{
-		reinterpret_cast<TextSource*>(data)->Render();
-	};
-=======
 	si.output_flags = OBS_SOURCE_VIDEO;
 	si.create = text_create;
 	si.destroy = text_destroy;
@@ -1143,7 +1079,6 @@ bool obs_module_load(void)
 	si.update = text_update;
 	si.video_tick = text_tick;
 	si.video_render = text_render;
->>>>>>> obs-text: Refactor obs-text plugin
 
 	obs_register_source(&si);
 
