@@ -39,7 +39,9 @@ public:
 		channelFormat = format;
 	}
 
-	bool Activate(DeckLinkDevice *device, long long modeId);
+	bool Activate(DeckLinkDevice *device, long long modeId,
+			BMDVideoConnection bmdVideoConnection,
+			BMDAudioConnection bmdAudioConnection);
 	void Deactivate();
 	bool Capturing();
 
@@ -48,4 +50,6 @@ public:
 	std::string hash;
 	long long id;
 	bool swap = false;
+	BMDVideoConnection videoConnection;
+	BMDAudioConnection audioConnection;
 };

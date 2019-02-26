@@ -21,6 +21,12 @@ class DeckLinkDevice {
 	int32_t                                   maxChannel = 0;
 	decklink_bool_t                           supportsExternalKeyer = false;
 	decklink_bool_t                           supportsInternalKeyer = false;
+	int64_t                                   subDeviceIndex = 0;
+	int64_t                                   numSubDevices = 0;
+	int64_t                                   supportedVideoInputConnections = -1;
+	int64_t                                   supportedVideoOutputConnections = -1;
+	int64_t                                   supportedAudioInputConnections = -1;
+	int64_t                                   supportedAudioOutputConnections = -1;
 	int                                       keyerMode = 0;
 	volatile long                             refCount = 1;
 
@@ -39,8 +45,12 @@ public:
 	const std::string& GetHash(void) const;
 	const std::vector<DeckLinkDeviceMode *>& GetInputModes(void) const;
 	const std::vector<DeckLinkDeviceMode *>& GetOutputModes(void) const;
+	int64_t GetVideoInputConnections();
+	int64_t GetAudioInputConnections();
 	bool GetSupportsExternalKeyer(void) const;
 	bool GetSupportsInternalKeyer(void) const;
+	int64_t GetSubDeviceCount();
+	int64_t GetSubDeviceIndex();
 	int GetKeyerMode(void);
 	void SetKeyerMode(int newKeyerMode);
 	const std::string& GetName(void) const;

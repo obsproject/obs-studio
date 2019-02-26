@@ -72,6 +72,18 @@ bool DeckLinkDevice::Init()
 		}
 	}
 
+	// Get supported video connections
+	attributes->GetInt(BMDDeckLinkVideoInputConnections,
+			&supportedVideoInputConnections);
+	attributes->GetInt(BMDDeckLinkVideoOutputConnections,
+			&supportedVideoOutputConnections);
+
+	// Get supported audio connections
+	attributes->GetInt(BMDDeckLinkAudioInputConnections,
+			&supportedAudioInputConnections);
+	attributes->GetInt(BMDDeckLinkAudioOutputConnections,
+			&supportedAudioOutputConnections);
+
 	// find output modes
 	ComPtr<IDeckLinkOutput> output;
 	if (device->QueryInterface(IID_IDeckLinkOutput, (void **) &output) == S_OK) {
@@ -98,8 +110,14 @@ bool DeckLinkDevice::Init()
 	}
 
 	// get keyer support
-	attributes->GetFlag(BMDDeckLinkSupportsExternalKeying, &supportsExternalKeyer);
-	attributes->GetFlag(BMDDeckLinkSupportsInternalKeying, &supportsInternalKeyer);
+	attributes->GetFlag(BMDDeckLinkSupportsExternalKeying,
+			&supportsExternalKeyer);
+	attributes->GetFlag(BMDDeckLinkSupportsInternalKeying,
+			&supportsInternalKeyer);
+
+	// Sub Device Counts
+	attributes->GetInt(BMDDeckLinkSubDeviceIndex, &subDeviceIndex);
+	attributes->GetInt(BMDDeckLinkNumberOfSubDevices, &numSubDevices);
 
 	decklink_string_t decklinkModelName;
 	decklink_string_t decklinkDisplayName;
@@ -207,6 +225,17 @@ const std::vector<DeckLinkDeviceMode *>& DeckLinkDevice::GetOutputModes(void) co
 	return outputModes;
 }
 
+int64_t DeckLinkDevice::GetVideoInputConnections()
+{
+	return supportedVideoInputConnections;
+}
+
+int64_t DeckLinkDevice::GetAudioInputConnections()
+{
+	return supportedAudioInputConnections;
+}
+
+
 bool DeckLinkDevice::GetSupportsExternalKeyer(void) const
 {
 	return supportsExternalKeyer;
@@ -215,6 +244,16 @@ bool DeckLinkDevice::GetSupportsExternalKeyer(void) const
 bool DeckLinkDevice::GetSupportsInternalKeyer(void) const
 {
 	return supportsInternalKeyer;
+}
+
+int64_t DeckLinkDevice::GetSubDeviceCount()
+{
+	return numSubDevices;
+}
+
+int64_t DeckLinkDevice::GetSubDeviceIndex()
+{
+	return subDeviceIndex;
 }
 
 const std::string& DeckLinkDevice::GetName(void) const
