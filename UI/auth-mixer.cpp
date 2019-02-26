@@ -213,6 +213,8 @@ public:
 
 void MixerAuth::LoadUI()
 {
+	if (!cef)
+		return;
 	if (uiLoaded)
 		return;
 	if (!GetChannelInfo())
@@ -261,6 +263,9 @@ void MixerAuth::LoadUI()
 
 bool MixerAuth::RetryLogin()
 {
+	if (!cef)
+		return false;
+
 	OAuthLogin login(OBSBasic::Get(), MIXER_AUTH_URL, false);
 	cef->add_popup_whitelist_url("about:blank", &login);
 
@@ -278,6 +283,10 @@ bool MixerAuth::RetryLogin()
 
 std::shared_ptr<Auth> MixerAuth::Login(QWidget *parent)
 {
+	if (!cef) {
+		return nullptr;
+	}
+
 	OAuthLogin login(parent, MIXER_AUTH_URL, false);
 	cef->add_popup_whitelist_url("about:blank", &login);
 
