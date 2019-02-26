@@ -1269,3 +1269,9 @@ uint32_t obs_get_encoder_caps(const char *encoder_id)
 	struct obs_encoder_info *info = find_encoder(encoder_id);
 	return info ? info->caps : 0;
 }
+
+uint32_t obs_encoder_get_caps(const obs_encoder_t *encoder)
+{
+	return obs_encoder_valid(encoder, "obs_encoder_get_caps")
+		? encoder->orig_info.caps : 0;
+}
