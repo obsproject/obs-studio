@@ -281,13 +281,26 @@ void gs_device::InitDevice(uint32_t adapterIdx)
 	/* check for nv12 texture output support    */
 
 	nv12Supported = false;
+	bool geforce = astrstri(adapterNameUTF8, "geforce") != nullptr;
+	bool nvidia  = astrstri(adapterNameUTF8, "nvidia")  != nullptr;
 
 	/* don't use on blacklisted adapters */
-	if (astrstri(adapterNameUTF8, "geforce") != nullptr) {
+	if (geforce) {
 		for (const char *old_gpu : blacklisted_nv12_geforce_gpus) {
 			if (astrstri(adapterNameUTF8, old_gpu) != nullptr) {
 				return;
 			}
+		}
+	}
+
+	/* Disable NV12 textures if NVENC not available, just as a safety
+	 * measure */
+	if (nvidia) {
+		HMODULE nvenc = LoadLibraryW((sizeof(void*) == 8)
+				? L"nvEncodeAPI64.dll"
+				: L"nvEncodeAPI.dll");
+		if (!nvenc) {
+			return;
 		}
 	}
 
