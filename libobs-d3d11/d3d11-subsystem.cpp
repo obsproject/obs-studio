@@ -258,19 +258,47 @@ void gs_device::InitDevice(uint32_t adapterIdx)
 	if (FAILED(hr))
 		throw UnsupportedHWError("Failed to create device", hr);
 
-	ComQIPtr<ID3D11Device1> d3d11_1(device);
-	if (!!d3d11_1) {
-		D3D11_FEATURE_DATA_D3D11_OPTIONS opts = {};
-		hr = d3d11_1->CheckFeatureSupport(
-				D3D11_FEATURE_D3D11_OPTIONS,
-				&opts, sizeof(opts));
-		if (SUCCEEDED(hr)) {
-			nv12Supported = !!opts.ExtendedResourceSharing;
-		}
-	}
-
 	blog(LOG_INFO, "D3D11 loaded successfully, feature level used: %u",
 			(unsigned int)levelUsed);
+
+	/* ---------------------------------------- */
+	/* check for nv12 texture output support    */
+
+	nv12Supported = false;
+
+	ComQIPtr<ID3D11Device1> d3d11_1(device);
+	if (!d3d11_1) {
+		return;
+	}
+
+	/* needs to support extended resource sharing */
+	D3D11_FEATURE_DATA_D3D11_OPTIONS opts = {};
+	hr = d3d11_1->CheckFeatureSupport(
+			D3D11_FEATURE_D3D11_OPTIONS,
+			&opts, sizeof(opts));
+	if (FAILED(hr) || !opts.ExtendedResourceSharing) {
+		return;
+	}
+
+	/* needs to support the actual format */
+	UINT support = 0;
+	hr = device->CheckFormatSupport(
+			DXGI_FORMAT_NV12,
+			&support);
+	if (FAILED(hr)) {
+		return;
+	}
+
+	if ((support & D3D11_FORMAT_SUPPORT_TEXTURE2D) == 0) {
+		return;
+	}
+
+	/* must be usable as a render target */
+	if ((support & D3D11_FORMAT_SUPPORT_RENDER_TARGET) == 0) {
+		return;
+	}
+
+	nv12Supported = true;
 }
 
 static inline void ConvertStencilSide(D3D11_DEPTH_STENCILOP_DESC &desc,
