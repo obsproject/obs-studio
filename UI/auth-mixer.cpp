@@ -44,7 +44,7 @@ MixerAuth::MixerAuth(const Def &d)
 {
 }
 
-bool MixerAuth::GetChannelInfo()
+bool MixerAuth::GetChannelInfo(bool allow_retry)
 try {
 	std::string client_id = MIXER_CLIENTID;
 	deobfuscate_str(&client_id[0], MIXER_HASH);
@@ -148,8 +148,8 @@ try {
 	 * it'll be an empty stream key usually.  So treat empty stream key as
 	 * an error. */
 	if (key_suffix.empty()) {
-		if (RetryLogin()) {
-			return GetChannelInfo();
+		if (allow_retry && RetryLogin()) {
+			return GetChannelInfo(false);
 		}
 		throw ErrorInfo("Auth Failure", "Could not get channel data");
 	}
@@ -305,7 +305,7 @@ std::shared_ptr<Auth> MixerAuth::Login(QWidget *parent)
 	}
 
 	std::string error;
-	if (auth->GetChannelInfo()) {
+	if (auth->GetChannelInfo(false)) {
 		return auth;
 	}
 
