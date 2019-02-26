@@ -18,6 +18,8 @@
 #include <cinttypes>
 #include <util/base.h>
 #include <util/platform.h>
+#include <util/dstr.h>
+#include <util/util.hpp>
 #include <graphics/matrix3.h>
 #include "d3d11-subsystem.hpp"
 
@@ -227,6 +229,21 @@ const static D3D_FEATURE_LEVEL featureLevels[] =
 	D3D_FEATURE_LEVEL_9_3,
 };
 
+static const char *blacklisted_nv12_geforce_gpus[] = {
+	"8100",
+	"8200",
+	"8300",
+	"8400",
+	"8500",
+	"8600",
+	"8800",
+	"9300",
+	"9400",
+	"9500",
+	"9600",
+	"9800"
+};
+
 void gs_device::InitDevice(uint32_t adapterIdx)
 {
 	wstring adapterName;
@@ -244,11 +261,10 @@ void gs_device::InitDevice(uint32_t adapterIdx)
 	adapterName = (adapter->GetDesc(&desc) == S_OK) ? desc.Description :
 		L"<unknown>";
 
-	char *adapterNameUTF8;
+	BPtr<char> adapterNameUTF8;
 	os_wcs_to_utf8_ptr(adapterName.c_str(), 0, &adapterNameUTF8);
 	blog(LOG_INFO, "Loading up D3D11 on adapter %s (%" PRIu32 ")",
-			adapterNameUTF8, adapterIdx);
-	bfree(adapterNameUTF8);
+			adapterNameUTF8.Get(), adapterIdx);
 
 	hr = D3D11CreateDevice(adapter, D3D_DRIVER_TYPE_UNKNOWN,
 			NULL, createFlags, featureLevels,
@@ -265,6 +281,15 @@ void gs_device::InitDevice(uint32_t adapterIdx)
 	/* check for nv12 texture output support    */
 
 	nv12Supported = false;
+
+	/* don't use on blacklisted adapters */
+	if (astrstri(adapterNameUTF8, "geforce") != nullptr) {
+		for (const char *old_gpu : blacklisted_nv12_geforce_gpus) {
+			if (astrstri(adapterNameUTF8, old_gpu) != nullptr) {
+				return;
+			}
+		}
+	}
 
 	ComQIPtr<ID3D11Device1> d3d11_1(device);
 	if (!d3d11_1) {
