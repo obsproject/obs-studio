@@ -946,7 +946,6 @@ void OBSRemux::remuxFinished(bool success)
 	queueModel->finishEntry(success);
 
 	if (autoRemux && autoRemuxFile != "") {
-		QFile::remove(autoRemuxFile);
 		QTimer::singleShot(3000, this, SLOT(close()));
 	}
 
