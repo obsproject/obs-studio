@@ -42,6 +42,9 @@ static Auth::Def twitchDef = {
 TwitchAuth::TwitchAuth(const Def &d)
 	: OAuthStreamKey(d)
 {
+	if (!cef)
+		return;
+
 	cef->add_popup_whitelist_url(
 			"https://twitch.tv/popout/frankerfacez/chat?ffz-settings",
 			this);
@@ -90,7 +93,7 @@ try {
 				5);
 	};
 
-	ExecuteFuncSafeBlockMsgBox(
+	ExecThreadedWithoutBlocking(
 			func,
 			QTStr("Auth.LoadingChannel.Title"),
 			QTStr("Auth.LoadingChannel.Text").arg(service()));
@@ -102,8 +105,16 @@ try {
 		throw ErrorInfo("Failed to parse json", error);
 
 	error = json["error"].string_value();
-	if (!error.empty())
+	if (!error.empty()) {
+		if (error == "Unauthorized") {
+			if (RetryLogin()) {
+				return GetChannelInfo();
+			}
+			throw ErrorInfo(error,
+					json["message"].string_value());
+		}
 		throw ErrorInfo(error, json["error_description"].string_value());
+	}
 
 	name = json["name"].string_value();
 	key_ = json["stream_key"].string_value();
@@ -186,17 +197,24 @@ static const char *referrer_script2 = "'; }});";
 
 void TwitchAuth::LoadUI()
 {
+	if (!cef)
+		return;
 	if (uiLoaded)
 		return;
 	if (!GetChannelInfo())
 		return;
 
-	OBSBasic::InitBrowserPanelSafeBlock(true);
+	OBSBasic::InitBrowserPanelSafeBlock();
 	OBSBasic *main = OBSBasic::Get();
 
 	QCefWidget *browser;
 	std::string url;
 	std::string script;
+
+	std::string moderation_tools_url;
+	moderation_tools_url = "https://www.twitch.tv/";
+	moderation_tools_url += name;
+	moderation_tools_url += "/dashboard/settings/moderation?no-reload=true";
 
 	/* ----------------------------------- */
 
@@ -216,6 +234,7 @@ void TwitchAuth::LoadUI()
 
 	browser = cef->create_widget(nullptr, url, panel_cookies);
 	chat->SetWidget(browser);
+	cef->add_force_popup_url(moderation_tools_url, chat.data());
 
 	script = bttv_script;
 	script += ffz_script;

@@ -1738,7 +1738,9 @@ void OBSBasic::OBSInit()
 					msg);
 
 		if (button == QMessageBox::Yes) {
-			on_autoConfigure_triggered();
+			QMetaObject::invokeMethod(this,
+					"on_autoConfigure_triggered",
+					Qt::QueuedConnection);
 		} else {
 			msg = QTStr("Basic.FirstStartup.RunWizard.NoClicked");
 			OBSMessageBox::information(this,
@@ -1917,11 +1919,17 @@ void OBSBasic::ReceivedIntroJson(const QString &text)
 		return;
 	}
 
-	cef->init_browser();
-	ExecuteFuncSafeBlock([] {cef->wait_for_browser_init();});
-
 	config_set_int(App()->GlobalConfig(), "General",
 			"InfoIncrement", info_increment);
+
+	/* Don't show What's New dialog for new users */
+#if !defined(OBS_RELEASE_CANDIDATE) || OBS_RELEASE_CANDIDATE == 0
+	if (!lastVersion) {
+		return;
+	}
+#endif
+	cef->init_browser();
+	ExecuteFuncSafeBlock([] {cef->wait_for_browser_init();});
 
 	QDialog *dlg = new QDialog(this);
 	dlg->setAttribute(Qt::WA_DeleteOnClose, true);
@@ -4361,10 +4369,7 @@ void OBSBasic::CreateSourcePopupMenu(int idx, bool preview)
 		int width = obs_source_get_width(source);
 		int height = obs_source_get_height(source);
 
-		resizeOutput->setEnabled(!(ui->streamButton->isChecked() ||
-				ui->recordButton->isChecked() ||
-				(replayBufferButton &&
-				replayBufferButton->isChecked())));
+		resizeOutput->setEnabled(!obs_video_active());
 
 		if (width == 0 || height == 0)
 			resizeOutput->setEnabled(false);
@@ -5323,6 +5328,7 @@ void OBSBasic::StartReplayBuffer()
 		OBSMessageBox::information(this,
 				RP_NO_HOTKEY_TITLE,
 				RP_NO_HOTKEY_TEXT);
+		replayBufferButton->setChecked(false);
 		return;
 	}
 
@@ -5368,6 +5374,7 @@ void OBSBasic::ReplayBufferStart()
 		return;
 
 	replayBufferButton->setText(QTStr("Basic.Main.StopReplayBuffer"));
+	replayBufferButton->setChecked(true);
 
 	if (sysTrayReplayBuffer)
 		sysTrayReplayBuffer->setText(replayBufferButton->text());

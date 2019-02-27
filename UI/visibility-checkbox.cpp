@@ -10,8 +10,8 @@ VisibilityCheckBox::VisibilityCheckBox() : QCheckBox()
 	QString checkedFile;
 	QString uncheckedFile;
 	if (devicePixelRatio() >= 2) {
-		checkedFile = ":/res/images/visible_mask@2x.png";
-		uncheckedFile = ":/res/images/invisible_mask@2x.png";
+		checkedFile = ":/res/images/visible_mask_2x.png";
+		uncheckedFile = ":/res/images/invisible_mask_2x.png";
 	} else {
 		checkedFile = ":/res/images/visible_mask.png";
 		uncheckedFile = ":/res/images/invisible_mask.png";

@@ -26,6 +26,10 @@ OAuthLogin::OAuthLogin(QWidget *parent, const std::string &url, bool token)
 	: QDialog   (parent),
 	  get_token (token)
 {
+	if (!cef) {
+		return;
+	}
+
 	setWindowTitle("Auth");
 	setMinimumSize(400, 400);
 	resize(700, 700);
@@ -34,7 +38,7 @@ OAuthLogin::OAuthLogin(QWidget *parent, const std::string &url, bool token)
 	Qt::WindowFlags helpFlag = Qt::WindowContextHelpButtonHint;
 	setWindowFlags(flags & (~helpFlag));
 
-	OBSBasic::InitBrowserPanelSafeBlock(true);
+	OBSBasic::InitBrowserPanelSafeBlock();
 
 	cefWidget = cef->create_widget(nullptr, url, panel_cookies);
 	if (!cefWidget) {
@@ -64,6 +68,15 @@ OAuthLogin::OAuthLogin(QWidget *parent, const std::string &url, bool token)
 OAuthLogin::~OAuthLogin()
 {
 	delete cefWidget;
+}
+
+int OAuthLogin::exec()
+{
+	if (cefWidget) {
+		return QDialog::exec();
+	}
+
+	return QDialog::Rejected;
 }
 
 void OAuthLogin::urlChanged(const QString &url)
@@ -216,7 +229,7 @@ try {
 				5);
 	};
 
-	ExecuteFuncSafeBlockMsgBox(
+	ExecThreadedWithoutBlocking(
 			func,
 			QTStr("Auth.Authing.Title"),
 			QTStr("Auth.Authing.Text").arg(service()));
@@ -276,6 +289,9 @@ try {
 
 void OAuthStreamKey::OnStreamConfig()
 {
+	if (key_.empty())
+		return;
+
 	OBSBasic *main = OBSBasic::Get();
 	obs_service_t *service = main->GetService();
 

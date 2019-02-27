@@ -105,6 +105,16 @@ QListWidget::item:selected:!active {
     background-color: rgb(48,47,48);
 }
 
+QListWidget QLineEdit {
+    padding-top: 0px;
+    padding-bottom: 0px;
+    padding-right: 0;
+    padding-left: 2px;
+    border: none;
+    border-radius: none;
+}
+
+
 /* Dock Widget */
 
 QDockWidget::title {

@@ -10,8 +10,8 @@ LockedCheckBox::LockedCheckBox() : QCheckBox()
 	QString lockedFile;
 	QString unlockedFile;
 	if (devicePixelRatio() >= 2) {
-		lockedFile = ":/res/images/locked_mask@2x.png";
-		unlockedFile = ":/res/images/unlocked_mask@2x.png";
+		lockedFile = ":/res/images/locked_mask_2x.png";
+		unlockedFile = ":/res/images/unlocked_mask_2x.png";
 	} else {
 		lockedFile = ":/res/images/locked_mask.png";
 		unlockedFile = ":/res/images/unlocked_mask.png";

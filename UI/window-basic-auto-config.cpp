@@ -709,6 +709,8 @@ void AutoConfigStreamPage::UpdateCompleted()
 AutoConfig::AutoConfig(QWidget *parent)
 	: QWizard(parent)
 {
+	EnableThreadedMessageBoxes(true);
+
 	calldata_t cd = {0};
 	calldata_set_int(&cd, "seconds", 5);
 
@@ -839,6 +841,7 @@ AutoConfig::~AutoConfig()
 {
 	OBSBasic *main = reinterpret_cast<OBSBasic*>(App()->GetMainWindow());
 	main->EnableOutputs(true);
+	EnableThreadedMessageBoxes(false);
 }
 
 void AutoConfig::TestHardwareEncoding()

@@ -263,3 +263,21 @@ void ExecuteFuncSafeBlockMsgBox(
 	dlg.exec();
 	thread->wait();
 }
+
+static bool enable_message_boxes = false;
+
+void EnableThreadedMessageBoxes(bool enable)
+{
+	enable_message_boxes = enable;
+}
+
+void ExecThreadedWithoutBlocking(
+		std::function<void()> func,
+		const QString &title,
+		const QString &text)
+{
+	if (!enable_message_boxes)
+		ExecuteFuncSafeBlock(func);
+	else
+		ExecuteFuncSafeBlockMsgBox(func, title, text);
+}
