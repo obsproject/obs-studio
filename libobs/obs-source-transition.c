@@ -454,6 +454,11 @@ float obs_transition_get_time(obs_source_t *transition)
 	return get_video_time(transition);
 }
 
+uint64_t obs_transition_get_duration_ms(obs_source_t *transition)
+{
+	return transition ? transition->transition_duration : 0;
+}
+
 static inline gs_texture_t *get_texture(obs_source_t *transition,
 		enum obs_transition_target target)
 {

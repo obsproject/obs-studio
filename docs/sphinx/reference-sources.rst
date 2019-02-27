@@ -1308,6 +1308,12 @@ Functions used by transitions
 
 ---------------------
 
+.. function:: uint64_t obs_transition_get_duration_ms(obs_source_t *transition)
+
+   :return: The duration of the transition in milliseconds
+
+---------------------
+
 .. function:: void obs_transition_video_render(obs_source_t *transition, obs_transition_video_render_callback_t callback)
 
    Helper function used for rendering transitions.  This function will
