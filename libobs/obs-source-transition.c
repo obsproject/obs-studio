@@ -459,6 +459,17 @@ uint64_t obs_transition_get_duration_ms(obs_source_t *transition)
 	return transition ? transition->transition_duration : 0;
 }
 
+uint64_t obs_transition_get_duration_frames(obs_source_t *transition)
+{
+	struct obs_video_info info;
+	obs_get_video_info(&info);
+	if (info.fps_den == 0)
+		return UINT64_MAX;
+	else
+		return transition ? (transition->transition_duration *
+			info.fps_num) / (info.fps_den * 1000): 0;
+}
+
 static inline gs_texture_t *get_texture(obs_source_t *transition,
 		enum obs_transition_target target)
 {
