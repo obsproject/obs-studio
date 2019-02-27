@@ -418,6 +418,8 @@ private:
 
 	bool NoSourcesConfirmation();
 
+	bool canShowContextMenu = false;
+
 public slots:
 	void DeferSaveBegin();
 	void DeferSaveEnd();
@@ -470,6 +472,8 @@ private slots:
 	void RenameSources(OBSSource source, QString newName, QString prevName);
 
 	void SelectSceneItem(OBSScene scene, OBSSceneItem item, bool select);
+
+	void UpdateContextBar();
 
 	void ActivateAudioSource(OBSSource source);
 	void DeactivateAudioSource(OBSSource source);
@@ -740,6 +744,7 @@ private slots:
 	void on_actionAlwaysOnTop_triggered();
 
 	void on_toggleListboxToolbars_toggled(bool visible);
+	void on_toggleContextToolbars_toggled(bool visible);
 	void on_toggleStatusBar_toggled(bool visible);
 
 	void on_transitions_currentIndexChanged(int index);

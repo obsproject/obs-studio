@@ -494,6 +494,7 @@
       <string>Basic.MainMenu.View.Toolbars</string>
      </property>
      <addaction name="toggleListboxToolbars"/>
+     <addaction name="toggleContextToolbars"/>
     </widget>
     <widget class="QMenu" name="viewMenuDocks">
      <property name="title">
@@ -1895,6 +1896,14 @@
   <action name="actionShowAbout">
    <property name="text">
     <string>Basic.MainMenu.Help.About</string>
+   </property>
+  </action>
+  <action name="toggleContextToolbars">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Basic.MainMenu.View.Toolbars.Context</string>
    </property>
   </action>
  </widget>

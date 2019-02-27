@@ -1632,6 +1632,17 @@ void OBSBasic::OBSInit()
 		opt_studio_mode = false;
 	}
 
+	ui->toggleContextToolbars->setChecked(true);
+	canShowContextMenu = true;
+	if (config_has_user_value(App()->GlobalConfig(), "BasicWindow",
+			"ShowContextToolbars")) {
+		bool visible = config_get_bool(App()->GlobalConfig(),
+				"BasicWindow", "ShowContextToolbars");
+		ui->toggleContextToolbars->setChecked(visible);
+		canShowContextMenu = visible;
+	}
+	this->UpdateContextBar();
+
 #define SET_VISIBILITY(name, control) \
 	do { \
 		if (config_has_user_value(App()->GlobalConfig(), \
@@ -2692,8 +2703,14 @@ void OBSBasic::SelectSceneItem(OBSScene scene, OBSSceneItem item, bool select)
 	if (scene != GetCurrentScene() || ignoreSelectionUpdate)
 		return;
 
-	if (GetCurrentSceneItem()) {
-	    // Show Context Items
+	this->UpdateContextBar();
+
+	ui->sources->SelectItem(item, select);
+}
+
+void OBSBasic::UpdateContextBar() {
+	if (GetCurrentSceneItem() && canShowContextMenu) {
+		// Show Context Items
 		QListIterator<QObject *> i(ui->contextContainer->children());
 		while (i.hasNext())
 		{
@@ -2701,7 +2718,7 @@ void OBSBasic::SelectSceneItem(OBSScene scene, OBSSceneItem item, bool select)
 			b->show();
 		}
 	} else {
-	    // Hide Context Items
+		// Hide Context Items
 		QListIterator<QObject *> i(ui->contextContainer->children());
 		while (i.hasNext())
 		{
@@ -2709,8 +2726,6 @@ void OBSBasic::SelectSceneItem(OBSScene scene, OBSSceneItem item, bool select)
 			b->hide();
 		}
 	}
-
-	ui->sources->SelectItem(item, select);
 }
 
 static inline bool SourceMixerHidden(obs_source_t *source)
@@ -6686,6 +6701,14 @@ void OBSBasic::on_toggleListboxToolbars_toggled(bool visible)
 
 	config_set_bool(App()->GlobalConfig(), "BasicWindow",
 			"ShowListboxToolbars", visible);
+}
+
+void OBSBasic::on_toggleContextToolbars_toggled(bool visible)
+{
+	canShowContextMenu = visible;
+	config_set_bool(App()->GlobalConfig(), "BasicWindow",
+			"ShowContextToolbars", visible);
+	UpdateContextBar();
 }
 
 void OBSBasic::on_toggleStatusBar_toggled(bool visible)
