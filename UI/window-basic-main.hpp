@@ -168,6 +168,8 @@ private:
 	QPointer<OBSBasicAdvAudio> advAudioWindow;
 	QPointer<OBSBasicFilters> filters;
 	QPointer<QDockWidget> statsDock;
+	QPointer<QDockWidget> propertiesDock;
+	QPointer<QDockWidget> filtersDock;
 	QPointer<OBSAbout> about;
 
 	QPointer<QTimer>    cpuUsageTimer;

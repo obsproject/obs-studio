@@ -225,6 +225,24 @@ OBSBasic::OBSBasic(QWidget *parent)
 	statsDock->setFloating(true);
 	statsDock->resize(700, 200);
 
+	propertiesDock = new QDockWidget(this);
+	propertiesDock->setObjectName(QStringLiteral("propertiesDock"));
+	propertiesDock->setFeatures(QDockWidget::AllDockWidgetFeatures);
+	propertiesDock->setWindowTitle(QTStr("Properties"));
+	addDockWidget(Qt::RightDockWidgetArea, propertiesDock);
+	propertiesDock->setVisible(false);
+	propertiesDock->setFloating(true);
+	propertiesDock->resize(700, 200);
+
+	filtersDock = new QDockWidget(this);
+	filtersDock->setObjectName(QStringLiteral("filtersDock"));
+	filtersDock->setFeatures(QDockWidget::AllDockWidgetFeatures);
+	filtersDock->setWindowTitle(QTStr("Filters"));
+	addDockWidget(Qt::RightDockWidgetArea, filtersDock);
+	filtersDock->setVisible(false);
+	filtersDock->setFloating(true);
+	filtersDock->resize(700, 200);
+
 	copyActionsDynamicProperties();
 
 	char styleSheetPath[512];
@@ -2420,22 +2438,54 @@ void OBSBasic::CreateInteractionWindow(obs_source_t *source)
 
 void OBSBasic::CreatePropertiesWindow(obs_source_t *source)
 {
+	if (!propertiesDock) {
+		propertiesDock = new QDockWidget(this);
+		propertiesDock->setObjectName(QStringLiteral("propertiesDock"));
+		propertiesDock->setFeatures(QDockWidget::AllDockWidgetFeatures);
+		propertiesDock->setWindowTitle(QTStr("Properties"));
+		addDockWidget(Qt::RightDockWidgetArea, propertiesDock);
+		propertiesDock->setVisible(false);
+		propertiesDock->setFloating(true);
+		propertiesDock->resize(700, 200);
+	}
 	if (properties)
 		properties->close();
 
+	const char *name = obs_source_get_name(source);
+	propertiesDock->setWindowTitle(QTStr("Basic.PropertiesWindow").arg(
+			QT_UTF8(name)));
+
 	properties = new OBSBasicProperties(this, source);
-	properties->Init();
 	properties->setAttribute(Qt::WA_DeleteOnClose, true);
+
+	propertiesDock->setWidget(properties);
+	propertiesDock->show();
 }
 
 void OBSBasic::CreateFiltersWindow(obs_source_t *source)
 {
+	if (!filtersDock) {
+		filtersDock = new QDockWidget(this);
+		filtersDock->setObjectName(QStringLiteral("filtersDock"));
+		filtersDock->setFeatures(QDockWidget::AllDockWidgetFeatures);
+		filtersDock->setWindowTitle(QTStr("Filters"));
+		addDockWidget(Qt::RightDockWidgetArea, filtersDock);
+		filtersDock->setVisible(false);
+		filtersDock->setFloating(true);
+		filtersDock->resize(700, 200);
+	}
 	if (filters)
 		filters->close();
 
+	const char *name = obs_source_get_name(source);
+	filtersDock->setWindowTitle(QTStr("Basic.Filters.Title").arg(
+			QT_UTF8(name)));
+
 	filters = new OBSBasicFilters(this, source);
-	filters->Init();
 	filters->setAttribute(Qt::WA_DeleteOnClose, true);
+
+	filtersDock->setWidget(filters);
+	filtersDock->show();
 }
 
 /* Qt callbacks for invokeMethod */
@@ -2604,6 +2654,8 @@ void OBSBasic::UpdateSceneSelection(OBSSource source)
 				GetOBSRef<OBSScene>(ui->scenes->currentItem());
 			if (api && scene != curScene)
 				api->on_event(OBS_FRONTEND_EVENT_PREVIEW_SCENE_CHANGED);
+			if (filtersDock && filtersDock->isVisible())
+				CreateFiltersWindow(source);
 		}
 	}
 }
@@ -2645,6 +2697,11 @@ void OBSBasic::SelectSceneItem(OBSScene scene, OBSSceneItem item, bool select)
 		return;
 
 	ui->sources->SelectItem(item, select);
+	OBSSource source = obs_sceneitem_get_source(item);
+	if (filtersDock && filtersDock->isVisible())
+		CreatePropertiesWindow(source);
+	if (propertiesDock && propertiesDock->isVisible())
+		CreateFiltersWindow(source);
 }
 
 static inline bool SourceMixerHidden(obs_source_t *source)
@@ -6391,6 +6448,9 @@ void OBSBasic::on_resetUI_triggered()
 	statsDock->setVisible(false);
 	statsDock->setFloating(true);
 
+	propertiesDock->setFloating(true);
+	filtersDock->setFloating(true);
+
 	resizeDocks(docks, {cy, cy, cy, cy, cy}, Qt::Vertical);
 	resizeDocks(docks, sizes, Qt::Horizontal);
 #endif
@@ -6408,6 +6468,7 @@ void OBSBasic::on_lockUI_toggled(bool lock)
 	ui->transitionsDock->setFeatures(features);
 	ui->controlsDock->setFeatures(features);
 	statsDock->setFeatures(features);
+	propertiesDock->setFeatures(features);
 
 	for (int i = extraDocks.size() - 1; i >= 0 ; i--) {
 		if (!extraDocks[i]) {
