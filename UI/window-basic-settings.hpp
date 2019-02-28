@@ -119,6 +119,9 @@ private:
 	int  pageIndex = 0;
 	bool loading = true;
 	std::string savedTheme;
+	int sampleRateIndex = 0;
+	int channelIndex = 0;
+	int languageIndex = 0;
 
 	int lastSimpleRecQualityIdx = 0;
 	int lastChannelSetupIdx = 0;

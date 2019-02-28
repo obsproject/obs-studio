@@ -28,6 +28,8 @@
 #include <QScreen>
 #include <QColorDialog>
 #include <QSizePolicy>
+#include <QApplication>
+#include <QProcess>
 
 #include <util/dstr.h>
 #include <util/util.hpp>
@@ -484,6 +486,24 @@ static obs_data_t *GenerateSaveData(obs_data_array_t *sceneOrder,
 	obs_source_release(transition);
 
 	return saveData;
+}
+
+void OBSBasic::DoRestart(bool restart)
+{
+	doRestart = restart;
+}
+
+void OBSBasic::Restart()
+{
+	QMessageBox::StandardButton button =
+				OBSMessageBox::question(this,
+						QTStr("Restart"),
+						QTStr("ProgramRestarted"));
+
+	if (button == QMessageBox::Yes)
+		close();
+	else
+		DoRestart(false);
 }
 
 void OBSBasic::copyActionsDynamicProperties()
@@ -2355,6 +2375,9 @@ OBSBasic::~OBSBasic()
 	delete cef;
 	cef = nullptr;
 #endif
+
+	if (doRestart)
+		QProcess::startDetached(qApp->arguments()[0], qApp->arguments());
 }
 
 void OBSBasic::SaveProjectNow()
@@ -3923,6 +3946,9 @@ void OBSBasic::on_action_Settings_triggered()
 	SystemTray(false);
 
 	settings_already_executing = false;
+
+	if (doRestart)
+		Restart();
 }
 
 void OBSBasic::on_actionAdvAudioProperties_triggered()

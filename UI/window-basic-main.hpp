@@ -418,6 +418,8 @@ private:
 
 	bool NoSourcesConfirmation();
 
+	void Restart();
+
 public slots:
 	void DeferSaveBegin();
 	void DeferSaveEnd();
@@ -642,6 +644,9 @@ public:
 	QAction *AddDockWidget(QDockWidget *dock);
 
 	static OBSBasic *Get();
+
+	void DoRestart(bool restart);
+	bool doRestart = false;
 
 protected:
 	virtual void closeEvent(QCloseEvent *event) override;

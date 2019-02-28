@@ -727,6 +727,16 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	UpdateAutomaticReplayBufferCheckboxes();
 
 	App()->EnableInFocusHotkeys(false);
+
+	channelIndex = ui->channelSetup->currentIndex();
+	sampleRateIndex = ui->sampleRate->currentIndex();
+	languageIndex = ui->language->currentIndex();
+
+	if (obs_video_active()) {
+		ui->channelSetup->setEnabled(false);
+		ui->sampleRate->setEnabled(false);
+		ui->language->setEnabled(false);
+	}
 }
 
 OBSBasicSettings::~OBSBasicSettings()
@@ -2664,13 +2674,18 @@ void OBSBasicSettings::LoadSettings(bool changedOnly)
 
 void OBSBasicSettings::SaveGeneralSettings()
 {
-	int languageIndex = ui->language->currentIndex();
-	QVariant langData = ui->language->itemData(languageIndex);
+	int currentLanguageIndex = ui->language->currentIndex();
+	QVariant langData = ui->language->itemData(currentLanguageIndex);
 	string language = langData.toString().toStdString();
 
 	if (WidgetChanged(ui->language))
 		config_set_string(GetGlobalConfig(), "General", "Language",
 				language.c_str());
+
+	if (currentLanguageIndex != languageIndex)
+		main->DoRestart(true);
+	else
+		main->DoRestart(false);
 
 	int themeIndex = ui->theme->currentIndex();
 	QString themeData = ui->theme->itemText(themeIndex);
@@ -3749,10 +3764,26 @@ void OBSBasicSettings::AudioChanged()
 void OBSBasicSettings::AudioChangedRestart()
 {
 	if (!loading) {
-		audioChanged = true;
-		ui->audioMsg->setText(QTStr("Basic.Settings.ProgramRestart"));
-		sender()->setProperty("changed", QVariant(true));
-		EnableApplyButton(true);
+		int currentChannelIndex = ui->channelSetup->currentIndex();
+		int currentSampleRateIndex = ui->sampleRate->currentIndex();
+
+		if (currentChannelIndex != channelIndex ||
+				currentSampleRateIndex != sampleRateIndex) {
+			audioChanged = true;
+			ui->audioMsg->setText(
+					QTStr("Basic.Settings.ProgramRestart"));
+			sender()->setProperty("changed", QVariant(true));
+			EnableApplyButton(true);
+
+			main->DoRestart(true);
+		} else {
+			audioChanged = false;
+			ui->audioMsg->setText("");
+			sender()->setProperty("changed", QVariant(false));
+			EnableApplyButton(false);
+
+			main->DoRestart(false);
+		}
 	}
 }
 
