@@ -229,6 +229,10 @@ private:
 	QPointer<QMenu>           perSceneTransitionMenu;
 	QPointer<QObject>         shortcutFilter;
 
+	QPointer<QWidget> programWidget;
+	QPointer<QVBoxLayout> programLayout;
+	QPointer<QLabel> programLabel;
+
 	void          UpdateMultiviewProjectorMenu();
 
 	void          DrawBackdrop(float cx, float cy);
