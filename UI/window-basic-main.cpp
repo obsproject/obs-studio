@@ -350,13 +350,7 @@ OBSBasic::OBSBasic(QWidget *parent)
 
 	QPoint curPos;
 
-	// hide context buttons
-	QListIterator<QObject *> i(ui->contextContainer->children());
-	while (i.hasNext())
-	{
-		QWidget* b = (QWidget*)( i.next() );
-		b->hide();
-	}
+	this->UpdateContextBar();
 
 	//restore parent window geometry
 	const char *geometry = config_get_string(App()->GlobalConfig(),
@@ -1632,16 +1626,17 @@ void OBSBasic::OBSInit()
 		opt_studio_mode = false;
 	}
 
-	ui->toggleContextToolbars->setChecked(true);
-	canShowContextMenu = true;
 	if (config_has_user_value(App()->GlobalConfig(), "BasicWindow",
 			"ShowContextToolbars")) {
 		bool visible = config_get_bool(App()->GlobalConfig(),
 				"BasicWindow", "ShowContextToolbars");
 		ui->toggleContextToolbars->setChecked(visible);
-		canShowContextMenu = visible;
+		this->ui->contextContainer->setVisible(visible);
 	}
-	this->UpdateContextBar();
+	else {
+		ui->toggleContextToolbars->setChecked(true);
+		this->ui->contextContainer->setVisible(true);
+	}
 
 #define SET_VISIBILITY(name, control) \
 	do { \
@@ -2709,22 +2704,11 @@ void OBSBasic::SelectSceneItem(OBSScene scene, OBSSceneItem item, bool select)
 }
 
 void OBSBasic::UpdateContextBar() {
-	if (GetCurrentSceneItem() && canShowContextMenu) {
-		// Show Context Items
-		QListIterator<QObject *> i(ui->contextContainer->children());
-		while (i.hasNext())
-		{
-			auto b = (QWidget*)( i.next() );
-			b->show();
-		}
-	} else {
-		// Hide Context Items
-		QListIterator<QObject *> i(ui->contextContainer->children());
-		while (i.hasNext())
-		{
-			auto b = (QWidget*)( i.next() );
-			b->hide();
-		}
+	if (GetCurrentSceneItem()) {
+		ui->contextSubContainer->show();
+	}
+	else {
+		ui->contextSubContainer->hide();
 	}
 }
 
@@ -6705,10 +6689,9 @@ void OBSBasic::on_toggleListboxToolbars_toggled(bool visible)
 
 void OBSBasic::on_toggleContextToolbars_toggled(bool visible)
 {
-	canShowContextMenu = visible;
 	config_set_bool(App()->GlobalConfig(), "BasicWindow",
 			"ShowContextToolbars", visible);
-	UpdateContextBar();
+	this->ui->contextContainer->setVisible(visible);
 }
 
 void OBSBasic::on_toggleStatusBar_toggled(bool visible)

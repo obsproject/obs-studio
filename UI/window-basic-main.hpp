@@ -418,8 +418,6 @@ private:
 
 	bool NoSourcesConfirmation();
 
-	bool canShowContextMenu = false;
-
 public slots:
 	void DeferSaveBegin();
 	void DeferSaveEnd();
