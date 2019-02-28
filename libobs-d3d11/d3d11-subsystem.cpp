@@ -18,6 +18,8 @@
 #include <cinttypes>
 #include <util/base.h>
 #include <util/platform.h>
+#include <util/dstr.h>
+#include <util/util.hpp>
 #include <graphics/matrix3.h>
 #include "d3d11-subsystem.hpp"
 
@@ -227,6 +229,21 @@ const static D3D_FEATURE_LEVEL featureLevels[] =
 	D3D_FEATURE_LEVEL_9_3,
 };
 
+static const char *blacklisted_nv12_geforce_gpus[] = {
+	"8100",
+	"8200",
+	"8300",
+	"8400",
+	"8500",
+	"8600",
+	"8800",
+	"9300",
+	"9400",
+	"9500",
+	"9600",
+	"9800"
+};
+
 void gs_device::InitDevice(uint32_t adapterIdx)
 {
 	wstring adapterName;
@@ -244,11 +261,10 @@ void gs_device::InitDevice(uint32_t adapterIdx)
 	adapterName = (adapter->GetDesc(&desc) == S_OK) ? desc.Description :
 		L"<unknown>";
 
-	char *adapterNameUTF8;
+	BPtr<char> adapterNameUTF8;
 	os_wcs_to_utf8_ptr(adapterName.c_str(), 0, &adapterNameUTF8);
 	blog(LOG_INFO, "Loading up D3D11 on adapter %s (%" PRIu32 ")",
-			adapterNameUTF8, adapterIdx);
-	bfree(adapterNameUTF8);
+			adapterNameUTF8.Get(), adapterIdx);
 
 	hr = D3D11CreateDevice(adapter, D3D_DRIVER_TYPE_UNKNOWN,
 			NULL, createFlags, featureLevels,
@@ -258,19 +274,69 @@ void gs_device::InitDevice(uint32_t adapterIdx)
 	if (FAILED(hr))
 		throw UnsupportedHWError("Failed to create device", hr);
 
-	ComQIPtr<ID3D11Device1> d3d11_1(device);
-	if (!!d3d11_1) {
-		D3D11_FEATURE_DATA_D3D11_OPTIONS opts = {};
-		hr = d3d11_1->CheckFeatureSupport(
-				D3D11_FEATURE_D3D11_OPTIONS,
-				&opts, sizeof(opts));
-		if (SUCCEEDED(hr)) {
-			nv12Supported = !!opts.ExtendedResourceSharing;
+	blog(LOG_INFO, "D3D11 loaded successfully, feature level used: %u",
+			(unsigned int)levelUsed);
+
+	/* ---------------------------------------- */
+	/* check for nv12 texture output support    */
+
+	nv12Supported = false;
+	bool geforce = astrstri(adapterNameUTF8, "geforce") != nullptr;
+	bool nvidia  = astrstri(adapterNameUTF8, "nvidia")  != nullptr;
+
+	/* don't use on blacklisted adapters */
+	if (geforce) {
+		for (const char *old_gpu : blacklisted_nv12_geforce_gpus) {
+			if (astrstri(adapterNameUTF8, old_gpu) != nullptr) {
+				return;
+			}
 		}
 	}
 
-	blog(LOG_INFO, "D3D11 loaded successfully, feature level used: %u",
-			(unsigned int)levelUsed);
+	/* Disable NV12 textures if NVENC not available, just as a safety
+	 * measure */
+	if (nvidia) {
+		HMODULE nvenc = LoadLibraryW((sizeof(void*) == 8)
+				? L"nvEncodeAPI64.dll"
+				: L"nvEncodeAPI.dll");
+		if (!nvenc) {
+			return;
+		}
+	}
+
+	ComQIPtr<ID3D11Device1> d3d11_1(device);
+	if (!d3d11_1) {
+		return;
+	}
+
+	/* needs to support extended resource sharing */
+	D3D11_FEATURE_DATA_D3D11_OPTIONS opts = {};
+	hr = d3d11_1->CheckFeatureSupport(
+			D3D11_FEATURE_D3D11_OPTIONS,
+			&opts, sizeof(opts));
+	if (FAILED(hr) || !opts.ExtendedResourceSharing) {
+		return;
+	}
+
+	/* needs to support the actual format */
+	UINT support = 0;
+	hr = device->CheckFormatSupport(
+			DXGI_FORMAT_NV12,
+			&support);
+	if (FAILED(hr)) {
+		return;
+	}
+
+	if ((support & D3D11_FORMAT_SUPPORT_TEXTURE2D) == 0) {
+		return;
+	}
+
+	/* must be usable as a render target */
+	if ((support & D3D11_FORMAT_SUPPORT_RENDER_TARGET) == 0) {
+		return;
+	}
+
+	nv12Supported = true;
 }
 
 static inline void ConvertStencilSide(D3D11_DEPTH_STENCILOP_DESC &desc,

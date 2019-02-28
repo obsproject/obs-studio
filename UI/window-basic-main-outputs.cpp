@@ -10,6 +10,10 @@ using namespace std;
 
 extern bool EncoderAvailable(const char *encoder);
 
+volatile bool streaming_active = false;
+volatile bool recording_active = false;
+volatile bool replaybuf_active = false;
+
 static void OBSStreamStarting(void *data, calldata_t *params)
 {
 	BasicOutputHandler *output = static_cast<BasicOutputHandler*>(data);
@@ -41,6 +45,7 @@ static void OBSStartStreaming(void *data, calldata_t *params)
 {
 	BasicOutputHandler *output = static_cast<BasicOutputHandler*>(data);
 	output->streamingActive = true;
+	os_atomic_set_bool(&streaming_active, true);
 	QMetaObject::invokeMethod(output->main, "StreamingStart");
 
 	UNUSED_PARAMETER(params);
@@ -56,6 +61,7 @@ static void OBSStopStreaming(void *data, calldata_t *params)
 
 	output->streamingActive = false;
 	output->delayActive = false;
+	os_atomic_set_bool(&streaming_active, false);
 	QMetaObject::invokeMethod(output->main,
 			"StreamingStop", Q_ARG(int, code), Q_ARG(QString, arg_last_error));
 }
@@ -65,6 +71,7 @@ static void OBSStartRecording(void *data, calldata_t *params)
 	BasicOutputHandler *output = static_cast<BasicOutputHandler*>(data);
 
 	output->recordingActive = true;
+	os_atomic_set_bool(&recording_active, true);
 	QMetaObject::invokeMethod(output->main, "RecordingStart");
 
 	UNUSED_PARAMETER(params);
@@ -76,6 +83,7 @@ static void OBSStopRecording(void *data, calldata_t *params)
 	int code = (int)calldata_int(params, "code");
 
 	output->recordingActive = false;
+	os_atomic_set_bool(&recording_active, false);
 	QMetaObject::invokeMethod(output->main,
 			"RecordingStop", Q_ARG(int, code));
 
@@ -95,6 +103,7 @@ static void OBSStartReplayBuffer(void *data, calldata_t *params)
 	BasicOutputHandler *output = static_cast<BasicOutputHandler*>(data);
 
 	output->replayBufferActive = true;
+	os_atomic_set_bool(&replaybuf_active, true);
 	QMetaObject::invokeMethod(output->main, "ReplayBufferStart");
 
 	UNUSED_PARAMETER(params);
@@ -106,6 +115,7 @@ static void OBSStopReplayBuffer(void *data, calldata_t *params)
 	int code = (int)calldata_int(params, "code");
 
 	output->replayBufferActive = false;
+	os_atomic_set_bool(&replaybuf_active, false);
 	QMetaObject::invokeMethod(output->main,
 			"ReplayBufferStop", Q_ARG(int, code));
 
@@ -1226,8 +1236,13 @@ inline void AdvancedOutput::SetupStreaming()
 			"Rescale");
 	const char *rescaleRes = config_get_string(main->Config(), "AdvOut",
 			"RescaleRes");
+	uint32_t caps = obs_encoder_get_caps(h264Streaming);
 	unsigned int cx = 0;
 	unsigned int cy = 0;
+
+	if ((caps & OBS_ENCODER_CAP_PASS_TEXTURE) != 0) {
+		rescale = false;
+	}
 
 	if (rescale && rescaleRes && *rescaleRes) {
 		if (sscanf(rescaleRes, "%ux%u", &cx, &cy) != 2) {
@@ -1262,6 +1277,11 @@ inline void AdvancedOutput::SetupRecording()
 			obs_output_set_video_encoder(replayBuffer,
 					h264Streaming);
 	} else {
+		uint32_t caps = obs_encoder_get_caps(h264Recording);
+		if ((caps & OBS_ENCODER_CAP_PASS_TEXTURE) != 0) {
+			rescale = false;
+		}
+
 		if (rescale && rescaleRes && *rescaleRes) {
 			if (sscanf(rescaleRes, "%ux%u", &cx, &cy) != 2) {
 				cx = 0;

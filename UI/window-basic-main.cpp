@@ -1919,11 +1919,17 @@ void OBSBasic::ReceivedIntroJson(const QString &text)
 		return;
 	}
 
-	cef->init_browser();
-	ExecuteFuncSafeBlock([] {cef->wait_for_browser_init();});
-
 	config_set_int(App()->GlobalConfig(), "General",
 			"InfoIncrement", info_increment);
+
+	/* Don't show What's New dialog for new users */
+#if !defined(OBS_RELEASE_CANDIDATE) || OBS_RELEASE_CANDIDATE == 0
+	if (!lastVersion) {
+		return;
+	}
+#endif
+	cef->init_browser();
+	ExecuteFuncSafeBlock([] {cef->wait_for_browser_init();});
 
 	QDialog *dlg = new QDialog(this);
 	dlg->setAttribute(Qt::WA_DeleteOnClose, true);

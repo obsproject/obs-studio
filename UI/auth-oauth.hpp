@@ -23,6 +23,8 @@ public:
 	inline QString GetCode() const {return code;}
 	inline bool LoadFail() const {return fail;}
 
+	virtual int exec() override;
+
 public slots:
 	void urlChanged(const QString &url);
 };

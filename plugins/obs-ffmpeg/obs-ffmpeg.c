@@ -142,6 +142,10 @@ static const char *nvenc_check_name = "nvenc_check";
 
 #ifdef _WIN32
 static const wchar_t *blacklisted_adapters[] = {
+	L"720M",
+	L"730M",
+	L"740M",
+	L"745M",
 	L"820M",
 	L"830M",
 	L"840M",
@@ -150,6 +154,10 @@ static const wchar_t *blacklisted_adapters[] = {
 	L"930M",
 	L"940M",
 	L"945M",
+	L"720A",
+	L"730A",
+	L"740A",
+	L"745A",
 	L"820A",
 	L"830A",
 	L"840A",
@@ -177,7 +185,7 @@ static bool is_blacklisted(const wchar_t *name)
 {
 	for (size_t i = 0; i < num_blacklisted; i++) {
 		const wchar_t *blacklisted_adapter = blacklisted_adapters[i];
-		if (wstrstri(blacklisted_adapter, name)) {
+		if (wstrstri(name, blacklisted_adapter)) {
 			return true;
 		}
 	}
