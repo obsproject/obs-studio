@@ -94,9 +94,14 @@ struct slideshow {
 	uint32_t cx;
 	uint32_t cy;
 
+	bool first_load;
+
 	pthread_mutex_t mutex;
 	DARRAY(struct image_file_data) files;
 	DARRAY(char*) paths;
+
+	DARRAY(struct image_file_data) first_files;
+	DARRAY(char*) first_paths;
 
 	enum behavior behavior;
 
@@ -200,6 +205,8 @@ static void add_file(struct slideshow *ss, struct darray *array,
 
 	pthread_mutex_lock(&ss->mutex);
 	new_source = get_source(&ss->files.da, path);
+	if (!new_source)
+		new_source = get_source(&ss->first_files.da, path);
 	pthread_mutex_unlock(&ss->mutex);
 
 	if (!new_source)
@@ -378,9 +385,6 @@ static void ss_update(void *data, obs_data_t *settings)
 	ss->loop = obs_data_get_bool(settings, S_LOOP);
 	ss->hide = obs_data_get_bool(settings, S_HIDE);
 
-	if (!ss->tr_name || strcmp(tr_name, ss->tr_name) != 0)
-		new_tr = obs_source_create_private(tr_name, NULL, NULL);
-
 	new_duration = (uint32_t)obs_data_get_int(settings, S_SLIDE_TIME);
 	new_speed = (uint32_t)obs_data_get_int(settings, S_TR_SPEED);
 
@@ -390,43 +394,57 @@ static void ss_update(void *data, obs_data_t *settings)
 	/* ------------------------------------- */
 	/* create new list of sources */
 
-	for (size_t i = 0; i < count; i++) {
-		obs_data_t *item = obs_data_array_item(array, i);
-		const char *path = obs_data_get_string(item, "value");
-		os_dir_t *dir = os_opendir(path);
-
-		if (dir) {
-			struct dstr dir_path = {0};
-			struct os_dirent *ent;
-
-			for (;;) {
-				const char *ext;
-
-				ent = os_readdir(dir);
-				if (!ent)
-					break;
-				if (ent->directory)
-					continue;
-
-				ext = os_get_path_extension(ent->d_name);
-				if (!valid_extension(ext))
-					continue;
-
-				dstr_copy(&dir_path, path);
-				dstr_cat_ch(&dir_path, '/');
-				dstr_cat(&dir_path, ent->d_name);
-				add_path(&new_paths.da, dir_path.array);
-			}
-
-			dstr_free(&dir_path);
-			os_closedir(dir);
-		} else {
-			add_path(&new_paths.da, path);
+	if (ss->restart_on_activate) {
+		ss->restart_on_activate = false;
+		if (ss->randomize) {
+			if (ss->files.num)
+				do_transition(ss, false, true);
+			return;
 		}
 
-		obs_data_release(item);
-	}
+		darray_reserve(sizeof(char*), &new_paths.da,
+				ss->first_paths.num);
+		for (size_t i = 0; i < ss->first_paths.num; i++)
+			add_path(&new_paths.da, ss->first_paths.array[i]);
+	} else {
+		for (size_t i = 0; i < count; i++) {
+			obs_data_t *item = obs_data_array_item(array, i);
+			const char *path = obs_data_get_string(item, "value");
+			os_dir_t *dir = os_opendir(path);
 
+			if (dir) {
+				struct dstr dir_path = { 0 };
+				struct os_dirent *ent;
+
+				for (;;) {
+					const char *ext;
+
+					ent = os_readdir(dir);
+					if (!ent)
+						break;
+					if (ent->directory)
+						continue;
+
+					ext = os_get_path_extension(
+							ent->d_name);
+					if (!valid_extension(ext))
+						continue;
+
+					dstr_copy(&dir_path, path);
+					dstr_cat_ch(&dir_path, '/');
+					dstr_cat(&dir_path, ent->d_name);
+					add_path(&new_paths.da, dir_path.array);
+				}
+
+				dstr_free(&dir_path);
+				os_closedir(dir);
+			} else {
+				add_path(&new_paths.da, path);
+			}
+
+			obs_data_release(item);
+		}
+	}
 	/* ------------------------------------- */
 	/* update settings data */
 
@@ -436,6 +454,9 @@ static void ss_update(void *data, obs_data_t *settings)
 	ss->files.da = new_files.da;
 	old_paths.da = ss->paths.da;
 	ss->paths.da = new_paths.da;
+
+	if (!ss->tr_name || strcmp(tr_name, ss->tr_name) != 0)
+		new_tr = obs_source_create_private(tr_name, NULL, NULL);
 	if (new_tr) {
 		old_tr = ss->transition;
 		ss->transition = new_tr;
@@ -468,6 +489,36 @@ static void ss_update(void *data, obs_data_t *settings)
 		for (size_t i = 0; i < ss->paths.num; i++)
 			add_file(ss, &ss->files.da, ss->paths.array[i],
 					&cx, &cy, true);
+	}
+
+	if (ss->first_load) {
+		ss->first_load = false;
+		darray_reserve(sizeof(char*), &ss->first_paths.da,
+				ss->paths.num);
+		for (size_t i = 0; i < ss->paths.num; i++)
+			add_path(&ss->first_paths.da, ss->paths.array[i]);
+
+		if (ss->paths.num > MAX_LOADED && !ss->randomize) {
+			for (int i = -(MAX_LOADED / 2); i <= (MAX_LOADED / 2);
+					i++) {
+				size_t index = MOD(i, ss->paths.num);
+				add_file(ss, &ss->first_files.da,
+						ss->paths.array[index], &cx,
+						&cy, true);
+			}
+		} else if (ss->paths.num > MAX_LOADED && ss->randomize) {
+			for (size_t i = 0; i < MAX_LOADED; i++) {
+				size_t index = random_file(ss);
+				add_file(ss, &ss->first_files.da,
+						ss->paths.array[index], &cx,
+						&cy, true);
+			}
+		} else if (ss->paths.num <= MAX_LOADED) {
+			for (size_t i = 0; i < ss->paths.num; i++)
+				add_file(ss, &ss->first_files.da,
+						ss->paths.array[i], &cx,
+						&cy, true);
+		}
 	}
 
 	/* ------------------------------------- */
@@ -564,7 +615,6 @@ static void ss_restart(void *data)
 
 	ss->stop = false;
 	ss->use_cut = true;
-	ss->restart_on_activate = false;
 
 	obs_data_t *settings = obs_source_get_settings(ss->source);
 	ss_update(ss, settings);
@@ -684,6 +734,8 @@ static void ss_destroy(void *data)
 	obs_source_release(ss->transition);
 	free_files(&ss->files.da);
 	free_paths(&ss->paths.da);
+	free_files(&ss->first_files.da);
+	free_paths(&ss->first_paths.da);
 	pthread_mutex_destroy(&ss->mutex);
 	bfree(ss);
 }
@@ -697,6 +749,7 @@ static void *ss_create(obs_data_t *settings, obs_source_t *source)
 	ss->manual = false;
 	ss->paused = false;
 	ss->stop = false;
+	ss->first_load = true;
 
 	ss->play_pause_hotkey = obs_hotkey_register_source(source,
 			"SlideShow.PlayPause",
