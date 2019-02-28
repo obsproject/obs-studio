@@ -185,7 +185,7 @@ static bool is_blacklisted(const wchar_t *name)
 {
 	for (size_t i = 0; i < num_blacklisted; i++) {
 		const wchar_t *blacklisted_adapter = blacklisted_adapters[i];
-		if (wstrstri(blacklisted_adapter, name)) {
+		if (wstrstri(name, blacklisted_adapter)) {
 			return true;
 		}
 	}
