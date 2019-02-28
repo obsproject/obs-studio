@@ -1,0 +1,72 @@
+uniform float4x4 ViewProj;
+uniform texture2d image;
+
+uniform float4 color;
+uniform float lumaMax;
+uniform float lumaMin;
+uniform float lumaMaxSmooth;
+uniform float lumaMinSmooth;
+uniform bool invertColor;
+uniform bool invertLuma;
+
+sampler_state textureSampler{
+       Filter = Linear;
+       AddressU = Clamp;
+       AddressV = Clamp;
+};
+
+float4 InvertColor(float4 rgba_in)
+{
+	rgba_in.r = 1.0 - rgba_in.r;
+	rgba_in.g = 1.0 - rgba_in.g;
+	rgba_in.b = 1.0 - rgba_in.b;
+	rgba_in.a = 1.0 - rgba_in.a;
+	return rgba_in;
+}
+
+struct VertData {
+	float4 pos : POSITION;
+	float2 uv : TEXCOORD0;
+};
+
+VertData VSDefault(VertData v_in)
+{
+	VertData vert_out;
+	vert_out.pos = mul(float4(v_in.pos.xyz, 1.0), ViewProj);
+	vert_out.uv = v_in.uv;
+	return vert_out;
+}
+
+float4 PSALumaKeyRGBA(VertData v_in) : TARGET
+{
+	float4 rgba = image.Sample(textureSampler, v_in.uv);
+	if (invertColor)
+	{
+		rgba = InvertColor(rgba);
+	}
+
+	float4 lumaCoef = float4(0.2989, 0.5870, 0.1140, 0.0);
+
+	float luminance = dot(rgba * color,lumaCoef);
+
+	float clo = smoothstep(lumaMin,lumaMin + lumaMinSmooth,luminance);
+	float chi = 1. - smoothstep(lumaMax - lumaMaxSmooth,lumaMax,luminance);
+
+	float amask = clo * chi;
+	if (invertLuma)
+	{
+		amask = 1.0 - amask;
+	}
+	rgba *= color;
+	rgba.a = clamp(amask, 0.0, 1.0);
+	return rgba;
+}
+
+technique Draw
+{
+	pass
+	{
+		vertex_shader = VSDefault(v_in);
+		pixel_shader = PSALumaKeyRGBA(v_in);
+	}
+}
