@@ -584,11 +584,13 @@ mfxStatus QSV_Encoder_Internal::ClearData()
 	if (m_bUseD3D11 || m_bD3D9HACK)
 		m_mfxAllocator.Free(m_mfxAllocator.pthis, &m_mfxResponse);
 
-	for (int i = 0; i < m_nSurfNum; i++) {
-		if (!m_bUseD3D11 && !m_bD3D9HACK)
-			delete m_pmfxSurfaces[i]->Data.Y;
+	if (m_pmfxSurfaces) {
+		for (int i = 0; i < m_nSurfNum; i++) {
+			if (!m_bUseD3D11 && !m_bD3D9HACK)
+				delete m_pmfxSurfaces[i]->Data.Y;
 
-		delete m_pmfxSurfaces[i];
+			delete m_pmfxSurfaces[i];
+		}
 	}
 	MSDK_SAFE_DELETE_ARRAY(m_pmfxSurfaces);
 
