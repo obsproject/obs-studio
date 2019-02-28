@@ -80,7 +80,8 @@ QSV_Encoder_Internal::QSV_Encoder_Internal(mfxIMPL& impl, mfxVersion& version) :
 	m_nTaskPool(0),
 	m_pTaskPool(NULL),
 	m_nTaskIdx(0),
-	m_nFirstSyncTask(0)
+	m_nFirstSyncTask(0),
+	m_outBitstream()
 {
 	mfxIMPL tempImpl;
 	mfxStatus sts;
@@ -579,7 +580,12 @@ mfxStatus QSV_Encoder_Internal::ClearData()
 	mfxStatus sts = MFX_ERR_NONE;
 	sts = Drain();
 
-	sts = m_pmfxENC->Close();
+	if (m_pmfxENC)
+	{
+		sts = m_pmfxENC->Close();
+		delete m_pmfxENC;
+		m_pmfxENC = NULL;
+	}
 
 	if (m_bUseD3D11 || m_bD3D9HACK)
 		m_mfxAllocator.Free(m_mfxAllocator.pthis, &m_mfxResponse);
@@ -591,17 +597,20 @@ mfxStatus QSV_Encoder_Internal::ClearData()
 
 			delete m_pmfxSurfaces[i];
 		}
+		MSDK_SAFE_DELETE_ARRAY(m_pmfxSurfaces);
 	}
-	MSDK_SAFE_DELETE_ARRAY(m_pmfxSurfaces);
 
-	for (int i = 0; i < m_nTaskPool; i++)
-		delete m_pTaskPool[i].mfxBS.Data;
-	MSDK_SAFE_DELETE_ARRAY(m_pTaskPool);
+	if (m_pTaskPool) {
+		for (int i = 0; i < m_nTaskPool; i++)
+			delete m_pTaskPool[i].mfxBS.Data;
+		MSDK_SAFE_DELETE_ARRAY(m_pTaskPool);
+	}
 
-	delete m_outBitstream.Data;
-
-	delete m_pmfxENC;
-	m_pmfxENC = NULL;
+	if (m_outBitstream.Data)
+	{
+		delete m_outBitstream.Data;
+		m_outBitstream.Data = NULL;
+	}
 
 	if (sts >= MFX_ERR_NONE) {
 		g_numEncodersOpen--;
