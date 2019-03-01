@@ -1,4 +1,4 @@
-﻿#include "DecklinkInput.hpp"
+#include "DecklinkInput.hpp"
 
 #include <util/threading.h>
 
@@ -61,7 +61,8 @@ bool DeckLinkInput::Activate(DeckLinkDevice *device, long long modeId)
 		    instance->GetActivePixelFormat() == pixelFormat &&
 		    instance->GetActiveColorSpace() == colorSpace &&
 		    instance->GetActiveColorRange() == colorRange &&
-		    instance->GetActiveChannelFormat() == channelFormat)
+		    instance->GetActiveChannelFormat() == channelFormat &&
+		    instance->GetActiveSwapState() == swap)
 			return false;
 	}
 

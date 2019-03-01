@@ -29,6 +29,7 @@ protected:
 	uint64_t                lastVideoTS = 0;
 	AudioRepacker           *audioRepacker = nullptr;
 	speaker_layout          channelFormat = SPEAKERS_STEREO;
+	bool                    swap;
 
 	IDeckLinkMutableVideoFrame *decklinkOutputFrame = nullptr;
 
@@ -54,6 +55,7 @@ public:
 	inline video_colorspace GetActiveColorSpace() const {return colorSpace;}
 	inline video_range_type GetActiveColorRange() const {return colorRange;}
 	inline speaker_layout GetActiveChannelFormat() const {return channelFormat;}
+	inline bool GetActiveSwapState() const {return swap;}
 
 	inline DeckLinkDeviceMode *GetMode() const {return mode;}
 

@@ -47,4 +47,5 @@ public:
 	bool dwns = false;
 	std::string hash;
 	long long id;
+	bool swap = false;
 };
