@@ -1162,6 +1162,12 @@
            <property name="widgetResizable">
             <bool>true</bool>
            </property>
+           <property name="frameShape">
+             <enum>QFrame::NoFrame</enum>
+           </property>
+           <property name="frameShadow">
+            <enum>QFrame::Plain</enum>
+           </property>
            <widget class="QWidget" name="scrollAreaWidgetContents_3">
             <property name="geometry">
              <rect>
