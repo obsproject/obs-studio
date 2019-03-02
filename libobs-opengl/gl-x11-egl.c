@@ -204,6 +204,7 @@ static xcb_get_geometry_reply_t* get_window_geometry(
 	return reply;
 }
 
+// FIXME export this
 static const char* get_egl_error_string() {
 	const EGLint error = eglGetError();
 	switch (error) {
@@ -273,6 +274,7 @@ static bool gl_context_create(struct gl_platform *plat)
 	plat->context = context;
 
 	success = true;
+	blog(LOG_DEBUG, "Created EGLDisplay %p", plat->edisplay);
 
 error:
 	if (!success) {
