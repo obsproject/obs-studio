@@ -1,7 +1,7 @@
 #include <obs-module.h>
 #include <graphics/graphics-internal.h>
 
-// FIXME ??
+// FIXME needed for gl_platform pointer access
 #include <../libobs-opengl/gl-subsystem.h>
 
 #include <glad/glad_egl.h>
@@ -115,6 +115,81 @@ cleanup:
 	return retval;
 }
 
+void dmabuf_source_close(dmabuf_source_t *ctx)
+{
+	if (ctx->eimage != EGL_NO_IMAGE) {
+		eglDestroyImage(ctx->edisp, ctx->eimage);
+		ctx->eimage = EGL_NO_IMAGE;
+	}
+	if (ctx->data.fd > 0) {
+		close(ctx->data.fd);
+		ctx->data.fd = -1;
+	}
+}
+
+// FIXME glad
+static PFNGLEGLIMAGETARGETTEXTURE2DOESPROC glEGLImageTargetTexture2DOES;
+
+void dmabuf_source_open(dmabuf_source_t *ctx, const char *sockname)
+{
+	memset(&ctx->data, 0, sizeof(ctx->data));
+
+	if (!dmabuf_receive_socket(sockname, &ctx->data)) {
+		blog(LOG_ERROR, "Cannot create dmabuf input from socket %s", sockname);
+		return;
+	}
+
+	obs_enter_graphics();
+
+	const graphics_t *const graphics = gs_get_context();
+	const EGLDisplay edisp = graphics->device->plat->edisplay;
+	ctx->edisp = edisp;
+
+	// FIXME check for EGL_EXT_image_dma_buf_import
+	EGLAttrib eimg_attrs[] = {
+		EGL_WIDTH, ctx->data.width,
+		EGL_HEIGHT, ctx->data.height,
+		EGL_LINUX_DRM_FOURCC_EXT, ctx->data.fourcc,
+		EGL_DMA_BUF_PLANE0_FD_EXT, ctx->data.fd,
+		EGL_DMA_BUF_PLANE0_OFFSET_EXT, ctx->data.offset,
+		EGL_DMA_BUF_PLANE0_PITCH_EXT, ctx->data.pitch,
+		EGL_NONE
+	};
+
+	ctx->eimage = eglCreateImage(edisp, EGL_NO_CONTEXT, EGL_LINUX_DMA_BUF_EXT, 0,
+		eimg_attrs);
+
+	if (!ctx->eimage) {
+		// FIXME stringify error
+		blog(LOG_ERROR, "Cannot create EGLImage: %d", eglGetError());
+		dmabuf_source_close(ctx);
+		goto exit;
+	}
+
+	// FIXME handle fourcc?
+	ctx->texture = gs_texture_create(ctx->data.width, ctx->data.height,
+		GS_BGRA, 1, NULL, GS_DYNAMIC);
+	const GLuint gltex = *(GLuint*)gs_texture_get_obj(ctx->texture);
+	blog(LOG_DEBUG, "gltex = %x", gltex);
+	glBindTexture(GL_TEXTURE_2D, gltex);
+
+	glEGLImageTargetTexture2DOES(GL_TEXTURE_2D, ctx->eimage);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+exit:
+	obs_leave_graphics();
+	return;
+}
+
+void dmabuf_source_update(void *data, obs_data_t *settings)
+{
+	dmabuf_source_t *ctx = data;
+
+	dmabuf_source_close(ctx);
+	dmabuf_source_open(ctx, obs_data_get_string(settings, "sockpath"));
+}
+
 static void *dmabuf_source_create(obs_data_t *settings, obs_source_t *source)
 {
 	(void)settings;
@@ -131,84 +206,30 @@ static void *dmabuf_source_create(obs_data_t *settings, obs_source_t *source)
 		return NULL;
 	}
 
-	const PFNGLEGLIMAGETARGETTEXTURE2DOESPROC glEGLImageTargetTexture2DOES =
-		(PFNGLEGLIMAGETARGETTEXTURE2DOESPROC)eglGetProcAddress("glEGLImageTargetTexture2DOES");
+
 	if (!glEGLImageTargetTexture2DOES) {
-		blog(LOG_ERROR, "GL_OES_EGL_image extension is required");
-		return NULL;
+		glEGLImageTargetTexture2DOES =
+			(PFNGLEGLIMAGETARGETTEXTURE2DOESPROC)eglGetProcAddress(
+				"glEGLImageTargetTexture2DOES");
 	}
 
-	dmabuf_metadata_t metadata = {0};
-	if (!dmabuf_receive_socket("/home/steaream/tmp/drmsend.sock", &metadata)) {
-		blog(LOG_ERROR, "Cannot create dmabuf input");
+	if (!glEGLImageTargetTexture2DOES) {
+		blog(LOG_ERROR, "GL_OES_EGL_image extension is required");
 		return NULL;
 	}
 
 	dmabuf_source_t *ctx = bzalloc(sizeof(dmabuf_source_t));
 	ctx->source = source;
 
-	obs_enter_graphics();
-
-	const graphics_t *const graphics = gs_get_context();
-	const EGLDisplay edisp = graphics->device->plat->edisplay;
-
-	// FIXME check for EGL_EXT_image_dma_buf_import
-	EGLAttrib eimg_attrs[] = {
-		EGL_WIDTH, metadata.width,
-		EGL_HEIGHT, metadata.height,
-		EGL_LINUX_DRM_FOURCC_EXT, metadata.fourcc,
-		EGL_DMA_BUF_PLANE0_FD_EXT, metadata.fd,
-		EGL_DMA_BUF_PLANE0_OFFSET_EXT, metadata.offset,
-		EGL_DMA_BUF_PLANE0_PITCH_EXT, metadata.pitch,
-		EGL_NONE
-	};
-
-	ctx->eimage = eglCreateImage(edisp, EGL_NO_CONTEXT, EGL_LINUX_DMA_BUF_EXT, 0,
-		eimg_attrs);
-
-	if (!ctx->eimage) {
-		// FIXME stringify error
-		blog(LOG_ERROR, "Cannot create EGLImage: %d", eglGetError());
-		goto error;
-	}
-
-	// FIXME handle fourcc
-	ctx->texture = gs_texture_create(metadata.width, metadata.height,
-		GS_BGRA, 1, NULL, GS_DYNAMIC);
-	const GLuint gltex = *(GLuint*)gs_texture_get_obj(ctx->texture);
-	blog(LOG_INFO, "gltex = %x", gltex);
-	glBindTexture(GL_TEXTURE_2D, gltex);
-
-	glEGLImageTargetTexture2DOES(GL_TEXTURE_2D, ctx->eimage);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
-	memcpy(&ctx->data, &metadata, sizeof(metadata));
-	ctx->edisp = edisp;
-
-	obs_leave_graphics();
+	dmabuf_source_update(ctx, settings);
 	return ctx;
-
-error:
-	obs_leave_graphics();
-	if (ctx->eimage)
-		eglDestroyImage(edisp, ctx->eimage);
-	if (metadata.fd >= 0)
-		close(metadata.fd);
-	bfree(ctx);
-	return NULL;
 }
 
 static void dmabuf_source_destroy(void *data)
 {
-	const dmabuf_source_t *ctx = data;
-
+	dmabuf_source_t *ctx = data;
 	gs_texture_destroy(ctx->texture);
-
-	if (ctx->eimage)
-		eglDestroyImage(ctx->edisp, ctx->eimage);
-	if (ctx->data.fd >= 0)
-		close(ctx->data.fd);
+	dmabuf_source_close(ctx);
 	bfree(data);
 }
 
@@ -247,21 +268,34 @@ static uint32_t dmabuf_source_get_height(void *data)
 	return ctx->data.height;
 }
 
+static obs_properties_t *dmabuf_source_get_properties(void *data)
+{
+	(void)data;
+
+	obs_properties_t *props = obs_properties_create();
+	obs_properties_add_path(props,
+		"sockpath", "drmsend unix socket", OBS_PATH_FILE, "*.*", NULL);
+
+	return props;
+}
+
 struct obs_source_info dmabuf_source = {
 	.id = "dmabuf-source",
 	.type = OBS_SOURCE_TYPE_INPUT,
 	.get_name = dmabuf_source_get_name,
-	.output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_CUSTOM_DRAW,
+	.output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_CUSTOM_DRAW | OBS_SOURCE_DO_NOT_DUPLICATE,
 	.create = dmabuf_source_create,
 	.destroy = dmabuf_source_destroy,
 	.video_render = dmabuf_source_render,
 	.get_width = dmabuf_source_get_width,
 	.get_height = dmabuf_source_get_height,
+	.get_properties = dmabuf_source_get_properties,
+	.update = dmabuf_source_update,
 };
 
 MODULE_EXPORT const char *obs_module_description(void)
 {
-	return "DMA-BUF-based zero-copy video capture";
+	return "DMA-BUF-based zero-copy screen capture";
 }
 
 OBS_DECLARE_MODULE()
