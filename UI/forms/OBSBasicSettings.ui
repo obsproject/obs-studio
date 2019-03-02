@@ -5098,14 +5098,59 @@
  </widget>
  <tabstops>
   <tabstop>listWidget</tabstop>
+  <tabstop>scrollArea_2</tabstop>
+  <tabstop>language</tabstop>
+  <tabstop>theme</tabstop>
+  <tabstop>enableAutoUpdates</tabstop>
+  <tabstop>openStatsOnStartup</tabstop>
+  <tabstop>warnBeforeStreamStart</tabstop>
+  <tabstop>warnBeforeStreamStop</tabstop>
+  <tabstop>recordWhenStreaming</tabstop>
+  <tabstop>keepRecordStreamStops</tabstop>
+  <tabstop>replayWhileStreaming</tabstop>
+  <tabstop>keepReplayStreamStops</tabstop>
+  <tabstop>snappingEnabled</tabstop>
+  <tabstop>snapDistance</tabstop>
+  <tabstop>screenSnapping</tabstop>
+  <tabstop>sourceSnapping</tabstop>
+  <tabstop>centerSnapping</tabstop>
+  <tabstop>hideProjectorCursor</tabstop>
+  <tabstop>projectorAlwaysOnTop</tabstop>
+  <tabstop>saveProjectors</tabstop>
+  <tabstop>systemTrayEnabled</tabstop>
+  <tabstop>systemTrayWhenStarted</tabstop>
+  <tabstop>systemTrayAlways</tabstop>
+  <tabstop>overflowHide</tabstop>
+  <tabstop>overflowAlwaysVisible</tabstop>
+  <tabstop>overflowSelectionHide</tabstop>
+  <tabstop>doubleClickSwitch</tabstop>
+  <tabstop>studioPortraitLayout</tabstop>
+  <tabstop>multiviewMouseSwitch</tabstop>
+  <tabstop>multiviewDrawNames</tabstop>
+  <tabstop>multiviewDrawAreas</tabstop>
+  <tabstop>multiviewLayout</tabstop>
+  <tabstop>service</tabstop>
+  <tabstop>connectAccount</tabstop>
+  <tabstop>useStreamKey</tabstop>
+  <tabstop>server</tabstop>
+  <tabstop>customServer</tabstop>
+  <tabstop>key</tabstop>
+  <tabstop>show</tabstop>
+  <tabstop>connectAccount2</tabstop>
+  <tabstop>disconnectAccount</tabstop>
+  <tabstop>useAuth</tabstop>
+  <tabstop>authUsername</tabstop>
+  <tabstop>authPw</tabstop>
+  <tabstop>authPwShow</tabstop>
+  <tabstop>scrollArea_3</tabstop>
   <tabstop>outputMode</tabstop>
   <tabstop>simpleOutputVBitrate</tabstop>
+  <tabstop>simpleOutStrEncoder</tabstop>
   <tabstop>simpleOutputABitrate</tabstop>
   <tabstop>simpleOutAdvanced</tabstop>
+  <tabstop>simpleOutEnforce</tabstop>
   <tabstop>simpleOutPreset</tabstop>
   <tabstop>simpleOutCustom</tabstop>
-  <tabstop>simpleOutEnforce</tabstop>
-  <tabstop>simpleOutStrEncoder</tabstop>
   <tabstop>simpleOutputPath</tabstop>
   <tabstop>simpleOutputBrowse</tabstop>
   <tabstop>simpleNoSpace</tabstop>
@@ -5142,10 +5187,12 @@
   <tabstop>advOutRecUseRescale</tabstop>
   <tabstop>advOutRecRescale</tabstop>
   <tabstop>advOutMuxCustom</tabstop>
+  <tabstop>advOutFFType</tabstop>
   <tabstop>advOutFFRecPath</tabstop>
   <tabstop>advOutFFPathBrowse</tabstop>
-  <tabstop>advOutFFURL</tabstop>
+  <tabstop>advOutFFNoSpace</tabstop>
   <tabstop>advOutFFFormat</tabstop>
+  <tabstop>advOutFFMCfg</tabstop>
   <tabstop>advOutFFVBitrate</tabstop>
   <tabstop>advOutFFVGOPSize</tabstop>
   <tabstop>advOutFFUseRescale</tabstop>
@@ -5162,9 +5209,7 @@
   <tabstop>advOutFFTrack6</tabstop>
   <tabstop>advOutFFAEncoder</tabstop>
   <tabstop>advOutFFACfg</tabstop>
-  <tabstop>advOutFFType</tabstop>
-  <tabstop>advOutFFMCfg</tabstop>
-  <tabstop>advOutFFNoSpace</tabstop>
+  <tabstop>advOutFFURL</tabstop>
   <tabstop>advOutTrack1Bitrate</tabstop>
   <tabstop>advOutTrack1Name</tabstop>
   <tabstop>advOutTrack2Bitrate</tabstop>
@@ -5177,6 +5222,9 @@
   <tabstop>advOutTrack5Name</tabstop>
   <tabstop>advOutTrack6Bitrate</tabstop>
   <tabstop>advOutTrack6Name</tabstop>
+  <tabstop>advReplayBuf</tabstop>
+  <tabstop>advRBSecMax</tabstop>
+  <tabstop>advRBMegsMax</tabstop>
   <tabstop>sampleRate</tabstop>
   <tabstop>channelSetup</tabstop>
   <tabstop>desktopAudioDevice1</tabstop>
@@ -5184,6 +5232,9 @@
   <tabstop>auxAudioDevice1</tabstop>
   <tabstop>auxAudioDevice2</tabstop>
   <tabstop>auxAudioDevice3</tabstop>
+  <tabstop>auxAudioDevice4</tabstop>
+  <tabstop>meterDecayRate</tabstop>
+  <tabstop>peakMeterType</tabstop>
   <tabstop>audioSourceScrollArea</tabstop>
   <tabstop>baseResolution</tabstop>
   <tabstop>outputResolution</tabstop>
@@ -5203,8 +5254,10 @@
   <tabstop>disableOSXVSync</tabstop>
   <tabstop>resetOSXVSync</tabstop>
   <tabstop>monitoringDevice</tabstop>
+  <tabstop>disableAudioDucking</tabstop>
   <tabstop>filenameFormatting</tabstop>
   <tabstop>overwriteIfExists</tabstop>
+  <tabstop>autoRemux</tabstop>
   <tabstop>simpleRBPrefix</tabstop>
   <tabstop>simpleRBSuffix</tabstop>
   <tabstop>streamDelayEnable</tabstop>
@@ -5216,27 +5269,8 @@
   <tabstop>bindToIP</tabstop>
   <tabstop>enableNewSocketLoop</tabstop>
   <tabstop>enableLowLatencyMode</tabstop>
-  <tabstop>warnBeforeStreamStop</tabstop>
-  <tabstop>recordWhenStreaming</tabstop>
-  <tabstop>keepRecordStreamStops</tabstop>
-  <tabstop>replayWhileStreaming</tabstop>
-  <tabstop>keepReplayStreamStops</tabstop>
-  <tabstop>snappingEnabled</tabstop>
-  <tabstop>screenSnapping</tabstop>
-  <tabstop>centerSnapping</tabstop>
-  <tabstop>sourceSnapping</tabstop>
-  <tabstop>snapDistance</tabstop>
-  <tabstop>hideProjectorCursor</tabstop>
-  <tabstop>projectorAlwaysOnTop</tabstop>
-  <tabstop>saveProjectors</tabstop>
-  <tabstop>systemTrayEnabled</tabstop>
-  <tabstop>systemTrayWhenStarted</tabstop>
-  <tabstop>systemTrayAlways</tabstop>
-  <tabstop>enableAutoUpdates</tabstop>
-  <tabstop>warnBeforeStreamStart</tabstop>
-  <tabstop>scrollArea_2</tabstop>
-  <tabstop>language</tabstop>
-  <tabstop>theme</tabstop>
+  <tabstop>browserHWAccel</tabstop>
+  <tabstop>disableFocusHotkeys</tabstop>
  </tabstops>
  <resources>
   <include location="obs.qrc"/>
