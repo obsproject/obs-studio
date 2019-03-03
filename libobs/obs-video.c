@@ -440,12 +440,12 @@ static inline bool queue_frame(struct obs_core_video *video, bool raw_active,
 
 		tf.tex = tex;
 		tf.tex_uv = tex_uv;
-		tf.handle = gs_texture_get_shared_handle(tex);
 	}
 
 	tf.count = 1;
 	tf.timestamp = vframe_info->timestamp;
 	tf.released = true;
+	tf.handle = gs_texture_get_shared_handle(tf.tex);
 	gs_texture_release_sync(tf.tex, ++tf.lock_key);
 	circlebuf_push_back(&video->gpu_encoder_queue, &tf, sizeof(tf));
 
