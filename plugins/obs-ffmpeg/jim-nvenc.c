@@ -902,7 +902,7 @@ static bool nvenc_sei_data(void *data, uint8_t **sei, size_t *size)
 	}
 
 	*sei  = enc->sei;
-	*size = enc->header_size;
+	*size = enc->sei_size;
 	return true;
 }
 
