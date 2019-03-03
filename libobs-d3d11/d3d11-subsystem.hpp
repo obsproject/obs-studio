@@ -369,6 +369,7 @@ struct gs_texture_2d : gs_texture {
 	void InitResourceView();
 	void InitRenderTargets();
 	void BackupTexture(const uint8_t **data);
+	void GetSharedHandle(IDXGIResource *dxgi_res);
 
 	void RebuildSharedTextureFallback();
 	void Rebuild(ID3D11Device *dev);
