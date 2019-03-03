@@ -10,6 +10,7 @@
 #define DEACTIVATE_WNS  "deactivate_when_not_showing"
 #define AUTO_START      "auto_start"
 #define KEYER           "keyer"
+#define SWAP            "swap"
 
 #define TEXT_DEVICE                 obs_module_text("Device")
 #define TEXT_MODE                   obs_module_text("Mode")
@@ -32,3 +33,5 @@
 #define TEXT_DWNS                   obs_module_text("DeactivateWhenNotShowing")
 #define TEXT_AUTO_START             obs_module_text("AutoStart")
 #define TEXT_ENABLE_KEYER           obs_module_text("Keyer")
+#define TEXT_SWAP                   obs_module_text("SwapFC-LFE")
+#define TEXT_SWAP_TOOLTIP           obs_module_text("SwapFC-LFE.Tooltip")

@@ -70,8 +70,9 @@ static void decklink_update(void *data, obs_data_t *settings)
 	decklink->SetColorSpace(colorSpace);
 	decklink->SetColorRange(colorRange);
 	decklink->SetChannelFormat(channelFormat);
-	decklink->Activate(device, id);
 	decklink->hash = std::string(hash);
+	decklink->swap = obs_data_get_bool(settings, SWAP);
+	decklink->Activate(device, id);
 }
 
 static void decklink_show(void *data)
@@ -101,6 +102,7 @@ static void decklink_get_defaults(obs_data_t *settings)
 	obs_data_set_default_int(settings, COLOR_SPACE, VIDEO_CS_DEFAULT);
 	obs_data_set_default_int(settings, COLOR_RANGE, VIDEO_RANGE_DEFAULT);
 	obs_data_set_default_int(settings, CHANNEL_FORMAT, SPEAKERS_STEREO);
+	obs_data_set_default_bool(settings, SWAP, false);
 }
 
 static const char *decklink_get_name(void*)
@@ -259,6 +261,9 @@ static obs_properties_t *decklink_get_properties(void *data)
 			SPEAKERS_5POINT1);
 	obs_property_list_add_int(list, TEXT_CHANNEL_FORMAT_7_1CH,
 			SPEAKERS_7POINT1);
+
+	obs_property_t *swap = obs_properties_add_bool(props, SWAP, TEXT_SWAP);
+	obs_property_set_long_description(swap, TEXT_SWAP_TOOLTIP);
 
 	obs_properties_add_bool(props, BUFFERING, TEXT_BUFFERING);
 
