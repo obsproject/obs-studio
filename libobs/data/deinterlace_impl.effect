@@ -1,0 +1,222 @@
+#include "colorspace_helpers.effect"
+
+#ifdef MATRIX_FUNCTIONS
+#define CONVERT_TO_SRGB_FUNC convert_to_srgb_matrix
+#define LOAD_AT_PREV_FUNC load_at_prev_matrix
+#define LOAD_AT_IMAGE_FUNC load_at_image_matrix
+#define LOAD_AT_FUNC load_at_matrix
+#define TEXEL_AT_YADIF_FUNC texel_at_yadif_matrix
+#define TEXEL_AT_YADIF_2X_FUNC texel_at_yadif_2x_matrix
+#define TEXEL_AT_DISCARD_FUNC texel_at_discard_matrix
+#define TEXEL_AT_DISCARD_2X_FUNC texel_at_discard_2x_matrix
+#define TEXEL_AT_BLEND_FUNC texel_at_blend_matrix
+#define TEXEL_AT_BLEND_2X_FUNC texel_at_blend_2x_matrix
+#define TEXEL_AT_LINEAR_FUNC texel_at_linear_matrix
+#define TEXEL_AT_LINEAR_2X_FUNC texel_at_linear_2x_matrix
+#define TEXEL_AT_YADIF_DISCARD_FUNC texel_at_yadif_discard_matrix
+#define TEXEL_AT_YADIF_DISCARD_2X_FUNC texel_at_yadif_discard_2x_matrix
+#else
+#define CONVERT_TO_SRGB_FUNC convert_to_srgb
+#define LOAD_AT_PREV_FUNC load_at_prev
+#define LOAD_AT_IMAGE_FUNC load_at_image
+#define LOAD_AT_FUNC load_at
+#define TEXEL_AT_YADIF_FUNC texel_at_yadif
+#define TEXEL_AT_YADIF_2X_FUNC texel_at_yadif_2x
+#define TEXEL_AT_DISCARD_FUNC texel_at_discard
+#define TEXEL_AT_DISCARD_2X_FUNC texel_at_discard_2x
+#define TEXEL_AT_BLEND_FUNC texel_at_blend
+#define TEXEL_AT_BLEND_2X_FUNC texel_at_blend_2x
+#define TEXEL_AT_LINEAR_FUNC texel_at_linear
+#define TEXEL_AT_LINEAR_2X_FUNC texel_at_linear_2x
+#define TEXEL_AT_YADIF_DISCARD_FUNC texel_at_yadif_discard
+#define TEXEL_AT_YADIF_DISCARD_2X_FUNC texel_at_yadif_discard_2x
+#endif
+
+float4 CONVERT_TO_SRGB_FUNC(float4 sample, bool from601, bool from709)
+{
+#ifdef MATRIX_FUNCTIONS
+	const float3 yuv = clamp(sample.xyz, color_range_min, color_range_max);
+	sample = saturate(mul(float4(yuv, 1.0), color_matrix));
+#endif
+
+	if (from601)
+	{
+		sample = float4(Gamma601ToGammaSrgb(sample.rgb), sample.a);
+	}
+	else if (from709)
+	{
+		sample = float4(Gamma709ToGammaSrgb(sample.rgb), sample.a);
+	}
+
+	return sample;
+}
+
+float4 LOAD_AT_PREV_FUNC(int2 texel, int x, int y, bool from601, bool from709)
+{
+	return CONVERT_TO_SRGB_FUNC(previous_image.Load(select(texel, x, y)), from601, from709);
+}
+
+float4 LOAD_AT_IMAGE_FUNC(int2 texel, int x, int y, bool from601, bool from709)
+{
+	return CONVERT_TO_SRGB_FUNC(image.Load(select(texel, x, y)), from601, from709);
+}
+
+float4 LOAD_AT_FUNC(int2 texel, int x, int y, int field, bool from601, bool from709)
+{
+	if(field == 0)
+		return LOAD_AT_IMAGE_FUNC(texel, x, y, from601, from709);
+	else
+		return LOAD_AT_PREV_FUNC(texel, x, y, from601, from709);
+}
+
+#define YADIF_UPDATE(c, level) 	\
+	if(score.c < spatial_score.c) \
+	{ \
+		spatial_score.c = score.c; \
+		spatial_pred.c = (LOAD_AT_FUNC(texel, level, -1, field, from601, from709) + LOAD_AT_FUNC(texel, -level, 1, field, from601, from709)).c / 2; \
+
+#define YADIF_CHECK_ONE(level, c) \
+{ \
+	float4 score = abs(LOAD_AT_FUNC(texel, -1 + level, 1, field, from601, from709) - LOAD_AT_FUNC(texel, -1 - level, -1, field, from601, from709)) + \
+	               abs(LOAD_AT_FUNC(texel, level,      1, field, from601, from709) - LOAD_AT_FUNC(texel, -level,     -1, field, from601, from709)) + \
+	               abs(LOAD_AT_FUNC(texel, 1 + level,  1, field, from601, from709) - LOAD_AT_FUNC(texel, 1 - level,  -1, field, from601, from709)); \
+	YADIF_UPDATE(c, level) } \
+}
+
+#define YADIF_CHECK(level) \
+{ \
+	float4 score = abs(LOAD_AT_FUNC(texel, -1 + level, 1, field, from601, from709) - LOAD_AT_FUNC(texel, -1 - level, -1, field, from601, from709)) + \
+	               abs(LOAD_AT_FUNC(texel, level,      1, field, from601, from709) - LOAD_AT_FUNC(texel, -level,     -1, field, from601, from709)) + \
+	               abs(LOAD_AT_FUNC(texel, 1 + level,  1, field, from601, from709) - LOAD_AT_FUNC(texel, 1 - level,  -1, field, from601, from709)); \
+	YADIF_UPDATE(r, level) YADIF_CHECK_ONE(level * 2, r) } \
+	YADIF_UPDATE(g, level) YADIF_CHECK_ONE(level * 2, g) } \
+	YADIF_UPDATE(b, level) YADIF_CHECK_ONE(level * 2, b) } \
+	YADIF_UPDATE(a, level) YADIF_CHECK_ONE(level * 2, a) } \
+}
+
+float4 TEXEL_AT_YADIF_FUNC(int2 texel, int field, bool mode0, bool from601, bool from709)
+{
+	if((texel.y % 2) == field)
+		return LOAD_AT_FUNC(texel, 0, 0, field, from601, from709);
+
+	#define YADIF_AVG(x_off, y_off) ((LOAD_AT_PREV_FUNC(texel, x_off, y_off, from601, from709) + LOAD_AT_IMAGE_FUNC(texel, x_off, y_off, from601, from709))/2)
+	float4 c = LOAD_AT_FUNC(texel, 0, 1, field, from601, from709),
+	       d = YADIF_AVG(0, 0),
+	       e = LOAD_AT_FUNC(texel, 0, -1, field, from601, from709);
+
+	float4 temporal_diff0 = (abs(LOAD_AT_PREV_FUNC(texel,  0, 0, from601, from709)      -     LOAD_AT_IMAGE_FUNC(texel, 0,  0, from601, from709)))      / 2,
+	       temporal_diff1 = (abs(LOAD_AT_PREV_FUNC(texel,  0, 1, from601, from709) - c) + abs(LOAD_AT_PREV_FUNC(texel,  0, -1, from601, from709) - e)) / 2,
+	       temporal_diff2 = (abs(LOAD_AT_IMAGE_FUNC(texel, 0, 1, from601, from709) - c) + abs(LOAD_AT_IMAGE_FUNC(texel, 0, -1, from601, from709) - e)) / 2,
+	       diff = max(temporal_diff0, max(temporal_diff1, temporal_diff2));
+
+	float4 spatial_pred = (c + e) / 2,
+	       spatial_score = abs(LOAD_AT_FUNC(texel, -1, 1, field, from601, from709) - LOAD_AT_FUNC(texel, -1, -1, field, from601, from709)) +
+	                       abs(c - e) +
+	                       abs(LOAD_AT_FUNC(texel, 1,  1, field, from601, from709) - LOAD_AT_FUNC(texel, 1,  -1, field, from601, from709)) - 1;
+
+	YADIF_CHECK(-1)
+	YADIF_CHECK(1)
+
+	if (mode0) {
+		float4 b = YADIF_AVG(0, 2),
+		       f = YADIF_AVG(0, -2);
+
+		float4 max_ = max(d - e, max(d - c, min(b - c, f - e))),
+		       min_ = min(d - e, min(d - c, max(b - c, f - e)));
+
+		diff = max(diff, max(min_, -max_));
+	} else {
+		diff = max(diff, max(min(d - e, d - c), -max(d - e, d - c)));
+	}
+
+#define YADIF_SPATIAL(c) \
+{ \
+	if(spatial_pred.c > d.c + diff.c) \
+		spatial_pred.c = d.c + diff.c; \
+	else if(spatial_pred.c < d.c - diff.c) \
+		spatial_pred.c = d.c - diff.c; \
+}
+
+	YADIF_SPATIAL(r)
+	YADIF_SPATIAL(g)
+	YADIF_SPATIAL(b)
+	YADIF_SPATIAL(a)
+
+	return spatial_pred;
+}
+
+float4 TEXEL_AT_YADIF_2X_FUNC(int2 texel, int field, bool mode0, bool from601, bool from709)
+{
+	field = frame2 ? (1 - field) : field;
+	return TEXEL_AT_YADIF_FUNC(texel, field, mode0, from601, from709);
+}
+
+float4 TEXEL_AT_DISCARD_FUNC(int2 texel, int field, bool from601, bool from709)
+{
+	texel.y = texel.y / 2 * 2;
+	return LOAD_AT_IMAGE_FUNC(texel, 0, field, from601, from709);
+}
+
+float4 TEXEL_AT_DISCARD_2X_FUNC(int2 texel, int field, bool from601, bool from709)
+{
+	field = frame2 ? field : (1 - field);
+	return TEXEL_AT_DISCARD_FUNC(texel, field, from601, from709);
+}
+
+float4 TEXEL_AT_BLEND_FUNC(int2 texel, int field, bool from601, bool from709)
+{
+	return (LOAD_AT_IMAGE_FUNC(texel, 0, 0, from601, from709) + LOAD_AT_IMAGE_FUNC(texel, 0, 1, from601, from709)) / 2;
+}
+
+float4 TEXEL_AT_BLEND_2X_FUNC(int2 texel, int field, bool from601, bool from709)
+{
+	if (!frame2)
+		return (LOAD_AT_IMAGE_FUNC(texel, 0, 0, from601, from709) +
+		        LOAD_AT_PREV_FUNC(texel, 0, 1, from601, from709)) / 2;
+	else
+		return (LOAD_AT_IMAGE_FUNC(texel, 0, 0, from601, from709) +
+		        LOAD_AT_IMAGE_FUNC(texel, 0, 1, from601, from709)) / 2;
+}
+
+float4 TEXEL_AT_LINEAR_FUNC(int2 texel, int field, bool from601, bool from709)
+{
+	if ((texel.y % 2) == field)
+		return LOAD_AT_IMAGE_FUNC(texel, 0, 0, from601, from709);
+	return (LOAD_AT_IMAGE_FUNC(texel, 0, -1, from601, from709) + LOAD_AT_IMAGE_FUNC(texel, 0, 1, from601, from709)) / 2;
+}
+
+float4 TEXEL_AT_LINEAR_2X_FUNC(int2 texel, int field, bool from601, bool from709)
+{
+	field = frame2 ? field : (1 - field);
+	return TEXEL_AT_LINEAR_FUNC(texel, field, from601, from709);
+}
+
+float4 TEXEL_AT_YADIF_DISCARD_FUNC(int2 texel, int field, bool from601, bool from709)
+{
+	return (TEXEL_AT_YADIF_FUNC(texel, field, true, from601, from709) + TEXEL_AT_DISCARD_FUNC(texel, field, from601, from709)) / 2;
+}
+
+float4 TEXEL_AT_YADIF_DISCARD_2X_FUNC(int2 texel, int field, bool from601, bool from709)
+{
+	field = frame2 ? (1 - field) : field;
+	return (TEXEL_AT_YADIF_FUNC(texel, field, true, from601, from709) + TEXEL_AT_DISCARD_FUNC(texel, field, from601, from709)) / 2;
+}
+
+#undef CONVERT_TO_SRGB_FUNC
+#undef LOAD_AT_PREV_FUNC
+#undef LOAD_AT_IMAGE_FUNC
+#undef LOAD_AT_FUNC
+#undef YADIF_UPDATE
+#undef YADIF_CHECK_ONE
+#undef YADIF_CHECK
+#undef TEXEL_AT_YADIF_FUNC
+#undef YADIF_SPATIAL
+#undef TEXEL_AT_YADIF_2X_FUNC
+#undef TEXEL_AT_DISCARD_FUNC
+#undef TEXEL_AT_DISCARD_2X_FUNC
+#undef TEXEL_AT_BLEND_FUNC
+#undef TEXEL_AT_BLEND_2X_FUNC
+#undef TEXEL_AT_LINEAR_FUNC
+#undef TEXEL_AT_LINEAR_2X_FUNC
+#undef TEXEL_AT_YADIF_DISCARD_FUNC
+#undef TEXEL_AT_YADIF_DISCARD_2X_FUNC

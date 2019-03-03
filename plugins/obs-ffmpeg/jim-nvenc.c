@@ -415,11 +415,12 @@ static bool init_encoder(struct nvenc_data *enc, obs_data_t *settings)
 	config->frameIntervalP = 1 + bf;
 	h264_config->idrPeriod = gop_size;
 	vui_params->videoSignalTypePresentFlag = 1;
+	vui_params->videoFormat = 5; /* Unspecified */
 	vui_params->videoFullRangeFlag = (voi->range == VIDEO_RANGE_FULL);
 	vui_params->colourDescriptionPresentFlag = 1;
-	vui_params->colourMatrix = (voi->colorspace == VIDEO_CS_709) ? 1 : 5;
-	vui_params->colourPrimaries = 1;
-	vui_params->transferCharacteristics = 1;
+	vui_params->colourMatrix = (voi->colorspace == VIDEO_CS_709) ? 1 /* BT.709 */ : 6 /* BT.601 525 */;
+	vui_params->colourPrimaries = (voi->colorspace == VIDEO_CS_709) ? 1 /* BT.709 */ : 6 /* BT.601 525 */;
+	vui_params->transferCharacteristics = (voi->colorspace == VIDEO_CS_709) ? 1 /* BT.709 */ : 6 /* BT.601 */;
 
 	enc->bframes = bf > 0;
 

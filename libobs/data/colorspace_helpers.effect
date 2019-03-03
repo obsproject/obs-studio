@@ -1,0 +1,117 @@
+float GammaToLinearSrgbChannel(float channel)
+{
+	return (channel < 0.04045) ? (channel / 12.92) : pow((channel + 0.055) / 1.055, 2.4);
+}
+
+float3 GammaToLinearSrgb(float3 color)
+{
+	return float3(GammaToLinearSrgbChannel(color.r), GammaToLinearSrgbChannel(color.g), GammaToLinearSrgbChannel(color.b));
+}
+
+float LinearToGammaChannelSrgb(float channel)
+{
+	return (channel < 0.0031308) ? (12.92 * channel) : ((1.055 * pow(channel, 1.0 / 2.4)) - 0.055);
+}
+
+float3 LinearToGammaSrgb(float3 color)
+{
+	return float3(LinearToGammaChannelSrgb(color.r), LinearToGammaChannelSrgb(color.g), LinearToGammaChannelSrgb(color.b));
+}
+
+float GammaToLinear601709Channel(float channel)
+{
+	return (channel < 0.081) ? (channel / 4.5) : pow((channel + 0.099) / 1.099, 1.0 / 0.45);
+}
+
+float3 GammaToLinear601709(float3 color)
+{
+	return float3(GammaToLinear601709Channel(color.r), GammaToLinear601709Channel(color.g), GammaToLinear601709Channel(color.b));
+}
+
+float LinearToGammaChannel601709(float channel)
+{
+	return (channel < 0.018) ? (4.5 * channel) : ((1.099 * pow(channel, 0.45)) - 0.099);
+}
+
+float3 LinearToGamma601709(float3 color)
+{
+	return float3(LinearToGammaChannel601709(color.r), LinearToGammaChannel601709(color.g), LinearToGammaChannel601709(color.b));
+}
+
+float3 LinearSrgbToXyz(float3 color)
+{
+	float3x3 transform =
+	{
+		0.4124564, 0.2126729, 0.0193339,
+		0.3575761, 0.7151522, 0.1191920,
+		0.1804375, 0.0721750, 0.9503041,
+	};
+	return mul(color, transform);
+}
+
+float3 XyzToLinearSrgb(float3 color)
+{
+	float3x3 transform =
+	{
+		 3.2404542, -0.9692660,  0.0556434,
+		-1.5371385,  1.8760108, -0.2040259,
+		-0.4985314,  0.0415560,  1.0572252,
+	};
+	color = mul(color, transform);
+	return saturate(color);
+}
+
+float3 XyzToLinear601(float3 color)
+{
+	float3x3 transform =
+	{
+		 3.5053960, -1.0690722,  0.0563200,
+		-1.7394894,  1.9778245, -0.1970226,
+		-0.5439640,  0.0351722,  1.0502026,
+	};
+	color = mul(color, transform);
+	return saturate(color);
+}
+
+float3 Linear601ToXyz(float3 color)
+{
+	float3x3 transform =
+	{
+		0.3935891, 0.2124132, 0.0187423,
+		0.3652497, 0.7010437, 0.1119313,
+		0.1916313, 0.0865432, 0.9581563,
+	};
+	return mul(color, transform);
+}
+
+float3 GammaSrgbToGamma601(float3 gammaSrgb)
+{
+	const float3 linearSrgb = GammaToLinearSrgb(gammaSrgb);
+	const float3 xyz = LinearSrgbToXyz(linearSrgb);
+	const float3 linear601 = XyzToLinear601(xyz);
+	const float3 gamma601 = LinearToGamma601709(linearSrgb);
+	return gamma601;
+}
+
+float3 GammaSrgbToGamma709(float3 gammaSrgb)
+{
+	const float3 linear709 = GammaToLinearSrgb(gammaSrgb); // Linear 709/sRGB are identical.
+	const float3 gamma709 = LinearToGamma601709(linear709);
+	return gamma709;
+}
+
+float3 Gamma601ToGammaSrgb(float3 gamma601)
+{
+	const float3 linear601 = GammaToLinear601709(gamma601);
+	const float3 xyz = Linear601ToXyz(linear601);
+	const float3 linearSrgb = XyzToLinearSrgb(xyz);
+	const float3 gammaSrgb = LinearToGammaSrgb(linearSrgb);
+	return gammaSrgb;
+}
+
+float3 Gamma709ToGammaSrgb(float3 gamma709)
+{
+	const float3 linearSrgb = GammaToLinear601709(gamma709); // Linear 709/sRGB are identical.
+	const float3 gammaSrgb = LinearToGammaSrgb(linearSrgb);
+	return gammaSrgb;
+}

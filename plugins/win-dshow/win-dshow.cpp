@@ -1042,6 +1042,7 @@ inline bool DShowInput::Activate(obs_data_t *settings)
 	enum video_colorspace cs = GetColorSpace(settings);
 
 	video_range_type range = GetColorRange(settings);
+	frame.colorspace = cs;
 	frame.full_range = range == VIDEO_RANGE_FULL;
 
 	if (device.Start() != Result::Success)

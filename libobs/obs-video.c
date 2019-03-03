@@ -215,9 +215,13 @@ static inline void render_output_texture(struct obs_core_video *video,
 	gs_technique_t *tech;
 
 	if (video->ovi.output_format == VIDEO_FORMAT_RGBA) {
-		tech = gs_effect_get_technique(effect, "Draw");
+		tech = (video->ovi.colorspace == VIDEO_CS_709) ?
+			gs_effect_get_technique(effect, "DrawTo709") :
+			gs_effect_get_technique(effect, "DrawTo601");
 	} else {
-		tech = gs_effect_get_technique(effect, "DrawMatrix");
+		tech = (video->ovi.colorspace == VIDEO_CS_709) ?
+			gs_effect_get_technique(effect, "DrawMatrixTo709") :
+			gs_effect_get_technique(effect, "DrawMatrixTo601");
 	}
 
 	gs_eparam_t    *image   = gs_effect_get_param_by_name(effect, "image");

@@ -3,6 +3,8 @@
  * low resolution image below half size
  */
 
+#include "colorspace_helpers.effect"
+
 uniform float4x4 ViewProj;
 uniform texture2d image;
 uniform float4x4 color_matrix;
@@ -29,39 +31,62 @@ VertData VSDefault(VertData v_in)
 	return vert_out;
 }
 
-float4 pixel(float2 uv)
-{
-	return image.Sample(textureSampler, uv);
-}
-
-float4 DrawLowresBilinear(VertData v_in)
-{
-	float2 stepxy = base_dimension_i;
-	float4 out_color;
-
-	out_color  = pixel(v_in.uv);
-	out_color += pixel(v_in.uv + float2(-stepxy.x, -stepxy.y));
-	out_color += pixel(v_in.uv + float2(-stepxy.x,       0.0));
-	out_color += pixel(v_in.uv + float2(-stepxy.x,  stepxy.y));
-	out_color += pixel(v_in.uv + float2(      0.0, -stepxy.y));
-	out_color += pixel(v_in.uv + float2(      0.0,  stepxy.y));
-	out_color += pixel(v_in.uv + float2( stepxy.x, -stepxy.y));
-	out_color += pixel(v_in.uv + float2( stepxy.x,       0.0));
-	out_color += pixel(v_in.uv + float2( stepxy.x,  stepxy.y));
-	return out_color / float4(9.0, 9.0, 9.0, 9.0);
-}
+#include "bilinear_lowres_scale_impl.effect"
+#define MATRIX_FUNCTIONS 1
+#include "bilinear_lowres_scale_impl.effect"
+#undef MATRIX_FUNCTIONS
 
 float4 PSDrawLowresBilinearRGBA(VertData v_in) : TARGET
 {
-	return DrawLowresBilinear(v_in);
+	return DrawLowresBilinear(v_in, false, false);
 }
 
-float4 PSDrawLowresBilinearMatrix(VertData v_in) : TARGET
+float4 PSDrawLowresBilinearRGBAFrom601(VertData v_in) : TARGET
 {
-	float4 yuv = DrawLowresBilinear(v_in);
+	return DrawLowresBilinear(v_in, true, false);
+}
 
-	yuv.xyz = clamp(yuv.xyz, color_range_min, color_range_max);
-	return saturate(mul(float4(yuv.xyz, 1.0), color_matrix));
+float4 PSDrawLowresBilinearRGBATo601(VertData v_in) : TARGET
+{
+	const float4 color = DrawLowresBilinear(v_in, false, false);
+	return float4(GammaSrgbToGamma601(color.rgb), color.a);
+}
+
+float4 PSDrawLowresBilinearRGBAFrom709(VertData v_in) : TARGET
+{
+	return DrawLowresBilinear(v_in, false, true);
+}
+
+float4 PSDrawLowresBilinearRGBATo709(VertData v_in) : TARGET
+{
+	const float4 color = DrawLowresBilinear(v_in, false, false);
+	return float4(GammaSrgbToGamma709(color.rgb), color.a);
+}
+
+float4 PSDrawLowresBilinearMatrixFrom601(VertData v_in) : TARGET
+{
+	return DrawLowresBilinearMatrix(v_in, true, false);
+}
+
+float4 PSDrawLowresBilinearMatrixTo601(VertData v_in) : TARGET
+{
+	const float4 sample = DrawLowresBilinear(v_in, false, false);
+	const float3 color = GammaSrgbToGamma601(sample.rgb);
+	const float3 clampedColor = clamp(color, color_range_min, color_range_max);
+	return saturate(mul(float4(clampedColor, 1.0), color_matrix));
+}
+
+float4 PSDrawLowresBilinearMatrixFrom709(VertData v_in) : TARGET
+{
+	return DrawLowresBilinearMatrix(v_in, false, true);
+}
+
+float4 PSDrawLowresBilinearMatrixTo709(VertData v_in) : TARGET
+{
+	const float4 sample = DrawLowresBilinear(v_in, false, false);
+	const float3 color = GammaSrgbToGamma709(sample.rgb);
+	const float3 clampedColor = clamp(color, color_range_min, color_range_max);
+	return saturate(mul(float4(clampedColor, 1.0), color_matrix));
 }
 
 technique Draw
@@ -73,12 +98,74 @@ technique Draw
 	}
 }
 
-technique DrawMatrix
+technique DrawFrom601
 {
 	pass
 	{
 		vertex_shader = VSDefault(v_in);
-		pixel_shader  = PSDrawLowresBilinearMatrix(v_in);
+		pixel_shader  = PSDrawLowresBilinearRGBAFrom601(v_in);
 	}
 }
 
+technique DrawTo601
+{
+	pass
+	{
+		vertex_shader = VSDefault(v_in);
+		pixel_shader  = PSDrawLowresBilinearRGBATo601(v_in);
+	}
+}
+
+technique DrawFrom709
+{
+	pass
+	{
+		vertex_shader = VSDefault(v_in);
+		pixel_shader  = PSDrawLowresBilinearRGBAFrom709(v_in);
+	}
+}
+
+technique DrawTo709
+{
+	pass
+	{
+		vertex_shader = VSDefault(v_in);
+		pixel_shader  = PSDrawLowresBilinearRGBATo709(v_in);
+	}
+}
+
+technique DrawMatrixFrom601
+{
+	pass
+	{
+		vertex_shader = VSDefault(v_in);
+		pixel_shader  = PSDrawLowresBilinearMatrixFrom601(v_in);
+	}
+}
+
+technique DrawMatrixTo601
+{
+	pass
+	{
+		vertex_shader = VSDefault(v_in);
+		pixel_shader  = PSDrawLowresBilinearMatrixTo601(v_in);
+	}
+}
+
+technique DrawMatrixFrom709
+{
+	pass
+	{
+		vertex_shader = VSDefault(v_in);
+		pixel_shader  = PSDrawLowresBilinearMatrixFrom709(v_in);
+	}
+}
+
+technique DrawMatrixTo709
+{
+	pass
+	{
+		vertex_shader = VSDefault(v_in);
+		pixel_shader  = PSDrawLowresBilinearMatrixTo709(v_in);
+	}
+}

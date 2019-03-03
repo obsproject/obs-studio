@@ -1,3 +1,5 @@
+#include "colorspace_helpers.effect"
+
 uniform float4x4 ViewProj;
 uniform float4x4 color_matrix;
 uniform float3 color_range_min = {0.0, 0.0, 0.0};
@@ -16,6 +18,18 @@ struct VertInOut {
 	float2 uv  : TEXCOORD0;
 };
 
+float4 GetColorBare(VertInOut vert_in)
+{
+	return image.Sample(def_sampler, vert_in.uv);
+}
+
+float4 GetYuvAsRgb(VertInOut vert_in)
+{
+	float4 yuv = image.Sample(def_sampler, vert_in.uv);
+	yuv.xyz = clamp(yuv.xyz, color_range_min, color_range_max);
+	return saturate(mul(float4(yuv.xyz, 1.0), color_matrix));
+}
+
 VertInOut VSDefault(VertInOut vert_in)
 {
 	VertInOut vert_out;
@@ -26,14 +40,64 @@ VertInOut VSDefault(VertInOut vert_in)
 
 float4 PSDrawBare(VertInOut vert_in) : TARGET
 {
-	return image.Sample(def_sampler, vert_in.uv);
+	return GetColorBare(vert_in);
+}
+
+float4 PSDrawBareFrom601(VertInOut vert_in) : TARGET
+{
+	const float4 color = GetColorBare(vert_in);
+	return float4(Gamma601ToGammaSrgb(color.rgb), color.a);
+}
+
+float4 PSDrawBareTo601(VertInOut vert_in) : TARGET
+{
+	const float4 color = GetColorBare(vert_in);
+	return float4(GammaSrgbToGamma601(color.rgb), color.a);
+}
+
+float4 PSDrawBareFrom709(VertInOut vert_in) : TARGET
+{
+	const float4 color = GetColorBare(vert_in);
+	return float4(Gamma709ToGammaSrgb(color.rgb), color.a);
+}
+
+float4 PSDrawBareTo709(VertInOut vert_in) : TARGET
+{
+	const float4 color = GetColorBare(vert_in);
+	return float4(GammaSrgbToGamma709(color.rgb), color.a);
 }
 
 float4 PSDrawMatrix(VertInOut vert_in) : TARGET
 {
-	float4 yuv = image.Sample(def_sampler, vert_in.uv);
-	yuv.xyz = clamp(yuv.xyz, color_range_min, color_range_max);
-	return saturate(mul(float4(yuv.xyz, 1.0), color_matrix));
+	return GetYuvAsRgb(vert_in);
+}
+
+float4 PSDrawMatrixFrom601(VertInOut vert_in) : TARGET
+{
+	const float4 color = GetYuvAsRgb(vert_in);
+	return float4(Gamma601ToGammaSrgb(color.rgb), color.a);
+}
+
+float4 PSDrawMatrixTo601(VertInOut vert_in) : TARGET
+{
+	const float4 sample = image.Sample(def_sampler, vert_in.uv);
+	const float3 color = GammaSrgbToGamma601(sample.rgb);
+	const float3 clampedColor = clamp(color, color_range_min, color_range_max);
+	return saturate(mul(float4(clampedColor, 1.0), color_matrix));
+}
+
+float4 PSDrawMatrixFrom709(VertInOut vert_in) : TARGET
+{
+	const float4 color = GetYuvAsRgb(vert_in);
+	return float4(Gamma709ToGammaSrgb(color.rgb), color.a);
+}
+
+float4 PSDrawMatrixTo709(VertInOut vert_in) : TARGET
+{
+	const float4 sample = image.Sample(def_sampler, vert_in.uv);
+	const float3 color = GammaSrgbToGamma709(sample.rgb);
+	const float3 clampedColor = clamp(color, color_range_min, color_range_max);
+	return saturate(mul(float4(clampedColor, 1.0), color_matrix));
 }
 
 technique Draw
@@ -45,11 +109,74 @@ technique Draw
 	}
 }
 
-technique DrawMatrix
+technique DrawFrom601
 {
 	pass
 	{
 		vertex_shader = VSDefault(vert_in);
-		pixel_shader  = PSDrawMatrix(vert_in);
+		pixel_shader  = PSDrawBareFrom601(vert_in);
+	}
+}
+
+technique DrawTo601
+{
+	pass
+	{
+		vertex_shader = VSDefault(vert_in);
+		pixel_shader  = PSDrawBareTo601(vert_in);
+	}
+}
+
+technique DrawFrom709
+{
+	pass
+	{
+		vertex_shader = VSDefault(vert_in);
+		pixel_shader  = PSDrawBareFrom709(vert_in);
+	}
+}
+
+technique DrawTo709
+{
+	pass
+	{
+		vertex_shader = VSDefault(vert_in);
+		pixel_shader  = PSDrawBareTo709(vert_in);
+	}
+}
+
+technique DrawMatrixFrom601
+{
+	pass
+	{
+		vertex_shader = VSDefault(vert_in);
+		pixel_shader  = PSDrawMatrixFrom601(vert_in);
+	}
+}
+
+technique DrawMatrixTo601
+{
+	pass
+	{
+		vertex_shader = VSDefault(vert_in);
+		pixel_shader  = PSDrawMatrixTo601(vert_in);
+	}
+}
+
+technique DrawMatrixFrom709
+{
+	pass
+	{
+		vertex_shader = VSDefault(vert_in);
+		pixel_shader  = PSDrawMatrixFrom709(vert_in);
+	}
+}
+
+technique DrawMatrixTo709
+{
+	pass
+	{
+		vertex_shader = VSDefault(vert_in);
+		pixel_shader  = PSDrawMatrixTo709(vert_in);
 	}
 }

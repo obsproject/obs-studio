@@ -643,6 +643,7 @@ struct obs_source {
 	bool                            async_gpu_conversion;
 	enum video_format               async_format;
 	enum video_format               async_cache_format;
+	enum video_colorspace           async_colorspace;
 	enum gs_color_format            async_texture_format;
 	float                           async_color_matrix[16];
 	bool                            async_full_range;

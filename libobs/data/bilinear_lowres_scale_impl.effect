@@ -1,0 +1,48 @@
+#ifdef MATRIX_FUNCTIONS
+#define PIXEL_FUNC pixel_matrix
+#define DRAW_LOWRES_BILINEAR_FUNC DrawLowresBilinearMatrix
+#else
+#define PIXEL_FUNC pixel
+#define DRAW_LOWRES_BILINEAR_FUNC DrawLowresBilinear
+#endif
+
+float4 PIXEL_FUNC(float2 uv, bool from601, bool from709)
+{
+	float4 sample = image.Sample(textureSampler, uv);
+
+#ifdef MATRIX_FUNCTIONS
+	const float3 yuv = clamp(sample.xyz, color_range_min, color_range_max);
+	sample = saturate(mul(float4(yuv, 1.0), color_matrix));
+#endif
+
+	if (from601)
+	{
+		sample = float4(Gamma601ToGammaSrgb(sample.rgb), sample.a);
+	}
+	else if (from709)
+	{
+		sample = float4(Gamma709ToGammaSrgb(sample.rgb), sample.a);
+	}
+
+	return sample;
+}
+
+float4 DRAW_LOWRES_BILINEAR_FUNC(VertData v_in, bool from601, bool from709)
+{
+	float2 stepxy = base_dimension_i;
+	float4 out_color;
+
+	out_color  = PIXEL_FUNC(v_in.uv, from601, from709);
+	out_color += PIXEL_FUNC(v_in.uv + float2(-stepxy.x, -stepxy.y), from601, from709);
+	out_color += PIXEL_FUNC(v_in.uv + float2(-stepxy.x,       0.0), from601, from709);
+	out_color += PIXEL_FUNC(v_in.uv + float2(-stepxy.x,  stepxy.y), from601, from709);
+	out_color += PIXEL_FUNC(v_in.uv + float2(      0.0, -stepxy.y), from601, from709);
+	out_color += PIXEL_FUNC(v_in.uv + float2(      0.0,  stepxy.y), from601, from709);
+	out_color += PIXEL_FUNC(v_in.uv + float2( stepxy.x, -stepxy.y), from601, from709);
+	out_color += PIXEL_FUNC(v_in.uv + float2( stepxy.x,       0.0), from601, from709);
+	out_color += PIXEL_FUNC(v_in.uv + float2( stepxy.x,  stepxy.y), from601, from709);
+	return out_color / float4(9.0, 9.0, 9.0, 9.0);
+}
+
+#undef PIXEL_FUNC
+#undef DRAW_LOWRES_BILINEAR_FUNC

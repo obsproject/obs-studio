@@ -1597,6 +1597,7 @@ bool update_async_texture(struct obs_source *source,
 	uint8_t           *ptr;
 	uint32_t          linesize;
 
+	source->async_colorspace = frame->colorspace;
 	source->async_flip       = frame->flip;
 	source->async_full_range = frame->full_range;
 	memcpy(source->async_color_matrix, frame->color_matrix,
@@ -1678,7 +1679,7 @@ static void obs_source_draw_async_texture(struct obs_source *source)
 	gs_effect_t    *effect        = gs_get_effect();
 	bool           yuv           = format_is_yuv(source->async_format);
 	bool           limited_range = yuv && !source->async_full_range;
-	const char     *type         = yuv ? "DrawMatrix" : "Draw";
+	const char     *type         = (source->async_colorspace == VIDEO_CS_709) ? (yuv ? "DrawMatrixFrom709" : "DrawFrom709") : (yuv ? "DrawMatrixFrom601" : "DrawFrom601");
 	bool           def_draw      = (!effect);
 	gs_technique_t *tech          = NULL;
 

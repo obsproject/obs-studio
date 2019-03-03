@@ -233,6 +233,7 @@ bool ffmpeg_decode_video(struct ffmpeg_decode *decode,
 		enum video_range_type range;
 
 		frame->format = new_format;
+		frame->colorspace = VIDEO_CS_601;
 		frame->full_range =
 			decode->frame->color_range == AVCOL_RANGE_JPEG;
 

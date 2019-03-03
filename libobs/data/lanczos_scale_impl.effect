@@ -1,0 +1,81 @@
+#ifdef MATRIX_FUNCTIONS
+#define PIXEL_FUNC pixel_matrix
+#define GET_LINE_FUNC get_line_matrix
+#define DRAW_LANCZOS_FUNC draw_lanczos_matrix
+#else
+#define PIXEL_FUNC pixel
+#define GET_LINE_FUNC get_line
+#define DRAW_LANCZOS_FUNC draw_lanczos
+#endif
+
+float4 PIXEL_FUNC(float xpos, float ypos, bool undistort, bool from601, bool from709)
+{
+	float4 sample = undistort ?
+		image.Sample(textureSampler, pixel_coord(xpos, ypos)) :
+		image.Sample(textureSampler, float2(xpos, ypos));
+
+#ifdef MATRIX_FUNCTIONS
+	const float3 yuv = clamp(sample.xyz, color_range_min, color_range_max);
+	sample = saturate(mul(float4(yuv, 1.0), color_matrix));
+#endif
+
+	if (from601)
+	{
+		sample = float4(Gamma601ToGammaSrgb(sample.rgb), sample.a);
+	}
+	else if (from709)
+	{
+		sample = float4(Gamma709ToGammaSrgb(sample.rgb), sample.a);
+	}
+
+	return sample;
+}
+
+float4 GET_LINE_FUNC(float ypos, float3 xpos1, float3 xpos2, float3 rowtap1,
+		float3 rowtap2, bool undistort, bool from601, bool from709)
+{
+	return
+		PIXEL_FUNC(xpos1.r, ypos, undistort, from601, from709) * rowtap1.r +
+		PIXEL_FUNC(xpos1.g, ypos, undistort, from601, from709) * rowtap2.r +
+		PIXEL_FUNC(xpos1.b, ypos, undistort, from601, from709) * rowtap1.g +
+		PIXEL_FUNC(xpos2.r, ypos, undistort, from601, from709) * rowtap2.g +
+		PIXEL_FUNC(xpos2.g, ypos, undistort, from601, from709) * rowtap1.b +
+		PIXEL_FUNC(xpos2.b, ypos, undistort, from601, from709) * rowtap2.b;
+}
+
+float4 DRAW_LANCZOS_FUNC(FragData v_in, bool undistort, bool from601, bool from709)
+{
+	float2 stepxy = base_dimension_i;
+	float2 pos = v_in.uv + stepxy * 0.5;
+	float2 f = frac(pos / stepxy);
+
+	float3 rowtap1 = weight3((1.0 - f.x) / 2.0,       v_in.scale.x);
+	float3 rowtap2 = weight3((1.0 - f.x) / 2.0 + 0.5, v_in.scale.x);
+	float3 coltap1 = weight3((1.0 - f.y) / 2.0,       v_in.scale.y);
+	float3 coltap2 = weight3((1.0 - f.y) / 2.0 + 0.5, v_in.scale.y);
+
+	/* make sure all taps added together is exactly 1.0, otherwise some
+         * (very small) distortion can occur */
+	float suml = rowtap1.r + rowtap1.g + rowtap1.b + rowtap2.r + rowtap2.g + rowtap2.b;
+	float sumc = coltap1.r + coltap1.g + coltap1.b + coltap2.r + coltap2.g + coltap2.b;
+	rowtap1 /= suml;
+	rowtap2 /= suml;
+	coltap1 /= sumc;
+	coltap2 /= sumc;
+
+	float2 xystart = (-2.5 - f) * stepxy + pos;
+	float3 xpos1 = float3(xystart.x                 , xystart.x + stepxy.x      , xystart.x + stepxy.x * 2.0);
+	float3 xpos2 = float3(xystart.x + stepxy.x * 3.0, xystart.x + stepxy.x * 4.0, xystart.x + stepxy.x * 5.0);
+
+	return
+		GET_LINE_FUNC(xystart.y                 , xpos1, xpos2, rowtap1, rowtap2, undistort, from601, from709) * coltap1.r +
+		GET_LINE_FUNC(xystart.y + stepxy.y      , xpos1, xpos2, rowtap1, rowtap2, undistort, from601, from709) * coltap2.r +
+		GET_LINE_FUNC(xystart.y + stepxy.y * 2.0, xpos1, xpos2, rowtap1, rowtap2, undistort, from601, from709) * coltap1.g +
+		GET_LINE_FUNC(xystart.y + stepxy.y * 3.0, xpos1, xpos2, rowtap1, rowtap2, undistort, from601, from709) * coltap2.g +
+		GET_LINE_FUNC(xystart.y + stepxy.y * 4.0, xpos1, xpos2, rowtap1, rowtap2, undistort, from601, from709) * coltap1.b +
+		GET_LINE_FUNC(xystart.y + stepxy.y * 5.0, xpos1, xpos2, rowtap1, rowtap2, undistort, from601, from709) * coltap2.b;
+}
+
+#undef PIXEL_FUNC
+#undef GET_LINE_FUNC
+#undef DRAW_LANCZOS_FUNC

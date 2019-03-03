@@ -228,6 +228,7 @@ struct obs_source_frame {
 	uint64_t            timestamp;
 
 	enum video_format   format;
+	enum video_colorspace colorspace;
 	float               color_matrix[16];
 	bool                full_range;
 	float               color_range_min[3];

@@ -317,7 +317,7 @@ void deinterlace_render(obs_source_t *s)
 	struct vec2 size = {(float)s->async_width, (float)s->async_height};
 	bool yuv = format_is_yuv(s->async_format);
 	bool limited_range = yuv && !s->async_full_range;
-	const char *tech = yuv ? "DrawMatrix" : "Draw";
+	const char *tech = (s->async_colorspace == VIDEO_CS_709) ? (yuv ? "DrawMatrixFrom709" : "DrawFrom709") : (yuv ? "DrawMatrixFrom601" : "DrawFrom601");
 
 	gs_texture_t *cur_tex = s->async_texrender ?
 		gs_texrender_get_texture(s->async_texrender) :

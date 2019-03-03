@@ -201,7 +201,7 @@ static bool nvenc_update(void *data, obs_data_t *settings)
 	enc->context->time_base = (AVRational){voi->fps_den, voi->fps_num};
 	enc->context->pix_fmt = obs_to_ffmpeg_video_format(info.format);
 	enc->context->colorspace = info.colorspace == VIDEO_CS_709 ?
-		AVCOL_SPC_BT709 : AVCOL_SPC_BT470BG;
+		AVCOL_SPC_BT709 : AVCOL_SPC_SMPTE170M;
 	enc->context->color_range = info.range == VIDEO_RANGE_FULL ?
 		AVCOL_RANGE_JPEG : AVCOL_RANGE_MPEG;
 	enc->context->max_b_frames = bf;

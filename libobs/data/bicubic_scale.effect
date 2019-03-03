@@ -4,6 +4,8 @@
  * there.
  */
 
+#include "colorspace_helpers.effect"
+
 uniform float4x4 ViewProj;
 uniform texture2d image;
 uniform float4x4 color_matrix;
@@ -81,64 +83,62 @@ float2 pixel_coord(float xpos, float ypos)
 	return float2(AspectUndistortU(xpos), ypos);
 }
 
-float4 pixel(float xpos, float ypos, bool undistort)
-{
-	if (undistort)
-		return image.Sample(textureSampler, pixel_coord(xpos, ypos));
-	else
-		return image.Sample(textureSampler, float2(xpos, ypos));
-}
-
-float4 get_line(float ypos, float4 xpos, float4 linetaps, bool undistort)
-{
-	return
-		pixel(xpos.r, ypos, undistort) * linetaps.r +
-		pixel(xpos.g, ypos, undistort) * linetaps.g +
-		pixel(xpos.b, ypos, undistort) * linetaps.b +
-		pixel(xpos.a, ypos, undistort) * linetaps.a;
-}
-
-float4 DrawBicubic(VertData v_in, bool undistort)
-{
-	float2 stepxy = base_dimension_i;
-	float2 pos = v_in.uv + stepxy * 0.5;
-	float2 f = frac(pos / stepxy);
-
-	float4 rowtaps = weight4(1.0 - f.x);
-	float4 coltaps = weight4(1.0 - f.y);
-
-	/* make sure all taps added together is exactly 1.0, otherwise some
- 	 * (very small) distortion can occur */
-	rowtaps /= rowtaps.r + rowtaps.g + rowtaps.b + rowtaps.a;
-	coltaps /= coltaps.r + coltaps.g + coltaps.b + coltaps.a;
-
-	float2 xystart = (-1.5 - f) * stepxy + pos;
-	float4 xpos = float4(
-		xystart.x,
-		xystart.x + stepxy.x,
-		xystart.x + stepxy.x * 2.0,
-		xystart.x + stepxy.x * 3.0
-	);
-
-	return
-		get_line(xystart.y                 , xpos, rowtaps, undistort) * coltaps.r +
-		get_line(xystart.y + stepxy.y      , xpos, rowtaps, undistort) * coltaps.g +
-		get_line(xystart.y + stepxy.y * 2.0, xpos, rowtaps, undistort) * coltaps.b +
-		get_line(xystart.y + stepxy.y * 3.0, xpos, rowtaps, undistort) * coltaps.a;
-}
+#include "bicubic_scale_impl.effect"
+#define MATRIX_FUNCTIONS 1
+#include "bicubic_scale_impl.effect"
+#undef MATRIX_FUNCTIONS
 
 float4 PSDrawBicubicRGBA(VertData v_in, bool undistort) : TARGET
 {
-	return DrawBicubic(v_in, undistort);
+	return DrawBicubic(v_in, undistort, false, false);
 }
 
-float4 PSDrawBicubicMatrix(VertData v_in) : TARGET
+float4 PSDrawBicubicRGBAFrom601(VertData v_in, bool undistort) : TARGET
 {
-	float4 rgba = DrawBicubic(v_in, false);
-	float4 yuv;
+	return DrawBicubic(v_in, false, true, false);
+}
 
-	yuv.xyz = clamp(rgba.xyz, color_range_min, color_range_max);
-	return saturate(mul(float4(yuv.xyz, 1.0), color_matrix));
+float4 PSDrawBicubicRGBATo601(VertData v_in, bool undistort) : TARGET
+{
+	const float4 color = DrawBicubic(v_in, false, false, false);
+	return float4(GammaSrgbToGamma601(color.rgb), color.a);
+}
+
+float4 PSDrawBicubicRGBAFrom709(VertData v_in, bool undistort) : TARGET
+{
+	return DrawBicubic(v_in, false, false, true);
+}
+
+float4 PSDrawBicubicRGBATo709(VertData v_in, bool undistort) : TARGET
+{
+	const float4 color = DrawBicubic(v_in, false, false, false);
+	return float4(GammaSrgbToGamma709(color.rgb), color.a);
+}
+
+float4 PSDrawBicubicMatrixFrom601(VertData v_in) : TARGET
+{
+	return DrawBicubicMatrix(v_in, false, true, false);
+}
+
+float4 PSDrawBicubicMatrixTo601(VertData v_in) : TARGET
+{
+	const float4 sample = DrawBicubic(v_in, false, false, false);
+	const float3 color = GammaSrgbToGamma601(sample.rgb);
+	const float3 clampedColor = clamp(color, color_range_min, color_range_max);
+	return saturate(mul(float4(clampedColor, 1.0), color_matrix));
+}
+
+float4 PSDrawBicubicMatrixFrom709(VertData v_in) : TARGET
+{
+	return DrawBicubicMatrix(v_in, false, false, true);
+}
+
+float4 PSDrawBicubicMatrixTo709(VertData v_in) : TARGET
+{
+	const float4 sample = DrawBicubic(v_in, false, false, false);
+	const float3 color = GammaSrgbToGamma709(sample.rgb);
+	const float3 clampedColor = clamp(color, color_range_min, color_range_max);
+	return saturate(mul(float4(clampedColor, 1.0), color_matrix));
 }
 
 technique Draw
@@ -147,6 +147,42 @@ technique Draw
 	{
 		vertex_shader = VSDefault(v_in);
 		pixel_shader  = PSDrawBicubicRGBA(v_in, false);
+	}
+}
+
+technique DrawFrom601
+{
+	pass
+	{
+		vertex_shader = VSDefault(v_in);
+		pixel_shader  = PSDrawBicubicRGBAFrom601(v_in, false);
+	}
+}
+
+technique DrawTo601
+{
+	pass
+	{
+		vertex_shader = VSDefault(v_in);
+		pixel_shader  = PSDrawBicubicRGBATo601(v_in, false);
+	}
+}
+
+technique DrawFrom709
+{
+	pass
+	{
+		vertex_shader = VSDefault(v_in);
+		pixel_shader  = PSDrawBicubicRGBAFrom709(v_in, false);
+	}
+}
+
+technique DrawTo709
+{
+	pass
+	{
+		vertex_shader = VSDefault(v_in);
+		pixel_shader  = PSDrawBicubicRGBATo709(v_in, false);
 	}
 }
 
@@ -159,11 +195,38 @@ technique DrawUndistort
 	}
 }
 
-technique DrawMatrix
+technique DrawMatrixFrom601
 {
 	pass
 	{
 		vertex_shader = VSDefault(v_in);
-		pixel_shader  = PSDrawBicubicMatrix(v_in);
+		pixel_shader  = PSDrawBicubicMatrixFrom601(v_in);
+	}
+}
+
+technique DrawMatrixTo601
+{
+	pass
+	{
+		vertex_shader = VSDefault(v_in);
+		pixel_shader  = PSDrawBicubicMatrixTo601(v_in);
+	}
+}
+
+technique DrawMatrixFrom709
+{
+	pass
+	{
+		vertex_shader = VSDefault(v_in);
+		pixel_shader  = PSDrawBicubicMatrixFrom709(v_in);
+	}
+}
+
+technique DrawMatrixTo709
+{
+	pass
+	{
+		vertex_shader = VSDefault(v_in);
+		pixel_shader  = PSDrawBicubicMatrixTo709(v_in);
 	}
 }

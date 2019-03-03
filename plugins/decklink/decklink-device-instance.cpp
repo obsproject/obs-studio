@@ -176,6 +176,7 @@ void DeckLinkDeviceInstance::SetupVideoFormat(DeckLinkDeviceMode *mode_)
 	}
 
 	colorRange = static_cast<DeckLinkInput*>(decklink)->GetColorRange();
+	currentFrame.colorspace = activeColorSpace;
 	currentFrame.full_range = colorRange == VIDEO_RANGE_FULL;
 
 	video_format_get_parameters(activeColorSpace, colorRange,
