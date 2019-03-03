@@ -1,6 +1,7 @@
 #include <obs-module.h>
 
 #include "const.h"
+#include "util.hpp"
 
 #include "DecklinkInput.hpp"
 #include "decklink-device.hpp"
@@ -42,6 +43,10 @@ static void decklink_update(void *data, obs_data_t *settings)
 	DeckLinkInput *decklink = (DeckLinkInput *)data;
 	const char *hash = obs_data_get_string(settings, DEVICE_HASH);
 	long long id = obs_data_get_int(settings, MODE_ID);
+	BMDVideoConnection videoConnection = (BMDVideoConnection) obs_data_get_int(settings,
+			VIDEO_CONNECTION);
+	BMDAudioConnection audioConnection = (BMDAudioConnection) obs_data_get_int(settings,
+			AUDIO_CONNECTION);
 	BMDPixelFormat pixelFormat = (BMDPixelFormat)obs_data_get_int(settings,
 			PIXEL_FORMAT);
 	video_colorspace colorSpace = (video_colorspace)obs_data_get_int(settings,
@@ -72,7 +77,7 @@ static void decklink_update(void *data, obs_data_t *settings)
 	decklink->SetChannelFormat(channelFormat);
 	decklink->hash = std::string(hash);
 	decklink->swap = obs_data_get_bool(settings, SWAP);
-	decklink->Activate(device, id);
+	decklink->Activate(device, id, videoConnection, audioConnection);
 }
 
 static void decklink_show(void *data)
@@ -83,7 +88,8 @@ static void decklink_show(void *data)
 	if (decklink->dwns && showing && !decklink->Capturing()) {
 		ComPtr<DeckLinkDevice> device;
 		device.Set(deviceEnum->FindByHash(decklink->hash.c_str()));
-		decklink->Activate(device, decklink->id);
+		decklink->Activate(device, decklink->id, decklink->videoConnection,
+				decklink->audioConnection);
 	}
 }
 static void decklink_hide(void *data)
@@ -134,8 +140,15 @@ static bool decklink_device_changed(obs_properties_t *props,
 		obs_property_list_item_disable(list, 0, true);
 	}
 
+	obs_property_t *videoConnectionList = obs_properties_get(props,
+			VIDEO_CONNECTION);
+	obs_property_t *audioConnectionList = obs_properties_get(props,
+			AUDIO_CONNECTION);
 	obs_property_t *modeList = obs_properties_get(props, MODE_ID);
 	obs_property_t *channelList = obs_properties_get(props, CHANNEL_FORMAT);
+
+	obs_property_list_clear(videoConnectionList);
+	obs_property_list_clear(audioConnectionList);
 
 	obs_property_list_clear(modeList);
 
@@ -149,9 +162,38 @@ static bool decklink_device_changed(obs_properties_t *props,
 	device.Set(deviceEnum->FindByHash(hash));
 
 	if (!device) {
+		obs_property_list_item_disable(videoConnectionList, 0, true);
+		obs_property_list_item_disable(audioConnectionList, 0, true);
 		obs_property_list_add_int(modeList, mode, modeId);
 		obs_property_list_item_disable(modeList, 0, true);
 	} else {
+		const BMDVideoConnection BMDVideoConnections[] = {
+				bmdVideoConnectionSDI, bmdVideoConnectionHDMI,
+				bmdVideoConnectionOpticalSDI, bmdVideoConnectionComponent,
+				bmdVideoConnectionComposite, bmdVideoConnectionSVideo
+		};
+
+		for (BMDVideoConnection conn : BMDVideoConnections) {
+			if ((device->GetVideoInputConnections() & conn) == conn) {
+				obs_property_list_add_int(videoConnectionList,
+						bmd_video_connection_to_name(conn), conn);
+			}
+		}
+
+		const BMDAudioConnection BMDAudioConnections[] = {
+				bmdAudioConnectionEmbedded, bmdAudioConnectionAESEBU,
+				bmdAudioConnectionAnalog, bmdAudioConnectionAnalogXLR,
+				bmdAudioConnectionAnalogRCA, bmdAudioConnectionMicrophone,
+				bmdAudioConnectionHeadphones
+		};
+
+		for (BMDAudioConnection conn : BMDAudioConnections) {
+			if ((device->GetAudioInputConnections() & conn) == conn) {
+				obs_property_list_add_int(audioConnectionList,
+						bmd_audio_connection_to_name(conn), conn);
+			}
+		}
+
 		const std::vector<DeckLinkDeviceMode*> &modes =
 				device->GetInputModes();
 
@@ -219,6 +261,11 @@ static obs_properties_t *decklink_get_properties(void *data)
 	obs_property_set_modified_callback(list, decklink_device_changed);
 
 	fill_out_devices(list);
+
+	obs_properties_add_list(props, VIDEO_CONNECTION, TEXT_VIDEO_CONNECTION,
+			OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
+	obs_properties_add_list(props, AUDIO_CONNECTION, TEXT_AUDIO_CONNECTION,
+								   OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
 
 	list = obs_properties_add_list(props, MODE_ID, TEXT_MODE,
 			OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);

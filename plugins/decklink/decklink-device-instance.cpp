@@ -191,7 +191,9 @@ void DeckLinkDeviceInstance::SetupVideoFormat(DeckLinkDeviceMode *mode_)
 #endif
 }
 
-bool DeckLinkDeviceInstance::StartCapture(DeckLinkDeviceMode *mode_)
+bool DeckLinkDeviceInstance::StartCapture(DeckLinkDeviceMode *mode_,
+		BMDVideoConnection bmdVideoConnection,
+		BMDAudioConnection bmdAudioConnection)
 {
 	if (mode != nullptr)
 		return false;
@@ -202,6 +204,40 @@ bool DeckLinkDeviceInstance::StartCapture(DeckLinkDeviceMode *mode_)
 
 	if (!device->GetInput(&input))
 		return false;
+
+
+	IDeckLinkConfiguration *deckLinkConfiguration = NULL;
+	HRESULT result = input->QueryInterface(IID_IDeckLinkConfiguration,
+			(void**)&deckLinkConfiguration);
+	if (result != S_OK)
+	{
+		LOG(LOG_ERROR,
+				"Could not obtain the IDeckLinkConfiguration interface: %08x\n",
+				result);
+	} else {
+		if (bmdVideoConnection > 0) {
+			result = deckLinkConfiguration->SetInt(
+					bmdDeckLinkConfigVideoInputConnection, bmdVideoConnection);
+			if (result != S_OK) {
+				LOG(LOG_ERROR,
+						"Couldn't set input video port to %d\n\n",
+						bmdVideoConnection);
+			}
+		}
+
+		if (bmdAudioConnection > 0) {
+			result = deckLinkConfiguration->SetInt(
+					bmdDeckLinkConfigAudioInputConnection, bmdAudioConnection);
+			if (result != S_OK) {
+				LOG(LOG_ERROR,
+						"Couldn't set input audio port to %d\n\n",
+						bmdVideoConnection);
+			}
+		}
+	}
+
+	videoConnection = bmdVideoConnection;
+	audioConnection = bmdAudioConnection;
 
 	BMDVideoInputFlags flags;
 
