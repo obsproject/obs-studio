@@ -150,6 +150,7 @@ void gs_texture_2d::InitTexture(const uint8_t **data)
 				}
 
 				km->AcquireSync(0, INFINITE);
+				acquired = true;
 			}
 		}
 	}
