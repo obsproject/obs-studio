@@ -358,6 +358,7 @@ struct gs_texture_2d : gs_texture {
 	gs_texture_2d   *pairedNV12texture = nullptr;
 	bool            nv12 = false;
 	bool            chroma = false;
+	bool            acquired = false;
 
 	vector<vector<uint8_t>> data;
 	vector<D3D11_SUBRESOURCE_DATA> srd;
@@ -862,3 +863,6 @@ struct gs_device {
 	gs_device(uint32_t adapterIdx);
 	~gs_device();
 };
+
+extern "C" EXPORT int device_texture_acquire_sync(gs_texture_t *tex,
+		uint64_t key, uint32_t ms);
