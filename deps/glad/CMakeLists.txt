@@ -63,6 +63,11 @@ if(NOT WIN32 AND NOT APPLE)
 		set(glad_PLATFORM_DEPS
 			${glad_PLATFORM_DEPS}
 			-ldl)
+		if(USE_EGL)
+		set(glad_PLATFORM_DEPS
+			${glad_PLATFORM_DEPS}
+			EGL)
+		endif()
 	endif()
 endif()
 
