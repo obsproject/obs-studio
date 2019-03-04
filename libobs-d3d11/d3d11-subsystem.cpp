@@ -229,6 +229,113 @@ const static D3D_FEATURE_LEVEL featureLevels[] =
 	D3D_FEATURE_LEVEL_9_3,
 };
 
+/* ------------------------------------------------------------------------- */
+
+#define VERT_IN_OUT "\
+struct VertInOut { \
+	float4 pos : POSITION; \
+}; "
+
+#define NV12_Y_PS VERT_IN_OUT "\
+float main(VertInOut vert_in) : TARGET \
+{ \
+	return 1.0; \
+}"
+
+#define NV12_UV_PS VERT_IN_OUT "\
+float2 main(VertInOut vert_in) : TARGET \
+{ \
+	return float2(1.0, 1.0); \
+}"
+
+#define NV12_VS VERT_IN_OUT "\
+VertInOut main(VertInOut vert_in) \
+{ \
+	VertInOut vert_out; \
+	vert_out.pos = float4(vert_in.pos.xyz, 1.0); \
+	return vert_out; \
+} "
+
+/* ------------------------------------------------------------------------- */
+
+#define NV12_CX 128
+#define NV12_CY 128
+
+bool gs_device::HasBadNV12Driver()
+try {
+	vec3 points[4];
+	vec3_set(&points[0], -1.0f, -1.0f, 0.0f);
+	vec3_set(&points[1], -1.0f,  1.0f, 0.0f);
+	vec3_set(&points[2],  1.0f, -1.0f, 0.0f);
+	vec3_set(&points[3],  1.0f,  1.0f, 0.0f);
+
+	gs_texture_2d nv12_y(this, NV12_CX, NV12_CY, GS_R8, 1, nullptr,
+			GS_RENDER_TARGET, GS_TEXTURE_2D, false, true);
+	gs_texture_2d nv12_uv(this, nv12_y.texture, GS_RENDER_TARGET);
+	gs_vertex_shader nv12_vs(this, "", NV12_VS);
+	gs_pixel_shader nv12_y_ps(this, "", NV12_Y_PS);
+	gs_pixel_shader nv12_uv_ps(this, "", NV12_UV_PS);
+	gs_stage_surface nv12_stage(this, NV12_CX, NV12_CY);
+
+	gs_vb_data *vbd = gs_vbdata_create();
+	vbd->num        = 4;
+	vbd->points     = (vec3*)bmemdup(&points, sizeof(points));
+
+	gs_vertex_buffer buf(this, vbd, 0);
+
+	device_load_vertexbuffer(this, &buf);
+	device_load_vertexshader(this, &nv12_vs);
+
+	context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+
+	device_set_viewport(this, 0, 0, NV12_CX, NV12_CY);
+	device_set_cull_mode(this, GS_NEITHER);
+	device_enable_depth_test(this, false);
+	device_enable_blending(this, false);
+	LoadVertexBufferData();
+
+	device_set_render_target(this, &nv12_y, nullptr);
+	device_load_pixelshader(this, &nv12_y_ps);
+	UpdateBlendState();
+	UpdateRasterState();
+	UpdateZStencilState();
+	context->Draw(4, 0);
+
+	device_set_viewport(this, 0, 0, NV12_CX/2, NV12_CY/2);
+	device_set_render_target(this, &nv12_uv, nullptr);
+	device_load_pixelshader(this, &nv12_uv_ps);
+	UpdateBlendState();
+	UpdateRasterState();
+	UpdateZStencilState();
+	context->Draw(4, 0);
+
+	device_load_pixelshader(this, nullptr);
+	device_load_vertexshader(this, nullptr);
+	device_set_render_target(this, nullptr, nullptr);
+
+	device_stage_texture(this, &nv12_stage, &nv12_y);
+
+	uint8_t *data;
+	uint32_t linesize;
+	bool bad_driver = false;
+
+	if (gs_stagesurface_map(&nv12_stage, &data, &linesize)) {
+		bad_driver = data[linesize * NV12_CY] == 0;
+		gs_stagesurface_unmap(&nv12_stage);
+	}
+
+	if (bad_driver) {
+		blog(LOG_WARNING, "Bad NV12 texture handling detected!  "
+				  "Disabling NV12 texture support.");
+	}
+	return bad_driver;
+
+} catch (HRError) {
+	return false;
+} catch (const char *) {
+	return false;
+}
+
 void gs_device::InitDevice(uint32_t adapterIdx)
 {
 	wstring adapterName;
@@ -296,6 +403,11 @@ void gs_device::InitDevice(uint32_t adapterIdx)
 
 	/* must be usable as a render target */
 	if ((support & D3D11_FORMAT_SUPPORT_RENDER_TARGET) == 0) {
+		return;
+	}
+
+	bool is_nvidia = astrstri(adapterNameUTF8, "nvidia") != nullptr;
+	if (is_nvidia && HasBadNV12Driver()) {
 		return;
 	}
 
