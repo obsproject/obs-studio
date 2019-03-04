@@ -229,21 +229,6 @@ const static D3D_FEATURE_LEVEL featureLevels[] =
 	D3D_FEATURE_LEVEL_9_3,
 };
 
-static const char *blacklisted_nv12_geforce_gpus[] = {
-	"8100",
-	"8200",
-	"8300",
-	"8400",
-	"8500",
-	"8600",
-	"8800",
-	"9300",
-	"9400",
-	"9500",
-	"9600",
-	"9800"
-};
-
 void gs_device::InitDevice(uint32_t adapterIdx)
 {
 	wstring adapterName;
@@ -281,28 +266,6 @@ void gs_device::InitDevice(uint32_t adapterIdx)
 	/* check for nv12 texture output support    */
 
 	nv12Supported = false;
-	bool geforce = astrstri(adapterNameUTF8, "geforce") != nullptr;
-	bool nvidia  = astrstri(adapterNameUTF8, "nvidia")  != nullptr;
-
-	/* don't use on blacklisted adapters */
-	if (geforce) {
-		for (const char *old_gpu : blacklisted_nv12_geforce_gpus) {
-			if (astrstri(adapterNameUTF8, old_gpu) != nullptr) {
-				return;
-			}
-		}
-	}
-
-	/* Disable NV12 textures if NVENC not available, just as a safety
-	 * measure */
-	if (nvidia) {
-		HMODULE nvenc = LoadLibraryW((sizeof(void*) == 8)
-				? L"nvEncodeAPI64.dll"
-				: L"nvEncodeAPI.dll");
-		if (!nvenc) {
-			return;
-		}
-	}
 
 	ComQIPtr<ID3D11Device1> d3d11_1(device);
 	if (!d3d11_1) {
