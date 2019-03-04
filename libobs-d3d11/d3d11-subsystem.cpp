@@ -261,7 +261,7 @@ VertInOut main(VertInOut vert_in) \
 #define NV12_CX 128
 #define NV12_CY 128
 
-bool gs_device::HasBadNV12Driver()
+bool gs_device::HasBadNV12Output()
 try {
 	vec3 points[4];
 	vec3_set(&points[0], -1.0f, -1.0f, 0.0f);
@@ -406,8 +406,7 @@ void gs_device::InitDevice(uint32_t adapterIdx)
 		return;
 	}
 
-	bool is_nvidia = astrstri(adapterNameUTF8, "nvidia") != nullptr;
-	if (is_nvidia && HasBadNV12Driver()) {
+	if (HasBadNV12Output()) {
 		return;
 	}
 
