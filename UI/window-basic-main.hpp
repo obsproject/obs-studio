@@ -324,7 +324,7 @@ private:
 	int GetTopSelectedSourceItem();
 
 	obs_hotkey_pair_id streamingHotkeys, recordingHotkeys,
-	                   replayBufHotkeys;
+	                   replayBufHotkeys, togglePreviewHotkeys;
 	obs_hotkey_id forceStreamingStopHotkey;
 
 	void InitDefaultTransitions();
@@ -525,6 +525,9 @@ private slots:
 
 	void AudioMixerCopyFilters();
 	void AudioMixerPasteFilters();
+
+	void EnablePreview();
+	void DisablePreview();
 
 private:
 	/* OBS Callbacks */

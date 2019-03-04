@@ -2182,6 +2182,19 @@ void OBSBasic::CreateHotkeys()
 			this, this);
 	LoadHotkeyPair(replayBufHotkeys,
 			"OBSBasic.StartReplayBuffer", "OBSBasic.StopReplayBuffer");
+
+	togglePreviewHotkeys = obs_hotkey_pair_register_frontend(
+			"OBSBasic.EnablePreview",
+			Str("Basic.Main.PreviewConextMenu.Enable"),
+			"OBSBasic.DisablePreview",
+			Str("Basic.Main.Preview.Disable"),
+			MAKE_CALLBACK(!basic.previewEnabled,
+				basic.EnablePreview, "Enabling preview"),
+			MAKE_CALLBACK(basic.previewEnabled,
+				basic.DisablePreview, "Disabling preview"),
+			this, this);
+	LoadHotkeyPair(togglePreviewHotkeys,
+			"OBSBasic.EnablePreview", "OBSBasic.DisablePreview");
 #undef MAKE_CALLBACK
 
 	auto togglePreviewProgram = [] (void *data, obs_hotkey_id,
@@ -6190,6 +6203,24 @@ void OBSBasic::TogglePreview()
 {
 	previewEnabled = !previewEnabled;
 	EnablePreviewDisplay(previewEnabled);
+}
+
+void OBSBasic::EnablePreview()
+{
+	if (previewProgramMode)
+		return;
+
+	previewEnabled = true;
+	EnablePreviewDisplay(true);
+}
+
+void OBSBasic::DisablePreview()
+{
+	if (previewProgramMode)
+		return;
+
+	previewEnabled = false;
+	EnablePreviewDisplay(false);
 }
 
 static bool nudge_callback(obs_scene_t*, obs_sceneitem_t *item, void *param)
