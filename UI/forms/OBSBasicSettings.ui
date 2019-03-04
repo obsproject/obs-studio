@@ -144,9 +144,9 @@
             <property name="geometry">
              <rect>
               <x>0</x>
-              <y>0</y>
-              <width>801</width>
-              <height>931</height>
+              <y>-540</y>
+              <width>804</width>
+              <height>1264</height>
              </rect>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_19">
@@ -631,6 +631,16 @@
                     <widget class="QCheckBox" name="studioPortraitLayout">
                      <property name="text">
                       <string>Basic.Settings.General.StudioPortraitLayout</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="2" column="1">
+                    <widget class="QCheckBox" name="prevProgLabelToggle">
+                     <property name="text">
+                      <string>Basic.Settings.General.TogglePreviewProgramLabels</string>
+                     </property>
+                     <property name="checked">
+                      <bool>true</bool>
                      </property>
                     </widget>
                    </item>
@@ -1144,8 +1154,8 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>601</width>
-              <height>640</height>
+              <width>890</width>
+              <height>791</height>
              </rect>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_21">
@@ -3845,8 +3855,8 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>63</width>
-              <height>16</height>
+              <width>98</width>
+              <height>28</height>
              </rect>
             </property>
            </widget>
@@ -4259,8 +4269,8 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>594</width>
-              <height>833</height>
+              <width>867</width>
+              <height>1061</height>
              </rect>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_23">

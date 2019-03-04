@@ -418,6 +418,8 @@ bool OBSApp::InitGlobalConfigDefaults()
 			"ShowListboxToolbars", true);
 	config_set_default_bool(globalConfig, "BasicWindow",
 			"ShowStatusBar", true);
+	config_set_default_bool(globalConfig, "BasicWindow",
+			"StudioModeLabels", true);
 
 	if (!config_get_bool(globalConfig, "General", "Pre21Defaults")) {
 		config_set_default_string(globalConfig, "General",

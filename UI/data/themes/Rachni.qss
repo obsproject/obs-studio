@@ -1263,3 +1263,11 @@ QToolTip {
 * [themeID="displayBackgroundColor"] {
     qproperty-displayBackgroundColor: rgb(35, 38, 41);
 }
+
+/* Preview/Program labels */
+
+* [themeID="previewProgramLabels"] {
+	font-size: 18px;
+	font-weight: bold;
+	color: rgb(122,121,122);
+}

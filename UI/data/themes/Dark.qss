@@ -698,3 +698,11 @@ QLabel#errorLabel {
 * [themeID="displayBackgroundColor"] {
     qproperty-displayBackgroundColor: rgb(76, 76, 76);
 }
+
+/* Preview/Program labels */
+
+* [themeID="previewProgramLabels"] {
+    font-size: 18px;
+    font-weight: bold;
+    color: rgb(122,121,122);
+}
