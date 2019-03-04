@@ -4,6 +4,7 @@
 #include <QDropEvent>
 #include <QFileInfo>
 #include <QMimeData>
+#include <QUrlQuery>
 #include <string>
 
 #include "window-basic-main.hpp"
@@ -53,6 +54,35 @@ static string GenerateSourceName(const char *base)
 		if (!source)
 			return name;
 	}
+}
+
+void OBSBasic::AddDropURL(const char *url, QString &name, obs_data_t *settings,
+			  const obs_video_info &ovi)
+{
+	QUrl path = QString::fromUtf8(url);
+	QUrlQuery query = QUrlQuery(path.query(QUrl::FullyEncoded));
+
+	int cx = (int)ovi.base_width;
+	int cy = (int)ovi.base_height;
+
+	if (query.hasQueryItem("layer-width"))
+		cx = query.queryItemValue("layer-width").toInt();
+	if (query.hasQueryItem("layer-height"))
+		cy = query.queryItemValue("layer-height").toInt();
+
+	obs_data_set_int(settings, "width", cx);
+	obs_data_set_int(settings, "height", cy);
+
+	name = query.hasQueryItem("layer-name")
+		       ? query.queryItemValue("layer-name", QUrl::FullyDecoded)
+		       : path.host();
+
+	query.removeQueryItem("layer-width");
+	query.removeQueryItem("layer-height");
+	query.removeQueryItem("layer-name");
+	path.setQuery(query);
+
+	obs_data_set_string(settings, "url", QT_TO_UTF8(path.url()));
 }
 
 void OBSBasic::AddDropSource(const char *data, DropType image)
@@ -105,6 +135,10 @@ void OBSBasic::AddDropSource(const char *data, DropType image)
 		name = QUrl::fromLocalFile(QString(data)).fileName();
 		type = "browser_source";
 		break;
+	case DropType_Url:
+		AddDropURL(data, name, settings, ovi);
+		type = "browser_source";
+		break;
 	}
 
 	if (!obs_source_get_display_name(type)) {
@@ -141,6 +175,35 @@ void OBSBasic::dragMoveEvent(QDragMoveEvent *event)
 	event->acceptProposedAction();
 }
 
+void OBSBasic::ConfirmDropUrl(const QString &url)
+{
+	if (url.left(7).compare("http://", Qt::CaseInsensitive) == 0 ||
+	    url.left(8).compare("https://", Qt::CaseInsensitive) == 0) {
+
+		activateWindow();
+
+		QString msg = QTStr("AddUrl.Text");
+		msg += "\n\n";
+		msg += QTStr("AddUrl.Text.Url").arg(url);
+
+		QMessageBox messageBox(this);
+		messageBox.setWindowTitle(QTStr("AddUrl.Title"));
+		messageBox.setText(msg);
+
+		QPushButton *yesButton = messageBox.addButton(
+			QTStr("Yes"), QMessageBox::YesRole);
+		QPushButton *noButton =
+			messageBox.addButton(QTStr("No"), QMessageBox::NoRole);
+		messageBox.setDefaultButton(yesButton);
+		messageBox.setEscapeButton(noButton);
+		messageBox.setIcon(QMessageBox::Question);
+		messageBox.exec();
+
+		if (messageBox.clickedButton() == yesButton)
+			AddDropSource(QT_TO_UTF8(url), DropType_Url);
+	}
+}
+
 void OBSBasic::dropEvent(QDropEvent *event)
 {
 	const QMimeData *mimeData = event->mimeData();
@@ -149,11 +212,14 @@ void OBSBasic::dropEvent(QDropEvent *event)
 		QList<QUrl> urls = mimeData->urls();
 
 		for (int i = 0; i < urls.size(); i++) {
-			QString file = urls.at(i).toLocalFile();
+			QUrl url = urls[i];
+			QString file = url.toLocalFile();
 			QFileInfo fileInfo(file);
 
-			if (!fileInfo.exists())
+			if (!fileInfo.exists()) {
+				ConfirmDropUrl(url.url());
 				continue;
+			}
 
 			QString suffixQStr = fileInfo.suffix();
 			QByteArray suffixArray = suffixQStr.toUtf8();

@@ -170,6 +170,7 @@ class OBSBasic : public OBSMainWindow {
 		DropType_Image,
 		DropType_Media,
 		DropType_Html,
+		DropType_Url,
 	};
 
 private:
@@ -435,6 +436,9 @@ private:
 	inline void OnDeactivate();
 
 	void AddDropSource(const char *file, DropType image);
+	void AddDropURL(const char *url, QString &name, obs_data_t *settings,
+			const obs_video_info &ovi);
+	void ConfirmDropUrl(const QString &url);
 	void dragEnterEvent(QDragEnterEvent *event) override;
 	void dragLeaveEvent(QDragLeaveEvent *event) override;
 	void dragMoveEvent(QDragMoveEvent *event) override;
