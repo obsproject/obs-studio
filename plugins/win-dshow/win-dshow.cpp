@@ -671,12 +671,12 @@ static inline bool CapsMatch(const VideoInfo &info, F&& f, Fs ... fs)
 template <typename ... F>
 static bool CapsMatch(const VideoDevice &dev, F ... fs)
 {
-	auto matcher = [&](const VideoInfo &info)
-	{
-		return CapsMatch(info, fs ...);
-	};
-
-	return any_of(begin(dev.caps), end(dev.caps), matcher);
+	// no early exit, trigger all side effects.
+	bool match = false;
+	for (const VideoInfo &info : dev.caps)
+		if (CapsMatch(info, fs ...))
+			match = true;
+	return match;
 }
 
 static inline bool MatcherMatchVideoFormat(VideoFormat format,
