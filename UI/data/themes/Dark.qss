@@ -111,20 +111,13 @@ QListWidget QLineEdit {
     padding-right: 0;
     padding-left: 2px;
     border: none;
-    border-radius: none;
 }
 
 
 /* Dock Widget */
 
 QDockWidget::title {
-    text-align: center;
-    background-color: QLinearGradient(x1: 0, y1: 0, x2: 0, y2: 1,
-        stop: 0 rgb(86,85,86),
-        stop: 0.1 rgb(82,81,82),
-        stop: 0.5 rgb(78,77,78),
-        stop: 0.9 rgb(74,73,74),
-        stop: 1 rgb(70,69,70));
+    text-align: left;
 }
 
 QDockWidget::close-button, QDockWidget::float-button {
@@ -145,7 +138,6 @@ QDockWidget::close-button:pressed, QDockWidget::float-button:pressed {
 
 QGroupBox {
     border: 1px solid rgb(31,30,31); /* veryDark */;
-    border-radius: 5px;
     padding-top: 16px;
 }
 
@@ -164,13 +156,9 @@ QScrollBar:vertical {
 }
 
 QScrollBar::handle:vertical {
-    background-color: QLinearGradient(x1: 0, y1: 0, x2: 1, y2: 0,
-        stop: 0 rgb(122,121,122), /* light */
-        stop: 0.25 rgb(100, 99, 100),
-        stop: 1 rgb(88,87,88)); /* kindaDark */
+    background-color: rgb(88,87,88); /* kindaDark */
     min-height: 20px;
     margin: 2px;
-    border-radius: 5px;
     border-width: 1px;
     border: 1px solid rgb(31,30,31); /* veryDark */
 }
@@ -194,13 +182,9 @@ QScrollBar:horizontal {
 }
 
 QScrollBar::handle:horizontal {
-    background-color: QLinearGradient(x1: 0, y1: 0, x2: 0, y2: 1,
-        stop: 0 rgb(122,121,122), /* light */
-        stop: 0.25 rgb(100, 99, 100),
-        stop: 1 rgb(88,87,88)); /* kindaDark */
+    background-color: rgb(88,87,88); /* kindaDark */
     min-width: 20px;
     margin: 2px;
-    border-radius: 5px;
     border-width: 1px;
     border: 1px solid rgb(31,30,31); /* veryDark */
 }
@@ -271,7 +255,7 @@ QTabWidget::pane { /* The tab widget frame */
 }
 
 QTabWidget::tab-bar {
-    alignment: center;
+    alignment: left;
 }
 
 QTabBar::tab {
@@ -284,9 +268,6 @@ QTabBar::tab {
 
 QTabBar::tab:top {
     border-bottom: 1px transparent;
-    border-top-left-radius: 5px;
-    border-top-right-radius: 5px;
-
 }
 
 QTabBar::tab:bottom {
@@ -313,25 +294,16 @@ QTabBar::tab:pressed {
 /* ComboBox */
 
 QComboBox {
-    background-color: QLinearGradient(x1: 0, y1: 0, x2: 0, y2: 1,
-        stop: 0 rgb(86,85,86),
-        stop: 0.1 rgb(82,81,82),
-        stop: 0.5 rgb(78,77,78),
-        stop: 0.9 rgb(74,73,74),
-        stop: 1 rgb(70,69,70));
+    background-color: rgb(88,87,88); /* kindaDark */
     border-style: solid;
     border: 1px;
-    border-radius: 3px;
     border-color: rgb(31,30,31); /* veryDark */
     padding: 2px;
     padding-left: 10px;
 }
 
 QComboBox:hover {
-    background-color: QLinearGradient(x1: 0, y1: 0, x2: 0, y2: 1,
-        stop: 0 rgb(111, 110, 101),
-        stop: 0.25 rgb(100, 99, 100),
-        stop: 1 rgb(88,87,88)); 
+    background-color: rgb(122,121,122); /* light */
 }
 
 QComboBox::drop-down {
@@ -372,7 +344,6 @@ QComboBox::down-arrow:editable {
 QLineEdit, QTextEdit, QPlainTextEdit {
     background-color: rgb(31,30,31); /* veryDark */
     border: none;
-    border-radius: 3px;
     padding: 2px 2px 3px 7px;
 }
 
@@ -386,7 +357,6 @@ OBSHotkeyWidget QLineEdit {
 QSpinBox, QDoubleSpinBox {
     background-color: rgb(31,30,31); /* veryDark */
     border: none;
-    border-radius: 3px;
     margin: 0px 3px 0px 0px;
     padding: 2px 2px 3px 7px;
 }
@@ -397,7 +367,6 @@ QSpinBox::up-button, QDoubleSpinBox::up-button {
 
     background-color: rgb(88,87,88); /* kindaDark */
     border: 1px solid rgb(31,30,31); /* veryDark */
-    border-radius: 3px;
     border-width: 0;
     border-bottom-left-radius: 0;
     border-bottom-right-radius: 0;
@@ -409,7 +378,6 @@ QSpinBox::down-button, QDoubleSpinBox::down-button {
     subcontrol-position: bottom right; /* position at the top right corner */
     background-color: rgb(88,87,88); /* kindaDark */
     border: 1px solid rgb(31,30,31); /* veryDark */
-    border-radius: 3px;
     border-width: 0;
     border-top-left-radius: 0;
     border-top-right-radius: 0;
@@ -449,7 +417,6 @@ QPushButton {
     color: rgb(225,224,225); /* veryLight */
     background-color: rgb(88,87,88); /* kindaDark */
     border: none;
-    border-radius: 3px;
     padding: 4px;
     padding-left: 20px;
     padding-right: 20px;
@@ -485,83 +452,55 @@ QPushButton[themeID="hotkeyButtons"] {
 /* Sliders */
 
 QSlider::groove:horizontal {
-    background-color: QLinearGradient(x1: 0, y1: 1, x2: 0, y2: 0,
-        stop: 0 rgb(50, 49, 50), /* dark */
-        stop: 0.75 rgb(88,87,88)); /* kindaDark */
+    background-color: rgb(88,87,88); /* kindaDark */
     height: 4px;
     border: none;
-    border-radius: 2px;
 }
 
 QSlider::handle:horizontal {
-    background-color: QLinearGradient(x1: 0, y1: 0, x2: 0, y2: 1,
-        stop: 0 rgb(240,239,240), /* lighter */
-        stop: 0.25 rgb(200,199,200),
-        stop: 1 rgb(162,161,162)); /* light */
+    background-color: rgb(162,161,162); /* light */
     border: 1px solid rgb(58,57,58); /* dark */
-    border-radius: 3px;
     height: 10px;
     width: 18px;
     margin: -3px 0; /* handle is placed by default on the contents rect of the groove. Expand outside the groove */
 }
 
 QSlider::handle:horizontal:pressed {
-    background-color: QLinearGradient(x1: 0, y1: 1, x2: 0, y2: 0,
-        stop: 0 rgb(240,239,240), /* lighter */
-        stop: 0.25 rgb(200,199,200),
-        stop: 1 rgb(162,161,162)); /* light */
+    background-color: rgb(162,161,162); /* light */
 }
 
 QSlider::sub-page:horizontal {
     background-color: rgb(42,130,218); /* blue */
-    border-radius: 2px;
 }
 
 QSlider::sub-page:horizontal:disabled {
-    background-color: QLinearGradient(x1: 0, y1: 1, x2: 0, y2: 0,
-        stop: 0 rgb(31,30,31), /* veryDark */
-        stop: 0.75 rgb(50, 49, 50)); /* dark */
-    border-radius: 2px;
+    background-color: rgb(50, 49, 50); /* dark */
 }
 
 QSlider::groove:vertical {
-    background-color: QLinearGradient(x1: 1, y1: 0, x2: 0, y2: 0,
-        stop: 0 rgb(50, 49, 50), /* dark */
-        stop: 0.75 rgb(88,87,88)); /* kindaDark */
+    background-color: rgb(88,87,88); /* kindaDark */
     width: 4px;
     border: none;
-    border-radius: 2px;
 }
 
 QSlider::handle:vertical {
-    background-color: QLinearGradient(x1: 1, y1: 0, x2: 0, y2: 0,
-        stop: 0 rgb(240,239,240), /* lighter */
-        stop: 0.25 rgb(200,199,200),
-        stop: 1 rgb(162,161,162)); /* light */
+    background-color: rgb(162,161,162); /* light */
     border: 1px solid rgb(58,57,58); /* dark */
-    border-radius: 3px;
     width: 10px;
     height: 18px;
     margin: 0 -3px; /* handle is placed by default on the contents rect of the groove. Expand outside the groove */
 }
 
 QSlider::handle:vertical:pressed {
-    background-color: QLinearGradient(x1: 1, y1: 0, x2: 0, y2: 0,
-        stop: 0 rgb(240,239,240), /* lighter */
-        stop: 0.25 rgb(200,199,200),
-        stop: 1 rgb(162,161,162)); /* light */
+    background-color: rgb(162,161,162); /* light */
 }
 
 QSlider::add-page:vertical {
     background-color: rgb(42,130,218); /* blue */
-    border-radius: 2px;
 }
 
 QSlider::add-page:vertical:disabled {
-    background-color: QLinearGradient(x1: 1, y1: 0, x2: 0, y2: 0,
-        stop: 0 rgb(31,30,31), /* veryDark */
-        stop: 0.75 rgb(50, 49, 50)); /* dark */
-    border-radius: 2px;
+    background-color: rgb(50, 49, 50); /* dark */
 }
 
 QSlider::handle:hover {
@@ -603,7 +542,6 @@ QHeaderView::section {
     background-color: rgb(58,57,58); /* dark */
     color: rgb(225,224,225); /* veryLight */
     border: 1px solid rgb(31,30,31); /* veryDark */;
-    border-radius: 5px;
 }
 
 /* Mute CheckBox */
