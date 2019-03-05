@@ -29,7 +29,7 @@ matrix:
       before_deploy: "./CI/before-deploy-osx.sh"
 
     - os: linux
-      dist: trusty
+      dist: xenial
       sudo: required
       before_install: "./CI/install-dependencies-linux.sh"
       before_script: "./CI/before-script-linux.sh"
