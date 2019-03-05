@@ -26,6 +26,7 @@
 #include <util/util.hpp>
 #include <util/platform.h>
 #include <obs-frontend-api.h>
+#include <functional>
 #include <string>
 #include <memory>
 #include <vector>
@@ -57,6 +58,8 @@ public:
 	virtual QString translate(const char *context, const char *sourceText,
 			const char *disambiguation, int n) const override;
 };
+
+typedef std::function<void ()> VoidFunc;
 
 class OBSApp : public QApplication {
 	Q_OBJECT
@@ -165,6 +168,9 @@ public:
 	{
 		translatorHooks.pop_front();
 	}
+
+public slots:
+	void Exec(VoidFunc func);
 
 signals:
 	void StyleChanged();
