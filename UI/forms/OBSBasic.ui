@@ -113,7 +113,7 @@
      <x>0</x>
      <y>0</y>
      <width>1079</width>
-     <height>25</height>
+     <height>21</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_File">
@@ -336,7 +336,7 @@
    <addaction name="menuBasic_MainMenu_Help"/>
   </widget>
   <widget class="OBSBasicStatusBar" name="statusbar"/>
-  <widget class="QDockWidget" name="scenesDock">
+  <widget class="OBSDock" name="scenesDock">
    <property name="features">
     <set>QDockWidget::AllDockWidgetFeatures</set>
    </property>
@@ -468,7 +468,7 @@
     </layout>
    </widget>
   </widget>
-  <widget class="QDockWidget" name="sourcesDock">
+  <widget class="OBSDock" name="sourcesDock">
    <property name="features">
     <set>QDockWidget::AllDockWidgetFeatures</set>
    </property>
@@ -601,7 +601,7 @@
     </layout>
    </widget>
   </widget>
-  <widget class="QDockWidget" name="mixerDock">
+  <widget class="OBSDock" name="mixerDock">
    <property name="features">
     <set>QDockWidget::AllDockWidgetFeatures</set>
    </property>
@@ -651,7 +651,7 @@
           <rect>
            <x>0</x>
            <y>0</y>
-           <width>82</width>
+           <width>80</width>
            <height>16</height>
           </rect>
          </property>
@@ -705,7 +705,7 @@
            <x>0</x>
            <y>0</y>
            <width>16</width>
-           <height>26</height>
+           <height>28</height>
           </rect>
          </property>
          <property name="sizePolicy">
@@ -738,7 +738,7 @@
     </layout>
    </widget>
   </widget>
-  <widget class="QDockWidget" name="transitionsDock">
+  <widget class="OBSDock" name="transitionsDock">
    <property name="features">
     <set>QDockWidget::AllDockWidgetFeatures</set>
    </property>
@@ -985,7 +985,7 @@
     </layout>
    </widget>
   </widget>
-  <widget class="QDockWidget" name="controlsDock">
+  <widget class="OBSDock" name="controlsDock">
    <property name="features">
     <set>QDockWidget::AllDockWidgetFeatures</set>
    </property>
@@ -1711,6 +1711,12 @@
    <class>SourceTree</class>
    <extends>QListView</extends>
    <header>source-tree.hpp</header>
+  </customwidget>
+  <customwidget>
+   <class>OBSDock</class>
+   <extends>QDockWidget</extends>
+   <header>window-dock.hpp</header>
+   <container>1</container>
   </customwidget>
  </customwidgets>
  <resources>

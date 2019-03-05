@@ -178,6 +178,7 @@ set(obs_SOURCES
 	${obs_libffutil_SOURCES}
 	../deps/json11/json11.cpp
 	obs-app.cpp
+	window-dock.cpp
 	api-interface.cpp
 	window-basic-main.cpp
 	window-basic-stats.cpp
@@ -234,6 +235,7 @@ set(obs_HEADERS
 	../deps/json11/json11.hpp
 	obs-app.hpp
 	platform.hpp
+	window-dock.hpp
 	window-main.hpp
 	window-basic-main.hpp
 	window-basic-stats.hpp

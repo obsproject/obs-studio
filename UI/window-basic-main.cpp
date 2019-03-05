@@ -216,7 +216,7 @@ OBSBasic::OBSBasic(QWidget *parent)
 
 	startingDockLayout = saveState();
 
-	statsDock = new QDockWidget();
+	statsDock = new OBSDock();
 	statsDock->setObjectName(QStringLiteral("statsDock"));
 	statsDock->setFeatures(QDockWidget::AllDockWidgetFeatures);
 	statsDock->setWindowTitle(QTStr("Basic.Stats"));

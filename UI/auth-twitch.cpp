@@ -9,6 +9,7 @@
 
 #include "window-basic-main.hpp"
 #include "remote-text.hpp"
+#include "window-dock.hpp"
 
 #include <json11.hpp>
 
@@ -165,9 +166,9 @@ bool TwitchAuth::LoadInternal()
 	return OAuthStreamKey::LoadInternal();
 }
 
-class TwitchWidget : public QDockWidget {
+class TwitchWidget : public OBSDock {
 public:
-	inline TwitchWidget() : QDockWidget() {}
+	inline TwitchWidget() : OBSDock() {}
 
 	QScopedPointer<QCefWidget> widget;
 
