@@ -475,8 +475,10 @@ static void close_audio(struct ffmpeg_data *data)
 			circlebuf_free(&data->excess_frames[idx][i]);
 
 		av_freep(&data->samples[idx][0]);
-		avcodec_close(data->audio_streams[idx]->codec);
-		av_frame_free(&data->aframe[idx]);
+		if (data->audio_streams[idx]) {
+			avcodec_close(data->audio_streams[idx]->codec);
+			av_frame_free(&data->aframe[idx]);
+		}
 	}
 }
 
