@@ -1174,6 +1174,20 @@ void OBSApp::AppInit()
 	config_set_default_string(globalConfig, "Basic", "SceneCollectionFile",
 			Str("Untitled"));
 
+	if (!config_has_user_value(globalConfig, "Basic", "Profile")) {
+		config_set_string(globalConfig, "Basic", "Profile",
+				Str("Untitled"));
+		config_set_string(globalConfig, "Basic", "ProfileDir",
+				Str("Untitled"));
+	}
+
+	if (!config_has_user_value(globalConfig, "Basic", "SceneCollection")) {
+		config_set_string(globalConfig, "Basic",
+				"SceneCollection", Str("Untitled"));
+		config_set_string(globalConfig, "Basic",
+				"SceneCollectionFile", Str("Untitled"));
+	}
+
 #ifdef _WIN32
 	bool disableAudioDucking = config_get_bool(globalConfig, "Audio",
 			"DisableAudioDucking");
