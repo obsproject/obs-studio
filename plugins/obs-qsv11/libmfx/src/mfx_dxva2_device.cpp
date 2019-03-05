@@ -1,32 +1,22 @@
-/* ****************************************************************************** *\
-
-Copyright (C) 2012-2014 Intel Corporation.  All rights reserved.
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are met:
-- Redistributions of source code must retain the above copyright notice,
-this list of conditions and the following disclaimer.
-- Redistributions in binary form must reproduce the above copyright notice,
-this list of conditions and the following disclaimer in the documentation
-and/or other materials provided with the distribution.
-- Neither the name of Intel Corporation nor the names of its contributors
-may be used to endorse or promote products derived from this software
-without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY INTEL CORPORATION "AS IS" AND ANY EXPRESS OR
-IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
-OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
-IN NO EVENT SHALL INTEL CORPORATION BE LIABLE FOR ANY DIRECT, INDIRECT,
-INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
-NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
-THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-File Name: mfx_dxva2_device.cpp
-
-\* ****************************************************************************** */
+// Copyright (c) 2012-2019 Intel Corporation
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
 
 #if defined(_WIN32) || defined(_WIN64)
 
@@ -104,26 +94,42 @@ void DXDevice::Close(void)
 
 void DXDevice::LoadDLLModule(const wchar_t *pModuleName)
 {
-    DWORD prevErrorMode = 0;
-
     // unload the module if it is required
     UnloadDLLModule();
 
+#if !defined(MEDIASDK_UWP_LOADER) && !defined(MEDIASDK_UWP_PROCTABLE)
+    DWORD prevErrorMode = 0;
     // set the silent error mode
 #if (_WIN32_WINNT >= 0x0600) && !(__GNUC__)
     SetThreadErrorMode(SEM_FAILCRITICALERRORS, &prevErrorMode); 
 #else
     prevErrorMode = SetErrorMode(SEM_FAILCRITICALERRORS);
 #endif
-    // load specified library
-	m_hModule = LoadLibraryExW(pModuleName, NULL, 0);
+#endif // !defined(MEDIASDK_UWP_LOADER) && !defined(MEDIASDK_UWP_PROCTABLE)
 
+    // load specified library
+#if !defined(OPEN_SOURCE)
+#if !defined(MEDIASDK_DFP_LOADER) && !defined(MEDIASDK_UWP_PROCTABLE)
+    m_hModule = LoadLibraryExW(pModuleName, NULL, 0);
+#else
+    m_hModule = LoadPackagedLibrary(pModuleName, 0);
+#endif
+#else //!defined(OPEN_SOURCE)
+#if !defined(MEDIASDK_UWP_PROCTABLE)
+    m_hModule = LoadLibraryExW(pModuleName, NULL, 0);
+#else
+    m_hModule = LoadPackagedLibrary(pModuleName, 0);
+#endif
+#endif // !defined(OPEN_SOURCE)
+
+#if !defined(MEDIASDK_UWP_LOADER) && !defined(MEDIASDK_UWP_PROCTABLE)
     // set the previous error mode
 #if (_WIN32_WINNT >= 0x0600) && !(__GNUC__)
     SetThreadErrorMode(prevErrorMode, NULL);
 #else
     SetErrorMode(prevErrorMode);
 #endif
+#endif //!defined(MEDIASDK_UWP_LOADER) && !defined(MEDIASDK_UWP_PROCTABLE)
 
 } // void LoadDLLModule(const wchar_t *pModuleName)
 
@@ -137,7 +143,7 @@ void DXDevice::UnloadDLLModule(void)
 
 } // void DXDevice::UnloaDLLdModule(void)
 
-
+#ifdef MFX_D3D9_ENABLED
 D3D9Device::D3D9Device(void)
 {
     m_pD3D9 = (void *) 0;
@@ -280,6 +286,7 @@ bool D3D9Device::Init(const mfxU32 adapterNum)
     return true;
 
 } // bool D3D9Device::Init(const mfxU32 adapterNum)
+#endif //MFX_D3D9_ENABLED
 
 typedef
 HRESULT (WINAPI *DXGICreateFactoryFunc) (REFIID riid, void **ppFactory);
@@ -320,87 +327,96 @@ bool DXGI1Device::Init(const mfxU32 adapterNum)
     // release the object before initialization
     Close();
 
+    IDXGIFactory1 *pFactory = NULL;
+    IDXGIAdapter1 *pAdapter = NULL;
+    DXGI_ADAPTER_DESC1 desc = { 0 };
+    mfxU32 curAdapter = 0;
+    mfxU32 maxAdapters = 0;
+    HRESULT hRes = E_FAIL;
+
+    DXGICreateFactoryFunc pFunc = NULL;
+
+#if !defined(OPEN_SOURCE) && !defined(MEDIASDK_DFP_LOADER)
     // load up the library if it is not loaded
     if (NULL == m_hModule)
     {
         LoadDLLModule(L"dxgi.dll");
     }
 
+
     if (m_hModule)
     {
-        DXGICreateFactoryFunc pFunc;
-        IDXGIFactory1 *pFactory;
-        IDXGIAdapter1 *pAdapter;
-        DXGI_ADAPTER_DESC1 desc;
-        mfxU32 curAdapter, maxAdapters;
-        HRESULT hRes;
-
         // load address of procedure to create DXGI 1.1 factory
-        pFunc = (DXGICreateFactoryFunc) GetProcAddress(m_hModule, "CreateDXGIFactory1");
-        if (NULL == pFunc)
-        {
-            return false;
-        }
-
-        // create the factory
-#if _MSC_VER >= 1400
-        hRes = pFunc(__uuidof(IDXGIFactory1), (void**) (&pFactory));
-#else
-        hRes = pFunc(IID_IDXGIFactory1, (void**) (&pFactory));
-#endif
-        if (FAILED(hRes))
-        {
-            return false;
-        }
-        m_pDXGIFactory1 = pFactory;
-
-        // get the number of adapters
-        curAdapter = 0;
-        maxAdapters = 0;
-        do
-        {
-            // get the required adapted
-            hRes = pFactory->EnumAdapters1(curAdapter, &pAdapter);
-            if (FAILED(hRes))
-            {
-                break;
-            }
-
-            // if it is the required adapter, save the interface
-            if (curAdapter == adapterNum)
-            {
-                m_pDXGIAdapter1 = pAdapter;
-            }
-            else
-            {
-                pAdapter->Release();
-            }
-
-            // get the next adapter
-            curAdapter += 1;
-
-        } while (SUCCEEDED(hRes));
-        maxAdapters = curAdapter;
-
-        // there is no required adapter
-        if (adapterNum >= maxAdapters)
-        {
-            return false;
-        }
-        pAdapter = (IDXGIAdapter1 *) m_pDXGIAdapter1;
-
-        // get the adapter's parameters
-        hRes = pAdapter->GetDesc1(&desc);
-        if (FAILED(hRes))
-        {
-            return false;
-        }
-
-        // save the parameters
-        m_vendorID = desc.VendorId;
-        m_deviceID = desc.DeviceId;
-        *((LUID *) &m_luid) = desc.AdapterLuid;
+        pFunc = (DXGICreateFactoryFunc)GetProcAddress(m_hModule, "CreateDXGIFactory1");
     }
+#else
+    pFunc = &CreateDXGIFactory1;
+#endif
+
+    if (NULL == pFunc)
+    {
+        return false;
+    }
+
+    // create the factory
+#if _MSC_VER >= 1400
+    hRes = pFunc(__uuidof(IDXGIFactory1), (void**)(&pFactory));
+#else
+    hRes = pFunc(IID_IDXGIFactory1, (void**)(&pFactory));
+#endif
+
+    if (FAILED(hRes))
+    {
+        return false;
+    }
+    m_pDXGIFactory1 = pFactory;
+
+    // get the number of adapters
+    curAdapter = 0;
+    maxAdapters = 0;
+    do
+    {
+        // get the required adapted
+        hRes = pFactory->EnumAdapters1(curAdapter, &pAdapter);
+        if (FAILED(hRes))
+        {
+            break;
+        }
+
+        // if it is the required adapter, save the interface
+        if (curAdapter == adapterNum)
+        {
+            m_pDXGIAdapter1 = pAdapter;
+        }
+        else
+        {
+            pAdapter->Release();
+        }
+
+        // get the next adapter
+        curAdapter += 1;
+
+    } while (SUCCEEDED(hRes));
+    maxAdapters = curAdapter;
+
+    // there is no required adapter
+    if (adapterNum >= maxAdapters)
+    {
+        return false;
+    }
+    pAdapter = (IDXGIAdapter1 *) m_pDXGIAdapter1;
+
+    // get the adapter's parameters
+    hRes = pAdapter->GetDesc1(&desc);
+    if (FAILED(hRes))
+    {
+        return false;
+    }
+
+    // save the parameters
+    m_vendorID = desc.VendorId;
+    m_deviceID = desc.DeviceId;
+    *((LUID *) &m_luid) = desc.AdapterLuid;
 
     return true;
 
@@ -413,6 +429,7 @@ DXVA2Device::DXVA2Device(void)
     m_vendorID = 0;
     m_deviceID = 0;
 
+    m_driverVersion = 0;
 } // DXVA2Device::DXVA2Device(void)
 
 DXVA2Device::~DXVA2Device(void)
@@ -428,8 +445,10 @@ void DXVA2Device::Close(void)
     m_vendorID = 0;
     m_deviceID = 0;
 
+    m_driverVersion = 0;
 } // void DXVA2Device::Close(void)
 
+#ifdef MFX_D3D9_ENABLED
 bool DXVA2Device::InitD3D9(const mfxU32 adapterNum)
 {
     D3D9Device d3d9Device;
@@ -444,6 +463,7 @@ bool DXVA2Device::InitD3D9(const mfxU32 adapterNum)
     {
         return false;
     }
+
 
     m_numAdapters = d3d9Device.GetAdapterCount();
 
@@ -464,6 +484,13 @@ bool DXVA2Device::InitD3D9(const mfxU32 adapterNum)
     // ... say goodbye
     return true;
 } // bool InitD3D9(const mfxU32 adapterNum)
+#else // MFX_D3D9_ENABLED
+bool DXVA2Device::InitD3D9(const mfxU32 adapterNum)
+{
+    (void)adapterNum;
+    return false;
+}
+#endif // MFX_D3D9_ENABLED
 
 bool DXVA2Device::InitDXGI1(const mfxU32 adapterNum)
 {
@@ -490,6 +517,7 @@ bool DXVA2Device::InitDXGI1(const mfxU32 adapterNum)
 
 } // bool DXVA2Device::InitDXGI1(const mfxU32 adapterNum)
 
+#ifdef MFX_D3D9_ENABLED
 void DXVA2Device::UseAlternativeWay(const D3D9Device *pD3D9Device)
 {
     mfxU64 d3d9LUID = pD3D9Device->GetLUID();
@@ -532,6 +560,7 @@ void DXVA2Device::UseAlternativeWay(const D3D9Device *pD3D9Device)
     // we need to match a DXGI(1) device to the D3D9 device
 
 } // void DXVA2Device::UseAlternativeWay(const D3D9Device *pD3D9Device)
+#endif // MFX_D3D9_ENABLED
 
 mfxU32 DXVA2Device::GetVendorID(void) const
 {

@@ -1,6 +1,6 @@
 /* ****************************************************************************** *\
 
-Copyright (C) 2007-2014 Intel Corporation.  All rights reserved.
+Copyright (C) 2007-2016 Intel Corporation.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -64,6 +64,7 @@ public:
     virtual mfxStatus SetFrameAllocator(mfxFrameAllocator *allocator) { return MFXVideoCORE_SetFrameAllocator(m_session, allocator); }
     virtual mfxStatus SetHandle(mfxHandleType type, mfxHDL hdl) { return MFXVideoCORE_SetHandle(m_session, type, hdl); }
     virtual mfxStatus GetHandle(mfxHandleType type, mfxHDL *hdl) { return MFXVideoCORE_GetHandle(m_session, type, hdl); }
+    virtual mfxStatus QueryPlatform(mfxPlatform* platform) { return MFXVideoCORE_QueryPlatform(m_session, platform); }
 
     virtual mfxStatus SyncOperation(mfxSyncPoint syncp, mfxU32 wait) { return MFXVideoCORE_SyncOperation(m_session, syncp, wait); }
 
@@ -151,6 +152,7 @@ protected:
     mfxSession m_session;                                       // (mfxSession) handle to the owning session
 };
 
+//FEI
 class MFXVideoENC
 {
 public:
@@ -163,6 +165,9 @@ public:
     virtual mfxStatus Init(mfxVideoParam *par) { return MFXVideoENC_Init(m_session, par); }
     virtual mfxStatus Reset(mfxVideoParam *par) { return MFXVideoENC_Reset(m_session, par); }
     virtual mfxStatus Close(void) { return MFXVideoENC_Close(m_session); }
+
+    virtual mfxStatus GetVideoParam(mfxVideoParam *par) { return MFXVideoENC_GetVideoParam(m_session, par); }
+    //virtual mfxStatus GetEncodeStat(mfxEncodeStat *stat) { return MFXVideoENCODE_GetEncodeStat(m_session, stat); }
 
     virtual mfxStatus ProcessFrameAsync(mfxENCInput *in, mfxENCOutput *out, mfxSyncPoint *syncp) { return MFXVideoENC_ProcessFrameAsync(m_session, in, out, syncp); }
 
@@ -184,7 +189,7 @@ public:
     virtual mfxStatus Reset(mfxVideoParam *par) { return MFXVideoPAK_Reset(m_session, par); }
     virtual mfxStatus Close(void) { return MFXVideoPAK_Close(m_session); }
 
-    //virtual mfxStatus GetVideoParam(mfxVideoParam *par) { return MFXVideoENCODE_GetVideoParam(m_session, par); }
+    virtual mfxStatus GetVideoParam(mfxVideoParam *par) { return MFXVideoPAK_GetVideoParam(m_session, par); }
     //virtual mfxStatus GetEncodeStat(mfxEncodeStat *stat) { return MFXVideoENCODE_GetEncodeStat(m_session, stat); }
 
     virtual mfxStatus ProcessFrameAsync(mfxPAKInput *in, mfxPAKOutput *out, mfxSyncPoint *syncp) { return MFXVideoPAK_ProcessFrameAsync(m_session, in, out, syncp); }

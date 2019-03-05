@@ -1,32 +1,22 @@
-/* ****************************************************************************** *\
-
-Copyright (C) 2012-2015 Intel Corporation.  All rights reserved.
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are met:
-- Redistributions of source code must retain the above copyright notice,
-this list of conditions and the following disclaimer.
-- Redistributions in binary form must reproduce the above copyright notice,
-this list of conditions and the following disclaimer in the documentation
-and/or other materials provided with the distribution.
-- Neither the name of Intel Corporation nor the names of its contributors
-may be used to endorse or promote products derived from this software
-without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY INTEL CORPORATION "AS IS" AND ANY EXPRESS OR
-IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
-OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
-IN NO EVENT SHALL INTEL CORPORATION BE LIABLE FOR ANY DIRECT, INDIRECT,
-INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
-NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
-THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-File Name: mfx_dispatcher.h
-
-\* ****************************************************************************** */
+// Copyright (c) 2012-2019 Intel Corporation
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
 
 #if !defined(__MFX_DISPATCHER_H)
 #define __MFX_DISPATCHER_H
@@ -40,8 +30,11 @@ File Name: mfx_dispatcher.h
 #include "mfxenc.h"
 #include "mfxpak.h"
 
+#define INTEL_VENDOR_ID 0x8086
 
 mfxStatus MFXQueryVersion(mfxSession session, mfxVersion *version);
+
+
 
 enum
 {
@@ -73,6 +66,16 @@ enum eFunc
     eMFXInitEx,
 #include "mfx_exposed_functions_list.h"
     eVideoFuncTotal
+};
+
+enum ePluginFunc
+{
+    eMFXVideoUSER_Load,
+    eMFXVideoUSER_LoadByPath,
+    eMFXVideoUSER_UnLoad,
+    eMFXAudioUSER_Load,
+    eMFXAudioUSER_UnLoad,
+    ePluginFuncTotal
 };
 
 enum eAudioFunc
@@ -111,8 +114,21 @@ enum
     MFX_DISPATCHER_VERSION_MINOR = 2
 };
 
+struct _mfxSession
+{
+    // A real handle from MFX engine passed to a called function
+    mfxSession session;
+
+    mfxFunctionPointer callTable[eVideoFuncTotal];
+    mfxFunctionPointer callPlugInsTable[ePluginFuncTotal];
+    mfxFunctionPointer callAudioTable[eAudioFuncTotal];
+
+    // Current library's implementation (exact implementation)
+    mfxIMPL impl;
+};
+
 // declare a dispatcher's handle
-struct MFX_DISP_HANDLE
+struct MFX_DISP_HANDLE : public _mfxSession
 {
     // Default constructor
     MFX_DISP_HANDLE(const mfxVersion requiredVersion);
@@ -121,7 +137,10 @@ struct MFX_DISP_HANDLE
 
     // Load the library's module
     mfxStatus LoadSelectedDLL(const msdk_disp_char *pPath, eMfxImplType implType, mfxIMPL impl, mfxIMPL implInterface, mfxInitParam &par);
-    // Unload the library's module
+#if !defined(OPEN_SOURCE) && defined(MEDIASDK_DX_LOADER)
+    mfxStatus LoadViaDXInterface(eMfxImplType reqImplType, mfxIMPL reqImpl, mfxIMPL reqImplInterface, mfxInitParam &par);
+#endif
+        // Unload the library's module
     mfxStatus UnLoadSelectedDLL(void);
 
     // Close the handle
@@ -133,15 +152,11 @@ struct MFX_DISP_HANDLE
 
     // Library's implementation type (hardware or software)
     eMfxImplType implType;
-    // Current library's implementation (exact implementation)
-    mfxIMPL impl;
     // Current library's VIA interface
     mfxIMPL implInterface;
     // Dispatcher's version. If version is 1.1 or lower, then old dispatcher's
     // architecture is used. Otherwise it means current dispatcher's version.
     mfxVersion dispVersion;
-    // A real handle passed to a called function
-    mfxSession session;
     // Required API version of session initialized
     const mfxVersion apiVersion;
     // Actual library API version
@@ -159,14 +174,10 @@ struct MFX_DISP_HANDLE
     MFX::MFXPluginStorage pluginHive;
     MFX::MFXPluginFactory pluginFactory;
 
-    // function call table
-    mfxFunctionPointer callTable[eVideoFuncTotal];
-    mfxFunctionPointer callAudioTable[eAudioFuncTotal];
-
 private:
     // Declare assignment operator and copy constructor to prevent occasional assignment
     MFX_DISP_HANDLE(const MFX_DISP_HANDLE &);
-    MFX_DISP_HANDLE & operator = (const MFX_DISP_HANDLE &);    
+    MFX_DISP_HANDLE & operator = (const MFX_DISP_HANDLE &);
 
 };
 

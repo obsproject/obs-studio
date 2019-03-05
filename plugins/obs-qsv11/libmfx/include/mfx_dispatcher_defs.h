@@ -1,41 +1,35 @@
-/* ****************************************************************************** *\
-
-Copyright (C) 2013-2015 Intel Corporation.  All rights reserved.
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are met:
-- Redistributions of source code must retain the above copyright notice,
-this list of conditions and the following disclaimer.
-- Redistributions in binary form must reproduce the above copyright notice,
-this list of conditions and the following disclaimer in the documentation
-and/or other materials provided with the distribution.
-- Neither the name of Intel Corporation nor the names of its contributors
-may be used to endorse or promote products derived from this software
-without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY INTEL CORPORATION "AS IS" AND ANY EXPRESS OR
-IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
-OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
-IN NO EVENT SHALL INTEL CORPORATION BE LIABLE FOR ANY DIRECT, INDIRECT,
-INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
-NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
-THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-File Name: mfx_dispatcher_defs.h
-
-\* ****************************************************************************** */
+// Copyright (c) 2013-2019 Intel Corporation
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
 
 #pragma once
 #include "mfxdefs.h"
 #include <cstring>
+#include <cstdio>
 
 #if defined(MFX_DISPATCHER_LOG)
 #include <string>
 #include <string.h>
 #endif
+
+#define MAX_PLUGIN_PATH 4096
+#define MAX_PLUGIN_NAME 4096
 
 #if defined(_WIN32) || defined(_WIN64)
 typedef wchar_t  msdk_disp_char;
@@ -53,10 +47,7 @@ typedef char msdk_disp_char;
 
 inline void msdk_disp_char_cpy_s(char * to, size_t to_size, const char * from)
 {
-    size_t source_len = strlen(from);
-    size_t num_chars = (to_size - 1) < source_len ? (to_size - 1) : source_len;
-    strncpy(to, from, num_chars);
-    to[num_chars] = 0;
+    snprintf(to, to_size, "%s", from);
 }
 
 #if defined(MFX_DISPATCHER_LOG)
@@ -73,7 +64,7 @@ inline std::wstring getWideString(const char * string)
 
 #endif
 
-#ifdef __GNUC__
+#if defined(__GNUC__) && !defined(_WIN32) && !defined(_WIN64)
 #define  sscanf_s  sscanf
 #define  swscanf_s swscanf
 #endif
