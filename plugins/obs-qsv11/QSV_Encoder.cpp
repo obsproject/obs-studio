@@ -280,17 +280,8 @@ enum qsv_cpu_platform qsv_get_cpu_platform()
 	case 0x45:
 	case 0x46:
 		return QSV_CPU_PLATFORM_HSW;
-
-	case 0x3d:
-	case 0x47:
-	case 0x4f:
-	case 0x56:
-		return QSV_CPU_PLATFORM_BDW;
-
-	case 0x4e:
-	case 0x5e:
-		return QSV_CPU_PLATFORM_SKL;
 	}
-	//assume newer revisions are at least as capable as Skylake
+
+	//assume newer revisions are at least as capable as Haswell
 	return QSV_CPU_PLATFORM_INTEL;
 }

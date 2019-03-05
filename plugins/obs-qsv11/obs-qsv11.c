@@ -146,7 +146,7 @@ static void obs_qsv_defaults(obs_data_t *settings)
 	obs_data_set_default_string(settings, "target_usage", "balanced");
 	obs_data_set_default_int(settings, "bitrate", 2500);
 	obs_data_set_default_int(settings, "max_bitrate", 3000);
-	obs_data_set_default_string(settings, "profile", "high");
+	obs_data_set_default_string(settings, "profile", "main");
 	obs_data_set_default_int(settings, "async_depth", 4);
 	obs_data_set_default_string(settings, "rate_control", "CBR");
 
@@ -156,10 +156,9 @@ static void obs_qsv_defaults(obs_data_t *settings)
 	obs_data_set_default_int(settings, "qpp", 23);
 	obs_data_set_default_int(settings, "qpb", 23);
 	obs_data_set_default_int(settings, "icq_quality", 23);
-	obs_data_set_default_int(settings, "la_depth", 15);
+	obs_data_set_default_int(settings, "la_depth", 40);
 
 	obs_data_set_default_int(settings, "keyint_sec", 3);
-	obs_data_set_default_int(settings, "bframes", 1);
 }
 
 static inline void add_strings(obs_property_t *list, const char *const *strings)
@@ -181,14 +180,6 @@ static inline void add_strings(obs_property_t *list, const char *const *strings)
 #define TEXT_ICQ_QUALITY        obs_module_text("ICQQuality")
 #define TEXT_LA_DEPTH           obs_module_text("LookAheadDepth")
 #define TEXT_KEYINT_SEC         obs_module_text("KeyframeIntervalSec")
-#define TEXT_BFRAMES            obs_module_text("B Frames")
-#define TEXT_MBBRC              obs_module_text("Content Adaptive Quantization")
-
-static inline bool is_skl_or_greater_platform()
-{
-	enum qsv_cpu_platform plat = qsv_get_cpu_platform();
-	return (plat >= QSV_CPU_PLATFORM_SKL);
-}
 
 static bool rate_control_modified(obs_properties_t *ppts, obs_property_t *p,
 	obs_data_t *settings)
@@ -228,15 +219,8 @@ static bool rate_control_modified(obs_properties_t *ppts, obs_property_t *p,
 	obs_property_set_visible(p, bVisible);
 
 	bVisible = astrcmpi(rate_control, "LA_ICQ") == 0 ||
-		astrcmpi(rate_control, "LA_CBR") == 0 ||
-		astrcmpi(rate_control, "LA_VBR") == 0;
+		astrcmpi(rate_control, "LA") == 0;
 	p = obs_properties_get(ppts, "la_depth");
-	obs_property_set_visible(p, bVisible);
-
-	bVisible = astrcmpi(rate_control, "CBR") == 0 ||
-		astrcmpi(rate_control, "VBR") == 0 ||
-		astrcmpi(rate_control, "AVBR") == 0;
-	p = obs_properties_get(ppts, "mbbrc");
 	obs_property_set_visible(p, bVisible);
 
 	return true;
@@ -287,10 +271,6 @@ static obs_properties_t *obs_qsv_props(void *unused)
 	obs_properties_add_int(props, "qpb", "QPB", 1, 51, 1);
 	obs_properties_add_int(props, "icq_quality", TEXT_ICQ_QUALITY, 1, 51, 1);
 	obs_properties_add_int(props, "la_depth", TEXT_LA_DEPTH, 10, 100, 1);
-	obs_properties_add_int(props, "bframes", TEXT_BFRAMES, 0, 3, 1);
-
-	if (is_skl_or_greater_platform())
-		obs_properties_add_bool(props, "mbbrc", TEXT_MBBRC);
 
 	return props;
 }
@@ -315,8 +295,7 @@ static void update_params(struct obs_qsv *obsqsv, obs_data_t *settings)
 	int la_depth = (int)obs_data_get_int(settings, "la_depth");
 	int keyint_sec = (int)obs_data_get_int(settings, "keyint_sec");
 	bool cbr_override = obs_data_get_bool(settings, "cbr");
-	int bFrames = (int)obs_data_get_int(settings, "bframes");
-	bool mbbrc = obs_data_get_bool(settings, "mbbrc");
+	int bFrames = 7;
 
 	if (obs_data_has_user_value(settings, "bf"))
 		bFrames = (int)obs_data_get_int(settings, "bf");
@@ -362,10 +341,8 @@ static void update_params(struct obs_qsv *obsqsv, obs_data_t *settings)
 		obsqsv->params.nRateControl = MFX_RATECONTROL_ICQ;
 	else if (astrcmpi(rate_control, "LA_ICQ") == 0)
 		obsqsv->params.nRateControl = MFX_RATECONTROL_LA_ICQ;
-	else if (astrcmpi(rate_control, "LA_VBR") == 0)
+	else if (astrcmpi(rate_control, "LA") == 0)
 		obsqsv->params.nRateControl = MFX_RATECONTROL_LA;
-	else if (astrcmpi(rate_control, "LA_CBR") == 0)
-		obsqsv->params.nRateControl = MFX_RATECONTROL_LA_HRD;
 
 	obsqsv->params.nAsyncDepth = (mfxU16)async_depth;
 	obsqsv->params.nAccuracy = (mfxU16)accuracy;
@@ -383,7 +360,6 @@ static void update_params(struct obs_qsv *obsqsv, obs_data_t *settings)
 	obsqsv->params.nbFrames = (mfxU16)bFrames;
 	obsqsv->params.nKeyIntSec = (mfxU16)keyint_sec;
 	obsqsv->params.nICQQuality = (mfxU16)icq_quality;
-	obsqsv->params.bMBBRC = mbbrc;
 
 	info("settings:\n\trate_control:   %s", rate_control);
 
@@ -407,8 +383,7 @@ static void update_params(struct obs_qsv *obsqsv, obs_data_t *settings)
 			(int)obsqsv->params.nICQQuality);
 
 	if (obsqsv->params.nRateControl == MFX_RATECONTROL_LA_ICQ ||
-	    obsqsv->params.nRateControl == MFX_RATECONTROL_LA ||
-	    obsqsv->params.nRateControl == MFX_RATECONTROL_LA_HRD)
+	    obsqsv->params.nRateControl == MFX_RATECONTROL_LA)
 		blog(LOG_INFO,
 			"\tLookahead Depth:%d",
 			(int)obsqsv->params.nLADEPTH);
