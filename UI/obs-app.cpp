@@ -1239,11 +1239,20 @@ void OBSApp::EnableInFocusHotkeys(bool enable)
 	ResetHotkeyState(applicationState() != Qt::ApplicationActive);
 }
 
+Q_DECLARE_METATYPE(VoidFunc)
+
+void OBSApp::Exec(VoidFunc func)
+{
+	func();
+}
+
 bool OBSApp::OBSInit()
 {
 	ProfileScope("OBSApp::OBSInit");
 
 	setAttribute(Qt::AA_UseHighDpiPixmaps);
+
+	qRegisterMetaType<VoidFunc>();
 
 	if (!StartupOBS(locale.c_str(), GetProfilerNameStore()))
 		return false;
