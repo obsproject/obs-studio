@@ -45,17 +45,11 @@ else() #This needs to change to be more specific to get ready for Wayland
 		${XCB_LIBRARIES}
 		${X11_XCB_LIBRARIES})
 
-if(USE_EGL)
-	set(libobs-opengl_PLATFORM_SOURCES
-		gl-x11-egl.c)
-else()
 	set(libobs-opengl_PLATFORM_SOURCES
 		gl-x11.c)
 endif()
-endif()
 
 set(libobs-opengl_SOURCES
-	${libobs-opengl_PLATFORM_SOURCES}
 	gl-helpers.c
 	gl-indexbuffer.c
 	gl-shader.c
@@ -74,10 +68,12 @@ set(libobs-opengl_HEADERS
 
 if(WIN32 OR APPLE)
 	add_library(libobs-opengl MODULE
+		${libobs-opengl_PLATFORM_SOURCES}
 		${libobs-opengl_SOURCES}
 		${libobs-opengl_HEADERS})
 else()
 	add_library(libobs-opengl SHARED
+		${libobs-opengl_PLATFORM_SOURCES}
 		${libobs-opengl_SOURCES}
 		${libobs-opengl_HEADERS})
 endif()
@@ -102,3 +98,36 @@ target_link_libraries(libobs-opengl
 	${libobs-opengl_PLATFORM_DEPS})
 
 install_obs_core(libobs-opengl)
+
+# Also build the EGL variant if possible
+if(EGL_FOUND)
+	set(libobs-opengl_PLATFORM_SOURCES
+		gl-x11-egl.c)
+
+	set(libobs-opengl_PLATFORM_DEPS
+		${libobs-opengl_PLATFORM_DEPS}
+		${EGL_LIBRARIES})
+
+	add_library(libobs-opengl-egl SHARED
+		${libobs-opengl_PLATFORM_SOURCES}
+		${libobs-opengl_SOURCES}
+		${libobs-opengl_HEADERS})
+
+	set_target_properties(libobs-opengl-egl
+		PROPERTIES
+			OUTPUT_NAME obs-opengl-egl
+			VERSION 0.0
+			SOVERSION 0
+			)
+
+	target_compile_definitions(libobs-opengl-egl
+		PRIVATE
+			USE_EGL=1)
+
+	target_link_libraries(libobs-opengl-egl
+		libobs
+		glad
+		${libobs-opengl_PLATFORM_DEPS})
+
+	install_obs_core(libobs-opengl-egl)
+endif(EGL_FOUND)

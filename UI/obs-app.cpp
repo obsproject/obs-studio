@@ -1199,8 +1199,15 @@ const char *OBSApp::GetRenderModule() const
 	const char *renderer = config_get_string(globalConfig, "Video",
 			"Renderer");
 
-	return (astrcmpi(renderer, "Direct3D 11") == 0) ?
-		DL_D3D11 : DL_OPENGL;
+	if (astrcmpi(renderer, "Direct3D 11") == 0)
+		return DL_D3D11;
+
+#ifdef DL_OPENGL_EGL
+	if (astrcmpi(renderer, "OpenGL EGL") == 0)
+		return DL_OPENGL_EGL;
+#endif
+
+	return DL_OPENGL;
 }
 
 static bool StartupOBS(const char *locale, profiler_name_store_t *store)

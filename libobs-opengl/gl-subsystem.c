@@ -194,7 +194,11 @@ const char *device_get_name(void)
 
 int device_get_type(void)
 {
+#ifdef USE_EGL
+	return GS_DEVICE_OPENGL_EGL;
+#else
 	return GS_DEVICE_OPENGL;
+#endif
 }
 
 const char *device_preprocessor_name(void)

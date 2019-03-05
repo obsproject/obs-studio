@@ -4,6 +4,19 @@
 
 static void* xcompcap_create(obs_data_t *settings, obs_source_t *source)
 {
+	{
+		// FIXME is it desirable to enter graphics at create time?
+		// Or is it better to postpone all activity to after the module
+		// was succesfully and unconditionally created?
+		obs_enter_graphics();
+		const int device_type = gs_get_device_type();
+		obs_leave_graphics();
+		if (device_type != GS_DEVICE_OPENGL) {
+			blog(LOG_ERROR, "XComposite source is not implemented for EGL contexts");
+			return NULL;
+		}
+	}
+
 	return new XCompcapMain(settings, source);
 }
 

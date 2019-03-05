@@ -553,24 +553,25 @@ function(install_obs_plugin_with_data target datadir)
 endfunction()
 
 function(define_graphic_modules target)
-	foreach(dl_lib opengl d3d9 d3d11)
+	foreach(dl_lib opengl opengl-egl d3d9 d3d11)
 		string(TOUPPER ${dl_lib} dl_lib_upper)
+		string(REPLACE "-" "_" dl_lib_def ${dl_lib_upper})
 		if(TARGET libobs-${dl_lib})
 			if(UNIX AND UNIX_STRUCTURE)
 				target_compile_definitions(${target}
 					PRIVATE
-					DL_${dl_lib_upper}="$<TARGET_SONAME_FILE_NAME:libobs-${dl_lib}>"
+					DL_${dl_lib_def}="$<TARGET_SONAME_FILE_NAME:libobs-${dl_lib}>"
 					)
 			else()
 				target_compile_definitions(${target}
 					PRIVATE
-					DL_${dl_lib_upper}="$<TARGET_FILE_NAME:libobs-${dl_lib}>"
+					DL_${dl_lib_def}="$<TARGET_FILE_NAME:libobs-${dl_lib}>"
 					)
 			endif()
 		else()
 			target_compile_definitions(${target}
 				PRIVATE
-				DL_${dl_lib_upper}=""
+				DL_${dl_lib_def}=""
 				)
 		endif()
 	endforeach()

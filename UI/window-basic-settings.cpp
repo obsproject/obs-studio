@@ -49,6 +49,11 @@
 
 #include <util/platform.h>
 
+#if defined(_WIN32) || \
+	(defined(__linux__) && defined(DL_OPENGL) && defined(DL_OPENGL_EGL))
+#define HAVE_SELECTABLE_RENDERERS
+#endif
+
 using namespace std;
 
 // Used for QVariant in codec comboboxes
@@ -503,7 +508,9 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 
 #else
 	delete ui->rendererLabel;
+#ifndef HAVE_SELECTABLE_RENDERERS
 	delete ui->renderer;
+#endif
 	delete ui->adapterLabel;
 	delete ui->adapter;
 	delete ui->processPriorityLabel;
@@ -517,7 +524,9 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	delete ui->disableAudioDucking;
 #endif
 	ui->rendererLabel = nullptr;
+#ifndef HAVE_SELECTABLE_RENDERERS
 	ui->renderer = nullptr;
+#endif
 	ui->adapterLabel = nullptr;
 	ui->adapter = nullptr;
 	ui->processPriorityLabel = nullptr;
@@ -1150,13 +1159,24 @@ void OBSBasicSettings::LoadGeneralSettings()
 
 void OBSBasicSettings::LoadRendererList()
 {
-#ifdef _WIN32
+#ifdef HAVE_SELECTABLE_RENDERERS
 	const char *renderer = config_get_string(GetGlobalConfig(), "Video",
 			"Renderer");
 
+#ifdef _WIN32
 	ui->renderer->addItem(QT_UTF8("Direct3D 11"));
 	if (opt_allow_opengl || strcmp(renderer, "OpenGL") == 0)
 		ui->renderer->addItem(QT_UTF8("OpenGL"));
+#else
+#ifndef DL_OPENGL
+#error Expect two GL variants here, and one of them should be DL_OPENGL or GLX
+#endif
+	ui->renderer->addItem(QT_UTF8("OpenGL GLX"));
+#ifndef DL_OPENGL_EGL
+#error Expect two GL variants here, and one of them should be DL_OPENGL_EGL or EGL
+#endif
+	ui->renderer->addItem(QT_UTF8("OpenGL EGL"));
+#endif
 
 	int idx = ui->renderer->findText(QT_UTF8(renderer));
 	if (idx == -1)
@@ -2836,11 +2856,13 @@ void OBSBasicSettings::SaveAdvancedSettings()
 	QString lastMonitoringDevice = config_get_string(main->Config(),
 			"Audio", "MonitoringDeviceId");
 
-#ifdef _WIN32
+#ifdef HAVE_SELECTABLE_RENDERERS
 	if (WidgetChanged(ui->renderer))
 		config_set_string(App()->GlobalConfig(), "Video", "Renderer",
 				QT_TO_UTF8(ui->renderer->currentText()));
+#endif
 
+#ifdef _WIN32
 	std::string priority =
 		QT_TO_UTF8(ui->processPriority->currentData().toString());
 	config_set_string(App()->GlobalConfig(), "General", "ProcessPriority",

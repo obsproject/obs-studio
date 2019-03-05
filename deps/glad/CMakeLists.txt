@@ -15,15 +15,15 @@ if(WIN32)
 		src/glad_wgl.c
 		include/glad/glad_wgl.h)
 elseif(NOT APPLE)
-if(USE_EGL)
-	set(glad_PLATFORM_SOURCES
-		src/glad_egl.c
-		include/glad/glad_egl.h)
-else()
 	set(glad_PLATFORM_SOURCES
 		src/glad_glx.c
 		include/glad/glad_glx.h)
-endif()
+	if(EGL_FOUND)
+		set(glad_PLATFORM_SOURCES
+			${glad_PLATFORM_SOURCES}
+			src/glad_egl.c
+			include/glad/glad_egl.h)
+	endif(EGL_FOUND)
 endif()
 
 set(glad_include_dirs
@@ -63,10 +63,10 @@ if(NOT WIN32 AND NOT APPLE)
 		set(glad_PLATFORM_DEPS
 			${glad_PLATFORM_DEPS}
 			-ldl)
-		if(USE_EGL)
+		if(EGL_FOUND)
 		set(glad_PLATFORM_DEPS
 			${glad_PLATFORM_DEPS}
-			EGL)
+			${EGL_LIBRARIES})
 		endif()
 	endif()
 endif()

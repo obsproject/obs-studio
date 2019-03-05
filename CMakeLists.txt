@@ -131,6 +131,11 @@ endif()
 option(BUILD_TESTS "Build test directory (includes test sources and possibly a platform test executable)" FALSE)
 mark_as_advanced(BUILD_TESTS)
 
+if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+	find_package(PkgConfig)
+	pkg_check_modules(EGL egl)
+endif()
+
 if(NOT INSTALLER_RUN)
 	option(ENABLE_UI "Enables the OBS user interfaces" ON)
 	if(DISABLE_UI OR NOT ENABLE_UI)

@@ -194,19 +194,20 @@ static void *dmabuf_source_create(obs_data_t *settings, obs_source_t *source)
 {
 	(void)settings;
 
-	struct obs_video_info ovi;
-	if (!obs_get_video_info(&ovi)) {
-		blog(LOG_ERROR, "Cannot get video info");
-		return NULL;
+	{
+		// FIXME is it desirable to enter graphics at create time?
+		// Or is it better to postpone all activity to after the module
+		// was succesfully and unconditionally created?
+		obs_enter_graphics();
+		const int device_type = gs_get_device_type();
+		obs_leave_graphics();
+		if (device_type != GS_DEVICE_OPENGL_EGL) {
+			blog(LOG_ERROR, "dmabuf_source requires EGL");
+			return NULL;
+		}
 	}
 
-	// FIXME libobs-opengl-egl
-	if (strcmp(ovi.graphics_module, "libobs-opengl.so.0.0") != 0) {
-		blog(LOG_ERROR, "dmabuf_source requires EGL graphics: %s", ovi.graphics_module);
-		return NULL;
-	}
-
-
+	// FIXME move to glad
 	if (!glEGLImageTargetTexture2DOES) {
 		glEGLImageTargetTexture2DOES =
 			(PFNGLEGLIMAGETARGETTEXTURE2DOESPROC)eglGetProcAddress(
