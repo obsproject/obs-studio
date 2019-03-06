@@ -362,6 +362,14 @@ void TwitchAuth::LoadSecondaryUIPanes()
 		stat->setVisible(false);
 		feed->setVisible(false);
 	} else {
+		uint32_t lastVersion = config_get_int(App()->GlobalConfig(), "General",
+				"LastVersion");
+
+		if (lastVersion == MAKE_SEMANTIC_VERSION(23, 0, 0) ||
+		    lastVersion == MAKE_SEMANTIC_VERSION(23, 0, 1)) {
+			feed->setVisible(false);
+		}
+
 		const char *dockStateStr = config_get_string(main->Config(),
 				service(), "DockState");
 		QByteArray dockState =
