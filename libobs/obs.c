@@ -1823,11 +1823,10 @@ void obs_load_sources(obs_data_array_t *array, obs_load_source_cb cb,
 			if (source->info.type == OBS_SOURCE_TYPE_TRANSITION)
 				obs_transition_load(source, source_data);
 			obs_source_load(source);
-			if (source->filters.num) {
-				for (size_t i = source->filters.num; i > 0; i--) {
-					obs_source_t *filter = source->filters.array[i - 1];
-					obs_source_load(filter);
-				}
+			for (size_t i = source->filters.num; i > 0; i--) {
+				obs_source_t *filter =
+					source->filters.array[i - 1];
+				obs_source_load(filter);
 			}
 			if (cb)
 				cb(private_data, source);
