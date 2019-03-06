@@ -88,6 +88,18 @@ GLAPI int gladLoadEGLLoader(GLADloadproc);
 
 #include <KHR/khrplatform.h>
 #include <EGL/eglplatform.h>
+
+/* OBS: Ubuntu trusty libgl1-mesa-dev contains an older eglplarform.h
+ * that doesn't define EGL_CAST. Fix thath */
+#ifndef EGL_CAST
+/* C++ / C typecast macros for special EGL handle values */
+#	if defined(__cplusplus)
+#		define EGL_CAST(type, value) (static_cast<type>(value))
+#	else
+#		define EGL_CAST(type, value) ((type) (value))
+#	endif
+#endif
+
 struct AHardwareBuffer;
 typedef unsigned int EGLBoolean;
 typedef unsigned int EGLenum;
