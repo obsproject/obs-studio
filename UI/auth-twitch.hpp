@@ -17,9 +17,11 @@ class TwitchAuth : public OAuthStreamKey {
 	QSharedPointer<TwitchWidget> chat;
 	QSharedPointer<TwitchWidget> info;
 	QSharedPointer<TwitchWidget> stat;
+	QSharedPointer<TwitchWidget> feed;
 	QSharedPointer<QAction> chatMenu;
 	QSharedPointer<QAction> infoMenu;
 	QSharedPointer<QAction> statMenu;
+	QSharedPointer<QAction> feedMenu;
 	bool uiLoaded = false;
 
 	std::string name;
