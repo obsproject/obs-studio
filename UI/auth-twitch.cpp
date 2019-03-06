@@ -325,18 +325,41 @@ void TwitchAuth::LoadSecondaryUIPanes()
 
 	/* ----------------------------------- */
 
+	url = "https://www.twitch.tv/popout/";
+	url += name;
+	url += "/dashboard/live/activity-feed";
+
+	activity.reset(new TwitchWidget());
+	activity->setObjectName("twitchActivityFeed");
+	activity->resize(200, 250);
+	activity->setMinimumSize(200, 150);
+	activity->setWindowTitle(QTStr("TwitchAuth.ActivityFeed"));
+	activity->setAllowedAreas(Qt::AllDockWidgetAreas);
+
+	browser = cef->create_widget(nullptr, url, panel_cookies);
+	activity->SetWidget(browser);
+	browser->setStartupScript(script);
+
+	main->addDockWidget(Qt::RightDockWidgetArea, activity.data());
+	activityMenu.reset(main->AddDockWidget(activity.data()));
+
+	/* ----------------------------------- */
+
 	info->setFloating(true);
 	stat->setFloating(true);
+	activity->setFloating(true);
 
 	QSize statSize = stat->frameSize();
 
 	info->move(pos.x() + 50, pos.y() + 50);
 	stat->move(pos.x() + size.width()  / 2 - statSize.width()  / 2,
 	           pos.y() + size.height() / 2 - statSize.height() / 2);
+	activity->move(pos.x() + 100, pos.y() + 100);
 
 	if (firstLoad) {
 		info->setVisible(true);
 		stat->setVisible(false);
+		activity->setVisible(false);
 	} else {
 		const char *dockStateStr = config_get_string(main->Config(),
 				service(), "DockState");
