@@ -1916,7 +1916,7 @@ void OBSBasic::ReceivedIntroJson(const QString &text)
 #if OBS_RELEASE_CANDIDATE > 0
 	if (lastVersion < OBS_RELEASE_CANDIDATE_VER) {
 #else
-	if (lastVersion < LIBOBS_API_VER) {
+	if ((lastVersion & ~0xFFFF) < (LIBOBS_API_VER & ~0xFFFF)) {
 #endif
 		config_set_int(App()->GlobalConfig(), "General",
 				"InfoIncrement", -1);
