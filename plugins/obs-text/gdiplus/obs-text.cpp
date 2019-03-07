@@ -812,7 +812,7 @@ inline void TextSource::Render()
 	if (!tex)
 		return;
 
-	gs_effect_t *effect = obs_get_base_effect(OBS_EFFECT_PREMULTIPLIED_ALPHA);
+	gs_effect_t *effect = obs_get_base_effect(OBS_EFFECT_DEFAULT);
 	gs_technique_t *tech  = gs_effect_get_technique(effect, "Draw");
 
 	gs_technique_begin(tech);

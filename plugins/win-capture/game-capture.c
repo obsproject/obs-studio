@@ -1771,7 +1771,7 @@ static void game_capture_render(void *data, gs_effect_t *effect)
 		return;
 
 	effect = obs_get_base_effect(gc->config.allow_transparency ?
-			OBS_EFFECT_PREMULTIPLIED_ALPHA : OBS_EFFECT_OPAQUE);
+			OBS_EFFECT_DEFAULT : OBS_EFFECT_OPAQUE);
 
 	while (gs_effect_loop(effect, "Draw")) {
 		obs_source_draw(gc->texture, 0, 0, 0, 0,
