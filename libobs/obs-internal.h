@@ -259,6 +259,7 @@ struct obs_core_video {
 	gs_effect_t                     *conversion_effect;
 	gs_effect_t                     *bicubic_effect;
 	gs_effect_t                     *lanczos_effect;
+	gs_effect_t                     *area_effect;
 	gs_effect_t                     *bilinear_lowres_effect;
 	gs_effect_t                     *premultiplied_alpha_effect;
 	gs_samplerstate_t               *point_sampler;
