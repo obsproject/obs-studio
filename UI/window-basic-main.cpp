@@ -6026,6 +6026,11 @@ void OBSBasic::on_actionResetTransform_triggered()
 	obs_scene_enum_items(GetCurrentScene(), reset_tr, nullptr);
 }
 
+void OBSBasic::on_sourceLockChanged()
+{
+	UpdateContextBar();
+}
+
 static void GetItemBox(obs_sceneitem_t *item, vec3 &tl, vec3 &br)
 {
 	matrix4 boxTransform;

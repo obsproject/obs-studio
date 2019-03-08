@@ -3,6 +3,7 @@
 #include "locked-checkbox.hpp"
 #include "qt-wrappers.hpp"
 #include "obs-app.hpp"
+#include "window-basic-main.hpp"
 #include <QListWidget>
 #include <QLineEdit>
 #include <QHBoxLayout>
@@ -201,6 +202,8 @@ void VisibilityItemWidget::LockClicked(bool locked)
 {
 	if (item)
 		obs_sceneitem_set_locked(item, locked);
+
+	QMetaObject::invokeMethod(OBSBasic::Get(), "on_sourceLockChanged");
 }
 
 void VisibilityItemWidget::SourceEnabled(bool enabled)

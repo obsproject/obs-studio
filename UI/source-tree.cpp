@@ -105,6 +105,7 @@ SourceTreeItem::SourceTreeItem(SourceTree *tree_, OBSSceneItem sceneitem_)
 	{
 		SignalBlocker sourcesSignalBlocker(this);
 		obs_sceneitem_set_locked(sceneitem, checked);
+		QMetaObject::invokeMethod(OBSBasic::Get(), "on_sourceLockChanged");
 	};
 
 	connect(vis, &QAbstractButton::clicked, setItemVisible);

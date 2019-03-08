@@ -815,6 +815,7 @@ private slots:
 
 public slots:
 	void on_actionResetTransform_triggered();
+	void on_sourceLockChanged();
 
 	bool StreamingActive();
 	bool RecordingActive();
