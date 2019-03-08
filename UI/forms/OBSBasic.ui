@@ -38,6 +38,12 @@
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QVBoxLayout" name="verticalLayout">
+    <property name="spacing">
+     <number>6</number>
+    </property>
+    <property name="bottomMargin">
+     <number>6</number>
+    </property>
     <item>
      <layout class="QHBoxLayout" name="horizontalLayout_2">
       <item>
@@ -116,17 +122,23 @@
       <property name="minimumSize">
        <size>
         <width>0</width>
-        <height>42</height>
+        <height>24</height>
        </size>
       </property>
       <layout class="QHBoxLayout" name="horizontalLayout">
        <property name="spacing">
-        <number>3</number>
+        <number>0</number>
        </property>
        <property name="sizeConstraint">
         <enum>QLayout::SetDefaultConstraint</enum>
        </property>
+       <property name="leftMargin">
+        <number>0</number>
+       </property>
        <property name="topMargin">
+        <number>0</number>
+       </property>
+       <property name="rightMargin">
         <number>0</number>
        </property>
        <property name="bottomMargin">
@@ -147,6 +159,18 @@
           </size>
          </property>
          <layout class="QHBoxLayout" name="horizontalLayout_5">
+          <property name="leftMargin">
+           <number>0</number>
+          </property>
+          <property name="topMargin">
+           <number>0</number>
+          </property>
+          <property name="rightMargin">
+           <number>0</number>
+          </property>
+          <property name="bottomMargin">
+           <number>0</number>
+          </property>
           <item>
            <widget class="QPushButton" name="sourcePropertiesButton">
             <property name="sizePolicy">
@@ -572,6 +596,9 @@
    </attribute>
    <widget class="QWidget" name="dockWidgetContents_2">
     <layout class="QVBoxLayout" name="verticalLayout_6">
+     <property name="spacing">
+      <number>6</number>
+     </property>
      <property name="leftMargin">
       <number>4</number>
      </property>
@@ -875,7 +902,7 @@
           <rect>
            <x>0</x>
            <y>0</y>
-           <width>80</width>
+           <width>81</width>
            <height>16</height>
           </rect>
          </property>
