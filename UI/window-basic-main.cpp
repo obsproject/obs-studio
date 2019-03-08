@@ -2695,7 +2695,7 @@ void OBSBasic::SelectSceneItem(OBSScene scene, OBSSceneItem item, bool select)
 {
 	SignalBlocker sourcesSignalBlocker(ui->sources);
 
-	if (scene != GetCurrentScene() || ignoreSelectionUpdate)
+	if (scene != GetCurrentScene() || ignoreSelectionUpdate) 
 		return;
 
 	ui->sources->SelectItem(item, select);
@@ -4000,6 +4000,8 @@ void OBSBasic::on_scenes_currentItemChanged(QListWidgetItem *current,
 
 	if (api)
 		api->on_event(OBS_FRONTEND_EVENT_PREVIEW_SCENE_CHANGED);
+
+	this->UpdateContextBar();
 
 	UNUSED_PARAMETER(prev);
 }
