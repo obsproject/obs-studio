@@ -795,6 +795,15 @@
             }
         },
         {
+          "name": "GameTips.TV",
+          "servers": [
+              {
+                  "name": "Server Iran",
+                  "url": "rtmp://gametips.tv:1935/hls"
+              }
+          ]
+        },
+        {
             "name": "Nood",
             "servers": [
                 {
