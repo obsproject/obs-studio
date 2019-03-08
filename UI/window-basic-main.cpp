@@ -2706,10 +2706,16 @@ void OBSBasic::SelectSceneItem(OBSScene scene, OBSSceneItem item, bool select)
 void OBSBasic::UpdateContextBar() {
 	if (GetCurrentSceneItem()) {
 		ui->contextSubContainer->show();
+		if (obs_sceneitem_locked(GetCurrentSceneItem())) {
+			ui->contextTransformIcons->hide();
+		}
+		else {
+			ui->contextTransformIcons->show();
+		}
 	}
 	else {
 		ui->contextSubContainer->hide();
-	}
+	}	
 }
 
 static inline bool SourceMixerHidden(obs_source_t *source)
