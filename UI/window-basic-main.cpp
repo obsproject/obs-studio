@@ -5477,14 +5477,16 @@ bool OBSBasic::NoSourcesConfirmation()
 		msg += "\n\n";
 		msg += QTStr("NoSources.Text.AddSource");
 
-		QMessageBox messageBox(QMessageBox::Question,
-				QTStr("NoSources.title"),
-				msg,
-				QMessageBox::Yes | QMessageBox::No,
-				this);
-		messageBox.setDefaultButton(QMessageBox::No);
+		QMessageBox messageBox(this);
+		messageBox.setWindowTitle(QTStr("NoSources.Title"));
+		messageBox.setText(msg);
+		QAbstractButton *Yes = messageBox.addButton(QTStr("Yes"),
+			QMessageBox::YesRole);
+		messageBox.addButton(QTStr("No"), QMessageBox::NoRole);
+		messageBox.setIcon(QMessageBox::Question);
+		messageBox.exec();
 
-		if (QMessageBox::No == messageBox.exec())
+		if (messageBox.clickedButton() != Yes)
 			return false;
 	}
 
