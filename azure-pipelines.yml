@@ -34,7 +34,7 @@ jobs:
       pathtoPublish: './nightly'
       artifactName: build
 
-- job: 'Build_Windows'
+- job: 'Build_Windows32'
   pool:
     vmImage: 'vs2017-win2016'
   steps:
@@ -42,13 +42,32 @@ jobs:
     displayName: 'Checkout Submodules'
   - script: ./CI/install-qt-win.cmd
     displayName: 'Install QT'
-  - script: ./CI/install-script-win.cmd      
-    displayName: 'Download / Setup Deps'
+  - script: ./CI/install-script-win.cmd
+    displayName: 'Download / Setup Deps / Run CMake'
   - task: MSBuild@1
     displayName: 'Build 32-bit'
     inputs: 
       msbuildArguments: '/m /p:Configuration=RelWithDebInfo'
       solution: .\build32\obs-studio.sln
+  - script: ./CI/before-deploy-win.cmd
+    condition: ne(variables['Build.Reason'], 'PullRequest')
+    displayName: 'Before deploy'
+  - task: PublishBuildArtifacts@1
+    condition: ne(variables['Build.Reason'], 'PullRequest')
+    inputs:
+      pathtoPublish: './build'
+      artifactName: winbuild
+
+- job: 'Build_Windows64'
+  pool:
+    vmImage: 'vs2017-win2016'
+  steps:
+  - script: git submodule update --init --recursive
+    displayName: 'Checkout Submodules'
+  - script: ./CI/install-qt-win.cmd
+    displayName: 'Install QT'
+  - script: ./CI/install-script-win.cmd
+    displayName: 'Download / Setup Deps / Run CMake'
   - task: MSBuild@1
     displayName: 'Build 64-bit'
     inputs: 
