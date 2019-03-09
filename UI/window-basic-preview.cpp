@@ -616,7 +616,6 @@ void OBSBasicPreview::mouseReleaseEvent(QMouseEvent *event)
 		cropping     = false;
 
 		OBSSceneItem item = GetItemAtPos(pos, true);
-		hoveredPreviewItem = item;
 	}
 }
 
@@ -1163,7 +1162,7 @@ void OBSBasicPreview::mouseMoveEvent(QMouseEvent *event)
 		return;
 
 	if (mouseDown) {
-		hoveredPreviewItem = nullptr;
+		hoveredListItem = nullptr;
 
 		vec2 pos = GetMouseEventPos(event);
 
@@ -1205,15 +1204,8 @@ void OBSBasicPreview::mouseMoveEvent(QMouseEvent *event)
 		vec2 pos = GetMouseEventPos(event);
 		OBSSceneItem item = GetItemAtPos(pos, true);
 
-		hoveredPreviewItem = item;
+		hoveredListItem = item;
 	}
-}
-
-void OBSBasicPreview::leaveEvent(QEvent *event)
-{
-	hoveredPreviewItem = nullptr;
-
-	UNUSED_PARAMETER(event);
 }
 
 static void DrawSquareAtPos(float x, float y)
@@ -1411,8 +1403,7 @@ bool OBSBasicPreview::DrawSelectedItem(obs_scene_t *scene,
 	OBSBasicPreview *prev = reinterpret_cast<OBSBasicPreview*>(param);
 	OBSBasic *main = OBSBasic::Get();
 
-	bool hovered = prev->hoveredPreviewItem == item ||
-	               prev->hoveredListItem == item;
+	bool hovered = prev->hoveredListItem == item;
 	bool selected = obs_sceneitem_selected(item);
 
 	if (!selected && !hovered)

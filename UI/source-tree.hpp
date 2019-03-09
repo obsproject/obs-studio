@@ -44,7 +44,9 @@ class SourceTreeItem : public QWidget {
 	void ReconnectSignals();
 
 	Type type = Type::Unknown;
-
+protected:
+	virtual void enterEvent(QEvent *event) override;
+	virtual void leaveEvent(QEvent *event) override;
 public:
 	explicit SourceTreeItem(SourceTree *tree, OBSSceneItem sceneitem);
 	bool IsEditing();
@@ -175,8 +177,6 @@ public slots:
 protected:
 	virtual void mouseDoubleClickEvent(QMouseEvent *event) override;
 	virtual void dropEvent(QDropEvent *event) override;
-	virtual void mouseMoveEvent(QMouseEvent *event) override;
-	virtual void leaveEvent(QEvent *event) override;
 
 	virtual void selectionChanged(const QItemSelection &selected, const QItemSelection &deselected) override;
 };

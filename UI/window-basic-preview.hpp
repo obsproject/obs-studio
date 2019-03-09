@@ -32,6 +32,7 @@ class OBSBasicPreview : public OBSQTDisplay {
 	Q_OBJECT
 
 	friend class SourceTree;
+	friend class SourceTreeItem;
 
 private:
 	obs_sceneitem_crop startCrop;
@@ -61,7 +62,6 @@ private:
 	int32_t      scalingLevel   = 0;
 	float        scalingAmount  = 1.0f;
 
-	obs_sceneitem_t *hoveredPreviewItem = nullptr;
 	obs_sceneitem_t *hoveredListItem    = nullptr;
 
 	static vec2 GetMouseEventPos(QMouseEvent *event);
@@ -105,7 +105,6 @@ public:
 	virtual void mousePressEvent(QMouseEvent *event) override;
 	virtual void mouseReleaseEvent(QMouseEvent *event) override;
 	virtual void mouseMoveEvent(QMouseEvent *event) override;
-	virtual void leaveEvent(QEvent *event) override;
 
 	void DrawOverflow();
 	void DrawSceneEditing();

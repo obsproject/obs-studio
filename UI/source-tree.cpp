@@ -110,6 +110,19 @@ SourceTreeItem::SourceTreeItem(SourceTree *tree_, OBSSceneItem sceneitem_)
 	connect(lock, &QAbstractButton::clicked, setItemLocked);
 }
 
+void SourceTreeItem::enterEvent(QEvent *event)
+{
+	OBSBasicPreview *preview = OBSBasicPreview::Get();
+	preview->hoveredListItem = this->sceneitem;
+}
+
+void SourceTreeItem::leaveEvent(QEvent *event)
+{
+	OBSBasicPreview *preview = OBSBasicPreview::Get();
+	if (preview->hoveredListItem == this->sceneitem)
+		preview->hoveredListItem = nullptr;
+}
+
 void SourceTreeItem::paintEvent(QPaintEvent *event)
 {
 	QStyleOption opt;
@@ -1265,24 +1278,6 @@ void SourceTree::dropEvent(QDropEvent *event)
 	event->setDropAction(Qt::CopyAction);
 
 	QListView::dropEvent(event);
-}
-
-void SourceTree::mouseMoveEvent(QMouseEvent *event)
-{
-	QPoint pos = event->pos();
-	SourceTreeItem *item = qobject_cast<SourceTreeItem *>(childAt(pos));
-
-	OBSBasicPreview *preview = OBSBasicPreview::Get();
-	preview->hoveredListItem = !!item ? item->sceneitem : nullptr;
-
-	QListView::mouseMoveEvent(event);
-}
-
-void SourceTree::leaveEvent(QEvent *event)
-{
-	OBSBasicPreview *preview = OBSBasicPreview::Get();
-	preview->hoveredListItem = nullptr;
-	QListView::leaveEvent(event);
 }
 
 void SourceTree::selectionChanged(
