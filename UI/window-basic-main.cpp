@@ -5519,7 +5519,21 @@ void OBSBasic::on_streamButton_clicked()
 		bool confirm = config_get_bool(GetGlobalConfig(), "BasicWindow",
 				"WarnBeforeStartingStream");
 
-		if (confirm && isVisible()) {
+		obs_data_t *settings = obs_service_get_settings(service);
+		bool bwtest = obs_data_get_bool(settings, "bwtest");
+		obs_data_release(settings);
+
+		if (bwtest && isVisible()) {
+			QMessageBox::StandardButton button =
+				OBSMessageBox::question(this,
+						QTStr("ConfirmBWTest.Title"),
+						QTStr("ConfirmBWTest.Text"));
+
+			if (button == QMessageBox::No) {
+				ui->streamButton->setChecked(false);
+				return;
+			}
+		} else if (confirm && isVisible()) {
 			QMessageBox::StandardButton button =
 				OBSMessageBox::question(this,
 						QTStr("ConfirmStart.Title"),
