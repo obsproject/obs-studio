@@ -196,6 +196,8 @@ void VisibilityItemWidget::VisibilityClicked(bool visible)
 		obs_sceneitem_set_visible(item, visible);
 	else
 		obs_source_set_enabled(source, visible);
+
+	QMetaObject::invokeMethod(OBSBasic::Get(), "on_sourceVisibleChanged");
 }
 
 void VisibilityItemWidget::LockClicked(bool locked)

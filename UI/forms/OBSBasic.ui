@@ -179,6 +179,20 @@
            </widget>
           </item>
           <item>
+           <widget class="VisibilityCheckBox" name="contextVisibilityCheckBox">
+            <property name="text">
+             <string/>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="LockedCheckBox" name="contextLockedCheckBox">
+            <property name="text">
+             <string/>
+            </property>
+           </widget>
+          </item>
+          <item>
            <widget class="Line" name="line_3">
             <property name="orientation">
              <enum>Qt::Vertical</enum>
@@ -2027,6 +2041,16 @@
    <extends>QDockWidget</extends>
    <header>window-dock.hpp</header>
    <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>LockedCheckBox</class>
+   <extends>QCheckBox</extends>
+   <header>locked-checkbox.hpp</header>
+  </customwidget>
+  <customwidget>
+   <class>VisibilityCheckBox</class>
+   <extends>QCheckBox</extends>
+   <header>visibility-checkbox.hpp</header>
   </customwidget>
  </customwidgets>
  <resources>

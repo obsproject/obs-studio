@@ -2712,9 +2712,11 @@ void OBSBasic::UpdateContextBar()
 		const char* name = obs_source_get_name(source);
 		ui->contextSourceLabel->setText(name);
 
-		ui->contextSubContainer->show();
+		bool visible = obs_sceneitem_visible(item);
+		ui->contextVisibilityCheckBox->setChecked(visible);
 
 		bool enabled = !obs_sceneitem_locked(item);
+		ui->contextLockedCheckBox->setChecked(!enabled);
 		ui->sourceRotateLeftButton->setEnabled(enabled);
 		ui->sourceRotateRightButton->setEnabled(enabled);
 		ui->sourceFlipHorizontallyButton->setEnabled(enabled);
@@ -2722,6 +2724,8 @@ void OBSBasic::UpdateContextBar()
 		ui->sourceFillScreenButton->setEnabled(enabled);
 		ui->sourceFitScreenButton->setEnabled(enabled);
 		ui->sourceCenterButton->setEnabled(enabled);
+
+		ui->contextSubContainer->show();
 	}
 	else {
 		ui->contextSubContainer->hide();
@@ -5864,6 +5868,24 @@ void OBSBasic::on_sourceCenterButton_clicked()
 	on_actionCenterToScreen_triggered();
 }
 
+void OBSBasic::on_contextVisibilityCheckBox_clicked(bool visible)
+{
+	OBSSceneItem sceneitem = GetCurrentSceneItem();
+	if (sceneitem) {
+		obs_sceneitem_set_visible(sceneitem, visible);
+		UpdateContextBar();
+	}
+}
+
+void OBSBasic::on_contextLockedCheckBox_clicked(bool locked)
+{
+	OBSSceneItem sceneitem = GetCurrentSceneItem();
+	if (sceneitem) {
+		obs_sceneitem_set_locked(sceneitem, locked);
+		UpdateContextBar();
+	}
+}
+
 void OBSBasic::ToggleAlwaysOnTop()
 {
 	bool isAlwaysOnTop = IsAlwaysOnTop(this);
@@ -6034,6 +6056,11 @@ static bool reset_tr(obs_scene_t *scene, obs_sceneitem_t *item, void *param)
 void OBSBasic::on_actionResetTransform_triggered()
 {
 	obs_scene_enum_items(GetCurrentScene(), reset_tr, nullptr);
+}
+
+void OBSBasic::on_sourceVisibleChanged()
+{
+	UpdateContextBar();
 }
 
 void OBSBasic::on_sourceLockChanged()

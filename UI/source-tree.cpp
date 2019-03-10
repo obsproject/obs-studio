@@ -99,6 +99,7 @@ SourceTreeItem::SourceTreeItem(SourceTree *tree_, OBSSceneItem sceneitem_)
 	{
 		SignalBlocker sourcesSignalBlocker(this);
 		obs_sceneitem_set_visible(sceneitem, checked);
+		QMetaObject::invokeMethod(OBSBasic::Get(), "on_sourceVisibleChanged");
 	};
 
 	auto setItemLocked = [this] (bool checked)

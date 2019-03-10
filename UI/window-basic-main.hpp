@@ -762,6 +762,8 @@ private slots:
 	void on_sourceFitScreenButton_clicked();
 	void on_sourceFillScreenButton_clicked();
 	void on_sourceCenterButton_clicked();
+	void on_contextVisibilityCheckBox_clicked(bool visible);
+	void on_contextLockedCheckBox_clicked(bool locked);
 
 	void on_autoConfigure_triggered();
 	void on_stats_triggered();
@@ -815,6 +817,7 @@ private slots:
 
 public slots:
 	void on_actionResetTransform_triggered();
+	void on_sourceVisibleChanged();
 	void on_sourceLockChanged();
 
 	bool StreamingActive();
