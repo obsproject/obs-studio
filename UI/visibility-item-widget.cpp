@@ -95,6 +95,8 @@ VisibilityItemWidget::VisibilityItemWidget(obs_sceneitem_t *item_)
 			this);
 	signal_handler_connect(signal, "item_visible", OBSSceneItemVisible,
 			this);
+	signal_handler_connect(signal, "item_locked", OBSSceneItemLocked,
+			this);
 
 	connect(vis, SIGNAL(clicked(bool)),
 			this, SLOT(VisibilityClicked(bool)));
@@ -121,6 +123,8 @@ void VisibilityItemWidget::DisconnectItemSignals()
 	signal_handler_disconnect(signal, "item_remove", OBSSceneItemRemove,
 			this);
 	signal_handler_disconnect(signal, "item_visible", OBSSceneItemVisible,
+			this);
+	signal_handler_disconnect(signal, "item_locked", OBSSceneItemLocked,
 			this);
 
 	sceneRemoved = true;

@@ -176,6 +176,18 @@ void SourceTreeItem::ReconnectSignals()
 					Q_ARG(bool, visible));
 	};
 
+	auto itemLocked = [] (void *data, calldata_t *cd)
+	{
+		SourceTreeItem *this_ = reinterpret_cast<SourceTreeItem*>(data);
+		obs_sceneitem_t *curItem =
+				(obs_sceneitem_t*)calldata_ptr(cd, "item");
+		bool locked = calldata_bool(cd, "locked");
+
+		if (curItem == this_->sceneitem)
+			QMetaObject::invokeMethod(this_, "LockedChanged",
+					Q_ARG(bool, locked));
+	};
+
 	auto itemDeselect = [] (void *data, calldata_t *cd)
 	{
 		SourceTreeItem *this_ = reinterpret_cast<SourceTreeItem*>(data);
@@ -199,6 +211,7 @@ void SourceTreeItem::ReconnectSignals()
 	sceneRemoveSignal.Connect(signal, "remove", removeItem, this);
 	itemRemoveSignal.Connect(signal, "item_remove", removeItem, this);
 	visibleSignal.Connect(signal, "item_visible", itemVisible, this);
+	lockedSignal.Connect(signal, "item_locked", itemLocked, this);
 
 	if (obs_sceneitem_is_group(sceneitem)) {
 		obs_source_t *source = obs_sceneitem_get_source(sceneitem);
@@ -364,6 +377,11 @@ bool SourceTreeItem::eventFilter(QObject *object, QEvent *event)
 void SourceTreeItem::VisibilityChanged(bool visible)
 {
 	vis->setChecked(visible);
+}
+
+void SourceTreeItem::LockedChanged(bool locked)
+{
+	lock->setChecked(locked);
 }
 
 void SourceTreeItem::Renamed(const QString &name)

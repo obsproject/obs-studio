@@ -180,6 +180,12 @@
           </item>
           <item>
            <widget class="VisibilityCheckBox" name="contextVisibilityCheckBox">
+            <property name="maximumSize">
+             <size>
+              <width>16</width>
+              <height>16</height>
+             </size>
+            </property>
             <property name="text">
              <string/>
             </property>
@@ -187,6 +193,12 @@
           </item>
           <item>
            <widget class="LockedCheckBox" name="contextLockedCheckBox">
+            <property name="maximumSize">
+             <size>
+              <width>16</width>
+              <height>16</height>
+             </size>
+            </property>
             <property name="text">
              <string/>
             </property>
