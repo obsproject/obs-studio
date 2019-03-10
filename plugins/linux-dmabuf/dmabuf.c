@@ -1,9 +1,11 @@
-#include <obs-module.h>
+#include "drmsend.h"
+
 #include <graphics/graphics-internal.h>
 
 // FIXME needed for gl_platform pointer access
 #include <../libobs-opengl/gl-subsystem.h>
 
+#include <obs-module.h>
 #include <glad/glad_egl.h>
 
 // FIXME integrate into glad
@@ -19,18 +21,12 @@ GLAPI PFNGLEGLIMAGETARGETRENDERBUFFERSTORAGEOESPROC glad_glEGLImageTargetRenderb
 #include <errno.h>
 
 typedef struct {
-	int width, height;
-	uint32_t fourcc;
-	int offset, pitch;
-	int fd;
-} dmabuf_metadata_t;
-
-typedef struct {
 	obs_source_t *source;
 	gs_texture_t *texture;
 	EGLDisplay edisp;
 	EGLImage eimage;
-	dmabuf_metadata_t data;
+	drmsend_framebuffer_t fb_data;
+	int fb_fd;
 } dmabuf_source_t;
 
 // FIXME sync w/ gl-x11-egl.c
@@ -42,7 +38,7 @@ struct gl_platform {
 	EGLSurface pbuffer;
 };
 
-static int dmabuf_receive_socket(const char *sockname, dmabuf_metadata_t *img)
+static int dmabuf_receive_socket(const char *sockname, drmsend_response_t *response)
 {
 	int retval = 0;
 	const int sockfd = socket(AF_UNIX, SOCK_STREAM, 0);
