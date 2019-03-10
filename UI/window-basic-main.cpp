@@ -5693,7 +5693,7 @@ void OBSBasic::GetFPSCommon(uint32_t &num, uint32_t &den) const
 	} else if (strcmp(val, "24 NTSC") == 0) {
 		num = 24000;
 		den = 1001;
-	} else if (strcmp(val, "25") == 0) {
+	} else if (strcmp(val, "25 PAL") == 0) {
 		num = 25;
 		den = 1;
 	} else if (strcmp(val, "29.97") == 0) {
@@ -5701,6 +5701,9 @@ void OBSBasic::GetFPSCommon(uint32_t &num, uint32_t &den) const
 		den = 1001;
 	} else if (strcmp(val, "48") == 0) {
 		num = 48;
+		den = 1;
+	} else if (strcmp(val, "50 PAL") == 0) {
+		num = 50;
 		den = 1;
 	} else if (strcmp(val, "59.94") == 0) {
 		num = 60000;
