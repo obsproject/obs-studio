@@ -125,6 +125,12 @@
         <height>24</height>
        </size>
       </property>
+      <property name="maximumSize">
+       <size>
+        <width>16777215</width>
+        <height>24</height>
+       </size>
+      </property>
       <layout class="QHBoxLayout" name="horizontalLayout">
        <property name="spacing">
         <number>0</number>
@@ -173,6 +179,18 @@
           </property>
           <item>
            <widget class="QLabel" name="contextSourceLabel">
+            <property name="minimumSize">
+             <size>
+              <width>150</width>
+              <height>0</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>150</width>
+              <height>16</height>
+             </size>
+            </property>
             <property name="text">
              <string>TextLabel</string>
             </property>
