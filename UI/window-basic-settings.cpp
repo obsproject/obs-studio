@@ -4469,3 +4469,38 @@ void OBSBasicSettings::on_disableOSXVSync_clicked()
 	}
 #endif
 }
+
+void OBSBasicSettings::SetGeneralIcon(const QIcon &icon)
+{
+	ui->listWidget->item(0)->setIcon(icon);
+}
+
+void OBSBasicSettings::SetStreamIcon(const QIcon &icon)
+{
+	ui->listWidget->item(1)->setIcon(icon);
+}
+
+void OBSBasicSettings::SetOutputIcon(const QIcon &icon)
+{
+	ui->listWidget->item(2)->setIcon(icon);
+}
+
+void OBSBasicSettings::SetAudioIcon(const QIcon &icon)
+{
+	ui->listWidget->item(3)->setIcon(icon);
+}
+
+void OBSBasicSettings::SetVideoIcon(const QIcon &icon)
+{
+	ui->listWidget->item(4)->setIcon(icon);
+}
+
+void OBSBasicSettings::SetHotkeysIcon(const QIcon &icon)
+{
+	ui->listWidget->item(5)->setIcon(icon);
+}
+
+void OBSBasicSettings::SetAdvancedIcon(const QIcon &icon)
+{
+	ui->listWidget->item(6)->setIcon(icon);
+}
