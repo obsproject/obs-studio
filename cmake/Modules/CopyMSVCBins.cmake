@@ -151,8 +151,8 @@ file(GLOB QT_DEBUG_BIN_FILES
 	"${Qt5Core_DIR}/../../../bin/Qt5Cored.dll"
 	"${Qt5Core_DIR}/../../../bin/Qt5Guid.dll"
 	"${Qt5Core_DIR}/../../../bin/Qt5Widgetsd.dll"
-	"${Qt5Core_DIR}/../../../bin/Qt5Svg.dll"
-	"${Qt5Core_DIR}/../../../bin/Qt5Xml.dll"
+	"${Qt5Core_DIR}/../../../bin/Qt5Svgd.dll"
+	"${Qt5Core_DIR}/../../../bin/Qt5Xmld.dll"
 	"${Qt5Core_DIR}/../../../bin/libGLESv2d.dll"
 	"${Qt5Core_DIR}/../../../bin/libEGLd.dll")
 file(GLOB QT_DEBUG_PLAT_BIN_FILES
@@ -160,9 +160,9 @@ file(GLOB QT_DEBUG_PLAT_BIN_FILES
 file(GLOB QT_DEBUG_STYLES_BIN_FILES
 	"${Qt5Core_DIR}/../../../plugins/styles/qwindowsvistastyled.dll")
 file(GLOB QT_DEBUG_ICONENGINE_BIN_FILES
-	"${Qt5Core_DIR}/../../../plugins/iconengines/qsvgicon.dll")	
+	"${Qt5Core_DIR}/../../../plugins/iconengines/qsvgicond.dll")
 file(GLOB QT_DEBUG_IMAGEFORMATS_BIN_FILES
-	"${Qt5Core_DIR}/../../../plugins/imageformats/qsvg.dll")	
+	"${Qt5Core_DIR}/../../../plugins/imageformats/qsvgd.dll")
 
 
 file(GLOB QT_BIN_FILES
