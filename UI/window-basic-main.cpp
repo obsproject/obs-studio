@@ -2706,9 +2706,15 @@ void OBSBasic::SelectSceneItem(OBSScene scene, OBSSceneItem item, bool select)
 void OBSBasic::UpdateContextBar()
 {
 	if (GetCurrentSceneItem()) {
+		OBSSceneItem item = GetCurrentSceneItem();
+
+		obs_source_t *source = obs_sceneitem_get_source(item);
+		const char* name = obs_source_get_name(source);
+		ui->contextSourceLabel->setText(name);
+
 		ui->contextSubContainer->show();
 
-		bool enabled = !obs_sceneitem_locked(GetCurrentSceneItem());
+		bool enabled = !obs_sceneitem_locked(item);
 		ui->sourceRotateLeftButton->setEnabled(enabled);
 		ui->sourceRotateRightButton->setEnabled(enabled);
 		ui->sourceFlipHorizontallyButton->setEnabled(enabled);

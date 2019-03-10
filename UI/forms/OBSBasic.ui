@@ -172,6 +172,20 @@
            <number>0</number>
           </property>
           <item>
+           <widget class="QLabel" name="contextSourceLabel">
+            <property name="text">
+             <string>TextLabel</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Line" name="line_3">
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+           </widget>
+          </item>
+          <item>
            <widget class="QPushButton" name="sourcePropertiesButton">
             <property name="sizePolicy">
              <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
@@ -385,7 +399,7 @@
      <x>0</x>
      <y>0</y>
      <width>1079</width>
-     <height>21</height>
+     <height>22</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_File">
@@ -929,7 +943,7 @@
           <rect>
            <x>0</x>
            <y>0</y>
-           <width>81</width>
+           <width>85</width>
            <height>16</height>
           </rect>
          </property>
@@ -983,7 +997,7 @@
            <x>0</x>
            <y>0</y>
            <width>16</width>
-           <height>16</height>
+           <height>28</height>
           </rect>
          </property>
          <property name="sizePolicy">
