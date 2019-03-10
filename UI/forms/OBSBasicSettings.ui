@@ -4075,6 +4075,11 @@
                </item>
                <item>
                 <property name="text">
+                 <string>25 PAL</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
                  <string notr="true">29.97</string>
                 </property>
                </item>
@@ -4086,6 +4091,11 @@
                <item>
                 <property name="text">
                  <string notr="true">48</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>50 PAL</string>
                 </property>
                </item>
                <item>
