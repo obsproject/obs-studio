@@ -14,7 +14,11 @@
 #include <string.h>
 #include <errno.h>
 
-#define MSG(fmt, ...) fprintf(stderr, "obs-drmsend: " fmt "\n", ##__VA_ARGS__)
+#define ERR(fmt, ...) \
+	fprintf(stderr, "" fmt "\n", ##__VA_ARGS__)
+
+#define MSG(fmt, ...) \
+	fprintf(stdout, "obs-drmsend: " fmt "\n", ##__VA_ARGS__)
 
 void printUsage(const char *name) {
 	MSG("usage: %s /dev/dri/card socket_filename", name);
@@ -26,8 +30,8 @@ int main(int argc, const char *argv[]) {
 		return 1;
 	}
 
-	const char *card = argv[2];
-	const char *sockname = argv[3];
+	const char *card = argv[1];
+	const char *sockname = argv[2];
 
 	MSG("Opening card %s", card);
 	const int drmfd = open(card, O_RDONLY);
@@ -35,6 +39,8 @@ int main(int argc, const char *argv[]) {
 		perror("Cannot open card");
 		return 1;
 	}
+
+	drmSetClientCap(drmfd, DRM_CLIENT_CAP_UNIVERSAL_PLANES, 1);
 
 	int sockfd = -1;
 	int retval = 2;
@@ -44,16 +50,19 @@ int main(int argc, const char *argv[]) {
 	{
 		drmModePlaneResPtr planes = drmModeGetPlaneResources(drmfd);
 		if (!planes) {
-			MSG("Cannot get drm planes: %d", errno);
+			ERR("Cannot get drm planes: %d", errno);
 			goto cleanup;
 		}
 
+		MSG("DRM planes %d:", planes->count_planes);
 		for (uint32_t i = 0; i < planes->count_planes; ++i) {
 			drmModePlanePtr plane = drmModeGetPlane(drmfd, planes->planes[i]);
 			if (!plane) {
-				MSG("Cannot get drmModePlanePtr for plane %#x", planes->planes[i]);
+				ERR("Cannot get drmModePlanePtr for plane %#x", planes->planes[i]);
 				continue;
 			}
+
+			MSG("\t%d: fb_id=%#x", i, plane->fb_id);
 
 			if (!plane->fb_id)
 				goto plane_continue;
@@ -68,22 +77,22 @@ int main(int argc, const char *argv[]) {
 				goto plane_continue;
 
 			if (j == OBS_DRMSEND_MAX_FRAMEBUFFERS) {
-				MSG("Too many framebuffers, max %d", OBS_DRMSEND_MAX_FRAMEBUFFERS);
+				ERR("Too many framebuffers, max %d", OBS_DRMSEND_MAX_FRAMEBUFFERS);
 				goto plane_continue;
 			}
 
 			drmModeFBPtr drmfb = drmModeGetFB(drmfd, plane->fb_id);
 			if (!drmfb) {
-				MSG("Cannot get drmModeFBPtr for fb %#x", plane->fb_id);
+				ERR("Cannot get drmModeFBPtr for fb %#x", plane->fb_id);
 			} else {
 				if (!drmfb->handle) {
-					MSG("Cannot get FB handle for fb %#x", plane->fb_id);
-					MSG("Possible reason: not permitted to get fb handles. Run either with sudo, or setcap cap_sys_admin+ep %s", argv[0]);
+					ERR("Cannot get FB handle for fb %#x", plane->fb_id);
+					ERR("Possible reason: not permitted to get fb handles. Run either with sudo, or setcap cap_sys_admin+ep %s", argv[0]);
 				} else {
 					int fb_fd = -1;
 					const int ret = drmPrimeHandleToFD(drmfd, drmfb->handle, 0, &fb_fd);
-					if (!ret || fb_fd == -1) {
-						MSG("Cannot get fd for fb %#x", plane->fb_id);
+					if (ret != 0 || fb_fd == -1) {
+						ERR("Cannot get fd for fb %#x handle %#x: %d", plane->fb_id, drmfb->handle, errno);
 					} else {
 						const int fb_index = response.num_framebuffers++;
 						drmsend_framebuffer_t *fb = response.framebuffers + fb_index;
@@ -115,25 +124,15 @@ plane_continue:
 				sockname, (int)sizeof(addr.sun_path));
 			goto cleanup;
 		}
+
 		strcpy(addr.sun_path, sockname);
-		if (-1 == bind(sockfd, (const struct sockaddr*)&addr, sizeof(addr))) {
-			perror("Cannot bind unix socket");
-			goto cleanup;
-		}
-
-		if (-1 == listen(sockfd, 1)) {
-			perror("Cannot listen on unix socket");
+		if (-1 == connect(sockfd, (const struct sockaddr*)&addr, sizeof(addr))) {
+			MSG("Cannot connect to unix socket: %d", errno);
 			goto cleanup;
 		}
 	}
 
-	int connfd = accept(sockfd, NULL, NULL);
-	if (connfd < 0) {
-		perror("Cannot accept unix socket");
-		goto cleanup;
-	}
-
-	MSG("accepted socket %d", connfd);
+	response.tag = OBS_DRMSEND_TAG;
 
 	struct msghdr msg = {0};
 
@@ -144,17 +143,18 @@ plane_continue:
 	msg.msg_iov = &io;
 	msg.msg_iovlen = 1;
 
+	const int fb_size = sizeof(int) * response.num_framebuffers;
 	char cmsg_buf[CMSG_SPACE(sizeof(fb_fds))];
 	msg.msg_control = cmsg_buf;
-	msg.msg_controllen = sizeof(cmsg_buf);
+	msg.msg_controllen = CMSG_SPACE(fb_size);
 	struct cmsghdr *cmsg = CMSG_FIRSTHDR(&msg);
 	cmsg->cmsg_level = SOL_SOCKET;
 	cmsg->cmsg_type = SCM_RIGHTS;
-	cmsg->cmsg_len = CMSG_LEN(sizeof(int) * response.num_framebuffers);
-	memcpy(CMSG_DATA(cmsg), fb_fds, sizeof(int) * response.num_framebuffers);
+	cmsg->cmsg_len = CMSG_LEN(fb_size);
+	memcpy(CMSG_DATA(cmsg), fb_fds, fb_size);
 
-	ssize_t sent = sendmsg(connfd, &msg, MSG_CONFIRM);
-	close(connfd);
+	const ssize_t sent = sendmsg(sockfd, &msg, 0);
+
 	if (sent < 0) {
 		perror("cannot sendmsg");
 		goto cleanup;
