@@ -2703,15 +2703,19 @@ void OBSBasic::SelectSceneItem(OBSScene scene, OBSSceneItem item, bool select)
 	this->UpdateContextBar();
 }
 
-void OBSBasic::UpdateContextBar() {
+void OBSBasic::UpdateContextBar()
+{
 	if (GetCurrentSceneItem()) {
 		ui->contextSubContainer->show();
-		if (obs_sceneitem_locked(GetCurrentSceneItem())) {
-			ui->contextTransformIcons->hide();
-		}
-		else {
-			ui->contextTransformIcons->show();
-		}
+
+		bool enabled = !obs_sceneitem_locked(GetCurrentSceneItem());
+		ui->sourceRotateLeftButton->setEnabled(enabled);
+		ui->sourceRotateRightButton->setEnabled(enabled);
+		ui->sourceFlipHorizontallyButton->setEnabled(enabled);
+		ui->sourceFlipVerticallyButton->setEnabled(enabled);
+		ui->sourceFillScreenButton->setEnabled(enabled);
+		ui->sourceFitScreenButton->setEnabled(enabled);
+		ui->sourceCenterButton->setEnabled(enabled);
 	}
 	else {
 		ui->contextSubContainer->hide();
