@@ -12,10 +12,10 @@ Copyright(c) 2005-2014 Intel Corporation. All Rights Reserved.
 
 #include<map>
 
-ID3D11Device*							g_pD3D11Device;
-ID3D11DeviceContext*					g_pD3D11Ctx;
-IDXGIFactory2*							g_pDXGIFactory;
-IDXGIAdapter*                           g_pAdapter;
+Microsoft::WRL::ComPtr<ID3D11Device>        g_pD3D11Device;
+Microsoft::WRL::ComPtr<ID3D11DeviceContext> g_pD3D11Ctx;
+Microsoft::WRL::ComPtr<IDXGIFactory2>       g_pDXGIFactory;
+Microsoft::WRL::ComPtr<IDXGIAdapter>        g_pAdapter;
 
 std::map<mfxMemId*, mfxHDL>             allocResponses;
 std::map<mfxHDL, mfxFrameAllocResponse> allocDecodeResponses;
@@ -92,7 +92,7 @@ mfxStatus CreateHWDevice(mfxSession session, mfxHDL* deviceHandle, HWND hWnd, bo
     UINT dxFlags = 0;
     //UINT dxFlags = D3D11_CREATE_DEVICE_DEBUG;
 
-    hres =  D3D11CreateDevice(  g_pAdapter,
+    hres =  D3D11CreateDevice(  g_pAdapter.Get(),
                                 D3D_DRIVER_TYPE_UNKNOWN,
                                 NULL,
                                 dxFlags,
@@ -106,19 +106,19 @@ mfxStatus CreateHWDevice(mfxSession session, mfxHDL* deviceHandle, HWND hWnd, bo
         return MFX_ERR_DEVICE_FAILED;
 
     // turn on multithreading for the DX11 context
-    CComQIPtr<ID3D10Multithread> p_mt(g_pD3D11Ctx);
-    if (p_mt)
+    Microsoft::WRL::ComPtr<ID3D10Multithread> p_mt;
+    if (SUCCEEDED(g_pD3D11Ctx.As(&p_mt)) && p_mt)
         p_mt->SetMultithreadProtected(true);
     else
         return MFX_ERR_DEVICE_FAILED;
 
-    *deviceHandle = (mfxHDL)g_pD3D11Device;
+    *deviceHandle = (mfxHDL)g_pD3D11Device.Get();
 
     return MFX_ERR_NONE;
 }
 
 
-void SetHWDeviceContext(CComPtr<ID3D11DeviceContext> devCtx)
+void SetHWDeviceContext(Microsoft::WRL::ComPtr<ID3D11DeviceContext> devCtx)
 {
     g_pD3D11Ctx = devCtx;
     devCtx->GetDevice(&g_pD3D11Device);
@@ -129,27 +129,23 @@ void CleanupHWDevice()
 {
 	if (g_pAdapter)
 	{
-		g_pAdapter->Release();
-		g_pAdapter = NULL;
+		g_pAdapter.Reset();
 	}
 	if (g_pD3D11Device)
 	{
-		g_pD3D11Device->Release();
-		g_pD3D11Device = NULL;
+		g_pD3D11Device.Reset();
 	}
 	if (g_pD3D11Ctx)
 	{
-		g_pD3D11Ctx->Release();
-		g_pD3D11Ctx = NULL;
+		g_pD3D11Ctx.Reset();
 	}
 	if (g_pDXGIFactory)
 	{
-		g_pDXGIFactory->Release();
-		g_pDXGIFactory = NULL;
+		g_pDXGIFactory.Reset();
 	}
 }
 
-CComPtr<ID3D11DeviceContext> GetHWDeviceContext()
+Microsoft::WRL::ComPtr<ID3D11DeviceContext> GetHWDeviceContext()
 {
     return g_pD3D11Ctx;
 }

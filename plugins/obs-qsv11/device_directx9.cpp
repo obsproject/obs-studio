@@ -20,7 +20,7 @@ Copyright(c) 2011-2015 Intel Corporation. All Rights Reserved.
 #include "device_directx9.h"
 // #include "igfx_s3dcontrol.h"
 
-#include "atlbase.h"
+#include <wrl/client.h>
 
 // Macros
 #define MSDK_ZERO_MEMORY(VAR)                    {memset(&VAR, 0, sizeof(VAR));}
@@ -356,12 +356,12 @@ mfxStatus CD3D9Device::RenderFrame(mfxFrameSurface1 * pSurface, mfxFrameAllocato
         }
     }
 
-    CComPtr<IDirect3DSurface9> pBackBuffer;
+    Microsoft::WRL::ComPtr<IDirect3DSurface9> pBackBuffer;
     hr = m_pD3DD9->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &pBackBuffer);
 
     mfxHDLPair* dxMemId = (mfxHDLPair*)pSurface->Data.MemId;
 
-    hr = m_pD3DD9->StretchRect((IDirect3DSurface9*)dxMemId->first, NULL, pBackBuffer, NULL, D3DTEXF_LINEAR);
+    hr = m_pD3DD9->StretchRect((IDirect3DSurface9*)dxMemId->first, NULL, pBackBuffer.Get(), NULL, D3DTEXF_LINEAR);
     if (FAILED(hr))
     {
         return MFX_ERR_UNKNOWN;

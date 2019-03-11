@@ -5,7 +5,7 @@
 #include <initguid.h>
 #include <d3d9.h>
 #include <map>
-#include <atlbase.h>
+#include <wrl/client.h>
 
 
 #define D3DFMT_NV12 (D3DFORMAT)MAKEFOURCC('N','V','1','2')
@@ -17,9 +17,9 @@ std::map<mfxMemId*, mfxHDL>             dx9_allocResponses;
 std::map<mfxHDL, mfxFrameAllocResponse> dx9_allocDecodeResponses;
 std::map<mfxHDL, int>                   dx9_allocDecodeRefCount;
 
-CComPtr<IDirect3DDeviceManager9> m_manager;
-CComPtr<IDirectXVideoDecoderService> m_decoderService;
-CComPtr<IDirectXVideoProcessorService> m_processorService;
+Microsoft::WRL::ComPtr<IDirect3DDeviceManager9> m_manager;
+Microsoft::WRL::ComPtr<IDirectXVideoDecoderService> m_decoderService;
+Microsoft::WRL::ComPtr<IDirectXVideoProcessorService> m_processorService;
 HANDLE m_hDecoder;
 HANDLE m_hProcessor;
 DWORD m_surfaceUsage;
@@ -112,24 +112,24 @@ void DX9_CleanupHWDevice()
 	}
 	if (m_manager && m_hDecoder) {
 		m_manager->CloseDeviceHandle(m_hDecoder);
-		m_manager = NULL;
+		m_manager.Reset();
 		m_hDecoder = NULL;
 	}
 
 	if (m_manager && m_hProcessor) {
 		m_manager->CloseDeviceHandle(m_hProcessor);
-		m_manager = NULL;
+		m_manager.Reset();
 		m_hProcessor = NULL;
 	}
 
 	if (m_decoderService) {
 		// delete m_decoderService;
-		m_decoderService = NULL;
+		m_decoderService.Reset();
 	}
 
 	if (m_processorService) {
 		// delete m_processorService;
-		m_processorService = NULL;
+		m_processorService.Reset();
 	}
 }
 
@@ -356,7 +356,7 @@ mfxStatus _dx9_simple_alloc(mfxFrameAllocRequest* request, mfxFrameAllocResponse
 			if (FAILED(hr))
 				return MFX_ERR_MEMORY_ALLOC;
 		}
-		videoService = m_processorService;
+		videoService = m_processorService.Get();
 	}
 	else {
 		if (!m_hDecoder)
@@ -369,7 +369,7 @@ mfxStatus _dx9_simple_alloc(mfxFrameAllocRequest* request, mfxFrameAllocResponse
 			if (FAILED(hr))
 				return MFX_ERR_MEMORY_ALLOC;
 		}
-		videoService = m_decoderService;
+		videoService = m_decoderService.Get();
 	}
 
 	mfxHDLPair *dxMids = NULL, **dxMidPtrs = NULL;
