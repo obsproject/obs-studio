@@ -270,8 +270,10 @@ try {
 	vec3_set(&points[3],  1.0f,  1.0f, 0.0f);
 
 	gs_texture_2d nv12_y(this, NV12_CX, NV12_CY, GS_R8, 1, nullptr,
-			GS_RENDER_TARGET, GS_TEXTURE_2D, false, true);
-	gs_texture_2d nv12_uv(this, nv12_y.texture, GS_RENDER_TARGET);
+			GS_RENDER_TARGET | GS_SHARED_KM_TEX, GS_TEXTURE_2D,
+			false, true);
+	gs_texture_2d nv12_uv(this, nv12_y.texture,
+			GS_RENDER_TARGET | GS_SHARED_KM_TEX);
 	gs_vertex_shader nv12_vs(this, "", NV12_VS);
 	gs_pixel_shader nv12_y_ps(this, "", NV12_Y_PS);
 	gs_pixel_shader nv12_uv_ps(this, "", NV12_UV_PS);
