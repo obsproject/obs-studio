@@ -324,6 +324,8 @@ try {
 	if (gs_stagesurface_map(&nv12_stage, &data, &linesize)) {
 		bad_driver = data[linesize * NV12_CY] == 0;
 		gs_stagesurface_unmap(&nv12_stage);
+	} else {
+		throw "Could not map surface";
 	}
 
 	if (bad_driver) {
@@ -332,9 +334,12 @@ try {
 	}
 	return bad_driver;
 
-} catch (HRError) {
+} catch (HRError error) {
+	blog(LOG_WARNING, "HasBadNV12Output failed: %s (%08lX)",
+			error.str, error.hr);
 	return false;
-} catch (const char *) {
+} catch (const char *error) {
+	blog(LOG_WARNING, "HasBadNV12Output failed: %s", error);
 	return false;
 }
 
