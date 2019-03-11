@@ -28,6 +28,7 @@ static PFNGLEGLIMAGETARGETTEXTURE2DOESPROC glEGLImageTargetTexture2DOES;
 #include <sys/un.h>
 #include <unistd.h>
 #include <errno.h>
+#include <limits.h>
 
 // FIXME sync w/ gl-x11-egl.c
 struct gl_platform {
@@ -55,18 +56,20 @@ typedef struct {
 
 OBS_DECLARE_MODULE()
 
+static const char obs_drmsend_suffix[] = "-drmsend";
+static const int obs_drmsend_suffix_len = sizeof(obs_drmsend_suffix) - 1;
 static const char socket_filename[] = "/obs-drmsend.sock";
 static const int socket_filename_len = sizeof(socket_filename) - 1;
 
 static int dmabuf_source_receive_framebuffers(dmabuf_source_fblist_t *list)
 {
 	const char *dri_filename = "/dev/dri/card0"; // FIXME
-	const char *drmsend_filename = "./obs-drmsend"; // FIXME extract from /proc/self/exe + -drmsend
 
 	blog(LOG_DEBUG, "dmabuf_source_receive_framebuffers");
 
 	int retval = 0;
 	int sockfd = -1;
+
 
 	/* Get socket filename */
 	struct sockaddr_un addr = {0};
@@ -88,9 +91,33 @@ static int dmabuf_source_receive_framebuffers(dmabuf_source_fblist_t *list)
 		}
 		memcpy(addr.sun_path, module_path, module_path_len);
 		memcpy(addr.sun_path + module_path_len, socket_filename, socket_filename_len);
+
+		blog(LOG_DEBUG, "Will bind socket to %s", addr.sun_path);
 	}
 
-	blog(LOG_DEBUG, "Will bind socket to %s", addr.sun_path);
+	/* Find obs-drmsend */
+	char drmsend_filename[PATH_MAX + 1];
+	{
+		const ssize_t drmsend_filename_len = readlink("/proc/self/exe", drmsend_filename, sizeof(drmsend_filename));
+		if (drmsend_filename_len < 0) {
+				blog(LOG_ERROR, "Unable to retrieve full path to obs binary: %d", errno);
+				return 0;
+		}
+
+		if (drmsend_filename_len + obs_drmsend_suffix_len + 1 > (int)sizeof(drmsend_filename)) {
+				blog(LOG_ERROR, "Full path to obs-drmsend is too long");
+				return 0;
+		}
+
+		memcpy(drmsend_filename + drmsend_filename_len, obs_drmsend_suffix, obs_drmsend_suffix_len + 1);
+
+		if (!os_file_exists(drmsend_filename)) {
+				blog(LOG_ERROR, "%s doesn't exist", drmsend_filename);
+				return 0;
+		}
+
+		blog(LOG_DEBUG, "Will execute obs-drmsend from %s", drmsend_filename);
+	}
 
 	/* 1. create and listen on unix socket */
 	sockfd = socket(AF_UNIX, SOCK_STREAM, 0);
