@@ -6,10 +6,13 @@
 #include <../libobs-opengl/gl-subsystem.h>
 
 #include <obs-module.h>
+#include <util/platform.h>
 #include <glad/glad_egl.h>
 
 #include <sys/wait.h>
 #include <stdio.h>
+
+// FIXME stringify errno
 
 // FIXME integrate into glad
 typedef void (APIENTRYP PFNGLEGLIMAGETARGETTEXTURE2DOESPROC)(GLenum target, GLeglImageOES image);
@@ -50,38 +53,57 @@ typedef struct {
 	int active_fb;
 } dmabuf_source_t;
 
+OBS_DECLARE_MODULE()
+
+static const char socket_filename[] = "/obs-drmsend.sock";
+static const int socket_filename_len = sizeof(socket_filename) - 1;
+
 static int dmabuf_source_receive_framebuffers(dmabuf_source_fblist_t *list)
 {
 	const char *dri_filename = "/dev/dri/card0"; // FIXME
 	const char *drmsend_filename = "./obs-drmsend"; // FIXME extract from /proc/self/exe + -drmsend
-	const char *sockname = "/tmp/drmsend.sock"; // FIXME mktemp/tempnamp/...
+
+	blog(LOG_DEBUG, "dmabuf_source_receive_framebuffers");
 
 	int retval = 0;
 	int sockfd = -1;
 
+	/* Get socket filename */
+	struct sockaddr_un addr = {0};
+	addr.sun_family = AF_UNIX;
+	{
+		const char * const module_path = obs_get_module_data_path(obs_module_pointer);
+		assert(module_path);
+		if (!os_file_exists(module_path)) {
+			if (MKDIR_ERROR == os_mkdir(module_path)) {
+				blog(LOG_ERROR, "Unable to create directory %s", module_path);
+				return 0;
+			}
+		}
+
+		const int module_path_len = strlen(module_path);
+		if (module_path_len + socket_filename_len + 1 >= (int)sizeof(addr.sun_path)) {
+			blog(LOG_ERROR, "Socket filename is too long, max %d", (int)sizeof(addr.sun_path));
+			return 0;
+		}
+		memcpy(addr.sun_path, module_path, module_path_len);
+		memcpy(addr.sun_path + module_path_len, socket_filename, socket_filename_len);
+	}
+
+	blog(LOG_DEBUG, "Will bind socket to %s", addr.sun_path);
+
 	/* 1. create and listen on unix socket */
 	sockfd = socket(AF_UNIX, SOCK_STREAM, 0);
-	{
-		struct sockaddr_un addr;
-		addr.sun_family = AF_UNIX;
-		if (strlen(sockname) >= sizeof(addr.sun_path)) {
-			blog(LOG_ERROR, "Socket filename '%s' is too long, max %d",
-				sockname, (int)sizeof(addr.sun_path));
-			goto socket_cleanup;
-		}
-		strcpy(addr.sun_path, sockname);
 
-		unlink(sockname);
+	unlink(addr.sun_path);
+	if (-1 == bind(sockfd, (const struct sockaddr*)&addr, sizeof(addr))) {
+		blog(LOG_ERROR, "Cannot bind unix socket to %s: %d", addr.sun_path, errno);
+		goto socket_cleanup;
+	}
 
-		if (-1 == bind(sockfd, (const struct sockaddr*)&addr, sizeof(addr))) {
-			blog(LOG_ERROR, "Cannot bind unix socket: %d", errno);
-			goto socket_cleanup;
-		}
-
-		if (-1 == listen(sockfd, 1)) {
-			blog(LOG_ERROR, "Cannot listen on unix socket: %d", errno);
-			goto socket_cleanup;
-		}
+	if (-1 == listen(sockfd, 1)) {
+		blog(LOG_ERROR, "Cannot listen on unix socket bound to %s: %d", addr.sun_path, errno);
+		goto socket_cleanup;
 	}
 
 	/* 2. run obs-drmsend utility */
@@ -90,10 +112,12 @@ static int dmabuf_source_receive_framebuffers(dmabuf_source_fblist_t *list)
 		blog(LOG_ERROR, "Cannot fork(): %d", errno);
 		goto socket_cleanup;
 	} else if (drmsend_pid == 0) {
-		execlp(drmsend_filename, drmsend_filename, dri_filename, sockname, NULL);
+		execlp(drmsend_filename, drmsend_filename, dri_filename, addr.sun_path, NULL);
 		fprintf(stderr, "Cannot execlp(%s): %d\n", drmsend_filename, errno);
 		exit(-1);
 	}
+
+	blog(LOG_DEBUG, "Forked obs-drmsend to pid %d", drmsend_pid);
 
 	/* 3. select() on unix socket w/ timeout */
 	// FIXME updating timeout w/ time left is linux-specific, other unices might not do that
@@ -124,12 +148,16 @@ static int dmabuf_source_receive_framebuffers(dmabuf_source_fblist_t *list)
 		}
 	}
 
+	blog(LOG_DEBUG, "Ready to accept");
+
 	/* 4. accept() and receive data */
 	int connfd = accept(sockfd, NULL, NULL);
 	if (connfd < 0) {
 		blog(LOG_ERROR, "Cannot accept unix socket: %d", errno);
 		goto child_cleanup;
 	}
+
+	blog(LOG_DEBUG, "Receiving message from obs-drmsend");
 
 	for (;;) {
 		struct msghdr msg = {0};
@@ -221,11 +249,14 @@ child_cleanup:
 
 socket_cleanup:
 	close(sockfd);
+	unlink(addr.sun_path);
 	return retval;
 }
 
 void dmabuf_source_close(dmabuf_source_t *ctx)
 {
+	blog(LOG_DEBUG, "dmabuf_source_close %p", ctx);
+
 	if (ctx->eimage != EGL_NO_IMAGE) {
 		eglDestroyImage(ctx->edisp, ctx->eimage);
 		ctx->eimage = EGL_NO_IMAGE;
@@ -236,6 +267,7 @@ void dmabuf_source_close(dmabuf_source_t *ctx)
 
 static void dmabuf_source_open(dmabuf_source_t *ctx, uint32_t fb_id)
 {
+	blog(LOG_DEBUG, "dmabuf_source_open %p %#x", ctx, fb_id);
 	assert(ctx->active_fb == -1);
 
 	int index;
@@ -303,6 +335,7 @@ exit:
 static void dmabuf_source_update(void *data, obs_data_t *settings)
 {
 	dmabuf_source_t *ctx = data;
+	blog(LOG_DEBUG, "dmabuf_source_udpate %p", ctx);
 
 	dmabuf_source_close(ctx);
 	dmabuf_source_open(ctx, obs_data_get_int(settings, "framebuffer"));
@@ -310,6 +343,7 @@ static void dmabuf_source_update(void *data, obs_data_t *settings)
 
 static void *dmabuf_source_create(obs_data_t *settings, obs_source_t *source)
 {
+	blog(LOG_DEBUG, "dmabuf_source_create");
 	(void)settings;
 
 	{
@@ -348,6 +382,7 @@ static void *dmabuf_source_create(obs_data_t *settings, obs_source_t *source)
 
 	if (!dmabuf_source_receive_framebuffers(&ctx->fbs)) {
 		blog(LOG_ERROR, "Unable to enumerate DRM/KMS framebuffers");
+		bfree(ctx);
 		return NULL;
 	}
 
@@ -367,6 +402,8 @@ static void dmabuf_source_close_fds(dmabuf_source_t *ctx)
 static void dmabuf_source_destroy(void *data)
 {
 	dmabuf_source_t *ctx = data;
+	blog(LOG_DEBUG, "dmabuf_source_destroy %p", ctx);
+
 	gs_texture_destroy(ctx->texture);
 	dmabuf_source_close(ctx);
 	dmabuf_source_close_fds(ctx);
@@ -393,6 +430,7 @@ static void dmabuf_source_render(void *data, gs_effect_t *effect)
 static obs_properties_t *dmabuf_source_get_properties(void *data)
 {
 	dmabuf_source_t *ctx = data;
+	blog(LOG_DEBUG, "dmabuf_source_get_properties %p", ctx);
 
 	dmabuf_source_fblist_t stack_list = {0};
 
@@ -421,7 +459,7 @@ static obs_properties_t *dmabuf_source_get_properties(void *data)
 
 static const char *dmabuf_source_get_name(void *data)
 {
-	(void)data;
+	blog(LOG_DEBUG, "dmabuf_source_get_name %p", data);
 	return "DMA-BUF source";
 }
 
@@ -459,8 +497,6 @@ MODULE_EXPORT const char *obs_module_description(void)
 {
 	return "DMA-BUF-based zero-copy screen capture";
 }
-
-OBS_DECLARE_MODULE()
 
 bool obs_module_load(void)
 {
