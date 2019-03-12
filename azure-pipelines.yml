@@ -82,3 +82,21 @@ jobs:
       pathtoPublish: './build'
       artifactName: winbuild
 
+- job: 'Build_Linux'
+  pool:
+    vmImage: 'ubuntu-16.04'
+  steps:
+  - script: git submodule update --init --recursive
+    displayName: 'Checkout Submodules'
+  - script: ./CI/install-dependencies-linux.sh
+    displayName: 'Install Dependencies'
+
+  - script: ./CI/before-script-linux.sh
+    displayName: 'CMake'
+
+  - bash: |
+      cd ./build
+      make -j4
+      cd -
+    displayName: 'Build'
+
