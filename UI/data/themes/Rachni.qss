@@ -1292,6 +1292,8 @@ OBSBasicSettings {
 
 #contextContainer QPushButton {
     padding: 0px;
+    background: transparent;
+    border: none;
 }
 
 QPushButton#sourcePropertiesButton {
