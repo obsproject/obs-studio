@@ -216,7 +216,7 @@ OBSBasic::OBSBasic(QWidget *parent)
 
 	startingDockLayout = saveState();
 
-	statsDock = new QDockWidget();
+	statsDock = new OBSDock();
 	statsDock->setObjectName(QStringLiteral("statsDock"));
 	statsDock->setFeatures(QDockWidget::AllDockWidgetFeatures);
 	statsDock->setWindowTitle(QTStr("Basic.Stats"));
@@ -371,6 +371,17 @@ OBSBasic::OBSBasic(QWidget *parent)
 	QPoint statsDockPos = curSize / 2 - statsDockSize / 2;
 	QPoint newPos = curPos + statsDockPos;
 	statsDock->move(newPos);
+
+	ui->previewLabel->setAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
+	ui->previewLabel->setProperty("themeID", "previewProgramLabels");
+
+	bool labels = config_get_bool(GetGlobalConfig(),
+			"BasicWindow", "StudioModeLabels");
+
+	if (!previewProgramMode)
+		ui->previewLabel->setHidden(true);
+	else
+		ui->previewLabel->setHidden(!labels);
 }
 
 static void SaveAudioDevice(const char *name, int channel, obs_data_t *parent,
@@ -1905,7 +1916,7 @@ void OBSBasic::ReceivedIntroJson(const QString &text)
 #if OBS_RELEASE_CANDIDATE > 0
 	if (lastVersion < OBS_RELEASE_CANDIDATE_VER) {
 #else
-	if (lastVersion < LIBOBS_API_VER) {
+	if ((lastVersion & ~0xFFFF) < (LIBOBS_API_VER & ~0xFFFF)) {
 #endif
 		config_set_int(App()->GlobalConfig(), "General",
 				"InfoIncrement", -1);
@@ -3437,10 +3448,19 @@ void OBSBasic::ResetUI()
 	bool studioPortraitLayout = config_get_bool(GetGlobalConfig(),
 			"BasicWindow", "StudioPortraitLayout");
 
+	bool labels = config_get_bool(GetGlobalConfig(),
+			"BasicWindow", "StudioModeLabels");
+
 	if (studioPortraitLayout)
 		ui->previewLayout->setDirection(QBoxLayout::TopToBottom);
 	else
 		ui->previewLayout->setDirection(QBoxLayout::LeftToRight);
+
+	if (previewProgramMode)
+		ui->previewLabel->setHidden(!labels);
+
+	if (programLabel)
+		programLabel->setHidden(!labels);
 }
 
 int OBSBasic::ResetVideo()
@@ -5408,6 +5428,7 @@ void OBSBasic::ReplayBufferStop(int code)
 		return;
 
 	replayBufferButton->setText(QTStr("Basic.Main.StartReplayBuffer"));
+	replayBufferButton->setChecked(false);
 
 	if (sysTrayReplayBuffer)
 		sysTrayReplayBuffer->setText(replayBufferButton->text());
@@ -5456,14 +5477,16 @@ bool OBSBasic::NoSourcesConfirmation()
 		msg += "\n\n";
 		msg += QTStr("NoSources.Text.AddSource");
 
-		QMessageBox messageBox(QMessageBox::Question,
-				QTStr("NoSources.title"),
-				msg,
-				QMessageBox::Yes | QMessageBox::No,
-				this);
-		messageBox.setDefaultButton(QMessageBox::No);
+		QMessageBox messageBox(this);
+		messageBox.setWindowTitle(QTStr("NoSources.Title"));
+		messageBox.setText(msg);
+		QAbstractButton *Yes = messageBox.addButton(QTStr("Yes"),
+			QMessageBox::YesRole);
+		messageBox.addButton(QTStr("No"), QMessageBox::NoRole);
+		messageBox.setIcon(QMessageBox::Question);
+		messageBox.exec();
 
-		if (QMessageBox::No == messageBox.exec())
+		if (messageBox.clickedButton() != Yes)
 			return false;
 	}
 
@@ -5498,7 +5521,21 @@ void OBSBasic::on_streamButton_clicked()
 		bool confirm = config_get_bool(GetGlobalConfig(), "BasicWindow",
 				"WarnBeforeStartingStream");
 
-		if (confirm && isVisible()) {
+		obs_data_t *settings = obs_service_get_settings(service);
+		bool bwtest = obs_data_get_bool(settings, "bwtest");
+		obs_data_release(settings);
+
+		if (bwtest && isVisible()) {
+			QMessageBox::StandardButton button =
+				OBSMessageBox::question(this,
+						QTStr("ConfirmBWTest.Title"),
+						QTStr("ConfirmBWTest.Text"));
+
+			if (button == QMessageBox::No) {
+				ui->streamButton->setChecked(false);
+				return;
+			}
+		} else if (confirm && isVisible()) {
 			QMessageBox::StandardButton button =
 				OBSMessageBox::question(this,
 						QTStr("ConfirmStart.Title"),
@@ -5670,7 +5707,7 @@ void OBSBasic::GetFPSCommon(uint32_t &num, uint32_t &den) const
 	} else if (strcmp(val, "24 NTSC") == 0) {
 		num = 24000;
 		den = 1001;
-	} else if (strcmp(val, "25") == 0) {
+	} else if (strcmp(val, "25 PAL") == 0) {
 		num = 25;
 		den = 1;
 	} else if (strcmp(val, "29.97") == 0) {
@@ -5678,6 +5715,9 @@ void OBSBasic::GetFPSCommon(uint32_t &num, uint32_t &den) const
 		den = 1001;
 	} else if (strcmp(val, "48") == 0) {
 		num = 48;
+		den = 1;
+	} else if (strcmp(val, "50 PAL") == 0) {
+		num = 50;
 		den = 1;
 	} else if (strcmp(val, "59.94") == 0) {
 		num = 60000;

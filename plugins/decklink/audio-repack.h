@@ -26,10 +26,14 @@ struct audio_repack {
 };
 
 enum _audio_repack_mode {
-	repack_mode_8to3ch=3,
+	repack_mode_8to3ch=0,
 	repack_mode_8to4ch,
 	repack_mode_8to5ch,
 	repack_mode_8to6ch,
+	repack_mode_8to5ch_swap,
+	repack_mode_8to6ch_swap,
+	repack_mode_8ch_swap,
+	repack_mode_8ch,
 };
 
 typedef enum _audio_repack_mode audio_repack_mode_t;

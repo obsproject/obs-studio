@@ -440,12 +440,12 @@ static inline bool queue_frame(struct obs_core_video *video, bool raw_active,
 
 		tf.tex = tex;
 		tf.tex_uv = tex_uv;
-		tf.handle = gs_texture_get_shared_handle(tex);
 	}
 
 	tf.count = 1;
 	tf.timestamp = vframe_info->timestamp;
 	tf.released = true;
+	tf.handle = gs_texture_get_shared_handle(tf.tex);
 	gs_texture_release_sync(tf.tex, ++tf.lock_key);
 	circlebuf_push_back(&video->gpu_encoder_queue, &tf, sizeof(tf));
 
@@ -809,7 +809,8 @@ static inline void output_frame(bool raw_active, const bool gpu_active)
 static void clear_base_frame_data(void)
 {
 	struct obs_core_video *video = &obs->video;
-	memset(video->textures_copied, 0, sizeof(video->textures_copied));
+	memset(video->textures_rendered, 0, sizeof(video->textures_rendered));
+	memset(video->textures_output, 0, sizeof(video->textures_output));
 	memset(video->textures_converted, 0, sizeof(video->textures_converted));
 	circlebuf_free(&video->vframe_info_buffer);
 	video->cur_texture = 0;
@@ -819,7 +820,6 @@ static void clear_raw_frame_data(void)
 {
 	struct obs_core_video *video = &obs->video;
 	memset(video->textures_copied, 0, sizeof(video->textures_copied));
-	memset(video->textures_converted, 0, sizeof(video->textures_converted));
 	circlebuf_free(&video->vframe_info_buffer);
 }
 

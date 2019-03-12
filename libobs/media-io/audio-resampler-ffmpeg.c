@@ -102,6 +102,21 @@ audio_resampler_t *audio_resampler_create(const struct resample_info *dst,
 		return NULL;
 	}
 
+	if (rs->input_layout == AV_CH_LAYOUT_MONO && rs->output_ch > 1) {
+		const double matrix[MAX_AUDIO_CHANNELS][MAX_AUDIO_CHANNELS] = {
+		{1},
+		{1, 1},
+		{1, 1, 0},
+		{1, 1, 1, 1},
+		{1, 1, 1, 0, 1},
+		{1, 1, 1, 1, 1, 1},
+		{1, 1, 1, 0, 1, 1, 1},
+		{1, 1, 1, 0, 1, 1, 1, 1},
+		};
+		if (swr_set_matrix(rs->context, matrix[rs->output_ch - 1], 1) < 0)
+			blog(LOG_DEBUG, "swr_set_matrix failed for mono upmix\n");
+	}
+
 	errcode = swr_init(rs->context);
 	if (errcode != 0) {
 		blog(LOG_ERROR, "avresample_open failed: error code %d",

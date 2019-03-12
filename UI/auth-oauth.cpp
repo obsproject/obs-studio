@@ -297,7 +297,14 @@ void OAuthStreamKey::OnStreamConfig()
 
 	obs_data_t *settings = obs_service_get_settings(service);
 
-	obs_data_set_string(settings, "key", key_.c_str());
+	bool bwtest = obs_data_get_bool(settings, "bwtest");
+
+	if (bwtest && strcmp(this->service(), "Twitch") == 0)
+		obs_data_set_string(settings, "key",
+				key_.append("?bandwidthtest=true").c_str());
+	else
+		obs_data_set_string(settings, "key", key_.c_str());
+
 	obs_service_update(service, settings);
 
 	obs_data_release(settings);

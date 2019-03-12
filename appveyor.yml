@@ -17,6 +17,7 @@ environment:
 
 install:
   - git submodule update --init --recursive
+  - cmd: C:\projects\obs-studio\CI\install-qt-win.cmd
   - cmd: C:\projects\obs-studio\CI\install-script-win.cmd
   - sh: ./CI/install-dependencies-linux-ubuntu16.sh
   - sh: ./CI/before-script-linux.sh
@@ -40,6 +41,7 @@ cache:
   - vlc.zip
   - 'cef_binary_%CEF_VERSION%_windows32.zip'
   - 'cef_binary_%CEF_VERSION%_windows64.zip'
+  - Qt_5.10.1.7z
 
 notifications:
   - provider: Webhook

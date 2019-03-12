@@ -89,6 +89,15 @@ void gs_texture_2d::Rebuild(ID3D11Device *dev)
 		if (FAILED(hr))
 			throw HRError("Failed to create GDI surface", hr);
 	}
+
+	acquired = false;
+
+	if ((td.MiscFlags & D3D11_RESOURCE_MISC_SHARED_KEYEDMUTEX) != 0) {
+		ComQIPtr<IDXGIResource> dxgi_res(texture);
+		if (dxgi_res)
+			GetSharedHandle(dxgi_res);
+		device_texture_acquire_sync(this, 0, INFINITE);
+	}
 }
 
 void gs_texture_2d::RebuildNV12_Y(ID3D11Device *dev)
@@ -108,6 +117,15 @@ void gs_texture_2d::RebuildNV12_Y(ID3D11Device *dev)
 		InitRenderTargets();
 
 	tex_uv->RebuildNV12_UV(dev);
+
+	acquired = false;
+
+	if ((td.MiscFlags & D3D11_RESOURCE_MISC_SHARED_KEYEDMUTEX) != 0) {
+		ComQIPtr<IDXGIResource> dxgi_res(texture);
+		if (dxgi_res)
+			GetSharedHandle(dxgi_res);
+		device_texture_acquire_sync(this, 0, INFINITE);
+	}
 }
 
 void gs_texture_2d::RebuildNV12_UV(ID3D11Device *dev)

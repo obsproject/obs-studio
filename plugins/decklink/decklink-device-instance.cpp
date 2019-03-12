@@ -38,7 +38,7 @@ static inline int ConvertChannelFormat(speaker_layout format)
 	}
 }
 
-static inline audio_repack_mode_t ConvertRepackFormat(speaker_layout format)
+static inline audio_repack_mode_t ConvertRepackFormat(speaker_layout format, bool swap)
 {
 	switch (format) {
 	case SPEAKERS_2POINT1:
@@ -46,10 +46,11 @@ static inline audio_repack_mode_t ConvertRepackFormat(speaker_layout format)
 	case SPEAKERS_4POINT0:
 		return repack_mode_8to4ch;
 	case SPEAKERS_4POINT1:
-		return repack_mode_8to5ch;
+		return swap? repack_mode_8to5ch_swap:repack_mode_8to5ch;
 	case SPEAKERS_5POINT1:
-		return repack_mode_8to6ch;
+		return swap ? repack_mode_8to6ch_swap : repack_mode_8to6ch;
 	case SPEAKERS_7POINT1:
+		return swap ? repack_mode_8ch_swap: repack_mode_8ch;
 	default:
 		assert(false && "No repack requested");
 		return (audio_repack_mode_t)-1;
@@ -98,8 +99,8 @@ void DeckLinkDeviceInstance::HandleAudioPacket(
 	if (channelFormat != SPEAKERS_UNKNOWN &&
 	    channelFormat != SPEAKERS_MONO &&
 	    channelFormat != SPEAKERS_STEREO &&
-	    channelFormat != SPEAKERS_7POINT1 &&
-	    maxdevicechannel >= 8) {
+	    (channelFormat != SPEAKERS_7POINT1 || static_cast<DeckLinkInput*>(decklink)->swap)
+	    && maxdevicechannel >= 8) {
 
 		if (audioRepacker->repack((uint8_t *)bytes, frameCount) < 0) {
 			LOG(LOG_ERROR, "Failed to convert audio packet data");
@@ -190,7 +191,9 @@ void DeckLinkDeviceInstance::SetupVideoFormat(DeckLinkDeviceMode *mode_)
 #endif
 }
 
-bool DeckLinkDeviceInstance::StartCapture(DeckLinkDeviceMode *mode_)
+bool DeckLinkDeviceInstance::StartCapture(DeckLinkDeviceMode *mode_,
+		BMDVideoConnection bmdVideoConnection,
+		BMDAudioConnection bmdAudioConnection)
 {
 	if (mode != nullptr)
 		return false;
@@ -201,6 +204,40 @@ bool DeckLinkDeviceInstance::StartCapture(DeckLinkDeviceMode *mode_)
 
 	if (!device->GetInput(&input))
 		return false;
+
+
+	IDeckLinkConfiguration *deckLinkConfiguration = NULL;
+	HRESULT result = input->QueryInterface(IID_IDeckLinkConfiguration,
+			(void**)&deckLinkConfiguration);
+	if (result != S_OK)
+	{
+		LOG(LOG_ERROR,
+				"Could not obtain the IDeckLinkConfiguration interface: %08x\n",
+				result);
+	} else {
+		if (bmdVideoConnection > 0) {
+			result = deckLinkConfiguration->SetInt(
+					bmdDeckLinkConfigVideoInputConnection, bmdVideoConnection);
+			if (result != S_OK) {
+				LOG(LOG_ERROR,
+						"Couldn't set input video port to %d\n\n",
+						bmdVideoConnection);
+			}
+		}
+
+		if (bmdAudioConnection > 0) {
+			result = deckLinkConfiguration->SetInt(
+					bmdDeckLinkConfigAudioInputConnection, bmdAudioConnection);
+			if (result != S_OK) {
+				LOG(LOG_ERROR,
+						"Couldn't set input audio port to %d\n\n",
+						bmdVideoConnection);
+			}
+		}
+	}
+
+	videoConnection = bmdVideoConnection;
+	audioConnection = bmdAudioConnection;
 
 	BMDVideoInputFlags flags;
 
@@ -226,6 +263,7 @@ bool DeckLinkDeviceInstance::StartCapture(DeckLinkDeviceMode *mode_)
 
 	channelFormat = static_cast<DeckLinkInput*>(decklink)->GetChannelFormat();
 	currentPacket.speakers = channelFormat;
+	swap = static_cast<DeckLinkInput*>(decklink)->swap;
 
 	int maxdevicechannel = device->GetMaxChannel();
 
@@ -240,11 +278,11 @@ bool DeckLinkDeviceInstance::StartCapture(DeckLinkDeviceMode *mode_)
 		if (channelFormat != SPEAKERS_UNKNOWN &&
 		    channelFormat != SPEAKERS_MONO &&
 		    channelFormat != SPEAKERS_STEREO &&
-		    channelFormat != SPEAKERS_7POINT1 &&
-		    maxdevicechannel >= 8) {
+		    (channelFormat != SPEAKERS_7POINT1 || swap)
+		    && maxdevicechannel >= 8) {
 
 			const audio_repack_mode_t repack_mode = ConvertRepackFormat
-					(channelFormat);
+					(channelFormat, swap);
 			audioRepacker = new AudioRepacker(repack_mode);
 		}
 	}

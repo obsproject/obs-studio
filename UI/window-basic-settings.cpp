@@ -325,6 +325,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->overflowSelectionHide,CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->doubleClickSwitch,    CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->studioPortraitLayout, CHECK_CHANGED,  GENERAL_CHANGED);
+	HookWidget(ui->prevProgLabelToggle,  CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->multiviewMouseSwitch, CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->multiviewDrawNames,   CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->multiviewDrawAreas,   CHECK_CHANGED,  GENERAL_CHANGED);
@@ -333,6 +334,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->server,               COMBO_CHANGED,  STREAM1_CHANGED);
 	HookWidget(ui->customServer,         EDIT_CHANGED,   STREAM1_CHANGED);
 	HookWidget(ui->key,                  EDIT_CHANGED,   STREAM1_CHANGED);
+	HookWidget(ui->bandwidthTestEnable,  CHECK_CHANGED,  STREAM1_CHANGED);
 	HookWidget(ui->useAuth,              CHECK_CHANGED,  STREAM1_CHANGED);
 	HookWidget(ui->authUsername,         EDIT_CHANGED,   STREAM1_CHANGED);
 	HookWidget(ui->authPw,               EDIT_CHANGED,   STREAM1_CHANGED);
@@ -1119,6 +1121,10 @@ void OBSBasicSettings::LoadGeneralSettings()
 	bool studioPortraitLayout = config_get_bool(GetGlobalConfig(),
 			"BasicWindow", "StudioPortraitLayout");
 	ui->studioPortraitLayout->setChecked(studioPortraitLayout);
+
+	bool prevProgLabels = config_get_bool(GetGlobalConfig(),
+			"BasicWindow", "StudioModeLabels");
+	ui->prevProgLabelToggle->setChecked(prevProgLabels);
 
 	bool multiviewMouseSwitch = config_get_bool(GetGlobalConfig(),
 			"BasicWindow", "MultiviewMouseSwitch");
@@ -1941,7 +1947,7 @@ void OBSBasicSettings::LoadListValues(QComboBox *widget, obs_property_t *prop,
 			deviceId = obs_data_get_string(settings, "device_id");
 	}
 
-	widget->addItem(QTStr("Disabled"), "disabled");
+	widget->addItem(QTStr("Basic.Settings.Audio.Disabled"), "disabled");
 
 	for (size_t i = 0; i < count; i++) {
 		const char *name = obs_property_list_item_name(prop, i);
@@ -2763,6 +2769,14 @@ void OBSBasicSettings::SaveGeneralSettings()
 		config_set_bool(GetGlobalConfig(), "BasicWindow",
 				"StudioPortraitLayout",
 				ui->studioPortraitLayout->isChecked());
+
+		main->ResetUI();
+	}
+
+	if (WidgetChanged(ui->prevProgLabelToggle)) {
+		config_set_bool(GetGlobalConfig(), "BasicWindow",
+				"StudioModeLabels",
+				ui->prevProgLabelToggle->isChecked());
 
 		main->ResetUI();
 	}
@@ -3888,7 +3902,8 @@ void OBSBasicSettings::AdvOutRecCheckWarnings()
 		warningMsg = QTStr("OutputWarnings.MultiTrackRecording");
 	}
 
-	if (ui->advOutRecFormat->currentText().compare("mp4") == 0) {
+	if (ui->advOutRecFormat->currentText().compare("mp4") == 0 ||
+	    ui->advOutRecFormat->currentText().compare("mov") == 0) {
 		if (!warningMsg.isEmpty())
 			warningMsg += "\n\n";
 		warningMsg += QTStr("OutputWarnings.MP4Recording");
@@ -4347,7 +4362,8 @@ void OBSBasicSettings::SimpleRecordingEncoderChanged()
 		}
 	}
 
-	if (ui->simpleOutRecFormat->currentText().compare("mp4") == 0) {
+	if (ui->simpleOutRecFormat->currentText().compare("mp4") == 0 ||
+	    ui->simpleOutRecFormat->currentText().compare("mov") == 0) {
 		if (!warning.isEmpty())
 			warning += "\n\n";
 		warning += QTStr("OutputWarnings.MP4Recording");
@@ -4453,4 +4469,39 @@ void OBSBasicSettings::on_disableOSXVSync_clicked()
 		ui->resetOSXVSync->setEnabled(disable);
 	}
 #endif
+}
+
+void OBSBasicSettings::SetGeneralIcon(const QIcon &icon)
+{
+	ui->listWidget->item(0)->setIcon(icon);
+}
+
+void OBSBasicSettings::SetStreamIcon(const QIcon &icon)
+{
+	ui->listWidget->item(1)->setIcon(icon);
+}
+
+void OBSBasicSettings::SetOutputIcon(const QIcon &icon)
+{
+	ui->listWidget->item(2)->setIcon(icon);
+}
+
+void OBSBasicSettings::SetAudioIcon(const QIcon &icon)
+{
+	ui->listWidget->item(3)->setIcon(icon);
+}
+
+void OBSBasicSettings::SetVideoIcon(const QIcon &icon)
+{
+	ui->listWidget->item(4)->setIcon(icon);
+}
+
+void OBSBasicSettings::SetHotkeysIcon(const QIcon &icon)
+{
+	ui->listWidget->item(5)->setIcon(icon);
+}
+
+void OBSBasicSettings::SetAdvancedIcon(const QIcon &icon)
+{
+	ui->listWidget->item(6)->setIcon(icon);
 }
