@@ -1,6 +1,7 @@
 #include "enum-wasapi.hpp"
 
 #include <obs-module.h>
+#include <obs.h>
 #include <util/platform.h>
 #include <util/windows/HRError.hpp>
 #include <util/windows/ComPtr.hpp>
@@ -368,10 +369,15 @@ DWORD WINAPI WASAPISource::ReconnectThread(LPVOID param)
 
 	CoInitializeEx(0, COINIT_MULTITHREADED);
 
+	obs_monitoring_type type = obs_source_get_monitoring_type(source->source);
+	obs_source_set_monitoring_type(source->source, OBS_MONITORING_TYPE_NONE);
+
 	while (!WaitForSignal(source->stopSignal, RECONNECT_INTERVAL)) {
 		if (source->TryInitialize())
 			break;
 	}
+
+	obs_source_set_monitoring_type(source->source, type);
 
 	source->reconnectThread = nullptr;
 	source->reconnecting = false;
