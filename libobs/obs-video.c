@@ -811,6 +811,7 @@ static void clear_base_frame_data(void)
 	struct obs_core_video *video = &obs->video;
 	memset(video->textures_rendered, 0, sizeof(video->textures_rendered));
 	memset(video->textures_output, 0, sizeof(video->textures_output));
+	memset(video->textures_converted, 0, sizeof(video->textures_converted));
 	circlebuf_free(&video->vframe_info_buffer);
 	video->cur_texture = 0;
 }
@@ -819,7 +820,6 @@ static void clear_raw_frame_data(void)
 {
 	struct obs_core_video *video = &obs->video;
 	memset(video->textures_copied, 0, sizeof(video->textures_copied));
-	memset(video->textures_converted, 0, sizeof(video->textures_converted));
 	circlebuf_free(&video->vframe_info_buffer);
 }
 
