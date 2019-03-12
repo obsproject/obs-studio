@@ -193,7 +193,7 @@ static bool is_blacklisted(const wchar_t *name)
 	return false;
 }
 
-typedef HRESULT (*create_dxgi_proc)(const IID *, IDXGIFactory1 **);
+typedef HRESULT (WINAPI *create_dxgi_proc)(const IID *, IDXGIFactory1 **);
 
 static bool nvenc_device_available(void)
 {
