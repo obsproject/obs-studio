@@ -1,10 +1,12 @@
 // Based rendermix wipe shader
 // https://github.com/rectalogic/rendermix-basic-effects/blob/master/assets/com/rendermix/Wipe/Wipe.frag
+// https://github.com/Oncorporation/obs-shaderfilter/blob/master/data/examples/shine.shader
 
 uniform float4x4  ViewProj;
 uniform texture2d a_tex;
 uniform texture2d b_tex;
 uniform texture2d l_tex;
+uniform float4 l_color;
 uniform float progress;
 uniform bool  invert;
 uniform float softness;
@@ -35,22 +37,31 @@ float4 PSLumaWipe(VertData v_in) : TARGET
 	float2 uv = v_in.uv;
 	float4 a_color = convert_pmalpha(a_tex.Sample(textureSampler, uv));
 	float4 b_color = convert_pmalpha(b_tex.Sample(textureSampler, uv));
-	float luma     = l_tex.Sample(textureSampler, uv).x;
+	float luma = l_tex.Sample(textureSampler, uv).x;
+	float soft = softness;
+
+	if (soft == 0.00)
+		soft += 0.01;
 
 	if (invert)
 		luma = 1.0f - luma;
 
-	float time = lerp(0.0f, 1.0f + softness, progress);
+	// user color with luma
+	float4 out_color = float4(l_color.rgb, luma);
 
-	if (luma <= time - softness)
-		return b_color;
+	float time = lerp(0.0f, 1.0f + soft, progress);
+
+	if (luma <= time - soft){
+		float alpha_behind = clamp(1.0 - (time - soft - luma) / soft, 0.00, 1.0);
+		return lerp(b_color, out_color, alpha_behind);
+	}
 
 	if (luma >= time)
 		return a_color;
 
-	float alpha = (time - luma) / softness;
+	float alpha = (time - luma) / soft;
 
-	return lerp(a_color, b_color, alpha);
+	return lerp(a_color, b_color + out_color, alpha);
 }
 
 technique LumaWipe
