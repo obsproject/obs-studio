@@ -2149,6 +2149,15 @@ bool obs_obj_invalid(void *obj)
 	return !context->data;
 }
 
+void *obs_obj_get_data(void *obj)
+{
+	struct obs_context_data *context = obj;
+	if (!context)
+		return NULL;
+
+	return context->data;
+}
+
 bool obs_set_audio_monitoring_device(const char *name, const char *id)
 {
 	if (!obs || !name || !id || !*name || !*id)
