@@ -17,6 +17,7 @@ class OBSBasicStats : public QWidget {
 	QLabel *fps = nullptr;
 	QLabel *cpuUsage = nullptr;
 	QLabel *hddSpace = nullptr;
+	QLabel *recordTimeLeft = nullptr;
 	QLabel *memUsage = nullptr;
 
 	QLabel *renderTime = nullptr;
@@ -28,6 +29,9 @@ class OBSBasicStats : public QWidget {
 	os_cpu_usage_info_t *cpu_info = nullptr;
 
 	QTimer timer;
+	QTimer recTimeLeft;
+	uint64_t num_bytes = 0;
+	std::vector<long double> bitrates;
 
 	struct OutputLabels {
 		QPointer<QLabel> name;
@@ -44,6 +48,8 @@ class OBSBasicStats : public QWidget {
 
 		void Update(obs_output_t *output, bool rec);
 		void Reset(obs_output_t *output);
+
+		long double kbps = 0.0l;
 	};
 
 	QList<OutputLabels> outputLabels;
@@ -54,13 +60,22 @@ class OBSBasicStats : public QWidget {
 
 	virtual void closeEvent(QCloseEvent *event) override;
 
+	static void OBSFrontendEvent(enum obs_frontend_event event, void *ptr);
+
 public:
 	OBSBasicStats(QWidget *parent = nullptr, bool closable = true);
 	~OBSBasicStats();
 
 	static void InitializeValues();
+
+	void StartRecTimeLeft();
+	void ResetRecTimeLeft();
+
 private:
 	QPointer<QObject> shortcutFilter;
+
+private slots:
+	void RecordingTimeLeft();
 
 protected:
 	virtual void showEvent(QShowEvent *event) override;
