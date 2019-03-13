@@ -250,6 +250,12 @@ static obs_properties_t *image_source_properties(void *data)
 	return props;
 }
 
+uint64_t image_source_get_memory_usage(void *data)
+{
+	struct image_source *s = data;
+	return s->image.mem_usage;
+}
+
 static struct obs_source_info image_source_info = {
 	.id             = "image_source",
 	.type           = OBS_SOURCE_TYPE_INPUT,

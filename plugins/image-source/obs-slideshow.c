@@ -57,6 +57,11 @@
 
 /* ------------------------------------------------------------------------- */
 
+extern uint64_t image_source_get_memory_usage(void *data);
+
+#define BYTES_TO_MBYTES (1024 * 1024)
+#define MAX_MEM_USAGE  (250 * BYTES_TO_MBYTES)
+
 struct image_file_data {
 	char *path;
 	obs_source_t *source;
@@ -91,6 +96,7 @@ struct slideshow {
 
 	uint32_t cx;
 	uint32_t cy;
+	uint64_t mem_usage;
 
 	pthread_mutex_t mutex;
 	DARRAY(struct image_file_data) files;
@@ -203,6 +209,9 @@ static void add_file(struct slideshow *ss, struct darray *array,
 
 		if (new_cx > *cx) *cx = new_cx;
 		if (new_cy > *cy) *cy = new_cy;
+
+		void *source_data = obs_obj_get_data(new_source);
+		ss->mem_usage += image_source_get_memory_usage(source_data);
 	}
 
 	*array = new_files.da;
@@ -308,6 +317,8 @@ static void ss_update(void *data, obs_data_t *settings)
 	/* ------------------------------------- */
 	/* create new list of sources */
 
+	ss->mem_usage = 0;
+
 	for (size_t i = 0; i < count; i++) {
 		obs_data_t *item = obs_data_array_item(array, i);
 		const char *path = obs_data_get_string(item, "value");
@@ -335,6 +346,9 @@ static void ss_update(void *data, obs_data_t *settings)
 				dstr_cat(&dir_path, ent->d_name);
 				add_file(ss, &new_files.da, dir_path.array,
 						&cx, &cy);
+
+				if (ss->mem_usage >= MAX_MEM_USAGE)
+					break;
 			}
 
 			dstr_free(&dir_path);
@@ -344,6 +358,9 @@ static void ss_update(void *data, obs_data_t *settings)
 		}
 
 		obs_data_release(item);
+
+		if (ss->mem_usage >= MAX_MEM_USAGE)
+			break;
 	}
 
 	/* ------------------------------------- */
