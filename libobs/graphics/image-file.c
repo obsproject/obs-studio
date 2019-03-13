@@ -59,6 +59,12 @@ static inline int get_full_decoded_gif_size(gs_image_file_t *image)
 	return image->gif.width * image->gif.height * 4 * image->gif.frame_count;
 }
 
+static inline void *alloc_mem(gs_image_file_t *image, size_t size)
+{
+	image->mem_usage += size;
+	return bzalloc(size);
+}
+
 static bool init_animated_gif(gs_image_file_t *image, const char *path)
 {
 	bool is_animated_gif = true;
@@ -121,9 +127,9 @@ static bool init_animated_gif(gs_image_file_t *image, const char *path)
 	if (image->is_animated_gif) {
 		gif_decode_frame(&image->gif, 0);
 
-		image->animation_frame_cache = bzalloc(
+		image->animation_frame_cache = alloc_mem(image,
 				image->gif.frame_count * sizeof(uint8_t*));
-		image->animation_frame_data = bzalloc(
+		image->animation_frame_data = alloc_mem(image,
 				get_full_decoded_gif_size(image));
 
 		for (unsigned int i = 0; i < image->gif.frame_count; i++) {
@@ -137,6 +143,9 @@ static bool init_animated_gif(gs_image_file_t *image, const char *path)
 		image->cx = (uint32_t)image->gif.width;
 		image->cy = (uint32_t)image->gif.height;
 		image->format = GS_RGBA;
+
+		image->mem_usage += image->cx * image->cy * 4;
+		image->mem_usage += size;
 	} else {
 		gif_finalise(&image->gif);
 		bfree(image->gif_data);
@@ -178,6 +187,9 @@ void gs_image_file_init(gs_image_file_t *image, const char *file)
 
 	image->texture_data = gs_create_texture_file_data(file,
 			&image->format, &image->cx, &image->cy);
+
+	image->mem_usage += image->cx * image->cy *
+		gs_get_format_bpp(image->format) / 8;
 
 	image->loaded = !!image->texture_data;
 	if (!image->loaded) {
