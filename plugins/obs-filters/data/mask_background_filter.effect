@@ -35,10 +35,21 @@ VertDataOut VSDefault(VertDataIn v_in)
 
 float4 PSColorMaskRGBA(VertDataOut v_in) : TARGET
 {
-	float4 rgba = image.Sample(textureSampler, v_in.uv) * color;
+	float Tolerance = opacity;
+	float4 rgba = image.Sample(textureSampler, v_in.uv);
 
-	float4 targetRGB = target.Sample(textureSampler, v_in.uv2);
-	rgba.a = lerp(rgba.a, rgba.a * ((targetRGB.r + targetRGB.g + targetRGB.b) / 3.0), opacity);
+	float4 targetRGB = target.Sample(textureSampler, v_in.uv2) * color;
+	float4 shadowRGB = targetRGB * targetRGB;
+
+	if ((abs(targetRGB.r - rgba.r) <= Tolerance &&
+		abs(targetRGB.g - rgba.g) <= Tolerance &&
+		abs(targetRGB.b - rgba.b) <= Tolerance)
+		|| (abs(shadowRGB.r - rgba.r) <= Tolerance &&
+			abs(shadowRGB.g - rgba.g) <= Tolerance &&
+			abs(shadowRGB.b - rgba.b) <= Tolerance))
+	{
+		rgba.rgba = 0;
+	}
 	return rgba;
 }
 
