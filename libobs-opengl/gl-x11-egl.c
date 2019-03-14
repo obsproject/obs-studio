@@ -205,8 +205,7 @@ static xcb_get_geometry_reply_t* get_window_geometry(
 }
 
 // FIXME export this
-static const char* get_egl_error_string() {
-	const EGLint error = eglGetError();
+static const char* get_egl_error_string2(const EGLint error) {
 	switch (error) {
 #define OBS_EGL_CASE_ERROR(e) case e: return #e;
 		OBS_EGL_CASE_ERROR(EGL_SUCCESS)
@@ -227,6 +226,9 @@ static const char* get_egl_error_string() {
 #undef OBS_EGL_CASE_ERROR
 		default: return "Unknown";
 	}
+}
+static const char* get_egl_error_string() {
+	return get_egl_error_string2(eglGetError());
 }
 
 static bool gl_context_create(struct gl_platform *plat)
@@ -258,6 +260,21 @@ static bool gl_context_create(struct gl_platform *plat)
 	}
 
 	context = eglCreateContext(edisplay, config, EGL_NO_CONTEXT, ctx_attribs);
+#ifdef _DEBUG
+	if (EGL_NO_CONTEXT == context) {
+		const EGLint error = eglGetError();
+		if (error == EGL_BAD_ATTRIBUTE) {
+			/* FIXME check spec about this; writing this on an airplane,
+			 * And i forgot to dl the egl spec beforehand ;_; */
+			/* Sometimes creation fails because debug gl is not supported */
+			blog(LOG_ERROR, "Unable to create EGL context with DEBUG attrib, trying without");
+			context = eglCreateContext(edisplay, config, EGL_NO_CONTEXT, ctx_attribs + 2);
+		} else {
+			blog(LOG_ERROR, "Unable to create EGL context: %s", get_egl_error_string2(error));
+			goto error;
+		}
+	}
+#endif
 	if (EGL_NO_CONTEXT == context) {
 		blog(LOG_ERROR, "Unable to create EGL context: %s", get_egl_error_string());
 		goto error;
