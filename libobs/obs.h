@@ -116,7 +116,8 @@ enum obs_scale_type {
 	OBS_SCALE_POINT,
 	OBS_SCALE_BICUBIC,
 	OBS_SCALE_BILINEAR,
-	OBS_SCALE_LANCZOS
+	OBS_SCALE_LANCZOS,
+	OBS_SCALE_AREA,
 };
 
 /**
@@ -599,6 +600,7 @@ enum obs_base_effect {
 	OBS_EFFECT_SOLID,              /**< RGB/YUV (solid color only) */
 	OBS_EFFECT_BICUBIC,            /**< Bicubic downscale */
 	OBS_EFFECT_LANCZOS,            /**< Lanczos downscale */
+	OBS_EFFECT_AREA,               /**< Area rescale */
 	OBS_EFFECT_BILINEAR_LOWRES,    /**< Bilinear low resolution downscale */
 	OBS_EFFECT_PREMULTIPLIED_ALPHA,/**< Premultiplied alpha */
 	OBS_EFFECT_REPEAT,             /**< RGB/YUV (repeating) */

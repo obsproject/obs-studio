@@ -1,0 +1,119 @@
+uniform float4x4 ViewProj;
+uniform float4x4 color_matrix;
+uniform float3 color_range_min = {0.0, 0.0, 0.0};
+uniform float3 color_range_max = {1.0, 1.0, 1.0};
+uniform float2 base_dimension_i;
+uniform texture2d image;
+
+sampler_state def_sampler {
+	Filter   = Linear;
+	AddressU = Clamp;
+	AddressV = Clamp;
+};
+
+struct VertInOut {
+	float4 pos : POSITION;
+	float2 uv  : TEXCOORD0;
+};
+
+VertInOut VSDefault(VertInOut vert_in)
+{
+	VertInOut vert_out;
+	vert_out.pos = mul(float4(vert_in.pos.xyz, 1.0), ViewProj);
+	vert_out.uv  = vert_in.uv;
+	return vert_out;
+}
+
+float4 PSDrawAreaRGBA(VertInOut vert_in) : TARGET
+{
+	float4 totalcolor = float4(0.0, 0.0, 0.0, 0.0);
+
+	const float2 uv = vert_in.uv;
+	const float2 uvdelta = float2(ddx(uv.x), ddy(uv.y));
+
+	const float2 uvhalfdelta = 0.5 * uvdelta;
+	const float2 uvmin = uv - uvhalfdelta;
+	const float2 uvmax = uv + uvhalfdelta;
+
+	const int2 loadindexmin = int2(uvmin / base_dimension_i);
+	const int2 loadindexmax = int2(uvmax / base_dimension_i);
+
+	const float2 targetpos = uv / uvdelta;
+	const float2 targetposleft = targetpos - 0.5;
+	const float2 targetposright = targetpos + 0.5;
+	for (int loadindexy = loadindexmin.y; loadindexy <= loadindexmax.y; ++loadindexy)
+	{
+		for (int loadindexx = loadindexmin.x; loadindexx <= loadindexmax.x; ++loadindexx)
+		{
+			const float2 loadindex = float2(loadindexx, loadindexy);
+			const float2 potentialtargetmin = loadindex / uvdelta * base_dimension_i;
+			const float2 potentialtargetmax = (loadindex + 1.0) / uvdelta * base_dimension_i;
+			const float2 targetmin = max(potentialtargetmin, targetposleft);
+			const float2 targetmax = min(potentialtargetmax, targetposright);
+			const float area = (targetmax.x - targetmin.x) * (targetmax.y - targetmin.y);
+			const float4 sample = image.SampleLevel(def_sampler, (loadindex + 0.5) * base_dimension_i, 0.0);
+			totalcolor += area * float4(sample.rgb * sample.a, sample.a);
+		}
+	}
+
+	return float4(totalcolor.rgb / totalcolor.a, totalcolor.a);
+}
+
+float3 ConvertFromYuv(float3 yuv)
+{
+	yuv = clamp(yuv, color_range_min, color_range_max);
+	return saturate(mul(float4(yuv, 1.0), color_matrix)).rgb;
+}
+
+float4 PSDrawAreaMatrix(VertInOut vert_in) : TARGET
+{
+	float3 totalcolor = float3(0.0, 0.0, 0.0);
+
+	const float2 uv = vert_in.uv;
+	const float2 uvdelta = float2(ddx(uv.x), ddy(uv.y));
+
+	const float2 uvhalfdelta = 0.5 * uvdelta;
+	const float2 uvmin = uv - uvhalfdelta;
+	const float2 uvmax = uv + uvhalfdelta;
+
+	const int2 loadindexmin = int2(uvmin / base_dimension_i);
+	const int2 loadindexmax = int2(uvmax / base_dimension_i);
+
+	const float2 targetpos = uv / uvdelta;
+	const float2 targetposleft = targetpos - 0.5;
+	const float2 targetposright = targetpos + 0.5;
+	for (int loadindexy = loadindexmin.y; loadindexy <= loadindexmax.y; ++loadindexy)
+	{
+		for (int loadindexx = loadindexmin.x; loadindexx <= loadindexmax.x; ++loadindexx)
+		{
+			const float2 loadindex = float2(loadindexx, loadindexy);
+			const float2 potentialtargetmin = loadindex / uvdelta * base_dimension_i;
+			const float2 potentialtargetmax = (loadindex + 1.0) / uvdelta * base_dimension_i;
+			const float2 targetmin = max(potentialtargetmin, targetposleft);
+			const float2 targetmax = min(potentialtargetmax, targetposright);
+			const float area = (targetmax.x - targetmin.x) * (targetmax.y - targetmin.y);
+			const float3 yuv = image.SampleLevel(def_sampler, (loadindex + 0.5) * base_dimension_i, 0.0).xyz;
+			totalcolor += area * ConvertFromYuv(yuv);
+		}
+	}
+
+	return float4(totalcolor, 1.0);
+}
+
+technique Draw
+{
+	pass
+	{
+		vertex_shader = VSDefault(vert_in);
+		pixel_shader  = PSDrawAreaRGBA(vert_in);
+	}
+}
+
+technique DrawMatrix
+{
+	pass
+	{
+		vertex_shader = VSDefault(vert_in);
+		pixel_shader  = PSDrawAreaMatrix(vert_in);
+	}
+}

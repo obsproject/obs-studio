@@ -3442,6 +3442,8 @@ static inline enum obs_scale_type GetScaleType(ConfigFile &basicConfig)
 		return OBS_SCALE_BILINEAR;
 	else if (astrcmpi(scaleTypeStr, "lanczos") == 0)
 		return OBS_SCALE_LANCZOS;
+	else if (astrcmpi(scaleTypeStr, "area") == 0)
+		return OBS_SCALE_AREA;
 	else
 		return OBS_SCALE_BICUBIC;
 }
@@ -4218,6 +4220,7 @@ QMenu *OBSBasic::AddScaleFilteringMenu(QMenu *menu, obs_sceneitem_t *item)
 	ADD_MODE("ScaleFiltering.Bilinear", OBS_SCALE_BILINEAR);
 	ADD_MODE("ScaleFiltering.Bicubic",  OBS_SCALE_BICUBIC);
 	ADD_MODE("ScaleFiltering.Lanczos",  OBS_SCALE_LANCZOS);
+	ADD_MODE("ScaleFiltering.Area",     OBS_SCALE_AREA);
 #undef ADD_MODE
 
 	return menu;
