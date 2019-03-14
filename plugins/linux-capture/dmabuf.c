@@ -54,8 +54,6 @@ typedef struct {
 	int active_fb;
 } dmabuf_source_t;
 
-OBS_DECLARE_MODULE()
-
 static const char obs_drmsend_suffix[] = "-drmsend";
 static const int obs_drmsend_suffix_len = sizeof(obs_drmsend_suffix) - 1;
 static const char socket_filename[] = "/obs-drmsend.sock";
@@ -75,7 +73,7 @@ static int dmabuf_source_receive_framebuffers(dmabuf_source_fblist_t *list)
 	struct sockaddr_un addr = {0};
 	addr.sun_family = AF_UNIX;
 	{
-		const char * const module_path = obs_get_module_data_path(obs_module_pointer);
+		const char * const module_path = obs_get_module_data_path(obs_current_module());
 		assert(module_path);
 		if (!os_file_exists(module_path)) {
 			if (MKDIR_ERROR == os_mkdir(module_path)) {
@@ -280,7 +278,7 @@ socket_cleanup:
 	return retval;
 }
 
-void dmabuf_source_close(dmabuf_source_t *ctx)
+static void dmabuf_source_close(dmabuf_source_t *ctx)
 {
 	blog(LOG_DEBUG, "dmabuf_source_close %p", ctx);
 
@@ -506,7 +504,7 @@ static uint32_t dmabuf_source_get_height(void *data)
 	return ctx->fbs.resp.framebuffers[ctx->active_fb].height;
 }
 
-struct obs_source_info dmabuf_source = {
+struct obs_source_info dmabuf_input = {
 	.id = "dmabuf-source",
 	.type = OBS_SOURCE_TYPE_INPUT,
 	.get_name = dmabuf_source_get_name,
@@ -519,18 +517,3 @@ struct obs_source_info dmabuf_source = {
 	.get_properties = dmabuf_source_get_properties,
 	.update = dmabuf_source_update,
 };
-
-MODULE_EXPORT const char *obs_module_description(void)
-{
-	return "DMA-BUF-based zero-copy screen capture";
-}
-
-bool obs_module_load(void)
-{
-	obs_register_source(&dmabuf_source);
-	return true;
-}
-
-void obs_module_unload(void)
-{
-}

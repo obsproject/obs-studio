@@ -79,7 +79,3 @@ add_subdirectory(obs-transitions)
 add_subdirectory(obs-text)
 add_subdirectory(rtmp-services)
 add_subdirectory(text-freetype2)
-
-if(EGL_FOUND)
-	add_subdirectory(linux-dmabuf)
-endif()
