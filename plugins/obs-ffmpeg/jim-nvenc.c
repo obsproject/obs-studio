@@ -318,6 +318,7 @@ static bool init_encoder(struct nvenc_data *enc, obs_data_t *settings)
 	const char *profile = obs_data_get_string(settings, "profile");
 	bool psycho_aq = obs_data_get_bool(settings, "psycho_aq");
 	bool lookahead = obs_data_get_bool(settings, "lookahead");
+	bool bframes_as_ref = obs_data_get_bool(settings, "bframes_as_ref");
 	int bf = (int)obs_data_get_int(settings, "bf");
 	bool vbr = astrcmpi(rc, "VBR") == 0;
 	NVENCSTATUS err;
@@ -432,6 +433,11 @@ static bool init_encoder(struct nvenc_data *enc, obs_data_t *settings)
 		config->rcParams.enableAQ = psycho_aq;
 		config->rcParams.enableTemporalAQ = psycho_aq;
 	}
+
+	/* b-frames as reference */
+	if (bf >= 1 && bframes_as_ref &&
+	    nv_get_cap(enc, NV_ENC_CAPS_SUPPORT_BFRAME_REF_MODE))
+		h264_config->useBFramesAsRef = NV_ENC_BFRAME_REF_MODE_MIDDLE;
 
 	/* -------------------------- */
 	/* rate control               */
