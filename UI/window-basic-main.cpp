@@ -2792,6 +2792,9 @@ void OBSBasic::VolControlContextMenu()
 	QAction unhideAllAction(QTStr("UnhideAll"), this);
 	QAction mixerRenameAction(QTStr("Rename"), this);
 
+	QAction copyFiltersAction(QTStr("Copy.Filters"), this);
+	QAction pasteFiltersAction(QTStr("Paste.Filters"), this);
+
 	QAction filtersAction(QTStr("Filters"), this);
 	QAction propertiesAction(QTStr("Properties"), this);
 	QAction advPropAction(QTStr("Basic.MainMenu.Edit.AdvAudio"), this);
@@ -2811,6 +2814,13 @@ void OBSBasic::VolControlContextMenu()
 			Qt::DirectConnection);
 	connect(&mixerRenameAction, &QAction::triggered,
 			this, &OBSBasic::MixerRenameSource,
+			Qt::DirectConnection);
+
+	connect(&copyFiltersAction, &QAction::triggered,
+			this, &OBSBasic::AudioMixerCopyFilters,
+			Qt::DirectConnection);
+	connect(&pasteFiltersAction, &QAction::triggered,
+			this, &OBSBasic::AudioMixerPasteFilters,
 			Qt::DirectConnection);
 
 	connect(&filtersAction, &QAction::triggered,
@@ -2836,6 +2846,11 @@ void OBSBasic::VolControlContextMenu()
 	mixerRenameAction.setProperty("volControl",
 			QVariant::fromValue<VolControl*>(vol));
 
+	copyFiltersAction.setProperty("volControl",
+			QVariant::fromValue<VolControl*>(vol));
+	pasteFiltersAction.setProperty("volControl",
+			QVariant::fromValue<VolControl*>(vol));
+
 	filtersAction.setProperty("volControl",
 			QVariant::fromValue<VolControl*>(vol));
 	propertiesAction.setProperty("volControl",
@@ -2843,10 +2858,18 @@ void OBSBasic::VolControlContextMenu()
 
 	/* ------------------- */
 
+	if (copyFiltersString == nullptr)
+		pasteFiltersAction.setEnabled(false);
+	else
+		pasteFiltersAction.setEnabled(true);
+
 	QMenu popup;
 	popup.addAction(&unhideAllAction);
 	popup.addAction(&hideAction);
 	popup.addAction(&mixerRenameAction);
+	popup.addSeparator();
+	popup.addAction(&copyFiltersAction);
+	popup.addAction(&pasteFiltersAction);
 	popup.addSeparator();
 	popup.addAction(&toggleControlLayoutAction);
 	popup.addSeparator();
@@ -6771,6 +6794,30 @@ void OBSBasic::on_actionPasteDup_triggered()
 {
 	OBSBasicSourceSelect::SourcePaste(copyString, copyVisible, true);
 	on_actionPasteTransform_triggered();
+}
+
+void OBSBasic::AudioMixerCopyFilters()
+{
+	QAction *action = reinterpret_cast<QAction*>(sender());
+	VolControl *vol = action->property("volControl").value<VolControl*>();
+	obs_source_t *source = vol->GetSource();
+
+	copyFiltersString = obs_source_get_name(source);
+}
+
+void OBSBasic::AudioMixerPasteFilters()
+{
+	QAction *action = reinterpret_cast<QAction*>(sender());
+	VolControl *vol = action->property("volControl").value<VolControl*>();
+	obs_source_t *dstSource = vol->GetSource();
+
+	OBSSource source = obs_get_source_by_name(copyFiltersString);
+	obs_source_release(source);
+
+	if (source == dstSource)
+		return;
+
+	obs_source_copy_filters(dstSource, source);
 }
 
 void OBSBasic::on_actionCopyFilters_triggered()
