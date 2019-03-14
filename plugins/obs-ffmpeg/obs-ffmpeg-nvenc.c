@@ -404,7 +404,6 @@ void nvenc_defaults(obs_data_t *settings)
 	obs_data_set_default_string(settings, "preset", "hq");
 	obs_data_set_default_string(settings, "profile", "high");
 	obs_data_set_default_bool(settings, "psycho_aq", true);
-	obs_data_set_default_bool(settings, "bframes_as_ref", true);
 	obs_data_set_default_int(settings, "gpu", 0);
 	obs_data_set_default_int(settings, "bf", 2);
 }
@@ -498,10 +497,6 @@ obs_properties_t *nvenc_properties_internal(bool ffmpeg)
 				obs_module_text("NVENC.PsychoVisualTuning"));
 		obs_property_set_long_description(p,
 				obs_module_text("NVENC.PsychoVisualTuning.ToolTip"));
-		p = obs_properties_add_bool(props, "bframes_as_ref",
-				obs_module_text("NVENC.BFramesAsRef"));
-		obs_property_set_long_description(p,
-				obs_module_text("NVENC.BFramesAsRef.ToolTip"));
 	}
 
 	obs_properties_add_int(props, "gpu", obs_module_text("GPU"), 0, 8, 1);
