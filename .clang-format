@@ -1,0 +1,112 @@
+# Style for Linux Kernel Coding Style
+BasedOnStyle: LLVM
+
+# Basic Formatting
+TabWidth: 8
+UseTab: ForContinuationAndIndentation
+ColumnLimit: 80
+ 
+# Language
+Language: Cpp
+Standard: Cpp11
+ 
+# Indentation
+AccessModifierOffset: 0
+ConstructorInitializerIndentWidth: 8
+ContinuationIndentWidth: 16
+IndentCaseLabels: false
+#IndentPPDirectives: true
+IndentWidth: 8
+IndentWrappedFunctionNames: true
+NamespaceIndentation: All
+ 
+# Includes
+#IncludeBlocks: Regroup
+IncludeCategories:
+  - Regex: '^<(assert|complex|ctype|errno|fenc|float|inttypes|iso646|limits|locale|math|setjmp|signal|stdalign|stdarg|stdatomic|stdbool|stddef|stdint|stdio|stdlib|stdnoreturn|string|tgmath|threads|time|uchar|wchar|wctype).h>$'
+    Priority: 0
+  - Regex: '^<[a-zA-Z0-9\-_]+intrin.h>$'
+    Priority: 10
+  - Regex: '^<(audioclient|mmdeviceapi|windows).h>$'
+    Priority: 50
+  - Regex: '^<'
+    Priority: 100
+  - Regex: '^"'
+    Priority: 200
+SortIncludes: true
+ 
+# Alignment
+AlignAfterOpenBracket: false
+AlignConsecutiveAssignments: true
+AlignConsecutiveDeclarations: true
+AlignEscapedNewlines: Left
+AlignOperands: false
+AlignTrailingComments: true
+DerivePointerAlignment: false
+PointerAlignment: Right
+ 
+# Wrapping and Breaking
+AllowAllParametersOfDeclarationOnNextLine: true
+AllowShortBlocksOnASingleLine: false
+AllowShortCaseLabelsOnASingleLine: false
+AllowShortFunctionsOnASingleLine: Empty
+AllowShortIfStatementsOnASingleLine: false
+AllowShortLoopsOnASingleLine: false
+AlwaysBreakAfterReturnType: None
+AlwaysBreakBeforeMultilineStrings: true
+AlwaysBreakTemplateDeclarations: true
+BraceWrapping:
+  AfterClass: false
+  AfterControlStatement: false
+  AfterEnum: false
+#  AfterExternBlock: false
+  AfterFunction: true
+  AfterNamespace: false
+  AfterStruct: false
+  AfterUnion: false
+  BeforeCatch: false
+  BeforeElse: false
+  SplitEmptyFunction: false
+  SplitEmptyRecord: false
+  SplitEmptyNamespace: false
+BinPackArguments: true
+BinPackParameters: true
+BreakBeforeBinaryOperators: NonAssignment
+BreakBeforeBraces: Linux
+BreakBeforeTernaryOperators: true
+BreakConstructorInitializers: BeforeColon
+#BreakInheritanceList: BeforeColon
+BreakStringLiterals: true
+ConstructorInitializerAllOnOneLineOrOnePerLine: false
+Cpp11BracedListStyle: false
+ 
+# Spaces
+SpaceAfterCStyleCast: false
+SpaceAfterTemplateKeyword: false
+SpaceBeforeAssignmentOperators: true
+#SpaceBeforeCpp11BracedList: false
+#SpaceBeforeCtorInitializerColon: true
+#SpaceBeforeInheritanceColon: true
+SpaceBeforeParens: ControlStatements
+#SpaceBeforeRangeBasedForLoopColon: true
+SpaceInEmptyParentheses: false
+SpacesBeforeTrailingComments: 1
+SpacesInAngles: false
+SpacesInCStyleCastParentheses: false
+SpacesInContainerLiterals: false
+SpacesInParentheses: false
+SpacesInSquareBrackets: false
+ 
+# Other
+CommentPragmas: '^(!FIXME!|!TODO!|ToDo:)'
+CompactNamespaces: false
+DisableFormat: false
+FixNamespaceComments: true
+#ForEachMacros: ''
+KeepEmptyLinesAtTheStartOfBlocks: false
+ReflowComments: false
+SortUsingDeclarations: false
+
+# Penalties
+PenaltyExcessCharacter: 5
+

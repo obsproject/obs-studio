@@ -27,7 +27,7 @@
 #define DEPRECATED __declspec(deprecated)
 #define FORCE_INLINE __forceinline
 #else
-#define DEPRECATED __attribute__ ((deprecated))
+#define DEPRECATED __attribute__((deprecated))
 #define FORCE_INLINE inline __attribute__((always_inline))
 #endif
 
@@ -51,8 +51,8 @@
 
 #if _MSC_VER && _MSC_VER < 0x0708
 
-#include "vc/vc_stdint.h"
 #include "vc/vc_stdbool.h"
+#include "vc/vc_stdint.h"
 
 #ifndef __off_t_defined
 #define __off_t_defined
@@ -68,9 +68,9 @@ typedef int64_t off64_t;
 
 #else
 
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
-#include <stdbool.h>
 #include <sys/types.h>
 
 #define SIZE_T_FORMAT "%zu"

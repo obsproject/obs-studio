@@ -29,8 +29,8 @@
 extern "C" {
 #endif
 
-#define OBS_ENCODER_CAP_DEPRECATED             (1<<0)
-#define OBS_ENCODER_CAP_PASS_TEXTURE           (1<<1)
+#define OBS_ENCODER_CAP_DEPRECATED (1 << 0)
+#define OBS_ENCODER_CAP_PASS_TEXTURE (1 << 1)
 
 /** Specifies the encoder type */
 enum obs_encoder_type {
@@ -40,27 +40,27 @@ enum obs_encoder_type {
 
 /** Encoder output packet */
 struct encoder_packet {
-	uint8_t               *data;        /**< Packet data */
-	size_t                size;         /**< Packet size */
+	uint8_t *data; /**< Packet data */
+	size_t   size; /**< Packet size */
 
-	int64_t               pts;          /**< Presentation timestamp */
-	int64_t               dts;          /**< Decode timestamp */
+	int64_t pts; /**< Presentation timestamp */
+	int64_t dts; /**< Decode timestamp */
 
-	int32_t               timebase_num; /**< Timebase numerator */
-	int32_t               timebase_den; /**< Timebase denominator */
+	int32_t timebase_num; /**< Timebase numerator */
+	int32_t timebase_den; /**< Timebase denominator */
 
-	enum obs_encoder_type type;         /**< Encoder type */
+	enum obs_encoder_type type; /**< Encoder type */
 
-	bool                  keyframe;     /**< Is a keyframe */
+	bool keyframe; /**< Is a keyframe */
 
 	/* ---------------------------------------------------------------- */
 	/* Internal video variables (will be parsed automatically) */
 
 	/* DTS in microseconds */
-	int64_t               dts_usec;
+	int64_t dts_usec;
 
 	/* System DTS in microseconds */
-	int64_t               sys_dts_usec;
+	int64_t sys_dts_usec;
 
 	/**
 	 * Packet priority
@@ -68,7 +68,7 @@ struct encoder_packet {
 	 * This is generally use by video encoders to specify the priority
 	 * of the packet.
 	 */
-	int                   priority;
+	int priority;
 
 	/**
 	 * Dropped packet priority
@@ -76,28 +76,28 @@ struct encoder_packet {
 	 * If this packet needs to be dropped, the next packet must be of this
 	 * priority or higher to continue transmission.
 	 */
-	int                   drop_priority;
+	int drop_priority;
 
 	/** Audio track index (used with outputs) */
-	size_t                track_idx;
+	size_t track_idx;
 
 	/** Encoder from which the track originated from */
-	obs_encoder_t         *encoder;
+	obs_encoder_t *encoder;
 };
 
 /** Encoder input frame */
 struct encoder_frame {
 	/** Data for the frame/audio */
-	uint8_t               *data[MAX_AV_PLANES];
+	uint8_t *data[MAX_AV_PLANES];
 
 	/** size of each plane */
-	uint32_t              linesize[MAX_AV_PLANES];
+	uint32_t linesize[MAX_AV_PLANES];
 
 	/** Number of frames (audio only) */
-	uint32_t              frames;
+	uint32_t frames;
 
 	/** Presentation timestamp */
-	int64_t               pts;
+	int64_t pts;
 };
 
 /**
@@ -258,8 +258,8 @@ struct obs_encoder_info {
 			struct encoder_packet *packet, bool *received_packet);
 };
 
-EXPORT void obs_register_encoder_s(const struct obs_encoder_info *info,
-		size_t size);
+EXPORT void obs_register_encoder_s(
+		const struct obs_encoder_info *info, size_t size);
 
 /**
  * Register an encoder definition to the current obs context.  This should be

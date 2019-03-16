@@ -46,9 +46,9 @@ enum cf_token_type {
 
 struct cf_token {
 	const struct cf_lexer *lex;
-	struct strref str;
-	struct strref unmerged_str;
-	enum cf_token_type type;
+	struct strref          str;
+	struct strref          unmerged_str;
+	enum cf_token_type     type;
 };
 
 static inline void cf_token_clear(struct cf_token *t)
@@ -56,14 +56,12 @@ static inline void cf_token_clear(struct cf_token *t)
 	memset(t, 0, sizeof(struct cf_token));
 }
 
-static inline void cf_token_copy(struct cf_token *dst,
-		const struct cf_token *src)
+static inline void cf_token_copy(struct cf_token *dst, const struct cf_token *src)
 {
 	memcpy(dst, src, sizeof(struct cf_token));
 }
 
-static inline void cf_token_add(struct cf_token *dst,
-		const struct cf_token *add)
+static inline void cf_token_add(struct cf_token *dst, const struct cf_token *add)
 {
 	strref_add(&dst->str, &add->str);
 	strref_add(&dst->unmerged_str, &add->unmerged_str);
@@ -83,9 +81,9 @@ static inline void cf_token_add(struct cf_token *dst,
  */
 
 struct cf_lexer {
-	char *file;
+	char *       file;
 	struct lexer base_lexer;
-	char *reformatted, *write_offset;
+	char *       reformatted, *write_offset;
 	DARRAY(struct cf_token) tokens;
 	bool unexpected_eof; /* unexpected multi-line comment eof */
 };
@@ -98,8 +96,7 @@ static inline struct cf_token *cf_lexer_get_tokens(struct cf_lexer *lex)
 	return lex->tokens.array;
 }
 
-EXPORT bool cf_lexer_lex(struct cf_lexer *lex, const char *str,
-		const char *file);
+EXPORT bool cf_lexer_lex(struct cf_lexer *lex, const char *str, const char *file);
 
 /* ------------------------------------------------------------------------- */
 /* c-family preprocessor definition */
@@ -129,10 +126,9 @@ static inline void cf_def_addtoken(struct cf_def *cfd, struct cf_token *token)
 	da_push_back(cfd->tokens, token);
 }
 
-static inline struct cf_token *cf_def_getparam(const struct cf_def *cfd,
-		size_t idx)
+static inline struct cf_token *cf_def_getparam(const struct cf_def *cfd, size_t idx)
 {
-	return cfd->params.array+idx;
+	return cfd->params.array + idx;
 }
 
 static inline void cf_def_free(struct cf_def *cfd)
@@ -168,10 +164,10 @@ static inline void cf_def_free(struct cf_def *cfd)
  */
 
 struct cf_preprocessor {
-	struct cf_lexer *lex;
+	struct cf_lexer *  lex;
 	struct error_data *ed;
-	DARRAY(struct cf_def)   defines;
-	DARRAY(char*)           sys_include_dirs;
+	DARRAY(struct cf_def) defines;
+	DARRAY(char *) sys_include_dirs;
 	DARRAY(struct cf_lexer) dependencies;
 	DARRAY(struct cf_token) tokens;
 	bool ignore_state;
@@ -190,13 +186,11 @@ static inline void cf_preprocessor_add_sys_include_dir(
 		da_push_back(pp->sys_include_dirs, bstrdup(include_dir));
 }
 
-EXPORT void cf_preprocessor_add_def(struct cf_preprocessor *pp,
-		struct cf_def *def);
-EXPORT void cf_preprocessor_remove_def(struct cf_preprocessor *pp,
-		const char *def_name);
+EXPORT void cf_preprocessor_add_def(struct cf_preprocessor *pp, struct cf_def *def);
+EXPORT void cf_preprocessor_remove_def(
+		struct cf_preprocessor *pp, const char *def_name);
 
-static inline struct cf_token *cf_preprocessor_get_tokens(
-		struct cf_preprocessor *pp)
+static inline struct cf_token *cf_preprocessor_get_tokens(struct cf_preprocessor *pp)
 {
 	return pp->tokens.array;
 }

@@ -53,10 +53,7 @@ static inline void pthread_mutex_init_value(pthread_mutex_t *mutex)
 	*mutex = init_val;
 }
 
-enum os_event_type {
-	OS_EVENT_TYPE_AUTO,
-	OS_EVENT_TYPE_MANUAL
-};
+enum os_event_type { OS_EVENT_TYPE_AUTO, OS_EVENT_TYPE_MANUAL };
 
 struct os_event_data;
 struct os_sem_data;
@@ -83,7 +80,6 @@ EXPORT void os_set_thread_name(const char *name);
 #else
 #define THREAD_LOCAL __thread
 #endif
-
 
 #ifdef __cplusplus
 }

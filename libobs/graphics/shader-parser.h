@@ -25,8 +25,8 @@ extern "C" {
 #endif
 
 EXPORT enum gs_shader_param_type get_shader_param_type(const char *type);
-EXPORT enum gs_sample_filter get_sample_filter(const char *filter);
-EXPORT enum gs_address_mode get_address_mode(const char *address_mode);
+EXPORT enum gs_sample_filter     get_sample_filter(const char *filter);
+EXPORT enum gs_address_mode      get_address_mode(const char *address_mode);
 
 /*
  * Shader Parser
@@ -46,12 +46,12 @@ enum shader_var_type {
 };
 
 struct shader_var {
-	char *type;
-	char *name;
-	char *mapping;
+	char *               type;
+	char *               name;
+	char *               mapping;
 	enum shader_var_type var_type;
-	int array_count;
-	size_t gl_sampler_id; /* optional: used/parsed by GL */
+	int                  array_count;
+	size_t               gl_sampler_id; /* optional: used/parsed by GL */
 
 	DARRAY(uint8_t) default_val;
 };
@@ -61,9 +61,8 @@ static inline void shader_var_init(struct shader_var *sv)
 	memset(sv, 0, sizeof(struct shader_var));
 }
 
-static inline void shader_var_init_param(struct shader_var *sv,
-		char *type, char *name, bool is_uniform,
-		bool is_const)
+static inline void shader_var_init_param(struct shader_var *sv, char *type,
+		char *name, bool is_uniform, bool is_const)
 {
 	if (is_uniform)
 		sv->var_type = SHADER_VAR_UNIFORM;
@@ -91,8 +90,8 @@ static inline void shader_var_free(struct shader_var *sv)
 
 struct shader_sampler {
 	char *name;
-	DARRAY(char*) states;
-	DARRAY(char*) values;
+	DARRAY(char *) states;
+	DARRAY(char *) values;
 };
 
 static inline void shader_sampler_init(struct shader_sampler *ss)
@@ -113,8 +112,8 @@ static inline void shader_sampler_free(struct shader_sampler *ss)
 	da_free(ss->values);
 }
 
-EXPORT void shader_sampler_convert(struct shader_sampler *ss,
-		struct gs_sampler_info *info);
+EXPORT void shader_sampler_convert(
+		struct shader_sampler *ss, struct gs_sampler_info *info);
 
 /* ------------------------------------------------------------------------- */
 
@@ -133,7 +132,7 @@ static inline void shader_struct_free(struct shader_struct *ss)
 	size_t i;
 
 	for (i = 0; i < ss->vars.num; i++)
-		shader_var_free(ss->vars.array+i);
+		shader_var_free(ss->vars.array + i);
 
 	bfree(ss->name);
 	da_free(ss->vars);
@@ -150,16 +149,16 @@ struct shader_func {
 	struct cf_token *start, *end;
 };
 
-static inline void shader_func_init(struct shader_func *sf,
-		char *return_type, char *name)
+static inline void shader_func_init(
+		struct shader_func *sf, char *return_type, char *name)
 {
 	da_init(sf->params);
 
-	sf->return_type    = return_type;
-	sf->mapping = NULL;
-	sf->name           = name;
-	sf->start          = NULL;
-	sf->end            = NULL;
+	sf->return_type = return_type;
+	sf->mapping     = NULL;
+	sf->name        = name;
+	sf->start       = NULL;
+	sf->end         = NULL;
 }
 
 static inline void shader_func_free(struct shader_func *sf)
@@ -167,7 +166,7 @@ static inline void shader_func_free(struct shader_func *sf)
 	size_t i;
 
 	for (i = 0; i < sf->params.num; i++)
-		shader_var_free(sf->params.array+i);
+		shader_var_free(sf->params.array + i);
 
 	bfree(sf->name);
 	bfree(sf->return_type);
@@ -180,10 +179,10 @@ static inline void shader_func_free(struct shader_func *sf)
 struct shader_parser {
 	struct cf_parser cfp;
 
-	DARRAY(struct shader_var)     params;
-	DARRAY(struct shader_struct)  structs;
+	DARRAY(struct shader_var) params;
+	DARRAY(struct shader_struct) structs;
 	DARRAY(struct shader_sampler) samplers;
-	DARRAY(struct shader_func)    funcs;
+	DARRAY(struct shader_func) funcs;
 };
 
 static inline void shader_parser_init(struct shader_parser *sp)
@@ -201,13 +200,13 @@ static inline void shader_parser_free(struct shader_parser *sp)
 	size_t i;
 
 	for (i = 0; i < sp->params.num; i++)
-		shader_var_free(sp->params.array+i);
+		shader_var_free(sp->params.array + i);
 	for (i = 0; i < sp->structs.num; i++)
-		shader_struct_free(sp->structs.array+i);
+		shader_struct_free(sp->structs.array + i);
 	for (i = 0; i < sp->samplers.num; i++)
-		shader_sampler_free(sp->samplers.array+i);
+		shader_sampler_free(sp->samplers.array + i);
 	for (i = 0; i < sp->funcs.num; i++)
-		shader_func_free(sp->funcs.array+i);
+		shader_func_free(sp->funcs.array + i);
 
 	cf_parser_free(&sp->cfp);
 	da_free(sp->params);
@@ -216,8 +215,8 @@ static inline void shader_parser_free(struct shader_parser *sp)
 	da_free(sp->funcs);
 }
 
-EXPORT bool shader_parse(struct shader_parser *sp, const char *shader,
-		const char *file);
+EXPORT bool shader_parse(
+		struct shader_parser *sp, const char *shader, const char *file);
 
 static inline char *shader_parser_geterrors(struct shader_parser *sp)
 {
@@ -229,7 +228,7 @@ static inline struct shader_var *shader_parser_getparam(
 {
 	size_t i;
 	for (i = 0; i < sp->params.num; i++) {
-		struct shader_var *param = sp->params.array+i;
+		struct shader_var *param = sp->params.array + i;
 		if (strcmp(param->name, param_name) == 0)
 			return param;
 	}
@@ -242,7 +241,7 @@ static inline struct shader_struct *shader_parser_getstruct(
 {
 	size_t i;
 	for (i = 0; i < sp->structs.num; i++) {
-		struct shader_struct *st = sp->structs.array+i;
+		struct shader_struct *st = sp->structs.array + i;
 		if (strcmp(st->name, struct_name) == 0)
 			return st;
 	}
@@ -255,7 +254,7 @@ static inline struct shader_sampler *shader_parser_getsampler(
 {
 	size_t i;
 	for (i = 0; i < sp->samplers.num; i++) {
-		struct shader_sampler *sampler = sp->samplers.array+i;
+		struct shader_sampler *sampler = sp->samplers.array + i;
 		if (strcmp(sampler->name, sampler_name) == 0)
 			return sampler;
 	}
@@ -268,7 +267,7 @@ static inline struct shader_func *shader_parser_getfunc(
 {
 	size_t i;
 	for (i = 0; i < sp->funcs.num; i++) {
-		struct shader_func *func = sp->funcs.array+i;
+		struct shader_func *func = sp->funcs.array + i;
 		if (strcmp(func->name, func_name) == 0)
 			return func;
 	}

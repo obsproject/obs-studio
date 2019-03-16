@@ -17,9 +17,9 @@
 
 #pragma once
 
+#include "axisang.h"
 #include "vec3.h"
 #include "vec4.h"
-#include "axisang.h"
 
 /* 4x4 Matrix */
 
@@ -55,8 +55,7 @@ static inline void matrix4_identity(struct matrix4 *dst)
 
 EXPORT void matrix4_from_matrix3(struct matrix4 *dst, const struct matrix3 *m);
 EXPORT void matrix4_from_quat(struct matrix4 *dst, const struct quat *q);
-EXPORT void matrix4_from_axisang(struct matrix4 *dst,
-		const struct axisang *aa);
+EXPORT void matrix4_from_axisang(struct matrix4 *dst, const struct axisang *aa);
 
 EXPORT void matrix4_mul(struct matrix4 *dst, const struct matrix4 *m1,
 		const struct matrix4 *m2);
@@ -103,8 +102,8 @@ static inline void matrix4_rotate_aa4f(struct matrix4 *dst,
 	matrix4_rotate_aa(dst, m, &aa);
 }
 
-static inline void matrix4_scale3f(struct matrix4 *dst,
-		const struct matrix4 *m, float x, float y, float z)
+static inline void matrix4_scale3f(struct matrix4 *dst, const struct matrix4 *m,
+		float x, float y, float z)
 {
 	struct vec3 v;
 	vec3_set(&v, x, y, z);

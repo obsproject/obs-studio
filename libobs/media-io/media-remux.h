@@ -22,7 +22,7 @@
 struct media_remux_job;
 typedef struct media_remux_job *media_remux_job_t;
 
-typedef bool (media_remux_progress_callback)(void *data, float percent);
+typedef bool(media_remux_progress_callback)(void *data, float percent);
 
 #ifdef __cplusplus
 extern "C" {

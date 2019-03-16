@@ -16,10 +16,10 @@
 
 #pragma once
 
-#include <string.h>
 #include <stdarg.h>
-#include "c99defs.h"
+#include <string.h>
 #include "bmem.h"
+#include "c99defs.h"
 
 /*
  * Dynamic string
@@ -34,7 +34,7 @@ extern "C" {
 struct strref;
 
 struct dstr {
-	char *array;
+	char * array;
 	size_t len; /* number of characters, excluding null terminator */
 	size_t capacity;
 };
@@ -59,14 +59,13 @@ EXPORT char *strdepad(char *str);
 EXPORT wchar_t *wcsdepad(wchar_t *str);
 
 EXPORT char **strlist_split(const char *str, char split_ch, bool include_empty);
-EXPORT void strlist_free(char **strlist);
+EXPORT void   strlist_free(char **strlist);
 
 static inline void dstr_init(struct dstr *dst);
 static inline void dstr_init_move(struct dstr *dst, struct dstr *src);
 static inline void dstr_init_move_array(struct dstr *dst, char *str);
 static inline void dstr_init_copy(struct dstr *dst, const char *src);
-static inline void dstr_init_copy_dstr(struct dstr *dst,
-		const struct dstr *src);
+static inline void dstr_init_copy_dstr(struct dstr *dst, const struct dstr *src);
 EXPORT void dstr_init_copy_strref(struct dstr *dst, const struct strref *src);
 
 static inline void dstr_free(struct dstr *dst);
@@ -75,14 +74,13 @@ static inline void dstr_array_free(struct dstr *array, const size_t count);
 static inline void dstr_move(struct dstr *dst, struct dstr *src);
 static inline void dstr_move_array(struct dstr *dst, char *str);
 
-EXPORT void dstr_copy(struct dstr *dst, const char *array);
+EXPORT void        dstr_copy(struct dstr *dst, const char *array);
 static inline void dstr_copy_dstr(struct dstr *dst, const struct dstr *src);
-EXPORT void dstr_copy_strref(struct dstr *dst, const struct strref *src);
+EXPORT void        dstr_copy_strref(struct dstr *dst, const struct strref *src);
 
-EXPORT void dstr_ncopy(struct dstr *dst, const char *array,
-		const size_t len);
-EXPORT void dstr_ncopy_dstr(struct dstr *dst, const struct dstr *src,
-		const size_t len);
+EXPORT void dstr_ncopy(struct dstr *dst, const char *array, const size_t len);
+EXPORT void dstr_ncopy_dstr(
+		struct dstr *dst, const struct dstr *src, const size_t len);
 
 static inline void dstr_resize(struct dstr *dst, const size_t num);
 static inline void dstr_reserve(struct dstr *dst, const size_t num);
@@ -90,21 +88,19 @@ static inline void dstr_reserve(struct dstr *dst, const size_t num);
 static inline bool dstr_is_empty(const struct dstr *str);
 
 static inline void dstr_cat(struct dstr *dst, const char *array);
-EXPORT void dstr_cat_dstr(struct dstr *dst, const struct dstr *str);
-EXPORT void dstr_cat_strref(struct dstr *dst, const struct strref *str);
+EXPORT void        dstr_cat_dstr(struct dstr *dst, const struct dstr *str);
+EXPORT void        dstr_cat_strref(struct dstr *dst, const struct strref *str);
 
 static inline void dstr_cat_ch(struct dstr *dst, char ch);
 
 EXPORT void dstr_ncat(struct dstr *dst, const char *array, const size_t len);
-EXPORT void dstr_ncat_dstr(struct dstr *dst, const struct dstr *str,
-		const size_t len);
+EXPORT void dstr_ncat_dstr(
+		struct dstr *dst, const struct dstr *str, const size_t len);
 
-EXPORT void dstr_insert(struct dstr *dst, const size_t idx,
-		const char *array);
-EXPORT void dstr_insert_dstr(struct dstr *dst, const size_t idx,
-		const struct dstr *str);
-EXPORT void dstr_insert_ch(struct dstr *dst, const size_t idx,
-		const char ch);
+EXPORT void dstr_insert(struct dstr *dst, const size_t idx, const char *array);
+EXPORT void dstr_insert_dstr(
+		struct dstr *dst, const size_t idx, const struct dstr *str);
+EXPORT void dstr_insert_ch(struct dstr *dst, const size_t idx, const char ch);
 
 EXPORT void dstr_remove(struct dstr *dst, const size_t idx, const size_t count);
 
@@ -116,39 +112,33 @@ EXPORT void dstr_catf(struct dstr *dst, const char *format, ...);
 EXPORT void dstr_vprintf(struct dstr *dst, const char *format, va_list args);
 EXPORT void dstr_vcatf(struct dstr *dst, const char *format, va_list args);
 
-EXPORT void dstr_safe_printf(struct dstr *dst, const char *format,
-		const char *val1, const char *val2, const char *val3,
-		const char *val4);
+EXPORT void dstr_safe_printf(struct dstr *dst, const char *format, const char *val1,
+		const char *val2, const char *val3, const char *val4);
 
-static inline const char *dstr_find_i(const struct dstr *str,
-		const char *find);
-static inline const char *dstr_find(const struct dstr *str,
-		const char *find);
+static inline const char *dstr_find_i(const struct dstr *str, const char *find);
+static inline const char *dstr_find(const struct dstr *str, const char *find);
 
-EXPORT void dstr_replace(struct dstr *str, const char *find,
-		const char *replace);
+EXPORT void dstr_replace(struct dstr *str, const char *find, const char *replace);
 
 static inline int dstr_cmp(const struct dstr *str1, const char *str2);
 static inline int dstr_cmpi(const struct dstr *str1, const char *str2);
-static inline int dstr_ncmp(const struct dstr *str1, const char *str2,
-		const size_t n);
-static inline int dstr_ncmpi(const struct dstr *str1, const char *str2,
-		const size_t n);
+static inline int dstr_ncmp(
+		const struct dstr *str1, const char *str2, const size_t n);
+static inline int dstr_ncmpi(
+		const struct dstr *str1, const char *str2, const size_t n);
 
 EXPORT void dstr_depad(struct dstr *dst);
 
-EXPORT void dstr_left(struct dstr *dst, const struct dstr *str,
-		const size_t pos);
+EXPORT void dstr_left(struct dstr *dst, const struct dstr *str, const size_t pos);
 EXPORT void dstr_mid(struct dstr *dst, const struct dstr *str,
 		const size_t start, const size_t count);
-EXPORT void dstr_right(struct dstr *dst, const struct dstr *str,
-		const size_t pos);
+EXPORT void dstr_right(struct dstr *dst, const struct dstr *str, const size_t pos);
 
 static inline char dstr_end(const struct dstr *str);
 
-EXPORT void dstr_from_mbs(struct dstr *dst, const char *mbstr);
+EXPORT void  dstr_from_mbs(struct dstr *dst, const char *mbstr);
 EXPORT char *dstr_to_mbs(const struct dstr *str);
-EXPORT void dstr_from_wcs(struct dstr *dst, const wchar_t *wstr);
+EXPORT void  dstr_from_wcs(struct dstr *dst, const wchar_t *wstr);
 EXPORT wchar_t *dstr_to_wcs(const struct dstr *str);
 
 EXPORT void dstr_to_upper(struct dstr *str);
@@ -202,7 +192,7 @@ static inline void dstr_array_free(struct dstr *array, const size_t count)
 {
 	size_t i;
 	for (i = 0; i < count; i++)
-		dstr_free(array+i);
+		dstr_free(array + i);
 }
 
 static inline void dstr_move_array(struct dstr *dst, char *str)
@@ -225,10 +215,10 @@ static inline void dstr_ensure_capacity(struct dstr *dst, const size_t new_size)
 	if (new_size <= dst->capacity)
 		return;
 
-	new_cap = (!dst->capacity) ? new_size : dst->capacity*2;
+	new_cap = (!dst->capacity) ? new_size : dst->capacity * 2;
 	if (new_size > new_cap)
 		new_cap = new_size;
-	dst->array = (char*)brealloc(dst->array, new_cap);
+	dst->array    = (char *)brealloc(dst->array, new_cap);
 	dst->capacity = new_cap;
 }
 
@@ -249,7 +239,7 @@ static inline void dstr_reserve(struct dstr *dst, const size_t capacity)
 	if (capacity == 0 || capacity <= dst->len)
 		return;
 
-	dst->array = (char*)brealloc(dst->array, capacity);
+	dst->array    = (char *)brealloc(dst->array, capacity);
 	dst->capacity = capacity;
 }
 
@@ -262,7 +252,7 @@ static inline void dstr_resize(struct dstr *dst, const size_t num)
 
 	dstr_ensure_capacity(dst, num + 1);
 	dst->array[num] = 0;
-	dst->len = num;
+	dst->len        = num;
 }
 
 static inline bool dstr_is_empty(const struct dstr *str)
@@ -288,8 +278,8 @@ static inline void dstr_cat(struct dstr *dst, const char *array)
 static inline void dstr_cat_ch(struct dstr *dst, char ch)
 {
 	dstr_ensure_capacity(dst, ++dst->len + 1);
-	dst->array[dst->len-1] = ch;
-	dst->array[dst->len]   = 0;
+	dst->array[dst->len - 1] = ch;
+	dst->array[dst->len]     = 0;
 }
 
 static inline const char *dstr_find_i(const struct dstr *str, const char *find)
@@ -312,14 +302,14 @@ static inline int dstr_cmpi(const struct dstr *str1, const char *str2)
 	return astrcmpi(str1->array, str2);
 }
 
-static inline int dstr_ncmp(const struct dstr *str1, const char *str2,
-		const size_t n)
+static inline int dstr_ncmp(
+		const struct dstr *str1, const char *str2, const size_t n)
 {
 	return astrcmp_n(str1->array, str2, n);
 }
 
-static inline int dstr_ncmpi(const struct dstr *str1, const char *str2,
-		const size_t n)
+static inline int dstr_ncmpi(
+		const struct dstr *str1, const char *str2, const size_t n)
 {
 	return astrcmpi_n(str1->array, str2, n);
 }

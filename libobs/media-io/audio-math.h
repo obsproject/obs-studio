@@ -17,8 +17,8 @@
 
 #pragma once
 
-#include "../util/c99defs.h"
 #include <math.h>
+#include "../util/c99defs.h"
 
 #ifdef _MSC_VER
 #include <float.h>

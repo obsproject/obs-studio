@@ -17,9 +17,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include <inttypes.h>
-#include <pulse/stream.h>
 #include <pulse/context.h>
 #include <pulse/introspect.h>
+#include <pulse/stream.h>
 
 #pragma once
 
@@ -29,8 +29,8 @@ struct pulseaudio_default_output {
 
 struct enum_cb {
 	obs_enum_audio_device_cb cb;
-	void *data;
-	int cont;
+	void *                   data;
+	int                      cont;
 };
 
 void get_default_id(char **id);
@@ -106,8 +106,8 @@ void pulseaudio_accept();
  *
  * @warning call without active locks
  */
-int_fast32_t pulseaudio_get_source_info_list(pa_source_info_cb_t cb,
-		void *userdata);
+int_fast32_t pulseaudio_get_source_info_list(
+		pa_source_info_cb_t cb, void *userdata);
 
 /**
  * Request source information from a specific source
@@ -125,8 +125,8 @@ int_fast32_t pulseaudio_get_source_info_list(pa_source_info_cb_t cb,
  *
  * @warning call without active locks
  */
-int_fast32_t pulseaudio_get_source_info(pa_source_info_cb_t cb,
-		const char *name, void *userdata);
+int_fast32_t pulseaudio_get_source_info(
+		pa_source_info_cb_t cb, const char *name, void *userdata);
 
 /**
  * Request server information
@@ -171,8 +171,8 @@ int_fast32_t pulseaudio_connect_playback(pa_stream *s, const char *name,
  * @param cb pa_stream_request_cb_t
  * @param userdata pointer to userdata the callback will be called with
  */
-void pulseaudio_write_callback(pa_stream *p, pa_stream_request_cb_t cb,
-		void *userdata);
+void pulseaudio_write_callback(
+		pa_stream *p, pa_stream_request_cb_t cb, void *userdata);
 
 /**
  * Sets a callback function for when an underflow happen
@@ -181,5 +181,5 @@ void pulseaudio_write_callback(pa_stream *p, pa_stream_request_cb_t cb,
  * @param cb pa_stream_notify_cb_t
  * @param userdata pointer to userdata the callback will be called with
  */
-void pulseaudio_set_underflow_callback(pa_stream *p, pa_stream_notify_cb_t cb,
-		void *userdata);
+void pulseaudio_set_underflow_callback(
+		pa_stream *p, pa_stream_notify_cb_t cb, void *userdata);

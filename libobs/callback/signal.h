@@ -33,17 +33,16 @@ extern "C" {
 
 struct signal_handler;
 typedef struct signal_handler signal_handler_t;
-typedef void (*global_signal_callback_t)(void*, const char*, calldata_t*);
-typedef void (*signal_callback_t)(void*, calldata_t*);
+typedef void (*global_signal_callback_t)(void *, const char *, calldata_t *);
+typedef void (*signal_callback_t)(void *, calldata_t *);
 
 EXPORT signal_handler_t *signal_handler_create(void);
-EXPORT void signal_handler_destroy(signal_handler_t *handler);
+EXPORT void              signal_handler_destroy(signal_handler_t *handler);
 
-EXPORT bool signal_handler_add(signal_handler_t *handler,
-		const char *signal_decl);
+EXPORT bool signal_handler_add(signal_handler_t *handler, const char *signal_decl);
 
-static inline bool signal_handler_add_array(signal_handler_t *handler,
-		const char **signal_decls)
+static inline bool signal_handler_add_array(
+		signal_handler_t *handler, const char **signal_decls)
 {
 	bool success = true;
 	if (!signal_decls)

@@ -65,13 +65,13 @@ enum video_range_type {
 };
 
 struct video_data {
-	uint8_t           *data[MAX_AV_PLANES];
-	uint32_t          linesize[MAX_AV_PLANES];
-	uint64_t          timestamp;
+	uint8_t *data[MAX_AV_PLANES];
+	uint32_t linesize[MAX_AV_PLANES];
+	uint64_t timestamp;
 };
 
 struct video_output_info {
-	const char        *name;
+	const char *name;
 
 	enum video_format format;
 	uint32_t          fps_num;
@@ -108,16 +108,26 @@ static inline bool format_is_yuv(enum video_format format)
 static inline const char *get_video_format_name(enum video_format format)
 {
 	switch (format) {
-	case VIDEO_FORMAT_I420: return "I420";
-	case VIDEO_FORMAT_NV12: return "NV12";
-	case VIDEO_FORMAT_YVYU: return "YVYU";
-	case VIDEO_FORMAT_YUY2: return "YUY2";
-	case VIDEO_FORMAT_UYVY: return "UYVY";
-	case VIDEO_FORMAT_RGBA: return "RGBA";
-	case VIDEO_FORMAT_BGRA: return "BGRA";
-	case VIDEO_FORMAT_BGRX: return "BGRX";
-	case VIDEO_FORMAT_I444: return "I444";
-	case VIDEO_FORMAT_Y800: return "Y800";
+	case VIDEO_FORMAT_I420:
+		return "I420";
+	case VIDEO_FORMAT_NV12:
+		return "NV12";
+	case VIDEO_FORMAT_YVYU:
+		return "YVYU";
+	case VIDEO_FORMAT_YUY2:
+		return "YUY2";
+	case VIDEO_FORMAT_UYVY:
+		return "UYVY";
+	case VIDEO_FORMAT_RGBA:
+		return "RGBA";
+	case VIDEO_FORMAT_BGRA:
+		return "BGRA";
+	case VIDEO_FORMAT_BGRX:
+		return "BGRX";
+	case VIDEO_FORMAT_I444:
+		return "I444";
+	case VIDEO_FORMAT_Y800:
+		return "Y800";
 	case VIDEO_FORMAT_NONE:;
 	}
 
@@ -127,7 +137,8 @@ static inline const char *get_video_format_name(enum video_format format)
 static inline const char *get_video_colorspace_name(enum video_colorspace cs)
 {
 	switch (cs) {
-	case VIDEO_CS_709: return "709";
+	case VIDEO_CS_709:
+		return "709";
 	case VIDEO_CS_601:
 	case VIDEO_CS_DEFAULT:;
 	}
@@ -138,7 +149,8 @@ static inline const char *get_video_colorspace_name(enum video_colorspace cs)
 static inline const char *get_video_range_name(enum video_range_type range)
 {
 	switch (range) {
-	case VIDEO_RANGE_FULL: return "Full";
+	case VIDEO_RANGE_FULL:
+		return "Full";
 	case VIDEO_RANGE_PARTIAL:
 	case VIDEO_RANGE_DEFAULT:;
 	}
@@ -168,14 +180,14 @@ EXPORT bool video_format_get_parameters(enum video_colorspace color_space,
 		enum video_range_type range, float matrix[16],
 		float min_range[3], float max_range[3]);
 
-#define VIDEO_OUTPUT_SUCCESS       0
+#define VIDEO_OUTPUT_SUCCESS 0
 #define VIDEO_OUTPUT_INVALIDPARAM -1
-#define VIDEO_OUTPUT_FAIL         -2
+#define VIDEO_OUTPUT_FAIL -2
 
-EXPORT int video_output_open(video_t **video, struct video_output_info *info);
+EXPORT int  video_output_open(video_t **video, struct video_output_info *info);
 EXPORT void video_output_close(video_t *video);
 
-EXPORT bool video_output_connect(video_t *video,
+EXPORT bool video_output_connect(video_t *     video,
 		const struct video_scale_info *conversion,
 		void (*callback)(void *param, struct video_data *frame),
 		void *param);
@@ -185,19 +197,18 @@ EXPORT void video_output_disconnect(video_t *video,
 
 EXPORT bool video_output_active(const video_t *video);
 
-EXPORT const struct video_output_info *video_output_get_info(
-		const video_t *video);
+EXPORT const struct video_output_info *video_output_get_info(const video_t *video);
 EXPORT bool video_output_lock_frame(video_t *video, struct video_frame *frame,
 		int count, uint64_t timestamp);
 EXPORT void video_output_unlock_frame(video_t *video);
 EXPORT uint64_t video_output_get_frame_time(const video_t *video);
-EXPORT void video_output_stop(video_t *video);
-EXPORT bool video_output_stopped(video_t *video);
+EXPORT void     video_output_stop(video_t *video);
+EXPORT bool     video_output_stopped(video_t *video);
 
 EXPORT enum video_format video_output_get_format(const video_t *video);
 EXPORT uint32_t video_output_get_width(const video_t *video);
 EXPORT uint32_t video_output_get_height(const video_t *video);
-EXPORT double video_output_get_frame_rate(const video_t *video);
+EXPORT double   video_output_get_frame_rate(const video_t *video);
 
 EXPORT uint32_t video_output_get_skipped_frames(const video_t *video);
 EXPORT uint32_t video_output_get_total_frames(const video_t *video);
@@ -206,7 +217,6 @@ extern void video_output_inc_texture_encoders(video_t *video);
 extern void video_output_dec_texture_encoders(video_t *video);
 extern void video_output_inc_texture_frames(video_t *video);
 extern void video_output_inc_texture_skipped_frames(video_t *video);
-
 
 #ifdef __cplusplus
 }

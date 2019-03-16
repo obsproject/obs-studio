@@ -16,10 +16,10 @@
 
 #pragma once
 
-#include "c99defs.h"
-#include "base.h"
-#include <wchar.h>
 #include <string.h>
+#include <wchar.h>
+#include "base.h"
+#include "c99defs.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -35,7 +35,7 @@ EXPORT void base_set_allocator(struct base_allocator *defs);
 
 EXPORT void *bmalloc(size_t size);
 EXPORT void *brealloc(void *ptr, size_t size);
-EXPORT void bfree(void *ptr);
+EXPORT void  bfree(void *ptr);
 
 EXPORT int base_get_alignment(void);
 
@@ -57,7 +57,7 @@ static inline char *bstrdup_n(const char *str, size_t n)
 	if (!str)
 		return NULL;
 
-	dup = (char*)bmemdup(str, n+1);
+	dup    = (char *)bmemdup(str, n + 1);
 	dup[n] = 0;
 
 	return dup;
@@ -69,7 +69,7 @@ static inline wchar_t *bwstrdup_n(const wchar_t *str, size_t n)
 	if (!str)
 		return NULL;
 
-	dup = (wchar_t*)bmemdup(str, (n+1) * sizeof(wchar_t));
+	dup    = (wchar_t *)bmemdup(str, (n + 1) * sizeof(wchar_t));
 	dup[n] = 0;
 
 	return dup;
