@@ -1,4 +1,5 @@
 #include "drmsend.h"
+#include "xcursor-xcb.h"
 
 #include <graphics/graphics-internal.h>
 
@@ -46,12 +47,17 @@ typedef struct {
 
 typedef struct {
 	obs_source_t *source;
+
+	xcb_connection_t *xcb;
+	xcb_xcursor_t *cursor;
 	gs_texture_t *texture;
 	EGLDisplay edisp;
 	EGLImage eimage;
 
 	dmabuf_source_fblist_t fbs;
 	int active_fb;
+
+	bool show_cursor;
 } dmabuf_source_t;
 
 static const char obs_drmsend_suffix[] = "-drmsend";
@@ -362,6 +368,8 @@ static void dmabuf_source_update(void *data, obs_data_t *settings)
 	dmabuf_source_t *ctx = data;
 	blog(LOG_DEBUG, "dmabuf_source_udpate %p", ctx);
 
+	ctx->show_cursor = obs_data_get_bool(settings, "show_cursor");
+
 	dmabuf_source_close(ctx);
 	dmabuf_source_open(ctx, obs_data_get_int(settings, "framebuffer"));
 }
@@ -411,6 +419,13 @@ static void *dmabuf_source_create(obs_data_t *settings, obs_source_t *source)
 		return NULL;
 	}
 
+	ctx->xcb = xcb_connect(NULL, NULL);
+	if (!ctx->xcb || xcb_connection_has_error(ctx->xcb)) {
+		blog(LOG_ERROR, "Unable to open X display, cursor will not be available");
+	}
+
+	ctx->cursor = xcb_xcursor_init(ctx->xcb);
+
 	dmabuf_source_update(ctx, settings);
 	return ctx;
 }
@@ -429,10 +444,43 @@ static void dmabuf_source_destroy(void *data)
 	dmabuf_source_t *ctx = data;
 	blog(LOG_DEBUG, "dmabuf_source_destroy %p", ctx);
 
-	gs_texture_destroy(ctx->texture);
+	if (ctx->texture)
+		gs_texture_destroy(ctx->texture);
+
 	dmabuf_source_close(ctx);
 	dmabuf_source_close_fds(ctx);
+
+	if (ctx->cursor)
+		xcb_xcursor_destroy(ctx->cursor);
+
+	if (ctx->xcb)
+		xcb_disconnect(ctx->xcb);
+
 	bfree(data);
+}
+
+static void dmabuf_source_video_tick(void *data, float seconds)
+{
+	UNUSED_PARAMETER(seconds);
+	dmabuf_source_t *ctx = data;
+
+	if (!ctx->texture)
+		return;
+	if (!obs_source_showing(ctx->source))
+		return;
+	if (!ctx->cursor)
+		return;
+
+	xcb_xfixes_get_cursor_image_cookie_t cur_c
+		= xcb_xfixes_get_cursor_image_unchecked(ctx->xcb);
+	xcb_xfixes_get_cursor_image_reply_t *cur_r
+		= xcb_xfixes_get_cursor_image_reply(ctx->xcb, cur_c, NULL);
+
+	obs_enter_graphics();
+	xcb_xcursor_update(ctx->cursor, cur_r);
+	obs_leave_graphics();
+
+	free(cur_r);
 }
 
 static void dmabuf_source_render(void *data, gs_effect_t *effect)
@@ -450,6 +498,17 @@ static void dmabuf_source_render(void *data, gs_effect_t *effect)
 	while (gs_effect_loop(effect, "Draw")) {
 		gs_draw_sprite(ctx->texture, 0, 0, 0);
 	}
+
+	if (ctx->show_cursor && ctx->cursor) {
+		while (gs_effect_loop(effect, "Draw")) {
+			xcb_xcursor_render(ctx->cursor);
+		}
+	}
+}
+
+static void dmabuf_source_get_defaults(obs_data_t *defaults)
+{
+	obs_data_set_default_bool(defaults, "show_cursor", true);
 }
 
 static obs_properties_t *dmabuf_source_get_properties(void *data)
@@ -465,6 +524,9 @@ static obs_properties_t *dmabuf_source_get_properties(void *data)
 	}
 
 	obs_properties_t *props = obs_properties_create();
+
+	obs_properties_add_bool(props, "show_cursor",
+			obs_module_text("CaptureCursor"));
 
 	obs_property_t *fb_list = obs_properties_add_list(props, "framebuffer", "Framebuffer to capture",
 		OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
@@ -511,9 +573,11 @@ struct obs_source_info dmabuf_input = {
 	.output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_CUSTOM_DRAW | OBS_SOURCE_DO_NOT_DUPLICATE,
 	.create = dmabuf_source_create,
 	.destroy = dmabuf_source_destroy,
+	.video_tick = dmabuf_source_video_tick,
 	.video_render = dmabuf_source_render,
 	.get_width = dmabuf_source_get_width,
 	.get_height = dmabuf_source_get_height,
+	.get_defaults = dmabuf_source_get_defaults,
 	.get_properties = dmabuf_source_get_properties,
 	.update = dmabuf_source_update,
 };
