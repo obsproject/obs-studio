@@ -3069,6 +3069,10 @@ void obs_source_process_filter_end(obs_source_t *filter, gs_effect_t *effect,
 
 	target       = obs_filter_get_target(filter);
 	parent       = obs_filter_get_parent(filter);
+
+	if (target == NULL || parent == NULL)
+		return;
+
 	parent_flags = parent->info.output_flags;
 
 	if (can_bypass(target, parent, parent_flags, filter->allow_direct)) {
