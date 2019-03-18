@@ -30,6 +30,8 @@ environment:
   CefUrl: https://s3-us-west-2.amazonaws.com/streamlabs-cef-dist/$(CefZip)
   ReleaseArtifact: libobs-$(ReleaseName)-$(APPVEYOR_BUILD_VERSION)-win32-x64.7z
   DependenciesUrl: https://obsproject.com/downloads/dependencies2017.zip
+  VLCLibPath: $(APPVEYOR_BUILD_FOLDER)\vlc
+  VLCUrl: https://obsproject.com/downloads/vlc.zip
 
 install:
   - git submodule update --init --recursive --jobs 2
