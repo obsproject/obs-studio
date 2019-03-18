@@ -1763,6 +1763,10 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 	QGuiApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
 #endif
 
+#if !defined(_WIN32) && !defined(__APPLE__) && BROWSER_AVAILABLE
+	setenv("QT_NO_GLIB", "1", true);
+#endif
+
 	QCoreApplication::addLibraryPath(".");
 
 #if __APPLE__
