@@ -344,6 +344,7 @@ static int obs_init_graphics(struct obs_video_info *ovi)
 			NULL);
 	bfree(filename);
 
+	point_sampler.max_anisotropy = 1;
 	video->point_sampler = gs_samplerstate_create(&point_sampler);
 
 	obs->video.transparent_texture = gs_texture_create(2, 2, GS_RGBA, 1,
