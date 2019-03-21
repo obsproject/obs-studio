@@ -223,6 +223,10 @@ void AutoConfigTestPage::TestBandwidthThread()
 		string_depad_key(key);
 		key += "?test=true";
 	}
+	else if (wiz->serviceName == "Restream.io - FTL") {
+		string_depad_key(key);
+		key += "?test";
+	}
 
 	obs_data_set_string(service_settings, "service",
 			wiz->serviceName.c_str());

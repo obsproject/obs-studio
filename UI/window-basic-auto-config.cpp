@@ -585,6 +585,13 @@ void AutoConfigStreamPage::UpdateKeyLink()
 
 		isYoutube = true;
 	}
+	else if (serviceName.startsWith("Restream.io")) {
+		text += " <a href=\"https://";
+		text += "restream.io/settings/streaming-setup?from=OBS";
+		text += "\">";
+		text += QTStr("Basic.AutoConfig.StreamPage.StreamKey.LinkToSite");
+		text += "</a>";
+	}
 
 	if (isYoutube) {
 		ui->doBandwidthTest->setChecked(false);
