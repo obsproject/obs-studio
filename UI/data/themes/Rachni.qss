@@ -1283,3 +1283,16 @@ OBSBasicSettings {
     qproperty-hotkeysIcon: url(./Dark/settings/hotkeys.svg);
     qproperty-advancedIcon: url(./Dark/settings/advanced.svg);
 }
+
+#sourcesEmpty {
+    background: rgb(31, 30, 31);
+}
+
+#noSourcesLabel {
+    background: none;
+}
+
+#noSourcesIcon {
+    background: none;
+    qproperty-pixmap: url(./Dark/no_sources.svg);
+}

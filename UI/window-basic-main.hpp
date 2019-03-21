@@ -417,6 +417,8 @@ private:
 
 	bool NoSourcesConfirmation();
 
+	void UpdateNoSourcesWidget();
+
 public slots:
 	void DeferSaveBegin();
 	void DeferSaveEnd();

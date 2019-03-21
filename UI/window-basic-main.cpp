@@ -382,6 +382,8 @@ OBSBasic::OBSBasic(QWidget *parent)
 		ui->previewLabel->setHidden(true);
 	else
 		ui->previewLabel->setHidden(!labels);
+
+	ui->sourcesEmpty->setHidden(true);
 }
 
 static void SaveAudioDevice(const char *name, int channel, obs_data_t *parent,
@@ -836,6 +838,7 @@ void OBSBasic::Load(const char *file)
 		blog(LOG_INFO, "No scene file found, creating default scene");
 		CreateDefaultScene(true);
 		SaveProject();
+		UpdateNoSourcesWidget();
 		return;
 	}
 
@@ -1028,6 +1031,8 @@ retryScene:
 	}
 
 	LogScenes();
+
+	UpdateNoSourcesWidget();
 
 	disableSaving--;
 
@@ -2592,6 +2597,8 @@ void OBSBasic::AddSceneItem(OBSSceneItem item)
 		
 		obs_scene_enum_items(scene, select_one, (obs_sceneitem_t*)item);
 	}
+
+	UpdateNoSourcesWidget();
 }
 
 void OBSBasic::UpdateSceneSelection(OBSSource source)
@@ -2613,6 +2620,9 @@ void OBSBasic::UpdateSceneSelection(OBSSource source)
 
 			OBSScene curScene =
 				GetOBSRef<OBSScene>(ui->scenes->currentItem());
+
+			UpdateNoSourcesWidget();
+
 			if (api && scene != curScene)
 				api->on_event(OBS_FRONTEND_EVENT_PREVIEW_SCENE_CHANGED);
 		}
@@ -3181,8 +3191,9 @@ void OBSBasic::RemoveSelectedSceneItem()
 	OBSSceneItem item = GetCurrentSceneItem();
 	if (item) {
 		obs_source_t *source = obs_sceneitem_get_source(item);
-		if (QueryRemoveSource(source))
+		if (QueryRemoveSource(source)) {
 			obs_sceneitem_remove(item);
+		}
 	}
 }
 
@@ -3902,6 +3913,7 @@ void OBSBasic::on_scenes_currentItemChanged(QListWidgetItem *current,
 	}
 
 	SetCurrentScene(source);
+	UpdateNoSourcesWidget();
 
 	if (api)
 		api->on_event(OBS_FRONTEND_EVENT_PREVIEW_SCENE_CHANGED);
@@ -4639,6 +4651,8 @@ void OBSBasic::on_actionRemoveSource_triggered()
 				obs_sceneitem_remove(item);
 		}
 	}
+
+	UpdateNoSourcesWidget();
 }
 
 void OBSBasic::on_actionInteract_triggered()
@@ -5517,6 +5531,34 @@ bool OBSBasic::NoSourcesConfirmation()
 	}
 
 	return true;
+}
+
+void OBSBasic::UpdateNoSourcesWidget()
+{
+	OBSScene scene = GetCurrentScene();
+
+	int count = 0;
+
+	auto countSources = [] (obs_scene_t*, obs_sceneitem_t* sceneItem, void* param)
+	{
+		if (!sceneItem)
+			return true;
+
+		(*reinterpret_cast<int*>(param))++;
+
+		return true;
+	};
+
+	obs_scene_enum_items(scene, countSources, &count);
+
+	if (count == 0) {
+		ui->sources->setHidden(true);
+		ui->sourcesEmpty->setHidden(false);
+	}
+	else {
+		ui->sources->setHidden(false);
+		ui->sourcesEmpty->setHidden(true);
+	}
 }
 
 void OBSBasic::on_streamButton_clicked()
