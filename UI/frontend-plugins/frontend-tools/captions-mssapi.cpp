@@ -6,6 +6,8 @@
 #define error(format, ...) do_log(LOG_ERROR, format, ##__VA_ARGS__)
 #define debug(format, ...) do_log(LOG_DEBUG, format, ##__VA_ARGS__)
 
+#define MSS_CAPTION_MAX_LENGTH (4*32)
+
 mssapi_captions::mssapi_captions(
 		captions_cb callback,
 		const std::string &lang) try
@@ -138,8 +140,12 @@ try {
 				if (FAILED(hr))
 					continue;
 
+				wchar_t capped[MSS_CAPTION_MAX_LENGTH+1];
+				swprintf(capped, MSS_CAPTION_MAX_LENGTH+1, L"%.*s",
+						(int)wcslen(text), (wchar_t *)text);
+
 				char text_utf8[512];
-				os_wcs_to_utf8(text, 0, text_utf8, 512);
+				os_wcs_to_utf8(capped, 0, text_utf8, 512);
 
 				callback(text_utf8);
 
