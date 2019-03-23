@@ -54,3 +54,7 @@ sudo apt-get install -y \
         libqt5svg5-dev \
         swig \
         clang-format-8
+
+# build cef
+wget --quiet --retry-connrefused --waitretry=1 https://cdn-fastly.obsproject.com/downloads/cef_binary_${CEF_BUILD_VERSION}_linux64.tar.bz2
+tar -xjf ./cef_binary_${CEF_BUILD_VERSION}_linux64.tar.bz2
