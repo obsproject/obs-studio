@@ -105,6 +105,20 @@
       </item>
      </layout>
     </item>
+    <item>
+     <widget class="QLabel" name="obsTrayIconDummy">
+      <property name="visible">
+       <bool>false</bool>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <widget class="QLabel" name="obsTrayActiveIconDummy">
+      <property name="visible">
+       <bool>false</bool>
+      </property>
+     </widget>
+    </item>
    </layout>
   </widget>
   <widget class="QMenuBar" name="menubar">
