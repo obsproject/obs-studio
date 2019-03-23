@@ -634,12 +634,12 @@ static void set_gpu_converted_data(struct obs_core_video *video,
 		uint8_t *out_uv = output->data[1];
 		uint8_t *in = input->data[0];
 
-		for (size_t y = 0; y < height; y++) {
+		for (int y = 0; y < height; y++) {
 			memcpy(out_y, in, width);
 			out_y += output->linesize[0];
 			in += input->linesize[0];
 		}
-		for (size_t y = 0; y < height_d2; y++) {
+		for (int y = 0; y < height_d2; y++) {
 			memcpy(out_uv, in, width);
 			out_uv += output->linesize[0];
 			in += input->linesize[0];
