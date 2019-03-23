@@ -399,6 +399,7 @@ private:
 	void ReplayBufferClicked();
 
 	bool sysTrayMinimizeToTray();
+	void setStyledTrayIcon(bool active);
 
 	void EnumDialogs();
 

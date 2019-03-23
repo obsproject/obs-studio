@@ -4966,6 +4966,26 @@ static inline void ClearProcessPriority()
 #define ClearProcessPriority() do {} while(false)
 #endif
 
+void OBSBasic::setStyledTrayIcon(bool active = false)
+{
+	const QPixmap *pImg;
+	QString resource;
+
+	if (active) {
+		pImg = ui->obsTrayActiveIconDummy->pixmap();
+		resource = ":/res/images/tray_active.png";
+	} else {
+		pImg = ui->obsTrayIconDummy->pixmap();
+		resource = ":/res/images/obs.png";
+	}
+
+	/* Fallback to default resource storage if styled icon not exist */
+	if (pImg && !QIcon(*pImg).isNull())
+		trayIcon->setIcon(QIcon(*pImg));
+	else
+		trayIcon->setIcon(QIcon(resource));
+}
+
 inline void OBSBasic::OnActivate()
 {
 	if (ui->profileMenu->isEnabled()) {
