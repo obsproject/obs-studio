@@ -61,6 +61,6 @@ deploy:
     set_public: true
     artifact: $(ReleaseArtifact)
     on:
-      branch: streamlabs-23.0.0
+      branch: streamlabs-23.0.2
 
 test: off
