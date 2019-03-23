@@ -4994,9 +4994,12 @@ inline void OBSBasic::OnActivate()
 		App()->IncrementSleepInhibition();
 		UpdateProcessPriority();
 
-		if (trayIcon)
-			trayIcon->setIcon(QIcon::fromTheme("obs-tray-active",
-					QIcon(":/res/images/tray_active.png")));
+		if (trayIcon) {
+			trayIcon->setIcon(QIcon::fromTheme("obs-tray-active"));
+
+			if (trayIcon->icon().isNull())
+				setStyledTrayIcon(true);
+		}
 	}
 }
 
@@ -5008,9 +5011,12 @@ inline void OBSBasic::OnDeactivate()
 		App()->DecrementSleepInhibition();
 		ClearProcessPriority();
 
-		if (trayIcon)
-			trayIcon->setIcon(QIcon::fromTheme("obs-tray",
-					QIcon(":/res/images/obs.png")));
+		if (trayIcon) {
+			trayIcon->setIcon(QIcon::fromTheme("obs-tray"));
+
+			if (trayIcon->icon().isNull())
+				setStyledTrayIcon();
+		}
 	}
 }
 
@@ -6659,8 +6665,12 @@ void OBSBasic::ToggleShowHide()
 
 void OBSBasic::SystemTrayInit()
 {
-	trayIcon.reset(new QSystemTrayIcon(QIcon::fromTheme("obs-tray",
-			QIcon(":/res/images/obs.png")), this));
+	trayIcon.reset(new QSystemTrayIcon(QIcon::fromTheme("obs-tray"),
+			this));
+
+	if (trayIcon->icon().isNull())
+		setStyledTrayIcon();
+
 	trayIcon->setToolTip("OBS Studio");
 
 	showHide = new QAction(QTStr("Basic.SystemTray.Show"),
