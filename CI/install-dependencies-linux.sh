@@ -42,3 +42,17 @@ sudo apt-get install -y \
         qtbase5-dev \
         libqt5svg5-dev \
         swig
+
+# build cef
+if [ ! -d "~/projects" ]
+then
+mkdir ~/projects
+fi
+
+cd ~/projects
+curl -L "http://opensource.spotify.com/cefbuilds/cef_binary_73.1.12%2Bgee4b49f%2Bchromium-73.0.3683.75_linux64_minimal.tar.bz2" -o "cef.tar.bz2"
+tar -xjf "cef.tar.bz2" --one-top-level=cef --strip-components=1
+cd cef && mkdir build
+cd build
+cmake -DCMAKE_CXX_FLAGS="-Wno-attributes" ..
+make -j4
