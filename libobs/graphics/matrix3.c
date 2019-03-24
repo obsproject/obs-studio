@@ -65,18 +65,20 @@ void matrix3_from_matrix4(struct matrix3 *dst, const struct matrix4 *m)
 void matrix3_mul(struct matrix3 *dst, const struct matrix3 *m1,
 		const struct matrix3 *m2)
 {
-	if (dst == m2) {
+	struct matrix3 m2_transpose;
+	matrix3_transpose(&m2_transpose, m2);
+	if (dst == m1) {
 		struct matrix3 temp;
-		vec3_rotate(&temp.x, &m1->x, m2);
-		vec3_rotate(&temp.y, &m1->y, m2);
-		vec3_rotate(&temp.z, &m1->z, m2);
-		vec3_transform3x4(&temp.t, &m1->t, m2);
+		vec3_rotate(&temp.x, &m1->x, &m2_transpose);
+		vec3_rotate(&temp.y, &m1->y, &m2_transpose);
+		vec3_rotate(&temp.z, &m1->z, &m2_transpose);
+		vec3_transform3x4(&temp.t, &m1->t, &m2_transpose);
 		matrix3_copy(dst, &temp);
 	} else {
-		vec3_rotate(&dst->x, &m1->x, m2);
-		vec3_rotate(&dst->y, &m1->y, m2);
-		vec3_rotate(&dst->z, &m1->z, m2);
-		vec3_transform3x4(&dst->t, &m1->t, m2);
+		vec3_rotate(&dst->x, &m1->x, &m2_transpose);
+		vec3_rotate(&dst->y, &m1->y, &m2_transpose);
+		vec3_rotate(&dst->z, &m1->z, &m2_transpose);
+		vec3_transform3x4(&dst->t, &m1->t, &m2_transpose);
 	}
 }
 
