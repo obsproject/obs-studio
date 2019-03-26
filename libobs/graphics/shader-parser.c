@@ -104,6 +104,8 @@ void shader_sampler_convert(struct shader_sampler *ss,
 	size_t i;
 	memset(info, 0, sizeof(struct gs_sampler_info));
 
+	info->max_anisotropy = 1;
+
 	for (i = 0; i < ss->states.num; i++) {
 		const char *state = ss->states.array[i];
 		const char *value = ss->values.array[i];
