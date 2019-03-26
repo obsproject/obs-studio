@@ -927,3 +927,13 @@ OBSBasicSettings {
     qproperty-hotkeysIcon: url(./Dark/settings/hotkeys.svg);
     qproperty-advancedIcon: url(./Dark/settings/advanced.svg);
 }
+
+/* System Tray Icons */
+
+QLabel#obsTrayIconDummy {
+    qproperty-pixmap: url(./Acri/obs.svg);
+}
+
+QLabel#obsTrayActiveIconDummy {
+    qproperty-pixmap: url(./Acri/tray-active.svg);
+}

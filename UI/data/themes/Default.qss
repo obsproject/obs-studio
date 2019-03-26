@@ -161,3 +161,13 @@ OBSBasicSettings {
     qproperty-hotkeysIcon: url(:settings/images/settings/hotkeys.svg);
     qproperty-advancedIcon: url(:settings/images/settings/advanced.svg);
 }
+
+/* System Tray Icons */
+
+QLabel#obsTrayIconDummy {
+    qproperty-pixmap: url(); /* Use default storage for Normal icon */
+}
+
+QLabel#obsTrayActiveIconDummy {
+    qproperty-pixmap: url(); /* Use default storage for Active icon */
+}
