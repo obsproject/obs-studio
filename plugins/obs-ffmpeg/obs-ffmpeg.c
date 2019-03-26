@@ -181,11 +181,32 @@ static const wchar_t *blacklisted_adapters[] = {
 static const size_t num_blacklisted =
 	sizeof(blacklisted_adapters) / sizeof(blacklisted_adapters[0]);
 
+static bool is_adapter(const wchar_t *name, const wchar_t *adapter)
+{
+	const wchar_t *find = wstrstri(name, adapter);
+	if (!find) {
+		return false;
+	}
+
+	/* check before string for potential numeric mismatch */
+	if (find > name && iswdigit(find[-1]) && iswdigit(find[0])) {
+		return false;
+	}
+
+	/* check after string for potential numeric mismatch */
+	size_t len = wcslen(adapter);
+	if (iswdigit(find[len - 1]) && iswdigit(find[len])) {
+		return false;
+	}
+
+	return true;
+}
+
 static bool is_blacklisted(const wchar_t *name)
 {
 	for (size_t i = 0; i < num_blacklisted; i++) {
 		const wchar_t *blacklisted_adapter = blacklisted_adapters[i];
-		if (wstrstri(name, blacklisted_adapter)) {
+		if (is_adapter(name, blacklisted_adapter)) {
 			return true;
 		}
 	}
