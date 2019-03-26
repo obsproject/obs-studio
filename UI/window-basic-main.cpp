@@ -382,6 +382,8 @@ OBSBasic::OBSBasic(QWidget *parent)
 		ui->previewLabel->setHidden(true);
 	else
 		ui->previewLabel->setHidden(!labels);
+
+	connect(App(), &OBSApp::StyleChanged, this, &OBSBasic::ThemeChanged);
 }
 
 static void SaveAudioDevice(const char *name, int channel, obs_data_t *parent,
@@ -7170,3 +7172,20 @@ bool OBSBasic::ReplayBufferActive()
 		return false;
 	return outputHandler->ReplayBufferActive();
 }
+
+void OBSBasic::ThemeChanged()
+{
+	/* Update system tray icon */
+	if (trayIcon)
+		if (Active()) {
+			trayIcon->setIcon(QIcon::fromTheme("obs-tray-active"));
+
+			if (trayIcon->icon().isNull())
+				setStyledTrayIcon(true);
+		} else {
+			trayIcon->setIcon(QIcon::fromTheme("obs-tray"));
+
+			if (trayIcon->icon().isNull())
+				setStyledTrayIcon();
+		}
+};

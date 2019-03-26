@@ -526,6 +526,8 @@ private slots:
 	void AudioMixerCopyFilters();
 	void AudioMixerPasteFilters();
 
+	void ThemeChanged();
+
 private:
 	/* OBS Callbacks */
 	static void SceneReordered(void *data, calldata_t *params);
