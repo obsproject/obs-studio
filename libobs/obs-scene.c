@@ -524,7 +524,7 @@ static inline void render_item(struct obs_scene_item *item)
 			float cy_scale = (float)height / (float)cy;
 			struct vec4 clear_color;
 
-			vec4_zero(&clear_color);
+			vec4_set(&clear_color, 0.0f, 0.0f, 0.0f, 1.0f);
 			gs_clear(GS_CLEAR_COLOR, &clear_color, 0.0f, 0);
 			gs_ortho(0.0f, (float)width, 0.0f, (float)height,
 					-100.0f, 100.0f);

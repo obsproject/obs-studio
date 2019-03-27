@@ -230,7 +230,7 @@ static void gpu_delay_filter_render(void *data, gs_effect_t *effect)
 		bool async = (parent_flags & OBS_SOURCE_ASYNC) != 0;
 		struct vec4 clear_color;
 
-		vec4_zero(&clear_color);
+		vec4_set(&clear_color, 0.0f, 0.0f, 0.0f, 1.0f);
 		gs_clear(GS_CLEAR_COLOR, &clear_color, 0.0f, 0);
 		gs_ortho(0.0f, (float)f->cx, 0.0f, (float)f->cy,
 				-100.0f, 100.0f);
