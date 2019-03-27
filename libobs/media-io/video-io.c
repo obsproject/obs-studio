@@ -400,7 +400,7 @@ static void log_skipped(video_t *video)
 		blog(LOG_INFO, "Video stopped, number of "
 				"skipped frames due "
 				"to encoding lag: "
-				"%"PRIu32"/%"PRIu32" (%0.1f%%)",
+				"%ld/%ld (%0.1f%%)",
 				video->skipped_frames,
 				video->total_frames,
 				percentage_skipped);

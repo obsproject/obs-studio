@@ -329,6 +329,11 @@ static int obs_init_graphics(struct obs_video_info *ovi)
 			NULL);
 	bfree(filename);
 
+	filename = obs_find_data_file("area.effect");
+	video->area_effect = gs_effect_create_from_file(filename,
+			NULL);
+	bfree(filename);
+
 	filename = obs_find_data_file("bilinear_lowres_scale.effect");
 	video->bilinear_lowres_effect = gs_effect_create_from_file(filename,
 			NULL);
@@ -339,6 +344,7 @@ static int obs_init_graphics(struct obs_video_info *ovi)
 			NULL);
 	bfree(filename);
 
+	point_sampler.max_anisotropy = 1;
 	video->point_sampler = gs_samplerstate_create(&point_sampler);
 
 	obs->video.transparent_texture = gs_texture_create(2, 2, GS_RGBA, 1,
@@ -533,6 +539,7 @@ static void obs_free_graphics(void)
 		gs_effect_destroy(video->bicubic_effect);
 		gs_effect_destroy(video->repeat_effect);
 		gs_effect_destroy(video->lanczos_effect);
+		gs_effect_destroy(video->area_effect);
 		gs_effect_destroy(video->bilinear_lowres_effect);
 		video->default_effect = NULL;
 
@@ -1115,6 +1122,9 @@ int obs_reset_video(struct obs_video_info *ovi)
 	case OBS_SCALE_LANCZOS:
 		scale_type_name = "Lanczos";
 		break;
+	case OBS_SCALE_AREA:
+		scale_type_name = "Area";
+		break;
 	}
 
 	bool yuv = format_is_yuv(ovi->output_format);
@@ -1582,6 +1592,8 @@ gs_effect_t *obs_get_base_effect(enum obs_base_effect effect)
 		return obs->video.bicubic_effect;
 	case OBS_EFFECT_LANCZOS:
 		return obs->video.lanczos_effect;
+	case OBS_EFFECT_AREA:
+		return obs->video.area_effect;
 	case OBS_EFFECT_BILINEAR_LOWRES:
 		return obs->video.bilinear_lowres_effect;
 	case OBS_EFFECT_PREMULTIPLIED_ALPHA:
@@ -2147,6 +2159,15 @@ bool obs_obj_invalid(void *obj)
 		return true;
 
 	return !context->data;
+}
+
+void *obs_obj_get_data(void *obj)
+{
+	struct obs_context_data *context = obj;
+	if (!context)
+		return NULL;
+
+	return context->data;
 }
 
 bool obs_set_audio_monitoring_device(const char *name, const char *id)

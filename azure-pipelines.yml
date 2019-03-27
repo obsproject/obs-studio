@@ -4,6 +4,12 @@ variables:
   CMAKE_PREFIX_PATH: /usr/local/opt/qt5/lib/cmake
   CEF_BUILD_VERSION: 3.3282.1726.gc8368c8 
   CEF_VERSION: 3.3440.1805.gbe070f9
+  TWITCH-CLIENTID: $(twitch_clientid)
+  TWITCH-HASH: $(twitch_hash)
+  MIXER-CLIENTID: $(mixer_clientid)
+  MIXER-HASH: $(mixer_hash)
+  RESTREAM-CLIENTID: $(restream_clientid)
+  RESTREAM-HASH: $(restream_hash)
 
 jobs:
 - job: 'Build_macOS'

@@ -486,6 +486,13 @@ static void render_item_texture(struct obs_scene_item *item)
 				effect = obs->video.bicubic_effect;
 			} else if (type == OBS_SCALE_LANCZOS) {
 				effect = obs->video.lanczos_effect;
+			} else if (type == OBS_SCALE_AREA) {
+				effect = obs->video.area_effect;
+
+				gs_eparam_t *image = gs_effect_get_param_by_name(
+					effect, "image");
+				gs_effect_set_next_sampler(image,
+					obs->video.point_sampler);
 			}
 
 			scale_param = gs_effect_get_param_by_name(effect,
@@ -748,6 +755,8 @@ static void scene_load_item(struct obs_scene *scene, obs_data_t *item_data)
 			item->scale_filter = OBS_SCALE_BICUBIC;
 		else if (astrcmpi(scale_filter_str, "lanczos") == 0)
 			item->scale_filter = OBS_SCALE_LANCZOS;
+		else if (astrcmpi(scale_filter_str, "area") == 0)
+			item->scale_filter = OBS_SCALE_AREA;
 	}
 
 	if (item->item_render && !item_texture_enabled(item)) {
@@ -857,6 +866,8 @@ static void scene_save_item(obs_data_array_t *array,
 		scale_filter = "bicubic";
 	else if (item->scale_filter == OBS_SCALE_LANCZOS)
 		scale_filter = "lanczos";
+	else if (item->scale_filter == OBS_SCALE_AREA)
+		scale_filter = "area";
 	else
 		scale_filter = "disable";
 

@@ -789,7 +789,7 @@ void obs_property_int_set_limits(obs_property_t *p,
 void obs_property_float_set_limits(obs_property_t *p,
 		double min, double max, double step)
 {
-	struct float_data *data = get_type_data(p, OBS_PROPERTY_INT);
+	struct float_data *data = get_type_data(p, OBS_PROPERTY_FLOAT);
 	if (!data)
 		return;
 

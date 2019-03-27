@@ -1760,13 +1760,13 @@ static bool ep_compile_pass(struct effect_parser *ep,
 	if (!ep_compile_pass_shader(ep, tech, pass, pass_in, idx,
 				GS_SHADER_VERTEX)) {
 		success = false;
-		blog(LOG_ERROR, "Pass (%i) <%s> missing vertex shader!",
+		blog(LOG_ERROR, "Pass (%zu) <%s> missing vertex shader!",
 				idx, pass->name ? pass->name : "");
 	}
 	if (!ep_compile_pass_shader(ep, tech, pass, pass_in, idx,
 				GS_SHADER_PIXEL)) {
 		success = false;
-		blog(LOG_ERROR, "Pass (%i) <%s> missing pixel shader!",
+		blog(LOG_ERROR, "Pass (%zu) <%s> missing pixel shader!",
 				idx, pass->name ? pass->name : "");
 	}
 	return success;

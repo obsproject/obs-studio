@@ -36,6 +36,7 @@ x64/
 ipch/
 GeneratedFiles/
 .moc/
+/UI/obs.rc
 
 /other/
 

@@ -155,7 +155,7 @@ private:
 	bool fullscreenInterface = false;
 
 	const char *copyString;
-	const char *copyFiltersString;
+	const char *copyFiltersString = nullptr;
 	bool copyVisible = true;
 
 	QScopedPointer<QThread> updateCheckThread;
@@ -521,6 +521,9 @@ private slots:
 	SourceTreeItem *GetItemWidgetFromSceneItem(obs_sceneitem_t *sceneItem);
 
 	void on_actionShowAbout_triggered();
+
+	void AudioMixerCopyFilters();
+	void AudioMixerPasteFilters();
 
 private:
 	/* OBS Callbacks */

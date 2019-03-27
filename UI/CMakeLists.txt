@@ -39,6 +39,16 @@ else()
 	set(MIXER_ENABLED TRUE)
 endif()
 
+if(NOT DEFINED RESTREAM_CLIENTID OR "${RESTREAM_CLIENTID}" STREQUAL "" OR
+   NOT DEFINED RESTREAM_HASH     OR "${RESTREAM_HASH}"     STREQUAL "" OR
+   NOT BROWSER_AVAILABLE_INTERNAL)
+	set(RESTREAM_ENABLED FALSE)
+	set(RESTREAM_CLIENTID "")
+	set(RESTREAM_HASH "0")
+else()
+	set(RESTREAM_ENABLED TRUE)
+endif()
+
 configure_file(
 	"${CMAKE_CURRENT_SOURCE_DIR}/ui-config.h.in"
 	"${CMAKE_CURRENT_BINARY_DIR}/ui-config.h")
@@ -157,6 +167,15 @@ if(BROWSER_AVAILABLE_INTERNAL)
 			)
 		list(APPEND obs_PLATFORM_HEADERS
 			auth-mixer.hpp
+			)
+	endif()
+
+	if(RESTREAM_ENABLED)
+		list(APPEND obs_PLATFORM_SOURCES
+			auth-restream.cpp
+			)
+		list(APPEND obs_PLATFORM_HEADERS
+			auth-restream.hpp
 			)
 	endif()
 endif()

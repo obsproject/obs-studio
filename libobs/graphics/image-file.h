@@ -38,6 +38,7 @@ struct gs_image_file {
 	uint8_t **animation_frame_cache;
 	uint8_t *animation_frame_data;
 	uint64_t cur_time;
+	uint64_t mem_usage;
 	int cur_frame;
 	int cur_loop;
 	int last_decoded_frame;
