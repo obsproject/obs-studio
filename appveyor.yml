@@ -14,6 +14,10 @@ environment:
     secure: lQXRRvkeZDVSTUcSaR/kthiKu89K18IubKN913PC0ldjHBQ6sWa8a/t4i1f441N3RPfzAbTrXf2ijRCYYub2Qw==
   MIXER-HASH:
     secure: fIxeDxHkiNodwPeNGX+E9tSpyjg/XuT+U9N+jtpT7xU=
+  RESTREAM-CLIENTID:
+    secure: 4KGqX7PbL100GhXWzMFziaHrD/XT9/QKFTGinmPqwOkfRSMMEkUyL998/z3cclUd
+  RESTREAM-HASH:
+    secure: +tu/wCCG3tXnFpjzzXF6zyAOJyt8w48qx47K1bIn/Gs=
 
 install:
   - git submodule update --init --recursive
