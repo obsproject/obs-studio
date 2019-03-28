@@ -7,6 +7,21 @@ static pthread_mutex_t init_mutex = PTHREAD_MUTEX_INITIALIZER;
 NV_ENCODE_API_FUNCTION_LIST nv = {NV_ENCODE_API_FUNCTION_LIST_VER};
 NV_CREATE_INSTANCE_FUNC nv_create_instance = NULL;
 
+#define error(format, ...) \
+	blog(LOG_ERROR, "[jim-nvenc] " format, ##__VA_ARGS__)
+
+static inline bool nv_failed(NVENCSTATUS err, const char *func, const char *call)
+{
+	if (err == NV_ENC_SUCCESS)
+		return false;
+
+	error("%s: %s failed: %d (%s)", func, call, (int)err,
+			nv_error_name(err));
+	return true;
+}
+
+#define NV_FAILED(x) nv_failed(x, __FUNCTION__, #x)
+
 bool load_nvenc_lib(void)
 {
 	if (sizeof(void*) == 8) {

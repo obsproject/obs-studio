@@ -12,6 +12,15 @@
 
 #define EXTRA_BUFFERS 5
 
+#define do_log(level, format, ...) \
+	blog(level, "[jim-nvenc: '%s'] " format, \
+			obs_encoder_get_name(enc->encoder), ##__VA_ARGS__)
+
+#define error(format, ...) do_log(LOG_ERROR,   format, ##__VA_ARGS__)
+#define warn(format, ...)  do_log(LOG_WARNING, format, ##__VA_ARGS__)
+#define info(format, ...)  do_log(LOG_INFO,    format, ##__VA_ARGS__)
+#define debug(format, ...) do_log(LOG_DEBUG,   format, ##__VA_ARGS__)
+
 #define error_hr(msg) \
 	error("%s: %s: 0x%08lX", __FUNCTION__, msg, (uint32_t)hr);
 
@@ -72,6 +81,19 @@ struct nv_bitstream {
 	void   *ptr;
 	HANDLE event;
 };
+
+static inline bool nv_failed(struct nvenc_data *enc, NVENCSTATUS err,
+		const char *func, const char *call)
+{
+	if (err == NV_ENC_SUCCESS)
+		return false;
+
+	error("%s: %s failed: %d (%s)", func, call, (int)err,
+			nv_error_name(err));
+	return true;
+}
+
+#define NV_FAILED(x) nv_failed(enc, x, __FUNCTION__, #x)
 
 static bool nv_bitstream_init(struct nvenc_data *enc, struct nv_bitstream *bs)
 {
@@ -227,7 +249,7 @@ static bool nvenc_update(void *data, obs_data_t *settings)
 	return true;
 }
 
-static HANDLE get_lib(const char *lib)
+static HANDLE get_lib(struct nvenc_data *enc, const char *lib)
 {
 	HMODULE mod = GetModuleHandleA(lib);
 	if (mod)
@@ -243,8 +265,8 @@ typedef HRESULT (WINAPI *CREATEDXGIFACTORY1PROC)(REFIID, void **);
 
 static bool init_d3d11(struct nvenc_data *enc, obs_data_t *settings)
 {
-	HMODULE                 dxgi  = get_lib("DXGI.dll");
-	HMODULE                 d3d11 = get_lib("D3D11.dll");
+	HMODULE                 dxgi  = get_lib(enc, "DXGI.dll");
+	HMODULE                 d3d11 = get_lib(enc, "D3D11.dll");
 	CREATEDXGIFACTORY1PROC  create_dxgi;
 	PFN_D3D11_CREATE_DEVICE create_device;
 	IDXGIFactory1           *factory;
@@ -375,7 +397,7 @@ static bool init_encoder(struct nvenc_data *enc, obs_data_t *settings)
 
 	err = nv.nvEncGetEncodePresetConfig(enc->session,
 			NV_ENC_CODEC_H264_GUID, nv_preset, &preset_config);
-	if (nv_failed(err, __FUNCTION__, "nvEncGetEncodePresetConfig")) {
+	if (nv_failed(enc, err, __FUNCTION__, "nvEncGetEncodePresetConfig")) {
 		return false;
 	}
 
@@ -741,7 +763,7 @@ static bool get_encoded_packet(struct nvenc_data *enc, bool finalize)
 		if (nvtex->mapped_res) {
 			NVENCSTATUS err;
 			err = nv.nvEncUnmapInputResource(s, nvtex->mapped_res);
-			if (nv_failed(err, __FUNCTION__, "unmap")) {
+			if (nv_failed(enc, err, __FUNCTION__, "unmap")) {
 				return false;
 			}
 			nvtex->mapped_res = NULL;
@@ -834,7 +856,7 @@ static bool nvenc_encode_tex(void *data, uint32_t handle, int64_t pts,
 
 	err = nv.nvEncEncodePicture(enc->session, &params);
 	if (err != NV_ENC_SUCCESS && err != NV_ENC_ERR_NEED_MORE_INPUT) {
-		nv_failed(err, __FUNCTION__, "nvEncEncodePicture");
+		nv_failed(enc, err, __FUNCTION__, "nvEncEncodePicture");
 		return false;
 	}
 
