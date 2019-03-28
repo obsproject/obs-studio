@@ -254,6 +254,8 @@ OBSBasicSourceSelect::OBSBasicSourceSelect(OBSBasic *parent, const char *id_)
 	  ui      (new Ui::OBSBasicSourceSelect),
 	  id      (id_)
 {
+	setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
+
 	ui->setupUi(this);
 
 	ui->sourceList->setAttribute(Qt::WA_MacShowFocusRect, false);
