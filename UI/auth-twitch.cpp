@@ -365,7 +365,7 @@ void TwitchAuth::LoadSecondaryUIPanes()
 		uint32_t lastVersion = config_get_int(App()->GlobalConfig(), "General",
 				"LastVersion");
 
-		if (lastVersion < MAKE_SEMANTIC_VERSION(23, 1, 0)) {
+		if (lastVersion <= MAKE_SEMANTIC_VERSION(23, 0, 2)) {
 			feed->setVisible(false);
 		}
 
