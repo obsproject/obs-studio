@@ -474,9 +474,12 @@ static void close_audio(struct ffmpeg_data *data)
 		for (size_t i = 0; i < MAX_AV_PLANES; i++)
 			circlebuf_free(&data->excess_frames[idx][i]);
 
-		av_freep(&data->samples[idx][0]);
-		avcodec_close(data->audio_streams[idx]->codec);
-		av_frame_free(&data->aframe[idx]);
+		if (data->samples[idx][0])
+			av_freep(&data->samples[idx][0]);
+		if (data->audio_streams[idx])
+			avcodec_close(data->audio_streams[idx]->codec);
+		if (data->aframe[idx])
+			av_frame_free(&data->aframe[idx]);
 	}
 }
 
@@ -575,17 +578,17 @@ static bool ffmpeg_data_init(struct ffmpeg_data *data,
 	avformat_alloc_output_context2(&data->output, output_format,
 			NULL, NULL);
 
+	if (!data->output) {
+		blog(LOG_WARNING, "Couldn't create avformat context");
+		goto fail;
+	}
+
 	if (is_rtmp) {
 		data->output->oformat->video_codec = AV_CODEC_ID_H264;
 		data->output->oformat->audio_codec = AV_CODEC_ID_AAC;
 	} else {
 		if (data->config.format_name)
 			set_encoder_ids(data);
-	}
-
-	if (!data->output) {
-		blog(LOG_WARNING, "Couldn't create avformat context");
-		goto fail;
 	}
 
 	if (!init_streams(data))

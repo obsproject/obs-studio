@@ -1,4 +1,4 @@
-﻿#include "DecklinkInput.hpp"
+#include "DecklinkInput.hpp"
 
 #include <util/threading.h>
 
@@ -26,16 +26,20 @@ void DeckLinkInput::DevicesChanged(void *param, DeckLinkDevice *device, bool add
 		const char *hash;
 		long long mode;
 		obs_data_t *settings;
+		BMDVideoConnection videoConnection;
+		BMDAudioConnection audioConnection;
 
 		settings = obs_source_get_settings(decklink->source);
 		hash = obs_data_get_string(settings, "device_hash");
+		videoConnection = (BMDVideoConnection) obs_data_get_int(settings, "video_connection");
+		audioConnection = (BMDAudioConnection) obs_data_get_int(settings, "audio_connection");
 		mode = obs_data_get_int(settings, "mode_id");
 		obs_data_release(settings);
 
 		if (device->GetHash().compare(hash) == 0) {
 			if (!decklink->activateRefs)
 				return;
-			if (decklink->Activate(device, mode))
+			if (decklink->Activate(device, mode, videoConnection, audioConnection))
 				os_atomic_dec_long(&decklink->activateRefs);
 		}
 
@@ -47,7 +51,9 @@ void DeckLinkInput::DevicesChanged(void *param, DeckLinkDevice *device, bool add
 	}
 }
 
-bool DeckLinkInput::Activate(DeckLinkDevice *device, long long modeId)
+bool DeckLinkInput::Activate(DeckLinkDevice *device, long long modeId,
+		BMDVideoConnection bmdVideoConnection,
+		BMDAudioConnection bmdAudioConnection)
 {
 	std::lock_guard<std::recursive_mutex> lock(deviceMutex);
 	DeckLinkDevice *curDevice = GetDevice();
@@ -58,10 +64,13 @@ bool DeckLinkInput::Activate(DeckLinkDevice *device, long long modeId)
 		if (!isActive)
 			return false;
 		if (instance->GetActiveModeId() == modeId &&
+		    instance->GetVideoConnection() == bmdVideoConnection &&
+		    instance->GetAudioConnection() == bmdAudioConnection &&
 		    instance->GetActivePixelFormat() == pixelFormat &&
 		    instance->GetActiveColorSpace() == colorSpace &&
 		    instance->GetActiveColorRange() == colorRange &&
-		    instance->GetActiveChannelFormat() == channelFormat)
+		    instance->GetActiveChannelFormat() == channelFormat &&
+		    instance->GetActiveSwapState() == swap)
 			return false;
 	}
 
@@ -86,7 +95,7 @@ bool DeckLinkInput::Activate(DeckLinkDevice *device, long long modeId)
 		return false;
 	}
 
-	if (!instance->StartCapture(mode)) {
+	if (!instance->StartCapture(mode, bmdVideoConnection, bmdAudioConnection)) {
 		instance = nullptr;
 		return false;
 	}

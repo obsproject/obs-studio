@@ -71,6 +71,20 @@ void gs_texture_2d::BackupTexture(const uint8_t **data)
 	}
 }
 
+void gs_texture_2d::GetSharedHandle(IDXGIResource *dxgi_res)
+{
+	HANDLE handle;
+	HRESULT hr;
+
+	hr = dxgi_res->GetSharedHandle(&handle);
+	if (FAILED(hr)) {
+		blog(LOG_WARNING, "GetSharedHandle: Failed to "
+				"get shared handle: %08lX", hr);
+	} else {
+		sharedHandle = (uint32_t)(uintptr_t)handle;
+	}
+}
+
 void gs_texture_2d::InitTexture(const uint8_t **data)
 {
 	HRESULT hr;
@@ -129,14 +143,7 @@ void gs_texture_2d::InitTexture(const uint8_t **data)
 			blog(LOG_WARNING, "InitTexture: Failed to query "
 					"interface: %08lX", hr);
 		} else {
-			HANDLE handle;
-			hr = dxgi_res->GetSharedHandle(&handle);
-			if (FAILED(hr)) {
-				blog(LOG_WARNING, "InitTexture: Failed to "
-						"get shared handle: %08lX", hr);
-			} else {
-				sharedHandle = (uint32_t)(uintptr_t)handle;
-			}
+			GetSharedHandle(dxgi_res);
 
 			if (flags & GS_SHARED_KM_TEX) {
 				ComPtr<IDXGIKeyedMutex> km;
@@ -150,6 +157,7 @@ void gs_texture_2d::InitTexture(const uint8_t **data)
 				}
 
 				km->AcquireSync(0, INFINITE);
+				acquired = true;
 			}
 		}
 	}

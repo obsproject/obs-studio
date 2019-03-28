@@ -462,6 +462,21 @@
             }
         },
         {
+            "name": "GamePlank",
+            "servers": [
+                {
+                    "name": "Primary",
+                    "url": "rtmp://live.gameplank.tv/go"
+                }
+            ],
+            "recommended": {
+                "keyint": 1,
+                "profile": "main",
+                "max video bitrate": 2500,
+                "max audio bitrate": 160
+            }
+        },
+        {
             "name": "Web.TV",
             "servers": [
                 {
@@ -778,6 +793,15 @@
                 "profile": "main",
                 "bframes": 0
             }
+        },
+        {
+          "name": "GameTips.TV",
+          "servers": [
+              {
+                  "name": "Server Iran",
+                  "url": "rtmp://gametips.tv:1935/hls"
+              }
+          ]
         },
         {
             "name": "Nood",

@@ -14,9 +14,14 @@ environment:
     secure: lQXRRvkeZDVSTUcSaR/kthiKu89K18IubKN913PC0ldjHBQ6sWa8a/t4i1f441N3RPfzAbTrXf2ijRCYYub2Qw==
   MIXER-HASH:
     secure: fIxeDxHkiNodwPeNGX+E9tSpyjg/XuT+U9N+jtpT7xU=
+  RESTREAM-CLIENTID:
+    secure: 4KGqX7PbL100GhXWzMFziaHrD/XT9/QKFTGinmPqwOkfRSMMEkUyL998/z3cclUd
+  RESTREAM-HASH:
+    secure: +tu/wCCG3tXnFpjzzXF6zyAOJyt8w48qx47K1bIn/Gs=
 
 install:
   - git submodule update --init --recursive
+  - cmd: C:\projects\obs-studio\CI\install-qt-win.cmd
   - cmd: C:\projects\obs-studio\CI\install-script-win.cmd
   - sh: ./CI/install-dependencies-linux-ubuntu16.sh
   - sh: ./CI/before-script-linux.sh
@@ -40,6 +45,7 @@ cache:
   - vlc.zip
   - 'cef_binary_%CEF_VERSION%_windows32.zip'
   - 'cef_binary_%CEF_VERSION%_windows64.zip'
+  - Qt_5.10.1.7z
 
 notifications:
   - provider: Webhook

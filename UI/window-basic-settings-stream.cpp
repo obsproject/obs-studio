@@ -36,6 +36,7 @@ void OBSBasicSettings::InitStreamPage()
 {
 	ui->connectAccount2->setVisible(false);
 	ui->disconnectAccount->setVisible(false);
+	ui->bandwidthTestEnable->setVisible(false);
 
 	int vertSpacing = ui->topStreamLayout->verticalSpacing();
 
@@ -90,6 +91,9 @@ void OBSBasicSettings::LoadStream1Settings()
 			idx = 1;
 		}
 		ui->service->setCurrentIndex(idx);
+
+		bool bw_test = obs_data_get_bool(settings, "bwtest");
+		ui->bandwidthTestEnable->setChecked(bw_test);
 	}
 
 	UpdateServerList();
@@ -151,6 +155,7 @@ void OBSBasicSettings::SaveStream1Settings()
 		}
 	}
 
+	obs_data_set_bool(settings, "bwtest", ui->bandwidthTestEnable->isChecked());
 	obs_data_set_string(settings, "key", QT_TO_UTF8(ui->key->text()));
 
 	OBSService newService = obs_service_create(service_id,
@@ -260,6 +265,7 @@ void OBSBasicSettings::on_service_currentIndexChanged(int)
 	bool custom = IsCustomService();
 
 	ui->disconnectAccount->setVisible(false);
+	ui->bandwidthTestEnable->setVisible(false);
 
 #ifdef BROWSER_AVAILABLE
 	if (cef) {
@@ -411,6 +417,9 @@ void OBSBasicSettings::OnOAuthStreamKeyConnected()
 		ui->streamKeyLabel->setVisible(false);
 		ui->connectAccount2->setVisible(false);
 		ui->disconnectAccount->setVisible(true);
+
+		if (strcmp(a->service(), "Twitch") == 0)
+			ui->bandwidthTestEnable->setVisible(true);
 	}
 
 	ui->streamStackWidget->setCurrentIndex((int)Section::StreamKey);
@@ -473,6 +482,7 @@ void OBSBasicSettings::on_disconnectAccount_clicked()
 	ui->streamKeyLabel->setVisible(true);
 	ui->connectAccount2->setVisible(true);
 	ui->disconnectAccount->setVisible(false);
+	ui->bandwidthTestEnable->setVisible(false);
 	ui->key->setText("");
 }
 

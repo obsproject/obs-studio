@@ -141,3 +141,23 @@ QLabel#errorLabel {
 * [themeID="displayBackgroundColor"] {
     qproperty-displayBackgroundColor: rgb(76, 76, 76);
 }
+
+/* Preview/Program labels */
+
+* [themeID="previewProgramLabels"] {
+    font-size: 18px;
+    font-weight: bold;
+    color: rgb(122,121,122);
+}
+
+/* Settings Icons */
+
+OBSBasicSettings {
+    qproperty-generalIcon: url(:settings/images/settings/general.svg);
+    qproperty-streamIcon: url(:settings/images/settings/stream.svg);
+    qproperty-outputIcon: url(:settings/images/settings/output.svg);
+    qproperty-audioIcon: url(:settings/images/settings/audio.svg);
+    qproperty-videoIcon: url(:settings/images/settings/video.svg);
+    qproperty-hotkeysIcon: url(:settings/images/settings/hotkeys.svg);
+    qproperty-advancedIcon: url(:settings/images/settings/advanced.svg);
+}

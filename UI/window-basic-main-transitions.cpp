@@ -696,6 +696,7 @@ void OBSBasic::SetCurrentScene(OBSSource scene, bool force, bool direct)
 void OBSBasic::CreateProgramDisplay()
 {
 	program = new OBSQTDisplay();
+
 	program->setContextMenuPolicy(Qt::CustomContextMenu);
 	connect(program.data(), &QWidget::customContextMenuRequested,
 			this, &OBSBasic::on_program_customContextMenuRequested);
@@ -1192,6 +1193,8 @@ void OBSBasic::SetPreviewProgramMode(bool enabled)
 	if (IsPreviewProgramMode() == enabled)
 		return;
 
+	ui->previewLabel->setHidden(!enabled);
+
 	ui->modeSwitch->setChecked(enabled);
 	os_atomic_set_bool(&previewProgramMode, enabled);
 
@@ -1230,10 +1233,28 @@ void OBSBasic::SetPreviewProgramMode(bool enabled)
 
 		RefreshQuickTransitions();
 
+		programLabel = new QLabel(QTStr("StudioMode.Program"));
+		programLabel->setAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
+		programLabel->setProperty("themeID", "previewProgramLabels");
+
+		programWidget = new QWidget();
+		programLayout = new QVBoxLayout();
+
+		programLayout->setContentsMargins(0, 0, 0, 0);
+
+		programLayout->addWidget(programLabel);
+		programLayout->addWidget(program);
+
+		bool labels = config_get_bool(GetGlobalConfig(),
+			"BasicWindow", "StudioModeLabels");
+
+		programLabel->setHidden(!labels);
+
+		programWidget->setLayout(programLayout);
+
 		ui->previewLayout->addWidget(programOptions);
-		ui->previewLayout->addWidget(program);
+		ui->previewLayout->addWidget(programWidget);
 		ui->previewLayout->setAlignment(programOptions, Qt::AlignCenter);
-		program->show();
 
 		if (api)
 			api->on_event(OBS_FRONTEND_EVENT_STUDIO_MODE_ENABLED);
@@ -1251,6 +1272,8 @@ void OBSBasic::SetPreviewProgramMode(bool enabled)
 
 		delete programOptions;
 		delete program;
+		delete programLabel;
+		delete programWidget;
 
 		if (lastScene) {
 			OBSSource actualLastScene = OBSGetStrongRef(lastScene);

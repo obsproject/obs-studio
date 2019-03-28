@@ -39,12 +39,24 @@ else()
 	set(MIXER_ENABLED TRUE)
 endif()
 
+if(NOT DEFINED RESTREAM_CLIENTID OR "${RESTREAM_CLIENTID}" STREQUAL "" OR
+   NOT DEFINED RESTREAM_HASH     OR "${RESTREAM_HASH}"     STREQUAL "" OR
+   NOT BROWSER_AVAILABLE_INTERNAL)
+	set(RESTREAM_ENABLED FALSE)
+	set(RESTREAM_CLIENTID "")
+	set(RESTREAM_HASH "0")
+else()
+	set(RESTREAM_ENABLED TRUE)
+endif()
+
 configure_file(
 	"${CMAKE_CURRENT_SOURCE_DIR}/ui-config.h.in"
 	"${CMAKE_CURRENT_BINARY_DIR}/ui-config.h")
 
 set(CMAKE_INCLUDE_CURRENT_DIR TRUE)
 set(CMAKE_AUTOMOC TRUE)
+
+find_package(Qt5Svg ${FIND_MODE})
 
 find_package(FFmpeg REQUIRED COMPONENTS avcodec avutil avformat)
 
@@ -157,6 +169,15 @@ if(BROWSER_AVAILABLE_INTERNAL)
 			auth-mixer.hpp
 			)
 	endif()
+
+	if(RESTREAM_ENABLED)
+		list(APPEND obs_PLATFORM_SOURCES
+			auth-restream.cpp
+			)
+		list(APPEND obs_PLATFORM_HEADERS
+			auth-restream.hpp
+			)
+	endif()
 endif()
 
 set(obs_libffutil_SOURCES
@@ -178,6 +199,7 @@ set(obs_SOURCES
 	${obs_libffutil_SOURCES}
 	../deps/json11/json11.cpp
 	obs-app.cpp
+	window-dock.cpp
 	api-interface.cpp
 	window-basic-main.cpp
 	window-basic-stats.cpp
@@ -234,6 +256,7 @@ set(obs_HEADERS
 	../deps/json11/json11.hpp
 	obs-app.hpp
 	platform.hpp
+	window-dock.hpp
 	window-main.hpp
 	window-basic-main.hpp
 	window-basic-stats.hpp
@@ -328,6 +351,7 @@ endif()
 target_link_libraries(obs
 	libobs
 	Qt5::Widgets
+	Qt5::Svg
 	obs-frontend-api
 	${FFMPEG_LIBRARIES}
 	${LIBCURL_LIBRARIES}

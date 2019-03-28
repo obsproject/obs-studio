@@ -98,6 +98,8 @@ struct SignalContainer {
 
 }
 
+extern volatile long insideEventLoop;
+
 Q_DECLARE_METATYPE(OBSScene);
 Q_DECLARE_METATYPE(OBSSceneItem);
 Q_DECLARE_METATYPE(OBSSource);
@@ -193,6 +195,7 @@ void assignDockToggle(QDockWidget *dock, QAction *action)
 
 extern void RegisterTwitchAuth();
 extern void RegisterMixerAuth();
+extern void RegisterRestreamAuth();
 
 OBSBasic::OBSBasic(QWidget *parent)
 	: OBSMainWindow  (parent),
@@ -206,6 +209,9 @@ OBSBasic::OBSBasic(QWidget *parent)
 #if MIXER_ENABLED
 	RegisterMixerAuth();
 #endif
+#if RESTREAM_ENABLED
+	RegisterRestreamAuth();
+#endif
 
 	setAcceptDrops(true);
 
@@ -216,7 +222,7 @@ OBSBasic::OBSBasic(QWidget *parent)
 
 	startingDockLayout = saveState();
 
-	statsDock = new QDockWidget();
+	statsDock = new OBSDock();
 	statsDock->setObjectName(QStringLiteral("statsDock"));
 	statsDock->setFeatures(QDockWidget::AllDockWidgetFeatures);
 	statsDock->setWindowTitle(QTStr("Basic.Stats"));
@@ -371,6 +377,17 @@ OBSBasic::OBSBasic(QWidget *parent)
 	QPoint statsDockPos = curSize / 2 - statsDockSize / 2;
 	QPoint newPos = curPos + statsDockPos;
 	statsDock->move(newPos);
+
+	ui->previewLabel->setAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
+	ui->previewLabel->setProperty("themeID", "previewProgramLabels");
+
+	bool labels = config_get_bool(GetGlobalConfig(),
+			"BasicWindow", "StudioModeLabels");
+
+	if (!previewProgramMode)
+		ui->previewLabel->setHidden(true);
+	else
+		ui->previewLabel->setHidden(!labels);
 }
 
 static void SaveAudioDevice(const char *name, int channel, obs_data_t *parent,
@@ -1905,7 +1922,7 @@ void OBSBasic::ReceivedIntroJson(const QString &text)
 #if OBS_RELEASE_CANDIDATE > 0
 	if (lastVersion < OBS_RELEASE_CANDIDATE_VER) {
 #else
-	if (lastVersion < LIBOBS_API_VER) {
+	if ((lastVersion & ~0xFFFF) < (LIBOBS_API_VER & ~0xFFFF)) {
 #endif
 		config_set_int(App()->GlobalConfig(), "General",
 				"InfoIncrement", -1);
@@ -2781,6 +2798,9 @@ void OBSBasic::VolControlContextMenu()
 	QAction unhideAllAction(QTStr("UnhideAll"), this);
 	QAction mixerRenameAction(QTStr("Rename"), this);
 
+	QAction copyFiltersAction(QTStr("Copy.Filters"), this);
+	QAction pasteFiltersAction(QTStr("Paste.Filters"), this);
+
 	QAction filtersAction(QTStr("Filters"), this);
 	QAction propertiesAction(QTStr("Properties"), this);
 	QAction advPropAction(QTStr("Basic.MainMenu.Edit.AdvAudio"), this);
@@ -2800,6 +2820,13 @@ void OBSBasic::VolControlContextMenu()
 			Qt::DirectConnection);
 	connect(&mixerRenameAction, &QAction::triggered,
 			this, &OBSBasic::MixerRenameSource,
+			Qt::DirectConnection);
+
+	connect(&copyFiltersAction, &QAction::triggered,
+			this, &OBSBasic::AudioMixerCopyFilters,
+			Qt::DirectConnection);
+	connect(&pasteFiltersAction, &QAction::triggered,
+			this, &OBSBasic::AudioMixerPasteFilters,
 			Qt::DirectConnection);
 
 	connect(&filtersAction, &QAction::triggered,
@@ -2825,6 +2852,11 @@ void OBSBasic::VolControlContextMenu()
 	mixerRenameAction.setProperty("volControl",
 			QVariant::fromValue<VolControl*>(vol));
 
+	copyFiltersAction.setProperty("volControl",
+			QVariant::fromValue<VolControl*>(vol));
+	pasteFiltersAction.setProperty("volControl",
+			QVariant::fromValue<VolControl*>(vol));
+
 	filtersAction.setProperty("volControl",
 			QVariant::fromValue<VolControl*>(vol));
 	propertiesAction.setProperty("volControl",
@@ -2832,10 +2864,18 @@ void OBSBasic::VolControlContextMenu()
 
 	/* ------------------- */
 
+	if (copyFiltersString == nullptr)
+		pasteFiltersAction.setEnabled(false);
+	else
+		pasteFiltersAction.setEnabled(true);
+
 	QMenu popup;
 	popup.addAction(&unhideAllAction);
 	popup.addAction(&hideAction);
 	popup.addAction(&mixerRenameAction);
+	popup.addSeparator();
+	popup.addAction(&copyFiltersAction);
+	popup.addAction(&pasteFiltersAction);
 	popup.addSeparator();
 	popup.addAction(&toggleControlLayoutAction);
 	popup.addSeparator();
@@ -3437,10 +3477,19 @@ void OBSBasic::ResetUI()
 	bool studioPortraitLayout = config_get_bool(GetGlobalConfig(),
 			"BasicWindow", "StudioPortraitLayout");
 
+	bool labels = config_get_bool(GetGlobalConfig(),
+			"BasicWindow", "StudioModeLabels");
+
 	if (studioPortraitLayout)
 		ui->previewLayout->setDirection(QBoxLayout::TopToBottom);
 	else
 		ui->previewLayout->setDirection(QBoxLayout::LeftToRight);
+
+	if (previewProgramMode)
+		ui->previewLabel->setHidden(!labels);
+
+	if (programLabel)
+		programLabel->setHidden(!labels);
 }
 
 int OBSBasic::ResetVideo()
@@ -3714,6 +3763,15 @@ void OBSBasic::ClearSceneData()
 
 void OBSBasic::closeEvent(QCloseEvent *event)
 {
+	/* Do not close window if inside of a temporary event loop because we
+	 * could be inside of an Auth::LoadUI call.  Keep trying once per
+	 * second until we've exit any known sub-loops. */
+	if (os_atomic_load_long(&insideEventLoop) != 0) {
+		QTimer::singleShot(1000, this, SLOT(close()));
+		event->ignore();
+		return;
+	}
+
 	if (isVisible())
 		config_set_string(App()->GlobalConfig(),
 				"BasicWindow", "geometry",
@@ -3813,9 +3871,28 @@ void OBSBasic::on_actionRemux_triggered()
 
 void OBSBasic::on_action_Settings_triggered()
 {
+	static bool settings_already_executing = false;
+
+	/* Do not load settings window if inside of a temporary event loop
+	 * because we could be inside of an Auth::LoadUI call.  Keep trying
+	 * once per second until we've exit any known sub-loops. */
+	if (os_atomic_load_long(&insideEventLoop) != 0) {
+		QTimer::singleShot(1000, this,
+				SLOT(on_action_Settings_triggered()));
+		return;
+	}
+
+	if (settings_already_executing) {
+		return;
+	}
+
+	settings_already_executing = true;
+
 	OBSBasicSettings settings(this);
 	settings.exec();
 	SystemTray(false);
+
+	settings_already_executing = false;
 }
 
 void OBSBasic::on_actionAdvAudioProperties_triggered()
@@ -4175,6 +4252,7 @@ QMenu *OBSBasic::AddScaleFilteringMenu(QMenu *menu, obs_sceneitem_t *item)
 	ADD_MODE("ScaleFiltering.Bilinear", OBS_SCALE_BILINEAR);
 	ADD_MODE("ScaleFiltering.Bicubic",  OBS_SCALE_BICUBIC);
 	ADD_MODE("ScaleFiltering.Lanczos",  OBS_SCALE_LANCZOS);
+	ADD_MODE("ScaleFiltering.Area",     OBS_SCALE_AREA);
 #undef ADD_MODE
 
 	return menu;
@@ -4931,7 +5009,8 @@ inline void OBSBasic::OnActivate()
 		UpdateProcessPriority();
 
 		if (trayIcon)
-			trayIcon->setIcon(QIcon(":/res/images/tray_active.png"));
+			trayIcon->setIcon(QIcon::fromTheme("obs-tray-active",
+					QIcon(":/res/images/tray_active.png")));
 	}
 }
 
@@ -4944,7 +5023,8 @@ inline void OBSBasic::OnDeactivate()
 		ClearProcessPriority();
 
 		if (trayIcon)
-			trayIcon->setIcon(QIcon(":/res/images/obs.png"));
+			trayIcon->setIcon(QIcon::fromTheme("obs-tray",
+					QIcon(":/res/images/obs.png")));
 	}
 }
 
@@ -5408,6 +5488,7 @@ void OBSBasic::ReplayBufferStop(int code)
 		return;
 
 	replayBufferButton->setText(QTStr("Basic.Main.StartReplayBuffer"));
+	replayBufferButton->setChecked(false);
 
 	if (sysTrayReplayBuffer)
 		sysTrayReplayBuffer->setText(replayBufferButton->text());
@@ -5456,14 +5537,16 @@ bool OBSBasic::NoSourcesConfirmation()
 		msg += "\n\n";
 		msg += QTStr("NoSources.Text.AddSource");
 
-		QMessageBox messageBox(QMessageBox::Question,
-				QTStr("NoSources.title"),
-				msg,
-				QMessageBox::Yes | QMessageBox::No,
-				this);
-		messageBox.setDefaultButton(QMessageBox::No);
+		QMessageBox messageBox(this);
+		messageBox.setWindowTitle(QTStr("NoSources.Title"));
+		messageBox.setText(msg);
+		QAbstractButton *Yes = messageBox.addButton(QTStr("Yes"),
+			QMessageBox::YesRole);
+		messageBox.addButton(QTStr("No"), QMessageBox::NoRole);
+		messageBox.setIcon(QMessageBox::Question);
+		messageBox.exec();
 
-		if (QMessageBox::No == messageBox.exec())
+		if (messageBox.clickedButton() != Yes)
 			return false;
 	}
 
@@ -5498,7 +5581,21 @@ void OBSBasic::on_streamButton_clicked()
 		bool confirm = config_get_bool(GetGlobalConfig(), "BasicWindow",
 				"WarnBeforeStartingStream");
 
-		if (confirm && isVisible()) {
+		obs_data_t *settings = obs_service_get_settings(service);
+		bool bwtest = obs_data_get_bool(settings, "bwtest");
+		obs_data_release(settings);
+
+		if (bwtest && isVisible()) {
+			QMessageBox::StandardButton button =
+				OBSMessageBox::question(this,
+						QTStr("ConfirmBWTest.Title"),
+						QTStr("ConfirmBWTest.Text"));
+
+			if (button == QMessageBox::No) {
+				ui->streamButton->setChecked(false);
+				return;
+			}
+		} else if (confirm && isVisible()) {
 			QMessageBox::StandardButton button =
 				OBSMessageBox::question(this,
 						QTStr("ConfirmStart.Title"),
@@ -5670,7 +5767,7 @@ void OBSBasic::GetFPSCommon(uint32_t &num, uint32_t &den) const
 	} else if (strcmp(val, "24 NTSC") == 0) {
 		num = 24000;
 		den = 1001;
-	} else if (strcmp(val, "25") == 0) {
+	} else if (strcmp(val, "25 PAL") == 0) {
 		num = 25;
 		den = 1;
 	} else if (strcmp(val, "29.97") == 0) {
@@ -5678,6 +5775,9 @@ void OBSBasic::GetFPSCommon(uint32_t &num, uint32_t &den) const
 		den = 1001;
 	} else if (strcmp(val, "48") == 0) {
 		num = 48;
+		den = 1;
+	} else if (strcmp(val, "50 PAL") == 0) {
+		num = 50;
 		den = 1;
 	} else if (strcmp(val, "59.94") == 0) {
 		num = 60000;
@@ -6573,8 +6673,8 @@ void OBSBasic::ToggleShowHide()
 
 void OBSBasic::SystemTrayInit()
 {
-	trayIcon.reset(new QSystemTrayIcon(QIcon(":/res/images/obs.png"),
-			this));
+	trayIcon.reset(new QSystemTrayIcon(QIcon::fromTheme("obs-tray",
+			QIcon(":/res/images/obs.png")), this));
 	trayIcon->setToolTip("OBS Studio");
 
 	showHide = new QAction(QTStr("Basic.SystemTray.Show"),
@@ -6731,6 +6831,30 @@ void OBSBasic::on_actionPasteDup_triggered()
 {
 	OBSBasicSourceSelect::SourcePaste(copyString, copyVisible, true);
 	on_actionPasteTransform_triggered();
+}
+
+void OBSBasic::AudioMixerCopyFilters()
+{
+	QAction *action = reinterpret_cast<QAction*>(sender());
+	VolControl *vol = action->property("volControl").value<VolControl*>();
+	obs_source_t *source = vol->GetSource();
+
+	copyFiltersString = obs_source_get_name(source);
+}
+
+void OBSBasic::AudioMixerPasteFilters()
+{
+	QAction *action = reinterpret_cast<QAction*>(sender());
+	VolControl *vol = action->property("volControl").value<VolControl*>();
+	obs_source_t *dstSource = vol->GetSource();
+
+	OBSSource source = obs_get_source_by_name(copyFiltersString);
+	obs_source_release(source);
+
+	if (source == dstSource)
+		return;
+
+	obs_source_copy_filters(dstSource, source);
 }
 
 void OBSBasic::on_actionCopyFilters_triggered()

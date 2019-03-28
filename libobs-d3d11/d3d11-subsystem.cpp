@@ -229,20 +229,119 @@ const static D3D_FEATURE_LEVEL featureLevels[] =
 	D3D_FEATURE_LEVEL_9_3,
 };
 
-static const char *blacklisted_nv12_geforce_gpus[] = {
-	"8100",
-	"8200",
-	"8300",
-	"8400",
-	"8500",
-	"8600",
-	"8800",
-	"9300",
-	"9400",
-	"9500",
-	"9600",
-	"9800"
-};
+/* ------------------------------------------------------------------------- */
+
+#define VERT_IN_OUT "\
+struct VertInOut { \
+	float4 pos : POSITION; \
+}; "
+
+#define NV12_Y_PS VERT_IN_OUT "\
+float main(VertInOut vert_in) : TARGET \
+{ \
+	return 1.0; \
+}"
+
+#define NV12_UV_PS VERT_IN_OUT "\
+float2 main(VertInOut vert_in) : TARGET \
+{ \
+	return float2(1.0, 1.0); \
+}"
+
+#define NV12_VS VERT_IN_OUT "\
+VertInOut main(VertInOut vert_in) \
+{ \
+	VertInOut vert_out; \
+	vert_out.pos = float4(vert_in.pos.xyz, 1.0); \
+	return vert_out; \
+} "
+
+/* ------------------------------------------------------------------------- */
+
+#define NV12_CX 128
+#define NV12_CY 128
+
+bool gs_device::HasBadNV12Output()
+try {
+	vec3 points[4];
+	vec3_set(&points[0], -1.0f, -1.0f, 0.0f);
+	vec3_set(&points[1], -1.0f,  1.0f, 0.0f);
+	vec3_set(&points[2],  1.0f, -1.0f, 0.0f);
+	vec3_set(&points[3],  1.0f,  1.0f, 0.0f);
+
+	gs_texture_2d nv12_y(this, NV12_CX, NV12_CY, GS_R8, 1, nullptr,
+			GS_RENDER_TARGET | GS_SHARED_KM_TEX, GS_TEXTURE_2D,
+			false, true);
+	gs_texture_2d nv12_uv(this, nv12_y.texture,
+			GS_RENDER_TARGET | GS_SHARED_KM_TEX);
+	gs_vertex_shader nv12_vs(this, "", NV12_VS);
+	gs_pixel_shader nv12_y_ps(this, "", NV12_Y_PS);
+	gs_pixel_shader nv12_uv_ps(this, "", NV12_UV_PS);
+	gs_stage_surface nv12_stage(this, NV12_CX, NV12_CY);
+
+	gs_vb_data *vbd = gs_vbdata_create();
+	vbd->num        = 4;
+	vbd->points     = (vec3*)bmemdup(&points, sizeof(points));
+
+	gs_vertex_buffer buf(this, vbd, 0);
+
+	device_load_vertexbuffer(this, &buf);
+	device_load_vertexshader(this, &nv12_vs);
+
+	context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+
+	device_set_viewport(this, 0, 0, NV12_CX, NV12_CY);
+	device_set_cull_mode(this, GS_NEITHER);
+	device_enable_depth_test(this, false);
+	device_enable_blending(this, false);
+	LoadVertexBufferData();
+
+	device_set_render_target(this, &nv12_y, nullptr);
+	device_load_pixelshader(this, &nv12_y_ps);
+	UpdateBlendState();
+	UpdateRasterState();
+	UpdateZStencilState();
+	context->Draw(4, 0);
+
+	device_set_viewport(this, 0, 0, NV12_CX/2, NV12_CY/2);
+	device_set_render_target(this, &nv12_uv, nullptr);
+	device_load_pixelshader(this, &nv12_uv_ps);
+	UpdateBlendState();
+	UpdateRasterState();
+	UpdateZStencilState();
+	context->Draw(4, 0);
+
+	device_load_pixelshader(this, nullptr);
+	device_load_vertexshader(this, nullptr);
+	device_set_render_target(this, nullptr, nullptr);
+
+	device_stage_texture(this, &nv12_stage, &nv12_y);
+
+	uint8_t *data;
+	uint32_t linesize;
+	bool bad_driver = false;
+
+	if (gs_stagesurface_map(&nv12_stage, &data, &linesize)) {
+		bad_driver = data[linesize * NV12_CY] == 0;
+		gs_stagesurface_unmap(&nv12_stage);
+	} else {
+		throw "Could not map surface";
+	}
+
+	if (bad_driver) {
+		blog(LOG_WARNING, "Bad NV12 texture handling detected!  "
+				  "Disabling NV12 texture support.");
+	}
+	return bad_driver;
+
+} catch (HRError error) {
+	blog(LOG_WARNING, "HasBadNV12Output failed: %s (%08lX)",
+			error.str, error.hr);
+	return false;
+} catch (const char *error) {
+	blog(LOG_WARNING, "HasBadNV12Output failed: %s", error);
+	return false;
+}
 
 void gs_device::InitDevice(uint32_t adapterIdx)
 {
@@ -281,28 +380,6 @@ void gs_device::InitDevice(uint32_t adapterIdx)
 	/* check for nv12 texture output support    */
 
 	nv12Supported = false;
-	bool geforce = astrstri(adapterNameUTF8, "geforce") != nullptr;
-	bool nvidia  = astrstri(adapterNameUTF8, "nvidia")  != nullptr;
-
-	/* don't use on blacklisted adapters */
-	if (geforce) {
-		for (const char *old_gpu : blacklisted_nv12_geforce_gpus) {
-			if (astrstri(adapterNameUTF8, old_gpu) != nullptr) {
-				return;
-			}
-		}
-	}
-
-	/* Disable NV12 textures if NVENC not available, just as a safety
-	 * measure */
-	if (nvidia) {
-		HMODULE nvenc = LoadLibraryW((sizeof(void*) == 8)
-				? L"nvEncodeAPI64.dll"
-				: L"nvEncodeAPI.dll");
-		if (!nvenc) {
-			return;
-		}
-	}
 
 	ComQIPtr<ID3D11Device1> d3d11_1(device);
 	if (!d3d11_1) {
@@ -333,6 +410,10 @@ void gs_device::InitDevice(uint32_t adapterIdx)
 
 	/* must be usable as a render target */
 	if ((support & D3D11_FORMAT_SUPPORT_RENDER_TARGET) == 0) {
+		return;
+	}
+
+	if (HasBadNV12Output()) {
 		return;
 	}
 
@@ -2222,22 +2303,26 @@ extern "C" EXPORT uint32_t device_texture_get_shared_handle(gs_texture_t *tex)
 	return tex2d->isShared ? tex2d->sharedHandle : GS_INVALID_HANDLE;
 }
 
-extern "C" EXPORT int device_texture_acquire_sync(gs_texture_t *tex,
-		uint64_t key, uint32_t ms)
+int device_texture_acquire_sync(gs_texture_t *tex, uint64_t key, uint32_t ms)
 {
 	gs_texture_2d *tex2d = reinterpret_cast<gs_texture_2d *>(tex);
 	if (tex->type != GS_TEXTURE_2D)
 		return -1;
+
+	if (tex2d->acquired)
+		return 0;
 
 	ComQIPtr<IDXGIKeyedMutex> keyedMutex(tex2d->texture);
 	if (!keyedMutex)
 		return -1;
 
 	HRESULT hr = keyedMutex->AcquireSync(key, ms);
-	if (hr == S_OK)
+	if (hr == S_OK) {
+		tex2d->acquired = true;
 		return 0;
-	else if (hr == WAIT_TIMEOUT)
+	} else if (hr == WAIT_TIMEOUT) {
 		return ETIMEDOUT;
+	}
 
 	return -1;
 }
@@ -2249,12 +2334,20 @@ extern "C" EXPORT int device_texture_release_sync(gs_texture_t *tex,
 	if (tex->type != GS_TEXTURE_2D)
 		return -1;
 
+	if (!tex2d->acquired)
+		return 0;
+
 	ComQIPtr<IDXGIKeyedMutex> keyedMutex(tex2d->texture);
 	if (!keyedMutex)
 		return -1;
 
 	HRESULT hr = keyedMutex->ReleaseSync(key);
-	return hr == S_OK ? 0 : -1;
+	if (hr == S_OK) {
+		tex2d->acquired = false;
+		return 0;
+	}
+
+	return -1;
 }
 
 extern "C" EXPORT bool device_texture_create_nv12(gs_device_t *device,

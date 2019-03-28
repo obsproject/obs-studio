@@ -2,6 +2,7 @@
 set -ex
 
 sudo add-apt-repository ppa:jonathonf/ffmpeg-3 -y
+curl -L https://packagecloud.io/github/git-lfs/gpgkey | sudo apt-key add -
 sudo apt-get -qq update
 sudo apt-get install -y \
         build-essential \
@@ -39,4 +40,5 @@ sudo apt-get install -y \
         pkg-config \
         python3-dev \
         qtbase5-dev \
+        libqt5svg5-dev \
         swig

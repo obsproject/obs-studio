@@ -418,6 +418,8 @@ bool OBSApp::InitGlobalConfigDefaults()
 			"ShowListboxToolbars", true);
 	config_set_default_bool(globalConfig, "BasicWindow",
 			"ShowStatusBar", true);
+	config_set_default_bool(globalConfig, "BasicWindow",
+			"StudioModeLabels", true);
 
 	if (!config_get_bool(globalConfig, "General", "Pre21Defaults")) {
 		config_set_default_string(globalConfig, "General",
@@ -1043,6 +1045,8 @@ OBSApp::OBSApp(int &argc, char **argv, profiler_name_store_t *store)
 	  profilerNameStore(store)
 {
 	sleepInhibitor = os_inhibit_sleep_create("OBS Video/audio");
+
+	setWindowIcon(QIcon::fromTheme("obs", QIcon(":/res/images/obs.png")));
 }
 
 OBSApp::~OBSApp()
@@ -1172,6 +1176,20 @@ void OBSApp::AppInit()
 	config_set_default_string(globalConfig, "Basic", "SceneCollectionFile",
 			Str("Untitled"));
 
+	if (!config_has_user_value(globalConfig, "Basic", "Profile")) {
+		config_set_string(globalConfig, "Basic", "Profile",
+				Str("Untitled"));
+		config_set_string(globalConfig, "Basic", "ProfileDir",
+				Str("Untitled"));
+	}
+
+	if (!config_has_user_value(globalConfig, "Basic", "SceneCollection")) {
+		config_set_string(globalConfig, "Basic",
+				"SceneCollection", Str("Untitled"));
+		config_set_string(globalConfig, "Basic",
+				"SceneCollectionFile", Str("Untitled"));
+	}
+
 #ifdef _WIN32
 	bool disableAudioDucking = config_get_bool(globalConfig, "Audio",
 			"DisableAudioDucking");
@@ -1225,11 +1243,20 @@ void OBSApp::EnableInFocusHotkeys(bool enable)
 	ResetHotkeyState(applicationState() != Qt::ApplicationActive);
 }
 
+Q_DECLARE_METATYPE(VoidFunc)
+
+void OBSApp::Exec(VoidFunc func)
+{
+	func();
+}
+
 bool OBSApp::OBSInit()
 {
 	ProfileScope("OBSApp::OBSInit");
 
 	setAttribute(Qt::AA_UseHighDpiPixmaps);
+
+	qRegisterMetaType<VoidFunc>();
 
 	if (!StartupOBS(locale.c_str(), GetProfilerNameStore()))
 		return false;

@@ -358,6 +358,7 @@ struct gs_texture_2d : gs_texture {
 	gs_texture_2d   *pairedNV12texture = nullptr;
 	bool            nv12 = false;
 	bool            chroma = false;
+	bool            acquired = false;
 
 	vector<vector<uint8_t>> data;
 	vector<D3D11_SUBRESOURCE_DATA> srd;
@@ -368,6 +369,7 @@ struct gs_texture_2d : gs_texture {
 	void InitResourceView();
 	void InitRenderTargets();
 	void BackupTexture(const uint8_t **data);
+	void GetSharedHandle(IDXGIResource *dxgi_res);
 
 	void RebuildSharedTextureFallback();
 	void Rebuild(ID3D11Device *dev);
@@ -859,6 +861,11 @@ struct gs_device {
 
 	void RebuildDevice();
 
+	bool HasBadNV12Output();
+
 	gs_device(uint32_t adapterIdx);
 	~gs_device();
 };
+
+extern "C" EXPORT int device_texture_acquire_sync(gs_texture_t *tex,
+		uint64_t key, uint32_t ms);

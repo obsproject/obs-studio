@@ -9,6 +9,7 @@
 
 #include "window-basic-main.hpp"
 #include "remote-text.hpp"
+#include "window-dock.hpp"
 
 #include <json11.hpp>
 
@@ -165,9 +166,9 @@ bool TwitchAuth::LoadInternal()
 	return OAuthStreamKey::LoadInternal();
 }
 
-class TwitchWidget : public QDockWidget {
+class TwitchWidget : public OBSDock {
 public:
-	inline TwitchWidget() : QDockWidget() {}
+	inline TwitchWidget() : OBSDock() {}
 
 	QScopedPointer<QCefWidget> widget;
 
@@ -325,19 +326,50 @@ void TwitchAuth::LoadSecondaryUIPanes()
 
 	/* ----------------------------------- */
 
+	url = "https://www.twitch.tv/popout/";
+	url += name;
+	url += "/dashboard/live/activity-feed";
+
+	feed.reset(new TwitchWidget());
+	feed->setObjectName("twitchFeed");
+	feed->resize(300, 650);
+	feed->setMinimumSize(200, 300);
+	feed->setWindowTitle(QTStr("TwitchAuth.Feed"));
+	feed->setAllowedAreas(Qt::AllDockWidgetAreas);
+
+	browser = cef->create_widget(nullptr, url, panel_cookies);
+	feed->SetWidget(browser);
+	browser->setStartupScript(script);
+
+	main->addDockWidget(Qt::RightDockWidgetArea, feed.data());
+	feedMenu.reset(main->AddDockWidget(feed.data()));
+
+	/* ----------------------------------- */
+
 	info->setFloating(true);
 	stat->setFloating(true);
+	feed->setFloating(true);
 
 	QSize statSize = stat->frameSize();
 
 	info->move(pos.x() + 50, pos.y() + 50);
 	stat->move(pos.x() + size.width()  / 2 - statSize.width()  / 2,
 	           pos.y() + size.height() / 2 - statSize.height() / 2);
+	feed->move(pos.x() + 100, pos.y() + 100);
 
 	if (firstLoad) {
 		info->setVisible(true);
 		stat->setVisible(false);
+		feed->setVisible(false);
 	} else {
+		uint32_t lastVersion = config_get_int(App()->GlobalConfig(), "General",
+				"LastVersion");
+
+		if (lastVersion == MAKE_SEMANTIC_VERSION(23, 0, 0) ||
+		    lastVersion == MAKE_SEMANTIC_VERSION(23, 0, 1)) {
+			feed->setVisible(false);
+		}
+
 		const char *dockStateStr = config_get_string(main->Config(),
 				service(), "DockState");
 		QByteArray dockState =

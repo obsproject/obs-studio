@@ -10,7 +10,9 @@ set -e
 # Echo all commands before executing
 set -v
 
-git fetch --unshallow
+if [ -v "$TRAVIS" ]; then
+  git fetch --unshallow
+fi
 
 # Leave obs-studio folder
 cd ../

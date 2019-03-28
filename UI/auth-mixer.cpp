@@ -9,6 +9,7 @@
 
 #include "window-basic-main.hpp"
 #include "remote-text.hpp"
+#include "window-dock.hpp"
 
 #include <json11.hpp>
 
@@ -204,9 +205,9 @@ bool MixerAuth::LoadInternal()
 	return OAuthStreamKey::LoadInternal();
 }
 
-class MixerChat : public QDockWidget {
+class MixerChat : public OBSDock {
 public:
-	inline MixerChat() : QDockWidget() {}
+	inline MixerChat() : OBSDock() {}
 
 	QScopedPointer<QCefWidget> widget;
 };
