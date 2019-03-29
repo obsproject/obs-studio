@@ -5609,6 +5609,10 @@ void OBSBasic::on_actionHelpPortal_triggered()
 void OBSBasic::on_actionWebsite_triggered()
 {
 	QUrl url = QUrl("https://obsproject.com", QUrl::TolerantMode);
+	QUrl url1 = QUrl("https://obsproject.com/zh-cn", QUrl::TolerantMode);
+	QUrl url2 = QUrl("https://obsproject.com/cs", QUrl::TolerantMode);
+	QUrl url3 = QUrl("https://obsproject.com/ja", QUrl::TolerantMode);
+	QUrl url4 = QUrl("https://obsproject.com/ko", QUrl::TolerantMode);
 	QDesktopServices::openUrl(url);
 }
 
