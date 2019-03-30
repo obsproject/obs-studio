@@ -107,13 +107,13 @@ static bool GetProfileName(QWidget *parent, std::string &name,
 			return false;
 		}
 		if (name.empty()) {
-			OBSMessageBox::information(parent,
+			OBSMessageBox::warning(parent,
 					QTStr("NoNameEntered.Title"),
 					QTStr("NoNameEntered.Text"));
 			continue;
 		}
 		if (ProfileExists(name.c_str())) {
-			OBSMessageBox::information(parent,
+			OBSMessageBox::warning(parent,
 					QTStr("NameExists.Title"),
 					QTStr("NameExists.Text"));
 			continue;
@@ -526,7 +526,7 @@ void OBSBasic::on_actionImportProfile_triggered()
 					profileDir + "/recordEncoder.json");
 			RefreshProfiles();
 		} else {
-			OBSMessageBox::information(this,
+			OBSMessageBox::warning(this,
 					QTStr("Basic.MainMenu.Profile.Import"),
 					QTStr("Basic.MainMenu.Profile.Exists"));
 		}

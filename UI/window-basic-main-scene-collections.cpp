@@ -114,13 +114,13 @@ static bool GetSceneCollectionName(QWidget *parent, std::string &name,
 			return false;
 		}
 		if (name.empty()) {
-			OBSMessageBox::information(parent,
+			OBSMessageBox::warning(parent,
 					QTStr("NoNameEntered.Title"),
 					QTStr("NoNameEntered.Text"));
 			continue;
 		}
 		if (SceneCollectionExists(name.c_str())) {
-			OBSMessageBox::information(parent,
+			OBSMessageBox::warning(parent,
 					QTStr("NameExists.Title"),
 					QTStr("NameExists.Text"));
 			continue;
