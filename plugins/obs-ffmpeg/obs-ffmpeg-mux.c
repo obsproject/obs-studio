@@ -369,8 +369,22 @@ static void ffmpeg_mux_stop(void *data, uint64_t ts)
 
 static void signal_failure(struct ffmpeg_muxer *stream)
 {
-	int ret = deactivate(stream);
+	char error[1024];
+	int ret;
 	int code;
+
+	size_t len;
+
+	len = os_process_pipe_read_err(stream->pipe, (uint8_t *)error,
+		sizeof(error) - 1);
+
+	if (len > 0) {
+		error[len] = 0;
+		warn ("ffmpeg-mux: %s", error);
+		obs_output_set_last_error (stream->output, error);
+	}
+
+	ret = deactivate(stream);
 
 	switch (ret) {
 	case FFM_UNSUPPORTED:          code = OBS_OUTPUT_UNSUPPORTED; break;
