@@ -1235,21 +1235,18 @@ static void DrawSquareAtPos(float x, float y)
 	gs_matrix_pop();
 }
 
-static void DrawLine(float x1, float y1, float x2, float y2, float thickness)
+static void DrawLine(float x1, float y1, float x2, float y2, vec2 thickness)
 {
-	struct matrix4 matrix;
-	gs_matrix_get(&matrix);
-
 	float ySide = (y1 == y2) ? (y1 < 0.5f ? 1.0f : -1.0f) : 0.0f;
 	float xSide = (x1 == x2) ? (x1 < 0.5f ? 1.0f : -1.0f) : 0.0f;
 
 	gs_render_start(true);
 
 	gs_vertex2f(x1, y1);
-	gs_vertex2f(x1 + (xSide * (thickness / matrix.x.x)),
-		y1 + (ySide * (thickness / matrix.y.y)));
-	gs_vertex2f(x2 + (xSide * (thickness / matrix.x.x)),
-		y2 + (ySide * (thickness / matrix.y.y)));
+	gs_vertex2f(x1 + (xSide * thickness.x),
+		y1 + (ySide * thickness.y));
+	gs_vertex2f(x2 + (xSide * thickness.x),
+		y2 + (ySide * thickness.y));
 	gs_vertex2f(x2, y2);
 	gs_vertex2f(x1, y1);
 
@@ -1260,31 +1257,28 @@ static void DrawLine(float x1, float y1, float x2, float y2, float thickness)
 	gs_vertexbuffer_destroy(line);
 }
 
-static void DrawRect(float thickness)
+static void DrawRect(vec2 thickness)
 {
-	struct matrix4 matrix;
-	gs_matrix_get(&matrix);
-
 	gs_render_start(true);
 
 	gs_vertex2f(0.0f, 0.0f);
-	gs_vertex2f(0.0f + (thickness / matrix.x.x), 0.0f);
-	gs_vertex2f(0.0f + (thickness / matrix.x.x), 1.0f);
+	gs_vertex2f(0.0f + thickness.x, 0.0f);
+	gs_vertex2f(0.0f + thickness.x, 1.0f);
 	gs_vertex2f(0.0f, 1.0f);
 	gs_vertex2f(0.0f, 0.0f);
 	gs_vertex2f(0.0f, 1.0f);
-	gs_vertex2f(0.0f, 1.0f - (thickness / matrix.y.y));
-	gs_vertex2f(1.0f, 1.0f - (thickness / matrix.y.y));
+	gs_vertex2f(0.0f, 1.0f - thickness.y);
+	gs_vertex2f(1.0f, 1.0f - thickness.y);
 	gs_vertex2f(1.0f, 1.0f);
 	gs_vertex2f(0.0f, 1.0f);
 	gs_vertex2f(1.0f, 1.0f);
-	gs_vertex2f(1.0f - (thickness / matrix.x.x), 1.0f);
-	gs_vertex2f(1.0f - (thickness / matrix.x.x), 0.0f);
+	gs_vertex2f(1.0f - thickness.x, 1.0f);
+	gs_vertex2f(1.0f - thickness.x, 0.0f);
 	gs_vertex2f(1.0f, 0.0f);
 	gs_vertex2f(1.0f, 1.0f);
 	gs_vertex2f(1.0f, 0.0f);
-	gs_vertex2f(1.0f, 0.0f + (thickness / matrix.y.y));
-	gs_vertex2f(0.0f, 0.0f + (thickness / matrix.y.y));
+	gs_vertex2f(1.0f, 0.0f + thickness.y);
+	gs_vertex2f(0.0f, 0.0f + thickness.y);
 	gs_vertex2f(0.0f, 0.0f);
 	gs_vertex2f(1.0f, 0.0f);
 
@@ -1367,8 +1361,9 @@ bool OBSBasicPreview::DrawSelectedOverflow(obs_scene_t *scene,
 	gs_eparam_t    *image = gs_effect_get_param_by_name(solid, "image");
 	gs_eparam_t    *scale = gs_effect_get_param_by_name(solid, "scale");
 
-	vec2 s;
-	vec2_set(&s, boxTransform.x.x / 96, boxTransform.y.y / 96);
+	vec2 start = {96.0f, 96.0f};
+	vec2 s = GetItemSize(item);
+	vec2_div(&s, &s, &start);
 
 	gs_effect_set_vec2(scale, &s);
 	gs_effect_set_texture(image, prev->overflow);
@@ -1462,26 +1457,31 @@ bool OBSBasicPreview::DrawSelectedItem(obs_scene_t *scene,
 	gs_effect_t *eff = gs_get_effect();
 	gs_eparam_t *colParam = gs_effect_get_param_by_name(eff, "color");
 
+	vec2 start = {HANDLE_RADIUS * 2, HANDLE_RADIUS * 2};
+	vec2_mul(&start, &start, &info.scale);
+	vec2 size = GetItemSize(item);
+	vec2_div(&size, &start, &size);
+
 	if (info.bounds_type == OBS_BOUNDS_NONE && crop_enabled(&crop)) {
-#define DRAW_SIDE(side, x1, y1, x2, y2) \
+#define DRAW_SIDE(side, x1, y1, x2, y2, dimensions) \
 		if (hovered && !selected) \
 			gs_effect_set_vec4(colParam, &blue); \
 		else if (crop.side > 0) \
 			gs_effect_set_vec4(colParam, &green); \
-		DrawLine(x1, y1, x2, y2, HANDLE_RADIUS / 2); \
+		DrawLine(x1, y1, x2, y2, dimensions); \
 		gs_effect_set_vec4(colParam, &red);
 
-		DRAW_SIDE(left,   0.0f, 0.0f, 0.0f, 1.0f);
-		DRAW_SIDE(top,    0.0f, 0.0f, 1.0f, 0.0f);
-		DRAW_SIDE(right,  1.0f, 0.0f, 1.0f, 1.0f);
-		DRAW_SIDE(bottom, 0.0f, 1.0f, 1.0f, 1.0f);
+		DRAW_SIDE(left,   0.0f, 0.0f, 0.0f, 1.0f, size);
+		DRAW_SIDE(top,    0.0f, 0.0f, 1.0f, 0.0f, size);
+		DRAW_SIDE(right,  1.0f, 0.0f, 1.0f, 1.0f, size);
+		DRAW_SIDE(bottom, 0.0f, 1.0f, 1.0f, 1.0f, size);
 #undef DRAW_SIDE
 	} else {
 		if (!selected) {
 			gs_effect_set_vec4(colParam, &blue);
-			DrawRect(HANDLE_RADIUS / 2);
+			DrawRect(size);
 		} else {
-			DrawRect(HANDLE_RADIUS / 2);
+			DrawRect(size);
 		}
 	}
 
