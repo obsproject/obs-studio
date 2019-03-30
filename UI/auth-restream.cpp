@@ -164,7 +164,7 @@ void RestreamAuth::LoadUI()
 	chat.reset(new RestreamWidget());
 	chat->setObjectName("restreamChat");
 	chat->resize(420, 600);
-	chat->setMinimumSize(380, 300);
+	chat->setMinimumSize(200, 300);
 	chat->setWindowTitle(QTStr("Auth.Chat"));
 	chat->setAllowedAreas(Qt::AllDockWidgetAreas);
 
@@ -181,7 +181,7 @@ void RestreamAuth::LoadUI()
 	info.reset(new RestreamWidget());
 	info->setObjectName("restreamInfo");
 	info->resize(410, 600);
-	info->setMinimumSize(380, 300);
+	info->setMinimumSize(200, 150);
 	info->setWindowTitle(QTStr("Auth.StreamInfo"));
 	info->setAllowedAreas(Qt::AllDockWidgetAreas);
 
