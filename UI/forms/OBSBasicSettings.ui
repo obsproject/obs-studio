@@ -151,8 +151,8 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>808</width>
-              <height>989</height>
+              <width>804</width>
+              <height>1225</height>
              </rect>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_19">
@@ -1173,8 +1173,8 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>747</width>
-              <height>808</height>
+              <width>813</width>
+              <height>770</height>
              </rect>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_21">
@@ -4471,9 +4471,9 @@
             <property name="geometry">
              <rect>
               <x>0</x>
-              <y>0</y>
-              <width>765</width>
-              <height>993</height>
+              <y>-430</y>
+              <width>806</width>
+              <height>1061</height>
              </rect>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_23">
@@ -5192,6 +5192,19 @@
                     </spacer>
                    </item>
                   </layout>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QPushButton" name="startFresh">
+                  <property name="maximumSize">
+                   <size>
+                    <width>125</width>
+                    <height>16777215</height>
+                   </size>
+                  </property>
+                  <property name="text">
+                   <string>Basic.Settings.StartFresh</string>
+                  </property>
                  </widget>
                 </item>
                </layout>

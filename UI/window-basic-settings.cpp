@@ -34,6 +34,7 @@
 #include <QScreen>
 #include <QStandardItemModel>
 #include <QSpacerItem>
+#include <QProcess>
 
 #include "audio-encoders.hpp"
 #include "hotkey-edit.hpp"
@@ -563,6 +564,9 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 			this, SLOT(UpdateStreamDelayEstimate()));
 	connect(ui->advOutTrack6Bitrate, SIGNAL(currentIndexChanged(int)),
 			this, SLOT(UpdateStreamDelayEstimate()));
+
+	connect(ui->startFresh, SIGNAL(clicked()), this, SLOT(StartFresh()));
+	ui->startFresh->setEnabled(!obs_video_active());
 
 	//Apply button disabled until change.
 	EnableApplyButton(false);
@@ -3400,22 +3404,24 @@ bool OBSBasicSettings::QueryChanges()
 {
 	QMessageBox::StandardButton button;
 
-	button = OBSMessageBox::question(this,
-			QTStr("Basic.Settings.ConfirmTitle"),
-			QTStr("Basic.Settings.Confirm"),
-			QMessageBox::Yes | QMessageBox::No |
-			QMessageBox::Cancel);
+	if (!forceRestart) {
+		button = OBSMessageBox::question(this,
+				QTStr("Basic.Settings.ConfirmTitle"),
+				QTStr("Basic.Settings.Confirm"),
+				QMessageBox::Yes | QMessageBox::No |
+				QMessageBox::Cancel);
 
-	if (button == QMessageBox::Cancel) {
-		return false;
-	} else if (button == QMessageBox::Yes) {
-		SaveSettings();
-	} else {
-		LoadSettings(true);
+		if (button == QMessageBox::Cancel) {
+			return false;
+		} else if (button == QMessageBox::Yes) {
+			SaveSettings();
+		} else {
+			LoadSettings(true);
 #ifdef _WIN32
-		if (toggleAero)
-			SetAeroEnabled(!aeroWasDisabled);
+			if (toggleAero)
+				SetAeroEnabled(!aeroWasDisabled);
 #endif
+		}
 	}
 
 	ClearChanged();
@@ -4567,4 +4573,32 @@ void OBSBasicSettings::SetHotkeysIcon(const QIcon &icon)
 void OBSBasicSettings::SetAdvancedIcon(const QIcon &icon)
 {
 	ui->listWidget->item(6)->setIcon(icon);
+}
+
+void OBSBasicSettings::StartFresh()
+{
+	QMessageBox::StandardButton button = QMessageBox::question(this,
+			QTStr("Basic.Settings.StartFresh"),
+			QTStr("Basic.Settings.StartFresh.Confirm"),
+			QMessageBox::Yes | QMessageBox::No,
+			QMessageBox::No);
+
+	if (button == QMessageBox::No) 
+		return;
+
+	char configDir[512];
+	int ret = GetConfigPath(configDir, sizeof(configDir),
+			"obs-studio/");
+
+	/* Check user dir first. */
+	if (ret > 0) {
+		forceRestart = true;
+		QDir dir(QT_UTF8(configDir));
+		dir.removeRecursively();
+
+		QProcess::startDetached(qApp->arguments()[0],
+				qApp->arguments());
+
+		main->close();
+	}
 }
