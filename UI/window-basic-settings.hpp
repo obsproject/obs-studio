@@ -116,6 +116,7 @@ private:
 	bool videoChanged = false;
 	bool hotkeysChanged = false;
 	bool advancedChanged = false;
+	bool forceRestart = false;
 	int  pageIndex = 0;
 	bool loading = true;
 	std::string savedTheme;
@@ -241,6 +242,7 @@ private slots:
 	void on_disconnectAccount_clicked();
 	void on_useStreamKey_clicked();
 	void on_useAuth_toggled();
+	void StartFresh();
 private:
 
 	/* output */
