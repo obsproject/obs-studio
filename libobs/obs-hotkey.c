@@ -1479,6 +1479,7 @@ void obs_hotkeys_set_translations_s(
 	ADD_TRANSLATION(OBS_KEY_META, meta);
 	ADD_TRANSLATION(OBS_KEY_MENU, menu);
 	ADD_TRANSLATION(OBS_KEY_SPACE, space);
+	ADD_TRANSLATION(OBS_KEY_ESCAPE, escape);
 #ifdef __APPLE__
 	const char *numpad_str = t.apple_keypad_num;
 	ADD_TRANSLATION(OBS_KEY_NUMSLASH, apple_keypad_divide);

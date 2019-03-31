@@ -126,6 +126,7 @@ struct obs_hotkeys_translations {
 	const char *apple_keypad_decimal;
 	const char *apple_keypad_equal;
 	const char *mouse_num; /* For example, "Mouse %1" */
+	const char *escape;
 };
 
 /* This function is an optional way to provide translations for specific keys

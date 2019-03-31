@@ -2037,6 +2037,7 @@ void OBSBasic::InitHotkeys()
 	t.apple_keypad_decimal         = Str("Hotkeys.AppleKeypadDecimal");
 	t.apple_keypad_equal           = Str("Hotkeys.AppleKeypadEqual");
 	t.mouse_num                    = Str("Hotkeys.MouseButton");
+	t.escape                       = Str("Hotkeys.Escape");
 	obs_hotkeys_set_translations(&t);
 
 	obs_hotkeys_set_audio_hotkeys_translations(Str("Mute"), Str("Unmute"),
