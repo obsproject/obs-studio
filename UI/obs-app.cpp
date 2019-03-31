@@ -2221,10 +2221,25 @@ static void upgrade_settings(void)
 	os_closedir(dir);
 }
 
+void ctrlc_handler (int s) {
+	UNUSED_PARAMETER(s);
+
+	OBSBasic *main = reinterpret_cast<OBSBasic*>(App()->GetMainWindow());
+	main->close();
+}
+
 int main(int argc, char *argv[])
 {
 #ifndef _WIN32
 	signal(SIGPIPE, SIG_IGN);
+
+	struct sigaction sig_handler;
+
+	sig_handler.sa_handler = ctrlc_handler;
+	sigemptyset(&sig_handler.sa_mask);
+	sig_handler.sa_flags = 0;
+
+	sigaction(SIGINT, &sig_handler, NULL);
 #endif
 
 #ifdef _WIN32
