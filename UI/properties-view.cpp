@@ -18,6 +18,7 @@
 #include <QDialogButtonBox>
 #include <QMenu>
 #include <QStackedWidget>
+#include <QDir>
 #include "double-slider.hpp"
 #include "qt-wrappers.hpp"
 #include "properties-view.hpp"
@@ -1977,9 +1978,21 @@ void WidgetInfo::EditListEdit()
 	QListWidgetItem *item = selectedItems[0];
 
 	if (type == OBS_EDITABLE_LIST_TYPE_FILES) {
-		QString path = QFileDialog::getOpenFileName(
+		QDir pathDir(item->text());
+		QString path;
+
+		if (pathDir.exists())
+			path = QFileDialog::getExistingDirectory(
+				App()->GetMainWindow(),
+				QTStr("Browse"),
+				item->text(),
+				QFileDialog::ShowDirsOnly |
+				QFileDialog::DontResolveSymlinks);
+		else
+			path = QFileDialog::getOpenFileName(
 				App()->GetMainWindow(), QTStr("Browse"),
 				item->text(), QT_UTF8(filter));
+
 		if (path.isEmpty())
 			return;
 
