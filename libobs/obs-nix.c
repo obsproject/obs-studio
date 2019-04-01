@@ -1114,6 +1114,8 @@ void obs_key_to_str(obs_key_t key, struct dstr *dstr)
 	case OBS_KEY_NUMCOMMA:     return translate_key(key, "Numpad ,");
 	case OBS_KEY_NUMPERIOD:    return translate_key(key, "Numpad .");
 	case OBS_KEY_NUMSLASH:     return translate_key(key, "Numpad /");
+	case OBS_KEY_SPACE:        return translate_key(key, "Space");
+	case OBS_KEY_ESCAPE:       return translate_key(key, "Escape");
 	default:;
 	}
 
