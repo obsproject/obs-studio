@@ -68,7 +68,7 @@ public:
 
 	inline ComPtr<T> &operator=(ComPtr<T> &&c)
 	{
-		if (this != &c) {
+		if (&ptr != &c.ptr) {
 			Kill();
 			ptr = c.ptr;
 			c.ptr = nullptr;
