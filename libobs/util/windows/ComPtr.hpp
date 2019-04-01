@@ -68,7 +68,8 @@ public:
 
 	inline ComPtr<T> &operator=(ComPtr<T> &&c)
 	{
-		if (this != &c) {
+		unsigned char& alias = reinterpret_cast<unsigned char&>(c);
+		if (this != (ComPtr<T>*)&alias) {
 			Kill();
 			ptr = c.ptr;
 			c.ptr = nullptr;
