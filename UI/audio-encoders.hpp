@@ -1,3 +1,5 @@
+#pragma once
+
 #include <obs.hpp>
 
 #include <map>
