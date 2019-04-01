@@ -22,6 +22,7 @@
 #include "../util/platform.h"
 
 #include <libavformat/avformat.h>
+#include <libavutil/opt.h>
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -80,6 +81,10 @@ static inline bool init_output(media_remux_job_t job, const char *out_filename)
 	if (!job->ofmt_ctx) {
 		blog(LOG_ERROR, "media_remux: Could not create output context");
 		return false;
+	}
+
+	if (strcmp(job->ofmt_ctx->oformat->name, "mp4") == 0) {
+		av_opt_set(job->ofmt_ctx->priv_data, "movflags", "faststart", 0);
 	}
 
 	for (unsigned i = 0; i < job->ifmt_ctx->nb_streams; i++) {
