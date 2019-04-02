@@ -6503,11 +6503,14 @@ void OBSBasic::on_lockUI_toggled(bool lock)
 		? QDockWidget::NoDockWidgetFeatures
 		: QDockWidget::AllDockWidgetFeatures;
 
-	ui->scenesDock->setFeatures(features);
-	ui->sourcesDock->setFeatures(features);
-	ui->mixerDock->setFeatures(features);
-	ui->transitionsDock->setFeatures(features);
-	ui->controlsDock->setFeatures(features);
+	QDockWidget::DockWidgetFeatures mainFeatures = features;
+	mainFeatures &= ~QDockWidget::QDockWidget::DockWidgetClosable;
+
+	ui->scenesDock->setFeatures(mainFeatures);
+	ui->sourcesDock->setFeatures(mainFeatures);
+	ui->mixerDock->setFeatures(mainFeatures);
+	ui->transitionsDock->setFeatures(mainFeatures);
+	ui->controlsDock->setFeatures(mainFeatures);
 	statsDock->setFeatures(features);
 
 	for (int i = extraDocks.size() - 1; i >= 0 ; i--) {
