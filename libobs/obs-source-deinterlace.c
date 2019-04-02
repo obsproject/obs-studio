@@ -315,9 +315,6 @@ void deinterlace_render(obs_source_t *s)
 	gs_eparam_t *dimensions = gs_effect_get_param_by_name(effect,
 			"dimensions");
 	struct vec2 size = {(float)s->async_width, (float)s->async_height};
-	bool yuv = format_is_yuv(s->async_format);
-	bool limited_range = yuv && !s->async_full_range;
-	const char *tech = yuv ? "DrawMatrix" : "Draw";
 
 	gs_texture_t *cur_tex = s->async_texrender ?
 		gs_texrender_get_texture(s->async_texrender) :
@@ -334,30 +331,12 @@ void deinterlace_render(obs_source_t *s)
 	gs_effect_set_int(field, s->deinterlace_top_first);
 	gs_effect_set_vec2(dimensions, &size);
 
-	if (yuv) {
-		gs_eparam_t *color_matrix = gs_effect_get_param_by_name(
-				effect, "color_matrix");
-		gs_effect_set_val(color_matrix, s->async_color_matrix,
-				sizeof(float) * 16);
-	}
-	if (limited_range) {
-		const size_t size = sizeof(float) * 3;
-		gs_eparam_t *color_range_min = gs_effect_get_param_by_name(
-				effect, "color_range_min");
-		gs_eparam_t *color_range_max = gs_effect_get_param_by_name(
-				effect, "color_range_max");
-		gs_effect_set_val(color_range_min, s->async_color_range_min,
-				size);
-		gs_effect_set_val(color_range_max, s->async_color_range_max,
-				size);
-	}
-
 	frame2_ts = s->deinterlace_frame_ts + s->deinterlace_offset +
 		s->deinterlace_half_duration - TWOX_TOLERANCE;
 
 	gs_effect_set_bool(frame2, obs->video.video_time >= frame2_ts);
 
-	while (gs_effect_loop(effect, tech))
+	while (gs_effect_loop(effect, "Draw"))
 		gs_draw_sprite(NULL, s->async_flip ? GS_FLIP_V : 0,
 				s->async_width, s->async_height);
 }

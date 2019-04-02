@@ -1329,6 +1329,7 @@ enum convert_type {
 	CONVERT_420,
 	CONVERT_422_U,
 	CONVERT_422_Y,
+	CONVERT_444,
 };
 
 static inline enum convert_type get_convert_type(enum video_format format)
@@ -1338,6 +1339,8 @@ static inline enum convert_type get_convert_type(enum video_format format)
 		return CONVERT_420;
 	case VIDEO_FORMAT_NV12:
 		return CONVERT_NV12;
+	case VIDEO_FORMAT_I444:
+		return CONVERT_444;
 
 	case VIDEO_FORMAT_YVYU:
 	case VIDEO_FORMAT_YUY2:
@@ -1346,7 +1349,6 @@ static inline enum convert_type get_convert_type(enum video_format format)
 		return CONVERT_422_U;
 
 	case VIDEO_FORMAT_Y800:
-	case VIDEO_FORMAT_I444:
 	case VIDEO_FORMAT_NONE:
 	case VIDEO_FORMAT_RGBA:
 	case VIDEO_FORMAT_BGRA:
@@ -1360,9 +1362,20 @@ static inline enum convert_type get_convert_type(enum video_format format)
 static inline bool set_packed422_sizes(struct obs_source *source,
 		const struct obs_source_frame *frame)
 {
-	source->async_convert_height = frame->height;
 	source->async_convert_width  = frame->width / 2;
+	source->async_convert_height = frame->height;
 	source->async_texture_format = GS_BGRA;
+	return true;
+}
+
+static inline bool set_planar444_sizes(struct obs_source *source,
+	const struct obs_source_frame *frame)
+{
+	source->async_convert_width   = frame->width;
+	source->async_convert_height  = frame->height * 3;
+	source->async_texture_format  = GS_R8;
+	source->async_plane_offset[0] = (int)(frame->data[1] - frame->data[0]);
+	source->async_plane_offset[1] = (int)(frame->data[2] - frame->data[0]);
 	return true;
 }
 
@@ -1406,7 +1419,9 @@ static inline bool init_gpu_conversion(struct obs_source *source,
 
 		case CONVERT_NV12:
 			return set_nv12_sizes(source, frame);
-			break;
+
+		case CONVERT_444:
+			return set_planar444_sizes(source, frame);
 
 		case CONVERT_NONE:
 			assert(false && "No conversion requested");
@@ -1491,6 +1506,11 @@ static void upload_raw_frame(gs_texture_t *tex,
 					frame->width, false);
 			break;
 
+		case CONVERT_444:
+			gs_texture_set_image(tex, frame->data[0],
+					frame->width, false);
+			break;
+
 		case CONVERT_NONE:
 			assert(false && "No conversion requested");
 			break;
@@ -1514,14 +1534,15 @@ static const char *select_conversion_technique(enum video_format format)
 
 		case VIDEO_FORMAT_NV12:
 			return "NV12_Reverse";
-			break;
+
+		case VIDEO_FORMAT_I444:
+			return "I444_Reverse";
 
 		case VIDEO_FORMAT_Y800:
 		case VIDEO_FORMAT_BGRA:
 		case VIDEO_FORMAT_BGRX:
 		case VIDEO_FORMAT_RGBA:
 		case VIDEO_FORMAT_NONE:
-		case VIDEO_FORMAT_I444:
 			assert(false && "No conversion requested");
 			break;
 	}
@@ -1581,6 +1602,19 @@ static bool update_async_texrender(struct obs_source *source,
 	set_eparami(conv, "int_v_plane_offset",
 			(int)source->async_plane_offset[1]);
 
+	gs_effect_set_val(gs_effect_get_param_by_name(conv, "color_matrix"),
+			frame->color_matrix, sizeof(float) * 16);
+	if (!frame->full_range) {
+		gs_eparam_t *min_param = gs_effect_get_param_by_name(
+				conv, "color_range_min");
+		gs_effect_set_val(min_param, frame->color_range_min,
+				sizeof(float) * 3);
+		gs_eparam_t *max_param = gs_effect_get_param_by_name(
+				conv, "color_range_max");
+		gs_effect_set_val(max_param, frame->color_range_max,
+				sizeof(float) * 3);
+	}
+
 	gs_ortho(0.f, (float)cx, 0.f, (float)cy, -100.f, 100.f);
 
 	gs_draw_sprite(tex, 0, cx, cy);
@@ -1603,13 +1637,6 @@ bool update_async_texture(struct obs_source *source,
 	uint32_t          linesize;
 
 	source->async_flip       = frame->flip;
-	source->async_full_range = frame->full_range;
-	memcpy(source->async_color_matrix, frame->color_matrix,
-			sizeof(frame->color_matrix));
-	memcpy(source->async_color_range_min, frame->color_range_min,
-			sizeof frame->color_range_min);
-	memcpy(source->async_color_range_max, frame->color_range_max,
-			sizeof frame->color_range_max);
 
 	if (source->async_gpu_conversion && texrender)
 		return update_async_texrender(source, frame, tex, texrender);
@@ -1624,13 +1651,11 @@ bool update_async_texture(struct obs_source *source,
 		return false;
 
 	if (type == CONVERT_420)
-		decompress_420((const uint8_t* const*)frame->data,
-				frame->linesize,
+		decompress_420(frame->data, frame->linesize,
 				0, frame->height, ptr, linesize);
 
 	else if (type == CONVERT_NV12)
-		decompress_nv12((const uint8_t* const*)frame->data,
-				frame->linesize,
+		decompress_nv12(frame->data, frame->linesize,
 				0, frame->height, ptr, linesize);
 
 	else if (type == CONVERT_422_Y)
@@ -1646,31 +1671,13 @@ bool update_async_texture(struct obs_source *source,
 }
 
 static inline void obs_source_draw_texture(struct obs_source *source,
-		gs_effect_t *effect, float *color_matrix,
-		float const *color_range_min, float const *color_range_max)
+		gs_effect_t *effect)
 {
 	gs_texture_t *tex = source->async_texture;
 	gs_eparam_t  *param;
 
 	if (source->async_texrender)
 		tex = gs_texrender_get_texture(source->async_texrender);
-
-	if (color_range_min) {
-		size_t const size = sizeof(float) * 3;
-		param = gs_effect_get_param_by_name(effect, "color_range_min");
-		gs_effect_set_val(param, color_range_min, size);
-	}
-
-	if (color_range_max) {
-		size_t const size = sizeof(float) * 3;
-		param = gs_effect_get_param_by_name(effect, "color_range_max");
-		gs_effect_set_val(param, color_range_max, size);
-	}
-
-	if (color_matrix) {
-		param = gs_effect_get_param_by_name(effect, "color_matrix");
-		gs_effect_set_val(param, color_matrix, sizeof(float) * 16);
-	}
 
 	param = gs_effect_get_param_by_name(effect, "image");
 	gs_effect_set_texture(param, tex);
@@ -1680,24 +1687,18 @@ static inline void obs_source_draw_texture(struct obs_source *source,
 
 static void obs_source_draw_async_texture(struct obs_source *source)
 {
-	gs_effect_t    *effect        = gs_get_effect();
-	bool           yuv           = format_is_yuv(source->async_format);
-	bool           limited_range = yuv && !source->async_full_range;
-	const char     *type         = yuv ? "DrawMatrix" : "Draw";
+	gs_effect_t    *effect       = gs_get_effect();
 	bool           def_draw      = (!effect);
-	gs_technique_t *tech          = NULL;
+	gs_technique_t *tech         = NULL;
 
 	if (def_draw) {
 		effect = obs_get_base_effect(OBS_EFFECT_DEFAULT);
-		tech = gs_effect_get_technique(effect, type);
+		tech = gs_effect_get_technique(effect, "Draw");
 		gs_technique_begin(tech);
 		gs_technique_begin_pass(tech, 0);
 	}
 
-	obs_source_draw_texture(source, effect,
-			yuv ? source->async_color_matrix : NULL,
-			limited_range ? source->async_color_range_min : NULL,
-			limited_range ? source->async_color_range_max : NULL);
+	obs_source_draw_texture(source, effect);
 
 	if (def_draw) {
 		gs_technique_end_pass(tech);
