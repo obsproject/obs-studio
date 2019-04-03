@@ -3311,6 +3311,8 @@ void OBSBasic::DrawBackdrop(float cx, float cy)
 	if (!box)
 		return;
 
+	GS_DEBUG_MARKER_BEGIN(GS_DEBUG_COLOR_DEFAULT, "DrawBackdrop");
+
 	gs_effect_t    *solid = obs_get_base_effect(OBS_EFFECT_SOLID);
 	gs_eparam_t    *color = gs_effect_get_param_by_name(solid, "color");
 	gs_technique_t *tech  = gs_effect_get_technique(solid, "Solid");
@@ -3333,10 +3335,14 @@ void OBSBasic::DrawBackdrop(float cx, float cy)
 	gs_technique_end(tech);
 
 	gs_load_vertexbuffer(nullptr);
+
+	GS_DEBUG_MARKER_END();
 }
 
 void OBSBasic::RenderMain(void *data, uint32_t cx, uint32_t cy)
 {
+	GS_DEBUG_MARKER_BEGIN(GS_DEBUG_COLOR_DEFAULT, "RenderMain");
+
 	OBSBasic *window = static_cast<OBSBasic*>(data);
 	obs_video_info ovi;
 
@@ -3367,7 +3373,6 @@ void OBSBasic::RenderMain(void *data, uint32_t cx, uint32_t cy)
 
 	window->DrawBackdrop(float(ovi.base_width), float(ovi.base_height));
 
-
 	if (window->IsPreviewProgramMode()) {
 		OBSScene scene = window->GetCurrentScene();
 		obs_source_t *source = obs_scene_get_source(scene);
@@ -3392,6 +3397,8 @@ void OBSBasic::RenderMain(void *data, uint32_t cx, uint32_t cy)
 
 	gs_projection_pop();
 	gs_viewport_pop();
+
+	GS_DEBUG_MARKER_END();
 
 	UNUSED_PARAMETER(cx);
 	UNUSED_PARAMETER(cy);

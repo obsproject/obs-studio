@@ -1305,6 +1305,8 @@ void OBSBasic::SetPreviewProgramMode(bool enabled)
 
 void OBSBasic::RenderProgram(void *data, uint32_t cx, uint32_t cy)
 {
+	GS_DEBUG_MARKER_BEGIN(GS_DEBUG_COLOR_DEFAULT, "RenderProgram");
+
 	OBSBasic *window = static_cast<OBSBasic*>(data);
 	obs_video_info ovi;
 
@@ -1332,6 +1334,8 @@ void OBSBasic::RenderProgram(void *data, uint32_t cx, uint32_t cy)
 
 	gs_projection_pop();
 	gs_viewport_pop();
+
+	GS_DEBUG_MARKER_END();
 
 	UNUSED_PARAMETER(cx);
 	UNUSED_PARAMETER(cy);
