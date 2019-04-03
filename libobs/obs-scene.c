@@ -462,6 +462,8 @@ static inline bool item_texture_enabled(const struct obs_scene_item *item)
 
 static void render_item_texture(struct obs_scene_item *item)
 {
+	GS_DEBUG_MARKER_BEGIN(GS_DEBUG_COLOR_ITEM_TEXTURE, "render_item_texture");
+
 	gs_texture_t *tex = gs_texrender_get_texture(item->item_render);
 	gs_effect_t *effect = obs->video.default_effect;
 	enum obs_scale_type type = item->scale_filter;
@@ -510,16 +512,24 @@ static void render_item_texture(struct obs_scene_item *item)
 
 	while (gs_effect_loop(effect, "Draw"))
 		obs_source_draw(tex, 0, 0, 0, 0, 0);
+
+	GS_DEBUG_MARKER_END();
 }
 
 static inline void render_item(struct obs_scene_item *item)
 {
+	GS_DEBUG_MARKER_BEGIN_FORMAT(GS_DEBUG_COLOR_ITEM, "Item: %s",
+			obs_source_get_name_no_null(item->source));
+
 	if (item->item_render) {
 		uint32_t width  = obs_source_get_width(item->source);
 		uint32_t height = obs_source_get_height(item->source);
 
 		if (!width || !height)
+		{
+			GS_DEBUG_MARKER_END();
 			return;
+		}
 
 		uint32_t cx = calc_cx(item, width);
 		uint32_t cy = calc_cy(item, height);
@@ -556,6 +566,8 @@ static inline void render_item(struct obs_scene_item *item)
 		obs_source_video_render(item->source);
 	}
 	gs_matrix_pop();
+
+	GS_DEBUG_MARKER_END();
 }
 
 static void scene_video_tick(void *data, float seconds)

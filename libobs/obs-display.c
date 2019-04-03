@@ -175,7 +175,6 @@ static inline void render_display_begin(struct obs_display *display,
 static inline void render_display_end()
 {
 	gs_end_scene();
-	gs_present();
 }
 
 void render_display(struct obs_display *display)
@@ -184,6 +183,8 @@ void render_display(struct obs_display *display)
 	bool size_changed;
 
 	if (!display || !display->enabled) return;
+
+	GS_DEBUG_MARKER_BEGIN(GS_DEBUG_COLOR_DISPLAY, "obs_display");
 
 	/* -------------------------------------------- */
 
@@ -214,6 +215,10 @@ void render_display(struct obs_display *display)
 	pthread_mutex_unlock(&display->draw_callbacks_mutex);
 
 	render_display_end();
+
+	GS_DEBUG_MARKER_END();
+
+	gs_present();
 }
 
 void obs_display_set_enabled(obs_display_t *display, bool enable)

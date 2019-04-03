@@ -120,6 +120,8 @@ static inline void render_main_texture(struct obs_core_video *video,
 		int cur_texture)
 {
 	profile_start(render_main_texture_name);
+	GS_DEBUG_MARKER_BEGIN(GS_DEBUG_COLOR_MAIN_TEXTURE,
+			render_main_texture_name);
 
 	struct vec4 clear_color;
 	vec4_set(&clear_color, 0.0f, 0.0f, 0.0f, 0.0f);
@@ -145,6 +147,7 @@ static inline void render_main_texture(struct obs_core_video *video,
 
 	video->textures_rendered[cur_texture] = true;
 
+	GS_DEBUG_MARKER_END();
 	profile_end(render_main_texture_name);
 }
 
@@ -773,7 +776,10 @@ static inline void output_frame(bool raw_active, const bool gpu_active)
 	gs_enter_context(video->graphics);
 
 	profile_start(output_frame_render_video_name);
+	GS_DEBUG_MARKER_BEGIN(GS_DEBUG_COLOR_RENDER_VIDEO,
+			output_frame_render_video_name);
 	render_video(video, raw_active, gpu_active, cur_texture, prev_texture);
+	GS_DEBUG_MARKER_END();
 	profile_end(output_frame_render_video_name);
 
 	if (raw_active) {

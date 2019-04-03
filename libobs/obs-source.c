@@ -1544,6 +1544,8 @@ static bool update_async_texrender(struct obs_source *source,
 		const struct obs_source_frame *frame,
 		gs_texture_t *tex, gs_texrender_t *texrender)
 {
+	GS_DEBUG_MARKER_BEGIN(GS_DEBUG_COLOR_CONVERT_FORMAT, "Convert Format");
+
 	gs_texrender_reset(texrender);
 
 	upload_raw_frame(tex, frame);
@@ -1558,7 +1560,10 @@ static bool update_async_texrender(struct obs_source *source,
 			select_conversion_technique(frame->format));
 
 	if (!gs_texrender_begin(texrender, cx, cy))
+	{
+		GS_DEBUG_MARKER_END();
 		return false;
+	}
 
 	gs_technique_begin(tech);
 	gs_technique_begin_pass(tech, 0);
@@ -1586,6 +1591,7 @@ static bool update_async_texrender(struct obs_source *source,
 
 	gs_texrender_end(texrender);
 
+	GS_DEBUG_MARKER_END();
 	return true;
 }
 
@@ -1785,6 +1791,25 @@ static inline void obs_source_main_render(obs_source_t *source)
 
 static bool ready_async_frame(obs_source_t *source, uint64_t sys_time);
 
+#if GS_USE_DEBUG_MARKERS
+static const char *get_type_format(enum obs_source_type type)
+{
+	switch (type)
+	{
+	case OBS_SOURCE_TYPE_INPUT:
+		return "Input: %s";
+	case OBS_SOURCE_TYPE_FILTER:
+		return "Filter: %s";
+	case OBS_SOURCE_TYPE_TRANSITION:
+		return "Transition: %s";
+	case OBS_SOURCE_TYPE_SCENE:
+		return "Scene: %s";
+	default:
+		return "[Unknown]: %s";
+	}
+}
+#endif
+
 static inline void render_video(obs_source_t *source)
 {
 	if (source->info.type != OBS_SOURCE_TYPE_FILTER &&
@@ -1808,6 +1833,10 @@ static inline void render_video(obs_source_t *source)
 		return;
 	}
 
+	GS_DEBUG_MARKER_BEGIN_FORMAT(GS_DEBUG_COLOR_SOURCE,
+			get_type_format(source->info.type),
+			obs_source_get_name_no_null(source));
+
 	if (source->filters.num && !source->rendering_filter)
 		obs_source_render_filters(source);
 
@@ -1822,6 +1851,8 @@ static inline void render_video(obs_source_t *source)
 
 	else
 		obs_source_render_async_video(source);
+
+	GS_DEBUG_MARKER_END();
 }
 
 void obs_source_video_render(obs_source_t *source)
@@ -2876,6 +2907,12 @@ const char *obs_source_get_name(const obs_source_t *source)
 {
 	return obs_source_valid(source, "obs_source_get_name") ?
 		source->context.name : NULL;
+}
+
+const char *obs_source_get_name_no_null(const obs_source_t *source)
+{
+	const char *name = obs_source_get_name(source);
+	return name ? name : "(null)";
 }
 
 void obs_source_set_name(obs_source_t *source, const char *name)

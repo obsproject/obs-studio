@@ -909,6 +909,9 @@ EXPORT obs_data_t *obs_source_get_settings(const obs_source_t *source);
 /** Gets the name of a source */
 EXPORT const char *obs_source_get_name(const obs_source_t *source);
 
+/** Gets the name of a source without null */
+EXPORT const char *obs_source_get_name_no_null(const obs_source_t *source);
+
 /** Sets the name of a source */
 EXPORT void obs_source_set_name(obs_source_t *source, const char *name);
 

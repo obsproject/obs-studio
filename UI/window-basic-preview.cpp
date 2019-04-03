@@ -1360,6 +1360,8 @@ bool OBSBasicPreview::DrawSelectedOverflow(obs_scene_t *scene,
 	if (!visible)
 		return true;
 
+	GS_DEBUG_MARKER_BEGIN(GS_DEBUG_COLOR_DEFAULT, "DrawSelectedOverflow");
+
 	obs_transform_info info;
 	obs_sceneitem_get_info(item, &info);
 
@@ -1384,6 +1386,8 @@ bool OBSBasicPreview::DrawSelectedOverflow(obs_scene_t *scene,
 	}
 
 	gs_matrix_pop();
+
+	GS_DEBUG_MARKER_END();
 
 	UNUSED_PARAMETER(scene);
 	return true;
@@ -1450,6 +1454,8 @@ bool OBSBasicPreview::DrawSelectedItem(obs_scene_t *scene,
 	if (!visible)
 		return true;
 
+	GS_DEBUG_MARKER_BEGIN(GS_DEBUG_COLOR_DEFAULT, "DrawSelectedItem");
+
 	obs_transform_info info;
 	obs_sceneitem_get_info(item, &info);
 
@@ -1501,6 +1507,8 @@ bool OBSBasicPreview::DrawSelectedItem(obs_scene_t *scene,
 
 	gs_matrix_pop();
 
+	GS_DEBUG_MARKER_END();
+
 	UNUSED_PARAMETER(scene);
 	UNUSED_PARAMETER(param);
 	return true;
@@ -1516,6 +1524,8 @@ void OBSBasicPreview::DrawOverflow()
 
 	if (hidden)
 		return;
+
+	GS_DEBUG_MARKER_BEGIN(GS_DEBUG_COLOR_DEFAULT, "DrawOverflow");
 
 	if (!overflow) {
 		std::string path;
@@ -1535,12 +1545,16 @@ void OBSBasicPreview::DrawOverflow()
 	}
 
 	gs_load_vertexbuffer(nullptr);
+
+	GS_DEBUG_MARKER_END();
 }
 
 void OBSBasicPreview::DrawSceneEditing()
 {
 	if (locked)
 		return;
+
+	GS_DEBUG_MARKER_BEGIN(GS_DEBUG_COLOR_DEFAULT, "DrawSceneEditing");
 
 	OBSBasic *main = reinterpret_cast<OBSBasic*>(App()->GetMainWindow());
 
@@ -1567,6 +1581,8 @@ void OBSBasicPreview::DrawSceneEditing()
 
 	gs_technique_end_pass(tech);
 	gs_technique_end(tech);
+
+	GS_DEBUG_MARKER_END();
 }
 
 void OBSBasicPreview::ResetScrollingOffset()
