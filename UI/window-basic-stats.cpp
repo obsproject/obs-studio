@@ -59,6 +59,10 @@ OBSBasicStats::OBSBasicStats(QWidget *parent, bool closeable)
 	hddSpace = new QLabel(this);
 	memUsage = new QLabel(this);
 
+	cpuUsage->setToolTip(QTStr("Basic.Stats.CPUUsage.ToolTip"));
+	hddSpace->setToolTip(QTStr("Basic.Stats.HDDSpaceAvailable.ToolTip"));
+	memUsage->setToolTip(QTStr("Basic.Stats.MemoryUsage.ToolTip"));
+
 	newStat("CPUUsage", cpuUsage, 0);
 	newStat("HDDSpaceAvailable", hddSpace, 0);
 	newStat("MemoryUsage", memUsage, 0);
@@ -69,7 +73,12 @@ OBSBasicStats::OBSBasicStats(QWidget *parent, bool closeable)
 	missedFrames = new QLabel(this);
 	row = 0;
 
-	newStatBare("FPS", fps, 2);
+	fps->setToolTip(QTStr("Basic.Stats.FPS.ToolTip"));
+	renderTime->setToolTip(QTStr("Basic.Stats.HDDSpaceAvailable.ToolTip"));
+	missedFrames->setToolTip(QTStr("Basic.Stats.MissedFrames.ToolTip"));
+	skippedFrames->setToolTip(QTStr("Basic.Stats.SkippedFrames.ToolTip"));
+
+	newStat("FPS", fps, 2);
 	newStat("AverageTimeToRender", renderTime, 2);
 	newStat("MissedFrames", missedFrames, 2);
 	newStat("SkippedFrames", skippedFrames, 2);
@@ -91,11 +100,13 @@ OBSBasicStats::OBSBasicStats(QWidget *parent, bool closeable)
 	auto addOutputCol = [&] (const char *loc)
 	{
 		QLabel *label = new QLabel(QTStr(loc), this);
+		std::string str = loc + ".ToolTip";
+		label->setToolTip(QTStr(str.c_str()));
 		label->setStyleSheet("font-weight: bold");
 		outputLayout->addWidget(label, 0, col++);
 	};
 
-	addOutputCol("Basic.Settings.Output");
+	addOutputCol("Basic.Stats.Output");
 	addOutputCol("Basic.Stats.Status");
 	addOutputCol("Basic.Stats.DroppedFrames");
 	addOutputCol("Basic.Stats.MegabytesSent");
@@ -196,6 +207,14 @@ void OBSBasicStats::AddOutputLabels(QString name)
 	ol.droppedFrames = new QLabel(this);
 	ol.megabytesSent = new QLabel(this);
 	ol.bitrate = new QLabel(this);
+
+	ol.name->setToolTip(QTStr("Basic.Stats.Output.ToolTip"));
+	ol.status->setToolTip(QTStr("Basic.Stats.Status.ToolTip"));
+	ol.droppedFrames->setToolTip(QTStr(
+			"Basic.Stats.DroppedFrames.ToolTip"));
+	ol.megabytesSent->setToolTip(QTStr(
+			"Basic.Stats.MegabytesSent.ToolTip"));
+	ol.bitrate->setToolTip(QTStr("Basic.Stats.Bitrate.ToolTip"));
 
 	int newPointSize = ol.status->font().pointSize();
 	newPointSize *= 13;
