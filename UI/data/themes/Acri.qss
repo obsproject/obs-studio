@@ -124,6 +124,7 @@ QToolTip {
 	color: rgb(205,205,205);
 	border: 1px solid #343335;
 	border-radius: 4px;
+	font-weight: normal; /* reset from Stats header styling */
 }
 
 /* Top Menu Bar Items */
@@ -832,6 +833,14 @@ SourceTreeSubItemCheckBox::indicator:unchecked:hover {
 
 
 /* Label warning/error */
+
+QLabel[statsLabel="Header"] {
+    font-weight: bold;
+}
+
+QLabel[statsLabel="Status"] {
+    font-size: 10pt;
+}
 
 QLabel#warningLabel {
 	color: rgb(192, 128, 0);

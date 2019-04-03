@@ -4,6 +4,7 @@
 #include "window-basic-main.hpp"
 #include "platform.hpp"
 #include "obs-app.hpp"
+#include "menu-button.hpp"
 
 #include <QDesktopWidget>
 #include <QPushButton>
@@ -34,72 +35,99 @@ OBSBasicStats::OBSBasicStats(QWidget *parent, bool closeable)
 	  timer               (this)
 {
 	QVBoxLayout *mainLayout = new QVBoxLayout();
-	QGridLayout *topLayout = new QGridLayout();
+	QGridLayout *topLayout0 = new QGridLayout();
+	QGridLayout *topLayout1 = new QGridLayout();
+	QHBoxLayout *topLayout = new QHBoxLayout();
 	outputLayout = new QGridLayout();
 
 	int row = 0;
 
-	auto newStatBare = [&] (QString name, QWidget *label, int col)
-	{
-		QLabel *typeLabel = new QLabel(name, this);
-		topLayout->addWidget(typeLabel, row, col);
-		topLayout->addWidget(label, row++, col + 1);
-	};
-
-	auto newStat = [&] (const char *strLoc, QWidget *label, int col)
-	{
-		std::string str = "Basic.Stats.";
-		str += strLoc;
-		newStatBare(QTStr(str.c_str()), label, col);
-	};
-
 	/* --------------------------------------------- */
+
+	cpuUsageTxt = new QLabel(this);
+	statsEntry("Basic.Stats.CPUUsage", true, "vCPUStats", nullptr,
+			cpuUsageTxt);
 
 	cpuUsage = new QLabel(this);
+	statsEntry("Basic.Stats.CPUUsage", true, nullptr, nullptr, cpuUsage,
+			cpuUsageTxt);
+
+	hddSpaceTxt = new QLabel(this);
+	statsEntry("Basic.Stats.HDDSpaceAvailable", true, "vHDDStats",
+			nullptr, hddSpaceTxt);
+
 	hddSpace = new QLabel(this);
+	statsEntry("Basic.Stats.HDDSpaceAvailable", true, nullptr, nullptr,
+			hddSpace, hddSpaceTxt);
+
+	memUsageTxt = new QLabel(this);
+	statsEntry("Basic.Stats.MemoryUsage", true, "vMemoryStats",
+			nullptr, memUsageTxt);
+	
 	memUsage = new QLabel(this);
+	statsEntry("Basic.Stats.MemoryUsage", true, nullptr, nullptr,
+			memUsage, memUsageTxt);
 
-	newStat("CPUUsage", cpuUsage, 0);
-	newStat("HDDSpaceAvailable", hddSpace, 0);
-	newStat("MemoryUsage", memUsage, 0);
+	topLayout0->addWidget(cpuUsageTxt, row, 0);
+	topLayout0->addWidget(cpuUsage, row++, 1);
 
-	fps = new QLabel(this);
-	renderTime = new QLabel(this);
-	skippedFrames = new QLabel(this);
-	missedFrames = new QLabel(this);
+	topLayout0->addWidget(hddSpaceTxt, row, 0);
+	topLayout0->addWidget(hddSpace, row++, 1);
+
+	topLayout0->addWidget(memUsageTxt, row, 0);
+	topLayout0->addWidget(memUsage, row++, 1);
+
 	row = 0;
 
-	newStatBare("FPS", fps, 2);
-	newStat("AverageTimeToRender", renderTime, 2);
-	newStat("MissedFrames", missedFrames, 2);
-	newStat("SkippedFrames", skippedFrames, 2);
-
 	/* --------------------------------------------- */
-	QPushButton *closeButton = nullptr;
-	if(closeable)
-		closeButton = new QPushButton(QTStr("Close"));
-	QPushButton *resetButton = new QPushButton(QTStr("Reset"));
-	QHBoxLayout *buttonLayout = new QHBoxLayout;
-	buttonLayout->addStretch();
-	buttonLayout->addWidget(resetButton);
-	if(closeable)
-		buttonLayout->addWidget(closeButton);
+
+	fpsTxt = new QLabel(this);
+	statsEntry("Basic.Stats.FPS", true, "vFPSStats",
+			nullptr, fpsTxt);
+
+	fps = new QLabel(this);
+	statsEntry("Basic.Stats.FPS", true, nullptr, nullptr,
+			fps, fpsTxt);
+
+	renderTimeTxt = new QLabel(this);
+	statsEntry("Basic.Stats.AverageTimeToRender", true, "vRenderTimeStats",
+			nullptr, renderTimeTxt);
+
+	renderTime = new QLabel(this);
+	statsEntry("Basic.Stats.AverageTimeToRender", true, nullptr, nullptr,
+			renderTime, renderTimeTxt);
+
+	missedFramesTxt = new QLabel(this);
+	statsEntry("Basic.Stats.MissedFrames", true, "vMissedFramesStats",
+			nullptr, missedFramesTxt);
+
+	missedFrames = new QLabel(this);
+	statsEntry("Basic.Stats.MissedFrames", true, nullptr, nullptr,
+			missedFrames, missedFramesTxt);
+
+	skippedFramesTxt = new QLabel(this);
+	statsEntry("Basic.Stats.SkippedFrames", true, "vSkippedFramesStats",
+			nullptr, skippedFramesTxt);
+
+	skippedFrames = new QLabel(this);
+	statsEntry("Basic.Stats.SkippedFrames", true, nullptr, nullptr,
+			skippedFrames, skippedFramesTxt);
+
+	topLayout1->addWidget(fpsTxt, row, 0);
+	topLayout1->addWidget(fps, row++, 1);
+
+	topLayout1->addWidget(renderTimeTxt, row, 0);
+	topLayout1->addWidget(renderTime, row++, 1);
+
+	topLayout1->addWidget(missedFramesTxt, row, 0);
+	topLayout1->addWidget(missedFrames, row++, 1);
+
+	topLayout1->addWidget(skippedFramesTxt, row, 0);
+	topLayout1->addWidget(skippedFrames, row++, 1);
 
 	/* --------------------------------------------- */
 
 	int col = 0;
-	auto addOutputCol = [&] (const char *loc)
-	{
-		QLabel *label = new QLabel(QTStr(loc), this);
-		label->setStyleSheet("font-weight: bold");
-		outputLayout->addWidget(label, 0, col++);
-	};
-
-	addOutputCol("Basic.Settings.Output");
-	addOutputCol("Basic.Stats.Status");
-	addOutputCol("Basic.Stats.DroppedFrames");
-	addOutputCol("Basic.Stats.MegabytesSent");
-	addOutputCol("Basic.Stats.Bitrate");
 
 	/* --------------------------------------------- */
 
@@ -107,6 +135,52 @@ OBSBasicStats::OBSBasicStats(QWidget *parent, bool closeable)
 	AddOutputLabels(QTStr("Basic.Stats.Output.Recording"));
 
 	/* --------------------------------------------- */
+
+	nameTxt = new QLabel(this);
+	statsEntry("Basic.Stats.Output", true, "vNameStats", "Header",
+			nameTxt);
+	statsEntry(nullptr, false, nullptr, nullptr, outputLabels[0].name,
+			nameTxt);
+	statsEntry(nullptr, false, nullptr, nullptr, outputLabels[1].name,
+			nameTxt);
+
+	statusTxt = new QLabel(this);
+	statsEntry("Basic.Stats.Status", true, "vStatusStats", "Header",
+			statusTxt);
+	statsEntry(nullptr, false, nullptr, nullptr, outputLabels[0].status,
+			statusTxt);
+	statsEntry(nullptr, false, nullptr, nullptr, outputLabels[1].status,
+			statusTxt);
+
+	droppedFramesTxt = new QLabel(this);
+	statsEntry("Basic.Stats.DroppedFrames", true, "vDroppedFramesStats",
+			"Header", droppedFramesTxt);
+	statsEntry(nullptr, false, nullptr, nullptr,
+			outputLabels[0].droppedFrames, droppedFramesTxt);
+	statsEntry(nullptr, false, nullptr, nullptr,
+			outputLabels[1].droppedFrames, droppedFramesTxt);
+
+	megabytesSentTxt = new QLabel(this);
+	statsEntry("Basic.Stats.MegabytesSent", true, "vMegabytesSentStats",
+			"Header", megabytesSentTxt);
+	statsEntry(nullptr, false, nullptr, nullptr,
+			outputLabels[0].megabytesSent, megabytesSentTxt);
+	statsEntry(nullptr, false, nullptr, nullptr,
+			outputLabels[1].megabytesSent, megabytesSentTxt);
+
+	bitrateTxt = new QLabel(this);
+	statsEntry("Basic.Stats.Bitrate", true, "vBitrateStats", "Header",
+			bitrateTxt);
+	statsEntry(nullptr, false, nullptr, nullptr, outputLabels[0].bitrate,
+			bitrateTxt);
+	statsEntry(nullptr, false, nullptr, nullptr, outputLabels[1].bitrate,
+			bitrateTxt);
+
+	outputLayout->addWidget(nameTxt, 0, col++);
+	outputLayout->addWidget(statusTxt, 0, col++);
+	outputLayout->addWidget(droppedFramesTxt, 0, col++);
+	outputLayout->addWidget(megabytesSentTxt, 0, col++);
+	outputLayout->addWidget(bitrateTxt, 0, col++);
 
 	QVBoxLayout *outputContainerLayout = new QVBoxLayout();
 	outputContainerLayout->addLayout(outputLayout);
@@ -118,8 +192,132 @@ OBSBasicStats::OBSBasicStats(QWidget *parent, bool closeable)
 	QScrollArea *scrollArea = new QScrollArea(this);
 	scrollArea->setWidget(widget);
 	scrollArea->setWidgetResizable(true);
+	scrollArea->setMinimumSize(1, 1);
 
 	/* --------------------------------------------- */
+
+	/* Menu to toggle visibility of stats items */
+
+	QAction *vCPU = new QAction(QTStr("Basic.Stats.CPUUsage"), this);
+	QAction	*vHDD = new QAction(QTStr("Basic.Stats.HDDSpaceAvailable"),
+			this);
+	QAction *vMemory = new QAction(QTStr("Basic.Stats.MemoryUsage"), this);
+	QAction *vFPS = new QAction(QTStr("Basic.Stats.FPS"), this);
+	QAction *vRenderTime = new QAction(QTStr(
+			"Basic.Stats.AverageTimeToRender"), this);
+	QAction *vMissedFrames = new QAction(QTStr("Basic.Stats.MissedFrames"),
+			this);
+	QAction *vSkippedFrames = new QAction(QTStr(
+			"Basic.Stats.SkippedFrames"), this);
+
+	vCPU->setCheckable(true);
+	vHDD->setCheckable(true);
+	vMemory->setCheckable(true);
+	vFPS->setCheckable(true);
+	vRenderTime->setCheckable(true);
+	vMissedFrames->setCheckable(true);
+	vSkippedFrames->setCheckable(true);
+
+	vCPU->setChecked(!cpuUsageTxt->isHidden());
+	vHDD->setChecked(!hddSpaceTxt->isHidden());
+	vMemory->setChecked(!memUsageTxt->isHidden());
+	vFPS->setChecked(!fpsTxt->isHidden());
+	vRenderTime->setChecked(!renderTimeTxt->isHidden());
+	vMissedFrames->setChecked(!missedFramesTxt->isHidden());
+	vSkippedFrames->setChecked(!skippedFramesTxt->isHidden());
+
+	connect(vCPU, &QAction::changed, this, &OBSBasicStats::toggleCPU);
+	connect(vHDD, &QAction::changed, this, &OBSBasicStats::toggleHDD);
+	connect(vMemory, &QAction::changed, this, &OBSBasicStats::toggleMemory);
+	connect(vFPS, &QAction::changed, this, &OBSBasicStats::toggleFPS);
+	connect(vRenderTime, &QAction::changed, this,
+			&OBSBasicStats::toggleRenderTime);
+	connect(vMissedFrames, &QAction::changed, this,
+			&OBSBasicStats::toggleMissedFrames);
+	connect(vSkippedFrames, &QAction::changed, this,
+			&OBSBasicStats::toggleSkippedFrames);
+
+	/* Additional menu entries */
+
+	QAction *vName = new QAction(QTStr("Basic.Stats.Output"), this);
+	QAction	*vStatus = new QAction(QTStr("Basic.Stats.Status"), this);
+	QAction *vDroppedFrames = new QAction(QTStr(
+			"Basic.Stats.DroppedFrames"), this);
+	QAction *vMegabytesSent = new QAction(QTStr(
+			"Basic.Stats.MegabytesSent"), this);
+	QAction *vBitrate = new QAction(QTStr("Basic.Stats.Bitrate"), this);
+
+	vName->setCheckable(true);
+	vStatus->setCheckable(true);
+	vDroppedFrames->setCheckable(true);
+	vMegabytesSent->setCheckable(true);
+	vBitrate->setCheckable(true);
+
+	vName->setChecked(!nameTxt->isHidden());
+	vStatus->setChecked(!statusTxt->isHidden());
+	vDroppedFrames->setChecked(!droppedFramesTxt->isHidden());
+	vMegabytesSent->setChecked(!megabytesSentTxt->isHidden());
+	vBitrate->setChecked(!bitrateTxt->isHidden());
+
+	connect(vName, &QAction::changed, this, &OBSBasicStats::toggleName);
+	connect(vStatus, &QAction::changed, this, &OBSBasicStats::toggleStatus);
+	connect(vDroppedFrames, &QAction::changed, this,
+			&OBSBasicStats::toggleDroppedFrames);
+	connect(vMegabytesSent, &QAction::changed, this,
+			&OBSBasicStats::toggleMegabytesSent);
+	connect(vBitrate, &QAction::changed, this,
+			&OBSBasicStats::toggleBitrate);
+
+	QPushButton *resetButton = new MenuButton();
+	resetButton->setText(QTStr("Reset"));
+
+	QMenu *popup = new QMenu(resetButton);
+
+	popup->addAction(vCPU);
+	popup->addAction(vHDD);
+	popup->addAction(vMemory);
+	popup->addSeparator();
+	popup->addAction(vFPS);
+	popup->addAction(vRenderTime);
+	popup->addAction(vMissedFrames);
+	popup->addAction(vSkippedFrames);
+	popup->addSeparator();
+	popup->addAction(vName);
+	popup->addAction(vStatus);
+	popup->addAction(vDroppedFrames);
+	popup->addAction(vMegabytesSent);
+	popup->addAction(vBitrate);
+
+	resetButton->setMenu(popup);
+
+	/* --------------------------------------------- */
+
+	QPushButton *closeButton = nullptr;
+
+	if (closeable)
+		closeButton = new QPushButton(QTStr("Close"));
+
+	QHBoxLayout *buttonLayout = new QHBoxLayout;
+	buttonLayout->addStretch();
+	buttonLayout->addWidget(resetButton);
+
+	if (closeable)
+		connect(closeButton, &QPushButton::clicked,
+				[this] () {close();});
+	connect(resetButton, &QAbstractButton::clicked, [this]() {Reset(); });
+
+	/* --------------------------------------------- */
+
+	QVBoxLayout *topLeftLayout = new QVBoxLayout();
+	QVBoxLayout *topRightLayout = new QVBoxLayout();
+
+	topLeftLayout->addLayout(topLayout0);
+	topLeftLayout->addStretch();
+	topRightLayout->addLayout(topLayout1);
+	topRightLayout->addStretch();
+
+	topLayout->addLayout(topLeftLayout);
+	topLayout->addLayout(topRightLayout);
 
 	mainLayout->addLayout(topLayout);
 	mainLayout->addWidget(scrollArea);
@@ -127,10 +325,6 @@ OBSBasicStats::OBSBasicStats(QWidget *parent, bool closeable)
 	setLayout(mainLayout);
 
 	/* --------------------------------------------- */
-	if(closeable)
-		connect(closeButton, &QPushButton::clicked,
-				[this] () {close();});
-	connect(resetButton, &QPushButton::clicked, [this] () {Reset();});
 
 	delete shortcutFilter;
 	shortcutFilter = CreateShortcutFilter();
@@ -172,6 +366,111 @@ OBSBasicStats::OBSBasicStats(QWidget *parent, bool closeable)
 	}
 }
 
+void statsEntry(const char *LabelTxt, bool tip, const char *saveVar,
+		const char *property, QLabel *pLabel, QLabel *pVisibility)
+{
+	if (pLabel) {
+		if (LabelTxt)
+			pLabel->setText(QTStr(LabelTxt));
+
+		if (tip) {
+			std::string str = LabelTxt + std::string(".ToolTip");
+			pLabel->setToolTip(QTStr(str.c_str()));
+		}
+
+		if (saveVar)
+			pLabel->setVisible(!config_get_bool(GetGlobalConfig(),
+					"BasicWindow", saveVar));
+		else if (pVisibility)
+			pLabel->setVisible(!pVisibility->isHidden());
+
+		if (property)
+			pLabel->setProperty("statsLabel", property);
+	}
+}
+
+void OBSBasicStats::saveToggle(const char *saveVar, QLabel *pVis,
+		QLabel *label0, QLabel *label1)
+{
+	bool visible = pVis->isHidden();
+	pVis->setVisible(visible);
+
+	if (label0)
+		label0->setVisible(visible);
+
+	if (label1)
+		label1->setVisible(visible);
+
+	config_set_bool(GetGlobalConfig(), "BasicWindow", saveVar, !visible);
+}
+
+void OBSBasicStats::toggleCPU()
+{
+	saveToggle("vCPUStats", cpuUsageTxt, cpuUsage);
+}
+
+void OBSBasicStats::toggleHDD()
+{
+	saveToggle("vHDDStats", hddSpaceTxt, hddSpace);
+}
+
+void OBSBasicStats::toggleMemory()
+{
+	saveToggle("vMemoryStats", memUsageTxt, memUsage);
+}
+
+void OBSBasicStats::toggleFPS()
+{
+	saveToggle("vFPSStats", fpsTxt, fps);
+}
+
+void OBSBasicStats::toggleRenderTime()
+{
+	saveToggle("vRenderTimeStats", renderTimeTxt, renderTime);
+}
+
+void OBSBasicStats::toggleMissedFrames()
+{
+	saveToggle("vMissedFramesStats", missedFramesTxt, missedFrames);
+}
+
+void OBSBasicStats::toggleSkippedFrames()
+{
+	saveToggle("vSkippedFramesStats", skippedFramesTxt, skippedFrames);
+}
+
+void OBSBasicStats::toggleName()
+{
+	saveToggle("vNameStats", nameTxt, outputLabels[0].name,
+			outputLabels[1].name);
+}
+
+void OBSBasicStats::toggleStatus()
+{
+	saveToggle("vStatusStats", statusTxt, outputLabels[0].status,
+			outputLabels[1].status);
+}
+
+void OBSBasicStats::toggleDroppedFrames()
+{
+	saveToggle("vDroppedFramesStats", droppedFramesTxt,
+			outputLabels[0].droppedFrames,
+			outputLabels[1].droppedFrames);
+}
+
+void OBSBasicStats::toggleMegabytesSent()
+{
+	saveToggle("vMegabytesSentStats", megabytesSentTxt,
+			outputLabels[0].megabytesSent,
+			outputLabels[1].megabytesSent);
+}
+
+void OBSBasicStats::toggleBitrate()
+{
+	saveToggle("vBitrateStats", bitrateTxt, outputLabels[0].bitrate,
+			outputLabels[1].bitrate);
+}
+
 void OBSBasicStats::closeEvent(QCloseEvent *event)
 {
 	OBSBasic *main = reinterpret_cast<OBSBasic*>(App()->GetMainWindow());
@@ -200,12 +499,15 @@ void OBSBasicStats::AddOutputLabels(QString name)
 	ol.megabytesSent = new QLabel(this);
 	ol.bitrate = new QLabel(this);
 
-	int newPointSize = ol.status->font().pointSize();
-	newPointSize *= 13;
-	newPointSize /= 10;
-	QString qss =
-		QString("font-size: %1pt").arg(QString::number(newPointSize));
-	ol.status->setStyleSheet(qss);
+	ol.name->setToolTip(QTStr("Basic.Stats.Output.ToolTip"));
+	ol.status->setToolTip(QTStr("Basic.Stats.Status.ToolTip"));
+	ol.droppedFrames->setToolTip(QTStr(
+			"Basic.Stats.DroppedFrames.ToolTip"));
+	ol.megabytesSent->setToolTip(QTStr(
+			"Basic.Stats.MegabytesSent.ToolTip"));
+	ol.bitrate->setToolTip(QTStr("Basic.Stats.Bitrate.ToolTip"));
+
+	ol.status->setProperty("statsLabel", "Status");
 
 	int col = 0;
 	int row = outputLabels.size() + 1;

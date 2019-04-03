@@ -1052,6 +1052,14 @@ QLabel#errorLabel {
 	font-weight: bold;
 }
 
+QLabel[statsLabel="Header"] {
+    font-weight: bold;
+}
+
+QLabel[statsLabel="Status"] {
+    font-size: 10pt;
+}
+
 /****************************/
 /*     --- Splitter ---     */
 /****************************/
@@ -1174,6 +1182,7 @@ QSlider::handle:hover {
 QSlider::handle:disabled {
 	background-color: rgb(122, 121, 122);
 }
+
 /**********************/
 /* --- Table View --- */
 /**********************/
@@ -1236,6 +1245,7 @@ QToolTip {
 	border: 1px solid rgb(118, 121, 124); /* Light Gray */
 	background-color: rgb(49, 54, 59); /* Blue-gray */
 	color: rgb(240, 98, 146); /* Pink (Secondary) */
+	font-weight: normal; /* reset from Stats header styling */
 }
 
 /* About dialog */
