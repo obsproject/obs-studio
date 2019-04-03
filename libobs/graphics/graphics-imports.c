@@ -173,6 +173,9 @@ bool load_graphics_imports(struct gs_exports *exports, void *module,
 
 	GRAPHICS_IMPORT_OPTIONAL(device_nv12_available);
 
+	GRAPHICS_IMPORT(device_debug_marker_begin);
+	GRAPHICS_IMPORT(device_debug_marker_end);
+
 	/* OSX/Cocoa specific functions */
 #ifdef __APPLE__
 	GRAPHICS_IMPORT_OPTIONAL(device_texture_create_from_iosurface);

@@ -761,6 +761,34 @@ EXPORT enum gs_index_type gs_indexbuffer_get_type(
 
 EXPORT bool     gs_nv12_available(void);
 
+#define GS_USE_DEBUG_MARKERS 0
+#if GS_USE_DEBUG_MARKERS
+static const float GS_DEBUG_COLOR_DEFAULT[] = { 0.5f, 0.5f, 0.5f, 1.0f };
+static const float GS_DEBUG_COLOR_RENDER_VIDEO[] = { 0.0f, 0.5f, 0.0f, 1.0f };
+static const float GS_DEBUG_COLOR_MAIN_TEXTURE[] = { 0.0f, 0.25f, 0.0f, 1.0f };
+static const float GS_DEBUG_COLOR_DISPLAY[] = { 0.0f, 0.5f, 0.5f, 1.0f };
+static const float GS_DEBUG_COLOR_SOURCE[] = { 0.0f, 0.5f, 5.0f, 1.0f };
+static const float GS_DEBUG_COLOR_ITEM[] = { 0.5f, 0.0f, 0.0f, 1.0f };
+static const float GS_DEBUG_COLOR_ITEM_TEXTURE[] = { 0.25f, 0.0f, 0.0f, 1.0f };
+static const float GS_DEBUG_COLOR_CONVERT_FORMAT[] = { 0.5f, 0.5f, 0.0f, 1.0f };
+#define GS_DEBUG_MARKER_BEGIN(color, markername) \
+		gs_debug_marker_begin(color, markername)
+#define GS_DEBUG_MARKER_BEGIN_FORMAT(color, format, ...) \
+		gs_debug_marker_begin_format(color, format, \
+		__VA_ARGS__)
+#define GS_DEBUG_MARKER_END() gs_debug_marker_end()
+#else
+#define GS_DEBUG_MARKER_BEGIN(color, markername) ((void)0)
+#define GS_DEBUG_MARKER_BEGIN_FORMAT(color, format, ...) ((void)0)
+#define GS_DEBUG_MARKER_END() ((void)0)
+#endif
+
+EXPORT void     gs_debug_marker_begin(const float color[4],
+		const char *markername);
+EXPORT void     gs_debug_marker_begin_format(const float color[4],
+		const char *format, ...);
+EXPORT void     gs_debug_marker_end(void);
+
 #ifdef __APPLE__
 
 /** platform specific function for creating (GL_TEXTURE_RECTANGLE) textures

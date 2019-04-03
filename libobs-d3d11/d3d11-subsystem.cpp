@@ -21,6 +21,7 @@
 #include <util/dstr.h>
 #include <util/util.hpp>
 #include <graphics/matrix3.h>
+#include <d3d9.h>
 #include "d3d11-subsystem.hpp"
 
 struct UnsupportedHWError : HRError {
@@ -2215,6 +2216,24 @@ extern "C" EXPORT bool device_shared_texture_available(void)
 extern "C" EXPORT bool device_nv12_available(gs_device_t *device)
 {
 	return device->nv12Supported;
+}
+
+extern "C" EXPORT void device_debug_marker_begin(gs_device_t *,
+		const char *markername, const float color[4])
+{
+	D3DCOLOR bgra = D3DCOLOR_ARGB((DWORD)(255.0f * color[3]),
+			(DWORD)(255.0f * color[0]), (DWORD)(255.0f * color[1]),
+			(DWORD)(255.0f * color[2]));
+
+	wchar_t wide[64];
+	os_utf8_to_wcs(markername, 0, wide, _countof(wide));
+
+	D3DPERF_BeginEvent(bgra, wide);
+}
+
+extern "C" EXPORT void device_debug_marker_end(gs_device_t *)
+{
+	D3DPERF_EndEvent();
 }
 
 extern "C" EXPORT gs_texture_t *device_texture_create_gdi(gs_device_t *device,

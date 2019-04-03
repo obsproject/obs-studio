@@ -234,6 +234,10 @@ struct gs_exports {
 
 	bool (*device_nv12_available)(gs_device_t *device);
 
+	void (*device_debug_marker_begin)(gs_device_t *device,
+			const char *markername, const float color[4]);
+	void (*device_debug_marker_end)(gs_device_t *device);
+
 #ifdef __APPLE__
 	/* OSX/Cocoa specific functions */
 	gs_texture_t *(*device_texture_create_from_iosurface)(gs_device_t *dev,
