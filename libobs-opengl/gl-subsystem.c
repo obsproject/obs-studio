@@ -1341,6 +1341,22 @@ void device_projection_pop(gs_device_t *device)
 	da_pop_back(device->proj_stack);
 }
 
+void device_debug_marker_begin(gs_device_t *device,
+		const char *markername, const float color[4])
+{
+	UNUSED_PARAMETER(device);
+	UNUSED_PARAMETER(color);
+
+	glPushDebugGroupKHR(GL_DEBUG_SOURCE_APPLICATION, 0, -1, markername);
+}
+
+void device_debug_marker_end(gs_device_t *device)
+{
+	UNUSED_PARAMETER(device);
+
+	glPopDebugGroupKHR();
+}
+
 void gs_swapchain_destroy(gs_swapchain_t *swapchain)
 {
 	if (!swapchain)

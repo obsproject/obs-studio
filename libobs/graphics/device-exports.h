@@ -142,6 +142,9 @@ EXPORT void device_frustum(gs_device_t *device, float left, float right,
 		float top, float bottom, float znear, float zfar);
 EXPORT void device_projection_push(gs_device_t *device);
 EXPORT void device_projection_pop(gs_device_t *device);
+EXPORT void device_debug_marker_begin(gs_device_t *device,
+		const char *markername, const float color[4]);
+EXPORT void device_debug_marker_end(gs_device_t *device);
 
 #ifdef __cplusplus
 }
