@@ -27,4 +27,6 @@ public:
 
 	int GetWidth();
 	int GetHeight();
+
+	void GetFrameRate(BMDTimeValue *frameDuration, BMDTimeScale *timeScale);
 };
