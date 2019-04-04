@@ -67,6 +67,11 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 		return (void*)main->winId();
 	}
 
+	void *obs_frontend_get_system_tray(void) override
+	{
+		return (void*)main->trayIcon.data();
+	}
+
 	void obs_frontend_get_scenes(
 			struct obs_frontend_source_list *sources) override
 	{

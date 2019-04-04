@@ -82,6 +82,7 @@ static inline void obs_frontend_source_list_free(
 
 EXPORT void *obs_frontend_get_main_window(void);
 EXPORT void *obs_frontend_get_main_window_handle(void);
+EXPORT void *obs_frontend_get_system_tray(void);
 
 EXPORT char **obs_frontend_get_scene_names(void);
 EXPORT void obs_frontend_get_scenes(struct obs_frontend_source_list *sources);
