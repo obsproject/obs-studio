@@ -11,7 +11,8 @@
 class AudioRepacker;
 class DecklinkBase;
 
-class DeckLinkDeviceInstance : public IDeckLinkInputCallback {
+class DeckLinkDeviceInstance : public IDeckLinkVideoOutputCallback,
+			       public IDeckLinkInputCallback {
 protected:
 	struct obs_source_frame2 currentFrame;
 	struct obs_source_audio currentPacket;
@@ -36,6 +37,10 @@ protected:
 	speaker_layout channelFormat = SPEAKERS_STEREO;
 	bool swap;
 	bool allow10Bit;
+	BMDTimeValue outputFrameDuration = 0;
+	BMDTimeScale outputTimeScale = 0;
+	int64_t outputInitialScheduleOffset = 1000000000;
+	int64_t outputDriftOffset = 0;
 
 	OBSVideoFrame *convertFrame = nullptr;
 	ComPtr<IDeckLinkMutableVideoFrame> decklinkOutputFrame;
@@ -51,6 +56,11 @@ protected:
 public:
 	DeckLinkDeviceInstance(DecklinkBase *decklink, DeckLinkDevice *device);
 	virtual ~DeckLinkDeviceInstance();
+
+	virtual HRESULT STDMETHODCALLTYPE
+	ScheduledFrameCompleted(IDeckLinkVideoFrame *completedFrame,
+				BMDOutputFrameCompletionResult result);
+	virtual HRESULT STDMETHODCALLTYPE ScheduledPlaybackHasStopped();
 
 	inline DeckLinkDevice *GetDevice() const { return device; }
 	inline long long GetActiveModeId() const
