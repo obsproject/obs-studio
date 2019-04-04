@@ -488,11 +488,6 @@ static void render_item_texture(struct obs_scene_item *item)
 				effect = obs->video.lanczos_effect;
 			} else if (type == OBS_SCALE_AREA) {
 				effect = obs->video.area_effect;
-
-				gs_eparam_t *image = gs_effect_get_param_by_name(
-					effect, "image");
-				gs_effect_set_next_sampler(image,
-					obs->video.point_sampler);
 			}
 
 			scale_param = gs_effect_get_param_by_name(effect,
