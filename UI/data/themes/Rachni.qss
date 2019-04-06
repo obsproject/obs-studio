@@ -231,9 +231,9 @@ QGroupBox {
 QGroupBox::title {
 	color: rgb(240, 98, 146); /* Pink (Secondary) */
 	left: 20px;
+	top: -7px;
 	padding-left: 5px;
 	padding-right: 4px;
-	padding-top: -14px;
 }
 
 /*****************/
