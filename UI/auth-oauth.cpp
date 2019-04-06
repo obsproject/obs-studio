@@ -301,7 +301,7 @@ void OAuthStreamKey::OnStreamConfig()
 
 	if (bwtest && strcmp(this->service(), "Twitch") == 0)
 		obs_data_set_string(settings, "key",
-				key_.append("?bandwidthtest=true").c_str());
+				(key_ + "?bandwidthtest=true").c_str());
 	else
 		obs_data_set_string(settings, "key", key_.c_str());
 
