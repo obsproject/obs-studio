@@ -9,6 +9,7 @@ struct obs_frontend_callbacks {
 	virtual ~obs_frontend_callbacks() {}
 	virtual void *obs_frontend_get_main_window(void)=0;
 	virtual void *obs_frontend_get_main_window_handle(void)=0;
+	virtual void *obs_frontend_get_system_tray(void)=0;
 
 	virtual void obs_frontend_get_scenes(
 			struct obs_frontend_source_list *sources)=0;

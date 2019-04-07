@@ -71,6 +71,13 @@ void *obs_frontend_get_main_window_handle(void)
 		: nullptr;
 }
 
+void *obs_frontend_get_system_tray(void)
+{
+	return !!callbacks_valid()
+		? c->obs_frontend_get_system_tray()
+		: nullptr;
+}
+
 char **obs_frontend_get_scene_names(void)
 {
 	if (!callbacks_valid())
