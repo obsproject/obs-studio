@@ -146,7 +146,10 @@ OBSBasicStats::OBSBasicStats(QWidget *parent, bool closeable)
 
 	QObject::connect(&timer, &QTimer::timeout, this, &OBSBasicStats::Update);
 	timer.setInterval(TIMER_INTERVAL);
-	timer.start();
+
+	if (isVisible())
+		timer.start();
+
 	Update();
 
 	OBSBasic *main = reinterpret_cast<OBSBasic*>(App()->GetMainWindow());
@@ -504,4 +507,14 @@ void OBSBasicStats::OutputLabels::Reset(obs_output_t *output)
 
 	first_total   = obs_output_get_total_frames(output);
 	first_dropped = obs_output_get_frames_dropped(output);
+}
+
+void OBSBasicStats::showEvent(QShowEvent *)
+{
+	timer.start(TIMER_INTERVAL);
+}
+
+void OBSBasicStats::hideEvent(QHideEvent *)
+{
+	timer.stop();
 }

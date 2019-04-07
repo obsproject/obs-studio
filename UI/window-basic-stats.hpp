@@ -61,4 +61,8 @@ public:
 	static void InitializeValues();
 private:
 	QPointer<QObject> shortcutFilter;
+
+protected:
+	virtual void showEvent(QShowEvent *event) override;
+	virtual void hideEvent(QHideEvent *event) override;
 };
