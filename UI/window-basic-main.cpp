@@ -258,6 +258,8 @@ OBSBasic::OBSBasic(QWidget *parent)
 	ui->scenes->setAttribute(Qt::WA_MacShowFocusRect, false);
 	ui->sources->setAttribute(Qt::WA_MacShowFocusRect, false);
 
+	ui->scenes->setItemDelegate(new SceneRenameDelegate(ui->scenes));
+
 	auto displayResize = [this]() {
 		struct obs_video_info ovi;
 
@@ -7177,4 +7179,18 @@ bool OBSBasic::ReplayBufferActive()
 	if (!outputHandler)
 		return false;
 	return outputHandler->ReplayBufferActive();
+}
+
+SceneRenameDelegate::SceneRenameDelegate(QObject *parent)
+	: QStyledItemDelegate(parent)
+{
+}
+
+void SceneRenameDelegate::setEditorData(QWidget *editor,
+		const QModelIndex &index) const
+{
+	QStyledItemDelegate::setEditorData(editor, index);
+	QLineEdit *lineEdit = qobject_cast<QLineEdit*>(editor);
+	if (lineEdit)
+		lineEdit->selectAll();
 }

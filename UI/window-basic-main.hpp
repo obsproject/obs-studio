@@ -21,6 +21,7 @@
 #include <QAction>
 #include <QWidgetAction>
 #include <QSystemTrayIcon>
+#include <QStyledItemDelegate>
 #include <obs.hpp>
 #include <vector>
 #include <memory>
@@ -815,4 +816,13 @@ public:
 
 private:
 	std::unique_ptr<Ui::OBSBasic> ui;
+};
+
+class SceneRenameDelegate : public QStyledItemDelegate {
+	Q_OBJECT
+
+public:
+	SceneRenameDelegate(QObject *parent);
+	virtual void setEditorData(QWidget *editor, const QModelIndex &index)
+		const override;
 };
