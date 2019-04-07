@@ -55,7 +55,7 @@
 #include "remote-text.hpp"
 #include <fstream>
 #include <sstream>
-
+#include<locale>
 #ifdef _WIN32
 #include "win-update/win-update.hpp"
 #endif
@@ -2794,7 +2794,7 @@ void OBSBasic::VolControlContextMenu()
 
 	QAction hideAction(QTStr("Hide"), this);
 	QAction unhideAllAction(QTStr("UnhideAll"), this);
-	QAction mixerRenameAction(QTStr("Rename"), this);
+	QAction mixerRenameAction(QTStr("Rename(F2)"), this);
 
 	QAction copyFiltersAction(QTStr("Copy.Filters"), this);
 	QAction pasteFiltersAction(QTStr("Paste.Filters"), this);
@@ -3956,7 +3956,7 @@ void OBSBasic::on_scenes_customContextMenuRequested(const QPoint &pos)
 		popup.addSeparator();
 		popup.addAction(QTStr("Duplicate"),
 				this, SLOT(DuplicateSelectedScene()));
-		popup.addAction(QTStr("Rename"),
+		popup.addAction(QTStr("Rename(F2)"),
 				this, SLOT(EditSceneName()));
 		popup.addAction(QTStr("Remove"),
 				this, SLOT(RemoveSelectedScene()));
@@ -4376,7 +4376,7 @@ void OBSBasic::CreateSourcePopupMenu(int idx, bool preview)
 		colorSelect = new ColorSelect(colorMenu);
 		popup.addMenu(AddBackgroundColorMenu(colorMenu,
 				colorWidgetAction, colorSelect, sceneItem));
-		popup.addAction(QTStr("Rename"), this,
+		popup.addAction(QTStr("Rename(F2)"), this,
 				SLOT(EditSceneItemName()));
 		popup.addAction(QTStr("Remove"), this,
 				SLOT(on_actionRemoveSource_triggered()));
@@ -5613,7 +5613,19 @@ void OBSBasic::on_actionWebsite_triggered()
 	QUrl url2 = QUrl("https://obsproject.com/cs", QUrl::TolerantMode);
 	QUrl url3 = QUrl("https://obsproject.com/ja", QUrl::TolerantMode);
 	QUrl url4 = QUrl("https://obsproject.com/ko", QUrl::TolerantMode);
-	QDesktopServices::openUrl(url);
+	QUrl url5 = QUrl("https://obsproject.com/de", QUrl::TolerantMode);
+	if (string(setlocale(LC_ALL, "")) == "English_United States.1252")
+		QDesktopServices::openUrl(url);
+	else if (string(setlocale(LC_ALL, "")) == "Chinese (Simplified)_China.1252")
+		QDesktopServices::openUrl(url1);
+	else if (string(setlocale(LC_ALL, "")) == "Czech_Czechia.1252")
+		QDesktopServices::openUrl(url2);
+	else if (string(setlocale(LC_ALL, "")) == "Korean_korea.1252")
+		QDesktopServices::openUrl(url4);
+	else if (string(setlocale(LC_ALL, "")) == "Japanese_Japan.1252")
+		QDesktopServices::openUrl(url3);
+	else if (string(setlocale(LC_ALL, "")) == "German_Germany.1252")
+		QDesktopServices::openUrl(url3);
 }
 
 void OBSBasic::on_actionDiscord_triggered()
