@@ -3987,7 +3987,7 @@ void OBSBasic::on_scenes_customContextMenuRequested(const QPoint &pos)
 		popup.addSeparator();
 		popup.addAction(QTStr("Duplicate"),
 				this, SLOT(DuplicateSelectedScene()));
-		popup.addAction(QTStr("Rename"),
+		popup.addAction(QTStr("Rename(F2)"),
 				this, SLOT(EditSceneName()));
 		popup.addAction(QTStr("Remove"),
 				this, SLOT(RemoveSelectedScene()));
@@ -4407,7 +4407,7 @@ void OBSBasic::CreateSourcePopupMenu(int idx, bool preview)
 		colorSelect = new ColorSelect(colorMenu);
 		popup.addMenu(AddBackgroundColorMenu(colorMenu,
 				colorWidgetAction, colorSelect, sceneItem));
-		popup.addAction(QTStr("Rename"), this,
+		popup.addAction(QTStr("Rename(F2)"), this,
 				SLOT(EditSceneItemName()));
 		popup.addAction(QTStr("Remove"), this,
 				SLOT(on_actionRemoveSource_triggered()));
