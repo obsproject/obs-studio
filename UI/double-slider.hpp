@@ -1,8 +1,9 @@
 #pragma once
 
 #include <QSlider>
+#include "slider-ignorewheel.hpp"
 
-class DoubleSlider : public QSlider {
+class DoubleSlider : public SliderIgnoreScroll {
 	Q_OBJECT
 
 	double minVal, maxVal, minStep;
