@@ -1,3 +1,5 @@
+#pragma once
+
 #include <QCheckBox>
 #include <QPixmap>
 

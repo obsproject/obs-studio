@@ -1,3 +1,5 @@
+#pragma once
+
 #include <windows.h>
 #include <mmdeviceapi.h>
 #include <audioclient.h>
