@@ -387,7 +387,7 @@ static void get_duration(void *data, calldata_t *cd)
 {
 	struct ffmpeg_source *s = data;
 	int64_t dur = 0;
-	if (s->media.fmt)
+	if (s->media_valid && s->media.fmt)
 		dur = s->media.fmt->duration;
 
 	calldata_set_int(cd, "duration", dur * 1000);
@@ -398,7 +398,7 @@ static void get_nb_frames(void *data, calldata_t *cd)
 	struct ffmpeg_source *s = data;
 	int64_t frames = 0;
 
-	if (!s->media.fmt) {
+	if (!s->media_valid || !s->media.fmt) {
 		calldata_set_int(cd, "num_frames", frames);
 		return;
 	}
