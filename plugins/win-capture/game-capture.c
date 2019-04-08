@@ -1505,7 +1505,22 @@ static void copy_shmem_tex(struct game_capture *gc)
 			uint32_t best_pitch =
 				pitch < gc->pitch ? pitch : gc->pitch;
 
-			for (uint32_t y = 0; y < gc->cy; y++) {
+			uint32_t fixed_y = gc->cy;
+
+			// If the new pitch is higher from the old one we must
+			// perform some modifications to not cause a crash
+			// Check if the old values are valid
+			if (pitch > gc->pitch)
+			{
+				uint32_t tex_size = gc->shmem_data->tex2_offset - gc->shmem_data->tex1_offset;
+
+				if (gc->pitch > 0 && fixed_y > tex_size / gc->pitch)
+				{
+					fixed_y = tex_size / gc->pitch;
+				}
+			}
+
+			for (uint32_t y = 0; y < fixed_y; y++) {
 				uint8_t *line_in = input + gc->pitch * y;
 				uint8_t *line_out = data + pitch * y;
 				memcpy(line_out, line_in, best_pitch);
