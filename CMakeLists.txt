@@ -33,16 +33,6 @@ include(ObsHelpers)
 include(ObsCpack)
 include(GNUInstallDirs)
 
-if(WIN32)
-	string(REPLACE "-" ";" UI_VERSION_SPLIT ${OBS_VERSION})
-	list(GET UI_VERSION_SPLIT 0 UI_VERSION)
-	string(REPLACE "." ";" UI_VERSION_SEMANTIC ${UI_VERSION})
-	list(GET UI_VERSION_SEMANTIC 0 UI_VERSION_MAJOR)
-	list(GET UI_VERSION_SEMANTIC 1 UI_VERSION_MINOR)
-	list(GET UI_VERSION_SEMANTIC 2 UI_VERSION_PATCH)
-	configure_file(${CMAKE_CURRENT_SOURCE_DIR}/UI/obs.rc.in ${CMAKE_CURRENT_SOURCE_DIR}/UI/obs.rc)
-endif()
-
 # Must be a string in the format of "x.x.x-rcx"
 if(DEFINED RELEASE_CANDIDATE)
 	set(OBS_VERSION "${RELEASE_CANDIDATE}")
