@@ -1,4 +1,4 @@
-version: 23.0.2-sl.{build}
+version: 23.1.0-sl.{build}
 
 image:
 - Visual Studio 2017
@@ -61,6 +61,6 @@ deploy:
     set_public: true
     artifact: $(ReleaseArtifact)
     on:
-      branch: streamlabs-23.0.2
+      branch: streamlabs-23.1.0
 
 test: off
