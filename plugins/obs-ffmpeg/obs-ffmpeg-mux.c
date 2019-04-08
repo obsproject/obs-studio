@@ -740,11 +740,17 @@ static void *replay_buffer_mux_thread(void *data)
 
 	for (size_t i = 0; i < stream->mux_packets.num; i++) {
 		struct encoder_packet *pkt = &stream->mux_packets.array[i];
-		write_packet(stream, pkt);
+
+		if (!hasFailed) {
+			hasFailed = !write_packet(stream, pkt);
+		}
+
 		obs_encoder_packet_release(pkt);
 	}
 
-	info("Wrote replay buffer to '%s'", stream->path.array);
+	if (!hasFailed) {
+		info("Wrote replay buffer to '%s'", stream->path.array);
+	}
 	
 error:
 	os_process_pipe_destroy(stream->pipe);
