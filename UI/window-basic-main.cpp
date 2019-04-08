@@ -788,13 +788,18 @@ static void LogFilter(obs_source_t*, obs_source_t *filter, void *v_val)
 	blog(LOG_INFO, "%s- filter: '%s' (%s)", indent.c_str(), name, id);
 }
 
-static bool LogSceneItem(obs_scene_t*, obs_sceneitem_t *item, void*)
+static bool LogSceneItem(obs_scene_t*, obs_sceneitem_t *item, void *v_val)
 {
 	obs_source_t *source = obs_sceneitem_get_source(item);
 	const char *name = obs_source_get_name(source);
 	const char *id = obs_source_get_id(source);
+	int indent_count = (int)(intptr_t)v_val;
+	string indent;
 
-	blog(LOG_INFO, "    - source: '%s' (%s)", name, id);
+	for (int i = 0; i < indent_count; i++)
+		indent += "    ";
+
+	blog(LOG_INFO, "%s- source: '%s' (%s)", indent.c_str(), name, id);
 
 	obs_monitoring_type monitoring_type =
 		obs_source_get_monitoring_type(source);
@@ -805,10 +810,12 @@ static bool LogSceneItem(obs_scene_t*, obs_sceneitem_t *item, void*)
 			? "monitor only"
 			: "monitor and output";
 
-		blog(LOG_INFO, "        - monitoring: %s", type);
+		blog(LOG_INFO, "    %s- monitoring: %s", indent.c_str(), type);
 	}
-
-	obs_source_enum_filters(source, LogFilter, (void*)(intptr_t)2);
+	int child_indent = 1 + indent_count;
+	obs_source_enum_filters(source, LogFilter, (void*)(intptr_t)child_indent);
+	if (obs_sceneitem_is_group(item))
+		obs_sceneitem_group_enum_items(item, LogSceneItem, (void*)(intptr_t)child_indent);
 	return true;
 }
 
@@ -825,7 +832,7 @@ void OBSBasic::LogScenes()
 		const char *name = obs_source_get_name(source);
 
 		blog(LOG_INFO, "- scene '%s':", name);
-		obs_scene_enum_items(scene, LogSceneItem, nullptr);
+		obs_scene_enum_items(scene, LogSceneItem, (void*)(intptr_t)1);
 		obs_source_enum_filters(source, LogFilter, (void*)(intptr_t)1);
 	}
 
