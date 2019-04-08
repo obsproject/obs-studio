@@ -1218,6 +1218,213 @@ static bool ep_compile(struct effect_parser *ep);
 
 extern const char *gs_preprocessor_name(void);
 
+#if defined(_DEBUG) && defined(_DEBUG_SHADERS)
+static void debug_get_default_value(struct gs_effect_param *param,
+	char* buffer, unsigned long long buf_size)
+{
+	if (param->default_val.num == 0) {
+		snprintf(buffer, buf_size, "(null)");
+		return;
+	}
+
+	switch (param->type) {
+	case GS_SHADER_PARAM_STRING:
+		snprintf(buffer, buf_size, "'%.*s'",
+			param->default_val.num,
+			param->default_val.array);
+		break;
+	case GS_SHADER_PARAM_INT:
+		snprintf(buffer, buf_size, "%ld",
+			*(int*)(param->default_val.array + 0));
+		break;
+	case GS_SHADER_PARAM_INT2:
+		snprintf(buffer, buf_size, "%ld,%ld",
+			*(int*)(param->default_val.array + 0),
+			*(int*)(param->default_val.array + 4));
+		break;
+	case GS_SHADER_PARAM_INT3:
+		snprintf(buffer, buf_size, "%ld,%ld,%ld",
+			*(int*)(param->default_val.array + 0),
+			*(int*)(param->default_val.array + 4),
+			*(int*)(param->default_val.array + 8));
+		break;
+	case GS_SHADER_PARAM_INT4:
+		snprintf(buffer, buf_size, "%ld,%ld,%ld,%ld",
+			*(int*)(param->default_val.array + 0),
+			*(int*)(param->default_val.array + 4),
+			*(int*)(param->default_val.array + 8),
+			*(int*)(param->default_val.array + 12));
+		break;
+	case GS_SHADER_PARAM_FLOAT:
+		snprintf(buffer, buf_size, "%e",
+			*(float*)(param->default_val.array + 0));
+		break;
+	case GS_SHADER_PARAM_VEC2:
+		snprintf(buffer, buf_size, "%e,%e",
+			*(float*)(param->default_val.array + 0),
+			*(float*)(param->default_val.array + 4));
+		break;
+	case GS_SHADER_PARAM_VEC3:
+		snprintf(buffer, buf_size, "%e,%e,%e",
+			*(float*)(param->default_val.array + 0),
+			*(float*)(param->default_val.array + 4),
+			*(float*)(param->default_val.array + 8));
+		break;
+	case GS_SHADER_PARAM_VEC4:
+		snprintf(buffer, buf_size, "%e,%e,%e,%e",
+			*(float*)(param->default_val.array + 0),
+			*(float*)(param->default_val.array + 4),
+			*(float*)(param->default_val.array + 8),
+			*(float*)(param->default_val.array + 12));
+		break;
+	case GS_SHADER_PARAM_MATRIX4X4:
+		snprintf(buffer, buf_size,
+			"[[%e,%e,%e,%e],[%e,%e,%e,%e],"
+			"[%e,%e,%e,%e],[%e,%e,%e,%e]]",
+			*(float*)(param->default_val.array + 0),
+			*(float*)(param->default_val.array + 4),
+			*(float*)(param->default_val.array + 8),
+			*(float*)(param->default_val.array + 12),
+			*(float*)(param->default_val.array + 16),
+			*(float*)(param->default_val.array + 20),
+			*(float*)(param->default_val.array + 24),
+			*(float*)(param->default_val.array + 28),
+			*(float*)(param->default_val.array + 32),
+			*(float*)(param->default_val.array + 36),
+			*(float*)(param->default_val.array + 40),
+			*(float*)(param->default_val.array + 44),
+			*(float*)(param->default_val.array + 48),
+			*(float*)(param->default_val.array + 52),
+			*(float*)(param->default_val.array + 56),
+			*(float*)(param->default_val.array + 60));
+		break;
+	case GS_SHADER_PARAM_BOOL:
+		snprintf(buffer, buf_size, "%s",
+			(*param->default_val.array) != 0
+			? "true\0"
+			: "false\0");
+		break;
+	case GS_SHADER_PARAM_UNKNOWN:
+	case GS_SHADER_PARAM_TEXTURE:
+		snprintf(buffer, buf_size, "<unknown>");
+		break;
+	}
+}
+
+static void debug_param(struct gs_effect_param *param,
+	struct ep_param *param_in, unsigned long long idx, const char* offset)
+{
+	char _debug_type[4096];
+	switch (param->type) {
+	case GS_SHADER_PARAM_STRING:
+		snprintf(_debug_type, sizeof(_debug_type), "string");
+		break;
+	case GS_SHADER_PARAM_INT:
+		snprintf(_debug_type, sizeof(_debug_type), "int");
+		break;
+	case GS_SHADER_PARAM_INT2:
+		snprintf(_debug_type, sizeof(_debug_type), "int2");
+		break;
+	case GS_SHADER_PARAM_INT3:
+		snprintf(_debug_type, sizeof(_debug_type), "int3");
+		break;
+	case GS_SHADER_PARAM_INT4:
+		snprintf(_debug_type, sizeof(_debug_type), "int4");
+		break;
+	case GS_SHADER_PARAM_FLOAT:
+		snprintf(_debug_type, sizeof(_debug_type), "float");
+		break;
+	case GS_SHADER_PARAM_VEC2:
+		snprintf(_debug_type, sizeof(_debug_type), "float2");
+		break;
+	case GS_SHADER_PARAM_VEC3:
+		snprintf(_debug_type, sizeof(_debug_type), "float3");
+		break;
+	case GS_SHADER_PARAM_VEC4:
+		snprintf(_debug_type, sizeof(_debug_type), "float4");
+		break;
+	case GS_SHADER_PARAM_MATRIX4X4:
+		snprintf(_debug_type, sizeof(_debug_type), "float4x4");
+		break;
+	case GS_SHADER_PARAM_BOOL:
+		snprintf(_debug_type, sizeof(_debug_type), "bool");
+		break;
+	case GS_SHADER_PARAM_UNKNOWN:
+		snprintf(_debug_type, sizeof(_debug_type), "unknown");
+		break;
+	case GS_SHADER_PARAM_TEXTURE:
+		snprintf(_debug_type, sizeof(_debug_type), "texture");
+		break;
+	}
+
+	char _debug_buf[4096];
+	debug_get_default_value(param, _debug_buf, sizeof(_debug_buf));
+	if (param->annotations.num > 0)	{
+		blog(LOG_DEBUG, "%s[%4lld] %.*s '%s' with value %.*s and %lld annotations:",
+			offset,
+			idx,
+			sizeof(_debug_type), _debug_type,
+			param->name,
+			sizeof(_debug_buf), _debug_buf,
+			param->annotations.num);
+	} else {
+		blog(LOG_DEBUG, "%s[%4lld] %.*s '%s' with value %.*s.",
+			offset,
+			idx,
+			sizeof(_debug_type), _debug_type,
+			param->name,
+			sizeof(_debug_buf), _debug_buf);
+	}
+
+}
+
+static void debug_param_annotation(struct gs_effect_param *param,
+	struct ep_param *param_in, unsigned long long idx, const char* offset)
+{
+	char _debug_buf[4096];
+	debug_get_default_value(param, _debug_buf, sizeof(_debug_buf));
+	blog(LOG_DEBUG, "%s[%4lld] %s '%s' with value %.*s",
+		offset,
+		idx,
+		param_in->type,
+		param->name,
+		sizeof(_debug_buf), _debug_buf);
+}
+
+static void debug_print_string(const char* offset, const char* str)
+{
+	// Bypass 4096 limit in def_log_handler.
+	char const *begin = str;
+	unsigned long long line = 1;
+	for (char const *here = begin; here[0] != '\0'; here++) {
+		char const * str = begin;
+		unsigned long long len = here - begin;
+		bool is_line = false;
+
+		if (here[0] == '\r') {
+			is_line = true;
+			if (here[1] == '\n') {
+				here += 1;
+			}
+			begin = here + 1;
+		} else if (here[0] == '\n') {
+			is_line = true;
+			begin = here + 1;
+		}
+
+		if (is_line) {
+			blog(LOG_DEBUG, "\t\t\t\t[%4lld] %.*s", line,
+				len, str);
+			line++;
+		}
+	}
+	if (begin[0] != '\0') {
+		// Final line was not written.
+		blog(LOG_DEBUG, "\t\t\t\t[%4lld] %*s", line, strlen(begin), begin);
+	}
+}
+#endif
+
 bool ep_parse(struct effect_parser *ep, gs_effect_t *effect,
               const char *effect_string, const char *file)
 {
@@ -1267,9 +1474,20 @@ bool ep_parse(struct effect_parser *ep, gs_effect_t *effect,
 		}
 	}
 
+#if defined(_DEBUG) && defined(_DEBUG_SHADERS)
+	blog(LOG_DEBUG, "================================================================================");
+	blog(LOG_DEBUG, "Effect Parser reformatted shader '%s' to:", file);
+	debug_print_string("\t", ep->cfp.lex.reformatted);
+#endif
+
 	success = !error_data_has_errors(&ep->cfp.error_list);
 	if (success)
 		success = ep_compile(ep);
+
+
+#if defined(_DEBUG) && defined(_DEBUG_SHADERS)
+	blog(LOG_DEBUG, "================================================================================");
+#endif
 
 	return success;
 }
@@ -1608,6 +1826,10 @@ static void ep_compile_annotations(struct darray *ep_annotations,
 		da_move(param->default_val, param_in->default_val);
 
 		param->type = get_effect_param_type(param_in->type);
+
+#if defined(_DEBUG) && defined(_DEBUG_SHADERS)
+		debug_param(param, param_in, i, "\t\t");
+#endif
 	}
 }
 
@@ -1639,6 +1861,10 @@ static void ep_compile_param(struct effect_parser *ep, size_t idx)
 	else if (strcmp(param_in->name, "World") == 0)
 		ep->effect->world = param;
 
+#if defined(_DEBUG) && defined(_DEBUG_SHADERS)
+	debug_param(param, param_in, idx, "\t");
+#endif
+
 	ep_compile_param_annotations(param_in, param, ep);
 }
 
@@ -1662,6 +1888,10 @@ static bool ep_compile_pass_shaderparams(struct effect_parser *ep,
 				param_name->array);
 		param->sparam = gs_shader_get_param_by_name(shader,
 				param_name->array);
+
+#if defined(_DEBUG) && defined(_DEBUG_SHADERS)
+		debug_param(param->eparam, 0, i, "\t\t\t\t");
+#endif
 
 		if (!param->sparam) {
 			blog(LOG_ERROR, "Effect shader parameter not found");
@@ -1707,6 +1937,7 @@ static inline bool ep_compile_pass_shader(struct effect_parser *ep,
 		pass->vertshader = gs_vertexshader_create(shader_str.array,
 				location.array, NULL);
 
+
 		shader = pass->vertshader;
 		pass_params = &pass->vertshader_params.da;
 	} else if (type == GS_SHADER_PIXEL) {
@@ -1720,12 +1951,12 @@ static inline bool ep_compile_pass_shader(struct effect_parser *ep,
 		pass_params = &pass->pixelshader_params.da;
 	}
 
-#if 0
-	blog(LOG_DEBUG, "+++++++++++++++++++++++++++++++++++");
-	blog(LOG_DEBUG, "  %s", location.array);
-	blog(LOG_DEBUG, "-----------------------------------");
-	blog(LOG_DEBUG, "%s", shader_str.array);
-	blog(LOG_DEBUG, "+++++++++++++++++++++++++++++++++++");
+#if defined(_DEBUG) && defined(_DEBUG_SHADERS)
+	blog(LOG_DEBUG, "\t\t\t%s Shader:",
+		type == GS_SHADER_VERTEX ? "Vertex" : "Fragment");
+	blog(LOG_DEBUG, "\t\t\tCode:");
+	debug_print_string("\t\t\t\t\t", shader_str.array);
+	blog(LOG_DEBUG, "\t\t\tParameters:");
 #endif
 
 	if (shader)
@@ -1756,6 +1987,11 @@ static bool ep_compile_pass(struct effect_parser *ep,
 
 	pass->name = bstrdup(pass_in->name);
 	pass->section = EFFECT_PASS;
+
+#if defined(_DEBUG) && defined(_DEBUG_SHADERS)
+	blog(LOG_DEBUG, "\t\t[%4lld] Pass '%s':",
+		idx, pass->name);
+#endif
 
 	if (!ep_compile_pass_shader(ep, tech, pass, pass_in, idx,
 				GS_SHADER_VERTEX)) {
@@ -1788,6 +2024,11 @@ static inline bool ep_compile_technique(struct effect_parser *ep, size_t idx)
 
 	da_resize(tech->passes, tech_in->passes.num);
 
+#if defined(_DEBUG) && defined(_DEBUG_SHADERS)
+	blog(LOG_DEBUG, "\t[%4lld] Technique '%s' has %lld passes:",
+		idx, tech->name, tech->passes.num);
+#endif
+
 	for (i = 0; i < tech->passes.num; i++) {
 		if (!ep_compile_pass(ep, tech, tech_in, i))
 			success = false;
@@ -1806,8 +2047,17 @@ static bool ep_compile(struct effect_parser *ep)
 	da_resize(ep->effect->params, ep->params.num);
 	da_resize(ep->effect->techniques, ep->techniques.num);
 
+#if defined(_DEBUG) && defined(_DEBUG_SHADERS)
+	blog(LOG_DEBUG, "Shader has %lld parameters:", ep->params.num);
+#endif
+
 	for (i = 0; i < ep->params.num; i++)
 		ep_compile_param(ep, i);
+
+#if defined(_DEBUG) && defined(_DEBUG_SHADERS)
+	blog(LOG_DEBUG, "Shader has %lld techniques:", ep->techniques.num);
+#endif
+
 	for (i = 0; i < ep->techniques.num; i++) {
 		if (!ep_compile_technique(ep, i))
 			success = false;
