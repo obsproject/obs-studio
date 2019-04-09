@@ -673,6 +673,8 @@ private slots:
 	void on_actionFitToScreen_triggered();
 	void on_actionStretchToScreen_triggered();
 	void on_actionCenterToScreen_triggered();
+	void on_actionVerticalCenter_triggered();
+	void on_actionHorizontalCenter_triggered();
 
 	void on_scenes_currentItemChanged(QListWidgetItem *current,
 			QListWidgetItem *prev);

@@ -185,6 +185,8 @@
      <addaction name="actionFitToScreen"/>
      <addaction name="actionStretchToScreen"/>
      <addaction name="actionCenterToScreen"/>
+     <addaction name="actionVerticalCenter"/>
+     <addaction name="actionHorizontalCenter"/>
     </widget>
     <widget class="QMenu" name="orderMenu">
      <property name="title">
@@ -1359,6 +1361,16 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+D</string>
+   </property>
+  </action>
+  <action name="actionVerticalCenter">
+   <property name="text">
+    <string>Basic.MainMenu.Edit.Transform.VerticalCenter</string>
+   </property>
+  </action>
+  <action name="actionHorizontalCenter">
+   <property name="text">
+    <string>Basic.MainMenu.Edit.Transform.HorizontalCenter</string>
    </property>
   </action>
   <action name="actionFlipHorizontal">
