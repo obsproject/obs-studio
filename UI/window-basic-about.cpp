@@ -1,7 +1,6 @@
 #include "window-basic-about.hpp"
 #include "window-basic-main.hpp"
 #include "qt-wrappers.hpp"
-#include <string>
 #include <util/util.hpp>
 #include <util/platform.h>
 #include <platform.hpp>
@@ -17,17 +16,22 @@ OBSAbout::OBSAbout(QWidget *parent)
 	setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
 
 	QString bitness;
+	QString ver;
 
 	if(sizeof(void*) == 4)
 		bitness = " (32 bit)";
 	else if(sizeof(void*) == 8)
 		bitness = " (64 bit)";
 
-	ui->version->setText(
-			QString::number(LIBOBS_API_MAJOR_VER) + "." +
-			QString::number(LIBOBS_API_MINOR_VER) + "." +
-			QString::number(LIBOBS_API_PATCH_VER) +
-			bitness);
+#ifdef HAVE_OBSCONFIG_H
+	ver +=  OBS_VERSION;
+#else
+	ver +=  LIBOBS_API_MAJOR_VER + "." +
+		LIBOBS_API_MINOR_VER + "." +
+		LIBOBS_API_PATCH_VER;
+#endif
+
+	ui->version->setText(ver + bitness);
 
 	ui->contribute->setText(QTStr("About.Contribute"));
 	ui->donate->setText("<a href='https://obsproject.com/donate'>" +
