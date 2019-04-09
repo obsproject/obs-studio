@@ -1408,7 +1408,7 @@ void OBSBasic::InitOBSCallbacks()
 {
 	ProfileScope("OBSBasic::InitOBSCallbacks");
 
-	signalHandlers.reserve(signalHandlers.size() + 6);
+	signalHandlers.reserve(signalHandlers.size() + 8);
 	signalHandlers.emplace_back(obs_get_signal_handler(), "source_create",
 			OBSBasic::SourceCreated, this);
 	signalHandlers.emplace_back(obs_get_signal_handler(), "source_remove",
@@ -1419,6 +1419,10 @@ void OBSBasic::InitOBSCallbacks()
 			OBSBasic::SourceDeactivated, this);
 	signalHandlers.emplace_back(obs_get_signal_handler(), "source_rename",
 			OBSBasic::SourceRenamed, this);
+	signalHandlers.emplace_back(obs_get_signal_handler(), "source_volume",
+			OBSBasic::SourceVolumeChanged, this);
+	signalHandlers.emplace_back(obs_get_signal_handler(), "source_muted",
+			OBSBasic::SourceMuted, this);
 }
 
 void OBSBasic::InitPrimitives()
@@ -3313,6 +3317,28 @@ void OBSBasic::SourceRenamed(void *data, calldata_t *params)
 			Q_ARG(QString, QT_UTF8(prevName)));
 
 	blog(LOG_INFO, "Source '%s' renamed to '%s'", prevName, newName);
+}
+
+void OBSBasic::SourceVolumeChanged(void *data, calldata_t *params)
+{
+	obs_source_t *source = (obs_source_t*)calldata_ptr(params, "source");
+	float volume = calldata_float(params, "volume");
+
+	QMetaObject::invokeMethod(static_cast<OBSBasic*>(data),
+			"PerSceneVolumeChanged",
+			Q_ARG(OBSSource, source),
+			Q_ARG(float, volume));
+}
+
+void OBSBasic::SourceMuted(void *data, calldata_t *params)
+{
+	obs_source_t *source = (obs_source_t*)calldata_ptr(params, "source");
+	bool mute = calldata_bool(params, "muted");
+
+	QMetaObject::invokeMethod(static_cast<OBSBasic*>(data),
+			"PerSceneMuteChanged",
+			Q_ARG(OBSSource, source),
+			Q_ARG(bool, mute));
 }
 
 void OBSBasic::DrawBackdrop(float cx, float cy)
@@ -7244,4 +7270,160 @@ void SceneRenameDelegate::setEditorData(QWidget *editor,
 	QLineEdit *lineEdit = qobject_cast<QLineEdit*>(editor);
 	if (lineEdit)
 		lineEdit->selectAll();
+}
+
+static int getOutputChannel(obs_source_t *source)
+{
+	int channel = -1;
+
+	for (int i = 0; i < MAX_CHANNELS; i++) {
+		obs_source_t *outputSource = obs_get_output_source(i);
+		obs_source_release(outputSource);
+
+		if (source == outputSource) {
+			channel = i;
+			break;
+		}
+	}
+
+	return channel;
+}
+
+void OBSBasic::SetPerSceneVolume()
+{
+	auto setVolume = [] (obs_scene_t*, obs_sceneitem_t *item, void*)
+	{
+		if (!item)
+			return true;
+
+		obs_source_t *source = obs_sceneitem_get_source(item);
+
+		obs_data_t *s = obs_source_get_settings(source);
+		bool track = obs_data_get_bool(s, "volumeTracking");
+		obs_data_release(s);
+
+		if (!track)
+			return true;
+
+		obs_data_t *settings = obs_sceneitem_get_private_settings(item);
+
+		obs_data_set_default_double(settings, "perSceneVolume", 1.0);
+
+		float vol = (float)obs_data_get_double(settings,
+				"perSceneVolume");
+		bool muted = obs_data_get_bool(settings,
+				"perSceneMuted");
+
+		obs_source_set_volume(source, vol);
+		obs_source_set_muted(source, muted);
+
+		obs_data_release(settings);
+
+		return true;
+	};
+
+	obs_scene_enum_items(GetCurrentScene(), setVolume, nullptr);
+
+	OBSSource sceneSource = GetCurrentSceneSource();
+	obs_data_t *sceneSettings = obs_source_get_settings(sceneSource);
+
+	for (int i = 1; i < 6; i++) {
+		obs_source_t *channelSource = obs_get_output_source(i);
+
+		if (!channelSource)
+			continue;
+
+		obs_source_release(channelSource);
+
+		obs_data_t *s = obs_source_get_settings(channelSource);
+		bool track = obs_data_get_bool(s, "volumeTracking");
+		obs_data_release(s);
+
+		if (!track)
+			continue;
+
+		QString volumeString = "volumeChannel" + QString::number(i);
+		QString muteString = "mutedChannel" + QString::number(i);
+
+		obs_data_set_default_double(sceneSettings,
+				QT_TO_UTF8(volumeString), 1.0);
+
+		float vol = obs_data_get_double(sceneSettings,
+				QT_TO_UTF8(volumeString));
+		bool mute = obs_data_get_double(sceneSettings,
+				QT_TO_UTF8(muteString));
+
+		obs_source_set_volume(channelSource, vol);
+		obs_source_set_muted(channelSource, mute);
+	}
+
+	obs_data_release(sceneSettings);
+}
+
+void OBSBasic::PerSceneVolumeChanged(OBSSource source, float volume)
+{
+	obs_data_t *s = obs_source_get_settings(source);
+	bool track = obs_data_get_bool(s, "volumeTracking");
+	obs_data_release(s);
+
+	if (!track)
+		return;
+
+	OBSSceneItem item = obs_scene_find_source(GetCurrentScene(),
+			obs_source_get_name(source));
+
+	if (item) {
+		obs_data_t *privData = obs_sceneitem_get_private_settings(item);
+		obs_data_set_double(privData, "perSceneVolume", volume);
+		obs_data_release(privData);
+		return;
+	}
+
+	int channel = getOutputChannel(source);
+
+	if (channel == -1)
+		return;
+
+	QString string = "volumeChannel" + QString::number(channel);
+
+	OBSSource sceneSource = GetCurrentSceneSource();
+
+	obs_data_t *settings = obs_source_get_settings(sceneSource);
+	obs_data_set_double(settings, QT_TO_UTF8(string), volume);
+	obs_data_release(settings);
+}
+
+void OBSBasic::PerSceneMuteChanged(OBSSource source, bool mute)
+{
+	obs_data_t *s = obs_source_get_settings(source);
+	bool track = obs_data_get_bool(s, "volumeTracking");
+	obs_data_release(s);
+
+	if (!track)
+		return;
+
+	OBSScene scene = GetCurrentScene();
+
+	OBSSceneItem item = obs_scene_find_source(scene,
+			obs_source_get_name(source));
+
+	if (item) {
+		obs_data_t *privData = obs_sceneitem_get_private_settings(item);
+		obs_data_set_bool(privData, "perSceneMuted", mute);
+		obs_data_release(privData);
+		return;
+	}
+
+	int channel = getOutputChannel(source);
+
+	if (channel == -1)
+		return;
+
+	QString string = "mutedChannel" + QString::number(channel);
+
+	OBSSource sceneSource = GetCurrentSceneSource();
+
+	obs_data_t *settings = obs_source_get_settings(sceneSource);
+	obs_data_set_bool(settings, QT_TO_UTF8(string), mute);
+	obs_data_release(settings);
 }

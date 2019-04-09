@@ -17,11 +17,13 @@ class OBSAdvAudioCtrl : public QObject {
 private:
 	OBSSource              source;
 
+	QPointer<QWidget>      volTrackingContainer;
 	QPointer<QWidget>      forceMonoContainer;
 	QPointer<QWidget>      mixerContainer;
 	QPointer<QWidget>      balanceContainer;
 
 	QPointer<QLabel>       nameLabel;
+	QPointer<QCheckBox>    volTracking;
 	QPointer<QSpinBox>     volume;
 	QPointer<QCheckBox>    forceMono;
 	QPointer<BalanceSlider>balance;
@@ -59,6 +61,7 @@ public slots:
 	void SourceSyncChanged(int64_t offset);
 	void SourceMixersChanged(uint32_t mixers);
 
+	void volTrackingChanged(bool checked);
 	void volumeChanged(int percentage);
 	void downmixMonoChanged(bool checked);
 	void balanceChanged(int val);

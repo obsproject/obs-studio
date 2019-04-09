@@ -26,11 +26,13 @@ OBSAdvAudioCtrl::OBSAdvAudioCtrl(QGridLayout *, obs_source_t *source_)
 	forceMonoContainer             = new QWidget();
 	mixerContainer                 = new QWidget();
 	balanceContainer               = new QWidget();
+	volTrackingContainer           = new QWidget();
 	labelL                         = new QLabel();
 	labelR                         = new QLabel();
 	nameLabel                      = new QLabel();
 	volume                         = new QSpinBox();
 	forceMono                      = new QCheckBox();
+	volTracking                    = new QCheckBox();
 	balance                        = new BalanceSlider();
 #if defined(_WIN32) || defined(__APPLE__) || HAVE_PULSEAUDIO
 	monitoringType                 = new QComboBox();
@@ -42,6 +44,13 @@ OBSAdvAudioCtrl::OBSAdvAudioCtrl(QGridLayout *, obs_source_t *source_)
 	mixer4                         = new QCheckBox();
 	mixer5                         = new QCheckBox();
 	mixer6                         = new QCheckBox();
+
+	obs_data_t *settings = obs_source_get_settings(source);
+	bool track = obs_data_get_bool(settings, "volumeTracking");
+	obs_data_release(settings);
+
+	volTracking->setChecked(track);
+	volTracking->setToolTip(QTStr("Basic.AdvAudio.VolTracking.Tooltip"));
 
 	volChangedSignal.Connect(handler, "volume", OBSSourceVolumeChanged,
 			this);
@@ -62,6 +71,9 @@ OBSAdvAudioCtrl::OBSAdvAudioCtrl(QGridLayout *, obs_source_t *source_)
 	hlayout->setContentsMargins(0, 0, 0, 0);
 	balanceContainer->setLayout(hlayout);
 	balanceContainer->setMinimumWidth(100);
+	hlayout = new QHBoxLayout();
+	hlayout->setContentsMargins(0, 0, 0, 0);
+	volTrackingContainer->setLayout(hlayout);
 
 	labelL->setText("L");
 
@@ -79,6 +91,10 @@ OBSAdvAudioCtrl::OBSAdvAudioCtrl(QGridLayout *, obs_source_t *source_)
 
 	forceMonoContainer->layout()->addWidget(forceMono);
 	forceMonoContainer->layout()->setAlignment(forceMono,
+			Qt::AlignHCenter | Qt::AlignVCenter);
+
+	volTrackingContainer->layout()->addWidget(volTracking);
+	volTrackingContainer->layout()->setAlignment(volTracking,
 			Qt::AlignHCenter | Qt::AlignVCenter);
 
 	balance->setOrientation(Qt::Horizontal);
@@ -173,6 +189,8 @@ OBSAdvAudioCtrl::OBSAdvAudioCtrl(QGridLayout *, obs_source_t *source_)
 			this, SLOT(mixer5Changed(bool)));
 	QWidget::connect(mixer6, SIGNAL(clicked(bool)),
 			this, SLOT(mixer6Changed(bool)));
+	QWidget::connect(volTracking, SIGNAL(clicked(bool)),
+			this, SLOT(volTrackingChanged(bool)));
 
 	setObjectName(sourceName);
 }
@@ -188,6 +206,7 @@ OBSAdvAudioCtrl::~OBSAdvAudioCtrl()
 	monitoringType->deleteLater();
 #endif
 	mixerContainer->deleteLater();
+	volTrackingContainer->deleteLater();
 }
 
 void OBSAdvAudioCtrl::ShowAudioControl(QGridLayout *layout)
@@ -196,6 +215,7 @@ void OBSAdvAudioCtrl::ShowAudioControl(QGridLayout *layout)
 	int idx = 0;
 
 	layout->addWidget(nameLabel, lastRow, idx++);
+	layout->addWidget(volTrackingContainer, lastRow, idx++);
 	layout->addWidget(volume, lastRow, idx++);
 	layout->addWidget(forceMonoContainer, lastRow, idx++);
 	layout->addWidget(balanceContainer, lastRow, idx++);
@@ -394,4 +414,11 @@ void OBSAdvAudioCtrl::mixer5Changed(bool checked)
 void OBSAdvAudioCtrl::mixer6Changed(bool checked)
 {
 	setMixer(source, 5, checked);
+}
+
+void OBSAdvAudioCtrl::volTrackingChanged(bool checked)
+{
+	obs_data_t *settings = obs_source_get_settings(source);
+	obs_data_set_bool(settings, "volumeTracking", checked);
+	obs_data_release(settings);
 }

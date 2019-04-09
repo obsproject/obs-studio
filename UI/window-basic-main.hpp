@@ -538,6 +538,8 @@ private:
 	static void SourceDeactivated(void *data, calldata_t *params);
 	static void SourceRenamed(void *data, calldata_t *params);
 	static void RenderMain(void *data, uint32_t cx, uint32_t cy);
+	static void SourceVolumeChanged(void *data, calldata_t *params);
+	static void SourceMuted(void *data, calldata_t *params);
 
 	void ResizePreview(uint32_t cx, uint32_t cy);
 
@@ -639,6 +641,8 @@ public:
 	QAction *AddDockWidget(QDockWidget *dock);
 
 	static OBSBasic *Get();
+
+	void SetPerSceneVolume();
 
 protected:
 	virtual void closeEvent(QCloseEvent *event) override;
@@ -795,6 +799,9 @@ private slots:
 	void StackedMixerAreaContextMenuRequested();
 
 	void ResizeOutputSizeOfSource();
+
+	void PerSceneVolumeChanged(OBSSource source, float volume);
+	void PerSceneMuteChanged(OBSSource source, bool mute);
 
 public slots:
 	void on_actionResetTransform_triggered();

@@ -716,6 +716,8 @@ static const char *obs_signals[] = {
 	"void hotkey_unregister(ptr hotkey)",
 	"void hotkey_bindings_changed(ptr hotkey)",
 
+	"void source_muted(ptr source, bool muted)",
+
 	NULL
 };
 

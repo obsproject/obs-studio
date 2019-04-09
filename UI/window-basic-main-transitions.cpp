@@ -375,6 +375,8 @@ void OBSBasic::TransitionToScene(OBSSource source, bool force, bool direct,
 		DisableQuickTransitionWidgets();
 	}
 
+	SetPerSceneVolume();
+
 cleanup:
 	if (usingPreviewProgram && sceneDuplicationMode)
 		obs_scene_release(scene);

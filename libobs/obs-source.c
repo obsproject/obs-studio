@@ -3675,6 +3675,10 @@ void obs_source_set_muted(obs_source_t *source, bool muted)
 
 	signal_handler_signal(source->context.signals, "mute", &data);
 
+	if (!source->context.private)
+			signal_handler_signal(obs->signals, "source_muted",
+					&data);
+
 	pthread_mutex_lock(&source->audio_actions_mutex);
 	da_push_back(source->audio_actions, &action);
 	pthread_mutex_unlock(&source->audio_actions_mutex);
