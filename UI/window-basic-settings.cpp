@@ -48,6 +48,7 @@
 #include "window-projector.hpp"
 
 #include <util/platform.h>
+#include "ui-config.h"
 
 using namespace std;
 
@@ -1003,17 +1004,31 @@ void OBSBasicSettings::LoadThemeList()
 		}
 	}
 
+	QString defaultTheme;
+	defaultTheme += DEFAULT_THEME;
+	defaultTheme += " ";
+	defaultTheme += QTStr("Default");
+
 	/* Check shipped themes. */
 	QDirIterator uIt(QString(themeDir.c_str()), QStringList() << "*.qss",
 			QDir::Files);
 	while (uIt.hasNext()) {
 		uIt.next();
 		QString name = uIt.fileName().section(".",0,0);
-		if (!uniqueSet.contains(name))
+
+		if (name == DEFAULT_THEME)
+			name = defaultTheme;
+
+		if (!uniqueSet.contains(name) && name != "Default")
 			ui->theme->addItem(name);
 	}
 
-	int idx = ui->theme->findText(App()->GetTheme());
+	const char *themeName = App()->GetTheme();
+
+	if (strcmp(themeName, DEFAULT_THEME) == 0)
+		themeName = QT_TO_UTF8(defaultTheme);
+
+	int idx = ui->theme->findText(themeName);
 	if (idx != -1)
 		ui->theme->setCurrentIndex(idx);
 }
@@ -2657,13 +2672,19 @@ void OBSBasicSettings::SaveGeneralSettings()
 
 	int themeIndex = ui->theme->currentIndex();
 	QString themeData = ui->theme->itemText(themeIndex);
-	string theme = themeData.toStdString();
+	QString defaultTheme;
+	defaultTheme += DEFAULT_THEME;
+	defaultTheme += " ";
+	defaultTheme += QTStr("Default");
+
+	if (themeData == defaultTheme)
+		themeData = DEFAULT_THEME;
 
 	if (WidgetChanged(ui->theme)) {
 		config_set_string(GetGlobalConfig(), "General", "CurrentTheme",
-				  theme.c_str());
+				  QT_TO_UTF8(themeData));
 
-		App()->SetTheme(theme);
+		App()->SetTheme(themeData.toUtf8().constData());
 	}
 
 #if defined(_WIN32) || defined(__APPLE__)
@@ -3392,8 +3413,17 @@ void OBSBasicSettings::closeEvent(QCloseEvent *event)
 
 void OBSBasicSettings::on_theme_activated(int idx)
 {
-	string currT = ui->theme->itemText(idx).toStdString();
-	App()->SetTheme(currT);
+	QString currT = ui->theme->itemText(idx);
+
+	QString defaultTheme;
+	defaultTheme += DEFAULT_THEME;
+	defaultTheme += " ";
+	defaultTheme += QTStr("Default");
+
+	if (currT == defaultTheme)
+		currT = DEFAULT_THEME;
+
+	App()->SetTheme(currT.toUtf8().constData());
 }
 
 void OBSBasicSettings::on_listWidget_itemSelectionChanged()

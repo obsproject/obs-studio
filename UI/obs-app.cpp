@@ -54,6 +54,8 @@
 
 #include <iostream>
 
+#include "ui-config.h"
+
 using namespace std;
 
 static log_handler_t def_log_handler;
@@ -423,7 +425,7 @@ bool OBSApp::InitGlobalConfigDefaults()
 
 	if (!config_get_bool(globalConfig, "General", "Pre21Defaults")) {
 		config_set_default_string(globalConfig, "General",
-				"CurrentTheme", "Dark");
+				"CurrentTheme", DEFAULT_THEME);
 	}
 
 	config_set_default_bool(globalConfig, "BasicWindow",
@@ -1026,18 +1028,22 @@ bool OBSApp::InitTheme()
 
 	const char *themeName = config_get_string(globalConfig, "General",
 			"CurrentTheme");
+
+	if (strcmp(themeName, "Default") == 0)
+		themeName = "System";
+
 	if (!themeName) {
 		/* Use deprecated "Theme" value if available */
 		themeName = config_get_string(globalConfig,
 				"General", "Theme");
 		if (!themeName)
-			themeName = "Default";
+			themeName = DEFAULT_THEME;
 	}
 
-	if (strcmp(themeName, "Default") != 0 && SetTheme(themeName))
+	if (strcmp(themeName, DEFAULT_THEME) != 0 && SetTheme(themeName))
 		return true;
 
-	return SetTheme("Default");
+	return SetTheme(DEFAULT_THEME);
 }
 
 OBSApp::OBSApp(int &argc, char **argv, profiler_name_store_t *store)
