@@ -1029,7 +1029,7 @@ bool OBSApp::InitTheme()
 	const char *themeName = config_get_string(globalConfig, "General",
 			"CurrentTheme");
 
-	if (strcmp(themeName, "Default") == 0)
+	if (themeName && strcmp(themeName, "Default") == 0)
 		themeName = "System";
 
 	if (!themeName) {
