@@ -189,4 +189,6 @@ private:
 	void handleBrowse(QWidget *container);
 	void handleClear(QWidget *container);
 
+private slots:
+	void updateText();
 };

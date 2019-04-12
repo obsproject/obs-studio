@@ -150,6 +150,7 @@ void RemuxEntryPathItemDelegate::setEditorData(QWidget *editor,
 {
 	QLineEdit *text = editor->findChild<QLineEdit *>();
 	text->setText(index.data().toString());
+	QObject::connect(text, SIGNAL(textEdited(QString)), this, SLOT(updateText()));
 	editor->setProperty(PATH_LIST_PROP, QVariant());
 }
 
@@ -257,6 +258,11 @@ void RemuxEntryPathItemDelegate::handleClear(QWidget *container)
 	emit commitData(container);
 }
 
+void RemuxEntryPathItemDelegate::updateText() {
+	QLineEdit *lineEdit = dynamic_cast<QLineEdit*>(sender());
+	QWidget *editor = lineEdit->parentWidget();
+	emit commitData(editor);
+}
 
 /**********************************************************
   Model - Manages the queue's data
