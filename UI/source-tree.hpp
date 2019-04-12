@@ -5,6 +5,8 @@
 #include <QPointer>
 #include <QListView>
 #include <QCheckBox>
+#include <QStaticText>
+#include <QSvgRenderer>
 #include <QAbstractListModel>
 
 class QLabel;
@@ -133,6 +135,12 @@ class SourceTree : public QListView {
 	friend class SourceTreeModel;
 	friend class SourceTreeItem;
 
+	bool textPrepared = false;
+	QStaticText textNoSources;
+	QSvgRenderer iconNoSources;
+
+	void UpdateNoSourcesMessage();
+
 	void ResetWidgets();
 	void UpdateWidget(const QModelIndex &idx, obs_sceneitem_t *item);
 	void UpdateWidgets(bool force = false);
@@ -177,6 +185,7 @@ protected:
 	virtual void dropEvent(QDropEvent *event) override;
 	virtual void mouseMoveEvent(QMouseEvent *event) override;
 	virtual void leaveEvent(QEvent *event) override;
+	virtual void paintEvent(QPaintEvent *event) override;
 
 	virtual void selectionChanged(const QItemSelection &selected, const QItemSelection &deselected) override;
 };

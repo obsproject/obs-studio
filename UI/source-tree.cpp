@@ -5,6 +5,7 @@
 #include "visibility-checkbox.hpp"
 #include "locked-checkbox.hpp"
 #include "expand-checkbox.hpp"
+#include "platform.hpp"
 
 #include <obs-frontend-api.h>
 #include <obs.h>
@@ -915,6 +916,10 @@ SourceTree::SourceTree(QWidget *parent_) : QListView(parent_)
 		"*[bgColor=\"8\"]{background-color:rgba(255,255,255,33%);}"));
 
 	setMouseTracking(true);
+
+	UpdateNoSourcesMessage();
+	connect(App(), &OBSApp::StyleChanged,
+			this, &SourceTree::UpdateNoSourcesMessage);
 }
 
 void SourceTree::ResetWidgets()
@@ -1428,4 +1433,57 @@ void SourceTree::UngroupSelectedGroups()
 void SourceTree::AddGroup()
 {
 	GetStm()->AddGroup();
+}
+
+void SourceTree::UpdateNoSourcesMessage()
+{
+	std::string darkPath;
+	GetDataFilePath("themes/Dark/no_sources.svg", darkPath);
+
+	QColor color = palette().text().color();
+	bool lightTheme = (color.redF() < 0.5);
+	QString file = lightTheme
+		? ":res/images/no_sources.svg"
+		: darkPath.c_str();
+	iconNoSources.load(file);
+
+	QTextOption opt(Qt::AlignHCenter);
+	opt.setWrapMode(QTextOption::WordWrap);
+	textNoSources.setTextOption(opt);
+	textNoSources.setText(QTStr("NoSources.Label").replace("\n", "<br/>"));
+
+	textPrepared = false;
+}
+
+void SourceTree::paintEvent(QPaintEvent *event)
+{
+	SourceTreeModel *stm = GetStm();
+	if (stm && !stm->items.count()) {
+		QPainter p(viewport());
+
+		if (!textPrepared) {
+			textNoSources.prepare(QTransform(), p.font());
+			textPrepared = true;
+		}
+
+		QRectF iconRect = iconNoSources.viewBoxF();
+
+		QSizeF iconSize = iconRect.size();
+		QSizeF textSize = textNoSources.size();
+		QSizeF thisSize = size();
+
+		qreal totalHeight = textSize.height() + iconSize.height();
+
+		qreal x = thisSize.width() / 2.0 - textSize.width() / 2.0;
+		qreal y = thisSize.height() / 2.0 - totalHeight / 2.0;
+		p.drawStaticText(x, y, textNoSources);
+
+		x = thisSize.width() / 2.0 - iconSize.width() / 2.0;
+		y += textSize.height();
+		iconRect.moveTo(x, y);
+
+		iconNoSources.render(&p, iconRect);
+	} else {
+		QListView::paintEvent(event);
+	}
 }
