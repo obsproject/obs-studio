@@ -1,7 +1,4 @@
 uniform float4x4 ViewProj;
-uniform float4x4 color_matrix;
-uniform float3 color_range_min = {0.0, 0.0, 0.0};
-uniform float3 color_range_max = {1.0, 1.0, 1.0};
 uniform float2 base_dimension_i;
 uniform texture2d image;
 
@@ -57,65 +54,11 @@ float4 PSDrawAreaRGBA(VertInOut vert_in) : TARGET
 	return float4(totalcolor.rgb / totalcolor.a, totalcolor.a);
 }
 
-float3 ConvertFromYuv(float3 yuv)
-{
-	yuv = clamp(yuv, color_range_min, color_range_max);
-	return saturate(mul(float4(yuv, 1.0), color_matrix)).rgb;
-}
-
-float4 PSDrawAreaMatrix(VertInOut vert_in) : TARGET
-{
-	float3 totalcolor = float3(0.0, 0.0, 0.0);
-
-	float2 uv = vert_in.uv;
-	float2 uvdelta = float2(ddx(uv.x), ddy(uv.y));
-
-	// Handle potential OpenGL flip.
-	uvdelta.y = abs(uvdelta.y);
-
-	float2 uvhalfdelta = 0.5 * uvdelta;
-	float2 uvmin = uv - uvhalfdelta;
-	float2 uvmax = uv + uvhalfdelta;
-
-	int2 loadindexmin = int2(uvmin / base_dimension_i);
-	int2 loadindexmax = int2(uvmax / base_dimension_i);
-
-	float2 targetpos = uv / uvdelta;
-	float2 targetposmin = targetpos - 0.5;
-	float2 targetposmax = targetpos + 0.5;
-	float2 scale = base_dimension_i / uvdelta;
-	for (int loadindexy = loadindexmin.y; loadindexy <= loadindexmax.y; ++loadindexy)
-	{
-		for (int loadindexx = loadindexmin.x; loadindexx <= loadindexmax.x; ++loadindexx)
-		{
-			int2 loadindex = int2(loadindexx, loadindexy);
-			float2 potentialtargetmin = float2(loadindex) * scale;
-			float2 potentialtargetmax = potentialtargetmin + scale;
-			float2 targetmin = max(potentialtargetmin, targetposmin);
-			float2 targetmax = min(potentialtargetmax, targetposmax);
-			float area = (targetmax.x - targetmin.x) * (targetmax.y - targetmin.y);
-			float3 yuv = image.Load(int3(loadindex, 0)).xyz;
-			totalcolor += area * ConvertFromYuv(yuv);
-		}
-	}
-
-	return float4(totalcolor, 1.0);
-}
-
 technique Draw
 {
 	pass
 	{
 		vertex_shader = VSDefault(vert_in);
 		pixel_shader  = PSDrawAreaRGBA(vert_in);
-	}
-}
-
-technique DrawMatrix
-{
-	pass
-	{
-		vertex_shader = VSDefault(vert_in);
-		pixel_shader  = PSDrawAreaMatrix(vert_in);
 	}
 }

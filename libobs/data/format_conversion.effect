@@ -42,6 +42,10 @@ uniform int       int_input_width;
 uniform int       int_u_plane_offset;
 uniform int       int_v_plane_offset;
 
+uniform float4x4  color_matrix;
+uniform float3    color_range_min = {0.0, 0.0, 0.0};
+uniform float3    color_range_max = {1.0, 1.0, 1.0};
+
 uniform texture2d image;
 
 sampler_state def_sampler {
@@ -283,8 +287,10 @@ float4 PSPacked422_Reverse(VertInOut vert_in, int u_pos, int v_pos,
 	x += input_width_i_d2;
 
 	float4 texel = image.Sample(def_sampler, float2(x, y));
-	return float4(odd > 0.5 ? texel[y1_pos] : texel[y0_pos],
-			texel[u_pos], texel[v_pos], 1.0);
+	float3 yuv = float3(odd > 0.5 ? texel[y1_pos] : texel[y0_pos],
+			texel[u_pos], texel[v_pos]);
+	yuv = clamp(yuv, color_range_min, color_range_max);
+	return saturate(mul(float4(yuv, 1.0), color_matrix));
 }
 
 float4 PSPlanar420_Reverse(VertInOut vert_in) : TARGET
@@ -297,12 +303,32 @@ float4 PSPlanar420_Reverse(VertInOut vert_in) : TARGET
 	int chroma1    = int_u_plane_offset + chroma_offset;
 	int chroma2    = int_v_plane_offset + chroma_offset;
 
-	return float4(
+	float3 yuv = float3(
 		GetIntOffsetColor(lum_offset),
 		GetIntOffsetColor(chroma1),
-		GetIntOffsetColor(chroma2),
-		1.0
+		GetIntOffsetColor(chroma2)
 	);
+	yuv = clamp(yuv, color_range_min, color_range_max);
+	return saturate(mul(float4(yuv, 1.0), color_matrix));
+}
+
+float4 PSPlanar444_Reverse(VertInOut vert_in) : TARGET
+{
+	int x = int(vert_in.uv.x * width  + PRECISION_OFFSET);
+	int y = int(vert_in.uv.y * height + PRECISION_OFFSET);
+
+	int lum_offset = y * int_width + x;
+	int chroma_offset = y * int_width + x;
+	int chroma1    = int_u_plane_offset + chroma_offset;
+	int chroma2    = int_v_plane_offset + chroma_offset;
+
+	float3 yuv = float3(
+		GetIntOffsetColor(lum_offset),
+		GetIntOffsetColor(chroma1),
+		GetIntOffsetColor(chroma2)
+	);
+	yuv = clamp(yuv, color_range_min, color_range_max);
+	return saturate(mul(float4(yuv, 1.0), color_matrix));
 }
 
 float4 PSNV12_Reverse(VertInOut vert_in) : TARGET
@@ -314,12 +340,13 @@ float4 PSNV12_Reverse(VertInOut vert_in) : TARGET
 	int chroma_offset = (y / 2) * (int_width / 2) + x / 2;
 	int chroma        = int_u_plane_offset + chroma_offset * 2;
 
-	return float4(
+	float3 yuv = float3(
 		GetIntOffsetColor(lum_offset),
 		GetIntOffsetColor(chroma),
-		GetIntOffsetColor(chroma + 1),
-		1.0
+		GetIntOffsetColor(chroma + 1)
 	);
+	yuv = clamp(yuv, color_range_min, color_range_max);
+	return saturate(mul(float4(yuv, 1.0), color_matrix));
 }
 
 technique Planar420
@@ -400,6 +427,15 @@ technique I420_Reverse
 	{
 		vertex_shader = VSDefault(vert_in);
 		pixel_shader  = PSPlanar420_Reverse(vert_in);
+	}
+}
+
+technique I444_Reverse
+{
+	pass
+	{
+		vertex_shader = VSDefault(vert_in);
+		pixel_shader  = PSPlanar444_Reverse(vert_in);
 	}
 }
 

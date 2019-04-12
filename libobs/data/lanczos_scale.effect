@@ -7,8 +7,6 @@
 uniform float4x4 ViewProj;
 uniform texture2d image;
 uniform float4x4 color_matrix;
-uniform float3 color_range_min = {0.0, 0.0, 0.0};
-uniform float3 color_range_max = {1.0, 1.0, 1.0};
 uniform float2 base_dimension_i;
 uniform float undistort_factor = 1.0;
 
@@ -142,11 +140,9 @@ float4 PSDrawLanczosRGBA(FragData v_in, bool undistort) : TARGET
 
 float4 PSDrawLanczosMatrix(FragData v_in) : TARGET
 {
-	float4 rgba = DrawLanczos(v_in, false);
-	float4 yuv;
-
-	yuv.xyz = clamp(rgba.xyz, color_range_min, color_range_max);
-	return saturate(mul(float4(yuv.xyz, 1.0), color_matrix));
+	float3 rgb = DrawLanczos(v_in, false).rgb;
+	float3 yuv = mul(float4(saturate(rgb), 1.0), color_matrix).xyz;
+	return float4(yuv, 1.0);
 }
 
 technique Draw

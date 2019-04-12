@@ -645,10 +645,6 @@ struct obs_source {
 	enum video_format               async_format;
 	enum video_format               async_cache_format;
 	enum gs_color_format            async_texture_format;
-	float                           async_color_matrix[16];
-	bool                            async_full_range;
-	float                           async_color_range_min[3];
-	float                           async_color_range_max[3];
 	int                             async_plane_offset[2];
 	bool                            async_flip;
 	bool                            async_active;

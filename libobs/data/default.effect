@@ -1,7 +1,5 @@
 uniform float4x4 ViewProj;
 uniform float4x4 color_matrix;
-uniform float3 color_range_min = {0.0, 0.0, 0.0};
-uniform float3 color_range_max = {1.0, 1.0, 1.0};
 uniform texture2d image;
 
 sampler_state def_sampler {
@@ -30,9 +28,9 @@ float4 PSDrawBare(VertInOut vert_in) : TARGET
 
 float4 PSDrawMatrix(VertInOut vert_in) : TARGET
 {
-	float4 yuv = image.Sample(def_sampler, vert_in.uv);
-	yuv.xyz = clamp(yuv.xyz, color_range_min, color_range_max);
-	return saturate(mul(float4(yuv.xyz, 1.0), color_matrix));
+	float3 rgb = image.Sample(def_sampler, vert_in.uv).rgb;
+	float3 yuv = mul(float4(saturate(rgb), 1.0), color_matrix).xyz;
+	return float4(yuv, 1.0);
 }
 
 technique Draw
