@@ -21,6 +21,7 @@
 #include <QMutex>
 #include <QPointer>
 #include <QThread>
+#include <QStyledItemDelegate>
 #include <memory>
 #include "ui_OBSRemux.h"
 
@@ -159,4 +160,35 @@ signals:
 	void remuxFinished(bool success);
 
 	friend class OBSRemux;
+};
+
+class RemuxEntryPathItemDelegate : public QStyledItemDelegate {
+	Q_OBJECT
+
+public:
+	RemuxEntryPathItemDelegate(bool isOutput, const QString &defaultPath);
+
+	virtual QWidget *createEditor(QWidget *parent,
+		const QStyleOptionViewItem & /* option */,
+		const QModelIndex &index) const override;
+
+	virtual void setEditorData(QWidget *editor, const QModelIndex &index)
+		const override;
+	virtual void setModelData(QWidget *editor,
+		QAbstractItemModel *model,
+		const QModelIndex &index) const override;
+	virtual void paint(QPainter *painter,
+		const QStyleOptionViewItem &option,
+		const QModelIndex &index) const override;
+
+private:
+	bool isOutput;
+	QString defaultPath;
+	const char *PATH_LIST_PROP = "pathList";
+
+	void handleBrowse(QWidget *container);
+	void handleClear(QWidget *container);
+
+private slots:
+	void updateText();
 };
