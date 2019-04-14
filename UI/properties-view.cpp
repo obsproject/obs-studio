@@ -20,6 +20,9 @@
 #include <QStackedWidget>
 #include <QDir>
 #include "double-slider.hpp"
+#include "slider-ignorewheel.hpp"
+#include "spinBox-ignorewheel.hpp"
+#include "comboBox-ignorewheel.hpp"
 #include "qt-wrappers.hpp"
 #include "properties-view.hpp"
 #include "properties-view.moc.hpp"
@@ -321,7 +324,7 @@ void OBSPropertiesView::AddInt(obs_property_t *prop, QFormLayout *layout,
 
 	const char *name = obs_property_name(prop);
 	int        val   = (int)obs_data_get_int(settings, name);
-	QSpinBox   *spin = new QSpinBox();
+	QSpinBox   *spin = new SpinBoxIgnoreScroll();
 
 	if (!obs_property_enabled(prop))
 		spin->setEnabled(false);
@@ -340,7 +343,7 @@ void OBSPropertiesView::AddInt(obs_property_t *prop, QFormLayout *layout,
 	children.emplace_back(info);
 
 	if (type == OBS_NUMBER_SLIDER) {
-		QSlider *slider = new QSlider();
+		QSlider *slider = new SliderIgnoreScroll();
 		slider->setMinimum(minVal);
 		slider->setMaximum(maxVal);
 		slider->setPageStep(stepVal);
@@ -481,7 +484,7 @@ static string from_obs_data_autoselect(obs_data_t *data, const char *name,
 QWidget *OBSPropertiesView::AddList(obs_property_t *prop, bool &warning)
 {
 	const char       *name  = obs_property_name(prop);
-	QComboBox        *combo = new QComboBox();
+	QComboBox        *combo = new ComboBoxIgnoreScroll();
 	obs_combo_type   type   = obs_property_list_type(prop);
 	obs_combo_format format = obs_property_list_format(prop);
 	size_t           count  = obs_property_list_item_count(prop);
@@ -913,7 +916,7 @@ static QWidget *CreateSimpleFPSValues(OBSFrameRatePropertyWidget *fpsProps,
 	auto items = vector<common_frame_rate>{};
 	items.reserve(sizeof(common_fps)/sizeof(common_frame_rate));
 
-	auto combo = fpsProps->simpleFPS = new QComboBox{};
+	auto combo = fpsProps->simpleFPS = new ComboBoxIgnoreScroll{};
 
 	combo->addItem("", QVariant::fromValue(make_fps(0, 0)));
 	for (const auto &fps : common_fps) {
@@ -993,7 +996,7 @@ static QWidget *CreateRationalFPS(OBSFrameRatePropertyWidget *fpsProps,
 	auto str = QTStr("Basic.PropertiesView.FPS.ValidFPSRanges");
 	auto rlabel = new QLabel{str};
 
-	auto combo = fpsProps->fpsRange = new QComboBox{};
+	auto combo = fpsProps->fpsRange = new ComboBoxIgnoreScroll{};
 	auto convert_fps = media_frames_per_second_to_fps;
 	//auto convert_fi  = media_frames_per_second_to_frame_interval;
 
@@ -1014,8 +1017,8 @@ static QWidget *CreateRationalFPS(OBSFrameRatePropertyWidget *fpsProps,
 
 	layout->addRow(rlabel, combo);
 
-	auto num_edit = fpsProps->numEdit = new QSpinBox{};
-	auto den_edit = fpsProps->denEdit = new QSpinBox{};
+	auto num_edit = fpsProps->numEdit = new SpinBoxIgnoreScroll{};
+	auto den_edit = fpsProps->denEdit = new SpinBoxIgnoreScroll{};
 
 	num_edit->setRange(0, INT_MAX);
 	den_edit->setRange(0, INT_MAX);
@@ -1044,7 +1047,7 @@ static OBSFrameRatePropertyWidget *CreateFrameRateWidget(obs_property_t *prop,
 
 	swap(widget->fps_ranges, fps_ranges);
 
-	auto combo = widget->modeSelect = new QComboBox{};
+	auto combo = widget->modeSelect = new ComboBoxIgnoreScroll{};
 	combo->addItem(QTStr("Basic.PropertiesView.FPS.Simple"),
 			QVariant::fromValue(frame_rate_tag::simple()));
 	combo->addItem(QTStr("Basic.PropertiesView.FPS.Rational"),

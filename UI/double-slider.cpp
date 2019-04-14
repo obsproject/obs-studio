@@ -2,7 +2,7 @@
 
 #include <cmath>
 
-DoubleSlider::DoubleSlider(QWidget *parent) : QSlider(parent)
+DoubleSlider::DoubleSlider(QWidget *parent) : SliderIgnoreScroll(parent)
 {
 	connect(this, SIGNAL(valueChanged(int)),
 			this, SLOT(intValChanged(int)));

@@ -17,6 +17,9 @@ set(decklink-ouput-ui_HEADERS
 	../../properties-view.moc.hpp
 	../../vertical-scroll-area.hpp
 	../../double-slider.hpp
+	../../slider-ignorewheel.hpp
+	../../comboBox-ignorewheel.hpp
+	../../spinBox-ignorewheel.hpp
 	./DecklinkOutputUI.h
 	decklink-ui-main.h
 	)
@@ -25,6 +28,9 @@ set(decklink-ouput-ui_SOURCES
 	../../properties-view.cpp
 	../../vertical-scroll-area.cpp
 	../../double-slider.cpp
+	../../slider-ignorewheel.cpp
+	../../comboBox-ignorewheel.cpp
+	../../spinBox-ignorewheel.cpp
 	./DecklinkOutputUI.cpp
 	decklink-ui-main.cpp
 	)
