@@ -378,9 +378,7 @@ install_obs_data(obs data obs-studio)
 install_obs_data_file(obs ../AUTHORS obs-studio/authors)
 
 if (UNIX AND UNIX_STRUCTURE AND NOT APPLE)
-	install(FILES dist/obs.desktop DESTINATION ${CMAKE_INSTALL_FULL_DATAROOTDIR}/applications)
-	install(FILES forms/images/obs.png
-		DESTINATION ${CMAKE_INSTALL_FULL_DATAROOTDIR}/icons/hicolor/256x256/apps)
+	add_subdirectory(xdg-data)
 endif()
 
 add_subdirectory(frontend-plugins)
