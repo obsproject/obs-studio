@@ -296,10 +296,6 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 
 	ui->listWidget->setAttribute(Qt::WA_MacShowFocusRect, false);
 
-	auto policy = ui->audioSourceScrollArea->sizePolicy();
-	policy.setVerticalStretch(true);
-	ui->audioSourceScrollArea->setSizePolicy(policy);
-
 	HookWidget(ui->language,             COMBO_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->theme, 		     COMBO_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->enableAutoUpdates,    CHECK_CHANGED,  GENERAL_CHANGED);
@@ -2021,17 +2017,21 @@ void OBSBasicSettings::LoadAudioDevices()
 
 void OBSBasicSettings::LoadAudioSources()
 {
+	if (ui->audioSourceLayout->rowCount() > 0) {
+		QLayoutItem *forDeletion = ui->audioSourceLayout->takeAt(0);
+		delete forDeletion->widget();
+		delete forDeletion;
+	}
 	auto layout = new QFormLayout();
 	layout->setVerticalSpacing(15);
 	layout->setFieldGrowthPolicy(QFormLayout::AllNonFixedFieldsGrow);
 
-	ui->audioSourceScrollArea->takeWidget()->deleteLater();
 	audioSourceSignals.clear();
 	audioSources.clear();
 
 	auto widget = new QWidget();
 	widget->setLayout(layout);
-	ui->audioSourceScrollArea->setWidget(widget);
+	ui->audioSourceLayout->addRow(widget);
 
 	const char *enablePtm = Str("Basic.Settings.Audio.EnablePushToMute");
 	const char *ptmDelay  = Str("Basic.Settings.Audio.PushToMuteDelay");
@@ -2110,6 +2110,8 @@ void OBSBasicSettings::LoadAudioSources()
 				ptmCB, pttSB, pttCB, pttSB);
 
 		auto label = new OBSSourceLabel(source);
+		label->setMinimumSize(QSize(170, 0));
+		label->setAlignment(Qt::AlignRight | Qt::AlignTrailing | Qt::AlignVCenter);
 		connect(label, &OBSSourceLabel::Removed,
 				[=]()
 				{
@@ -2135,9 +2137,9 @@ void OBSBasicSettings::LoadAudioSources()
 
 
 	if (layout->rowCount() == 0)
-		ui->audioSourceScrollArea->hide();
+		ui->audioHotkeysGroupBox->hide();
 	else
-		ui->audioSourceScrollArea->show();
+		ui->audioHotkeysGroupBox->show();
 }
 
 void OBSBasicSettings::LoadAudioSettings()
