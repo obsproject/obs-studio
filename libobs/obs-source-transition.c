@@ -630,7 +630,7 @@ static inline void render_child(obs_source_t *transition,
 		return;
 
 	if (gs_texrender_begin(transition->transition_texrender[idx], cx, cy)) {
-		vec4_zero(&blank);
+		vec4_set(&blank, 0.0f, 0.0f, 0.0f, 1.0f);
 		gs_clear(GS_CLEAR_COLOR, &blank, 0.0f, 0);
 		gs_ortho(0.0f, (float)cx, 0.0f, (float)cy, -100.0f, 100.0f);
 
