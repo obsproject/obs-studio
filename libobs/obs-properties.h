@@ -122,6 +122,19 @@ EXPORT obs_property_t *obs_properties_first(obs_properties_t *props);
 EXPORT obs_property_t *obs_properties_get(obs_properties_t *props,
 		const char *property);
 
+/** Remove a property from a properties list.
+ *
+ * Removes a property from a properties list. Only valid in either
+ * get_properties or modified_callback(2). modified_callback(2) must return
+ * true so that all UI properties are rebuilt and returning false is undefined
+ * behavior.
+ *
+ * @param props Properties to remove from.
+ * @param property Name of the property to remove.
+ */
+EXPORT void obs_properties_remove_by_name(obs_properties_t *props,
+		const char *property);
+
 /**
  * Applies settings to the properties by calling all the necessary
  * modification callbacks

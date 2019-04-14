@@ -271,6 +271,31 @@ obs_property_t *obs_properties_get(obs_properties_t *props, const char *name)
 	return NULL;
 }
 
+void obs_properties_remove_by_name(obs_properties_t *props, const char *name)
+{
+	if (!props)
+		return;
+
+	/* obs_properties_t is a forward-linked-list, so we need to keep both
+	 * previous and current pointers around. That way we can fix up the
+	 * pointers for the previous element if we find a match.
+	 */
+	struct obs_property *cur = props->first_property;
+	struct obs_property *prev = props->first_property;
+
+	while (cur) {
+		if (strcmp(cur->name, name) == 0) {
+			prev->next = cur->next;
+			cur->next = 0;
+			obs_property_destroy(cur);
+			break;
+		}
+
+		prev = cur;
+		cur = cur->next;
+	}
+}
+
 void obs_properties_apply_settings(obs_properties_t *props, obs_data_t *settings)
 {
 	struct obs_property *p;
