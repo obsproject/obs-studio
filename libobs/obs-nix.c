@@ -422,6 +422,17 @@ static int get_keysym(obs_key_t key)
 	case OBS_KEY_F22: return XK_F22;
 	case OBS_KEY_F23: return XK_F23;
 	case OBS_KEY_F24: return XK_F24;
+	case OBS_KEY_F25: return XK_F25;
+	case OBS_KEY_F26: return XK_F26;
+	case OBS_KEY_F27: return XK_F27;
+	case OBS_KEY_F28: return XK_F28;
+	case OBS_KEY_F29: return XK_F29;
+	case OBS_KEY_F30: return XK_F30;
+	case OBS_KEY_F31: return XK_F31;
+	case OBS_KEY_F32: return XK_F32;
+	case OBS_KEY_F33: return XK_F33;
+	case OBS_KEY_F34: return XK_F34;
+	case OBS_KEY_F35: return XK_F35;
 
 	case OBS_KEY_MENU: return XK_Menu;
 	case OBS_KEY_HYPER_L: return XK_Hyper_L;
