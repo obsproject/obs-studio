@@ -30,6 +30,7 @@ sudo apt-get install -y \
         libvlc-dev \
         libx11-dev \
         libx264-dev \
+        libxcb-randr0-dev \
         libxcb-shm0-dev \
         libxcb-xinerama0-dev \
         libxcomposite-dev \
