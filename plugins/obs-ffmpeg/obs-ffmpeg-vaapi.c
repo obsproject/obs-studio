@@ -464,7 +464,7 @@ static obs_properties_t *vaapi_properties(void *unused)
 
 	list = obs_properties_add_list(props, "vaapi_device", "VAAPI Device",
 			OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
-	char path[128] = "/dev/dri/renderD1";
+	char path[32] = "/dev/dri/renderD1";
 	for (int i = 28;; i++) {
 		sprintf(path, "/dev/dri/renderD1%d", i);
 		if (access(path, F_OK) == 0) {

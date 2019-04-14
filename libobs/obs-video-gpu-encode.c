@@ -34,7 +34,7 @@ static void *gpu_encode_thread(void *unused)
 		uint64_t timestamp;
 		uint64_t lock_key;
 		uint64_t next_key;
-		int lock_count = 0;
+		size_t lock_count = 0;
 
 		if (os_atomic_load_bool(&video->gpu_encode_stop))
 			break;

@@ -192,7 +192,6 @@ static void limiter_defaults(obs_data_t *s)
 
 static obs_properties_t *limiter_properties(void *data)
 {
-	struct limiter_data *cd    = data;
 	obs_properties_t *props = obs_properties_create();
 
 	obs_properties_add_float_slider(props, S_THRESHOLD, TEXT_THRESHOLD, MIN_THRESHOLD_DB, MAX_THRESHOLD_DB, 0.1);
