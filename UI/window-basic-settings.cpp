@@ -468,8 +468,8 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 #endif
 
 #if !defined(_WIN32) && !defined(__APPLE__) && !HAVE_PULSEAUDIO
-	delete ui->advAudioGroupBox;
-	ui->advAudioGroupBox = nullptr;
+	delete ui->audioAdvGroupBox;
+	ui->audioAdvGroupBox = nullptr;
 #endif
 
 #ifdef _WIN32
