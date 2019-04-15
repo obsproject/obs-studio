@@ -56,7 +56,7 @@ float4 PSDrawLowresBilinearRGBA(VertData v_in) : TARGET
 
 float4 PSDrawLowresBilinearMatrix(VertData v_in) : TARGET
 {
-	float3 rgb = DrawLowresBilinear(v_in);
+	float3 rgb = DrawLowresBilinear(v_in).rgb;
 	float3 yuv = mul(float4(saturate(rgb), 1.0), color_matrix).xyz;
 	return float4(yuv, 1.0);
 }
