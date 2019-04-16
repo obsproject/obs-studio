@@ -1017,3 +1017,32 @@ QCalendarWidget QAbstractItemView:enabled {
 QCalendarWidget QAbstractItemView:disabled {
     color: rgb(122,121,122);
 }
+
+/* Notifications widget */
+QPushButton#notificationButton {
+    color: palette(window-text);
+    border: 1px solid palette(window-text);
+    font-weight: bold;
+    background: transparent;
+}
+
+QPushButton#notificationButton:hover {
+    background: rgb(122,121,122);
+}
+
+QLabel#notificationText {
+    color: palette(window-text);
+    font-weight: bold;
+}
+
+#notificationWidget[notificationType=info] {
+    background-color: rgb(90,163,89);
+}
+
+#notificationWidget[notificationType=warning] {
+    background-color: rgb(192,128,0);
+}
+
+#notificationWidget[notificationType=error] {
+    background-color: rgb(192,0,0);
+}

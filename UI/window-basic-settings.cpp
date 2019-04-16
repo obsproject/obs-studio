@@ -357,7 +357,7 @@ void OBSBasicSettings::HookWidget(QWidget *widget, const char *signal,
 #define ADV_RESTART     SLOT(AdvancedChangedRestart())
 /* clang-format on */
 
-OBSBasicSettings::OBSBasicSettings(QWidget *parent)
+OBSBasicSettings::OBSBasicSettings(QWidget *parent, int tab)
 	: QDialog(parent),
 	  main(qobject_cast<OBSBasic *>(parent)),
 	  ui(new Ui::OBSBasicSettings)
@@ -369,6 +369,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
 
 	ui->setupUi(this);
+	ui->listWidget->setCurrentRow(tab);
 
 	main->EnableOutputs(false);
 

@@ -2518,6 +2518,19 @@ EXPORT void obs_source_frame_copy(struct obs_source_frame *dst,
 /* Get source icon type */
 EXPORT enum obs_icon_type obs_source_get_icon_type(const char *id);
 
+/* ------------------------------------------------------------------------- */
+/* Functions to show notification in main UI */
+enum obs_notify_type {
+	OBS_NOTIFY_TYPE_INFO,
+	OBS_NOTIFY_TYPE_WARNING,
+	OBS_NOTIFY_TYPE_ERROR,
+};
+
+EXPORT uint32_t obs_show_notification(enum obs_notify_type type,
+				      const char *message, bool persist,
+				      void *data);
+EXPORT void obs_close_notification(uint32_t id);
+
 #ifdef __cplusplus
 }
 #endif

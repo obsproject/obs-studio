@@ -26,7 +26,10 @@ private:
 	obs_output_t *recordOutput = nullptr;
 	bool active = false;
 	bool overloadedNotify = true;
+
 	bool streamPauseIconToggle = false;
+	bool droppingFramesNotify = true;
+	bool lowFPSNotify = true;
 
 	int retries = 0;
 	int totalStreamSeconds = 0;

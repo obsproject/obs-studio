@@ -90,6 +90,7 @@ static inline void wrap_blog(int log_level, const char *message)
 %ignore obs_hotkey_pair_register_output;
 %ignore obs_hotkey_pair_register_service;
 %ignore obs_hotkey_pair_register_source;
+%ignore obs_show_notification;
 
 /* The function gs_debug_marker_begin_format has a va_args.
  * By default, SWIG just drop it and replace it with a single NULL pointer.

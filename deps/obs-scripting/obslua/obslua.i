@@ -82,6 +82,7 @@ static inline void wrap_blog(int log_level, const char *message)
 %ignore obs_hotkey_pair_register_output;
 %ignore obs_hotkey_pair_register_service;
 %ignore obs_hotkey_pair_register_source;
+%ignore obs_show_notification;
 
 %include "graphics/graphics.h"
 %include "graphics/vec4.h"

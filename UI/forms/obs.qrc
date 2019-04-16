@@ -58,6 +58,10 @@
     <file>images/interact.svg</file>
     <file>images/dots.svg</file>
     <file>images/dots-vert.svg</file>
+    <file>images/notifications/info.svg</file>
+    <file>images/notifications/warning.svg</file>
+    <file>images/notifications/error.svg</file>
+    <file>images/notifications/close.svg</file>
   </qresource>
   <qresource prefix="/settings">
     <file>images/settings/output.svg</file>

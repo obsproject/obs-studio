@@ -563,6 +563,40 @@ Primary signal/procedure handlers
 
    :return: The primary obs procedure handler
 
+---------------------
+
+.. function:: uint32_t obs_show_notification(enum obs_notify_type type, const char *message, bool persist, void *data)
+
+   Show a notification in the main UI.
+
+   :param type: | Can be one of the following types:
+                | OBS_NOTIFY_TYPE_INFO
+                | OBS_NOTIFY_TYPE_WARNING
+                | OBS_NOTIFY_TYPE_ERROR
+   :param message: | Message of notification (append HTML hyperlink at end of message to add action to message)
+                | Example link to open settings dialog: <a href="settings://">Open Settings</a>
+                | Link types (can also be any arbitrary link):
+                | settings://general, open settings general tab
+                | settings://stream, open settings stream tab
+                | settings://output, open settings output tab
+                | settings://audio, open settings audio tab
+                | settings://video, open settings video tab
+                | settings://hotkeys, open settings hotkey tab
+                | settings://advanced, open settings advanced tab
+                | source://properties, open source properties (make sure data pointer is valid source)
+                | source://filters, open source filters (make sure data pointer is valid source)
+   :param persist: | Sets whether the user can close the notification in the alerts window (not yet implemented)
+   :param data: Pointer to object calling notification, can be NULL
+
+   :return: The id of the notification
+
+---------------------
+
+.. function:: void obs_close_notification(uint32_t id)
+
+   Closes notification based on id
+
+   :param id: | Notification id
 
 .. _core_signal_handler_reference:
 
@@ -653,6 +687,10 @@ Core OBS Signals
 **hotkey_bindings_changed** (ptr hotkey)
 
    Called when a hotkey's bindings has changed.
+
+**show_notification** (int timestamp, int type, string text, ptr data)
+
+  Called when a notification is shown.
 
 ---------------------
 

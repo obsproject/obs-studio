@@ -287,7 +287,9 @@ target_sources(
           window-projector.cpp
           window-projector.hpp
           window-remux.cpp
-          window-remux.hpp)
+          window-remux.hpp
+          notifications-widget.cpp
+          notifications-widget.hpp)
 
 target_sources(
   obs

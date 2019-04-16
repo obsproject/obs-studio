@@ -34,6 +34,7 @@
 #include <QSizePolicy>
 #include <QScrollBar>
 #include <QTextStream>
+#include <QStackedLayout>
 
 #include <util/dstr.h>
 #include <util/util.hpp>
@@ -293,6 +294,7 @@ OBSBasic::OBSBasic(QWidget *parent)
 	qRegisterMetaType<OBSSource>("OBSSource");
 	qRegisterMetaType<obs_hotkey_id>("obs_hotkey_id");
 	qRegisterMetaType<SavedProjectorInfo *>("SavedProjectorInfo *");
+	qRegisterMetaType<enum obs_notify_type>("enum obs_notify_type");
 
 #if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
 	qRegisterMetaTypeStreamOperators<std::vector<std::shared_ptr<OBSSignal>>>(
@@ -480,6 +482,13 @@ OBSBasic::OBSBasic(QWidget *parent)
 		&OBSBasic::BroadcastButtonClicked);
 
 	UpdatePreviewSafeAreas();
+
+	QWidget *notifyWidget = new QWidget(this);
+	notifyLayout = new QStackedLayout(this);
+	notifyLayout->setContentsMargins(0, 0, 0, 0);
+	notifyWidget->setLayout(notifyLayout);
+
+	ui->mainToolBar->addWidget(notifyWidget);
 }
 
 static void SaveAudioDevice(const char *name, int channel, obs_data_t *parent,
@@ -632,6 +641,14 @@ void OBSBasic::ClearVolumeControls()
 		delete vol;
 
 	volumes.clear();
+}
+
+void OBSBasic::ClearNotifications()
+{
+	for (OBSNotification *notification : notifications)
+		delete notification;
+
+	notifications.clear();
 }
 
 obs_data_array_t *OBSBasic::SaveSceneListOrder()
@@ -1558,7 +1575,7 @@ void OBSBasic::InitOBSCallbacks()
 {
 	ProfileScope("OBSBasic::InitOBSCallbacks");
 
-	signalHandlers.reserve(signalHandlers.size() + 7);
+	signalHandlers.reserve(signalHandlers.size() + 8);
 	signalHandlers.emplace_back(obs_get_signal_handler(), "source_create",
 				    OBSBasic::SourceCreated, this);
 	signalHandlers.emplace_back(obs_get_signal_handler(), "source_remove",
@@ -1576,6 +1593,12 @@ void OBSBasic::InitOBSCallbacks()
 				    OBSBasic::SourceAudioDeactivated, this);
 	signalHandlers.emplace_back(obs_get_signal_handler(), "source_rename",
 				    OBSBasic::SourceRenamed, this);
+	signalHandlers.emplace_back(obs_get_signal_handler(),
+				    "show_notification",
+				    OBSBasic::NotificationReceived, this);
+	signalHandlers.emplace_back(obs_get_signal_handler(),
+				    "close_notification",
+				    OBSBasic::NotificationClosed, this);
 }
 
 void OBSBasic::InitPrimitives()
@@ -2085,6 +2108,8 @@ void OBSBasic::OnFirstLoad()
 
 	if (showLogViewerOnStartup)
 		on_actionViewCurrentLog_triggered();
+
+	ui->mainToolBar->hide();
 }
 
 /* shows a "what's new" page on startup of new versions using CEF */
@@ -4088,6 +4113,33 @@ void OBSBasic::SourceRenamed(void *data, calldata_t *params)
 	blog(LOG_INFO, "Source '%s' renamed to '%s'", prevName, newName);
 }
 
+void OBSBasic::NotificationReceived(void *data, calldata_t *params)
+{
+	uint32_t id = calldata_int(params, "id");
+	enum obs_notify_type type =
+		(enum obs_notify_type)calldata_int(params, "type");
+	const char *message = calldata_string(params, "message");
+	bool persist = calldata_bool(params, "persist");
+	void *notifyData = calldata_ptr(params, "data");
+
+	QMetaObject::invokeMethod(static_cast<OBSBasic *>(data),
+				  "ShowNotification", Qt::QueuedConnection,
+				  Q_ARG(uint32_t, id),
+				  Q_ARG(enum obs_notify_type, type),
+				  Q_ARG(QString, QT_UTF8(message)),
+				  Q_ARG(bool, persist),
+				  Q_ARG(void *, notifyData));
+}
+
+void OBSBasic::NotificationClosed(void *data, calldata_t *params)
+{
+	uint32_t id = calldata_int(params, "id");
+
+	QMetaObject::invokeMethod(static_cast<OBSBasic *>(data),
+				  "CloseNotification", Qt::QueuedConnection,
+				  Q_ARG(uint32_t, id));
+}
+
 void OBSBasic::DrawBackdrop(float cx, float cy)
 {
 	if (!box)
@@ -4567,6 +4619,7 @@ void OBSBasic::ClearSceneData()
 	CloseDialogs();
 
 	ClearVolumeControls();
+	ClearNotifications();
 	ClearListItems(ui->scenes);
 	ui->sources->Clear();
 	ClearQuickTransitions();
@@ -4812,7 +4865,7 @@ void OBSBasic::on_actionRemux_triggered()
 	remux = remuxDlg;
 }
 
-void OBSBasic::on_action_Settings_triggered()
+void OBSBasic::OpenSettings(int tab)
 {
 	static bool settings_already_executing = false;
 
@@ -4832,7 +4885,7 @@ void OBSBasic::on_action_Settings_triggered()
 	settings_already_executing = true;
 
 	{
-		OBSBasicSettings settings(this);
+		OBSBasicSettings settings(this, tab);
 		settings.exec();
 	}
 
@@ -4847,6 +4900,11 @@ void OBSBasic::on_action_Settings_triggered()
 		else
 			restart = false;
 	}
+}
+
+void OBSBasic::on_action_Settings_triggered()
+{
+	OpenSettings();
 }
 
 static inline void AddMissingFiles(void *data, obs_source_t *source)
@@ -10083,4 +10141,48 @@ void OBSBasic::SetDisplayAffinity(QWindow *window)
 	// implement SetDisplayAffinitySupported too!
 	UNUSED_PARAMETER(hideFromCapture);
 #endif
+}
+
+void OBSBasic::ShowNotification(uint32_t id, enum obs_notify_type type,
+				const QString &message, bool persist,
+				void *data)
+{
+	OBSNotification *notify =
+		new OBSNotification(id, type, message, persist, data);
+
+	notifyLayout->addWidget(notify);
+	notifications.emplace_back(notify);
+
+	int index = notifyLayout->indexOf(notify);
+	notifyLayout->setCurrentIndex(index);
+
+	ui->mainToolBar->show();
+}
+
+void OBSBasic::CloseNotification(OBSNotification *notification)
+{
+	for (size_t i = 0; i < notifications.size(); i++) {
+		if (notifications[i] == notification) {
+			notifications[i]->deleteLater();
+			notifications.erase(notifications.begin() + i);
+			break;
+		}
+	}
+
+	if (!notifications.size())
+		ui->mainToolBar->hide();
+}
+
+void OBSBasic::CloseNotification(uint32_t id)
+{
+	for (size_t i = 0; i < notifications.size(); i++) {
+		if (notifications[i]->GetID() == id) {
+			notifications[i]->deleteLater();
+			notifications.erase(notifications.begin() + i);
+			break;
+		}
+	}
+
+	if (!notifications.size())
+		ui->mainToolBar->hide();
 }

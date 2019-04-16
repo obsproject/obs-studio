@@ -362,3 +362,32 @@ QCalendarWidget #qt_calendar_nextmonth {
     qproperty-icon: url(./Dark/expand.svg);
     icon-size: 16px, 16px;
 }
+
+/* Notifications widget */
+QPushButton#notificationButton {
+    color: rgb(225,224,225);
+    border: 1px solid palette(window-text);
+    font-weight: bold;
+    background: transparent;
+}
+
+QPushButton#notificationButton:hover {
+    background: rgb(122,121,122);
+}
+
+QLabel#notificationText {
+    color: rgb(225,224,225);
+    font-weight: bold;
+}
+
+#notificationWidget[notificationType=info] {
+    background-color: rgb(90,163,89);
+}
+
+#notificationWidget[notificationType=warning] {
+    background-color: rgb(192,128,0);
+}
+
+#notificationWidget[notificationType=error] {
+    background-color: rgb(192,0,0);
+}
