@@ -1260,8 +1260,8 @@ QToolTip {
 
 /* Preview background color */
 
-* [themeID="displayBackgroundColor"] {
-    qproperty-displayBackgroundColor: rgb(35, 38, 41);
+OBSQTDisplay {
+	qproperty-displayBackgroundColor: rgb(35, 38, 41);
 }
 
 /* Preview/Program labels */
