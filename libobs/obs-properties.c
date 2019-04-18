@@ -86,6 +86,11 @@ struct frame_rate_data {
 	DARRAY(struct frame_rate_range)  ranges;
 };
 
+struct group_data {
+	enum obs_group_type type;
+	obs_properties_t *content;
+};
+
 static inline void path_data_free(struct path_data *data)
 {
 	bfree(data->default_path);
@@ -140,6 +145,10 @@ static inline void frame_rate_data_free(struct frame_rate_data *data)
 	da_free(data->ranges);
 }
 
+static inline void group_data_free(struct group_data *data) {
+	obs_properties_destroy(data->content);
+}
+
 struct obs_properties;
 
 struct obs_property {
@@ -166,6 +175,7 @@ struct obs_properties {
 
 	struct obs_property     *first_property;
 	struct obs_property     **last;
+	struct obs_property     *parent;
 };
 
 obs_properties_t *obs_properties_create(void)
@@ -223,6 +233,8 @@ static void obs_property_destroy(struct obs_property *property)
 		editable_list_data_free(get_property_data(property));
 	else if (property->type == OBS_PROPERTY_FRAME_RATE)
 		frame_rate_data_free(get_property_data(property));
+	else if (property->type == OBS_PROPERTY_GROUP)
+		group_data_free(get_property_data(property));
 
 	bfree(property->name);
 	bfree(property->desc);
@@ -265,10 +277,24 @@ obs_property_t *obs_properties_get(obs_properties_t *props, const char *name)
 		if (strcmp(property->name, name) == 0)
 			return property;
 
+		if (property->type == OBS_PROPERTY_GROUP) {
+			obs_properties_t *group =
+				obs_property_group_content(property);
+			obs_property_t *found = obs_properties_get(group, name);
+			if (found != NULL) {
+				return found;
+			}
+		}
+
 		property = property->next;
 	}
 
 	return NULL;
+}
+
+obs_properties_t *obs_properties_get_parent(obs_properties_t *props)
+{
+	return props->parent ? props->parent->parent : NULL;
 }
 
 void obs_properties_remove_by_name(obs_properties_t *props, const char *name)
@@ -338,6 +364,7 @@ static inline size_t get_property_size(enum obs_property_type type)
 	case OBS_PROPERTY_EDITABLE_LIST:
 		return sizeof(struct editable_list_data);
 	case OBS_PROPERTY_FRAME_RATE:return sizeof(struct frame_rate_data);
+	case OBS_PROPERTY_GROUP:     return sizeof(struct group_data);
 	}
 
 	return 0;
@@ -362,7 +389,18 @@ static inline struct obs_property *new_prop(struct obs_properties *props,
 	return p;
 }
 
-static inline bool has_prop(struct obs_properties *props, const char *name)
+static inline obs_properties_t *get_topmost_parent(obs_properties_t *props)
+{
+	obs_properties_t *parent = props;
+	obs_properties_t *last_parent = parent;
+	while (parent) {
+		last_parent = parent;
+		parent = obs_properties_get_parent(parent);
+	}
+	return last_parent;
+}
+
+static inline bool contains_prop(struct obs_properties *props, const char *name)
 {
 	struct obs_property *p = props->first_property;
 
@@ -372,10 +410,21 @@ static inline bool has_prop(struct obs_properties *props, const char *name)
 			return true;
 		}
 
+		if (p->type == OBS_PROPERTY_GROUP) {
+			if (contains_prop(obs_property_group_content(p), name)) {
+				return true;
+			}
+		}
+
 		p = p->next;
 	}
 
 	return false;
+}
+
+static inline bool has_prop(struct obs_properties *props, const char *name)
+{
+	return contains_prop(get_topmost_parent(props), name);
 }
 
 static inline void *get_property_data(struct obs_property *prop)
@@ -578,6 +627,70 @@ obs_property_t *obs_properties_add_frame_rate(obs_properties_t *props,
 	return p;
 }
 
+static bool check_property_group_recursion(obs_properties_t *parent,
+	obs_properties_t *group)
+{
+	/* Scan the group for the parent. */
+	obs_property_t *current_property = group->first_property;
+	while (current_property) {
+		if (current_property->type == OBS_PROPERTY_GROUP) {
+			obs_properties_t *cprops =
+				obs_property_group_content(current_property);
+			if (cprops == parent) {
+				/* Contains find_props */
+				return true;
+			} else if (cprops == group) {
+				/* Contains self, shouldn't be possible but
+				 * lets verify anyway. */
+				return true;
+			}
+			check_property_group_recursion(cprops, group);
+		}
+
+		current_property = current_property->next;
+	}
+
+	return false;
+}
+
+static bool check_property_group_duplicates(obs_properties_t *parent,
+	obs_properties_t *group)
+{
+	obs_property_t *current_property = group->first_property;
+	while (current_property) {
+		if (has_prop(parent, current_property->name)) {
+			return true;
+		}
+
+		current_property = current_property->next;
+	}
+
+	return false;
+}
+
+obs_property_t *obs_properties_add_group(obs_properties_t *props,
+	const char *name, const char *desc, enum obs_group_type type,
+	obs_properties_t *group)
+{
+	if (!props || has_prop(props, name)) return NULL;
+	if (!group) return NULL;
+
+	/* Prevent recursion. */
+	if (props == group) return NULL;
+	if (check_property_group_recursion(props, group)) return NULL;
+
+	/* Prevent duplicate properties */
+	if (check_property_group_duplicates(props, group)) return NULL;
+
+	obs_property_t *p = new_prop(props, name, desc, OBS_PROPERTY_GROUP);
+	group->parent = p;
+
+	struct group_data *data = get_property_data(p);
+	data->type = type;
+	data->content = group;
+	return p;
+}
+
 /* ------------------------------------------------------------------------- */
 
 static inline bool is_combo(struct obs_property *p)
@@ -630,9 +743,11 @@ bool obs_property_modified(obs_property_t *p, obs_data_t *settings)
 {
 	if (p) {
 		if (p->modified) {
-			return p->modified(p->parent, p, settings);
+			obs_properties_t *top = get_topmost_parent(p->parent);
+			return p->modified(top, p, settings);
 		} else if (p->modified2) {
-			return p->modified2(p->priv, p->parent, p, settings);
+			obs_properties_t *top = get_topmost_parent(p->parent);
+			return p->modified2(p->priv, top, p, settings);
 		}
 	}
 	return false;
@@ -645,9 +760,10 @@ bool obs_property_button_clicked(obs_property_t *p, void *obj)
 		struct button_data *data = get_type_data(p,
 				OBS_PROPERTY_BUTTON);
 		if (data && data->callback) {
+			obs_properties_t *top = get_topmost_parent(p->parent);
 			if (p->priv)
-				return data->callback(p->parent, p, p->priv);
-			return data->callback(p->parent, p,
+				return data->callback(top, p, p->priv);
+			return data->callback(top, p,
 					(context ? context->data : NULL));
 		}
 	}
@@ -1136,4 +1252,16 @@ struct media_frames_per_second obs_property_frame_rate_fps_range_max(
 enum obs_text_type obs_proprety_text_type(obs_property_t *p)
 {
 	return obs_property_text_type(p);
+}
+
+enum obs_group_type obs_property_group_type(obs_property_t *p)
+{
+	struct group_data *data = get_type_data(p, OBS_PROPERTY_GROUP);
+	return data ? data->type : OBS_COMBO_INVALID;
+}
+
+obs_properties_t *obs_property_group_content(obs_property_t *p)
+{
+	struct group_data *data = get_type_data(p, OBS_PROPERTY_GROUP);
+	return data ? data->content : NULL;
 }

@@ -19,6 +19,7 @@
 #include <QMenu>
 #include <QStackedWidget>
 #include <QDir>
+#include <QGroupBox>
 #include "double-slider.hpp"
 #include "slider-ignorewheel.hpp"
 #include "spinBox-ignorewheel.hpp"
@@ -1332,6 +1333,44 @@ void OBSPropertiesView::AddFrameRate(obs_property_t *prop, bool &warning,
 	});
 }
 
+void OBSPropertiesView::AddGroup(obs_property_t *prop, QFormLayout *layout)
+{
+	const char *name = obs_property_name(prop);
+	bool val = obs_data_get_bool(settings, name);
+	const char *desc = obs_property_description(prop);
+	enum obs_group_type type = obs_property_group_type(prop);
+
+	// Create GroupBox
+	QGroupBox *groupBox = new QGroupBox(QT_UTF8(desc));
+	groupBox->setCheckable(type == OBS_GROUP_CHECKABLE);
+	groupBox->setChecked(groupBox->isCheckable() ? val : true);
+	groupBox->setAccessibleName("group");
+	groupBox->setEnabled(obs_property_enabled(prop));
+
+	// Create Layout and build content
+	QFormLayout *subLayout = new QFormLayout();
+	subLayout->setFieldGrowthPolicy(QFormLayout::AllNonFixedFieldsGrow);
+	groupBox->setLayout(subLayout);
+
+	obs_properties_t *content = obs_property_group_content(prop);
+	obs_property_t *el = obs_properties_first(content);
+	while (el != nullptr) {
+		AddProperty(el, subLayout);
+		obs_property_next(&el);
+	}
+
+	// Insert into UI
+	layout->setWidget(layout->rowCount(),
+			QFormLayout::ItemRole::SpanningRole, groupBox);
+
+	// Register Group Widget
+	WidgetInfo *info = new WidgetInfo(this, prop, groupBox);
+	children.emplace_back(info);
+
+	// Signals
+	connect(groupBox, SIGNAL(toggled()), info, SLOT(ControlChanged()));
+}
+
 void OBSPropertiesView::AddProperty(obs_property_t *property,
 		QFormLayout *layout)
 {
@@ -1381,6 +1420,8 @@ void OBSPropertiesView::AddProperty(obs_property_t *property,
 	case OBS_PROPERTY_FRAME_RATE:
 		AddFrameRate(property, warning, layout, label);
 		break;
+	case OBS_PROPERTY_GROUP:
+		AddGroup(property, layout);
 	}
 
 	if (widget && !obs_property_enabled(property))
@@ -1388,7 +1429,8 @@ void OBSPropertiesView::AddProperty(obs_property_t *property,
 
 	if (!label &&
 	    type != OBS_PROPERTY_BOOL &&
-	    type != OBS_PROPERTY_BUTTON)
+	    type != OBS_PROPERTY_BUTTON &&
+	    type != OBS_PROPERTY_GROUP)
 		label = new QLabel(QT_UTF8(obs_property_description(property)));
 
 	if (warning && label) //TODO: select color based on background color
@@ -1707,6 +1749,13 @@ bool WidgetInfo::FontChanged(const char *setting)
 	return true;
 }
 
+void WidgetInfo::GroupChanged(const char *setting)
+{
+	QGroupBox *groupbox = static_cast<QGroupBox*>(widget);
+	obs_data_set_bool(view->settings, setting,
+		groupbox->isCheckable() ? groupbox->isChecked() : true);
+}
+
 void WidgetInfo::EditableListChanged()
 {
 	const char *setting = obs_property_name(property);
@@ -1776,6 +1825,7 @@ void WidgetInfo::ControlChanged()
 		if (!FrameRateChanged(widget, setting, view->settings))
 			return;
 		break;
+	case OBS_PROPERTY_GROUP:  GroupChanged(setting); return;
 	}
 
 	if (view->callback && !view->deferUpdate)
