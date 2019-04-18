@@ -24,15 +24,29 @@ else()
 	add_definitions(-DHAVE_UDEV)
 endif()
 
+find_package(ImageMagick QUIET COMPONENTS MagickCore)
+
+if(NOT ImageMagick_MagickCore_FOUND)
+	message(FATAL_ERROR "MagickCore is required.")
+endif()
+
+if(${ImageMagick_VERSION_STRING} LESS 7)
+	add_definitions(-DLIBOBS_IMAGEMAGICK_DIR_STYLE_6L)
+elseif(${ImageMagick_VERSION_STRING} GREATER_EQUAL 7)
+	add_definitions(-DLIBOBS_IMAGEMAGICK_DIR_STYLE_7GE)
+endif()
+
 include_directories(
 	SYSTEM "${CMAKE_SOURCE_DIR}/libobs"
 	${LIBV4L2_INCLUDE_DIRS}
+	${ImageMagick_INCLUDE_DIRS}
 )
 
 set(linux-v4l2_SOURCES
 	linux-v4l2.c
 	v4l2-input.c
 	v4l2-helpers.c
+	v4l2-decompress.c
 	${linux-v4l2-udev_SOURCES}
 )
 
@@ -43,6 +57,8 @@ target_link_libraries(linux-v4l2
 	libobs
 	${LIBV4L2_LIBRARIES}
 	${UDEV_LIBRARIES}
+	${ImageMagick_LIBRARIES}
 )
+
 
 install_obs_plugin_with_data(linux-v4l2 data)

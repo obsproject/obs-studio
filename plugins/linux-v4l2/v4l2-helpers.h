@@ -69,7 +69,22 @@ static inline enum video_format v4l2_to_obs_video_format(uint_fast32_t format)
 #ifdef V4L2_PIX_FMT_ABGR32
 	case V4L2_PIX_FMT_ABGR32: return VIDEO_FORMAT_BGRA;
 #endif
+	case V4L2_PIX_FMT_MJPEG:  return VIDEO_FORMAT_BGRA;
 	default:                  return VIDEO_FORMAT_NONE;
+	}
+}
+
+/**
+ * Check if v4l2 buffer requires decompression
+ *
+ * @param format v4l2 format id
+ *
+ * @return bool
+ */
+static inline bool v4l2_is_compressed(uint_fast32_t format) {
+	switch (format) {
+	case V4L2_PIX_FMT_MJPEG: return true;
+	default:                  return false;
 	}
 }
 

@@ -36,6 +36,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <obs-module.h>
 
 #include "v4l2-helpers.h"
+#include "v4l2-decompress.h"
 
 #if HAVE_UDEV
 #include "v4l2-udev.h"
@@ -137,6 +138,9 @@ static void v4l2_prep_obs_frame(struct v4l2_data *data,
 		plane_offsets[1] = data->linesize * data->height;
 		plane_offsets[2] = data->linesize * data->height * 5 / 4;
 		break;
+	case V4L2_PIX_FMT_MJPEG:
+		frame->linesize[0] = data->width * 4;
+		break;
 	default:
 		frame->linesize[0] = data->linesize;
 		break;
@@ -165,6 +169,11 @@ static void *v4l2_thread(void *vptr)
 	frames   = 0;
 	first_ts = 0;
 	v4l2_prep_obs_frame(data, &out, plane_offsets);
+
+	uint8_t *decompressed = NULL;
+	if (v4l2_is_compressed(data->pixfmt)) {
+		decompressed = bmalloc(data->width * data->height * 4);
+	}
 
 	while (os_event_try(data->event) == EAGAIN) {
 		FD_ZERO(&fds);
@@ -198,7 +207,15 @@ static void *v4l2_thread(void *vptr)
 			first_ts = out.timestamp;
 		out.timestamp -= first_ts;
 
+
 		start = (uint8_t *) data->buffers.info[buf.index].start;
+
+		if (v4l2_is_compressed(data->pixfmt)) {
+			if (v4l2_decompress(start, decompressed, data->width, data->height)) {
+				start = decompressed;
+			}
+		}
+
 		for (uint_fast32_t i = 0; i < MAX_AV_PLANES; ++i)
 			out.data[i] = start + plane_offsets[i];
 		obs_source_output_video(data->source, &out);
@@ -209,6 +226,10 @@ static void *v4l2_thread(void *vptr)
 		}
 
 		frames++;
+	}
+
+	if (decompressed != NULL) {
+		bfree(decompressed);
 	}
 
 	blog(LOG_INFO, "Stopped capture after %"PRIu64" frames", frames);
@@ -396,6 +417,9 @@ static void v4l2_format_list(int dev, obs_property_t *prop)
 
 		if (v4l2_to_obs_video_format(fmt.pixelformat)
 				!= VIDEO_FORMAT_NONE) {
+			if (v4l2_is_compressed(fmt.pixelformat)) {
+				dstr_cat(&buffer, " (Compressed)");
+			}
 			obs_property_list_add_int(prop, buffer.array,
 					fmt.pixelformat);
 			blog(LOG_INFO, "Pixelformat: %s (available)",
