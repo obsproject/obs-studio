@@ -2,11 +2,11 @@
 #include "qt-wrappers.hpp"
 #include "obs-app.hpp"
 #include "mute-checkbox.hpp"
+#include "slider-ignorewheel.hpp"
 #include "slider-absoluteset-style.hpp"
 #include <QFontDatabase>
 #include <QHBoxLayout>
 #include <QPushButton>
-#include <QSlider>
 #include <QLabel>
 #include <QPainter>
 #include <QStyleFactory>
@@ -123,6 +123,7 @@ VolControl::VolControl(OBSSource source_, bool showConfig, bool vertical)
 	nameLabel = new QLabel();
 	volLabel  = new QLabel();
 	mute      = new MuteCheckBox();
+
 	QString sourceName = obs_source_get_name(source);
 	setObjectName(sourceName);
 
@@ -153,7 +154,7 @@ VolControl::VolControl(OBSSource source_, bool showConfig, bool vertical)
 		QHBoxLayout *meterLayout  = new QHBoxLayout;
 
 		volMeter  = new VolumeMeter(nullptr, obs_volmeter, true);
-		slider    = new QSlider(Qt::Vertical);
+		slider    = new SliderIgnoreScroll(Qt::Vertical);
 
 		nameLayout->setAlignment(Qt::AlignCenter);
 		meterLayout->setAlignment(Qt::AlignCenter);
@@ -188,6 +189,8 @@ VolControl::VolControl(OBSSource source_, bool showConfig, bool vertical)
 		mainLayout->addItem(meterLayout);
 		mainLayout->addItem(controlLayout);
 
+		volMeter->setFocusProxy(slider);
+
 		setMaximumWidth(110);
 	} else {
 		QHBoxLayout *volLayout  = new QHBoxLayout;
@@ -195,7 +198,7 @@ VolControl::VolControl(OBSSource source_, bool showConfig, bool vertical)
 		QHBoxLayout *botLayout  = new QHBoxLayout;
 
 		volMeter  = new VolumeMeter(nullptr, obs_volmeter, false);
-		slider    = new QSlider(Qt::Horizontal);
+		slider    = new SliderIgnoreScroll(Qt::Horizontal);
 
 		textLayout->setContentsMargins(0, 0, 0, 0);
 		textLayout->addWidget(nameLabel);
@@ -217,6 +220,8 @@ VolControl::VolControl(OBSSource source_, bool showConfig, bool vertical)
 		mainLayout->addItem(textLayout);
 		mainLayout->addWidget(volMeter);
 		mainLayout->addItem(botLayout);
+
+		volMeter->setFocusProxy(slider);
 	}
 
 	setLayout(mainLayout);
@@ -227,6 +232,7 @@ VolControl::VolControl(OBSSource source_, bool showConfig, bool vertical)
 	nameLabel->setText(sourceName);
 	nameLabel->setFont(font);
 	volLabel->setFont(font);
+
 	slider->setMinimum(0);
 	slider->setMaximum(100);
 
@@ -496,6 +502,21 @@ void VolumeMeter::setPeakMeterType(enum obs_peak_meter_type peakMeterType)
 		setWarningLevel(-20.0);
 		break;
 	}
+}
+
+void VolumeMeter::mousePressEvent(QMouseEvent * event)
+{
+	setFocus(Qt::MouseFocusReason);
+}
+
+void VolumeMeter::wheelEvent(QWheelEvent * event)
+{
+	QApplication::sendEvent(focusProxy(), event);
+}
+
+void VolumeMeter::leaveEvent(QEvent * event)
+{
+	clearFocus();
 }
 
 VolumeMeter::VolumeMeter(QWidget *parent, obs_volmeter_t *obs_volmeter,
