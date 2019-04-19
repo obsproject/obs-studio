@@ -48,6 +48,14 @@ public:
 			QWidget *parent,
 			const QString &title,
 			const QString &text);
+	static void warning(
+		QWidget *parent,
+		const QString &title,
+		const QString &text);
+	static void critical(
+		QWidget *parent,
+		const QString &title,
+		const QString &text);
 };
 
 void OBSErrorBox(QWidget *parent, const char *msg, ...);

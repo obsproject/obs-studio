@@ -215,7 +215,7 @@ void OBSBasicSourceSelect::on_buttonBox_accepted()
 		AddExisting(QT_TO_UTF8(item->text()), visible, false);
 	} else {
 		if (ui->sourceName->text().isEmpty()) {
-			OBSMessageBox::information(this,
+			OBSMessageBox::warning(this,
 					QTStr("NoNameEntered.Title"),
 					QTStr("NoNameEntered.Text"));
 			return;

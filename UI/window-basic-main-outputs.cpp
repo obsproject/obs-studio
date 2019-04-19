@@ -63,7 +63,8 @@ static void OBSStopStreaming(void *data, calldata_t *params)
 	output->delayActive = false;
 	os_atomic_set_bool(&streaming_active, false);
 	QMetaObject::invokeMethod(output->main,
-			"StreamingStop", Q_ARG(int, code), Q_ARG(QString, arg_last_error));
+			"StreamingStop", Q_ARG(int, code),
+			Q_ARG(QString, arg_last_error));
 }
 
 static void OBSStartRecording(void *data, calldata_t *params)
@@ -81,11 +82,15 @@ static void OBSStopRecording(void *data, calldata_t *params)
 {
 	BasicOutputHandler *output = static_cast<BasicOutputHandler*>(data);
 	int code = (int)calldata_int(params, "code");
+	const char *last_error = calldata_string(params, "last_error");
+
+	QString arg_last_error = QString::fromUtf8(last_error);
 
 	output->recordingActive = false;
 	os_atomic_set_bool(&recording_active, false);
 	QMetaObject::invokeMethod(output->main,
-			"RecordingStop", Q_ARG(int, code));
+			"RecordingStop", Q_ARG(int, code),
+			Q_ARG(QString, arg_last_error));
 
 	UNUSED_PARAMETER(params);
 }
@@ -891,7 +896,7 @@ bool SimpleOutput::ConfigureRecording(bool updateReplayBuffer)
 
 	if (!dir) {
 		if (main->isVisible())
-			OBSMessageBox::information(main,
+			OBSMessageBox::warning(main,
 					QTStr("Output.BadPath.Title"),
 					QTStr("Output.BadPath.Text"));
 		else
@@ -1658,7 +1663,7 @@ bool AdvancedOutput::StartRecording()
 
 		if (!dir) {
 			if (main->isVisible())
-				OBSMessageBox::information(main,
+				OBSMessageBox::warning(main,
 						QTStr("Output.BadPath.Title"),
 						QTStr("Output.BadPath.Text"));
 			else
@@ -1758,7 +1763,7 @@ bool AdvancedOutput::StartReplayBuffer()
 
 		if (!dir) {
 			if (main->isVisible())
-				OBSMessageBox::information(main,
+				OBSMessageBox::warning(main,
 						QTStr("Output.BadPath.Title"),
 						QTStr("Output.BadPath.Text"));
 			else

@@ -73,6 +73,15 @@ size_t os_process_pipe_read(os_process_pipe_t *pp, uint8_t *data, size_t len)
 	return fread(data, 1, len, pp->file);
 }
 
+size_t os_process_pipe_read_err(os_process_pipe_t *pp, uint8_t *data, size_t len)
+{
+	/* XXX: unsupported on posix */
+	UNUSED_PARAMETER(pp);
+	UNUSED_PARAMETER(data);
+	UNUSED_PARAMETER(len);
+	return 0;
+}
+
 size_t os_process_pipe_write(os_process_pipe_t *pp, const uint8_t *data,
 		size_t len)
 {

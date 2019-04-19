@@ -2790,7 +2790,7 @@ void OBSBasic::MixerRenameSource()
 			return;
 
 		if (name.empty()) {
-			OBSMessageBox::information(this,
+			OBSMessageBox::warning(this,
 					QTStr("NoNameEntered.Title"),
 					QTStr("NoNameEntered.Text"));
 			continue;
@@ -2800,7 +2800,7 @@ void OBSBasic::MixerRenameSource()
 		obs_source_release(sourceTest);
 
 		if (sourceTest) {
-			OBSMessageBox::information(this,
+			OBSMessageBox::warning(this,
 					QTStr("NameExists.Title"),
 					QTStr("NameExists.Text"));
 			continue;
@@ -3165,7 +3165,7 @@ void OBSBasic::DuplicateSelectedScene()
 			return;
 
 		if (name.empty()) {
-			OBSMessageBox::information(this,
+			OBSMessageBox::warning(this,
 					QTStr("NoNameEntered.Title"),
 					QTStr("NoNameEntered.Text"));
 			continue;
@@ -3173,7 +3173,7 @@ void OBSBasic::DuplicateSelectedScene()
 
 		obs_source_t *source = obs_get_source_by_name(name.c_str());
 		if (source) {
-			OBSMessageBox::information(this,
+			OBSMessageBox::warning(this,
 					QTStr("NameExists.Title"),
 					QTStr("NameExists.Text"));
 
@@ -4109,7 +4109,7 @@ void OBSBasic::on_actionAddScene_triggered()
 
 	if (accepted) {
 		if (name.empty()) {
-			OBSMessageBox::information(this,
+			OBSMessageBox::warning(this,
 					QTStr("NoNameEntered.Title"),
 					QTStr("NoNameEntered.Text"));
 			on_actionAddScene_triggered();
@@ -4118,7 +4118,7 @@ void OBSBasic::on_actionAddScene_triggered()
 
 		obs_source_t *source = obs_get_source_by_name(name.c_str());
 		if (source) {
-			OBSMessageBox::information(this,
+			OBSMessageBox::warning(this,
 					QTStr("NameExists.Title"),
 					QTStr("NameExists.Text"));
 
@@ -4869,7 +4869,7 @@ void OBSBasic::logUploadFinished(const QString &text, const QString &error)
 	ui->menuLogFiles->setEnabled(true);
 
 	if (text.isEmpty()) {
-		OBSMessageBox::information(this,
+		OBSMessageBox::critical(this,
 				QTStr("LogReturnDialog.ErrorUploadingLog"),
 				error);
 		return;
@@ -4898,11 +4898,11 @@ static void RenameListItem(OBSBasic *parent, QListWidget *listWidget,
 		listItem->setText(QT_UTF8(prevName));
 
 		if (foundSource) {
-			OBSMessageBox::information(parent,
+			OBSMessageBox::warning(parent,
 				QTStr("NameExists.Title"),
 				QTStr("NameExists.Text"));
 		} else if (name.empty()) {
-			OBSMessageBox::information(parent,
+			OBSMessageBox::warning(parent,
 				QTStr("NoNameEntered.Title"),
 				QTStr("NoNameEntered.Text"));
 		}
@@ -5363,7 +5363,7 @@ void OBSBasic::RecordingStart()
 	blog(LOG_INFO, RECORDING_START);
 }
 
-void OBSBasic::RecordingStop(int code)
+void OBSBasic::RecordingStop(int code, QString last_error)
 {
 	ui->statusbar->RecordingStopped();
 	ui->recordButton->setText(QTStr("Basic.Main.StartRecording"));
@@ -5375,19 +5375,32 @@ void OBSBasic::RecordingStop(int code)
 	blog(LOG_INFO, RECORDING_STOP);
 
 	if (code == OBS_OUTPUT_UNSUPPORTED && isVisible()) {
-		OBSMessageBox::information(this,
+		OBSMessageBox::critical(this,
 				QTStr("Output.RecordFail.Title"),
 				QTStr("Output.RecordFail.Unsupported"));
 
 	} else if (code == OBS_OUTPUT_NO_SPACE && isVisible()) {
-		OBSMessageBox::information(this,
+		OBSMessageBox::warning(this,
 				QTStr("Output.RecordNoSpace.Title"),
 				QTStr("Output.RecordNoSpace.Msg"));
 
 	} else if (code != OBS_OUTPUT_SUCCESS && isVisible()) {
-		OBSMessageBox::information(this,
+
+		const char *errorDescription;
+		DStr errorMessage;
+		bool use_last_error = true;
+
+		errorDescription = Str("Output.RecordError.Msg");
+
+		if (use_last_error && !last_error.isEmpty())
+			dstr_printf(errorMessage, "%s\n\n%s", errorDescription,
+				QT_TO_UTF8(last_error));
+		else
+			dstr_copy(errorMessage, errorDescription);
+
+		OBSMessageBox::critical(this,
 				QTStr("Output.RecordError.Title"),
-				QTStr("Output.RecordError.Msg"));
+				QT_UTF8(errorMessage));
 
 	} else if (code == OBS_OUTPUT_UNSUPPORTED && !isVisible()) {
 		SysTrayNotify(QTStr("Output.RecordFail.Unsupported"),
@@ -5528,17 +5541,17 @@ void OBSBasic::ReplayBufferStop(int code)
 	blog(LOG_INFO, REPLAY_BUFFER_STOP);
 
 	if (code == OBS_OUTPUT_UNSUPPORTED && isVisible()) {
-		OBSMessageBox::information(this,
+		OBSMessageBox::critical(this,
 				QTStr("Output.RecordFail.Title"),
 				QTStr("Output.RecordFail.Unsupported"));
 
 	} else if (code == OBS_OUTPUT_NO_SPACE && isVisible()) {
-		OBSMessageBox::information(this,
+		OBSMessageBox::warning(this,
 				QTStr("Output.RecordNoSpace.Title"),
 				QTStr("Output.RecordNoSpace.Msg"));
 
 	} else if (code != OBS_OUTPUT_SUCCESS && isVisible()) {
-		OBSMessageBox::information(this,
+		OBSMessageBox::critical(this,
 				QTStr("Output.RecordError.Title"),
 				QTStr("Output.RecordError.Msg"));
 

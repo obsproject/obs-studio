@@ -86,6 +86,8 @@ struct ffmpeg_data {
 	struct ffmpeg_cfg  config;
 
 	bool               initialized;
+
+	char               *last_error;
 };
 
 struct ffmpeg_output {
@@ -114,6 +116,30 @@ struct ffmpeg_output {
 
 /* ------------------------------------------------------------------------- */
 
+static void ffmpeg_output_set_last_error(struct ffmpeg_data *data,
+	const char *error)
+{
+	if (data->last_error)
+		bfree(data->last_error);
+
+	data->last_error = bstrdup(error);
+}
+
+void ffmpeg_log_error(int log_level, struct ffmpeg_data *data,
+	const char *format, ...)
+{
+	va_list args;
+	char out[4096];
+
+	va_start(args, format);
+	vsnprintf(out, sizeof(out), format, args);
+	va_end(args);
+
+	ffmpeg_output_set_last_error(data, out);
+
+	blog(log_level, "%s", out);
+}
+
 static bool new_stream(struct ffmpeg_data *data, AVStream **stream,
 		AVCodec **codec, enum AVCodecID id, const char *name)
 {
@@ -122,14 +148,14 @@ static bool new_stream(struct ffmpeg_data *data, AVStream **stream,
 		avcodec_find_encoder(id);
 
 	if (!*codec) {
-		blog(LOG_WARNING, "Couldn't find encoder '%s'",
+		ffmpeg_log_error(LOG_WARNING, data, "Couldn't find encoder '%s'",
 				avcodec_get_name(id));
 		return false;
 	}
 
 	*stream = avformat_new_stream(data->output, *codec);
 	if (!*stream) {
-		blog(LOG_WARNING, "Couldn't create stream for encoder '%s'",
+		ffmpeg_log_error(LOG_WARNING, data, "Couldn't create stream for encoder '%s'",
 				avcodec_get_name(id));
 		return false;
 	}
@@ -186,14 +212,14 @@ static bool open_video_codec(struct ffmpeg_data *data)
 
 	ret = avcodec_open2(context, data->vcodec, NULL);
 	if (ret < 0) {
-		blog(LOG_WARNING, "Failed to open video codec: %s",
+		ffmpeg_log_error(LOG_WARNING, data, "Failed to open video codec: %s",
 				av_err2str(ret));
 		return false;
 	}
 
 	data->vframe = av_frame_alloc();
 	if (!data->vframe) {
-		blog(LOG_WARNING, "Failed to allocate video frame");
+		ffmpeg_log_error(LOG_WARNING, data, "Failed to allocate video frame");
 		return false;
 	}
 
@@ -205,7 +231,7 @@ static bool open_video_codec(struct ffmpeg_data *data)
 
 	ret = av_frame_get_buffer(data->vframe, base_get_alignment());
 	if (ret < 0) {
-		blog(LOG_WARNING, "Failed to allocate vframe: %s",
+		ffmpeg_log_error(LOG_WARNING, data, "Failed to allocate vframe: %s",
 				av_err2str(ret));
 		return false;
 	}
@@ -223,7 +249,7 @@ static bool init_swscale(struct ffmpeg_data *data, AVCodecContext *context)
 			SWS_BICUBIC, NULL, NULL, NULL);
 
 	if (!data->swscale) {
-		blog(LOG_WARNING, "Could not initialize swscale");
+		ffmpeg_log_error(LOG_WARNING, data, "Could not initialize swscale");
 		return false;
 	}
 
@@ -237,7 +263,7 @@ static bool create_video_stream(struct ffmpeg_data *data)
 	struct obs_video_info ovi;
 
 	if (!obs_get_video_info(&ovi)) {
-		blog(LOG_WARNING, "No active video");
+		ffmpeg_log_error(LOG_WARNING, data, "No active video");
 		return false;
 	}
 
@@ -292,7 +318,7 @@ static bool open_audio_codec(struct ffmpeg_data *data, int idx)
 
 	data->aframe[idx] = av_frame_alloc();
 	if (!data->aframe[idx]) {
-		blog(LOG_WARNING, "Failed to allocate audio frame");
+		ffmpeg_log_error(LOG_WARNING, data, "Failed to allocate audio frame");
 		return false;
 	}
 
@@ -305,7 +331,7 @@ static bool open_audio_codec(struct ffmpeg_data *data, int idx)
 
 	ret = avcodec_open2(context, data->acodec, NULL);
 	if (ret < 0) {
-		blog(LOG_WARNING, "Failed to open audio codec: %s",
+		ffmpeg_log_error(LOG_WARNING, data, "Failed to open audio codec: %s",
 				av_err2str(ret));
 		return false;
 	}
@@ -315,7 +341,7 @@ static bool open_audio_codec(struct ffmpeg_data *data, int idx)
 	ret = av_samples_alloc(data->samples[idx], NULL, context->channels,
 			data->frame_size, context->sample_fmt, 0);
 	if (ret < 0) {
-		blog(LOG_WARNING, "Failed to create audio buffer: %s",
+		ffmpeg_log_error(LOG_WARNING, data, "Failed to create audio buffer: %s",
 		                av_err2str(ret));
 		return false;
 	}
@@ -330,7 +356,7 @@ static bool create_audio_stream(struct ffmpeg_data *data, int idx)
 	struct obs_audio_info aoi;
 
 	if (!obs_get_audio_info(&aoi)) {
-		blog(LOG_WARNING, "No active audio");
+		ffmpeg_log_error(LOG_WARNING, data, "No active audio");
 		return false;
 	}
 
@@ -396,7 +422,7 @@ static inline bool open_output_file(struct ffmpeg_data *data)
 	AVDictionary *dict = NULL;
 	if ((ret = av_dict_parse_string(&dict, data->config.muxer_settings,
 				"=", " ", 0))) {
-		blog(LOG_WARNING, "Failed to parse muxer settings: %s\n%s",
+		ffmpeg_log_error(LOG_WARNING, data, "Failed to parse muxer settings: %s\n%s",
 				av_err2str(ret), data->config.muxer_settings);
 
 		av_dict_free(&dict);
@@ -419,8 +445,9 @@ static inline bool open_output_file(struct ffmpeg_data *data)
 		ret = avio_open2(&data->output->pb, data->config.url,
 				AVIO_FLAG_WRITE, NULL, &dict);
 		if (ret < 0) {
-			blog(LOG_WARNING, "Couldn't open '%s', %s",
-					data->config.url, av_err2str(ret));
+			ffmpeg_log_error(LOG_WARNING, data,
+				"Couldn't open '%s', %s", data->config.url,
+				av_err2str(ret));
 			av_dict_free(&dict);
 			return false;
 		}
@@ -432,7 +459,7 @@ static inline bool open_output_file(struct ffmpeg_data *data)
 
 	ret = avformat_write_header(data->output, &dict);
 	if (ret < 0) {
-		blog(LOG_WARNING, "Error opening '%s': %s",
+		ffmpeg_log_error(LOG_WARNING, data, "Error opening '%s': %s",
 				data->config.url, av_err2str(ret));
 		return false;
 	}
@@ -503,6 +530,9 @@ static void ffmpeg_data_free(struct ffmpeg_data *data)
 		avformat_free_context(data->output);
 	}
 
+	if (data->last_error)
+		bfree(data->last_error);
+
 	memset(data, 0, sizeof(struct ffmpeg_data));
 }
 
@@ -565,13 +595,15 @@ static bool ffmpeg_data_init(struct ffmpeg_data *data,
 			is_rtmp ? NULL : data->config.format_mime_type);
 
 	if (output_format == NULL) {
-		blog(LOG_WARNING, "Couldn't find matching output format with "
-				" parameters: name=%s, url=%s, mime=%s",
-				safe_str(is_rtmp ?
-					"flv" :	data->config.format_name),
-				safe_str(data->config.url),
-				safe_str(is_rtmp ?
-					NULL : data->config.format_mime_type));
+		ffmpeg_log_error(LOG_WARNING, data,
+			"Couldn't find matching output format with "
+			"parameters: name=%s, url=%s, mime=%s",
+			safe_str(is_rtmp ?
+				"flv" : data->config.format_name),
+			safe_str(data->config.url),
+			safe_str(is_rtmp ?
+				NULL : data->config.format_mime_type));
+
 		goto fail;
 	}
 
@@ -579,7 +611,8 @@ static bool ffmpeg_data_init(struct ffmpeg_data *data,
 			NULL, NULL);
 
 	if (!data->output) {
-		blog(LOG_WARNING, "Couldn't create avformat context");
+		ffmpeg_log_error(LOG_WARNING, data,
+			"Couldn't create avformat context");
 		goto fail;
 	}
 
@@ -603,7 +636,6 @@ static bool ffmpeg_data_init(struct ffmpeg_data *data,
 
 fail:
 	blog(LOG_WARNING, "ffmpeg_data_init failed");
-	ffmpeg_data_free(data);
 	return false;
 }
 
@@ -758,6 +790,7 @@ static void receive_video(void *param, struct video_data *frame)
 		if (ret < 0) {
 			blog(LOG_WARNING, "receive_video: Error encoding "
 			                  "video: %s", av_err2str(ret));
+			//FIXME: stop the encode with an error
 			return;
 		}
 
@@ -783,6 +816,7 @@ static void receive_video(void *param, struct video_data *frame)
 	if (ret != 0) {
 		blog(LOG_WARNING, "receive_video: Error writing video: %s",
 				av_err2str(ret));
+		//FIXME: stop the encode with an error
 	}
 
 	data->total_frames++;
@@ -808,6 +842,7 @@ static void encode_audio(struct ffmpeg_output *output, int idx,
 	if (ret < 0) {
 		blog(LOG_WARNING, "encode_audio: avcodec_fill_audio_frame "
 		                  "failed: %s", av_err2str(ret));
+		//FIXME: stop the encode with an error
 		return;
 	}
 
@@ -829,6 +864,7 @@ static void encode_audio(struct ffmpeg_output *output, int idx,
 	if (ret < 0) {
 		blog(LOG_WARNING, "encode_audio: Error encoding audio: %s",
 				av_err2str(ret));
+		//FIXME: stop the encode with an error
 		return;
 	}
 
@@ -989,8 +1025,9 @@ static int process_packet(struct ffmpeg_output *output)
 	ret = av_interleaved_write_frame(output->ff_data.output, &packet);
 	if (ret < 0) {
 		av_free_packet(&packet);
-		blog(LOG_WARNING, "receive_audio: Error writing packet: %s",
-				av_err2str(ret));
+		ffmpeg_log_error(LOG_WARNING, &output->ff_data,
+			"receive_audio: Error writing packet: %s",
+			av_err2str(ret));
 		return ret;
 	}
 
@@ -1108,8 +1145,14 @@ static bool try_connect(struct ffmpeg_output *output)
 	success = ffmpeg_data_init(&output->ff_data, &config);
 	obs_data_release(settings);
 
-	if (!success)
+	if (!success) {
+		if (output->ff_data.last_error) {
+			obs_output_set_last_error(output->output,
+				output->ff_data.last_error);
+		}
+		ffmpeg_data_free(&output->ff_data);
 		return false;
+	}
 
 	struct audio_convert_info aci = {
 		.format = output->ff_data.audio_format
@@ -1122,8 +1165,9 @@ static bool try_connect(struct ffmpeg_output *output)
 
 	ret = pthread_create(&output->write_thread, NULL, write_thread, output);
 	if (ret != 0) {
-		blog(LOG_WARNING, "ffmpeg_output_start: failed to create write "
-		                  "thread.");
+		ffmpeg_log_error(LOG_WARNING, &output->ff_data,
+			"ffmpeg_output_start: failed to create write "
+			"thread.");
 		ffmpeg_output_full_stop(output);
 		return false;
 	}
