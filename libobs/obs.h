@@ -1453,6 +1453,8 @@ EXPORT void obs_sceneitem_get_draw_transform(const obs_sceneitem_t *item,
 		struct matrix4 *transform);
 EXPORT void obs_sceneitem_get_box_transform(const obs_sceneitem_t *item,
 		struct matrix4 *transform);
+EXPORT void obs_sceneitem_get_box_scale(const obs_sceneitem_t *item,
+		struct vec2 *scale);
 
 EXPORT bool obs_sceneitem_visible(const obs_sceneitem_t *item);
 EXPORT bool obs_sceneitem_set_visible(obs_sceneitem_t *item, bool visible);

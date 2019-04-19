@@ -395,6 +395,8 @@ static void update_item_transform(struct obs_scene_item *item, bool update_tex)
 		scale.y = (float)height * item->scale.y;
 	}
 
+	item->box_scale = scale;
+
 	add_alignment(&base_origin, item->align, (int)scale.x, (int)scale.y);
 
 	matrix4_identity(&item->box_transform);
@@ -1260,6 +1262,7 @@ static inline void duplicate_item_data(struct obs_scene_item *dst,
 	dst->output_scale = src->output_scale;
 	dst->scale_filter = src->scale_filter;
 	dst->box_transform = src->box_transform;
+	dst->box_scale = src->box_scale;
 	dst->draw_transform = src->draw_transform;
 	dst->bounds_type = src->bounds_type;
 	dst->bounds_align = src->bounds_align;
@@ -2045,6 +2048,13 @@ void obs_sceneitem_get_box_transform(const obs_sceneitem_t *item,
 {
 	if (item)
 		matrix4_copy(transform, &item->box_transform);
+}
+
+void obs_sceneitem_get_box_scale(const obs_sceneitem_t *item,
+		struct vec2 *scale)
+{
+	if (item)
+		*scale = item->box_scale;
 }
 
 bool obs_sceneitem_visible(const obs_sceneitem_t *item)
