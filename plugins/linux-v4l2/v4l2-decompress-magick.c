@@ -19,7 +19,7 @@
  *
  * @return bool if success
  */
-bool v4l2_decompress(uint8_t *buffer, uint8_t *output, int width, int height) {
+bool v4l2_decompress(uint8_t *buffer, int buf_size, uint8_t *output, int width, int height) {
     bool ret_val = false;
 
 	ImageInfo     *info;

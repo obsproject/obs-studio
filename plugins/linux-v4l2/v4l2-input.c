@@ -207,18 +207,19 @@ static void *v4l2_thread(void *vptr)
 			first_ts = out.timestamp;
 		out.timestamp -= first_ts;
 
-
 		start = (uint8_t *) data->buffers.info[buf.index].start;
 
 		if (v4l2_is_compressed(data->pixfmt)) {
-			if (v4l2_decompress(start, decompressed, data->width, data->height)) {
-				start = decompressed;
+			if (v4l2_decompress(start, buf.length, decompressed, data->width, data->height)) {
+				for (uint_fast32_t i = 0; i < MAX_AV_PLANES; ++i)
+					out.data[i] = decompressed + plane_offsets[i];
+				obs_source_output_video(data->source, &out);
 			}
+		} else {
+			for (uint_fast32_t i = 0; i < MAX_AV_PLANES; ++i)
+				out.data[i] = start + plane_offsets[i];
+			obs_source_output_video(data->source, &out);
 		}
-
-		for (uint_fast32_t i = 0; i < MAX_AV_PLANES; ++i)
-			out.data[i] = start + plane_offsets[i];
-		obs_source_output_video(data->source, &out);
 
 		if (v4l2_ioctl(data->dev, VIDIOC_QBUF, &buf) < 0) {
 			blog(LOG_DEBUG, "failed to enqueue buffer");
