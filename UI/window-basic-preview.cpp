@@ -1235,21 +1235,19 @@ static void DrawSquareAtPos(float x, float y)
 	gs_matrix_pop();
 }
 
-static void DrawLine(float x1, float y1, float x2, float y2, float thickness)
+static void DrawLine(float x1, float y1, float x2, float y2, float thickness,
+		vec2 scale)
 {
-	struct matrix4 matrix;
-	gs_matrix_get(&matrix);
-
 	float ySide = (y1 == y2) ? (y1 < 0.5f ? 1.0f : -1.0f) : 0.0f;
 	float xSide = (x1 == x2) ? (x1 < 0.5f ? 1.0f : -1.0f) : 0.0f;
 
 	gs_render_start(true);
 
 	gs_vertex2f(x1, y1);
-	gs_vertex2f(x1 + (xSide * (thickness / matrix.x.x)),
-		y1 + (ySide * (thickness / matrix.y.y)));
-	gs_vertex2f(x2 + (xSide * (thickness / matrix.x.x)),
-		y2 + (ySide * (thickness / matrix.y.y)));
+	gs_vertex2f(x1 + (xSide * (thickness / scale.x)),
+		y1 + (ySide * (thickness / scale.y)));
+	gs_vertex2f(x2 + (xSide * (thickness / scale.x)),
+		y2 + (ySide * (thickness / scale.y)));
 	gs_vertex2f(x2, y2);
 	gs_vertex2f(x1, y1);
 
@@ -1260,31 +1258,28 @@ static void DrawLine(float x1, float y1, float x2, float y2, float thickness)
 	gs_vertexbuffer_destroy(line);
 }
 
-static void DrawRect(float thickness)
+static void DrawRect(float thickness, vec2 scale)
 {
-	struct matrix4 matrix;
-	gs_matrix_get(&matrix);
-
 	gs_render_start(true);
 
 	gs_vertex2f(0.0f, 0.0f);
-	gs_vertex2f(0.0f + (thickness / matrix.x.x), 0.0f);
-	gs_vertex2f(0.0f + (thickness / matrix.x.x), 1.0f);
+	gs_vertex2f(0.0f + (thickness / scale.x), 0.0f);
+	gs_vertex2f(0.0f + (thickness / scale.x), 1.0f);
 	gs_vertex2f(0.0f, 1.0f);
 	gs_vertex2f(0.0f, 0.0f);
 	gs_vertex2f(0.0f, 1.0f);
-	gs_vertex2f(0.0f, 1.0f - (thickness / matrix.y.y));
-	gs_vertex2f(1.0f, 1.0f - (thickness / matrix.y.y));
+	gs_vertex2f(0.0f, 1.0f - (thickness / scale.y));
+	gs_vertex2f(1.0f, 1.0f - (thickness / scale.y));
 	gs_vertex2f(1.0f, 1.0f);
 	gs_vertex2f(0.0f, 1.0f);
 	gs_vertex2f(1.0f, 1.0f);
-	gs_vertex2f(1.0f - (thickness / matrix.x.x), 1.0f);
-	gs_vertex2f(1.0f - (thickness / matrix.x.x), 0.0f);
+	gs_vertex2f(1.0f - (thickness / scale.x), 1.0f);
+	gs_vertex2f(1.0f - (thickness / scale.x), 0.0f);
 	gs_vertex2f(1.0f, 0.0f);
 	gs_vertex2f(1.0f, 1.0f);
 	gs_vertex2f(1.0f, 0.0f);
-	gs_vertex2f(1.0f, 0.0f + (thickness / matrix.y.y));
-	gs_vertex2f(0.0f, 0.0f + (thickness / matrix.y.y));
+	gs_vertex2f(1.0f, 0.0f + (thickness / scale.y));
+	gs_vertex2f(0.0f, 0.0f + (thickness / scale.y));
 	gs_vertex2f(0.0f, 0.0f);
 	gs_vertex2f(1.0f, 0.0f);
 
@@ -1456,6 +1451,13 @@ bool OBSBasicPreview::DrawSelectedItem(obs_scene_t *scene,
 
 	GS_DEBUG_MARKER_BEGIN(GS_DEBUG_COLOR_DEFAULT, "DrawSelectedItem");
 
+	matrix4 curTransform;
+	vec2 boxScale;
+	gs_matrix_get(&curTransform);
+	obs_sceneitem_get_box_scale(item, &boxScale);
+	boxScale.x *= curTransform.x.x;
+	boxScale.y *= curTransform.y.y;
+
 	obs_transform_info info;
 	obs_sceneitem_get_info(item, &info);
 
@@ -1474,7 +1476,7 @@ bool OBSBasicPreview::DrawSelectedItem(obs_scene_t *scene,
 			gs_effect_set_vec4(colParam, &blue); \
 		else if (crop.side > 0) \
 			gs_effect_set_vec4(colParam, &green); \
-		DrawLine(x1, y1, x2, y2, HANDLE_RADIUS / 2); \
+		DrawLine(x1, y1, x2, y2, HANDLE_RADIUS / 2, boxScale); \
 		gs_effect_set_vec4(colParam, &red);
 
 		DRAW_SIDE(left,   0.0f, 0.0f, 0.0f, 1.0f);
@@ -1485,9 +1487,9 @@ bool OBSBasicPreview::DrawSelectedItem(obs_scene_t *scene,
 	} else {
 		if (!selected) {
 			gs_effect_set_vec4(colParam, &blue);
-			DrawRect(HANDLE_RADIUS / 2);
+			DrawRect(HANDLE_RADIUS / 2, boxScale);
 		} else {
-			DrawRect(HANDLE_RADIUS / 2);
+			DrawRect(HANDLE_RADIUS / 2, boxScale);
 		}
 	}
 

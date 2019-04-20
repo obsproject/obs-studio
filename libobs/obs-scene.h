@@ -65,6 +65,7 @@ struct obs_scene_item {
 	enum obs_scale_type   scale_filter;
 
 	struct matrix4        box_transform;
+	struct vec2           box_scale;
 	struct matrix4        draw_transform;
 
 	enum obs_bounds_type  bounds_type;
