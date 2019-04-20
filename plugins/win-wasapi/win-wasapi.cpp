@@ -1,6 +1,7 @@
 #include "enum-wasapi.hpp"
 
 #include <obs-module.h>
+#include <obs.h>
 #include <util/platform.h>
 #include <util/windows/HRError.hpp>
 #include <util/windows/ComPtr.hpp>
@@ -366,10 +367,17 @@ DWORD WINAPI WASAPISource::ReconnectThread(LPVOID param)
 
 	os_set_thread_name("win-wasapi: reconnect thread");
 
+	CoInitializeEx(0, COINIT_MULTITHREADED);
+
+	obs_monitoring_type type = obs_source_get_monitoring_type(source->source);
+	obs_source_set_monitoring_type(source->source, OBS_MONITORING_TYPE_NONE);
+
 	while (!WaitForSignal(source->stopSignal, RECONNECT_INTERVAL)) {
 		if (source->TryInitialize())
 			break;
 	}
+
+	obs_source_set_monitoring_type(source->source, type);
 
 	source->reconnectThread = nullptr;
 	source->reconnecting = false;
@@ -446,7 +454,7 @@ DWORD WINAPI WASAPISource::CaptureThread(LPVOID param)
 	bool         reconnect = false;
 
 	/* Output devices don't signal, so just make it check every 10 ms */
-	DWORD        dur       = source->isInputDevice ? INFINITE : 10;
+	DWORD        dur       = source->isInputDevice ? RECONNECT_INTERVAL : 10;
 
 	HANDLE sigs[2] = {
 		source->receiveSignal,
