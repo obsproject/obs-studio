@@ -244,7 +244,6 @@ set(obs_SOURCES
 	vertical-scroll-area.cpp
 	visibility-item-widget.cpp
 	slider-absoluteset-style.cpp
-	source-list-widget.cpp
 	qt-display.cpp
 	crash-report.cpp
 	hotkey-edit.cpp
@@ -302,7 +301,6 @@ set(obs_HEADERS
 	vertical-scroll-area.hpp
 	visibility-item-widget.hpp
 	slider-absoluteset-style.hpp
-	source-list-widget.hpp
 	qt-display.hpp
 	crash-report.hpp
 	hotkey-edit.hpp
