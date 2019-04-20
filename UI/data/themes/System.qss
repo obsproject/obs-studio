@@ -12,31 +12,31 @@
 /* We need to set back the icons, or the preview wont stick. */
 
 * [themeID="addIconSmall"] {
-    qproperty-icon: url(:/res/images/add.png);
+    qproperty-icon: url(:/res/images/plus.svg);
 }
 
 * [themeID="removeIconSmall"] {
-    qproperty-icon: url(:/res/images/list_remove.png);
+    qproperty-icon: url(:/res/images/minus.svg);
 }
 
 * [themeID="propertiesIconSmall"] {
-    qproperty-icon: url(:/res/images/properties.png);
+    qproperty-icon: url(:/settings/images/settings/general.svg);
 }
 
 * [themeID="configIconSmall"] {
-    qproperty-icon: url(:/res/images/configuration21_16.png);
+    qproperty-icon: url(:/settings/images/settings/general.svg);
 }
 
 * [themeID="upArrowIconSmall"] {
-    qproperty-icon: url(:/res/images/up.png);
+    qproperty-icon: url(:/res/images/up.svg);
 }
 
 * [themeID="refreshIconSmall"] {
-    qproperty-icon: url(:/res/images/refresh.png);
+    qproperty-icon: url(:/res/images/refresh.svg);
 }
 
 * [themeID="downArrowIconSmall"] {
-    qproperty-icon: url(:/res/images/down.png);
+    qproperty-icon: url(:/res/images/down.svg);
 }
 
 MuteCheckBox {
@@ -44,11 +44,11 @@ MuteCheckBox {
 }
 
 MuteCheckBox::indicator:checked {
-    image: url(:/res/images/mute.png);
+    image: url(:/res/images/mute.svg);
 }
 
 MuteCheckBox::indicator:unchecked {
-    image: url(:/res/images/unmute.png);
+    image: url(:/settings/images/settings/audio.svg);
 }
 
 SourceTreeSubItemCheckBox {
@@ -62,11 +62,11 @@ SourceTreeSubItemCheckBox::indicator {
 }
 
 SourceTreeSubItemCheckBox::indicator:checked {
-    image: url(:/res/images/expand.png);
+    image: url(:/res/images/expand.svg);
 }
 
 SourceTreeSubItemCheckBox::indicator:unchecked {
-    image: url(:/res/images/collapse.png);
+    image: url(:/res/images/down.svg);
 }
 
 OBSHotkeyLabel[hotkeyPairHover=true] {
@@ -160,4 +160,32 @@ OBSBasicSettings {
     qproperty-videoIcon: url(:settings/images/settings/video.svg);
     qproperty-hotkeysIcon: url(:settings/images/settings/hotkeys.svg);
     qproperty-advancedIcon: url(:settings/images/settings/advanced.svg);
+}
+
+/* Locked CheckBox */
+
+LockedCheckBox {
+    outline: none;
+}
+
+LockedCheckBox::indicator:checked {
+    image: url(:res/images/locked.svg);
+}
+
+LockedCheckBox::indicator:unchecked {
+    image: url(:res/images/unlocked.svg);
+}
+
+/* Visibilty CheckBox */
+
+VisibilityCheckBox {
+    outline: none;
+}
+
+VisibilityCheckBox::indicator:checked {
+    image: url(:res/images/visible.svg);
+}
+
+VisibilityCheckBox::indicator:unchecked {
+    image: url(:res/images/invisible.svg);
 }

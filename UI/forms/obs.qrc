@@ -1,31 +1,19 @@
 <RCC>
   <qresource prefix="/res">
-    <file>images/mute.png</file>
-    <file>images/unmute.png</file>
-    <file>images/refresh.png</file>
+    <file>images/mute.svg</file>
+    <file>images/refresh.svg</file>
     <file>images/no_sources.svg</file>
-    <file>images/configuration21_16.png</file>
-    <file>images/configuration21_16_2x.png</file>
-    <file>images/invisible_mask.png</file>
-    <file>images/invisible_mask_2x.png</file>
-    <file>images/visible_mask.png</file>
-    <file>images/visible_mask_2x.png</file>
-    <file>images/list_remove.png</file>
-    <file>images/add.png</file>
-    <file>images/down.png</file>
-    <file>images/editscene.png</file>
-    <file>images/live.png</file>
-    <file>images/properties.png</file>
-    <file>images/properties_2x.png</file>
-    <file>images/up.png</file>
+    <file>images/minus.svg</file>
+    <file>images/plus.svg</file>
+    <file>images/down.svg</file>
+    <file>images/up.svg</file>
     <file>images/obs.png</file>
     <file>images/tray_active.png</file>
-    <file>images/locked_mask.png</file>
-    <file>images/locked_mask_2x.png</file>
-    <file>images/unlocked_mask.png</file>
-    <file>images/unlocked_mask_2x.png</file>
-    <file>images/collapse.png</file>
-    <file>images/expand.png</file>
+    <file>images/expand.svg</file>
+    <file>images/unlocked.svg</file>
+    <file>images/locked.svg</file>
+    <file>images/invisible.svg</file>
+    <file>images/visible.svg</file>
   </qresource>
   <qresource prefix="/settings">
     <file>images/settings/output.svg</file>

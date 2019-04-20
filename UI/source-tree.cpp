@@ -60,12 +60,12 @@ SourceTreeItem::SourceTreeItem(SourceTree *tree_, OBSSceneItem sceneitem_)
 
 	vis = new VisibilityCheckBox();
 	vis->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
-	vis->setMaximumSize(16, 16);
+	vis->setFixedSize(16, 16);
 	vis->setChecked(obs_sceneitem_visible(sceneitem));
 
 	lock = new LockedCheckBox();
 	lock->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
-	lock->setMaximumSize(16, 16);
+	lock->setFixedSize(16, 16);
 	lock->setChecked(obs_sceneitem_locked(sceneitem));
 
 	label = new QLabel(QT_UTF8(name));
@@ -79,10 +79,11 @@ SourceTreeItem::SourceTreeItem(SourceTree *tree_, OBSSceneItem sceneitem_)
 #endif
 
 	boxLayout = new QHBoxLayout();
-	boxLayout->setContentsMargins(1, 1, 2, 1);
+	boxLayout->setContentsMargins(1, 1, 1, 1);
 	boxLayout->setSpacing(1);
 	boxLayout->addWidget(label);
 	boxLayout->addWidget(vis);
+	boxLayout->setSpacing(2);
 	boxLayout->addWidget(lock);
 #ifdef __APPLE__
 	/* Hack: Fixes a bug where scrollbars would be above the lock icon */
