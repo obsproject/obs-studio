@@ -80,7 +80,7 @@ void output_stop()
 
 OBSData load_preview_settings()
 {
-	char *path = obs_module_get_config_path(obs_current_module(),
+	BPtr<char> path = obs_module_get_config_path(obs_current_module(),
 			"decklinkPreviewOutputProps.json");
 	BPtr<char> jsonData = os_quick_read_utf8_file(path);
 	if (!!jsonData) {
