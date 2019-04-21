@@ -504,12 +504,12 @@ void VolumeMeter::setPeakMeterType(enum obs_peak_meter_type peakMeterType)
 	}
 }
 
-void VolumeMeter::mousePressEvent(QMouseEvent * event)
+void VolumeMeter::mousePressEvent(QMouseEvent *event)
 {
 	setFocus(Qt::MouseFocusReason);
 }
 
-void VolumeMeter::wheelEvent(QWheelEvent * event)
+void VolumeMeter::wheelEvent(QWheelEvent *event)
 {
 	QApplication::sendEvent(focusProxy(), event);
 }

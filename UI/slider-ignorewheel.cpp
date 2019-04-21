@@ -13,7 +13,7 @@ SliderIgnoreScroll::SliderIgnoreScroll(Qt::Orientation orientation,
 	setOrientation(orientation);
 }
 
-void SliderIgnoreScroll::wheelEvent(QWheelEvent * event)
+void SliderIgnoreScroll::wheelEvent(QWheelEvent *event)
 {
 	if (!hasFocus())
 		event->ignore();
