@@ -12,8 +12,3 @@ void ComboBoxIgnoreScroll::wheelEvent(QWheelEvent * event)
 	else
 		QComboBox::wheelEvent(event);
 }
-
-void ComboBoxIgnoreScroll::leaveEvent(QEvent * event)
-{
-	clearFocus();
-}

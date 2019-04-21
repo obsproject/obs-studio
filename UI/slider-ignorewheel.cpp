@@ -20,8 +20,3 @@ void SliderIgnoreScroll::wheelEvent(QWheelEvent * event)
 	else
 		QSlider::wheelEvent(event);
 }
-
-void SliderIgnoreScroll::leaveEvent(QEvent * event)
-{
-	clearFocus();
-}

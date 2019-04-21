@@ -14,7 +14,6 @@ public:
 protected:
 
 	virtual void wheelEvent(QWheelEvent *event) override;
-	virtual void leaveEvent(QEvent *event) override;
 };
 
 

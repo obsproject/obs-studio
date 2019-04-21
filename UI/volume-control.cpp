@@ -514,11 +514,6 @@ void VolumeMeter::wheelEvent(QWheelEvent * event)
 	QApplication::sendEvent(focusProxy(), event);
 }
 
-void VolumeMeter::leaveEvent(QEvent * event)
-{
-	clearFocus();
-}
-
 VolumeMeter::VolumeMeter(QWidget *parent, obs_volmeter_t *obs_volmeter,
 		bool vertical)
 		: QWidget(parent), obs_volmeter(obs_volmeter),

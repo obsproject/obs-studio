@@ -12,8 +12,3 @@ void SpinBoxIgnoreScroll::wheelEvent(QWheelEvent * event)
 	else
 		QSpinBox::wheelEvent(event);
 }
-
-void SpinBoxIgnoreScroll::leaveEvent(QEvent * event)
-{
-	clearFocus();
-}
