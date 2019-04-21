@@ -18,8 +18,8 @@ set(decklink-ouput-ui_HEADERS
 	../../vertical-scroll-area.hpp
 	../../double-slider.hpp
 	../../slider-ignorewheel.hpp
-	../../comboBox-ignorewheel.hpp
-	../../spinBox-ignorewheel.hpp
+	../../combobox-ignorewheel.hpp
+	../../spinbox-ignorewheel.hpp
 	./DecklinkOutputUI.h
 	decklink-ui-main.h
 	)
@@ -29,8 +29,8 @@ set(decklink-ouput-ui_SOURCES
 	../../vertical-scroll-area.cpp
 	../../double-slider.cpp
 	../../slider-ignorewheel.cpp
-	../../comboBox-ignorewheel.cpp
-	../../spinBox-ignorewheel.cpp
+	../../combobox-ignorewheel.cpp
+	../../spinbox-ignorewheel.cpp
 	./DecklinkOutputUI.cpp
 	decklink-ui-main.cpp
 	)

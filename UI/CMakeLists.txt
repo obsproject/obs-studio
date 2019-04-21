@@ -233,8 +233,8 @@ set(obs_SOURCES
 	menu-button.cpp
 	double-slider.cpp
 	slider-ignorewheel.cpp
-	comboBox-ignorewheel.cpp
-	spinBox-ignorewheel.cpp
+	combobox-ignorewheel.cpp
+	spinbox-ignorewheel.cpp
 	volume-control.cpp
 	adv-audio-control.cpp
 	item-widget-helpers.cpp
@@ -286,8 +286,8 @@ set(obs_HEADERS
 	balance-slider.hpp
 	double-slider.hpp
 	slider-ignorewheel.hpp
-	comboBox-ignorewheel.hpp
-	spinBox-ignorewheel.hpp
+	combobox-ignorewheel.hpp
+	spinbox-ignorewheel.hpp
 	focus-list.hpp
 	menu-button.hpp
 	mute-checkbox.hpp

@@ -1,4 +1,4 @@
-#include "spinBox-ignorewheel.hpp"
+#include "spinbox-ignorewheel.hpp"
 
 SpinBoxIgnoreScroll::SpinBoxIgnoreScroll(QWidget *parent) : QSpinBox(parent)
 {

@@ -22,8 +22,8 @@
 #include <QGroupBox>
 #include "double-slider.hpp"
 #include "slider-ignorewheel.hpp"
-#include "spinBox-ignorewheel.hpp"
-#include "comboBox-ignorewheel.hpp"
+#include "spinbox-ignorewheel.hpp"
+#include "combobox-ignorewheel.hpp"
 #include "qt-wrappers.hpp"
 #include "properties-view.hpp"
 #include "properties-view.moc.hpp"

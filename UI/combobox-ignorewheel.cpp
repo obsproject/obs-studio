@@ -1,4 +1,4 @@
-#include "comboBox-ignorewheel.hpp"
+#include "combobox-ignorewheel.hpp"
 
 ComboBoxIgnoreScroll::ComboBoxIgnoreScroll(QWidget *parent) : QComboBox(parent)
 {
