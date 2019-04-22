@@ -18,15 +18,30 @@
     <rect>
      <x>30</x>
      <y>30</y>
-     <width>261</width>
-     <height>261</height>
+     <width>256</width>
+     <height>256</height>
     </rect>
+   </property>
+   <property name="minimumSize">
+    <size>
+     <width>256</width>
+     <height>256</height>
+    </size>
+   </property>
+   <property name="maximumSize">
+    <size>
+     <width>256</width>
+     <height>256</height>
+    </size>
    </property>
    <property name="text">
     <string/>
    </property>
    <property name="pixmap">
     <pixmap>:res/images/obs.png</pixmap>
+   </property>
+   <property name="scaledContents">
+    <bool>true</bool>
    </property>
   </widget>
   <widget class="QWidget" name="verticalLayoutWidget">

@@ -238,8 +238,6 @@ set(obs_SOURCES
 	volume-control.cpp
 	adv-audio-control.cpp
 	item-widget-helpers.cpp
-	visibility-checkbox.cpp
-	locked-checkbox.cpp
 	horizontal-scroll-area.cpp
 	vertical-scroll-area.cpp
 	visibility-item-widget.cpp

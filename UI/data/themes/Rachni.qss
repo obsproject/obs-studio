@@ -480,31 +480,31 @@ QToolButton:pressed {
 }
 
 * [themeID="addIconSmall"] {
-	qproperty-icon: url(./Dark/plus.png);
+	qproperty-icon: url(./Dark/plus.svg);
 }
 
 * [themeID="removeIconSmall"] {
-	qproperty-icon: url(./Dark/minus.png);
+	qproperty-icon: url(./Dark/minus.svg);
 }
 
 * [themeID="propertiesIconSmall"] {
-	qproperty-icon: url(./Dark/cogwheel.png);
+	qproperty-icon: url(./Dark/settings/general.svg);
 }
 
 * [themeID="configIconSmall"] {
-	qproperty-icon: url(./Dark/cogwheel.png);
+	qproperty-icon: url(./Dark/settings/general.svg);
 }
 
 * [themeID="refreshIconSmall"] {
-	qproperty-icon: url(./Dark/refresh.png);
+	qproperty-icon: url(./Dark/refresh.svg);
 }
 
 * [themeID="upArrowIconSmall"] {
-	qproperty-icon: url(./Dark/up_arrow.png);
+	qproperty-icon: url(./Dark/up.svg);
 }
 
 * [themeID="downArrowIconSmall"] {
-	qproperty-icon: url(./Dark/down_arrow.png);
+	qproperty-icon: url(./Dark/down.svg);
 }
 
 /***********************/
@@ -738,36 +738,36 @@ MuteCheckBox {
 }
 
 MuteCheckBox::indicator:checked {
-	image: url(./Dark/mute.png);
+	image: url(./Dark/mute.svg);
 }
 
 MuteCheckBox::indicator:unchecked {
-	image: url(./Dark/unmute.png);
+	image: url(./Dark/settings/audio.svg);
 }
 
 MuteCheckBox::indicator:unchecked:hover {
 	background-color: rgba(240, 98, 146, 0.5); /* Pink (Secondary) */
-	image: url(./Dark/unmute.png);
+	image: url(./Dark/settings/audio.svg);
 }
 
 MuteCheckBox::indicator:unchecked:focus {
-	image: url(./Dark/unmute.png);
+	image: url(./Dark/settings/audio.svg);
 }
 MuteCheckBox::indicator:checked:hover {
 	background-color: rgba(240, 98, 146, 0.5); /* Pink (Secondary) */
-	image: url(./Dark/mute.png);
+	image: url(./Dark/mute.svg);
 }
 
 MuteCheckBox::indicator:checked:focus {
-	image: url(./Dark/mute.png);
+	image: url(./Dark/mute.svg);
 }
 
 MuteCheckBox::indicator:checked:disabled {
-	image: url(./Dark/mute.png);
+	image: url(./Dark/mute.svg);
 }
 
 MuteCheckBox::indicator:unchecked:disabled {
-	image: url(./Dark/unmute.png);
+	image: url(./Dark/settings/audio.svg);
 }
 
 /****************************/
@@ -786,12 +786,12 @@ SourceTreeSubItemCheckBox::indicator {
 
 SourceTreeSubItemCheckBox::indicator:checked,
 SourceTreeSubItemCheckBox::indicator:checked:hover {
-	image: url(./Dark/expand.png);
+	image: url(./Dark/expand.svg);
 }
 
 SourceTreeSubItemCheckBox::indicator:unchecked,
 SourceTreeSubItemCheckBox::indicator:unchecked:hover {
-	image: url(./Dark/collapse.png);
+	image: url(./Dark/down.svg);
 }
 
 /*************************/
@@ -1282,4 +1282,48 @@ OBSBasicSettings {
     qproperty-videoIcon: url(./Dark/settings/video.svg);
     qproperty-hotkeysIcon: url(./Dark/settings/hotkeys.svg);
     qproperty-advancedIcon: url(./Dark/settings/advanced.svg);
+}
+
+/* Locked CheckBox */
+
+LockedCheckBox {
+    outline: none;
+}
+
+LockedCheckBox::indicator:checked {
+    image: url(./Dark/locked.svg);
+}
+
+LockedCheckBox::indicator:unchecked {
+    image: url(:res/images/unlocked.svg);
+}
+
+LockedCheckBox::indicator:checked:hover {
+    image: url(./Dark/locked.svg);
+}
+
+LockedCheckBox::indicator:unchecked:hover {
+    image: url(:res/images/unlocked.svg);
+}
+
+/* Visibilty CheckBox */
+
+VisibilityCheckBox {
+    outline: none;
+}
+
+VisibilityCheckBox::indicator:checked {
+    image: url(./Dark/visible.svg);
+}
+
+VisibilityCheckBox::indicator:unchecked {
+    image: url(:res/images/invisible.svg);
+}
+
+VisibilityCheckBox::indicator:checked:hover {
+    image: url(./Dark/visible.svg);
+}
+
+VisibilityCheckBox::indicator:unchecked:hover {
+    image: url(:res/images/invisible.svg);
 }
