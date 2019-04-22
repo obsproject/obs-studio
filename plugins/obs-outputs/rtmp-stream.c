@@ -92,6 +92,7 @@ static void rtmp_stream_destroy(void *data)
 		}
 	}
 
+	RTMP_TLS_Free();
 	free_packets(stream);
 	dstr_free(&stream->path);
 	dstr_free(&stream->key);
