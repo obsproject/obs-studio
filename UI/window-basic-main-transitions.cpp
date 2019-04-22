@@ -1234,13 +1234,16 @@ void OBSBasic::SetPreviewProgramMode(bool enabled)
 		RefreshQuickTransitions();
 
 		programLabel = new QLabel(QTStr("StudioMode.Program"));
-		programLabel->setAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
+		programLabel->setSizePolicy(QSizePolicy::Preferred,
+				QSizePolicy::Preferred);
+		programLabel->setAlignment(Qt::AlignHCenter | Qt::AlignBottom);
 		programLabel->setProperty("themeID", "previewProgramLabels");
 
 		programWidget = new QWidget();
 		programLayout = new QVBoxLayout();
 
 		programLayout->setContentsMargins(0, 0, 0, 0);
+		programLayout->setSpacing(0);
 
 		programLayout->addWidget(programLabel);
 		programLayout->addWidget(program);
