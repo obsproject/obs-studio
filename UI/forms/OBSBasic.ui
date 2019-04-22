@@ -67,12 +67,15 @@
         <item>
          <layout class="QVBoxLayout" name="previewTextLayout">
           <property name="spacing">
-           <number>4</number>
+           <number>0</number>
           </property>
           <item>
            <widget class="QLabel" name="previewLabel">
             <property name="text">
              <string>StudioMode.Preview</string>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignBottom|Qt::AlignHCenter</set>
             </property>
            </widget>
           </item>
@@ -113,7 +116,7 @@
      <x>0</x>
      <y>0</y>
      <width>1079</width>
-     <height>21</height>
+     <height>22</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_File">
@@ -653,7 +656,7 @@
           <rect>
            <x>0</x>
            <y>0</y>
-           <width>80</width>
+           <width>64</width>
            <height>16</height>
           </rect>
          </property>
