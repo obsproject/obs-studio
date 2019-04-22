@@ -1517,9 +1517,7 @@ gs_indexbuffer_t *gs_indexbuffer_create(enum gs_index_type type,
 		return NULL;
 
 	if (indices && num && (flags & GS_DUP_BUFFER) != 0) {
-		size_t size = type == GS_UNSIGNED_SHORT
-			? sizeof(unsigned short)
-			: sizeof(unsigned long);
+		size_t size = type == GS_UNSIGNED_SHORT ? 2 : 4;
 		indices = bmemdup(indices, size * num);
 	}
 
