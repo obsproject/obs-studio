@@ -7290,3 +7290,17 @@ void SceneRenameDelegate::setEditorData(QWidget *editor,
 	if (lineEdit)
 		lineEdit->selectAll();
 }
+
+bool SceneRenameDelegate::eventFilter(QObject *editor, QEvent *event)
+{
+	if (event->type() == QEvent::KeyPress) {
+		QKeyEvent *keyEvent = static_cast<QKeyEvent *>(event);
+		if (keyEvent->key() == Qt::Key_Escape) {
+			QLineEdit *lineEdit = qobject_cast<QLineEdit*>(editor);
+			if (lineEdit)
+				lineEdit->undo();
+		}
+	}
+
+	return QStyledItemDelegate::eventFilter(editor, event);
+}
