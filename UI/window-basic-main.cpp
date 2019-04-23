@@ -1041,6 +1041,9 @@ retryScene:
 		opt_start_replaybuffer = false;
 	}
 
+	copyString = nullptr;
+	copyFiltersString = nullptr;
+
 	LogScenes();
 
 	disableSaving--;
@@ -4012,9 +4015,19 @@ void OBSBasic::on_scenes_customContextMenuRequested(const QPoint &pos)
 			this, SLOT(on_actionAddScene_triggered()));
 
 	if (item) {
+		QAction *pasteFilters = new QAction(
+				QTStr("Paste.Filters"), this);
+		pasteFilters->setEnabled(copyFiltersString);
+		connect(pasteFilters, SIGNAL(triggered()), this,
+				SLOT(ScenePasteFilters()));
+
 		popup.addSeparator();
 		popup.addAction(QTStr("Duplicate"),
 				this, SLOT(DuplicateSelectedScene()));
+		popup.addAction(QTStr("Copy.Filters"),
+				this, SLOT(SceneCopyFilters()));
+		popup.addAction(pasteFilters);
+		popup.addSeparator();
 		popup.addAction(QTStr("Rename"),
 				this, SLOT(EditSceneName()));
 		popup.addAction(QTStr("Remove"),
@@ -6952,6 +6965,24 @@ void OBSBasic::AudioMixerPasteFilters()
 
 	OBSSource source = obs_get_source_by_name(copyFiltersString);
 	obs_source_release(source);
+
+	if (source == dstSource)
+		return;
+
+	obs_source_copy_filters(dstSource, source);
+}
+
+void OBSBasic::SceneCopyFilters()
+{
+	copyFiltersString = obs_source_get_name(GetCurrentSceneSource());
+}
+
+void OBSBasic::ScenePasteFilters()
+{
+	OBSSource source = obs_get_source_by_name(copyFiltersString);
+	obs_source_release(source);
+
+	OBSSource dstSource = GetCurrentSceneSource();
 
 	if (source == dstSource)
 		return;
