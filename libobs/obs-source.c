@@ -1330,9 +1330,12 @@ enum convert_type {
 	CONVERT_422_U,
 	CONVERT_422_Y,
 	CONVERT_444,
+	CONVERT_800,
+	CONVERT_RGB_LIMITED,
 };
 
-static inline enum convert_type get_convert_type(enum video_format format)
+static inline enum convert_type get_convert_type(enum video_format format,
+		bool full_range)
 {
 	switch (format) {
 	case VIDEO_FORMAT_I420:
@@ -1349,11 +1352,13 @@ static inline enum convert_type get_convert_type(enum video_format format)
 		return CONVERT_422_U;
 
 	case VIDEO_FORMAT_Y800:
+		return CONVERT_800;
+
 	case VIDEO_FORMAT_NONE:
 	case VIDEO_FORMAT_RGBA:
 	case VIDEO_FORMAT_BGRA:
 	case VIDEO_FORMAT_BGRX:
-		return CONVERT_NONE;
+		return full_range ? CONVERT_NONE : CONVERT_RGB_LIMITED;
 	}
 
 	return CONVERT_NONE;
@@ -1406,10 +1411,28 @@ static inline bool set_nv12_sizes(struct obs_source *source,
 	return true;
 }
 
+static inline bool set_y800_sizes(struct obs_source *source,
+	const struct obs_source_frame *frame)
+{
+	source->async_convert_width   = frame->width;
+	source->async_convert_height  = frame->height;
+	source->async_texture_format  = GS_R8;
+	return true;
+}
+
+static inline bool set_rgb_limited_sizes(struct obs_source *source,
+	const struct obs_source_frame *frame)
+{
+	source->async_convert_width   = frame->width;
+	source->async_convert_height  = frame->height;
+	source->async_texture_format  = convert_video_format(frame->format);
+	return true;
+}
+
 static inline bool init_gpu_conversion(struct obs_source *source,
 		const struct obs_source_frame *frame)
 {
-	switch (get_convert_type(frame->format)) {
+	switch (get_convert_type(frame->format, frame->full_range)) {
 		case CONVERT_422_Y:
 		case CONVERT_422_U:
 			return set_packed422_sizes(source, frame);
@@ -1423,6 +1446,12 @@ static inline bool init_gpu_conversion(struct obs_source *source,
 		case CONVERT_444:
 			return set_planar444_sizes(source, frame);
 
+		case CONVERT_800:
+			return set_y800_sizes(source, frame);
+
+		case CONVERT_RGB_LIMITED:
+			return set_rgb_limited_sizes(source, frame);
+
 		case CONVERT_NONE:
 			assert(false && "No conversion requested");
 			break;
@@ -1434,16 +1463,19 @@ static inline bool init_gpu_conversion(struct obs_source *source,
 bool set_async_texture_size(struct obs_source *source,
 		const struct obs_source_frame *frame)
 {
-	enum convert_type cur = get_convert_type(frame->format);
+	enum convert_type cur = get_convert_type(frame->format,
+			frame->full_range);
 
-	if (source->async_width  == frame->width  &&
-	    source->async_height == frame->height &&
-	    source->async_format == frame->format)
+	if (source->async_width      == frame->width  &&
+	    source->async_height     == frame->height &&
+	    source->async_format     == frame->format &&
+	    source->async_full_range == frame->full_range)
 		return true;
 
-	source->async_width  = frame->width;
-	source->async_height = frame->height;
-	source->async_format = frame->format;
+	source->async_width      = frame->width;
+	source->async_height     = frame->height;
+	source->async_format     = frame->format;
+	source->async_full_range = frame->full_range;
 
 	gs_enter_context(obs->video.graphics);
 
@@ -1459,8 +1491,10 @@ bool set_async_texture_size(struct obs_source *source,
 	if (cur != CONVERT_NONE && init_gpu_conversion(source, frame)) {
 		source->async_gpu_conversion = true;
 
+		enum gs_color_format format = CONVERT_RGB_LIMITED ?
+			convert_video_format(frame->format) : GS_BGRX;
 		source->async_texrender =
-			gs_texrender_create(GS_BGRX, GS_ZS_NONE);
+			gs_texrender_create(format, GS_ZS_NONE);
 
 		source->async_texture = gs_texture_create(
 				source->async_convert_width,
@@ -1489,23 +1523,17 @@ bool set_async_texture_size(struct obs_source *source,
 static void upload_raw_frame(gs_texture_t *tex,
 		const struct obs_source_frame *frame)
 {
-	switch (get_convert_type(frame->format)) {
+	switch (get_convert_type(frame->format, frame->full_range)) {
 		case CONVERT_422_U:
 		case CONVERT_422_Y:
+		case CONVERT_800:
+		case CONVERT_RGB_LIMITED:
 			gs_texture_set_image(tex, frame->data[0],
 					frame->linesize[0], false);
 			break;
 
 		case CONVERT_420:
-			gs_texture_set_image(tex, frame->data[0],
-					frame->width, false);
-			break;
-
 		case CONVERT_NV12:
-			gs_texture_set_image(tex, frame->data[0],
-					frame->width, false);
-			break;
-
 		case CONVERT_444:
 			gs_texture_set_image(tex, frame->data[0],
 					frame->width, false);
@@ -1517,7 +1545,8 @@ static void upload_raw_frame(gs_texture_t *tex,
 	}
 }
 
-static const char *select_conversion_technique(enum video_format format)
+static const char *select_conversion_technique(enum video_format format,
+		bool full_range)
 {
 	switch (format) {
 		case VIDEO_FORMAT_UYVY:
@@ -1539,11 +1568,16 @@ static const char *select_conversion_technique(enum video_format format)
 			return "I444_Reverse";
 
 		case VIDEO_FORMAT_Y800:
+			return full_range ? "Y800_Full" : "Y800_Limited";
+
 		case VIDEO_FORMAT_BGRA:
 		case VIDEO_FORMAT_BGRX:
 		case VIDEO_FORMAT_RGBA:
 		case VIDEO_FORMAT_NONE:
-			assert(false && "No conversion requested");
+			if (full_range)
+				assert(false && "No conversion requested");
+			else
+				return "RGB_Limited";
 			break;
 	}
 	return NULL;
@@ -1577,8 +1611,9 @@ static bool update_async_texrender(struct obs_source *source,
 	float convert_width  = (float)source->async_convert_width;
 
 	gs_effect_t *conv = obs->video.conversion_effect;
-	gs_technique_t *tech = gs_effect_get_technique(conv,
-			select_conversion_technique(frame->format));
+	const char *tech_name = select_conversion_technique(frame->format,
+			frame->full_range);
+	gs_technique_t *tech = gs_effect_get_technique(conv, tech_name);
 
 	if (!gs_texrender_begin(texrender, cx, cy)) {
 		GS_DEBUG_MARKER_END();
@@ -1632,7 +1667,7 @@ bool update_async_texture(struct obs_source *source,
 		const struct obs_source_frame *frame,
 		gs_texture_t *tex, gs_texrender_t *texrender)
 {
-	enum convert_type type      = get_convert_type(frame->format);
+	enum convert_type type;
 	uint8_t           *ptr;
 	uint32_t          linesize;
 
@@ -1641,6 +1676,7 @@ bool update_async_texture(struct obs_source *source,
 	if (source->async_gpu_conversion && texrender)
 		return update_async_texrender(source, frame, tex, texrender);
 
+	type = get_convert_type(frame->format, frame->full_range);
 	if (type == CONVERT_NONE) {
 		gs_texture_set_image(tex, frame->data[0], frame->linesize[0],
 				false);
@@ -2247,41 +2283,6 @@ static inline void copy_frame_data_plane(struct obs_source_frame *dst,
 				dst->linesize[plane] * lines);
 }
 
-static void copy_frame_data_line_y800(uint32_t *dst, uint8_t *src, uint8_t *end)
-{
-	while (src < end) {
-		register uint32_t val = *(src++);
-		val |= (val << 8);
-		val |= (val << 16);
-		*(dst++) = val;
-	}
-}
-
-static inline void copy_frame_data_y800(struct obs_source_frame *dst,
-		const struct obs_source_frame *src)
-{
-	uint32_t *ptr_dst;
-	uint8_t  *ptr_src;
-	uint8_t  *src_end;
-
-	if ((src->linesize[0] * 4) != dst->linesize[0]) {
-		for (uint32_t cy = 0; cy < src->height; cy++) {
-			ptr_dst = (uint32_t*)
-				(dst->data[0] + cy * dst->linesize[0]);
-			ptr_src = (src->data[0] + cy * src->linesize[0]);
-			src_end = ptr_src + src->width;
-
-			copy_frame_data_line_y800(ptr_dst, ptr_src, src_end);
-		}
-	} else {
-		ptr_dst = (uint32_t*)dst->data[0];
-		ptr_src = (uint8_t *)src->data[0];
-		src_end = ptr_src + src->height * src->linesize[0];
-
-		copy_frame_data_line_y800(ptr_dst, ptr_src, src_end);
-	}
-}
-
 static void copy_frame_data(struct obs_source_frame *dst,
 		const struct obs_source_frame *src)
 {
@@ -2320,11 +2321,8 @@ static void copy_frame_data(struct obs_source_frame *dst,
 	case VIDEO_FORMAT_RGBA:
 	case VIDEO_FORMAT_BGRA:
 	case VIDEO_FORMAT_BGRX:
-		copy_frame_data_plane(dst, src, 0, dst->height);
-		break;
-
 	case VIDEO_FORMAT_Y800:
-		copy_frame_data_y800(dst, src);
+		copy_frame_data_plane(dst, src, 0, dst->height);
 		break;
 	}
 }
@@ -2339,8 +2337,9 @@ static inline bool async_texture_changed(struct obs_source *source,
 		const struct obs_source_frame *frame)
 {
 	enum convert_type prev, cur;
-	prev = get_convert_type(source->async_cache_format);
-	cur  = get_convert_type(frame->format);
+	prev = get_convert_type(source->async_cache_format,
+			source->async_cache_full_range);
+	cur  = get_convert_type(frame->format, frame->full_range);
 
 	return source->async_cache_width  != frame->width ||
 	       source->async_cache_height != frame->height ||
@@ -2393,9 +2392,10 @@ static inline struct obs_source_frame *cache_video(struct obs_source *source,
 
 	if (async_texture_changed(source, frame)) {
 		free_async_cache(source);
-		source->async_cache_width  = frame->width;
-		source->async_cache_height = frame->height;
-		source->async_cache_format = frame->format;
+		source->async_cache_width      = frame->width;
+		source->async_cache_height     = frame->height;
+		source->async_cache_format     = frame->format;
+		source->async_cache_full_range = frame->full_range;
 	}
 
 	for (size_t i = 0; i < source->async_cache.num; i++) {
@@ -2413,9 +2413,6 @@ static inline struct obs_source_frame *cache_video(struct obs_source *source,
 	if (!new_frame) {
 		struct async_frame new_af;
 		enum video_format format = frame->format;
-
-		if (format == VIDEO_FORMAT_Y800)
-			format = VIDEO_FORMAT_BGRX;
 
 		new_frame = obs_source_frame_create(format,
 				frame->width, frame->height);
