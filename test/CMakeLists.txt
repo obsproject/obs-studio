@@ -3,8 +3,8 @@ add_subdirectory(test-input)
 
 if(WIN32)
 	add_subdirectory(win)
-endif()
-
-if(APPLE AND UNIX)
+elseif(APPLE)
 	add_subdirectory(osx)
+elseif(UNIX)
+	add_subdirectory(linux)
 endif()
