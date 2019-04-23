@@ -2326,12 +2326,22 @@ void OBSBasicSettings::LoadAdvancedSettings()
 	loading = false;
 }
 
+#define TRUNCATE_TEXT_LENGTH 80
+
 template <typename Func>
 static inline void LayoutHotkey(obs_hotkey_id id, obs_hotkey_t *key, Func &&fun,
 		const map<obs_hotkey_id, vector<obs_key_combination_t>> &keys)
 {
 	auto *label = new OBSHotkeyLabel;
-	label->setText(obs_hotkey_get_description(key));
+	QString text = QT_UTF8(obs_hotkey_get_description(key));
+
+	if (text.length() > TRUNCATE_TEXT_LENGTH) {
+		label->setProperty("fullName", text);
+		text = text.left(TRUNCATE_TEXT_LENGTH);
+		text += "...'";
+	}
+
+	label->setText(text);
 
 	OBSHotkeyWidget *hw = nullptr;
 
@@ -2359,6 +2369,15 @@ static QLabel *makeLabel(const OBSSource &source, Func &&)
 {
 	OBSSourceLabel *label = new OBSSourceLabel(source);
 	label->setStyleSheet("font-weight: bold;");
+	QString name = QT_UTF8(obs_source_get_name(source));
+
+	if (name.length() > TRUNCATE_TEXT_LENGTH) {
+		label->setToolTip(name);
+		name = name.left(TRUNCATE_TEXT_LENGTH);
+		name += "...";
+	}
+
+	label->setText(name);
 
 	return label;
 }
@@ -2634,7 +2653,12 @@ void OBSBasicSettings::LoadHotkeySettings(obs_hotkey_id ignoreKey)
 		auto Update = [&](OBSHotkeyLabel *label, const QString &name,
 				OBSHotkeyLabel *other, const QString &otherName)
 		{
-			label->setToolTip(tt.arg(otherName));
+			QString string = other->property("fullName").value<QString>();
+
+			if (string.isEmpty() || string.isNull())
+				string = otherName;
+
+			label->setToolTip(tt.arg(string));
 			label->setText(name + " *");
 			label->pairPartner = other;
 		};
