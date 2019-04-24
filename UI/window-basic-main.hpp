@@ -529,6 +529,9 @@ private slots:
 	void EnablePreview();
 	void DisablePreview();
 
+	void SceneCopyFilters();
+	void ScenePasteFilters();
+
 private:
 	/* OBS Callbacks */
 	static void SceneReordered(void *data, calldata_t *params);
