@@ -659,7 +659,7 @@ struct BlendState {
 		  srcFactorC   (GS_BLEND_SRCALPHA),
 		  destFactorC  (GS_BLEND_INVSRCALPHA),
 		  srcFactorA   (GS_BLEND_ONE),
-		  destFactorA  (GS_BLEND_INVSRCALPHA),
+		  destFactorA  (GS_BLEND_ONE),
 		  redEnabled   (true),
 		  greenEnabled (true),
 		  blueEnabled  (true),
