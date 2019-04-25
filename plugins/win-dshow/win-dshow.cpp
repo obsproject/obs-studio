@@ -176,7 +176,7 @@ struct DShowInput {
 	VideoConfig  videoConfig;
 	AudioConfig  audioConfig;
 
-	obs_source_frame frame;
+	obs_source_frame2 frame;
 	obs_source_audio audio;
 
 	WinHandle semaphore;
@@ -327,7 +327,7 @@ void DShowInput::DShowLoop()
 				obs_data_t *settings;
 				settings = obs_source_get_settings(source);
 				if (!Activate(settings)) {
-					obs_source_output_video(source,
+					obs_source_output_video2(source,
 							nullptr);
 				}
 				if (block)
@@ -468,7 +468,7 @@ void DShowInput::OnEncodedVideoData(enum AVCodecID id,
 #if LOG_ENCODED_VIDEO_TS
 		blog(LOG_DEBUG, "video ts: %llu", frame.timestamp);
 #endif
-		obs_source_output_video(source, &frame);
+		obs_source_output_video2(source, &frame);
 	}
 }
 
@@ -537,7 +537,7 @@ void DShowInput::OnVideoData(const VideoConfig &config,
 		return;
 	}
 
-	obs_source_output_video(source, &frame);
+	obs_source_output_video2(source, &frame);
 
 	UNUSED_PARAMETER(endTime); /* it's the enndd tiimmes! */
 	UNUSED_PARAMETER(size);
@@ -1040,15 +1040,13 @@ inline bool DShowInput::Activate(obs_data_t *settings)
 		return false;
 
 	enum video_colorspace cs = GetColorSpace(settings);
-
-	video_range_type range = GetColorRange(settings);
-	frame.full_range = range == VIDEO_RANGE_FULL;
+	frame.range = GetColorRange(settings);
 
 	if (device.Start() != Result::Success)
 		return false;
 
 	bool success = video_format_get_parameters(
-			cs, range,
+			cs, frame.range,
 			frame.color_matrix,
 			frame.color_range_min,
 			frame.color_range_max);
@@ -1063,7 +1061,7 @@ inline bool DShowInput::Activate(obs_data_t *settings)
 inline void DShowInput::Deactivate()
 {
 	device.ResetGraph();
-	obs_source_output_video(source, nullptr);
+	obs_source_output_video2(source, nullptr);
 }
 
 /* ------------------------------------------------------------------------- */
