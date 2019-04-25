@@ -135,7 +135,7 @@ void DeckLinkDeviceInstance::HandleVideoFrame(
 	currentFrame.height      = (uint32_t)videoFrame->GetHeight();
 	currentFrame.timestamp   = timestamp;
 
-	obs_source_output_video(static_cast<DeckLinkInput*>(decklink)->GetSource(), &currentFrame);
+	obs_source_output_video2(static_cast<DeckLinkInput*>(decklink)->GetSource(), &currentFrame);
 }
 
 void DeckLinkDeviceInstance::FinalizeStream()
@@ -177,7 +177,7 @@ void DeckLinkDeviceInstance::SetupVideoFormat(DeckLinkDeviceMode *mode_)
 	}
 
 	colorRange = static_cast<DeckLinkInput*>(decklink)->GetColorRange();
-	currentFrame.full_range = colorRange == VIDEO_RANGE_FULL;
+	currentFrame.range = colorRange;
 
 	video_format_get_parameters(activeColorSpace, colorRange,
 			currentFrame.color_matrix, currentFrame.color_range_min,

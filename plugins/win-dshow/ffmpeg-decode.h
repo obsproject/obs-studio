@@ -56,7 +56,7 @@ extern bool ffmpeg_decode_audio(struct ffmpeg_decode *decode,
 
 extern bool ffmpeg_decode_video(struct ffmpeg_decode *decode,
 		uint8_t *data, size_t size, long long *ts,
-		struct obs_source_frame *frame,
+		struct obs_source_frame2 *frame,
 		bool *got_output);
 
 static inline bool ffmpeg_decode_valid(struct ffmpeg_decode *decode)

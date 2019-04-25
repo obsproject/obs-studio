@@ -349,6 +349,35 @@ float4 PSNV12_Reverse(VertInOut vert_in) : TARGET
 	return saturate(mul(float4(yuv, 1.0), color_matrix));
 }
 
+float4 PSY800_Limited(VertInOut vert_in) : TARGET
+{
+	int x = int(vert_in.uv.x * width  + PRECISION_OFFSET);
+	int y = int(vert_in.uv.y * height + PRECISION_OFFSET);
+
+	float limited = image.Load(int3(x, y, 0)).x;
+	float full = saturate((limited - (16.0 / 255.0)) * (255.0 / 219.0));
+	return float4(full, full, full, 1.0);
+}
+
+float4 PSY800_Full(VertInOut vert_in) : TARGET
+{
+	int x = int(vert_in.uv.x * width  + PRECISION_OFFSET);
+	int y = int(vert_in.uv.y * height + PRECISION_OFFSET);
+
+	float3 full = image.Load(int3(x, y, 0)).xxx;
+	return float4(full, 1.0);
+}
+
+float4 PSRGB_Limited(VertInOut vert_in) : TARGET
+{
+	int x = int(vert_in.uv.x * width  + PRECISION_OFFSET);
+	int y = int(vert_in.uv.y * height + PRECISION_OFFSET);
+
+	float4 rgba = image.Load(int3(x, y, 0));
+	rgba.rgb = saturate((rgba.rgb - (16.0 / 255.0)) * (255.0 / 219.0));
+	return rgba;
+}
+
 technique Planar420
 {
 	pass
@@ -445,5 +474,32 @@ technique NV12_Reverse
 	{
 		vertex_shader = VSDefault(vert_in);
 		pixel_shader  = PSNV12_Reverse(vert_in);
+	}
+}
+
+technique Y800_Limited
+{
+	pass
+	{
+		vertex_shader = VSDefault(vert_in);
+		pixel_shader  = PSY800_Limited(vert_in);
+	}
+}
+
+technique Y800_Full
+{
+	pass
+	{
+		vertex_shader = VSDefault(vert_in);
+		pixel_shader  = PSY800_Full(vert_in);
+	}
+}
+
+technique RGB_Limited
+{
+	pass
+	{
+		vertex_shader = VSDefault(vert_in);
+		pixel_shader  = PSRGB_Limited(vert_in);
 	}
 }

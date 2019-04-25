@@ -220,9 +220,6 @@ static bool decklink_device_changed(obs_properties_t *props,
 	return true;
 }
 
-static bool color_format_changed(obs_properties_t *props,
-		obs_property_t *list, obs_data_t *settings);
-
 static bool mode_id_changed(obs_properties_t *props,
 		obs_property_t *list, obs_data_t *settings)
 {
@@ -230,24 +227,6 @@ static bool mode_id_changed(obs_properties_t *props,
 
 	list = obs_properties_get(props, PIXEL_FORMAT);
 	obs_property_set_visible(list, id != MODE_ID_AUTO);
-
-	return color_format_changed(props, nullptr, settings);
-}
-
-static bool color_format_changed(obs_properties_t *props,
-		obs_property_t *list, obs_data_t *settings)
-{
-	long long id = obs_data_get_int(settings, MODE_ID);
-	BMDPixelFormat pixelFormat = (BMDPixelFormat)obs_data_get_int(settings,
-		PIXEL_FORMAT);
-
-	list = obs_properties_get(props, COLOR_SPACE);
-	obs_property_set_visible(list,
-			id != MODE_ID_AUTO && pixelFormat == bmdFormat8BitYUV);
-
-	list = obs_properties_get(props, COLOR_RANGE);
-	obs_property_set_visible(list,
-			id == MODE_ID_AUTO || pixelFormat == bmdFormat8BitYUV);
 
 	return true;
 }
@@ -274,7 +253,6 @@ static obs_properties_t *decklink_get_properties(void *data)
 	list = obs_properties_add_list(props, PIXEL_FORMAT,
 			TEXT_PIXEL_FORMAT, OBS_COMBO_TYPE_LIST,
 			OBS_COMBO_FORMAT_INT);
-	obs_property_set_modified_callback(list, color_format_changed);
 
 	obs_property_list_add_int(list, "8-bit YUV", bmdFormat8BitYUV);
 	obs_property_list_add_int(list, "8-bit BGRA", bmdFormat8BitBGRA);
