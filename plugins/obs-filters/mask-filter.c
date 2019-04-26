@@ -116,7 +116,8 @@ static obs_properties_t *mask_filter_properties(void *data)
 	obs_properties_add_path(props, SETTING_IMAGE_PATH, TEXT_IMAGE_PATH,
 			OBS_PATH_FILE, filter_str.array, NULL);
 	obs_properties_add_color(props, SETTING_COLOR, TEXT_COLOR);
-	obs_properties_add_int(props, SETTING_OPACITY, TEXT_OPACITY, 0, 100, 1);
+	obs_properties_add_int_slider(props, SETTING_OPACITY, TEXT_OPACITY,
+			0, 100, 1);
 	obs_properties_add_bool(props, SETTING_STRETCH, TEXT_STRETCH);
 
 	dstr_free(&filter_str);
