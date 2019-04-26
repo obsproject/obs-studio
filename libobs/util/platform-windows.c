@@ -295,6 +295,31 @@ char *os_get_program_data_path_ptr(const char *name)
 	return os_get_path_ptr_internal(name, CSIDL_COMMON_APPDATA);
 }
 
+char *os_get_executable_path_ptr(const char *name)
+{
+	char *ptr;
+	char *slash;
+	wchar_t path_utf16[MAX_PATH];
+	struct dstr path;
+
+	GetModuleFileNameW(NULL, path_utf16, MAX_PATH);
+
+	os_wcs_to_utf8_ptr(path_utf16, 0, &ptr);
+	dstr_init_move_array(&path, ptr);
+	dstr_replace(&path, "\\", "/");
+	slash = strrchr(path.array, '/');
+	if (slash) {
+		size_t len = slash - path.array + 1;
+		dstr_resize(&path, len);
+	}
+
+	if (name && *name) {
+		dstr_cat(&path, name);
+	}
+
+	return path.array;
+}
+
 bool os_file_exists(const char *path)
 {
 	WIN32_FIND_DATAW wfd;

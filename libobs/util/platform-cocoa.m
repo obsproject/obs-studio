@@ -24,11 +24,13 @@
 #include <time.h>
 #include <unistd.h>
 #include <sys/types.h>
+#include <sys/param.h>
 #include <sys/sysctl.h>
 
 #include <CoreServices/CoreServices.h>
 #include <mach/mach.h>
 #include <mach/mach_time.h>
+#include <mach-o/dyld.h>
 
 #include <IOKit/pwr_mgt/IOPMLib.h>
 
@@ -138,6 +140,35 @@ int os_get_program_data_path(char *dst, size_t size, const char *name)
 char *os_get_program_data_path_ptr(const char *name)
 {
 	return os_get_path_ptr_internal(name, NSLocalDomainMask);
+}
+
+char *os_get_executable_path_ptr(const char *name)
+{
+	char exe[PATH_MAX];
+	char abs_path[PATH_MAX];
+	uint32_t size = sizeof(exe);
+	struct dstr path;
+	char *slash;
+
+	if (_NSGetExecutablePath(exe, &size) != 0) {
+		return NULL;
+	}
+
+	if (!realpath(exe, abs_path)) {
+		return NULL;
+	}
+
+	dstr_init_copy(&path, abs_path);
+	slash = strrchr(path.array, '/');
+	if (slash) {
+		size_t len = slash - path.array + 1;
+		dstr_resize(&path, len);
+	}
+
+	if (name && *name) {
+		dstr_cat(&path, name);
+	}
+	return path.array;
 }
 
 struct os_cpu_usage_info {

@@ -33,6 +33,7 @@
 #if !defined(__APPLE__)
 #include <sys/times.h>
 #include <sys/wait.h>
+#include <libgen.h>
 #ifdef __FreeBSD__
 #include <sys/param.h>
 #include <sys/queue.h>
@@ -263,6 +264,32 @@ char *os_get_program_data_path_ptr(const char *name)
 	snprintf(str, len + 1, "/usr/local/share/%s", !!name ? name : "");
 	str[len] = 0;
 	return str;
+}
+
+char *os_get_executable_path_ptr(const char *name)
+{
+	char exe[PATH_MAX];
+	ssize_t count = readlink("/proc/self/exe", exe, PATH_MAX);
+	const char *path_out = NULL;
+	struct dstr path;
+
+	if (count == -1) {
+		return NULL;
+	}
+
+	path_out = dirname(exe);
+	if (!path_out) {
+		return NULL;
+	}
+
+	dstr_init_copy(&path, path_out);
+	dstr_cat(&path, "/");
+
+	if (name && *name) {
+		dstr_cat(&path, name);
+	}
+
+	return path.array;
 }
 
 #endif
