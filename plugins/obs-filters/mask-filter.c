@@ -46,6 +46,7 @@ static void mask_filter_update(void *data, obs_data_t *settings)
 	int opacity = (int)obs_data_get_int(settings, SETTING_OPACITY);
 	char *effect_path;
 
+	color &= 0xFFFFFF;
 	color |= (uint32_t)(((double)opacity) * 2.55) << 24;
 
 	vec4_from_rgba(&filter->color, color);
