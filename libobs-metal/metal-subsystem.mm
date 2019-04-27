@@ -1449,13 +1449,14 @@ static inline void gs_indexbuffer_flush_internal(gs_indexbuffer_t *indexbuffer,
 
 void gs_indexbuffer_flush(gs_indexbuffer_t *indexbuffer)
 {
-	gs_indexbuffer_flush_internal(indexbuffer, indexbuffer->indices.get());
+	gs_indexbuffer_flush_internal(indexbuffer,
+			(void *)indexbuffer->indices.get());
 }
 
 void gs_indexbuffer_flush_direct(gs_indexbuffer_t *indexbuffer,
 		const void *data)
 {
-	gs_indexbuffer_flush_internal(indexbuffer, data);
+	gs_indexbuffer_flush_internal(indexbuffer, (void *)data);
 }
 
 void *gs_indexbuffer_get_data(const gs_indexbuffer_t *indexbuffer)
