@@ -46,7 +46,7 @@ static inline void AddInputLayoutVar(shader_var *var,
 }
 
 static inline void BuildVertexDescFromVars(shader_parser *parser, darray *vars,
-		__weak MTLVertexDescriptor *vd, size_t &index)
+		MTLVertexDescriptor *vd, size_t &index)
 {
 	shader_var *array = (shader_var*)vars->array;
 
@@ -67,7 +67,7 @@ static inline void BuildVertexDescFromVars(shader_parser *parser, darray *vars,
 	}
 }
 
-void ShaderProcessor::BuildVertexDesc(__weak MTLVertexDescriptor *vertexDesc)
+void ShaderProcessor::BuildVertexDesc(MTLVertexDescriptor *vertexDesc)
 {
 	shader_func *func = shader_parser_getfunc(&parser, "main");
 	if (!func)

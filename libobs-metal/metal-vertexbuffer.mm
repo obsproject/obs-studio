@@ -6,7 +6,7 @@
 using namespace std;
 
 inline id<MTLBuffer> gs_vertex_buffer::PrepareBuffer(
-		void *array, size_t elementSize, __weak NSString *name)
+		void *array, size_t elementSize, NSString *name)
 {
 	id<MTLBuffer> b = device->GetBuffer(array, elementSize * vbData->num);
 #if _DEBUG
