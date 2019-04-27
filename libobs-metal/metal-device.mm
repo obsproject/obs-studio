@@ -21,6 +21,12 @@ void gs_device::InitDevice(uint32_t deviceIdx)
 		}
 	}
 
+	if (device == nil)
+		throw "Well I guess there's no device, try using OpenGL "
+		      "rather than this awful apple API that they made "
+		      "with the sole purpose of making developer's lives "
+		      "difficult.";
+
 	blog(LOG_INFO, "Loading up Metal on adapter %s (%" PRIu32 ")",
 			device.name.UTF8String, deviceIdx);
 
