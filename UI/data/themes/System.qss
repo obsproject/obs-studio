@@ -166,6 +166,7 @@ OBSBasicSettings {
 
 LockedCheckBox {
     outline: none;
+    background: transparent;
 }
 
 LockedCheckBox::indicator:checked {
@@ -180,6 +181,7 @@ LockedCheckBox::indicator:unchecked {
 
 VisibilityCheckBox {
     outline: none;
+    background: transparent;
 }
 
 VisibilityCheckBox::indicator:checked {
