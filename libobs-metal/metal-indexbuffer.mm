@@ -20,11 +20,11 @@ static inline size_t ConvertGSIndexTypeToSize(gs_index_type type)
 	throw "Failed to initialize index buffer";
 }
 
-void gs_index_buffer::PrepareBuffer()
+void gs_index_buffer::PrepareBuffer(void *new_indices)
 {
 	assert(isDynamic);
 	
-	indexBuffer = device->GetBuffer(indices.get(), len);
+	indexBuffer = device->GetBuffer(new_indices, len);
 #if _DEBUG
 	indexBuffer.label = @"index";
 #endif

@@ -1161,6 +1161,14 @@ void device_projection_pop(gs_device_t *device)
 	device->projStack.pop();
 }
 
+void device_debug_marker_begin(gs_device_t *, const char *, const float[4])
+{
+}
+
+void device_debug_marker_end(gs_device_t *)
+{
+}
+
 void gs_swapchain_destroy(gs_swapchain_t *swapchain)
 {
 	assert(swapchain->obj_type == gs_type::gs_swap_chain);
@@ -1385,7 +1393,8 @@ void gs_vertexbuffer_destroy(gs_vertbuffer_t *vertbuffer)
 	delete vertbuffer;
 }
 
-void gs_vertexbuffer_flush(gs_vertbuffer_t *vertbuffer)
+static inline void gs_vertexbuffer_flush_internal(gs_vertbuffer_t *vertbuffer,
+		const gs_vb_data *data)
 {
 	assert(vertbuffer->obj_type == gs_type::gs_vertex_buffer);
 
@@ -1395,7 +1404,18 @@ void gs_vertexbuffer_flush(gs_vertbuffer_t *vertbuffer)
 		return;
 	}
 
-	vertbuffer->PrepareBuffers();
+	vertbuffer->PrepareBuffers(data);
+}
+
+void gs_vertexbuffer_flush(gs_vertbuffer_t *vertbuffer)
+{
+	gs_vertexbuffer_flush_internal(vertbuffer, vertbuffer->vbData.get());
+}
+
+void gs_vertexbuffer_flush_direct(gs_vertbuffer_t *vertbuffer,
+		const gs_vb_data *data)
+{
+	gs_vertexbuffer_flush_internal(vertbuffer, data);
 }
 
 struct gs_vb_data *gs_vertexbuffer_get_data(const gs_vertbuffer_t *vertbuffer)
@@ -1413,7 +1433,8 @@ void gs_indexbuffer_destroy(gs_indexbuffer_t *indexbuffer)
 	delete indexbuffer;
 }
 
-void gs_indexbuffer_flush(gs_indexbuffer_t *indexbuffer)
+static inline void gs_indexbuffer_flush_internal(gs_indexbuffer_t *indexbuffer,
+		void *indices)
 {
 	assert(indexbuffer->obj_type == gs_type::gs_index_buffer);
 
@@ -1423,7 +1444,18 @@ void gs_indexbuffer_flush(gs_indexbuffer_t *indexbuffer)
 		return;
 	}
 
-	indexbuffer->PrepareBuffer();
+	indexbuffer->PrepareBuffer(indices);
+}
+
+void gs_indexbuffer_flush(gs_indexbuffer_t *indexbuffer)
+{
+	gs_indexbuffer_flush_internal(indexbuffer, indexbuffer->indices.get());
+}
+
+void gs_indexbuffer_flush_direct(gs_indexbuffer_t *indexbuffer,
+		const void *data)
+{
+	gs_indexbuffer_flush_internal(indexbuffer, data);
 }
 
 void *gs_indexbuffer_get_data(const gs_indexbuffer_t *indexbuffer)
