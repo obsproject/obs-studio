@@ -799,7 +799,7 @@
           "servers": [
               {
                   "name": "Server Iran",
-                  "url": "rtmp://gametips.tv:1935/hls"
+                  "url": "rtmp://rtmp.cdn.server1.gametips.tv:1935/hls"
               }
           ]
         },
