@@ -14,6 +14,7 @@
 using namespace std;
 
 #define CLAMP(x, min, max) ((x) < (min) ? (min) : ((x) > (max) ? (max) : (x)))
+#define FADER_PRECISION 4096.0
 
 QWeakPointer<VolumeMeterTimer> VolumeMeter::updateTimer;
 
@@ -47,7 +48,8 @@ void VolControl::OBSVolumeMuted(void *data, calldata_t *calldata)
 void VolControl::VolumeChanged()
 {
 	slider->blockSignals(true);
-	slider->setValue((int) (obs_fader_get_deflection(obs_fader) * 100.0f));
+	slider->setValue((int) (obs_fader_get_deflection(obs_fader) *
+			FADER_PRECISION));
 	slider->blockSignals(false);
 
 	updateText();
@@ -66,7 +68,7 @@ void VolControl::SetMuted(bool checked)
 
 void VolControl::SliderChanged(int vol)
 {
-	obs_fader_set_deflection(obs_fader, float(vol) * 0.01f);
+	obs_fader_set_deflection(obs_fader, float(vol) / FADER_PRECISION);
 	updateText();
 }
 
@@ -234,7 +236,7 @@ VolControl::VolControl(OBSSource source_, bool showConfig, bool vertical)
 	volLabel->setFont(font);
 
 	slider->setMinimum(0);
-	slider->setMaximum(100);
+	slider->setMaximum(int(FADER_PRECISION));
 
 	bool muted = obs_source_muted(source);
 	mute->setChecked(muted);
