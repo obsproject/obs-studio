@@ -3,6 +3,7 @@
 #include <obs.hpp>
 #include <QWidget>
 #include <QPointer>
+#include <QDoubleSpinBox>
 #include "balance-slider.hpp"
 
 class QGridLayout;
@@ -22,7 +23,7 @@ private:
 	QPointer<QWidget>      balanceContainer;
 
 	QPointer<QLabel>       nameLabel;
-	QPointer<QSpinBox>     volume;
+	QPointer<QDoubleSpinBox> volume;
 	QPointer<QCheckBox>    forceMono;
 	QPointer<BalanceSlider>balance;
 	QPointer<QLabel>       labelL;
@@ -59,7 +60,7 @@ public slots:
 	void SourceSyncChanged(int64_t offset);
 	void SourceMixersChanged(uint32_t mixers);
 
-	void volumeChanged(int percentage);
+	void volumeChanged(double db);
 	void downmixMonoChanged(bool checked);
 	void balanceChanged(int val);
 	void syncOffsetChanged(int milliseconds);

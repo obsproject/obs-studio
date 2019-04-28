@@ -932,3 +932,12 @@ void obs_volmeter_remove_callback(obs_volmeter_t *volmeter,
 	pthread_mutex_unlock(&volmeter->callback_mutex);
 }
 
+float obs_mul_to_db(float mul)
+{
+	return mul_to_db(mul);
+}
+
+float obs_db_to_mul(float db)
+{
+	return db_to_mul(db);
+}

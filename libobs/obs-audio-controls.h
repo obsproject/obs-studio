@@ -273,6 +273,9 @@ EXPORT void obs_volmeter_add_callback(obs_volmeter_t *volmeter,
 EXPORT void obs_volmeter_remove_callback(obs_volmeter_t *volmeter,
 		obs_volmeter_updated_t callback, void *param);
 
+EXPORT float obs_mul_to_db(float mul);
+EXPORT float obs_db_to_mul(float db);
+
 #ifdef __cplusplus
 }
 #endif
