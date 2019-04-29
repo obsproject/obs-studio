@@ -725,6 +725,10 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 			this, SLOT(AdvOutRecCheckWarnings()));
 	AdvOutRecCheckWarnings();
 
+	ui->buttonBox->button(QDialogButtonBox::Apply)->setIcon(QIcon());
+	ui->buttonBox->button(QDialogButtonBox::Ok)->setIcon(QIcon());
+	ui->buttonBox->button(QDialogButtonBox::Cancel)->setIcon(QIcon());
+
 	SimpleRecordingQualityChanged();
 
 	UpdateAutomaticReplayBufferCheckboxes();
