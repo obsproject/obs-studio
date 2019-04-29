@@ -985,3 +985,11 @@ VisibilityCheckBox::indicator:checked:hover {
 VisibilityCheckBox::indicator:unchecked:hover {
     image: url(:res/images/invisible.svg);
 }
+
+* [themeID="trashIcon"] {
+    qproperty-icon: url(./Dark/trash.svg);
+}
+
+* [themeID="revertIcon"] {
+    qproperty-icon: url(./Dark/revert.svg);
+}
