@@ -272,13 +272,17 @@ void OBSHotkeyWidget::AddEdit(obs_key_combination combo, int idx)
 	edit->setToolTip(toolTip);
 
 	auto revert = new QPushButton;
-	revert->setProperty("themeID", "hotkeyButtons");
-	revert->setText(QTStr("Revert"));
+	revert->setProperty("themeID", "revertIcon");
+	revert->setToolTip(QTStr("Revert"));
+	revert->setFixedSize(24, 24);
+	revert->setStyleSheet("background: transparent; border: none;");
 	revert->setEnabled(false);
 
 	auto clear = new QPushButton;
-	clear->setProperty("themeID", "hotkeyButtons");
-	clear->setText(QTStr("Clear"));
+	clear->setProperty("themeID", "trashIcon");
+	clear->setToolTip(QTStr("Clear"));
+	clear->setFixedSize(24, 24);
+	clear->setStyleSheet("background: transparent; border: none;");
 	clear->setEnabled(!obs_key_combination_is_empty(combo));
 
 	QObject::connect(edit, &OBSHotkeyEdit::KeyChanged,
@@ -289,15 +293,15 @@ void OBSHotkeyWidget::AddEdit(obs_key_combination combo, int idx)
 	});
 
 	auto add = new QPushButton;
-	add->setProperty("themeID", "hotkeyButtons");
-	add->setText("+");
-	add->setMinimumWidth(50);
+	add->setProperty("themeID", "addIconSmall");
+	add->setFixedSize(24, 24);
+	add->setStyleSheet("background: transparent; border: none;");
 
 	auto remove = new QPushButton;
-	remove->setProperty("themeID", "hotkeyButtons");
-	remove->setText("-");
+	remove->setProperty("themeID", "removeIconSmall");
 	remove->setEnabled(removeButtons.size() > 0);
-	remove->setMinimumWidth(50);
+	remove->setFixedSize(24, 24);
+	remove->setStyleSheet("background: transparent; border: none;");
 
 	auto CurrentIndex = [&, remove]
 	{
