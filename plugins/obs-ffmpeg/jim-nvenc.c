@@ -24,6 +24,8 @@
 #define error_hr(msg) \
 	error("%s: %s: 0x%08lX", __FUNCTION__, msg, (uint32_t)hr);
 
+#define AV_NOPTS_VALUE   ((int64_t)UINT64_C(0x8000000000000000))
+
 struct nv_bitstream;
 struct nv_texture;
 
@@ -72,6 +74,12 @@ struct nvenc_data {
 
 	uint8_t *sei;
 	size_t  sei_size;
+
+	/* ts_ for timestamp fixing */
+	bool	ts_first;
+	/* first 2 dts */
+	int64_t ts_init[2];
+	int64_t ts_last_dts;
 };
 
 /* ------------------------------------------------------------------------- */
@@ -523,14 +531,16 @@ static bool init_encoder(struct nvenc_data *enc, obs_data_t *settings)
 	     "\t2-pass:       %s\n"
 	     "\tb-frames:     %d\n"
 	     "\tlookahead:    %s\n"
-	     "\tpsycho_aq:    %s\n",
+	     "\tpsycho_aq:    %s\n"
+	     "\tuseBFrameAsRef:    %d\n",
 	     rc, bitrate, cqp, gop_size,
 	     preset, profile,
 	     enc->cx, enc->cy,
 	     twopass ? "true" : "false",
 	     bf,
 	     lookahead ? "true" : "false",
-	     psycho_aq ? "true" : "false");
+	     psycho_aq ? "true" : "false",
+	     h264_config->useBFramesAsRef);
 
 	return true;
 }
@@ -606,6 +616,10 @@ static void *nvenc_create(obs_data_t *settings, obs_encoder_t *encoder)
 		goto fail;
 	}
 
+	enc->ts_first = TRUE;
+	enc->ts_init[0] = AV_NOPTS_VALUE;
+	enc->ts_init[1] = AV_NOPTS_VALUE;
+	enc->ts_last_dts = 0;
 	return enc;
 
 fail:
@@ -813,6 +827,15 @@ static bool nvenc_encode_tex(void *data, uint32_t handle, int64_t pts,
 
 	circlebuf_push_back(&enc->dts_list, &pts, sizeof(pts));
 
+	if (enc->ts_first) {
+		for (int i = 0; i < 2; i++) {
+			if (enc->ts_init[i] == AV_NOPTS_VALUE) {
+				enc->ts_init[i] = (int64_t)pts;
+				break;
+			}
+		}
+	}
+
 	/* ------------------------------------ */
 	/* wait for output bitstream/tex        */
 
@@ -879,19 +902,51 @@ static bool nvenc_encode_tex(void *data, uint32_t handle, int64_t pts,
 
 	if (enc->packet_data.num) {
 		int64_t dts;
-		circlebuf_pop_front(&enc->dts_list, &dts, sizeof(dts));
 
-		/* subtract bframe delay from dts */
-		if (enc->bframes)
-			dts--;
+		/* calculate first dts. fix floating-point fps. */
+		do {
+			if (enc->bframes && enc->ts_first && enc->ts_init[1] != AV_NOPTS_VALUE) {
+				int64_t ts0 = enc->ts_init[0], ts1 = enc->ts_init[1];
+				int64_t delta;
+				if ((ts0 < 0 && ts1 > INT64_MAX + ts0) ||
+					(ts0 > 0 && ts1 < INT64_MIN + ts0)) {
+					error("pts/dts error. ts0: %d, ts1: %d", ts0, ts1);
+					break;
+				}
+				delta = ts1 - ts0;
+				if ((delta < 0 && ts0 > INT64_MAX + delta) ||
+					(delta > 0 && ts0 < INT64_MIN + delta)) {
+					error("pts/dts error. invalid delta: %d. ts0: %d, ts1: %d",
+						delta, ts0, ts1);
+					break;
+				}
+
+				enc->ts_first = FALSE;
+				packet->dts = ts0 - delta;
+			}
+			else {
+				circlebuf_pop_front(&enc->dts_list, &dts, sizeof(dts));
+				packet->dts = dts;
+			}
+		} while (FALSE);
 
 		*received_packet = true;
 		packet->data     = enc->packet_data.array;
 		packet->size     = enc->packet_data.num;
 		packet->type     = OBS_ENCODER_VIDEO;
 		packet->pts      = enc->packet_pts;
-		packet->dts      = dts;
 		packet->keyframe = enc->packet_keyframe;
+
+		/* useBFrameAsRef = middle(0x2) may probably produce smaller pts. */
+		if (packet->dts > packet->pts) {
+			// TODO: logging
+			uint64_t guess;
+			guess = packet->pts + packet->dts + enc->ts_last_dts + 1
+				- min(packet->pts, min(packet->dts, enc->ts_last_dts + 1))
+				- max(packet->pts, min(packet->dts, enc->ts_last_dts + 1));
+			packet->pts = packet->dts = guess;
+		}
+		enc->ts_last_dts = packet->dts;
 	} else {
 		*received_packet = false;
 	}
