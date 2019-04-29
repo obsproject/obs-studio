@@ -2353,7 +2353,10 @@ static QLabel *makeLabel(T &t, Func &&getName)
 template <typename Func>
 static QLabel *makeLabel(const OBSSource &source, Func &&)
 {
-	return new OBSSourceLabel(source);
+	OBSSourceLabel *label = new OBSSourceLabel(source);
+	label->setStyleSheet("font-weight: bold;");
+
+	return label;
 }
 
 template <typename Func, typename T>
@@ -2365,13 +2368,8 @@ static inline void AddHotkeys(QFormLayout &layout,
 	if (hotkeys.empty())
 		return;
 
-	auto line = new QFrame();
-	line->setFrameShape(QFrame::HLine);
-	line->setFrameShadow(QFrame::Sunken);
-
 	layout.setItem(layout.rowCount(), QFormLayout::SpanningRole,
 			new QSpacerItem(0, 10));
-	layout.addRow(line);
 
 	using tuple_type =
 		std::tuple<T, QPointer<QLabel>, QPointer<QWidget>>;
@@ -4323,7 +4321,6 @@ void OBSBasicSettings::AdvReplayBufferChanged()
 		ui->advRBEstimate->setText(QTStr(ESTIMATE_UNKNOWN_STR));
 
 	ui->advReplayBufferGroupBox->setVisible(!lossless && replayBufferEnabled);
-	ui->line_4->setVisible(!lossless && replayBufferEnabled);
 	ui->advReplayBuf->setEnabled(!lossless);
 
 	UpdateAutomaticReplayBufferCheckboxes();

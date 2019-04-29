@@ -1251,13 +1251,6 @@
               </widget>
              </item>
              <item>
-              <widget class="Line" name="line_2">
-               <property name="orientation">
-                <enum>Qt::Horizontal</enum>
-               </property>
-              </widget>
-             </item>
-             <item>
               <widget class="QStackedWidget" name="outputModePages">
                <property name="currentIndex">
                 <number>0</number>
@@ -2028,13 +2021,6 @@
                          </widget>
                         </item>
                        </layout>
-                      </widget>
-                     </item>
-                     <item>
-                      <widget class="Line" name="line_3">
-                       <property name="orientation">
-                        <enum>Qt::Horizontal</enum>
-                       </property>
                       </widget>
                      </item>
                      <item>
@@ -3494,13 +3480,6 @@
                       <widget class="QCheckBox" name="advReplayBuf">
                        <property name="text">
                         <string>Basic.Settings.Output.UseReplayBuffer</string>
-                       </property>
-                      </widget>
-                     </item>
-                     <item>
-                      <widget class="Line" name="line_4">
-                       <property name="orientation">
-                        <enum>Qt::Horizontal</enum>
                        </property>
                       </widget>
                      </item>
