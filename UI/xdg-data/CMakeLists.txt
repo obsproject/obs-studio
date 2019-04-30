@@ -22,3 +22,9 @@ install(FILES com.obsproject.Studio.desktop
 install(FILES ../forms/images/obs.png
 	DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/icons/hicolor/256x256/apps
 	RENAME com.obsproject.Studio.png)
+
+install(FILES ../forms/images/obs-tray-active.png
+	DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/icons/hicolor/256x256/apps)
+
+install(FILES ../forms/images/obs-tray.png
+	DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/icons/hicolor/256x256/apps)

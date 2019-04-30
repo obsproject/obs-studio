@@ -5054,7 +5054,7 @@ inline void OBSBasic::OnActivate()
 
 		if (trayIcon)
 			trayIcon->setIcon(QIcon::fromTheme("obs-tray-active",
-					QIcon(":/res/images/tray_active.png")));
+					QIcon(":/res/images/obs-tray-active.png")));
 	}
 }
 
@@ -5068,7 +5068,7 @@ inline void OBSBasic::OnDeactivate()
 
 		if (trayIcon)
 			trayIcon->setIcon(QIcon::fromTheme("obs-tray",
-					QIcon(":/res/images/obs.png")));
+					QIcon(":/res/images/obs-tray.png")));
 	}
 }
 
@@ -6789,7 +6789,7 @@ void OBSBasic::ToggleShowHide()
 void OBSBasic::SystemTrayInit()
 {
 	trayIcon.reset(new QSystemTrayIcon(QIcon::fromTheme("obs-tray",
-			QIcon(":/res/images/obs.png")), this));
+			QIcon(":/res/images/obs-tray.png")), this));
 	trayIcon->setToolTip("OBS Studio");
 
 	showHide = new QAction(QTStr("Basic.SystemTray.Show"),
