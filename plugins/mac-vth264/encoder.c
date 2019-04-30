@@ -874,14 +874,18 @@ static obs_properties_t *vt_h264_properties(void *unused)
 	obs_properties_t *props = obs_properties_create();
 	obs_property_t *p;
 
-	obs_properties_add_int(props, "bitrate", TEXT_BITRATE, 50, 10000000, 50);
+	p = obs_properties_add_int(props, "bitrate",
+			TEXT_BITRATE, 50, 10000000, 50);
+	obs_property_int_set_suffix(p, " Kbps");
 
 	p = obs_properties_add_bool(props, "limit_bitrate",
 			TEXT_USE_MAX_BITRATE);
 	obs_property_set_modified_callback(p, limit_bitrate_modified);
 
-	obs_properties_add_int(props, "max_bitrate", TEXT_MAX_BITRATE, 50,
+	p = obs_properties_add_int(props, "max_bitrate", TEXT_MAX_BITRATE, 50,
 			10000000, 50);
+	obs_property_int_set_suffix(p, " Kbps");
+
 	obs_properties_add_float(props, "max_bitrate_window",
 			TEXT_MAX_BITRATE_WINDOW, 0.10f, 10.0f, 0.25f);
 

@@ -463,7 +463,10 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->autoRemux,            CHECK_CHANGED,  ADV_CHANGED);
 
 	ui->simpleOutputVBitrate->setSingleStep(50);
+	ui->simpleOutputVBitrate->setSuffix(" Kbps");
 	ui->advOutFFVBitrate->setSingleStep(50);
+	ui->advOutFFVBitrate->setSuffix(" Kbps");
+	ui->advOutFFABitrate->setSuffix(" Kbps");
 
 #if !defined(_WIN32) && !defined(__APPLE__)
 	delete ui->enableAutoUpdates;

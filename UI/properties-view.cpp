@@ -333,12 +333,14 @@ void OBSPropertiesView::AddInt(obs_property_t *prop, QFormLayout *layout,
 	int minVal = obs_property_int_min(prop);
 	int maxVal = obs_property_int_max(prop);
 	int stepVal = obs_property_int_step(prop);
+	const char *suffix = obs_property_int_suffix(prop);
 
 	spin->setMinimum(minVal);
 	spin->setMaximum(maxVal);
 	spin->setSingleStep(stepVal);
 	spin->setValue(val);
 	spin->setToolTip(QT_UTF8(obs_property_long_description(prop)));
+	spin->setSuffix(QT_UTF8(suffix));
 
 	WidgetInfo *info = new WidgetInfo(this, prop, spin);
 	children.emplace_back(info);
@@ -382,12 +384,14 @@ void OBSPropertiesView::AddFloat(obs_property_t *prop, QFormLayout *layout,
 	double minVal = obs_property_float_min(prop);
 	double maxVal = obs_property_float_max(prop);
 	double stepVal = obs_property_float_step(prop);
+	const char *suffix = obs_property_float_suffix(prop);
 
 	spin->setMinimum(minVal);
 	spin->setMaximum(maxVal);
 	spin->setSingleStep(stepVal);
 	spin->setValue(val);
 	spin->setToolTip(QT_UTF8(obs_property_long_description(prop)));
+	spin->setSuffix(QT_UTF8(suffix));
 
 	WidgetInfo *info = new WidgetInfo(this, prop, spin);
 	children.emplace_back(info);
