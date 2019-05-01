@@ -6866,6 +6866,8 @@ void OBSBasic::SystemTray(bool firstStarted)
 {
 	if (!QSystemTrayIcon::isSystemTrayAvailable())
 		return;
+	if (!trayIcon)
+		return;
 
 	bool sysTrayWhenStarted = config_get_bool(GetGlobalConfig(),
 			"BasicWindow", "SysTrayWhenStarted");
