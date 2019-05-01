@@ -1640,14 +1640,12 @@ void OBSBasic::OBSInit()
 	SET_VISIBILITY("ShowStatusBar", toggleStatusBar);
 #undef SET_VISIBILITY
 
-#ifndef __APPLE__
 	{
 		ProfileScope("OBSBasic::Load");
 		disableSaving--;
 		Load(savePath);
 		disableSaving++;
 	}
-#endif
 
 	TimedCheckForUpdates();
 	loaded = true;
@@ -1669,9 +1667,7 @@ void OBSBasic::OBSInit()
 	}
 #endif
 
-#ifndef __APPLE__
 	RefreshSceneCollections();
-#endif
 	RefreshProfiles();
 	disableSaving--;
 
@@ -1809,28 +1805,12 @@ void OBSBasic::OBSInit()
 	ui->actionCheckForUpdates = nullptr;
 #endif
 
-#ifdef __APPLE__
-	/* This is an incredibly unpleasant hack for macOS to isolate CEF
-	 * initialization until after all tasks related to Qt startup and main
-	 * window initialization have completed.  There is a macOS-specific bug
-	 * within either CEF and/or Qt that can cause a crash if both Qt and
-	 * CEF are loading at the same time.
-	 *
-	 * CEF will typically load fine after about two iterations from this
-	 * point, and all Qt tasks are typically fully completed after about
-	 * four or five iterations, but to be "ultra" safe, an arbitrarily
-	 * large number such as 10 is used.  This hack is extremely unpleasant,
-	 * but is worth doing instead of being forced to isolate the entire
-	 * browser plugin in to a separate process as before.
-	 *
-	 * Again, this hack is specific to macOS only.  Fortunately, on other
-	 * operating systems, such issues do not occur. */
-	QMetaObject::invokeMethod(this, "DeferredLoad",
-			Qt::QueuedConnection,
-			Q_ARG(QString, QT_UTF8(savePath)),
-			Q_ARG(int, 10));
-#else
 	OnFirstLoad();
+
+#ifdef __APPLE__
+	QMetaObject::invokeMethod(this, "DeferredSysTrayLoad",
+			Qt::QueuedConnection,
+			Q_ARG(int, 10));
 #endif
 }
 
@@ -1857,19 +1837,14 @@ void OBSBasic::OnFirstLoad()
 	Auth::Load();
 }
 
-void OBSBasic::DeferredLoad(const QString &file, int requeueCount)
+void OBSBasic::DeferredSysTrayLoad(int requeueCount)
 {
 	if (--requeueCount > 0) {
-		QMetaObject::invokeMethod(this, "DeferredLoad",
+		QMetaObject::invokeMethod(this, "DeferredSysTrayLoad",
 				Qt::QueuedConnection,
-				Q_ARG(QString, file),
 				Q_ARG(int, requeueCount));
 		return;
 	}
-
-	Load(QT_TO_UTF8(file));
-	RefreshSceneCollections();
-	OnFirstLoad();
 
 	/* Minimizng to tray on initial startup does not work on mac
 	 * unless it is done in the deferred load */
