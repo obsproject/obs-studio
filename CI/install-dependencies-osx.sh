@@ -26,7 +26,7 @@ sudo installer -pkg ./Packages.pkg -target /
 brew update
 
 #Base OBS Deps and ccache
-brew install jack speexdsp ccache swig mbedtls
+brew install jack speexdsp ccache swig@3.04 mbedtls
 brew install https://gist.githubusercontent.com/DDRBoxman/b3956fab6073335a4bf151db0dcbd4ad/raw/ed1342a8a86793ea8c10d8b4d712a654da121ace/qt.rb
 
 export PATH=/usr/local/opt/ccache/libexec:$PATH
