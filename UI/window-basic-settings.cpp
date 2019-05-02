@@ -1029,12 +1029,12 @@ void OBSBasicSettings::LoadThemeList()
 			ui->theme->addItem(name);
 	}
 
-	const char *themeName = App()->GetTheme();
+	std::string themeName = App()->GetTheme();
 
-	if (strcmp(themeName, DEFAULT_THEME) == 0)
+	if (themeName == DEFAULT_THEME)
 		themeName = QT_TO_UTF8(defaultTheme);
 
-	int idx = ui->theme->findText(themeName);
+	int idx = ui->theme->findText(themeName.c_str());
 	if (idx != -1)
 		ui->theme->setCurrentIndex(idx);
 }
