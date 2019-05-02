@@ -260,10 +260,15 @@ static obs_properties_t *obs_qsv_props(void *unused)
 	add_rate_controls(list, qsv_ratecontrols);
 	obs_property_set_modified_callback(list, rate_control_modified);
 
-	obs_properties_add_int(props, "bitrate", TEXT_TARGET_BITRATE, 50,
+	obs_property_t *p;
+	p = obs_properties_add_int(props, "bitrate", TEXT_TARGET_BITRATE, 50,
 			10000000, 50);
-	obs_properties_add_int(props, "max_bitrate", TEXT_MAX_BITRATE, 50,
+	obs_property_int_set_suffix(p, " Kbps");
+
+	p = obs_properties_add_int(props, "max_bitrate", TEXT_MAX_BITRATE, 50,
 			10000000, 50);
+	obs_property_int_set_suffix(p, " Kbps");
+
 	obs_properties_add_int(props, "accuracy", TEXT_ACCURACY, 0, 10000, 1);
 	obs_properties_add_int(props, "convergence", TEXT_CONVERGENCE, 0, 10, 1);
 	obs_properties_add_int(props, "qpi", "QPI", 1, 51, 1);

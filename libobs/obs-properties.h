@@ -286,10 +286,12 @@ EXPORT int                    obs_property_int_min(obs_property_t *p);
 EXPORT int                    obs_property_int_max(obs_property_t *p);
 EXPORT int                    obs_property_int_step(obs_property_t *p);
 EXPORT enum obs_number_type   obs_property_int_type(obs_property_t *p);
+EXPORT const char *           obs_property_int_suffix(obs_property_t *p);
 EXPORT double                 obs_property_float_min(obs_property_t *p);
 EXPORT double                 obs_property_float_max(obs_property_t *p);
 EXPORT double                 obs_property_float_step(obs_property_t *p);
 EXPORT enum obs_number_type   obs_property_float_type(obs_property_t *p);
+EXPORT const char *           obs_property_float_suffix(obs_property_t *p);
 EXPORT enum obs_text_type     obs_property_text_type(obs_property_t *p);
 EXPORT enum obs_path_type     obs_property_path_type(obs_property_t *p);
 EXPORT const char *           obs_property_path_filter(obs_property_t *p);
@@ -301,6 +303,8 @@ EXPORT void obs_property_int_set_limits(obs_property_t *p,
 		int min, int max, int step);
 EXPORT void obs_property_float_set_limits(obs_property_t *p,
 		double min, double max, double step);
+EXPORT void obs_property_int_set_suffix(obs_property_t *p, const char *suffix);
+EXPORT void obs_property_float_set_suffix(obs_property_t *p, const char *suffix);
 
 EXPORT void obs_property_list_clear(obs_property_t *p);
 

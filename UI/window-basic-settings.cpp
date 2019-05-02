@@ -463,7 +463,10 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->autoRemux,            CHECK_CHANGED,  ADV_CHANGED);
 
 	ui->simpleOutputVBitrate->setSingleStep(50);
+	ui->simpleOutputVBitrate->setSuffix(" Kbps");
 	ui->advOutFFVBitrate->setSingleStep(50);
+	ui->advOutFFVBitrate->setSuffix(" Kbps");
+	ui->advOutFFABitrate->setSuffix(" Kbps");
 
 #if !defined(_WIN32) && !defined(__APPLE__)
 	delete ui->enableAutoUpdates;
@@ -724,6 +727,10 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	connect(ui->advOutRecFormat, SIGNAL(currentIndexChanged(int)),
 			this, SLOT(AdvOutRecCheckWarnings()));
 	AdvOutRecCheckWarnings();
+
+	ui->buttonBox->button(QDialogButtonBox::Apply)->setIcon(QIcon());
+	ui->buttonBox->button(QDialogButtonBox::Ok)->setIcon(QIcon());
+	ui->buttonBox->button(QDialogButtonBox::Cancel)->setIcon(QIcon());
 
 	SimpleRecordingQualityChanged();
 
@@ -2322,12 +2329,22 @@ void OBSBasicSettings::LoadAdvancedSettings()
 	loading = false;
 }
 
+#define TRUNCATE_TEXT_LENGTH 80
+
 template <typename Func>
 static inline void LayoutHotkey(obs_hotkey_id id, obs_hotkey_t *key, Func &&fun,
 		const map<obs_hotkey_id, vector<obs_key_combination_t>> &keys)
 {
 	auto *label = new OBSHotkeyLabel;
-	label->setText(obs_hotkey_get_description(key));
+	QString text = QT_UTF8(obs_hotkey_get_description(key));
+
+	if (text.length() > TRUNCATE_TEXT_LENGTH) {
+		label->setProperty("fullName", text);
+		text = text.left(TRUNCATE_TEXT_LENGTH);
+		text += "...'";
+	}
+
+	label->setText(text);
 
 	OBSHotkeyWidget *hw = nullptr;
 
@@ -2353,7 +2370,19 @@ static QLabel *makeLabel(T &t, Func &&getName)
 template <typename Func>
 static QLabel *makeLabel(const OBSSource &source, Func &&)
 {
-	return new OBSSourceLabel(source);
+	OBSSourceLabel *label = new OBSSourceLabel(source);
+	label->setStyleSheet("font-weight: bold;");
+	QString name = QT_UTF8(obs_source_get_name(source));
+
+	if (name.length() > TRUNCATE_TEXT_LENGTH) {
+		label->setToolTip(name);
+		name = name.left(TRUNCATE_TEXT_LENGTH);
+		name += "...";
+	}
+
+	label->setText(name);
+
+	return label;
 }
 
 template <typename Func, typename T>
@@ -2365,13 +2394,8 @@ static inline void AddHotkeys(QFormLayout &layout,
 	if (hotkeys.empty())
 		return;
 
-	auto line = new QFrame();
-	line->setFrameShape(QFrame::HLine);
-	line->setFrameShadow(QFrame::Sunken);
-
 	layout.setItem(layout.rowCount(), QFormLayout::SpanningRole,
 			new QSpacerItem(0, 10));
-	layout.addRow(line);
 
 	using tuple_type =
 		std::tuple<T, QPointer<QLabel>, QPointer<QWidget>>;
@@ -2632,7 +2656,12 @@ void OBSBasicSettings::LoadHotkeySettings(obs_hotkey_id ignoreKey)
 		auto Update = [&](OBSHotkeyLabel *label, const QString &name,
 				OBSHotkeyLabel *other, const QString &otherName)
 		{
-			label->setToolTip(tt.arg(otherName));
+			QString string = other->property("fullName").value<QString>();
+
+			if (string.isEmpty() || string.isNull())
+				string = otherName;
+
+			label->setToolTip(tt.arg(string));
 			label->setText(name + " *");
 			label->pairPartner = other;
 		};
@@ -4323,7 +4352,6 @@ void OBSBasicSettings::AdvReplayBufferChanged()
 		ui->advRBEstimate->setText(QTStr(ESTIMATE_UNKNOWN_STR));
 
 	ui->advReplayBufferGroupBox->setVisible(!lossless && replayBufferEnabled);
-	ui->line_4->setVisible(!lossless && replayBufferEnabled);
 	ui->advReplayBuf->setEnabled(!lossless);
 
 	UpdateAutomaticReplayBufferCheckboxes();

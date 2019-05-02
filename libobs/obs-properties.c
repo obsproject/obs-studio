@@ -27,11 +27,13 @@ static inline void *get_property_data(struct obs_property *prop);
 struct float_data {
 	double min, max, step;
 	enum obs_number_type type;
+	char *suffix;
 };
 
 struct int_data {
 	int min, max, step;
 	enum obs_number_type type;
+	char *suffix;
 };
 
 struct list_item {
@@ -149,6 +151,16 @@ static inline void group_data_free(struct group_data *data) {
 	obs_properties_destroy(data->content);
 }
 
+static inline void int_data_free(struct int_data *data) {
+	if (data->suffix)
+		bfree(data->suffix);
+}
+
+static inline void float_data_free(struct int_data *data) {
+	if (data->suffix)
+		bfree(data->suffix);
+}
+
 struct obs_properties;
 
 struct obs_property {
@@ -235,6 +247,10 @@ static void obs_property_destroy(struct obs_property *property)
 		frame_rate_data_free(get_property_data(property));
 	else if (property->type == OBS_PROPERTY_GROUP)
 		group_data_free(get_property_data(property));
+	else if (property->type == OBS_PROPERTY_INT)
+		int_data_free(get_property_data(property));
+	else if (property->type == OBS_PROPERTY_FLOAT)
+		float_data_free(get_property_data(property));
 
 	bfree(property->name);
 	bfree(property->desc);
@@ -855,6 +871,12 @@ enum obs_number_type obs_property_int_type(obs_property_t *p)
 	return data ? data->type : OBS_NUMBER_SCROLLER;
 }
 
+const char *obs_property_int_suffix(obs_property_t *p)
+{
+	struct int_data *data = get_type_data(p, OBS_PROPERTY_INT);
+	return data ? data->suffix : NULL;
+}
+
 double obs_property_float_min(obs_property_t *p)
 {
 	struct float_data *data = get_type_data(p, OBS_PROPERTY_FLOAT);
@@ -871,6 +893,12 @@ double obs_property_float_step(obs_property_t *p)
 {
 	struct float_data *data = get_type_data(p, OBS_PROPERTY_FLOAT);
 	return data ? data->step : 0;
+}
+
+const char *obs_property_float_suffix(obs_property_t *p)
+{
+	struct int_data *data = get_type_data(p, OBS_PROPERTY_FLOAT);
+	return data ? data->suffix : NULL;
 }
 
 enum obs_number_type obs_property_float_type(obs_property_t *p)
@@ -937,6 +965,26 @@ void obs_property_float_set_limits(obs_property_t *p,
 	data->min = min;
 	data->max = max;
 	data->step = step;
+}
+
+void obs_property_int_set_suffix(obs_property_t *p, const char *suffix)
+{
+	struct int_data *data = get_type_data(p, OBS_PROPERTY_INT);
+	if (!data)
+		return;
+
+	bfree(data->suffix);
+	data->suffix = bstrdup(suffix);
+}
+
+void obs_property_float_set_suffix(obs_property_t *p, const char *suffix)
+{
+	struct float_data *data = get_type_data(p, OBS_PROPERTY_FLOAT);
+	if (!data)
+		return;
+
+	bfree(data->suffix);
+	data->suffix = bstrdup(suffix);
 }
 
 void obs_property_list_clear(obs_property_t *p)
