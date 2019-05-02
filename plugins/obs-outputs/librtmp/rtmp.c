@@ -40,6 +40,10 @@
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #endif
 
+#if defined(_WIN32)
+#define MSG_NOSIGNAL 0
+#endif
+
 #if defined(USE_MBEDTLS)
 #if defined(_WIN32)
 #include <windows.h>
@@ -4589,7 +4593,7 @@ RTMPSockBuf_Fill(RTMPSockBuf *sb)
         else
 #endif
         {
-            nBytes = recv(sb->sb_socket, sb->sb_start + sb->sb_size, nBytes, 0);
+            nBytes = recv(sb->sb_socket, sb->sb_start + sb->sb_size, nBytes, MSG_NOSIGNAL);
         }
         if (nBytes > 0)
         {
@@ -4642,7 +4646,7 @@ RTMPSockBuf_Send(RTMPSockBuf *sb, const char *buf, int len)
     else
 #endif
     {
-        rc = send(sb->sb_socket, buf, len, 0);
+        rc = send(sb->sb_socket, buf, len, MSG_NOSIGNAL);
     }
     return rc;
 }
