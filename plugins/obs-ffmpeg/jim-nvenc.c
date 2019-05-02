@@ -883,7 +883,7 @@ static bool nvenc_encode_tex(void *data, uint32_t handle, int64_t pts,
 
 		/* subtract bframe delay from dts */
 		if (enc->bframes)
-			dts--;
+			dts -= packet->timebase_num;
 
 		*received_packet = true;
 		packet->data     = enc->packet_data.array;
