@@ -47,11 +47,11 @@ float4 PSDrawAreaRGBA(VertInOut vert_in) : TARGET
 			float2 targetmax = min(potentialtargetmax, targetposmax);
 			float area = (targetmax.x - targetmin.x) * (targetmax.y - targetmin.y);
 			float4 sample = image.Load(int3(loadindex, 0));
-			totalcolor += area * float4(sample.rgb * sample.a, sample.a);
+			totalcolor += area * sample;
 		}
 	}
 
-	return float4(totalcolor.rgb / totalcolor.a, totalcolor.a);
+	return totalcolor;
 }
 
 technique Draw

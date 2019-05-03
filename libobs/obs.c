@@ -1651,8 +1651,13 @@ void obs_render_main_texture(void)
 	param = gs_effect_get_param_by_name(effect, "image");
 	gs_effect_set_texture(param, tex);
 
+	gs_blend_state_push();
+	gs_blend_function(GS_BLEND_ONE, GS_BLEND_INVSRCALPHA);
+
 	while (gs_effect_loop(effect, "Draw"))
 		gs_draw_sprite(tex, 0, 0, 0);
+
+	gs_blend_state_pop();
 }
 
 gs_texture_t *obs_get_main_texture(void)

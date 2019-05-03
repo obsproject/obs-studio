@@ -160,12 +160,12 @@ static bool graphics_init(struct graphics_subsystem *graphics)
 
 	graphics->exports.device_blend_function_separate(graphics->device,
 			GS_BLEND_SRCALPHA, GS_BLEND_INVSRCALPHA,
-			GS_BLEND_ONE, GS_BLEND_ONE);
+			GS_BLEND_ONE, GS_BLEND_INVSRCALPHA);
 	graphics->cur_blend_state.enabled = true;
 	graphics->cur_blend_state.src_c   = GS_BLEND_SRCALPHA;
 	graphics->cur_blend_state.dest_c  = GS_BLEND_INVSRCALPHA;
 	graphics->cur_blend_state.src_a   = GS_BLEND_ONE;
-	graphics->cur_blend_state.dest_a  = GS_BLEND_ONE;
+	graphics->cur_blend_state.dest_a  = GS_BLEND_INVSRCALPHA;
 
 	graphics->exports.device_leave_context(graphics->device);
 
@@ -1240,10 +1240,10 @@ void gs_reset_blend_state(void)
 	if (graphics->cur_blend_state.src_c  != GS_BLEND_SRCALPHA ||
 	    graphics->cur_blend_state.dest_c != GS_BLEND_INVSRCALPHA ||
 	    graphics->cur_blend_state.src_a  != GS_BLEND_ONE ||
-	    graphics->cur_blend_state.dest_a != GS_BLEND_ONE)
+	    graphics->cur_blend_state.dest_a != GS_BLEND_INVSRCALPHA)
 		gs_blend_function_separate(
 				GS_BLEND_SRCALPHA, GS_BLEND_INVSRCALPHA,
-				GS_BLEND_ONE, GS_BLEND_ONE);
+				GS_BLEND_ONE, GS_BLEND_INVSRCALPHA);
 }
 
 /* ------------------------------------------------------------------------- */
