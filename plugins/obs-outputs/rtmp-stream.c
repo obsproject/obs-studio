@@ -16,6 +16,7 @@
 ******************************************************************************/
 
 #include "rtmp-stream.h"
+#include <signal.h>
 
 static const char *rtmp_stream_getname(void *unused)
 {
@@ -453,6 +454,16 @@ static void set_output_error(struct rtmp_stream *stream)
 
 static void *send_thread(void *data)
 {
+#ifndef _WIN32
+	// prevent SIGPIPE if write is called on a closed socket
+	struct sigaction sa;
+	sa.sa_handler = SIG_IGN;
+	sa.sa_flags = 0;
+	if (sigaction(SIGPIPE, &sa, 0) == -1) {
+		return NULL;
+	}
+#endif
+
 	struct rtmp_stream *stream = data;
 
 	os_set_thread_name("rtmp-stream: send_thread");
