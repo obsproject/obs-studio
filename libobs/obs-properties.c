@@ -156,7 +156,7 @@ static inline void int_data_free(struct int_data *data) {
 		bfree(data->suffix);
 }
 
-static inline void float_data_free(struct int_data *data) {
+static inline void float_data_free(struct float_data *data) {
 	if (data->suffix)
 		bfree(data->suffix);
 }
@@ -897,7 +897,7 @@ double obs_property_float_step(obs_property_t *p)
 
 const char *obs_property_float_suffix(obs_property_t *p)
 {
-	struct int_data *data = get_type_data(p, OBS_PROPERTY_FLOAT);
+	struct float_data *data = get_type_data(p, OBS_PROPERTY_FLOAT);
 	return data ? data->suffix : NULL;
 }
 
