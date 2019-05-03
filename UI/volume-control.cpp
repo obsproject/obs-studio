@@ -118,7 +118,7 @@ VolControl::VolControl(OBSSource source_, bool showConfig, bool vertical)
 		: source      (std::move(source_)),
 		levelTotal    (0.0f),
 		levelCount    (0.0f),
-		obs_fader     (obs_fader_create(OBS_FADER_CUBIC)),
+		obs_fader     (obs_fader_create(OBS_FADER_LOG)),
 		obs_volmeter  (obs_volmeter_create(OBS_FADER_LOG)),
 		vertical      (vertical)
 {
