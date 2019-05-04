@@ -1675,8 +1675,7 @@ bool WidgetInfo::ColorChanged(const char *setting)
 	long long  val   = obs_data_get_int(view->settings, setting);
 	QColor     color = color_from_int(val);
 
-	QColorDialog::ColorDialogOptions options =
-		QColorDialog::ShowAlphaChannel;
+	QColorDialog::ColorDialogOptions options = 0;
 
 	/* The native dialog on OSX has all kinds of problems, like closing
 	 * other open QDialogs on exit, and
