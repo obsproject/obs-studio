@@ -7312,3 +7312,11 @@ bool SceneRenameDelegate::eventFilter(QObject *editor, QEvent *event)
 
 	return QStyledItemDelegate::eventFilter(editor, event);
 }
+
+void OBSBasic::UpdatePatronJson(const QString &text, const QString &error)
+{
+	if (!error.isEmpty())
+		return;
+
+	patronJson = QT_TO_UTF8(text);
+}
