@@ -6,7 +6,6 @@
 #include <util/platform.h>
 #include <platform.hpp>
 #include <json11.hpp>
-#include <sstream>
 
 using namespace json11;
 
@@ -90,10 +89,10 @@ void OBSAbout::ShowAbout()
 	std::string error;
 	Json json = Json::parse(main->patronJson, error);
 	const Json::array &patrons = json.array_items();
-	std::stringstream text;
+	QString text;
 
-	text << "<h1>Top Patreon contributors:</h1>";
-	text << "<p style=\"font-size:16px;\">";
+	text += "<h1>Top Patreon contributors:</h1>";
+	text += "<p style=\"font-size:16px;\">";
 	bool first = true;
 	bool top = true;
 
@@ -103,23 +102,26 @@ void OBSAbout::ShowAbout()
 		int amount = patron["amount"].int_value();
 
 		if (top && amount < 10000) {
-			text << "</p>";
+			text += "</p>";
 			top = false;
 		} else if (!first) {
-			text << "<br/>";
+			text += "<br/>";
 		}
 
+		if (!link.empty()) {
+			text += "<a href=\"";
+			text += QT_UTF8(link.c_str()).toHtmlEscaped();
+			text += "\">";
+		}
+		text += QT_UTF8(name.c_str()).toHtmlEscaped();
 		if (!link.empty())
-			text << "<a href=\"" << link << "\">";
-		text << name;
-		if (!link.empty())
-			text << "</a>";
+			text += "</a>";
 
 		if (first)
 			first = false;
 	}
 
-	ui->textBrowser->setHtml(QT_UTF8(text.str().c_str()));
+	ui->textBrowser->setHtml(text);
 }
 
 void OBSAbout::ShowAuthors()
