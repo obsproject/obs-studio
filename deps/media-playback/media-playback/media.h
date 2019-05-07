@@ -33,6 +33,7 @@ extern "C" {
 #include <libavcodec/avcodec.h>
 #include <libswscale/swscale.h>
 #include <util/threading.h>
+#include "util/darray.h"
 
 #ifdef _MSC_VER
 #pragma warning(pop)
@@ -41,6 +42,14 @@ extern "C" {
 typedef void (*mp_video_cb)(void *opaque, struct obs_source_frame *frame);
 typedef void (*mp_audio_cb)(void *opaque, struct obs_source_audio *audio);
 typedef void (*mp_stop_cb)(void *opaque);
+
+struct cached_data {
+	int index;
+	int index_eof;
+	DARRAY(void*) data;
+	int64_t refresh_rate_ns;
+	int64_t last_processed_ns;
+};
 
 struct mp_media {
 	AVFormatContext *fmt;
@@ -93,6 +102,11 @@ struct mp_media {
 
 	bool thread_valid;
 	pthread_t thread;
+
+	bool caching;
+	struct cached_data video;
+	struct cached_data audio;
+	int64_t next_wait;
 };
 
 typedef struct mp_media mp_media_t;
