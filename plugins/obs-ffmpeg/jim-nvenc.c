@@ -340,6 +340,9 @@ static bool init_encoder(struct nvenc_data *enc, obs_data_t *settings)
 	const char *profile = obs_data_get_string(settings, "profile");
 	bool psycho_aq = obs_data_get_bool(settings, "psycho_aq");
 	bool lookahead = obs_data_get_bool(settings, "lookahead");
+	uint16_t lookaheaddepth = obs_data_get_int(settings, "lookaheadDepth");
+	NV_ENC_BFRAME_REF_MODE useBFramesAsRef = obs_data_get_int(settings, "useBFramesAsRef");
+	uint32_t aqStrength = obs_data_get_int(settings, "aqStrength");
 	int bf = (int)obs_data_get_int(settings, "bf");
 	bool vbr = astrcmpi(rc, "VBR") == 0;
 	NVENCSTATUS err;
@@ -447,6 +450,7 @@ static bool init_encoder(struct nvenc_data *enc, obs_data_t *settings)
 	if (lookahead && nv_get_cap(enc, NV_ENC_CAPS_SUPPORT_LOOKAHEAD)) {
 		config->rcParams.lookaheadDepth = 8;
 		config->rcParams.enableLookahead = 1;
+		config->rcParams.lookaheadDepth = lookaheaddepth;
 	}
 
 	/* psycho aq */
@@ -488,6 +492,10 @@ static bool init_encoder(struct nvenc_data *enc, obs_data_t *settings)
 	h264_config->outputPictureTimingSEI = 1;
 	config->rcParams.averageBitRate = bitrate * 1000;
 	config->rcParams.maxBitRate = vbr ? max_bitrate * 1000 : bitrate * 1000;
+	h264_config->useBFramesAsRef = useBFramesAsRef;
+
+	if (config->rcParams.enableAQ)
+		config->rcParams.aqStrength = aqStrength;
 
 	/* -------------------------- */
 	/* profile                    */
@@ -512,25 +520,31 @@ static bool init_encoder(struct nvenc_data *enc, obs_data_t *settings)
 	enc->output_delay = enc->buf_count - 1;
 
 	info("settings:\n"
-	     "\trate_control: %s\n"
-	     "\tbitrate:      %d\n"
-	     "\tcqp:          %d\n"
-	     "\tkeyint:       %d\n"
-	     "\tpreset:       %s\n"
-	     "\tprofile:      %s\n"
-	     "\twidth:        %d\n"
-	     "\theight:       %d\n"
-	     "\t2-pass:       %s\n"
-	     "\tb-frames:     %d\n"
-	     "\tlookahead:    %s\n"
-	     "\tpsycho_aq:    %s\n",
+	     "\trate_control:    %s\n"
+	     "\tbitrate:         %d\n"
+	     "\tcqp:             %d\n"
+	     "\tkeyint:          %d\n"
+	     "\tpreset:          %s\n"
+	     "\tprofile:         %s\n"
+	     "\twidth:           %d\n"
+	     "\theight:          %d\n"
+	     "\t2-pass:          %s\n"
+	     "\tb-frames:        %d\n"
+	     "\tlookahead:       %s\n"
+             "\tlookaheaddepth:  %d\n",
+	     "\tpsycho_aq:       %s\n",
+	     "\tuseBFramesAsRef: %d\n",
+	     "\taqStrength:      %d\n",
 	     rc, bitrate, cqp, gop_size,
 	     preset, profile,
 	     enc->cx, enc->cy,
 	     twopass ? "true" : "false",
 	     bf,
 	     lookahead ? "true" : "false",
-	     psycho_aq ? "true" : "false");
+	     lookaheaddepth,
+	     psycho_aq ? "true" : "false",
+	     useBFramesAsRef,
+	     aqStrength);
 
 	return true;
 }

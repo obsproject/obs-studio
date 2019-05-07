@@ -497,6 +497,22 @@ obs_properties_t *nvenc_properties_internal(bool ffmpeg)
 				obs_module_text("NVENC.PsychoVisualTuning"));
 		obs_property_set_long_description(p,
 				obs_module_text("NVENC.PsychoVisualTuning.ToolTip"));
+
+		p = obs_properties_add_int(props, "lookaheadDepth",
+			obs_module_text("NVENC.LookAheadDepth"), 0, 32, 1);
+		obs_property_set_long_description(p,
+			obs_module_text("NVENC.LookAheadDepth.ToolTip"));
+
+		p = obs_properties_add_int(props, "useBFramesAsRef",
+			obs_module_text("NVENC.UseBFramesAsRef"), 0, 2, 1);
+		obs_property_set_long_description(p,
+			obs_module_text("NVENC.UseBFramesAsRef.ToolTip"));
+
+		p = obs_properties_add_int(props, "aqStrength",
+			obs_module_text("NVENC.AQStrength"), 1, 15, 1);
+		obs_property_set_long_description(p,
+			obs_module_text("NVENC.AQStrength.ToolTip"));
+
 	}
 
 	obs_properties_add_int(props, "gpu", obs_module_text("GPU"), 0, 8, 1);
