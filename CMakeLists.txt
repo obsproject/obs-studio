@@ -1,6 +1,5 @@
 cmake_minimum_required(VERSION 2.8.12)
 
-
 if (UNIX AND POLICY CMP0072)
 	# In case of both legacy and glvnd OpenGL libraries found. Prefer GLVND
 	cmake_policy(SET CMP0072 NEW)
