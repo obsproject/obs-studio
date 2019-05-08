@@ -306,10 +306,10 @@ static void mp_media_next_audio(mp_media_t *m)
 		if (!m->a_cb)
 			return;
 
-		struct obs_source_audio *audio = malloc(sizeof(struct obs_source_audio));;
+		struct obs_source_audio *audio = malloc(sizeof(struct obs_source_audio));
 
 		for (size_t i = 0; i < MAX_AV_PLANES; i++) {
-			audio->data[i] = malloc(f->linesize[0] / f->channels);
+			audio->data[i] = malloc(f->linesize[0]);
 			if (f->data[i]) {
 				memcpy(audio->data[i], f->data[i], f->linesize[0] / f->channels);
 			}
