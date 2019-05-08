@@ -531,9 +531,9 @@ static bool init_encoder(struct nvenc_data *enc, obs_data_t *settings)
 	     "\t2-pass:          %s\n"
 	     "\tb-frames:        %d\n"
 	     "\tlookahead:       %s\n"
-             "\tlookaheaddepth:  %d\n",
-	     "\tpsycho_aq:       %s\n",
-	     "\tuseBFramesAsRef: %d\n",
+            "\tlookaheaddepth:  %d\n"
+	     "\tpsycho_aq:       %s\n"
+	     "\tuseBFramesAsRef: %d\n"
 	     "\taqStrength:      %d\n",
 	     rc, bitrate, cqp, gop_size,
 	     preset, profile,
