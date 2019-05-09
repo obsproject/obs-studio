@@ -13,6 +13,9 @@
 #define NSEC_PER_MSEC 1000000
 #endif
 
+#define MIN_DB -96.0
+#define MAX_DB 26.0
+
 OBSAdvAudioCtrl::OBSAdvAudioCtrl(QGridLayout *, obs_source_t *source_)
 	: source(source_)
 {
@@ -29,7 +32,7 @@ OBSAdvAudioCtrl::OBSAdvAudioCtrl(QGridLayout *, obs_source_t *source_)
 	labelL                         = new QLabel();
 	labelR                         = new QLabel();
 	nameLabel                      = new QLabel();
-	volume                         = new QSpinBox();
+	volume                         = new QDoubleSpinBox();
 	forceMono                      = new QCheckBox();
 	balance                        = new BalanceSlider();
 #if defined(_WIN32) || defined(__APPLE__) || HAVE_PULSEAUDIO
@@ -71,9 +74,15 @@ OBSAdvAudioCtrl::OBSAdvAudioCtrl(QGridLayout *, obs_source_t *source_)
 	nameLabel->setText(QT_UTF8(sourceName));
 	nameLabel->setAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
 
-	volume->setMinimum(0);
-	volume->setMaximum(2000);
-	volume->setValue(int(vol * 100.0f));
+	volume->setMinimum(MIN_DB - 0.1);
+	volume->setMaximum(MAX_DB);
+	volume->setSingleStep(0.1);
+	volume->setDecimals(1);
+	volume->setSuffix(" dB");
+	volume->setValue(obs_mul_to_db(vol));
+
+	if (volume->value() < MIN_DB)
+		volume->setSpecialValueText("-inf dB");
 
 	forceMono->setChecked((flags & OBS_SOURCE_FLAG_FORCE_MONO) != 0);
 
@@ -147,8 +156,8 @@ OBSAdvAudioCtrl::OBSAdvAudioCtrl(QGridLayout *, obs_source_t *source_)
 	mixerContainer->layout()->addWidget(mixer5);
 	mixerContainer->layout()->addWidget(mixer6);
 
-	QWidget::connect(volume, SIGNAL(valueChanged(int)),
-			this, SLOT(volumeChanged(int)));
+	QWidget::connect(volume, SIGNAL(valueChanged(double)),
+			this, SLOT(volumeChanged(double)));
 	QWidget::connect(forceMono, SIGNAL(clicked(bool)),
 			this, SLOT(downmixMonoChanged(bool)));
 	QWidget::connect(balance, SIGNAL(valueChanged(int)),
@@ -259,7 +268,7 @@ void OBSAdvAudioCtrl::SourceFlagsChanged(uint32_t flags)
 void OBSAdvAudioCtrl::SourceVolumeChanged(float value)
 {
 	volume->blockSignals(true);
-	volume->setValue(int(round(value * 100.0f)));
+	volume->setValue(obs_mul_to_db(value));
 	volume->blockSignals(false);
 }
 
@@ -281,9 +290,14 @@ void OBSAdvAudioCtrl::SourceMixersChanged(uint32_t mixers)
 /* ------------------------------------------------------------------------- */
 /* Qt control callbacks */
 
-void OBSAdvAudioCtrl::volumeChanged(int percentage)
+void OBSAdvAudioCtrl::volumeChanged(double db)
 {
-	float val = float(percentage) / 100.0f;
+	if (db < MIN_DB) {
+		volume->setSpecialValueText("-inf dB");
+		db = -INFINITY;
+	}
+
+	float val = obs_db_to_mul(db);
 	obs_source_set_volume(source, val);
 }
 
