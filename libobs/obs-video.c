@@ -218,7 +218,7 @@ static inline void render_output_texture(struct obs_core_video *video,
 	gs_technique_t *tech;
 
 	if (video->ovi.output_format == VIDEO_FORMAT_RGBA) {
-		tech = gs_effect_get_technique(effect, "Draw");
+		tech = gs_effect_get_technique(effect, "DrawAlphaDivide");
 	} else {
 		tech = gs_effect_get_technique(effect, "DrawMatrix");
 	}
