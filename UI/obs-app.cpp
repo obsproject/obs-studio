@@ -50,6 +50,7 @@
 #include <windows.h>
 #else
 #include <signal.h>
+#include <pthread.h>
 #endif
 
 #include <iostream>
@@ -2245,6 +2246,18 @@ int main(int argc, char *argv[])
 	sig_handler.sa_flags = 0;
 
 	sigaction(SIGINT, &sig_handler, NULL);
+
+
+	/* Block SIGPIPE in all threads, this can happen if a thread calls write on
+	a closed pipe. */
+	sigset_t sigpipe_mask;
+	sigemptyset(&sigpipe_mask);
+	sigaddset(&sigpipe_mask, SIGPIPE);
+	sigset_t saved_mask;
+	if (pthread_sigmask(SIG_BLOCK, &sigpipe_mask, &saved_mask) == -1) {
+		perror("pthread_sigmask");
+		exit(1);
+	}
 #endif
 
 #ifdef _WIN32
