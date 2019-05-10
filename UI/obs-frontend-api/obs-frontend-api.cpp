@@ -132,6 +132,19 @@ void obs_frontend_set_current_transition(obs_source_t *transition)
 		c->obs_frontend_set_current_transition(transition);
 }
 
+int obs_frontend_get_transition_duration(void)
+{
+	return !!callbacks_valid()
+		? c->obs_frontend_get_transition_duration()
+		: 0;
+}
+
+void obs_frontend_set_transition_duration(int duration)
+{
+	if (callbacks_valid())
+		c->obs_frontend_set_transition_duration(duration);
+}
+
 char **obs_frontend_get_scene_collections(void)
 {
 	if (!callbacks_valid())

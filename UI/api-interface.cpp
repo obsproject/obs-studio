@@ -139,6 +139,17 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 				Q_ARG(OBSSource, OBSSource(transition)));
 	}
 
+	int obs_frontend_get_transition_duration(void) override
+	{
+		return main->ui->transitionDuration->value();
+	}
+
+	void obs_frontend_set_transition_duration(int duration) override
+	{
+		QMetaObject::invokeMethod(main->ui->transitionDuration, "setValue",
+			Q_ARG(int, duration));
+	}
+
 	void obs_frontend_get_scene_collections(
 			std::vector<std::string> &strings) override
 	{
