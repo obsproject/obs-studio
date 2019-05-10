@@ -104,6 +104,7 @@ struct mp_media {
 	pthread_t thread;
 
 	bool caching;
+	bool enable_caching;
 	struct cached_data video;
 	struct cached_data audio;
 	int64_t next_wait;
@@ -126,6 +127,7 @@ struct mp_media_info {
 	enum video_range_type force_range;
 	bool hardware_decoding;
 	bool is_local_file;
+	bool enable_caching;
 };
 
 extern bool mp_media_init(mp_media_t *media, const struct mp_media_info *info);

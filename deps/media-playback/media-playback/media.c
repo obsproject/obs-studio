@@ -653,6 +653,10 @@ static bool allow_cache(mp_media_t *m)
 {
 	int video_stream_index = av_find_best_stream(m->fmt,
 		AVMEDIA_TYPE_VIDEO, -1, -1, NULL, 0);
+
+	if (video_stream_index < 0)
+		return true;
+
 	AVStream *stream = m->fmt->streams[video_stream_index];
 	AVRational avg_frame_rate = stream->avg_frame_rate;
 	int64_t frames = (int64_t)ceil((double)m->fmt->duration /
@@ -715,7 +719,11 @@ static bool init_avformat(mp_media_t *m)
 		return false;
 	}
 
-	m->caching = m->looping && m->is_local_file && allow_cache(m);
+	if (m->enable_caching)
+		m->caching = m->looping && m->is_local_file && allow_cache(m);
+	else
+		m->caching = false;
+
 	return true;
 }
 
@@ -867,6 +875,7 @@ bool mp_media_init(mp_media_t *media, const struct mp_media_info *info)
 	media->buffering = info->buffering;
 	media->speed = info->speed;
 	media->is_local_file = info->is_local_file;
+	media->enable_caching = info->enable_caching;
 
 	if (!info->is_local_file || media->speed < 1 || media->speed > 200)
 		media->speed = 100;
@@ -933,8 +942,10 @@ void mp_media_play(mp_media_t *m, bool loop)
 		m->reset = true;
 
 	m->looping = loop;
-	if (m->fmt)
+	if (m->fmt && m->enable_caching)
 		m->caching = m->looping && m->is_local_file && allow_cache(m);
+	else
+		m->caching = false;
 	m->active = true;
 
 	pthread_mutex_unlock(&m->mutex);
