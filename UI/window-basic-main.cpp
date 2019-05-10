@@ -3353,9 +3353,11 @@ void OBSBasic::RenderMain(void *data, uint32_t cx, uint32_t cy)
 	gs_viewport_push();
 	gs_projection_push();
 
-	QSize previewSize = GetPixelSize(window->ui->preview);
-	float right  = float(previewSize.width())  - window->previewX;
-	float bottom = float(previewSize.height()) - window->previewY;
+	obs_display_t *display = window->ui->preview->GetDisplay();
+	uint32_t width, height;
+	obs_display_size(display, &width, &height);
+	float right  = float(width)  - window->previewX;
+	float bottom = float(height) - window->previewY;
 
 	gs_ortho(-window->previewX, right,
 		-window->previewY, bottom,
