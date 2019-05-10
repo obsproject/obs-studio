@@ -1687,11 +1687,13 @@ bool update_async_texture(struct obs_source *source,
 		return false;
 
 	if (type == CONVERT_420)
-		decompress_420(frame->data, frame->linesize,
+		decompress_420((const uint8_t* const*)frame->data,
+				frame->linesize,
 				0, frame->height, ptr, linesize);
 
 	else if (type == CONVERT_NV12)
-		decompress_nv12(frame->data, frame->linesize,
+		decompress_nv12((const uint8_t* const*)frame->data,
+				frame->linesize,
 				0, frame->height, ptr, linesize);
 
 	else if (type == CONVERT_422_Y)
