@@ -450,6 +450,11 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 		main->SetPreviewProgramMode(enable);
 	}
 
+	void obs_frontend_preview_program_trigger_transition(void) override
+	{
+		QMetaObject::invokeMethod(main, "TransitionClicked");
+	}
+
 	bool obs_frontend_preview_enabled(void) override
 	{
 		return main->previewEnabled;

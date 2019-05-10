@@ -485,6 +485,12 @@ Functions
 
 ---------------------------------------
 
+.. function:: void obs_frontend_preview_program_trigger_transition(void)
+
+   Triggers a preview-to-program transition if studio mode is active.
+
+---------------------------------------
+
 .. function:: obs_source_t *obs_frontend_get_current_preview_scene(void)
 
    :return: A new reference to the current preview scene if studio mode

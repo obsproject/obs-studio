@@ -408,6 +408,12 @@ void obs_frontend_set_preview_program_mode(bool enable)
 		c->obs_frontend_set_preview_program_mode(enable);
 }
 
+void obs_frontend_preview_program_trigger_transition(void)
+{
+	if (callbacks_valid())
+		c->obs_frontend_preview_program_trigger_transition();
+}
+
 void obs_frontend_set_preview_enabled(bool enable)
 {
 	if (callbacks_valid())
