@@ -34,14 +34,14 @@
 
 #include <util/platform.h>
 
+#if !defined(MSG_NOSIGNAL)
+#define MSG_NOSIGNAL 0
+#endif
+
 #ifdef CRYPTO
 
 #ifdef __APPLE__
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-#endif
-
-#if !defined(MSG_NOSIGNAL)
-#define MSG_NOSIGNAL 0
 #endif
 
 #if defined(USE_MBEDTLS)
