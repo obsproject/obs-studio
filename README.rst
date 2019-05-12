@@ -39,6 +39,8 @@ Quick Links
 
  - Developer/API Documentation: https://obsproject.com/docs
 
+ - Donating/backing/sponsoring: https://obsproject.com/contribute
+
  - Bug Tracker: https://obsproject.com/mantis/
 
    (Note: The bug tracker is linked to forum accounts.  To use the bug
@@ -46,6 +48,12 @@ Quick Links
 
 Contributing
 ------------
+
+ - If you would like to help fund or sponsor the project, you can do so
+   via `Patreon <https://www.patreon.com/obsproject>`_, `OpenCollective
+   <https://opencollective.com/obsproject>`_, or `PayPal
+   <https://www.paypal.me/obsproject>`_.  See our `contribute page
+   <https://obsproject.com/contribute>`_ for more information.
 
  - If you wish to contribute code to the project, please make sure to
    read the coding and commit guidelines:
