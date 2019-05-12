@@ -29,6 +29,8 @@
 
 using namespace std;
 
+static void CreateTransitionScene(OBSSource scene, char *text, uint32_t color);
+
 OBSBasicProperties::OBSBasicProperties(QWidget *parent, OBSSource source_)
 	: QDialog                (parent),
 	  preview                (new OBSQTDisplay(this)),
@@ -48,6 +50,8 @@ OBSBasicProperties::OBSBasicProperties(QWidget *parent, OBSSource source_)
 			"cx");
 	int cy = (int)config_get_int(App()->GlobalConfig(), "PropertiesWindow",
 			"cy");
+
+	enum obs_source_type type = obs_source_get_type(source);
 
 	buttonBox->setObjectName(QStringLiteral("buttonBox"));
 	buttonBox->setStandardButtons(QDialogButtonBox::Ok |
@@ -95,6 +99,13 @@ OBSBasicProperties::OBSBasicProperties(QWidget *parent, OBSSource source_)
 
 	setLayout(new QVBoxLayout(this));
 	layout()->addWidget(windowSplitter);
+
+	if (type == OBS_SOURCE_TYPE_TRANSITION) {
+		AddPreviewButton();
+		connect(view, SIGNAL(PropertiesRefreshed()),
+				this, SLOT(AddPreviewButton()));
+	}
+
 	layout()->addWidget(buttonBox);
 	layout()->setAlignment(buttonBox, Qt::AlignBottom);
 
@@ -116,7 +127,11 @@ OBSBasicProperties::OBSBasicProperties(QWidget *parent, OBSSource source_)
 		obs_display_add_draw_callback(preview->GetDisplay(),
 				OBSBasicProperties::DrawPreview, this);
 	};
-	enum obs_source_type type = obs_source_get_type(source);
+	auto addTransitionDrawCallback = [this] ()
+	{
+		obs_display_add_draw_callback(preview->GetDisplay(),
+			OBSBasicProperties::DrawTransitionPreview, this);
+	};
 	uint32_t caps = obs_source_get_output_flags(source);
 	bool drawable_type = type == OBS_SOURCE_TYPE_INPUT ||
 		type == OBS_SOURCE_TYPE_SCENE;
@@ -126,6 +141,59 @@ OBSBasicProperties::OBSBasicProperties(QWidget *parent, OBSSource source_)
 		preview->show();
 		connect(preview.data(), &OBSQTDisplay::DisplayCreated,
 				addDrawCallback);
+
+	} else if (type == OBS_SOURCE_TYPE_TRANSITION) {
+		sourceA = obs_source_create_private("scene", "sourceA",
+			nullptr);
+		sourceB = obs_source_create_private("scene", "sourceB",
+			nullptr);
+
+		obs_source_release(sourceA);
+		obs_source_release(sourceB);
+
+		uint32_t colorA = 0xFFB26F52;
+		uint32_t colorB = 0xFF6FB252;
+
+		CreateTransitionScene(sourceA, "A", colorA);
+		CreateTransitionScene(sourceB, "B", colorB);
+
+		/**
+		 * The cloned source is made from scratch, rather than using
+		 * obs_source_duplicate, as the stinger transition would not
+		 * play correctly otherwise.
+		 */
+
+		obs_data_t *settings = obs_source_get_settings(source);
+
+		sourceClone = obs_source_create_private(
+				obs_source_get_id(source), "clone", settings);
+		obs_source_release(sourceClone);
+
+		obs_source_inc_active(sourceClone);
+		obs_transition_set(sourceClone, sourceA);
+
+		obs_data_release(settings);
+
+		auto updateCallback = [=]()
+		{
+			obs_data_t *settings = obs_source_get_settings(source);
+			obs_source_update(sourceClone, settings);
+
+			obs_transition_clear(sourceClone);
+			obs_transition_set(sourceClone, sourceA);
+			obs_transition_force_stop(sourceClone);
+
+			obs_data_release(settings);
+
+			direction = true;
+		};
+
+		connect(view, &OBSPropertiesView::Changed, updateCallback);
+
+		preview->show();
+		connect(preview.data(), &OBSQTDisplay::DisplayCreated,
+			addTransitionDrawCallback);
+
 	} else {
 		preview->hide();
 	}
@@ -133,8 +201,113 @@ OBSBasicProperties::OBSBasicProperties(QWidget *parent, OBSSource source_)
 
 OBSBasicProperties::~OBSBasicProperties()
 {
+	if (sourceClone) {
+		obs_source_dec_active(sourceClone);
+	}
 	obs_source_dec_showing(source);
 	main->SaveProject();
+}
+
+void OBSBasicProperties::AddPreviewButton()
+{
+	QPushButton *playButton = new QPushButton(
+		QTStr("PreviewTransition"), this);
+	VScrollArea *area = view;
+	area->widget()->layout()->addWidget(playButton);
+
+	playButton->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+
+	auto play = [=] ()
+	{
+		OBSSource start;
+		OBSSource end;
+
+		if (direction) {
+			start = sourceA;
+			end = sourceB;
+		} else {
+			start = sourceB;
+			end = sourceA;
+		}
+
+		obs_transition_set(sourceClone, start);
+		obs_transition_start(sourceClone,
+			OBS_TRANSITION_MODE_AUTO,
+			main->GetTransitionDuration(), end);
+		direction = !direction;
+
+		start = nullptr;
+		end = nullptr;
+	};
+
+	connect(playButton, &QPushButton::clicked, play);
+}
+
+static obs_source_t *CreateLabel(const char *name, size_t h)
+{
+	obs_data_t *settings = obs_data_create();
+	obs_data_t *font = obs_data_create();
+
+	std::string text;
+	text += " ";
+	text += name;
+	text += " ";
+
+#if defined(_WIN32)
+	obs_data_set_string(font, "face", "Arial");
+#elif defined(__APPLE__)
+	obs_data_set_string(font, "face", "Helvetica");
+#else
+	obs_data_set_string(font, "face", "Monospace");
+#endif
+	obs_data_set_int(font, "flags", 1); // Bold text
+	obs_data_set_int(font, "size", int(h));
+
+	obs_data_set_obj(settings, "font", font);
+	obs_data_set_string(settings, "text", text.c_str());
+	obs_data_set_bool(settings, "outline", false);
+
+#ifdef _WIN32
+	const char *text_source_id = "text_gdiplus";
+#else
+	const char *text_source_id = "text_ft2_source";
+#endif
+
+	obs_source_t *txtSource = obs_source_create_private(text_source_id,
+							name, settings);
+
+	obs_data_release(font);
+	obs_data_release(settings);
+
+	return txtSource;
+}
+
+static void CreateTransitionScene(OBSSource scene, char *text, uint32_t color)
+{
+	obs_data_t *settings = obs_data_create();
+	obs_data_set_int(settings, "width", obs_source_get_width(scene));
+	obs_data_set_int(settings, "height", obs_source_get_height(scene));
+	obs_data_set_int(settings, "color", color);
+
+	obs_source_t *colorBG = obs_source_create_private("color_source",
+		"background", settings);
+
+	obs_scene_add(obs_scene_from_source(scene), colorBG);
+
+	obs_source_t *label = CreateLabel(text, obs_source_get_height(scene));
+	obs_sceneitem_t *item = obs_scene_add(obs_scene_from_source(scene),
+		label);
+
+	vec2 size;
+	vec2_set(&size, obs_source_get_width(scene),
+			obs_source_get_height(scene));
+
+	obs_sceneitem_set_bounds(item, &size);
+	obs_sceneitem_set_bounds_type(item, OBS_BOUNDS_SCALE_INNER);
+
+	obs_data_release(settings);
+	obs_source_release(colorBG);
+	obs_source_release(label);
 }
 
 void OBSBasicProperties::SourceRemoved(void *data, calldata_t *params)
@@ -226,6 +399,38 @@ void OBSBasicProperties::DrawPreview(void *data, uint32_t cx, uint32_t cy)
 	gs_viewport_pop();
 }
 
+void OBSBasicProperties::DrawTransitionPreview(void *data, uint32_t cx,
+		uint32_t cy)
+{
+	OBSBasicProperties *window = static_cast<OBSBasicProperties*>(data);
+
+	if (!window->source)
+		return;
+
+	uint32_t sourceCX = max(obs_source_get_width(window->source), 1u);
+	uint32_t sourceCY = max(obs_source_get_height(window->source), 1u);
+
+	int   x, y;
+	int   newCX, newCY;
+	float scale;
+
+	GetScaleAndCenterPos(sourceCX, sourceCY, cx, cy, x, y, scale);
+
+	newCX = int(scale * float(sourceCX));
+	newCY = int(scale * float(sourceCY));
+
+	gs_viewport_push();
+	gs_projection_push();
+	gs_ortho(0.0f, float(sourceCX), 0.0f, float(sourceCY),
+		-100.0f, 100.0f);
+	gs_set_viewport(x, y, newCX, newCY);
+
+	obs_source_video_render(window->sourceClone);
+
+	gs_projection_pop();
+	gs_viewport_pop();
+}
+
 void OBSBasicProperties::Cleanup()
 {
 	config_set_int(App()->GlobalConfig(), "PropertiesWindow", "cx",
@@ -235,6 +440,8 @@ void OBSBasicProperties::Cleanup()
 
 	obs_display_remove_draw_callback(preview->GetDisplay(),
 		OBSBasicProperties::DrawPreview, this);
+	obs_display_remove_draw_callback(preview->GetDisplay(),
+		OBSBasicProperties::DrawTransitionPreview, this);
 }
 
 void OBSBasicProperties::reject()

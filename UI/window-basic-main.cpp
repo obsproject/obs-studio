@@ -3423,6 +3423,11 @@ void OBSBasic::SetService(obs_service_t *newService)
 		service = newService;
 }
 
+int OBSBasic::GetTransitionDuration()
+{
+	return ui->transitionDuration->value();
+}
+
 bool OBSBasic::StreamingActive() const
 {
 	if (!outputHandler)
