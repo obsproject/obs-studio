@@ -193,6 +193,7 @@ static bool vaapi_update(void *data, obs_data_t *settings)
 	enc->context->max_b_frames = bf;
 	enc->context->level        = level;
 	enc->context->bit_rate     = bitrate * 1000;
+	enc->context->rc_max_rate  = bitrate * 1000;
 
 	enc->context->width  = obs_encoder_get_width(enc->encoder);
 	enc->context->height = obs_encoder_get_height(enc->encoder);
