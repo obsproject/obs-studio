@@ -311,7 +311,7 @@ static void mp_media_next_audio(mp_media_t *m)
 		for (size_t i = 0; i < MAX_AV_PLANES; i++) {
 			audio->data[i] = malloc(f->linesize[0]);
 			if (f->data[i]) {
-				memcpy(audio->data[i], f->data[i], f->linesize[0] / f->channels);
+				memcpy(audio->data[i], f->data[i], f->linesize[0]);
 			}
 		}
 
