@@ -152,6 +152,8 @@ void OBSPropertiesView::RefreshProperties()
 		QLabel *noPropertiesLabel = new QLabel(NO_PROPERTIES_STRING);
 		layout->addWidget(noPropertiesLabel);
 	}
+
+	emit PropertiesRefreshed();
 }
 
 void OBSPropertiesView::SetScrollPos(int h, int v)

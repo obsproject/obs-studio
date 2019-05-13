@@ -121,6 +121,7 @@ public slots:
 signals:
 	void PropertiesResized();
 	void Changed();
+	void PropertiesRefreshed();
 
 public:
 	OBSPropertiesView(OBSData settings, void *obj,

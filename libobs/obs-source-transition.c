@@ -665,6 +665,11 @@ static inline void handle_stop(obs_source_t *transition)
 			"transition_stop");
 }
 
+void obs_transition_force_stop(obs_source_t *transition)
+{
+	handle_stop(transition);
+}
+
 void obs_transition_video_render(obs_source_t *transition,
 		obs_transition_video_render_callback_t callback)
 {
