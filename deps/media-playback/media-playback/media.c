@@ -291,14 +291,15 @@ static void mp_media_next_audio(mp_media_t *m)
 {
 	struct mp_decode *d = &m->a;
 	AVFrame *f = d->frame;
+	struct obs_source_audio *audio;
 
 	if (m->audio.index_eof > 0 && m->audio.index == m->audio.index_eof) {
 		m->audio.index = 0;
 		m->next_wait = 0;
+		return;
 	}
 
 	if (m->audio.index_eof < 0 || !m->caching) {
-
 		if (!mp_media_can_play_frame(m, d))
 			return;
 
@@ -306,7 +307,7 @@ static void mp_media_next_audio(mp_media_t *m)
 		if (!m->a_cb)
 			return;
 
-		struct obs_source_audio *audio = malloc(sizeof(struct obs_source_audio));
+		audio = malloc(sizeof(struct obs_source_audio));
 
 		for (size_t i = 0; i < MAX_AV_PLANES; i++) {
 			audio->data[i] = malloc(f->linesize[0]);
@@ -321,6 +322,7 @@ static void mp_media_next_audio(mp_media_t *m)
 		audio->frames = f->nb_samples;
 		audio->timestamp = m->base_ts + d->frame_pts - m->start_ts +
 			m->play_sys_ts - base_sys_ts;
+		audio->dec_frame_pts = d->frame_pts;
 
 		if (audio->format == AUDIO_FORMAT_UNKNOWN) {
 			for (size_t j = 0; j < MAX_AV_PLANES; j++) {
@@ -330,17 +332,28 @@ static void mp_media_next_audio(mp_media_t *m)
 			return;
 		}
 
-		if (m->audio.index > 0) {
-			struct obs_source_audio *previous_frame = m->audio.data.array[m->audio.index - 1];
-			m->audio.refresh_rate_ns =
-				audio->timestamp - previous_frame->timestamp;
+		if (m->caching) {
+			if (m->audio.index > 0) {
+				struct obs_source_audio *previous_frame = m->audio.data.array[m->audio.index - 1];
+				m->audio.refresh_rate_ns =
+					audio->timestamp - previous_frame->timestamp;
+			}
+			da_push_back(m->audio.data, &audio);
 		}
-		da_push_back(m->audio.data, &audio);
 	}
-	if (m->audio.data.num > 0) {
-		m->a_cb(m->opaque, m->audio.data.array[m->audio.index]);
+	if (m->caching) {
+		audio = m->audio.data.array[m->audio.index];
+		audio->timestamp = m->base_ts + audio->dec_frame_pts - m->start_ts +
+			m->play_sys_ts - base_sys_ts;
 		m->audio.index++;
 	}
+
+	if (audio) {
+		m->a_cb(m->opaque, audio);
+	}
+
+	if (!m->caching)
+		free(audio);
 }
 
 static void mp_media_next_video(mp_media_t *m, bool preload)
@@ -354,8 +367,8 @@ static void mp_media_next_video(mp_media_t *m, bool preload)
 
 	if (m->video.index_eof > 0 && m->video.index == m->video.index_eof) {
 		m->video.index = 0;
-		m->audio.index= 0;
 		m->next_wait = 0;
+		return;
 	}
 
 	if (m->video.index_eof < 0 || !m->caching) {

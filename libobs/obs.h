@@ -209,7 +209,8 @@ struct obs_source_audio {
 	enum audio_format format;
 	uint32_t samples_per_sec;
 
-	uint64_t timestamp;
+	uint64_t            timestamp;
+	int64_t             dec_frame_pts;
 };
 
 /**
