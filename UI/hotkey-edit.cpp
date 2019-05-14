@@ -324,6 +324,7 @@ void OBSHotkeyWidget::AddEdit(obs_key_combination combo, int idx)
 	});
 
 	QHBoxLayout *subLayout = new QHBoxLayout;
+	subLayout->setContentsMargins(0, 4, 0, 0);
 	subLayout->addWidget(edit);
 	subLayout->addWidget(revert);
 	subLayout->addWidget(clear);
