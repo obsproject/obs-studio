@@ -813,7 +813,8 @@ static inline bool mp_media_thread(mp_media_t *m)
 							sleeping_time = m->video.refresh_rate_ns - time_spent;
 						}
 						os_sleep_ms(sleeping_time / 1000000);
-						mp_media_next_audio(m);
+						if (m->has_audio)
+							mp_media_next_audio(m);
 						time_spent += sleeping_time;
 					}
 				}
