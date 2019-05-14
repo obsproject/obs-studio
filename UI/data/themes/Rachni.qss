@@ -999,39 +999,6 @@ QPushButton:hover#moveEffectFilterUp {
 	outline: none;
 }
 
-/******************************/
-/*   --- Hotkey Buttons ---   */
-/******************************/
-/* Fix for the hotkey buttons */
-/* looking terrible with my   */
-/* color choices.             */
-/******************************/
-
-QPushButton[themeID="hotkeyButtons"] {
-	background-color: rgb(58, 64, 69); /* Light Blue-gray */
-	color: rgb(239, 240, 241); /* White */
-	border-radius: 2px;
-	border: none;
-	margin: 4px;
-	padding-top: 6px;
-	padding-bottom: 6px;
-}
-
-QPushButton:hover[themeID="hotkeyButtons"] {
-	background-color: rgba(240, 98, 146, 0.5); /* Pink (Secondary) */
-	border: 1px solid rgba(240, 98, 146, 0.5); /* Pink (Secondary) */
-}
-
-QPushButton:pressed[themeID="hotkeyButtons"] {
-	background-color: rgb(240, 98, 146); /* Pink (Secondary) */
-	border: 1px solid rgb(240, 98, 146); /* Pink (Secondary) */
-}
-
-QPushButton:disabled[themeID="hotkeyButtons"] {
-	background-color: rgb(58, 64, 69); /* Light Blue-gray */
-	color: rgb(162, 161, 162); /* Lighter Gray */
-}
-
 /******************/
 /* --- Labels --- */
 /******************/

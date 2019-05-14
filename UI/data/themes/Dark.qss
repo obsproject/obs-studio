@@ -357,11 +357,6 @@ QLineEdit, QTextEdit, QPlainTextEdit {
     padding: 2px 2px 3px 7px;
 }
 
-OBSHotkeyWidget QLineEdit {
-    margin: 0px 3px 0px 0px;
-}
-
-
 /* Spinbox and doubleSpinbox */
 
 QSpinBox, QDoubleSpinBox {
@@ -457,10 +452,6 @@ QPushButton::menu-indicator {
     subcontrol-position: right;
     subcontrol-origin: padding;
     width: 25px;
-}
-
-QPushButton[themeID="hotkeyButtons"] {
-    margin: 1px  2px;
 }
 
 /* Sliders */
