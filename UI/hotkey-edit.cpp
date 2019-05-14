@@ -275,14 +275,14 @@ void OBSHotkeyWidget::AddEdit(obs_key_combination combo, int idx)
 	revert->setProperty("themeID", "revertIcon");
 	revert->setToolTip(QTStr("Revert"));
 	revert->setFixedSize(24, 24);
-	revert->setStyleSheet("background: transparent; border: none;");
+	revert->setFlat(true);
 	revert->setEnabled(false);
 
 	auto clear = new QPushButton;
 	clear->setProperty("themeID", "trashIcon");
 	clear->setToolTip(QTStr("Clear"));
 	clear->setFixedSize(24, 24);
-	clear->setStyleSheet("background: transparent; border: none;");
+	clear->setFlat(true);
 	clear->setEnabled(!obs_key_combination_is_empty(combo));
 
 	QObject::connect(edit, &OBSHotkeyEdit::KeyChanged,
@@ -295,13 +295,13 @@ void OBSHotkeyWidget::AddEdit(obs_key_combination combo, int idx)
 	auto add = new QPushButton;
 	add->setProperty("themeID", "addIconSmall");
 	add->setFixedSize(24, 24);
-	add->setStyleSheet("background: transparent; border: none;");
+	add->setFlat(true);
 
 	auto remove = new QPushButton;
 	remove->setProperty("themeID", "removeIconSmall");
 	remove->setEnabled(removeButtons.size() > 0);
 	remove->setFixedSize(24, 24);
-	remove->setStyleSheet("background: transparent; border: none;");
+	remove->setFlat(true);
 
 	auto CurrentIndex = [&, remove]
 	{
