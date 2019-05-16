@@ -103,7 +103,6 @@ struct mp_media {
 	bool thread_valid;
 	pthread_t thread;
 
-	bool caching;
 	bool enable_caching;
 	struct cached_data video;
 	struct cached_data audio;

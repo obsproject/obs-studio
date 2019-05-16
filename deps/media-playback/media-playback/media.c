@@ -299,7 +299,7 @@ static void mp_media_next_audio(mp_media_t *m)
 		return;
 	}
 
-	if (m->audio.index_eof < 0 || !m->caching) {
+	if (m->audio.index_eof < 0 || !m->enable_caching) {
 		if (!mp_media_can_play_frame(m, d))
 			return;
 
@@ -332,7 +332,7 @@ static void mp_media_next_audio(mp_media_t *m)
 			return;
 		}
 
-		if (m->caching) {
+		if (m->enable_caching) {
 			if (m->audio.index > 0) {
 				struct obs_source_audio *previous_frame = m->audio.data.array[m->audio.index - 1];
 				m->audio.refresh_rate_ns =
@@ -341,7 +341,7 @@ static void mp_media_next_audio(mp_media_t *m)
 			da_push_back(m->audio.data, &audio);
 		}
 	}
-	if (m->caching) {
+	if (m->enable_caching) {
 		audio = m->audio.data.array[m->audio.index];
 		audio->timestamp = m->base_ts + audio->dec_frame_pts - m->start_ts +
 			m->play_sys_ts - base_sys_ts;
@@ -352,7 +352,7 @@ static void mp_media_next_audio(mp_media_t *m)
 		m->a_cb(m->opaque, audio);
 	}
 
-	if (!m->caching) {
+	if (!m->enable_caching) {
 		for (size_t i = 0; i < MAX_AV_PLANES; i++) {
 			free(audio->data[i]);
 		}
@@ -375,7 +375,7 @@ static void mp_media_next_video(mp_media_t *m, bool preload)
 		return;
 	}
 
-	if (m->video.index_eof < 0 || !m->caching) {
+	if (m->video.index_eof < 0 || !m->enable_caching) {
 		if (!preload) {
 			if (!mp_media_can_play_frame(m, d)) {
 				return;
@@ -467,7 +467,7 @@ static void mp_media_next_video(mp_media_t *m, bool preload)
 			d->got_first_keyframe = true;
 		}
 
-		if (m->caching) {
+		if (m->enable_caching) {
 			struct obs_source_frame *new_frame = obs_source_frame_create(
 				current_frame->format, current_frame->width, current_frame->height);
 
@@ -486,7 +486,7 @@ static void mp_media_next_video(mp_media_t *m, bool preload)
 			frame = current_frame;
 		}
 	}
-	else if (m->caching) {
+	else if (m->enable_caching) {
 		frame = m->video.data.array[m->video.index];
 		m->video.index++;
 	}
@@ -666,29 +666,6 @@ static int interrupt_callback(void *data)
 	return stop;
 }
 
-static bool allow_cache(mp_media_t *m)
-{
-	int video_stream_index = av_find_best_stream(m->fmt,
-		AVMEDIA_TYPE_VIDEO, -1, -1, NULL, 0);
-
-	if (video_stream_index < 0)
-		return true;
-
-	AVStream *stream = m->fmt->streams[video_stream_index];
-	AVRational avg_frame_rate = stream->avg_frame_rate;
-	int64_t frames = (int64_t)ceil((double)m->fmt->duration /
-		(double)AV_TIME_BASE *
-		(double)avg_frame_rate.num /
-		(double)avg_frame_rate.den);
-
-	int width = stream->codec->width;
-	int height = stream->codec->height;
-
-	// File size in MB
-	double file_size = width * height * 1.5 * frames / 1000000;
-	return file_size < 1024;
-}
-
 static bool init_avformat(mp_media_t *m)
 {
 	AVInputFormat *format = NULL;
@@ -735,11 +712,6 @@ static bool init_avformat(mp_media_t *m)
 		     m->path);
 		return false;
 	}
-
-	if (m->enable_caching)
-		m->caching = m->looping && m->is_local_file && allow_cache(m);
-	else
-		m->caching = false;
 
 	return true;
 }
@@ -793,7 +765,7 @@ static inline bool mp_media_thread(mp_media_t *m)
 				mp_media_next_video(m, false);
 			if (m->has_audio)
 				mp_media_next_audio(m);
-			if (m->audio.index_eof < 0 || m->video.index_eof < 0 || !m->caching) {
+			if (m->audio.index_eof < 0 || m->video.index_eof < 0 || !m->enable_caching) {
 				if (!mp_media_prepare_frames(m))
 					return false;
 			}
@@ -960,10 +932,6 @@ void mp_media_play(mp_media_t *m, bool loop)
 		m->reset = true;
 
 	m->looping = loop;
-	if (m->fmt && m->enable_caching)
-		m->caching = m->looping && m->is_local_file && allow_cache(m);
-	else
-		m->caching = false;
 	m->active = true;
 
 	pthread_mutex_unlock(&m->mutex);
