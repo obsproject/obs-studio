@@ -343,9 +343,6 @@ static bool init_encoder(struct nvenc_data *enc, obs_data_t *settings)
 	const char *profile = obs_data_get_string(settings, "profile");
 	bool psycho_aq = obs_data_get_bool(settings, "psycho_aq");
 	bool lookahead = obs_data_get_bool(settings, "lookahead");
-	uint16_t lookaheaddepth = obs_data_get_int(settings, "lookaheadDepth");
-	NV_ENC_BFRAME_REF_MODE useBFramesAsRef = obs_data_get_int(settings, "useBFramesAsRef");
-	uint32_t aqStrength = obs_data_get_int(settings, "aqStrength");
 	int bf = (int)obs_data_get_int(settings, "bf");
 	bool vbr = astrcmpi(rc, "VBR") == 0;
 	NVENCSTATUS err;
@@ -495,10 +492,6 @@ static bool init_encoder(struct nvenc_data *enc, obs_data_t *settings)
 	h264_config->outputPictureTimingSEI = 1;
 	config->rcParams.averageBitRate = bitrate * 1000;
 	config->rcParams.maxBitRate = vbr ? max_bitrate * 1000 : bitrate * 1000;
-	h264_config->useBFramesAsRef = useBFramesAsRef;
-
-	if (config->rcParams.enableAQ)
-		config->rcParams.aqStrength = aqStrength;
 
 	/* -------------------------- */
 	/* profile                    */
