@@ -342,6 +342,8 @@ static void mp_media_next_audio(mp_media_t *m)
 		}
 	}
 	if (m->enable_caching) {
+		if (m->audio.data.num <= 0)
+			return;
 		audio = m->audio.data.array[m->audio.index];
 		audio->timestamp = m->base_ts + audio->dec_frame_pts - m->start_ts +
 			m->play_sys_ts - base_sys_ts;
@@ -487,6 +489,8 @@ static void mp_media_next_video(mp_media_t *m, bool preload)
 		}
 	}
 	else if (m->enable_caching) {
+		if (m->video.data.num <= 0)
+			return;
 		frame = m->video.data.array[m->video.index];
 		m->video.index++;
 	}
@@ -789,6 +793,9 @@ static inline bool mp_media_thread(mp_media_t *m)
 							mp_media_next_audio(m);
 						time_spent += sleeping_time;
 					}
+				}
+				else if (!m->has_video) {
+					os_sleep_ms(m->audio.refresh_rate_ns / 1000000);
 				}
 				else {
 					os_sleep_ms(m->video.refresh_rate_ns / 1000000);
