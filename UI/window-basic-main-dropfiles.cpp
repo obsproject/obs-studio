@@ -148,7 +148,7 @@ void OBSBasic::dropEvent(QDropEvent *event)
 	if (mimeData->hasUrls()) {
 		QList<QUrl> urls = mimeData->urls();
 
-		for (int i = 0; i < urls.size() && i < 5; i++) {
+		for (int i = 0; i < urls.size(); i++) {
 			QString file = urls.at(i).toLocalFile();
 			QFileInfo fileInfo(file);
 
