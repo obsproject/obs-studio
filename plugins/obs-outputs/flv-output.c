@@ -193,7 +193,7 @@ static void flv_output_stop(void *data, uint64_t ts)
 	os_atomic_set_bool(&stream->stopping, true);
 }
 
-static void flv_output_actual_stop(struct flv_output *stream)
+static void flv_output_actual_stop(struct flv_output *stream, int code)
 {
 	os_atomic_set_bool(&stream->active, false);
 
@@ -203,7 +203,11 @@ static void flv_output_actual_stop(struct flv_output *stream)
 
 		fclose(stream->file);
 	}
-	obs_output_end_data_capture(stream->output);
+	if (code) {
+		obs_output_signal_stop(stream->output, code);
+	} else {
+		obs_output_end_data_capture(stream->output);
+	}
 
 	info("FLV file output complete");
 }
@@ -218,9 +222,14 @@ static void flv_output_data(void *data, struct encoder_packet *packet)
 	if (!active(stream))
 		goto unlock;
 
+	if (!packet) {
+		flv_output_actual_stop(stream, OBS_OUTPUT_ENCODE_ERROR);
+		goto unlock;
+	}
+
 	if (stopping(stream)) {
 		if (packet->sys_dts_usec >= (int64_t)stream->stop_ts) {
-			flv_output_actual_stop(stream);
+			flv_output_actual_stop(stream, 0);
 			goto unlock;
 		}
 	}

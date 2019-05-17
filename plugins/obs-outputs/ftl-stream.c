@@ -72,6 +72,7 @@ struct ftl_stream {
 
 	volatile bool    active;
 	volatile bool    disconnected;
+	volatile bool    encode_error;
 	pthread_t        send_thread;
 
 	int              max_shutdown_time_sec;
@@ -516,8 +517,12 @@ static void *send_thread(void *data)
 		}
 	}
 
+	bool encode_error = os_atomic_load_bool(&stream->encode_error);
+
 	if (disconnected(stream)) {
 		info("Disconnected from %s", stream->path.array);
+	} else if (encode_error) {
+		info("Encoder error, disconnecting");
 	} else {
 		info("User stopped the stream");
 	}
@@ -525,6 +530,8 @@ static void *send_thread(void *data)
 	if (!stopping(stream)) {
 		pthread_detach(stream->send_thread);
 		obs_output_signal_stop(stream->output, OBS_OUTPUT_DISCONNECTED);
+	} else if (encode_error) {
+		obs_output_signal_stop(stream->output, OBS_OUTPUT_ENCODE_ERROR);
 	} else {
 		obs_output_end_data_capture(stream->output);
 	}
@@ -809,6 +816,13 @@ static void ftl_stream_data(void *data, struct encoder_packet *packet)
 	if (disconnected(stream) || !active(stream))
 		return;
 
+	/* encoder failure */
+	if (!packet) {
+		os_atomic_set_bool(&stream->encode_error, true);
+		os_sem_post(stream->send_sem);
+		return;
+	}
+
 	if (packet->type == OBS_ENCODER_VIDEO)
 		obs_parse_avc_packet(&new_packet, packet);
 	else
@@ -1034,6 +1048,7 @@ static int init_connect(struct ftl_stream *stream)
 	}
 
 	os_atomic_set_bool(&stream->disconnected, false);
+	os_atomic_set_bool(&stream->encode_error, false);
 	stream->total_bytes_sent  = 0;
 	stream->dropped_frames    = 0;
 	stream->min_priority      = 0;

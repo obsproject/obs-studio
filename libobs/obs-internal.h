@@ -1042,7 +1042,7 @@ extern void obs_encoder_remove_output(struct obs_encoder *encoder,
 extern bool start_gpu_encode(obs_encoder_t *encoder);
 extern void stop_gpu_encode(obs_encoder_t *encoder);
 
-extern void do_encode(struct obs_encoder *encoder, struct encoder_frame *frame);
+extern bool do_encode(struct obs_encoder *encoder, struct encoder_frame *frame);
 extern void send_off_encoder_packet(obs_encoder_t *encoder, bool success,
 		bool received, struct encoder_packet *pkt);
 

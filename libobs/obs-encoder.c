@@ -208,7 +208,7 @@ static void add_connection(struct obs_encoder *encoder)
 	set_encoder_active(encoder, true);
 }
 
-static void remove_connection(struct obs_encoder *encoder)
+static void remove_connection(struct obs_encoder *encoder, bool shutdown)
 {
 	if (encoder->info.type == OBS_ENCODER_AUDIO) {
 		audio_output_disconnect(encoder->media, encoder->mixer_idx,
@@ -221,7 +221,13 @@ static void remove_connection(struct obs_encoder *encoder)
 		}
 	}
 
-	obs_encoder_shutdown(encoder);
+	/* obs_encoder_shutdown locks init_mutex, so don't call it on encode
+	 * errors, otherwise you can get a deadlock with outputs when they end
+	 * data capture, which will lock init_mutex and the video callback
+	 * mutex in the reverse order.  instead, call shutdown before starting
+	 * up again */
+	if (shutdown)
+		obs_encoder_shutdown(encoder);
 	set_encoder_active(encoder, false);
 }
 
@@ -575,7 +581,7 @@ static inline bool obs_encoder_stop_internal(obs_encoder_t *encoder,
 	pthread_mutex_unlock(&encoder->callbacks_mutex);
 
 	if (last) {
-		remove_connection(encoder);
+		remove_connection(encoder, true);
 		encoder->initialized = false;
 
 		if (encoder->destroy_on_stop) {
@@ -834,10 +840,23 @@ static inline void send_packet(struct obs_encoder *encoder,
 void full_stop(struct obs_encoder *encoder)
 {
 	if (encoder) {
+		pthread_mutex_lock(&encoder->outputs_mutex);
+		for (size_t i = 0; i < encoder->outputs.num; i++) {
+			struct obs_output *output = encoder->outputs.array[i];
+			obs_output_force_stop(output);
+
+			pthread_mutex_lock(&output->interleaved_mutex);
+			output->info.encoded_packet(output->context.data, NULL);
+			pthread_mutex_unlock(&output->interleaved_mutex);
+		}
+		pthread_mutex_unlock(&encoder->outputs_mutex);
+
 		pthread_mutex_lock(&encoder->callbacks_mutex);
 		da_free(encoder->callbacks);
-		remove_connection(encoder);
 		pthread_mutex_unlock(&encoder->callbacks_mutex);
+
+		remove_connection(encoder, false);
+		encoder->initialized = false;
 	}
 }
 
@@ -845,9 +864,9 @@ void send_off_encoder_packet(obs_encoder_t *encoder, bool success,
 		bool received, struct encoder_packet *pkt)
 {
 	if (!success) {
-		full_stop(encoder);
 		blog(LOG_ERROR, "Error encoding with encoder '%s'",
 				encoder->context.name);
+		full_stop(encoder);
 		return;
 	}
 
@@ -876,7 +895,7 @@ void send_off_encoder_packet(obs_encoder_t *encoder, bool success,
 }
 
 static const char *do_encode_name = "do_encode";
-void do_encode(struct obs_encoder *encoder, struct encoder_frame *frame)
+bool do_encode(struct obs_encoder *encoder, struct encoder_frame *frame)
 {
 	profile_start(do_encode_name);
 	if (!encoder->profile_encoder_encode_name)
@@ -899,6 +918,8 @@ void do_encode(struct obs_encoder *encoder, struct encoder_frame *frame)
 	send_off_encoder_packet(encoder, success, received, &pkt);
 
 	profile_end(do_encode_name);
+
+	return success;
 }
 
 static const char *receive_video_name = "receive_video";
@@ -930,9 +951,8 @@ static void receive_video(void *param, struct video_data *frame)
 	enc_frame.frames = 1;
 	enc_frame.pts    = encoder->cur_pts;
 
-	do_encode(encoder, &enc_frame);
-
-	encoder->cur_pts += encoder->timebase_num;
+	if (do_encode(encoder, &enc_frame))
+		encoder->cur_pts += encoder->timebase_num;
 
 wait_for_audio:
 	profile_end(receive_video_name);
@@ -1040,7 +1060,7 @@ fail:
 	return success;
 }
 
-static void send_audio_data(struct obs_encoder *encoder)
+static bool send_audio_data(struct obs_encoder *encoder)
 {
 	struct encoder_frame  enc_frame;
 
@@ -1058,9 +1078,11 @@ static void send_audio_data(struct obs_encoder *encoder)
 	enc_frame.frames = (uint32_t)encoder->framesize;
 	enc_frame.pts    = encoder->cur_pts;
 
-	do_encode(encoder, &enc_frame);
+	if (!do_encode(encoder, &enc_frame))
+		return false;
 
 	encoder->cur_pts += encoder->framesize;
+	return true;
 }
 
 static const char *receive_audio_name = "receive_audio";
@@ -1079,8 +1101,11 @@ static void receive_audio(void *param, size_t mix_idx, struct audio_data *data)
 	if (!buffer_audio(encoder, data))
 		goto end;
 
-	while (encoder->audio_input_buffer[0].size >= encoder->framesize_bytes)
-		send_audio_data(encoder);
+	while (encoder->audio_input_buffer[0].size >= encoder->framesize_bytes) {
+		if (!send_audio_data(encoder)) {
+			break;
+		}
+	}
 
 	UNUSED_PARAMETER(mix_idx);
 

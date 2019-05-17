@@ -137,7 +137,10 @@ Output Definition Structure (obs_output_info)
    Only applies to outputs that are encoded.  Packets will always be
    given in monotonic timestamp order.
 
-   :param packet: The video or audio packet
+   :param packet: The video or audio packet.  If NULL, an encoder error
+                  occurred, and the output should call
+                  :c:func:`obs_output_signal_stop()` with the error code
+                  **OBS_OUTPUT_ENCODE_ERROR**.
 
 .. member:: void (*obs_output_info.update)(void *data, obs_data_t *settings)
 
@@ -252,6 +255,7 @@ Output Signals
                   | OBS_OUTPUT_DISCONNECTED   - Unexpectedly disconnected
                   | OBS_OUTPUT_UNSUPPORTED    - The settings, video/audio format, or codecs are unsupported by this output
                   | OBS_OUTPUT_NO_SPACE       - Ran out of disk space
+                  | OBS_OUTPUT_ENCODE_ERROR   - Encoder error
 
 **starting** (ptr output)
 

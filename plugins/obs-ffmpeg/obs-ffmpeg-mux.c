@@ -331,7 +331,7 @@ static bool ffmpeg_mux_start(void *data)
 	return true;
 }
 
-static int deactivate(struct ffmpeg_muxer *stream)
+static int deactivate(struct ffmpeg_muxer *stream, int code)
 {
 	int ret = -1;
 
@@ -345,8 +345,11 @@ static int deactivate(struct ffmpeg_muxer *stream)
 		info("Output of file '%s' stopped", stream->path.array);
 	}
 
-	if (stopping(stream))
+	if (code) {
+		obs_output_signal_stop(stream->output, code);
+	} else if (stopping(stream)) {
 		obs_output_end_data_capture(stream->output);
+	}
 
 	os_atomic_set_bool(&stream->stopping, false);
 	return ret;
@@ -380,7 +383,7 @@ static void signal_failure(struct ffmpeg_muxer *stream)
 		obs_output_set_last_error (stream->output, error);
 	}
 
-	ret = deactivate(stream);
+	ret = deactivate(stream, 0);
 
 	switch (ret) {
 	case FFM_UNSUPPORTED:          code = OBS_OUTPUT_UNSUPPORTED; break;
@@ -479,6 +482,12 @@ static void ffmpeg_mux_data(void *data, struct encoder_packet *packet)
 	if (!active(stream))
 		return;
 
+	/* encoder failure */
+	if (!packet) {
+		deactivate(stream, OBS_OUTPUT_ENCODE_ERROR);
+		return;
+	}
+
 	if (!stream->sent_headers) {
 		if (!send_headers(stream))
 			return;
@@ -488,7 +497,7 @@ static void ffmpeg_mux_data(void *data, struct encoder_packet *packet)
 
 	if (stopping(stream)) {
 		if (packet->sys_dts_usec >= stream->stop_ts) {
-			deactivate(stream);
+			deactivate(stream, 0);
 			return;
 		}
 	}
@@ -803,10 +812,13 @@ static void replay_buffer_save(struct ffmpeg_muxer *stream)
 			replay_buffer_mux_thread, stream) == 0;
 }
 
-static void deactivate_replay_buffer(struct ffmpeg_muxer *stream)
+static void deactivate_replay_buffer(struct ffmpeg_muxer *stream, int code)
 {
-	if (stopping(stream))
+	if (code) {
+		obs_output_signal_stop(stream->output, code);
+	} else if (stopping(stream)) {
 		obs_output_end_data_capture(stream->output);
+	}
 
 	os_atomic_set_bool(&stream->active, false);
 	os_atomic_set_bool(&stream->sent_headers, false);
@@ -822,9 +834,15 @@ static void replay_buffer_data(void *data, struct encoder_packet *packet)
 	if (!active(stream))
 		return;
 
+	/* encoder failure */
+	if (!packet) {
+		deactivate_replay_buffer(stream, OBS_OUTPUT_ENCODE_ERROR);
+		return;
+	}
+
 	if (stopping(stream)) {
 		if (packet->sys_dts_usec >= stream->stop_ts) {
-			deactivate_replay_buffer(stream);
+			deactivate_replay_buffer(stream, 0);
 			return;
 		}
 	}
