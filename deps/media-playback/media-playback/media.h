@@ -48,7 +48,7 @@ struct cached_data {
 	int index_eof;
 	DARRAY(void*) data;
 	int64_t refresh_rate_ns;
-	int64_t last_processed_ns;
+	uint64_t last_processed_ns;
 };
 
 struct mp_media {
@@ -106,7 +106,8 @@ struct mp_media {
 	bool enable_caching;
 	struct cached_data video;
 	struct cached_data audio;
-	int64_t next_wait;
+	bool process_audio;
+	bool process_video;
 };
 
 typedef struct mp_media mp_media_t;

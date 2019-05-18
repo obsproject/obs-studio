@@ -289,15 +289,14 @@ static inline bool mp_media_can_play_frame(mp_media_t *m, struct mp_decode *d)
 
 static void mp_media_next_audio(mp_media_t *m)
 {
+	if (!m->process_audio) {
+		m->process_audio = true;
+		return;
+	}
+
 	struct mp_decode *d = &m->a;
 	AVFrame *f = d->frame;
 	struct obs_source_audio *audio;
-
-	if (m->audio.index_eof > 0 && m->audio.index == m->audio.index_eof) {
-		m->audio.index = 0;
-		m->next_wait = 0;
-		return;
-	}
 
 	if (m->audio.index_eof < 0 || !m->enable_caching) {
 		if (!mp_media_can_play_frame(m, d))
@@ -345,10 +344,9 @@ static void mp_media_next_audio(mp_media_t *m)
 		if (m->audio.data.num <= 0)
 			return;
 		audio = m->audio.data.array[m->audio.index];
-		audio->timestamp = m->base_ts + audio->dec_frame_pts - m->start_ts +
-			m->play_sys_ts - base_sys_ts;
-		m->audio.index++;
 	}
+
+	m->audio.index++;
 
 	if (audio) {
 		m->a_cb(m->opaque, audio);
@@ -364,18 +362,17 @@ static void mp_media_next_audio(mp_media_t *m)
 
 static void mp_media_next_video(mp_media_t *m, bool preload)
 {
+	if (!m->process_video) {
+		m->process_video = true;
+		return;
+	}
+
 	struct mp_decode *d = &m->v;
 	enum video_format new_format;
 	enum video_colorspace new_space;
 	enum video_range_type new_range;
 	AVFrame *f = d->frame;
 	struct obs_source_frame *frame;
-
-	if (m->video.index_eof > 0 && m->video.index == m->video.index_eof) {
-		m->video.index = 0;
-		m->next_wait = 0;
-		return;
-	}
 
 	if (m->video.index_eof < 0 || !m->enable_caching) {
 		if (!preload) {
@@ -475,14 +472,13 @@ static void mp_media_next_video(mp_media_t *m, bool preload)
 
 			obs_source_frame_copy(new_frame, current_frame);
 
-			if (m->video.index > 0) {
+			if (m->video.index > 0 && m->video.refresh_rate_ns == 0) {
 				struct obs_source_frame *previous_frame = m->video.data.array[m->video.index - 1];
 				m->video.refresh_rate_ns = new_frame->timestamp - previous_frame->timestamp;
 			}
 
 			da_push_back(m->video.data, &new_frame);
 			frame = new_frame;
-			m->video.index++;
 		}
 		else {
 			frame = current_frame;
@@ -492,9 +488,8 @@ static void mp_media_next_video(mp_media_t *m, bool preload)
 		if (m->video.data.num <= 0)
 			return;
 		frame = m->video.data.array[m->video.index];
-		m->video.index++;
 	}
-
+	m->video.index++;
 	if (preload)
 		m->v_preload_cb(m->opaque, frame);
 	else
@@ -644,7 +639,6 @@ static inline bool mp_media_eof(mp_media_t *m)
 		m->video.index = 0;
 		m->audio.index_eof = m->audio.index;
 		m->audio.index = 0;
-		m->next_wait = 0;
 		pthread_mutex_unlock(&m->mutex);
 
 		mp_media_reset(m);
@@ -774,31 +768,52 @@ static inline bool mp_media_thread(mp_media_t *m)
 					return false;
 			}
 			else {
-				if (m->video.refresh_rate_ns > m->audio.refresh_rate_ns) {
-					int64_t time_spent = 0;
-					while (time_spent < m->video.refresh_rate_ns) {
-						int sleeping_time = 0;
-						if (m->audio.refresh_rate_ns - time_spent > 0) {
-							if (m->next_wait > 0) {
-								time_spent -= m->next_wait;
-								m->next_wait = 0;
-							}
-							sleeping_time  = m->audio.refresh_rate_ns - time_spent;
-						}
-						else {
-							sleeping_time = m->video.refresh_rate_ns - time_spent;
-						}
-						os_sleep_ms(sleeping_time / 1000000);
-						if (m->has_audio)
-							mp_media_next_audio(m);
-						time_spent += sleeping_time;
-					}
-				}
-				else if (!m->has_video) {
+				if (!m->has_video) {
 					os_sleep_ms(m->audio.refresh_rate_ns / 1000000);
 				}
-				else {
+				else if (!m->has_audio) {
 					os_sleep_ms(m->video.refresh_rate_ns / 1000000);
+				}
+				else {
+					uint64_t time_now = os_gettime_ns();
+
+					if (m->video.last_processed_ns == 0)
+						m->video.last_processed_ns = time_now;
+
+					if (m->audio.last_processed_ns == 0)
+						m->audio.last_processed_ns = time_now;
+
+					int64_t elapsed_time_video = time_now - m->video.last_processed_ns;
+					int64_t elapsed_time_audio = time_now - m->audio.last_processed_ns;
+					int64_t delta_video = m->video.refresh_rate_ns - elapsed_time_video;
+					int64_t delta_audio = m->audio.refresh_rate_ns - elapsed_time_audio;
+
+					if (delta_audio >= delta_video - 1000000 && delta_audio <= delta_video + 1000000) {
+						os_sleep_ms(delta_audio/1000000);
+						m->video.last_processed_ns = os_gettime_ns();
+						m->audio.last_processed_ns = os_gettime_ns();
+					}
+					else if (delta_video < delta_audio) {
+						if (delta_video > 0)
+							os_sleep_ms(delta_video / 1000000);
+						m->process_audio = false;
+						m->video.last_processed_ns = os_gettime_ns();
+					}
+					else if (delta_video > delta_audio) {
+						if (delta_audio > 0)
+							os_sleep_ms(delta_audio/1000000);
+						m->process_video = false;
+						m->audio.last_processed_ns = os_gettime_ns();
+					}
+
+				}
+				if ((m->audio.index_eof > 0 && m->audio.index == m->audio.index_eof) ||
+					(m->video.index_eof > 0 && m->video.index == m->video.index_eof)) {
+					m->audio.index = 0;
+					m->video.index = 0;
+					m->video.last_processed_ns = 0;
+					m->audio.last_processed_ns = 0;
+					continue;
 				}
 				m->a.frame_ready = true;
 				m->v.frame_ready = true;
@@ -842,13 +857,12 @@ static inline bool mp_media_init_internal(mp_media_t *m,
 	m->format_name = info->format ? bstrdup(info->format) : NULL;
 	m->hw = info->hardware_decoding;
 
-	m->video = (struct cached_data) { 0, -1, NULL, -1, -1 };
-	m->audio = (struct cached_data) { 0, -1, NULL, -1, -1 };
-
+	m->video = (struct cached_data) { 0, -1, NULL, -1, 0 };
+	m->audio = (struct cached_data) { 0, -1, NULL, -1, 0 };
+	m->process_audio = true;
+	m->process_video = false;
 	da_init(m->video.data);
 	da_init(m->audio.data);
-
-	m->next_wait = 0;
 
 	if (pthread_create(&m->thread, NULL, mp_media_thread_start, m) != 0) {
 		blog(LOG_WARNING, "MP: Could not create media thread");
