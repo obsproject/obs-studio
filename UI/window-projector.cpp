@@ -226,28 +226,6 @@ static OBSSource CreateLabel(const char *name, size_t h)
 	return txtSource;
 }
 
-static inline void renderVB(gs_effect_t *effect, gs_vertbuffer_t *vb,
-		int cx, int cy)
-{
-	if (!vb)
-		return;
-
-	matrix4 transform;
-	matrix4_identity(&transform);
-	transform.x.x = cx;
-	transform.y.y = cy;
-
-	gs_load_vertexbuffer(vb);
-
-	gs_matrix_push();
-	gs_matrix_mul(&transform);
-
-	while (gs_effect_loop(effect, "Solid"))
-		gs_draw(GS_LINESTRIP, 0, 0);
-
-	gs_matrix_pop();
-}
-
 static inline uint32_t labelOffset(obs_source_t *label, uint32_t cx)
 {
 	uint32_t w = obs_source_get_width(label);

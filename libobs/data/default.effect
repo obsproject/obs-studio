@@ -37,7 +37,7 @@ float4 PSDrawAlphaDivide(VertInOut vert_in) : TARGET
 float4 PSDrawMatrix(VertInOut vert_in) : TARGET
 {
 	float3 rgb = image.Sample(def_sampler, vert_in.uv).rgb;
-	float3 yuv = mul(float4(saturate(rgb), 1.0), color_matrix).xyz;
+	float3 yuv = mul(float4(rgb, 1.0), color_matrix).xyz;
 	return float4(yuv, 1.0);
 }
 
