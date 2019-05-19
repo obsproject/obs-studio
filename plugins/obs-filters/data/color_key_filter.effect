@@ -42,7 +42,6 @@ float GetColorDist(float3 rgb)
 float4 ProcessColorKey(float4 rgba, VertData v_in)
 {
 	float colorDist = GetColorDist(rgba.rgb);
-	float baseMask = colorDist - similarity;
 	rgba.a *= saturate(max(colorDist - similarity, 0.0) / smoothness);
 
 	return CalcColor(rgba);
