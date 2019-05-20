@@ -1668,8 +1668,6 @@ bool update_async_texture(struct obs_source *source,
 		gs_texture_t *tex, gs_texrender_t *texrender)
 {
 	enum convert_type type;
-	uint8_t           *ptr;
-	uint32_t          linesize;
 
 	source->async_flip       = frame->flip;
 
@@ -1683,29 +1681,7 @@ bool update_async_texture(struct obs_source *source,
 		return true;
 	}
 
-	if (!gs_texture_map(tex, &ptr, &linesize))
-		return false;
-
-	if (type == CONVERT_420)
-		decompress_420((const uint8_t* const*)frame->data,
-				frame->linesize,
-				0, frame->height, ptr, linesize);
-
-	else if (type == CONVERT_NV12)
-		decompress_nv12((const uint8_t* const*)frame->data,
-				frame->linesize,
-				0, frame->height, ptr, linesize);
-
-	else if (type == CONVERT_422_Y)
-		decompress_422(frame->data[0], frame->linesize[0],
-				0, frame->height, ptr, linesize, true);
-
-	else if (type == CONVERT_422_U)
-		decompress_422(frame->data[0], frame->linesize[0],
-				0, frame->height, ptr, linesize, false);
-
-	gs_texture_unmap(tex);
-	return true;
+	return false;
 }
 
 static inline void obs_source_draw_texture(struct obs_source *source,
