@@ -176,7 +176,6 @@ OBSBasicStats::OBSBasicStats(QWidget *parent, bool closeable)
 	QObject::connect(&recTimeLeft, &QTimer::timeout, this,
 			&OBSBasicStats::RecordingTimeLeft);
 	recTimeLeft.setInterval(REC_TIME_LEFT_INTERVAL);
-	recTimeLeft.start();
 
 	OBSBasic *main = reinterpret_cast<OBSBasic*>(App()->GetMainWindow());
 
