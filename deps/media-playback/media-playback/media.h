@@ -108,6 +108,7 @@ struct mp_media {
 	struct cached_data audio;
 	bool process_audio;
 	bool process_video;
+	int32_t pix_format;
 };
 
 typedef struct mp_media mp_media_t;
