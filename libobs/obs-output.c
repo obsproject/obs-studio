@@ -1756,9 +1756,6 @@ bool obs_output_initialize_encoders(obs_output_t *output, uint32_t flags)
 	if (has_audio && !initialize_audio_encoders(output, num_mixes))
 		return false;
 
-	if (has_video && has_audio)
-		pair_encoders(output, num_mixes);
-
 	return true;
 }
 
@@ -1785,6 +1782,7 @@ static bool begin_delayed_capture(obs_output_t *output)
 bool obs_output_begin_data_capture(obs_output_t *output, uint32_t flags)
 {
 	bool encoded, has_video, has_audio, has_service;
+	size_t num_mixes;
 
 	if (!obs_output_valid(output, "obs_output_begin_data_capture"))
 		return false;
@@ -1800,6 +1798,10 @@ bool obs_output_begin_data_capture(obs_output_t *output, uint32_t flags)
 	if (!can_begin_data_capture(output, encoded, has_video, has_audio,
 				has_service))
 		return false;
+
+	num_mixes = num_audio_mixes(output);
+	if (has_video && has_audio)
+		pair_encoders(output, num_mixes);
 
 	os_atomic_set_bool(&output->data_active, true);
 	hook_data_capture(output, encoded, has_video, has_audio);
