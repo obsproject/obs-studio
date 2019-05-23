@@ -506,6 +506,11 @@ void TextSource::RenderText()
 		(italic ? FontStyleItalic : 0) |
 		(bold ? FontStyleBold : 0);
 
+	if (text_transform == S_TRANSFORM_UPPERCASE)
+		transform(text.begin(), text.end(), text.begin(), towupper);
+	else if (text_transform == S_TRANSFORM_LOWERCASE)
+		transform(text.begin(), text.end(), text.begin(), towlower);
+
 	/* This has gotten a bit messy. FIXME */
 	if (custom_font)
 		font.reset(new Font(family.get(), REAL(face_size), style, UnitPixel));
@@ -747,10 +752,6 @@ inline void TextSource::Update(obs_data_t *s)
 		if (!text.empty())
 			text.push_back('\n');
 	}
-	if(text_transform == S_TRANSFORM_UPPERCASE)
-		transform(text.begin(), text.end(), text.begin(), towupper);
-	else if(text_transform == S_TRANSFORM_LOWERCASE)
-		transform(text.begin(), text.end(), text.begin(), towlower);
 
 	use_outline = new_outline;
 	outline_color = new_o_color;
