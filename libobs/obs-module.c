@@ -212,6 +212,9 @@ char *obs_find_module_file(obs_module_t *module, const char *file)
 char *obs_module_get_config_path(obs_module_t *module, const char *file)
 {
 	struct dstr output = {0};
+	
+	if(!obs)
+		return NULL;
 
 	dstr_copy(&output, obs->module_config_path);
 	if (!dstr_is_empty(&output) && dstr_end(&output) != '/')
