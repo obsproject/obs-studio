@@ -19,18 +19,20 @@ static void GetWASAPIDefaults(obs_data_t *settings);
 #define OBS_KSAUDIO_SPEAKER_4POINT1 \
 	(KSAUDIO_SPEAKER_SURROUND | SPEAKER_LOW_FREQUENCY)
 
-class WASAPISource {
-	ComPtr<IMMDevice> device;
-	ComPtr<IAudioClient> client;
+class WASAPISource: public IMMNotificationClient
+{
+	ComPtr<IMMDevice>           device;
+	ComPtr<IAudioClient>        client;
 	ComPtr<IAudioCaptureClient> capture;
 	ComPtr<IAudioRenderClient> render;
 
-	obs_source_t *source;
-	string device_id;
-	string device_name;
-	bool isInputDevice;
-	bool useDeviceTiming = false;
-	bool isDefaultDevice = false;
+	obs_source_t                *source;
+	string                      device_id;
+	string                      device_name;
+	bool                        isInputDevice;
+	bool                        useDeviceTiming = false;
+	bool                        isDefaultDevice = false;
+	bool                        hadDefaultChangeEvent = false;
 
 	bool reconnecting = false;
 	bool previouslyFailed = false;
@@ -66,17 +68,39 @@ class WASAPISource {
 	bool TryInitialize();
 
 	void UpdateSettings(obs_data_t *settings);
+	
+	void RegisterNotificationCallback();
+	void UnRegisterNotificationCallback();
 
 public:
 	WASAPISource(obs_data_t *settings, obs_source_t *source_, bool input);
 	inline ~WASAPISource();
 
 	void Update(obs_data_t *settings);
+
+//callbacks for IMMNotificationClient	
+	HRESULT STDMETHODCALLTYPE OnDefaultDeviceChanged(EDataFlow flow, ERole role, LPCWSTR pwstrDefaultDeviceId);
+
+	HRESULT STDMETHODCALLTYPE OnDeviceStateChanged(LPCWSTR /*pwstrDeviceId*/, DWORD /*dwNewState*/) { return S_OK; }
+	HRESULT STDMETHODCALLTYPE OnDeviceAdded(LPCWSTR /*pwstrDeviceId*/) { return S_OK; }
+	HRESULT STDMETHODCALLTYPE OnDeviceRemoved(LPCWSTR /*pwstrDeviceId*/) { return S_OK; }
+	HRESULT STDMETHODCALLTYPE OnPropertyValueChanged(LPCWSTR /*pwstrDeviceId*/, const PROPERTYKEY /*key*/) { return S_OK; }
+	HRESULT STDMETHODCALLTYPE OnDeviceQueryRemove() { return S_OK; }
+	HRESULT STDMETHODCALLTYPE OnDeviceQueryRemoveFailed() { return S_OK; }
+	HRESULT STDMETHODCALLTYPE OnDeviceRemovePending() { return S_OK; }
+
+	HRESULT STDMETHODCALLTYPE QueryInterface(const IID& iid, void** ppUnk);
+	IFACEMETHODIMP_(ULONG) AddRef(); 
+	IFACEMETHODIMP_(ULONG) Release();
+
+	long m_cRef;
 };
 
 WASAPISource::WASAPISource(obs_data_t *settings, obs_source_t *source_,
-			   bool input)
-	: source(source_), isInputDevice(input)
+		bool input)
+	: source          (source_),
+	  isInputDevice   (input),
+	  m_cRef          (1)
 {
 	UpdateSettings(settings);
 
@@ -89,6 +113,8 @@ WASAPISource::WASAPISource(obs_data_t *settings, obs_source_t *source_,
 		throw "Could not create receive signal";
 
 	Start();
+	
+	RegisterNotificationCallback();
 }
 
 inline void WASAPISource::Start()
@@ -120,7 +146,48 @@ inline void WASAPISource::Stop()
 
 inline WASAPISource::~WASAPISource()
 {
+	UnRegisterNotificationCallback();
 	Stop();
+}
+
+void WASAPISource::RegisterNotificationCallback()
+{
+	if(isDefaultDevice && !isInputDevice) {
+		blog(LOG_INFO, "WASAPI: will register for notification callbacks on default audio device change");
+
+		ComPtr<IMMDeviceEnumerator> enumerator;
+		HRESULT res;
+
+		res = CoCreateInstance(__uuidof(MMDeviceEnumerator),
+				nullptr, CLSCTX_ALL,
+				__uuidof(IMMDeviceEnumerator),
+				(void**)enumerator.Assign());
+		if(FAILED(res) ) {
+			blog(LOG_INFO, "WASAPI: failed to get enumerator to set callbacks");
+		} else {
+			res = enumerator->RegisterEndpointNotificationCallback(this);
+			if(FAILED(res) ) {
+				blog(LOG_INFO, "WASAPI: failed to set callbacks");
+			}
+		}
+	}
+}
+
+void WASAPISource::UnRegisterNotificationCallback()
+{
+	if(isDefaultDevice && !isInputDevice) {
+		ComPtr<IMMDeviceEnumerator> enumerator;
+		HRESULT res;
+
+		res = CoCreateInstance(__uuidof(MMDeviceEnumerator),
+				nullptr, CLSCTX_ALL,
+				__uuidof(IMMDeviceEnumerator),
+				(void**)enumerator.Assign());
+		
+		if(!FAILED(res) ) {
+			res = enumerator->UnregisterEndpointNotificationCallback(this);
+		}
+	}	
 }
 
 void WASAPISource::UpdateSettings(obs_data_t *settings)
@@ -465,7 +532,8 @@ DWORD WINAPI WASAPISource::CaptureThread(LPVOID param)
 	os_set_thread_name("win-wasapi: capture thread");
 
 	while (WaitForCaptureSignal(2, sigs, dur)) {
-		if (!source->ProcessCaptureData()) {
+		if (source->hadDefaultChangeEvent || !source->ProcessCaptureData()) {
+			source->hadDefaultChangeEvent = false;
 			reconnect = true;
 			break;
 		}
@@ -484,6 +552,48 @@ DWORD WINAPI WASAPISource::CaptureThread(LPVOID param)
 
 	return 0;
 }
+
+HRESULT STDMETHODCALLTYPE WASAPISource::OnDefaultDeviceChanged(EDataFlow Flow, ERole Role, LPCWSTR )
+{
+	if (Flow == eRender && Role == eConsole) {
+		if (isDefaultDevice ) {
+			blog(LOG_INFO, "Got notification about Default audio output device switch");
+			hadDefaultChangeEvent = true;
+			SetEvent(receiveSignal);
+		}
+	}		
+
+	return S_OK;
+}
+
+HRESULT WASAPISource::QueryInterface(const IID& iid, void** ppUnk)
+{
+    if ((iid == __uuidof(IUnknown)) ||
+        (iid == __uuidof(IMMNotificationClient))) {
+        *ppUnk = static_cast<IMMNotificationClient*>(this);
+    } else {
+        *ppUnk = NULL;
+        return E_NOINTERFACE;
+    }
+
+    AddRef();
+    return S_OK;
+}
+
+ULONG WASAPISource::AddRef()
+{
+    return InterlockedIncrement(&m_cRef);
+}
+
+ULONG WASAPISource::Release()
+{
+    long lRef = InterlockedDecrement(&m_cRef);
+    if (lRef == 0) {
+        delete this;
+    }
+    return lRef;
+}
+
 
 /* ------------------------------------------------------------------------- */
 
