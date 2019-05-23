@@ -664,7 +664,7 @@ static inline void EnumD3DAdapters(
 	ComPtr<IDXGIFactory1> factory;
 	ComPtr<IDXGIAdapter1> adapter;
 	HRESULT hr;
-	UINT i = 0;
+	UINT i;
 
 	IID factoryIID = (GetWinVer() >= 0x602) ? dxgiFactory2 :
 		__uuidof(IDXGIFactory1);
@@ -673,7 +673,7 @@ static inline void EnumD3DAdapters(
 	if (FAILED(hr))
 		throw HRError("Failed to create DXGIFactory", hr);
 
-	while (factory->EnumAdapters1(i++, adapter.Assign()) == S_OK) {
+	for (i = 0; factory->EnumAdapters1(i, adapter.Assign()) == S_OK; ++i) {
 		DXGI_ADAPTER_DESC desc;
 		char name[512] = "";
 
@@ -687,7 +687,7 @@ static inline void EnumD3DAdapters(
 
 		os_wcs_to_utf8(desc.Description, 0, name, sizeof(name));
 
-		if (!callback(param, name, i - 1))
+		if (!callback(param, name, i))
 			break;
 	}
 }
@@ -709,10 +709,10 @@ bool device_enum_adapters(
 
 static inline void LogAdapterMonitors(IDXGIAdapter1 *adapter)
 {
-	UINT i = 0;
+	UINT i;
 	ComPtr<IDXGIOutput> output;
 
-	while (adapter->EnumOutputs(i++, &output) == S_OK) {
+	for (i = 0; adapter->EnumOutputs(i, &output) == S_OK; ++i) {
 		DXGI_OUTPUT_DESC desc;
 		if (FAILED(output->GetDesc(&desc)))
 			continue;
@@ -734,7 +734,7 @@ static inline void LogD3DAdapters()
 	ComPtr<IDXGIFactory1> factory;
 	ComPtr<IDXGIAdapter1> adapter;
 	HRESULT hr;
-	UINT i = 0;
+	UINT i;
 
 	blog(LOG_INFO, "Available Video Adapters: ");
 
@@ -745,7 +745,7 @@ static inline void LogD3DAdapters()
 	if (FAILED(hr))
 		throw HRError("Failed to create DXGIFactory", hr);
 
-	while (factory->EnumAdapters1(i++, adapter.Assign()) == S_OK) {
+	for (i = 0; factory->EnumAdapters1(i, adapter.Assign()) == S_OK; ++i) {
 		DXGI_ADAPTER_DESC desc;
 		char name[512] = "";
 
