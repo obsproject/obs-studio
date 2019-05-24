@@ -10,7 +10,7 @@ set -e
 # Echo all commands before executing
 set -v
 
-if [ -v "$TRAVIS" ]; then
+if [[ $TRAVIS ]]; then
   git fetch --unshallow
 fi
 
