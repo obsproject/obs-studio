@@ -214,6 +214,8 @@ void OBSBasicStats::closeEvent(QCloseEvent *event)
 
 OBSBasicStats::~OBSBasicStats()
 {
+	obs_frontend_remove_event_callback(OBSFrontendEvent, this);
+
 	delete shortcutFilter;
 	os_cpu_usage_info_destroy(cpu_info);
 }
