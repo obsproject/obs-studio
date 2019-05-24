@@ -181,29 +181,27 @@ static bool obs_init_gpu_conversion(struct obs_video_info *ovi)
 	else
 		blog(LOG_INFO, "NV12 texture support not available");
 
-	for (size_t i = 0; i < NUM_TEXTURES; i++) {
 #ifdef _WIN32
-		if (video->using_nv12_tex) {
-			gs_texture_create_nv12(
-					&video->convert_textures[i],
-					&video->convert_uv_textures[i],
-					ovi->output_width, ovi->output_height,
-					GS_RENDER_TARGET | GS_SHARED_KM_TEX);
-			if (!video->convert_uv_textures[i])
-				return false;
-		} else {
+	if (video->using_nv12_tex) {
+		gs_texture_create_nv12(
+				&video->convert_texture,
+				&video->convert_uv_texture,
+				ovi->output_width, ovi->output_height,
+				GS_RENDER_TARGET | GS_SHARED_KM_TEX);
+		if (!video->convert_uv_texture)
+			return false;
+	} else {
 #endif
-			video->convert_textures[i] = gs_texture_create(
-					ovi->output_width,
-					video->conversion_height,
-					GS_RGBA, 1, NULL, GS_RENDER_TARGET);
+		video->convert_texture = gs_texture_create(
+				ovi->output_width,
+				video->conversion_height,
+				GS_RGBA, 1, NULL, GS_RENDER_TARGET);
 #ifdef _WIN32
-		}
+	}
 #endif
 
-		if (!video->convert_textures[i])
-			return false;
-	}
+	if (!video->convert_texture)
+		return false;
 
 	return true;
 }
@@ -233,21 +231,21 @@ static bool obs_init_textures(struct obs_video_info *ovi)
 #ifdef _WIN32
 		}
 #endif
-
-		video->render_textures[i] = gs_texture_create(
-				ovi->base_width, ovi->base_height,
-				GS_RGBA, 1, NULL, GS_RENDER_TARGET);
-
-		if (!video->render_textures[i])
-			return false;
-
-		video->output_textures[i] = gs_texture_create(
-				ovi->output_width, ovi->output_height,
-				GS_RGBA, 1, NULL, GS_RENDER_TARGET);
-
-		if (!video->output_textures[i])
-			return false;
 	}
+
+	video->render_texture = gs_texture_create(
+		ovi->base_width, ovi->base_height,
+		GS_RGBA, 1, NULL, GS_RENDER_TARGET);
+
+	if (!video->render_texture)
+		return false;
+
+	video->output_texture = gs_texture_create(
+		ovi->output_width, ovi->output_height,
+		GS_RGBA, 1, NULL, GS_RENDER_TARGET);
+
+	if (!video->output_texture)
+		return false;
 
 	return true;
 }
@@ -485,31 +483,27 @@ static void obs_free_video(void)
 
 		for (size_t i = 0; i < NUM_TEXTURES; i++) {
 			gs_stagesurface_destroy(video->copy_surfaces[i]);
-			gs_texture_destroy(video->render_textures[i]);
-			gs_texture_destroy(video->convert_textures[i]);
-			gs_texture_destroy(video->convert_uv_textures[i]);
-			gs_texture_destroy(video->output_textures[i]);
-
-			video->copy_surfaces[i]       = NULL;
-			video->render_textures[i]     = NULL;
-			video->convert_textures[i]    = NULL;
-			video->convert_uv_textures[i] = NULL;
-			video->output_textures[i]     = NULL;
+			video->copy_surfaces[i] = NULL;
 		}
+
+		gs_texture_destroy(video->render_texture);
+		gs_texture_destroy(video->convert_texture);
+		gs_texture_destroy(video->convert_uv_texture);
+		gs_texture_destroy(video->output_texture);
+		video->render_texture     = NULL;
+		video->convert_texture    = NULL;
+		video->convert_uv_texture = NULL;
+		video->output_texture     = NULL;
 
 		gs_leave_context();
 
 		circlebuf_free(&video->vframe_info_buffer);
 		circlebuf_free(&video->vframe_info_buffer_gpu);
 
-		memset(&video->textures_rendered, 0,
-				sizeof(video->textures_rendered));
-		memset(&video->textures_output, 0,
-				sizeof(video->textures_output));
-		memset(&video->textures_copied, 0,
+		video->texture_rendered = false;;
+		memset(video->textures_copied, 0,
 				sizeof(video->textures_copied));
-		memset(&video->textures_converted, 0,
-				sizeof(video->textures_converted));
+		video->texture_converted = false;;
 
 		pthread_mutex_destroy(&video->gpu_encoder_mutex);
 		pthread_mutex_init_value(&video->gpu_encoder_mutex);
@@ -1631,22 +1625,18 @@ void obs_render_main_view(void)
 
 void obs_render_main_texture(void)
 {
-	struct obs_core_video *video = &obs->video;
+	struct obs_core_video *video;
 	gs_texture_t *tex;
 	gs_effect_t *effect;
 	gs_eparam_t *param;
-	int last_tex;
 
 	if (!obs) return;
 
-	last_tex = video->cur_texture == 0
-		? NUM_TEXTURES - 1
-		: video->cur_texture - 1;
-
-	if (!video->textures_rendered[last_tex])
+	video = &obs->video;
+	if (!video->texture_rendered)
 		return;
 
-	tex = video->render_textures[last_tex];
+	tex = video->render_texture;
 	effect = obs_get_base_effect(OBS_EFFECT_DEFAULT);
 	param = gs_effect_get_param_by_name(effect, "image");
 	gs_effect_set_texture(param, tex);
@@ -1662,19 +1652,15 @@ void obs_render_main_texture(void)
 
 gs_texture_t *obs_get_main_texture(void)
 {
-	struct obs_core_video *video = &obs->video;
-	int last_tex;
+	struct obs_core_video *video;
 
 	if (!obs) return NULL;
 
-	last_tex = video->cur_texture == 0
-		? NUM_TEXTURES - 1
-		: video->cur_texture - 1;
-
-	if (!video->textures_rendered[last_tex])
+	video = &obs->video;
+	if (!video->texture_rendered)
 		return NULL;
 
-	return video->render_textures[last_tex];
+	return video->render_texture;
 }
 
 void obs_set_master_volume(float volume)
