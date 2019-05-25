@@ -20,6 +20,13 @@ fi
 
 CURDIR=$(pwd)
 
+PREFIX=/tmp/obsdeps
+mkdir -p "${PREFIX}"
+mkdir -p "${PREFIX}/bin"
+mkdir -p "${PREFIX}/include"
+mkdir -p "${PREFIX}/lib"
+mkdir -p "${PREFIX}/lib/pkgconfig"
+
 # the temp directory
 WORK_DIR=`mktemp -d`
 
@@ -45,6 +52,10 @@ mkdir $DEPS_DEST/lib
 # OSX COMPAT
 export MACOSX_DEPLOYMENT_TARGET=10.11
 
+export CFLAGS="-I${PREFIX}/include -mmacosx-version-min=${MACOSX_DEPLOYMENT_TARGET}"
+export LDFLAGS="-L${PREFIX}/lib -mmacosx-version-min=${MACOSX_DEPLOYMENT_TARGET}"
+export PKG_CONFIG_PATH="${PREFIX}/lib/pkgconfig"
+
 # If you need an olders SDK and Xcode won't give it to you
 # https://github.com/phracker/MacOSX-SDKs
 
@@ -54,7 +65,8 @@ tar -xf opus-1.2.1.tar.gz
 cd ./opus-1.2.1
 mkdir build
 cd ./build
-../configure --disable-shared --enable-static --prefix="/tmp/obsdeps"
+../configure --disable-shared --enable-static --prefix="${PREFIX}" --disable-doc \
+CFLAGS="-O2 ${CFLAGS}" CPPFLAGS="-O2 ${CFLAGS}" LDFLAGS="${LDFLAGS}"
 make -j 12
 make install
 
@@ -66,8 +78,8 @@ tar -xf libogg-1.3.3.tar.gz
 cd ./libogg-1.3.3
 mkdir build
 cd ./build
-../configure --disable-shared --enable-static --prefix="/tmp/obsdeps"
-make -j 12
+../configure --disable-shared --enable-static --prefix="${PREFIX}"
+make
 make install
 
 cd $WORK_DIR
@@ -78,7 +90,7 @@ tar -xf libvorbis-1.3.6.tar.gz
 cd ./libvorbis-1.3.6
 mkdir build
 cd ./build
-../configure --disable-shared --enable-static --prefix="/tmp/obsdeps"
+../configure --disable-shared --enable-static --prefix="${PREFIX}"
 make -j 12
 make install
 
@@ -89,9 +101,10 @@ curl -L -O https://chromium.googlesource.com/webm/libvpx/+archive/v1.7.0.tar.gz
 mkdir -p ./libvpx-v1.7.0
 tar -xf v1.7.0.tar.gz -C $PWD/libvpx-v1.7.0
 cd ./libvpx-v1.7.0
-mkdir -p build
-cd ./build
-../configure --disable-shared --prefix="/tmp/obsdeps" --libdir="/tmp/obsdeps/lib"
+mkdir -p macbuild
+cd ./macbuild
+../configure --disable-shared --prefix="${PREFIX}" --libdir="${PREFIX}/lib" \
+--disable-examples --disable-unit-tests --disable-docs
 make -j 12
 make install
 
@@ -103,34 +116,34 @@ cd ./x264
 git checkout origin/stable
 mkdir build
 cd ./build
-../configure --extra-ldflags="-mmacosx-version-min=10.11" --enable-static --prefix="/tmp/obsdeps"
+../configure --enable-static --prefix="${PREFIX}" \
+--extra-cflags="${CFLAGS}" --extra-ldflags="${LDFLAGS}"
 make -j 12
 make install
-../configure --extra-ldflags="-mmacosx-version-min=10.11" --enable-shared --libdir="/tmp/obsdeps/bin" --prefix="/tmp/obsdeps"
+../configure --enable-shared --prefix="${PREFIX}" --libdir="${PREFIX}/bin" \
+--extra-cflags="${CFLAGS}" --extra-ldflags="${LDFLAGS}"
 make -j 12
 ln -f -s libx264.*.dylib libx264.dylib
-find . -name \*.dylib -exec cp \{\} $DEPS_DEST/bin/ \;
-rsync -avh --include="*/" --include="*.h" --exclude="*" ../* $DEPS_DEST/include/
-rsync -avh --include="*/" --include="*.h" --exclude="*" ./* $DEPS_DEST/include/
+find . -name \*.dylib -exec cp -a \{\} $DEPS_DEST/bin/ \;
+rsync -avh --prune-empty-dirs --include="*/" --include="*.h" --exclude="*" ../* $DEPS_DEST/include/
+rsync -avh --prune-empty-dirs --include="*/" --include="*.h" --exclude="*" ./* $DEPS_DEST/include/
 
 cd $WORK_DIR
 
-# janson
+# jansson
 curl -L -O http://www.digip.org/jansson/releases/jansson-2.11.tar.gz
 tar -xf jansson-2.11.tar.gz
 cd jansson-2.11
 mkdir build
 cd ./build
-../configure --libdir="/tmp/obsdeps/bin" --enable-shared --disable-static
+../configure --enable-shared --disable-static --prefix="${PREFIX}" --libdir="${PREFIX}/bin"
 make -j 12
-find . -name \*.dylib -exec cp \{\} $DEPS_DEST/bin/ \;
-rsync -avh --include="*/" --include="*.h" --exclude="*" ../* $DEPS_DEST/include/
-rsync -avh --include="*/" --include="*.h" --exclude="*" ./* $DEPS_DEST/include/
+mkdir -p $DEPS_DEST/include/jansson
+find . -name \*.dylib -exec cp -a \{\} $DEPS_DEST/bin/ \;
+find . -name \*.h -exec cp -a \{\} $DEPS_DEST/include/jansson/ \;
+find ../src -name \*.h -exec cp -a \{\} $DEPS_DEST/include/jansson/ \;
 
 cd $WORK_DIR
-
-export LDFLAGS="-L/tmp/obsdeps/lib"
-export CFLAGS="-I/tmp/obsdeps/include"
 
 # FFMPEG
 curl -L -O https://github.com/FFmpeg/FFmpeg/archive/n4.0.2.zip
@@ -138,21 +151,23 @@ unzip ./n4.0.2.zip
 cd ./FFmpeg-n4.0.2
 mkdir build
 cd ./build
-../configure --pkg-config-flags="--static" --extra-ldflags="-mmacosx-version-min=10.11" --enable-shared --disable-static --shlibdir="/tmp/obsdeps/bin" --enable-gpl --disable-doc --enable-libx264 --enable-libopus --enable-libvorbis --enable-libvpx --disable-outdev=sdl
+../configure --enable-shared --disable-static --prefix="${PREFIX}" --shlibdir="${PREFIX}/bin" \
+--enable-gpl --enable-libx264 --enable-libopus --enable-libvorbis --enable-libvpx --disable-doc \
+--disable-outdev=sdl --pkg-config-flags="--static" --extra-cflags="${CFLAGS}" --extra-ldflags="${LDFLAGS}"
 make -j 12
-find . -name \*.dylib -exec cp \{\} $DEPS_DEST/bin/ \;
-rsync -avh --include="*/" --include="*.h" --exclude="*" ../* $DEPS_DEST/include/
-rsync -avh --include="*/" --include="*.h" --exclude="*" ./* $DEPS_DEST/include/
+find . -name \*.dylib -exec cp -a \{\} $DEPS_DEST/bin/ \;
+rsync -avh --prune-empty-dirs --include="*/" --include="*.h" --exclude="*" ../* $DEPS_DEST/include/
+rsync -avh --prune-empty-dirs --include="*/" --include="*.h" --exclude="*" ./* $DEPS_DEST/include/
 
 #luajit
 curl -L -O https://luajit.org/download/LuaJIT-2.0.5.tar.gz
 tar -xf LuaJIT-2.0.5.tar.gz
 cd LuaJIT-2.0.5
-make PREFIX=/tmp/obsdeps
-make PREFIX=/tmp/obsdeps install
-find /tmp/obsdeps/lib -name libluajit\*.dylib -exec cp \{\} $DEPS_DEST/lib/ \;
-rsync -avh --include="*/" --include="*.h" --exclude="*" src/* $DEPS_DEST/include/
-make PREFIX=/tmp/obsdeps uninstall
+make PREFIX="${PREFIX}"
+make PREFIX="${PREFIX}" install
+find "${PREFIX}/lib" -name libluajit\*.dylib -exec cp -a \{\} $DEPS_DEST/lib/ \;
+rsync -avh --prune-empty-dirs --include="*/" --include="*.h" --exclude="*" src/* $DEPS_DEST/include/
+make PREFIX="${PREFIX}" uninstall
 
 cd $WORK_DIR
 
