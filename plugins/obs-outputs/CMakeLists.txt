@@ -30,6 +30,7 @@ if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/ftl-sdk/CMakeLists.txt")
 	add_definitions(-DFTL_STATIC_COMPILE)
 
 	include_directories(${LIBCURL_INCLUDE_DIRS})
+	include_directories(${OBS_JANSSON_INCLUDE_DIRS})
 
 	set(ftl_SOURCES
 		ftl-stream.c

@@ -29,7 +29,12 @@ find_path(Jansson_INCLUDE_DIR
 		${DepsPath}
 		${_JANSSON_INCLUDE_DIRS}
 	PATHS
-		/usr/include /usr/local/include /opt/local/include /sw/include)
+		/usr/include /usr/local/include /opt/local/include /sw/include
+	PATH_SUFFIXES
+		include
+		include/jansson
+		include/src
+		src)
 
 find_library(Jansson_LIB
 	NAMES ${_JANSSON_LIBRARIES} jansson libjansson
