@@ -125,8 +125,9 @@ make install
 make -j 12
 ln -f -s libx264.*.dylib libx264.dylib
 find . -name \*.dylib -exec cp -a \{\} $DEPS_DEST/bin/ \;
-rsync -avh --prune-empty-dirs --include="*/" --include="*.h" --exclude="*" ../* $DEPS_DEST/include/
-rsync -avh --prune-empty-dirs --include="*/" --include="*.h" --exclude="*" ./* $DEPS_DEST/include/
+mkdir  $DEPS_DEST/include/x264
+rsync -avh --prune-empty-dirs --include="*/" --include="*.h" --exclude="*" ../* $DEPS_DEST/include/x264/
+rsync -avh --prune-empty-dirs --include="*/" --include="*.h" --exclude="*" ./* $DEPS_DEST/include/x264/
 
 cd $WORK_DIR
 
@@ -138,8 +139,8 @@ mkdir build
 cd ./build
 ../configure --enable-shared --disable-static --prefix="${PREFIX}" --libdir="${PREFIX}/bin"
 make -j 12
-mkdir -p $DEPS_DEST/include/jansson
 find . -name \*.dylib -exec cp -a \{\} $DEPS_DEST/bin/ \;
+mkdir $DEPS_DEST/include/jansson
 find . -name \*.h -exec cp -a \{\} $DEPS_DEST/include/jansson/ \;
 find ../src -name \*.h -exec cp -a \{\} $DEPS_DEST/include/jansson/ \;
 
@@ -156,8 +157,9 @@ cd ./build
 --disable-outdev=sdl --pkg-config-flags="--static" --extra-cflags="${CFLAGS}" --extra-ldflags="${LDFLAGS}"
 make -j 12
 find . -name \*.dylib -exec cp -a \{\} $DEPS_DEST/bin/ \;
-rsync -avh --prune-empty-dirs --include="*/" --include="*.h" --exclude="*" ../* $DEPS_DEST/include/
-rsync -avh --prune-empty-dirs --include="*/" --include="*.h" --exclude="*" ./* $DEPS_DEST/include/
+mkdir $DEPS_DEST/include/ffmpeg
+rsync -avh --prune-empty-dirs --include="*/" --include="*.h" --exclude="*" ../* $DEPS_DEST/include/ffmpeg/
+rsync -avh --prune-empty-dirs --include="*/" --include="*.h" --exclude="*" ./* $DEPS_DEST/include/ffmpeg/
 
 #luajit
 curl -L -O https://luajit.org/download/LuaJIT-2.0.5.tar.gz
@@ -166,7 +168,8 @@ cd LuaJIT-2.0.5
 make PREFIX="${PREFIX}"
 make PREFIX="${PREFIX}" install
 find "${PREFIX}/lib" -name libluajit\*.dylib -exec cp -a \{\} $DEPS_DEST/lib/ \;
-rsync -avh --prune-empty-dirs --include="*/" --include="*.h" --exclude="*" src/* $DEPS_DEST/include/
+mkdir $DEPS_DEST/include/luajit
+rsync -avh --prune-empty-dirs --include="*/" --include="*.h" --exclude="*" src/* $DEPS_DEST/include/luajit/
 make PREFIX="${PREFIX}" uninstall
 
 cd $WORK_DIR
