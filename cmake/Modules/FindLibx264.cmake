@@ -34,7 +34,8 @@ find_path(X264_INCLUDE_DIR
 	PATHS
 		/usr/include /usr/local/include /opt/local/include /sw/include
 	PATH_SUFFIXES
-		include)
+		include
+		include/x264)
 
 find_library(X264_LIB
 	NAMES ${_X264_LIBRARIES} x264 libx264
