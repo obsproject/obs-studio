@@ -51,7 +51,12 @@ function(find_ffmpeg_library component header)
 			${PC_FFMPEG_${component}_INCLUDE_DIRS}
 		PATHS
 			/usr/include /usr/local/include /opt/local/include /sw/include
-		PATH_SUFFIXES ffmpeg libav include)
+		PATH_SUFFIXES
+			ffmpeg
+			libav
+			include
+			include/ffmpeg
+			include/libav)
 
 	find_library(FFMPEG_${component}_LIBRARY
 		NAMES
