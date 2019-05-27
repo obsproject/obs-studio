@@ -17,6 +17,7 @@
 #define S_BEHAVIOR_STOP_RESTART        "stop_restart"
 #define S_BEHAVIOR_PAUSE_UNPAUSE       "pause_unpause"
 #define S_BEHAVIOR_ALWAYS_PLAY         "always_play"
+#define S_VLC_OPTIONS                  "vlc_options"
 #define S_NETWORK_CACHING              "network_caching"
 #define S_TRACK                        "track"
 #define S_SUBTITLE_ENABLE              "subtitle_enable"
@@ -30,6 +31,7 @@
 #define T_BEHAVIOR_STOP_RESTART        T_("PlaybackBehavior.StopRestart")
 #define T_BEHAVIOR_PAUSE_UNPAUSE       T_("PlaybackBehavior.PauseUnpause")
 #define T_BEHAVIOR_ALWAYS_PLAY         T_("PlaybackBehavior.AlwaysPlay")
+#define T_VLC_OPTIONS                  T_("VLCOptions")
 #define T_NETWORK_CACHING              T_("NetworkCaching")
 #define T_TRACK                        T_("AudioTrack")
 #define T_SUBTITLE_ENABLE              T_("SubtitleEnable")
@@ -61,6 +63,7 @@ struct vlc_source {
 	pthread_mutex_t mutex;
 	DARRAY(struct media_file_data) files;
 	enum behavior behavior;
+	DARRAY(char*) vlc_options;
 	bool loop;
 	bool shuffle;
 
@@ -289,6 +292,12 @@ static void vlcs_destroy(void *data)
 	bfree((void*)c->audio.data[0]);
 	obs_source_frame_free(&c->frame);
 
+	for (size_t i = 0; i < c->vlc_options.num; i++) {
+		char* opt = c->vlc_options.array[i];
+		bfree(opt);
+	}
+	da_free(c->vlc_options);
+
 	free_files(&c->files.da);
 	pthread_mutex_destroy(&c->mutex);
 	bfree(c);
@@ -457,6 +466,13 @@ static void add_file(struct vlc_source *c, struct darray *array,
 		libvlc_media_add_option_(new_media, sub_option.array);
 		dstr_free(&sub_option);
 
+		for (size_t i = 0 ; i < c->vlc_options.num ; ++i) {
+			struct dstr vlc_option = {0};
+			dstr_catf(&vlc_option, "%s", c->vlc_options.array[i]);
+			libvlc_media_add_option_(new_media, vlc_option.array);
+			dstr_free(&vlc_option);
+		}
+
 		data.path = new_path.array;
 		data.media = new_media;
 		da_push_back(new_files, &data);
@@ -509,6 +525,9 @@ static void vlcs_update(void *data, obs_data_t *settings)
 	obs_data_array_t *array;
 	const char *behavior;
 	size_t count;
+	DARRAY(char*) vlc_options;
+	obs_data_array_t *vlc_options_array;
+	size_t vlc_options_count;
 	int network_caching;
 	int track_index;
 	int subtitle_index;
@@ -516,6 +535,7 @@ static void vlcs_update(void *data, obs_data_t *settings)
 
 	da_init(new_files);
 	da_init(old_files);
+	da_init(vlc_options);
 
 	array = obs_data_get_array(settings, S_PLAYLIST);
 	count = obs_data_array_count(array);
@@ -523,6 +543,9 @@ static void vlcs_update(void *data, obs_data_t *settings)
 	c->loop = obs_data_get_bool(settings, S_LOOP);
 
 	behavior = obs_data_get_string(settings, S_BEHAVIOR);
+
+	vlc_options_array = obs_data_get_array(settings, S_VLC_OPTIONS);
+	vlc_options_count = obs_data_array_count(vlc_options_array);
 
 	network_caching = (int)obs_data_get_int(settings, S_NETWORK_CACHING);
 
@@ -539,6 +562,14 @@ static void vlcs_update(void *data, obs_data_t *settings)
 	} else { /* S_BEHAVIOR_STOP_RESTART */
 		c->behavior = BEHAVIOR_STOP_RESTART;
 	}
+
+	for (size_t i = 0; i < vlc_options_count; i++) {
+		obs_data_t *item = obs_data_array_item(vlc_options_array, i);
+		const char *option = obs_data_get_string(item, "value");
+		char *new_option = bstrdup(option);
+		da_push_back(vlc_options, &new_option);
+	}
+	c->vlc_options.da = vlc_options.da;
 
 	/* ------------------------------------- */
 	/* create new list of sources */
@@ -942,6 +973,9 @@ static obs_properties_t *vlcs_properties(void *data)
 	obs_properties_add_bool(ppts, S_SUBTITLE_ENABLE, T_SUBTITLE_ENABLE);
 	obs_properties_add_int(ppts, S_SUBTITLE_TRACK, T_SUBTITLE_TRACK,
 			1, 10, 1);
+
+	obs_properties_add_editable_list(ppts, S_VLC_OPTIONS, T_VLC_OPTIONS,
+			OBS_EDITABLE_LIST_TYPE_STRINGS, NULL, NULL);
 
 	return ppts;
 }
