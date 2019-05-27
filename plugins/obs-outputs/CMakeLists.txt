@@ -26,10 +26,12 @@ endif()
 
 if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/ftl-sdk/CMakeLists.txt")
 	find_package(Libcurl REQUIRED)
+	find_package(Jansson QUIET)
 
 	add_definitions(-DFTL_STATIC_COMPILE)
 
 	include_directories(${LIBCURL_INCLUDE_DIRS})
+	include_directories(${JANSSON_INCLUDE_DIRS})
 
 	set(ftl_SOURCES
 		ftl-stream.c
@@ -48,7 +50,7 @@ if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/ftl-sdk/CMakeLists.txt")
 		ftl-sdk/libftl/ftl.h
 		ftl-sdk/libftl/ftl_private.h)
 	set(ftl_IMPORTS
-		${OBS_JANSSON_IMPORT}
+		${JANSSON_LIBRARIES}
 		${LIBCURL_LIBRARIES})
 
 	if (WIN32)
