@@ -35,44 +35,68 @@ enum copy_type { COPY_TYPE_ARB, COPY_TYPE_NV, COPY_TYPE_FBO_BLIT };
 static inline GLenum convert_gs_format(enum gs_color_format format)
 {
 	switch (format) {
-	case GS_A8:
-		return GL_RED;
-	case GS_R8:
-		return GL_RED;
+		// Original Formats
 	case GS_RGBA:
 		return GL_RGBA;
 	case GS_BGRX:
 		return GL_BGRA;
 	case GS_BGRA:
 		return GL_BGRA;
-	case GS_R10G10B10A2:
-		return GL_RGBA;
-	case GS_RGBA16:
-		return GL_RGBA;
-	case GS_R16:
-		return GL_RED;
-	case GS_RGBA16F:
-		return GL_RGBA;
-	case GS_RGBA32F:
-		return GL_RGBA;
-	case GS_RG16F:
-		return GL_RG;
-	case GS_RG32F:
-		return GL_RG;
-	case GS_R8G8:
-		return GL_RG;
-	case GS_R16F:
-		return GL_RED;
-	case GS_R32F:
-		return GL_RED;
-	case GS_DXT1:
-		return GL_RGB;
-	case GS_DXT3:
-		return GL_RGBA;
-	case GS_DXT5:
-		return GL_RGBA;
 	case GS_UNKNOWN:
 		return 0;
+		// Red
+	case GS_A8_UNORM:
+	case GS_R8_UNORM:
+	case GS_R8_SNORM:
+	case GS_R8_UINT:
+	case GS_R8_SINT:
+	case GS_R16_UNORM:
+	case GS_R16_SNORM:
+	case GS_R16_FLOAT:
+	case GS_R16_UINT:
+	case GS_R16_SINT:
+	case GS_R32_FLOAT:
+	case GS_R32_UINT:
+	case GS_R32_SINT:
+		return GL_RED;
+		// Red Green
+	case GS_R8G8_UNORM:
+	case GS_R8G8_SNORM:
+	case GS_R8G8_UINT:
+	case GS_R8G8_SINT:
+	case GS_R16G16_UNORM:
+	case GS_R16G16_SNORM:
+	case GS_R16G16_FLOAT:
+	case GS_R16G16_UINT:
+	case GS_R16G16_SINT:
+	case GS_R32G32_FLOAT:
+	case GS_R32G32_UINT:
+	case GS_R32G32_SINT:
+		return GL_RG;
+		// Red Green Blue Alpha
+	case GS_R8G8B8A8_UNORM:
+	case GS_R8G8B8A8_UNORM_SRGB:
+	case GS_R8G8B8A8_SNORM:
+	case GS_R8G8B8A8_UINT:
+	case GS_R8G8B8A8_SINT:
+	case GS_R16G16B16A16_UNORM:
+	case GS_R16G16B16A16_FLOAT:
+	case GS_R16G16B16A16_UINT:
+	case GS_R16G16B16A16_SINT:
+	case GS_R32G32B32A32_FLOAT:
+	case GS_R32G32B32A32_UINT:
+	case GS_R32G32B32A32_SINT:
+	case GS_R10G10B10A2:
+	case GS_BC1_UNORM:
+	case GS_BC1_UNORM_SRGB:
+	case GS_BC2_UNORM:
+	case GS_BC2_UNORM_SRGB:
+	case GS_BC3_UNORM:
+	case GS_BC3_UNORM_SRGB:
+		return GL_RGBA;
+	case GS_B8G8R8A8_UNORM:
+	case GS_B8G8R8X8_UNORM:
+		return GL_BGRA;
 	}
 
 	return 0;
@@ -81,44 +105,111 @@ static inline GLenum convert_gs_format(enum gs_color_format format)
 static inline GLenum convert_gs_internal_format(enum gs_color_format format)
 {
 	switch (format) {
-	case GS_A8:
-		return GL_R8; /* NOTE: use GL_TEXTURE_SWIZZLE_x */
-	case GS_R8:
-		return GL_R8;
+		// Original Formats
 	case GS_RGBA:
 		return GL_RGBA;
 	case GS_BGRX:
 		return GL_RGB;
 	case GS_BGRA:
 		return GL_RGBA;
-	case GS_R10G10B10A2:
-		return GL_RGB10_A2;
-	case GS_RGBA16:
-		return GL_RGBA16;
-	case GS_R16:
-		return GL_R16;
-	case GS_RGBA16F:
-		return GL_RGBA16F;
-	case GS_RGBA32F:
-		return GL_RGBA32F;
-	case GS_RG16F:
-		return GL_RG16F;
-	case GS_RG32F:
-		return GL_RG32F;
-	case GS_R8G8:
-		return GL_RG8;
-	case GS_R16F:
-		return GL_R16F;
-	case GS_R32F:
-		return GL_R32F;
-	case GS_DXT1:
-		return GL_COMPRESSED_RGBA_S3TC_DXT1_EXT;
-	case GS_DXT3:
-		return GL_COMPRESSED_RGBA_S3TC_DXT3_EXT;
-	case GS_DXT5:
-		return GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
 	case GS_UNKNOWN:
 		return 0;
+		// 8-Bit
+	case GS_A8_UNORM: /* NOTE: use GL_TEXTURE_SWIZZLE_x */
+	case GS_R8_UNORM:
+		return GL_R8;
+	case GS_R8_SNORM:
+		return GL_R8_SNORM;
+	case GS_R8_UINT:
+		return GL_R8UI;
+	case GS_R8_SINT:
+		return GL_R8I;
+	case GS_R8G8_UNORM:
+		return GL_RG8;
+	case GS_R8G8_SNORM:
+		return GL_RG8_SNORM;
+	case GS_R8G8_UINT:
+		return GL_RG8UI;
+	case GS_R8G8_SINT:
+		return GL_RG8I;
+	case GS_R8G8B8A8_UNORM:
+		return GL_RGBA8;
+	case GS_R8G8B8A8_SNORM:
+		return GL_RGBA8_SNORM;
+	case GS_R8G8B8A8_UINT:
+		return GL_RGBA8UI;
+	case GS_R8G8B8A8_SINT:
+		return GL_RGBA8I;
+	case GS_B8G8R8A8_UNORM: // GL_BGRA
+		return GL_RGBA8;
+	case GS_B8G8R8X8_UNORM: // GL_BGRA
+		return GL_RGB8;
+		// 16-bit
+	case GS_R16_UNORM:
+		return GL_R16;
+	case GS_R16_SNORM:
+		return GL_R16_SNORM;
+	case GS_R16_FLOAT:
+		return GL_R16F;
+	case GS_R16_UINT:
+		return GL_R16UI;
+	case GS_R16_SINT:
+		return GL_R16I;
+	case GS_R16G16_UNORM:
+		return GL_RG16;
+	case GS_R16G16_SNORM:
+		return GL_RG16_SNORM;
+	case GS_R16G16_FLOAT:
+		return GL_RG16F;
+	case GS_R16G16_UINT:
+		return GL_RG16UI;
+	case GS_R16G16_SINT:
+		return GL_RG16I;
+	case GS_R16G16B16A16_UNORM:
+		return GL_RGBA16;
+	case GS_R16G16B16A16_FLOAT:
+		return GL_RGBA16F;
+	case GS_R16G16B16A16_UINT:
+		return GL_RGBA16UI;
+	case GS_R16G16B16A16_SINT:
+		return GL_RGBA16I;
+		// 32-bit
+	case GS_R32_FLOAT:
+		return GL_R32F;
+	case GS_R32_UINT:
+		return GL_R32UI;
+	case GS_R32_SINT:
+		return GL_R32I;
+	case GS_R32G32_FLOAT:
+		return GL_RG32F;
+	case GS_R32G32_UINT:
+		return GL_RG32UI;
+	case GS_R32G32_SINT:
+		return GL_RG32I;
+	case GS_R32G32B32A32_FLOAT:
+		return GL_RGBA32F;
+	case GS_R32G32B32A32_UINT:
+		return GL_RGBA32UI;
+	case GS_R32G32B32A32_SINT:
+		return GL_RGBA32I;
+		// Other Formats
+	case GS_R10G10B10A2:
+		return GL_RGB10_A2;
+	case GS_R8G8B8A8_UNORM_SRGB:
+		return GL_SRGB8_ALPHA8;
+		// Compressed Formats
+	case GS_BC1_UNORM:
+		return GL_COMPRESSED_RGBA_S3TC_DXT1_EXT;
+	case GS_BC1_UNORM_SRGB:
+		return GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT1_EXT;
+	case GS_BC2_UNORM:
+		return GL_COMPRESSED_RGBA_S3TC_DXT3_EXT;
+	case GS_BC2_UNORM_SRGB:
+		return GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT3_EXT;
+	case GS_BC3_UNORM:
+		return GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
+	case GS_BC3_UNORM_SRGB:
+		return GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT;
 	}
 
 	return 0;
@@ -127,44 +218,82 @@ static inline GLenum convert_gs_internal_format(enum gs_color_format format)
 static inline GLenum get_gl_format_type(enum gs_color_format format)
 {
 	switch (format) {
-	case GS_A8:
-		return GL_UNSIGNED_BYTE;
-	case GS_R8:
-		return GL_UNSIGNED_BYTE;
-	case GS_RGBA:
-		return GL_UNSIGNED_BYTE;
-	case GS_BGRX:
-		return GL_UNSIGNED_BYTE;
-	case GS_BGRA:
-		return GL_UNSIGNED_BYTE;
-	case GS_R10G10B10A2:
-		return GL_UNSIGNED_INT_10_10_10_2;
-	case GS_RGBA16:
-		return GL_UNSIGNED_SHORT;
-	case GS_R16:
-		return GL_UNSIGNED_SHORT;
-	case GS_RGBA16F:
-		return GL_UNSIGNED_SHORT;
-	case GS_RGBA32F:
-		return GL_FLOAT;
-	case GS_RG16F:
-		return GL_UNSIGNED_SHORT;
-	case GS_RG32F:
-		return GL_FLOAT;
-	case GS_R8G8:
-		return GL_UNSIGNED_BYTE;
-	case GS_R16F:
-		return GL_UNSIGNED_SHORT;
-	case GS_R32F:
-		return GL_FLOAT;
-	case GS_DXT1:
-		return GL_UNSIGNED_BYTE;
-	case GS_DXT3:
-		return GL_UNSIGNED_BYTE;
-	case GS_DXT5:
-		return GL_UNSIGNED_BYTE;
 	case GS_UNKNOWN:
 		return 0;
+
+		// 8-Bit
+	case GS_RGBA:
+	case GS_BGRA:
+	case GS_BGRX:
+	case GS_A8_UNORM:
+	case GS_R8_UNORM:
+	case GS_R8_UINT:
+	case GS_R8G8_UNORM:
+	case GS_R8G8_UINT:
+	case GS_R8G8B8A8_UNORM:
+	case GS_R8G8B8A8_UNORM_SRGB:
+	case GS_R8G8B8A8_UINT:
+	case GS_B8G8R8A8_UNORM:
+	case GS_B8G8R8X8_UNORM:
+		return GL_UNSIGNED_BYTE;
+
+	case GS_R8_SNORM:
+	case GS_R8_SINT:
+	case GS_R8G8_SNORM:
+	case GS_R8G8_SINT:
+	case GS_R8G8B8A8_SNORM:
+	case GS_R8G8B8A8_SINT:
+		return GL_BYTE;
+
+		// 16-Bit
+	case GS_R16_UNORM:
+	case GS_R16_UINT:
+	case GS_R16G16_UNORM:
+	case GS_R16G16_UINT:
+	case GS_R16G16B16A16_UNORM:
+	case GS_R16G16B16A16_UINT:
+		return GL_UNSIGNED_SHORT;
+
+	case GS_R16_SNORM:
+	case GS_R16_SINT:
+	case GS_R16G16_SNORM:
+	case GS_R16G16_SINT:
+	case GS_R16G16B16A16_SINT:
+		return GL_SHORT;
+
+	case GS_R16_FLOAT:
+	case GS_R16G16_FLOAT:
+	case GS_R16G16B16A16_FLOAT:
+		return GL_HALF_FLOAT;
+
+		// 32-Bit
+	case GS_R32_UINT:
+	case GS_R32G32_UINT:
+	case GS_R32G32B32A32_UINT:
+		return GL_UNSIGNED_INT;
+
+	case GS_R32_SINT:
+	case GS_R32G32_SINT:
+	case GS_R32G32B32A32_SINT:
+		return GL_INT;
+
+	case GS_R32_FLOAT:
+	case GS_R32G32_FLOAT:
+	case GS_R32G32B32A32_FLOAT:
+		return GL_FLOAT;
+
+		// Other Formats
+	case GS_R10G10B10A2:
+		return GL_UNSIGNED_INT_10_10_10_2;
+
+		// Compressed Formats
+	case GS_BC1_UNORM:
+	case GS_BC1_UNORM_SRGB:
+	case GS_BC2_UNORM:
+	case GS_BC2_UNORM_SRGB:
+	case GS_BC3_UNORM:
+	case GS_BC3_UNORM_SRGB:
+		return GL_UNSIGNED_BYTE;
 	}
 
 	return GL_UNSIGNED_BYTE;

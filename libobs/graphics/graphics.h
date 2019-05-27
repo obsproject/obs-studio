@@ -73,6 +73,63 @@ enum gs_color_format {
 	GS_DXT3,
 	GS_DXT5,
 	GS_R8G8,
+
+	// 8-Bit
+	GS_R8_SNORM,       // GL_R8_SNORM, DXGI_FORMAT_R8_SNORM
+	GS_R8_UINT,        // GL_R8UI, DXGI_FORMAT_R8_UINT
+	GS_R8_SINT,        // GL_R8I, DXGI_FORMAT_R8_SINT
+	GS_R8G8_SNORM,     // GL_RG8_SNORM, DXGI_FORMAT_R8G8_SNORM
+	GS_R8G8_UINT,      // GL_RG8UI, DXGI_FORMAT_R8G8_UINT
+	GS_R8G8_SINT,      // GL_RG8I, DXGI_FORMAT_R8G8_SINT
+	GS_R8G8B8A8_UNORM, // GL_RGBA8, DXGI_FORMAT_R8G8B8A8_UNORM,
+	GS_R8G8B8A8_SNORM, // GL_RGBA8_SNORM, DXGI_FORMAT_R8G8B8A8_SNORM,
+	GS_R8G8B8A8_UINT,  // GL_RGBA8UI, DXGI_FORMAT_R8G8B8A8_UINT,
+	GS_R8G8B8A8_SINT,  // GL_RGBA8I, DXGI_FORMAT_R8G8B8A8_SINT,
+	GS_B8G8R8A8_UNORM, // GL_BGRA & GL_RGBA8, DXGI_FORMAT_B8G8R8A8_UNORM
+	GS_B8G8R8X8_UNORM, // GL_BGRA & GL_RGBA8, DXGI_FORMAT_B8G8R8X8_UNORM
+
+	// 16-bit
+	GS_R16_SNORM,         // GL_R16_SNORM, DXGI_FORMAT_R16_SNORM
+	GS_R16_UINT,          // GL_R16UI, DXGI_FORMAT_R16_UINT
+	GS_R16_SINT,          // GL_R16I, DXGI_FORMAT_R16_SINT
+	GS_R16G16_UNORM,      // GS_RG16, DXGI_FORMAT_R16G16_UNORM
+	GS_R16G16_SNORM,      // GS_RG16_SNORM, DXGI_FORMAT_R16G16_SNORM
+	GS_R16G16_UINT,       // GS_RG16UI, DXGI_FORMAT_R16G16_UINT
+	GS_R16G16_SINT,       // GS_RG16I, DXGI_FORMAT_R16G16_SINT
+	GS_R16G16B16A16_UINT, // GS_RGBA16UI, DXGI_FORMAT_R16G16B16A16_UINT
+	GS_R16G16B16A16_SINT, // GS_RGBA16I, DXGI_FORMAT_R16G16B16A16_SINT
+
+	// 32-bit
+	GS_R32_UINT,          // GL_R32UI, DXGI_FORMAT_R32_UINT
+	GS_R32_SINT,          // GL_R32I, DXGI_FORMAT_R32_SINT
+	GS_R32G32_UINT,       // GS_RG32UI, DXGI_FORMAT_R32G32_UINT
+	GS_R32G32_SINT,       // GS_RG32I, DXGI_FORMAT_R32G32_SINT
+	GS_R32G32B32A32_UINT, // GS_RGBA32UI, DXGI_FORMAT_R32G32B32A32_UINT
+	GS_R32G32B32A32_SINT, // GS_RGBA32I, DXGI_FORMAT_R32G32B32A32_SINT
+
+	// Other Formats
+	GS_R8G8B8A8_UNORM_SRGB, // GS_SRGB8_ALPHA8, DXGI_FORMAT_R8G8B8A8_UNORM_SRGB
+
+	// Compressed Formats
+	GS_BC1_UNORM_SRGB, // GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT1_EXT, DXGI_FORMAT_BC1_UNORM_SRGB
+	GS_BC2_UNORM_SRGB, // GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT3_EXT, DXGI_FORMAT_BC2_UNORM_SRGB
+	GS_BC3_UNORM_SRGB, // GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT, DXGI_FORMAT_BC3_UNORM_SRGB
+
+	// Aliases (always put these at the end of the enum)
+	GS_A8_UNORM = GS_A8,
+	GS_R8_UNORM = GS_R8,
+	GS_R8G8_UNORM = GS_R8G8,
+	GS_R16_UNORM = GS_R16,
+	GS_R16_FLOAT = GS_R16F,
+	GS_R16G16_FLOAT = GS_RG16F,
+	GS_R16G16B16A16_UNORM = GS_RGBA16,
+	GS_R16G16B16A16_FLOAT = GS_RGBA16F,
+	GS_R32_FLOAT = GS_R32F,
+	GS_R32G32_FLOAT = GS_RG32F,
+	GS_R32G32B32A32_FLOAT = GS_RGBA32F,
+	GS_BC1_UNORM = GS_DXT1,
+	GS_BC2_UNORM = GS_DXT3,
+	GS_BC3_UNORM = GS_DXT5,
 };
 
 enum gs_zstencil_format {
@@ -888,44 +945,69 @@ EXPORT gs_stagesurf_t *gs_stagesurface_create_nv12(uint32_t width,
 static inline uint32_t gs_get_format_bpp(enum gs_color_format format)
 {
 	switch (format) {
-	case GS_A8:
-		return 8;
-	case GS_R8:
-		return 8;
-	case GS_RGBA:
-		return 32;
-	case GS_BGRX:
-		return 32;
-	case GS_BGRA:
-		return 32;
-	case GS_R10G10B10A2:
-		return 32;
-	case GS_RGBA16:
-		return 64;
-	case GS_R16:
-		return 16;
-	case GS_RGBA16F:
-		return 64;
-	case GS_RGBA32F:
-		return 128;
-	case GS_RG16F:
-		return 32;
-	case GS_RG32F:
-		return 64;
-	case GS_R16F:
-		return 16;
-	case GS_R32F:
-		return 32;
-	case GS_DXT1:
-		return 4;
-	case GS_DXT3:
-		return 8;
-	case GS_DXT5:
-		return 8;
-	case GS_R8G8:
-		return 16;
 	case GS_UNKNOWN:
 		return 0;
+
+	case GS_BC1_UNORM:
+	case GS_BC1_UNORM_SRGB:
+		return 4;
+
+	case GS_A8_UNORM:
+	case GS_R8_UNORM:
+	case GS_R8_UINT:
+	case GS_R8_SNORM:
+	case GS_R8_SINT:
+	case GS_BC2_UNORM:
+	case GS_BC2_UNORM_SRGB:
+	case GS_BC3_UNORM:
+	case GS_BC3_UNORM_SRGB:
+		return 8;
+
+	case GS_R8G8_UNORM:
+	case GS_R8G8_UINT:
+	case GS_R8G8_SNORM:
+	case GS_R8G8_SINT:
+	case GS_R16_UNORM:
+	case GS_R16_UINT:
+	case GS_R16_SNORM:
+	case GS_R16_SINT:
+	case GS_R16_FLOAT:
+		return 16;
+
+	case GS_RGBA:
+	case GS_BGRA:
+	case GS_BGRX:
+	case GS_R8G8B8A8_UNORM:
+	case GS_R8G8B8A8_UINT:
+	case GS_B8G8R8A8_UNORM:
+	case GS_B8G8R8X8_UNORM:
+	case GS_R8G8B8A8_SNORM:
+	case GS_R8G8B8A8_SINT:
+	case GS_R16G16_UNORM:
+	case GS_R16G16_UINT:
+	case GS_R16G16_SNORM:
+	case GS_R16G16_SINT:
+	case GS_R16G16_FLOAT:
+	case GS_R32_UINT:
+	case GS_R32_SINT:
+	case GS_R32_FLOAT:
+	case GS_R10G10B10A2:
+	case GS_R8G8B8A8_UNORM_SRGB:
+		return 32;
+
+	case GS_R16G16B16A16_UNORM:
+	case GS_R16G16B16A16_UINT:
+	case GS_R16G16B16A16_SINT:
+	case GS_R16G16B16A16_FLOAT:
+	case GS_R32G32_UINT:
+	case GS_R32G32_SINT:
+	case GS_R32G32_FLOAT:
+		return 64;
+
+	case GS_R32G32B32A32_UINT:
+	case GS_R32G32B32A32_SINT:
+	case GS_R32G32B32A32_FLOAT:
+		return 128;
 	}
 
 	return 0;
@@ -933,7 +1015,17 @@ static inline uint32_t gs_get_format_bpp(enum gs_color_format format)
 
 static inline bool gs_is_compressed_format(enum gs_color_format format)
 {
-	return (format == GS_DXT1 || format == GS_DXT3 || format == GS_DXT5);
+	switch (format) {
+	case GS_BC1_UNORM:
+	case GS_BC1_UNORM_SRGB:
+	case GS_BC2_UNORM:
+	case GS_BC2_UNORM_SRGB:
+	case GS_BC3_UNORM:
+	case GS_BC3_UNORM_SRGB:
+		return true;
+	default:
+		return false;
+	}
 }
 
 static inline uint32_t gs_get_total_levels(uint32_t width, uint32_t height)
