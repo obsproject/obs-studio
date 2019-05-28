@@ -99,6 +99,7 @@ struct mp_media {
 	bool active;
 	bool reset;
 	bool kill;
+	bool playing;
 
 	bool thread_valid;
 	pthread_t thread;

@@ -457,6 +457,15 @@ static void get_nb_frames(void *data, calldata_t *cd)
 	calldata_set_int(cd, "pix_format", pix_format);
 }
 
+static void get_playing(void *data, calldata_t *cd)
+{
+	struct ffmpeg_source *s = data;
+	pthread_mutex_lock(&s->media.mutex);
+	bool playing = s->media.playing;
+	pthread_mutex_unlock(&s->media.mutex);
+	calldata_set_bool(cd, "playing", playing);
+}
+
 static void *ffmpeg_source_create(obs_data_t *settings, obs_source_t *source)
 {
 	UNUSED_PARAMETER(settings);
@@ -473,7 +482,9 @@ static void *ffmpeg_source_create(obs_data_t *settings, obs_source_t *source)
 	proc_handler_add(ph, "void get_duration(out int duration)",
 			 get_duration, s);
 	proc_handler_add(ph, "void get_nb_frames(out int num_frames)",
-			 get_nb_frames, s);
+			get_nb_frames, s);
+	proc_handler_add(ph, "void get_playing(out bool active)",
+		get_playing, s);
 
 	ffmpeg_source_update(s, settings);
 	return s;
