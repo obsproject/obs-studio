@@ -59,6 +59,7 @@ enum gs_color_format {
 	GS_R8,
 	GS_RGBA,
 	GS_BGRX,
+	GS_BGR24,
 	GS_BGRA,
 	GS_R10G10B10A2,
 	GS_RGBA16,
@@ -861,6 +862,7 @@ static inline uint32_t gs_get_format_bpp(enum gs_color_format format)
 	case GS_A8:          return 8;
 	case GS_R8:          return 8;
 	case GS_RGBA:        return 32;
+	case GS_BGR24:       return 24;
 	case GS_BGRX:        return 32;
 	case GS_BGRA:        return 32;
 	case GS_R10G10B10A2: return 32;

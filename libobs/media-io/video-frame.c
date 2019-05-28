@@ -82,6 +82,13 @@ void video_frame_init(struct video_frame *frame, enum video_format format,
 		frame->linesize[0] = width*2;
 		break;
 
+	case VIDEO_FORMAT_BGR24:
+		size = width * height * 3;
+		ALIGN_SIZE(size, alignment);
+		frame->data[0] = bmalloc(size);
+		frame->linesize[0] = width*3;
+		break;
+
 	case VIDEO_FORMAT_RGBA:
 	case VIDEO_FORMAT_BGRA:
 	case VIDEO_FORMAT_BGRX:

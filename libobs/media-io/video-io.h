@@ -44,6 +44,7 @@ enum video_format {
 
 	/* packed uncompressed formats */
 	VIDEO_FORMAT_RGBA,
+	VIDEO_FORMAT_BGR24,
 	VIDEO_FORMAT_BGRA,
 	VIDEO_FORMAT_BGRX,
 	VIDEO_FORMAT_Y800, /* grayscale */
@@ -96,6 +97,7 @@ static inline bool format_is_yuv(enum video_format format)
 		return true;
 	case VIDEO_FORMAT_NONE:
 	case VIDEO_FORMAT_RGBA:
+	case VIDEO_FORMAT_BGR24:
 	case VIDEO_FORMAT_BGRA:
 	case VIDEO_FORMAT_BGRX:
 	case VIDEO_FORMAT_Y800:
@@ -108,16 +110,17 @@ static inline bool format_is_yuv(enum video_format format)
 static inline const char *get_video_format_name(enum video_format format)
 {
 	switch (format) {
-	case VIDEO_FORMAT_I420: return "I420";
-	case VIDEO_FORMAT_NV12: return "NV12";
-	case VIDEO_FORMAT_YVYU: return "YVYU";
-	case VIDEO_FORMAT_YUY2: return "YUY2";
-	case VIDEO_FORMAT_UYVY: return "UYVY";
-	case VIDEO_FORMAT_RGBA: return "RGBA";
-	case VIDEO_FORMAT_BGRA: return "BGRA";
-	case VIDEO_FORMAT_BGRX: return "BGRX";
-	case VIDEO_FORMAT_I444: return "I444";
-	case VIDEO_FORMAT_Y800: return "Y800";
+	case VIDEO_FORMAT_I420:  return "I420";
+	case VIDEO_FORMAT_NV12:  return "NV12";
+	case VIDEO_FORMAT_YVYU:  return "YVYU";
+	case VIDEO_FORMAT_YUY2:  return "YUY2";
+	case VIDEO_FORMAT_UYVY:  return "UYVY";
+	case VIDEO_FORMAT_RGBA:  return "RGBA";
+	case VIDEO_FORMAT_BGR24: return "BGR24";
+	case VIDEO_FORMAT_BGRA:  return "BGRA";
+	case VIDEO_FORMAT_BGRX:  return "BGRX";
+	case VIDEO_FORMAT_I444:  return "I444";
+	case VIDEO_FORMAT_Y800:  return "Y800";
 	case VIDEO_FORMAT_NONE:;
 	}
 

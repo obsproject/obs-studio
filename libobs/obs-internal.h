@@ -782,6 +782,8 @@ static inline enum gs_color_format convert_video_format(
 {
 	if (format == VIDEO_FORMAT_RGBA)
 		return GS_RGBA;
+	else if (format == VIDEO_FORMAT_BGR24)
+		return GS_BGR24;
 	else if (format == VIDEO_FORMAT_BGRA)
 		return GS_BGRA;
 
