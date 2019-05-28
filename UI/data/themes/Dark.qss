@@ -100,11 +100,6 @@ QMenuBar::item {
     background-color: rgb(58,57,58); /* dark */
 }
 
-QListWidget {
-    font-family: "MS Shell Dlg 2";
-    font-size: 8pt;
-}
-
 QListWidget::item:selected:!active,
 SourceTree::item:selected:!active {
     color: rgb(255, 255, 255);
