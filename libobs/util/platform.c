@@ -25,6 +25,7 @@
 #include "bmem.h"
 #include "utf8.h"
 #include "dstr.h"
+#include "obs.h"
 
 FILE *os_wfopen(const wchar_t *path, const char *mode)
 {
@@ -708,6 +709,8 @@ char *os_generate_formatted_filename(const char *extension, bool space,
 	time_t now = time(0);
 	struct tm *cur_time;
 	cur_time = localtime(&now);
+	struct obs_video_info ovi;
+	obs_get_video_info(&ovi);
 
 	const size_t spec_count = 23;
 	static const char *spec[][2] = {
@@ -728,10 +731,9 @@ char *os_generate_formatted_filename(const char *extension, bool space,
 	dstr_init_copy(&sf, format);
 
 	while (pos < sf.len) {
+		const char *cmp = sf.array + pos;
 		for (size_t i = 0; i < spec_count && !convert[0]; i++) {
 			size_t len = strlen(spec[i][0]);
-
-			const char *cmp = sf.array + pos;
 
 			if (astrcmp_n(cmp, spec[i][0], len) == 0) {
 				if (strlen(spec[i][1]))
@@ -744,6 +746,35 @@ char *os_generate_formatted_filename(const char *extension, bool space,
 				dstr_copy(&c, convert);
 				if (c.len && valid_string(c.array))
 					replace_text(&sf, pos, len, convert);
+			}
+		}
+
+		if (!convert[0]) {
+			if (astrcmp_n(cmp, "%FPS", 4) == 0) {
+				if (ovi.fps_den <= 1) {
+					sprintf(convert, "%u", ovi.fps_num);
+				} else {
+					const double obsFPS =
+						(double)ovi.fps_num /
+						(double)ovi.fps_den;
+					sprintf(convert, "%.2f", obsFPS);
+				}
+				replace_text(&sf, pos, 4, convert);
+
+			} else if (astrcmp_n(cmp, "%CRES", 5) == 0) {
+				sprintf(convert, "%ux%u", ovi.base_width,
+					ovi.base_height);
+				replace_text(&sf, pos, 5, convert);
+
+			} else if (astrcmp_n(cmp, "%ORES", 5) == 0) {
+				sprintf(convert, "%ux%u", ovi.output_width,
+					ovi.output_height);
+				replace_text(&sf, pos, 5, convert);
+
+			} else if (astrcmp_n(cmp, "%VF", 3) == 0) {
+				strcpy(convert, get_video_format_name(
+							ovi.output_format));
+				replace_text(&sf, pos, 3, convert);
 			}
 		}
 
