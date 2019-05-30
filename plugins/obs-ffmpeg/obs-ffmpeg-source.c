@@ -420,6 +420,11 @@ static void get_nb_frames(void *data, calldata_t *cd)
 
 	pthread_mutex_lock(&s->media.mutex);
 
+	if (s->media.stopping || !s->media.active) {
+		pthread_mutex_unlock(&s->media.mutex);
+		return;
+	}
+
 	int video_stream_index = av_find_best_stream(s->media.fmt,
 			AVMEDIA_TYPE_VIDEO, -1, -1, NULL, 0);
 
@@ -461,9 +466,14 @@ static void get_nb_frames(void *data, calldata_t *cd)
 static void get_playing(void *data, calldata_t *cd)
 {
 	struct ffmpeg_source *s = data;
-	pthread_mutex_lock(&s->media.mutex);
-	bool playing = s->media.playing;
-	pthread_mutex_unlock(&s->media.mutex);
+	bool playing = false;
+
+	if (s->media.fmt) {
+		pthread_mutex_lock(&s->media.mutex);
+		playing = s->media.playing;
+		pthread_mutex_unlock(&s->media.mutex);
+	}
+
 	calldata_set_bool(cd, "playing", playing);
 }
 
