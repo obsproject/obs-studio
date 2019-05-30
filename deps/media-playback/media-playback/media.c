@@ -975,10 +975,10 @@ void mp_media_play(mp_media_t *m, bool loop)
 void mp_media_stop(mp_media_t *m)
 {
 	pthread_mutex_lock(&m->mutex);
+	m->stopping = true;
 	if (m->active) {
 		m->reset = true;
 		m->active = false;
-		m->stopping = true;
 		os_sem_post(m->sem);
 	}
 	pthread_mutex_unlock(&m->mutex);
