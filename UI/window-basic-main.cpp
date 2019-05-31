@@ -6570,6 +6570,13 @@ void OBSBasic::OpenSceneWindow()
 void OBSBasic::OpenSavedProjectors()
 {
 	for (SavedProjectorInfo *info : savedProjectorsArray) {
+		OpenSavedProjector(info);
+	}
+}
+
+void OBSBasic::OpenSavedProjector(SavedProjectorInfo *info)
+{
+	if (info) {
 		OBSProjector *projector = nullptr;
 		switch (info->type) {
 		case ProjectorType::Source:
@@ -6577,7 +6584,7 @@ void OBSBasic::OpenSavedProjectors()
 			OBSSource source =
 				obs_get_source_by_name(info->name.c_str());
 			if (!source)
-				continue;
+				return;
 
 			projector = OpenProjector(source, info->monitor,
 						  info->type);
