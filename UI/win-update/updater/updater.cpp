@@ -1141,6 +1141,12 @@ static bool Update(wchar_t *cmdLine)
 	SetDlgItemTextW(hwndMain, IDC_STATUS,
 			L"Searching for available updates...");
 
+	HWND hProgress = GetDlgItem(hwndMain, IDC_PROGRESS);
+	LONG_PTR style = GetWindowLongPtr(hProgress, GWL_STYLE);
+	SetWindowLongPtr(hProgress, GWL_STYLE, style | PBS_MARQUEE);
+
+	SendDlgItemMessage(hwndMain, IDC_PROGRESS, PBM_SETMARQUEE, 1, 0);
+
 	/* ------------------------------------- *
 	 * Check if updating portable build      */
 
@@ -1249,6 +1255,9 @@ static bool Update(wchar_t *cmdLine)
 			return false;
 		}
 	}
+
+	SendDlgItemMessage(hwndMain, IDC_PROGRESS, PBM_SETMARQUEE, 0, 0);
+	SetWindowLongPtr(hProgress, GWL_STYLE, style);
 
 	/* ------------------------------------- *
 	 * Exit if updates already installed     */
@@ -1460,8 +1469,10 @@ static DWORD WINAPI UpdateThread(void *arg)
 		if (WaitForSingleObject(cancelRequested, 0) == WAIT_OBJECT_0)
 			Status(L"Update aborted.");
 
-		SendDlgItemMessage(hwndMain, IDC_PROGRESS, PBM_SETSTATE,
-				PBST_ERROR, 0);
+		HWND hProgress = GetDlgItem(hwndMain, IDC_PROGRESS);
+		LONG_PTR style = GetWindowLongPtr(hProgress, GWL_STYLE);
+		SetWindowLongPtr(hProgress, GWL_STYLE, style & ~PBS_MARQUEE);
+		SendMessage(hProgress, PBM_SETSTATE, PBST_ERROR, 0);
 
 		SetDlgItemText(hwndMain, IDC_BUTTON, L"Exit");
 		EnableWindow(GetDlgItem(hwndMain, IDC_BUTTON), true);
