@@ -5,6 +5,7 @@
 
 #include "rtmp-format-ver.h"
 #include "twitch.h"
+#include "younow.h"
 
 struct rtmp_common {
 	char *service;
@@ -591,6 +592,12 @@ static const char *rtmp_common_url(void *data)
 			twitch_ingests_unlock();
 
 			return ing.url;
+		}
+	}
+
+	if (service->service && strcmp(service->service, "YouNow") == 0) {
+		if (service->server && service->key) {
+			return younow_get_ingest(service->server, service->key);
 		}
 	}
 
