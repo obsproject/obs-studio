@@ -1251,7 +1251,7 @@ static bool Update(wchar_t *cmdLine)
 
 	for (size_t i = 0; i < packageCount; i++) {
 		if (!AddPackageUpdateFiles(packages, i, tempPath)) {
-			Status(L"Failed to process update packages");
+			Status(L"Update failed: Failed to process update packages");
 			return false;
 		}
 	}
@@ -1264,6 +1264,7 @@ static bool Update(wchar_t *cmdLine)
 
 	if (!updates.size()) {
 		Status(L"All available updates are already installed.");
+		SetDlgItemText(hwndMain, IDC_BUTTON, L"Launch OBS");
 		return true;
 	}
 
