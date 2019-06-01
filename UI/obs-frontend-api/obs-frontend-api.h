@@ -165,6 +165,8 @@ EXPORT void obs_frontend_replay_buffer_save(void);
 EXPORT void obs_frontend_replay_buffer_stop(void);
 EXPORT bool obs_frontend_replay_buffer_active(void);
 
+EXPORT void obs_frontend_open_projector(const char *type, int monitor,
+					const char *geometry, const char *name);
 EXPORT void obs_frontend_save(void);
 EXPORT void obs_frontend_defer_save_begin(void);
 EXPORT void obs_frontend_defer_save_end(void);
