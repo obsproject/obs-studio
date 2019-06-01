@@ -51,7 +51,8 @@ public:
 	static void warning(
 		QWidget *parent,
 		const QString &title,
-		const QString &text);
+		const QString &text,
+		bool enableRichText = false);
 	static void critical(
 		QWidget *parent,
 		const QString &title,

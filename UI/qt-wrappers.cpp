@@ -93,11 +93,14 @@ void OBSMessageBox::information(
 void OBSMessageBox::warning(
 	QWidget *parent,
 	const QString &title,
-	const QString &text)
+	const QString &text,
+	bool enableRichText)
 {
 	QMessageBox mb(QMessageBox::Warning,
 		title, text, QMessageBox::Ok,
 		parent);
+	if (enableRichText)
+		mb.setTextFormat(Qt::RichText);
 	mb.setButtonText(QMessageBox::Ok, QTStr("OK"));
 	mb.exec();
 }
