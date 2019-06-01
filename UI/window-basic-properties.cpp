@@ -261,7 +261,7 @@ static obs_source_t *CreateLabel(const char *name, size_t h)
 	obs_data_set_string(font, "face", "Monospace");
 #endif
 	obs_data_set_int(font, "flags", 1); // Bold text
-	obs_data_set_int(font, "size", int(h));
+	obs_data_set_int(font, "size", min(int(h), 300));
 
 	obs_data_set_obj(settings, "font", font);
 	obs_data_set_string(settings, "text", text.c_str());
@@ -300,7 +300,11 @@ static void CreateTransitionScene(OBSSource scene, char *text, uint32_t color)
 
 	vec2 size;
 	vec2_set(&size, obs_source_get_width(scene),
+#ifdef _WIN32
 			obs_source_get_height(scene));
+#else
+			obs_source_get_height(scene) * 0.8);
+#endif
 
 	obs_sceneitem_set_bounds(item, &size);
 	obs_sceneitem_set_bounds_type(item, OBS_BOUNDS_SCALE_INNER);
