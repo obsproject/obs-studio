@@ -78,6 +78,7 @@ try {
 
 	std::string output;
 	std::string error;
+	long error_code = 0;
 
 	bool success = false;
 
@@ -86,7 +87,7 @@ try {
 				"https://api.twitch.tv/kraken/channel",
 				output,
 				error,
-				nullptr,
+				&error_code,
 				"application/json",
 				nullptr,
 				headers,
@@ -98,6 +99,19 @@ try {
 			func,
 			QTStr("Auth.LoadingChannel.Title"),
 			QTStr("Auth.LoadingChannel.Text").arg(service()));
+	if (error_code == 403) {
+		OBSMessageBox::warning(OBSBasic::Get(),
+				Str("TwitchAuth.TwoFactorFail.Title"),
+				Str("TwitchAuth.TwoFactorFail.Text"),
+				true);
+		blog(LOG_WARNING, "%s: %s",
+				__FUNCTION__,
+				"Got 403 from Twitch, user probably does not "
+				"have two-factor authentication enabled on "
+				"their account");
+		return false;
+	}
+
 	if (!success || output.empty())
 		throw ErrorInfo("Failed to get text from remote", error);
 
