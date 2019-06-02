@@ -29,27 +29,34 @@ float4 PSDrawAreaRGBA(VertInOut vert_in) : TARGET
 	float2 uvmin = uv - uvhalfdelta;
 	float2 uvmax = uv + uvhalfdelta;
 
-	int2 loadindexmin = int2(uvmin / base_dimension_i);
-	int2 loadindexmax = int2(uvmax / base_dimension_i);
+	float2 imagesize = 1.0 / base_dimension_i;
+	float2 loadindexmin = floor(uvmin * imagesize);
+	float2 loadindexmax = floor(uvmax * imagesize);
 
-	float2 targetpos = uv / uvdelta;
+	float2 targetsize = 1.0 / uvdelta;
+	float2 targetpos = uv * targetsize;
 	float2 targetposmin = targetpos - 0.5;
 	float2 targetposmax = targetpos + 0.5;
-	float2 scale = base_dimension_i / uvdelta;
-	for (int loadindexy = loadindexmin.y; loadindexy <= loadindexmax.y; ++loadindexy)
-	{
-		for (int loadindexx = loadindexmin.x; loadindexx <= loadindexmax.x; ++loadindexx)
-		{
-			int2 loadindex = int2(loadindexx, loadindexy);
-			float2 potentialtargetmin = float2(loadindex) * scale;
+	float2 scale = base_dimension_i * targetsize;
+
+	float loadindexy = loadindexmin.y;
+	do {
+		float loadindexx = loadindexmin.x;
+		do {
+			float2 loadindex = float2(loadindexx, loadindexy);
+			float2 potentialtargetmin = loadindex * scale;
 			float2 potentialtargetmax = potentialtargetmin + scale;
 			float2 targetmin = max(potentialtargetmin, targetposmin);
 			float2 targetmax = min(potentialtargetmax, targetposmax);
 			float area = (targetmax.x - targetmin.x) * (targetmax.y - targetmin.y);
 			float4 sample = image.Load(int3(loadindex, 0));
 			totalcolor += area * sample;
-		}
-	}
+
+			++loadindexx;
+		} while (loadindexx <= loadindexmax.x);
+
+		++loadindexy;
+	} while (loadindexy <= loadindexmax.y);
 
 	return totalcolor;
 }
