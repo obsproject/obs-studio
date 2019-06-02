@@ -22,9 +22,9 @@
 using namespace std;
 
 static const char *semanticInputNames[] =
-	{"POSITION", "NORMAL", "COLOR", "TANGENT", "TEXCOORD"};
+	{"POSITION", "NORMAL", "COLOR", "TANGENT", "TEXCOORD", "VERTEXID"};
 static const char *semanticOutputNames[] =
-	{"SV_Position", "NORMAL", "COLOR", "TANGENT", "TEXCOORD"};
+	{"SV_Position", "NORMAL", "COLOR", "TANGENT", "TEXCOORD", "VERTEXID"};
 
 static const char *ConvertSemanticName(const char *name)
 {
@@ -111,7 +111,8 @@ static void BuildInputLayoutFromVars(shader_parser *parser, darray *vars,
 		shader_var *var = array+i;
 
 		if (var->mapping) {
-			AddInputLayoutVar(var, layout);
+			if (strcmp(var->mapping, "VERTEXID") != 0)
+				AddInputLayoutVar(var, layout);
 		} else {
 			shader_struct *st = shader_parser_getstruct(parser,
 					var->type);
@@ -197,6 +198,8 @@ void ShaderProcessor::BuildSamplers(vector<unique_ptr<ShaderSampler>> &samplers)
 void ShaderProcessor::BuildString(string &outputString)
 {
 	stringstream output;
+	output << "static const bool obs_glsl_compile = false;\n\n";
+
 	cf_token *token = cf_preprocessor_get_tokens(&parser.cfp.pp);
 	while (token->type != CFTOKEN_NONE) {
 		/* cheaply just replace specific tokens */
@@ -214,6 +217,8 @@ void ShaderProcessor::BuildString(string &outputString)
 			throw "texture_rect is not supported in D3D";
 		else if (strref_cmp(&token->str, "sampler_state") == 0)
 			output << "SamplerState";
+		else if (strref_cmp(&token->str, "VERTEXID") == 0)
+			output << "SV_VertexID";
 		else
 			output.write(token->str.array, token->str.len);
 

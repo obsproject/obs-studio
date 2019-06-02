@@ -1672,9 +1672,7 @@ static bool update_async_texrender(struct obs_source *source,
 				sizeof(float) * 3);
 	}
 
-	gs_ortho(0.f, (float)cx, 0.f, (float)cy, -100.f, 100.f);
-
-	gs_draw_sprite(tex, 0, cx, cy);
+	gs_draw(GS_TRIS, 0, 3);
 
 	gs_technique_end_pass(tech);
 	gs_technique_end(tech);
