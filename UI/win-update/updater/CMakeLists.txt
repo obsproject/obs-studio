@@ -28,6 +28,7 @@ set(updater_SOURCES
 	http.cpp
 	hash.cpp
 	updater.rc
+	updater.manifest
 	)
 
 add_definitions(-DNOMINMAX -DUNICODE -D_UNICODE)
