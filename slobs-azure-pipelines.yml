@@ -102,7 +102,7 @@ steps:
     awsCredentials: 'SLOBS Backend AWS buckets'
     regionName: 'us-west-2'
     bucketName: 'obsstudios3.streamlabs.com'
-    globExpressions: '$(ReleaseArtifact)'
+    globExpressions: '$(ReleaseArtifact).7z'
     filesAcl: 'public-read'
   displayName: 'Upload artifact to S3'
   condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
