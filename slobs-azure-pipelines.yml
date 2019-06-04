@@ -31,10 +31,11 @@ variables:
   CefBuildPath: $(CefPath)\build
   CefZip: $(CefDirName).zip
   CefUrl: https://s3-us-west-2.amazonaws.com/streamlabs-cef-dist/$(CefZip)
-  ReleaseArtifact: libobs-$(ReleaseName)-$(Build.BuildId)-win32-x64.7z
   DependenciesUrl: https://obsproject.com/downloads/dependencies2017.zip
   VLCLibPath: $(Build.SourcesDirectory)\vlc
   VLCUrl: https://obsproject.com/downloads/vlc.zip
+  Version: 23.1.0-sl
+  ReleaseArtifact: libobs-$(ReleaseName)-$(Version).$(BuildNumber)-win32-x64
 
 steps:
 - script: | 
@@ -86,15 +87,14 @@ steps:
   inputs:
     rootFolderOrFile: $(InstallPath)
     includeRootFolder: true
-    replaceExistingArchive: true
     archiveType: 7z
-    archiveFile: $(ReleaseArtifact)
+    archiveFile: '$(ReleaseArtifact).7z'
   displayName: 'Generate artifact'
 
 - task: PublishBuildArtifacts@1
   inputs: 
-    pathtoPublish: $(Build.SourcesDirectory)\$(ReleaseArtifact)
-    artifactName: $(ReleaseArtifact)
+    pathtoPublish: $(Build.SourcesDirectory)\$(ReleaseArtifact).7z
+    artifactName: $(ReleaseArtifact).7z
   displayName: 'Publish artifact'
 
 - task: S3Upload@1
@@ -105,6 +105,7 @@ steps:
     globExpressions: '$(ReleaseArtifact)'
     filesAcl: 'public-read'
   displayName: 'Upload artifact to S3'
+  condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
 
 - script: "shutdown /r /t 10 /c \"Reboot after CI Job finished\" /f /d p:4:1"
   displayName: 'Schedule reboot'
