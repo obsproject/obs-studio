@@ -5,6 +5,11 @@ if (UNIX AND POLICY CMP0072)
 	cmake_policy(SET CMP0072 NEW)
 endif()
 
+if(MSVC)
+  add_definitions(/MP)
+  add_definitions(/debug:fastlink)
+endif()
+
 project(obs-studio)
 
 option(BUILD_CAPTIONS "Build captions" FALSE)
