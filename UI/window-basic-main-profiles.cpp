@@ -25,6 +25,11 @@
 #include "window-namedialog.hpp"
 #include "qt-wrappers.hpp"
 
+extern void DestroyPanelCookieManager();
+extern void DuplicateCurrentCookieProfile(ConfigFile &config);
+extern void CheckExistingCookieId();
+extern void DeleteCookies();
+
 void EnumProfiles(std::function<bool (const char *, const char *)> &&cb)
 {
 	char path[512];
@@ -102,13 +107,13 @@ static bool GetProfileName(QWidget *parent, std::string &name,
 			return false;
 		}
 		if (name.empty()) {
-			OBSMessageBox::information(parent,
+			OBSMessageBox::warning(parent,
 					QTStr("NoNameEntered.Title"),
 					QTStr("NoNameEntered.Text"));
 			continue;
 		}
 		if (ProfileExists(name.c_str())) {
-			OBSMessageBox::information(parent,
+			OBSMessageBox::warning(parent,
 					QTStr("NameExists.Title"),
 					QTStr("NameExists.Text"));
 			continue;
@@ -143,7 +148,7 @@ static bool GetProfileName(QWidget *parent, std::string &name,
 static bool CopyProfile(const char *fromPartial, const char *to)
 {
 	os_glob_t *glob;
-	char path[512];
+	char path[514];
 	char dir[512];
 	int ret;
 
@@ -182,7 +187,7 @@ static bool CopyProfile(const char *fromPartial, const char *to)
 }
 
 bool OBSBasic::AddProfile(bool create_new, const char *title, const char *text,
-		const char *init_text)
+		const char *init_text, bool rename)
 {
 	std::string newName;
 	std::string newDir;
@@ -228,10 +233,20 @@ bool OBSBasic::AddProfile(bool create_new, const char *title, const char *text,
 	config_set_string(App()->GlobalConfig(), "Basic", "ProfileDir",
 			newDir.c_str());
 
+	Auth::Save();
+	if (create_new) {
+		auth.reset();
+		DestroyPanelCookieManager();
+	} else if (!rename) {
+		DuplicateCurrentCookieProfile(config);
+	}
+
 	config_set_string(config, "General", "Name", newName.c_str());
+	basicConfig.SaveSafe("tmp");
 	config.SaveSafe("tmp");
 	config.Swap(basicConfig);
 	InitBasicConfigDefaults();
+	InitBasicConfigDefaults2();
 	RefreshProfiles();
 
 	if (create_new)
@@ -346,6 +361,19 @@ void OBSBasic::ResetProfileData()
 	ResetOutputs();
 	ClearHotkeys();
 	CreateHotkeys();
+
+	/* load audio monitoring */
+#if defined(_WIN32) || defined(__APPLE__) || HAVE_PULSEAUDIO
+	const char *device_name = config_get_string(basicConfig, "Audio",
+			"MonitoringDeviceName");
+	const char *device_id = config_get_string(basicConfig, "Audio",
+			"MonitoringDeviceId");
+
+	obs_set_audio_monitoring_device(device_name, device_id);
+
+	blog(LOG_INFO, "Audio monitoring device:\n\tname: %s\n\tid: %s",
+			device_name, device_id);
+#endif
 }
 
 void OBSBasic::on_actionNewProfile_triggered()
@@ -367,7 +395,7 @@ void OBSBasic::on_actionRenameProfile_triggered()
 
 	/* Duplicate and delete in case there are any issues in the process */
 	bool success = AddProfile(false, Str("RenameProfile.Title"),
-			Str("AddProfile.Text"), curName.c_str());
+			Str("AddProfile.Text"), curName.c_str(), true);
 	if (success) {
 		DeleteProfile(curName.c_str(), curDir.c_str());
 		RefreshProfiles();
@@ -433,8 +461,14 @@ void OBSBasic::on_actionRemoveProfile_triggered()
 	config_set_string(App()->GlobalConfig(), "Basic", "ProfileDir",
 			newDir);
 
+	Auth::Save();
+	auth.reset();
+	DeleteCookies();
+	DestroyPanelCookieManager();
+
 	config.Swap(basicConfig);
 	InitBasicConfigDefaults();
+	InitBasicConfigDefaults2();
 	ResetProfileData();
 	DeleteProfile(oldName.c_str(), oldDir.c_str());
 	RefreshProfiles();
@@ -445,6 +479,8 @@ void OBSBasic::on_actionRemoveProfile_triggered()
 	blog(LOG_INFO, "------------------------------------------------");
 
 	UpdateTitleBar();
+
+	Auth::Load();
 
 	if (api) {
 		api->on_event(OBS_FRONTEND_EVENT_PROFILE_LIST_CHANGED);
@@ -490,7 +526,7 @@ void OBSBasic::on_actionImportProfile_triggered()
 					profileDir + "/recordEncoder.json");
 			RefreshProfiles();
 		} else {
-			OBSMessageBox::information(this,
+			OBSMessageBox::warning(this,
 					QTStr("Basic.MainMenu.Profile.Import"),
 					QTStr("Basic.MainMenu.Profile.Exists"));
 		}
@@ -590,12 +626,19 @@ void OBSBasic::ChangeProfile()
 	config_set_string(App()->GlobalConfig(), "Basic", "ProfileDir",
 			newDir);
 
+	Auth::Save();
+	auth.reset();
+	DestroyPanelCookieManager();
+
 	config.Swap(basicConfig);
 	InitBasicConfigDefaults();
+	InitBasicConfigDefaults2();
 	ResetProfileData();
 	RefreshProfiles();
 	config_save_safe(App()->GlobalConfig(), "tmp", nullptr);
 	UpdateTitleBar();
+
+	Auth::Load();
 
 	CheckForSimpleModeX264Fallback();
 

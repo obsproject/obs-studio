@@ -4,16 +4,19 @@
 #include <QSpinBox>
 #include <QComboBox>
 #include <QCheckBox>
-#include <QSlider>
 #include "qt-wrappers.hpp"
 #include "obs-app.hpp"
 #include "adv-audio-control.hpp"
+#include "window-basic-main.hpp"
 
 #ifndef NSEC_PER_MSEC
 #define NSEC_PER_MSEC 1000000
 #endif
 
-OBSAdvAudioCtrl::OBSAdvAudioCtrl(QGridLayout *layout, obs_source_t *source_)
+#define MIN_DB -96.0
+#define MAX_DB 26.0
+
+OBSAdvAudioCtrl::OBSAdvAudioCtrl(QGridLayout *, obs_source_t *source_)
 	: source(source_)
 {
 	QHBoxLayout *hlayout;
@@ -25,13 +28,13 @@ OBSAdvAudioCtrl::OBSAdvAudioCtrl(QGridLayout *layout, obs_source_t *source_)
 
 	forceMonoContainer             = new QWidget();
 	mixerContainer                 = new QWidget();
-	panningContainer               = new QWidget();
+	balanceContainer               = new QWidget();
 	labelL                         = new QLabel();
 	labelR                         = new QLabel();
 	nameLabel                      = new QLabel();
-	volume                         = new QSpinBox();
+	volume                         = new QDoubleSpinBox();
 	forceMono                      = new QCheckBox();
-	panning                        = new QSlider(Qt::Horizontal);
+	balance                        = new BalanceSlider();
 #if defined(_WIN32) || defined(__APPLE__) || HAVE_PULSEAUDIO
 	monitoringType                 = new QComboBox();
 #endif
@@ -60,8 +63,8 @@ OBSAdvAudioCtrl::OBSAdvAudioCtrl(QGridLayout *layout, obs_source_t *source_)
 	mixerContainer->setLayout(hlayout);
 	hlayout = new QHBoxLayout();
 	hlayout->setContentsMargins(0, 0, 0, 0);
-	panningContainer->setLayout(hlayout);
-	panningContainer->setMinimumWidth(100);
+	balanceContainer->setLayout(hlayout);
+	balanceContainer->setMinimumWidth(100);
 
 	labelL->setText("L");
 
@@ -71,9 +74,15 @@ OBSAdvAudioCtrl::OBSAdvAudioCtrl(QGridLayout *layout, obs_source_t *source_)
 	nameLabel->setText(QT_UTF8(sourceName));
 	nameLabel->setAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
 
-	volume->setMinimum(0);
-	volume->setMaximum(2000);
-	volume->setValue(int(vol * 100.0f));
+	volume->setMinimum(MIN_DB - 0.1);
+	volume->setMaximum(MAX_DB);
+	volume->setSingleStep(0.1);
+	volume->setDecimals(1);
+	volume->setSuffix(" dB");
+	volume->setValue(obs_mul_to_db(vol));
+
+	if (volume->value() < MIN_DB)
+		volume->setSpecialValueText("-inf dB");
 
 	forceMono->setChecked((flags & OBS_SOURCE_FLAG_FORCE_MONO) != 0);
 
@@ -81,14 +90,27 @@ OBSAdvAudioCtrl::OBSAdvAudioCtrl(QGridLayout *layout, obs_source_t *source_)
 	forceMonoContainer->layout()->setAlignment(forceMono,
 			Qt::AlignHCenter | Qt::AlignVCenter);
 
-	panning->setMinimum(0);
-	panning->setMaximum(100);
-	panning->setTickPosition(QSlider::TicksAbove);
-	panning->setEnabled(false);
-	panning->setValue(50); /* XXX */
+	balance->setOrientation(Qt::Horizontal);
+	balance->setMinimum(0);
+	balance->setMaximum(100);
+	balance->setTickPosition(QSlider::TicksAbove);
+	balance->setTickInterval(50);
+
+	OBSBasic *main = reinterpret_cast<OBSBasic*>(App()->GetMainWindow());
+
+	const char *speakers = config_get_string(main->Config(), "Audio",
+			"ChannelSetup");
+
+	if (strcmp(speakers, "Mono") == 0)
+		balance->setEnabled(false);
+	else
+		balance->setEnabled(true);
+
+	float bal = obs_source_get_balance_value(source) * 100.0f;
+	balance->setValue((int)bal);
 
 	int64_t cur_sync = obs_source_get_sync_offset(source);
-	syncOffset->setMinimum(-20000);
+	syncOffset->setMinimum(-950);
 	syncOffset->setMaximum(20000);
 	syncOffset->setValue(int(cur_sync / NSEC_PER_MSEC));
 
@@ -118,10 +140,14 @@ OBSAdvAudioCtrl::OBSAdvAudioCtrl(QGridLayout *layout, obs_source_t *source_)
 	mixer6->setText("6");
 	mixer6->setChecked(mixers & (1<<5));
 
-	panningContainer->layout()->addWidget(labelL);
-	panningContainer->layout()->addWidget(panning);
-	panningContainer->layout()->addWidget(labelR);
-	panningContainer->setMaximumWidth(170);
+	speaker_layout sl = obs_source_get_speaker_layout(source);
+ 
+	if (sl == SPEAKERS_STEREO) {
+		balanceContainer->layout()->addWidget(labelL);
+		balanceContainer->layout()->addWidget(balance);
+		balanceContainer->layout()->addWidget(labelR);
+		balanceContainer->setMaximumWidth(170);
+	}
 
 	mixerContainer->layout()->addWidget(mixer1);
 	mixerContainer->layout()->addWidget(mixer2);
@@ -130,12 +156,14 @@ OBSAdvAudioCtrl::OBSAdvAudioCtrl(QGridLayout *layout, obs_source_t *source_)
 	mixerContainer->layout()->addWidget(mixer5);
 	mixerContainer->layout()->addWidget(mixer6);
 
-	QWidget::connect(volume, SIGNAL(valueChanged(int)),
-			this, SLOT(volumeChanged(int)));
+	QWidget::connect(volume, SIGNAL(valueChanged(double)),
+			this, SLOT(volumeChanged(double)));
 	QWidget::connect(forceMono, SIGNAL(clicked(bool)),
 			this, SLOT(downmixMonoChanged(bool)));
-	QWidget::connect(panning, SIGNAL(valueChanged(int)),
-			this, SLOT(panningChanged(int)));
+	QWidget::connect(balance, SIGNAL(valueChanged(int)),
+			this, SLOT(balanceChanged(int)));
+	QWidget::connect(balance, SIGNAL(doubleClicked()),
+			this, SLOT(ResetBalance()));
 	QWidget::connect(syncOffset, SIGNAL(valueChanged(int)),
 			this, SLOT(syncOffsetChanged(int)));
 #if defined(_WIN32) || defined(__APPLE__) || HAVE_PULSEAUDIO
@@ -155,20 +183,7 @@ OBSAdvAudioCtrl::OBSAdvAudioCtrl(QGridLayout *layout, obs_source_t *source_)
 	QWidget::connect(mixer6, SIGNAL(clicked(bool)),
 			this, SLOT(mixer6Changed(bool)));
 
-	int lastRow = layout->rowCount();
-
-	idx = 0;
-	layout->addWidget(nameLabel, lastRow, idx++);
-	layout->addWidget(volume, lastRow, idx++);
-	layout->addWidget(forceMonoContainer, lastRow, idx++);
-	layout->addWidget(panningContainer, lastRow, idx++);
-	layout->addWidget(syncOffset, lastRow, idx++);
-#if defined(_WIN32) || defined(__APPLE__) || HAVE_PULSEAUDIO
-	layout->addWidget(monitoringType, lastRow, idx++);
-#endif
-	layout->addWidget(mixerContainer, lastRow, idx++);
-	layout->layout()->setAlignment(mixerContainer,
-			Qt::AlignHCenter | Qt::AlignVCenter);
+	setObjectName(sourceName);
 }
 
 OBSAdvAudioCtrl::~OBSAdvAudioCtrl()
@@ -176,12 +191,30 @@ OBSAdvAudioCtrl::~OBSAdvAudioCtrl()
 	nameLabel->deleteLater();
 	volume->deleteLater();
 	forceMonoContainer->deleteLater();
-	panningContainer->deleteLater();
+	balanceContainer->deleteLater();
 	syncOffset->deleteLater();
 #if defined(_WIN32) || defined(__APPLE__) || HAVE_PULSEAUDIO
 	monitoringType->deleteLater();
 #endif
 	mixerContainer->deleteLater();
+}
+
+void OBSAdvAudioCtrl::ShowAudioControl(QGridLayout *layout)
+{
+	int lastRow = layout->rowCount();
+	int idx = 0;
+
+	layout->addWidget(nameLabel, lastRow, idx++);
+	layout->addWidget(volume, lastRow, idx++);
+	layout->addWidget(forceMonoContainer, lastRow, idx++);
+	layout->addWidget(balanceContainer, lastRow, idx++);
+	layout->addWidget(syncOffset, lastRow, idx++);
+#if defined(_WIN32) || defined(__APPLE__) || HAVE_PULSEAUDIO
+	layout->addWidget(monitoringType, lastRow, idx++);
+#endif
+	layout->addWidget(mixerContainer, lastRow, idx++);
+	layout->layout()->setAlignment(mixerContainer,
+		Qt::AlignHCenter | Qt::AlignVCenter);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -235,7 +268,7 @@ void OBSAdvAudioCtrl::SourceFlagsChanged(uint32_t flags)
 void OBSAdvAudioCtrl::SourceVolumeChanged(float value)
 {
 	volume->blockSignals(true);
-	volume->setValue(int(round(value * 100.0f)));
+	volume->setValue(obs_mul_to_db(value));
 	volume->blockSignals(false);
 }
 
@@ -257,9 +290,14 @@ void OBSAdvAudioCtrl::SourceMixersChanged(uint32_t mixers)
 /* ------------------------------------------------------------------------- */
 /* Qt control callbacks */
 
-void OBSAdvAudioCtrl::volumeChanged(int percentage)
+void OBSAdvAudioCtrl::volumeChanged(double db)
 {
-	float val = float(percentage) / 100.0f;
+	if (db < MIN_DB) {
+		volume->setSpecialValueText("-inf dB");
+		db = -INFINITY;
+	}
+
+	float val = obs_db_to_mul(db);
 	obs_source_set_volume(source, val);
 }
 
@@ -278,11 +316,25 @@ void OBSAdvAudioCtrl::downmixMonoChanged(bool checked)
 	}
 }
 
-void OBSAdvAudioCtrl::panningChanged(int val)
+void OBSAdvAudioCtrl::balanceChanged(int val)
 {
-	/* TODO */
-	UNUSED_PARAMETER(val);
+	float bal = (float)val / 100.0f;
+
+	if (abs(50 - val) < 10) {
+		balance->blockSignals(true);
+		balance->setValue(50);
+		bal = 0.5f;
+		balance->blockSignals(false);
+	}
+
+	obs_source_set_balance_value(source, bal);
 }
+
+void OBSAdvAudioCtrl::ResetBalance()
+{
+	balance->setValue(50);
+}
+
 
 void OBSAdvAudioCtrl::syncOffsetChanged(int milliseconds)
 {

@@ -40,6 +40,7 @@
 #define OBS_OUTPUT_DISCONNECTED   -5
 #define OBS_OUTPUT_UNSUPPORTED    -6
 #define OBS_OUTPUT_NO_SPACE       -7
+#define OBS_OUTPUT_ENCODE_ERROR   -8
 
 #define OBS_VIDEO_SUCCESS           0
 #define OBS_VIDEO_FAIL             -1

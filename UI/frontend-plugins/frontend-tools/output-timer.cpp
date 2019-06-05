@@ -18,6 +18,8 @@ OutputTimer::OutputTimer(QWidget *parent)
 {
 	ui->setupUi(this);
 
+	setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
+
 	QObject::connect(ui->outputTimerStream, SIGNAL(clicked()), this,
 		SLOT(StreamingTimerButton()));
 	QObject::connect(ui->outputTimerRecord, SIGNAL(clicked()), this,

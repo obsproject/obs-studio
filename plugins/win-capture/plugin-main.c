@@ -5,6 +5,10 @@
 
 OBS_DECLARE_MODULE()
 OBS_MODULE_USE_DEFAULT_LOCALE("win-capture", "en-US")
+MODULE_EXPORT const char *obs_module_description(void)
+{
+	return "Windows game/screen/window capture";
+}
 
 extern struct obs_source_info duplicator_capture_info;
 extern struct obs_source_info monitor_capture_info;
@@ -14,8 +18,8 @@ extern struct obs_source_info game_capture_info;
 static HANDLE init_hooks_thread = NULL;
 
 extern bool cached_versions_match(void);
-extern bool load_cached_graphics_offsets(bool is32bit);
-extern bool load_graphics_offsets(bool is32bit);
+extern bool load_cached_graphics_offsets(bool is32bit, const char *config_path);
+extern bool load_graphics_offsets(bool is32bit, const char *config_path);
 
 /* temporary, will eventually be erased once we figure out how to create both
  * 32bit and 64bit versions of the helpers/hook */
@@ -25,22 +29,26 @@ extern bool load_graphics_offsets(bool is32bit);
 #define IS32BIT true
 #endif
 
+/* note, need to enable cache writing in load-graphics-offsets.c if you turn
+ * this back on*/
 #define USE_HOOK_ADDRESS_CACHE false
 
-static DWORD WINAPI init_hooks(LPVOID unused)
+static DWORD WINAPI init_hooks(LPVOID param)
 {
+	char *config_path = param;
+
 	if (USE_HOOK_ADDRESS_CACHE &&
 	    cached_versions_match() &&
-	    load_cached_graphics_offsets(IS32BIT)) {
+	    load_cached_graphics_offsets(IS32BIT, config_path)) {
 
-		load_cached_graphics_offsets(!IS32BIT);
+		load_cached_graphics_offsets(!IS32BIT, config_path);
 		obs_register_source(&game_capture_info);
 
-	} else if (load_graphics_offsets(IS32BIT)) {
-		load_graphics_offsets(!IS32BIT);
+	} else if (load_graphics_offsets(IS32BIT, config_path)) {
+		load_graphics_offsets(!IS32BIT, config_path);
 	}
 
-	UNUSED_PARAMETER(unused);
+	bfree(config_path);
 	return 0;
 }
 
@@ -85,7 +93,9 @@ bool obs_module_load(void)
 
 	obs_register_source(&window_capture_info);
 
-	init_hooks_thread = CreateThread(NULL, 0, init_hooks, NULL, 0, NULL);
+	char *config_path = obs_module_config_path(NULL);
+
+	init_hooks_thread = CreateThread(NULL, 0, init_hooks, config_path, 0, NULL);
 	obs_register_source(&game_capture_info);
 
 	return true;

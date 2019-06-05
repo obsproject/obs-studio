@@ -253,6 +253,12 @@ void os_set_thread_name(const char *name)
 #elif defined(__FreeBSD__)
 	pthread_set_name_np(pthread_self(), name);
 #elif defined(__GLIBC__) && !defined(__MINGW32__)
-	pthread_setname_np(pthread_self(), name);
+	if (strlen(name) <= 15) {
+		pthread_setname_np(pthread_self(), name);
+	} else {
+		char *thread_name = bstrdup_n(name, 15);
+		pthread_setname_np(pthread_self(), thread_name);
+		bfree(thread_name);
+	}
 #endif
 }

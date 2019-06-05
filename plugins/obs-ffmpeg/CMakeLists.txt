@@ -13,6 +13,7 @@ set(obs-ffmpeg_HEADERS
 	obs-ffmpeg-formats.h
 	obs-ffmpeg-compat.h
 	closest-pixel-format.h)
+
 set(obs-ffmpeg_SOURCES
 	obs-ffmpeg.c
 	obs-ffmpeg-audio-encoders.c
@@ -20,6 +21,21 @@ set(obs-ffmpeg_SOURCES
 	obs-ffmpeg-output.c
 	obs-ffmpeg-mux.c
 	obs-ffmpeg-source.c)
+
+if(UNIX AND NOT APPLE)
+	list(APPEND obs-ffmpeg_SOURCES
+		obs-ffmpeg-vaapi.c)
+	LIST(APPEND obs-ffmpeg_PLATFORM_DEPS
+		${LIBVA_LBRARIES})
+endif()
+
+if(WIN32)
+	list(APPEND obs-ffmpeg_SOURCES
+		jim-nvenc.c
+		jim-nvenc-helpers.c)
+	list(APPEND obs-ffmpeg_HEADERS
+		jim-nvenc.h)
+endif()
 
 add_library(obs-ffmpeg MODULE
 	${obs-ffmpeg_HEADERS}

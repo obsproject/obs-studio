@@ -2,8 +2,11 @@
 #include "obs-filters-config.h"
 
 OBS_DECLARE_MODULE()
-
 OBS_MODULE_USE_DEFAULT_LOCALE("obs-filters", "en-US")
+MODULE_EXPORT const char *obs_module_description(void)
+{
+	return "OBS core filters";
+}
 
 extern struct obs_source_info mask_filter;
 extern struct obs_source_info crop_filter;
@@ -20,8 +23,12 @@ extern struct obs_source_info async_delay_filter;
 #if SPEEXDSP_ENABLED
 extern struct obs_source_info noise_suppress_filter;
 #endif
+extern struct obs_source_info invert_polarity_filter;
 extern struct obs_source_info noise_gate_filter;
 extern struct obs_source_info compressor_filter;
+extern struct obs_source_info limiter_filter;
+extern struct obs_source_info expander_filter;
+extern struct obs_source_info luma_key_filter;
 
 bool obs_module_load(void)
 {
@@ -40,7 +47,11 @@ bool obs_module_load(void)
 #if SPEEXDSP_ENABLED
 	obs_register_source(&noise_suppress_filter);
 #endif
+	obs_register_source(&invert_polarity_filter);
 	obs_register_source(&noise_gate_filter);
 	obs_register_source(&compressor_filter);
+	obs_register_source(&limiter_filter);
+	obs_register_source(&expander_filter);
+	obs_register_source(&luma_key_filter);
 	return true;
 }

@@ -27,7 +27,7 @@
 #include <windows.h>
 #include <dxgi.h>
 #include <dxgi1_2.h>
-#include <d3d11.h>
+#include <d3d11_1.h>
 #include <d3dcompiler.h>
 
 #include <util/base.h>
@@ -80,6 +80,7 @@ static inline DXGI_FORMAT ConvertGSTextureFormat(gs_color_format format)
 	case GS_DXT1:        return DXGI_FORMAT_BC1_UNORM;
 	case GS_DXT3:        return DXGI_FORMAT_BC2_UNORM;
 	case GS_DXT5:        return DXGI_FORMAT_BC3_UNORM;
+	case GS_R8G8:        return DXGI_FORMAT_R8G8_UNORM;
 	}
 
 	return DXGI_FORMAT_UNKNOWN;
@@ -90,6 +91,7 @@ static inline gs_color_format ConvertDXGITextureFormat(DXGI_FORMAT format)
 	switch ((unsigned long)format) {
 	case DXGI_FORMAT_A8_UNORM:           return GS_A8;
 	case DXGI_FORMAT_R8_UNORM:           return GS_R8;
+	case DXGI_FORMAT_R8G8_UNORM:         return GS_R8G8;
 	case DXGI_FORMAT_R8G8B8A8_UNORM:     return GS_RGBA;
 	case DXGI_FORMAT_B8G8R8X8_UNORM:     return GS_BGRX;
 	case DXGI_FORMAT_B8G8R8A8_UNORM:     return GS_BGRA;
@@ -267,7 +269,7 @@ struct gs_vertex_buffer : gs_obj {
 		uvBuffers.clear();
 	}
 
-	inline void Rebuild();
+	void Rebuild();
 
 	gs_vertex_buffer(gs_device_t *device, struct gs_vb_data *data,
 			uint32_t flags);
@@ -294,7 +296,7 @@ struct gs_index_buffer : gs_obj {
 
 	void InitBuffer();
 
-	inline void Rebuild(ID3D11Device *dev);
+	void Rebuild(ID3D11Device *dev);
 
 	inline void Release() {indexBuffer.Release();}
 
@@ -310,7 +312,7 @@ struct gs_texture : gs_obj {
 	ComPtr<ID3D11ShaderResourceView> shaderRes;
 	D3D11_SHADER_RESOURCE_VIEW_DESC resourceDesc = {};
 
-	inline void Rebuild(ID3D11Device *dev);
+	void Rebuild(ID3D11Device *dev);
 
 	inline gs_texture(gs_texture_type type, uint32_t levels,
 			gs_color_format format)
@@ -344,13 +346,19 @@ struct gs_texture_2d : gs_texture {
 	ComPtr<IDXGISurface1>            gdiSurface;
 
 	uint32_t        width = 0, height = 0;
+	uint32_t        flags = 0;
 	DXGI_FORMAT     dxgiFormat = DXGI_FORMAT_UNKNOWN;
 	bool            isRenderTarget = false;
 	bool            isGDICompatible = false;
 	bool            isDynamic = false;
 	bool            isShared = false;
 	bool            genMipmaps = false;
-	uint32_t        sharedHandle = 0;
+	uint32_t        sharedHandle = GS_INVALID_HANDLE;
+
+	gs_texture_2d   *pairedNV12texture = nullptr;
+	bool            nv12 = false;
+	bool            chroma = false;
+	bool            acquired = false;
 
 	vector<vector<uint8_t>> data;
 	vector<D3D11_SUBRESOURCE_DATA> srd;
@@ -361,9 +369,12 @@ struct gs_texture_2d : gs_texture {
 	void InitResourceView();
 	void InitRenderTargets();
 	void BackupTexture(const uint8_t **data);
+	void GetSharedHandle(IDXGIResource *dxgi_res);
 
 	void RebuildSharedTextureFallback();
-	inline void Rebuild(ID3D11Device *dev);
+	void Rebuild(ID3D11Device *dev);
+	void RebuildNV12_Y(ID3D11Device *dev);
+	void RebuildNV12_UV(ID3D11Device *dev);
 
 	inline void Release()
 	{
@@ -382,8 +393,11 @@ struct gs_texture_2d : gs_texture {
 	gs_texture_2d(gs_device_t *device, uint32_t width, uint32_t height,
 			gs_color_format colorFormat, uint32_t levels,
 			const uint8_t **data, uint32_t flags,
-			gs_texture_type type, bool gdiCompatible, bool shared);
+			gs_texture_type type, bool gdiCompatible,
+			bool nv12 = false);
 
+	gs_texture_2d(gs_device_t *device, ID3D11Texture2D *nv12,
+			uint32_t flags);
 	gs_texture_2d(gs_device_t *device, uint32_t handle);
 };
 
@@ -400,7 +414,7 @@ struct gs_zstencil_buffer : gs_obj {
 
 	void InitBuffer();
 
-	inline void Rebuild(ID3D11Device *dev);
+	void Rebuild(ID3D11Device *dev);
 
 	inline void Release()
 	{
@@ -427,7 +441,7 @@ struct gs_stage_surface : gs_obj {
 	gs_color_format format;
 	DXGI_FORMAT     dxgiFormat;
 
-	inline void Rebuild(ID3D11Device *dev);
+	void Rebuild(ID3D11Device *dev);
 
 	inline void Release()
 	{
@@ -436,6 +450,7 @@ struct gs_stage_surface : gs_obj {
 
 	gs_stage_surface(gs_device_t *device, uint32_t width, uint32_t height,
 			gs_color_format colorFormat);
+	gs_stage_surface(gs_device_t *device, uint32_t width, uint32_t height);
 };
 
 struct gs_sampler_state : gs_obj {
@@ -443,7 +458,7 @@ struct gs_sampler_state : gs_obj {
 	D3D11_SAMPLER_DESC         sd = {};
 	gs_sampler_info            info;
 
-	inline void Rebuild(ID3D11Device *dev);
+	void Rebuild(ID3D11Device *dev);
 
 	inline void Release() {state.Release();}
 
@@ -532,7 +547,7 @@ struct gs_vertex_shader : gs_shader {
 	bool     hasTangents;
 	uint32_t nTexUnits;
 
-	inline void Rebuild(ID3D11Device *dev);
+	void Rebuild(ID3D11Device *dev);
 
 	inline void Release()
 	{
@@ -579,7 +594,7 @@ struct gs_pixel_shader : gs_shader {
 	ComPtr<ID3D11PixelShader> shader;
 	vector<unique_ptr<ShaderSampler>> samplers;
 
-	inline void Rebuild(ID3D11Device *dev);
+	void Rebuild(ID3D11Device *dev);
 
 	inline void Release()
 	{
@@ -615,7 +630,7 @@ struct gs_swap_chain : gs_obj {
 	void Resize(uint32_t cx, uint32_t cy);
 	void Init();
 
-	inline void Rebuild(ID3D11Device *dev);
+	void Rebuild(ID3D11Device *dev);
 
 	inline void Release()
 	{
@@ -644,7 +659,7 @@ struct BlendState {
 		  srcFactorC   (GS_BLEND_SRCALPHA),
 		  destFactorC  (GS_BLEND_INVSRCALPHA),
 		  srcFactorA   (GS_BLEND_ONE),
-		  destFactorA  (GS_BLEND_ONE),
+		  destFactorA  (GS_BLEND_INVSRCALPHA),
 		  redEnabled   (true),
 		  greenEnabled (true),
 		  blueEnabled  (true),
@@ -662,7 +677,7 @@ struct SavedBlendState : BlendState {
 	ComPtr<ID3D11BlendState> state;
 	D3D11_BLEND_DESC         bd;
 
-	inline void Rebuild(ID3D11Device *dev);
+	void Rebuild(ID3D11Device *dev);
 
 	inline void Release()
 	{
@@ -719,7 +734,7 @@ struct SavedZStencilState : ZStencilState {
 	ComPtr<ID3D11DepthStencilState> state;
 	D3D11_DEPTH_STENCIL_DESC        dsd;
 
-	inline void Rebuild(ID3D11Device *dev);
+	void Rebuild(ID3D11Device *dev);
 
 	inline void Release()
 	{
@@ -754,7 +769,7 @@ struct SavedRasterState : RasterState {
 	ComPtr<ID3D11RasterizerState> state;
 	D3D11_RASTERIZER_DESC         rd;
 
-	inline void Rebuild(ID3D11Device *dev);
+	void Rebuild(ID3D11Device *dev);
 
 	inline void Release()
 	{
@@ -779,6 +794,7 @@ struct gs_device {
 	ComPtr<ID3D11Device>        device;
 	ComPtr<ID3D11DeviceContext> context;
 	uint32_t                    adpIdx = 0;
+	bool                        nv12Supported = false;
 
 	gs_texture_2d               *curRenderTarget = nullptr;
 	gs_zstencil_buffer          *curZStencilBuffer = nullptr;
@@ -845,6 +861,11 @@ struct gs_device {
 
 	void RebuildDevice();
 
+	bool HasBadNV12Output();
+
 	gs_device(uint32_t adapterIdx);
 	~gs_device();
 };
+
+extern "C" EXPORT int device_texture_acquire_sync(gs_texture_t *tex,
+		uint64_t key, uint32_t ms);

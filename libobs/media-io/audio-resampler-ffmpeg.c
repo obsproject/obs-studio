@@ -63,10 +63,10 @@ static inline uint64_t convert_speaker_layout(enum speaker_layout layout)
 	case SPEAKERS_UNKNOWN:          return 0;
 	case SPEAKERS_MONO:             return AV_CH_LAYOUT_MONO;
 	case SPEAKERS_STEREO:           return AV_CH_LAYOUT_STEREO;
-	case SPEAKERS_2POINT1:          return AV_CH_LAYOUT_2_1;
+	case SPEAKERS_2POINT1:          return AV_CH_LAYOUT_SURROUND;
 	case SPEAKERS_4POINT0:          return AV_CH_LAYOUT_4POINT0;
 	case SPEAKERS_4POINT1:          return AV_CH_LAYOUT_4POINT1;
-	case SPEAKERS_5POINT1:          return AV_CH_LAYOUT_5POINT1;
+	case SPEAKERS_5POINT1:          return AV_CH_LAYOUT_5POINT1_BACK;
 	case SPEAKERS_7POINT1:          return AV_CH_LAYOUT_7POINT1;
 	}
 
@@ -100,6 +100,21 @@ audio_resampler_t *audio_resampler_create(const struct resample_info *dst,
 		blog(LOG_ERROR, "swr_alloc_set_opts failed");
 		audio_resampler_destroy(rs);
 		return NULL;
+	}
+
+	if (rs->input_layout == AV_CH_LAYOUT_MONO && rs->output_ch > 1) {
+		const double matrix[MAX_AUDIO_CHANNELS][MAX_AUDIO_CHANNELS] = {
+		{1},
+		{1, 1},
+		{1, 1, 0},
+		{1, 1, 1, 1},
+		{1, 1, 1, 0, 1},
+		{1, 1, 1, 1, 1, 1},
+		{1, 1, 1, 0, 1, 1, 1},
+		{1, 1, 1, 0, 1, 1, 1, 1},
+		};
+		if (swr_set_matrix(rs->context, matrix[rs->output_ch - 1], 1) < 0)
+			blog(LOG_DEBUG, "swr_set_matrix failed for mono upmix\n");
 	}
 
 	errcode = swr_init(rs->context);

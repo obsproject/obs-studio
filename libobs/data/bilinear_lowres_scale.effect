@@ -6,8 +6,6 @@
 uniform float4x4 ViewProj;
 uniform texture2d image;
 uniform float4x4 color_matrix;
-uniform float3 color_range_min = {0.0, 0.0, 0.0};
-uniform float3 color_range_max = {1.0, 1.0, 1.0};
 uniform float2 base_dimension_i;
 
 sampler_state textureSampler {
@@ -56,12 +54,19 @@ float4 PSDrawLowresBilinearRGBA(VertData v_in) : TARGET
 	return DrawLowresBilinear(v_in);
 }
 
+float4 PSDrawLowresBilinearRGBADivide(VertData v_in) : TARGET
+{
+	float4 rgba = DrawLowresBilinear(v_in);
+	float alpha = rgba.a;
+	float multiplier = (alpha > 0.0) ? (1.0 / alpha) : 0.0;
+	return float4(rgba.rgb * multiplier, alpha);
+}
+
 float4 PSDrawLowresBilinearMatrix(VertData v_in) : TARGET
 {
-	float4 yuv = DrawLowresBilinear(v_in);
-
-	yuv.xyz = clamp(yuv.xyz, color_range_min, color_range_max);
-	return saturate(mul(float4(yuv.xyz, 1.0), color_matrix));
+	float3 rgb = DrawLowresBilinear(v_in).rgb;
+	float3 yuv = mul(float4(saturate(rgb), 1.0), color_matrix).xyz;
+	return float4(yuv, 1.0);
 }
 
 technique Draw
@@ -70,6 +75,15 @@ technique Draw
 	{
 		vertex_shader = VSDefault(v_in);
 		pixel_shader  = PSDrawLowresBilinearRGBA(v_in);
+	}
+}
+
+technique DrawAlphaDivide
+{
+	pass
+	{
+		vertex_shader = VSDefault(v_in);
+		pixel_shader  = PSDrawLowresBilinearRGBADivide(v_in);
 	}
 }
 

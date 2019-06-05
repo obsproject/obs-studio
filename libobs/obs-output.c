@@ -22,7 +22,7 @@
 
 #if BUILD_CAPTIONS
 #include <caption/caption.h>
-#include <caption/avc.h>
+#include <caption/mpeg.h>
 #endif
 
 static inline bool active(const struct obs_output *output)
@@ -255,13 +255,17 @@ bool obs_output_actual_start(obs_output_t *output)
 bool obs_output_start(obs_output_t *output)
 {
 	bool encoded;
+	bool has_service;
 	if (!obs_output_valid(output, "obs_output_start"))
 		return false;
 	if (!output->context.data)
 		return false;
 
-	encoded = (output->info.flags & OBS_OUTPUT_ENCODED) != 0;
+	has_service = (output->info.flags & OBS_OUTPUT_SERVICE) != 0;
+	if (has_service && !obs_service_initialize(output->service, output))
+		return false;
 
+	encoded = (output->info.flags & OBS_OUTPUT_ENCODED) != 0;
 	if (encoded && output->delay_sec) {
 		return obs_output_delay_start(output);
 	} else {
@@ -419,6 +423,18 @@ bool obs_output_active(const obs_output_t *output)
 		(active(output) || reconnecting(output)) : false;
 }
 
+uint32_t obs_output_get_flags(const obs_output_t *output)
+{
+	return obs_output_valid(output, "obs_output_get_flags") ?
+		output->info.flags : 0;
+}
+
+uint32_t obs_get_output_flags(const char *id)
+{
+	const struct obs_output_info *info = find_output(id);
+	return info ? info->flags : 0;
+}
+
 static inline obs_data_t *get_defaults(const struct obs_output_info *info)
 {
 	obs_data_t *settings = obs_data_create();
@@ -532,19 +548,46 @@ audio_t *obs_output_audio(const obs_output_t *output)
 		output->audio : NULL;
 }
 
+static inline size_t get_first_mixer(const obs_output_t *output)
+{
+	for (size_t i = 0; i < MAX_AUDIO_MIXES; i++) {
+		if ((((size_t)1 << i) & output->mixer_mask) != 0) {
+			return i;
+		}
+	}
+
+	return 0;
+}
+
 void obs_output_set_mixer(obs_output_t *output, size_t mixer_idx)
 {
 	if (!obs_output_valid(output, "obs_output_set_mixer"))
 		return;
 
 	if (!active(output))
-		output->mixer_idx = mixer_idx;
+		output->mixer_mask = (size_t)1 << mixer_idx;
 }
 
 size_t obs_output_get_mixer(const obs_output_t *output)
 {
-	return obs_output_valid(output, "obs_output_get_mixer") ?
-		output->mixer_idx : 0;
+	if (!obs_output_valid(output, "obs_output_get_mixer"))
+		return 0;
+
+	return get_first_mixer(output);
+}
+
+void obs_output_set_mixers(obs_output_t *output, size_t mixers)
+{
+	if (!obs_output_valid(output, "obs_output_set_mixers"))
+		return;
+
+	output->mixer_mask = mixers;
+}
+
+size_t obs_output_get_mixers(const obs_output_t *output)
+{
+	return obs_output_valid(output, "obs_output_get_mixers") ?
+		output->mixer_mask : 0;
 }
 
 void obs_output_remove_encoder(struct obs_output *output,
@@ -977,7 +1020,7 @@ static bool add_caption(struct obs_output *output, struct encoder_packet *out)
 	if (out->priority > 1)
 		return false;
 
-	sei_init(&sei);
+	sei_init(&sei, 0.0);
 
 	da_init(out_data);
 	da_push_back_array(out_data, &ref, sizeof(ref));
@@ -1031,17 +1074,18 @@ static inline void send_interleaved(struct obs_output *output)
 		double frame_timestamp = (out.pts * out.timebase_num) /
 			(double)out.timebase_den;
 
-		/* TODO if output->caption_timestamp is more than 5 seconds
-		 * old, send empty frame */
 		if (output->caption_head &&
 		    output->caption_timestamp <= frame_timestamp) {
-			blog(LOG_INFO,"Sending caption: %f \"%s\"",
+			blog(LOG_DEBUG,"Sending caption: %f \"%s\"",
 					frame_timestamp,
 					&output->caption_head->text[0]);
 
+			double display_duration =
+				output->caption_head->display_duration;
+
 			if (add_caption(output, &out)) {
 				output->caption_timestamp =
-					frame_timestamp + 2.0;
+					frame_timestamp + display_duration;
 			}
 		}
 
@@ -1464,6 +1508,7 @@ static void default_raw_video_callback(void *param, struct video_data *frame)
 	output->total_frames++;
 }
 
+
 static void default_raw_audio_callback(void *param, size_t mix_idx,
 		struct audio_data *frames)
 {
@@ -1471,9 +1516,10 @@ static void default_raw_audio_callback(void *param, size_t mix_idx,
 	if (!data_active(output))
 		return;
 
-	output->info.raw_audio(output->context.data, frames);
-
-	UNUSED_PARAMETER(mix_idx);
+	if (output->info.raw_audio2)
+		output->info.raw_audio2(output->context.data, mix_idx, frames);
+	else
+		output->info.raw_audio(output->context.data, frames);
 }
 
 static inline void start_audio_encoders(struct obs_output *output,
@@ -1487,6 +1533,25 @@ static inline void start_audio_encoders(struct obs_output *output,
 	}
 }
 
+static inline void start_raw_audio(obs_output_t *output)
+{
+	if (output->info.raw_audio2) {
+		for (int idx = 0; idx < MAX_AUDIO_MIXES; idx++) {
+			if ((output->mixer_mask & ((size_t)1 << idx)) != 0) {
+				audio_output_connect(output->audio, idx,
+						get_audio_conversion(output),
+						default_raw_audio_callback,
+						output);
+			}
+		}
+	} else {
+		audio_output_connect(output->audio, get_first_mixer(output),
+				     get_audio_conversion(output),
+				     default_raw_audio_callback,
+				     output);
+	}
+}
+
 static void reset_packet_data(obs_output_t *output)
 {
 	output->received_audio   = false;
@@ -1496,7 +1561,7 @@ static void reset_packet_data(obs_output_t *output)
 	output->video_offset     = 0;
 
 	for (size_t i = 0; i < MAX_AUDIO_MIXES; i++)
-		output->audio_offsets[0] = 0;
+		output->audio_offsets[i] = 0;
 
 	free_packets(output);
 }
@@ -1541,13 +1606,11 @@ static void hook_data_capture(struct obs_output *output, bool encoded,
 					encoded_callback, output);
 	} else {
 		if (has_video)
-			video_output_connect(output->video,
+			start_raw_video(output->video,
 					get_video_conversion(output),
 					default_raw_video_callback, output);
 		if (has_audio)
-			audio_output_connect(output->audio, output->mixer_idx,
-					get_audio_conversion(output),
-					default_raw_audio_callback, output);
+			start_raw_audio(output);
 	}
 }
 
@@ -1688,15 +1751,10 @@ bool obs_output_initialize_encoders(obs_output_t *output, uint32_t flags)
 
 	if (!encoded)
 		return false;
-	if (has_service && !obs_service_initialize(output->service, output))
-		return false;
 	if (has_video && !obs_encoder_initialize(output->video_encoder))
 		return false;
 	if (has_audio && !initialize_audio_encoders(output, num_mixes))
 		return false;
-
-	if (has_video && has_audio)
-		pair_encoders(output, num_mixes);
 
 	return true;
 }
@@ -1724,6 +1782,7 @@ static bool begin_delayed_capture(obs_output_t *output)
 bool obs_output_begin_data_capture(obs_output_t *output, uint32_t flags)
 {
 	bool encoded, has_video, has_audio, has_service;
+	size_t num_mixes;
 
 	if (!obs_output_valid(output, "obs_output_begin_data_capture"))
 		return false;
@@ -1739,6 +1798,10 @@ bool obs_output_begin_data_capture(obs_output_t *output, uint32_t flags)
 	if (!can_begin_data_capture(output, encoded, has_video, has_audio,
 				has_service))
 		return false;
+
+	num_mixes = num_audio_mixes(output);
+	if (has_video && has_audio)
+		pair_encoders(output, num_mixes);
 
 	os_atomic_set_bool(&output->data_active, true);
 	hook_data_capture(output, encoded, has_video, has_audio);
@@ -1774,6 +1837,25 @@ static inline void stop_audio_encoders(obs_output_t *output,
 	}
 }
 
+static inline void stop_raw_audio(obs_output_t *output)
+{
+	if (output->info.raw_audio2) {
+		for (int idx = 0; idx < MAX_AUDIO_MIXES; idx++) {
+			if ((output->mixer_mask & ((size_t)1 << idx)) != 0) {
+				audio_output_disconnect(output->audio,
+						     idx,
+						     default_raw_audio_callback,
+						     output);
+			}
+		}
+	} else {
+		audio_output_disconnect(output->audio,
+				     get_first_mixer(output),
+				     default_raw_audio_callback,
+				     output);
+	}
+}
+
 static void *end_data_capture_thread(void *data)
 {
 	bool encoded, has_video, has_audio, has_service;
@@ -1797,12 +1879,10 @@ static void *end_data_capture_thread(void *data)
 			stop_audio_encoders(output, encoded_callback);
 	} else {
 		if (has_video)
-			video_output_disconnect(output->video,
+			stop_raw_video(output->video,
 					default_raw_video_callback, output);
 		if (has_audio)
-			audio_output_disconnect(output->audio,
-					output->mixer_idx,
-					default_raw_audio_callback, output);
+			stop_raw_audio(output);
 	}
 
 	if (has_service)
@@ -2058,10 +2138,13 @@ const char *obs_output_get_id(const obs_output_t *output)
 
 #if BUILD_CAPTIONS
 static struct caption_text *caption_text_new(const char *text, size_t bytes,
-		struct caption_text *tail, struct caption_text **head)
+		struct caption_text *tail, struct caption_text **head,
+		double display_duration)
 {
 	struct caption_text *next = bzalloc(sizeof(struct caption_text));
-	snprintf(&next->text[0], CAPTION_LINE_BYTES + 1, "%.*s", bytes, text);
+	snprintf(&next->text[0], CAPTION_LINE_BYTES + 1, "%.*s",
+			(int)bytes, text);
+	next->display_duration = display_duration;
 
 	if (!*head) {
 		*head = next;
@@ -2076,39 +2159,28 @@ void obs_output_output_caption_text1(obs_output_t *output, const char *text)
 {
 	if (!obs_output_valid(output, "obs_output_output_caption_text1"))
 		return;
+	obs_output_output_caption_text2(output, text, 2.0f);
+}
+
+void obs_output_output_caption_text2(obs_output_t *output, const char *text,
+		double display_duration)
+{
+	if (!obs_output_valid(output, "obs_output_output_caption_text2"))
+		return;
 	if (!active(output))
 		return;
 
 	// split text into 32 character strings
 	int size = (int)strlen(text);
-	int r;
-	size_t char_count;
-	size_t line_length = 0;
-	size_t trimmed_length = 0;
-
 	blog(LOG_DEBUG, "Caption text: %s", text);
 
 	pthread_mutex_lock(&output->caption_mutex);
 
-	for (r = 0 ; 0 < size && CAPTION_LINE_CHARS > r; ++r) {
-		line_length = utf8_line_length(text);
-		trimmed_length = utf8_trimmed_length(text, line_length);
-		char_count = utf8_char_count(text, trimmed_length);
-
-		if (SCREEN_COLS < char_count) {
-			char_count = utf8_wrap_length(text, CAPTION_LINE_CHARS);
-			line_length = utf8_string_length(text, char_count + 1);
-		}
-
-		output->caption_tail = caption_text_new(
-				text,
-				line_length,
-				output->caption_tail,
-				&output->caption_head);
-
-		text += line_length;
-		size -= (int)line_length;
-	}
+	output->caption_tail = caption_text_new(
+			text, size,
+			output->caption_tail,
+			&output->caption_head,
+			display_duration);
 
 	pthread_mutex_unlock(&output->caption_mutex);
 }

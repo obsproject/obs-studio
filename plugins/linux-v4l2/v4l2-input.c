@@ -75,6 +75,7 @@ struct v4l2_data {
 	int dv_timing;
 	int resolution;
 	int framerate;
+	int color_range;
 
 	/* internal data */
 	obs_source_t *source;
@@ -112,7 +113,7 @@ static void v4l2_prep_obs_frame(struct v4l2_data *data,
 	frame->width = data->width;
 	frame->height = data->height;
 	frame->format = v4l2_to_obs_video_format(data->pixfmt);
-	video_format_get_parameters(VIDEO_CS_DEFAULT, VIDEO_RANGE_PARTIAL,
+	video_format_get_parameters(VIDEO_CS_DEFAULT, data->color_range,
 		frame->color_matrix, frame->color_range_min,
 		frame->color_range_max);
 
@@ -231,6 +232,7 @@ static void v4l2_defaults(obs_data_t *settings)
 	obs_data_set_default_int(settings, "dv_timing", -1);
 	obs_data_set_default_int(settings, "resolution", -1);
 	obs_data_set_default_int(settings, "framerate", -1);
+	obs_data_set_default_int(settings, "color_range", VIDEO_RANGE_PARTIAL);
 	obs_data_set_default_bool(settings, "buffering", true);
 }
 
@@ -329,7 +331,11 @@ static void v4l2_device_list(obs_property_t *prop, obs_data_t *settings)
 			continue;
 		}
 
-		obs_property_list_add_string(prop, (char *) video_cap.card,
+		/* make sure device names are unique */
+		char unique_device_name[68];
+		sprintf(unique_device_name, "%s (%s)", video_cap.card,
+				video_cap.bus_info);
+		obs_property_list_add_string(prop, unique_device_name,
 				device.array);
 		blog(LOG_INFO, "Found device '%s' at %s", video_cap.card,
 				device.array);
@@ -759,6 +765,12 @@ static obs_properties_t *v4l2_properties(void *vptr)
 			"framerate", obs_module_text("FrameRate"),
 			OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
 
+	obs_property_t *color_range_list = obs_properties_add_list(props,
+			"color_range", obs_module_text("ColorRange"),
+			OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
+	obs_property_list_add_int(color_range_list, obs_module_text("ColorRange.Partial"), VIDEO_RANGE_PARTIAL);
+	obs_property_list_add_int(color_range_list, obs_module_text("ColorRange.Full"), VIDEO_RANGE_FULL);
+
 	obs_properties_add_bool(props,
 			"buffering", obs_module_text("UseBuffering"));
 
@@ -940,6 +952,7 @@ static void v4l2_update(void *vptr, obs_data_t *settings)
 	data->dv_timing  = obs_data_get_int(settings, "dv_timing");
 	data->resolution = obs_data_get_int(settings, "resolution");
 	data->framerate  = obs_data_get_int(settings, "framerate");
+	data->color_range  = obs_data_get_int(settings, "color_range");
 
 	v4l2_update_source_flags(data, settings);
 

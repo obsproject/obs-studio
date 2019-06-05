@@ -117,6 +117,18 @@ Output Definition Structure (obs_output_info)
    This is called when the output recieves raw audio data.  Only applies
    to outputs that are not encoded.
 
+   **This callback must be used with single-track raw outputs.**
+
+   :param frames: The raw audio frames
+
+.. member:: void (*obs_output_info.raw_audio2)(void *data, size_t idx, struct audio_data *frames)
+
+   This is called when the output recieves raw audio data.  Only applies
+   to outputs that are not encoded.
+
+   **This callback must be used with multi-track raw outputs.**
+
+   :param idx:    The audio track index
    :param frames: The raw audio frames
 
 .. member:: void (*obs_output_info.encoded_packet)(void *data, struct encoder_packet *packet)
@@ -125,7 +137,10 @@ Output Definition Structure (obs_output_info)
    Only applies to outputs that are encoded.  Packets will always be
    given in monotonic timestamp order.
 
-   :param packet: The video or audio packet
+   :param packet: The video or audio packet.  If NULL, an encoder error
+                  occurred, and the output should call
+                  :c:func:`obs_output_signal_stop()` with the error code
+                  **OBS_OUTPUT_ENCODE_ERROR**.
 
 .. member:: void (*obs_output_info.update)(void *data, obs_data_t *settings)
 
@@ -240,6 +255,7 @@ Output Signals
                   | OBS_OUTPUT_DISCONNECTED   - Unexpectedly disconnected
                   | OBS_OUTPUT_UNSUPPORTED    - The settings, video/audio format, or codecs are unsupported by this output
                   | OBS_OUTPUT_NO_SPACE       - Ran out of disk space
+                  | OBS_OUTPUT_ENCODE_ERROR   - Encoder error
 
 **starting** (ptr output)
 
@@ -472,7 +488,19 @@ General Output Functions
 .. function:: void obs_output_set_mixer(obs_output_t *output, size_t mixer_idx)
               size_t obs_output_get_mixer(const obs_output_t *output)
 
-   Sets/gets the current audio mixer for non-encoded outputs.
+   Sets/gets the current audio mixer for non-encoded outputs.  For
+   multi-track outputs, this would be the equivalent of setting the mask
+   only for the specified mixer index.
+
+---------------------
+
+.. function:: void obs_output_set_mixers(obs_output_t *output, size_t mixers)
+              size_t obs_output_get_mixers(const obs_output_t *output)
+
+   Sets/gets the current audio mixers (via mask) for non-encoded
+   multi-track outputs.  If used with single-track outputs, the
+   single-track output will use either the first set mixer track in the
+   bitmask, or the first track if none is set in the bitmask.
 
 ---------------------
 
@@ -583,6 +611,13 @@ General Output Functions
 
    :return: Supported video/audio codecs of an encoded output, separated
             by semicolen
+
+---------------------
+
+.. function:: uint32_t obs_output_get_flags(const obs_output_t *output)
+              uint32_t obs_get_output_flags(const char *id)
+
+   :return: The output capability flags
 
 ---------------------
 

@@ -59,6 +59,7 @@ struct rtmp_stream {
 
 	volatile bool    active;
 	volatile bool    disconnected;
+	volatile bool    encode_error;
 	pthread_t        send_thread;
 
 	int              max_shutdown_time_sec;

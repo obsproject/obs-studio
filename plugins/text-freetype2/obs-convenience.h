@@ -15,6 +15,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
+#pragma once
+
 #include <obs-module.h>
 
 gs_vertbuffer_t *create_uv_vbuffer(uint32_t num_verts, bool add_color);

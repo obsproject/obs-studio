@@ -32,6 +32,7 @@ private:
 	const char *id;
 
 	static bool EnumSources(void *data, obs_source_t *source);
+	static bool EnumGroups(void *data, obs_source_t *source);
 
 	static void OBSSourceRemoved(void *data, calldata_t *calldata);
 	static void OBSSourceAdded(void *data, calldata_t *calldata);

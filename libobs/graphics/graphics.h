@@ -71,7 +71,8 @@ enum gs_color_format {
 	GS_R32F,
 	GS_DXT1,
 	GS_DXT3,
-	GS_DXT5
+	GS_DXT5,
+	GS_R8G8,
 };
 
 enum gs_zstencil_format {
@@ -267,6 +268,7 @@ typedef struct gs_shader           gs_shader_t;
 typedef struct gs_shader_param     gs_sparam_t;
 typedef struct gs_effect           gs_effect_t;
 typedef struct gs_effect_technique gs_technique_t;
+typedef struct gs_effect_pass      gs_epass_t;
 typedef struct gs_effect_param     gs_eparam_t;
 typedef struct gs_device           gs_device_t;
 typedef struct graphics_subsystem  graphics_t;
@@ -368,11 +370,20 @@ EXPORT bool gs_technique_begin_pass(gs_technique_t *technique, size_t pass);
 EXPORT bool gs_technique_begin_pass_by_name(gs_technique_t *technique,
 		const char *name);
 EXPORT void gs_technique_end_pass(gs_technique_t *technique);
+EXPORT gs_epass_t *gs_technique_get_pass_by_idx(const gs_technique_t *technique,
+		size_t pass);
+EXPORT gs_epass_t *gs_technique_get_pass_by_name(
+		const gs_technique_t *technique, const char *name);
 
 EXPORT size_t gs_effect_get_num_params(const gs_effect_t *effect);
 EXPORT gs_eparam_t *gs_effect_get_param_by_idx(const gs_effect_t *effect,
 		size_t param);
 EXPORT gs_eparam_t *gs_effect_get_param_by_name(const gs_effect_t *effect,
+		const char *name);
+EXPORT size_t gs_param_get_num_annotations(const gs_eparam_t *param);
+EXPORT gs_eparam_t *gs_param_get_annotation_by_idx(const gs_eparam_t *param,
+		size_t annotation);
+EXPORT gs_eparam_t *gs_param_get_annotation_by_name(const gs_eparam_t *param,
 		const char *name);
 
 /** Helper function to simplify effect usage.  Use with a while loop that
@@ -402,6 +413,10 @@ EXPORT void gs_effect_set_vec4(gs_eparam_t *param, const struct vec4 *val);
 EXPORT void gs_effect_set_texture(gs_eparam_t *param, gs_texture_t *val);
 EXPORT void gs_effect_set_val(gs_eparam_t *param, const void *val, size_t size);
 EXPORT void gs_effect_set_default(gs_eparam_t *param);
+EXPORT size_t gs_effect_get_val_size(gs_eparam_t *param);
+EXPORT void *gs_effect_get_val(gs_eparam_t *param);
+EXPORT size_t gs_effect_get_default_val_size(gs_eparam_t *param);
+EXPORT void *gs_effect_get_default_val(gs_eparam_t *param);
 EXPORT void gs_effect_set_next_sampler(gs_eparam_t *param,
 		gs_samplerstate_t *sampler);
 
@@ -430,6 +445,8 @@ EXPORT gs_texture_t *gs_texrender_get_texture(const gs_texrender_t *texrender);
 #define GS_GL_DUMMYTEX   (1<<3) /**<< texture with no allocated texture data */
 #define GS_DUP_BUFFER    (1<<4) /**<< do not pass buffer ownership when
 				 *    creating a vertex/index buffer */
+#define GS_SHARED_TEX    (1<<5)
+#define GS_SHARED_KM_TEX (1<<6)
 
 /* ---------------- */
 /* global functions */
@@ -742,6 +759,36 @@ EXPORT size_t   gs_indexbuffer_get_num_indices(
 EXPORT enum gs_index_type gs_indexbuffer_get_type(
 		const gs_indexbuffer_t *indexbuffer);
 
+EXPORT bool     gs_nv12_available(void);
+
+#define GS_USE_DEBUG_MARKERS 0
+#if GS_USE_DEBUG_MARKERS
+static const float GS_DEBUG_COLOR_DEFAULT[] = { 0.5f, 0.5f, 0.5f, 1.0f };
+static const float GS_DEBUG_COLOR_RENDER_VIDEO[] = { 0.0f, 0.5f, 0.0f, 1.0f };
+static const float GS_DEBUG_COLOR_MAIN_TEXTURE[] = { 0.0f, 0.25f, 0.0f, 1.0f };
+static const float GS_DEBUG_COLOR_DISPLAY[] = { 0.0f, 0.5f, 0.5f, 1.0f };
+static const float GS_DEBUG_COLOR_SOURCE[] = { 0.0f, 0.5f, 5.0f, 1.0f };
+static const float GS_DEBUG_COLOR_ITEM[] = { 0.5f, 0.0f, 0.0f, 1.0f };
+static const float GS_DEBUG_COLOR_ITEM_TEXTURE[] = { 0.25f, 0.0f, 0.0f, 1.0f };
+static const float GS_DEBUG_COLOR_CONVERT_FORMAT[] = { 0.5f, 0.5f, 0.0f, 1.0f };
+#define GS_DEBUG_MARKER_BEGIN(color, markername) \
+		gs_debug_marker_begin(color, markername)
+#define GS_DEBUG_MARKER_BEGIN_FORMAT(color, format, ...) \
+		gs_debug_marker_begin_format(color, format, \
+		__VA_ARGS__)
+#define GS_DEBUG_MARKER_END() gs_debug_marker_end()
+#else
+#define GS_DEBUG_MARKER_BEGIN(color, markername) ((void)0)
+#define GS_DEBUG_MARKER_BEGIN_FORMAT(color, format, ...) ((void)0)
+#define GS_DEBUG_MARKER_END() ((void)0)
+#endif
+
+EXPORT void     gs_debug_marker_begin(const float color[4],
+		const char *markername);
+EXPORT void     gs_debug_marker_begin_format(const float color[4],
+		const char *format, ...);
+EXPORT void     gs_debug_marker_end(void);
+
 #ifdef __APPLE__
 
 /** platform specific function for creating (GL_TEXTURE_RECTANGLE) textures
@@ -780,6 +827,30 @@ EXPORT void gs_texture_release_dc(gs_texture_t *gdi_tex);
 
 /** creates a windows shared texture from a texture handle */
 EXPORT gs_texture_t *gs_texture_open_shared(uint32_t handle);
+
+#define GS_INVALID_HANDLE (uint32_t)-1
+EXPORT uint32_t gs_texture_get_shared_handle(gs_texture_t *tex);
+
+#define GS_WAIT_INFINITE (uint32_t)-1
+
+/**
+ * acquires a lock on a keyed mutex texture.
+ * returns -1 on generic failure, ETIMEDOUT if timed out
+ */
+EXPORT int gs_texture_acquire_sync(gs_texture_t *tex, uint64_t key, uint32_t ms);
+
+/**
+ * releases a lock on a keyed mutex texture to another device.
+ * return 0 on success, -1 on error
+ */
+EXPORT int gs_texture_release_sync(gs_texture_t *tex, uint64_t key);
+
+EXPORT bool gs_texture_create_nv12(gs_texture_t **tex_y, gs_texture_t **tex_uv,
+		uint32_t width, uint32_t height, uint32_t flags);
+
+EXPORT gs_stagesurf_t *gs_stagesurface_create_nv12(
+		uint32_t width, uint32_t height);
+
 #endif
 
 /* inline functions used by modules */
@@ -804,6 +875,7 @@ static inline uint32_t gs_get_format_bpp(enum gs_color_format format)
 	case GS_DXT1:        return 4;
 	case GS_DXT3:        return 8;
 	case GS_DXT5:        return 8;
+	case GS_R8G8:        return 16;
 	case GS_UNKNOWN:     return 0;
 	}
 

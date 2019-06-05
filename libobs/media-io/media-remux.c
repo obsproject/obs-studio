@@ -109,6 +109,8 @@ static inline bool init_output(media_remux_job_t job, const char *out_filename)
 		}
 		out_stream->time_base = out_stream->codec->time_base;
 
+		av_dict_copy(&out_stream->metadata, in_stream->metadata, 0);
+
 		out_stream->codec->codec_tag = 0;
 		if (job->ofmt_ctx->oformat->flags & AVFMT_GLOBALHEADER)
 			out_stream->codec->flags |= CODEC_FLAG_GLOBAL_H;
@@ -139,6 +141,9 @@ bool media_remux_job_create(media_remux_job_t *job, const char *in_filename,
 
 	*job = NULL;
 	if (!os_file_exists(in_filename))
+		return false;
+
+	if (strcmp(in_filename, out_filename) == 0)
 		return false;
 
 	*job = (media_remux_job_t)bzalloc(sizeof(struct media_remux_job));

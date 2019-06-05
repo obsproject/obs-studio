@@ -1,0 +1,11 @@
+prefix=@DEST_DIR@
+exec_prefix=${prefix}
+libdir=${prefix}/@OBS_LIBRARY_DESTINATION@
+includedir=${prefix}/include
+
+Name: libobs
+Description: OBS Studio Library
+Version: @OBS_VERSION@
+Requires: x11
+Cflags: -I${includedir}
+Libs: -L${libdir} @PRIVATE_LIBS@

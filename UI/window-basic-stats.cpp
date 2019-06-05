@@ -4,6 +4,7 @@
 #include "window-basic-main.hpp"
 #include "platform.hpp"
 #include "obs-app.hpp"
+#include "qt-wrappers.hpp"
 
 #include <QDesktopWidget>
 #include <QPushButton>
@@ -15,6 +16,7 @@
 #include <string>
 
 #define TIMER_INTERVAL 2000
+#define REC_TIME_LEFT_INTERVAL 30000
 
 static void setThemeID(QWidget *widget, const QString &themeID)
 {
@@ -28,14 +30,31 @@ static void setThemeID(QWidget *widget, const QString &themeID)
 	}
 }
 
-OBSBasicStats::OBSBasicStats(QWidget *parent)
+void OBSBasicStats::OBSFrontendEvent(enum obs_frontend_event event, void *ptr)
+{
+	OBSBasicStats *stats = reinterpret_cast<OBSBasicStats *>(ptr);
+
+	switch ((int)event) {
+	case OBS_FRONTEND_EVENT_RECORDING_STARTED:
+		stats->StartRecTimeLeft();
+		break;
+	case OBS_FRONTEND_EVENT_RECORDING_STOPPED:
+		stats->ResetRecTimeLeft();
+		break;
+	}
+}
+
+OBSBasicStats::OBSBasicStats(QWidget *parent, bool closeable)
 	: QWidget             (parent),
 	  cpu_info            (os_cpu_usage_info_start()),
-	  timer               (this)
+	  timer               (this),
+	  recTimeLeft         (this)
 {
 	QVBoxLayout *mainLayout = new QVBoxLayout();
 	QGridLayout *topLayout = new QGridLayout();
 	outputLayout = new QGridLayout();
+
+	bitrates.reserve(REC_TIME_LEFT_INTERVAL / TIMER_INTERVAL);
 
 	int row = 0;
 
@@ -57,10 +76,12 @@ OBSBasicStats::OBSBasicStats(QWidget *parent)
 
 	cpuUsage = new QLabel(this);
 	hddSpace = new QLabel(this);
+	recordTimeLeft = new QLabel(this);
 	memUsage = new QLabel(this);
 
 	newStat("CPUUsage", cpuUsage, 0);
 	newStat("HDDSpaceAvailable", hddSpace, 0);
+	newStat("DiskFullIn", recordTimeLeft, 0);
 	newStat("MemoryUsage", memUsage, 0);
 
 	fps = new QLabel(this);
@@ -75,13 +96,15 @@ OBSBasicStats::OBSBasicStats(QWidget *parent)
 	newStat("SkippedFrames", skippedFrames, 2);
 
 	/* --------------------------------------------- */
-
-	QPushButton *closeButton = new QPushButton(QTStr("Close"));
+	QPushButton *closeButton = nullptr;
+	if(closeable)
+		closeButton = new QPushButton(QTStr("Close"));
 	QPushButton *resetButton = new QPushButton(QTStr("Reset"));
 	QHBoxLayout *buttonLayout = new QHBoxLayout;
 	buttonLayout->addStretch();
 	buttonLayout->addWidget(resetButton);
-	buttonLayout->addWidget(closeButton);
+	if(closeable)
+		buttonLayout->addWidget(closeButton);
 
 	/* --------------------------------------------- */
 
@@ -125,24 +148,34 @@ OBSBasicStats::OBSBasicStats(QWidget *parent)
 	setLayout(mainLayout);
 
 	/* --------------------------------------------- */
-
-	connect(closeButton, &QPushButton::clicked, [this] () {close();});
+	if(closeable)
+		connect(closeButton, &QPushButton::clicked,
+				[this] () {close();});
 	connect(resetButton, &QPushButton::clicked, [this] () {Reset();});
 
-	installEventFilter(CreateShortcutFilter());
+	delete shortcutFilter;
+	shortcutFilter = CreateShortcutFilter();
+	installEventFilter(shortcutFilter);
 
 	resize(800, 280);
-	setWindowFlags(Qt::Window |
-	               Qt::WindowMinimizeButtonHint |
-	               Qt::WindowCloseButtonHint);
+
 	setWindowTitle(QTStr("Basic.Stats"));
+	setWindowIcon(QIcon::fromTheme("obs", QIcon(":/res/images/obs.png")));
+
 	setWindowModality(Qt::NonModal);
 	setAttribute(Qt::WA_DeleteOnClose, true);
 
 	QObject::connect(&timer, &QTimer::timeout, this, &OBSBasicStats::Update);
 	timer.setInterval(TIMER_INTERVAL);
-	timer.start();
+
+	if (isVisible())
+		timer.start();
+
 	Update();
+
+	QObject::connect(&recTimeLeft, &QTimer::timeout, this,
+			&OBSBasicStats::RecordingTimeLeft);
+	recTimeLeft.setInterval(REC_TIME_LEFT_INTERVAL);
 
 	OBSBasic *main = reinterpret_cast<OBSBasic*>(App()->GetMainWindow());
 
@@ -162,6 +195,8 @@ OBSBasicStats::OBSBasicStats(QWidget *parent)
 						size(), rect));
 		}
 	}
+
+	obs_frontend_add_event_callback(OBSFrontendEvent, this);
 }
 
 void OBSBasicStats::closeEvent(QCloseEvent *event)
@@ -179,6 +214,9 @@ void OBSBasicStats::closeEvent(QCloseEvent *event)
 
 OBSBasicStats::~OBSBasicStats()
 {
+	obs_frontend_remove_event_callback(OBSFrontendEvent, this);
+
+	delete shortcutFilter;
 	os_cpu_usage_info_destroy(cpu_info);
 }
 
@@ -271,7 +309,7 @@ void OBSBasicStats::Update()
 #define MBYTE (1024ULL * 1024ULL)
 #define GBYTE (1024ULL * 1024ULL * 1024ULL)
 #define TBYTE (1024ULL * 1024ULL * 1024ULL * 1024ULL)
-	uint64_t num_bytes = os_get_free_disk_space(path);
+	num_bytes = os_get_free_disk_space(path);
 	QString abrv = QStringLiteral(" MB");
 	long double num;
 
@@ -384,6 +422,45 @@ void OBSBasicStats::Update()
 
 	outputLabels[0].Update(strOutput, false);
 	outputLabels[1].Update(recOutput, true);
+
+	if (obs_output_active(recOutput)) {
+		long double kbps = outputLabels[1].kbps;
+		bitrates.push_back(kbps);
+	}
+}
+
+void OBSBasicStats::StartRecTimeLeft()
+{
+	recordTimeLeft->setText(QTStr("Calculating"));
+	recTimeLeft.start();
+}
+
+void OBSBasicStats::ResetRecTimeLeft()
+{
+	bitrates.clear();
+	recTimeLeft.stop();
+	recordTimeLeft->setText(QTStr(""));
+}
+
+void OBSBasicStats::RecordingTimeLeft()
+{
+	long double averageBitrate = accumulate(bitrates.begin(),
+			bitrates.end(), 0.0) /
+			(long double)bitrates.size();
+	long double bytesPerSec = (averageBitrate / 8.0l) * 1000.0l;
+	long double secondsUntilFull = (long double)num_bytes / bytesPerSec;
+
+	bitrates.clear();
+
+	int totalMinutes = (int)secondsUntilFull / 60;
+	int minutes      = totalMinutes % 60;
+	int hours        = totalMinutes / 60;
+
+	QString text;
+	text.sprintf("%d %s, %d %s", hours, QT_TO_UTF8(QTStr("Hours")),
+			minutes, QT_TO_UTF8(QTStr("Minutes")));
+	recordTimeLeft->setText(text);
+	recordTimeLeft->setMinimumWidth(recordTimeLeft->width());
 }
 
 void OBSBasicStats::Reset()
@@ -419,8 +496,7 @@ void OBSBasicStats::OutputLabels::Update(obs_output_t *output, bool rec)
 	uint64_t bitsBetween = (bytesSent - lastBytesSent) * 8;
 	long double timePassed = (long double)(curTime - lastBytesSentTime) /
 		1000000000.0l;
-	long double kbps = (long double)bitsBetween /
-		timePassed / 1000.0l;
+	kbps = (long double)bitsBetween / timePassed / 1000.0l;
 
 	if (timePassed < 0.01l)
 		kbps = 0.0l;
@@ -498,4 +574,14 @@ void OBSBasicStats::OutputLabels::Reset(obs_output_t *output)
 
 	first_total   = obs_output_get_total_frames(output);
 	first_dropped = obs_output_get_frames_dropped(output);
+}
+
+void OBSBasicStats::showEvent(QShowEvent *)
+{
+	timer.start(TIMER_INTERVAL);
+}
+
+void OBSBasicStats::hideEvent(QHideEvent *)
+{
+	timer.stop();
 }

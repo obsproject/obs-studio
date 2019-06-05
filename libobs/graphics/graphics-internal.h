@@ -232,6 +232,12 @@ struct gs_exports {
 	void (*gs_shader_set_next_sampler)(gs_sparam_t *param,
 			gs_samplerstate_t *sampler);
 
+	bool (*device_nv12_available)(gs_device_t *device);
+
+	void (*device_debug_marker_begin)(gs_device_t *device,
+			const char *markername, const float color[4]);
+	void (*device_debug_marker_end)(gs_device_t *device);
+
 #ifdef __APPLE__
 	/* OSX/Cocoa specific functions */
 	gs_texture_t *(*device_texture_create_from_iosurface)(gs_device_t *dev,
@@ -261,6 +267,16 @@ struct gs_exports {
 
 	gs_texture_t *(*device_texture_open_shared)(gs_device_t *device,
 				uint32_t handle);
+	uint32_t (*device_texture_get_shared_handle)(gs_texture_t *tex);
+	int (*device_texture_acquire_sync)(gs_texture_t *tex, uint64_t key,
+			uint32_t ms);
+	int (*device_texture_release_sync)(gs_texture_t *tex, uint64_t key);
+	bool (*device_texture_create_nv12)(gs_device_t *device,
+			gs_texture_t **tex_y, gs_texture_t **tex_uv,
+			uint32_t width, uint32_t height, uint32_t flags);
+
+	gs_stagesurf_t *(*device_stagesurface_create_nv12)(gs_device_t *device,
+		uint32_t width, uint32_t height);
 #endif
 };
 

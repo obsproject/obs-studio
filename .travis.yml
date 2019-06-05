@@ -20,6 +20,7 @@ env:
 matrix:
   include:
     - os: osx
+      osx_image: xcode9.4
       env:
        - CMAKE_PREFIX_PATH=/usr/local/opt/qt5/lib/cmake
        - CEF_BUILD_VERSION=3.3282.1726.gc8368c8
@@ -28,7 +29,7 @@ matrix:
       before_deploy: "./CI/before-deploy-osx.sh"
 
     - os: linux
-      dist: trusty
+      dist: xenial
       sudo: required
       before_install: "./CI/install-dependencies-linux.sh"
       before_script: "./CI/before-script-linux.sh"
@@ -45,24 +46,14 @@ deploy:
   region: us-west-2
   acl: public_read
   on:
-    repo: jp9000/obs-studio
+    repo: obsproject/obs-studio
     condition: "$TRAVIS_OS_NAME = osx"
     all_branches: true
 
-# The channel name "azubu.il.us.quakenet.org#obs-dev" is encrypted against jp9000/obs-studio to prevent IRC spam of forks
-#notifications:
-#  irc:
-#    skip_join: false
-#    template:
-#      - "[Travis CI|%{result}] %{repository_name}/%{branch} (%{author} - %{commit_subject}) %{build_url}"
-#    channels:
-#      - secure: k9j7+ogVODMlveZdd5pP73AVLCFl1VbzVaVon0ECn3EQcxnLSpiZbc6l+PnIUKgee5pRKtUB4breufgmr4puq3s69YeQiOVKk5gx2yJGZ5jGacbSne0xTspzPxapiEbVUkcJ2L7gKntDG4+SUiW67dtt4G26O7zsErDF/lY/woQ=
-#    on_failure: always
-#    on_success: change
 notifications:
   webhooks:
     urls:
-      - secure: T5RBY818nO40nr5eC8pdrCfAdQKGkjQdbyYw7mfFrhxWxgt/U5tyKXpX0l9zNGfobS0SnLSqF71OrfW04V97oijXx3q5Y24xV6mSrlLQZOq19+XvGp82LDpkVd4yi2N0kBYpoANB9Pkof4jWT/rKfdQCQttluOLjgr5SM0uWHRg=
-    on_success: change
+      - secure: EVI2cu5OnNxVTl4jdVppps7O869gGN1PDcSi8fqq/HJVM5kif8iDe4wCrIKv6yWrK3dSNwRgBAwpcPZglRJnKRh23PdFoCdnTjgzBQlmjUR6BYlunQvoKR9mVX6AdT8zrFDgmtC4aOtGD2paptpqt+Equo25KrLwv+qOHJOTrSQ=
+    on_success: always
     on_failure: always
 

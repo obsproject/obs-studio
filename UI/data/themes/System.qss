@@ -1,0 +1,206 @@
+/* Intentionnally left blank */
+/* Themes are created using Qt CSS, you can visit */
+/* http://doc.qt.io/qt-5/stylesheet-reference.html and */
+/* http://doc.qt.io/qt-5/stylesheet-examples.html for examples. */
+
+/* OBS will use the theme filename for the settings. */
+/* You can ship images using relative paths in qss. */
+/* Dark Theme is a good place to start if you need */
+/* a template. */
+
+
+/* We need to set back the icons, or the preview wont stick. */
+
+* [themeID="addIconSmall"] {
+    qproperty-icon: url(:/res/images/plus.svg);
+}
+
+* [themeID="removeIconSmall"] {
+    qproperty-icon: url(:/res/images/minus.svg);
+}
+
+* [themeID="propertiesIconSmall"] {
+    qproperty-icon: url(:/settings/images/settings/general.svg);
+}
+
+* [themeID="configIconSmall"] {
+    qproperty-icon: url(:/settings/images/settings/general.svg);
+}
+
+* [themeID="upArrowIconSmall"] {
+    qproperty-icon: url(:/res/images/up.svg);
+}
+
+* [themeID="refreshIconSmall"] {
+    qproperty-icon: url(:/res/images/refresh.svg);
+}
+
+* [themeID="downArrowIconSmall"] {
+    qproperty-icon: url(:/res/images/down.svg);
+}
+
+MuteCheckBox {
+    outline: none;
+}
+
+MuteCheckBox::indicator:checked {
+    image: url(:/res/images/mute.svg);
+}
+
+MuteCheckBox::indicator:unchecked {
+    image: url(:/settings/images/settings/audio.svg);
+}
+
+SourceTreeSubItemCheckBox {
+    background: transparent;
+    outline: none;
+}
+
+SourceTreeSubItemCheckBox::indicator {
+    width: 10px;
+    height: 10px;
+}
+
+SourceTreeSubItemCheckBox::indicator:checked {
+    image: url(:/res/images/expand.svg);
+}
+
+SourceTreeSubItemCheckBox::indicator:unchecked {
+    image: url(:/res/images/down.svg);
+}
+
+OBSHotkeyLabel[hotkeyPairHover=true] {
+    color: red;
+}
+
+
+/* Volume Control */
+
+VolumeMeter {
+    qproperty-backgroundNominalColor: rgb(15, 100, 15);
+    qproperty-backgroundWarningColor: rgb(100, 100, 15);
+    qproperty-backgroundErrorColor: rgb(100, 15, 15);
+    qproperty-foregroundNominalColor: rgb(50, 200, 50);
+    qproperty-foregroundWarningColor: rgb(255, 200, 50);
+    qproperty-foregroundErrorColor: rgb(200, 50, 50);
+    qproperty-magnitudeColor: rgb(0, 0, 0);
+    qproperty-majorTickColor: rgb(0, 0, 0);
+    qproperty-minorTickColor: rgb(50, 50, 50);
+}
+
+
+/* Label warning/error */
+
+QLabel#warningLabel {
+    color: rgb(192, 128, 0);
+    font-weight: bold;
+}
+
+QLabel#errorLabel {
+    color: rgb(192, 0, 0);
+    font-weight: bold;
+}
+
+* [themeID="warning"] {
+    color: rgb(192, 128, 0);
+    font-weight: bold;
+}
+
+* [themeID="error"] {
+    color: rgb(192, 0, 0);
+    font-weight: bold;
+}
+
+* [themeID="good"] {
+    color: rgb(0, 128, 0);
+    font-weight: bold;
+}
+
+/* About dialog */
+
+* [themeID="aboutName"] {
+    font-size: 36px;
+    font-weight: bold;
+}
+
+* [themeID="aboutVersion"] {
+    font-size: 16px;
+    margin-bottom: 20px;
+}
+
+* [themeID="aboutInfo"] {
+    margin-bottom: 20px;
+}
+
+* [themeID="aboutHLayout"] {
+	background-color: #DCD9D7;
+}
+
+/* Preview background color */
+
+OBSQTDisplay {
+	qproperty-displayBackgroundColor: rgb(76, 76, 76);
+}
+
+/* Preview/Program labels */
+
+* [themeID="previewProgramLabels"] {
+    font-size: 18px;
+    font-weight: bold;
+    color: rgb(122,121,122);
+}
+
+/* Settings Icons */
+
+OBSBasicSettings {
+    qproperty-generalIcon: url(:settings/images/settings/general.svg);
+    qproperty-streamIcon: url(:settings/images/settings/stream.svg);
+    qproperty-outputIcon: url(:settings/images/settings/output.svg);
+    qproperty-audioIcon: url(:settings/images/settings/audio.svg);
+    qproperty-videoIcon: url(:settings/images/settings/video.svg);
+    qproperty-hotkeysIcon: url(:settings/images/settings/hotkeys.svg);
+    qproperty-advancedIcon: url(:settings/images/settings/advanced.svg);
+}
+
+OBSBasicSettings QListWidget::item {
+    padding-top: 5px;
+    padding-bottom: 5px;
+}
+
+/* Locked CheckBox */
+
+LockedCheckBox {
+    outline: none;
+    background: transparent;
+}
+
+LockedCheckBox::indicator:checked {
+    image: url(:res/images/locked.svg);
+}
+
+LockedCheckBox::indicator:unchecked {
+    image: url(:res/images/unlocked.svg);
+}
+
+/* Visibilty CheckBox */
+
+VisibilityCheckBox {
+    outline: none;
+    background: transparent;
+}
+
+VisibilityCheckBox::indicator:checked {
+    image: url(:res/images/visible.svg);
+}
+
+VisibilityCheckBox::indicator:unchecked {
+    image: url(:res/images/invisible.svg);
+}
+
+* [themeID="trashIcon"] {
+    qproperty-icon: url(:res/images/trash.svg);
+}
+
+* [themeID="revertIcon"] {
+    qproperty-icon: url(:res/images/revert.svg);
+}

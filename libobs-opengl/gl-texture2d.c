@@ -138,6 +138,9 @@ void gs_texture_destroy(gs_texture_t *tex)
 	if (tex->texture)
 		gl_delete_textures(1, &tex->texture);
 
+	if (tex->fbo)
+		fbo_info_destroy(tex->fbo);
+
 	bfree(tex);
 }
 

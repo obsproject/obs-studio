@@ -30,6 +30,7 @@ extern "C" {
 #endif
 
 #define OBS_ENCODER_CAP_DEPRECATED             (1<<0)
+#define OBS_ENCODER_CAP_PASS_TEXTURE           (1<<1)
 
 /** Specifies the encoder type */
 enum obs_encoder_type {
@@ -234,6 +235,27 @@ struct obs_encoder_info {
 	void (*free_type_data)(void *type_data);
 
 	uint32_t caps;
+
+	/**
+	 * Gets the default settings for this encoder
+	 *
+	 * @param[out]  settings  Data to assign default settings to
+	 * @param[in]   typedata  Type Data
+	 */
+	void (*get_defaults2)(obs_data_t *settings, void *type_data);
+
+	/**
+	 * Gets the property information of this encoder
+	 *
+	 * @param[in]   data      Pointer from create (or null)
+	 * @param[in]   typedata  Type Data
+	 * @return                The properties data
+	 */
+	obs_properties_t *(*get_properties2)(void *data, void *type_data);
+
+	bool (*encode_texture)(void *data, uint32_t handle, int64_t pts,
+			uint64_t lock_key, uint64_t *next_key,
+			struct encoder_packet *packet, bool *received_packet);
 };
 
 EXPORT void obs_register_encoder_s(const struct obs_encoder_info *info,

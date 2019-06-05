@@ -103,7 +103,8 @@ static void draw_cursor(struct dc_capture *capture, HDC hdc, HWND window)
 		pos.x = ci->ptScreenPos.x - (int)ii.xHotspot - win_pos.x;
 		pos.y = ci->ptScreenPos.y - (int)ii.yHotspot - win_pos.y;
 
-		DrawIcon(hdc, pos.x, pos.y, icon);
+		DrawIconEx(hdc, pos.x, pos.y, icon, 0, 0, 0, NULL,
+				DI_NORMAL);
 
 		DeleteObject(ii.hbmColor);
 		DeleteObject(ii.hbmMask);

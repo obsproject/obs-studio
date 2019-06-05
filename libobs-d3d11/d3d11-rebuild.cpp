@@ -17,14 +17,14 @@
 
 #include "d3d11-subsystem.hpp"
 
-inline void gs_vertex_buffer::Rebuild()
+void gs_vertex_buffer::Rebuild()
 {
 	uvBuffers.clear();
 	uvSizes.clear();
 	BuildBuffers();
 }
 
-inline void gs_index_buffer::Rebuild(ID3D11Device *dev)
+void gs_index_buffer::Rebuild(ID3D11Device *dev)
 {
 	HRESULT hr = dev->CreateBuffer(&bd, &srd, &indexBuffer);
 	if (FAILED(hr))
@@ -55,7 +55,7 @@ void gs_texture_2d::RebuildSharedTextureFallback()
 	isShared = false;
 }
 
-inline void gs_texture_2d::Rebuild(ID3D11Device *dev)
+void gs_texture_2d::Rebuild(ID3D11Device *dev)
 {
 	HRESULT hr;
 	if (isShared) {
@@ -89,9 +89,61 @@ inline void gs_texture_2d::Rebuild(ID3D11Device *dev)
 		if (FAILED(hr))
 			throw HRError("Failed to create GDI surface", hr);
 	}
+
+	acquired = false;
+
+	if ((td.MiscFlags & D3D11_RESOURCE_MISC_SHARED_KEYEDMUTEX) != 0) {
+		ComQIPtr<IDXGIResource> dxgi_res(texture);
+		if (dxgi_res)
+			GetSharedHandle(dxgi_res);
+		device_texture_acquire_sync(this, 0, INFINITE);
+	}
 }
 
-inline void gs_zstencil_buffer::Rebuild(ID3D11Device *dev)
+void gs_texture_2d::RebuildNV12_Y(ID3D11Device *dev)
+{
+	gs_texture_2d *tex_uv = pairedNV12texture;
+	HRESULT hr;
+
+	hr = dev->CreateTexture2D(&td, nullptr, &texture);
+	if (FAILED(hr))
+		throw HRError("Failed to create 2D texture", hr);
+
+	hr = dev->CreateShaderResourceView(texture, &resourceDesc, &shaderRes);
+	if (FAILED(hr))
+		throw HRError("Failed to create resource view", hr);
+
+	if (isRenderTarget)
+		InitRenderTargets();
+
+	tex_uv->RebuildNV12_UV(dev);
+
+	acquired = false;
+
+	if ((td.MiscFlags & D3D11_RESOURCE_MISC_SHARED_KEYEDMUTEX) != 0) {
+		ComQIPtr<IDXGIResource> dxgi_res(texture);
+		if (dxgi_res)
+			GetSharedHandle(dxgi_res);
+		device_texture_acquire_sync(this, 0, INFINITE);
+	}
+}
+
+void gs_texture_2d::RebuildNV12_UV(ID3D11Device *dev)
+{
+	gs_texture_2d *tex_y = pairedNV12texture;
+	HRESULT hr;
+
+	texture = tex_y->texture;
+
+	hr = dev->CreateShaderResourceView(texture, &resourceDesc, &shaderRes);
+	if (FAILED(hr))
+		throw HRError("Failed to create resource view", hr);
+
+	if (isRenderTarget)
+		InitRenderTargets();
+}
+
+void gs_zstencil_buffer::Rebuild(ID3D11Device *dev)
 {
 	HRESULT hr;
 	hr = dev->CreateTexture2D(&td, nullptr, &texture);
@@ -103,21 +155,21 @@ inline void gs_zstencil_buffer::Rebuild(ID3D11Device *dev)
 		throw HRError("Failed to create depth stencil view", hr);
 }
 
-inline void gs_stage_surface::Rebuild(ID3D11Device *dev)
+void gs_stage_surface::Rebuild(ID3D11Device *dev)
 {
 	HRESULT hr = dev->CreateTexture2D(&td, nullptr, &texture);
 	if (FAILED(hr))
 		throw HRError("Failed to create staging surface", hr);
 }
 
-inline void gs_sampler_state::Rebuild(ID3D11Device *dev)
+void gs_sampler_state::Rebuild(ID3D11Device *dev)
 {
 	HRESULT hr = dev->CreateSamplerState(&sd, state.Assign());
 	if (FAILED(hr))
 		throw HRError("Failed to create sampler state", hr);
 }
 
-inline void gs_vertex_shader::Rebuild(ID3D11Device *dev)
+void gs_vertex_shader::Rebuild(ID3D11Device *dev)
 {
 	HRESULT hr;
 	hr = dev->CreateVertexShader(data.data(), data.size(), nullptr, &shader);
@@ -142,7 +194,7 @@ inline void gs_vertex_shader::Rebuild(ID3D11Device *dev)
 	}
 }
 
-inline void gs_pixel_shader::Rebuild(ID3D11Device *dev)
+void gs_pixel_shader::Rebuild(ID3D11Device *dev)
 {
 	HRESULT hr;
 	
@@ -164,7 +216,7 @@ inline void gs_pixel_shader::Rebuild(ID3D11Device *dev)
 	}
 }
 
-inline void gs_swap_chain::Rebuild(ID3D11Device *dev)
+void gs_swap_chain::Rebuild(ID3D11Device *dev)
 {
 	HRESULT hr = device->factory->CreateSwapChain(dev, &swapDesc, &swap);
 	if (FAILED(hr))
@@ -172,21 +224,21 @@ inline void gs_swap_chain::Rebuild(ID3D11Device *dev)
 	Init();
 }
 
-inline void SavedBlendState::Rebuild(ID3D11Device *dev)
+void SavedBlendState::Rebuild(ID3D11Device *dev)
 {
 	HRESULT hr = dev->CreateBlendState(&bd, &state);
 	if (FAILED(hr))
 		throw HRError("Failed to create blend state", hr);
 }
 
-inline void SavedZStencilState::Rebuild(ID3D11Device *dev)
+void SavedZStencilState::Rebuild(ID3D11Device *dev)
 {
 	HRESULT hr = dev->CreateDepthStencilState(&dsd, &state);
 	if (FAILED(hr))
 		throw HRError("Failed to create depth stencil state", hr);
 }
 
-inline void SavedRasterState::Rebuild(ID3D11Device *dev)
+void SavedRasterState::Rebuild(ID3D11Device *dev)
 {
 	HRESULT hr = dev->CreateRasterizerState(&rd, &state);
 	if (FAILED(hr))
@@ -287,7 +339,14 @@ try {
 			((gs_index_buffer*)obj)->Rebuild(dev);
 			break;
 		case gs_type::gs_texture_2d:
-			((gs_texture_2d*)obj)->Rebuild(dev);
+			{
+				gs_texture_2d *tex = (gs_texture_2d*)obj;
+				if (!tex->nv12) {
+					tex->Rebuild(dev);
+				} else if (!tex->chroma) {
+					tex->RebuildNV12_Y(dev);
+				}
+			}
 			break;
 		case gs_type::gs_zstencil_buffer:
 			((gs_zstencil_buffer*)obj)->Rebuild(dev);

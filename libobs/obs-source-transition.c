@@ -665,6 +665,11 @@ static inline void handle_stop(obs_source_t *transition)
 			"transition_stop");
 }
 
+void obs_transition_force_stop(obs_source_t *transition)
+{
+	handle_stop(transition);
+}
+
 void obs_transition_video_render(obs_source_t *transition,
 		obs_transition_video_render_callback_t callback)
 {
@@ -718,9 +723,15 @@ void obs_transition_video_render(obs_source_t *transition,
 
 		cx = get_cx(transition);
 		cy = get_cy(transition);
-		if (cx && cy)
+		if (cx && cy) {
+			gs_blend_state_push();
+			gs_blend_function(GS_BLEND_ONE, GS_BLEND_INVSRCALPHA);
+
 			callback(transition->context.data, tex[0], tex[1], t,
 					cx, cy);
+
+			gs_blend_state_pop();
+		}
 
 	} else if (state.transitioning_audio) {
 		if (state.s[1]) {

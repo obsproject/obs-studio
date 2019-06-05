@@ -17,12 +17,15 @@
 #define T_SAMPLING_BILINEAR             obs_module_text("ScaleFiltering.Bilinear")
 #define T_SAMPLING_BICUBIC              obs_module_text("ScaleFiltering.Bicubic")
 #define T_SAMPLING_LANCZOS              obs_module_text("ScaleFiltering.Lanczos")
+#define T_SAMPLING_AREA                 obs_module_text("ScaleFiltering.Area")
 #define T_UNDISTORT                     obs_module_text("UndistortCenter")
+#define T_BASE                          obs_module_text("Base.Canvas")
 
 #define S_SAMPLING_POINT                "point"
 #define S_SAMPLING_BILINEAR             "bilinear"
 #define S_SAMPLING_BICUBIC              "bicubic"
 #define S_SAMPLING_LANCZOS              "lanczos"
+#define S_SAMPLING_AREA                 "area"
 
 struct scale_filter_data {
 	obs_source_t                    *context;
@@ -42,6 +45,7 @@ struct scale_filter_data {
 	bool                            target_valid;
 	bool                            valid;
 	bool                            undistort;
+	bool                            base_canvas_resolution;
 };
 
 static const char *scale_filter_name(void *unused)
@@ -59,18 +63,29 @@ static void scale_filter_update(void *data, obs_data_t *settings)
 	const char *sampling = obs_data_get_string(settings, S_SAMPLING);
 
 	filter->valid = true;
+	filter->base_canvas_resolution = false;
 
-	ret = sscanf(res_str, "%dx%d", &filter->cx_in, &filter->cy_in);
-	if (ret == 2) {
+	if (strcmp(res_str, T_BASE) == 0) {
+		struct obs_video_info ovi;
+		obs_get_video_info(&ovi);
 		filter->aspect_ratio_only = false;
+		filter->base_canvas_resolution = true;
+		filter->cx_in = ovi.base_width;
+		filter->cy_in = ovi.base_height;
 	} else {
-		ret = sscanf(res_str, "%d:%d", &filter->cx_in, &filter->cy_in);
-		if (ret != 2) {
-			filter->valid = false;
-			return;
-		}
+		ret = sscanf(res_str, "%dx%d", &filter->cx_in, &filter->cy_in);
+		if (ret == 2) {
+			filter->aspect_ratio_only = false;
+		} else {
+			ret = sscanf(res_str, "%d:%d", &filter->cx_in,
+					&filter->cy_in);
+			if (ret != 2) {
+				filter->valid = false;
+				return;
+			}
 
-		filter->aspect_ratio_only = true;
+			filter->aspect_ratio_only = true;
+		}
 	}
 
 	if (astrcmpi(sampling, S_SAMPLING_POINT) == 0) {
@@ -81,6 +96,9 @@ static void scale_filter_update(void *data, obs_data_t *settings)
 
 	} else if (astrcmpi(sampling, S_SAMPLING_LANCZOS) == 0) {
 		filter->sampling = OBS_SCALE_LANCZOS;
+
+	} else if (astrcmpi(sampling, S_SAMPLING_AREA) == 0) {
+		filter->sampling = OBS_SCALE_AREA;
 
 	} else { /* S_SAMPLING_BICUBIC */
 		filter->sampling = OBS_SCALE_BICUBIC;
@@ -125,6 +143,13 @@ static void scale_filter_tick(void *data, float seconds)
 	double cy_f;
 	int cx;
 	int cy;
+
+	if (filter->base_canvas_resolution) {
+		struct obs_video_info ovi;
+		obs_get_video_info(&ovi);
+		filter->cx_in = ovi.base_width;
+		filter->cy_in = ovi.base_height;
+	}
 
 	target = obs_filter_get_target(filter->context);
 	filter->cx_out = 0;
@@ -198,6 +223,7 @@ static void scale_filter_tick(void *data, float seconds)
 		case OBS_SCALE_BILINEAR: type = OBS_EFFECT_DEFAULT; break;
 		case OBS_SCALE_BICUBIC:  type = OBS_EFFECT_BICUBIC; break;
 		case OBS_SCALE_LANCZOS:  type = OBS_EFFECT_LANCZOS; break;
+		case OBS_SCALE_AREA:     type = OBS_EFFECT_AREA; break;
 		}
 	}
 
@@ -289,15 +315,15 @@ static bool sampling_modified(obs_properties_t *props, obs_property_t *p,
 	bool has_undistort;
 	if (astrcmpi(sampling, S_SAMPLING_POINT) == 0) {
 		has_undistort = false;
-
 	}
 	else if (astrcmpi(sampling, S_SAMPLING_BILINEAR) == 0) {
 		has_undistort = false;
-
 	}
 	else if (astrcmpi(sampling, S_SAMPLING_LANCZOS) == 0) {
 		has_undistort = true;
-
+	}
+	else if (astrcmpi(sampling, S_SAMPLING_AREA) == 0) {
+		has_undistort = false;
 	}
 	else { /* S_SAMPLING_BICUBIC */
 		has_undistort = true;
@@ -340,6 +366,7 @@ static obs_properties_t *scale_filter_properties(void *data)
 	obs_property_list_add_string(p, T_SAMPLING_BILINEAR, S_SAMPLING_BILINEAR);
 	obs_property_list_add_string(p, T_SAMPLING_BICUBIC,  S_SAMPLING_BICUBIC);
 	obs_property_list_add_string(p, T_SAMPLING_LANCZOS,  S_SAMPLING_LANCZOS);
+	obs_property_list_add_string(p, T_SAMPLING_AREA,     S_SAMPLING_AREA);
 
 	/* ----------------- */
 
@@ -347,6 +374,7 @@ static obs_properties_t *scale_filter_properties(void *data)
 			OBS_COMBO_TYPE_EDITABLE, OBS_COMBO_FORMAT_STRING);
 
 	obs_property_list_add_string(p, T_NONE, T_NONE);
+	obs_property_list_add_string(p, T_BASE, T_BASE);
 
 	for (size_t i = 0; i < NUM_ASPECTS; i++)
 		obs_property_list_add_string(p, aspects[i], aspects[i]);

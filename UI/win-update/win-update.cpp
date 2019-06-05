@@ -8,6 +8,7 @@
 #include <QMessageBox>
 
 #include <string>
+#include <mutex>
 
 #include <util/windows/WinHandle.hpp>
 #include <util/util.hpp>
@@ -27,11 +28,15 @@ using namespace std;
 #define WIN_MANIFEST_URL "https://obsproject.com/update_studio/manifest.json"
 #endif
 
+#ifndef WIN_WHATSNEW_URL
+#define WIN_WHATSNEW_URL "https://obsproject.com/update_studio/whatsnew.json"
+#endif
+
 #ifndef WIN_UPDATER_URL
 #define WIN_UPDATER_URL "https://obsproject.com/update_studio/updater.exe"
 #endif
 
-static HCRYPTPROV provider = 0;
+static __declspec(thread) HCRYPTPROV provider = 0;
 
 #pragma pack(push, r1, 1)
 
@@ -237,7 +242,7 @@ try {
 	return true;
 
 } catch (string text) {
-	blog(LOG_WARNING, "%s: %s", __FUNCTION__, text.c_str());
+	blog(LOG_DEBUG, "%s: %s", __FUNCTION__, text.c_str());
 	return false;
 }
 
@@ -478,6 +483,32 @@ void GenerateGUID(string &guid)
 	HashToString(junk, &guid[0]);
 }
 
+string GetProgramGUID()
+{
+	static mutex m;
+	lock_guard<mutex> lock(m);
+
+	/* NOTE: this is an arbitrary random number that we use to count the
+	 * number of unique OBS installations and is not associated with any
+	 * kind of identifiable information */
+	const char *pguid = config_get_string(GetGlobalConfig(),
+			"General", "InstallGUID");
+	string guid;
+	if (pguid)
+		guid = pguid;
+
+	if (guid.empty()) {
+		GenerateGUID(guid);
+
+		if (!guid.empty())
+			config_set_string(GetGlobalConfig(),
+					"General", "InstallGUID",
+					guid.c_str());
+	}
+
+	return guid;
+}
+
 void AutoUpdateThread::infoMsg(const QString &title, const QString &text)
 {
 	OBSMessageBox::information(App()->GetMainWindow(), title, text);
@@ -555,7 +586,7 @@ try {
 
 	auto ActiveOrGameCaptureLocked = [this] ()
 	{
-		if (video_output_active(obs_get_video())) {
+		if (obs_video_active()) {
 			if (manualUpdate)
 				info(QTStr("Updater.Running.Title"),
 				     QTStr("Updater.Running.Text"));
@@ -605,24 +636,7 @@ try {
 	/* ----------------------------------- *
 	 * get current install GUID            */
 
-	/* NOTE: this is an arbitrary random number that we use to count the
-	 * number of unique OBS installations and is not associated with any
-	 * kind of identifiable information */
-	const char *pguid = config_get_string(GetGlobalConfig(),
-			"General", "InstallGUID");
-	string guid;
-	if (pguid)
-		guid = pguid;
-
-	if (guid.empty()) {
-		GenerateGUID(guid);
-
-		if (!guid.empty())
-			config_set_string(GetGlobalConfig(),
-					"General", "InstallGUID",
-					guid.c_str());
-	}
-
+	string guid = GetProgramGUID();
 	if (!guid.empty()) {
 		string header = "X-OBS2-GUID: ";
 		header += guid;
@@ -776,6 +790,104 @@ try {
 			guid.c_str());
 
 	QMetaObject::invokeMethod(App()->GetMainWindow(), "close");
+
+} catch (string text) {
+	blog(LOG_WARNING, "%s: %s", __FUNCTION__, text.c_str());
+}
+
+/* ------------------------------------------------------------------------ */
+
+void WhatsNewInfoThread::run()
+try {
+	long           responseCode;
+	vector<string> extraHeaders;
+	string         text;
+	string         error;
+	string         signature;
+	CryptProvider  localProvider;
+	BYTE           whatsnewHash[BLAKE2_HASH_LENGTH];
+	bool           success;
+
+	BPtr<char> whatsnewPath = GetConfigPathPtr(
+			"obs-studio\\updates\\whatsnew.json");
+
+	/* ----------------------------------- *
+	 * create signature provider           */
+
+	if (!CryptAcquireContext(&localProvider,
+	                         nullptr,
+	                         MS_ENH_RSA_AES_PROV,
+	                         PROV_RSA_AES,
+	                         CRYPT_VERIFYCONTEXT))
+		throw strprintf("CryptAcquireContext failed: %lu",
+				GetLastError());
+
+	provider = localProvider;
+
+	/* ----------------------------------- *
+	 * avoid downloading json again        */
+
+	if (CalculateFileHash(whatsnewPath, whatsnewHash)) {
+		char hashString[BLAKE2_HASH_STR_LENGTH];
+		HashToString(whatsnewHash, hashString);
+
+		string header = "If-None-Match: ";
+		header += hashString;
+		extraHeaders.push_back(move(header));
+	}
+
+	/* ----------------------------------- *
+	 * get current install GUID            */
+
+	string guid = GetProgramGUID();
+
+	if (!guid.empty()) {
+		string header = "X-OBS2-GUID: ";
+		header += guid;
+		extraHeaders.push_back(move(header));
+	}
+
+	/* ----------------------------------- *
+	 * get json from server                */
+
+	success = GetRemoteFile(WIN_WHATSNEW_URL, text, error, &responseCode,
+			nullptr, nullptr, extraHeaders, &signature);
+
+	if (!success || (responseCode != 200 && responseCode != 304)) {
+		if (responseCode == 404)
+			return;
+
+		throw strprintf("Failed to fetch whatsnew file: %s",
+				error.c_str());
+	}
+
+	/* ----------------------------------- *
+	 * verify file signature               */
+
+	if (responseCode == 200) {
+		success = CheckDataSignature(text, "whatsnew",
+				signature.data(), signature.size());
+		if (!success)
+			throw string("Invalid whatsnew signature");
+	}
+
+	/* ----------------------------------- *
+	 * write or load json                  */
+
+	if (responseCode == 200) {
+		if (!QuickWriteFile(whatsnewPath, text.data(), text.size()))
+			throw strprintf("Could not write file '%s'",
+					whatsnewPath.Get());
+	} else {
+		if (!QuickReadFile(whatsnewPath, text))
+			throw strprintf("Could not read file '%s'",
+					whatsnewPath.Get());
+	}
+
+	/* ----------------------------------- *
+	 * success                             */
+
+	emit Result(QString::fromUtf8(text.c_str()));
 
 } catch (string text) {
 	blog(LOG_WARNING, "%s: %s", __FUNCTION__, text.c_str());

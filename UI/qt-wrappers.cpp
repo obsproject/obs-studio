@@ -19,6 +19,7 @@
 #include "obs-app.hpp"
 
 #include <graphics/graphics.h>
+#include <util/threading.h>
 #include <QWidget>
 #include <QLayout>
 #include <QMessageBox>
@@ -85,6 +86,33 @@ void OBSMessageBox::information(
 	QMessageBox mb(QMessageBox::Information,
 			title, text, QMessageBox::Ok,
 			parent);
+	mb.setButtonText(QMessageBox::Ok, QTStr("OK"));
+	mb.exec();
+}
+
+void OBSMessageBox::warning(
+	QWidget *parent,
+	const QString &title,
+	const QString &text,
+	bool enableRichText)
+{
+	QMessageBox mb(QMessageBox::Warning,
+		title, text, QMessageBox::Ok,
+		parent);
+	if (enableRichText)
+		mb.setTextFormat(Qt::RichText);
+	mb.setButtonText(QMessageBox::Ok, QTStr("OK"));
+	mb.exec();
+}
+
+void OBSMessageBox::critical(
+	QWidget *parent,
+	const QString &title,
+	const QString &text)
+{
+	QMessageBox mb(QMessageBox::Critical,
+		title, text, QMessageBox::Ok,
+		parent);
 	mb.setButtonText(QMessageBox::Ok, QTStr("OK"));
 	mb.exec();
 }
@@ -202,4 +230,88 @@ void DeleteLayout(QLayout *layout)
 	}
 
 	delete layout;
+}
+
+class QuickThread : public QThread {
+public:
+	explicit inline QuickThread(std::function<void()> func_)
+		: func(func_)
+	{}
+
+private:
+	virtual void run() override
+	{
+		func();
+	}
+
+	std::function<void()> func;
+};
+
+QThread *CreateQThread(std::function<void()> func)
+{
+	return new QuickThread(func);
+}
+
+volatile long insideEventLoop = 0;
+
+void ExecuteFuncSafeBlock(std::function<void()> func)
+{
+	QEventLoop eventLoop;
+
+	auto wait = [&] ()
+	{
+		func();
+		QMetaObject::invokeMethod(&eventLoop, "quit",
+				Qt::QueuedConnection);
+	};
+
+	os_atomic_inc_long(&insideEventLoop);
+	QScopedPointer<QThread> thread(CreateQThread(wait));
+	thread->start();
+	eventLoop.exec();
+	thread->wait();
+	os_atomic_dec_long(&insideEventLoop);
+}
+
+void ExecuteFuncSafeBlockMsgBox(
+		std::function<void()> func,
+		const QString &title,
+		const QString &text)
+{
+	QMessageBox dlg;
+	dlg.setWindowFlags(dlg.windowFlags() & ~Qt::WindowCloseButtonHint);
+	dlg.setWindowTitle(title);
+	dlg.setText(text);
+	dlg.setStandardButtons(0);
+
+	auto wait = [&] ()
+	{
+		func();
+		QMetaObject::invokeMethod(&dlg, "accept", Qt::QueuedConnection);
+	};
+
+	os_atomic_inc_long(&insideEventLoop);
+	QScopedPointer<QThread> thread(CreateQThread(wait));
+	thread->start();
+	dlg.exec();
+	thread->wait();
+	os_atomic_dec_long(&insideEventLoop);
+}
+
+static bool enable_message_boxes = false;
+
+void EnableThreadedMessageBoxes(bool enable)
+{
+	enable_message_boxes = enable;
+}
+
+void ExecThreadedWithoutBlocking(
+		std::function<void()> func,
+		const QString &title,
+		const QString &text)
+{
+	if (!enable_message_boxes)
+		ExecuteFuncSafeBlock(func);
+	else
+		ExecuteFuncSafeBlockMsgBox(func, title, text);
 }

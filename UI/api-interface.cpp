@@ -20,6 +20,10 @@ static T GetOBSRef(QListWidgetItem *item)
 void EnumProfiles(function<bool (const char *, const char *)> &&cb);
 void EnumSceneCollections(function<bool (const char *, const char *)> &&cb);
 
+extern volatile bool streaming_active;
+extern volatile bool recording_active;
+extern volatile bool replaybuf_active;
+
 /* ------------------------------------------------------------------------- */
 
 template<typename T> struct OBSStudioCallback {
@@ -63,6 +67,11 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 		return (void*)main->winId();
 	}
 
+	void *obs_frontend_get_system_tray(void) override
+	{
+		return (void*)main->trayIcon.data();
+	}
+
 	void obs_frontend_get_scenes(
 			struct obs_frontend_source_list *sources) override
 	{
@@ -93,9 +102,11 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 	{
 		if (main->IsPreviewProgramMode()) {
 			QMetaObject::invokeMethod(main, "TransitionToScene",
+					WaitConnection(),
 					Q_ARG(OBSSource, OBSSource(scene)));
 		} else {
 			QMetaObject::invokeMethod(main, "SetCurrentScene",
+					WaitConnection(),
 					Q_ARG(OBSSource, OBSSource(scene)),
 					Q_ARG(bool, false));
 		}
@@ -126,6 +137,17 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 	{
 		QMetaObject::invokeMethod(main, "SetTransition",
 				Q_ARG(OBSSource, OBSSource(transition)));
+	}
+
+	int obs_frontend_get_transition_duration(void) override
+	{
+		return main->ui->transitionDuration->value();
+	}
+
+	void obs_frontend_set_transition_duration(int duration) override
+	{
+		QMetaObject::invokeMethod(main->ui->transitionDuration, "setValue",
+			Q_ARG(int, duration));
 	}
 
 	void obs_frontend_get_scene_collections(
@@ -165,6 +187,19 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 				}
 			}
 		}
+	}
+
+	bool obs_frontend_add_scene_collection(
+			const char *name) override
+	{
+		bool success = false;
+		QMetaObject::invokeMethod(main,
+				"AddSceneCollection",
+				WaitConnection(),
+				Q_RETURN_ARG(bool, success),
+				Q_ARG(bool, true),
+				Q_ARG(QString, QT_UTF8(name)));
+		return success;
 	}
 
 	void obs_frontend_get_profiles(
@@ -217,7 +252,7 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 
 	bool obs_frontend_streaming_active(void) override
 	{
-		return main->outputHandler->StreamingActive();
+		return os_atomic_load_bool(&streaming_active);
 	}
 
 	void obs_frontend_recording_start(void) override
@@ -232,7 +267,7 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 
 	bool obs_frontend_recording_active(void) override
 	{
-		return main->outputHandler->RecordingActive();
+		return os_atomic_load_bool(&recording_active);
 	}
 
 	void obs_frontend_replay_buffer_start(void) override
@@ -252,7 +287,7 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 
 	bool obs_frontend_replay_buffer_active(void) override
 	{
-		return main->outputHandler->ReplayBufferActive();
+		return os_atomic_load_bool(&replaybuf_active);
 	}
 
 	void *obs_frontend_add_tools_menu_qaction(const char *name) override
@@ -329,6 +364,16 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 		main->SaveProject();
 	}
 
+	void obs_frontend_defer_save_begin(void) override
+	{
+		QMetaObject::invokeMethod(main, "DeferSaveBegin");
+	}
+
+	void obs_frontend_defer_save_end(void) override
+	{
+		QMetaObject::invokeMethod(main, "DeferSaveEnd");
+	}
+
 	void obs_frontend_add_save_callback(obs_frontend_save_cb callback,
 			void *private_data) override
 	{
@@ -403,6 +448,11 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 	void obs_frontend_set_preview_program_mode(bool enable) override
 	{
 		main->SetPreviewProgramMode(enable);
+	}
+
+	void obs_frontend_preview_program_trigger_transition(void) override
+	{
+		QMetaObject::invokeMethod(main, "TransitionClicked");
 	}
 
 	bool obs_frontend_preview_enabled(void) override

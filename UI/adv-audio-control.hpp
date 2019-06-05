@@ -3,12 +3,13 @@
 #include <obs.hpp>
 #include <QWidget>
 #include <QPointer>
+#include <QDoubleSpinBox>
+#include "balance-slider.hpp"
 
 class QGridLayout;
 class QLabel;
 class QSpinBox;
 class QCheckBox;
-class QSlider;
 class QComboBox;
 
 class OBSAdvAudioCtrl : public QObject {
@@ -19,12 +20,12 @@ private:
 
 	QPointer<QWidget>      forceMonoContainer;
 	QPointer<QWidget>      mixerContainer;
-	QPointer<QWidget>      panningContainer;
+	QPointer<QWidget>      balanceContainer;
 
 	QPointer<QLabel>       nameLabel;
-	QPointer<QSpinBox>     volume;
+	QPointer<QDoubleSpinBox> volume;
 	QPointer<QCheckBox>    forceMono;
-	QPointer<QSlider>      panning;
+	QPointer<BalanceSlider>balance;
 	QPointer<QLabel>       labelL;
 	QPointer<QLabel>       labelR;
 	QPointer<QSpinBox>     syncOffset;
@@ -51,6 +52,7 @@ public:
 	virtual ~OBSAdvAudioCtrl();
 
 	inline obs_source_t *GetSource() const {return source;}
+	void ShowAudioControl(QGridLayout *layout);
 
 public slots:
 	void SourceFlagsChanged(uint32_t flags);
@@ -58,9 +60,9 @@ public slots:
 	void SourceSyncChanged(int64_t offset);
 	void SourceMixersChanged(uint32_t mixers);
 
-	void volumeChanged(int percentage);
+	void volumeChanged(double db);
 	void downmixMonoChanged(bool checked);
-	void panningChanged(int val);
+	void balanceChanged(int val);
 	void syncOffsetChanged(int milliseconds);
 	void monitoringTypeChanged(int index);
 	void mixer1Changed(bool checked);
@@ -69,4 +71,5 @@ public slots:
 	void mixer4Changed(bool checked);
 	void mixer5Changed(bool checked);
 	void mixer6Changed(bool checked);
+	void ResetBalance();
 };

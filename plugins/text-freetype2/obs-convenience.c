@@ -51,7 +51,7 @@ gs_vertbuffer_t *create_uv_vbuffer(uint32_t num_verts, bool add_color) {
 	}
 
 	obs_leave_graphics();
-	
+
 	return tmp;
 }
 

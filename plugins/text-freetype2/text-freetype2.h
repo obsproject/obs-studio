@@ -15,6 +15,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
+#pragma once
+
 #include <obs-module.h>
 #include <ft2build.h>
 
@@ -60,6 +62,7 @@ struct ft2_source {
 	gs_effect_t *draw_effect;
 	bool outline_text, drop_shadow;
 	bool log_mode, word_wrap;
+	uint32_t log_lines;
 
 	obs_source_t *src;
 };

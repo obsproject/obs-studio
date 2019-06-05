@@ -1,4 +1,5 @@
 #include <QMessageBox>
+#include <QAction>
 
 #include <windows.h>
 #include <obs-frontend-api.h>
@@ -88,6 +89,8 @@ CaptionsDialog::CaptionsDialog(QWidget *parent) :
 	ui(new Ui_CaptionsDialog)
 {
 	ui->setupUi(this);
+
+	setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
 
 	auto cb = [this] (obs_source_t *source)
 	{

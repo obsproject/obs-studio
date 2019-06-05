@@ -59,7 +59,18 @@ static inline int get_full_decoded_gif_size(gs_image_file_t *image)
 	return image->gif.width * image->gif.height * 4 * image->gif.frame_count;
 }
 
-static bool init_animated_gif(gs_image_file_t *image, const char *path)
+static inline void *alloc_mem(gs_image_file_t *image, uint64_t *mem_usage,
+		size_t size)
+{
+	UNUSED_PARAMETER(image);
+
+	if (mem_usage)
+		*mem_usage += size;
+	return bzalloc(size);
+}
+
+static bool init_animated_gif(gs_image_file_t *image, const char *path,
+		uint64_t *mem_usage)
 {
 	bool is_animated_gif = true;
 	gif_result result;
@@ -121,9 +132,9 @@ static bool init_animated_gif(gs_image_file_t *image, const char *path)
 	if (image->is_animated_gif) {
 		gif_decode_frame(&image->gif, 0);
 
-		image->animation_frame_cache = bzalloc(
+		image->animation_frame_cache = alloc_mem(image, mem_usage,
 				image->gif.frame_count * sizeof(uint8_t*));
-		image->animation_frame_data = bzalloc(
+		image->animation_frame_data = alloc_mem(image, mem_usage,
 				get_full_decoded_gif_size(image));
 
 		for (unsigned int i = 0; i < image->gif.frame_count; i++) {
@@ -137,6 +148,11 @@ static bool init_animated_gif(gs_image_file_t *image, const char *path)
 		image->cx = (uint32_t)image->gif.width;
 		image->cy = (uint32_t)image->gif.height;
 		image->format = GS_RGBA;
+
+		if (mem_usage) {
+			*mem_usage += image->cx * image->cy * 4;
+			*mem_usage += size;
+		}
 	} else {
 		gif_finalise(&image->gif);
 		bfree(image->gif_data);
@@ -157,7 +173,8 @@ not_animated:
 	return is_animated_gif;
 }
 
-void gs_image_file_init(gs_image_file_t *image, const char *file)
+static void gs_image_file_init_internal(gs_image_file_t *image,
+		const char *file, uint64_t *mem_usage)
 {
 	size_t len;
 
@@ -172,18 +189,28 @@ void gs_image_file_init(gs_image_file_t *image, const char *file)
 	len = strlen(file);
 
 	if (len > 4 && strcmp(file + len - 4, ".gif") == 0) {
-		if (init_animated_gif(image, file))
+		if (init_animated_gif(image, file, mem_usage))
 			return;
 	}
 
 	image->texture_data = gs_create_texture_file_data(file,
 			&image->format, &image->cx, &image->cy);
 
+	if (mem_usage) {
+		*mem_usage += image->cx * image->cy *
+			gs_get_format_bpp(image->format) / 8;
+	}
+
 	image->loaded = !!image->texture_data;
 	if (!image->loaded) {
 		blog(LOG_WARNING, "Failed to load file '%s'", file);
 		gs_image_file_free(image);
 	}
+}
+
+void gs_image_file_init(gs_image_file_t *image, const char *file)
+{
+	gs_image_file_init_internal(image, file, NULL);
 }
 
 void gs_image_file_free(gs_image_file_t *image)
@@ -204,6 +231,11 @@ void gs_image_file_free(gs_image_file_t *image)
 	bfree(image->texture_data);
 	bfree(image->gif_data);
 	memset(image, 0, sizeof(*image));
+}
+
+void gs_image_file2_init(gs_image_file2_t *if2, const char *file)
+{
+	gs_image_file_init_internal(&if2->image, file, &if2->mem_usage);
 }
 
 void gs_image_file_init_texture(gs_image_file_t *image)

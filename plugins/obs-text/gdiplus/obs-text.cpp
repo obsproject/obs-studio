@@ -62,6 +62,7 @@ using namespace Gdiplus;
 #define S_EXTENTS_WRAP                  "extents_wrap"
 #define S_EXTENTS_CX                    "extents_cx"
 #define S_EXTENTS_CY                    "extents_cy"
+#define S_TRANSFORM                     "transform"
 
 #define S_ALIGN_LEFT                    "left"
 #define S_ALIGN_CENTER                  "center"
@@ -70,6 +71,10 @@ using namespace Gdiplus;
 #define S_VALIGN_TOP                    "top"
 #define S_VALIGN_CENTER                 S_ALIGN_CENTER
 #define S_VALIGN_BOTTOM                 "bottom"
+
+#define S_TRANSFORM_NONE                0
+#define S_TRANSFORM_UPPERCASE           1
+#define S_TRANSFORM_LOWERCASE           2
 
 #define T_(v)                           obs_module_text(v)
 #define T_FONT                          T_("Font")
@@ -97,6 +102,7 @@ using namespace Gdiplus;
 #define T_EXTENTS_WRAP                  T_("UseCustomExtents.Wrap")
 #define T_EXTENTS_CX                    T_("Width")
 #define T_EXTENTS_CY                    T_("Height")
+#define T_TRANSFORM                     T_("Transform")
 
 #define T_FILTER_TEXT_FILES             T_("Filter.TextFiles")
 #define T_FILTER_ALL_FILES              T_("Filter.AllFiles")
@@ -108,6 +114,10 @@ using namespace Gdiplus;
 #define T_VALIGN_TOP                    T_("VerticalAlignment.Top")
 #define T_VALIGN_CENTER                 T_ALIGN_CENTER
 #define T_VALIGN_BOTTOM                 T_("VerticalAlignment.Bottom")
+
+#define T_TRANSFORM_NONE                T_("Transform.None")
+#define T_TRANSFORM_UPPERCASE           T_("Transform.Uppercase")
+#define T_TRANSFORM_LOWERCASE           T_("Transform.Lowercase")
 
 /* ------------------------------------------------------------------------- */
 
@@ -229,6 +239,8 @@ struct TextSource {
 	uint32_t extents_cx = 0;
 	uint32_t extents_cy = 0;
 
+	int text_transform = S_TRANSFORM_NONE;
+
 	bool chatlog_mode = false;
 	int chatlog_lines = 6;
 
@@ -266,7 +278,7 @@ struct TextSource {
 
 	inline void Update(obs_data_t *settings);
 	inline void Tick(float seconds);
-	inline void Render(gs_effect_t *effect);
+	inline void Render();
 };
 
 static time_t get_modified_timestamp(const char *filename)
@@ -659,6 +671,7 @@ inline void TextSource::Update(obs_data_t *s)
 	bool new_extents_wrap  = obs_data_get_bool(s, S_EXTENTS_WRAP);
 	uint32_t n_extents_cx  = obs_data_get_uint32(s, S_EXTENTS_CX);
 	uint32_t n_extents_cy  = obs_data_get_uint32(s, S_EXTENTS_CY);
+	int new_text_transform = (int)obs_data_get_int(s, S_TRANSFORM);
 
 	const char *font_face  = obs_data_get_string(font_obj, "face");
 	int font_size          = (int)obs_data_get_int(font_obj, "size");
@@ -712,6 +725,7 @@ inline void TextSource::Update(obs_data_t *s)
 	wrap = new_extents_wrap;
 	extents_cx = n_extents_cx;
 	extents_cy = n_extents_cy;
+	text_transform = new_text_transform;
 
 	if (!gradient) {
 		color2 = color;
@@ -737,6 +751,10 @@ inline void TextSource::Update(obs_data_t *s)
 		if (!text.empty())
 			text.push_back('\n');
 	}
+	if(text_transform == S_TRANSFORM_UPPERCASE)
+		transform(text.begin(), text.end(), text.begin(), towupper);
+	else if(text_transform == S_TRANSFORM_LOWERCASE)
+		transform(text.begin(), text.end(), text.begin(), towlower);
 
 	use_outline = new_outline;
 	outline_color = new_o_color;
@@ -789,13 +807,22 @@ inline void TextSource::Tick(float seconds)
 	}
 }
 
-inline void TextSource::Render(gs_effect_t *effect)
+inline void TextSource::Render()
 {
 	if (!tex)
 		return;
 
+	gs_effect_t *effect = obs_get_base_effect(OBS_EFFECT_DEFAULT);
+	gs_technique_t *tech  = gs_effect_get_technique(effect, "Draw");
+
+	gs_technique_begin(tech);
+	gs_technique_begin_pass(tech, 0);
+
 	gs_effect_set_texture(gs_effect_get_param_by_name(effect, "image"), tex);
 	gs_draw_sprite(tex, 0, cx, cy);
+
+	gs_technique_end_pass(tech);
+	gs_technique_end(tech);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -804,6 +831,10 @@ static ULONG_PTR gdip_token = 0;
 
 OBS_DECLARE_MODULE()
 OBS_MODULE_USE_DEFAULT_LOCALE("obs-text", "en-US")
+MODULE_EXPORT const char *obs_module_description(void)
+{
+	return "Windows GDI+ text source";
+}
 
 #define set_vis(var, val, show) \
 	do { \
@@ -898,6 +929,13 @@ static obs_properties_t *get_properties(void *data)
 	obs_properties_add_path(props, S_FILE, T_FILE, OBS_PATH_FILE,
 			filter.c_str(), path.c_str());
 
+	p = obs_properties_add_list(props, S_TRANSFORM, T_TRANSFORM,
+			OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
+	obs_property_list_add_int(p, T_TRANSFORM_NONE, S_TRANSFORM_NONE);
+	obs_property_list_add_int(p, T_TRANSFORM_UPPERCASE, S_TRANSFORM_UPPERCASE);
+	obs_property_list_add_int(p, T_TRANSFORM_LOWERCASE, S_TRANSFORM_LOWERCASE);
+
+
 	obs_properties_add_bool(props, S_VERTICAL, T_VERTICAL);
 	obs_properties_add_color(props, S_COLOR, T_COLOR);
 	obs_properties_add_int_slider(props, S_OPACITY, T_OPACITY, 0, 100, 1);
@@ -910,7 +948,7 @@ static obs_properties_t *get_properties(void *data)
 			T_GRADIENT_OPACITY, 0, 100, 1);
 	obs_properties_add_float_slider(props, S_GRADIENT_DIR,
 			T_GRADIENT_DIR, 0, 360, 0.1);
-	
+
 	obs_properties_add_color(props, S_BKCOLOR, T_BKCOLOR);
 	obs_properties_add_int_slider(props, S_BKOPACITY, T_BKOPACITY,
 			0, 100, 1);
@@ -956,7 +994,7 @@ bool obs_module_load(void)
 	obs_source_info si = {};
 	si.id = "text_gdiplus";
 	si.type = OBS_SOURCE_TYPE_INPUT;
-	si.output_flags = OBS_SOURCE_VIDEO;
+	si.output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_CUSTOM_DRAW;
 	si.get_properties = get_properties;
 
 	si.get_name = [] (void*)
@@ -1002,6 +1040,7 @@ bool obs_module_load(void)
 		obs_data_set_default_bool(settings, S_EXTENTS_WRAP, true);
 		obs_data_set_default_int(settings, S_EXTENTS_CX, 100);
 		obs_data_set_default_int(settings, S_EXTENTS_CY, 100);
+		obs_data_set_default_int(settings, S_TRANSFORM, S_TRANSFORM_NONE);
 
 		obs_data_release(font_obj);
 	};
@@ -1013,9 +1052,9 @@ bool obs_module_load(void)
 	{
 		reinterpret_cast<TextSource*>(data)->Tick(seconds);
 	};
-	si.video_render = [] (void *data, gs_effect_t *effect)
+	si.video_render = [] (void *data, gs_effect_t*)
 	{
-		reinterpret_cast<TextSource*>(data)->Render(effect);
+		reinterpret_cast<TextSource*>(data)->Render();
 	};
 
 	obs_register_source(&si);

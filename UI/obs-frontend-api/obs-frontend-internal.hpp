@@ -9,6 +9,7 @@ struct obs_frontend_callbacks {
 	virtual ~obs_frontend_callbacks() {}
 	virtual void *obs_frontend_get_main_window(void)=0;
 	virtual void *obs_frontend_get_main_window_handle(void)=0;
+	virtual void *obs_frontend_get_system_tray(void)=0;
 
 	virtual void obs_frontend_get_scenes(
 			struct obs_frontend_source_list *sources)=0;
@@ -20,12 +21,15 @@ struct obs_frontend_callbacks {
 	virtual obs_source_t *obs_frontend_get_current_transition(void)=0;
 	virtual void obs_frontend_set_current_transition(
 			obs_source_t *transition)=0;
+	virtual int obs_frontend_get_transition_duration(void)=0;
+	virtual void obs_frontend_set_transition_duration(int duration)=0;
 
 	virtual void obs_frontend_get_scene_collections(
 			std::vector<std::string> &strings)=0;
 	virtual char *obs_frontend_get_current_scene_collection(void)=0;
 	virtual void obs_frontend_set_current_scene_collection(
 			const char *collection)=0;
+	virtual bool obs_frontend_add_scene_collection(const char *name)=0;
 
 	virtual void obs_frontend_get_profiles(
 			std::vector<std::string> &strings)=0;
@@ -61,7 +65,9 @@ struct obs_frontend_callbacks {
 	virtual config_t *obs_frontend_get_profile_config(void)=0;
 	virtual config_t *obs_frontend_get_global_config(void)=0;
 
-	virtual void obs_frontend_save(void)=0;
+	virtual void obs_frontend_save(void) = 0;
+	virtual void obs_frontend_defer_save_begin(void) = 0;
+	virtual void obs_frontend_defer_save_end(void) = 0;
 	virtual void obs_frontend_add_save_callback(
 			obs_frontend_save_cb callback, void *private_data)=0;
 	virtual void obs_frontend_remove_save_callback(
@@ -83,6 +89,8 @@ struct obs_frontend_callbacks {
 
 	virtual bool obs_frontend_preview_program_mode_active(void)=0;
 	virtual void obs_frontend_set_preview_program_mode(bool enable)=0;
+	virtual void obs_frontend_preview_program_trigger_transition(void)=0;
+
 	virtual bool obs_frontend_preview_enabled(void)=0;
 	virtual void obs_frontend_set_preview_enabled(bool enable)=0;
 

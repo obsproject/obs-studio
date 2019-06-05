@@ -32,6 +32,8 @@ const size_t OBS_INVALID_HOTKEY_ID = (size_t)-1;
 const size_t OBS_INVALID_HOTKEY_PAIR_ID = (size_t)-1;
 #endif
 
+#define XINPUT_MOUSE_LEN 33
+
 enum obs_key {
 #define OBS_HOTKEY(x) x,
 #include "obs-hotkeys.h"
@@ -58,6 +60,8 @@ enum obs_hotkey_registerer_type {
 };
 typedef enum obs_hotkey_registerer_type obs_hotkey_registerer_t;
 
+/* getter functions */
+
 EXPORT obs_hotkey_id obs_hotkey_get_id(const obs_hotkey_t *key);
 EXPORT const char *obs_hotkey_get_name(const obs_hotkey_t *key);
 EXPORT const char *obs_hotkey_get_description(const obs_hotkey_t *key);
@@ -73,6 +77,15 @@ EXPORT obs_hotkey_id obs_hotkey_binding_get_hotkey_id(
 		obs_hotkey_binding_t *binding);
 EXPORT obs_hotkey_t *obs_hotkey_binding_get_hotkey(
 		obs_hotkey_binding_t *binding);
+
+/* setter functions */
+
+EXPORT void obs_hotkey_set_name(obs_hotkey_id id, const char *name);
+EXPORT void obs_hotkey_set_description(obs_hotkey_id id, const char *desc);
+EXPORT void obs_hotkey_pair_set_names(obs_hotkey_pair_id id,
+		const char *name0, const char *name1);
+EXPORT void obs_hotkey_pair_set_descriptions(obs_hotkey_pair_id id,
+		const char *desc0, const char *desc1);
 
 #ifndef SWIG
 struct obs_hotkeys_translations {
@@ -113,6 +126,7 @@ struct obs_hotkeys_translations {
 	const char *apple_keypad_decimal;
 	const char *apple_keypad_equal;
 	const char *mouse_num; /* For example, "Mouse %1" */
+	const char *escape;
 };
 
 /* This function is an optional way to provide translations for specific keys
@@ -222,6 +236,10 @@ EXPORT void obs_hotkey_pair_load(obs_hotkey_pair_id id, obs_data_array_t *data0,
 
 
 EXPORT obs_data_array_t *obs_hotkey_save(obs_hotkey_id id);
+
+EXPORT void obs_hotkey_pair_save(obs_hotkey_pair_id id,
+		obs_data_array_t **p_data0,
+		obs_data_array_t **p_data1);
 
 EXPORT obs_data_t *obs_hotkeys_save_encoder(obs_encoder_t *encoder);
 

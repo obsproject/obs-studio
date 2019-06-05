@@ -26,6 +26,10 @@
 #include <util/threading.h>
 #include "ffmpeg-mux/ffmpeg-mux.h"
 
+#ifdef _WIN32
+#include "util/windows/win-version.h"
+#endif
+
 #include <libavformat/avformat.h>
 
 #define do_log(level, format, ...) \
@@ -109,13 +113,9 @@ static void *ffmpeg_mux_create(obs_data_t *settings, obs_output_t *output)
 }
 
 #ifdef _WIN32
-#ifdef _WIN64
-#define FFMPEG_MUX "ffmpeg-mux64.exe"
+#define FFMPEG_MUX "obs-ffmpeg-mux.exe"
 #else
-#define FFMPEG_MUX "ffmpeg-mux32.exe"
-#endif
-#else
-#define FFMPEG_MUX "ffmpeg-mux"
+#define FFMPEG_MUX "obs-ffmpeg-mux"
 #endif
 
 static inline bool capturing(struct ffmpeg_muxer *stream)
@@ -237,7 +237,7 @@ static void build_command_line(struct ffmpeg_muxer *stream, struct dstr *cmd,
 		num_tracks++;
 	}
 
-	dstr_init_move_array(cmd, obs_module_file(FFMPEG_MUX));
+	dstr_init_move_array(cmd, os_get_executable_path_ptr(FFMPEG_MUX));
 	dstr_insert_ch(cmd, 0, '\"');
 	dstr_cat(cmd, "\" \"");
 
@@ -290,6 +290,16 @@ static bool ffmpeg_mux_start(void *data)
 		struct dstr error_message;
 		dstr_init_copy(&error_message,
 			obs_module_text("UnableToWritePath"));
+#ifdef _WIN32
+		// special warning for Windows 10 users about Defender
+		struct win_version_info ver;
+		get_win_ver(&ver);
+		if (ver.major >= 10) {
+			dstr_cat(&error_message, "\n\n");
+			dstr_cat(&error_message,
+				obs_module_text("WarnWindowsDefender"));
+		}
+#endif
 		dstr_replace(&error_message, "%1", path);
 		obs_output_set_last_error(stream->output,
 			error_message.array);
@@ -321,7 +331,7 @@ static bool ffmpeg_mux_start(void *data)
 	return true;
 }
 
-static int deactivate(struct ffmpeg_muxer *stream)
+static int deactivate(struct ffmpeg_muxer *stream, int code)
 {
 	int ret = -1;
 
@@ -335,8 +345,11 @@ static int deactivate(struct ffmpeg_muxer *stream)
 		info("Output of file '%s' stopped", stream->path.array);
 	}
 
-	if (stopping(stream))
+	if (code) {
+		obs_output_signal_stop(stream->output, code);
+	} else if (stopping(stream)) {
 		obs_output_end_data_capture(stream->output);
+	}
 
 	os_atomic_set_bool(&stream->stopping, false);
 	return ret;
@@ -355,8 +368,22 @@ static void ffmpeg_mux_stop(void *data, uint64_t ts)
 
 static void signal_failure(struct ffmpeg_muxer *stream)
 {
-	int ret = deactivate(stream);
+	char error[1024];
+	int ret;
 	int code;
+
+	size_t len;
+
+	len = os_process_pipe_read_err(stream->pipe, (uint8_t *)error,
+		sizeof(error) - 1);
+
+	if (len > 0) {
+		error[len] = 0;
+		warn ("ffmpeg-mux: %s", error);
+		obs_output_set_last_error (stream->output, error);
+	}
+
+	ret = deactivate(stream, 0);
 
 	switch (ret) {
 	case FFM_UNSUPPORTED:          code = OBS_OUTPUT_UNSUPPORTED; break;
@@ -455,6 +482,12 @@ static void ffmpeg_mux_data(void *data, struct encoder_packet *packet)
 	if (!active(stream))
 		return;
 
+	/* encoder failure */
+	if (!packet) {
+		deactivate(stream, OBS_OUTPUT_ENCODE_ERROR);
+		return;
+	}
+
 	if (!stream->sent_headers) {
 		if (!send_headers(stream))
 			return;
@@ -464,7 +497,7 @@ static void ffmpeg_mux_data(void *data, struct encoder_packet *packet)
 
 	if (stopping(stream)) {
 		if (packet->sys_dts_usec >= stream->stop_ts) {
-			deactivate(stream);
+			deactivate(stream, 0);
 			return;
 		}
 	}
@@ -779,10 +812,13 @@ static void replay_buffer_save(struct ffmpeg_muxer *stream)
 			replay_buffer_mux_thread, stream) == 0;
 }
 
-static void deactivate_replay_buffer(struct ffmpeg_muxer *stream)
+static void deactivate_replay_buffer(struct ffmpeg_muxer *stream, int code)
 {
-	if (stopping(stream))
+	if (code) {
+		obs_output_signal_stop(stream->output, code);
+	} else if (stopping(stream)) {
 		obs_output_end_data_capture(stream->output);
+	}
 
 	os_atomic_set_bool(&stream->active, false);
 	os_atomic_set_bool(&stream->sent_headers, false);
@@ -798,9 +834,15 @@ static void replay_buffer_data(void *data, struct encoder_packet *packet)
 	if (!active(stream))
 		return;
 
+	/* encoder failure */
+	if (!packet) {
+		deactivate_replay_buffer(stream, OBS_OUTPUT_ENCODE_ERROR);
+		return;
+	}
+
 	if (stopping(stream)) {
 		if (packet->sys_dts_usec >= stream->stop_ts) {
-			deactivate_replay_buffer(stream);
+			deactivate_replay_buffer(stream, 0);
 			return;
 		}
 	}

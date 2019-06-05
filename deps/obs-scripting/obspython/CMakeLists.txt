@@ -45,6 +45,17 @@ function(install_plugin_bin_swig target additional_target)
 	set_target_properties(${additional_target} PROPERTIES
 		PREFIX "")
 
+	if (APPLE)
+		set_property(
+				TARGET ${additional_target}
+				APPEND
+				PROPERTY INSTALL_RPATH
+				"/usr/local/Cellar/python3/3.6.4_2/Frameworks/Python.framework/Versions/3.6/lib/"
+				"/Library/Frameworks/Python.framework/Versions/3.6/lib/"
+				"/opt/local/Library/Frameworks/Python.framework/Versions/3.6/lib/"
+		)
+	endif()
+
 	install(FILES "${CMAKE_CURRENT_BINARY_DIR}/obspython.py"
 		DESTINATION "${OBS_SCRIPT_PLUGIN_DESTINATION}")
 	install(TARGETS "${additional_target}"

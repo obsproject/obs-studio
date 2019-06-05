@@ -28,6 +28,10 @@ FT_Library ft2_lib;
 
 OBS_DECLARE_MODULE()
 OBS_MODULE_USE_DEFAULT_LOCALE("text-freetype2", "en-US")
+MODULE_EXPORT const char *obs_module_description(void)
+{
+	return "FreeType2 text source";
+}
 
 uint32_t texbuf_w = 2048, texbuf_h = 2048;
 
@@ -136,6 +140,9 @@ static obs_properties_t *ft2_source_properties(void *unused)
 	obs_properties_add_bool(props, "log_mode",
 		obs_module_text("ChatLogMode"));
 
+	obs_properties_add_int(props, "log_lines",
+		obs_module_text("ChatLogLines"), 1, 1000, 1);
+
 	obs_properties_add_path(props,
 		"text_file", obs_module_text("TextFile"),
 		OBS_PATH_FILE, obs_module_text("TextFileFilter"), NULL);
@@ -169,7 +176,7 @@ static void ft2_source_destroy(void *data)
 		FT_Done_Face(srcdata->font_face);
 		srcdata->font_face = NULL;
 	}
-	
+
 	for (uint32_t i = 0; i < num_cache_slots; i++) {
 		if (srcdata->cacheglyphs[i] != NULL) {
 			bfree(srcdata->cacheglyphs[i]);
@@ -324,7 +331,12 @@ static void ft2_source_update(void *data, obs_data_t *settings)
 
 	bool from_file = obs_data_get_bool(settings, "from_file");
 	bool chat_log_mode = obs_data_get_bool(settings, "log_mode");
+	uint32_t log_lines = (uint32_t)obs_data_get_int(settings, "log_lines");
 
+	if (srcdata->log_lines != log_lines) {
+		srcdata->log_lines = log_lines;
+		vbuf_needs_update = true;
+	}
 	srcdata->log_mode = chat_log_mode;
 
 	if (ft2_lib == NULL) goto error;
@@ -381,7 +393,7 @@ static void ft2_source_update(void *data, obs_data_t *settings)
 		goto error;
 	}
 	else {
-		FT_Set_Pixel_Sizes(srcdata->font_face, 0, srcdata->font_size); 
+		FT_Set_Pixel_Sizes(srcdata->font_face, 0, srcdata->font_size);
 		FT_Select_Charmap(srcdata->font_face, FT_ENCODING_UNICODE);
 	}
 
@@ -467,6 +479,8 @@ static void *ft2_source_create(obs_data_t *settings, obs_source_t *source)
 	obs_data_set_default_string(font_obj, "face", DEFAULT_FACE);
 	obs_data_set_default_int(font_obj, "size", 32);
 	obs_data_set_default_obj(settings, "font", font_obj);
+
+	obs_data_set_default_int(settings, "log_lines", 6);
 
 	obs_data_set_default_int(settings, "color1", 0xFFFFFFFF);
 	obs_data_set_default_int(settings, "color2", 0xFFFFFFFF);

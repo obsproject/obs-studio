@@ -160,12 +160,12 @@ static bool graphics_init(struct graphics_subsystem *graphics)
 
 	graphics->exports.device_blend_function_separate(graphics->device,
 			GS_BLEND_SRCALPHA, GS_BLEND_INVSRCALPHA,
-			GS_BLEND_ONE, GS_BLEND_ONE);
+			GS_BLEND_ONE, GS_BLEND_INVSRCALPHA);
 	graphics->cur_blend_state.enabled = true;
 	graphics->cur_blend_state.src_c   = GS_BLEND_SRCALPHA;
 	graphics->cur_blend_state.dest_c  = GS_BLEND_INVSRCALPHA;
 	graphics->cur_blend_state.src_a   = GS_BLEND_ONE;
-	graphics->cur_blend_state.dest_a  = GS_BLEND_ONE;
+	graphics->cur_blend_state.dest_a  = GS_BLEND_INVSRCALPHA;
 
 	graphics->exports.device_leave_context(graphics->device);
 
@@ -1240,10 +1240,10 @@ void gs_reset_blend_state(void)
 	if (graphics->cur_blend_state.src_c  != GS_BLEND_SRCALPHA ||
 	    graphics->cur_blend_state.dest_c != GS_BLEND_INVSRCALPHA ||
 	    graphics->cur_blend_state.src_a  != GS_BLEND_ONE ||
-	    graphics->cur_blend_state.dest_a != GS_BLEND_ONE)
+	    graphics->cur_blend_state.dest_a != GS_BLEND_INVSRCALPHA)
 		gs_blend_function_separate(
 				GS_BLEND_SRCALPHA, GS_BLEND_INVSRCALPHA,
-				GS_BLEND_ONE, GS_BLEND_ONE);
+				GS_BLEND_ONE, GS_BLEND_INVSRCALPHA);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -1517,9 +1517,7 @@ gs_indexbuffer_t *gs_indexbuffer_create(enum gs_index_type type,
 		return NULL;
 
 	if (indices && num && (flags & GS_DUP_BUFFER) != 0) {
-		size_t size = type == GS_UNSIGNED_SHORT
-			? sizeof(unsigned short)
-			: sizeof(unsigned long);
+		size_t size = type == GS_UNSIGNED_SHORT ? 2 : 4;
 		indices = bmemdup(indices, size * num);
 	}
 
@@ -2545,6 +2543,61 @@ enum gs_index_type gs_indexbuffer_get_type(const gs_indexbuffer_t *indexbuffer)
 	return thread_graphics->exports.gs_indexbuffer_get_type(indexbuffer);
 }
 
+bool gs_nv12_available(void)
+{
+	if (!gs_valid("gs_nv12_available"))
+		return false;
+
+	if (!thread_graphics->exports.device_nv12_available)
+		return false;
+
+	return thread_graphics->exports.device_nv12_available(
+			thread_graphics->device);
+}
+
+void gs_debug_marker_begin(const float color[4],
+		const char *markername)
+{
+	if (!gs_valid("gs_debug_marker_begin"))
+		return;
+
+	if (!markername)
+		markername = "(null)";
+
+	thread_graphics->exports.device_debug_marker_begin(
+			thread_graphics->device, markername,
+			color);
+}
+
+void gs_debug_marker_begin_format(const float color[4],
+		const char *format, ...)
+{
+	if (!gs_valid("gs_debug_marker_begin"))
+		return;
+
+	if (format) {
+		char markername[64];
+		va_list args;
+		va_start(args, format);
+		vsnprintf(markername, sizeof(markername), format, args);
+		va_end(args);
+		thread_graphics->exports.device_debug_marker_begin(
+			thread_graphics->device, markername,
+			color);
+	} else {
+		gs_debug_marker_begin(color, NULL);
+	}
+}
+
+void gs_debug_marker_end(void)
+{
+	if (!gs_valid("gs_debug_marker_end"))
+		return;
+
+	thread_graphics->exports.device_debug_marker_end(
+			thread_graphics->device);
+}
+
 #ifdef __APPLE__
 
 /** Platform specific functions */
@@ -2689,6 +2742,100 @@ gs_texture_t *gs_texture_open_shared(uint32_t handle)
 	if (graphics->exports.device_texture_open_shared)
 		return graphics->exports.device_texture_open_shared(
 				graphics->device, handle);
+	return NULL;
+}
+
+uint32_t gs_texture_get_shared_handle(gs_texture_t *tex)
+{
+	graphics_t *graphics = thread_graphics;
+	if (!gs_valid("gs_texture_get_shared_handle"))
+		return GS_INVALID_HANDLE;
+
+	if (graphics->exports.device_texture_get_shared_handle)
+		return graphics->exports.device_texture_get_shared_handle(tex);
+	return GS_INVALID_HANDLE;
+}
+
+int gs_texture_acquire_sync(gs_texture_t *tex, uint64_t key, uint32_t ms)
+{
+	graphics_t *graphics = thread_graphics;
+	if (!gs_valid("gs_texture_acquire_sync"))
+		return -1;
+
+	if (graphics->exports.device_texture_acquire_sync)
+		return graphics->exports.device_texture_acquire_sync(tex,
+				key, ms);
+	return -1;
+}
+
+int gs_texture_release_sync(gs_texture_t *tex, uint64_t key)
+{
+	graphics_t *graphics = thread_graphics;
+	if (!gs_valid("gs_texture_release_sync"))
+		return -1;
+
+	if (graphics->exports.device_texture_release_sync)
+		return graphics->exports.device_texture_release_sync(tex, key);
+	return -1;
+}
+
+bool gs_texture_create_nv12(gs_texture_t **tex_y, gs_texture_t **tex_uv,
+		uint32_t width, uint32_t height, uint32_t flags)
+{
+	graphics_t *graphics = thread_graphics;
+	bool success = false;
+
+	if (!gs_valid("gs_texture_create_nv12"))
+		return false;
+
+	if ((width & 1) == 1 || (height & 1) == 1) {
+		blog(LOG_ERROR, "NV12 textures must have dimensions "
+				"divisible by 2.");
+		return false;
+	}
+
+	if (graphics->exports.device_texture_create_nv12) {
+		success = graphics->exports.device_texture_create_nv12(
+				graphics->device, tex_y, tex_uv,
+				width, height, flags);
+		if (success)
+			return true;
+	}
+
+	*tex_y = gs_texture_create(width, height, GS_R8, 1, NULL, flags);
+	*tex_uv = gs_texture_create(width / 2, height / 2, GS_R8G8, 1, NULL,
+			flags);
+
+	if (!*tex_y || !*tex_uv) {
+		if (*tex_y)
+			gs_texture_destroy(*tex_y);
+		if (*tex_uv)
+			gs_texture_destroy(*tex_uv);
+		*tex_y = NULL;
+		*tex_uv = NULL;
+		return false;
+	}
+
+	return true;
+}
+
+gs_stagesurf_t *gs_stagesurface_create_nv12(uint32_t width, uint32_t height)
+{
+	graphics_t *graphics = thread_graphics;
+
+	if (!gs_valid("gs_stagesurface_create_nv12"))
+		return NULL;
+
+	if ((width & 1) == 1 || (height & 1) == 1) {
+		blog(LOG_ERROR, "NV12 textures must have dimensions "
+				"divisible by 2.");
+		return NULL;
+	}
+
+	if (graphics->exports.device_stagesurface_create_nv12)
+		return graphics->exports.device_stagesurface_create_nv12(
+				graphics->device, width, height);
+
 	return NULL;
 }
 

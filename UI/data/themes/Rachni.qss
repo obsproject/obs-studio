@@ -40,6 +40,76 @@
 /***************************************************************************/
 
 
+/************************/
+/* ---- Main Theme ---- */
+/************************/
+
+OBSTheme {
+	window: rgb(49, 54, 59); /* Blue-gray */
+	windowText: rgb(239, 240, 241); /* White */
+	base: rgb(0, 139, 163); /* Dark Cyan (Primary Dark) */
+	alternateBase: rgb(186, 45, 101); /* Dark Pink (Secondary Dark) */
+	text: rgb(239, 240, 241); /* White */
+	button: rgb(0, 188, 212); /* Cyan (Primary) */
+	buttonText: rgb(239, 240, 241); /* White */
+	brightText: rgb(255, 148, 194); /* Light Pink (Secondary Light) */
+
+	light: rgb(162, 161, 162); /* Lighter Gray */
+	mid: rgb(118, 121, 124); /* Light Grey */
+	dark: rgb(84, 87, 91); /* Gray */
+	shadow: rgb(35, 38, 41); /* Dark Gray */
+
+	highlight: rgb(98, 238, 255); /* Light Cyan (Primary Light) */
+	highlightText: rgb(0,0,0);
+
+	link: rgb(98, 238, 255); /* Light Cyan (Primary Light) */
+	linkVisited: rgb(98, 238, 255); /* Light Cyan (Primary Light) */
+}
+
+OBSTheme::disabled {
+	text: rgb(118, 121, 124); /* Light Gray */
+	buttonText: rgb(118, 121, 124); /* Light Gray */
+	brightText: rgb(118, 121, 124); /* Light Gray */
+}
+
+OBSTheme::inactive {
+	highlight: rgb(0, 188, 212); /* Cyan (Primary) */
+	highlightText: rgb(239, 240, 241); /* White */
+}
+
+
+/************************/
+/* ---- SourceTree ---- */
+/************************/
+
+SourceTree::item:selected:!active {
+	color: rgb(239, 240, 241); /* White */
+	background-color: rgba(255, 148, 194, 0.25); /* Light Pink (Secondary Light) */
+	border: none;
+}
+
+SourceTree::item:selected {
+	background-color: rgba(240, 98, 146, 0.5); /* Pink (Secondary) */
+	border: none;
+}
+
+SourceTree::item:hover,
+SourceTree::item:disabled:hover,
+SourceTree::item:hover:!active {
+	background-color: rgb(0, 188, 212); /* Cyan (Primary) */
+	color: rgb(239, 240, 241); /* White */
+	border: none;
+}
+
+SourceTree QLineEdit {
+	padding-top: 0;
+	padding-bottom: 0;
+	padding-right: 0;
+	padding-left: 2px;
+	border: none;
+	border-radius: none;
+}
+
 /*************************/
 /* --- General style --- */
 /*************************/
@@ -80,6 +150,15 @@ QSizeGrip {
 	image: url(./Rachni/sizegrip.png);
 	width: 12px;
 	height: 12px;
+}
+
+QListWidget QLineEdit {
+    padding-top: 0;
+    padding-bottom: 0;
+    padding-right: 0;
+    padding-left: 2px;
+    border: none;
+    border-radius: none;
 }
 
 /***********************/
@@ -152,9 +231,9 @@ QGroupBox {
 QGroupBox::title {
 	color: rgb(240, 98, 146); /* Pink (Secondary) */
 	left: 20px;
+	top: -7px;
 	padding-left: 5px;
 	padding-right: 4px;
-	padding-top: -14px;
 }
 
 /*****************/
@@ -401,31 +480,31 @@ QToolButton:pressed {
 }
 
 * [themeID="addIconSmall"] {
-	qproperty-icon: url(./Dark/plus.png);
+	qproperty-icon: url(./Dark/plus.svg);
 }
 
 * [themeID="removeIconSmall"] {
-	qproperty-icon: url(./Dark/minus.png);
+	qproperty-icon: url(./Dark/minus.svg);
 }
 
 * [themeID="propertiesIconSmall"] {
-	qproperty-icon: url(./Dark/cogwheel.png);
+	qproperty-icon: url(./Dark/settings/general.svg);
 }
 
 * [themeID="configIconSmall"] {
-	qproperty-icon: url(./Dark/cogwheel.png);
+	qproperty-icon: url(./Dark/settings/general.svg);
 }
 
 * [themeID="refreshIconSmall"] {
-	qproperty-icon: url(./Dark/refresh.png);
+	qproperty-icon: url(./Dark/refresh.svg);
 }
 
 * [themeID="upArrowIconSmall"] {
-	qproperty-icon: url(./Dark/up_arrow.png);
+	qproperty-icon: url(./Dark/up.svg);
 }
 
 * [themeID="downArrowIconSmall"] {
-	qproperty-icon: url(./Dark/down_arrow.png);
+	qproperty-icon: url(./Dark/down.svg);
 }
 
 /***********************/
@@ -534,16 +613,6 @@ QLineEdit {
 	border-radius: 2px;
 	color: rgb(239, 240, 241); /* White */
 }
-
-QListWidget QLineEdit {
-	padding-top: 0;
-	padding-bottom: 0;
-	padding-right: 0;
-	padding-left: 2px;
-	border: none;
-	border-radius: none;
-}
-
 
 /**********************/
 /* --- Checkboxes --- */
@@ -669,36 +738,60 @@ MuteCheckBox {
 }
 
 MuteCheckBox::indicator:checked {
-	image: url(./Dark/mute.png);
+	image: url(./Dark/mute.svg);
 }
 
 MuteCheckBox::indicator:unchecked {
-	image: url(./Dark/unmute.png);
+	image: url(./Dark/settings/audio.svg);
 }
 
 MuteCheckBox::indicator:unchecked:hover {
 	background-color: rgba(240, 98, 146, 0.5); /* Pink (Secondary) */
-	image: url(./Dark/unmute.png);
+	image: url(./Dark/settings/audio.svg);
 }
 
 MuteCheckBox::indicator:unchecked:focus {
-	image: url(./Dark/unmute.png);
+	image: url(./Dark/settings/audio.svg);
 }
 MuteCheckBox::indicator:checked:hover {
 	background-color: rgba(240, 98, 146, 0.5); /* Pink (Secondary) */
-	image: url(./Dark/mute.png);
+	image: url(./Dark/mute.svg);
 }
 
 MuteCheckBox::indicator:checked:focus {
-	image: url(./Dark/mute.png);
+	image: url(./Dark/mute.svg);
 }
 
 MuteCheckBox::indicator:checked:disabled {
-	image: url(./Dark/mute.png);
+	image: url(./Dark/mute.svg);
 }
 
 MuteCheckBox::indicator:unchecked:disabled {
-	image: url(./Dark/unmute.png);
+	image: url(./Dark/settings/audio.svg);
+}
+
+/****************************/
+/* --- Group Checkboxes --- */
+/****************************/
+
+SourceTreeSubItemCheckBox {
+	background: transparent;
+	outline: none;
+}
+
+SourceTreeSubItemCheckBox::indicator {
+	width: 10px;
+	height: 10px;
+}
+
+SourceTreeSubItemCheckBox::indicator:checked,
+SourceTreeSubItemCheckBox::indicator:checked:hover {
+	image: url(./Dark/expand.svg);
+}
+
+SourceTreeSubItemCheckBox::indicator:unchecked,
+SourceTreeSubItemCheckBox::indicator:unchecked:hover {
+	image: url(./Dark/down.svg);
 }
 
 /*************************/
@@ -775,10 +868,10 @@ QPushButton:disabled {
 }
 
 QPushButton::menu-indicator {
-    image: url(./Rachni/down_arrow.png);
-    subcontrol-position: right;
-    subcontrol-origin: padding;
-    width: 25px;
+	image: url(./Rachni/down_arrow.png);
+	subcontrol-position: right;
+	subcontrol-origin: padding;
+	width: 25px;
 }
 
 /******************************/
@@ -876,6 +969,8 @@ QPushButton:checked#exitButton {
 QPushButton[themeID="addIconSmall"],
 QPushButton[themeID="removeIconSmall"],
 QPushButton[themeID="configIconSmall"],
+QPushButton[themeID="trashIcon"],
+QPushButton[themeID="revertIcon"],
 QPushButton#transitionRemove,
 QPushButton#moveAsyncFilterUp,
 QPushButton#moveAsyncFilterDown,
@@ -889,6 +984,8 @@ QPushButton#moveEffectFilterUp {
 QPushButton:hover[themeID="addIconSmall"],
 QPushButton:hover[themeID="removeIconSmall"],
 QPushButton:hover[themeID="configIconSmall"],
+QPushButton:hover[themeID="trashIcon"],
+QPushButton:hover[themeID="revertIcon"],
 QPushButton:hover#transitionRemove,
 QPushButton:hover#moveAsyncFilterUp,
 QPushButton:hover#moveAsyncFilterDown,
@@ -900,39 +997,6 @@ QPushButton:hover#moveEffectFilterUp {
 	border-radius: 2px;
 	border: none;
 	outline: none;
-}
-
-/******************************/
-/*   --- Hotkey Buttons ---   */
-/******************************/
-/* Fix for the hotkey buttons */
-/* looking terrible with my   */
-/* color choices.             */
-/******************************/
-
-QPushButton[themeID="hotkeyButtons"] {
-	background-color: rgb(58, 64, 69); /* Light Blue-gray */
-	color: rgb(239, 240, 241); /* White */
-	border-radius: 2px;
-	border: none;
-	margin: 4px;
-	padding-top: 6px;
-	padding-bottom: 6px;
-}
-
-QPushButton:hover[themeID="hotkeyButtons"] {
-	background-color: rgba(240, 98, 146, 0.5); /* Pink (Secondary) */
-	border: 1px solid rgba(240, 98, 146, 0.5); /* Pink (Secondary) */
-}
-
-QPushButton:pressed[themeID="hotkeyButtons"] {
-	background-color: rgb(240, 98, 146); /* Pink (Secondary) */
-	border: 1px solid rgb(240, 98, 146); /* Pink (Secondary) */
-}
-
-QPushButton:disabled[themeID="hotkeyButtons"] {
-	background-color: rgb(58, 64, 69); /* Light Blue-gray */
-	color: rgb(162, 161, 162); /* Lighter Gray */
 }
 
 /******************/
@@ -1022,10 +1086,55 @@ QSlider::handle:horizontal:pressed {
 	stop: 1 rgb(162, 161, 162));
 }
 
+QSlider::sub-page:horizontal {
+	background-color: rgb(0, 188, 212); /* Cyan (Primary) */
+	border-radius: 2px;
+}
+
 QSlider::sub-page:horizontal:disabled {
 	background-color: QLinearGradient(x1: 0, y1: 0, x2: 0, y2: 1,
 	stop: 0 rgb(35, 38, 41), /* Dark Gray */
+	stop: 0.75 rgb(35, 38, 41)); /* Dark Gray */
+	border-radius: 2px;
+}
+
+QSlider::groove:vertical {
+	background-color: QLinearGradient(x1: 1, y1: 0, x2: 0, y2: 0,
+	stop: 0 rgb(35, 38, 41), /* Dark Gray */
 	stop: 0.75 rgb(50, 49, 50));
+	width: 4px;
+	border: none;
+	border-radius: 2px;
+}
+
+QSlider::handle:vertical {
+	background-color: QLinearGradient(x1: 1, y1: 0, x2: 0, y2: 0,
+	stop: 0 rgb(240, 239, 240),
+	stop: 0.25 rgb(200, 199, 200),
+	stop: 1 rgb(162, 161, 162));
+	border: 1px solid rgb(58, 57, 58);
+	border-radius: 3px;
+	width: 10px;
+	height: 18px;
+	margin: 0 -3px;
+}
+
+QSlider::handle:vertical:pressed {
+	background-color: QLinearGradient(x1: 1, y1: 0, x2: 0, y2: 0,
+	stop: 0 rgb(240, 239, 240),
+	stop: 0.25 rgb(200, 199, 200),
+	stop: 1 rgb(162, 161, 162));
+}
+
+QSlider::add-page:vertical {
+	background-color: rgb(0, 188, 212); /* Cyan (Primary) */
+	border-radius: 2px;
+}
+
+QSlider::add-page:vertical:disabled {
+	background-color: QLinearGradient(x1: 1, y1: 0, x2: 0, y2: 0,
+	stop: 0 rgb(35, 38, 41), /* Dark Gray */
+	stop: 0.75 rgb(35, 38, 41)); /* Dark Gray */
 	border-radius: 2px;
 }
 
@@ -1033,13 +1142,23 @@ QSlider::handle:hover {
 	background-color: rgb(200, 199, 200);
 }
 
-QSlider::sub-page {
-	background-color: rgb(0, 188, 212); /* Cyan (Primary) */
-	border-radius: 2px;
-}
-
 QSlider::handle:disabled {
 	background-color: rgb(122, 121, 122);
+}
+/**********************/
+/* --- Table View --- */
+/**********************/
+
+QTableView {
+    gridline-color: rgb(118, 121, 124); /* Light Gray */
+}
+
+QHeaderView::section {
+    background-color: rgb(35, 38, 41); /* Dark Gray */
+    color: rgb(239, 240, 241); /* "White" */
+    border: 1px solid rgb(118, 121, 124); /* Light Gray */
+    border-radius: 2px;
+    padding: 4px;
 }
 
 /****************/
@@ -1067,8 +1186,15 @@ QFrame[frameShape="0"] {
 	border: 1px transparent;
 }
 
-
 /* Misc style tweaks for dark themes */
+* [themeID="error"] {
+	color: rgb(255, 89, 76); /* Red Error */
+}
+
+* [themeID="warning"] {
+	color: rgb(255, 148, 194); /* Light Pink (Secondary Light) */
+}
+
 QStatusBar::item {
 	border: none;
 }
@@ -1081,4 +1207,119 @@ QToolTip {
 	border: 1px solid rgb(118, 121, 124); /* Light Gray */
 	background-color: rgb(49, 54, 59); /* Blue-gray */
 	color: rgb(240, 98, 146); /* Pink (Secondary) */
+}
+
+/* About dialog */
+
+* [themeID="aboutName"] {
+	font-size: 36px;
+	font-weight: bold;
+}
+
+* [themeID="aboutVersion"] {
+	font-size: 16px;
+	margin-bottom: 20px;
+}
+
+* [themeID="aboutInfo"] {
+	margin-bottom: 20px;
+}
+
+* [themeID="aboutHLayout"] {
+	background-color: rgb(35, 38, 41); /* Dark Gray */
+}
+
+/* Preview background color */
+
+OBSQTDisplay {
+	qproperty-displayBackgroundColor: rgb(35, 38, 41);
+}
+
+/* Preview/Program labels */
+
+* [themeID="previewProgramLabels"] {
+	font-size: 18px;
+	font-weight: bold;
+	color: rgb(122,121,122);
+}
+
+/* Settings Icons */
+
+OBSBasicSettings {
+    qproperty-generalIcon: url(./Dark/settings/general.svg);
+    qproperty-streamIcon: url(./Dark/settings/stream.svg);
+    qproperty-outputIcon: url(./Dark/settings/output.svg);
+    qproperty-audioIcon: url(./Dark/settings/audio.svg);
+    qproperty-videoIcon: url(./Dark/settings/video.svg);
+    qproperty-hotkeysIcon: url(./Dark/settings/hotkeys.svg);
+    qproperty-advancedIcon: url(./Dark/settings/advanced.svg);
+}
+
+OBSBasicSettings QListWidget::item {
+    padding-top: 5px;
+    padding-bottom: 5px;
+}
+
+/* Locked CheckBox */
+
+LockedCheckBox {
+    outline: none;
+    background: transparent;
+}
+
+LockedCheckBox::indicator {
+    width: 16px;
+    height: 16px;
+}
+
+LockedCheckBox::indicator:checked {
+    image: url(./Dark/locked.svg);
+}
+
+LockedCheckBox::indicator:unchecked {
+    image: url(:res/images/unlocked.svg);
+}
+
+LockedCheckBox::indicator:checked:hover {
+    image: url(./Dark/locked.svg);
+}
+
+LockedCheckBox::indicator:unchecked:hover {
+    image: url(:res/images/unlocked.svg);
+}
+
+/* Visibilty CheckBox */
+
+VisibilityCheckBox {
+    outline: none;
+    background: transparent;
+}
+
+VisibilityCheckBox::indicator {
+    width: 16px;
+    height: 16px;
+}
+
+VisibilityCheckBox::indicator:checked {
+    image: url(./Dark/visible.svg);
+}
+
+VisibilityCheckBox::indicator:unchecked {
+    image: url(:res/images/invisible.svg);
+}
+
+VisibilityCheckBox::indicator:checked:hover {
+    image: url(./Dark/visible.svg);
+}
+
+VisibilityCheckBox::indicator:unchecked:hover {
+    image: url(:res/images/invisible.svg);
+}
+
+* [themeID="trashIcon"] {
+    qproperty-icon: url(./Dark/trash.svg);
+}
+
+* [themeID="revertIcon"] {
+    qproperty-icon: url(./Dark/revert.svg);
 }

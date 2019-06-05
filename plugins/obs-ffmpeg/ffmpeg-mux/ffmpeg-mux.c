@@ -268,7 +268,7 @@ static bool new_stream(struct ffmpeg_mux *ffm, AVStream **stream,
 	AVCodec *codec;
 
 	if (!desc) {
-		printf("Couldn't find encoder '%s'\n", name);
+		fprintf(stderr, "Couldn't find encoder '%s'\n", name);
 		return false;
 	}
 
@@ -276,13 +276,13 @@ static bool new_stream(struct ffmpeg_mux *ffm, AVStream **stream,
 
 	codec = avcodec_find_encoder(desc->id);
 	if (!codec) {
-		printf("Couldn't create encoder");
+		fprintf(stderr, "Couldn't create encoder");
 		return false;
 	}
 
 	*stream = avformat_new_stream(ffm->output, codec);
 	if (!*stream) {
-		printf("Couldn't create stream for encoder '%s'\n", name);
+		fprintf(stderr, "Couldn't create stream for encoder '%s'\n", name);
 		return false;
 	}
 
@@ -316,6 +316,7 @@ static void create_video_stream(struct ffmpeg_mux *ffm)
 		(AVRational){ffm->params.fps_den, ffm->params.fps_num};
 
 	ffm->video_stream->time_base = context->time_base;
+	ffm->video_stream->avg_frame_rate = av_inv_q(context->time_base);
 
 	if (ffm->output->oformat->flags & AVFMT_GLOBALHEADER)
 		context->flags |= CODEC_FLAG_GLOBAL_H;
@@ -468,7 +469,7 @@ static inline int open_output_file(struct ffmpeg_mux *ffm)
 		ret = avio_open(&ffm->output->pb, ffm->params.file,
 				AVIO_FLAG_WRITE);
 		if (ret < 0) {
-			printf("Couldn't open '%s', %s",
+			fprintf(stderr, "Couldn't open '%s', %s",
 					ffm->params.file, av_err2str(ret));
 			return FFM_ERROR;
 		}
@@ -481,7 +482,7 @@ static inline int open_output_file(struct ffmpeg_mux *ffm)
 	AVDictionary *dict = NULL;
 	if ((ret = av_dict_parse_string(&dict, ffm->params.muxer_settings,
 				"=", " ", 0))) {
-		printf("Failed to parse muxer settings: %s\n%s",
+		fprintf(stderr, "Failed to parse muxer settings: %s\n%s",
 				av_err2str(ret), ffm->params.muxer_settings);
 
 		av_dict_free(&dict);
@@ -500,7 +501,7 @@ static inline int open_output_file(struct ffmpeg_mux *ffm)
 
 	ret = avformat_write_header(ffm->output, &dict);
 	if (ret < 0) {
-		printf("Error opening '%s': %s",
+		fprintf(stderr, "Error opening '%s': %s",
 				ffm->params.file, av_err2str(ret));
 
 		av_dict_free(&dict);
@@ -520,7 +521,7 @@ static int ffmpeg_mux_init_context(struct ffmpeg_mux *ffm)
 
 	output_format = av_guess_format(NULL, ffm->params.file, NULL);
 	if (output_format == NULL) {
-		printf("Couldn't find an appropriate muxer for '%s'\n",
+		fprintf(stderr, "Couldn't find an appropriate muxer for '%s'\n",
 				ffm->params.file);
 		return FFM_ERROR;
 	}
@@ -528,7 +529,7 @@ static int ffmpeg_mux_init_context(struct ffmpeg_mux *ffm)
 	ret = avformat_alloc_output_context2(&ffm->output, output_format,
 			NULL, NULL);
 	if (ret < 0) {
-		printf("Couldn't initialize output context: %s\n",
+		fprintf(stderr, "Couldn't initialize output context: %s\n",
 				av_err2str(ret));
 		return FFM_ERROR;
 	}
@@ -678,7 +679,7 @@ int main(int argc, char *argv[])
 
 	ret = ffmpeg_mux_init(&ffm, argc, argv);
 	if (ret != FFM_SUCCESS) {
-		puts("Couldn't initialize muxer");
+		fprintf(stderr, "Couldn't initialize muxer\n");
 		return ret;
 	}
 

@@ -219,6 +219,10 @@ void AutoConfigTestPage::TestBandwidthThread()
 		string_depad_key(key);
 		key += "?bandwidthtest";
 	}
+	else if(wiz->serviceName == "Restream.io" || wiz->serviceName == "Restream.io - RTMP") {
+		string_depad_key(key);
+		key += "?test=true";
+	}
 
 	obs_data_set_string(service_settings, "service",
 			wiz->serviceName.c_str());
@@ -246,8 +250,9 @@ void AutoConfigTestPage::TestBandwidthThread()
 		GetServers(servers);
 
 	/* just use the first server if it only has one alternate server,
-	 * or if using Mixer due to its "auto" server */
-	if (servers.size() < 3 || wiz->serviceName == "Mixer.com - FTL") {
+	 * or if using Mixer or Restream due to their "auto" servers */
+	if (servers.size() < 3 || wiz->serviceName == "Mixer.com - FTL" || 
+			wiz->serviceName.substr(0, 11)=="Restream.io") {
 		servers.resize(1);
 
 	} else if (wiz->service == AutoConfig::Service::Twitch &&
@@ -791,8 +796,17 @@ void AutoConfigTestPage::FindIdealHardwareResolution()
 		if (!force && rate > maxDataRate)
 			return;
 
-		int minBitrate = EstimateMinBitrate(cx, cy, fps_num, fps_den)
-			* 114 / 100;
+		AutoConfig::Encoder encType = wiz->streamingEncoder;
+		bool nvenc = encType == AutoConfig::Encoder::NVENC;
+
+		int minBitrate = EstimateMinBitrate(cx, cy, fps_num, fps_den);
+
+		/* most hardware encoders don't have a good quality to bitrate
+		 * ratio, so increase the minimum bitrate estimate for them.
+		 * NVENC currently is the exception because of the improvements
+		 * its made to its quality in recent generations. */
+		if (!nvenc) minBitrate = minBitrate * 114 / 100;
+
 		if (wiz->type == AutoConfig::Type::Recording)
 			force = true;
 		if (force || wiz->idealBitrate >= minBitrate)
@@ -849,9 +863,6 @@ void AutoConfigTestPage::TestStreamEncoderThread()
 		}
 	}
 
-	if (preferHardware && !softwareTested && wiz->hardwareEncodingAvailable)
-		FindIdealHardwareResolution();
-
 	if (!softwareTested) {
 		if (wiz->nvencAvailable)
 			wiz->streamingEncoder = AutoConfig::Encoder::NVENC;
@@ -862,6 +873,9 @@ void AutoConfigTestPage::TestStreamEncoderThread()
 	} else {
 		wiz->streamingEncoder = AutoConfig::Encoder::x264;
 	}
+
+	if (preferHardware && !softwareTested && wiz->hardwareEncodingAvailable)
+		FindIdealHardwareResolution();
 
 	QMetaObject::invokeMethod(this, "NextStage");
 }

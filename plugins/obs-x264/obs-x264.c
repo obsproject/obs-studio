@@ -179,7 +179,9 @@ static obs_properties_t *obs_x264_props(void *unused)
 
 	obs_property_set_modified_callback(list, rate_control_modified);
 
-	obs_properties_add_int(props, "bitrate", TEXT_BITRATE, 50, 10000000, 1);
+	p = obs_properties_add_int(props, "bitrate",
+			TEXT_BITRATE, 50, 10000000, 50);
+	obs_property_int_set_suffix(p, " Kbps");
 
 	p = obs_properties_add_bool(props, "use_bufsize", TEXT_CUSTOM_BUF);
 	obs_property_set_modified_callback(p, use_bufsize_modified);

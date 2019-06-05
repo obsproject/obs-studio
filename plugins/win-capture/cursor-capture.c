@@ -166,7 +166,7 @@ static inline bool cursor_capture_icon(struct cursor_data *data, HICON icon)
 
 	bitmap = cursor_capture_icon_bitmap(&ii, &width, &height);
 	if (bitmap) {
-		if (data->last_cx != width && data->last_cy != height) {
+		if (data->last_cx != width || data->last_cy != height) {
 			data->texture = get_cached_texture(data, width, height);
 			data->last_cx = width;
 			data->last_cy = height;

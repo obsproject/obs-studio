@@ -218,7 +218,8 @@ static obs_properties_t *color_key_properties(void *data)
 	obs_properties_add_int_slider(props, SETTING_SMOOTHNESS,
 			TEXT_SMOOTHNESS, 1, 1000, 1);
 
-	obs_properties_add_int(props, SETTING_OPACITY, TEXT_OPACITY, 0, 100, 1);
+	obs_properties_add_int_slider(props, SETTING_OPACITY, TEXT_OPACITY,
+			0, 100, 1);
 	obs_properties_add_float_slider(props, SETTING_CONTRAST,
 			TEXT_CONTRAST, -1.0, 1.0, 0.01);
 	obs_properties_add_float_slider(props, SETTING_BRIGHTNESS,

@@ -150,6 +150,7 @@ public:
 enum class Action {
 	None,
 	Activate,
+	ActivateBlock,
 	Deactivate,
 	Shutdown,
 	ConfigVideo,
@@ -175,10 +176,11 @@ struct DShowInput {
 	VideoConfig  videoConfig;
 	AudioConfig  audioConfig;
 
-	obs_source_frame frame;
+	obs_source_frame2 frame;
 	obs_source_audio audio;
 
 	WinHandle semaphore;
+	WinHandle activated_event;
 	WinHandle thread;
 	CriticalSection mutex;
 	vector<Action> actions;
@@ -188,6 +190,16 @@ struct DShowInput {
 		CriticalScope scope(mutex);
 		actions.push_back(action);
 		ReleaseSemaphore(semaphore, 1, nullptr);
+	}
+
+	inline void QueueActivate(obs_data_t *settings)
+	{
+		bool block = obs_data_get_bool(settings, "synchronous_activate");
+		QueueAction(block ? Action::ActivateBlock : Action::Activate);
+		if (block) {
+			obs_data_erase(settings, "synchronous_activate");
+			WaitForSingleObject(activated_event, INFINITE);
+		}
 	}
 
 	inline DShowInput(obs_source_t *source_, obs_data_t *settings)
@@ -204,6 +216,10 @@ struct DShowInput {
 		if (!semaphore)
 			throw "Failed to create semaphore";
 
+		activated_event = CreateEvent(nullptr, false, false, nullptr);
+		if (!activated_event)
+			throw "Failed to create activated_event";
+
 		thread = CreateThread(nullptr, 0, DShowThread, this, 0,
 				nullptr);
 		if (!thread)
@@ -215,7 +231,7 @@ struct DShowInput {
 		if (obs_data_get_bool(settings, "active")) {
 			bool showing = obs_source_showing(source);
 			if (!deactivateWhenNotShowing || showing)
-				QueueAction(Action::Activate);
+				QueueActivate(settings);
 
 			active = true;
 		}
@@ -304,13 +320,18 @@ void DShowInput::DShowLoop()
 
 		switch (action) {
 		case Action::Activate:
+		case Action::ActivateBlock:
 			{
+				bool block = action == Action::ActivateBlock;
+
 				obs_data_t *settings;
 				settings = obs_source_get_settings(source);
 				if (!Activate(settings)) {
-					obs_source_output_video(source,
+					obs_source_output_video2(source,
 							nullptr);
 				}
+				if (block)
+					SetEvent(activated_event);
 				obs_data_release(settings);
 				break;
 			}
@@ -447,7 +468,7 @@ void DShowInput::OnEncodedVideoData(enum AVCodecID id,
 #if LOG_ENCODED_VIDEO_TS
 		blog(LOG_DEBUG, "video ts: %llu", frame.timestamp);
 #endif
-		obs_source_output_video(source, &frame);
+		obs_source_output_video2(source, &frame);
 	}
 }
 
@@ -516,7 +537,7 @@ void DShowInput::OnVideoData(const VideoConfig &config,
 		return;
 	}
 
-	obs_source_output_video(source, &frame);
+	obs_source_output_video2(source, &frame);
 
 	UNUSED_PARAMETER(endTime); /* it's the enndd tiimmes! */
 	UNUSED_PARAMETER(size);
@@ -650,12 +671,12 @@ static inline bool CapsMatch(const VideoInfo &info, F&& f, Fs ... fs)
 template <typename ... F>
 static bool CapsMatch(const VideoDevice &dev, F ... fs)
 {
-	auto matcher = [&](const VideoInfo &info)
-	{
-		return CapsMatch(info, fs ...);
-	};
-
-	return any_of(begin(dev.caps), end(dev.caps), matcher);
+	// no early exit, trigger all side effects.
+	bool match = false;
+	for (const VideoInfo &info : dev.caps)
+		if (CapsMatch(info, fs ...))
+			match = true;
+	return match;
 }
 
 static inline bool MatcherMatchVideoFormat(VideoFormat format,
@@ -1019,15 +1040,13 @@ inline bool DShowInput::Activate(obs_data_t *settings)
 		return false;
 
 	enum video_colorspace cs = GetColorSpace(settings);
-
-	video_range_type range = GetColorRange(settings);
-	frame.full_range = range == VIDEO_RANGE_FULL;
+	frame.range = GetColorRange(settings);
 
 	if (device.Start() != Result::Success)
 		return false;
 
 	bool success = video_format_get_parameters(
-			cs, range,
+			cs, frame.range,
 			frame.color_matrix,
 			frame.color_range_min,
 			frame.color_range_max);
@@ -1042,7 +1061,7 @@ inline bool DShowInput::Activate(obs_data_t *settings)
 inline void DShowInput::Deactivate()
 {
 	device.ResetGraph();
-	obs_source_output_video(source, nullptr);
+	obs_source_output_video2(source, nullptr);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -1075,9 +1094,7 @@ static void UpdateDShowInput(void *data, obs_data_t *settings)
 {
 	DShowInput *input = reinterpret_cast<DShowInput*>(data);
 	if (input->active)
-		input->QueueAction(Action::Activate);
-
-	UNUSED_PARAMETER(settings);
+		input->QueueActivate(settings);
 }
 
 static void GetDShowDefaults(obs_data_t *settings)

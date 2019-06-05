@@ -42,7 +42,8 @@ enum obs_frontend_event {
 	OBS_FRONTEND_EVENT_STUDIO_MODE_DISABLED,
 	OBS_FRONTEND_EVENT_PREVIEW_SCENE_CHANGED,
 
-	OBS_FRONTEND_EVENT_SCENE_COLLECTION_CLEANUP
+	OBS_FRONTEND_EVENT_SCENE_COLLECTION_CLEANUP,
+	OBS_FRONTEND_EVENT_FINISHED_LOADING
 };
 
 /* ------------------------------------------------------------------------- */
@@ -81,6 +82,7 @@ static inline void obs_frontend_source_list_free(
 
 EXPORT void *obs_frontend_get_main_window(void);
 EXPORT void *obs_frontend_get_main_window_handle(void);
+EXPORT void *obs_frontend_get_system_tray(void);
 
 EXPORT char **obs_frontend_get_scene_names(void);
 EXPORT void obs_frontend_get_scenes(struct obs_frontend_source_list *sources);
@@ -91,10 +93,13 @@ EXPORT void obs_frontend_get_transitions(
 		struct obs_frontend_source_list *sources);
 EXPORT obs_source_t *obs_frontend_get_current_transition(void);
 EXPORT void obs_frontend_set_current_transition(obs_source_t *transition);
+EXPORT int obs_frontend_get_transition_duration(void);
+EXPORT void obs_frontend_set_transition_duration(int duration);
 
 EXPORT char **obs_frontend_get_scene_collections(void);
 EXPORT char *obs_frontend_get_current_scene_collection(void);
 EXPORT void obs_frontend_set_current_scene_collection(const char *collection);
+EXPORT bool obs_frontend_add_scene_collection(const char *name);
 
 EXPORT char **obs_frontend_get_profiles(void);
 EXPORT char *obs_frontend_get_current_profile(void);
@@ -150,6 +155,8 @@ EXPORT void obs_frontend_replay_buffer_stop(void);
 EXPORT bool obs_frontend_replay_buffer_active(void);
 
 EXPORT void obs_frontend_save(void);
+EXPORT void obs_frontend_defer_save_begin(void);
+EXPORT void obs_frontend_defer_save_end(void);
 
 EXPORT obs_output_t *obs_frontend_get_streaming_output(void);
 EXPORT obs_output_t *obs_frontend_get_recording_output(void);
@@ -164,6 +171,7 @@ EXPORT void obs_frontend_save_streaming_service(void);
 
 EXPORT bool obs_frontend_preview_program_mode_active(void);
 EXPORT void obs_frontend_set_preview_program_mode(bool enable);
+EXPORT void obs_frontend_preview_program_trigger_transition(void);
 
 EXPORT void obs_frontend_set_preview_enabled(bool enable);
 EXPORT bool obs_frontend_preview_enabled(void);

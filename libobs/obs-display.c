@@ -46,16 +46,18 @@ bool obs_display_init(struct obs_display *display,
 		return false;
 	}
 
-	display->background_color = 0x4C4C4C;
 	display->enabled = true;
 	return true;
 }
 
-obs_display_t *obs_display_create(const struct gs_init_data *graphics_data)
+obs_display_t *obs_display_create(const struct gs_init_data *graphics_data,
+		uint32_t background_color)
 {
 	struct obs_display *display = bzalloc(sizeof(struct obs_display));
 
 	gs_enter_context(obs->video.graphics);
+
+	display->background_color = background_color;
 
 	if (!obs_display_init(display, graphics_data)) {
 		obs_display_destroy(display);
@@ -173,7 +175,6 @@ static inline void render_display_begin(struct obs_display *display,
 static inline void render_display_end()
 {
 	gs_end_scene();
-	gs_present();
 }
 
 void render_display(struct obs_display *display)
@@ -182,6 +183,8 @@ void render_display(struct obs_display *display)
 	bool size_changed;
 
 	if (!display || !display->enabled) return;
+
+	GS_DEBUG_MARKER_BEGIN(GS_DEBUG_COLOR_DISPLAY, "obs_display");
 
 	/* -------------------------------------------- */
 
@@ -212,6 +215,10 @@ void render_display(struct obs_display *display)
 	pthread_mutex_unlock(&display->draw_callbacks_mutex);
 
 	render_display_end();
+
+	GS_DEBUG_MARKER_END();
+
+	gs_present();
 }
 
 void obs_display_set_enabled(obs_display_t *display, bool enable)
@@ -229,4 +236,20 @@ void obs_display_set_background_color(obs_display_t *display, uint32_t color)
 {
 	if (display)
 		display->background_color = color;
+}
+
+void obs_display_size(obs_display_t *display,
+		uint32_t *width, uint32_t *height)
+{
+	*width = 0;
+	*height = 0;
+
+	if (display) {
+		pthread_mutex_lock(&display->draw_info_mutex);
+
+		*width = display->cx;
+		*height = display->cy;
+
+		pthread_mutex_unlock(&display->draw_info_mutex);
+	}
 }

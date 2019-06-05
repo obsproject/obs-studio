@@ -61,7 +61,11 @@ void RemoteTextThread::run()
 					contentTypeString.c_str());
 		}
 
+		for (std::string &h : extraHeaders)
+			header = curl_slist_append(header, h.c_str());
+
 		curl_easy_setopt(curl.get(), CURLOPT_URL, url.c_str());
+		curl_easy_setopt(curl.get(), CURLOPT_ACCEPT_ENCODING, "");
 		curl_easy_setopt(curl.get(), CURLOPT_HTTPHEADER,
 				header);
 		curl_easy_setopt(curl.get(), CURLOPT_ERRORBUFFER,
@@ -70,6 +74,10 @@ void RemoteTextThread::run()
 				string_write);
 		curl_easy_setopt(curl.get(), CURLOPT_WRITEDATA,
 				&str);
+
+		if (timeoutSec)
+			curl_easy_setopt(curl.get(), CURLOPT_TIMEOUT,
+					timeoutSec);
 
 #if LIBCURL_VERSION_NUM >= 0x072400
 		// A lot of servers don't yet support ALPN
@@ -118,7 +126,8 @@ bool GetRemoteFile(
 	const char *contentType,
 	const char *postData,
 	std::vector<std::string> extraHeaders,
-	std::string *signature)
+	std::string *signature,
+	int timeoutSec)
 {
 	vector<string> header_in_list;
 	char error_in[CURL_ERROR_SIZE];
@@ -151,6 +160,7 @@ bool GetRemoteFile(
 			header = curl_slist_append(header, h.c_str());
 
 		curl_easy_setopt(curl.get(), CURLOPT_URL, url);
+		curl_easy_setopt(curl.get(), CURLOPT_ACCEPT_ENCODING, "");
 		curl_easy_setopt(curl.get(), CURLOPT_HTTPHEADER,
 				header);
 		curl_easy_setopt(curl.get(), CURLOPT_ERRORBUFFER,
@@ -165,6 +175,10 @@ bool GetRemoteFile(
 			curl_easy_setopt(curl.get(), CURLOPT_HEADERDATA,
 					&header_in_list);
 		}
+
+		if (timeoutSec)
+			curl_easy_setopt(curl.get(), CURLOPT_TIMEOUT,
+					timeoutSec);
 
 #if LIBCURL_VERSION_NUM >= 0x072400
 		// A lot of servers don't yet support ALPN

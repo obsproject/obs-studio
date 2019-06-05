@@ -71,6 +71,20 @@ void gs_texture_2d::BackupTexture(const uint8_t **data)
 	}
 }
 
+void gs_texture_2d::GetSharedHandle(IDXGIResource *dxgi_res)
+{
+	HANDLE handle;
+	HRESULT hr;
+
+	hr = dxgi_res->GetSharedHandle(&handle);
+	if (FAILED(hr)) {
+		blog(LOG_WARNING, "GetSharedHandle: Failed to "
+				"get shared handle: %08lX", hr);
+	} else {
+		sharedHandle = (uint32_t)(uintptr_t)handle;
+	}
+}
+
 void gs_texture_2d::InitTexture(const uint8_t **data)
 {
 	HRESULT hr;
@@ -80,7 +94,7 @@ void gs_texture_2d::InitTexture(const uint8_t **data)
 	td.Height           = height;
 	td.MipLevels        = genMipmaps ? 0 : levels;
 	td.ArraySize        = type == GS_TEXTURE_CUBE ? 6 : 1;
-	td.Format           = dxgiFormat;
+	td.Format           = nv12 ? DXGI_FORMAT_NV12 : dxgiFormat;
 	td.BindFlags        = D3D11_BIND_SHADER_RESOURCE;
 	td.SampleDesc.Count = 1;
 	td.CPUAccessFlags   = isDynamic ? D3D11_CPU_ACCESS_WRITE : 0;
@@ -95,6 +109,11 @@ void gs_texture_2d::InitTexture(const uint8_t **data)
 
 	if (isGDICompatible)
 		td.MiscFlags |= D3D11_RESOURCE_MISC_GDI_COMPATIBLE;
+
+	if ((flags & GS_SHARED_KM_TEX) != 0)
+		td.MiscFlags |= D3D11_RESOURCE_MISC_SHARED_KEYEDMUTEX;
+	else if ((flags & GS_SHARED_TEX) != 0)
+		td.MiscFlags |= D3D11_RESOURCE_MISC_SHARED;
 
 	if (data) {
 		BackupTexture(data);
@@ -112,6 +131,36 @@ void gs_texture_2d::InitTexture(const uint8_t **data)
 		if (FAILED(hr))
 			throw HRError("Failed to create GDI surface", hr);
 	}
+
+	if (isShared) {
+		ComPtr<IDXGIResource> dxgi_res;
+
+		texture->SetEvictionPriority(DXGI_RESOURCE_PRIORITY_MAXIMUM);
+
+		hr = texture->QueryInterface(__uuidof(IDXGIResource),
+				(void**)&dxgi_res);
+		if (FAILED(hr)) {
+			blog(LOG_WARNING, "InitTexture: Failed to query "
+					"interface: %08lX", hr);
+		} else {
+			GetSharedHandle(dxgi_res);
+
+			if (flags & GS_SHARED_KM_TEX) {
+				ComPtr<IDXGIKeyedMutex> km;
+				hr = texture->QueryInterface(
+						__uuidof(IDXGIKeyedMutex),
+						(void**)&km);
+				if (FAILED(hr)) {
+					throw HRError("Failed to query "
+							"IDXGIKeyedMutex",
+							hr);
+				}
+
+				km->AcquireSync(0, INFINITE);
+				acquired = true;
+			}
+		}
+	}
 }
 
 void gs_texture_2d::InitResourceView()
@@ -123,10 +172,12 @@ void gs_texture_2d::InitResourceView()
 
 	if (type == GS_TEXTURE_CUBE) {
 		resourceDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURECUBE;
-		resourceDesc.TextureCube.MipLevels = genMipmaps ? -1 : 1;
+		resourceDesc.TextureCube.MipLevels =
+			genMipmaps || !levels ? -1 : levels;
 	} else {
 		resourceDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
-		resourceDesc.Texture2D.MipLevels = genMipmaps ? -1 : 1;
+		resourceDesc.Texture2D.MipLevels =
+			genMipmaps || !levels ? -1 : levels;
 	}
 
 	hr = device->device->CreateShaderResourceView(texture, &resourceDesc,
@@ -139,7 +190,12 @@ void gs_texture_2d::InitRenderTargets()
 {
 	HRESULT hr;
 	if (type == GS_TEXTURE_2D) {
-		hr = device->device->CreateRenderTargetView(texture, NULL,
+		D3D11_RENDER_TARGET_VIEW_DESC rtv;
+		rtv.Format = dxgiFormat;
+		rtv.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
+		rtv.Texture2D.MipSlice  = 0;
+
+		hr = device->device->CreateRenderTargetView(texture, &rtv,
 				renderTarget[0].Assign());
 		if (FAILED(hr))
 			throw HRError("Failed to create render target view",
@@ -162,24 +218,56 @@ void gs_texture_2d::InitRenderTargets()
 	}
 }
 
+#define SHARED_FLAGS (GS_SHARED_TEX | GS_SHARED_KM_TEX)
+
 gs_texture_2d::gs_texture_2d(gs_device_t *device, uint32_t width,
 		uint32_t height, gs_color_format colorFormat, uint32_t levels,
-		const uint8_t **data, uint32_t flags, gs_texture_type type,
-		bool gdiCompatible, bool shared)
+		const uint8_t **data, uint32_t flags_, gs_texture_type type,
+		bool gdiCompatible, bool nv12_)
 	: gs_texture      (device, gs_type::gs_texture_2d, type, levels,
 	                   colorFormat),
 	  width           (width),
 	  height          (height),
+	  flags           (flags_),
 	  dxgiFormat      (ConvertGSTextureFormat(format)),
-	  isRenderTarget  ((flags & GS_RENDER_TARGET) != 0),
+	  isRenderTarget  ((flags_ & GS_RENDER_TARGET) != 0),
 	  isGDICompatible (gdiCompatible),
-	  isDynamic       ((flags & GS_DYNAMIC) != 0),
-	  isShared        (shared),
-	  genMipmaps      ((flags & GS_BUILD_MIPMAPS) != 0)
+	  isDynamic       ((flags_ & GS_DYNAMIC) != 0),
+	  isShared        ((flags_ & SHARED_FLAGS) != 0),
+	  genMipmaps      ((flags_ & GS_BUILD_MIPMAPS) != 0),
+	  sharedHandle    (GS_INVALID_HANDLE),
+	  nv12            (nv12_)
 {
 	InitTexture(data);
 	InitResourceView();
 
+	if (isRenderTarget)
+		InitRenderTargets();
+}
+
+gs_texture_2d::gs_texture_2d(gs_device_t *device, ID3D11Texture2D *nv12tex,
+		uint32_t flags_)
+	: gs_texture      (device, gs_type::gs_texture_2d, GS_TEXTURE_2D),
+	  isRenderTarget  ((flags_ & GS_RENDER_TARGET) != 0),
+	  isDynamic       ((flags_ & GS_DYNAMIC) != 0),
+	  isShared        ((flags_ & SHARED_FLAGS) != 0),
+	  genMipmaps      ((flags_ & GS_BUILD_MIPMAPS) != 0),
+	  nv12            (true)
+{
+	texture = nv12tex;
+	texture->GetDesc(&td);
+
+	this->type       = GS_TEXTURE_2D;
+	this->format     = GS_R8G8;
+	this->flags      = flags_;
+	this->levels     = 1;
+	this->device     = device;
+	this->chroma     = true;
+	this->width      = td.Width / 2;
+	this->height     = td.Height / 2;
+	this->dxgiFormat = DXGI_FORMAT_R8G8_UNORM;
+
+	InitResourceView();
 	if (isRenderTarget)
 		InitRenderTargets();
 }

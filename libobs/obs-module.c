@@ -26,7 +26,7 @@ extern const char *get_module_extension(void);
 
 static inline int req_func_not_found(const char *name, const char *path)
 {
-	blog(LOG_ERROR, "Required module function '%s' in module '%s' not "
+	blog(LOG_DEBUG, "Required module function '%s' in module '%s' not "
 	                "found, loading of module failed",
 	                name, path);
 	return MODULE_MISSING_EXPORTS;
@@ -84,6 +84,17 @@ int obs_open_module(obs_module_t **module, const char *path,
 
 	if (!module || !path || !obs)
 		return MODULE_ERROR;
+
+#ifdef __APPLE__
+	/* HACK: Do not load obsolete obs-browser build on macOS; the
+	 * obs-browser plugin used to live in the Application Support
+	 * directory. */
+	if (astrstri(path, "Library/Application Support") != NULL &&
+	    astrstri(path, "obs-browser") != NULL) {
+		blog(LOG_WARNING, "Ignoring old obs-browser.so version");
+		return MODULE_ERROR;
+	}
+#endif
 
 	blog(LOG_DEBUG, "---------------------------------");
 
@@ -664,9 +675,15 @@ void obs_register_output_s(const struct obs_output_info *info, size_t size)
 			CHECK_REQUIRED_VAL_(info, raw_video,
 					obs_register_output);
 
-		if (info->flags & OBS_OUTPUT_AUDIO)
-			CHECK_REQUIRED_VAL_(info, raw_audio,
-					obs_register_output);
+		if (info->flags & OBS_OUTPUT_AUDIO) {
+			if (info->flags & OBS_OUTPUT_MULTI_TRACK) {
+				CHECK_REQUIRED_VAL_(info, raw_audio2,
+						obs_register_output);
+			} else {
+				CHECK_REQUIRED_VAL_(info, raw_audio,
+						obs_register_output);
+			}
+		}
 	}
 #undef CHECK_REQUIRED_VAL_
 
@@ -690,7 +707,11 @@ void obs_register_encoder_s(const struct obs_encoder_info *info, size_t size)
 	CHECK_REQUIRED_VAL_(info, get_name, obs_register_encoder);
 	CHECK_REQUIRED_VAL_(info, create,   obs_register_encoder);
 	CHECK_REQUIRED_VAL_(info, destroy,  obs_register_encoder);
-	CHECK_REQUIRED_VAL_(info, encode,   obs_register_encoder);
+
+	if ((info->caps & OBS_ENCODER_CAP_PASS_TEXTURE) != 0)
+		CHECK_REQUIRED_VAL_(info, encode_texture, obs_register_encoder);
+	else
+		CHECK_REQUIRED_VAL_(info, encode, obs_register_encoder);
 
 	if (info->type == OBS_ENCODER_AUDIO)
 		CHECK_REQUIRED_VAL_(info, get_frame_size, obs_register_encoder);
@@ -725,13 +746,13 @@ error:
 	HANDLE_ERROR(size, obs_service_info, info);
 }
 
-void obs_regsiter_modal_ui_s(const struct obs_modal_ui *info, size_t size)
+void obs_register_modal_ui_s(const struct obs_modal_ui *info, size_t size)
 {
 #define CHECK_REQUIRED_VAL_(info, val, func) \
 	CHECK_REQUIRED_VAL(struct obs_modal_ui, info, val, func)
-	CHECK_REQUIRED_VAL_(info, task,   obs_regsiter_modal_ui);
-	CHECK_REQUIRED_VAL_(info, target, obs_regsiter_modal_ui);
-	CHECK_REQUIRED_VAL_(info, exec,   obs_regsiter_modal_ui);
+	CHECK_REQUIRED_VAL_(info, task,   obs_register_modal_ui);
+	CHECK_REQUIRED_VAL_(info, target, obs_register_modal_ui);
+	CHECK_REQUIRED_VAL_(info, exec,   obs_register_modal_ui);
 #undef CHECK_REQUIRED_VAL_
 
 	REGISTER_OBS_DEF(size, obs_modal_ui, obs->modal_ui_callbacks, info);
@@ -741,13 +762,13 @@ error:
 	HANDLE_ERROR(size, obs_modal_ui, info);
 }
 
-void obs_regsiter_modeless_ui_s(const struct obs_modeless_ui *info, size_t size)
+void obs_register_modeless_ui_s(const struct obs_modeless_ui *info, size_t size)
 {
 #define CHECK_REQUIRED_VAL_(info, val, func) \
 	CHECK_REQUIRED_VAL(struct obs_modeless_ui, info, val, func)
-	CHECK_REQUIRED_VAL_(info, task,   obs_regsiter_modeless_ui);
-	CHECK_REQUIRED_VAL_(info, target, obs_regsiter_modeless_ui);
-	CHECK_REQUIRED_VAL_(info, create, obs_regsiter_modeless_ui);
+	CHECK_REQUIRED_VAL_(info, task,   obs_register_modeless_ui);
+	CHECK_REQUIRED_VAL_(info, target, obs_register_modeless_ui);
+	CHECK_REQUIRED_VAL_(info, create, obs_register_modeless_ui);
 #undef CHECK_REQUIRED_VAL_
 
 	REGISTER_OBS_DEF(size, obs_modeless_ui, obs->modeless_ui_callbacks,

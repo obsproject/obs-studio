@@ -175,7 +175,7 @@ static inline PIP_ADAPTER_ADDRESSES get_adapters(void)
 {
 	PIP_ADAPTER_ADDRESSES adapter = NULL;
 	unsigned long ret = 0;
-	unsigned long out_buf_len = 4096;
+	unsigned long out_buf_len = 16384;
 	unsigned long flags =
 		GAA_FLAG_SKIP_ANYCAST |
 		GAA_FLAG_SKIP_MULTICAST |

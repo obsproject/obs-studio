@@ -13,6 +13,13 @@ endif()
 
 if(UNIX)
 	if (NOT APPLE)
+		find_package(X11_XCB REQUIRED)
+		find_package(XCB OPTIONAL_COMPONENTS XINPUT)
+		if (XCB_XINPUT_FOUND)
+			set(USE_XINPUT "1")
+		else()
+			set(USE_XINPUT "0")
+		endif()
 		find_package(PulseAudio)
 		if (NOT "${PULSEAUDIO_LIBRARY}" STREQUAL "")
 			message(STATUS "Found PulseAudio - Audio Monitor enabled")
@@ -22,14 +29,13 @@ if(UNIX)
 		endif()
 	else()
 		set(HAVE_PULSEAUDIO "0")
+		set(USE_XINPUT "0")
 	endif()
 	find_package(DBus QUIET)
-	if (NOT APPLE)
-		find_package(X11_XCB REQUIRED)
-	endif()
 else()
 	set(HAVE_DBUS "0")
 	set(HAVE_PULSEAUDIO "0")
+	set(USE_XINPUT "0")
 endif()
 
 find_package(ImageMagick QUIET COMPONENTS MagickCore)
@@ -110,7 +116,8 @@ elseif(APPLE)
 		util/platform-nix.c
 		util/platform-cocoa.m)
 	set(libobs_PLATFORM_HEADERS
-		util/threading-posix.h)
+		util/threading-posix.h
+		util/apple/cfstring-utils.h)
 	set(libobs_audio_monitoring_SOURCES
 		audio-monitoring/osx/coreaudio-enum-devices.c
 		audio-monitoring/osx/coreaudio-output.c
@@ -198,6 +205,16 @@ elseif(UNIX)
 	set(libobs_PLATFORM_DEPS
 		${libobs_PLATFORM_DEPS}
 		${X11_XCB_LIBRARIES})
+
+	if(USE_XINPUT)
+		include_directories(
+			${XCB_XINPUT_INCLUDE_DIR})
+		add_definitions(
+			${XCB_DEFINITIONS})
+		set(libobs_PLATFORM_DEPS
+			${XCB_XINPUT_LIBRARY}
+			${libobs_PLATFORM_DEPS})
+	endif()
 
 	if(HAVE_PULSEAUDIO)
 		set(libobs_PLATFORM_DEPS
@@ -367,6 +384,7 @@ set(libobs_libobs_SOURCES
 	obs-view.c
 	obs-scene.c
 	obs-audio.c
+	obs-video-gpu-encode.c
 	obs-video.c)
 set(libobs_libobs_HEADERS
 	${libobs_PLATFORM_HEADERS}
@@ -430,6 +448,14 @@ if(BUILD_CAPTIONS)
 endif()
 
 add_library(libobs SHARED ${libobs_SOURCES} ${libobs_HEADERS})
+if(UNIX AND NOT APPLE)
+	set(DEST_DIR "${CMAKE_INSTALL_PREFIX}")
+	foreach(LIB "obs" "rt")
+		set(PRIVATE_LIBS "${PRIVATE_LIBS} -l${LIB}")
+	endforeach()
+	CONFIGURE_FILE("libobs.pc.in" "libobs.pc" @ONLY)
+	install(FILES "${CMAKE_CURRENT_BINARY_DIR}/libobs.pc" DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/pkgconfig")
+endif()
 
 set_target_properties(libobs PROPERTIES
 	OUTPUT_NAME obs
@@ -439,7 +465,12 @@ target_compile_definitions(libobs
 	PUBLIC
 		HAVE_OBSCONFIG_H)
 
-if(NOT MSVC)
+if(CMAKE_SYSTEM_PROCESSOR MATCHES "^(powerpc|ppc)64le")
+	target_compile_options(libobs
+		PUBLIC
+			-mvsx)
+	add_compile_definitions(NO_WARN_X86_INTRINSICS)
+elseif(NOT MSVC)
 	target_compile_options(libobs
 		PUBLIC
 			-mmmx

@@ -211,7 +211,7 @@ public:
 		  callback (callback_),
 		  param    (param_)
 	{
-		signal_handler_connect(handler, signal, callback, param);
+		signal_handler_connect_ref(handler, signal, callback, param);
 	}
 
 	inline void Disconnect()
@@ -236,7 +236,7 @@ public:
 		signal   = signal_;
 		callback = callback_;
 		param    = param_;
-		signal_handler_connect(handler, signal, callback, param);
+		signal_handler_connect_ref(handler, signal, callback, param);
 	}
 
 	OBSSignal(const OBSSignal&) = delete;

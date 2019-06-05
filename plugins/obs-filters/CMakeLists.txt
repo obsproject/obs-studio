@@ -1,13 +1,23 @@
 project(obs-filters)
 
-find_package(Libspeexdsp QUIET)
-if(LIBSPEEXDSP_FOUND)
-	set(obs-filters_LIBSPEEXDSP_SOURCES
-		noise-suppress-filter.c)
-	set(obs-filters_LIBSPEEXDSP_LIBRARIES
-		${LIBSPEEXDSP_LIBRARIES})
+option(DISABLE_SPEEXDSP "Disable building of the SpeexDSP-based Noise Suppression filter" OFF)
+
+if(DISABLE_SPEEXDSP)
+	message(STATUS "SpeexDSP support disabled")
+	set(LIBSPEEXDSP_FOUND FALSE)
 else()
-	message(STATUS "Speexdsp library not found, speexdsp filters disabled")
+	find_package(Libspeexdsp QUIET)
+
+	if(NOT LIBSPEEXDSP_FOUND)
+		message(STATUS "SpeexDSP support not found")
+		set(LIBSPEEXDSP_FOUND FALSE)
+	else()
+		message(STATUS "SpeexDSP supported")
+		set(obs-filters_LIBSPEEXDSP_SOURCES
+			noise-suppress-filter.c)
+		set(obs-filters_LIBSPEEXDSP_LIBRARIES
+			${LIBSPEEXDSP_LIBRARIES})
+	endif()
 endif()
 
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/obs-filters-config.h.in"
@@ -38,7 +48,11 @@ set(obs-filters_SOURCES
 	gain-filter.c
 	noise-gate-filter.c
 	mask-filter.c
-	compressor-filter.c)
+	invert-audio-polarity.c
+	compressor-filter.c
+	limiter-filter.c
+	expander-filter.c
+	luma-key-filter.c)
 
 add_library(obs-filters MODULE
 	${obs-filters_SOURCES}

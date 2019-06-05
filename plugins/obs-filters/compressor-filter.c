@@ -40,12 +40,12 @@
 #define TEXT_OUTPUT_GAIN                MT_("Compressor.OutputGain")
 #define TEXT_SIDECHAIN_SOURCE           MT_("Compressor.SidechainSource")
 
-#define MIN_RATIO                       1.0f
-#define MAX_RATIO                       32.0f
-#define MIN_THRESHOLD_DB                -60.0f
+#define MIN_RATIO                       1.0
+#define MAX_RATIO                       32.0
+#define MIN_THRESHOLD_DB                -60.0
 #define MAX_THRESHOLD_DB                0.0f
-#define MIN_OUTPUT_GAIN_DB              -32.0f
-#define MAX_OUTPUT_GAIN_DB              32.0f
+#define MIN_OUTPUT_GAIN_DB              -32.0
+#define MAX_OUTPUT_GAIN_DB              32.0
 #define MIN_ATK_RLS_MS                  1
 #define MAX_RLS_MS                      1000
 #define MAX_ATK_MS                      500
@@ -432,6 +432,8 @@ static void compressor_tick(void *data, float seconds)
 
 		bfree(new_name);
 	}
+
+	UNUSED_PARAMETER(seconds);
 }
 
 static struct obs_audio_data *compressor_filter_audio(void *data,
@@ -440,6 +442,9 @@ static struct obs_audio_data *compressor_filter_audio(void *data,
 	struct compressor_data *cd = data;
 
 	const uint32_t num_samples = audio->frames;
+	if (num_samples == 0)
+		return audio;
+
 	float **samples = (float**)audio->data;
 
 	pthread_mutex_lock(&cd->sidechain_update_mutex);
@@ -495,15 +500,15 @@ static obs_properties_t *compressor_properties(void *data)
 		parent = obs_filter_get_parent(cd->context);
 
 	obs_properties_add_float_slider(props, S_RATIO,
-		TEXT_RATIO, MIN_RATIO, MAX_RATIO, 0.5f);
+		TEXT_RATIO, MIN_RATIO, MAX_RATIO, 0.5);
 	obs_properties_add_float_slider(props, S_THRESHOLD,
-		TEXT_THRESHOLD, MIN_THRESHOLD_DB, MAX_THRESHOLD_DB, 0.1f);
+		TEXT_THRESHOLD, MIN_THRESHOLD_DB, MAX_THRESHOLD_DB, 0.1);
 	obs_properties_add_int_slider(props, S_ATTACK_TIME,
 		TEXT_ATTACK_TIME, MIN_ATK_RLS_MS, MAX_ATK_MS, 1);
 	obs_properties_add_int_slider(props, S_RELEASE_TIME,
 		TEXT_RELEASE_TIME, MIN_ATK_RLS_MS, MAX_RLS_MS, 1);
 	obs_properties_add_float_slider(props, S_OUTPUT_GAIN,
-		TEXT_OUTPUT_GAIN, MIN_OUTPUT_GAIN_DB, MAX_OUTPUT_GAIN_DB, 0.1f);
+		TEXT_OUTPUT_GAIN, MIN_OUTPUT_GAIN_DB, MAX_OUTPUT_GAIN_DB, 0.1);
 
 	obs_property_t *sources = obs_properties_add_list(props,
 			S_SIDECHAIN_SOURCE, TEXT_SIDECHAIN_SOURCE,

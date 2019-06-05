@@ -124,6 +124,36 @@ static inline const char *get_video_format_name(enum video_format format)
 	return "None";
 }
 
+static inline const char *get_video_colorspace_name(enum video_colorspace cs)
+{
+	switch (cs) {
+	case VIDEO_CS_709: return "709";
+	case VIDEO_CS_601:
+	case VIDEO_CS_DEFAULT:;
+	}
+
+	return "601";
+}
+
+static inline enum video_range_type resolve_video_range(
+		enum video_format format, enum video_range_type range)
+{
+	if (range == VIDEO_RANGE_DEFAULT) {
+		range = format_is_yuv(format)
+			? VIDEO_RANGE_PARTIAL
+			: VIDEO_RANGE_FULL;
+	}
+
+	return range;
+}
+
+static inline const char *get_video_range_name(enum video_format format,
+		enum video_range_type range)
+{
+	range = resolve_video_range(format, range);
+	return range == VIDEO_RANGE_FULL ? "Full" : "Partial";
+}
+
 enum video_scale_type {
 	VIDEO_SCALE_DEFAULT,
 	VIDEO_SCALE_POINT,
@@ -179,6 +209,11 @@ EXPORT double video_output_get_frame_rate(const video_t *video);
 
 EXPORT uint32_t video_output_get_skipped_frames(const video_t *video);
 EXPORT uint32_t video_output_get_total_frames(const video_t *video);
+
+extern void video_output_inc_texture_encoders(video_t *video);
+extern void video_output_dec_texture_encoders(video_t *video);
+extern void video_output_inc_texture_frames(video_t *video);
+extern void video_output_inc_texture_skipped_frames(video_t *video);
 
 
 #ifdef __cplusplus

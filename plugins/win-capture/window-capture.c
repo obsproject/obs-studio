@@ -26,6 +26,7 @@ struct window_capture {
 	struct dc_capture    capture;
 
 	float                resize_timer;
+	float                check_window_timer;
 	float                cursor_check_time;
 
 	HWND                 window;
@@ -157,6 +158,16 @@ static void wc_tick(void *data, float seconds)
 	if (!wc->window || !IsWindow(wc->window)) {
 		if (!wc->title && !wc->class)
 			return;
+
+		wc->check_window_timer += seconds;
+
+		if (wc->check_window_timer < 1.0f) {
+			if (wc->capture.valid)
+				dc_capture_free(&wc->capture);
+			return;
+		}
+
+		wc->check_window_timer = 0.0f;
 
 		wc->window = find_window(EXCLUDE_MINIMIZED, wc->priority,
 				wc->class, wc->title, wc->executable);

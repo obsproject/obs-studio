@@ -26,6 +26,7 @@
 #include <util/util.hpp>
 #include <util/platform.h>
 #include <obs-frontend-api.h>
+#include <functional>
 #include <string>
 #include <memory>
 #include <vector>
@@ -58,6 +59,8 @@ public:
 			const char *disambiguation, int n) const override;
 };
 
+typedef std::function<void ()> VoidFunc;
+
 class OBSApp : public QApplication {
 	Q_OBJECT
 
@@ -73,12 +76,25 @@ private:
 	os_inhibit_t                   *sleepInhibitor = nullptr;
 	int                            sleepInhibitRefs = 0;
 
+	bool                           enableHotkeysInFocus = true;
+
+
 	std::deque<obs_frontend_translate_ui_cb> translatorHooks;
+
+	bool UpdatePre22MultiviewLayout(const char *layout);
 
 	bool InitGlobalConfig();
 	bool InitGlobalConfigDefaults();
 	bool InitLocale();
 	bool InitTheme();
+
+	inline void ResetHotkeyState(bool inFocus);
+
+	QPalette defaultPalette;
+
+	void ParseExtraThemeData(const char *path);
+	void AddExtraThemeColor(QPalette &pal, int group,
+			const char *name, uint32_t color);
 
 public:
 	OBSApp(int &argc, char **argv, profiler_name_store_t *store);
@@ -86,6 +102,8 @@ public:
 
 	void AppInit();
 	bool OBSInit();
+
+	void EnableInFocusHotkeys(bool enable);
 
 	inline QMainWindow *GetMainWindow() const {return mainWindow.data();}
 
@@ -115,6 +133,8 @@ public:
 
 	const char *GetLastLog() const;
 	const char *GetCurrentLog() const;
+
+	const char *GetLastCrashLog() const;
 
 	std::string GetVersionString() const;
 	bool IsPortableMode();
@@ -148,6 +168,12 @@ public:
 	{
 		translatorHooks.pop_front();
 	}
+
+public slots:
+	void Exec(VoidFunc func);
+
+signals:
+	void StyleChanged();
 };
 
 int GetConfigPath(char *path, size_t size, const char *name);
@@ -177,6 +203,10 @@ static inline int GetProfilePath(char *path, size_t size, const char *file)
 }
 
 extern bool portable_mode;
+
+extern bool remuxAfterRecord;
+extern std::string remuxFilename;
+
 extern bool opt_start_streaming;
 extern bool opt_start_recording;
 extern bool opt_start_replaybuffer;

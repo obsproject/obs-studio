@@ -17,6 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <stdint.h>
 #include <sys/shm.h>
+#include <xcb/randr.h>
 #include <xcb/xcb.h>
 #include <xcb/xinerama.h>
 
@@ -89,6 +90,78 @@ int xinerama_screen_geo(xcb_connection_t *xcb, int_fast32_t screen,
 
 	if (success)
 		return 0;
+
+fail:
+	*x = *y = *w = *h = 0;
+	return -1;
+}
+
+bool randr_is_active(xcb_connection_t *xcb)
+{
+	if (!xcb || !xcb_get_extension_data(xcb, &xcb_randr_id)->present)
+		return false;
+
+	return true;
+}
+
+int randr_screen_count(xcb_connection_t *xcb)
+{
+	if (!xcb)
+		return 0;
+
+	xcb_screen_t *screen;
+	screen = xcb_setup_roots_iterator(xcb_get_setup(xcb)).data;
+
+	xcb_randr_get_screen_resources_cookie_t res_c;
+	xcb_randr_get_screen_resources_reply_t* res_r;
+
+	res_c = xcb_randr_get_screen_resources(xcb, screen->root);
+	res_r = xcb_randr_get_screen_resources_reply(xcb, res_c, 0);
+	if (!res_r)
+		return 0;
+
+	return xcb_randr_get_screen_resources_crtcs_length(res_r);
+}
+
+int randr_screen_geo(xcb_connection_t *xcb, int_fast32_t screen,
+		int_fast32_t *x, int_fast32_t *y,
+		int_fast32_t *w, int_fast32_t *h,
+		xcb_screen_t **rscreen)
+{
+	xcb_screen_t *xscreen;
+	xscreen = xcb_setup_roots_iterator(xcb_get_setup(xcb)).data;
+
+	xcb_randr_get_screen_resources_cookie_t res_c;
+	xcb_randr_get_screen_resources_reply_t* res_r;
+
+	res_c = xcb_randr_get_screen_resources(xcb, xscreen->root);
+	res_r = xcb_randr_get_screen_resources_reply(xcb, res_c, 0);
+	if (!res_r)
+		goto fail;
+
+	int screens = xcb_randr_get_screen_resources_crtcs_length(res_r);
+	if (screen < 0 || screen >= screens)
+		goto fail;
+
+	xcb_randr_crtc_t *crtc = xcb_randr_get_screen_resources_crtcs(res_r);
+
+	xcb_randr_get_crtc_info_cookie_t crtc_c;
+	xcb_randr_get_crtc_info_reply_t *crtc_r;
+
+	crtc_c = xcb_randr_get_crtc_info(xcb, *(crtc + screen), 0);
+	crtc_r = xcb_randr_get_crtc_info_reply(xcb, crtc_c, 0);
+	if (!crtc_r)
+		goto fail;
+
+	*x = crtc_r->x;
+	*y = crtc_r->y;
+	*w = crtc_r->width;
+	*h = crtc_r->height;
+
+	if (rscreen)
+		*rscreen = xscreen;
+
+	return 0;
 
 fail:
 	*x = *y = *w = *h = 0;

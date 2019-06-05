@@ -150,7 +150,7 @@ extern "C"
 
     void RTMPPacket_Reset(RTMPPacket *p);
     void RTMPPacket_Dump(RTMPPacket *p);
-    int RTMPPacket_Alloc(RTMPPacket *p, int nSize);
+    int RTMPPacket_Alloc(RTMPPacket *p, uint32_t nSize);
     void RTMPPacket_Free(RTMPPacket *p);
 
 #define RTMPPacket_IsReady(a)	((a)->m_nBytesRead == (a)->m_nBodySize)
@@ -381,6 +381,7 @@ extern "C"
     void RTMP_Init(RTMP *r);
     void RTMP_Close(RTMP *r);
     RTMP *RTMP_Alloc(void);
+    void RTMP_TLS_Free();
     void RTMP_Free(RTMP *r);
     void RTMP_EnableWrite(RTMP *r);
 

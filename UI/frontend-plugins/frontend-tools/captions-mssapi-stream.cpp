@@ -249,8 +249,9 @@ STDMETHODIMP CaptionStream::Stat(STATSTG *stg, DWORD flag)
 	stg->cbSize.QuadPart = (ULONGLONG)buf->size;
 
 	if (flag == STATFLAG_DEFAULT) {
-		stg->pwcsName = (wchar_t*)CoTaskMemAlloc(sizeof(stat_name));
-		memcpy(stg->pwcsName, stat_name, sizeof(stat_name));
+		size_t byte_size = (wcslen(stat_name) + 1) * sizeof(wchar_t);
+		stg->pwcsName = (wchar_t*)CoTaskMemAlloc(byte_size);
+		memcpy(stg->pwcsName, stat_name, byte_size);
 	}
 
 	return S_OK;

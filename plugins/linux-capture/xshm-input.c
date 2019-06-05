@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <stdio.h>
 #include <stdlib.h>
 #include <inttypes.h>
+#include <xcb/randr.h>
 #include <xcb/shm.h>
 #include <xcb/xfixes.h>
 #include <xcb/xinerama.h>
@@ -50,6 +51,7 @@ struct xshm_data {
 
 	bool             show_cursor;
 	bool             use_xinerama;
+	bool             use_randr;
 	bool             advanced;
 };
 
@@ -83,6 +85,9 @@ static bool xshm_check_extensions(xcb_connection_t *xcb)
 	if (!xcb_get_extension_data(xcb, &xcb_xinerama_id)->present)
 		blog(LOG_INFO, "Missing Xinerama extension !");
 
+	if (!xcb_get_extension_data(xcb, &xcb_randr_id)->present)
+		blog(LOG_INFO, "Missing Randr extension !");
+
 	return ok;
 }
 
@@ -96,7 +101,15 @@ static int_fast32_t xshm_update_geometry(struct xshm_data *data)
 	int_fast32_t old_width = data->width;
 	int_fast32_t old_height = data->height;
 
-	if (data->use_xinerama) {
+	if (data->use_randr) {
+		if (randr_screen_geo(data->xcb, data->screen_id,
+			&data->x_org, &data->y_org,
+			&data->width, &data->height,
+			&data->xcb_screen) < 0) {
+			return -1;
+		}
+	}
+	else if (data->use_xinerama) {
 		if (xinerama_screen_geo(data->xcb, data->screen_id,
 			&data->x_org, &data->y_org,
 			&data->width, &data->height) < 0) {
@@ -189,6 +202,7 @@ static void xshm_capture_start(struct xshm_data *data)
 	if (!xshm_check_extensions(data->xcb))
 		goto fail;
 
+	data->use_randr = randr_is_active(data->xcb) ? true : false;
 	data->use_xinerama = xinerama_is_active(data->xcb) ? true : false;
 
 	if (xshm_update_geometry(data) < 0) {
@@ -287,16 +301,21 @@ static bool xshm_server_changed(obs_properties_t *props,
 
 	struct dstr screen_info;
 	dstr_init(&screen_info);
+	bool randr = randr_is_active(xcb);
 	bool xinerama = xinerama_is_active(xcb);
-	int_fast32_t count = (xinerama) ?
-			xinerama_screen_count(xcb) :
-			xcb_setup_roots_length(xcb_get_setup(xcb));
+	int_fast32_t count = (randr) ?
+			randr_screen_count(xcb) :
+			(xinerama) ?
+				xinerama_screen_count(xcb) :
+				xcb_setup_roots_length(xcb_get_setup(xcb));
 
 	for (int_fast32_t i = 0; i < count; ++i) {
 		int_fast32_t x, y, w, h;
 		x = y = w = h = 0;
 
-		if (xinerama)
+		if (randr)
+			randr_screen_geo(xcb, i, &x, &y, &w, &h, NULL);
+		else if (xinerama)
 			xinerama_screen_geo(xcb, i, &x, &y, &w, &h);
 		else
 			x11_screen_geo(xcb, i, &w, &h);

@@ -71,6 +71,9 @@ struct obs_output_info {
 	/* only used with encoded outputs, separated with semicolon */
 	const char *encoded_video_codecs;
 	const char *encoded_audio_codecs;
+
+	/* raw audio callback for multi track outputs */
+	void (*raw_audio2)(void *data, size_t idx, struct audio_data *frames);
 };
 
 EXPORT void obs_register_output_s(const struct obs_output_info *info,

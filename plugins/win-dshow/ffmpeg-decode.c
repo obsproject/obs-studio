@@ -63,14 +63,15 @@ void ffmpeg_decode_free(struct ffmpeg_decode *decode)
 static inline enum video_format convert_pixel_format(int f)
 {
 	switch (f) {
-	case AV_PIX_FMT_NONE:    return VIDEO_FORMAT_NONE;
-	case AV_PIX_FMT_YUV420P: return VIDEO_FORMAT_I420;
-	case AV_PIX_FMT_NV12:    return VIDEO_FORMAT_NV12;
-	case AV_PIX_FMT_YUYV422: return VIDEO_FORMAT_YUY2;
-	case AV_PIX_FMT_UYVY422: return VIDEO_FORMAT_UYVY;
-	case AV_PIX_FMT_RGBA:    return VIDEO_FORMAT_RGBA;
-	case AV_PIX_FMT_BGRA:    return VIDEO_FORMAT_BGRA;
-	case AV_PIX_FMT_BGR0:    return VIDEO_FORMAT_BGRX;
+	case AV_PIX_FMT_NONE:     return VIDEO_FORMAT_NONE;
+	case AV_PIX_FMT_YUV420P:
+	case AV_PIX_FMT_YUVJ420P: return VIDEO_FORMAT_I420;
+	case AV_PIX_FMT_NV12:     return VIDEO_FORMAT_NV12;
+	case AV_PIX_FMT_YUYV422:  return VIDEO_FORMAT_YUY2;
+	case AV_PIX_FMT_UYVY422:  return VIDEO_FORMAT_UYVY;
+	case AV_PIX_FMT_RGBA:     return VIDEO_FORMAT_RGBA;
+	case AV_PIX_FMT_BGRA:     return VIDEO_FORMAT_BGRA;
+	case AV_PIX_FMT_BGR0:     return VIDEO_FORMAT_BGRX;
 	default:;
 	}
 
@@ -181,7 +182,7 @@ bool ffmpeg_decode_audio(struct ffmpeg_decode *decode,
 
 bool ffmpeg_decode_video(struct ffmpeg_decode *decode,
 		uint8_t *data, size_t size, long long *ts,
-		struct obs_source_frame *frame,
+		struct obs_source_frame2 *frame,
 		bool *got_output)
 {
 	AVPacket packet = {0};
@@ -230,17 +231,14 @@ bool ffmpeg_decode_video(struct ffmpeg_decode *decode,
 	new_format = convert_pixel_format(decode->frame->format);
 	if (new_format != frame->format) {
 		bool success;
-		enum video_range_type range;
 
 		frame->format = new_format;
-		frame->full_range =
-			decode->frame->color_range == AVCOL_RANGE_JPEG;
-
-		range = frame->full_range ?
-			VIDEO_RANGE_FULL : VIDEO_RANGE_PARTIAL;
+		frame->range = decode->frame->color_range == AVCOL_RANGE_JPEG
+			? VIDEO_RANGE_FULL
+			: VIDEO_RANGE_DEFAULT;
 
 		success = video_format_get_parameters(VIDEO_CS_601,
-				range, frame->color_matrix,
+				frame->range, frame->color_matrix,
 				frame->color_range_min, frame->color_range_max);
 		if (!success) {
 			blog(LOG_ERROR, "Failed to get video format "

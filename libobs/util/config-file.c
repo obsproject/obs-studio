@@ -212,8 +212,15 @@ static void config_parse_section(struct config_section *section,
 		strref_clear(&value);
 		config_parse_string(lex, &value, 0);
 
-		if (!strref_is_empty(&value))
+		if (strref_is_empty(&value)) {
+			struct config_item item;
+			item.name  = bstrdup_n(name.array, name.len);
+			item.value = bzalloc(1);
+			darray_push_back(sizeof(struct config_item),
+					&section->items, &item);
+		} else {
 			config_add_item(&section->items, &name, &value);
+		}
 	}
 }
 
@@ -352,6 +359,7 @@ int config_save(config_t *config)
 	FILE *f;
 	struct dstr str, tmp;
 	size_t i, j;
+	int ret = CONFIG_ERROR;
 
 	if (!config)
 		return CONFIG_ERROR;
@@ -398,9 +406,15 @@ int config_save(config_t *config)
 	}
 
 #ifdef _WIN32
-	fwrite("\xEF\xBB\xBF", 1, 3, f);
+	if (fwrite("\xEF\xBB\xBF", 3, 1, f) != 1)
+		goto cleanup;
 #endif
-	fwrite(str.array, 1, str.len, f);
+	if (fwrite(str.array, str.len, 1, f) != 1)
+		goto cleanup;
+
+	ret = CONFIG_SUCCESS;
+
+cleanup:
 	fclose(f);
 
 	pthread_mutex_unlock(&config->mutex);
@@ -408,7 +422,7 @@ int config_save(config_t *config)
 	dstr_free(&tmp);
 	dstr_free(&str);
 
-	return CONFIG_SUCCESS;
+	return ret;
 }
 
 int config_save_safe(config_t *config, const char *temp_ext,
@@ -437,6 +451,8 @@ int config_save_safe(config_t *config, const char *temp_ext,
 	config->file = file;
 
 	if (ret != CONFIG_SUCCESS) {
+		blog(LOG_ERROR, "config_save_safe: failed to "
+			"write to %s", temp_file.array);
 		goto cleanup;
 	}
 

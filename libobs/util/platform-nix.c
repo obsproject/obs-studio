@@ -33,6 +33,7 @@
 #if !defined(__APPLE__)
 #include <sys/times.h>
 #include <sys/wait.h>
+#include <libgen.h>
 #ifdef __FreeBSD__
 #include <sys/param.h>
 #include <sys/queue.h>
@@ -66,7 +67,11 @@ void *os_dlopen(const char *path)
 #endif
 		dstr_cat(&dylib_name, ".so");
 
+#ifdef __APPLE__
+	void *res = dlopen(dylib_name.array, RTLD_LAZY | RTLD_FIRST);
+#else
 	void *res = dlopen(dylib_name.array, RTLD_LAZY);
+#endif
 	if (!res)
 		blog(LOG_ERROR, "os_dlopen(%s->%s): %s\n",
 				path, dylib_name.array, dlerror());
@@ -263,6 +268,32 @@ char *os_get_program_data_path_ptr(const char *name)
 	snprintf(str, len + 1, "/usr/local/share/%s", !!name ? name : "");
 	str[len] = 0;
 	return str;
+}
+
+char *os_get_executable_path_ptr(const char *name)
+{
+	char exe[PATH_MAX];
+	ssize_t count = readlink("/proc/self/exe", exe, PATH_MAX);
+	const char *path_out = NULL;
+	struct dstr path;
+
+	if (count == -1) {
+		return NULL;
+	}
+
+	path_out = dirname(exe);
+	if (!path_out) {
+		return NULL;
+	}
+
+	dstr_init_copy(&path, path_out);
+	dstr_cat(&path, "/");
+
+	if (name && *name) {
+		dstr_cat(&path, name);
+	}
+
+	return path.array;
 }
 
 #endif
@@ -848,7 +879,7 @@ static inline bool os_get_proc_memory_usage_internal(statm_t *statm)
 	if (!f)
 		return false;
 
-	if (fscanf(f, "%ld %ld %ld %ld %ld %ld %ld",
+	if (fscanf(f, "%lu %lu %lu %lu %lu %lu %lu",
 	    &statm->virtual_size,
 	    &statm->resident_size,
 	    &statm->share_pages,

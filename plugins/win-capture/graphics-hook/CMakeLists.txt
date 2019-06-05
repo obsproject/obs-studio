@@ -30,7 +30,7 @@ set(graphics-hook_SOURCES
 	d3d12-capture.cpp)
 
 if(MSVC)
-	add_compile_options("$<$<CONFIG:RelWithDebInfo>:/MT>")
+	add_compile_options("$<IF:$<CONFIG:Debug>,/MTd,/MT>")
 endif()
 
 add_library(graphics-hook MODULE

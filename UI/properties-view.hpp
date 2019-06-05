@@ -33,6 +33,7 @@ private:
 	void ListChanged(const char *setting);
 	bool ColorChanged(const char *setting);
 	bool FontChanged(const char *setting);
+	void GroupChanged(const char *setting);
 	void EditableListChanged();
 	void ButtonClicked();
 
@@ -103,6 +104,8 @@ private:
 	void AddFrameRate(obs_property_t *prop, bool &warning,
 			QFormLayout *layout, QLabel *&label);
 
+	void AddGroup(obs_property_t *prop, QFormLayout *layout);
+
 	void AddProperty(obs_property_t *property, QFormLayout *layout);
 
 	void resizeEvent(QResizeEvent *event) override;
@@ -118,6 +121,7 @@ public slots:
 signals:
 	void PropertiesResized();
 	void Changed();
+	void PropertiesRefreshed();
 
 public:
 	OBSPropertiesView(OBSData settings, void *obj,

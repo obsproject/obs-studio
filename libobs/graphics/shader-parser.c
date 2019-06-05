@@ -104,6 +104,8 @@ void shader_sampler_convert(struct shader_sampler *ss,
 	size_t i;
 	memset(info, 0, sizeof(struct gs_sampler_info));
 
+	info->max_anisotropy = 1;
+
 	for (i = 0; i < ss->states.num; i++) {
 		const char *state = ss->states.array[i];
 		const char *value = ss->values.array[i];
@@ -334,16 +336,40 @@ static inline int sp_parse_func_param(struct shader_parser *sp,
 		struct shader_var *var)
 {
 	int code;
-	bool is_uniform = false;
+	bool var_type_keyword = false;
 
 	if (!cf_next_valid_token(&sp->cfp))
 		return PARSE_EOF;
 
-	code = sp_check_for_keyword(sp, "uniform", &is_uniform);
+	code = sp_check_for_keyword(sp, "in", &var_type_keyword);
 	if (code == PARSE_EOF)
 		return PARSE_EOF;
+	else if (var_type_keyword)
+		var->var_type = SHADER_VAR_IN;
 
-	var->var_type = is_uniform ? SHADER_VAR_UNIFORM : SHADER_VAR_NONE;
+	if (!var_type_keyword) {
+		code = sp_check_for_keyword(sp, "inout", &var_type_keyword);
+		if (code == PARSE_EOF)
+			return PARSE_EOF;
+		else if (var_type_keyword)
+			var->var_type = SHADER_VAR_INOUT;
+	}
+
+	if (!var_type_keyword) {
+		code = sp_check_for_keyword(sp, "out", &var_type_keyword);
+		if (code == PARSE_EOF)
+			return PARSE_EOF;
+		else if (var_type_keyword)
+			var->var_type = SHADER_VAR_OUT;
+	}
+
+	if (!var_type_keyword) {
+		code = sp_check_for_keyword(sp, "uniform", &var_type_keyword);
+		if (code == PARSE_EOF)
+			return PARSE_EOF;
+		else if (var_type_keyword)
+			var->var_type = SHADER_VAR_UNIFORM;
+	}
 
 	code = cf_get_name(&sp->cfp, &var->type, "type", ")");
 	if (code != PARSE_SUCCESS)

@@ -1193,7 +1193,11 @@ static PyObject *py_script_log_internal(PyObject *self, PyObject *args,
 
 	while (endl) {
 		*endl = 0;
-		script_log(&cur_python_script->base, log_level, "%s", start);
+		if (cur_python_script)
+			script_log(&cur_python_script->base, log_level, "%s",
+					start);
+		else
+			script_log(NULL, log_level, "%s", start);
 		*endl = '\n';
 
 		start = endl + 1;
@@ -1591,6 +1595,8 @@ void obs_python_load(void)
 
 extern void add_python_frontend_funcs(PyObject *module);
 
+static bool python_loaded_at_all = false;
+
 bool obs_scripting_load_python(const char *python_path)
 {
 	if (python_loaded)
@@ -1692,6 +1698,8 @@ out:
 		obs_python_unload();
 	}
 
+	python_loaded_at_all = success;
+
 	if (python_loaded)
 		obs_add_tick_callback(python_tick, NULL);
 
@@ -1700,6 +1708,9 @@ out:
 
 void obs_python_unload(void)
 {
+	if (!python_loaded_at_all)
+		return;
+
 	if (python_loaded && Py_IsInitialized()) {
 		PyGILState_Ensure();
 
@@ -1718,4 +1729,6 @@ void obs_python_unload(void)
 	pthread_mutex_destroy(&tick_mutex);
 	pthread_mutex_destroy(&timer_mutex);
 	dstr_free(&cur_py_log_chunk);
+
+	python_loaded_at_all = false;
 }

@@ -92,6 +92,7 @@ static void rtmp_stream_destroy(void *data)
 		}
 	}
 
+	RTMP_TLS_Free();
 	free_packets(stream);
 	dstr_free(&stream->path);
 	dstr_free(&stream->key);
@@ -438,6 +439,15 @@ static void set_output_error(struct rtmp_stream *stream)
 	}
 #endif
 
+	// non platform-specific errors
+	if (!msg) {
+		switch (stream->rtmp.last_error_code) {
+		case -0x2700:
+			msg = obs_module_text("SSLCertVerifyFailed");
+			break;
+		}
+	}
+
 	obs_output_set_last_error(stream->output, msg);
 }
 
@@ -477,8 +487,12 @@ static void *send_thread(void *data)
 		}
 	}
 
+	bool encode_error = os_atomic_load_bool(&stream->encode_error);
+
 	if (disconnected(stream)) {
 		info("Disconnected from %s", stream->path.array);
+	} else if (encode_error) {
+		info("Encoder error, disconnecting");
 	} else {
 		info("User stopped the stream");
 	}
@@ -497,6 +511,8 @@ static void *send_thread(void *data)
 	if (!stopping(stream)) {
 		pthread_detach(stream->send_thread);
 		obs_output_signal_stop(stream->output, OBS_OUTPUT_DISCONNECTED);
+	} else if (encode_error) {
+		obs_output_signal_stop(stream->output, OBS_OUTPUT_ENCODE_ERROR);
 	} else {
 		obs_output_end_data_capture(stream->output);
 	}
@@ -876,6 +892,7 @@ static bool init_connect(struct rtmp_stream *stream)
 		return false;
 
 	os_atomic_set_bool(&stream->disconnected, false);
+	os_atomic_set_bool(&stream->encode_error, false);
 	stream->total_bytes_sent = 0;
 	stream->dropped_frames   = 0;
 	stream->min_priority     = 0;
@@ -1092,6 +1109,13 @@ static void rtmp_stream_data(void *data, struct encoder_packet *packet)
 
 	if (disconnected(stream) || !active(stream))
 		return;
+
+	/* encoder fail */
+	if (!packet) {
+		os_atomic_set_bool(&stream->encode_error, true);
+		os_sem_post(stream->send_sem);
+		return;
+	}
 
 	if (packet->type == OBS_ENCODER_VIDEO) {
 		if (!stream->got_first_video) {

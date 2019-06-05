@@ -1,6 +1,7 @@
 #include "enum-wasapi.hpp"
 
 #include <obs-module.h>
+#include <obs.h>
 #include <util/platform.h>
 #include <util/windows/HRError.hpp>
 #include <util/windows/ComPtr.hpp>
@@ -15,9 +16,8 @@ using namespace std;
 
 static void GetWASAPIDefaults(obs_data_t *settings);
 
-// Fix inconsistent defs of speaker_surround between avutil & wasapi
-#define KSAUDIO_SPEAKER_2POINT1 (KSAUDIO_SPEAKER_STEREO|SPEAKER_LOW_FREQUENCY)
-#define KSAUDIO_SPEAKER_4POINT1 (KSAUDIO_SPEAKER_QUAD|SPEAKER_LOW_FREQUENCY)
+#define OBS_KSAUDIO_SPEAKER_4POINT1 \
+		(KSAUDIO_SPEAKER_SURROUND|SPEAKER_LOW_FREQUENCY)
 
 class WASAPISource {
 	ComPtr<IMMDevice>           device;
@@ -244,7 +244,7 @@ static speaker_layout ConvertSpeakerLayout(DWORD layout, WORD channels)
 	switch (layout) {
 	case KSAUDIO_SPEAKER_2POINT1:          return SPEAKERS_2POINT1;
 	case KSAUDIO_SPEAKER_SURROUND:         return SPEAKERS_4POINT0;
-	case KSAUDIO_SPEAKER_4POINT1:          return SPEAKERS_4POINT1;
+	case OBS_KSAUDIO_SPEAKER_4POINT1:      return SPEAKERS_4POINT1;
 	case KSAUDIO_SPEAKER_5POINT1_SURROUND: return SPEAKERS_5POINT1;
 	case KSAUDIO_SPEAKER_7POINT1_SURROUND: return SPEAKERS_7POINT1;
 	}
@@ -366,10 +366,17 @@ DWORD WINAPI WASAPISource::ReconnectThread(LPVOID param)
 
 	os_set_thread_name("win-wasapi: reconnect thread");
 
+	CoInitializeEx(0, COINIT_MULTITHREADED);
+
+	obs_monitoring_type type = obs_source_get_monitoring_type(source->source);
+	obs_source_set_monitoring_type(source->source, OBS_MONITORING_TYPE_NONE);
+
 	while (!WaitForSignal(source->stopSignal, RECONNECT_INTERVAL)) {
 		if (source->TryInitialize())
 			break;
 	}
+
+	obs_source_set_monitoring_type(source->source, type);
 
 	source->reconnectThread = nullptr;
 	source->reconnecting = false;
@@ -446,7 +453,7 @@ DWORD WINAPI WASAPISource::CaptureThread(LPVOID param)
 	bool         reconnect = false;
 
 	/* Output devices don't signal, so just make it check every 10 ms */
-	DWORD        dur       = source->isInputDevice ? INFINITE : 10;
+	DWORD        dur       = source->isInputDevice ? RECONNECT_INTERVAL : 10;
 
 	HANDLE sigs[2] = {
 		source->receiveSignal,

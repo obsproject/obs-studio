@@ -21,33 +21,47 @@ set(linux-decklink-sdk_SOURCES
 	)
 
 set(linux-decklink_HEADERS
+	../decklink-devices.hpp
+	../const.h
+	../DecklinkOutput.hpp
 	../platform.hpp
-	../decklink.hpp
+	../DecklinkInput.hpp
+	../DecklinkBase.h
 	../decklink-device-instance.hpp
 	../decklink-device-discovery.hpp
 	../decklink-device.hpp
 	../decklink-device-mode.hpp
 	../audio-repack.h
 	../audio-repack.hpp
+	../util.hpp
 	)
 
 set(linux-decklink_SOURCES
 	../plugin-main.cpp
-	../decklink.cpp
+	../decklink-devices.cpp
+	../decklink-source.cpp
+	../decklink-output.cpp
+	../DecklinkOutput.cpp
+	../DecklinkInput.cpp
+	../DecklinkBase.cpp
 	../decklink-device-instance.cpp
 	../decklink-device-discovery.cpp
 	../decklink-device.cpp
 	../decklink-device-mode.cpp
 	../audio-repack.c
-	platform.cpp)
+	platform.cpp
+	../util.cpp
+	)
 
 add_library(linux-decklink MODULE
 	${linux-decklink_SOURCES}
 	${linux-decklink_HEADERS}
 	${linux-decklink-sdk_HEADERS}
-	${linux-decklink-sdk_SOURCES})
+	${linux-decklink-sdk_SOURCES}
+	)
 
 target_link_libraries(linux-decklink
-	libobs)
+	libobs
+	)
 
 install_obs_plugin_with_data(linux-decklink ../data)

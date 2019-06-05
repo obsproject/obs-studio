@@ -1,0 +1,64 @@
+uniform float4x4 ViewProj;
+uniform float2 base_dimension_i;
+uniform texture2d image;
+
+struct VertInOut {
+	float4 pos : POSITION;
+	float2 uv  : TEXCOORD0;
+};
+
+VertInOut VSDefault(VertInOut vert_in)
+{
+	VertInOut vert_out;
+	vert_out.pos = mul(float4(vert_in.pos.xyz, 1.0), ViewProj);
+	vert_out.uv  = vert_in.uv;
+	return vert_out;
+}
+
+float4 PSDrawAreaRGBA(VertInOut vert_in) : TARGET
+{
+	float4 totalcolor = float4(0.0, 0.0, 0.0, 0.0);
+
+	float2 uv = vert_in.uv;
+	float2 uvdelta = float2(ddx(uv.x), ddy(uv.y));
+
+	// Handle potential OpenGL flip.
+	uvdelta.y = abs(uvdelta.y);
+
+	float2 uvhalfdelta = 0.5 * uvdelta;
+	float2 uvmin = uv - uvhalfdelta;
+	float2 uvmax = uv + uvhalfdelta;
+
+	int2 loadindexmin = int2(uvmin / base_dimension_i);
+	int2 loadindexmax = int2(uvmax / base_dimension_i);
+
+	float2 targetpos = uv / uvdelta;
+	float2 targetposmin = targetpos - 0.5;
+	float2 targetposmax = targetpos + 0.5;
+	float2 scale = base_dimension_i / uvdelta;
+	for (int loadindexy = loadindexmin.y; loadindexy <= loadindexmax.y; ++loadindexy)
+	{
+		for (int loadindexx = loadindexmin.x; loadindexx <= loadindexmax.x; ++loadindexx)
+		{
+			int2 loadindex = int2(loadindexx, loadindexy);
+			float2 potentialtargetmin = float2(loadindex) * scale;
+			float2 potentialtargetmax = potentialtargetmin + scale;
+			float2 targetmin = max(potentialtargetmin, targetposmin);
+			float2 targetmax = min(potentialtargetmax, targetposmax);
+			float area = (targetmax.x - targetmin.x) * (targetmax.y - targetmin.y);
+			float4 sample = image.Load(int3(loadindex, 0));
+			totalcolor += area * sample;
+		}
+	}
+
+	return totalcolor;
+}
+
+technique Draw
+{
+	pass
+	{
+		vertex_shader = VSDefault(vert_in);
+		pixel_shader  = PSDrawAreaRGBA(vert_in);
+	}
+}

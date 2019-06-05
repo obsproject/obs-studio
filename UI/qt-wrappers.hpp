@@ -17,10 +17,13 @@
 
 #pragma once
 
+#include <QApplication>
 #include <QMessageBox>
 #include <QWidget>
+#include <QThread>
 #include <obs.hpp>
 
+#include <functional>
 #include <memory>
 #include <vector>
 
@@ -45,6 +48,15 @@ public:
 			QWidget *parent,
 			const QString &title,
 			const QString &text);
+	static void warning(
+		QWidget *parent,
+		const QString &title,
+		const QString &text,
+		bool enableRichText = false);
+	static void critical(
+		QWidget *parent,
+		const QString &title,
+		const QString &text);
 };
 
 void OBSErrorBox(QWidget *parent, const char *msg, ...);
@@ -61,6 +73,22 @@ QDataStream &operator<<(QDataStream &out, const OBSScene &scene);
 QDataStream &operator>>(QDataStream &in, OBSScene &scene);
 QDataStream &operator<<(QDataStream &out, const OBSSceneItem &si);
 QDataStream &operator>>(QDataStream &in, OBSSceneItem &si);
+
+QThread *CreateQThread(std::function<void()> func);
+
+void ExecuteFuncSafeBlock(std::function<void()> func);
+void ExecuteFuncSafeBlockMsgBox(
+		std::function<void()> func,
+		const QString &title,
+		const QString &text);
+
+/* allows executing without message boxes if starting up, otherwise with a
+ * message box */
+void EnableThreadedMessageBoxes(bool enable);
+void ExecThreadedWithoutBlocking(
+		std::function<void()> func,
+		const QString &title,
+		const QString &text);
 
 class SignalBlocker {
 	QWidget *widget;
@@ -79,3 +107,10 @@ public:
 };
 
 void DeleteLayout(QLayout *layout);
+
+static inline Qt::ConnectionType WaitConnection()
+{
+	return QThread::currentThread() == qApp->thread()
+		? Qt::DirectConnection
+		: Qt::BlockingQueuedConnection;
+}

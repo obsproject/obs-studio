@@ -235,6 +235,18 @@ Functions
 
 ---------------------------------------
 
+.. function:: int obs_frontend_get_transition_duration(void)
+
+   :return: The transition duration (in milliseconds) currently set in the UI.
+
+---------------------------------------
+
+.. function:: void obs_frontend_set_transition_duration(int duration)
+
+   :param duration: Desired transition duration (in milliseconds)
+
+---------------------------------------
+
 .. function:: char **obs_frontend_get_scene_collections(void)
 
    :return: The list of profile names, ending with NULL.  The list is
@@ -470,6 +482,12 @@ Functions
 
    :param enable: *true* to activate studio mode, *false* to deactivate
                   studio mode.
+
+---------------------------------------
+
+.. function:: void obs_frontend_preview_program_trigger_transition(void)
+
+   Triggers a preview-to-program transition if studio mode is active.
 
 ---------------------------------------
 

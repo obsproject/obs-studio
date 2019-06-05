@@ -23,7 +23,7 @@ else()
 endif()
 
 if(MSVC)
-	add_compile_options("$<$<CONFIG:RelWithDebInfo>:/MT>")
+	add_compile_options($<IF:$<CONFIG:Debug>,/MTd,/MT> /Zl)
 endif()
 
 add_library(ipc-util STATIC

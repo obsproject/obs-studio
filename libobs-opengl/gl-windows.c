@@ -532,7 +532,7 @@ void device_enter_context(gs_device_t *device)
 		hdc = device->cur_swap->wi->hdc;
 
 	if (!wgl_make_current(hdc, device->plat->hrc))
-		blog(LOG_ERROR, "device_load_swapchain (GL) failed");
+		blog(LOG_ERROR, "device_enter_context (GL) failed");
 }
 
 void device_leave_context(gs_device_t *device)

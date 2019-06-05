@@ -12,7 +12,7 @@ set(get-graphics-offsets_SOURCES
 	d3d9-offsets.cpp)
 
 if(MSVC)
-	add_compile_options("$<$<CONFIG:RelWithDebInfo>:/MT>")
+	add_compile_options($<IF:$<CONFIG:Debug>,/MTd,/MT>)
 endif()
 
 add_executable(get-graphics-offsets

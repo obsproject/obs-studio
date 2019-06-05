@@ -33,6 +33,9 @@
   <property name="styleSheet">
    <string notr="true"/>
   </property>
+  <property name="dockOptions">
+   <set>QMainWindow::AllowNestedDocks|QMainWindow::AllowTabbedDocks|QMainWindow::AnimatedDocks</set>
+  </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QVBoxLayout" name="verticalLayout">
     <item>
@@ -64,8 +67,18 @@
         <item>
          <layout class="QVBoxLayout" name="previewTextLayout">
           <property name="spacing">
-           <number>4</number>
+           <number>0</number>
           </property>
+          <item>
+           <widget class="QLabel" name="previewLabel">
+            <property name="text">
+             <string>StudioMode.Preview</string>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignBottom|Qt::AlignHCenter</set>
+            </property>
+           </widget>
+          </item>
           <item>
            <widget class="OBSBasicPreview" name="preview" native="true">
             <property name="sizePolicy">
@@ -103,7 +116,7 @@
      <x>0</x>
      <y>0</y>
      <width>1079</width>
-     <height>21</height>
+     <height>22</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_File">
@@ -134,11 +147,23 @@
      <addaction name="actionUploadLastLog"/>
      <addaction name="actionViewCurrentLog"/>
     </widget>
+    <widget class="QMenu" name="menuCrashLogs">
+     <property name="title">
+      <string>Basic.MainMenu.Help.CrashLogs</string>
+     </property>
+     <addaction name="actionShowCrashLogs"/>
+     <addaction name="actionUploadLastCrashLog"/>
+    </widget>
     <addaction name="actionHelpPortal"/>
     <addaction name="actionWebsite"/>
+    <addaction name="actionDiscord"/>
     <addaction name="separator"/>
     <addaction name="menuLogFiles"/>
+    <addaction name="menuCrashLogs"/>
+    <addaction name="separator"/>
     <addaction name="actionCheckForUpdates"/>
+    <addaction name="actionShowAbout"/>
+    <addaction name="separator"/>
    </widget>
    <widget class="QMenu" name="menuBasic_MainMenu_Edit">
     <property name="title">
@@ -163,6 +188,8 @@
      <addaction name="actionFitToScreen"/>
      <addaction name="actionStretchToScreen"/>
      <addaction name="actionCenterToScreen"/>
+     <addaction name="actionVerticalCenter"/>
+     <addaction name="actionHorizontalCenter"/>
     </widget>
     <widget class="QMenu" name="orderMenu">
      <property name="title">
@@ -183,9 +210,6 @@
      <addaction name="actionScaleOutput"/>
     </widget>
     <action name="actionCopySource">
-     <property name="enabled">
-      <bool>false</bool>
-     </property>
      <property name="text">
       <string>Copy</string>
      </property>
@@ -283,6 +307,7 @@
      <addaction name="toggleMixer"/>
      <addaction name="toggleTransitions"/>
      <addaction name="toggleControls"/>
+     <addaction name="toggleStats"/>
     </widget>
     <action name="actionFullscreenInterface">
      <property name="text">
@@ -316,7 +341,7 @@
    <addaction name="menuBasic_MainMenu_Help"/>
   </widget>
   <widget class="OBSBasicStatusBar" name="statusbar"/>
-  <widget class="QDockWidget" name="scenesDock">
+  <widget class="OBSDock" name="scenesDock">
    <property name="features">
     <set>QDockWidget::AllDockWidgetFeatures</set>
    </property>
@@ -448,7 +473,7 @@
     </layout>
    </widget>
   </widget>
-  <widget class="QDockWidget" name="sourcesDock">
+  <widget class="OBSDock" name="sourcesDock">
    <property name="features">
     <set>QDockWidget::AllDockWidgetFeatures</set>
    </property>
@@ -509,7 +534,7 @@
          <number>0</number>
         </property>
         <item>
-         <widget class="SourceListWidget" name="sources">
+         <widget class="SourceTree" name="sources">
           <property name="sizePolicy">
            <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
             <horstretch>0</horstretch>
@@ -581,7 +606,7 @@
     </layout>
    </widget>
   </widget>
-  <widget class="QDockWidget" name="mixerDock">
+  <widget class="OBSDock" name="mixerDock">
    <property name="features">
     <set>QDockWidget::AllDockWidgetFeatures</set>
    </property>
@@ -606,70 +631,119 @@
       <number>4</number>
      </property>
      <item>
-      <widget class="VScrollArea" name="mixerScrollArea">
-       <property name="minimumSize">
-        <size>
-         <width>220</width>
-         <height>0</height>
-        </size>
-       </property>
-       <property name="contextMenuPolicy">
-        <enum>Qt::CustomContextMenu</enum>
-       </property>
-       <property name="frameShape">
-        <enum>QFrame::StyledPanel</enum>
-       </property>
-       <property name="frameShadow">
-        <enum>QFrame::Sunken</enum>
-       </property>
-       <property name="verticalScrollBarPolicy">
-        <enum>Qt::ScrollBarAlwaysOn</enum>
-       </property>
-       <property name="horizontalScrollBarPolicy">
-        <enum>Qt::ScrollBarAlwaysOff</enum>
-       </property>
-       <property name="widgetResizable">
-        <bool>true</bool>
-       </property>
-       <widget class="QWidget" name="volumeWidgets">
-        <property name="geometry">
-         <rect>
-          <x>0</x>
-          <y>0</y>
-          <width>230</width>
-          <height>16</height>
-         </rect>
+      <widget class="QStackedWidget" name="stackedMixerArea">
+       <widget class="VScrollArea" name="hMixerScrollArea">
+        <property name="contextMenuPolicy">
+         <enum>Qt::CustomContextMenu</enum>
         </property>
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
+        <property name="frameShape">
+         <enum>QFrame::StyledPanel</enum>
         </property>
-        <layout class="QVBoxLayout" name="verticalLayout_18">
-         <property name="spacing">
-          <number>0</number>
+        <property name="frameShadow">
+         <enum>QFrame::Sunken</enum>
+        </property>
+        <property name="verticalScrollBarPolicy">
+         <enum>Qt::ScrollBarAlwaysOn</enum>
+        </property>
+        <property name="horizontalScrollBarPolicy">
+         <enum>Qt::ScrollBarAlwaysOff</enum>
+        </property>
+        <property name="widgetResizable">
+         <bool>true</bool>
+        </property>
+        <widget class="QWidget" name="hVolumeWidgets">
+         <property name="geometry">
+          <rect>
+           <x>0</x>
+           <y>0</y>
+           <width>64</width>
+           <height>16</height>
+          </rect>
          </property>
-         <property name="leftMargin">
-          <number>0</number>
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
          </property>
-         <property name="topMargin">
-          <number>0</number>
+         <layout class="QVBoxLayout" name="hVolControlLayout">
+          <property name="spacing">
+           <number>0</number>
+          </property>
+          <property name="leftMargin">
+           <number>0</number>
+          </property>
+          <property name="topMargin">
+           <number>0</number>
+          </property>
+          <property name="rightMargin">
+           <number>0</number>
+          </property>
+          <property name="bottomMargin">
+           <number>0</number>
+          </property>
+         </layout>
+        </widget>
+       </widget>
+       <widget class="HScrollArea" name="vMixerScrollArea">
+        <property name="contextMenuPolicy">
+         <enum>Qt::CustomContextMenu</enum>
+        </property>
+        <property name="frameShape">
+         <enum>QFrame::StyledPanel</enum>
+        </property>
+        <property name="frameShadow">
+         <enum>QFrame::Sunken</enum>
+        </property>
+        <property name="verticalScrollBarPolicy">
+         <enum>Qt::ScrollBarAlwaysOff</enum>
+        </property>
+        <property name="horizontalScrollBarPolicy">
+         <enum>Qt::ScrollBarAlwaysOn</enum>
+        </property>
+        <property name="widgetResizable">
+         <bool>true</bool>
+        </property>
+        <widget class="QWidget" name="vVolumeWidgets">
+         <property name="geometry">
+          <rect>
+           <x>0</x>
+           <y>0</y>
+           <width>16</width>
+           <height>28</height>
+          </rect>
          </property>
-         <property name="rightMargin">
-          <number>0</number>
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
          </property>
-         <property name="bottomMargin">
-          <number>0</number>
-         </property>
-        </layout>
+         <layout class="QHBoxLayout" name="vVolControlLayout">
+          <property name="spacing">
+           <number>0</number>
+          </property>
+          <property name="leftMargin">
+           <number>0</number>
+          </property>
+          <property name="topMargin">
+           <number>0</number>
+          </property>
+          <property name="rightMargin">
+           <number>0</number>
+          </property>
+          <property name="bottomMargin">
+           <number>0</number>
+          </property>
+         </layout>
+        </widget>
        </widget>
       </widget>
      </item>
     </layout>
    </widget>
   </widget>
-  <widget class="QDockWidget" name="transitionsDock">
+  <widget class="OBSDock" name="transitionsDock">
    <property name="features">
     <set>QDockWidget::AllDockWidgetFeatures</set>
    </property>
@@ -916,7 +990,7 @@
     </layout>
    </widget>
   </widget>
-  <widget class="QDockWidget" name="controlsDock">
+  <widget class="OBSDock" name="controlsDock">
    <property name="features">
     <set>QDockWidget::AllDockWidgetFeatures</set>
    </property>
@@ -1292,6 +1366,16 @@
     <string>Ctrl+D</string>
    </property>
   </action>
+  <action name="actionVerticalCenter">
+   <property name="text">
+    <string>Basic.MainMenu.Edit.Transform.VerticalCenter</string>
+   </property>
+  </action>
+  <action name="actionHorizontalCenter">
+   <property name="text">
+    <string>Basic.MainMenu.Edit.Transform.HorizontalCenter</string>
+   </property>
+  </action>
   <action name="actionFlipHorizontal">
    <property name="text">
     <string>Basic.MainMenu.Edit.Transform.FlipHorizontal</string>
@@ -1498,7 +1582,7 @@
   </action>
   <action name="autoConfigure">
    <property name="text">
-    <string>Basic.AutoConfig.Beta</string>
+    <string>Basic.AutoConfig</string>
    </property>
   </action>
   <action name="stats">
@@ -1582,6 +1666,37 @@
     <string>Basic.MainMenu.Help.HelpPortal</string>
    </property>
   </action>
+  <action name="actionShowCrashLogs">
+   <property name="text">
+    <string>Basic.MainMenu.Help.CrashLogs.ShowLogs</string>
+   </property>
+  </action>
+  <action name="actionUploadLastCrashLog">
+   <property name="text">
+    <string>Basic.MainMenu.Help.CrashLogs.UploadLastLog</string>
+   </property>
+  </action>
+  <action name="actionDiscord">
+   <property name="text">
+    <string>Basic.MainMenu.Help.Discord</string>
+   </property>
+  </action>
+  <action name="toggleStats">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Basic.Stats</string>
+   </property>
+  </action>
+  <action name="actionShowAbout">
+   <property name="text">
+    <string>Basic.MainMenu.Help.About</string>
+   </property>
+  </action>
  </widget>
  <customwidgets>
   <customwidget>
@@ -1596,15 +1711,27 @@
    <header>window-basic-status-bar.hpp</header>
   </customwidget>
   <customwidget>
+   <class>HScrollArea</class>
+   <extends>QScrollArea</extends>
+   <header>horizontal-scroll-area.hpp</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
    <class>VScrollArea</class>
    <extends>QScrollArea</extends>
    <header>vertical-scroll-area.hpp</header>
    <container>1</container>
   </customwidget>
   <customwidget>
-   <class>SourceListWidget</class>
-   <extends>QListWidget</extends>
-   <header>source-list-widget.hpp</header>
+   <class>SourceTree</class>
+   <extends>QListView</extends>
+   <header>source-tree.hpp</header>
+  </customwidget>
+  <customwidget>
+   <class>OBSDock</class>
+   <extends>QDockWidget</extends>
+   <header>window-dock.hpp</header>
+   <container>1</container>
   </customwidget>
  </customwidgets>
  <resources>

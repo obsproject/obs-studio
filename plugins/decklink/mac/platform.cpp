@@ -1,22 +1,17 @@
 #include "../platform.hpp"
+#include <util/apple/cfstring-utils.h>
 
 bool DeckLinkStringToStdString(decklink_string_t input, std::string& output)
 {
 	const CFStringRef string = static_cast<CFStringRef>(input);
-	const CFIndex length = CFStringGetLength(string);
-	const CFIndex maxLength = CFStringGetMaximumSizeForEncoding(length,
-			kCFStringEncodingASCII) + 1;
 
-	char * const buffer = new char[maxLength];
+	char *buffer = cfstr_copy_cstr(string, kCFStringEncodingASCII);
 
-	const bool result = CFStringGetCString(string, buffer, maxLength,
-			kCFStringEncodingASCII);
-
-	if (result)
+	if (buffer)
 		output = std::string(buffer);
 
-	delete[] buffer;
+	bfree(buffer);
 	CFRelease(string);
 
-	return result;
+	return (buffer != NULL);
 }

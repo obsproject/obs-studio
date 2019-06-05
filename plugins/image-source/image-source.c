@@ -25,7 +25,7 @@ struct image_source {
 	uint64_t     last_time;
 	bool         active;
 
-	gs_image_file_t image;
+	gs_image_file2_t if2;
 };
 
 
@@ -48,20 +48,20 @@ static void image_source_load(struct image_source *context)
 	char *file = context->file;
 
 	obs_enter_graphics();
-	gs_image_file_free(&context->image);
+	gs_image_file2_free(&context->if2);
 	obs_leave_graphics();
 
 	if (file && *file) {
 		debug("loading texture '%s'", file);
 		context->file_timestamp = get_modified_timestamp(file);
-		gs_image_file_init(&context->image, file);
+		gs_image_file2_init(&context->if2, file);
 		context->update_time_elapsed = 0;
 
 		obs_enter_graphics();
-		gs_image_file_init_texture(&context->image);
+		gs_image_file2_init_texture(&context->if2);
 		obs_leave_graphics();
 
-		if (!context->image.loaded)
+		if (!context->if2.image.loaded)
 			warn("failed to load texture '%s'", file);
 	}
 }
@@ -69,7 +69,7 @@ static void image_source_load(struct image_source *context)
 static void image_source_unload(struct image_source *context)
 {
 	obs_enter_graphics();
-	gs_image_file_free(&context->image);
+	gs_image_file2_free(&context->if2);
 	obs_leave_graphics();
 }
 
@@ -135,26 +135,26 @@ static void image_source_destroy(void *data)
 static uint32_t image_source_getwidth(void *data)
 {
 	struct image_source *context = data;
-	return context->image.cx;
+	return context->if2.image.cx;
 }
 
 static uint32_t image_source_getheight(void *data)
 {
 	struct image_source *context = data;
-	return context->image.cy;
+	return context->if2.image.cy;
 }
 
 static void image_source_render(void *data, gs_effect_t *effect)
 {
 	struct image_source *context = data;
 
-	if (!context->image.texture)
+	if (!context->if2.image.texture)
 		return;
 
 	gs_effect_set_texture(gs_effect_get_param_by_name(effect, "image"),
-			context->image.texture);
-	gs_draw_sprite(context->image.texture, 0,
-			context->image.cx, context->image.cy);
+			context->if2.image.texture);
+	gs_draw_sprite(context->if2.image.texture, 0,
+			context->if2.image.cx, context->if2.image.cy);
 }
 
 static void image_source_tick(void *data, float seconds)
@@ -175,20 +175,20 @@ static void image_source_tick(void *data, float seconds)
 
 	if (obs_source_active(context->source)) {
 		if (!context->active) {
-			if (context->image.is_animated_gif)
+			if (context->if2.image.is_animated_gif)
 				context->last_time = frame_time;
 			context->active = true;
 		}
 
 	} else {
 		if (context->active) {
-			if (context->image.is_animated_gif) {
-				context->image.cur_frame = 0;
-				context->image.cur_loop = 0;
-				context->image.cur_time = 0;
+			if (context->if2.image.is_animated_gif) {
+				context->if2.image.cur_frame = 0;
+				context->if2.image.cur_loop = 0;
+				context->if2.image.cur_time = 0;
 
 				obs_enter_graphics();
-				gs_image_file_update_texture(&context->image);
+				gs_image_file2_update_texture(&context->if2);
 				obs_leave_graphics();
 			}
 
@@ -198,13 +198,13 @@ static void image_source_tick(void *data, float seconds)
 		return;
 	}
 
-	if (context->last_time && context->image.is_animated_gif) {
+	if (context->last_time && context->if2.image.is_animated_gif) {
 		uint64_t elapsed = frame_time - context->last_time;
-		bool updated = gs_image_file_tick(&context->image, elapsed);
+		bool updated = gs_image_file2_tick(&context->if2, elapsed);
 
 		if (updated) {
 			obs_enter_graphics();
-			gs_image_file_update_texture(&context->image);
+			gs_image_file2_update_texture(&context->if2);
 			obs_leave_graphics();
 		}
 	}
@@ -214,12 +214,14 @@ static void image_source_tick(void *data, float seconds)
 
 
 static const char *image_filter =
-	"All formats (*.bmp *.tga *.png *.jpeg *.jpg *.gif);;"
+	"All formats (*.bmp *.tga *.png *.jpeg *.jpg *.gif *.psd);;"
 	"BMP Files (*.bmp);;"
 	"Targa Files (*.tga);;"
 	"PNG Files (*.png);;"
 	"JPEG Files (*.jpeg *.jpg);;"
-	"GIF Files (*.gif)";
+	"GIF Files (*.gif);;"
+	"PSD Files (*.psd);;"
+	"All Files (*.*)";
 
 static obs_properties_t *image_source_properties(void *data)
 {
@@ -248,6 +250,12 @@ static obs_properties_t *image_source_properties(void *data)
 	return props;
 }
 
+uint64_t image_source_get_memory_usage(void *data)
+{
+	struct image_source *s = data;
+	return s->if2.mem_usage;
+}
+
 static struct obs_source_info image_source_info = {
 	.id             = "image_source",
 	.type           = OBS_SOURCE_TYPE_INPUT,
@@ -268,6 +276,10 @@ static struct obs_source_info image_source_info = {
 
 OBS_DECLARE_MODULE()
 OBS_MODULE_USE_DEFAULT_LOCALE("image-source", "en-US")
+MODULE_EXPORT const char *obs_module_description(void)
+{
+	return "Image/color/slideshow sources";
+}
 
 extern struct obs_source_info slideshow_info;
 extern struct obs_source_info color_source_info;

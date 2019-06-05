@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 2.8)
 
 if(NOT ENABLE_SCRIPTING)
+	message(STATUS "Scripting plugin disabled")
 	return()
 endif()
 
@@ -11,12 +12,53 @@ if(MSVC)
 		w32-pthreads)
 endif()
 
-find_package(Luajit QUIET)
-find_package(PythonDeps QUIET)
-find_package(SwigDeps QUIET 2)
+option(DISABLE_LUA "Disable Lua scripting support" OFF)
+option(DISABLE_PYTHON "Disable Python scripting support" OFF)
 
 set(COMPILE_PYTHON FALSE CACHE BOOL "" FORCE)
 set(COMPILE_LUA FALSE CACHE BOOL "" FORCE)
+
+if(NOT DISABLE_LUA)
+	find_package(Luajit QUIET)
+
+	if(NOT DISABLE_LUA AND NOT LUAJIT_FOUND)
+		message(STATUS "Luajit support not found.")
+		set(LUAJIT_FOUND FALSE)
+	else()
+		message(STATUS "Scripting: Luajit supported")
+		set(COMPILE_LUA TRUE CACHE BOOL "" FORCE)
+	endif()
+else()
+	message(STATUS "Scripting: Luajit support disabled")
+	set(LUAJIT_FOUND FALSE)
+endif()
+
+if(NOT DISABLE_PYTHON)
+	find_package(PythonDeps QUIET)
+
+	if(NOT DISABLE_PYTHON AND NOT PYTHONLIBS_FOUND)
+		message(STATUS "Python support not found.")
+		set(PYTHON_FOUND FALSE)
+		set(PYTHONLIBS_FOUND FALSE)
+	else()
+		message(STATUS "Scripting: Python 3 supported")
+		set(PYTHON_FOUND TRUE)
+		set(COMPILE_PYTHON TRUE CACHE BOOL "" FORCE)
+
+		get_filename_component(PYTHON_LIB "${PYTHON_LIBRARIES}" NAME)
+		string(REGEX REPLACE "\\.[^.]*$" "" PYTHON_LIB ${PYTHON_LIB})
+
+		if(WIN32)
+			string(REGEX REPLACE "_d" "" PYTHON_LIB "${PYTHON_LIB}")
+		endif()
+	endif()
+else()
+	message(STATUS "Scripting: Python 3 support disabled")
+	set(PYTHON_FOUND FALSE)
+	set(PYTHONLIBS_FOUND FALSE)
+endif()
+
+find_package(SwigDeps QUIET 2)
 
 if(NOT SWIG_FOUND)
 	message(STATUS "Scripting: SWIG not found; scripting disabled")
@@ -28,34 +70,15 @@ if(NOT PYTHONLIBS_FOUND AND NOT LUAJIT_FOUND)
 	return()
 endif()
 
-if(NOT LUAJIT_FOUND)
-	message(STATUS "Scripting: Luajit not found; Luajit support disabled")
-else()
-	message(STATUS "Scripting: Luajit supported")
-	set(COMPILE_LUA TRUE CACHE BOOL "" FORCE)
-endif()
-
-if(NOT PYTHONLIBS_FOUND)
-	message(STATUS "Scripting: Python 3 not found; Python support disabled")
-	set(PYTHON_FOUND FALSE)
-	set(PYTHONLIBS_FOUND FALSE)
-else()
-	message(STATUS "Scripting: Python 3 supported")
-	set(PYTHON_FOUND TRUE)
-	set(COMPILE_PYTHON TRUE CACHE BOOL "" FORCE)
-
-	get_filename_component(PYTHON_LIB "${PYTHON_LIBRARIES}" NAME)
-	string(REGEX REPLACE "\\.[^.]*$" "" PYTHON_LIB ${PYTHON_LIB})
-	if(WIN32)
-		string(REGEX REPLACE "_d" "" PYTHON_LIB "${PYTHON_LIB}")
-	endif()
-endif()
-
 set(SCRIPTING_ENABLED ON CACHE BOOL "Interal global cmake variable" FORCE)
 
 if(UI_ENABLED)
 	set(EXTRA_LIBS obs-frontend-api)
 	include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/UI/obs-frontend-api")
+endif()
+
+IF(BUILD_CAPTIONS)
+	string(TOUPPER "${BUILD_CAPTIONS}" BUILD_CAPTIONS)
 endif()
 
 configure_file(

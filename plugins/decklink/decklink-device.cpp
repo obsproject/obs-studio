@@ -1,4 +1,4 @@
-#include <sstream>
+﻿#include <sstream>
 
 #include "decklink-device.hpp"
 
@@ -10,7 +10,10 @@ DeckLinkDevice::DeckLinkDevice(IDeckLink *device_) : device(device_)
 
 DeckLinkDevice::~DeckLinkDevice(void)
 {
-	for (DeckLinkDeviceMode *mode : modes)
+	for (DeckLinkDeviceMode *mode : inputModes)
+		delete mode;
+
+	for (DeckLinkDeviceMode *mode : outputModes)
 		delete mode;
 }
 
@@ -37,36 +40,84 @@ bool DeckLinkDevice::Init()
 		decklink_bool_t detectable = false;
 		if (attributes->GetFlag(BMDDeckLinkSupportsInputFormatDetection,
 				&detectable) == S_OK && !!detectable) {
-			DeckLinkDeviceMode *mode =
-				new DeckLinkDeviceMode("Auto", MODE_ID_AUTO);
-			modes.push_back(mode);
-			modeIdMap[MODE_ID_AUTO] = mode;
+			DeckLinkDeviceMode *mode = new DeckLinkDeviceMode(
+					"Auto",
+					MODE_ID_AUTO);
+			inputModes.push_back(mode);
+			inputModeIdMap[MODE_ID_AUTO] = mode;
 		}
 	}
 
+	// Find input modes
 	ComPtr<IDeckLinkInput> input;
-	if (device->QueryInterface(IID_IDeckLinkInput, (void**)&input) != S_OK)
-		return false;
+	if (device->QueryInterface(IID_IDeckLinkInput, (void **) &input) == S_OK) {
+		IDeckLinkDisplayModeIterator *modeIterator;
+		if (input->GetDisplayModeIterator(&modeIterator) == S_OK) {
+			IDeckLinkDisplayMode *displayMode;
+			long long modeId = 1;
 
-	IDeckLinkDisplayModeIterator *modeIterator;
-	if (input->GetDisplayModeIterator(&modeIterator) == S_OK) {
-		IDeckLinkDisplayMode *displayMode;
-		long long modeId = 1;
+			while (modeIterator->Next(&displayMode) == S_OK) {
+				if (displayMode == nullptr)
+					continue;
 
-		while (modeIterator->Next(&displayMode) == S_OK) {
-			if (displayMode == nullptr)
-				continue;
+				DeckLinkDeviceMode *mode =
+						new DeckLinkDeviceMode(displayMode, modeId);
+				inputModes.push_back(mode);
+				inputModeIdMap[modeId] = mode;
+				displayMode->Release();
+				++modeId;
+			}
 
-			DeckLinkDeviceMode *mode =
-				new DeckLinkDeviceMode(displayMode, modeId);
-			modes.push_back(mode);
-			modeIdMap[modeId] = mode;
-			displayMode->Release();
-			++modeId;
+			modeIterator->Release();
 		}
-
-		modeIterator->Release();
 	}
+
+	// Get supported video connections
+	attributes->GetInt(BMDDeckLinkVideoInputConnections,
+			&supportedVideoInputConnections);
+	attributes->GetInt(BMDDeckLinkVideoOutputConnections,
+			&supportedVideoOutputConnections);
+
+	// Get supported audio connections
+	attributes->GetInt(BMDDeckLinkAudioInputConnections,
+			&supportedAudioInputConnections);
+	attributes->GetInt(BMDDeckLinkAudioOutputConnections,
+			&supportedAudioOutputConnections);
+
+	// find output modes
+	ComPtr<IDeckLinkOutput> output;
+	if (device->QueryInterface(IID_IDeckLinkOutput, (void **) &output) == S_OK) {
+
+		IDeckLinkDisplayModeIterator *modeIterator;
+		if (output->GetDisplayModeIterator(&modeIterator) == S_OK) {
+			IDeckLinkDisplayMode *displayMode;
+			long long modeId = 1;
+
+			while (modeIterator->Next(&displayMode) == S_OK) {
+				if (displayMode == nullptr)
+					continue;
+
+				DeckLinkDeviceMode *mode =
+						new DeckLinkDeviceMode(displayMode, modeId);
+				outputModes.push_back(mode);
+				outputModeIdMap[modeId] = mode;
+				displayMode->Release();
+				++modeId;
+			}
+
+			modeIterator->Release();
+		}
+	}
+
+	// get keyer support
+	attributes->GetFlag(BMDDeckLinkSupportsExternalKeying,
+			&supportsExternalKeyer);
+	attributes->GetFlag(BMDDeckLinkSupportsInternalKeying,
+			&supportsInternalKeyer);
+
+	// Sub Device Counts
+	attributes->GetInt(BMDDeckLinkSubDeviceIndex, &subDeviceIndex);
+	attributes->GetInt(BMDDeckLinkNumberOfSubDevices, &numSubDevices);
 
 	decklink_string_t decklinkModelName;
 	decklink_string_t decklinkDisplayName;
@@ -115,9 +166,43 @@ bool DeckLinkDevice::GetInput(IDeckLinkInput **input)
 	return true;
 }
 
-DeckLinkDeviceMode *DeckLinkDevice::FindMode(long long id)
+bool DeckLinkDevice::GetOutput(IDeckLinkOutput **output)
 {
-	return modeIdMap[id];
+	if (device->QueryInterface(IID_IDeckLinkOutput, (void**)output) != S_OK)
+		return false;
+
+	return true;
+}
+
+bool DeckLinkDevice::GetKeyer(IDeckLinkKeyer **deckLinkKeyer)
+{
+	if (device->QueryInterface(IID_IDeckLinkKeyer, (void**)deckLinkKeyer) != S_OK)
+	{
+		fprintf(stderr, "Could not obtain the IDeckLinkKeyer interface\n");
+		return false;
+	}
+
+	return true;
+}
+
+void DeckLinkDevice::SetKeyerMode(int newKeyerMode)
+{
+	keyerMode = newKeyerMode;
+}
+
+int DeckLinkDevice::GetKeyerMode(void)
+{
+	return keyerMode;
+}
+
+DeckLinkDeviceMode *DeckLinkDevice::FindInputMode(long long id)
+{
+	return inputModeIdMap[id];
+}
+
+DeckLinkDeviceMode *DeckLinkDevice::FindOutputMode(long long id)
+{
+	return outputModeIdMap[id];
 }
 
 const std::string& DeckLinkDevice::GetDisplayName(void)
@@ -130,9 +215,45 @@ const std::string& DeckLinkDevice::GetHash(void) const
 	return hash;
 }
 
-const std::vector<DeckLinkDeviceMode *>& DeckLinkDevice::GetModes(void) const
+const std::vector<DeckLinkDeviceMode *>& DeckLinkDevice::GetInputModes(void) const
 {
-	return modes;
+	return inputModes;
+}
+
+const std::vector<DeckLinkDeviceMode *>& DeckLinkDevice::GetOutputModes(void) const
+{
+	return outputModes;
+}
+
+int64_t DeckLinkDevice::GetVideoInputConnections()
+{
+	return supportedVideoInputConnections;
+}
+
+int64_t DeckLinkDevice::GetAudioInputConnections()
+{
+	return supportedAudioInputConnections;
+}
+
+
+bool DeckLinkDevice::GetSupportsExternalKeyer(void) const
+{
+	return supportsExternalKeyer;
+}
+
+bool DeckLinkDevice::GetSupportsInternalKeyer(void) const
+{
+	return supportsInternalKeyer;
+}
+
+int64_t DeckLinkDevice::GetSubDeviceCount()
+{
+	return numSubDevices;
+}
+
+int64_t DeckLinkDevice::GetSubDeviceIndex()
+{
+	return subDeviceIndex;
 }
 
 const std::string& DeckLinkDevice::GetName(void) const

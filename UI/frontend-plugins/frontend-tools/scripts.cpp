@@ -12,6 +12,7 @@
 #include <QFont>
 #include <QDialogButtonBox>
 #include <QResizeEvent>
+#include <QAction>
 
 #include <obs.hpp>
 #include <obs-module.h>
@@ -229,6 +230,15 @@ void ScriptsTool::ReloadScript(const char *path)
 		const char *script_path = obs_script_get_path(script);
 		if (strcmp(script_path, path) == 0) {
 			obs_script_reload(script);
+
+			OBSData settings = obs_data_create();
+			obs_data_release(settings);
+
+			obs_properties_t *prop =
+				obs_script_get_properties(script);
+			obs_properties_apply_settings(prop, settings);
+			obs_properties_destroy(prop);
+
 			break;
 		}
 	}
@@ -316,6 +326,14 @@ void ScriptsTool::on_addScripts_clicked()
 			QListWidgetItem *item = new QListWidgetItem(script_file);
 			item->setData(Qt::UserRole, QString(file));
 			ui->scripts->addItem(item);
+
+			OBSData settings = obs_data_create();
+			obs_data_release(settings);
+
+			obs_properties_t *prop =
+				obs_script_get_properties(script);
+			obs_properties_apply_settings(prop, settings);
+			obs_properties_destroy(prop);
 		}
 	}
 }
@@ -494,9 +512,14 @@ static void script_log(void *, obs_script_t *script, int log_level,
 		const char *message)
 {
 	QString qmsg;
-	qmsg = QStringLiteral("[%1] %2").arg(
-			obs_script_get_file(script),
-			message);
+
+	if (script) {
+		qmsg = QStringLiteral("[%1] %2").arg(
+				obs_script_get_file(script),
+				message);
+	} else {
+		qmsg = QStringLiteral("[Unknown Script] %1").arg(message);
+	}
 
 	QMetaObject::invokeMethod(scriptLogWindow, "AddLogMsg",
 			Q_ARG(int, log_level),

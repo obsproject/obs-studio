@@ -1,6 +1,7 @@
 /*
- * Copyright (c) 2013-2014 Ruwen Hahn <palana@stunned.de>
+ * Copyright (c) 2013-2018 Ruwen Hahn <palana@stunned.de>
  *                         Hugh "Jim" Bailey <obs.jim@gmail.com>
+ *                         Marvin Scholz <epirat07@gmail.com>
  *
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -23,15 +24,19 @@
 #include <time.h>
 #include <unistd.h>
 #include <sys/types.h>
+#include <sys/param.h>
 #include <sys/sysctl.h>
 
 #include <CoreServices/CoreServices.h>
 #include <mach/mach.h>
 #include <mach/mach_time.h>
+#include <mach-o/dyld.h>
 
 #include <IOKit/pwr_mgt/IOPMLib.h>
 
 #import <Cocoa/Cocoa.h>
+
+#include "apple/cfstring-utils.h"
 
 /* clock function selection taken from libc++ */
 static uint64_t ns_time_simple()
@@ -135,6 +140,35 @@ int os_get_program_data_path(char *dst, size_t size, const char *name)
 char *os_get_program_data_path_ptr(const char *name)
 {
 	return os_get_path_ptr_internal(name, NSLocalDomainMask);
+}
+
+char *os_get_executable_path_ptr(const char *name)
+{
+	char exe[PATH_MAX];
+	char abs_path[PATH_MAX];
+	uint32_t size = sizeof(exe);
+	struct dstr path;
+	char *slash;
+
+	if (_NSGetExecutablePath(exe, &size) != 0) {
+		return NULL;
+	}
+
+	if (!realpath(exe, abs_path)) {
+		return NULL;
+	}
+
+	dstr_init_copy(&path, abs_path);
+	slash = strrchr(path.array, '/');
+	if (slash) {
+		size_t len = slash - path.array + 1;
+		dstr_resize(&path, len);
+	}
+
+	if (name && *name) {
+		dstr_cat(&path, name);
+	}
+	return path.array;
 }
 
 struct os_cpu_usage_info {
@@ -416,4 +450,91 @@ uint64_t os_get_proc_virtual_size(void)
 	if (!os_get_proc_memory_usage_internal(&taskinfo))
 		return 0;
 	return taskinfo.virtual_size;
+}
+
+/* Obtains a copy of the contents of a CFString in specified encoding.
+ * Returns char* (must be bfree'd by caller) or NULL on failure.
+ */
+char *cfstr_copy_cstr(CFStringRef cfstring, CFStringEncoding cfstring_encoding)
+{
+	if (!cfstring)
+		return NULL;
+
+	// Try the quick way to obtain the buffer
+	const char *tmp_buffer = CFStringGetCStringPtr(cfstring,
+			cfstring_encoding);
+
+	if (tmp_buffer != NULL)
+		return bstrdup(tmp_buffer);
+
+	// The quick way did not work, try the more expensive one
+	CFIndex length = CFStringGetLength(cfstring);
+	CFIndex max_size =
+		CFStringGetMaximumSizeForEncoding(length, cfstring_encoding);
+
+	// If result would exceed LONG_MAX, kCFNotFound is returned
+	if (max_size == kCFNotFound)
+		return NULL;
+
+	// Account for the null terminator
+	max_size++;
+
+	char *buffer = bmalloc(max_size);
+
+	if (buffer == NULL) {
+		return NULL;
+	}
+
+	// Copy CFString in requested encoding to buffer
+	Boolean success =
+		CFStringGetCString(cfstring, buffer, max_size, cfstring_encoding);
+
+	if (!success) {
+		bfree(buffer);
+		buffer = NULL;
+	}
+	return buffer;
+}
+
+/* Copies the contents of a CFString in specified encoding to a given dstr.
+ * Returns true on success or false on failure.
+ * In case of failure, the dstr capacity but not size is changed.
+ */
+bool cfstr_copy_dstr(CFStringRef cfstring,
+	CFStringEncoding cfstring_encoding, struct dstr *str)
+{
+	if (!cfstring)
+		return false;
+
+	// Try the quick way to obtain the buffer
+	const char *tmp_buffer = CFStringGetCStringPtr(cfstring,
+			cfstring_encoding);
+
+	if (tmp_buffer != NULL) {
+		dstr_copy(str, tmp_buffer);
+		return true;
+	}
+
+	// The quick way did not work, try the more expensive one
+	CFIndex length = CFStringGetLength(cfstring);
+	CFIndex max_size =
+		CFStringGetMaximumSizeForEncoding(length, cfstring_encoding);
+
+	// If result would exceed LONG_MAX, kCFNotFound is returned
+	if (max_size == kCFNotFound)
+		return NULL;
+
+	// Account for the null terminator
+	max_size++;
+
+	dstr_ensure_capacity(str, max_size);
+
+	// Copy CFString in requested encoding to dstr buffer
+	Boolean success = CFStringGetCString(
+		cfstring, str->array, max_size, cfstring_encoding);
+
+	if (success)
+		dstr_resize(str, max_size);
+
+	return (bool)success;
 }

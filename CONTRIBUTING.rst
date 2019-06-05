@@ -10,7 +10,9 @@ Quick Links for Contributing
  - Our bug tracker (linked to forum accounts):
    https://obsproject.com/mantis/
 
- - Development IRC channel: #obs-dev on QuakeNet
+ - Discord Server: https://obsproject.com/discord
+
+ - Development chat: #development on the Discord server (see above)
  
  - Development forum:
    https://obsproject.com/forum/list/general-development.21/
@@ -39,8 +41,8 @@ Coding Guidelines
 
  - 80 columns max
 
-Commit Guidlines
-----------------
+Commit Guidelines
+-----------------
 
  - OBS Studio uses the 50/72 standard for commits.  50 characters max
    for the title (excluding module prefix), an empty line, and then a
@@ -50,15 +52,18 @@ Commit Guidlines
  - Make sure commit titles are always in present tense, and are not
    followed by punctuation.
 
- - Prefix commit titles with the module name, followed by a colon and a
-   space (unless modifying a file in the base directory).  When
-   modifying cmake modules, prefix with "cmake".  So for example, if you
-   are modifying the obs-ffmpeg plugin::
+ - Prefix each commit's titles with the module name, followed by a colon
+   and a space (unless modifying a file in the base directory).  After
+   that, the first word should be capitalized.
+
+   So for example, if you are modifying the obs-ffmpeg plugin::
 
      obs-ffmpeg: Fix bug with audio output
 
    Or for libobs::
 
      libobs: Fix source not displaying
+
+   Note: When modifying cmake modules, just prefix with "cmake".
 
  - If you still need examples, please view the commit history.

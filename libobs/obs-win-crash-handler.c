@@ -255,10 +255,16 @@ static inline void write_header(struct exception_handler_data *data)
 	ts = *localtime(&now);
 	strftime(date_time, sizeof(date_time), "%Y-%m-%d, %X", &ts);
 
+	const char *obs_bitness;
+	if (sizeof(void*) == 8)
+		obs_bitness = "64";
+	else
+		obs_bitness = "32";
+
 	dstr_catf(&data->str, "Unhandled exception: %x\r\n"
 			"Date/Time: %s\r\n"
 			"Fault address: %"PRIX64" (%s)\r\n"
-			"libobs version: "OBS_VERSION"\r\n"
+			"libobs version: "OBS_VERSION" (%s-bit)\r\n"
 			"Windows version: %d.%d build %d (revision: %d; "
 				"%s-bit)\r\n"
 			"CPU: %s\r\n\r\n",
@@ -266,6 +272,7 @@ static inline void write_header(struct exception_handler_data *data)
 			date_time,
 			data->main_trace.instruction_ptr,
 			data->module_name.array,
+			obs_bitness,
 			data->win_version.major, data->win_version.minor,
 			data->win_version.build, data->win_version.revis,
 			is_64_bit_windows() ? "64" : "32",

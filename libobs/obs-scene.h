@@ -32,12 +32,17 @@ struct obs_scene_item {
 	volatile long         ref;
 	volatile bool         removed;
 
+	bool                  is_group;
+	bool                  update_transform;
+	bool                  update_group_resize;
+
 	int64_t               id;
 
 	struct obs_scene      *parent;
 	struct obs_source     *source;
 	volatile long         active_refs;
 	volatile long         defer_update;
+	volatile long         defer_group_resize;
 	bool                  user_visible;
 	bool                  visible;
 	bool                  selected;
@@ -60,6 +65,7 @@ struct obs_scene_item {
 	enum obs_scale_type   scale_filter;
 
 	struct matrix4        box_transform;
+	struct vec2           box_scale;
 	struct matrix4        draw_transform;
 
 	enum obs_bounds_type  bounds_type;
@@ -80,6 +86,11 @@ struct obs_scene_item {
 
 struct obs_scene {
 	struct obs_source     *source;
+
+	bool                  is_group;
+	bool                  custom_size;
+	uint32_t              cx;
+	uint32_t              cy;
 
 	int64_t               id_counter;
 

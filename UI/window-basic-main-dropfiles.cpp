@@ -107,8 +107,10 @@ void OBSBasic::AddDropSource(const char *data, DropType image)
 		break;
 	}
 
-	if (!obs_source_get_display_name(type))
+	if (!obs_source_get_display_name(type)) {
+		obs_data_release(settings);
 		return;
+	}
 
 	if (name.isEmpty())
 		name = obs_source_get_display_name(type);
@@ -146,7 +148,7 @@ void OBSBasic::dropEvent(QDropEvent *event)
 	if (mimeData->hasUrls()) {
 		QList<QUrl> urls = mimeData->urls();
 
-		for (int i = 0; i < urls.size() && i < 5; i++) {
+		for (int i = 0; i < urls.size(); i++) {
 			QString file = urls.at(i).toLocalFile();
 			QFileInfo fileInfo(file);
 

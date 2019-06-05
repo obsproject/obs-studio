@@ -2,6 +2,10 @@
 
 OBS_DECLARE_MODULE()
 OBS_MODULE_USE_DEFAULT_LOCALE("mac-capture", "en-US")
+MODULE_EXPORT const char *obs_module_description(void)
+{
+	return "macOS audio input/output and window/display capture";
+}
 
 extern struct obs_source_info coreaudio_input_capture_info;
 extern struct obs_source_info coreaudio_output_capture_info;

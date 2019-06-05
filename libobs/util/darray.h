@@ -207,11 +207,13 @@ static inline void *darray_push_back_new(const size_t element_size,
 static inline size_t darray_push_back_array(const size_t element_size,
 		struct darray *dst, const void *array, const size_t num)
 {
-	size_t old_num = dst->num;
+	size_t old_num;
+	if (!dst)
+		return 0;
+	if (!array || !num)
+		return dst->num;
 
-	assert(array != NULL);
-	assert(num != 0);
-
+	old_num = dst->num;
 	darray_resize(element_size, dst, dst->num+num);
 	memcpy(darray_item(element_size, dst, old_num), array,
 			element_size*num);
