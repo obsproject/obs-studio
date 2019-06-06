@@ -144,7 +144,13 @@ float PSNV12_Y(VertInOut vert_in) : TARGET
 
 float2 PSNV12_UV(VertInOut vert_in) : TARGET
 {
-	return image.Sample(def_sampler, vert_in.uv.xy).xz;
+	float2 uv = vert_in.uv;
+	float uv_left_x = uv.x - 0.5 * ddx(uv.x);
+	float2 uv_left = float2(uv_left_x, uv.y);
+	float2 cbcr_left = image.Sample(def_sampler, uv_left).xz;
+	float2 cbcr_right = image.Sample(def_sampler, uv).xz;
+	float2 cbcr = (cbcr_left + cbcr_right) * 0.5;
+	return cbcr;
 }
 
 float4 PSPlanar420(VertInOut vert_in) : TARGET
@@ -287,15 +293,15 @@ float4 PSPacked422_Reverse(VertInOut vert_in, int u_pos, int v_pos,
 		int y0_pos, int y1_pos) : TARGET
 {
 	float y = vert_in.uv.y;
-	float odd = floor(fmod(width * vert_in.uv.x + PRECISION_OFFSET, 2.0));
-	float x = floor(width_d2 * vert_in.uv.x + PRECISION_OFFSET) *
-			width_d2_i;
+	int2 pos_xy = int2(vert_in.pos.xy);
+	int luma_pos = (pos_xy.x & 1) ? y1_pos : y0_pos;
+	int2 luma_xy = int2(pos_xy.x >> 1, pos_xy.y);
+	float chroma_x = vert_in.uv.x + 0.5 * ddx(vert_in.uv.x);
 
-	x += input_width_i_d2;
-
-	float4 texel = image.Sample(def_sampler, float2(x, y));
-	float3 yuv = float3(odd > 0.5 ? texel[y1_pos] : texel[y0_pos],
-			texel[u_pos], texel[v_pos]);
+	float4 texel_luma = image.Load(int3(luma_xy, 0));
+	float4 texel_chroma = image.Sample(def_sampler, float2(chroma_x, y));
+	float3 yuv = float3(texel_luma[luma_pos],
+			texel_chroma[u_pos], texel_chroma[v_pos]);
 	yuv = clamp(yuv, color_range_min, color_range_max);
 	return saturate(mul(float4(yuv, 1.0), color_matrix));
 }
