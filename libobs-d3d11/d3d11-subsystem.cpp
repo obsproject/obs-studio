@@ -1886,14 +1886,11 @@ void device_projection_push(gs_device_t *device)
 
 void device_projection_pop(gs_device_t *device)
 {
-	if (!device->projStack.size())
+	if (device->projStack.empty())
 		return;
 
-	mat4float *mat = device->projStack.data();
-	size_t end = device->projStack.size()-1;
-
-	/* XXX - does anyone know a better way of doing this? */
-	memcpy(&device->curProjMatrix, mat+end, sizeof(matrix4));
+	const mat4float &mat = device->projStack.back();
+	memcpy(&device->curProjMatrix, &mat, sizeof(matrix4));
 	device->projStack.pop_back();
 }
 
