@@ -474,10 +474,10 @@ static void *ft2_source_create(obs_data_t *settings, obs_source_t *source)
 
 	init_plugin();
 
-	srcdata->font_size = 32;
+	srcdata->font_size = 256;
 
 	obs_data_set_default_string(font_obj, "face", DEFAULT_FACE);
-	obs_data_set_default_int(font_obj, "size", 32);
+	obs_data_set_default_int(font_obj, "size", 256);
 	obs_data_set_default_obj(settings, "font", font_obj);
 
 	obs_data_set_default_int(settings, "log_lines", 6);
