@@ -121,6 +121,7 @@ private:
 	OBSPropertiesView *recordEncoderProps = nullptr;
 
 	QPointer<QLabel> advOutRecWarning;
+	QPointer<QLabel> advOutStreamWarning;
 	QPointer<QLabel> simpleOutRecWarning;
 
 	QString curPreset;
@@ -225,6 +226,14 @@ private:
 	void OnOAuthStreamKeyConnected();
 	void OnAuthConnected();
 	QString lastService;
+
+	int AudioTrackBitrate(int track);
+
+	int AdvStreamTrackNumber();
+	int SharedTrackNumber();
+	int StreamMaxBitrate();
+	bool ShowRecMaxBitrateWarning();
+	bool ShowStreamMaxBitrateWarning();
 private slots:
 	void UpdateServerList();
 	void UpdateKeyLink();
@@ -324,7 +333,9 @@ private slots:
 
 	void UpdateAutomaticReplayBufferCheckboxes();
 
+	void AdvOutputkWarnings();
 	void AdvOutRecCheckWarnings();
+	void AdvOutStreamCheckWarnings();
 
 	void SimpleRecordingQualityChanged();
 	void SimpleRecordingEncoderChanged();

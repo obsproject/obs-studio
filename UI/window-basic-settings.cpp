@@ -573,6 +573,18 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 		SLOT(UpdateStreamDelayEstimate()));
 	connect(ui->advOutTrack6Bitrate, SIGNAL(currentIndexChanged(int)), this,
 		SLOT(UpdateStreamDelayEstimate()));
+	connect(ui->advOutTrack1Bitrate, SIGNAL(currentIndexChanged(int)), this,
+		SLOT(AdvOutputkWarnings()));
+	connect(ui->advOutTrack2Bitrate, SIGNAL(currentIndexChanged(int)), this,
+		SLOT(AdvOutputkWarnings()));
+	connect(ui->advOutTrack3Bitrate, SIGNAL(currentIndexChanged(int)), this,
+		SLOT(AdvOutputkWarnings()));
+	connect(ui->advOutTrack4Bitrate, SIGNAL(currentIndexChanged(int)), this,
+		SLOT(AdvOutputkWarnings()));
+	connect(ui->advOutTrack5Bitrate, SIGNAL(currentIndexChanged(int)), this,
+		SLOT(AdvOutputkWarnings()));
+	connect(ui->advOutTrack6Bitrate, SIGNAL(currentIndexChanged(int)), this,
+		SLOT(AdvOutputkWarnings()));
 
 	//Apply button disabled until change.
 	EnableApplyButton(false);
@@ -714,22 +726,37 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	InitStreamPage();
 	LoadSettings(false);
 
-	// Add warning checks to advanced output recording section controls
+	// Add warning checks to advanced output stream/recording section controls
 	connect(ui->advOutRecTrack1, SIGNAL(clicked()), this,
-		SLOT(AdvOutRecCheckWarnings()));
+		SLOT(AdvOutputkWarnings()));
 	connect(ui->advOutRecTrack2, SIGNAL(clicked()), this,
-		SLOT(AdvOutRecCheckWarnings()));
+		SLOT(AdvOutputkWarnings()));
 	connect(ui->advOutRecTrack3, SIGNAL(clicked()), this,
-		SLOT(AdvOutRecCheckWarnings()));
+		SLOT(AdvOutputkWarnings()));
 	connect(ui->advOutRecTrack4, SIGNAL(clicked()), this,
-		SLOT(AdvOutRecCheckWarnings()));
+		SLOT(AdvOutputkWarnings()));
 	connect(ui->advOutRecTrack5, SIGNAL(clicked()), this,
-		SLOT(AdvOutRecCheckWarnings()));
+		SLOT(AdvOutputkWarnings()));
 	connect(ui->advOutRecTrack6, SIGNAL(clicked()), this,
-		SLOT(AdvOutRecCheckWarnings()));
+		SLOT(AdvOutputkWarnings()));
 	connect(ui->advOutRecFormat, SIGNAL(currentIndexChanged(int)), this,
-		SLOT(AdvOutRecCheckWarnings()));
-	AdvOutRecCheckWarnings();
+		SLOT(AdvOutputkWarnings()));
+	connect(ui->advOutTrack1, SIGNAL(clicked()), this,
+		SLOT(AdvOutputkWarnings()));
+	connect(ui->advOutTrack2, SIGNAL(clicked()), this,
+		SLOT(AdvOutputkWarnings()));
+	connect(ui->advOutTrack3, SIGNAL(clicked()), this,
+		SLOT(AdvOutputkWarnings()));
+	connect(ui->advOutTrack4, SIGNAL(clicked()), this,
+		SLOT(AdvOutputkWarnings()));
+	connect(ui->advOutTrack5, SIGNAL(clicked()), this,
+		SLOT(AdvOutputkWarnings()));
+	connect(ui->advOutTrack6, SIGNAL(clicked()), this,
+		SLOT(AdvOutputkWarnings()));
+	connect(ui->advOutApplyService, SIGNAL(clicked()), this,
+		SLOT(AdvOutputkWarnings()));
+
+	AdvOutputkWarnings();
 
 	ui->buttonBox->button(QDialogButtonBox::Apply)->setIcon(QIcon());
 	ui->buttonBox->button(QDialogButtonBox::Ok)->setIcon(QIcon());
@@ -3911,6 +3938,12 @@ void OBSBasicSettings::AdvancedChanged()
 	}
 }
 
+void OBSBasicSettings::AdvOutputkWarnings()
+{
+	AdvOutRecCheckWarnings();
+	AdvOutStreamCheckWarnings();
+}
+
 void OBSBasicSettings::AdvOutRecCheckWarnings()
 {
 	auto Checked = [](QCheckBox *box) { return box->isChecked() ? 1 : 0; };
@@ -3927,6 +3960,17 @@ void OBSBasicSettings::AdvOutRecCheckWarnings()
 
 	} else if (tracks > 1) {
 		warningMsg = QTStr("OutputWarnings.MultiTrackRecording");
+	}
+
+	if (ShowRecMaxBitrateWarning()) {
+		if (!warningMsg.isEmpty())
+			warningMsg += "\n\n";
+
+		warningMsg +=
+			QTStr("Basic.Settings.Output.Adv.AudioTrack.MaxBitrate.Rec")
+				.arg(QString::number(StreamMaxBitrate()) +
+					     " Kbps",
+				     QString::number(SharedTrackNumber()));
 	}
 
 	if (ui->advOutRecFormat->currentText().compare("mp4") == 0 ||
@@ -3955,6 +3999,38 @@ void OBSBasicSettings::AdvOutRecCheckWarnings()
 			ui->advOutRecTopContainer->layout());
 
 		formLayout->addRow(nullptr, advOutRecWarning);
+	}
+}
+
+void OBSBasicSettings::AdvOutStreamCheckWarnings()
+{
+	QString errorMsg;
+	QString warningMsg;
+
+	if (ShowStreamMaxBitrateWarning()) {
+		if (!warningMsg.isEmpty())
+			warningMsg += "\n\n";
+
+		warningMsg +=
+			QTStr("Basic.Settings.Output.Adv.AudioTrack.MaxBitrate.Stream")
+				.arg(QString::number(StreamMaxBitrate()) +
+					     " Kbps",
+				     QString::number(AdvStreamTrackNumber()));
+	}
+
+	delete advOutStreamWarning;
+
+	if (!errorMsg.isEmpty() || !warningMsg.isEmpty()) {
+		advOutStreamWarning = new QLabel(
+			errorMsg.isEmpty() ? warningMsg : errorMsg, this);
+		advOutStreamWarning->setObjectName(
+			errorMsg.isEmpty() ? "warningLabel" : "errorLabel");
+		advOutStreamWarning->setWordWrap(true);
+
+		QFormLayout *formLayout = reinterpret_cast<QFormLayout *>(
+			ui->advOutTopContainer->layout());
+
+		formLayout->addRow(nullptr, advOutStreamWarning);
 	}
 }
 
@@ -4531,4 +4607,110 @@ void OBSBasicSettings::SetHotkeysIcon(const QIcon &icon)
 void OBSBasicSettings::SetAdvancedIcon(const QIcon &icon)
 {
 	ui->listWidget->item(6)->setIcon(icon);
+}
+
+int OBSBasicSettings::SharedTrackNumber()
+{
+	if (ui->advOutTrack1->isChecked() && ui->advOutRecTrack1->isChecked())
+		return 1;
+	else if (ui->advOutTrack2->isChecked() &&
+		 ui->advOutRecTrack2->isChecked())
+		return 2;
+	else if (ui->advOutTrack3->isChecked() &&
+		 ui->advOutRecTrack2->isChecked())
+		return 3;
+	else if (ui->advOutTrack4->isChecked() &&
+		 ui->advOutRecTrack2->isChecked())
+		return 4;
+	else if (ui->advOutTrack5->isChecked() &&
+		 ui->advOutRecTrack5->isChecked())
+		return 5;
+	else if (ui->advOutTrack6->isChecked() &&
+		 ui->advOutRecTrack6->isChecked())
+		return 6;
+	else
+		return -1;
+}
+
+int OBSBasicSettings::AdvStreamTrackNumber()
+{
+	if (ui->advOutTrack1->isChecked())
+		return 1;
+	else if (ui->advOutTrack2->isChecked())
+		return 2;
+	else if (ui->advOutTrack3->isChecked())
+		return 3;
+	else if (ui->advOutTrack4->isChecked())
+		return 4;
+	else if (ui->advOutTrack5->isChecked())
+		return 5;
+	else if (ui->advOutTrack6->isChecked())
+		return 6;
+	else
+		return -1;
+}
+
+int OBSBasicSettings::AudioTrackBitrate(int track)
+{
+	QString aBitrateText;
+
+	switch (track) {
+	case 1:
+		aBitrateText = ui->advOutTrack1Bitrate->currentText();
+		break;
+	case 2:
+		aBitrateText = ui->advOutTrack2Bitrate->currentText();
+		break;
+	case 3:
+		aBitrateText = ui->advOutTrack3Bitrate->currentText();
+		break;
+	case 4:
+		aBitrateText = ui->advOutTrack4Bitrate->currentText();
+		break;
+	case 5:
+		aBitrateText = ui->advOutTrack5Bitrate->currentText();
+		break;
+	case 6:
+		aBitrateText = ui->advOutTrack6Bitrate->currentText();
+		break;
+	}
+
+	return aBitrateText.toInt();
+}
+
+int OBSBasicSettings::StreamMaxBitrate()
+{
+	OBSService service;
+
+	if (stream1Changed) {
+		service = SpawnTempService();
+	} else {
+		service = main->GetService();
+	}
+
+	return obs_service_get_max_audio_bitrate(service);
+}
+
+bool OBSBasicSettings::ShowRecMaxBitrateWarning()
+{
+	int sharedTrack = SharedTrackNumber();
+	int sharedTrackBitrate = AudioTrackBitrate(sharedTrack);
+	int streamMaxBitrate = StreamMaxBitrate();
+
+	if (sharedTrack != -1 && streamMaxBitrate < sharedTrackBitrate &&
+	    streamMaxBitrate > 0 && ui->advOutApplyService->isChecked())
+		return true;
+	else
+		return false;
+}
+
+bool OBSBasicSettings::ShowStreamMaxBitrateWarning()
+{
+	int streamMaxBitrate = StreamMaxBitrate();
+
+	if (streamMaxBitrate < AudioTrackBitrate(AdvStreamTrackNumber()) &&
+	    ui->advOutApplyService->isChecked())
+		return true;
+	else
+		return false;
 }
