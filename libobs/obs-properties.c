@@ -93,6 +93,10 @@ struct group_data {
 	obs_properties_t *content;
 };
 
+struct message_data {
+	enum obs_message_type type;
+};
+
 static inline void path_data_free(struct path_data *data)
 {
 	bfree(data->default_path);
@@ -397,6 +401,8 @@ static inline size_t get_property_size(enum obs_property_type type)
 		return sizeof(struct frame_rate_data);
 	case OBS_PROPERTY_GROUP:
 		return sizeof(struct group_data);
+	case OBS_PROPERTY_MESSAGE:
+		return sizeof(struct message_data);
 	}
 
 	return 0;
@@ -1366,4 +1372,24 @@ obs_properties_t *obs_property_group_content(obs_property_t *p)
 {
 	struct group_data *data = get_type_data(p, OBS_PROPERTY_GROUP);
 	return data ? data->content : NULL;
+}
+
+obs_property_t *obs_properties_add_message(obs_properties_t *props,
+					   const char *name, const char *desc,
+					   enum obs_message_type type)
+{
+	if (!props || has_prop(props, name))
+		return NULL;
+
+	struct obs_property *p =
+		new_prop(props, name, desc, OBS_PROPERTY_MESSAGE);
+	struct message_data *data = get_property_data(p);
+	data->type = type;
+	return p;
+}
+
+enum obs_message_type obs_property_message_type(obs_property_t *p)
+{
+	struct message_data *data = get_type_data(p, OBS_PROPERTY_MESSAGE);
+	return data ? data->type : OBS_MESSAGE_INFO;
 }

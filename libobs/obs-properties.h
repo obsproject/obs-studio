@@ -56,6 +56,7 @@ enum obs_property_type {
 	OBS_PROPERTY_EDITABLE_LIST,
 	OBS_PROPERTY_FRAME_RATE,
 	OBS_PROPERTY_GROUP,
+	OBS_PROPERTY_MESSAGE,
 };
 
 enum obs_combo_format {
@@ -98,6 +99,12 @@ enum obs_group_type {
 	OBS_COMBO_INVALID,
 	OBS_GROUP_NORMAL,
 	OBS_GROUP_CHECKABLE,
+};
+
+enum obs_message_type {
+	OBS_MESSAGE_INFO,
+	OBS_MESSAGE_WARNING,
+	OBS_MESSAGE_ERROR,
 };
 
 #define OBS_FONT_BOLD (1 << 0)
@@ -393,6 +400,12 @@ obs_property_frame_rate_fps_range_max(obs_property_t *p, size_t idx);
 
 EXPORT enum obs_group_type obs_property_group_type(obs_property_t *p);
 EXPORT obs_properties_t *obs_property_group_content(obs_property_t *p);
+
+EXPORT obs_property_t *obs_properties_add_message(obs_properties_t *props,
+						  const char *name,
+						  const char *description,
+						  enum obs_message_type type);
+EXPORT enum obs_message_type obs_property_message_type(obs_property_t *p);
 
 #ifndef SWIG
 DEPRECATED

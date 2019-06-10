@@ -114,6 +114,9 @@ private:
 	void GetScrollPos(int &h, int &v);
 	void SetScrollPos(int h, int v);
 
+	QWidget *AddMessage(obs_property_t *prop, QFormLayout *layout,
+			QLabel *&label);
+
 public slots:
 	void ReloadProperties();
 	void RefreshProperties();

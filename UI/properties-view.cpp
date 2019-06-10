@@ -280,6 +280,30 @@ QWidget *OBSPropertiesView::AddText(obs_property_t *prop, QFormLayout *layout,
 	return NewWidget(prop, edit, SIGNAL(textEdited(const QString &)));
 }
 
+QWidget *OBSPropertiesView::AddMessage(obs_property_t *prop,
+				       QFormLayout *layout, QLabel *&label)
+{
+	obs_message_type type = obs_property_message_type(prop);
+
+	label = new QLabel(QT_UTF8(obs_property_description(prop)));
+
+	switch (type) {
+	case OBS_MESSAGE_INFO:
+		label->setObjectName("infoLabel");
+		break;
+	case OBS_MESSAGE_WARNING:
+		label->setObjectName("warningLabel");
+		break;
+	case OBS_MESSAGE_ERROR:
+		label->setObjectName("errorLabel");
+		break;
+	}
+
+	layout->addRow(label);
+
+	return NewWidget(prop, label, nullptr);
+}
+
 void OBSPropertiesView::AddPath(obs_property_t *prop, QFormLayout *layout,
 				QLabel **label)
 {
@@ -1403,6 +1427,10 @@ void OBSPropertiesView::AddProperty(obs_property_t *property,
 		break;
 	case OBS_PROPERTY_GROUP:
 		AddGroup(property, layout);
+		break;
+	case OBS_PROPERTY_MESSAGE:
+		widget = AddMessage(property, layout, label);
+		break;
 	}
 
 	if (widget && !obs_property_enabled(property))
@@ -1821,6 +1849,8 @@ void WidgetInfo::ControlChanged()
 	case OBS_PROPERTY_GROUP:
 		GroupChanged(setting);
 		return;
+	case OBS_PROPERTY_MESSAGE:
+		break;
 	}
 
 	if (view->callback && !view->deferUpdate)
