@@ -2096,6 +2096,10 @@ EXPORT const char *obs_service_get_username(const obs_service_t *service);
 /** Returns the password (if any) for this service context */
 EXPORT const char *obs_service_get_password(const obs_service_t *service);
 
+/** Returns the max audio or video bitrate of service */
+EXPORT int obs_service_get_max_audio_bitrate(const obs_service_t *service);
+EXPORT int obs_service_get_max_video_bitrate(const obs_service_t *service);
+
 /**
  * Applies service-specific video encoder settings.
  *

@@ -74,6 +74,9 @@ struct obs_service_info {
 
 	const char *(*get_output_type)(void *data);
 
+	int (*get_max_audio_bitrate)(void *data);
+	int (*get_max_video_bitrate)(void *data);
+
 	/* TODO: more stuff later */
 };
 

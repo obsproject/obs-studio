@@ -418,3 +418,23 @@ const char *obs_service_get_output_type(const obs_service_t *service)
 		return service->info.get_output_type(service->context.data);
 	return NULL;
 }
+
+int obs_service_get_max_audio_bitrate(const obs_service_t *service)
+{
+	if (!obs_service_valid(service, "obs_service_get_max_audio_bitrate"))
+		return 0;
+
+	if (!service->info.get_max_audio_bitrate)
+		return 0;
+	return service->info.get_max_audio_bitrate(service->context.data);
+}
+
+int obs_service_get_max_video_bitrate(const obs_service_t *service)
+{
+	if (!obs_service_valid(service, "obs_service_get_max_video_bitrate"))
+		return 0;
+
+	if (!service->info.get_max_video_bitrate)
+		return 0;
+	return service->info.get_max_video_bitrate(service->context.data);
+}

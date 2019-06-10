@@ -12,6 +12,9 @@ struct rtmp_common {
 	char *key;
 
 	char *output;
+
+	int max_audio_bitrate;
+	int max_video_bitrate;
 };
 
 static const char *rtmp_common_getname(void *unused)
@@ -474,7 +477,8 @@ static obs_properties_t *rtmp_common_properties(void *unused)
 }
 
 static void apply_video_encoder_settings(obs_data_t *settings,
-					 json_t *recommended)
+					 json_t *recommended,
+					 struct rtmp_common *service)
 {
 	json_t *item = json_object_get(recommended, "keyint");
 	if (item && json_is_integer(item)) {
@@ -497,6 +501,7 @@ static void apply_video_encoder_settings(obs_data_t *settings,
 			obs_data_set_int(settings, "bitrate", max_bitrate);
 			obs_data_set_int(settings, "buffer_size", max_bitrate);
 		}
+		service->max_video_bitrate = max_bitrate;
 	}
 
 	item = json_object_get(recommended, "bframes");
@@ -521,13 +526,15 @@ static void apply_video_encoder_settings(obs_data_t *settings,
 }
 
 static void apply_audio_encoder_settings(obs_data_t *settings,
-					 json_t *recommended)
+					 json_t *recommended,
+					 struct rtmp_common *service)
 {
 	json_t *item = json_object_get(recommended, "max audio bitrate");
 	if (item && json_is_integer(item)) {
 		int max_bitrate = (int)json_integer_value(item);
 		if (obs_data_get_int(settings, "bitrate") > max_bitrate)
 			obs_data_set_int(settings, "bitrate", max_bitrate);
+		service->max_audio_bitrate = max_bitrate;
 	}
 }
 
@@ -552,9 +559,11 @@ static void initialize_output(struct rtmp_common *service, json_t *root,
 		return;
 
 	if (video_settings)
-		apply_video_encoder_settings(video_settings, recommended);
+		apply_video_encoder_settings(video_settings, recommended,
+					     service);
 	if (audio_settings)
-		apply_audio_encoder_settings(audio_settings, recommended);
+		apply_audio_encoder_settings(audio_settings, recommended,
+					     service);
 }
 
 static void rtmp_common_apply_settings(void *data, obs_data_t *video_settings,
@@ -603,6 +612,18 @@ static const char *rtmp_common_key(void *data)
 	return service->key;
 }
 
+static const char *rtmp_common_max_audio_bitrate(void *data)
+{
+	struct rtmp_common *service = data;
+	return service->max_audio_bitrate;
+}
+
+static const char *rtmp_common_max_video_bitrate(void *data)
+{
+	struct rtmp_common *service = data;
+	return service->max_video_bitrate;
+}
+
 struct obs_service_info rtmp_common_service = {
 	.id = "rtmp_common",
 	.get_name = rtmp_common_getname,
@@ -612,6 +633,8 @@ struct obs_service_info rtmp_common_service = {
 	.get_properties = rtmp_common_properties,
 	.get_url = rtmp_common_url,
 	.get_key = rtmp_common_key,
+	.get_max_audio_bitrate = rtmp_common_max_audio_bitrate,
+	.get_max_video_bitrate = rtmp_common_max_video_bitrate,
 	.apply_encoder_settings = rtmp_common_apply_settings,
 	.get_output_type = rtmp_common_get_output_type,
 };
