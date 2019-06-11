@@ -1704,7 +1704,7 @@ static inline obs_encoder_t *find_inactive_audio_encoder(obs_output_t *output,
 	for (size_t i = 0; i < num_mixes; i++) {
 		struct obs_encoder *audio = output->audio_encoders[i];
 
-		if (!audio->active && !audio->paired_encoder)
+		if (audio && !audio->active && !audio->paired_encoder)
 			return audio;
 	}
 
