@@ -263,6 +263,7 @@ void SourceTreeItem::EnterEditMode()
 	setFocusPolicy(Qt::StrongFocus);
 	boxLayout->removeWidget(label);
 	editor = new QLineEdit(label->text());
+	editor->setStyleSheet("background: none");
 	editor->selectAll();
 	editor->installEventFilter(this);
 	boxLayout->insertWidget(1, editor);
