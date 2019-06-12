@@ -106,7 +106,3 @@ steps:
     filesAcl: 'public-read'
   displayName: 'Upload artifact to S3'
   condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
-
-- script: "shutdown /r /t 10 /c \"Reboot after CI Job finished\" /f /d p:4:1"
-  displayName: 'Schedule reboot'
-  condition: always()
