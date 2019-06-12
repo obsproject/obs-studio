@@ -62,11 +62,13 @@ SourceTreeItem::SourceTreeItem(SourceTree *tree_, OBSSceneItem sceneitem_)
 	vis->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
 	vis->setFixedSize(16, 16);
 	vis->setChecked(obs_sceneitem_visible(sceneitem));
+	vis->setStyleSheet("background: none");
 
 	lock = new LockedCheckBox();
 	lock->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
 	lock->setFixedSize(16, 16);
 	lock->setChecked(obs_sceneitem_locked(sceneitem));
+	lock->setStyleSheet("background: none");
 
 	label = new QLabel(QT_UTF8(name));
 	label->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
