@@ -1088,6 +1088,18 @@ void obs_source_video_tick(obs_source_t *source, float seconds)
 			hide_source(source);
 		}
 
+		if (source->filters.num) {
+			for (size_t i = source->filters.num; i > 0; i--) {
+				obs_source_t *filter =
+					source->filters.array[i - 1];
+				if (now_showing) {
+					show_source(filter);
+				} else {
+					hide_source(filter);
+				}
+			}
+		}
+
 		source->showing = now_showing;
 	}
 
@@ -1098,6 +1110,18 @@ void obs_source_video_tick(obs_source_t *source, float seconds)
 			activate_source(source);
 		} else {
 			deactivate_source(source);
+		}
+
+		if (source->filters.num) {
+			for (size_t i = source->filters.num; i > 0; i--) {
+				obs_source_t *filter =
+					source->filters.array[i - 1];
+				if (now_active) {
+					activate_source(filter);
+				} else {
+					deactivate_source(filter);
+				}
+			}
 		}
 
 		source->active = now_active;
