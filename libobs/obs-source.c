@@ -1620,6 +1620,8 @@ static bool update_async_texrender(struct obs_source *source,
 		return false;
 	}
 
+	gs_enable_blending(false);
+
 	gs_technique_begin(tech);
 	gs_technique_begin_pass(tech, 0);
 
@@ -1656,6 +1658,8 @@ static bool update_async_texrender(struct obs_source *source,
 
 	gs_technique_end_pass(tech);
 	gs_technique_end(tech);
+
+	gs_enable_blending(true);
 
 	gs_texrender_end(texrender);
 
