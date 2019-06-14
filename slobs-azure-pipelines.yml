@@ -99,7 +99,7 @@ steps:
 
 - task: S3Upload@1
   inputs:
-    awsCredentials: 'SLOBS Backend AWS buckets'
+    awsCredentials: 'Streamlabs AWS'
     regionName: 'us-west-2'
     bucketName: 'obsstudios3.streamlabs.com'
     globExpressions: '$(ReleaseArtifact).7z'
