@@ -111,6 +111,9 @@ EXPORT void *obs_frontend_add_tools_menu_qaction(const char *name);
 EXPORT void obs_frontend_add_tools_menu_item(const char *name,
 		obs_frontend_cb callback, void *private_data);
 
+/* takes QDockWidget and returns QAction */
+EXPORT void *obs_frontend_add_dock(void *dock);
+
 typedef void (*obs_frontend_event_cb)(enum obs_frontend_event event,
 		void *private_data);
 

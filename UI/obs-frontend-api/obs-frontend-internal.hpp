@@ -53,6 +53,8 @@ struct obs_frontend_callbacks {
 	virtual void obs_frontend_add_tools_menu_item(const char *name,
 			obs_frontend_cb callback, void *private_data)=0;
 
+	virtual void *obs_frontend_add_dock(void *dock)=0;
+
 	virtual void obs_frontend_add_event_callback(
 			obs_frontend_event_cb callback, void *private_data)=0;
 	virtual void obs_frontend_remove_event_callback(

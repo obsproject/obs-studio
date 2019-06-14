@@ -269,6 +269,13 @@ void obs_frontend_add_tools_menu_item(const char *name,
 				private_data);
 }
 
+void *obs_frontend_add_dock(void *dock)
+{
+	return !!callbacks_valid()
+		? c->obs_frontend_add_dock(dock)
+		: nullptr;
+}
+
 void obs_frontend_add_event_callback(obs_frontend_event_cb callback,
 		void *private_data)
 {

@@ -310,6 +310,11 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 		QObject::connect(action, &QAction::triggered, func);
 	}
 
+	void *obs_frontend_add_dock(void *dock) override
+	{
+		return (void*)main->AddDockWidget((QDockWidget *)dock);
+	}
+
 	void obs_frontend_add_event_callback(obs_frontend_event_cb callback,
 			void *private_data) override
 	{
