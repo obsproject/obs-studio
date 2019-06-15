@@ -1,8 +1,6 @@
 #!/bin/sh
 set -ex
 
-ls -lh $(readlink -f $(which qmake))
-# sudo rm -f /usr/bin/qmake && sudo ln -s /usr/lib/x86_64-linux-gnu/qt5/bin/qmake /usr/bin/qmake # FIXME
 export QT_SELECT=qt5
 
 # Compile and install to an AppDir
@@ -11,6 +9,7 @@ cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr
 make -j$(nproc)
 make DESTDIR=appdir -j$(nproc) install ; find appdir/
 ( cd appdir/usr ; ln -s lib/obs-scripting/* . ) # FIXME: https://github.com/obsproject/obs-studio/pull/1565#issuecomment-448754477
+( cd appdir/usr ; ln -s plugins/platforms . ) # Why? linuxdeployqt bug?
 find appdir -executable -type f -exec ldd {} \; | grep " => /usr" | cut -d " " -f 2-3 | sort | uniq
 
 # Finalize the AppDir and convert it to AppImage
