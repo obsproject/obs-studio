@@ -1332,6 +1332,7 @@ enum convert_type {
 	CONVERT_444,
 	CONVERT_800,
 	CONVERT_RGB_LIMITED,
+	CONVERT_BGR3,
 };
 
 static inline enum convert_type get_convert_type(enum video_format format,
@@ -1359,6 +1360,9 @@ static inline enum convert_type get_convert_type(enum video_format format,
 	case VIDEO_FORMAT_BGRA:
 	case VIDEO_FORMAT_BGRX:
 		return full_range ? CONVERT_NONE : CONVERT_RGB_LIMITED;
+
+	case VIDEO_FORMAT_BGR3:
+		return CONVERT_BGR3;
 	}
 
 	return CONVERT_NONE;
@@ -1429,6 +1433,15 @@ static inline bool set_rgb_limited_sizes(struct obs_source *source,
 	return true;
 }
 
+static inline bool set_bgr3_sizes(struct obs_source *source,
+	const struct obs_source_frame *frame)
+{
+	source->async_convert_width   = frame->width * 3;
+	source->async_convert_height  = frame->height;
+	source->async_texture_format  = GS_R8;
+	return true;
+}
+
 static inline bool init_gpu_conversion(struct obs_source *source,
 		const struct obs_source_frame *frame)
 {
@@ -1451,6 +1464,9 @@ static inline bool init_gpu_conversion(struct obs_source *source,
 
 		case CONVERT_RGB_LIMITED:
 			return set_rgb_limited_sizes(source, frame);
+
+		case CONVERT_BGR3:
+			return set_bgr3_sizes(source, frame);
 
 		case CONVERT_NONE:
 			assert(false && "No conversion requested");
@@ -1528,6 +1544,7 @@ static void upload_raw_frame(gs_texture_t *tex,
 		case CONVERT_422_Y:
 		case CONVERT_800:
 		case CONVERT_RGB_LIMITED:
+		case CONVERT_BGR3:
 			gs_texture_set_image(tex, frame->data[0],
 					frame->linesize[0], false);
 			break;
@@ -1569,6 +1586,9 @@ static const char *select_conversion_technique(enum video_format format,
 
 		case VIDEO_FORMAT_Y800:
 			return full_range ? "Y800_Full" : "Y800_Limited";
+
+		case VIDEO_FORMAT_BGR3:
+			return full_range ? "BGR3_Full" : "BGR3_Limited";
 
 		case VIDEO_FORMAT_BGRA:
 		case VIDEO_FORMAT_BGRX:
@@ -2304,6 +2324,7 @@ static void copy_frame_data(struct obs_source_frame *dst,
 	case VIDEO_FORMAT_BGRA:
 	case VIDEO_FORMAT_BGRX:
 	case VIDEO_FORMAT_Y800:
+	case VIDEO_FORMAT_BGR3:
 		copy_frame_data_plane(dst, src, 0, dst->height);
 		break;
 	}

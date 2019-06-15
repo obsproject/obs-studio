@@ -378,6 +378,31 @@ float4 PSRGB_Limited(VertInOut vert_in) : TARGET
 	return rgba;
 }
 
+float4 PSBGR3_Limited(VertInOut vert_in) : TARGET
+{
+	int x = int(vert_in.uv.x * width * 3.0 + PRECISION_OFFSET);
+	int y = int(vert_in.uv.y * height      + PRECISION_OFFSET);
+
+	float b = image.Load(int3(x - 1, y, 0)).x;
+	float g = image.Load(int3(x, y, 0)).x;
+	float r = image.Load(int3(x + 1, y, 0)).x;
+	float3 rgb = float3(r, g, b);
+	rgb = saturate((rgb - (16.0 / 255.0)) * (255.0 / 219.0));
+	return float4(rgb, 1.0);
+}
+
+float4 PSBGR3_Full(VertInOut vert_in) : TARGET
+{
+	int x = int(vert_in.uv.x * width * 3.0 + PRECISION_OFFSET);
+	int y = int(vert_in.uv.y * height      + PRECISION_OFFSET);
+
+	float b = image.Load(int3(x - 1, y, 0)).x;
+	float g = image.Load(int3(x, y, 0)).x;
+	float r = image.Load(int3(x + 1, y, 0)).x;
+	float3 rgb = float3(r, g, b);
+	return float4(rgb, 1.0);
+}
+
 technique Planar420
 {
 	pass
@@ -501,5 +526,23 @@ technique RGB_Limited
 	{
 		vertex_shader = VSDefault(vert_in);
 		pixel_shader  = PSRGB_Limited(vert_in);
+	}
+}
+
+technique BGR3_Limited
+{
+	pass
+	{
+		vertex_shader = VSDefault(vert_in);
+		pixel_shader  = PSBGR3_Limited(vert_in);
+	}
+}
+
+technique BGR3_Full
+{
+	pass
+	{
+		vertex_shader = VSDefault(vert_in);
+		pixel_shader  = PSBGR3_Full(vert_in);
 	}
 }

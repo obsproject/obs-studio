@@ -40,6 +40,7 @@ static inline enum AVPixelFormat get_ffmpeg_video_format(
 	case VIDEO_FORMAT_BGRX: return AV_PIX_FMT_BGRA;
 	case VIDEO_FORMAT_Y800: return AV_PIX_FMT_GRAY8;
 	case VIDEO_FORMAT_I444: return AV_PIX_FMT_YUV444P;
+	case VIDEO_FORMAT_BGR3: return AV_PIX_FMT_BGR24;
 	}
 
 	return AV_PIX_FMT_NONE;

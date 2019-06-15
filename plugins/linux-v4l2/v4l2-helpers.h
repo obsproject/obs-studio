@@ -69,6 +69,7 @@ static inline enum video_format v4l2_to_obs_video_format(uint_fast32_t format)
 #ifdef V4L2_PIX_FMT_ABGR32
 	case V4L2_PIX_FMT_ABGR32: return VIDEO_FORMAT_BGRA;
 #endif
+	case V4L2_PIX_FMT_BGR24:  return VIDEO_FORMAT_BGR3;
 	default:                  return VIDEO_FORMAT_NONE;
 	}
 }
