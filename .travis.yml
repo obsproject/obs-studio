@@ -27,14 +27,21 @@ matrix:
       before_install: "./CI/install-dependencies-osx.sh"
       before_script: "./CI/before-script-osx.sh"
       before_deploy: "./CI/before-deploy-osx.sh"
+      script: cd ./build && make -j4 && cd -
 
     - os: linux
       dist: xenial
       sudo: required
       before_install: "./CI/install-dependencies-linux.sh"
       before_script: "./CI/before-script-linux.sh"
+      script: cd ./build && make -j4 && cd -
 
-script: cd ./build && make -j4 && cd -
+    - os: linux
+      dist: xenial
+      sudo: required
+      before_install: "./CI/install-dependencies-linux.sh"
+      before_script: "./CI/before-script-linux.sh"
+      script: bash "./CI/script-linux-appimage.sh"
 
 deploy:
   provider: s3
