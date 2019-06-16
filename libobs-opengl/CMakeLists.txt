@@ -7,8 +7,11 @@ include_directories(${OPENGL_INCLUDE_DIR})
 add_definitions(-DLIBOBS_EXPORTS)
 
 if(WIN32)
+	set(MODULE_DESCRIPTION "OBS Library OpenGL wrapper")
+	configure_file(${CMAKE_SOURCE_DIR}/cmake/winrc/obs-module.rc.in libobs-opengl.rc)
 	set(libobs-opengl_PLATFORM_SOURCES
-		gl-windows.c)
+		gl-windows.c
+		libobs-opengl.rc)
 elseif(APPLE)
 	set(libobs-opengl_PLATFORM_SOURCES
 		gl-cocoa.m)
