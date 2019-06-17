@@ -1290,6 +1290,9 @@ inline void AdvancedOutput::SetupRecording()
 	unsigned int cy = 0;
 	int idx = 0;
 
+	if (tracks == 0)
+		tracks = config_get_int(main->Config(), "AdvOut", "TrackIndex");
+
 	if (useStreamEncoder) {
 		obs_output_set_video_encoder(fileOutput, h264Streaming);
 		if (replayBuffer)
