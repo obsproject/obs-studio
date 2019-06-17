@@ -306,6 +306,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->openStatsOnStartup,   CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->warnBeforeStreamStart,CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->warnBeforeStreamStop, CHECK_CHANGED,  GENERAL_CHANGED);
+	HookWidget(ui->warnBeforeRecordStop, CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->hideProjectorCursor,  CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->projectorAlwaysOnTop, CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->recordWhenStreaming,  CHECK_CHANGED,  GENERAL_CHANGED);
@@ -1120,6 +1121,10 @@ void OBSBasicSettings::LoadGeneralSettings()
 	bool warnBeforeStreamStop = config_get_bool(
 		GetGlobalConfig(), "BasicWindow", "WarnBeforeStoppingStream");
 	ui->warnBeforeStreamStop->setChecked(warnBeforeStreamStop);
+
+	bool warnBeforeRecordStop = config_get_bool(
+		GetGlobalConfig(), "BasicWindow", "WarnBeforeStoppingRecord");
+	ui->warnBeforeRecordStop->setChecked(warnBeforeRecordStop);
 
 	bool hideProjectorCursor = config_get_bool(
 		GetGlobalConfig(), "BasicWindow", "HideProjectorCursor");
@@ -2760,6 +2765,9 @@ void OBSBasicSettings::SaveGeneralSettings()
 	config_set_bool(GetGlobalConfig(), "BasicWindow",
 			"WarnBeforeStoppingStream",
 			ui->warnBeforeStreamStop->isChecked());
+	config_set_bool(GetGlobalConfig(), "BasicWindow",
+			"WarnBeforeStoppingRecord",
+			ui->warnBeforeRecordStop->isChecked());
 
 	config_set_bool(GetGlobalConfig(), "BasicWindow", "HideProjectorCursor",
 			ui->hideProjectorCursor->isChecked());
