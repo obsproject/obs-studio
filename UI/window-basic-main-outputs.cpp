@@ -5,6 +5,7 @@
 #include "audio-encoders.hpp"
 #include "window-basic-main.hpp"
 #include "window-basic-main-outputs.hpp"
+#include "platform.hpp"
 
 using namespace std;
 
@@ -895,14 +896,9 @@ bool SimpleOutput::ConfigureRecording(bool updateReplayBuffer)
 	os_dir_t *dir = path && path[0] ? os_opendir(path) : nullptr;
 
 	if (!dir) {
-		if (main->isVisible())
-			OBSMessageBox::warning(main,
-					QTStr("Output.BadPath.Title"),
-					QTStr("Output.BadPath.Text"));
-		else
-			main->SysTrayNotify(QTStr("Output.BadPath.Text"),
-					QSystemTrayIcon::Warning);
-		return false;
+		path = GetDefaultVideoSavePath().c_str();
+		config_set_string(main->Config(),
+				"SimpleOutput", "FilePath", path);
 	}
 
 	os_closedir(dir);
@@ -1662,14 +1658,10 @@ bool AdvancedOutput::StartRecording()
 		os_dir_t *dir = path && path[0] ? os_opendir(path) : nullptr;
 
 		if (!dir) {
-			if (main->isVisible())
-				OBSMessageBox::warning(main,
-						QTStr("Output.BadPath.Title"),
-						QTStr("Output.BadPath.Text"));
-			else
-				main->SysTrayNotify(QTStr("Output.BadPath.Text"),
-						QSystemTrayIcon::Warning);
-			return false;
+			path = GetDefaultVideoSavePath().c_str();
+			config_set_string(main->Config(), "AdvOut",
+					ffmpegRecording ? "FFFilePath" :
+					"RecFilePath", path);
 		}
 
 		os_closedir(dir);
@@ -1762,14 +1754,10 @@ bool AdvancedOutput::StartReplayBuffer()
 		os_dir_t *dir = path && path[0] ? os_opendir(path) : nullptr;
 
 		if (!dir) {
-			if (main->isVisible())
-				OBSMessageBox::warning(main,
-						QTStr("Output.BadPath.Title"),
-						QTStr("Output.BadPath.Text"));
-			else
-				main->SysTrayNotify(QTStr("Output.BadPath.Text"),
-						QSystemTrayIcon::Warning);
-			return false;
+			path = GetDefaultVideoSavePath().c_str();
+			config_set_string(main->Config(), "AdvOut",
+					ffmpegRecording ? "FFFilePath" :
+					"RecFilePath", path);
 		}
 
 		os_closedir(dir);
