@@ -108,6 +108,23 @@ void video_frame_init(struct video_frame *frame, enum video_format format,
 		frame->data[0] = bmalloc(size);
 		frame->linesize[0] = width * 3;
 		break;
+
+	case VIDEO_FORMAT_I422:
+		size = width * height;
+		ALIGN_SIZE(size, alignment);
+		offsets[0] = size;
+		size += (width / 2) * height;
+		ALIGN_SIZE(size, alignment);
+		offsets[1] = size;
+		size += (width / 2) * height;
+		ALIGN_SIZE(size, alignment);
+		frame->data[0] = bmalloc(size);
+		frame->data[1] = (uint8_t *)frame->data[0] + offsets[0];
+		frame->data[2] = (uint8_t *)frame->data[0] + offsets[1];
+		frame->linesize[0] = width;
+		frame->linesize[1] = width / 2;
+		frame->linesize[2] = width / 2;
+		break;
 	}
 }
 
@@ -141,6 +158,7 @@ void video_frame_copy(struct video_frame *dst, const struct video_frame *src,
 		break;
 
 	case VIDEO_FORMAT_I444:
+	case VIDEO_FORMAT_I422:
 		memcpy(dst->data[0], src->data[0], src->linesize[0] * cy);
 		memcpy(dst->data[1], src->data[1], src->linesize[1] * cy);
 		memcpy(dst->data[2], src->data[2], src->linesize[2] * cy);

@@ -53,6 +53,9 @@ enum video_format {
 
 	/* more packed uncompressed formats */
 	VIDEO_FORMAT_BGR3,
+
+	/* planar 4:2:2 */
+	VIDEO_FORMAT_I422,
 };
 
 enum video_colorspace {

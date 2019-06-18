@@ -363,6 +363,25 @@ float4 PSPlanar420_Reverse(FragTex frag_in) : TARGET
 	return saturate(mul(float4(yuv, 1.0), color_matrix));
 }
 
+float4 PSPlanar422_Reverse(FragTex frag_in) : TARGET
+{
+	int x = int(frag_in.uv.x * width  + PRECISION_OFFSET);
+	int y = int(frag_in.uv.y * height + PRECISION_OFFSET);
+
+	int lum_offset = y * int_width + x;
+	int chroma_offset = y * (int_width / 2) + x / 2;
+	int chroma1    = int_u_plane_offset + chroma_offset;
+	int chroma2    = int_v_plane_offset + chroma_offset;
+
+	float3 yuv = float3(
+		GetIntOffsetColor(lum_offset),
+		GetIntOffsetColor(chroma1),
+		GetIntOffsetColor(chroma2)
+	);
+	yuv = clamp(yuv, color_range_min, color_range_max);
+	return saturate(mul(float4(yuv, 1.0), color_matrix));
+}
+
 float4 PSPlanar444_Reverse(FragTex frag_in) : TARGET
 {
 	int x = int(frag_in.uv.x * width  + PRECISION_OFFSET);
@@ -532,6 +551,15 @@ technique I420_Reverse
 	{
 		vertex_shader = VSPosTex(id);
 		pixel_shader  = PSPlanar420_Reverse(frag_in);
+	}
+}
+
+technique I422_Reverse
+{
+	pass
+	{
+		vertex_shader = VSPosTex(id);
+		pixel_shader  = PSPlanar422_Reverse(frag_in);
 	}
 }
 
