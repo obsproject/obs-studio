@@ -418,8 +418,6 @@ static inline video_format ConvertVideoFormat(VideoFormat format)
 		return VIDEO_FORMAT_UYVY;
 	case VideoFormat::HDYC:
 		return VIDEO_FORMAT_UYVY;
-	case VideoFormat::MJPEG:
-		return VIDEO_FORMAT_YUY2;
 	default:
 		return VIDEO_FORMAT_NONE;
 	}
@@ -499,6 +497,11 @@ void DShowInput::OnVideoData(const VideoConfig &config, unsigned char *data,
 {
 	if (videoConfig.format == VideoFormat::H264) {
 		OnEncodedVideoData(AV_CODEC_ID_H264, data, size, startTime);
+		return;
+	}
+
+	if (videoConfig.format == VideoFormat::MJPEG) {
+		OnEncodedVideoData(AV_CODEC_ID_MJPEG, data, size, startTime);
 		return;
 	}
 
@@ -905,26 +908,12 @@ bool DShowInput::UpdateVideoConfig(obs_data_t *settings)
 					 placeholders::_3, placeholders::_4,
 					 placeholders::_5);
 
-	if (videoConfig.internalFormat != VideoFormat::MJPEG)
-		videoConfig.format = videoConfig.internalFormat;
+	videoConfig.format = videoConfig.internalFormat;
 
 	if (!device.SetVideoConfig(&videoConfig)) {
 		blog(LOG_WARNING, "%s: device.SetVideoConfig failed",
 		     obs_source_get_name(source));
 		return false;
-	}
-
-	if (videoConfig.internalFormat == VideoFormat::MJPEG) {
-		videoConfig.format = VideoFormat::XRGB;
-		videoConfig.useDefaultConfig = false;
-
-		if (!device.SetVideoConfig(&videoConfig)) {
-			blog(LOG_WARNING,
-			     "%s: device.SetVideoConfig (XRGB) "
-			     "failed",
-			     obs_source_get_name(source));
-			return false;
-		}
 	}
 
 	DStr formatName = GetVideoFormatName(videoConfig.internalFormat);
