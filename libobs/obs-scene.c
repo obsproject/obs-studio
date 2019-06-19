@@ -54,6 +54,7 @@ static const char *obs_scene_signals[] = {
 	"void item_select(ptr scene, ptr item)",
 	"void item_deselect(ptr scene, ptr item)",
 	"void item_transform(ptr scene, ptr item)",
+	"void item_locked(ptr scene, ptr item, bool locked)",
 	NULL
 };
 
@@ -2118,6 +2119,9 @@ bool obs_sceneitem_locked(const obs_sceneitem_t *item)
 
 bool obs_sceneitem_set_locked(obs_sceneitem_t *item, bool lock)
 {
+	struct calldata cd;
+	uint8_t stack[256];
+
 	if (!item)
 		return false;
 
@@ -2128,6 +2132,12 @@ bool obs_sceneitem_set_locked(obs_sceneitem_t *item, bool lock)
 		return false;
 
 	item->locked = lock;
+
+	calldata_init_fixed(&cd, stack, sizeof(stack));
+	calldata_set_ptr(&cd, "item", item);
+	calldata_set_bool(&cd, "locked", lock);
+
+	signal_parent(item->parent, "item_locked", &cd);
 
 	return true;
 }

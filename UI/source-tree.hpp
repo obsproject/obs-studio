@@ -68,6 +68,7 @@ private:
 	OBSSignal groupReorderSignal;
 	OBSSignal deselectSignal;
 	OBSSignal visibleSignal;
+	OBSSignal lockedSignal;
 	OBSSignal renameSignal;
 	OBSSignal removeSignal;
 
@@ -80,6 +81,7 @@ private slots:
 	void ExitEditMode(bool save);
 
 	void VisibilityChanged(bool visible);
+	void LockedChanged(bool locked);
 	void Renamed(const QString &name);
 
 	void ExpandClicked(bool checked);
