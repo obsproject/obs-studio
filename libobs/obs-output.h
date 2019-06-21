@@ -29,6 +29,9 @@ extern "C" {
 #define OBS_OUTPUT_MULTI_TRACK (1 << 4)
 #define OBS_OUTPUT_CAN_PAUSE (1 << 5)
 
+// User flags
+#define OBS_OUTPUT_FORCE_ENCODER (1<<15)
+
 struct encoder_packet;
 
 struct obs_output_info {
