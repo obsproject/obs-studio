@@ -17,8 +17,6 @@
 
 //#define DEBUGGING
 
-uniform float4x4  ViewProj;
-
 uniform float     u_plane_offset;
 uniform float     v_plane_offset;
 
@@ -59,11 +57,20 @@ struct VertInOut {
 	float2 uv  : TEXCOORD0;
 };
 
-VertInOut VSDefault(VertInOut vert_in)
+VertInOut VSDefault(uint id : VERTEXID)
 {
+	float idHigh = float(id >> 1);
+	float idLow = float(id & uint(1));
+
+	float x = idHigh * 4.0 - 1.0;
+	float y = idLow * 4.0 - 1.0;
+
+	float u = idHigh * 2.0;
+	float v = obs_glsl_compile ? (idLow * 2.0) : (1.0 - idLow * 2.0);
+
 	VertInOut vert_out;
-	vert_out.pos = mul(float4(vert_in.pos.xyz, 1.0), ViewProj);
-	vert_out.uv  = vert_in.uv;
+	vert_out.pos = float4(x, y, 0.0, 1.0);
+	vert_out.uv = float2(u, v);
 	return vert_out;
 }
 
@@ -407,7 +414,7 @@ technique Planar420
 {
 	pass
 	{
-		vertex_shader = VSDefault(vert_in);
+		vertex_shader = VSDefault(id);
 		pixel_shader  = PSPlanar420(vert_in);
 	}
 }
@@ -416,7 +423,7 @@ technique Planar444
 {
 	pass
 	{
-		vertex_shader = VSDefault(vert_in);
+		vertex_shader = VSDefault(id);
 		pixel_shader  = PSPlanar444(vert_in);
 	}
 }
@@ -425,7 +432,7 @@ technique NV12
 {
 	pass
 	{
-		vertex_shader = VSDefault(vert_in);
+		vertex_shader = VSDefault(id);
 		pixel_shader  = PSNV12(vert_in);
 	}
 }
@@ -434,7 +441,7 @@ technique NV12_Y
 {
 	pass
 	{
-		vertex_shader = VSDefault(vert_in);
+		vertex_shader = VSDefault(id);
 		pixel_shader  = PSNV12_Y(vert_in);
 	}
 }
@@ -443,7 +450,7 @@ technique NV12_UV
 {
 	pass
 	{
-		vertex_shader = VSDefault(vert_in);
+		vertex_shader = VSDefault(id);
 		pixel_shader  = PSNV12_UV(vert_in);
 	}
 }
@@ -452,7 +459,7 @@ technique UYVY_Reverse
 {
 	pass
 	{
-		vertex_shader = VSDefault(vert_in);
+		vertex_shader = VSDefault(id);
 		pixel_shader  = PSPacked422_Reverse(vert_in, 2, 0, 1, 3);
 	}
 }
@@ -461,7 +468,7 @@ technique YUY2_Reverse
 {
 	pass
 	{
-		vertex_shader = VSDefault(vert_in);
+		vertex_shader = VSDefault(id);
 		pixel_shader  = PSPacked422_Reverse(vert_in, 1, 3, 2, 0);
 	}
 }
@@ -470,7 +477,7 @@ technique YVYU_Reverse
 {
 	pass
 	{
-		vertex_shader = VSDefault(vert_in);
+		vertex_shader = VSDefault(id);
 		pixel_shader  = PSPacked422_Reverse(vert_in, 3, 1, 2, 0);
 	}
 }
@@ -479,7 +486,7 @@ technique I420_Reverse
 {
 	pass
 	{
-		vertex_shader = VSDefault(vert_in);
+		vertex_shader = VSDefault(id);
 		pixel_shader  = PSPlanar420_Reverse(vert_in);
 	}
 }
@@ -488,7 +495,7 @@ technique I444_Reverse
 {
 	pass
 	{
-		vertex_shader = VSDefault(vert_in);
+		vertex_shader = VSDefault(id);
 		pixel_shader  = PSPlanar444_Reverse(vert_in);
 	}
 }
@@ -497,7 +504,7 @@ technique NV12_Reverse
 {
 	pass
 	{
-		vertex_shader = VSDefault(vert_in);
+		vertex_shader = VSDefault(id);
 		pixel_shader  = PSNV12_Reverse(vert_in);
 	}
 }
@@ -506,7 +513,7 @@ technique Y800_Limited
 {
 	pass
 	{
-		vertex_shader = VSDefault(vert_in);
+		vertex_shader = VSDefault(id);
 		pixel_shader  = PSY800_Limited(vert_in);
 	}
 }
@@ -515,7 +522,7 @@ technique Y800_Full
 {
 	pass
 	{
-		vertex_shader = VSDefault(vert_in);
+		vertex_shader = VSDefault(id);
 		pixel_shader  = PSY800_Full(vert_in);
 	}
 }
@@ -524,7 +531,7 @@ technique RGB_Limited
 {
 	pass
 	{
-		vertex_shader = VSDefault(vert_in);
+		vertex_shader = VSDefault(id);
 		pixel_shader  = PSRGB_Limited(vert_in);
 	}
 }
@@ -533,7 +540,7 @@ technique BGR3_Limited
 {
 	pass
 	{
-		vertex_shader = VSDefault(vert_in);
+		vertex_shader = VSDefault(id);
 		pixel_shader  = PSBGR3_Limited(vert_in);
 	}
 }
@@ -542,7 +549,7 @@ technique BGR3_Full
 {
 	pass
 	{
-		vertex_shader = VSDefault(vert_in);
+		vertex_shader = VSDefault(id);
 		pixel_shader  = PSBGR3_Full(vert_in);
 	}
 }

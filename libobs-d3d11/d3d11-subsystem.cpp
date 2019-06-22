@@ -1503,7 +1503,7 @@ void device_draw(gs_device_t *device, enum gs_draw_mode draw_mode,
 		if (!device->curPixelShader)
 			throw "No pixel shader specified";
 
-		if (!device->curVertexBuffer)
+		if (!device->curVertexBuffer && (num_verts == 0))
 			throw "No vertex buffer specified";
 
 		if (!device->curSwapChain && !device->curRenderTarget)

@@ -68,11 +68,14 @@ gs_vertex_shader::gs_vertex_shader(gs_device_t *device, const char *file,
 	if (FAILED(hr))
 		throw HRError("Failed to create vertex shader", hr);
 
-	hr = device->device->CreateInputLayout(layoutData.data(),
-			(UINT)layoutData.size(),
-			data.data(), data.size(), layout.Assign());
-	if (FAILED(hr))
-		throw HRError("Failed to create input layout", hr);
+	const UINT layoutSize = (UINT)layoutData.size();
+	if (layoutSize > 0) {
+		hr = device->device->CreateInputLayout(layoutData.data(),
+				(UINT)layoutSize,
+				data.data(), data.size(), layout.Assign());
+		if (FAILED(hr))
+			throw HRError("Failed to create input layout", hr);
+	}
 
 	viewProj = gs_shader_get_param_by_name(this, "ViewProj");
 	world    = gs_shader_get_param_by_name(this, "World");

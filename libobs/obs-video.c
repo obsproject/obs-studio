@@ -293,8 +293,7 @@ static void render_convert_texture(struct obs_core_video *video)
 	passes = gs_technique_begin(tech);
 	for (i = 0; i < passes; i++) {
 		gs_technique_begin_pass(tech, i);
-		gs_draw_sprite(texture, 0, video->output_width,
-				video->conversion_height);
+		gs_draw(GS_TRIS, 0, 3);
 		gs_technique_end_pass(tech);
 	}
 	gs_technique_end(tech);
@@ -324,7 +323,7 @@ static void render_nv12(struct obs_core_video *video, gs_texture_t *target,
 	passes = gs_technique_begin(tech);
 	for (i = 0; i < passes; i++) {
 		gs_technique_begin_pass(tech, i);
-		gs_draw_sprite(texture, 0, width, height);
+		gs_draw(GS_TRIS, 0, 3);
 		gs_technique_end_pass(tech);
 	}
 	gs_technique_end(tech);

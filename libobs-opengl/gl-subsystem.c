@@ -891,7 +891,7 @@ void device_begin_scene(gs_device_t *device)
 	clear_textures(device);
 }
 
-static inline bool can_render(const gs_device_t *device)
+static inline bool can_render(const gs_device_t *device, uint32_t num_verts)
 {
 	if (!device->cur_vertex_shader) {
 		blog(LOG_ERROR, "No vertex shader specified");
@@ -903,7 +903,7 @@ static inline bool can_render(const gs_device_t *device)
 		return false;
 	}
 
-	if (!device->cur_vertex_buffer) {
+	if (!device->cur_vertex_buffer && (num_verts == 0)) {
 		blog(LOG_ERROR, "No vertex buffer specified");
 		return false;
 	}
@@ -977,7 +977,7 @@ void device_draw(gs_device_t *device, enum gs_draw_mode draw_mode,
 	gs_effect_t *effect = gs_get_effect();
 	struct gs_program *program;
 
-	if (!can_render(device))
+	if (!can_render(device, num_verts))
 		goto fail;
 
 	if (effect)

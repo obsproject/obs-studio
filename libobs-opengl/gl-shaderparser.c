@@ -163,7 +163,7 @@ static void gl_write_storage_var(struct gl_shader_parser *glsp,
 
 	if (st) {
 		gl_unwrap_storage_struct(glsp, st, var->name, input, prefix);
-	} else {
+	} else if (!input || strcmp(var->mapping, "VERTEXID")) {
 		struct gl_parser_attrib attrib;
 		gl_parser_attrib_init(&attrib);
 
@@ -536,9 +536,13 @@ static void gl_write_main_storage_assign(struct gl_shader_parser *glsp,
 		if (!dstr_is_empty(&dst_copy))
 			dstr_cat_dstr(&glsp->gl_string, &dst_copy);
 		dstr_cat(&glsp->gl_string, " = ");
-		if (src)
-			dstr_cat(&glsp->gl_string, src);
-		dstr_cat(&glsp->gl_string, var->name);
+		if (input && (strcmp(var->mapping, "VERTEXID") == 0))
+			dstr_cat(&glsp->gl_string, "uint(gl_VertexID)");
+		else {
+			if (src)
+				dstr_cat(&glsp->gl_string, src);
+			dstr_cat(&glsp->gl_string, var->name);
+		}
 		dstr_cat(&glsp->gl_string, ";\n");
 
 		if (!input)
@@ -628,6 +632,12 @@ static void gl_rename_attributes(struct gl_shader_parser *glsp)
 		size_t val;
 
 		if (attrib->input) {
+			if (strcmp(attrib->mapping, "VERTEXID") == 0) {
+				dstr_replace(&glsp->gl_string, attrib->name.array,
+						"gl_VertexID");
+				continue;
+			}
+
 			prefix = glsp->input_prefix;
 			val    = input_idx++;
 		} else {
@@ -653,6 +663,7 @@ static bool gl_shader_buildstring(struct gl_shader_parser *glsp)
 	}
 
 	dstr_copy(&glsp->gl_string, "#version 150\n\n");
+	dstr_cat(&glsp->gl_string, "const bool obs_glsl_compile = true;\n\n");
 	gl_write_params(glsp);
 	gl_write_inputs(glsp, main_func);
 	gl_write_outputs(glsp, main_func);
