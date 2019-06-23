@@ -11,6 +11,7 @@ MODULE_EXPORT const char *obs_module_description(void)
 extern struct obs_source_info mask_filter;
 extern struct obs_source_info crop_filter;
 extern struct obs_source_info gain_filter;
+extern struct obs_source_info normalization_filter;
 extern struct obs_source_info color_filter;
 extern struct obs_source_info scale_filter;
 extern struct obs_source_info scroll_filter;
@@ -35,6 +36,7 @@ bool obs_module_load(void)
 	obs_register_source(&mask_filter);
 	obs_register_source(&crop_filter);
 	obs_register_source(&gain_filter);
+	obs_register_source(&normalization_filter);
 	obs_register_source(&color_filter);
 	obs_register_source(&scale_filter);
 	obs_register_source(&scroll_filter);

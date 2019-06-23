@@ -46,6 +46,7 @@ set(obs-filters_SOURCES
 	color-grade-filter.c
 	sharpness-filter.c
 	gain-filter.c
+	normalization-filter.c
 	noise-gate-filter.c
 	mask-filter.c
 	invert-audio-polarity.c
@@ -54,12 +55,16 @@ set(obs-filters_SOURCES
 	expander-filter.c
 	luma-key-filter.c)
 
+add_subdirectory(libebur128)
+
 add_library(obs-filters MODULE
 	${obs-filters_SOURCES}
 	${obs-filters_config_HEADERS}
 	${obs-filters_LIBSPEEXDSP_SOURCES})
+
 target_link_libraries(obs-filters
 	libobs
+	ebur128
 	${obs-filters_PLATFORM_DEPS}
 	${obs-filters_LIBSPEEXDSP_LIBRARIES})
 
