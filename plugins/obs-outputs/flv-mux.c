@@ -56,16 +56,16 @@ void write_file_info(FILE *file, int64_t duration_ms, int64_t size)
 	fwrite(buf, 1, enc - buf, file);
 }
 
-static bool build_flv_meta_data(obs_output_t *context,
-		uint8_t **output, size_t *size, size_t a_idx)
+static bool build_flv_meta_data(obs_output_t *context, uint8_t **output,
+				size_t *size, size_t a_idx)
 {
 	obs_encoder_t *vencoder = obs_output_get_video_encoder(context);
 	obs_encoder_t *aencoder = obs_output_get_audio_encoder(context, a_idx);
-	video_t       *video    = obs_encoder_video(vencoder);
-	audio_t       *audio    = obs_encoder_audio(aencoder);
+	video_t *video = obs_encoder_video(vencoder);
+	audio_t *audio = obs_encoder_audio(aencoder);
 	char buf[4096];
 	char *enc = buf;
-	char *end = enc+sizeof(buf);
+	char *end = enc + sizeof(buf);
 	struct dstr encoder_name = {0};
 
 	if (a_idx > 0 && !aencoder)
@@ -74,57 +74,48 @@ static bool build_flv_meta_data(obs_output_t *context,
 	enc_str(&enc, end, "onMetaData");
 
 	*enc++ = AMF_ECMA_ARRAY;
-	enc    = AMF_EncodeInt32(enc, end, a_idx == 0 ? 20 : 15);
+	enc = AMF_EncodeInt32(enc, end, a_idx == 0 ? 20 : 15);
 
 	enc_num_val(&enc, end, "duration", 0.0);
 	enc_num_val(&enc, end, "fileSize", 0.0);
 
 	if (a_idx == 0) {
 		enc_num_val(&enc, end, "width",
-				(double)obs_encoder_get_width(vencoder));
+			    (double)obs_encoder_get_width(vencoder));
 		enc_num_val(&enc, end, "height",
-				(double)obs_encoder_get_height(vencoder));
+			    (double)obs_encoder_get_height(vencoder));
 
 		enc_str_val(&enc, end, "videocodecid", "avc1");
 		enc_num_val(&enc, end, "videodatarate",
-				encoder_bitrate(vencoder));
+			    encoder_bitrate(vencoder));
 		enc_num_val(&enc, end, "framerate",
-				video_output_get_frame_rate(video));
+			    video_output_get_frame_rate(video));
 	}
 
 	enc_str_val(&enc, end, "audiocodecid", "mp4a");
 	enc_num_val(&enc, end, "audiodatarate", encoder_bitrate(aencoder));
 	enc_num_val(&enc, end, "audiosamplerate",
-			(double)obs_encoder_get_sample_rate(aencoder));
+		    (double)obs_encoder_get_sample_rate(aencoder));
 	enc_num_val(&enc, end, "audiosamplesize", 16.0);
 	enc_num_val(&enc, end, "audiochannels",
-			(double)audio_output_get_channels(audio));
+		    (double)audio_output_get_channels(audio));
 
 	enc_bool_val(&enc, end, "stereo",
-			audio_output_get_channels(audio) == 2);
-	enc_bool_val(&enc, end, "2.1",
-			audio_output_get_channels(audio) == 3);
-	enc_bool_val(&enc, end, "3.1",
-			audio_output_get_channels(audio) == 4);
-	enc_bool_val(&enc, end, "4.0",
-			audio_output_get_channels(audio) == 4);
-	enc_bool_val(&enc, end, "4.1",
-			audio_output_get_channels(audio) == 5);
-	enc_bool_val(&enc, end, "5.1",
-			audio_output_get_channels(audio) == 6);
-	enc_bool_val(&enc, end, "7.1",
-			audio_output_get_channels(audio) == 8);
+		     audio_output_get_channels(audio) == 2);
+	enc_bool_val(&enc, end, "2.1", audio_output_get_channels(audio) == 3);
+	enc_bool_val(&enc, end, "3.1", audio_output_get_channels(audio) == 4);
+	enc_bool_val(&enc, end, "4.0", audio_output_get_channels(audio) == 4);
+	enc_bool_val(&enc, end, "4.1", audio_output_get_channels(audio) == 5);
+	enc_bool_val(&enc, end, "5.1", audio_output_get_channels(audio) == 6);
+	enc_bool_val(&enc, end, "7.1", audio_output_get_channels(audio) == 8);
 
-	dstr_printf(&encoder_name, "%s (libobs version ",
-			MODULE_NAME);
+	dstr_printf(&encoder_name, "%s (libobs version ", MODULE_NAME);
 
 #ifdef HAVE_OBSCONFIG_H
 	dstr_cat(&encoder_name, OBS_VERSION);
 #else
-	dstr_catf(&encoder_name, "%d.%d.%d",
-			LIBOBS_API_MAJOR_VER,
-			LIBOBS_API_MINOR_VER,
-			LIBOBS_API_PATCH_VER);
+	dstr_catf(&encoder_name, "%d.%d.%d", LIBOBS_API_MAJOR_VER,
+		  LIBOBS_API_MINOR_VER, LIBOBS_API_PATCH_VER);
 #endif
 
 	dstr_cat(&encoder_name, ")");
@@ -132,28 +123,28 @@ static bool build_flv_meta_data(obs_output_t *context,
 	enc_str_val(&enc, end, "encoder", encoder_name.array);
 	dstr_free(&encoder_name);
 
-	*enc++  = 0;
-	*enc++  = 0;
-	*enc++  = AMF_OBJECT_END;
+	*enc++ = 0;
+	*enc++ = 0;
+	*enc++ = AMF_OBJECT_END;
 
-	*size   = enc-buf;
+	*size = enc - buf;
 	*output = bmemdup(buf, *size);
 	return true;
 }
 
 bool flv_meta_data(obs_output_t *context, uint8_t **output, size_t *size,
-		bool write_header, size_t audio_idx)
+		   bool write_header, size_t audio_idx)
 {
 	struct array_output_data data;
 	struct serializer s;
 	uint8_t *meta_data = NULL;
-	size_t  meta_data_size;
+	size_t meta_data_size;
 	uint32_t start_pos;
 
 	array_output_serializer_init(&s, &data);
 
 	if (!build_flv_meta_data(context, &meta_data, &meta_data_size,
-				audio_idx)) {
+				 audio_idx)) {
 		bfree(meta_data);
 		return false;
 	}
@@ -179,7 +170,7 @@ bool flv_meta_data(obs_output_t *context, uint8_t **output, size_t *size,
 	s_wb32(&s, (uint32_t)serializer_get_pos(&s) - start_pos - 1);
 
 	*output = data.bytes.array;
-	*size   = data.bytes.num;
+	*size = data.bytes.num;
 
 	bfree(meta_data);
 	return true;
@@ -190,9 +181,9 @@ static int32_t last_time = 0;
 #endif
 
 static void flv_video(struct serializer *s, int32_t dts_offset,
-		struct encoder_packet *packet, bool is_header)
+		      struct encoder_packet *packet, bool is_header)
 {
-	int64_t offset  = packet->pts - packet->dts;
+	int64_t offset = packet->pts - packet->dts;
 	int32_t time_ms = get_ms_time(packet, packet->dts) - dts_offset;
 
 	if (!packet->data || !packet->size)
@@ -225,7 +216,7 @@ static void flv_video(struct serializer *s, int32_t dts_offset,
 }
 
 static void flv_audio(struct serializer *s, int32_t dts_offset,
-		struct encoder_packet *packet, bool is_header)
+		      struct encoder_packet *packet, bool is_header)
 {
 	int32_t time_ms = get_ms_time(packet, packet->dts) - dts_offset;
 
@@ -258,7 +249,7 @@ static void flv_audio(struct serializer *s, int32_t dts_offset,
 }
 
 void flv_packet_mux(struct encoder_packet *packet, int32_t dts_offset,
-		uint8_t **output, size_t *size, bool is_header)
+		    uint8_t **output, size_t *size, bool is_header)
 {
 	struct array_output_data data;
 	struct serializer s;
@@ -271,5 +262,5 @@ void flv_packet_mux(struct encoder_packet *packet, int32_t dts_offset,
 		flv_audio(&s, dts_offset, packet, is_header);
 
 	*output = data.bytes.array;
-	*size   = data.bytes.num;
+	*size = data.bytes.num;
 }

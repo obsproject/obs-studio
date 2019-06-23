@@ -37,8 +37,7 @@ static DWORD WINAPI init_hooks(LPVOID param)
 {
 	char *config_path = param;
 
-	if (USE_HOOK_ADDRESS_CACHE &&
-	    cached_versions_match() &&
+	if (USE_HOOK_ADDRESS_CACHE && cached_versions_match() &&
 	    load_cached_graphics_offsets(IS32BIT, config_path)) {
 
 		load_cached_graphics_offsets(!IS32BIT, config_path);
@@ -95,7 +94,8 @@ bool obs_module_load(void)
 
 	char *config_path = obs_module_config_path(NULL);
 
-	init_hooks_thread = CreateThread(NULL, 0, init_hooks, config_path, 0, NULL);
+	init_hooks_thread =
+		CreateThread(NULL, 0, init_hooks, config_path, 0, NULL);
 	obs_register_source(&game_capture_info);
 
 	return true;

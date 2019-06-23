@@ -20,8 +20,7 @@
 #include "obs-app.hpp"
 
 OBSLogReply::OBSLogReply(QWidget *parent, const QString &url)
-	: QDialog (parent),
-	  ui      (new Ui::OBSLogReply)
+	: QDialog(parent), ui(new Ui::OBSLogReply)
 {
 	ui->setupUi(this);
 	ui->urlEdit->setText(url);

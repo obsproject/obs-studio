@@ -30,15 +30,24 @@ static int64_t base_sys_ts = 0;
 static inline enum video_format convert_pixel_format(int f)
 {
 	switch (f) {
-	case AV_PIX_FMT_NONE:    return VIDEO_FORMAT_NONE;
-	case AV_PIX_FMT_YUV420P: return VIDEO_FORMAT_I420;
-	case AV_PIX_FMT_NV12:    return VIDEO_FORMAT_NV12;
-	case AV_PIX_FMT_YUYV422: return VIDEO_FORMAT_YUY2;
-	case AV_PIX_FMT_YUV444P: return VIDEO_FORMAT_I444;
-	case AV_PIX_FMT_UYVY422: return VIDEO_FORMAT_UYVY;
-	case AV_PIX_FMT_RGBA:    return VIDEO_FORMAT_RGBA;
-	case AV_PIX_FMT_BGRA:    return VIDEO_FORMAT_BGRA;
-	case AV_PIX_FMT_BGR0:    return VIDEO_FORMAT_BGRX;
+	case AV_PIX_FMT_NONE:
+		return VIDEO_FORMAT_NONE;
+	case AV_PIX_FMT_YUV420P:
+		return VIDEO_FORMAT_I420;
+	case AV_PIX_FMT_NV12:
+		return VIDEO_FORMAT_NV12;
+	case AV_PIX_FMT_YUYV422:
+		return VIDEO_FORMAT_YUY2;
+	case AV_PIX_FMT_YUV444P:
+		return VIDEO_FORMAT_I444;
+	case AV_PIX_FMT_UYVY422:
+		return VIDEO_FORMAT_UYVY;
+	case AV_PIX_FMT_RGBA:
+		return VIDEO_FORMAT_RGBA;
+	case AV_PIX_FMT_BGRA:
+		return VIDEO_FORMAT_BGRA;
+	case AV_PIX_FMT_BGR0:
+		return VIDEO_FORMAT_BGRX;
 	default:;
 	}
 
@@ -48,14 +57,22 @@ static inline enum video_format convert_pixel_format(int f)
 static inline enum audio_format convert_sample_format(int f)
 {
 	switch (f) {
-	case AV_SAMPLE_FMT_U8:   return AUDIO_FORMAT_U8BIT;
-	case AV_SAMPLE_FMT_S16:  return AUDIO_FORMAT_16BIT;
-	case AV_SAMPLE_FMT_S32:  return AUDIO_FORMAT_32BIT;
-	case AV_SAMPLE_FMT_FLT:  return AUDIO_FORMAT_FLOAT;
-	case AV_SAMPLE_FMT_U8P:  return AUDIO_FORMAT_U8BIT_PLANAR;
-	case AV_SAMPLE_FMT_S16P: return AUDIO_FORMAT_16BIT_PLANAR;
-	case AV_SAMPLE_FMT_S32P: return AUDIO_FORMAT_32BIT_PLANAR;
-	case AV_SAMPLE_FMT_FLTP: return AUDIO_FORMAT_FLOAT_PLANAR;
+	case AV_SAMPLE_FMT_U8:
+		return AUDIO_FORMAT_U8BIT;
+	case AV_SAMPLE_FMT_S16:
+		return AUDIO_FORMAT_16BIT;
+	case AV_SAMPLE_FMT_S32:
+		return AUDIO_FORMAT_32BIT;
+	case AV_SAMPLE_FMT_FLT:
+		return AUDIO_FORMAT_FLOAT;
+	case AV_SAMPLE_FMT_U8P:
+		return AUDIO_FORMAT_U8BIT_PLANAR;
+	case AV_SAMPLE_FMT_S16P:
+		return AUDIO_FORMAT_16BIT_PLANAR;
+	case AV_SAMPLE_FMT_S32P:
+		return AUDIO_FORMAT_32BIT_PLANAR;
+	case AV_SAMPLE_FMT_FLTP:
+		return AUDIO_FORMAT_FLOAT_PLANAR;
 	default:;
 	}
 
@@ -65,15 +82,24 @@ static inline enum audio_format convert_sample_format(int f)
 static inline enum speaker_layout convert_speaker_layout(uint8_t channels)
 {
 	switch (channels) {
-	case 0:     return SPEAKERS_UNKNOWN;
-	case 1:     return SPEAKERS_MONO;
-	case 2:     return SPEAKERS_STEREO;
-	case 3:     return SPEAKERS_2POINT1;
-	case 4:     return SPEAKERS_4POINT0;
-	case 5:     return SPEAKERS_4POINT1;
-	case 6:     return SPEAKERS_5POINT1;
-	case 8:     return SPEAKERS_7POINT1;
-	default:    return SPEAKERS_UNKNOWN;
+	case 0:
+		return SPEAKERS_UNKNOWN;
+	case 1:
+		return SPEAKERS_MONO;
+	case 2:
+		return SPEAKERS_STEREO;
+	case 3:
+		return SPEAKERS_2POINT1;
+	case 4:
+		return SPEAKERS_4POINT0;
+	case 5:
+		return SPEAKERS_4POINT1;
+	case 6:
+		return SPEAKERS_5POINT1;
+	case 8:
+		return SPEAKERS_7POINT1;
+	default:
+		return SPEAKERS_UNKNOWN;
 	}
 }
 
@@ -88,7 +114,7 @@ static inline enum video_range_type convert_color_range(enum AVColorRange r)
 }
 
 static inline struct mp_decode *get_packet_decoder(mp_media_t *media,
-		AVPacket *pkt)
+						   AVPacket *pkt)
 {
 	if (media->has_audio && pkt->stream_index == media->a.stream->index)
 		return &media->a;
@@ -109,7 +135,7 @@ static int mp_media_next_packet(mp_media_t *media)
 	if (ret < 0) {
 		if (ret != AVERROR_EOF)
 			blog(LOG_WARNING, "MP: av_read_frame failed: %s (%d)",
-					av_err2str(ret), ret);
+			     av_err2str(ret), ret);
 		return ret;
 	}
 
@@ -160,7 +186,7 @@ static inline int get_sws_range(enum AVColorRange r)
 	return r == AVCOL_RANGE_JPEG ? 1 : 0;
 }
 
-#define FIXED_1_0 (1<<16)
+#define FIXED_1_0 (1 << 16)
 
 static bool mp_media_init_scaling(mp_media_t *m)
 {
@@ -168,23 +194,23 @@ static bool mp_media_init_scaling(mp_media_t *m)
 	int range = get_sws_range(m->v.decoder->color_range);
 	const int *coeff = sws_getCoefficients(space);
 
-	m->swscale = sws_getCachedContext(NULL,
-			m->v.decoder->width, m->v.decoder->height,
-			m->v.decoder->pix_fmt,
-			m->v.decoder->width, m->v.decoder->height,
-			m->scale_format,
-			SWS_FAST_BILINEAR, NULL, NULL, NULL);
+	m->swscale = sws_getCachedContext(NULL, m->v.decoder->width,
+					  m->v.decoder->height,
+					  m->v.decoder->pix_fmt,
+					  m->v.decoder->width,
+					  m->v.decoder->height, m->scale_format,
+					  SWS_FAST_BILINEAR, NULL, NULL, NULL);
 	if (!m->swscale) {
 		blog(LOG_WARNING, "MP: Failed to initialize scaler");
 		return false;
 	}
 
 	sws_setColorspaceDetails(m->swscale, coeff, range, coeff, range, 0,
-			FIXED_1_0, FIXED_1_0);
+				 FIXED_1_0, FIXED_1_0);
 
 	int ret = av_image_alloc(m->scale_pic, m->scale_linesizes,
-			m->v.decoder->width, m->v.decoder->height,
-			m->scale_format, 1);
+				 m->v.decoder->width, m->v.decoder->height,
+				 m->scale_format, 1);
 	if (ret < 0) {
 		blog(LOG_WARNING, "MP: Failed to create scale pic data");
 		return false;
@@ -250,8 +276,7 @@ static inline int64_t mp_media_get_base_pts(mp_media_t *m)
 	return base_ts;
 }
 
-static inline bool mp_media_can_play_frame(mp_media_t *m,
-		struct mp_decode *d)
+static inline bool mp_media_can_play_frame(mp_media_t *m, struct mp_decode *d)
 {
 	return d->frame_ready && d->frame_pts <= m->next_pts_ns;
 }
@@ -277,7 +302,7 @@ static void mp_media_next_audio(mp_media_t *m)
 	audio.format = convert_sample_format(f->format);
 	audio.frames = f->nb_samples;
 	audio.timestamp = m->base_ts + d->frame_pts - m->start_ts +
-		m->play_sys_ts - base_sys_ts;
+			  m->play_sys_ts - base_sys_ts;
 
 	if (audio.format == AUDIO_FORMAT_UNKNOWN)
 		return;
@@ -308,10 +333,9 @@ static void mp_media_next_video(mp_media_t *m, bool preload)
 
 	bool flip = false;
 	if (m->swscale) {
-		int ret = sws_scale(m->swscale,
-				(const uint8_t *const *)f->data, f->linesize,
-				0, f->height,
-				m->scale_pic, m->scale_linesizes);
+		int ret = sws_scale(m->swscale, (const uint8_t *const *)f->data,
+				    f->linesize, 0, f->height, m->scale_pic,
+				    m->scale_linesizes);
 		if (ret < 0)
 			return;
 
@@ -334,25 +358,22 @@ static void mp_media_next_video(mp_media_t *m, bool preload)
 		frame->data[0] -= frame->linesize[0] * (f->height - 1);
 
 	new_format = convert_pixel_format(m->scale_format);
-	new_space  = convert_color_space(f->colorspace);
-	new_range  = m->force_range == VIDEO_RANGE_DEFAULT
-		? convert_color_range(f->color_range)
-		: m->force_range;
+	new_space = convert_color_space(f->colorspace);
+	new_range = m->force_range == VIDEO_RANGE_DEFAULT
+			    ? convert_color_range(f->color_range)
+			    : m->force_range;
 
-	if (new_format != frame->format ||
-	    new_space  != m->cur_space  ||
-	    new_range  != m->cur_range) {
+	if (new_format != frame->format || new_space != m->cur_space ||
+	    new_range != m->cur_range) {
 		bool success;
 
 		frame->format = new_format;
 		frame->full_range = new_range == VIDEO_RANGE_FULL;
 
-		success = video_format_get_parameters(
-				new_space,
-				new_range,
-				frame->color_matrix,
-				frame->color_range_min,
-				frame->color_range_max);
+		success = video_format_get_parameters(new_space, new_range,
+						      frame->color_matrix,
+						      frame->color_range_min,
+						      frame->color_range_max);
 
 		frame->format = new_format;
 		m->cur_space = new_space;
@@ -368,7 +389,7 @@ static void mp_media_next_video(mp_media_t *m, bool preload)
 		return;
 
 	frame->timestamp = m->base_ts + d->frame_pts - m->start_ts +
-		m->play_sys_ts - base_sys_ts;
+			   m->play_sys_ts - base_sys_ts;
 	frame->width = f->width;
 	frame->height = f->height;
 	frame->flip = flip;
@@ -420,14 +441,15 @@ static bool mp_media_reset(mp_media_t *m)
 	}
 
 	int64_t seek_target = seek_flags == AVSEEK_FLAG_BACKWARD
-		? av_rescale_q(seek_pos, AV_TIME_BASE_Q, stream->time_base)
-		: seek_pos;
+				      ? av_rescale_q(seek_pos, AV_TIME_BASE_Q,
+						     stream->time_base)
+				      : seek_pos;
 
 	if (m->is_local_file) {
 		int ret = av_seek_frame(m->fmt, 0, seek_target, seek_flags);
 		if (ret < 0) {
 			blog(LOG_WARNING, "MP: Failed to seek: %s",
-					av_err2str(ret));
+			     av_err2str(ret));
 		}
 	}
 
@@ -538,8 +560,10 @@ static bool init_avformat(mp_media_t *m)
 	if (m->format_name && *m->format_name) {
 		format = av_find_input_format(m->format_name);
 		if (!format)
-			blog(LOG_INFO, "MP: Unable to find input format for "
-					"'%s'", m->path);
+			blog(LOG_INFO,
+			     "MP: Unable to find input format for "
+			     "'%s'",
+			     m->path);
 	}
 
 	AVDictionary *opts = NULL;
@@ -551,7 +575,7 @@ static bool init_avformat(mp_media_t *m)
 	m->fmt->interrupt_callback.opaque = m;
 
 	int ret = avformat_open_input(&m->fmt, m->path, format,
-			opts ? &opts : NULL);
+				      opts ? &opts : NULL);
 	av_dict_free(&opts);
 
 	if (ret < 0) {
@@ -561,7 +585,7 @@ static bool init_avformat(mp_media_t *m)
 
 	if (avformat_find_stream_info(m->fmt, NULL) < 0) {
 		blog(LOG_WARNING, "MP: Failed to find stream info for '%s'",
-				m->path);
+		     m->path);
 		return false;
 	}
 
@@ -569,8 +593,10 @@ static bool init_avformat(mp_media_t *m)
 	m->has_audio = mp_decode_init(m, AVMEDIA_TYPE_AUDIO, m->hw);
 
 	if (!m->has_video && !m->has_audio) {
-		blog(LOG_WARNING, "MP: Could not initialize audio or video: "
-				"'%s'", m->path);
+		blog(LOG_WARNING,
+		     "MP: Could not initialize audio or video: "
+		     "'%s'",
+		     m->path);
 		return false;
 	}
 
@@ -653,7 +679,7 @@ static void *mp_media_thread_start(void *opaque)
 }
 
 static inline bool mp_media_init_internal(mp_media_t *m,
-		const struct mp_media_info *info)
+					  const struct mp_media_info *info)
 {
 	if (pthread_mutex_init(&m->mutex, NULL) != 0) {
 		blog(LOG_WARNING, "MP: Failed to init mutex");

@@ -59,7 +59,7 @@ EXPORT void gs_image_file_free(gs_image_file_t *image);
 
 EXPORT void gs_image_file_init_texture(gs_image_file_t *image);
 EXPORT bool gs_image_file_tick(gs_image_file_t *image,
-		uint64_t elapsed_time_ns);
+			       uint64_t elapsed_time_ns);
 EXPORT void gs_image_file_update_texture(gs_image_file_t *image);
 
 EXPORT void gs_image_file2_init(gs_image_file2_t *if2, const char *file);
@@ -76,7 +76,7 @@ static inline void gs_image_file2_init_texture(gs_image_file2_t *if2)
 }
 
 static inline bool gs_image_file2_tick(gs_image_file2_t *if2,
-		uint64_t elapsed_time_ns)
+				       uint64_t elapsed_time_ns)
 {
 	return gs_image_file_tick(&if2->image, elapsed_time_ns);
 }

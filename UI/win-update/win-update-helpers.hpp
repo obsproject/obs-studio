@@ -23,9 +23,9 @@ public:
 			freefunc(handle);
 	}
 
-	inline T *operator&() {return &handle;}
-	inline operator T() const {return handle;}
-	inline T get() const {return handle;}
+	inline T *operator&() { return &handle; }
+	inline operator T() const { return handle; }
+	inline T get() const { return handle; }
 
 	inline CustomHandle<T, freefunc> &operator=(T in)
 	{
@@ -35,7 +35,7 @@ public:
 		return *this;
 	}
 
-	inline bool operator!() const {return !handle;}
+	inline bool operator!() const { return !handle; }
 };
 
 void FreeProvider(HCRYPTPROV prov);
@@ -43,8 +43,8 @@ void FreeHash(HCRYPTHASH hash);
 void FreeKey(HCRYPTKEY key);
 
 using CryptProvider = CustomHandle<HCRYPTPROV, FreeProvider>;
-using CryptHash     = CustomHandle<HCRYPTHASH, FreeHash>;
-using CryptKey      = CustomHandle<HCRYPTKEY,  FreeKey>;
+using CryptHash = CustomHandle<HCRYPTHASH, FreeHash>;
+using CryptKey = CustomHandle<HCRYPTKEY, FreeKey>;
 
 /* ------------------------------------------------------------------------ */
 
@@ -58,13 +58,13 @@ public:
 			LocalFree(ptr);
 	}
 
-	inline T **operator&() {return &ptr;}
-	inline operator T() const {return ptr;}
-	inline T *get() const {return ptr;}
+	inline T **operator&() { return &ptr; }
+	inline operator T() const { return ptr; }
+	inline T *get() const { return ptr; }
 
-	inline bool operator!() const {return !ptr;}
+	inline bool operator!() const { return !ptr; }
 
-	inline T *operator->() {return ptr;}
+	inline T *operator->() { return ptr; }
 };
 
 /* ------------------------------------------------------------------------ */
@@ -76,9 +76,10 @@ public:
 	inline Json() : json(nullptr) {}
 	explicit inline Json(json_t *json_) : json(json_) {}
 	inline Json(const Json &from) : json(json_incref(from.json)) {}
-	inline Json(Json &&from) : json(from.json) {from.json = nullptr;}
+	inline Json(Json &&from) : json(from.json) { from.json = nullptr; }
 
-	inline ~Json() {
+	inline ~Json()
+	{
 		if (json)
 			json_decref(json);
 	}
@@ -106,12 +107,12 @@ public:
 		return *this;
 	}
 
-	inline operator json_t *() const {return json;}
+	inline operator json_t *() const { return json; }
 
-	inline bool operator!() const {return !json;}
+	inline bool operator!() const { return !json; }
 
 	inline const char *GetString(const char *name,
-			const char *def = nullptr) const
+				     const char *def = nullptr) const
 	{
 		json_t *obj(json_object_get(json, name));
 		if (!obj)
@@ -130,7 +131,7 @@ public:
 		return json_object_get(json, name);
 	}
 
-	inline json_t *get() const {return json;}
+	inline json_t *get() const { return json; }
 };
 
 /* ------------------------------------------------------------------------ */

@@ -47,7 +47,7 @@ static inline void apply_mask(uint8_t *color, uint8_t *mask, long num_pixels)
 }
 
 static inline uint8_t *copy_from_color(ICONINFO *ii, uint32_t *width,
-		uint32_t *height)
+				       uint32_t *height)
 {
 	BITMAP bmp_color;
 	BITMAP bmp_mask;
@@ -80,7 +80,7 @@ static inline uint8_t *copy_from_color(ICONINFO *ii, uint32_t *width,
 }
 
 static inline uint8_t *copy_from_mask(ICONINFO *ii, uint32_t *width,
-		uint32_t *height)
+				      uint32_t *height)
 {
 	uint8_t *output;
 	uint8_t *mask;
@@ -107,8 +107,8 @@ static inline uint8_t *copy_from_mask(ICONINFO *ii, uint32_t *width,
 		if (!alpha) {
 			output[i * 4 + 3] = color;
 		} else {
-			*(uint32_t*)&output[i * 4] = !!color ?
-				0xFFFFFFFF : 0xFF000000;
+			*(uint32_t *)&output[i * 4] = !!color ? 0xFFFFFFFF
+							      : 0xFF000000;
 		}
 	}
 
@@ -119,8 +119,8 @@ static inline uint8_t *copy_from_mask(ICONINFO *ii, uint32_t *width,
 	return output;
 }
 
-static inline uint8_t *cursor_capture_icon_bitmap(ICONINFO *ii,
-		uint32_t *width, uint32_t *height)
+static inline uint8_t *cursor_capture_icon_bitmap(ICONINFO *ii, uint32_t *width,
+						  uint32_t *height)
 {
 	uint8_t *output;
 
@@ -131,8 +131,8 @@ static inline uint8_t *cursor_capture_icon_bitmap(ICONINFO *ii,
 	return output;
 }
 
-static gs_texture_t *get_cached_texture(struct cursor_data *data,
-		uint32_t cx, uint32_t cy)
+static gs_texture_t *get_cached_texture(struct cursor_data *data, uint32_t cx,
+					uint32_t cy)
 {
 	struct cached_cursor cc;
 
@@ -210,7 +210,7 @@ void cursor_capture(struct cursor_data *data)
 }
 
 void cursor_draw(struct cursor_data *data, long x_offset, long y_offset,
-		float x_scale, float y_scale, long width, long height)
+		 float x_scale, float y_scale, long width, long height)
 {
 	long x = data->cursor_pos.x + x_offset;
 	long y = data->cursor_pos.y + y_offset;

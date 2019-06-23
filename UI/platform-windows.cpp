@@ -37,8 +37,8 @@ using namespace std;
 #include <util/windows/HRError.hpp>
 #include <util/windows/ComPtr.hpp>
 
-static inline bool check_path(const char* data, const char *path,
-		string &output)
+static inline bool check_path(const char *data, const char *path,
+			      string &output)
 {
 	ostringstream str;
 	str << path << data;
@@ -65,10 +65,10 @@ bool InitApplicationBundle()
 string GetDefaultVideoSavePath()
 {
 	wchar_t path_utf16[MAX_PATH];
-	char    path_utf8[MAX_PATH]  = {};
+	char path_utf8[MAX_PATH] = {};
 
 	SHGetFolderPathW(NULL, CSIDL_MYVIDEO, NULL, SHGFP_TYPE_CURRENT,
-			path_utf16);
+			 path_utf16);
 
 	os_wcs_to_utf8(path_utf16, wcslen(path_utf16), path_utf8, MAX_PATH);
 	return string(path_utf8);
@@ -79,18 +79,18 @@ static vector<string> GetUserPreferredLocales()
 	vector<string> result;
 
 	ULONG num, length = 0;
-	if (!GetUserPreferredUILanguages(MUI_LANGUAGE_NAME, &num,
-				nullptr, &length))
+	if (!GetUserPreferredUILanguages(MUI_LANGUAGE_NAME, &num, nullptr,
+					 &length))
 		return result;
 
 	vector<wchar_t> buffer(length);
 	if (!GetUserPreferredUILanguages(MUI_LANGUAGE_NAME, &num,
-				&buffer.front(), &length))
+					 &buffer.front(), &length))
 		return result;
 
 	result.reserve(num);
 	auto start = begin(buffer);
-	auto end_  = end(buffer);
+	auto end_ = end(buffer);
 	decltype(start) separator;
 	while ((separator = find(start, end_, 0)) != end_) {
 		if (result.size() == num)
@@ -162,7 +162,7 @@ uint32_t GetWindowsVersion()
 
 void SetAeroEnabled(bool enable)
 {
-	static HRESULT (WINAPI *func)(UINT) = nullptr;
+	static HRESULT(WINAPI * func)(UINT) = nullptr;
 	static bool failed = false;
 
 	if (!func) {
@@ -176,8 +176,8 @@ void SetAeroEnabled(bool enable)
 			return;
 		}
 
-		func = reinterpret_cast<decltype(func)>(GetProcAddress(dwm,
-						"DwmEnableComposition"));
+		func = reinterpret_cast<decltype(func)>(
+			GetProcAddress(dwm, "DwmEnableComposition"));
 		if (!func) {
 			failed = true;
 			return;
@@ -197,7 +197,7 @@ void SetAlwaysOnTop(QWidget *window, bool enable)
 {
 	HWND hwnd = (HWND)window->winId();
 	SetWindowPos(hwnd, enable ? HWND_TOPMOST : HWND_NOTOPMOST, 0, 0, 0, 0,
-			SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
+		     SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
 }
 
 void SetProcessPriority(const char *priority)
@@ -208,11 +208,13 @@ void SetProcessPriority(const char *priority)
 	if (strcmp(priority, "High") == 0)
 		SetPriorityClass(GetCurrentProcess(), HIGH_PRIORITY_CLASS);
 	else if (strcmp(priority, "AboveNormal") == 0)
-		SetPriorityClass(GetCurrentProcess(), ABOVE_NORMAL_PRIORITY_CLASS);
+		SetPriorityClass(GetCurrentProcess(),
+				 ABOVE_NORMAL_PRIORITY_CLASS);
 	else if (strcmp(priority, "Normal") == 0)
 		SetPriorityClass(GetCurrentProcess(), NORMAL_PRIORITY_CLASS);
 	else if (strcmp(priority, "BelowNormal") == 0)
-		SetPriorityClass(GetCurrentProcess(), BELOW_NORMAL_PRIORITY_CLASS);
+		SetPriorityClass(GetCurrentProcess(),
+				 BELOW_NORMAL_PRIORITY_CLASS);
 	else if (strcmp(priority, "Idle") == 0)
 		SetPriorityClass(GetCurrentProcess(), IDLE_PRIORITY_CLASS);
 }
@@ -227,16 +229,16 @@ void SetWin32DropStyle(QWidget *window)
 
 bool DisableAudioDucking(bool disable)
 {
-	ComPtr<IMMDeviceEnumerator>   devEmum;
-	ComPtr<IMMDevice>             device;
+	ComPtr<IMMDeviceEnumerator> devEmum;
+	ComPtr<IMMDevice> device;
 	ComPtr<IAudioSessionManager2> sessionManager2;
-	ComPtr<IAudioSessionControl>  sessionControl;
+	ComPtr<IAudioSessionControl> sessionControl;
 	ComPtr<IAudioSessionControl2> sessionControl2;
 
-	HRESULT result = CoCreateInstance(__uuidof(MMDeviceEnumerator),
-			nullptr, CLSCTX_INPROC_SERVER,
-			__uuidof(IMMDeviceEnumerator),
-			(void **)&devEmum);
+	HRESULT result = CoCreateInstance(__uuidof(MMDeviceEnumerator), nullptr,
+					  CLSCTX_INPROC_SERVER,
+					  __uuidof(IMMDeviceEnumerator),
+					  (void **)&devEmum);
 	if (FAILED(result))
 		return false;
 
@@ -245,13 +247,13 @@ bool DisableAudioDucking(bool disable)
 		return false;
 
 	result = device->Activate(__uuidof(IAudioSessionManager2),
-			CLSCTX_INPROC_SERVER, nullptr,
-			(void **)&sessionManager2);
+				  CLSCTX_INPROC_SERVER, nullptr,
+				  (void **)&sessionManager2);
 	if (FAILED(result))
 		return false;
 
 	result = sessionManager2->GetAudioSessionControl(nullptr, 0,
-			&sessionControl);
+							 &sessionControl);
 	if (FAILED(result))
 		return false;
 

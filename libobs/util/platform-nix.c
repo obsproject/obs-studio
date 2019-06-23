@@ -73,8 +73,8 @@ void *os_dlopen(const char *path)
 	void *res = dlopen(dylib_name.array, RTLD_LAZY);
 #endif
 	if (!res)
-		blog(LOG_ERROR, "os_dlopen(%s->%s): %s\n",
-				path, dylib_name.array, dlerror());
+		blog(LOG_ERROR, "os_dlopen(%s->%s): %s\n", path,
+		     dylib_name.array, dlerror());
 
 	dstr_free(&dylib_name);
 	return res;
@@ -101,20 +101,20 @@ struct os_cpu_usage_info {
 os_cpu_usage_info_t *os_cpu_usage_info_start(void)
 {
 	struct os_cpu_usage_info *info = bmalloc(sizeof(*info));
-	struct tms               time_sample;
+	struct tms time_sample;
 
-	info->last_cpu_time  = times(&time_sample);
-	info->last_sys_time  = time_sample.tms_stime;
+	info->last_cpu_time = times(&time_sample);
+	info->last_sys_time = time_sample.tms_stime;
 	info->last_user_time = time_sample.tms_utime;
-	info->core_count     = sysconf(_SC_NPROCESSORS_ONLN);
+	info->core_count = sysconf(_SC_NPROCESSORS_ONLN);
 	return info;
 }
 
 double os_cpu_usage_info_query(os_cpu_usage_info_t *info)
 {
 	struct tms time_sample;
-	clock_t    cur_cpu_time;
-	double     percent;
+	clock_t cur_cpu_time;
+	double percent;
 
 	if (!info)
 		return 0.0;
@@ -126,12 +126,12 @@ double os_cpu_usage_info_query(os_cpu_usage_info_t *info)
 		return 0.0;
 
 	percent = (double)(time_sample.tms_stime - info->last_sys_time +
-			(time_sample.tms_utime - info->last_user_time));
+			   (time_sample.tms_utime - info->last_user_time));
 	percent /= (double)(cur_cpu_time - info->last_cpu_time);
 	percent /= (double)info->core_count;
 
-	info->last_cpu_time  = cur_cpu_time;
-	info->last_sys_time  = time_sample.tms_stime;
+	info->last_cpu_time = cur_cpu_time;
+	info->last_sys_time = time_sample.tms_stime;
 	info->last_user_time = time_sample.tms_utime;
 
 	return percent * 100.0;
@@ -156,8 +156,8 @@ bool os_sleepto_ns(uint64_t time_target)
 	struct timespec req, remain;
 	memset(&req, 0, sizeof(req));
 	memset(&remain, 0, sizeof(remain));
-	req.tv_sec = time_target/1000000000;
-	req.tv_nsec = time_target%1000000000;
+	req.tv_sec = time_target / 1000000000;
+	req.tv_nsec = time_target % 1000000000;
 
 	while (nanosleep(&req, &remain)) {
 		req = remain;
@@ -169,7 +169,7 @@ bool os_sleepto_ns(uint64_t time_target)
 
 void os_sleep_ms(uint32_t duration)
 {
-	usleep(duration*1000);
+	usleep(duration * 1000);
 }
 
 #if !defined(__APPLE__)
@@ -178,7 +178,7 @@ uint64_t os_gettime_ns(void)
 {
 	struct timespec ts;
 	clock_gettime(CLOCK_MONOTONIC, &ts);
-	return ((uint64_t) ts.tv_sec * 1000000000ULL + (uint64_t) ts.tv_nsec);
+	return ((uint64_t)ts.tv_sec * 1000000000ULL + (uint64_t)ts.tv_nsec);
 }
 
 /* should return $HOME/.[name], or when using XDG,
@@ -263,7 +263,8 @@ int os_get_program_data_path(char *dst, size_t size, const char *name)
 
 char *os_get_program_data_path_ptr(const char *name)
 {
-	size_t len = snprintf(NULL, 0, "/usr/local/share/%s", !!name ? name : "");
+	size_t len =
+		snprintf(NULL, 0, "/usr/local/share/%s", !!name ? name : "");
 	char *str = bmalloc(len + 1);
 	snprintf(str, len + 1, "/usr/local/share/%s", !!name ? name : "");
 	str[len] = 0;
@@ -332,23 +333,23 @@ char *os_get_abs_path_ptr(const char *path)
 }
 
 struct os_dir {
-	const char       *path;
-	DIR              *dir;
-	struct dirent    *cur_dirent;
+	const char *path;
+	DIR *dir;
+	struct dirent *cur_dirent;
 	struct os_dirent out;
 };
 
 os_dir_t *os_opendir(const char *path)
 {
 	struct os_dir *dir;
-	DIR           *dir_val;
+	DIR *dir_val;
 
 	dir_val = opendir(path);
 	if (!dir_val)
 		return NULL;
 
 	dir = bzalloc(sizeof(struct os_dir));
-	dir->dir  = dir_val;
+	dir->dir = dir_val;
 	dir->path = path;
 	return dir;
 }
@@ -367,7 +368,8 @@ struct os_dirent *os_readdir(os_dir_t *dir)
 {
 	struct dstr file_path = {0};
 
-	if (!dir) return NULL;
+	if (!dir)
+		return NULL;
 
 	dir->cur_dirent = readdir(dir->dir);
 	if (!dir->cur_dirent)
@@ -442,7 +444,7 @@ int os_glob(const char *pattern, int flags, os_glob_t **pglob)
 void os_globfree(os_glob_t *pglob)
 {
 	if (pglob) {
-		struct posix_glob_info *pgi = (struct posix_glob_info*)pglob;
+		struct posix_glob_info *pgi = (struct posix_glob_info *)pglob;
 		globfree(&pgi->gl);
 
 		bfree(pgi->base.gl_pathv);
@@ -544,7 +546,7 @@ struct dbus_sleep_info;
 
 extern struct dbus_sleep_info *dbus_sleep_info_create(void);
 extern void dbus_inhibit_sleep(struct dbus_sleep_info *dbus, const char *sleep,
-		bool active);
+			       bool active);
 extern void dbus_sleep_info_destroy(struct dbus_sleep_info *dbus);
 #endif
 
@@ -575,8 +577,8 @@ os_inhibit_t *os_inhibit_sleep_create(const char *reason)
 	posix_spawnattr_setsigmask(&info->attr, &set);
 	sigaddset(&set, SIGPIPE);
 	posix_spawnattr_setsigdefault(&info->attr, &set);
-	posix_spawnattr_setflags(&info->attr,
-			POSIX_SPAWN_SETSIGDEF | POSIX_SPAWN_SETSIGMASK);
+	posix_spawnattr_setflags(&info->attr, POSIX_SPAWN_SETSIGDEF |
+						      POSIX_SPAWN_SETSIGMASK);
 
 	info->reason = bstrdup(reason);
 	return info;
@@ -586,14 +588,15 @@ extern char **environ;
 
 static void reset_screensaver(os_inhibit_t *info)
 {
-	char *argv[3] = {(char*)"xdg-screensaver", (char*)"reset", NULL};
+	char *argv[3] = {(char *)"xdg-screensaver", (char *)"reset", NULL};
 	pid_t pid;
 
-	int err = posix_spawnp(&pid, "xdg-screensaver", NULL, &info->attr,
-			argv, environ);
+	int err = posix_spawnp(&pid, "xdg-screensaver", NULL, &info->attr, argv,
+			       environ);
 	if (err == 0) {
 		int status;
-		while (waitpid(pid, &status, 0) == -1);
+		while (waitpid(pid, &status, 0) == -1)
+			;
 	} else {
 		blog(LOG_WARNING, "Failed to create xdg-screensaver: %d", err);
 	}
@@ -628,10 +631,10 @@ bool os_inhibit_sleep_set_active(os_inhibit_t *info, bool active)
 
 	if (active) {
 		ret = pthread_create(&info->screensaver_thread, NULL,
-				&screensaver_thread, info);
+				     &screensaver_thread, info);
 		if (ret < 0) {
 			blog(LOG_ERROR, "Failed to create screensaver "
-			                "inhibitor thread");
+					"inhibitor thread");
 			return false;
 		}
 	} else {
@@ -714,8 +717,8 @@ static void os_get_cores_internal(void)
 				continue;
 
 			if (dstr_is_empty(&proc_phys_ids) ||
-				(!dstr_is_empty(&proc_phys_ids) &&
-				!dstr_find(&proc_phys_ids, proc_phys_id.array))) {
+			    (!dstr_is_empty(&proc_phys_ids) &&
+			     !dstr_find(&proc_phys_ids, proc_phys_id.array))) {
 				dstr_cat_dstr(&proc_phys_ids, &proc_phys_id);
 				dstr_cat(&proc_phys_ids, " ");
 				core_count += atoi(start);
@@ -774,7 +777,7 @@ static void os_get_cores_internal(void)
 	len = strcspn(core_count, " ");
 	dstr_ncopy(&proc_cores, core_count, len);
 
-	FreeBSD_cores_cleanup:
+FreeBSD_cores_cleanup:
 	if (!dstr_is_empty(&proc_packages))
 		packages = atoi(proc_packages.array);
 	if (!dstr_is_empty(&proc_cores))
@@ -814,8 +817,8 @@ uint64_t os_get_sys_free_size(void)
 {
 	uint64_t mem_free = 0;
 	size_t length = sizeof(mem_free);
-	if (sysctlbyname("vm.stats.vm.v_free_count", &mem_free, &length,
-				NULL, 0) < 0)
+	if (sysctlbyname("vm.stats.vm.v_free_count", &mem_free, &length, NULL,
+			 0) < 0)
 		return 0;
 	return mem_free;
 }
@@ -824,8 +827,8 @@ static inline bool os_get_proc_memory_usage_internal(struct kinfo_proc *kinfo)
 {
 	int mib[] = {CTL_KERN, KERN_PROC, KERN_PROC_PID, getpid()};
 	size_t length = sizeof(*kinfo);
-	if (sysctl(mib, sizeof(mib) / sizeof(mib[0]), kinfo, &length,
-				NULL, 0) < 0)
+	if (sysctl(mib, sizeof(mib) / sizeof(mib[0]), kinfo, &length, NULL, 0) <
+	    0)
 		return false;
 	return true;
 }
@@ -837,8 +840,8 @@ bool os_get_proc_memory_usage(os_proc_memory_usage_t *usage)
 		return false;
 
 	usage->resident_size =
-			(uint64_t)kinfo.ki_rssize * sysconf(_SC_PAGESIZE);
-	usage->virtual_size  = (uint64_t)kinfo.ki_size;
+		(uint64_t)kinfo.ki_rssize * sysconf(_SC_PAGESIZE);
+	usage->virtual_size = (uint64_t)kinfo.ki_size;
 	return true;
 }
 
@@ -858,10 +861,12 @@ uint64_t os_get_proc_virtual_size(void)
 	return (uint64_t)kinfo.ki_size;
 }
 #else
-uint64_t os_get_sys_free_size(void) {return 0;}
-
-typedef struct
+uint64_t os_get_sys_free_size(void)
 {
+	return 0;
+}
+
+typedef struct {
 	unsigned long virtual_size;
 	unsigned long resident_size;
 	unsigned long share_pages;
@@ -879,14 +884,9 @@ static inline bool os_get_proc_memory_usage_internal(statm_t *statm)
 	if (!f)
 		return false;
 
-	if (fscanf(f, "%lu %lu %lu %lu %lu %lu %lu",
-	    &statm->virtual_size,
-	    &statm->resident_size,
-	    &statm->share_pages,
-	    &statm->text,
-	    &statm->library,
-	    &statm->data,
-	    &statm->dirty_pages) != 7) {
+	if (fscanf(f, "%lu %lu %lu %lu %lu %lu %lu", &statm->virtual_size,
+		   &statm->resident_size, &statm->share_pages, &statm->text,
+		   &statm->library, &statm->data, &statm->dirty_pages) != 7) {
 		fclose(f);
 		return false;
 	}
@@ -902,7 +902,7 @@ bool os_get_proc_memory_usage(os_proc_memory_usage_t *usage)
 		return false;
 
 	usage->resident_size = statm.resident_size;
-	usage->virtual_size  = statm.virtual_size;
+	usage->virtual_size = statm.virtual_size;
 	return true;
 }
 

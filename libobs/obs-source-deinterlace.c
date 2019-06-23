@@ -21,7 +21,7 @@ static bool ready_deinterlace_frames(obs_source_t *source, uint64_t sys_time)
 {
 	struct obs_source_frame *next_frame = source->async_frames.array[0];
 	struct obs_source_frame *prev_frame = NULL;
-	struct obs_source_frame *frame      = NULL;
+	struct obs_source_frame *frame = NULL;
 	uint64_t sys_offset = sys_time - source->last_sys_timestamp;
 	uint64_t frame_time = next_frame->timestamp;
 	uint64_t frame_offset = 0;
@@ -97,7 +97,7 @@ static bool ready_deinterlace_frames(obs_source_t *source, uint64_t sys_time)
 			source->deinterlace_offset = 0;
 		}
 
-		frame_time   = next_frame->timestamp;
+		frame_time = next_frame->timestamp;
 		frame_offset = frame_time - source->last_frame_ts;
 	}
 
@@ -119,11 +119,11 @@ static inline bool first_frame(obs_source_t *s)
 
 static inline uint64_t uint64_diff(uint64_t ts1, uint64_t ts2)
 {
-	return (ts1 < ts2) ?  (ts2 - ts1) : (ts1 - ts2);
+	return (ts1 < ts2) ? (ts2 - ts1) : (ts1 - ts2);
 }
 
 static inline void deinterlace_get_closest_frames(obs_source_t *s,
-		uint64_t sys_time)
+						  uint64_t sys_time)
 {
 	const struct video_output_info *info;
 	uint64_t half_interval;
@@ -133,7 +133,7 @@ static inline void deinterlace_get_closest_frames(obs_source_t *s,
 
 	info = video_output_get_info(obs->video.video);
 	half_interval = (uint64_t)info->fps_den * 500000000ULL /
-		(uint64_t)info->fps_num;
+			(uint64_t)info->fps_num;
 
 	if (first_frame(s) || ready_deinterlace_frames(s, sys_time)) {
 		uint64_t offset;
@@ -149,13 +149,15 @@ static inline void deinterlace_get_closest_frames(obs_source_t *s,
 
 			da_erase(s->async_frames, 0);
 
-			s->deinterlace_half_duration = (uint32_t)
-				((s->cur_async_frame->timestamp -
-				  s->prev_async_frame->timestamp) / 2);
+			s->deinterlace_half_duration =
+				(uint32_t)((s->cur_async_frame->timestamp -
+					    s->prev_async_frame->timestamp) /
+					   2);
 		} else {
-			s->deinterlace_half_duration = (uint32_t)
-				((s->cur_async_frame->timestamp -
-				  s->deinterlace_frame_ts) / 2);
+			s->deinterlace_half_duration =
+				(uint32_t)((s->cur_async_frame->timestamp -
+					    s->deinterlace_frame_ts) /
+					   2);
 		}
 
 		if (!s->last_frame_ts)
@@ -168,8 +170,8 @@ static inline void deinterlace_get_closest_frames(obs_source_t *s,
 		if (!s->deinterlace_offset) {
 			s->deinterlace_offset = offset;
 		} else {
-			uint64_t offset_diff = uint64_diff(
-					s->deinterlace_offset, offset);
+			uint64_t offset_diff =
+				uint64_diff(s->deinterlace_offset, offset);
 			if (offset_diff > half_interval)
 				s->deinterlace_offset = offset;
 		}
@@ -197,23 +199,22 @@ void set_deinterlace_texture_size(obs_source_t *source)
 			gs_texrender_create(GS_BGRX, GS_ZS_NONE);
 
 		source->async_prev_texture = gs_texture_create(
-				source->async_convert_width,
-				source->async_convert_height,
-				source->async_texture_format,
-				1, NULL, GS_DYNAMIC);
+			source->async_convert_width,
+			source->async_convert_height,
+			source->async_texture_format, 1, NULL, GS_DYNAMIC);
 
 	} else {
-		enum gs_color_format format = convert_video_format(
-				source->async_format);
+		enum gs_color_format format =
+			convert_video_format(source->async_format);
 
 		source->async_prev_texture = gs_texture_create(
-				source->async_width, source->async_height,
-				format, 1, NULL, GS_DYNAMIC);
+			source->async_width, source->async_height, format, 1,
+			NULL, GS_DYNAMIC);
 	}
 }
 
 static inline struct obs_source_frame *get_prev_frame(obs_source_t *source,
-		bool *updated)
+						      bool *updated)
 {
 	struct obs_source_frame *frame = NULL;
 
@@ -248,8 +249,8 @@ void deinterlace_update_async_video(obs_source_t *source)
 	if (frame) {
 		if (set_async_texture_size(source, frame)) {
 			update_async_texture(source, frame,
-					source->async_prev_texture,
-					source->async_prev_texrender);
+					     source->async_prev_texture,
+					     source->async_prev_texrender);
 		}
 
 		obs_source_release_frame(source, frame);
@@ -270,31 +271,33 @@ void deinterlace_update_async_video(obs_source_t *source)
 static inline gs_effect_t *get_effect(enum obs_deinterlace_mode mode)
 {
 	switch (mode) {
-	case OBS_DEINTERLACE_MODE_DISABLE: return NULL;
+	case OBS_DEINTERLACE_MODE_DISABLE:
+		return NULL;
 	case OBS_DEINTERLACE_MODE_DISCARD:
 		return obs_load_effect(&obs->video.deinterlace_discard_effect,
-				"deinterlace_discard.effect");
+				       "deinterlace_discard.effect");
 	case OBS_DEINTERLACE_MODE_RETRO:
-		return obs_load_effect(&obs->video.deinterlace_discard_2x_effect,
-				"deinterlace_discard_2x.effect");
+		return obs_load_effect(
+			&obs->video.deinterlace_discard_2x_effect,
+			"deinterlace_discard_2x.effect");
 	case OBS_DEINTERLACE_MODE_BLEND:
 		return obs_load_effect(&obs->video.deinterlace_blend_effect,
-				"deinterlace_blend.effect");
+				       "deinterlace_blend.effect");
 	case OBS_DEINTERLACE_MODE_BLEND_2X:
 		return obs_load_effect(&obs->video.deinterlace_blend_2x_effect,
-				"deinterlace_blend_2x.effect");
+				       "deinterlace_blend_2x.effect");
 	case OBS_DEINTERLACE_MODE_LINEAR:
 		return obs_load_effect(&obs->video.deinterlace_linear_effect,
-				"deinterlace_linear.effect");
+				       "deinterlace_linear.effect");
 	case OBS_DEINTERLACE_MODE_LINEAR_2X:
 		return obs_load_effect(&obs->video.deinterlace_linear_2x_effect,
-				"deinterlace_linear_2x.effect");
+				       "deinterlace_linear_2x.effect");
 	case OBS_DEINTERLACE_MODE_YADIF:
 		return obs_load_effect(&obs->video.deinterlace_yadif_effect,
-				"deinterlace_yadif.effect");
+				       "deinterlace_yadif.effect");
 	case OBS_DEINTERLACE_MODE_YADIF_2X:
 		return obs_load_effect(&obs->video.deinterlace_yadif_2x_effect,
-				"deinterlace_yadif_2x.effect");
+				       "deinterlace_yadif_2x.effect");
 	}
 
 	return NULL;
@@ -308,20 +311,22 @@ void deinterlace_render(obs_source_t *s)
 
 	uint64_t frame2_ts;
 	gs_eparam_t *image = gs_effect_get_param_by_name(effect, "image");
-	gs_eparam_t *prev = gs_effect_get_param_by_name(effect,
-			"previous_image");
+	gs_eparam_t *prev =
+		gs_effect_get_param_by_name(effect, "previous_image");
 	gs_eparam_t *field = gs_effect_get_param_by_name(effect, "field_order");
 	gs_eparam_t *frame2 = gs_effect_get_param_by_name(effect, "frame2");
-	gs_eparam_t *dimensions = gs_effect_get_param_by_name(effect,
-			"dimensions");
+	gs_eparam_t *dimensions =
+		gs_effect_get_param_by_name(effect, "dimensions");
 	struct vec2 size = {(float)s->async_width, (float)s->async_height};
 
-	gs_texture_t *cur_tex = s->async_texrender ?
-		gs_texrender_get_texture(s->async_texrender) :
-		s->async_texture;
-	gs_texture_t *prev_tex = s->async_prev_texrender ?
-		gs_texrender_get_texture(s->async_prev_texrender) :
-		s->async_prev_texture;
+	gs_texture_t *cur_tex =
+		s->async_texrender
+			? gs_texrender_get_texture(s->async_texrender)
+			: s->async_texture;
+	gs_texture_t *prev_tex =
+		s->async_prev_texrender
+			? gs_texrender_get_texture(s->async_prev_texrender)
+			: s->async_prev_texture;
 
 	if (!cur_tex || !prev_tex || !s->async_width || !s->async_height)
 		return;
@@ -332,23 +337,22 @@ void deinterlace_render(obs_source_t *s)
 	gs_effect_set_vec2(dimensions, &size);
 
 	frame2_ts = s->deinterlace_frame_ts + s->deinterlace_offset +
-		s->deinterlace_half_duration - TWOX_TOLERANCE;
+		    s->deinterlace_half_duration - TWOX_TOLERANCE;
 
 	gs_effect_set_bool(frame2, obs->video.video_time >= frame2_ts);
 
 	while (gs_effect_loop(effect, "Draw"))
 		gs_draw_sprite(NULL, s->async_flip ? GS_FLIP_V : 0,
-				s->async_width, s->async_height);
+			       s->async_width, s->async_height);
 }
 
 static void enable_deinterlacing(obs_source_t *source,
-		enum obs_deinterlace_mode mode)
+				 enum obs_deinterlace_mode mode)
 {
 	obs_enter_graphics();
 
 	if (source->async_format != VIDEO_FORMAT_NONE &&
-	    source->async_width != 0 &&
-	    source->async_height != 0)
+	    source->async_width != 0 && source->async_height != 0)
 		set_deinterlace_texture_size(source);
 
 	source->deinterlace_mode = mode;
@@ -376,7 +380,7 @@ static void disable_deinterlacing(obs_source_t *source)
 }
 
 void obs_source_set_deinterlace_mode(obs_source_t *source,
-		enum obs_deinterlace_mode mode)
+				     enum obs_deinterlace_mode mode)
 {
 	if (!obs_source_valid(source, "obs_source_set_deinterlace_mode"))
 		return;
@@ -395,30 +399,31 @@ void obs_source_set_deinterlace_mode(obs_source_t *source,
 	}
 }
 
-enum obs_deinterlace_mode obs_source_get_deinterlace_mode(
-		const obs_source_t *source)
+enum obs_deinterlace_mode
+obs_source_get_deinterlace_mode(const obs_source_t *source)
 {
-	return obs_source_valid(source, "obs_source_set_deinterlace_mode") ?
-		source->deinterlace_mode : OBS_DEINTERLACE_MODE_DISABLE;
+	return obs_source_valid(source, "obs_source_set_deinterlace_mode")
+		       ? source->deinterlace_mode
+		       : OBS_DEINTERLACE_MODE_DISABLE;
 }
 
-void obs_source_set_deinterlace_field_order(obs_source_t *source,
-		enum obs_deinterlace_field_order field_order)
+void obs_source_set_deinterlace_field_order(
+	obs_source_t *source, enum obs_deinterlace_field_order field_order)
 {
 	if (!obs_source_valid(source, "obs_source_set_deinterlace_field_order"))
 		return;
 
-	source->deinterlace_top_first =
-		field_order == OBS_DEINTERLACE_FIELD_ORDER_TOP;
+	source->deinterlace_top_first = field_order ==
+					OBS_DEINTERLACE_FIELD_ORDER_TOP;
 }
 
-enum obs_deinterlace_field_order obs_source_get_deinterlace_field_order(
-		const obs_source_t *source)
+enum obs_deinterlace_field_order
+obs_source_get_deinterlace_field_order(const obs_source_t *source)
 {
 	if (!obs_source_valid(source, "obs_source_set_deinterlace_field_order"))
 		return OBS_DEINTERLACE_FIELD_ORDER_TOP;
 
 	return source->deinterlace_top_first
-		? OBS_DEINTERLACE_FIELD_ORDER_TOP
-		: OBS_DEINTERLACE_FIELD_ORDER_BOTTOM;
+		       ? OBS_DEINTERLACE_FIELD_ORDER_TOP
+		       : OBS_DEINTERLACE_FIELD_ORDER_BOTTOM;
 }

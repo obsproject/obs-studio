@@ -15,9 +15,9 @@ extern "C" {
 #endif
 
 static inline uint32_t vtable_offset(HMODULE module, void *cls,
-		unsigned int offset)
+				     unsigned int offset)
 {
-	uintptr_t *vtable = *(uintptr_t**)cls;
+	uintptr_t *vtable = *(uintptr_t **)cls;
 	return (uint32_t)(vtable[offset] - (uintptr_t)module);
 }
 

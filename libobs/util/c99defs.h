@@ -27,7 +27,7 @@
 #define DEPRECATED __declspec(deprecated)
 #define FORCE_INLINE __forceinline
 #else
-#define DEPRECATED __attribute__ ((deprecated))
+#define DEPRECATED __attribute__((deprecated))
 #define FORCE_INLINE inline __attribute__((always_inline))
 #endif
 

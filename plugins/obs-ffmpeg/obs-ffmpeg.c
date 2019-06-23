@@ -20,10 +20,10 @@ MODULE_EXPORT const char *obs_module_description(void)
 	return "FFmpeg based sources/outputs/encoders";
 }
 
-extern struct obs_source_info  ffmpeg_source;
-extern struct obs_output_info  ffmpeg_output;
-extern struct obs_output_info  ffmpeg_muxer;
-extern struct obs_output_info  replay_buffer;
+extern struct obs_source_info ffmpeg_source;
+extern struct obs_output_info ffmpeg_output;
+extern struct obs_output_info ffmpeg_muxer;
+extern struct obs_output_info replay_buffer;
 extern struct obs_encoder_info aac_encoder_info;
 extern struct obs_encoder_info opus_encoder_info;
 extern struct obs_encoder_info nvenc_encoder_info;
@@ -84,8 +84,8 @@ static void destroy_log_context(struct log_context *log_context)
 	pthread_mutex_unlock(&log_contexts_mutex);
 }
 
-static void ffmpeg_log_callback(void* context, int level, const char* format,
-	va_list args)
+static void ffmpeg_log_callback(void *context, int level, const char *format,
+				va_list args)
 {
 	if (format == NULL)
 		return;
@@ -95,8 +95,8 @@ static void ffmpeg_log_callback(void* context, int level, const char* format,
 	char *str = log_context->str;
 
 	av_log_format_line(context, level, format, args, str + strlen(str),
-			(int)(sizeof(log_context->str) - strlen(str)),
-			&log_context->print_prefix);
+			   (int)(sizeof(log_context->str) - strlen(str)),
+			   &log_context->print_prefix);
 
 	int obs_level;
 	switch (level) {
@@ -121,7 +121,7 @@ static void ffmpeg_log_callback(void* context, int level, const char* format,
 		return;
 
 	char *str_end = str + strlen(str) - 1;
-	while(str < str_end) {
+	while (str < str_end) {
 		if (*str_end != '\n')
 			break;
 		*str_end-- = '\0';
@@ -142,28 +142,10 @@ static const char *nvenc_check_name = "nvenc_check";
 
 #ifdef _WIN32
 static const wchar_t *blacklisted_adapters[] = {
-	L"720M",
-	L"730M",
-	L"740M",
-	L"745M",
-	L"820M",
-	L"830M",
-	L"840M",
-	L"845M",
-	L"920M",
-	L"930M",
-	L"940M",
-	L"945M",
-	L"1030",
-	L"MX110",
-	L"MX130",
-	L"MX150",
-	L"MX230",
-	L"MX250",
-	L"M520",
-	L"M500",
-	L"P500",
-	L"K620M"
+	L"720M", L"730M",  L"740M",  L"745M",  L"820M",  L"830M",
+	L"840M", L"845M",  L"920M",  L"930M",  L"940M",  L"945M",
+	L"1030", L"MX110", L"MX130", L"MX150", L"MX230", L"MX250",
+	L"M520", L"M500",  L"P500",  L"K620M",
 };
 
 static const size_t num_blacklisted =
@@ -202,7 +184,7 @@ static bool is_blacklisted(const wchar_t *name)
 	return false;
 }
 
-typedef HRESULT (WINAPI *create_dxgi_proc)(const IID *, IDXGIFactory1 **);
+typedef HRESULT(WINAPI *create_dxgi_proc)(const IID *, IDXGIFactory1 **);
 
 static bool nvenc_device_available(void)
 {
@@ -226,7 +208,7 @@ static bool nvenc_device_available(void)
 
 	if (!create) {
 		create = (create_dxgi_proc)GetProcAddress(dxgi,
-				"CreateDXGIFactory1");
+							  "CreateDXGIFactory1");
 		if (!create) {
 			return true;
 		}

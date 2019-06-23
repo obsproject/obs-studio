@@ -20,23 +20,25 @@
 #include "../util/platform.h"
 #include "graphics-internal.h"
 
-#define GRAPHICS_IMPORT(func) \
-	do { \
-		exports->func = os_dlsym(module, #func); \
-		if (!exports->func) { \
-			success = false; \
-			blog(LOG_ERROR, "Could not load function '%s' from " \
-			                "module '%s'", #func, module_name); \
-		} \
+#define GRAPHICS_IMPORT(func)                                     \
+	do {                                                      \
+		exports->func = os_dlsym(module, #func);          \
+		if (!exports->func) {                             \
+			success = false;                          \
+			blog(LOG_ERROR,                           \
+			     "Could not load function '%s' from " \
+			     "module '%s'",                       \
+			     #func, module_name);                 \
+		}                                                 \
 	} while (false)
 
-#define GRAPHICS_IMPORT_OPTIONAL(func) \
-	do { \
+#define GRAPHICS_IMPORT_OPTIONAL(func)                   \
+	do {                                             \
 		exports->func = os_dlsym(module, #func); \
 	} while (false)
 
 bool load_graphics_imports(struct gs_exports *exports, void *module,
-		const char *module_name)
+			   const char *module_name)
 {
 	bool success = true;
 

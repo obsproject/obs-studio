@@ -16,9 +16,9 @@ Q_DECLARE_METATYPE(OBSSource);
 OBSBasicAdvAudio::OBSBasicAdvAudio(QWidget *parent)
 	: QDialog(parent),
 	  sourceAddedSignal(obs_get_signal_handler(), "source_activate",
-			  OBSSourceAdded, this),
+			    OBSSourceAdded, this),
 	  sourceRemovedSignal(obs_get_signal_handler(), "source_deactivate",
-			  OBSSourceRemoved, this)
+			      OBSSourceRemoved, this)
 {
 	QScrollArea *scrollArea;
 	QVBoxLayout *vlayout;
@@ -55,7 +55,7 @@ OBSBasicAdvAudio::OBSBasicAdvAudio(QWidget *parent)
 	controlArea = new QWidget;
 	controlArea->setLayout(mainLayout);
 	controlArea->setSizePolicy(QSizePolicy::Preferred,
-			QSizePolicy::Preferred);
+				   QSizePolicy::Preferred);
 
 	vlayout = new QVBoxLayout;
 	vlayout->addWidget(controlArea);
@@ -80,7 +80,7 @@ OBSBasicAdvAudio::OBSBasicAdvAudio(QWidget *parent)
 	vlayout->addLayout(buttonLayout);
 	setLayout(vlayout);
 
-	connect(closeButton, &QPushButton::clicked, [this] () {close();});
+	connect(closeButton, &QPushButton::clicked, [this]() { close(); });
 
 	installEventFilter(CreateShortcutFilter());
 
@@ -97,7 +97,7 @@ OBSBasicAdvAudio::OBSBasicAdvAudio(QWidget *parent)
 
 OBSBasicAdvAudio::~OBSBasicAdvAudio()
 {
-	OBSBasic *main = reinterpret_cast<OBSBasic*>(parent());
+	OBSBasic *main = reinterpret_cast<OBSBasic *>(parent());
 
 	for (size_t i = 0; i < controls.size(); ++i)
 		delete controls[i];
@@ -107,7 +107,7 @@ OBSBasicAdvAudio::~OBSBasicAdvAudio()
 
 bool OBSBasicAdvAudio::EnumSources(void *param, obs_source_t *source)
 {
-	OBSBasicAdvAudio *dialog = reinterpret_cast<OBSBasicAdvAudio*>(param);
+	OBSBasicAdvAudio *dialog = reinterpret_cast<OBSBasicAdvAudio *>(param);
 	uint32_t flags = obs_source_get_output_flags(source);
 
 	if ((flags & OBS_SOURCE_AUDIO) != 0 && obs_source_active(source))
@@ -118,18 +118,18 @@ bool OBSBasicAdvAudio::EnumSources(void *param, obs_source_t *source)
 
 void OBSBasicAdvAudio::OBSSourceAdded(void *param, calldata_t *calldata)
 {
-	OBSSource source((obs_source_t*)calldata_ptr(calldata, "source"));
+	OBSSource source((obs_source_t *)calldata_ptr(calldata, "source"));
 
-	QMetaObject::invokeMethod(reinterpret_cast<OBSBasicAdvAudio*>(param),
-			"SourceAdded", Q_ARG(OBSSource, source));
+	QMetaObject::invokeMethod(reinterpret_cast<OBSBasicAdvAudio *>(param),
+				  "SourceAdded", Q_ARG(OBSSource, source));
 }
 
 void OBSBasicAdvAudio::OBSSourceRemoved(void *param, calldata_t *calldata)
 {
-	OBSSource source((obs_source_t*)calldata_ptr(calldata, "source"));
+	OBSSource source((obs_source_t *)calldata_ptr(calldata, "source"));
 
-	QMetaObject::invokeMethod(reinterpret_cast<OBSBasicAdvAudio*>(param),
-			"SourceRemoved", Q_ARG(OBSSource, source));
+	QMetaObject::invokeMethod(reinterpret_cast<OBSBasicAdvAudio *>(param),
+				  "SourceRemoved", Q_ARG(OBSSource, source));
 }
 
 inline void OBSBasicAdvAudio::AddAudioSource(obs_source_t *source)

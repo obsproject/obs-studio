@@ -13,7 +13,8 @@ bool is_app(HANDLE process)
 
 	if (OpenProcessToken(process, TOKEN_QUERY, &token)) {
 		BOOL success = GetTokenInformation(token, TokenIsAppContainer,
-				&ret, sizeof(ret), &size_ret);
+						   &ret, sizeof(ret),
+						   &size_ret);
 		if (!success) {
 			DWORD error = GetLastError();
 			int test = 0;
@@ -33,12 +34,12 @@ wchar_t *get_app_sid(HANDLE process)
 
 	if (OpenProcessToken(process, TOKEN_QUERY, &token)) {
 		DWORD info_len = GetSidLengthRequired(12) +
-			sizeof(TOKEN_APPCONTAINER_INFORMATION);
+				 sizeof(TOKEN_APPCONTAINER_INFORMATION);
 
 		PTOKEN_APPCONTAINER_INFORMATION info = malloc(info_len);
 
-		success = GetTokenInformation(token, TokenAppContainerSid,
-				info, info_len, &size_ret);
+		success = GetTokenInformation(token, TokenAppContainerSid, info,
+					      info_len, &size_ret);
 		if (success)
 			ConvertSidToStringSidW(info->TokenAppContainer, &ret);
 

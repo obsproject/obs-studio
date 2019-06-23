@@ -32,13 +32,13 @@ class AutoConfig : public QWizard {
 	enum class Type {
 		Invalid,
 		Streaming,
-		Recording
+		Recording,
 	};
 
 	enum class Service {
 		Twitch,
 		Smashcast,
-		Other
+		Other,
 	};
 
 	enum class Encoder {
@@ -46,12 +46,12 @@ class AutoConfig : public QWizard {
 		NVENC,
 		QSV,
 		AMD,
-		Stream
+		Stream,
 	};
 
 	enum class Quality {
 		Stream,
-		High
+		High,
 	};
 
 	enum class FPSType : int {
@@ -59,7 +59,7 @@ class AutoConfig : public QWizard {
 		PreferHighRes,
 		UseCurrent,
 		fps30,
-		fps60
+		fps60,
 	};
 
 	static inline const char *GetEncoderId(Encoder enc);
@@ -119,7 +119,7 @@ public:
 		StartPage,
 		VideoPage,
 		StreamPage,
-		TestPage
+		TestPage,
 	};
 };
 
@@ -216,7 +216,7 @@ class AutoConfigTestPage : public QWizardPage {
 		BandwidthTest,
 		StreamEncoder,
 		RecordingEncoder,
-		Finished
+		Finished,
 	};
 
 	Stage stage = Stage::Starting;
