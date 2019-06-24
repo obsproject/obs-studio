@@ -313,6 +313,7 @@ try {
 	context->Draw(4, 0);
 
 	device_load_pixelshader(this, nullptr);
+	device_load_vertexbuffer(this, nullptr);
 	device_load_vertexshader(this, nullptr);
 	device_set_render_target(this, nullptr, nullptr);
 
