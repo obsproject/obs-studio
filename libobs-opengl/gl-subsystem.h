@@ -581,6 +581,8 @@ struct gs_device {
 	struct gl_platform *plat;
 	enum copy_type copy_type;
 
+	GLuint empty_vao;
+
 	gs_texture_t *cur_render_target;
 	gs_zstencil_t *cur_zstencil_buffer;
 	int cur_render_side;

@@ -248,6 +248,7 @@ int device_create(gs_device_t **p_device, uint32_t adapter)
 	     glVersion, glShadingLanguage);
 
 	gl_enable(GL_CULL_FACE);
+	gl_gen_vertex_arrays(1, &device->empty_vao);
 
 	device_leave_context(device);
 	device->cur_swap = NULL;
@@ -276,6 +277,8 @@ void device_destroy(gs_device_t *device)
 	if (device) {
 		while (device->first_program)
 			gs_program_destroy(device->first_program);
+
+		gl_delete_vertex_arrays(1, &device->empty_vao);
 
 		da_free(device->proj_stack);
 		gl_platform_destroy(device->plat);
@@ -987,6 +990,7 @@ static inline struct gs_program *get_shader_program(struct gs_device *device)
 void device_draw(gs_device_t *device, enum gs_draw_mode draw_mode,
 		 uint32_t start_vert, uint32_t num_verts)
 {
+	struct gs_vertex_buffer *vb = device->cur_vertex_buffer;
 	struct gs_index_buffer *ib = device->cur_index_buffer;
 	GLenum topology = convert_gs_topology(draw_mode);
 	gs_effect_t *effect = gs_get_effect();
@@ -1002,7 +1006,10 @@ void device_draw(gs_device_t *device, enum gs_draw_mode draw_mode,
 	if (!program)
 		goto fail;
 
-	load_vb_buffers(program, device->cur_vertex_buffer, ib);
+	if (vb)
+		load_vb_buffers(program, vb, ib);
+	else
+		gl_bind_vertex_array(device->empty_vao);
 
 	if (program != device->cur_program && device->cur_program) {
 		glUseProgram(0);

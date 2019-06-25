@@ -256,7 +256,7 @@ bool load_vb_buffers(struct gs_program *program, struct gs_vertex_buffer *vb,
 	struct gs_shader *shader = program->vertex_shader;
 	size_t i;
 
-	if (vb && !gl_bind_vertex_array(vb->vao))
+	if (!gl_bind_vertex_array(vb->vao))
 		return false;
 
 	for (i = 0; i < shader->attribs.num; i++) {
