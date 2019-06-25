@@ -70,33 +70,16 @@ struct qsv_rate_control_info {
 };
 
 static const struct qsv_rate_control_info qsv_ratecontrols[] = {
-	{"CBR", false},
-	{"VBR", false},
-	{"VCM", true},
-	{"CQP", false},
-	{"AVBR", false},
-	{"ICQ", true},
-	{"LA_ICQ", true},
-	{"LA", true},
-	{0, false}
-};
-static const char * const qsv_profile_names[] = {
-	"high",
-	"main",
-	"baseline",
-	0
-};
-static const char * const qsv_usage_names[] = {
-	"quality",
-	"balanced",
-	"speed",
-	0
-};
+	{"CBR", false},   {"VBR", false},  {"VCM", true},
+	{"CQP", false},   {"AVBR", false}, {"ICQ", true},
+	{"LA_ICQ", true}, {"LA", true},    {0, false}};
+static const char *const qsv_profile_names[] = {"high", "main", "baseline", 0};
+static const char *const qsv_usage_names[] = {"quality", "balanced", "speed",
+					      0};
 
 typedef struct qsv_t qsv_t;
 
-typedef struct
-{
+typedef struct {
 	mfxU16 nTargetUsage; /* 1 through 7, 1 being best quality and 7
 				being the best speed */
 	mfxU16 nWidth;       /* source picture width */
@@ -134,14 +117,14 @@ int qsv_encoder_close(qsv_t *);
 int qsv_param_parse(qsv_param_t *, const char *name, const char *value);
 int qsv_param_apply_profile(qsv_param_t *, const char *profile);
 int qsv_param_default_preset(qsv_param_t *, const char *preset,
-		const char *tune);
+			     const char *tune);
 int qsv_encoder_reconfig(qsv_t *, qsv_param_t *);
 void qsv_encoder_version(unsigned short *major, unsigned short *minor);
-qsv_t *qsv_encoder_open( qsv_param_t * );
+qsv_t *qsv_encoder_open(qsv_param_t *);
 int qsv_encoder_encode(qsv_t *, uint64_t, uint8_t *, uint8_t *, uint32_t,
-		uint32_t, mfxBitstream **pBS);
+		       uint32_t, mfxBitstream **pBS);
 int qsv_encoder_headers(qsv_t *, uint8_t **pSPS, uint8_t **pPPS,
-		uint16_t *pnSPS, uint16_t *pnPPS);
+			uint16_t *pnSPS, uint16_t *pnPPS);
 enum qsv_cpu_platform qsv_get_cpu_platform();
 
 #ifdef __cplusplus

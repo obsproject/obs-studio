@@ -15,7 +15,7 @@ struct swipe_info {
 };
 
 #define S_DIRECTION "direction"
-#define S_SWIPE_IN  "swipe_in"
+#define S_SWIPE_IN "swipe_in"
 
 static const char *swipe_get_name(void *type_data)
 {
@@ -76,7 +76,7 @@ static void swipe_update(void *data, obs_data_t *settings)
 }
 
 static void swipe_callback(void *data, gs_texture_t *a, gs_texture_t *b,
-		float t, uint32_t cx, uint32_t cy)
+			   float t, uint32_t cx, uint32_t cy)
 {
 	struct swipe_info *swipe = data;
 	struct vec2 swipe_val = swipe->dir;
@@ -116,12 +116,13 @@ static float mix_b(void *data, float t)
 }
 
 static bool swipe_audio_render(void *data, uint64_t *ts_out,
-		struct obs_source_audio_mix *audio, uint32_t mixers,
-		size_t channels, size_t sample_rate)
+			       struct obs_source_audio_mix *audio,
+			       uint32_t mixers, size_t channels,
+			       size_t sample_rate)
 {
 	struct swipe_info *swipe = data;
-	return obs_transition_audio_render(swipe->source, ts_out,
-		audio, mixers, channels, sample_rate, mix_a, mix_b);
+	return obs_transition_audio_render(swipe->source, ts_out, audio, mixers,
+					   channels, sample_rate, mix_a, mix_b);
 }
 
 static obs_properties_t *swipe_properties(void *data)
@@ -130,16 +131,16 @@ static obs_properties_t *swipe_properties(void *data)
 	obs_property_t *p;
 
 	p = obs_properties_add_list(ppts, S_DIRECTION,
-			obs_module_text("Direction"), OBS_COMBO_TYPE_LIST,
-			OBS_COMBO_FORMAT_STRING);
+				    obs_module_text("Direction"),
+				    OBS_COMBO_TYPE_LIST,
+				    OBS_COMBO_FORMAT_STRING);
 	obs_property_list_add_string(p, obs_module_text("Direction.Left"),
-			"left");
+				     "left");
 	obs_property_list_add_string(p, obs_module_text("Direction.Right"),
-			"right");
-	obs_property_list_add_string(p, obs_module_text("Direction.Up"),
-			"up");
+				     "right");
+	obs_property_list_add_string(p, obs_module_text("Direction.Up"), "up");
 	obs_property_list_add_string(p, obs_module_text("Direction.Down"),
-			"down");
+				     "down");
 
 	obs_properties_add_bool(ppts, S_SWIPE_IN, obs_module_text("SwipeIn"));
 
@@ -156,5 +157,5 @@ struct obs_source_info swipe_transition = {
 	.update = swipe_update,
 	.video_render = swipe_video_render,
 	.audio_render = swipe_audio_render,
-	.get_properties = swipe_properties
+	.get_properties = swipe_properties,
 };

@@ -6,7 +6,7 @@
 #include "../../UI/properties-view.hpp"
 
 class DecklinkOutputUI : public QDialog {
-Q_OBJECT
+	Q_OBJECT
 private:
 	OBSPropertiesView *propertiesView;
 	OBSPropertiesView *previewPropertiesView;

@@ -13,19 +13,18 @@ using namespace std;
 OutputTimer *ot;
 
 OutputTimer::OutputTimer(QWidget *parent)
-	: QDialog(parent),
-	ui(new Ui_OutputTimer)
+	: QDialog(parent), ui(new Ui_OutputTimer)
 {
 	ui->setupUi(this);
 
 	setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
 
 	QObject::connect(ui->outputTimerStream, SIGNAL(clicked()), this,
-		SLOT(StreamingTimerButton()));
+			 SLOT(StreamingTimerButton()));
 	QObject::connect(ui->outputTimerRecord, SIGNAL(clicked()), this,
-		SLOT(RecordingTimerButton()));
+			 SLOT(RecordingTimerButton()));
 	QObject::connect(ui->buttonBox->button(QDialogButtonBox::Close),
-		SIGNAL(clicked()), this, SLOT(hide()));
+			 SIGNAL(clicked()), this, SLOT(hide()));
 
 	streamingTimer = new QTimer(this);
 	streamingTimerDisplay = new QTimer(this);
@@ -34,7 +33,7 @@ OutputTimer::OutputTimer(QWidget *parent)
 	recordingTimerDisplay = new QTimer(this);
 }
 
-void OutputTimer::closeEvent(QCloseEvent*)
+void OutputTimer::closeEvent(QCloseEvent *)
 {
 	obs_frontend_save();
 }
@@ -78,9 +77,7 @@ void OutputTimer::StreamTimerStart()
 	int minutes = ui->streamingTimerMinutes->value();
 	int seconds = ui->streamingTimerSeconds->value();
 
-	int total = (((hours * 3600) +
-		(minutes * 60)) +
-		seconds) * 1000;
+	int total = (((hours * 3600) + (minutes * 60)) + seconds) * 1000;
 
 	if (total == 0)
 		total = 1000;
@@ -89,10 +86,10 @@ void OutputTimer::StreamTimerStart()
 	streamingTimer->setSingleShot(true);
 
 	QObject::connect(streamingTimer, SIGNAL(timeout()),
-		SLOT(EventStopStreaming()));
+			 SLOT(EventStopStreaming()));
 
 	QObject::connect(streamingTimerDisplay, SIGNAL(timeout()), this,
-		SLOT(UpdateStreamTimerDisplay()));
+			 SLOT(UpdateStreamTimerDisplay()));
 
 	streamingTimer->start();
 	streamingTimerDisplay->start(1000);
@@ -112,9 +109,7 @@ void OutputTimer::RecordTimerStart()
 	int minutes = ui->recordingTimerMinutes->value();
 	int seconds = ui->recordingTimerSeconds->value();
 
-	int total = (((hours * 3600) +
-			(minutes * 60)) +
-			seconds) * 1000;
+	int total = (((hours * 3600) + (minutes * 60)) + seconds) * 1000;
 
 	if (total == 0)
 		total = 1000;
@@ -123,10 +118,10 @@ void OutputTimer::RecordTimerStart()
 	recordingTimer->setSingleShot(true);
 
 	QObject::connect(recordingTimer, SIGNAL(timeout()),
-		SLOT(EventStopRecording()));
+			 SLOT(EventStopRecording()));
 
 	QObject::connect(recordingTimerDisplay, SIGNAL(timeout()), this,
-		SLOT(UpdateRecordTimerDisplay()));
+			 SLOT(UpdateRecordTimerDisplay()));
 
 	recordingTimer->start();
 	recordingTimerDisplay->start(1000);
@@ -226,60 +221,57 @@ static void SaveOutputTimer(obs_data_t *save_data, bool saving, void *)
 		obs_data_t *obj = obs_data_create();
 
 		obs_data_set_int(obj, "streamTimerHours",
-				ot->ui->streamingTimerHours->value());
+				 ot->ui->streamingTimerHours->value());
 		obs_data_set_int(obj, "streamTimerMinutes",
-				ot->ui->streamingTimerMinutes->value());
+				 ot->ui->streamingTimerMinutes->value());
 		obs_data_set_int(obj, "streamTimerSeconds",
-				ot->ui->streamingTimerSeconds->value());
+				 ot->ui->streamingTimerSeconds->value());
 
 		obs_data_set_int(obj, "recordTimerHours",
-				ot->ui->recordingTimerHours->value());
+				 ot->ui->recordingTimerHours->value());
 		obs_data_set_int(obj, "recordTimerMinutes",
-				ot->ui->recordingTimerMinutes->value());
+				 ot->ui->recordingTimerMinutes->value());
 		obs_data_set_int(obj, "recordTimerSeconds",
-				ot->ui->recordingTimerSeconds->value());
+				 ot->ui->recordingTimerSeconds->value());
 
 		obs_data_set_bool(obj, "autoStartStreamTimer",
-				ot->ui->autoStartStreamTimer->isChecked());
+				  ot->ui->autoStartStreamTimer->isChecked());
 		obs_data_set_bool(obj, "autoStartRecordTimer",
-				ot->ui->autoStartRecordTimer->isChecked());
+				  ot->ui->autoStartRecordTimer->isChecked());
 
 		obs_data_set_obj(save_data, "output-timer", obj);
 
 		obs_data_release(obj);
 	} else {
-		obs_data_t *obj = obs_data_get_obj(save_data,
-				"output-timer");
+		obs_data_t *obj = obs_data_get_obj(save_data, "output-timer");
 
 		if (!obj)
 			obj = obs_data_create();
 
 		ot->ui->streamingTimerHours->setValue(
-				obs_data_get_int(obj, "streamTimerHours"));
+			obs_data_get_int(obj, "streamTimerHours"));
 		ot->ui->streamingTimerMinutes->setValue(
-				obs_data_get_int(obj, "streamTimerMinutes"));
+			obs_data_get_int(obj, "streamTimerMinutes"));
 		ot->ui->streamingTimerSeconds->setValue(
-				obs_data_get_int(obj, "streamTimerSeconds"));
+			obs_data_get_int(obj, "streamTimerSeconds"));
 
 		ot->ui->recordingTimerHours->setValue(
-				obs_data_get_int(obj, "recordTimerHours"));
+			obs_data_get_int(obj, "recordTimerHours"));
 		ot->ui->recordingTimerMinutes->setValue(
-				obs_data_get_int(obj, "recordTimerMinutes"));
+			obs_data_get_int(obj, "recordTimerMinutes"));
 		ot->ui->recordingTimerSeconds->setValue(
-				obs_data_get_int(obj, "recordTimerSeconds"));
+			obs_data_get_int(obj, "recordTimerSeconds"));
 
 		ot->ui->autoStartStreamTimer->setChecked(
-				obs_data_get_bool(obj, "autoStartStreamTimer"));
+			obs_data_get_bool(obj, "autoStartStreamTimer"));
 		ot->ui->autoStartRecordTimer->setChecked(
-				obs_data_get_bool(obj, "autoStartRecordTimer"));
+			obs_data_get_bool(obj, "autoStartRecordTimer"));
 
 		obs_data_release(obj);
 	}
 }
 
-extern "C" void FreeOutputTimer()
-{
-}
+extern "C" void FreeOutputTimer() {}
 
 static void OBSEvent(enum obs_frontend_event event, void *)
 {
@@ -299,19 +291,16 @@ static void OBSEvent(enum obs_frontend_event event, void *)
 
 extern "C" void InitOutputTimer()
 {
-	QAction *action = (QAction*)obs_frontend_add_tools_menu_qaction(
-			obs_module_text("OutputTimer"));
+	QAction *action = (QAction *)obs_frontend_add_tools_menu_qaction(
+		obs_module_text("OutputTimer"));
 
 	obs_frontend_push_ui_translation(obs_module_get_string);
 
-	QMainWindow *window = (QMainWindow*)obs_frontend_get_main_window();
+	QMainWindow *window = (QMainWindow *)obs_frontend_get_main_window();
 
 	ot = new OutputTimer(window);
 
-	auto cb = [] ()
-	{
-		ot->ShowHideDialog();
-	};
+	auto cb = []() { ot->ShowHideDialog(); };
 
 	obs_frontend_pop_ui_translation();
 

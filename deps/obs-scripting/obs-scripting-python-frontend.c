@@ -20,12 +20,11 @@
 
 #include "obs-scripting-python.h"
 
-#define libobs_to_py(type, obs_obj, ownership, py_obj) \
-	libobs_to_py_(#type " *", obs_obj, ownership, py_obj, \
-			NULL, __func__, __LINE__)
+#define libobs_to_py(type, obs_obj, ownership, py_obj)                        \
+	libobs_to_py_(#type " *", obs_obj, ownership, py_obj, NULL, __func__, \
+		      __LINE__)
 #define py_to_libobs(type, py_obj, libobs_out) \
-	py_to_libobs_(#type " *", py_obj, libobs_out, \
-			NULL, __func__, __LINE__)
+	py_to_libobs_(#type " *", py_obj, libobs_out, NULL, __func__, __LINE__)
 
 /* ----------------------------------- */
 
@@ -257,7 +256,7 @@ static PyObject *set_current_profile(PyObject *self, PyObject *args)
 /* ----------------------------------- */
 
 static void frontend_save_callback(obs_data_t *save_data, bool saving,
-		void *priv)
+				   void *priv)
 {
 	struct python_obs_callback *cb = priv;
 
@@ -303,8 +302,10 @@ static PyObject *remove_save_callback(PyObject *self, PyObject *args)
 	if (!py_cb || !PyFunction_Check(py_cb))
 		return python_none();
 
-	struct python_obs_callback *cb = find_python_obs_callback(script, py_cb);
-	if (cb) remove_python_obs_callback(cb);
+	struct python_obs_callback *cb =
+		find_python_obs_callback(script, py_cb);
+	if (cb)
+		remove_python_obs_callback(cb);
 	return python_none();
 }
 
@@ -354,8 +355,7 @@ void add_python_frontend_funcs(PyObject *module)
 		DEF_FUNC(add_save_callback),
 
 #undef DEF_FUNC
-		{0}
-	};
+		{0}};
 
 	add_functions_to_py_module(module, funcs);
 }

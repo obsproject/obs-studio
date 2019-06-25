@@ -4,30 +4,26 @@
 #include <util/dstr.h>
 #include <sys/stat.h>
 
-#define blog(log_level, format, ...) \
+#define blog(log_level, format, ...)                    \
 	blog(log_level, "[image_source: '%s'] " format, \
-			obs_source_get_name(context->source), ##__VA_ARGS__)
+	     obs_source_get_name(context->source), ##__VA_ARGS__)
 
-#define debug(format, ...) \
-	blog(LOG_DEBUG, format, ##__VA_ARGS__)
-#define info(format, ...) \
-	blog(LOG_INFO, format, ##__VA_ARGS__)
-#define warn(format, ...) \
-	blog(LOG_WARNING, format, ##__VA_ARGS__)
+#define debug(format, ...) blog(LOG_DEBUG, format, ##__VA_ARGS__)
+#define info(format, ...) blog(LOG_INFO, format, ##__VA_ARGS__)
+#define warn(format, ...) blog(LOG_WARNING, format, ##__VA_ARGS__)
 
 struct image_source {
 	obs_source_t *source;
 
-	char         *file;
-	bool         persistent;
-	time_t       file_timestamp;
-	float        update_time_elapsed;
-	uint64_t     last_time;
-	bool         active;
+	char *file;
+	bool persistent;
+	time_t file_timestamp;
+	float update_time_elapsed;
+	uint64_t last_time;
+	bool active;
 
 	gs_image_file2_t if2;
 };
-
 
 static time_t get_modified_timestamp(const char *filename)
 {
@@ -152,9 +148,9 @@ static void image_source_render(void *data, gs_effect_t *effect)
 		return;
 
 	gs_effect_set_texture(gs_effect_get_param_by_name(effect, "image"),
-			context->if2.image.texture);
-	gs_draw_sprite(context->if2.image.texture, 0,
-			context->if2.image.cx, context->if2.image.cy);
+			      context->if2.image.texture);
+	gs_draw_sprite(context->if2.image.texture, 0, context->if2.image.cx,
+		       context->if2.image.cy);
 }
 
 static void image_source_tick(void *data, float seconds)
@@ -212,7 +208,6 @@ static void image_source_tick(void *data, float seconds)
 	context->last_time = frame_time;
 }
 
-
 static const char *image_filter =
 	"All formats (*.bmp *.tga *.png *.jpeg *.jpg *.gif *.psd);;"
 	"BMP Files (*.bmp);;"
@@ -240,11 +235,10 @@ static obs_properties_t *image_source_properties(void *data)
 			dstr_resize(&path, slash - path.array + 1);
 	}
 
-	obs_properties_add_path(props,
-			"file", obs_module_text("File"),
-			OBS_PATH_FILE, image_filter, path.array);
-	obs_properties_add_bool(props,
-			"unload", obs_module_text("UnloadWhenNotShowing"));
+	obs_properties_add_path(props, "file", obs_module_text("File"),
+				OBS_PATH_FILE, image_filter, path.array);
+	obs_properties_add_bool(props, "unload",
+				obs_module_text("UnloadWhenNotShowing"));
 	dstr_free(&path);
 
 	return props;
@@ -257,22 +251,21 @@ uint64_t image_source_get_memory_usage(void *data)
 }
 
 static struct obs_source_info image_source_info = {
-	.id             = "image_source",
-	.type           = OBS_SOURCE_TYPE_INPUT,
-	.output_flags   = OBS_SOURCE_VIDEO,
-	.get_name       = image_source_get_name,
-	.create         = image_source_create,
-	.destroy        = image_source_destroy,
-	.update         = image_source_update,
-	.get_defaults   = image_source_defaults,
-	.show           = image_source_show,
-	.hide           = image_source_hide,
-	.get_width      = image_source_getwidth,
-	.get_height     = image_source_getheight,
-	.video_render   = image_source_render,
-	.video_tick     = image_source_tick,
-	.get_properties = image_source_properties
-};
+	.id = "image_source",
+	.type = OBS_SOURCE_TYPE_INPUT,
+	.output_flags = OBS_SOURCE_VIDEO,
+	.get_name = image_source_get_name,
+	.create = image_source_create,
+	.destroy = image_source_destroy,
+	.update = image_source_update,
+	.get_defaults = image_source_defaults,
+	.show = image_source_show,
+	.hide = image_source_hide,
+	.get_width = image_source_getwidth,
+	.get_height = image_source_getheight,
+	.video_render = image_source_render,
+	.video_tick = image_source_tick,
+	.get_properties = image_source_properties};
 
 OBS_DECLARE_MODULE()
 OBS_MODULE_USE_DEFAULT_LOCALE("image-source", "en-US")

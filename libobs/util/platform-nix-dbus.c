@@ -35,26 +35,30 @@ struct service_info {
 };
 
 static const struct service_info services[] = {
-	[FREEDESKTOP_SS] = {
-		.name      = "org.freedesktop.ScreenSaver",
-		.path      = "/ScreenSaver",
-		.uninhibit = "UnInhibit",
-	},
-	[FREEDESKTOP_PM] = {
-		.name      = "org.freedesktop.PowerManagement.Inhibit",
-		.path      = "/org/freedesktop/PowerManagement",
-		.uninhibit = "UnInhibit",
-	},
-	[MATE_SM] = {
-		.name      = "org.mate.SessionManager",
-		.path      = "/org/mate/SessionManager",
-		.uninhibit = "Uninhibit",
-	},
-	[GNOME_SM] = {
-		.name      = "org.gnome.SessionManager",
-		.path      = "/org/gnome/SessionManager",
-		.uninhibit = "Uninhibit",
-	},
+	[FREEDESKTOP_SS] =
+		{
+			.name = "org.freedesktop.ScreenSaver",
+			.path = "/ScreenSaver",
+			.uninhibit = "UnInhibit",
+		},
+	[FREEDESKTOP_PM] =
+		{
+			.name = "org.freedesktop.PowerManagement.Inhibit",
+			.path = "/org/freedesktop/PowerManagement",
+			.uninhibit = "UnInhibit",
+		},
+	[MATE_SM] =
+		{
+			.name = "org.mate.SessionManager",
+			.path = "/org/mate/SessionManager",
+			.uninhibit = "Uninhibit",
+		},
+	[GNOME_SM] =
+		{
+			.name = "org.gnome.SessionManager",
+			.path = "/org/gnome/SessionManager",
+			.uninhibit = "Uninhibit",
+		},
 };
 
 static const size_t num_services =
@@ -92,7 +96,7 @@ struct dbus_sleep_info *dbus_sleep_info_create(void)
 	info->c = dbus_bus_get_private(DBUS_BUS_SESSION, &err);
 	if (!info->c) {
 		blog(LOG_ERROR, "Could not create dbus connection: %s",
-				err.message);
+		     err.message);
 		bfree(info);
 		return NULL;
 	}
@@ -105,7 +109,7 @@ struct dbus_sleep_info *dbus_sleep_info_create(void)
 
 		if (dbus_bus_name_has_owner(info->c, service->name, NULL)) {
 			blog(LOG_DEBUG, "Found dbus service: %s",
-					service->name);
+			     service->name);
 			info->service = service;
 			info->type = (enum service_type)i;
 			return info;
@@ -117,7 +121,7 @@ struct dbus_sleep_info *dbus_sleep_info_create(void)
 }
 
 void dbus_inhibit_sleep(struct dbus_sleep_info *info, const char *reason,
-		bool active)
+			bool active)
 {
 	DBusMessage *reply;
 	const char *method;
@@ -132,8 +136,9 @@ void dbus_inhibit_sleep(struct dbus_sleep_info *info, const char *reason,
 
 		if (reply) {
 			success = dbus_message_get_args(reply, NULL,
-					DBUS_TYPE_UINT32, &info->id,
-					DBUS_TYPE_INVALID);
+							DBUS_TYPE_UINT32,
+							&info->id,
+							DBUS_TYPE_INVALID);
 			if (!success)
 				info->id = 0;
 			dbus_message_unref(reply);
@@ -146,7 +151,8 @@ void dbus_inhibit_sleep(struct dbus_sleep_info *info, const char *reason,
 	method = active ? "Inhibit" : info->service->uninhibit;
 
 	reply = dbus_message_new_method_call(info->service->name,
-			info->service->path, info->service->name, method);
+					     info->service->path,
+					     info->service->name, method);
 	if (reply == NULL) {
 		blog(LOG_ERROR, "dbus_message_new_method_call failed");
 		return;
@@ -162,31 +168,28 @@ void dbus_inhibit_sleep(struct dbus_sleep_info *info, const char *reason,
 		switch (info->type) {
 		case MATE_SM:
 		case GNOME_SM:
-			success = dbus_message_append_args(reply,
-					DBUS_TYPE_STRING, &program,
-					DBUS_TYPE_UINT32, &xid,
-					DBUS_TYPE_STRING, &reason,
-					DBUS_TYPE_UINT32, &flags,
-					DBUS_TYPE_INVALID);
+			success = dbus_message_append_args(
+				reply, DBUS_TYPE_STRING, &program,
+				DBUS_TYPE_UINT32, &xid, DBUS_TYPE_STRING,
+				&reason, DBUS_TYPE_UINT32, &flags,
+				DBUS_TYPE_INVALID);
 			break;
 		default:
-			success = dbus_message_append_args(reply,
-					DBUS_TYPE_STRING, &program,
-					DBUS_TYPE_STRING, &reason,
-					DBUS_TYPE_INVALID);
+			success = dbus_message_append_args(
+				reply, DBUS_TYPE_STRING, &program,
+				DBUS_TYPE_STRING, &reason, DBUS_TYPE_INVALID);
 		}
 
 		if (success) {
-			success = dbus_connection_send_with_reply(info->c,
-					reply, &info->pending, -1);
+			success = dbus_connection_send_with_reply(
+				info->c, reply, &info->pending, -1);
 			if (!success)
 				info->pending = NULL;
 		}
 	} else {
 		assert(info->id != 0);
-		success = dbus_message_append_args(reply,
-				DBUS_TYPE_UINT32, &info->id,
-				DBUS_TYPE_INVALID);
+		success = dbus_message_append_args(
+			reply, DBUS_TYPE_UINT32, &info->id, DBUS_TYPE_INVALID);
 		if (success)
 			success = dbus_connection_send(info->c, reply, NULL);
 		if (!success)

@@ -16,31 +16,31 @@ class OBSAdvAudioCtrl : public QObject {
 	Q_OBJECT
 
 private:
-	OBSSource              source;
+	OBSSource source;
 
-	QPointer<QWidget>      forceMonoContainer;
-	QPointer<QWidget>      mixerContainer;
-	QPointer<QWidget>      balanceContainer;
+	QPointer<QWidget> forceMonoContainer;
+	QPointer<QWidget> mixerContainer;
+	QPointer<QWidget> balanceContainer;
 
-	QPointer<QLabel>       nameLabel;
+	QPointer<QLabel> nameLabel;
 	QPointer<QDoubleSpinBox> volume;
-	QPointer<QCheckBox>    forceMono;
-	QPointer<BalanceSlider>balance;
-	QPointer<QLabel>       labelL;
-	QPointer<QLabel>       labelR;
-	QPointer<QSpinBox>     syncOffset;
-	QPointer<QComboBox>    monitoringType;
-	QPointer<QCheckBox>    mixer1;
-	QPointer<QCheckBox>    mixer2;
-	QPointer<QCheckBox>    mixer3;
-	QPointer<QCheckBox>    mixer4;
-	QPointer<QCheckBox>    mixer5;
-	QPointer<QCheckBox>    mixer6;
+	QPointer<QCheckBox> forceMono;
+	QPointer<BalanceSlider> balance;
+	QPointer<QLabel> labelL;
+	QPointer<QLabel> labelR;
+	QPointer<QSpinBox> syncOffset;
+	QPointer<QComboBox> monitoringType;
+	QPointer<QCheckBox> mixer1;
+	QPointer<QCheckBox> mixer2;
+	QPointer<QCheckBox> mixer3;
+	QPointer<QCheckBox> mixer4;
+	QPointer<QCheckBox> mixer5;
+	QPointer<QCheckBox> mixer6;
 
-	OBSSignal              volChangedSignal;
-	OBSSignal              syncOffsetSignal;
-	OBSSignal              flagsSignal;
-	OBSSignal              mixersSignal;
+	OBSSignal volChangedSignal;
+	OBSSignal syncOffsetSignal;
+	OBSSignal flagsSignal;
+	OBSSignal mixersSignal;
 
 	static void OBSSourceFlagsChanged(void *param, calldata_t *calldata);
 	static void OBSSourceVolumeChanged(void *param, calldata_t *calldata);
@@ -51,7 +51,7 @@ public:
 	OBSAdvAudioCtrl(QGridLayout *layout, obs_source_t *source_);
 	virtual ~OBSAdvAudioCtrl();
 
-	inline obs_source_t *GetSource() const {return source;}
+	inline obs_source_t *GetSource() const { return source; }
 	void ShowAudioControl(QGridLayout *layout);
 
 public slots:

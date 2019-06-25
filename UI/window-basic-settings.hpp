@@ -40,9 +40,9 @@ class OBSHotkeyWidget;
 
 #include "ui_OBSBasicSettings.h"
 
-#define VOLUME_METER_DECAY_FAST        23.53
-#define VOLUME_METER_DECAY_MEDIUM      11.76
-#define VOLUME_METER_DECAY_SLOW        8.57
+#define VOLUME_METER_DECAY_FAST 23.53
+#define VOLUME_METER_DECAY_MEDIUM 11.76
+#define VOLUME_METER_DECAY_SLOW 8.57
 
 class SilentUpdateCheckBox : public QCheckBox {
 	Q_OBJECT
@@ -68,8 +68,7 @@ public slots:
 	}
 };
 
-class OBSFFDeleter
-{
+class OBSFFDeleter {
 public:
 	void operator()(const ff_format_desc *format)
 	{
@@ -80,27 +79,19 @@ public:
 		ff_codec_desc_free(codec);
 	}
 };
-using OBSFFCodecDesc = std::unique_ptr<const ff_codec_desc,
-		OBSFFDeleter>;
-using OBSFFFormatDesc = std::unique_ptr<const ff_format_desc,
-		OBSFFDeleter>;
+using OBSFFCodecDesc = std::unique_ptr<const ff_codec_desc, OBSFFDeleter>;
+using OBSFFFormatDesc = std::unique_ptr<const ff_format_desc, OBSFFDeleter>;
 
 class OBSBasicSettings : public QDialog {
 	Q_OBJECT
-	Q_PROPERTY(QIcon generalIcon WRITE SetGeneralIcon
-			NOTIFY SetGeneralIcon)
-	Q_PROPERTY(QIcon streamIcon WRITE SetStreamIcon
-			NOTIFY SetStreamIcon)
-	Q_PROPERTY(QIcon outputIcon WRITE SetOutputIcon
-			NOTIFY SetOutputIcon)
-	Q_PROPERTY(QIcon audioIcon WRITE SetAudioIcon
-			NOTIFY SetAudioIcon)
-	Q_PROPERTY(QIcon videoIcon WRITE SetVideoIcon
-			NOTIFY SetVideoIcon)
-	Q_PROPERTY(QIcon hotkeysIcon WRITE SetHotkeysIcon
-			NOTIFY SetHotkeysIcon)
-	Q_PROPERTY(QIcon advancedIcon WRITE SetAdvancedIcon
-			NOTIFY SetAdvancedIcon)
+	Q_PROPERTY(QIcon generalIcon WRITE SetGeneralIcon NOTIFY SetGeneralIcon)
+	Q_PROPERTY(QIcon streamIcon WRITE SetStreamIcon NOTIFY SetStreamIcon)
+	Q_PROPERTY(QIcon outputIcon WRITE SetOutputIcon NOTIFY SetOutputIcon)
+	Q_PROPERTY(QIcon audioIcon WRITE SetAudioIcon NOTIFY SetAudioIcon)
+	Q_PROPERTY(QIcon videoIcon WRITE SetVideoIcon NOTIFY SetVideoIcon)
+	Q_PROPERTY(QIcon hotkeysIcon WRITE SetHotkeysIcon NOTIFY SetHotkeysIcon)
+	Q_PROPERTY(
+		QIcon advancedIcon WRITE SetAdvancedIcon NOTIFY SetAdvancedIcon)
 
 private:
 	OBSBasic *main;
@@ -116,7 +107,7 @@ private:
 	bool videoChanged = false;
 	bool hotkeysChanged = false;
 	bool advancedChanged = false;
-	int  pageIndex = 0;
+	int pageIndex = 0;
 	bool loading = true;
 	std::string savedTheme;
 
@@ -141,9 +132,9 @@ private:
 	QString curAdvRecordEncoder;
 
 	using AudioSource_t =
-		std::tuple<OBSWeakSource,
-			QPointer<QCheckBox>, QPointer<QSpinBox>,
-			QPointer<QCheckBox>, QPointer<QSpinBox>>;
+		std::tuple<OBSWeakSource, QPointer<QCheckBox>,
+			   QPointer<QSpinBox>, QPointer<QCheckBox>,
+			   QPointer<QSpinBox>>;
 	std::vector<AudioSource_t> audioSources;
 	std::vector<OBSSignal> audioSourceSignals;
 	OBSSignal sourceCreated;
@@ -157,24 +148,24 @@ private:
 	uint32_t outputCY = 0;
 
 	void SaveCombo(QComboBox *widget, const char *section,
-			const char *value);
+		       const char *value);
 	void SaveComboData(QComboBox *widget, const char *section,
-			const char *value);
+			   const char *value);
 	void SaveCheckBox(QAbstractButton *widget, const char *section,
-			const char *value, bool invert = false);
+			  const char *value, bool invert = false);
 	void SaveEdit(QLineEdit *widget, const char *section,
-			const char *value);
+		      const char *value);
 	void SaveSpinBox(QSpinBox *widget, const char *section,
-			const char *value);
+			 const char *value);
 	void SaveFormat(QComboBox *combo);
 	void SaveEncoder(QComboBox *combo, const char *section,
-			const char *value);
+			 const char *value);
 
 	inline bool Changed() const
 	{
 		return generalChanged || outputsChanged || stream1Changed ||
-			audioChanged || videoChanged || advancedChanged ||
-			hotkeysChanged;
+		       audioChanged || videoChanged || advancedChanged ||
+		       hotkeysChanged;
 	}
 
 	inline void EnableApplyButton(bool en)
@@ -187,10 +178,10 @@ private:
 		generalChanged = false;
 		stream1Changed = false;
 		outputsChanged = false;
-		audioChanged   = false;
-		videoChanged   = false;
+		audioChanged = false;
+		videoChanged = false;
 		hotkeysChanged = false;
-		advancedChanged= false;
+		advancedChanged = false;
 		EnableApplyButton(false);
 	}
 
@@ -214,12 +205,14 @@ private:
 	void LoadOutputSettings();
 	void LoadAudioSettings();
 	void LoadVideoSettings();
-	void LoadHotkeySettings(obs_hotkey_id ignoreKey=OBS_INVALID_HOTKEY_ID);
+	void
+	LoadHotkeySettings(obs_hotkey_id ignoreKey = OBS_INVALID_HOTKEY_ID);
 	void LoadAdvancedSettings();
 	void LoadSettings(bool changedOnly);
 
 	OBSPropertiesView *CreateEncoderPropertyView(const char *encoder,
-			const char *path, bool changed = false);
+						     const char *path,
+						     bool changed = false);
 
 	/* general */
 	void LoadLanguageList();
@@ -241,8 +234,8 @@ private slots:
 	void on_disconnectAccount_clicked();
 	void on_useStreamKey_clicked();
 	void on_useAuth_toggled();
-private:
 
+private:
 	/* output */
 	void LoadSimpleOutputSettings();
 	void LoadAdvOutputStreamingSettings();
@@ -251,9 +244,9 @@ private:
 	void LoadAdvOutputRecordingEncoderProperties();
 	void LoadAdvOutputFFmpegSettings();
 	void LoadAdvOutputAudioSettings();
-	void SetAdvOutputFFmpegEnablement(
-		ff_codec_type encoderType, bool enabled,
-		bool enableEncode = false);
+	void SetAdvOutputFFmpegEnablement(ff_codec_type encoderType,
+					  bool enabled,
+					  bool enableEncode = false);
 
 	/* audio */
 	void LoadListValues(QComboBox *widget, obs_property_t *prop, int index);
@@ -323,7 +316,7 @@ private slots:
 	void VideoChangedResolution();
 	void VideoChangedRestart();
 	void HotkeysChanged();
-	void ReloadHotkeys(obs_hotkey_id ignoreKey=OBS_INVALID_HOTKEY_ID);
+	void ReloadHotkeys(obs_hotkey_id ignoreKey = OBS_INVALID_HOTKEY_ID);
 	void AdvancedChanged();
 	void AdvancedChangedRestart();
 

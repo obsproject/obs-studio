@@ -22,16 +22,14 @@ static inline char *decode_str(const char *src)
 	return str.array;
 }
 
-extern void build_window_strings(const char *str,
-		char **class,
-		char **title,
-		char **exe)
+extern void build_window_strings(const char *str, char **class, char **title,
+				 char **exe)
 {
 	char **strlist;
 
 	*class = NULL;
 	*title = NULL;
-	*exe   = NULL;
+	*exe = NULL;
 
 	if (!str) {
 		return;
@@ -42,7 +40,7 @@ extern void build_window_strings(const char *str,
 	if (strlist && strlist[0] && strlist[1] && strlist[2]) {
 		*title = decode_str(strlist[0]);
 		*class = decode_str(strlist[1]);
-		*exe   = decode_str(strlist[2]);
+		*exe = decode_str(strlist[2]);
 	}
 
 	strlist_free(strlist);
@@ -57,24 +55,24 @@ static HMODULE kernel32(void)
 }
 
 static inline HANDLE open_process(DWORD desired_access, bool inherit_handle,
-		DWORD process_id)
+				  DWORD process_id)
 {
-	static HANDLE (WINAPI *open_process_proc)(DWORD, BOOL, DWORD) = NULL;
+	static HANDLE(WINAPI * open_process_proc)(DWORD, BOOL, DWORD) = NULL;
 	if (!open_process_proc)
-		open_process_proc = get_obfuscated_func(kernel32(),
-				"B}caZyah`~q", 0x2D5BEBAF6DDULL);
+		open_process_proc = get_obfuscated_func(
+			kernel32(), "B}caZyah`~q", 0x2D5BEBAF6DDULL);
 
 	return open_process_proc(desired_access, inherit_handle, process_id);
 }
 
 bool get_window_exe(struct dstr *name, HWND window)
 {
-	wchar_t     wname[MAX_PATH];
-	struct dstr temp    = {0};
-	bool        success = false;
-	HANDLE      process = NULL;
-	char        *slash;
-	DWORD       id;
+	wchar_t wname[MAX_PATH];
+	struct dstr temp = {0};
+	bool success = false;
+	HANDLE process = NULL;
+	char *slash;
+	DWORD id;
 
 	GetWindowThreadProcessId(window, &id);
 	if (id == GetCurrentProcessId())
@@ -92,7 +90,7 @@ bool get_window_exe(struct dstr *name, HWND window)
 	if (!slash)
 		goto fail;
 
-	dstr_copy(name, slash+1);
+	dstr_copy(name, slash + 1);
 	success = true;
 
 fail:
@@ -113,8 +111,8 @@ void get_window_title(struct dstr *name, HWND hwnd)
 	if (!len)
 		return;
 
-	temp = malloc(sizeof(wchar_t) * (len+1));
-	if (GetWindowTextW(hwnd, temp, len+1))
+	temp = malloc(sizeof(wchar_t) * (len + 1));
+	if (GetWindowTextW(hwnd, temp, len + 1))
 		dstr_from_wcs(name, temp);
 	free(temp);
 }
@@ -136,7 +134,7 @@ static const char *internal_microsoft_exes[] = {
 	"winstore.app",
 	"searchui",
 	"lockapp",
-	NULL
+	NULL,
 };
 
 static bool is_microsoft_internal_window_exe(const char *exe)
@@ -154,11 +152,11 @@ static bool is_microsoft_internal_window_exe(const char *exe)
 
 static void add_window(obs_property_t *p, HWND hwnd, add_window_cb callback)
 {
-	struct dstr class   = {0};
-	struct dstr title   = {0};
-	struct dstr exe     = {0};
+	struct dstr class = {0};
+	struct dstr title = {0};
+	struct dstr exe = {0};
 	struct dstr encoded = {0};
-	struct dstr desc    = {0};
+	struct dstr desc = {0};
 
 	if (!get_window_exe(&exe, hwnd))
 		return;
@@ -207,14 +205,14 @@ static void add_window(obs_property_t *p, HWND hwnd, add_window_cb callback)
 static bool check_window_valid(HWND window, enum window_search_mode mode)
 {
 	DWORD styles, ex_styles;
-	RECT  rect;
+	RECT rect;
 
 	if (!IsWindowVisible(window) ||
 	    (mode == EXCLUDE_MINIMIZED && IsIconic(window)))
 		return false;
 
 	GetClientRect(window, &rect);
-	styles    = (DWORD)GetWindowLongPtr(window, GWL_STYLE);
+	styles = (DWORD)GetWindowLongPtr(window, GWL_STYLE);
 	ex_styles = (DWORD)GetWindowLongPtr(window, GWL_EXSTYLE);
 
 	if (ex_styles & WS_EX_TOOLWINDOW)
@@ -259,8 +257,8 @@ HWND get_uwp_actual_window(HWND parent)
 	return NULL;
 }
 
-static HWND next_window(HWND window, enum window_search_mode mode,
-		HWND *parent, bool use_findwindowex)
+static HWND next_window(HWND window, enum window_search_mode mode, HWND *parent,
+			bool use_findwindowex)
 {
 	if (*parent) {
 		window = *parent;
@@ -270,7 +268,7 @@ static HWND next_window(HWND window, enum window_search_mode mode,
 	while (true) {
 		if (use_findwindowex)
 			window = FindWindowEx(GetDesktopWindow(), window, NULL,
-					NULL);
+					      NULL);
 		else
 			window = GetNextWindow(window, GW_HWNDNEXT);
 
@@ -290,7 +288,7 @@ static HWND next_window(HWND window, enum window_search_mode mode,
 }
 
 static HWND first_window(enum window_search_mode mode, HWND *parent,
-		bool *use_findwindowex)
+			 bool *use_findwindowex)
 {
 	HWND window = FindWindowEx(GetDesktopWindow(), NULL, NULL, NULL);
 
@@ -312,7 +310,7 @@ static HWND first_window(enum window_search_mode mode, HWND *parent,
 			window = GetWindow(GetDesktopWindow(), GW_CHILD);
 			if (!check_window_valid(window, mode))
 				window = next_window(window, mode, parent,
-						*use_findwindowex);
+						     *use_findwindowex);
 		}
 	}
 
@@ -328,7 +326,7 @@ static HWND first_window(enum window_search_mode mode, HWND *parent,
 }
 
 void fill_window_list(obs_property_t *p, enum window_search_mode mode,
-		add_window_cb callback)
+		      add_window_cb callback)
 {
 	HWND parent;
 	bool use_findwindowex = false;
@@ -341,16 +339,13 @@ void fill_window_list(obs_property_t *p, enum window_search_mode mode,
 	}
 }
 
-static int window_rating(HWND window,
-		enum window_priority priority,
-		const char *class,
-		const char *title,
-		const char *exe,
-		bool uwp_window)
+static int window_rating(HWND window, enum window_priority priority,
+			 const char *class, const char *title, const char *exe,
+			 bool uwp_window)
 {
 	struct dstr cur_class = {0};
 	struct dstr cur_title = {0};
-	struct dstr cur_exe   = {0};
+	struct dstr cur_exe = {0};
 	int val = 0x7FFFFFFF;
 
 	if (!get_window_exe(&cur_exe, window))
@@ -388,27 +383,24 @@ static int window_rating(HWND window,
 	return val;
 }
 
-HWND find_window(enum window_search_mode mode,
-		enum window_priority priority,
-		const char *class,
-		const char *title,
-		const char *exe)
+HWND find_window(enum window_search_mode mode, enum window_priority priority,
+		 const char *class, const char *title, const char *exe)
 {
 	HWND parent;
 	bool use_findwindowex = false;
 
-	HWND window      = first_window(mode, &parent, &use_findwindowex);
+	HWND window = first_window(mode, &parent, &use_findwindowex);
 	HWND best_window = NULL;
-	int  best_rating = 0x7FFFFFFF;
+	int best_rating = 0x7FFFFFFF;
 
 	if (!class)
 		return NULL;
 
-	bool uwp_window  = strcmp(class, "Windows.UI.Core.CoreWindow") == 0;
+	bool uwp_window = strcmp(class, "Windows.UI.Core.CoreWindow") == 0;
 
 	while (window) {
 		int rating = window_rating(window, priority, class, title, exe,
-				uwp_window);
+					   uwp_window);
 		if (rating < best_rating) {
 			best_rating = rating;
 			best_window = window;

@@ -24,4 +24,4 @@ typedef const char *decklink_string_t;
 
 #include <string>
 
-bool DeckLinkStringToStdString(decklink_string_t input, std::string& output);
+bool DeckLinkStringToStdString(decklink_string_t input, std::string &output);

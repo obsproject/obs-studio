@@ -72,7 +72,7 @@ private:
 	OBSSignal renameSignal;
 	OBSSignal removeSignal;
 
-	virtual void paintEvent(QPaintEvent* event) override;
+	virtual void paintEvent(QPaintEvent *event) override;
 
 private slots:
 	void Clear();
@@ -123,7 +123,8 @@ public:
 	~SourceTreeModel();
 
 	virtual int rowCount(const QModelIndex &parent) const override;
-	virtual QVariant data(const QModelIndex &index, int role) const override;
+	virtual QVariant data(const QModelIndex &index,
+			      int role) const override;
 
 	virtual Qt::ItemFlags flags(const QModelIndex &index) const override;
 	virtual Qt::DropActions supportedDropActions() const override;
@@ -161,12 +162,12 @@ public:
 
 	explicit SourceTree(QWidget *parent = nullptr);
 
-	inline bool IgnoreReorder() const {return ignoreReorder;}
-	inline void Clear() {GetStm()->Clear();}
+	inline bool IgnoreReorder() const { return ignoreReorder; }
+	inline void Clear() { GetStm()->Clear(); }
 
-	inline void Add(obs_sceneitem_t *item) {GetStm()->Add(item);}
-	inline OBSSceneItem Get(int idx) {return GetStm()->Get(idx);}
-	inline QString GetNewGroupName() {return GetStm()->GetNewGroupName();}
+	inline void Add(obs_sceneitem_t *item) { GetStm()->Add(item); }
+	inline OBSSceneItem Get(int idx) { return GetStm()->Get(idx); }
+	inline QString GetNewGroupName() { return GetStm()->GetNewGroupName(); }
 
 	void SelectItem(obs_sceneitem_t *sceneitem, bool select);
 
@@ -175,7 +176,7 @@ public:
 	bool GroupedItemsSelected() const;
 
 public slots:
-	inline void ReorderItems() {GetStm()->ReorderItems();}
+	inline void ReorderItems() { GetStm()->ReorderItems(); }
 	void Remove(OBSSceneItem item);
 	void GroupSelectedItems();
 	void UngroupSelectedGroups();
@@ -189,5 +190,7 @@ protected:
 	virtual void leaveEvent(QEvent *event) override;
 	virtual void paintEvent(QPaintEvent *event) override;
 
-	virtual void selectionChanged(const QItemSelection &selected, const QItemSelection &deselected) override;
+	virtual void
+	selectionChanged(const QItemSelection &selected,
+			 const QItemSelection &deselected) override;
 };

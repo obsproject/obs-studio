@@ -12,17 +12,16 @@
 
 #define EXTRA_BUFFERS 5
 
-#define do_log(level, format, ...) \
+#define do_log(level, format, ...)               \
 	blog(level, "[jim-nvenc: '%s'] " format, \
-			obs_encoder_get_name(enc->encoder), ##__VA_ARGS__)
+	     obs_encoder_get_name(enc->encoder), ##__VA_ARGS__)
 
-#define error(format, ...) do_log(LOG_ERROR,   format, ##__VA_ARGS__)
-#define warn(format, ...)  do_log(LOG_WARNING, format, ##__VA_ARGS__)
-#define info(format, ...)  do_log(LOG_INFO,    format, ##__VA_ARGS__)
-#define debug(format, ...) do_log(LOG_DEBUG,   format, ##__VA_ARGS__)
+#define error(format, ...) do_log(LOG_ERROR, format, ##__VA_ARGS__)
+#define warn(format, ...) do_log(LOG_WARNING, format, ##__VA_ARGS__)
+#define info(format, ...) do_log(LOG_INFO, format, ##__VA_ARGS__)
+#define debug(format, ...) do_log(LOG_DEBUG, format, ##__VA_ARGS__)
 
-#define error_hr(msg) \
-	error("%s: %s: 0x%08lX", __FUNCTION__, msg, (uint32_t)hr);
+#define error_hr(msg) error("%s: %s: 0x%08lX", __FUNCTION__, msg, (uint32_t)hr);
 
 struct nv_bitstream;
 struct nv_texture;
@@ -39,57 +38,57 @@ struct handle_tex {
 struct nvenc_data {
 	obs_encoder_t *encoder;
 
-	void                     *session;
+	void *session;
 	NV_ENC_INITIALIZE_PARAMS params;
-	NV_ENC_CONFIG            config;
-	size_t                   buf_count;
-	size_t                   output_delay;
-	size_t                   buffers_queued;
-	size_t                   next_bitstream;
-	size_t                   cur_bitstream;
-	bool                     encode_started;
-	bool                     first_packet;
-	bool                     can_change_bitrate;
-	bool                     bframes;
+	NV_ENC_CONFIG config;
+	size_t buf_count;
+	size_t output_delay;
+	size_t buffers_queued;
+	size_t next_bitstream;
+	size_t cur_bitstream;
+	bool encode_started;
+	bool first_packet;
+	bool can_change_bitrate;
+	bool bframes;
 
 	DARRAY(struct nv_bitstream) bitstreams;
-	DARRAY(struct nv_texture)   textures;
-	DARRAY(struct handle_tex)   input_textures;
-	struct circlebuf            dts_list;
+	DARRAY(struct nv_texture) textures;
+	DARRAY(struct handle_tex) input_textures;
+	struct circlebuf dts_list;
 
 	DARRAY(uint8_t) packet_data;
-	int64_t         packet_pts;
-	bool            packet_keyframe;
+	int64_t packet_pts;
+	bool packet_keyframe;
 
-	ID3D11Device        *device;
+	ID3D11Device *device;
 	ID3D11DeviceContext *context;
 
 	uint32_t cx;
 	uint32_t cy;
 
 	uint8_t *header;
-	size_t  header_size;
+	size_t header_size;
 
 	uint8_t *sei;
-	size_t  sei_size;
+	size_t sei_size;
 };
 
 /* ------------------------------------------------------------------------- */
 /* Bitstream Buffer                                                          */
 
 struct nv_bitstream {
-	void   *ptr;
+	void *ptr;
 	HANDLE event;
 };
 
 static inline bool nv_failed(struct nvenc_data *enc, NVENCSTATUS err,
-		const char *func, const char *call)
+			     const char *func, const char *call)
 {
 	if (err == NV_ENC_SUCCESS)
 		return false;
 
 	error("%s: %s failed: %d (%s)", func, call, (int)err,
-			nv_error_name(err));
+	      nv_error_name(err));
 	return true;
 }
 
@@ -97,7 +96,8 @@ static inline bool nv_failed(struct nvenc_data *enc, NVENCSTATUS err,
 
 static bool nv_bitstream_init(struct nvenc_data *enc, struct nv_bitstream *bs)
 {
-	NV_ENC_CREATE_BITSTREAM_BUFFER buf = {NV_ENC_CREATE_BITSTREAM_BUFFER_VER};
+	NV_ENC_CREATE_BITSTREAM_BUFFER buf = {
+		NV_ENC_CREATE_BITSTREAM_BUFFER_VER};
 	NV_ENC_EVENT_PARAMS params = {NV_ENC_EVENT_PARAMS_VER};
 	HANDLE event = NULL;
 
@@ -126,7 +126,7 @@ fail:
 	}
 	if (buf.bitstreamBuffer) {
 		nv.nvEncDestroyBitstreamBuffer(enc->session,
-				buf.bitstreamBuffer);
+					       buf.bitstreamBuffer);
 	}
 	return false;
 }
@@ -147,9 +147,9 @@ static void nv_bitstream_free(struct nvenc_data *enc, struct nv_bitstream *bs)
 /* Texture Resource                                                          */
 
 struct nv_texture {
-	void            *res;
+	void *res;
 	ID3D11Texture2D *tex;
-	void            *mapped_res;
+	void *mapped_res;
 };
 
 static bool nv_texture_init(struct nvenc_data *enc, struct nv_texture *nvtex)
@@ -159,13 +159,13 @@ static bool nv_texture_init(struct nvenc_data *enc, struct nv_texture *nvtex)
 	HRESULT hr;
 
 	D3D11_TEXTURE2D_DESC desc = {0};
-	desc.Width                = enc->cx;
-	desc.Height               = enc->cy;
-	desc.MipLevels            = 1;
-	desc.ArraySize            = 1;
-	desc.Format               = DXGI_FORMAT_NV12;
-	desc.SampleDesc.Count     = 1;
-	desc.BindFlags            = D3D11_BIND_RENDER_TARGET;
+	desc.Width = enc->cx;
+	desc.Height = enc->cy;
+	desc.MipLevels = 1;
+	desc.ArraySize = 1;
+	desc.Format = DXGI_FORMAT_NV12;
+	desc.SampleDesc.Count = 1;
+	desc.BindFlags = D3D11_BIND_RENDER_TARGET;
 
 	hr = device->lpVtbl->CreateTexture2D(device, &desc, NULL, &tex);
 	if (FAILED(hr)) {
@@ -176,11 +176,11 @@ static bool nv_texture_init(struct nvenc_data *enc, struct nv_texture *nvtex)
 	tex->lpVtbl->SetEvictionPriority(tex, DXGI_RESOURCE_PRIORITY_MAXIMUM);
 
 	NV_ENC_REGISTER_RESOURCE res = {NV_ENC_REGISTER_RESOURCE_VER};
-	res.resourceType             = NV_ENC_INPUT_RESOURCE_TYPE_DIRECTX;
-	res.resourceToRegister       = tex;
-	res.width                    = enc->cx;
-	res.height                   = enc->cy;
-	res.bufferFormat             = NV_ENC_BUFFER_FORMAT_NV12;
+	res.resourceType = NV_ENC_INPUT_RESOURCE_TYPE_DIRECTX;
+	res.resourceToRegister = tex;
+	res.width = enc->cx;
+	res.height = enc->cy;
+	res.bufferFormat = NV_ENC_BUFFER_FORMAT_NV12;
 
 	if (NV_FAILED(nv.nvEncRegisterResource(enc->session, &res))) {
 		tex->lpVtbl->Release(tex);
@@ -197,7 +197,7 @@ static void nv_texture_free(struct nvenc_data *enc, struct nv_texture *nvtex)
 	if (nvtex->res) {
 		if (nvtex->mapped_res) {
 			nv.nvEncUnmapInputResource(enc->session,
-					nvtex->mapped_res);
+						   nvtex->mapped_res);
 		}
 		nv.nvEncUnregisterResource(enc->session, nvtex->res);
 		nvtex->tex->lpVtbl->Release(nvtex->tex);
@@ -235,11 +235,11 @@ static bool nvenc_update(void *data, obs_data_t *settings)
 		int bitrate = (int)obs_data_get_int(settings, "bitrate");
 
 		enc->config.rcParams.averageBitRate = bitrate * 1000;
-		enc->config.rcParams.maxBitRate     = bitrate * 1000;
+		enc->config.rcParams.maxBitRate = bitrate * 1000;
 
 		NV_ENC_RECONFIGURE_PARAMS params = {0};
-		params.version                   = NV_ENC_RECONFIGURE_PARAMS_VER;
-		params.reInitEncodeParams        = enc->params;
+		params.version = NV_ENC_RECONFIGURE_PARAMS_VER;
+		params.reInitEncodeParams = enc->params;
 
 		if (FAILED(nv.nvEncReconfigureEncoder(enc->session, &params))) {
 			return false;
@@ -261,28 +261,28 @@ static HANDLE get_lib(struct nvenc_data *enc, const char *lib)
 	return mod;
 }
 
-typedef HRESULT (WINAPI *CREATEDXGIFACTORY1PROC)(REFIID, void **);
+typedef HRESULT(WINAPI *CREATEDXGIFACTORY1PROC)(REFIID, void **);
 
 static bool init_d3d11(struct nvenc_data *enc, obs_data_t *settings)
 {
-	HMODULE                 dxgi  = get_lib(enc, "DXGI.dll");
-	HMODULE                 d3d11 = get_lib(enc, "D3D11.dll");
-	CREATEDXGIFACTORY1PROC  create_dxgi;
+	HMODULE dxgi = get_lib(enc, "DXGI.dll");
+	HMODULE d3d11 = get_lib(enc, "D3D11.dll");
+	CREATEDXGIFACTORY1PROC create_dxgi;
 	PFN_D3D11_CREATE_DEVICE create_device;
-	IDXGIFactory1           *factory;
-	IDXGIAdapter            *adapter;
-	ID3D11Device            *device;
-	ID3D11DeviceContext     *context;
-	HRESULT                 hr;
+	IDXGIFactory1 *factory;
+	IDXGIAdapter *adapter;
+	ID3D11Device *device;
+	ID3D11DeviceContext *context;
+	HRESULT hr;
 
 	if (!dxgi || !d3d11) {
 		return false;
 	}
 
-	create_dxgi = (CREATEDXGIFACTORY1PROC)GetProcAddress(dxgi,
-			"CreateDXGIFactory1");
-	create_device = (PFN_D3D11_CREATE_DEVICE)GetProcAddress(d3d11,
-			"D3D11CreateDevice");
+	create_dxgi = (CREATEDXGIFACTORY1PROC)GetProcAddress(
+		dxgi, "CreateDXGIFactory1");
+	create_device = (PFN_D3D11_CREATE_DEVICE)GetProcAddress(
+		d3d11, "D3D11CreateDevice");
 
 	if (!create_dxgi || !create_device) {
 		error("Failed to load D3D11/DXGI procedures");
@@ -302,8 +302,8 @@ static bool init_d3d11(struct nvenc_data *enc, obs_data_t *settings)
 		return false;
 	}
 
-	hr = create_device(adapter, D3D_DRIVER_TYPE_UNKNOWN, NULL, 0,
-			NULL, 0, D3D11_SDK_VERSION, &device, NULL, &context);
+	hr = create_device(adapter, D3D_DRIVER_TYPE_UNKNOWN, NULL, 0, NULL, 0,
+			   D3D11_SDK_VERSION, &device, NULL, &context);
 	adapter->lpVtbl->Release(adapter);
 	if (FAILED(hr)) {
 		error_hr("D3D11CreateDevice failed");
@@ -317,8 +317,8 @@ static bool init_d3d11(struct nvenc_data *enc, obs_data_t *settings)
 
 static bool init_session(struct nvenc_data *enc)
 {
-	NV_ENC_OPEN_ENCODE_SESSION_EX_PARAMS params =
-			{NV_ENC_OPEN_ENCODE_SESSION_EX_PARAMS_VER};
+	NV_ENC_OPEN_ENCODE_SESSION_EX_PARAMS params = {
+		NV_ENC_OPEN_ENCODE_SESSION_EX_PARAMS_VER};
 	params.device = enc->device;
 	params.deviceType = NV_ENC_DEVICE_TYPE_DIRECTX;
 	params.apiVersion = NVENCAPI_VERSION;
@@ -384,19 +384,19 @@ static bool init_encoder(struct nvenc_data *enc, obs_data_t *settings)
 	}
 
 	if (astrcmpi(rc, "lossless") == 0) {
-		nv_preset = hp
-			? NV_ENC_PRESET_LOSSLESS_HP_GUID
-			: NV_ENC_PRESET_LOSSLESS_DEFAULT_GUID;
+		nv_preset = hp ? NV_ENC_PRESET_LOSSLESS_HP_GUID
+			       : NV_ENC_PRESET_LOSSLESS_DEFAULT_GUID;
 	}
 
 	/* -------------------------- */
 	/* get preset default config  */
 
-	NV_ENC_PRESET_CONFIG preset_config =
-			{NV_ENC_PRESET_CONFIG_VER, {NV_ENC_CONFIG_VER}};
+	NV_ENC_PRESET_CONFIG preset_config = {NV_ENC_PRESET_CONFIG_VER,
+					      {NV_ENC_CONFIG_VER}};
 
 	err = nv.nvEncGetEncodePresetConfig(enc->session,
-			NV_ENC_CODEC_H264_GUID, nv_preset, &preset_config);
+					    NV_ENC_CODEC_H264_GUID, nv_preset,
+					    &preset_config);
 	if (nv_failed(enc, err, __FUNCTION__, "nvEncGetEncodePresetConfig")) {
 		return false;
 	}
@@ -406,9 +406,8 @@ static bool init_encoder(struct nvenc_data *enc, obs_data_t *settings)
 
 	enc->config = preset_config.presetCfg;
 
-	uint32_t gop_size = (keyint_sec)
-		? keyint_sec * voi->fps_num / voi->fps_den
-		: 250;
+	uint32_t gop_size =
+		(keyint_sec) ? keyint_sec * voi->fps_num / voi->fps_den : 250;
 
 	NV_ENC_INITIALIZE_PARAMS *params = &enc->params;
 	NV_ENC_CONFIG *config = &enc->config;
@@ -461,9 +460,8 @@ static bool init_encoder(struct nvenc_data *enc, obs_data_t *settings)
 	enc->can_change_bitrate =
 		nv_get_cap(enc, NV_ENC_CAPS_SUPPORT_DYN_BITRATE_CHANGE);
 
-	config->rcParams.rateControlMode = twopass
-		? NV_ENC_PARAMS_RC_VBR_HQ
-		: NV_ENC_PARAMS_RC_VBR;
+	config->rcParams.rateControlMode = twopass ? NV_ENC_PARAMS_RC_VBR_HQ
+						   : NV_ENC_PARAMS_RC_VBR;
 
 	if (astrcmpi(rc, "cqp") == 0 || astrcmpi(rc, "lossless") == 0) {
 		if (astrcmpi(rc, "lossless") == 0)
@@ -480,9 +478,9 @@ static bool init_encoder(struct nvenc_data *enc, obs_data_t *settings)
 
 	} else if (astrcmpi(rc, "vbr") != 0) { /* CBR by default */
 		h264_config->outputBufferingPeriodSEI = 1;
-		config->rcParams.rateControlMode = twopass
-			? NV_ENC_PARAMS_RC_2_PASS_QUALITY
-			: NV_ENC_PARAMS_RC_CBR;
+		config->rcParams.rateControlMode =
+			twopass ? NV_ENC_PARAMS_RC_2_PASS_QUALITY
+				: NV_ENC_PARAMS_RC_CBR;
 	}
 
 	h264_config->outputPictureTimingSEI = 1;
@@ -508,7 +506,7 @@ static bool init_encoder(struct nvenc_data *enc, obs_data_t *settings)
 	}
 
 	enc->buf_count = config->frameIntervalP +
-		config->rcParams.lookaheadDepth + EXTRA_BUFFERS;
+			 config->rcParams.lookaheadDepth + EXTRA_BUFFERS;
 	enc->output_delay = enc->buf_count - 1;
 
 	info("settings:\n"
@@ -524,12 +522,8 @@ static bool init_encoder(struct nvenc_data *enc, obs_data_t *settings)
 	     "\tb-frames:     %d\n"
 	     "\tlookahead:    %s\n"
 	     "\tpsycho_aq:    %s\n",
-	     rc, bitrate, cqp, gop_size,
-	     preset, profile,
-	     enc->cx, enc->cy,
-	     twopass ? "true" : "false",
-	     bf,
-	     lookahead ? "true" : "false",
+	     rc, bitrate, cqp, gop_size, preset, profile, enc->cx, enc->cy,
+	     twopass ? "true" : "false", bf, lookahead ? "true" : "false",
 	     psycho_aq ? "true" : "false");
 
 	return true;
@@ -662,12 +656,13 @@ static void nvenc_destroy(void *data)
 }
 
 static ID3D11Texture2D *get_tex_from_handle(struct nvenc_data *enc,
-		uint32_t handle, IDXGIKeyedMutex **km_out)
+					    uint32_t handle,
+					    IDXGIKeyedMutex **km_out)
 {
-	ID3D11Device    *device = enc->device;
+	ID3D11Device *device = enc->device;
 	IDXGIKeyedMutex *km;
 	ID3D11Texture2D *input_tex;
-	HRESULT         hr;
+	HRESULT hr;
 
 	for (size_t i = 0; i < enc->input_textures.num; i++) {
 		struct handle_tex *ht = &enc->input_textures.array[i];
@@ -678,15 +673,16 @@ static ID3D11Texture2D *get_tex_from_handle(struct nvenc_data *enc,
 	}
 
 	hr = device->lpVtbl->OpenSharedResource(device,
-			(HANDLE)(uintptr_t)handle,
-			&IID_ID3D11Texture2D, &input_tex);
+						(HANDLE)(uintptr_t)handle,
+						&IID_ID3D11Texture2D,
+						&input_tex);
 	if (FAILED(hr)) {
 		error_hr("OpenSharedResource failed");
 		return NULL;
 	}
 
 	hr = input_tex->lpVtbl->QueryInterface(input_tex, &IID_IDXGIKeyedMutex,
-			&km);
+					       &km);
 	if (FAILED(hr)) {
 		error_hr("QueryInterface(IDXGIKeyedMutex) failed");
 		input_tex->lpVtbl->Release(input_tex);
@@ -694,7 +690,7 @@ static ID3D11Texture2D *get_tex_from_handle(struct nvenc_data *enc,
 	}
 
 	input_tex->lpVtbl->SetEvictionPriority(input_tex,
-			DXGI_RESOURCE_PRIORITY_MAXIMUM);
+					       DXGI_RESOURCE_PRIORITY_MAXIMUM);
 
 	*km_out = km;
 
@@ -717,15 +713,15 @@ static bool get_encoded_packet(struct nvenc_data *enc, bool finalize)
 	size_t count = finalize ? enc->buffers_queued : 1;
 
 	for (size_t i = 0; i < count; i++) {
-		size_t cur_bs_idx          = enc->cur_bitstream;
-		struct nv_bitstream *bs    = &enc->bitstreams.array[cur_bs_idx];
-		struct nv_texture   *nvtex = &enc->textures.array[cur_bs_idx];
+		size_t cur_bs_idx = enc->cur_bitstream;
+		struct nv_bitstream *bs = &enc->bitstreams.array[cur_bs_idx];
+		struct nv_texture *nvtex = &enc->textures.array[cur_bs_idx];
 
 		/* ---------------- */
 
 		NV_ENC_LOCK_BITSTREAM lock = {NV_ENC_LOCK_BITSTREAM_VER};
-		lock.outputBitstream       = bs->ptr;
-		lock.doNotWait             = false;
+		lock.outputBitstream = bs->ptr;
+		lock.doNotWait = false;
 
 		if (NV_FAILED(nv.nvEncLockBitstream(s, &lock))) {
 			return false;
@@ -736,19 +732,17 @@ static bool get_encoded_packet(struct nvenc_data *enc, bool finalize)
 			size_t size;
 
 			enc->first_packet = false;
-			obs_extract_avc_headers(
-					lock.bitstreamBufferPtr,
-					lock.bitstreamSizeInBytes,
-					&new_packet, &size,
-					&enc->header, &enc->header_size,
-					&enc->sei, &enc->sei_size);
+			obs_extract_avc_headers(lock.bitstreamBufferPtr,
+						lock.bitstreamSizeInBytes,
+						&new_packet, &size,
+						&enc->header, &enc->header_size,
+						&enc->sei, &enc->sei_size);
 
 			da_copy_array(enc->packet_data, new_packet, size);
 			bfree(new_packet);
 		} else {
-			da_copy_array(enc->packet_data,
-					lock.bitstreamBufferPtr,
-					lock.bitstreamSizeInBytes);
+			da_copy_array(enc->packet_data, lock.bitstreamBufferPtr,
+				      lock.bitstreamSizeInBytes);
 		}
 
 		enc->packet_pts = (int64_t)lock.outputTimeStamp;
@@ -781,18 +775,19 @@ static bool get_encoded_packet(struct nvenc_data *enc, bool finalize)
 }
 
 static bool nvenc_encode_tex(void *data, uint32_t handle, int64_t pts,
-		uint64_t lock_key, uint64_t *next_key,
-		struct encoder_packet *packet, bool *received_packet)
+			     uint64_t lock_key, uint64_t *next_key,
+			     struct encoder_packet *packet,
+			     bool *received_packet)
 {
-	struct nvenc_data   *enc     = data;
-	ID3D11Device        *device  = enc->device;
+	struct nvenc_data *enc = data;
+	ID3D11Device *device = enc->device;
 	ID3D11DeviceContext *context = enc->context;
-	ID3D11Texture2D     *input_tex;
-	ID3D11Texture2D     *output_tex;
-	IDXGIKeyedMutex     *km;
-	struct nv_texture   *nvtex;
+	ID3D11Texture2D *input_tex;
+	ID3D11Texture2D *output_tex;
+	IDXGIKeyedMutex *km;
+	struct nv_texture *nvtex;
 	struct nv_bitstream *bs;
-	NVENCSTATUS         err;
+	NVENCSTATUS err;
 
 	if (handle == GS_INVALID_HANDLE) {
 		error("Encode failed: bad texture handle");
@@ -800,10 +795,10 @@ static bool nvenc_encode_tex(void *data, uint32_t handle, int64_t pts,
 		return false;
 	}
 
-	bs    = &enc->bitstreams.array[enc->next_bitstream];
+	bs = &enc->bitstreams.array[enc->next_bitstream];
 	nvtex = &enc->textures.array[enc->next_bitstream];
 
-	input_tex  = get_tex_from_handle(enc, handle, &km);
+	input_tex = get_tex_from_handle(enc, handle, &km);
 	output_tex = nvtex->tex;
 
 	if (!input_tex) {
@@ -823,9 +818,8 @@ static bool nvenc_encode_tex(void *data, uint32_t handle, int64_t pts,
 
 	km->lpVtbl->AcquireSync(km, lock_key, INFINITE);
 
-	context->lpVtbl->CopyResource(context,
-			(ID3D11Resource *)output_tex,
-			(ID3D11Resource *)input_tex);
+	context->lpVtbl->CopyResource(context, (ID3D11Resource *)output_tex,
+				      (ID3D11Resource *)input_tex);
 
 	km->lpVtbl->ReleaseSync(km, *next_key);
 
@@ -833,7 +827,7 @@ static bool nvenc_encode_tex(void *data, uint32_t handle, int64_t pts,
 	/* map output tex so nvenc can use it   */
 
 	NV_ENC_MAP_INPUT_RESOURCE map = {NV_ENC_MAP_INPUT_RESOURCE_VER};
-	map.registeredResource        = nvtex->res;
+	map.registeredResource = nvtex->res;
 	if (NV_FAILED(nv.nvEncMapInputResource(enc->session, &map))) {
 		return false;
 	}
@@ -844,15 +838,15 @@ static bool nvenc_encode_tex(void *data, uint32_t handle, int64_t pts,
 	/* do actual encode call                */
 
 	NV_ENC_PIC_PARAMS params = {0};
-	params.version           = NV_ENC_PIC_PARAMS_VER;
-	params.pictureStruct     = NV_ENC_PIC_STRUCT_FRAME;
-	params.inputBuffer       = nvtex->mapped_res;
-	params.bufferFmt         = NV_ENC_BUFFER_FORMAT_NV12;
-	params.inputTimeStamp    = (uint64_t)pts;
-	params.inputWidth        = enc->cx;
-	params.inputHeight       = enc->cy;
-	params.outputBitstream   = bs->ptr;
-	params.completionEvent   = bs->event;
+	params.version = NV_ENC_PIC_PARAMS_VER;
+	params.pictureStruct = NV_ENC_PIC_STRUCT_FRAME;
+	params.inputBuffer = nvtex->mapped_res;
+	params.bufferFmt = NV_ENC_BUFFER_FORMAT_NV12;
+	params.inputTimeStamp = (uint64_t)pts;
+	params.inputWidth = enc->cx;
+	params.inputHeight = enc->cy;
+	params.outputBitstream = bs->ptr;
+	params.completionEvent = bs->event;
 
 	err = nv.nvEncEncodePicture(enc->session, &params);
 	if (err != NV_ENC_SUCCESS && err != NV_ENC_ERR_NEED_MORE_INPUT) {
@@ -886,11 +880,11 @@ static bool nvenc_encode_tex(void *data, uint32_t handle, int64_t pts,
 			dts -= packet->timebase_num;
 
 		*received_packet = true;
-		packet->data     = enc->packet_data.array;
-		packet->size     = enc->packet_data.num;
-		packet->type     = OBS_ENCODER_VIDEO;
-		packet->pts      = enc->packet_pts;
-		packet->dts      = dts;
+		packet->data = enc->packet_data.array;
+		packet->size = enc->packet_data.num;
+		packet->type = OBS_ENCODER_VIDEO;
+		packet->pts = enc->packet_pts;
+		packet->dts = dts;
 		packet->keyframe = enc->packet_keyframe;
 	} else {
 		*received_packet = false;
@@ -911,7 +905,7 @@ static bool nvenc_extra_data(void *data, uint8_t **header, size_t *size)
 	}
 
 	*header = enc->header;
-	*size   = enc->header_size;
+	*size = enc->header_size;
 	return true;
 }
 
@@ -923,23 +917,23 @@ static bool nvenc_sei_data(void *data, uint8_t **sei, size_t *size)
 		return false;
 	}
 
-	*sei  = enc->sei;
+	*sei = enc->sei;
 	*size = enc->sei_size;
 	return true;
 }
 
 struct obs_encoder_info nvenc_info = {
-	.id                      = "jim_nvenc",
-	.codec                   = "h264",
-	.type                    = OBS_ENCODER_VIDEO,
-	.caps                    = OBS_ENCODER_CAP_PASS_TEXTURE,
-	.get_name                = nvenc_get_name,
-	.create                  = nvenc_create,
-	.destroy                 = nvenc_destroy,
-	.update                  = nvenc_update,
-	.encode_texture          = nvenc_encode_tex,
-	.get_defaults            = nvenc_defaults,
-	.get_properties          = nvenc_properties,
-	.get_extra_data          = nvenc_extra_data,
-	.get_sei_data            = nvenc_sei_data,
+	.id = "jim_nvenc",
+	.codec = "h264",
+	.type = OBS_ENCODER_VIDEO,
+	.caps = OBS_ENCODER_CAP_PASS_TEXTURE,
+	.get_name = nvenc_get_name,
+	.create = nvenc_create,
+	.destroy = nvenc_destroy,
+	.update = nvenc_update,
+	.encode_texture = nvenc_encode_tex,
+	.get_defaults = nvenc_defaults,
+	.get_properties = nvenc_properties,
+	.get_extra_data = nvenc_extra_data,
+	.get_sei_data = nvenc_sei_data,
 };

@@ -4,28 +4,29 @@
 #include "graphics-hook.h"
 #include "../funchook.h"
 
-typedef HRESULT(STDMETHODCALLTYPE *reset_t)(IDirect3DDevice8*,
-		D3DPRESENT_PARAMETERS*);
-typedef HRESULT(STDMETHODCALLTYPE *present_t)(IDirect3DDevice8*,
-		CONST RECT*, CONST RECT*, HWND, CONST RGNDATA*);
+typedef HRESULT(STDMETHODCALLTYPE *reset_t)(IDirect3DDevice8 *,
+					    D3DPRESENT_PARAMETERS *);
+typedef HRESULT(STDMETHODCALLTYPE *present_t)(IDirect3DDevice8 *, CONST RECT *,
+					      CONST RECT *, HWND,
+					      CONST RGNDATA *);
 
 static struct func_hook present;
 static struct func_hook reset;
 
 struct d3d8_data {
-	HMODULE                        d3d8;
-	uint32_t                       cx;
-	uint32_t                       cy;
-	D3DFORMAT                      d3d8_format;
-	DXGI_FORMAT                    dxgi_format;
+	HMODULE d3d8;
+	uint32_t cx;
+	uint32_t cy;
+	D3DFORMAT d3d8_format;
+	DXGI_FORMAT dxgi_format;
 
-	struct shmem_data              *shmem_info;
-	HWND                           window;
-	uint32_t                       pitch;
-	IDirect3DSurface8              *copy_surfaces[NUM_BUFFERS];
-	bool                           surface_locked[NUM_BUFFERS];
-	int                            cur_surface;
-	int                            copy_wait;
+	struct shmem_data *shmem_info;
+	HWND window;
+	uint32_t pitch;
+	IDirect3DSurface8 *copy_surfaces[NUM_BUFFERS];
+	bool surface_locked[NUM_BUFFERS];
+	int cur_surface;
+	int copy_wait;
 };
 
 static d3d8_data data = {};
@@ -34,10 +35,14 @@ static DXGI_FORMAT d3d8_to_dxgi_format(D3DFORMAT format)
 {
 	switch ((unsigned long)format) {
 	case D3DFMT_X1R5G5B5:
-	case D3DFMT_A1R5G5B5: return DXGI_FORMAT_B5G5R5A1_UNORM;
-	case D3DFMT_R5G6B5:   return DXGI_FORMAT_B5G6R5_UNORM;
-	case D3DFMT_A8R8G8B8: return DXGI_FORMAT_B8G8R8A8_UNORM;
-	case D3DFMT_X8R8G8B8: return DXGI_FORMAT_B8G8R8X8_UNORM;
+	case D3DFMT_A1R5G5B5:
+		return DXGI_FORMAT_B5G5R5A1_UNORM;
+	case D3DFMT_R5G6B5:
+		return DXGI_FORMAT_B5G6R5_UNORM;
+	case D3DFMT_A8R8G8B8:
+		return DXGI_FORMAT_B8G8R8A8_UNORM;
+	case D3DFMT_X8R8G8B8:
+		return DXGI_FORMAT_B8G8R8X8_UNORM;
 	}
 
 	return DXGI_FORMAT_UNKNOWN;
@@ -64,7 +69,8 @@ static bool d3d8_get_window_handle(IDirect3DDevice8 *device)
 	hr = device->GetCreationParameters(&parameters);
 	if (FAILED(hr)) {
 		hlog_hr("d3d8_get_window_handle: Failed to get "
-				"device creation parameters", hr);
+			"device creation parameters",
+			hr);
 		return false;
 	}
 
@@ -90,7 +96,8 @@ static bool d3d8_init_format_backbuffer(IDirect3DDevice8 *device)
 	backbuffer->Release();
 	if (FAILED(hr)) {
 		hlog_hr("d3d8_init_format_backbuffer: Failed to get "
-				"backbuffer descriptor", hr);
+			"backbuffer descriptor",
+			hr);
 		return false;
 	}
 
@@ -106,8 +113,8 @@ static bool d3d8_shmem_init_buffer(IDirect3DDevice8 *device, int idx)
 {
 	HRESULT hr;
 
-	hr = device->CreateImageSurface(data.cx, data.cy,
-			data.d3d8_format, &data.copy_surfaces[idx]);
+	hr = device->CreateImageSurface(data.cx, data.cy, data.d3d8_format,
+					&data.copy_surfaces[idx]);
 	if (FAILED(hr)) {
 		hlog_hr("d3d8_shmem_init_buffer: Failed to create surface", hr);
 		return false;
@@ -116,9 +123,10 @@ static bool d3d8_shmem_init_buffer(IDirect3DDevice8 *device, int idx)
 	if (idx == 0) {
 		D3DLOCKED_RECT rect;
 		hr = data.copy_surfaces[0]->LockRect(&rect, nullptr,
-				D3DLOCK_READONLY);
+						     D3DLOCK_READONLY);
 		if (FAILED(hr)) {
-			hlog_hr("d3d8_shmem_init_buffer: Failed to lock buffer", hr);
+			hlog_hr("d3d8_shmem_init_buffer: Failed to lock buffer",
+				hr);
 			return false;
 		}
 
@@ -190,7 +198,7 @@ static void d3d8_shmem_capture_copy(int idx)
 }
 
 static void d3d8_shmem_capture(IDirect3DDevice8 *device,
-		IDirect3DSurface8 *backbuffer)
+			       IDirect3DSurface8 *backbuffer)
 {
 	int cur_surface;
 	int next_surface;
@@ -221,7 +229,7 @@ static void d3d8_shmem_capture(IDirect3DDevice8 *device,
 }
 
 static void d3d8_capture(IDirect3DDevice8 *device,
-		IDirect3DSurface8 *backbuffer)
+			 IDirect3DSurface8 *backbuffer)
 {
 	if (capture_should_stop()) {
 		d3d8_free();
@@ -234,9 +242,8 @@ static void d3d8_capture(IDirect3DDevice8 *device,
 	}
 }
 
-
 static HRESULT STDMETHODCALLTYPE hook_reset(IDirect3DDevice8 *device,
-		D3DPRESENT_PARAMETERS *parameters)
+					    D3DPRESENT_PARAMETERS *parameters)
 {
 	HRESULT hr;
 
@@ -255,18 +262,20 @@ static bool hooked_reset = false;
 
 static void setup_reset_hooks(IDirect3DDevice8 *device)
 {
-	uintptr_t *vtable = *(uintptr_t**)device;
+	uintptr_t *vtable = *(uintptr_t **)device;
 
-	hook_init(&reset, (void*)vtable[14], (void*)hook_reset,
-			"IDirect3DDevice8::Reset");
+	hook_init(&reset, (void *)vtable[14], (void *)hook_reset,
+		  "IDirect3DDevice8::Reset");
 	rehook(&reset);
 
 	hooked_reset = true;
 }
 
 static HRESULT STDMETHODCALLTYPE hook_present(IDirect3DDevice8 *device,
-		CONST RECT *src_rect, CONST RECT *dst_rect,
-		HWND override_window, CONST RGNDATA *dirty_region)
+					      CONST RECT *src_rect,
+					      CONST RECT *dst_rect,
+					      HWND override_window,
+					      CONST RGNDATA *dirty_region)
 {
 	IDirect3DSurface8 *backbuffer;
 	HRESULT hr;
@@ -291,7 +300,7 @@ static HRESULT STDMETHODCALLTYPE hook_present(IDirect3DDevice8 *device,
 typedef IDirect3D8 *(WINAPI *d3d8create_t)(UINT);
 
 static bool manually_get_d3d8_present_addr(HMODULE d3d8_module,
-		void **present_addr)
+					   void **present_addr)
 {
 	d3d8create_t create;
 	D3DPRESENT_PARAMETERS pp;
@@ -315,22 +324,23 @@ static bool manually_get_d3d8_present_addr(HMODULE d3d8_module,
 	}
 
 	memset(&pp, 0, sizeof(pp));
-	pp.Windowed                 = true;
-	pp.SwapEffect               = D3DSWAPEFFECT_FLIP;
-	pp.BackBufferFormat         = D3DFMT_A8R8G8B8;
-	pp.BackBufferWidth          = 2;
-	pp.BackBufferHeight         = 2;
-	pp.BackBufferCount          = 1;
-	pp.hDeviceWindow            = dummy_window;
+	pp.Windowed = true;
+	pp.SwapEffect = D3DSWAPEFFECT_FLIP;
+	pp.BackBufferFormat = D3DFMT_A8R8G8B8;
+	pp.BackBufferWidth = 2;
+	pp.BackBufferHeight = 2;
+	pp.BackBufferCount = 1;
+	pp.hDeviceWindow = dummy_window;
 
 	hr = d3d8->CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL,
-			dummy_window, D3DCREATE_HARDWARE_VERTEXPROCESSING, &pp,
-			&device);
+				dummy_window,
+				D3DCREATE_HARDWARE_VERTEXPROCESSING, &pp,
+				&device);
 	d3d8->Release();
 
 	if (SUCCEEDED(hr)) {
-		uintptr_t *vtable = *(uintptr_t**)device;
-		*present_addr = (void*)vtable[15];
+		uintptr_t *vtable = *(uintptr_t **)device;
+		*present_addr = (void *)vtable[15];
 
 		device->Release();
 	} else {
@@ -354,15 +364,15 @@ bool hook_d3d8(void)
 	d3d8_size = module_size(d3d8_module);
 
 	if (global_hook_info->offsets.d3d8.present < d3d8_size) {
-		present_addr = get_offset_addr(d3d8_module,
-				global_hook_info->offsets.d3d8.present);
+		present_addr = get_offset_addr(
+			d3d8_module, global_hook_info->offsets.d3d8.present);
 	} else {
 		if (!dummy_window) {
 			return false;
 		}
 
 		if (!manually_get_d3d8_present_addr(d3d8_module,
-					&present_addr)) {
+						    &present_addr)) {
 			hlog("Failed to get D3D8 value");
 			return true;
 		}
@@ -373,8 +383,8 @@ bool hook_d3d8(void)
 		return true;
 	}
 
-	hook_init(&present, present_addr, (void*)hook_present,
-			"IDirect3DDevice8::Present");
+	hook_init(&present, present_addr, (void *)hook_present,
+		  "IDirect3DDevice8::Present");
 
 	rehook(&present);
 

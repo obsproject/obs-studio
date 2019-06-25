@@ -25,7 +25,7 @@ static AVCodec *find_hardware_decoder(enum AVCodecID id)
 	while (hwa) {
 		if (hwa->id == id) {
 			if (hwa->pix_fmt == AV_PIX_FMT_VDTOOL ||
-				hwa->pix_fmt == AV_PIX_FMT_DXVA2_VLD ||
+			    hwa->pix_fmt == AV_PIX_FMT_DXVA2_VLD ||
 			    hwa->pix_fmt == AV_PIX_FMT_VAAPI_VLD) {
 				c = avcodec_find_decoder_by_name(hwa->name);
 				if (c)
@@ -58,12 +58,10 @@ static int mp_open_codec(struct mp_decode *d)
 	c = d->stream->codec;
 #endif
 
-	if (c->thread_count == 1 &&
-	    c->codec_id != AV_CODEC_ID_PNG &&
+	if (c->thread_count == 1 && c->codec_id != AV_CODEC_ID_PNG &&
 	    c->codec_id != AV_CODEC_ID_TIFF &&
 	    c->codec_id != AV_CODEC_ID_JPEG2000 &&
-	    c->codec_id != AV_CODEC_ID_MPEG4 &&
-	    c->codec_id != AV_CODEC_ID_WEBP)
+	    c->codec_id != AV_CODEC_ID_MPEG4 && c->codec_id != AV_CODEC_ID_WEBP)
 		c->thread_count = 0;
 
 	ret = avcodec_open2(c, d->codec, NULL);
@@ -122,15 +120,14 @@ bool mp_decode_init(mp_media_t *m, enum AVMediaType type, bool hw)
 			d->codec = avcodec_find_decoder(id);
 		if (!d->codec) {
 			blog(LOG_WARNING, "MP: Failed to find %s codec",
-					av_get_media_type_string(type));
+			     av_get_media_type_string(type));
 			return false;
 		}
 
 		ret = mp_open_codec(d);
 		if (ret < 0) {
 			blog(LOG_WARNING, "MP: Failed to open %s decoder: %s",
-					av_get_media_type_string(type),
-					av_err2str(ret));
+			     av_get_media_type_string(type), av_err2str(ret));
 			return false;
 		}
 	}
@@ -138,7 +135,7 @@ bool mp_decode_init(mp_media_t *m, enum AVMediaType type, bool hw)
 	d->frame = av_frame_alloc();
 	if (!d->frame) {
 		blog(LOG_WARNING, "MP: Failed to allocate %s frame",
-				av_get_media_type_string(type));
+		     av_get_media_type_string(type));
 		return false;
 	}
 
@@ -187,22 +184,22 @@ void mp_decode_push_packet(struct mp_decode *decode, AVPacket *packet)
 }
 
 static inline int64_t get_estimated_duration(struct mp_decode *d,
-		int64_t last_pts)
+					     int64_t last_pts)
 {
 	if (last_pts)
 		return d->frame_pts - last_pts;
 
 	if (d->audio) {
 		return av_rescale_q(d->frame->nb_samples,
-				(AVRational){1, d->frame->sample_rate},
-				(AVRational){1, 1000000000});
+				    (AVRational){1, d->frame->sample_rate},
+				    (AVRational){1, 1000000000});
 	} else {
 		if (d->last_duration)
 			return d->last_duration;
 
 		return av_rescale_q(d->decoder->time_base.num,
-				d->decoder->time_base,
-				(AVRational){1, 1000000000});
+				    d->decoder->time_base,
+				    (AVRational){1, 1000000000});
 	}
 }
 
@@ -243,11 +240,11 @@ static int decode_packet(struct mp_decode *d, int *got_frame)
 
 #else
 	if (d->audio) {
-		ret = avcodec_decode_audio4(d->decoder,
-				d->frame, got_frame, &d->pkt);
+		ret = avcodec_decode_audio4(d->decoder, d->frame, got_frame,
+					    &d->pkt);
 	} else {
-		ret = avcodec_decode_video2(d->decoder,
-				d->frame, got_frame, &d->pkt);
+		ret = avcodec_decode_video2(d->decoder, d->frame, got_frame,
+					    &d->pkt);
 	}
 #endif
 	return ret;
@@ -275,7 +272,7 @@ bool mp_decode_next(struct mp_decode *d)
 				}
 			} else {
 				circlebuf_pop_front(&d->packets, &d->orig_pkt,
-						sizeof(d->orig_pkt));
+						    sizeof(d->orig_pkt));
 				d->pkt = d->orig_pkt;
 				d->packet_pending = true;
 			}
@@ -290,7 +287,7 @@ bool mp_decode_next(struct mp_decode *d)
 		if (ret < 0) {
 #ifdef DETAILED_DEBUG_INFO
 			blog(LOG_DEBUG, "MP: decode failed: %s",
-					av_err2str(ret));
+			     av_err2str(ret));
 #endif
 
 			if (d->packet_pending) {
@@ -325,26 +322,25 @@ bool mp_decode_next(struct mp_decode *d)
 		if (d->frame->best_effort_timestamp == AV_NOPTS_VALUE)
 			d->frame_pts = d->next_pts;
 		else
-			d->frame_pts = av_rescale_q(
-					d->frame->best_effort_timestamp,
-					d->stream->time_base,
-					(AVRational){1, 1000000000});
+			d->frame_pts =
+				av_rescale_q(d->frame->best_effort_timestamp,
+					     d->stream->time_base,
+					     (AVRational){1, 1000000000});
 
 		int64_t duration = d->frame->pkt_duration;
 		if (!duration)
 			duration = get_estimated_duration(d, last_pts);
 		else
-			duration = av_rescale_q(duration,
-					d->stream->time_base,
-					(AVRational){1, 1000000000});
+			duration = av_rescale_q(duration, d->stream->time_base,
+						(AVRational){1, 1000000000});
 
 		if (d->m->speed != 100) {
-			d->frame_pts = av_rescale_q(d->frame_pts,
-					(AVRational){1, d->m->speed},
-					(AVRational){1, 100});
+			d->frame_pts = av_rescale_q(
+				d->frame_pts, (AVRational){1, d->m->speed},
+				(AVRational){1, 100});
 			duration = av_rescale_q(duration,
-					(AVRational){1, d->m->speed},
-					(AVRational){1, 100});
+						(AVRational){1, d->m->speed},
+						(AVRational){1, 100});
 		}
 
 		d->last_duration = duration;

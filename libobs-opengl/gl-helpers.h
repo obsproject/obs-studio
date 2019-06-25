@@ -27,8 +27,8 @@ static inline bool gl_success(const char *funcname)
 {
 	GLenum errorcode = glGetError();
 	if (errorcode != GL_NO_ERROR) {
-		blog(LOG_ERROR, "%s failed, glGetError returned 0x%X",
-				funcname, errorcode);
+		blog(LOG_ERROR, "%s failed, glGetError returned 0x%X", funcname,
+		     errorcode);
 		return false;
 	}
 
@@ -144,17 +144,17 @@ static inline bool gl_get_integer_v(GLenum pname, GLint *params)
 }
 
 extern bool gl_init_face(GLenum target, GLenum type, uint32_t num_levels,
-		GLenum format, GLint internal_format, bool compressed,
-		uint32_t width, uint32_t height, uint32_t size,
-		const uint8_t ***p_data);
+			 GLenum format, GLint internal_format, bool compressed,
+			 uint32_t width, uint32_t height, uint32_t size,
+			 const uint8_t ***p_data);
 
 extern bool gl_copy_texture(struct gs_device *device, struct gs_texture *dst,
-		uint32_t dst_x, uint32_t dst_y, struct gs_texture *src,
-		uint32_t src_x, uint32_t src_y, uint32_t width,
-		uint32_t height);
+			    uint32_t dst_x, uint32_t dst_y,
+			    struct gs_texture *src, uint32_t src_x,
+			    uint32_t src_y, uint32_t width, uint32_t height);
 
 extern bool gl_create_buffer(GLenum target, GLuint *buffer, GLsizeiptr size,
-		const GLvoid *data, GLenum usage);
+			     const GLvoid *data, GLenum usage);
 
 extern bool update_buffer(GLenum target, GLuint buffer, const void *data,
-		size_t size);
+			  size_t size);

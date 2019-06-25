@@ -30,7 +30,7 @@ bool xinerama_is_active(xcb_connection_t *xcb)
 
 	bool active = true;
 	xcb_xinerama_is_active_cookie_t xnr_c;
-	xcb_xinerama_is_active_reply_t  *xnr_r;
+	xcb_xinerama_is_active_reply_t *xnr_r;
 
 	xnr_c = xcb_xinerama_is_active_unchecked(xcb);
 	xnr_r = xcb_xinerama_is_active_reply(xcb, xnr_c, NULL);
@@ -48,7 +48,7 @@ int xinerama_screen_count(xcb_connection_t *xcb)
 
 	int screens = 0;
 	xcb_xinerama_query_screens_cookie_t scr_c;
-	xcb_xinerama_query_screens_reply_t  *scr_r;
+	xcb_xinerama_query_screens_reply_t *scr_r;
 
 	scr_c = xcb_xinerama_query_screens_unchecked(xcb);
 	scr_r = xcb_xinerama_query_screens_reply(xcb, scr_c, NULL);
@@ -60,15 +60,15 @@ int xinerama_screen_count(xcb_connection_t *xcb)
 }
 
 int xinerama_screen_geo(xcb_connection_t *xcb, int_fast32_t screen,
-		int_fast32_t *x, int_fast32_t *y,
-		int_fast32_t *w, int_fast32_t *h)
+			int_fast32_t *x, int_fast32_t *y, int_fast32_t *w,
+			int_fast32_t *h)
 {
 	if (!xcb)
 		goto fail;
 
 	bool success = false;
 	xcb_xinerama_query_screens_cookie_t scr_c;
-	xcb_xinerama_query_screens_reply_t  *scr_r;
+	xcb_xinerama_query_screens_reply_t *scr_r;
 	xcb_xinerama_screen_info_iterator_t iter;
 
 	scr_c = xcb_xinerama_query_screens_unchecked(xcb);
@@ -113,7 +113,7 @@ int randr_screen_count(xcb_connection_t *xcb)
 	screen = xcb_setup_roots_iterator(xcb_get_setup(xcb)).data;
 
 	xcb_randr_get_screen_resources_cookie_t res_c;
-	xcb_randr_get_screen_resources_reply_t* res_r;
+	xcb_randr_get_screen_resources_reply_t *res_r;
 
 	res_c = xcb_randr_get_screen_resources(xcb, screen->root);
 	res_r = xcb_randr_get_screen_resources_reply(xcb, res_c, 0);
@@ -124,15 +124,14 @@ int randr_screen_count(xcb_connection_t *xcb)
 }
 
 int randr_screen_geo(xcb_connection_t *xcb, int_fast32_t screen,
-		int_fast32_t *x, int_fast32_t *y,
-		int_fast32_t *w, int_fast32_t *h,
-		xcb_screen_t **rscreen)
+		     int_fast32_t *x, int_fast32_t *y, int_fast32_t *w,
+		     int_fast32_t *h, xcb_screen_t **rscreen)
 {
 	xcb_screen_t *xscreen;
 	xscreen = xcb_setup_roots_iterator(xcb_get_setup(xcb)).data;
 
 	xcb_randr_get_screen_resources_cookie_t res_c;
-	xcb_randr_get_screen_resources_reply_t* res_r;
+	xcb_randr_get_screen_resources_reply_t *res_r;
 
 	res_c = xcb_randr_get_screen_resources(xcb, xscreen->root);
 	res_r = xcb_randr_get_screen_resources_reply(xcb, res_c, 0);
@@ -168,8 +167,8 @@ fail:
 	return -1;
 }
 
-int x11_screen_geo(xcb_connection_t *xcb, int_fast32_t screen,
-		int_fast32_t *w, int_fast32_t *h)
+int x11_screen_geo(xcb_connection_t *xcb, int_fast32_t screen, int_fast32_t *w,
+		   int_fast32_t *h)
 {
 	if (!xcb)
 		goto fail;
@@ -194,14 +193,14 @@ fail:
 	return -1;
 }
 
-xcb_shm_t* xshm_xcb_attach(xcb_connection_t *xcb, const int w, const int h)
+xcb_shm_t *xshm_xcb_attach(xcb_connection_t *xcb, const int w, const int h)
 {
 	if (!xcb)
 		return NULL;
 
 	xcb_shm_t *shm = bzalloc(sizeof(xcb_shm_t));
-	shm->xcb       = xcb;
-	shm->seg       = xcb_generate_id(shm->xcb);
+	shm->xcb = xcb;
+	shm->seg = xcb_generate_id(shm->xcb);
 
 	shm->shmid = shmget(IPC_PRIVATE, w * h * 4, IPC_CREAT | 0777);
 	if (shm->shmid == -1)
@@ -224,7 +223,7 @@ void xshm_xcb_detach(xcb_shm_t *shm)
 
 	xcb_shm_detach(shm->xcb, shm->seg);
 
-	if ((char *) shm->data != (char *) -1)
+	if ((char *)shm->data != (char *)-1)
 		shmdt(shm->data);
 
 	if (shm->shmid != -1)

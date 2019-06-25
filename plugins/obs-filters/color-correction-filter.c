@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <graphics/matrix4.h>
 #include <graphics/quat.h>
 
+/* clang-format off */
 
 #define SETTING_GAMMA                  "gamma"
 #define SETTING_CONTRAST               "contrast"
@@ -35,39 +36,41 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define TEXT_OPACITY                   obs_module_text("Opacity")
 #define TEXT_COLOR                     obs_module_text("Color")
 
+/* clang-format on */
+
 struct color_correction_filter_data {
-	obs_source_t                   *context;
+	obs_source_t *context;
 
-	gs_effect_t                    *effect;
+	gs_effect_t *effect;
 
-	gs_eparam_t                    *gamma_param;
-	gs_eparam_t                    *final_matrix_param;
+	gs_eparam_t *gamma_param;
+	gs_eparam_t *final_matrix_param;
 
-	struct vec3                     gamma;
-	float                           contrast;
-	float                           brightness;
-	float                           saturation;
-	float                           hue_shift;
-	float                           opacity;
-	struct vec4                     color;
+	struct vec3 gamma;
+	float contrast;
+	float brightness;
+	float saturation;
+	float hue_shift;
+	float opacity;
+	struct vec4 color;
 
 	/* Pre-Computes */
-	struct matrix4                  con_matrix;
-	struct matrix4                  bright_matrix;
-	struct matrix4                  sat_matrix;
-	struct matrix4                  hue_op_matrix;
-	struct matrix4                  color_matrix;
-	struct matrix4                  final_matrix;
+	struct matrix4 con_matrix;
+	struct matrix4 bright_matrix;
+	struct matrix4 sat_matrix;
+	struct matrix4 hue_op_matrix;
+	struct matrix4 color_matrix;
+	struct matrix4 final_matrix;
 
-	struct vec3                     rot_quaternion;
-	float                           rot_quaternion_w;
-	struct vec3                     cross;
-	struct vec3                     square;
-	struct vec3                     wimag;
-	struct vec3                     diag;
-	struct vec3                     a_line;
-	struct vec3                     b_line;
-	struct vec3                     half_unit;
+	struct vec3 rot_quaternion;
+	float rot_quaternion_w;
+	struct vec3 cross;
+	struct vec3 square;
+	struct vec3 wimag;
+	struct vec3 diag;
+	struct vec3 a_line;
+	struct vec3 b_line;
+	struct vec3 half_unit;
 };
 
 static const float root3 = 0.57735f;
@@ -101,22 +104,31 @@ static void color_correction_filter_update(void *data, obs_data_t *settings)
 	vec3_set(&filter->gamma, (float)gamma, (float)gamma, (float)gamma);
 
 	/* Build our contrast number. */
-	filter->contrast = (float)obs_data_get_double(settings,
-			SETTING_CONTRAST) + 1.0f;
+	filter->contrast =
+		(float)obs_data_get_double(settings, SETTING_CONTRAST) + 1.0f;
 	float one_minus_con = (1.0f - filter->contrast) / 2.0f;
 
 	/* Now let's build our Contrast matrix. */
-	filter->con_matrix = (struct matrix4)
-	{
-		filter->contrast, 0.0f, 0.0f, 0.0f,
-		0.0f, filter->contrast, 0.0f, 0.0f,
-		0.0f, 0.0f, filter->contrast, 0.0f,
-		one_minus_con, one_minus_con, one_minus_con, 1.0f
-	};
+	filter->con_matrix = (struct matrix4){filter->contrast,
+					      0.0f,
+					      0.0f,
+					      0.0f,
+					      0.0f,
+					      filter->contrast,
+					      0.0f,
+					      0.0f,
+					      0.0f,
+					      0.0f,
+					      filter->contrast,
+					      0.0f,
+					      one_minus_con,
+					      one_minus_con,
+					      one_minus_con,
+					      1.0f};
 
 	/* Build our brightness number. */
-	filter->brightness = (float)obs_data_get_double(settings,
-			SETTING_BRIGHTNESS);
+	filter->brightness =
+		(float)obs_data_get_double(settings, SETTING_BRIGHTNESS);
 
 	/*
 	 * Now let's build our Brightness matrix.
@@ -129,49 +141,57 @@ static void color_correction_filter_update(void *data, obs_data_t *settings)
 	filter->bright_matrix.t.z = filter->brightness;
 
 	/* Build our Saturation number. */
-	filter->saturation = (float)obs_data_get_double(settings,
-			SETTING_SATURATION) + 1.0f;
+	filter->saturation =
+		(float)obs_data_get_double(settings, SETTING_SATURATION) + 1.0f;
 
 	/* Factor in the selected color weights. */
 	float one_minus_sat_red = (1.0f - filter->saturation) * red_weight;
 	float one_minus_sat_green = (1.0f - filter->saturation) * green_weight;
 	float one_minus_sat_blue = (1.0f - filter->saturation) * blue_weight;
-	float sat_val_red   = one_minus_sat_red + filter->saturation;
+	float sat_val_red = one_minus_sat_red + filter->saturation;
 	float sat_val_green = one_minus_sat_green + filter->saturation;
-	float sat_val_blue  = one_minus_sat_blue + filter->saturation;
+	float sat_val_blue = one_minus_sat_blue + filter->saturation;
 
 	/* Now we build our Saturation matrix. */
-	filter->sat_matrix = (struct matrix4)
-	{
-		sat_val_red, one_minus_sat_red, one_minus_sat_red, 0.0f,
-		one_minus_sat_green, sat_val_green, one_minus_sat_green, 0.0f,
-		one_minus_sat_blue, one_minus_sat_blue, sat_val_blue, 0.0f,
-		0.0f, 0.0f, 0.0f, 1.0f
-	};
+	filter->sat_matrix = (struct matrix4){sat_val_red,
+					      one_minus_sat_red,
+					      one_minus_sat_red,
+					      0.0f,
+					      one_minus_sat_green,
+					      sat_val_green,
+					      one_minus_sat_green,
+					      0.0f,
+					      one_minus_sat_blue,
+					      one_minus_sat_blue,
+					      sat_val_blue,
+					      0.0f,
+					      0.0f,
+					      0.0f,
+					      0.0f,
+					      1.0f};
 
 	/* Build our Hue number. */
-	filter->hue_shift = (float)obs_data_get_double(settings,
-			SETTING_HUESHIFT);
+	filter->hue_shift =
+		(float)obs_data_get_double(settings, SETTING_HUESHIFT);
 
 	/* Build our Transparency number. */
-	filter->opacity = (float)obs_data_get_int(settings,
-			SETTING_OPACITY) * 0.01f;
+	filter->opacity =
+		(float)obs_data_get_int(settings, SETTING_OPACITY) * 0.01f;
 
 	/* Hue is the radian of 0 to 360 degrees. */
 	float half_angle = 0.5f * (float)(filter->hue_shift / (180.0f / M_PI));
 
 	/* Pseudo-Quaternion To Matrix. */
 	float rot_quad1 = root3 * (float)sin(half_angle);
-	vec3_set(&filter->rot_quaternion, rot_quad1, rot_quad1,
-			rot_quad1);
+	vec3_set(&filter->rot_quaternion, rot_quad1, rot_quad1, rot_quad1);
 	filter->rot_quaternion_w = (float)cos(half_angle);
 
 	vec3_mul(&filter->cross, &filter->rot_quaternion,
-			&filter->rot_quaternion);
+		 &filter->rot_quaternion);
 	vec3_mul(&filter->square, &filter->rot_quaternion,
-			&filter->rot_quaternion);
+		 &filter->rot_quaternion);
 	vec3_mulf(&filter->wimag, &filter->rot_quaternion,
-			filter->rot_quaternion_w);
+		  filter->rot_quaternion_w);
 
 	vec3_mulf(&filter->square, &filter->square, 2.0f);
 	vec3_sub(&filter->diag, &filter->half_unit, &filter->square);
@@ -179,29 +199,28 @@ static void color_correction_filter_update(void *data, obs_data_t *settings)
 	vec3_sub(&filter->b_line, &filter->cross, &filter->wimag);
 
 	/* Now we build our Hue and Opacity matrix. */
-	filter->hue_op_matrix = (struct matrix4)
-	{
-		filter->diag.x * 2.0f,
-		filter->b_line.z * 2.0f,
-		filter->a_line.y * 2.0f,
-		0.0f,
+	filter->hue_op_matrix = (struct matrix4){filter->diag.x * 2.0f,
+						 filter->b_line.z * 2.0f,
+						 filter->a_line.y * 2.0f,
+						 0.0f,
 
-		filter->a_line.z * 2.0f,
-		filter->diag.y * 2.0f,
-		filter->b_line.x * 2.0f,
-		0.0f,
+						 filter->a_line.z * 2.0f,
+						 filter->diag.y * 2.0f,
+						 filter->b_line.x * 2.0f,
+						 0.0f,
 
-		filter->b_line.y * 2.0f,
-		filter->a_line.x * 2.0f,
-		filter->diag.z * 2.0f,
-		0.0f,
+						 filter->b_line.y * 2.0f,
+						 filter->a_line.x * 2.0f,
+						 filter->diag.z * 2.0f,
+						 0.0f,
 
-		0.0f, 0.0f, 0.0f, filter->opacity
-	};
+						 0.0f,
+						 0.0f,
+						 0.0f,
+						 filter->opacity};
 
 	/* Now get the overlay color data. */
-	uint32_t color = (uint32_t)obs_data_get_int(settings,
-			SETTING_COLOR);
+	uint32_t color = (uint32_t)obs_data_get_int(settings, SETTING_COLOR);
 	vec4_from_rgba(&filter->color, color);
 
 	/*
@@ -214,26 +233,22 @@ static void color_correction_filter_update(void *data, obs_data_t *settings)
 	filter->color_matrix.y.y = filter->color.y;
 	filter->color_matrix.z.z = filter->color.z;
 
-	filter->color_matrix.t.x = filter->color.w *
-			filter->color.x;
-	filter->color_matrix.t.y = filter->color.w *
-			filter->color.y;
-	filter->color_matrix.t.z = filter->color.w *
-			filter->color.z;
-
+	filter->color_matrix.t.x = filter->color.w * filter->color.x;
+	filter->color_matrix.t.y = filter->color.w * filter->color.y;
+	filter->color_matrix.t.z = filter->color.w * filter->color.z;
 
 	/* First we apply the Contrast & Brightness matrix. */
 	matrix4_mul(&filter->final_matrix, &filter->bright_matrix,
-			&filter->con_matrix);
+		    &filter->con_matrix);
 	/* Now we apply the Saturation matrix. */
 	matrix4_mul(&filter->final_matrix, &filter->final_matrix,
-			&filter->sat_matrix);
+		    &filter->sat_matrix);
 	/* Next we apply the Hue+Opacity matrix. */
 	matrix4_mul(&filter->final_matrix, &filter->final_matrix,
-			&filter->hue_op_matrix);
+		    &filter->hue_op_matrix);
 	/* Lastly we apply the Color Wash matrix. */
 	matrix4_mul(&filter->final_matrix, &filter->final_matrix,
-			&filter->color_matrix);
+		    &filter->color_matrix);
 }
 
 /*
@@ -261,7 +276,7 @@ static void color_correction_filter_destroy(void *data)
  * actual rendering code.
  */
 static void *color_correction_filter_create(obs_data_t *settings,
-	obs_source_t *context)
+					    obs_source_t *context)
 {
 	/*
 	* Because of limitations of pre-c99 compilers, you can't create an
@@ -294,9 +309,9 @@ static void *color_correction_filter_create(obs_data_t *settings,
 	/* If the filter is active pass the parameters to the filter. */
 	if (filter->effect) {
 		filter->gamma_param = gs_effect_get_param_by_name(
-				filter->effect, SETTING_GAMMA);
+			filter->effect, SETTING_GAMMA);
 		filter->final_matrix_param = gs_effect_get_param_by_name(
-				filter->effect, "color_matrix");
+			filter->effect, "color_matrix");
 	}
 
 	obs_leave_graphics();
@@ -328,12 +343,13 @@ static void color_correction_filter_render(void *data, gs_effect_t *effect)
 	struct color_correction_filter_data *filter = data;
 
 	if (!obs_source_process_filter_begin(filter->context, GS_RGBA,
-			OBS_ALLOW_DIRECT_RENDERING))
+					     OBS_ALLOW_DIRECT_RENDERING))
 		return;
 
 	/* Now pass the interface variables to the .effect file. */
 	gs_effect_set_vec3(filter->gamma_param, &filter->gamma);
-	gs_effect_set_matrix4(filter->final_matrix_param, &filter->final_matrix);
+	gs_effect_set_matrix4(filter->final_matrix_param,
+			      &filter->final_matrix);
 
 	obs_source_process_filter_end(filter->context, filter->effect, 0, 0);
 
@@ -350,19 +366,19 @@ static obs_properties_t *color_correction_filter_properties(void *data)
 {
 	obs_properties_t *props = obs_properties_create();
 
-	obs_properties_add_float_slider(props, SETTING_GAMMA,
-			TEXT_GAMMA, -3.0, 3.0, 0.01);
+	obs_properties_add_float_slider(props, SETTING_GAMMA, TEXT_GAMMA, -3.0,
+					3.0, 0.01);
 
-	obs_properties_add_float_slider(props, SETTING_CONTRAST,
-			TEXT_CONTRAST, -2.0, 2.0, 0.01);
+	obs_properties_add_float_slider(props, SETTING_CONTRAST, TEXT_CONTRAST,
+					-2.0, 2.0, 0.01);
 	obs_properties_add_float_slider(props, SETTING_BRIGHTNESS,
-			TEXT_BRIGHTNESS, -1.0, 1.0, 0.01);
+					TEXT_BRIGHTNESS, -1.0, 1.0, 0.01);
 	obs_properties_add_float_slider(props, SETTING_SATURATION,
-			TEXT_SATURATION, -1.0, 5.0, 0.01);
-	obs_properties_add_float_slider(props, SETTING_HUESHIFT,
-			TEXT_HUESHIFT, -180.0, 180.0, 0.01);
-	obs_properties_add_int_slider(props, SETTING_OPACITY,
-			TEXT_OPACITY, 0, 100, 1);
+					TEXT_SATURATION, -1.0, 5.0, 0.01);
+	obs_properties_add_float_slider(props, SETTING_HUESHIFT, TEXT_HUESHIFT,
+					-180.0, 180.0, 0.01);
+	obs_properties_add_int_slider(props, SETTING_OPACITY, TEXT_OPACITY, 0,
+				      100, 1);
 
 	obs_properties_add_color(props, SETTING_COLOR, TEXT_COLOR);
 
@@ -382,8 +398,7 @@ static void color_correction_filter_defaults(obs_data_t *settings)
 	obs_data_set_default_double(settings, SETTING_GAMMA, 0.0);
 	obs_data_set_default_double(settings, SETTING_CONTRAST, 0.0);
 	obs_data_set_default_double(settings, SETTING_BRIGHTNESS, 0.0);
-	obs_data_set_default_double(settings,
-			SETTING_SATURATION, 0.0);
+	obs_data_set_default_double(settings, SETTING_SATURATION, 0.0);
 	obs_data_set_default_double(settings, SETTING_HUESHIFT, 0.0);
 	obs_data_set_default_double(settings, SETTING_OPACITY, 100.0);
 	obs_data_set_default_int(settings, SETTING_COLOR, 0xFFFFFF);
@@ -409,5 +424,5 @@ struct obs_source_info color_filter = {
 	.video_render = color_correction_filter_render,
 	.update = color_correction_filter_update,
 	.get_properties = color_correction_filter_properties,
-	.get_defaults = color_correction_filter_defaults
+	.get_defaults = color_correction_filter_defaults,
 };

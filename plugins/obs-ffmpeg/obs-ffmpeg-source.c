@@ -25,9 +25,9 @@
 
 #define FF_LOG(level, format, ...) \
 	blog(level, "[Media Source]: " format, ##__VA_ARGS__)
-#define FF_LOG_S(source, level, format, ...) \
+#define FF_LOG_S(source, level, format, ...)        \
 	blog(level, "[Media Source '%s']: " format, \
-			obs_source_get_name(source), ##__VA_ARGS__)
+	     obs_source_get_name(source), ##__VA_ARGS__)
 #define FF_BLOG(level, format, ...) \
 	FF_LOG_S(s->source, level, format, ##__VA_ARGS__)
 
@@ -60,18 +60,19 @@ struct ffmpeg_source {
 };
 
 static bool is_local_file_modified(obs_properties_t *props,
-		obs_property_t *prop, obs_data_t *settings)
+				   obs_property_t *prop, obs_data_t *settings)
 {
 	UNUSED_PARAMETER(prop);
 
 	bool enabled = obs_data_get_bool(settings, "is_local_file");
 	obs_property_t *input = obs_properties_get(props, "input");
-	obs_property_t *input_format =obs_properties_get(props,
-			"input_format");
+	obs_property_t *input_format =
+		obs_properties_get(props, "input_format");
 	obs_property_t *local_file = obs_properties_get(props, "local_file");
 	obs_property_t *looping = obs_properties_get(props, "looping");
 	obs_property_t *buffering = obs_properties_get(props, "buffering_mb");
-	obs_property_t *close = obs_properties_get(props, "close_when_inactive");
+	obs_property_t *close =
+		obs_properties_get(props, "close_when_inactive");
 	obs_property_t *seekable = obs_properties_get(props, "seekable");
 	obs_property_t *speed = obs_properties_get(props, "speed_percent");
 	obs_property_set_visible(input, !enabled);
@@ -103,8 +104,7 @@ static const char *media_filter =
 	" (*.mp4 *.ts *.mov *.flv *.mkv *.avi *.mp3 *.ogg *.aac *.wav *.gif *.webm);;";
 static const char *video_filter =
 	" (*.mp4 *.ts *.mov *.flv *.mkv *.avi *.gif *.webm);;";
-static const char *audio_filter =
-	" (*.mp3 *.aac *.ogg *.wav);;";
+static const char *audio_filter = " (*.mp3 *.aac *.ogg *.wav);;";
 
 static obs_properties_t *ffmpeg_source_getproperties(void *data)
 {
@@ -120,7 +120,7 @@ static obs_properties_t *ffmpeg_source_getproperties(void *data)
 	obs_property_t *prop;
 	// use this when obs allows non-readonly paths
 	prop = obs_properties_add_bool(props, "is_local_file",
-			obs_module_text("LocalFile"));
+				       obs_module_text("LocalFile"));
 
 	obs_property_set_modified_callback(prop, is_local_file_modified);
 
@@ -144,53 +144,56 @@ static obs_properties_t *ffmpeg_source_getproperties(void *data)
 	}
 
 	obs_properties_add_path(props, "local_file",
-			obs_module_text("LocalFile"), OBS_PATH_FILE,
-			filter.array, path.array);
+				obs_module_text("LocalFile"), OBS_PATH_FILE,
+				filter.array, path.array);
 	dstr_free(&filter);
 	dstr_free(&path);
 
 	prop = obs_properties_add_bool(props, "looping",
-			obs_module_text("Looping"));
+				       obs_module_text("Looping"));
 
 	obs_properties_add_bool(props, "restart_on_activate",
-			obs_module_text("RestartWhenActivated"));
+				obs_module_text("RestartWhenActivated"));
 
 	obs_properties_add_int_slider(props, "buffering_mb",
-			obs_module_text("BufferingMB"),
-			1, 16, 1);
+				      obs_module_text("BufferingMB"), 1, 16, 1);
 
-	obs_properties_add_text(props, "input",
-			obs_module_text("Input"), OBS_TEXT_DEFAULT);
+	obs_properties_add_text(props, "input", obs_module_text("Input"),
+				OBS_TEXT_DEFAULT);
 
 	obs_properties_add_text(props, "input_format",
-			obs_module_text("InputFormat"), OBS_TEXT_DEFAULT);
+				obs_module_text("InputFormat"),
+				OBS_TEXT_DEFAULT);
 
 #ifndef __APPLE__
 	obs_properties_add_bool(props, "hw_decode",
-			obs_module_text("HardwareDecode"));
+				obs_module_text("HardwareDecode"));
 #endif
 
 	obs_properties_add_bool(props, "clear_on_media_end",
-			obs_module_text("ClearOnMediaEnd"));
+				obs_module_text("ClearOnMediaEnd"));
 
-	prop = obs_properties_add_bool(props, "close_when_inactive",
-			obs_module_text("CloseFileWhenInactive"));
+	prop = obs_properties_add_bool(
+		props, "close_when_inactive",
+		obs_module_text("CloseFileWhenInactive"));
 
-	obs_property_set_long_description(prop,
-			obs_module_text("CloseFileWhenInactive.ToolTip"));
+	obs_property_set_long_description(
+		prop, obs_module_text("CloseFileWhenInactive.ToolTip"));
 
 	obs_properties_add_int_slider(props, "speed_percent",
-			obs_module_text("SpeedPercentage"), 1, 200, 1);
+				      obs_module_text("SpeedPercentage"), 1,
+				      200, 1);
 
 	prop = obs_properties_add_list(props, "color_range",
-			obs_module_text("ColorRange"), OBS_COMBO_TYPE_LIST,
-			OBS_COMBO_FORMAT_INT);
+				       obs_module_text("ColorRange"),
+				       OBS_COMBO_TYPE_LIST,
+				       OBS_COMBO_FORMAT_INT);
 	obs_property_list_add_int(prop, obs_module_text("ColorRange.Auto"),
-			VIDEO_RANGE_DEFAULT);
+				  VIDEO_RANGE_DEFAULT);
 	obs_property_list_add_int(prop, obs_module_text("ColorRange.Partial"),
-			VIDEO_RANGE_PARTIAL);
+				  VIDEO_RANGE_PARTIAL);
 	obs_property_list_add_int(prop, obs_module_text("ColorRange.Full"),
-			VIDEO_RANGE_FULL);
+				  VIDEO_RANGE_FULL);
 
 	obs_properties_add_bool(props, "seekable", obs_module_text("Seekable"));
 
@@ -198,26 +201,24 @@ static obs_properties_t *ffmpeg_source_getproperties(void *data)
 }
 
 static void dump_source_info(struct ffmpeg_source *s, const char *input,
-		const char *input_format)
+			     const char *input_format)
 {
 	FF_BLOG(LOG_INFO,
-			"settings:\n"
-			"\tinput:                   %s\n"
-			"\tinput_format:            %s\n"
-			"\tspeed:                   %d\n"
-			"\tis_looping:              %s\n"
-			"\tis_hw_decoding:          %s\n"
-			"\tis_clear_on_media_end:   %s\n"
-			"\trestart_on_activate:     %s\n"
-			"\tclose_when_inactive:     %s",
-			input ? input : "(null)",
-			input_format ? input_format : "(null)",
-			s->speed_percent,
-			s->is_looping ? "yes" : "no",
-			s->is_hw_decoding ? "yes" : "no",
-			s->is_clear_on_media_end ? "yes" : "no",
-			s->restart_on_activate ? "yes" : "no",
-			s->close_when_inactive ? "yes" : "no");
+		"settings:\n"
+		"\tinput:                   %s\n"
+		"\tinput_format:            %s\n"
+		"\tspeed:                   %d\n"
+		"\tis_looping:              %s\n"
+		"\tis_hw_decoding:          %s\n"
+		"\tis_clear_on_media_end:   %s\n"
+		"\trestart_on_activate:     %s\n"
+		"\tclose_when_inactive:     %s",
+		input ? input : "(null)",
+		input_format ? input_format : "(null)", s->speed_percent,
+		s->is_looping ? "yes" : "no", s->is_hw_decoding ? "yes" : "no",
+		s->is_clear_on_media_end ? "yes" : "no",
+		s->restart_on_activate ? "yes" : "no",
+		s->close_when_inactive ? "yes" : "no");
 }
 
 static void get_frame(void *opaque, struct obs_source_frame *f)
@@ -267,8 +268,7 @@ static void ffmpeg_source_open(struct ffmpeg_source *s)
 			.speed = s->speed_percent,
 			.force_range = s->range,
 			.hardware_decoding = s->is_hw_decoding,
-			.is_local_file = s->is_local_file || s->seekable
-		};
+			.is_local_file = s->is_local_file || s->seekable};
 
 		s->media_valid = mp_media_init(&s->media, &info);
 	}
@@ -316,14 +316,14 @@ static void ffmpeg_source_update(void *data, obs_data_t *settings)
 		input = (char *)obs_data_get_string(settings, "local_file");
 		input_format = NULL;
 		s->is_looping = obs_data_get_bool(settings, "looping");
-		s->close_when_inactive = obs_data_get_bool(settings,
-				"close_when_inactive");
+		s->close_when_inactive =
+			obs_data_get_bool(settings, "close_when_inactive");
 
 		obs_source_set_async_unbuffered(s->source, true);
 	} else {
 		input = (char *)obs_data_get_string(settings, "input");
-		input_format = (char *)obs_data_get_string(settings,
-				"input_format");
+		input_format =
+			(char *)obs_data_get_string(settings, "input_format");
 		s->is_looping = false;
 		s->close_when_inactive = true;
 
@@ -335,12 +335,12 @@ static void ffmpeg_source_update(void *data, obs_data_t *settings)
 #ifndef __APPLE__
 	s->is_hw_decoding = obs_data_get_bool(settings, "hw_decode");
 #endif
-	s->is_clear_on_media_end = obs_data_get_bool(settings,
-			"clear_on_media_end");
-	s->restart_on_activate = obs_data_get_bool(settings,
-			"restart_on_activate");
+	s->is_clear_on_media_end =
+		obs_data_get_bool(settings, "clear_on_media_end");
+	s->restart_on_activate =
+		obs_data_get_bool(settings, "restart_on_activate");
 	s->range = (enum video_range_type)obs_data_get_int(settings,
-			"color_range");
+							   "color_range");
 	s->buffering_mb = (int)obs_data_get_int(settings, "buffering_mb");
 	s->speed_percent = (int)obs_data_get_int(settings, "speed_percent");
 	s->is_local_file = is_local_file;
@@ -369,8 +369,8 @@ static const char *ffmpeg_source_getname(void *unused)
 	return obs_module_text("FFMpegSource");
 }
 
-static void restart_hotkey(void *data, obs_hotkey_id id,
-		obs_hotkey_t *hotkey, bool pressed)
+static void restart_hotkey(void *data, obs_hotkey_id id, obs_hotkey_t *hotkey,
+			   bool pressed)
 {
 	UNUSED_PARAMETER(id);
 	UNUSED_PARAMETER(hotkey);
@@ -407,12 +407,12 @@ static void get_nb_frames(void *data, calldata_t *cd)
 		return;
 	}
 
-	int video_stream_index = av_find_best_stream(s->media.fmt,
-			AVMEDIA_TYPE_VIDEO, -1, -1, NULL, 0);
+	int video_stream_index = av_find_best_stream(
+		s->media.fmt, AVMEDIA_TYPE_VIDEO, -1, -1, NULL, 0);
 
 	if (video_stream_index < 0) {
 		FF_BLOG(LOG_WARNING, "Getting number of frames failed: No "
-				"video stream in media file!");
+				     "video stream in media file!");
 		calldata_set_int(cd, "num_frames", frames);
 		return;
 	}
@@ -423,12 +423,12 @@ static void get_nb_frames(void *data, calldata_t *cd)
 		frames = stream->nb_frames;
 	} else {
 		FF_BLOG(LOG_DEBUG, "nb_frames not set, estimating using frame "
-				"rate and duration");
+				   "rate and duration");
 		AVRational avg_frame_rate = stream->avg_frame_rate;
 		frames = (int64_t)ceil((double)s->media.fmt->duration /
-				(double)AV_TIME_BASE *
-				(double)avg_frame_rate.num /
-				(double)avg_frame_rate.den);
+				       (double)AV_TIME_BASE *
+				       (double)avg_frame_rate.num /
+				       (double)avg_frame_rate.den);
 	}
 
 	calldata_set_int(cd, "num_frames", frames);
@@ -441,17 +441,16 @@ static void *ffmpeg_source_create(obs_data_t *settings, obs_source_t *source)
 	struct ffmpeg_source *s = bzalloc(sizeof(struct ffmpeg_source));
 	s->source = source;
 
-	s->hotkey = obs_hotkey_register_source(source,
-			"MediaSource.Restart",
-			obs_module_text("RestartMedia"),
-			restart_hotkey, s);
+	s->hotkey = obs_hotkey_register_source(source, "MediaSource.Restart",
+					       obs_module_text("RestartMedia"),
+					       restart_hotkey, s);
 
 	proc_handler_t *ph = obs_source_get_proc_handler(source);
 	proc_handler_add(ph, "void restart()", restart_proc, s);
 	proc_handler_add(ph, "void get_duration(out int duration)",
-			get_duration, s);
+			 get_duration, s);
 	proc_handler_add(ph, "void get_nb_frames(out int num_frames)",
-			get_nb_frames, s);
+			 get_nb_frames, s);
 
 	ffmpeg_source_update(s, settings);
 	return s;
@@ -497,17 +496,17 @@ static void ffmpeg_source_deactivate(void *data)
 }
 
 struct obs_source_info ffmpeg_source = {
-	.id             = "ffmpeg_source",
-	.type           = OBS_SOURCE_TYPE_INPUT,
-	.output_flags   = OBS_SOURCE_ASYNC_VIDEO | OBS_SOURCE_AUDIO |
-	                  OBS_SOURCE_DO_NOT_DUPLICATE,
-	.get_name       = ffmpeg_source_getname,
-	.create         = ffmpeg_source_create,
-	.destroy        = ffmpeg_source_destroy,
-	.get_defaults   = ffmpeg_source_defaults,
+	.id = "ffmpeg_source",
+	.type = OBS_SOURCE_TYPE_INPUT,
+	.output_flags = OBS_SOURCE_ASYNC_VIDEO | OBS_SOURCE_AUDIO |
+			OBS_SOURCE_DO_NOT_DUPLICATE,
+	.get_name = ffmpeg_source_getname,
+	.create = ffmpeg_source_create,
+	.destroy = ffmpeg_source_destroy,
+	.get_defaults = ffmpeg_source_defaults,
 	.get_properties = ffmpeg_source_getproperties,
-	.activate       = ffmpeg_source_activate,
-	.deactivate     = ffmpeg_source_deactivate,
-	.video_tick     = ffmpeg_source_tick,
-	.update         = ffmpeg_source_update
+	.activate = ffmpeg_source_activate,
+	.deactivate = ffmpeg_source_deactivate,
+	.video_tick = ffmpeg_source_tick,
+	.update = ffmpeg_source_update,
 };

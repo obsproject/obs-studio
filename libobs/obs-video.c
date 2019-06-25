@@ -27,13 +27,13 @@
 static uint64_t tick_sources(uint64_t cur_time, uint64_t last_time)
 {
 	struct obs_core_data *data = &obs->data;
-	struct obs_source    *source;
-	uint64_t             delta_time;
-	float                seconds;
+	struct obs_source *source;
+	uint64_t delta_time;
+	float seconds;
 
 	if (!last_time)
 		last_time = cur_time -
-			video_output_get_frame_time(obs->video.video);
+			    video_output_get_frame_time(obs->video.video);
 
 	delta_time = cur_time - last_time;
 	seconds = (float)((double)delta_time / 1000000000.0);
@@ -59,7 +59,7 @@ static uint64_t tick_sources(uint64_t cur_time, uint64_t last_time)
 	source = data->first_source;
 	while (source) {
 		struct obs_source *cur_source = obs_source_get_ref(source);
-		source = (struct obs_source*)source->context.next;
+		source = (struct obs_source *)source->context.next;
 
 		if (cur_source) {
 			obs_source_video_tick(cur_source, seconds);
@@ -120,7 +120,7 @@ static inline void render_main_texture(struct obs_core_video *video)
 {
 	profile_start(render_main_texture_name);
 	GS_DEBUG_MARKER_BEGIN(GS_DEBUG_COLOR_MAIN_TEXTURE,
-			render_main_texture_name);
+			      render_main_texture_name);
 
 	struct vec4 clear_color;
 	vec4_set(&clear_color, 0.0f, 0.0f, 0.0f, 0.0f);
@@ -136,8 +136,8 @@ static inline void render_main_texture(struct obs_core_video *video)
 		struct draw_callback *callback;
 		callback = obs->data.draw_callbacks.array + (i - 1);
 
-		callback->draw(callback->param,
-				video->base_width, video->base_height);
+		callback->draw(callback->param, video->base_width,
+			       video->base_height);
 	}
 
 	pthread_mutex_unlock(&obs->data.draw_callbacks_mutex);
@@ -150,20 +150,22 @@ static inline void render_main_texture(struct obs_core_video *video)
 	profile_end(render_main_texture_name);
 }
 
-static inline gs_effect_t *get_scale_effect_internal(
-		struct obs_core_video *video)
+static inline gs_effect_t *
+get_scale_effect_internal(struct obs_core_video *video)
 {
 	/* if the dimension is under half the size of the original image,
 	 * bicubic/lanczos can't sample enough pixels to create an accurate
 	 * image, so use the bilinear low resolution effect instead */
-	if (video->output_width  < (video->base_width  / 2) &&
+	if (video->output_width < (video->base_width / 2) &&
 	    video->output_height < (video->base_height / 2)) {
 		return video->bilinear_lowres_effect;
 	}
 
 	switch (video->scale_type) {
-	case OBS_SCALE_BILINEAR: return video->default_effect;
-	case OBS_SCALE_LANCZOS:  return video->lanczos_effect;
+	case OBS_SCALE_BILINEAR:
+		return video->default_effect;
+	case OBS_SCALE_LANCZOS:
+		return video->lanczos_effect;
 	case OBS_SCALE_BICUBIC:
 	default:;
 	}
@@ -172,16 +174,16 @@ static inline gs_effect_t *get_scale_effect_internal(
 }
 
 static inline bool resolution_close(struct obs_core_video *video,
-		uint32_t width, uint32_t height)
+				    uint32_t width, uint32_t height)
 {
-	long width_cmp  = (long)video->base_width  - (long)width;
+	long width_cmp = (long)video->base_width - (long)width;
 	long height_cmp = (long)video->base_height - (long)height;
 
 	return labs(width_cmp) <= 16 && labs(height_cmp) <= 16;
 }
 
 static inline gs_effect_t *get_scale_effect(struct obs_core_video *video,
-		uint32_t width, uint32_t height)
+					    uint32_t width, uint32_t height)
 {
 	if (resolution_close(video, width, height)) {
 		return video->default_effect;
@@ -190,9 +192,9 @@ static inline gs_effect_t *get_scale_effect(struct obs_core_video *video,
 		 * or bilinear by default */
 		gs_effect_t *effect = get_scale_effect_internal(video);
 		if (!effect)
-			effect = !!video->bicubic_effect ?
-				video->bicubic_effect :
-				video->default_effect;
+			effect = !!video->bicubic_effect
+					 ? video->bicubic_effect
+					 : video->default_effect;
 		return effect;
 	}
 }
@@ -203,16 +205,15 @@ static inline void render_output_texture(struct obs_core_video *video)
 	profile_start(render_output_texture_name);
 
 	gs_texture_t *texture = video->render_texture;
-	gs_texture_t *target  = video->output_texture;
-	uint32_t     width   = gs_texture_get_width(target);
-	uint32_t     height  = gs_texture_get_height(target);
-	struct vec2  base_i;
+	gs_texture_t *target = video->output_texture;
+	uint32_t width = gs_texture_get_width(target);
+	uint32_t height = gs_texture_get_height(target);
+	struct vec2 base_i;
 
-	vec2_set(&base_i,
-		1.0f / (float)video->base_width,
-		1.0f / (float)video->base_height);
+	vec2_set(&base_i, 1.0f / (float)video->base_width,
+		 1.0f / (float)video->base_height);
 
-	gs_effect_t    *effect  = get_scale_effect(video, width, height);
+	gs_effect_t *effect = get_scale_effect(video, width, height);
 	gs_technique_t *tech;
 
 	if (video->ovi.output_format == VIDEO_FORMAT_RGBA) {
@@ -221,12 +222,12 @@ static inline void render_output_texture(struct obs_core_video *video)
 		tech = gs_effect_get_technique(effect, "DrawMatrix");
 	}
 
-	gs_eparam_t    *image   = gs_effect_get_param_by_name(effect, "image");
-	gs_eparam_t    *matrix  = gs_effect_get_param_by_name(effect,
-			"color_matrix");
-	gs_eparam_t    *bres_i  = gs_effect_get_param_by_name(effect,
-			"base_dimension_i");
-	size_t      passes, i;
+	gs_eparam_t *image = gs_effect_get_param_by_name(effect, "image");
+	gs_eparam_t *matrix =
+		gs_effect_get_param_by_name(effect, "color_matrix");
+	gs_eparam_t *bres_i =
+		gs_effect_get_param_by_name(effect, "base_dimension_i");
+	size_t passes, i;
 
 	gs_set_render_target(target, NULL);
 	set_render_size(width, height);
@@ -262,25 +263,25 @@ static void render_convert_texture(struct obs_core_video *video)
 	profile_start(render_convert_texture_name);
 
 	gs_texture_t *texture = video->output_texture;
-	gs_texture_t *target  = video->convert_texture;
-	float        fwidth  = (float)video->output_width;
-	float        fheight = (float)video->output_height;
-	size_t       passes, i;
+	gs_texture_t *target = video->convert_texture;
+	float fwidth = (float)video->output_width;
+	float fheight = (float)video->output_height;
+	size_t passes, i;
 
-	gs_effect_t    *effect  = video->conversion_effect;
-	gs_eparam_t    *image   = gs_effect_get_param_by_name(effect, "image");
-	gs_technique_t *tech    = gs_effect_get_technique(effect,
-			video->conversion_tech);
+	gs_effect_t *effect = video->conversion_effect;
+	gs_eparam_t *image = gs_effect_get_param_by_name(effect, "image");
+	gs_technique_t *tech =
+		gs_effect_get_technique(effect, video->conversion_tech);
 
 	set_eparam(effect, "u_plane_offset", (float)video->plane_offsets[1]);
 	set_eparam(effect, "v_plane_offset", (float)video->plane_offsets[2]);
-	set_eparam(effect, "width",  fwidth);
+	set_eparam(effect, "width", fwidth);
 	set_eparam(effect, "height", fheight);
-	set_eparam(effect, "width_i",  1.0f / fwidth);
+	set_eparam(effect, "width_i", 1.0f / fwidth);
 	set_eparam(effect, "height_i", 1.0f / fheight);
-	set_eparam(effect, "width_d2",  fwidth  * 0.5f);
+	set_eparam(effect, "width_d2", fwidth * 0.5f);
 	set_eparam(effect, "height_d2", fheight * 0.5f);
-	set_eparam(effect, "width_d2_i",  1.0f / (fwidth  * 0.5f));
+	set_eparam(effect, "width_d2_i", 1.0f / (fwidth * 0.5f));
 	set_eparam(effect, "height_d2_i", 1.0f / (fheight * 0.5f));
 	set_eparam(effect, "input_height", (float)video->conversion_height);
 
@@ -305,14 +306,14 @@ static void render_convert_texture(struct obs_core_video *video)
 }
 
 static void render_nv12(struct obs_core_video *video, gs_texture_t *target,
-		const char *tech_name, uint32_t width, uint32_t height)
+			const char *tech_name, uint32_t width, uint32_t height)
 {
 	gs_texture_t *texture = video->output_texture;
 
-	gs_effect_t    *effect  = video->conversion_effect;
-	gs_eparam_t    *image   = gs_effect_get_param_by_name(effect, "image");
-	gs_technique_t *tech    = gs_effect_get_technique(effect, tech_name);
-	size_t         passes, i;
+	gs_effect_t *effect = video->conversion_effect;
+	gs_eparam_t *image = gs_effect_get_param_by_name(effect, "image");
+	gs_technique_t *tech = gs_effect_get_technique(effect, tech_name);
+	size_t passes, i;
 
 	gs_effect_set_texture(image, texture);
 
@@ -336,9 +337,9 @@ static void render_convert_texture_nv12(struct obs_core_video *video)
 	profile_start(render_convert_nv12_name);
 
 	render_nv12(video, video->convert_texture, "NV12_Y",
-			video->output_width, video->output_height);
+		    video->output_width, video->output_height);
 	render_nv12(video, video->convert_uv_texture, "NV12_UV",
-			video->output_width / 2, video->output_height / 2);
+		    video->output_width / 2, video->output_height / 2);
 
 	video->texture_converted = true;
 
@@ -347,12 +348,12 @@ static void render_convert_texture_nv12(struct obs_core_video *video)
 
 static const char *stage_output_texture_name = "stage_output_texture";
 static inline void stage_output_texture(struct obs_core_video *video,
-		int cur_texture)
+					int cur_texture)
 {
 	profile_start(stage_output_texture_name);
 
-	gs_texture_t   *texture;
-	bool        texture_ready;
+	gs_texture_t *texture;
+	bool texture_ready;
 	gs_stagesurf_t *copy = video->copy_surfaces[cur_texture];
 
 	if (video->gpu_conversion) {
@@ -378,15 +379,16 @@ end:
 
 #ifdef _WIN32
 static inline bool queue_frame(struct obs_core_video *video, bool raw_active,
-		struct obs_vframe_info *vframe_info)
+			       struct obs_vframe_info *vframe_info)
 {
-	bool duplicate = !video->gpu_encoder_avail_queue.size ||
+	bool duplicate =
+		!video->gpu_encoder_avail_queue.size ||
 		(video->gpu_encoder_queue.size && vframe_info->count > 1);
 
 	if (duplicate) {
 		struct obs_tex_frame *tf = circlebuf_data(
-				&video->gpu_encoder_queue,
-				video->gpu_encoder_queue.size - sizeof(*tf));
+			&video->gpu_encoder_queue,
+			video->gpu_encoder_queue.size - sizeof(*tf));
 
 		/* texture-based encoding is stopping */
 		if (!tf) {
@@ -439,9 +441,10 @@ finish:
 extern void full_stop(struct obs_encoder *encoder);
 
 static inline void encode_gpu(struct obs_core_video *video, bool raw_active,
-		struct obs_vframe_info *vframe_info)
+			      struct obs_vframe_info *vframe_info)
 {
-	while (queue_frame(video, raw_active, vframe_info));
+	while (queue_frame(video, raw_active, vframe_info))
+		;
 }
 
 static const char *output_gpu_encoders_name = "output_gpu_encoders";
@@ -456,7 +459,7 @@ static void output_gpu_encoders(struct obs_core_video *video, bool raw_active)
 
 	struct obs_vframe_info vframe_info;
 	circlebuf_pop_front(&video->vframe_info_buffer_gpu, &vframe_info,
-			sizeof(vframe_info));
+			    sizeof(vframe_info));
 
 	pthread_mutex_lock(&video->gpu_encoder_mutex);
 	encode_gpu(video, raw_active, &vframe_info);
@@ -468,7 +471,7 @@ end:
 #endif
 
 static inline void render_video(struct obs_core_video *video, bool raw_active,
-		const bool gpu_active, int cur_texture)
+				const bool gpu_active, int cur_texture)
 {
 	gs_begin_scene();
 
@@ -510,7 +513,7 @@ static inline void render_video(struct obs_core_video *video, bool raw_active,
 }
 
 static inline bool download_frame(struct obs_core_video *video,
-		int prev_texture, struct video_data *frame)
+				  int prev_texture, struct video_data *frame)
 {
 	gs_stagesurf_t *surface = video->copy_surfaces[prev_texture];
 
@@ -530,10 +533,9 @@ static inline uint32_t calc_linesize(uint32_t pos, uint32_t linesize)
 	return size ? size : linesize;
 }
 
-static void copy_dealign(
-		uint8_t *dst, uint32_t dst_pos, uint32_t dst_linesize,
-		const uint8_t *src, uint32_t src_pos, uint32_t src_linesize,
-		uint32_t remaining)
+static void copy_dealign(uint8_t *dst, uint32_t dst_pos, uint32_t dst_linesize,
+			 const uint8_t *src, uint32_t src_pos,
+			 uint32_t src_linesize, uint32_t remaining)
 {
 	while (remaining) {
 		uint32_t src_remainder = src_pos % src_linesize;
@@ -555,37 +557,39 @@ static void copy_dealign(
 }
 
 static inline uint32_t make_aligned_linesize_offset(uint32_t offset,
-		uint32_t dst_linesize, uint32_t src_linesize)
+						    uint32_t dst_linesize,
+						    uint32_t src_linesize)
 {
 	uint32_t remainder = offset % dst_linesize;
 	return (offset / dst_linesize) * src_linesize + remainder;
 }
 
 static void fix_gpu_converted_alignment(struct obs_core_video *video,
-		struct video_frame *output, const struct video_data *input)
+					struct video_frame *output,
+					const struct video_data *input)
 {
 	uint32_t src_linesize = input->linesize[0];
 	uint32_t dst_linesize = output->linesize[0] * 4;
-	uint32_t src_pos      = 0;
+	uint32_t src_pos = 0;
 
 	for (size_t i = 0; i < 3; i++) {
 		if (video->plane_linewidth[i] == 0)
 			break;
 
-		src_pos = make_aligned_linesize_offset(video->plane_offsets[i],
-				dst_linesize, src_linesize);
+		src_pos = make_aligned_linesize_offset(
+			video->plane_offsets[i], dst_linesize, src_linesize);
 
-		copy_dealign(output->data[i], 0, dst_linesize,
-				input->data[0], src_pos, src_linesize,
-				video->plane_sizes[i]);
+		copy_dealign(output->data[i], 0, dst_linesize, input->data[0],
+			     src_pos, src_linesize, video->plane_sizes[i]);
 	}
 }
 
 static void set_gpu_converted_data(struct obs_core_video *video,
-		struct video_frame *output, const struct video_data *input,
-		const struct video_output_info *info)
+				   struct video_frame *output,
+				   const struct video_data *input,
+				   const struct video_output_info *info)
 {
-	if (input->linesize[0] == video->output_width*4) {
+	if (input->linesize[0] == video->output_width * 4) {
 		struct video_frame frame;
 
 		for (size_t i = 0; i < 3; i++) {
@@ -623,36 +627,33 @@ static void set_gpu_converted_data(struct obs_core_video *video,
 	}
 }
 
-static void convert_frame(
-		struct video_frame *output, const struct video_data *input,
-		const struct video_output_info *info)
+static void convert_frame(struct video_frame *output,
+			  const struct video_data *input,
+			  const struct video_output_info *info)
 {
 	if (info->format == VIDEO_FORMAT_I420) {
-		compress_uyvx_to_i420(
-				input->data[0], input->linesize[0],
-				0, info->height,
-				output->data, output->linesize);
+		compress_uyvx_to_i420(input->data[0], input->linesize[0], 0,
+				      info->height, output->data,
+				      output->linesize);
 
 	} else if (info->format == VIDEO_FORMAT_NV12) {
-		compress_uyvx_to_nv12(
-				input->data[0], input->linesize[0],
-				0, info->height,
-				output->data, output->linesize);
+		compress_uyvx_to_nv12(input->data[0], input->linesize[0], 0,
+				      info->height, output->data,
+				      output->linesize);
 
 	} else if (info->format == VIDEO_FORMAT_I444) {
-		convert_uyvx_to_i444(
-				input->data[0], input->linesize[0],
-				0, info->height,
-				output->data, output->linesize);
+		convert_uyvx_to_i444(input->data[0], input->linesize[0], 0,
+				     info->height, output->data,
+				     output->linesize);
 
 	} else {
 		blog(LOG_ERROR, "convert_frame: unsupported texture format");
 	}
 }
 
-static inline void copy_rgbx_frame(
-		struct video_frame *output, const struct video_data *input,
-		const struct video_output_info *info)
+static inline void copy_rgbx_frame(struct video_frame *output,
+				   const struct video_data *input,
+				   const struct video_output_info *info)
 {
 	uint8_t *in_ptr = input->data[0];
 	uint8_t *out_ptr = output->data[0];
@@ -670,7 +671,7 @@ static inline void copy_rgbx_frame(
 }
 
 static inline void output_video_data(struct obs_core_video *video,
-		struct video_data *input_frame, int count)
+				     struct video_data *input_frame, int count)
 {
 	const struct video_output_info *info;
 	struct video_frame output_frame;
@@ -679,11 +680,11 @@ static inline void output_video_data(struct obs_core_video *video,
 	info = video_output_get_info(video->video);
 
 	locked = video_output_lock_frame(video->video, &output_frame, count,
-			input_frame->timestamp);
+					 input_frame->timestamp);
 	if (locked) {
 		if (video->gpu_conversion) {
 			set_gpu_converted_data(video, &output_frame,
-					input_frame, info);
+					       input_frame, info);
 
 		} else if (format_is_yuv(info->format)) {
 			convert_frame(&output_frame, input_frame, info);
@@ -695,9 +696,9 @@ static inline void output_video_data(struct obs_core_video *video,
 	}
 }
 
-static inline void video_sleep(struct obs_core_video *video,
-		bool raw_active, const bool gpu_active,
-		uint64_t *p_time, uint64_t interval_ns)
+static inline void video_sleep(struct obs_core_video *video, bool raw_active,
+			       const bool gpu_active, uint64_t *p_time,
+			       uint64_t interval_ns)
 {
 	struct obs_vframe_info vframe_info;
 	uint64_t cur_time = *p_time;
@@ -720,10 +721,10 @@ static inline void video_sleep(struct obs_core_video *video,
 
 	if (raw_active)
 		circlebuf_push_back(&video->vframe_info_buffer, &vframe_info,
-				sizeof(vframe_info));
+				    sizeof(vframe_info));
 	if (gpu_active)
 		circlebuf_push_back(&video->vframe_info_buffer_gpu,
-				&vframe_info, sizeof(vframe_info));
+				    &vframe_info, sizeof(vframe_info));
 }
 
 static const char *output_frame_gs_context_name = "gs_context(video->graphics)";
@@ -734,8 +735,9 @@ static const char *output_frame_output_video_data_name = "output_video_data";
 static inline void output_frame(bool raw_active, const bool gpu_active)
 {
 	struct obs_core_video *video = &obs->video;
-	int cur_texture  = video->cur_texture;
-	int prev_texture = cur_texture == 0 ? NUM_TEXTURES-1 : cur_texture-1;
+	int cur_texture = video->cur_texture;
+	int prev_texture = cur_texture == 0 ? NUM_TEXTURES - 1
+					    : cur_texture - 1;
 	struct video_data frame;
 	bool frame_ready = 0;
 
@@ -746,7 +748,7 @@ static inline void output_frame(bool raw_active, const bool gpu_active)
 
 	profile_start(output_frame_render_video_name);
 	GS_DEBUG_MARKER_BEGIN(GS_DEBUG_COLOR_RENDER_VIDEO,
-			output_frame_render_video_name);
+			      output_frame_render_video_name);
 	render_video(video, raw_active, gpu_active, cur_texture);
 	GS_DEBUG_MARKER_END();
 	profile_end(output_frame_render_video_name);
@@ -767,7 +769,7 @@ static inline void output_frame(bool raw_active, const bool gpu_active)
 	if (raw_active && frame_ready) {
 		struct obs_vframe_info vframe_info;
 		circlebuf_pop_front(&video->vframe_info_buffer, &vframe_info,
-				sizeof(vframe_info));
+				    sizeof(vframe_info));
 
 		frame.timestamp = vframe_info.timestamp;
 		profile_start(output_frame_output_video_data_name);
@@ -825,9 +827,9 @@ void *obs_graphics_thread(void *param)
 
 	os_set_thread_name("libobs: graphics thread");
 
-	const char *video_thread_name =
-		profile_store_name(obs_get_profiler_name_store(),
-			"obs_graphics_thread(%g"NBSP"ms)", interval / 1000000.);
+	const char *video_thread_name = profile_store_name(
+		obs_get_profiler_name_store(),
+		"obs_graphics_thread(%g" NBSP "ms)", interval / 1000000.);
 	profile_register_root(video_thread_name, interval);
 
 	srand((unsigned int)time(NULL));
@@ -878,17 +880,19 @@ void *obs_graphics_thread(void *param)
 		profile_reenable_thread();
 
 		video_sleep(&obs->video, raw_active, gpu_active,
-				&obs->video.video_time, interval);
+			    &obs->video.video_time, interval);
 
 		frame_time_total_ns += frame_time_ns;
 		fps_total_ns += (obs->video.video_time - last_time);
 		fps_total_frames++;
 
 		if (fps_total_ns >= 1000000000ULL) {
-			obs->video.video_fps = (double)fps_total_frames /
+			obs->video.video_fps =
+				(double)fps_total_frames /
 				((double)fps_total_ns / 1000000000.0);
 			obs->video.video_avg_frame_time_ns =
-				frame_time_total_ns / (uint64_t)fps_total_frames;
+				frame_time_total_ns /
+				(uint64_t)fps_total_frames;
 
 			frame_time_total_ns = 0;
 			fps_total_ns = 0;

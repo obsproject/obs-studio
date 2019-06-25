@@ -11,8 +11,8 @@ class DoubleSlider : public SliderIgnoreScroll {
 public:
 	DoubleSlider(QWidget *parent = nullptr);
 
-	void setDoubleConstraints(double newMin, double newMax,
-			double newStep, double val);
+	void setDoubleConstraints(double newMin, double newMax, double newStep,
+				  double val);
 
 signals:
 	void doubleValChanged(double val);

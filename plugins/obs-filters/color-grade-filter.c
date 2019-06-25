@@ -2,20 +2,24 @@
 #include <graphics/image-file.h>
 #include <util/dstr.h>
 
+/* clang-format off */
+
 #define SETTING_IMAGE_PATH             "image_path"
 #define SETTING_CLUT_AMOUNT            "clut_amount"
 
 #define TEXT_IMAGE_PATH                obs_module_text("Path")
 #define TEXT_AMOUNT                    obs_module_text("Amount")
 
-struct lut_filter_data {
-	obs_source_t                   *context;
-	gs_effect_t                    *effect;
-	gs_texture_t                   *target;
-	gs_image_file_t                image;
+/* clang-format on */
 
-	char                           *file;
-	float                          clut_amount;
+struct lut_filter_data {
+	obs_source_t *context;
+	gs_effect_t *effect;
+	gs_texture_t *target;
+	gs_image_file_t image;
+
+	char *file;
+	float clut_amount;
 };
 
 static const char *color_grade_filter_get_name(void *unused)
@@ -89,9 +93,9 @@ static obs_properties_t *color_grade_filter_properties(void *data)
 		dstr_resize(&path, slash - path.array + 1);
 
 	obs_properties_add_path(props, SETTING_IMAGE_PATH, TEXT_IMAGE_PATH,
-			OBS_PATH_FILE, filter_str.array, path.array);
-	obs_properties_add_float_slider(props, SETTING_CLUT_AMOUNT,
-			TEXT_AMOUNT, 0, 1, 0.01);
+				OBS_PATH_FILE, filter_str.array, path.array);
+	obs_properties_add_float_slider(props, SETTING_CLUT_AMOUNT, TEXT_AMOUNT,
+					0, 1, 0.01);
 
 	dstr_free(&filter_str);
 	dstr_free(&path);
@@ -100,8 +104,8 @@ static obs_properties_t *color_grade_filter_properties(void *data)
 	return props;
 }
 
-static void *color_grade_filter_create(
-		obs_data_t *settings, obs_source_t *context)
+static void *color_grade_filter_create(obs_data_t *settings,
+				       obs_source_t *context)
 {
 	struct lut_filter_data *filter =
 		bzalloc(sizeof(struct lut_filter_data));
@@ -136,7 +140,7 @@ static void color_grade_filter_render(void *data, gs_effect_t *effect)
 	}
 
 	if (!obs_source_process_filter_begin(filter->context, GS_RGBA,
-				OBS_ALLOW_DIRECT_RENDERING))
+					     OBS_ALLOW_DIRECT_RENDERING))
 		return;
 
 	param = gs_effect_get_param_by_name(filter->effect, "clut");
@@ -151,14 +155,14 @@ static void color_grade_filter_render(void *data, gs_effect_t *effect)
 }
 
 struct obs_source_info color_grade_filter = {
-	.id                            = "clut_filter",
-	.type                          = OBS_SOURCE_TYPE_FILTER,
-	.output_flags                  = OBS_SOURCE_VIDEO,
-	.get_name                      = color_grade_filter_get_name,
-	.create                        = color_grade_filter_create,
-	.destroy                       = color_grade_filter_destroy,
-	.update                        = color_grade_filter_update,
-	.get_defaults                  = color_grade_filter_defaults,
-	.get_properties                = color_grade_filter_properties,
-	.video_render                  = color_grade_filter_render
+	.id = "clut_filter",
+	.type = OBS_SOURCE_TYPE_FILTER,
+	.output_flags = OBS_SOURCE_VIDEO,
+	.get_name = color_grade_filter_get_name,
+	.create = color_grade_filter_create,
+	.destroy = color_grade_filter_destroy,
+	.update = color_grade_filter_update,
+	.get_defaults = color_grade_filter_defaults,
+	.get_properties = color_grade_filter_properties,
+	.video_render = color_grade_filter_render,
 };
