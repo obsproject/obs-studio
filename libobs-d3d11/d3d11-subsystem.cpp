@@ -1120,6 +1120,20 @@ gs_indexbuffer_t *device_indexbuffer_create(gs_device_t *device,
 	return buffer;
 }
 
+gs_timer_t *device_timer_create(gs_device_t *device)
+{
+	gs_timer *timer = NULL;
+	try {
+		timer = new gs_timer(device);
+	} catch (HRError error) {
+		blog(LOG_ERROR, "device_timer_create (D3D11): %s (%08lX)",
+				error.str, error.hr);
+		LogD3D11ErrorDetails(error, device);
+	}
+
+	return timer;
+}
+
 enum gs_texture_type device_get_texture_type(const gs_texture_t *texture)
 {
 	return texture->type;
@@ -2229,6 +2243,60 @@ size_t gs_indexbuffer_get_num_indices(const gs_indexbuffer_t *indexbuffer)
 enum gs_index_type gs_indexbuffer_get_type(const gs_indexbuffer_t *indexbuffer)
 {
 	return indexbuffer->type;
+}
+
+void gs_timer_destroy(gs_timer_t* timer)
+{
+	delete timer;
+}
+
+void gs_timer_begin(gs_timer_t *timer)
+{
+	timer->device->context->Begin(timer->query_disjoint);
+	timer->device->context->End(timer->query_begin);
+}
+
+void gs_timer_end(gs_timer_t *timer)
+{
+	timer->device->context->End(timer->query_end);
+	timer->device->context->End(timer->query_disjoint);
+}
+
+bool gs_timer_get_data(gs_timer_t *timer, uint64_t *frequency,
+		uint64_t *ticks)
+{
+	D3D11_QUERY_DATA_TIMESTAMP_DISJOINT disjoint;
+	uint64_t begin, end;
+	HRESULT hr_disjoint, hr_begin, hr_end;
+	do {
+		hr_disjoint = timer->device->context->GetData(
+				timer->query_disjoint, &disjoint,
+				sizeof(disjoint), 0);
+	} while (hr_disjoint == S_FALSE);
+	do {
+		hr_begin = timer->device->context->GetData(timer->query_begin,
+				&begin, sizeof(begin), 0);
+	} while (hr_begin == S_FALSE);
+	do {
+		hr_end = timer->device->context->GetData(timer->query_end,
+				&end, sizeof(end), 0);
+	} while (hr_end == S_FALSE);
+
+	if (FAILED(hr_disjoint) || FAILED(hr_begin) || FAILED(hr_end))
+		return false;
+
+	if (disjoint.Disjoint)
+		return false;
+
+	*frequency = disjoint.Frequency;
+	*ticks = end - begin;
+	return true;
+}
+
+gs_timer::gs_timer(gs_device_t *device)
+	: gs_obj(device, gs_type::gs_timer)
+{
+	Rebuild(device->device);
 }
 
 extern "C" EXPORT bool device_gdi_texture_available(void)

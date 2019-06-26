@@ -247,6 +247,7 @@ struct gs_index_buffer;
 struct gs_sampler_state;
 struct gs_shader;
 struct gs_swap_chain;
+struct gs_timer;
 struct gs_texrender;
 struct gs_shader_param;
 struct gs_effect;
@@ -263,6 +264,7 @@ typedef struct gs_vertex_buffer gs_vertbuffer_t;
 typedef struct gs_index_buffer gs_indexbuffer_t;
 typedef struct gs_sampler_state gs_samplerstate_t;
 typedef struct gs_swap_chain gs_swapchain_t;
+typedef struct gs_timer gs_timer_t;
 typedef struct gs_texture_render gs_texrender_t;
 typedef struct gs_shader gs_shader_t;
 typedef struct gs_shader_param gs_sparam_t;
@@ -633,6 +635,8 @@ EXPORT gs_indexbuffer_t *gs_indexbuffer_create(enum gs_index_type type,
 					       void *indices, size_t num,
 					       uint32_t flags);
 
+EXPORT gs_timer_t *gs_timer_create();
+
 EXPORT enum gs_texture_type gs_get_texture_type(const gs_texture_t *texture);
 
 EXPORT void gs_load_vertexbuffer(gs_vertbuffer_t *vertbuffer);
@@ -772,6 +776,12 @@ EXPORT size_t
 gs_indexbuffer_get_num_indices(const gs_indexbuffer_t *indexbuffer);
 EXPORT enum gs_index_type
 gs_indexbuffer_get_type(const gs_indexbuffer_t *indexbuffer);
+
+EXPORT void gs_timer_destroy(gs_timer_t *timer);
+EXPORT void gs_timer_begin(gs_timer_t *timer);
+EXPORT void gs_timer_end(gs_timer_t *timer);
+EXPORT bool
+gs_timer_get_data(gs_timer_t* timer, uint64_t *frequency, uint64_t *ticks);
 
 EXPORT bool gs_nv12_available(void);
 

@@ -1525,6 +1525,16 @@ gs_indexbuffer_t *gs_indexbuffer_create(enum gs_index_type type, void *indices,
 		graphics->device, type, indices, num, flags);
 }
 
+gs_timer_t *gs_timer_create()
+{
+	graphics_t *graphics = thread_graphics;
+
+	if (!gs_valid("gs_timer_create"))
+		return NULL;
+
+	return graphics->exports.device_timer_create(graphics->device);
+}
+
 enum gs_texture_type gs_get_texture_type(const gs_texture_t *texture)
 {
 	graphics_t *graphics = thread_graphics;
@@ -2541,6 +2551,51 @@ enum gs_index_type gs_indexbuffer_get_type(const gs_indexbuffer_t *indexbuffer)
 		return (enum gs_index_type)0;
 
 	return thread_graphics->exports.gs_indexbuffer_get_type(indexbuffer);
+}
+
+void gs_timer_destroy(gs_timer_t *timer)
+{
+	graphics_t *graphics = thread_graphics;
+
+	if (!gs_valid("gs_timer_destroy"))
+		return;
+	if (!timer)
+		return;
+
+	graphics->exports.gs_timer_destroy(timer);
+}
+
+void gs_timer_begin(gs_timer_t *timer)
+{
+	graphics_t* graphics = thread_graphics;
+
+	if (!gs_valid("gs_timer_begin"))
+		return;
+	if (!timer)
+		return;
+
+	graphics->exports.gs_timer_begin(timer);
+}
+
+void gs_timer_end(gs_timer_t *timer)
+{
+	graphics_t* graphics = thread_graphics;
+
+	if (!gs_valid("gs_timer_end"))
+		return;
+	if (!timer)
+		return;
+
+	graphics->exports.gs_timer_end(timer);
+}
+
+bool gs_timer_get_data(gs_timer_t *timer, uint64_t *frequency, uint64_t *ticks)
+{
+	if (!gs_valid_p3("gs_timer_get_data", timer, frequency, ticks))
+		return false;
+
+	return thread_graphics->exports.gs_timer_get_data(timer, frequency,
+			ticks);
 }
 
 bool gs_nv12_available(void)

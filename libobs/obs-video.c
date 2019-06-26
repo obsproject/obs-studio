@@ -470,18 +470,96 @@ end:
 }
 #endif
 
+#define GPU_TIMER_ENABLE 0
+#if GPU_TIMER_ENABLE
+#define GPU_TIMER_COUNT 2
+#define GPU_TIMER_FRAMES_BETWEEN_PRINT 60
+int gpu_timer_frames_until_print = GPU_TIMER_FRAMES_BETWEEN_PRINT;
+struct gpu_timer
+{
+	const char *name;
+	double microseconds;
+	uint32_t cur_timer;
+	gs_timer_t* timers[GPU_TIMER_COUNT];
+};
+static void gpu_timer_begin_frame()
+{
+	--gpu_timer_frames_until_print;
+}
+static void gpu_timer_end_frame()
+{
+	if (gpu_timer_frames_until_print == 0)
+		gpu_timer_frames_until_print = GPU_TIMER_FRAMES_BETWEEN_PRINT;
+}
+static void gpu_timer_create(struct gpu_timer* timer, const char *name)
+{
+	timer->name = name;
+	timer->microseconds = 1.7976931348623158e+308;
+	timer->cur_timer = 0;
+	for (int i = 0; i < GPU_TIMER_COUNT; ++i)
+		timer->timers[i] = gs_timer_create();
+}
+static void gpu_timer_destroy(struct gpu_timer* timer)
+{
+	for (int i = 0; i < GPU_TIMER_COUNT; ++i)
+		gs_timer_destroy(timer->timers[i]);
+}
+static void gpu_timer_begin(struct gpu_timer *timer)
+{
+	gs_timer_begin(timer->timers[timer->cur_timer]);
+}
+static void gpu_timer_end(struct gpu_timer *timer)
+{
+	uint32_t cur_timer = timer->cur_timer;
+	gs_timer_end(timer->timers[cur_timer]);
+	cur_timer = (timer->cur_timer + 1) % GPU_TIMER_COUNT;
+	uint64_t frequency = 1, ticks = 0;
+	if (gs_timer_get_data(timer->timers[cur_timer], &frequency, &ticks)) {
+		double us = (double)ticks / (double)frequency * 1000000.0;;
+		if (us < timer->microseconds)
+			timer->microseconds = us;
+	}
+
+	timer->cur_timer = cur_timer;
+
+	if (gpu_timer_frames_until_print == 0) {
+		blog(LOG_INFO, "%s: %f", timer->name, timer->microseconds);
+		timer->microseconds = 1.7976931348623158e+308;
+	}
+}
+static struct gpu_timer gpu_timer_output_frame;
+static struct gpu_timer gpu_timer_render_video;
+static struct gpu_timer gpu_timer_render_main_texture;
+static struct gpu_timer gpu_timer_render_output_texture;
+static struct gpu_timer gpu_timer_convert_texture;
+static struct gpu_timer gpu_timer_gpu_encode;
+static struct gpu_timer gpu_timer_stage_output;
+static struct gpu_timer gpu_timer_download_frame;
+#else
+#define gpu_timer_begin_frame()
+#define gpu_timer_end_frame()
+#define gpu_timer_begin(timer)
+#define gpu_timer_end(timer)
+#endif
+
 static inline void render_video(struct obs_core_video *video, bool raw_active,
 				const bool gpu_active, int cur_texture)
 {
 	gs_begin_scene();
 
+	gpu_timer_begin(&gpu_timer_render_video);
+
 	gs_enable_depth_test(false);
 	gs_set_cull_mode(GS_NEITHER);
 
+	gpu_timer_begin(&gpu_timer_render_main_texture);
 	render_main_texture(video);
+	gpu_timer_end(&gpu_timer_render_main_texture);
 
 	if (raw_active || gpu_active) {
+		gpu_timer_begin(&gpu_timer_render_output_texture);
 		render_output_texture(video);
+		gpu_timer_end(&gpu_timer_render_output_texture);
 
 #ifdef _WIN32
 		if (gpu_active) {
@@ -490,24 +568,33 @@ static inline void render_video(struct obs_core_video *video, bool raw_active,
 #endif
 
 		if (video->gpu_conversion) {
+			gpu_timer_begin(&gpu_timer_convert_texture);
 			if (video->using_nv12_tex)
 				render_convert_texture_nv12(video);
 			else
 				render_convert_texture(video);
+			gpu_timer_end(&gpu_timer_convert_texture);
 		}
 
 #ifdef _WIN32
 		if (gpu_active) {
 			gs_flush();
+			gpu_timer_begin(&gpu_timer_gpu_encode);
 			output_gpu_encoders(video, raw_active);
+			gpu_timer_end(&gpu_timer_gpu_encode);
 		}
 #endif
-		if (raw_active)
+		if (raw_active) {
+			gpu_timer_begin(&gpu_timer_stage_output);
 			stage_output_texture(video, cur_texture);
+			gpu_timer_end(&gpu_timer_stage_output);
+		}
 	}
 
 	gs_set_render_target(NULL, NULL);
 	gs_enable_blending(true);
+
+	gpu_timer_end(&gpu_timer_render_video);
 
 	gs_end_scene();
 }
@@ -745,6 +832,8 @@ static inline void output_frame(bool raw_active, const bool gpu_active)
 
 	profile_start(output_frame_gs_context_name);
 	gs_enter_context(video->graphics);
+	gpu_timer_begin_frame();
+	gpu_timer_begin(&gpu_timer_output_frame);
 
 	profile_start(output_frame_render_video_name);
 	GS_DEBUG_MARKER_BEGIN(GS_DEBUG_COLOR_RENDER_VIDEO,
@@ -755,7 +844,9 @@ static inline void output_frame(bool raw_active, const bool gpu_active)
 
 	if (raw_active) {
 		profile_start(output_frame_download_frame_name);
+		gpu_timer_begin(&gpu_timer_download_frame);
 		frame_ready = download_frame(video, prev_texture, &frame);
+		gpu_timer_end(&gpu_timer_download_frame);
 		profile_end(output_frame_download_frame_name);
 	}
 
@@ -763,6 +854,8 @@ static inline void output_frame(bool raw_active, const bool gpu_active)
 	gs_flush();
 	profile_end(output_frame_gs_flush_name);
 
+	gpu_timer_end(&gpu_timer_output_frame);
+	gpu_timer_end_frame();
 	gs_leave_context();
 	profile_end(output_frame_gs_context_name);
 
@@ -834,6 +927,19 @@ void *obs_graphics_thread(void *param)
 
 	srand((unsigned int)time(NULL));
 
+#if GPU_TIMER_ENABLE
+	gs_enter_context(obs->video.graphics);
+	gpu_timer_create(&gpu_timer_output_frame, "Frame");
+	gpu_timer_create(&gpu_timer_render_video, " Video");
+	gpu_timer_create(&gpu_timer_render_main_texture, "  MainTexture");
+	gpu_timer_create(&gpu_timer_render_output_texture, "  OutputTexture");
+	gpu_timer_create(&gpu_timer_convert_texture, "  ConvertTexture");
+	gpu_timer_create(&gpu_timer_gpu_encode, "  GpuEncodeHandoff");
+	gpu_timer_create(&gpu_timer_stage_output, "  StageOutput");
+	gpu_timer_create(&gpu_timer_download_frame, " DownloadFrame");
+	gs_leave_context();
+#endif
+
 	while (!video_output_stopped(obs->video.video)) {
 		uint64_t frame_start = os_gettime_ns();
 		uint64_t frame_time_ns;
@@ -899,6 +1005,19 @@ void *obs_graphics_thread(void *param)
 			fps_total_frames = 0;
 		}
 	}
+
+#if GPU_TIMER_ENABLE
+	gs_enter_context(obs->video.graphics);
+	gpu_timer_destroy(&gpu_timer_output_frame);
+	gpu_timer_destroy(&gpu_timer_render_video);
+	gpu_timer_destroy(&gpu_timer_render_main_texture);
+	gpu_timer_destroy(&gpu_timer_render_output_texture);
+	gpu_timer_destroy(&gpu_timer_convert_texture);
+	gpu_timer_destroy(&gpu_timer_gpu_encode);
+	gpu_timer_destroy(&gpu_timer_stage_output);
+	gpu_timer_destroy(&gpu_timer_download_frame);
+	gs_leave_context();
+#endif
 
 	UNUSED_PARAMETER(param);
 	return NULL;
