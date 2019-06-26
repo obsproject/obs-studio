@@ -1078,8 +1078,12 @@ void SourceTree::dropEvent(QDropEvent *event)
 	/* if dropping a group, detect if it's     */
 	/* below another group                     */
 
-	obs_sceneitem_t *itemBelow =
-		row == stm->items.count() ? nullptr : stm->items[row];
+	obs_sceneitem_t *itemBelow;
+	if (row == stm->items.count())
+		itemBelow = nullptr;
+	else
+		itemBelow = stm->items[row];
+
 	if (hasGroups) {
 		if (!itemBelow ||
 		    obs_sceneitem_get_group(scene, itemBelow) != dropGroup) {
@@ -1288,7 +1292,11 @@ void SourceTree::mouseMoveEvent(QMouseEvent *event)
 	SourceTreeItem *item = qobject_cast<SourceTreeItem *>(childAt(pos));
 
 	OBSBasicPreview *preview = OBSBasicPreview::Get();
-	preview->hoveredListItem = !!item ? item->sceneitem : nullptr;
+
+	if (item)
+		preview->hoveredListItem = item->sceneitem;
+	else
+		preview->hoveredListItem = nullptr;
 
 	QListView::mouseMoveEvent(event);
 }
