@@ -1358,7 +1358,8 @@ void device_set_render_target(gs_device_t *device, gs_texture_t *tex,
 		return;
 	}
 
-	ID3D11RenderTargetView *rt = tex2d ? tex2d->renderTarget[0] : nullptr;
+	ID3D11RenderTargetView *rt = tex2d ? tex2d->renderTarget[0].Get()
+					   : nullptr;
 
 	device->curRenderTarget = tex2d;
 	device->curRenderSide = 0;
