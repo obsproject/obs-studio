@@ -256,9 +256,9 @@ gs_texture_2d::gs_texture_2d(gs_device_t *device, ID3D11Texture2D *nv12tex,
 	  isDynamic((flags_ & GS_DYNAMIC) != 0),
 	  isShared((flags_ & SHARED_FLAGS) != 0),
 	  genMipmaps((flags_ & GS_BUILD_MIPMAPS) != 0),
-	  nv12(true)
+	  nv12(true),
+	  texture(nv12tex)
 {
-	texture = nv12tex;
 	texture->GetDesc(&td);
 
 	this->type = GS_TEXTURE_2D;
