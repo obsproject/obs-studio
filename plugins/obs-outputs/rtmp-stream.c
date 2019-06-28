@@ -768,7 +768,7 @@ static void win32_log_interface_type(struct rtmp_stream *stream)
 	if (rtmp->m_bindIP.addrLen == 0)
 		source_addr = 0;
 	else if (rtmp->m_bindIP.addr.ss_family == AF_INET)
-		source_addr = (*(struct sockaddr_in *)&rtmp->m_bindIP)
+		source_addr = (*(struct sockaddr_in *)&rtmp->m_bindIP.addr)
 				      .sin_addr.S_un.S_addr;
 	else
 		return;

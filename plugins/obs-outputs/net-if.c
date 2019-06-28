@@ -210,7 +210,7 @@ static inline PIP_ADAPTER_ADDRESSES get_adapters(void)
 				       FORMAT_MESSAGE_IGNORE_INSERTS,
 			       NULL, ret,
 			       MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-			       msg_buf, 0, NULL);
+			       (LPSTR)&msg_buf, 0, NULL);
 		if (msg_buf) {
 			warn("Call to GetAdaptersAddresses failed: %s (%d)",
 			     msg_buf, ret);
