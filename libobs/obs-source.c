@@ -1509,7 +1509,7 @@ bool set_async_texture_size(struct obs_source *source,
 		source->async_gpu_conversion = true;
 
 		enum gs_color_format format =
-			CONVERT_RGB_LIMITED
+			(cur == CONVERT_RGB_LIMITED)
 				? convert_video_format(frame->format)
 				: GS_BGRX;
 		source->async_texrender =
