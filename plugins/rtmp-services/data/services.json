@@ -70,6 +70,10 @@
                     "url": "rtmp://live-mil.twitch.tv/app"
                 },
                 {
+                    "name": "EU: Norway, Oslo",
+                    "url": "rtmp://live-osl.twitch.tv/app"
+                },
+                {
                     "name": "EU: Paris, FR",
                     "url": "rtmp://live-cdg.twitch.tv/app"
                 },
@@ -214,7 +218,6 @@
         },
         {
             "name": "Smashcast",
-            "common": true,
             "servers": [
                 {
                     "name": "Default",
@@ -462,21 +465,6 @@
             }
         },
         {
-            "name": "GamePlank",
-            "servers": [
-                {
-                    "name": "Primary",
-                    "url": "rtmp://live.gameplank.tv/go"
-                }
-            ],
-            "recommended": {
-                "keyint": 1,
-                "profile": "main",
-                "max video bitrate": 2500,
-                "max audio bitrate": 160
-            }
-        },
-        {
             "name": "Web.TV",
             "servers": [
                 {
@@ -574,21 +562,6 @@
             ]
         },
         {
-            "name": "DJlive.pl",
-            "servers": [
-                {
-                    "name": "Default",
-                    "url": "rtmp://live.djlive.pl/live"
-                }
-            ],
-            "recommended": {
-                "keyint": 1,
-                "profile": "high",
-                "max video bitrate": 1300,
-                "max audio bitrate": 320
-            }
-        },
-        {
             "name": "Facebook Live",
             "common": true,
             "servers": [
@@ -678,6 +651,10 @@
                 {
                     "name": "US-East (Miami, FL)",
                     "url": "rtmp://miami.restream.io/live"
+                },
+                {
+                    "name": "US-East (Chicago, IL)",
+                    "url": "rtmp://chicago.restream.io/live"
                 },
                 {
                     "name": "NA-East (Toronto, Canada)",
@@ -783,6 +760,10 @@
                 {
                     "name": "US-East (Miami, FL)",
                     "url": "miami.restream.io"
+                },
+                {
+                    "name": "US-East (Chicago, IL)",
+                    "url": "chicago.restream.io"
                 },
                 {
                     "name": "NA-East (Toronto, Canada)",
@@ -1258,10 +1239,6 @@
                 {
                     "name": "Australia East",
                     "url": "rtmp://ingest-au-east.a.switchboard.zone/live"
-                },
-                {
-                    "name": "Asia Central",
-                    "url": "rtmp://ingest-as-central.a.switchboard.zone/live"
                 }
             ]
         },
@@ -1279,38 +1256,6 @@
                 "profile": "main",
                 "max video bitrate": 6000,
                 "max audio bitrate": 160
-            }
-        },
-        {
-            "name": "Stream.me",
-            "common": false,
-            "servers": [
-                {
-                    "name": "US, Central",
-                    "url": "rtmp://uc-origin.stream.me/origin"
-                },
-                {
-                    "name": "US, East",
-                    "url": "rtmp://ue-origin.stream.me/origin"
-                },
-                {
-                    "name": "US, West",
-                    "url": "rtmp://uw-origin.stream.me/origin"
-                },
-                {
-                    "name": "Europe, West",
-                    "url": "rtmp://ew-origin.stream.me/origin"
-                },
-                {
-                    "name": "Asia, East",
-                    "url": "rtmp://ae-origin.stream.me/origin"
-                }
-            ],
-            "recommended": {
-                "keyint": 2,
-                "profile": "main",
-                "max video bitrate": 20000,
-                "max audio bitrate": 192
             }
         },
         {
