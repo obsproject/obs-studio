@@ -108,7 +108,7 @@ steps:
     awsCredentials: 'Streamlabs AWS'
     regionName: 'us-west-2'
     bucketName: 'obsstudios3.streamlabs.com'
-    globExpressions: '$(ReleaseArtifact).7z'
+    globExpressions: 'libobs-$(ReleaseName)-$(tag).7z'
     filesAcl: 'public-read'
   displayName: 'Upload artifact to S3'
   condition: and(succeeded(), contains(variables['Build.SourceBranch'], 'tags'))
