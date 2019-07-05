@@ -1,5 +1,10 @@
 trigger:
-- streamlabs-23.1.0
+  branches:
+    include:
+      - streamlabs-23.1.0
+  tags:
+    include:
+      - 23.1.0-streamlabs-v*
 
 workspace:
   clean: all
@@ -34,10 +39,11 @@ variables:
   DependenciesUrl: https://obsproject.com/downloads/dependencies2017.zip
   VLCLibPath: $(Build.SourcesDirectory)\vlc
   VLCUrl: https://obsproject.com/downloads/vlc.zip
-  Version: 23.1.0-sl
-  ReleaseArtifact: libobs-$(ReleaseName)-$(Version).$(BuildNumber)-win32-x64
 
 steps:
+- powershell: 'Write-Host "##vso[task.setvariable variable=tag]$((git.exe describe --tags --abbrev=0) | Out-String)"'
+  displayName: 'Get tag for artifact'
+
 - script: | 
     git submodule update --init --recursive --jobs 2
     if not exist "%BuildPath32%" (mkdir "%BuildPath32%")
@@ -88,13 +94,13 @@ steps:
     rootFolderOrFile: $(InstallPath)
     includeRootFolder: true
     archiveType: 7z
-    archiveFile: '$(ReleaseArtifact).7z'
+    archiveFile: 'libobs-$(ReleaseName)-$(tag).7z'
   displayName: 'Generate artifact'
 
 - task: PublishBuildArtifacts@1
   inputs: 
-    pathtoPublish: $(Build.SourcesDirectory)\$(ReleaseArtifact).7z
-    artifactName: $(ReleaseArtifact).7z
+    pathtoPublish: $(Build.SourcesDirectory)\libobs-$(ReleaseName)-$(tag).7z
+    artifactName: libobs-$(ReleaseName)-$(BuildNumber).7z
   displayName: 'Publish artifact'
 
 - task: S3Upload@1
@@ -105,4 +111,4 @@ steps:
     globExpressions: '$(ReleaseArtifact).7z'
     filesAcl: 'public-read'
   displayName: 'Upload artifact to S3'
-  condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
+  condition: and(succeeded(), contains(variables['Build.SourceBranch'], 'tags'))
