@@ -211,6 +211,7 @@ static inline void discard_audio(struct obs_core_audio *audio,
 		if (is_audio_source)
 			blog(LOG_DEBUG, "can't discard, data still pending");
 #endif
+		source->audio_ts = ts->end;
 		return;
 	}
 
