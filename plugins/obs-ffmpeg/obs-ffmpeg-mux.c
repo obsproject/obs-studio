@@ -541,6 +541,9 @@ static void replay_buffer_hotkey(void *data, obs_hotkey_id id,
 	UNUSED_PARAMETER(hotkey);
 	UNUSED_PARAMETER(pressed);
 
+	if (!pressed)
+		return;
+
 	struct ffmpeg_muxer *stream = data;
 	if (os_atomic_load_bool(&stream->active))
 		stream->save_ts = os_gettime_ns() / 1000LL;
