@@ -800,6 +800,11 @@ static inline bool IsEncoded(const VideoConfig &config)
 	       wstrstri(config.name.c_str(), L"stream engine") != NULL;
 }
 
+static inline bool IsDecoupled(const VideoConfig &config)
+{
+	return wstrstri(config.name.c_str(), L"GV-USB2") != NULL;
+}
+
 inline void DShowInput::SetupBuffering(obs_data_t *settings)
 {
 	BufferingType bufType;
@@ -813,6 +818,7 @@ inline void DShowInput::SetupBuffering(obs_data_t *settings)
 		useBuffering = bufType == BufferingType::On;
 
 	obs_source_set_async_unbuffered(source, !useBuffering);
+	obs_source_set_async_decoupled(source, IsDecoupled(videoConfig));
 }
 
 static DStr GetVideoFormatName(VideoFormat format);
