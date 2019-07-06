@@ -4389,8 +4389,9 @@ void OBSBasicSettings::SimpleRecordingEncoderChanged()
 		}
 	}
 
-	if (ui->simpleOutRecFormat->currentText().compare("mp4") == 0 ||
-	    ui->simpleOutRecFormat->currentText().compare("mov") == 0) {
+	if (qual != "Lossless" &&
+	    (ui->simpleOutRecFormat->currentText().compare("mp4") == 0 ||
+	     ui->simpleOutRecFormat->currentText().compare("mov") == 0)) {
 		if (!warning.isEmpty())
 			warning += "\n\n";
 		warning += QTStr("OutputWarnings.MP4Recording");
