@@ -273,6 +273,7 @@ struct obs_core_video {
 	volatile bool gpu_encode_stop;
 
 	uint64_t video_time;
+	uint64_t video_frame_interval_ns;
 	uint64_t video_avg_frame_time_ns;
 	double video_fps;
 	video_t *video;

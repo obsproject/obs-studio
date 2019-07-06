@@ -824,6 +824,7 @@ void *obs_graphics_thread(void *param)
 	bool was_active = false;
 
 	obs->video.video_time = os_gettime_ns();
+	obs->video.video_frame_interval_ns = interval;
 
 	os_set_thread_name("libobs: graphics thread");
 

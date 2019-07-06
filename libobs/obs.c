@@ -2144,6 +2144,11 @@ uint64_t obs_get_average_frame_time_ns(void)
 	return obs ? obs->video.video_avg_frame_time_ns : 0;
 }
 
+uint64_t obs_get_frame_interval_ns(void)
+{
+	return obs ? obs->video.video_frame_interval_ns : 0;
+}
+
 enum obs_obj_type obs_obj_get_type(void *obj)
 {
 	struct obs_context_data *context = obj;
