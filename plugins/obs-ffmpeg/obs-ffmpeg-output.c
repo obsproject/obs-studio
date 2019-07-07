@@ -900,34 +900,6 @@ static void encode_audio(struct ffmpeg_output *output, int idx,
 	os_sem_post(output->write_sem);
 }
 
-static bool prepare_audio(struct ffmpeg_data *data,
-			  const struct audio_data *frame,
-			  struct audio_data *output)
-{
-	*output = *frame;
-
-	if (frame->timestamp < data->start_timestamp) {
-		uint64_t duration = (uint64_t)frame->frames * 1000000000 /
-				    (uint64_t)data->audio_samplerate;
-		uint64_t end_ts = (frame->timestamp + duration);
-		uint64_t cutoff;
-
-		if (end_ts <= data->start_timestamp)
-			return false;
-
-		cutoff = data->start_timestamp - frame->timestamp;
-		output->timestamp += cutoff;
-
-		cutoff = cutoff * (uint64_t)data->audio_samplerate / 1000000000;
-
-		for (size_t i = 0; i < data->audio_planes; i++)
-			output->data[i] += data->audio_size * (uint32_t)cutoff;
-		output->frames -= (uint32_t)cutoff;
-	}
-
-	return true;
-}
-
 /* Given a bitmask for the selected tracks and the mix index,
  * this returns the stream index which will be passed to the muxer. */
 static int get_track_order(int track_config, size_t mix_index)
@@ -945,7 +917,7 @@ static void receive_audio(void *param, size_t mix_idx, struct audio_data *frame)
 	struct ffmpeg_output *output = param;
 	struct ffmpeg_data *data = &output->ff_data;
 	size_t frame_size_bytes;
-	struct audio_data in;
+	struct audio_data in = *frame;
 	int track_order;
 
 	// codec doesn't support audio or none configured
@@ -962,8 +934,6 @@ static void receive_audio(void *param, size_t mix_idx, struct audio_data *frame)
 	AVCodecContext *context = data->audio_streams[track_order]->codec;
 
 	if (!data->start_timestamp)
-		return;
-	if (!prepare_audio(data, frame, &in))
 		return;
 
 	if (!output->audio_start_ts)
