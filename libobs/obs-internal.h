@@ -885,6 +885,14 @@ struct obs_output {
 	obs_service_t *service;
 	size_t mixer_mask;
 
+	struct circlebuf audio_buffer[MAX_AUDIO_MIXES][MAX_AV_PLANES];
+	uint64_t audio_start_ts;
+	uint64_t video_start_ts;
+	size_t audio_size;
+	size_t planes;
+	size_t sample_rate;
+	size_t total_audio_frames;
+
 	uint32_t scaled_width;
 	uint32_t scaled_height;
 
@@ -912,6 +920,8 @@ struct obs_output {
 	volatile bool delay_capturing;
 
 	char *last_error_message;
+
+	float audio_data[MAX_AUDIO_CHANNELS][AUDIO_OUTPUT_FRAMES];
 };
 
 static inline void do_output_signal(struct obs_output *output,
