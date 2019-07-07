@@ -48,6 +48,7 @@ static bool init_encoder(struct obs_encoder *encoder, const char *name,
 	pthread_mutex_init_value(&encoder->init_mutex);
 	pthread_mutex_init_value(&encoder->callbacks_mutex);
 	pthread_mutex_init_value(&encoder->outputs_mutex);
+	pthread_mutex_init_value(&encoder->pause.mutex);
 
 	if (pthread_mutexattr_init(&attr) != 0)
 		return false;
@@ -61,6 +62,8 @@ static bool init_encoder(struct obs_encoder *encoder, const char *name,
 	if (pthread_mutex_init(&encoder->callbacks_mutex, &attr) != 0)
 		return false;
 	if (pthread_mutex_init(&encoder->outputs_mutex, NULL) != 0)
+		return false;
+	if (pthread_mutex_init(&encoder->pause.mutex, NULL) != 0)
 		return false;
 
 	if (encoder->orig_info.get_defaults)
@@ -264,6 +267,7 @@ static void obs_encoder_actually_destroy(obs_encoder_t *encoder)
 		pthread_mutex_destroy(&encoder->init_mutex);
 		pthread_mutex_destroy(&encoder->callbacks_mutex);
 		pthread_mutex_destroy(&encoder->outputs_mutex);
+		pthread_mutex_destroy(&encoder->pause.mutex);
 		obs_context_data_free(&encoder->context);
 		if (encoder->owns_info_id)
 			bfree((void *)encoder->info.id);
@@ -529,6 +533,16 @@ get_callback_idx(const struct obs_encoder *encoder,
 	return DARRAY_INVALID;
 }
 
+void pause_reset(struct pause_data *pause)
+{
+	pthread_mutex_lock(&pause->mutex);
+	pause->last_video_ts = 0;
+	pause->ts_start = 0;
+	pause->ts_end = 0;
+	pause->ts_offset = 0;
+	pthread_mutex_unlock(&pause->mutex);
+}
+
 static inline void obs_encoder_start_internal(
 	obs_encoder_t *encoder,
 	void (*new_packet)(void *param, struct encoder_packet *packet),
@@ -551,6 +565,9 @@ static inline void obs_encoder_start_internal(
 	pthread_mutex_unlock(&encoder->callbacks_mutex);
 
 	if (first) {
+		os_atomic_set_bool(&encoder->paused, false);
+		pause_reset(&encoder->pause);
+
 		encoder->cur_pts = 0;
 		add_connection(encoder);
 	}
@@ -906,6 +923,10 @@ void send_off_encoder_packet(obs_encoder_t *encoder, bool success,
 				packet_dts_usec(pkt) - encoder->offset_usec;
 		pkt->sys_dts_usec = pkt->dts_usec;
 
+		pthread_mutex_lock(&encoder->pause.mutex);
+		pkt->sys_dts_usec += encoder->pause.ts_offset / 1000;
+		pthread_mutex_unlock(&encoder->pause.mutex);
+
 		pthread_mutex_lock(&encoder->callbacks_mutex);
 
 		for (size_t i = encoder->callbacks.num; i > 0; i--) {
@@ -946,6 +967,39 @@ bool do_encode(struct obs_encoder *encoder, struct encoder_frame *frame)
 	return success;
 }
 
+static inline bool video_pause_check_internal(struct pause_data *pause,
+					      uint64_t ts)
+{
+	pause->last_video_ts = ts;
+	if (!pause->ts_start) {
+		return false;
+	}
+
+	if (ts == pause->ts_start) {
+		return true;
+
+	} else if (ts == pause->ts_end) {
+		pause->ts_start = 0;
+		pause->ts_end = 0;
+	} else {
+
+		return true;
+	}
+
+	return false;
+}
+
+bool video_pause_check(struct pause_data *pause, uint64_t timestamp)
+{
+	bool ignore_frame;
+
+	pthread_mutex_lock(&pause->mutex);
+	ignore_frame = video_pause_check_internal(pause, timestamp);
+	pthread_mutex_unlock(&pause->mutex);
+
+	return ignore_frame;
+}
+
 static const char *receive_video_name = "receive_video";
 static void receive_video(void *param, struct video_data *frame)
 {
@@ -961,6 +1015,9 @@ static void receive_video(void *param, struct video_data *frame)
 			goto wait_for_audio;
 		}
 	}
+
+	if (video_pause_check(&encoder->pause, frame->timestamp))
+		goto wait_for_audio;
 
 	memset(&enc_frame, 0, sizeof(struct encoder_frame));
 
@@ -1110,20 +1167,90 @@ static bool send_audio_data(struct obs_encoder *encoder)
 	return true;
 }
 
+static void pause_audio(struct pause_data *pause, struct audio_data *data,
+			size_t sample_rate)
+{
+	uint64_t cutoff_frames = pause->ts_start - data->timestamp;
+	cutoff_frames = ns_to_audio_frames(sample_rate, cutoff_frames);
+
+	data->frames = (uint32_t)cutoff_frames;
+}
+
+static void unpause_audio(struct pause_data *pause, struct audio_data *data,
+			  size_t sample_rate)
+{
+	uint64_t cutoff_frames = pause->ts_end - data->timestamp;
+	cutoff_frames = ns_to_audio_frames(sample_rate, cutoff_frames);
+
+	data->timestamp = pause->ts_start;
+	data->frames = data->frames - (uint32_t)cutoff_frames;
+	pause->ts_start = 0;
+	pause->ts_end = 0;
+}
+
+static inline bool audio_pause_check_internal(struct pause_data *pause,
+					      struct audio_data *data,
+					      size_t sample_rate)
+{
+	uint64_t end_ts;
+
+	if (!pause->ts_start) {
+		return false;
+	}
+
+	end_ts =
+		data->timestamp + audio_frames_to_ns(sample_rate, data->frames);
+
+	if (pause->ts_start >= data->timestamp) {
+		if (pause->ts_start <= end_ts) {
+			pause_audio(pause, data, sample_rate);
+			return !data->frames;
+		}
+
+	} else {
+		if (pause->ts_end >= data->timestamp &&
+		    pause->ts_end <= end_ts) {
+			unpause_audio(pause, data, sample_rate);
+			return !data->frames;
+		}
+
+		return true;
+	}
+
+	return false;
+}
+
+bool audio_pause_check(struct pause_data *pause, struct audio_data *data,
+		       size_t sample_rate)
+{
+	bool ignore_audio;
+
+	pthread_mutex_lock(&pause->mutex);
+	ignore_audio = audio_pause_check_internal(pause, data, sample_rate);
+	data->timestamp -= pause->ts_offset;
+	pthread_mutex_unlock(&pause->mutex);
+
+	return ignore_audio;
+}
+
 static const char *receive_audio_name = "receive_audio";
-static void receive_audio(void *param, size_t mix_idx, struct audio_data *data)
+static void receive_audio(void *param, size_t mix_idx, struct audio_data *in)
 {
 	profile_start(receive_audio_name);
 
 	struct obs_encoder *encoder = param;
+	struct audio_data audio = *in;
 
 	if (!encoder->first_received) {
-		encoder->first_raw_ts = data->timestamp;
+		encoder->first_raw_ts = audio.timestamp;
 		encoder->first_received = true;
 		clear_audio(encoder);
 	}
 
-	if (!buffer_audio(encoder, data))
+	if (audio_pause_check(&encoder->pause, &audio, encoder->samplerate))
+		goto end;
+
+	if (!buffer_audio(encoder, &audio))
 		goto end;
 
 	while (encoder->audio_input_buffer[0].size >=
@@ -1330,4 +1457,11 @@ uint32_t obs_encoder_get_caps(const obs_encoder_t *encoder)
 	return obs_encoder_valid(encoder, "obs_encoder_get_caps")
 		       ? encoder->orig_info.caps
 		       : 0;
+}
+
+bool obs_encoder_paused(const obs_encoder_t *encoder)
+{
+	return obs_encoder_valid(encoder, "obs_encoder_paused")
+		       ? os_atomic_load_bool(&encoder->paused)
+		       : false;
 }

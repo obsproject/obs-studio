@@ -86,6 +86,9 @@ static void *gpu_encode_thread(void *unused)
 				}
 			}
 
+			if (video_pause_check(&encoder->pause, timestamp))
+				continue;
+
 			if (!encoder->start_ts)
 				encoder->start_ts = timestamp;
 
