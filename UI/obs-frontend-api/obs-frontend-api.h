@@ -44,6 +44,9 @@ enum obs_frontend_event {
 
 	OBS_FRONTEND_EVENT_SCENE_COLLECTION_CLEANUP,
 	OBS_FRONTEND_EVENT_FINISHED_LOADING,
+
+	OBS_FRONTEND_EVENT_RECORDING_PAUSED,
+	OBS_FRONTEND_EVENT_RECORDING_UNPAUSED,
 };
 
 /* ------------------------------------------------------------------------- */
@@ -152,6 +155,8 @@ EXPORT bool obs_frontend_streaming_active(void);
 EXPORT void obs_frontend_recording_start(void);
 EXPORT void obs_frontend_recording_stop(void);
 EXPORT bool obs_frontend_recording_active(void);
+EXPORT void obs_frontend_recording_pause(bool pause);
+EXPORT bool obs_frontend_recording_paused(void);
 
 EXPORT void obs_frontend_replay_buffer_start(void);
 EXPORT void obs_frontend_replay_buffer_save(void);

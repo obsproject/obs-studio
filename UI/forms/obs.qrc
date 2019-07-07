@@ -1,5 +1,6 @@
 <RCC>
   <qresource prefix="/res">
+    <file>images/media-pause.svg</file>
     <file>images/mute.svg</file>
     <file>images/refresh.svg</file>
     <file>images/no_sources.svg</file>

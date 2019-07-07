@@ -253,6 +253,10 @@ QToolButton:pressed {
     qproperty-icon: url(./Dark/down.svg);
 }
 
+* [themeID="pauseIconSmall"] {
+    qproperty-icon: url(./Dark/media-pause.svg);
+}
+
 
 /* Tab Widget */
 
@@ -575,6 +579,19 @@ MuteCheckBox::indicator:unchecked {
 
 OBSHotkeyLabel[hotkeyPairHover=true] {
     color: red;
+}
+
+/* Pause */
+PauseCheckBox {
+    outline: none;
+}
+
+PauseCheckBox::indicator:checked {
+    image: url(:/res/images/media-pause.svg);
+}
+
+PauseCheckBox::indicator:unchecked {
+    image: url(:/res/images/media-play.svg);
 }
 
 /* Group Collapse Checkbox */
