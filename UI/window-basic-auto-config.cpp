@@ -701,7 +701,7 @@ AutoConfig::AutoConfig(QWidget *parent) : QWizard(parent)
 {
 	EnableThreadedMessageBoxes(true);
 
-	calldata_t cd = {0};
+	calldata_t cd = {};
 	calldata_set_int(&cd, "seconds", 5);
 
 	proc_handler_t *ph = obs_get_proc_handler();

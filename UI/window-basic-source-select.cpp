@@ -118,7 +118,7 @@ static void AddSource(void *_data, obs_scene_t *scene)
 
 static char *get_new_source_name(const char *name)
 {
-	struct dstr new_name = {0};
+	struct dstr new_name = {};
 	int inc = 0;
 
 	dstr_copy(&new_name, name);

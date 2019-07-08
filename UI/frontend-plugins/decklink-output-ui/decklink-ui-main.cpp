@@ -33,7 +33,7 @@ struct preview_output {
 	obs_video_info ovi;
 };
 
-static struct preview_output context = {0};
+static struct preview_output context = {};
 
 OBSData load_settings()
 {
@@ -122,7 +122,7 @@ void preview_output_start()
 			const video_output_info *mainVOI =
 				video_output_get_info(obs_get_video());
 
-			video_output_info vi = {0};
+			video_output_info vi = {};
 			vi.format = VIDEO_FORMAT_BGRA;
 			vi.width = width;
 			vi.height = height;
