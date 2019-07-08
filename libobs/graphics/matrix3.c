@@ -55,10 +55,6 @@ void matrix3_from_matrix4(struct matrix3 *dst, const struct matrix4 *m)
 	dst->y.m = m->y.m;
 	dst->z.m = m->z.m;
 	dst->t.m = m->t.m;
-	dst->x.w = 0.0f;
-	dst->y.w = 0.0f;
-	dst->z.w = 0.0f;
-	dst->t.w = 0.0f;
 }
 
 void matrix3_mul(struct matrix3 *dst, const struct matrix3 *m1,
@@ -122,7 +118,6 @@ void matrix3_inv(struct matrix3 *dst, const struct matrix3 *m)
 	struct matrix4 m4;
 	matrix4_from_matrix3(&m4, m);
 	matrix4_inv((struct matrix4 *)dst, &m4);
-	dst->t.w = 0.0f;
 }
 
 void matrix3_mirror(struct matrix3 *dst, const struct matrix3 *m,

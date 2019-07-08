@@ -24,7 +24,6 @@
 static inline void quat_vec3(struct vec3 *v, const struct quat *q)
 {
 	v->m = q->m;
-	v->w = 0.0f;
 }
 
 void quat_mul(struct quat *dst, const struct quat *q1, const struct quat *q2)

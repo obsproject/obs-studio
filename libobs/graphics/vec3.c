@@ -26,7 +26,6 @@
 void vec3_from_vec4(struct vec3 *dst, const struct vec4 *v)
 {
 	dst->m = v->m;
-	dst->w = 0.0f;
 }
 
 float vec3_plane_dist(const struct vec3 *v, const struct plane *p)
@@ -43,7 +42,6 @@ void vec3_rotate(struct vec3 *dst, const struct vec3 *v,
 	dst->x = vec3_dot(&temp, &m->x);
 	dst->y = vec3_dot(&temp, &m->y);
 	dst->z = vec3_dot(&temp, &m->z);
-	dst->w = 0.0f;
 }
 
 void vec3_transform(struct vec3 *dst, const struct vec3 *v,
@@ -64,7 +62,6 @@ void vec3_transform3x4(struct vec3 *dst, const struct vec3 *v,
 	dst->x = vec3_dot(&temp, &m->x);
 	dst->y = vec3_dot(&temp, &m->y);
 	dst->z = vec3_dot(&temp, &m->z);
-	dst->w = 0.0f;
 }
 
 void vec3_mirror(struct vec3 *dst, const struct vec3 *v, const struct plane *p)
@@ -87,5 +84,4 @@ void vec3_rand(struct vec3 *dst, int positive_only)
 	dst->x = rand_float(positive_only);
 	dst->y = rand_float(positive_only);
 	dst->z = rand_float(positive_only);
-	dst->w = 0.0f;
 }

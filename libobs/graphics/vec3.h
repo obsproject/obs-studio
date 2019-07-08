@@ -33,7 +33,7 @@ struct quat;
 struct vec3 {
 	union {
 		struct {
-			float x, y, z, w;
+			float x, y, z;
 		};
 		float ptr[4];
 		__m128 m;
@@ -61,14 +61,12 @@ static inline void vec3_add(struct vec3 *dst, const struct vec3 *v1,
 			    const struct vec3 *v2)
 {
 	dst->m = _mm_add_ps(v1->m, v2->m);
-	dst->w = 0.0f;
 }
 
 static inline void vec3_sub(struct vec3 *dst, const struct vec3 *v1,
 			    const struct vec3 *v2)
 {
 	dst->m = _mm_sub_ps(v1->m, v2->m);
-	dst->w = 0.0f;
 }
 
 static inline void vec3_mul(struct vec3 *dst, const struct vec3 *v1,
@@ -81,19 +79,16 @@ static inline void vec3_div(struct vec3 *dst, const struct vec3 *v1,
 			    const struct vec3 *v2)
 {
 	dst->m = _mm_div_ps(v1->m, v2->m);
-	dst->w = 0.0f;
 }
 
 static inline void vec3_addf(struct vec3 *dst, const struct vec3 *v, float f)
 {
 	dst->m = _mm_add_ps(v->m, _mm_set1_ps(f));
-	dst->w = 0.0f;
 }
 
 static inline void vec3_subf(struct vec3 *dst, const struct vec3 *v, float f)
 {
 	dst->m = _mm_sub_ps(v->m, _mm_set1_ps(f));
-	dst->w = 0.0f;
 }
 
 static inline void vec3_mulf(struct vec3 *dst, const struct vec3 *v, float f)
@@ -104,7 +99,6 @@ static inline void vec3_mulf(struct vec3 *dst, const struct vec3 *v, float f)
 static inline void vec3_divf(struct vec3 *dst, const struct vec3 *v, float f)
 {
 	dst->m = _mm_div_ps(v->m, _mm_set1_ps(f));
-	dst->w = 0.0f;
 }
 
 static inline float vec3_dot(const struct vec3 *v1, const struct vec3 *v2)
@@ -131,7 +125,6 @@ static inline void vec3_neg(struct vec3 *dst, const struct vec3 *v)
 	dst->x = -v->x;
 	dst->y = -v->y;
 	dst->z = -v->z;
-	dst->w = 0.0f;
 }
 
 static inline float vec3_len(const struct vec3 *v)
@@ -170,26 +163,22 @@ static inline void vec3_min(struct vec3 *dst, const struct vec3 *v1,
 			    const struct vec3 *v2)
 {
 	dst->m = _mm_min_ps(v1->m, v2->m);
-	dst->w = 0.0f;
 }
 
 static inline void vec3_minf(struct vec3 *dst, const struct vec3 *v, float f)
 {
 	dst->m = _mm_min_ps(v->m, _mm_set1_ps(f));
-	dst->w = 0.0f;
 }
 
 static inline void vec3_max(struct vec3 *dst, const struct vec3 *v1,
 			    const struct vec3 *v2)
 {
 	dst->m = _mm_max_ps(v1->m, v2->m);
-	dst->w = 0.0f;
 }
 
 static inline void vec3_maxf(struct vec3 *dst, const struct vec3 *v, float f)
 {
 	dst->m = _mm_max_ps(v->m, _mm_set1_ps(f));
-	dst->w = 0.0f;
 }
 
 static inline void vec3_abs(struct vec3 *dst, const struct vec3 *v)
@@ -197,7 +186,6 @@ static inline void vec3_abs(struct vec3 *dst, const struct vec3 *v)
 	dst->x = fabsf(v->x);
 	dst->y = fabsf(v->y);
 	dst->z = fabsf(v->z);
-	dst->w = 0.0f;
 }
 
 static inline void vec3_floor(struct vec3 *dst, const struct vec3 *v)
@@ -205,7 +193,6 @@ static inline void vec3_floor(struct vec3 *dst, const struct vec3 *v)
 	dst->x = floorf(v->x);
 	dst->y = floorf(v->y);
 	dst->z = floorf(v->z);
-	dst->w = 0.0f;
 }
 
 static inline void vec3_ceil(struct vec3 *dst, const struct vec3 *v)
@@ -213,7 +200,6 @@ static inline void vec3_ceil(struct vec3 *dst, const struct vec3 *v)
 	dst->x = ceilf(v->x);
 	dst->y = ceilf(v->y);
 	dst->z = ceilf(v->z);
-	dst->w = 0.0f;
 }
 
 EXPORT float vec3_plane_dist(const struct vec3 *v, const struct plane *p);
