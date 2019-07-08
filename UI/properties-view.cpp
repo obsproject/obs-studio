@@ -577,10 +577,8 @@ void OBSPropertiesView::AddEditableList(obs_property_t *prop,
 	for (size_t i = 0; i < count; i++) {
 		obs_data_t *item = obs_data_array_item(array, i);
 		list->addItem(QT_UTF8(obs_data_get_string(item, "value")));
-		list->setItemSelected(list->item((int)i),
-				      obs_data_get_bool(item, "selected"));
-		list->setItemHidden(list->item((int)i),
-				    obs_data_get_bool(item, "hidden"));
+		list->item(i)->setSelected(obs_data_get_bool(item, "selected"));
+		list->item(i)->setHidden(obs_data_get_bool(item, "hidden"));
 		obs_data_release(item);
 	}
 
