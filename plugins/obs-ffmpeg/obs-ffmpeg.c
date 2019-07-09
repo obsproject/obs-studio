@@ -306,6 +306,8 @@ bool obs_module_load(void)
 	da_init(active_log_contexts);
 	da_init(cached_log_contexts);
 
+	if (pthread_mutex_init(&log_contexts_mutex, NULL) != 0)
+		return false;
 	//av_log_set_callback(ffmpeg_log_callback);
 
 	obs_register_source(&ffmpeg_source);

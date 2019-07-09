@@ -129,6 +129,7 @@ MODULE_EXPORT void obs_module_free_locale(void);
 	void obs_module_free_locale(void)                               \
 	{                                                               \
 		text_lookup_destroy(obs_module_lookup);                 \
+		obs_module_lookup = NULL; 								\
 	}
 
 /** Helper function for looking up locale if default locale handler was used */
