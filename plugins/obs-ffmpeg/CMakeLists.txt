@@ -5,9 +5,19 @@ if(MSVC)
 		w32-pthreads)
 endif()
 
+option(ENABLE_FFMPEG_LOGGING "Enables obs-ffmpeg logging" OFF)
+
 find_package(FFmpeg REQUIRED
 	COMPONENTS avcodec avfilter avdevice avutil swscale avformat swresample)
 include_directories(${FFMPEG_INCLUDE_DIRS})
+
+configure_file(
+	"${CMAKE_CURRENT_SOURCE_DIR}/obs-ffmpeg-config.h.in"
+	"${CMAKE_CURRENT_BINARY_DIR}/obs-ffmpeg-config.h")
+include_directories(${CMAKE_CURRENT_BINARY_DIR})
+
+set(obs-ffmpeg_config_HEADERS
+	"${CMAKE_CURRENT_BINARY_DIR}/obs-ffmpeg-config.h")
 
 set(obs-ffmpeg_HEADERS
 	obs-ffmpeg-formats.h
@@ -29,6 +39,11 @@ if(UNIX AND NOT APPLE)
 		${LIBVA_LBRARIES})
 endif()
 
+if(ENABLE_FFMPEG_LOGGING)
+	list(APPEND obs-ffmpeg_SOURCES
+		obs-ffmpeg-logging.c)
+endif()
+
 if(WIN32)
 	list(APPEND obs-ffmpeg_SOURCES
 		jim-nvenc.c
@@ -38,6 +53,7 @@ if(WIN32)
 endif()
 
 add_library(obs-ffmpeg MODULE
+	${obs-ffmpeg_config_HEADERS}
 	${obs-ffmpeg_HEADERS}
 	${obs-ffmpeg_SOURCES})
 target_link_libraries(obs-ffmpeg
