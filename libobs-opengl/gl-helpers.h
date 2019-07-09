@@ -17,6 +17,50 @@
 
 #pragma once
 
+static char *gl_error_to_str(GLenum errorcode)
+{
+	static void *err_to_str[][2] = {
+		{
+			GL_INVALID_ENUM,
+			"GL_INVALID_ENUM",
+		},
+		{
+			GL_INVALID_VALUE,
+			"GL_INVALID_VALUE",
+		},
+		{
+			GL_INVALID_OPERATION,
+			"GL_INVALID_OPERATION",
+		},
+		{
+			GL_INVALID_FRAMEBUFFER_OPERATION,
+			"GL_INVALID_FRAMEBUFFER_OPERATION",
+		},
+		{
+			GL_OUT_OF_MEMORY,
+			"GL_OUT_OF_MEMORY",
+		},
+		{
+			GL_STACK_UNDERFLOW,
+			"GL_STACK_UNDERFLOW",
+		},
+		{
+			GL_STACK_OVERFLOW,
+			"GL_STACK_OVERFLOW",
+		},
+		{
+			NULL,
+			"Unknown",
+		},
+	};
+	int i = 0;
+	while ((GLenum)err_to_str[i][0] != errorcode ||
+	       err_to_str[i][0] == NULL) {
+		i += 2;
+	}
+	return err_to_str[i][1];
+}
+
 /*
  * Okay, so GL error handling is..  unclean to work with.  I don't want
  * to have to keep typing out the same stuff over and over again do I'll just
@@ -28,8 +72,9 @@ static inline bool gl_success(const char *funcname)
 	GLenum errorcode = glGetError();
 	if (errorcode != GL_NO_ERROR) {
 		do {
-			blog(LOG_ERROR, "%s failed, glGetError returned 0x%X",
-			     funcname, errorcode);
+			blog(LOG_ERROR,
+			     "%s failed, glGetError returned %s(0x%X)",
+			     funcname, gl_error_to_str(errorcode), errorcode);
 			errorcode = glGetError();
 		} while (errorcode != GL_NO_ERROR);
 		return false;
