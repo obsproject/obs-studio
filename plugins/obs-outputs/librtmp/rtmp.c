@@ -4800,7 +4800,7 @@ restart:
     if (!ptr)
         return -1;
     hlen = strtol(ptr+16, NULL, 10);
-    if (hlen < 1 || ((hlen == LONG_MIN || hlen == LONG_MAX) && errno == ERANGE))
+    if (hlen < 1 || hlen > INT_MAX)
     return -1;
     ptr = strstr(ptr+16, "\r\n\r\n");
     if (!ptr)

@@ -267,7 +267,7 @@ HTTP_get(struct HTTP_ctx *http, const char *url, HTTP_read_callback *cb)
                  (sb.sb_start, "Content-Length: ", sizeof("Content-Length: ") - 1))
         {
             flen = strtol(sb.sb_start + sizeof("Content-Length: ") - 1, NULL, 10);
-            if (flen < 0 || ((flen == LONG_MAX || flen == LONG_MIN) && errno == ERANGE))
+            if (flen < 1 || flen > INT_MAX)
             {
                 ret = HTTPRES_BAD_REQUEST;
                 goto leave;
