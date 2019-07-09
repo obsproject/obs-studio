@@ -84,6 +84,8 @@ extern TLS_CTX RTMP_TLS_ctx;
 
 #endif /* CRYPTO */
 
+#define DATELEN	64
+
 #define	AGENT	"Mozilla/5.0"
 
 HTTPResult
@@ -96,7 +98,8 @@ HTTP_get(struct HTTP_ctx *http, const char *url, HTTP_read_callback *cb)
 #ifdef CRYPTO
     int ssl = 0;
 #endif
-    int hlen, flen = 0;
+    int hlen;
+    long flen = 0;
     int rc, i;
     int len_known;
     HTTPResult ret = HTTPRES_OK;
@@ -263,13 +266,19 @@ HTTP_get(struct HTTP_ctx *http, const char *url, HTTP_read_callback *cb)
         else if (!strncasecmp
                  (sb.sb_start, "Content-Length: ", sizeof("Content-Length: ") - 1))
         {
-            flen = atoi(sb.sb_start + sizeof("Content-Length: ") - 1);
+            flen = strtol(sb.sb_start + sizeof("Content-Length: ") - 1, NULL, 10);
+            if (flen < 0 || ((flen == LONG_MAX || flen == LONG_MIN) && errno == ERANGE))
+            {
+                ret = HTTPRES_BAD_REQUEST;
+                goto leave;
+            }
         }
         else if (!strncasecmp
                  (sb.sb_start, "Last-Modified: ", sizeof("Last-Modified: ") - 1))
         {
             *p2 = '\0';
-            strcpy(http->date, sb.sb_start + sizeof("Last-Modified: ") - 1);
+            strncpy(http->date, sb.sb_start + sizeof("Last-Modified: ") - 1, DATELEN-1);
+            http->date[DATELEN-1] = '\0';
         }
         p2 += 2;
         sb.sb_size -= p2 - sb.sb_start;
@@ -474,7 +483,7 @@ RTMP_HashSWF(const char *url, unsigned int *size, unsigned char *hash,
              int age)
 {
     FILE *f = NULL;
-    char *path, date[64], cctim[64];
+    char *path, date[DATELEN], cctim[DATELEN];
     long pos = 0;
     time_t ctim = -1, cnow;
     int i, got = 0, ret = 0;
@@ -575,7 +584,8 @@ RTMP_HashSWF(const char *url, unsigned int *size, unsigned char *hash,
                 else if (!strncmp(buf, "date: ", 6))
                 {
                     buf[strlen(buf) - 1] = '\0';
-                    strncpy(date, buf + 6, sizeof(date));
+                    strncpy(date, buf + 6, sizeof(date)-1);
+                    date[DATELEN-1] = '\0';
                     got++;
                 }
                 else if (!strncmp(buf, "ctim: ", 6))
