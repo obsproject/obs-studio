@@ -86,13 +86,14 @@ struct mp_media {
 	pthread_mutex_t mutex;
 	os_sem_t *sem;
 	bool stopping;
-	bool looping;
 	bool active;
 	bool reset;
 	bool kill;
 
 	bool thread_valid;
 	pthread_t thread;
+
+	bool pause;
 };
 
 typedef struct mp_media mp_media_t;
@@ -117,8 +118,12 @@ struct mp_media_info {
 extern bool mp_media_init(mp_media_t *media, const struct mp_media_info *info);
 extern void mp_media_free(mp_media_t *media);
 
-extern void mp_media_play(mp_media_t *media, bool loop);
+extern void mp_media_play(mp_media_t *media);
 extern void mp_media_stop(mp_media_t *media);
+extern void mp_media_play_pause(mp_media_t *media, bool pause);
+extern int64_t mp_get_current_time(mp_media_t *m);
+extern void mp_media_seek_to(mp_media_t *m, int64_t pos);
+
 
 /* #define DETAILED_DEBUG_INFO */
 
