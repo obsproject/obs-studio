@@ -34,3 +34,17 @@ void OBSDock::closeEvent(QCloseEvent *event)
 
 	QDockWidget::closeEvent(event);
 }
+
+void OBSDock::hideEvent(QHideEvent *event)
+{
+	emit dockHidden();
+
+	QDockWidget::hideEvent(event);
+}
+
+void OBSDock::showEvent(QShowEvent *event)
+{
+	emit dockShown();
+
+	QDockWidget::showEvent(event);
+}

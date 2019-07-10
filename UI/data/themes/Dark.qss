@@ -737,3 +737,33 @@ VisibilityCheckBox::indicator:unchecked {
 * [themeID="revertIcon"] {
     qproperty-icon: url(./Dark/revert.svg);
 }
+
+/* Media icons */
+
+* [themeID="playIcon"] {
+    qproperty-icon: url(./Dark/media/media_play.svg);
+}
+
+* [themeID="pauseIcon"] {
+    qproperty-icon: url(./Dark/media/media_pause.svg);
+}
+
+* [themeID="restartIcon"] {
+    qproperty-icon: url(./Dark/media/media_restart.svg);
+}
+
+* [themeID="stopIcon"] {
+    qproperty-icon: url(./Dark/media/media_stop.svg);
+}
+
+* [themeID="nextIcon"] {
+    qproperty-icon: url(./Dark/media/media_next.svg);
+}
+
+* [themeID="previousIcon"] {
+    qproperty-icon: url(./Dark/media/media_previous.svg);
+}
+
+* [themeID="mediaControls"] {
+    background-color: rgb(31,30,31); /* veryDark */
+}

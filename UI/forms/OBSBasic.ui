@@ -380,6 +380,7 @@
      <addaction name="toggleTransitions"/>
      <addaction name="toggleControls"/>
      <addaction name="toggleStats"/>
+     <addaction name="toggleMediaControls"/>
     </widget>
     <action name="actionFullscreenInterface">
      <property name="text">
@@ -1750,6 +1751,17 @@
    </property>
    <property name="text">
     <string>Basic.Main.Controls</string>
+   </property>
+  </action>
+  <action name="toggleMediaControls">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>MediaControls</string>
    </property>
   </action>
   <action name="actionHelpPortal">

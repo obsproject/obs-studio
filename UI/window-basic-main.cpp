@@ -177,11 +177,8 @@ void assignDockToggle(QDockWidget *dock, QAction *action)
 		action->setChecked(vis);
 		action->blockSignals(false);
 	};
-	auto handleMenuToggle = [dock](bool check) {
-		dock->blockSignals(true);
-		dock->setVisible(check);
-		dock->blockSignals(false);
-	};
+
+	auto handleMenuToggle = [dock](bool check) { dock->setVisible(check); };
 
 	dock->connect(dock->toggleViewAction(), &QAction::toggled,
 		      handleWindowToggle);
@@ -224,6 +221,20 @@ OBSBasic::OBSBasic(QWidget *parent)
 	statsDock->setVisible(false);
 	statsDock->setFloating(true);
 	statsDock->resize(700, 200);
+
+	mediaControlsDock = new OBSDock(this);
+	mediaControlsDock->setObjectName(QStringLiteral("mediaControlsDock"));
+	mediaControlsDock->setFeatures(QDockWidget::AllDockWidgetFeatures);
+	mediaControlsDock->setWindowTitle(QTStr("MediaControls"));
+	addDockWidget(Qt::BottomDockWidgetArea, mediaControlsDock);
+	mediaControlsDock->setVisible(false);
+	mediaControlsDock->setFloating(true);
+	mediaControlsDock->resize(500, 100);
+
+	connect(mediaControlsDock, SIGNAL(dockHidden()), this,
+		SLOT(MediaControlsDockHidden()));
+	connect(mediaControlsDock, SIGNAL(dockShown()), this,
+		SLOT(MediaControlsDockShown()));
 
 	copyActionsDynamicProperties();
 
@@ -331,6 +342,7 @@ OBSBasic::OBSBasic(QWidget *parent)
 	assignDockToggle(ui->transitionsDock, ui->toggleTransitions);
 	assignDockToggle(ui->controlsDock, ui->toggleControls);
 	assignDockToggle(statsDock, ui->toggleStats);
+	assignDockToggle(mediaControlsDock, ui->toggleMediaControls);
 
 	//hide all docking panes
 	ui->toggleScenes->setChecked(false);
@@ -339,6 +351,7 @@ OBSBasic::OBSBasic(QWidget *parent)
 	ui->toggleTransitions->setChecked(false);
 	ui->toggleControls->setChecked(false);
 	ui->toggleStats->setChecked(false);
+	ui->toggleMediaControls->setChecked(false);
 
 	QPoint curPos;
 
@@ -372,6 +385,11 @@ OBSBasic::OBSBasic(QWidget *parent)
 	QPoint newPos = curPos + statsDockPos;
 	statsDock->move(newPos);
 
+	QPoint mediaControlsDockSize(mediaControlsDock->width(),
+				     mediaControlsDock->height());
+	QPoint mediaControlsDockPos = curSize / 2 - mediaControlsDockSize / 2;
+	newPos = curPos + mediaControlsDockPos;
+	mediaControlsDock->move(newPos);
 	ui->previewLabel->setProperty("themeID", "previewProgramLabels");
 
 	bool labels = config_get_bool(GetGlobalConfig(), "BasicWindow",
@@ -544,6 +562,14 @@ void OBSBasic::ClearVolumeControls()
 		delete vol;
 
 	volumes.clear();
+}
+
+void OBSBasic::ClearMediaControls()
+{
+	for (MediaControls *m : mediaControls)
+		delete m;
+
+	mediaControls.clear();
 }
 
 obs_data_array_t *OBSBasic::SaveSceneListOrder()
@@ -1706,8 +1732,29 @@ void OBSBasic::OBSInit()
 	}
 #endif
 
+	/* setup media controls dock */
+	mediaScroll = new QScrollArea(mediaControlsDock);
+	mediaScroll->setWidgetResizable(true);
+	mediaScroll->setProperty("themeID", "mediaControls");
+	mediaControlsContainer = new QWidget(mediaScroll);
+	mediaControlsContainer->setProperty("themeID", "mediaControls");
+	mediaControlsContainer->setSizePolicy(QSizePolicy::Expanding,
+					      QSizePolicy::Maximum);
+	mediaControlsLayout = new QVBoxLayout(mediaControlsContainer);
+	mediaControlsLayout->setContentsMargins(0, 0, 0, 0);
+	mediaControlsContainer->setLayout(mediaControlsLayout);
+	mediaScroll->setWidget(mediaControlsContainer);
+	mediaControlsDock->setWidget(mediaScroll);
+	mediaControlsContainer->resize(mediaControlsDock->height(),
+				       mediaControlsDock->width());
+
+	mediaScroll->setContextMenuPolicy(Qt::CustomContextMenu);
+	connect(mediaScroll, SIGNAL(customContextMenuRequested(const QPoint &)),
+		this, SLOT(ShowMediaControlsMenu(const QPoint &)));
+
 	const char *dockStateStr = config_get_string(
 		App()->GlobalConfig(), "BasicWindow", "DockState");
+
 	if (!dockStateStr) {
 		on_resetUI_triggered();
 	} else {
@@ -2648,6 +2695,11 @@ void OBSBasic::RenameSources(OBSSource source, QString newName,
 			volumes[i]->SetName(newName);
 	}
 
+	for (size_t i = 0; i < mediaControls.size(); i++) {
+		if (mediaControls[i]->GetName().compare(prevName) == 0)
+			mediaControls[i]->SetName(newName);
+	}
+
 	OBSProjector::RenameProjector(prevName, newName);
 
 	SaveProject();
@@ -3012,6 +3064,72 @@ void OBSBasic::DeactivateAudioSource(OBSSource source)
 	}
 }
 
+void OBSBasic::ShowMediaControls(OBSSource source)
+{
+	if (mediaControlsDock->isHidden())
+		return;
+
+	for (size_t i = 0; i < mediaControls.size(); i++) {
+		if (mediaControls[i]->GetSource() == source)
+			return;
+	}
+
+	obs_data_t *settings = obs_source_get_settings(source);
+	bool hide = obs_data_get_bool(settings, "hideMediaControls");
+	obs_data_release(settings);
+
+	if (hide)
+		return;
+
+	MediaControls *m = new MediaControls(mediaControlsContainer, source);
+	InsertQObjectByName(mediaControls, m);
+	mediaControlsLayout->addWidget(m);
+}
+
+void OBSBasic::HideMediaControls(OBSSource source)
+{
+	for (size_t i = 0; i < mediaControls.size(); i++) {
+		if (mediaControls[i]->GetSource() == source) {
+			delete mediaControls[i];
+			mediaControls.erase(mediaControls.begin() + i);
+			break;
+		}
+	}
+}
+
+void OBSBasic::UnhideMediaControls()
+{
+	auto UnhideMediaControls = [](void *data, obs_source_t *source) {
+		UNUSED_PARAMETER(data);
+
+		if (!obs_source_active(source))
+			return true;
+
+		uint32_t flags = obs_source_get_output_flags(source);
+
+		if (flags & OBS_SOURCE_CONTROLLABLE_MEDIA) {
+			obs_data_t *settings = obs_source_get_settings(source);
+			obs_data_release(settings);
+			bool hide = obs_data_get_bool(settings,
+						      "hideMediaControls");
+
+			if (!hide)
+				return true;
+
+			obs_data_set_bool(settings, "hideMediaControls", false);
+
+			OBSBasic *main = reinterpret_cast<OBSBasic *>(
+				App()->GetMainWindow());
+
+			main->ShowMediaControls(source);
+		}
+
+		return true;
+	};
+
+	obs_enum_sources(UnhideMediaControls, nullptr);
+}
+
 bool OBSBasic::QueryRemoveSource(obs_source_t *source)
 {
 	if (obs_source_get_type(source) == OBS_SOURCE_TYPE_SCENE &&
@@ -3265,6 +3383,11 @@ void OBSBasic::SourceActivated(void *data, calldata_t *params)
 		QMetaObject::invokeMethod(static_cast<OBSBasic *>(data),
 					  "ActivateAudioSource",
 					  Q_ARG(OBSSource, OBSSource(source)));
+
+	if (flags & OBS_SOURCE_CONTROLLABLE_MEDIA)
+		QMetaObject::invokeMethod(static_cast<OBSBasic *>(data),
+					  "ShowMediaControls",
+					  Q_ARG(OBSSource, OBSSource(source)));
 }
 
 void OBSBasic::SourceDeactivated(void *data, calldata_t *params)
@@ -3275,6 +3398,11 @@ void OBSBasic::SourceDeactivated(void *data, calldata_t *params)
 	if (flags & OBS_SOURCE_AUDIO)
 		QMetaObject::invokeMethod(static_cast<OBSBasic *>(data),
 					  "DeactivateAudioSource",
+					  Q_ARG(OBSSource, OBSSource(source)));
+
+	if (flags & OBS_SOURCE_CONTROLLABLE_MEDIA)
+		QMetaObject::invokeMethod(static_cast<OBSBasic *>(data),
+					  "HideMediaControls",
 					  Q_ARG(OBSSource, OBSSource(source)));
 }
 
@@ -3731,6 +3859,7 @@ void OBSBasic::ClearSceneData()
 	CloseDialogs();
 
 	ClearVolumeControls();
+	ClearMediaControls();
 	ClearListItems(ui->scenes);
 	ui->sources->Clear();
 	ClearQuickTransitions();
@@ -6653,6 +6782,8 @@ void OBSBasic::on_resetUI_triggered()
 	ui->controlsDock->setVisible(true);
 	statsDock->setVisible(false);
 	statsDock->setFloating(true);
+	mediaControlsDock->setVisible(false);
+	mediaControlsDock->setFloating(true);
 
 	resizeDocks(docks, {cy, cy, cy, cy, cy}, Qt::Vertical);
 	resizeDocks(docks, sizes, Qt::Horizontal);
@@ -6674,6 +6805,7 @@ void OBSBasic::on_lockUI_toggled(bool lock)
 	ui->transitionsDock->setFeatures(mainFeatures);
 	ui->controlsDock->setFeatures(mainFeatures);
 	statsDock->setFeatures(features);
+	mediaControlsDock->setFeatures(features);
 
 	for (int i = extraDocks.size() - 1; i >= 0; i--) {
 		if (!extraDocks[i]) {
@@ -7493,4 +7625,45 @@ void OBSBasic::UpdatePause(bool activate)
 	} else {
 		pause.reset();
 	}
+}
+
+void OBSBasic::ShowMediaControlsMenu(const QPoint &pos)
+{
+	QPoint globalPos = mediaControlsContainer->mapToGlobal(pos);
+
+	QAction *unhideAllAction = new QAction(QTStr("UnhideAll"), this);
+	connect(unhideAllAction, SIGNAL(triggered()), this,
+		SLOT(UnhideMediaControls()));
+
+	QMenu menu;
+	menu.addAction(unhideAllAction);
+	menu.exec(globalPos);
+}
+
+void OBSBasic::MediaControlsDockHidden()
+{
+	ClearMediaControls();
+}
+
+void OBSBasic::MediaControlsDockShown()
+{
+	auto UnhideMediaControls = [](void *data, obs_source_t *source) {
+		UNUSED_PARAMETER(data);
+
+		if (!obs_source_active(source))
+			return true;
+
+		uint32_t flags = obs_source_get_output_flags(source);
+
+		if (flags & OBS_SOURCE_CONTROLLABLE_MEDIA) {
+			OBSBasic *main = reinterpret_cast<OBSBasic *>(
+				App()->GetMainWindow());
+
+			main->ShowMediaControls(source);
+		}
+
+		return true;
+	};
+
+	obs_enum_sources(UnhideMediaControls, nullptr);
 }

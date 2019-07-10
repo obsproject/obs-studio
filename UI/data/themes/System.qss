@@ -208,3 +208,29 @@ VisibilityCheckBox::indicator:unchecked {
 * [themeID="revertIcon"] {
     qproperty-icon: url(:res/images/revert.svg);
 }
+
+/* Media icons */
+
+* [themeID="playIcon"] {
+    qproperty-icon: url(:res/images/media/media_play.svg);
+}
+
+* [themeID="pauseIcon"] {
+    qproperty-icon: url(:/res/images/media/media_pause.svg);
+}
+
+* [themeID="restartIcon"] {
+    qproperty-icon: url(:/res/images/media/media_restart.svg);
+}
+
+* [themeID="stopIcon"] {
+    qproperty-icon: url(:/res/images/media/media_stop.svg);
+}
+
+* [themeID="nextIcon"] {
+    qproperty-icon: url(:/res/images/media/media_next.svg);
+}
+
+* [themeID="previousIcon"] {
+    qproperty-icon: url(:/res/images/media/media_previous.svg);
+}
