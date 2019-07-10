@@ -63,8 +63,12 @@ static bool init_encoder(struct obs_encoder *encoder, const char *name,
 	if (pthread_mutex_init(&encoder->outputs_mutex, NULL) != 0)
 		return false;
 
-	if (encoder->orig_info.get_defaults)
+	if (encoder->orig_info.get_defaults) {
 		encoder->orig_info.get_defaults(encoder->context.settings);
+	}
+	if (encoder->orig_info.get_defaults2) {
+		encoder->orig_info.get_defaults2(encoder->context.settings, encoder->orig_info.type_data);
+	}
 
 	return true;
 }
@@ -312,10 +316,11 @@ void obs_encoder_set_name(obs_encoder_t *encoder, const char *name)
 static inline obs_data_t *get_defaults(const struct obs_encoder_info *info)
 {
 	obs_data_t *settings = obs_data_create();
+	if (info->get_defaults) {
+		info->get_defaults(settings);
+	}
 	if (info->get_defaults2) {
 		info->get_defaults2(settings, info->type_data);
-	} else if (info->get_defaults) {
-		info->get_defaults(settings);
 	}
 	return settings;
 }
