@@ -43,7 +43,15 @@ static void stinger_update(void *data, obs_data_t *settings)
 	const char *path = obs_data_get_string(settings, "path");
 
 	obs_data_t *media_settings = obs_data_create();
-	obs_data_set_string(media_settings, "local_file", path);
+	obs_data_array_t *array = obs_data_array_create();
+	obs_data_t *item = obs_data_create();
+
+	obs_data_set_string(item, "value", path);
+	obs_data_array_insert(array, 0, item);
+	obs_data_set_array(media_settings, "files", array);
+
+	obs_data_release(item);
+	obs_data_array_release(array);
 
 	obs_source_release(s->media_source);
 	s->media_source = obs_source_create_private("ffmpeg_source", NULL,
