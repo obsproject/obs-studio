@@ -212,7 +212,7 @@ OBSBasic::OBSBasic(QWidget *parent)
 	api = InitializeAPIInterface(this);
 
 	ui->setupUi(this);
-	ui->previewDisabledLabel->setVisible(false);
+	ui->previewDisabledWidget->setVisible(false);
 
 	startingDockLayout = saveState();
 
@@ -381,6 +381,13 @@ OBSBasic::OBSBasic(QWidget *parent)
 		ui->previewLabel->setHidden(true);
 	else
 		ui->previewLabel->setHidden(!labels);
+
+	ui->previewDisabledWidget->setContextMenuPolicy(Qt::CustomContextMenu);
+	connect(ui->previewDisabledWidget,
+		SIGNAL(customContextMenuRequested(const QPoint &)), this,
+		SLOT(PreviewDisabledMenu(const QPoint &)));
+	connect(ui->enablePreviewButton, SIGNAL(clicked()), this,
+		SLOT(TogglePreview()));
 }
 
 static void SaveAudioDevice(const char *name, int channel, obs_data_t *parent,
@@ -5759,8 +5766,7 @@ void OBSBasic::on_program_customContextMenuRequested(const QPoint &)
 	popup.exec(QCursor::pos());
 }
 
-void OBSBasic::on_previewDisabledLabel_customContextMenuRequested(
-	const QPoint &pos)
+void OBSBasic::PreviewDisabledMenu(const QPoint &pos)
 {
 	QMenu popup(this);
 	delete previewProjectorMain;
@@ -6219,7 +6225,7 @@ void OBSBasic::EnablePreviewDisplay(bool enable)
 {
 	obs_display_set_enabled(ui->preview->GetDisplay(), enable);
 	ui->preview->setVisible(enable);
-	ui->previewDisabledLabel->setVisible(!enable);
+	ui->previewDisabledWidget->setVisible(!enable);
 }
 
 void OBSBasic::TogglePreview()
