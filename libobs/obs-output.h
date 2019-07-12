@@ -27,6 +27,7 @@ extern "C" {
 #define OBS_OUTPUT_ENCODED (1 << 2)
 #define OBS_OUTPUT_SERVICE (1 << 3)
 #define OBS_OUTPUT_MULTI_TRACK (1 << 4)
+#define OBS_OUTPUT_CAN_PAUSE (1 << 5)
 
 struct encoder_packet;
 
@@ -56,7 +57,7 @@ struct obs_output_info {
 
 	obs_properties_t *(*get_properties)(void *data);
 
-	void (*pause)(void *data);
+	void (*unused1)(void *data);
 
 	uint64_t (*get_total_bytes)(void *data);
 

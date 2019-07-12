@@ -241,17 +241,28 @@ void OBSBasicStatusBar::UpdateStreamTime()
 	}
 }
 
+extern volatile bool recording_paused;
+
 void OBSBasicStatusBar::UpdateRecordTime()
 {
-	totalRecordSeconds++;
+	bool paused = os_atomic_load_bool(&recording_paused);
 
-	int seconds = totalRecordSeconds % 60;
-	int totalMinutes = totalRecordSeconds / 60;
-	int minutes = totalMinutes % 60;
-	int hours = totalMinutes / 60;
+	if (!paused)
+		totalRecordSeconds++;
 
 	QString text;
-	text.sprintf("REC: %02d:%02d:%02d", hours, minutes, seconds);
+
+	if (paused) {
+		text = QStringLiteral("REC: PAUSED");
+	} else {
+		int seconds = totalRecordSeconds % 60;
+		int totalMinutes = totalRecordSeconds / 60;
+		int minutes = totalMinutes % 60;
+		int hours = totalMinutes / 60;
+
+		text.sprintf("REC: %02d:%02d:%02d", hours, minutes, seconds);
+	}
+
 	recordTime->setText(text);
 	recordTime->setMinimumWidth(recordTime->width());
 }

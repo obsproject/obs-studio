@@ -12,6 +12,7 @@ extern bool EncoderAvailable(const char *encoder);
 
 volatile bool streaming_active = false;
 volatile bool recording_active = false;
+volatile bool recording_paused = false;
 volatile bool replaybuf_active = false;
 
 static void OBSStreamStarting(void *data, calldata_t *params)
@@ -88,6 +89,7 @@ static void OBSStopRecording(void *data, calldata_t *params)
 
 	output->recordingActive = false;
 	os_atomic_set_bool(&recording_active, false);
+	os_atomic_set_bool(&recording_paused, false);
 	QMetaObject::invokeMethod(output->main, "RecordingStop",
 				  Q_ARG(int, code),
 				  Q_ARG(QString, arg_last_error));

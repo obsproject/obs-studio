@@ -2112,6 +2112,17 @@ void OBSBasic::CreateHotkeys()
 	LoadHotkeyPair(recordingHotkeys, "OBSBasic.StartRecording",
 		       "OBSBasic.StopRecording");
 
+	pauseHotkeys = obs_hotkey_pair_register_frontend(
+		"OBSBasic.PauseRecording", Str("Basic.Main.PauseRecording"),
+		"OBSBasic.UnpauseRecording", Str("Basic.Main.UnpauseRecording"),
+		MAKE_CALLBACK(basic.pause && !basic.pause->isChecked(),
+			      basic.PauseRecording, "Pausing recording"),
+		MAKE_CALLBACK(basic.pause && basic.pause->isChecked(),
+			      basic.UnpauseRecording, "Unpausing recording"),
+		this, this);
+	LoadHotkeyPair(pauseHotkeys, "OBSBasic.PauseRecording",
+		       "OBSBasic.UnpauseRecording");
+
 	replayBufHotkeys = obs_hotkey_pair_register_frontend(
 		"OBSBasic.StartReplayBuffer",
 		Str("Basic.Main.StartReplayBuffer"),
@@ -2169,6 +2180,7 @@ void OBSBasic::ClearHotkeys()
 {
 	obs_hotkey_pair_unregister(streamingHotkeys);
 	obs_hotkey_pair_unregister(recordingHotkeys);
+	obs_hotkey_pair_unregister(pauseHotkeys);
 	obs_hotkey_pair_unregister(replayBufHotkeys);
 	obs_hotkey_pair_unregister(togglePreviewHotkeys);
 	obs_hotkey_unregister(forceStreamingStopHotkey);
@@ -5319,6 +5331,7 @@ void OBSBasic::RecordingStart()
 		api->on_event(OBS_FRONTEND_EVENT_RECORDING_STARTED);
 
 	OnActivate();
+	UpdatePause();
 
 	blog(LOG_INFO, RECORDING_START);
 }
@@ -5385,10 +5398,45 @@ void OBSBasic::RecordingStop(int code, QString last_error)
 		AutoRemux();
 
 	OnDeactivate();
+	UpdatePause(false);
 }
 
 #define RP_NO_HOTKEY_TITLE QTStr("Output.ReplayBuffer.NoHotkey.Title")
 #define RP_NO_HOTKEY_TEXT QTStr("Output.ReplayBuffer.NoHotkey.Msg")
+
+extern volatile bool recording_paused;
+extern volatile bool replaybuf_active;
+
+void OBSBasic::ShowReplayBufferPauseWarning()
+{
+	auto msgBox = []() {
+		QMessageBox msgbox(App()->GetMainWindow());
+		msgbox.setWindowTitle(QTStr("Output.ReplayBuffer."
+					    "PauseWarning.Title"));
+		msgbox.setText(QTStr("Output.ReplayBuffer."
+				     "PauseWarning.Text"));
+		msgbox.setIcon(QMessageBox::Icon::Information);
+		msgbox.addButton(QMessageBox::Ok);
+
+		QCheckBox *cb = new QCheckBox(QTStr("DoNotShowAgain"));
+		msgbox.setCheckBox(cb);
+
+		msgbox.exec();
+
+		if (cb->isChecked()) {
+			config_set_bool(App()->GlobalConfig(), "General",
+					"WarnedAboutReplayBufferPausing", true);
+			config_save_safe(App()->GlobalConfig(), "tmp", nullptr);
+		}
+	};
+
+	bool warned = config_get_bool(App()->GlobalConfig(), "General",
+				      "WarnedAboutReplayBufferPausing");
+	if (!warned) {
+		QMetaObject::invokeMethod(App(), "Exec", Qt::QueuedConnection,
+					  Q_ARG(VoidFunc, msgBox));
+	}
+}
 
 void OBSBasic::StartReplayBuffer()
 {
@@ -5423,8 +5471,12 @@ void OBSBasic::StartReplayBuffer()
 		api->on_event(OBS_FRONTEND_EVENT_REPLAY_BUFFER_STARTING);
 
 	SaveProject();
-	if (!outputHandler->StartReplayBuffer())
+
+	if (!outputHandler->StartReplayBuffer()) {
 		replayBufferButton->setChecked(false);
+	} else if (os_atomic_load_bool(&recording_paused)) {
+		ShowReplayBufferPauseWarning();
+	}
 }
 
 void OBSBasic::ReplayBufferStopping()
@@ -7294,4 +7346,107 @@ void OBSBasic::UpdatePatronJson(const QString &text, const QString &error)
 		return;
 
 	patronJson = QT_TO_UTF8(text);
+}
+
+void OBSBasic::PauseRecording()
+{
+	if (!pause || !outputHandler || !outputHandler->fileOutput)
+		return;
+
+	obs_output_t *output = outputHandler->fileOutput;
+
+	if (obs_output_pause(output, true)) {
+		pause->setChecked(true);
+		os_atomic_set_bool(&recording_paused, true);
+
+		if (api)
+			api->on_event(OBS_FRONTEND_EVENT_RECORDING_PAUSED);
+
+		if (os_atomic_load_bool(&replaybuf_active))
+			ShowReplayBufferPauseWarning();
+	}
+}
+
+void OBSBasic::UnpauseRecording()
+{
+	if (!pause || !outputHandler || !outputHandler->fileOutput)
+		return;
+
+	obs_output_t *output = outputHandler->fileOutput;
+
+	if (obs_output_pause(output, false)) {
+		pause->setChecked(false);
+		os_atomic_set_bool(&recording_paused, false);
+
+		if (api)
+			api->on_event(OBS_FRONTEND_EVENT_RECORDING_UNPAUSED);
+	}
+}
+
+void OBSBasic::PauseToggled()
+{
+	if (!pause || !outputHandler || !outputHandler->fileOutput)
+		return;
+
+	obs_output_t *output = outputHandler->fileOutput;
+	bool enable = !obs_output_paused(output);
+
+	if (obs_output_pause(output, enable)) {
+		os_atomic_set_bool(&recording_paused, enable);
+
+		if (api)
+			api->on_event(
+				enable ? OBS_FRONTEND_EVENT_RECORDING_PAUSED
+				       : OBS_FRONTEND_EVENT_RECORDING_UNPAUSED);
+
+		if (enable && os_atomic_load_bool(&replaybuf_active))
+			ShowReplayBufferPauseWarning();
+	} else {
+		pause->setChecked(!enable);
+	}
+}
+
+void OBSBasic::UpdatePause(bool activate)
+{
+	if (!activate || !outputHandler || !outputHandler->RecordingActive()) {
+		pause.reset();
+		return;
+	}
+
+	const char *mode = config_get_string(basicConfig, "Output", "Mode");
+	bool adv = astrcmpi(mode, "Advanced") == 0;
+	bool shared;
+
+	if (adv) {
+		const char *recType =
+			config_get_string(basicConfig, "AdvOut", "RecType");
+
+		if (astrcmpi(recType, "FFmpeg") == 0) {
+			shared = config_get_bool(basicConfig, "AdvOut",
+						 "FFOutputToFile");
+		} else {
+			const char *recordEncoder = config_get_string(
+				basicConfig, "AdvOut", "RecEncoder");
+			shared = astrcmpi(recordEncoder, "none") == 0;
+		}
+	} else {
+		const char *quality = config_get_string(
+			basicConfig, "SimpleOutput", "RecQuality");
+		shared = strcmp(quality, "Stream") == 0;
+	}
+
+	if (!shared) {
+		pause.reset(new QPushButton());
+		pause->setAccessibleName(QTStr("Basic.Main.PauseRecording"));
+		pause->setToolTip(QTStr("Basic.Main.PauseRecording"));
+		pause->setCheckable(true);
+		pause->setChecked(false);
+		pause->setProperty("themeID",
+				   QVariant(QStringLiteral("pauseIconSmall")));
+		connect(pause.data(), &QAbstractButton::clicked, this,
+			&OBSBasic::PauseToggled);
+		ui->recordingLayout->addWidget(pause.data());
+	} else {
+		pause.reset();
+	}
 }

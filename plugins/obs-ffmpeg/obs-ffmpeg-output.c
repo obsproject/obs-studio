@@ -960,6 +960,7 @@ static uint64_t get_packet_sys_dts(struct ffmpeg_output *output,
 				   AVPacket *packet)
 {
 	struct ffmpeg_data *data = &output->ff_data;
+	uint64_t pause_offset = obs_output_get_pause_offset(output->output);
 	uint64_t start_ts;
 
 	AVRational time_base;
@@ -972,8 +973,9 @@ static uint64_t get_packet_sys_dts(struct ffmpeg_output *output,
 		start_ts = output->audio_start_ts;
 	}
 
-	return start_ts + (uint64_t)av_rescale_q(packet->dts, time_base,
-						 (AVRational){1, 1000000000});
+	return start_ts + pause_offset +
+	       (uint64_t)av_rescale_q(packet->dts, time_base,
+				      (AVRational){1, 1000000000});
 }
 
 static int process_packet(struct ffmpeg_output *output)
@@ -1247,7 +1249,8 @@ static uint64_t ffmpeg_output_total_bytes(void *data)
 
 struct obs_output_info ffmpeg_output = {
 	.id = "ffmpeg_output",
-	.flags = OBS_OUTPUT_AUDIO | OBS_OUTPUT_VIDEO | OBS_OUTPUT_MULTI_TRACK,
+	.flags = OBS_OUTPUT_AUDIO | OBS_OUTPUT_VIDEO | OBS_OUTPUT_MULTI_TRACK |
+		 OBS_OUTPUT_CAN_PAUSE,
 	.get_name = ffmpeg_output_getname,
 	.create = ffmpeg_output_create,
 	.destroy = ffmpeg_output_destroy,

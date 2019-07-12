@@ -515,7 +515,8 @@ static uint64_t ffmpeg_mux_total_bytes(void *data)
 
 struct obs_output_info ffmpeg_muxer = {
 	.id = "ffmpeg_muxer",
-	.flags = OBS_OUTPUT_AV | OBS_OUTPUT_ENCODED | OBS_OUTPUT_MULTI_TRACK,
+	.flags = OBS_OUTPUT_AV | OBS_OUTPUT_ENCODED | OBS_OUTPUT_MULTI_TRACK |
+		 OBS_OUTPUT_CAN_PAUSE,
 	.get_name = ffmpeg_mux_getname,
 	.create = ffmpeg_mux_create,
 	.destroy = ffmpeg_mux_destroy,
@@ -545,8 +546,17 @@ static void replay_buffer_hotkey(void *data, obs_hotkey_id id,
 		return;
 
 	struct ffmpeg_muxer *stream = data;
-	if (os_atomic_load_bool(&stream->active))
+
+	if (os_atomic_load_bool(&stream->active)) {
+		obs_encoder_t *vencoder =
+			obs_output_get_video_encoder(stream->output);
+		if (obs_encoder_paused(vencoder)) {
+			info("Could not save buffer because encoders paused");
+			return;
+		}
+
 		stream->save_ts = os_gettime_ns() / 1000LL;
+	}
 }
 
 static void save_replay_proc(void *data, calldata_t *cd)
@@ -876,7 +886,8 @@ static void replay_buffer_defaults(obs_data_t *s)
 
 struct obs_output_info replay_buffer = {
 	.id = "replay_buffer",
-	.flags = OBS_OUTPUT_AV | OBS_OUTPUT_ENCODED | OBS_OUTPUT_MULTI_TRACK,
+	.flags = OBS_OUTPUT_AV | OBS_OUTPUT_ENCODED | OBS_OUTPUT_MULTI_TRACK |
+		 OBS_OUTPUT_CAN_PAUSE,
 	.get_name = replay_buffer_getname,
 	.create = replay_buffer_create,
 	.destroy = replay_buffer_destroy,

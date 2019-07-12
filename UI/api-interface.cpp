@@ -21,6 +21,7 @@ void EnumSceneCollections(function<bool(const char *, const char *)> &&cb);
 
 extern volatile bool streaming_active;
 extern volatile bool recording_active;
+extern volatile bool recording_paused;
 extern volatile bool replaybuf_active;
 
 /* ------------------------------------------------------------------------- */
@@ -263,6 +264,17 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 	bool obs_frontend_recording_active(void) override
 	{
 		return os_atomic_load_bool(&recording_active);
+	}
+
+	void obs_frontend_recording_pause(bool pause) override
+	{
+		QMetaObject::invokeMethod(main, pause ? "PauseRecording"
+						      : "UnpauseRecording");
+	}
+
+	bool obs_frontend_recording_paused(void) override
+	{
+		return os_atomic_load_bool(&recording_paused);
 	}
 
 	void obs_frontend_replay_buffer_start(void) override

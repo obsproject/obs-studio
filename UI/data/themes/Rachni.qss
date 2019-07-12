@@ -507,6 +507,10 @@ QToolButton:pressed {
 	qproperty-icon: url(./Dark/down.svg);
 }
 
+* [themeID="pauseIconSmall"] {
+	qproperty-icon: url(./Dark/media-pause.svg);
+}
+
 /***********************/
 /* --- Combo boxes --- */
 /***********************/
