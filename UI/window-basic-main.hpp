@@ -729,8 +729,7 @@ private slots:
 
 	void on_preview_customContextMenuRequested(const QPoint &pos);
 	void on_program_customContextMenuRequested(const QPoint &pos);
-	void
-	on_previewDisabledLabel_customContextMenuRequested(const QPoint &pos);
+	void PreviewDisabledMenu(const QPoint &pos);
 
 	void on_actionNewSceneCollection_triggered();
 	void on_actionDupSceneCollection_triggered();
