@@ -209,6 +209,7 @@ bool QSV_Encoder_Internal::InitParams(qsv_param_t *pParams)
 	m_mfxEncParams.mfx.FrameInfo.CropY = 0;
 	m_mfxEncParams.mfx.FrameInfo.CropW = pParams->nWidth;
 	m_mfxEncParams.mfx.FrameInfo.CropH = pParams->nHeight;
+	m_mfxEncParams.mfx.GopRefDist = pParams->nbFrames + 1;
 
 	m_mfxEncParams.mfx.RateControlMethod = pParams->nRateControl;
 
@@ -253,23 +254,23 @@ bool QSV_Encoder_Internal::InitParams(qsv_param_t *pParams)
 	int iBuffers = 0;
 	if (pParams->nAsyncDepth == 1) {
 		m_mfxEncParams.mfx.NumRefFrame = 1;
-		// low latency, I and P frames only
-		m_mfxEncParams.mfx.GopRefDist = 1;
 		memset(&m_co, 0, sizeof(mfxExtCodingOption));
 		m_co.Header.BufferId = MFX_EXTBUFF_CODING_OPTION;
 		m_co.Header.BufferSz = sizeof(mfxExtCodingOption);
 		m_co.MaxDecFrameBuffering = 1;
 		extendedBuffers[iBuffers++] = (mfxExtBuffer *)&m_co;
-	} else
-		m_mfxEncParams.mfx.GopRefDist = pParams->nbFrames + 1;
+	}
 
-	if (pParams->nRateControl == MFX_RATECONTROL_LA_ICQ ||
-	    pParams->nRateControl == MFX_RATECONTROL_LA) {
-
+	if (m_ver.Major == 1 && m_ver.Minor >= 8)
+	{
 		memset(&m_co2, 0, sizeof(mfxExtCodingOption2));
-		m_co2.Header.BufferId = MFX_EXTBUFF_CODING_OPTION;
+		m_co2.Header.BufferId = MFX_EXTBUFF_CODING_OPTION2;
 		m_co2.Header.BufferSz = sizeof(m_co2);
-		m_co2.LookAheadDepth = pParams->nLADEPTH;
+		if (pParams->nRateControl == MFX_RATECONTROL_LA_ICQ ||
+		    pParams->nRateControl == MFX_RATECONTROL_LA)
+			m_co2.LookAheadDepth = pParams->nLADEPTH;
+		if (pParams->nbFrames > 1)
+			m_co2.BRefType = MFX_B_REF_PYRAMID;
 		extendedBuffers[iBuffers++] = (mfxExtBuffer *)&m_co2;
 	}
 
