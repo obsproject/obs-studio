@@ -100,6 +100,7 @@ typedef struct {
 	mfxU16 nKeyIntSec;
 	mfxU16 nbFrames;
 	mfxU16 nICQQuality;
+	bool bMBBRC;
 } qsv_param_t;
 
 enum qsv_cpu_platform {
