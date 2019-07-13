@@ -142,7 +142,14 @@ QDockWidget::close-button:pressed, QDockWidget::float-button:pressed {
 QGroupBox {
     border: 1px solid rgb(31,30,31); /* veryDark */;
     border-radius: 5px;
-    padding-top: 16px;
+    padding-top: 24px;
+    font-weight: bold;
+}
+
+QGroupBox::title {
+    subcontrol-origin: margin;
+    left: 4px;
+    top: 4px;
 }
 
 
