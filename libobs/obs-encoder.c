@@ -70,7 +70,8 @@ static bool init_encoder(struct obs_encoder *encoder, const char *name,
 		encoder->orig_info.get_defaults(encoder->context.settings);
 	}
 	if (encoder->orig_info.get_defaults2) {
-		encoder->orig_info.get_defaults2(encoder->context.settings, encoder->orig_info.type_data);
+		encoder->orig_info.get_defaults2(encoder->context.settings,
+						 encoder->orig_info.type_data);
 	}
 
 	return true;
