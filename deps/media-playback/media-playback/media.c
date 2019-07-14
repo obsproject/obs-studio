@@ -105,7 +105,11 @@ static inline enum speaker_layout convert_speaker_layout(uint8_t channels)
 
 static inline enum video_colorspace convert_color_space(enum AVColorSpace s)
 {
-	return s == AVCOL_SPC_BT709 ? VIDEO_CS_709 : VIDEO_CS_DEFAULT;
+	switch (s) {
+	case AVCOL_SPC_BT709:     return VIDEO_CS_709;
+	case AVCOL_SPC_SMPTE170M: return VIDEO_CS_601;
+	}
+	return VIDEO_CS_DEFAULT;
 }
 
 static inline enum video_range_type convert_color_range(enum AVColorRange r)
@@ -368,6 +372,7 @@ static void mp_media_next_video(mp_media_t *m, bool preload)
 		bool success;
 
 		frame->format = new_format;
+		frame->colorspace = new_space;
 		frame->full_range = new_range == VIDEO_RANGE_FULL;
 
 		success = video_format_get_parameters(new_space, new_range,

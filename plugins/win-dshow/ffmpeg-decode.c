@@ -256,6 +256,7 @@ bool ffmpeg_decode_video(struct ffmpeg_decode *decode, uint8_t *data,
 		bool success;
 
 		frame->format = new_format;
+		frame->colorspace = VIDEO_CS_601;
 		frame->range = decode->frame->color_range == AVCOL_RANGE_JPEG
 				       ? VIDEO_RANGE_FULL
 				       : VIDEO_RANGE_DEFAULT;

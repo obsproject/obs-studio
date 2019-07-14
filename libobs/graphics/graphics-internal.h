@@ -321,6 +321,9 @@ struct graphics_subsystem {
 	struct matrix4 projection;
 	struct gs_effect *cur_effect;
 
+	enum gs_colorspace cur_colorspace;
+	DARRAY(enum gs_colorspace) colorspace_stack;
+
 	gs_vertbuffer_t *sprite_buffer;
 
 	bool using_immediate;

@@ -51,9 +51,9 @@ bool obs_transition_init(obs_source_t *transition)
 
 	transition->transition_alignment = OBS_ALIGN_LEFT | OBS_ALIGN_TOP;
 	transition->transition_texrender[0] =
-		gs_texrender_create(GS_RGBA, GS_ZS_NONE);
+		gs_texrender_create(GS_RGBA16F, GS_ZS_NONE);
 	transition->transition_texrender[1] =
-		gs_texrender_create(GS_RGBA, GS_ZS_NONE);
+		gs_texrender_create(GS_RGBA16F, GS_ZS_NONE);
 	transition->transition_source_active[0] = true;
 
 	return transition->transition_texrender[0] != NULL &&
@@ -630,7 +630,8 @@ static inline void render_child(obs_source_t *transition, obs_source_t *child,
 	if (!child)
 		return;
 
-	if (gs_texrender_begin(transition->transition_texrender[idx], cx, cy)) {
+	if (gs_texrender_begin(transition->transition_texrender[idx], cx, cy,
+			       GS_CS_ACESCG)) {
 		vec4_zero(&blank);
 		gs_clear(GS_CLEAR_COLOR, &blank, 0.0f, 0);
 		gs_ortho(0.0f, (float)cx, 0.0f, (float)cy, -100.0f, 100.0f);

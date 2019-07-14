@@ -16,8 +16,17 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+#include "colorspace.inc"
+
 uniform float4x4 ViewProj;
 uniform texture2d image;
+uniform float3 color_rgb_matrix0;
+uniform float3 color_rgb_matrix1;
+uniform float3 color_rgb_matrix2;
+uniform float3 color_source_transfer_abc;
+uniform float3 color_source_transfer_def;
+uniform float3 color_target_transfer_abc;
+uniform float3 color_target_transfer_def;
 
 uniform texture2d previous_image;
 uniform float2 dimensions;
@@ -40,14 +49,19 @@ int3 select(int2 texel, int x, int y)
 	return int3(texel + int2(x, y), 0);
 }
 
+float4 convert_to_acescg(float4 sample)
+{
+	return float4(ConvertToLinear(sample.rgb, color_source_transfer_abc, color_source_transfer_def, color_rgb_matrix0, color_rgb_matrix1, color_rgb_matrix2), sample.a);
+}
+
 float4 load_at_prev(int2 texel, int x, int y)
 {
-	return previous_image.Load(select(texel, x, y));
+	return convert_to_acescg(previous_image.Load(select(texel, x, y)));
 }
 
 float4 load_at_image(int2 texel, int x, int y)
 {
-	return image.Load(select(texel, x, y));
+	return convert_to_acescg(image.Load(select(texel, x, y)));
 }
 
 float4 load_at(int2 texel, int x, int y, int field)
@@ -271,5 +285,19 @@ technique Draw \
 	{ \
 		vertex_shader = VSDefault(v_in); \
 		pixel_shader  = rgba_ps(v_in); \
+	} \
+} \
+\
+float4 draw_translate(VertData v_in) : TARGET \
+{ \
+	float4 color = rgba_ps(v_in); \
+	return float4(LinearToGamma(color.rgb, color_target_transfer_abc, color_target_transfer_def), color.a); \
+} \
+technique DrawTranslate \
+{ \
+	pass \
+	{ \
+		vertex_shader = VSDefault(v_in); \
+		pixel_shader  = draw_translate(v_in); \
 	} \
 }

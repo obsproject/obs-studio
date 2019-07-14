@@ -138,6 +138,56 @@ static bool graphics_init_sprite_vb(struct graphics_subsystem *graphics)
 	return true;
 }
 
+struct gs_rgb_matrix {
+	struct matrix4 to_xyz;
+	struct matrix4 from_xyz;
+};
+static struct gs_rgb_matrix gs_compute_rgb_matrix(float Rx, float Ry, float Gx,
+						  float Gy, float Bx, float By,
+						  float Wx, float Wy)
+{
+	const float Rz = 1.0f - Rx - Ry;
+	const float Gz = 1.0f - Gx - Gy;
+	const float Bz = 1.0f - Bx - By;
+	const float Wz = 1.0f - Wx - Wy;
+
+	struct matrix4 C;
+	matrix4_identity(&C);
+	vec4_set(&C.x, Rx, Gx, Bx, 0.0f);
+	vec4_set(&C.y, Ry, Gy, By, 0.0f);
+	vec4_set(&C.z, Rz, Gz, Bz, 0.0f);
+
+	struct matrix4 C_inverse;
+	matrix4_inv(&C_inverse, &C);
+
+	struct vec4 factors;
+	vec4_set(&factors, Wx / Wy, 1.0f, Wz / Wy, 0.0f);
+
+	struct matrix4 J;
+	matrix4_identity(&J);
+	vec4_set(&J.x, vec4_dot(&factors, &C_inverse.x), 0.0f, 0.0f, 0.0f);
+	vec4_set(&J.y, 0.0f, vec4_dot(&factors, &C_inverse.y), 0.0f, 0.0f);
+	vec4_set(&J.z, 0.0f, 0.0f, vec4_dot(&factors, &C_inverse.z), 0.0f);
+
+	struct matrix4 T_column;
+	matrix4_mul(&T_column, &C, &J);
+
+	struct matrix4 T;
+	matrix4_transpose(&T, &T_column);
+
+	struct matrix4 T_inverse;
+	matrix4_inv(&T_inverse, &T);
+
+	struct gs_rgb_matrix rgb_matrix;
+	rgb_matrix.to_xyz = T;
+	rgb_matrix.from_xyz = T_inverse;
+	return rgb_matrix;
+}
+static struct gs_rgb_matrix rgb_matrix_precomputed_601;
+static struct gs_rgb_matrix rgb_matrix_precomputed_709;
+static struct gs_rgb_matrix rgb_matrix_precomputed_acescg;
+static struct gs_rgb_matrix *rgb_matrix_precomputed_table[5];
+
 static bool graphics_init(struct graphics_subsystem *graphics)
 {
 	struct matrix4 top_mat;
@@ -156,6 +206,8 @@ static bool graphics_init(struct graphics_subsystem *graphics)
 	if (pthread_mutex_init(&graphics->effect_mutex, NULL) != 0)
 		return false;
 
+	graphics->cur_colorspace = GS_CS_ACESCG;
+
 	graphics->exports.device_blend_function_separate(
 		graphics->device, GS_BLEND_SRCALPHA, GS_BLEND_INVSRCALPHA,
 		GS_BLEND_ONE, GS_BLEND_INVSRCALPHA);
@@ -168,6 +220,23 @@ static bool graphics_init(struct graphics_subsystem *graphics)
 	graphics->exports.device_leave_context(graphics->device);
 
 	gs_init_image_deps();
+
+	rgb_matrix_precomputed_601 = gs_compute_rgb_matrix(
+		0.63f, 0.34f, 0.31f, 0.595f, 0.155f, 0.07f, 0.3127f, 0.3290f);
+	rgb_matrix_precomputed_709 = gs_compute_rgb_matrix(
+		0.64f, 0.33f, 0.30f, 0.60f, 0.15f, 0.06f, 0.3127f, 0.3290f);
+	rgb_matrix_precomputed_acescg =
+		gs_compute_rgb_matrix(0.713f, 0.293f, 0.165f, 0.83f, 0.128f,
+				      0.044f, 0.32168f, 0.33767f);
+	rgb_matrix_precomputed_table[GS_CS_SRGB_NONLINEAR] =
+		&rgb_matrix_precomputed_709;
+	rgb_matrix_precomputed_table[GS_CS_SRGB_LINEAR] =
+		&rgb_matrix_precomputed_709;
+	rgb_matrix_precomputed_table[GS_CS_601] = &rgb_matrix_precomputed_601;
+	rgb_matrix_precomputed_table[GS_CS_709] = &rgb_matrix_precomputed_709;
+	rgb_matrix_precomputed_table[GS_CS_ACESCG] =
+		&rgb_matrix_precomputed_acescg;
+
 	return true;
 }
 
@@ -241,6 +310,7 @@ void gs_destroy(graphics_t *graphics)
 	pthread_mutex_destroy(&graphics->effect_mutex);
 	da_free(graphics->matrix_stack);
 	da_free(graphics->viewport_stack);
+	da_free(graphics->colorspace_stack);
 	da_free(graphics->blend_state_stack);
 	if (graphics->module)
 		os_dlclose(graphics->module);
@@ -1243,6 +1313,33 @@ void gs_reset_blend_state(void)
 					   GS_BLEND_INVSRCALPHA);
 }
 
+void gs_colorspace_push(void)
+{
+	graphics_t *graphics = thread_graphics;
+
+	if (!gs_valid("gs_colorspace_push"))
+		return;
+
+	da_push_back(graphics->colorspace_stack, &graphics->cur_colorspace);
+}
+
+void gs_colorspace_pop(void)
+{
+	graphics_t *graphics = thread_graphics;
+	enum gs_colorspace *cs;
+
+	if (!gs_valid("gs_blend_state_pop"))
+		return;
+
+	cs = da_end(graphics->colorspace_stack);
+	if (!cs)
+		return;
+
+	gs_set_colorspace(*cs);
+
+	da_pop_back(graphics->colorspace_stack);
+}
+
 /* ------------------------------------------------------------------------- */
 
 const char *gs_preprocessor_name(void)
@@ -1651,6 +1748,13 @@ gs_zstencil_t *gs_get_zstencil_target(void)
 	return graphics->exports.device_get_zstencil_target(graphics->device);
 }
 
+enum gs_colorspace gs_get_colorspace(void)
+{
+	graphics_t *graphics = thread_graphics;
+
+	return graphics->cur_colorspace;
+}
+
 void gs_set_render_target(gs_texture_t *tex, gs_zstencil_t *zstencil)
 {
 	graphics_t *graphics = thread_graphics;
@@ -1672,6 +1776,13 @@ void gs_set_cube_render_target(gs_texture_t *cubetex, int side,
 
 	graphics->exports.device_set_cube_render_target(
 		graphics->device, cubetex, side, zstencil);
+}
+
+EXPORT void gs_set_colorspace(enum gs_colorspace cs)
+{
+	graphics_t *graphics = thread_graphics;
+
+	graphics->cur_colorspace = cs;
 }
 
 void gs_copy_texture(gs_texture_t *dst, gs_texture_t *src)
@@ -2592,6 +2703,144 @@ void gs_debug_marker_end(void)
 
 	thread_graphics->exports.device_debug_marker_end(
 		thread_graphics->device);
+}
+
+static void gs_get_color_rgb_matrix(enum gs_colorspace source_cs,
+				    enum gs_colorspace target_cs,
+				    struct vec3 *rgb_matrix0,
+				    struct vec3 *rgb_matrix1,
+				    struct vec3 *rgb_matrix2)
+{
+	struct matrix4 *to_xyz =
+		&rgb_matrix_precomputed_table[source_cs]->to_xyz;
+	struct matrix4 *from_xyz =
+		&rgb_matrix_precomputed_table[target_cs]->from_xyz;
+
+	struct matrix4 rgb_matrix;
+	matrix4_mul(&rgb_matrix, to_xyz, from_xyz);
+
+	struct matrix4 rgb_matrix_column;
+	matrix4_transpose(&rgb_matrix_column, &rgb_matrix);
+
+	vec3_from_vec4(rgb_matrix0, &rgb_matrix_column.x);
+	vec3_from_vec4(rgb_matrix1, &rgb_matrix_column.y);
+	vec3_from_vec4(rgb_matrix2, &rgb_matrix_column.z);
+}
+
+static void gs_get_color_transfer(enum gs_colorspace space, struct vec3 *abc,
+				  struct vec3 *def)
+{
+	// Use modified Chromium inverse transfer convention:
+	// Them: (L < d) ? (c * L + f) :     pow(a * L + b, g) + e
+	// Us:   (L < d) ? (c * L    ) : a * pow(    L + b, f) + e
+
+	switch (space) {
+	case GS_CS_SRGB_NONLINEAR:
+		vec3_set(abc, 1.055f, 0.0f, 12.92f);
+		vec3_set(def, 0.0031308f, -0.055f, 1.0f / 2.4f);
+		break;
+	case GS_CS_601:
+	case GS_CS_709:
+		vec3_set(abc, 1.099f, 0.0f, 4.5f);
+		vec3_set(def, 0.018f, -0.099f, 0.45f);
+		break;
+	default:
+		vec3_set(abc, 1.0f, 0.0f, 1.0f);
+		vec3_set(def, 0.0f, 0.0f, 1.0f);
+	}
+}
+
+static void gs_get_color_transfer_reverse(enum gs_colorspace space,
+					  struct vec3 *abc, struct vec3 *def)
+{
+	// Use modified Chromium transfer convention:
+	// Them: (V < d) ? (c * V + f) : pow(a * V + b, g) + e
+	// Us:   (V < d) ? (c * V    ) : pow(a * V + b, f) + e
+
+	switch (space) {
+	case GS_CS_SRGB_NONLINEAR:
+		vec3_set(abc, 1.0f / 1.055f, 0.055f / 1.055f, 1.0f / 12.92f);
+		vec3_set(def, 0.04045f, 0.0f, 2.4f);
+		break;
+	case GS_CS_601:
+	case GS_CS_709:
+		vec3_set(abc, 1.0f / 1.099f, 0.099f / 1.099f, 1.0f / 4.5f);
+		vec3_set(def, 0.081f, 0.0f, 1.0f / 0.45f);
+		break;
+	default:
+		vec3_set(abc, 1.0f, 0.0f, 1.0f);
+		vec3_set(def, 0.0f, 0.0f, 1.0f);
+	}
+}
+
+void gs_effect_set_color_translate(const gs_effect_t *effect,
+				   enum gs_colorspace source_cs,
+				   enum gs_colorspace target_cs)
+{
+	struct vec3 source_abc, source_def;
+	struct vec3 target_abc, target_def;
+	struct vec3 rgb_matrix0, rgb_matrix1, rgb_matrix2;
+	gs_eparam_t *p;
+
+	gs_get_color_transfer_reverse(source_cs, &source_abc, &source_def);
+	gs_get_color_transfer(target_cs, &target_abc, &target_def);
+	gs_get_color_rgb_matrix(source_cs, target_cs, &rgb_matrix0,
+				&rgb_matrix1, &rgb_matrix2);
+
+	p = gs_effect_get_param_by_name(effect, "color_source_transfer_abc");
+	if (p)
+		gs_effect_set_vec3(p, &source_abc);
+	p = gs_effect_get_param_by_name(effect, "color_source_transfer_def");
+	if (p)
+		gs_effect_set_vec3(p, &source_def);
+	p = gs_effect_get_param_by_name(effect, "color_target_transfer_abc");
+	gs_effect_set_vec3(p, &target_abc);
+	p = gs_effect_get_param_by_name(effect, "color_target_transfer_def");
+	gs_effect_set_vec3(p, &target_def);
+	p = gs_effect_get_param_by_name(effect, "color_rgb_matrix0");
+	gs_effect_set_vec3(p, &rgb_matrix0);
+	p = gs_effect_get_param_by_name(effect, "color_rgb_matrix1");
+	gs_effect_set_vec3(p, &rgb_matrix1);
+	p = gs_effect_get_param_by_name(effect, "color_rgb_matrix2");
+	gs_effect_set_vec3(p, &rgb_matrix2);
+}
+
+static float transfer_color_reverse(float v, struct vec3 abc, struct vec3 def)
+{
+	return (v < def.x) ? (abc.z * v)
+			   : (powf(abc.x * v + abc.y, def.z) + def.y);
+}
+
+static float transfer_color(float l, struct vec3 abc, struct vec3 def)
+{
+	return (l < def.x) ? (abc.z * l)
+			   : ((abc.x * powf(l + abc.y, def.z)) + def.y);
+}
+
+void gs_convert_colorspace(struct vec4 color, enum gs_colorspace source_cs,
+			   enum gs_colorspace target_cs,
+			   struct vec4 *target_color)
+{
+	struct vec3 source_abc, source_def;
+	struct vec3 target_abc, target_def;
+	struct vec3 rgb_matrix0, rgb_matrix1, rgb_matrix2;
+	float r, g, b;
+	float r_new, g_new, b_new;
+
+	gs_get_color_transfer_reverse(source_cs, &source_abc, &source_def);
+	gs_get_color_transfer(target_cs, &target_abc, &target_def);
+	gs_get_color_rgb_matrix(source_cs, target_cs, &rgb_matrix0,
+				&rgb_matrix1, &rgb_matrix2);
+
+	r = transfer_color_reverse(color.x, source_abc, source_def);
+	g = transfer_color_reverse(color.y, source_abc, source_def);
+	b = transfer_color_reverse(color.z, source_abc, source_def);
+	r_new = (r * rgb_matrix0.x) + (g * rgb_matrix0.y) + (b * rgb_matrix0.z);
+	g_new = (r * rgb_matrix1.x) + (g * rgb_matrix1.y) + (b * rgb_matrix1.z);
+	b_new = (r * rgb_matrix2.x) + (g * rgb_matrix2.y) + (b * rgb_matrix2.z);
+	vec4_set(target_color, transfer_color(r_new, target_abc, target_def),
+		 transfer_color(g_new, target_abc, target_def),
+		 transfer_color(b_new, target_abc, target_def), color.w);
 }
 
 #ifdef __APPLE__

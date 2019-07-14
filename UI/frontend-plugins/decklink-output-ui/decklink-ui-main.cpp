@@ -217,7 +217,8 @@ void render_preview_source(void *param, uint32_t cx, uint32_t cy)
 
 	gs_texrender_reset(ctx->texrender);
 
-	if (gs_texrender_begin(ctx->texrender, width, height)) {
+	if (gs_texrender_begin(ctx->texrender, width, height,
+			       GS_CS_SRGB_NONLINEAR)) {
 		struct vec4 background;
 		vec4_zero(&background);
 

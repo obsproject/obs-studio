@@ -26,6 +26,16 @@ bool obs_display_init(struct obs_display *display,
 	pthread_mutex_init_value(&display->draw_info_mutex);
 
 	if (graphics_data) {
+		display->render_texture = gs_texture_create(graphics_data->cx,
+							    graphics_data->cy,
+							    GS_RGBA16F, 1, NULL,
+							    GS_RENDER_TARGET);
+		if (!display->render_texture) {
+			blog(LOG_ERROR, "obs_display_init: Failed to "
+					"create swap chain render target");
+			return false;
+		}
+
 		display->swap = gs_swapchain_create(graphics_data);
 		if (!display->swap) {
 			blog(LOG_ERROR, "obs_display_init: Failed to "
@@ -86,6 +96,11 @@ void obs_display_free(obs_display_t *display)
 	if (display->swap) {
 		gs_swapchain_destroy(display->swap);
 		display->swap = NULL;
+	}
+
+	if (display->render_texture) {
+		gs_texture_destroy(display->render_texture);
+		display->render_texture = NULL;
 	}
 }
 
@@ -155,20 +170,29 @@ static inline void render_display_begin(struct obs_display *display,
 					uint32_t cx, uint32_t cy,
 					bool size_changed)
 {
-	struct vec4 clear_color;
+	struct vec4 clear_color_srgb;
+	struct vec4 clear_color_acescg;
 
 	gs_load_swapchain(display->swap);
 
-	if (size_changed)
+	if (size_changed) {
 		gs_resize(cx, cy);
+		gs_texture_destroy(display->render_texture);
+		display->render_texture = gs_texture_create(
+			cx, cy, GS_RGBA16F, 1, NULL, GS_RENDER_TARGET);
+	}
+
+	gs_set_render_target(display->render_texture, NULL);
+	gs_set_colorspace(GS_CS_ACESCG);
 
 	gs_begin_scene();
 
-	vec4_from_rgba(&clear_color, display->background_color);
-	clear_color.w = 1.0f;
+	vec4_from_rgba(&clear_color_srgb, display->background_color);
+	gs_convert_colorspace(clear_color_srgb, GS_CS_SRGB_NONLINEAR,
+			      GS_CS_ACESCG, &clear_color_acescg);
 
 	gs_clear(GS_CLEAR_COLOR | GS_CLEAR_DEPTH | GS_CLEAR_STENCIL,
-		 &clear_color, 1.0f, 0);
+		 &clear_color_acescg, 1.0f, 0);
 
 	gs_enable_depth_test(false);
 	/* gs_enable_blending(false); */
@@ -178,8 +202,40 @@ static inline void render_display_begin(struct obs_display *display,
 	gs_set_viewport(0, 0, cx, cy);
 }
 
-static inline void render_display_end()
+static inline void render_display_end(struct obs_display *display)
 {
+	gs_texture_t *texture = display->render_texture;
+	uint32_t width = gs_texture_get_width(texture);
+	uint32_t height = gs_texture_get_height(texture);
+
+	gs_effect_t *effect = obs_get_base_effect(OBS_EFFECT_DEFAULT);
+	gs_technique_t *tech = gs_effect_get_technique(effect, "DrawTranslate");
+
+	gs_eparam_t *image = gs_effect_get_param_by_name(effect, "image");
+	size_t passes, i;
+
+	gs_set_render_target(NULL, NULL);
+	gs_set_colorspace(GS_CS_SRGB_NONLINEAR);
+	gs_enable_depth_test(false);
+	gs_set_cull_mode(GS_NEITHER);
+	gs_ortho(0.0f, (float)width, 0.0f, (float)height, -100.0f, 100.0f);
+	gs_set_viewport(0, 0, width, height);
+
+	gs_effect_set_texture(image, texture);
+
+	gs_effect_set_color_translate(effect, GS_CS_ACESCG,
+				      GS_CS_SRGB_NONLINEAR);
+
+	gs_enable_blending(false);
+	passes = gs_technique_begin(tech);
+	for (i = 0; i < passes; i++) {
+		gs_technique_begin_pass(tech, i);
+		gs_draw_sprite(texture, 0, width, height);
+		gs_technique_end_pass(tech);
+	}
+	gs_technique_end(tech);
+	gs_enable_blending(true);
+
 	gs_end_scene();
 }
 
@@ -221,7 +277,7 @@ void render_display(struct obs_display *display)
 
 	pthread_mutex_unlock(&display->draw_callbacks_mutex);
 
-	render_display_end();
+	render_display_end(display);
 
 	GS_DEBUG_MARKER_END();
 

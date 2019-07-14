@@ -1116,7 +1116,7 @@ static bool try_connect(struct ffmpeg_output *output)
 					     : AVCOL_RANGE_MPEG;
 		config.color_space = voi->colorspace == VIDEO_CS_709
 					     ? AVCOL_SPC_BT709
-					     : AVCOL_SPC_BT470BG;
+					     : AVCOL_SPC_SMPTE170M;
 	} else {
 		config.color_range = AVCOL_RANGE_UNSPECIFIED;
 		config.color_space = AVCOL_SPC_RGB;

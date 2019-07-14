@@ -202,6 +202,7 @@ struct obs_display {
 	bool enabled;
 	uint32_t cx, cy;
 	uint32_t background_color;
+	gs_texture_t *render_texture;
 	gs_swapchain_t *swap;
 	pthread_mutex_t draw_callbacks_mutex;
 	pthread_mutex_t draw_info_mutex;
@@ -638,6 +639,7 @@ struct obs_source {
 	bool async_full_range;
 	enum video_format async_cache_format;
 	bool async_cache_full_range;
+	enum gs_colorspace async_colorspace;
 	enum gs_color_format async_texture_format;
 	int async_plane_offset[2];
 	bool async_flip;
@@ -667,6 +669,10 @@ struct obs_source {
 	enum obs_deinterlace_mode deinterlace_mode;
 	bool deinterlace_top_first;
 	bool deinterlace_rendered;
+
+	/* input render-to-texture */
+	gs_texrender_t *input_texrender;
+	enum gs_colorspace input_colorspace;
 
 	/* filters */
 	struct obs_source *filter_parent;
@@ -780,6 +786,19 @@ convert_video_format(enum video_format format)
 		return GS_BGRA;
 
 	return GS_BGRX;
+}
+
+static inline enum gs_colorspace
+convert_video_colorspace(enum video_colorspace colorspace)
+{
+	switch (colorspace) {
+	case VIDEO_CS_709:
+		return GS_CS_709;
+	case VIDEO_CS_SRGB:
+		return GS_CS_SRGB_NONLINEAR;
+	default:
+		return GS_CS_601;
+	}
 }
 
 extern void obs_source_activate(obs_source_t *source, enum view_type type);

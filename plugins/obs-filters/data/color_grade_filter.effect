@@ -1,3 +1,5 @@
+#include "srgb_legacy.inc"
+
 uniform float4x4 ViewProj;
 uniform texture2d image;
 
@@ -31,6 +33,7 @@ VertDataOut VSDefault(VertDataIn v_in)
 float4 LUT(VertDataOut v_in) : TARGET
 {
 	float4 textureColor = image.Sample(textureSampler, v_in.uv);
+	textureColor = float4(ConvertToSrgbNonlinear(textureColor.rgb), textureColor.a);
 	float blueColor = textureColor.b * 63.0;
 
 	float2 quad1;
@@ -54,6 +57,7 @@ float4 LUT(VertDataOut v_in) : TARGET
 	float4 luttedColor = lerp(newColor1, newColor2, frac(blueColor));
 
 	float4 final_color = lerp(textureColor, luttedColor, clut_amount);
+	final_color.rgb = ConvertFromSrgbNonlinear(final_color.rgb);
 	return float4(final_color.rgb, textureColor.a);
 }
 

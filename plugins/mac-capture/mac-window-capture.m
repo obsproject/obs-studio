@@ -69,6 +69,7 @@ static inline void capture_frame(struct window_capture *wc)
 
 	struct obs_source_frame frame = {
 		.format = VIDEO_FORMAT_BGRA,
+		.colorspace = VIDEO_CS_SRGB,
 		.width = width,
 		.height = height,
 		.data[0] = data,
@@ -103,7 +104,7 @@ static inline void *window_capture_create_internal(obs_data_t *settings,
 
 	wc->source = source;
 
-	wc->color_space = CGColorSpaceCreateDeviceRGB();
+	wc->color_space = CGColorSpaceCreateWithName(kCGColorSpaceSRGB);
 
 	da_init(wc->buffer);
 

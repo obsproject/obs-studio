@@ -352,6 +352,7 @@ static unsigned vlcs_video_format(void **p_data, char *chroma, unsigned *width,
 		obs_source_frame_init(&c->frame, new_format, *width, *height);
 
 		c->frame.format = new_format;
+		c->frame.colorspace = VIDEO_CS_DEFAULT;
 		c->frame.full_range = new_range;
 		range = c->frame.full_range ? VIDEO_RANGE_FULL
 					    : VIDEO_RANGE_PARTIAL;

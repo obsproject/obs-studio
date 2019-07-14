@@ -1,5 +1,14 @@
+#include "colorspace.inc"
+
 uniform float4x4 ViewProj;
 uniform float4x4 color_matrix;
+uniform float3 color_rgb_matrix0;
+uniform float3 color_rgb_matrix1;
+uniform float3 color_rgb_matrix2;
+uniform float3 color_source_transfer_abc;
+uniform float3 color_source_transfer_def;
+uniform float3 color_target_transfer_abc;
+uniform float3 color_target_transfer_def;
 uniform texture2d image;
 
 sampler_state def_sampler {
@@ -26,18 +35,30 @@ float4 PSDrawBare(VertInOut vert_in) : TARGET
 	return image.Sample(def_sampler, vert_in.uv);
 }
 
+float4 PSDrawTranslate(VertInOut vert_in) : TARGET
+{
+	float4 color = image.Sample(def_sampler, vert_in.uv);
+	return float4(TranslateColor(color.rgb, color_source_transfer_abc, color_source_transfer_def, color_target_transfer_abc, color_target_transfer_def, color_rgb_matrix0, color_rgb_matrix1, color_rgb_matrix2), color.a);
+}
+
 float4 PSDrawAlphaDivide(VertInOut vert_in) : TARGET
 {
 	float4 rgba = image.Sample(def_sampler, vert_in.uv);
 	float alpha = rgba.a;
 	float multiplier = (alpha > 0.0) ? (1.0 / alpha) : 0.0;
-	return float4(rgba.rgb * multiplier, alpha);
+	float3 rgb = ConvertFromLinear(rgba.rgb * multiplier,
+			color_target_transfer_abc, color_target_transfer_def,
+			color_rgb_matrix0, color_rgb_matrix1, color_rgb_matrix2);
+	return float4(rgb, alpha);
 }
 
 float4 PSDrawMatrix(VertInOut vert_in) : TARGET
 {
 	float3 rgb = image.Sample(def_sampler, vert_in.uv).rgb;
-	float3 yuv = mul(float4(rgb, 1.0), color_matrix).xyz;
+	float3 yuv = LinearToYuv(rgb,
+			color_target_transfer_abc, color_target_transfer_def,
+			color_matrix, color_rgb_matrix0, color_rgb_matrix1,
+			color_rgb_matrix2);
 	return float4(yuv, 1.0);
 }
 
@@ -47,6 +68,15 @@ technique Draw
 	{
 		vertex_shader = VSDefault(vert_in);
 		pixel_shader  = PSDrawBare(vert_in);
+	}
+}
+
+technique DrawTranslate
+{
+	pass
+	{
+		vertex_shader = VSDefault(vert_in);
+		pixel_shader  = PSDrawTranslate(vert_in);
 	}
 }
 

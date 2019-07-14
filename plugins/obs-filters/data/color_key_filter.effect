@@ -1,3 +1,5 @@
+#include "srgb_legacy.inc"
+
 uniform float4x4 ViewProj;
 uniform texture2d image;
 
@@ -39,18 +41,21 @@ float GetColorDist(float3 rgb)
 	return distance(key_color.rgb, rgb);
 }
 
-float4 ProcessColorKey(float4 rgba, VertData v_in)
+float4 ProcessColorKey(float4 rgba)
 {
 	float colorDist = GetColorDist(rgba.rgb);
-	rgba.a *= saturate(max(colorDist - similarity, 0.0) / smoothness);
+	rgba.a *= saturate((colorDist - similarity) / smoothness);
 
 	return CalcColor(rgba);
 }
 
 float4 PSColorKeyRGBA(VertData v_in) : TARGET
 {
-	float4 rgba = image.Sample(textureSampler, v_in.uv) * color;
-	return ProcessColorKey(rgba, v_in);
+	float4 sample = image.Sample(textureSampler, v_in.uv);
+	float4 sample_srgb = float4(ConvertToSrgbNonlinear(sample.rgb), sample.a);
+	float4 rgba = sample_srgb * color;
+	float4 keyed = ProcessColorKey(rgba);
+	return float4(ConvertFromSrgbNonlinear(keyed.rgb), keyed.a);
 }
 
 technique Draw

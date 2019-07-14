@@ -1424,13 +1424,22 @@ bool OBSBasicPreview::DrawSelectedItem(obs_scene_t *scene,
 		{{{1.f, 1.f, 0.f}}},
 	};
 
+	vec4 red_srgb;
+	vec4 green_srgb;
+	vec4 blue_srgb;
+	vec4_set(&red_srgb, 1.0f, 0.0f, 0.0f, 1.0f);
+	vec4_set(&green_srgb, 0.0f, 1.0f, 0.0f, 1.0f);
+	vec4_set(&blue_srgb, 0.0f, 0.0f, 1.0f, 1.0f);
+
 	vec4 red;
 	vec4 green;
 	vec4 blue;
-
-	vec4_set(&red, 1.0f, 0.0f, 0.0f, 1.0f);
-	vec4_set(&green, 0.0f, 1.0f, 0.0f, 1.0f);
-	vec4_set(&blue, 0.0f, 0.5f, 1.0f, 1.0f);
+	gs_convert_colorspace(red_srgb, GS_CS_SRGB_NONLINEAR, GS_CS_ACESCG,
+			      &red);
+	gs_convert_colorspace(green_srgb, GS_CS_SRGB_NONLINEAR, GS_CS_ACESCG,
+			      &green);
+	gs_convert_colorspace(blue_srgb, GS_CS_SRGB_NONLINEAR, GS_CS_ACESCG,
+			      &blue);
 
 	bool visible = std::all_of(
 		std::begin(bounds), std::end(bounds), [&](const vec3 &b) {
@@ -1557,8 +1566,12 @@ void OBSBasicPreview::DrawSceneEditing()
 	gs_effect_t *solid = obs_get_base_effect(OBS_EFFECT_SOLID);
 	gs_technique_t *tech = gs_effect_get_technique(solid, "Solid");
 
+	vec4 color_srgb;
+	vec4_set(&color_srgb, 1.0f, 0.0f, 0.0f, 1.0f);
+
 	vec4 color;
-	vec4_set(&color, 1.0f, 0.0f, 0.0f, 1.0f);
+	gs_convert_colorspace(color_srgb, GS_CS_SRGB_NONLINEAR, GS_CS_ACESCG,
+			      &color);
 	gs_effect_set_vec4(gs_effect_get_param_by_name(solid, "color"), &color);
 
 	gs_technique_begin(tech);

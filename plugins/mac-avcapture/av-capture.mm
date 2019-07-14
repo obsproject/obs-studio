@@ -491,6 +491,7 @@ static inline bool update_colorspace(av_capture *capture,
 		return true;
 	}
 
+	frame->colorspace = colorspace;
 	frame->full_range = full_range;
 
 	if (!video_format_get_parameters(colorspace, range, frame->color_matrix,

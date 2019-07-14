@@ -1,3 +1,5 @@
+#include "srgb_legacy.inc"
+
 uniform float4x4 ViewProj;
 uniform texture2d image;
 
@@ -34,11 +36,13 @@ VertDataOut VSDefault(VertDataIn v_in)
 
 float4 PSColorMaskRGBA(VertDataOut v_in) : TARGET
 {
-	float4 rgba = image.Sample(textureSampler, v_in.uv) * color;
+	float4 sample = image.Sample(textureSampler, v_in.uv);
+	float4 sample_srgb = float4(ConvertToSrgbNonlinear(sample.rgb), sample.a);
+	float4 rgba = sample_srgb * color;
 
 	float4 targetRGB = target.Sample(textureSampler, v_in.uv2);
 	rgba.a *= (targetRGB.r + targetRGB.g + targetRGB.b) / 3.0;
-	return rgba;
+	return float4(ConvertFromSrgbNonlinear(rgba.rgb), rgba.a);
 }
 
 technique Draw

@@ -3,9 +3,16 @@
  * low resolution image below half size
  */
 
+#include "colorspace.inc"
+
 uniform float4x4 ViewProj;
 uniform texture2d image;
 uniform float4x4 color_matrix;
+uniform float3 color_rgb_matrix0;
+uniform float3 color_rgb_matrix1;
+uniform float3 color_rgb_matrix2;
+uniform float3 color_target_transfer_abc;
+uniform float3 color_target_transfer_def;
 
 sampler_state textureSampler {
 	Filter    = Linear;
@@ -63,13 +70,19 @@ float4 PSDrawLowresBilinearRGBADivide(VertData v_in) : TARGET
 	float4 rgba = DrawLowresBilinear(v_in);
 	float alpha = rgba.a;
 	float multiplier = (alpha > 0.0) ? (1.0 / alpha) : 0.0;
-	return float4(rgba.rgb * multiplier, alpha);
+	float3 rgb = ConvertFromLinear(rgba.rgb * multiplier,
+			color_target_transfer_abc, color_target_transfer_def,
+			color_rgb_matrix0, color_rgb_matrix1, color_rgb_matrix2);
+	return float4(rgb, alpha);
 }
 
 float4 PSDrawLowresBilinearMatrix(VertData v_in) : TARGET
 {
 	float3 rgb = DrawLowresBilinear(v_in).rgb;
-	float3 yuv = mul(float4(saturate(rgb), 1.0), color_matrix).xyz;
+	float3 yuv = LinearToYuv(rgb,
+			color_target_transfer_abc, color_target_transfer_def,
+			color_matrix, color_rgb_matrix0, color_rgb_matrix1,
+			color_rgb_matrix2);
 	return float4(yuv, 1.0);
 }
 

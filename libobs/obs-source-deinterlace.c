@@ -336,12 +336,15 @@ void deinterlace_render(obs_source_t *s)
 	gs_effect_set_int(field, s->deinterlace_top_first);
 	gs_effect_set_vec2(dimensions, &size);
 
+	gs_effect_set_color_translate(effect, s->async_colorspace,
+				      gs_get_colorspace());
+
 	frame2_ts = s->deinterlace_frame_ts + s->deinterlace_offset +
 		    s->deinterlace_half_duration - TWOX_TOLERANCE;
 
 	gs_effect_set_bool(frame2, obs->video.video_time >= frame2_ts);
 
-	while (gs_effect_loop(effect, "Draw"))
+	while (gs_effect_loop(effect, "DrawTranslate"))
 		gs_draw_sprite(NULL, s->async_flip ? GS_FLIP_V : 0,
 			       s->async_width, s->async_height);
 }

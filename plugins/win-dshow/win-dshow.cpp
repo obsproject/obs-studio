@@ -1084,6 +1084,7 @@ inline bool DShowInput::Activate(obs_data_t *settings)
 		return false;
 
 	enum video_colorspace cs = GetColorSpace(settings);
+	frame.colorspace = cs;
 	frame.range = GetColorRange(settings);
 
 	if (device.Start() != Result::Success)

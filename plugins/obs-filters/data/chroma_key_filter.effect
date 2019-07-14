@@ -1,3 +1,5 @@
+#include "srgb_legacy.inc"
+
 uniform float4x4 ViewProj;
 uniform texture2d image;
 
@@ -84,8 +86,10 @@ float4 ProcessChromaKey(float4 rgba, VertData v_in)
 
 float4 PSChromaKeyRGBA(VertData v_in) : TARGET
 {
-	float4 rgba = image.Sample(textureSampler, v_in.uv);
-	return ProcessChromaKey(rgba, v_in);
+	float4 sample = image.Sample(textureSampler, v_in.uv);
+	float4 rgba = float4(ConvertToSrgbNonlinear(sample.rgb), sample.a);
+	float4 keyed = ProcessChromaKey(rgba, v_in);
+	return float4(ConvertFromSrgbNonlinear(keyed.rgb), keyed.a);
 }
 
 technique Draw

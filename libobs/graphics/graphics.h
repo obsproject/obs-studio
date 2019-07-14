@@ -83,6 +83,14 @@ enum gs_zstencil_format {
 	GS_Z32F_S8X24,
 };
 
+enum gs_colorspace {
+	GS_CS_SRGB_NONLINEAR,
+	GS_CS_SRGB_LINEAR, // Need GPU format support, but OpenGL is painful.
+	GS_CS_601,
+	GS_CS_709,
+	GS_CS_ACESCG,
+};
+
 enum gs_index_type {
 	GS_UNSIGNED_SHORT,
 	GS_UNSIGNED_LONG,
@@ -425,6 +433,10 @@ EXPORT void gs_effect_set_next_sampler(gs_eparam_t *param,
 
 EXPORT void gs_effect_set_color(gs_eparam_t *param, uint32_t argb);
 
+EXPORT void gs_effect_set_color_translate(const gs_effect_t *effect,
+					  enum gs_colorspace source_cs,
+					  enum gs_colorspace target_cs);
+
 /* ---------------------------------------------------
  * texture render helper functions
  * --------------------------------------------------- */
@@ -433,7 +445,7 @@ EXPORT gs_texrender_t *gs_texrender_create(enum gs_color_format format,
 					   enum gs_zstencil_format zsformat);
 EXPORT void gs_texrender_destroy(gs_texrender_t *texrender);
 EXPORT bool gs_texrender_begin(gs_texrender_t *texrender, uint32_t cx,
-			       uint32_t cy);
+			       uint32_t cy, enum gs_colorspace cs);
 EXPORT void gs_texrender_end(gs_texrender_t *texrender);
 EXPORT void gs_texrender_reset(gs_texrender_t *texrender);
 EXPORT gs_texture_t *gs_texrender_get_texture(const gs_texrender_t *texrender);
@@ -589,6 +601,9 @@ EXPORT void gs_blend_state_push(void);
 EXPORT void gs_blend_state_pop(void);
 EXPORT void gs_reset_blend_state(void);
 
+EXPORT void gs_colorspace_push(void);
+EXPORT void gs_colorspace_pop(void);
+
 /* -------------------------- */
 /* library-specific functions */
 
@@ -653,6 +668,9 @@ EXPORT gs_zstencil_t *gs_get_zstencil_target(void);
 EXPORT void gs_set_render_target(gs_texture_t *tex, gs_zstencil_t *zstencil);
 EXPORT void gs_set_cube_render_target(gs_texture_t *cubetex, int side,
 				      gs_zstencil_t *zstencil);
+
+EXPORT enum gs_colorspace gs_get_colorspace(void);
+EXPORT void gs_set_colorspace(enum gs_colorspace cs);
 
 EXPORT void gs_copy_texture(gs_texture_t *dst, gs_texture_t *src);
 EXPORT void gs_copy_texture_region(gs_texture_t *dst, uint32_t dst_x,
@@ -800,6 +818,11 @@ EXPORT void gs_debug_marker_begin(const float color[4], const char *markername);
 EXPORT void gs_debug_marker_begin_format(const float color[4],
 					 const char *format, ...);
 EXPORT void gs_debug_marker_end(void);
+
+EXPORT void gs_convert_colorspace(struct vec4 color,
+				  enum gs_colorspace source_cs,
+				  enum gs_colorspace target_cs,
+				  struct vec4 *target_color);
 
 #ifdef __APPLE__
 

@@ -87,7 +87,8 @@ static bool texrender_resetbuffer(gs_texrender_t *texrender, uint32_t cx,
 	return true;
 }
 
-bool gs_texrender_begin(gs_texrender_t *texrender, uint32_t cx, uint32_t cy)
+bool gs_texrender_begin(gs_texrender_t *texrender, uint32_t cx, uint32_t cy,
+			enum gs_colorspace cs)
 {
 	if (!texrender || texrender->rendered)
 		return false;
@@ -106,10 +107,12 @@ bool gs_texrender_begin(gs_texrender_t *texrender, uint32_t cx, uint32_t cy)
 	gs_projection_push();
 	gs_matrix_push();
 	gs_matrix_identity();
+	gs_colorspace_push();
 
 	texrender->prev_target = gs_get_render_target();
 	texrender->prev_zs = gs_get_zstencil_target();
 	gs_set_render_target(texrender->target, texrender->zs);
+	gs_set_colorspace(cs);
 
 	gs_set_viewport(0, 0, texrender->cx, texrender->cy);
 
@@ -126,6 +129,7 @@ void gs_texrender_end(gs_texrender_t *texrender)
 	gs_matrix_pop();
 	gs_projection_pop();
 	gs_viewport_pop();
+	gs_colorspace_pop();
 
 	texrender->rendered = true;
 }
