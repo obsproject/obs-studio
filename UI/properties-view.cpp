@@ -1349,7 +1349,7 @@ void OBSPropertiesView::AddGroup(obs_property_t *prop, QFormLayout *layout)
 	children.emplace_back(info);
 
 	// Signals
-	connect(groupBox, SIGNAL(toggled()), info, SLOT(ControlChanged()));
+	connect(groupBox, SIGNAL(toggled(bool)), info, SLOT(ControlChanged()));
 }
 
 void OBSPropertiesView::AddProperty(obs_property_t *property,
