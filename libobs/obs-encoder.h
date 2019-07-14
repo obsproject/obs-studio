@@ -238,6 +238,9 @@ struct obs_encoder_info {
 
 	/**
 	 * Gets the default settings for this encoder
+	 * 
+	 * If get_defaults is also defined both will be called, and the first
+	 * call will be to get_defaults, then to get_defaults2.
 	 *
 	 * @param[out]  settings  Data to assign default settings to
 	 * @param[in]   typedata  Type Data

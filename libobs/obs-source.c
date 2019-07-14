@@ -324,11 +324,13 @@ static obs_source_t *obs_source_create_internal(const char *id,
 		goto fail;
 
 	if (info) {
-		if (info->get_defaults2)
+		if (info->get_defaults) {
+			info->get_defaults(source->context.settings);
+		}
+		if (info->get_defaults2) {
 			info->get_defaults2(info->type_data,
 					    source->context.settings);
-		else if (info->get_defaults)
-			info->get_defaults(source->context.settings);
+		}
 	}
 
 	if (!obs_source_init(source))
