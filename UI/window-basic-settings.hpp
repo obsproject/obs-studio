@@ -84,14 +84,20 @@ using OBSFFFormatDesc = std::unique_ptr<const ff_format_desc, OBSFFDeleter>;
 
 class OBSBasicSettings : public QDialog {
 	Q_OBJECT
-	Q_PROPERTY(QIcon generalIcon WRITE SetGeneralIcon NOTIFY SetGeneralIcon)
-	Q_PROPERTY(QIcon streamIcon WRITE SetStreamIcon NOTIFY SetStreamIcon)
-	Q_PROPERTY(QIcon outputIcon WRITE SetOutputIcon NOTIFY SetOutputIcon)
-	Q_PROPERTY(QIcon audioIcon WRITE SetAudioIcon NOTIFY SetAudioIcon)
-	Q_PROPERTY(QIcon videoIcon WRITE SetVideoIcon NOTIFY SetVideoIcon)
-	Q_PROPERTY(QIcon hotkeysIcon WRITE SetHotkeysIcon NOTIFY SetHotkeysIcon)
-	Q_PROPERTY(
-		QIcon advancedIcon WRITE SetAdvancedIcon NOTIFY SetAdvancedIcon)
+	Q_PROPERTY(QIcon generalIcon READ GetGeneralIcon WRITE SetGeneralIcon
+			   DESIGNABLE true)
+	Q_PROPERTY(QIcon streamIcon READ GetStreamIcon WRITE SetStreamIcon
+			   DESIGNABLE true)
+	Q_PROPERTY(QIcon outputIcon READ GetOutputIcon WRITE SetOutputIcon
+			   DESIGNABLE true)
+	Q_PROPERTY(QIcon audioIcon READ GetAudioIcon WRITE SetAudioIcon
+			   DESIGNABLE true)
+	Q_PROPERTY(QIcon videoIcon READ GetVideoIcon WRITE SetVideoIcon
+			   DESIGNABLE true)
+	Q_PROPERTY(QIcon hotkeysIcon READ GetHotkeysIcon WRITE SetHotkeysIcon
+			   DESIGNABLE true)
+	Q_PROPERTY(QIcon advancedIcon READ GetAdvancedIcon WRITE SetAdvancedIcon
+			   DESIGNABLE true)
 
 private:
 	OBSBasic *main;
@@ -277,6 +283,22 @@ private:
 	void FillAudioMonitoringDevices();
 
 	void RecalcOutputResPixels(const char *resText);
+
+	QIcon generalIcon;
+	QIcon streamIcon;
+	QIcon outputIcon;
+	QIcon audioIcon;
+	QIcon videoIcon;
+	QIcon hotkeysIcon;
+	QIcon advancedIcon;
+
+	QIcon GetGeneralIcon() const;
+	QIcon GetStreamIcon() const;
+	QIcon GetOutputIcon() const;
+	QIcon GetAudioIcon() const;
+	QIcon GetVideoIcon() const;
+	QIcon GetHotkeysIcon() const;
+	QIcon GetAdvancedIcon() const;
 
 private slots:
 	void on_theme_activated(int idx);

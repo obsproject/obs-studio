@@ -153,8 +153,8 @@ OBSBasicProperties::OBSBasicProperties(QWidget *parent, OBSSource source_)
 		uint32_t colorA = 0xFFB26F52;
 		uint32_t colorB = 0xFF6FB252;
 
-		CreateTransitionScene(sourceA, "A", colorA);
-		CreateTransitionScene(sourceB, "B", colorB);
+		CreateTransitionScene(sourceA, (char *)"A", colorA);
+		CreateTransitionScene(sourceB, (char *)"B", colorB);
 
 		/**
 		 * The cloned source is made from scratch, rather than using

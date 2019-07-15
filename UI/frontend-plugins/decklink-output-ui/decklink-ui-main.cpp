@@ -207,6 +207,9 @@ void on_preview_scene_changed(enum obs_frontend_event event, void *param)
 
 void render_preview_source(void *param, uint32_t cx, uint32_t cy)
 {
+	UNUSED_PARAMETER(cx);
+	UNUSED_PARAMETER(cy);
+
 	auto ctx = (struct preview_output *)param;
 
 	if (!ctx->current_source)

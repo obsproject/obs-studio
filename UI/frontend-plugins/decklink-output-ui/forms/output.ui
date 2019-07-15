@@ -115,7 +115,7 @@
     </layout>
    </item>
    <item>
-    <widget class="QLabel" name="label">
+    <widget class="QLabel" name="keyerLabel">
      <property name="text">
       <string>Keyer output requires RGB mode in advanced settings.</string>
      </property>
