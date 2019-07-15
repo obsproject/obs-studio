@@ -1093,6 +1093,23 @@
             ]
         },
         {
+            "name": "Stripchat",
+            "servers": [
+                {
+                    "name": "Auto",
+                    "url": "rtmp://s-sd.stripcdn.com/ext"
+                }
+            ],
+            "recommended": {
+                "keyint": 2,
+                "profile": "main",
+                "bframes": 0,
+                "max video bitrate": 6000,
+                "max audio bitrate": 128,
+                "x264opts": "tune=zerolatency"
+            }
+        },
+        {
             "name": "Chaturbate",
             "servers": [
                 {
