@@ -155,7 +155,7 @@ static void obs_qsv_defaults(obs_data_t *settings)
 	obs_data_set_default_int(settings, "qpp", 23);
 	obs_data_set_default_int(settings, "qpb", 23);
 	obs_data_set_default_int(settings, "icq_quality", 23);
-	obs_data_set_default_int(settings, "la_depth", 40);
+	obs_data_set_default_int(settings, "la_depth", 15);
 
 	obs_data_set_default_int(settings, "keyint_sec", 3);
 	obs_data_set_default_int(settings, "bframes", 3);
@@ -226,13 +226,14 @@ static bool rate_control_modified(obs_properties_t *ppts, obs_property_t *p,
 	obs_property_set_visible(p, bVisible);
 
 	bVisible = astrcmpi(rate_control, "LA_ICQ") == 0 ||
-		   astrcmpi(rate_control, "LA") == 0;
+		   astrcmpi(rate_control, "LA_CBR") == 0 ||
+		   astrcmpi(rate_control, "LA_VBR") == 0;
 	p = obs_properties_get(ppts, "la_depth");
 	obs_property_set_visible(p, bVisible);
 
 	bVisible = astrcmpi(rate_control, "CBR") == 0 ||
-		    astrcmpi(rate_control, "VBR") == 0 ||
-		    astrcmpi(rate_control, "AVBR") == 0;
+		   astrcmpi(rate_control, "VBR") == 0 ||
+		   astrcmpi(rate_control, "AVBR") == 0;
 	p = obs_properties_get(ppts, "mbbrc");
 	obs_property_set_visible(p, bVisible);
 
@@ -371,8 +372,10 @@ static void update_params(struct obs_qsv *obsqsv, obs_data_t *settings)
 		obsqsv->params.nRateControl = MFX_RATECONTROL_ICQ;
 	else if (astrcmpi(rate_control, "LA_ICQ") == 0)
 		obsqsv->params.nRateControl = MFX_RATECONTROL_LA_ICQ;
-	else if (astrcmpi(rate_control, "LA") == 0)
+	else if (astrcmpi(rate_control, "LA_VBR") == 0)
 		obsqsv->params.nRateControl = MFX_RATECONTROL_LA;
+	else if (astrcmpi(rate_control, "LA_CBR") == 0)
+		obsqsv->params.nRateControl = MFX_RATECONTROL_LA_HRD;
 
 	obsqsv->params.nAsyncDepth = (mfxU16)async_depth;
 	obsqsv->params.nAccuracy = (mfxU16)accuracy;
@@ -411,7 +414,8 @@ static void update_params(struct obs_qsv *obsqsv, obs_data_t *settings)
 		     (int)obsqsv->params.nICQQuality);
 
 	if (obsqsv->params.nRateControl == MFX_RATECONTROL_LA_ICQ ||
-	    obsqsv->params.nRateControl == MFX_RATECONTROL_LA)
+	    obsqsv->params.nRateControl == MFX_RATECONTROL_LA ||
+	    obsqsv->params.nRateControl == MFX_RATECONTROL_LA_HRD)
 		blog(LOG_INFO, "\tLookahead Depth:%d",
 		     (int)obsqsv->params.nLADEPTH);
 
@@ -639,7 +643,8 @@ static void parse_packet(struct obs_qsv *obsqsv, struct encoder_packet *packet,
 
 	if (frameType & MFX_FRAMETYPE_I)
 		priority = OBS_NAL_PRIORITY_HIGHEST;
-	else if ((frameType & MFX_FRAMETYPE_P) || (frameType & MFX_FRAMETYPE_REF))
+	else if ((frameType & MFX_FRAMETYPE_P) ||
+		 (frameType & MFX_FRAMETYPE_REF))
 		priority = OBS_NAL_PRIORITY_HIGH;
 	else
 		priority = 0;
@@ -662,7 +667,9 @@ static void parse_packet(struct obs_qsv *obsqsv, struct encoder_packet *packet,
 		type = start[0] & 0x1F;
 		if (type == OBS_NAL_SLICE_IDR || type == OBS_NAL_SLICE) {
 			start[0] &= ~(3 << 5);
-			start[0] |= priority << 5; //0 for non-ref frames and not equal to 0 for ref frames
+			start[0] |=
+				priority
+				<< 5; //0 for non-ref frames and not equal to 0 for ref frames
 		}
 
 		start = (uint8_t *)obs_avc_find_startcode(start, end);

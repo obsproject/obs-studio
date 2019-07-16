@@ -240,6 +240,9 @@ bool QSV_Encoder_Internal::InitParams(qsv_param_t *pParams)
 		break;
 	case MFX_RATECONTROL_LA_ICQ:
 		m_mfxEncParams.mfx.ICQQuality = pParams->nICQQuality;
+	case MFX_RATECONTROL_LA_HRD:
+		m_mfxEncParams.mfx.TargetKbps = pParams->nTargetBitRate;
+		m_mfxEncParams.mfx.MaxKbps = pParams->nTargetBitRate;
 		break;
 	default:
 		break;
@@ -261,8 +264,7 @@ bool QSV_Encoder_Internal::InitParams(qsv_param_t *pParams)
 		extendedBuffers[iBuffers++] = (mfxExtBuffer *)&m_co;
 	}
 
-	if (m_ver.Major == 1 && m_ver.Minor >= 8)
-	{
+	if (m_ver.Major == 1 && m_ver.Minor >= 8) {
 		memset(&m_co2, 0, sizeof(mfxExtCodingOption2));
 		m_co2.Header.BufferId = MFX_EXTBUFF_CODING_OPTION2;
 		m_co2.Header.BufferSz = sizeof(m_co2);
