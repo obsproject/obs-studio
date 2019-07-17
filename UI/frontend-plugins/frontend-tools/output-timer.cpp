@@ -181,7 +181,13 @@ void OutputTimer::UpdateStreamTimerDisplay()
 
 void OutputTimer::UpdateRecordTimerDisplay()
 {
-	int remainingTime = recordingTimer->remainingTime() / 1000;
+	int remainingTime = 0;
+
+	if (obs_frontend_recording_paused() &&
+	    ui->pauseRecordTimer->isChecked())
+		remainingTime = recordingTimeLeft / 1000;
+	else
+		remainingTime = recordingTimer->remainingTime() / 1000;
 
 	int seconds = remainingTime % 60;
 	int minutes = (remainingTime % 3600) / 60;
@@ -190,6 +196,26 @@ void OutputTimer::UpdateRecordTimerDisplay()
 	QString text;
 	text.sprintf("%02d:%02d:%02d", hours, minutes, seconds);
 	ui->recordTime->setText(text);
+}
+
+void OutputTimer::PauseRecordingTimer()
+{
+	if (!ui->pauseRecordTimer->isChecked())
+		return;
+
+	if (recordingTimer->isActive()) {
+		recordingTimeLeft = recordingTimer->remainingTime();
+		recordingTimer->stop();
+	}
+}
+
+void OutputTimer::UnpauseRecordingTimer()
+{
+	if (!ui->pauseRecordTimer->isChecked())
+		return;
+
+	if (!recordingTimer->isActive())
+		recordingTimer->start(recordingTimeLeft);
 }
 
 void OutputTimer::ShowHideDialog()
@@ -239,6 +265,9 @@ static void SaveOutputTimer(obs_data_t *save_data, bool saving, void *)
 		obs_data_set_bool(obj, "autoStartRecordTimer",
 				  ot->ui->autoStartRecordTimer->isChecked());
 
+		obs_data_set_bool(obj, "pauseRecordTimer",
+				  ot->ui->pauseRecordTimer->isChecked());
+
 		obs_data_set_obj(save_data, "output-timer", obj);
 
 		obs_data_release(obj);
@@ -267,6 +296,9 @@ static void SaveOutputTimer(obs_data_t *save_data, bool saving, void *)
 		ot->ui->autoStartRecordTimer->setChecked(
 			obs_data_get_bool(obj, "autoStartRecordTimer"));
 
+		ot->ui->pauseRecordTimer->setChecked(
+			obs_data_get_bool(obj, "pauseRecordTimer"));
+
 		obs_data_release(obj);
 	}
 }
@@ -286,6 +318,10 @@ static void OBSEvent(enum obs_frontend_event event, void *)
 		ot->RecordTimerStart();
 	} else if (event == OBS_FRONTEND_EVENT_RECORDING_STOPPING) {
 		ot->RecordTimerStop();
+	} else if (event == OBS_FRONTEND_EVENT_RECORDING_PAUSED) {
+		ot->PauseRecordingTimer();
+	} else if (event == OBS_FRONTEND_EVENT_RECORDING_UNPAUSED) {
+		ot->UnpauseRecordingTimer();
 	}
 }
 
