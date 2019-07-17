@@ -65,6 +65,8 @@ void output_start()
 			obs_data_release(settings);
 
 			main_output_running = true;
+
+			doUI->OutputStateChanged(true);
 		}
 	}
 }
@@ -75,6 +77,7 @@ void output_stop()
 		obs_output_stop(output);
 		obs_output_release(output);
 		main_output_running = false;
+		doUI->OutputStateChanged(false);
 	}
 }
 
@@ -153,6 +156,7 @@ void preview_output_start()
 			obs_output_start(context.output);
 
 			preview_output_running = true;
+			doUI->PreviewOutputStateChanged(true);
 		}
 	}
 }
@@ -178,6 +182,7 @@ void preview_output_stop()
 		video_output_close(context.video_queue);
 
 		preview_output_running = false;
+		doUI->PreviewOutputStateChanged(false);
 	}
 }
 

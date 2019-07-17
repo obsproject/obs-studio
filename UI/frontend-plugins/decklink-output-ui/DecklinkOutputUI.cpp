@@ -122,6 +122,19 @@ void DecklinkOutputUI::PropertiesChanged()
 	SaveSettings();
 }
 
+void DecklinkOutputUI::OutputStateChanged(bool active)
+{
+	QString text;
+	if (active) {
+		text = QString(obs_module_text("OutputState.Active"));
+	} else {
+		text = QString(obs_module_text("OutputState.Idle"));
+	}
+
+	QMetaObject::invokeMethod(ui->outputStatus, "setText",
+				  Q_ARG(QString, text));
+}
+
 void DecklinkOutputUI::StartPreviewOutput()
 {
 	SavePreviewSettings();
@@ -136,4 +149,17 @@ void DecklinkOutputUI::StopPreviewOutput()
 void DecklinkOutputUI::PreviewPropertiesChanged()
 {
 	SavePreviewSettings();
+}
+
+void DecklinkOutputUI::PreviewOutputStateChanged(bool active)
+{
+	QString text;
+	if (active) {
+		text = QString(obs_module_text("OutputState.Active"));
+	} else {
+		text = QString(obs_module_text("OutputState.Idle"));
+	}
+
+	QMetaObject::invokeMethod(ui->previewOutputStatus, "setText",
+				  Q_ARG(QString, text));
 }
