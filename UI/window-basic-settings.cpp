@@ -3078,8 +3078,17 @@ void OBSBasicSettings::SaveEncoder(QComboBox *combo, const char *section,
 
 void OBSBasicSettings::SaveOutputSettings()
 {
-	config_set_string(main->Config(), "Output", "Mode",
-			  OutputModeFromIdx(ui->outputMode->currentIndex()));
+	const char *mode = config_get_string(main->Config(), "Output", "Mode");
+	const char *newmode = OutputModeFromIdx(ui->outputMode->currentIndex());
+	bool mode_changed = false;
+	if (strcmp(mode, newmode) != 0) {
+		config_set_string(main->Config(), "Output", "Mode", newmode);
+		mode_changed = true;
+		bool vertical = config_get_bool(GetGlobalConfig(),
+						"BasicWindow",
+						"VerticalMasterVolControl");
+		main->ToggleMixerLayout(vertical, true);
+	}
 
 	QString encoder = ui->simpleOutStrEncoder->currentData().toString();
 	const char *presetType;
@@ -3119,9 +3128,16 @@ void OBSBasicSettings::SaveOutputSettings()
 	SaveTrackIndex(main->Config(), "AdvOut", "TrackIndex", ui->advOutTrack1,
 		       ui->advOutTrack2, ui->advOutTrack3, ui->advOutTrack4,
 		       ui->advOutTrack5, ui->advOutTrack6);
+	bool stream_track_changed = WidgetChanged(ui->advOutTrack1) ||
+				    WidgetChanged(ui->advOutTrack2) ||
+				    WidgetChanged(ui->advOutTrack3) ||
+				    WidgetChanged(ui->advOutTrack4) ||
+				    WidgetChanged(ui->advOutTrack5) ||
+				    WidgetChanged(ui->advOutTrack6);
 
 	config_set_string(main->Config(), "AdvOut", "RecType",
 			  RecTypeFromIdx(ui->advOutRecType->currentIndex()));
+	bool adv_rectype_changed = WidgetChanged(ui->advOutRecType);
 
 	curAdvRecordEncoder = GetComboData(ui->advOutRecEncoder);
 
@@ -3141,6 +3157,12 @@ void OBSBasicSettings::SaveOutputSettings()
 			(ui->advOutRecTrack4->isChecked() ? (1 << 3) : 0) |
 			(ui->advOutRecTrack5->isChecked() ? (1 << 4) : 0) |
 			(ui->advOutRecTrack6->isChecked() ? (1 << 5) : 0));
+	bool rec_tracks_changed = WidgetChanged(ui->advOutRecTrack1) ||
+				  WidgetChanged(ui->advOutRecTrack2) ||
+				  WidgetChanged(ui->advOutRecTrack3) ||
+				  WidgetChanged(ui->advOutRecTrack4) ||
+				  WidgetChanged(ui->advOutRecTrack5) ||
+				  WidgetChanged(ui->advOutRecTrack6);
 
 	config_set_bool(main->Config(), "AdvOut", "FFOutputToFile",
 			ui->advOutFFType->currentIndex() == 0 ? true : false);
@@ -3167,6 +3189,13 @@ void OBSBasicSettings::SaveOutputSettings()
 			(ui->advOutFFTrack4->isChecked() ? (1 << 3) : 0) |
 			(ui->advOutFFTrack5->isChecked() ? (1 << 4) : 0) |
 			(ui->advOutFFTrack6->isChecked() ? (1 << 5) : 0));
+	bool FF_track_changed = WidgetChanged(ui->advOutFFTrack1) ||
+				WidgetChanged(ui->advOutFFTrack2) ||
+				WidgetChanged(ui->advOutFFTrack3) ||
+				WidgetChanged(ui->advOutFFTrack4) ||
+				WidgetChanged(ui->advOutFFTrack5) ||
+				WidgetChanged(ui->advOutFFTrack6);
+
 	SaveCombo(ui->advOutTrack1Bitrate, "AdvOut", "Track1Bitrate");
 	SaveCombo(ui->advOutTrack2Bitrate, "AdvOut", "Track2Bitrate");
 	SaveCombo(ui->advOutTrack3Bitrate, "AdvOut", "Track3Bitrate");
@@ -3179,6 +3208,19 @@ void OBSBasicSettings::SaveOutputSettings()
 	SaveEdit(ui->advOutTrack4Name, "AdvOut", "Track4Name");
 	SaveEdit(ui->advOutTrack5Name, "AdvOut", "Track5Name");
 	SaveEdit(ui->advOutTrack6Name, "AdvOut", "Track6Name");
+	bool track_name_changed = WidgetChanged(ui->advOutTrack1Name) ||
+				  WidgetChanged(ui->advOutTrack2Name) ||
+				  WidgetChanged(ui->advOutTrack3Name) ||
+				  WidgetChanged(ui->advOutTrack4Name) ||
+				  WidgetChanged(ui->advOutTrack5Name) ||
+				  WidgetChanged(ui->advOutTrack6Name);
+
+	if (mode_changed || stream_track_changed || rec_tracks_changed ||
+	    adv_rectype_changed || FF_track_changed || track_name_changed) {
+		OBSBasic *main =
+			reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
+		main->InitAudioMasterMixer();
+	}
 
 	SaveCheckBox(ui->advReplayBuf, "AdvOut", "RecRB");
 	SaveSpinBox(ui->advRBSecMax, "AdvOut", "RecRBTime");

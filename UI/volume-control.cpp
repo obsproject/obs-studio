@@ -1,6 +1,7 @@
 #include "volume-control.hpp"
 #include "qt-wrappers.hpp"
 #include "obs-app.hpp"
+#include "window-basic-main.hpp"
 #include "mute-checkbox.hpp"
 #include "slider-ignorewheel.hpp"
 #include "slider-absoluteset-style.hpp"
@@ -64,6 +65,92 @@ void VolControl::VolumeMuted(bool muted)
 void VolControl::SetMuted(bool checked)
 {
 	obs_source_set_muted(source, checked);
+
+	if (mutePtr)
+		*mutePtr = checked;
+}
+
+void VolControl::SetMon(bool checked)
+{
+	obs_monitoring_type mt;
+	bool isOutput = stream->isChecked() || rec->isChecked();
+	if (!checked)
+		mt = OBS_MONITORING_TYPE_NONE;
+	else if (isOutput)
+		mt = OBS_MONITORING_TYPE_MONITOR_AND_OUTPUT;
+	else
+		mt = OBS_MONITORING_TYPE_MONITOR_ONLY;
+
+	obs_source_set_monitoring_type(source, mt);
+	obs_source_set_track_active(source);
+}
+
+void VolControl::SetStream(bool checked)
+{
+	OBSBasic *main = reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
+	int index = checked ? track_index : 0;
+	config_set_int(main->Config(), "AdvOut", "TrackIndex", index + 1);
+	main->ResetOutputs();
+	config_save_safe(main->Config(), "tmp", nullptr);
+	for (auto vol : main->GetMasterVol()) {
+		if (vol->track_index != index)
+			vol->stream->setChecked(false);
+		else
+			vol->stream->setChecked(true);
+	}
+	/* The monitoring API unfortunately links it to output.
+	 * The next call is required to update the monitoring_type.
+	 * Remove it if API is reworked.
+	 * See also SetRec function. This is used for monitor hotkey.
+	 */
+	SetMon(mon->isChecked());
+}
+
+void VolControl::SetRec(bool checked)
+{
+	Q_UNUSED(checked);
+	OBSBasic *main = reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
+	std::string RecMode =
+		config_get_string(main->Config(), "AdvOut", "RecType");
+	bool isStandard = RecMode.compare("Standard") == 0;
+	int recbitmask;
+	if (isStandard)
+		recbitmask =
+			config_get_int(main->Config(), "AdvOut", "RecTracks");
+	else
+		recbitmask = config_get_int(main->Config(), "AdvOut",
+					    "FFAudioMixes");
+
+	int newbitmask = recbitmask ^ (1 << track_index);
+	if (!newbitmask) {
+		newbitmask = 1 << 0;
+		for (auto vol : main->GetMasterVol()) {
+			if (vol->track_index != 0)
+				vol->rec->setChecked(false);
+			else
+				vol->rec->setChecked(true);
+		}
+	}
+	if (isStandard)
+		config_set_int(main->Config(), "AdvOut", "RecTracks",
+			       newbitmask);
+	else
+		config_set_int(main->Config(), "AdvOut", "FFAudioMixes",
+			       newbitmask);
+
+	main->ResetOutputs();
+	config_save_safe(main->Config(), "tmp", nullptr);
+	SetMon(mon->isChecked());
+}
+
+void VolControl::enableStreamButton(bool show)
+{
+	stream->setEnabled(show);
+}
+
+void VolControl::enableRecButton(bool show)
+{
+	rec->setEnabled(show);
 }
 
 void VolControl::SliderChanged(int vol)
@@ -113,19 +200,49 @@ void VolControl::setPeakMeterType(enum obs_peak_meter_type peakMeterType)
 	volMeter->setPeakMeterType(peakMeterType);
 }
 
-VolControl::VolControl(OBSSource source_, bool showConfig, bool vertical)
+VolControl::VolControl(OBSSource source_, bool *mutePtr, bool showConfig,
+		       bool vertical, int trackIndex)
 	: source(std::move(source_)),
 	  levelTotal(0.0f),
 	  levelCount(0.0f),
 	  obs_fader(obs_fader_create(OBS_FADER_LOG)),
 	  obs_volmeter(obs_volmeter_create(OBS_FADER_LOG)),
+	  mutePtr(mutePtr),
 	  vertical(vertical)
 {
 	nameLabel = new QLabel();
 	volLabel = new QLabel();
 	mute = new MuteCheckBox();
 
-	QString sourceName = obs_source_get_name(source);
+#if defined(_WIN32) || defined(__APPLE__) || HAVE_PULSEAUDIO
+	mon = new MonCheckBox();
+#endif
+	track_index = trackIndex;
+	OBSBasic *main = reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
+	QString sourceName;
+
+	/* set the name of the meter */
+	if (trackIndex >= 0) {
+		stream = new StreamCheckBox();
+		rec = new RecCheckBox();
+
+		std::string trackNum =
+			"Track" + std::to_string(trackIndex + 1) + "Name";
+		const char *nameAdv = config_get_string(
+			main->Config(), "AdvOut", trackNum.c_str());
+		trackNum = "Track " + std::to_string(trackIndex + 1);
+		const char *name;
+		if (nameAdv) {
+			std::string nameStr = nameAdv;
+			name = nameStr.compare("") == 0 ? trackNum.c_str()
+							: nameAdv;
+		} else {
+			name = trackNum.c_str();
+		}
+		sourceName = QString::fromUtf8(name);
+	} else {
+		sourceName = obs_source_get_name(source);
+	}
 	setObjectName(sourceName);
 
 	if (showConfig) {
@@ -145,45 +262,61 @@ VolControl::VolControl(OBSSource source_, bool showConfig, bool vertical)
 	}
 
 	QVBoxLayout *mainLayout = new QVBoxLayout;
-	mainLayout->setContentsMargins(4, 4, 4, 4);
+	mainLayout->setContentsMargins(4, 2, 4, 2);
 	mainLayout->setSpacing(2);
 
 	if (vertical) {
 		QHBoxLayout *nameLayout = new QHBoxLayout;
-		QHBoxLayout *controlLayout = new QHBoxLayout;
 		QHBoxLayout *volLayout = new QHBoxLayout;
 		QHBoxLayout *meterLayout = new QHBoxLayout;
+		QHBoxLayout *controlLayout = new QHBoxLayout;
+		QVBoxLayout *rightLayout = new QVBoxLayout;
 
 		volMeter = new VolumeMeter(nullptr, obs_volmeter, true);
 		slider = new SliderIgnoreScroll(Qt::Vertical);
 
-		nameLayout->setAlignment(Qt::AlignCenter);
-		meterLayout->setAlignment(Qt::AlignCenter);
-		controlLayout->setAlignment(Qt::AlignCenter);
-		volLayout->setAlignment(Qt::AlignCenter);
+		nameLayout->setAlignment(Qt::AlignLeft);
+		volLayout->setAlignment(Qt::AlignLeft);
+		meterLayout->setAlignment(Qt::AlignLeft);
+		controlLayout->setAlignment(Qt::AlignLeft);
 
 		nameLayout->setContentsMargins(0, 0, 0, 0);
 		nameLayout->setSpacing(0);
 		nameLayout->addWidget(nameLabel);
 
-		controlLayout->setContentsMargins(0, 0, 0, 0);
-		controlLayout->setSpacing(0);
-
-		if (showConfig)
-			controlLayout->addWidget(config);
-
-		controlLayout->addItem(new QSpacerItem(3, 0));
-		// Add Headphone (audio monitoring) widget here
-		controlLayout->addWidget(mute);
-
-		meterLayout->setContentsMargins(0, 0, 0, 0);
-		meterLayout->setSpacing(0);
-		meterLayout->addWidget(volMeter);
-		meterLayout->addWidget(slider);
-
 		volLayout->setContentsMargins(0, 0, 0, 0);
 		volLayout->setSpacing(0);
 		volLayout->addWidget(volLabel);
+
+		rightLayout->setAlignment(Qt::AlignTop);
+		rightLayout->setContentsMargins(0, 0, 0, 0);
+#ifndef __APPLE__
+		rightLayout->setSpacing(5);
+#else
+		rightLayout->setSpacing(12);
+#endif
+
+		if (trackIndex >= 0) {
+#if defined(_WIN32) || defined(__APPLE__) || HAVE_PULSEAUDIO
+			rightLayout->addWidget(mon);
+#endif
+			rightLayout->addWidget(stream);
+			rightLayout->addWidget(rec);
+		}
+
+		meterLayout->setContentsMargins(0, 0, 0, 0);
+		meterLayout->setSpacing(0);
+		meterLayout->addSpacing(4);
+		meterLayout->addWidget(volMeter);
+		meterLayout->addWidget(slider);
+		meterLayout->addLayout(rightLayout);
+
+		controlLayout->setContentsMargins(0, 0, 0, 0);
+		controlLayout->setSpacing(0);
+		if (showConfig)
+			controlLayout->addWidget(config);
+		controlLayout->addSpacing(15);
+		controlLayout->addWidget(mute);
 
 		mainLayout->addItem(nameLayout);
 		mainLayout->addItem(volLayout);
@@ -192,6 +325,14 @@ VolControl::VolControl(OBSSource source_, bool showConfig, bool vertical)
 
 		volMeter->setFocusProxy(slider);
 
+#ifdef __APPLE__ //thanks to SuslikV for pointing this
+		mon->setProperty("themeID", "MacOnly");
+		mute->setProperty("themeID", "MacOnly");
+		if (trackIndex >= 0) {
+			stream->setProperty("themeID", "MacOnly");
+			rec->setProperty("themeID", "MacOnly");
+		}
+#endif
 		setMaximumWidth(110);
 	} else {
 		QHBoxLayout *volLayout = new QHBoxLayout;
@@ -202,7 +343,28 @@ VolControl::VolControl(OBSSource source_, bool showConfig, bool vertical)
 		slider = new SliderIgnoreScroll(Qt::Horizontal);
 
 		textLayout->setContentsMargins(0, 0, 0, 0);
+		textLayout->setSpacing(0);
+		if (trackIndex >= 0) {
+#if defined(_WIN32) || defined(__APPLE__) || HAVE_PULSEAUDIO
+			textLayout->addWidget(mon);
+#endif
+#ifdef __APPLE__
+			textLayout->addItem(new QSpacerItem(13, 0));
+			;
+#endif
+			textLayout->addWidget(stream);
+#ifdef __APPLE__
+			textLayout->addItem(new QSpacerItem(15, 0));
+#endif
+			textLayout->addWidget(rec);
+#ifdef __APPLE__
+			textLayout->addItem(new QSpacerItem(15, 0));
+#else
+			textLayout->addItem(new QSpacerItem(5, 0));
+#endif
+		}
 		textLayout->addWidget(nameLabel);
+		textLayout->addStretch();
 		textLayout->addWidget(volLabel);
 		textLayout->setAlignment(nameLabel, Qt::AlignLeft);
 		textLayout->setAlignment(volLabel, Qt::AlignRight);
@@ -237,20 +399,75 @@ VolControl::VolControl(OBSSource source_, bool showConfig, bool vertical)
 	slider->setMinimum(0);
 	slider->setMaximum(int(FADER_PRECISION));
 
+	/* mute button */
 	bool muted = obs_source_muted(source);
 	mute->setChecked(muted);
+	SetMuted(muted);
 	mute->setAccessibleName(QTStr("VolControl.Mute").arg(sourceName));
 	obs_fader_add_callback(obs_fader, OBSVolumeChanged, this);
 	obs_volmeter_add_callback(obs_volmeter, OBSVolumeLevel, this);
 
-	signal_handler_connect(obs_source_get_signal_handler(source), "mute",
-			       OBSVolumeMuted, this);
+	if (source != nullptr)
+		signal_handler_connect(obs_source_get_signal_handler(source),
+				       "mute", OBSVolumeMuted, this);
 
 	QWidget::connect(slider, SIGNAL(valueChanged(int)), this,
 			 SLOT(SliderChanged(int)));
 	QWidget::connect(mute, SIGNAL(clicked(bool)), this,
 			 SLOT(SetMuted(bool)));
+	/* monitoring button */
+#if defined(_WIN32) || defined(__APPLE__) || HAVE_PULSEAUDIO
+	if (trackIndex >= 0) {
+		bool monON = false;
+		enum obs_monitoring_type type =
+			(obs_monitoring_type)obs_source_get_monitoring_type(
+				source);
+		if (type != OBS_MONITORING_TYPE_NONE)
+			monON = true;
+		mon->setChecked(monON);
+		SetMon(monON);
+		mon->setAccessibleName(QTStr("VolControl.Mon"));
+		mon->setToolTip(QTStr("VolControl.Mon.Tooltip"));
 
+		QWidget::connect(mon, SIGNAL(clicked(bool)), this,
+				 SLOT(SetMon(bool)));
+#endif
+
+		bool onAir = false;
+		int stream_index =
+			config_get_int(main->Config(), "AdvOut", "TrackIndex");
+		if (track_index == stream_index - 1)
+			onAir = true;
+		stream->setChecked(onAir);
+		stream->setAccessibleName(QTStr("VolControl.Stream"));
+		stream->setToolTip(
+			QTStr("VolControl.Stream.Tooltip").arg(track_index + 1));
+		QWidget::connect(stream, SIGNAL(clicked(bool)), this,
+				 SLOT(SetStream(bool)));
+
+		bool onRec = false;
+		std::string RecMode =
+			config_get_string(main->Config(), "AdvOut", "RecType");
+		bool isStandard = RecMode.compare("Standard") == 0;
+		if (isStandard) {
+			int recbitmask = config_get_int(main->Config(),
+							"AdvOut", "RecTracks");
+			if (recbitmask & 1 << track_index)
+				onRec = true;
+		} else {
+			int FFbitmask = config_get_int(main->Config(), "AdvOut",
+						       "FFAudioMixes");
+			if (FFbitmask & 1 << track_index)
+				onRec = true;
+		}
+		rec->setChecked(onRec);
+		rec->setAccessibleName(QTStr("VolControl.Rec").arg(sourceName));
+		rec->setToolTip(
+			QTStr("VolControl.Rec.Tooltip").arg(track_index + 1));
+
+		QWidget::connect(rec, SIGNAL(clicked(bool)), this,
+				 SLOT(SetRec(bool)));
+	}
 	obs_fader_attach_source(obs_fader, source);
 	obs_volmeter_attach_source(obs_volmeter, source);
 
@@ -274,10 +491,10 @@ VolControl::~VolControl()
 {
 	obs_fader_remove_callback(obs_fader, OBSVolumeChanged, this);
 	obs_volmeter_remove_callback(obs_volmeter, OBSVolumeLevel, this);
-
-	signal_handler_disconnect(obs_source_get_signal_handler(source), "mute",
-				  OBSVolumeMuted, this);
-
+	if (source != nullptr) {
+		signal_handler_disconnect(obs_source_get_signal_handler(source),
+					  "mute", OBSVolumeMuted, this);
+	}
 	obs_fader_destroy(obs_fader);
 	obs_volmeter_destroy(obs_volmeter);
 }
@@ -553,7 +770,8 @@ VolumeMeter::VolumeMeter(QWidget *parent, obs_volmeter_t *obs_volmeter,
 		updateTimerRef->start(34);
 		updateTimer = updateTimerRef;
 	}
-
+	if (vertical)
+		setMinimumHeight(50);
 	updateTimerRef->AddVolControl(this);
 }
 

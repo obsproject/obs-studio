@@ -110,7 +110,8 @@ bool OBSBasicAdvAudio::EnumSources(void *param, obs_source_t *source)
 	OBSBasicAdvAudio *dialog = reinterpret_cast<OBSBasicAdvAudio *>(param);
 	uint32_t flags = obs_source_get_output_flags(source);
 
-	if ((flags & OBS_SOURCE_AUDIO) != 0 && obs_source_active(source))
+	if ((flags & OBS_SOURCE_AUDIO) != 0 && obs_source_active(source) &&
+	    (flags & OBS_SOURCE_TRACK) == 0)
 		dialog->AddAudioSource(source);
 
 	return true;
@@ -147,7 +148,7 @@ void OBSBasicAdvAudio::SourceAdded(OBSSource source)
 {
 	uint32_t flags = obs_source_get_output_flags(source);
 
-	if ((flags & OBS_SOURCE_AUDIO) == 0)
+	if ((flags & OBS_SOURCE_AUDIO) == 0 || flags & OBS_SOURCE_TRACK)
 		return;
 
 	AddAudioSource(source);
