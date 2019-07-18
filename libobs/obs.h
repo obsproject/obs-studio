@@ -1141,6 +1141,7 @@ EXPORT void obs_source_set_monitoring_type(obs_source_t *source,
 EXPORT enum obs_monitoring_type
 obs_source_get_monitoring_type(const obs_source_t *source);
 
+EXPORT bool obs_source_get_sends(const obs_source_t *source);
 EXPORT void obs_source_set_track_active(obs_source_t *source);
 
 /** Gets private front-end settings data.  This data is saved/loaded
