@@ -2107,6 +2107,10 @@ obs_data_array_t *obs_save_track_sources()
 	for (size_t i = 0; i < MAX_AUDIO_MIXES; i++) {
 		if (tracks[i]) {
 			obs_data_t *track_data = obs_save_source(tracks[i]);
+			obs_data_t *private_data =
+				obs_source_get_private_settings(tracks[i]);
+			obs_data_set_int(private_data, "track_index", i);
+			obs_data_release(private_data);
 			obs_data_array_push_back(array, track_data);
 			obs_data_release(track_data);
 		}
