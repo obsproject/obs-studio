@@ -139,6 +139,11 @@ enum obs_balance_type {
  */
 #define OBS_SOURCE_CAP_DISABLED (1 << 10)
 
+/**
+ * Source type is a track and should not be shown to the user
+ */
+#define OBS_SOURCE_TRACK (1 << 11)
+
 /** @} */
 
 typedef void (*obs_source_enum_proc_t)(obs_source_t *parent,

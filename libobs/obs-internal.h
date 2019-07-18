@@ -331,6 +331,17 @@ struct obs_core_audio {
 	char *monitoring_device_id;
 };
 
+struct obs_volumeter;
+struct obs_fader_t;
+
+struct obs_audio_mixes {
+	float volume[MAX_AUDIO_MIXES];
+	bool muted[MAX_AUDIO_MIXES];
+	struct obs_volumeter_t *meters[MAX_AUDIO_MIXES];
+	struct obs_fader_t *faders[MAX_AUDIO_MIXES];
+	struct obs_source_t *tracks[MAX_AUDIO_MIXES];
+};
+
 /* user sources, output channels, and displays */
 struct obs_core_data {
 	struct obs_source *first_source;
@@ -340,6 +351,8 @@ struct obs_core_data {
 	struct obs_encoder *first_encoder;
 	struct obs_service *first_service;
 
+	struct obs_audio_mixes audio_mixes;
+
 	pthread_mutex_t sources_mutex;
 	pthread_mutex_t displays_mutex;
 	pthread_mutex_t outputs_mutex;
@@ -347,6 +360,7 @@ struct obs_core_data {
 	pthread_mutex_t services_mutex;
 	pthread_mutex_t audio_sources_mutex;
 	pthread_mutex_t draw_callbacks_mutex;
+	pthread_mutex_t mixers_mutex;
 	DARRAY(struct draw_callback) draw_callbacks;
 	DARRAY(struct tick_callback) tick_callbacks;
 

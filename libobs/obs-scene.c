@@ -1119,9 +1119,6 @@ static bool scene_audio_render(void *data, uint64_t *ts_out,
 
 		obs_source_get_audio_mix(item->source, &child_audio);
 		for (size_t mix = 0; mix < MAX_AUDIO_MIXES; mix++) {
-			if ((mixers & (1 << mix)) == 0)
-				continue;
-
 			for (size_t ch = 0; ch < channels; ch++) {
 				float *out = audio_output->output[mix].data[ch];
 				float *in = child_audio.output[mix].data[ch];

@@ -595,6 +595,22 @@ EXPORT void obs_enum_encoders(bool (*enum_proc)(void *, obs_encoder_t *),
 EXPORT void obs_enum_services(bool (*enum_proc)(void *, obs_service_t *),
 			      void *param);
 
+/** Lock / Unlock for mixer modification*/
+EXPORT void obs_audio_mix_lock();
+EXPORT void obs_audio_mix_unlock();
+/** Gets mixer information */
+EXPORT struct obs_audio_mixes *obs_audio_mixes();
+/** Gets mixer volume information */
+EXPORT float *obs_audio_mix_volumes();
+/** Gets mixer meter information */
+EXPORT void *obs_audio_mix_meters();
+/** Gets mixer fader information */
+EXPORT void *obs_audio_mix_faders();
+/** Gets mixer mute information */
+EXPORT bool *obs_audio_mix_muted();
+/** Gets mixer source information */
+EXPORT void *obs_audio_mix_tracks();
+
 /**
  * Gets a source by its name.
  *
@@ -677,12 +693,17 @@ typedef void (*obs_load_source_cb)(void *private_data, obs_source_t *source);
 EXPORT void obs_load_sources(obs_data_array_t *array, obs_load_source_cb cb,
 			     void *private_data);
 
+/** Loads tracks from a data array */
+EXPORT void obs_load_track_sources(obs_data_array_t *array,
+				   obs_load_source_cb cb, void *private_data);
+
 /** Saves sources to a data array */
 EXPORT obs_data_array_t *obs_save_sources(void);
 
 typedef bool (*obs_save_source_filter_cb)(void *data, obs_source_t *source);
 EXPORT obs_data_array_t *obs_save_sources_filtered(obs_save_source_filter_cb cb,
 						   void *data);
+EXPORT obs_data_array_t *obs_save_track_sources();
 
 enum obs_obj_type {
 	OBS_OBJ_TYPE_INVALID,
@@ -1120,6 +1141,8 @@ EXPORT void obs_source_set_monitoring_type(obs_source_t *source,
 EXPORT enum obs_monitoring_type
 obs_source_get_monitoring_type(const obs_source_t *source);
 
+EXPORT void obs_source_set_track_active(obs_source_t *source);
+
 /** Gets private front-end settings data.  This data is saved/loaded
  * automatically.  Returns an incremented reference. */
 EXPORT obs_data_t *obs_source_get_private_settings(obs_source_t *item);
@@ -1186,6 +1209,10 @@ EXPORT void obs_source_preload_video2(obs_source_t *source,
 
 /** Shows any preloaded video data */
 EXPORT void obs_source_show_preloaded_video(obs_source_t *source);
+
+EXPORT struct obs_audio_data *
+obs_source_output_audio_track(obs_source_t *source,
+			      const struct obs_source_audio *audio);
 
 /** Outputs audio data (always asynchronous) */
 EXPORT void obs_source_output_audio(obs_source_t *source,

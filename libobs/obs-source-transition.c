@@ -862,10 +862,6 @@ static void process_audio(obs_source_t *transition, obs_source_t *child,
 	for (size_t mix_idx = 0; mix_idx < MAX_AUDIO_MIXES; mix_idx++) {
 		struct audio_output_data *output = &audio->output[mix_idx];
 		struct audio_output_data *input = &child_audio.output[mix_idx];
-
-		if ((mixers & (1 << mix_idx)) == 0)
-			continue;
-
 		for (size_t ch = 0; ch < channels; ch++) {
 			float *out = output->data[ch];
 			float *in = input->data[ch];

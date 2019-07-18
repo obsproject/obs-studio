@@ -99,6 +99,7 @@ struct audio_output_info {
 
 	audio_input_callback_t input_callback;
 	void *input_param;
+	struct audio_data audio_out;
 };
 
 struct audio_convert_info {

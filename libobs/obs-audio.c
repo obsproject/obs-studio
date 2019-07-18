@@ -46,7 +46,8 @@ static inline size_t convert_time_to_frames(size_t sample_rate, uint64_t t)
 
 static inline void mix_audio(struct audio_output_data *mixes,
 			     obs_source_t *source, size_t channels,
-			     size_t sample_rate, struct ts_info *ts)
+			     size_t sample_rate, struct ts_info *ts,
+			     float *vol_data, bool *muted)
 {
 	size_t total_floats = AUDIO_OUTPUT_FRAMES;
 	size_t start_point = 0;
@@ -73,8 +74,24 @@ static inline void mix_audio(struct audio_output_data *mixes,
 			mix += start_point;
 			end = aud + total_floats;
 
+			float gain = muted[mix_idx] ? 0.0f : vol_data[mix_idx];
 			while (aud < end)
-				*(mix++) += *(aud++);
+				*(mix++) += *(aud++) * gain;
+		}
+	}
+}
+
+static inline void process_gain(struct audio_output_data *mixes,
+				size_t channels, float *vol_data, bool *muted)
+{
+	size_t total_floats = AUDIO_OUTPUT_FRAMES;
+	for (size_t mix_idx = 0; mix_idx < MAX_AUDIO_MIXES; mix_idx++) {
+		for (size_t ch = 0; ch < channels; ch++) {
+			register float *mix = mixes[mix_idx].data[ch];
+			register float *end = mix + total_floats;
+			float gain = muted[mix_idx] ? 0.0f : vol_data[mix_idx];
+			while (mix < end)
+				*(mix++) *= gain;
 		}
 	}
 }
@@ -385,8 +402,10 @@ bool audio_callback(void *param, uint64_t start_ts_in, uint64_t end_ts_in,
 	struct obs_core_data *data = &obs->data;
 	struct obs_core_audio *audio = &obs->audio;
 	struct obs_source *source;
+	const struct audio_output_info *obs_info;
 	size_t sample_rate = audio_output_get_sample_rate(audio->audio);
 	size_t channels = audio_output_get_channels(audio->audio);
+	obs_info = audio_output_get_info(audio->audio);
 	struct ts_info ts = {start_ts_in, end_ts_in};
 	size_t audio_size;
 	uint64_t min_ts;
@@ -461,10 +480,57 @@ bool audio_callback(void *param, uint64_t start_ts_in, uint64_t end_ts_in,
 
 			if (source->audio_output_buf[0][0] && source->audio_ts)
 				mix_audio(mixes, source, channels, sample_rate,
-					  &ts);
+					  &ts, &data->audio_mixes.volume[0],
+					  &data->audio_mixes.muted[0]);
 
 			pthread_mutex_unlock(&source->audio_buf_mutex);
 		}
+
+		struct audio_data audio_out = obs_info->audio_out;
+		audio_out.timestamp = start_ts_in;
+
+		struct obs_audio_data *o = NULL;
+		for (size_t i = 0; i < MAX_AUDIO_MIXES; i++) {
+			for (size_t j = 0; j < channels; j++)
+				memcpy(audio_out.data[j], mixes[i].data[j],
+				       AUDIO_OUTPUT_FRAMES * sizeof(float));
+			struct obs_source_audio s;
+			s.format = obs_info->format;
+			s.frames = AUDIO_OUTPUT_FRAMES;
+			s.samples_per_sec = (uint32_t)sample_rate;
+			s.speakers = obs_info->speakers;
+			s.timestamp = start_ts_in;
+			for (size_t j = 0; j < channels; j++)
+				s.data[j] = audio_out.data[j];
+			for (size_t j = channels; j < MAX_AV_PLANES; j++)
+				s.data[j] = NULL;
+
+			o = obs_source_output_audio_track(
+				(obs_source_t *)data->audio_mixes.tracks[i],
+				&s);
+
+			if (o) {
+				for (size_t j = 0; j < channels; j++)
+					memcpy(audio_out.data[j], o->data[j],
+					       AUDIO_OUTPUT_FRAMES *
+						       sizeof(float));
+				/* Mute output */
+			} else {
+				for (size_t j = 0; j < channels; j++)
+					memset(audio_out.data[j], 0,
+					       AUDIO_OUTPUT_FRAMES *
+						       sizeof(float));
+			}
+			obs_audio_mix_lock();
+			volmeter_data_received(data->audio_mixes.meters[i],
+					       &audio_out,
+					       data->audio_mixes.muted[i]);
+			obs_audio_mix_unlock();
+		}
+
+		/* Process Gain */
+		process_gain(mixes, channels, &data->audio_mixes.volume[0],
+			     &data->audio_mixes.muted[0]);
 	}
 
 	/* ------------------------------------------------ */
