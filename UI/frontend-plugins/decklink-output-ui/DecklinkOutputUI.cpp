@@ -3,6 +3,35 @@
 #include <util/platform.h>
 #include <util/util.hpp>
 #include "decklink-ui-main.h"
+#include "../../UI/obs-app.hpp"
+
+static void DecklinkOutStarting(void *data, calldata_t *params)
+{
+	UNUSED_PARAMETER(params);
+	DecklinkOutputUI *decklinkUI = static_cast<DecklinkOutputUI *>(data);
+	QMetaObject::invokeMethod(decklinkUI, "OutputButtonSetStarted");
+}
+
+static void DecklinkOutStopping(void *data, calldata_t *params)
+{
+	UNUSED_PARAMETER(params);
+	DecklinkOutputUI *decklinkUI = static_cast<DecklinkOutputUI *>(data);
+	QMetaObject::invokeMethod(decklinkUI, "OutputButtonSetStopped");
+}
+
+static void DecklinkPreviewOutStarting(void *data, calldata_t *params)
+{
+	UNUSED_PARAMETER(params);
+	DecklinkOutputUI *decklinkUI = static_cast<DecklinkOutputUI *>(data);
+	QMetaObject::invokeMethod(decklinkUI, "PreviewOutputButtonSetStarted");
+}
+
+static void DecklinkPreviewOutStopping(void *data, calldata_t *params)
+{
+	UNUSED_PARAMETER(params);
+	DecklinkOutputUI *decklinkUI = static_cast<DecklinkOutputUI *>(data);
+	QMetaObject::invokeMethod(decklinkUI, "PreviewOutputButtonSetStopped");
+}
 
 DecklinkOutputUI::DecklinkOutputUI(QWidget *parent)
 	: QDialog(parent), ui(new Ui_Output)
@@ -16,13 +45,48 @@ DecklinkOutputUI::DecklinkOutputUI(QWidget *parent)
 	propertiesView = nullptr;
 	previewPropertiesView = nullptr;
 
-	connect(ui->startOutput, SIGNAL(released()), this, SLOT(StartOutput()));
-	connect(ui->stopOutput, SIGNAL(released()), this, SLOT(StopOutput()));
+	connect(ui->startOutput, SIGNAL(released()), this,
+		SLOT(ToggleOutput()));
 
 	connect(ui->startPreviewOutput, SIGNAL(released()), this,
-		SLOT(StartPreviewOutput()));
-	connect(ui->stopPreviewOutput, SIGNAL(released()), this,
-		SLOT(StopPreviewOutput()));
+		SLOT(TogglePreviewOutput()));
+
+	OBSData settings = load_settings();
+
+	if (settings) {
+		output_main = obs_output_create(
+			"decklink_output", "decklink_output", settings, NULL);
+		obs_data_release(settings);
+	}
+
+	OBSData previewSettings = load_preview_settings();
+
+	if (previewSettings) {
+		context.output = obs_output_create("decklink_preview_output",
+						   "decklink_preview_output",
+						   previewSettings, NULL);
+		obs_data_release(previewSettings);
+	}
+
+	decklinkOutStart.Connect(obs_output_get_signal_handler(output_main),
+				 "starting", DecklinkOutStarting, this);
+	decklinkOutStop.Connect(obs_output_get_signal_handler(output_main),
+				"stopping", DecklinkOutStopping, this);
+
+	decklinkPreviewOutStart.Connect(
+		obs_output_get_signal_handler(context.output), "starting",
+		DecklinkPreviewOutStarting, this);
+	decklinkPreviewOutStop.Connect(
+		obs_output_get_signal_handler(context.output), "stopping",
+		DecklinkPreviewOutStopping, this);
+}
+
+DecklinkOutputUI::~DecklinkOutputUI()
+{
+	decklinkOutStart.Disconnect();
+	decklinkOutStop.Disconnect();
+	decklinkPreviewOutStart.Disconnect();
+	decklinkPreviewOutStop.Disconnect();
 }
 
 void DecklinkOutputUI::ShowHideDialog()
@@ -106,6 +170,14 @@ void DecklinkOutputUI::SavePreviewSettings()
 		obs_data_save_json_safe(settings, path, "tmp", "bak");
 }
 
+void DecklinkOutputUI::ToggleOutput()
+{
+	if (!main_output_running)
+		StartOutput();
+	else
+		StopOutput();
+}
+
 void DecklinkOutputUI::StartOutput()
 {
 	SaveSettings();
@@ -117,9 +189,29 @@ void DecklinkOutputUI::StopOutput()
 	output_stop();
 }
 
+void DecklinkOutputUI::OutputButtonSetStarted()
+{
+	ui->startOutput->setText(QTStr("Stop"));
+	ui->startOutput->setChecked(true);
+}
+
+void DecklinkOutputUI::OutputButtonSetStopped()
+{
+	ui->startOutput->setText(QTStr("Start"));
+	ui->startOutput->setChecked(false);
+}
+
 void DecklinkOutputUI::PropertiesChanged()
 {
 	SaveSettings();
+}
+
+void DecklinkOutputUI::TogglePreviewOutput()
+{
+	if (!preview_output_running)
+		StartPreviewOutput();
+	else
+		StopPreviewOutput();
 }
 
 void DecklinkOutputUI::StartPreviewOutput()
@@ -131,6 +223,18 @@ void DecklinkOutputUI::StartPreviewOutput()
 void DecklinkOutputUI::StopPreviewOutput()
 {
 	preview_output_stop();
+}
+
+void DecklinkOutputUI::PreviewOutputButtonSetStarted()
+{
+	ui->startPreviewOutput->setText(QTStr("Stop"));
+	ui->startPreviewOutput->setChecked(true);
+}
+
+void DecklinkOutputUI::PreviewOutputButtonSetStopped()
+{
+	ui->startPreviewOutput->setText(QTStr("Start"));
+	ui->startPreviewOutput->setChecked(false);
 }
 
 void DecklinkOutputUI::PreviewPropertiesChanged()

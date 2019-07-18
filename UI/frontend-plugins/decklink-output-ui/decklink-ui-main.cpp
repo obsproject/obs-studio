@@ -17,23 +17,17 @@ DecklinkOutputUI *doUI;
 bool main_output_running = false;
 bool preview_output_running = false;
 
-obs_output_t *output;
+obs_output_t *output_main = nullptr;
 
-struct preview_output {
-	bool enabled;
-	obs_source_t *current_source;
-	obs_output_t *output;
+struct preview_output context = {0};
 
-	video_t *video_queue;
-	gs_texrender_t *texrender;
-	gs_stagesurf_t *stagesurface;
-	uint8_t *video_data;
-	uint32_t video_linesize;
+obs_output_t *get_preview_output()
+{
+	if (context.output)
+		return context.output;
 
-	obs_video_info ovi;
-};
-
-static struct preview_output context = {0};
+	return nullptr;
+}
 
 OBSData load_settings()
 {
@@ -57,13 +51,7 @@ void output_start()
 		OBSData settings = load_settings();
 
 		if (settings != nullptr) {
-			output = obs_output_create("decklink_output",
-						   "decklink_output", settings,
-						   NULL);
-
-			obs_output_start(output);
-			obs_data_release(settings);
-
+			obs_output_start(output_main);
 			main_output_running = true;
 		}
 	}
@@ -72,8 +60,8 @@ void output_start()
 void output_stop()
 {
 	if (main_output_running) {
-		obs_output_stop(output);
-		obs_output_release(output);
+		obs_output_stop(output_main);
+		obs_output_release(output_main);
 		main_output_running = false;
 	}
 }
@@ -100,60 +88,49 @@ void render_preview_source(void *param, uint32_t cx, uint32_t cy);
 void preview_output_start()
 {
 	if (!preview_output_running) {
-		OBSData settings = load_preview_settings();
+		obs_get_video_info(&context.ovi);
 
-		if (settings != nullptr) {
-			context.output = obs_output_create(
-				"decklink_output", "decklink_preview_output",
-				settings, NULL);
+		uint32_t width = context.ovi.base_width;
+		uint32_t height = context.ovi.base_height;
 
-			obs_get_video_info(&context.ovi);
+		obs_enter_graphics();
+		context.texrender = gs_texrender_create(GS_BGRA, GS_ZS_NONE);
+		context.stagesurface =
+			gs_stagesurface_create(width, height, GS_BGRA);
+		obs_leave_graphics();
 
-			uint32_t width = context.ovi.base_width;
-			uint32_t height = context.ovi.base_height;
+		const video_output_info *mainVOI =
+			video_output_get_info(obs_get_video());
 
-			obs_enter_graphics();
-			context.texrender =
-				gs_texrender_create(GS_BGRA, GS_ZS_NONE);
-			context.stagesurface =
-				gs_stagesurface_create(width, height, GS_BGRA);
-			obs_leave_graphics();
+		video_output_info vi = {0};
+		vi.format = VIDEO_FORMAT_BGRA;
+		vi.width = width;
+		vi.height = height;
+		vi.fps_den = context.ovi.fps_den;
+		vi.fps_num = context.ovi.fps_num;
+		vi.cache_size = 16;
+		vi.colorspace = mainVOI->colorspace;
+		vi.range = mainVOI->range;
+		vi.name = "decklink_preview_output";
 
-			const video_output_info *mainVOI =
-				video_output_get_info(obs_get_video());
+		video_output_open(&context.video_queue, &vi);
 
-			video_output_info vi = {0};
-			vi.format = VIDEO_FORMAT_BGRA;
-			vi.width = width;
-			vi.height = height;
-			vi.fps_den = context.ovi.fps_den;
-			vi.fps_num = context.ovi.fps_num;
-			vi.cache_size = 16;
-			vi.colorspace = mainVOI->colorspace;
-			vi.range = mainVOI->range;
-			vi.name = "decklink_preview_output";
-
-			video_output_open(&context.video_queue, &vi);
-
-			obs_frontend_add_event_callback(
-				on_preview_scene_changed, &context);
-			if (obs_frontend_preview_program_mode_active()) {
-				context.current_source =
-					obs_frontend_get_current_preview_scene();
-			} else {
-				context.current_source =
-					obs_frontend_get_current_scene();
-			}
-			obs_add_main_render_callback(render_preview_source,
-						     &context);
-
-			obs_output_set_media(context.output,
-					     context.video_queue,
-					     obs_get_audio());
-			obs_output_start(context.output);
-
-			preview_output_running = true;
+		obs_frontend_add_event_callback(on_preview_scene_changed,
+						&context);
+		if (obs_frontend_preview_program_mode_active()) {
+			context.current_source =
+				obs_frontend_get_current_preview_scene();
+		} else {
+			context.current_source =
+				obs_frontend_get_current_scene();
 		}
+		obs_add_main_render_callback(render_preview_source, &context);
+
+		obs_output_set_media(context.output, context.video_queue,
+				     obs_get_audio());
+		obs_output_start(context.output);
+
+		preview_output_running = true;
 	}
 }
 

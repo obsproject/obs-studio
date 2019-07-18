@@ -42,7 +42,7 @@
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout">
      <property name="spacing">
-      <number>-1</number>
+      <number>6</number>
      </property>
      <item>
       <spacer name="horizontalSpacer">
@@ -62,12 +62,8 @@
        <property name="text">
         <string>Start</string>
        </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QPushButton" name="stopOutput">
-       <property name="text">
-        <string>Stop</string>
+       <property name="checkable">
+        <bool>true</bool>
        </property>
       </widget>
      </item>
@@ -103,12 +99,8 @@
        <property name="text">
         <string>Start</string>
        </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QPushButton" name="stopPreviewOutput">
-       <property name="text">
-        <string>Stop</string>
+       <property name="checkable">
+        <bool>true</bool>
        </property>
       </widget>
      </item>

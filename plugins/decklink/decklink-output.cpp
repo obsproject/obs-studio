@@ -39,6 +39,10 @@ static void decklink_output_update(void *data, obs_data_t *settings)
 static bool decklink_output_start(void *data)
 {
 	auto *decklink = (DeckLinkOutput *)data;
+
+	if (!decklink)
+		return false;
+
 	struct obs_audio_info aoi;
 
 	if (!obs_get_audio_info(&aoi)) {
