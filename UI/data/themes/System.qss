@@ -91,6 +91,78 @@ RecCheckBox::indicator:unchecked {
     image: url(:/res/images/recOFF.png);
 }
 
+TracksCheckBox#track1 {
+    outline: none;
+}
+
+TracksCheckBox#track1::indicator:checked {
+    image: url(:/res/images/track1.png);
+}
+
+TracksCheckBox#track1::indicator:unchecked {
+    image: url(:/res/images/track1OFF.png);
+}
+
+TracksCheckBox#track2 {
+    outline: none;
+}
+
+TracksCheckBox#track2::indicator:checked {
+    image: url(:/res/images/track2.png);
+}
+
+TracksCheckBox#track2::indicator:unchecked {
+    image: url(:/res/images/track2OFF.png);
+}
+
+TracksCheckBox#track3 {
+    outline: none;
+}
+
+TracksCheckBox#track3::indicator:checked {
+    image: url(:/res/images/track3.png);
+}
+
+TracksCheckBox#track3::indicator:unchecked {
+    image: url(:/res/images/track3OFF.png);
+}
+
+TracksCheckBox#track4 {
+    outline: none;
+}
+
+TracksCheckBox#track4::indicator:checked {
+    image: url(:/res/images/track4.png);
+}
+
+TracksCheckBox#track4::indicator:unchecked {
+    image: url(:/res/images/track4OFF.png);
+}
+
+TracksCheckBox#track5 {
+    outline: none;
+}
+
+TracksCheckBox#track5::indicator:checked {
+    image: url(:/res/images/track5.png);
+}
+
+TracksCheckBox#track5::indicator:unchecked {
+    image: url(:/res/images/track5OFF.png);
+}
+
+TracksCheckBox#track6 {
+    outline: none;
+}
+
+TracksCheckBox#track6::indicator:checked {
+    image: url(:/res/images/track6.png);
+}
+
+TracksCheckBox#track6::indicator:unchecked {
+    image: url(:/res/images/track6OFF.png);
+}
+
 SourceTreeSubItemCheckBox {
     background: transparent;
     outline: none;

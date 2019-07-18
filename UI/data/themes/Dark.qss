@@ -86,7 +86,7 @@ QWidget::disabled {
     color: 2px solid rgb(200,199,200); /* lighter */
 }
 
-QAbstractItemView, QStackedWidget#stackedMixerArea QWidget {
+QAbstractItemView, QStackedWidget#stackedMixerArea QWidget, QStackedWidget#stackedMasterMixerArea QWidget {
     background-color: rgb(31,30,31); /* veryDark */
 }
 
@@ -369,6 +369,11 @@ QLineEdit, QTextEdit, QPlainTextEdit {
     padding: 2px 2px 3px 7px;
 }
 
+OBSHotkeyWidget QLineEdit {
+    margin: 0px 3px 0px 0px;
+}
+
+
 /* Spinbox and doubleSpinbox */
 
 QSpinBox, QDoubleSpinBox {
@@ -464,6 +469,10 @@ QPushButton::menu-indicator {
     subcontrol-position: right;
     subcontrol-origin: padding;
     width: 25px;
+}
+
+QPushButton[themeID="hotkeyButtons"] {
+    margin: 1px  2px;
 }
 
 /* Sliders */
@@ -599,6 +608,116 @@ PauseCheckBox::indicator:checked {
 
 PauseCheckBox::indicator:unchecked {
     image: url(:/res/images/media-play.svg);
+}
+
+/* master mixer */
+
+MonCheckBox {
+    outline: none;
+}
+
+MonCheckBox::indicator:checked {
+    image: url(./Dark/monON.png);
+}
+
+MonCheckBox::indicator:unchecked {
+    image: url(./Dark/monOFF.png);
+}
+
+StreamCheckBox {
+    outline: none;
+}
+
+StreamCheckBox::indicator:checked {
+    image: url(:/res/images/streamON.png);
+}
+
+StreamCheckBox::indicator:unchecked {
+    image: url(:/res/images/streamOFF.png);
+}
+
+RecCheckBox {
+    outline: none;
+}
+
+RecCheckBox::indicator:checked {
+    image: url(:/res/images/recON.png);
+}
+
+RecCheckBox::indicator:unchecked {
+    image: url(:/res/images/recOFF.png);
+}
+
+TracksCheckBox#track1 {
+    outline: none;
+}
+
+TracksCheckBox#track1::indicator:checked {
+    image: url(:/res/images/track1.png);
+}
+
+TracksCheckBox#track1::indicator:unchecked {
+    image: url(:/res/images/track1OFF.png);
+}
+
+TracksCheckBox#track2 {
+    outline: none;
+}
+
+TracksCheckBox#track2::indicator:checked {
+    image: url(:/res/images/track2.png);
+}
+
+TracksCheckBox#track2::indicator:unchecked {
+    image: url(:/res/images/track2OFF.png);
+}
+
+TracksCheckBox#track3 {
+    outline: none;
+}
+
+TracksCheckBox#track3::indicator:checked {
+    image: url(:/res/images/track3.png);
+}
+
+TracksCheckBox#track3::indicator:unchecked {
+    image: url(:/res/images/track3OFF.png);
+}
+
+TracksCheckBox#track4 {
+    outline: none;
+}
+
+TracksCheckBox#track4::indicator:checked {
+    image: url(:/res/images/track4.png);
+}
+
+TracksCheckBox#track4::indicator:unchecked {
+    image: url(:/res/images/track4OFF.png);
+}
+
+TracksCheckBox#track5 {
+    outline: none;
+}
+
+TracksCheckBox#track5::indicator:checked {
+    image: url(:/res/images/track5.png);
+}
+
+TracksCheckBox#track5::indicator:unchecked {
+    image: url(:/res/images/track5OFF.png);
+}
+
+TracksCheckBox#track6 {
+    outline: none;
+}
+
+TracksCheckBox#track6::indicator:checked {
+    image: url(:/res/images/track6.png);
+}
+
+TracksCheckBox#track6::indicator:unchecked {
+    image: url(:/res/images/track6OFF.png);
 }
 
 /* Group Collapse Checkbox */

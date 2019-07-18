@@ -23,6 +23,18 @@
     <file>images/recOFF.png</file>
     <file>images/monON.png</file>
     <file>images/monOFF.png</file>
+    <file>images/track1.png</file>
+    <file>images/track1OFF.png</file>
+    <file>images/track2.png</file>
+    <file>images/track2OFF.png</file>
+    <file>images/track3.png</file>
+    <file>images/track3OFF.png</file>
+    <file>images/track4.png</file>
+    <file>images/track4OFF.png</file>
+    <file>images/track5.png</file>
+    <file>images/track5OFF.png</file>
+    <file>images/track6.png</file>
+    <file>images/track6OFF.png</file>
   </qresource>
   <qresource prefix="/settings">
     <file>images/settings/output.svg</file>
