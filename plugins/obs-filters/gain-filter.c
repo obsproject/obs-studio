@@ -76,8 +76,9 @@ static obs_properties_t *gain_properties(void *data)
 {
 	obs_properties_t *ppts = obs_properties_create();
 
-	obs_properties_add_float_slider(ppts, S_GAIN_DB, TEXT_GAIN_DB, -30.0,
-					30.0, 0.1);
+	obs_property_t *p = obs_properties_add_float_slider(
+		ppts, S_GAIN_DB, TEXT_GAIN_DB, -30.0, 30.0, 0.1);
+	obs_property_float_set_suffix(p, " dB");
 
 	UNUSED_PARAMETER(data);
 	return ppts;

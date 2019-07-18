@@ -947,20 +947,24 @@ static obs_properties_t *get_properties(void *data)
 
 	obs_properties_add_bool(props, S_VERTICAL, T_VERTICAL);
 	obs_properties_add_color(props, S_COLOR, T_COLOR);
-	obs_properties_add_int_slider(props, S_OPACITY, T_OPACITY, 0, 100, 1);
+	p = obs_properties_add_int_slider(props, S_OPACITY, T_OPACITY, 0, 100,
+					  1);
+	obs_property_int_set_suffix(p, "%");
 
 	p = obs_properties_add_bool(props, S_GRADIENT, T_GRADIENT);
 	obs_property_set_modified_callback(p, gradient_changed);
 
 	obs_properties_add_color(props, S_GRADIENT_COLOR, T_GRADIENT_COLOR);
-	obs_properties_add_int_slider(props, S_GRADIENT_OPACITY,
-				      T_GRADIENT_OPACITY, 0, 100, 1);
+	p = obs_properties_add_int_slider(props, S_GRADIENT_OPACITY,
+					  T_GRADIENT_OPACITY, 0, 100, 1);
+	obs_property_int_set_suffix(p, "%");
 	obs_properties_add_float_slider(props, S_GRADIENT_DIR, T_GRADIENT_DIR,
 					0, 360, 0.1);
 
 	obs_properties_add_color(props, S_BKCOLOR, T_BKCOLOR);
-	obs_properties_add_int_slider(props, S_BKOPACITY, T_BKOPACITY, 0, 100,
-				      1);
+	p = obs_properties_add_int_slider(props, S_BKOPACITY, T_BKOPACITY, 0,
+					  100, 1);
+	obs_property_int_set_suffix(p, "%");
 
 	p = obs_properties_add_list(props, S_ALIGN, T_ALIGN,
 				    OBS_COMBO_TYPE_LIST,
@@ -981,8 +985,9 @@ static obs_properties_t *get_properties(void *data)
 
 	obs_properties_add_int(props, S_OUTLINE_SIZE, T_OUTLINE_SIZE, 1, 20, 1);
 	obs_properties_add_color(props, S_OUTLINE_COLOR, T_OUTLINE_COLOR);
-	obs_properties_add_int_slider(props, S_OUTLINE_OPACITY,
-				      T_OUTLINE_OPACITY, 0, 100, 1);
+	p = obs_properties_add_int_slider(props, S_OUTLINE_OPACITY,
+					  T_OUTLINE_OPACITY, 0, 100, 1);
+	obs_property_int_set_suffix(p, "%");
 
 	p = obs_properties_add_bool(props, S_CHATLOG_MODE, T_CHATLOG_MODE);
 	obs_property_set_modified_callback(p, chatlog_mode_changed);

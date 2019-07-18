@@ -310,21 +310,20 @@ static obs_properties_t *stinger_properties(void *data)
 
 	obs_properties_add_path(ppts, "path", obs_module_text("VideoFile"),
 				OBS_PATH_FILE, FILE_FILTER, NULL);
-	obs_property_t *list = obs_properties_add_list(
+	obs_property_t *p = obs_properties_add_list(
 		ppts, "tp_type", obs_module_text("TransitionPointType"),
 		OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
+	obs_property_list_add_int(p, obs_module_text("TransitionPointTypeTime"),
+				  TIMING_TIME);
 	obs_property_list_add_int(
-		list, obs_module_text("TransitionPointTypeTime"), TIMING_TIME);
-	obs_property_list_add_int(list,
-				  obs_module_text("TransitionPointTypeFrame"),
-				  TIMING_FRAME);
+		p, obs_module_text("TransitionPointTypeFrame"), TIMING_FRAME);
 
-	obs_property_set_modified_callback(list,
-					   transition_point_type_modified);
+	obs_property_set_modified_callback(p, transition_point_type_modified);
 
-	obs_properties_add_int(ppts, "transition_point",
-			       obs_module_text("TransitionPoint"), 0, 120000,
-			       1);
+	p = obs_properties_add_int(ppts, "transition_point",
+				   obs_module_text("TransitionPoint"), 0,
+				   120000, 1);
+	obs_property_int_set_suffix(p, " ms");
 
 	obs_property_t *monitor_list = obs_properties_add_list(
 		ppts, "audio_monitoring", obs_module_text("AudioMonitoring"),
