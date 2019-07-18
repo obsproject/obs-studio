@@ -73,10 +73,9 @@ void VolControl::SetMuted(bool checked)
 void VolControl::SetMon(bool checked)
 {
 	obs_monitoring_type mt;
-	bool isOutput = stream->isChecked() || rec->isChecked();
 	if (!checked)
 		mt = OBS_MONITORING_TYPE_NONE;
-	else if (isOutput)
+	else if (obs_source_get_sends(source))
 		mt = OBS_MONITORING_TYPE_MONITOR_AND_OUTPUT;
 	else
 		mt = OBS_MONITORING_TYPE_MONITOR_ONLY;
@@ -153,6 +152,11 @@ void VolControl::enableRecButton(bool show)
 	rec->setEnabled(show);
 }
 
+void VolControl::showMonitoringButton(bool show)
+{
+	mon->setHidden(!show);
+}
+
 void VolControl::SliderChanged(int vol)
 {
 	obs_fader_set_deflection(obs_fader, float(vol) / FADER_PRECISION);
@@ -201,7 +205,7 @@ void VolControl::setPeakMeterType(enum obs_peak_meter_type peakMeterType)
 }
 
 VolControl::VolControl(OBSSource source_, bool *mutePtr, bool showConfig,
-		       bool vertical, int trackIndex)
+		       bool vertical, bool showMon, int trackIndex)
 	: source(std::move(source_)),
 	  levelTotal(0.0f),
 	  levelCount(0.0f),
@@ -296,10 +300,10 @@ VolControl::VolControl(OBSSource source_, bool *mutePtr, bool showConfig,
 		rightLayout->setSpacing(12);
 #endif
 
-		if (trackIndex >= 0) {
 #if defined(_WIN32) || defined(__APPLE__) || HAVE_PULSEAUDIO
-			rightLayout->addWidget(mon);
+		rightLayout->addWidget(mon);
 #endif
+		if (trackIndex >= 0) {
 			rightLayout->addWidget(stream);
 			rightLayout->addWidget(rec);
 		}
@@ -329,7 +333,6 @@ VolControl::VolControl(OBSSource source_, bool *mutePtr, bool showConfig,
 		mon->setProperty("themeID", "MacOnly");
 		mute->setProperty("themeID", "MacOnly");
 		if (trackIndex >= 0) {
-			stream->setProperty("themeID", "MacOnly");
 			rec->setProperty("themeID", "MacOnly");
 		}
 #endif
@@ -344,14 +347,19 @@ VolControl::VolControl(OBSSource source_, bool *mutePtr, bool showConfig,
 
 		textLayout->setContentsMargins(0, 0, 0, 0);
 		textLayout->setSpacing(0);
-		if (trackIndex >= 0) {
 #if defined(_WIN32) || defined(__APPLE__) || HAVE_PULSEAUDIO
-			textLayout->addWidget(mon);
+		textLayout->addWidget(mon);
+		if (trackIndex < 0) {
+#ifdef __APPLE__
+			textLayout->addItem(new QSpacerItem(15, 0));
+#endif
+		}
 #endif
 #ifdef __APPLE__
-			textLayout->addItem(new QSpacerItem(13, 0));
-			;
+		textLayout->addItem(new QSpacerItem(13, 0));
+		;
 #endif
+		if (trackIndex >= 0) {
 			textLayout->addWidget(stream);
 #ifdef __APPLE__
 			textLayout->addItem(new QSpacerItem(15, 0));
@@ -417,22 +425,19 @@ VolControl::VolControl(OBSSource source_, bool *mutePtr, bool showConfig,
 			 SLOT(SetMuted(bool)));
 	/* monitoring button */
 #if defined(_WIN32) || defined(__APPLE__) || HAVE_PULSEAUDIO
-	if (trackIndex >= 0) {
-		bool monON = false;
-		enum obs_monitoring_type type =
-			(obs_monitoring_type)obs_source_get_monitoring_type(
-				source);
-		if (type != OBS_MONITORING_TYPE_NONE)
-			monON = true;
-		mon->setChecked(monON);
-		SetMon(monON);
-		mon->setAccessibleName(QTStr("VolControl.Mon"));
-		mon->setToolTip(QTStr("VolControl.Mon.Tooltip"));
-
-		QWidget::connect(mon, SIGNAL(clicked(bool)), this,
-				 SLOT(SetMon(bool)));
+	mon->setHidden(!showMon);
+	bool monON = false;
+	enum obs_monitoring_type type =
+		(obs_monitoring_type)obs_source_get_monitoring_type(source);
+	if (type != OBS_MONITORING_TYPE_NONE)
+		monON = true;
+	mon->setChecked(monON);
+	SetMon(monON);
+	mon->setAccessibleName(QTStr("VolControl.Mon"));
+	mon->setToolTip(QTStr("VolControl.Mon.Tooltip"));
+	QWidget::connect(mon, SIGNAL(clicked(bool)), this, SLOT(SetMon(bool)));
 #endif
-
+	if (trackIndex >= 0) {
 		bool onAir = false;
 		int stream_index =
 			config_get_int(main->Config(), "AdvOut", "TrackIndex");
