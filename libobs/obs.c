@@ -1645,7 +1645,10 @@ void obs_render_main_view(void)
 	obs_view_render(&obs->data.main_view);
 }
 
-void obs_render_main_texture(void)
+static void obs_render_main_texture_internal(enum gs_blend_type src_c,
+					     enum gs_blend_type dest_c,
+					     enum gs_blend_type src_a,
+					     enum gs_blend_type dest_a)
 {
 	struct obs_core_video *video;
 	gs_texture_t *tex;
@@ -1665,12 +1668,24 @@ void obs_render_main_texture(void)
 	gs_effect_set_texture(param, tex);
 
 	gs_blend_state_push();
-	gs_blend_function(GS_BLEND_ONE, GS_BLEND_INVSRCALPHA);
+	gs_blend_function_separate(src_c, dest_c, src_a, dest_a);
 
 	while (gs_effect_loop(effect, "Draw"))
 		gs_draw_sprite(tex, 0, 0, 0);
 
 	gs_blend_state_pop();
+}
+
+void obs_render_main_texture(void)
+{
+	obs_render_main_texture_internal(GS_BLEND_ONE, GS_BLEND_INVSRCALPHA,
+					 GS_BLEND_ONE, GS_BLEND_INVSRCALPHA);
+}
+
+void obs_render_main_texture_src_color_only(void)
+{
+	obs_render_main_texture_internal(GS_BLEND_ONE, GS_BLEND_ZERO,
+					 GS_BLEND_ONE, GS_BLEND_INVSRCALPHA);
 }
 
 gs_texture_t *obs_get_main_texture(void)
