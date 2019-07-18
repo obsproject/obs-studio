@@ -3196,6 +3196,18 @@ void OBSBasic::ShowTracksButtons()
 	}
 }
 
+void OBSBasic::SelectiveMonitoring(int index)
+{
+	for (auto volume : volumes) {
+		if (index >= 0)
+			volume->checkMonButton(false);
+	}
+	for (auto volume : master_volumes) {
+		if (volume->GetTrack() != index)
+			volume->checkMonButton(false);
+	}
+}
+
 void OBSBasic::ToggleMasterVolControlLayout()
 {
 	bool vertical = !config_get_bool(GetGlobalConfig(), "BasicWindow",

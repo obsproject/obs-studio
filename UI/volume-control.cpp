@@ -54,6 +54,14 @@ void VolControl::OBSSourceMixersChanged(void *data, calldata_t *calldata)
 				  Q_ARG(uint32_t, mixers));
 }
 
+void VolControl::OBSSourceMonitoringChanged(void *data, calldata_t *calldata)
+{
+	VolControl *volControl = static_cast<VolControl *>(data);
+	int type = (int)calldata_int(calldata, "mon_type");
+	QMetaObject::invokeMethod(volControl, "SourceMonitoringTypeChanged",
+				  Q_ARG(int, type));
+}
+
 void VolControl::VolumeChanged()
 {
 	slider->blockSignals(true);
@@ -160,9 +168,21 @@ void VolControl::enableRecButton(bool show)
 	rec->setEnabled(show);
 }
 
+void VolControl::checkMonButton(bool check)
+{
+	mon->setChecked(check);
+}
+
 void VolControl::showMonitoringButton(bool show)
 {
 	mon->setHidden(!show);
+}
+
+void VolControl::SourceMonitoringTypeChanged(int type)
+{
+	OBSBasic *main = reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
+	if ((enum obs_monitoring_type)type != OBS_MONITORING_TYPE_NONE)
+		main->SelectiveMonitoring(track_index);
 }
 
 void VolControl::SourceMixersChanged(uint32_t mixers)
@@ -545,6 +565,10 @@ VolControl::VolControl(OBSSource source_, bool *mutePtr, bool showConfig,
 	mon->setAccessibleName(QTStr("VolControl.Mon"));
 	mon->setToolTip(QTStr("VolControl.Mon.Tooltip"));
 	QWidget::connect(mon, SIGNAL(clicked(bool)), this, SLOT(SetMon(bool)));
+	if (source != nullptr)
+		signal_handler_connect(obs_source_get_signal_handler(source),
+				       "monitoring_type",
+				       OBSSourceMonitoringChanged, this);
 #endif
 	if (trackIndex >= 0) {
 		bool onAir = false;
@@ -644,6 +668,9 @@ VolControl::~VolControl()
 		signal_handler_disconnect(obs_source_get_signal_handler(source),
 					  "audio_mixers",
 					  OBSSourceMixersChanged, this);
+		signal_handler_disconnect(obs_source_get_signal_handler(source),
+					  "monitoring_type",
+					  OBSSourceMonitoringChanged, this);
 	}
 	obs_fader_destroy(obs_fader);
 	obs_volmeter_destroy(obs_volmeter);

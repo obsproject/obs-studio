@@ -251,6 +251,8 @@ private:
 				   const float inputPeak[MAX_AUDIO_CHANNELS]);
 	static void OBSVolumeMuted(void *data, calldata_t *calldata);
 	static void OBSSourceMixersChanged(void *param, calldata_t *calldata);
+	static void OBSSourceMonitoringChanged(void *param,
+					       calldata_t *calldata);
 
 	void EmitConfigClicked();
 	void setMixer(obs_source_t *source, const int mixerIdx,
@@ -278,7 +280,8 @@ public slots:
 	void track5Changed(bool checked);
 	void track6Changed(bool checked);
 	void showTracksButtons(bool show);
-
+	void SourceMonitoringTypeChanged(int type);
+	void checkMonButton(bool check);
 signals:
 	void ConfigClicked();
 
