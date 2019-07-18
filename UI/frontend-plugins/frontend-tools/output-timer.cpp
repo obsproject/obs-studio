@@ -96,6 +96,8 @@ void OutputTimer::StreamTimerStart()
 	ui->outputTimerStream->setText(obs_module_text("Stop"));
 
 	UpdateStreamTimerDisplay();
+
+	ui->outputTimerStream->setChecked(true);
 }
 
 void OutputTimer::RecordTimerStart()
@@ -128,6 +130,8 @@ void OutputTimer::RecordTimerStart()
 	ui->outputTimerRecord->setText(obs_module_text("Stop"));
 
 	UpdateRecordTimerDisplay();
+
+	ui->outputTimerRecord->setChecked(true);
 }
 
 void OutputTimer::StreamTimerStop()
@@ -146,6 +150,7 @@ void OutputTimer::StreamTimerStop()
 		streamingTimerDisplay->stop();
 
 	ui->streamTime->setText("00:00:00");
+	ui->outputTimerStream->setChecked(false);
 }
 
 void OutputTimer::RecordTimerStop()
@@ -164,6 +169,7 @@ void OutputTimer::RecordTimerStop()
 		recordingTimerDisplay->stop();
 
 	ui->recordTime->setText("00:00:00");
+	ui->outputTimerRecord->setChecked(false);
 }
 
 void OutputTimer::UpdateStreamTimerDisplay()
