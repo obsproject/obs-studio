@@ -60,6 +60,13 @@ struct ffmpeg_source {
 	bool enable_caching;
 };
 
+struct file_info {
+	int64_t frames;
+	int64_t width;
+	int64_t height;
+	uint32_t pix_format;
+};
+
 static bool is_local_file_modified(obs_properties_t *props,
 				   obs_property_t *prop, obs_data_t *settings)
 {
@@ -408,57 +415,103 @@ static void get_duration(void *data, calldata_t *cd)
 	calldata_set_int(cd, "duration", dur * 1000);
 }
 
-static void get_nb_frames(void *data, calldata_t *cd)
+
+
+static struct file_info file_info(struct ffmpeg_source *s)
 {
-	struct ffmpeg_source *s = data;
-	int64_t frames = 0;
-	int64_t width  = 0;
-	int64_t height = 0;
-	uint32_t pix_format = 0;
-
-	if (!s->media.fmt) {
-		calldata_set_int(cd, "num_frames", frames);
-		return;
-	}
-
-	pthread_mutex_lock(&s->media.mutex);
+	struct file_info fi = {
+		.frames = 0,
+		.width = 0,
+		.height = 0,
+		.pix_format = 0
+	};
 
 	int video_stream_index = av_find_best_stream(s->media.fmt,
-			AVMEDIA_TYPE_VIDEO, -1, -1, NULL, 0);
+		AVMEDIA_TYPE_VIDEO, -1, -1, NULL, 0);
 
 	if (video_stream_index < 0) {
 		FF_BLOG(LOG_WARNING, "Getting number of frames failed: No "
-				     "video stream in media file!");
-		calldata_set_int(cd, "num_frames", frames);
-		pthread_mutex_unlock(&s->media.mutex);
-		return;
+			"video stream in media file!");
+		goto end;
 	}
 
 	AVStream *stream = s->media.fmt->streams[video_stream_index];
 
 	if (stream->nb_frames > 0) {
-		frames = stream->nb_frames;
-	} else {
+		fi.frames = stream->nb_frames;
+	}
+	else {
 		FF_BLOG(LOG_DEBUG, "nb_frames not set, estimating using frame "
-				   "rate and duration");
+			"rate and duration");
 		AVRational avg_frame_rate = stream->avg_frame_rate;
-		frames = (int64_t)ceil((double)s->media.fmt->duration /
-				       (double)AV_TIME_BASE *
-				       (double)avg_frame_rate.num /
-				       (double)avg_frame_rate.den);
+		fi.frames = (int64_t)ceil((double)s->media.fmt->duration /
+			(double)AV_TIME_BASE *
+			(double)avg_frame_rate.num /
+			(double)avg_frame_rate.den);
 	}
 
 	if (stream->codec && stream->codec->width > 0 && stream->codec->height > 0) {
-		width  = stream->codec->width;
-		height = stream->codec->height;
-		pix_format = s->media.pix_format;
+		fi.width = stream->codec->width;
+		fi.height = stream->codec->height;
+		fi.pix_format = s->media.pix_format;
 	}
 
-	calldata_set_int(cd, "num_frames", frames);
-	calldata_set_int(cd, "width", width);
-	calldata_set_int(cd, "height", height);
-	calldata_set_int(cd, "pix_format", pix_format);
+end:
+	return fi;
+}
+
+static void get_nb_frames(void *data, calldata_t *cd)
+{
+	struct ffmpeg_source *s = data;
+	struct file_info fi = {
+		.frames = 0,
+		.width = 0,
+		.height = 0,
+		.pix_format = 0
+	};
+
+	if (!s->media.fmt) {
+		goto end;
+	}
+
+	pthread_mutex_lock(&s->media.mutex);
+	fi = file_info(s);
 	pthread_mutex_unlock(&s->media.mutex);
+
+end:
+	calldata_set_int(cd, "num_frames", fi.frames);
+}
+
+static void get_file_info(void *data, calldata_t *cd)
+{
+	struct ffmpeg_source *s = data;
+	struct file_info fi = {
+		.frames = 0,
+		.width = 0,
+		.height = 0,
+		.pix_format = 0
+	};
+
+	if (!s->media.fmt) {
+		goto end;
+	}
+
+	pthread_mutex_lock(&s->media.mutex);
+
+	if (s->media.stopping || !s->media.active) {
+		pthread_mutex_unlock(&s->media.mutex);
+		goto end;
+	}
+
+	fi = file_info(s);
+
+	pthread_mutex_unlock(&s->media.mutex);
+
+end:
+	calldata_set_int(cd, "num_frames", fi.frames);
+	calldata_set_int(cd, "width", fi.width);
+	calldata_set_int(cd, "height", fi.height);
+	calldata_set_int(cd, "pix_format", fi.pix_format);
 }
 
 static void get_playing(void *data, calldata_t *cd)
@@ -492,6 +545,8 @@ static void *ffmpeg_source_create(obs_data_t *settings, obs_source_t *source)
 			 get_duration, s);
 	proc_handler_add(ph, "void get_nb_frames(out int num_frames)",
 			get_nb_frames, s);
+	proc_handler_add(ph, "void get_file_info(out int num_frames)",
+			get_file_info, s);
 	proc_handler_add(ph, "void get_playing(out bool active)",
 		get_playing, s);
 
