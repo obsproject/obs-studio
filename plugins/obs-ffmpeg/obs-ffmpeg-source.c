@@ -423,11 +423,6 @@ static void get_nb_frames(void *data, calldata_t *cd)
 
 	pthread_mutex_lock(&s->media.mutex);
 
-	if (s->media.stopping || !s->media.active) {
-		pthread_mutex_unlock(&s->media.mutex);
-		return;
-	}
-
 	int video_stream_index = av_find_best_stream(s->media.fmt,
 			AVMEDIA_TYPE_VIDEO, -1, -1, NULL, 0);
 
