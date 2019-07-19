@@ -255,14 +255,6 @@ bool QSV_Encoder_Internal::InitParams(qsv_param_t *pParams)
 
 	static mfxExtBuffer *extendedBuffers[2];
 	int iBuffers = 0;
-	if (pParams->nAsyncDepth == 1) {
-		m_mfxEncParams.mfx.NumRefFrame = 1;
-		memset(&m_co, 0, sizeof(mfxExtCodingOption));
-		m_co.Header.BufferId = MFX_EXTBUFF_CODING_OPTION;
-		m_co.Header.BufferSz = sizeof(mfxExtCodingOption);
-		m_co.MaxDecFrameBuffering = 1;
-		extendedBuffers[iBuffers++] = (mfxExtBuffer *)&m_co;
-	}
 
 	if (m_ver.Major == 1 && m_ver.Minor >= 8) {
 		memset(&m_co2, 0, sizeof(mfxExtCodingOption2));
