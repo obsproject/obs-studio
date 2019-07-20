@@ -34,8 +34,28 @@ static bool ready_deinterlace_frames(obs_source_t *source, uint64_t sys_time)
 			next_frame = source->async_frames.array[0];
 		}
 
-		if (source->async_frames.num == 2)
-			source->async_frames.array[0]->prev_frame = true;
+		if (source->async_frames.num == 2) {
+			bool prev_frame = true;
+			if (source->async_unbuffered &&
+			    source->deinterlace_offset) {
+				const uint64_t timestamp =
+					source->async_frames.array[0]->timestamp;
+				const uint64_t after_timestamp =
+					source->async_frames.array[1]->timestamp;
+				const uint64_t duration =
+					after_timestamp - timestamp;
+				const uint64_t frame_end =
+					timestamp + source->deinterlace_offset +
+					duration;
+				if (sys_time < frame_end) {
+					// Don't skip ahead prematurely.
+					prev_frame = false;
+					source->deinterlace_frame_ts =
+						timestamp - duration;
+				}
+			}
+			source->async_frames.array[0]->prev_frame = prev_frame;
+		}
 		source->deinterlace_offset = 0;
 		source->last_frame_ts = next_frame->timestamp;
 		return true;
@@ -122,11 +142,29 @@ static inline uint64_t uint64_diff(uint64_t ts1, uint64_t ts2)
 	return (ts1 < ts2) ? (ts2 - ts1) : (ts1 - ts2);
 }
 
+#define TWOX_TOLERANCE 1000000
+#define TS_JUMP_THRESHOLD 70000000ULL
+
 static inline void deinterlace_get_closest_frames(obs_source_t *s,
 						  uint64_t sys_time)
 {
 	const struct video_output_info *info;
 	uint64_t half_interval;
+
+	if (s->async_unbuffered && s->deinterlace_offset) {
+		// Want to keep frame if it has not elapsed.
+		const uint64_t frame_end =
+			s->deinterlace_frame_ts + s->deinterlace_offset +
+			((uint64_t)s->deinterlace_half_duration * 2) -
+			TWOX_TOLERANCE;
+		if (sys_time < frame_end) {
+			// Process new frames if we think time jumped.
+			const uint64_t diff = frame_end - sys_time;
+			if (diff < TS_JUMP_THRESHOLD) {
+				return;
+			}
+		}
+	}
 
 	if (!s->async_frames.num)
 		return;
@@ -302,8 +340,6 @@ static inline gs_effect_t *get_effect(enum obs_deinterlace_mode mode)
 
 	return NULL;
 }
-
-#define TWOX_TOLERANCE 1000000
 
 void deinterlace_render(obs_source_t *s)
 {
