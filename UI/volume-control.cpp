@@ -74,9 +74,15 @@ void VolControl::SliderChanged(int vol)
 
 void VolControl::updateText()
 {
-	QString db = QString::number(obs_fader_get_db(obs_fader), 'f', 1)
-			     .append(" dB");
-	volLabel->setText(db);
+	QString text;
+	float db = obs_fader_get_db(obs_fader);
+
+	if (db < -96.0f)
+		text = "-" + QT_UTF8("\u221E") + " dB";
+	else
+		text = QString::number(db, 'f', 1).append(" dB");
+
+	volLabel->setText(text);
 
 	bool muted = obs_source_muted(source);
 	const char *accTextLookup = muted ? "VolControl.SliderMuted"

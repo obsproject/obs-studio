@@ -82,7 +82,7 @@ OBSAdvAudioCtrl::OBSAdvAudioCtrl(QGridLayout *, obs_source_t *source_)
 	volume->setValue(obs_mul_to_db(vol));
 
 	if (volume->value() < MIN_DB)
-		volume->setSpecialValueText("-inf dB");
+		volume->setSpecialValueText("-" + QT_UTF8("\u221E") + " dB");
 
 	forceMono->setChecked((flags & OBS_SOURCE_FLAG_FORCE_MONO) != 0);
 
@@ -293,7 +293,7 @@ void OBSAdvAudioCtrl::SourceMixersChanged(uint32_t mixers)
 void OBSAdvAudioCtrl::volumeChanged(double db)
 {
 	if (db < MIN_DB) {
-		volume->setSpecialValueText("-inf dB");
+		volume->setSpecialValueText("-" + QT_UTF8("\u221E") + " dB");
 		db = -INFINITY;
 	}
 
