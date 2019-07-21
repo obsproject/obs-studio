@@ -3341,15 +3341,16 @@ void OBSBasic::RenderMain(void *data, uint32_t cx, uint32_t cy)
 	gs_set_viewport(window->previewX, window->previewY, window->previewCX,
 			window->previewCY);
 
-	window->DrawBackdrop(float(ovi.base_width), float(ovi.base_height));
-
 	if (window->IsPreviewProgramMode()) {
+		window->DrawBackdrop(float(ovi.base_width),
+				     float(ovi.base_height));
+
 		OBSScene scene = window->GetCurrentScene();
 		obs_source_t *source = obs_scene_get_source(scene);
 		if (source)
 			obs_source_video_render(source);
 	} else {
-		obs_render_main_texture();
+		obs_render_main_texture_src_color_only();
 	}
 	gs_load_vertexbuffer(nullptr);
 

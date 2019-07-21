@@ -649,6 +649,9 @@ EXPORT void obs_render_main_view(void);
 /** Renders the last main output texture */
 EXPORT void obs_render_main_texture(void);
 
+/** Renders the last main output texture ignoring background color */
+EXPORT void obs_render_main_texture_src_color_only(void);
+
 /** Returns the last main output texture.  This can return NULL if the texture
  * is unavailable. */
 EXPORT gs_texture_t *obs_get_main_texture(void);
