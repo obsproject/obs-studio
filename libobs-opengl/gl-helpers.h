@@ -27,10 +27,18 @@ static inline bool gl_success(const char *funcname)
 {
 	GLenum errorcode = glGetError();
 	if (errorcode != GL_NO_ERROR) {
+		int attempts = 8;
 		do {
 			blog(LOG_ERROR, "%s failed, glGetError returned 0x%X",
 			     funcname, errorcode);
 			errorcode = glGetError();
+
+			--attempts;
+			if (attempts == 0) {
+				blog(LOG_ERROR, "Too many GL errors, moving on",
+				     funcname, errorcode);
+				break;
+			}
 		} while (errorcode != GL_NO_ERROR);
 		return false;
 	}
