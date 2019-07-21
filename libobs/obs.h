@@ -2101,11 +2101,20 @@ EXPORT const char *obs_service_get_url(const obs_service_t *service);
 /** Returns the stream key (if any) for this service context */
 EXPORT const char *obs_service_get_key(const obs_service_t *service);
 
+/** Returns the room name (if any) for this service context */
+EXPORT const char *obs_service_get_room(const obs_service_t *service);
+
 /** Returns the username (if any) for this service context */
 EXPORT const char *obs_service_get_username(const obs_service_t *service);
 
 /** Returns the password (if any) for this service context */
 EXPORT const char *obs_service_get_password(const obs_service_t *service);
+
+/** Returns the video codec name for this service context */
+EXPORT const char *obs_service_get_codec(const obs_service_t *service);
+
+/** Returns the protocol for this service context */
+EXPORT const char *obs_service_get_protocol(const obs_service_t *service);
 
 /**
  * Applies service-specific video encoder settings.

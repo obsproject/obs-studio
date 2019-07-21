@@ -1083,9 +1083,22 @@
               </widget>
              </item>
              <item row="6" column="1">
-              <widget class="QLineEdit" name="authUsername"/>
+              <widget class="QLineEdit" name="room"/>
              </item>
              <item row="6" column="0">
+              <widget class="QLabel" name="roomLabel">
+               <property name="text">
+                <string>Room</string>
+               </property>
+               <property name="buddy">
+                <cstring>room</cstring>
+               </property>
+              </widget>
+             </item>
+             <item row="7" column="1">
+              <widget class="QLineEdit" name="authUsername"/>
+             </item>
+             <item row="7" column="0">
               <widget class="QLabel" name="authUsernameLabel">
                <property name="text">
                 <string>Basic.Settings.Stream.Custom.Username</string>
@@ -1095,7 +1108,7 @@
                </property>
               </widget>
              </item>
-             <item row="7" column="0">
+             <item row="8" column="0">
               <widget class="QLabel" name="authPwLabel">
                <property name="text">
                 <string>Basic.Settings.Stream.Custom.Password</string>
@@ -1105,7 +1118,7 @@
                </property>
               </widget>
              </item>
-             <item row="7" column="1">
+             <item row="8" column="1">
               <widget class="QWidget" name="authPwWidget" native="true">
                <layout class="QHBoxLayout" name="horizontalLayout_25">
                 <property name="leftMargin">
@@ -1143,6 +1156,75 @@
                 <string>Basic.Settings.Stream.BandwidthTestMode</string>
                </property>
               </widget>
+             </item>
+             <item row="9" column="0">
+               <widget class="QLabel" name="codecLabel">
+               <property name="text">
+                 <string>Codec</string>
+               </property>
+               <property name="buddy">
+                 <cstring>codec</cstring>
+               </property>
+               </widget>
+             </item>
+             <item row="9" column="1">
+               <widget class="QComboBox" name="codec">
+                 <property name="currentIndex">
+                   <number>0</number>
+                 </property>
+                 <item>
+                   <property name="text">
+                     <string>Automatic</string>
+                   </property>
+                 </item>
+                 <item>
+                   <property name="text">
+                     <string>H264</string>
+                   </property>
+                 </item>
+                 <item>
+                   <property name="text">
+                     <string>VP8</string>
+                   </property>
+                 </item>
+                 <item>
+                   <property name="text">
+                     <string>VP9</string>
+                   </property>
+                 </item>
+               </widget>
+             </item>
+             <item row="10" column="0">
+               <widget class="QLabel" name="streamProtocolLabel">
+               <property name="text">
+                 <string>Protocol</string>
+               </property>
+               <property name="buddy">
+                 <cstring>streamProtocol</cstring>
+               </property>
+               </widget>
+             </item>
+             <item row="10" column="1">
+               <widget class="QComboBox" name="streamProtocol">
+                 <property name="currentIndex">
+                   <number>0</number>
+                 </property>
+                 <item>
+                   <property name="text">
+                     <string>Automatic</string>
+                   </property>
+                 </item>
+                 <item>
+                   <property name="text">
+                     <string>UDP</string>
+                   </property>
+                 </item>
+                 <item>
+                   <property name="text">
+                     <string>TCP</string>
+                   </property>
+                 </item>
+               </widget>
              </item>
             </layout>
            </widget>
@@ -5276,10 +5358,13 @@
   <tabstop>show</tabstop>
   <tabstop>connectAccount2</tabstop>
   <tabstop>disconnectAccount</tabstop>
+  <tabstop>room</tabstop>
   <tabstop>useAuth</tabstop>
   <tabstop>authUsername</tabstop>
   <tabstop>authPw</tabstop>
   <tabstop>authPwShow</tabstop>
+  <tabstop>codec</tabstop>
+  <tabstop>streamProtocol</tabstop>
   <tabstop>scrollArea_3</tabstop>
   <tabstop>outputMode</tabstop>
   <tabstop>simpleOutputVBitrate</tabstop>

@@ -142,6 +142,17 @@ endif()
 option(BUILD_TESTS "Build test directory (includes test sources and possibly a platform test executable)" FALSE)
 mark_as_advanced(BUILD_TESTS)
 
+option(BUILD_WEBRTC "Build WebRTC output plugin" OFF)
+
+if(BUILD_WEBRTC)
+	set(WEBRTC_ENABLED TRUE)
+	add_definitions(-DWEBRTC_AVAILABLE)
+	message(STATUS "WebRTC output enabled")
+else()
+	set(WEBRTC_ENABLED FALSE)
+	message(STATUS "WebRTC output not enabled")
+endif()
+
 if(NOT INSTALLER_RUN)
 	option(ENABLE_UI "Enables the OBS user interfaces" ON)
 	if(DISABLE_UI OR NOT ENABLE_UI)

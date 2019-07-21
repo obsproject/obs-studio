@@ -3,10 +3,18 @@ project(rtmp-services)
 include_directories(${OBS_JANSSON_INCLUDE_DIRS})
 
 set(rtmp-services_SOURCES
-	twitch.c
+	rtmp-services-main.c
 	rtmp-common.c
 	rtmp-custom.c
-	rtmp-services-main.c)
+	twitch.c)
+
+if(WEBRTC_ENABLED)
+	set(rtmp-services_webrtc_SOURCES
+		webrtc-janus.c
+		webrtc-wowza.c
+		webrtc-millicast.c
+		webrtc-evercast.c)
+endif()
 
 set(rtmp-services_HEADERS
 	twitch.h
@@ -26,6 +34,7 @@ set(rtmp-services_config_HEADERS
 
 add_library(rtmp-services MODULE
 	${rtmp-services_SOURCES}
+	${rtmp-services_webrtc_SOURCES}
 	${rtmp-services_HEADERS}
 	${rtmp-services_config_HEADERS})
 target_link_libraries(rtmp-services

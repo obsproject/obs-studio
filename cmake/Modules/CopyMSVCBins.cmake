@@ -185,6 +185,16 @@ file(GLOB QT_IMAGEFORMATS_BIN_FILES
 file(GLOB QT_ICU_BIN_FILES
 	"${Qt5Core_DIR}/../../../bin/icu*.dll")
 
+file(GLOB OPENSSL_BIN_FILES
+	"${OPENSSL_INCLUDE_DIR}/../bin${_bin_suffix}/libcrypto*.dll"
+	"${OPENSSL_INCLUDE_DIR}/../bin${_bin_suffix}/libssl*.dll"
+	"${OPENSSL_INCLUDE_DIR}/../bin/libcrypto*.dll"
+	"${OPENSSL_INCLUDE_DIR}/../bin/libssl*.dll"
+	"${OPENSSL_INCLUDE_DIR}/bin${_bin_suffix}/libcrypto*.dll"
+	"${OPENSSL_INCLUDE_DIR}/bin${_bin_suffix}/libssl*.dll"
+	"${OPENSSL_INCLUDE_DIR}/bin/libcrypto*.dll"
+	"${OPENSSL_INCLUDE_DIR}/bin/libssl*.dll")
+
 set(ALL_BASE_BIN_FILES
 	${FFMPEG_BIN_FILES}
 	${X264_BIN_FILES}
@@ -194,7 +204,8 @@ set(ALL_BASE_BIN_FILES
 	${ZLIB_BIN_FILES}
 	${LIBFDK_BIN_FILES}
 	${FREETYPE_BIN_FILES}
-	${QT_ICU_BIN_FILES})
+	${QT_ICU_BIN_FILES}
+	${OPENSSL_BIN_FILES})
 
 set(ALL_REL_BIN_FILES
 	${QT_BIN_FILES})
@@ -256,6 +267,7 @@ message(STATUS "QT Release Styles files: ${QT_STYLES_BIN_FILES}")
 message(STATUS "QT Release Iconengine files: ${QT_REL_ICONENGINE_BIN_FILES}")
 message(STATUS "QT Release Imageformat files: ${QT_REL_IMAGEFORMATS_BIN_FILES}")
 message(STATUS "QT ICU files: ${QT_ICU_BIN_FILES}")
+message(STATUS "OpenSSL files: ${OPENSSL_BIN_FILES}")
 
 foreach(BinFile ${ALL_BASE_BIN_FILES})
 	message(STATUS "copying ${BinFile} to ${CMAKE_SOURCE_DIR}/additional_install_files/exec${_bin_suffix}")
