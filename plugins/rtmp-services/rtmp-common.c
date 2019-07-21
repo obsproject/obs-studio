@@ -86,7 +86,7 @@ static void rtmp_common_update(void *data, obs_data_t *settings)
 
 		if (serv) {
 			json_t *rec = json_object_get(serv, "recommended");
-			if (rec && json_is_object(rec)) {
+			if (json_is_object(rec)) {
 				const char *out = get_string_val(rec, "output");
 				if (out)
 					service->output = bstrdup(out);
@@ -477,7 +477,7 @@ static void apply_video_encoder_settings(obs_data_t *settings,
 					 json_t *recommended)
 {
 	json_t *item = json_object_get(recommended, "keyint");
-	if (item && json_is_integer(item)) {
+	if (json_is_integer(item)) {
 		int keyint = (int)json_integer_value(item);
 		obs_data_set_int(settings, "keyint_sec", keyint);
 	}
@@ -485,13 +485,13 @@ static void apply_video_encoder_settings(obs_data_t *settings,
 	obs_data_set_string(settings, "rate_control", "CBR");
 
 	item = json_object_get(recommended, "profile");
-	if (item && json_is_string(item)) {
+	if (json_is_string(item)) {
 		const char *profile = json_string_value(item);
 		obs_data_set_string(settings, "profile", profile);
 	}
 
 	item = json_object_get(recommended, "max video bitrate");
-	if (item && json_is_integer(item)) {
+	if (json_is_integer(item)) {
 		int max_bitrate = (int)json_integer_value(item);
 		if (obs_data_get_int(settings, "bitrate") > max_bitrate) {
 			obs_data_set_int(settings, "bitrate", max_bitrate);
@@ -500,11 +500,11 @@ static void apply_video_encoder_settings(obs_data_t *settings,
 	}
 
 	item = json_object_get(recommended, "bframes");
-	if (item && json_is_integer(item))
+	if (json_is_integer(item))
 		obs_data_set_int(settings, "bf", 0);
 
 	item = json_object_get(recommended, "x264opts");
-	if (item && json_is_string(item)) {
+	if (json_is_string(item)) {
 		const char *x264_settings = json_string_value(item);
 		const char *cur_settings =
 			obs_data_get_string(settings, "x264opts");
@@ -524,7 +524,7 @@ static void apply_audio_encoder_settings(obs_data_t *settings,
 					 json_t *recommended)
 {
 	json_t *item = json_object_get(recommended, "max audio bitrate");
-	if (item && json_is_integer(item)) {
+	if (json_is_integer(item)) {
 		int max_bitrate = (int)json_integer_value(item);
 		if (obs_data_get_int(settings, "bitrate") > max_bitrate)
 			obs_data_set_int(settings, "bitrate", max_bitrate);
