@@ -208,8 +208,9 @@ static inline void render_output_texture(struct obs_core_video *video)
 	gs_texture_t *target = video->output_texture;
 	uint32_t width = gs_texture_get_width(target);
 	uint32_t height = gs_texture_get_height(target);
-	struct vec2 base_i;
+	struct vec2 base, base_i;
 
+	vec2_set(&base, (float)video->base_width, (float)video->base_height);
 	vec2_set(&base_i, 1.0f / (float)video->base_width,
 		 1.0f / (float)video->base_height);
 
@@ -225,6 +226,8 @@ static inline void render_output_texture(struct obs_core_video *video)
 	gs_eparam_t *image = gs_effect_get_param_by_name(effect, "image");
 	gs_eparam_t *matrix =
 		gs_effect_get_param_by_name(effect, "color_matrix");
+	gs_eparam_t *bres =
+		gs_effect_get_param_by_name(effect, "base_dimension");
 	gs_eparam_t *bres_i =
 		gs_effect_get_param_by_name(effect, "base_dimension_i");
 	size_t passes, i;
@@ -232,6 +235,8 @@ static inline void render_output_texture(struct obs_core_video *video)
 	gs_set_render_target(target, NULL);
 	set_render_size(width, height);
 
+	if (bres)
+		gs_effect_set_vec2(bres, &base);
 	if (bres_i)
 		gs_effect_set_vec2(bres_i, &base_i);
 
