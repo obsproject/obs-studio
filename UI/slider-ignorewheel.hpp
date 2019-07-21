@@ -13,5 +13,5 @@ public:
 			   QWidget *parent = nullptr);
 
 protected:
-	virtual void wheelEvent(QWheelEvent *event) override;
+	void wheelEvent(QWheelEvent *event) override;
 };

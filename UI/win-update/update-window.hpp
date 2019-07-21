@@ -17,8 +17,8 @@ public slots:
 	void on_yes_clicked();
 	void on_no_clicked();
 	void on_skip_clicked();
-	virtual void accept() override;
-	virtual void reject() override;
+	void accept() override;
+	void reject() override;
 
 private:
 	std::unique_ptr<Ui_OBSUpdate> ui;

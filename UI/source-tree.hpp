@@ -31,7 +31,7 @@ class SourceTreeItem : public QWidget {
 
 	void mouseDoubleClickEvent(QMouseEvent *event) override;
 
-	virtual bool eventFilter(QObject *object, QEvent *event) override;
+	bool eventFilter(QObject *object, QEvent *event) override;
 
 	void Update(bool force);
 
@@ -72,7 +72,7 @@ private:
 	OBSSignal renameSignal;
 	OBSSignal removeSignal;
 
-	virtual void paintEvent(QPaintEvent *event) override;
+	void paintEvent(QPaintEvent *event) override;
 
 private slots:
 	void Clear();
@@ -122,12 +122,11 @@ public:
 	explicit SourceTreeModel(SourceTree *st);
 	~SourceTreeModel();
 
-	virtual int rowCount(const QModelIndex &parent) const override;
-	virtual QVariant data(const QModelIndex &index,
-			      int role) const override;
+	int rowCount(const QModelIndex &parent) const override;
+	QVariant data(const QModelIndex &index, int role) const override;
 
-	virtual Qt::ItemFlags flags(const QModelIndex &index) const override;
-	virtual Qt::DropActions supportedDropActions() const override;
+	Qt::ItemFlags flags(const QModelIndex &index) const override;
+	Qt::DropActions supportedDropActions() const override;
 };
 
 class SourceTree : public QListView {
@@ -184,13 +183,12 @@ public slots:
 	void Edit(int idx);
 
 protected:
-	virtual void mouseDoubleClickEvent(QMouseEvent *event) override;
-	virtual void dropEvent(QDropEvent *event) override;
-	virtual void mouseMoveEvent(QMouseEvent *event) override;
-	virtual void leaveEvent(QEvent *event) override;
-	virtual void paintEvent(QPaintEvent *event) override;
+	void mouseDoubleClickEvent(QMouseEvent *event) override;
+	void dropEvent(QDropEvent *event) override;
+	void mouseMoveEvent(QMouseEvent *event) override;
+	void leaveEvent(QEvent *event) override;
+	void paintEvent(QPaintEvent *event) override;
 
-	virtual void
-	selectionChanged(const QItemSelection &selected,
-			 const QItemSelection &deselected) override;
+	void selectionChanged(const QItemSelection &selected,
+			      const QItemSelection &deselected) override;
 };

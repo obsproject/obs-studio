@@ -226,7 +226,7 @@ public:
 	}
 
 private:
-	virtual void run() override { func(); }
+	void run() override { func(); }
 
 	std::function<void()> func;
 };

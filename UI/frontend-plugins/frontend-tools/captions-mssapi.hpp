@@ -42,6 +42,6 @@ class mssapi_captions : public captions_handler {
 
 public:
 	mssapi_captions(captions_cb callback, const std::string &lang);
-	virtual ~mssapi_captions();
-	virtual void pcm_data(const void *data, size_t frames) override;
+	~mssapi_captions();
+	void pcm_data(const void *data, size_t frames) override;
 };

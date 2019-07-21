@@ -37,7 +37,7 @@ public:
 	typedef std::function<std::shared_ptr<Auth>()> create_cb;
 
 	inline Auth(const Def &d) : def(d) {}
-	virtual ~Auth() {}
+	~Auth() {}
 
 	inline Type type() const { return def.type; }
 	inline const char *service() const { return def.service.c_str(); }

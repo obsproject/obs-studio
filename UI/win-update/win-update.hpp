@@ -9,7 +9,7 @@ class AutoUpdateThread : public QThread {
 	bool manualUpdate;
 	bool user_confirmed = false;
 
-	virtual void run() override;
+	void run() override;
 
 	void info(const QString &title, const QString &text);
 	int queryUpdate(bool manualUpdate, const char *text_utf8);
@@ -25,7 +25,7 @@ public:
 class WhatsNewInfoThread : public QThread {
 	Q_OBJECT
 
-	virtual void run() override;
+	void run() override;
 
 signals:
 	void Result(const QString &text);

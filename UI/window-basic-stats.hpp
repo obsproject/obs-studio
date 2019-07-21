@@ -58,7 +58,7 @@ class OBSBasicStats : public QWidget {
 	void Update();
 	void Reset();
 
-	virtual void closeEvent(QCloseEvent *event) override;
+	void closeEvent(QCloseEvent *event) override;
 
 	static void OBSFrontendEvent(enum obs_frontend_event event, void *ptr);
 
@@ -78,6 +78,6 @@ private slots:
 	void RecordingTimeLeft();
 
 protected:
-	virtual void showEvent(QShowEvent *event) override;
-	virtual void hideEvent(QHideEvent *event) override;
+	void showEvent(QShowEvent *event) override;
+	void hideEvent(QHideEvent *event) override;
 };

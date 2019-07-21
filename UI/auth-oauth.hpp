@@ -23,7 +23,7 @@ public:
 	inline QString GetCode() const { return code; }
 	inline bool LoadFail() const { return fail; }
 
-	virtual int exec() override;
+	int exec() override;
 
 public slots:
 	void urlChanged(const QString &url);
@@ -53,8 +53,8 @@ protected:
 	uint64_t expire_time = 0;
 	int currentScopeVer = 0;
 
-	virtual void SaveInternal() override;
-	virtual bool LoadInternal() override;
+	void SaveInternal() override;
+	bool LoadInternal() override;
 
 	virtual bool RetryLogin() = 0;
 	bool TokenExpired();
@@ -75,5 +75,5 @@ public:
 
 	inline const std::string &key() const { return key_; }
 
-	virtual void OnStreamConfig() override;
+	void OnStreamConfig() override;
 };

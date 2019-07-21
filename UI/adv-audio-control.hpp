@@ -49,7 +49,7 @@ private:
 
 public:
 	OBSAdvAudioCtrl(QGridLayout *layout, obs_source_t *source_);
-	virtual ~OBSAdvAudioCtrl();
+	~OBSAdvAudioCtrl();
 
 	inline obs_source_t *GetSource() const { return source; }
 	void ShowAudioControl(QGridLayout *layout);

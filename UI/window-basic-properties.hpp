@@ -71,6 +71,6 @@ public:
 	void Init();
 
 protected:
-	virtual void closeEvent(QCloseEvent *event) override;
-	virtual void reject() override;
+	void closeEvent(QCloseEvent *event) override;
+	void reject() override;
 };

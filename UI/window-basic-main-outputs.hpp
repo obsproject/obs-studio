@@ -30,7 +30,7 @@ struct BasicOutputHandler {
 
 	inline BasicOutputHandler(OBSBasic *main_) : main(main_) {}
 
-	virtual ~BasicOutputHandler(){};
+	virtual ~BasicOutputHandler() {}
 
 	virtual bool StartStreaming(obs_service_t *service) = 0;
 	virtual bool StartRecording() = 0;

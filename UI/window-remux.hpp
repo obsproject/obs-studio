@@ -53,8 +53,8 @@ class OBSRemux : public QDialog {
 
 	const char *recPath;
 
-	virtual void closeEvent(QCloseEvent *event) override;
-	virtual void reject() override;
+	void closeEvent(QCloseEvent *event) override;
+	void reject() override;
 
 	bool autoRemux;
 	QString autoRemuxFile;
@@ -62,15 +62,15 @@ class OBSRemux : public QDialog {
 public:
 	explicit OBSRemux(const char *recPath, QWidget *parent = nullptr,
 			  bool autoRemux = false);
-	virtual ~OBSRemux() override;
+	~OBSRemux();
 
 	using job_t = std::shared_ptr<struct media_remux_job>;
 
 	void AutoRemux(QString inFile, QString outFile);
 
 protected:
-	void dropEvent(QDropEvent *ev);
-	void dragEnterEvent(QDragEnterEvent *ev);
+	void dropEvent(QDropEvent *ev) override;
+	void dragEnterEvent(QDragEnterEvent *ev) override;
 
 	void remuxNextEntry();
 
@@ -147,7 +147,7 @@ class RemuxWorker : public QObject {
 	void UpdateProgress(float percent);
 
 	explicit RemuxWorker() : isWorking(false) {}
-	virtual ~RemuxWorker(){};
+	~RemuxWorker() {}
 
 private slots:
 	void remux(const QString &source, const QString &target);
@@ -165,17 +165,16 @@ class RemuxEntryPathItemDelegate : public QStyledItemDelegate {
 public:
 	RemuxEntryPathItemDelegate(bool isOutput, const QString &defaultPath);
 
-	virtual QWidget *createEditor(QWidget *parent,
-				      const QStyleOptionViewItem & /* option */,
-				      const QModelIndex &index) const override;
+	QWidget *createEditor(QWidget *parent,
+			      const QStyleOptionViewItem & /* option */,
+			      const QModelIndex &index) const override;
 
-	virtual void setEditorData(QWidget *editor,
-				   const QModelIndex &index) const override;
-	virtual void setModelData(QWidget *editor, QAbstractItemModel *model,
-				  const QModelIndex &index) const override;
-	virtual void paint(QPainter *painter,
-			   const QStyleOptionViewItem &option,
+	void setEditorData(QWidget *editor,
 			   const QModelIndex &index) const override;
+	void setModelData(QWidget *editor, QAbstractItemModel *model,
+			  const QModelIndex &index) const override;
+	void paint(QPainter *painter, const QStyleOptionViewItem &option,
+		   const QModelIndex &index) const override;
 
 private:
 	bool isOutput;

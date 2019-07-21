@@ -14,14 +14,14 @@ class MixerAuth : public OAuthStreamKey {
 	std::string name;
 	std::string id;
 
-	virtual bool RetryLogin() override;
+	bool RetryLogin() override;
 
-	virtual void SaveInternal() override;
-	virtual bool LoadInternal() override;
+	void SaveInternal() override;
+	bool LoadInternal() override;
 
 	bool GetChannelInfo(bool allow_retry = true);
 
-	virtual void LoadUI() override;
+	void LoadUI() override;
 
 public:
 	MixerAuth(const Def &d);

@@ -222,7 +222,7 @@ struct SimpleOutput : BasicOutputHandler {
 	void UpdateRecordingSettings_amd_cqp(int cqp);
 	void UpdateRecordingSettings();
 	void UpdateRecordingAudioSettings();
-	virtual void Update() override;
+	void Update() override;
 
 	void SetupOutputs();
 	int GetAudioBitrate() const;
@@ -236,15 +236,15 @@ struct SimpleOutput : BasicOutputHandler {
 	void UpdateRecording();
 	bool ConfigureRecording(bool useReplayBuffer);
 
-	virtual bool StartStreaming(obs_service_t *service) override;
-	virtual bool StartRecording() override;
-	virtual bool StartReplayBuffer() override;
-	virtual void StopStreaming(bool force) override;
-	virtual void StopRecording(bool force) override;
-	virtual void StopReplayBuffer(bool force) override;
-	virtual bool StreamingActive() const override;
-	virtual bool RecordingActive() const override;
-	virtual bool ReplayBufferActive() const override;
+	bool StartStreaming(obs_service_t *service) override;
+	bool StartRecording() override;
+	bool StartReplayBuffer() override;
+	void StopStreaming(bool force) override;
+	void StopRecording(bool force) override;
+	void StopReplayBuffer(bool force) override;
+	bool StreamingActive() const override;
+	bool RecordingActive() const override;
+	bool ReplayBufferActive() const override;
 };
 
 void SimpleOutput::LoadRecordingPreset_Lossless()
@@ -1058,7 +1058,7 @@ struct AdvancedOutput : BasicOutputHandler {
 	inline void UpdateStreamSettings();
 	inline void UpdateRecordingSettings();
 	inline void UpdateAudioSettings();
-	virtual void Update() override;
+	void Update() override;
 
 	inline void SetupStreaming();
 	inline void SetupRecording();
@@ -1066,15 +1066,15 @@ struct AdvancedOutput : BasicOutputHandler {
 	void SetupOutputs();
 	int GetAudioBitrate(size_t i) const;
 
-	virtual bool StartStreaming(obs_service_t *service) override;
-	virtual bool StartRecording() override;
-	virtual bool StartReplayBuffer() override;
-	virtual void StopStreaming(bool force) override;
-	virtual void StopRecording(bool force) override;
-	virtual void StopReplayBuffer(bool force) override;
-	virtual bool StreamingActive() const override;
-	virtual bool RecordingActive() const override;
-	virtual bool ReplayBufferActive() const override;
+	bool StartStreaming(obs_service_t *service) override;
+	bool StartRecording() override;
+	bool StartReplayBuffer() override;
+	void StopStreaming(bool force) override;
+	void StopRecording(bool force) override;
+	void StopReplayBuffer(bool force) override;
+	bool StreamingActive() const override;
+	bool RecordingActive() const override;
+	bool ReplayBufferActive() const override;
 };
 
 static OBSData GetDataFromJsonFile(const char *jsonFile)

@@ -106,7 +106,7 @@ class AutoConfig : public QWizard {
 	void TestHardwareEncoding();
 	bool CanTestServer(const char *server);
 
-	virtual void done(int result) override;
+	void done(int result) override;
 
 	void SaveStreamSettings();
 	void SaveSettings();
@@ -134,7 +134,7 @@ public:
 	AutoConfigStartPage(QWidget *parent = nullptr);
 	~AutoConfigStartPage();
 
-	virtual int nextId() const override;
+	int nextId() const override;
 
 public slots:
 	void on_prioritizeStreaming_clicked();
@@ -152,8 +152,8 @@ public:
 	AutoConfigVideoPage(QWidget *parent = nullptr);
 	~AutoConfigVideoPage();
 
-	virtual int nextId() const override;
-	virtual bool validatePage() override;
+	int nextId() const override;
+	bool validatePage() override;
 };
 
 class AutoConfigStreamPage : public QWizardPage {
@@ -179,9 +179,9 @@ public:
 	AutoConfigStreamPage(QWidget *parent = nullptr);
 	~AutoConfigStreamPage();
 
-	virtual bool isComplete() const override;
-	virtual int nextId() const override;
-	virtual bool validatePage() override;
+	bool isComplete() const override;
+	int nextId() const override;
+	bool validatePage() override;
 
 	void OnAuthConnected();
 	void OnOAuthStreamKeyConnected();
@@ -255,10 +255,10 @@ public:
 	AutoConfigTestPage(QWidget *parent = nullptr);
 	~AutoConfigTestPage();
 
-	virtual void initializePage() override;
-	virtual void cleanupPage() override;
-	virtual bool isComplete() const override;
-	virtual int nextId() const override;
+	void initializePage() override;
+	void cleanupPage() override;
+	bool isComplete() const override;
+	int nextId() const override;
 
 public slots:
 	void NextStage();

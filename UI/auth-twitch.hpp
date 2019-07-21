@@ -26,14 +26,14 @@ class TwitchAuth : public OAuthStreamKey {
 
 	std::string name;
 
-	virtual bool RetryLogin() override;
+	bool RetryLogin() override;
 
-	virtual void SaveInternal() override;
-	virtual bool LoadInternal() override;
+	void SaveInternal() override;
+	bool LoadInternal() override;
 
 	bool GetChannelInfo();
 
-	virtual void LoadUI() override;
+	void LoadUI() override;
 
 public:
 	TwitchAuth(const Def &d);

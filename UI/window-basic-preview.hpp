@@ -97,15 +97,15 @@ public:
 
 	static OBSBasicPreview *Get();
 
-	virtual void keyPressEvent(QKeyEvent *event) override;
-	virtual void keyReleaseEvent(QKeyEvent *event) override;
+	void keyPressEvent(QKeyEvent *event) override;
+	void keyReleaseEvent(QKeyEvent *event) override;
 
-	virtual void wheelEvent(QWheelEvent *event) override;
+	void wheelEvent(QWheelEvent *event) override;
 
-	virtual void mousePressEvent(QMouseEvent *event) override;
-	virtual void mouseReleaseEvent(QMouseEvent *event) override;
-	virtual void mouseMoveEvent(QMouseEvent *event) override;
-	virtual void leaveEvent(QEvent *event) override;
+	void mousePressEvent(QMouseEvent *event) override;
+	void mouseReleaseEvent(QMouseEvent *event) override;
+	void mouseMoveEvent(QMouseEvent *event) override;
+	void leaveEvent(QEvent *event) override;
 
 	void DrawOverflow();
 	void DrawSceneEditing();

@@ -26,7 +26,7 @@ public:
 	OBSQTDisplay(QWidget *parent = nullptr,
 		     Qt::WindowFlags flags = nullptr);
 
-	virtual QPaintEngine *paintEngine() const override;
+	QPaintEngine *paintEngine() const override;
 
 	inline obs_display_t *GetDisplay() const { return display; }
 

@@ -656,8 +656,8 @@ public:
 	static OBSBasic *Get();
 
 protected:
-	virtual void closeEvent(QCloseEvent *event) override;
-	virtual void changeEvent(QEvent *event) override;
+	void closeEvent(QCloseEvent *event) override;
+	void changeEvent(QEvent *event) override;
 
 private slots:
 	void on_actionFullscreenInterface_triggered();
@@ -821,14 +821,14 @@ public slots:
 
 public:
 	explicit OBSBasic(QWidget *parent = 0);
-	virtual ~OBSBasic();
+	~OBSBasic();
 
-	virtual void OBSInit() override;
+	void OBSInit() override;
 
-	virtual config_t *Config() const override;
+	config_t *Config() const override;
 
-	virtual int GetProfilePath(char *path, size_t size,
-				   const char *file) const override;
+	int GetProfilePath(char *path, size_t size,
+			   const char *file) const override;
 
 	static void InitBrowserPanelSafeBlock();
 
@@ -841,9 +841,9 @@ class SceneRenameDelegate : public QStyledItemDelegate {
 
 public:
 	SceneRenameDelegate(QObject *parent);
-	virtual void setEditorData(QWidget *editor,
-				   const QModelIndex &index) const override;
+	void setEditorData(QWidget *editor,
+			   const QModelIndex &index) const override;
 
 protected:
-	virtual bool eventFilter(QObject *editor, QEvent *event) override;
+	bool eventFilter(QObject *editor, QEvent *event) override;
 };

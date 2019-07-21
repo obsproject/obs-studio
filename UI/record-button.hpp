@@ -8,5 +8,5 @@ class RecordButton : public QPushButton {
 public:
 	inline RecordButton(QWidget *parent = nullptr) : QPushButton(parent) {}
 
-	virtual void resizeEvent(QResizeEvent *event) override;
+	void resizeEvent(QResizeEvent *event) override;
 };
