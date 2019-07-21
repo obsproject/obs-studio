@@ -545,7 +545,7 @@ void TextSource::RenderText()
 	GetStringFormat(format);
 	CalculateTextSizes(format, box, size);
 
-	unique_ptr<uint8_t> bits(new uint8_t[size.cx * size.cy * 4]);
+	unique_ptr<uint8_t[]> bits(new uint8_t[size.cx * size.cy * 4]);
 	Bitmap bitmap(size.cx, size.cy, 4 * size.cx, PixelFormat32bppARGB,
 		      bits.get());
 
