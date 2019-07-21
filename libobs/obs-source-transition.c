@@ -51,9 +51,9 @@ bool obs_transition_init(obs_source_t *transition)
 
 	transition->transition_alignment = OBS_ALIGN_LEFT | OBS_ALIGN_TOP;
 	transition->transition_texrender[0] =
-		gs_texrender_create(GS_RGBA, GS_ZS_NONE);
+		gs_texrender_create(GS_RGBA_SRGB, GS_ZS_NONE);
 	transition->transition_texrender[1] =
-		gs_texrender_create(GS_RGBA, GS_ZS_NONE);
+		gs_texrender_create(GS_RGBA_SRGB, GS_ZS_NONE);
 	transition->transition_source_active[0] = true;
 
 	return transition->transition_texrender[0] != NULL &&

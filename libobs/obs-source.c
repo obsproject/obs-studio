@@ -1516,7 +1516,7 @@ bool set_async_texture_size(struct obs_source *source,
 		enum gs_color_format format =
 			(cur == CONVERT_RGB_LIMITED)
 				? convert_video_format(frame->format)
-				: GS_BGRX;
+				: GS_BGRX_SRGB;
 		source->async_texrender =
 			gs_texrender_create(format, GS_ZS_NONE);
 
@@ -1641,7 +1641,7 @@ static bool update_async_texrender(struct obs_source *source,
 		select_conversion_technique(frame->format, frame->full_range);
 	gs_technique_t *tech = gs_effect_get_technique(conv, tech_name);
 
-	if (!gs_texrender_begin(texrender, cx, cy)) {
+	if (!gs_texrender_begin_no_srgb(texrender, cx, cy)) {
 		GS_DEBUG_MARKER_END();
 		return false;
 	}

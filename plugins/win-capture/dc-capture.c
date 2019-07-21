@@ -168,7 +168,7 @@ void dc_capture_capture(struct dc_capture *capture, HWND window)
 static void draw_texture(struct dc_capture *capture, gs_effect_t *effect)
 {
 	gs_texture_t *texture = capture->texture;
-	gs_technique_t *tech = gs_effect_get_technique(effect, "Draw");
+	gs_technique_t *tech = gs_effect_get_technique(effect, "DrawSrgb");
 	gs_eparam_t *image = gs_effect_get_param_by_name(effect, "image");
 	size_t passes;
 

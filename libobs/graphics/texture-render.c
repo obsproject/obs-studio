@@ -116,6 +116,36 @@ bool gs_texrender_begin(gs_texrender_t *texrender, uint32_t cx, uint32_t cy)
 	return true;
 }
 
+bool gs_texrender_begin_no_srgb(gs_texrender_t *texrender, uint32_t cx,
+				uint32_t cy)
+{
+	if (!texrender || texrender->rendered)
+		return false;
+
+	if (!cx || !cy)
+		return false;
+
+	if (texrender->cx != cx || texrender->cy != cy)
+		if (!texrender_resetbuffer(texrender, cx, cy))
+			return false;
+
+	if (!texrender->target)
+		return false;
+
+	gs_viewport_push();
+	gs_projection_push();
+	gs_matrix_push();
+	gs_matrix_identity();
+
+	texrender->prev_target = gs_get_render_target();
+	texrender->prev_zs = gs_get_zstencil_target();
+	gs_set_render_target_no_srgb(texrender->target, texrender->zs);
+
+	gs_set_viewport(0, 0, texrender->cx, texrender->cy);
+
+	return true;
+}
+
 void gs_texrender_end(gs_texrender_t *texrender)
 {
 	if (!texrender)

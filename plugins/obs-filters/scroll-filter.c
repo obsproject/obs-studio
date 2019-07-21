@@ -188,7 +188,7 @@ static void scroll_filter_render(void *data, gs_effect_t *effect)
 	vec2_set(&mul_val, (float)cx / (float)base_cx,
 		 (float)cy / (float)base_cy);
 
-	if (!obs_source_process_filter_begin(filter->context, GS_RGBA,
+	if (!obs_source_process_filter_begin(filter->context, GS_RGBA_SRGB,
 					     OBS_NO_DIRECT_RENDERING))
 		return;
 

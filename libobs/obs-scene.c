@@ -424,7 +424,8 @@ static void update_item_transform(struct obs_scene_item *item, bool update_tex)
 
 	} else if (!item->item_render && item_texture_enabled(item)) {
 		obs_enter_graphics();
-		item->item_render = gs_texrender_create(GS_RGBA, GS_ZS_NONE);
+		item->item_render =
+			gs_texrender_create(GS_RGBA_SRGB, GS_ZS_NONE);
 		obs_leave_graphics();
 	}
 
@@ -792,7 +793,8 @@ static void scene_load_item(struct obs_scene *scene, obs_data_t *item_data)
 
 	} else if (!item->item_render && item_texture_enabled(item)) {
 		obs_enter_graphics();
-		item->item_render = gs_texrender_create(GS_RGBA, GS_ZS_NONE);
+		item->item_render =
+			gs_texrender_create(GS_RGBA_SRGB, GS_ZS_NONE);
 		obs_leave_graphics();
 	}
 
@@ -1301,7 +1303,7 @@ static inline void duplicate_item_data(struct obs_scene_item *dst,
 		if (!dst->item_render && item_texture_enabled(dst)) {
 			obs_enter_graphics();
 			dst->item_render =
-				gs_texrender_create(GS_RGBA, GS_ZS_NONE);
+				gs_texrender_create(GS_RGBA_SRGB, GS_ZS_NONE);
 			obs_leave_graphics();
 		}
 	}
@@ -1672,7 +1674,8 @@ static obs_sceneitem_t *obs_scene_add_internal(obs_scene_t *scene,
 
 	if (item_texture_enabled(item)) {
 		obs_enter_graphics();
-		item->item_render = gs_texrender_create(GS_RGBA, GS_ZS_NONE);
+		item->item_render =
+			gs_texrender_create(GS_RGBA_SRGB, GS_ZS_NONE);
 		obs_leave_graphics();
 	}
 

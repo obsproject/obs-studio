@@ -86,7 +86,7 @@ void OBSQTDisplay::CreateDisplay()
 	gs_init_data info = {};
 	info.cx = size.width();
 	info.cy = size.height();
-	info.format = GS_RGBA;
+	info.format = GS_RGBA_SRGB;
 	info.zsformat = GS_ZS_NONE;
 
 	QTToGSWindow(winId(), info.window);

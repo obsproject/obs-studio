@@ -75,7 +75,7 @@ static void color_source_render(void *data, gs_effect_t *effect)
 	gs_technique_t *tech = gs_effect_get_technique(solid, "Solid");
 
 	struct vec4 colorVal;
-	vec4_from_rgba(&colorVal, context->color);
+	vec4_from_rgba_srgb(&colorVal, context->color);
 	gs_effect_set_vec4(color, &colorVal);
 
 	gs_technique_begin(tech);

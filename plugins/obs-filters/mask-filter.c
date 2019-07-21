@@ -53,7 +53,7 @@ static void mask_filter_update(void *data, obs_data_t *settings)
 	color &= 0xFFFFFF;
 	color |= (uint32_t)(((double)opacity) * 2.55) << 24;
 
-	vec4_from_rgba(&filter->color, color);
+	vec4_from_rgba_srgb(&filter->color, color);
 
 	obs_enter_graphics();
 	gs_image_file_free(&filter->image);
@@ -216,7 +216,7 @@ static void mask_filter_render(void *data, gs_effect_t *effect)
 		vec2_div(&add_val, &add_val, &mask_size);
 	}
 
-	if (!obs_source_process_filter_begin(filter->context, GS_RGBA,
+	if (!obs_source_process_filter_begin(filter->context, GS_RGBA_SRGB,
 					     OBS_ALLOW_DIRECT_RENDERING))
 		return;
 

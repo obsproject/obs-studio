@@ -25,13 +25,24 @@ VertData VSDefault(VertData v_in)
 	return vert_out;
 }
 
+float LinearToSrgb(float c)
+{
+	return (c <= 0.0031308) ?
+			(12.92 * c) :
+			(1.055 * pow(c, 1.0 / 2.4) - 0.055);
+}
+
 float4 PSALumaKeyRGBA(VertData v_in) : TARGET
 {
 	float4 rgba = image.Sample(textureSampler, v_in.uv);
 
-	float4 lumaCoef = float4(0.2989, 0.5870, 0.1140, 0.0);
+	float3 nonlinear = float3(
+			LinearToSrgb(rgba.r),
+			LinearToSrgb(rgba.g),
+			LinearToSrgb(rgba.b));
+	float3 lumaCoef = float3(0.2126, 0.7152, 0.0722);
 
-	float luminance = dot(rgba, lumaCoef);
+	float luminance = dot(nonlinear, lumaCoef);
 
 	float clo = smoothstep(lumaMin, lumaMin + lumaMinSmooth, luminance);
 	float chi = 1. - smoothstep(lumaMax - lumaMaxSmooth, lumaMax, luminance);

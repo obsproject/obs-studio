@@ -703,12 +703,18 @@ static inline struct fbo_info *get_fbo_by_tex(gs_texture_t *tex)
 	return get_fbo(tex, width, height);
 }
 
-static bool set_current_fbo(gs_device_t *device, struct fbo_info *fbo)
+static bool set_current_fbo(gs_device_t *device, struct fbo_info *fbo,
+			    bool srgb)
 {
 	if (device->cur_fbo != fbo) {
 		GLuint fbo_obj = fbo ? fbo->fbo : 0;
 		if (!gl_bind_framebuffer(GL_DRAW_FRAMEBUFFER, fbo_obj))
 			return false;
+
+		if (srgb)
+			gl_enable(GL_FRAMEBUFFER_SRGB);
+		else
+			gl_disable(GL_FRAMEBUFFER_SRGB);
 
 		if (device->cur_fbo) {
 			device->cur_fbo->cur_render_target = NULL;
@@ -770,7 +776,7 @@ static bool attach_zstencil(struct fbo_info *fbo, gs_zstencil_t *zs)
 }
 
 static bool set_target(gs_device_t *device, gs_texture_t *tex, int side,
-		       gs_zstencil_t *zs)
+		       gs_zstencil_t *zs, bool srgb)
 {
 	struct fbo_info *fbo;
 
@@ -784,13 +790,13 @@ static bool set_target(gs_device_t *device, gs_texture_t *tex, int side,
 	device->cur_zstencil_buffer = zs;
 
 	if (!tex)
-		return set_current_fbo(device, NULL);
+		return set_current_fbo(device, NULL, srgb);
 
 	fbo = get_fbo_by_tex(tex);
 	if (!fbo)
 		return false;
 
-	set_current_fbo(device, fbo);
+	set_current_fbo(device, fbo, srgb);
 
 	if (!attach_rendertarget(fbo, tex, side))
 		return false;
@@ -815,7 +821,31 @@ void device_set_render_target(gs_device_t *device, gs_texture_t *tex,
 		}
 	}
 
-	if (!set_target(device, tex, 0, zstencil))
+	if (!set_target(device, tex, 0, zstencil, true))
+		goto fail;
+
+	return;
+
+fail:
+	blog(LOG_ERROR, "device_set_render_target (GL) failed");
+}
+
+void device_set_render_target_no_srgb(gs_device_t *device, gs_texture_t *tex,
+				      gs_zstencil_t *zstencil)
+{
+	if (tex) {
+		if (tex->type != GS_TEXTURE_2D) {
+			blog(LOG_ERROR, "Texture is not a 2D texture");
+			goto fail;
+		}
+
+		if (!tex->is_render_target) {
+			blog(LOG_ERROR, "Texture is not a render target");
+			goto fail;
+		}
+	}
+
+	if (!set_target(device, tex, 0, zstencil, false))
 		goto fail;
 
 	return;
@@ -839,7 +869,7 @@ void device_set_cube_render_target(gs_device_t *device, gs_texture_t *cubetex,
 		}
 	}
 
-	if (!set_target(device, cubetex, side, zstencil))
+	if (!set_target(device, cubetex, side, zstencil, true))
 		goto fail;
 
 	return;

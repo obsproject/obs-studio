@@ -186,7 +186,7 @@ static void crop_filter_render(void *data, gs_effect_t *effect)
 {
 	struct crop_filter_data *filter = data;
 
-	if (!obs_source_process_filter_begin(filter->context, GS_RGBA,
+	if (!obs_source_process_filter_begin(filter->context, GS_RGBA_SRGB,
 					     OBS_NO_DIRECT_RENDERING))
 		return;
 

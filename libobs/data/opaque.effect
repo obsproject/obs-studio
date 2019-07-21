@@ -25,11 +25,33 @@ float4 PSDraw(VertInOut vert_in) : TARGET
 	return float4(image.Sample(def_sampler, vert_in.uv).rgb, 1.0);
 }
 
+float SrgbToLinear(float c)
+{
+	return (c <= 0.04045) ? (c / 12.92) : pow((c + 0.055) / 1.055, 2.4);
+}
+
+float4 PSDrawSrgb(VertInOut vert_in) : TARGET
+{
+	float3 rgb = image.Sample(def_sampler, vert_in.uv).rgb;
+	rgb = float3(SrgbToLinear(rgb.r), SrgbToLinear(rgb.g),
+			SrgbToLinear(rgb.b));
+	return float4(rgb, 1.0);
+}
+
 technique Draw
 {
 	pass
 	{
 		vertex_shader = VSDefault(vert_in);
 		pixel_shader  = PSDraw(vert_in);
+	}
+}
+
+technique DrawSrgb
+{
+	pass
+	{
+		vertex_shader = VSDefault(vert_in);
+		pixel_shader  = PSDrawSrgb(vert_in);
 	}
 }

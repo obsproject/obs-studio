@@ -173,6 +173,7 @@ void device_load_swapchain(gs_device_t *device, gs_swapchain_t *swap)
 	device->cur_swap = swap;
 	if (swap) {
 		[device->plat->context setView:swap->wi->view];
+		gl_enable(GL_FRAMEBUFFER_SRGB);
 	} else {
 		[device->plat->context clearDrawable];
 	}

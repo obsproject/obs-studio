@@ -554,13 +554,17 @@ extern void device_load_swapchain(gs_device_t *device, gs_swapchain_t *swap)
 		XID window = swap->wi->window;
 		if (!glXMakeContextCurrent(dpy, window, window, ctx)) {
 			blog(LOG_ERROR, "Failed to make context current.");
+			return;
 		}
 	} else {
 		GLXPbuffer pbuf = device->plat->pbuffer;
 		if (!glXMakeContextCurrent(dpy, pbuf, pbuf, ctx)) {
 			blog(LOG_ERROR, "Failed to make context current.");
+			return;
 		}
 	}
+
+	gl_enable(GL_FRAMEBUFFER_SRGB);
 }
 
 enum swap_type {

@@ -71,6 +71,12 @@ static inline GLenum convert_gs_format(enum gs_color_format format)
 		return GL_RGBA;
 	case GS_DXT5:
 		return GL_RGBA;
+	case GS_RGBA_SRGB:
+		return GL_RGBA;
+	case GS_BGRX_SRGB:
+		return GL_BGRA;
+	case GS_BGRA_SRGB:
+		return GL_BGRA;
 	case GS_UNKNOWN:
 		return 0;
 	}
@@ -117,6 +123,12 @@ static inline GLenum convert_gs_internal_format(enum gs_color_format format)
 		return GL_COMPRESSED_RGBA_S3TC_DXT3_EXT;
 	case GS_DXT5:
 		return GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
+	case GS_RGBA_SRGB:
+		return GL_SRGB8_ALPHA8;
+	case GS_BGRX_SRGB:
+		return GL_SRGB8;
+	case GS_BGRA_SRGB:
+		return GL_SRGB8_ALPHA8;
 	case GS_UNKNOWN:
 		return 0;
 	}
@@ -162,6 +174,12 @@ static inline GLenum get_gl_format_type(enum gs_color_format format)
 	case GS_DXT3:
 		return GL_UNSIGNED_BYTE;
 	case GS_DXT5:
+		return GL_UNSIGNED_BYTE;
+	case GS_RGBA_SRGB:
+		return GL_UNSIGNED_BYTE;
+	case GS_BGRX_SRGB:
+		return GL_UNSIGNED_BYTE;
+	case GS_BGRA_SRGB:
 		return GL_UNSIGNED_BYTE;
 	case GS_UNKNOWN:
 		return 0;

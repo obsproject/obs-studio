@@ -480,7 +480,7 @@ void gs_effect_set_vec4(gs_eparam_t *param, const struct vec4 *val)
 void gs_effect_set_color(gs_eparam_t *param, uint32_t argb)
 {
 	struct vec4 v_color;
-	vec4_from_bgra(&v_color, argb);
+	vec4_from_bgra_srgb(&v_color, argb);
 	effect_setval_inline(param, &v_color, sizeof(struct vec4));
 }
 

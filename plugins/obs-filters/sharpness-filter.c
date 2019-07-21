@@ -77,7 +77,7 @@ static void sharpness_render(void *data, gs_effect_t *effect)
 {
 	struct sharpness_data *filter = data;
 
-	if (!obs_source_process_filter_begin(filter->context, GS_RGBA,
+	if (!obs_source_process_filter_begin(filter->context, GS_RGBA_SRGB,
 					     OBS_ALLOW_DIRECT_RENDERING))
 		return;
 

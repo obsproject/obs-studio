@@ -98,6 +98,9 @@ EXPORT gs_texture_t *device_get_render_target(const gs_device_t *device);
 EXPORT gs_zstencil_t *device_get_zstencil_target(const gs_device_t *device);
 EXPORT void device_set_render_target(gs_device_t *device, gs_texture_t *tex,
 				     gs_zstencil_t *zstencil);
+EXPORT void device_set_render_target_no_srgb(gs_device_t *device,
+					     gs_texture_t *tex,
+					     gs_zstencil_t *zstencil);
 EXPORT void device_set_cube_render_target(gs_device_t *device,
 					  gs_texture_t *cubetex, int side,
 					  gs_zstencil_t *zstencil);

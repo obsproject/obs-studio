@@ -73,6 +73,9 @@ enum gs_color_format {
 	GS_DXT3,
 	GS_DXT5,
 	GS_R8G8,
+	GS_RGBA_SRGB,
+	GS_BGRX_SRGB,
+	GS_BGRA_SRGB,
 };
 
 enum gs_zstencil_format {
@@ -434,6 +437,8 @@ EXPORT gs_texrender_t *gs_texrender_create(enum gs_color_format format,
 EXPORT void gs_texrender_destroy(gs_texrender_t *texrender);
 EXPORT bool gs_texrender_begin(gs_texrender_t *texrender, uint32_t cx,
 			       uint32_t cy);
+EXPORT bool gs_texrender_begin_no_srgb(gs_texrender_t *texrender, uint32_t cx,
+				       uint32_t cy);
 EXPORT void gs_texrender_end(gs_texrender_t *texrender);
 EXPORT void gs_texrender_reset(gs_texrender_t *texrender);
 EXPORT gs_texture_t *gs_texrender_get_texture(const gs_texrender_t *texrender);
@@ -651,6 +656,8 @@ EXPORT gs_texture_t *gs_get_render_target(void);
 EXPORT gs_zstencil_t *gs_get_zstencil_target(void);
 
 EXPORT void gs_set_render_target(gs_texture_t *tex, gs_zstencil_t *zstencil);
+EXPORT void gs_set_render_target_no_srgb(gs_texture_t *tex,
+					 gs_zstencil_t *zstencil);
 EXPORT void gs_set_cube_render_target(gs_texture_t *cubetex, int side,
 				      gs_zstencil_t *zstencil);
 
@@ -908,6 +915,12 @@ static inline uint32_t gs_get_format_bpp(enum gs_color_format format)
 		return 8;
 	case GS_R8G8:
 		return 16;
+	case GS_RGBA_SRGB:
+		return 32;
+	case GS_BGRX_SRGB:
+		return 32;
+	case GS_BGRA_SRGB:
+		return 32;
 	case GS_UNKNOWN:
 		return 0;
 	}

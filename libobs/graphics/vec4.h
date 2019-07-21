@@ -226,6 +226,25 @@ static inline void vec4_from_rgba(struct vec4 *dst, uint32_t rgba)
 	dst->w = (float)((double)(rgba & 0xFF) * (1.0 / 255.0));
 }
 
+static inline float srgb_to_float(uint32_t c)
+{
+	const float nonlinear = (float)c * (1.0f / 255.0f);
+	return (nonlinear <= 0.04045f)
+		       ? nonlinear / 12.92f
+		       : powf((nonlinear + 0.055f) / 1.055f, 2.4f);
+}
+
+static inline void vec4_from_rgba_srgb(struct vec4 *dst, uint32_t rgba)
+{
+	dst->x = srgb_to_float(rgba & 0xFF);
+	rgba >>= 8;
+	dst->y = srgb_to_float(rgba & 0xFF);
+	rgba >>= 8;
+	dst->z = srgb_to_float(rgba & 0xFF);
+	rgba >>= 8;
+	dst->w = (float)((double)(rgba & 0xFF) * (1.0 / 255.0));
+}
+
 static inline void vec4_from_bgra(struct vec4 *dst, uint32_t bgra)
 {
 	dst->z = (float)((double)(bgra & 0xFF) * (1.0 / 255.0));
@@ -233,6 +252,17 @@ static inline void vec4_from_bgra(struct vec4 *dst, uint32_t bgra)
 	dst->y = (float)((double)(bgra & 0xFF) * (1.0 / 255.0));
 	bgra >>= 8;
 	dst->x = (float)((double)(bgra & 0xFF) * (1.0 / 255.0));
+	bgra >>= 8;
+	dst->w = (float)((double)(bgra & 0xFF) * (1.0 / 255.0));
+}
+
+static inline void vec4_from_bgra_srgb(struct vec4 *dst, uint32_t bgra)
+{
+	dst->z = srgb_to_float(bgra & 0xFF);
+	bgra >>= 8;
+	dst->y = srgb_to_float(bgra & 0xFF);
+	bgra >>= 8;
+	dst->x = srgb_to_float(bgra & 0xFF);
 	bgra >>= 8;
 	dst->w = (float)((double)(bgra & 0xFF) * (1.0 / 255.0));
 }

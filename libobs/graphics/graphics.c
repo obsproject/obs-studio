@@ -1662,6 +1662,17 @@ void gs_set_render_target(gs_texture_t *tex, gs_zstencil_t *zstencil)
 						   zstencil);
 }
 
+void gs_set_render_target_no_srgb(gs_texture_t *tex, gs_zstencil_t *zstencil)
+{
+	graphics_t *graphics = thread_graphics;
+
+	if (!gs_valid("gs_set_render_target"))
+		return;
+
+	graphics->exports.device_set_render_target_no_srgb(graphics->device,
+							   tex, zstencil);
+}
+
 void gs_set_cube_render_target(gs_texture_t *cubetex, int side,
 			       gs_zstencil_t *zstencil)
 {

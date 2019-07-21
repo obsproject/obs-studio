@@ -65,7 +65,7 @@ static void update_interval(struct gpu_delay_filter_data *f,
 			struct frame *frame =
 				circlebuf_data(&f->frames, i * sizeof(*frame));
 			frame->render =
-				gs_texrender_create(GS_RGBA, GS_ZS_NONE);
+				gs_texrender_create(GS_RGBA_SRGB, GS_ZS_NONE);
 		}
 
 		obs_leave_graphics();

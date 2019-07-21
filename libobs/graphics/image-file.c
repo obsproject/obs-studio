@@ -153,7 +153,7 @@ static bool init_animated_gif(gs_image_file_t *image, const char *path,
 
 		image->cx = (uint32_t)image->gif.width;
 		image->cy = (uint32_t)image->gif.height;
-		image->format = GS_RGBA;
+		image->format = GS_RGBA_SRGB;
 
 		if (mem_usage) {
 			*mem_usage += image->cx * image->cy * 4;

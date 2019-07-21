@@ -221,7 +221,7 @@ static void color_correction_filter_update(void *data, obs_data_t *settings)
 
 	/* Now get the overlay color data. */
 	uint32_t color = (uint32_t)obs_data_get_int(settings, SETTING_COLOR);
-	vec4_from_rgba(&filter->color, color);
+	vec4_from_rgba_srgb(&filter->color, color);
 
 	/*
 	* Now let's build our Color 'overlay' matrix.
@@ -342,7 +342,7 @@ static void color_correction_filter_render(void *data, gs_effect_t *effect)
 {
 	struct color_correction_filter_data *filter = data;
 
-	if (!obs_source_process_filter_begin(filter->context, GS_RGBA,
+	if (!obs_source_process_filter_begin(filter->context, GS_RGBA_SRGB,
 					     OBS_ALLOW_DIRECT_RENDERING))
 		return;
 

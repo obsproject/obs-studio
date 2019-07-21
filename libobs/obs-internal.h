@@ -775,11 +775,11 @@ static inline enum gs_color_format
 convert_video_format(enum video_format format)
 {
 	if (format == VIDEO_FORMAT_RGBA)
-		return GS_RGBA;
+		return GS_RGBA_SRGB;
 	else if (format == VIDEO_FORMAT_BGRA)
-		return GS_BGRA;
+		return GS_BGRA_SRGB;
 
-	return GS_BGRX;
+	return GS_BGRX_SRGB;
 }
 
 extern void obs_source_activate(obs_source_t *source, enum view_type type);

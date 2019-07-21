@@ -211,11 +211,11 @@ static inline enum gs_color_format convert_format(enum AVPixelFormat format)
 {
 	switch ((int)format) {
 	case AV_PIX_FMT_RGBA:
-		return GS_RGBA;
+		return GS_RGBA_SRGB;
 	case AV_PIX_FMT_BGRA:
-		return GS_BGRA;
+		return GS_BGRA_SRGB;
 	case AV_PIX_FMT_BGR0:
-		return GS_BGRX;
+		return GS_BGRX_SRGB;
 	}
 
 	return GS_BGRX;
@@ -229,7 +229,8 @@ uint8_t *gs_create_texture_file_data(const char *file,
 	uint8_t *data = NULL;
 
 	if (ffmpeg_image_init(&image, file)) {
-		data = bmalloc(image.cx * image.cy * 4);
+		const int size = image.cx * image.cy * 4;
+		data = bmalloc(size);
 
 		if (ffmpeg_image_decode(&image, data, image.cx * 4)) {
 			*format = convert_format(image.format);

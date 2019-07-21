@@ -96,7 +96,7 @@ void gs_texture_2d::InitTexture(const uint8_t **data)
 	td.Height = height;
 	td.MipLevels = genMipmaps ? 0 : levels;
 	td.ArraySize = type == GS_TEXTURE_CUBE ? 6 : 1;
-	td.Format = nv12 ? DXGI_FORMAT_NV12 : dxgiFormat;
+	td.Format = nv12 ? DXGI_FORMAT_NV12 : dxgiFormatResource;
 	td.BindFlags = D3D11_BIND_SHADER_RESOURCE;
 	td.SampleDesc.Count = 1;
 	td.CPUAccessFlags = isDynamic ? D3D11_CPU_ACCESS_WRITE : 0;
@@ -203,6 +203,15 @@ void gs_texture_2d::InitRenderTargets()
 		if (FAILED(hr))
 			throw HRError("Failed to create render target view",
 				      hr);
+		if (dxgiFormatNoSrgb != DXGI_FORMAT_UNKNOWN) {
+			rtv.Format = dxgiFormatNoSrgb;
+			hr = device->device->CreateRenderTargetView(
+				texture, &rtv, renderTargetNoSrgb[0].Assign());
+			if (FAILED(hr))
+				throw HRError(
+					"Failed to create render target view",
+					hr);
+		}
 	} else {
 		D3D11_RENDER_TARGET_VIEW_DESC rtv;
 		rtv.Format = dxgiFormat;
@@ -218,6 +227,16 @@ void gs_texture_2d::InitRenderTargets()
 				throw HRError("Failed to create cube render "
 					      "target view",
 					      hr);
+			if (dxgiFormatNoSrgb != DXGI_FORMAT_UNKNOWN) {
+				rtv.Format = dxgiFormatNoSrgb;
+				hr = device->device->CreateRenderTargetView(
+					texture, &rtv,
+					renderTargetNoSrgb[i].Assign());
+				if (FAILED(hr))
+					throw HRError("Failed to create cube "
+						      "render target view",
+						      hr);
+			}
 		}
 	}
 }
@@ -234,6 +253,8 @@ gs_texture_2d::gs_texture_2d(gs_device_t *device, uint32_t width,
 	  height(height),
 	  flags(flags_),
 	  dxgiFormat(ConvertGSTextureFormat(format)),
+	  dxgiFormatResource(ConvertGSTextureFormatResource(format)),
+	  dxgiFormatNoSrgb(ConvertGSTextureFormatNoSrgb(format)),
 	  isRenderTarget((flags_ & GS_RENDER_TARGET) != 0),
 	  isGDICompatible(gdiCompatible),
 	  isDynamic((flags_ & GS_DYNAMIC) != 0),
@@ -270,6 +291,8 @@ gs_texture_2d::gs_texture_2d(gs_device_t *device, ID3D11Texture2D *nv12tex,
 	this->width = td.Width / 2;
 	this->height = td.Height / 2;
 	this->dxgiFormat = DXGI_FORMAT_R8G8_UNORM;
+	this->dxgiFormatResource = DXGI_FORMAT_R8G8_UNORM;
+	this->dxgiFormatNoSrgb = DXGI_FORMAT_UNKNOWN;
 
 	InitResourceView();
 	if (isRenderTarget)
@@ -290,22 +313,18 @@ gs_texture_2d::gs_texture_2d(gs_device_t *device, uint32_t handle)
 
 	texture->GetDesc(&td);
 
+	const gs_color_format format = ConvertDXGITextureFormat(td.Format);
+
 	this->type = GS_TEXTURE_2D;
-	this->format = ConvertDXGITextureFormat(td.Format);
+	this->format = format;
 	this->levels = 1;
 	this->device = device;
 
 	this->width = td.Width;
 	this->height = td.Height;
 	this->dxgiFormat = td.Format;
+	this->dxgiFormatResource = ConvertGSTextureFormatResource(format);
+	this->dxgiFormatNoSrgb = ConvertGSTextureFormatNoSrgb(format);
 
-	memset(&resourceDesc, 0, sizeof(resourceDesc));
-	resourceDesc.Format = td.Format;
-	resourceDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
-	resourceDesc.Texture2D.MipLevels = 1;
-
-	hr = device->device->CreateShaderResourceView(texture, &resourceDesc,
-						      shaderRes.Assign());
-	if (FAILED(hr))
-		throw HRError("Failed to create shader resource view", hr);
+	InitResourceView();
 }

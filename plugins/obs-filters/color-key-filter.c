@@ -76,7 +76,7 @@ static inline void color_settings_update(struct color_key_filter_data *filter,
 	filter->brightness = (float)brightness;
 	filter->gamma = (float)gamma;
 
-	vec4_from_rgba(&filter->color, color);
+	vec4_from_rgba_srgb(&filter->color, color);
 }
 
 static inline void key_settings_update(struct color_key_filter_data *filter,
@@ -98,7 +98,7 @@ static inline void key_settings_update(struct color_key_filter_data *filter,
 	else if (strcmp(key_type, "magenta") == 0)
 		key_color = 0xFF00FF;
 
-	vec4_from_rgba(&filter->key_color, key_color | 0xFF000000);
+	vec4_from_rgba_srgb(&filter->key_color, key_color | 0xFF000000);
 
 	filter->similarity = (float)similarity / 1000.0f;
 	filter->smoothness = (float)smoothness / 1000.0f;
@@ -170,7 +170,7 @@ static void color_key_render(void *data, gs_effect_t *effect)
 {
 	struct color_key_filter_data *filter = data;
 
-	if (!obs_source_process_filter_begin(filter->context, GS_RGBA,
+	if (!obs_source_process_filter_begin(filter->context, GS_RGBA_SRGB,
 					     OBS_ALLOW_DIRECT_RENDERING))
 		return;
 

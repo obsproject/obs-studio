@@ -41,6 +41,9 @@ static inline int get_color_format_bits(enum gs_color_format format)
 {
 	switch ((uint32_t)format) {
 	case GS_RGBA:
+	case GS_BGRA:
+	case GS_RGBA_SRGB:
+	case GS_BGRA_SRGB:
 		return 32;
 	default:
 		return 0;
@@ -554,7 +557,9 @@ void device_load_swapchain(gs_device_t *device, gs_swapchain_t *swap)
 		hdc = swap->wi->hdc;
 
 	if (hdc) {
-		if (!wgl_make_current(hdc, device->plat->hrc))
+		if (wgl_make_current(hdc, device->plat->hrc))
+			gl_enable(GL_FRAMEBUFFER_SRGB);
+		else
 			blog(LOG_ERROR, "device_load_swapchain (GL) failed");
 	}
 }

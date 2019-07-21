@@ -33,18 +33,22 @@ void gs_index_buffer::Rebuild(ID3D11Device *dev)
 
 void gs_texture_2d::RebuildSharedTextureFallback()
 {
+	static const gs_color_format format = GS_BGRA;
+
 	td = {};
 	td.Width = 2;
 	td.Height = 2;
 	td.MipLevels = 1;
-	td.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
+	td.Format = ConvertGSTextureFormatResource(format);
 	td.ArraySize = 1;
 	td.SampleDesc.Count = 1;
 	td.BindFlags = D3D11_BIND_SHADER_RESOURCE;
 
 	width = td.Width;
 	height = td.Height;
-	dxgiFormat = td.Format;
+	dxgiFormat = ConvertGSTextureFormat(format);
+	dxgiFormatResource = td.Format;
+	dxgiFormatNoSrgb = ConvertGSTextureFormatNoSrgb(format);
 	levels = 1;
 
 	resourceDesc = {};

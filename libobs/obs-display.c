@@ -164,7 +164,7 @@ static inline void render_display_begin(struct obs_display *display,
 
 	gs_begin_scene();
 
-	vec4_from_rgba(&clear_color, display->background_color);
+	vec4_from_rgba_srgb(&clear_color, display->background_color);
 	clear_color.w = 1.0f;
 
 	gs_clear(GS_CLEAR_COLOR | GS_CLEAR_DEPTH | GS_CLEAR_STENCIL,
