@@ -1269,8 +1269,11 @@ static void source_output_audio_data(obs_source_t *source,
 		if (diff > MAX_TS_VAR && !using_direct_ts)
 			handle_ts_jump(source, source->next_audio_ts_min,
 				       in.timestamp, diff, os_time);
-		else if (diff < TS_SMOOTHING_THRESHOLD)
+		else if (diff < TS_SMOOTHING_THRESHOLD) {
+			if (source->async_unbuffered && source->async_decoupled)
+				source->timing_adjust = os_time - in.timestamp;
 			in.timestamp = source->next_audio_ts_min;
+		}
 	}
 
 	source->last_audio_ts = in.timestamp;
