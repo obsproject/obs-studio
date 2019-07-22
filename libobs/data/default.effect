@@ -1,5 +1,4 @@
 uniform float4x4 ViewProj;
-uniform float4x4 color_matrix;
 uniform texture2d image;
 
 sampler_state def_sampler {
@@ -34,13 +33,6 @@ float4 PSDrawAlphaDivide(VertInOut vert_in) : TARGET
 	return float4(rgba.rgb * multiplier, alpha);
 }
 
-float4 PSDrawMatrix(VertInOut vert_in) : TARGET
-{
-	float3 rgb = image.Sample(def_sampler, vert_in.uv).rgb;
-	float3 yuv = mul(float4(rgb, 1.0), color_matrix).xyz;
-	return float4(yuv, 1.0);
-}
-
 technique Draw
 {
 	pass
@@ -56,14 +48,5 @@ technique DrawAlphaDivide
 	{
 		vertex_shader = VSDefault(vert_in);
 		pixel_shader  = PSDrawAlphaDivide(vert_in);
-	}
-}
-
-technique DrawMatrix
-{
-	pass
-	{
-		vertex_shader = VSDefault(vert_in);
-		pixel_shader  = PSDrawMatrix(vert_in);
 	}
 }

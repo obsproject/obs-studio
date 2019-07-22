@@ -200,19 +200,12 @@ static inline gs_effect_t *get_scale_effect(struct obs_core_video *video,
 }
 
 static const char *render_output_texture_name = "render_output_texture";
-static inline void render_output_texture(struct obs_core_video *video)
+static inline gs_texture_t *render_output_texture(struct obs_core_video *video)
 {
-	profile_start(render_output_texture_name);
-
 	gs_texture_t *texture = video->render_texture;
 	gs_texture_t *target = video->output_texture;
 	uint32_t width = gs_texture_get_width(target);
 	uint32_t height = gs_texture_get_height(target);
-	struct vec2 base, base_i;
-
-	vec2_set(&base, (float)video->base_width, (float)video->base_height);
-	vec2_set(&base_i, 1.0f / (float)video->base_width,
-		 1.0f / (float)video->base_height);
 
 	gs_effect_t *effect = get_scale_effect(video, width, height);
 	gs_technique_t *tech;
@@ -220,12 +213,17 @@ static inline void render_output_texture(struct obs_core_video *video)
 	if (video->ovi.output_format == VIDEO_FORMAT_RGBA) {
 		tech = gs_effect_get_technique(effect, "DrawAlphaDivide");
 	} else {
-		tech = gs_effect_get_technique(effect, "DrawMatrix");
+		if ((effect == video->default_effect) &&
+		    (width == video->base_width) &&
+		    (height == video->base_height))
+			return texture;
+
+		tech = gs_effect_get_technique(effect, "Draw");
 	}
 
+	profile_start(render_output_texture_name);
+
 	gs_eparam_t *image = gs_effect_get_param_by_name(effect, "image");
-	gs_eparam_t *matrix =
-		gs_effect_get_param_by_name(effect, "color_matrix");
 	gs_eparam_t *bres =
 		gs_effect_get_param_by_name(effect, "base_dimension");
 	gs_eparam_t *bres_i =
@@ -235,12 +233,20 @@ static inline void render_output_texture(struct obs_core_video *video)
 	gs_set_render_target(target, NULL);
 	set_render_size(width, height);
 
-	if (bres)
+	if (bres) {
+		struct vec2 base;
+		vec2_set(&base, (float)video->base_width,
+			 (float)video->base_height);
 		gs_effect_set_vec2(bres, &base);
-	if (bres_i)
-		gs_effect_set_vec2(bres_i, &base_i);
+	}
 
-	gs_effect_set_val(matrix, video->color_matrix, sizeof(float) * 16);
+	if (bres_i) {
+		struct vec2 base_i;
+		vec2_set(&base_i, 1.0f / (float)video->base_width,
+			 1.0f / (float)video->base_height);
+		gs_effect_set_vec2(bres_i, &base_i);
+	}
+
 	gs_effect_set_texture(image, texture);
 
 	gs_enable_blending(false);
@@ -254,6 +260,8 @@ static inline void render_output_texture(struct obs_core_video *video)
 	gs_enable_blending(true);
 
 	profile_end(render_output_texture_name);
+
+	return target;
 }
 
 static inline void set_eparam(gs_effect_t *effect, const char *name, float val)
@@ -263,17 +271,23 @@ static inline void set_eparam(gs_effect_t *effect, const char *name, float val)
 }
 
 static const char *render_convert_texture_name = "render_convert_texture";
-static void render_convert_texture(struct obs_core_video *video)
+static void render_convert_texture(struct obs_core_video *video,
+				   gs_texture_t *texture)
 {
 	profile_start(render_convert_texture_name);
 
-	gs_texture_t *texture = video->output_texture;
 	gs_texture_t *target = video->convert_texture;
 	float fwidth = (float)video->output_width;
 	float fheight = (float)video->output_height;
 	size_t passes, i;
 
 	gs_effect_t *effect = video->conversion_effect;
+	gs_eparam_t *color_vec_y =
+		gs_effect_get_param_by_name(effect, "color_vec_y");
+	gs_eparam_t *color_vec_u =
+		gs_effect_get_param_by_name(effect, "color_vec_u");
+	gs_eparam_t *color_vec_v =
+		gs_effect_get_param_by_name(effect, "color_vec_v");
 	gs_eparam_t *image = gs_effect_get_param_by_name(effect, "image");
 	gs_technique_t *tech =
 		gs_effect_get_technique(effect, video->conversion_tech);
@@ -289,6 +303,17 @@ static void render_convert_texture(struct obs_core_video *video)
 	set_eparam(effect, "width_d2_i", 1.0f / (fwidth * 0.5f));
 	set_eparam(effect, "height_d2_i", 1.0f / (fheight * 0.5f));
 	set_eparam(effect, "input_height", (float)video->conversion_height);
+
+	struct vec4 vec_y, vec_u, vec_v;
+	vec4_set(&vec_y, video->color_matrix[4], video->color_matrix[5],
+		 video->color_matrix[6], video->color_matrix[7]);
+	vec4_set(&vec_u, video->color_matrix[0], video->color_matrix[1],
+		 video->color_matrix[2], video->color_matrix[3]);
+	vec4_set(&vec_v, video->color_matrix[8], video->color_matrix[9],
+		 video->color_matrix[10], video->color_matrix[11]);
+	gs_effect_set_vec4(color_vec_y, &vec_y);
+	gs_effect_set_vec4(color_vec_u, &vec_u);
+	gs_effect_set_vec4(color_vec_v, &vec_v);
 
 	gs_effect_set_texture(image, texture);
 
@@ -310,15 +335,31 @@ static void render_convert_texture(struct obs_core_video *video)
 	profile_end(render_convert_texture_name);
 }
 
-static void render_nv12(struct obs_core_video *video, gs_texture_t *target,
-			const char *tech_name, uint32_t width, uint32_t height)
+static void render_nv12(struct obs_core_video *video, gs_texture_t *texture,
+			gs_texture_t *target, const char *tech_name,
+			uint32_t width, uint32_t height)
 {
-	gs_texture_t *texture = video->output_texture;
-
 	gs_effect_t *effect = video->conversion_effect;
+	gs_eparam_t *color_vec_y =
+		gs_effect_get_param_by_name(effect, "color_vec_y");
+	gs_eparam_t *color_vec_u =
+		gs_effect_get_param_by_name(effect, "color_vec_u");
+	gs_eparam_t *color_vec_v =
+		gs_effect_get_param_by_name(effect, "color_vec_v");
 	gs_eparam_t *image = gs_effect_get_param_by_name(effect, "image");
 	gs_technique_t *tech = gs_effect_get_technique(effect, tech_name);
 	size_t passes, i;
+
+	struct vec4 vec_y, vec_u, vec_v;
+	vec4_set(&vec_y, video->color_matrix[4], video->color_matrix[5],
+		 video->color_matrix[6], video->color_matrix[7]);
+	vec4_set(&vec_u, video->color_matrix[0], video->color_matrix[1],
+		 video->color_matrix[2], video->color_matrix[3]);
+	vec4_set(&vec_v, video->color_matrix[8], video->color_matrix[9],
+		 video->color_matrix[10], video->color_matrix[11]);
+	gs_effect_set_vec4(color_vec_y, &vec_y);
+	gs_effect_set_vec4(color_vec_u, &vec_u);
+	gs_effect_set_vec4(color_vec_v, &vec_v);
 
 	gs_effect_set_texture(image, texture);
 
@@ -337,13 +378,14 @@ static void render_nv12(struct obs_core_video *video, gs_texture_t *target,
 }
 
 static const char *render_convert_nv12_name = "render_convert_texture_nv12";
-static void render_convert_texture_nv12(struct obs_core_video *video)
+static void render_convert_texture_nv12(struct obs_core_video *video,
+					gs_texture_t *texture)
 {
 	profile_start(render_convert_nv12_name);
 
-	render_nv12(video, video->convert_texture, "NV12_Y",
+	render_nv12(video, texture, video->convert_texture, "NV12_Y",
 		    video->output_width, video->output_height);
-	render_nv12(video, video->convert_uv_texture, "NV12_UV",
+	render_nv12(video, texture, video->convert_uv_texture, "NV12_UV",
 		    video->output_width / 2, video->output_height / 2);
 
 	video->texture_converted = true;
@@ -353,11 +395,10 @@ static void render_convert_texture_nv12(struct obs_core_video *video)
 
 static const char *stage_output_texture_name = "stage_output_texture";
 static inline void stage_output_texture(struct obs_core_video *video,
-					int cur_texture)
+					gs_texture_t *texture, int cur_texture)
 {
 	profile_start(stage_output_texture_name);
 
-	gs_texture_t *texture;
 	bool texture_ready;
 	gs_stagesurf_t *copy = video->copy_surfaces[cur_texture];
 
@@ -365,7 +406,6 @@ static inline void stage_output_texture(struct obs_core_video *video,
 		texture = video->convert_texture;
 		texture_ready = video->texture_converted;
 	} else {
-		texture = video->output_texture;
 		texture_ready = true;
 	}
 
@@ -486,7 +526,7 @@ static inline void render_video(struct obs_core_video *video, bool raw_active,
 	render_main_texture(video);
 
 	if (raw_active || gpu_active) {
-		render_output_texture(video);
+		gs_texture_t *texture = render_output_texture(video);
 
 #ifdef _WIN32
 		if (gpu_active) {
@@ -496,9 +536,9 @@ static inline void render_video(struct obs_core_video *video, bool raw_active,
 
 		if (video->gpu_conversion) {
 			if (video->using_nv12_tex)
-				render_convert_texture_nv12(video);
+				render_convert_texture_nv12(video, texture);
 			else
-				render_convert_texture(video);
+				render_convert_texture(video, texture);
 		}
 
 #ifdef _WIN32
@@ -508,7 +548,7 @@ static inline void render_video(struct obs_core_video *video, bool raw_active,
 		}
 #endif
 		if (raw_active)
-			stage_output_texture(video, cur_texture);
+			stage_output_texture(video, texture, cur_texture);
 	}
 
 	gs_set_render_target(NULL, NULL);
