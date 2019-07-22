@@ -582,6 +582,13 @@ void AutoConfigStreamPage::UpdateKeyLink()
 		text += QTStr(
 			"Basic.AutoConfig.StreamPage.StreamKey.LinkToSite");
 		text += "</a>";
+	} else if (serviceName == "Facebook Live") {
+		text += " <a href=\"https://";
+		text += "www.facebook.com/live/create";
+		text += "\">";
+		text += QTStr(
+			"Basic.AutoConfig.StreamPage.StreamKey.LinkToSite");
+		text += "</a>";
 	}
 
 	if (isYoutube) {
