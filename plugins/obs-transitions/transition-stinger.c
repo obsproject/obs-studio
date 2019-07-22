@@ -293,12 +293,15 @@ static bool transition_point_type_modified(obs_properties_t *ppts,
 	int64_t type = obs_data_get_int(s, "tp_type");
 	p = obs_properties_get(ppts, "transition_point");
 
-	if (type == TIMING_TIME)
+	if (type == TIMING_TIME) {
 		obs_property_set_description(
 			p, obs_module_text("TransitionPoint"));
-	else
+		obs_property_int_set_suffix(p, " ms");
+	} else {
 		obs_property_set_description(
 			p, obs_module_text("TransitionPointFrame"));
+		obs_property_int_set_suffix(p, "");
+	}
 	return true;
 }
 
@@ -320,10 +323,9 @@ static obs_properties_t *stinger_properties(void *data)
 
 	obs_property_set_modified_callback(p, transition_point_type_modified);
 
-	p = obs_properties_add_int(ppts, "transition_point",
-				   obs_module_text("TransitionPoint"), 0,
-				   120000, 1);
-	obs_property_int_set_suffix(p, " ms");
+	obs_properties_add_int(ppts, "transition_point",
+			       obs_module_text("TransitionPoint"), 0, 120000,
+			       1);
 
 	obs_property_t *monitor_list = obs_properties_add_list(
 		ppts, "audio_monitoring", obs_module_text("AudioMonitoring"),
