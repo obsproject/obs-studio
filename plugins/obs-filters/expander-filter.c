@@ -387,6 +387,7 @@ static bool presets_changed(obs_properties_t *props, obs_property_t *prop,
 static obs_properties_t *expander_properties(void *data)
 {
 	obs_properties_t *props = obs_properties_create();
+	obs_property_t *p;
 
 	obs_property_t *presets = obs_properties_add_list(
 		props, S_PRESETS, TEXT_PRESETS, OBS_COMBO_TYPE_LIST,
@@ -394,18 +395,26 @@ static obs_properties_t *expander_properties(void *data)
 	obs_property_list_add_string(presets, TEXT_PRESETS_EXP, "expander");
 	obs_property_list_add_string(presets, TEXT_PRESETS_GATE, "gate");
 	obs_property_set_modified_callback(presets, presets_changed);
-	obs_properties_add_float_slider(props, S_RATIO, TEXT_RATIO, MIN_RATIO,
-					MAX_RATIO, 0.1);
-	obs_properties_add_float_slider(props, S_THRESHOLD, TEXT_THRESHOLD,
-					MIN_THRESHOLD_DB, MAX_THRESHOLD_DB,
-					0.1);
-	obs_properties_add_int_slider(props, S_ATTACK_TIME, TEXT_ATTACK_TIME,
-				      MIN_ATK_RLS_MS, MAX_ATK_MS, 1);
-	obs_properties_add_int_slider(props, S_RELEASE_TIME, TEXT_RELEASE_TIME,
-				      MIN_ATK_RLS_MS, MAX_RLS_MS, 1);
-	obs_properties_add_float_slider(props, S_OUTPUT_GAIN, TEXT_OUTPUT_GAIN,
-					MIN_OUTPUT_GAIN_DB, MAX_OUTPUT_GAIN_DB,
-					0.1);
+	p = obs_properties_add_float_slider(props, S_RATIO, TEXT_RATIO,
+					    MIN_RATIO, MAX_RATIO, 0.1);
+	obs_property_float_set_suffix(p, ":1");
+	p = obs_properties_add_float_slider(props, S_THRESHOLD, TEXT_THRESHOLD,
+					    MIN_THRESHOLD_DB, MAX_THRESHOLD_DB,
+					    0.1);
+	obs_property_float_set_suffix(p, " dB");
+	p = obs_properties_add_int_slider(props, S_ATTACK_TIME,
+					  TEXT_ATTACK_TIME, MIN_ATK_RLS_MS,
+					  MAX_ATK_MS, 1);
+	obs_property_int_set_suffix(p, " ms");
+	p = obs_properties_add_int_slider(props, S_RELEASE_TIME,
+					  TEXT_RELEASE_TIME, MIN_ATK_RLS_MS,
+					  MAX_RLS_MS, 1);
+	obs_property_int_set_suffix(p, " ms");
+	p = obs_properties_add_float_slider(props, S_OUTPUT_GAIN,
+					    TEXT_OUTPUT_GAIN,
+					    MIN_OUTPUT_GAIN_DB,
+					    MAX_OUTPUT_GAIN_DB, 0.1);
+	obs_property_float_set_suffix(p, " dB");
 	obs_property_t *detect = obs_properties_add_list(
 		props, S_DETECTOR, TEXT_DETECTOR, OBS_COMBO_TYPE_LIST,
 		OBS_COMBO_FORMAT_STRING);

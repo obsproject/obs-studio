@@ -188,7 +188,7 @@
      <x>0</x>
      <y>0</y>
      <width>1079</width>
-     <height>21</height>
+     <height>22</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_File">
@@ -728,7 +728,7 @@
           <rect>
            <x>0</x>
            <y>0</y>
-           <width>80</width>
+           <width>64</width>
            <height>16</height>
           </rect>
          </property>
@@ -781,8 +781,8 @@
           <rect>
            <x>0</x>
            <y>0</y>
-           <width>28</width>
-           <height>16</height>
+           <width>16</width>
+           <height>28</height>
           </rect>
          </property>
          <property name="sizePolicy">
@@ -1025,7 +1025,7 @@
              <string>Basic.TransitionDuration</string>
             </property>
             <property name="suffix">
-             <string>ms</string>
+             <string> ms</string>
             </property>
             <property name="minimum">
              <number>2</number>
