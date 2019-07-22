@@ -107,6 +107,11 @@ public:
 
 	void EnableInFocusHotkeys(bool enable);
 
+	inline bool HotkeysEnabledInFocus() const
+	{
+		return enableHotkeysInFocus;
+	}
+
 	inline QMainWindow *GetMainWindow() const { return mainWindow.data(); }
 
 	inline config_t *GlobalConfig() const { return globalConfig; }

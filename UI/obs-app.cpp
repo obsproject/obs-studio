@@ -93,6 +93,9 @@ QObject *CreateShortcutFilter()
 {
 	return new OBSEventFilter([](QObject *obj, QEvent *event) {
 		auto mouse_event = [](QMouseEvent &event) {
+			if (!App()->HotkeysEnabledInFocus())
+				return true;
+
 			obs_key_combination_t hotkey = {0, OBS_KEY_NONE};
 			bool pressed = event.type() == QEvent::MouseButtonPress;
 
@@ -147,6 +150,9 @@ QObject *CreateShortcutFilter()
 		};
 
 		auto key_event = [&](QKeyEvent *event) {
+			if (!App()->HotkeysEnabledInFocus())
+				return true;
+
 			QDialog *dialog = qobject_cast<QDialog *>(obj);
 
 			obs_key_combination_t hotkey = {0, OBS_KEY_NONE};
