@@ -1257,13 +1257,13 @@ static bool StartupOBS(const char *locale, profiler_name_store_t *store)
 
 inline void OBSApp::ResetHotkeyState(bool inFocus)
 {
-	obs_hotkey_enable_background_press(inFocus || enableHotkeysInFocus);
+	obs_hotkey_enable_background_press(!inFocus || enableHotkeysInFocus);
 }
 
 void OBSApp::EnableInFocusHotkeys(bool enable)
 {
 	enableHotkeysInFocus = enable;
-	ResetHotkeyState(applicationState() != Qt::ApplicationActive);
+	ResetHotkeyState(applicationState() == Qt::ApplicationActive);
 }
 
 Q_DECLARE_METATYPE(VoidFunc)
@@ -1313,9 +1313,9 @@ bool OBSApp::OBSInit()
 
 	connect(this, &QGuiApplication::applicationStateChanged,
 		[this](Qt::ApplicationState state) {
-			ResetHotkeyState(state != Qt::ApplicationActive);
+			ResetHotkeyState(state == Qt::ApplicationActive);
 		});
-	ResetHotkeyState(applicationState() != Qt::ApplicationActive);
+	ResetHotkeyState(applicationState() == Qt::ApplicationActive);
 	return true;
 }
 
