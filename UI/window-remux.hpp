@@ -69,8 +69,8 @@ public:
 	void AutoRemux(QString inFile, QString outFile);
 
 protected:
-	void dropEvent(QDropEvent *ev);
-	void dragEnterEvent(QDragEnterEvent *ev);
+	virtual void dropEvent(QDropEvent *ev) override;
+	virtual void dragEnterEvent(QDragEnterEvent *ev) override;
 
 	void remuxNextEntry();
 
