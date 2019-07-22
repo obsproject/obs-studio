@@ -632,30 +632,6 @@ static void set_gpu_converted_data(struct obs_core_video *video,
 	}
 }
 
-static void convert_frame(struct video_frame *output,
-			  const struct video_data *input,
-			  const struct video_output_info *info)
-{
-	if (info->format == VIDEO_FORMAT_I420) {
-		compress_uyvx_to_i420(input->data[0], input->linesize[0], 0,
-				      info->height, output->data,
-				      output->linesize);
-
-	} else if (info->format == VIDEO_FORMAT_NV12) {
-		compress_uyvx_to_nv12(input->data[0], input->linesize[0], 0,
-				      info->height, output->data,
-				      output->linesize);
-
-	} else if (info->format == VIDEO_FORMAT_I444) {
-		convert_uyvx_to_i444(input->data[0], input->linesize[0], 0,
-				     info->height, output->data,
-				     output->linesize);
-
-	} else {
-		blog(LOG_ERROR, "convert_frame: unsupported texture format");
-	}
-}
-
 static inline void copy_rgbx_frame(struct video_frame *output,
 				   const struct video_data *input,
 				   const struct video_output_info *info)
@@ -690,9 +666,6 @@ static inline void output_video_data(struct obs_core_video *video,
 		if (video->gpu_conversion) {
 			set_gpu_converted_data(video, &output_frame,
 					       input_frame, info);
-
-		} else if (format_is_yuv(info->format)) {
-			convert_frame(&output_frame, input_frame, info);
 		} else {
 			copy_rgbx_frame(&output_frame, input_frame, info);
 		}
