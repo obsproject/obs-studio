@@ -7238,8 +7238,7 @@ void OBSBasic::on_actionShowAbout_triggered()
 
 void OBSBasic::ResizeOutputSizeOfSource()
 {
-	if (ui->streamButton->isChecked() || ui->recordButton->isChecked() ||
-	    (replayBufferButton && replayBufferButton->isChecked()))
+	if (obs_video_active())
 		return;
 
 	QMessageBox resize_output(this);
