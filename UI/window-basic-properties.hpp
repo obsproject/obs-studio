@@ -21,8 +21,14 @@
 #include <QDialogButtonBox>
 #include <QPointer>
 #include <QSplitter>
+#include <QTabBar>
+#include <QStackedWidget>
 #include "qt-display.hpp"
 #include <obs.hpp>
+#include "window-basic-filters.hpp"
+#include "window-basic-transform.hpp"
+
+enum PropertiesType { Scene, Source, Transition };
 
 class OBSPropertiesView;
 class OBSBasic;
@@ -37,13 +43,32 @@ private:
 	bool acceptClicked;
 
 	OBSSource source;
+	OBSSceneItem item;
 	OBSSignal removedSignal;
 	OBSSignal renamedSignal;
 	OBSSignal updatePropertiesSignal;
 	OBSData oldSettings;
 	OBSPropertiesView *view;
+	OBSBasicFilters *filters;
+	OBSBasicTransform *transformWindow;
 	QDialogButtonBox *buttonBox;
 	QSplitter *windowSplitter;
+	QStackedWidget *stackedWidget;
+	QTabBar *tabsLeft;
+	QTabBar *tabsRight;
+	QWidget *PerSceneTransitionWidget(QWidget *parent);
+	QWidget *AdvancedItemTab(QWidget *parent);
+	QWidget *AdvancedGlobalTab(QWidget *parent);
+	QComboBox *combo;
+	QSpinBox *duration;
+	QComboBox *deinterlace;
+	QComboBox *sf;
+	QComboBox *order;
+	QWidget *trOverride;
+	QWidget *itemAdvanced;
+	QWidget *globalAdvanced;
+
+	enum PropertiesType propType;
 
 	OBSSource sourceA;
 	OBSSource sourceB;
@@ -60,15 +85,50 @@ private:
 	int CheckSettings();
 	void Cleanup();
 
+	void ShowGeneral();
+	void ShowFilters();
+	void ShowTransform();
+	void ShowGlobalAdvanced();
+	void ShowItemAdvanced();
+	void ShowPerSceneTransition();
+	void HideLeft();
+	void HideRight();
+
+	void LoadOriginalSettings();
+	void SaveOriginalSettings();
+
+	void ResetSourcesDialog();
+	void ResetScenesDialog();
+	void ResetTransitionsDialog();
+
+	obs_transform_info originalTransform;
+	obs_sceneitem_crop originalCrop;
+
+	obs_deinterlace_mode originalDeinterlaceMode;
+	obs_deinterlace_field_order originalDeinterlaceOrder;
+	obs_scale_type originalScaleFilter;
+
+	const char *originalTransition;
+	int originalDuration;
+
 private slots:
 	void on_buttonBox_clicked(QAbstractButton *button);
 	void AddPreviewButton();
+	void SetDeinterlacingMode(int index);
+	void SetDeinterlacingOrder(int index);
+	void SetScaleFilter(int index);
+	void TabsLeftClicked(int index);
+	void TabsRightClicked(int index);
 
 public:
-	OBSBasicProperties(QWidget *parent, OBSSource source_);
+	OBSBasicProperties(QWidget *parent, OBSSource source_,
+			   PropertiesType type_);
 	~OBSBasicProperties();
 
 	void Init();
+	void OpenTransformTab();
+
+	OBSSource GetSource();
 
 protected:
 	virtual void closeEvent(QCloseEvent *event) override;

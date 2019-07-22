@@ -7,7 +7,7 @@
 
 class OBSBasic;
 
-class OBSBasicTransform : public QDialog {
+class OBSBasicTransform : public QWidget {
 	Q_OBJECT
 
 private:
@@ -15,6 +15,7 @@ private:
 
 	OBSBasic *main;
 	OBSSceneItem item;
+	OBSScene curScene;
 	OBSSignal channelChangedSignal;
 	OBSSignal transformSignal;
 	OBSSignal removeSignal;
@@ -42,8 +43,8 @@ private slots:
 	void OnBoundsType(int index);
 	void OnControlChanged();
 	void OnCropChanged();
-	void on_resetButton_clicked();
 
 public:
-	OBSBasicTransform(OBSBasic *parent);
+	OBSBasicTransform(QWidget *parent, OBSScene scene_);
+	void ResetTransform();
 };

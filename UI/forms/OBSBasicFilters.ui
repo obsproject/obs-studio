@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
  <class>OBSBasicFilters</class>
- <widget class="QDialog" name="OBSBasicFilters">
+ <widget class="QWidget" name="OBSBasicFilters">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -372,22 +372,6 @@
       <layout class="QVBoxLayout" name="rightContainerLayout">
        <item>
         <layout class="QVBoxLayout" name="rightLayout">
-         <item>
-          <widget class="OBSQTDisplay" name="preview" native="true">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="minimumSize">
-            <size>
-             <width>24</width>
-             <height>24</height>
-            </size>
-           </property>
-          </widget>
-         </item>
         </layout>
        </item>
        <item>
@@ -410,13 +394,6 @@
             </size>
            </property>
           </spacer>
-         </item>
-         <item>
-          <widget class="QDialogButtonBox" name="buttonBox">
-           <property name="standardButtons">
-            <set>QDialogButtonBox::Reset|QDialogButtonBox::Close</set>
-           </property>
-          </widget>
          </item>
         </layout>
        </item>

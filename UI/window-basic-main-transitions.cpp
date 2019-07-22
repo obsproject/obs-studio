@@ -162,7 +162,7 @@ void OBSBasic::InitTransition(obs_source_t *transition)
 			       this);
 }
 
-static inline OBSSource GetTransitionComboItem(QComboBox *combo, int idx)
+OBSSource OBSBasic::GetTransitionComboItem(QComboBox *combo, int idx)
 {
 	return combo->itemData(idx).value<OBSSource>();
 }
@@ -505,7 +505,7 @@ void OBSBasic::AddTransition()
 			QT_UTF8(name.c_str()),
 			QVariant::fromValue(OBSSource(source)));
 		ui->transitions->setCurrentIndex(ui->transitions->count() - 1);
-		CreatePropertiesWindow(source);
+		CreatePropertiesWindow(source, PropertiesType::Transition);
 		obs_source_release(source);
 
 		if (api)
@@ -629,7 +629,9 @@ void OBSBasic::on_transitionProps_clicked()
 	if (!obs_source_configurable(source))
 		return;
 
-	auto properties = [&]() { CreatePropertiesWindow(source); };
+	auto properties = [&]() {
+		CreatePropertiesWindow(source, PropertiesType::Transition);
+	};
 
 	QMenu menu(this);
 
@@ -879,86 +881,6 @@ void OBSBasic::on_modeSwitch_clicked()
 static inline void ResetQuickTransitionText(QuickTransition *qt)
 {
 	qt->button->setText(MakeQuickTransitionText(qt));
-}
-
-QMenu *OBSBasic::CreatePerSceneTransitionMenu()
-{
-	OBSSource scene = GetCurrentSceneSource();
-	QMenu *menu = new QMenu(QTStr("TransitionOverride"));
-	QAction *action;
-
-	OBSData data = obs_source_get_private_settings(scene);
-	obs_data_release(data);
-
-	obs_data_set_default_int(data, "transition_duration", 300);
-
-	const char *curTransition = obs_data_get_string(data, "transition");
-	int curDuration = (int)obs_data_get_int(data, "transition_duration");
-
-	QSpinBox *duration = new QSpinBox(menu);
-	duration->setMinimum(50);
-	duration->setSuffix("ms");
-	duration->setMaximum(20000);
-	duration->setSingleStep(50);
-	duration->setValue(curDuration);
-
-	auto setTransition = [this](QAction *action) {
-		int idx = action->property("transition_index").toInt();
-		OBSSource scene = GetCurrentSceneSource();
-		OBSData data = obs_source_get_private_settings(scene);
-		obs_data_release(data);
-
-		if (idx == -1) {
-			obs_data_set_string(data, "transition", "");
-			return;
-		}
-
-		OBSSource tr = GetTransitionComboItem(ui->transitions, idx);
-		const char *name = obs_source_get_name(tr);
-
-		obs_data_set_string(data, "transition", name);
-	};
-
-	auto setDuration = [this](int duration) {
-		OBSSource scene = GetCurrentSceneSource();
-		OBSData data = obs_source_get_private_settings(scene);
-		obs_data_release(data);
-
-		obs_data_set_int(data, "transition_duration", duration);
-	};
-
-	connect(duration, (void (QSpinBox::*)(int)) & QSpinBox::valueChanged,
-		setDuration);
-
-	for (int i = -1; i < ui->transitions->count(); i++) {
-		const char *name = "";
-
-		if (i >= 0) {
-			OBSSource tr;
-			tr = GetTransitionComboItem(ui->transitions, i);
-			name = obs_source_get_name(tr);
-		}
-
-		bool match = (name && strcmp(name, curTransition) == 0);
-
-		if (!name || !*name)
-			name = Str("None");
-
-		action = menu->addAction(QT_UTF8(name));
-		action->setProperty("transition_index", i);
-		action->setCheckable(true);
-		action->setChecked(match);
-
-		connect(action, &QAction::triggered,
-			std::bind(setTransition, action));
-	}
-
-	QWidgetAction *durationAction = new QWidgetAction(menu);
-	durationAction->setDefaultWidget(duration);
-
-	menu->addSeparator();
-	menu->addAction(durationAction);
-	return menu;
 }
 
 QMenu *OBSBasic::CreateTransitionMenu(QWidget *parent, QuickTransition *qt)

@@ -29,7 +29,7 @@ class QMenu;
 
 #include "ui_OBSBasicFilters.h"
 
-class OBSBasicFilters : public QDialog {
+class OBSBasicFilters : public QWidget {
 	Q_OBJECT
 
 private:
@@ -80,7 +80,6 @@ private slots:
 	void ReorderFilters();
 	void RenameAsyncFilter();
 	void RenameEffectFilter();
-	void ResetFilters();
 
 	void AddFilterFromAction();
 
@@ -115,6 +114,6 @@ public:
 
 	void Init();
 
-protected:
-	virtual void closeEvent(QCloseEvent *event) override;
+public slots:
+	void ResetFilters();
 };
