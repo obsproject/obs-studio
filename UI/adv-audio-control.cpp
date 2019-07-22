@@ -64,15 +64,14 @@ OBSAdvAudioCtrl::OBSAdvAudioCtrl(QGridLayout *, obs_source_t *source_)
 	hlayout = new QHBoxLayout();
 	hlayout->setContentsMargins(0, 0, 0, 0);
 	balanceContainer->setLayout(hlayout);
-	balanceContainer->setMinimumWidth(100);
+	balanceContainer->setFixedWidth(150);
 
 	labelL->setText("L");
 
 	labelR->setText("R");
 
-	nameLabel->setMinimumWidth(170);
 	nameLabel->setText(QT_UTF8(sourceName));
-	nameLabel->setAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
+	nameLabel->setAlignment(Qt::AlignVCenter);
 
 	volume->setMinimum(MIN_DB - 0.1);
 	volume->setMaximum(MAX_DB);
@@ -80,6 +79,7 @@ OBSAdvAudioCtrl::OBSAdvAudioCtrl(QGridLayout *, obs_source_t *source_)
 	volume->setDecimals(1);
 	volume->setSuffix(" dB");
 	volume->setValue(obs_mul_to_db(vol));
+	volume->setFixedWidth(100);
 
 	if (volume->value() < MIN_DB)
 		volume->setSpecialValueText("-" + QT_UTF8("\u221E") + " dB");
@@ -87,8 +87,8 @@ OBSAdvAudioCtrl::OBSAdvAudioCtrl(QGridLayout *, obs_source_t *source_)
 	forceMono->setChecked((flags & OBS_SOURCE_FLAG_FORCE_MONO) != 0);
 
 	forceMonoContainer->layout()->addWidget(forceMono);
-	forceMonoContainer->layout()->setAlignment(
-		forceMono, Qt::AlignHCenter | Qt::AlignVCenter);
+	forceMonoContainer->layout()->setAlignment(forceMono, Qt::AlignVCenter);
+	forceMonoContainer->setFixedWidth(50);
 
 	balance->setOrientation(Qt::Horizontal);
 	balance->setMinimum(0);
@@ -112,7 +112,9 @@ OBSAdvAudioCtrl::OBSAdvAudioCtrl(QGridLayout *, obs_source_t *source_)
 	int64_t cur_sync = obs_source_get_sync_offset(source);
 	syncOffset->setMinimum(-950);
 	syncOffset->setMaximum(20000);
+	syncOffset->setSuffix(" ms");
 	syncOffset->setValue(int(cur_sync / NSEC_PER_MSEC));
+	syncOffset->setFixedWidth(100);
 
 	int idx;
 #if defined(_WIN32) || defined(__APPLE__) || HAVE_PULSEAUDIO
@@ -213,8 +215,8 @@ void OBSAdvAudioCtrl::ShowAudioControl(QGridLayout *layout)
 	layout->addWidget(monitoringType, lastRow, idx++);
 #endif
 	layout->addWidget(mixerContainer, lastRow, idx++);
-	layout->layout()->setAlignment(mixerContainer,
-				       Qt::AlignHCenter | Qt::AlignVCenter);
+	layout->layout()->setAlignment(mixerContainer, Qt::AlignVCenter);
+	layout->setHorizontalSpacing(15);
 }
 
 /* ------------------------------------------------------------------------- */
