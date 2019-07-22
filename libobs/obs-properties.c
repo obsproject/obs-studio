@@ -336,27 +336,44 @@ void obs_properties_remove_by_name(obs_properties_t *props, const char *name)
 			break;
 		}
 
+		if (cur->type == OBS_PROPERTY_GROUP) {
+			obs_properties_remove_by_name(
+				obs_property_group_content(cur), name);
+		}
+
 		prev = cur;
 		cur = cur->next;
+	}
+}
+
+void obs_properties_apply_settings_internal(obs_properties_t *props,
+					    obs_data_t *settings,
+					    obs_properties_t *realprops)
+{
+	struct obs_property *p;
+
+	p = props->first_property;
+	while (p) {
+		if (p->type == OBS_PROPERTY_GROUP) {
+			obs_properties_apply_settings_internal(
+				obs_property_group_content(p), settings,
+				realprops);
+		}
+		if (p->modified)
+			p->modified(realprops, p, settings);
+		else if (p->modified2)
+			p->modified2(p->priv, realprops, p, settings);
+		p = p->next;
 	}
 }
 
 void obs_properties_apply_settings(obs_properties_t *props,
 				   obs_data_t *settings)
 {
-	struct obs_property *p;
-
 	if (!props)
 		return;
 
-	p = props->first_property;
-	while (p) {
-		if (p->modified)
-			p->modified(props, p, settings);
-		else if (p->modified2)
-			p->modified2(p->priv, props, p, settings);
-		p = p->next;
-	}
+	obs_properties_apply_settings_internal(props, settings, props);
 }
 
 /* ------------------------------------------------------------------------- */
