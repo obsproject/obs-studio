@@ -9,8 +9,12 @@ class RestreamAuth : public OAuthStreamKey {
 
 	QSharedPointer<RestreamWidget> chat;
 	QSharedPointer<RestreamWidget> info;
+	QSharedPointer<RestreamWidget> channels;
+
 	QSharedPointer<QAction> chatMenu;
 	QSharedPointer<QAction> infoMenu;
+	QSharedPointer<QAction> channelMenu;
+
 	bool uiLoaded = false;
 
 	virtual bool RetryLogin() override;
