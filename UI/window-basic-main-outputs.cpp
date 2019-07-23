@@ -1305,7 +1305,18 @@ inline void AdvancedOutput::SetupRecording()
 	bool rescale = config_get_bool(main->Config(), "AdvOut", "RecRescale");
 	const char *rescaleRes =
 		config_get_string(main->Config(), "AdvOut", "RecRescaleRes");
-	int tracks = config_get_int(main->Config(), "AdvOut", "RecTracks");
+	int tracks;
+
+	const char *recFormat =
+		config_get_string(main->Config(), "AdvOut", "RecFormat");
+
+	bool flv = strcmp(recFormat, "flv") == 0;
+
+	if (flv)
+		tracks = config_get_int(main->Config(), "AdvOut", "FLVTrack");
+	else
+		tracks = config_get_int(main->Config(), "AdvOut", "RecTracks");
+
 	obs_data_t *settings = obs_data_create();
 	unsigned int cx = 0;
 	unsigned int cy = 0;
@@ -1340,15 +1351,24 @@ inline void AdvancedOutput::SetupRecording()
 						     h264Recording);
 	}
 
-	for (int i = 0; i < MAX_AUDIO_MIXES; i++) {
-		if ((tracks & (1 << i)) != 0) {
-			obs_output_set_audio_encoder(fileOutput, aacTrack[i],
-						     idx);
-			if (replayBuffer)
-				obs_output_set_audio_encoder(replayBuffer,
+	if (!flv) {
+		for (int i = 0; i < MAX_AUDIO_MIXES; i++) {
+			if ((tracks & (1 << i)) != 0) {
+				obs_output_set_audio_encoder(fileOutput,
 							     aacTrack[i], idx);
-			idx++;
+				if (replayBuffer)
+					obs_output_set_audio_encoder(
+						replayBuffer, aacTrack[i], idx);
+				idx++;
+			}
 		}
+	} else if (flv && tracks != 0) {
+		obs_output_set_audio_encoder(fileOutput, aacTrack[tracks - 1],
+					     idx);
+
+		if (replayBuffer)
+			obs_output_set_audio_encoder(replayBuffer,
+						     aacTrack[tracks - 1], idx);
 	}
 
 	obs_data_set_string(settings, "path", path);
