@@ -3383,32 +3383,20 @@ void obs_source_process_filter_tech_end(obs_source_t *filter,
 		render_filter_bypass(target, effect, tech);
 	} else {
 		texture = gs_texrender_get_texture(filter->filter_texrender);
-		render_filter_tex(texture, effect, width, height, tech);
+		if (texture) {
+			render_filter_tex(texture, effect, width, height, tech);
+		}
 	}
 }
 
 void obs_source_process_filter_end(obs_source_t *filter, gs_effect_t *effect,
 				   uint32_t width, uint32_t height)
 {
-	obs_source_t *target, *parent;
-	gs_texture_t *texture;
-	uint32_t parent_flags;
-
 	if (!obs_ptr_valid(filter, "obs_source_process_filter_end"))
 		return;
 
-	target = obs_filter_get_target(filter);
-	parent = obs_filter_get_parent(filter);
-	parent_flags = parent->info.output_flags;
-
-	if (can_bypass(target, parent, parent_flags, filter->allow_direct)) {
-		render_filter_bypass(target, effect, "Draw");
-	} else {
-		texture = gs_texrender_get_texture(filter->filter_texrender);
-		if (texture)
-			render_filter_tex(texture, effect, width, height,
-					  "Draw");
-	}
+	obs_source_process_filter_tech_end(filter, effect, width, height,
+					   "Draw");
 }
 
 void obs_source_skip_video_filter(obs_source_t *filter)
