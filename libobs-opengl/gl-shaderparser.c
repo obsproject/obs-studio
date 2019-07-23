@@ -669,12 +669,6 @@ static void gl_rename_attributes(struct gl_shader_parser *glsp)
 		size_t val;
 
 		if (attrib->input) {
-			if (strcmp(attrib->mapping, "VERTEXID") == 0) {
-				dstr_replace(&glsp->gl_string,
-					     attrib->name.array, "gl_VertexID");
-				continue;
-			}
-
 			prefix = glsp->input_prefix;
 			val = input_idx++;
 		} else {
