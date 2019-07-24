@@ -28,11 +28,14 @@ OBSBasicPreview::OBSBasicPreview(QWidget *parent, Qt::WindowFlags flags)
 
 OBSBasicPreview::~OBSBasicPreview()
 {
-	if (overflow) {
-		obs_enter_graphics();
+	obs_enter_graphics();
+
+	if (overflow)
 		gs_texture_destroy(overflow);
-		obs_leave_graphics();
-	}
+	if (rectFill)
+		gs_vertexbuffer_destroy(rectFill);
+
+	obs_leave_graphics();
 }
 
 vec2 OBSBasicPreview::GetMouseEventPos(QMouseEvent *event)
@@ -66,6 +69,22 @@ struct SceneFindData {
 
 	inline SceneFindData(const vec2 &pos_, bool selectBelow_)
 		: pos(pos_), selectBelow(selectBelow_)
+	{
+	}
+};
+
+struct SceneFindBoxData {
+	const vec2 &startPos;
+	const vec2 &pos;
+	std::vector<obs_sceneitem_t *> sceneItems;
+
+	SceneFindBoxData(const SceneFindData &) = delete;
+	SceneFindBoxData(SceneFindData &&) = delete;
+	SceneFindBoxData &operator=(const SceneFindData &) = delete;
+	SceneFindBoxData &operator=(SceneFindData &&) = delete;
+
+	inline SceneFindBoxData(const vec2 &startPos_, const vec2 &pos_)
+		: startPos(startPos_), pos(pos_)
 	{
 	}
 };
@@ -518,6 +537,8 @@ void OBSBasicPreview::mousePressEvent(QMouseEvent *event)
 	float y = float(event->y()) - main->previewY / pixelRatio;
 	Qt::KeyboardModifiers modifiers = QGuiApplication::keyboardModifiers();
 	bool altDown = (modifiers & Qt::AltModifier);
+	bool shiftDown = (modifiers & Qt::ShiftModifier);
+	bool ctrlDown = (modifiers & Qt::ControlModifier);
 
 	OBSQTDisplay::mousePressEvent(event);
 
@@ -528,8 +549,24 @@ void OBSBasicPreview::mousePressEvent(QMouseEvent *event)
 	if (event->button() == Qt::LeftButton)
 		mouseDown = true;
 
+	{
+		std::lock_guard<std::mutex> lock(selectMutex);
+		selectedItems.clear();
+	}
+
 	if (altDown)
 		cropping = true;
+
+	if (altDown || shiftDown || ctrlDown) {
+		vec2 s;
+		SceneFindBoxData data(s, s);
+
+		obs_scene_enum_items(main->GetCurrentScene(), FindSelected,
+				     &data);
+
+		std::lock_guard<std::mutex> lock(selectMutex);
+		selectedItems = data.sceneItems;
+	}
 
 	vec2_set(&startPos, x, y);
 	GetStretchHandleData(startPos);
@@ -540,6 +577,8 @@ void OBSBasicPreview::mousePressEvent(QMouseEvent *event)
 
 	mouseOverItems = SelectedAtPos(startPos);
 	vec2_zero(&lastMoveOffset);
+
+	mousePos = startPos;
 }
 
 static bool select_one(obs_scene_t *scene, obs_sceneitem_t *item, void *param)
@@ -601,6 +640,37 @@ void OBSBasicPreview::mouseReleaseEvent(QMouseEvent *event)
 		if (!mouseMoved)
 			ProcessClick(pos);
 
+		if (selectionBox) {
+			Qt::KeyboardModifiers modifiers =
+				QGuiApplication::keyboardModifiers();
+
+			bool altDown = modifiers & Qt::AltModifier;
+			bool shiftDown = modifiers & Qt::ShiftModifier;
+			bool ctrlDown = modifiers & Qt::ControlModifier;
+
+			std::lock_guard<std::mutex> lock(selectMutex);
+			if (altDown || ctrlDown || shiftDown) {
+				for (int i = 0; i < selectedItems.size(); i++) {
+					obs_sceneitem_select(selectedItems[i],
+							     true);
+				}
+			}
+
+			for (int i = 0; i < hoveredPreviewItems.size(); i++) {
+				bool select = true;
+				obs_sceneitem_t *item = hoveredPreviewItems[i];
+
+				if (altDown) {
+					select = false;
+				} else if (ctrlDown) {
+					select = !obs_sceneitem_selected(item);
+				}
+
+				obs_sceneitem_select(hoveredPreviewItems[i],
+						     select);
+			}
+		}
+
 		if (stretchGroup) {
 			obs_sceneitem_defer_group_resize_end(stretchGroup);
 		}
@@ -610,9 +680,14 @@ void OBSBasicPreview::mouseReleaseEvent(QMouseEvent *event)
 		mouseDown = false;
 		mouseMoved = false;
 		cropping = false;
+		selectionBox = false;
 
 		OBSSceneItem item = GetItemAtPos(pos, true);
-		hoveredPreviewItem = item;
+
+		std::lock_guard<std::mutex> lock(selectMutex);
+		hoveredPreviewItems.clear();
+		hoveredPreviewItems.push_back(item);
+		selectedItems.clear();
 	}
 }
 
@@ -831,6 +906,191 @@ void OBSBasicPreview::MoveItems(const vec2 &pos)
 	vec2_add(&lastMoveOffset, &lastMoveOffset, &moveOffset);
 
 	obs_scene_enum_items(scene, move_items, &moveOffset);
+}
+
+static bool CounterClockwise(float x1, float x2, float x3, float y1, float y2,
+			     float y3)
+{
+	return (y3 - y1) * (x2 - x1) > (y2 - y1) * (x3 - x1);
+}
+
+static bool IntersectLine(float x1, float x2, float x3, float x4, float y1,
+			  float y2, float y3, float y4)
+{
+	bool a = CounterClockwise(x1, x2, x3, y1, y2, y3);
+	bool b = CounterClockwise(x1, x2, x4, y1, y2, y4);
+	bool c = CounterClockwise(x3, x4, x1, y3, y4, y1);
+	bool d = CounterClockwise(x3, x4, x2, y3, y4, y2);
+
+	return (a != b) && (c != d);
+}
+
+static bool IntersectBox(matrix4 transform, float x1, float x2, float y1,
+			 float y2)
+{
+	float x3, x4, y3, y4;
+
+	x3 = transform.t.x;
+	y3 = transform.t.y;
+	x4 = x3 + transform.x.x;
+	y4 = y3 + transform.x.y;
+
+	if (IntersectLine(x1, x1, x3, x4, y1, y2, y3, y4) ||
+	    IntersectLine(x1, x2, x3, x4, y1, y1, y3, y4) ||
+	    IntersectLine(x2, x2, x3, x4, y1, y2, y3, y4) ||
+	    IntersectLine(x1, x2, x3, x4, y2, y2, y3, y4))
+		return true;
+
+	x4 = x3 + transform.y.x;
+	y4 = y3 + transform.y.y;
+
+	if (IntersectLine(x1, x1, x3, x4, y1, y2, y3, y4) ||
+	    IntersectLine(x1, x2, x3, x4, y1, y1, y3, y4) ||
+	    IntersectLine(x2, x2, x3, x4, y1, y2, y3, y4) ||
+	    IntersectLine(x1, x2, x3, x4, y2, y2, y3, y4))
+		return true;
+
+	x3 = transform.t.x + transform.x.x;
+	y3 = transform.t.y + transform.x.y;
+	x4 = x3 + transform.y.x;
+	y4 = y3 + transform.y.y;
+
+	if (IntersectLine(x1, x1, x3, x4, y1, y2, y3, y4) ||
+	    IntersectLine(x1, x2, x3, x4, y1, y1, y3, y4) ||
+	    IntersectLine(x2, x2, x3, x4, y1, y2, y3, y4) ||
+	    IntersectLine(x1, x2, x3, x4, y2, y2, y3, y4))
+		return true;
+
+	x3 = transform.t.x + transform.y.x;
+	y3 = transform.t.y + transform.y.y;
+	x4 = x3 + transform.x.x;
+	y4 = y3 + transform.x.y;
+
+	if (IntersectLine(x1, x1, x3, x4, y1, y2, y3, y4) ||
+	    IntersectLine(x1, x2, x3, x4, y1, y1, y3, y4) ||
+	    IntersectLine(x2, x2, x3, x4, y1, y2, y3, y4) ||
+	    IntersectLine(x1, x2, x3, x4, y2, y2, y3, y4))
+		return true;
+
+	return false;
+}
+#undef PI
+
+bool OBSBasicPreview::FindSelected(obs_scene_t *scene, obs_sceneitem_t *item,
+				   void *param)
+{
+	SceneFindBoxData *data = reinterpret_cast<SceneFindBoxData *>(param);
+
+	if (obs_sceneitem_selected(item))
+		data->sceneItems.push_back(item);
+
+	UNUSED_PARAMETER(scene);
+	return true;
+}
+
+static bool FindItemsInBox(obs_scene_t *scene, obs_sceneitem_t *item,
+			   void *param)
+{
+	SceneFindBoxData *data = reinterpret_cast<SceneFindBoxData *>(param);
+	matrix4 transform;
+	matrix4 invTransform;
+	vec3 transformedPos;
+	vec3 pos3;
+	vec3 pos3_;
+
+	float x1 = std::min(data->startPos.x, data->pos.x);
+	float x2 = std::max(data->startPos.x, data->pos.x);
+	float y1 = std::min(data->startPos.y, data->pos.y);
+	float y2 = std::max(data->startPos.y, data->pos.y);
+
+	if (!SceneItemHasVideo(item))
+		return true;
+	if (obs_sceneitem_locked(item))
+		return true;
+	if (!obs_sceneitem_visible(item))
+		return true;
+
+	vec3_set(&pos3, data->pos.x, data->pos.y, 0.0f);
+
+	obs_sceneitem_get_box_transform(item, &transform);
+
+	matrix4_inv(&invTransform, &transform);
+	vec3_transform(&transformedPos, &pos3, &invTransform);
+	vec3_transform(&pos3_, &transformedPos, &transform);
+
+	if (CloseFloat(pos3.x, pos3_.x) && CloseFloat(pos3.y, pos3_.y) &&
+	    transformedPos.x >= 0.0f && transformedPos.x <= 1.0f &&
+	    transformedPos.y >= 0.0f && transformedPos.y <= 1.0f) {
+
+		data->sceneItems.push_back(item);
+		return true;
+	}
+
+	if (transform.t.x > x1 && transform.t.x < x2 && transform.t.y > y1 &&
+	    transform.t.y < y2) {
+
+		data->sceneItems.push_back(item);
+		return true;
+	}
+
+	if (transform.t.x + transform.x.x > x1 &&
+	    transform.t.x + transform.x.x < x2 &&
+	    transform.t.y + transform.x.y > y1 &&
+	    transform.t.y + transform.x.y < y2) {
+
+		data->sceneItems.push_back(item);
+		return true;
+	}
+
+	if (transform.t.x + transform.y.x > x1 &&
+	    transform.t.x + transform.y.x < x2 &&
+	    transform.t.y + transform.y.y > y1 &&
+	    transform.t.y + transform.y.y < y2) {
+
+		data->sceneItems.push_back(item);
+		return true;
+	}
+
+	if (transform.t.x + transform.x.x + transform.y.x > x1 &&
+	    transform.t.x + transform.x.x + transform.y.x < x2 &&
+	    transform.t.y + transform.x.y + transform.y.y > y1 &&
+	    transform.t.y + transform.x.y + transform.y.y < y2) {
+
+		data->sceneItems.push_back(item);
+		return true;
+	}
+
+	if (transform.t.x + 0.5 * (transform.x.x + transform.y.x) > x1 &&
+	    transform.t.x + 0.5 * (transform.x.x + transform.y.x) < x2 &&
+	    transform.t.y + 0.5 * (transform.x.y + transform.y.y) > y1 &&
+	    transform.t.y + 0.5 * (transform.x.y + transform.y.y) < y2) {
+
+		data->sceneItems.push_back(item);
+		return true;
+	}
+
+	if (IntersectBox(transform, x1, x2, y1, y2)) {
+		data->sceneItems.push_back(item);
+		return true;
+	}
+
+	UNUSED_PARAMETER(scene);
+	return true;
+}
+
+void OBSBasicPreview::BoxItems(const vec2 &startPos, const vec2 &pos)
+{
+	OBSBasic *main = reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
+
+	OBSScene scene = main->GetCurrentScene();
+	if (!scene)
+		return;
+
+	SceneFindBoxData data(startPos, pos);
+	obs_scene_enum_items(scene, FindItemsInBox, &data);
+
+	std::lock_guard<std::mutex> lock(selectMutex);
+	hoveredPreviewItems = data.sceneItems;
 }
 
 vec3 OBSBasicPreview::CalculateStretchPos(const vec3 &tl, const vec3 &br)
@@ -1160,8 +1420,6 @@ void OBSBasicPreview::mouseMoveEvent(QMouseEvent *event)
 		return;
 
 	if (mouseDown) {
-		hoveredPreviewItem = nullptr;
-
 		vec2 pos = GetMouseEventPos(event);
 
 		if (!mouseMoved && !mouseOverItems &&
@@ -1174,6 +1432,8 @@ void OBSBasicPreview::mouseMoveEvent(QMouseEvent *event)
 		pos.y = std::round(pos.y);
 
 		if (stretchHandle != ItemHandle::None) {
+			selectionBox = false;
+
 			OBSBasic *main = reinterpret_cast<OBSBasic *>(
 				App()->GetMainWindow());
 			OBSScene scene = main->GetCurrentScene();
@@ -1194,23 +1454,32 @@ void OBSBasicPreview::mouseMoveEvent(QMouseEvent *event)
 				StretchItem(pos);
 
 		} else if (mouseOverItems) {
+			selectionBox = false;
 			MoveItems(pos);
+		} else {
+			selectionBox = true;
+			if (!mouseMoved)
+				DoSelect(startPos);
+			BoxItems(startPos, pos);
 		}
 
 		mouseMoved = true;
+		mousePos = pos;
 	} else {
 		vec2 pos = GetMouseEventPos(event);
 		OBSSceneItem item = GetItemAtPos(pos, true);
 
-		hoveredPreviewItem = item;
+		std::lock_guard<std::mutex> lock(selectMutex);
+		hoveredPreviewItems.clear();
+		hoveredPreviewItems.push_back(item);
 	}
 }
 
-void OBSBasicPreview::leaveEvent(QEvent *event)
+void OBSBasicPreview::leaveEvent(QEvent *)
 {
-	hoveredPreviewItem = nullptr;
-
-	UNUSED_PARAMETER(event);
+	std::lock_guard<std::mutex> lock(selectMutex);
+	if (!selectionBox)
+		hoveredPreviewItems.clear();
 }
 
 static void DrawSquareAtPos(float x, float y)
@@ -1405,8 +1674,17 @@ bool OBSBasicPreview::DrawSelectedItem(obs_scene_t *scene,
 	OBSBasicPreview *prev = reinterpret_cast<OBSBasicPreview *>(param);
 	OBSBasic *main = OBSBasic::Get();
 
-	bool hovered = prev->hoveredPreviewItem == item ||
-		       prev->hoveredListItem == item;
+	bool hovered = false;
+	{
+		std::lock_guard<std::mutex> lock(prev->selectMutex);
+		for (int i = 0; i < prev->hoveredPreviewItems.size(); i++) {
+			if (prev->hoveredPreviewItems[i] == item) {
+				hovered = true;
+				break;
+			}
+		}
+	}
+
 	bool selected = obs_sceneitem_selected(item);
 
 	if (!selected && !hovered)
@@ -1510,6 +1788,44 @@ bool OBSBasicPreview::DrawSelectedItem(obs_scene_t *scene,
 	return true;
 }
 
+bool OBSBasicPreview::DrawSelectionBox(float x1, float y1, float x2, float y2,
+				       gs_vertbuffer_t *rectFill)
+{
+	x1 = std::round(x1);
+	x2 = std::round(x2);
+	y1 = std::round(y1);
+	y2 = std::round(y2);
+
+	gs_effect_t *eff = gs_get_effect();
+	gs_eparam_t *colParam = gs_effect_get_param_by_name(eff, "color");
+
+	vec4 fillColor;
+	vec4_set(&fillColor, 0.7f, 0.7f, 0.7f, 0.5f);
+
+	vec4 borderColor;
+	vec4_set(&borderColor, 1.0f, 1.0f, 1.0f, 1.0f);
+
+	vec2 scale;
+	vec2_set(&scale, std::abs(x2 - x1), std::abs(y2 - y1));
+
+	gs_matrix_push();
+	gs_matrix_identity();
+
+	gs_matrix_translate3f(x1, y1, 0.0f);
+	gs_matrix_scale3f(x2 - x1, y2 - y1, 1.0f);
+
+	gs_effect_set_vec4(colParam, &fillColor);
+	gs_load_vertexbuffer(rectFill);
+	gs_draw(GS_TRISTRIP, 0, 0);
+
+	gs_effect_set_vec4(colParam, &borderColor);
+	DrawRect(HANDLE_RADIUS / 2, scale);
+
+	gs_matrix_pop();
+
+	return true;
+}
+
 void OBSBasicPreview::DrawOverflow()
 {
 	if (locked)
@@ -1571,6 +1887,26 @@ void OBSBasicPreview::DrawSceneEditing()
 		gs_matrix_scale3f(main->previewScale, main->previewScale, 1.0f);
 		obs_scene_enum_items(scene, DrawSelectedItem, this);
 		gs_matrix_pop();
+	}
+
+	if (selectionBox) {
+		if (!rectFill) {
+			gs_render_start(true);
+
+			gs_vertex2f(0.0f, 0.0f);
+			gs_vertex2f(1.0f, 0.0f);
+			gs_vertex2f(1.0f, 1.0f);
+			gs_vertex2f(1.0f, 1.0f);
+			gs_vertex2f(0.0f, 0.0f);
+			gs_vertex2f(0.0f, 1.0f);
+
+			rectFill = gs_render_save();
+		}
+
+		DrawSelectionBox(startPos.x * main->previewScale,
+				 startPos.y * main->previewScale,
+				 mousePos.x * main->previewScale,
+				 mousePos.y * main->previewScale, rectFill);
 	}
 
 	gs_load_vertexbuffer(nullptr);
