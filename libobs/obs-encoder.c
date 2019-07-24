@@ -349,7 +349,7 @@ obs_properties_t *obs_get_encoder_properties(const char *id)
 	const struct obs_encoder_info *ei = find_encoder(id);
 	if (ei && (ei->get_properties || ei->get_properties2)) {
 		obs_data_t *defaults = get_defaults(ei);
-		obs_properties_t *properties;
+		obs_properties_t *properties = NULL;
 
 		if (ei->get_properties2) {
 			properties = ei->get_properties2(NULL, ei->type_data);
