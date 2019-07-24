@@ -319,7 +319,7 @@ bool WASAPISource::TryInitialize()
 	try {
 		Initialize();
 
-	} catch (HRError error) {
+	} catch (HRError &error) {
 		if (previouslyFailed)
 			return active;
 
