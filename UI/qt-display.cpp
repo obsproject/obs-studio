@@ -6,7 +6,7 @@
 #include <QResizeEvent>
 #include <QShowEvent>
 
-static inline long long color_to_int(QColor color)
+static inline long long color_to_int(const QColor &color)
 {
 	auto shift = [&](unsigned val, int shift) {
 		return ((val & 0xff) << shift);
