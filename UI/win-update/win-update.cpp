@@ -146,7 +146,7 @@ try {
 
 	return true;
 
-} catch (string text) {
+} catch (string &text) {
 	blog(LOG_WARNING, "%s: %s", __FUNCTION__, text.c_str());
 	return false;
 }
@@ -174,7 +174,7 @@ try {
 
 	return true;
 
-} catch (string text) {
+} catch (string &text) {
 	blog(LOG_WARNING, "%s: %s", __FUNCTION__, text.c_str());
 	return false;
 }
@@ -229,7 +229,7 @@ try {
 
 	return true;
 
-} catch (string text) {
+} catch (string &text) {
 	blog(LOG_DEBUG, "%s: %s", __FUNCTION__, text.c_str());
 	return false;
 }
@@ -332,7 +332,7 @@ try {
 
 	return true;
 
-} catch (string text) {
+} catch (string &text) {
 	blog(LOG_WARNING, "%s: %s", __FUNCTION__, text.c_str());
 	return false;
 }
@@ -384,7 +384,7 @@ try {
 
 	return true;
 
-} catch (string text) {
+} catch (string &text) {
 	blog(LOG_WARNING, "%s: %s", __FUNCTION__, text.c_str());
 	return false;
 }
@@ -430,7 +430,7 @@ try {
 
 	return true;
 
-} catch (string text) {
+} catch (string &text) {
 	blog(LOG_WARNING, "%s: %s", __FUNCTION__, text.c_str());
 	return false;
 }
@@ -750,7 +750,7 @@ try {
 
 	QMetaObject::invokeMethod(App()->GetMainWindow(), "close");
 
-} catch (string text) {
+} catch (string &text) {
 	blog(LOG_WARNING, "%s: %s", __FUNCTION__, text.c_str());
 }
 
@@ -845,6 +845,6 @@ try {
 
 	emit Result(QString::fromUtf8(text.c_str()));
 
-} catch (string text) {
+} catch (string &text) {
 	blog(LOG_WARNING, "%s: %s", __FUNCTION__, text.c_str());
 }
