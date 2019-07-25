@@ -6,7 +6,6 @@
 
 uniform float4x4 ViewProj;
 uniform texture2d image;
-uniform float4x4 color_matrix;
 uniform float2 base_dimension_i;
 uniform float undistort_factor = 1.0;
 
@@ -138,13 +137,6 @@ float4 PSDrawBicubicRGBADivide(VertData v_in) : TARGET
 	return float4(rgba.rgb * multiplier, alpha);
 }
 
-float4 PSDrawBicubicMatrix(VertData v_in) : TARGET
-{
-	float3 rgb = DrawBicubic(v_in, false).rgb;
-	float3 yuv = mul(float4(saturate(rgb), 1.0), color_matrix).xyz;
-	return float4(yuv, 1.0);
-}
-
 technique Draw
 {
 	pass
@@ -169,14 +161,5 @@ technique DrawUndistort
 	{
 		vertex_shader = VSDefault(v_in);
 		pixel_shader  = PSDrawBicubicRGBA(v_in, true);
-	}
-}
-
-technique DrawMatrix
-{
-	pass
-	{
-		vertex_shader = VSDefault(v_in);
-		pixel_shader  = PSDrawBicubicMatrix(v_in);
 	}
 }
