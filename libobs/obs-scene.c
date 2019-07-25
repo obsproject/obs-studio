@@ -501,9 +501,9 @@ static void render_item_texture(struct obs_scene_item *item)
 			scale_param = gs_effect_get_param_by_name(
 				effect, "base_dimension");
 			if (scale_param) {
-				struct vec2 base_res_i = {(float)cx, (float)cy};
+				struct vec2 base_res = {(float)cx, (float)cy};
 
-				gs_effect_set_vec2(scale_param, &base_res_i);
+				gs_effect_set_vec2(scale_param, &base_res);
 			}
 
 			scale_i_param = gs_effect_get_param_by_name(
