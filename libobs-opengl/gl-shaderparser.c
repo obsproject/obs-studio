@@ -167,7 +167,16 @@ static void gl_write_storage_var(struct gl_shader_parser *glsp,
 
 	if (st) {
 		gl_unwrap_storage_struct(glsp, st, var->name, input, prefix);
-	} else if (!input || strcmp(var->mapping, "VERTEXID")) {
+	} else {
+		if (input && (strcmp(var->mapping, "VERTEXID") == 0))
+			return;
+		if (strcmp(var->mapping, "POSITION") == 0) {
+			if (!input && (glsp->type == GS_SHADER_VERTEX))
+				return;
+			if (input && (glsp->type == GS_SHADER_PIXEL))
+				return;
+		}
+
 		struct gl_parser_attrib attrib;
 		gl_parser_attrib_init(&attrib);
 
@@ -555,17 +564,23 @@ static void gl_write_main_storage_assign(struct gl_shader_parser *glsp,
 
 		dstr_free(&src_copy);
 	} else {
-		if (!dstr_is_empty(&dst_copy))
-			dstr_cat_dstr(&glsp->gl_string, &dst_copy);
-		dstr_cat(&glsp->gl_string, " = ");
-		if (input && (strcmp(var->mapping, "VERTEXID") == 0))
-			dstr_cat(&glsp->gl_string, "uint(gl_VertexID)");
-		else {
-			if (src)
-				dstr_cat(&glsp->gl_string, src);
-			dstr_cat(&glsp->gl_string, var->name);
+		if (input || (glsp->type != GS_SHADER_VERTEX) ||
+		    (strcmp(var->mapping, "POSITION"))) {
+			if (!dstr_is_empty(&dst_copy))
+				dstr_cat_dstr(&glsp->gl_string, &dst_copy);
+			dstr_cat(&glsp->gl_string, " = ");
+			if (input && (strcmp(var->mapping, "VERTEXID") == 0))
+				dstr_cat(&glsp->gl_string, "uint(gl_VertexID)");
+			else if (input && (glsp->type == GS_SHADER_PIXEL) &&
+				 (strcmp(var->mapping, "POSITION") == 0))
+				dstr_cat(&glsp->gl_string, "gl_FragCoord");
+			else {
+				if (src)
+					dstr_cat(&glsp->gl_string, src);
+				dstr_cat(&glsp->gl_string, var->name);
+			}
+			dstr_cat(&glsp->gl_string, ";\n");
 		}
-		dstr_cat(&glsp->gl_string, ";\n");
 
 		if (!input)
 			gl_write_main_interface_assign(glsp, var, src);
@@ -654,12 +669,6 @@ static void gl_rename_attributes(struct gl_shader_parser *glsp)
 		size_t val;
 
 		if (attrib->input) {
-			if (strcmp(attrib->mapping, "VERTEXID") == 0) {
-				dstr_replace(&glsp->gl_string,
-					     attrib->name.array, "gl_VertexID");
-				continue;
-			}
-
 			prefix = glsp->input_prefix;
 			val = input_idx++;
 		} else {
