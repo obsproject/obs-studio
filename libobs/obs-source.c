@@ -1334,6 +1334,7 @@ enum convert_type {
 	CONVERT_NONE,
 	CONVERT_NV12,
 	CONVERT_420,
+	CONVERT_422,
 	CONVERT_422_U,
 	CONVERT_422_Y,
 	CONVERT_444,
@@ -1352,6 +1353,8 @@ static inline enum convert_type get_convert_type(enum video_format format,
 		return CONVERT_NV12;
 	case VIDEO_FORMAT_I444:
 		return CONVERT_444;
+	case VIDEO_FORMAT_I422:
+		return CONVERT_422;
 
 	case VIDEO_FORMAT_YVYU:
 	case VIDEO_FORMAT_YUY2:
@@ -1400,6 +1403,20 @@ static inline bool set_planar420_sizes(struct obs_source *source,
 {
 	uint32_t size = frame->width * frame->height;
 	size += size / 2;
+
+	source->async_convert_width = frame->width;
+	source->async_convert_height = size / frame->width;
+	source->async_texture_format = GS_R8;
+	source->async_plane_offset[0] = (int)(frame->data[1] - frame->data[0]);
+	source->async_plane_offset[1] = (int)(frame->data[2] - frame->data[0]);
+	return true;
+}
+
+static inline bool set_planar422_sizes(struct obs_source *source,
+				       const struct obs_source_frame *frame)
+{
+	uint32_t size = frame->width * frame->height;
+	size *= 2;
 
 	source->async_convert_width = frame->width;
 	source->async_convert_height = size / frame->width;
@@ -1459,6 +1476,9 @@ static inline bool init_gpu_conversion(struct obs_source *source,
 
 	case CONVERT_420:
 		return set_planar420_sizes(source, frame);
+
+	case CONVERT_422:
+		return set_planar422_sizes(source, frame);
 
 	case CONVERT_NV12:
 		return set_nv12_sizes(source, frame);
@@ -1557,6 +1577,7 @@ static void upload_raw_frame(gs_texture_t *tex,
 		break;
 
 	case CONVERT_420:
+	case CONVERT_422:
 	case CONVERT_NV12:
 	case CONVERT_444:
 		gs_texture_set_image(tex, frame->data[0], frame->width, false);
@@ -1595,6 +1616,9 @@ static const char *select_conversion_technique(enum video_format format,
 
 	case VIDEO_FORMAT_BGR3:
 		return full_range ? "BGR3_Full" : "BGR3_Limited";
+
+	case VIDEO_FORMAT_I422:
+		return "I422_Reverse";
 
 	case VIDEO_FORMAT_BGRA:
 	case VIDEO_FORMAT_BGRX:
@@ -2316,6 +2340,7 @@ static void copy_frame_data(struct obs_source_frame *dst,
 		break;
 
 	case VIDEO_FORMAT_I444:
+	case VIDEO_FORMAT_I422:
 		copy_frame_data_plane(dst, src, 0, dst->height);
 		copy_frame_data_plane(dst, src, 1, dst->height);
 		copy_frame_data_plane(dst, src, 2, dst->height);
