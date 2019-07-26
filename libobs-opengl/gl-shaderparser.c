@@ -325,7 +325,6 @@ static inline bool gl_write_texture_call(struct gl_shader_parser *glsp,
 					 const char *call, bool sampler)
 {
 	struct cf_parser *cfp = &glsp->parser.cfp;
-	size_t sampler_id = (size_t)-1;
 
 	if (!cf_next_token(cfp))
 		return false;
@@ -335,16 +334,16 @@ static inline bool gl_write_texture_call(struct gl_shader_parser *glsp,
 	if (sampler) {
 		if (!cf_next_token(cfp))
 			return false;
-		sampler_id = sp_getsampler(glsp, cfp->cur_token);
+		const size_t sampler_id = sp_getsampler(glsp, cfp->cur_token);
 		if (sampler_id == (size_t)-1)
 			return false;
 		if (!cf_next_token(cfp))
 			return false;
 		if (!cf_token_is(cfp, ","))
 			return false;
-	}
 
-	var->gl_sampler_id = sampler_id;
+		var->gl_sampler_id = sampler_id;
+	}
 
 	dstr_cat(&glsp->gl_string, call);
 	dstr_cat(&glsp->gl_string, "(");
