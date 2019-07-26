@@ -1733,6 +1733,8 @@ static obs_source_t *obs_load_source_type(obs_data_t *source_data)
 	double volume;
 	double balance;
 	int64_t sync;
+	uint32_t prev_ver;
+	uint32_t caps;
 	uint32_t flags;
 	uint32_t mixers;
 	int di_order;
@@ -1742,6 +1744,9 @@ static obs_source_t *obs_load_source_type(obs_data_t *source_data)
 	source = obs_source_create(id, name, settings, hotkeys);
 
 	obs_data_release(hotkeys);
+
+	prev_ver = (uint32_t)obs_data_get_int(source_data, "prev_ver");
+	caps = obs_source_get_output_flags(source);
 
 	obs_data_set_default_double(source_data, "volume", 1.0);
 	volume = obs_data_get_double(source_data, "volume");
@@ -1795,6 +1800,14 @@ static obs_source_t *obs_load_source_type(obs_data_t *source_data)
 		source, (enum obs_deinterlace_field_order)di_order);
 
 	monitoring_type = (int)obs_data_get_int(source_data, "monitoring_type");
+	if (prev_ver < MAKE_SEMANTIC_VERSION(24, 0, 0)) {
+		if ((caps & OBS_SOURCE_MONITOR_BY_DEFAULT) != 0) {
+			/* updates older sources to enable monitoring
+			 * automatically if they added monitoring by default in
+			 * version 24 */
+			monitoring_type = OBS_MONITORING_TYPE_MONITOR_ONLY;
+		}
+	}
 	obs_source_set_monitoring_type(
 		source, (enum obs_monitoring_type)monitoring_type);
 
@@ -1920,6 +1933,8 @@ obs_data_t *obs_save_source(obs_source_t *source)
 		source->context.hotkey_data = hotkeys;
 		hotkey_data = hotkeys;
 	}
+
+	obs_data_set_int(source_data, "prev_ver", LIBOBS_API_VER);
 
 	obs_data_set_string(source_data, "name", name);
 	obs_data_set_string(source_data, "id", id);

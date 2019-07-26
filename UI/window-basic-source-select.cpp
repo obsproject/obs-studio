@@ -197,6 +197,14 @@ bool AddNew(QWidget *parent, const char *id, const char *name,
 
 			newSource = source;
 
+			/* set monitoring if source monitors by default */
+			uint32_t flags = obs_source_get_output_flags(source);
+			if ((flags & OBS_SOURCE_MONITOR_BY_DEFAULT) != 0) {
+				obs_source_set_monitoring_type(
+					source,
+					OBS_MONITORING_TYPE_MONITOR_ONLY);
+			}
+
 			success = true;
 		}
 	}

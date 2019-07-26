@@ -139,6 +139,12 @@ enum obs_balance_type {
  */
 #define OBS_SOURCE_CAP_DISABLED (1 << 10)
 
+/**
+ * Source should enable monitoring by default.  Monitoring should be set by the
+ * frontend if this flag is set.
+ */
+#define OBS_SOURCE_MONITOR_BY_DEFAULT (1 << 11)
+
 /** @} */
 
 typedef void (*obs_source_enum_proc_t)(obs_source_t *parent,
