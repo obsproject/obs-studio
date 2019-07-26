@@ -6,6 +6,7 @@
 
 uniform float4x4 ViewProj;
 uniform texture2d image;
+uniform float2 base_dimension;
 uniform float2 base_dimension_i;
 uniform float undistort_factor = 1.0;
 
@@ -20,11 +21,20 @@ struct VertData {
 	float2 uv  : TEXCOORD0;
 };
 
-VertData VSDefault(VertData v_in)
+struct VertOut {
+	float2 uv  : TEXCOORD0;
+	float4 pos : POSITION;
+};
+
+struct FragData {
+	float2 uv : TEXCOORD0;
+};
+
+VertOut VSDefault(VertData v_in)
 {
-	VertData vert_out;
+	VertOut vert_out;
+	vert_out.uv = v_in.uv;
 	vert_out.pos = mul(float4(v_in.pos.xyz, 1.0), ViewProj);
-	vert_out.uv  = v_in.uv;
 	return vert_out;
 }
 
@@ -32,24 +42,19 @@ float weight(float x)
 {
 	float ax = abs(x);
 
-	/* Sharper version.  May look better in some cases. */
-	const float B = 0.0;
-	const float C = 0.75;
+	/* Sharper version.  May look better in some cases. B=0, C=0.75 */
 
-	if (ax < 1.0)
-		return (pow(x, 2.0) *
-			((12.0 - 9.0 * B - 6.0 * C) * ax +
-				(-18.0 + 12.0 * B + 6.0 * C)) +
-				(6.0 - 2.0 * B))
-			/ 6.0;
-	else if ((ax >= 1.0) && (ax < 2.0))
-		return (pow(x, 2.0) *
-			((-B - 6.0 * C) * ax + (6.0 * B + 30.0 * C)) +
-				(-12.0 * B - 48.0 * C) * ax +
-				(8.0 * B + 24.0 * C))
-			/ 6.0;
-	else
-		return 0.0;
+	if (ax < 2.0) {
+		float six_i = 1.0 / 6.0;
+		float x_squared = x * x;
+		if (ax < 1.0) {
+			return (x_squared * (7.5 * ax + (-13.5))) * six_i + 1.0;
+		}
+
+		return (x_squared * ((-4.5) * ax + 22.5) + (-36.0) * ax) * six_i + 3.0;
+	}
+
+	return 0.0;
 }
 
 float4 weight4(float x)
@@ -73,65 +78,83 @@ float AspectUndistortU(float u)
 	return AspectUndistortX((u - 0.5) * 2.0, undistort_factor) * 0.5 + 0.5;
 }
 
-float2 pixel_coord(float xpos, float ypos)
+float2 undistort_coord(float xpos, float ypos)
 {
 	return float2(AspectUndistortU(xpos), ypos);
 }
 
-float4 pixel(float xpos, float ypos, bool undistort)
+float4 undistort_pixel(float xpos, float ypos)
 {
-	if (undistort)
-		return image.Sample(textureSampler, pixel_coord(xpos, ypos));
-	else
-		return image.Sample(textureSampler, float2(xpos, ypos));
+	return image.Sample(textureSampler, undistort_coord(xpos, ypos));
 }
 
-float4 get_line(float ypos, float4 xpos, float4 linetaps, bool undistort)
+float4 undistort_line(float4 xpos, float ypos, float4 rowtaps)
 {
-	return
-		pixel(xpos.r, ypos, undistort) * linetaps.r +
-		pixel(xpos.g, ypos, undistort) * linetaps.g +
-		pixel(xpos.b, ypos, undistort) * linetaps.b +
-		pixel(xpos.a, ypos, undistort) * linetaps.a;
+	return undistort_pixel(xpos.x, ypos) * rowtaps.x +
+	       undistort_pixel(xpos.y, ypos) * rowtaps.y +
+	       undistort_pixel(xpos.z, ypos) * rowtaps.z +
+	       undistort_pixel(xpos.w, ypos) * rowtaps.w;
 }
 
-float4 DrawBicubic(VertData v_in, bool undistort)
+float4 DrawBicubic(FragData f_in, bool undistort)
 {
 	float2 stepxy = base_dimension_i;
-	float2 pos = v_in.uv + stepxy * 0.5;
-	float2 f = frac(pos / stepxy);
+	float2 pos = f_in.uv + stepxy * 0.5;
+	float2 f = frac(pos * base_dimension);
 
 	float4 rowtaps = weight4(1.0 - f.x);
 	float4 coltaps = weight4(1.0 - f.y);
 
-	/* make sure all taps added together is exactly 1.0, otherwise some
- 	 * (very small) distortion can occur */
-	rowtaps /= rowtaps.r + rowtaps.g + rowtaps.b + rowtaps.a;
-	coltaps /= coltaps.r + coltaps.g + coltaps.b + coltaps.a;
+	float2 uv0 = (-1.5 - f) * stepxy + pos;
+	float2 uv1 = uv0 + stepxy;
+	float2 uv2 = uv1 + stepxy;
+	float2 uv3 = uv2 + stepxy;
 
-	float2 xystart = (-1.5 - f) * stepxy + pos;
-	float4 xpos = float4(
-		xystart.x,
-		xystart.x + stepxy.x,
-		xystart.x + stepxy.x * 2.0,
-		xystart.x + stepxy.x * 3.0
-	);
+	if (undistort) {
+		float4 xpos = float4(uv0.x, uv1.x, uv2.x, uv3.x);
+		return undistort_line(xpos, uv0.y, rowtaps) * coltaps.x +
+		       undistort_line(xpos, uv1.y, rowtaps) * coltaps.y +
+		       undistort_line(xpos, uv2.y, rowtaps) * coltaps.z +
+		       undistort_line(xpos, uv3.y, rowtaps) * coltaps.w;
+	}
 
-	return
-		get_line(xystart.y                 , xpos, rowtaps, undistort) * coltaps.r +
-		get_line(xystart.y + stepxy.y      , xpos, rowtaps, undistort) * coltaps.g +
-		get_line(xystart.y + stepxy.y * 2.0, xpos, rowtaps, undistort) * coltaps.b +
-		get_line(xystart.y + stepxy.y * 3.0, xpos, rowtaps, undistort) * coltaps.a;
+	float u_weight_sum = rowtaps.y + rowtaps.z;
+	float u_middle_offset = rowtaps.z * stepxy.x / u_weight_sum;
+	float u_middle = uv1.x + u_middle_offset;
+
+	float v_weight_sum = coltaps.y + coltaps.z;
+	float v_middle_offset = coltaps.z * stepxy.y / v_weight_sum;
+	float v_middle = uv1.y + v_middle_offset;
+
+	int2 coord_top_left = int2(max(uv0 * base_dimension, 0.5));
+	int2 coord_bottom_right = int2(min(uv3 * base_dimension, base_dimension - 0.5));
+
+	float4 top = image.Load(int3(coord_top_left, 0)) * rowtaps.x;
+	top += image.Sample(textureSampler, float2(u_middle, uv0.y)) * u_weight_sum;
+	top += image.Load(int3(coord_bottom_right.x, coord_top_left.y, 0)) * rowtaps.w;
+	float4 total = top * coltaps.x;
+
+	float4 middle = image.Sample(textureSampler, float2(uv0.x, v_middle)) * rowtaps.x;
+	middle += image.Sample(textureSampler, float2(u_middle, v_middle)) * u_weight_sum;
+	middle += image.Sample(textureSampler, float2(uv3.x, v_middle)) * rowtaps.w;
+	total += middle * v_weight_sum;
+
+	float4 bottom = image.Load(int3(coord_top_left.x, coord_bottom_right.y, 0)) * rowtaps.x;
+	bottom += image.Sample(textureSampler, float2(u_middle, uv3.y)) * u_weight_sum;
+	bottom += image.Load(int3(coord_bottom_right, 0)) * rowtaps.w;
+	total += bottom * coltaps.w;
+
+	return total;
 }
 
-float4 PSDrawBicubicRGBA(VertData v_in, bool undistort) : TARGET
+float4 PSDrawBicubicRGBA(FragData f_in, bool undistort) : TARGET
 {
-	return DrawBicubic(v_in, undistort);
+	return DrawBicubic(f_in, undistort);
 }
 
-float4 PSDrawBicubicRGBADivide(VertData v_in) : TARGET
+float4 PSDrawBicubicRGBADivide(FragData f_in) : TARGET
 {
-	float4 rgba = DrawBicubic(v_in, false);
+	float4 rgba = DrawBicubic(f_in, false);
 	float alpha = rgba.a;
 	float multiplier = (alpha > 0.0) ? (1.0 / alpha) : 0.0;
 	return float4(rgba.rgb * multiplier, alpha);
@@ -142,7 +165,7 @@ technique Draw
 	pass
 	{
 		vertex_shader = VSDefault(v_in);
-		pixel_shader  = PSDrawBicubicRGBA(v_in, false);
+		pixel_shader = PSDrawBicubicRGBA(f_in, false);
 	}
 }
 
@@ -151,7 +174,7 @@ technique DrawAlphaDivide
 	pass
 	{
 		vertex_shader = VSDefault(v_in);
-		pixel_shader  = PSDrawBicubicRGBADivide(v_in);
+		pixel_shader = PSDrawBicubicRGBADivide(f_in);
 	}
 }
 
@@ -160,6 +183,6 @@ technique DrawUndistort
 	pass
 	{
 		vertex_shader = VSDefault(v_in);
-		pixel_shader  = PSDrawBicubicRGBA(v_in, true);
+		pixel_shader = PSDrawBicubicRGBA(f_in, true);
 	}
 }
