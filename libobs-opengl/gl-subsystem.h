@@ -396,6 +396,10 @@ static inline void samplerstate_release(gs_samplerstate_t *ss)
 		bfree(ss);
 }
 
+struct gs_timer {
+	GLuint queries[2];
+};
+
 struct gs_shader_param {
 	enum gs_shader_param_type type;
 

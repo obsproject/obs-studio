@@ -77,6 +77,8 @@ struct gs_exports {
 						       void *indices,
 						       size_t num,
 						       uint32_t flags);
+	gs_timer_t *(*device_timer_create)(gs_device_t *device);
+	gs_timer_range_t *(*device_timer_range_create)(gs_device_t *device);
 	enum gs_texture_type (*device_get_texture_type)(
 		const gs_texture_t *texture);
 	void (*device_load_vertexbuffer)(gs_device_t *device,
@@ -218,6 +220,16 @@ struct gs_exports {
 		const gs_indexbuffer_t *indexbuffer);
 	enum gs_index_type (*gs_indexbuffer_get_type)(
 		const gs_indexbuffer_t *indexbuffer);
+
+	void (*gs_timer_destroy)(gs_timer_t *timer);
+	void (*gs_timer_begin)(gs_timer_t *timer);
+	void (*gs_timer_end)(gs_timer_t *timer);
+	bool (*gs_timer_get_data)(gs_timer_t *timer, uint64_t *ticks);
+	void (*gs_timer_range_destroy)(gs_timer_range_t *range);
+	bool (*gs_timer_range_begin)(gs_timer_range_t *range);
+	bool (*gs_timer_range_end)(gs_timer_range_t *range);
+	bool (*gs_timer_range_get_data)(gs_timer_range_t *range, bool *disjoint,
+					uint64_t *frequency);
 
 	void (*gs_shader_destroy)(gs_shader_t *shader);
 	int (*gs_shader_get_num_params)(const gs_shader_t *shader);

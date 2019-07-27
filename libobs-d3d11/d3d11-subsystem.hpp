@@ -292,6 +292,8 @@ enum class gs_type {
 	gs_pixel_shader,
 	gs_duplicator,
 	gs_swap_chain,
+	gs_timer,
+	gs_timer_range,
 };
 
 struct gs_obj {
@@ -371,6 +373,31 @@ struct gs_index_buffer : gs_obj {
 
 	gs_index_buffer(gs_device_t *device, enum gs_index_type type,
 			void *indices, size_t num, uint32_t flags);
+};
+
+struct gs_timer : gs_obj {
+	ComPtr<ID3D11Query> query_begin;
+	ComPtr<ID3D11Query> query_end;
+
+	void Rebuild(ID3D11Device *dev);
+
+	inline void Release()
+	{
+		query_begin.Release();
+		query_end.Release();
+	}
+
+	gs_timer(gs_device_t *device);
+};
+
+struct gs_timer_range : gs_obj {
+	ComPtr<ID3D11Query> query_disjoint;
+
+	void Rebuild(ID3D11Device *dev);
+
+	inline void Release() { query_disjoint.Release(); }
+
+	gs_timer_range(gs_device_t *device);
 };
 
 struct gs_texture : gs_obj {
