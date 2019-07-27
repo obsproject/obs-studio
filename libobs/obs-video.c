@@ -109,9 +109,11 @@ static inline void set_render_size(uint32_t width, uint32_t height)
 
 static inline void unmap_last_surface(struct obs_core_video *video)
 {
-	if (video->mapped_surface) {
-		gs_stagesurface_unmap(video->mapped_surface);
-		video->mapped_surface = NULL;
+	for (int c = 0; c < NUM_CHANNELS; ++c) {
+		if (video->mapped_surfaces[c]) {
+			gs_stagesurface_unmap(video->mapped_surfaces[c]);
+			video->mapped_surfaces[c] = NULL;
+		}
 	}
 }
 
@@ -264,10 +266,24 @@ static inline gs_texture_t *render_output_texture(struct obs_core_video *video)
 	return target;
 }
 
-static inline void set_eparam(gs_effect_t *effect, const char *name, float val)
+static void render_convert_plane(gs_effect_t *effect, gs_texture_t *texture,
+				 gs_texture_t *target, const char *tech_name)
 {
-	gs_eparam_t *param = gs_effect_get_param_by_name(effect, name);
-	gs_effect_set_float(param, val);
+	gs_technique_t *tech = gs_effect_get_technique(effect, tech_name);
+
+	const uint32_t width = gs_texture_get_width(target);
+	const uint32_t height = gs_texture_get_height(target);
+
+	gs_set_render_target(target, NULL);
+	set_render_size(width, height);
+
+	size_t passes = gs_technique_begin(tech);
+	for (size_t i = 0; i < passes; i++) {
+		gs_technique_begin_pass(tech, i);
+		gs_draw(GS_TRIS, 0, 3);
+		gs_technique_end_pass(tech);
+	}
+	gs_technique_end(tech);
 }
 
 static const char *render_convert_texture_name = "render_convert_texture";
@@ -276,11 +292,6 @@ static void render_convert_texture(struct obs_core_video *video,
 {
 	profile_start(render_convert_texture_name);
 
-	gs_texture_t *target = video->convert_texture;
-	float fwidth = (float)video->output_width;
-	float fheight = (float)video->output_height;
-	size_t passes, i;
-
 	gs_effect_t *effect = video->conversion_effect;
 	gs_eparam_t *color_vec_y =
 		gs_effect_get_param_by_name(effect, "color_vec_y");
@@ -289,20 +300,7 @@ static void render_convert_texture(struct obs_core_video *video,
 	gs_eparam_t *color_vec_v =
 		gs_effect_get_param_by_name(effect, "color_vec_v");
 	gs_eparam_t *image = gs_effect_get_param_by_name(effect, "image");
-	gs_technique_t *tech =
-		gs_effect_get_technique(effect, video->conversion_tech);
-
-	set_eparam(effect, "u_plane_offset", (float)video->plane_offsets[1]);
-	set_eparam(effect, "v_plane_offset", (float)video->plane_offsets[2]);
-	set_eparam(effect, "width", fwidth);
-	set_eparam(effect, "height", fheight);
-	set_eparam(effect, "width_i", 1.0f / fwidth);
-	set_eparam(effect, "height_i", 1.0f / fheight);
-	set_eparam(effect, "width_d2", fwidth * 0.5f);
-	set_eparam(effect, "height_d2", fheight * 0.5f);
-	set_eparam(effect, "width_d2_i", 1.0f / (fwidth * 0.5f));
-	set_eparam(effect, "height_d2_i", 1.0f / (fheight * 0.5f));
-	set_eparam(effect, "input_height", (float)video->conversion_height);
+	gs_eparam_t *width_i = gs_effect_get_param_by_name(effect, "width_i");
 
 	struct vec4 vec_y, vec_u, vec_v;
 	vec4_set(&vec_y, video->color_matrix[4], video->color_matrix[5],
@@ -311,23 +309,39 @@ static void render_convert_texture(struct obs_core_video *video,
 		 video->color_matrix[2], video->color_matrix[3]);
 	vec4_set(&vec_v, video->color_matrix[8], video->color_matrix[9],
 		 video->color_matrix[10], video->color_matrix[11]);
-	gs_effect_set_vec4(color_vec_y, &vec_y);
-	gs_effect_set_vec4(color_vec_u, &vec_u);
-	gs_effect_set_vec4(color_vec_v, &vec_v);
-
-	gs_effect_set_texture(image, texture);
-
-	gs_set_render_target(target, NULL);
-	set_render_size(video->output_width, video->conversion_height);
 
 	gs_enable_blending(false);
-	passes = gs_technique_begin(tech);
-	for (i = 0; i < passes; i++) {
-		gs_technique_begin_pass(tech, i);
-		gs_draw(GS_TRIS, 0, 3);
-		gs_technique_end_pass(tech);
+
+	if (video->convert_textures[0]) {
+		gs_effect_set_texture(image, texture);
+		gs_effect_set_vec4(color_vec_y, &vec_y);
+		render_convert_plane(effect, texture,
+				     video->convert_textures[0],
+				     video->conversion_techs[0]);
+
+		if (video->convert_textures[1]) {
+			gs_effect_set_texture(image, texture);
+			gs_effect_set_vec4(color_vec_u, &vec_u);
+			if (!video->convert_textures[2])
+				gs_effect_set_vec4(color_vec_v, &vec_v);
+			gs_effect_set_float(width_i, video->conversion_width_i);
+			render_convert_plane(effect, texture,
+					     video->convert_textures[1],
+					     video->conversion_techs[1]);
+
+			if (video->convert_textures[2]) {
+				gs_effect_set_texture(image, texture);
+				gs_effect_set_vec4(color_vec_v, &vec_v);
+				gs_effect_set_float(width_i,
+						    video->conversion_width_i);
+				render_convert_plane(
+					effect, texture,
+					video->convert_textures[2],
+					video->conversion_techs[2]);
+			}
+		}
 	}
-	gs_technique_end(tech);
+
 	gs_enable_blending(true);
 
 	video->texture_converted = true;
@@ -335,90 +349,32 @@ static void render_convert_texture(struct obs_core_video *video,
 	profile_end(render_convert_texture_name);
 }
 
-static void render_nv12(struct obs_core_video *video, gs_texture_t *texture,
-			gs_texture_t *target, const char *tech_name,
-			uint32_t width, uint32_t height)
-{
-	gs_effect_t *effect = video->conversion_effect;
-	gs_eparam_t *color_vec_y =
-		gs_effect_get_param_by_name(effect, "color_vec_y");
-	gs_eparam_t *color_vec_u =
-		gs_effect_get_param_by_name(effect, "color_vec_u");
-	gs_eparam_t *color_vec_v =
-		gs_effect_get_param_by_name(effect, "color_vec_v");
-	gs_eparam_t *image = gs_effect_get_param_by_name(effect, "image");
-	gs_technique_t *tech = gs_effect_get_technique(effect, tech_name);
-	size_t passes, i;
-
-	struct vec4 vec_y, vec_u, vec_v;
-	vec4_set(&vec_y, video->color_matrix[4], video->color_matrix[5],
-		 video->color_matrix[6], video->color_matrix[7]);
-	vec4_set(&vec_u, video->color_matrix[0], video->color_matrix[1],
-		 video->color_matrix[2], video->color_matrix[3]);
-	vec4_set(&vec_v, video->color_matrix[8], video->color_matrix[9],
-		 video->color_matrix[10], video->color_matrix[11]);
-	gs_effect_set_vec4(color_vec_y, &vec_y);
-	gs_effect_set_vec4(color_vec_u, &vec_u);
-	gs_effect_set_vec4(color_vec_v, &vec_v);
-
-	gs_effect_set_texture(image, texture);
-
-	gs_set_render_target(target, NULL);
-	set_render_size(width, height);
-
-	gs_enable_blending(false);
-	passes = gs_technique_begin(tech);
-	for (i = 0; i < passes; i++) {
-		gs_technique_begin_pass(tech, i);
-		gs_draw(GS_TRIS, 0, 3);
-		gs_technique_end_pass(tech);
-	}
-	gs_technique_end(tech);
-	gs_enable_blending(true);
-}
-
-static const char *render_convert_nv12_name = "render_convert_texture_nv12";
-static void render_convert_texture_nv12(struct obs_core_video *video,
-					gs_texture_t *texture)
-{
-	profile_start(render_convert_nv12_name);
-
-	render_nv12(video, texture, video->convert_texture, "NV12_Y",
-		    video->output_width, video->output_height);
-	render_nv12(video, texture, video->convert_uv_texture, "NV12_UV",
-		    video->output_width / 2, video->output_height / 2);
-
-	video->texture_converted = true;
-
-	profile_end(render_convert_nv12_name);
-}
-
 static const char *stage_output_texture_name = "stage_output_texture";
 static inline void stage_output_texture(struct obs_core_video *video,
-					gs_texture_t *texture, int cur_texture)
+					int cur_texture)
 {
 	profile_start(stage_output_texture_name);
 
-	bool texture_ready;
-	gs_stagesurf_t *copy = video->copy_surfaces[cur_texture];
-
-	if (video->gpu_conversion) {
-		texture = video->convert_texture;
-		texture_ready = video->texture_converted;
-	} else {
-		texture_ready = true;
-	}
-
 	unmap_last_surface(video);
 
-	if (!texture_ready)
-		goto end;
+	if (!video->gpu_conversion) {
+		gs_stagesurf_t *copy = video->copy_surfaces[cur_texture][0];
+		if (copy)
+			gs_stage_texture(copy, video->output_texture);
 
-	gs_stage_texture(copy, texture);
+		video->textures_copied[cur_texture] = true;
+	} else if (video->texture_converted) {
+		for (int i = 0; i < NUM_CHANNELS; i++) {
+			gs_stagesurf_t *copy =
+				video->copy_surfaces[cur_texture][i];
+			if (copy)
+				gs_stage_texture(copy,
+						 video->convert_textures[i]);
+		}
 
-	video->textures_copied[cur_texture] = true;
+		video->textures_copied[cur_texture] = true;
+	}
 
-end:
 	profile_end(stage_output_texture_name);
 }
 
@@ -458,13 +414,13 @@ static inline bool queue_frame(struct obs_core_video *video, bool raw_active,
 	 * reason.  otherwise, it goes to the 'duplicate' case above, which
 	 * will ensure better performance. */
 	if (raw_active || vframe_info->count > 1) {
-		gs_copy_texture(tf.tex, video->convert_texture);
+		gs_copy_texture(tf.tex, video->convert_textures[0]);
 	} else {
-		gs_texture_t *tex = video->convert_texture;
-		gs_texture_t *tex_uv = video->convert_uv_texture;
+		gs_texture_t *tex = video->convert_textures[0];
+		gs_texture_t *tex_uv = video->convert_textures[1];
 
-		video->convert_texture = tf.tex;
-		video->convert_uv_texture = tf.tex_uv;
+		video->convert_textures[0] = tf.tex;
+		video->convert_textures[1] = tf.tex_uv;
 
 		tf.tex = tex;
 		tf.tex_uv = tex_uv;
@@ -529,17 +485,12 @@ static inline void render_video(struct obs_core_video *video, bool raw_active,
 		gs_texture_t *texture = render_output_texture(video);
 
 #ifdef _WIN32
-		if (gpu_active) {
+		if (gpu_active)
 			gs_flush();
-		}
 #endif
 
-		if (video->gpu_conversion) {
-			if (video->using_nv12_tex)
-				render_convert_texture_nv12(video, texture);
-			else
-				render_convert_texture(video, texture);
-		}
+		if (video->gpu_conversion)
+			render_convert_texture(video, texture);
 
 #ifdef _WIN32
 		if (gpu_active) {
@@ -547,8 +498,9 @@ static inline void render_video(struct obs_core_video *video, bool raw_active,
 			output_gpu_encoders(video, raw_active);
 		}
 #endif
+
 		if (raw_active)
-			stage_output_texture(video, texture, cur_texture);
+			stage_output_texture(video, cur_texture);
 	}
 
 	gs_set_render_target(NULL, NULL);
@@ -560,73 +512,41 @@ static inline void render_video(struct obs_core_video *video, bool raw_active,
 static inline bool download_frame(struct obs_core_video *video,
 				  int prev_texture, struct video_data *frame)
 {
-	gs_stagesurf_t *surface = video->copy_surfaces[prev_texture];
-
 	if (!video->textures_copied[prev_texture])
 		return false;
 
-	if (!gs_stagesurface_map(surface, &frame->data[0], &frame->linesize[0]))
-		return false;
+	for (int channel = 0; channel < NUM_CHANNELS; ++channel) {
+		gs_stagesurf_t *surface =
+			video->copy_surfaces[prev_texture][channel];
+		if (surface) {
+			if (!gs_stagesurface_map(surface, &frame->data[channel],
+						 &frame->linesize[channel]))
+				return false;
 
-	video->mapped_surface = surface;
+			video->mapped_surfaces[channel] = surface;
+		}
+	}
 	return true;
 }
 
-static inline uint32_t calc_linesize(uint32_t pos, uint32_t linesize)
+static const uint8_t *set_gpu_converted_plane(uint32_t width, uint32_t height,
+					      uint32_t linesize_input,
+					      uint32_t linesize_output,
+					      const uint8_t *in, uint8_t *out)
 {
-	uint32_t size = pos % linesize;
-	return size ? size : linesize;
-}
-
-static void copy_dealign(uint8_t *dst, uint32_t dst_pos, uint32_t dst_linesize,
-			 const uint8_t *src, uint32_t src_pos,
-			 uint32_t src_linesize, uint32_t remaining)
-{
-	while (remaining) {
-		uint32_t src_remainder = src_pos % src_linesize;
-		uint32_t dst_offset = dst_linesize - src_remainder;
-		uint32_t src_offset = src_linesize - src_remainder;
-
-		if (remaining < dst_offset) {
-			memcpy(dst + dst_pos, src + src_pos, remaining);
-			src_pos += remaining;
-			dst_pos += remaining;
-			remaining = 0;
-		} else {
-			memcpy(dst + dst_pos, src + src_pos, dst_offset);
-			src_pos += src_offset;
-			dst_pos += dst_offset;
-			remaining -= dst_offset;
+	if ((width == linesize_input) && (width == linesize_output)) {
+		size_t total = width * height;
+		memcpy(out, in, total);
+		in += total;
+	} else {
+		for (size_t y = 0; y < height; y++) {
+			memcpy(out, in, width);
+			out += linesize_output;
+			in += linesize_input;
 		}
 	}
-}
 
-static inline uint32_t make_aligned_linesize_offset(uint32_t offset,
-						    uint32_t dst_linesize,
-						    uint32_t src_linesize)
-{
-	uint32_t remainder = offset % dst_linesize;
-	return (offset / dst_linesize) * src_linesize + remainder;
-}
-
-static void fix_gpu_converted_alignment(struct obs_core_video *video,
-					struct video_frame *output,
-					const struct video_data *input)
-{
-	uint32_t src_linesize = input->linesize[0];
-	uint32_t dst_linesize = output->linesize[0] * 4;
-	uint32_t src_pos = 0;
-
-	for (size_t i = 0; i < 3; i++) {
-		if (video->plane_linewidth[i] == 0)
-			break;
-
-		src_pos = make_aligned_linesize_offset(
-			video->plane_offsets[i], dst_linesize, src_linesize);
-
-		copy_dealign(output->data[i], 0, dst_linesize, input->data[0],
-			     src_pos, src_linesize, video->plane_sizes[i]);
-	}
+	return in;
 }
 
 static void set_gpu_converted_data(struct obs_core_video *video,
@@ -634,41 +554,91 @@ static void set_gpu_converted_data(struct obs_core_video *video,
 				   const struct video_data *input,
 				   const struct video_output_info *info)
 {
-	if (input->linesize[0] == video->output_width * 4) {
-		struct video_frame frame;
+	if (video->using_nv12_tex) {
+		const uint32_t width = info->width;
+		const uint32_t height = info->height;
 
-		for (size_t i = 0; i < 3; i++) {
-			if (video->plane_linewidth[i] == 0)
-				break;
+		const uint8_t *const in_uv = set_gpu_converted_plane(
+			width, height, input->linesize[0], output->linesize[0],
+			input->data[0], output->data[0]);
 
-			frame.linesize[i] = video->plane_linewidth[i];
-			frame.data[i] =
-				input->data[0] + video->plane_offsets[i];
-		}
-
-		video_frame_copy(output, &frame, info->format, info->height);
-
-	} else if (video->using_nv12_tex) {
-		size_t width = info->width;
-		size_t height = info->height;
-		size_t height_d2 = height / 2;
-		uint8_t *out_y = output->data[0];
-		uint8_t *out_uv = output->data[1];
-		uint8_t *in = input->data[0];
-
-		for (size_t y = 0; y < height; y++) {
-			memcpy(out_y, in, width);
-			out_y += output->linesize[0];
-			in += input->linesize[0];
-		}
-		for (size_t y = 0; y < height_d2; y++) {
-			memcpy(out_uv, in, width);
-			out_uv += output->linesize[0];
-			in += input->linesize[0];
-		}
-
+		const uint32_t height_d2 = height / 2;
+		set_gpu_converted_plane(width, height_d2, input->linesize[0],
+					output->linesize[1], in_uv,
+					output->data[1]);
 	} else {
-		fix_gpu_converted_alignment(video, output, input);
+		switch (info->format) {
+		case VIDEO_FORMAT_I420: {
+			const uint32_t width = info->width;
+			const uint32_t height = info->height;
+
+			set_gpu_converted_plane(width, height,
+						input->linesize[0],
+						output->linesize[0],
+						input->data[0],
+						output->data[0]);
+
+			const uint32_t width_d2 = width / 2;
+			const uint32_t height_d2 = height / 2;
+
+			set_gpu_converted_plane(width_d2, height_d2,
+						input->linesize[1],
+						output->linesize[1],
+						input->data[1],
+						output->data[1]);
+
+			set_gpu_converted_plane(width_d2, height_d2,
+						input->linesize[2],
+						output->linesize[2],
+						input->data[2],
+						output->data[2]);
+
+			break;
+		}
+		case VIDEO_FORMAT_NV12: {
+			const uint32_t width = info->width;
+			const uint32_t height = info->height;
+
+			set_gpu_converted_plane(width, height,
+						input->linesize[0],
+						output->linesize[0],
+						input->data[0],
+						output->data[0]);
+
+			const uint32_t height_d2 = height / 2;
+			set_gpu_converted_plane(width, height_d2,
+						input->linesize[1],
+						output->linesize[1],
+						input->data[1],
+						output->data[1]);
+
+			break;
+		}
+		case VIDEO_FORMAT_I444: {
+			const uint32_t width = info->width;
+			const uint32_t height = info->height;
+
+			set_gpu_converted_plane(width, height,
+						input->linesize[0],
+						output->linesize[0],
+						input->data[0],
+						output->data[0]);
+
+			set_gpu_converted_plane(width, height,
+						input->linesize[1],
+						output->linesize[1],
+						input->data[1],
+						output->data[1]);
+
+			set_gpu_converted_plane(width, height,
+						input->linesize[2],
+						output->linesize[2],
+						input->data[2],
+						output->data[2]);
+
+			break;
+		}
+		}
 	}
 }
 
