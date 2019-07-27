@@ -137,6 +137,8 @@ static inline const char *get_video_format_name(enum video_format format)
 		return "Y800";
 	case VIDEO_FORMAT_BGR3:
 		return "BGR3";
+	case VIDEO_FORMAT_I422:
+		return "I422";
 	case VIDEO_FORMAT_NONE:;
 	}
 
