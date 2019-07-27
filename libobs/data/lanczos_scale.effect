@@ -6,6 +6,7 @@
 
 uniform float4x4 ViewProj;
 uniform texture2d image;
+uniform float2 base_dimension;
 uniform float2 base_dimension_i;
 uniform float undistort_factor = 1.0;
 
@@ -21,45 +22,47 @@ struct VertData {
 	float2 uv  : TEXCOORD0;
 };
 
-struct FragData {
+struct VertOut {
+	float2 uv : TEXCOORD0;
 	float4 pos : POSITION;
-	float2 uv  : TEXCOORD0;
-	float2 scale  : TEXCOORD1;
 };
 
-FragData VSDefault(VertData v_in)
+struct FragData {
+	float2 uv : TEXCOORD0;
+};
+
+VertOut VSDefault(VertData v_in)
 {
-	FragData vert_out;
-	vert_out.pos = mul(float4(v_in.pos.xyz, 1.0), ViewProj);
+	VertOut vert_out;
 	vert_out.uv  = v_in.uv;
-	vert_out.scale = min(0.25 + abs(0.75 / mul(float4(1.0 / base_dimension_i.xy, 1.0, 1.0), ViewProj).xy), 1.0);
+	vert_out.pos = mul(float4(v_in.pos.xyz, 1.0), ViewProj);
 
 	return vert_out;
 }
 
-float sinc(float x)
-{
-	const float PIval = 3.1415926535897932384626433832795;
-	return sin(x * PIval) / (x * PIval);
-}
-
-float weight(float x, float radius)
+float weight(float x)
 {
 	float ax = abs(x);
 	if (x == 0.0)
 		return 1.0;
-	else if (ax < radius)
-		return sinc(x) * sinc(x / radius);
-	else
-		return 0.0;
+
+	float radius = 3.0;
+	if (ax < radius) {
+		float PIval = 3.14159265358979323846;
+		float x_pi = x * PIval;
+		float radius_i = 1.0 / 3.0;
+		return radius * sin(x_pi) * sin(x_pi * radius_i) / (x_pi * x_pi);
+	}
+
+	return 0.0;
 }
 
-float3 weight3(float x, float scale)
+float3 weight3(float x)
 {
 	return float3(
-		weight((x * 2.0 + 0.0 * 2.0 - 3.0) * scale, 3.0),
-		weight((x * 2.0 + 1.0 * 2.0 - 3.0) * scale, 3.0),
-		weight((x * 2.0 + 2.0 * 2.0 - 3.0) * scale, 3.0));
+		weight(x * 2.0 - 3.0),
+		weight(x * 2.0 - 1.0),
+		weight(x * 2.0 + 1.0));
 }
 
 float AspectUndistortX(float x, float a)
@@ -74,72 +77,123 @@ float AspectUndistortU(float u)
 	return AspectUndistortX((u - 0.5) * 2.0, undistort_factor) * 0.5 + 0.5;
 }
 
-float2 pixel_coord(float xpos, float ypos)
+float2 undistort_coord(float xpos, float ypos)
 {
 	return float2(AspectUndistortU(xpos), ypos);
 }
 
-float4 pixel(float xpos, float ypos, bool undistort)
+float4 undistort_pixel(float xpos, float ypos)
 {
-	if (undistort)
-		return image.Sample(textureSampler, pixel_coord(xpos, ypos));
-	else
-		return image.Sample(textureSampler, float2(xpos, ypos));
+	return image.Sample(textureSampler, undistort_coord(xpos, ypos));
 }
 
-float4 get_line(float ypos, float3 xpos1, float3 xpos2, float3 rowtap1,
-		float3 rowtap2, bool undistort)
+float4 undistort_line(float3 xpos012, float3 xpos345, float ypos, float3 rowtap024,
+		float3 rowtap135)
 {
 	return
-		pixel(xpos1.r, ypos, undistort) * rowtap1.r +
-		pixel(xpos1.g, ypos, undistort) * rowtap2.r +
-		pixel(xpos1.b, ypos, undistort) * rowtap1.g +
-		pixel(xpos2.r, ypos, undistort) * rowtap2.g +
-		pixel(xpos2.g, ypos, undistort) * rowtap1.b +
-		pixel(xpos2.b, ypos, undistort) * rowtap2.b;
+		undistort_pixel(xpos012.x, ypos) * rowtap024.x +
+		undistort_pixel(xpos012.y, ypos) * rowtap135.x +
+		undistort_pixel(xpos012.z, ypos) * rowtap024.y +
+		undistort_pixel(xpos345.x, ypos) * rowtap135.y +
+		undistort_pixel(xpos345.y, ypos) * rowtap024.z +
+		undistort_pixel(xpos345.z, ypos) * rowtap135.z;
 }
 
-float4 DrawLanczos(FragData v_in, bool undistort)
+float4 DrawLanczos(FragData f_in, bool undistort)
 {
 	float2 stepxy = base_dimension_i;
-	float2 pos = v_in.uv + stepxy * 0.5;
-	float2 f = frac(pos / stepxy);
+	float2 pos = f_in.uv + stepxy * 0.5;
+	float2 f = frac(pos * base_dimension);
 
-	float3 rowtap1 = weight3((1.0 - f.x) / 2.0,       v_in.scale.x);
-	float3 rowtap2 = weight3((1.0 - f.x) / 2.0 + 0.5, v_in.scale.x);
-	float3 coltap1 = weight3((1.0 - f.y) / 2.0,       v_in.scale.y);
-	float3 coltap2 = weight3((1.0 - f.y) / 2.0 + 0.5, v_in.scale.y);
+	float2 f_rev_half = (-0.5) * f + 0.5;
+	float3 rowtap024 = weight3(f_rev_half.x);
+	float3 rowtap135 = weight3(f_rev_half.x + 0.5);
+	float3 coltap024 = weight3(f_rev_half.y);
+	float3 coltap135 = weight3(f_rev_half.y + 0.5);
 
-	/* make sure all taps added together is exactly 1.0, otherwise some
-         * (very small) distortion can occur */
-	float suml = rowtap1.r + rowtap1.g + rowtap1.b + rowtap2.r + rowtap2.g + rowtap2.b;
-	float sumc = coltap1.r + coltap1.g + coltap1.b + coltap2.r + coltap2.g + coltap2.b;
-	rowtap1 /= suml;
-	rowtap2 /= suml;
-	coltap1 /= sumc;
-	coltap2 /= sumc;
+	float2 uv0 = (-2.5 - f) * stepxy + pos;
+	float2 uv1 = uv0 + stepxy;
+	float2 uv2 = uv1 + stepxy;
+	float2 uv3 = uv2 + stepxy;
+	float2 uv4 = uv3 + stepxy;
+	float2 uv5 = uv4 + stepxy;
 
-	float2 xystart = (-2.5 - f) * stepxy + pos;
-	float3 xpos1 = float3(xystart.x                 , xystart.x + stepxy.x      , xystart.x + stepxy.x * 2.0);
-	float3 xpos2 = float3(xystart.x + stepxy.x * 3.0, xystart.x + stepxy.x * 4.0, xystart.x + stepxy.x * 5.0);
+	if (undistort) {
+		float3 xpos012 = float3(uv0.x, uv1.x, uv2.x);
+		float3 xpos345 = float3(uv3.x, uv4.x, uv5.x);
+		return undistort_line(xpos012, xpos345, uv0.y, rowtap024, rowtap135) * coltap024.x +
+		       undistort_line(xpos012, xpos345, uv1.y, rowtap024, rowtap135) * coltap135.x +
+		       undistort_line(xpos012, xpos345, uv2.y, rowtap024, rowtap135) * coltap024.y +
+		       undistort_line(xpos012, xpos345, uv3.y, rowtap024, rowtap135) * coltap135.y +
+		       undistort_line(xpos012, xpos345, uv4.y, rowtap024, rowtap135) * coltap024.z +
+		       undistort_line(xpos012, xpos345, uv5.y, rowtap024, rowtap135) * coltap135.z;
+	}
 
-	return
-		get_line(xystart.y                 , xpos1, xpos2, rowtap1, rowtap2, undistort) * coltap1.r +
-		get_line(xystart.y + stepxy.y      , xpos1, xpos2, rowtap1, rowtap2, undistort) * coltap2.r +
-		get_line(xystart.y + stepxy.y * 2.0, xpos1, xpos2, rowtap1, rowtap2, undistort) * coltap1.g +
-		get_line(xystart.y + stepxy.y * 3.0, xpos1, xpos2, rowtap1, rowtap2, undistort) * coltap2.g +
-		get_line(xystart.y + stepxy.y * 4.0, xpos1, xpos2, rowtap1, rowtap2, undistort) * coltap1.b +
-		get_line(xystart.y + stepxy.y * 5.0, xpos1, xpos2, rowtap1, rowtap2, undistort) * coltap2.b;
+	float u_weight_sum = rowtap024.y + rowtap135.y;
+	float u_middle_offset = rowtap135.y * stepxy.x / u_weight_sum;
+	float u_middle = uv2.x + u_middle_offset;
+
+	float v_weight_sum = coltap024.y + coltap135.y;
+	float v_middle_offset = coltap135.y * stepxy.y / v_weight_sum;
+	float v_middle = uv2.y + v_middle_offset;
+
+	float2 coord_limit = base_dimension - 0.5;
+	float2 coord0_f = max(uv0 * base_dimension, 0.5);
+	float2 coord1_f = coord0_f + 1.0;
+	float2 coord4_f = min(coord0_f + 4.0, coord_limit);
+	float2 coord5_f = min(coord0_f + 5.0, coord_limit);
+
+	int2 coord0 = int2(coord0_f);
+	int2 coord1 = int2(coord1_f);
+	int2 coord4 = int2(coord4_f);
+	int2 coord5 = int2(coord5_f);
+
+	float4 row0 = image.Load(int3(coord0, 0)) * rowtap024.x;
+	row0 += image.Load(int3(coord1.x, coord0.y, 0))* rowtap135.x;
+	row0 += image.Sample(textureSampler, float2(u_middle, uv0.y)) * u_weight_sum;
+	row0 += image.Load(int3(coord4.x, coord0.y, 0)) * rowtap024.z;
+	row0 += image.Load(int3(coord5.x, coord0.y, 0)) * rowtap135.z;
+	float4 total = row0 * coltap024.x;
+
+	float4 row1 = image.Load(int3(coord0.x, coord1.y, 0)) * rowtap024.x;
+	row1 += image.Load(int3(coord1.x, coord1.y, 0))* rowtap135.x;
+	row1 += image.Sample(textureSampler, float2(u_middle, uv1.y)) * u_weight_sum;
+	row1 += image.Load(int3(coord4.x, coord1.y, 0)) * rowtap024.z;
+	row1 += image.Load(int3(coord5.x, coord1.y, 0)) * rowtap135.z;
+	total += row1 * coltap135.x;
+
+	float4 row23 = image.Sample(textureSampler, float2(uv0.x, v_middle)) * rowtap024.x;
+	row23 += image.Sample(textureSampler, float2(uv1.x, v_middle))* rowtap135.x;
+	row23 += image.Sample(textureSampler, float2(u_middle, v_middle)) * u_weight_sum;
+	row23 += image.Sample(textureSampler, float2(uv4.x, v_middle)) * rowtap024.z;
+	row23 += image.Sample(textureSampler, float2(uv5.x, v_middle)) * rowtap135.z;
+	total += row23 * v_weight_sum;
+
+	float4 row4 = image.Load(int3(coord0.x, coord4.y, 0)) * rowtap024.x;
+	row4 += image.Load(int3(coord1.x, coord4.y, 0))* rowtap135.x;
+	row4 += image.Sample(textureSampler, float2(u_middle, uv4.y)) * u_weight_sum;
+	row4 += image.Load(int3(coord4.x, coord4.y, 0)) * rowtap024.z;
+	row4 += image.Load(int3(coord5.x, coord4.y, 0)) * rowtap135.z;
+	total += row4 * coltap024.z;
+
+	float4 row5 = image.Load(int3(coord0.x, coord5.y, 0)) * rowtap024.x;
+	row5 += image.Load(int3(coord1.x, coord5.y, 0))* rowtap135.x;
+	row5 += image.Sample(textureSampler, float2(u_middle, uv5.y)) * u_weight_sum;
+	row5 += image.Load(int3(coord4.x, coord5.y, 0)) * rowtap024.z;
+	row5 += image.Load(int3(coord5, 0)) * rowtap135.z;
+	total += row5 * coltap135.z;
+
+	return total;
 }
 
-float4 PSDrawLanczosRGBA(FragData v_in, bool undistort) : TARGET
+float4 PSDrawLanczosRGBA(FragData f_in, bool undistort) : TARGET
 {
-	return DrawLanczos(v_in, undistort);
+	return DrawLanczos(f_in, undistort);
 }
 
-float4 PSDrawLanczosRGBADivide(FragData v_in) : TARGET
+float4 PSDrawLanczosRGBADivide(FragData f_in) : TARGET
 {
-	float4 rgba = DrawLanczos(v_in, false);
+	float4 rgba = DrawLanczos(f_in, false);
 	float alpha = rgba.a;
 	float multiplier = (alpha > 0.0) ? (1.0 / alpha) : 0.0;
 	return float4(rgba.rgb * multiplier, alpha);
@@ -150,7 +204,7 @@ technique Draw
 	pass
 	{
 		vertex_shader = VSDefault(v_in);
-		pixel_shader  = PSDrawLanczosRGBA(v_in, false);
+		pixel_shader  = PSDrawLanczosRGBA(f_in, false);
 	}
 }
 
@@ -159,7 +213,7 @@ technique DrawAlphaDivide
 	pass
 	{
 		vertex_shader = VSDefault(v_in);
-		pixel_shader  = PSDrawLanczosRGBADivide(v_in);
+		pixel_shader  = PSDrawLanczosRGBADivide(f_in);
 	}
 }
 
@@ -168,6 +222,6 @@ technique DrawUndistort
 	pass
 	{
 		vertex_shader = VSDefault(v_in);
-		pixel_shader  = PSDrawLanczosRGBA(v_in, true);
+		pixel_shader  = PSDrawLanczosRGBA(f_in, true);
 	}
 }
