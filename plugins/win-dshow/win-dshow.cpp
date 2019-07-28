@@ -462,11 +462,18 @@ static inline enum speaker_layout convert_speaker_layout(uint8_t channels)
 //#define LOG_ENCODED_VIDEO_TS 1
 //#define LOG_ENCODED_AUDIO_TS 1
 
+#define MAX_SW_RES_INT (1920 * 1080)
+
 void DShowInput::OnEncodedVideoData(enum AVCodecID id, unsigned char *data,
 				    size_t size, long long ts)
 {
 	if (!ffmpeg_decode_valid(video_decoder)) {
-		if (ffmpeg_decode_init(video_decoder, id) < 0) {
+		/* Only use MJPEG hardware decoding on resolutions higher
+		 * than 1920x1080.  The reason why is because we want to strike
+		 * a reasonable balance between hardware and CPU usage. */
+		bool useHW = videoConfig.format != VideoFormat::MJPEG ||
+			     (videoConfig.cx * videoConfig.cy) > MAX_SW_RES_INT;
+		if (ffmpeg_decode_init(video_decoder, id, useHW) < 0) {
 			blog(LOG_WARNING, "Could not initialize video decoder");
 			return;
 		}
@@ -571,7 +578,7 @@ void DShowInput::OnEncodedAudioData(enum AVCodecID id, unsigned char *data,
 				    size_t size, long long ts)
 {
 	if (!ffmpeg_decode_valid(audio_decoder)) {
-		if (ffmpeg_decode_init(audio_decoder, id) < 0) {
+		if (ffmpeg_decode_init(audio_decoder, id, false) < 0) {
 			blog(LOG_WARNING, "Could not initialize audio decoder");
 			return;
 		}
