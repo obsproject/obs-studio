@@ -259,4 +259,5 @@ struct obs_source_info window_capture_info = {
 	.get_height = wc_height,
 	.get_defaults = wc_defaults,
 	.get_properties = wc_properties,
+	.icon_type = OBS_ICON_TYPE_WINDOW_CAPTURE,
 };

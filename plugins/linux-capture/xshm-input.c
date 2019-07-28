@@ -508,4 +508,5 @@ struct obs_source_info xshm_input = {
 	.video_render = xshm_video_render,
 	.get_width = xshm_getwidth,
 	.get_height = xshm_getheight,
+	.icon_type = OBS_ICON_TYPE_DESKTOP_CAPTURE,
 };

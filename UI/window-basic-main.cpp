@@ -1816,6 +1816,8 @@ void OBSBasic::OBSInit()
 	ui->viewMenu->addAction(QTStr("MultiviewWindowed"), this,
 				SLOT(OpenMultiviewWindow()));
 
+	ui->sources->UpdateIcons();
+
 #if !defined(_WIN32) && !defined(__APPLE__)
 	delete ui->actionShowCrashLogs;
 	delete ui->actionUploadLastCrashLog;
@@ -4612,6 +4614,15 @@ QMenu *OBSBasic::CreateAddSourcePopupMenu()
 		connect(popupItem, SIGNAL(triggered(bool)), this,
 			SLOT(AddSourceFromAction()));
 
+		QIcon icon;
+
+		if (strcmp(type, "scene") == 0)
+			icon = GetSceneIcon();
+		else
+			icon = GetSourceIcon(type);
+
+		popupItem->setIcon(icon);
+
 		QAction *after = getActionAfter(popup, qname);
 		popup->insertAction(after, popupItem);
 	};
@@ -4637,6 +4648,7 @@ QMenu *OBSBasic::CreateAddSourcePopupMenu()
 	popup->addSeparator();
 	QAction *addGroup = new QAction(QTStr("Group"), this);
 	addGroup->setData(QT_UTF8("group"));
+	addGroup->setIcon(GetGroupIcon());
 	connect(addGroup, SIGNAL(triggered(bool)), this,
 		SLOT(AddSourceFromAction()));
 	popup->addAction(addGroup);

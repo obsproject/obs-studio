@@ -940,4 +940,5 @@ struct obs_source_info slideshow_info = {
 	.get_height = ss_height,
 	.get_defaults = ss_defaults,
 	.get_properties = ss_properties,
+	.icon_type = OBS_ICON_TYPE_SLIDESHOW,
 };

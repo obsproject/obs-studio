@@ -505,4 +505,5 @@ struct obs_source_info ffmpeg_source = {
 	.deactivate = ffmpeg_source_deactivate,
 	.video_tick = ffmpeg_source_tick,
 	.update = ffmpeg_source_update,
+	.icon_type = OBS_ICON_TYPE_MEDIA,
 };

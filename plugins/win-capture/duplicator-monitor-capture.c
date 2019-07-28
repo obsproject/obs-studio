@@ -323,4 +323,5 @@ struct obs_source_info duplicator_capture_info = {
 	.get_height = duplicator_capture_height,
 	.get_defaults = duplicator_capture_defaults,
 	.get_properties = duplicator_capture_properties,
+	.icon_type = OBS_ICON_TYPE_DESKTOP_CAPTURE,
 };

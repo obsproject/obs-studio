@@ -265,7 +265,9 @@ static struct obs_source_info image_source_info = {
 	.get_height = image_source_getheight,
 	.video_render = image_source_render,
 	.video_tick = image_source_tick,
-	.get_properties = image_source_properties};
+	.get_properties = image_source_properties,
+	.icon_type = OBS_ICON_TYPE_IMAGE,
+};
 
 OBS_DECLARE_MODULE()
 OBS_MODULE_USE_DEFAULT_LOCALE("image-source", "en-US")

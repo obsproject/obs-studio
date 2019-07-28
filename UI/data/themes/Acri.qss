@@ -142,6 +142,7 @@ SourceTree::item {
 	margin-bottom: 2px;
 	margin-top: 0px;
 	border: 1px solid transparent;
+	height: 24px;
 }
 
 QListWidget QLineEdit {
@@ -198,11 +199,6 @@ SourceListWidget {
 SourceTree {
 	border: none;
 	border-bottom: 1px solid #2f2f2f;
-}
-
-SourceTree QLabel {
-	padding: 2px 0px;
-	margin: -2px 4px -2px;
 }
 
 SourceTree QLineEdit {
@@ -1005,4 +1001,24 @@ QPushButton#extraPanelDelete:hover {
 
 QPushButton#extraPanelDelete:pressed {
     background-color: #161f41;
+}
+
+/* Source Icons */
+
+OBSBasic {
+    qproperty-imageIcon: url(./Dark/sources/image.svg);
+    qproperty-colorIcon: url(./Dark/sources/brush.svg);
+    qproperty-slideshowIcon: url(./Dark/sources/slideshow.svg);
+    qproperty-audioInputIcon: url(./Dark/sources/microphone.svg);
+    qproperty-audioOutputIcon: url(./Dark/settings/audio.svg);
+    qproperty-desktopCapIcon: url(./Dark/settings/video.svg);
+    qproperty-windowCapIcon: url(./Dark/sources/window.svg);
+    qproperty-gameCapIcon: url(./Dark/sources/gamepad.svg);
+    qproperty-cameraIcon: url(./Dark/sources/camera.svg);
+    qproperty-textIcon: url(./Dark/sources/text.svg);
+    qproperty-mediaIcon: url(./Dark/sources/media.svg);
+    qproperty-browserIcon: url(./Dark/sources/globe.svg);
+    qproperty-groupIcon: url(./Dark/sources/group.svg);
+    qproperty-sceneIcon: url(./Dark/sources/scene.svg);
+    qproperty-defaultIcon: url(./Dark/sources/default.svg);
 }
