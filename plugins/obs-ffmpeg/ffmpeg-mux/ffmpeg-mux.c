@@ -566,7 +566,9 @@ static int ffmpeg_mux_init_internal(struct ffmpeg_mux *ffm, int argc,
 			calloc(1, sizeof(struct header) * ffm->params.tracks);
 	}
 
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58, 9, 100)
 	av_register_all();
+#endif
 
 	if (!ffmpeg_mux_get_extra_data(ffm))
 		return FFM_ERROR;

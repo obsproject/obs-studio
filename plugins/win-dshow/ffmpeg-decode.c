@@ -73,7 +73,9 @@ int ffmpeg_decode_init(struct ffmpeg_decode *decode, enum AVCodecID id,
 {
 	int ret;
 
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58, 9, 100)
 	avcodec_register_all();
+#endif
 	memset(decode, 0, sizeof(*decode));
 
 	decode->codec = avcodec_find_decoder(id);

@@ -147,7 +147,9 @@ extern bool load_nvenc_lib(void);
 
 static bool nvenc_supported(void)
 {
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58, 9, 100)
 	av_register_all();
+#endif
 
 	profile_start(nvenc_check_name);
 

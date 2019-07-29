@@ -154,7 +154,9 @@ bool media_remux_job_create(media_remux_job_t *job, const char *in_filename,
 
 	init_size(*job, in_filename);
 
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58, 9, 100)
 	av_register_all();
+#endif
 
 	if (!init_input(*job, in_filename))
 		goto fail;
