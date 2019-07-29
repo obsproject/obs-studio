@@ -804,7 +804,7 @@ static bool DetermineResolution(int &cx, int &cy, obs_data_t *settings,
 
 static long long GetOBSFPS();
 
-static inline bool IsEncoded(const VideoConfig &config)
+static inline bool IsDelayedDevice(const VideoConfig &config)
 {
 	return config.format >= VideoFormat::MJPEG ||
 	       wstrstri(config.name.c_str(), L"elgato") != NULL ||
@@ -824,7 +824,7 @@ inline void DShowInput::SetupBuffering(obs_data_t *settings)
 	bufType = (BufferingType)obs_data_get_int(settings, BUFFERING_VAL);
 
 	if (bufType == BufferingType::Auto)
-		useBuffering = IsEncoded(videoConfig);
+		useBuffering = IsDelayedDevice(videoConfig);
 	else
 		useBuffering = bufType == BufferingType::On;
 
