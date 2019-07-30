@@ -463,7 +463,7 @@ bool WASAPISource::ProcessCaptureData()
 	UINT64 pos, ts;
 	UINT captureSize = 0;
 
-	while (true) {
+	while (active) {
 		res = capture->GetNextPacketSize(&captureSize);
 
 		if (FAILED(res)) {
@@ -533,6 +533,7 @@ DWORD WINAPI WASAPISource::CaptureThread(LPVOID param)
 
 	while (WaitForCaptureSignal(2, sigs, dur)) {
 		if (source->hadDefaultChangeEvent || !source->ProcessCaptureData()) {
+			ResetEvent(source->receiveSignal);
 			source->hadDefaultChangeEvent = false;
 			reconnect = true;
 			break;
