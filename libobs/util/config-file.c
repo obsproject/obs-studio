@@ -95,7 +95,7 @@ config_t *config_create(const char *file)
 static inline void remove_ref_whitespace(struct strref *ref)
 {
 	if (ref->array) {
-		while (is_whitespace(*ref->array)) {
+		while (ref->len && is_whitespace(*ref->array)) {
 			ref->array++;
 			ref->len--;
 		}
