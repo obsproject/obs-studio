@@ -1556,7 +1556,7 @@ static bool initialize_interleaved_packets(struct obs_output *output)
 
 #if DEBUG_STARTING_PACKETS == 1
 	int64_t v = video->dts_usec;
-	int64_t a = audio[0]->dts_usec;
+	int64_t a = audio_mixes > 0 ? audio[0]->dts_usec : 0;
 	int64_t diff = v - a;
 
 	blog(LOG_DEBUG,
@@ -1566,7 +1566,9 @@ static bool initialize_interleaved_packets(struct obs_output *output)
 #endif
 
 	/* subtract offsets from highest TS offset variables */
-	output->highest_audio_ts -= audio[0]->dts_usec;
+	if(audio_mixes > 0)
+		output->highest_audio_ts -= audio[0]->dts_usec;
+
 	output->highest_video_ts -= video->dts_usec;
 
 	/* apply new offsets to all existing packet DTS/PTS values */
