@@ -246,17 +246,17 @@ static void wc_render(void *data, gs_effect_t *effect)
 }
 
 struct obs_source_info window_capture_info = {
-	.id = "window_capture",
-	.type = OBS_SOURCE_TYPE_INPUT,
-	.output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_CUSTOM_DRAW,
-	.get_name = wc_getname,
-	.create = wc_create,
-	.destroy = wc_destroy,
-	.update = wc_update,
-	.video_render = wc_render,
-	.video_tick = wc_tick,
-	.get_width = wc_width,
-	.get_height = wc_height,
-	.get_defaults = wc_defaults,
-	.get_properties = wc_properties,
+	.id             = "window_capture",
+	.type           = OBS_SOURCE_TYPE_INPUT,
+	.output_flags   = OBS_SOURCE_VIDEO | OBS_SOURCE_CUSTOM_DRAW | OBS_SOURCE_DO_NOT_DUPLICATE,
+	.get_name       = wc_getname,
+	.create         = wc_create,
+	.destroy        = wc_destroy,
+	.update         = wc_update,
+	.video_render   = wc_render,
+	.video_tick     = wc_tick,
+	.get_width      = wc_width,
+	.get_height     = wc_height,
+	.get_defaults   = wc_defaults,
+	.get_properties = wc_properties
 };
