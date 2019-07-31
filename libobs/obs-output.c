@@ -190,6 +190,7 @@ void obs_output_destroy(obs_output_t *output)
 {
 	if (output) {
 		obs_context_data_remove(&output->context);
+		os_atomic_set_long(&output->control->ref.refs, -0xFF);
 
 		blog(LOG_DEBUG, "output '%s' destroyed", output->context.name);
 
@@ -202,8 +203,12 @@ void obs_output_destroy(obs_output_t *output)
 
 		if (output->service)
 			output->service->output = NULL;
-		if (output->context.data)
-			output->info.destroy(output->context.data);
+
+		if (output->context.data) {
+			void* temp_data = output->context.data;
+			output->context.data = NULL;
+			output->info.destroy(temp_data);
+		}
 
 		free_packets(output);
 

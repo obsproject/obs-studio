@@ -601,9 +601,9 @@ static void obs_free_audio(void)
 	da_free(audio->monitors);
 	bfree(audio->monitoring_device_name);
 	bfree(audio->monitoring_device_id);
-	pthread_mutex_destroy(&audio->monitoring_mutex);
 
-	memset(audio, 0, sizeof(struct obs_core_audio));
+	memset(audio, 0, sizeof(struct obs_core_audio) - sizeof(pthread_mutex_t));
+	pthread_mutex_destroy(&audio->monitoring_mutex);
 }
 
 static bool obs_init_data(void)
@@ -2143,7 +2143,7 @@ void obs_context_data_free(struct obs_context_data *context)
 		bfree(context->rename_cache.array[i]);
 	da_free(context->rename_cache);
 
-	memset(context, 0, sizeof(*context));
+	memset(context, 0, sizeof(*context) - sizeof(pthread_mutex_t));
 }
 
 void obs_context_data_insert(struct obs_context_data *context,

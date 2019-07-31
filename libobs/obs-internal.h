@@ -323,10 +323,10 @@ struct obs_core_audio {
 
 	float user_volume;
 
-	pthread_mutex_t monitoring_mutex;
-	DARRAY(struct audio_monitor *) monitors;
-	char *monitoring_device_name;
-	char *monitoring_device_id;
+	DARRAY(struct audio_monitor*)   monitors;
+	char                            *monitoring_device_name;
+	char                            *monitoring_device_id;
+	pthread_mutex_t                 monitoring_mutex;
 };
 
 /* user sources, output channels, and displays */
@@ -456,14 +456,14 @@ struct obs_context_data {
 	DARRAY(obs_hotkey_pair_id) hotkey_pairs;
 	obs_data_t *hotkey_data;
 
-	DARRAY(char *) rename_cache;
-	pthread_mutex_t rename_cache_mutex;
+	pthread_mutex_t                 *mutex;
+	struct obs_context_data         *next;
+	struct obs_context_data         **prev_next;
 
-	pthread_mutex_t *mutex;
-	struct obs_context_data *next;
-	struct obs_context_data **prev_next;
+	bool                            private;
 
-	bool private;
+	DARRAY(char*)                   rename_cache;
+	pthread_mutex_t                 rename_cache_mutex;
 };
 
 extern bool obs_context_data_init(struct obs_context_data *context,

@@ -454,6 +454,8 @@ static inline bool obs_encoder_initialize_internal(obs_encoder_t *encoder)
 	if (encoder->initialized)
 		return true;
 
+	encoder->destroy_on_stop = false;
+
 	obs_encoder_shutdown(encoder);
 
 	if (encoder->orig_info.create) {
