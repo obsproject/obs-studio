@@ -30,7 +30,7 @@ variables:
   BuildPath32: $(Build.SourcesDirectory)\build32
   BuildPath64: $(Build.SourcesDirectory)\build64
   InstallPath: $(Build.SourcesDirectory)\packed_build
-  CefVersion: 3.3578.1859.g3563564
+  CefVersion: 75.0.13_g2c92fcd_chromium-75.0.3770.100
   CefDirName: cef_binary_$(CefVersion)_windows64
   CefPath: $(Build.SourcesDirectory)\$(CefDirName)
   CefBuildPath: $(CefPath)\build
