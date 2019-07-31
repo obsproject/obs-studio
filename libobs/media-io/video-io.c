@@ -289,7 +289,7 @@ static size_t video_get_input_idx(const video_t *video,
 {
 	for (size_t i = 0; i < video->inputs.num; i++) {
 		struct video_input *input = video->inputs.array + i;
-		if (input->callback == callback && input->param == param)
+		if (input != NULL && input->callback == callback && input->param == param)
 			return i;
 	}
 

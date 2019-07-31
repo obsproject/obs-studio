@@ -309,9 +309,11 @@ static void mp_media_next_audio(mp_media_t *m)
 		audio = malloc(sizeof(struct obs_source_audio));
 
 		for (size_t i = 0; i < MAX_AV_PLANES; i++) {
-			audio->data[i] = malloc(f->linesize[0]);
 			if (f->data[i]) {
-				memcpy(audio->data[i], f->data[i], f->linesize[0]);
+				audio->data[i] = malloc(f->linesize[i]);
+				memcpy(audio->data[i], f->data[i], f->linesize[i]);
+			} else {
+				audio->data[i] = NULL;
 			}
 		}
 
@@ -325,7 +327,8 @@ static void mp_media_next_audio(mp_media_t *m)
 
 		if (audio->format == AUDIO_FORMAT_UNKNOWN) {
 			for (size_t j = 0; j < MAX_AV_PLANES; j++) {
-				free(audio->data[j]);
+				if(audio->data[j] != NULL)
+					free(audio->data[j]);
 			}
 			free(audio);
 			return;
