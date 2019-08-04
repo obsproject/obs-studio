@@ -16,6 +16,11 @@ class QMouseEvent;
 
 #define ZOOM_SENSITIVITY 1.125f
 
+#define PREVIEW_OUTLINE_COLOR 0xFF0000FF
+#define CROP_COLOR 0xFF00FF00
+#define HOVER_OUTLINE_COLOR 0xFFFF0000
+#define HANDLE_COLOR 0xFF0000FF
+
 enum class ItemHandle : uint32_t {
 	None = 0,
 	TopLeft = ITEM_TOP | ITEM_LEFT,
@@ -30,6 +35,14 @@ enum class ItemHandle : uint32_t {
 
 class OBSBasicPreview : public OBSQTDisplay {
 	Q_OBJECT
+	Q_PROPERTY(QColor previewOutlineColor MEMBER backgroundColor READ
+			   GetPreviewOutlineColor WRITE SetPreviewOutlineColor)
+	Q_PROPERTY(QColor cropColor MEMBER cropColor READ GetCropColor WRITE
+			   SetCropColor)
+	Q_PROPERTY(QColor hoverOutlineColor MEMBER hoverOutlineColor READ
+			   GetHoverOutlineColor WRITE SetHoverOutlineColor)
+	Q_PROPERTY(QColor handleColor MEMBER handleColor READ GetHandleColor
+			   WRITE SetHandleColor)
 
 	friend class SourceTree;
 
@@ -91,6 +104,11 @@ private:
 
 	void ProcessClick(const vec2 &pos);
 
+	uint32_t previewOutlineColor = PREVIEW_OUTLINE_COLOR;
+	uint32_t cropColor = CROP_COLOR;
+	uint32_t hoverOutlineColor = HOVER_OUTLINE_COLOR;
+	uint32_t handleColor = HANDLE_COLOR;
+
 public:
 	OBSBasicPreview(QWidget *parent, Qt::WindowFlags flags = 0);
 	~OBSBasicPreview();
@@ -139,4 +157,14 @@ public:
 	 * byte boundary. */
 	static inline void *operator new(size_t size) { return bmalloc(size); }
 	static inline void operator delete(void *ptr) { bfree(ptr); }
+
+	QColor GetPreviewOutlineColor() const;
+	QColor GetCropColor() const;
+	QColor GetHoverOutlineColor() const;
+	QColor GetHandleColor() const;
+
+	void SetPreviewOutlineColor(const QColor &color);
+	void SetCropColor(const QColor &color);
+	void SetHoverOutlineColor(const QColor &color);
+	void SetHandleColor(const QColor &color);
 };

@@ -1015,3 +1015,12 @@ QPushButton#extraPanelDelete:hover {
 QPushButton#extraPanelDelete:pressed {
     background-color: #161f41;
 }
+
+/* Preview Outline Colors */
+
+OBSBasicPreview {
+	qproperty-previewOutlineColor: #FF0000;
+	qproperty-cropColor: #00FF00;
+	qproperty-hoverOutlineColor: #0000FF;
+	qproperty-handleColor: #FF0000;
+}

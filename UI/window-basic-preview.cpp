@@ -19,6 +19,22 @@
 
 /* TODO: make C++ math classes and clean up code here later */
 
+static inline long long color_to_int(QColor color)
+{
+	auto shift = [&](unsigned val, int shift) {
+		return ((val & 0xff) << shift);
+	};
+
+	return shift(color.red(), 0) | shift(color.green(), 8) |
+	       shift(color.blue(), 16) | shift(color.alpha(), 24);
+}
+
+static inline QColor rgba_to_color(uint32_t rgba)
+{
+	return QColor::fromRgb(rgba & 0xFF, (rgba >> 8) & 0xFF,
+			       (rgba >> 16) & 0xFF, (rgba >> 24) & 0xFF);
+}
+
 OBSBasicPreview::OBSBasicPreview(QWidget *parent, Qt::WindowFlags flags)
 	: OBSQTDisplay(parent, flags)
 {
@@ -1424,13 +1440,17 @@ bool OBSBasicPreview::DrawSelectedItem(obs_scene_t *scene,
 		{{{1.f, 1.f, 0.f}}},
 	};
 
-	vec4 red;
-	vec4 green;
-	vec4 blue;
+	vec4 handleVal;
+	vec4_from_rgba(&handleVal, prev->handleColor);
 
-	vec4_set(&red, 1.0f, 0.0f, 0.0f, 1.0f);
-	vec4_set(&green, 0.0f, 1.0f, 0.0f, 1.0f);
-	vec4_set(&blue, 0.0f, 0.5f, 1.0f, 1.0f);
+	vec4 cropVal;
+	vec4_from_rgba(&cropVal, prev->cropColor);
+
+	vec4 hoverVal;
+	vec4_from_rgba(&hoverVal, prev->hoverOutlineColor);
+
+	vec4 outlineVal;
+	vec4_from_rgba(&outlineVal, prev->previewOutlineColor);
 
 	bool visible = std::all_of(
 		std::begin(bounds), std::end(bounds), [&](const vec3 &b) {
@@ -1467,11 +1487,11 @@ bool OBSBasicPreview::DrawSelectedItem(obs_scene_t *scene,
 	if (info.bounds_type == OBS_BOUNDS_NONE && crop_enabled(&crop)) {
 #define DRAW_SIDE(side, x1, y1, x2, y2)                        \
 	if (hovered && !selected)                              \
-		gs_effect_set_vec4(colParam, &blue);           \
+		gs_effect_set_vec4(colParam, &hoverVal);       \
 	else if (crop.side > 0)                                \
-		gs_effect_set_vec4(colParam, &green);          \
+		gs_effect_set_vec4(colParam, &cropVal);        \
 	DrawLine(x1, y1, x2, y2, HANDLE_RADIUS / 2, boxScale); \
-	gs_effect_set_vec4(colParam, &red);
+	gs_effect_set_vec4(colParam, &outlineVal);
 
 		DRAW_SIDE(left, 0.0f, 0.0f, 0.0f, 1.0f);
 		DRAW_SIDE(top, 0.0f, 0.0f, 1.0f, 0.0f);
@@ -1480,7 +1500,7 @@ bool OBSBasicPreview::DrawSelectedItem(obs_scene_t *scene,
 #undef DRAW_SIDE
 	} else {
 		if (!selected) {
-			gs_effect_set_vec4(colParam, &blue);
+			gs_effect_set_vec4(colParam, &hoverVal);
 			DrawRect(HANDLE_RADIUS / 2, boxScale);
 		} else {
 			DrawRect(HANDLE_RADIUS / 2, boxScale);
@@ -1488,7 +1508,7 @@ bool OBSBasicPreview::DrawSelectedItem(obs_scene_t *scene,
 	}
 
 	gs_load_vertexbuffer(main->box);
-	gs_effect_set_vec4(colParam, &red);
+	gs_effect_set_vec4(colParam, &handleVal);
 
 	if (selected) {
 		DrawSquareAtPos(0.0f, 0.0f);
@@ -1557,9 +1577,10 @@ void OBSBasicPreview::DrawSceneEditing()
 	gs_effect_t *solid = obs_get_base_effect(OBS_EFFECT_SOLID);
 	gs_technique_t *tech = gs_effect_get_technique(solid, "Solid");
 
-	vec4 color;
-	vec4_set(&color, 1.0f, 0.0f, 0.0f, 1.0f);
-	gs_effect_set_vec4(gs_effect_get_param_by_name(solid, "color"), &color);
+	vec4 outlineVal;
+	vec4_from_rgba(&outlineVal, previewOutlineColor);
+	gs_effect_set_vec4(gs_effect_get_param_by_name(solid, "color"),
+			   &outlineVal);
 
 	gs_technique_begin(tech);
 	gs_technique_begin_pass(tech, 0);
@@ -1604,4 +1625,44 @@ void OBSBasicPreview::SetScalingAmount(float newScalingAmountVal)
 OBSBasicPreview *OBSBasicPreview::Get()
 {
 	return OBSBasic::Get()->ui->preview;
+}
+
+void OBSBasicPreview::SetPreviewOutlineColor(const QColor &color)
+{
+	previewOutlineColor = (uint32_t)color_to_int(color);
+}
+
+void OBSBasicPreview::SetCropColor(const QColor &color)
+{
+	cropColor = (uint32_t)color_to_int(color);
+}
+
+void OBSBasicPreview::SetHoverOutlineColor(const QColor &color)
+{
+	hoverOutlineColor = (uint32_t)color_to_int(color);
+}
+
+void OBSBasicPreview::SetHandleColor(const QColor &color)
+{
+	handleColor = (uint32_t)color_to_int(color);
+}
+
+QColor OBSBasicPreview::GetPreviewOutlineColor() const
+{
+	return rgba_to_color(previewOutlineColor);
+}
+
+QColor OBSBasicPreview::GetCropColor() const
+{
+	return rgba_to_color(cropColor);
+}
+
+QColor OBSBasicPreview::GetHoverOutlineColor() const
+{
+	return rgba_to_color(hoverOutlineColor);
+}
+
+QColor OBSBasicPreview::GetHandleColor() const
+{
+	return rgba_to_color(handleColor);
 }

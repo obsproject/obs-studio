@@ -208,3 +208,12 @@ VisibilityCheckBox::indicator:unchecked {
 * [themeID="revertIcon"] {
     qproperty-icon: url(:res/images/revert.svg);
 }
+
+/* Preview Outline Colors */
+
+OBSBasicPreview {
+	qproperty-previewOutlineColor: #FF0000;
+	qproperty-cropColor: #00FF00;
+	qproperty-hoverOutlineColor: #0000FF;
+	qproperty-handleColor:  #FF0000;
+}
