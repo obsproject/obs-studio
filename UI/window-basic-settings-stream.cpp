@@ -17,10 +17,19 @@ struct QCefCookieManager;
 extern QCef *cef;
 extern QCefCookieManager *panel_cookies;
 
-enum class ListOpt : int {
-	ShowAll = 1,
-	Custom,
-};
+#ifdef WEBRTC_AVAILABLE
+enum class ListOpt : int { ShowAll = 1, Custom, Janus, Wowza, Millicast };
+
+std::vector<std::string> webrtc_services = {"webrtc_janus", "webrtc_wowza",
+					    "webrtc_millicast"};
+
+std::vector<std::string>::size_type webrtc_count = webrtc_services.size();
+#else
+enum class ListOpt : int { ShowAll = 1, Custom };
+
+std::vector<std::string> webrtc_services = {""};
+std::vector<std::string>::size_type webrtc_count = webrtc_services.size();
+#endif
 
 enum class Section : int {
 	Connect,
@@ -30,6 +39,17 @@ enum class Section : int {
 inline bool OBSBasicSettings::IsCustomService() const
 {
 	return ui->service->currentData().toInt() == (int)ListOpt::Custom;
+}
+
+inline int OBSBasicSettings::IsWebRTC() const
+{
+#ifdef WEBRTC_AVAILABLE
+	if (ui->service->currentData().toInt() > (int)ListOpt::Custom)
+		return ui->service->currentData().toInt();
+	return 0;
+#else
+	return 0;
+#endif
 }
 
 void OBSBasicSettings::InitStreamPage()
@@ -85,7 +105,7 @@ void OBSBasicSettings::LoadStream1Settings()
 		ui->authUsername->setText(QT_UTF8(username));
 		ui->authPw->setText(QT_UTF8(password));
 		ui->useAuth->setChecked(use_auth);
-	} else {
+	} else if (strcmp(type, "rtmp_common") == 0) {
 		int idx = ui->service->findText(service);
 		if (idx == -1) {
 			if (service && *service)
@@ -96,6 +116,44 @@ void OBSBasicSettings::LoadStream1Settings()
 
 		bool bw_test = obs_data_get_bool(settings, "bwtest");
 		ui->bandwidthTestEnable->setChecked(bw_test);
+	} else {
+		const char *room = obs_data_get_string(settings, "room");
+		const char *username =
+			obs_data_get_string(settings, "username");
+		const char *password =
+			obs_data_get_string(settings, "password");
+
+		const char *tmpString = nullptr;
+
+		tmpString = obs_data_get_string(settings, "codec");
+		const char *codec = strcmp("", tmpString) == 0 ? "Automatic"
+							       : tmpString;
+
+		tmpString = obs_data_get_string(settings, "protocol");
+		const char *protocol = strcmp("", tmpString) == 0 ? "Automatic"
+								  : tmpString;
+
+		int idx = 0;
+		for (std::vector<std::string>::size_type i = 0;
+		     i < webrtc_count; ++i)
+			if (std::string(type) == webrtc_services[i]) {
+				idx = i + 1;
+				break;
+			}
+
+		ui->service->setCurrentIndex(idx);
+		ui->customServer->setText(server);
+		ui->room->setText(QT_UTF8(room));
+		ui->authUsername->setText(QT_UTF8(username));
+		ui->authPw->setText(QT_UTF8(password));
+		bool use_auth = true;
+		ui->useAuth->setChecked(use_auth);
+
+		int idxC = ui->codec->findText(codec);
+		ui->codec->setCurrentIndex(idxC);
+
+		int idxP = ui->streamProtocol->findText(protocol);
+		ui->streamProtocol->setCurrentIndex(idxP);
 	}
 
 	UpdateServerList();
@@ -128,7 +186,11 @@ void OBSBasicSettings::LoadStream1Settings()
 void OBSBasicSettings::SaveStream1Settings()
 {
 	bool customServer = IsCustomService();
-	const char *service_id = customServer ? "rtmp_custom" : "rtmp_common";
+	int webrtc = IsWebRTC();
+
+	const char *service_id =
+		webrtc == 0 ? customServer ? "rtmp_custom" : "rtmp_common"
+			    : webrtc_services[webrtc - 3].c_str();
 
 	obs_service_t *oldService = main->GetService();
 	OBSData hotkeyData = obs_hotkeys_save_service(oldService);
@@ -137,13 +199,13 @@ void OBSBasicSettings::SaveStream1Settings()
 	OBSData settings = obs_data_create();
 	obs_data_release(settings);
 
-	if (!customServer) {
+	if (!customServer && webrtc == 0) {
 		obs_data_set_string(settings, "service",
 				    QT_TO_UTF8(ui->service->currentText()));
 		obs_data_set_string(
 			settings, "server",
 			QT_TO_UTF8(ui->server->currentData().toString()));
-	} else {
+	} else if (customServer && webrtc == 0) {
 		obs_data_set_string(settings, "server",
 				    QT_TO_UTF8(ui->customServer->text()));
 		obs_data_set_bool(settings, "use_auth",
@@ -155,6 +217,20 @@ void OBSBasicSettings::SaveStream1Settings()
 			obs_data_set_string(settings, "password",
 					    QT_TO_UTF8(ui->authPw->text()));
 		}
+	} else if (webrtc > 0) {
+		obs_data_set_string(settings, "server",
+				    QT_TO_UTF8(ui->customServer->text()));
+		obs_data_set_string(settings, "room",
+				    QT_TO_UTF8(ui->room->text()));
+		obs_data_set_string(settings, "username",
+				    QT_TO_UTF8(ui->authUsername->text()));
+		obs_data_set_string(settings, "password",
+				    QT_TO_UTF8(ui->authPw->text()));
+		obs_data_set_string(settings, "codec",
+				    QT_TO_UTF8(ui->codec->currentText()));
+		obs_data_set_string(
+			settings, "protocol",
+			QT_TO_UTF8(ui->streamProtocol->currentText()));
 	}
 
 	obs_data_set_bool(settings, "bwtest",
@@ -178,9 +254,10 @@ void OBSBasicSettings::SaveStream1Settings()
 void OBSBasicSettings::UpdateKeyLink()
 {
 	bool custom = IsCustomService();
+	int webrtc = IsWebRTC();
 	QString serviceName = ui->service->currentText();
 
-	if (custom)
+	if (custom || webrtc > 0)
 		serviceName = "";
 
 	QString text = QTStr("Basic.AutoConfig.StreamPage.StreamKey");
@@ -253,6 +330,14 @@ void OBSBasicSettings::LoadServices(bool showAll)
 			QVariant((int)ListOpt::ShowAll));
 	}
 
+#ifdef WEBRTC_AVAILABLE
+	for (std::vector<std::string>::size_type i = webrtc_count; i-- > 0;)
+		ui->service->insertItem(0,
+					obs_service_get_display_name(
+						webrtc_services[i].c_str()),
+					QVariant((int)i + 3));
+#endif
+
 	ui->service->insertItem(
 		0, QTStr("Basic.AutoConfig.StreamPage.Service.Custom"),
 		QVariant((int)ListOpt::Custom));
@@ -282,12 +367,13 @@ void OBSBasicSettings::on_service_currentIndexChanged(int)
 
 	std::string service = QT_TO_UTF8(ui->service->currentText());
 	bool custom = IsCustomService();
+	int webrtc = IsWebRTC();
 
 	ui->disconnectAccount->setVisible(false);
 	ui->bandwidthTestEnable->setVisible(false);
 
 #ifdef BROWSER_AVAILABLE
-	if (cef) {
+	if (cef && webrtc == 0) {
 		if (lastService != service.c_str()) {
 			QString key = ui->key->text();
 			bool can_auth = is_auth_service(service);
@@ -307,22 +393,139 @@ void OBSBasicSettings::on_service_currentIndexChanged(int)
 	ui->connectAccount2->setVisible(false);
 #endif
 
-	ui->useAuth->setVisible(custom);
-	ui->authUsernameLabel->setVisible(custom);
-	ui->authUsername->setVisible(custom);
+	ui->useAuth->setVisible(custom && webrtc == 0);
+	ui->authUsernameLabel->setVisible(custom || webrtc > 0);
+	ui->authUsername->setVisible(custom || webrtc > 0);
 	ui->authPwLabel->setVisible(custom);
 	ui->authPwWidget->setVisible(custom);
 
-	if (custom) {
+	if (custom && webrtc == 0) {
+		ui->authUsernameLabel->setText("Username");
+		ui->authPwLabel->setText("Password");
 		ui->streamkeyPageLayout->insertRow(1, ui->serverLabel,
 						   ui->serverStackedWidget);
-
+		ui->streamkeyPageLayout->insertRow(2, ui->streamKeyLabel,
+						   ui->streamKeyWidget);
+		ui->streamkeyPageLayout->insertRow(3, nullptr, ui->useAuth);
+		ui->streamkeyPageLayout->insertRow(4, ui->authUsernameLabel,
+						   ui->authUsername);
+		ui->streamkeyPageLayout->insertRow(5, ui->authPwLabel,
+						   ui->authPwWidget);
+		ui->streamkeyPageLayout->insertRow(6, ui->codecLabel,
+						   ui->codec);
+		ui->streamkeyPageLayout->insertRow(7, ui->streamProtocolLabel,
+						   ui->streamProtocol);
 		ui->serverStackedWidget->setCurrentIndex(1);
 		ui->serverStackedWidget->setVisible(true);
 		ui->serverLabel->setVisible(true);
+		ui->streamKeyLabel->setVisible(true);
+		ui->streamKeyWidget->setVisible(true);
+		ui->roomLabel->setVisible(false);
+		ui->room->setVisible(false);
 		on_useAuth_toggled();
-	} else {
+		ui->codecLabel->setVisible(false);
+		ui->codec->setVisible(false);
+		ui->streamProtocolLabel->setVisible(false);
+		ui->streamProtocol->setVisible(false);
+	} else if (webrtc > 0) {
+		ui->streamKeyLabel->setVisible(false);
+		ui->streamKeyWidget->setVisible(false);
+		ui->serverStackedWidget->setCurrentIndex(1);
+		ui->serverLabel->setVisible(true);
+		ui->serverStackedWidget->setVisible(true);
+		obs_properties_t *props = obs_get_service_properties(
+			webrtc_services[(int)webrtc - 3].c_str());
+		obs_property_t *server = obs_properties_get(props, "server");
+		obs_property_t *room = obs_properties_get(props, "room");
+		obs_property_t *username =
+			obs_properties_get(props, "username");
+		obs_property_t *password =
+			obs_properties_get(props, "password");
+		obs_property_t *codec = obs_properties_get(props, "codec");
+		obs_property_t *protocol =
+			obs_properties_get(props, "protocol");
+		ui->serverLabel->setText(obs_property_description(server));
+		ui->roomLabel->setText(obs_property_description(room));
+		ui->authUsernameLabel->setText(
+			obs_property_description(username));
+		ui->authPwLabel->setText(obs_property_description(password));
+		int min_idx = 1;
+		if (obs_property_visible(server)) {
+			ui->streamkeyPageLayout->insertRow(
+				min_idx, ui->serverLabel,
+				ui->serverStackedWidget);
+			min_idx++;
+		}
+		if (obs_property_visible(room)) {
+			ui->streamkeyPageLayout->insertRow(
+				min_idx, ui->roomLabel, ui->room);
+			min_idx++;
+		}
+		if (obs_property_visible(username)) {
+			ui->streamkeyPageLayout->insertRow(
+				min_idx, ui->authUsernameLabel,
+				ui->authUsername);
+			min_idx++;
+		}
+		if (obs_property_visible(password)) {
+			ui->streamkeyPageLayout->insertRow(
+				min_idx, ui->authPwLabel, ui->authPwWidget);
+			min_idx++;
+		}
+		if (obs_property_visible(codec)) {
+			ui->streamkeyPageLayout->insertRow(
+				min_idx, ui->codecLabel, ui->codec);
+			min_idx++;
+		}
+		if (obs_property_visible(protocol)) {
+			ui->streamkeyPageLayout->insertRow(
+				min_idx, ui->streamProtocolLabel,
+				ui->streamProtocol);
+			min_idx++;
+		}
+		ui->serverLabel->setVisible(obs_property_visible(server));
+		ui->serverStackedWidget->setVisible(
+			obs_property_visible(server));
+		ui->roomLabel->setVisible(obs_property_visible(room));
+		ui->room->setVisible(obs_property_visible(room));
+		ui->authUsernameLabel->setVisible(
+			obs_property_visible(username));
+		ui->authUsername->setVisible(obs_property_visible(username));
+		ui->authPwLabel->setVisible(obs_property_visible(password));
+		ui->authPwWidget->setVisible(obs_property_visible(password));
+		ui->codecLabel->setVisible(obs_property_visible(codec));
+		ui->codec->setVisible(obs_property_visible(codec));
+		ui->streamProtocolLabel->setVisible(
+			obs_property_visible(protocol));
+		ui->streamProtocol->setVisible(obs_property_visible(protocol));
+		obs_properties_destroy(props);
+	} else if (!custom && webrtc == 0) { // rtmp_common
+		ui->authUsernameLabel->setText("Username");
+		ui->authPwLabel->setText("Password");
+		ui->streamkeyPageLayout->insertRow(1, ui->serverLabel,
+						   ui->serverStackedWidget);
+		ui->streamkeyPageLayout->insertRow(2, ui->streamKeyLabel,
+						   ui->streamKeyWidget);
+		ui->streamkeyPageLayout->insertRow(3, NULL, ui->useAuth);
+		ui->streamkeyPageLayout->insertRow(4, ui->authUsernameLabel,
+						   ui->authUsername);
+		ui->streamkeyPageLayout->insertRow(5, ui->authPwLabel,
+						   ui->authPwWidget);
+		ui->streamkeyPageLayout->insertRow(6, ui->codecLabel,
+						   ui->codec);
+		ui->streamkeyPageLayout->insertRow(7, ui->streamProtocolLabel,
+						   ui->streamProtocol);
 		ui->serverStackedWidget->setCurrentIndex(0);
+		ui->serverLabel->setVisible(true);
+		ui->serverStackedWidget->setVisible(true);
+		ui->streamKeyLabel->setVisible(true);
+		ui->streamKeyWidget->setVisible(true);
+		ui->roomLabel->setVisible(false);
+		ui->room->setVisible(false);
+		ui->streamProtocolLabel->setVisible(false);
+		ui->streamProtocol->setVisible(false);
+		ui->codecLabel->setVisible(false);
+		ui->codec->setVisible(false);
 	}
 
 #ifdef BROWSER_AVAILABLE
@@ -398,12 +601,16 @@ void OBSBasicSettings::on_authPwShow_clicked()
 OBSService OBSBasicSettings::SpawnTempService()
 {
 	bool custom = IsCustomService();
-	const char *service_id = custom ? "rtmp_custom" : "rtmp_common";
+	int webrtc = IsWebRTC();
+
+	const char *service_id =
+		webrtc == 0 ? custom ? "rtmp_custom" : "rtmp_common"
+			    : webrtc_services[webrtc - 3].c_str();
 
 	OBSData settings = obs_data_create();
 	obs_data_release(settings);
 
-	if (!custom) {
+	if (!custom && webrtc == 0) {
 		obs_data_set_string(settings, "service",
 				    QT_TO_UTF8(ui->service->currentText()));
 		obs_data_set_string(
@@ -497,8 +704,16 @@ void OBSBasicSettings::on_disconnectAccount_clicked()
 	OAuth::DeleteCookies(service);
 #endif
 
-	ui->streamKeyWidget->setVisible(true);
-	ui->streamKeyLabel->setVisible(true);
+	int webrtc = IsWebRTC();
+
+	if (webrtc > 0) {
+		ui->streamKeyWidget->setVisible(false);
+		ui->streamKeyLabel->setVisible(false);
+	} else {
+		ui->streamKeyWidget->setVisible(true);
+		ui->streamKeyLabel->setVisible(true);
+	}
+
 	ui->connectAccount2->setVisible(true);
 	ui->disconnectAccount->setVisible(false);
 	ui->bandwidthTestEnable->setVisible(false);
