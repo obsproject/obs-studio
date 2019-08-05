@@ -84,6 +84,25 @@ configure_file(
 
 include_directories("${CMAKE_BINARY_DIR}/plugins/obs-outputs/config")
 
+#------------------------------------------------------------------------
+# WebRTC
+#
+if(WEBRTC_ENABLED)
+	set(COMPILE_FTL FALSE) # To do: solve compilation errors
+
+	if(WIN32)
+		set(WEBRTC_USE_FILE_INCLUDED 0)
+	endif()
+
+	find_package(LibWebRTC REQUIRED)
+
+	if(NOT WEBRTC_FOUND)
+		message(FATAL_ERROR "WebRTC not found")
+	endif()
+
+	include_directories(${WEBRTC_INCLUDE_DIRS})
+endif()
+
 if(WIN32)
 	set(obs-outputs_PLATFORM_DEPS
 		ws2_32
@@ -130,13 +149,39 @@ set(obs-outputs_librtmp_SOURCES
 	librtmp/cencode.c
 	librtmp/hashswf.c
 	librtmp/log.c
-	librtmp/md5.c
+	# librtmp/md5.c # compilation error with WebRTC
 	librtmp/parseurl.c
 	librtmp/rtmp.c)
+
+if(NOT WEBRTC_ENABLED)
+	list(APPEND obs-outputs_librtmp_SOURCES librtmp/md5.c)
+endif()
 
 if(NOT WIN32)
 	set_source_files_properties(${obs-outputs_librtmp_SOURCES} PROPERTIES
 		COMPILE_FLAGS "-fvisibility=hidden")
+endif()
+
+if(WEBRTC_ENABLED)
+	set(obs-outputs_webrtc_HEADERS
+		AudioDeviceModuleWrapper.h
+		VideoCapturer.h
+		WebRTCStream.h
+		janus-stream.h
+		wowza-stream.h
+		millicast-stream.h)
+	set(obs-outputs_webrtc_SOURCES
+		AudioDeviceModuleWrapper.cpp
+		VideoCapturer.cpp
+		WebRTCStream.cpp
+		janus-stream.cpp
+		wowza-stream.cpp
+		millicast-stream.cpp)
+
+	if(NOT WIN32)
+		set_source_files_properties(${obs-outputs_webrtc_SOURCES} PROPERTIES
+			COMPILE_FLAGS "-fvisibility=hidden")
+	endif()
 endif()
 
 set(obs-outputs_HEADERS
@@ -161,12 +206,35 @@ add_library(obs-outputs MODULE
 	${obs-outputs_SOURCES}
 	${obs-outputs_HEADERS}
 	${obs-outputs_librtmp_SOURCES}
-	${obs-outputs_librtmp_HEADERS})
+	${obs-outputs_librtmp_HEADERS}
+	${obs-outputs_webrtc_SOURCES}
+	${obs-outputs_webrtc_HEADERS})
+
+if(WEBRTC_ENABLED)
+	target_include_directories(obs-outputs
+		PUBLIC ${websocketclient_SOURCE_DIR}
+		PUBLIC "${CMAKE_CURRENT_LIST_DIR}/../websocket-client") # for WebsocketClient.h
+
+	set(websocketclient_LIBRARIES websocketclient)
+endif()
+
 target_link_libraries(obs-outputs
 	libobs
+	${websocketclient_LIBRARIES}
 	${LIBMBEDTLS_LIBRARIES}
+	${WEBRTC_LIBRARIES}
 	${ZLIB_LIBRARIES}
 	${ftl_IMPORTS}
 	${obs-outputs_PLATFORM_DEPS})
+
+if(WEBRTC_ENABLED)
+	if(WIN32 AND MSVC)
+		if(${CMAKE_BUILD_TYPE} STREQUAL "Debug")
+			target_compile_options(obs-outputs PUBLIC "/MTd")
+		else()
+			target_compile_options(obs-outputs PUBLIC "/MT")
+		endif()
+	endif()
+endif()
 
 install_obs_plugin_with_data(obs-outputs data)
