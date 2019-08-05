@@ -16,3 +16,15 @@
 [submodule "plugins/obs-outputs/ftl-sdk"]
 	path = plugins/obs-outputs/ftl-sdk
 	url = https://github.com/Mixer/ftl-sdk.git
+[submodule "plugins/websocket-client/third_party"]
+	path = plugins/websocket-client/third_party
+	url = https://github.com/chriskohlhoff/asio.git
+[submodule "plugins/websocket-client/websocketpp"]
+	path = plugins/websocket-client/websocketpp
+	url = https://github.com/zaphoyd/websocketpp.git
+[submodule "plugins/websocket-client/nlohmann_json"]
+	path = plugins/websocket-client/nlohmann_json
+	url = https://github.com/nlohmann/json.git
+[submodule "plugins/websocket-client/restclient-cpp"]
+	path = plugins/websocket-client/restclient-cpp
+	url = https://github.com/mrtazz/restclient-cpp.git
