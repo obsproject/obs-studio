@@ -2426,14 +2426,17 @@ cache_video(struct obs_source *source, const struct obs_source_frame *frame)
 		free_async_cache(source);
 		source->async_cache_width = frame->width;
 		source->async_cache_height = frame->height;
-		source->async_cache_format = frame->format;
-		source->async_cache_full_range = frame->full_range;
 	}
+
+	const enum video_format format = frame->format;
+	source->async_cache_format = format;
+	source->async_cache_full_range = frame->full_range;
 
 	for (size_t i = 0; i < source->async_cache.num; i++) {
 		struct async_frame *af = &source->async_cache.array[i];
 		if (!af->used) {
 			new_frame = af->frame;
+			new_frame->format = format;
 			af->used = true;
 			af->unused_count = 0;
 			break;
@@ -2444,7 +2447,6 @@ cache_video(struct obs_source *source, const struct obs_source_frame *frame)
 
 	if (!new_frame) {
 		struct async_frame new_af;
-		enum video_format format = frame->format;
 
 		new_frame = obs_source_frame_create(format, frame->width,
 						    frame->height);
