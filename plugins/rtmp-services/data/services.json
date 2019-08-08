@@ -1184,6 +1184,32 @@
             }
         },
         {
+            "name": "CamSoft",
+            "servers": [
+                {
+                    "name": "Global Main Fastest - Recommended",
+                    "url": "rtmp://wowza01.foobarweb.com/cmschatsys_video"
+                },
+                {
+                    "name": "Global Backup 1",
+                    "url": "rtmp://wowza01.foobarweb.com/cmschatsys_video"
+                },
+                {
+                    "name": "Global Backup 2",
+                    "url": "rtmp://wowza03.foobarweb.com/cmschatsys_video"                
+		},
+                {
+                    "name": "Global Backup 3",
+                    "url": "rtmp://wowza04.foobarweb.com/cmschatsys_video"  
+		}
+            ],
+            "recommended": {
+                "keyint": 2,
+                "max video bitrate": 50000,
+                "max audio bitrate": 192
+            }
+        },
+	{
             "name": "Twitter / Periscope",
             "common": true,
             "servers": [
