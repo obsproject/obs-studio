@@ -146,10 +146,12 @@ if(BROWSER_AVAILABLE_INTERNAL)
 	list(APPEND obs_PLATFORM_SOURCES
 		obf.c
 		auth-oauth.cpp
+		window-extra-browsers.cpp
 		)
 	list(APPEND obs_PLATFORM_HEADERS
 		obf.h
 		auth-oauth.hpp
+		window-extra-browsers.hpp
 		)
 
 	if(TWITCH_ENABLED)
@@ -324,6 +326,7 @@ set(obs_UI
 	forms/OBSBasicSettings.ui
 	forms/OBSBasicSourceSelect.ui
 	forms/OBSBasicInteraction.ui
+	forms/OBSExtraBrowsers.ui
 	forms/OBSUpdate.ui
 	forms/OBSRemux.ui
 	forms/OBSAbout.ui)
