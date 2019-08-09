@@ -65,6 +65,7 @@ struct file_info {
 	int64_t width;
 	int64_t height;
 	uint32_t pix_format;
+	bool     have_video;
 };
 
 static bool is_local_file_modified(obs_properties_t *props,
@@ -423,7 +424,8 @@ static struct file_info file_info(struct ffmpeg_source *s)
 		.frames = 0,
 		.width = 0,
 		.height = 0,
-		.pix_format = 0
+		.pix_format = 0,
+		.have_video = true
 	};
 
 	int video_stream_index = av_find_best_stream(s->media.fmt,
@@ -432,6 +434,7 @@ static struct file_info file_info(struct ffmpeg_source *s)
 	if (video_stream_index < 0) {
 		FF_BLOG(LOG_WARNING, "Getting number of frames failed: No "
 			"video stream in media file!");
+		fi.have_video = false;
 		goto end;
 	}
 
@@ -489,7 +492,8 @@ static void get_file_info(void *data, calldata_t *cd)
 		.frames = 0,
 		.width = 0,
 		.height = 0,
-		.pix_format = 0
+		.pix_format = 0,
+		.have_video = false
 	};
 
 	if (!s->media.fmt) {
@@ -512,6 +516,7 @@ end:
 	calldata_set_int(cd, "width", fi.width);
 	calldata_set_int(cd, "height", fi.height);
 	calldata_set_int(cd, "pix_format", fi.pix_format);
+	calldata_set_bool(cd, "have_video", fi.have_video);
 }
 
 static void get_playing(void *data, calldata_t *cd)
