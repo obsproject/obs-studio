@@ -306,8 +306,8 @@ static void stop_capture(struct game_capture *gc)
 {
 	ipc_pipe_server_free(&gc->pipe);
 
-	if (gc->hook_stop) {
-		SetEvent(gc->hook_stop);
+	if (gc->hook_restart) {
+		ResetEvent(gc->hook_restart);
 	}
 	if (gc->global_hook_info) {
 		UnmapViewOfFile(gc->global_hook_info);
@@ -324,7 +324,6 @@ static void stop_capture(struct game_capture *gc)
 	}
 
 	close_handle(&gc->hook_restart);
-	close_handle(&gc->hook_stop);
 	close_handle(&gc->hook_ready);
 	close_handle(&gc->hook_exit);
 	close_handle(&gc->hook_init);
@@ -334,6 +333,11 @@ static void stop_capture(struct game_capture *gc)
 	close_handle(&gc->target_process);
 	close_handle(&gc->texture_mutexes[0]);
 	close_handle(&gc->texture_mutexes[1]);
+
+	if (gc->hook_stop) {
+		SetEvent(gc->hook_stop);
+		close_handle(&gc->hook_stop);
+	}
 
 	if (gc->texture) {
 		obs_enter_graphics();
@@ -713,8 +717,8 @@ static inline bool attempt_existing_hook(struct game_capture *gc)
 	gc->hook_restart = open_event_gc(gc, EVENT_CAPTURE_RESTART);
 	if (gc->hook_restart) {
 		debug("existing hook found, signaling process: %s",
-		      gc->config.executable);
-		SetEvent(gc->hook_restart);
+				gc->config.executable);
+
 		return true;
 	}
 
@@ -768,10 +772,15 @@ static inline bool init_hook_info(struct game_capture *gc)
 	gc->global_hook_info->capture_overlay = gc->config.capture_overlays;
 	gc->global_hook_info->force_shmem = gc->config.force_shmem;
 	gc->global_hook_info->use_scale = gc->config.force_scaling;
-	if (gc->config.scale_cx)
-		gc->global_hook_info->cx = gc->config.scale_cx;
-	if (gc->config.scale_cy)
-		gc->global_hook_info->cy = gc->config.scale_cy;
+	if (gc->config.force_scaling) {
+		if (gc->config.scale_cx)
+			gc->global_hook_info->cx = gc->config.scale_cx;
+		if (gc->config.scale_cy)
+			gc->global_hook_info->cy = gc->config.scale_cy;
+	} else {
+		gc->global_hook_info->cx = gc->global_hook_info->base_cx;
+		gc->global_hook_info->cy = gc->global_hook_info->base_cy;
+	}
 	reset_frame_interval(gc);
 
 	obs_enter_graphics();
@@ -990,6 +999,7 @@ static bool init_events(struct game_capture *gc);
 
 static bool init_hook(struct game_capture *gc)
 {
+	bool hook_reused = false;
 	struct dstr exe = {0};
 	bool blacklisted_process = false;
 
@@ -1028,6 +1038,8 @@ static bool init_hook(struct game_capture *gc)
 		if (!inject_hook(gc)) {
 			return false;
 		}
+	} else {
+		hook_reused = true;
 	}
 	if (!init_texture_mutexes(gc)) {
 		return false;
@@ -1039,6 +1051,9 @@ static bool init_hook(struct game_capture *gc)
 		return false;
 	}
 
+	if (!hook_reused) {
+		SetEvent(gc->hook_restart);
+	}
 	SetEvent(gc->hook_init);
 
 	gc->window = gc->next_window;
