@@ -37,6 +37,7 @@
 #include "obs.h"
 
 #define NUM_TEXTURES 2
+#define NUM_CHANNELS 3
 #define MICROSECOND_DEN 1000000
 #define NUM_ENCODE_TEXTURES 3
 #define NUM_ENCODE_TEXTURE_FRAMES_TO_WAIT 1
@@ -235,11 +236,10 @@ struct obs_tex_frame {
 
 struct obs_core_video {
 	graphics_t *graphics;
-	gs_stagesurf_t *copy_surfaces[NUM_TEXTURES];
+	gs_stagesurf_t *copy_surfaces[NUM_TEXTURES][NUM_CHANNELS];
 	gs_texture_t *render_texture;
 	gs_texture_t *output_texture;
-	gs_texture_t *convert_texture;
-	gs_texture_t *convert_uv_texture;
+	gs_texture_t *convert_textures[NUM_CHANNELS];
 	bool texture_rendered;
 	bool textures_copied[NUM_TEXTURES];
 	bool texture_converted;
@@ -258,7 +258,7 @@ struct obs_core_video {
 	gs_effect_t *bilinear_lowres_effect;
 	gs_effect_t *premultiplied_alpha_effect;
 	gs_samplerstate_t *point_sampler;
-	gs_stagesurf_t *mapped_surface;
+	gs_stagesurf_t *mapped_surfaces[NUM_CHANNELS];
 	int cur_texture;
 	long raw_active;
 	long gpu_encoder_active;
@@ -283,11 +283,9 @@ struct obs_core_video {
 	bool thread_initialized;
 
 	bool gpu_conversion;
-	const char *conversion_tech;
-	uint32_t conversion_height;
-	uint32_t plane_offsets[3];
-	uint32_t plane_sizes[3];
-	uint32_t plane_linewidth[3];
+	const char *conversion_techs[NUM_CHANNELS];
+	bool conversion_needed;
+	float conversion_width_i;
 
 	uint32_t output_width;
 	uint32_t output_height;

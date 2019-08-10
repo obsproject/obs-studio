@@ -15,25 +15,12 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-//#define DEBUGGING
-
-uniform float     u_plane_offset;
-uniform float     v_plane_offset;
-
 uniform float     width;
 uniform float     height;
 uniform float     width_i;
-uniform float     height_i;
 uniform float     width_d2;
-uniform float     height_d2;
 uniform float     width_d2_i;
-uniform float     height_d2_i;
-uniform float     input_width;
-uniform float     input_height;
-uniform float     input_width_i;
-uniform float     input_height_i;
 uniform float     input_width_i_d2;
-uniform float     input_height_i_d2;
 
 uniform int       int_width;
 uniform int       int_input_width;
@@ -65,8 +52,17 @@ struct VertTexPos {
 	float4 pos : POSITION;
 };
 
+struct VertTexPosWide {
+	float3 uuv : TEXCOORD0;
+	float4 pos : POSITION;
+};
+
 struct FragTex {
-	float2 uv  : TEXCOORD0;
+	float2 uv : TEXCOORD0;
+};
+
+struct FragTexWide {
+	float3 uuv : TEXCOORD0;
 };
 
 FragPos VSPos(uint id : VERTEXID)
@@ -82,7 +78,7 @@ FragPos VSPos(uint id : VERTEXID)
 	return vert_out;
 }
 
-VertTexPos VSPosTex(uint id : VERTEXID)
+VertTexPos VSTexPos(uint id : VERTEXID)
 {
 	float idHigh = float(id >> 1);
 	float idLow = float(id & uint(1));
@@ -99,225 +95,76 @@ VertTexPos VSPosTex(uint id : VERTEXID)
 	return vert_out;
 }
 
+VertTexPosWide VSTexPosLeft(uint id : VERTEXID)
+{
+	float idHigh = float(id >> 1);
+	float idLow = float(id & uint(1));
+
+	float x = idHigh * 4.0 - 1.0;
+	float y = idLow * 4.0 - 1.0;
+
+	float u_right = idHigh * 2.0;
+	float u_left = u_right - width_i;
+	float v = obs_glsl_compile ? (idLow * 2.0) : (1.0 - idLow * 2.0);
+
+	VertTexPosWide vert_out;
+	vert_out.uuv.x = u_left;
+	vert_out.uuv.y = u_right;
+	vert_out.uuv.z = v;
+	vert_out.pos = float4(x, y, 0.0, 1.0);
+	return vert_out;
+}
+
 /* used to prevent internal GPU precision issues width fmod in particular */
 #define PRECISION_OFFSET 0.2
 
-float4 PSNV12(FragTex frag_in) : TARGET
-{
-	float v_mul = floor(frag_in.uv.y * input_height);
-
-	float byte_offset = floor((v_mul + frag_in.uv.x) * width) * 4.0;
-	byte_offset += PRECISION_OFFSET;
-
-	if (byte_offset < u_plane_offset) {
-#ifdef DEBUGGING
-		return float4(1.0, 1.0, 1.0, 1.0);
-#endif
-
-		float lum_u = floor(fmod(byte_offset, width)) * width_i;
-		float lum_v = floor(byte_offset * width_i)    * height_i;
-
-		/* move to texel centers to sample the 4 pixels properly */
-		lum_u += width_i  * 0.5;
-		lum_v += height_i * 0.5;
-
-		float2 sample_pos0 = float2(lum_u,            lum_v);
-		float2 sample_pos1 = float2(lum_u += width_i, lum_v);
-		float2 sample_pos2 = float2(lum_u += width_i, lum_v);
-		float2 sample_pos3 = float2(lum_u +  width_i, lum_v);
-
-		float3 rgb0 = image.Sample(def_sampler, sample_pos0).rgb;
-		float3 rgb1 = image.Sample(def_sampler, sample_pos1).rgb;
-		float3 rgb2 = image.Sample(def_sampler, sample_pos2).rgb;
-		float3 rgb3 = image.Sample(def_sampler, sample_pos3).rgb;
-
-		float4 out_val = float4(
-			dot(color_vec_y.xyz, rgb0) + color_vec_y.w,
-			dot(color_vec_y.xyz, rgb1) + color_vec_y.w,
-			dot(color_vec_y.xyz, rgb2) + color_vec_y.w,
-			dot(color_vec_y.xyz, rgb3) + color_vec_y.w
-		);
-
-		return out_val;
-	} else {
-#ifdef DEBUGGING
-		return float4(0.5, 0.2, 0.5, 0.2);
-#endif
-
-		float new_offset = byte_offset - u_plane_offset;
-
-		float ch_u = floor(fmod(new_offset, width)) * width_i;
-		float ch_v = floor(new_offset * width_i)    * height_d2_i;
-		float width_i2 = width_i*2.0;
-
-		/* move to the borders of each set of 4 pixels to force it
-		 * to do bilinear averaging */
-		ch_u += width_i;
-		ch_v += height_i;
-
-		float2 sample_pos0 = float2(ch_u,             ch_v);
-		float2 sample_pos1 = float2(ch_u + width_i2,  ch_v);
-
-		float3 rgb0 = image.Sample(def_sampler, sample_pos0).rgb;
-		float3 rgb1 = image.Sample(def_sampler, sample_pos1).rgb;
-
-		return float4(
-			dot(color_vec_u.xyz, rgb0) + color_vec_u.w,
-			dot(color_vec_v.xyz, rgb0) + color_vec_v.w,
-			dot(color_vec_u.xyz, rgb1) + color_vec_u.w,
-			dot(color_vec_v.xyz, rgb1) + color_vec_v.w
-		);
-	}
-}
-
-float PSNV12_Y(FragPos frag_in) : TARGET
+float PS_Y(FragPos frag_in) : TARGET
 {
 	float3 rgb = image.Load(int3(frag_in.pos.xy, 0)).rgb;
 	float y = dot(color_vec_y.xyz, rgb) + color_vec_y.w;
 	return y;
 }
 
-float2 PSNV12_UV(FragTex frag_in) : TARGET
+float2 PS_UV_Wide(FragTexWide frag_in) : TARGET
 {
-	float3 rgb = image.Sample(def_sampler, frag_in.uv).rgb;
+	float3 rgb_left = image.Sample(def_sampler, frag_in.uuv.xz).rgb;
+	float3 rgb_right = image.Sample(def_sampler, frag_in.uuv.yz).rgb;
+	float3 rgb = (rgb_left + rgb_right) * 0.5;
 	float u = dot(color_vec_u.xyz, rgb) + color_vec_u.w;
 	float v = dot(color_vec_v.xyz, rgb) + color_vec_v.w;
 	return float2(u, v);
 }
 
-float4 PSPlanar420(FragTex frag_in) : TARGET
+float PS_U(FragTex frag_in) : TARGET
 {
-	float v_mul = floor(frag_in.uv.y * input_height);
-
-	float byte_offset = floor((v_mul + frag_in.uv.x) * width) * 4.0;
-	byte_offset += PRECISION_OFFSET;
-
-	float2 sample_pos0, sample_pos1, sample_pos2, sample_pos3;
-
-	if (byte_offset < u_plane_offset) {
-#ifdef DEBUGGING
-		return float4(1.0, 1.0, 1.0, 1.0);
-#endif
-
-		float lum_u = floor(fmod(byte_offset, width)) * width_i;
-		float lum_v = floor(byte_offset * width_i)    * height_i;
-
-		/* move to texel centers to sample the 4 pixels properly */
-		lum_u += width_i  * 0.5;
-		lum_v += height_i * 0.5;
-
-		sample_pos0 = float2(lum_u,            lum_v);
-		sample_pos1 = float2(lum_u += width_i, lum_v);
-		sample_pos2 = float2(lum_u += width_i, lum_v);
-		sample_pos3 = float2(lum_u +  width_i, lum_v);
-
-	} else {
-#ifdef DEBUGGING
-		return ((byte_offset < v_plane_offset) ?
-				float4(0.5, 0.5, 0.5, 0.5) :
-				float4(0.2, 0.2, 0.2, 0.2));
-#endif
-
-		float new_offset = byte_offset -
-				((byte_offset < v_plane_offset) ?
-				u_plane_offset : v_plane_offset);
-
-		float ch_u = floor(fmod(new_offset, width_d2)) * width_d2_i;
-		float ch_v = floor(new_offset * width_d2_i)    * height_d2_i;
-		float width_i2 = width_i*2.0;
-
-		/* move to the borders of each set of 4 pixels to force it
-		 * to do bilinear averaging */
-		ch_u += width_i;
-		ch_v += height_i;
-
-		/* set up coordinates for next chroma line, in case
-		 * (width / 2) % 4 == 2, i.e. the current set of 4 pixels is split
-		 * between the current and the next chroma line; do note that the next
-		 * chroma line is two source lines below the current source line */
-		float ch_u_n = 0.   + width_i;
-		float ch_v_n = ch_v + height_i * 3;
-
-		sample_pos0 = float2(ch_u,             ch_v);
-		sample_pos1 = float2(ch_u += width_i2, ch_v);
-
-		ch_u += width_i2;
-		// check if ch_u overflowed the current source and chroma line
-		if (ch_u > 1.0) {
-			sample_pos2 = float2(ch_u_n,            ch_v_n);
-			sample_pos2 = float2(ch_u_n + width_i2, ch_v_n);
-		} else {
-			sample_pos2 = float2(ch_u,            ch_v);
-			sample_pos3 = float2(ch_u + width_i2, ch_v);
-		}
-	}
-
-	float3 rgb0 = image.Sample(def_sampler, sample_pos0).rgb;
-	float3 rgb1 = image.Sample(def_sampler, sample_pos1).rgb;
-	float3 rgb2 = image.Sample(def_sampler, sample_pos2).rgb;
-	float3 rgb3 = image.Sample(def_sampler, sample_pos3).rgb;
-
-	float4 color_vec;
-	if (byte_offset < u_plane_offset)
-		color_vec = color_vec_y;
-	else if (byte_offset < v_plane_offset)
-		color_vec = color_vec_u;
-	else
-		color_vec = color_vec_v;
-
-	return float4(
-		dot(color_vec.xyz, rgb0) + color_vec.w,
-		dot(color_vec.xyz, rgb1) + color_vec.w,
-		dot(color_vec.xyz, rgb2) + color_vec.w,
-		dot(color_vec.xyz, rgb3) + color_vec.w
-	);
+	float3 rgb = image.Sample(def_sampler, frag_in.uv).rgb;
+	float u = dot(color_vec_u.xyz, rgb) + color_vec_u.w;
+	return u;
 }
 
-float4 PSPlanar444(FragTex frag_in) : TARGET
+float PS_V(FragTex frag_in) : TARGET
 {
-	float v_mul = floor(frag_in.uv.y * input_height);
+	float3 rgb = image.Sample(def_sampler, frag_in.uv).rgb;
+	float v = dot(color_vec_v.xyz, rgb) + color_vec_v.w;
+	return v;
+}
 
-	float byte_offset = floor((v_mul + frag_in.uv.x) * width) * 4.0;
-	byte_offset += PRECISION_OFFSET;
+float PS_U_Wide(FragTexWide frag_in) : TARGET
+{
+	float3 rgb_left = image.Sample(def_sampler, frag_in.uuv.xz).rgb;
+	float3 rgb_right = image.Sample(def_sampler, frag_in.uuv.yz).rgb;
+	float3 rgb = (rgb_left + rgb_right) * 0.5;
+	float u = dot(color_vec_u.xyz, rgb) + color_vec_u.w;
+	return u;
+}
 
-	float new_byte_offset = byte_offset;
-
-	if (byte_offset >= v_plane_offset)
-		new_byte_offset -= v_plane_offset;
-	else if (byte_offset >= u_plane_offset)
-		new_byte_offset -= u_plane_offset;
-
-	float u_val = floor(fmod(new_byte_offset, width)) * width_i;
-	float v_val = floor(new_byte_offset * width_i)    * height_i;
-
-	/* move to texel centers to sample the 4 pixels properly */
-	u_val += width_i  * 0.5;
-	v_val += height_i * 0.5;
-
-	float2 sample_pos0 = float2(u_val,            v_val);
-	float2 sample_pos1 = float2(u_val += width_i, v_val);
-	float2 sample_pos2 = float2(u_val += width_i, v_val);
-	float2 sample_pos3 = float2(u_val +  width_i, v_val);
-
-	float3 rgb0 = image.Sample(def_sampler, sample_pos0).rgb;
-	float3 rgb1 = image.Sample(def_sampler, sample_pos1).rgb;
-	float3 rgb2 = image.Sample(def_sampler, sample_pos2).rgb;
-	float3 rgb3 = image.Sample(def_sampler, sample_pos3).rgb;
-
-	float4 color_vec;
-	if (byte_offset < u_plane_offset)
-		color_vec = color_vec_y;
-	else if (byte_offset < v_plane_offset)
-		color_vec = color_vec_u;
-	else
-		color_vec = color_vec_v;
-
-	return float4(
-		dot(color_vec.xyz, rgb0) + color_vec.w,
-		dot(color_vec.xyz, rgb1) + color_vec.w,
-		dot(color_vec.xyz, rgb2) + color_vec.w,
-		dot(color_vec.xyz, rgb3) + color_vec.w
-	);
+float PS_V_Wide(FragTexWide frag_in) : TARGET
+{
+	float3 rgb_left = image.Sample(def_sampler, frag_in.uuv.xz).rgb;
+	float3 rgb_right = image.Sample(def_sampler, frag_in.uuv.yz).rgb;
+	float3 rgb = (rgb_left + rgb_right) * 0.5;
+	float v = dot(color_vec_v.xyz, rgb) + color_vec_v.w;
+	return v;
 }
 
 float GetIntOffsetColor(int offset)
@@ -473,30 +320,48 @@ float4 PSBGR3_Full(FragTex frag_in) : TARGET
 	return float4(rgb, 1.0);
 }
 
-technique Planar420
+technique Planar_Y
 {
 	pass
 	{
-		vertex_shader = VSPosTex(id);
-		pixel_shader  = PSPlanar420(frag_in);
+		vertex_shader = VSPos(id);
+		pixel_shader  = PS_Y(frag_in);
 	}
 }
 
-technique Planar444
+technique Planar_U
 {
 	pass
 	{
-		vertex_shader = VSPosTex(id);
-		pixel_shader  = PSPlanar444(frag_in);
+		vertex_shader = VSTexPos(id);
+		pixel_shader  = PS_U(frag_in);
 	}
 }
 
-technique NV12
+technique Planar_V
 {
 	pass
 	{
-		vertex_shader = VSPosTex(id);
-		pixel_shader  = PSNV12(frag_in);
+		vertex_shader = VSTexPos(id);
+		pixel_shader  = PS_V(frag_in);
+	}
+}
+
+technique Planar_U_Left
+{
+	pass
+	{
+		vertex_shader = VSTexPosLeft(id);
+		pixel_shader  = PS_U_Wide(frag_in);
+	}
+}
+
+technique Planar_V_Left
+{
+	pass
+	{
+		vertex_shader = VSTexPosLeft(id);
+		pixel_shader  = PS_V_Wide(frag_in);
 	}
 }
 
@@ -505,7 +370,7 @@ technique NV12_Y
 	pass
 	{
 		vertex_shader = VSPos(id);
-		pixel_shader  = PSNV12_Y(frag_in);
+		pixel_shader  = PS_Y(frag_in);
 	}
 }
 
@@ -513,8 +378,8 @@ technique NV12_UV
 {
 	pass
 	{
-		vertex_shader = VSPosTex(id);
-		pixel_shader  = PSNV12_UV(frag_in);
+		vertex_shader = VSTexPosLeft(id);
+		pixel_shader  = PS_UV_Wide(frag_in);
 	}
 }
 
@@ -522,7 +387,7 @@ technique UYVY_Reverse
 {
 	pass
 	{
-		vertex_shader = VSPosTex(id);
+		vertex_shader = VSTexPos(id);
 		pixel_shader  = PSPacked422_Reverse(frag_in, 2, 0, 1, 3);
 	}
 }
@@ -531,7 +396,7 @@ technique YUY2_Reverse
 {
 	pass
 	{
-		vertex_shader = VSPosTex(id);
+		vertex_shader = VSTexPos(id);
 		pixel_shader  = PSPacked422_Reverse(frag_in, 1, 3, 2, 0);
 	}
 }
@@ -540,7 +405,7 @@ technique YVYU_Reverse
 {
 	pass
 	{
-		vertex_shader = VSPosTex(id);
+		vertex_shader = VSTexPos(id);
 		pixel_shader  = PSPacked422_Reverse(frag_in, 3, 1, 2, 0);
 	}
 }
@@ -549,7 +414,7 @@ technique I420_Reverse
 {
 	pass
 	{
-		vertex_shader = VSPosTex(id);
+		vertex_shader = VSTexPos(id);
 		pixel_shader  = PSPlanar420_Reverse(frag_in);
 	}
 }
@@ -558,7 +423,7 @@ technique I422_Reverse
 {
 	pass
 	{
-		vertex_shader = VSPosTex(id);
+		vertex_shader = VSTexPos(id);
 		pixel_shader  = PSPlanar422_Reverse(frag_in);
 	}
 }
@@ -567,7 +432,7 @@ technique I444_Reverse
 {
 	pass
 	{
-		vertex_shader = VSPosTex(id);
+		vertex_shader = VSTexPos(id);
 		pixel_shader  = PSPlanar444_Reverse(frag_in);
 	}
 }
@@ -576,7 +441,7 @@ technique NV12_Reverse
 {
 	pass
 	{
-		vertex_shader = VSPosTex(id);
+		vertex_shader = VSTexPos(id);
 		pixel_shader  = PSNV12_Reverse(frag_in);
 	}
 }
@@ -585,7 +450,7 @@ technique Y800_Limited
 {
 	pass
 	{
-		vertex_shader = VSPosTex(id);
+		vertex_shader = VSTexPos(id);
 		pixel_shader  = PSY800_Limited(frag_in);
 	}
 }
@@ -594,7 +459,7 @@ technique Y800_Full
 {
 	pass
 	{
-		vertex_shader = VSPosTex(id);
+		vertex_shader = VSTexPos(id);
 		pixel_shader  = PSY800_Full(frag_in);
 	}
 }
@@ -603,7 +468,7 @@ technique RGB_Limited
 {
 	pass
 	{
-		vertex_shader = VSPosTex(id);
+		vertex_shader = VSTexPos(id);
 		pixel_shader  = PSRGB_Limited(frag_in);
 	}
 }
@@ -612,7 +477,7 @@ technique BGR3_Limited
 {
 	pass
 	{
-		vertex_shader = VSPosTex(id);
+		vertex_shader = VSTexPos(id);
 		pixel_shader  = PSBGR3_Limited(frag_in);
 	}
 }
@@ -621,7 +486,7 @@ technique BGR3_Full
 {
 	pass
 	{
-		vertex_shader = VSPosTex(id);
+		vertex_shader = VSTexPos(id);
 		pixel_shader  = PSBGR3_Full(frag_in);
 	}
 }
