@@ -1120,6 +1120,34 @@ gs_indexbuffer_t *device_indexbuffer_create(gs_device_t *device,
 	return buffer;
 }
 
+gs_timer_t *device_timer_create(gs_device_t *device)
+{
+	gs_timer *timer = NULL;
+	try {
+		timer = new gs_timer(device);
+	} catch (HRError error) {
+		blog(LOG_ERROR, "device_timer_create (D3D11): %s (%08lX)",
+		     error.str, error.hr);
+		LogD3D11ErrorDetails(error, device);
+	}
+
+	return timer;
+}
+
+gs_timer_range_t *device_timer_range_create(gs_device_t *device)
+{
+	gs_timer_range *range = NULL;
+	try {
+		range = new gs_timer_range(device);
+	} catch (HRError error) {
+		blog(LOG_ERROR, "device_timer_range_create (D3D11): %s (%08lX)",
+		     error.str, error.hr);
+		LogD3D11ErrorDetails(error, device);
+	}
+
+	return range;
+}
+
 enum gs_texture_type device_get_texture_type(const gs_texture_t *texture)
 {
 	return texture->type;
@@ -2230,6 +2258,88 @@ size_t gs_indexbuffer_get_num_indices(const gs_indexbuffer_t *indexbuffer)
 enum gs_index_type gs_indexbuffer_get_type(const gs_indexbuffer_t *indexbuffer)
 {
 	return indexbuffer->type;
+}
+
+void gs_timer_destroy(gs_timer_t *timer)
+{
+	delete timer;
+}
+
+void gs_timer_begin(gs_timer_t *timer)
+{
+	timer->device->context->End(timer->query_begin);
+}
+
+void gs_timer_end(gs_timer_t *timer)
+{
+	timer->device->context->End(timer->query_end);
+}
+
+bool gs_timer_get_data(gs_timer_t *timer, uint64_t *ticks)
+{
+	uint64_t begin, end;
+	HRESULT hr_begin, hr_end;
+	do {
+		hr_begin = timer->device->context->GetData(
+			timer->query_begin, &begin, sizeof(begin), 0);
+	} while (hr_begin == S_FALSE);
+	do {
+		hr_end = timer->device->context->GetData(timer->query_end, &end,
+							 sizeof(end), 0);
+	} while (hr_end == S_FALSE);
+
+	const bool succeeded = SUCCEEDED(hr_begin) && SUCCEEDED(hr_end);
+	if (succeeded)
+		*ticks = end - begin;
+
+	return succeeded;
+}
+
+void gs_timer_range_destroy(gs_timer_range_t *range)
+{
+	delete range;
+}
+
+void gs_timer_range_begin(gs_timer_range_t *range)
+{
+	range->device->context->Begin(range->query_disjoint);
+}
+
+void gs_timer_range_end(gs_timer_range_t *range)
+{
+	range->device->context->End(range->query_disjoint);
+}
+
+bool gs_timer_range_get_data(gs_timer_range_t *range, bool *disjoint,
+			     uint64_t *frequency)
+{
+	D3D11_QUERY_DATA_TIMESTAMP_DISJOINT timestamp_disjoint;
+	HRESULT hr;
+	do {
+		hr = range->device->context->GetData(range->query_disjoint,
+						     &timestamp_disjoint,
+						     sizeof(timestamp_disjoint),
+						     0);
+	} while (hr == S_FALSE);
+
+	const bool succeeded = SUCCEEDED(hr);
+	if (succeeded) {
+		*disjoint = timestamp_disjoint.Disjoint;
+		*frequency = timestamp_disjoint.Frequency;
+	}
+
+	return succeeded;
+}
+
+gs_timer::gs_timer(gs_device_t *device) : gs_obj(device, gs_type::gs_timer)
+{
+	Rebuild(device->device);
+}
+
+gs_timer_range::gs_timer_range(gs_device_t *device)
+	: gs_obj(device, gs_type::gs_timer_range)
+{
+	Rebuild(device->device);
 }
 
 extern "C" EXPORT bool device_gdi_texture_available(void)
