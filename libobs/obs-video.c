@@ -293,37 +293,37 @@ static void render_convert_texture(struct obs_core_video *video,
 	profile_start(render_convert_texture_name);
 
 	gs_effect_t *effect = video->conversion_effect;
-	gs_eparam_t *color_vec_y =
-		gs_effect_get_param_by_name(effect, "color_vec_y");
-	gs_eparam_t *color_vec_u =
-		gs_effect_get_param_by_name(effect, "color_vec_u");
-	gs_eparam_t *color_vec_v =
-		gs_effect_get_param_by_name(effect, "color_vec_v");
+	gs_eparam_t *color_vec0 =
+		gs_effect_get_param_by_name(effect, "color_vec0");
+	gs_eparam_t *color_vec1 =
+		gs_effect_get_param_by_name(effect, "color_vec1");
+	gs_eparam_t *color_vec2 =
+		gs_effect_get_param_by_name(effect, "color_vec2");
 	gs_eparam_t *image = gs_effect_get_param_by_name(effect, "image");
 	gs_eparam_t *width_i = gs_effect_get_param_by_name(effect, "width_i");
 
-	struct vec4 vec_y, vec_u, vec_v;
-	vec4_set(&vec_y, video->color_matrix[4], video->color_matrix[5],
+	struct vec4 vec0, vec1, vec2;
+	vec4_set(&vec0, video->color_matrix[4], video->color_matrix[5],
 		 video->color_matrix[6], video->color_matrix[7]);
-	vec4_set(&vec_u, video->color_matrix[0], video->color_matrix[1],
+	vec4_set(&vec1, video->color_matrix[0], video->color_matrix[1],
 		 video->color_matrix[2], video->color_matrix[3]);
-	vec4_set(&vec_v, video->color_matrix[8], video->color_matrix[9],
+	vec4_set(&vec2, video->color_matrix[8], video->color_matrix[9],
 		 video->color_matrix[10], video->color_matrix[11]);
 
 	gs_enable_blending(false);
 
 	if (video->convert_textures[0]) {
 		gs_effect_set_texture(image, texture);
-		gs_effect_set_vec4(color_vec_y, &vec_y);
+		gs_effect_set_vec4(color_vec0, &vec0);
 		render_convert_plane(effect, texture,
 				     video->convert_textures[0],
 				     video->conversion_techs[0]);
 
 		if (video->convert_textures[1]) {
 			gs_effect_set_texture(image, texture);
-			gs_effect_set_vec4(color_vec_u, &vec_u);
+			gs_effect_set_vec4(color_vec1, &vec1);
 			if (!video->convert_textures[2])
-				gs_effect_set_vec4(color_vec_v, &vec_v);
+				gs_effect_set_vec4(color_vec2, &vec2);
 			gs_effect_set_float(width_i, video->conversion_width_i);
 			render_convert_plane(effect, texture,
 					     video->convert_textures[1],
@@ -331,7 +331,7 @@ static void render_convert_texture(struct obs_core_video *video,
 
 			if (video->convert_textures[2]) {
 				gs_effect_set_texture(image, texture);
-				gs_effect_set_vec4(color_vec_v, &vec_v);
+				gs_effect_set_vec4(color_vec2, &vec2);
 				gs_effect_set_float(width_i,
 						    video->conversion_width_i);
 				render_convert_plane(

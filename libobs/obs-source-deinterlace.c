@@ -236,16 +236,18 @@ void set_deinterlace_texture_size(obs_source_t *source)
 		source->async_prev_texrender =
 			gs_texrender_create(GS_BGRX, GS_ZS_NONE);
 
-		source->async_prev_texture = gs_texture_create(
-			source->async_convert_width,
-			source->async_convert_height,
-			source->async_texture_format, 1, NULL, GS_DYNAMIC);
+		for (int c = 0; c < source->async_channel_count; c++)
+			source->async_prev_textures[c] = gs_texture_create(
+				source->async_convert_width[c],
+				source->async_convert_height[c],
+				source->async_texture_formats[c], 1, NULL,
+				GS_DYNAMIC);
 
 	} else {
 		enum gs_color_format format =
 			convert_video_format(source->async_format);
 
-		source->async_prev_texture = gs_texture_create(
+		source->async_prev_textures[0] = gs_texture_create(
 			source->async_width, source->async_height, format, 1,
 			NULL, GS_DYNAMIC);
 	}
@@ -286,17 +288,20 @@ void deinterlace_update_async_video(obs_source_t *source)
 
 	if (frame) {
 		if (set_async_texture_size(source, frame)) {
-			update_async_texture(source, frame,
-					     source->async_prev_texture,
-					     source->async_prev_texrender);
+			update_async_textures(source, frame,
+					      source->async_prev_textures,
+					      source->async_prev_texrender);
 		}
 
 		obs_source_release_frame(source, frame);
 
 	} else if (updated) { /* swap cur/prev if no previous texture */
-		gs_texture_t *prev_tex = source->async_prev_texture;
-		source->async_prev_texture = source->async_texture;
-		source->async_texture = prev_tex;
+		for (size_t c = 0; c < MAX_AV_PLANES; c++) {
+			gs_texture_t *prev_tex = source->async_prev_textures[c];
+			source->async_prev_textures[c] =
+				source->async_textures[c];
+			source->async_textures[c] = prev_tex;
+		}
 
 		if (source->async_texrender) {
 			gs_texrender_t *prev = source->async_prev_texrender;
@@ -358,11 +363,11 @@ void deinterlace_render(obs_source_t *s)
 	gs_texture_t *cur_tex =
 		s->async_texrender
 			? gs_texrender_get_texture(s->async_texrender)
-			: s->async_texture;
+			: s->async_textures[0];
 	gs_texture_t *prev_tex =
 		s->async_prev_texrender
 			? gs_texrender_get_texture(s->async_prev_texrender)
-			: s->async_prev_texture;
+			: s->async_prev_textures[0];
 
 	if (!cur_tex || !prev_tex || !s->async_width || !s->async_height)
 		return;
@@ -407,10 +412,14 @@ static void enable_deinterlacing(obs_source_t *source,
 static void disable_deinterlacing(obs_source_t *source)
 {
 	obs_enter_graphics();
-	gs_texture_destroy(source->async_prev_texture);
+	gs_texture_destroy(source->async_prev_textures[0]);
+	gs_texture_destroy(source->async_prev_textures[1]);
+	gs_texture_destroy(source->async_prev_textures[2]);
 	gs_texrender_destroy(source->async_prev_texrender);
 	source->deinterlace_mode = OBS_DEINTERLACE_MODE_DISABLE;
-	source->async_prev_texture = NULL;
+	source->async_prev_textures[0] = NULL;
+	source->async_prev_textures[1] = NULL;
+	source->async_prev_textures[2] = NULL;
 	source->async_prev_texrender = NULL;
 	obs_leave_graphics();
 }
