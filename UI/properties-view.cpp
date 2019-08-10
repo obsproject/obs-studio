@@ -334,7 +334,6 @@ void OBSPropertiesView::AddInt(obs_property_t *prop, QFormLayout *layout,
 	spin->setValue(val);
 	spin->setToolTip(QT_UTF8(obs_property_long_description(prop)));
 	spin->setSuffix(QT_UTF8(suffix));
-	spin->setFixedWidth(100);
 
 	WidgetInfo *info = new WidgetInfo(this, prop, spin);
 	children.emplace_back(info);
@@ -386,8 +385,6 @@ void OBSPropertiesView::AddFloat(obs_property_t *prop, QFormLayout *layout,
 	spin->setValue(val);
 	spin->setToolTip(QT_UTF8(obs_property_long_description(prop)));
 	spin->setSuffix(QT_UTF8(suffix));
-	spin->setDecimals(1);
-	spin->setFixedWidth(100);
 
 	WidgetInfo *info = new WidgetInfo(this, prop, spin);
 	children.emplace_back(info);
