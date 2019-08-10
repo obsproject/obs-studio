@@ -1689,6 +1689,23 @@ void OBSBasic::OBSInit()
 	OBSBasicStats *statsDlg = new OBSBasicStats(statsDock, false);
 	statsDock->setWidget(statsDlg);
 
+	/* ----------------------------- */
+	/* add custom browser docks      */
+
+#ifdef BROWSER_AVAILABLE
+	if (cef) {
+		QAction *action = new QAction(QTStr("Basic.MainMenu."
+						    "View.Docks."
+						    "CustomBrowserDocks"));
+		ui->viewMenuDocks->insertAction(ui->toggleScenes, action);
+		connect(action, &QAction::triggered, this,
+			&OBSBasic::ManageExtraBrowserDocks);
+		ui->viewMenuDocks->insertSeparator(ui->toggleScenes);
+
+		LoadExtraBrowserDocks();
+	}
+#endif
+
 	const char *dockStateStr = config_get_string(
 		App()->GlobalConfig(), "BasicWindow", "DockState");
 	if (!dockStateStr) {
@@ -3794,8 +3811,15 @@ void OBSBasic::closeEvent(QCloseEvent *event)
 	SaveProjectNow();
 	auth.reset();
 
+	delete extraBrowsers;
+
 	config_set_string(App()->GlobalConfig(), "BasicWindow", "DockState",
 			  saveState().toBase64().constData());
+
+#ifdef BROWSER_AVAILABLE
+	SaveExtraBrowserDocks();
+	ClearExtraBrowserDocks();
+#endif
 
 	if (api)
 		api->on_event(OBS_FRONTEND_EVENT_EXIT);

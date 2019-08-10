@@ -342,25 +342,13 @@ bool SourceTreeItem::eventFilter(QObject *object, QEvent *event)
 	if (editor != object)
 		return false;
 
-	if (event->type() == QEvent::KeyPress) {
-		QKeyEvent *keyEvent = static_cast<QKeyEvent *>(event);
-
-		switch (keyEvent->key()) {
-		case Qt::Key_Escape:
-			QMetaObject::invokeMethod(this, "ExitEditMode",
-						  Qt::QueuedConnection,
-						  Q_ARG(bool, false));
-			return true;
-		case Qt::Key_Tab:
-		case Qt::Key_Backtab:
-		case Qt::Key_Enter:
-		case Qt::Key_Return:
-			QMetaObject::invokeMethod(this, "ExitEditMode",
-						  Qt::QueuedConnection,
-						  Q_ARG(bool, true));
-			return true;
-		}
-	} else if (event->type() == QEvent::FocusOut) {
+	if (LineEditCanceled(event)) {
+		QMetaObject::invokeMethod(this, "ExitEditMode",
+					  Qt::QueuedConnection,
+					  Q_ARG(bool, false));
+		return true;
+	}
+	if (LineEditChanged(event)) {
 		QMetaObject::invokeMethod(this, "ExitEditMode",
 					  Qt::QueuedConnection,
 					  Q_ARG(bool, true));
