@@ -628,7 +628,7 @@ struct obs_source {
 	float balance;
 
 	/* async video data */
-	gs_texture_t *async_texture;
+	gs_texture_t *async_textures[MAX_AV_PLANES];
 	gs_texrender_t *async_texrender;
 	struct obs_source_frame *cur_async_frame;
 	bool async_gpu_conversion;
@@ -636,8 +636,8 @@ struct obs_source {
 	bool async_full_range;
 	enum video_format async_cache_format;
 	bool async_cache_full_range;
-	enum gs_color_format async_texture_format;
-	int async_plane_offset[2];
+	enum gs_color_format async_texture_formats[MAX_AV_PLANES];
+	int async_channel_count;
 	bool async_flip;
 	bool async_active;
 	bool async_update_texture;
@@ -651,15 +651,15 @@ struct obs_source {
 	uint32_t async_height;
 	uint32_t async_cache_width;
 	uint32_t async_cache_height;
-	uint32_t async_convert_width;
-	uint32_t async_convert_height;
+	uint32_t async_convert_width[MAX_AV_PLANES];
+	uint32_t async_convert_height[MAX_AV_PLANES];
 
 	/* async video deinterlacing */
 	uint64_t deinterlace_offset;
 	uint64_t deinterlace_frame_ts;
 	gs_effect_t *deinterlace_effect;
 	struct obs_source_frame *prev_async_frame;
-	gs_texture_t *async_prev_texture;
+	gs_texture_t *async_prev_textures[MAX_AV_PLANES];
 	gs_texrender_t *async_prev_texrender;
 	uint32_t deinterlace_half_duration;
 	enum obs_deinterlace_mode deinterlace_mode;
@@ -797,6 +797,10 @@ extern struct obs_source_frame *filter_async_video(obs_source_t *source,
 extern bool update_async_texture(struct obs_source *source,
 				 const struct obs_source_frame *frame,
 				 gs_texture_t *tex, gs_texrender_t *texrender);
+extern bool update_async_textures(struct obs_source *source,
+				  const struct obs_source_frame *frame,
+				  gs_texture_t *tex[MAX_AV_PLANES],
+				  gs_texrender_t *texrender);
 extern bool set_async_texture_size(struct obs_source *source,
 				   const struct obs_source_frame *frame);
 extern void remove_async_frame(obs_source_t *source,
