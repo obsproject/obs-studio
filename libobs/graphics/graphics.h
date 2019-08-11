@@ -58,7 +58,6 @@ enum gs_color_format {
 	GS_A8,
 	GS_R8,
 	GS_RGBA,
-	GS_RGBX,
 	GS_BGRX,
 	GS_BGRA,
 	GS_R10G10B10A2,
@@ -74,6 +73,7 @@ enum gs_color_format {
 	GS_DXT3,
 	GS_DXT5,
 	GS_R8G8,
+	GS_RGBX,
 };
 
 enum gs_zstencil_format {
