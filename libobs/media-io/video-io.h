@@ -56,6 +56,18 @@ enum video_format {
 
 	/* planar 4:2:2 */
 	VIDEO_FORMAT_I422,
+
+	/* planar 4:2:0 with alpha */
+	VIDEO_FORMAT_I40A,
+
+	/* planar 4:2:2 with alpha */
+	VIDEO_FORMAT_I42A,
+
+	/* planar 4:4:4 with alpha */
+	VIDEO_FORMAT_YUVA,
+
+	/* packed 4:4:4 with alpha */
+	VIDEO_FORMAT_AYUV,
 };
 
 enum video_colorspace {
@@ -99,6 +111,10 @@ static inline bool format_is_yuv(enum video_format format)
 	case VIDEO_FORMAT_YUY2:
 	case VIDEO_FORMAT_UYVY:
 	case VIDEO_FORMAT_I444:
+	case VIDEO_FORMAT_I40A:
+	case VIDEO_FORMAT_I42A:
+	case VIDEO_FORMAT_YUVA:
+	case VIDEO_FORMAT_AYUV:
 		return true;
 	case VIDEO_FORMAT_NONE:
 	case VIDEO_FORMAT_RGBA:
@@ -137,6 +153,14 @@ static inline const char *get_video_format_name(enum video_format format)
 		return "Y800";
 	case VIDEO_FORMAT_BGR3:
 		return "BGR3";
+	case VIDEO_FORMAT_I40A:
+		return "I40A";
+	case VIDEO_FORMAT_I42A:
+		return "I42A";
+	case VIDEO_FORMAT_YUVA:
+		return "YUVA";
+	case VIDEO_FORMAT_AYUV:
+		return "AYUV";
 	case VIDEO_FORMAT_NONE:;
 	}
 
