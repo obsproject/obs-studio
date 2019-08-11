@@ -95,6 +95,7 @@ static inline bool format_is_yuv(enum video_format format)
 	switch (format) {
 	case VIDEO_FORMAT_I420:
 	case VIDEO_FORMAT_NV12:
+	case VIDEO_FORMAT_I422:
 	case VIDEO_FORMAT_YVYU:
 	case VIDEO_FORMAT_YUY2:
 	case VIDEO_FORMAT_UYVY:
@@ -119,6 +120,8 @@ static inline const char *get_video_format_name(enum video_format format)
 		return "I420";
 	case VIDEO_FORMAT_NV12:
 		return "NV12";
+	case VIDEO_FORMAT_I422:
+		return "I422";
 	case VIDEO_FORMAT_YVYU:
 		return "YVYU";
 	case VIDEO_FORMAT_YUY2:
