@@ -48,6 +48,12 @@ static inline enum video_format convert_pixel_format(int f)
 		return VIDEO_FORMAT_BGRA;
 	case AV_PIX_FMT_BGR0:
 		return VIDEO_FORMAT_BGRX;
+	case AV_PIX_FMT_YUVA420P:
+		return VIDEO_FORMAT_I40A;
+	case AV_PIX_FMT_YUVA422P:
+		return VIDEO_FORMAT_I42A;
+	case AV_PIX_FMT_YUVA444P:
+		return VIDEO_FORMAT_YUVA;
 	default:;
 	}
 

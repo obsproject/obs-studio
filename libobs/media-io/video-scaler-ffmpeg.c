@@ -55,6 +55,12 @@ get_ffmpeg_video_format(enum video_format format)
 		return AV_PIX_FMT_BGR24;
 	case VIDEO_FORMAT_I422:
 		return AV_PIX_FMT_YUV422P;
+	case VIDEO_FORMAT_I40A:
+		return AV_PIX_FMT_YUVA420P;
+	case VIDEO_FORMAT_I42A:
+		return AV_PIX_FMT_YUVA422P;
+	case VIDEO_FORMAT_YUVA:
+		return AV_PIX_FMT_YUVA444P;
 	}
 
 	return AV_PIX_FMT_NONE;

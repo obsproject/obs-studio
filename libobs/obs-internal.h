@@ -772,12 +772,18 @@ static inline bool frame_out_of_bounds(const obs_source_t *source, uint64_t ts)
 static inline enum gs_color_format
 convert_video_format(enum video_format format)
 {
-	if (format == VIDEO_FORMAT_RGBA)
+	switch (format) {
+	case VIDEO_FORMAT_RGBA:
 		return GS_RGBA;
-	else if (format == VIDEO_FORMAT_BGRA)
+	case VIDEO_FORMAT_BGRA:
+	case VIDEO_FORMAT_I40A:
+	case VIDEO_FORMAT_I42A:
+	case VIDEO_FORMAT_YUVA:
+	case VIDEO_FORMAT_AYUV:
 		return GS_BGRA;
-
-	return GS_BGRX;
+	default:
+		return GS_BGRX;
+	}
 }
 
 extern void obs_source_activate(obs_source_t *source, enum view_type type);
