@@ -303,13 +303,17 @@ static void xcc_cleanup(XCompcapMain_private *p)
 static gs_color_format gs_format_from_tex()
 {
 	GLint iformat = 0;
-	// we can probably fix the intel swapped texture by querying via
-	// GL_ARB_internalformat_query
+	// consider GL_ARB_internalformat_query
 	glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_INTERNAL_FORMAT,
 				 &iformat);
+
+	// These formats are known to be wrong on Intel platforms. We intentionally
+	// use swapped internal formats here to preserve historic behavior which
+	// swapped colors accidentally and because D3D11 would not support a
+	// GS_RGBX format
 	switch (iformat) {
 	case GL_RGB:
-		return GS_RGBX;
+		return GS_BGRX;
 	case GL_RGBA:
 		return GS_RGBA;
 	default:
