@@ -122,8 +122,7 @@ gs_texture_t *device_texture_create(gs_device_t *device, uint32_t width,
 		did_init =
 			gl_tex_param_i(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0);
 
-		bool did_unbind =
-			gl_bind_texture(GL_TEXTURE_2D, tex->base.texture);
+		bool did_unbind = gl_bind_texture(GL_TEXTURE_2D, 0);
 		if (!did_init || !did_unbind)
 			goto fail;
 	}
