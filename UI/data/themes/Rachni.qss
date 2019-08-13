@@ -1328,3 +1328,15 @@ VisibilityCheckBox::indicator:unchecked:hover {
 * [themeID="revertIcon"] {
     qproperty-icon: url(./Dark/revert.svg);
 }
+
+QPushButton#extraPanelDelete {
+    background-color: rgb(35, 38, 41);
+}
+
+QPushButton#extraPanelDelete:hover {
+     background-color: rgba(145, 76, 103);
+}
+
+QPushButton#extraPanelDelete:pressed {
+     background-color: rgb(240, 98, 146);
+}
