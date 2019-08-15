@@ -32,6 +32,7 @@
 #define OPT_LOWLATENCY_ENABLED "low_latency_mode_enabled"
 
 //#define TEST_FRAMEDROPS
+//#define TEST_FRAMEDROPS_WITH_BITRATE_SHORTCUTS
 
 #ifdef TEST_FRAMEDROPS
 
@@ -87,6 +88,8 @@ struct rtmp_stream {
 
 #ifdef TEST_FRAMEDROPS
 	struct circlebuf droptest_info;
+	uint64_t droptest_last_key_check;
+	size_t droptest_max;
 	size_t droptest_size;
 #endif
 
