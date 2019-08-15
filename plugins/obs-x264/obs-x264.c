@@ -787,4 +787,5 @@ struct obs_encoder_info obs_x264_encoder = {
 	.get_extra_data = obs_x264_extra_data,
 	.get_sei_data = obs_x264_sei,
 	.get_video_info = obs_x264_video_info,
+	.caps = OBS_ENCODER_CAP_DYN_BITRATE,
 };
