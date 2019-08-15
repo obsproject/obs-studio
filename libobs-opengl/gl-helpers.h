@@ -17,9 +17,12 @@
 
 #pragma once
 
-static char *gl_error_to_str(GLenum errorcode)
+static const char *gl_error_to_str(GLenum errorcode)
 {
-	static void *err_to_str[][2] = {
+	static const struct {
+		GLenum error;
+		const char *str;
+	} err_to_str[] = {
 		{
 			GL_INVALID_ENUM,
 			"GL_INVALID_ENUM",
@@ -48,17 +51,12 @@ static char *gl_error_to_str(GLenum errorcode)
 			GL_STACK_OVERFLOW,
 			"GL_STACK_OVERFLOW",
 		},
-		{
-			NULL,
-			"Unknown",
-		},
 	};
-	int i = 0;
-	while ((GLenum)err_to_str[i][0] != errorcode ||
-	       err_to_str[i][0] == NULL) {
-		i += 2;
+	for (size_t i = 0; i < sizeof(err_to_str) / sizeof(*err_to_str); i++) {
+		if (err_to_str[i].error == errorcode)
+			return err_to_str[i].str;
 	}
-	return err_to_str[i][1];
+	return "Unknown";
 }
 
 /*
