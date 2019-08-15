@@ -24,6 +24,7 @@
 #define info(format, ...) do_log(LOG_INFO, format, ##__VA_ARGS__)
 #define debug(format, ...) do_log(LOG_DEBUG, format, ##__VA_ARGS__)
 
+#define OPT_DYN_BITRATE "dyn_bitrate"
 #define OPT_DROP_THRESHOLD "drop_threshold_ms"
 #define OPT_PFRAME_DROP_THRESHOLD "pframe_drop_threshold_ms"
 #define OPT_MAX_SHUTDOWN_TIME_SEC "max_shutdown_time_sec"
@@ -44,6 +45,12 @@ struct droptest_info {
 	size_t size;
 };
 #endif
+
+struct dbr_frame {
+	uint64_t send_beg;
+	uint64_t send_end;
+	size_t size;
+};
 
 struct rtmp_stream {
 	obs_output_t *output;
@@ -92,6 +99,18 @@ struct rtmp_stream {
 	size_t droptest_max;
 	size_t droptest_size;
 #endif
+
+	pthread_mutex_t dbr_mutex;
+	struct circlebuf dbr_frames;
+	size_t dbr_data_size;
+	uint64_t dbr_inc_timeout;
+	long audio_bitrate;
+	long dbr_est_bitrate;
+	long dbr_orig_bitrate;
+	long dbr_prev_bitrate;
+	long dbr_cur_bitrate;
+	long dbr_inc_bitrate;
+	bool dbr_enabled;
 
 	RTMP rtmp;
 
