@@ -397,7 +397,7 @@ enum rate_control {
 };
 
 static void update_params(struct obs_x264 *obsx264, obs_data_t *settings,
-			  char **params)
+			  char **params, bool update)
 {
 	video_t *video = obs_encoder_video(obsx264->encoder);
 	const struct video_output_info *voi = video_output_get_info(video);
@@ -518,23 +518,26 @@ static void update_params(struct obs_x264 *obsx264, obs_data_t *settings,
 	while (*params)
 		set_param(obsx264, *(params++));
 
-	info("settings:\n"
-	     "\trate_control: %s\n"
-	     "\tbitrate:      %d\n"
-	     "\tbuffer size:  %d\n"
-	     "\tcrf:          %d\n"
-	     "\tfps_num:      %d\n"
-	     "\tfps_den:      %d\n"
-	     "\twidth:        %d\n"
-	     "\theight:       %d\n"
-	     "\tkeyint:       %d\n",
-	     rate_control, obsx264->params.rc.i_vbv_max_bitrate,
-	     obsx264->params.rc.i_vbv_buffer_size,
-	     (int)obsx264->params.rc.f_rf_constant, voi->fps_num, voi->fps_den,
-	     width, height, obsx264->params.i_keyint_max);
+	if (!update) {
+		info("settings:\n"
+		     "\trate_control: %s\n"
+		     "\tbitrate:      %d\n"
+		     "\tbuffer size:  %d\n"
+		     "\tcrf:          %d\n"
+		     "\tfps_num:      %d\n"
+		     "\tfps_den:      %d\n"
+		     "\twidth:        %d\n"
+		     "\theight:       %d\n"
+		     "\tkeyint:       %d\n",
+		     rate_control, obsx264->params.rc.i_vbv_max_bitrate,
+		     obsx264->params.rc.i_vbv_buffer_size,
+		     (int)obsx264->params.rc.f_rf_constant, voi->fps_num,
+		     voi->fps_den, width, height, obsx264->params.i_keyint_max);
+	}
 }
 
-static bool update_settings(struct obs_x264 *obsx264, obs_data_t *settings)
+static bool update_settings(struct obs_x264 *obsx264, obs_data_t *settings,
+			    bool update)
 {
 	char *preset = bstrdup(obs_data_get_string(settings, "preset"));
 	char *profile = bstrdup(obs_data_get_string(settings, "profile"));
@@ -563,7 +566,7 @@ static bool update_settings(struct obs_x264 *obsx264, obs_data_t *settings)
 	}
 
 	if (success) {
-		update_params(obsx264, settings, paramlist);
+		update_params(obsx264, settings, paramlist, update);
 		if (opts && *opts)
 			info("custom settings: %s", opts);
 
@@ -584,7 +587,7 @@ static bool update_settings(struct obs_x264 *obsx264, obs_data_t *settings)
 static bool obs_x264_update(void *data, obs_data_t *settings)
 {
 	struct obs_x264 *obsx264 = data;
-	bool success = update_settings(obsx264, settings);
+	bool success = update_settings(obsx264, settings, true);
 	int ret;
 
 	if (success) {
@@ -630,7 +633,7 @@ static void *obs_x264_create(obs_data_t *settings, obs_encoder_t *encoder)
 	struct obs_x264 *obsx264 = bzalloc(sizeof(struct obs_x264));
 	obsx264->encoder = encoder;
 
-	if (update_settings(obsx264, settings)) {
+	if (update_settings(obsx264, settings, false)) {
 		obsx264->context = x264_encoder_open(&obsx264->params);
 
 		if (obsx264->context == NULL)
