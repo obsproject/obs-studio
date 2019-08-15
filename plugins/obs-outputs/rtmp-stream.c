@@ -267,6 +267,49 @@ static void droptest_cap_data_rate(struct rtmp_stream *stream, size_t size)
 	uint64_t ts = os_gettime_ns();
 	struct droptest_info info;
 
+#if defined(_WIN32) && defined(TEST_FRAMEDROPS_WITH_BITRATE_SHORTCUTS)
+	uint64_t check_elapsed = ts - stream->droptest_last_key_check;
+
+	if (check_elapsed > (200ULL * MSEC_TO_NSEC)) {
+		size_t bitrate = 0;
+
+		stream->droptest_last_key_check = ts;
+
+		if (GetAsyncKeyState(VK_NUMPAD0) & 0x8000) {
+			stream->droptest_max = 0;
+		} else if (GetAsyncKeyState(VK_NUMPAD1) & 0x8000) {
+			bitrate = 1000;
+		} else if (GetAsyncKeyState(VK_NUMPAD2) & 0x8000) {
+			bitrate = 2000;
+		} else if (GetAsyncKeyState(VK_NUMPAD3) & 0x8000) {
+			bitrate = 3000;
+		} else if (GetAsyncKeyState(VK_NUMPAD4) & 0x8000) {
+			bitrate = 4000;
+		} else if (GetAsyncKeyState(VK_NUMPAD5) & 0x8000) {
+			bitrate = 5000;
+		} else if (GetAsyncKeyState(VK_NUMPAD6) & 0x8000) {
+			bitrate = 6000;
+		} else if (GetAsyncKeyState(VK_NUMPAD7) & 0x8000) {
+			bitrate = 7000;
+		} else if (GetAsyncKeyState(VK_NUMPAD8) & 0x8000) {
+			bitrate = 8000;
+		} else if (GetAsyncKeyState(VK_NUMPAD9) & 0x8000) {
+			bitrate = 9000;
+		}
+
+		if (bitrate) {
+			stream->droptest_max = (bitrate * 1000 / 8);
+		}
+	}
+	if (!stream->droptest_max) {
+		return;
+	}
+#else
+	if (!stream->droptest_max) {
+		stream->droptest_max = DROPTEST_MAX_BYTES;
+	}
+#endif
+
 	info.ts = ts;
 	info.size = size;
 
@@ -277,7 +320,7 @@ static void droptest_cap_data_rate(struct rtmp_stream *stream, size_t size)
 		circlebuf_peek_front(&stream->droptest_info, &info,
 				     sizeof(info));
 
-		if (stream->droptest_size > DROPTEST_MAX_BYTES) {
+		if (stream->droptest_size > stream->droptest_max) {
 			uint64_t elapsed = ts - info.ts;
 
 			if (elapsed < 1000000000ULL) {
@@ -285,7 +328,7 @@ static void droptest_cap_data_rate(struct rtmp_stream *stream, size_t size)
 				os_sleepto_ns(ts + elapsed);
 			}
 
-			while (stream->droptest_size > DROPTEST_MAX_BYTES) {
+			while (stream->droptest_size > stream->droptest_max) {
 				circlebuf_pop_front(&stream->droptest_info,
 						    &info, sizeof(info));
 				stream->droptest_size -= info.size;
