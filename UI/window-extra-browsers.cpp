@@ -150,20 +150,18 @@ void ExtraBrowsersModel::AddDeleteButton(int idx)
 {
 	QTableView *widget = reinterpret_cast<QTableView *>(parent());
 
-	QSizePolicy policy(QSizePolicy::Expanding, QSizePolicy::Expanding,
-			   QSizePolicy::PushButton);
-	policy.setWidthForHeight(true);
-
 	QModelIndex index = createIndex(idx, (int)Column::Delete, nullptr);
 
 	QPushButton *del = new DelButton(index);
 	del->setProperty("themeID", "trashIcon");
-	del->setSizePolicy(policy);
-	del->setFlat(true);
+	del->setObjectName("extraPanelDelete");
+	del->setFixedSize(QSize(20, 20));
 	connect(del, &QPushButton::clicked, this,
 		&ExtraBrowsersModel::DeleteItem);
 
 	widget->setIndexWidget(index, del);
+	widget->setRowHeight(idx, 20);
+	widget->setColumnWidth(idx, 20);
 }
 
 void ExtraBrowsersModel::CheckToAdd()
