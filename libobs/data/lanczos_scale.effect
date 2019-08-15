@@ -111,6 +111,16 @@ float4 DrawLanczos(FragData f_in, bool undistort)
 	float3 coltap024 = weight3(f_rev_half.y);
 	float3 coltap135 = weight3(f_rev_half.y + 0.5);
 
+	// Need normalization if divided value near zero
+	float rowsum = rowtap024.x + rowtap024.y + rowtap024.z;
+	rowsum += rowtap135.x + rowtap135.y + rowtap135.z;
+	rowtap024 = rowtap024 / rowsum;
+	rowtap135 = rowtap135 / rowsum;
+	float colsum = coltap024.x + coltap024.y + coltap024.z;
+	colsum += coltap135.x + coltap135.y + coltap135.z;
+	coltap024 = coltap024 / colsum;
+	coltap135 = coltap135 / colsum;
+
 	float2 uv0 = (-2.5 - f) * stepxy + pos;
 	float2 uv1 = uv0 + stepxy;
 	float2 uv2 = uv1 + stepxy;
