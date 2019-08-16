@@ -657,9 +657,9 @@ void TextSource::LoadFileText()
 
 void TextSource::TransformText()
 {
-	if(text_transform == S_TRANSFORM_UPPERCASE)
+	if (text_transform == S_TRANSFORM_UPPERCASE)
 		transform(text.begin(), text.end(), text.begin(), towupper);
-	else if(text_transform == S_TRANSFORM_LOWERCASE)
+	else if (text_transform == S_TRANSFORM_LOWERCASE)
 		transform(text.begin(), text.end(), text.begin(), towlower);
 }
 
