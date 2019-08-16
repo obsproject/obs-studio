@@ -1823,6 +1823,7 @@ static obs_source_t *obs_load_source_type(obs_data_t *source_data)
 			 * automatically if they added monitoring by default in
 			 * version 24 */
 			monitoring_type = OBS_MONITORING_TYPE_MONITOR_ONLY;
+			obs_source_set_audio_mixers(source, 0xF);
 		}
 	}
 	obs_source_set_monitoring_type(
