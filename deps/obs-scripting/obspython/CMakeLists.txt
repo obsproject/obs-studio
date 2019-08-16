@@ -1,6 +1,10 @@
 cmake_minimum_required(VERSION 2.8)
 project(obspython)
 
+if(POLICY CMP0078)
+	cmake_policy(SET CMP0078 OLD)
+endif()
+
 find_package(SWIG 2 REQUIRED)
 include(${SWIG_USE_FILE})
 
@@ -30,7 +34,14 @@ if(WIN32)
 	string(REGEX REPLACE "_d" "" PYTHON_LIBRARIES "${PYTHON_LIBRARIES}")
 endif()
 
-SWIG_ADD_MODULE(obspython python obspython.i ../cstrcache.cpp ../cstrcache.h)
+if(CMAKE_VERSION VERSION_GREATER 3.7.2)
+	SWIG_ADD_LIBRARY(obspython
+		LANGUAGE python
+		TYPE MODULE
+		SOURCES  obspython.i ../cstrcache.cpp ../cstrcache.h)
+else()
+	SWIG_ADD_MODULE(obspython python obspython.i ../cstrcache.cpp ../cstrcache.h)
+endif()
 SWIG_LINK_LIBRARIES(obspython obs-scripting libobs ${PYTHON_LIBRARIES})
 
 function(install_plugin_bin_swig target additional_target)
