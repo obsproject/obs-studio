@@ -284,6 +284,7 @@ struct TextSource {
 			       const Brush &brush);
 	void RenderText();
 	void LoadFileText();
+	void TransformText();
 
 	const char *GetMainString(const char *str);
 
@@ -654,6 +655,14 @@ void TextSource::LoadFileText()
 		text.push_back('\n');
 }
 
+void TextSource::TransformText()
+{
+	if(text_transform == S_TRANSFORM_UPPERCASE)
+		transform(text.begin(), text.end(), text.begin(), towupper);
+	else if(text_transform == S_TRANSFORM_LOWERCASE)
+		transform(text.begin(), text.end(), text.begin(), towlower);
+}
+
 #define obs_data_get_uint32 (uint32_t) obs_data_get_int
 
 inline void TextSource::Update(obs_data_t *s)
@@ -758,10 +767,7 @@ inline void TextSource::Update(obs_data_t *s)
 		if (!text.empty())
 			text.push_back('\n');
 	}
-	if (text_transform == S_TRANSFORM_UPPERCASE)
-		transform(text.begin(), text.end(), text.begin(), towupper);
-	else if (text_transform == S_TRANSFORM_LOWERCASE)
-		transform(text.begin(), text.end(), text.begin(), towlower);
+	TransformText();
 
 	use_outline = new_outline;
 	outline_color = new_o_color;
@@ -803,6 +809,7 @@ inline void TextSource::Tick(float seconds)
 
 		if (update_file) {
 			LoadFileText();
+			TransformText();
 			RenderText();
 			update_file = false;
 		}
