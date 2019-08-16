@@ -390,6 +390,11 @@ void gs_device::InitDevice(uint32_t adapterIdx)
 
 	nv12Supported = false;
 
+	/* Intel CopyResource is very slow with NV12 */
+	if (desc.VendorId == 0x8086) {
+		return;
+	}
+
 	ComQIPtr<ID3D11Device1> d3d11_1(device);
 	if (!d3d11_1) {
 		return;
