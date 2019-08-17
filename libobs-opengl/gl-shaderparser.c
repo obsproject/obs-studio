@@ -603,7 +603,7 @@ static inline void gl_write_main_storage_outputs(struct gl_shader_parser *glsp,
 	if (!main->mapping) {
 		struct shader_var var = {0};
 		var.name = "outputval";
-		var.type = (char *)main->return_type;
+		var.type = main->return_type;
 		dstr_cat(&glsp->gl_string, "\n");
 		gl_write_main_storage_assign(glsp, &var, NULL, NULL, false);
 	}
