@@ -1817,7 +1817,7 @@ static obs_source_t *obs_load_source_type(obs_data_t *source_data)
 		source, (enum obs_deinterlace_field_order)di_order);
 
 	monitoring_type = (int)obs_data_get_int(source_data, "monitoring_type");
-	if (prev_ver < MAKE_SEMANTIC_VERSION(24, 0, 0)) {
+	if (prev_ver < MAKE_SEMANTIC_VERSION(23, 2, 2)) {
 		if ((caps & OBS_SOURCE_MONITOR_BY_DEFAULT) != 0) {
 			/* updates older sources to enable monitoring
 			 * automatically if they added monitoring by default in
