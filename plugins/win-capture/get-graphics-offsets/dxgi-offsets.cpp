@@ -56,7 +56,6 @@ static inline bool dxgi_init(dxgi_info &info)
 	create = (d3d10create_t)GetProcAddress(d3d10_module,
 					       "D3D10CreateDeviceAndSwapChain");
 	if (!create) {
-		FreeLibrary(d3d10_module);
 		return false;
 	}
 
@@ -65,14 +64,12 @@ static inline bool dxgi_init(dxgi_info &info)
 
 	hr = create_factory(&factory_iid, (void **)&factory);
 	if (FAILED(hr)) {
-		FreeLibrary(d3d10_module);
 		return false;
 	}
 
 	hr = factory->EnumAdapters1(0, &adapter);
 	factory->Release();
 	if (FAILED(hr)) {
-		FreeLibrary(d3d10_module);
 		return false;
 	}
 
@@ -90,12 +87,10 @@ static inline bool dxgi_init(dxgi_info &info)
 		    D3D10_SDK_VERSION, &desc, &info.swap, &device);
 	adapter->Release();
 	if (FAILED(hr)) {
-		FreeLibrary(d3d10_module);
 		return false;
 	}
 
 	device->Release();
-	FreeLibrary(d3d10_module);
 	return true;
 }
 

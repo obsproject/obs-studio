@@ -113,7 +113,6 @@ int inject_library_safe_obf(DWORD thread_id, const wchar_t *dll,
 	size_t i;
 
 	if (!lib || !user32) {
-		FreeLibrary(lib);
 		return INJECT_ERROR_UNLIKELY_FAIL;
 	}
 
@@ -124,7 +123,6 @@ int inject_library_safe_obf(DWORD thread_id, const wchar_t *dll,
 #endif
 
 	if (!proc) {
-		FreeLibrary(lib);
 		return INJECT_ERROR_UNLIKELY_FAIL;
 	}
 
