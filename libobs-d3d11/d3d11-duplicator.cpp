@@ -87,7 +87,7 @@ EXPORT bool device_get_duplicator_monitor_info(gs_device_t *device,
 		if (FAILED(hr))
 			throw HRError("GetDesc failed", hr);
 
-	} catch (HRError error) {
+	} catch (HRError &error) {
 		blog(LOG_ERROR,
 		     "device_get_duplicator_monitor_info: "
 		     "%s (%08lX)",
@@ -151,7 +151,7 @@ EXPORT gs_duplicator_t *device_duplicator_create(gs_device_t *device,
 		blog(LOG_DEBUG, "device_duplicator_create: %s", error);
 		return nullptr;
 
-	} catch (HRError error) {
+	} catch (HRError &error) {
 		blog(LOG_DEBUG, "device_duplicator_create: %s (%08lX)",
 		     error.str, error.hr);
 		return nullptr;

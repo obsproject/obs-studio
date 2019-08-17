@@ -91,7 +91,7 @@ void GetWASAPIAudioDevices(vector<AudioDeviceInfo> &devices, bool input)
 	try {
 		GetWASAPIAudioDevices_(devices, input);
 
-	} catch (HRError error) {
+	} catch (HRError &error) {
 		blog(LOG_WARNING, "[GetWASAPIAudioDevices] %s: %lX", error.str,
 		     error.hr);
 	}

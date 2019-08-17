@@ -183,6 +183,7 @@ static void log_aero(void)
 	composition_enabled = (dwm_is_composition_enabled_t)GetProcAddress(
 		dwm, "DwmIsCompositionEnabled");
 	if (!composition_enabled) {
+		FreeLibrary(dwm);
 		return;
 	}
 
@@ -832,10 +833,13 @@ void reset_win32_symbol_paths(void)
 			(void *)GetProcAddress(mod, "SymInitializeW");
 		sym_set_search_path_w =
 			(void *)GetProcAddress(mod, "SymSetSearchPathW");
-		if (!sym_initialize_w || !sym_set_search_path_w)
+		if (!sym_initialize_w || !sym_set_search_path_w) {
+			FreeLibrary(mod);
 			return;
+		}
 
 		initialize_success = true;
+		// Leaks 'mod' once.
 	}
 
 	if (!initialize_success)

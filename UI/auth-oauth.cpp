@@ -259,7 +259,7 @@ try {
 
 	return true;
 
-} catch (ErrorInfo info) {
+} catch (ErrorInfo &info) {
 	if (!retry) {
 		QString title = QTStr("Auth.AuthFailure.Title");
 		QString text = QTStr("Auth.AuthFailure.Text")

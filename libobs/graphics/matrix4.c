@@ -118,7 +118,7 @@ float matrix4_determinant(const struct matrix4 *m)
 	float m3x3[9];
 	int n;
 
-	for (n = 0; n < 4; n++, i *= -1.0f) {
+	for (n = 0; n < 4; n++, i = -i) { // NOLINT(clang-tidy-cert-flp30-c)
 		get_3x3_submatrix(m3x3, m, 0, n);
 
 		det = get_3x3_determinant(m3x3);
