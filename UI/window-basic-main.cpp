@@ -130,7 +130,7 @@ static void AddExtraModulePaths()
 	if (ret <= 0)
 		return;
 
-	string path = (char *)base_module_dir;
+	string path = base_module_dir;
 #if defined(__APPLE__)
 	obs_add_module_path((path + "/bin").c_str(), (path + "/data").c_str());
 
@@ -4752,7 +4752,7 @@ static BPtr<char> ReadLogFile(const char *subdir, const char *log)
 	if (GetConfigPath(logDir, sizeof(logDir), subdir) <= 0)
 		return nullptr;
 
-	string path = (char *)logDir;
+	string path = logDir;
 	path += "/";
 	path += log;
 
@@ -4822,7 +4822,7 @@ void OBSBasic::on_actionViewCurrentLog_triggered()
 
 	const char *log = App()->GetCurrentLog();
 
-	string path = (char *)logDir;
+	string path = logDir;
 	path += "/";
 	path += log;
 
