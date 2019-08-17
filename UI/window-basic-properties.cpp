@@ -29,7 +29,8 @@
 
 using namespace std;
 
-static void CreateTransitionScene(OBSSource scene, char *text, uint32_t color);
+static void CreateTransitionScene(OBSSource scene, const char *text,
+				  uint32_t color);
 
 OBSBasicProperties::OBSBasicProperties(QWidget *parent, OBSSource source_)
 	: QDialog(parent),
@@ -153,8 +154,8 @@ OBSBasicProperties::OBSBasicProperties(QWidget *parent, OBSSource source_)
 		uint32_t colorA = 0xFFB26F52;
 		uint32_t colorB = 0xFF6FB252;
 
-		CreateTransitionScene(sourceA, (char *)"A", colorA);
-		CreateTransitionScene(sourceB, (char *)"B", colorB);
+		CreateTransitionScene(sourceA, "A", colorA);
+		CreateTransitionScene(sourceB, "B", colorB);
 
 		/**
 		 * The cloned source is made from scratch, rather than using
@@ -278,7 +279,8 @@ static obs_source_t *CreateLabel(const char *name, size_t h)
 	return txtSource;
 }
 
-static void CreateTransitionScene(OBSSource scene, char *text, uint32_t color)
+static void CreateTransitionScene(OBSSource scene, const char *text,
+				  uint32_t color)
 {
 	obs_data_t *settings = obs_data_create();
 	obs_data_set_int(settings, "width", obs_source_get_width(scene));
