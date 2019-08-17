@@ -78,8 +78,8 @@ static inline bool gl_success(const char *funcname)
 
 			--attempts;
 			if (attempts == 0) {
-				blog(LOG_ERROR, "Too many GL errors, moving on",
-				     funcname, errorcode);
+				blog(LOG_ERROR,
+				     "Too many GL errors, moving on");
 				break;
 			}
 		} while (errorcode != GL_NO_ERROR);
