@@ -3,6 +3,9 @@
 #include <obs.hpp>
 #include <graphics/vec2.h>
 #include <graphics/matrix4.h>
+#include <util/threading.h>
+#include <mutex>
+#include <vector>
 #include "qt-display.hpp"
 #include "obs-app.hpp"
 
@@ -32,6 +35,7 @@ class OBSBasicPreview : public OBSQTDisplay {
 	Q_OBJECT
 
 	friend class SourceTree;
+	friend class SourceTreeItem;
 
 private:
 	obs_sceneitem_crop startCrop;
@@ -46,8 +50,10 @@ private:
 	matrix4 invGroupTransform;
 
 	gs_texture_t *overflow = nullptr;
+	gs_vertbuffer_t *rectFill = nullptr;
 
 	vec2 startPos;
+	vec2 mousePos;
 	vec2 lastMoveOffset;
 	vec2 scrollingFrom;
 	vec2 scrollingOffset;
@@ -58,17 +64,23 @@ private:
 	bool locked = false;
 	bool scrollMode = false;
 	bool fixedScaling = false;
+	bool selectionBox = false;
 	int32_t scalingLevel = 0;
 	float scalingAmount = 1.0f;
 
-	obs_sceneitem_t *hoveredPreviewItem = nullptr;
-	obs_sceneitem_t *hoveredListItem = nullptr;
+	std::vector<obs_sceneitem_t *> hoveredPreviewItems;
+	std::vector<obs_sceneitem_t *> selectedItems;
+	std::mutex selectMutex;
 
 	static vec2 GetMouseEventPos(QMouseEvent *event);
+	static bool FindSelected(obs_scene_t *scene, obs_sceneitem_t *item,
+				 void *param);
 	static bool DrawSelectedOverflow(obs_scene_t *scene,
 					 obs_sceneitem_t *item, void *param);
 	static bool DrawSelectedItem(obs_scene_t *scene, obs_sceneitem_t *item,
 				     void *param);
+	static bool DrawSelectionBox(float x1, float y1, float x2, float y2,
+				     gs_vertbuffer_t *box);
 
 	static OBSSceneItem GetItemAtPos(const vec2 &pos, bool selectBelow);
 	static bool SelectedAtPos(const vec2 &pos);
@@ -88,6 +100,7 @@ private:
 
 	static void SnapItemMovement(vec2 &offset);
 	void MoveItems(const vec2 &pos);
+	void BoxItems(const vec2 &startPos, const vec2 &pos);
 
 	void ProcessClick(const vec2 &pos);
 

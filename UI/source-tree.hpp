@@ -30,6 +30,8 @@ class SourceTreeItem : public QWidget {
 	friend class SourceTreeModel;
 
 	void mouseDoubleClickEvent(QMouseEvent *event) override;
+	void enterEvent(QEvent *event) override;
+	void leaveEvent(QEvent *event) override;
 
 	virtual bool eventFilter(QObject *object, QEvent *event) override;
 
