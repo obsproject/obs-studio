@@ -514,6 +514,7 @@ void VolumeMeter::setPeakMeterType(enum obs_peak_meter_type peakMeterType)
 void VolumeMeter::mousePressEvent(QMouseEvent *event)
 {
 	setFocus(Qt::MouseFocusReason);
+	event->accept();
 }
 
 void VolumeMeter::wheelEvent(QWheelEvent *event)

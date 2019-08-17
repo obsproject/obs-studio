@@ -230,7 +230,9 @@ static inline unsigned get_format_lines(enum video_format format,
 	case VIDEO_FORMAT_BGRX:
 	case VIDEO_FORMAT_Y800:
 		return height;
-	case VIDEO_FORMAT_NONE:;
+	case VIDEO_FORMAT_NONE:
+	default:
+		break;
 	}
 
 	return 0;

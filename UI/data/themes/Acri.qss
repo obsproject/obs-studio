@@ -42,7 +42,6 @@ QWidget {
 	outline: none;
 	font-family: "Open Sans", "Tahoma", "Arial", sans-serif;
 	font-size: 12px;
-	overflow: auto;
 }
 
 #menubar {
@@ -650,14 +649,6 @@ QSlider::handle:disabled {
 }
 
 /* Volume Control */
-
-/* Old Meters */
-VolumeMeter {
-	qproperty-bkColor: rgb(8,8,11);
-	qproperty-magColor:;
-	qproperty-peakColor:;
-	qproperty-peakHoldColor: rgb(225,224,225);
-}
 
 VolumeMeter {
 
