@@ -354,7 +354,6 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->simpleOutRecQuality,  COMBO_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->simpleOutRecEncoder,  COMBO_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->simpleOutMuxCustom,   EDIT_CHANGED,   OUTPUTS_CHANGED);
-	HookWidget(ui->simpleReplayBuf,      CHECK_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->simpleRBSecMax,       SCROLL_CHANGED, OUTPUTS_CHANGED);
 	HookWidget(ui->simpleRBMegsMax,      SCROLL_CHANGED, OUTPUTS_CHANGED);
 	HookWidget(ui->advOutEncoder,        COMBO_CHANGED,  OUTPUTS_CHANGED);
@@ -415,7 +414,6 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->advOutTrack5Name,     EDIT_CHANGED,   OUTPUTS_CHANGED);
 	HookWidget(ui->advOutTrack6Bitrate,  COMBO_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advOutTrack6Name,     EDIT_CHANGED,   OUTPUTS_CHANGED);
-	HookWidget(ui->advReplayBuf,         CHECK_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advRBSecMax,          SCROLL_CHANGED, OUTPUTS_CHANGED);
 	HookWidget(ui->advRBMegsMax,         SCROLL_CHANGED, OUTPUTS_CHANGED);
 	HookWidget(ui->channelSetup,         COMBO_CHANGED,  AUDIO_RESTART);
@@ -665,16 +663,12 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 		SLOT(SimpleRecordingEncoderChanged()));
 	connect(ui->simpleOutEnforce, SIGNAL(toggled(bool)), this,
 		SLOT(SimpleRecordingEncoderChanged()));
-	connect(ui->simpleReplayBuf, SIGNAL(toggled(bool)), this,
-		SLOT(SimpleReplayBufferChanged()));
 	connect(ui->simpleOutputVBitrate, SIGNAL(valueChanged(int)), this,
 		SLOT(SimpleReplayBufferChanged()));
 	connect(ui->simpleOutputABitrate, SIGNAL(currentIndexChanged(int)),
 		this, SLOT(SimpleReplayBufferChanged()));
 	connect(ui->simpleRBSecMax, SIGNAL(valueChanged(int)), this,
 		SLOT(SimpleReplayBufferChanged()));
-	connect(ui->advReplayBuf, SIGNAL(toggled(bool)), this,
-		SLOT(AdvReplayBufferChanged()));
 	connect(ui->advOutRecTrack1, SIGNAL(toggled(bool)), this,
 		SLOT(AdvReplayBufferChanged()));
 	connect(ui->advOutRecTrack2, SIGNAL(toggled(bool)), this,
@@ -749,8 +743,6 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	ui->buttonBox->button(QDialogButtonBox::Cancel)->setIcon(QIcon());
 
 	SimpleRecordingQualityChanged();
-
-	UpdateAutomaticReplayBufferCheckboxes();
 
 	App()->DisableHotkeys();
 }
@@ -1511,8 +1503,6 @@ void OBSBasicSettings::LoadSimpleOutputSettings()
 		config_get_string(main->Config(), "SimpleOutput", "RecEncoder");
 	const char *muxCustom = config_get_string(
 		main->Config(), "SimpleOutput", "MuxerCustom");
-	bool replayBuf =
-		config_get_bool(main->Config(), "SimpleOutput", "RecRB");
 	int rbTime =
 		config_get_int(main->Config(), "SimpleOutput", "RecRBTime");
 	int rbSize =
@@ -1563,7 +1553,6 @@ void OBSBasicSettings::LoadSimpleOutputSettings()
 
 	ui->simpleOutMuxCustom->setText(muxCustom);
 
-	ui->simpleReplayBuf->setChecked(replayBuf);
 	ui->simpleRBSecMax->setValue(rbTime);
 	ui->simpleRBMegsMax->setValue(rbSize);
 
@@ -2258,7 +2247,6 @@ void OBSBasicSettings::LoadAdvancedSettings()
 						 "RecRBPrefix");
 	const char *rbSuffix = config_get_string(main->Config(), "SimpleOutput",
 						 "RecRBSuffix");
-	bool replayBuf = config_get_bool(main->Config(), "AdvOut", "RecRB");
 	int rbTime = config_get_int(main->Config(), "AdvOut", "RecRBTime");
 	int rbSize = config_get_int(main->Config(), "AdvOut", "RecRBSize");
 	bool autoRemux = config_get_bool(main->Config(), "Video", "AutoRemux");
@@ -2279,7 +2267,6 @@ void OBSBasicSettings::LoadAdvancedSettings()
 	ui->simpleRBPrefix->setText(rbPrefix);
 	ui->simpleRBSuffix->setText(rbSuffix);
 
-	ui->advReplayBuf->setChecked(replayBuf);
 	ui->advRBSecMax->setValue(rbTime);
 	ui->advRBMegsMax->setValue(rbSize);
 
@@ -3130,7 +3117,6 @@ void OBSBasicSettings::SaveOutputSettings()
 	SaveComboData(ui->simpleOutRecQuality, "SimpleOutput", "RecQuality");
 	SaveComboData(ui->simpleOutRecEncoder, "SimpleOutput", "RecEncoder");
 	SaveEdit(ui->simpleOutMuxCustom, "SimpleOutput", "MuxerCustom");
-	SaveCheckBox(ui->simpleReplayBuf, "SimpleOutput", "RecRB");
 	SaveSpinBox(ui->simpleRBSecMax, "SimpleOutput", "RecRBTime");
 	SaveSpinBox(ui->simpleRBMegsMax, "SimpleOutput", "RecRBSize");
 
@@ -3204,7 +3190,6 @@ void OBSBasicSettings::SaveOutputSettings()
 	SaveEdit(ui->advOutTrack5Name, "AdvOut", "Track5Name");
 	SaveEdit(ui->advOutTrack6Name, "AdvOut", "Track6Name");
 
-	SaveCheckBox(ui->advReplayBuf, "AdvOut", "RecRB");
 	SaveSpinBox(ui->advRBSecMax, "AdvOut", "RecRBTime");
 	SaveSpinBox(ui->advRBMegsMax, "AdvOut", "RecRBSize");
 
@@ -4055,8 +4040,6 @@ void OBSBasicSettings::UpdateStreamDelayEstimate()
 		UpdateSimpleOutStreamDelayEstimate();
 	else
 		UpdateAdvOutStreamDelayEstimate();
-
-	UpdateAutomaticReplayBufferCheckboxes();
 }
 
 bool EncoderAvailable(const char *encoder)
@@ -4223,26 +4206,9 @@ void OBSBasicSettings::SimpleStreamingEncoderChanged()
 #define ESTIMATE_UNKNOWN_STR \
 	"Basic.Settings.Output.ReplayBuffer.EstimateUnknown"
 
-void OBSBasicSettings::UpdateAutomaticReplayBufferCheckboxes()
-{
-	bool state = false;
-	switch (ui->outputMode->currentIndex()) {
-	case 0:
-		state = ui->simpleReplayBuf->isChecked();
-		break;
-	case 1:
-		state = ui->advReplayBuf->isChecked();
-		break;
-	}
-	ui->replayWhileStreaming->setEnabled(state);
-	ui->keepReplayStreamStops->setEnabled(
-		state && ui->replayWhileStreaming->isChecked());
-}
-
 void OBSBasicSettings::SimpleReplayBufferChanged()
 {
 	QString qual = ui->simpleOutRecQuality->currentData().toString();
-	bool replayBufferEnabled = ui->simpleReplayBuf->isChecked();
 	bool lossless = qual == "Lossless";
 	bool streamQuality = qual == "Stream";
 
@@ -4264,10 +4230,7 @@ void OBSBasicSettings::SimpleReplayBufferChanged()
 	else
 		ui->simpleRBEstimate->setText(QTStr(ESTIMATE_UNKNOWN_STR));
 
-	ui->replayBufferGroupBox->setVisible(!lossless && replayBufferEnabled);
-	ui->simpleReplayBuf->setVisible(!lossless);
-
-	UpdateAutomaticReplayBufferCheckboxes();
+	ui->replayBufferGroupBox->setEnabled(!lossless);
 }
 
 void OBSBasicSettings::AdvReplayBufferChanged()
@@ -4308,7 +4271,6 @@ void OBSBasicSettings::AdvReplayBufferChanged()
 
 	bool lossless = strcmp(rateControl, "lossless") == 0 ||
 			ui->advOutRecType->currentIndex() == 1;
-	bool replayBufferEnabled = ui->advReplayBuf->isChecked();
 
 	int abitrate = 0;
 	if (ui->advOutRecTrack1->isChecked())
@@ -4337,8 +4299,8 @@ void OBSBasicSettings::AdvReplayBufferChanged()
 	if (vbitrate == 0)
 		varRateControl = false;
 
-	ui->advRBMegsMax->setVisible(!varRateControl);
-	ui->advRBMegsMaxLabel->setVisible(!varRateControl);
+	ui->advRBMegsMax->setEnabled(!varRateControl);
+	ui->advRBMegsMaxLabel->setEnabled(!varRateControl);
 
 	if (varRateControl)
 		ui->advRBEstimate->setText(
@@ -4346,11 +4308,7 @@ void OBSBasicSettings::AdvReplayBufferChanged()
 	else
 		ui->advRBEstimate->setText(QTStr(ESTIMATE_UNKNOWN_STR));
 
-	ui->advReplayBufferGroupBox->setVisible(!lossless &&
-						replayBufferEnabled);
-	ui->advReplayBuf->setEnabled(!lossless);
-
-	UpdateAutomaticReplayBufferCheckboxes();
+	ui->advReplayBufferGroupBox->setEnabled(!lossless);
 }
 
 #define SIMPLE_OUTPUT_WARNING(str) \

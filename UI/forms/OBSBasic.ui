@@ -381,6 +381,17 @@
      <addaction name="toggleControls"/>
      <addaction name="toggleStats"/>
     </widget>
+    <widget class="QMenu" name="viewMenuControls">
+     <property name="title">
+      <string>Basic.Main.Controls</string>
+     </property>
+     <addaction name="toggleStream"/>
+     <addaction name="toggleRecording"/>
+     <addaction name="toggleReplay"/>
+     <addaction name="toggleStudioMode"/>
+     <addaction name="toggleSettings"/>
+     <addaction name="toggleExit"/>
+    </widget>
     <action name="actionFullscreenInterface">
      <property name="text">
       <string>Basic.MainMenu.View.Fullscreen.Interface</string>
@@ -393,6 +404,7 @@
     <addaction name="separator"/>
     <addaction name="viewMenuDocks"/>
     <addaction name="viewMenuToolbars"/>
+    <addaction name="viewMenuControls"/>
     <addaction name="toggleStatusBar"/>
     <addaction name="separator"/>
     <addaction name="stats"/>
@@ -728,7 +740,7 @@
           <rect>
            <x>0</x>
            <y>0</y>
-           <width>64</width>
+           <width>63</width>
            <height>16</height>
           </rect>
          </property>
@@ -782,7 +794,7 @@
            <x>0</x>
            <y>0</y>
            <width>16</width>
-           <height>28</height>
+           <height>16</height>
           </rect>
          </property>
          <property name="sizePolicy">
@@ -1144,6 +1156,20 @@
          </property>
          <property name="text">
           <string>Basic.Main.StartRecording</string>
+         </property>
+         <property name="checkable">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </item>
+     <item>
+      <layout class="QHBoxLayout" name="replayBufferLayout">
+       <item>
+        <widget class="ReplayBufferButton" name="replayBufferButton">
+         <property name="text">
+          <string>Basic.Main.StartReplayBuffer</string>
          </property>
          <property name="checkable">
           <bool>true</bool>
@@ -1788,6 +1814,77 @@
     <string>Basic.MainMenu.Help.About</string>
    </property>
   </action>
+  <action name="actionStream">
+   <property name="text">
+    <string>Stream</string>
+   </property>
+  </action>
+  <action name="toggleStream">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Stream</string>
+   </property>
+  </action>
+  <action name="toggleRecording">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Recording</string>
+   </property>
+  </action>
+  <action name="toggleReplay">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>ReplayBuffer</string>
+   </property>
+  </action>
+  <action name="toggleStudioMode">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Basic.TogglePreviewProgramMode</string>
+   </property>
+  </action>
+  <action name="toggleSettings">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Settings</string>
+   </property>
+  </action>
+  <action name="toggleExit">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Exit</string>
+   </property>
+  </action>
  </widget>
  <customwidgets>
   <customwidget>
@@ -1828,6 +1925,11 @@
    <class>RecordButton</class>
    <extends>QPushButton</extends>
    <header>record-button.hpp</header>
+  </customwidget>
+  <customwidget>
+   <class>ReplayBufferButton</class>
+   <extends>QPushButton</extends>
+   <header>replay-buffer-button.hpp</header>
   </customwidget>
  </customwidgets>
  <resources>

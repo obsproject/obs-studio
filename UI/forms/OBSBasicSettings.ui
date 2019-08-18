@@ -1611,16 +1611,6 @@
                     <item row="5" column="1">
                      <widget class="QLineEdit" name="simpleOutMuxCustom"/>
                     </item>
-                    <item row="6" column="1">
-                     <widget class="QCheckBox" name="simpleReplayBuf">
-                      <property name="text">
-                       <string>Basic.Settings.Output.UseReplayBuffer</string>
-                      </property>
-                      <property name="checked">
-                       <bool>true</bool>
-                      </property>
-                     </widget>
-                    </item>
                    </layout>
                   </widget>
                  </item>
@@ -1683,13 +1673,6 @@
                      </widget>
                     </item>
                     <item row="2" column="1">
-                     <widget class="QLabel" name="label_45">
-                      <property name="text">
-                       <string>Basic.Settings.Output.ReplayBuffer.HotkeyMessage</string>
-                      </property>
-                     </widget>
-                    </item>
-                    <item row="3" column="1">
                      <widget class="QLabel" name="simpleRBEstimate">
                       <property name="text">
                        <string notr="true"/>
@@ -3484,13 +3467,6 @@
                     </attribute>
                     <layout class="QVBoxLayout" name="verticalLayout_22">
                      <item>
-                      <widget class="QCheckBox" name="advReplayBuf">
-                       <property name="text">
-                        <string>Basic.Settings.Output.UseReplayBuffer</string>
-                       </property>
-                      </widget>
-                     </item>
-                     <item>
                       <widget class="QGroupBox" name="advReplayBufferGroupBox">
                        <property name="sizePolicy">
                         <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
@@ -3531,17 +3507,10 @@
                           </property>
                          </widget>
                         </item>
-                        <item row="2" column="1">
-                         <widget class="QLabel" name="advRBHotkeyLabel">
+                        <item row="1" column="0">
+                         <widget class="QLabel" name="advRBMegsMaxLabel">
                           <property name="text">
-                           <string>Basic.Settings.Output.ReplayBuffer.HotkeyMessage</string>
-                          </property>
-                         </widget>
-                        </item>
-                        <item row="3" column="1">
-                         <widget class="QLabel" name="advRBEstimate">
-                          <property name="text">
-                           <string notr="true"/>
+                           <string>Basic.Settings.Output.ReplayBuffer.MegabytesMax</string>
                           </property>
                          </widget>
                         </item>
@@ -3561,10 +3530,10 @@
                           </property>
                          </widget>
                         </item>
-                        <item row="1" column="0">
-                         <widget class="QLabel" name="advRBMegsMaxLabel">
+                        <item row="2" column="1">
+                         <widget class="QLabel" name="advRBEstimate">
                           <property name="text">
-                           <string>Basic.Settings.Output.ReplayBuffer.MegabytesMax</string>
+                           <string notr="true"/>
                           </property>
                          </widget>
                         </item>
@@ -5302,7 +5271,6 @@
   <tabstop>simpleOutRecFormat</tabstop>
   <tabstop>simpleOutRecEncoder</tabstop>
   <tabstop>simpleOutMuxCustom</tabstop>
-  <tabstop>simpleReplayBuf</tabstop>
   <tabstop>simpleRBSecMax</tabstop>
   <tabstop>simpleRBMegsMax</tabstop>
   <tabstop>advOutTabs</tabstop>
@@ -5366,7 +5334,6 @@
   <tabstop>advOutTrack5Name</tabstop>
   <tabstop>advOutTrack6Bitrate</tabstop>
   <tabstop>advOutTrack6Name</tabstop>
-  <tabstop>advReplayBuf</tabstop>
   <tabstop>advRBSecMax</tabstop>
   <tabstop>advRBMegsMax</tabstop>
   <tabstop>sampleRate</tabstop>

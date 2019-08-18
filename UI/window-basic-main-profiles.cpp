@@ -348,6 +348,8 @@ void OBSBasic::RefreshProfiles()
 	EnumProfiles(addProfile);
 
 	ui->actionRemoveProfile->setEnabled(count > 1);
+
+	ShowHideReplayBufferButtonFFmpeg();
 }
 
 void OBSBasic::ResetProfileData()

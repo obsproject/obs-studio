@@ -362,33 +362,27 @@ SimpleOutput::SimpleOutput(OBSBasic *main_) : BasicOutputHandler(main_)
 	LoadRecordingPreset();
 
 	if (!ffmpegOutput) {
-		bool useReplayBuffer = config_get_bool(main->Config(),
-						       "SimpleOutput", "RecRB");
-		if (useReplayBuffer) {
-			const char *str = config_get_string(
-				main->Config(), "Hotkeys", "ReplayBuffer");
-			obs_data_t *hotkey = obs_data_create_from_json(str);
-			replayBuffer = obs_output_create("replay_buffer",
-							 Str("ReplayBuffer"),
-							 nullptr, hotkey);
+		const char *str = config_get_string(main->Config(), "Hotkeys",
+						    "ReplayBuffer");
+		obs_data_t *hotkey = obs_data_create_from_json(str);
+		replayBuffer = obs_output_create(
+			"replay_buffer", Str("ReplayBuffer"), nullptr, hotkey);
 
-			obs_data_release(hotkey);
-			if (!replayBuffer)
-				throw "Failed to create replay buffer output "
-				      "(simple output)";
-			obs_output_release(replayBuffer);
+		obs_data_release(hotkey);
+		if (!replayBuffer)
+			throw "Failed to create replay buffer output "
+			      "(simple output)";
+		obs_output_release(replayBuffer);
 
-			signal_handler_t *signal =
-				obs_output_get_signal_handler(replayBuffer);
+		signal_handler_t *signal =
+			obs_output_get_signal_handler(replayBuffer);
 
-			startReplayBuffer.Connect(signal, "start",
-						  OBSStartReplayBuffer, this);
-			stopReplayBuffer.Connect(signal, "stop",
-						 OBSStopReplayBuffer, this);
-			replayBufferStopping.Connect(signal, "stopping",
-						     OBSReplayBufferStopping,
-						     this);
-		}
+		startReplayBuffer.Connect(signal, "start", OBSStartReplayBuffer,
+					  this);
+		stopReplayBuffer.Connect(signal, "stop", OBSStopReplayBuffer,
+					 this);
+		replayBufferStopping.Connect(signal, "stopping",
+					     OBSReplayBufferStopping, this);
 
 		fileOutput = obs_output_create(
 			"ffmpeg_muxer", "simple_file_output", nullptr, nullptr);
@@ -1143,33 +1137,27 @@ AdvancedOutput::AdvancedOutput(OBSBasic *main_) : BasicOutputHandler(main_)
 			      "(advanced output)";
 		obs_output_release(fileOutput);
 	} else {
-		bool useReplayBuffer =
-			config_get_bool(main->Config(), "AdvOut", "RecRB");
-		if (useReplayBuffer) {
-			const char *str = config_get_string(
-				main->Config(), "Hotkeys", "ReplayBuffer");
-			obs_data_t *hotkey = obs_data_create_from_json(str);
-			replayBuffer = obs_output_create("replay_buffer",
-							 Str("ReplayBuffer"),
-							 nullptr, hotkey);
+		const char *str = config_get_string(main->Config(), "Hotkeys",
+						    "ReplayBuffer");
+		obs_data_t *hotkey = obs_data_create_from_json(str);
+		replayBuffer = obs_output_create(
+			"replay_buffer", Str("ReplayBuffer"), nullptr, hotkey);
 
-			obs_data_release(hotkey);
-			if (!replayBuffer)
-				throw "Failed to create replay buffer output "
-				      "(simple output)";
-			obs_output_release(replayBuffer);
+		obs_data_release(hotkey);
+		if (!replayBuffer)
+			throw "Failed to create replay buffer output "
+			      "(simple output)";
+		obs_output_release(replayBuffer);
 
-			signal_handler_t *signal =
-				obs_output_get_signal_handler(replayBuffer);
+		signal_handler_t *signal =
+			obs_output_get_signal_handler(replayBuffer);
 
-			startReplayBuffer.Connect(signal, "start",
-						  OBSStartReplayBuffer, this);
-			stopReplayBuffer.Connect(signal, "stop",
-						 OBSStopReplayBuffer, this);
-			replayBufferStopping.Connect(signal, "stopping",
-						     OBSReplayBufferStopping,
-						     this);
-		}
+		startReplayBuffer.Connect(signal, "start", OBSStartReplayBuffer,
+					  this);
+		stopReplayBuffer.Connect(signal, "stop", OBSStopReplayBuffer,
+					 this);
+		replayBufferStopping.Connect(signal, "stopping",
+					     OBSReplayBufferStopping, this);
 
 		fileOutput = obs_output_create(
 			"ffmpeg_muxer", "adv_file_output", nullptr, nullptr);

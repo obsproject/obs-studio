@@ -1217,7 +1217,6 @@ bool OBSBasic::InitBasicConfigDefaults()
 				  "hq");
 	config_set_default_string(basicConfig, "SimpleOutput", "RecQuality",
 				  "Stream");
-	config_set_default_bool(basicConfig, "SimpleOutput", "RecRB", false);
 	config_set_default_int(basicConfig, "SimpleOutput", "RecRBTime", 20);
 	config_set_default_int(basicConfig, "SimpleOutput", "RecRBSize", 512);
 	config_set_default_string(basicConfig, "SimpleOutput", "RecRBPrefix",
@@ -1256,7 +1255,6 @@ bool OBSBasic::InitBasicConfigDefaults()
 	config_set_default_uint(basicConfig, "AdvOut", "Track5Bitrate", 160);
 	config_set_default_uint(basicConfig, "AdvOut", "Track6Bitrate", 160);
 
-	config_set_default_bool(basicConfig, "AdvOut", "RecRB", false);
 	config_set_default_uint(basicConfig, "AdvOut", "RecRBTime", 20);
 	config_set_default_int(basicConfig, "AdvOut", "RecRBSize", 512);
 
@@ -1459,7 +1457,7 @@ void OBSBasic::InitPrimitives()
 	obs_leave_graphics();
 }
 
-void OBSBasic::ReplayBufferClicked()
+void OBSBasic::on_replayBufferButton_clicked()
 {
 	if (outputHandler->ReplayBufferActive())
 		StopReplayBuffer();
@@ -1478,25 +1476,6 @@ void OBSBasic::ResetOutputs()
 		outputHandler.reset();
 		outputHandler.reset(advOut ? CreateAdvancedOutputHandler(this)
 					   : CreateSimpleOutputHandler(this));
-
-		delete replayBufferButton;
-
-		if (outputHandler->replayBuffer) {
-			replayBufferButton = new QPushButton(
-				QTStr("Basic.Main.StartReplayBuffer"), this);
-			replayBufferButton->setCheckable(true);
-			connect(replayBufferButton.data(),
-				&QPushButton::clicked, this,
-				&OBSBasic::ReplayBufferClicked);
-
-			replayBufferButton->setProperty("themeID",
-							"replayBufferButton");
-			ui->buttonsVLayout->insertWidget(2, replayBufferButton);
-		}
-
-		if (sysTrayReplayBuffer)
-			sysTrayReplayBuffer->setEnabled(
-				!!outputHandler->replayBuffer);
 	} else {
 		outputHandler->Update();
 	}
@@ -1629,6 +1608,12 @@ void OBSBasic::OBSInit()
 
 	SET_VISIBILITY("ShowListboxToolbars", toggleListboxToolbars);
 	SET_VISIBILITY("ShowStatusBar", toggleStatusBar);
+	SET_VISIBILITY("ShowStreamButton", toggleStream);
+	SET_VISIBILITY("ShowRecordingButton", toggleRecording);
+	SET_VISIBILITY("ShowReplayBufferButton", toggleReplay);
+	SET_VISIBILITY("ShowStudioModeButton", toggleStudioMode);
+	SET_VISIBILITY("ShowSettingsButton", toggleSettings);
+	SET_VISIBILITY("ShowExitButton", toggleExit);
 #undef SET_VISIBILITY
 
 	{
@@ -3910,6 +3895,8 @@ void OBSBasic::on_action_Settings_triggered()
 	settings.exec();
 	SystemTray(false);
 
+	ShowHideReplayBufferButtonFFmpeg();
+
 	settings_already_executing = false;
 }
 
@@ -5498,30 +5485,17 @@ void OBSBasic::StartReplayBuffer()
 		return;
 
 	if (!NoSourcesConfirmation()) {
-		replayBufferButton->setChecked(false);
+		ui->replayBufferButton->setChecked(false);
 		return;
 	}
 
 	if (LowDiskSpace()) {
 		DiskSpaceMessage();
-		replayBufferButton->setChecked(false);
+		ui->replayBufferButton->setChecked(false);
 		return;
 	}
 
-	obs_output_t *output = outputHandler->replayBuffer;
-	obs_data_t *hotkeys = obs_hotkeys_save_output(output);
-	obs_data_array_t *bindings =
-		obs_data_get_array(hotkeys, "ReplayBuffer.Save");
-	size_t count = obs_data_array_count(bindings);
-	obs_data_array_release(bindings);
-	obs_data_release(hotkeys);
-
-	if (!count) {
-		OBSMessageBox::information(this, RP_NO_HOTKEY_TITLE,
-					   RP_NO_HOTKEY_TEXT);
-		replayBufferButton->setChecked(false);
-		return;
-	}
+	UpdateSaveReplayBufferButton();
 
 	if (api)
 		api->on_event(OBS_FRONTEND_EVENT_REPLAY_BUFFER_STARTING);
@@ -5529,7 +5503,7 @@ void OBSBasic::StartReplayBuffer()
 	SaveProject();
 
 	if (!outputHandler->StartReplayBuffer()) {
-		replayBufferButton->setChecked(false);
+		ui->replayBufferButton->setChecked(false);
 	} else if (os_atomic_load_bool(&recording_paused)) {
 		ShowReplayBufferPauseWarning();
 	}
@@ -5540,10 +5514,11 @@ void OBSBasic::ReplayBufferStopping()
 	if (!outputHandler || !outputHandler->replayBuffer)
 		return;
 
-	replayBufferButton->setText(QTStr("Basic.Main.StoppingReplayBuffer"));
+	ui->replayBufferButton->setText(
+		QTStr("Basic.Main.StoppingReplayBuffer"));
 
 	if (sysTrayReplayBuffer)
-		sysTrayReplayBuffer->setText(replayBufferButton->text());
+		sysTrayReplayBuffer->setText(ui->replayBufferButton->text());
 
 	replayBufferStopping = true;
 	if (api)
@@ -5560,6 +5535,8 @@ void OBSBasic::StopReplayBuffer()
 	if (outputHandler->ReplayBufferActive())
 		outputHandler->StopReplayBuffer(replayBufferStopping);
 
+	UpdateSaveReplayBufferButton();
+
 	OnDeactivate();
 }
 
@@ -5568,11 +5545,11 @@ void OBSBasic::ReplayBufferStart()
 	if (!outputHandler || !outputHandler->replayBuffer)
 		return;
 
-	replayBufferButton->setText(QTStr("Basic.Main.StopReplayBuffer"));
-	replayBufferButton->setChecked(true);
+	ui->replayBufferButton->setText(QTStr("Basic.Main.StopReplayBuffer"));
+	ui->replayBufferButton->setChecked(true);
 
 	if (sysTrayReplayBuffer)
-		sysTrayReplayBuffer->setText(replayBufferButton->text());
+		sysTrayReplayBuffer->setText(ui->replayBufferButton->text());
 
 	replayBufferStopping = false;
 	if (api)
@@ -5602,11 +5579,11 @@ void OBSBasic::ReplayBufferStop(int code)
 	if (!outputHandler || !outputHandler->replayBuffer)
 		return;
 
-	replayBufferButton->setText(QTStr("Basic.Main.StartReplayBuffer"));
-	replayBufferButton->setChecked(false);
+	ui->replayBufferButton->setText(QTStr("Basic.Main.StartReplayBuffer"));
+	ui->replayBufferButton->setChecked(false);
 
 	if (sysTrayReplayBuffer)
-		sysTrayReplayBuffer->setText(replayBufferButton->text());
+		sysTrayReplayBuffer->setText(ui->replayBufferButton->text());
 
 	blog(LOG_INFO, REPLAY_BUFFER_STOP);
 
@@ -6906,7 +6883,7 @@ void OBSBasic::SystemTrayInit()
 	connect(sysTrayRecord, SIGNAL(triggered()), this,
 		SLOT(on_recordButton_clicked()));
 	connect(sysTrayReplayBuffer.data(), &QAction::triggered, this,
-		&OBSBasic::ReplayBufferClicked);
+		&OBSBasic::on_replayBufferButton_clicked);
 	connect(exit, SIGNAL(triggered()), this, SLOT(close()));
 }
 
@@ -7556,4 +7533,94 @@ void OBSBasic::CheckDiskSpaceRemaining()
 
 		DiskSpaceMessage();
 	}
+}
+
+void OBSBasic::UpdateSaveReplayBufferButton()
+{
+	if (outputHandler && outputHandler->ReplayBufferActive()) {
+		saveReplay.reset();
+		return;
+	}
+
+	saveReplay.reset(new QPushButton());
+	saveReplay->setAccessibleName(QTStr("Basic.Main.SaveReplayBuffer"));
+	saveReplay->setToolTip(QTStr("Basic.Main.SaveReplayBuffer"));
+	saveReplay->setProperty("themeID",
+				QVariant(QStringLiteral("saveReplayIcon")));
+	connect(saveReplay.data(), &QAbstractButton::clicked, this,
+		&OBSBasic::ReplayBufferSave);
+
+	ui->replayBufferLayout->addWidget(saveReplay.data());
+}
+
+void OBSBasic::ShowHideReplayBufferButtonFFmpeg()
+{
+	const char *mode = config_get_string(basicConfig, "Output", "Mode");
+	bool adv = astrcmpi(mode, "Advanced") == 0;
+
+	if (adv) {
+		const char *recType =
+			config_get_string(basicConfig, "AdvOut", "RecType");
+
+		if (astrcmpi(recType, "FFmpeg") == 0)
+			on_toggleReplay_toggled(false);
+		else
+			on_toggleReplay_toggled(true);
+	} else {
+		on_toggleReplay_toggled(true);
+	}
+}
+
+void OBSBasic::on_toggleStream_toggled(bool visible)
+{
+	ui->streamButton->setVisible(visible);
+
+	config_set_bool(App()->GlobalConfig(), "BasicWindow",
+			"ShowStreamButton", visible);
+}
+
+void OBSBasic::on_toggleRecording_toggled(bool visible)
+{
+	ui->recordButton->setVisible(visible);
+
+	if (pause)
+		pause->setVisible(visible);
+
+	config_set_bool(App()->GlobalConfig(), "BasicWindow",
+			"ShowRecordingButton", visible);
+}
+
+void OBSBasic::on_toggleReplay_toggled(bool visible)
+{
+	ui->replayBufferButton->setVisible(visible);
+
+	if (saveReplay)
+		saveReplay->setVisible(visible);
+
+	config_set_bool(App()->GlobalConfig(), "BasicWindow",
+			"ShowReplayBufferButton", visible);
+}
+
+void OBSBasic::on_toggleStudioMode_toggled(bool visible)
+{
+	ui->modeSwitch->setVisible(visible);
+
+	config_set_bool(App()->GlobalConfig(), "BasicWindow",
+			"ShowStudioModeButton", visible);
+}
+
+void OBSBasic::on_toggleSettings_toggled(bool visible)
+{
+	ui->settingsButton->setVisible(visible);
+
+	config_set_bool(App()->GlobalConfig(), "BasicWindow",
+			"ShowSettingsButton", visible);
+}
+
+void OBSBasic::on_toggleExit_toggled(bool visible)
+{
+	ui->exitButton->setVisible(visible);
+
+	config_set_bool(App()->GlobalConfig(), "BasicWindow", "ShowExitButton",
+			visible);
 }

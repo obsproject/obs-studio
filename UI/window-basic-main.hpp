@@ -126,6 +126,7 @@ class OBSBasic : public OBSMainWindow {
 	friend class RecordButton;
 	friend class ExtraBrowsersModel;
 	friend class ExtraBrowsersDelegate;
+	friend class ReplayBufferButton;
 	friend struct OBSStudioAPI;
 
 	enum class MoveDir { Up, Down, Left, Right };
@@ -209,8 +210,8 @@ private:
 	QPointer<QMenu> startStreamMenu;
 
 	QPointer<QPushButton> transitionButton;
-	QPointer<QPushButton> replayBufferButton;
 	QScopedPointer<QPushButton> pause;
+	QScopedPointer<QPushButton> saveReplay;
 
 	QScopedPointer<QSystemTrayIcon> trayIcon;
 	QPointer<QAction> sysTrayStream;
@@ -404,8 +405,6 @@ private:
 	void dragMoveEvent(QDragMoveEvent *event) override;
 	void dropEvent(QDropEvent *event) override;
 
-	void ReplayBufferClicked();
-
 	bool sysTrayMinimizeToTray();
 
 	void EnumDialogs();
@@ -437,6 +436,9 @@ private:
 	void AddExtraBrowserDock(const QString &title, const QString &url,
 				 bool firstCreate);
 #endif
+
+	void UpdateSaveReplayBufferButton();
+	void ShowHideReplayBufferButtonFFmpeg();
 
 public slots:
 	void DeferSaveBegin();
@@ -745,6 +747,7 @@ private slots:
 
 	void on_streamButton_clicked();
 	void on_recordButton_clicked();
+	void on_replayBufferButton_clicked();
 	void on_settingsButton_clicked();
 
 	void on_actionHelpPortal_triggered();
@@ -776,6 +779,13 @@ private slots:
 
 	void on_toggleListboxToolbars_toggled(bool visible);
 	void on_toggleStatusBar_toggled(bool visible);
+
+	void on_toggleStream_toggled(bool visible);
+	void on_toggleRecording_toggled(bool visible);
+	void on_toggleReplay_toggled(bool visible);
+	void on_toggleStudioMode_toggled(bool visible);
+	void on_toggleSettings_toggled(bool visible);
+	void on_toggleExit_toggled(bool visible);
 
 	void on_transitions_currentIndexChanged(int index);
 	void on_transitionAdd_clicked();

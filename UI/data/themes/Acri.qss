@@ -1006,3 +1006,9 @@ QPushButton#extraPanelDelete:hover {
 QPushButton#extraPanelDelete:pressed {
     background-color: #161f41;
 }
+
+/* Save icon */
+
+* [themeID="saveReplayIcon"] {
+    qproperty-icon: url(./Dark/save.svg);
+}

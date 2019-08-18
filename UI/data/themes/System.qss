@@ -208,3 +208,9 @@ VisibilityCheckBox::indicator:unchecked {
 * [themeID="revertIcon"] {
     qproperty-icon: url(:res/images/revert.svg);
 }
+
+/* Save icon */
+
+* [themeID="saveReplayIcon"] {
+    qproperty-icon: url(:res/images/save.svg);
+}
