@@ -542,8 +542,11 @@ void XCompcapMain::updateSettings(obs_data_t *settings)
 	p->tex = gs_texture_create(width(), height(), format, 1, 0,
 				   GS_GL_DUMMYTEX);
 	if (p->swapRedBlue) {
+		GLuint tex = *(GLuint *)gs_texture_get_obj(p->tex);
+		glBindTexture(GL_TEXTURE_2D, tex);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_B, GL_RED);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_R, GL_BLUE);
+		glBindTexture(GL_TEXTURE_2D, 0);
 	}
 
 	if (!p->windowName.empty()) {
