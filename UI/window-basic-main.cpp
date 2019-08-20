@@ -7463,19 +7463,10 @@ void OBSBasic::PauseToggled()
 	obs_output_t *output = outputHandler->fileOutput;
 	bool enable = !obs_output_paused(output);
 
-	if (obs_output_pause(output, enable)) {
-		os_atomic_set_bool(&recording_paused, enable);
-
-		if (api)
-			api->on_event(
-				enable ? OBS_FRONTEND_EVENT_RECORDING_PAUSED
-				       : OBS_FRONTEND_EVENT_RECORDING_UNPAUSED);
-
-		if (enable && os_atomic_load_bool(&replaybuf_active))
-			ShowReplayBufferPauseWarning();
-	} else {
-		pause->setChecked(!enable);
-	}
+	if (enable)
+		PauseRecording();
+	else
+		UnpauseRecording();
 }
 
 void OBSBasic::UpdatePause(bool activate)
