@@ -627,8 +627,6 @@ void obs_register_source_s(const struct obs_source_info *info, size_t size)
 #define CHECK_REQUIRED_VAL_(info, val, func) \
 	CHECK_REQUIRED_VAL(struct obs_source_info, info, val, func)
 	CHECK_REQUIRED_VAL_(info, get_name, obs_register_source);
-	CHECK_REQUIRED_VAL_(info, create, obs_register_source);
-	CHECK_REQUIRED_VAL_(info, destroy, obs_register_source);
 
 	if (info->type != OBS_SOURCE_TYPE_FILTER &&
 	    info->type != OBS_SOURCE_TYPE_TRANSITION &&
