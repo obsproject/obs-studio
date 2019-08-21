@@ -611,6 +611,7 @@ struct obs_source {
 	size_t last_audio_input_buf_size;
 	DARRAY(struct audio_action) audio_actions;
 	float *audio_output_buf[MAX_AUDIO_MIXES][MAX_AUDIO_CHANNELS];
+	float *audio_mix_buf[MAX_AUDIO_CHANNELS];
 	struct resample_info sample_info;
 	audio_resampler_t *resampler;
 	pthread_mutex_t audio_actions_mutex;

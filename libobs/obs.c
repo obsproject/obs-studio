@@ -814,6 +814,20 @@ static inline void obs_free_hotkeys(void)
 extern const struct obs_source_info scene_info;
 extern const struct obs_source_info group_info;
 
+static const char *submix_name(void *unused)
+{
+	UNUSED_PARAMETER(unused);
+	return "Audio line (internal use only)";
+}
+
+const struct obs_source_info audio_line_info = {
+	.id = "audio_line",
+	.type = OBS_SOURCE_TYPE_INPUT,
+	.output_flags = OBS_SOURCE_AUDIO | OBS_SOURCE_CAP_DISABLED |
+			OBS_SOURCE_SUBMIX,
+	.get_name = submix_name,
+};
+
 extern void log_system_info(void);
 
 static bool obs_init(const char *locale, const char *module_config_path,
@@ -845,6 +859,7 @@ static bool obs_init(const char *locale, const char *module_config_path,
 	obs->locale = bstrdup(locale);
 	obs_register_source(&scene_info);
 	obs_register_source(&group_info);
+	obs_register_source(&audio_line_info);
 	add_default_module_paths();
 	return true;
 }

@@ -115,6 +115,16 @@ static void allocate_audio_output_buffer(struct obs_source *source)
 	}
 }
 
+static void allocate_audio_mix_buffer(struct obs_source *source)
+{
+	size_t size = sizeof(float) * AUDIO_OUTPUT_FRAMES * MAX_AUDIO_CHANNELS;
+	float *ptr = bzalloc(size);
+
+	for (size_t i = 0; i < MAX_AUDIO_CHANNELS; i++) {
+		source->audio_mix_buf[i] = ptr + AUDIO_OUTPUT_FRAMES * i;
+	}
+}
+
 static inline bool is_async_video_source(const struct obs_source *source)
 {
 	return (source->info.output_flags & OBS_SOURCE_ASYNC_VIDEO) ==
@@ -167,6 +177,8 @@ bool obs_source_init(struct obs_source *source)
 
 	if (is_audio_source(source) || is_composite_source(source))
 		allocate_audio_output_buffer(source);
+	if (source->info.audio_mix)
+		allocate_audio_mix_buffer(source);
 
 	if (source->info.type == OBS_SOURCE_TYPE_TRANSITION) {
 		if (!obs_transition_init(source))
@@ -341,10 +353,10 @@ static obs_source_t *obs_source_create_internal(const char *id,
 
 	/* allow the source to be created even if creation fails so that the
 	 * user's data doesn't become lost */
-	if (info)
+	if (info && info->create)
 		source->context.data =
 			info->create(source->context.settings, source);
-	if (!source->context.data)
+	if (info->create && !source->context.data)
 		blog(LOG_ERROR, "Failed to create source '%s'!", name);
 
 	blog(LOG_DEBUG, "%ssource '%s' (%s) created", private ? "private " : "",
@@ -592,6 +604,7 @@ void obs_source_destroy(struct obs_source *source)
 		circlebuf_free(&source->audio_input_buf[i]);
 	audio_resampler_destroy(source->resampler);
 	bfree(source->audio_output_buf[0][0]);
+	bfree(source->audio_mix_buf[0]);
 
 	obs_source_frame_destroy(source->async_preload_frame);
 
@@ -4341,10 +4354,47 @@ static void custom_audio_render(obs_source_t *source, uint32_t mixers,
 	apply_audio_volume(source, mixers, channels, sample_rate);
 }
 
+static void audio_submix(obs_source_t *source, uint32_t mixers, size_t channels,
+			 size_t sample_rate)
+{
+	struct audio_output_data audio_data;
+	struct obs_source_audio audio = {0};
+	bool success;
+	uint64_t ts;
+
+	for (size_t mix = 0; mix < MAX_AUDIO_MIXES; mix++) {
+		for (size_t ch = 0; ch < channels; ch++) {
+			audio_data.data[ch] = source->audio_mix_buf[ch];
+		}
+
+		memset(source->audio_mix_buf[0], 0,
+		       sizeof(float) * AUDIO_OUTPUT_FRAMES * channels);
+	}
+
+	success = source->info.audio_mix(source->context.data, &ts, &audio_data,
+					 channels, sample_rate);
+
+	if (!success)
+		return;
+
+	for (size_t i = 0; i < channels; i++)
+		audio.data[i] = (const uint8_t *)audio_data.data[i];
+
+	audio.samples_per_sec = (uint32_t)sample_rate;
+	audio.frames = AUDIO_OUTPUT_FRAMES;
+	audio.format = AUDIO_FORMAT_FLOAT_PLANAR;
+	audio.speakers = (enum speaker_layout)channels;
+	audio.timestamp = ts;
+
+	obs_source_output_audio(source, &audio);
+}
+
 static inline void process_audio_source_tick(obs_source_t *source,
 					     uint32_t mixers, size_t channels,
 					     size_t sample_rate, size_t size)
 {
+	bool audio_submix = !!(source->info.output_flags & OBS_SOURCE_SUBMIX);
+
 	pthread_mutex_lock(&source->audio_buf_mutex);
 
 	if (source->audio_input_buf[0].size < size) {
@@ -4362,6 +4412,14 @@ static inline void process_audio_source_tick(obs_source_t *source,
 	for (size_t mix = 1; mix < MAX_AUDIO_MIXES; mix++) {
 		uint32_t mix_and_val = (1 << mix);
 
+		if (audio_submix) {
+			if (mix > 1)
+				break;
+
+			mixers = 1;
+			mix_and_val = 1;
+		}
+
 		if ((source->audio_mixers & mix_and_val) == 0 ||
 		    (mixers & mix_and_val) == 0) {
 			memset(source->audio_output_buf[mix][0], 0,
@@ -4372,6 +4430,11 @@ static inline void process_audio_source_tick(obs_source_t *source,
 		for (size_t ch = 0; ch < channels; ch++)
 			memcpy(source->audio_output_buf[mix][ch],
 			       source->audio_output_buf[0][ch], size);
+	}
+
+	if (audio_submix) {
+		source->audio_pending = false;
+		return;
 	}
 
 	if ((source->audio_mixers & 1) == 0 || (mixers & 1) == 0)
@@ -4392,6 +4455,10 @@ void obs_source_audio_render(obs_source_t *source, uint32_t mixers,
 	if (source->info.audio_render) {
 		custom_audio_render(source, mixers, channels, sample_rate);
 		return;
+	}
+
+	if (source->info.audio_mix) {
+		audio_submix(source, mixers, channels, sample_rate);
 	}
 
 	if (!source->audio_ts) {
