@@ -1044,7 +1044,7 @@ bool SimpleOutput::ReplayBufferActive() const
 /* ------------------------------------------------------------------------ */
 
 struct AdvancedOutput : BasicOutputHandler {
-	OBSEncoder aacStreaming;
+	OBSEncoder streamAudioEnc;
 	OBSEncoder aacTrack[MAX_AUDIO_MIXES];
 	OBSEncoder h264Streaming;
 	OBSEncoder h264Recording;
@@ -1212,7 +1212,7 @@ AdvancedOutput::AdvancedOutput(OBSBasic *main_) : BasicOutputHandler(main_)
 	std::string id;
 	int streamTrack =
 		config_get_int(main->Config(), "AdvOut", "TrackIndex") - 1;
-	if (!CreateAACEncoder(aacStreaming, id, GetAudioBitrate(streamTrack),
+	if (!CreateAACEncoder(streamAudioEnc, id, GetAudioBitrate(streamTrack),
 			      "avc_aac_stream", streamTrack))
 		throw "Failed to create streaming audio encoder "
 		      "(advanced output)";
@@ -1283,7 +1283,7 @@ inline void AdvancedOutput::SetupStreaming()
 		}
 	}
 
-	obs_output_set_audio_encoder(streamOutput, aacStreaming, streamTrack);
+	obs_output_set_audio_encoder(streamOutput, streamAudioEnc, streamTrack);
 	obs_encoder_set_scaled_size(h264Streaming, cx, cy);
 	obs_encoder_set_video(h264Streaming, obs_get_video());
 }
@@ -1454,7 +1454,7 @@ inline void AdvancedOutput::UpdateAudioSettings()
 					settings[i]);
 			}
 
-			obs_encoder_update(aacStreaming, settings[i]);
+			obs_encoder_update(streamAudioEnc, settings[i]);
 		}
 
 		obs_data_release(settings[i]);
@@ -1468,7 +1468,7 @@ void AdvancedOutput::SetupOutputs()
 		obs_encoder_set_video(h264Recording, obs_get_video());
 	for (size_t i = 0; i < MAX_AUDIO_MIXES; i++)
 		obs_encoder_set_audio(aacTrack[i], obs_get_audio());
-	obs_encoder_set_audio(aacStreaming, obs_get_audio());
+	obs_encoder_set_audio(streamAudioEnc, obs_get_audio());
 
 	SetupStreaming();
 
@@ -1490,6 +1490,9 @@ int AdvancedOutput::GetAudioBitrate(size_t i) const
 
 bool AdvancedOutput::StartStreaming(obs_service_t *service)
 {
+	int streamTrack =
+		config_get_int(main->Config(), "AdvOut", "TrackIndex") - 1;
+
 	if (!useStreamEncoder ||
 	    (!ffmpegOutput && !obs_output_active(fileOutput))) {
 		UpdateStreamSettings();
@@ -1553,13 +1556,34 @@ bool AdvancedOutput::StartStreaming(obs_service_t *service)
 				blog(LOG_WARNING, "Failed to load audio codec");
 				return false;
 			}
+
+			if (strcmp(codec, "aac") != 0) {
+				OBSData settings = obs_encoder_get_settings(
+					streamAudioEnc);
+				obs_data_release(settings);
+
+				const char *id =
+					FindAudioEncoderFromCodec(codec);
+
+				streamAudioEnc = obs_audio_encoder_create(
+					id, "alt_audio_enc", nullptr,
+					streamTrack, nullptr);
+
+				if (!streamAudioEnc)
+					return false;
+
+				obs_encoder_release(streamAudioEnc);
+				obs_encoder_update(streamAudioEnc, settings);
+				obs_encoder_set_audio(streamAudioEnc,
+						      obs_get_audio());
+			}
 		}
 
 		outputType = type;
 	}
 
 	obs_output_set_video_encoder(streamOutput, h264Streaming);
-	obs_output_set_audio_encoder(streamOutput, aacStreaming, 0);
+	obs_output_set_audio_encoder(streamOutput, streamAudioEnc, 0);
 
 	/* --------------------- */
 
