@@ -549,7 +549,8 @@ static bool update_settings(struct obs_x264 *obsx264, obs_data_t *settings,
 
 	paramlist = strlist_split(opts, ' ', false);
 
-	blog(LOG_INFO, "---------------------------------");
+	if (!update)
+		blog(LOG_INFO, "---------------------------------");
 
 	if (!obsx264->context) {
 		override_base_params(obsx264, paramlist, &preset, &profile,
@@ -567,7 +568,7 @@ static bool update_settings(struct obs_x264 *obsx264, obs_data_t *settings,
 
 	if (success) {
 		update_params(obsx264, settings, paramlist, update);
-		if (opts && *opts)
+		if (opts && *opts && !update)
 			info("custom settings: %s", opts);
 
 		if (!obsx264->context)
