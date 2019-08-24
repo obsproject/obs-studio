@@ -1696,10 +1696,10 @@ bool WidgetInfo::FontChanged(const char *setting)
 	if (!font_obj) {
 		QFont initial;
 		font = QFontDialog::getFont(&success, initial, view,
-					    QTStr("Basic.PropertiesWindow.SelectFont"), options);
+					    "Pick a Font", options);
 	} else {
 		MakeQFont(font_obj, font);
-		font = QFontDialog::getFont(&success, font, view, QTStr("Basic.PropertiesWindow.SelectFont"),
+		font = QFontDialog::getFont(&success, font, view, "Pick a Font",
 					    options);
 		obs_data_release(font_obj);
 	}
