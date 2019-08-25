@@ -67,6 +67,7 @@ static void init_hw_decoder(struct mp_decode *d, AVCodecContext *c)
 	if (hw_ctx) {
 		c->hw_device_ctx = av_buffer_ref(hw_ctx);
 		c->opaque = d;
+		d->hw_ctx = hw_ctx;
 		d->hw = true;
 	}
 }
@@ -221,6 +222,12 @@ void mp_decode_free(struct mp_decode *d)
 		av_frame_unref(d->sw_frame);
 		av_free(d->sw_frame);
 	}
+
+#ifdef USE_NEW_HARDWARE_CODEC_METHOD
+	if (d->hw_ctx) {
+		av_buffer_unref(&d->hw_ctx);
+	}
+#endif
 
 	memset(d, 0, sizeof(*d));
 }

@@ -58,6 +58,7 @@ struct mp_decode {
 	bool audio;
 
 	AVCodecContext *decoder;
+	AVBufferRef *hw_ctx;
 	AVCodec *codec;
 
 	int64_t last_duration;
