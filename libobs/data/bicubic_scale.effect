@@ -33,37 +33,19 @@ struct FragData {
 VertOut VSDefault(VertData v_in)
 {
 	VertOut vert_out;
-	vert_out.uv = v_in.uv;
+	vert_out.uv = v_in.uv * base_dimension;
 	vert_out.pos = mul(float4(v_in.pos.xyz, 1.0), ViewProj);
 	return vert_out;
 }
 
-float weight(float x)
-{
-	float ax = abs(x);
-
-	/* Sharper version.  May look better in some cases. B=0, C=0.75 */
-
-	if (ax < 2.0) {
-		float six_i = 1.0 / 6.0;
-		float x_squared = x * x;
-		if (ax < 1.0) {
-			return (x_squared * (7.5 * ax + (-13.5))) * six_i + 1.0;
-		}
-
-		return (x_squared * ((-4.5) * ax + 22.5) + (-36.0) * ax) * six_i + 3.0;
-	}
-
-	return 0.0;
-}
-
 float4 weight4(float x)
 {
+	/* Sharper version.  May look better in some cases. B=0, C=0.75 */
 	return float4(
-		weight(x - 2.0),
-		weight(x - 1.0),
-		weight(x),
-		weight(x + 1.0));
+		((-0.75 * x + 1.5) * x - 0.75) * x,
+		(1.25 * x - 2.25) * x * x + 1.0,
+		((-1.25 * x + 1.5) * x + 0.75) * x,
+		(0.75 * x - 0.75) * x * x);
 }
 
 float AspectUndistortX(float x, float a)
@@ -98,17 +80,17 @@ float4 undistort_line(float4 xpos, float ypos, float4 rowtaps)
 
 float4 DrawBicubic(FragData f_in, bool undistort)
 {
-	float2 stepxy = base_dimension_i;
-	float2 pos = f_in.uv + stepxy * 0.5;
-	float2 f = frac(pos * base_dimension);
+	float2 pos = f_in.uv;
+	float2 pos1 = floor(pos - 0.5) + 0.5;
+	float2 f = pos - pos1;
 
-	float4 rowtaps = weight4(1.0 - f.x);
-	float4 coltaps = weight4(1.0 - f.y);
+	float4 rowtaps = weight4(f.x);
+	float4 coltaps = weight4(f.y);
 
-	float2 uv0 = (-1.5 - f) * stepxy + pos;
-	float2 uv1 = uv0 + stepxy;
-	float2 uv2 = uv1 + stepxy;
-	float2 uv3 = uv2 + stepxy;
+	float2 uv1 = pos1 * base_dimension_i;
+	float2 uv0 = uv1 - base_dimension_i;
+	float2 uv2 = uv1 + base_dimension_i;
+	float2 uv3 = uv2 + base_dimension_i;
 
 	if (undistort) {
 		float4 xpos = float4(uv0.x, uv1.x, uv2.x, uv3.x);
@@ -119,11 +101,11 @@ float4 DrawBicubic(FragData f_in, bool undistort)
 	}
 
 	float u_weight_sum = rowtaps.y + rowtaps.z;
-	float u_middle_offset = rowtaps.z * stepxy.x / u_weight_sum;
+	float u_middle_offset = rowtaps.z * base_dimension_i.x / u_weight_sum;
 	float u_middle = uv1.x + u_middle_offset;
 
 	float v_weight_sum = coltaps.y + coltaps.z;
-	float v_middle_offset = coltaps.z * stepxy.y / v_weight_sum;
+	float v_middle_offset = coltaps.z * base_dimension_i.y / v_weight_sum;
 	float v_middle = uv1.y + v_middle_offset;
 
 	int2 coord_top_left = int2(max(uv0 * base_dimension, 0.5));
