@@ -243,7 +243,8 @@ static bool nvenc_update(void *data, obs_data_t *settings)
 		params.resetEncoder = 1;
 		params.forceIDR = 1;
 
-		if (FAILED(nv.nvEncReconfigureEncoder(enc->session, &params))) {
+		if (NV_FAILED(nv.nvEncReconfigureEncoder(enc->session,
+							 &params))) {
 			return false;
 		}
 	}
