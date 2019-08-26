@@ -231,9 +231,9 @@ QGroupBox {
 QGroupBox::title {
 	color: rgb(240, 98, 146); /* Pink (Secondary) */
 	left: 20px;
+	top: -7px;
 	padding-left: 5px;
 	padding-right: 4px;
-	padding-top: -14px;
 }
 
 /*****************/
@@ -480,31 +480,35 @@ QToolButton:pressed {
 }
 
 * [themeID="addIconSmall"] {
-	qproperty-icon: url(./Dark/plus.png);
+	qproperty-icon: url(./Dark/plus.svg);
 }
 
 * [themeID="removeIconSmall"] {
-	qproperty-icon: url(./Dark/minus.png);
+	qproperty-icon: url(./Dark/minus.svg);
 }
 
 * [themeID="propertiesIconSmall"] {
-	qproperty-icon: url(./Dark/cogwheel.png);
+	qproperty-icon: url(./Dark/settings/general.svg);
 }
 
 * [themeID="configIconSmall"] {
-	qproperty-icon: url(./Dark/cogwheel.png);
+	qproperty-icon: url(./Dark/settings/general.svg);
 }
 
 * [themeID="refreshIconSmall"] {
-	qproperty-icon: url(./Dark/refresh.png);
+	qproperty-icon: url(./Dark/refresh.svg);
 }
 
 * [themeID="upArrowIconSmall"] {
-	qproperty-icon: url(./Dark/up_arrow.png);
+	qproperty-icon: url(./Dark/up.svg);
 }
 
 * [themeID="downArrowIconSmall"] {
-	qproperty-icon: url(./Dark/down_arrow.png);
+	qproperty-icon: url(./Dark/down.svg);
+}
+
+* [themeID="pauseIconSmall"] {
+	qproperty-icon: url(./Dark/media-pause.svg);
 }
 
 /***********************/
@@ -738,36 +742,36 @@ MuteCheckBox {
 }
 
 MuteCheckBox::indicator:checked {
-	image: url(./Dark/mute.png);
+	image: url(./Dark/mute.svg);
 }
 
 MuteCheckBox::indicator:unchecked {
-	image: url(./Dark/unmute.png);
+	image: url(./Dark/settings/audio.svg);
 }
 
 MuteCheckBox::indicator:unchecked:hover {
 	background-color: rgba(240, 98, 146, 0.5); /* Pink (Secondary) */
-	image: url(./Dark/unmute.png);
+	image: url(./Dark/settings/audio.svg);
 }
 
 MuteCheckBox::indicator:unchecked:focus {
-	image: url(./Dark/unmute.png);
+	image: url(./Dark/settings/audio.svg);
 }
 MuteCheckBox::indicator:checked:hover {
 	background-color: rgba(240, 98, 146, 0.5); /* Pink (Secondary) */
-	image: url(./Dark/mute.png);
+	image: url(./Dark/mute.svg);
 }
 
 MuteCheckBox::indicator:checked:focus {
-	image: url(./Dark/mute.png);
+	image: url(./Dark/mute.svg);
 }
 
 MuteCheckBox::indicator:checked:disabled {
-	image: url(./Dark/mute.png);
+	image: url(./Dark/mute.svg);
 }
 
 MuteCheckBox::indicator:unchecked:disabled {
-	image: url(./Dark/unmute.png);
+	image: url(./Dark/settings/audio.svg);
 }
 
 /****************************/
@@ -786,12 +790,12 @@ SourceTreeSubItemCheckBox::indicator {
 
 SourceTreeSubItemCheckBox::indicator:checked,
 SourceTreeSubItemCheckBox::indicator:checked:hover {
-	image: url(./Dark/expand.png);
+	image: url(./Dark/expand.svg);
 }
 
 SourceTreeSubItemCheckBox::indicator:unchecked,
 SourceTreeSubItemCheckBox::indicator:unchecked:hover {
-	image: url(./Dark/collapse.png);
+	image: url(./Dark/down.svg);
 }
 
 /*************************/
@@ -952,7 +956,8 @@ QPushButton:checked#recordButton,
 QPushButton:checked[themeID="replayBufferButton"],
 QPushButton:checked#modeSwitch,
 QPushButton:checked#settingsButton,
-QPushButton:checked#exitButton {
+QPushButton:checked#exitButton,
+QPushButton:checked[themeID="pauseIconSmall"] {
 	background-color: rgba(240, 98, 146, 0.5); /* Pink (Secondary) */
 	border: 1px solid rgba(240, 98, 146, 0.5); /* Pink (Secondary) */
 }
@@ -969,6 +974,8 @@ QPushButton:checked#exitButton {
 QPushButton[themeID="addIconSmall"],
 QPushButton[themeID="removeIconSmall"],
 QPushButton[themeID="configIconSmall"],
+QPushButton[themeID="trashIcon"],
+QPushButton[themeID="revertIcon"],
 QPushButton#transitionRemove,
 QPushButton#moveAsyncFilterUp,
 QPushButton#moveAsyncFilterDown,
@@ -982,6 +989,8 @@ QPushButton#moveEffectFilterUp {
 QPushButton:hover[themeID="addIconSmall"],
 QPushButton:hover[themeID="removeIconSmall"],
 QPushButton:hover[themeID="configIconSmall"],
+QPushButton:hover[themeID="trashIcon"],
+QPushButton:hover[themeID="revertIcon"],
 QPushButton:hover#transitionRemove,
 QPushButton:hover#moveAsyncFilterUp,
 QPushButton:hover#moveAsyncFilterDown,
@@ -993,39 +1002,6 @@ QPushButton:hover#moveEffectFilterUp {
 	border-radius: 2px;
 	border: none;
 	outline: none;
-}
-
-/******************************/
-/*   --- Hotkey Buttons ---   */
-/******************************/
-/* Fix for the hotkey buttons */
-/* looking terrible with my   */
-/* color choices.             */
-/******************************/
-
-QPushButton[themeID="hotkeyButtons"] {
-	background-color: rgb(58, 64, 69); /* Light Blue-gray */
-	color: rgb(239, 240, 241); /* White */
-	border-radius: 2px;
-	border: none;
-	margin: 4px;
-	padding-top: 6px;
-	padding-bottom: 6px;
-}
-
-QPushButton:hover[themeID="hotkeyButtons"] {
-	background-color: rgba(240, 98, 146, 0.5); /* Pink (Secondary) */
-	border: 1px solid rgba(240, 98, 146, 0.5); /* Pink (Secondary) */
-}
-
-QPushButton:pressed[themeID="hotkeyButtons"] {
-	background-color: rgb(240, 98, 146); /* Pink (Secondary) */
-	border: 1px solid rgb(240, 98, 146); /* Pink (Secondary) */
-}
-
-QPushButton:disabled[themeID="hotkeyButtons"] {
-	background-color: rgb(58, 64, 69); /* Light Blue-gray */
-	color: rgb(162, 161, 162); /* Lighter Gray */
 }
 
 /******************/
@@ -1260,6 +1236,107 @@ QToolTip {
 
 /* Preview background color */
 
-* [themeID="displayBackgroundColor"] {
-    qproperty-displayBackgroundColor: rgb(35, 38, 41);
+OBSQTDisplay {
+	qproperty-displayBackgroundColor: rgb(35, 38, 41);
+}
+
+/* Preview/Program labels */
+
+* [themeID="previewProgramLabels"] {
+	font-size: 18px;
+	font-weight: bold;
+	color: rgb(122,121,122);
+}
+
+/* Settings Icons */
+
+OBSBasicSettings {
+    qproperty-generalIcon: url(./Dark/settings/general.svg);
+    qproperty-streamIcon: url(./Dark/settings/stream.svg);
+    qproperty-outputIcon: url(./Dark/settings/output.svg);
+    qproperty-audioIcon: url(./Dark/settings/audio.svg);
+    qproperty-videoIcon: url(./Dark/settings/video.svg);
+    qproperty-hotkeysIcon: url(./Dark/settings/hotkeys.svg);
+    qproperty-advancedIcon: url(./Dark/settings/advanced.svg);
+}
+
+OBSBasicSettings QListWidget::item {
+    padding-top: 5px;
+    padding-bottom: 5px;
+}
+
+/* Locked CheckBox */
+
+LockedCheckBox {
+    outline: none;
+    background: transparent;
+}
+
+LockedCheckBox::indicator {
+    width: 16px;
+    height: 16px;
+}
+
+LockedCheckBox::indicator:checked {
+    image: url(./Dark/locked.svg);
+}
+
+LockedCheckBox::indicator:unchecked {
+    image: url(:res/images/unlocked.svg);
+}
+
+LockedCheckBox::indicator:checked:hover {
+    image: url(./Dark/locked.svg);
+}
+
+LockedCheckBox::indicator:unchecked:hover {
+    image: url(:res/images/unlocked.svg);
+}
+
+/* Visibilty CheckBox */
+
+VisibilityCheckBox {
+    outline: none;
+    background: transparent;
+}
+
+VisibilityCheckBox::indicator {
+    width: 16px;
+    height: 16px;
+}
+
+VisibilityCheckBox::indicator:checked {
+    image: url(./Dark/visible.svg);
+}
+
+VisibilityCheckBox::indicator:unchecked {
+    image: url(:res/images/invisible.svg);
+}
+
+VisibilityCheckBox::indicator:checked:hover {
+    image: url(./Dark/visible.svg);
+}
+
+VisibilityCheckBox::indicator:unchecked:hover {
+    image: url(:res/images/invisible.svg);
+}
+
+* [themeID="trashIcon"] {
+    qproperty-icon: url(./Dark/trash.svg);
+}
+
+* [themeID="revertIcon"] {
+    qproperty-icon: url(./Dark/revert.svg);
+}
+
+QPushButton#extraPanelDelete {
+    background-color: rgb(35, 38, 41);
+}
+
+QPushButton#extraPanelDelete:hover {
+     background-color: rgba(145, 76, 103);
+}
+
+QPushButton#extraPanelDelete:pressed {
+     background-color: rgb(240, 98, 146);
 }

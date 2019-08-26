@@ -1,5 +1,5 @@
 /* -LICENSE-START-
-** Copyright (c) 2016 Blackmagic Design
+** Copyright (c) 2018 Blackmagic Design
 **
 ** Permission is hereby granted, free of charge, to any person or organization
 ** obtaining a copy of the software and accompanying documentation covered by
@@ -186,7 +186,8 @@ typedef [v1_enum] enum	_BMDPixelFormat {
 [v1_enum] enum	_BMDDisplayModeFlags {
     bmdDisplayModeSupports3D                                     = 1 << 0,
     bmdDisplayModeColorspaceRec601                               = 1 << 1,
-    bmdDisplayModeColorspaceRec709                               = 1 << 2
+    bmdDisplayModeColorspaceRec709                               = 1 << 2,
+    bmdDisplayModeColorspaceRec2020                              = 1 << 3
 };
 
 // Forward Declarations

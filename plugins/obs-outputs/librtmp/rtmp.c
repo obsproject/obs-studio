@@ -34,6 +34,10 @@
 
 #include <util/platform.h>
 
+#if !defined(MSG_NOSIGNAL)
+#define MSG_NOSIGNAL 0
+#endif
+
 #ifdef CRYPTO
 
 #ifdef __APPLE__
@@ -930,6 +934,11 @@ RTMP_Connect0(RTMP *r, struct sockaddr * service, socklen_t addrlen)
 
     if (r->m_sb.sb_socket != INVALID_SOCKET)
     {
+#ifndef _WIN32
+#ifdef SO_NOSIGPIPE
+        setsockopt(r->m_sb.sb_socket, SOL_SOCKET, SO_NOSIGPIPE, &(int){ 1 }, sizeof(int));
+#endif
+#endif
         if(r->m_bindIP.addrLen)
         {
             if (bind(r->m_sb.sb_socket, (const struct sockaddr *)&r->m_bindIP.addr, r->m_bindIP.addrLen) < 0)
@@ -4589,7 +4598,7 @@ RTMPSockBuf_Fill(RTMPSockBuf *sb)
         else
 #endif
         {
-            nBytes = recv(sb->sb_socket, sb->sb_start + sb->sb_size, nBytes, 0);
+            nBytes = recv(sb->sb_socket, sb->sb_start + sb->sb_size, nBytes, MSG_NOSIGNAL);
         }
         if (nBytes > 0)
         {
@@ -4642,7 +4651,7 @@ RTMPSockBuf_Send(RTMPSockBuf *sb, const char *buf, int len)
     else
 #endif
     {
-        rc = send(sb->sb_socket, buf, len, 0);
+        rc = send(sb->sb_socket, buf, len, MSG_NOSIGNAL);
     }
     return rc;
 }

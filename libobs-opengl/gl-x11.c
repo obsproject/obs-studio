@@ -42,28 +42,34 @@
 
 static const int ctx_attribs[] = {
 #ifdef _DEBUG
-	GLX_CONTEXT_FLAGS_ARB, GLX_CONTEXT_DEBUG_BIT_ARB,
+	GLX_CONTEXT_FLAGS_ARB,
+	GLX_CONTEXT_DEBUG_BIT_ARB,
 #endif
-	GLX_CONTEXT_PROFILE_MASK_ARB, GLX_CONTEXT_CORE_PROFILE_BIT_ARB,
-	GLX_CONTEXT_MAJOR_VERSION_ARB, 3, GLX_CONTEXT_MINOR_VERSION_ARB, 2,
+	GLX_CONTEXT_PROFILE_MASK_ARB,
+	GLX_CONTEXT_CORE_PROFILE_BIT_ARB,
+	GLX_CONTEXT_MAJOR_VERSION_ARB,
+	3,
+	GLX_CONTEXT_MINOR_VERSION_ARB,
+	2,
 	None,
 };
 
-static int ctx_pbuffer_attribs[] = {
-	GLX_PBUFFER_WIDTH, 2,
-	GLX_PBUFFER_HEIGHT, 2,
-	None
-};
+static int ctx_pbuffer_attribs[] = {GLX_PBUFFER_WIDTH, 2, GLX_PBUFFER_HEIGHT, 2,
+				    None};
 
-static int ctx_visual_attribs[] = {
-	GLX_STENCIL_SIZE, 0,
-	GLX_DEPTH_SIZE, 0,
-	GLX_BUFFER_SIZE, 32,
-	GLX_ALPHA_SIZE, 8,
-	GLX_DOUBLEBUFFER, true,
-	GLX_X_RENDERABLE, true,
-	None
-};
+static int ctx_visual_attribs[] = {GLX_STENCIL_SIZE,
+				   0,
+				   GLX_DEPTH_SIZE,
+				   0,
+				   GLX_BUFFER_SIZE,
+				   32,
+				   GLX_ALPHA_SIZE,
+				   8,
+				   GLX_DOUBLEBUFFER,
+				   true,
+				   GLX_X_RENDERABLE,
+				   true,
+				   None};
 
 struct gl_windowinfo {
 	/* We store this value since we can fetch a lot
@@ -91,17 +97,14 @@ struct gl_platform {
 
 static void print_info_stuff(const struct gs_init_data *info)
 {
-	blog(	LOG_INFO,
-		"X and Y: %i %i\n"
-		"Backbuffers: %i\n"
-		"Color Format: %i\n"
-		"ZStencil Format: %i\n"
-		"Adapter: %i\n",
-		info->cx, info->cy,
-		info->num_backbuffers,
-		info->format, info->zsformat,
-		info->adapter
-	);
+	blog(LOG_INFO,
+	     "X and Y: %i %i\n"
+	     "Backbuffers: %i\n"
+	     "Color Format: %i\n"
+	     "ZStencil Format: %i\n"
+	     "Adapter: %i\n",
+	     info->cx, info->cy, info->num_backbuffers, info->format,
+	     info->zsformat, info->adapter);
 }
 /* The following utility functions are copied verbatim from WGL code.
  * GLX and WGL are more similar than most people realize. */
@@ -150,7 +153,7 @@ static inline int get_stencil_format_bits(enum gs_zstencil_format zsformat)
 
 /* Returns -1 on invalid screen. */
 static int get_screen_num_from_xcb_screen(xcb_connection_t *xcb_conn,
-		xcb_screen_t *screen)
+					  xcb_screen_t *screen)
 {
 	xcb_screen_iterator_t iter =
 		xcb_setup_roots_iterator(xcb_get_setup(xcb_conn));
@@ -164,7 +167,7 @@ static int get_screen_num_from_xcb_screen(xcb_connection_t *xcb_conn,
 }
 
 static xcb_screen_t *get_screen_from_root(xcb_connection_t *xcb_conn,
-		xcb_window_t root)
+					  xcb_window_t root)
 {
 	xcb_screen_iterator_t iter =
 		xcb_setup_roots_iterator(xcb_get_setup(xcb_conn));
@@ -180,17 +183,18 @@ static xcb_screen_t *get_screen_from_root(xcb_connection_t *xcb_conn,
 }
 
 static inline int get_screen_num_from_root(xcb_connection_t *xcb_conn,
-		xcb_window_t root)
+					   xcb_window_t root)
 {
 	xcb_screen_t *screen = get_screen_from_root(xcb_conn, root);
 
-	if (!screen) return -1;
+	if (!screen)
+		return -1;
 
 	return get_screen_num_from_xcb_screen(xcb_conn, screen);
 }
 
-static xcb_get_geometry_reply_t* get_window_geometry(
-		xcb_connection_t *xcb_conn, xcb_drawable_t drawable)
+static xcb_get_geometry_reply_t *get_window_geometry(xcb_connection_t *xcb_conn,
+						     xcb_drawable_t drawable)
 {
 	xcb_get_geometry_cookie_t cookie;
 	xcb_generic_error_t *error;
@@ -224,14 +228,14 @@ static bool gl_context_create(struct gl_platform *plat)
 	}
 
 	config = glXChooseFBConfig(display, DefaultScreen(display),
-			ctx_visual_attribs, &frame_buf_config_count);
+				   ctx_visual_attribs, &frame_buf_config_count);
 	if (!config) {
 		blog(LOG_ERROR, "Failed to create OpenGL frame buffer config");
 		return false;
 	}
 
-	context = glXCreateContextAttribsARB(display, config[0], NULL,
-			true, ctx_attribs);
+	context = glXCreateContextAttribsARB(display, config[0], NULL, true,
+					     ctx_attribs);
 	if (!context) {
 		blog(LOG_ERROR, "Failed to create OpenGL context.");
 		goto error;
@@ -240,8 +244,8 @@ static bool gl_context_create(struct gl_platform *plat)
 	plat->context = context;
 	plat->display = display;
 
-	plat->pbuffer = glXCreatePbuffer(display, config[0],
-			ctx_pbuffer_attribs);
+	plat->pbuffer =
+		glXCreatePbuffer(display, config[0], ctx_pbuffer_attribs);
 	if (!plat->pbuffer) {
 		blog(LOG_ERROR, "Failed to create OpenGL pbuffer");
 		goto error;
@@ -264,7 +268,8 @@ static void gl_context_destroy(struct gl_platform *plat)
 	bfree(plat);
 }
 
-extern struct gl_windowinfo *gl_windowinfo_create(const struct gs_init_data *info)
+extern struct gl_windowinfo *
+gl_windowinfo_create(const struct gs_init_data *info)
 {
 	UNUSED_PARAMETER(info);
 	return bmalloc(sizeof(struct gl_windowinfo));
@@ -330,20 +335,21 @@ static int x_error_handler(Display *display, XErrorEvent *error)
 	XGetErrorText(display, error->request_code, str2, sizeof(str2));
 	XGetErrorText(display, error->minor_code, str3, sizeof(str3));
 
-	blog(LOG_ERROR, "X Error: %s, Major opcode: %s, "
-			"Minor opcode: %s, Serial: %lu",
-			str1, str2, str3, error->serial);
+	blog(LOG_ERROR,
+	     "X Error: %s, Major opcode: %s, "
+	     "Minor opcode: %s, Serial: %lu",
+	     str1, str2, str3, error->serial);
 	return 0;
 }
 
 extern struct gl_platform *gl_platform_create(gs_device_t *device,
-		uint32_t adapter)
+					      uint32_t adapter)
 {
 	/* There's some trickery here... we're mixing libX11, xcb, and GLX
 	   For an explanation see here: http://xcb.freedesktop.org/MixingCalls/
 	   Essentially, GLX requires Xlib. Everything else we use xcb. */
-	struct gl_platform * plat = bmalloc(sizeof(struct gl_platform));
-	Display * display = open_windowless_display();
+	struct gl_platform *plat = bmalloc(sizeof(struct gl_platform));
+	Display *display = open_windowless_display();
 
 	if (!display) {
 		goto fail_display_open;
@@ -363,7 +369,7 @@ extern struct gl_platform *gl_platform_create(gs_device_t *device,
 	}
 
 	if (!glXMakeContextCurrent(plat->display, plat->pbuffer, plat->pbuffer,
-				plat->context)) {
+				   plat->context)) {
 		blog(LOG_ERROR, "Failed to make context current.");
 		goto fail_make_current;
 	}
@@ -410,7 +416,8 @@ extern bool gl_platform_init_swapchain(struct gs_swap_chain *swap)
 	int visual;
 	GLXFBConfig *fb_config;
 
-	if (!geometry) goto fail_geometry_request;
+	if (!geometry)
+		goto fail_geometry_request;
 
 	screen_num = get_screen_num_from_root(xcb_conn, geometry->root);
 	if (screen_num == -1) {
@@ -421,7 +428,7 @@ extern bool gl_platform_init_swapchain(struct gs_swap_chain *swap)
 	{
 		int num_configs;
 		fb_config = glXChooseFBConfig(display, screen_num,
-			                      ctx_visual_attribs, &num_configs);
+					      ctx_visual_attribs, &num_configs);
 
 		if (!fb_config || !num_configs) {
 			blog(LOG_ERROR, "Failed to find FBConfig!");
@@ -431,7 +438,8 @@ extern bool gl_platform_init_swapchain(struct gs_swap_chain *swap)
 
 	/* ...then fetch matching visual info for xcb. */
 	{
-		int error = glXGetFBConfigAttrib(display, fb_config[0], GLX_VISUAL_ID, &visual);
+		int error = glXGetFBConfigAttrib(display, fb_config[0],
+						 GLX_VISUAL_ID, &visual);
 
 		if (error) {
 			blog(LOG_ERROR, "Bad call to GetFBConfigAttrib!");
@@ -439,27 +447,16 @@ extern bool gl_platform_init_swapchain(struct gs_swap_chain *swap)
 		}
 	}
 
-
 	xcb_colormap_t colormap = xcb_generate_id(xcb_conn);
 	uint32_t mask = XCB_CW_BORDER_PIXEL | XCB_CW_COLORMAP;
-	uint32_t mask_values[] = { 0, colormap, 0 };
+	uint32_t mask_values[] = {0, colormap, 0};
 
-	xcb_create_colormap(xcb_conn,
-		XCB_COLORMAP_ALLOC_NONE,
-		colormap,
-		parent,
-		visual
-	);
+	xcb_create_colormap(xcb_conn, XCB_COLORMAP_ALLOC_NONE, colormap, parent,
+			    visual);
 
-	xcb_create_window(
-		xcb_conn, 24 /* Hardcoded? */,
-		wid, parent,
-		0, 0,
-		geometry->width,
-		geometry->height,
-		0, 0,
-		visual, mask, mask_values
-	);
+	xcb_create_window(xcb_conn, 24 /* Hardcoded? */, wid, parent, 0, 0,
+			  geometry->width, geometry->height, 0, 0, visual, mask,
+			  mask_values);
 
 	swap->wi->config = fb_config[0];
 	swap->wi->window = wid;
@@ -513,15 +510,17 @@ extern void device_leave_context(gs_device_t *device)
 	}
 }
 
-extern void gl_getclientsize(const struct gs_swap_chain *swap,
-			     uint32_t *width, uint32_t *height)
+extern void gl_getclientsize(const struct gs_swap_chain *swap, uint32_t *width,
+			     uint32_t *height)
 {
-	xcb_connection_t *xcb_conn = XGetXCBConnection(swap->device->plat->display);
+	xcb_connection_t *xcb_conn =
+		XGetXCBConnection(swap->device->plat->display);
 	xcb_window_t window = swap->wi->window;
 
-	xcb_get_geometry_reply_t *geometry = get_window_geometry(xcb_conn, window);
+	xcb_get_geometry_reply_t *geometry =
+		get_window_geometry(xcb_conn, window);
 	if (geometry) {
-		*width  = geometry->width;
+		*width = geometry->width;
 		*height = geometry->height;
 	}
 
@@ -533,16 +532,12 @@ extern void gl_update(gs_device_t *device)
 	Display *display = device->plat->display;
 	xcb_window_t window = device->cur_swap->wi->window;
 
-	uint32_t values[] = {
-		device->cur_swap->info.cx,
-		device->cur_swap->info.cy
-	};
+	uint32_t values[] = {device->cur_swap->info.cx,
+			     device->cur_swap->info.cy};
 
-	xcb_configure_window(
-		XGetXCBConnection(display), window,
-		XCB_CONFIG_WINDOW_WIDTH | XCB_CONFIG_WINDOW_HEIGHT,
-		values
-	);
+	xcb_configure_window(XGetXCBConnection(display), window,
+			     XCB_CONFIG_WINDOW_WIDTH | XCB_CONFIG_WINDOW_HEIGHT,
+			     values);
 }
 
 extern void device_load_swapchain(gs_device_t *device, gs_swapchain_t *swap)
@@ -596,15 +591,21 @@ extern void device_present(gs_device_t *device)
 
 	xcb_connection_t *xcb_conn = XGetXCBConnection(display);
 	xcb_generic_event_t *xcb_event;
-	while((xcb_event = xcb_poll_for_event(xcb_conn))) {
+	while ((xcb_event = xcb_poll_for_event(xcb_conn))) {
 		/* TODO: Handle XCB events. */
 		free(xcb_event);
 	}
 
 	switch (swap_type) {
-	case SWAP_TYPE_EXT:    glXSwapIntervalEXT(display, window, 0); break;
-	case SWAP_TYPE_MESA:   glXSwapIntervalMESA(0); break;
-	case SWAP_TYPE_SGI:    glXSwapIntervalSGI(0); break;
+	case SWAP_TYPE_EXT:
+		glXSwapIntervalEXT(display, window, 0);
+		break;
+	case SWAP_TYPE_MESA:
+		glXSwapIntervalMESA(0);
+		break;
+	case SWAP_TYPE_SGI:
+		glXSwapIntervalSGI(0);
+		break;
 	case SWAP_TYPE_NORMAL:;
 	}
 

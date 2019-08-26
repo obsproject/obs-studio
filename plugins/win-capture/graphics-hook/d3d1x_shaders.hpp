@@ -1,7 +1,6 @@
 #pragma once
 
-static const char vertex_shader_string[] =
-"struct VertData \
+static const char vertex_shader_string[] = "struct VertData \
 { \
 	float4 pos : SV_Position; \
 	float2 texCoord : TexCoord0; \
@@ -14,8 +13,7 @@ VertData main(VertData input) \
 	return output; \
 }";
 
-static const char pixel_shader_string[] =
-"uniform Texture2D diffuseTexture; \
+static const char pixel_shader_string[] = "uniform Texture2D diffuseTexture; \
 SamplerState textureSampler \
 { \
 	AddressU = Clamp; \

@@ -9,6 +9,7 @@ include_directories(
 	)
 
 set(media-playback_HEADERS
+	media-playback/closest-format.h
 	media-playback/decode.h
 	media-playback/media.h
 	)

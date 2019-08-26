@@ -9,6 +9,10 @@ OBS Studio <https://obsproject.com>
    :alt: OBS Studio Build Status - AppVeyor CI
    :target: https://ci.appveyor.com/project/jp9000/obs-studio/branch/master
 
+.. image:: https://dev.azure.com/obsjim/obsjim/_apis/build/status/obsproject.obs-studio?branchName=master
+  :alt: OBS Studio Build Status - Azure Pipelines
+  :target: https://dev.azure.com/obsjim/obsjim/_build/latest?definitionId=1&branchName=master
+
 .. image:: https://discordapp.com/api/guilds/348973006581923840/widget.png?style=shield
    :alt: OBS Studio Discord Server
    :target: https://obsproject.com/discord
@@ -35,6 +39,8 @@ Quick Links
 
  - Developer/API Documentation: https://obsproject.com/docs
 
+ - Donating/backing/sponsoring: https://obsproject.com/contribute
+
  - Bug Tracker: https://obsproject.com/mantis/
 
    (Note: The bug tracker is linked to forum accounts.  To use the bug
@@ -42,6 +48,12 @@ Quick Links
 
 Contributing
 ------------
+
+ - If you would like to help fund or sponsor the project, you can do so
+   via `Patreon <https://www.patreon.com/obsproject>`_, `OpenCollective
+   <https://opencollective.com/obsproject>`_, or `PayPal
+   <https://www.paypal.me/obsproject>`_.  See our `contribute page
+   <https://obsproject.com/contribute>`_ for more information.
 
  - If you wish to contribute code to the project, please make sure to
    read the coding and commit guidelines:
@@ -59,9 +71,3 @@ Contributing
    you fully understand -- bad advice is worse than no advice.  When it
    comes to something that you don't fully know or understand, please
    defer to the official help or official channels.
-
-Credits
--------
- - Icons made by `Freepik <https://www.freepik.com>`_ from
-   `Flaticon <https://www.flaticon.com/>`_ are licensed under
-   `CC 3.0 BY <https://creativecommons.org/licenses/by/3.0/>`_.

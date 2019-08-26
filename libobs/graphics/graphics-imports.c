@@ -20,23 +20,25 @@
 #include "../util/platform.h"
 #include "graphics-internal.h"
 
-#define GRAPHICS_IMPORT(func) \
-	do { \
-		exports->func = os_dlsym(module, #func); \
-		if (!exports->func) { \
-			success = false; \
-			blog(LOG_ERROR, "Could not load function '%s' from " \
-			                "module '%s'", #func, module_name); \
-		} \
+#define GRAPHICS_IMPORT(func)                                     \
+	do {                                                      \
+		exports->func = os_dlsym(module, #func);          \
+		if (!exports->func) {                             \
+			success = false;                          \
+			blog(LOG_ERROR,                           \
+			     "Could not load function '%s' from " \
+			     "module '%s'",                       \
+			     #func, module_name);                 \
+		}                                                 \
 	} while (false)
 
-#define GRAPHICS_IMPORT_OPTIONAL(func) \
-	do { \
+#define GRAPHICS_IMPORT_OPTIONAL(func)                   \
+	do {                                             \
 		exports->func = os_dlsym(module, #func); \
 	} while (false)
 
 bool load_graphics_imports(struct gs_exports *exports, void *module,
-		const char *module_name)
+			   const char *module_name)
 {
 	bool success = true;
 
@@ -63,6 +65,8 @@ bool load_graphics_imports(struct gs_exports *exports, void *module,
 	GRAPHICS_IMPORT(device_pixelshader_create);
 	GRAPHICS_IMPORT(device_vertexbuffer_create);
 	GRAPHICS_IMPORT(device_indexbuffer_create);
+	GRAPHICS_IMPORT(device_timer_create);
+	GRAPHICS_IMPORT(device_timer_range_create);
 	GRAPHICS_IMPORT(device_get_texture_type);
 	GRAPHICS_IMPORT(device_load_vertexbuffer);
 	GRAPHICS_IMPORT(device_load_indexbuffer);
@@ -151,6 +155,15 @@ bool load_graphics_imports(struct gs_exports *exports, void *module,
 	GRAPHICS_IMPORT(gs_indexbuffer_get_num_indices);
 	GRAPHICS_IMPORT(gs_indexbuffer_get_type);
 
+	GRAPHICS_IMPORT(gs_timer_destroy);
+	GRAPHICS_IMPORT(gs_timer_begin);
+	GRAPHICS_IMPORT(gs_timer_end);
+	GRAPHICS_IMPORT(gs_timer_get_data);
+	GRAPHICS_IMPORT(gs_timer_range_destroy);
+	GRAPHICS_IMPORT(gs_timer_range_begin);
+	GRAPHICS_IMPORT(gs_timer_range_end);
+	GRAPHICS_IMPORT(gs_timer_range_get_data);
+
 	GRAPHICS_IMPORT(gs_shader_destroy);
 	GRAPHICS_IMPORT(gs_shader_get_num_params);
 	GRAPHICS_IMPORT(gs_shader_get_param_by_idx);
@@ -172,6 +185,9 @@ bool load_graphics_imports(struct gs_exports *exports, void *module,
 	GRAPHICS_IMPORT(gs_shader_set_next_sampler);
 
 	GRAPHICS_IMPORT_OPTIONAL(device_nv12_available);
+
+	GRAPHICS_IMPORT(device_debug_marker_begin);
+	GRAPHICS_IMPORT(device_debug_marker_end);
 
 	/* OSX/Cocoa specific functions */
 #ifdef __APPLE__

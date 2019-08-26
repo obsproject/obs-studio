@@ -58,7 +58,7 @@ bool InitApplicationBundle()
 			throw "Could not change working directory to "
 			      "bundle path";
 
-	} catch (const char* error) {
+	} catch (const char *error) {
 		blog(LOG_ERROR, "InitBundle: %s", error);
 		return false;
 	}
@@ -77,7 +77,7 @@ string GetDefaultVideoSavePath()
 		       appropriateForURL:nil
 				  create:true
 				   error:nil];
-	
+
 	if (!url)
 		return getenv("HOME");
 
@@ -97,7 +97,7 @@ vector<string> GetPreferredLocales()
 				return locale.first;
 
 			if (!lang_match.size() &&
-				locale.first.substr(0, 2) == lang.substr(0, 2))
+			    locale.first.substr(0, 2) == lang.substr(0, 2))
 				lang_match = locale.first;
 		}
 
@@ -150,12 +150,13 @@ void EnableOSXVSync(bool enable)
 
 	if (!initialized) {
 		void *quartzCore = dlopen("/System/Library/Frameworks/"
-				"QuartzCore.framework/QuartzCore", RTLD_LAZY);
+					  "QuartzCore.framework/QuartzCore",
+					  RTLD_LAZY);
 		if (quartzCore) {
-			set_debug_options = (set_int_t)dlsym(quartzCore,
-					"CGSSetDebugOptions");
-			deferred_updates = (set_int_t)dlsym(quartzCore,
-					"CGSDeferredUpdates");
+			set_debug_options = (set_int_t)dlsym(
+				quartzCore, "CGSSetDebugOptions");
+			deferred_updates = (set_int_t)dlsym(
+				quartzCore, "CGSDeferredUpdates");
 
 			valid = set_debug_options && deferred_updates;
 		}
@@ -174,5 +175,6 @@ void EnableOSXDockIcon(bool enable)
 	if (enable)
 		[NSApp setActivationPolicy:NSApplicationActivationPolicyRegular];
 	else
-		[NSApp setActivationPolicy:NSApplicationActivationPolicyProhibited];
+		[NSApp setActivationPolicy:
+				NSApplicationActivationPolicyProhibited];
 }

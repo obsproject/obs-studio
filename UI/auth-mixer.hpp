@@ -19,7 +19,7 @@ class MixerAuth : public OAuthStreamKey {
 	virtual void SaveInternal() override;
 	virtual bool LoadInternal() override;
 
-	bool GetChannelInfo();
+	bool GetChannelInfo(bool allow_retry = true);
 
 	virtual void LoadUI() override;
 

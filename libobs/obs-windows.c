@@ -44,13 +44,11 @@ static const char *module_bin[] = {
 	"../../obs-plugins/" BIT_STRING,
 };
 
-static const char *module_data[] = {
-	"data/%module%",
-	"../../data/obs-plugins/%module%"
-};
+static const char *module_data[] = {"data/%module%",
+				    "../../data/obs-plugins/%module%"};
 
 static const int module_patterns_size =
-	sizeof(module_bin)/sizeof(module_bin[0]);
+	sizeof(module_bin) / sizeof(module_bin[0]);
 
 void add_default_module_paths(void)
 {
@@ -76,23 +74,23 @@ char *find_libobs_data_file(const char *file)
 
 static void log_processor_info(void)
 {
-	HKEY    key;
+	HKEY key;
 	wchar_t data[1024];
-	char    *str = NULL;
-	DWORD   size, speed;
+	char *str = NULL;
+	DWORD size, speed;
 	LSTATUS status;
 
 	memset(data, 0, sizeof(data));
 
-	status = RegOpenKeyW(HKEY_LOCAL_MACHINE,
-			L"HARDWARE\\DESCRIPTION\\System\\CentralProcessor\\0",
-			&key);
+	status = RegOpenKeyW(
+		HKEY_LOCAL_MACHINE,
+		L"HARDWARE\\DESCRIPTION\\System\\CentralProcessor\\0", &key);
 	if (status != ERROR_SUCCESS)
 		return;
 
 	size = sizeof(data);
 	status = RegQueryValueExW(key, L"ProcessorNameString", NULL, NULL,
-			(LPBYTE)data, &size);
+				  (LPBYTE)data, &size);
 	if (status == ERROR_SUCCESS) {
 		os_wcs_to_utf8_ptr(data, 0, &str);
 		blog(LOG_INFO, "CPU Name: %s", str);
@@ -101,7 +99,7 @@ static void log_processor_info(void)
 
 	size = sizeof(speed);
 	status = RegQueryValueExW(key, L"~MHz", NULL, NULL, (LPBYTE)&speed,
-			&size);
+				  &size);
 	if (status == ERROR_SUCCESS)
 		blog(LOG_INFO, "CPU Speed: %ldMHz", speed);
 
@@ -111,7 +109,7 @@ static void log_processor_info(void)
 static void log_processor_cores(void)
 {
 	blog(LOG_INFO, "Physical Cores: %d, Logical Cores: %d",
-			os_get_physical_cores(), os_get_logical_cores());
+	     os_get_physical_cores(), os_get_logical_cores());
 }
 
 static void log_available_memory(void)
@@ -128,9 +126,8 @@ static void log_available_memory(void)
 #endif
 
 	blog(LOG_INFO, "Physical Memory: %luMB Total, %luMB Free%s",
-			(DWORD)(ms.ullTotalPhys / 1048576),
-			(DWORD)(ms.ullAvailPhys / 1048576),
-			note);
+	     (DWORD)(ms.ullTotalPhys / 1048576),
+	     (DWORD)(ms.ullAvailPhys / 1048576), note);
 }
 
 static void log_windows_version(void)
@@ -142,8 +139,7 @@ static void log_windows_version(void)
 	const char *windows_bitness = b64 ? "64" : "32";
 
 	blog(LOG_INFO, "Windows Version: %d.%d Build %d (revision: %d; %s-bit)",
-			ver.major, ver.minor, ver.build, ver.revis,
-			windows_bitness);
+	     ver.major, ver.minor, ver.build, ver.revis, windows_bitness);
 }
 
 static void log_admin_status(void)
@@ -153,8 +149,9 @@ static void log_admin_status(void)
 	BOOL success;
 
 	success = AllocateAndInitializeSid(&auth, 2,
-			SECURITY_BUILTIN_DOMAIN_RID, DOMAIN_ALIAS_RID_ADMINS,
-			0, 0, 0, 0, 0, 0, &admin_group);
+					   SECURITY_BUILTIN_DOMAIN_RID,
+					   DOMAIN_ALIAS_RID_ADMINS, 0, 0, 0, 0,
+					   0, 0, &admin_group);
 	if (success) {
 		if (!CheckTokenMembership(NULL, admin_group, &success))
 			success = false;
@@ -162,17 +159,19 @@ static void log_admin_status(void)
 	}
 
 	blog(LOG_INFO, "Running as administrator: %s",
-			success ? "true" : "false");
+	     success ? "true" : "false");
 }
 
-typedef HRESULT (WINAPI *dwm_is_composition_enabled_t)(BOOL*);
+typedef HRESULT(WINAPI *dwm_is_composition_enabled_t)(BOOL *);
 
 static void log_aero(void)
 {
 	dwm_is_composition_enabled_t composition_enabled = NULL;
 
-	const char *aeroMessage = win_ver >= 0x602 ?
-		" (Aero is always on for windows 8 and above)" : "";
+	const char *aeroMessage =
+		win_ver >= 0x602
+			? " (Aero is always on for windows 8 and above)"
+			: "";
 
 	HMODULE dwm = LoadLibraryW(L"dwmapi");
 	BOOL bComposition = true;
@@ -181,21 +180,22 @@ static void log_aero(void)
 		return;
 	}
 
-	composition_enabled = (dwm_is_composition_enabled_t)GetProcAddress(dwm,
-			"DwmIsCompositionEnabled");
+	composition_enabled = (dwm_is_composition_enabled_t)GetProcAddress(
+		dwm, "DwmIsCompositionEnabled");
 	if (!composition_enabled) {
+		FreeLibrary(dwm);
 		return;
 	}
 
 	composition_enabled(&bComposition);
 	blog(LOG_INFO, "Aero is %s%s", bComposition ? "Enabled" : "Disabled",
-			aeroMessage);
+	     aeroMessage);
 }
 
 #define WIN10_GAME_BAR_REG_KEY \
-		L"Software\\Microsoft\\Windows\\CurrentVersion\\GameDVR"
+	L"Software\\Microsoft\\Windows\\CurrentVersion\\GameDVR"
 #define WIN10_GAME_DVR_POLICY_REG_KEY \
-		L"SOFTWARE\\Policies\\Microsoft\\Windows\\GameDVR"
+	L"SOFTWARE\\Policies\\Microsoft\\Windows\\GameDVR"
 #define WIN10_GAME_DVR_REG_KEY L"System\\GameConfigStore"
 #define WIN10_GAME_MODE_REG_KEY L"Software\\Microsoft\\GameBar"
 
@@ -211,45 +211,44 @@ static void log_gaming_features(void)
 	struct reg_dword game_mode_enabled;
 
 	get_reg_dword(HKEY_CURRENT_USER, WIN10_GAME_BAR_REG_KEY,
-			L"AppCaptureEnabled", &game_bar_enabled);
+		      L"AppCaptureEnabled", &game_bar_enabled);
 	get_reg_dword(HKEY_CURRENT_USER, WIN10_GAME_DVR_POLICY_REG_KEY,
-			L"AllowGameDVR", &game_dvr_allowed);
+		      L"AllowGameDVR", &game_dvr_allowed);
 	get_reg_dword(HKEY_CURRENT_USER, WIN10_GAME_DVR_REG_KEY,
-			L"GameDVR_Enabled", &game_dvr_enabled);
+		      L"GameDVR_Enabled", &game_dvr_enabled);
 	get_reg_dword(HKEY_CURRENT_USER, WIN10_GAME_BAR_REG_KEY,
-			L"HistoricalCaptureEnabled", &game_dvr_bg_recording);
+		      L"HistoricalCaptureEnabled", &game_dvr_bg_recording);
 	get_reg_dword(HKEY_CURRENT_USER, WIN10_GAME_MODE_REG_KEY,
-			L"AllowAutoGameMode", &game_mode_enabled);
+		      L"AllowAutoGameMode", &game_mode_enabled);
 	if (game_mode_enabled.status != ERROR_SUCCESS) {
 		get_reg_dword(HKEY_CURRENT_USER, WIN10_GAME_MODE_REG_KEY,
-				L"AutoGameModeEnabled", &game_mode_enabled);
+			      L"AutoGameModeEnabled", &game_mode_enabled);
 	}
 
 	blog(LOG_INFO, "Windows 10 Gaming Features:");
 	if (game_bar_enabled.status == ERROR_SUCCESS) {
 		blog(LOG_INFO, "\tGame Bar: %s",
-			(bool)game_bar_enabled.return_value ? "On" : "Off");
+		     (bool)game_bar_enabled.return_value ? "On" : "Off");
 	}
 
 	if (game_dvr_allowed.status == ERROR_SUCCESS) {
 		blog(LOG_INFO, "\tGame DVR Allowed: %s",
-			(bool)game_dvr_allowed.return_value ? "Yes" : "No");
+		     (bool)game_dvr_allowed.return_value ? "Yes" : "No");
 	}
 
 	if (game_dvr_enabled.status == ERROR_SUCCESS) {
 		blog(LOG_INFO, "\tGame DVR: %s",
-			(bool)game_dvr_enabled.return_value ? "On" : "Off");
+		     (bool)game_dvr_enabled.return_value ? "On" : "Off");
 	}
 
 	if (game_dvr_bg_recording.status == ERROR_SUCCESS) {
 		blog(LOG_INFO, "\tGame DVR Background Recording: %s",
-			(bool)game_dvr_bg_recording.return_value ? "On" :
-			"Off");
+		     (bool)game_dvr_bg_recording.return_value ? "On" : "Off");
 	}
 
 	if (game_mode_enabled.status == ERROR_SUCCESS) {
 		blog(LOG_INFO, "\tGame Mode: %s",
-			(bool)game_mode_enabled.return_value ? "On" : "Off");
+		     (bool)game_mode_enabled.return_value ? "On" : "Off");
 	}
 }
 
@@ -318,8 +317,7 @@ static void log_security_products_by_type(IWSCProductList *prod_list, int type)
 		}
 
 		blog(LOG_INFO, "\t%S: %s (%s)", name,
-				get_str_for_state(prod_state),
-				get_str_for_type(type));
+		     get_str_for_state(prod_state), get_str_for_type(type));
 
 		SysFreeString(name);
 		prod->lpVtbl->Release(prod);
@@ -350,27 +348,27 @@ static void log_security_products(void)
 		blog(LOG_INFO, "Sec. Software Status:");
 
 		hr = CoCreateInstance(prod_list_clsid, NULL,
-				CLSCTX_INPROC_SERVER, prod_list_iid,
-				&prod_list);
+				      CLSCTX_INPROC_SERVER, prod_list_iid,
+				      &prod_list);
 		if (!FAILED(hr)) {
-			log_security_products_by_type(prod_list,
-					WSC_SECURITY_PROVIDER_ANTIVIRUS);
+			log_security_products_by_type(
+				prod_list, WSC_SECURITY_PROVIDER_ANTIVIRUS);
 		}
 
 		hr = CoCreateInstance(prod_list_clsid, NULL,
-				CLSCTX_INPROC_SERVER, prod_list_iid,
-				&prod_list);
+				      CLSCTX_INPROC_SERVER, prod_list_iid,
+				      &prod_list);
 		if (!FAILED(hr)) {
-			log_security_products_by_type(prod_list,
-					WSC_SECURITY_PROVIDER_FIREWALL);
+			log_security_products_by_type(
+				prod_list, WSC_SECURITY_PROVIDER_FIREWALL);
 		}
 
 		hr = CoCreateInstance(prod_list_clsid, NULL,
-				CLSCTX_INPROC_SERVER, prod_list_iid,
-				&prod_list);
+				      CLSCTX_INPROC_SERVER, prod_list_iid,
+				      &prod_list);
 		if (!FAILED(hr)) {
-			log_security_products_by_type(prod_list,
-					WSC_SECURITY_PROVIDER_ANTISPYWARE);
+			log_security_products_by_type(
+				prod_list, WSC_SECURITY_PROVIDER_ANTISPYWARE);
 		}
 	}
 
@@ -394,7 +392,6 @@ void log_system_info(void)
 	log_security_products();
 }
 
-
 struct obs_hotkeys_platform {
 	int vk_codes[OBS_KEY_LAST_VALUE];
 };
@@ -402,137 +399,260 @@ struct obs_hotkeys_platform {
 static int get_virtual_key(obs_key_t key)
 {
 	switch (key) {
-	case OBS_KEY_RETURN: return VK_RETURN;
-	case OBS_KEY_ESCAPE: return VK_ESCAPE;
-	case OBS_KEY_TAB: return VK_TAB;
-	case OBS_KEY_BACKTAB: return VK_OEM_BACKTAB;
-	case OBS_KEY_BACKSPACE: return VK_BACK;
-	case OBS_KEY_INSERT: return VK_INSERT;
-	case OBS_KEY_DELETE: return VK_DELETE;
-	case OBS_KEY_PAUSE: return VK_PAUSE;
-	case OBS_KEY_PRINT: return VK_SNAPSHOT;
-	case OBS_KEY_CLEAR: return VK_CLEAR;
-	case OBS_KEY_HOME: return VK_HOME;
-	case OBS_KEY_END: return VK_END;
-	case OBS_KEY_LEFT: return VK_LEFT;
-	case OBS_KEY_UP: return VK_UP;
-	case OBS_KEY_RIGHT: return VK_RIGHT;
-	case OBS_KEY_DOWN: return VK_DOWN;
-	case OBS_KEY_PAGEUP: return VK_PRIOR;
-	case OBS_KEY_PAGEDOWN: return VK_NEXT;
+	case OBS_KEY_RETURN:
+		return VK_RETURN;
+	case OBS_KEY_ESCAPE:
+		return VK_ESCAPE;
+	case OBS_KEY_TAB:
+		return VK_TAB;
+	case OBS_KEY_BACKTAB:
+		return VK_OEM_BACKTAB;
+	case OBS_KEY_BACKSPACE:
+		return VK_BACK;
+	case OBS_KEY_INSERT:
+		return VK_INSERT;
+	case OBS_KEY_DELETE:
+		return VK_DELETE;
+	case OBS_KEY_PAUSE:
+		return VK_PAUSE;
+	case OBS_KEY_PRINT:
+		return VK_SNAPSHOT;
+	case OBS_KEY_CLEAR:
+		return VK_CLEAR;
+	case OBS_KEY_HOME:
+		return VK_HOME;
+	case OBS_KEY_END:
+		return VK_END;
+	case OBS_KEY_LEFT:
+		return VK_LEFT;
+	case OBS_KEY_UP:
+		return VK_UP;
+	case OBS_KEY_RIGHT:
+		return VK_RIGHT;
+	case OBS_KEY_DOWN:
+		return VK_DOWN;
+	case OBS_KEY_PAGEUP:
+		return VK_PRIOR;
+	case OBS_KEY_PAGEDOWN:
+		return VK_NEXT;
 
-	case OBS_KEY_SHIFT: return VK_SHIFT;
-	case OBS_KEY_CONTROL: return VK_CONTROL;
-	case OBS_KEY_ALT: return VK_MENU;
-	case OBS_KEY_CAPSLOCK: return VK_CAPITAL;
-	case OBS_KEY_NUMLOCK: return VK_NUMLOCK;
-	case OBS_KEY_SCROLLLOCK: return VK_SCROLL;
+	case OBS_KEY_SHIFT:
+		return VK_SHIFT;
+	case OBS_KEY_CONTROL:
+		return VK_CONTROL;
+	case OBS_KEY_ALT:
+		return VK_MENU;
+	case OBS_KEY_CAPSLOCK:
+		return VK_CAPITAL;
+	case OBS_KEY_NUMLOCK:
+		return VK_NUMLOCK;
+	case OBS_KEY_SCROLLLOCK:
+		return VK_SCROLL;
 
-	case OBS_KEY_F1: return VK_F1;
-	case OBS_KEY_F2: return VK_F2;
-	case OBS_KEY_F3: return VK_F3;
-	case OBS_KEY_F4: return VK_F4;
-	case OBS_KEY_F5: return VK_F5;
-	case OBS_KEY_F6: return VK_F6;
-	case OBS_KEY_F7: return VK_F7;
-	case OBS_KEY_F8: return VK_F8;
-	case OBS_KEY_F9: return VK_F9;
-	case OBS_KEY_F10: return VK_F10;
-	case OBS_KEY_F11: return VK_F11;
-	case OBS_KEY_F12: return VK_F12;
-	case OBS_KEY_F13: return VK_F13;
-	case OBS_KEY_F14: return VK_F14;
-	case OBS_KEY_F15: return VK_F15;
-	case OBS_KEY_F16: return VK_F16;
-	case OBS_KEY_F17: return VK_F17;
-	case OBS_KEY_F18: return VK_F18;
-	case OBS_KEY_F19: return VK_F19;
-	case OBS_KEY_F20: return VK_F20;
-	case OBS_KEY_F21: return VK_F21;
-	case OBS_KEY_F22: return VK_F22;
-	case OBS_KEY_F23: return VK_F23;
-	case OBS_KEY_F24: return VK_F24;
+	case OBS_KEY_F1:
+		return VK_F1;
+	case OBS_KEY_F2:
+		return VK_F2;
+	case OBS_KEY_F3:
+		return VK_F3;
+	case OBS_KEY_F4:
+		return VK_F4;
+	case OBS_KEY_F5:
+		return VK_F5;
+	case OBS_KEY_F6:
+		return VK_F6;
+	case OBS_KEY_F7:
+		return VK_F7;
+	case OBS_KEY_F8:
+		return VK_F8;
+	case OBS_KEY_F9:
+		return VK_F9;
+	case OBS_KEY_F10:
+		return VK_F10;
+	case OBS_KEY_F11:
+		return VK_F11;
+	case OBS_KEY_F12:
+		return VK_F12;
+	case OBS_KEY_F13:
+		return VK_F13;
+	case OBS_KEY_F14:
+		return VK_F14;
+	case OBS_KEY_F15:
+		return VK_F15;
+	case OBS_KEY_F16:
+		return VK_F16;
+	case OBS_KEY_F17:
+		return VK_F17;
+	case OBS_KEY_F18:
+		return VK_F18;
+	case OBS_KEY_F19:
+		return VK_F19;
+	case OBS_KEY_F20:
+		return VK_F20;
+	case OBS_KEY_F21:
+		return VK_F21;
+	case OBS_KEY_F22:
+		return VK_F22;
+	case OBS_KEY_F23:
+		return VK_F23;
+	case OBS_KEY_F24:
+		return VK_F24;
 
-	case OBS_KEY_SPACE: return VK_SPACE;
+	case OBS_KEY_SPACE:
+		return VK_SPACE;
 
-	case OBS_KEY_APOSTROPHE: return VK_OEM_7;
-	case OBS_KEY_PLUS: return VK_OEM_PLUS;
-	case OBS_KEY_COMMA: return VK_OEM_COMMA;
-	case OBS_KEY_MINUS: return VK_OEM_MINUS;
-	case OBS_KEY_PERIOD: return VK_OEM_PERIOD;
-	case OBS_KEY_SLASH: return VK_OEM_2;
-	case OBS_KEY_0: return '0';
-	case OBS_KEY_1: return '1';
-	case OBS_KEY_2: return '2';
-	case OBS_KEY_3: return '3';
-	case OBS_KEY_4: return '4';
-	case OBS_KEY_5: return '5';
-	case OBS_KEY_6: return '6';
-	case OBS_KEY_7: return '7';
-	case OBS_KEY_8: return '8';
-	case OBS_KEY_9: return '9';
-	case OBS_KEY_NUMASTERISK: return VK_MULTIPLY;
-	case OBS_KEY_NUMPLUS: return VK_ADD;
-	case OBS_KEY_NUMMINUS: return VK_SUBTRACT;
-	case OBS_KEY_NUMPERIOD: return VK_DECIMAL;
-	case OBS_KEY_NUMSLASH: return VK_DIVIDE;
-	case OBS_KEY_NUM0: return VK_NUMPAD0;
-	case OBS_KEY_NUM1: return VK_NUMPAD1;
-	case OBS_KEY_NUM2: return VK_NUMPAD2;
-	case OBS_KEY_NUM3: return VK_NUMPAD3;
-	case OBS_KEY_NUM4: return VK_NUMPAD4;
-	case OBS_KEY_NUM5: return VK_NUMPAD5;
-	case OBS_KEY_NUM6: return VK_NUMPAD6;
-	case OBS_KEY_NUM7: return VK_NUMPAD7;
-	case OBS_KEY_NUM8: return VK_NUMPAD8;
-	case OBS_KEY_NUM9: return VK_NUMPAD9;
-	case OBS_KEY_SEMICOLON: return VK_OEM_1;
-	case OBS_KEY_A: return 'A';
-	case OBS_KEY_B: return 'B';
-	case OBS_KEY_C: return 'C';
-	case OBS_KEY_D: return 'D';
-	case OBS_KEY_E: return 'E';
-	case OBS_KEY_F: return 'F';
-	case OBS_KEY_G: return 'G';
-	case OBS_KEY_H: return 'H';
-	case OBS_KEY_I: return 'I';
-	case OBS_KEY_J: return 'J';
-	case OBS_KEY_K: return 'K';
-	case OBS_KEY_L: return 'L';
-	case OBS_KEY_M: return 'M';
-	case OBS_KEY_N: return 'N';
-	case OBS_KEY_O: return 'O';
-	case OBS_KEY_P: return 'P';
-	case OBS_KEY_Q: return 'Q';
-	case OBS_KEY_R: return 'R';
-	case OBS_KEY_S: return 'S';
-	case OBS_KEY_T: return 'T';
-	case OBS_KEY_U: return 'U';
-	case OBS_KEY_V: return 'V';
-	case OBS_KEY_W: return 'W';
-	case OBS_KEY_X: return 'X';
-	case OBS_KEY_Y: return 'Y';
-	case OBS_KEY_Z: return 'Z';
-	case OBS_KEY_BRACKETLEFT: return VK_OEM_4;
-	case OBS_KEY_BACKSLASH: return VK_OEM_5;
-	case OBS_KEY_BRACKETRIGHT: return VK_OEM_6;
-	case OBS_KEY_ASCIITILDE: return VK_OEM_3;
+	case OBS_KEY_APOSTROPHE:
+		return VK_OEM_7;
+	case OBS_KEY_PLUS:
+		return VK_OEM_PLUS;
+	case OBS_KEY_COMMA:
+		return VK_OEM_COMMA;
+	case OBS_KEY_MINUS:
+		return VK_OEM_MINUS;
+	case OBS_KEY_PERIOD:
+		return VK_OEM_PERIOD;
+	case OBS_KEY_SLASH:
+		return VK_OEM_2;
+	case OBS_KEY_0:
+		return '0';
+	case OBS_KEY_1:
+		return '1';
+	case OBS_KEY_2:
+		return '2';
+	case OBS_KEY_3:
+		return '3';
+	case OBS_KEY_4:
+		return '4';
+	case OBS_KEY_5:
+		return '5';
+	case OBS_KEY_6:
+		return '6';
+	case OBS_KEY_7:
+		return '7';
+	case OBS_KEY_8:
+		return '8';
+	case OBS_KEY_9:
+		return '9';
+	case OBS_KEY_NUMASTERISK:
+		return VK_MULTIPLY;
+	case OBS_KEY_NUMPLUS:
+		return VK_ADD;
+	case OBS_KEY_NUMMINUS:
+		return VK_SUBTRACT;
+	case OBS_KEY_NUMPERIOD:
+		return VK_DECIMAL;
+	case OBS_KEY_NUMSLASH:
+		return VK_DIVIDE;
+	case OBS_KEY_NUM0:
+		return VK_NUMPAD0;
+	case OBS_KEY_NUM1:
+		return VK_NUMPAD1;
+	case OBS_KEY_NUM2:
+		return VK_NUMPAD2;
+	case OBS_KEY_NUM3:
+		return VK_NUMPAD3;
+	case OBS_KEY_NUM4:
+		return VK_NUMPAD4;
+	case OBS_KEY_NUM5:
+		return VK_NUMPAD5;
+	case OBS_KEY_NUM6:
+		return VK_NUMPAD6;
+	case OBS_KEY_NUM7:
+		return VK_NUMPAD7;
+	case OBS_KEY_NUM8:
+		return VK_NUMPAD8;
+	case OBS_KEY_NUM9:
+		return VK_NUMPAD9;
+	case OBS_KEY_SEMICOLON:
+		return VK_OEM_1;
+	case OBS_KEY_A:
+		return 'A';
+	case OBS_KEY_B:
+		return 'B';
+	case OBS_KEY_C:
+		return 'C';
+	case OBS_KEY_D:
+		return 'D';
+	case OBS_KEY_E:
+		return 'E';
+	case OBS_KEY_F:
+		return 'F';
+	case OBS_KEY_G:
+		return 'G';
+	case OBS_KEY_H:
+		return 'H';
+	case OBS_KEY_I:
+		return 'I';
+	case OBS_KEY_J:
+		return 'J';
+	case OBS_KEY_K:
+		return 'K';
+	case OBS_KEY_L:
+		return 'L';
+	case OBS_KEY_M:
+		return 'M';
+	case OBS_KEY_N:
+		return 'N';
+	case OBS_KEY_O:
+		return 'O';
+	case OBS_KEY_P:
+		return 'P';
+	case OBS_KEY_Q:
+		return 'Q';
+	case OBS_KEY_R:
+		return 'R';
+	case OBS_KEY_S:
+		return 'S';
+	case OBS_KEY_T:
+		return 'T';
+	case OBS_KEY_U:
+		return 'U';
+	case OBS_KEY_V:
+		return 'V';
+	case OBS_KEY_W:
+		return 'W';
+	case OBS_KEY_X:
+		return 'X';
+	case OBS_KEY_Y:
+		return 'Y';
+	case OBS_KEY_Z:
+		return 'Z';
+	case OBS_KEY_BRACKETLEFT:
+		return VK_OEM_4;
+	case OBS_KEY_BACKSLASH:
+		return VK_OEM_5;
+	case OBS_KEY_BRACKETRIGHT:
+		return VK_OEM_6;
+	case OBS_KEY_ASCIITILDE:
+		return VK_OEM_3;
 
-	case OBS_KEY_HENKAN: return VK_CONVERT;
-	case OBS_KEY_MUHENKAN: return VK_NONCONVERT;
-	case OBS_KEY_KANJI: return VK_KANJI;
-	case OBS_KEY_TOUROKU: return VK_OEM_FJ_TOUROKU;
-	case OBS_KEY_MASSYO: return VK_OEM_FJ_MASSHOU;
+	case OBS_KEY_HENKAN:
+		return VK_CONVERT;
+	case OBS_KEY_MUHENKAN:
+		return VK_NONCONVERT;
+	case OBS_KEY_KANJI:
+		return VK_KANJI;
+	case OBS_KEY_TOUROKU:
+		return VK_OEM_FJ_TOUROKU;
+	case OBS_KEY_MASSYO:
+		return VK_OEM_FJ_MASSHOU;
 
-	case OBS_KEY_HANGUL: return VK_HANGUL;
+	case OBS_KEY_HANGUL:
+		return VK_HANGUL;
 
-	case OBS_KEY_BACKSLASH_RT102: return VK_OEM_102;
+	case OBS_KEY_BACKSLASH_RT102:
+		return VK_OEM_102;
 
-	case OBS_KEY_MOUSE1: return VK_LBUTTON;
-	case OBS_KEY_MOUSE2: return VK_RBUTTON;
-	case OBS_KEY_MOUSE3: return VK_MBUTTON;
-	case OBS_KEY_MOUSE4: return VK_XBUTTON1;
-	case OBS_KEY_MOUSE5: return VK_XBUTTON2;
+	case OBS_KEY_MOUSE1:
+		return VK_LBUTTON;
+	case OBS_KEY_MOUSE2:
+		return VK_RBUTTON;
+	case OBS_KEY_MOUSE3:
+		return VK_MBUTTON;
+	case OBS_KEY_MOUSE4:
+		return VK_XBUTTON1;
+	case OBS_KEY_MOUSE5:
+		return VK_XBUTTON2;
 
 	/* TODO: Implement keys for non-US keyboards */
 	default:;
@@ -565,7 +685,7 @@ static bool vk_down(DWORD vk)
 }
 
 bool obs_hotkeys_platform_is_pressed(obs_hotkeys_platform_t *context,
-		obs_key_t key)
+				     obs_key_t key)
 {
 	if (key == OBS_KEY_META) {
 		return vk_down(VK_LWIN) || vk_down(VK_RWIN);
@@ -589,11 +709,11 @@ void obs_key_to_str(obs_key_t key, struct dstr *str)
 			dstr_copy(str, obs->hotkeys.translations[key]);
 		} else {
 			dstr_printf(str, "Mouse %d",
-					(int)(key - OBS_KEY_MOUSE1 + 1));
+				    (int)(key - OBS_KEY_MOUSE1 + 1));
 		}
 		return;
-
-	} if (key == OBS_KEY_PAUSE) {
+	}
+	if (key == OBS_KEY_PAUSE) {
 		dstr_copy(str, obs_get_hotkey_translation(key, "Pause"));
 		return;
 
@@ -665,7 +785,7 @@ static inline void add_combo_key(obs_key_t key, struct dstr *str)
 }
 
 void obs_key_combination_to_str(obs_key_combination_t combination,
-		struct dstr *str)
+				struct dstr *str)
 {
 	if ((combination.modifiers & INTERACT_CONTROL_KEY) != 0) {
 		add_combo_key(OBS_KEY_CONTROL, str);
@@ -688,14 +808,14 @@ bool sym_initialize_called = false;
 
 void reset_win32_symbol_paths(void)
 {
-	static BOOL (WINAPI *sym_initialize_w)(HANDLE, const wchar_t*, BOOL);
-	static BOOL (WINAPI *sym_set_search_path_w)(HANDLE, const wchar_t*);
+	static BOOL(WINAPI * sym_initialize_w)(HANDLE, const wchar_t *, BOOL);
+	static BOOL(WINAPI * sym_set_search_path_w)(HANDLE, const wchar_t *);
 	static bool funcs_initialized = false;
 	static bool initialize_success = false;
 
 	struct obs_module *module = obs->first_module;
 	struct dstr path_str = {0};
-	DARRAY(char*) paths;
+	DARRAY(char *) paths;
 	wchar_t *path_str_w = NULL;
 	char *abspath;
 
@@ -709,13 +829,17 @@ void reset_win32_symbol_paths(void)
 		if (!mod)
 			return;
 
-		sym_initialize_w = (void*)GetProcAddress(mod, "SymInitializeW");
-		sym_set_search_path_w = (void*)GetProcAddress(mod,
-				"SymSetSearchPathW");
-		if (!sym_initialize_w || !sym_set_search_path_w)
+		sym_initialize_w =
+			(void *)GetProcAddress(mod, "SymInitializeW");
+		sym_set_search_path_w =
+			(void *)GetProcAddress(mod, "SymSetSearchPathW");
+		if (!sym_initialize_w || !sym_set_search_path_w) {
+			FreeLibrary(mod);
 			return;
+		}
 
 		initialize_success = true;
+		// Leaks 'mod' once.
 	}
 
 	if (!initialize_success)
@@ -775,11 +899,11 @@ void reset_win32_symbol_paths(void)
 		if (path_str_w) {
 			if (!sym_initialize_called) {
 				sym_initialize_w(GetCurrentProcess(),
-						path_str_w, false);
+						 path_str_w, false);
 				sym_initialize_called = true;
 			} else {
 				sym_set_search_path_w(GetCurrentProcess(),
-						path_str_w);
+						      path_str_w);
 			}
 
 			bfree(path_str_w);

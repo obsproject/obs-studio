@@ -26,7 +26,7 @@ endif()
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 set(ENABLE_SCRIPTING TRUE CACHE BOOL "Enables scripting")
-set(SCRIPTING_ENABLED OFF CACHE BOOL "Interal global cmake variable" FORCE)
+set(SCRIPTING_ENABLED OFF CACHE BOOL "Internal global cmake variable" FORCE)
 
 include(ObsHelpers)
 include(ObsCpack)
@@ -47,6 +47,17 @@ else()
 	set(OBS_RELEASE_CANDIDATE_MINOR 0)
 	set(OBS_RELEASE_CANDIDATE_PATCH 0)
 	set(OBS_RELEASE_CANDIDATE 0)
+endif()
+
+# Binary Versioning for Windows
+if(WIN32)
+	string(REPLACE "-" ";" UI_VERSION_SPLIT ${OBS_VERSION})
+	list(GET UI_VERSION_SPLIT 0 UI_VERSION)
+	string(REPLACE "." ";" UI_VERSION_SEMANTIC ${UI_VERSION})
+	list(GET UI_VERSION_SEMANTIC 0 UI_VERSION_MAJOR)
+	list(GET UI_VERSION_SEMANTIC 1 UI_VERSION_MINOR)
+	list(GET UI_VERSION_SEMANTIC 2 UI_VERSION_PATCH)
+	configure_file(UI/obs.rc.in ${PROJECT_BINARY_DIR}/obs.rc)
 endif()
 
 if(MSVC AND NOT EXISTS "${CMAKE_BINARY_DIR}/ALL_BUILD.vcxproj.user")

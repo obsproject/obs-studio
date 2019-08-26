@@ -1,47 +1,30 @@
 <RCC>
   <qresource prefix="/res">
-    <file>images/mute.png</file>
-    <file>images/unmute.png</file>
-    <file>images/refresh.png</file>
-    <file>images/configuration21_16.png</file>
-    <file>images/configuration21_16@2x.png</file>
-    <file>images/invisible_mask.png</file>
-    <file>images/invisible_mask@2x.png</file>
-    <file>images/visible_mask.png</file>
-    <file>images/visible_mask@2x.png</file>
-    <file>images/list_remove.png</file>
-    <file>images/add.png</file>
-    <file>images/down.png</file>
-    <file>images/editscene.png</file>
-    <file>images/live.png</file>
-    <file>images/properties.png</file>
-    <file>images/properties@2x.png</file>
-    <file>images/up.png</file>
+    <file>images/media-pause.svg</file>
+    <file>images/mute.svg</file>
+    <file>images/refresh.svg</file>
+    <file>images/no_sources.svg</file>
+    <file>images/minus.svg</file>
+    <file>images/plus.svg</file>
+    <file>images/down.svg</file>
+    <file>images/up.svg</file>
     <file>images/obs.png</file>
     <file>images/tray_active.png</file>
-    <file>images/locked_mask.png</file>
-    <file>images/locked_mask@2x.png</file>
-    <file>images/unlocked_mask.png</file>
-    <file>images/unlocked_mask@2x.png</file>
-    <file>images/collapse.png</file>
-    <file>images/expand.png</file>
+    <file>images/expand.svg</file>
+    <file>images/unlocked.svg</file>
+    <file>images/locked.svg</file>
+    <file>images/invisible.svg</file>
+    <file>images/visible.svg</file>
+    <file>images/trash.svg</file>
+    <file>images/revert.svg</file>
   </qresource>
   <qresource prefix="/settings">
-    <file>images/settings/advanced.png</file>
-    <file>images/settings/advanced@2x.png</file>
-    <file>images/settings/network.png</file>
-    <file>images/settings/network@2x.png</file>
-    <file>images/settings/video-display-3.png</file>
-    <file>images/settings/video-display-3@2x.png</file>
-    <file>images/settings/decibel_audio_player.png</file>
-    <file>images/settings/decibel_audio_player@2x.png</file>
-    <file>images/settings/applications-system-2.png</file>
-    <file>images/settings/applications-system-2@2x.png</file>
-    <file>images/settings/system-settings-3.png</file>
-    <file>images/settings/system-settings-3@2x.png</file>
-    <file>images/settings/network-bluetooth.png</file>
-    <file>images/settings/network-bluetooth@2x.png</file>
-    <file>images/settings/preferences-desktop-keyboard-shortcuts.png</file>
-    <file>images/settings/preferences-desktop-keyboard-shortcuts@2x.png</file>
+    <file>images/settings/output.svg</file>
+    <file>images/settings/stream.svg</file>
+    <file>images/settings/advanced.svg</file>
+    <file>images/settings/video.svg</file>
+    <file>images/settings/audio.svg</file>
+    <file>images/settings/general.svg</file>
+    <file>images/settings/hotkeys.svg</file>
   </qresource>
 </RCC>

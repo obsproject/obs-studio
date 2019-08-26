@@ -4,7 +4,7 @@
 
 #ifdef _MSC_VER
 /* conversion from data/function pointer */
-#pragma warning(disable: 4152)
+#pragma warning(disable : 4152)
 #endif
 
 #include "../graphics-hook-info.h"
@@ -59,11 +59,13 @@ extern uint8_t *get_d3d1x_pixel_shader(size_t *size);
 extern bool rehook_gl(void);
 
 extern bool capture_init_shtex(struct shtex_data **data, HWND window,
-		uint32_t base_cx, uint32_t base_cy, uint32_t cx, uint32_t cy,
-		uint32_t format, bool flip, uintptr_t handle);
+			       uint32_t base_cx, uint32_t base_cy, uint32_t cx,
+			       uint32_t cy, uint32_t format, bool flip,
+			       uintptr_t handle);
 extern bool capture_init_shmem(struct shmem_data **data, HWND window,
-		uint32_t base_cx, uint32_t base_cy, uint32_t cx, uint32_t cy,
-		uint32_t pitch, uint32_t format, bool flip);
+			       uint32_t base_cx, uint32_t base_cy, uint32_t cx,
+			       uint32_t cy, uint32_t pitch, uint32_t format,
+			       bool flip);
 extern void capture_free(void);
 
 extern struct hook_info *global_hook_info;
@@ -80,12 +82,12 @@ struct vertex {
 static inline bool duplicate_handle(HANDLE *dst, HANDLE src)
 {
 	return !!DuplicateHandle(GetCurrentProcess(), src, GetCurrentProcess(),
-			dst, 0, false, DUPLICATE_SAME_ACCESS);
+				 dst, 0, false, DUPLICATE_SAME_ACCESS);
 }
 
 static inline void *get_offset_addr(HMODULE module, uint32_t offset)
 {
-	return (void*)((uintptr_t)module + (uintptr_t)offset);
+	return (void *)((uintptr_t)module + (uintptr_t)offset);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -121,7 +123,7 @@ static inline uint32_t module_size(HMODULE module)
 {
 	MODULEINFO info;
 	bool success = !!GetModuleInformation(GetCurrentProcess(), module,
-			&info, sizeof(info));
+					      &info, sizeof(info));
 	return success ? info.SizeOfImage : 0;
 }
 
@@ -160,8 +162,8 @@ static inline bool capture_active(void)
 static inline bool frame_ready(uint64_t interval)
 {
 	static uint64_t last_time = 0;
-	uint64_t        elapsed;
-	uint64_t        t;
+	uint64_t elapsed;
+	uint64_t t;
 
 	if (!interval) {
 		return true;
@@ -181,7 +183,7 @@ static inline bool frame_ready(uint64_t interval)
 static inline bool capture_ready(void)
 {
 	return capture_active() &&
-		frame_ready(global_hook_info->frame_interval);
+	       frame_ready(global_hook_info->frame_interval);
 }
 
 static inline bool capture_stopped(void)

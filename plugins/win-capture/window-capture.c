@@ -3,6 +3,8 @@
 #include "dc-capture.h"
 #include "window-helpers.h"
 
+/* clang-format off */
+
 #define TEXT_WINDOW_CAPTURE obs_module_text("WindowCapture")
 #define TEXT_WINDOW         obs_module_text("WindowCapture.Window")
 #define TEXT_MATCH_PRIORITY obs_module_text("WindowCapture.Priority")
@@ -12,31 +14,33 @@
 #define TEXT_CAPTURE_CURSOR obs_module_text("CaptureCursor")
 #define TEXT_COMPATIBILITY  obs_module_text("Compatibility")
 
+/* clang-format on */
+
 struct window_capture {
-	obs_source_t         *source;
+	obs_source_t *source;
 
-	char                 *title;
-	char                 *class;
-	char                 *executable;
+	char *title;
+	char *class;
+	char *executable;
 	enum window_priority priority;
-	bool                 cursor;
-	bool                 compatibility;
-	bool                 use_wildcards; /* TODO */
+	bool cursor;
+	bool compatibility;
+	bool use_wildcards; /* TODO */
 
-	struct dc_capture    capture;
+	struct dc_capture capture;
 
-	float                resize_timer;
-	float                check_window_timer;
-	float                cursor_check_time;
+	float resize_timer;
+	float check_window_timer;
+	float cursor_check_time;
 
-	HWND                 window;
-	RECT                 last_rect;
+	HWND window;
+	RECT last_rect;
 };
 
 static void update_settings(struct window_capture *wc, obs_data_t *s)
 {
-	const char *window     = obs_data_get_string(s, "window");
-	int        priority    = (int)obs_data_get_int(s, "priority");
+	const char *window = obs_data_get_string(s, "window");
+	int priority = (int)obs_data_get_int(s, "priority");
 
 	bfree(wc->title);
 	bfree(wc->class);
@@ -45,15 +49,15 @@ static void update_settings(struct window_capture *wc, obs_data_t *s)
 	build_window_strings(window, &wc->class, &wc->title, &wc->executable);
 
 	if (wc->title != NULL) {
-		blog(LOG_INFO, "[window-capture: '%s'] update settings:\n"
-				"\texecutable: %s",
-				obs_source_get_name(wc->source),
-				wc->executable);
+		blog(LOG_INFO,
+		     "[window-capture: '%s'] update settings:\n"
+		     "\texecutable: %s",
+		     obs_source_get_name(wc->source), wc->executable);
 		blog(LOG_DEBUG, "\tclass:      %s", wc->class);
 	}
 
-	wc->priority      = (enum window_priority)priority;
-	wc->cursor        = obs_data_get_bool(s, "cursor");
+	wc->priority = (enum window_priority)priority;
+	wc->cursor = obs_data_get_bool(s, "cursor");
 	wc->use_wildcards = obs_data_get_bool(s, "use_wildcards");
 	wc->compatibility = obs_data_get_bool(s, "compatibility");
 }
@@ -127,14 +131,15 @@ static obs_properties_t *wc_properties(void *unused)
 	obs_property_t *p;
 
 	p = obs_properties_add_list(ppts, "window", TEXT_WINDOW,
-			OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
+				    OBS_COMBO_TYPE_LIST,
+				    OBS_COMBO_FORMAT_STRING);
 	fill_window_list(p, EXCLUDE_MINIMIZED, NULL);
 
 	p = obs_properties_add_list(ppts, "priority", TEXT_MATCH_PRIORITY,
-			OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
+				    OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
 	obs_property_list_add_int(p, TEXT_MATCH_TITLE, WINDOW_PRIORITY_TITLE);
 	obs_property_list_add_int(p, TEXT_MATCH_CLASS, WINDOW_PRIORITY_CLASS);
-	obs_property_list_add_int(p, TEXT_MATCH_EXE,   WINDOW_PRIORITY_EXE);
+	obs_property_list_add_int(p, TEXT_MATCH_EXE, WINDOW_PRIORITY_EXE);
 
 	obs_properties_add_bool(ppts, "cursor", TEXT_CAPTURE_CURSOR);
 
@@ -170,7 +175,7 @@ static void wc_tick(void *data, float seconds)
 		wc->check_window_timer = 0.0f;
 
 		wc->window = find_window(EXCLUDE_MINIMIZED, wc->priority,
-				wc->class, wc->title, wc->executable);
+					 wc->class, wc->title, wc->executable);
 		if (!wc->window) {
 			if (wc->capture.valid)
 				dc_capture_free(&wc->capture);
@@ -188,13 +193,15 @@ static void wc_tick(void *data, float seconds)
 		DWORD foreground_pid, target_pid;
 
 		// Can't just compare the window handle in case of app with child windows
-		if (!GetWindowThreadProcessId(GetForegroundWindow(), &foreground_pid))
+		if (!GetWindowThreadProcessId(GetForegroundWindow(),
+					      &foreground_pid))
 			foreground_pid = 0;
 
 		if (!GetWindowThreadProcessId(wc->window, &target_pid))
 			target_pid = 0;
 
-		if (foreground_pid && target_pid && foreground_pid != target_pid)
+		if (foreground_pid && target_pid &&
+		    foreground_pid != target_pid)
 			wc->capture.cursor_hidden = true;
 		else
 			wc->capture.cursor_hidden = false;
@@ -211,7 +218,7 @@ static void wc_tick(void *data, float seconds)
 
 		if (wc->resize_timer >= RESIZE_CHECK_TIME) {
 			if (rect.bottom != wc->last_rect.bottom ||
-			    rect.right  != wc->last_rect.right)
+			    rect.right != wc->last_rect.right)
 				reset_capture = true;
 
 			wc->resize_timer = 0.0f;
@@ -239,17 +246,17 @@ static void wc_render(void *data, gs_effect_t *effect)
 }
 
 struct obs_source_info window_capture_info = {
-	.id             = "window_capture",
-	.type           = OBS_SOURCE_TYPE_INPUT,
-	.output_flags   = OBS_SOURCE_VIDEO | OBS_SOURCE_CUSTOM_DRAW,
-	.get_name       = wc_getname,
-	.create         = wc_create,
-	.destroy        = wc_destroy,
-	.update         = wc_update,
-	.video_render   = wc_render,
-	.video_tick     = wc_tick,
-	.get_width      = wc_width,
-	.get_height     = wc_height,
-	.get_defaults   = wc_defaults,
-	.get_properties = wc_properties
+	.id = "window_capture",
+	.type = OBS_SOURCE_TYPE_INPUT,
+	.output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_CUSTOM_DRAW,
+	.get_name = wc_getname,
+	.create = wc_create,
+	.destroy = wc_destroy,
+	.update = wc_update,
+	.video_render = wc_render,
+	.video_tick = wc_tick,
+	.get_width = wc_width,
+	.get_height = wc_height,
+	.get_defaults = wc_defaults,
+	.get_properties = wc_properties,
 };

@@ -36,6 +36,7 @@ set(mac-decklink_HEADERS
 	../decklink-device-mode.hpp
 	../audio-repack.h
 	../audio-repack.hpp
+	../util.hpp
 	)
 
 set(mac-decklink_SOURCES
@@ -52,6 +53,7 @@ set(mac-decklink_SOURCES
 	../decklink-device-mode.cpp
 	../audio-repack.c
 	platform.cpp
+	../util.cpp
 	)
 
 list(APPEND decklink_HEADERS ${decklink_UI_HEADERS})

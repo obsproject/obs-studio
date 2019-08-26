@@ -39,8 +39,8 @@
 
 struct resize_buf {
 	uint8_t *buf;
-	size_t  size;
-	size_t  capacity;
+	size_t size;
+	size_t capacity;
 };
 
 static inline void resize_buf_resize(struct resize_buf *rb, size_t size)
@@ -96,15 +96,15 @@ struct header {
 };
 
 struct ffmpeg_mux {
-	AVFormatContext        *output;
-	AVStream               *video_stream;
-	AVStream               **audio_streams;
-	struct main_params     params;
-	struct audio_params    *audio;
-	struct header          video_header;
-	struct header          *audio_header;
-	int                    num_audio_streams;
-	bool                   initialized;
+	AVFormatContext *output;
+	AVStream *video_stream;
+	AVStream **audio_streams;
+	struct main_params params;
+	struct audio_params *audio;
+	struct header video_header;
+	struct header *audio_header;
+	int num_audio_streams;
+	bool initialized;
 	char error[4096];
 };
 
@@ -158,7 +158,7 @@ static void ffmpeg_mux_free(struct ffmpeg_mux *ffm)
 }
 
 static bool get_opt_str(int *p_argc, char ***p_argv, char **str,
-		const char *opt)
+			const char *opt)
 {
 	int argc = *p_argc;
 	char **argv = *p_argv;
@@ -187,7 +187,7 @@ static bool get_opt_int(int *p_argc, char ***p_argv, int *i, const char *opt)
 }
 
 static bool get_audio_params(struct audio_params *audio, int *argc,
-		char ***argv)
+			     char ***argv)
 {
 	if (!get_opt_str(argc, argv, &audio->name, "audio track name"))
 		return false;
@@ -201,7 +201,7 @@ static bool get_audio_params(struct audio_params *audio, int *argc,
 }
 
 static bool init_params(int *argc, char ***argv, struct main_params *params,
-		struct audio_params **p_audio)
+			struct audio_params **p_audio)
 {
 	struct audio_params *audio = NULL;
 
@@ -228,7 +228,8 @@ static bool init_params(int *argc, char ***argv, struct main_params *params,
 	if (params->has_video) {
 		if (!get_opt_str(argc, argv, &params->vcodec, "video codec"))
 			return false;
-		if (!get_opt_int(argc, argv, &params->vbitrate,"video bitrate"))
+		if (!get_opt_int(argc, argv, &params->vbitrate,
+				 "video bitrate"))
 			return false;
 		if (!get_opt_int(argc, argv, &params->width, "video width"))
 			return false;
@@ -262,13 +263,13 @@ static bool init_params(int *argc, char ***argv, struct main_params *params,
 }
 
 static bool new_stream(struct ffmpeg_mux *ffm, AVStream **stream,
-		const char *name, enum AVCodecID *id)
+		       const char *name, enum AVCodecID *id)
 {
 	const AVCodecDescriptor *desc = avcodec_descriptor_get_by_name(name);
 	AVCodec *codec;
 
 	if (!desc) {
-		printf("Couldn't find encoder '%s'\n", name);
+		fprintf(stderr, "Couldn't find encoder '%s'\n", name);
 		return false;
 	}
 
@@ -276,17 +277,18 @@ static bool new_stream(struct ffmpeg_mux *ffm, AVStream **stream,
 
 	codec = avcodec_find_encoder(desc->id);
 	if (!codec) {
-		printf("Couldn't create encoder");
+		fprintf(stderr, "Couldn't create encoder");
 		return false;
 	}
 
 	*stream = avformat_new_stream(ffm->output, codec);
 	if (!*stream) {
-		printf("Couldn't create stream for encoder '%s'\n", name);
+		fprintf(stderr, "Couldn't create stream for encoder '%s'\n",
+			name);
 		return false;
 	}
 
-	(*stream)->id = ffm->output->nb_streams-1;
+	(*stream)->id = ffm->output->nb_streams - 1;
 	return true;
 }
 
@@ -296,21 +298,21 @@ static void create_video_stream(struct ffmpeg_mux *ffm)
 	void *extradata = NULL;
 
 	if (!new_stream(ffm, &ffm->video_stream, ffm->params.vcodec,
-				&ffm->output->oformat->video_codec))
+			&ffm->output->oformat->video_codec))
 		return;
 
 	if (ffm->video_header.size) {
 		extradata = av_memdup(ffm->video_header.data,
-				ffm->video_header.size);
+				      ffm->video_header.size);
 	}
 
-	context                 = ffm->video_stream->codec;
-	context->bit_rate       = ffm->params.vbitrate * 1000;
-	context->width          = ffm->params.width;
-	context->height         = ffm->params.height;
-	context->coded_width    = ffm->params.width;
-	context->coded_height   = ffm->params.height;
-	context->extradata      = extradata;
+	context = ffm->video_stream->codec;
+	context->bit_rate = ffm->params.vbitrate * 1000;
+	context->width = ffm->params.width;
+	context->height = ffm->params.height;
+	context->coded_width = ffm->params.width;
+	context->coded_height = ffm->params.height;
+	context->extradata = extradata;
 	context->extradata_size = ffm->video_header.size;
 	context->time_base =
 		(AVRational){ffm->params.fps_den, ffm->params.fps_num};
@@ -329,7 +331,7 @@ static void create_audio_stream(struct ffmpeg_mux *ffm, int idx)
 	void *extradata = NULL;
 
 	if (!new_stream(ffm, &stream, ffm->params.acodec,
-				&ffm->output->oformat->audio_codec))
+			&ffm->output->oformat->audio_codec))
 		return;
 
 	ffm->audio_streams[idx] = stream;
@@ -340,19 +342,19 @@ static void create_audio_stream(struct ffmpeg_mux *ffm, int idx)
 
 	if (ffm->audio_header[idx].size) {
 		extradata = av_memdup(ffm->audio_header[idx].data,
-				ffm->audio_header[idx].size);
+				      ffm->audio_header[idx].size);
 	}
 
-	context                 = stream->codec;
-	context->bit_rate       = ffm->audio[idx].abitrate * 1000;
-	context->channels       = ffm->audio[idx].channels;
-	context->sample_rate    = ffm->audio[idx].sample_rate;
-	context->sample_fmt     = AV_SAMPLE_FMT_S16;
-	context->time_base      = stream->time_base;
-	context->extradata      = extradata;
+	context = stream->codec;
+	context->bit_rate = ffm->audio[idx].abitrate * 1000;
+	context->channels = ffm->audio[idx].channels;
+	context->sample_rate = ffm->audio[idx].sample_rate;
+	context->sample_fmt = AV_SAMPLE_FMT_S16;
+	context->time_base = stream->time_base;
+	context->extradata = extradata;
 	context->extradata_size = ffm->audio_header[idx].size;
 	context->channel_layout =
-			av_get_default_channel_layout(context->channels);
+		av_get_default_channel_layout(context->channels);
 	//AVlib default channel layout for 4 channels is 4.0 ; fix for quad
 	if (context->channels == 4)
 		context->channel_layout = av_get_channel_layout("quad");
@@ -372,7 +374,7 @@ static bool init_streams(struct ffmpeg_mux *ffm)
 
 	if (ffm->params.tracks) {
 		ffm->audio_streams =
-			calloc(1, ffm->params.tracks * sizeof(void*));
+			calloc(1, ffm->params.tracks * sizeof(void *));
 
 		for (int i = 0; i < ffm->params.tracks; i++)
 			create_audio_stream(ffm, i);
@@ -392,20 +394,20 @@ static void set_header(struct header *header, uint8_t *data, size_t size)
 }
 
 static void ffmpeg_mux_header(struct ffmpeg_mux *ffm, uint8_t *data,
-		struct ffm_packet_info *info)
+			      struct ffm_packet_info *info)
 {
 	if (info->type == FFM_PACKET_VIDEO) {
 		set_header(&ffm->video_header, data, (size_t)info->size);
 	} else {
 		set_header(&ffm->audio_header[info->index], data,
-				(size_t)info->size);
+			   (size_t)info->size);
 	}
 }
 
 static size_t safe_read(void *vdata, size_t size)
 {
 	uint8_t *data = vdata;
-	size_t  total = size;
+	size_t total = size;
 
 	while (size > 0) {
 		size_t in_size = fread(data, 1, size, stdin);
@@ -469,21 +471,21 @@ static inline int open_output_file(struct ffmpeg_mux *ffm)
 		ret = avio_open(&ffm->output->pb, ffm->params.file,
 				AVIO_FLAG_WRITE);
 		if (ret < 0) {
-			printf("Couldn't open '%s', %s",
-					ffm->params.file, av_err2str(ret));
+			fprintf(stderr, "Couldn't open '%s', %s",
+				ffm->params.file, av_err2str(ret));
 			return FFM_ERROR;
 		}
 	}
 
 	strncpy(ffm->output->filename, ffm->params.file,
-			sizeof(ffm->output->filename));
+		sizeof(ffm->output->filename));
 	ffm->output->filename[sizeof(ffm->output->filename) - 1] = 0;
 
 	AVDictionary *dict = NULL;
-	if ((ret = av_dict_parse_string(&dict, ffm->params.muxer_settings,
-				"=", " ", 0))) {
-		printf("Failed to parse muxer settings: %s\n%s",
-				av_err2str(ret), ffm->params.muxer_settings);
+	if ((ret = av_dict_parse_string(&dict, ffm->params.muxer_settings, "=",
+					" ", 0))) {
+		fprintf(stderr, "Failed to parse muxer settings: %s\n%s",
+			av_err2str(ret), ffm->params.muxer_settings);
 
 		av_dict_free(&dict);
 	}
@@ -493,7 +495,7 @@ static inline int open_output_file(struct ffmpeg_mux *ffm)
 
 		AVDictionaryEntry *entry = NULL;
 		while ((entry = av_dict_get(dict, "", entry,
-						AV_DICT_IGNORE_SUFFIX)))
+					    AV_DICT_IGNORE_SUFFIX)))
 			printf("\n\t%s=%s", entry->key, entry->value);
 
 		printf("\n");
@@ -501,8 +503,8 @@ static inline int open_output_file(struct ffmpeg_mux *ffm)
 
 	ret = avformat_write_header(ffm->output, &dict);
 	if (ret < 0) {
-		printf("Error opening '%s': %s",
-				ffm->params.file, av_err2str(ret));
+		fprintf(stderr, "Error opening '%s': %s", ffm->params.file,
+			av_err2str(ret));
 
 		av_dict_free(&dict);
 
@@ -521,16 +523,16 @@ static int ffmpeg_mux_init_context(struct ffmpeg_mux *ffm)
 
 	output_format = av_guess_format(NULL, ffm->params.file, NULL);
 	if (output_format == NULL) {
-		printf("Couldn't find an appropriate muxer for '%s'\n",
-				ffm->params.file);
+		fprintf(stderr, "Couldn't find an appropriate muxer for '%s'\n",
+			ffm->params.file);
 		return FFM_ERROR;
 	}
 
-	ret = avformat_alloc_output_context2(&ffm->output, output_format,
-			NULL, NULL);
+	ret = avformat_alloc_output_context2(&ffm->output, output_format, NULL,
+					     NULL);
 	if (ret < 0) {
-		printf("Couldn't initialize output context: %s\n",
-				av_err2str(ret));
+		fprintf(stderr, "Couldn't initialize output context: %s\n",
+			av_err2str(ret));
 		return FFM_ERROR;
 	}
 
@@ -552,7 +554,7 @@ static int ffmpeg_mux_init_context(struct ffmpeg_mux *ffm)
 }
 
 static int ffmpeg_mux_init_internal(struct ffmpeg_mux *ffm, int argc,
-		char *argv[])
+				    char *argv[])
 {
 	argc--;
 	argv++;
@@ -564,7 +566,9 @@ static int ffmpeg_mux_init_internal(struct ffmpeg_mux *ffm, int argc,
 			calloc(1, sizeof(struct header) * ffm->params.tracks);
 	}
 
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58, 9, 100)
 	av_register_all();
+#endif
 
 	if (!ffmpeg_mux_get_extra_data(ffm))
 		return FFM_ERROR;
@@ -587,7 +591,7 @@ static int ffmpeg_mux_init(struct ffmpeg_mux *ffm, int argc, char *argv[])
 }
 
 static inline int get_index(struct ffmpeg_mux *ffm,
-		struct ffm_packet_info *info)
+			    struct ffm_packet_info *info)
 {
 	if (info->type == FFM_PACKET_VIDEO) {
 		if (ffm->video_stream) {
@@ -612,12 +616,12 @@ static inline int64_t rescale_ts(struct ffmpeg_mux *ffm, int64_t val, int idx)
 	AVStream *stream = get_stream(ffm, idx);
 
 	return av_rescale_q_rnd(val / stream->codec->time_base.num,
-			stream->codec->time_base, stream->time_base,
-			AV_ROUND_NEAR_INF | AV_ROUND_PASS_MINMAX);
+				stream->codec->time_base, stream->time_base,
+				AV_ROUND_NEAR_INF | AV_ROUND_PASS_MINMAX);
 }
 
 static inline bool ffmpeg_mux_packet(struct ffmpeg_mux *ffm, uint8_t *buf,
-		struct ffm_packet_info *info)
+				     struct ffm_packet_info *info)
 {
 	int idx = get_index(ffm, info);
 	AVPacket packet = {0};
@@ -627,7 +631,7 @@ static inline bool ffmpeg_mux_packet(struct ffmpeg_mux *ffm, uint8_t *buf,
 		return true;
 	}
 
-        av_init_packet(&packet);
+	av_init_packet(&packet);
 
 	packet.data = buf;
 	packet.size = (int)info->size;
@@ -660,16 +664,16 @@ int main(int argc, char *argv[])
 
 	SetErrorMode(SEM_FAILCRITICALERRORS);
 
-	argv = malloc(argc * sizeof(char*));
+	argv = malloc(argc * sizeof(char *));
 	for (int i = 0; i < argc; i++) {
 		size_t len = wcslen(argv_w[i]);
 		int size;
 
 		size = WideCharToMultiByte(CP_UTF8, 0, argv_w[i], (int)len,
-				NULL, 0, NULL, NULL);
+					   NULL, 0, NULL, NULL);
 		argv[i] = malloc(size + 1);
 		WideCharToMultiByte(CP_UTF8, 0, argv_w[i], (int)len, argv[i],
-				size + 1, NULL, NULL);
+				    size + 1, NULL, NULL);
 		argv[i][size] = 0;
 	}
 
@@ -679,7 +683,7 @@ int main(int argc, char *argv[])
 
 	ret = ffmpeg_mux_init(&ffm, argc, argv);
 	if (ret != FFM_SUCCESS) {
-		puts("Couldn't initialize muxer");
+		fprintf(stderr, "Couldn't initialize muxer\n");
 		return ret;
 	}
 

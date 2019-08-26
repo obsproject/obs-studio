@@ -1,5 +1,5 @@
 /* -LICENSE-START-
-** Copyright (c) 2016 Blackmagic Design
+** Copyright (c) 2018 Blackmagic Design
 **
 ** Permission is hereby granted, free of charge, to any person or organization
 ** obtaining a copy of the software and accompanying documentation covered by
@@ -71,6 +71,7 @@ BMD_CONST REFIID IID_IDeckLinkIterator                            = /* 50FB36CD-
 BMD_CONST REFIID IID_IDeckLinkAPIInformation                      = /* 7BEA3C68-730D-4322-AF34-8A7152B532A4 */ {0x7B,0xEA,0x3C,0x68,0x73,0x0D,0x43,0x22,0xAF,0x34,0x8A,0x71,0x52,0xB5,0x32,0xA4};
 BMD_CONST REFIID IID_IDeckLinkOutput                              = /* CC5C8A6E-3F2F-4B3A-87EA-FD78AF300564 */ {0xCC,0x5C,0x8A,0x6E,0x3F,0x2F,0x4B,0x3A,0x87,0xEA,0xFD,0x78,0xAF,0x30,0x05,0x64};
 BMD_CONST REFIID IID_IDeckLinkInput                               = /* AF22762B-DFAC-4846-AA79-FA8883560995 */ {0xAF,0x22,0x76,0x2B,0xDF,0xAC,0x48,0x46,0xAA,0x79,0xFA,0x88,0x83,0x56,0x09,0x95};
+BMD_CONST REFIID IID_IDeckLinkHDMIInputEDID                       = /* ABBBACBC-45BC-4665-9D92-ACE6E5A97902 */ {0xAB,0xBB,0xAC,0xBC,0x45,0xBC,0x46,0x65,0x9D,0x92,0xAC,0xE6,0xE5,0xA9,0x79,0x02};
 BMD_CONST REFIID IID_IDeckLinkEncoderInput                        = /* 270587DA-6B7D-42E7-A1F0-6D853F581185 */ {0x27,0x05,0x87,0xDA,0x6B,0x7D,0x42,0xE7,0xA1,0xF0,0x6D,0x85,0x3F,0x58,0x11,0x85};
 BMD_CONST REFIID IID_IDeckLinkVideoFrame                          = /* 3F716FE0-F023-4111-BE5D-EF4414C05B17 */ {0x3F,0x71,0x6F,0xE0,0xF0,0x23,0x41,0x11,0xBE,0x5D,0xEF,0x44,0x14,0xC0,0x5B,0x17};
 BMD_CONST REFIID IID_IDeckLinkMutableVideoFrame                   = /* 69E2639F-40DA-4E19-B6F2-20ACE815C390 */ {0x69,0xE2,0x63,0x9F,0x40,0xDA,0x4E,0x19,0xB6,0xF2,0x20,0xAC,0xE8,0x15,0xC3,0x90};
@@ -354,10 +355,36 @@ enum _BMDDeviceInterface {
     bmdDeviceInterfaceThunderbolt                                = 'thun'
 };
 
+/* Enum BMDColorspace - Colorspace */
+
+typedef uint32_t BMDColorspace;
+enum _BMDColorspace {
+    bmdColorspaceRec601                                          = 'r601',
+    bmdColorspaceRec709                                          = 'r709',
+    bmdColorspaceRec2020                                         = '2020'
+};
+
+/* Enum BMDDynamicRange - SDR or HDR */
+
+typedef uint32_t BMDDynamicRange;
+enum _BMDDynamicRange {
+    bmdDynamicRangeSDR                                           = 0,
+    bmdDynamicRangeHDRStaticPQ                                   = 1 << 29,	// SMPTE ST 2084
+    bmdDynamicRangeHDRStaticHLG                                  = 1 << 30	// ITU-R BT.2100-0
+};
+
+/* Enum BMDDeckLinkHDMIInputEDIDID - DeckLink HDMI Input EDID ID */
+
+typedef uint32_t BMDDeckLinkHDMIInputEDIDID;
+enum _BMDDeckLinkHDMIInputEDIDID {
+    bmdDeckLinkHDMIInputEDIDDynamicRange                         = 'HIDy'	// Parameter is of type BMDDynamicRange. Default is (bmdDynamicRangeSDR|bmdDynamicRangeHDRStaticPQ)
+};
+
 /* Enum BMDDeckLinkFrameMetadataID - DeckLink Frame Metadata ID */
 
 typedef uint32_t BMDDeckLinkFrameMetadataID;
 enum _BMDDeckLinkFrameMetadataID {
+    bmdDeckLinkFrameMetadataColorspace                           = 'cspc',	// Colorspace of video frame (see BMDColorspace)
     bmdDeckLinkFrameMetadataHDRElectroOpticalTransferFunc        = 'eotf',	// EOTF in range 0-7 as per CEA 861.3
     bmdDeckLinkFrameMetadataCintelFilmType                       = 'cfty',	// Current film type
     bmdDeckLinkFrameMetadataCintelFilmGauge                      = 'cfga',	// Current film gauge
@@ -447,6 +474,7 @@ enum _BMDDeckLinkAttributeID {
     BMDDeckLinkHasLTCTimecodeInput                               = 'hltc',
     BMDDeckLinkSupportsDuplexModeConfiguration                   = 'dupx',
     BMDDeckLinkSupportsHDRMetadata                               = 'hdrm',
+    BMDDeckLinkSupportsColorspaceMetadata                        = 'cmet',
 
     /* Integers */
 
@@ -602,6 +630,7 @@ class IDeckLinkIterator;
 class IDeckLinkAPIInformation;
 class IDeckLinkOutput;
 class IDeckLinkInput;
+class IDeckLinkHDMIInputEDID;
 class IDeckLinkEncoderInput;
 class IDeckLinkVideoFrame;
 class IDeckLinkMutableVideoFrame;
@@ -802,6 +831,19 @@ public:
 
 protected:
     virtual ~IDeckLinkInput () {} // call Release method to drop reference count
+};
+
+/* Interface IDeckLinkHDMIInputEDID - Created by QueryInterface from IDeckLink. Releasing all references will restore EDID to default */
+
+class BMD_PUBLIC IDeckLinkHDMIInputEDID : public IUnknown
+{
+public:
+    virtual HRESULT SetInt (/* in */ BMDDeckLinkHDMIInputEDIDID cfgID, /* in */ int64_t value) = 0;
+    virtual HRESULT GetInt (/* in */ BMDDeckLinkHDMIInputEDIDID cfgID, /* out */ int64_t *value) = 0;
+    virtual HRESULT WriteToEDID (void) = 0;
+
+protected:
+    virtual ~IDeckLinkHDMIInputEDID () {} // call Release method to drop reference count
 };
 
 /* Interface IDeckLinkEncoderInput - Created by QueryInterface from IDeckLink. */

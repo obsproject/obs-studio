@@ -35,7 +35,7 @@ set(libdshowcapture_SOURCES
 
 set(libdshowcapture_HEADERS
 	libdshowcapture/dshowcapture.hpp
-	libdshowcapture/source/IVideoCaptureFilter.h
+	libdshowcapture/source/external/IVideoCaptureFilter.h
 	libdshowcapture/source/capture-filter.hpp
 	libdshowcapture/source/output-filter.hpp
 	libdshowcapture/source/device.hpp

@@ -5,13 +5,15 @@
 
 #include "cursor-capture.h"
 
-#define do_log(level, format, ...) \
+#define do_log(level, format, ...)                                \
 	blog(level, "[duplicator-monitor-capture: '%s'] " format, \
-			obs_source_get_name(capture->source), ##__VA_ARGS__)
+	     obs_source_get_name(capture->source), ##__VA_ARGS__)
 
-#define warn(format, ...)  do_log(LOG_WARNING, format, ##__VA_ARGS__)
-#define info(format, ...)  do_log(LOG_INFO,    format, ##__VA_ARGS__)
-#define debug(format, ...) do_log(LOG_DEBUG,   format, ##__VA_ARGS__)
+#define warn(format, ...) do_log(LOG_WARNING, format, ##__VA_ARGS__)
+#define info(format, ...) do_log(LOG_INFO, format, ##__VA_ARGS__)
+#define debug(format, ...) do_log(LOG_DEBUG, format, ##__VA_ARGS__)
+
+/* clang-format off */
 
 #define TEXT_MONITOR_CAPTURE obs_module_text("MonitorCapture")
 #define TEXT_CAPTURE_CURSOR  obs_module_text("CaptureCursor")
@@ -19,30 +21,32 @@
 #define TEXT_MONITOR         obs_module_text("Monitor")
 #define TEXT_PRIMARY_MONITOR obs_module_text("PrimaryMonitor")
 
+/* clang-format on */
+
 #define RESET_INTERVAL_SEC 3.0f
 
 struct duplicator_capture {
-	obs_source_t                   *source;
-	int                            monitor;
-	bool                           capture_cursor;
-	bool                           showing;
+	obs_source_t *source;
+	int monitor;
+	bool capture_cursor;
+	bool showing;
 
-	long                           x;
-	long                           y;
-	int                            rot;
-	uint32_t                       width;
-	uint32_t                       height;
-	gs_duplicator_t                *duplicator;
-	float                          reset_timeout;
-	struct cursor_data             cursor_data;
+	long x;
+	long y;
+	int rot;
+	uint32_t width;
+	uint32_t height;
+	gs_duplicator_t *duplicator;
+	float reset_timeout;
+	struct cursor_data cursor_data;
 };
 
 /* ------------------------------------------------------------------------- */
 
 static inline void update_settings(struct duplicator_capture *capture,
-		obs_data_t *settings)
+				   obs_data_t *settings)
 {
-	capture->monitor        = (int)obs_data_get_int(settings, "monitor");
+	capture->monitor = (int)obs_data_get_int(settings, "monitor");
 	capture->capture_cursor = obs_data_get_bool(settings, "capture_cursor");
 
 	obs_enter_graphics();
@@ -94,7 +98,7 @@ static void duplicator_capture_update(void *data, obs_data_t *settings)
 }
 
 static void *duplicator_capture_create(obs_data_t *settings,
-		obs_source_t *source)
+				       obs_source_t *source)
 {
 	struct duplicator_capture *capture;
 
@@ -148,7 +152,7 @@ static void duplicator_capture_tick(void *data, float seconds)
 		}
 		return;
 
-	/* always try to load the capture immediately when the source is first
+		/* always try to load the capture immediately when the source is first
 	 * shown */
 	} else if (!capture->showing) {
 		capture->reset_timeout = RESET_INTERVAL_SEC;
@@ -201,10 +205,9 @@ static uint32_t duplicator_capture_height(void *data)
 
 static void draw_cursor(struct duplicator_capture *capture)
 {
-	cursor_draw(&capture->cursor_data, -capture->x, -capture->y,
-		1.0f, 1.0f,
-		capture->rot % 180 == 0 ? capture->width : capture->height,
-		capture->rot % 180 == 0 ? capture->height : capture->width);
+	cursor_draw(&capture->cursor_data, -capture->x, -capture->y, 1.0f, 1.0f,
+		    capture->rot % 180 == 0 ? capture->width : capture->height,
+		    capture->rot % 180 == 0 ? capture->height : capture->width);
 }
 
 static void duplicator_capture_render(void *data, gs_effect_t *effect)
@@ -270,12 +273,11 @@ static bool get_monitor_props(obs_property_t *monitor_list, int monitor_idx)
 	if (!gs_get_duplicator_monitor_info(monitor_idx, &info))
 		return false;
 
-	dstr_catf(&monitor_desc, "%s %d: %ldx%ld @ %ld,%ld",
-			TEXT_MONITOR, monitor_idx + 1,
-			info.cx, info.cy, info.x, info.y);
+	dstr_catf(&monitor_desc, "%s %d: %ldx%ld @ %ld,%ld", TEXT_MONITOR,
+		  monitor_idx + 1, info.cx, info.cy, info.x, info.y);
 
 	obs_property_list_add_int(monitor_list, monitor_desc.array,
-			monitor_idx);
+				  monitor_idx);
 
 	dstr_free(&monitor_desc);
 
@@ -290,15 +292,16 @@ static obs_properties_t *duplicator_capture_properties(void *unused)
 
 	obs_properties_t *props = obs_properties_create();
 
-	obs_property_t *monitors = obs_properties_add_list(props,
-		"monitor", TEXT_MONITOR,
-		OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
+	obs_property_t *monitors = obs_properties_add_list(
+		props, "monitor", TEXT_MONITOR, OBS_COMBO_TYPE_LIST,
+		OBS_COMBO_FORMAT_INT);
 
 	obs_properties_add_bool(props, "capture_cursor", TEXT_CAPTURE_CURSOR);
 
 	obs_enter_graphics();
 
-	while (get_monitor_props(monitors, monitor_idx++));
+	while (get_monitor_props(monitors, monitor_idx++))
+		;
 
 	obs_leave_graphics();
 
@@ -306,18 +309,18 @@ static obs_properties_t *duplicator_capture_properties(void *unused)
 }
 
 struct obs_source_info duplicator_capture_info = {
-	.id             = "monitor_capture",
-	.type           = OBS_SOURCE_TYPE_INPUT,
-	.output_flags   = OBS_SOURCE_VIDEO | OBS_SOURCE_CUSTOM_DRAW |
-	                  OBS_SOURCE_DO_NOT_DUPLICATE,
-	.get_name       = duplicator_capture_getname,
-	.create         = duplicator_capture_create,
-	.destroy        = duplicator_capture_destroy,
-	.video_render   = duplicator_capture_render,
-	.video_tick     = duplicator_capture_tick,
-	.update         = duplicator_capture_update,
-	.get_width      = duplicator_capture_width,
-	.get_height     = duplicator_capture_height,
-	.get_defaults   = duplicator_capture_defaults,
-	.get_properties = duplicator_capture_properties
+	.id = "monitor_capture",
+	.type = OBS_SOURCE_TYPE_INPUT,
+	.output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_CUSTOM_DRAW |
+			OBS_SOURCE_DO_NOT_DUPLICATE,
+	.get_name = duplicator_capture_getname,
+	.create = duplicator_capture_create,
+	.destroy = duplicator_capture_destroy,
+	.video_render = duplicator_capture_render,
+	.video_tick = duplicator_capture_tick,
+	.update = duplicator_capture_update,
+	.get_width = duplicator_capture_width,
+	.get_height = duplicator_capture_height,
+	.get_defaults = duplicator_capture_defaults,
+	.get_properties = duplicator_capture_properties,
 };

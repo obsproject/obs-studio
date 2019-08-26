@@ -44,8 +44,8 @@
        </property>
        <property name="iconSize">
         <size>
-         <width>48</width>
-         <height>48</height>
+         <width>32</width>
+         <height>32</height>
         </size>
        </property>
        <property name="currentRow">
@@ -57,7 +57,7 @@
         </property>
         <property name="icon">
          <iconset resource="obs.qrc">
-          <normaloff>:/settings/images/settings/system-settings-3.png</normaloff>:/settings/images/settings/system-settings-3.png</iconset>
+          <normaloff>:/settings/images/settings/general.svg</normaloff>:/settings/images/settings/general.svg</iconset>
         </property>
        </item>
        <item>
@@ -66,7 +66,7 @@
         </property>
         <property name="icon">
          <iconset resource="obs.qrc">
-          <normaloff>:/settings/images/settings/network.png</normaloff>:/settings/images/settings/network.png</iconset>
+          <normaloff>:/settings/images/settings/stream.svg</normaloff>:/settings/images/settings/stream.svg</iconset>
         </property>
        </item>
        <item>
@@ -75,7 +75,7 @@
         </property>
         <property name="icon">
          <iconset resource="obs.qrc">
-          <normaloff>:/settings/images/settings/network-bluetooth.png</normaloff>:/settings/images/settings/network-bluetooth.png</iconset>
+          <normaloff>:/settings/images/settings/output.svg</normaloff>:/settings/images/settings/output.svg</iconset>
         </property>
        </item>
        <item>
@@ -84,7 +84,7 @@
         </property>
         <property name="icon">
          <iconset resource="obs.qrc">
-          <normaloff>:/settings/images/settings/decibel_audio_player.png</normaloff>:/settings/images/settings/decibel_audio_player.png</iconset>
+          <normaloff>:/settings/images/settings/audio.svg</normaloff>:/settings/images/settings/audio.svg</iconset>
         </property>
        </item>
        <item>
@@ -93,7 +93,7 @@
         </property>
         <property name="icon">
          <iconset resource="obs.qrc">
-          <normaloff>:/settings/images/settings/video-display-3.png</normaloff>:/settings/images/settings/video-display-3.png</iconset>
+          <normaloff>:/settings/images/settings/video.svg</normaloff>:/settings/images/settings/video.svg</iconset>
         </property>
        </item>
        <item>
@@ -102,7 +102,7 @@
         </property>
         <property name="icon">
          <iconset resource="obs.qrc">
-          <normaloff>:/settings/images/settings/preferences-desktop-keyboard-shortcuts.png</normaloff>:/settings/images/settings/preferences-desktop-keyboard-shortcuts.png</iconset>
+          <normaloff>:/settings/images/settings/hotkeys.svg</normaloff>:/settings/images/settings/hotkeys.svg</iconset>
         </property>
        </item>
        <item>
@@ -111,7 +111,7 @@
         </property>
         <property name="icon">
          <iconset resource="obs.qrc">
-          <normaloff>:/settings/images/settings/advanced.png</normaloff>:/settings/images/settings/advanced.png</iconset>
+          <normaloff>:/settings/images/settings/advanced.svg</normaloff>:/settings/images/settings/advanced.svg</iconset>
         </property>
        </item>
       </widget>
@@ -137,6 +137,12 @@
          </property>
          <item>
           <widget class="QScrollArea" name="scrollArea_2">
+           <property name="frameShape">
+            <enum>QFrame::NoFrame</enum>
+           </property>
+           <property name="frameShadow">
+            <enum>QFrame::Plain</enum>
+           </property>
            <property name="widgetResizable">
             <bool>true</bool>
            </property>
@@ -145,8 +151,8 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>801</width>
-              <height>836</height>
+              <width>803</width>
+              <height>977</height>
              </rect>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_19">
@@ -285,13 +291,20 @@
                     </widget>
                    </item>
                    <item row="2" column="1">
+                    <widget class="QCheckBox" name="warnBeforeRecordStop">
+                     <property name="text">
+                      <string>Basic.Settings.General.WarnBeforeStoppingRecord</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="3" column="1">
                     <widget class="QCheckBox" name="recordWhenStreaming">
                      <property name="text">
                       <string>Basic.Settings.General.RecordWhenStreaming</string>
                      </property>
                     </widget>
                    </item>
-                   <item row="3" column="1">
+                   <item row="4" column="1">
                     <widget class="QCheckBox" name="keepRecordStreamStops">
                      <property name="enabled">
                       <bool>false</bool>
@@ -301,14 +314,14 @@
                      </property>
                     </widget>
                    </item>
-                   <item row="4" column="1">
+                   <item row="5" column="1">
                     <widget class="QCheckBox" name="replayWhileStreaming">
                      <property name="text">
                       <string>Basic.Settings.General.ReplayBufferWhileStreaming</string>
                      </property>
                     </widget>
                    </item>
-                   <item row="5" column="1">
+                   <item row="6" column="1">
                     <widget class="QCheckBox" name="keepReplayStreamStops">
                      <property name="enabled">
                       <bool>false</bool>
@@ -631,6 +644,16 @@
                     <widget class="QCheckBox" name="studioPortraitLayout">
                      <property name="text">
                       <string>Basic.Settings.General.StudioPortraitLayout</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="2" column="1">
+                    <widget class="QCheckBox" name="prevProgLabelToggle">
+                     <property name="text">
+                      <string>Basic.Settings.General.TogglePreviewProgramLabels</string>
+                     </property>
+                     <property name="checked">
+                      <bool>true</bool>
                      </property>
                     </widget>
                    </item>
@@ -1052,6 +1075,75 @@
                </item>
               </layout>
              </item>
+             <item row="5" column="1">
+              <widget class="QCheckBox" name="useAuth">
+               <property name="text">
+                <string>Basic.Settings.Stream.Custom.UseAuthentication</string>
+               </property>
+              </widget>
+             </item>
+             <item row="6" column="1">
+              <widget class="QLineEdit" name="authUsername"/>
+             </item>
+             <item row="6" column="0">
+              <widget class="QLabel" name="authUsernameLabel">
+               <property name="text">
+                <string>Basic.Settings.Stream.Custom.Username</string>
+               </property>
+               <property name="buddy">
+                <cstring>authUsername</cstring>
+               </property>
+              </widget>
+             </item>
+             <item row="7" column="0">
+              <widget class="QLabel" name="authPwLabel">
+               <property name="text">
+                <string>Basic.Settings.Stream.Custom.Password</string>
+               </property>
+               <property name="buddy">
+                <cstring>authPw</cstring>
+               </property>
+              </widget>
+             </item>
+             <item row="7" column="1">
+              <widget class="QWidget" name="authPwWidget" native="true">
+               <layout class="QHBoxLayout" name="horizontalLayout_25">
+                <property name="leftMargin">
+                 <number>0</number>
+                </property>
+                <property name="topMargin">
+                 <number>0</number>
+                </property>
+                <property name="rightMargin">
+                 <number>0</number>
+                </property>
+                <property name="bottomMargin">
+                 <number>0</number>
+                </property>
+                <item>
+                 <widget class="QLineEdit" name="authPw">
+                  <property name="echoMode">
+                   <enum>QLineEdit::Password</enum>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QPushButton" name="authPwShow">
+                  <property name="text">
+                   <string>Show</string>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </widget>
+             </item>
+             <item row="4" column="1">
+              <widget class="QCheckBox" name="bandwidthTestEnable">
+               <property name="text">
+                <string>Basic.Settings.Stream.BandwidthTestMode</string>
+               </property>
+              </widget>
+             </item>
             </layout>
            </widget>
           </widget>
@@ -1074,6 +1166,12 @@
          </property>
          <item>
           <widget class="QScrollArea" name="scrollArea_3">
+           <property name="frameShape">
+            <enum>QFrame::NoFrame</enum>
+           </property>
+           <property name="frameShadow">
+            <enum>QFrame::Plain</enum>
+           </property>
            <property name="widgetResizable">
             <bool>true</bool>
            </property>
@@ -1083,7 +1181,7 @@
               <x>0</x>
               <y>0</y>
               <width>601</width>
-              <height>640</height>
+              <height>631</height>
              </rect>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_21">
@@ -1157,13 +1255,6 @@
                  </widget>
                 </item>
                </layout>
-              </widget>
-             </item>
-             <item>
-              <widget class="Line" name="line_2">
-               <property name="orientation">
-                <enum>Qt::Horizontal</enum>
-               </property>
               </widget>
              </item>
              <item>
@@ -1937,13 +2028,6 @@
                          </widget>
                         </item>
                        </layout>
-                      </widget>
-                     </item>
-                     <item>
-                      <widget class="Line" name="line_3">
-                       <property name="orientation">
-                        <enum>Qt::Horizontal</enum>
-                       </property>
                       </widget>
                      </item>
                      <item>
@@ -3407,13 +3491,6 @@
                       </widget>
                      </item>
                      <item>
-                      <widget class="Line" name="line_4">
-                       <property name="orientation">
-                        <enum>Qt::Horizontal</enum>
-                       </property>
-                      </widget>
-                     </item>
-                     <item>
                       <widget class="QGroupBox" name="advReplayBufferGroupBox">
                        <property name="sizePolicy">
                         <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
@@ -3441,7 +3518,7 @@
                         <item row="0" column="1">
                          <widget class="QSpinBox" name="advRBSecMax">
                           <property name="suffix">
-                           <string notr="true"> sec</string>
+                           <string notr="true"> s</string>
                           </property>
                           <property name="minimum">
                            <number>5</number>
@@ -3522,275 +3599,465 @@
         </layout>
        </widget>
        <widget class="QWidget" name="audioPage">
-        <layout class="QFormLayout" name="formLayout">
-         <property name="fieldGrowthPolicy">
-          <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+        <layout class="QVBoxLayout" name="formLayout">
+         <property name="leftMargin">
+          <number>0</number>
          </property>
-         <property name="labelAlignment">
-          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+         <property name="topMargin">
+          <number>0</number>
          </property>
-         <item row="0" column="0">
-          <widget class="QLabel" name="label_14">
-           <property name="text">
-            <string>Basic.Settings.Audio.SampleRate</string>
+         <property name="rightMargin">
+          <number>0</number>
+         </property>
+         <property name="bottomMargin">
+          <number>0</number>
+         </property>
+         <item>
+          <widget class="QScrollArea" name="scrollArea_50">
+           <property name="frameShape">
+            <enum>QFrame::NoFrame</enum>
            </property>
-           <property name="buddy">
-            <cstring>sampleRate</cstring>
+           <property name="frameShadow">
+            <enum>QFrame::Plain</enum>
            </property>
-          </widget>
-         </item>
-         <item row="0" column="1">
-          <widget class="QComboBox" name="sampleRate">
-           <property name="currentText">
-            <string notr="true">44.1khz</string>
-           </property>
-           <property name="currentIndex">
-            <number>0</number>
-           </property>
-           <item>
-            <property name="text">
-             <string>44.1khz</string>
-            </property>
-           </item>
-           <item>
-            <property name="text">
-             <string>48khz</string>
-            </property>
-           </item>
-          </widget>
-         </item>
-         <item row="1" column="0">
-          <widget class="QLabel" name="label_15">
-           <property name="text">
-            <string>Basic.Settings.Audio.Channels</string>
-           </property>
-           <property name="buddy">
-            <cstring>channelSetup</cstring>
-           </property>
-          </widget>
-         </item>
-         <item row="1" column="1">
-          <widget class="QComboBox" name="channelSetup">
-           <property name="currentText">
-            <string>Mono</string>
-           </property>
-           <property name="currentIndex">
-            <number>0</number>
-           </property>
-           <item>
-            <property name="text">
-             <string>Mono</string>
-            </property>
-           </item>
-           <item>
-            <property name="text">
-             <string>Stereo</string>
-            </property>
-           </item>
-           <item>
-            <property name="text">
-             <string>2.1</string>
-            </property>
-           </item>
-           <item>
-            <property name="text">
-             <string>4.0</string>
-            </property>
-           </item>
-           <item>
-            <property name="text">
-             <string>4.1</string>
-            </property>
-           </item>
-           <item>
-            <property name="text">
-             <string>5.1</string>
-            </property>
-           </item>
-           <item>
-            <property name="text">
-             <string>7.1</string>
-            </property>
-           </item>
-          </widget>
-         </item>
-         <item row="2" column="0">
-          <widget class="QLabel" name="label_2">
-           <property name="minimumSize">
-            <size>
-             <width>170</width>
-             <height>0</height>
-            </size>
-           </property>
-           <property name="text">
-            <string>Basic.Settings.Audio.DesktopDevice</string>
-           </property>
-           <property name="alignment">
-            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-           </property>
-           <property name="buddy">
-            <cstring>desktopAudioDevice1</cstring>
-           </property>
-          </widget>
-         </item>
-         <item row="2" column="1">
-          <widget class="QComboBox" name="desktopAudioDevice1">
-           <property name="enabled">
-            <bool>true</bool>
-           </property>
-          </widget>
-         </item>
-         <item row="3" column="0">
-          <widget class="QLabel" name="label_3">
-           <property name="text">
-            <string>Basic.Settings.Audio.DesktopDevice2</string>
-           </property>
-           <property name="alignment">
-            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-           </property>
-           <property name="buddy">
-            <cstring>desktopAudioDevice2</cstring>
-           </property>
-          </widget>
-         </item>
-         <item row="3" column="1">
-          <widget class="QComboBox" name="desktopAudioDevice2">
-           <property name="enabled">
-            <bool>true</bool>
-           </property>
-          </widget>
-         </item>
-         <item row="4" column="0">
-          <widget class="QLabel" name="label_4">
-           <property name="text">
-            <string>Basic.Settings.Audio.AuxDevice</string>
-           </property>
-           <property name="buddy">
-            <cstring>auxAudioDevice1</cstring>
-           </property>
-          </widget>
-         </item>
-         <item row="4" column="1">
-          <widget class="QComboBox" name="auxAudioDevice1">
-           <property name="enabled">
-            <bool>true</bool>
-           </property>
-          </widget>
-         </item>
-         <item row="5" column="0">
-          <widget class="QLabel" name="label_5">
-           <property name="text">
-            <string>Basic.Settings.Audio.AuxDevice2</string>
-           </property>
-           <property name="buddy">
-            <cstring>auxAudioDevice2</cstring>
-           </property>
-          </widget>
-         </item>
-         <item row="5" column="1">
-          <widget class="QComboBox" name="auxAudioDevice2">
-           <property name="enabled">
-            <bool>true</bool>
-           </property>
-          </widget>
-         </item>
-         <item row="6" column="0">
-          <widget class="QLabel" name="label_6">
-           <property name="text">
-            <string>Basic.Settings.Audio.AuxDevice3</string>
-           </property>
-           <property name="buddy">
-            <cstring>auxAudioDevice3</cstring>
-           </property>
-          </widget>
-         </item>
-         <item row="6" column="1">
-          <widget class="QComboBox" name="auxAudioDevice3">
-           <property name="enabled">
-            <bool>true</bool>
-           </property>
-          </widget>
-         </item>
-         <item row="8" column="0">
-          <widget class="QLabel" name="label_65">
-           <property name="text">
-            <string>Basic.Settings.Audio.MeterDecayRate</string>
-           </property>
-           <property name="buddy">
-            <cstring>meterDecayRate</cstring>
-           </property>
-          </widget>
-         </item>
-         <item row="8" column="1">
-          <widget class="QComboBox" name="meterDecayRate">
-           <property name="currentText">
-            <string>Basic.Settings.Audio.MeterDecayRate.Fast</string>
-           </property>
-           <property name="currentIndex">
-            <number>0</number>
-           </property>
-           <item>
-            <property name="text">
-             <string>Basic.Settings.Audio.MeterDecayRate.Fast</string>
-            </property>
-           </item>
-           <item>
-            <property name="text">
-             <string>Basic.Settings.Audio.MeterDecayRate.Medium</string>
-            </property>
-           </item>
-           <item>
-            <property name="text">
-             <string>Basic.Settings.Audio.MeterDecayRate.Slow</string>
-            </property>
-           </item>
-          </widget>
-         </item>
-         <item row="9" column="0">
-          <widget class="QLabel" name="label_66">
-           <property name="text">
-            <string>Basic.Settings.Audio.PeakMeterType</string>
-           </property>
-           <property name="buddy">
-            <cstring>peakMeterType</cstring>
-           </property>
-          </widget>
-         </item>
-         <item row="9" column="1">
-          <widget class="QComboBox" name="peakMeterType">
-           <property name="currentIndex">
-            <number>0</number>
-           </property>
-           <item>
-            <property name="text">
-             <string>Basic.Settings.Audio.PeakMeterType.SamplePeak</string>
-            </property>
-           </item>
-           <item>
-            <property name="text">
-             <string>Basic.Settings.Audio.PeakMeterType.TruePeak</string>
-            </property>
-           </item>
-          </widget>
-         </item>
-         <item row="10" column="0" colspan="2">
-          <widget class="QScrollArea" name="audioSourceScrollArea">
            <property name="widgetResizable">
             <bool>true</bool>
            </property>
-           <widget class="QWidget" name="audioSourceWidget">
+           <widget class="QWidget" name="scrollAreaWidgetContents_50">
             <property name="geometry">
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>98</width>
-              <height>28</height>
+              <width>555</width>
+              <height>469</height>
              </rect>
             </property>
+            <layout class="QVBoxLayout" name="verticalLayout_50">
+             <property name="leftMargin">
+              <number>0</number>
+             </property>
+             <property name="topMargin">
+              <number>0</number>
+             </property>
+             <property name="rightMargin">
+              <number>0</number>
+             </property>
+             <property name="bottomMargin">
+              <number>9</number>
+             </property>
+             <item alignment="Qt::AlignTop">
+              <widget class="QWidget" name="widget_50" native="true">
+               <layout class="QVBoxLayout" name="verticalLayout_51">
+                <item>
+                 <widget class="QGroupBox" name="audioGeneralGroupBox">
+                  <property name="title">
+                   <string>Basic.Settings.General</string>
+                  </property>
+                  <layout class="QFormLayout" name="formLayout_52">
+                   <property name="fieldGrowthPolicy">
+                    <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+                   </property>
+                   <property name="labelAlignment">
+                    <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                   </property>
+                   <property name="topMargin">
+                    <number>2</number>
+                   </property>
+                   <item row="0" column="0">
+                    <widget class="QLabel" name="label_14">
+                     <property name="minimumSize">
+                      <size>
+                       <width>170</width>
+                       <height>0</height>
+                      </size>
+                     </property>
+                     <property name="text">
+                      <string>Basic.Settings.Audio.SampleRate</string>
+                     </property>
+                     <property name="alignment">
+                      <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                     </property>
+                     <property name="buddy">
+                      <cstring>sampleRate</cstring>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="0" column="1">
+                    <widget class="QComboBox" name="sampleRate">
+                     <property name="currentText">
+                      <string notr="true">44.1khz</string>
+                     </property>
+                     <property name="currentIndex">
+                      <number>0</number>
+                     </property>
+                     <item>
+                      <property name="text">
+                       <string>44.1khz</string>
+                      </property>
+                     </item>
+                     <item>
+                      <property name="text">
+                       <string>48khz</string>
+                      </property>
+                     </item>
+                    </widget>
+                   </item>
+                   <item row="1" column="0">
+                    <widget class="QLabel" name="label_15">
+                     <property name="text">
+                      <string>Basic.Settings.Audio.Channels</string>
+                     </property>
+                     <property name="buddy">
+                      <cstring>channelSetup</cstring>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="1" column="1">
+                    <widget class="QComboBox" name="channelSetup">
+                     <property name="currentText">
+                      <string>Mono</string>
+                     </property>
+                     <property name="currentIndex">
+                      <number>0</number>
+                     </property>
+                     <item>
+                      <property name="text">
+                       <string>Mono</string>
+                      </property>
+                     </item>
+                     <item>
+                      <property name="text">
+                       <string>Stereo</string>
+                      </property>
+                     </item>
+                     <item>
+                      <property name="text">
+                       <string>2.1</string>
+                      </property>
+                     </item>
+                     <item>
+                      <property name="text">
+                       <string>4.0</string>
+                      </property>
+                     </item>
+                     <item>
+                      <property name="text">
+                       <string>4.1</string>
+                      </property>
+                     </item>
+                     <item>
+                      <property name="text">
+                       <string>5.1</string>
+                      </property>
+                     </item>
+                     <item>
+                      <property name="text">
+                       <string>7.1</string>
+                      </property>
+                     </item>
+                    </widget>
+                   </item>
+                  </layout>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QGroupBox" name="audioDevicesGroupBox">
+                  <property name="title">
+                   <string>Basic.Settings.Audio.Devices</string>
+                  </property>
+                  <layout class="QFormLayout" name="formLayout_53">
+                   <property name="fieldGrowthPolicy">
+                    <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+                   </property>
+                   <property name="labelAlignment">
+                    <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                   </property>
+                   <property name="topMargin">
+                    <number>2</number>
+                   </property>
+                   <item row="0" column="0">
+                    <widget class="QLabel" name="label_2">
+                     <property name="minimumSize">
+                      <size>
+                       <width>170</width>
+                       <height>0</height>
+                      </size>
+                     </property>
+                     <property name="text">
+                      <string>Basic.Settings.Audio.DesktopDevice</string>
+                     </property>
+                     <property name="alignment">
+                      <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                     </property>
+                     <property name="buddy">
+                      <cstring>desktopAudioDevice1</cstring>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="0" column="1">
+                    <widget class="QComboBox" name="desktopAudioDevice1">
+                     <property name="enabled">
+                      <bool>true</bool>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="1" column="0">
+                    <widget class="QLabel" name="label_3">
+                     <property name="text">
+                      <string>Basic.Settings.Audio.DesktopDevice2</string>
+                     </property>
+                     <property name="alignment">
+                      <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                     </property>
+                     <property name="buddy">
+                      <cstring>desktopAudioDevice2</cstring>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="1" column="1">
+                    <widget class="QComboBox" name="desktopAudioDevice2">
+                     <property name="enabled">
+                      <bool>true</bool>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="2" column="0">
+                    <widget class="QLabel" name="label_4">
+                     <property name="text">
+                      <string>Basic.Settings.Audio.AuxDevice</string>
+                     </property>
+                     <property name="buddy">
+                      <cstring>auxAudioDevice1</cstring>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="2" column="1">
+                    <widget class="QComboBox" name="auxAudioDevice1">
+                     <property name="enabled">
+                      <bool>true</bool>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="3" column="0">
+                    <widget class="QLabel" name="label_5">
+                     <property name="text">
+                      <string>Basic.Settings.Audio.AuxDevice2</string>
+                     </property>
+                     <property name="buddy">
+                      <cstring>auxAudioDevice2</cstring>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="3" column="1">
+                    <widget class="QComboBox" name="auxAudioDevice2">
+                     <property name="enabled">
+                      <bool>true</bool>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="4" column="0">
+                    <widget class="QLabel" name="label_6">
+                     <property name="text">
+                      <string>Basic.Settings.Audio.AuxDevice3</string>
+                     </property>
+                     <property name="buddy">
+                      <cstring>auxAudioDevice3</cstring>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="4" column="1">
+                    <widget class="QComboBox" name="auxAudioDevice3">
+                     <property name="enabled">
+                      <bool>true</bool>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="5" column="1">
+                    <widget class="QComboBox" name="auxAudioDevice4">
+                     <property name="enabled">
+                      <bool>true</bool>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="5" column="0">
+                    <widget class="QLabel" name="label_67">
+                     <property name="text">
+                      <string>Basic.Settings.Audio.AuxDevice4</string>
+                     </property>
+                     <property name="buddy">
+                      <cstring>auxAudioDevice4</cstring>
+                     </property>
+                    </widget>
+                   </item>
+                  </layout>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QGroupBox" name="audioMetersGroupBox">
+                  <property name="title">
+                   <string>Basic.Settings.Audio.Meters</string>
+                  </property>
+                  <layout class="QFormLayout" name="formLayout_54">
+                   <property name="fieldGrowthPolicy">
+                    <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+                   </property>
+                   <property name="labelAlignment">
+                    <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                   </property>
+                   <property name="topMargin">
+                    <number>2</number>
+                   </property>
+                   <item row="0" column="0">
+                    <widget class="QLabel" name="label_65">
+                     <property name="minimumSize">
+                      <size>
+                       <width>170</width>
+                       <height>0</height>
+                      </size>
+                     </property>
+                     <property name="text">
+                      <string>Basic.Settings.Audio.MeterDecayRate</string>
+                     </property>
+                     <property name="alignment">
+                      <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                     </property>
+                     <property name="buddy">
+                      <cstring>meterDecayRate</cstring>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="0" column="1">
+                    <widget class="QComboBox" name="meterDecayRate">
+                     <property name="currentText">
+                      <string>Basic.Settings.Audio.MeterDecayRate.Fast</string>
+                     </property>
+                     <property name="currentIndex">
+                      <number>0</number>
+                     </property>
+                     <item>
+                      <property name="text">
+                       <string>Basic.Settings.Audio.MeterDecayRate.Fast</string>
+                      </property>
+                     </item>
+                     <item>
+                      <property name="text">
+                       <string>Basic.Settings.Audio.MeterDecayRate.Medium</string>
+                      </property>
+                     </item>
+                     <item>
+                      <property name="text">
+                       <string>Basic.Settings.Audio.MeterDecayRate.Slow</string>
+                      </property>
+                     </item>
+                    </widget>
+                   </item>
+                   <item row="1" column="0">
+                    <widget class="QLabel" name="label_66">
+                     <property name="text">
+                      <string>Basic.Settings.Audio.PeakMeterType</string>
+                     </property>
+                     <property name="buddy">
+                      <cstring>peakMeterType</cstring>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="1" column="1">
+                    <widget class="QComboBox" name="peakMeterType">
+                     <property name="currentIndex">
+                      <number>0</number>
+                     </property>
+                     <item>
+                      <property name="text">
+                       <string>Basic.Settings.Audio.PeakMeterType.SamplePeak</string>
+                      </property>
+                     </item>
+                     <item>
+                      <property name="text">
+                       <string>Basic.Settings.Audio.PeakMeterType.TruePeak</string>
+                      </property>
+                     </item>
+                    </widget>
+                   </item>
+                  </layout>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QGroupBox" name="audioAdvGroupBox">
+                  <property name="title">
+                   <string>Basic.Settings.Advanced</string>
+                  </property>
+                  <layout class="QFormLayout" name="formLayout_56">
+                   <property name="fieldGrowthPolicy">
+                    <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+                   </property>
+                   <property name="labelAlignment">
+                    <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                   </property>
+                   <property name="topMargin">
+                    <number>2</number>
+                   </property>
+                   <item row="0" column="0">
+                    <widget class="QLabel" name="monitoringDeviceLabel">
+                     <property name="text">
+                      <string>Basic.Settings.Advanced.Audio.MonitoringDevice</string>
+                     </property>
+                     <property name="buddy">
+                      <cstring>monitoringDevice</cstring>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="0" column="1">
+                    <widget class="QComboBox" name="monitoringDevice"/>
+                   </item>
+                   <item row="1" column="0">
+                    <spacer name="horizontalSpacer_11">
+                     <property name="orientation">
+                      <enum>Qt::Horizontal</enum>
+                     </property>
+                     <property name="sizeHint" stdset="0">
+                      <size>
+                       <width>170</width>
+                       <height>20</height>
+                      </size>
+                     </property>
+                    </spacer>
+                   </item>
+                   <item row="1" column="1">
+                    <widget class="QCheckBox" name="disableAudioDucking">
+                     <property name="text">
+                      <string>Basic.Settings.Advanced.Audio.DisableAudioDucking</string>
+                     </property>
+                    </widget>
+                   </item>
+                  </layout>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QGroupBox" name="audioHotkeysGroupBox">
+                  <property name="title">
+                   <string>Basic.Settings.Hotkeys</string>
+                  </property>
+                  <layout class="QFormLayout" name="audioSourceLayout">
+                   <property name="fieldGrowthPolicy">
+                    <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+                   </property>
+                   <property name="labelAlignment">
+                    <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                   </property>
+                   <property name="topMargin">
+                    <number>2</number>
+                   </property>
+                  </layout>
+                 </widget>
+                </item>
+               </layout>
+              </widget>
+             </item>
+            </layout>
            </widget>
           </widget>
          </item>
-         <item row="11" column="1">
+         <item>
           <widget class="QLabel" name="audioMsg">
            <property name="text">
             <string notr="true"/>
@@ -3803,7 +4070,7 @@
            </property>
           </widget>
          </item>
-         <item row="12" column="1">
+         <item>
           <widget class="QLabel" name="audioMsg_2">
            <property name="text">
             <string notr="true"/>
@@ -3813,36 +4080,6 @@
            </property>
            <property name="themeID" stdset="0">
             <string notr="true">warning</string>
-           </property>
-          </widget>
-         </item>
-         <item row="13" column="1">
-          <spacer name="verticalSpacer_3">
-           <property name="orientation">
-            <enum>Qt::Vertical</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>20</width>
-             <height>40</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
-         <item row="7" column="1">
-          <widget class="QComboBox" name="auxAudioDevice4">
-           <property name="enabled">
-            <bool>true</bool>
-           </property>
-          </widget>
-         </item>
-         <item row="7" column="0">
-          <widget class="QLabel" name="label_67">
-           <property name="text">
-            <string>Basic.Settings.Audio.AuxDevice4</string>
-           </property>
-           <property name="buddy">
-            <cstring>auxAudioDevice4</cstring>
            </property>
           </widget>
          </item>
@@ -4003,6 +4240,11 @@
                </item>
                <item>
                 <property name="text">
+                 <string>25 PAL</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
                  <string notr="true">29.97</string>
                 </property>
                </item>
@@ -4014,6 +4256,11 @@
                <item>
                 <property name="text">
                  <string notr="true">48</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>50 PAL</string>
                 </property>
                </item>
                <item>
@@ -4197,8 +4444,8 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>594</width>
-              <height>833</height>
+              <width>803</width>
+              <height>781</height>
              </rect>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_23">
@@ -4465,57 +4712,6 @@
                  </widget>
                 </item>
                 <item>
-                 <widget class="QGroupBox" name="advAudioGroupBox">
-                  <property name="title">
-                   <string>Basic.Settings.Audio</string>
-                  </property>
-                  <layout class="QFormLayout" name="formLayout_27">
-                   <property name="fieldGrowthPolicy">
-                    <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
-                   </property>
-                   <property name="labelAlignment">
-                    <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-                   </property>
-                   <property name="topMargin">
-                    <number>2</number>
-                   </property>
-                   <item row="0" column="0">
-                    <widget class="QLabel" name="monitoringDeviceLabel">
-                     <property name="text">
-                      <string>Basic.Settings.Advanced.Audio.MonitoringDevice</string>
-                     </property>
-                     <property name="buddy">
-                      <cstring>monitoringDevice</cstring>
-                     </property>
-                    </widget>
-                   </item>
-                   <item row="0" column="1">
-                    <widget class="QComboBox" name="monitoringDevice"/>
-                   </item>
-                   <item row="1" column="1">
-                    <widget class="QCheckBox" name="disableAudioDucking">
-                     <property name="text">
-                      <string>Basic.Settings.Advanced.Audio.DisableAudioDucking</string>
-                     </property>
-                    </widget>
-                   </item>
-                   <item row="1" column="0">
-                    <spacer name="horizontalSpacer_11">
-                     <property name="orientation">
-                      <enum>Qt::Horizontal</enum>
-                     </property>
-                     <property name="sizeHint" stdset="0">
-                      <size>
-                       <width>170</width>
-                       <height>20</height>
-                      </size>
-                     </property>
-                    </spacer>
-                   </item>
-                  </layout>
-                 </widget>
-                </item>
-                <item>
                  <widget class="QGroupBox" name="groupBox_6">
                   <property name="title">
                    <string>Basic.Settings.Output.Adv.Recording</string>
@@ -4692,7 +4888,7 @@
                          </size>
                         </property>
                         <property name="suffix">
-                         <string notr="true">s</string>
+                         <string notr="true"> s</string>
                         </property>
                         <property name="minimum">
                          <number>1</number>
@@ -4786,6 +4982,9 @@
                      </property>
                      <item>
                       <widget class="QSpinBox" name="reconnectRetryDelay">
+                       <property name="suffix">
+                        <string> s</string>
+                       </property>
                        <property name="maximum">
                         <number>30</number>
                        </property>
@@ -4873,14 +5072,14 @@
                    <item row="0" column="1">
                     <widget class="QComboBox" name="bindToIP"/>
                    </item>
-                   <item row="1" column="1">
+                   <item row="2" column="1">
                     <widget class="QCheckBox" name="enableNewSocketLoop">
                      <property name="text">
                       <string>Basic.Settings.Advanced.Network.EnableNewSocketLoop</string>
                      </property>
                     </widget>
                    </item>
-                   <item row="2" column="1">
+                   <item row="3" column="1">
                     <widget class="QCheckBox" name="enableLowLatencyMode">
                      <property name="enabled">
                       <bool>false</bool>
@@ -4890,7 +5089,7 @@
                      </property>
                     </widget>
                    </item>
-                   <item row="1" column="0">
+                   <item row="2" column="0">
                     <spacer name="horizontalSpacer_7">
                      <property name="orientation">
                       <enum>Qt::Horizontal</enum>
@@ -4898,10 +5097,20 @@
                      <property name="sizeHint" stdset="0">
                       <size>
                        <width>170</width>
-                       <height>20</height>
+                       <height>1</height>
                       </size>
                      </property>
                     </spacer>
+                   </item>
+                   <item row="1" column="1">
+                    <widget class="QCheckBox" name="dynBitrate">
+                     <property name="toolTip">
+                      <string>Basic.Settings.Output.DynamicBitrate.TT</string>
+                     </property>
+                     <property name="text">
+                      <string>Basic.Settings.Output.DynamicBitrate.Beta</string>
+                     </property>
+                    </widget>
                    </item>
                   </layout>
                  </widget>
@@ -4944,17 +5153,23 @@
                    <string>Basic.Settings.Hotkeys</string>
                   </property>
                   <layout class="QFormLayout" name="formLayout_33">
+                   <property name="labelAlignment">
+                    <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                   </property>
                    <property name="topMargin">
                     <number>2</number>
                    </property>
-                   <item row="0" column="1">
-                    <widget class="QCheckBox" name="disableFocusHotkeys">
+                   <item row="0" column="0">
+                    <widget class="QLabel" name="label_21">
                      <property name="text">
-                      <string>Basic.Settings.Advanced.Hotkeys.DisableHotkeysInFocus</string>
+                      <string>Basic.Settings.Advanced.Hotkeys.HotkeyFocusBehavior</string>
                      </property>
                     </widget>
                    </item>
-                   <item row="0" column="0">
+                   <item row="0" column="1">
+                    <widget class="QComboBox" name="hotkeyFocusType"/>
+                   </item>
+                   <item row="1" column="0">
                     <spacer name="horizontalSpacer_14">
                      <property name="orientation">
                       <enum>Qt::Horizontal</enum>
@@ -4962,7 +5177,7 @@
                      <property name="sizeHint" stdset="0">
                       <size>
                        <width>170</width>
-                       <height>20</height>
+                       <height>0</height>
                       </size>
                      </property>
                     </spacer>
@@ -5036,14 +5251,60 @@
  </widget>
  <tabstops>
   <tabstop>listWidget</tabstop>
+  <tabstop>scrollArea_2</tabstop>
+  <tabstop>language</tabstop>
+  <tabstop>theme</tabstop>
+  <tabstop>enableAutoUpdates</tabstop>
+  <tabstop>openStatsOnStartup</tabstop>
+  <tabstop>warnBeforeStreamStart</tabstop>
+  <tabstop>warnBeforeStreamStop</tabstop>
+  <tabstop>warnBeforeRecordStop</tabstop>
+  <tabstop>recordWhenStreaming</tabstop>
+  <tabstop>keepRecordStreamStops</tabstop>
+  <tabstop>replayWhileStreaming</tabstop>
+  <tabstop>keepReplayStreamStops</tabstop>
+  <tabstop>snappingEnabled</tabstop>
+  <tabstop>snapDistance</tabstop>
+  <tabstop>screenSnapping</tabstop>
+  <tabstop>sourceSnapping</tabstop>
+  <tabstop>centerSnapping</tabstop>
+  <tabstop>hideProjectorCursor</tabstop>
+  <tabstop>projectorAlwaysOnTop</tabstop>
+  <tabstop>saveProjectors</tabstop>
+  <tabstop>systemTrayEnabled</tabstop>
+  <tabstop>systemTrayWhenStarted</tabstop>
+  <tabstop>systemTrayAlways</tabstop>
+  <tabstop>overflowHide</tabstop>
+  <tabstop>overflowAlwaysVisible</tabstop>
+  <tabstop>overflowSelectionHide</tabstop>
+  <tabstop>doubleClickSwitch</tabstop>
+  <tabstop>studioPortraitLayout</tabstop>
+  <tabstop>multiviewMouseSwitch</tabstop>
+  <tabstop>multiviewDrawNames</tabstop>
+  <tabstop>multiviewDrawAreas</tabstop>
+  <tabstop>multiviewLayout</tabstop>
+  <tabstop>service</tabstop>
+  <tabstop>connectAccount</tabstop>
+  <tabstop>useStreamKey</tabstop>
+  <tabstop>server</tabstop>
+  <tabstop>customServer</tabstop>
+  <tabstop>key</tabstop>
+  <tabstop>show</tabstop>
+  <tabstop>connectAccount2</tabstop>
+  <tabstop>disconnectAccount</tabstop>
+  <tabstop>useAuth</tabstop>
+  <tabstop>authUsername</tabstop>
+  <tabstop>authPw</tabstop>
+  <tabstop>authPwShow</tabstop>
+  <tabstop>scrollArea_3</tabstop>
   <tabstop>outputMode</tabstop>
   <tabstop>simpleOutputVBitrate</tabstop>
+  <tabstop>simpleOutStrEncoder</tabstop>
   <tabstop>simpleOutputABitrate</tabstop>
   <tabstop>simpleOutAdvanced</tabstop>
+  <tabstop>simpleOutEnforce</tabstop>
   <tabstop>simpleOutPreset</tabstop>
   <tabstop>simpleOutCustom</tabstop>
-  <tabstop>simpleOutEnforce</tabstop>
-  <tabstop>simpleOutStrEncoder</tabstop>
   <tabstop>simpleOutputPath</tabstop>
   <tabstop>simpleOutputBrowse</tabstop>
   <tabstop>simpleNoSpace</tabstop>
@@ -5080,10 +5341,12 @@
   <tabstop>advOutRecUseRescale</tabstop>
   <tabstop>advOutRecRescale</tabstop>
   <tabstop>advOutMuxCustom</tabstop>
+  <tabstop>advOutFFType</tabstop>
   <tabstop>advOutFFRecPath</tabstop>
   <tabstop>advOutFFPathBrowse</tabstop>
-  <tabstop>advOutFFURL</tabstop>
+  <tabstop>advOutFFNoSpace</tabstop>
   <tabstop>advOutFFFormat</tabstop>
+  <tabstop>advOutFFMCfg</tabstop>
   <tabstop>advOutFFVBitrate</tabstop>
   <tabstop>advOutFFVGOPSize</tabstop>
   <tabstop>advOutFFUseRescale</tabstop>
@@ -5100,9 +5363,7 @@
   <tabstop>advOutFFTrack6</tabstop>
   <tabstop>advOutFFAEncoder</tabstop>
   <tabstop>advOutFFACfg</tabstop>
-  <tabstop>advOutFFType</tabstop>
-  <tabstop>advOutFFMCfg</tabstop>
-  <tabstop>advOutFFNoSpace</tabstop>
+  <tabstop>advOutFFURL</tabstop>
   <tabstop>advOutTrack1Bitrate</tabstop>
   <tabstop>advOutTrack1Name</tabstop>
   <tabstop>advOutTrack2Bitrate</tabstop>
@@ -5115,6 +5376,9 @@
   <tabstop>advOutTrack5Name</tabstop>
   <tabstop>advOutTrack6Bitrate</tabstop>
   <tabstop>advOutTrack6Name</tabstop>
+  <tabstop>advReplayBuf</tabstop>
+  <tabstop>advRBSecMax</tabstop>
+  <tabstop>advRBMegsMax</tabstop>
   <tabstop>sampleRate</tabstop>
   <tabstop>channelSetup</tabstop>
   <tabstop>desktopAudioDevice1</tabstop>
@@ -5122,7 +5386,11 @@
   <tabstop>auxAudioDevice1</tabstop>
   <tabstop>auxAudioDevice2</tabstop>
   <tabstop>auxAudioDevice3</tabstop>
-  <tabstop>audioSourceScrollArea</tabstop>
+  <tabstop>auxAudioDevice4</tabstop>
+  <tabstop>meterDecayRate</tabstop>
+  <tabstop>peakMeterType</tabstop>
+  <tabstop>monitoringDevice</tabstop>
+  <tabstop>disableAudioDucking</tabstop>
   <tabstop>baseResolution</tabstop>
   <tabstop>outputResolution</tabstop>
   <tabstop>downscaleFilter</tabstop>
@@ -5140,9 +5408,9 @@
   <tabstop>colorRange</tabstop>
   <tabstop>disableOSXVSync</tabstop>
   <tabstop>resetOSXVSync</tabstop>
-  <tabstop>monitoringDevice</tabstop>
   <tabstop>filenameFormatting</tabstop>
   <tabstop>overwriteIfExists</tabstop>
+  <tabstop>autoRemux</tabstop>
   <tabstop>simpleRBPrefix</tabstop>
   <tabstop>simpleRBSuffix</tabstop>
   <tabstop>streamDelayEnable</tabstop>
@@ -5154,27 +5422,7 @@
   <tabstop>bindToIP</tabstop>
   <tabstop>enableNewSocketLoop</tabstop>
   <tabstop>enableLowLatencyMode</tabstop>
-  <tabstop>warnBeforeStreamStop</tabstop>
-  <tabstop>recordWhenStreaming</tabstop>
-  <tabstop>keepRecordStreamStops</tabstop>
-  <tabstop>replayWhileStreaming</tabstop>
-  <tabstop>keepReplayStreamStops</tabstop>
-  <tabstop>snappingEnabled</tabstop>
-  <tabstop>screenSnapping</tabstop>
-  <tabstop>centerSnapping</tabstop>
-  <tabstop>sourceSnapping</tabstop>
-  <tabstop>snapDistance</tabstop>
-  <tabstop>hideProjectorCursor</tabstop>
-  <tabstop>projectorAlwaysOnTop</tabstop>
-  <tabstop>saveProjectors</tabstop>
-  <tabstop>systemTrayEnabled</tabstop>
-  <tabstop>systemTrayWhenStarted</tabstop>
-  <tabstop>systemTrayAlways</tabstop>
-  <tabstop>enableAutoUpdates</tabstop>
-  <tabstop>warnBeforeStreamStart</tabstop>
-  <tabstop>scrollArea_2</tabstop>
-  <tabstop>language</tabstop>
-  <tabstop>theme</tabstop>
+  <tabstop>browserHWAccel</tabstop>
  </tabstops>
  <resources>
   <include location="obs.qrc"/>

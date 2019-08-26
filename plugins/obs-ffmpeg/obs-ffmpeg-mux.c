@@ -32,38 +32,38 @@
 
 #include <libavformat/avformat.h>
 
-#define do_log(level, format, ...) \
+#define do_log(level, format, ...)                  \
 	blog(level, "[ffmpeg muxer: '%s'] " format, \
-			obs_output_get_name(stream->output), ##__VA_ARGS__)
+	     obs_output_get_name(stream->output), ##__VA_ARGS__)
 
-#define warn(format, ...)  do_log(LOG_WARNING, format, ##__VA_ARGS__)
-#define info(format, ...)  do_log(LOG_INFO,    format, ##__VA_ARGS__)
+#define warn(format, ...) do_log(LOG_WARNING, format, ##__VA_ARGS__)
+#define info(format, ...) do_log(LOG_INFO, format, ##__VA_ARGS__)
 
 struct ffmpeg_muxer {
-	obs_output_t      *output;
+	obs_output_t *output;
 	os_process_pipe_t *pipe;
-	int64_t           stop_ts;
-	uint64_t          total_bytes;
-	struct dstr       path;
-	bool              sent_headers;
-	volatile bool     active;
-	volatile bool     stopping;
-	volatile bool     capturing;
+	int64_t stop_ts;
+	uint64_t total_bytes;
+	struct dstr path;
+	bool sent_headers;
+	volatile bool active;
+	volatile bool stopping;
+	volatile bool capturing;
 
 	/* replay buffer */
-	struct circlebuf  packets;
-	int64_t           cur_size;
-	int64_t           cur_time;
-	int64_t           max_size;
-	int64_t           max_time;
-	int64_t           save_ts;
-	int               keyframes;
-	obs_hotkey_id     hotkey;
+	struct circlebuf packets;
+	int64_t cur_size;
+	int64_t cur_time;
+	int64_t max_size;
+	int64_t max_time;
+	int64_t save_ts;
+	int keyframes;
+	obs_hotkey_id hotkey;
 
 	DARRAY(struct encoder_packet) mux_packets;
-	pthread_t                     mux_thread;
-	bool                          mux_thread_joinable;
-	volatile bool                 muxing;
+	pthread_t mux_thread;
+	bool mux_thread_joinable;
+	volatile bool muxing;
 };
 
 static const char *ffmpeg_mux_getname(void *type)
@@ -113,13 +113,9 @@ static void *ffmpeg_mux_create(obs_data_t *settings, obs_output_t *output)
 }
 
 #ifdef _WIN32
-#ifdef _WIN64
-#define FFMPEG_MUX "ffmpeg-mux64.exe"
+#define FFMPEG_MUX "obs-ffmpeg-mux.exe"
 #else
-#define FFMPEG_MUX "ffmpeg-mux32.exe"
-#endif
-#else
-#define FFMPEG_MUX "ffmpeg-mux"
+#define FFMPEG_MUX "obs-ffmpeg-mux"
 #endif
 
 static inline bool capturing(struct ffmpeg_muxer *stream)
@@ -140,7 +136,7 @@ static inline bool active(struct ffmpeg_muxer *stream)
 /* TODO: allow codecs other than h264 whenever we start using them */
 
 static void add_video_encoder_params(struct ffmpeg_muxer *stream,
-		struct dstr *cmd, obs_encoder_t *vencoder)
+				     struct dstr *cmd, obs_encoder_t *vencoder)
 {
 	obs_data_t *settings = obs_encoder_get_settings(vencoder);
 	int bitrate = (int)obs_data_get_int(settings, "bitrate");
@@ -149,13 +145,10 @@ static void add_video_encoder_params(struct ffmpeg_muxer *stream,
 
 	obs_data_release(settings);
 
-	dstr_catf(cmd, "%s %d %d %d %d %d ",
-			obs_encoder_get_codec(vencoder),
-			bitrate,
-			obs_output_get_width(stream->output),
-			obs_output_get_height(stream->output),
-			(int)info->fps_num,
-			(int)info->fps_den);
+	dstr_catf(cmd, "%s %d %d %d %d %d ", obs_encoder_get_codec(vencoder),
+		  bitrate, obs_output_get_width(stream->output),
+		  obs_output_get_height(stream->output), (int)info->fps_num,
+		  (int)info->fps_den);
 }
 
 static void add_audio_encoder_params(struct dstr *cmd, obs_encoder_t *aencoder)
@@ -170,11 +163,9 @@ static void add_audio_encoder_params(struct dstr *cmd, obs_encoder_t *aencoder)
 	dstr_copy(&name, obs_encoder_get_name(aencoder));
 	dstr_replace(&name, "\"", "\"\"");
 
-	dstr_catf(cmd, "\"%s\" %d %d %d ",
-			name.array,
-			bitrate,
-			(int)obs_encoder_get_sample_rate(aencoder),
-			(int)audio_output_get_channels(audio));
+	dstr_catf(cmd, "\"%s\" %d %d %d ", name.array, bitrate,
+		  (int)obs_encoder_get_sample_rate(aencoder),
+		  (int)audio_output_get_channels(audio));
 
 	dstr_free(&name);
 }
@@ -185,8 +176,8 @@ static void log_muxer_params(struct ffmpeg_muxer *stream, const char *settings)
 
 	AVDictionary *dict = NULL;
 	if ((ret = av_dict_parse_string(&dict, settings, "=", " ", 0))) {
-		warn("Failed to parse muxer settings: %s\n%s",
-				av_err2str(ret), settings);
+		warn("Failed to parse muxer settings: %s\n%s", av_err2str(ret),
+		     settings);
 
 		av_dict_free(&dict);
 		return;
@@ -197,7 +188,7 @@ static void log_muxer_params(struct ffmpeg_muxer *stream, const char *settings)
 
 		AVDictionaryEntry *entry = NULL;
 		while ((entry = av_dict_get(dict, "", entry,
-						AV_DICT_IGNORE_SUFFIX)))
+					    AV_DICT_IGNORE_SUFFIX)))
 			dstr_catf(&str, "\n\t%s=%s", entry->key, entry->value);
 
 		info("Using muxer settings:%s", str.array);
@@ -225,7 +216,7 @@ static void add_muxer_params(struct dstr *cmd, struct ffmpeg_muxer *stream)
 }
 
 static void build_command_line(struct ffmpeg_muxer *stream, struct dstr *cmd,
-		const char *path)
+			       const char *path)
 {
 	obs_encoder_t *vencoder = obs_output_get_video_encoder(stream->output);
 	obs_encoder_t *aencoders[MAX_AUDIO_MIXES];
@@ -233,7 +224,7 @@ static void build_command_line(struct ffmpeg_muxer *stream, struct dstr *cmd,
 
 	for (;;) {
 		obs_encoder_t *aencoder = obs_output_get_audio_encoder(
-				stream->output, num_tracks);
+			stream->output, num_tracks);
 		if (!aencoder)
 			break;
 
@@ -241,7 +232,7 @@ static void build_command_line(struct ffmpeg_muxer *stream, struct dstr *cmd,
 		num_tracks++;
 	}
 
-	dstr_init_move_array(cmd, obs_module_file(FFMPEG_MUX));
+	dstr_init_move_array(cmd, os_get_executable_path_ptr(FFMPEG_MUX));
 	dstr_insert_ch(cmd, 0, '\"');
 	dstr_cat(cmd, "\" \"");
 
@@ -293,7 +284,7 @@ static bool ffmpeg_mux_start(void *data)
 	if (!test_file) {
 		struct dstr error_message;
 		dstr_init_copy(&error_message,
-			obs_module_text("UnableToWritePath"));
+			       obs_module_text("UnableToWritePath"));
 #ifdef _WIN32
 		// special warning for Windows 10 users about Defender
 		struct win_version_info ver;
@@ -301,12 +292,11 @@ static bool ffmpeg_mux_start(void *data)
 		if (ver.major >= 10) {
 			dstr_cat(&error_message, "\n\n");
 			dstr_cat(&error_message,
-				obs_module_text("WarnWindowsDefender"));
+				 obs_module_text("WarnWindowsDefender"));
 		}
 #endif
 		dstr_replace(&error_message, "%1", path);
-		obs_output_set_last_error(stream->output,
-			error_message.array);
+		obs_output_set_last_error(stream->output, error_message.array);
 		dstr_free(&error_message);
 		obs_data_release(settings);
 		return false;
@@ -319,8 +309,8 @@ static bool ffmpeg_mux_start(void *data)
 	obs_data_release(settings);
 
 	if (!stream->pipe) {
-		obs_output_set_last_error(stream->output,
-			obs_module_text("HelperProcessFailed"));
+		obs_output_set_last_error(
+			stream->output, obs_module_text("HelperProcessFailed"));
 		warn("Failed to create process pipe");
 		return false;
 	}
@@ -335,7 +325,7 @@ static bool ffmpeg_mux_start(void *data)
 	return true;
 }
 
-static int deactivate(struct ffmpeg_muxer *stream)
+static int deactivate(struct ffmpeg_muxer *stream, int code)
 {
 	int ret = -1;
 
@@ -349,8 +339,11 @@ static int deactivate(struct ffmpeg_muxer *stream)
 		info("Output of file '%s' stopped", stream->path.array);
 	}
 
-	if (stopping(stream))
+	if (code) {
+		obs_output_signal_stop(stream->output, code);
+	} else if (stopping(stream)) {
 		obs_output_end_data_capture(stream->output);
+	}
 
 	os_atomic_set_bool(&stream->stopping, false);
 	return ret;
@@ -369,12 +362,29 @@ static void ffmpeg_mux_stop(void *data, uint64_t ts)
 
 static void signal_failure(struct ffmpeg_muxer *stream)
 {
-	int ret = deactivate(stream);
+	char error[1024];
+	int ret;
 	int code;
 
+	size_t len;
+
+	len = os_process_pipe_read_err(stream->pipe, (uint8_t *)error,
+				       sizeof(error) - 1);
+
+	if (len > 0) {
+		error[len] = 0;
+		warn("ffmpeg-mux: %s", error);
+		obs_output_set_last_error(stream->output, error);
+	}
+
+	ret = deactivate(stream, 0);
+
 	switch (ret) {
-	case FFM_UNSUPPORTED:          code = OBS_OUTPUT_UNSUPPORTED; break;
-	default:                       code = OBS_OUTPUT_ERROR;
+	case FFM_UNSUPPORTED:
+		code = OBS_OUTPUT_UNSUPPORTED;
+		break;
+	default:
+		code = OBS_OUTPUT_ERROR;
 	}
 
 	obs_output_signal_stop(stream->output, code);
@@ -382,22 +392,21 @@ static void signal_failure(struct ffmpeg_muxer *stream)
 }
 
 static bool write_packet(struct ffmpeg_muxer *stream,
-		struct encoder_packet *packet)
+			 struct encoder_packet *packet)
 {
 	bool is_video = packet->type == OBS_ENCODER_VIDEO;
 	size_t ret;
 
-	struct ffm_packet_info info = {
-		.pts = packet->pts,
-		.dts = packet->dts,
-		.size = (uint32_t)packet->size,
-		.index = (int)packet->track_idx,
-		.type = is_video ? FFM_PACKET_VIDEO : FFM_PACKET_AUDIO,
-		.keyframe = packet->keyframe
-	};
+	struct ffm_packet_info info = {.pts = packet->pts,
+				       .dts = packet->dts,
+				       .size = (uint32_t)packet->size,
+				       .index = (int)packet->track_idx,
+				       .type = is_video ? FFM_PACKET_VIDEO
+							: FFM_PACKET_AUDIO,
+				       .keyframe = packet->keyframe};
 
-	ret = os_process_pipe_write(stream->pipe, (const uint8_t*)&info,
-			sizeof(info));
+	ret = os_process_pipe_write(stream->pipe, (const uint8_t *)&info,
+				    sizeof(info));
 	if (ret != sizeof(info)) {
 		warn("os_process_pipe_write for info structure failed");
 		signal_failure(stream);
@@ -416,13 +425,10 @@ static bool write_packet(struct ffmpeg_muxer *stream,
 }
 
 static bool send_audio_headers(struct ffmpeg_muxer *stream,
-		obs_encoder_t *aencoder, size_t idx)
+			       obs_encoder_t *aencoder, size_t idx)
 {
 	struct encoder_packet packet = {
-		.type         = OBS_ENCODER_AUDIO,
-		.timebase_den = 1,
-		.track_idx    = idx
-	};
+		.type = OBS_ENCODER_AUDIO, .timebase_den = 1, .track_idx = idx};
 
 	obs_encoder_get_extra_data(aencoder, &packet.data, &packet.size);
 	return write_packet(stream, &packet);
@@ -432,10 +438,8 @@ static bool send_video_headers(struct ffmpeg_muxer *stream)
 {
 	obs_encoder_t *vencoder = obs_output_get_video_encoder(stream->output);
 
-	struct encoder_packet packet = {
-		.type         = OBS_ENCODER_VIDEO,
-		.timebase_den = 1
-	};
+	struct encoder_packet packet = {.type = OBS_ENCODER_VIDEO,
+					.timebase_den = 1};
 
 	obs_encoder_get_extra_data(vencoder, &packet.data, &packet.size);
 	return write_packet(stream, &packet);
@@ -469,6 +473,12 @@ static void ffmpeg_mux_data(void *data, struct encoder_packet *packet)
 	if (!active(stream))
 		return;
 
+	/* encoder failure */
+	if (!packet) {
+		deactivate(stream, OBS_OUTPUT_ENCODE_ERROR);
+		return;
+	}
+
 	if (!stream->sent_headers) {
 		if (!send_headers(stream))
 			return;
@@ -478,7 +488,7 @@ static void ffmpeg_mux_data(void *data, struct encoder_packet *packet)
 
 	if (stopping(stream)) {
 		if (packet->sys_dts_usec >= stream->stop_ts) {
-			deactivate(stream);
+			deactivate(stream, 0);
 			return;
 		}
 	}
@@ -492,9 +502,8 @@ static obs_properties_t *ffmpeg_mux_properties(void *unused)
 
 	obs_properties_t *props = obs_properties_create();
 
-	obs_properties_add_text(props, "path",
-			obs_module_text("FilePath"),
-			OBS_TEXT_DEFAULT);
+	obs_properties_add_text(props, "path", obs_module_text("FilePath"),
+				OBS_TEXT_DEFAULT);
 	return props;
 }
 
@@ -505,18 +514,17 @@ static uint64_t ffmpeg_mux_total_bytes(void *data)
 }
 
 struct obs_output_info ffmpeg_muxer = {
-	.id             = "ffmpeg_muxer",
-	.flags          = OBS_OUTPUT_AV |
-	                  OBS_OUTPUT_ENCODED |
-	                  OBS_OUTPUT_MULTI_TRACK,
-	.get_name       = ffmpeg_mux_getname,
-	.create         = ffmpeg_mux_create,
-	.destroy        = ffmpeg_mux_destroy,
-	.start          = ffmpeg_mux_start,
-	.stop           = ffmpeg_mux_stop,
+	.id = "ffmpeg_muxer",
+	.flags = OBS_OUTPUT_AV | OBS_OUTPUT_ENCODED | OBS_OUTPUT_MULTI_TRACK |
+		 OBS_OUTPUT_CAN_PAUSE,
+	.get_name = ffmpeg_mux_getname,
+	.create = ffmpeg_mux_create,
+	.destroy = ffmpeg_mux_destroy,
+	.start = ffmpeg_mux_start,
+	.stop = ffmpeg_mux_stop,
 	.encoded_packet = ffmpeg_mux_data,
-	.get_total_bytes= ffmpeg_mux_total_bytes,
-	.get_properties = ffmpeg_mux_properties
+	.get_total_bytes = ffmpeg_mux_total_bytes,
+	.get_properties = ffmpeg_mux_properties,
 };
 
 /* ------------------------------------------------------------------------ */
@@ -528,15 +536,27 @@ static const char *replay_buffer_getname(void *type)
 }
 
 static void replay_buffer_hotkey(void *data, obs_hotkey_id id,
-		obs_hotkey_t *hotkey, bool pressed)
+				 obs_hotkey_t *hotkey, bool pressed)
 {
 	UNUSED_PARAMETER(id);
 	UNUSED_PARAMETER(hotkey);
 	UNUSED_PARAMETER(pressed);
 
+	if (!pressed)
+		return;
+
 	struct ffmpeg_muxer *stream = data;
-	if (os_atomic_load_bool(&stream->active))
+
+	if (os_atomic_load_bool(&stream->active)) {
+		obs_encoder_t *vencoder =
+			obs_output_get_video_encoder(stream->output);
+		if (obs_encoder_paused(vencoder)) {
+			info("Could not save buffer because encoders paused");
+			return;
+		}
+
 		stream->save_ts = os_gettime_ns() / 1000LL;
+	}
 }
 
 static void save_replay_proc(void *data, calldata_t *cd)
@@ -558,15 +578,15 @@ static void *replay_buffer_create(obs_data_t *settings, obs_output_t *output)
 	struct ffmpeg_muxer *stream = bzalloc(sizeof(*stream));
 	stream->output = output;
 
-	stream->hotkey = obs_hotkey_register_output(output,
-			"ReplayBuffer.Save",
-			obs_module_text("ReplayBuffer.Save"),
-			replay_buffer_hotkey, stream);
+	stream->hotkey =
+		obs_hotkey_register_output(output, "ReplayBuffer.Save",
+					   obs_module_text("ReplayBuffer.Save"),
+					   replay_buffer_hotkey, stream);
 
 	proc_handler_t *ph = obs_output_get_proc_handler(output);
 	proc_handler_add(ph, "void save()", save_replay_proc, stream);
 	proc_handler_add(ph, "void get_last_replay(out string path)",
-			get_last_replay, stream);
+			 get_last_replay, stream);
 
 	return stream;
 }
@@ -634,7 +654,7 @@ static inline void purge(struct ffmpeg_muxer *stream)
 
 		for (;;) {
 			circlebuf_peek_front(&stream->packets, &pkt,
-					sizeof(pkt));
+					     sizeof(pkt));
 			if (pkt.type == OBS_ENCODER_VIDEO && pkt.keyframe)
 				return;
 
@@ -644,14 +664,14 @@ static inline void purge(struct ffmpeg_muxer *stream)
 }
 
 static inline void replay_buffer_purge(struct ffmpeg_muxer *stream,
-		struct encoder_packet *pkt)
+				       struct encoder_packet *pkt)
 {
 	if (stream->max_size) {
 		if (!stream->packets.size || stream->keyframes <= 2)
 			return;
 
 		while ((stream->cur_size + (int64_t)pkt->size) >
-				stream->max_size)
+		       stream->max_size)
 			purge(stream);
 	}
 
@@ -663,8 +683,8 @@ static inline void replay_buffer_purge(struct ffmpeg_muxer *stream,
 }
 
 static void insert_packet(struct darray *array, struct encoder_packet *packet,
-		int64_t video_offset, int64_t *audio_offsets,
-		int64_t video_dts_offset, int64_t *audio_dts_offsets)
+			  int64_t video_offset, int64_t *audio_offsets,
+			  int64_t video_dts_offset, int64_t *audio_dts_offsets)
 {
 	struct encoder_packet pkt;
 	DARRAY(struct encoder_packet) packets;
@@ -706,7 +726,7 @@ static void *replay_buffer_mux_thread(void *data)
 
 	if (!send_headers(stream)) {
 		warn("Could not write headers for file '%s'",
-				stream->path.array);
+		     stream->path.array);
 		goto error;
 	}
 
@@ -761,9 +781,9 @@ static void replay_buffer_save(struct ffmpeg_muxer *stream)
 			}
 		}
 
-		insert_packet(&stream->mux_packets.da, pkt,
-				video_offset, audio_offsets,
-				video_dts_offset, audio_dts_offsets);
+		insert_packet(&stream->mux_packets.da, pkt, video_offset,
+			      audio_offsets, video_dts_offset,
+			      audio_dts_offsets);
 	}
 
 	/* ---------------------------- */
@@ -790,13 +810,17 @@ static void replay_buffer_save(struct ffmpeg_muxer *stream)
 
 	os_atomic_set_bool(&stream->muxing, true);
 	stream->mux_thread_joinable = pthread_create(&stream->mux_thread, NULL,
-			replay_buffer_mux_thread, stream) == 0;
+						     replay_buffer_mux_thread,
+						     stream) == 0;
 }
 
-static void deactivate_replay_buffer(struct ffmpeg_muxer *stream)
+static void deactivate_replay_buffer(struct ffmpeg_muxer *stream, int code)
 {
-	if (stopping(stream))
+	if (code) {
+		obs_output_signal_stop(stream->output, code);
+	} else if (stopping(stream)) {
 		obs_output_end_data_capture(stream->output);
+	}
 
 	os_atomic_set_bool(&stream->active, false);
 	os_atomic_set_bool(&stream->sent_headers, false);
@@ -812,9 +836,15 @@ static void replay_buffer_data(void *data, struct encoder_packet *packet)
 	if (!active(stream))
 		return;
 
+	/* encoder failure */
+	if (!packet) {
+		deactivate_replay_buffer(stream, OBS_OUTPUT_ENCODE_ERROR);
+		return;
+	}
+
 	if (stopping(stream)) {
 		if (packet->sys_dts_usec >= stream->stop_ts) {
-			deactivate_replay_buffer(stream);
+			deactivate_replay_buffer(stream, 0);
 			return;
 		}
 	}
@@ -855,16 +885,15 @@ static void replay_buffer_defaults(obs_data_t *s)
 }
 
 struct obs_output_info replay_buffer = {
-	.id             = "replay_buffer",
-	.flags          = OBS_OUTPUT_AV |
-	                  OBS_OUTPUT_ENCODED |
-	                  OBS_OUTPUT_MULTI_TRACK,
-	.get_name       = replay_buffer_getname,
-	.create         = replay_buffer_create,
-	.destroy        = replay_buffer_destroy,
-	.start          = replay_buffer_start,
-	.stop           = ffmpeg_mux_stop,
+	.id = "replay_buffer",
+	.flags = OBS_OUTPUT_AV | OBS_OUTPUT_ENCODED | OBS_OUTPUT_MULTI_TRACK |
+		 OBS_OUTPUT_CAN_PAUSE,
+	.get_name = replay_buffer_getname,
+	.create = replay_buffer_create,
+	.destroy = replay_buffer_destroy,
+	.start = replay_buffer_start,
+	.stop = ffmpeg_mux_stop,
 	.encoded_packet = replay_buffer_data,
-	.get_total_bytes= ffmpeg_mux_total_bytes,
-	.get_defaults   = replay_buffer_defaults
+	.get_total_bytes = ffmpeg_mux_total_bytes,
+	.get_defaults = replay_buffer_defaults,
 };

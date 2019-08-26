@@ -29,8 +29,8 @@
 #include "platform.hpp"
 using namespace std;
 
-static inline bool check_path(const char* data, const char *path,
-		string &output)
+static inline bool check_path(const char *data, const char *path,
+			      string &output)
 {
 	ostringstream str;
 	str << path << data;

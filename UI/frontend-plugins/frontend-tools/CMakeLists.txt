@@ -28,6 +28,9 @@ set(frontend-tools_HEADERS
 	../../horizontal-scroll-area.hpp
 	../../vertical-scroll-area.hpp
 	../../double-slider.hpp
+	../../slider-ignorewheel.hpp
+	../../combobox-ignorewheel.hpp
+	../../spinbox-ignorewheel.hpp
 	)
 set(frontend-tools_SOURCES
 	${frontend-tools_SOURCES}
@@ -38,6 +41,9 @@ set(frontend-tools_SOURCES
 	../../horizontal-scroll-area.cpp
 	../../vertical-scroll-area.cpp
 	../../double-slider.cpp
+	../../slider-ignorewheel.cpp
+	../../combobox-ignorewheel.cpp
+	../../spinbox-ignorewheel.cpp
 	)
 set(frontend-tools_UI
 	${frontend-tools_UI}

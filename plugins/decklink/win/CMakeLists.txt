@@ -28,6 +28,7 @@ set(win-decklink_HEADERS
 	../decklink-device-mode.hpp
 	../audio-repack.h
 	../audio-repack.hpp
+	../util.hpp
 	)
 
 set(win-decklink_SOURCES
@@ -44,6 +45,7 @@ set(win-decklink_SOURCES
 	../decklink-device-mode.cpp
 	../audio-repack.c
 	platform.cpp
+	../util.cpp
 	)
 
 add_idl_files(win-decklink-sdk_GENERATED_FILES

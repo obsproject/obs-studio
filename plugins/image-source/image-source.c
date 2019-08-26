@@ -4,30 +4,26 @@
 #include <util/dstr.h>
 #include <sys/stat.h>
 
-#define blog(log_level, format, ...) \
+#define blog(log_level, format, ...)                    \
 	blog(log_level, "[image_source: '%s'] " format, \
-			obs_source_get_name(context->source), ##__VA_ARGS__)
+	     obs_source_get_name(context->source), ##__VA_ARGS__)
 
-#define debug(format, ...) \
-	blog(LOG_DEBUG, format, ##__VA_ARGS__)
-#define info(format, ...) \
-	blog(LOG_INFO, format, ##__VA_ARGS__)
-#define warn(format, ...) \
-	blog(LOG_WARNING, format, ##__VA_ARGS__)
+#define debug(format, ...) blog(LOG_DEBUG, format, ##__VA_ARGS__)
+#define info(format, ...) blog(LOG_INFO, format, ##__VA_ARGS__)
+#define warn(format, ...) blog(LOG_WARNING, format, ##__VA_ARGS__)
 
 struct image_source {
 	obs_source_t *source;
 
-	char         *file;
-	bool         persistent;
-	time_t       file_timestamp;
-	float        update_time_elapsed;
-	uint64_t     last_time;
-	bool         active;
+	char *file;
+	bool persistent;
+	time_t file_timestamp;
+	float update_time_elapsed;
+	uint64_t last_time;
+	bool active;
 
-	gs_image_file_t image;
+	gs_image_file2_t if2;
 };
-
 
 static time_t get_modified_timestamp(const char *filename)
 {
@@ -48,20 +44,20 @@ static void image_source_load(struct image_source *context)
 	char *file = context->file;
 
 	obs_enter_graphics();
-	gs_image_file_free(&context->image);
+	gs_image_file2_free(&context->if2);
 	obs_leave_graphics();
 
 	if (file && *file) {
 		debug("loading texture '%s'", file);
 		context->file_timestamp = get_modified_timestamp(file);
-		gs_image_file_init(&context->image, file);
+		gs_image_file2_init(&context->if2, file);
 		context->update_time_elapsed = 0;
 
 		obs_enter_graphics();
-		gs_image_file_init_texture(&context->image);
+		gs_image_file2_init_texture(&context->if2);
 		obs_leave_graphics();
 
-		if (!context->image.loaded)
+		if (!context->if2.image.loaded)
 			warn("failed to load texture '%s'", file);
 	}
 }
@@ -69,7 +65,7 @@ static void image_source_load(struct image_source *context)
 static void image_source_unload(struct image_source *context)
 {
 	obs_enter_graphics();
-	gs_image_file_free(&context->image);
+	gs_image_file2_free(&context->if2);
 	obs_leave_graphics();
 }
 
@@ -135,26 +131,26 @@ static void image_source_destroy(void *data)
 static uint32_t image_source_getwidth(void *data)
 {
 	struct image_source *context = data;
-	return context->image.cx;
+	return context->if2.image.cx;
 }
 
 static uint32_t image_source_getheight(void *data)
 {
 	struct image_source *context = data;
-	return context->image.cy;
+	return context->if2.image.cy;
 }
 
 static void image_source_render(void *data, gs_effect_t *effect)
 {
 	struct image_source *context = data;
 
-	if (!context->image.texture)
+	if (!context->if2.image.texture)
 		return;
 
 	gs_effect_set_texture(gs_effect_get_param_by_name(effect, "image"),
-			context->image.texture);
-	gs_draw_sprite(context->image.texture, 0,
-			context->image.cx, context->image.cy);
+			      context->if2.image.texture);
+	gs_draw_sprite(context->if2.image.texture, 0, context->if2.image.cx,
+		       context->if2.image.cy);
 }
 
 static void image_source_tick(void *data, float seconds)
@@ -175,20 +171,20 @@ static void image_source_tick(void *data, float seconds)
 
 	if (obs_source_active(context->source)) {
 		if (!context->active) {
-			if (context->image.is_animated_gif)
+			if (context->if2.image.is_animated_gif)
 				context->last_time = frame_time;
 			context->active = true;
 		}
 
 	} else {
 		if (context->active) {
-			if (context->image.is_animated_gif) {
-				context->image.cur_frame = 0;
-				context->image.cur_loop = 0;
-				context->image.cur_time = 0;
+			if (context->if2.image.is_animated_gif) {
+				context->if2.image.cur_frame = 0;
+				context->if2.image.cur_loop = 0;
+				context->if2.image.cur_time = 0;
 
 				obs_enter_graphics();
-				gs_image_file_update_texture(&context->image);
+				gs_image_file2_update_texture(&context->if2);
 				obs_leave_graphics();
 			}
 
@@ -198,20 +194,19 @@ static void image_source_tick(void *data, float seconds)
 		return;
 	}
 
-	if (context->last_time && context->image.is_animated_gif) {
+	if (context->last_time && context->if2.image.is_animated_gif) {
 		uint64_t elapsed = frame_time - context->last_time;
-		bool updated = gs_image_file_tick(&context->image, elapsed);
+		bool updated = gs_image_file2_tick(&context->if2, elapsed);
 
 		if (updated) {
 			obs_enter_graphics();
-			gs_image_file_update_texture(&context->image);
+			gs_image_file2_update_texture(&context->if2);
 			obs_leave_graphics();
 		}
 	}
 
 	context->last_time = frame_time;
 }
-
 
 static const char *image_filter =
 	"All formats (*.bmp *.tga *.png *.jpeg *.jpg *.gif *.psd);;"
@@ -230,8 +225,6 @@ static obs_properties_t *image_source_properties(void *data)
 
 	obs_properties_t *props = obs_properties_create();
 
-	obs_properties_set_flags(props, OBS_PROPERTIES_DEFER_UPDATE);
-
 	if (s && s->file && *s->file) {
 		const char *slash;
 
@@ -242,33 +235,37 @@ static obs_properties_t *image_source_properties(void *data)
 			dstr_resize(&path, slash - path.array + 1);
 	}
 
-	obs_properties_add_path(props,
-			"file", obs_module_text("File"),
-			OBS_PATH_FILE, image_filter, path.array);
-	obs_properties_add_bool(props,
-			"unload", obs_module_text("UnloadWhenNotShowing"));
+	obs_properties_add_path(props, "file", obs_module_text("File"),
+				OBS_PATH_FILE, image_filter, path.array);
+	obs_properties_add_bool(props, "unload",
+				obs_module_text("UnloadWhenNotShowing"));
 	dstr_free(&path);
 
 	return props;
 }
 
+uint64_t image_source_get_memory_usage(void *data)
+{
+	struct image_source *s = data;
+	return s->if2.mem_usage;
+}
+
 static struct obs_source_info image_source_info = {
-	.id             = "image_source",
-	.type           = OBS_SOURCE_TYPE_INPUT,
-	.output_flags   = OBS_SOURCE_VIDEO,
-	.get_name       = image_source_get_name,
-	.create         = image_source_create,
-	.destroy        = image_source_destroy,
-	.update         = image_source_update,
-	.get_defaults   = image_source_defaults,
-	.show           = image_source_show,
-	.hide           = image_source_hide,
-	.get_width      = image_source_getwidth,
-	.get_height     = image_source_getheight,
-	.video_render   = image_source_render,
-	.video_tick     = image_source_tick,
-	.get_properties = image_source_properties
-};
+	.id = "image_source",
+	.type = OBS_SOURCE_TYPE_INPUT,
+	.output_flags = OBS_SOURCE_VIDEO,
+	.get_name = image_source_get_name,
+	.create = image_source_create,
+	.destroy = image_source_destroy,
+	.update = image_source_update,
+	.get_defaults = image_source_defaults,
+	.show = image_source_show,
+	.hide = image_source_hide,
+	.get_width = image_source_getwidth,
+	.get_height = image_source_getheight,
+	.video_render = image_source_render,
+	.video_tick = image_source_tick,
+	.get_properties = image_source_properties};
 
 OBS_DECLARE_MODULE()
 OBS_MODULE_USE_DEFAULT_LOCALE("image-source", "en-US")

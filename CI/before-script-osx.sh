@@ -3,6 +3,11 @@ export PATH=/usr/local/opt/ccache/libexec:$PATH
 
 git fetch --tags
 
+./formatcode.sh
+if ! ./CI/check-format.sh; then
+	exit 1
+fi
+
 mkdir build
 cd build
 cmake -DENABLE_SPARKLE_UPDATER=ON \
@@ -12,4 +17,5 @@ cmake -DENABLE_SPARKLE_UPDATER=ON \
 -DVLCPath=$PWD/../../vlc-3.0.4 \
 -DBUILD_BROWSER=ON \
 -DBROWSER_DEPLOY=ON \
+-DBUILD_CAPTIONS=ON \
 -DCEF_ROOT_DIR=$PWD/../../cef_binary_${CEF_BUILD_VERSION}_macosx64 ..

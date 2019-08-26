@@ -454,7 +454,7 @@ if(UNIX AND NOT APPLE)
 		set(PRIVATE_LIBS "${PRIVATE_LIBS} -l${LIB}")
 	endforeach()
 	CONFIGURE_FILE("libobs.pc.in" "libobs.pc" @ONLY)
-	install(FILES "${CMAKE_CURRENT_BINARY_DIR}/libobs.pc" DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/pkgconfig")
+	install(FILES "${CMAKE_CURRENT_BINARY_DIR}/libobs.pc" DESTINATION "${CMAKE_INSTALL_LIBDIR}/pkgconfig")
 endif()
 
 set_target_properties(libobs PROPERTIES

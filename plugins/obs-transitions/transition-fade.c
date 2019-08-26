@@ -49,7 +49,7 @@ static void fade_destroy(void *data)
 }
 
 static void fade_callback(void *data, gs_texture_t *a, gs_texture_t *b, float t,
-		uint32_t cx, uint32_t cy)
+			  uint32_t cx, uint32_t cy)
 {
 	struct fade_info *fade = data;
 
@@ -81,12 +81,13 @@ static float mix_b(void *data, float t)
 }
 
 static bool fade_audio_render(void *data, uint64_t *ts_out,
-		struct obs_source_audio_mix *audio, uint32_t mixers,
-		size_t channels, size_t sample_rate)
+			      struct obs_source_audio_mix *audio,
+			      uint32_t mixers, size_t channels,
+			      size_t sample_rate)
 {
 	struct fade_info *fade = data;
-	return obs_transition_audio_render(fade->source, ts_out,
-		audio, mixers, channels, sample_rate, mix_a, mix_b);
+	return obs_transition_audio_render(fade->source, ts_out, audio, mixers,
+					   channels, sample_rate, mix_a, mix_b);
 }
 
 struct obs_source_info fade_transition = {
@@ -96,5 +97,5 @@ struct obs_source_info fade_transition = {
 	.create = fade_create,
 	.destroy = fade_destroy,
 	.video_render = fade_video_render,
-	.audio_render = fade_audio_render
+	.audio_render = fade_audio_render,
 };

@@ -10,11 +10,11 @@
 #include <QLabel>
 
 VisibilityItemWidget::VisibilityItemWidget(obs_source_t *source_)
-	: source        (source_),
-	  enabledSignal (obs_source_get_signal_handler(source), "enable",
-	                 OBSSourceEnabled, this),
-	  renamedSignal (obs_source_get_signal_handler(source), "rename",
-	                 OBSSourceRenamed, this)
+	: source(source_),
+	  enabledSignal(obs_source_get_signal_handler(source), "enable",
+			OBSSourceEnabled, this),
+	  renamedSignal(obs_source_get_signal_handler(source), "rename",
+			OBSSourceRenamed, this)
 {
 	const char *name = obs_source_get_name(source);
 	bool enabled = obs_source_enabled(source);
@@ -38,15 +38,15 @@ VisibilityItemWidget::VisibilityItemWidget(obs_source_t *source_)
 	setLayout(itemLayout);
 	setStyleSheet("background-color: rgba(255, 255, 255, 0);");
 
-	connect(vis, SIGNAL(clicked(bool)),
-			this, SLOT(VisibilityClicked(bool)));
+	connect(vis, SIGNAL(clicked(bool)), this,
+		SLOT(VisibilityClicked(bool)));
 }
 
 VisibilityItemWidget::VisibilityItemWidget(obs_sceneitem_t *item_)
-	: item          (item_),
-	  source        (obs_sceneitem_get_source(item)),
-	  renamedSignal (obs_source_get_signal_handler(source), "rename",
-	                 OBSSourceRenamed, this)
+	: item(item_),
+	  source(obs_sceneitem_get_source(item)),
+	  renamedSignal(obs_source_get_signal_handler(source), "rename",
+			OBSSourceRenamed, this)
 {
 	const char *name = obs_source_get_name(source);
 	bool enabled = obs_sceneitem_visible(item);
@@ -90,16 +90,15 @@ VisibilityItemWidget::VisibilityItemWidget(obs_sceneitem_t *item_)
 
 	signal_handler_t *signal = obs_source_get_signal_handler(sceneSource);
 	signal_handler_connect(signal, "remove", OBSSceneRemove, this);
-	signal_handler_connect(signal, "item_remove", OBSSceneItemRemove,
-			this);
+	signal_handler_connect(signal, "item_remove", OBSSceneItemRemove, this);
 	signal_handler_connect(signal, "item_visible", OBSSceneItemVisible,
-			this);
+			       this);
+	signal_handler_connect(signal, "item_locked", OBSSceneItemLocked, this);
 
-	connect(vis, SIGNAL(clicked(bool)),
-			this, SLOT(VisibilityClicked(bool)));
+	connect(vis, SIGNAL(clicked(bool)), this,
+		SLOT(VisibilityClicked(bool)));
 
-	connect(lock, SIGNAL(clicked(bool)),
-			this, SLOT(LockClicked(bool)));
+	connect(lock, SIGNAL(clicked(bool)), this, SLOT(LockClicked(bool)));
 }
 
 VisibilityItemWidget::~VisibilityItemWidget()
@@ -118,9 +117,11 @@ void VisibilityItemWidget::DisconnectItemSignals()
 
 	signal_handler_disconnect(signal, "remove", OBSSceneRemove, this);
 	signal_handler_disconnect(signal, "item_remove", OBSSceneItemRemove,
-			this);
+				  this);
 	signal_handler_disconnect(signal, "item_visible", OBSSceneItemVisible,
-			this);
+				  this);
+	signal_handler_disconnect(signal, "item_locked", OBSSceneItemLocked,
+				  this);
 
 	sceneRemoved = true;
 }
@@ -128,7 +129,7 @@ void VisibilityItemWidget::DisconnectItemSignals()
 void VisibilityItemWidget::OBSSceneRemove(void *param, calldata_t *data)
 {
 	VisibilityItemWidget *window =
-		reinterpret_cast<VisibilityItemWidget*>(param);
+		reinterpret_cast<VisibilityItemWidget *>(param);
 
 	window->DisconnectItemSignals();
 
@@ -138,8 +139,8 @@ void VisibilityItemWidget::OBSSceneRemove(void *param, calldata_t *data)
 void VisibilityItemWidget::OBSSceneItemRemove(void *param, calldata_t *data)
 {
 	VisibilityItemWidget *window =
-		reinterpret_cast<VisibilityItemWidget*>(param);
-	obs_sceneitem_t *item = (obs_sceneitem_t*)calldata_ptr(data, "item");
+		reinterpret_cast<VisibilityItemWidget *>(param);
+	obs_sceneitem_t *item = (obs_sceneitem_t *)calldata_ptr(data, "item");
 
 	if (item == window->item)
 		window->DisconnectItemSignals();
@@ -148,45 +149,47 @@ void VisibilityItemWidget::OBSSceneItemRemove(void *param, calldata_t *data)
 void VisibilityItemWidget::OBSSceneItemVisible(void *param, calldata_t *data)
 {
 	VisibilityItemWidget *window =
-		reinterpret_cast<VisibilityItemWidget*>(param);
-	obs_sceneitem_t *curItem = (obs_sceneitem_t*)calldata_ptr(data, "item");
+		reinterpret_cast<VisibilityItemWidget *>(param);
+	obs_sceneitem_t *curItem =
+		(obs_sceneitem_t *)calldata_ptr(data, "item");
 	bool enabled = calldata_bool(data, "visible");
 
 	if (window->item == curItem)
 		QMetaObject::invokeMethod(window, "SourceEnabled",
-				Q_ARG(bool, enabled));
+					  Q_ARG(bool, enabled));
 }
 
 void VisibilityItemWidget::OBSSceneItemLocked(void *param, calldata_t *data)
 {
 	VisibilityItemWidget *window =
-		reinterpret_cast<VisibilityItemWidget*>(param);
-	obs_sceneitem_t *curItem = (obs_sceneitem_t*)calldata_ptr(data, "item");
+		reinterpret_cast<VisibilityItemWidget *>(param);
+	obs_sceneitem_t *curItem =
+		(obs_sceneitem_t *)calldata_ptr(data, "item");
 	bool locked = calldata_bool(data, "locked");
 
 	if (window->item == curItem)
 		QMetaObject::invokeMethod(window, "SourceLocked",
-				Q_ARG(bool, locked));
+					  Q_ARG(bool, locked));
 }
 
 void VisibilityItemWidget::OBSSourceEnabled(void *param, calldata_t *data)
 {
 	VisibilityItemWidget *window =
-		reinterpret_cast<VisibilityItemWidget*>(param);
+		reinterpret_cast<VisibilityItemWidget *>(param);
 	bool enabled = calldata_bool(data, "enabled");
 
 	QMetaObject::invokeMethod(window, "SourceEnabled",
-			Q_ARG(bool, enabled));
+				  Q_ARG(bool, enabled));
 }
 
 void VisibilityItemWidget::OBSSourceRenamed(void *param, calldata_t *data)
 {
 	VisibilityItemWidget *window =
-		reinterpret_cast<VisibilityItemWidget*>(param);
+		reinterpret_cast<VisibilityItemWidget *>(param);
 	const char *name = calldata_string(data, "new_name");
 
 	QMetaObject::invokeMethod(window, "SourceRenamed",
-			Q_ARG(QString, QT_UTF8(name)));
+				  Q_ARG(QString, QT_UTF8(name)));
 }
 
 void VisibilityItemWidget::VisibilityClicked(bool visible)
@@ -221,8 +224,8 @@ void VisibilityItemWidget::SourceRenamed(QString name)
 		label->setText(name);
 }
 
-void VisibilityItemWidget::SetColor(const QColor &color,
-		bool active_, bool selected_)
+void VisibilityItemWidget::SetColor(const QColor &color, bool active_,
+				    bool selected_)
 {
 	/* Do not update unless the state has actually changed */
 	if (active_ == active && selected_ == selected)
@@ -244,19 +247,19 @@ VisibilityItemDelegate::VisibilityItemDelegate(QObject *parent)
 }
 
 void VisibilityItemDelegate::paint(QPainter *painter,
-		const QStyleOptionViewItem &option,
-		const QModelIndex &index) const
+				   const QStyleOptionViewItem &option,
+				   const QModelIndex &index) const
 {
 	QStyledItemDelegate::paint(painter, option, index);
 
 	QObject *parentObj = parent();
-	QListWidget *list = qobject_cast<QListWidget*>(parentObj);
+	QListWidget *list = qobject_cast<QListWidget *>(parentObj);
 	if (!list)
 		return;
 
 	QListWidgetItem *item = list->item(index.row());
 	VisibilityItemWidget *widget =
-		qobject_cast<VisibilityItemWidget*>(list->itemWidget(item));
+		qobject_cast<VisibilityItemWidget *>(list->itemWidget(item));
 	if (!widget)
 		return;
 
@@ -265,8 +268,8 @@ void VisibilityItemDelegate::paint(QPainter *painter,
 
 	QPalette palette = list->palette();
 #if defined(_WIN32) || defined(__APPLE__)
-	QPalette::ColorGroup group = active ?
-		QPalette::Active : QPalette::Inactive;
+	QPalette::ColorGroup group = active ? QPalette::Active
+					    : QPalette::Inactive;
 #else
 	QPalette::ColorGroup group = QPalette::Active;
 #endif
@@ -288,7 +291,7 @@ void VisibilityItemDelegate::paint(QPainter *painter,
 }
 
 void SetupVisibilityItem(QListWidget *list, QListWidgetItem *item,
-		obs_source_t *source)
+			 obs_source_t *source)
 {
 	VisibilityItemWidget *baseWidget = new VisibilityItemWidget(source);
 
@@ -297,7 +300,7 @@ void SetupVisibilityItem(QListWidget *list, QListWidgetItem *item,
 }
 
 void SetupVisibilityItem(QListWidget *list, QListWidgetItem *item,
-		obs_sceneitem_t *sceneItem)
+			 obs_sceneitem_t *sceneItem)
 {
 	VisibilityItemWidget *baseWidget = new VisibilityItemWidget(sceneItem);
 

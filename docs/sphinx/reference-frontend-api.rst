@@ -124,6 +124,18 @@ Structures/Enumerations
      the program is either about to load a new scene collection, or the
      program is about to exit.
 
+   - **OBS_FRONTEND_FINISHED_LOADING**
+
+     Triggered when the program has finished loading.
+
+   - **OBS_FRONTEND_EVENT_RECORDING_PAUSED**
+
+     Triggered when the recording has been paused.
+
+   - **OBS_FRONTEND_EVENT_RECORDING_UNPAUSED**
+
+     Triggered when the recording has been unpaused.
+
 .. type:: struct obs_frontend_source_list
 
    - DARRAY(obs_source_t*) **sources**
@@ -232,6 +244,18 @@ Functions
 .. function:: void obs_frontend_set_current_transition(obs_source_t *transition)
 
    :param transition: The transition to set as the current transition.
+
+---------------------------------------
+
+.. function:: int obs_frontend_get_transition_duration(void)
+
+   :return: The transition duration (in milliseconds) currently set in the UI.
+
+---------------------------------------
+
+.. function:: void obs_frontend_set_transition_duration(int duration)
+
+   :param duration: Desired transition duration (in milliseconds)
 
 ---------------------------------------
 
@@ -390,6 +414,18 @@ Functions
 
 ---------------------------------------
 
+.. function:: void obs_frontend_recording_pause(bool pause)
+
+   :pause: *true* to pause recording, *false* to unpause.
+
+---------------------------------------
+
+.. function:: bool obs_frontend_recording_paused(void)
+
+   :return: *true* if recording paused, *false* otherwise.
+
+---------------------------------------
+
 .. function:: void obs_frontend_replay_buffer_start(void)
 
    Starts replay buffer.
@@ -470,6 +506,12 @@ Functions
 
    :param enable: *true* to activate studio mode, *false* to deactivate
                   studio mode.
+
+---------------------------------------
+
+.. function:: void obs_frontend_preview_program_trigger_transition(void)
+
+   Triggers a preview-to-program transition if studio mode is active.
 
 ---------------------------------------
 

@@ -7,27 +7,27 @@
 
 /* -------------------------------------------------------- */
 
-#define do_log(level, format, ...) \
+#define do_log(level, format, ...)                    \
 	blog(level, "[noise suppress: '%s'] " format, \
-			obs_source_get_name(ng->context), ##__VA_ARGS__)
+	     obs_source_get_name(ng->context), ##__VA_ARGS__)
 
-#define warn(format, ...)  do_log(LOG_WARNING, format, ##__VA_ARGS__)
-#define info(format, ...)  do_log(LOG_INFO,    format, ##__VA_ARGS__)
+#define warn(format, ...) do_log(LOG_WARNING, format, ##__VA_ARGS__)
+#define info(format, ...) do_log(LOG_INFO, format, ##__VA_ARGS__)
 
 #ifdef _DEBUG
-#define debug(format, ...) do_log(LOG_DEBUG,   format, ##__VA_ARGS__)
+#define debug(format, ...) do_log(LOG_DEBUG, format, ##__VA_ARGS__)
 #else
 #define debug(format, ...)
 #endif
 
 /* -------------------------------------------------------- */
 
-#define S_SUPPRESS_LEVEL                "suppress_level"
+#define S_SUPPRESS_LEVEL "suppress_level"
 
 #define MT_ obs_module_text
-#define TEXT_SUPPRESS_LEVEL             MT_("NoiseSuppress.SuppressLevel")
+#define TEXT_SUPPRESS_LEVEL MT_("NoiseSuppress.SuppressLevel")
 
-#define MAX_PREPROC_CHANNELS            8
+#define MAX_PREPROC_CHANNELS 8
 
 /* -------------------------------------------------------- */
 
@@ -90,12 +90,13 @@ static void noise_suppress_destroy(void *data)
 }
 
 static inline void alloc_channel(struct noise_suppress_data *ng,
-		uint32_t sample_rate, size_t channel, size_t frames)
+				 uint32_t sample_rate, size_t channel,
+				 size_t frames)
 {
-	ng->states[channel] = speex_preprocess_state_init((int)frames,
-			sample_rate);
+	ng->states[channel] =
+		speex_preprocess_state_init((int)frames, sample_rate);
 
-	circlebuf_reserve(&ng->input_buffers[channel],  frames * sizeof(float));
+	circlebuf_reserve(&ng->input_buffers[channel], frames * sizeof(float));
 	circlebuf_reserve(&ng->output_buffers[channel], frames * sizeof(float));
 }
 
@@ -119,12 +120,12 @@ static void noise_suppress_update(void *data, obs_data_t *s)
 
 	/* One speex state for each channel (limit 2) */
 	ng->copy_buffers[0] = bmalloc(frames * channels * sizeof(float));
-	ng->segment_buffers[0] = bmalloc(frames * channels * sizeof(spx_int16_t));
+	ng->segment_buffers[0] =
+		bmalloc(frames * channels * sizeof(spx_int16_t));
 	for (size_t c = 1; c < channels; ++c) {
-		ng->copy_buffers[c] = ng->copy_buffers[c-1] + frames;
-		ng->segment_buffers[c] = ng->segment_buffers[c-1] + frames;
+		ng->copy_buffers[c] = ng->copy_buffers[c - 1] + frames;
+		ng->segment_buffers[c] = ng->segment_buffers[c - 1] + frames;
 	}
-
 
 	for (size_t i = 0; i < channels; i++)
 		alloc_channel(ng, sample_rate, i, frames);
@@ -145,22 +146,24 @@ static inline void process(struct noise_suppress_data *ng)
 	/* Pop from input circlebuf */
 	for (size_t i = 0; i < ng->channels; i++)
 		circlebuf_pop_front(&ng->input_buffers[i], ng->copy_buffers[i],
-				ng->frames * sizeof(float));
+				    ng->frames * sizeof(float));
 
 	/* Set args */
 	for (size_t i = 0; i < ng->channels; i++)
 		speex_preprocess_ctl(ng->states[i],
-				SPEEX_PREPROCESS_SET_NOISE_SUPPRESS,
-				&ng->suppress_level);
+				     SPEEX_PREPROCESS_SET_NOISE_SUPPRESS,
+				     &ng->suppress_level);
 
 	/* Convert to 16bit */
 	for (size_t i = 0; i < ng->channels; i++)
 		for (size_t j = 0; j < ng->frames; j++) {
 			float s = ng->copy_buffers[i][j];
-			if (s > 1.0f) s = 1.0f;
-			else if (s < -1.0f) s = -1.0f;
-			ng->segment_buffers[i][j] = (spx_int16_t)
-				(s * c_32_to_16);
+			if (s > 1.0f)
+				s = 1.0f;
+			else if (s < -1.0f)
+				s = -1.0f;
+			ng->segment_buffers[i][j] =
+				(spx_int16_t)(s * c_32_to_16);
 		}
 
 	/* Execute */
@@ -176,7 +179,7 @@ static inline void process(struct noise_suppress_data *ng)
 	/* Push to output circlebuf */
 	for (size_t i = 0; i < ng->channels; i++)
 		circlebuf_push_back(&ng->output_buffers[i], ng->copy_buffers[i],
-				ng->frames * sizeof(float));
+				    ng->frames * sizeof(float));
 }
 
 struct ng_audio_info {
@@ -199,8 +202,8 @@ static void reset_data(struct noise_suppress_data *ng)
 	clear_circlebuf(&ng->info_buffer);
 }
 
-static struct obs_audio_data *noise_suppress_filter_audio(void *data,
-	struct obs_audio_data *audio)
+static struct obs_audio_data *
+noise_suppress_filter_audio(void *data, struct obs_audio_data *audio)
 {
 	struct noise_suppress_data *ng = data;
 	struct ng_audio_info info;
@@ -216,7 +219,7 @@ static struct obs_audio_data *noise_suppress_filter_audio(void *data,
 	 * from being processed as part of the new data. */
 	if (ng->last_timestamp) {
 		int64_t diff = llabs((int64_t)ng->last_timestamp -
-				(int64_t)audio->timestamp);
+				     (int64_t)audio->timestamp);
 
 		if (diff > 1000000000LL)
 			reset_data(ng);
@@ -234,7 +237,7 @@ static struct obs_audio_data *noise_suppress_filter_audio(void *data,
 	 * push back current audio data to input circlebuf */
 	for (size_t i = 0; i < ng->channels; i++)
 		circlebuf_push_back(&ng->input_buffers[i], audio->data[i],
-				audio->frames * sizeof(float));
+				    audio->frames * sizeof(float));
 
 	/* -----------------------------------------------
 	 * pop/process each 10ms segments, push back to output circlebuf */
@@ -259,11 +262,10 @@ static struct obs_audio_data *noise_suppress_filter_audio(void *data,
 
 	for (size_t i = 0; i < ng->channels; i++) {
 		ng->output_audio.data[i] =
-			(uint8_t*)&ng->output_data.array[i * out_size];
+			(uint8_t *)&ng->output_data.array[i * out_size];
 
 		circlebuf_pop_front(&ng->output_buffers[i],
-				ng->output_audio.data[i],
-				out_size);
+				    ng->output_audio.data[i], out_size);
 	}
 
 	ng->output_audio.frames = info.frames;
@@ -280,8 +282,11 @@ static obs_properties_t *noise_suppress_properties(void *data)
 {
 	obs_properties_t *ppts = obs_properties_create();
 
-	obs_properties_add_int_slider(ppts, S_SUPPRESS_LEVEL,
-			TEXT_SUPPRESS_LEVEL, SUP_MIN, SUP_MAX, 1);
+	obs_property_t *p = obs_properties_add_int_slider(ppts,
+							  S_SUPPRESS_LEVEL,
+							  TEXT_SUPPRESS_LEVEL,
+							  SUP_MIN, SUP_MAX, 1);
+	obs_property_int_set_suffix(p, " dB");
 
 	UNUSED_PARAMETER(data);
 	return ppts;

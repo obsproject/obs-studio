@@ -1,6 +1,7 @@
 #include <QMessageBox>
 
 #include "window-basic-settings.hpp"
+#include "obs-frontend-api.h"
 #include "obs-app.hpp"
 #include "window-basic-main.hpp"
 #include "qt-wrappers.hpp"
@@ -13,7 +14,7 @@
 struct QCef;
 struct QCefCookieManager;
 
-extern QCef              *cef;
+extern QCef *cef;
 extern QCefCookieManager *panel_cookies;
 
 enum class ListOpt : int {
@@ -35,6 +36,7 @@ void OBSBasicSettings::InitStreamPage()
 {
 	ui->connectAccount2->setVisible(false);
 	ui->disconnectAccount->setVisible(false);
+	ui->bandwidthTestEnable->setVisible(false);
 
 	int vertSpacing = ui->topStreamLayout->verticalSpacing();
 
@@ -52,10 +54,10 @@ void OBSBasicSettings::InitStreamPage()
 
 	LoadServices(false);
 
-	connect(ui->service, SIGNAL(currentIndexChanged(int)),
-			this, SLOT(UpdateServerList()));
-	connect(ui->service, SIGNAL(currentIndexChanged(int)),
-			this, SLOT(UpdateKeyLink()));
+	connect(ui->service, SIGNAL(currentIndexChanged(int)), this,
+		SLOT(UpdateServerList()));
+	connect(ui->service, SIGNAL(currentIndexChanged(int)), this,
+		SLOT(UpdateKeyLink()));
 }
 
 void OBSBasicSettings::LoadStream1Settings()
@@ -74,6 +76,15 @@ void OBSBasicSettings::LoadStream1Settings()
 	if (strcmp(type, "rtmp_custom") == 0) {
 		ui->service->setCurrentIndex(0);
 		ui->customServer->setText(server);
+
+		bool use_auth = obs_data_get_bool(settings, "use_auth");
+		const char *username =
+			obs_data_get_string(settings, "username");
+		const char *password =
+			obs_data_get_string(settings, "password");
+		ui->authUsername->setText(QT_UTF8(username));
+		ui->authPw->setText(QT_UTF8(password));
+		ui->useAuth->setChecked(use_auth);
 	} else {
 		int idx = ui->service->findText(service);
 		if (idx == -1) {
@@ -82,6 +93,9 @@ void OBSBasicSettings::LoadStream1Settings()
 			idx = 1;
 		}
 		ui->service->setCurrentIndex(idx);
+
+		bool bw_test = obs_data_get_bool(settings, "bwtest");
+		ui->bandwidthTestEnable->setChecked(bw_test);
 	}
 
 	UpdateServerList();
@@ -105,15 +119,16 @@ void OBSBasicSettings::LoadStream1Settings()
 
 	UpdateKeyLink();
 
+	bool streamActive = obs_frontend_streaming_active();
+	ui->streamPage->setEnabled(!streamActive);
+
 	loading = false;
 }
 
 void OBSBasicSettings::SaveStream1Settings()
 {
 	bool customServer = IsCustomService();
-	const char *service_id = customServer
-		? "rtmp_custom"
-		: "rtmp_common";
+	const char *service_id = customServer ? "rtmp_custom" : "rtmp_common";
 
 	obs_service_t *oldService = main->GetService();
 	OBSData hotkeyData = obs_hotkeys_save_service(oldService);
@@ -124,18 +139,30 @@ void OBSBasicSettings::SaveStream1Settings()
 
 	if (!customServer) {
 		obs_data_set_string(settings, "service",
-				QT_TO_UTF8(ui->service->currentText()));
-		obs_data_set_string(settings, "server",
-				QT_TO_UTF8(ui->server->currentData().toString()));
+				    QT_TO_UTF8(ui->service->currentText()));
+		obs_data_set_string(
+			settings, "server",
+			QT_TO_UTF8(ui->server->currentData().toString()));
 	} else {
 		obs_data_set_string(settings, "server",
-				QT_TO_UTF8(ui->customServer->text()));
+				    QT_TO_UTF8(ui->customServer->text()));
+		obs_data_set_bool(settings, "use_auth",
+				  ui->useAuth->isChecked());
+		if (ui->useAuth->isChecked()) {
+			obs_data_set_string(
+				settings, "username",
+				QT_TO_UTF8(ui->authUsername->text()));
+			obs_data_set_string(settings, "password",
+					    QT_TO_UTF8(ui->authPw->text()));
+		}
 	}
 
+	obs_data_set_bool(settings, "bwtest",
+			  ui->bandwidthTestEnable->isChecked());
 	obs_data_set_string(settings, "key", QT_TO_UTF8(ui->key->text()));
 
-	OBSService newService = obs_service_create(service_id,
-			"default_service", settings, hotkeyData);
+	OBSService newService = obs_service_create(
+		service_id, "default_service", settings, hotkeyData);
 	obs_service_release(newService);
 
 	if (!newService)
@@ -161,13 +188,29 @@ void OBSBasicSettings::UpdateKeyLink()
 		text += " <a href=\"https://";
 		text += "www.twitch.tv/broadcast/dashboard/streamkey";
 		text += "\">";
-		text += QTStr("Basic.AutoConfig.StreamPage.StreamKey.LinkToSite");
+		text += QTStr(
+			"Basic.AutoConfig.StreamPage.StreamKey.LinkToSite");
 		text += "</a>";
 	} else if (serviceName == "YouTube / YouTube Gaming") {
 		text += " <a href=\"https://";
 		text += "www.youtube.com/live_dashboard";
 		text += "\">";
-		text += QTStr("Basic.AutoConfig.StreamPage.StreamKey.LinkToSite");
+		text += QTStr(
+			"Basic.AutoConfig.StreamPage.StreamKey.LinkToSite");
+		text += "</a>";
+	} else if (serviceName.startsWith("Restream.io")) {
+		text += " <a href=\"https://";
+		text += "restream.io/settings/streaming-setup?from=OBS";
+		text += "\">";
+		text += QTStr(
+			"Basic.AutoConfig.StreamPage.StreamKey.LinkToSite");
+		text += "</a>";
+	} else if (serviceName == "Facebook Live") {
+		text += " <a href=\"https://";
+		text += "www.facebook.com/live/create";
+		text += "\">";
+		text += QTStr(
+			"Basic.AutoConfig.StreamPage.StreamKey.LinkToSite");
 		text += "</a>";
 	}
 
@@ -210,9 +253,9 @@ void OBSBasicSettings::LoadServices(bool showAll)
 			QVariant((int)ListOpt::ShowAll));
 	}
 
-	ui->service->insertItem(0,
-			QTStr("Basic.AutoConfig.StreamPage.Service.Custom"),
-			QVariant((int)ListOpt::Custom));
+	ui->service->insertItem(
+		0, QTStr("Basic.AutoConfig.StreamPage.Service.Custom"),
+		QVariant((int)ListOpt::Custom));
 
 	if (!lastService.isEmpty()) {
 		int idx = ui->service->findText(lastService);
@@ -232,8 +275,8 @@ static inline bool is_auth_service(const std::string &service)
 
 void OBSBasicSettings::on_service_currentIndexChanged(int)
 {
-	bool showMore =
-		ui->service->currentData().toInt() == (int)ListOpt::ShowAll;
+	bool showMore = ui->service->currentData().toInt() ==
+			(int)ListOpt::ShowAll;
 	if (showMore)
 		return;
 
@@ -241,6 +284,7 @@ void OBSBasicSettings::on_service_currentIndexChanged(int)
 	bool custom = IsCustomService();
 
 	ui->disconnectAccount->setVisible(false);
+	ui->bandwidthTestEnable->setVisible(false);
 
 #ifdef BROWSER_AVAILABLE
 	if (cef) {
@@ -248,8 +292,8 @@ void OBSBasicSettings::on_service_currentIndexChanged(int)
 			QString key = ui->key->text();
 			bool can_auth = is_auth_service(service);
 			int page = can_auth && (!loading || key.isEmpty())
-				? (int)Section::Connect
-				: (int)Section::StreamKey;
+					   ? (int)Section::Connect
+					   : (int)Section::StreamKey;
 
 			ui->streamStackWidget->setCurrentIndex(page);
 			ui->streamKeyWidget->setVisible(true);
@@ -263,13 +307,20 @@ void OBSBasicSettings::on_service_currentIndexChanged(int)
 	ui->connectAccount2->setVisible(false);
 #endif
 
+	ui->useAuth->setVisible(custom);
+	ui->authUsernameLabel->setVisible(custom);
+	ui->authUsername->setVisible(custom);
+	ui->authPwLabel->setVisible(custom);
+	ui->authPwWidget->setVisible(custom);
+
 	if (custom) {
 		ui->streamkeyPageLayout->insertRow(1, ui->serverLabel,
-				ui->serverStackedWidget);
+						   ui->serverStackedWidget);
 
 		ui->serverStackedWidget->setCurrentIndex(1);
 		ui->serverStackedWidget->setVisible(true);
 		ui->serverLabel->setVisible(true);
+		on_useAuth_toggled();
 	} else {
 		ui->serverStackedWidget->setCurrentIndex(0);
 	}
@@ -288,8 +339,8 @@ void OBSBasicSettings::on_service_currentIndexChanged(int)
 void OBSBasicSettings::UpdateServerList()
 {
 	QString serviceName = ui->service->currentText();
-	bool showMore =
-		ui->service->currentData().toInt() == (int)ListOpt::ShowAll;
+	bool showMore = ui->service->currentData().toInt() ==
+			(int)ListOpt::ShowAll;
 
 	if (showMore) {
 		LoadServices(true);
@@ -333,6 +384,17 @@ void OBSBasicSettings::on_show_clicked()
 	}
 }
 
+void OBSBasicSettings::on_authPwShow_clicked()
+{
+	if (ui->authPw->echoMode() == QLineEdit::Password) {
+		ui->authPw->setEchoMode(QLineEdit::Normal);
+		ui->authPwShow->setText(QTStr("Hide"));
+	} else {
+		ui->authPw->setEchoMode(QLineEdit::Password);
+		ui->authPwShow->setText(QTStr("Show"));
+	}
+}
+
 OBSService OBSBasicSettings::SpawnTempService()
 {
 	bool custom = IsCustomService();
@@ -343,17 +405,18 @@ OBSService OBSBasicSettings::SpawnTempService()
 
 	if (!custom) {
 		obs_data_set_string(settings, "service",
-				QT_TO_UTF8(ui->service->currentText()));
-		obs_data_set_string(settings, "server",
-				QT_TO_UTF8(ui->server->currentData().toString()));
+				    QT_TO_UTF8(ui->service->currentText()));
+		obs_data_set_string(
+			settings, "server",
+			QT_TO_UTF8(ui->server->currentData().toString()));
 	} else {
 		obs_data_set_string(settings, "server",
-				QT_TO_UTF8(ui->customServer->text()));
+				    QT_TO_UTF8(ui->customServer->text()));
 	}
 	obs_data_set_string(settings, "key", QT_TO_UTF8(ui->key->text()));
 
-	OBSService newService = obs_service_create(service_id,
-			"temp_service", settings, nullptr);
+	OBSService newService = obs_service_create(service_id, "temp_service",
+						   settings, nullptr);
 	obs_service_release(newService);
 
 	return newService;
@@ -362,7 +425,7 @@ OBSService OBSBasicSettings::SpawnTempService()
 void OBSBasicSettings::OnOAuthStreamKeyConnected()
 {
 #ifdef BROWSER_AVAILABLE
-	OAuthStreamKey *a = reinterpret_cast<OAuthStreamKey*>(auth.get());
+	OAuthStreamKey *a = reinterpret_cast<OAuthStreamKey *>(auth.get());
 
 	if (a) {
 		bool validKey = !a->key().empty();
@@ -370,10 +433,13 @@ void OBSBasicSettings::OnOAuthStreamKeyConnected()
 		if (validKey)
 			ui->key->setText(QT_UTF8(a->key().c_str()));
 
-		ui->streamKeyWidget->setVisible(!validKey);
-		ui->streamKeyLabel->setVisible(!validKey);
-		ui->connectAccount2->setVisible(!validKey);
-		ui->disconnectAccount->setVisible(validKey);
+		ui->streamKeyWidget->setVisible(false);
+		ui->streamKeyLabel->setVisible(false);
+		ui->connectAccount2->setVisible(false);
+		ui->disconnectAccount->setVisible(true);
+
+		if (strcmp(a->service(), "Twitch") == 0)
+			ui->bandwidthTestEnable->setVisible(true);
 	}
 
 	ui->streamStackWidget->setCurrentIndex((int)Section::StreamKey);
@@ -415,9 +481,8 @@ void OBSBasicSettings::on_disconnectAccount_clicked()
 {
 	QMessageBox::StandardButton button;
 
-	button = OBSMessageBox::question(this,
-			QTStr(DISCONNECT_COMFIRM_TITLE),
-			QTStr(DISCONNECT_COMFIRM_TEXT));
+	button = OBSMessageBox::question(this, QTStr(DISCONNECT_COMFIRM_TITLE),
+					 QTStr(DISCONNECT_COMFIRM_TEXT));
 
 	if (button == QMessageBox::No) {
 		return;
@@ -436,10 +501,24 @@ void OBSBasicSettings::on_disconnectAccount_clicked()
 	ui->streamKeyLabel->setVisible(true);
 	ui->connectAccount2->setVisible(true);
 	ui->disconnectAccount->setVisible(false);
+	ui->bandwidthTestEnable->setVisible(false);
 	ui->key->setText("");
 }
 
 void OBSBasicSettings::on_useStreamKey_clicked()
 {
 	ui->streamStackWidget->setCurrentIndex((int)Section::StreamKey);
+}
+
+void OBSBasicSettings::on_useAuth_toggled()
+{
+	if (!IsCustomService())
+		return;
+
+	bool use_auth = ui->useAuth->isChecked();
+
+	ui->authUsernameLabel->setVisible(use_auth);
+	ui->authUsername->setVisible(use_auth);
+	ui->authPwLabel->setVisible(use_auth);
+	ui->authPwWidget->setVisible(use_auth);
 }

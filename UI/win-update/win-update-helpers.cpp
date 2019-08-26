@@ -21,7 +21,7 @@ std::string vstrprintf(const char *format, va_list args)
 		return std::string();
 
 	std::string str;
-	int size = (int)vsnprintf(nullptr, 0, format, args);
+	int size = (int)vsnprintf(nullptr, 0, format, args) + 1;
 	str.resize(size);
 	vsnprintf(&str[0], size, format, args);
 	return str;

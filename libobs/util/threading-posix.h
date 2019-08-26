@@ -36,8 +36,8 @@ static inline long os_atomic_load_long(const volatile long *ptr)
 	return __atomic_load_n(ptr, __ATOMIC_SEQ_CST);
 }
 
-static inline bool os_atomic_compare_swap_long(volatile long *val,
-		long old_val, long new_val)
+static inline bool os_atomic_compare_swap_long(volatile long *val, long old_val,
+					       long new_val)
 {
 	return __sync_bool_compare_and_swap(val, old_val, new_val);
 }

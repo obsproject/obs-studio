@@ -139,6 +139,10 @@ Scene Signals
 
    Called when a scene item's visibility state changes.
 
+**item_locked** (ptr scene, ptr item, bool locked)
+
+   Called when a scene item has been locked or unlocked.
+
 **item_select** (ptr scene, ptr item)
 **item_deselect** (ptr scene, ptr item)
 
@@ -403,6 +407,13 @@ Scene Item Functions
               bool obs_sceneitem_visible(const obs_sceneitem_t *item)
 
    Sets/gets the visibility state of the scene item.
+
+---------------------
+
+.. function:: bool obs_sceneitem_set_locked(obs_sceneitem_t *item, bool locked)
+              bool obs_sceneitem_locked(const obs_sceneitem_t *item)
+
+   Sets/gets the locked/unlocked state of the scene item.
 
 ---------------------
 

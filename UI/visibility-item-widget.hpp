@@ -61,10 +61,10 @@ public:
 	VisibilityItemDelegate(QObject *parent = nullptr);
 
 	void paint(QPainter *painter, const QStyleOptionViewItem &option,
-			const QModelIndex &index) const override;
+		   const QModelIndex &index) const override;
 };
 
 void SetupVisibilityItem(QListWidget *list, QListWidgetItem *item,
-		obs_source_t *source);
+			 obs_source_t *source);
 void SetupVisibilityItem(QListWidget *list, QListWidgetItem *item,
-		obs_sceneitem_t *sceneItem);
+			 obs_sceneitem_t *sceneItem);

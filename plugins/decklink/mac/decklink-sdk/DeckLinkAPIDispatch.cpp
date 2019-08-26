@@ -55,7 +55,7 @@ static CreateDeckLinkDiscoveryInstanceFunc  gCreateDeckLinkDiscoveryFunc= NULL;
 static CreateVideoFrameAncillaryPacketsInstanceFunc	gCreateVideoFrameAncillaryPacketsFunc = NULL;
 
 
-void	InitDeckLinkAPI (void)
+static void	InitDeckLinkAPI (void)
 {
 	CFURLRef		bundleURL;
 
@@ -167,7 +167,7 @@ static CFBundleRef         gBMDStreamingAPIBundleRef = NULL;
 static CreateDiscoveryFunc gCreateDiscoveryFunc      = NULL;
 static CreateNALParserFunc gCreateNALParserFunc      = NULL;
 
-void InitBMDStreamingAPI(void)
+static void InitBMDStreamingAPI(void)
 {
 	CFURLRef bundleURL;
 
