@@ -186,6 +186,11 @@ enum obs_media_state {
  */
 #define OBS_SOURCE_CONTROLLABLE_MEDIA (1 << 13)
 
+/**
+ * Source type provides cea708 data
+ */
+#define OBS_SOURCE_CEA_708 (1 << 14)
+
 /** @} */
 
 typedef void (*obs_source_enum_proc_t)(obs_source_t *parent,
