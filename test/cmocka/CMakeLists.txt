@@ -37,3 +37,10 @@ target_link_libraries(test_darray ${CMOCKA_LIBRARIES} libobs)
 
 add_test(test_darray ${CMAKE_CURRENT_BINARY_DIR}/test_darray)
 fixLink(test_darray)
+
+# bitstream test
+add_executable(test_bitstream test_bitstream.c)
+target_link_libraries(test_bitstream ${CMOCKA_LIBRARIES} libobs)
+
+add_test(test_bitstream ${CMAKE_CURRENT_BINARY_DIR}/test_bitstream)
+fixLink(test_bitstream)

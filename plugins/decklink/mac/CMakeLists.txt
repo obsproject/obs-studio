@@ -9,6 +9,8 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}")
 
 find_library(COREFOUNDATION CoreFoundation)
 
+include_directories(${CMAKE_SOURCE_DIR}/deps/libcaption)
+
 set(mac-decklink-sdk_HEADERS
 	decklink-sdk/DeckLinkAPI.h
 	decklink-sdk/DeckLinkAPIConfiguration.h
@@ -37,6 +39,7 @@ set(mac-decklink_HEADERS
 	../audio-repack.h
 	../audio-repack.hpp
 	../util.hpp
+	../OBSVideoFrame.h
 	)
 
 set(mac-decklink_SOURCES
@@ -54,6 +57,7 @@ set(mac-decklink_SOURCES
 	../audio-repack.c
 	platform.cpp
 	../util.cpp
+	../OBSVideoFrame.cpp
 	)
 
 list(APPEND decklink_HEADERS ${decklink_UI_HEADERS})
@@ -73,7 +77,9 @@ add_library(mac-decklink MODULE
 
 target_link_libraries(mac-decklink
 	libobs
-	${COREFOUNDATION})
+	obs-frontend-api
+	${COREFOUNDATION}
+	caption)
 set_target_properties(mac-decklink PROPERTIES FOLDER "plugins")
 
 install_obs_plugin_with_data(mac-decklink ../data)

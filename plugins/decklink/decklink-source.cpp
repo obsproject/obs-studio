@@ -331,9 +331,9 @@ struct obs_source_info create_decklink_source_info()
 	struct obs_source_info decklink_source_info = {};
 	decklink_source_info.id = "decklink-input";
 	decklink_source_info.type = OBS_SOURCE_TYPE_INPUT;
-	decklink_source_info.output_flags = OBS_SOURCE_ASYNC_VIDEO |
-					    OBS_SOURCE_AUDIO |
-					    OBS_SOURCE_DO_NOT_DUPLICATE;
+	decklink_source_info.output_flags =
+		OBS_SOURCE_ASYNC_VIDEO | OBS_SOURCE_AUDIO |
+		OBS_SOURCE_DO_NOT_DUPLICATE | OBS_SOURCE_CEA_708;
 	decklink_source_info.create = decklink_create;
 	decklink_source_info.destroy = decklink_destroy;
 	decklink_source_info.get_defaults = decklink_get_defaults;
