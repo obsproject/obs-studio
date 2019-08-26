@@ -190,6 +190,12 @@ static bool obs_source_init(struct obs_source *source)
 	source->control->source = source;
 	source->audio_mixers = 0xFF;
 
+	source->private_settings = obs_data_create();
+	return true;
+}
+
+static void obs_source_init_finalize(struct obs_source *source)
+{
 	if (is_audio_source(source)) {
 		pthread_mutex_lock(&obs->data.audio_sources_mutex);
 
@@ -203,11 +209,8 @@ static bool obs_source_init(struct obs_source *source)
 		pthread_mutex_unlock(&obs->data.audio_sources_mutex);
 	}
 
-	source->private_settings = obs_data_create();
-
 	obs_context_data_insert(&source->context, &obs->data.sources_mutex,
 				&obs->data.first_source);
-	return true;
 }
 
 static bool obs_source_hotkey_mute(void *data, obs_hotkey_pair_id id,
@@ -369,6 +372,7 @@ static obs_source_t *obs_source_create_internal(const char *id,
 		obs_source_dosignal(source, "source_create", NULL);
 	}
 
+	obs_source_init_finalize(source);
 	return source;
 
 fail:
