@@ -144,7 +144,7 @@ static inline bool is_composite_source(const struct obs_source *source)
 extern char *find_libobs_data_file(const char *file);
 
 /* internal initialization */
-bool obs_source_init(struct obs_source *source)
+static bool obs_source_init(struct obs_source *source)
 {
 	pthread_mutexattr_t attr;
 
