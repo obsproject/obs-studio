@@ -356,7 +356,7 @@ static obs_source_t *obs_source_create_internal(const char *id,
 	if (info && info->create)
 		source->context.data =
 			info->create(source->context.settings, source);
-	if (info->create && !source->context.data)
+	if ((!info || info->create) && !source->context.data)
 		blog(LOG_ERROR, "Failed to create source '%s'!", name);
 
 	blog(LOG_DEBUG, "%ssource '%s' (%s) created", private ? "private " : "",
