@@ -331,6 +331,10 @@ static void update_params(struct obs_qsv *obsqsv, obs_data_t *settings)
 	if (obs_data_has_user_value(settings, "bf"))
 		bFrames = (int)obs_data_get_int(settings, "bf");
 
+	enum qsv_cpu_platform plat = qsv_get_cpu_platform();
+	if (plat == QSV_CPU_PLATFORM_IVB || plat == QSV_CPU_PLATFORM_SNB)
+		bFrames = 0;
+
 	int width = (int)obs_encoder_get_width(obsqsv->encoder);
 	int height = (int)obs_encoder_get_height(obsqsv->encoder);
 	if (astrcmpi(target_usage, "quality") == 0)
