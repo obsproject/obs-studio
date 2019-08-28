@@ -2130,6 +2130,7 @@ static void reset_raw_output(obs_output_t *output)
 bool obs_output_begin_data_capture(obs_output_t *output, uint32_t flags)
 {
 	bool encoded, has_video, has_audio, has_service, force_encoder;
+	size_t num_mixes;
 
 	if (!obs_output_valid(output, "obs_output_begin_data_capture"))
 		return false;
