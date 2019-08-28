@@ -5,9 +5,11 @@
 #include "visibility-checkbox.hpp"
 #include "locked-checkbox.hpp"
 #include "expand-checkbox.hpp"
+#include "interact-button.hpp"
 #include "platform.hpp"
 
 #include <obs-frontend-api.h>
+#include <obs-source.h>
 #include <obs.h>
 
 #include <string>
@@ -74,6 +76,14 @@ SourceTreeItem::SourceTreeItem(SourceTree *tree_, OBSSceneItem sceneitem_)
 	label->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
 	label->setAttribute(Qt::WA_TranslucentBackground);
 
+	interact = new InteractButton();
+	interact->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
+	interact->setFixedSize(16, 16);
+	interact->setVisible(source && (obs_source_get_output_flags(source) &
+					OBS_SOURCE_INTERACTION));
+	interact->setAttribute(Qt::WA_TranslucentBackground);
+	interact->setStyleSheet("background: none");
+
 #ifdef __APPLE__
 	vis->setAttribute(Qt::WA_LayoutUsesWidgetRect);
 	lock->setAttribute(Qt::WA_LayoutUsesWidgetRect);
@@ -83,6 +93,8 @@ SourceTreeItem::SourceTreeItem(SourceTree *tree_, OBSSceneItem sceneitem_)
 	boxLayout->setContentsMargins(1, 1, 1, 1);
 	boxLayout->setSpacing(1);
 	boxLayout->addWidget(label);
+	boxLayout->addWidget(interact);
+	boxLayout->setSpacing(2);
 	boxLayout->addWidget(vis);
 	boxLayout->setSpacing(2);
 	boxLayout->addWidget(lock);
@@ -107,8 +119,14 @@ SourceTreeItem::SourceTreeItem(SourceTree *tree_, OBSSceneItem sceneitem_)
 		obs_sceneitem_set_locked(sceneitem, checked);
 	};
 
+	auto openInteraction = [this]() {
+		SignalBlocker sourcesSignalBlocker(this);
+		InteractionClicked();
+	};
+
 	connect(vis, &QAbstractButton::clicked, setItemVisible);
 	connect(lock, &QAbstractButton::clicked, setItemLocked);
+	connect(interact, &QAbstractButton::clicked, openInteraction);
 }
 
 void SourceTreeItem::paintEvent(QPaintEvent *event)
@@ -247,6 +265,14 @@ void SourceTreeItem::ReconnectSignals()
 	removeSignal.Connect(signal, "remove", removeSource, this);
 }
 
+void SourceTreeItem::mouseReleaseEvent(QMouseEvent *event)
+{
+	QWidget::mouseReleaseEvent(event);
+	if (event->button() == Qt::MiddleButton) {
+		InteractionClicked();
+	}
+}
+
 void SourceTreeItem::mouseDoubleClickEvent(QMouseEvent *event)
 {
 	QWidget::mouseDoubleClickEvent(event);
@@ -382,6 +408,16 @@ bool SourceTreeItem::eventFilter(QObject *object, QEvent *event)
 void SourceTreeItem::VisibilityChanged(bool visible)
 {
 	vis->setChecked(visible);
+}
+
+void SourceTreeItem::InteractionClicked()
+{
+	obs_source_t *source = obs_sceneitem_get_source(sceneitem);
+	OBSBasic *main = reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
+	if (source &&
+	    (obs_source_get_output_flags(source) & OBS_SOURCE_INTERACTION)) {
+		main->CreateInteractionWindow(source);
+	}
 }
 
 void SourceTreeItem::LockedChanged(bool locked)
@@ -1005,6 +1041,12 @@ void SourceTree::mouseDoubleClickEvent(QMouseEvent *event)
 {
 	if (event->button() == Qt::LeftButton)
 		QListView::mouseDoubleClickEvent(event);
+}
+
+void SourceTree::mouseReleaseEvent(QMouseEvent *event)
+{
+	if (event->button() == Qt::MiddleButton)
+		QListView::mouseReleaseEvent(event);
 }
 
 void SourceTree::dropEvent(QDropEvent *event)

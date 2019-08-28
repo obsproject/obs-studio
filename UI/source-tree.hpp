@@ -18,6 +18,7 @@ class QHBoxLayout;
 class LockedCheckBox;
 class VisibilityCheckBox;
 class VisibilityItemWidget;
+class InteractButton;
 
 class SourceTreeSubItemCheckBox : public QCheckBox {
 	Q_OBJECT
@@ -29,6 +30,7 @@ class SourceTreeItem : public QWidget {
 	friend class SourceTree;
 	friend class SourceTreeModel;
 
+	void mouseReleaseEvent(QMouseEvent *event) override;
 	void mouseDoubleClickEvent(QMouseEvent *event) override;
 	void enterEvent(QEvent *event) override;
 	void leaveEvent(QEvent *event) override;
@@ -60,6 +62,7 @@ private:
 	LockedCheckBox *lock = nullptr;
 	QHBoxLayout *boxLayout = nullptr;
 	QLabel *label = nullptr;
+	InteractButton *interact = nullptr;
 
 	QLineEdit *editor = nullptr;
 
@@ -83,6 +86,7 @@ private slots:
 	void ExitEditMode(bool save);
 
 	void VisibilityChanged(bool visible);
+	void InteractionClicked();
 	void LockedChanged(bool locked);
 	void Renamed(const QString &name);
 
@@ -186,6 +190,7 @@ public slots:
 	void Edit(int idx);
 
 protected:
+	virtual void mouseReleaseEvent(QMouseEvent *event) override;
 	virtual void mouseDoubleClickEvent(QMouseEvent *event) override;
 	virtual void dropEvent(QDropEvent *event) override;
 	virtual void mouseMoveEvent(QMouseEvent *event) override;

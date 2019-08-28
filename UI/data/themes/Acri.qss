@@ -928,6 +928,14 @@ OBSBasicSettings QListWidget::item {
     padding-bottom: 5px;
 }
 
+/* Interact Button */
+
+InteractButton {
+    outline: none;
+    background: transparent;
+    qproperty-icon: url(./Dark/interact.svg);
+}
+
 /* Locked CheckBox */
 
 LockedCheckBox {

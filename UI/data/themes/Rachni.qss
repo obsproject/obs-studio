@@ -1260,6 +1260,14 @@ OBSBasicSettings {
     qproperty-advancedIcon: url(./Dark/settings/advanced.svg);
 }
 
+/* Interact Button */
+
+InteractButton {
+    outline: none;
+    background: transparent;
+    qproperty-icon: url(./Dark/interact.svg);
+}
+
 OBSBasicSettings QListWidget::item {
     padding-top: 5px;
     padding-bottom: 5px;
