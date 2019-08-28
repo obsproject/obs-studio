@@ -51,11 +51,11 @@ steps:
   displayName: 'Update submodules and create build folders'
 
 - script: |
-    if not exist "dependencies2017.zip" (curl -kLO "%DependenciesUrl%" -f --retry 5)
+    if not exist "dependencies2017.1.zip" (curl -kLO "%DependenciesUrl%" -f --retry 5)
     if not exist "%CefZip%" (curl -kLO "%CefUrl%" -f --retry 5)
     if not exist "vlc.zip" (curl -kLO "%VLCUrl%" -f --retry 5)
     7z x "%CefZip%"
-    7z x dependencies2017.zip -odependencies2017
+    7z x dependencies2017.1.zip -odependencies2017
     7z x vlc.zip -ovlc
   displayName: 'Download and extract dependencies'
 
