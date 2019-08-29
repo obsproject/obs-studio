@@ -807,8 +807,12 @@
           "name": "GameTips.TV",
           "servers": [
               {
-                  "name": "Server Iran",
+                  "name": "Iran - Rasht",
                   "url": "rtmp://rtmp.cdn.server1.gametips.tv:1935/hls"
+              },
+              {
+                  "name": "Germany - Falkenstein/Vogtland",
+                  "url": "rtmp://rtmp.cdn.server2.gametips.tv:1935/hls"
               }
           ]
         },
