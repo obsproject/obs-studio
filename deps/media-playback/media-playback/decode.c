@@ -310,7 +310,7 @@ static int decode_packet(struct mp_decode *d, int *got_frame)
 #endif
 
 #ifdef USE_NEW_HARDWARE_CODEC_METHOD
-	if (*got_frame && ret && d->hw) {
+	if (*got_frame && d->hw) {
 		if (d->hw_frame->format != d->hw_format) {
 			d->frame = d->hw_frame;
 			return ret;
