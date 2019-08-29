@@ -382,7 +382,7 @@ void gs_device::InitDevice(uint32_t adapterIdx)
 	if (FAILED(hr))
 		throw UnsupportedHWError("Failed to create device", hr);
 
-	blog(LOG_INFO, "D3D11 loaded successfully, feature level used: %u",
+	blog(LOG_INFO, "D3D11 loaded successfully, feature level used: %x",
 	     (unsigned int)levelUsed);
 
 	/* ---------------------------------------- */
