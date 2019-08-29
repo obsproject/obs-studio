@@ -205,9 +205,8 @@ void obs_output_destroy(obs_output_t *output)
 			output->service->output = NULL;
 
 		if (output->context.data) {
-			void* temp_data = output->context.data;
+			output->info.destroy(output->context.data);
 			output->context.data = NULL;
-			output->info.destroy(temp_data);
 		}
 
 		free_packets(output);
@@ -932,7 +931,7 @@ int obs_output_get_frames_dropped(const obs_output_t *output)
 {
 	if (!obs_output_valid(output, "obs_output_get_frames_dropped"))
 		return 0;
-	if (!output->info.get_dropped_frames)
+	if (!output->info.get_dropped_frames || !output->context.data)
 		return 0;
 
 	return output->info.get_dropped_frames(output->context.data);
