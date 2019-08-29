@@ -500,6 +500,7 @@ EXPORT void gs_destroy(graphics_t *graphics);
 EXPORT void gs_enter_context(graphics_t *graphics);
 EXPORT void gs_leave_context(void);
 EXPORT graphics_t *gs_get_context(void);
+EXPORT void *gs_get_device_obj(void);
 
 EXPORT void gs_matrix_push(void);
 EXPORT void gs_matrix_pop(void);

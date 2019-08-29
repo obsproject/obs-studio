@@ -288,6 +288,14 @@ graphics_t *gs_get_context(void)
 	return thread_graphics;
 }
 
+void *gs_get_device_obj(void)
+{
+	if (!gs_valid("gs_get_device_obj"))
+		return NULL;
+
+	return thread_graphics->exports.device_get_device_obj(thread_graphics);
+}
+
 const char *gs_get_device_name(void)
 {
 	return gs_valid("gs_get_device_name")

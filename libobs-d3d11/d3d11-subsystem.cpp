@@ -829,6 +829,11 @@ void device_leave_context(gs_device_t *device)
 	UNUSED_PARAMETER(device);
 }
 
+void *device_get_device_obj(gs_device_t *device)
+{
+	return (void *)device->device.Get();
+}
+
 gs_swapchain_t *device_swapchain_create(gs_device_t *device,
 					const struct gs_init_data *data)
 {
