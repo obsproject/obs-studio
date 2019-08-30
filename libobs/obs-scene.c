@@ -466,6 +466,10 @@ static void render_item_texture(struct obs_scene_item *item)
 			      "render_item_texture");
 
 	gs_texture_t *tex = gs_texrender_get_texture(item->item_render);
+	if (!tex) {
+		return;
+	}
+
 	gs_effect_t *effect = obs->video.default_effect;
 	enum obs_scale_type type = item->scale_filter;
 	uint32_t cx = gs_texture_get_width(tex);
