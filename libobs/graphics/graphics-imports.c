@@ -122,6 +122,8 @@ bool load_graphics_imports(struct gs_exports *exports, void *module,
 	GRAPHICS_IMPORT(gs_texture_unmap);
 	GRAPHICS_IMPORT_OPTIONAL(gs_texture_is_rect);
 	GRAPHICS_IMPORT(gs_texture_get_obj);
+	GRAPHICS_IMPORT(device_texture_open_shared);
+	GRAPHICS_IMPORT(device_texture_get_shared_handle);
 
 	GRAPHICS_IMPORT(gs_cubetexture_destroy);
 	GRAPHICS_IMPORT(gs_cubetexture_get_size);
@@ -186,6 +188,7 @@ bool load_graphics_imports(struct gs_exports *exports, void *module,
 	GRAPHICS_IMPORT(gs_shader_set_next_sampler);
 
 	GRAPHICS_IMPORT_OPTIONAL(device_nv12_available);
+	GRAPHICS_IMPORT(device_shared_texture_available);
 
 	GRAPHICS_IMPORT(device_debug_marker_begin);
 	GRAPHICS_IMPORT(device_debug_marker_end);
@@ -198,7 +201,6 @@ bool load_graphics_imports(struct gs_exports *exports, void *module,
 	/* win32 specific functions */
 #elif _WIN32
 	GRAPHICS_IMPORT(device_gdi_texture_available);
-	GRAPHICS_IMPORT(device_shared_texture_available);
 	GRAPHICS_IMPORT_OPTIONAL(device_get_duplicator_monitor_info);
 	GRAPHICS_IMPORT_OPTIONAL(device_duplicator_create);
 	GRAPHICS_IMPORT_OPTIONAL(gs_duplicator_destroy);
@@ -207,8 +209,6 @@ bool load_graphics_imports(struct gs_exports *exports, void *module,
 	GRAPHICS_IMPORT_OPTIONAL(device_texture_create_gdi);
 	GRAPHICS_IMPORT_OPTIONAL(gs_texture_get_dc);
 	GRAPHICS_IMPORT_OPTIONAL(gs_texture_release_dc);
-	GRAPHICS_IMPORT_OPTIONAL(device_texture_open_shared);
-	GRAPHICS_IMPORT_OPTIONAL(device_texture_get_shared_handle);
 	GRAPHICS_IMPORT_OPTIONAL(device_texture_acquire_sync);
 	GRAPHICS_IMPORT_OPTIONAL(device_texture_release_sync);
 	GRAPHICS_IMPORT_OPTIONAL(device_texture_create_nv12);

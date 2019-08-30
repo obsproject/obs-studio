@@ -163,6 +163,7 @@ EXPORT void device_debug_marker_begin(gs_device_t *device,
 				      const char *markername,
 				      const float color[4]);
 EXPORT void device_debug_marker_end(gs_device_t *device);
+EXPORT bool device_shared_texture_available(void);
 
 #ifdef __cplusplus
 }

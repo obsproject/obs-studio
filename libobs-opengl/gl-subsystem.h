@@ -124,6 +124,48 @@ static inline GLenum convert_gs_internal_format(enum gs_color_format format)
 	return 0;
 }
 
+static inline enum gs_color_format convert_gl_internal_format(GLenum format)
+{
+	switch (format) {
+	case GL_R8:
+		return GS_R8;
+	case GL_RGBA:
+		return GS_RGBA;
+	case GL_RGB:
+		return GS_BGRX;
+	case GL_BGRA:
+		return GS_RGBA;
+	case GL_RGB10_A2:
+		return GS_R10G10B10A2;
+	case GL_RGBA16:
+		return GS_RGBA16;
+	case GL_R16:
+		return GS_R16;
+	case GL_RGBA16F:
+		return GS_RGBA16F;
+	case GL_RGBA32F:
+		return GS_RGBA32F;
+	case GL_RG16F:
+		return GS_RG16F;
+	case GL_RG32F:
+		return GS_RG32F;
+	case GL_RG8:
+		return GS_R8G8;
+	case GL_R16F:
+		return GS_R16F;
+	case GL_R32F:
+		return GS_R32F;
+	case GL_COMPRESSED_RGBA_S3TC_DXT1_EXT:
+		return GS_DXT1;
+	case GL_COMPRESSED_RGBA_S3TC_DXT3_EXT:
+		return GS_DXT3;
+	case GL_COMPRESSED_RGBA_S3TC_DXT5_EXT:
+		return GS_DXT5;
+	default:
+		return GS_UNKNOWN;
+	}
+}
+
 static inline GLenum get_gl_format_type(enum gs_color_format format)
 {
 	switch (format) {
@@ -512,6 +554,7 @@ struct gs_texture {
 	bool is_dynamic;
 	bool is_render_target;
 	bool is_dummy;
+	bool is_shared;
 	bool gen_mipmaps;
 
 	gs_samplerstate_t *cur_sampler;

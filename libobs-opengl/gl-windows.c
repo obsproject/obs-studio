@@ -593,8 +593,3 @@ EXPORT bool device_gdi_texture_available(void)
 {
 	return false;
 }
-
-EXPORT bool device_shared_texture_available(void)
-{
-	return false;
-}

@@ -167,6 +167,13 @@ static inline bool gl_tex_param_i(GLenum target, GLenum param, GLint val)
 	return gl_success("glTexParameteri");
 }
 
+static inline GLint gl_get_tex_param_iv(GLenum target, GLint level,
+					GLenum param, GLint *store)
+{
+	glGetTexLevelParameteriv(target, level, param, store);
+	return gl_success("glGetTexParameteriv");
+}
+
 static inline bool gl_active_texture(GLenum texture_id)
 {
 	glActiveTexture(texture_id);

@@ -179,6 +179,9 @@ struct gs_exports {
 	void (*gs_texture_unmap)(gs_texture_t *tex);
 	bool (*gs_texture_is_rect)(const gs_texture_t *tex);
 	void *(*gs_texture_get_obj)(const gs_texture_t *tex);
+	gs_texture_t *(*device_texture_open_shared)(gs_device_t *device,
+						    uint32_t handle);
+	uint32_t (*device_texture_get_shared_handle)(gs_texture_t *tex);
 
 	void (*gs_cubetexture_destroy)(gs_texture_t *cubetex);
 	uint32_t (*gs_cubetexture_get_size)(const gs_texture_t *cubetex);
@@ -260,6 +263,7 @@ struct gs_exports {
 					   gs_samplerstate_t *sampler);
 
 	bool (*device_nv12_available)(gs_device_t *device);
+	bool (*device_shared_texture_available)(void);
 
 	void (*device_debug_marker_begin)(gs_device_t *device,
 					  const char *markername,
@@ -275,7 +279,6 @@ struct gs_exports {
 
 #elif _WIN32
 	bool (*device_gdi_texture_available)(void);
-	bool (*device_shared_texture_available)(void);
 
 	bool (*device_get_duplicator_monitor_info)(
 		gs_device_t *device, int monitor_idx,
@@ -295,9 +298,6 @@ struct gs_exports {
 	void *(*gs_texture_get_dc)(gs_texture_t *gdi_tex);
 	void (*gs_texture_release_dc)(gs_texture_t *gdi_tex);
 
-	gs_texture_t *(*device_texture_open_shared)(gs_device_t *device,
-						    uint32_t handle);
-	uint32_t (*device_texture_get_shared_handle)(gs_texture_t *tex);
 	int (*device_texture_acquire_sync)(gs_texture_t *tex, uint64_t key,
 					   uint32_t ms);
 	int (*device_texture_release_sync)(gs_texture_t *tex, uint64_t key);

@@ -94,6 +94,7 @@ gs_texture_t *device_texture_create(gs_device_t *device, uint32_t width,
 	tex->base.is_dynamic = (flags & GS_DYNAMIC) != 0;
 	tex->base.is_render_target = (flags & GS_RENDER_TARGET) != 0;
 	tex->base.is_dummy = (flags & GS_GL_DUMMYTEX) != 0;
+	tex->base.is_shared = false;
 	tex->base.gen_mipmaps = (flags & GS_BUILD_MIPMAPS) != 0;
 	tex->width = width;
 	tex->height = height;
@@ -135,6 +136,31 @@ fail:
 	return NULL;
 }
 
+gs_texture_t *device_texture_open_shared(gs_device_t *device, uint32_t handle)
+{
+	struct gs_texture_2d *tex = bzalloc(sizeof(struct gs_texture_2d));
+
+	tex->base.device = device;
+	tex->base.type = GS_TEXTURE_2D;
+	tex->base.levels = 1;
+	tex->base.gl_target = GL_TEXTURE_2D;
+	tex->base.is_dummy = true;
+	tex->base.is_shared = true;
+
+	gl_bind_texture(GL_TEXTURE_2D, tex->base.texture);
+	gl_get_tex_param_iv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &tex->width);
+	gl_get_tex_param_iv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &tex->height);
+	gl_get_tex_param_iv(GL_TEXTURE_2D, 0, GL_TEXTURE_INTERNAL_FORMAT,
+			    &tex->base.gl_internal_format);
+	gl_bind_texture(GL_TEXTURE_2D, 0);
+
+	tex->base.format =
+		convert_gl_internal_format(tex->base.gl_internal_format);
+	tex->base.gl_type = get_gl_format_type(tex->base.format);
+	tex->base.gl_format = convert_gs_format(tex->base.format);
+	tex->base.gl_type = get_gl_format_type(tex->base.format);
+}
+
 static inline bool is_texture_2d(const gs_texture_t *tex, const char *func)
 {
 	bool is_tex2d = tex->type == GS_TEXTURE_2D;
@@ -158,7 +184,7 @@ void gs_texture_destroy(gs_texture_t *tex)
 	if (!tex->is_dummy && tex->is_dynamic && tex2d->unpack_buffer)
 		gl_delete_buffers(1, &tex2d->unpack_buffer);
 
-	if (tex->texture)
+	if (!tex->is_shared && tex->texture)
 		gl_delete_textures(1, &tex->texture);
 
 	if (tex->fbo)
@@ -271,4 +297,15 @@ void *gs_texture_get_obj(gs_texture_t *tex)
 	}
 
 	return &tex2d->base.texture;
+}
+
+uint32_t device_texture_get_shared_handle(gs_texture_t *tex)
+{
+	struct gs_texture_2d *tex2d = (struct gs_texture_2d *)tex;
+	if (!is_texture_2d(tex, "gs_texture_unmap")) {
+		blog(LOG_ERROR, "gs_texture_get_shared_handle (GL) failed");
+		return NULL;
+	}
+
+	return tex2d->base.texture;
 }

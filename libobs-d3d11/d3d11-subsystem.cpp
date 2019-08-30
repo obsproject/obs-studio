@@ -2357,7 +2357,7 @@ extern "C" EXPORT bool device_gdi_texture_available(void)
 	return true;
 }
 
-extern "C" EXPORT bool device_shared_texture_available(void)
+bool device_shared_texture_available(void)
 {
 	return true;
 }
