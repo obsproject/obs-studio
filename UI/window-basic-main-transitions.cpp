@@ -616,6 +616,15 @@ void OBSBasic::on_transitionProps_clicked()
 	menu.exec(QCursor::pos());
 }
 
+void OBSBasic::on_transitionDuration_valueChanged(int value)
+{
+	if (api) {
+		api->on_event(OBS_FRONTEND_EVENT_TRANSITION_DURATION_CHANGED);
+	}
+
+	UNUSED_PARAMETER(value);
+}
+
 QuickTransition *OBSBasic::GetQuickTransition(int id)
 {
 	for (QuickTransition &qt : quickTransitions) {

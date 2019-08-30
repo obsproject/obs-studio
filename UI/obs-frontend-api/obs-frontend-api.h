@@ -47,6 +47,8 @@ enum obs_frontend_event {
 
 	OBS_FRONTEND_EVENT_RECORDING_PAUSED,
 	OBS_FRONTEND_EVENT_RECORDING_UNPAUSED,
+
+	OBS_FRONTEND_EVENT_TRANSITION_DURATION_CHANGED,
 };
 
 /* ------------------------------------------------------------------------- */
