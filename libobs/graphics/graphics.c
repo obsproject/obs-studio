@@ -293,7 +293,8 @@ void *gs_get_device_obj(void)
 	if (!gs_valid("gs_get_device_obj"))
 		return NULL;
 
-	return thread_graphics->exports.device_get_device_obj(thread_graphics);
+	return thread_graphics->exports.device_get_device_obj(
+		thread_graphics->device);
 }
 
 const char *gs_get_device_name(void)
