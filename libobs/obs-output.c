@@ -548,11 +548,22 @@ static inline uint64_t get_closest_v_ts(struct pause_data *pause)
 	       ((ts - pause->last_video_ts + i2) / interval) * interval;
 }
 
+static inline bool pause_can_start(struct pause_data *pause)
+{
+	return !pause->ts_start && !pause->ts_end;
+}
+
+static inline bool pause_can_stop(struct pause_data *pause)
+{
+	return !!pause->ts_start && !pause->ts_end;
+}
+
 static bool obs_encoded_output_pause(obs_output_t *output, bool pause)
 {
 	obs_encoder_t *venc;
 	obs_encoder_t *aenc[MAX_AUDIO_MIXES];
 	uint64_t closest_v_ts;
+	bool success = false;
 
 	venc = output->video_encoder;
 	for (size_t i = 0; i < MAX_AUDIO_MIXES; i++)
@@ -570,6 +581,15 @@ static bool obs_encoded_output_pause(obs_output_t *output, bool pause)
 	closest_v_ts = get_closest_v_ts(&venc->pause);
 
 	if (pause) {
+		if (!pause_can_start(&venc->pause)) {
+			goto fail;
+		}
+		for (size_t i = 0; i < MAX_AUDIO_MIXES; i++) {
+			if (aenc[i] && !pause_can_start(&aenc[i]->pause)) {
+				goto fail;
+			}
+		}
+
 		os_atomic_set_bool(&venc->paused, true);
 		venc->pause.ts_start = closest_v_ts;
 
@@ -580,6 +600,15 @@ static bool obs_encoded_output_pause(obs_output_t *output, bool pause)
 			}
 		}
 	} else {
+		if (!pause_can_stop(&venc->pause)) {
+			goto fail;
+		}
+		for (size_t i = 0; i < MAX_AUDIO_MIXES; i++) {
+			if (aenc[i] && !pause_can_stop(&aenc[i]->pause)) {
+				goto fail;
+			}
+		}
+
 		os_atomic_set_bool(&venc->paused, false);
 		end_pause(&venc->pause, closest_v_ts);
 
@@ -593,6 +622,9 @@ static bool obs_encoded_output_pause(obs_output_t *output, bool pause)
 
 	/* ---------------------------- */
 
+	success = true;
+
+fail:
 	for (size_t i = MAX_AUDIO_MIXES; i > 0; i--) {
 		if (aenc[i - 1]) {
 			pthread_mutex_unlock(&aenc[i - 1]->pause.mutex);
@@ -600,7 +632,7 @@ static bool obs_encoded_output_pause(obs_output_t *output, bool pause)
 	}
 	pthread_mutex_unlock(&venc->pause.mutex);
 
-	return true;
+	return success;
 }
 
 static bool obs_raw_output_pause(obs_output_t *output, bool pause)
@@ -611,11 +643,11 @@ static bool obs_raw_output_pause(obs_output_t *output, bool pause)
 	pthread_mutex_lock(&output->pause.mutex);
 	closest_v_ts = get_closest_v_ts(&output->pause);
 	if (pause) {
-		success = !output->pause.ts_start;
+		success = pause_can_start(&output->pause);
 		if (success)
 			output->pause.ts_start = closest_v_ts;
 	} else {
-		success = !!output->pause.ts_start;
+		success = pause_can_stop(&output->pause);
 		if (success)
 			end_pause(&output->pause, closest_v_ts);
 	}
