@@ -541,10 +541,11 @@ static inline void end_pause(struct pause_data *pause, uint64_t ts)
 static inline uint64_t get_closest_v_ts(struct pause_data *pause)
 {
 	uint64_t interval = obs->video.video_frame_interval_ns;
+	uint64_t i2 = interval * 2;
 	uint64_t ts = os_gettime_ns();
 
 	return pause->last_video_ts +
-	       ((ts - pause->last_video_ts + interval) / interval) * interval;
+	       ((ts - pause->last_video_ts + i2) / interval) * interval;
 }
 
 static bool obs_encoded_output_pause(obs_output_t *output, bool pause)
