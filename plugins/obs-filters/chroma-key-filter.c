@@ -14,6 +14,7 @@
 #define SETTING_SIMILARITY             "similarity"
 #define SETTING_SMOOTHNESS             "smoothness"
 #define SETTING_SPILL                  "spill"
+#define SETTING_INVERT			"invert"
 
 #define TEXT_OPACITY                   obs_module_text("Opacity")
 #define TEXT_CONTRAST                  obs_module_text("Contrast")
@@ -24,6 +25,7 @@
 #define TEXT_SIMILARITY                obs_module_text("Similarity")
 #define TEXT_SMOOTHNESS                obs_module_text("Smoothness")
 #define TEXT_SPILL                     obs_module_text("ColorSpillReduction")
+#define TEXT_INVERT		       obs_module_text("Invert")
 
 /* clang-format on */
 
@@ -42,6 +44,7 @@ struct chroma_key_filter_data {
 	gs_eparam_t *similarity_param;
 	gs_eparam_t *smoothness_param;
 	gs_eparam_t *spill_param;
+	gs_eparam_t *invert_param;
 
 	struct vec4 color;
 	float contrast;
@@ -52,6 +55,8 @@ struct chroma_key_filter_data {
 	float similarity;
 	float smoothness;
 	float spill;
+
+	bool invert;
 };
 
 static const char *chroma_key_name(void *unused)
@@ -95,6 +100,8 @@ static inline void chroma_settings_update(struct chroma_key_filter_data *filter,
 	int64_t similarity = obs_data_get_int(settings, SETTING_SIMILARITY);
 	int64_t smoothness = obs_data_get_int(settings, SETTING_SMOOTHNESS);
 	int64_t spill = obs_data_get_int(settings, SETTING_SPILL);
+	bool invert = obs_data_get_bool(settings, SETTING_INVERT);
+
 	uint32_t key_color =
 		(uint32_t)obs_data_get_int(settings, SETTING_KEY_COLOR);
 	const char *key_type =
@@ -114,11 +121,13 @@ static inline void chroma_settings_update(struct chroma_key_filter_data *filter,
 
 	memcpy(&yuv_mat_m4, yuv_mat, sizeof(yuv_mat));
 	vec4_transform(&key_color_v4, &key_rgb, &yuv_mat_m4);
+
 	vec2_set(&filter->chroma, key_color_v4.y, key_color_v4.z);
 
 	filter->similarity = (float)similarity / 1000.0f;
 	filter->smoothness = (float)smoothness / 1000.0f;
 	filter->spill = (float)spill / 1000.0f;
+	filter->invert = invert;
 }
 
 static void chroma_key_update(void *data, obs_data_t *settings)
@@ -172,6 +181,8 @@ static void *chroma_key_create(obs_data_t *settings, obs_source_t *context)
 			filter->effect, "smoothness");
 		filter->spill_param =
 			gs_effect_get_param_by_name(filter->effect, "spill");
+		filter->invert_param =
+			gs_effect_get_param_by_name(filter->effect, "invert");
 	}
 
 	obs_leave_graphics();
@@ -210,6 +221,7 @@ static void chroma_key_render(void *data, gs_effect_t *effect)
 	gs_effect_set_float(filter->similarity_param, filter->similarity);
 	gs_effect_set_float(filter->smoothness_param, filter->smoothness);
 	gs_effect_set_float(filter->spill_param, filter->spill);
+	gs_effect_set_bool(filter->invert_param, filter->invert);
 
 	obs_source_process_filter_end(filter->context, filter->effect, 0, 0);
 
@@ -261,6 +273,8 @@ static obs_properties_t *chroma_key_properties(void *data)
 	obs_properties_add_float_slider(props, SETTING_GAMMA, TEXT_GAMMA, -1.0,
 					1.0, 0.01);
 
+	obs_properties_add_bool(props, SETTING_INVERT, TEXT_INVERT);
+
 	UNUSED_PARAMETER(data);
 	return props;
 }
@@ -276,6 +290,7 @@ static void chroma_key_defaults(obs_data_t *settings)
 	obs_data_set_default_int(settings, SETTING_SIMILARITY, 400);
 	obs_data_set_default_int(settings, SETTING_SMOOTHNESS, 80);
 	obs_data_set_default_int(settings, SETTING_SPILL, 100);
+	obs_data_set_default_bool(settings, SETTING_INVERT, false);
 }
 
 struct obs_source_info chroma_key_filter = {
