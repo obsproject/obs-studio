@@ -1185,6 +1185,12 @@ static void unpause_audio(struct pause_data *pause, struct audio_data *data,
 	uint64_t cutoff_frames = pause->ts_end - data->timestamp;
 	cutoff_frames = ns_to_audio_frames(sample_rate, cutoff_frames);
 
+	for (size_t i = 0; i < MAX_AV_PLANES; i++) {
+		if (!data->data[i])
+			break;
+		data->data[i] += cutoff_frames * sizeof(float);
+	}
+
 	data->timestamp = pause->ts_start;
 	data->frames = data->frames - (uint32_t)cutoff_frames;
 	pause->ts_start = 0;
