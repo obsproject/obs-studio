@@ -981,14 +981,11 @@ static inline bool video_pause_check_internal(struct pause_data *pause,
 		return false;
 	}
 
-	if (ts == pause->ts_start) {
-		return true;
-
-	} else if (ts == pause->ts_end) {
+	if (ts == pause->ts_end) {
 		pause->ts_start = 0;
 		pause->ts_end = 0;
-	} else {
 
+	} else if (ts >= pause->ts_start) {
 		return true;
 	}
 
