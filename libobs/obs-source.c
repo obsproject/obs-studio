@@ -4358,7 +4358,7 @@ static void custom_audio_render(obs_source_t *source, uint32_t mixers,
 	apply_audio_volume(source, mixers, channels, sample_rate);
 }
 
-static void audio_submix(obs_source_t *source, uint32_t mixers, size_t channels,
+static void audio_submix(obs_source_t *source, size_t channels,
 			 size_t sample_rate)
 {
 	struct audio_output_data audio_data;
@@ -4366,14 +4366,12 @@ static void audio_submix(obs_source_t *source, uint32_t mixers, size_t channels,
 	bool success;
 	uint64_t ts;
 
-	for (size_t mix = 0; mix < MAX_AUDIO_MIXES; mix++) {
-		for (size_t ch = 0; ch < channels; ch++) {
-			audio_data.data[ch] = source->audio_mix_buf[ch];
-		}
-
-		memset(source->audio_mix_buf[0], 0,
-		       sizeof(float) * AUDIO_OUTPUT_FRAMES * channels);
+	for (size_t ch = 0; ch < channels; ch++) {
+		audio_data.data[ch] = source->audio_mix_buf[ch];
 	}
+
+	memset(source->audio_mix_buf[0], 0,
+	       sizeof(float) * AUDIO_OUTPUT_FRAMES * channels);
 
 	success = source->info.audio_mix(source->context.data, &ts, &audio_data,
 					 channels, sample_rate);
@@ -4462,7 +4460,7 @@ void obs_source_audio_render(obs_source_t *source, uint32_t mixers,
 	}
 
 	if (source->info.audio_mix) {
-		audio_submix(source, mixers, channels, sample_rate);
+		audio_submix(source, channels, sample_rate);
 	}
 
 	if (!source->audio_ts) {
