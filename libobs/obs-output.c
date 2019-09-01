@@ -2068,32 +2068,36 @@ static bool begin_delayed_capture(obs_output_t *output)
 
 static void reset_raw_output(obs_output_t *output)
 {
-	const struct audio_output_info *aoi =
-		audio_output_get_info(output->audio);
-	struct audio_convert_info conv = output->audio_conversion;
-	struct audio_convert_info info = {
-		aoi->samples_per_sec,
-		aoi->format,
-		aoi->speakers,
-	};
-
 	clear_audio_buffers(output);
 
-	if (output->audio_conversion_set) {
-		if (conv.samples_per_sec)
-			info.samples_per_sec = conv.samples_per_sec;
-		if (conv.format != AUDIO_FORMAT_UNKNOWN)
-			info.format = conv.format;
-		if (conv.speakers != SPEAKERS_UNKNOWN)
-			info.speakers = conv.speakers;
+	if (output->audio) {
+		const struct audio_output_info *aoi =
+			audio_output_get_info(output->audio);
+		struct audio_convert_info conv = output->audio_conversion;
+		struct audio_convert_info info = {
+			aoi->samples_per_sec,
+			aoi->format,
+			aoi->speakers,
+		};
+
+		if (output->audio_conversion_set) {
+			if (conv.samples_per_sec)
+				info.samples_per_sec = conv.samples_per_sec;
+			if (conv.format != AUDIO_FORMAT_UNKNOWN)
+				info.format = conv.format;
+			if (conv.speakers != SPEAKERS_UNKNOWN)
+				info.speakers = conv.speakers;
+		}
+
+		output->sample_rate = info.samples_per_sec;
+		output->planes = get_audio_planes(info.format, info.speakers);
+		output->total_audio_frames = 0;
+		output->audio_size =
+			get_audio_size(info.format, info.speakers, 1);
 	}
 
 	output->audio_start_ts = 0;
 	output->video_start_ts = 0;
-	output->sample_rate = info.samples_per_sec;
-	output->planes = get_audio_planes(info.format, info.speakers);
-	output->total_audio_frames = 0;
-	output->audio_size = get_audio_size(info.format, info.speakers, 1);
 
 	pause_reset(&output->pause);
 }
