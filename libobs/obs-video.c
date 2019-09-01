@@ -268,8 +268,8 @@ static inline gs_texture_t *render_output_texture(struct obs_core_video *video)
 	return target;
 }
 
-static void render_convert_plane(gs_effect_t *effect, gs_texture_t *texture,
-				 gs_texture_t *target, const char *tech_name)
+static void render_convert_plane(gs_effect_t *effect, gs_texture_t *target,
+				 const char *tech_name)
 {
 	gs_technique_t *tech = gs_effect_get_technique(effect, tech_name);
 
@@ -317,8 +317,7 @@ static void render_convert_texture(struct obs_core_video *video,
 	if (video->convert_textures[0]) {
 		gs_effect_set_texture(image, texture);
 		gs_effect_set_vec4(color_vec0, &vec0);
-		render_convert_plane(effect, texture,
-				     video->convert_textures[0],
+		render_convert_plane(effect, video->convert_textures[0],
 				     video->conversion_techs[0]);
 
 		if (video->convert_textures[1]) {
@@ -327,8 +326,7 @@ static void render_convert_texture(struct obs_core_video *video,
 			if (!video->convert_textures[2])
 				gs_effect_set_vec4(color_vec2, &vec2);
 			gs_effect_set_float(width_i, video->conversion_width_i);
-			render_convert_plane(effect, texture,
-					     video->convert_textures[1],
+			render_convert_plane(effect, video->convert_textures[1],
 					     video->conversion_techs[1]);
 
 			if (video->convert_textures[2]) {
@@ -337,8 +335,7 @@ static void render_convert_texture(struct obs_core_video *video,
 				gs_effect_set_float(width_i,
 						    video->conversion_width_i);
 				render_convert_plane(
-					effect, texture,
-					video->convert_textures[2],
+					effect, video->convert_textures[2],
 					video->conversion_techs[2]);
 			}
 		}
@@ -640,6 +637,23 @@ static void set_gpu_converted_data(struct obs_core_video *video,
 
 			break;
 		}
+
+		case VIDEO_FORMAT_NONE:
+		case VIDEO_FORMAT_YVYU:
+		case VIDEO_FORMAT_YUY2:
+		case VIDEO_FORMAT_UYVY:
+		case VIDEO_FORMAT_RGBA:
+		case VIDEO_FORMAT_BGRA:
+		case VIDEO_FORMAT_BGRX:
+		case VIDEO_FORMAT_Y800:
+		case VIDEO_FORMAT_BGR3:
+		case VIDEO_FORMAT_I422:
+		case VIDEO_FORMAT_I40A:
+		case VIDEO_FORMAT_I42A:
+		case VIDEO_FORMAT_YUVA:
+		case VIDEO_FORMAT_AYUV:
+			/* unimplemented */
+			;
 		}
 	}
 }

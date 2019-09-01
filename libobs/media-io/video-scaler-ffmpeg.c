@@ -29,14 +29,10 @@ static inline enum AVPixelFormat
 get_ffmpeg_video_format(enum video_format format)
 {
 	switch (format) {
-	case VIDEO_FORMAT_NONE:
-		return AV_PIX_FMT_NONE;
 	case VIDEO_FORMAT_I420:
 		return AV_PIX_FMT_YUV420P;
 	case VIDEO_FORMAT_NV12:
 		return AV_PIX_FMT_NV12;
-	case VIDEO_FORMAT_YVYU:
-		return AV_PIX_FMT_NONE;
 	case VIDEO_FORMAT_YUY2:
 		return AV_PIX_FMT_YUYV422;
 	case VIDEO_FORMAT_UYVY:
@@ -61,6 +57,11 @@ get_ffmpeg_video_format(enum video_format format)
 		return AV_PIX_FMT_YUVA422P;
 	case VIDEO_FORMAT_YUVA:
 		return AV_PIX_FMT_YUVA444P;
+	case VIDEO_FORMAT_NONE:
+	case VIDEO_FORMAT_YVYU:
+	case VIDEO_FORMAT_AYUV:
+		/* not supported by FFmpeg */
+		return AV_PIX_FMT_NONE;
 	}
 
 	return AV_PIX_FMT_NONE;
