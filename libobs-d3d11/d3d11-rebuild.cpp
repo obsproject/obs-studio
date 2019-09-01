@@ -440,6 +440,6 @@ try {
 } catch (const char *error) {
 	bcrash("Failed to recreate D3D11: %s", error);
 
-} catch (HRError &error) {
+} catch (const HRError &error) {
 	bcrash("Failed to recreate D3D11: %s (%08lX)", error.str, error.hr);
 }
