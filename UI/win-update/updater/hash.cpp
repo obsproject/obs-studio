@@ -35,7 +35,7 @@ void HashToString(const uint8_t *in, wchar_t *out)
 
 void StringToHash(const wchar_t *in, BYTE *out)
 {
-	int temp;
+	unsigned int temp;
 
 	for (int i = 0; i < BLAKE2_HASH_LENGTH; i++) {
 		swscanf_s(in + i * 2, L"%02x", &temp);
