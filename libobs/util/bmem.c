@@ -101,7 +101,11 @@ void *bmalloc(size_t size)
 	if (!ptr && !size)
 		ptr = alloc.malloc(1);
 	if (!ptr) {
+#ifdef ALIGNED_MALLOC
+		blog(LOG_ERROR, "Failed while trying to allocate %lu bytes, errno %u", (unsigned long)size, errno);
+#else
 		blog(LOG_ERROR, "Out of memory while trying to allocate %lu bytes", (unsigned long)size);
+#endif
 		os_breakpoint();
 		bcrash("Out of memory while trying to allocate %lu bytes",
 		       (unsigned long)size);
@@ -120,7 +124,11 @@ void *brealloc(void *ptr, size_t size)
 	if (!ptr && !size)
 		ptr = alloc.realloc(ptr, 1);
 	if (!ptr) {
-		blog(LOG_ERROR, "Out of memory while trying to allocate %lu bytes", (unsigned long)size);
+#ifdef ALIGNED_MALLOC
+		blog(LOG_ERROR, "Failed while trying to reallocate %lu bytes, errno %u", (unsigned long)size, errno);
+#else
+		blog(LOG_ERROR, "Out of memory while trying to reallocate %lu bytes", (unsigned long)size);
+#endif
 		os_breakpoint();
 		bcrash("Out of memory while trying to allocate %lu bytes",
 		       (unsigned long)size);
