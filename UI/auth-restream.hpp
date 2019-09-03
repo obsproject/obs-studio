@@ -2,14 +2,14 @@
 
 #include "auth-oauth.hpp"
 
-class RestreamWidget;
+class BrowserDock;
 
 class RestreamAuth : public OAuthStreamKey {
 	Q_OBJECT
 
-	QSharedPointer<RestreamWidget> chat;
-	QSharedPointer<RestreamWidget> info;
-	QSharedPointer<RestreamWidget> channels;
+	QSharedPointer<BrowserDock> chat;
+	QSharedPointer<BrowserDock> info;
+	QSharedPointer<BrowserDock> channels;
 
 	QSharedPointer<QAction> chatMenu;
 	QSharedPointer<QAction> infoMenu;

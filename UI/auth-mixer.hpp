@@ -2,12 +2,12 @@
 
 #include "auth-oauth.hpp"
 
-class MixerChat;
+class BrowserDock;
 
 class MixerAuth : public OAuthStreamKey {
 	Q_OBJECT
 
-	QSharedPointer<MixerChat> chat;
+	QSharedPointer<BrowserDock> chat;
 	QSharedPointer<QAction> chatMenu;
 	bool uiLoaded = false;
 

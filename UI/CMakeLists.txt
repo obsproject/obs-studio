@@ -151,6 +151,7 @@ if(BROWSER_AVAILABLE_INTERNAL)
 	list(APPEND obs_PLATFORM_HEADERS
 		obf.h
 		auth-oauth.hpp
+		window-dock-browser.hpp
 		window-extra-browsers.hpp
 		)
 
