@@ -1493,6 +1493,46 @@ void obs_enum_scenes(bool (*enum_proc)(void *, obs_source_t *), void *param)
 	pthread_mutex_unlock(&obs->data.sources_mutex);
 }
 
+bool source_ref_enum_callback(void *data, obs_source_t *source)
+{
+	obs_source_t ** checked_ref = (obs_source_t **)data;
+	
+	if (source == *checked_ref)
+		*checked_ref = NULL;
+
+	return true;
+}
+
+bool scene_ref_enum_callback(void *data, obs_scene_t *source)
+{
+	obs_scene_t ** checked_ref = (obs_scene_t **)data;
+	
+	if (source == *checked_ref)
+		*checked_ref = NULL;
+
+	return true;
+}
+
+bool obs_scene_is_present(obs_scene_t * checking_scene)
+{
+	if (checking_scene == NULL)
+		return false;
+
+	obs_enum_scenes(scene_ref_enum_callback, &checking_scene);
+
+	return checking_scene == NULL;
+}
+ 
+bool obs_source_is_present(obs_source_t * checking_source)
+{
+	if (checking_source == NULL)
+		return false;
+
+	obs_enum_sources(source_ref_enum_callback, &checking_source);
+
+	return checking_source == NULL;
+}
+
 static inline void obs_enum(void *pstart, pthread_mutex_t *mutex, void *proc,
 			    void *param)
 {

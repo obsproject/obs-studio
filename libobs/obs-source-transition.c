@@ -91,9 +91,11 @@ void obs_transition_clear(obs_source_t *transition)
 	unlock_transition(transition);
 
 	for (size_t i = 0; i < 2; i++) {
-		if (s[i] && active[i])
-			obs_source_remove_active_child(transition, s[i]);
-		obs_source_release(s[i]);
+		if (obs_scene_is_present(s[i]) || obs_source_is_present(s[i]) ) {
+			if (s[i] && active[i])
+				obs_source_remove_active_child(transition, s[i]);
+			obs_source_release(s[i]);
+		} 
 	}
 }
 
