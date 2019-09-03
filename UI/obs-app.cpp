@@ -34,9 +34,11 @@
 #include <QGuiApplication>
 #include <QProxyStyle>
 #include <QScreen>
+#include <QAccessible>
 
 #include "qt-wrappers.hpp"
 #include "obs-app.hpp"
+#include "slider-ignorewheel.hpp"
 #include "window-basic-main.hpp"
 #include "window-basic-settings.hpp"
 #include "crash-report.hpp"
@@ -1720,6 +1722,17 @@ static auto ProfilerFree = [](void *) {
 	profiler_free();
 };
 
+QAccessibleInterface *accessibleFactory(const QString &classname,
+					QObject *object)
+{
+	if (classname == QLatin1String("VolumeSlider") && object &&
+	    object->isWidgetType())
+		return new VolumeAccessibleInterface(
+			static_cast<QWidget *>(object));
+
+	return nullptr;
+}
+
 static const char *run_program_init = "run_program_init";
 static int run_program(fstream &logFile, int argc, char *argv[])
 {
@@ -1743,6 +1756,8 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 
 	OBSApp program(argc, argv, profilerNameStore.get());
 	try {
+		QAccessible::installFactory(accessibleFactory);
+
 		bool created_log = false;
 
 		program.AppInit();
