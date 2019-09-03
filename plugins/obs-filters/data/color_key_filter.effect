@@ -9,6 +9,7 @@ uniform float gamma;
 uniform float4 key_color;
 uniform float similarity;
 uniform float smoothness;
+uniform int color_space;
 
 sampler_state textureSampler {
 	Filter    = Linear;
@@ -29,14 +30,205 @@ VertData VSDefault(VertData v_in)
 	return vert_out;
 }
 
-float4 CalcColor(float4 rgba)
+float RGBToXYZChannel(float c)
 {
-	return float4(pow(rgba.rgb, float3(gamma, gamma, gamma)) * contrast + brightness, rgba.a);
+	return c > 0.04045 ? pow((c + 0.055) / 1.055, 2.4) : c / 12.92;
+}
+
+float3 RGBToXYZ(float3 rgb)
+{
+	rgb.r = RGBToXYZChannel(rgb.r);
+	rgb.g = RGBToXYZChannel(rgb.g);
+	rgb.b = RGBToXYZChannel(rgb.b);
+
+	const float3x3 RGBToXYZMatrix = float3x3(
+		0.4124564, 0.3575761, 0.1804375,
+		0.2126729, 0.7151522, 0.0721750,
+		0.0193339, 0.1191920, 0.9503041);
+
+	return 100.0 * mul(rgb, RGBToXYZMatrix);
+}
+
+float XYZToLABChannel(float c)
+{
+    return c > 0.008856 ? pow(c, 1.0 / 3.0) : (7.787 * c) + (16.0 / 116.0);
+}
+
+float3 XYZToLAB(float3 xyz)
+{
+	const float3 WhiteBalance = float3(95.047, 100, 108.883);
+    xyz /= WhiteBalance;
+
+	const float FY = XYZToLABChannel(xyz.y);
+
+	const float L = (116.0 * FY) - 16.0;
+	const float A = 500.0 * (XYZToLABChannel(xyz.x) - FY);
+	const float B = 200.0 * (FY - XYZToLABChannel(xyz.z));
+
+	return float3(L, A, B);
+}
+
+#define epsilon 1e-10
+
+#define kL 1.0
+#define kC 1.0
+#define kH 1.0
+
+#define deg6InRad   0.10472
+#define deg25InRad  0.436332
+#define deg30InRad  0.523599
+#define deg63InRad  1.09956
+#define deg180InRad 3.14159
+#define deg275InRad 4.79966
+#define deg360InRad 6.28319
+
+#define pow25To7 6103515625.0
+
+float CIEDE2000_distance(float3 one, float3 two)
+{
+	const float L1 = one.x;
+	const float a1 = one.y;
+	const float b1 = one.z;
+
+	const float L2 = two.x;
+	const float a2 = two.y;
+	const float b2 = two.z;
+
+	const float C1 = sqrt((a1 * a1) + (b1 * b1));
+	const float C2 = sqrt((a2 * a2) + (b2 * b2));
+	const float CBar = 0.5 * (C1 + C2) ;
+
+	const float G = 0.5 * (1 - sqrt(pow(CBar, 7) / (pow(CBar, 7) + pow25To7)));
+	const float a1Prime = (1.0 + G) * a1;
+	const float a2Prime = (1.0 + G) * a2;
+
+	const float C1Prime = sqrt((a1Prime * a1Prime) + (b1 * b1));
+	const float C2Prime = sqrt((a2Prime * a2Prime) + (b2 * b2));
+
+	float h1Prime;
+	if (abs(b1) < epsilon && abs(a1Prime) < epsilon)
+	{
+		h1Prime = 0.0;
+	}
+	else
+	{
+		h1Prime = atan2(b1, a1Prime);
+		if (h1Prime < 0)
+			h1Prime += deg360InRad;
+	}
+
+	float h2Prime;
+	if (abs(b2) < epsilon && abs(a2Prime) < epsilon)
+	{
+		h2Prime = 0.0;
+	}
+	else
+	{
+		h2Prime = atan2(b2, a2Prime);
+		if (h2Prime < 0)
+			h2Prime += deg360InRad;
+	}
+
+	const float deltaLPrime = L2 - L1;
+	const float deltaCPrime = C2Prime - C1Prime;
+
+	const float CPrimeProduct = C1Prime * C2Prime;
+	float deltahPrime;
+	if (CPrimeProduct < epsilon)
+	{
+		deltahPrime = 0;
+	}
+	else
+	{
+		deltahPrime = h2Prime - h1Prime;
+		if (deltahPrime < -deg180InRad)
+		{
+			deltahPrime += deg360InRad;
+		}
+		else if (deltahPrime > deg180InRad)
+		{
+			deltahPrime -= deg360InRad;
+		}
+	}
+
+	const float deltaHPrime = 2.0 * sqrt(CPrimeProduct) * sin(deltahPrime * 0.5);
+
+	const float barLPrime = 0.5 * (L1 + L2);
+	const float barCPrime = 0.5 * (C1Prime + C2Prime);
+
+	const float hPrimeSum = h1Prime + h2Prime;
+	float barhPrime;
+	if (C1Prime * C2Prime < epsilon)
+	{
+		barhPrime = hPrimeSum;
+	}
+	else
+	{
+		if (abs(h1Prime - h2Prime) <= deg180InRad)
+		{
+			barhPrime = 0.5 * hPrimeSum;
+		}
+		else
+		{
+			if (hPrimeSum < deg360InRad)
+			{
+				barhPrime = 0.5 * (hPrimeSum + deg360InRad);
+			}
+			else
+			{
+				barhPrime = 0.5 * (hPrimeSum - deg360InRad);
+			}
+		}
+	}
+
+	const float T = 1.0 -
+		(0.17 * cos(barhPrime - deg30InRad)) +
+	    (0.24 * cos(2.0 * barhPrime)) +
+	    (0.32 * cos((3.0 * barhPrime) + deg6InRad)) -
+	    (0.20 * cos((4.0 * barhPrime) - deg63InRad));
+
+	const float deltaThetaHalf = (barhPrime - deg275InRad) / deg25InRad;
+	const float deltaTheta = deg30InRad * exp(- (deltaThetaHalf * deltaThetaHalf));
+
+	const float RCPartial = pow(barCPrime, 7.0);
+	const float RC = 2.0 * sqrt(RCPartial / (RCPartial + pow25To7));
+
+	const float SLPartial = (barLPrime - 50.0) * (barLPrime - 50.0);
+	const float SL = 1.0 + ((0.015 * SLPartial) / sqrt(20 + SLPartial));
+
+	const float SC = 1.0 + (0.045 * barCPrime);
+	const float SH = 1.0 + (0.015 * barCPrime * T);
+	const float RT = (-sin(2.0 * deltaTheta)) * RC;
+
+	const float deltaL = deltaLPrime / (kL * SL);
+	const float deltaC = deltaCPrime / (kC * SC);
+	const float deltaH = deltaHPrime / (kH * SH);
+
+	const float deltaESquared = (deltaL * deltaL) + (deltaC * deltaC) + (deltaH * deltaH) + (RT * deltaC * deltaH);
+	return sqrt(deltaESquared);
 }
 
 float GetColorDist(float3 rgb)
 {
-	return distance(key_color.rgb, rgb);
+	if(color_space == 0)
+	{
+		return distance(key_color.rgb, rgb);
+	}
+
+	const float3 key_color_lab = XYZToLAB(RGBToXYZ(key_color.rgb));
+	const float3 lab = XYZToLAB(RGBToXYZ(rgb));
+
+	if(color_space == 1)
+	{
+		return distance(key_color_lab, lab) / 200;
+	}
+
+	return CIEDE2000_distance(key_color_lab, lab) / 200.0;
+}
+
+float4 CalcColor(float4 rgba)
+{
+	return float4(pow(rgba.rgb, float3(gamma, gamma, gamma)) * contrast + brightness, rgba.a);
 }
 
 float4 ProcessColorKey(float4 rgba, VertData v_in)

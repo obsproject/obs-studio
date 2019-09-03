@@ -14,6 +14,7 @@
 #define SETTING_SIMILARITY             "similarity"
 #define SETTING_SMOOTHNESS             "smoothness"
 #define SETTING_SPILL                  "spill"
+#define SETTING_COLORSPACE             "color_space"
 
 #define TEXT_OPACITY                   obs_module_text("Opacity")
 #define TEXT_CONTRAST                  obs_module_text("Contrast")
@@ -24,6 +25,7 @@
 #define TEXT_SIMILARITY                obs_module_text("Similarity")
 #define TEXT_SMOOTHNESS                obs_module_text("Smoothness")
 #define TEXT_SPILL                     obs_module_text("ColorSpillReduction")
+#define TEXT_COLORSPACE                obs_module_text("ColorSpace")
 
 /* clang-format on */
 
@@ -42,16 +44,18 @@ struct chroma_key_filter_data {
 	gs_eparam_t *similarity_param;
 	gs_eparam_t *smoothness_param;
 	gs_eparam_t *spill_param;
+	gs_eparam_t *color_space_param;
 
 	struct vec4 color;
 	float contrast;
 	float brightness;
 	float gamma;
 
-	struct vec2 chroma;
+	struct vec4 chroma;
 	float similarity;
 	float smoothness;
 	float spill;
+	int color_space;
 };
 
 static const char *chroma_key_name(void *unused)
@@ -95,6 +99,8 @@ static inline void chroma_settings_update(struct chroma_key_filter_data *filter,
 	int64_t similarity = obs_data_get_int(settings, SETTING_SIMILARITY);
 	int64_t smoothness = obs_data_get_int(settings, SETTING_SMOOTHNESS);
 	int64_t spill = obs_data_get_int(settings, SETTING_SPILL);
+	int color_space = (int)obs_data_get_int(settings, SETTING_COLORSPACE);
+
 	uint32_t key_color =
 		(uint32_t)obs_data_get_int(settings, SETTING_KEY_COLOR);
 	const char *key_type =
@@ -106,19 +112,22 @@ static inline void chroma_settings_update(struct chroma_key_filter_data *filter,
 	if (strcmp(key_type, "green") == 0)
 		key_color = 0x00FF00;
 	else if (strcmp(key_type, "blue") == 0)
-		key_color = 0xFF9900;
+		key_color = 0xFF0000;
+	else if (strcmp(key_type, "red") == 0)
+		key_color = 0x0000FF;
+	else if (strcmp(key_type, "yellow") == 0)
+		key_color = 0xFFFF00;
+	else if (strcmp(key_type, "cyan") == 0)
+		key_color = 0x00FFFF;
 	else if (strcmp(key_type, "magenta") == 0)
 		key_color = 0xFF00FF;
 
-	vec4_from_rgba(&key_rgb, key_color | 0xFF000000);
-
-	memcpy(&yuv_mat_m4, yuv_mat, sizeof(yuv_mat));
-	vec4_transform(&key_color_v4, &key_rgb, &yuv_mat_m4);
-	vec2_set(&filter->chroma, key_color_v4.y, key_color_v4.z);
+	vec4_from_rgba(&filter->chroma, key_color | 0xFF000000);
 
 	filter->similarity = (float)similarity / 1000.0f;
 	filter->smoothness = (float)smoothness / 1000.0f;
 	filter->spill = (float)spill / 1000.0f;
+	filter->color_space = color_space;
 }
 
 static void chroma_key_update(void *data, obs_data_t *settings)
@@ -172,6 +181,8 @@ static void *chroma_key_create(obs_data_t *settings, obs_source_t *context)
 			filter->effect, "smoothness");
 		filter->spill_param =
 			gs_effect_get_param_by_name(filter->effect, "spill");
+		filter->color_space_param = gs_effect_get_param_by_name(
+			filter->effect, "color_space");
 	}
 
 	obs_leave_graphics();
@@ -205,11 +216,12 @@ static void chroma_key_render(void *data, gs_effect_t *effect)
 	gs_effect_set_float(filter->contrast_param, filter->contrast);
 	gs_effect_set_float(filter->brightness_param, filter->brightness);
 	gs_effect_set_float(filter->gamma_param, filter->gamma);
-	gs_effect_set_vec2(filter->chroma_param, &filter->chroma);
+	gs_effect_set_vec4(filter->chroma_param, &filter->chroma);
 	gs_effect_set_vec2(filter->pixel_size_param, &pixel_size);
 	gs_effect_set_float(filter->similarity_param, filter->similarity);
 	gs_effect_set_float(filter->smoothness_param, filter->smoothness);
 	gs_effect_set_float(filter->spill_param, filter->spill);
+	gs_effect_set_int(filter->color_space_param, filter->color_space);
 
 	obs_source_process_filter_end(filter->context, filter->effect, 0, 0);
 
@@ -239,10 +251,21 @@ static obs_properties_t *chroma_key_properties(void *data)
 						    OBS_COMBO_FORMAT_STRING);
 	obs_property_list_add_string(p, obs_module_text("Green"), "green");
 	obs_property_list_add_string(p, obs_module_text("Blue"), "blue");
+	obs_property_list_add_string(p, obs_module_text("Red"), "red");
+	obs_property_list_add_string(p, obs_module_text("Yellow"), "yellow");
+	obs_property_list_add_string(p, obs_module_text("Cyan"), "cyan");
 	obs_property_list_add_string(p, obs_module_text("Magenta"), "magenta");
 	obs_property_list_add_string(p, obs_module_text("Custom"), "custom");
 
 	obs_property_set_modified_callback(p, key_type_changed);
+
+	obs_property_t *t = obs_properties_add_list(props, SETTING_COLORSPACE,
+						    TEXT_COLORSPACE,
+						    OBS_COMBO_TYPE_LIST,
+						    OBS_COMBO_FORMAT_INT);
+	obs_property_list_add_int(t, "YUV", 0);
+	obs_property_list_add_int(t, "LAB", 1);
+	obs_property_list_add_int(t, "DE2000", 2);
 
 	obs_properties_add_color(props, SETTING_KEY_COLOR, TEXT_KEY_COLOR);
 	obs_properties_add_int_slider(props, SETTING_SIMILARITY,
@@ -276,6 +299,7 @@ static void chroma_key_defaults(obs_data_t *settings)
 	obs_data_set_default_int(settings, SETTING_SIMILARITY, 400);
 	obs_data_set_default_int(settings, SETTING_SMOOTHNESS, 80);
 	obs_data_set_default_int(settings, SETTING_SPILL, 100);
+	obs_data_set_default_int(settings, SETTING_COLORSPACE, 0);
 }
 
 struct obs_source_info chroma_key_filter = {
