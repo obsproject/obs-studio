@@ -1,0 +1,89 @@
+uniform float4x4 ViewProj;
+uniform texture2d image;
+
+uniform float2 point1;
+uniform float2 point2;
+
+sampler_state textureSampler {
+	Filter    = Linear;
+	AddressU  = Clamp;
+	AddressV  = Clamp;
+};
+
+struct VertData {
+	float4 pos : POSITION;
+	float2 uv  : TEXCOORD0;
+};
+
+VertData VSDefault(VertData v_in)
+{
+	VertData vert_out;
+	vert_out.pos = mul(float4(v_in.pos.xyz, 1.0), ViewProj);
+	vert_out.uv  = v_in.uv;
+	return vert_out;
+}
+
+float4 GarbageMatteCircle(VertData v_in) : TARGET
+{
+	float4 rgba = image.Sample(textureSampler, v_in.uv);
+	
+	float dist = distance(v_in.pos.xy, point1);
+	float radius = point2.x;
+		
+	rgba.a *= saturate(dist - radius);
+	return rgba;
+}
+
+float4 GarbageMatteEllipse(VertData v_in) : TARGET
+{
+	float4 rgba = image.Sample(textureSampler, v_in.uv);
+
+	int inside = (v_in.pos.x - point1.x) * (v_in.pos.x - point1.x) / (point2.x * point2.x) +
+					   (v_in.pos.y - point1.y) * (v_in.pos.y - point1.y) / (point2.y * point2.y);
+		
+	rgba.a *= saturate(inside);
+	return rgba;
+}
+	
+float4 GarbageMatteRectangle(VertData v_in) : TARGET
+{
+	float4 rgba = image.Sample(textureSampler, v_in.uv);
+
+	const float2 lowerLeft = point1;
+	const float2 upperRight = point2;
+		
+	const float x = v_in.pos.x;
+	const float y = v_in.pos.y;
+		
+	int ret = !(x > lowerLeft.x && x < upperRight.x && y > lowerLeft.y && y < upperRight.y);
+	rgba.a *= ret;
+
+	return rgba;
+}
+
+technique DrawCircle
+{
+	pass
+	{
+		vertex_shader = VSDefault(v_in);
+		pixel_shader  = GarbageMatteCircle(v_in);
+	}
+}
+
+technique DrawEllipse
+{
+	pass
+	{
+		vertex_shader = VSDefault(v_in);
+		pixel_shader  = GarbageMatteEllipse(v_in);
+	}
+}
+
+technique DrawRectangle
+{
+	pass
+	{
+		vertex_shader = VSDefault(v_in);
+		pixel_shader  = GarbageMatteRectangle(v_in);
+	}
+}
