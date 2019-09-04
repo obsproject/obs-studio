@@ -18,4 +18,6 @@ public:
 		setWidget(widget_);
 		cefWidget.reset(widget_);
 	}
+
+	void closeEvent(QCloseEvent *event) override;
 };
