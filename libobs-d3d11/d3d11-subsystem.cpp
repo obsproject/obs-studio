@@ -70,18 +70,41 @@ gs_obj::~gs_obj()
 		next->prev_next = prev_next;
 }
 
-static inline void make_swap_desc(DXGI_SWAP_CHAIN_DESC &desc,
-				  const gs_init_data *data)
+static inline void make_swap_desc_common(DXGI_SWAP_CHAIN_DESC &desc,
+					 const gs_init_data *data,
+					 UINT num_backbuffers,
+					 DXGI_SWAP_EFFECT effect)
 {
 	memset(&desc, 0, sizeof(desc));
-	desc.BufferCount = data->num_backbuffers;
-	desc.BufferDesc.Format = ConvertGSTextureFormat(data->format);
 	desc.BufferDesc.Width = data->cx;
 	desc.BufferDesc.Height = data->cy;
-	desc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-	desc.OutputWindow = (HWND)data->window.hwnd;
+	desc.BufferDesc.Format = ConvertGSTextureFormat(data->format);
 	desc.SampleDesc.Count = 1;
+	desc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+	desc.BufferCount = num_backbuffers;
+	desc.OutputWindow = (HWND)data->window.hwnd;
 	desc.Windowed = true;
+	desc.SwapEffect = effect;
+}
+
+static inline void make_swap_desc_win7(DXGI_SWAP_CHAIN_DESC &desc,
+				       const gs_init_data *data)
+{
+	UINT num_backbuffers = data->num_backbuffers;
+	if (num_backbuffers == 0)
+		num_backbuffers = 1;
+	make_swap_desc_common(desc, data, num_backbuffers,
+			      DXGI_SWAP_EFFECT_DISCARD);
+}
+
+static inline void make_swap_desc_win10(DXGI_SWAP_CHAIN_DESC &desc,
+					const gs_init_data *data)
+{
+	UINT num_backbuffers = data->num_backbuffers;
+	if (num_backbuffers == 0)
+		num_backbuffers = 2;
+	make_swap_desc_common(desc, data, num_backbuffers,
+			      DXGI_SWAP_EFFECT_FLIP_DISCARD);
 }
 
 void gs_swap_chain::InitTarget(uint32_t cx, uint32_t cy)
@@ -166,11 +189,16 @@ gs_swap_chain::gs_swap_chain(gs_device *device, const gs_init_data *data)
 {
 	HRESULT hr;
 
-	make_swap_desc(swapDesc, data);
+	make_swap_desc_win10(swapDesc, data);
 	hr = device->factory->CreateSwapChain(device->device, &swapDesc,
 					      swap.Assign());
-	if (FAILED(hr))
-		throw HRError("Failed to create swap chain", hr);
+	if (FAILED(hr)) {
+		make_swap_desc_win7(swapDesc, data);
+		hr = device->factory->CreateSwapChain(device->device, &swapDesc,
+						      swap.Assign());
+		if (FAILED(hr))
+			throw HRError("Failed to create swap chain", hr);
+	}
 
 	/* Ignore Alt+Enter */
 	device->factory->MakeWindowAssociation(hwnd, DXGI_MWA_NO_ALT_ENTER);
