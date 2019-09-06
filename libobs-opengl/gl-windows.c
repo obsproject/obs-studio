@@ -41,6 +41,7 @@ static inline int get_color_format_bits(enum gs_color_format format)
 {
 	switch ((uint32_t)format) {
 	case GS_RGBA:
+	case GS_BGRA:
 		return 32;
 	default:
 		return 0;

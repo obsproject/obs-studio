@@ -95,53 +95,6 @@ struct gl_platform {
 	GLXPbuffer pbuffer;
 };
 
-static void print_info_stuff(const struct gs_init_data *info)
-{
-	blog(LOG_INFO,
-	     "X and Y: %i %i\n"
-	     "Backbuffers: %i\n"
-	     "Color Format: %i\n"
-	     "ZStencil Format: %i\n"
-	     "Adapter: %i\n",
-	     info->cx, info->cy, info->num_backbuffers, info->format,
-	     info->zsformat, info->adapter);
-}
-/* The following utility functions are copied verbatim from WGL code.
- * GLX and WGL are more similar than most people realize. */
-
-/* For now, only support basic 32bit formats for graphics output. */
-static inline int get_color_format_bits(enum gs_color_format format)
-{
-	switch ((uint32_t)format) {
-	case GS_RGBA:
-		return 32;
-	default:
-		return 0;
-	}
-}
-
-static inline int get_depth_format_bits(enum gs_zstencil_format zsformat)
-{
-	switch ((uint32_t)zsformat) {
-	case GS_Z16:
-		return 16;
-	case GS_Z24_S8:
-		return 24;
-	default:
-		return 0;
-	}
-}
-
-static inline int get_stencil_format_bits(enum gs_zstencil_format zsformat)
-{
-	switch ((uint32_t)zsformat) {
-	case GS_Z24_S8:
-		return 8;
-	default:
-		return 0;
-	}
-}
-
 /*
  * Since we cannot take advantage of the asynchronous nature of xcb,
  * all of the helper functions are synchronous but thread-safe.
