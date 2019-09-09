@@ -262,7 +262,6 @@ static const D3D_FEATURE_LEVEL feature_levels[] = {
 	D3D_FEATURE_LEVEL_11_0,
 	D3D_FEATURE_LEVEL_10_1,
 	D3D_FEATURE_LEVEL_10_0,
-	D3D_FEATURE_LEVEL_9_3,
 };
 
 static inline bool gl_shtex_init_d3d11(void)
