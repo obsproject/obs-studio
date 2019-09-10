@@ -1229,6 +1229,10 @@ void AdvancedOutput::UpdateStreamSettings()
 {
 	bool applyServiceSettings = config_get_bool(main->Config(), "AdvOut",
 						    "ApplyServiceSettings");
+	bool dynBitrate =
+		config_get_bool(main->Config(), "Output", "DynamicBitrate");
+	const char *streamEncoder =
+		config_get_string(main->Config(), "AdvOut", "Encoder");
 
 	OBSData settings = GetDataFromJsonFile("streamEncoder.json");
 	ApplyEncoderDefaults(settings, h264Streaming);
@@ -1236,6 +1240,9 @@ void AdvancedOutput::UpdateStreamSettings()
 	if (applyServiceSettings)
 		obs_service_apply_encoder_settings(main->GetService(), settings,
 						   nullptr);
+
+	if (dynBitrate && astrcmpi(streamEncoder, "jim_nvenc") == 0)
+		obs_data_set_bool(settings, "lookahead", false);
 
 	video_t *video = obs_get_video();
 	enum video_format format = video_output_get_format(video);
