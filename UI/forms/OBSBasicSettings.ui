@@ -371,13 +371,33 @@
                      </property>
                     </widget>
                    </item>
-                   <item row="1" column="0">
-                    <widget class="QLabel" name="label_9">
+                   <item row="2" column="1">
+                    <widget class="QCheckBox" name="screenSnapping">
                      <property name="text">
-                      <string>Basic.Settings.General.SnapDistance</string>
+                      <string>Basic.Settings.General.ScreenSnapping</string>
                      </property>
-                     <property name="buddy">
-                      <cstring>snapDistance</cstring>
+                     <property name="checked">
+                      <bool>true</bool>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="4" column="1">
+                    <widget class="QCheckBox" name="centerSnapping">
+                     <property name="text">
+                      <string>Basic.Settings.General.CenterSnapping</string>
+                     </property>
+                     <property name="checked">
+                      <bool>true</bool>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="3" column="1">
+                    <widget class="QCheckBox" name="sourceSnapping">
+                     <property name="text">
+                      <string>Basic.Settings.General.SourceSnapping</string>
+                     </property>
+                     <property name="checked">
+                      <bool>true</bool>
                      </property>
                     </widget>
                    </item>
@@ -394,13 +414,13 @@
                      </property>
                     </widget>
                    </item>
-                   <item row="2" column="1">
-                    <widget class="QCheckBox" name="screenSnapping">
+                   <item row="1" column="0">
+                    <widget class="QLabel" name="label_9">
                      <property name="text">
-                      <string>Basic.Settings.General.ScreenSnapping</string>
+                      <string>Basic.Settings.General.SnapDistance</string>
                      </property>
-                     <property name="checked">
-                      <bool>true</bool>
+                     <property name="buddy">
+                      <cstring>snapDistance</cstring>
                      </property>
                     </widget>
                    </item>
@@ -419,26 +439,6 @@
                       </size>
                      </property>
                     </spacer>
-                   </item>
-                   <item row="3" column="1">
-                    <widget class="QCheckBox" name="sourceSnapping">
-                     <property name="text">
-                      <string>Basic.Settings.General.SourceSnapping</string>
-                     </property>
-                     <property name="checked">
-                      <bool>true</bool>
-                     </property>
-                    </widget>
-                   </item>
-                   <item row="4" column="1">
-                    <widget class="QCheckBox" name="centerSnapping">
-                     <property name="text">
-                      <string>Basic.Settings.General.CenterSnapping</string>
-                     </property>
-                     <property name="checked">
-                      <bool>true</bool>
-                     </property>
-                    </widget>
                    </item>
                   </layout>
                  </widget>
@@ -568,6 +568,13 @@
                    <property name="topMargin">
                     <number>2</number>
                    </property>
+                   <item row="1" column="1">
+                    <widget class="QCheckBox" name="overflowAlwaysVisible">
+                     <property name="text">
+                      <string>Basic.Settings.General.OverflowAlwaysVisible</string>
+                     </property>
+                    </widget>
+                   </item>
                    <item row="0" column="0">
                     <spacer name="horizontalSpacer_25">
                      <property name="orientation">
@@ -581,24 +588,17 @@
                      </property>
                     </spacer>
                    </item>
-                   <item row="0" column="1">
-                    <widget class="QCheckBox" name="overflowHide">
-                     <property name="text">
-                      <string>Basic.Settings.General.OverflowHidden</string>
-                     </property>
-                    </widget>
-                   </item>
-                   <item row="1" column="1">
-                    <widget class="QCheckBox" name="overflowAlwaysVisible">
-                     <property name="text">
-                      <string>Basic.Settings.General.OverflowAlwaysVisible</string>
-                     </property>
-                    </widget>
-                   </item>
                    <item row="2" column="1">
                     <widget class="QCheckBox" name="overflowSelectionHide">
                      <property name="text">
                       <string>Basic.Settings.General.OverflowSelectionHidden</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="0" column="1">
+                    <widget class="QCheckBox" name="overflowHide">
+                     <property name="text">
+                      <string>Basic.Settings.General.OverflowHidden</string>
                      </property>
                     </widget>
                    </item>
@@ -721,6 +721,9 @@
                      </property>
                     </widget>
                    </item>
+                   <item row="3" column="1">
+                    <widget class="QComboBox" name="multiviewLayout"/>
+                   </item>
                    <item row="3" column="0">
                     <widget class="QLabel" name="label_64">
                      <property name="text">
@@ -730,9 +733,6 @@
                       <cstring>multiviewLayout</cstring>
                      </property>
                     </widget>
-                   </item>
-                   <item row="3" column="1">
-                    <widget class="QComboBox" name="multiviewLayout"/>
                    </item>
                   </layout>
                  </widget>
@@ -4636,16 +4636,6 @@
                      </item>
                     </layout>
                    </item>
-                   <item row="3" column="0">
-                    <widget class="QLabel" name="label_33">
-                     <property name="text">
-                      <string>Basic.Settings.Advanced.Video.ColorSpace</string>
-                     </property>
-                     <property name="buddy">
-                      <cstring>colorSpace</cstring>
-                     </property>
-                    </widget>
-                   </item>
                    <item row="3" column="1">
                     <layout class="QHBoxLayout" name="horizontalLayout_20">
                      <property name="leftMargin">
@@ -4694,6 +4684,16 @@
                       <widget class="QComboBox" name="colorRange"/>
                      </item>
                     </layout>
+                   </item>
+                   <item row="3" column="0">
+                    <widget class="QLabel" name="label_33">
+                     <property name="text">
+                      <string>Basic.Settings.Advanced.Video.ColorSpace</string>
+                     </property>
+                     <property name="buddy">
+                      <cstring>colorSpace</cstring>
+                     </property>
+                    </widget>
                    </item>
                    <item row="4" column="0">
                     <spacer name="horizontalSpacer_12">
@@ -4746,23 +4746,6 @@
                      </property>
                     </widget>
                    </item>
-                   <item row="2" column="1">
-                    <widget class="QCheckBox" name="autoRemux">
-                     <property name="text">
-                      <string>Basic.Settings.Advanced.AutoRemux</string>
-                     </property>
-                    </widget>
-                   </item>
-                   <item row="3" column="0">
-                    <widget class="QLabel" name="label_57">
-                     <property name="text">
-                      <string>Basic.Settings.Output.ReplayBuffer.Prefix</string>
-                     </property>
-                     <property name="buddy">
-                      <cstring>simpleRBPrefix</cstring>
-                     </property>
-                    </widget>
-                   </item>
                    <item row="3" column="1">
                     <layout class="QHBoxLayout" name="horizontalLayout_14">
                      <property name="leftMargin">
@@ -4795,6 +4778,16 @@
                      </item>
                     </layout>
                    </item>
+                   <item row="3" column="0">
+                    <widget class="QLabel" name="label_57">
+                     <property name="text">
+                      <string>Basic.Settings.Output.ReplayBuffer.Prefix</string>
+                     </property>
+                     <property name="buddy">
+                      <cstring>simpleRBPrefix</cstring>
+                     </property>
+                    </widget>
+                   </item>
                    <item row="1" column="0">
                     <spacer name="horizontalSpacer_10">
                      <property name="orientation">
@@ -4807,6 +4800,13 @@
                       </size>
                      </property>
                     </spacer>
+                   </item>
+                   <item row="2" column="1">
+                    <widget class="QCheckBox" name="autoRemux">
+                     <property name="text">
+                      <string>Basic.Settings.Advanced.AutoRemux</string>
+                     </property>
+                    </widget>
                    </item>
                    <item row="2" column="0">
                     <spacer name="horizontalSpacer_16">
@@ -4839,16 +4839,6 @@
                    <property name="topMargin">
                     <number>2</number>
                    </property>
-                   <item row="0" column="1">
-                    <widget class="QCheckBox" name="streamDelayEnable">
-                     <property name="text">
-                      <string>Enable</string>
-                     </property>
-                     <property name="checked">
-                      <bool>true</bool>
-                     </property>
-                    </widget>
-                   </item>
                    <item row="1" column="0">
                     <widget class="QLabel" name="label_56">
                      <property name="text">
@@ -4925,6 +4915,16 @@
                      </property>
                     </widget>
                    </item>
+                   <item row="0" column="1">
+                    <widget class="QCheckBox" name="streamDelayEnable">
+                     <property name="text">
+                      <string>Enable</string>
+                     </property>
+                     <property name="checked">
+                      <bool>true</bool>
+                     </property>
+                    </widget>
+                   </item>
                    <item row="2" column="0">
                     <spacer name="horizontalSpacer_9">
                      <property name="orientation">
@@ -4963,16 +4963,6 @@
                      </property>
                      <property name="checked">
                       <bool>true</bool>
-                     </property>
-                    </widget>
-                   </item>
-                   <item row="1" column="0">
-                    <widget class="QLabel" name="label_17">
-                     <property name="text">
-                      <string>Basic.Settings.Output.RetryDelay</string>
-                     </property>
-                     <property name="buddy">
-                      <cstring>reconnectRetryDelay</cstring>
                      </property>
                     </widget>
                    </item>
@@ -5028,6 +5018,16 @@
                      </item>
                     </layout>
                    </item>
+                   <item row="1" column="0">
+                    <widget class="QLabel" name="label_17">
+                     <property name="text">
+                      <string>Basic.Settings.Output.RetryDelay</string>
+                     </property>
+                     <property name="buddy">
+                      <cstring>reconnectRetryDelay</cstring>
+                     </property>
+                    </widget>
+                   </item>
                    <item row="0" column="0">
                     <spacer name="horizontalSpacer_8">
                      <property name="orientation">
@@ -5072,16 +5072,6 @@
                    <item row="0" column="1">
                     <widget class="QComboBox" name="bindToIP"/>
                    </item>
-                   <item row="1" column="1">
-                    <widget class="QCheckBox" name="dynBitrate">
-                     <property name="toolTip">
-                      <string>Basic.Settings.Output.DynamicBitrate.TT</string>
-                     </property>
-                     <property name="text">
-                      <string>Basic.Settings.Output.DynamicBitrate.Beta</string>
-                     </property>
-                    </widget>
-                   </item>
                    <item row="2" column="1">
                     <widget class="QCheckBox" name="enableNewSocketLoop">
                      <property name="text">
@@ -5111,6 +5101,16 @@
                       </size>
                      </property>
                     </spacer>
+                   </item>
+                   <item row="1" column="1">
+                    <widget class="QCheckBox" name="dynBitrate">
+                     <property name="toolTip">
+                      <string>Basic.Settings.Output.DynamicBitrate.TT</string>
+                     </property>
+                     <property name="text">
+                      <string>Basic.Settings.Output.DynamicBitrate.Beta</string>
+                     </property>
+                    </widget>
                    </item>
                   </layout>
                  </widget>

@@ -62,18 +62,12 @@ SourceTreeItem::SourceTreeItem(SourceTree *tree_, OBSSceneItem sceneitem_)
 	vis->setFixedSize(16, 16);
 	vis->setChecked(obs_sceneitem_visible(sceneitem));
 	vis->setStyleSheet("background: none");
-	vis->setAccessibleName(QTStr("Basic.Main.Sources.Visibility"));
-	vis->setAccessibleDescription(
-		QTStr("Basic.Main.Sources.VisibilityDescription").arg(name));
 
 	lock = new LockedCheckBox();
 	lock->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
 	lock->setFixedSize(16, 16);
 	lock->setChecked(obs_sceneitem_locked(sceneitem));
 	lock->setStyleSheet("background: none");
-	lock->setAccessibleName(QTStr("Basic.Main.Sources.Lock"));
-	lock->setAccessibleDescription(
-		QTStr("Basic.Main.Sources.LockDescription").arg(name));
 
 	label = new QLabel(QT_UTF8(name));
 	label->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
@@ -113,8 +107,8 @@ SourceTreeItem::SourceTreeItem(SourceTree *tree_, OBSSceneItem sceneitem_)
 		obs_sceneitem_set_locked(sceneitem, checked);
 	};
 
-	connect(vis, &QAbstractButton::toggled, setItemVisible);
-	connect(lock, &QAbstractButton::toggled, setItemLocked);
+	connect(vis, &QAbstractButton::clicked, setItemVisible);
+	connect(lock, &QAbstractButton::clicked, setItemLocked);
 }
 
 void SourceTreeItem::paintEvent(QPaintEvent *event)
