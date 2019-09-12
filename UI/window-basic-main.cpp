@@ -7426,7 +7426,9 @@ void OBSBasic::PauseRecording()
 	if (obs_output_pause(output, true)) {
 		pause->setAccessibleName(QTStr("Basic.Main.UnpauseRecording"));
 		pause->setToolTip(QTStr("Basic.Main.UnpauseRecording"));
+		pause->blockSignals(true);
 		pause->setChecked(true);
+		pause->blockSignals(false);
 		os_atomic_set_bool(&recording_paused, true);
 
 		if (api)
@@ -7447,7 +7449,9 @@ void OBSBasic::UnpauseRecording()
 	if (obs_output_pause(output, false)) {
 		pause->setAccessibleName(QTStr("Basic.Main.PauseRecording"));
 		pause->setToolTip(QTStr("Basic.Main.PauseRecording"));
+		pause->blockSignals(true);
 		pause->setChecked(false);
+		pause->blockSignals(false);
 		os_atomic_set_bool(&recording_paused, false);
 
 		if (api)
