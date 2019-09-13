@@ -50,7 +50,7 @@ static const int ctx_attribs[] = {
 	GLX_CONTEXT_MAJOR_VERSION_ARB,
 	3,
 	GLX_CONTEXT_MINOR_VERSION_ARB,
-	2,
+	3,
 	None,
 };
 

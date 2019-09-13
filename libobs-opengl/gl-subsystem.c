@@ -130,23 +130,15 @@ static void gl_enable_debug() {}
 
 static bool gl_init_extensions(struct gs_device *device)
 {
-	if (!GLAD_GL_VERSION_2_1) {
-		blog(LOG_ERROR, "obs-studio requires OpenGL version 2.1 or "
-				"higher.");
+	if (!GLAD_GL_VERSION_3_3) {
+		blog(LOG_ERROR,
+		     "obs-studio requires OpenGL version 3.3 or higher.");
 		return false;
 	}
 
 	gl_enable_debug();
 
-	if (!GLAD_GL_VERSION_3_0 && !GLAD_GL_ARB_framebuffer_object) {
-		blog(LOG_ERROR, "OpenGL extension ARB_framebuffer_object "
-				"is required.");
-		return false;
-	}
-
-	if (GLAD_GL_VERSION_3_2 || GLAD_GL_ARB_seamless_cube_map) {
-		gl_enable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
-	}
+	gl_enable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 
 	if (GLAD_GL_VERSION_4_3 || GLAD_GL_ARB_copy_image)
 		device->copy_type = COPY_TYPE_ARB;
@@ -182,8 +174,11 @@ void convert_sampler_info(struct gs_sampler_state *sampler,
 	sampler->max_anisotropy = info->max_anisotropy;
 
 	max_anisotropy_max = 1;
-	glGetIntegerv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &max_anisotropy_max);
-	gl_success("glGetIntegerv(GL_MAX_TEXTURE_ANISOTROPY_MAX)");
+	if (GLAD_GL_EXT_texture_filter_anisotropic) {
+		glGetIntegerv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT,
+			      &max_anisotropy_max);
+		gl_success("glGetIntegerv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT)");
+	}
 
 	if (1 <= sampler->max_anisotropy &&
 	    sampler->max_anisotropy <= max_anisotropy_max)
@@ -475,9 +470,12 @@ static bool load_texture_sampler(gs_texture_t *tex, gs_samplerstate_t *ss)
 		success = false;
 	if (!gl_tex_param_i(tex->gl_target, GL_TEXTURE_WRAP_R, ss->address_w))
 		success = false;
-	if (!gl_tex_param_i(tex->gl_target, GL_TEXTURE_MAX_ANISOTROPY_EXT,
-			    ss->max_anisotropy))
-		success = false;
+	if (GLAD_GL_EXT_texture_filter_anisotropic) {
+		if (!gl_tex_param_i(tex->gl_target,
+				    GL_TEXTURE_MAX_ANISOTROPY_EXT,
+				    ss->max_anisotropy))
+			success = false;
+	}
 
 	apply_swizzle(tex);
 
