@@ -550,7 +550,11 @@ void OBSBasic::AddExtraBrowserDock(const QString &title, const QString &url,
 	}
 
 	QAction *action = AddDockWidget(dock);
-	action->setChecked(true);
+	if (firstCreate) {
+		action->blockSignals(true);
+		action->setChecked(true);
+		action->blockSignals(false);
+	}
 
 	extraBrowserDocks.push_back(QSharedPointer<QDockWidget>(dock));
 	extraBrowserDockActions.push_back(QSharedPointer<QAction>(action));
