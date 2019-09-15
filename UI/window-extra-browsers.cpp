@@ -549,8 +549,10 @@ void OBSBasic::AddExtraBrowserDock(const QString &title, const QString &url,
 		dock->setVisible(true);
 	}
 
+	QAction *action = AddDockWidget(dock);
+	action->setChecked(true);
+
 	extraBrowserDocks.push_back(QSharedPointer<QDockWidget>(dock));
-	extraBrowserDockActions.push_back(
-		QSharedPointer<QAction>(AddDockWidget(dock)));
+	extraBrowserDockActions.push_back(QSharedPointer<QAction>(action));
 	extraBrowserDockTargets.push_back(url);
 }
