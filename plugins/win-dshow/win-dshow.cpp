@@ -178,6 +178,7 @@ struct DShowInput {
 	VideoConfig videoConfig;
 	AudioConfig audioConfig;
 
+	video_range_type range;
 	obs_source_frame2 frame;
 	obs_source_audio audio;
 
@@ -481,7 +482,7 @@ void DShowInput::OnEncodedVideoData(enum AVCodecID id, unsigned char *data,
 
 	bool got_output;
 	bool success = ffmpeg_decode_video(video_decoder, data, size, &ts,
-					   &frame, &got_output);
+					   range, &frame, &got_output);
 	if (!success) {
 		blog(LOG_WARNING, "Error decoding video");
 		return;
@@ -1079,13 +1080,14 @@ inline bool DShowInput::Activate(obs_data_t *settings)
 	if (!device.ConnectFilters())
 		return false;
 
-	enum video_colorspace cs = GetColorSpace(settings);
-	frame.range = GetColorRange(settings);
-
 	if (device.Start() != Result::Success)
 		return false;
 
-	bool success = video_format_get_parameters(cs, frame.range,
+	enum video_colorspace cs = GetColorSpace(settings);
+	range = GetColorRange(settings);
+	frame.range = range;
+
+	bool success = video_format_get_parameters(cs, range,
 						   frame.color_matrix,
 						   frame.color_range_min,
 						   frame.color_range_max);
