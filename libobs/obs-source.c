@@ -1938,6 +1938,28 @@ static void obs_source_draw_async_texture(struct obs_source *source)
 	}
 }
 
+static void recreate_async_texture(obs_source_t *source,
+				   enum gs_color_format format)
+{
+	uint32_t cx = gs_texture_get_width(source->async_textures[0]);
+	uint32_t cy = gs_texture_get_height(source->async_textures[0]);
+	gs_texture_destroy(source->async_textures[0]);
+	source->async_textures[0] =
+		gs_texture_create(cx, cy, format, 1, NULL, GS_DYNAMIC);
+}
+
+static inline void check_to_swap_bgrx_bgra(obs_source_t *source,
+					   struct obs_source_frame *frame)
+{
+	enum gs_color_format format =
+		gs_texture_get_color_format(source->async_textures[0]);
+	if (format == GS_BGRX && frame->format == VIDEO_FORMAT_BGRA) {
+		recreate_async_texture(source, GS_BGRA);
+	} else if (format == GS_BGRA && frame->format == VIDEO_FORMAT_BGRX) {
+		recreate_async_texture(source, GS_BGRX);
+	}
+}
+
 static void obs_source_update_async_video(obs_source_t *source)
 {
 	if (!source->async_rendered) {
@@ -1948,6 +1970,8 @@ static void obs_source_update_async_video(obs_source_t *source)
 
 		source->async_rendered = true;
 		if (frame) {
+			check_to_swap_bgrx_bgra(source, frame);
+
 			if (!source->async_decoupled ||
 			    !source->async_unbuffered) {
 				source->timing_adjust = obs->video.video_time -
