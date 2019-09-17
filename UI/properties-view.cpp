@@ -1835,6 +1835,74 @@ void WidgetInfo::ControlChanged()
 	}
 }
 
+static void SetInitColorValues(obs_data_t *settings, const char *name)
+{
+	long long val = obs_data_get_int(settings, name);
+	obs_data_set_int(settings, name, val);
+}
+
+static void SetInitFontValues(obs_data_t *settings, const char *name)
+{
+	obs_data_t *font_obj = obs_data_get_obj(settings, name);
+	const char *face = obs_data_get_string(font_obj, "face");
+	const char *style = obs_data_get_string(font_obj, "style");
+	int size = obs_data_get_int(font_obj, "size");
+	uint32_t flags = obs_data_get_int(font_obj, "flags");
+	obs_data_set_string(font_obj, "face", face);
+	obs_data_set_string(font_obj, "style", style);
+	obs_data_set_int(font_obj, "size", size);
+	obs_data_set_int(font_obj, "flags", flags);
+	obs_data_set_obj(settings, name, font_obj);
+	obs_data_release(font_obj);
+}
+
+static void SetInitPathValues(obs_data_t *settings, const char *name)
+{
+	const char *path = obs_data_get_string(settings, name);
+	obs_data_set_string(settings, name, path);
+}
+
+void WidgetInfo::SaveInitValues()
+{
+	const char *setting = obs_property_name(property);
+	obs_property_type type = obs_property_get_type(property);
+
+	switch (type) {
+	case OBS_PROPERTY_INVALID:
+		break;
+	case OBS_PROPERTY_BOOL:
+		BoolChanged(setting);
+		break;
+	case OBS_PROPERTY_INT:
+		IntChanged(setting);
+		break;
+	case OBS_PROPERTY_FLOAT:
+		FloatChanged(setting);
+		break;
+	case OBS_PROPERTY_TEXT:
+		TextChanged(setting);
+		break;
+	case OBS_PROPERTY_LIST:
+		ListChanged(setting);
+		break;
+	case OBS_PROPERTY_COLOR:
+		SetInitColorValues(view->settings, setting);
+		break;
+	case OBS_PROPERTY_FONT:
+		SetInitFontValues(view->settings, setting);
+		break;
+	case OBS_PROPERTY_PATH:
+		SetInitPathValues(view->settings, setting);
+		break;
+	case OBS_PROPERTY_FRAME_RATE:
+		if (!FrameRateChanged(widget, setting, view->settings))
+			return;
+		break;
+	default:
+		break;
+	}
+}
+
 class EditableItemDialog : public QDialog {
 	QLineEdit *edit;
 	QString filter;

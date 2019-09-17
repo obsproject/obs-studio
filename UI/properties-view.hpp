@@ -38,11 +38,14 @@ private:
 
 	void TogglePasswordText(bool checked);
 
+	void SaveInitValues();
+
 public:
 	inline WidgetInfo(OBSPropertiesView *view_, obs_property_t *prop,
 			  QWidget *widget_)
 		: view(view_), property(prop), widget(widget_)
 	{
+		SaveInitValues();
 	}
 
 public slots:
