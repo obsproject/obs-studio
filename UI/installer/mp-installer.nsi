@@ -6,8 +6,8 @@ Unicode true
 !define APPNAME "OBS Studio"
 
 !ifndef APPVERSION
-!define APPVERSION "17.0.2"
-!define SHORTVERSION "17.0.2"
+!define APPVERSION "24.0.0"
+!define SHORTVERSION "24.0.0"
 !endif
 
 !define APPNAMEANDVERSION "OBS Studio ${SHORTVERSION}"
