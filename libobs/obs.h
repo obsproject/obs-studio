@@ -135,6 +135,23 @@ enum obs_bounds_type {
 	OBS_BOUNDS_MAX_ONLY,        /**< no scaling, maximum size only */
 };
 
+enum obs_audio_rendering_mode {
+	OBS_MAIN_AUDIO_RENDERING,
+	OBS_STREAMING_AUDIO_RENDERING,
+	OBS_RECORDING_AUDIO_RENDERING,
+};
+
+enum obs_video_rendering_mode {
+	OBS_MAIN_VIDEO_RENDERING,
+	OBS_STREAMING_VIDEO_RENDERING,
+	OBS_RECORDING_VIDEO_RENDERING,
+};
+
+enum obs_replay_buffer_rendering_mode {
+	OBS_STREAMING_REPLAY_BUFFER_RENDERING,
+	OBS_RECORDING_REPLAY_BUFFER_RENDERING,
+};
+
 struct obs_transform_info {
 	struct vec2 pos;
 	float rot;
@@ -657,9 +674,41 @@ EXPORT void obs_render_main_texture(void);
 /** Renders the last main output texture ignoring background color */
 EXPORT void obs_render_main_texture_src_color_only(void);
 
+/** Renders the last streaming output texture */
+EXPORT void obs_render_streaming_texture(void);
+
+/** Renders the last recording output texture */
+EXPORT void obs_render_recording_texture(void);
+
 /** Returns the last main output texture.  This can return NULL if the texture
  * is unavailable. */
 EXPORT gs_texture_t *obs_get_main_texture(void);
+
+/** Enable/disable multiple rendering mode*/
+EXPORT void obs_set_multiple_rendering(bool multiple_rendering);
+
+/** Get current multiple rendering mode*/
+EXPORT bool obs_get_multiple_rendering(void);
+
+/** Sets video rendering mode*/
+EXPORT void obs_set_video_rendering_mode(enum obs_video_rendering_mode mode);
+
+/** Gets current video rendering mode */
+EXPORT enum obs_video_rendering_mode obs_get_video_rendering_mode(void);
+
+/** Sets audio rendering mode*/
+EXPORT void obs_set_audio_rendering_mode(enum obs_audio_rendering_mode mode);
+
+/** Gets current audio rendering mode */
+EXPORT enum obs_audio_rendering_mode obs_get_audio_rendering_mode(void);
+
+/** Set the replay buffer rendering mode*/
+EXPORT void obs_set_replay_buffer_rendering_mode(
+	enum obs_replay_buffer_rendering_mode mode);
+
+/** Get current replay buffer rendering mode*/
+EXPORT enum obs_replay_buffer_rendering_mode
+obs_get_replay_buffer_rendering_mode(void);
 
 /** Sets the master user volume */
 EXPORT void obs_set_master_volume(float volume);
@@ -727,9 +776,13 @@ EXPORT void obs_remove_main_render_callback(
 
 EXPORT void obs_add_raw_video_callback(
 	const struct video_scale_info *conversion,
-	void (*callback)(void *param, struct video_data *frame), void *param);
+	void (*callback)(void *param, struct video_data *streaming_frame,
+			 struct video_data *recording_frame),
+	void *param);
 EXPORT void obs_remove_raw_video_callback(
-	void (*callback)(void *param, struct video_data *frame), void *param);
+	void (*callback)(void *param, struct video_data *streaming_frame,
+			 struct video_data *recording_frame),
+	void *param);
 
 EXPORT uint64_t obs_get_video_frame_time(void);
 
@@ -1499,6 +1552,12 @@ EXPORT void obs_sceneitem_select(obs_sceneitem_t *item, bool select);
 EXPORT bool obs_sceneitem_selected(const obs_sceneitem_t *item);
 EXPORT bool obs_sceneitem_locked(const obs_sceneitem_t *item);
 EXPORT bool obs_sceneitem_set_locked(obs_sceneitem_t *item, bool lock);
+EXPORT bool obs_sceneitem_stream_visible(const obs_sceneitem_t *item);
+EXPORT bool obs_sceneitem_set_stream_visible(obs_sceneitem_t *item,
+					     bool stream_visible);
+EXPORT bool obs_sceneitem_recording_visible(const obs_sceneitem_t *item);
+EXPORT bool obs_sceneitem_set_recording_visible(obs_sceneitem_t *item,
+						bool recording_visible);
 
 /* Functions for getting/setting specific orientation of a scene item */
 EXPORT void obs_sceneitem_set_pos(obs_sceneitem_t *item,

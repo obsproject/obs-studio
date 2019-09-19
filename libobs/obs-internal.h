@@ -41,6 +41,7 @@
 #define MICROSECOND_DEN 1000000
 #define NUM_ENCODE_TEXTURES 3
 #define NUM_ENCODE_TEXTURE_FRAMES_TO_WAIT 1
+#define NUM_RENDERING_MODES 3
 
 static inline int64_t packet_dts_usec(struct encoder_packet *packet)
 {
@@ -234,8 +235,7 @@ struct obs_tex_frame {
 	bool released;
 };
 
-struct obs_core_video {
-	graphics_t *graphics;
+struct obs_textures {
 	gs_stagesurf_t *copy_surfaces[NUM_TEXTURES][NUM_CHANNELS];
 	gs_texture_t *render_texture;
 	gs_texture_t *output_texture;
@@ -243,6 +243,16 @@ struct obs_core_video {
 	bool texture_rendered;
 	bool textures_copied[NUM_TEXTURES];
 	bool texture_converted;
+};
+
+struct obs_gpu_queues {
+	struct circlebuf gpu_encoder_queue;
+	struct circlebuf gpu_encoder_avail_queue;
+};
+
+struct obs_core_video {
+	graphics_t *graphics;
+	struct obs_textures textures[NUM_RENDERING_MODES];
 	bool using_nv12_tex;
 	struct circlebuf vframe_info_buffer;
 	struct circlebuf vframe_info_buffer_gpu;
@@ -263,8 +273,7 @@ struct obs_core_video {
 	long raw_active;
 	long gpu_encoder_active;
 	pthread_mutex_t gpu_encoder_mutex;
-	struct circlebuf gpu_encoder_queue;
-	struct circlebuf gpu_encoder_avail_queue;
+	struct obs_gpu_queues gpu_queues[NUM_RENDERING_MODES];
 	DARRAY(obs_encoder_t *) gpu_encoders;
 	os_sem_t *gpu_encode_semaphore;
 	os_event_t *gpu_encode_inactive;
@@ -420,6 +429,11 @@ struct obs_core {
 	struct obs_core_audio audio;
 	struct obs_core_data data;
 	struct obs_core_hotkeys hotkeys;
+
+	bool multiple_rendering;
+	enum obs_replay_buffer_rendering_mode replay_buffer_rendering_mode;
+	enum obs_video_rendering_mode video_rendering_mode;
+	enum obs_audio_rendering_mode audio_rendering_mode;
 };
 
 extern struct obs_core *obs;
@@ -430,15 +444,20 @@ extern gs_effect_t *obs_load_effect(gs_effect_t **effect, const char *file);
 
 extern bool audio_callback(void *param, uint64_t start_ts_in,
 			   uint64_t end_ts_in, uint64_t *out_ts,
-			   uint32_t mixers, struct audio_output_data *mixes);
+			   uint32_t mixers,
+			   struct audio_output_data *main_mixes,
+			   struct audio_output_data *streaming_mixes,
+			   struct audio_output_data *recording_mixes);
 
 extern void
 start_raw_video(video_t *video, const struct video_scale_info *conversion,
-		void (*callback)(void *param, struct video_data *frame),
+		void (*callback)(void *param, struct video_data *streaming_frame,
+			         struct video_data *recording_frame),
 		void *param);
 extern void stop_raw_video(video_t *video,
 			   void (*callback)(void *param,
-					    struct video_data *frame),
+					    struct video_data *streaming_frame,
+					    struct video_data *recording_frame),
 			   void *param);
 
 /* ------------------------------------------------------------------------- */
@@ -609,10 +628,10 @@ struct obs_source {
 	struct obs_source *next_audio_source;
 	struct obs_source **prev_next_audio_source;
 	uint64_t audio_ts;
-	struct circlebuf audio_input_buf[MAX_AUDIO_CHANNELS];
-	size_t last_audio_input_buf_size;
+	struct circlebuf audio_input_buf[NUM_RENDERING_MODES][MAX_AUDIO_CHANNELS];
+	size_t last_audio_input_buf_size[NUM_RENDERING_MODES];
 	DARRAY(struct audio_action) audio_actions;
-	float *audio_output_buf[MAX_AUDIO_MIXES][MAX_AUDIO_CHANNELS];
+	float *audio_output_buf[NUM_RENDERING_MODES][MAX_AUDIO_MIXES][MAX_AUDIO_CHANNELS];
 	float *audio_mix_buf[MAX_AUDIO_CHANNELS];
 	struct resample_info sample_info;
 	audio_resampler_t *resampler;

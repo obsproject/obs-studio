@@ -26,6 +26,7 @@
 
 #include "audio-io.h"
 #include "audio-resampler.h"
+#include "obs-internal.h"
 
 extern profiler_name_store_t *obs_get_profiler_name_store(void);
 
@@ -68,7 +69,7 @@ struct audio_output {
 	audio_input_callback_t input_cb;
 	void *input_param;
 	pthread_mutex_t input_mutex;
-	struct audio_mix mixes[MAX_AUDIO_MIXES];
+	struct audio_mix mixes[NUM_RENDERING_MODES][MAX_AUDIO_MIXES];
 };
 
 /* ------------------------------------------------------------------------- */
@@ -146,23 +147,66 @@ static bool resample_audio_output(struct audio_input *input,
 static inline void do_audio_output(struct audio_output *audio, size_t mix_idx,
 				   uint64_t timestamp, uint32_t frames)
 {
-	struct audio_mix *mix = &audio->mixes[mix_idx];
-	struct audio_data data;
+	blog(LOG_INFO, "do_audio_output - start");
+	struct audio_mix *main_mix = &audio->mixes[OBS_MAIN_AUDIO_RENDERING][mix_idx];
+	struct audio_data main_data;
+
+	struct audio_mix *streaming_mix =
+		&audio->mixes[OBS_STREAMING_AUDIO_RENDERING][mix_idx];
+	struct audio_data streaming_data;
+
+	struct audio_mix *recording_mix =
+		&audio->mixes[OBS_RECORDING_AUDIO_RENDERING][mix_idx];
+	struct audio_data recording_data;
 
 	pthread_mutex_lock(&audio->input_mutex);
 
-	for (size_t i = mix->inputs.num; i > 0; i--) {
-		struct audio_input *input = mix->inputs.array + (i - 1);
+	for (size_t i = recording_mix->inputs.num; i > 0; i--) {
+		struct audio_input *main_input =
+			main_mix->inputs.array + (i - 1);
+		struct audio_input *streaming_input =
+			streaming_mix->inputs.array + (i - 1);
+		struct audio_input *recording_input =
+			recording_mix->inputs.array + (i - 1);
 
-		for (size_t i = 0; i < audio->planes; i++)
-			data.data[i] = (uint8_t *)mix->buffer[i];
-		data.frames = frames;
-		data.timestamp = timestamp;
+		for (size_t i = 0; i < audio->planes; i++) {
+			main_data.data[i] = (uint8_t *)main_mix->buffer[i];
+			streaming_data.data[i] =
+				(uint8_t *)streaming_mix->buffer[i];
+			recording_data.data[i] =
+				(uint8_t *)recording_mix->buffer[i];
+		}
 
-		if (resample_audio_output(input, &data))
-			input->callback(input->param, mix_idx, &data);
+		main_data.frames = frames;
+		main_data.timestamp = timestamp;
+		streaming_data.frames = frames;
+		streaming_data.timestamp = timestamp;
+		recording_data.frames = frames;
+		recording_data.timestamp = timestamp;
+
+		if (obs_get_multiple_rendering()) {
+			if (resample_audio_output(main_input, &main_data) &&
+			    resample_audio_output(streaming_input,
+						  &streaming_data) &&
+			    resample_audio_output(recording_input,
+						  &recording_data)) {
+				blog(LOG_INFO, "do_audio_output - callback");
+				main_input->callback(main_input->param, mix_idx,
+						     &streaming_data,
+						     &recording_data);
+			}
+		} else {
+			if (resample_audio_output(main_input, &main_data) &&
+			    resample_audio_output(streaming_input,
+						  &streaming_data)) {
+				main_input->callback(main_input->param, mix_idx,
+						     &streaming_data,
+						     &streaming_data);
+			}
+		}
 	}
 
+	blog(LOG_INFO, "do_audio_output - end");
 	pthread_mutex_unlock(&audio->input_mutex);
 }
 
@@ -170,37 +214,43 @@ static inline void clamp_audio_output(struct audio_output *audio, size_t bytes)
 {
 	size_t float_size = bytes / sizeof(float);
 
-	for (size_t mix_idx = 0; mix_idx < MAX_AUDIO_MIXES; mix_idx++) {
-		struct audio_mix *mix = &audio->mixes[mix_idx];
+	for (enum obs_audio_rendering_mode mode = OBS_MAIN_AUDIO_RENDERING;
+	     mode <= OBS_RECORDING_AUDIO_RENDERING; mode++) {
+		for (size_t mix_idx = 0; mix_idx < MAX_AUDIO_MIXES; mix_idx++) {
+			struct audio_mix *mix = &audio->mixes[mode][mix_idx];
 
-		/* do not process mixing if a specific mix is inactive */
-		if (!mix->inputs.num)
-			continue;
+			/* do not process mixing if a specific mix is inactive */
+			if (!mix->inputs.num)
+				continue;
 
-		for (size_t plane = 0; plane < audio->planes; plane++) {
-			float *mix_data = mix->buffer[plane];
-			float *mix_end = &mix_data[float_size];
+			for (size_t plane = 0; plane < audio->planes; plane++) {
+				float *mix_data = mix->buffer[plane];
+				float *mix_end = &mix_data[float_size];
 
-			while (mix_data < mix_end) {
-				float val = *mix_data;
-				val = (val > 1.0f) ? 1.0f : val;
-				val = (val < -1.0f) ? -1.0f : val;
-				*(mix_data++) = val;
+				while (mix_data < mix_end) {
+					float val = *mix_data;
+					val = (val > 1.0f) ? 1.0f : val;
+					val = (val < -1.0f) ? -1.0f : val;
+					*(mix_data++) = val;
+				}
 			}
 		}
 	}
+
 }
 
 static void input_and_output(struct audio_output *audio, uint64_t audio_time,
 			     uint64_t prev_time)
 {
 	size_t bytes = AUDIO_OUTPUT_FRAMES * audio->block_size;
-	struct audio_output_data data[MAX_AUDIO_MIXES];
+	struct audio_output_data data[NUM_RENDERING_MODES][MAX_AUDIO_MIXES];
 	uint32_t active_mixes = 0;
 	uint64_t new_ts = 0;
 	bool success;
 
-	memset(data, 0, sizeof(data));
+	for (enum obs_audio_rendering_mode mode = OBS_MAIN_AUDIO_RENDERING;
+	     mode <= OBS_RECORDING_AUDIO_RENDERING; mode++)
+		memset(data[mode], 0, sizeof(data[mode]));
 
 #ifdef DEBUG_AUDIO
 	blog(LOG_DEBUG, "audio_time: %llu, prev_time: %llu, bytes: %lu",
@@ -210,26 +260,34 @@ static void input_and_output(struct audio_output *audio, uint64_t audio_time,
 	/* get mixers */
 	pthread_mutex_lock(&audio->input_mutex);
 	for (size_t i = 0; i < MAX_AUDIO_MIXES; i++) {
-		if (audio->mixes[i].inputs.num)
+		if (audio->mixes[OBS_MAIN_AUDIO_RENDERING][i].inputs.num)
 			active_mixes |= (1 << i);
 	}
 	pthread_mutex_unlock(&audio->input_mutex);
 
 	/* clear mix buffers */
-	for (size_t mix_idx = 0; mix_idx < MAX_AUDIO_MIXES; mix_idx++) {
-		struct audio_mix *mix = &audio->mixes[mix_idx];
 
-		memset(mix->buffer[0], 0,
-		       AUDIO_OUTPUT_FRAMES * MAX_AUDIO_CHANNELS *
-			       sizeof(float));
+	for (enum obs_audio_rendering_mode mode = OBS_MAIN_AUDIO_RENDERING;
+	     mode <= OBS_RECORDING_AUDIO_RENDERING; mode++) {
+		for (size_t mix_idx = 0; mix_idx < MAX_AUDIO_MIXES; mix_idx++) {
+			struct audio_mix *mix = &audio->mixes[mode][mix_idx];
 
-		for (size_t i = 0; i < audio->planes; i++)
-			data[mix_idx].data[i] = mix->buffer[i];
+			memset(mix->buffer[0], 0,
+			       AUDIO_OUTPUT_FRAMES * MAX_AUDIO_CHANNELS *
+				       sizeof(float));
+
+			for (size_t i = 0; i < audio->planes; i++)
+				data[mode][mix_idx].data[i] =
+					mix->buffer[i];
+		}
 	}
 
 	/* get new audio data */
 	success = audio->input_cb(audio->input_param, prev_time, audio_time,
-				  &new_ts, active_mixes, data);
+				  &new_ts, active_mixes,
+				  data[OBS_MAIN_AUDIO_RENDERING],
+				  data[OBS_STREAMING_AUDIO_RENDERING],
+				  data[OBS_RECORDING_AUDIO_RENDERING]);
 	if (!success)
 		return;
 
@@ -288,7 +346,7 @@ static void *audio_thread(void *param)
 static size_t audio_get_input_idx(const audio_t *audio, size_t mix_idx,
 				  audio_output_callback_t callback, void *param)
 {
-	const struct audio_mix *mix = &audio->mixes[mix_idx];
+	const struct audio_mix *mix = &audio->mixes[OBS_MAIN_AUDIO_RENDERING][mix_idx];
 
 	for (size_t i = 0; i < mix->inputs.num; i++) {
 		struct audio_input *input = mix->inputs.array + i;
@@ -341,31 +399,37 @@ bool audio_output_connect(audio_t *audio, size_t mi,
 	pthread_mutex_lock(&audio->input_mutex);
 
 	if (audio_get_input_idx(audio, mi, callback, param) == DARRAY_INVALID) {
-		struct audio_mix *mix = &audio->mixes[mi];
-		struct audio_input input;
-		input.callback = callback;
-		input.param = param;
+		for (enum obs_audio_rendering_mode mode =
+			     OBS_MAIN_AUDIO_RENDERING;
+		     mode <= OBS_RECORDING_AUDIO_RENDERING; mode++) {
+			struct audio_mix *mix = &audio->mixes[mode][mi];
+			struct audio_input input;
+			input.callback = callback;
+			input.param = param;
 
-		if (conversion) {
-			input.conversion = *conversion;
-		} else {
-			input.conversion.format = audio->info.format;
-			input.conversion.speakers = audio->info.speakers;
-			input.conversion.samples_per_sec =
-				audio->info.samples_per_sec;
+			if (conversion) {
+				input.conversion = *conversion;
+			} else {
+				input.conversion.format = audio->info.format;
+				input.conversion.speakers =
+					audio->info.speakers;
+				input.conversion.samples_per_sec =
+					audio->info.samples_per_sec;
+			}
+
+			if (input.conversion.format == AUDIO_FORMAT_UNKNOWN)
+				input.conversion.format = audio->info.format;
+			if (input.conversion.speakers == SPEAKERS_UNKNOWN)
+				input.conversion.speakers =
+					audio->info.speakers;
+			if (input.conversion.samples_per_sec == 0)
+				input.conversion.samples_per_sec =
+					audio->info.samples_per_sec;
+
+			success = audio_input_init(&input, audio);
+			if (success)
+				da_push_back(mix->inputs, &input);
 		}
-
-		if (input.conversion.format == AUDIO_FORMAT_UNKNOWN)
-			input.conversion.format = audio->info.format;
-		if (input.conversion.speakers == SPEAKERS_UNKNOWN)
-			input.conversion.speakers = audio->info.speakers;
-		if (input.conversion.samples_per_sec == 0)
-			input.conversion.samples_per_sec =
-				audio->info.samples_per_sec;
-
-		success = audio_input_init(&input, audio);
-		if (success)
-			da_push_back(mix->inputs, &input);
 	}
 
 	pthread_mutex_unlock(&audio->input_mutex);
@@ -383,9 +447,13 @@ void audio_output_disconnect(audio_t *audio, size_t mix_idx,
 
 	size_t idx = audio_get_input_idx(audio, mix_idx, callback, param);
 	if (idx != DARRAY_INVALID) {
-		struct audio_mix *mix = &audio->mixes[mix_idx];
-		audio_input_free(mix->inputs.array + idx);
-		da_erase(mix->inputs, idx);
+		for (enum obs_audio_rendering_mode mode =
+			     OBS_MAIN_AUDIO_RENDERING;
+		     mode <= OBS_RECORDING_AUDIO_RENDERING; mode++) {
+			struct audio_mix *mix = &audio->mixes[mode][mix_idx];
+			audio_input_free(mix->inputs.array + idx);
+			da_erase(mix->inputs, idx);
+		}
 	}
 
 	pthread_mutex_unlock(&audio->input_mutex);
@@ -450,13 +518,16 @@ void audio_output_close(audio_t *audio)
 		pthread_join(audio->thread, &thread_ret);
 	}
 
-	for (size_t mix_idx = 0; mix_idx < MAX_AUDIO_MIXES; mix_idx++) {
-		struct audio_mix *mix = &audio->mixes[mix_idx];
+	for (enum obs_audio_rendering_mode mode = OBS_MAIN_AUDIO_RENDERING;
+	     mode <= OBS_RECORDING_AUDIO_RENDERING; mode++) {
+		for (size_t mix_idx = 0; mix_idx < MAX_AUDIO_MIXES; mix_idx++) {
+			struct audio_mix *mix = &audio->mixes[mode][mix_idx];
 
-		for (size_t i = 0; i < mix->inputs.num; i++)
-			audio_input_free(mix->inputs.array + i);
+			for (size_t i = 0; i < mix->inputs.num; i++)
+				audio_input_free(mix->inputs.array + i);
 
-		da_free(mix->inputs);
+			da_free(mix->inputs);
+		}
 	}
 
 	os_event_destroy(audio->stop_event);
@@ -474,7 +545,7 @@ bool audio_output_active(const audio_t *audio)
 		return false;
 
 	for (size_t mix_idx = 0; mix_idx < MAX_AUDIO_MIXES; mix_idx++) {
-		const struct audio_mix *mix = &audio->mixes[mix_idx];
+		const struct audio_mix *mix = &audio->mixes[OBS_MAIN_AUDIO_RENDERING][mix_idx];
 
 		if (mix->inputs.num != 0)
 			return true;

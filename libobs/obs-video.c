@@ -118,7 +118,8 @@ static inline void unmap_last_surface(struct obs_core_video *video)
 }
 
 static const char *render_main_texture_name = "render_main_texture";
-static inline void render_main_texture(struct obs_core_video *video)
+static inline void render_main_texture(struct obs_core_video *video,
+				       enum obs_video_rendering_mode mode)
 {
 	profile_start(render_main_texture_name);
 	GS_DEBUG_MARKER_BEGIN(GS_DEBUG_COLOR_MAIN_TEXTURE,
@@ -127,8 +128,11 @@ static inline void render_main_texture(struct obs_core_video *video)
 	struct vec4 clear_color;
 	vec4_set(&clear_color, 0.0f, 0.0f, 0.0f, 0.0f);
 
-	gs_set_render_target(video->render_texture, NULL);
+	gs_set_render_target(video->textures[mode].render_texture,
+			     NULL);
 	gs_clear(GS_CLEAR_COLOR, &clear_color, 1.0f, 0);
+
+	obs_set_video_rendering_mode(mode);
 
 	set_render_size(video->base_width, video->base_height);
 
@@ -146,7 +150,7 @@ static inline void render_main_texture(struct obs_core_video *video)
 
 	obs_view_render(&obs->data.main_view);
 
-	video->texture_rendered = true;
+	video->textures[mode].texture_rendered = true;
 
 	GS_DEBUG_MARKER_END();
 	profile_end(render_main_texture_name);
@@ -204,10 +208,11 @@ static inline gs_effect_t *get_scale_effect(struct obs_core_video *video,
 }
 
 static const char *render_output_texture_name = "render_output_texture";
-static inline gs_texture_t *render_output_texture(struct obs_core_video *video)
+static inline gs_texture_t *render_output_texture(struct obs_core_video *video,
+						  enum obs_video_rendering_mode mode)
 {
-	gs_texture_t *texture = video->render_texture;
-	gs_texture_t *target = video->output_texture;
+	gs_texture_t *texture = video->textures[mode].render_texture;
+	gs_texture_t *target = video->textures[mode].output_texture;
 	uint32_t width = gs_texture_get_width(target);
 	uint32_t height = gs_texture_get_height(target);
 
@@ -290,7 +295,8 @@ static void render_convert_plane(gs_effect_t *effect, gs_texture_t *target,
 
 static const char *render_convert_texture_name = "render_convert_texture";
 static void render_convert_texture(struct obs_core_video *video,
-				   gs_texture_t *texture)
+				   gs_texture_t *texture,
+				   enum obs_video_rendering_mode mode)
 {
 	profile_start(render_convert_texture_name);
 
@@ -314,28 +320,32 @@ static void render_convert_texture(struct obs_core_video *video,
 
 	gs_enable_blending(false);
 
-	if (video->convert_textures[0]) {
+	if (video->textures[mode].convert_textures[0]) {
 		gs_effect_set_texture(image, texture);
 		gs_effect_set_vec4(color_vec0, &vec0);
-		render_convert_plane(effect, video->convert_textures[0],
+		render_convert_plane(effect, texture,
+				     video->textures[mode].convert_textures[0],
 				     video->conversion_techs[0]);
 
-		if (video->convert_textures[1]) {
+		if (video->textures[mode].convert_textures[1]) {
 			gs_effect_set_texture(image, texture);
 			gs_effect_set_vec4(color_vec1, &vec1);
-			if (!video->convert_textures[2])
+			if (!video->textures[mode].convert_textures[2])
 				gs_effect_set_vec4(color_vec2, &vec2);
 			gs_effect_set_float(width_i, video->conversion_width_i);
-			render_convert_plane(effect, video->convert_textures[1],
+			render_convert_plane(effect, texture,
+				video->textures[mode].convert_textures[1],
 					     video->conversion_techs[1]);
 
-			if (video->convert_textures[2]) {
+			if (video->textures[mode].convert_textures[2]) {
 				gs_effect_set_texture(image, texture);
 				gs_effect_set_vec4(color_vec2, &vec2);
 				gs_effect_set_float(width_i,
 						    video->conversion_width_i);
 				render_convert_plane(
-					effect, video->convert_textures[2],
+					effect, texture,
+					video->textures[mode]
+						.convert_textures[2],
 					video->conversion_techs[2]);
 			}
 		}
@@ -343,35 +353,41 @@ static void render_convert_texture(struct obs_core_video *video,
 
 	gs_enable_blending(true);
 
-	video->texture_converted = true;
+	video->textures[mode].texture_converted = true;
 
 	profile_end(render_convert_texture_name);
 }
 
 static const char *stage_output_texture_name = "stage_output_texture";
 static inline void stage_output_texture(struct obs_core_video *video,
-					int cur_texture)
+					int cur_texture,
+					enum obs_video_rendering_mode mode)
 {
 	profile_start(stage_output_texture_name);
 
 	unmap_last_surface(video);
 
 	if (!video->gpu_conversion) {
-		gs_stagesurf_t *copy = video->copy_surfaces[cur_texture][0];
-		if (copy)
-			gs_stage_texture(copy, video->output_texture);
+		gs_stagesurf_t *copy =
+			video->textures[mode].copy_surfaces[cur_texture][0];
 
-		video->textures_copied[cur_texture] = true;
-	} else if (video->texture_converted) {
+		if (copy)
+			gs_stage_texture(copy,
+					 video->textures[mode].output_texture);
+
+		video->textures[mode].textures_copied[cur_texture] = true;
+	} else if (video->textures[mode].texture_converted) {
 		for (int i = 0; i < NUM_CHANNELS; i++) {
 			gs_stagesurf_t *copy =
-				video->copy_surfaces[cur_texture][i];
+				video->textures[mode]
+					.copy_surfaces[cur_texture][i];
 			if (copy)
 				gs_stage_texture(copy,
-						 video->convert_textures[i]);
+						 video->textures[mode]
+							 .convert_textures[i]);
 		}
 
-		video->textures_copied[cur_texture] = true;
+		video->textures[mode].textures_copied[cur_texture] = true;
 	}
 
 	profile_end(stage_output_texture_name);
@@ -381,60 +397,78 @@ static inline void stage_output_texture(struct obs_core_video *video,
 static inline bool queue_frame(struct obs_core_video *video, bool raw_active,
 			       struct obs_vframe_info *vframe_info)
 {
-	bool duplicate =
-		!video->gpu_encoder_avail_queue.size ||
-		(video->gpu_encoder_queue.size && vframe_info->count > 1);
+	uint32_t start, end;
 
-	if (duplicate) {
-		struct obs_tex_frame *tf = circlebuf_data(
-			&video->gpu_encoder_queue,
-			video->gpu_encoder_queue.size - sizeof(*tf));
+	if (!obs_get_multiple_rendering()) {
+		start = OBS_MAIN_VIDEO_RENDERING;
+		end = NUM_RENDERING_MODES - 2;
+	} else {
+		start = OBS_STREAMING_VIDEO_RENDERING;
+		end = NUM_RENDERING_MODES;
+	}
+	for (size_t i = start; i < end; i++) {
+		bool duplicate =
+			!video->gpu_queues[i].gpu_encoder_avail_queue.size ||
+			(video->gpu_queues[i].gpu_encoder_queue.size &&
+			 vframe_info->count > 1);
 
-		/* texture-based encoding is stopping */
-		if (!tf) {
-			return false;
+		if (duplicate) {
+			struct obs_tex_frame *tf = circlebuf_data(
+				&video->gpu_queues[i].gpu_encoder_queue,
+				video->gpu_queues[i].gpu_encoder_queue.size -
+					sizeof(*tf));
+
+			/* texture-based encoding is stopping */
+			if (!tf) {
+				return false;
+			}
+
+			tf->count++;
+			continue;
+		}
+		struct obs_tex_frame tf;
+		circlebuf_pop_front(
+			&video->gpu_queues[i].gpu_encoder_avail_queue, &tf,
+			sizeof(tf));
+
+
+		if (tf.released) {
+			gs_texture_acquire_sync(tf.tex, tf.lock_key, GS_WAIT_INFINITE);
+			tf.released = false;
 		}
 
-		tf->count++;
-		os_sem_post(video->gpu_encode_semaphore);
-		goto finish;
+		/* the vframe_info->count > 1 case causing a copy can only happen if by
+		 * some chance the very first frame has to be duplicated for whatever
+		 * reason.  otherwise, it goes to the 'duplicate' case above, which
+		 * will ensure better performance. */
+		if (raw_active || vframe_info->count > 1) {
+			gs_copy_texture(
+				tf.tex,
+				video->textures[i].convert_textures[0]);
+		} else {
+			gs_texture_t *tex =
+				video->textures[i].convert_textures[0];
+			gs_texture_t *tex_uv =
+				video->textures[i].convert_textures[1];
+
+			video->textures[i].convert_textures[0] = tf.tex;
+			video->textures[i].convert_textures[1] = tf.tex_uv;
+
+			tf.tex = tex;
+			tf.tex_uv = tex_uv;
+		}
+
+		tf.count = 1;
+		tf.timestamp = vframe_info->timestamp;
+		tf.released = true;
+		tf.handle = gs_texture_get_shared_handle(tf.tex);
+		gs_texture_release_sync(tf.tex, ++tf.lock_key);
+		circlebuf_push_back(&video->gpu_queues[i].gpu_encoder_queue,
+				    &tf, sizeof(tf));
 	}
-
-	struct obs_tex_frame tf;
-	circlebuf_pop_front(&video->gpu_encoder_avail_queue, &tf, sizeof(tf));
-
-	if (tf.released) {
-		gs_texture_acquire_sync(tf.tex, tf.lock_key, GS_WAIT_INFINITE);
-		tf.released = false;
-	}
-
-	/* the vframe_info->count > 1 case causing a copy can only happen if by
-	 * some chance the very first frame has to be duplicated for whatever
-	 * reason.  otherwise, it goes to the 'duplicate' case above, which
-	 * will ensure better performance. */
-	if (raw_active || vframe_info->count > 1) {
-		gs_copy_texture(tf.tex, video->convert_textures[0]);
-	} else {
-		gs_texture_t *tex = video->convert_textures[0];
-		gs_texture_t *tex_uv = video->convert_textures[1];
-
-		video->convert_textures[0] = tf.tex;
-		video->convert_textures[1] = tf.tex_uv;
-
-		tf.tex = tex;
-		tf.tex_uv = tex_uv;
-	}
-
-	tf.count = 1;
-	tf.timestamp = vframe_info->timestamp;
-	tf.released = true;
-	tf.handle = gs_texture_get_shared_handle(tf.tex);
-	gs_texture_release_sync(tf.tex, ++tf.lock_key);
-	circlebuf_push_back(&video->gpu_encoder_queue, &tf, sizeof(tf));
 
 	os_sem_post(video->gpu_encode_semaphore);
 
-finish:
 	return --vframe_info->count;
 }
 
@@ -452,8 +486,20 @@ static void output_gpu_encoders(struct obs_core_video *video, bool raw_active)
 {
 	profile_start(output_gpu_encoders_name);
 
-	if (!video->texture_converted)
+	if (!video->textures[OBS_MAIN_VIDEO_RENDERING].texture_converted)
 		goto end;
+
+	if (!video->textures[OBS_MAIN_VIDEO_RENDERING].texture_converted)
+		goto end;
+
+	if (obs_get_multiple_rendering()) {
+		if (!video->textures[OBS_STREAMING_VIDEO_RENDERING]
+			     .texture_converted ||
+		    !video->textures[OBS_RECORDING_VIDEO_RENDERING]
+			     .texture_converted)
+			goto end;
+	}
+
 	if (!video->vframe_info_buffer_gpu.size)
 		goto end;
 
@@ -471,17 +517,18 @@ end:
 #endif
 
 static inline void render_video(struct obs_core_video *video, bool raw_active,
-				const bool gpu_active, int cur_texture)
+				const bool gpu_active, int cur_texture,
+				enum obs_video_rendering_mode mode)
 {
 	gs_begin_scene();
 
 	gs_enable_depth_test(false);
 	gs_set_cull_mode(GS_NEITHER);
 
-	render_main_texture(video);
+	render_main_texture(video, mode);
 
 	if (raw_active || gpu_active) {
-		gs_texture_t *texture = render_output_texture(video);
+		gs_texture_t *texture = render_output_texture(video, mode);
 
 #ifdef _WIN32
 		if (gpu_active)
@@ -489,7 +536,7 @@ static inline void render_video(struct obs_core_video *video, bool raw_active,
 #endif
 
 		if (video->gpu_conversion)
-			render_convert_texture(video, texture);
+			render_convert_texture(video, texture, mode);
 
 #ifdef _WIN32
 		if (gpu_active) {
@@ -499,7 +546,7 @@ static inline void render_video(struct obs_core_video *video, bool raw_active,
 #endif
 
 		if (raw_active)
-			stage_output_texture(video, cur_texture);
+			stage_output_texture(video, cur_texture, mode);
 	}
 
 	gs_set_render_target(NULL, NULL);
@@ -509,14 +556,16 @@ static inline void render_video(struct obs_core_video *video, bool raw_active,
 }
 
 static inline bool download_frame(struct obs_core_video *video,
-				  int prev_texture, struct video_data *frame)
+				  int prev_texture, struct video_data *frame,
+				  enum obs_video_rendering_mode mode)
 {
-	if (!video->textures_copied[prev_texture])
+	if (!video->textures[mode].textures_copied[prev_texture])
 		return false;
 
 	for (int channel = 0; channel < NUM_CHANNELS; ++channel) {
 		gs_stagesurf_t *surface =
-			video->copy_surfaces[prev_texture][channel];
+			video->textures[mode]
+				.copy_surfaces[prev_texture][channel];
 		if (surface) {
 			if (!gs_stagesurface_map(surface, &frame->data[channel],
 						 &frame->linesize[channel]))
@@ -678,22 +727,61 @@ static inline void copy_rgbx_frame(struct video_frame *output,
 }
 
 static inline void output_video_data(struct obs_core_video *video,
-				     struct video_data *input_frame, int count)
+				     struct video_data *main_input_frame,
+				     struct video_data *streaming_input_frame,
+				     struct video_data *recording_input_frame,
+				     int count)
 {
 	const struct video_output_info *info;
-	struct video_frame output_frame;
+	struct video_frame *output_frames[NUM_RENDERING_MODES];
+	struct video_frame main_output_frame;
+	struct video_frame streaming_output_frame;
+	struct video_frame recording_output_frame;
+
+	output_frames[OBS_MAIN_VIDEO_RENDERING] = &main_output_frame;
+	output_frames[OBS_STREAMING_VIDEO_RENDERING] = &streaming_output_frame;
+	output_frames[OBS_RECORDING_VIDEO_RENDERING] = &recording_output_frame;
 	bool locked;
+	uint64_t timestamps[NUM_RENDERING_MODES];
 
 	info = video_output_get_info(video->video);
 
-	locked = video_output_lock_frame(video->video, &output_frame, count,
-					 input_frame->timestamp);
+	timestamps[OBS_MAIN_VIDEO_RENDERING] = main_input_frame->timestamp;
+	timestamps[OBS_STREAMING_VIDEO_RENDERING] =
+		streaming_input_frame->timestamp;
+	timestamps[OBS_RECORDING_VIDEO_RENDERING] =
+		recording_input_frame->timestamp;
+
+	locked = video_output_lock_frame(video->video, output_frames, count,
+					 timestamps);
 	if (locked) {
-		if (video->gpu_conversion) {
-			set_gpu_converted_data(video, &output_frame,
-					       input_frame, info);
+		if (!obs_get_multiple_rendering()) {
+			if (video->gpu_conversion) {
+				set_gpu_converted_data(video,
+						       &main_output_frame,
+						       main_input_frame, info);
+
+			} else {
+				copy_rgbx_frame(&main_output_frame,
+						main_input_frame, info);
+			}
 		} else {
-			copy_rgbx_frame(&output_frame, input_frame, info);
+			if (video->gpu_conversion) {
+				set_gpu_converted_data(video,
+						       &streaming_output_frame,
+						       streaming_input_frame,
+						       info);
+				set_gpu_converted_data(video,
+						       &recording_output_frame,
+						       recording_input_frame,
+						       info);
+
+			} else {
+				copy_rgbx_frame(&streaming_output_frame,
+						streaming_input_frame, info);
+				copy_rgbx_frame(&recording_output_frame,
+						recording_input_frame, info);
+			}
 		}
 
 		video_output_unlock_frame(video->video);
@@ -742,10 +830,10 @@ static inline void output_frame(bool raw_active, const bool gpu_active)
 	int cur_texture = video->cur_texture;
 	int prev_texture = cur_texture == 0 ? NUM_TEXTURES - 1
 					    : cur_texture - 1;
-	struct video_data frame;
+	struct video_data main_frame = {0};
+	struct video_data streaming_frame = {0};
+	struct video_data recording_frame = {0};
 	bool frame_ready = 0;
-
-	memset(&frame, 0, sizeof(struct video_data));
 
 	profile_start(output_frame_gs_context_name);
 	gs_enter_context(video->graphics);
@@ -753,15 +841,36 @@ static inline void output_frame(bool raw_active, const bool gpu_active)
 	profile_start(output_frame_render_video_name);
 	GS_DEBUG_MARKER_BEGIN(GS_DEBUG_COLOR_RENDER_VIDEO,
 			      output_frame_render_video_name);
-	render_video(video, raw_active, gpu_active, cur_texture);
+
+	for (int mode = 0; mode < NUM_RENDERING_MODES; mode++) {
+		render_video(video, raw_active, gpu_active, cur_texture, mode);
+
+		if (raw_active) {
+			profile_start(output_frame_download_frame_name);
+
+			switch (mode) {
+			case OBS_MAIN_VIDEO_RENDERING: {
+				frame_ready = download_frame(
+					video, prev_texture, &main_frame, mode);
+				break;
+			}
+			case OBS_STREAMING_VIDEO_RENDERING: {
+				frame_ready = download_frame(
+					video, prev_texture, &streaming_frame, mode);
+				break;
+			}
+			case OBS_RECORDING_VIDEO_RENDERING: {
+				frame_ready = download_frame(
+					video, prev_texture, &recording_frame, mode);
+				break;
+			}
+			}
+			profile_end(output_frame_download_frame_name);
+		}
+	}
+
 	GS_DEBUG_MARKER_END();
 	profile_end(output_frame_render_video_name);
-
-	if (raw_active) {
-		profile_start(output_frame_download_frame_name);
-		frame_ready = download_frame(video, prev_texture, &frame);
-		profile_end(output_frame_download_frame_name);
-	}
 
 	profile_start(output_frame_gs_flush_name);
 	gs_flush();
@@ -775,9 +884,15 @@ static inline void output_frame(bool raw_active, const bool gpu_active)
 		circlebuf_pop_front(&video->vframe_info_buffer, &vframe_info,
 				    sizeof(vframe_info));
 
-		frame.timestamp = vframe_info.timestamp;
+		if (!obs_get_multiple_rendering()) {
+			main_frame.timestamp = vframe_info.timestamp;
+		} else {
+			streaming_frame.timestamp = vframe_info.timestamp;
+			recording_frame.timestamp = vframe_info.timestamp;
+		}
 		profile_start(output_frame_output_video_data_name);
-		output_video_data(video, &frame, vframe_info.count);
+		output_video_data(video, &main_frame, &streaming_frame,
+				  &recording_frame, vframe_info.count);
 		profile_end(output_frame_output_video_data_name);
 	}
 
@@ -790,8 +905,10 @@ static inline void output_frame(bool raw_active, const bool gpu_active)
 static void clear_base_frame_data(void)
 {
 	struct obs_core_video *video = &obs->video;
-	video->texture_rendered = false;
-	video->texture_converted = false;
+	for (size_t i = 0; i < NUM_RENDERING_MODES; i++) {
+		video->textures[i].texture_rendered = false;
+		video->textures[i].texture_converted = false;
+	}
 	circlebuf_free(&video->vframe_info_buffer);
 	video->cur_texture = 0;
 }
@@ -799,7 +916,9 @@ static void clear_base_frame_data(void)
 static void clear_raw_frame_data(void)
 {
 	struct obs_core_video *video = &obs->video;
-	memset(video->textures_copied, 0, sizeof(video->textures_copied));
+	for (size_t i = 0; i < NUM_RENDERING_MODES; i++)
+		memset(video->textures[i].textures_copied, 0,
+		       sizeof(video->textures[i].textures_copied));
 	circlebuf_free(&video->vframe_info_buffer);
 }
 

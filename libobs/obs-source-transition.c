@@ -957,8 +957,10 @@ bool obs_transition_audio_render(obs_source_t *transition, uint64_t *ts_out,
 					      min_ts, mixers, channels,
 					      sample_rate, mix_b);
 		} else if (state.s[0]) {
+			enum obs_audio_rendering_mode mode =
+				obs_get_audio_rendering_mode();
 			memcpy(audio->output[0].data[0],
-			       state.s[0]->audio_output_buf[0][0],
+			       state.s[0]->audio_output_buf[mode][0][0],
 			       TOTAL_AUDIO_SIZE);
 		}
 
