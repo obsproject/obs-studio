@@ -398,7 +398,7 @@ Scene Item Functions
 
 .. function:: void obs_sceneitem_get_box_transform(const obs_sceneitem_t *item, struct matrix4 *transform)
 
-   Gets the transform matrix of the scene item used for the bouding box
+   Gets the transform matrix of the scene item used for the bounding box
    or edges of the scene item.
 
 ---------------------

@@ -591,7 +591,7 @@ void OBSProjector::OBSRenderMultiview(void *data, uint32_t cx, uint32_t cy)
 		gs_matrix_pop();
 	}
 
-	// Region for future usage with aditional info.
+	// Region for future usage with additional info.
 	if (multiviewLayout == MultiviewLayout::HORIZONTAL_TOP_24_SCENES) {
 		// Just paint the background for now
 		paintAreaWithColor(window->thickness, window->thickness,

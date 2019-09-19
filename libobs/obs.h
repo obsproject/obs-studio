@@ -317,7 +317,7 @@ EXPORT uint32_t obs_get_version(void);
 EXPORT const char *obs_get_version_string(void);
 
 /**
- * Sets things up for calls to obs_get_cmdline_args. Called onl yonce at startup
+ * Sets things up for calls to obs_get_cmdline_args. Called only once at startup
  * and safely copies argv/argc from main(). Subsequent calls do nothing.
  *
  * @param  argc  The count of command line arguments, from main()
@@ -1489,7 +1489,7 @@ EXPORT obs_scene_t *obs_sceneitem_get_scene(const obs_sceneitem_t *item);
 EXPORT obs_source_t *obs_sceneitem_get_source(const obs_sceneitem_t *item);
 
 /* FIXME: The following functions should be deprecated and replaced with a way
- * to specify savable private user data. -Jim */
+ * to specify saveable private user data. -Jim */
 EXPORT void obs_sceneitem_select(obs_sceneitem_t *item, bool select);
 EXPORT bool obs_sceneitem_selected(const obs_sceneitem_t *item);
 EXPORT bool obs_sceneitem_locked(const obs_sceneitem_t *item);

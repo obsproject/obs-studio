@@ -1,4 +1,4 @@
-# Doesn't realy make sense anywhere else
+# Doesn't really make sense anywhere else
 if(NOT MSVC)
 	return()
 endif()
@@ -8,7 +8,7 @@ if(COPIED_DEPENDENCIES)
 	return()
 endif()
 
-option(COPY_DEPENDENCIES "Automaticaly try copying all dependencies" ON)
+option(COPY_DEPENDENCIES "Automatically try copying all dependencies" ON)
 if(NOT COPY_DEPENDENCIES)
 	return()
 endif()

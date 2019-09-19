@@ -70,7 +70,7 @@ if(NOT PYTHONLIBS_FOUND AND NOT LUAJIT_FOUND)
 	return()
 endif()
 
-set(SCRIPTING_ENABLED ON CACHE BOOL "Interal global cmake variable" FORCE)
+set(SCRIPTING_ENABLED ON CACHE BOOL "Internal global cmake variable" FORCE)
 
 if(UI_ENABLED)
 	set(EXTRA_LIBS obs-frontend-api)

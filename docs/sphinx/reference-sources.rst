@@ -96,7 +96,7 @@ Source Definition Structure (obs_source_info)
      user.
 
      When this is used, the source will receive interaction events if
-     theese callbacks are provided:
+     these callbacks are provided:
      :c:member:`obs_source_info.mouse_click`,
      :c:member:`obs_source_info.mouse_move`,
      :c:member:`obs_source_info.mouse_wheel`,
@@ -286,7 +286,7 @@ Source Definition Structure (obs_source_info)
 
    Called to enumerate all active sources being used within this
    source.  If the source has children that render audio/video it must
-   implement this callback.  Only used with sources that have tha
+   implement this callback.  Only used with sources that have the
    OBS_SOURCE_COMPOSITE output capability flag.
 
    :param  enum_callback: Enumeration callback
@@ -391,14 +391,14 @@ Source Definition Structure (obs_source_info)
 .. member:: bool (*obs_source_info.audio_render)(void *data, uint64_t *ts_out, struct obs_source_audio_mix *audio_output, uint32_t mixers, size_t channels, size_t sample_rate)
 
    Called to render audio of composite sources.  Only used with sources
-   that have tha OBS_SOURCE_COMPOSITE output capability flag.
+   that have the OBS_SOURCE_COMPOSITE output capability flag.
 
 .. member:: void (*obs_source_info.enum_all_sources)(void *data, obs_source_enum_proc_t enum_callback, void *param)
 
    Called to enumerate all active and inactive sources being used
    within this source.  If this callback isn't implemented,
    enum_active_sources will be called instead.  Only used with sources
-   that have tha OBS_SOURCE_COMPOSITE output capability flag.
+   that have the OBS_SOURCE_COMPOSITE output capability flag.
 
    This is typically used if a source can have inactive child sources.
 
@@ -836,7 +836,7 @@ General Source Functions
 .. function:: bool obs_source_active(const obs_source_t *source)
 
    :return: *true* if active, *false* if not.  A source is only
-            consdiered active if it's being shown on the final mix
+            considered active if it's being shown on the final mix
 
 ---------------------
 
@@ -1268,8 +1268,8 @@ Transitions
    Sets/gets the scale type for sources within the transition.
 
    :param type: | OBS_TRANSITION_SCALE_MAX_ONLY - Scale to aspect ratio, but only to the maximum size of each source
-                | OBS_TRANSITION_SCALE_ASPECT   - Alwasy scale the sources, but keep aspect ratio
-                | OBS_TRANSITION_SCALE_STRETCH  - Scale and stretch the sources to the size of the transision
+                | OBS_TRANSITION_SCALE_ASPECT   - Always scale the sources, but keep aspect ratio
+                | OBS_TRANSITION_SCALE_STRETCH  - Scale and stretch the sources to the size of the transition
 
 ---------------------
 
