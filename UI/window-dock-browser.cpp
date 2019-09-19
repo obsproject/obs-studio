@@ -14,7 +14,7 @@ void BrowserDock::closeEvent(QCloseEvent *event)
 		panel_version = obs_browser_qcef_version();
 	}
 
-	if (panel_version >= 2) {
+	if (panel_version >= 2 && !!cefWidget) {
 		cefWidget->closeBrowser();
 	}
 }
