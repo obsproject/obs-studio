@@ -147,7 +147,6 @@ static bool resample_audio_output(struct audio_input *input,
 static inline void do_audio_output(struct audio_output *audio, size_t mix_idx,
 				   uint64_t timestamp, uint32_t frames)
 {
-	blog(LOG_INFO, "do_audio_output - start");
 	struct audio_mix *main_mix = &audio->mixes[OBS_MAIN_AUDIO_RENDERING][mix_idx];
 	struct audio_data main_data;
 
@@ -190,7 +189,6 @@ static inline void do_audio_output(struct audio_output *audio, size_t mix_idx,
 						  &streaming_data) &&
 			    resample_audio_output(recording_input,
 						  &recording_data)) {
-				blog(LOG_INFO, "do_audio_output - callback");
 				main_input->callback(main_input->param, mix_idx,
 						     &streaming_data,
 						     &recording_data);
@@ -206,7 +204,6 @@ static inline void do_audio_output(struct audio_output *audio, size_t mix_idx,
 		}
 	}
 
-	blog(LOG_INFO, "do_audio_output - end");
 	pthread_mutex_unlock(&audio->input_mutex);
 }
 
