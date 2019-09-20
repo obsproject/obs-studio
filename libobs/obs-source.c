@@ -72,6 +72,8 @@ static const char *source_signals[] = {
 	"void update_flags(ptr source, int flags)",
 	"void audio_sync(ptr source, int out int offset)",
 	"void audio_mixers(ptr source, in out int mixers)",
+	"void audio_activate(ptr source)",
+	"void audio_deactivate(ptr source)",
 	"void filter_add(ptr source, ptr filter)",
 	"void filter_remove(ptr source, ptr filter)",
 	"void reorder_filters(ptr source)",
@@ -152,6 +154,7 @@ static bool obs_source_init(struct obs_source *source)
 	source->volume = 1.0f;
 	source->sync_offset = 0;
 	source->balance = 0.5f;
+	source->audio_active = true;
 	pthread_mutex_init_value(&source->filter_mutex);
 	pthread_mutex_init_value(&source->async_mutex);
 	pthread_mutex_init_value(&source->audio_mutex);
@@ -4668,4 +4671,27 @@ float obs_source_get_balance_value(const obs_source_t *source)
 	return obs_source_valid(source, "obs_source_get_balance_value")
 		       ? source->balance
 		       : 0.5f;
+}
+
+void obs_source_set_audio_active(obs_source_t *source, bool active)
+{
+	if (!obs_source_valid(source, "obs_source_set_audio_active"))
+		return;
+
+	if (os_atomic_set_bool(&source->audio_active, active) == active)
+		return;
+
+	if (active)
+		obs_source_dosignal(source, "source_audio_activate",
+				    "audio_activate");
+	else
+		obs_source_dosignal(source, "source_audio_deactivate",
+				    "audio_deactivate");
+}
+
+bool obs_source_audio_active(const obs_source_t *source)
+{
+	return obs_source_valid(source, "obs_source_audio_active")
+		       ? os_atomic_load_bool(&source->audio_active)
+		       : false;
 }

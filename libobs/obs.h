@@ -1312,6 +1312,9 @@ EXPORT bool obs_source_async_unbuffered(const obs_source_t *source);
 EXPORT void obs_source_set_async_decoupled(obs_source_t *source, bool decouple);
 EXPORT bool obs_source_async_decoupled(const obs_source_t *source);
 
+EXPORT void obs_source_set_audio_active(obs_source_t *source, bool show);
+EXPORT bool obs_source_audio_active(const obs_source_t *source);
+
 /* ------------------------------------------------------------------------- */
 /* Transition-specific functions */
 enum obs_transition_target {
