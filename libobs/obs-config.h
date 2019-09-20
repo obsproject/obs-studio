@@ -41,7 +41,7 @@
  *
  * Reset to zero each major or minor version
  */
-#define LIBOBS_API_PATCH_VER 0
+#define LIBOBS_API_PATCH_VER 1
 
 #define MAKE_SEMANTIC_VERSION(major, minor, patch) \
 	((major << 24) | (minor << 16) | patch)
