@@ -1411,6 +1411,12 @@ void OBSBasic::InitOBSCallbacks()
 	signalHandlers.emplace_back(obs_get_signal_handler(),
 				    "source_deactivate",
 				    OBSBasic::SourceDeactivated, this);
+	signalHandlers.emplace_back(obs_get_signal_handler(),
+				    "source_audio_activate",
+				    OBSBasic::SourceAudioActivated, this);
+	signalHandlers.emplace_back(obs_get_signal_handler(),
+				    "source_audio_deactivate",
+				    OBSBasic::SourceAudioDeactivated, this);
 	signalHandlers.emplace_back(obs_get_signal_handler(), "source_rename",
 				    OBSBasic::SourceRenamed, this);
 }
@@ -2961,6 +2967,8 @@ void OBSBasic::ActivateAudioSource(OBSSource source)
 {
 	if (SourceMixerHidden(source))
 		return;
+	if (!obs_source_audio_active(source))
+		return;
 
 	bool vertical = config_get_bool(GetGlobalConfig(), "BasicWindow",
 					"VerticalVolControl");
@@ -3280,6 +3288,24 @@ void OBSBasic::SourceDeactivated(void *data, calldata_t *params)
 		QMetaObject::invokeMethod(static_cast<OBSBasic *>(data),
 					  "DeactivateAudioSource",
 					  Q_ARG(OBSSource, OBSSource(source)));
+}
+
+void OBSBasic::SourceAudioActivated(void *data, calldata_t *params)
+{
+	obs_source_t *source = (obs_source_t *)calldata_ptr(params, "source");
+
+	if (obs_source_active(source))
+		QMetaObject::invokeMethod(static_cast<OBSBasic *>(data),
+					  "ActivateAudioSource",
+					  Q_ARG(OBSSource, OBSSource(source)));
+}
+
+void OBSBasic::SourceAudioDeactivated(void *data, calldata_t *params)
+{
+	obs_source_t *source = (obs_source_t *)calldata_ptr(params, "source");
+	QMetaObject::invokeMethod(static_cast<OBSBasic *>(data),
+				  "DeactivateAudioSource",
+				  Q_ARG(OBSSource, OBSSource(source)));
 }
 
 void OBSBasic::SourceRenamed(void *data, calldata_t *params)

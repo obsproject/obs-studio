@@ -570,6 +570,8 @@ private:
 	static void SourceRemoved(void *data, calldata_t *params);
 	static void SourceActivated(void *data, calldata_t *params);
 	static void SourceDeactivated(void *data, calldata_t *params);
+	static void SourceAudioActivated(void *data, calldata_t *params);
+	static void SourceAudioDeactivated(void *data, calldata_t *params);
 	static void SourceRenamed(void *data, calldata_t *params);
 	static void RenderMain(void *data, uint32_t cx, uint32_t cy);
 
