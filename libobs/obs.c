@@ -1775,11 +1775,13 @@ static obs_source_t *obs_load_source_type(obs_data_t *source_data)
 	int di_mode;
 	int monitoring_type;
 
-	source = obs_source_create(id, name, settings, hotkeys);
+	prev_ver = (uint32_t)obs_data_get_int(source_data, "prev_ver");
+
+	source = obs_source_create_set_last_ver(id, name, settings, hotkeys,
+						prev_ver);
 
 	obs_data_release(hotkeys);
 
-	prev_ver = (uint32_t)obs_data_get_int(source_data, "prev_ver");
 	caps = obs_source_get_output_flags(source);
 
 	obs_data_set_default_double(source_data, "volume", 1.0);
