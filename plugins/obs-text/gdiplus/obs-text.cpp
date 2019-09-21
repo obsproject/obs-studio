@@ -657,10 +657,12 @@ void TextSource::LoadFileText()
 
 void TextSource::TransformText()
 {
+	const locale loc = locale(obs_get_locale());
+	const ctype<wchar_t> &f = use_facet<ctype<wchar_t>>(loc);
 	if (text_transform == S_TRANSFORM_UPPERCASE)
-		transform(text.begin(), text.end(), text.begin(), towupper);
+		f.toupper(&text[0], &text[0] + text.size());
 	else if (text_transform == S_TRANSFORM_LOWERCASE)
-		transform(text.begin(), text.end(), text.begin(), towlower);
+		f.tolower(&text[0], &text[0] + text.size());
 }
 
 #define obs_data_get_uint32 (uint32_t) obs_data_get_int
