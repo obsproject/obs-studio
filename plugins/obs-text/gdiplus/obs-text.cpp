@@ -80,6 +80,7 @@ using namespace Gdiplus;
 #define S_TRANSFORM_NONE                0
 #define S_TRANSFORM_UPPERCASE           1
 #define S_TRANSFORM_LOWERCASE           2
+#define S_TRANSFORM_STARTCASE           3
 
 #define T_(v)                           obs_module_text(v)
 #define T_FONT                          T_("Font")
@@ -123,6 +124,7 @@ using namespace Gdiplus;
 #define T_TRANSFORM_NONE                T_("Transform.None")
 #define T_TRANSFORM_UPPERCASE           T_("Transform.Uppercase")
 #define T_TRANSFORM_LOWERCASE           T_("Transform.Lowercase")
+#define T_TRANSFORM_STARTCASE           T_("Transform.Startcase")
 
 /* clang-format on */
 
@@ -663,6 +665,22 @@ void TextSource::TransformText()
 		f.toupper(&text[0], &text[0] + text.size());
 	else if (text_transform == S_TRANSFORM_LOWERCASE)
 		f.tolower(&text[0], &text[0] + text.size());
+	else if (text_transform == S_TRANSFORM_STARTCASE) {
+		bool upper = true;
+		for (wstring::iterator it = text.begin(); it != text.end();
+		     ++it) {
+			const wchar_t upper_char = f.toupper(*it);
+			const wchar_t lower_char = f.tolower(*it);
+			if (upper && lower_char != upper_char) {
+				upper = false;
+				*it = upper_char;
+			} else if (lower_char != upper_char) {
+				*it = lower_char;
+			} else {
+				upper = iswspace(*it);
+			}
+		}
+	}
 }
 
 #define obs_data_get_uint32 (uint32_t) obs_data_get_int
@@ -953,6 +971,8 @@ static obs_properties_t *get_properties(void *data)
 				  S_TRANSFORM_UPPERCASE);
 	obs_property_list_add_int(p, T_TRANSFORM_LOWERCASE,
 				  S_TRANSFORM_LOWERCASE);
+	obs_property_list_add_int(p, T_TRANSFORM_STARTCASE,
+				  S_TRANSFORM_STARTCASE);
 
 	obs_properties_add_bool(props, S_VERTICAL, T_VERTICAL);
 	obs_properties_add_color(props, S_COLOR, T_COLOR);
