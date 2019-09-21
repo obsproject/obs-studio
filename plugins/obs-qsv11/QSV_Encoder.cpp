@@ -300,6 +300,12 @@ enum qsv_cpu_platform qsv_get_cpu_platform()
 	case 0x4e:
 	case 0x5e:
 		return QSV_CPU_PLATFORM_SKL;
+	case 0x8e:
+	case 0x9e:
+		return QSV_CPU_PLATFORM_KBL;
+	case 0x7d:
+	case 0x7e:
+		return QSV_CPU_PLATFORM_ICL;
 	}
 
 	//assume newer revisions are at least as capable as Haswell
