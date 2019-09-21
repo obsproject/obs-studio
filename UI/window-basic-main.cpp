@@ -1787,9 +1787,6 @@ void OBSBasic::OBSInit()
 	ToggleMixerLayout(config_get_bool(App()->GlobalConfig(), "BasicWindow",
 					  "VerticalVolControl"));
 
-	if (config_get_bool(basicConfig, "General", "OpenStatsOnStartup"))
-		on_stats_triggered();
-
 	OBSBasicStats::InitializeValues();
 
 	/* ----------------------- */
@@ -3727,8 +3724,6 @@ void OBSBasic::CloseDialogs()
 		projector.clear();
 	}
 
-	if (!stats.isNull())
-		stats->close(); //call close to save Stats geometry
 	if (!remux.isNull())
 		remux->close();
 }
@@ -7297,20 +7292,6 @@ void OBSBasic::on_autoConfigure_triggered()
 	test.setModal(true);
 	test.show();
 	test.exec();
-}
-
-void OBSBasic::on_stats_triggered()
-{
-	if (!stats.isNull()) {
-		stats->show();
-		stats->raise();
-		return;
-	}
-
-	OBSBasicStats *statsDlg;
-	statsDlg = new OBSBasicStats(nullptr);
-	statsDlg->show();
-	stats = statsDlg;
 }
 
 void OBSBasic::on_actionShowAbout_triggered()

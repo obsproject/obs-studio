@@ -395,7 +395,6 @@
     <addaction name="viewMenuToolbars"/>
     <addaction name="toggleStatusBar"/>
     <addaction name="separator"/>
-    <addaction name="stats"/>
    </widget>
    <widget class="QMenu" name="menuTools">
     <property name="title">
@@ -728,7 +727,7 @@
           <rect>
            <x>0</x>
            <y>0</y>
-           <width>64</width>
+           <width>63</width>
            <height>16</height>
           </rect>
          </property>

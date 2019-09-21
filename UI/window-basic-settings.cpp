@@ -303,7 +303,6 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->language,             COMBO_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->theme, 		     COMBO_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->enableAutoUpdates,    CHECK_CHANGED,  GENERAL_CHANGED);
-	HookWidget(ui->openStatsOnStartup,   CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->warnBeforeStreamStart,CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->warnBeforeStreamStop, CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->warnBeforeRecordStop, CHECK_CHANGED,  GENERAL_CHANGED);
@@ -1066,9 +1065,6 @@ void OBSBasicSettings::LoadGeneralSettings()
 						 "EnableAutoUpdates");
 	ui->enableAutoUpdates->setChecked(enableAutoUpdates);
 #endif
-	bool openStatsOnStartup = config_get_bool(main->Config(), "General",
-						  "OpenStatsOnStartup");
-	ui->openStatsOnStartup->setChecked(openStatsOnStartup);
 
 	bool recordWhenStreaming = config_get_bool(
 		GetGlobalConfig(), "BasicWindow", "RecordWhenStreaming");
@@ -2738,9 +2734,6 @@ void OBSBasicSettings::SaveGeneralSettings()
 				"EnableAutoUpdates",
 				ui->enableAutoUpdates->isChecked());
 #endif
-	if (WidgetChanged(ui->openStatsOnStartup))
-		config_set_bool(main->Config(), "General", "OpenStatsOnStartup",
-				ui->openStatsOnStartup->isChecked());
 	if (WidgetChanged(ui->snappingEnabled))
 		config_set_bool(GetGlobalConfig(), "BasicWindow",
 				"SnappingEnabled",

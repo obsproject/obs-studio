@@ -202,7 +202,6 @@ private:
 	QPointer<QWidget> projectors[10];
 	QList<QPointer<QWidget>> windowProjectors;
 
-	QPointer<QWidget> stats;
 	QPointer<QWidget> remux;
 	QPointer<QWidget> extraBrowsers;
 
@@ -787,7 +786,6 @@ private slots:
 	void on_modeSwitch_clicked();
 
 	void on_autoConfigure_triggered();
-	void on_stats_triggered();
 
 	void on_resetUI_triggered();
 	void on_lockUI_toggled(bool lock);
