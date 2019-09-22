@@ -842,12 +842,14 @@ static inline void output_frame(bool raw_active, const bool gpu_active)
 	GS_DEBUG_MARKER_BEGIN(GS_DEBUG_COLOR_RENDER_VIDEO,
 			      output_frame_render_video_name);
 
-	for (int mode = 0; mode < NUM_RENDERING_MODES; mode++) {
+	enum obs_video_rendering_mode start = OBS_MAIN_VIDEO_RENDERING;
+	enum obs_video_rendering_mode end =
+		obs_get_multiple_rendering() ? OBS_RECORDING_VIDEO_RENDERING
+					     : OBS_MAIN_VIDEO_RENDERING;
+	for (enum obs_video_rendering_mode mode = start; mode <= end; mode++) {
 		render_video(video, raw_active, gpu_active, cur_texture, mode);
-
 		if (raw_active) {
 			profile_start(output_frame_download_frame_name);
-
 			switch (mode) {
 			case OBS_MAIN_VIDEO_RENDERING: {
 				frame_ready = download_frame(

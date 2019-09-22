@@ -4424,22 +4424,26 @@ static void custom_audio_render(obs_source_t *source, uint32_t mixers,
 		}
 	}
 
-	obs_set_audio_rendering_mode(OBS_MAIN_AUDIO_RENDERING);
-	success = source->info.audio_render(source->context.data, &ts,
-					    &main_audio_data, mixers, channels,
-					    sample_rate);
+	if (!obs_get_multiple_rendering()) {
+		obs_set_audio_rendering_mode(OBS_MAIN_AUDIO_RENDERING);
+		success = source->info.audio_render(source->context.data, &ts,
+						    &main_audio_data, mixers,
+						    channels, sample_rate);
+	} else {
+		obs_set_audio_rendering_mode(OBS_STREAMING_AUDIO_RENDERING);
+		success = source->info.audio_render(source->context.data, &ts,
+						    &streaming_audio_data,
+						    mixers, channels,
+						    sample_rate);
+
+		obs_set_audio_rendering_mode(OBS_RECORDING_AUDIO_RENDERING);
+		success |= source->info.audio_render(source->context.data, &ts,
+					  &recording_audio_data, mixers,
+					  channels, sample_rate);
+	}
+
 	source->audio_ts = success ? ts : 0;
 	source->audio_pending = !success;
-
-	obs_set_audio_rendering_mode(OBS_STREAMING_AUDIO_RENDERING);
-	source->info.audio_render(source->context.data, &ts,
-				  &streaming_audio_data, mixers, channels,
-				  sample_rate);
-
-	obs_set_audio_rendering_mode(OBS_RECORDING_AUDIO_RENDERING);
-	source->info.audio_render(source->context.data, &ts,
-				  &recording_audio_data, mixers, channels,
-				  sample_rate);
 
 	if (!success || !source->audio_ts || !mixers)
 		return;
@@ -4503,12 +4507,16 @@ static inline void process_audio_source_tick(obs_source_t *source,
 					     size_t sample_rate, size_t size)
 {
 	bool audio_submix = !!(source->info.output_flags & OBS_SOURCE_SUBMIX);
-
+	enum obs_video_rendering_mode start =
+		obs_get_multiple_rendering() ? OBS_STREAMING_AUDIO_RENDERING
+					     : OBS_MAIN_AUDIO_RENDERING;
+	enum obs_video_rendering_mode end =
+		obs_get_multiple_rendering() ? OBS_RECORDING_AUDIO_RENDERING
+					     : OBS_MAIN_AUDIO_RENDERING;
 	// Main audio
 	pthread_mutex_lock(&source->audio_buf_mutex);
 
-	for (enum obs_audio_rendering_mode mode = OBS_MAIN_AUDIO_RENDERING;
-	     mode <= OBS_RECORDING_AUDIO_RENDERING; mode++) {
+	for (enum obs_video_rendering_mode mode = start; mode <= end; mode++) {
 		if (source->audio_input_buf[mode][0].size < size) {
 			source->audio_pending = true;
 			pthread_mutex_unlock(&source->audio_buf_mutex);
@@ -4536,18 +4544,16 @@ static inline void process_audio_source_tick(obs_source_t *source,
 
 		if ((source->audio_mixers & mix_and_val) == 0 ||
 		    (mixers & mix_and_val) == 0) {
-			for (enum obs_audio_rendering_mode mode =
-				     OBS_MAIN_AUDIO_RENDERING;
-			     mode <= OBS_RECORDING_AUDIO_RENDERING; mode++)
+			for (enum obs_video_rendering_mode mode = start;
+			     mode <= end; mode++)
 				memset(source->audio_output_buf[mode][mix][0],
 				       0, size * channels);
 			continue;
 		}
 
 		for (size_t ch = 0; ch < channels; ch++) {
-			for (enum obs_audio_rendering_mode mode =
-				     OBS_MAIN_AUDIO_RENDERING;
-			     mode <= OBS_RECORDING_AUDIO_RENDERING; mode++)
+			for (enum obs_video_rendering_mode mode = start;
+			     mode <= end; mode++)
 				memcpy(source->audio_output_buf[mode][mix][ch],
 				       source->audio_output_buf[mode][0][ch],
 				       size);
@@ -4560,9 +4566,8 @@ static inline void process_audio_source_tick(obs_source_t *source,
 	}
 
 	if ((source->audio_mixers & 1) == 0 || (mixers & 1) == 0) {
-		for (enum obs_audio_rendering_mode mode =
-			     OBS_MAIN_AUDIO_RENDERING;
-		     mode <= OBS_RECORDING_AUDIO_RENDERING; mode++)
+		for (enum obs_video_rendering_mode mode = start; mode <= end;
+		     mode++)
 			memset(source->audio_output_buf[mode][0][0], 0,
 			       size * channels);
 	}
@@ -4574,7 +4579,10 @@ static inline void process_audio_source_tick(obs_source_t *source,
 void obs_source_audio_render(obs_source_t *source, uint32_t mixers,
 			     size_t channels, size_t sample_rate, size_t size)
 {
-	if (!source->audio_output_buf[OBS_MAIN_AUDIO_RENDERING][0][0]) {
+	enum obs_video_rendering_mode mode =
+		obs_get_multiple_rendering() ? OBS_STREAMING_AUDIO_RENDERING
+					     : OBS_MAIN_AUDIO_RENDERING;
+	if (!source->audio_output_buf[mode][0][0]) {
 		source->audio_pending = true;
 		return;
 	}
