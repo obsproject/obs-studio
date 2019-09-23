@@ -29,27 +29,27 @@ OBSBasicAdvAudio::OBSBasicAdvAudio(QWidget *parent)
 	mainLayout = new QGridLayout;
 	mainLayout->setContentsMargins(0, 0, 0, 0);
 	label = new QLabel(QTStr("Basic.AdvAudio.Name"));
-	label->setAlignment(Qt::AlignHCenter);
+	label->setStyleSheet("font-weight: bold;");
 	mainLayout->addWidget(label, 0, idx++);
 	label = new QLabel(QTStr("Basic.AdvAudio.Volume"));
-	label->setAlignment(Qt::AlignHCenter);
+	label->setStyleSheet("font-weight: bold;");
 	mainLayout->addWidget(label, 0, idx++);
 	label = new QLabel(QTStr("Basic.AdvAudio.Mono"));
-	label->setAlignment(Qt::AlignHCenter);
+	label->setStyleSheet("font-weight: bold;");
 	mainLayout->addWidget(label, 0, idx++);
 	label = new QLabel(QTStr("Basic.AdvAudio.Balance"));
-	label->setAlignment(Qt::AlignHCenter);
+	label->setStyleSheet("font-weight: bold;");
 	mainLayout->addWidget(label, 0, idx++);
 	label = new QLabel(QTStr("Basic.AdvAudio.SyncOffset"));
-	label->setAlignment(Qt::AlignHCenter);
+	label->setStyleSheet("font-weight: bold;");
 	mainLayout->addWidget(label, 0, idx++);
 #if defined(_WIN32) || defined(__APPLE__) || HAVE_PULSEAUDIO
 	label = new QLabel(QTStr("Basic.AdvAudio.Monitoring"));
-	label->setAlignment(Qt::AlignHCenter);
+	label->setStyleSheet("font-weight: bold;");
 	mainLayout->addWidget(label, 0, idx++);
 #endif
 	label = new QLabel(QTStr("Basic.AdvAudio.AudioTracks"));
-	label->setAlignment(Qt::AlignHCenter);
+	label->setStyleSheet("font-weight: bold;");
 	mainLayout->addWidget(label, 0, idx++);
 
 	controlArea = new QWidget;
@@ -87,7 +87,7 @@ OBSBasicAdvAudio::OBSBasicAdvAudio(QWidget *parent)
 	/* enum user scene/sources */
 	obs_enum_sources(EnumSources, this);
 
-	resize(1000, 340);
+	resize(1100, 340);
 	setWindowTitle(QTStr("Basic.AdvAudio"));
 	setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
 	setSizeGripEnabled(true);

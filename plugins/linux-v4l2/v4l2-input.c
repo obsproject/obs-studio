@@ -231,7 +231,7 @@ static void v4l2_defaults(obs_data_t *settings)
 	obs_data_set_default_int(settings, "dv_timing", -1);
 	obs_data_set_default_int(settings, "resolution", -1);
 	obs_data_set_default_int(settings, "framerate", -1);
-	obs_data_set_default_int(settings, "color_range", VIDEO_RANGE_PARTIAL);
+	obs_data_set_default_int(settings, "color_range", VIDEO_RANGE_DEFAULT);
 	obs_data_set_default_bool(settings, "buffering", true);
 }
 
@@ -770,6 +770,9 @@ static obs_properties_t *v4l2_properties(void *vptr)
 	obs_property_t *color_range_list = obs_properties_add_list(
 		props, "color_range", obs_module_text("ColorRange"),
 		OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
+	obs_property_list_add_int(color_range_list,
+				  obs_module_text("ColorRange.Default"),
+				  VIDEO_RANGE_DEFAULT);
 	obs_property_list_add_int(color_range_list,
 				  obs_module_text("ColorRange.Partial"),
 				  VIDEO_RANGE_PARTIAL);

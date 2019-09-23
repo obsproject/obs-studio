@@ -272,7 +272,9 @@ static void vaapi_destroy(void *data)
 static void *vaapi_create(obs_data_t *settings, obs_encoder_t *encoder)
 {
 	struct vaapi_encoder *enc;
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58, 9, 100)
 	avcodec_register_all();
+#endif
 
 	enc = bzalloc(sizeof(*enc));
 	enc->encoder = encoder;

@@ -76,6 +76,7 @@ static inline void shader_var_init_param(struct shader_var *sv, char *type,
 	sv->name = name;
 	sv->mapping = NULL;
 	sv->array_count = 0;
+	sv->gl_sampler_id = (size_t)-1;
 	da_init(sv->default_val);
 }
 

@@ -37,6 +37,7 @@
 #include "obs.h"
 
 #define NUM_TEXTURES 2
+#define NUM_CHANNELS 3
 #define MICROSECOND_DEN 1000000
 #define NUM_ENCODE_TEXTURES 3
 #define NUM_ENCODE_TEXTURE_FRAMES_TO_WAIT 1
@@ -235,11 +236,10 @@ struct obs_tex_frame {
 
 struct obs_core_video {
 	graphics_t *graphics;
-	gs_stagesurf_t *copy_surfaces[NUM_TEXTURES];
+	gs_stagesurf_t *copy_surfaces[NUM_TEXTURES][NUM_CHANNELS];
 	gs_texture_t *render_texture;
 	gs_texture_t *output_texture;
-	gs_texture_t *convert_texture;
-	gs_texture_t *convert_uv_texture;
+	gs_texture_t *convert_textures[NUM_CHANNELS];
 	bool texture_rendered;
 	bool textures_copied[NUM_TEXTURES];
 	bool texture_converted;
@@ -258,7 +258,7 @@ struct obs_core_video {
 	gs_effect_t *bilinear_lowres_effect;
 	gs_effect_t *premultiplied_alpha_effect;
 	gs_samplerstate_t *point_sampler;
-	gs_stagesurf_t *mapped_surface;
+	gs_stagesurf_t *mapped_surfaces[NUM_CHANNELS];
 	int cur_texture;
 	long raw_active;
 	long gpu_encoder_active;
@@ -283,11 +283,9 @@ struct obs_core_video {
 	bool thread_initialized;
 
 	bool gpu_conversion;
-	const char *conversion_tech;
-	uint32_t conversion_height;
-	uint32_t plane_offsets[3];
-	uint32_t plane_sizes[3];
-	uint32_t plane_linewidth[3];
+	const char *conversion_techs[NUM_CHANNELS];
+	bool conversion_needed;
+	float conversion_width_i;
 
 	uint32_t output_width;
 	uint32_t output_height;
@@ -565,6 +563,7 @@ struct obs_source {
 	/* general exposed flags that can be set for the source */
 	uint32_t flags;
 	uint32_t default_flags;
+	uint32_t last_obs_ver;
 
 	/* indicates ownership of the info.id buffer */
 	bool owns_info_id;
@@ -604,6 +603,7 @@ struct obs_source {
 	bool audio_failed;
 	bool audio_pending;
 	bool pending_stop;
+	bool audio_active;
 	bool user_muted;
 	bool muted;
 	struct obs_source *next_audio_source;
@@ -613,6 +613,7 @@ struct obs_source {
 	size_t last_audio_input_buf_size;
 	DARRAY(struct audio_action) audio_actions;
 	float *audio_output_buf[MAX_AUDIO_MIXES][MAX_AUDIO_CHANNELS];
+	float *audio_mix_buf[MAX_AUDIO_CHANNELS];
 	struct resample_info sample_info;
 	audio_resampler_t *resampler;
 	pthread_mutex_t audio_actions_mutex;
@@ -630,7 +631,7 @@ struct obs_source {
 	float balance;
 
 	/* async video data */
-	gs_texture_t *async_texture;
+	gs_texture_t *async_textures[MAX_AV_PLANES];
 	gs_texrender_t *async_texrender;
 	struct obs_source_frame *cur_async_frame;
 	bool async_gpu_conversion;
@@ -638,8 +639,8 @@ struct obs_source {
 	bool async_full_range;
 	enum video_format async_cache_format;
 	bool async_cache_full_range;
-	enum gs_color_format async_texture_format;
-	int async_plane_offset[2];
+	enum gs_color_format async_texture_formats[MAX_AV_PLANES];
+	int async_channel_count;
 	bool async_flip;
 	bool async_active;
 	bool async_update_texture;
@@ -653,15 +654,15 @@ struct obs_source {
 	uint32_t async_height;
 	uint32_t async_cache_width;
 	uint32_t async_cache_height;
-	uint32_t async_convert_width;
-	uint32_t async_convert_height;
+	uint32_t async_convert_width[MAX_AV_PLANES];
+	uint32_t async_convert_height[MAX_AV_PLANES];
 
 	/* async video deinterlacing */
 	uint64_t deinterlace_offset;
 	uint64_t deinterlace_frame_ts;
 	gs_effect_t *deinterlace_effect;
 	struct obs_source_frame *prev_async_frame;
-	gs_texture_t *async_prev_texture;
+	gs_texture_t *async_prev_textures[MAX_AV_PLANES];
 	gs_texrender_t *async_prev_texrender;
 	uint32_t deinterlace_half_duration;
 	enum obs_deinterlace_mode deinterlace_mode;
@@ -737,6 +738,11 @@ struct audio_monitor *audio_monitor_create(obs_source_t *source);
 void audio_monitor_reset(struct audio_monitor *monitor);
 extern void audio_monitor_destroy(struct audio_monitor *monitor);
 
+extern obs_source_t *obs_source_create_set_last_ver(const char *id,
+						    const char *name,
+						    obs_data_t *settings,
+						    obs_data_t *hotkey_data,
+						    uint32_t last_obs_ver);
 extern void obs_source_destroy(struct obs_source *source);
 
 enum view_type {
@@ -774,12 +780,18 @@ static inline bool frame_out_of_bounds(const obs_source_t *source, uint64_t ts)
 static inline enum gs_color_format
 convert_video_format(enum video_format format)
 {
-	if (format == VIDEO_FORMAT_RGBA)
+	switch (format) {
+	case VIDEO_FORMAT_RGBA:
 		return GS_RGBA;
-	else if (format == VIDEO_FORMAT_BGRA)
+	case VIDEO_FORMAT_BGRA:
+	case VIDEO_FORMAT_I40A:
+	case VIDEO_FORMAT_I42A:
+	case VIDEO_FORMAT_YUVA:
+	case VIDEO_FORMAT_AYUV:
 		return GS_BGRA;
-
-	return GS_BGRX;
+	default:
+		return GS_BGRX;
+	}
 }
 
 extern void obs_source_activate(obs_source_t *source, enum view_type type);
@@ -799,6 +811,10 @@ extern struct obs_source_frame *filter_async_video(obs_source_t *source,
 extern bool update_async_texture(struct obs_source *source,
 				 const struct obs_source_frame *frame,
 				 gs_texture_t *tex, gs_texrender_t *texrender);
+extern bool update_async_textures(struct obs_source *source,
+				  const struct obs_source_frame *frame,
+				  gs_texture_t *tex[MAX_AV_PLANES],
+				  gs_texrender_t *texrender);
 extern bool set_async_texture_size(struct obs_source *source,
 				   const struct obs_source_frame *frame);
 extern void remove_async_frame(obs_source_t *source,

@@ -499,22 +499,31 @@ static obs_properties_t *compressor_properties(void *data)
 	struct compressor_data *cd = data;
 	obs_properties_t *props = obs_properties_create();
 	obs_source_t *parent = NULL;
+	obs_property_t *p;
 
 	if (cd)
 		parent = obs_filter_get_parent(cd->context);
 
-	obs_properties_add_float_slider(props, S_RATIO, TEXT_RATIO, MIN_RATIO,
-					MAX_RATIO, 0.5);
-	obs_properties_add_float_slider(props, S_THRESHOLD, TEXT_THRESHOLD,
-					MIN_THRESHOLD_DB, MAX_THRESHOLD_DB,
-					0.1);
-	obs_properties_add_int_slider(props, S_ATTACK_TIME, TEXT_ATTACK_TIME,
-				      MIN_ATK_RLS_MS, MAX_ATK_MS, 1);
-	obs_properties_add_int_slider(props, S_RELEASE_TIME, TEXT_RELEASE_TIME,
-				      MIN_ATK_RLS_MS, MAX_RLS_MS, 1);
-	obs_properties_add_float_slider(props, S_OUTPUT_GAIN, TEXT_OUTPUT_GAIN,
-					MIN_OUTPUT_GAIN_DB, MAX_OUTPUT_GAIN_DB,
-					0.1);
+	p = obs_properties_add_float_slider(props, S_RATIO, TEXT_RATIO,
+					    MIN_RATIO, MAX_RATIO, 0.5);
+	obs_property_float_set_suffix(p, ":1");
+	p = obs_properties_add_float_slider(props, S_THRESHOLD, TEXT_THRESHOLD,
+					    MIN_THRESHOLD_DB, MAX_THRESHOLD_DB,
+					    0.1);
+	obs_property_float_set_suffix(p, " dB");
+	p = obs_properties_add_int_slider(props, S_ATTACK_TIME,
+					  TEXT_ATTACK_TIME, MIN_ATK_RLS_MS,
+					  MAX_ATK_MS, 1);
+	obs_property_int_set_suffix(p, " ms");
+	p = obs_properties_add_int_slider(props, S_RELEASE_TIME,
+					  TEXT_RELEASE_TIME, MIN_ATK_RLS_MS,
+					  MAX_RLS_MS, 1);
+	obs_property_int_set_suffix(p, " ms");
+	p = obs_properties_add_float_slider(props, S_OUTPUT_GAIN,
+					    TEXT_OUTPUT_GAIN,
+					    MIN_OUTPUT_GAIN_DB,
+					    MAX_OUTPUT_GAIN_DB, 0.1);
+	obs_property_float_set_suffix(p, " dB");
 
 	obs_property_t *sources = obs_properties_add_list(
 		props, S_SIDECHAIN_SOURCE, TEXT_SIDECHAIN_SOURCE,

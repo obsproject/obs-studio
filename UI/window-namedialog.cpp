@@ -40,7 +40,7 @@ bool NameDialog::AskForName(QWidget *parent, const QString &title,
 			    const QString &placeHolder, int maxSize)
 {
 	if (maxSize <= 0 || maxSize > 32767)
-		maxSize = 256;
+		maxSize = 170;
 
 	NameDialog dialog(parent);
 	dialog.setWindowTitle(title);

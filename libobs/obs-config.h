@@ -27,14 +27,14 @@
 /*
  * Increment if major breaking API changes
  */
-#define LIBOBS_API_MAJOR_VER 23
+#define LIBOBS_API_MAJOR_VER 24
 
 /*
  * Increment if backward-compatible additions
  *
  * Reset to zero each major version
  */
-#define LIBOBS_API_MINOR_VER 2
+#define LIBOBS_API_MINOR_VER 0
 
 /*
  * Increment if backward-compatible bug fix

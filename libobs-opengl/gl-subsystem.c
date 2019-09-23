@@ -386,6 +386,31 @@ device_samplerstate_create(gs_device_t *device,
 	return sampler;
 }
 
+gs_timer_t *device_timer_create(gs_device_t *device)
+{
+	UNUSED_PARAMETER(device);
+
+	struct gs_timer *timer;
+
+	GLuint queries[2];
+	glGenQueries(2, queries);
+	if (!gl_success("glGenQueries"))
+		return NULL;
+
+	timer = bzalloc(sizeof(struct gs_timer));
+	timer->queries[0] = queries[0];
+	timer->queries[1] = queries[1];
+
+	return timer;
+}
+
+gs_timer_range_t *device_timer_range_create(gs_device_t *device)
+{
+	UNUSED_PARAMETER(device);
+
+	return NULL;
+}
+
 enum gs_texture_type device_get_texture_type(const gs_texture_t *texture)
 {
 	return texture->type;
@@ -1442,4 +1467,68 @@ void gs_samplerstate_destroy(gs_samplerstate_t *samplerstate)
 				samplerstate->device->cur_samplers[i] = NULL;
 
 	samplerstate_release(samplerstate);
+}
+
+void gs_timer_destroy(gs_timer_t *timer)
+{
+	if (!timer)
+		return;
+
+	glDeleteQueries(2, timer->queries);
+	gl_success("glDeleteQueries");
+
+	bfree(timer);
+}
+
+void gs_timer_begin(gs_timer_t *timer)
+{
+	glQueryCounter(timer->queries[0], GL_TIMESTAMP);
+	gl_success("glQueryCounter");
+}
+
+void gs_timer_end(gs_timer_t *timer)
+{
+	glQueryCounter(timer->queries[1], GL_TIMESTAMP);
+	gl_success("glQueryCounter");
+}
+
+bool gs_timer_get_data(gs_timer_t *timer, uint64_t *ticks)
+{
+	GLint available = 0;
+	glGetQueryObjectiv(timer->queries[1], GL_QUERY_RESULT_AVAILABLE,
+			   &available);
+
+	GLuint64 begin, end;
+	glGetQueryObjectui64v(timer->queries[0], GL_QUERY_RESULT, &begin);
+	gl_success("glGetQueryObjectui64v");
+	glGetQueryObjectui64v(timer->queries[1], GL_QUERY_RESULT, &end);
+	gl_success("glGetQueryObjectui64v");
+
+	*ticks = end - begin;
+	return true;
+}
+
+void gs_timer_range_destroy(gs_timer_range_t *range)
+{
+	UNUSED_PARAMETER(range);
+}
+
+void gs_timer_range_begin(gs_timer_range_t *range)
+{
+	UNUSED_PARAMETER(range);
+}
+
+void gs_timer_range_end(gs_timer_range_t *range)
+{
+	UNUSED_PARAMETER(range);
+}
+
+bool gs_timer_range_get_data(gs_timer_range_t *range, bool *disjoint,
+			     uint64_t *frequency)
+{
+	UNUSED_PARAMETER(range);
+
+	*disjoint = false;
+	*frequency = 1000000000;
+	return true;
 }

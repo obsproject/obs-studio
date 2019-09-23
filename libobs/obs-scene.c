@@ -462,14 +462,19 @@ static inline bool item_texture_enabled(const struct obs_scene_item *item)
 
 static void render_item_texture(struct obs_scene_item *item)
 {
+	gs_texture_t *tex = gs_texrender_get_texture(item->item_render);
+	if (!tex) {
+		return;
+	}
+
 	GS_DEBUG_MARKER_BEGIN(GS_DEBUG_COLOR_ITEM_TEXTURE,
 			      "render_item_texture");
 
-	gs_texture_t *tex = gs_texrender_get_texture(item->item_render);
 	gs_effect_t *effect = obs->video.default_effect;
 	enum obs_scale_type type = item->scale_filter;
 	uint32_t cx = gs_texture_get_width(tex);
 	uint32_t cy = gs_texture_get_height(tex);
+	const char *tech = "Draw";
 
 	if (type != OBS_SCALE_DISABLE) {
 		if (type == OBS_SCALE_POINT) {
@@ -481,6 +486,7 @@ static void render_item_texture(struct obs_scene_item *item)
 		} else if (!close_float(item->output_scale.x, 1.0f, EPSILON) ||
 			   !close_float(item->output_scale.y, 1.0f, EPSILON)) {
 			gs_eparam_t *scale_param;
+			gs_eparam_t *scale_i_param;
 
 			if (item->output_scale.x < 0.5f ||
 			    item->output_scale.y < 0.5f) {
@@ -491,15 +497,26 @@ static void render_item_texture(struct obs_scene_item *item)
 				effect = obs->video.lanczos_effect;
 			} else if (type == OBS_SCALE_AREA) {
 				effect = obs->video.area_effect;
+				if ((item->output_scale.x >= 1.0f) &&
+				    (item->output_scale.y >= 1.0f))
+					tech = "DrawUpscale";
 			}
 
 			scale_param = gs_effect_get_param_by_name(
-				effect, "base_dimension_i");
+				effect, "base_dimension");
 			if (scale_param) {
+				struct vec2 base_res = {(float)cx, (float)cy};
+
+				gs_effect_set_vec2(scale_param, &base_res);
+			}
+
+			scale_i_param = gs_effect_get_param_by_name(
+				effect, "base_dimension_i");
+			if (scale_i_param) {
 				struct vec2 base_res_i = {1.0f / (float)cx,
 							  1.0f / (float)cy};
 
-				gs_effect_set_vec2(scale_param, &base_res_i);
+				gs_effect_set_vec2(scale_i_param, &base_res_i);
 			}
 		}
 	}
@@ -507,7 +524,7 @@ static void render_item_texture(struct obs_scene_item *item)
 	gs_blend_state_push();
 	gs_blend_function(GS_BLEND_ONE, GS_BLEND_INVSRCALPHA);
 
-	while (gs_effect_loop(effect, "Draw"))
+	while (gs_effect_loop(effect, tech))
 		obs_source_draw(tex, 0, 0, 0, 0, 0);
 
 	gs_blend_state_pop();

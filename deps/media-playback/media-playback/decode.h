@@ -58,15 +58,21 @@ struct mp_decode {
 	bool audio;
 
 	AVCodecContext *decoder;
+	AVBufferRef *hw_ctx;
 	AVCodec *codec;
 
 	int64_t last_duration;
 	int64_t frame_pts;
 	int64_t next_pts;
+	AVFrame *in_frame;
+	AVFrame *sw_frame;
+	AVFrame *hw_frame;
 	AVFrame *frame;
+	enum AVPixelFormat hw_format;
 	bool got_first_keyframe;
 	bool frame_ready;
 	bool eof;
+	bool hw;
 
 	AVPacket orig_pkt;
 	AVPacket pkt;

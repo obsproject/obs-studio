@@ -106,7 +106,7 @@ static inline GLenum convert_gs_internal_format(enum gs_color_format format)
 	case GS_RG32F:
 		return GL_RG32F;
 	case GS_R8G8:
-		return GL_R16;
+		return GL_RG8;
 	case GS_R16F:
 		return GL_R16F;
 	case GS_R32F:
@@ -152,7 +152,7 @@ static inline GLenum get_gl_format_type(enum gs_color_format format)
 	case GS_RG32F:
 		return GL_FLOAT;
 	case GS_R8G8:
-		return GL_UNSIGNED_SHORT;
+		return GL_UNSIGNED_BYTE;
 	case GS_R16F:
 		return GL_UNSIGNED_SHORT;
 	case GS_R32F:
@@ -395,6 +395,10 @@ static inline void samplerstate_release(gs_samplerstate_t *ss)
 	if (os_atomic_dec_long(&ss->ref) == 0)
 		bfree(ss);
 }
+
+struct gs_timer {
+	GLuint queries[2];
+};
 
 struct gs_shader_param {
 	enum gs_shader_param_type type;

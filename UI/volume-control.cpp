@@ -74,9 +74,15 @@ void VolControl::SliderChanged(int vol)
 
 void VolControl::updateText()
 {
-	QString db = QString::number(obs_fader_get_db(obs_fader), 'f', 1)
-			     .append(" dB");
-	volLabel->setText(db);
+	QString text;
+	float db = obs_fader_get_db(obs_fader);
+
+	if (db < -96.0f)
+		text = "-inf dB";
+	else
+		text = QString::number(db, 'f', 1).append(" dB");
+
+	volLabel->setText(text);
 
 	bool muted = obs_source_muted(source);
 	const char *accTextLookup = muted ? "VolControl.SliderMuted"
@@ -508,6 +514,7 @@ void VolumeMeter::setPeakMeterType(enum obs_peak_meter_type peakMeterType)
 void VolumeMeter::mousePressEvent(QMouseEvent *event)
 {
 	setFocus(Qt::MouseFocusReason);
+	event->accept();
 }
 
 void VolumeMeter::wheelEvent(QWheelEvent *event)

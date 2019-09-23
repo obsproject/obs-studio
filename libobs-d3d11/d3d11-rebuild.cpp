@@ -225,6 +225,29 @@ void gs_swap_chain::Rebuild(ID3D11Device *dev)
 	Init();
 }
 
+void gs_timer::Rebuild(ID3D11Device *dev)
+{
+	D3D11_QUERY_DESC desc;
+	desc.Query = D3D11_QUERY_TIMESTAMP;
+	desc.MiscFlags = 0;
+	HRESULT hr = dev->CreateQuery(&desc, &query_begin);
+	if (FAILED(hr))
+		throw HRError("Failed to create timer", hr);
+	hr = dev->CreateQuery(&desc, &query_end);
+	if (FAILED(hr))
+		throw HRError("Failed to create timer", hr);
+}
+
+void gs_timer_range::Rebuild(ID3D11Device *dev)
+{
+	D3D11_QUERY_DESC desc;
+	desc.Query = D3D11_QUERY_TIMESTAMP_DISJOINT;
+	desc.MiscFlags = 0;
+	HRESULT hr = dev->CreateQuery(&desc, &query_disjoint);
+	if (FAILED(hr))
+		throw HRError("Failed to create timer", hr);
+}
+
 void SavedBlendState::Rebuild(ID3D11Device *dev)
 {
 	HRESULT hr = dev->CreateBlendState(&bd, &state);
@@ -295,6 +318,12 @@ try {
 			break;
 		case gs_type::gs_swap_chain:
 			((gs_swap_chain *)obj)->Release();
+			break;
+		case gs_type::gs_timer:
+			((gs_timer *)obj)->Release();
+			break;
+		case gs_type::gs_timer_range:
+			((gs_timer_range *)obj)->Release();
 			break;
 		}
 
@@ -372,6 +401,12 @@ try {
 		case gs_type::gs_swap_chain:
 			((gs_swap_chain *)obj)->Rebuild(dev);
 			break;
+		case gs_type::gs_timer:
+			((gs_timer *)obj)->Rebuild(dev);
+			break;
+		case gs_type::gs_timer_range:
+			((gs_timer_range *)obj)->Rebuild(dev);
+			break;
 		}
 
 		obj = obj->next;
@@ -405,6 +440,6 @@ try {
 } catch (const char *error) {
 	bcrash("Failed to recreate D3D11: %s", error);
 
-} catch (HRError error) {
+} catch (const HRError &error) {
 	bcrash("Failed to recreate D3D11: %s (%08lX)", error.str, error.hr);
 }

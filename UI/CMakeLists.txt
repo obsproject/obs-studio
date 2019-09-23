@@ -146,10 +146,14 @@ if(BROWSER_AVAILABLE_INTERNAL)
 	list(APPEND obs_PLATFORM_SOURCES
 		obf.c
 		auth-oauth.cpp
+		window-dock-browser.cpp
+		window-extra-browsers.cpp
 		)
 	list(APPEND obs_PLATFORM_HEADERS
 		obf.h
 		auth-oauth.hpp
+		window-dock-browser.hpp
+		window-extra-browsers.hpp
 		)
 
 	if(TWITCH_ENABLED)
@@ -192,6 +196,9 @@ if(MSVC)
 		../deps/libff/libff/ff-util.c
 		PROPERTIES COMPILE_FLAGS -Dinline=__inline
 		)
+	set(obs_PLATFORM_LIBRARIES
+		${obs_PLATFORM_LIBRARIES}
+		w32-pthreads)
 endif()
 
 set(obs_SOURCES
@@ -324,6 +331,7 @@ set(obs_UI
 	forms/OBSBasicSettings.ui
 	forms/OBSBasicSourceSelect.ui
 	forms/OBSBasicInteraction.ui
+	forms/OBSExtraBrowsers.ui
 	forms/OBSUpdate.ui
 	forms/OBSRemux.ui
 	forms/OBSAbout.ui)

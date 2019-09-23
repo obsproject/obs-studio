@@ -50,6 +50,7 @@ bool load_graphics_imports(struct gs_exports *exports, void *module,
 	GRAPHICS_IMPORT(device_destroy);
 	GRAPHICS_IMPORT(device_enter_context);
 	GRAPHICS_IMPORT(device_leave_context);
+	GRAPHICS_IMPORT(device_get_device_obj);
 	GRAPHICS_IMPORT(device_swapchain_create);
 	GRAPHICS_IMPORT(device_resize);
 	GRAPHICS_IMPORT(device_get_size);
@@ -65,6 +66,8 @@ bool load_graphics_imports(struct gs_exports *exports, void *module,
 	GRAPHICS_IMPORT(device_pixelshader_create);
 	GRAPHICS_IMPORT(device_vertexbuffer_create);
 	GRAPHICS_IMPORT(device_indexbuffer_create);
+	GRAPHICS_IMPORT(device_timer_create);
+	GRAPHICS_IMPORT(device_timer_range_create);
 	GRAPHICS_IMPORT(device_get_texture_type);
 	GRAPHICS_IMPORT(device_load_vertexbuffer);
 	GRAPHICS_IMPORT(device_load_indexbuffer);
@@ -152,6 +155,15 @@ bool load_graphics_imports(struct gs_exports *exports, void *module,
 	GRAPHICS_IMPORT(gs_indexbuffer_get_data);
 	GRAPHICS_IMPORT(gs_indexbuffer_get_num_indices);
 	GRAPHICS_IMPORT(gs_indexbuffer_get_type);
+
+	GRAPHICS_IMPORT(gs_timer_destroy);
+	GRAPHICS_IMPORT(gs_timer_begin);
+	GRAPHICS_IMPORT(gs_timer_end);
+	GRAPHICS_IMPORT(gs_timer_get_data);
+	GRAPHICS_IMPORT(gs_timer_range_destroy);
+	GRAPHICS_IMPORT(gs_timer_range_begin);
+	GRAPHICS_IMPORT(gs_timer_range_end);
+	GRAPHICS_IMPORT(gs_timer_range_get_data);
 
 	GRAPHICS_IMPORT(gs_shader_destroy);
 	GRAPHICS_IMPORT(gs_shader_get_num_params);

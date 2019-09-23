@@ -2,8 +2,8 @@
 
 variables:
   CMAKE_PREFIX_PATH: /usr/local/opt/qt5/lib/cmake
-  CEF_BUILD_VERSION: 3.3282.1726.gc8368c8 
-  CEF_VERSION: 3.3440.1805.gbe070f9
+  CEF_BUILD_VERSION: 3770
+  CEF_VERSION: 75.1.16+g16a67c4+chromium-75.0.3770.100
   TWITCH-CLIENTID: $(twitch_clientid)
   TWITCH-HASH: $(twitch_hash)
   MIXER-CLIENTID: $(mixer_clientid)

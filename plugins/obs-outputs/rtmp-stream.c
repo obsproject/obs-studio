@@ -17,6 +17,24 @@
 
 #include "rtmp-stream.h"
 
+#ifndef SEC_TO_NSEC
+#define SEC_TO_NSEC 1000000000ULL
+#endif
+
+#ifndef MSEC_TO_USEC
+#define MSEC_TO_USEC 1000ULL
+#endif
+
+#ifndef MSEC_TO_NSEC
+#define MSEC_TO_NSEC 1000000ULL
+#endif
+
+/* dynamic bitrate coefficients */
+#define DBR_INC_TIMER (30ULL * SEC_TO_NSEC)
+#define DBR_TRIGGER_USEC (200ULL * MSEC_TO_USEC)
+#define MIN_ESTIMATE_DURATION_MS 1000
+#define MAX_ESTIMATE_DURATION_MS 2000
+
 static const char *rtmp_stream_getname(void *unused)
 {
 	UNUSED_PARAMETER(unused);
@@ -107,6 +125,8 @@ static void rtmp_stream_destroy(void *data)
 #ifdef TEST_FRAMEDROPS
 	circlebuf_free(&stream->droptest_info);
 #endif
+	circlebuf_free(&stream->dbr_frames);
+	pthread_mutex_destroy(&stream->dbr_mutex);
 
 	os_event_destroy(stream->buffer_space_available_event);
 	os_event_destroy(stream->buffer_has_data_event);
@@ -136,6 +156,11 @@ static void *rtmp_stream_create(obs_data_t *settings, obs_output_t *output)
 
 	if (pthread_mutex_init(&stream->write_buf_mutex, NULL) != 0) {
 		warn("Failed to initialize write buffer mutex");
+		goto fail;
+	}
+
+	if (pthread_mutex_init(&stream->dbr_mutex, NULL) != 0) {
+		warn("Failed to initialize dbr mutex");
 		goto fail;
 	}
 
@@ -267,6 +292,49 @@ static void droptest_cap_data_rate(struct rtmp_stream *stream, size_t size)
 	uint64_t ts = os_gettime_ns();
 	struct droptest_info info;
 
+#if defined(_WIN32) && defined(TEST_FRAMEDROPS_WITH_BITRATE_SHORTCUTS)
+	uint64_t check_elapsed = ts - stream->droptest_last_key_check;
+
+	if (check_elapsed > (200ULL * MSEC_TO_NSEC)) {
+		size_t bitrate = 0;
+
+		stream->droptest_last_key_check = ts;
+
+		if (GetAsyncKeyState(VK_NUMPAD0) & 0x8000) {
+			stream->droptest_max = 0;
+		} else if (GetAsyncKeyState(VK_NUMPAD1) & 0x8000) {
+			bitrate = 1000;
+		} else if (GetAsyncKeyState(VK_NUMPAD2) & 0x8000) {
+			bitrate = 2000;
+		} else if (GetAsyncKeyState(VK_NUMPAD3) & 0x8000) {
+			bitrate = 3000;
+		} else if (GetAsyncKeyState(VK_NUMPAD4) & 0x8000) {
+			bitrate = 4000;
+		} else if (GetAsyncKeyState(VK_NUMPAD5) & 0x8000) {
+			bitrate = 5000;
+		} else if (GetAsyncKeyState(VK_NUMPAD6) & 0x8000) {
+			bitrate = 6000;
+		} else if (GetAsyncKeyState(VK_NUMPAD7) & 0x8000) {
+			bitrate = 7000;
+		} else if (GetAsyncKeyState(VK_NUMPAD8) & 0x8000) {
+			bitrate = 8000;
+		} else if (GetAsyncKeyState(VK_NUMPAD9) & 0x8000) {
+			bitrate = 9000;
+		}
+
+		if (bitrate) {
+			stream->droptest_max = (bitrate * 1000 / 8);
+		}
+	}
+	if (!stream->droptest_max) {
+		return;
+	}
+#else
+	if (!stream->droptest_max) {
+		stream->droptest_max = DROPTEST_MAX_BYTES;
+	}
+#endif
+
 	info.ts = ts;
 	info.size = size;
 
@@ -277,7 +345,7 @@ static void droptest_cap_data_rate(struct rtmp_stream *stream, size_t size)
 		circlebuf_peek_front(&stream->droptest_info, &info,
 				     sizeof(info));
 
-		if (stream->droptest_size > DROPTEST_MAX_BYTES) {
+		if (stream->droptest_size > stream->droptest_max) {
 			uint64_t elapsed = ts - info.ts;
 
 			if (elapsed < 1000000000ULL) {
@@ -285,7 +353,7 @@ static void droptest_cap_data_rate(struct rtmp_stream *stream, size_t size)
 				os_sleepto_ns(ts + elapsed);
 			}
 
-			while (stream->droptest_size > DROPTEST_MAX_BYTES) {
+			while (stream->droptest_size > stream->droptest_max) {
 				circlebuf_pop_front(&stream->droptest_info,
 						    &info, sizeof(info));
 				stream->droptest_size -= info.size;
@@ -452,6 +520,39 @@ static void set_output_error(struct rtmp_stream *stream)
 	obs_output_set_last_error(stream->output, msg);
 }
 
+static void dbr_add_frame(struct rtmp_stream *stream, struct dbr_frame *back)
+{
+	struct dbr_frame front;
+	uint64_t dur;
+
+	circlebuf_push_back(&stream->dbr_frames, back, sizeof(*back));
+	circlebuf_peek_front(&stream->dbr_frames, &front, sizeof(front));
+
+	stream->dbr_data_size += back->size;
+
+	dur = (back->send_end - front.send_beg) / 1000000;
+
+	if (dur >= MAX_ESTIMATE_DURATION_MS) {
+		stream->dbr_data_size -= front.size;
+		circlebuf_pop_front(&stream->dbr_frames, NULL, sizeof(front));
+	}
+
+	stream->dbr_est_bitrate =
+		(dur >= MIN_ESTIMATE_DURATION_MS)
+			? (long)(stream->dbr_data_size * 1000 / dur)
+			: 0;
+	stream->dbr_est_bitrate *= 8;
+	stream->dbr_est_bitrate /= 1000;
+
+	if (stream->dbr_est_bitrate) {
+		stream->dbr_est_bitrate -= stream->audio_bitrate;
+		if (stream->dbr_est_bitrate < 50)
+			stream->dbr_est_bitrate = 50;
+	}
+}
+
+static void dbr_set_bitrate(struct rtmp_stream *stream);
+
 static void *send_thread(void *data)
 {
 	struct rtmp_stream *stream = data;
@@ -460,6 +561,7 @@ static void *send_thread(void *data)
 
 	while (os_sem_wait(stream->send_sem) == 0) {
 		struct encoder_packet packet;
+		struct dbr_frame dbr_frame;
 
 		if (stopping(stream) && stream->stop_ts == 0) {
 			break;
@@ -482,9 +584,22 @@ static void *send_thread(void *data)
 			}
 		}
 
+		if (stream->dbr_enabled) {
+			dbr_frame.send_beg = os_gettime_ns();
+			dbr_frame.size = packet.size;
+		}
+
 		if (send_packet(stream, &packet, false, packet.track_idx) < 0) {
 			os_atomic_set_bool(&stream->disconnected, true);
 			break;
+		}
+
+		if (stream->dbr_enabled) {
+			dbr_frame.send_end = os_gettime_ns();
+
+			pthread_mutex_lock(&stream->dbr_mutex);
+			dbr_add_frame(stream, &dbr_frame);
+			pthread_mutex_unlock(&stream->dbr_mutex);
 		}
 	}
 
@@ -522,6 +637,15 @@ static void *send_thread(void *data)
 	os_event_reset(stream->stop_event);
 	os_atomic_set_bool(&stream->active, false);
 	stream->sent_headers = false;
+
+	/* reset bitrate on stop */
+	if (stream->dbr_enabled) {
+		if (stream->dbr_cur_bitrate != stream->dbr_orig_bitrate) {
+			stream->dbr_cur_bitrate = stream->dbr_orig_bitrate;
+			dbr_set_bitrate(stream);
+		}
+	}
+
 	return NULL;
 }
 
@@ -880,6 +1004,7 @@ static bool init_connect(struct rtmp_stream *stream)
 	const char *bind_ip;
 	int64_t drop_p;
 	int64_t drop_b;
+	uint32_t caps;
 
 	if (stopping(stream)) {
 		pthread_join(stream->send_thread, NULL);
@@ -909,6 +1034,37 @@ static bool init_connect(struct rtmp_stream *stream)
 	drop_p = (int64_t)obs_data_get_int(settings, OPT_PFRAME_DROP_THRESHOLD);
 	stream->max_shutdown_time_sec =
 		(int)obs_data_get_int(settings, OPT_MAX_SHUTDOWN_TIME_SEC);
+
+	obs_encoder_t *venc = obs_output_get_video_encoder(stream->output);
+	obs_encoder_t *aenc = obs_output_get_audio_encoder(stream->output, 0);
+	obs_data_t *vsettings = obs_encoder_get_settings(venc);
+	obs_data_t *asettings = obs_encoder_get_settings(aenc);
+
+	circlebuf_free(&stream->dbr_frames);
+	stream->audio_bitrate = (long)obs_data_get_int(asettings, "bitrate");
+	stream->dbr_data_size = 0;
+	stream->dbr_orig_bitrate = (long)obs_data_get_int(vsettings, "bitrate");
+	stream->dbr_cur_bitrate = stream->dbr_orig_bitrate;
+	stream->dbr_est_bitrate = 0;
+	stream->dbr_inc_bitrate = stream->dbr_orig_bitrate / 10;
+	stream->dbr_inc_timeout = 0;
+	stream->dbr_enabled = obs_data_get_bool(settings, OPT_DYN_BITRATE);
+
+	caps = obs_encoder_get_caps(venc);
+	if ((caps & OBS_ENCODER_CAP_DYN_BITRATE) == 0) {
+		stream->dbr_enabled = false;
+	}
+
+	if (obs_output_get_delay(stream->output) != 0) {
+		stream->dbr_enabled = false;
+	}
+
+	if (stream->dbr_enabled) {
+		info("Dynamic bitrate enabled.  Dropped frames begone!");
+	}
+
+	obs_data_release(vsettings);
+	obs_data_release(asettings);
 
 	if (drop_p < (drop_b + 200))
 		drop_p = drop_b + 200;
@@ -1044,6 +1200,96 @@ static bool find_first_video_packet(struct rtmp_stream *stream,
 	return false;
 }
 
+static bool dbr_bitrate_lowered(struct rtmp_stream *stream)
+{
+	long prev_bitrate = stream->dbr_prev_bitrate;
+	long est_bitrate = 0;
+	long new_bitrate;
+
+	if (stream->dbr_est_bitrate &&
+	    stream->dbr_est_bitrate < stream->dbr_cur_bitrate) {
+		stream->dbr_data_size = 0;
+		circlebuf_pop_front(&stream->dbr_frames, NULL,
+				    stream->dbr_frames.size);
+		est_bitrate = stream->dbr_est_bitrate / 100 * 100;
+		if (est_bitrate < 50) {
+			est_bitrate = 50;
+		}
+	}
+
+#if 0
+	if (prev_bitrate && est_bitrate) {
+		if (prev_bitrate < est_bitrate) {
+			blog(LOG_INFO, "going back to prev bitrate: "
+					"prev_bitrate (%d) < est_bitrate (%d)",
+					prev_bitrate,
+					est_bitrate);
+			new_bitrate = prev_bitrate;
+		} else {
+			new_bitrate = est_bitrate;
+		}
+		new_bitrate = est_bitrate;
+	} else if (prev_bitrate) {
+		new_bitrate = prev_bitrate;
+		info("going back to prev bitrate");
+
+	} else if (est_bitrate) {
+		new_bitrate = est_bitrate;
+
+	} else {
+		return false;
+	}
+#else
+	if (est_bitrate) {
+		new_bitrate = est_bitrate;
+
+	} else if (prev_bitrate) {
+		new_bitrate = prev_bitrate;
+		info("going back to prev bitrate");
+
+	} else {
+		return false;
+	}
+
+	if (new_bitrate == stream->dbr_cur_bitrate) {
+		return false;
+	}
+#endif
+
+	stream->dbr_prev_bitrate = 0;
+	stream->dbr_cur_bitrate = new_bitrate;
+	stream->dbr_inc_timeout = os_gettime_ns() + DBR_INC_TIMER;
+	info("bitrate decreased to: %ld", stream->dbr_cur_bitrate);
+	return true;
+}
+
+static void dbr_set_bitrate(struct rtmp_stream *stream)
+{
+	obs_encoder_t *vencoder = obs_output_get_video_encoder(stream->output);
+	obs_data_t *settings = obs_encoder_get_settings(vencoder);
+
+	obs_data_set_int(settings, "bitrate", stream->dbr_cur_bitrate);
+	obs_encoder_update(vencoder, settings);
+
+	obs_data_release(settings);
+}
+
+static void dbr_inc_bitrate(struct rtmp_stream *stream)
+{
+	stream->dbr_prev_bitrate = stream->dbr_cur_bitrate;
+	stream->dbr_cur_bitrate += stream->dbr_inc_bitrate;
+
+	if (stream->dbr_cur_bitrate >= stream->dbr_orig_bitrate) {
+		stream->dbr_cur_bitrate = stream->dbr_orig_bitrate;
+		info("bitrate increased to: %ld, done",
+		     stream->dbr_cur_bitrate);
+	} else if (stream->dbr_cur_bitrate < stream->dbr_orig_bitrate) {
+		stream->dbr_inc_timeout = os_gettime_ns() + DBR_INC_TIMER;
+		info("bitrate increased to: %ld, waiting",
+		     stream->dbr_cur_bitrate);
+	}
+}
+
 static void check_to_drop_frames(struct rtmp_stream *stream, bool pframes)
 {
 	struct encoder_packet first;
@@ -1054,6 +1300,18 @@ static void check_to_drop_frames(struct rtmp_stream *stream, bool pframes)
 			       : OBS_NAL_PRIORITY_HIGH;
 	int64_t drop_threshold = pframes ? stream->pframe_drop_threshold_usec
 					 : stream->drop_threshold_usec;
+
+	if (!pframes && stream->dbr_enabled) {
+		if (stream->dbr_inc_timeout) {
+			uint64_t t = os_gettime_ns();
+
+			if (t >= stream->dbr_inc_timeout) {
+				stream->dbr_inc_timeout = 0;
+				dbr_inc_bitrate(stream);
+				dbr_set_bitrate(stream);
+			}
+		}
+	}
 
 	if (num_packets < 5) {
 		if (!pframes)
@@ -1071,6 +1329,31 @@ static void check_to_drop_frames(struct rtmp_stream *stream, bool pframes)
 	if (!pframes) {
 		stream->congestion =
 			(float)buffer_duration_usec / (float)drop_threshold;
+	}
+
+	/* alternatively, drop only pframes:
+	 * (!pframes && stream->dbr_enabled)
+	 * but let's test without dropping frames
+	 * at all first */
+	if (stream->dbr_enabled) {
+		bool bitrate_changed = false;
+
+		if (pframes) {
+			return;
+		}
+
+		if (buffer_duration_usec >= DBR_TRIGGER_USEC) {
+			pthread_mutex_lock(&stream->dbr_mutex);
+			bitrate_changed = dbr_bitrate_lowered(stream);
+			pthread_mutex_unlock(&stream->dbr_mutex);
+		}
+
+		if (bitrate_changed) {
+			debug("buffer_duration_msec: %" PRId64,
+			      buffer_duration_usec / 1000);
+			dbr_set_bitrate(stream);
+		}
+		return;
 	}
 
 	if (buffer_duration_usec > drop_threshold) {

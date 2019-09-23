@@ -93,6 +93,9 @@ QObject *CreateShortcutFilter()
 {
 	return new OBSEventFilter([](QObject *obj, QEvent *event) {
 		auto mouse_event = [](QMouseEvent &event) {
+			if (!App()->HotkeysEnabledInFocus())
+				return true;
+
 			obs_key_combination_t hotkey = {0, OBS_KEY_NONE};
 			bool pressed = event.type() == QEvent::MouseButtonPress;
 
@@ -147,6 +150,9 @@ QObject *CreateShortcutFilter()
 		};
 
 		auto key_event = [&](QKeyEvent *event) {
+			if (!App()->HotkeysEnabledInFocus())
+				return true;
+
 			QDialog *dialog = qobject_cast<QDialog *>(obj);
 
 			obs_key_combination_t hotkey = {0, OBS_KEY_NONE};
@@ -426,6 +432,9 @@ bool OBSApp::InitGlobalConfigDefaults()
 					  "CurrentTheme", DEFAULT_THEME);
 	}
 
+	config_set_default_string(globalConfig, "General", "HotkeyFocusType",
+				  "NeverDisableHotkeys");
+
 	config_set_default_bool(globalConfig, "BasicWindow",
 				"VerticalVolControl", false);
 
@@ -693,9 +702,10 @@ bool OBSApp::InitGlobalConfig()
 		}
 	}
 
+	uint32_t lastVersion =
+		config_get_int(globalConfig, "General", "LastVersion");
+
 	if (!config_has_user_value(globalConfig, "General", "Pre19Defaults")) {
-		uint32_t lastVersion =
-			config_get_int(globalConfig, "General", "LastVersion");
 		bool useOldDefaults = lastVersion &&
 				      lastVersion <
 					      MAKE_SEMANTIC_VERSION(19, 0, 0);
@@ -706,8 +716,6 @@ bool OBSApp::InitGlobalConfig()
 	}
 
 	if (!config_has_user_value(globalConfig, "General", "Pre21Defaults")) {
-		uint32_t lastVersion =
-			config_get_int(globalConfig, "General", "LastVersion");
 		bool useOldDefaults = lastVersion &&
 				      lastVersion <
 					      MAKE_SEMANTIC_VERSION(21, 0, 0);
@@ -718,8 +726,6 @@ bool OBSApp::InitGlobalConfig()
 	}
 
 	if (!config_has_user_value(globalConfig, "General", "Pre23Defaults")) {
-		uint32_t lastVersion =
-			config_get_int(globalConfig, "General", "LastVersion");
 		bool useOldDefaults = lastVersion &&
 				      lastVersion <
 					      MAKE_SEMANTIC_VERSION(23, 0, 0);
@@ -734,6 +740,16 @@ bool OBSApp::InitGlobalConfig()
 		const char *layout = config_get_string(
 			globalConfig, "BasicWindow", "MultiviewLayout");
 		changed |= UpdatePre22MultiviewLayout(layout);
+	}
+
+	if (lastVersion && lastVersion < MAKE_SEMANTIC_VERSION(24, 0, 0)) {
+		bool disableHotkeysInFocus = config_get_bool(
+			globalConfig, "General", "DisableHotkeysInFocus");
+		if (disableHotkeysInFocus)
+			config_set_string(globalConfig, "General",
+					  "HotkeyFocusType",
+					  "DisableHotkeysInFocus");
+		changed = true;
 	}
 
 	if (changed)
@@ -1221,8 +1237,7 @@ void OBSApp::AppInit()
 		EnableOSXVSync(false);
 #endif
 
-	enableHotkeysInFocus = !config_get_bool(globalConfig, "General",
-						"DisableHotkeysInFocus");
+	UpdateHotkeyFocusSetting(false);
 
 	move_basic_to_profiles();
 	move_basic_to_scene_collections();
@@ -1251,13 +1266,34 @@ static bool StartupOBS(const char *locale, profiler_name_store_t *store)
 
 inline void OBSApp::ResetHotkeyState(bool inFocus)
 {
-	obs_hotkey_enable_background_press(inFocus || enableHotkeysInFocus);
+	obs_hotkey_enable_background_press(
+		(inFocus && enableHotkeysInFocus) ||
+		(!inFocus && enableHotkeysOutOfFocus));
 }
 
-void OBSApp::EnableInFocusHotkeys(bool enable)
+void OBSApp::UpdateHotkeyFocusSetting(bool resetState)
 {
-	enableHotkeysInFocus = enable;
-	ResetHotkeyState(applicationState() != Qt::ApplicationActive);
+	enableHotkeysInFocus = true;
+	enableHotkeysOutOfFocus = true;
+
+	const char *hotkeyFocusType =
+		config_get_string(globalConfig, "General", "HotkeyFocusType");
+
+	if (astrcmpi(hotkeyFocusType, "DisableHotkeysInFocus") == 0) {
+		enableHotkeysInFocus = false;
+	} else if (astrcmpi(hotkeyFocusType, "DisableHotkeysOutOfFocus") == 0) {
+		enableHotkeysOutOfFocus = false;
+	}
+
+	if (resetState)
+		ResetHotkeyState(applicationState() == Qt::ApplicationActive);
+}
+
+void OBSApp::DisableHotkeys()
+{
+	enableHotkeysInFocus = false;
+	enableHotkeysOutOfFocus = false;
+	ResetHotkeyState(applicationState() == Qt::ApplicationActive);
 }
 
 Q_DECLARE_METATYPE(VoidFunc)
@@ -1307,9 +1343,9 @@ bool OBSApp::OBSInit()
 
 	connect(this, &QGuiApplication::applicationStateChanged,
 		[this](Qt::ApplicationState state) {
-			ResetHotkeyState(state != Qt::ApplicationActive);
+			ResetHotkeyState(state == Qt::ApplicationActive);
 		});
-	ResetHotkeyState(applicationState() != Qt::ApplicationActive);
+	ResetHotkeyState(applicationState() == Qt::ApplicationActive);
 	return true;
 }
 

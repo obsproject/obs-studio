@@ -202,7 +202,9 @@ fail:
 
 void gs_init_image_deps(void)
 {
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58, 9, 100)
 	av_register_all();
+#endif
 }
 
 void gs_free_image_deps(void) {}

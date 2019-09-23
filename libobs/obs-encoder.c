@@ -66,8 +66,13 @@ static bool init_encoder(struct obs_encoder *encoder, const char *name,
 	if (pthread_mutex_init(&encoder->pause.mutex, NULL) != 0)
 		return false;
 
-	if (encoder->orig_info.get_defaults)
+	if (encoder->orig_info.get_defaults) {
 		encoder->orig_info.get_defaults(encoder->context.settings);
+	}
+	if (encoder->orig_info.get_defaults2) {
+		encoder->orig_info.get_defaults2(encoder->context.settings,
+						 encoder->orig_info.type_data);
+	}
 
 	return true;
 }
@@ -316,10 +321,11 @@ void obs_encoder_set_name(obs_encoder_t *encoder, const char *name)
 static inline obs_data_t *get_defaults(const struct obs_encoder_info *info)
 {
 	obs_data_t *settings = obs_data_create();
+	if (info->get_defaults) {
+		info->get_defaults(settings);
+	}
 	if (info->get_defaults2) {
 		info->get_defaults2(settings, info->type_data);
-	} else if (info->get_defaults) {
-		info->get_defaults(settings);
 	}
 	return settings;
 }
@@ -343,7 +349,7 @@ obs_properties_t *obs_get_encoder_properties(const char *id)
 	const struct obs_encoder_info *ei = find_encoder(id);
 	if (ei && (ei->get_properties || ei->get_properties2)) {
 		obs_data_t *defaults = get_defaults(ei);
-		obs_properties_t *properties;
+		obs_properties_t *properties = NULL;
 
 		if (ei->get_properties2) {
 			properties = ei->get_properties2(NULL, ei->type_data);
@@ -975,14 +981,11 @@ static inline bool video_pause_check_internal(struct pause_data *pause,
 		return false;
 	}
 
-	if (ts == pause->ts_start) {
-		return true;
-
-	} else if (ts == pause->ts_end) {
+	if (ts == pause->ts_end) {
 		pause->ts_start = 0;
 		pause->ts_end = 0;
-	} else {
 
+	} else if (ts >= pause->ts_start) {
 		return true;
 	}
 
@@ -1181,6 +1184,12 @@ static void unpause_audio(struct pause_data *pause, struct audio_data *data,
 {
 	uint64_t cutoff_frames = pause->ts_end - data->timestamp;
 	cutoff_frames = ns_to_audio_frames(sample_rate, cutoff_frames);
+
+	for (size_t i = 0; i < MAX_AV_PLANES; i++) {
+		if (!data->data[i])
+			break;
+		data->data[i] += cutoff_frames * sizeof(float);
+	}
 
 	data->timestamp = pause->ts_start;
 	data->frames = data->frames - (uint32_t)cutoff_frames;

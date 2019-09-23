@@ -1,6 +1,5 @@
 # please use clang-format version 8 or later
 
-Language: Cpp
 Standard: Cpp11
 AccessModifierOffset: -8
 AlignAfterOpenBracket: Align
@@ -104,3 +103,5 @@ TabWidth: 8
 #TypenameMacros:  # requires clang-format 9
 #  - 'DARRAY'
 UseTab: ForContinuationAndIndentation
+---
+Language: ObjC

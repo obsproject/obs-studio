@@ -649,6 +649,9 @@ EXPORT void obs_render_main_view(void);
 /** Renders the last main output texture */
 EXPORT void obs_render_main_texture(void);
 
+/** Renders the last main output texture ignoring background color */
+EXPORT void obs_render_main_texture_src_color_only(void);
+
 /** Returns the last main output texture.  This can return NULL if the texture
  * is unavailable. */
 EXPORT gs_texture_t *obs_get_main_texture(void);
@@ -1308,6 +1311,11 @@ EXPORT bool obs_source_async_unbuffered(const obs_source_t *source);
  * mode. */
 EXPORT void obs_source_set_async_decoupled(obs_source_t *source, bool decouple);
 EXPORT bool obs_source_async_decoupled(const obs_source_t *source);
+
+EXPORT void obs_source_set_audio_active(obs_source_t *source, bool show);
+EXPORT bool obs_source_audio_active(const obs_source_t *source);
+
+EXPORT uint32_t obs_source_get_last_obs_version(const obs_source_t *source);
 
 /* ------------------------------------------------------------------------- */
 /* Transition-specific functions */

@@ -106,6 +106,25 @@ gs_texture_t *device_texture_create(gs_device_t *device, uint32_t width,
 			goto fail;
 		if (!upload_texture_2d(tex, data))
 			goto fail;
+	} else {
+		if (!gl_bind_texture(GL_TEXTURE_2D, tex->base.texture))
+			goto fail;
+
+		uint32_t row_size =
+			tex->width * gs_get_format_bpp(tex->base.format);
+		uint32_t tex_size = tex->height * row_size / 8;
+		bool compressed = gs_is_compressed_format(tex->base.format);
+		bool did_init = gl_init_face(GL_TEXTURE_2D, tex->base.gl_type,
+					     1, tex->base.gl_format,
+					     tex->base.gl_internal_format,
+					     compressed, tex->width,
+					     tex->height, tex_size, NULL);
+		did_init =
+			gl_tex_param_i(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0);
+
+		bool did_unbind = gl_bind_texture(GL_TEXTURE_2D, 0);
+		if (!did_init || !did_unbind)
+			goto fail;
 	}
 
 	return (gs_texture_t *)tex;

@@ -190,7 +190,9 @@ static void *enc_create(obs_data_t *settings, obs_encoder_t *encoder,
 	int bitrate = (int)obs_data_get_int(settings, "bitrate");
 	audio_t *audio = obs_encoder_audio(encoder);
 
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58, 9, 100)
 	avcodec_register_all();
+#endif
 
 	enc = bzalloc(sizeof(struct enc_encoder));
 	enc->encoder = encoder;

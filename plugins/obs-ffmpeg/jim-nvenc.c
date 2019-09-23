@@ -240,8 +240,11 @@ static bool nvenc_update(void *data, obs_data_t *settings)
 		NV_ENC_RECONFIGURE_PARAMS params = {0};
 		params.version = NV_ENC_RECONFIGURE_PARAMS_VER;
 		params.reInitEncodeParams = enc->params;
+		params.resetEncoder = 1;
+		params.forceIDR = 1;
 
-		if (FAILED(nv.nvEncReconfigureEncoder(enc->session, &params))) {
+		if (NV_FAILED(nv.nvEncReconfigureEncoder(enc->session,
+							 &params))) {
 			return false;
 		}
 	}
@@ -926,7 +929,7 @@ struct obs_encoder_info nvenc_info = {
 	.id = "jim_nvenc",
 	.codec = "h264",
 	.type = OBS_ENCODER_VIDEO,
-	.caps = OBS_ENCODER_CAP_PASS_TEXTURE,
+	.caps = OBS_ENCODER_CAP_PASS_TEXTURE | OBS_ENCODER_CAP_DYN_BITRATE,
 	.get_name = nvenc_get_name,
 	.create = nvenc_create,
 	.destroy = nvenc_destroy,

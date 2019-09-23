@@ -198,6 +198,20 @@ void OBSBasicSettings::UpdateKeyLink()
 		text += QTStr(
 			"Basic.AutoConfig.StreamPage.StreamKey.LinkToSite");
 		text += "</a>";
+	} else if (serviceName.startsWith("Restream.io")) {
+		text += " <a href=\"https://";
+		text += "restream.io/settings/streaming-setup?from=OBS";
+		text += "\">";
+		text += QTStr(
+			"Basic.AutoConfig.StreamPage.StreamKey.LinkToSite");
+		text += "</a>";
+	} else if (serviceName == "Facebook Live") {
+		text += " <a href=\"https://";
+		text += "www.facebook.com/live/create";
+		text += "\">";
+		text += QTStr(
+			"Basic.AutoConfig.StreamPage.StreamKey.LinkToSite");
+		text += "</a>";
 	}
 
 	ui->streamKeyLabel->setText(text);

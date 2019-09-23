@@ -7,9 +7,9 @@
 #include <qt-wrappers.hpp>
 #include <obs-app.hpp>
 
+#include "window-dock-browser.hpp"
 #include "window-basic-main.hpp"
 #include "remote-text.hpp"
-#include "window-dock.hpp"
 
 #include <json11.hpp>
 
@@ -17,10 +17,6 @@
 #include "obf.h"
 
 using namespace json11;
-
-#include <browser-panel.hpp>
-extern QCef *cef;
-extern QCefCookieManager *panel_cookies;
 
 /* ------------------------------------------------------------------------- */
 
@@ -162,19 +158,6 @@ bool TwitchAuth::LoadInternal()
 	return OAuthStreamKey::LoadInternal();
 }
 
-class TwitchWidget : public OBSDock {
-public:
-	inline TwitchWidget() : OBSDock() {}
-
-	QScopedPointer<QCefWidget> widget;
-
-	inline void SetWidget(QCefWidget *widget_)
-	{
-		setWidget(widget_);
-		widget.reset(widget_);
-	}
-};
-
 static const char *ffz_script = "\
 var ffz = document.createElement('script');\
 ffz.setAttribute('src','https://cdn.frankerfacez.com/script/script.min.js');\
@@ -222,7 +205,7 @@ void TwitchAuth::LoadUI()
 	QSize size = main->frameSize();
 	QPoint pos = main->pos();
 
-	chat.reset(new TwitchWidget());
+	chat.reset(new BrowserDock());
 	chat->setObjectName("twitchChat");
 	chat->resize(300, 600);
 	chat->setMinimumSize(200, 300);
@@ -286,7 +269,7 @@ void TwitchAuth::LoadSecondaryUIPanes()
 	url += name;
 	url += "/dashboard/live/stream-info";
 
-	info.reset(new TwitchWidget());
+	info.reset(new BrowserDock());
 	info->setObjectName("twitchInfo");
 	info->resize(300, 650);
 	info->setMinimumSize(200, 300);
@@ -306,7 +289,7 @@ void TwitchAuth::LoadSecondaryUIPanes()
 	url += name;
 	url += "/dashboard/live/stats";
 
-	stat.reset(new TwitchWidget());
+	stat.reset(new BrowserDock());
 	stat->setObjectName("twitchStats");
 	stat->resize(200, 250);
 	stat->setMinimumSize(200, 150);
@@ -326,7 +309,7 @@ void TwitchAuth::LoadSecondaryUIPanes()
 	url += name;
 	url += "/dashboard/live/activity-feed";
 
-	feed.reset(new TwitchWidget());
+	feed.reset(new BrowserDock());
 	feed->setObjectName("twitchFeed");
 	feed->resize(300, 650);
 	feed->setMinimumSize(200, 300);

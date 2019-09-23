@@ -124,6 +124,8 @@ class OBSBasic : public OBSMainWindow {
 	friend class AutoConfig;
 	friend class AutoConfigStreamPage;
 	friend class RecordButton;
+	friend class ExtraBrowsersModel;
+	friend class ExtraBrowsersDelegate;
 	friend struct OBSStudioAPI;
 
 	enum class MoveDir { Up, Down, Left, Right };
@@ -170,6 +172,8 @@ private:
 	QPointer<OBSAbout> about;
 
 	QPointer<QTimer> cpuUsageTimer;
+	QPointer<QTimer> diskFullTimer;
+
 	os_cpu_usage_info_t *cpuUsageInfo = nullptr;
 
 	OBSService service;
@@ -200,6 +204,7 @@ private:
 
 	QPointer<QWidget> stats;
 	QPointer<QWidget> remux;
+	QPointer<QWidget> extraBrowsers;
 
 	QPointer<QMenu> startStreamMenu;
 
@@ -420,6 +425,19 @@ private:
 
 	bool NoSourcesConfirmation();
 
+#ifdef BROWSER_AVAILABLE
+	QList<QSharedPointer<QDockWidget>> extraBrowserDocks;
+	QList<QSharedPointer<QAction>> extraBrowserDockActions;
+	QStringList extraBrowserDockTargets;
+
+	void ClearExtraBrowserDocks();
+	void LoadExtraBrowserDocks();
+	void SaveExtraBrowserDocks();
+	void ManageExtraBrowserDocks();
+	void AddExtraBrowserDock(const QString &title, const QString &url,
+				 bool firstCreate);
+#endif
+
 public slots:
 	void DeferSaveBegin();
 	void DeferSaveEnd();
@@ -540,6 +558,8 @@ private slots:
 	void SceneCopyFilters();
 	void ScenePasteFilters();
 
+	void CheckDiskSpaceRemaining();
+
 private:
 	/* OBS Callbacks */
 	static void SceneReordered(void *data, calldata_t *params);
@@ -550,6 +570,8 @@ private:
 	static void SourceRemoved(void *data, calldata_t *params);
 	static void SourceActivated(void *data, calldata_t *params);
 	static void SourceDeactivated(void *data, calldata_t *params);
+	static void SourceAudioActivated(void *data, calldata_t *params);
+	static void SourceAudioDeactivated(void *data, calldata_t *params);
 	static void SourceRenamed(void *data, calldata_t *params);
 	static void RenderMain(void *data, uint32_t cx, uint32_t cy);
 
@@ -563,7 +585,11 @@ private:
 	static void HotkeyTriggered(void *data, obs_hotkey_id id, bool pressed);
 
 	void AutoRemux();
+
 	void UpdatePause(bool activate = true);
+
+	bool LowDiskSpace();
+	void DiskSpaceMessage();
 
 public:
 	OBSSource GetProgramSource();
@@ -729,8 +755,7 @@ private slots:
 
 	void on_preview_customContextMenuRequested(const QPoint &pos);
 	void on_program_customContextMenuRequested(const QPoint &pos);
-	void
-	on_previewDisabledLabel_customContextMenuRequested(const QPoint &pos);
+	void PreviewDisabledMenu(const QPoint &pos);
 
 	void on_actionNewSceneCollection_triggered();
 	void on_actionDupSceneCollection_triggered();

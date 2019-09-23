@@ -196,12 +196,16 @@ static void limiter_defaults(obs_data_t *s)
 static obs_properties_t *limiter_properties(void *data)
 {
 	obs_properties_t *props = obs_properties_create();
+	obs_property_t *p;
 
-	obs_properties_add_float_slider(props, S_THRESHOLD, TEXT_THRESHOLD,
-					MIN_THRESHOLD_DB, MAX_THRESHOLD_DB,
-					0.1);
-	obs_properties_add_int_slider(props, S_RELEASE_TIME, TEXT_RELEASE_TIME,
-				      MIN_ATK_RLS_MS, MAX_RLS_MS, 1);
+	p = obs_properties_add_float_slider(props, S_THRESHOLD, TEXT_THRESHOLD,
+					    MIN_THRESHOLD_DB, MAX_THRESHOLD_DB,
+					    0.1);
+	obs_property_float_set_suffix(p, " dB");
+	p = obs_properties_add_int_slider(props, S_RELEASE_TIME,
+					  TEXT_RELEASE_TIME, MIN_ATK_RLS_MS,
+					  MAX_RLS_MS, 1);
+	obs_property_int_set_suffix(p, " ms");
 
 	UNUSED_PARAMETER(data);
 	return props;

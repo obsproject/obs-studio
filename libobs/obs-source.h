@@ -139,6 +139,15 @@ enum obs_balance_type {
  */
 #define OBS_SOURCE_CAP_DISABLED (1 << 10)
 
+/**
+ * Source should enable monitoring by default.  Monitoring should be set by the
+ * frontend if this flag is set.
+ */
+#define OBS_SOURCE_MONITOR_BY_DEFAULT (1 << 11)
+
+/** Used internally for audio submixing */
+#define OBS_SOURCE_SUBMIX (1 << 12)
+
 /** @} */
 
 typedef void (*obs_source_enum_proc_t)(obs_source_t *parent,
@@ -441,6 +450,9 @@ struct obs_source_info {
 
 	/**
 	 * Gets the default settings for this source
+	 * 
+	 * If get_defaults is also defined both will be called, and the first
+	 * call will be to get_defaults, then to get_defaults2.
 	 *
 	 * @param       type_data The type_data variable of this structure
 	 * @param[out]  settings  Data to assign default settings to
@@ -455,6 +467,10 @@ struct obs_source_info {
 	 * @return          The properties data
 	 */
 	obs_properties_t *(*get_properties2)(void *data, void *type_data);
+
+	bool (*audio_mix)(void *data, uint64_t *ts_out,
+			  struct audio_output_data *audio_output,
+			  size_t channels, size_t sample_rate);
 };
 
 EXPORT void obs_register_source_s(const struct obs_source_info *info,

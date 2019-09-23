@@ -284,6 +284,7 @@ struct TextSource {
 			       const Brush &brush);
 	void RenderText();
 	void LoadFileText();
+	void TransformText();
 
 	const char *GetMainString(const char *str);
 
@@ -545,7 +546,7 @@ void TextSource::RenderText()
 	GetStringFormat(format);
 	CalculateTextSizes(format, box, size);
 
-	unique_ptr<uint8_t> bits(new uint8_t[size.cx * size.cy * 4]);
+	unique_ptr<uint8_t[]> bits(new uint8_t[size.cx * size.cy * 4]);
 	Bitmap bitmap(size.cx, size.cy, 4 * size.cx, PixelFormat32bppARGB,
 		      bits.get());
 
@@ -654,6 +655,14 @@ void TextSource::LoadFileText()
 		text.push_back('\n');
 }
 
+void TextSource::TransformText()
+{
+	if (text_transform == S_TRANSFORM_UPPERCASE)
+		transform(text.begin(), text.end(), text.begin(), towupper);
+	else if (text_transform == S_TRANSFORM_LOWERCASE)
+		transform(text.begin(), text.end(), text.begin(), towlower);
+}
+
 #define obs_data_get_uint32 (uint32_t) obs_data_get_int
 
 inline void TextSource::Update(obs_data_t *s)
@@ -758,10 +767,7 @@ inline void TextSource::Update(obs_data_t *s)
 		if (!text.empty())
 			text.push_back('\n');
 	}
-	if (text_transform == S_TRANSFORM_UPPERCASE)
-		transform(text.begin(), text.end(), text.begin(), towupper);
-	else if (text_transform == S_TRANSFORM_LOWERCASE)
-		transform(text.begin(), text.end(), text.begin(), towlower);
+	TransformText();
 
 	use_outline = new_outline;
 	outline_color = new_o_color;
@@ -803,6 +809,7 @@ inline void TextSource::Tick(float seconds)
 
 		if (update_file) {
 			LoadFileText();
+			TransformText();
 			RenderText();
 			update_file = false;
 		}
@@ -947,20 +954,24 @@ static obs_properties_t *get_properties(void *data)
 
 	obs_properties_add_bool(props, S_VERTICAL, T_VERTICAL);
 	obs_properties_add_color(props, S_COLOR, T_COLOR);
-	obs_properties_add_int_slider(props, S_OPACITY, T_OPACITY, 0, 100, 1);
+	p = obs_properties_add_int_slider(props, S_OPACITY, T_OPACITY, 0, 100,
+					  1);
+	obs_property_int_set_suffix(p, "%");
 
 	p = obs_properties_add_bool(props, S_GRADIENT, T_GRADIENT);
 	obs_property_set_modified_callback(p, gradient_changed);
 
 	obs_properties_add_color(props, S_GRADIENT_COLOR, T_GRADIENT_COLOR);
-	obs_properties_add_int_slider(props, S_GRADIENT_OPACITY,
-				      T_GRADIENT_OPACITY, 0, 100, 1);
+	p = obs_properties_add_int_slider(props, S_GRADIENT_OPACITY,
+					  T_GRADIENT_OPACITY, 0, 100, 1);
+	obs_property_int_set_suffix(p, "%");
 	obs_properties_add_float_slider(props, S_GRADIENT_DIR, T_GRADIENT_DIR,
 					0, 360, 0.1);
 
 	obs_properties_add_color(props, S_BKCOLOR, T_BKCOLOR);
-	obs_properties_add_int_slider(props, S_BKOPACITY, T_BKOPACITY, 0, 100,
-				      1);
+	p = obs_properties_add_int_slider(props, S_BKOPACITY, T_BKOPACITY, 0,
+					  100, 1);
+	obs_property_int_set_suffix(p, "%");
 
 	p = obs_properties_add_list(props, S_ALIGN, T_ALIGN,
 				    OBS_COMBO_TYPE_LIST,
@@ -981,8 +992,9 @@ static obs_properties_t *get_properties(void *data)
 
 	obs_properties_add_int(props, S_OUTLINE_SIZE, T_OUTLINE_SIZE, 1, 20, 1);
 	obs_properties_add_color(props, S_OUTLINE_COLOR, T_OUTLINE_COLOR);
-	obs_properties_add_int_slider(props, S_OUTLINE_OPACITY,
-				      T_OUTLINE_OPACITY, 0, 100, 1);
+	p = obs_properties_add_int_slider(props, S_OUTLINE_OPACITY,
+					  T_OUTLINE_OPACITY, 0, 100, 1);
+	obs_property_int_set_suffix(p, "%");
 
 	p = obs_properties_add_bool(props, S_CHATLOG_MODE, T_CHATLOG_MODE);
 	obs_property_set_modified_callback(p, chatlog_mode_changed);

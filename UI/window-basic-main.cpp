@@ -130,7 +130,7 @@ static void AddExtraModulePaths()
 	if (ret <= 0)
 		return;
 
-	string path = (char *)base_module_dir;
+	string path = base_module_dir;
 #if defined(__APPLE__)
 	obs_add_module_path((path + "/bin").c_str(), (path + "/data").c_str());
 
@@ -212,7 +212,7 @@ OBSBasic::OBSBasic(QWidget *parent)
 	api = InitializeAPIInterface(this);
 
 	ui->setupUi(this);
-	ui->previewDisabledLabel->setVisible(false);
+	ui->previewDisabledWidget->setVisible(false);
 
 	startingDockLayout = saveState();
 
@@ -286,6 +286,10 @@ OBSBasic::OBSBasic(QWidget *parent)
 	connect(cpuUsageTimer.data(), SIGNAL(timeout()), ui->statusbar,
 		SLOT(UpdateCPUUsage()));
 	cpuUsageTimer->start(3000);
+
+	diskFullTimer = new QTimer(this);
+	connect(diskFullTimer, SIGNAL(timeout()), this,
+		SLOT(CheckDiskSpaceRemaining()));
 
 	QAction *renameScene = new QAction(ui->scenesDock);
 	renameScene->setShortcutContext(Qt::WidgetWithChildrenShortcut);
@@ -381,6 +385,13 @@ OBSBasic::OBSBasic(QWidget *parent)
 		ui->previewLabel->setHidden(true);
 	else
 		ui->previewLabel->setHidden(!labels);
+
+	ui->previewDisabledWidget->setContextMenuPolicy(Qt::CustomContextMenu);
+	connect(ui->previewDisabledWidget,
+		SIGNAL(customContextMenuRequested(const QPoint &)), this,
+		SLOT(PreviewDisabledMenu(const QPoint &)));
+	connect(ui->enablePreviewButton, SIGNAL(clicked()), this,
+		SLOT(TogglePreview()));
 }
 
 static void SaveAudioDevice(const char *name, int channel, obs_data_t *parent,
@@ -1193,7 +1204,7 @@ bool OBSBasic::InitBasicConfigDefaults()
 	config_set_default_string(basicConfig, "SimpleOutput", "FilePath",
 				  GetDefaultVideoSavePath().c_str());
 	config_set_default_string(basicConfig, "SimpleOutput", "RecFormat",
-				  "flv");
+				  "mkv");
 	config_set_default_uint(basicConfig, "SimpleOutput", "VBitrate", 2500);
 	config_set_default_uint(basicConfig, "SimpleOutput", "ABitrate", 160);
 	config_set_default_bool(basicConfig, "SimpleOutput", "UseAdvanced",
@@ -1222,7 +1233,7 @@ bool OBSBasic::InitBasicConfigDefaults()
 
 	config_set_default_string(basicConfig, "AdvOut", "RecFilePath",
 				  GetDefaultVideoSavePath().c_str());
-	config_set_default_string(basicConfig, "AdvOut", "RecFormat", "flv");
+	config_set_default_string(basicConfig, "AdvOut", "RecFormat", "mkv");
 	config_set_default_bool(basicConfig, "AdvOut", "RecUseRescale", false);
 	config_set_default_uint(basicConfig, "AdvOut", "RecTracks", (1 << 0));
 	config_set_default_string(basicConfig, "AdvOut", "RecEncoder", "none");
@@ -1400,6 +1411,12 @@ void OBSBasic::InitOBSCallbacks()
 	signalHandlers.emplace_back(obs_get_signal_handler(),
 				    "source_deactivate",
 				    OBSBasic::SourceDeactivated, this);
+	signalHandlers.emplace_back(obs_get_signal_handler(),
+				    "source_audio_activate",
+				    OBSBasic::SourceAudioActivated, this);
+	signalHandlers.emplace_back(obs_get_signal_handler(),
+				    "source_audio_deactivate",
+				    OBSBasic::SourceAudioDeactivated, this);
 	signalHandlers.emplace_back(obs_get_signal_handler(), "source_rename",
 				    OBSBasic::SourceRenamed, this);
 }
@@ -1681,6 +1698,23 @@ void OBSBasic::OBSInit()
 	/* setup stats dock */
 	OBSBasicStats *statsDlg = new OBSBasicStats(statsDock, false);
 	statsDock->setWidget(statsDlg);
+
+	/* ----------------------------- */
+	/* add custom browser docks      */
+
+#ifdef BROWSER_AVAILABLE
+	if (cef) {
+		QAction *action = new QAction(QTStr("Basic.MainMenu."
+						    "View.Docks."
+						    "CustomBrowserDocks"));
+		ui->viewMenuDocks->insertAction(ui->toggleScenes, action);
+		connect(action, &QAction::triggered, this,
+			&OBSBasic::ManageExtraBrowserDocks);
+		ui->viewMenuDocks->insertSeparator(ui->toggleScenes);
+
+		LoadExtraBrowserDocks();
+	}
+#endif
 
 	const char *dockStateStr = config_get_string(
 		App()->GlobalConfig(), "BasicWindow", "DockState");
@@ -2933,6 +2967,8 @@ void OBSBasic::ActivateAudioSource(OBSSource source)
 {
 	if (SourceMixerHidden(source))
 		return;
+	if (!obs_source_audio_active(source))
+		return;
 
 	bool vertical = config_get_bool(GetGlobalConfig(), "BasicWindow",
 					"VerticalVolControl");
@@ -3254,6 +3290,24 @@ void OBSBasic::SourceDeactivated(void *data, calldata_t *params)
 					  Q_ARG(OBSSource, OBSSource(source)));
 }
 
+void OBSBasic::SourceAudioActivated(void *data, calldata_t *params)
+{
+	obs_source_t *source = (obs_source_t *)calldata_ptr(params, "source");
+
+	if (obs_source_active(source))
+		QMetaObject::invokeMethod(static_cast<OBSBasic *>(data),
+					  "ActivateAudioSource",
+					  Q_ARG(OBSSource, OBSSource(source)));
+}
+
+void OBSBasic::SourceAudioDeactivated(void *data, calldata_t *params)
+{
+	obs_source_t *source = (obs_source_t *)calldata_ptr(params, "source");
+	QMetaObject::invokeMethod(static_cast<OBSBasic *>(data),
+				  "DeactivateAudioSource",
+				  Q_ARG(OBSSource, OBSSource(source)));
+}
+
 void OBSBasic::SourceRenamed(void *data, calldata_t *params)
 {
 	obs_source_t *source = (obs_source_t *)calldata_ptr(params, "source");
@@ -3334,15 +3388,16 @@ void OBSBasic::RenderMain(void *data, uint32_t cx, uint32_t cy)
 	gs_set_viewport(window->previewX, window->previewY, window->previewCX,
 			window->previewCY);
 
-	window->DrawBackdrop(float(ovi.base_width), float(ovi.base_height));
-
 	if (window->IsPreviewProgramMode()) {
+		window->DrawBackdrop(float(ovi.base_width),
+				     float(ovi.base_height));
+
 		OBSScene scene = window->GetCurrentScene();
 		obs_source_t *source = obs_scene_get_source(scene);
 		if (source)
 			obs_source_video_render(source);
 	} else {
-		obs_render_main_texture();
+		obs_render_main_texture_src_color_only();
 	}
 	gs_load_vertexbuffer(nullptr);
 
@@ -3422,6 +3477,8 @@ static inline enum obs_scale_type GetScaleType(ConfigFile &basicConfig)
 		return OBS_SCALE_BILINEAR;
 	else if (astrcmpi(scaleTypeStr, "lanczos") == 0)
 		return OBS_SCALE_LANCZOS;
+	else if (astrcmpi(scaleTypeStr, "area") == 0)
+		return OBS_SCALE_AREA;
 	else
 		return OBS_SCALE_BICUBIC;
 }
@@ -3786,8 +3843,15 @@ void OBSBasic::closeEvent(QCloseEvent *event)
 	SaveProjectNow();
 	auth.reset();
 
+	delete extraBrowsers;
+
 	config_set_string(App()->GlobalConfig(), "BasicWindow", "DockState",
 			  saveState().toBase64().constData());
+
+#ifdef BROWSER_AVAILABLE
+	SaveExtraBrowserDocks();
+	ClearExtraBrowserDocks();
+#endif
 
 	if (api)
 		api->on_event(OBS_FRONTEND_EVENT_EXIT);
@@ -4714,7 +4778,7 @@ static BPtr<char> ReadLogFile(const char *subdir, const char *log)
 	if (GetConfigPath(logDir, sizeof(logDir), subdir) <= 0)
 		return nullptr;
 
-	string path = (char *)logDir;
+	string path = logDir;
 	path += "/";
 	path += log;
 
@@ -4784,7 +4848,7 @@ void OBSBasic::on_actionViewCurrentLog_triggered()
 
 	const char *log = App()->GetCurrentLog();
 
-	string path = (char *)logDir;
+	string path = logDir;
 	path += "/";
 	path += log;
 
@@ -5286,6 +5350,12 @@ void OBSBasic::StartRecording()
 	if (disableOutputsRef)
 		return;
 
+	if (LowDiskSpace()) {
+		DiskSpaceMessage();
+		ui->recordButton->setChecked(false);
+		return;
+	}
+
 	if (api)
 		api->on_event(OBS_FRONTEND_EVENT_RECORDING_STARTING);
 
@@ -5329,6 +5399,9 @@ void OBSBasic::RecordingStart()
 	recordingStopping = false;
 	if (api)
 		api->on_event(OBS_FRONTEND_EVENT_RECORDING_STARTED);
+
+	if (!diskFullTimer->isActive())
+		diskFullTimer->start(1000);
 
 	OnActivate();
 	UpdatePause();
@@ -5394,6 +5467,9 @@ void OBSBasic::RecordingStop(int code, QString last_error)
 	if (api)
 		api->on_event(OBS_FRONTEND_EVENT_RECORDING_STOPPED);
 
+	if (diskFullTimer->isActive())
+		diskFullTimer->stop();
+
 	if (remuxAfterRecord)
 		AutoRemux();
 
@@ -5448,6 +5524,12 @@ void OBSBasic::StartReplayBuffer()
 		return;
 
 	if (!NoSourcesConfirmation()) {
+		replayBufferButton->setChecked(false);
+		return;
+	}
+
+	if (LowDiskSpace()) {
+		DiskSpaceMessage();
 		replayBufferButton->setChecked(false);
 		return;
 	}
@@ -5671,6 +5753,20 @@ void OBSBasic::on_streamButton_clicked()
 void OBSBasic::on_recordButton_clicked()
 {
 	if (outputHandler->RecordingActive()) {
+		bool confirm = config_get_bool(GetGlobalConfig(), "BasicWindow",
+					       "WarnBeforeStoppingRecord");
+
+		if (confirm && isVisible()) {
+			QMessageBox::StandardButton button =
+				OBSMessageBox::question(
+					this, QTStr("ConfirmStopRecord.Title"),
+					QTStr("ConfirmStopRecord.Text"));
+
+			if (button == QMessageBox::No) {
+				ui->recordButton->setChecked(true);
+				return;
+			}
+		}
 		StopRecording();
 	} else {
 		if (!NoSourcesConfirmation()) {
@@ -5759,8 +5855,7 @@ void OBSBasic::on_program_customContextMenuRequested(const QPoint &)
 	popup.exec(QCursor::pos());
 }
 
-void OBSBasic::on_previewDisabledLabel_customContextMenuRequested(
-	const QPoint &pos)
+void OBSBasic::PreviewDisabledMenu(const QPoint &pos)
 {
 	QMenu popup(this);
 	delete previewProjectorMain;
@@ -6219,7 +6314,7 @@ void OBSBasic::EnablePreviewDisplay(bool enable)
 {
 	obs_display_set_enabled(ui->preview->GetDisplay(), enable);
 	ui->preview->setVisible(enable);
-	ui->previewDisabledLabel->setVisible(!enable);
+	ui->previewDisabledWidget->setVisible(!enable);
 }
 
 void OBSBasic::TogglePreview()
@@ -7231,8 +7326,7 @@ void OBSBasic::on_actionShowAbout_triggered()
 
 void OBSBasic::ResizeOutputSizeOfSource()
 {
-	if (ui->streamButton->isChecked() || ui->recordButton->isChecked() ||
-	    (replayBufferButton && replayBufferButton->isChecked()))
+	if (obs_video_active())
 		return;
 
 	QMessageBox resize_output(this);
@@ -7356,7 +7450,11 @@ void OBSBasic::PauseRecording()
 	obs_output_t *output = outputHandler->fileOutput;
 
 	if (obs_output_pause(output, true)) {
+		pause->setAccessibleName(QTStr("Basic.Main.UnpauseRecording"));
+		pause->setToolTip(QTStr("Basic.Main.UnpauseRecording"));
+		pause->blockSignals(true);
 		pause->setChecked(true);
+		pause->blockSignals(false);
 		os_atomic_set_bool(&recording_paused, true);
 
 		if (api)
@@ -7375,7 +7473,11 @@ void OBSBasic::UnpauseRecording()
 	obs_output_t *output = outputHandler->fileOutput;
 
 	if (obs_output_pause(output, false)) {
+		pause->setAccessibleName(QTStr("Basic.Main.PauseRecording"));
+		pause->setToolTip(QTStr("Basic.Main.PauseRecording"));
+		pause->blockSignals(true);
 		pause->setChecked(false);
+		pause->blockSignals(false);
 		os_atomic_set_bool(&recording_paused, false);
 
 		if (api)
@@ -7391,19 +7493,10 @@ void OBSBasic::PauseToggled()
 	obs_output_t *output = outputHandler->fileOutput;
 	bool enable = !obs_output_paused(output);
 
-	if (obs_output_pause(output, enable)) {
-		os_atomic_set_bool(&recording_paused, enable);
-
-		if (api)
-			api->on_event(
-				enable ? OBS_FRONTEND_EVENT_RECORDING_PAUSED
-				       : OBS_FRONTEND_EVENT_RECORDING_UNPAUSED);
-
-		if (enable && os_atomic_load_bool(&replaybuf_active))
-			ShowReplayBufferPauseWarning();
-	} else {
-		pause->setChecked(!enable);
-	}
+	if (enable)
+		PauseRecording();
+	else
+		UnpauseRecording();
 }
 
 void OBSBasic::UpdatePause(bool activate)
@@ -7448,5 +7541,44 @@ void OBSBasic::UpdatePause(bool activate)
 		ui->recordingLayout->addWidget(pause.data());
 	} else {
 		pause.reset();
+	}
+}
+
+#define MBYTE (1024ULL * 1024ULL)
+#define MBYTES_LEFT_STOP_REC 50ULL
+#define MAX_BYTES_LEFT (MBYTES_LEFT_STOP_REC * MBYTE)
+
+void OBSBasic::DiskSpaceMessage()
+{
+	blog(LOG_ERROR, "Recording stopped because of low disk space");
+
+	OBSMessageBox::critical(this, QTStr("Output.RecordNoSpace.Title"),
+				QTStr("Output.RecordNoSpace.Msg"));
+}
+
+bool OBSBasic::LowDiskSpace()
+{
+	const char *mode = config_get_string(Config(), "Output", "Mode");
+	const char *path =
+		strcmp(mode, "Advanced")
+			? config_get_string(Config(), "SimpleOutput",
+					    "FilePath")
+			: config_get_string(Config(), "AdvOut", "RecFilePath");
+
+	uint64_t num_bytes = os_get_free_disk_space(path);
+
+	if (num_bytes < (MAX_BYTES_LEFT))
+		return true;
+	else
+		return false;
+}
+
+void OBSBasic::CheckDiskSpaceRemaining()
+{
+	if (LowDiskSpace()) {
+		StopRecording();
+		StopReplayBuffer();
+
+		DiskSpaceMessage();
 	}
 }

@@ -263,6 +263,27 @@ void SourceTreeItem::mouseDoubleClickEvent(QMouseEvent *event)
 	}
 }
 
+void SourceTreeItem::enterEvent(QEvent *event)
+{
+	QWidget::enterEvent(event);
+
+	OBSBasicPreview *preview = OBSBasicPreview::Get();
+
+	std::lock_guard<std::mutex> lock(preview->selectMutex);
+	preview->hoveredPreviewItems.clear();
+	preview->hoveredPreviewItems.push_back(sceneitem);
+}
+
+void SourceTreeItem::leaveEvent(QEvent *event)
+{
+	QWidget::leaveEvent(event);
+
+	OBSBasicPreview *preview = OBSBasicPreview::Get();
+
+	std::lock_guard<std::mutex> lock(preview->selectMutex);
+	preview->hoveredPreviewItems.clear();
+}
+
 bool SourceTreeItem::IsEditing()
 {
 	return editor != nullptr;
@@ -342,25 +363,13 @@ bool SourceTreeItem::eventFilter(QObject *object, QEvent *event)
 	if (editor != object)
 		return false;
 
-	if (event->type() == QEvent::KeyPress) {
-		QKeyEvent *keyEvent = static_cast<QKeyEvent *>(event);
-
-		switch (keyEvent->key()) {
-		case Qt::Key_Escape:
-			QMetaObject::invokeMethod(this, "ExitEditMode",
-						  Qt::QueuedConnection,
-						  Q_ARG(bool, false));
-			return true;
-		case Qt::Key_Tab:
-		case Qt::Key_Backtab:
-		case Qt::Key_Enter:
-		case Qt::Key_Return:
-			QMetaObject::invokeMethod(this, "ExitEditMode",
-						  Qt::QueuedConnection,
-						  Q_ARG(bool, true));
-			return true;
-		}
-	} else if (event->type() == QEvent::FocusOut) {
+	if (LineEditCanceled(event)) {
+		QMetaObject::invokeMethod(this, "ExitEditMode",
+					  Qt::QueuedConnection,
+					  Q_ARG(bool, false));
+		return true;
+	}
+	if (LineEditChanged(event)) {
 		QMetaObject::invokeMethod(this, "ExitEditMode",
 					  Qt::QueuedConnection,
 					  Q_ARG(bool, true));
@@ -1293,19 +1302,22 @@ void SourceTree::mouseMoveEvent(QMouseEvent *event)
 
 	OBSBasicPreview *preview = OBSBasicPreview::Get();
 
-	if (item)
-		preview->hoveredListItem = item->sceneitem;
-	else
-		preview->hoveredListItem = nullptr;
-
 	QListView::mouseMoveEvent(event);
+
+	std::lock_guard<std::mutex> lock(preview->selectMutex);
+	preview->hoveredPreviewItems.clear();
+	if (item)
+		preview->hoveredPreviewItems.push_back(item->sceneitem);
 }
 
 void SourceTree::leaveEvent(QEvent *event)
 {
 	OBSBasicPreview *preview = OBSBasicPreview::Get();
-	preview->hoveredListItem = nullptr;
+
 	QListView::leaveEvent(event);
+
+	std::lock_guard<std::mutex> lock(preview->selectMutex);
+	preview->hoveredPreviewItems.clear();
 }
 
 void SourceTree::selectionChanged(const QItemSelection &selected,

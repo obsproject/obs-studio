@@ -590,9 +590,11 @@ static int enum_sources(lua_State *script)
 
 /* -------------------------------------------- */
 
-static bool source_enum_filters_proc(obs_source_t *source, obs_source_t *filter,
+static void source_enum_filters_proc(obs_source_t *source, obs_source_t *filter,
 				     void *param)
 {
+	UNUSED_PARAMETER(source);
+
 	lua_State *script = param;
 
 	obs_source_get_ref(filter);
@@ -600,7 +602,6 @@ static bool source_enum_filters_proc(obs_source_t *source, obs_source_t *filter,
 
 	size_t idx = lua_rawlen(script, -2);
 	lua_rawseti(script, -2, (int)idx + 1);
-	return true;
 }
 
 static int source_enum_filters(lua_State *script)

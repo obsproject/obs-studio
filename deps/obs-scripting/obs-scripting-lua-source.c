@@ -641,7 +641,12 @@ static int obs_lua_register_source(lua_State *script)
 	if (!existing) {
 		ls.data = current_lua_script;
 
-		pthread_mutex_init(&ls.definition_mutex, NULL);
+		pthread_mutexattr_t mutexattr;
+		pthread_mutexattr_init(&mutexattr);
+		pthread_mutexattr_settype(&mutexattr, PTHREAD_MUTEX_RECURSIVE);
+		pthread_mutex_init(&ls.definition_mutex, &mutexattr);
+		pthread_mutexattr_destroy(&mutexattr);
+
 		info.type_data = bmemdup(&ls, sizeof(ls));
 		info.free_type_data = obs_lua_source_free_type_data;
 		info.get_name = obs_lua_source_get_name;

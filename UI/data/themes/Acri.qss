@@ -42,7 +42,6 @@ QWidget {
 	outline: none;
 	font-family: "Open Sans", "Tahoma", "Arial", sans-serif;
 	font-size: 12px;
-	overflow: auto;
 }
 
 #menubar {
@@ -651,14 +650,6 @@ QSlider::handle:disabled {
 
 /* Volume Control */
 
-/* Old Meters */
-VolumeMeter {
-	qproperty-bkColor: rgb(8,8,11);
-	qproperty-magColor:;
-	qproperty-peakColor:;
-	qproperty-peakHoldColor: rgb(225,224,225);
-}
-
 VolumeMeter {
 
 	qproperty-backgroundNominalColor: #42740c;
@@ -1001,4 +992,17 @@ VisibilityCheckBox::indicator:unchecked:hover {
 
 * [themeID="revertIcon"] {
     qproperty-icon: url(./Dark/revert.svg);
+}
+
+QPushButton#extraPanelDelete {
+     background: transparent;
+     border: none;
+}
+
+QPushButton#extraPanelDelete:hover {
+     background-color: #2a3a75;
+}
+
+QPushButton#extraPanelDelete:pressed {
+    background-color: #161f41;
 }

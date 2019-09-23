@@ -5,11 +5,11 @@
 #include <obs-module.h>
 
 struct cocoa_window {
-	CGWindowID      window_id;
+	CGWindowID window_id;
 
 	pthread_mutex_t name_lock;
-	NSString        *owner_name;
-	NSString        *window_name;
+	NSString *owner_name;
+	NSString *window_name;
 
 	uint64_t next_search_time;
 };

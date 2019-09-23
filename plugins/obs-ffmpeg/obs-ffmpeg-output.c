@@ -594,7 +594,9 @@ static bool ffmpeg_data_init(struct ffmpeg_data *data,
 	if (!config->url || !*config->url)
 		return false;
 
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58, 9, 100)
 	av_register_all();
+#endif
 	avformat_network_init();
 
 	is_rtmp = (astrcmpi_n(config->url, "rtmp://", 7) == 0);

@@ -542,6 +542,11 @@ void device_leave_context(gs_device_t *device)
 	UNUSED_PARAMETER(device);
 }
 
+void *device_get_device_obj(gs_device_t *device)
+{
+	return device->plat->hrc;
+}
+
 void device_load_swapchain(gs_device_t *device, gs_swapchain_t *swap)
 {
 	HDC hdc = device->plat->window.hdc;

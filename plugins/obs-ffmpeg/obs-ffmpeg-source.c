@@ -155,8 +155,10 @@ static obs_properties_t *ffmpeg_source_getproperties(void *data)
 	obs_properties_add_bool(props, "restart_on_activate",
 				obs_module_text("RestartWhenActivated"));
 
-	obs_properties_add_int_slider(props, "buffering_mb",
-				      obs_module_text("BufferingMB"), 1, 16, 1);
+	prop = obs_properties_add_int_slider(props, "buffering_mb",
+					     obs_module_text("BufferingMB"), 1,
+					     16, 1);
+	obs_property_int_set_suffix(prop, " MB");
 
 	obs_properties_add_text(props, "input", obs_module_text("Input"),
 				OBS_TEXT_DEFAULT);
@@ -180,9 +182,10 @@ static obs_properties_t *ffmpeg_source_getproperties(void *data)
 	obs_property_set_long_description(
 		prop, obs_module_text("CloseFileWhenInactive.ToolTip"));
 
-	obs_properties_add_int_slider(props, "speed_percent",
-				      obs_module_text("SpeedPercentage"), 1,
-				      200, 1);
+	prop = obs_properties_add_int_slider(props, "speed_percent",
+					     obs_module_text("SpeedPercentage"),
+					     1, 200, 1);
+	obs_property_int_set_suffix(prop, "%");
 
 	prop = obs_properties_add_list(props, "color_range",
 				       obs_module_text("ColorRange"),

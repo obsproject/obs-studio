@@ -48,6 +48,12 @@ static inline enum video_format convert_pixel_format(int f)
 		return VIDEO_FORMAT_BGRA;
 	case AV_PIX_FMT_BGR0:
 		return VIDEO_FORMAT_BGRX;
+	case AV_PIX_FMT_YUVA420P:
+		return VIDEO_FORMAT_I40A;
+	case AV_PIX_FMT_YUVA422P:
+		return VIDEO_FORMAT_I42A;
+	case AV_PIX_FMT_YUVA444P:
+		return VIDEO_FORMAT_YUVA;
 	default:;
 	}
 
@@ -722,9 +728,11 @@ bool mp_media_init(mp_media_t *media, const struct mp_media_info *info)
 
 	static bool initialized = false;
 	if (!initialized) {
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58, 9, 100)
 		av_register_all();
-		avdevice_register_all();
 		avcodec_register_all();
+#endif
+		avdevice_register_all();
 		avformat_network_init();
 		initialized = true;
 	}

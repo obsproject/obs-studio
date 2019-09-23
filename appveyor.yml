@@ -4,7 +4,7 @@ image:
 
 environment:
   CURL_VERSION: 7.56.1
-  CEF_VERSION: 3.3440.1805.gbe070f9
+  CEF_VERSION: 75.1.16+g16a67c4+chromium-75.0.3770.100
   APPVEYOR_YML_DISABLE_PS_LINUX: true
   TWITCH-CLIENTID:
     secure: D3vFGk41HZaJWAZu5slwAHZhB868mGI2aIMS03L2rt4=
@@ -43,8 +43,8 @@ test: off
 cache:
   - dependencies2017.zip
   - vlc.zip
-  - 'cef_binary_%CEF_VERSION%_windows32.zip'
-  - 'cef_binary_%CEF_VERSION%_windows64.zip'
+  - 'cef_binary_%CEF_VERSION%_windows32_minimal.zip'
+  - 'cef_binary_%CEF_VERSION%_windows64_minimal.zip'
   - Qt_5.10.1.7z
 
 notifications:
