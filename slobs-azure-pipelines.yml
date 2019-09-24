@@ -1,10 +1,10 @@
 trigger:
   branches:
     include:
-      - streamlabs-24.0.0-rc1
+      - streamlabs-24.0.1
   tags:
     include:
-      - 24.0.0-rc1-streamlabs-v*
+      - 24.0.1-streamlabs-v*
 
 workspace:
   clean: all
