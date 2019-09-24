@@ -323,7 +323,7 @@ static void render_convert_texture(struct obs_core_video *video,
 	if (video->textures[mode].convert_textures[0]) {
 		gs_effect_set_texture(image, texture);
 		gs_effect_set_vec4(color_vec0, &vec0);
-		render_convert_plane(effect, texture,
+		render_convert_plane(effect,
 				     video->textures[mode].convert_textures[0],
 				     video->conversion_techs[0]);
 
@@ -333,7 +333,7 @@ static void render_convert_texture(struct obs_core_video *video,
 			if (!video->textures[mode].convert_textures[2])
 				gs_effect_set_vec4(color_vec2, &vec2);
 			gs_effect_set_float(width_i, video->conversion_width_i);
-			render_convert_plane(effect, texture,
+			render_convert_plane(effect,
 				video->textures[mode].convert_textures[1],
 					     video->conversion_techs[1]);
 
@@ -343,7 +343,7 @@ static void render_convert_texture(struct obs_core_video *video,
 				gs_effect_set_float(width_i,
 						    video->conversion_width_i);
 				render_convert_plane(
-					effect, texture,
+					effect,
 					video->textures[mode]
 						.convert_textures[2],
 					video->conversion_techs[2]);
