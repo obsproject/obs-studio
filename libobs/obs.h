@@ -1603,6 +1603,9 @@ EXPORT void obs_sceneitem_group_enum_items(obs_sceneitem_t *group,
 							    void *),
 					   void *param);
 
+/** Gets the group from its source, or NULL if not a group */
+EXPORT obs_scene_t *obs_group_from_source(const obs_source_t *source);
+
 EXPORT void obs_sceneitem_defer_group_resize_begin(obs_sceneitem_t *item);
 EXPORT void obs_sceneitem_defer_group_resize_end(obs_sceneitem_t *item);
 
