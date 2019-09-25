@@ -824,8 +824,12 @@ static inline bool mp_media_thread(mp_media_t *m)
 					}
 
 				}
-				if ((m->audio.index_eof > 0 && m->audio.index == m->audio.index_eof) &&
-					(m->video.index_eof > 0 && m->video.index == m->video.index_eof)) {
+				bool audio_eof = m->audio.index_eof > 0 &&
+						 m->audio.index == m->audio.index_eof;
+				bool video_eof = m->video.index_eof > 0 &&
+					         m->video.index == m->video.index_eof;
+				if ((audio_eof || !m->has_audio) &&
+				    (video_eof || !m->has_video)) {
 					m->audio.index = 0;
 					m->video.index = 0;
 					m->video.last_processed_ns = 0;
