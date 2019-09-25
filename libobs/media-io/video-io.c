@@ -144,18 +144,18 @@ static inline bool video_output_cur_frame(struct video_output *video)
 	for (size_t i = 0; i < video->inputs.num; i++) {
 		struct video_input *input = video->inputs.array + i;
 		if (!obs_get_multiple_rendering()) {
-			if (scale_video_output(input, &main_frame_info->frame))
-				input->callback(input->param,
-						&main_frame_info->frame,
-						&main_frame_info->frame);
+			struct video_data frame = main_frame_info->frame;
+			if (scale_video_output(input, &frame))
+				input->callback(input->param, &frame, &frame);
 		} else {
-			if (scale_video_output(input,
-					       &streaming_frame_info->frame) &&
-			    scale_video_output(input,
-					       &recording_frame_info->frame)) {
-				input->callback(input->param,
-						&streaming_frame_info->frame,
-						&recording_frame_info->frame);
+			struct video_data stream_frame =
+				streaming_frame_info->frame;
+			struct video_data record_frame =
+				recording_frame_info->frame;
+			if (scale_video_output(input, &stream_frame) &&
+			    scale_video_output(input, &record_frame)) {
+				input->callback(input->param, &stream_frame,
+						&record_frame);
 			}
 		}
 	}
@@ -244,8 +244,8 @@ static inline void init_cache(struct video_output *video)
 	if (video->info.cache_size > MAX_CACHE_SIZE)
 		video->info.cache_size = MAX_CACHE_SIZE;
 
-	for (enum obs_audio_rendering_mode mode = OBS_MAIN_AUDIO_RENDERING;
-	     mode <= OBS_RECORDING_AUDIO_RENDERING; mode++) {
+       for (enum obs_audio_rendering_mode mode = OBS_MAIN_VIDEO_RENDERING;
+	     mode <= OBS_RECORDING_VIDEO_RENDERING; mode++) {
 		for (size_t i = 0; i < video->info.cache_size; i++) {
 			struct video_frame *frame;
 			frame = (struct video_frame *)&video->caches[mode][i];
