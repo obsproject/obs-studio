@@ -147,6 +147,21 @@ if (NOT ZLIB_BIN_FILES)
 		)
 endif()
 
+if (AGS_LIB)
+	GET_FILENAME_COMPONENT(AGS_BIN_PATH ${AGS_LIB} PATH)
+endif()
+file(GLOB AGS_BIN_FILES
+	"${AGS_BIN_PATH}/amd_ags_x*.dll")
+
+if (NOT AGS_BIN_FILES)
+	file(GLOB AGS_BIN_FILES
+		"${AGS_INCLUDE_DIR}/../bin${_bin_suffix}/amd_ags_x*.dll"
+		"${AGS_INCLUDE_DIR}/../bin/amd_ags_x*.dll"
+		"${AGS_INCLUDE_DIR}/bin${_bin_suffix}/amd_ags_x*.dll"
+		"${AGS_INCLUDE_DIR}/bin/amd_ags_x*.dll"
+		)
+endif()
+
 file(GLOB QT_DEBUG_BIN_FILES
 	"${Qt5Core_DIR}/../../../bin/Qt5Cored.dll"
 	"${Qt5Core_DIR}/../../../bin/Qt5Guid.dll"
@@ -192,6 +207,7 @@ set(ALL_BASE_BIN_FILES
 	${LUA_BIN_FILES}
 	${SSL_BIN_FILES}
 	${ZLIB_BIN_FILES}
+	${AGS_BIN_FILES}
 	${LIBFDK_BIN_FILES}
 	${FREETYPE_BIN_FILES}
 	${QT_ICU_BIN_FILES})
@@ -245,6 +261,7 @@ message(STATUS "curl files: ${CURL_BIN_FILES}")
 message(STATUS "lua files: ${LUA_BIN_FILES}")
 message(STATUS "ssl files: ${SSL_BIN_FILES}")
 message(STATUS "zlib files: ${ZLIB_BIN_FILES}")
+message(STATUS "AGS files: ${AGS_BIN_FILES}")
 message(STATUS "QT Debug files: ${QT_DEBUG_BIN_FILES}")
 message(STATUS "QT Debug Platform files: ${QT_DEBUG_PLAT_BIN_FILES}")
 message(STATUS "QT Debug Styles files: ${QT_DEBUG_STYLES_BIN_FILES}")
