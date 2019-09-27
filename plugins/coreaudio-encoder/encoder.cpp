@@ -539,6 +539,11 @@ static void *aac_create(obs_data_t *settings, obs_encoder_t *encoder)
 	AudioStreamBasicDescription out;
 
 	UInt32 rate_control = kAudioCodecBitRateControlMode_Constant;
+	const char *rate_control_name =
+		obs_data_get_string(settings, "rate_control");
+	if (0 == strcmp(rate_control_name, "VBR")) {
+		rate_control = kAudioCodecBitRateControlMode_Variable;
+	}
 
 	if (obs_data_get_bool(settings, "allow he-aac") && ca->channels != 3) {
 		ca->allowed_formats = &aac_formats;
@@ -581,9 +586,16 @@ static void *aac_create(obs_data_t *settings, obs_encoder_t *encoder)
 		ca->converter, kAudioConverterCodecQuality,
 		sizeof(converter_quality), &converter_quality));
 
-	STATUS_CHECK(AudioConverterSetProperty(ca->converter,
-					       kAudioConverterEncodeBitRate,
-					       sizeof(bitrate), &bitrate));
+	if (rate_control == kAudioCodecBitRateControlMode_Variable) {
+		UInt32 quality = 127; // CoreAudio maximum VBR quality
+		STATUS_CHECK(AudioConverterSetProperty(
+			ca->converter, kAudioCodecPropertySoundQualityForVBR,
+			sizeof(quality), &quality));
+	} else {
+		STATUS_CHECK(AudioConverterSetProperty(
+			ca->converter, kAudioConverterEncodeBitRate,
+			sizeof(bitrate), &bitrate));
+	}
 
 	UInt32 size = sizeof(in);
 	STATUS_CHECK(AudioConverterGetProperty(
