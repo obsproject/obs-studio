@@ -360,6 +360,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->advOutEncoder,        COMBO_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advOutUseRescale,     CHECK_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advOutRescale,        CBEDIT_CHANGED, OUTPUTS_CHANGED);
+	HookWidget(ui->advOutAudioRateControl, COMBO_CHANGED, OUTPUTS_CHANGED);
 	HookWidget(ui->advOutTrack1,         CHECK_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advOutTrack2,         CHECK_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advOutTrack3,         CHECK_CHANGED,  OUTPUTS_CHANGED);
@@ -676,6 +677,8 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 		SLOT(SimpleReplayBufferChanged()));
 	connect(ui->advReplayBuf, SIGNAL(toggled(bool)), this,
 		SLOT(AdvReplayBufferChanged()));
+	connect(ui->advOutAudioRateControl, SIGNAL(currentIndexChanged(int)),
+		this, SLOT(SimpleRecordingEncoderChanged()));
 	connect(ui->advOutRecTrack1, SIGNAL(toggled(bool)), this,
 		SLOT(AdvReplayBufferChanged()));
 	connect(ui->advOutRecTrack2, SIGNAL(toggled(bool)), this,
@@ -1579,6 +1582,8 @@ void OBSBasicSettings::LoadAdvOutputStreamingSettings()
 	int trackIndex = config_get_int(main->Config(), "AdvOut", "TrackIndex");
 	bool applyServiceSettings = config_get_bool(main->Config(), "AdvOut",
 						    "ApplyServiceSettings");
+	const char *audioRateControl =
+		config_get_string(main->Config(), "AdvOut", "AudioRateControl");
 
 	ui->advOutApplyService->setChecked(applyServiceSettings);
 	ui->advOutUseRescale->setChecked(rescale);
@@ -1592,6 +1597,8 @@ void OBSBasicSettings::LoadAdvOutputStreamingSettings()
 	specCompleter->setFilterMode(Qt::MatchContains);
 	ui->filenameFormatting->setCompleter(specCompleter);
 	ui->filenameFormatting->setToolTip(QTStr("FilenameFormatting.TT"));
+
+	SetComboByName(ui->advOutAudioRateControl, audioRateControl);
 
 	switch (trackIndex) {
 	case 1:
@@ -3125,6 +3132,7 @@ void OBSBasicSettings::SaveOutputSettings()
 	SaveSpinBox(ui->simpleOutputVBitrate, "SimpleOutput", "VBitrate");
 	SaveComboData(ui->simpleOutStrEncoder, "SimpleOutput", "StreamEncoder");
 	SaveCombo(ui->simpleOutputABitrate, "SimpleOutput", "ABitrate");
+	SaveCombo(ui->advOutAudioRateControl, "AdvOut", "AudioRateControl");
 	SaveEdit(ui->simpleOutputPath, "SimpleOutput", "FilePath");
 	SaveCheckBox(ui->simpleNoSpace, "SimpleOutput", "FileNameWithoutSpace");
 	SaveCombo(ui->simpleOutRecFormat, "SimpleOutput", "RecFormat");

@@ -1068,6 +1068,7 @@ struct AdvancedOutput : BasicOutputHandler {
 	inline void SetupFFmpeg();
 	void SetupOutputs();
 	int GetAudioBitrate(size_t i) const;
+	const char *GetAudioRateControl() const;
 
 	virtual bool StartStreaming(obs_service_t *service) override;
 	virtual bool StartRecording() override;
@@ -1437,6 +1438,8 @@ inline void AdvancedOutput::UpdateAudioSettings()
 	for (size_t i = 0; i < MAX_AUDIO_MIXES; i++) {
 		settings[i] = obs_data_create();
 		obs_data_set_int(settings[i], "bitrate", GetAudioBitrate(i));
+		obs_data_set_string(settings[i], "rate_control",
+				    GetAudioRateControl());
 	}
 
 	for (size_t i = 0; i < MAX_AUDIO_MIXES; i++) {
@@ -1493,6 +1496,11 @@ int AdvancedOutput::GetAudioBitrate(size_t i) const
 	};
 	int bitrate = (int)config_get_uint(main->Config(), "AdvOut", names[i]);
 	return FindClosestAvailableAACBitrate(bitrate);
+}
+
+const char *AdvancedOutput::GetAudioRateControl() const
+{
+	return config_get_string(main->Config(), "AdvOut", "AudioRateControl");
 }
 
 bool AdvancedOutput::StartStreaming(obs_service_t *service)
