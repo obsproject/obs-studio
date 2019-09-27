@@ -7548,6 +7548,29 @@ void OBSBasic::UpdatePause(bool activate)
 #define MBYTES_LEFT_STOP_REC 50ULL
 #define MAX_BYTES_LEFT (MBYTES_LEFT_STOP_REC * MBYTE)
 
+const char *OBSBasic::GetCurrentOutputPath()
+{
+	const char *path = nullptr;
+	const char *mode = config_get_string(Config(), "Output", "Mode");
+
+	if (strcmp(mode, "Advanced") == 0) {
+		const char *advanced_mode =
+			config_get_string(Config(), "AdvOut", "RecType");
+
+		if (strcmp(advanced_mode, "FFmpeg") == 0) {
+			path = config_get_string(Config(), "AdvOut",
+						 "FFFilePath");
+		} else {
+			path = config_get_string(Config(), "AdvOut",
+						 "RecFilePath");
+		}
+	} else {
+		path = config_get_string(Config(), "SimpleOutput", "FilePath");
+	}
+
+	return path;
+}
+
 void OBSBasic::DiskSpaceMessage()
 {
 	blog(LOG_ERROR, "Recording stopped because of low disk space");
@@ -7558,12 +7581,11 @@ void OBSBasic::DiskSpaceMessage()
 
 bool OBSBasic::LowDiskSpace()
 {
-	const char *mode = config_get_string(Config(), "Output", "Mode");
-	const char *path =
-		strcmp(mode, "Advanced")
-			? config_get_string(Config(), "SimpleOutput",
-					    "FilePath")
-			: config_get_string(Config(), "AdvOut", "RecFilePath");
+	const char *path;
+
+	path = GetCurrentOutputPath();
+	if (!path)
+		return false;
 
 	uint64_t num_bytes = os_get_free_disk_space(path);
 
