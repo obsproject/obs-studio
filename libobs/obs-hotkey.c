@@ -644,6 +644,9 @@ static inline void create_binding(obs_hotkey_t *hotkey,
 	binding->key = combo;
 	binding->hotkey_id = hotkey->id;
 	binding->hotkey = hotkey;
+#ifdef _WIN32
+	suppress_global_hotkey(combo);
+#endif
 }
 
 static inline void load_binding(obs_hotkey_t *hotkey, obs_data_t *data)
@@ -988,7 +991,9 @@ static inline void remove_bindings(obs_hotkey_id id)
 	while (find_binding(id, &idx)) {
 		obs_hotkey_binding_t *binding =
 			&obs->hotkeys.bindings.array[idx];
-
+#ifdef _WIN32
+		unsuppress_global_hotkey(binding->key);
+#endif
 		if (binding->pressed)
 			release_pressed_binding(binding);
 

@@ -932,3 +932,34 @@ void uninitialize_com(void)
 {
 	CoUninitialize();
 }
+
+static inline int get_hotkey_id(struct obs_key_combination combo)
+{
+	// docs say hotkey_id must be between 0x0000 and 0xBFFF
+	// virtual key code is between 0x00 and 0xFF
+	// modifiers are max 0x8E == (0x02 | 0x04 | 0x08 | 0x80)
+	return (combo.modifiers << 8) | obs_key_to_virtual_key(combo.key);
+}
+
+bool suppress_global_hotkey(obs_key_combination_t combo)
+{
+	UINT key_modifiers = MOD_NOREPEAT;
+	if (combo.modifiers & INTERACT_SHIFT_KEY)
+		key_modifiers |= MOD_SHIFT;
+	if (combo.modifiers & INTERACT_CONTROL_KEY)
+		key_modifiers |= MOD_CONTROL;
+	if (combo.modifiers & INTERACT_ALT_KEY)
+		key_modifiers |= MOD_ALT;
+	if (combo.modifiers & INTERACT_COMMAND_KEY)
+		key_modifiers |= MOD_WIN;
+
+	BOOL result = RegisterHotKey(NULL, get_hotkey_id(combo), key_modifiers,
+				     obs_key_to_virtual_key(combo.key));
+
+	return !!result;
+}
+
+bool unsuppress_global_hotkey(obs_key_combination_t combo)
+{
+	return UnregisterHotKey(NULL, get_hotkey_id(combo));
+}

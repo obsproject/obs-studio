@@ -311,6 +311,11 @@ EXPORT int obs_key_to_virtual_key(obs_key_t key);
 EXPORT const char *obs_key_to_name(obs_key_t key);
 EXPORT obs_key_t obs_key_from_name(const char *name);
 
+#ifdef _WIN32
+bool suppress_global_hotkey(obs_key_combination_t combo);
+bool unsuppress_global_hotkey(obs_key_combination_t combo);
+#endif
+
 static inline bool obs_key_combination_is_empty(obs_key_combination_t combo)
 {
 	return !combo.modifiers && combo.key == OBS_KEY_NONE;
