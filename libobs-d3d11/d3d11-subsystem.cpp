@@ -734,15 +734,30 @@ static inline void LogAdapterMonitors(IDXGIAdapter1 *adapter)
 		if (FAILED(output->GetDesc(&desc)))
 			continue;
 
-		RECT rect = desc.DesktopCoordinates;
+		unsigned refresh = 0;
+
+		MONITORINFOEX info;
+		info.cbSize = sizeof(info);
+		if (GetMonitorInfo(desc.Monitor, &info)) {
+			DEVMODE mode;
+			mode.dmSize = sizeof(mode);
+			mode.dmDriverExtra = 0;
+			if (EnumDisplaySettings(info.szDevice,
+						ENUM_CURRENT_SETTINGS, &mode)) {
+				refresh = mode.dmDisplayFrequency;
+			}
+		}
+
+		const RECT &rect = desc.DesktopCoordinates;
 		blog(LOG_INFO,
 		     "\t  output %u: "
 		     "pos={%d, %d}, "
 		     "size={%d, %d}, "
-		     "attached=%s",
+		     "attached=%s, "
+		     "refresh=%u",
 		     i, rect.left, rect.top, rect.right - rect.left,
 		     rect.bottom - rect.top,
-		     desc.AttachedToDesktop ? "true" : "false");
+		     desc.AttachedToDesktop ? "true" : "false", refresh);
 	}
 }
 
