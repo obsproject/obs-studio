@@ -208,13 +208,6 @@ static inline void discard_audio(struct obs_core_audio *audio,
 	enum obs_audio_rendering_mode mode =
 		obs_get_multiple_rendering() ? OBS_STREAMING_AUDIO_RENDERING
 					     : OBS_MAIN_AUDIO_RENDERING;
-	enum obs_video_rendering_mode start =
-		obs_get_multiple_rendering() ? OBS_STREAMING_AUDIO_RENDERING
-					     : OBS_MAIN_AUDIO_RENDERING;
-
-	enum obs_video_rendering_mode end =
-		obs_get_multiple_rendering() ? OBS_RECORDING_AUDIO_RENDERING
-					     : OBS_MAIN_AUDIO_RENDERING;
 
 #if DEBUG_AUDIO == 1
 	bool is_audio_source = source->info.output_flags & OBS_SOURCE_AUDIO;
@@ -288,7 +281,8 @@ static inline void discard_audio(struct obs_core_audio *audio,
 		return;
 	}
 
-	for (enum obs_video_rendering_mode mode = start; mode <= end; mode++) {
+	for (enum obs_audio_rendering_mode mode = OBS_MAIN_AUDIO_RENDERING;
+	     mode <= OBS_RECORDING_AUDIO_RENDERING; mode++) {
 		for (size_t ch = 0; ch < channels; ch++)
 			circlebuf_pop_front(&source->audio_input_buf[mode][ch], NULL,
 					    size);
