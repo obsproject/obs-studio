@@ -172,6 +172,8 @@ private:
 	QPointer<OBSAbout> about;
 
 	QPointer<QTimer> cpuUsageTimer;
+	QPointer<QTimer> diskFullTimer;
+
 	os_cpu_usage_info_t *cpuUsageInfo = nullptr;
 
 	OBSService service;
@@ -556,6 +558,8 @@ private slots:
 	void SceneCopyFilters();
 	void ScenePasteFilters();
 
+	void CheckDiskSpaceRemaining();
+
 private:
 	/* OBS Callbacks */
 	static void SceneReordered(void *data, calldata_t *params);
@@ -581,7 +585,11 @@ private:
 	static void HotkeyTriggered(void *data, obs_hotkey_id id, bool pressed);
 
 	void AutoRemux();
+
 	void UpdatePause(bool activate = true);
+
+	bool LowDiskSpace();
+	void DiskSpaceMessage();
 
 public:
 	OBSSource GetProgramSource();
