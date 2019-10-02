@@ -191,11 +191,18 @@ static void *gpu_encode_thread(void *unused)
 						 [OBS_STREAMING_VIDEO_RENDERING]
 							 .gpu_encoder_queue,
 					&new_frame, sizeof(new_frame));
-				circlebuf_push_back(
-					&video->gpu_queues
-						 [OBS_STREAMING_VIDEO_RENDERING]
+
+				if (--new_frame.count)
+					circlebuf_push_back(
+						&video->gpu_queues
+							 [OBS_STREAMING_VIDEO_RENDERING]
+								 .gpu_encoder_queue,
+						&new_frame, sizeof(new_frame));
+				else
+					circlebuf_push_back(
+						&video->gpu_queues[OBS_STREAMING_VIDEO_RENDERING]
 							 .gpu_encoder_avail_queue,
-					&new_frame, sizeof(new_frame));
+						&new_frame, sizeof(new_frame));
 			}
 
 			if (!record_encoded) {
@@ -205,11 +212,18 @@ static void *gpu_encode_thread(void *unused)
 						 [OBS_RECORDING_VIDEO_RENDERING]
 							 .gpu_encoder_queue,
 					&new_frame, sizeof(new_frame));
-				circlebuf_push_back(
-					&video->gpu_queues
-						 [OBS_RECORDING_VIDEO_RENDERING]
+
+				if (--new_frame.count)
+					circlebuf_push_back(
+						&video->gpu_queues
+							 [OBS_RECORDING_VIDEO_RENDERING]
+								 .gpu_encoder_queue,
+						&new_frame, sizeof(new_frame));
+				else
+					circlebuf_push_back(
+						&video->gpu_queues[OBS_RECORDING_VIDEO_RENDERING]
 							 .gpu_encoder_avail_queue,
-					&new_frame, sizeof(new_frame));
+						&new_frame, sizeof(new_frame));
 			}
 		} else {
 			if (--tf.count) {
