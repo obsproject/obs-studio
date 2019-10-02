@@ -72,6 +72,8 @@ static const char *source_signals[] = {
 	"void update_flags(ptr source, int flags)",
 	"void audio_sync(ptr source, int out int offset)",
 	"void audio_mixers(ptr source, in out int mixers)",
+	"void audio_activate(ptr source)",
+	"void audio_deactivate(ptr source)",
 	"void filter_add(ptr source, ptr filter)",
 	"void filter_remove(ptr source, ptr filter)",
 	"void reorder_filters(ptr source)",
@@ -152,6 +154,7 @@ static bool obs_source_init(struct obs_source *source)
 	source->volume = 1.0f;
 	source->sync_offset = 0;
 	source->balance = 0.5f;
+	source->audio_active = true;
 	pthread_mutex_init_value(&source->filter_mutex);
 	pthread_mutex_init_value(&source->async_mutex);
 	pthread_mutex_init_value(&source->audio_mutex);
@@ -304,11 +307,10 @@ static void obs_source_init_audio_hotkeys(struct obs_source *source)
 		obs_source_hotkey_push_to_talk, source);
 }
 
-static obs_source_t *obs_source_create_internal(const char *id,
-						const char *name,
-						obs_data_t *settings,
-						obs_data_t *hotkey_data,
-						bool private)
+static obs_source_t *
+obs_source_create_internal(const char *id, const char *name,
+			   obs_data_t *settings, obs_data_t *hotkey_data,
+			   bool private, uint32_t last_obs_ver)
 {
 	struct obs_source *source = bzalloc(sizeof(struct obs_source));
 
@@ -333,6 +335,7 @@ static obs_source_t *obs_source_create_internal(const char *id,
 	source->mute_unmute_key = OBS_INVALID_HOTKEY_PAIR_ID;
 	source->push_to_mute_key = OBS_INVALID_HOTKEY_ID;
 	source->push_to_talk_key = OBS_INVALID_HOTKEY_ID;
+	source->last_obs_ver = last_obs_ver;
 
 	if (!obs_source_init_context(source, settings, name, hotkey_data,
 				     private))
@@ -385,13 +388,23 @@ obs_source_t *obs_source_create(const char *id, const char *name,
 				obs_data_t *settings, obs_data_t *hotkey_data)
 {
 	return obs_source_create_internal(id, name, settings, hotkey_data,
-					  false);
+					  false, LIBOBS_API_VER);
 }
 
 obs_source_t *obs_source_create_private(const char *id, const char *name,
 					obs_data_t *settings)
 {
-	return obs_source_create_internal(id, name, settings, NULL, true);
+	return obs_source_create_internal(id, name, settings, NULL, true,
+					  LIBOBS_API_VER);
+}
+
+obs_source_t *obs_source_create_set_last_ver(const char *id, const char *name,
+					     obs_data_t *settings,
+					     obs_data_t *hotkey_data,
+					     uint32_t last_obs_ver)
+{
+	return obs_source_create_internal(id, name, settings, hotkey_data,
+					  false, last_obs_ver);
 }
 
 static char *get_new_filter_name(obs_source_t *dst, const char *name)
@@ -1355,7 +1368,6 @@ enum convert_type {
 	CONVERT_422,
 	CONVERT_422_A,
 	CONVERT_422_PACK,
-	CONVERT_422_Y,
 	CONVERT_444,
 	CONVERT_444_A,
 	CONVERT_444_A_PACK,
@@ -1939,6 +1951,28 @@ static void obs_source_draw_async_texture(struct obs_source *source)
 	}
 }
 
+static void recreate_async_texture(obs_source_t *source,
+				   enum gs_color_format format)
+{
+	uint32_t cx = gs_texture_get_width(source->async_textures[0]);
+	uint32_t cy = gs_texture_get_height(source->async_textures[0]);
+	gs_texture_destroy(source->async_textures[0]);
+	source->async_textures[0] =
+		gs_texture_create(cx, cy, format, 1, NULL, GS_DYNAMIC);
+}
+
+static inline void check_to_swap_bgrx_bgra(obs_source_t *source,
+					   struct obs_source_frame *frame)
+{
+	enum gs_color_format format =
+		gs_texture_get_color_format(source->async_textures[0]);
+	if (format == GS_BGRX && frame->format == VIDEO_FORMAT_BGRA) {
+		recreate_async_texture(source, GS_BGRA);
+	} else if (format == GS_BGRA && frame->format == VIDEO_FORMAT_BGRX) {
+		recreate_async_texture(source, GS_BGRX);
+	}
+}
+
 static void obs_source_update_async_video(obs_source_t *source)
 {
 	if (!source->async_rendered) {
@@ -1949,6 +1983,8 @@ static void obs_source_update_async_video(obs_source_t *source)
 
 		source->async_rendered = true;
 		if (frame) {
+			check_to_swap_bgrx_bgra(source, frame);
+
 			if (!source->async_decoupled ||
 			    !source->async_unbuffered) {
 				source->timing_adjust = obs->video.video_time -
@@ -4358,7 +4394,7 @@ static void custom_audio_render(obs_source_t *source, uint32_t mixers,
 	apply_audio_volume(source, mixers, channels, sample_rate);
 }
 
-static void audio_submix(obs_source_t *source, uint32_t mixers, size_t channels,
+static void audio_submix(obs_source_t *source, size_t channels,
 			 size_t sample_rate)
 {
 	struct audio_output_data audio_data;
@@ -4366,14 +4402,12 @@ static void audio_submix(obs_source_t *source, uint32_t mixers, size_t channels,
 	bool success;
 	uint64_t ts;
 
-	for (size_t mix = 0; mix < MAX_AUDIO_MIXES; mix++) {
-		for (size_t ch = 0; ch < channels; ch++) {
-			audio_data.data[ch] = source->audio_mix_buf[ch];
-		}
-
-		memset(source->audio_mix_buf[0], 0,
-		       sizeof(float) * AUDIO_OUTPUT_FRAMES * channels);
+	for (size_t ch = 0; ch < channels; ch++) {
+		audio_data.data[ch] = source->audio_mix_buf[ch];
 	}
+
+	memset(source->audio_mix_buf[0], 0,
+	       sizeof(float) * AUDIO_OUTPUT_FRAMES * channels);
 
 	success = source->info.audio_mix(source->context.data, &ts, &audio_data,
 					 channels, sample_rate);
@@ -4462,7 +4496,7 @@ void obs_source_audio_render(obs_source_t *source, uint32_t mixers,
 	}
 
 	if (source->info.audio_mix) {
-		audio_submix(source, mixers, channels, sample_rate);
+		audio_submix(source, channels, sample_rate);
 	}
 
 	if (!source->audio_ts) {
@@ -4647,4 +4681,34 @@ float obs_source_get_balance_value(const obs_source_t *source)
 	return obs_source_valid(source, "obs_source_get_balance_value")
 		       ? source->balance
 		       : 0.5f;
+}
+
+void obs_source_set_audio_active(obs_source_t *source, bool active)
+{
+	if (!obs_source_valid(source, "obs_source_set_audio_active"))
+		return;
+
+	if (os_atomic_set_bool(&source->audio_active, active) == active)
+		return;
+
+	if (active)
+		obs_source_dosignal(source, "source_audio_activate",
+				    "audio_activate");
+	else
+		obs_source_dosignal(source, "source_audio_deactivate",
+				    "audio_deactivate");
+}
+
+bool obs_source_audio_active(const obs_source_t *source)
+{
+	return obs_source_valid(source, "obs_source_audio_active")
+		       ? os_atomic_load_bool(&source->audio_active)
+		       : false;
+}
+
+uint32_t obs_source_get_last_obs_version(const obs_source_t *source)
+{
+	return obs_source_valid(source, "obs_source_get_last_obs_version")
+		       ? source->last_obs_ver
+		       : 0;
 }

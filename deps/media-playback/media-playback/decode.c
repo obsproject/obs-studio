@@ -25,8 +25,7 @@
 enum AVHWDeviceType hw_priority[] = {
 	AV_HWDEVICE_TYPE_D3D11VA, AV_HWDEVICE_TYPE_DXVA2,
 	AV_HWDEVICE_TYPE_VAAPI,   AV_HWDEVICE_TYPE_VDPAU,
-	AV_HWDEVICE_TYPE_QSV,     AV_HWDEVICE_TYPE_CUDA,
-	AV_HWDEVICE_TYPE_NONE,
+	AV_HWDEVICE_TYPE_QSV,     AV_HWDEVICE_TYPE_NONE,
 };
 
 static bool has_hw_type(AVCodec *c, enum AVHWDeviceType type,
@@ -142,10 +141,17 @@ bool mp_decode_init(mp_media_t *m, enum AVMediaType type, bool hw)
 	id = stream->codec->codec_id;
 #endif
 
-	if (id == AV_CODEC_ID_VP8)
-		d->codec = avcodec_find_decoder_by_name("libvpx");
-	else if (id == AV_CODEC_ID_VP9)
-		d->codec = avcodec_find_decoder_by_name("libvpx-vp9");
+	if (id == AV_CODEC_ID_VP8 || id == AV_CODEC_ID_VP9) {
+		AVDictionaryEntry *tag = NULL;
+		tag = av_dict_get(stream->metadata, "alpha_mode", tag,
+				  AV_DICT_IGNORE_SUFFIX);
+
+		if (tag && strcmp(tag->value, "1") == 0) {
+			char *codec = (id == AV_CODEC_ID_VP8) ? "libvpx"
+							      : "libvpx-vp9";
+			d->codec = avcodec_find_decoder_by_name(codec);
+		}
+	}
 
 	if (!d->codec)
 		d->codec = avcodec_find_decoder(id);
@@ -303,7 +309,7 @@ static int decode_packet(struct mp_decode *d, int *got_frame)
 #endif
 
 #ifdef USE_NEW_HARDWARE_CODEC_METHOD
-	if (*got_frame && ret && d->hw) {
+	if (*got_frame && d->hw) {
 		if (d->hw_frame->format != d->hw_format) {
 			d->frame = d->hw_frame;
 			return ret;

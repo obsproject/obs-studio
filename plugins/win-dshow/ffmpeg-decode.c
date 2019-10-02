@@ -25,8 +25,7 @@
 
 #ifdef USE_NEW_HARDWARE_CODEC_METHOD
 enum AVHWDeviceType hw_priority[] = {
-	AV_HWDEVICE_TYPE_D3D11VA, AV_HWDEVICE_TYPE_DXVA2, AV_HWDEVICE_TYPE_QSV,
-	AV_HWDEVICE_TYPE_CUDA,    AV_HWDEVICE_TYPE_NONE,
+	AV_HWDEVICE_TYPE_NONE,
 };
 
 static bool has_hw_type(AVCodec *c, enum AVHWDeviceType type)
@@ -273,11 +272,11 @@ bool ffmpeg_decode_audio(struct ffmpeg_decode *decode, uint8_t *data,
 
 bool ffmpeg_decode_video(struct ffmpeg_decode *decode, uint8_t *data,
 			 size_t size, long long *ts,
+			 enum video_range_type range,
 			 struct obs_source_frame2 *frame, bool *got_output)
 {
 	AVPacket packet = {0};
 	int got_frame = false;
-	enum video_format new_format;
 	AVFrame *out_frame;
 	int ret;
 
@@ -337,17 +336,17 @@ bool ffmpeg_decode_video(struct ffmpeg_decode *decode, uint8_t *data,
 		frame->linesize[i] = decode->frame->linesize[i];
 	}
 
-	new_format = convert_pixel_format(decode->frame->format);
-	if (new_format != frame->format) {
-		bool success;
+	frame->format = convert_pixel_format(decode->frame->format);
 
-		frame->format = new_format;
-		frame->range = decode->frame->color_range == AVCOL_RANGE_JPEG
-				       ? VIDEO_RANGE_FULL
-				       : VIDEO_RANGE_DEFAULT;
+	if (range == VIDEO_RANGE_DEFAULT) {
+		range = (decode->frame->color_range == AVCOL_RANGE_JPEG)
+				? VIDEO_RANGE_FULL
+				: VIDEO_RANGE_PARTIAL;
+	}
 
-		success = video_format_get_parameters(
-			VIDEO_CS_601, frame->range, frame->color_matrix,
+	if (range != frame->range) {
+		const bool success = video_format_get_parameters(
+			VIDEO_CS_601, range, frame->color_matrix,
 			frame->color_range_min, frame->color_range_max);
 		if (!success) {
 			blog(LOG_ERROR,
@@ -356,6 +355,8 @@ bool ffmpeg_decode_video(struct ffmpeg_decode *decode, uint8_t *data,
 			     VIDEO_CS_601);
 			return false;
 		}
+
+		frame->range = range;
 	}
 
 	*ts = decode->frame->pkt_pts;

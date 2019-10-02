@@ -31,9 +31,8 @@ VertInOut VSDefault(VertData vert_in)
 	return vert_out;
 }
 
-float4 PSDrawAreaRGBA(FragData frag_in) : TARGET
+float4 DrawArea(float2 uv)
 {
-	float2 uv = frag_in.uv;
 	float2 uv_delta = float2(ddx(uv.x), ddy(uv.y));
 
 	// Handle potential OpenGL flip.
@@ -83,7 +82,20 @@ float4 PSDrawAreaRGBA(FragData frag_in) : TARGET
 	return total_color;
 }
 
-float4 PSDrawAreaUpscaleRGBA(FragData frag_in) : TARGET
+float4 PSDrawAreaRGBA(FragData frag_in) : TARGET
+{
+	return DrawArea(frag_in.uv);
+}
+
+float4 PSDrawAreaRGBADivide(FragData frag_in) : TARGET
+{
+	float4 rgba = DrawArea(frag_in.uv);
+	float alpha = rgba.a;
+	float multiplier = (alpha > 0.0) ? (1.0 / alpha) : 0.0;
+	return float4(rgba.rgb * multiplier, alpha);
+}
+
+float4 PSDrawAreaRGBAUpscale(FragData frag_in) : TARGET
 {
 	float2 uv = frag_in.uv;
 	float2 uv_delta = float2(ddx(uv.x), ddy(uv.y));
@@ -121,11 +133,20 @@ technique Draw
 	}
 }
 
+technique DrawAlphaDivide
+{
+	pass
+	{
+		vertex_shader = VSDefault(vert_in);
+		pixel_shader  = PSDrawAreaRGBADivide(frag_in);
+	}
+}
+
 technique DrawUpscale
 {
 	pass
 	{
 		vertex_shader = VSDefault(vert_in);
-		pixel_shader  = PSDrawAreaUpscaleRGBA(frag_in);
+		pixel_shader  = PSDrawAreaRGBAUpscale(frag_in);
 	}
 }

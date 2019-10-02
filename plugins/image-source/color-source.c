@@ -101,12 +101,9 @@ static uint32_t color_source_getheight(void *data)
 
 static void color_source_defaults(obs_data_t *settings)
 {
-	struct obs_video_info ovi;
-	obs_get_video_info(&ovi);
-
 	obs_data_set_default_int(settings, "color", 0xFFFFFFFF);
-	obs_data_set_default_int(settings, "width", ovi.base_width);
-	obs_data_set_default_int(settings, "height", ovi.base_height);
+	obs_data_set_default_int(settings, "width", 400);
+	obs_data_set_default_int(settings, "height", 400);
 }
 
 struct obs_source_info color_source_info = {

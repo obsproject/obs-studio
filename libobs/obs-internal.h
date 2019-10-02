@@ -563,6 +563,7 @@ struct obs_source {
 	/* general exposed flags that can be set for the source */
 	uint32_t flags;
 	uint32_t default_flags;
+	uint32_t last_obs_ver;
 
 	/* indicates ownership of the info.id buffer */
 	bool owns_info_id;
@@ -602,6 +603,7 @@ struct obs_source {
 	bool audio_failed;
 	bool audio_pending;
 	bool pending_stop;
+	bool audio_active;
 	bool user_muted;
 	bool muted;
 	struct obs_source *next_audio_source;
@@ -736,6 +738,11 @@ struct audio_monitor *audio_monitor_create(obs_source_t *source);
 void audio_monitor_reset(struct audio_monitor *monitor);
 extern void audio_monitor_destroy(struct audio_monitor *monitor);
 
+extern obs_source_t *obs_source_create_set_last_ver(const char *id,
+						    const char *name,
+						    obs_data_t *settings,
+						    obs_data_t *hotkey_data,
+						    uint32_t last_obs_ver);
 extern void obs_source_destroy(struct obs_source *source);
 
 enum view_type {

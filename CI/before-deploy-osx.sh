@@ -41,7 +41,15 @@ sudo install_name_tool -change \
 	../../Frameworks/Chromium\ Embedded\ Framework.framework/Chromium\ Embedded\ Framework \
 	OBS.app/Contents/Resources/obs-plugins/obs-browser.so
 sudo install_name_tool -change \
+	@executable_path/../Frameworks/Chromium\ Embedded\ Framework.framework/Chromium\ Embedded\ Framework \
+	../../Frameworks/Chromium\ Embedded\ Framework.framework/Chromium\ Embedded\ Framework \
+	OBS.app/Contents/Resources/obs-plugins/obs-browser.so	
+sudo install_name_tool -change \
 	@rpath/Frameworks/Chromium\ Embedded\ Framework.framework/Chromium\ Embedded\ Framework \
+	../../Frameworks/Chromium\ Embedded\ Framework.framework/Chromium\ Embedded\ Framework \
+	OBS.app/Contents/Resources/obs-plugins/obs-browser-page
+sudo install_name_tool -change \
+	@executable_path/../Frameworks/Chromium\ Embedded\ Framework.framework/Chromium\ Embedded\ Framework \
 	../../Frameworks/Chromium\ Embedded\ Framework.framework/Chromium\ Embedded\ Framework \
 	OBS.app/Contents/Resources/obs-plugins/obs-browser-page
 

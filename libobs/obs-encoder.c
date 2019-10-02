@@ -981,14 +981,11 @@ static inline bool video_pause_check_internal(struct pause_data *pause,
 		return false;
 	}
 
-	if (ts == pause->ts_start) {
-		return true;
-
-	} else if (ts == pause->ts_end) {
+	if (ts == pause->ts_end) {
 		pause->ts_start = 0;
 		pause->ts_end = 0;
-	} else {
 
+	} else if (ts >= pause->ts_start) {
 		return true;
 	}
 
@@ -1187,6 +1184,12 @@ static void unpause_audio(struct pause_data *pause, struct audio_data *data,
 {
 	uint64_t cutoff_frames = pause->ts_end - data->timestamp;
 	cutoff_frames = ns_to_audio_frames(sample_rate, cutoff_frames);
+
+	for (size_t i = 0; i < MAX_AV_PLANES; i++) {
+		if (!data->data[i])
+			break;
+		data->data[i] += cutoff_frames * sizeof(float);
+	}
 
 	data->timestamp = pause->ts_start;
 	data->frames = data->frames - (uint32_t)cutoff_frames;

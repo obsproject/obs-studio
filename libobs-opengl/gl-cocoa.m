@@ -165,6 +165,11 @@ void device_leave_context(gs_device_t *device)
 	[NSOpenGLContext clearCurrentContext];
 }
 
+void *device_get_device_obj(gs_device_t *device)
+{
+	return device->plat->context;
+}
+
 void device_load_swapchain(gs_device_t *device, gs_swapchain_t *swap)
 {
 	if (device->cur_swap == swap)

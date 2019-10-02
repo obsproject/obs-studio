@@ -7,9 +7,9 @@
 #include <qt-wrappers.hpp>
 #include <obs-app.hpp>
 
+#include "window-dock-browser.hpp"
 #include "window-basic-main.hpp"
 #include "remote-text.hpp"
-#include "window-dock.hpp"
 
 #include <json11.hpp>
 
@@ -19,10 +19,6 @@
 #include "obf.h"
 
 using namespace json11;
-
-#include <browser-panel.hpp>
-extern QCef *cef;
-extern QCefCookieManager *panel_cookies;
 
 /* ------------------------------------------------------------------------- */
 
@@ -181,13 +177,6 @@ bool MixerAuth::LoadInternal()
 	return OAuthStreamKey::LoadInternal();
 }
 
-class MixerChat : public OBSDock {
-public:
-	inline MixerChat() : OBSDock() {}
-
-	QScopedPointer<QCefWidget> widget;
-};
-
 void MixerAuth::LoadUI()
 {
 	if (!cef)
@@ -207,7 +196,7 @@ void MixerAuth::LoadUI()
 	QSize size = main->frameSize();
 	QPoint pos = main->pos();
 
-	chat.reset(new MixerChat());
+	chat.reset(new BrowserDock());
 	chat->setObjectName("mixerChat");
 	chat->resize(300, 600);
 	chat->setMinimumSize(200, 300);
@@ -215,7 +204,7 @@ void MixerAuth::LoadUI()
 	chat->setAllowedAreas(Qt::AllDockWidgetAreas);
 
 	QCefWidget *browser = cef->create_widget(nullptr, url, panel_cookies);
-	chat->setWidget(browser);
+	chat->SetWidget(browser);
 
 	main->addDockWidget(Qt::RightDockWidgetArea, chat.data());
 	chatMenu.reset(main->AddDockWidget(chat.data()));
