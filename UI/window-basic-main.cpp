@@ -7471,6 +7471,10 @@ void OBSBasic::PauseRecording()
 		pause->blockSignals(true);
 		pause->setChecked(true);
 		pause->blockSignals(false);
+
+		if (trayIcon)
+			trayIcon->setIcon(QIcon(":/res/images/obs_paused.png"));
+
 		os_atomic_set_bool(&recording_paused, true);
 
 		if (api)
@@ -7494,6 +7498,11 @@ void OBSBasic::UnpauseRecording()
 		pause->blockSignals(true);
 		pause->setChecked(false);
 		pause->blockSignals(false);
+
+		if (trayIcon)
+			trayIcon->setIcon(
+				QIcon(":/res/images/tray_active.png"));
+
 		os_atomic_set_bool(&recording_paused, false);
 
 		if (api)
