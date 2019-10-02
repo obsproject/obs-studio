@@ -1075,7 +1075,8 @@ void obs_key_to_str(obs_key_t key, struct dstr *str)
 		scan_code |= 0x01000000;
 	}
 
-	if (scan_code != 0 && GetKeyNameTextW(scan_code, name, 128) != 0) {
+	if ((key < OBS_KEY_VK_CANCEL || key > OBS_KEY_VK_OEM_CLEAR) &&
+	    scan_code != 0 && GetKeyNameTextW(scan_code, name, 128) != 0) {
 		dstr_from_wcs(str, name);
 	} else if (key != OBS_KEY_NONE) {
 		dstr_copy(str, obs_key_to_name(key));
