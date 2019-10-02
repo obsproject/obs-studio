@@ -724,6 +724,53 @@ bool device_enum_adapters(bool (*callback)(void *param, const char *name,
 	}
 }
 
+static bool GetMonitorTarget(const MONITORINFOEX &info,
+			     DISPLAYCONFIG_TARGET_DEVICE_NAME &target)
+{
+	bool found = false;
+
+	UINT32 numPath, numMode;
+	if (GetDisplayConfigBufferSizes(QDC_ONLY_ACTIVE_PATHS, &numPath,
+					&numMode) == ERROR_SUCCESS) {
+		std::vector<DISPLAYCONFIG_PATH_INFO> paths(numPath);
+		std::vector<DISPLAYCONFIG_MODE_INFO> modes(numMode);
+		if (QueryDisplayConfig(QDC_ONLY_ACTIVE_PATHS, &numPath,
+				       paths.data(), &numMode, modes.data(),
+				       nullptr) == ERROR_SUCCESS) {
+			paths.resize(numPath);
+			for (size_t i = 0; i < numPath; ++i) {
+				const DISPLAYCONFIG_PATH_INFO &path = paths[i];
+
+				DISPLAYCONFIG_SOURCE_DEVICE_NAME
+				source;
+				source.header.type =
+					DISPLAYCONFIG_DEVICE_INFO_GET_SOURCE_NAME;
+				source.header.size = sizeof(source);
+				source.header.adapterId =
+					path.sourceInfo.adapterId;
+				source.header.id = path.sourceInfo.id;
+				if (DisplayConfigGetDeviceInfo(
+					    &source.header) == ERROR_SUCCESS &&
+				    wcscmp(info.szDevice,
+					   source.viewGdiDeviceName) == 0) {
+					target.header.type =
+						DISPLAYCONFIG_DEVICE_INFO_GET_TARGET_NAME;
+					target.header.size = sizeof(target);
+					target.header.adapterId =
+						path.sourceInfo.adapterId;
+					target.header.id = path.targetInfo.id;
+					found = DisplayConfigGetDeviceInfo(
+							&target.header) ==
+						ERROR_SUCCESS;
+					break;
+				}
+			}
+		}
+	}
+
+	return found;
+}
+
 static inline void LogAdapterMonitors(IDXGIAdapter1 *adapter)
 {
 	UINT i;
@@ -736,9 +783,14 @@ static inline void LogAdapterMonitors(IDXGIAdapter1 *adapter)
 
 		unsigned refresh = 0;
 
+		bool target_found = false;
+		DISPLAYCONFIG_TARGET_DEVICE_NAME target;
+
 		MONITORINFOEX info;
 		info.cbSize = sizeof(info);
 		if (GetMonitorInfo(desc.Monitor, &info)) {
+			target_found = GetMonitorTarget(info, target);
+
 			DEVMODE mode;
 			mode.dmSize = sizeof(mode);
 			mode.dmDriverExtra = 0;
@@ -748,16 +800,22 @@ static inline void LogAdapterMonitors(IDXGIAdapter1 *adapter)
 			}
 		}
 
+		if (!target_found) {
+			target.monitorFriendlyDeviceName[0] = 0;
+		}
+
 		const RECT &rect = desc.DesktopCoordinates;
 		blog(LOG_INFO,
 		     "\t  output %u: "
 		     "pos={%d, %d}, "
 		     "size={%d, %d}, "
 		     "attached=%s, "
-		     "refresh=%u",
+		     "refresh=%u, "
+		     "name=%ls",
 		     i, rect.left, rect.top, rect.right - rect.left,
 		     rect.bottom - rect.top,
-		     desc.AttachedToDesktop ? "true" : "false", refresh);
+		     desc.AttachedToDesktop ? "true" : "false", refresh,
+		     target.monitorFriendlyDeviceName);
 	}
 }
 
