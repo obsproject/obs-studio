@@ -546,6 +546,11 @@ extern void device_leave_context(gs_device_t *device)
 	}
 }
 
+extern void *device_get_device_obj(gs_device_t *device)
+{
+	return device->plat->context;
+}
+
 extern void gl_getclientsize(const struct gs_swap_chain *swap,
 			     uint32_t *width, uint32_t *height)
 {
