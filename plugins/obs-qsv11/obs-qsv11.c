@@ -475,15 +475,21 @@ static bool obs_qsv_update(void *data, obs_data_t *settings)
 {
 	struct obs_qsv *obsqsv = data;
 	bool success = update_settings(obsqsv, settings);
-	int ret;
+	int ret = 0;
 
 	if (success) {
 		EnterCriticalSection(&g_QsvCs);
 
-		ret = qsv_encoder_reconfig(obsqsv->context, &obsqsv->params);
-		if (ret != 0)
-			warn("Failed to reconfigure: %d", ret);
+		if (obsqsv->context) {
 
+			ret = qsv_encoder_reconfig(obsqsv->context,
+						   &obsqsv->params);
+
+			if (ret != 0)
+				warn("Failed to reconfigure: %d", ret);
+		} else {
+			warn("Cannot update encoder. QSV ecoder context is epmpty.");
+		}
 		LeaveCriticalSection(&g_QsvCs);
 
 		return ret == 0;

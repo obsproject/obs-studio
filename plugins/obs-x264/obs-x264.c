@@ -589,12 +589,16 @@ static bool obs_x264_update(void *data, obs_data_t *settings)
 {
 	struct obs_x264 *obsx264 = data;
 	bool success = update_settings(obsx264, settings, true);
-	int ret;
+	int ret = 0;
 
 	if (success) {
-		ret = x264_encoder_reconfig(obsx264->context, &obsx264->params);
-		if (ret != 0)
-			warn("Failed to reconfigure: %d", ret);
+		if (obsx264->context) {
+			ret = x264_encoder_reconfig(obsx264->context, &obsx264->params);
+			if (ret != 0)
+				warn("Failed to reconfigure: %d", ret);
+		} else {
+			warn("Cannot update encoder. x264 ecoder context is epmpty.");
+		}
 		return ret == 0;
 	}
 

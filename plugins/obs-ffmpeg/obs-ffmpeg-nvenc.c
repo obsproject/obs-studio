@@ -232,11 +232,14 @@ static bool nvenc_reconfigure(void *data, obs_data_t *settings)
 {
 #if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(58, 19, 101)
 	struct nvenc_encoder *enc = data;
+	if (!enc->context) 
+		return false;
 
 	int bitrate = (int)obs_data_get_int(settings, "bitrate");
 	const char *rc = obs_data_get_string(settings, "rate_control");
 	bool cbr = astrcmpi(rc, "CBR") == 0;
 	bool vbr = astrcmpi(rc, "VBR") == 0;
+
 	if (cbr || vbr) {
 		enc->context->bit_rate = bitrate * 1000;
 		enc->context->rc_max_rate = bitrate * 1000;
