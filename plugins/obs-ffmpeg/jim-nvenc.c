@@ -449,6 +449,8 @@ static bool init_encoder(struct nvenc_data *enc, obs_data_t *settings)
 	if (lookahead && nv_get_cap(enc, NV_ENC_CAPS_SUPPORT_LOOKAHEAD)) {
 		config->rcParams.lookaheadDepth = 8;
 		config->rcParams.enableLookahead = 1;
+	} else {
+		lookahead = false;
 	}
 
 	/* psycho aq */
@@ -461,7 +463,8 @@ static bool init_encoder(struct nvenc_data *enc, obs_data_t *settings)
 	/* rate control               */
 
 	enc->can_change_bitrate =
-		nv_get_cap(enc, NV_ENC_CAPS_SUPPORT_DYN_BITRATE_CHANGE);
+		nv_get_cap(enc, NV_ENC_CAPS_SUPPORT_DYN_BITRATE_CHANGE) &&
+		!lookahead;
 
 	config->rcParams.rateControlMode = twopass ? NV_ENC_PARAMS_RC_VBR_HQ
 						   : NV_ENC_PARAMS_RC_VBR;
