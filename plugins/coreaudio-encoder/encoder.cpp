@@ -1257,6 +1257,9 @@ static vector<UInt32> get_bitrates(DStr &log, ca_encoder *ca,
 
 		handle_bitrate(max_);
 	};
+	
+	if (channels == 0) 
+		return bitrates;
 
 	for (UInt32 format_id : (ca ? *ca->allowed_formats : aac_formats)) {
 		log_to_dstr(log, ca, "Trying %s (0x%x) at %g" NBSP "hz\n",
