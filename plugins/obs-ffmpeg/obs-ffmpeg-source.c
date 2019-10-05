@@ -318,16 +318,12 @@ static void ffmpeg_source_update(void *data, obs_data_t *settings)
 		s->is_looping = obs_data_get_bool(settings, "looping");
 		s->close_when_inactive =
 			obs_data_get_bool(settings, "close_when_inactive");
-
-		obs_source_set_async_unbuffered(s->source, true);
 	} else {
 		input = (char *)obs_data_get_string(settings, "input");
 		input_format =
 			(char *)obs_data_get_string(settings, "input_format");
 		s->is_looping = false;
 		s->close_when_inactive = true;
-
-		obs_source_set_async_unbuffered(s->source, false);
 	}
 
 	s->input = input ? bstrdup(input) : NULL;
