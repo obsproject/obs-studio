@@ -781,6 +781,25 @@ static inline void LogD3DAdapters()
 		blog(LOG_INFO, "\t  Shared VRAM:    %u",
 		     desc.SharedSystemMemory);
 
+		/* driver version */
+		LARGE_INTEGER umd;
+		hr = adapter->CheckInterfaceSupport(__uuidof(IDXGIDevice),
+						    &umd);
+		if (SUCCEEDED(hr)) {
+			const uint64_t version = umd.QuadPart;
+			const uint16_t aa = (version >> 48) & 0xffff;
+			const uint16_t bb = (version >> 32) & 0xffff;
+			const uint16_t ccccc = (version >> 16) & 0xffff;
+			const uint16_t ddddd = version & 0xffff;
+			blog(LOG_INFO,
+			     "\t  Driver Version: %" PRIu16 ".%" PRIu16
+			     ".%" PRIu16 ".%" PRIu16,
+			     aa, bb, ccccc, ddddd);
+		} else {
+			blog(LOG_INFO, "\t  Driver Version: Unknown (0x%X)",
+			     (unsigned)hr);
+		}
+
 		LogAdapterMonitors(adapter);
 	}
 }
