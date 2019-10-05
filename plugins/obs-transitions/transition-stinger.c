@@ -225,7 +225,8 @@ static void stinger_transition_start(void *data)
 
 		proc_handler_call(ph, "get_duration", &cd);
 		proc_handler_call(ph, "get_nb_frames", &cd);
-		s->duration_ns = (uint64_t)calldata_int(&cd, "duration");
+		s->duration_ns =
+			(uint64_t)calldata_int(&cd, "duration") + 500000000ULL;
 		s->duration_frames = (uint64_t)calldata_int(&cd, "num_frames");
 
 		if (s->transition_point_is_frame)
