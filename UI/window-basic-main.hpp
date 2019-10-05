@@ -155,7 +155,7 @@ private:
 	bool previewEnabled = true;
 	bool fullscreenInterface = false;
 
-	const char *copyString;
+	std::list<const char *> copyStrings;
 	const char *copyFiltersString = nullptr;
 	bool copyVisible = true;
 
@@ -329,6 +329,8 @@ private:
 	void SaveProjectNow();
 
 	int GetTopSelectedSourceItem();
+
+	QModelIndexList GetAllSelectedSourceItems();
 
 	obs_hotkey_pair_id streamingHotkeys, recordingHotkeys, pauseHotkeys,
 		replayBufHotkeys, togglePreviewHotkeys;
