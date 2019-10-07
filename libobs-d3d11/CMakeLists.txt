@@ -4,6 +4,20 @@ include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/libobs")
 
 add_definitions(-DLIBOBS_EXPORTS)
 
+if(NOT DEFINED GPU_PRIORITY_VAL OR "${GPU_PRIORITY_VAL}" STREQUAL "" OR
+   "${GPU_PRIORITY_VAL}" STREQUAL "0")
+	set(USE_GPU_PRIORITY FALSE)
+	set(GPU_PRIORITY_VAL "0")
+else()
+	set(USE_GPU_PRIORITY TRUE)
+endif()
+
+configure_file(
+	"${CMAKE_CURRENT_SOURCE_DIR}/d3d11-config.h.in"
+	"${CMAKE_CURRENT_BINARY_DIR}/d3d11-config.h")
+
+include_directories(${CMAKE_CURRENT_BINARY_DIR})
+
 set(libobs-d3d11_SOURCES
 	d3d11-indexbuffer.cpp
 	d3d11-samplerstate.cpp
@@ -18,6 +32,7 @@ set(libobs-d3d11_SOURCES
 	d3d11-zstencilbuffer.cpp)
 
 set(libobs-d3d11_HEADERS
+	${CMAKE_CURRENT_BINARY_DIR}/d3d11-config.h
 	d3d11-shaderprocessor.hpp
 	d3d11-subsystem.hpp)
 

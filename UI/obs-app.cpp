@@ -1911,6 +1911,18 @@ static void load_debug_privilege(void)
 				      NULL);
 	}
 
+	if (!!LookupPrivilegeValue(NULL, SE_INC_BASE_PRIORITY_NAME, &val)) {
+		tp.PrivilegeCount = 1;
+		tp.Privileges[0].Luid = val;
+		tp.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
+
+		if (!AdjustTokenPrivileges(token, false, &tp, sizeof(tp), NULL,
+					   NULL)) {
+			blog(LOG_INFO, "Could not set privilege to "
+				       "increase GPU priority");
+		}
+	}
+
 	CloseHandle(token);
 }
 #endif
