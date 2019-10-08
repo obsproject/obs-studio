@@ -35,6 +35,9 @@ TwitchAuth::TwitchAuth(const Def &d) : OAuthStreamKey(d)
 	if (!cef)
 		return;
 
+	cef->add_popup_whitelist_url(
+		"https://twitch.tv/popout/frankerfacez/chat?ffz-settings",
+		this);
 	uiLoadTimer.setSingleShot(true);
 	uiLoadTimer.setInterval(500);
 	connect(&uiLoadTimer, &QTimer::timeout, this,
@@ -155,6 +158,11 @@ bool TwitchAuth::LoadInternal()
 	return OAuthStreamKey::LoadInternal();
 }
 
+static const char *ffz_script = "\
+var ffz = document.createElement('script');\
+ffz.setAttribute('src','https://cdn.frankerfacez.com/script/script.min.js');\
+document.head.appendChild(ffz);";
+
 static const char *bttv_script = "\
 localStorage.setItem('bttv_clickTwitchEmotes', true);\
 localStorage.setItem('bttv_darkenedMode', true);\
@@ -209,6 +217,7 @@ void TwitchAuth::LoadUI()
 	cef->add_force_popup_url(moderation_tools_url, chat.data());
 
 	script = bttv_script;
+	script += ffz_script;
 	browser->setStartupScript(script);
 
 	main->addDockWidget(Qt::RightDockWidgetArea, chat.data());
@@ -252,6 +261,7 @@ void TwitchAuth::LoadSecondaryUIPanes()
 	script += "/dashboard/live";
 	script += referrer_script2;
 	script += bttv_script;
+	script += ffz_script;
 
 	/* ----------------------------------- */
 
