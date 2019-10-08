@@ -214,16 +214,19 @@ void mp_decode_free(struct mp_decode *d)
 	mp_decode_clear_packets(d);
 	circlebuf_free(&d->packets);
 
-	if (d->hw_frame) {
-		av_frame_unref(d->hw_frame);
-		av_free(d->hw_frame);
-	}
-	if (d->decoder) {
+	if (d->decoder &&
+		((d->hw && d->hw_frame->data[0]) || !d->hw)) {
 #if LIBAVFORMAT_VERSION_INT >= AV_VERSION_INT(57, 40, 101)
 		avcodec_free_context(&d->decoder);
 #else
 		avcodec_close(d->decoder);
 #endif
+	} else {
+		blog(LOG_INFO, "Skip releasing memory");
+	}
+	if (d->hw_frame) {
+		av_frame_unref(d->hw_frame);
+		av_free(d->hw_frame);
 	}
 	if (d->sw_frame) {
 		av_frame_unref(d->sw_frame);
