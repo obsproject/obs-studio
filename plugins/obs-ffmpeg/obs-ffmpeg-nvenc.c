@@ -90,6 +90,14 @@ static bool nvenc_init_codec(struct nvenc_encoder *enc)
 
 	ret = avcodec_open2(enc->context, enc->nvenc, NULL);
 	if (ret < 0) {
+		struct dstr error_message = {0};
+		dstr_printf(
+			&error_message,
+			"Failed to open NVENC codec: %s"
+			"\r\n\r\nPlease check your video drivers are up to date.",
+			av_err2str(ret));
+		obs_encoder_set_last_error(enc->encoder, error_message.array);
+		dstr_free(&error_message);
 		warn("Failed to open NVENC codec: %s", av_err2str(ret));
 		return false;
 	}
@@ -296,6 +304,8 @@ static void *nvenc_create(obs_data_t *settings, obs_encoder_t *encoder)
 	blog(LOG_INFO, "---------------------------------");
 
 	if (!enc->nvenc) {
+		obs_encoder_set_last_error(encoder,
+					   "Couldn't find NVENC encoder");
 		warn("Couldn't find encoder");
 		goto fail;
 	}

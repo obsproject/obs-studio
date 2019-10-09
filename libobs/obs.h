@@ -2104,7 +2104,7 @@ EXPORT bool obs_encoder_paused(const obs_encoder_t *output);
 
 EXPORT const char *obs_encoder_get_last_error(obs_encoder_t *encoder);
 EXPORT void obs_encoder_set_last_error(obs_encoder_t *encoder,
-				      const char *message);
+				       const char *message);
 
 /* ------------------------------------------------------------------------- */
 /* Stream Services */
