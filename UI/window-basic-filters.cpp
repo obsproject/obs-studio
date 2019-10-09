@@ -103,6 +103,11 @@ OBSBasicFilters::OBSBasicFilters(QWidget *parent, OBSSource source_)
 	connect(ui->buttonBox->button(QDialogButtonBox::RestoreDefaults),
 		SIGNAL(clicked()), this, SLOT(ResetFilters()));
 
+	connect(ui->asyncFilters->model(), &QAbstractItemModel::rowsMoved, this,
+		&OBSBasicFilters::FiltersMoved);
+	connect(ui->effectFilters->model(), &QAbstractItemModel::rowsMoved,
+		this, &OBSBasicFilters::FiltersMoved);
+
 	uint32_t caps = obs_source_get_output_flags(source);
 	bool audio = (caps & OBS_SOURCE_AUDIO) != 0;
 	bool audioOnly = (caps & OBS_SOURCE_VIDEO) == 0;
@@ -1275,4 +1280,29 @@ void OBSBasicFilters::delete_filter(OBSSource filter)
 		QTStr("Undo.Delete").arg(obs_source_get_name(filter)), undo,
 		redo, undo_data, redo_data, false);
 	obs_source_filter_remove(source, filter);
+}
+
+void OBSBasicFilters::FiltersMoved(const QModelIndex &, int srcIdxStart, int,
+				   const QModelIndex &, int)
+{
+	QListWidget *list = isAsync ? ui->asyncFilters : ui->effectFilters;
+	int neighborIdx = 0;
+
+	if (srcIdxStart < list->currentRow())
+		neighborIdx = list->currentRow() - 1;
+	else if (srcIdxStart > list->currentRow())
+		neighborIdx = list->currentRow() + 1;
+	else
+		return;
+
+	if (neighborIdx > list->count() - 1)
+		neighborIdx = list->count() - 1;
+	else if (neighborIdx < 0)
+		neighborIdx = 0;
+
+	OBSSource neighbor = GetFilter(neighborIdx, isAsync);
+	size_t idx = obs_source_filter_get_index(source, neighbor);
+
+	OBSSource filter = GetFilter(list->currentRow(), isAsync);
+	obs_source_filter_set_index(source, filter, idx);
 }
