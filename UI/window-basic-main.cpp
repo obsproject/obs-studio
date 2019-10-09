@@ -4561,12 +4561,8 @@ void OBSBasic::on_scenes_itemDoubleClicked(QListWidgetItem *witem)
 			config_get_bool(App()->GlobalConfig(), "BasicWindow",
 					"TransitionOnDoubleClick");
 
-		if (doubleClickSwitch) {
-			OBSScene scene = GetCurrentScene();
-
-			if (scene)
-				SetCurrentScene(scene, false, true);
-		}
+		if (doubleClickSwitch)
+			TransitionClicked();
 	}
 }
 

@@ -131,7 +131,7 @@ void OBSBasic::TriggerQuickTransition(int id)
 			overridingTransition = true;
 		}
 
-		TransitionToScene(source, false, false, true, qt->duration,
+		TransitionToScene(source, false, true, qt->duration,
 				  qt->fadeToBlack);
 	}
 }
@@ -255,10 +255,10 @@ obs_source_t *OBSBasic::FindTransition(const char *name)
 	return nullptr;
 }
 
-void OBSBasic::TransitionToScene(OBSScene scene, bool force, bool direct)
+void OBSBasic::TransitionToScene(OBSScene scene, bool force)
 {
 	obs_source_t *source = obs_scene_get_source(scene);
-	TransitionToScene(source, force, direct);
+	TransitionToScene(source, force);
 }
 
 void OBSBasic::TransitionStopped()
@@ -304,7 +304,7 @@ void OBSBasic::TransitionFullyStopped()
 	}
 }
 
-void OBSBasic::TransitionToScene(OBSSource source, bool force, bool direct,
+void OBSBasic::TransitionToScene(OBSSource source, bool force,
 				 bool quickTransition, int quickDuration,
 				 bool black)
 {
@@ -319,7 +319,7 @@ void OBSBasic::TransitionToScene(OBSSource source, bool force, bool direct,
 		lastProgramScene = programScene;
 		programScene = OBSGetWeakRef(source);
 
-		if (swapScenesMode && !force && !direct && !black) {
+		if (swapScenesMode && !force && !black) {
 			OBSSource newScene = OBSGetStrongRef(lastProgramScene);
 
 			if (!sceneDuplicationMode && newScene == source)
@@ -676,10 +676,10 @@ int OBSBasic::GetQuickTransitionIdx(int id)
 	return -1;
 }
 
-void OBSBasic::SetCurrentScene(obs_scene_t *scene, bool force, bool direct)
+void OBSBasic::SetCurrentScene(obs_scene_t *scene, bool force)
 {
 	obs_source_t *source = obs_scene_get_source(scene);
-	SetCurrentScene(source, force, direct);
+	SetCurrentScene(source, force);
 }
 
 template<typename T> static T GetOBSRef(QListWidgetItem *item)
@@ -687,14 +687,10 @@ template<typename T> static T GetOBSRef(QListWidgetItem *item)
 	return item->data(static_cast<int>(QtDataRole::OBSRef)).value<T>();
 }
 
-void OBSBasic::SetCurrentScene(OBSSource scene, bool force, bool direct)
+void OBSBasic::SetCurrentScene(OBSSource scene, bool force)
 {
-	if (!IsPreviewProgramMode() && !direct) {
-		TransitionToScene(scene, force, false);
-
-	} else if (IsPreviewProgramMode() && direct) {
-		TransitionToScene(scene, force, true);
-
+	if (!IsPreviewProgramMode()) {
+		TransitionToScene(scene, force);
 	} else {
 		OBSSource actualLastScene = OBSGetStrongRef(lastScene);
 		if (actualLastScene != scene) {
