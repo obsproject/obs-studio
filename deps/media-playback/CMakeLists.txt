@@ -28,6 +28,9 @@ if(CMAKE_SYSTEM_PROCESSOR MATCHES "^(powerpc|ppc)64le")
 			PUBLIC
 			-mvsx)
 	add_compile_definitions(NO_WARN_X86_INTRINSICS)
+elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64")
+	target_compile_options(media-playback
+			PUBLIC)
 elseif(NOT MSVC)
 	target_compile_options(media-playback
 		PUBLIC
