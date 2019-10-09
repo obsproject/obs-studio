@@ -1076,6 +1076,7 @@ struct obs_encoder {
 	struct pause_data pause;
 
 	const char *profile_encoder_encode_name;
+	char *last_error_message;
 };
 
 extern struct obs_encoder_info *find_encoder(const char *id);

@@ -276,6 +276,8 @@ static void obs_encoder_actually_destroy(obs_encoder_t *encoder)
 		obs_context_data_free(&encoder->context);
 		if (encoder->owns_info_id)
 			bfree((void *)encoder->info.id);
+		if (encoder->last_error_message)
+			bfree(encoder->last_error_message);
 		bfree(encoder);
 	}
 }
@@ -1483,4 +1485,26 @@ bool obs_encoder_paused(const obs_encoder_t *encoder)
 	return obs_encoder_valid(encoder, "obs_encoder_paused")
 		       ? os_atomic_load_bool(&encoder->paused)
 		       : false;
+}
+
+const char *obs_encoder_get_last_error(obs_encoder_t *encoder)
+{
+	if (!obs_encoder_valid(encoder, "obs_encoder_get_last_error"))
+		return NULL;
+
+	return encoder->last_error_message;
+}
+
+void obs_encoder_set_last_error(obs_encoder_t *encoder, const char *message)
+{
+	if (!obs_encoder_valid(encoder, "obs_encoder_set_last_error"))
+		return;
+
+	if (encoder->last_error_message)
+		bfree(encoder->last_error_message);
+
+	if (message)
+		encoder->last_error_message = bstrdup(message);
+	else
+		encoder->last_error_message = NULL;
 }

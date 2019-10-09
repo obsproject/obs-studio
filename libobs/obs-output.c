@@ -1979,6 +1979,9 @@ static inline bool initialize_audio_encoders(obs_output_t *output,
 {
 	for (size_t i = 0; i < num_mixes; i++) {
 		if (!obs_encoder_initialize(output->audio_encoders[i])) {
+			obs_output_set_last_error(
+				output, obs_encoder_get_last_error(
+						output->audio_encoders[i]));
 			return false;
 		}
 	}
@@ -2038,8 +2041,12 @@ bool obs_output_initialize_encoders(obs_output_t *output, uint32_t flags)
 
 	if (!encoded)
 		return false;
-	if (has_video && !obs_encoder_initialize(output->video_encoder))
+	if (has_video && !obs_encoder_initialize(output->video_encoder)) {
+		obs_output_set_last_error(
+			output,
+			obs_encoder_get_last_error(output->video_encoder));
 		return false;
+	}
 	if (has_audio && !initialize_audio_encoders(output, num_mixes))
 		return false;
 
