@@ -151,8 +151,8 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>630</width>
-              <height>1035</height>
+              <width>803</width>
+              <height>977</height>
              </rect>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_19">
@@ -1012,18 +1012,18 @@
                  </widget>
                 </item>
                 <item>
-                <widget class="UrlPushButton" name="getStreamKeyButton">
-                 <property name="toolTip">
-                  <string/>
-                 </property>
-                 <property name="toolTipDuration">
-                  <number>-4</number>
-                 </property>
-                 <property name="text">
-                  <string>Basic.AutoConfig.StreamPage.GetStreamKey</string>
-                 </property>
-                </widget>
-               </item>
+                 <widget class="UrlPushButton" name="getStreamKeyButton">
+                  <property name="toolTip">
+                   <string/>
+                  </property>
+                  <property name="toolTipDuration">
+                   <number>-4</number>
+                  </property>
+                  <property name="text">
+                   <string>Basic.AutoConfig.StreamPage.GetStreamKey</string>
+                  </property>
+                 </widget>
+                </item>
                </layout>
               </widget>
              </item>
@@ -1102,7 +1102,7 @@
                </property>
               </widget>
              </item>
-             <item row="7" column="0">
+             <item row="8" column="0">
               <widget class="QLabel" name="authUsernameLabel">
                <property name="text">
                 <string>Basic.Settings.Stream.Custom.Username</string>
@@ -1112,10 +1112,10 @@
                </property>
               </widget>
              </item>
-             <item row="7" column="1">
+             <item row="8" column="1">
               <widget class="QLineEdit" name="authUsername"/>
              </item>
-             <item row="8" column="0">
+             <item row="9" column="0">
               <widget class="QLabel" name="authPwLabel">
                <property name="text">
                 <string>Basic.Settings.Stream.Custom.Password</string>
@@ -1125,7 +1125,7 @@
                </property>
               </widget>
              </item>
-             <item row="8" column="1">
+             <item row="9" column="1">
               <widget class="QWidget" name="authPwWidget" native="true">
                <layout class="QHBoxLayout" name="horizontalLayout_25">
                 <property name="leftMargin">
@@ -1155,6 +1155,19 @@
                  </widget>
                 </item>
                </layout>
+              </widget>
+             </item>
+             <item row="7" column="1">
+              <widget class="QComboBox" name="twitchAddonDropdown"/>
+             </item>
+             <item row="7" column="0">
+              <widget class="QLabel" name="twitchAddonLabel">
+               <property name="text">
+                <string>Basic.Settings.Stream.TTVAddon</string>
+               </property>
+               <property name="buddy">
+                <cstring>twitchAddonDropdown</cstring>
+               </property>
               </widget>
              </item>
             </layout>
@@ -1193,8 +1206,8 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>739</width>
-              <height>793</height>
+              <width>601</width>
+              <height>631</height>
              </rect>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_21">
@@ -2268,7 +2281,7 @@
                               <property name="currentIndex">
                                <number>0</number>
                               </property>
-                              <widget class="QWidget" name="recTracks" native="true">
+                              <widget class="QWidget" name="recTracks">
                                <layout class="QHBoxLayout" name="horizontalLayout_9">
                                 <property name="leftMargin">
                                  <number>0</number>
@@ -3702,8 +3715,8 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>696</width>
-              <height>601</height>
+              <width>555</width>
+              <height>469</height>
              </rect>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_50">
@@ -4518,8 +4531,8 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>759</width>
-              <height>930</height>
+              <width>803</width>
+              <height>781</height>
              </rect>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_23">
