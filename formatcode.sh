@@ -27,5 +27,5 @@ else
     CLANG_FORMAT=clang-format
 fi
 
-find . -type d \( -path ./deps -o -path ./cmake -o -path ./plugins/decklink/win -o -path ./plugins/decklink/mac -o -path ./plugins/decklink/linux \) -prune -type f -o -name '*.h' -or -name '*.hpp' -or -name '*.m' -or -name '*.mm' -or -name '*.c' -or -name '*.cpp' \
+find . -type d \( -path ./deps -o -path ./cmake -o -path ./plugins/decklink/win -o -path ./plugins/decklink/mac -o -path ./plugins/decklink/linux -o -path ./build \) -prune -type f -o -name '*.h' -or -name '*.hpp' -or -name '*.m' -or -name '*.mm' -or -name '*.c' -or -name '*.cpp' \
 | xargs -I{} -P ${NPROC} ${CLANG_FORMAT} -i -style=file  -fallback-style=none {}
