@@ -10,6 +10,14 @@
 	EXTERN_C const GUID DECLSPEC_SELECTANY name = {                       \
 		l, w1, w2, {b1, b2, b3, b4, b5, b6, b7, b8}}
 
+#define do_log(level, format, ...)                      \
+	blog(level, "[audio monitoring: '%s'] " format, \
+	     obs_source_get_name(monitor->source), ##__VA_ARGS__)
+
+#define warn(format, ...) do_log(LOG_WARNING, format, ##__VA_ARGS__)
+#define info(format, ...) do_log(LOG_INFO, format, ##__VA_ARGS__)
+#define debug(format, ...) do_log(LOG_DEBUG, format, ##__VA_ARGS__)
+
 ACTUALLY_DEFINE_GUID(CLSID_MMDeviceEnumerator, 0xBCDE0395, 0xE52F, 0x467C, 0x8E,
 		     0x3D, 0xC4, 0x57, 0x92, 0x91, 0x69, 0x2E);
 ACTUALLY_DEFINE_GUID(IID_IMMDeviceEnumerator, 0xA95664D2, 0x9614, 0x4F35, 0xA7,
@@ -261,6 +269,7 @@ static void audio_monitor_start_device(struct audio_monitor *monitor)
 
 	const char *id = obs->audio.monitoring_device_id;
 	if (!id) {
+		warn("%s: No device ID set", __FUNCTION__);
 		goto fail;
 	}
 
@@ -270,6 +279,8 @@ static void audio_monitor_start_device(struct audio_monitor *monitor)
 	hr = CoCreateInstance(&CLSID_MMDeviceEnumerator, NULL, CLSCTX_ALL,
 			      &IID_IMMDeviceEnumerator, (void **)&immde);
 	if (FAILED(hr)) {
+		warn("%s: Failed to create IMMDeviceEnumerator: %08lX",
+		     __FUNCTION__, hr);
 		goto fail;
 	}
 
@@ -284,6 +295,7 @@ static void audio_monitor_start_device(struct audio_monitor *monitor)
 	}
 
 	if (FAILED(hr)) {
+		warn("%s: Failed to get device: %08lX", __FUNCTION__, hr);
 		goto fail;
 	}
 
@@ -294,11 +306,13 @@ static void audio_monitor_start_device(struct audio_monitor *monitor)
 					       &IID_IAudioClient, CLSCTX_ALL,
 					       NULL, (void **)&monitor->client);
 	if (FAILED(hr)) {
+		warn("%s: Failed to activate device: %08lX", __FUNCTION__, hr);
 		goto fail;
 	}
 
 	hr = monitor->client->lpVtbl->GetMixFormat(monitor->client, &wfex);
 	if (FAILED(hr)) {
+		warn("%s: Failed to get mix format: %08lX", __FUNCTION__, hr);
 		goto fail;
 	}
 
@@ -306,6 +320,7 @@ static void audio_monitor_start_device(struct audio_monitor *monitor)
 						 AUDCLNT_SHAREMODE_SHARED, 0,
 						 10000000, 0, wfex, NULL);
 	if (FAILED(hr)) {
+		warn("%s: Failed to initialize: %08lX", __FUNCTION__, hr);
 		goto fail;
 	}
 
@@ -339,6 +354,7 @@ static void audio_monitor_start_device(struct audio_monitor *monitor)
 
 	hr = monitor->client->lpVtbl->GetBufferSize(monitor->client, &frames);
 	if (FAILED(hr)) {
+		warn("%s: Failed to get buffer size: %08lX", __FUNCTION__, hr);
 		goto fail;
 	}
 
@@ -346,11 +362,14 @@ static void audio_monitor_start_device(struct audio_monitor *monitor)
 						 &IID_IAudioRenderClient,
 						 (void **)&monitor->render);
 	if (FAILED(hr)) {
+		warn("%s: Failed to get IAudioRenderClient: %08lX",
+		     __FUNCTION__, hr);
 		goto fail;
 	}
 
 	hr = monitor->client->lpVtbl->Start(monitor->client);
 	if (FAILED(hr)) {
+		warn("%s: Failed to start audio: %08lX", __FUNCTION__, hr);
 		goto fail;
 	}
 
@@ -377,10 +396,12 @@ static bool audio_monitor_init(struct audio_monitor *monitor,
 
 	const char *id = obs->audio.monitoring_device_id;
 	if (!id) {
+		warn("%s: No device ID set", __FUNCTION__);
 		return false;
 	}
 
 	if (pthread_mutex_init(&monitor->playback_mutex, NULL) != 0) {
+		warn("%s: Failed to initialize mutex", __FUNCTION__);
 		return false;
 	}
 
