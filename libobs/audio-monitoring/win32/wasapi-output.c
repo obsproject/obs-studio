@@ -33,6 +33,8 @@ struct audio_monitor {
 	uint32_t channels;
 	bool source_has_video;
 	bool ignore;
+	bool initialized;
+	bool failure;
 
 	int64_t lowest_audio_offset;
 	struct circlebuf delay_buffer;
@@ -131,11 +133,13 @@ static bool process_audio_delay(struct audio_monitor *monitor, float **data,
 	return false;
 }
 
+static void audio_monitor_start_device(struct audio_monitor *monitor);
+
 static void on_audio_playback(void *param, obs_source_t *source,
 			      const struct audio_data *audio_data, bool muted)
 {
 	struct audio_monitor *monitor = param;
-	IAudioRenderClient *render = monitor->render;
+	IAudioRenderClient *render;
 	uint8_t *resample_data[MAX_AV_PLANES];
 	float vol = source->user_volume;
 	uint32_t resample_frames;
@@ -149,6 +153,14 @@ static void on_audio_playback(void *param, obs_source_t *source,
 	if (os_atomic_load_long(&source->activate_refs) == 0) {
 		goto unlock;
 	}
+	if (!monitor->failure && !monitor->initialized) {
+		audio_monitor_start_device(monitor);
+	}
+	if (monitor->failure) {
+		goto unlock;
+	}
+
+	render = monitor->render;
 
 	success = audio_resampler_resample(
 		monitor->resampler, resample_data, &resample_frames, &ts_offset,
@@ -239,10 +251,7 @@ static enum speaker_layout convert_speaker_layout(DWORD layout, WORD channels)
 	return (enum speaker_layout)channels;
 }
 
-extern bool devices_match(const char *id1, const char *id2);
-
-static bool audio_monitor_init(struct audio_monitor *monitor,
-			       obs_source_t *source)
+static void audio_monitor_start_device(struct audio_monitor *monitor)
 {
 	IMMDeviceEnumerator *immde = NULL;
 	WAVEFORMATEX *wfex = NULL;
@@ -250,25 +259,9 @@ static bool audio_monitor_init(struct audio_monitor *monitor,
 	UINT32 frames;
 	HRESULT hr;
 
-	pthread_mutex_init_value(&monitor->playback_mutex);
-
-	monitor->source = source;
-
 	const char *id = obs->audio.monitoring_device_id;
 	if (!id) {
-		return false;
-	}
-
-	if (source->info.output_flags & OBS_SOURCE_DO_NOT_SELF_MONITOR) {
-		obs_data_t *s = obs_source_get_settings(source);
-		const char *s_dev_id = obs_data_get_string(s, "device_id");
-		bool match = devices_match(s_dev_id, id);
-		obs_data_release(s);
-
-		if (match) {
-			monitor->ignore = true;
-			return true;
-		}
+		goto fail;
 	}
 
 	/* ------------------------------------------ *
@@ -277,7 +270,7 @@ static bool audio_monitor_init(struct audio_monitor *monitor,
 	hr = CoCreateInstance(&CLSID_MMDeviceEnumerator, NULL, CLSCTX_ALL,
 			      &IID_IMMDeviceEnumerator, (void **)&immde);
 	if (FAILED(hr)) {
-		return false;
+		goto fail;
 	}
 
 	if (strcmp(id, "default") == 0) {
@@ -356,22 +349,53 @@ static bool audio_monitor_init(struct audio_monitor *monitor,
 		goto fail;
 	}
 
-	if (pthread_mutex_init(&monitor->playback_mutex, NULL) != 0) {
-		goto fail;
-	}
-
 	hr = monitor->client->lpVtbl->Start(monitor->client);
 	if (FAILED(hr)) {
 		goto fail;
 	}
 
 	success = true;
+	monitor->initialized = true;
 
 fail:
+	if (!success)
+		monitor->failure = true;
+
 	safe_release(immde);
 	if (wfex)
 		CoTaskMemFree(wfex);
-	return success;
+}
+
+extern bool devices_match(const char *id1, const char *id2);
+
+static bool audio_monitor_init(struct audio_monitor *monitor,
+			       obs_source_t *source)
+{
+	pthread_mutex_init_value(&monitor->playback_mutex);
+
+	monitor->source = source;
+
+	const char *id = obs->audio.monitoring_device_id;
+	if (!id) {
+		return false;
+	}
+
+	if (pthread_mutex_init(&monitor->playback_mutex, NULL) != 0) {
+		return false;
+	}
+
+	if (source->info.output_flags & OBS_SOURCE_DO_NOT_SELF_MONITOR) {
+		obs_data_t *s = obs_source_get_settings(source);
+		const char *s_dev_id = obs_data_get_string(s, "device_id");
+		bool match = devices_match(s_dev_id, id);
+		obs_data_release(s);
+
+		if (match) {
+			monitor->ignore = true;
+		}
+	}
+
+	return true;
 }
 
 static void audio_monitor_init_final(struct audio_monitor *monitor)
