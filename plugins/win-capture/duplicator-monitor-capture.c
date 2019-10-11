@@ -52,7 +52,7 @@ static inline void update_settings(struct duplicator_capture *capture,
 	obs_enter_graphics();
 
 	gs_duplicator_destroy(capture->duplicator);
-	capture->duplicator = gs_duplicator_create(capture->monitor);
+	capture->duplicator = NULL;
 	capture->width = 0;
 	capture->height = 0;
 	capture->x = 0;
