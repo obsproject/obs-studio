@@ -398,6 +398,10 @@ OBSBasic::OBSBasic(QWidget *parent)
 		this,
 		SLOT(ScenesReordered(const QModelIndex &, int, int,
 				     const QModelIndex &, int)));
+
+#ifdef __APPLE__
+	ui->recordButton->setAttribute(Qt::WA_LayoutUsesWidgetRect);
+#endif
 }
 
 static void SaveAudioDevice(const char *name, int channel, obs_data_t *parent,
@@ -7544,6 +7548,10 @@ void OBSBasic::UpdatePause(bool activate)
 				   QVariant(QStringLiteral("pauseIconSmall")));
 		connect(pause.data(), &QAbstractButton::clicked, this,
 			&OBSBasic::PauseToggled);
+#ifdef __APPLE__
+		pause->setAttribute(Qt::WA_LayoutUsesWidgetRect);
+#endif
+
 		ui->recordingLayout->addWidget(pause.data());
 	} else {
 		pause.reset();

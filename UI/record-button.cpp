@@ -14,9 +14,6 @@ void RecordButton::resizeEvent(QResizeEvent *event)
 		main->pause->setMinimumSize(height, height);
 		main->pause->setMaximumSize(height, height);
 	}
-#ifdef __APPLE__
-	main->pause->setAttribute(Qt::WA_LayoutUsesWidgetRect);
-#endif // __APPLE__
 
 	event->accept();
 }
