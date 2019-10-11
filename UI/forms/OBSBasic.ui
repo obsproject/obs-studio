@@ -1111,7 +1111,7 @@
      <item>
       <layout class="QHBoxLayout" name="recordingLayout">
        <property name="spacing">
-        <number>2</number>
+        <number>0</number>
        </property>
        <property name="leftMargin">
         <number>0</number>
