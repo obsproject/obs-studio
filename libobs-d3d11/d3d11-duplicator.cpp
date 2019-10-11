@@ -16,7 +16,7 @@
 ******************************************************************************/
 
 #include "d3d11-subsystem.hpp"
-#include <map>
+#include <unordered_map>
 
 static inline bool get_monitor(gs_device_t *device, int monitor_idx,
 			       IDXGIOutput **dxgiOutput)
@@ -122,11 +122,11 @@ EXPORT bool device_get_duplicator_monitor_info(gs_device_t *device,
 	return true;
 }
 
-static std::map<int, gs_duplicator *> instances;
+static std::unordered_map<int, gs_duplicator *> instances;
 
 void reset_duplicators(void)
 {
-	for (auto &pair : instances) {
+	for (std::pair<const int, gs_duplicator *> &pair : instances) {
 		pair.second->updated = false;
 	}
 }
@@ -136,7 +136,7 @@ EXPORT gs_duplicator_t *device_duplicator_create(gs_device_t *device,
 {
 	gs_duplicator *duplicator = nullptr;
 
-	auto it = instances.find(monitor_idx);
+	const auto it = instances.find(monitor_idx);
 	if (it != instances.end()) {
 		duplicator = it->second;
 		duplicator->refs++;
