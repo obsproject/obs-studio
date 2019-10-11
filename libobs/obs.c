@@ -139,6 +139,8 @@ static bool obs_init_gpu_conversion(struct obs_video_info *ovi)
 			if (!video->convert_textures[2])
 				return false;
 			break;
+		default:
+			break;
 		}
 #ifdef _WIN32
 	}
@@ -189,6 +191,8 @@ static bool obs_init_gpu_copy_surfaces(struct obs_video_info *ovi, size_t i)
 			ovi->output_width, ovi->output_height, GS_R8);
 		if (!video->copy_surfaces[i][2])
 			return false;
+		break;
+	default:
 		break;
 	}
 
