@@ -409,6 +409,9 @@ RTMP_TLS_Init()
 void
 RTMP_TLS_Free() {
 #ifdef USE_MBEDTLS
+    if (!RTMP_TLS_ctx)
+        return;
+
     mbedtls_ssl_config_free(&RTMP_TLS_ctx->conf);
     mbedtls_ctr_drbg_free(&RTMP_TLS_ctx->ctr_drbg);
     mbedtls_entropy_free(&RTMP_TLS_ctx->entropy);
@@ -532,6 +535,7 @@ RTMP_Free(RTMP *r)
     RTMP_TLS_Free();
 #endif
     free(r);
+    r = NULL;
 }
 
 void
