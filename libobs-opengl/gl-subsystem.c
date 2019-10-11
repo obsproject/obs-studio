@@ -929,6 +929,12 @@ void device_copy_texture(gs_device_t *device, gs_texture_t *dst,
 	device_copy_texture_region(device, dst, 0, 0, src, 0, 0, 0, 0);
 }
 
+void device_begin_frame(gs_device_t *device)
+{
+	/* does nothing */
+	UNUSED_PARAMETER(device);
+}
+
 void device_begin_scene(gs_device_t *device)
 {
 	clear_textures(device);

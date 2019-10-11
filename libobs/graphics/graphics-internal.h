@@ -115,6 +115,7 @@ struct gs_exports {
 					   uint32_t src_w, uint32_t src_h);
 	void (*device_stage_texture)(gs_device_t *device, gs_stagesurf_t *dst,
 				     gs_texture_t *src);
+	void (*device_begin_frame)(gs_device_t *device);
 	void (*device_begin_scene)(gs_device_t *device);
 	void (*device_draw)(gs_device_t *device, enum gs_draw_mode draw_mode,
 			    uint32_t start_vert, uint32_t num_verts);

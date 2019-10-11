@@ -1631,6 +1631,16 @@ void device_stage_texture(gs_device_t *device, gs_stagesurf_t *dst,
 	}
 }
 
+extern "C" void reset_duplicators(void);
+
+void device_begin_frame(gs_device_t *device)
+{
+	/* does nothing in D3D11 */
+	UNUSED_PARAMETER(device);
+
+	reset_duplicators();
+}
+
 void device_begin_scene(gs_device_t *device)
 {
 	clear_textures(device);
@@ -1761,12 +1771,9 @@ void device_present(gs_device_t *device)
 	}
 }
 
-extern "C" void reset_duplicators(void);
-
 void device_flush(gs_device_t *device)
 {
 	device->context->Flush();
-	reset_duplicators();
 }
 
 void device_set_cull_mode(gs_device_t *device, enum gs_cull_mode mode)
