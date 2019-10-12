@@ -377,7 +377,7 @@ static bool set_priority(ID3D11Device *device)
 		return false;
 	}
 
-	NTSTATUS (*d3dkmt_spspc)(HANDLE, D3DKMT_SCHEDULINGPRIORITYCLASS);
+	NTSTATUS (WINAPI *d3dkmt_spspc)(HANDLE, D3DKMT_SCHEDULINGPRIORITYCLASS);
 	d3dkmt_spspc = (decltype(d3dkmt_spspc))GetProcAddress(
 		gdi32, "D3DKMTSetProcessSchedulingPriorityClass");
 	if (!d3dkmt_spspc) {
