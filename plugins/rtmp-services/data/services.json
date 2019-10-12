@@ -1466,6 +1466,20 @@
             }
         },
         {
+            "name": "ChathostessModels",
+            "servers": [
+                {
+                    "name": "ChathostessModels - Default",
+                    "url": "rtmp://wowza01.foobarweb.com/cmschatsys_video"
+                }
+            ],
+            "recommended": {
+                "keyint": 2,
+                "max video bitrate": 3000,
+                "max audio bitrate": 128
+            }
+        },
+        {
             "name": "Camplace",
             "servers": [
                 {
