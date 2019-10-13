@@ -788,6 +788,7 @@ private slots:
 	void on_transitionAdd_clicked();
 	void on_transitionRemove_clicked();
 	void on_transitionProps_clicked();
+	void on_transitionDuration_valueChanged(int value);
 
 	void on_modeSwitch_clicked();
 
