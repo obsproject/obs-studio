@@ -2235,6 +2235,7 @@ OBSBasic::~OBSBasic()
 
 	delete multiviewProjectorMenu;
 	delete previewProjector;
+	delete sceneMenu;
 	delete studioProgramProjector;
 	delete previewProjectorSource;
 	delete previewProjectorMain;
@@ -4001,6 +4002,24 @@ void OBSBasic::EditSceneName()
 	item->setFlags(flags | Qt::ItemIsEditable);
 	ui->scenes->editItem(item);
 	item->setFlags(flags);
+}
+
+static void AddSceneMenu(QMenu *parent, QListWidget *listWidget,
+			 QObject *target, const char *slot)
+{
+	QAction *action;
+	for (int i = 0; i < listWidget->count(); i++) {
+		QListWidgetItem *item = listWidget->item(i);
+		OBSScene scene = GetOBSRef<OBSScene>(item);
+		obs_source_t *source = obs_scene_get_source(scene);
+		const char *name = obs_source_get_name(source);
+		action = parent->addAction(QT_UTF8(name), target, slot);
+		action->setProperty("sceneID", i);
+		if (item->isSelected()) {
+			action->setCheckable(true);
+			action->setChecked(true);
+		}
+	}
 }
 
 static void AddProjectorMenuMonitors(QMenu *parent, QObject *target,
@@ -6460,6 +6479,15 @@ void OBSBasic::OpenStudioProgramProjector()
 	OpenProjector(nullptr, monitor, nullptr, ProjectorType::StudioProgram);
 }
 
+void OBSBasic::SelectScene()
+{
+	int sceneID = sender()->property("sceneID").toInt();
+	QListWidgetItem *item = ui->scenes->item(sceneID);
+	OBSScene scene = GetOBSRef<OBSScene>(item);
+	obs_source_t *source = obs_scene_get_source(scene);
+	SetCurrentScene(source, true);
+}
+
 void OBSBasic::OpenPreviewProjector()
 {
 	int monitor = sender()->property("monitor").toInt();
@@ -6910,6 +6938,9 @@ void OBSBasic::SystemTrayInit()
 	exit = new QAction(QTStr("Exit"), trayIcon.data());
 
 	trayMenu = new QMenu;
+	sceneMenu = new QMenu(QTStr("Basic.Main.Scenes"));
+	AddSceneMenu(sceneMenu, ui->scenes, this, SLOT(SelectScene()));
+
 	previewProjector = new QMenu(QTStr("PreviewProjector"));
 	studioProgramProjector = new QMenu(QTStr("StudioProgramProjector"));
 	AddProjectorMenuMonitors(previewProjector, this,
@@ -6917,6 +6948,7 @@ void OBSBasic::SystemTrayInit()
 	AddProjectorMenuMonitors(studioProgramProjector, this,
 				 SLOT(OpenStudioProgramProjector()));
 	trayMenu->addAction(showHide);
+	trayMenu->addMenu(sceneMenu);
 	trayMenu->addMenu(previewProjector);
 	trayMenu->addMenu(studioProgramProjector);
 	trayMenu->addAction(sysTrayStream);
@@ -6947,6 +6979,8 @@ void OBSBasic::IconActivated(QSystemTrayIcon::ActivationReason reason)
 	// Refresh projector list
 	previewProjector->clear();
 	studioProgramProjector->clear();
+	sceneMenu->clear();
+	AddSceneMenu(sceneMenu, ui->scenes, this, SLOT(SelectScene()));
 	AddProjectorMenuMonitors(previewProjector, this,
 				 SLOT(OpenPreviewProjector()));
 	AddProjectorMenuMonitors(studioProgramProjector, this,

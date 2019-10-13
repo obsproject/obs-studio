@@ -219,6 +219,7 @@ private:
 	QPointer<QAction> showHide;
 	QPointer<QAction> exit;
 	QPointer<QMenu> trayMenu;
+	QPointer<QMenu> sceneMenu;
 	QPointer<QMenu> previewProjector;
 	QPointer<QMenu> studioProgramProjector;
 	QPointer<QMenu> multiviewProjectorMenu;
@@ -827,6 +828,7 @@ private slots:
 	void NudgeRight();
 
 	void OpenStudioProgramProjector();
+	void SelectScene();
 	void OpenPreviewProjector();
 	void OpenSourceProjector();
 	void OpenMultiviewProjector();
