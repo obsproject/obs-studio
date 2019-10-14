@@ -1,0 +1,25 @@
+mkdir OBS.app
+mkdir OBS.app/Contents
+mkdir OBS.app/Contents/MacOS
+mkdir OBS.app/Contents/Plugins
+mkdir OBS.app/Contents/Resources
+
+cp -r rundir/RelWithDebInfo/bin/ ./OBS.app/Contents/MacOS
+cp -r rundir/RelWithDebInfo/data ./OBS.app/Contents/Resources
+cp ../CI/install/osx/obs.icns ./OBS.app/Contents/Resources
+cp -r rundir/RelWithDebInfo/obs-plugins/ ./OBS.app/Contents/Plugins
+cp ../CI/install/osx/Info.plist ./OBS.app/Contents
+
+/usr/local/Cellar/qt/5.10.1/bin/macdeployqt ./OBS.app
+
+install_name_tool -change /usr/local/opt/qt/lib/QtGui.framework/Versions/5/QtGui @executable_path/../Frameworks/QtGui.framework/Versions/5/QtGui ./OBS.app/Contents/Plugins/decklink-ouput-ui.so
+
+install_name_tool -change /usr/local/opt/qt/lib/QtCore.framework/Versions/5/QtCore @executable_path/../Frameworks/QtCore.framework/Versions/5/QtCore ./OBS.app/Contents/Plugins/decklink-ouput-ui.so
+
+install_name_tool -change /usr/local/opt/qt/lib/QtWidgets.framework/Versions/5/QtWidgets @executable_path/../Frameworks/QtWidgets.framework/Versions/5/QtWidgets ./OBS.app/Contents/Plugins/decklink-ouput-ui.so
+
+install_name_tool -change /usr/local/opt/qt/lib/QtGui.framework/Versions/5/QtGui @executable_path/../Frameworks/QtGui.framework/Versions/5/QtGui ./OBS.app/Contents/Plugins/frontend-tools.so
+
+install_name_tool -change /usr/local/opt/qt/lib/QtCore.framework/Versions/5/QtCore @executable_path/../Frameworks/QtCore.framework/Versions/5/QtCore ./OBS.app/Contents/Plugins/frontend-tools.so
+
+install_name_tool -change /usr/local/opt/qt/lib/QtWidgets.framework/Versions/5/QtWidgets @executable_path/../Frameworks/QtWidgets.framework/Versions/5/QtWidgets ./OBS.app/Contents/Plugins/frontend-tools.so
