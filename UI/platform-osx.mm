@@ -28,11 +28,27 @@
 
 using namespace std;
 
+bool isInBundle()
+{
+	NSRunningApplication *app = [NSRunningApplication currentApplication];
+	return [app bundleIdentifier] != nil;
+}
+
 bool GetDataFilePath(const char *data, string &output)
 {
-	stringstream str;
-	str << OBS_DATA_PATH "/obs-studio/" << data;
-	output = str.str();
+	if (isInBundle()) {
+		NSBundle *myBundle = [NSBundle mainBundle];
+		NSString *path = [NSString
+			stringWithFormat:@"data/obs-studio/%@",
+					 [NSString stringWithUTF8String:data]];
+		NSString *absPath = [myBundle pathForResource:path ofType:nil];
+		output = [absPath UTF8String];
+	} else {
+		stringstream str;
+		str << OBS_DATA_PATH "/obs-studio/" << data;
+		output = str.str();
+	}
+
 	return !access(output.c_str(), R_OK);
 }
 

@@ -29,6 +29,14 @@
 #include <IOKit/hid/IOHIDDevice.h>
 #include <IOKit/hid/IOHIDManager.h>
 
+#import <AppKit/AppKit.h>
+
+bool is_in_bundle()
+{
+	NSRunningApplication *app = [NSRunningApplication currentApplication];
+	return [app bundleIdentifier] != nil;
+}
+
 const char *get_module_extension(void)
 {
 	return ".so";
@@ -51,12 +59,45 @@ void add_default_module_paths(void)
 {
 	for (int i = 0; i < module_patterns_size; i++)
 		obs_add_module_path(module_bin[i], module_data[i]);
+
+	if (is_in_bundle()) {
+		NSRunningApplication *app =
+			[NSRunningApplication currentApplication];
+		NSURL *bundleURL = [app bundleURL];
+		NSURL *pluginsURL = [bundleURL
+			URLByAppendingPathComponent:@"Contents/Plugins"];
+		NSURL *dataURL = [bundleURL
+			URLByAppendingPathComponent:
+				@"Contents/Resources/data/obs-plugins/%module%"];
+
+		const char *binPath = [[pluginsURL path]
+			cStringUsingEncoding:NSUTF8StringEncoding];
+		const char *dataPath = [[dataURL path]
+			cStringUsingEncoding:NSUTF8StringEncoding];
+
+		obs_add_module_path(binPath, dataPath);
+	}
 }
 
 char *find_libobs_data_file(const char *file)
 {
 	struct dstr path;
-	dstr_init_copy(&path, OBS_INSTALL_DATA_PATH "/libobs/");
+
+	if (is_in_bundle()) {
+		NSRunningApplication *app =
+			[NSRunningApplication currentApplication];
+		NSURL *bundleURL = [app bundleURL];
+		NSURL *libobsDataURL =
+			[bundleURL URLByAppendingPathComponent:
+					   @"Contents/Resources/data/libobs/"];
+		const char *libobsDataPath = [[libobsDataURL path]
+			cStringUsingEncoding:NSUTF8StringEncoding];
+		dstr_init_copy(&path, libobsDataPath);
+		dstr_cat(&path, "/");
+	} else {
+		dstr_init_copy(&path, OBS_INSTALL_DATA_PATH "/libobs/");
+	}
+
 	dstr_cat(&path, file);
 	return path.array;
 }
