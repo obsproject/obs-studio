@@ -186,7 +186,7 @@ LockedCheckBox::indicator:unchecked {
     image: url(:res/images/unlocked.svg);
 }
 
-/* Visibilty CheckBox */
+/* Visibility CheckBox */
 
 VisibilityCheckBox {
     outline: none;

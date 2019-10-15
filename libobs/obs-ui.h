@@ -46,7 +46,7 @@ struct obs_modal_ui {
 	 * Callback to execute modal interface.
 	 *
 	 * The @b object variable points to the input/output/encoder/etc.  The
-	 * @b ui_data varaible points to the UI parent or UI-specific data to
+	 * @b ui_data variable points to the UI parent or UI-specific data to
 	 * be used with the custom user interface.
 	 *
 	 * What @b ui_data points to differs depending on the target, and you

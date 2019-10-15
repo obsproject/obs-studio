@@ -182,7 +182,7 @@ Property Object Functions
 
                           - **OBS_COMBO_TYPE_EDITABLE** - Can be edited.
                             Only used with string lists.
-                          - **OBS_COMBO_TYPE_LIST** - Not ediable.
+                          - **OBS_COMBO_TYPE_LIST** - Not editable.
 
    :param    format:      Can be one of the following values:
 
