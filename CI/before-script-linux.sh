@@ -8,4 +8,4 @@ fi
 set -ex
 ccache -s || echo "CCache is not available."
 mkdir build && cd build
-cmake ..
+cmake -DBUILD_CAPTIONS=ON ..
