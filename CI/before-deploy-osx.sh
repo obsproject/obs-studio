@@ -35,32 +35,17 @@ fi
 
 #sudo python ../CI/install/osx/build_app.py --public-key ../CI/install/osx/OBSPublicDSAKey.pem --sparkle-framework ../../sparkle/Sparkle.framework --stable=$STABLE
 
-../CI/install/osx/packageApp
+../CI/install/osx/packageApp.sh
 
-# curl
-cp /usr/local/opt/curl/lib/libcurl.4.dylib ./OBS.app/Contents/Frameworks/
-install_name_tool -change /usr/local/opt/curl/lib/libcurl.4.dylib @executable_path/../Frameworks/libcurl.4.dylib ./OBS.app/Contents/Plugins/rtmp-services.so
-
-# luajit
-install_name_tool -change /tmp/obsdeps/lib/libluajit-5.1.2.dylib @executable_path/../Frameworks/libluajit-5.1.2.dylib ./OBS.app/Contents/Plugins/frontend-tools.so
-
-# jack
-cp /usr/local/opt/jack/lib/libjack.0.dylib ./OBS.app/Contents/Frameworks/
-cp /usr/local/opt/berkeley-db/lib/libdb-18.1.dylib ./OBS.app/Contents/Frameworks/
-install_name_tool -change /usr/local/opt/jack/lib/libjack.0.dylib @executable_path/../Frameworks/libjack.0.dylib ./OBS.app/Contents/Plugins/linux-jack.so
-install_name_tool -change /usr/local/opt/berkeley-db/lib/libdb-18.1.dylib @executable_path/../Frameworks/libdb-18.1.dylib ./OBS.app/Contents/Frameworks/libjack.0.dylib
-
-# speexdsp
-cp /usr/local/opt/speexdsp/lib/libspeexdsp.1.dylib ./OBS.app/Contents/Frameworks/
-install_name_tool -change /usr/local/opt/speexdsp/lib/libspeexdsp.1.dylib @executable_path/../Frameworks/libspeexdsp.1.dylib ./OBS.app/Contents/Plugins/obs-filters.so
-
-# libmbedtls
+# fix obs outputs
 cp /usr/local/opt/mbedtls/lib/libmbedtls.12.dylib ./OBS.app/Contents/Frameworks/
 cp /usr/local/opt/mbedtls/lib/libmbedcrypto.3.dylib ./OBS.app/Contents/Frameworks/
 cp /usr/local/opt/mbedtls/lib/libmbedx509.0.dylib ./OBS.app/Contents/Frameworks/
 install_name_tool -change /usr/local/opt/mbedtls/lib/libmbedtls.12.dylib @executable_path/../Frameworks/libmbedtls.12.dylib ./OBS.app/Contents/Plugins/obs-outputs.so
 install_name_tool -change /usr/local/opt/mbedtls/lib/libmbedcrypto.3.dylib @executable_path/../Frameworks/libmbedcrypto.3.dylib ./OBS.app/Contents/Plugins/obs-outputs.so
 install_name_tool -change /usr/local/opt/mbedtls/lib/libmbedx509.0.dylib @executable_path/../Frameworks/libmbedx509.0.dylib ./OBS.app/Contents/Plugins/obs-outputs.so
+install_name_tool -change /usr/local/opt/curl/lib/libcurl.4.dylib @executable_path/../Frameworks/libcurl.4.dylib ./OBS.app/Contents/Plugins/obs-outputs.so
+install_name_tool -change @rpath/libobs.0.dylib @executable_path/../Frameworks/libobs.0.dylib ./OBS.app/Contents/Plugins/obs-outputs.so
 
 # copy sparkle into the app
 hr "Copying Sparkle.framework"
@@ -76,9 +61,11 @@ install_name_tool -change /usr/local/opt/qt/lib/QtGui.framework/Versions/5/QtGui
 install_name_tool -change /usr/local/opt/qt/lib/QtCore.framework/Versions/5/QtCore @executable_path/../Frameworks/QtCore.framework/Versions/5/QtCore ./OBS.app/Contents/Plugins/obs-browser.so
 install_name_tool -change /usr/local/opt/qt/lib/QtWidgets.framework/Versions/5/QtWidgets @executable_path/../Frameworks/QtWidgets.framework/Versions/5/QtWidgets ./OBS.app/Contents/Plugins/obs-browser.so
 
+cp ../CI/install/osx/OBSPublicDSAKey.pem OBS.app/Contents/Resources
+
 # edit plist
-plutil -insert CFBundleVersion -string $GIT_TAG-$GIT_HASH ./OBS.app/Contents/Info.plist
-plutil -insert CFBundleShortVersionString -string $GIT_TAG-$GIT_HASH ./OBS.app/Contents/Info.plist
+plutil -insert CFBundleVersion -string $GIT_TAG ./OBS.app/Contents/Info.plist
+plutil -insert CFBundleShortVersionString -string $GIT_TAG ./OBS.app/Contents/Info.plist
 plutil -insert OBSFeedsURL -string https://obsproject.com/osx_update/feeds.xml ./OBS.app/Contents/Info.plist
 plutil -insert SUFeedURL -string https://obsproject.com/osx_update/stable/updates.xml ./OBS.app/Contents/Info.plist
 plutil -insert SUPublicDSAKeyFile -string OBSPublicDSAKey.pem ./OBS.app/Contents/Info.plist

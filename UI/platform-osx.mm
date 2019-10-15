@@ -37,12 +37,14 @@ bool isInBundle()
 bool GetDataFilePath(const char *data, string &output)
 {
 	if (isInBundle()) {
-		NSBundle *myBundle = [NSBundle mainBundle];
+		NSRunningApplication *app =
+			[NSRunningApplication currentApplication];
+		NSURL *bundleURL = [app bundleURL];
 		NSString *path = [NSString
-			stringWithFormat:@"data/obs-studio/%@",
+			stringWithFormat:@"Contents/Resources/data/obs-studio/%@",
 					 [NSString stringWithUTF8String:data]];
-		NSString *absPath = [myBundle pathForResource:path ofType:nil];
-		output = [absPath UTF8String];
+		NSURL *dataURL = [bundleURL URLByAppendingPathComponent:path];
+		output = [[dataURL path] UTF8String];
 	} else {
 		stringstream str;
 		str << OBS_DATA_PATH "/obs-studio/" << data;

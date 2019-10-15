@@ -12,6 +12,11 @@ if(MSVC)
 		w32-pthreads)
 endif()
 
+if(APPLE)
+	set(obs-scripting_PLATFORM_DEPS
+		objc)
+endif()
+
 option(DISABLE_LUA "Disable Lua scripting support" OFF)
 option(DISABLE_PYTHON "Disable Python scripting support" OFF)
 
