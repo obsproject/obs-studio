@@ -108,7 +108,6 @@ int randr_screen_count(xcb_connection_t *xcb)
 {
 	if (!xcb)
 		return 0;
-
 	xcb_screen_t *screen;
 	screen = xcb_setup_roots_iterator(xcb_get_setup(xcb)).data;
 
