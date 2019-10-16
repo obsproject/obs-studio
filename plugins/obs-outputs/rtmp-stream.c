@@ -1342,7 +1342,7 @@ static void check_to_drop_frames(struct rtmp_stream *stream, bool pframes)
 			return;
 		}
 
-		if (buffer_duration_usec >= DBR_TRIGGER_USEC) {
+		if ((uint64_t)buffer_duration_usec >= DBR_TRIGGER_USEC) {
 			pthread_mutex_lock(&stream->dbr_mutex);
 			bitrate_changed = dbr_bitrate_lowered(stream);
 			pthread_mutex_unlock(&stream->dbr_mutex);
