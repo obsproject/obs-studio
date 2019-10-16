@@ -28,7 +28,6 @@
 #include <libswscale/swscale.h>
 
 #include "obs-ffmpeg-formats.h"
-#include "closest-pixel-format.h"
 #include "obs-ffmpeg-compat.h"
 
 struct ffmpeg_cfg {
@@ -279,8 +278,8 @@ static bool create_video_stream(struct ffmpeg_data *data)
 			data->config.video_encoder))
 		return false;
 
-	closest_format =
-		get_closest_format(data->config.format, data->vcodec->pix_fmts);
+	closest_format = avcodec_find_best_pix_fmt_of_list(
+		data->vcodec->pix_fmts, data->config.format, 0, NULL);
 
 	context = data->video->codec;
 	context->bit_rate = data->config.video_bitrate * 1000;

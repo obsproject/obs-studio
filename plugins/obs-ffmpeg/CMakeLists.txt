@@ -21,8 +21,7 @@ set(obs-ffmpeg_config_HEADERS
 
 set(obs-ffmpeg_HEADERS
 	obs-ffmpeg-formats.h
-	obs-ffmpeg-compat.h
-	closest-pixel-format.h)
+	obs-ffmpeg-compat.h)
 
 set(obs-ffmpeg_SOURCES
 	obs-ffmpeg.c
