@@ -1820,7 +1820,7 @@ void WidgetInfo::ControlChanged()
 		break;
 	case OBS_PROPERTY_GROUP:
 		GroupChanged(setting);
-		return;
+		break;
 	}
 
 	if (view->callback && !view->deferUpdate)
