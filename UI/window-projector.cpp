@@ -653,6 +653,9 @@ void OBSProjector::OBSRender(void *data, uint32_t cx, uint32_t cy)
 			source = curSource;
 			window->source = source;
 		}
+	} else if (window->type == ProjectorType::Preview &&
+		   !main->IsPreviewProgramMode()) {
+		window->source = nullptr;
 	}
 
 	if (source)
