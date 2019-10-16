@@ -866,6 +866,10 @@ void *obs_graphics_thread(void *param)
 
 		profile_start(video_thread_name);
 
+		gs_enter_context(obs->video.graphics);
+		gs_begin_frame();
+		gs_leave_context();
+
 		profile_start(tick_sources_name);
 		last_time = tick_sources(obs->video.video_time, last_time);
 		profile_end(tick_sources_name);
