@@ -2214,6 +2214,19 @@ void OBSBasic::CreateHotkeys()
 	transitionHotkey = obs_hotkey_register_frontend(
 		"OBSBasic.Transition", Str("Transition"), transition, this);
 	LoadHotkey(transitionHotkey, "OBSBasic.Transition");
+
+	auto resetStats = [](void *data, obs_hotkey_id, obs_hotkey_t *,
+			     bool pressed) {
+		if (pressed)
+			QMetaObject::invokeMethod(static_cast<OBSBasic *>(data),
+						  "ResetStatsHotkey",
+						  Qt::QueuedConnection);
+	};
+
+	statsHotkey = obs_hotkey_register_frontend(
+		"OBSBasic.ResetStats", Str("Basic.Stats.ResetStats"),
+		resetStats, this);
+	LoadHotkey(statsHotkey, "OBSBasic.ResetStats");
 }
 
 void OBSBasic::ClearHotkeys()
@@ -2226,6 +2239,7 @@ void OBSBasic::ClearHotkeys()
 	obs_hotkey_unregister(forceStreamingStopHotkey);
 	obs_hotkey_unregister(togglePreviewProgramHotkey);
 	obs_hotkey_unregister(transitionHotkey);
+	obs_hotkey_unregister(statsHotkey);
 }
 
 OBSBasic::~OBSBasic()
@@ -7621,4 +7635,11 @@ void OBSBasic::ScenesReordered(const QModelIndex &parent, int start, int end,
 	UNUSED_PARAMETER(row);
 
 	OBSProjector::UpdateMultiviewProjectors();
+}
+
+void OBSBasic::ResetStatsHotkey()
+{
+	QList<OBSBasicStats *> list = findChildren<OBSBasicStats *>();
+
+	foreach(OBSBasicStats * s, list) s->Reset();
 }
