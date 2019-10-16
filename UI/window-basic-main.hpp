@@ -386,6 +386,7 @@ private:
 	volatile bool previewProgramMode = false;
 	obs_hotkey_id togglePreviewProgramHotkey = 0;
 	obs_hotkey_id transitionHotkey = 0;
+	obs_hotkey_id statsHotkey = 0;
 	int quickTransitionIdCounter = 1;
 	bool overridingTransition = false;
 
@@ -562,6 +563,8 @@ private slots:
 
 	void ScenesReordered(const QModelIndex &parent, int start, int end,
 			     const QModelIndex &destination, int row);
+
+	void ResetStatsHotkey();
 
 private:
 	/* OBS Callbacks */
