@@ -20,7 +20,6 @@
 #include "obs-config.h"
 #include "obs-app.hpp"
 #include "platform.hpp"
-using namespace std;
 
 #include <util/windows/win-version.h>
 #include <util/platform.h>
@@ -36,6 +35,8 @@ using namespace std;
 #include <util/windows/WinHandle.hpp>
 #include <util/windows/HRError.hpp>
 #include <util/windows/ComPtr.hpp>
+
+using namespace std;
 
 static inline bool check_path(const char *data, const char *path,
 			      string &output)
