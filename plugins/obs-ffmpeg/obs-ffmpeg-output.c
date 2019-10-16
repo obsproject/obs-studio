@@ -183,7 +183,8 @@ static bool parse_params(AVCodecContext *context, char **opts)
 			*assign = 0;
 			value = assign + 1;
 
-			if (av_opt_set(context->priv_data, name, value, 0)) {
+			if (av_opt_set(context, name, value,
+				       AV_OPT_SEARCH_CHILDREN)) {
 				blog(LOG_WARNING, "Failed to set %s=%s", name,
 				     value);
 				ret = false;
