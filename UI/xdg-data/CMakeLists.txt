@@ -16,7 +16,7 @@ configure_file(
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/com.obsproject.Studio.appdata.xml
 	DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/metainfo)
 
-install(FILES com.obsproject.Studio.desktop
+install(FILES obs.desktop
 	DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/applications)
 
 install(FILES ../forms/images/obs.png
