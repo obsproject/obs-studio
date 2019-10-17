@@ -129,8 +129,8 @@ static void ignore_audio(obs_source_t *source, size_t channels,
 
 			source->last_audio_input_buf_size[mode] = 0;
 
-			if ((obs_get_multiple_rendering() && mode == OBS_MAIN_AUDIO_RENDERING) ||
-			    (!obs_get_multiple_rendering() && mode == OBS_STREAMING_AUDIO_RENDERING))
+			if ((!obs_get_multiple_rendering() && mode == OBS_MAIN_AUDIO_RENDERING) ||
+			    (obs_get_multiple_rendering() && mode == OBS_STREAMING_AUDIO_RENDERING))
 				source->audio_ts += (uint64_t)num_floats *
 						    1000000000ULL /
 						    (uint64_t)sample_rate;
