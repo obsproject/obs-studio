@@ -128,12 +128,23 @@ void get_window_class(struct dstr *class, HWND hwnd)
 
 /* not capturable or internal windows */
 static const char *internal_microsoft_exes[] = {
+	"startmenuexperiencehost",
 	"applicationframehost",
+	"peopleexperiencehost",
 	"shellexperiencehost",
+	"microsoft.notes",
 	"windowsinternal",
+	"systemsettings",
+	"textinputhost",
 	"winstore.app",
+	"searchapp",
+	"video.ui",
 	"searchui",
 	"lockapp",
+	"cortana",
+	"gamebar",
+	"tabtip",
+	"time",
 	NULL,
 };
 
