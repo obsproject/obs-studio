@@ -400,6 +400,8 @@ struct obs_core_hotkeys {
 	char *push_to_talk;
 	char *sceneitem_show;
 	char *sceneitem_hide;
+	char *enable;
+	char *disable;
 };
 
 struct obs_core {
@@ -725,6 +727,7 @@ struct obs_source {
 	uint64_t push_to_mute_stop_time;
 	uint64_t push_to_talk_delay;
 	uint64_t push_to_talk_stop_time;
+	obs_hotkey_pair_id filters_key;
 
 	/* transitions */
 	uint64_t transition_start_time;
