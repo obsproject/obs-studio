@@ -2560,14 +2560,12 @@ static QLabel *makeLabel(const OBSSource &source, Func &&)
 
 template<typename Func, typename T>
 static inline void AddHotkeys(
-	QFormLayout &layout, Func &&getName,
-	std::vector<std::tuple<T, QPointer<QLabel>, QPointer<QWidget>>> &hotkeys)
+	QFormLayout *layout, Func &&getName,
+	std::vector<std::tuple<T, QPointer<QLabel>, QPointer<QWidget>>> &hotkeys,
+	QComboBox *combo = nullptr)
 {
 	if (hotkeys.empty())
 		return;
-
-	layout.setItem(layout.rowCount(), QFormLayout::SpanningRole,
-		       new QSpacerItem(0, 10));
 
 	using tuple_type = std::tuple<T, QPointer<QLabel>, QPointer<QWidget>>;
 
@@ -2579,27 +2577,26 @@ static inline void AddHotkeys(
 				   string(getName(o_a)) < getName(o_b);
 		    });
 
-	string prevName;
 	for (const auto &hotkey : hotkeys) {
 		const auto &o = get<0>(hotkey);
-		const char *name = getName(o);
-		if (prevName != name) {
-			prevName = name;
-			layout.setItem(layout.rowCount(),
-				       QFormLayout::SpanningRole,
-				       new QSpacerItem(0, 10));
-			layout.addRow(makeLabel(o, getName));
-		}
 
 		auto hlabel = get<1>(hotkey);
 		auto widget = get<2>(hotkey);
-		layout.addRow(hlabel, widget);
+
+		layout->addRow(hlabel, widget);
+
+		QString name = QT_UTF8(getName(o));
+		widget->setProperty("name", name);
+
+		if (combo && combo->findText(name) == -1)
+			combo->addItem(name);
 	}
 }
 
 void OBSBasicSettings::LoadHotkeySettings(obs_hotkey_id ignoreKey)
 {
 	hotkeys.clear();
+	filters.clear();
 	ui->hotkeyPage->takeWidget()->deleteLater();
 
 	using keys_t = map<obs_hotkey_id, vector<obs_key_combination_t>>;
@@ -2617,65 +2614,76 @@ void OBSBasicSettings::LoadHotkeySettings(obs_hotkey_id ignoreKey)
 		},
 		&keys);
 
-	auto layout = new QFormLayout();
-	layout->setVerticalSpacing(0);
-	layout->setFieldGrowthPolicy(QFormLayout::AllNonFixedFieldsGrow);
-	layout->setLabelAlignment(Qt::AlignRight | Qt::AlignTrailing |
-				  Qt::AlignVCenter);
+	auto newFormLayout = [](QLabel *label = nullptr,
+				QComboBox *combo = nullptr) {
+		QFormLayout *form = new QFormLayout();
+		form->setVerticalSpacing(0);
+		form->setFieldGrowthPolicy(QFormLayout::AllNonFixedFieldsGrow);
+		form->setLabelAlignment(Qt::AlignRight | Qt::AlignTrailing |
+					Qt::AlignVCenter);
 
-	auto widget = new QWidget();
-	widget->setLayout(layout);
-	ui->hotkeyPage->setWidget(widget);
+		if (label && combo)
+			form->addRow(label, combo);
 
-	auto filterLayout = new QGridLayout();
-	auto filterWidget = new QWidget();
-	filterWidget->setLayout(filterLayout);
-
-	auto filterLabel = new QLabel(QTStr("Basic.Settings.Hotkeys.Filter"));
-	auto filter = new QLineEdit();
-
-	auto setRowVisible = [=](int row, bool visible, QLayoutItem *label) {
-		label->widget()->setVisible(visible);
-
-		auto field = layout->itemAt(row, QFormLayout::FieldRole);
-		if (field)
-			field->widget()->setVisible(visible);
+		return form;
 	};
 
-	auto searchFunction = [=](const QString &text) {
-		for (int i = 0; i < layout->rowCount(); i++) {
-			auto label = layout->itemAt(i, QFormLayout::LabelRole);
-			if (label) {
-				OBSHotkeyLabel *item =
-					qobject_cast<OBSHotkeyLabel *>(
-						label->widget());
-				if (item) {
-					if (item->text().toLower().contains(
-						    text.toLower()))
-						setRowVisible(i, true, label);
-					else
-						setRowVisible(i, false, label);
-				}
-			}
-		}
-	};
+	tabs = new QTabWidget();
 
-	connect(filter, &QLineEdit::textChanged, this, searchFunction);
+	sceneLabel = new QLabel(QTStr("Basic.Scene"));
+	sourceLabel = new QLabel(QTStr("Source"));
+	filtersSourceLabel = new QLabel(QTStr("Source"));
+	outputLabel = new QLabel(QTStr("Basic.Settings.Output"));
+	encoderLabel = new QLabel(QTStr("Basic.Settings.Output.Encoder"));
+	serviceLabel = new QLabel(QTStr("Basic.AutoConfig.StreamPage.Service"));
 
-	filterLayout->addWidget(filterLabel, 0, 0);
-	filterLayout->addWidget(filter, 0, 1);
+	sceneLabel->setStyleSheet("font-weight: bold;");
+	sourceLabel->setStyleSheet("font-weight: bold;");
+	filtersSourceLabel->setStyleSheet("font-weight: bold;");
+	outputLabel->setStyleSheet("font-weight: bold;");
+	encoderLabel->setStyleSheet("font-weight: bold;");
+	serviceLabel->setStyleSheet("font-weight: bold;");
 
-	layout->addRow(filterWidget);
+	scenesCombo = new QComboBox();
+	sourcesCombo = new QComboBox();
+	filtersCombo = new QComboBox();
+	outputsCombo = new QComboBox();
+	encodersCombo = new QComboBox();
+	servicesCombo = new QComboBox();
+
+	QFormLayout *hotkeysFrontendLayout = newFormLayout();
+	QFormLayout *hotkeysScenesLayout =
+		newFormLayout(sceneLabel, scenesCombo);
+	QFormLayout *hotkeysSourcesLayout =
+		newFormLayout(sourceLabel, sourcesCombo);
+	QFormLayout *hotkeysFiltersLayout =
+		newFormLayout(filtersSourceLabel, filtersCombo);
+	QFormLayout *hotkeysOutputsLayout =
+		newFormLayout(outputLabel, outputsCombo);
+	QFormLayout *hotkeysEncodersLayout =
+		newFormLayout(encoderLabel, encodersCombo);
+	QFormLayout *hotkeysServicesLayout =
+		newFormLayout(serviceLabel, servicesCombo);
+
+	hotkeysFrontend = new QWidget();
+	hotkeysScenes = new QWidget();
+	hotkeysSources = new QWidget();
+	hotkeysFilters = new QWidget();
+	hotkeysOutputs = new QWidget();
+	hotkeysEncoders = new QWidget();
+	hotkeysServices = new QWidget();
+
+	hotkeysFrontend->setLayout(hotkeysFrontendLayout);
+	hotkeysScenes->setLayout(hotkeysScenesLayout);
+	hotkeysSources->setLayout(hotkeysSourcesLayout);
+	hotkeysFilters->setLayout(hotkeysFiltersLayout);
+	hotkeysOutputs->setLayout(hotkeysOutputsLayout);
+	hotkeysEncoders->setLayout(hotkeysEncodersLayout);
+	hotkeysServices->setLayout(hotkeysServicesLayout);
+
+	ui->hotkeyPage->setWidget(tabs);
 
 	using namespace std;
-	using encoders_elem_t =
-		tuple<OBSEncoder, QPointer<QLabel>, QPointer<QWidget>>;
-	using outputs_elem_t =
-		tuple<OBSOutput, QPointer<QLabel>, QPointer<QWidget>>;
-	using services_elem_t =
-		tuple<OBSService, QPointer<QLabel>, QPointer<QWidget>>;
-	using sources_elem_t =
-		tuple<OBSSource, QPointer<QLabel>, QPointer<QWidget>>;
 	vector<encoders_elem_t> encoders;
 	vector<outputs_elem_t> outputs;
 	vector<services_elem_t> services;
@@ -2733,10 +2741,18 @@ void OBSBasicSettings::LoadHotkeySettings(obs_hotkey_id ignoreKey)
 		if (!source)
 			return true;
 
-		if (obs_scene_from_source(source))
+		enum obs_source_type type = obs_source_get_type(source);
+
+		if (type == OBS_SOURCE_TYPE_SCENE) {
 			scenes.emplace_back(source, label, hw);
-		else
+		} else if (type == OBS_SOURCE_TYPE_INPUT) {
 			sources.emplace_back(source, label, hw);
+		} else if (type == OBS_SOURCE_TYPE_FILTER) {
+			label->setText(label->text() + " '" +
+				       QT_UTF8(obs_source_get_name(source)) +
+				       "'");
+			filters.emplace_back(source, label, hw);
+		}
 
 		return false;
 	};
@@ -2757,7 +2773,7 @@ void OBSBasicSettings::LoadHotkeySettings(obs_hotkey_id ignoreKey)
 
 		switch (registerer_type) {
 		case OBS_HOTKEY_REGISTERER_FRONTEND:
-			layout->addRow(label, hw);
+			hotkeysFrontendLayout->addRow(label, hw);
 			break;
 
 		case OBS_HOTKEY_REGISTERER_ENCODER:
@@ -2836,11 +2852,200 @@ void OBSBasicSettings::LoadHotkeySettings(obs_hotkey_id ignoreKey)
 		Update(label2, name2, label1, name1);
 	}
 
-	AddHotkeys(*layout, obs_output_get_name, outputs);
-	AddHotkeys(*layout, obs_source_get_name, scenes);
-	AddHotkeys(*layout, obs_source_get_name, sources);
-	AddHotkeys(*layout, obs_encoder_get_name, encoders);
-	AddHotkeys(*layout, obs_service_get_name, services);
+	AddHotkeys(hotkeysOutputsLayout, obs_output_get_name, outputs,
+		   outputsCombo);
+	AddHotkeys(hotkeysScenesLayout, obs_source_get_name, scenes,
+		   scenesCombo);
+	AddHotkeys(hotkeysSourcesLayout, obs_source_get_name, sources,
+		   sourcesCombo);
+	AddHotkeys(hotkeysFiltersLayout, obs_source_get_name, filters);
+	AddHotkeys(hotkeysEncodersLayout, obs_encoder_get_name, encoders,
+		   encodersCombo);
+	AddHotkeys(hotkeysServicesLayout, obs_service_get_name, services,
+		   servicesCombo);
+
+	tabs->addTab(hotkeysFrontend, QTStr("Frontend"));
+	tabs->addTab(hotkeysScenes, QTStr("Basic.Main.Scenes"));
+	tabs->addTab(hotkeysSources, QTStr("Basic.Main.Sources"));
+	tabs->addTab(hotkeysFilters, QTStr("Basic.Filters"));
+	tabs->addTab(hotkeysOutputs, QTStr("Outputs"));
+
+	QLabel *noHotkeys;
+
+	if (scenes.size() == 0) {
+		noHotkeys =
+			new QLabel(QTStr("Basic.Settings.Hotkeys.NoHotkeys"));
+		sceneLabel->hide();
+		scenesCombo->hide();
+		hotkeysScenesLayout->addRow(noHotkeys);
+	}
+
+	if (sources.size() == 0) {
+		noHotkeys =
+			new QLabel(QTStr("Basic.Settings.Hotkeys.NoHotkeys"));
+		sourceLabel->hide();
+		sourcesCombo->hide();
+		hotkeysSourcesLayout->addRow(noHotkeys);
+	}
+
+	if (filters.size() == 0) {
+		noHotkeys =
+			new QLabel(QTStr("Basic.Settings.Hotkeys.NoHotkeys"));
+		filtersSourceLabel->hide();
+		filtersCombo->hide();
+		hotkeysFiltersLayout->addRow(noHotkeys);
+	}
+
+	if (outputs.size() == 0) {
+		noHotkeys =
+			new QLabel(QTStr("Basic.Settings.Hotkeys.NoHotkeys"));
+		outputLabel->hide();
+		outputsCombo->hide();
+		hotkeysOutputsLayout->addRow(noHotkeys);
+	}
+
+	if (encoders.size() > 0)
+		tabs->addTab(hotkeysEncoders, QTStr("Encoders"));
+
+	if (services.size() > 0)
+		tabs->addTab(hotkeysServices, QTStr("Services"));
+
+	for (const auto &filter : filters) {
+		obs_source_t *parent = obs_filter_get_parent(get<0>(filter));
+
+		if (!parent)
+			continue;
+
+		QString name = QT_UTF8(obs_source_get_name(parent));
+
+		if (filtersCombo->findText(name) == -1)
+			filtersCombo->addItem(name);
+	}
+
+	connect(scenesCombo, SIGNAL(currentIndexChanged(const QString &)), this,
+		SLOT(HotkeysComboChanged(const QString &)));
+	connect(sourcesCombo, SIGNAL(currentIndexChanged(const QString &)),
+		this, SLOT(HotkeysComboChanged(const QString &)));
+	connect(outputsCombo, SIGNAL(currentIndexChanged(const QString &)),
+		this, SLOT(HotkeysComboChanged(const QString &)));
+	connect(encodersCombo, SIGNAL(currentIndexChanged(const QString &)),
+		this, SLOT(HotkeysComboChanged(const QString &)));
+	connect(servicesCombo, SIGNAL(currentIndexChanged(const QString &)),
+		this, SLOT(HotkeysComboChanged(const QString &)));
+	connect(filtersCombo, SIGNAL(currentIndexChanged(const QString &)),
+		this, SLOT(FiltersSourceComboChanged(const QString &)));
+
+	connect(tabs, SIGNAL(currentChanged(int)), this,
+		SLOT(HotkeysTabChanged(int)));
+
+	auto setCompleter = [](QComboBox *combo, QStringList list) {
+		QCompleter *completer = new QCompleter(list);
+		completer->setCompletionMode(QCompleter::PopupCompletion);
+		completer->setModelSorting(QCompleter::UnsortedModel);
+		completer->setFilterMode(Qt::MatchStartsWith);
+		completer->setMaxVisibleItems(10);
+		completer->setCaseSensitivity(Qt::CaseInsensitive);
+
+		combo->setCompleter(completer);
+		combo->setEditable(true);
+		combo->setCompleter(completer);
+	};
+
+	auto getList = [](QComboBox *combo) {
+		QStringList list;
+
+		for (int index = 0; index < combo->count(); index++)
+			list << combo->itemText(index);
+
+		return list;
+	};
+
+	setCompleter(scenesCombo, getList(scenesCombo));
+	setCompleter(sourcesCombo, getList(sourcesCombo));
+	setCompleter(filtersCombo, getList(filtersCombo));
+	setCompleter(outputsCombo, getList(outputsCombo));
+	setCompleter(encodersCombo, getList(encodersCombo));
+	setCompleter(servicesCombo, getList(servicesCombo));
+
+	HotkeysTabChanged(tabs->currentIndex());
+}
+
+void OBSBasicSettings::HotkeysTabChanged(int tab)
+{
+	switch (tab) {
+	case 0:
+		break;
+	case 1:
+		HotkeysComboChanged(scenesCombo->currentText());
+		break;
+	case 2:
+		HotkeysComboChanged(sourcesCombo->currentText());
+		break;
+	case 3:
+		FiltersSourceComboChanged(filtersCombo->currentText());
+		break;
+	case 4:
+		HotkeysComboChanged(outputsCombo->currentText());
+		break;
+	case 5:
+		HotkeysComboChanged(encodersCombo->currentText());
+		break;
+	case 6:
+		HotkeysComboChanged(servicesCombo->currentText());
+		break;
+	}
+}
+
+void OBSBasicSettings::FiltersSourceComboChanged(const QString &text)
+{
+	OBSSource parent = obs_get_source_by_name(QT_TO_UTF8(text));
+
+	if (!parent)
+		return;
+
+	for (const auto &filter : filters) {
+		OBSSource parent_ = obs_filter_get_parent(get<0>(filter));
+
+		auto label = get<1>(filter);
+		auto widget = get<2>(filter);
+
+		if (parent == parent_) {
+			widget->show();
+			label->show();
+		} else {
+			widget->hide();
+			label->hide();
+		}
+	}
+
+	obs_source_release(parent);
+}
+
+void OBSBasicSettings::HotkeysComboChanged(const QString &text)
+{
+	QFormLayout *layout =
+		qobject_cast<QFormLayout *>(tabs->currentWidget()->layout());
+
+	if (!layout)
+		return;
+
+	for (int i = 0; i < layout->count(); i++) {
+		OBSHotkeyWidget *w = qobject_cast<OBSHotkeyWidget *>(
+			layout->itemAt(i)->widget());
+
+		if (!w)
+			continue;
+
+		QString name = w->property("name").value<QString>();
+
+		if (name == text) {
+			w->show();
+			layout->labelForField(w)->show();
+		} else {
+			w->hide();
+			layout->labelForField(w)->hide();
+		}
+	}
 }
 
 void OBSBasicSettings::LoadSettings(bool changedOnly)
