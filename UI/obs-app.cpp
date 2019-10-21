@@ -1349,35 +1349,31 @@ bool OBSApp::OBSInit()
 	return true;
 }
 
-string OBSApp::GetVersionString() const
+const char *OBSApp::GetVersionString() const
 {
-	stringstream ver;
-
-#ifdef HAVE_OBSCONFIG_H
-	ver << OBS_VERSION;
-#else
-	ver << LIBOBS_API_MAJOR_VER << "." << LIBOBS_API_MINOR_VER << "."
-	    << LIBOBS_API_PATCH_VER;
-
+#ifndef HAVE_OBSCONFIG_H
+#undef OBS_VERSION
+#define OBS_VERSION
+	STRINGIFY_(LIBOBS_API_MAJOR_VER)
+	"." STRINGIFY_(LIBOBS_API_MINOR_VER) "." STRINGIFY_(
+		LIBOBS_API_PATCH_VER)
 #endif
-	ver << " (";
 
 #ifdef _WIN32
-	if (sizeof(void *) == 8)
-		ver << "64-bit, ";
-	else
-		ver << "32-bit, ";
-
-	ver << "windows)";
+#if _WIN64
+#define OBS_FULL_VERSION OBS_VERSION " (64-bit, windows)"
+#else
+#define OBS_FULL_VERSION OBS_VERSION " (32-bit, windows)"
+#endif
 #elif __APPLE__
-	ver << "mac)";
+#define OBS_FULL_VERSION OBS_VERSION " (mac)"
 #elif __FreeBSD__
-	ver << "freebsd)";
+#define OBS_FULL_VERSION OBS_VERSION " (freebsd)"
 #else /* assume linux for the time being */
-	ver << "linux)";
+#define OBS_FULL_VERSION OBS_VERSION " (linux)"
 #endif
 
-	return ver.str();
+		return OBS_FULL_VERSION;
 }
 
 bool OBSApp::IsPortableMode()

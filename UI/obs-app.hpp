@@ -142,7 +142,7 @@ public:
 
 	const char *GetLastCrashLog() const;
 
-	std::string GetVersionString() const;
+	const char *GetVersionString() const;
 	bool IsPortableMode();
 
 	const char *InputAudioSource() const;
