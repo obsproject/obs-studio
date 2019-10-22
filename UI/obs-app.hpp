@@ -143,7 +143,7 @@ public:
 	const char *GetLastCrashLog() const;
 
 	const char *GetVersionString() const;
-	bool IsPortableMode();
+	bool IsPortableMode() const;
 
 	const char *InputAudioSource() const;
 	const char *OutputAudioSource() const;

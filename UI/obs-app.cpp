@@ -1376,7 +1376,7 @@ const char *OBSApp::GetVersionString() const
 		return OBS_FULL_VERSION;
 }
 
-bool OBSApp::IsPortableMode()
+bool OBSApp::IsPortableMode() const
 {
 	return portable_mode;
 }
