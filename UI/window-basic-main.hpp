@@ -153,7 +153,6 @@ private:
 	long disableSaving = 1;
 	bool projectChanged = false;
 	bool previewEnabled = true;
-	bool fullscreenInterface = false;
 
 	const char *copyString;
 	const char *copyFiltersString = nullptr;

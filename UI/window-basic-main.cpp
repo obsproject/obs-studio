@@ -1758,9 +1758,6 @@ void OBSBasic::OBSInit()
 	SystemTray(true);
 #endif
 
-	if (windowState().testFlag(Qt::WindowFullScreen))
-		fullscreenInterface = true;
-
 	bool has_last_version = config_has_user_value(App()->GlobalConfig(),
 						      "General", "LastVersion");
 	bool first_run =
@@ -6612,12 +6609,10 @@ void OBSBasic::OpenSavedProjectors()
 
 void OBSBasic::on_actionFullscreenInterface_triggered()
 {
-	if (!fullscreenInterface)
+	if (!isFullScreen())
 		showFullScreen();
 	else
 		showNormal();
-
-	fullscreenInterface = !fullscreenInterface;
 }
 
 void OBSBasic::UpdateTitleBar()
