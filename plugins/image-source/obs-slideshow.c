@@ -292,21 +292,19 @@ static void ss_update(void *data, obs_data_t *settings)
 	ss->manual = (astrcmpi(mode, S_MODE_MANUAL) == 0);
 
 	tr_name = obs_data_get_string(settings, S_TRANSITION);
-	if (astrcmpi(tr_name, TR_CUT) == 0)
-		tr_name = "cut_transition";
-	else if (astrcmpi(tr_name, TR_SWIPE) == 0)
-		tr_name = "swipe_transition";
-	else if (astrcmpi(tr_name, TR_SLIDE) == 0)
-		tr_name = "slide_transition";
+
+	obs_source_t *tr = obs_get_private_source_by_name(tr_name);
+
+	if (!tr)
+		new_tr = obs_source_create_private("cut_transition", NULL, NULL);
 	else
-		tr_name = "fade_transition";
+		new_tr = obs_source_duplicate(tr, NULL, true);
+
+	obs_source_release(tr);
 
 	ss->randomize = obs_data_get_bool(settings, S_RANDOMIZE);
 	ss->loop = obs_data_get_bool(settings, S_LOOP);
 	ss->hide = obs_data_get_bool(settings, S_HIDE);
-
-	if (!ss->tr_name || strcmp(tr_name, ss->tr_name) != 0)
-		new_tr = obs_source_create_private(tr_name, NULL, NULL);
 
 	new_duration = (uint32_t)obs_data_get_int(settings, S_SLIDE_TIME);
 	new_speed = (uint32_t)obs_data_get_int(settings, S_TR_SPEED);
@@ -817,6 +815,23 @@ static const char *aspects[] = {"16:9", "16:10", "4:3", "1:1"};
 
 #define NUM_ASPECTS (sizeof(aspects) / sizeof(const char *))
 
+static bool add_tr(void *data, obs_source_t *source)
+{
+	if (!source)
+		return true;
+
+	if (obs_source_get_type(source) != OBS_SOURCE_TYPE_TRANSITION)
+		return true;
+
+	obs_property_t *prop = data;
+	const char *name = obs_source_get_name(source);
+
+	if (name)
+		obs_property_list_add_string(prop, name, name);
+
+	return true;
+}
+
 static obs_properties_t *ss_properties(void *data)
 {
 	obs_properties_t *ppts = obs_properties_create();
@@ -853,10 +868,8 @@ static obs_properties_t *ss_properties(void *data)
 	p = obs_properties_add_list(ppts, S_TRANSITION, T_TRANSITION,
 				    OBS_COMBO_TYPE_LIST,
 				    OBS_COMBO_FORMAT_STRING);
-	obs_property_list_add_string(p, T_TR_CUT, TR_CUT);
-	obs_property_list_add_string(p, T_TR_FADE, TR_FADE);
-	obs_property_list_add_string(p, T_TR_SWIPE, TR_SWIPE);
-	obs_property_list_add_string(p, T_TR_SLIDE, TR_SLIDE);
+
+	obs_enum_private_sources(add_tr, p);
 
 	obs_properties_add_int(ppts, S_SLIDE_TIME, T_SLIDE_TIME, 50, 3600000,
 			       50);
