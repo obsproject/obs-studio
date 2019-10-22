@@ -28,6 +28,7 @@ class WASAPISource {
 	obs_source_t *source;
 	string device_id;
 	string device_name;
+	string device_sample = "-";
 	bool isInputDevice;
 	bool useDeviceTiming = false;
 	bool isDefaultDevice = false;
@@ -289,7 +290,8 @@ void WASAPISource::InitCapture()
 	client->Start();
 	active = true;
 
-	blog(LOG_INFO, "WASAPI: Device '%s' initialized", device_name.c_str());
+	blog(LOG_INFO, "WASAPI: Device '%s' [%s Hz] initialized",
+	     device_name.c_str(), device_sample.c_str());
 }
 
 void WASAPISource::Initialize()
@@ -307,6 +309,22 @@ void WASAPISource::Initialize()
 		return;
 
 	device_name = GetDeviceName(device);
+
+	HRESULT resSample;
+	IPropertyStore *store = nullptr;
+	PWAVEFORMATEX deviceFormatProperties;
+	PROPVARIANT prop;
+	resSample = device->OpenPropertyStore(STGM_READ, &store);
+	if (!FAILED(resSample)) {
+		resSample =
+			store->GetValue(PKEY_AudioEngine_DeviceFormat, &prop);
+		if (!FAILED(resSample)) {
+			deviceFormatProperties =
+				(PWAVEFORMATEX)prop.blob.pBlobData;
+			device_sample = std::to_string(
+				deviceFormatProperties->nSamplesPerSec);
+		}
+	}
 
 	InitClient();
 	if (!isInputDevice)
