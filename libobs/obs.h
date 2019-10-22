@@ -580,6 +580,10 @@ EXPORT void obs_enum_sources(bool (*enum_proc)(void *, obs_source_t *),
 			     void *param);
 
 /** Enumerates scenes */
+EXPORT void obs_enum_private_sources(bool (*enum_proc)(void *, obs_source_t *),
+				 void *param);
+
+/** Enumerates scenes */
 EXPORT void obs_enum_scenes(bool (*enum_proc)(void *, obs_source_t *),
 			    void *param);
 
@@ -611,6 +615,9 @@ EXPORT obs_encoder_t *obs_get_encoder_by_name(const char *name);
 
 /** Gets an service by its name. */
 EXPORT obs_service_t *obs_get_service_by_name(const char *name);
+
+/** Find private source */
+EXPORT obs_source_t *obs_get_private_source_by_name(const char *name);
 
 enum obs_base_effect {
 	OBS_EFFECT_DEFAULT,         /**< RGB/YUV */

@@ -1493,6 +1493,32 @@ void obs_enum_scenes(bool (*enum_proc)(void *, obs_source_t *), void *param)
 	pthread_mutex_unlock(&obs->data.sources_mutex);
 }
 
+void obs_enum_private_sources(bool (*enum_proc)(void *, obs_source_t *),
+			  void *param)
+{
+	obs_source_t *source;
+
+	if (!obs)
+		return;
+
+	pthread_mutex_lock(&obs->data.sources_mutex);
+	source = obs->data.first_source;
+
+	while (source) {
+		obs_source_t *next_source =
+			(obs_source_t *)source->context.next;
+
+		if (source->info.type == OBS_SOURCE_TYPE_TRANSITION &&
+		    !enum_proc(param, source)) {
+			break;
+		}
+
+		source = next_source;
+	}
+
+	pthread_mutex_unlock(&obs->data.sources_mutex);
+}
+
 static inline void obs_enum(void *pstart, pthread_mutex_t *mutex, void *proc,
 			    void *param)
 {
@@ -1562,6 +1588,29 @@ static inline void *get_context_by_name(void *vfirst, const char *name,
 	return context;
 }
 
+static inline void *get_private_context_by_name(void *vfirst, const char *name,
+					pthread_mutex_t *mutex,
+					void *(*addref)(void *))
+{
+	struct obs_context_data **first = vfirst;
+	struct obs_context_data *context;
+
+	pthread_mutex_lock(mutex);
+
+	context = *first;
+	while (context) {
+		if (strcmp(context->name, name) == 0) {
+			context = addref(context);
+			break;
+		}
+		context = context->next;
+	}
+
+	pthread_mutex_unlock(mutex);
+	return context;
+}
+
+
 static inline void *obs_source_addref_safe_(void *ref)
 {
 	return obs_source_get_ref(ref);
@@ -1592,6 +1641,15 @@ obs_source_t *obs_get_source_by_name(const char *name)
 	if (!obs)
 		return NULL;
 	return get_context_by_name(&obs->data.first_source, name,
+				   &obs->data.sources_mutex,
+				   obs_source_addref_safe_);
+}
+
+obs_source_t *obs_get_private_source_by_name(const char *name)
+{
+	if (!obs || !name)
+		return NULL;
+	return get_private_context_by_name(&obs->data.first_source, name,
 				   &obs->data.sources_mutex,
 				   obs_source_addref_safe_);
 }
