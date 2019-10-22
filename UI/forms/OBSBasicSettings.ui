@@ -3685,19 +3685,19 @@
                    <item row="0" column="1">
                     <widget class="QComboBox" name="sampleRate">
                      <property name="currentText">
-                      <string notr="true">44.1khz</string>
+                      <string notr="true">44.1 kHz</string>
                      </property>
                      <property name="currentIndex">
                       <number>0</number>
                      </property>
                      <item>
                       <property name="text">
-                       <string>44.1khz</string>
+                       <string>44.1 kHz</string>
                       </property>
                      </item>
                      <item>
                       <property name="text">
-                       <string>48khz</string>
+                       <string>48 kHz</string>
                       </property>
                      </item>
                     </widget>
