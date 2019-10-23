@@ -12,3 +12,4 @@ Terminal=false
 Type=Application
 Categories=AudioVideo;Recorder;
 StartupNotify=true
+StartupWMClass=obs
