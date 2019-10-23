@@ -358,7 +358,7 @@ static bool enc_encode(void *data, struct encoder_frame *frame,
 
 static void enc_defaults(obs_data_t *settings)
 {
-	obs_data_set_default_int(settings, "bitrate", 128);
+	obs_data_set_default_int(settings, "bitrate", 160);
 }
 
 static obs_properties_t *enc_properties(void *unused)
