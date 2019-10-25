@@ -151,8 +151,8 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>803</width>
-              <height>977</height>
+              <width>630</width>
+              <height>1035</height>
              </rect>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_19">
@@ -775,7 +775,7 @@
             <property name="labelAlignment">
              <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
             </property>
-            <item row="2" column="0">
+            <item row="3" column="0">
              <widget class="QLabel" name="serviceLabel">
               <property name="text">
                <string>Basic.AutoConfig.StreamPage.Service</string>
@@ -785,7 +785,7 @@
               </property>
              </widget>
             </item>
-            <item row="2" column="1">
+            <item row="3" column="1">
              <widget class="QComboBox" name="service">
               <property name="maxVisibleItems">
                <number>20</number>
@@ -921,7 +921,7 @@
              <item row="0" column="1">
               <widget class="QStackedWidget" name="serverStackedWidget">
                <property name="currentIndex">
-                <number>0</number>
+                <number>1</number>
                </property>
                <widget class="QWidget" name="servicePage">
                 <layout class="QHBoxLayout" name="horizontalLayout_21">
@@ -1011,10 +1011,23 @@
                   </property>
                  </widget>
                 </item>
+                <item>
+                <widget class="UrlPushButton" name="getStreamKeyButton">
+                 <property name="toolTip">
+                  <string/>
+                 </property>
+                 <property name="toolTipDuration">
+                  <number>-4</number>
+                 </property>
+                 <property name="text">
+                  <string>Basic.AutoConfig.StreamPage.GetStreamKey</string>
+                 </property>
+                </widget>
+               </item>
                </layout>
               </widget>
              </item>
-             <item row="2" column="0">
+             <item row="3" column="0">
               <spacer name="horizontalSpacer_18">
                <property name="orientation">
                 <enum>Qt::Horizontal</enum>
@@ -1027,7 +1040,7 @@
                </property>
               </spacer>
              </item>
-             <item row="2" column="1">
+             <item row="3" column="1">
               <layout class="QHBoxLayout" name="horizontalLayout_15">
                <item>
                 <widget class="QPushButton" name="connectAccount2">
@@ -1051,7 +1064,7 @@
                </item>
               </layout>
              </item>
-             <item row="3" column="1">
+             <item row="4" column="1">
               <layout class="QHBoxLayout" name="horizontalLayout_23">
                <item>
                 <widget class="QPushButton" name="disconnectAccount">
@@ -1076,16 +1089,20 @@
               </layout>
              </item>
              <item row="5" column="1">
+              <widget class="QCheckBox" name="bandwidthTestEnable">
+               <property name="text">
+                <string>Basic.Settings.Stream.BandwidthTestMode</string>
+               </property>
+              </widget>
+             </item>
+             <item row="6" column="1">
               <widget class="QCheckBox" name="useAuth">
                <property name="text">
                 <string>Basic.Settings.Stream.Custom.UseAuthentication</string>
                </property>
               </widget>
              </item>
-             <item row="6" column="1">
-              <widget class="QLineEdit" name="authUsername"/>
-             </item>
-             <item row="6" column="0">
+             <item row="7" column="0">
               <widget class="QLabel" name="authUsernameLabel">
                <property name="text">
                 <string>Basic.Settings.Stream.Custom.Username</string>
@@ -1095,7 +1112,10 @@
                </property>
               </widget>
              </item>
-             <item row="7" column="0">
+             <item row="7" column="1">
+              <widget class="QLineEdit" name="authUsername"/>
+             </item>
+             <item row="8" column="0">
               <widget class="QLabel" name="authPwLabel">
                <property name="text">
                 <string>Basic.Settings.Stream.Custom.Password</string>
@@ -1105,7 +1125,7 @@
                </property>
               </widget>
              </item>
-             <item row="7" column="1">
+             <item row="8" column="1">
               <widget class="QWidget" name="authPwWidget" native="true">
                <layout class="QHBoxLayout" name="horizontalLayout_25">
                 <property name="leftMargin">
@@ -1135,13 +1155,6 @@
                  </widget>
                 </item>
                </layout>
-              </widget>
-             </item>
-             <item row="4" column="1">
-              <widget class="QCheckBox" name="bandwidthTestEnable">
-               <property name="text">
-                <string>Basic.Settings.Stream.BandwidthTestMode</string>
-               </property>
               </widget>
              </item>
             </layout>
@@ -1180,8 +1193,8 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>601</width>
-              <height>631</height>
+              <width>739</width>
+              <height>793</height>
              </rect>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_21">
@@ -3628,8 +3641,8 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>555</width>
-              <height>469</height>
+              <width>696</width>
+              <height>601</height>
              </rect>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_50">
@@ -4199,7 +4212,7 @@
          <item row="3" column="1">
           <widget class="QStackedWidget" name="fpsTypes">
            <property name="currentIndex">
-            <number>0</number>
+            <number>1</number>
            </property>
            <widget class="QWidget" name="page">
             <layout class="QHBoxLayout" name="horizontalLayout_2">
@@ -4444,8 +4457,8 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>803</width>
-              <height>781</height>
+              <width>759</width>
+              <height>930</height>
              </rect>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_23">
@@ -5249,6 +5262,13 @@
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>UrlPushButton</class>
+   <extends>QPushButton</extends>
+   <header>url-push-button.hpp</header>
+  </customwidget>
+ </customwidgets>
  <tabstops>
   <tabstop>listWidget</tabstop>
   <tabstop>scrollArea_2</tabstop>
