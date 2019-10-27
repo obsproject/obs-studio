@@ -55,6 +55,7 @@
 #include <mbedtls/ctr_drbg.h>
 #include <mbedtls/md5.h>
 #include <mbedtls/base64.h>
+#include <mbedtls/x509_crt.h>
 #define MD5_DIGEST_LENGTH 16
 
 #elif defined(USE_POLARSSL)

@@ -86,6 +86,8 @@
 #include <mbedtls/ssl.h>
 #include <mbedtls/ctr_drbg.h>
 #include <mbedtls/entropy.h>
+#include <mbedtls/x509.h>
+#include <mbedtls/x509_crt.h>
 
 #define my_dhm_P \
     "E4004C1F94182000103D883A448B3F80" \
