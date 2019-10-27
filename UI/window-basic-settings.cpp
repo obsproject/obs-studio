@@ -132,6 +132,35 @@ static bool ConvertResText(const char *res, uint32_t &cx, uint32_t &cy)
 	return true;
 }
 
+static bool listInsertOrdered(QListWidget *list, int newValue)
+{
+	int insertionIndex = -1;
+	for (int i = 0; i < list->count(); ++i) {
+		auto item = list->item(i);
+		auto itemValue = item->data(0).toInt();
+
+		if (itemValue == newValue) {
+			return false;
+		}
+
+		if (itemValue > newValue) {
+			insertionIndex = i;
+			break;
+		}
+	}
+
+	auto item = new QListWidgetItem(QString::asprintf("%d", newValue));
+	item->setData(0, newValue);
+
+	if (insertionIndex < 0) {
+		list->addItem(item);
+	} else {
+		list->insertItem(insertionIndex, item);
+	}
+
+	return true;
+}
+
 static inline bool WidgetChanged(QWidget *widget)
 {
 	return widget->property("changed").toBool();
@@ -708,6 +737,12 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 		SLOT(AdvReplayBufferChanged()));
 	connect(ui->listWidget, SIGNAL(currentRowChanged(int)), this,
 		SLOT(SimpleRecordingEncoderChanged()));
+	connect(ui->advRBLengthsAddButton, SIGNAL(clicked()), this,
+		SLOT(AdvReplayBufferAddLength()));
+	connect(ui->advRBLengthsRemoveButton, SIGNAL(clicked()), this,
+		SLOT(AdvReplayBufferRemoveSelectedLengths()));
+	connect(ui->advRBLengthsList, SIGNAL(itemSelectionChanged()), this,
+		SLOT(AdvReplayBufferLengthSelected()));
 
 	// Get Bind to IP Addresses
 	obs_properties_t *ppts = obs_get_output_properties("rtmp_output");
@@ -810,6 +845,26 @@ void OBSBasicSettings::SaveSpinBox(QSpinBox *widget, const char *section,
 {
 	if (WidgetChanged(widget))
 		config_set_int(main->Config(), section, value, widget->value());
+}
+
+void OBSBasicSettings::SaveListAsCSV(QListWidget *widget, const char *section,
+				     const char *value)
+{
+	if (WidgetChanged(widget)) {
+		QString cfg;
+		for (size_t i = 0; i < ui->advRBLengthsList->count(); ++i) {
+			cfg.append(QString::asprintf(
+				"%d,",
+				ui->advRBLengthsList->item(i)->data(0).toInt()));
+		}
+
+		if (cfg.length()) {
+			cfg.remove(cfg.length() - 1, 1);
+		}
+
+		auto scfg = cfg.toStdString();
+		config_set_string(main->Config(), section, value, scfg.c_str());
+	}
 }
 
 #define TEXT_USE_STREAM_ENC \
@@ -2262,6 +2317,8 @@ void OBSBasicSettings::LoadAdvancedSettings()
 	bool replayBuf = config_get_bool(main->Config(), "AdvOut", "RecRB");
 	int rbTime = config_get_int(main->Config(), "AdvOut", "RecRBTime");
 	int rbSize = config_get_int(main->Config(), "AdvOut", "RecRBSize");
+	QString rbExtraLengths = config_get_string(main->Config(), "AdvOut",
+						   "RecRBExtraLengths");
 	bool autoRemux = config_get_bool(main->Config(), "Video", "AutoRemux");
 	const char *hotkeyFocusType = config_get_string(
 		App()->GlobalConfig(), "General", "HotkeyFocusType");
@@ -2285,6 +2342,27 @@ void OBSBasicSettings::LoadAdvancedSettings()
 	ui->advReplayBuf->setChecked(replayBuf);
 	ui->advRBSecMax->setValue(rbTime);
 	ui->advRBMegsMax->setValue(rbSize);
+
+	for (auto &sLength : rbExtraLengths.split(
+		     ',', QString::SplitBehavior::SkipEmptyParts)) {
+		bool convOk = false;
+		int length = sLength.toInt(&convOk);
+
+		if (convOk) {
+			listInsertOrdered(ui->advRBLengthsList, length);
+		}
+	}
+
+	if (ui->advRBLengthsList->count() > 0) {
+		bool gotValue;
+		int maxExtra = ui->advRBLengthsList
+				       ->item(ui->advRBLengthsList->count() - 1)
+				       ->data(0)
+				       .toInt(&gotValue);
+
+		ui->advRBExtraLengthsTooHighMessage->setVisible(
+			gotValue && rbTime < maxExtra);
+	}
 
 	ui->reconnectEnable->setChecked(reconnect);
 	ui->reconnectRetryDelay->setValue(retryDelay);
@@ -3212,6 +3290,7 @@ void OBSBasicSettings::SaveOutputSettings()
 	SaveCheckBox(ui->advReplayBuf, "AdvOut", "RecRB");
 	SaveSpinBox(ui->advRBSecMax, "AdvOut", "RecRBTime");
 	SaveSpinBox(ui->advRBMegsMax, "AdvOut", "RecRBSize");
+	SaveListAsCSV(ui->advRBLengthsList, "AdvOut", "RecRBExtraLengths");
 
 	WriteJsonData(streamEncoderProps, "streamEncoder.json");
 	WriteJsonData(recordEncoderProps, "recordEncoder.json");
@@ -4355,11 +4434,67 @@ void OBSBasicSettings::AdvReplayBufferChanged()
 						replayBufferEnabled);
 	ui->advReplayBuf->setEnabled(!lossless);
 
+	if (ui->advRBLengthsList->count() > 0) {
+		bool gotValue;
+		int maxExtra = ui->advRBLengthsList
+				       ->item(ui->advRBLengthsList->count() - 1)
+				       ->data(0)
+				       .toInt(&gotValue);
+
+		ui->advRBExtraLengthsTooHighMessage->setVisible(
+			gotValue && seconds < maxExtra);
+	}
+
+	ui->advRBLengthsSpinBox->setMaximum(seconds);
+
+	ui->advRBLengthsSpinBox->setMinimum(1);
+
+	ui->advRBLengthsRemoveButton->setEnabled(false);
+
 	UpdateAutomaticReplayBufferCheckboxes();
 }
 
 #define SIMPLE_OUTPUT_WARNING(str) \
 	QTStr("Basic.Settings.Output.Simple.Warn." str)
+
+void OBSBasicSettings::AdvReplayBufferAddLength()
+{
+	auto newValue = ui->advRBLengthsSpinBox->value();
+
+	if (newValue < 1) {
+		return;
+	}
+
+	if (ui->advRBSecMax->value() < newValue) {
+		// should never enter here, but.
+		QMessageBox::warning(
+			this, QString("RB"),
+			"Extra lengths must be shorter than Replay Buffer length",
+			QMessageBox::StandardButton::Ok,
+			QMessageBox::StandardButton::NoButton);
+		return;
+	}
+
+	if (listInsertOrdered(ui->advRBLengthsList, newValue)) {
+		ui->advRBLengthsList->setProperty("changed", QVariant(true));
+		OutputsChanged();
+	}
+
+	AdvReplayBufferChanged();
+}
+
+void OBSBasicSettings::AdvReplayBufferRemoveSelectedLengths()
+{
+	qDeleteAll(ui->advRBLengthsList->selectedItems());
+
+	AdvReplayBufferChanged();
+}
+
+void OBSBasicSettings::AdvReplayBufferLengthSelected()
+{
+	int enable = ui->advRBLengthsList->selectedItems().count();
+	ui->advRBLengthsRemoveButton->setEnabled(enable);
+}
 
 void OBSBasicSettings::SimpleRecordingEncoderChanged()
 {

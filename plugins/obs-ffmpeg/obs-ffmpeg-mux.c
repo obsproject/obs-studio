@@ -25,6 +25,7 @@
 #include <util/circlebuf.h>
 #include <util/threading.h>
 #include "ffmpeg-mux/ffmpeg-mux.h"
+#include "obs-internal.h"
 
 #ifdef _WIN32
 #include "util/windows/win-version.h"
@@ -59,12 +60,20 @@ struct ffmpeg_muxer {
 	int64_t save_ts;
 	int keyframes;
 	obs_hotkey_id hotkey;
+	obs_hotkey_id *hotkey_extra;
+	uint8_t hotkey_extra_count;
 
 	DARRAY(struct encoder_packet) mux_packets;
 	pthread_t mux_thread;
 	bool mux_thread_joinable;
 	volatile bool muxing;
+
+	int64_t save_length_usec;
 };
+
+const char *hotkey_name_prefix = "ReplayBuffer.Save.seconds.";
+const unsigned int hotkey_name_prefix_length =
+	sizeof("ReplayBuffer.Save.seconds.") - 1;
 
 static const char *ffmpeg_mux_getname(void *type)
 {
@@ -87,6 +96,7 @@ static inline void replay_buffer_clear(struct ffmpeg_muxer *stream)
 	stream->max_time = 0;
 	stream->save_ts = 0;
 	stream->keyframes = 0;
+	stream->save_length_usec = -1;
 }
 
 static void ffmpeg_mux_destroy(void *data)
@@ -100,6 +110,10 @@ static void ffmpeg_mux_destroy(void *data)
 
 	os_process_pipe_destroy(stream->pipe);
 	dstr_free(&stream->path);
+
+	bfree(stream->hotkey_extra);
+	stream->hotkey_extra_count = 0;
+
 	bfree(stream);
 }
 
@@ -539,13 +553,24 @@ static void replay_buffer_hotkey(void *data, obs_hotkey_id id,
 				 obs_hotkey_t *hotkey, bool pressed)
 {
 	UNUSED_PARAMETER(id);
-	UNUSED_PARAMETER(hotkey);
-	UNUSED_PARAMETER(pressed);
 
 	if (!pressed)
 		return;
 
 	struct ffmpeg_muxer *stream = data;
+
+	if (hotkey && hotkey->name &&
+	    memcmp(hotkey_name_prefix, hotkey->name,
+		   hotkey_name_prefix_length) == 0) {
+
+		char *endPtr;
+		stream->save_length_usec =
+			strtol(hotkey->name + hotkey_name_prefix_length,
+			       &endPtr, 10) *
+			1000000;
+		if (*endPtr)
+			stream->save_length_usec = -1;
+	}
 
 	if (os_atomic_load_bool(&stream->active)) {
 		obs_encoder_t *vencoder =
@@ -565,6 +590,16 @@ static void save_replay_proc(void *data, calldata_t *cd)
 	UNUSED_PARAMETER(cd);
 }
 
+static void save_replay_proc_secs(void *data, calldata_t *cd)
+{
+	int64_t secs = calldata_int(cd, "seconds");
+
+	struct ffmpeg_muxer *fm = data;
+	fm->save_length_usec = (secs > 0) ? secs * 1000000 : -1;
+
+	replay_buffer_hotkey(data, 0, NULL, true);
+}
+
 static void get_last_replay(void *data, calldata_t *cd)
 {
 	struct ffmpeg_muxer *stream = data;
@@ -572,9 +607,110 @@ static void get_last_replay(void *data, calldata_t *cd)
 		calldata_set_string(cd, "path", stream->path.array);
 }
 
+void register_extra_hotkeys(obs_data_t *settings, struct ffmpeg_muxer *stream)
+{
+
+	char **extra_lengths_ptr = strlist_split(
+		obs_data_get_string(settings, "RecRBExtraLengths"), ',', false);
+	char **extra_lengths = extra_lengths_ptr;
+
+	int extra_length_count = 0;
+	while (extra_lengths[extra_length_count]) {
+		++extra_length_count;
+	}
+
+	stream->hotkey_extra =
+		bzalloc(sizeof(obs_hotkey_id) * extra_length_count);
+	stream->hotkey_extra_count = extra_length_count;
+
+	char *hotkey_desc_template =
+		bstrdup(obs_module_text("ReplayBuffer.Save.seconds"));
+
+	char *hotkey_desc_template_ptr = hotkey_desc_template;
+	int replace_count = 0;
+
+	while ((hotkey_desc_template_ptr =
+			strstr(hotkey_desc_template_ptr, "%1"))) {
+		++replace_count;
+		*(hotkey_desc_template_ptr + 1) = 'd'; // %1 becomes %d
+		hotkey_desc_template_ptr += 2;
+	}
+
+	const unsigned int hotkey_desc_len =
+		strlen(hotkey_desc_template) - (replace_count * 2) + 1;
+
+	char *hotkey_desc = NULL;
+	unsigned int hotkey_desc_cur_len = 0;
+
+	char *hotkey_name = NULL;
+	unsigned int hotkey_name_cur_len = 0;
+
+	char *conv_end;
+	unsigned int extra_length_idx = 0;
+
+	while (*extra_lengths) {
+		const int len = strtol(*extra_lengths, &conv_end, 10);
+		if (*conv_end != 0) {
+			blog(LOG_WARNING,
+			     "found \"%s\" in settings which is not a valid Replay Buffer length, ignoring",
+			     *extra_lengths);
+			continue;
+		}
+
+		const unsigned int extra_length_len = strlen(*extra_lengths);
+
+		const unsigned int hotkey_name_needed_len =
+			hotkey_name_prefix_length +
+			(extra_length_len * replace_count) + 1;
+
+		if (hotkey_name_cur_len < hotkey_name_needed_len) {
+			if (hotkey_name)
+				bfree(hotkey_name);
+			hotkey_name_cur_len = hotkey_name_needed_len;
+			hotkey_name = bmalloc(hotkey_name_cur_len);
+		}
+
+		strcpy(hotkey_name, hotkey_name_prefix);
+		strcat(hotkey_name, *extra_lengths);
+		assert(strlen(hotkey_name) <= hotkey_name_needed_len - 1);
+
+		const unsigned int hotkey_desc_buf_needed_len =
+			hotkey_desc_len + extra_length_len;
+
+		if (hotkey_desc_cur_len < hotkey_desc_buf_needed_len) {
+			hotkey_desc_cur_len = hotkey_desc_buf_needed_len;
+
+			if (hotkey_desc)
+				bfree(hotkey_desc);
+			hotkey_desc = bmalloc(hotkey_desc_cur_len);
+		}
+
+		sprintf(hotkey_desc, hotkey_desc_template, len);
+		assert(strlen(hotkey_desc) <= hotkey_desc_cur_len - 1);
+
+		stream->hotkey_extra[extra_length_idx++] =
+			obs_hotkey_register_output(stream->output, hotkey_name,
+						   hotkey_desc,
+						   replay_buffer_hotkey,
+						   stream);
+
+		++extra_lengths;
+	}
+
+	if (hotkey_desc_template)
+		bfree(hotkey_desc_template);
+
+	if (hotkey_name)
+		bfree(hotkey_name);
+
+	if (hotkey_desc)
+		bfree(hotkey_desc);
+
+	strlist_free(extra_lengths_ptr);
+}
+
 static void *replay_buffer_create(obs_data_t *settings, obs_output_t *output)
 {
-	UNUSED_PARAMETER(settings);
 	struct ffmpeg_muxer *stream = bzalloc(sizeof(*stream));
 	stream->output = output;
 
@@ -583,8 +719,12 @@ static void *replay_buffer_create(obs_data_t *settings, obs_output_t *output)
 					   obs_module_text("ReplayBuffer.Save"),
 					   replay_buffer_hotkey, stream);
 
+	register_extra_hotkeys(settings, stream);
+
 	proc_handler_t *ph = obs_output_get_proc_handler(output);
 	proc_handler_add(ph, "void save()", save_replay_proc, stream);
+	proc_handler_add(ph, "void save_length(int seconds)",
+			 save_replay_proc_secs, stream);
 	proc_handler_add(ph, "void get_last_replay(out string path)",
 			 get_last_replay, stream);
 
@@ -596,6 +736,11 @@ static void replay_buffer_destroy(void *data)
 	struct ffmpeg_muxer *stream = data;
 	if (stream->hotkey)
 		obs_hotkey_unregister(stream->hotkey);
+
+	for (size_t i = 0; i < stream->hotkey_extra_count; ++i) {
+		obs_hotkey_unregister(stream->hotkey_extra[i]);
+	}
+
 	ffmpeg_mux_destroy(data);
 }
 
@@ -763,9 +908,22 @@ static void replay_buffer_save(struct ffmpeg_muxer *stream)
 	int64_t audio_offsets[MAX_AUDIO_MIXES] = {0};
 	int64_t audio_dts_offsets[MAX_AUDIO_MIXES] = {0};
 
+	struct encoder_packet *pkt =
+		circlebuf_data(&stream->packets, (num_packets - 1) * size);
+
+	int64_t dts_offset = pkt->dts_usec - stream->save_length_usec;
+
+	if (stream->save_length_usec == -1 || dts_offset < 0) {
+		pkt = circlebuf_data(&stream->packets, 0);
+		dts_offset = pkt->dts_usec;
+	}
+
 	for (size_t i = 0; i < num_packets; i++) {
-		struct encoder_packet *pkt;
 		pkt = circlebuf_data(&stream->packets, i * size);
+
+		if (pkt->dts_usec < dts_offset) {
+			continue;
+		}
 
 		if (pkt->type == OBS_ENCODER_VIDEO) {
 			if (!found_video) {
@@ -809,6 +967,7 @@ static void replay_buffer_save(struct ffmpeg_muxer *stream)
 	/* ---------------------------- */
 
 	os_atomic_set_bool(&stream->muxing, true);
+	stream->save_length_usec = -1;
 	stream->mux_thread_joinable = pthread_create(&stream->mux_thread, NULL,
 						     replay_buffer_mux_thread,
 						     stream) == 0;

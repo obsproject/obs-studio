@@ -163,6 +163,8 @@ private:
 		      const char *value);
 	void SaveSpinBox(QSpinBox *widget, const char *section,
 			 const char *value);
+	void SaveListAsCSV(QListWidget *widget, const char *section,
+			   const char *value);
 	void SaveFormat(QComboBox *combo);
 	void SaveEncoder(QComboBox *combo, const char *section,
 			 const char *value);
@@ -347,6 +349,10 @@ private slots:
 	void UpdateAutomaticReplayBufferCheckboxes();
 
 	void AdvOutRecCheckWarnings();
+
+	void AdvReplayBufferAddLength();
+	void AdvReplayBufferRemoveSelectedLengths();
+	void AdvReplayBufferLengthSelected();
 
 	void SimpleRecordingQualityChanged();
 	void SimpleRecordingEncoderChanged();

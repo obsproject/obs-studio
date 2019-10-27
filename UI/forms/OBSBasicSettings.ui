@@ -3581,6 +3581,156 @@
                           </property>
                          </widget>
                         </item>
+                        <item row="4" column="0">
+                         <layout class="QVBoxLayout" name="advRBExtraLengthsDescVL">
+                          <item>
+                           <widget class="QLabel" name="advRBLengthsLabel">
+                            <property name="text">
+                             <string>Basic.Settings.Output.ReplayBuffer.AddExtraLengths</string>
+                            </property>
+                           </widget>
+                          </item>
+                          <item>
+                           <widget class="QLabel" name="advRBExtraLengthsHotkeyMessage">
+                            <property name="text">
+                             <string>Basic.Settings.Output.ReplayBuffer.LengthsHotkeyMessage</string>
+                            </property>
+                            <property name="wordWrap">
+                             <bool>true</bool>
+                            </property>
+                           </widget>
+                          </item>
+                          <item>
+                           <spacer name="advRBExtraLengthsDescVS">
+                            <property name="orientation">
+                             <enum>Qt::Vertical</enum>
+                            </property>
+                            <property name="sizeHint" stdset="0">
+                             <size>
+                              <width>20</width>
+                              <height>40</height>
+                             </size>
+                            </property>
+                           </spacer>
+                          </item>
+                         </layout>
+                        </item>
+                        <item row="4" column="1">
+                         <layout class="QHBoxLayout" name="advRBExtraLengthsEditHL">
+                          <item>
+                           <widget class="QListWidget" name="advRBLengthsList">
+                            <property name="maximumSize">
+                             <size>
+                              <width>100</width>
+                              <height>200</height>
+                             </size>
+                            </property>
+                            <property name="selectionMode">
+                             <enum>QAbstractItemView::ExtendedSelection</enum>
+                            </property>
+                           </widget>
+                          </item>
+                          <item>
+                           <layout class="QVBoxLayout" name="verticalLayout_7">
+                            <item>
+                             <layout class="QHBoxLayout" name="horizontalLayout_24">
+                              <item>
+                               <widget class="QSpinBox" name="advRBLengthsSpinBox">
+                                <property name="baseSize">
+                                 <size>
+                                  <width>0</width>
+                                  <height>0</height>
+                                 </size>
+                                </property>
+                               </widget>
+                              </item>
+                              <item>
+                               <widget class="QLabel" name="label_69">
+                                <property name="text">
+                                 <string>Seconds</string>
+                                </property>
+                               </widget>
+                              </item>
+                              <item>
+                               <spacer name="horizontalSpacer_27">
+                                <property name="orientation">
+                                 <enum>Qt::Horizontal</enum>
+                                </property>
+                                <property name="sizeHint" stdset="0">
+                                 <size>
+                                  <width>40</width>
+                                  <height>20</height>
+                                 </size>
+                                </property>
+                               </spacer>
+                              </item>
+                             </layout>
+                            </item>
+                            <item>
+                             <widget class="QPushButton" name="advRBLengthsAddButton">
+                              <property name="maximumSize">
+                               <size>
+                                <width>16777215</width>
+                                <height>16777215</height>
+                               </size>
+                              </property>
+                              <property name="text">
+                               <string>Basic.Settings.Output.ReplayBuffer.AddLengthToList</string>
+                              </property>
+                             </widget>
+                            </item>
+                            <item>
+                             <widget class="QLabel" name="advRBExtraLengthsTooHighMessage">
+                              <property name="enabled">
+                               <bool>true</bool>
+                              </property>
+                              <property name="font">
+                               <font>
+                                <weight>75</weight>
+                                <bold>true</bold>
+                               </font>
+                              </property>
+                              <property name="styleSheet">
+                               <string notr="true">color: rgb(255, 0, 0);</string>
+                              </property>
+                              <property name="text">
+                               <string>Basic.Settings.Output.ReplayBuffer.LengthsTooLongMessage</string>
+                              </property>
+                              <property name="wordWrap">
+                               <bool>true</bool>
+                              </property>
+                             </widget>
+                            </item>
+                            <item>
+                             <spacer name="verticalSpacer_3">
+                              <property name="orientation">
+                               <enum>Qt::Vertical</enum>
+                              </property>
+                              <property name="sizeHint" stdset="0">
+                               <size>
+                                <width>20</width>
+                                <height>40</height>
+                               </size>
+                              </property>
+                             </spacer>
+                            </item>
+                            <item>
+                             <widget class="QPushButton" name="advRBLengthsRemoveButton">
+                              <property name="maximumSize">
+                               <size>
+                                <width>16777215</width>
+                                <height>16777215</height>
+                               </size>
+                              </property>
+                              <property name="text">
+                               <string>Basic.Settings.Output.ReplayBuffer.RemoveLengthFromList</string>
+                              </property>
+                             </widget>
+                            </item>
+                           </layout>
+                          </item>
+                         </layout>
+                        </item>
                        </layout>
                       </widget>
                      </item>
