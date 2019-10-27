@@ -51,7 +51,7 @@ FIND_PATH(LUAJIT_INCLUDE_DIR
 		)
 
 find_library(LUAJIT_LIB
-	NAMES ${_LUAJIT_LIBRARIES} luajit luajit-51 luajit-5.1 lua51
+	NAMES ${_LUAJIT_LIBRARIES} lua liblua luajit luajit-51 luajit-5.1 lua51
 	HINTS
 		ENV LuajitPath${_lib_suffix}
 		ENV LuajitPath

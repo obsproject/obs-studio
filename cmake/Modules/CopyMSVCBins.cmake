@@ -58,8 +58,10 @@ file(GLOB FFMPEG_BIN_FILES
 	"${FFMPEG_avcodec_INCLUDE_DIR}/bin/opus*.dll"
 
 	"${FFMPEG_avcodec_INCLUDE_DIR}/../bin/libogg*.dll"
+	"${FFMPEG_avcodec_INCLUDE_DIR}/../bin/ogg*.dll"
 	"${FFMPEG_avcodec_INCLUDE_DIR}/../bin/libvorbis*.dll"
 	"${FFMPEG_avcodec_INCLUDE_DIR}/bin/libogg*.dll"
+	"${FFMPEG_avcodec_INCLUDE_DIR}/bin/ogg*.dll"
 	"${FFMPEG_avcodec_INCLUDE_DIR}/bin/libvorbis*.dll"
 
 	"${FFMPEG_avcodec_INCLUDE_DIR}/../bin/libvpx*.dll"
@@ -71,13 +73,58 @@ file(GLOB FFMPEG_BIN_FILES
 	"${FFMPEG_avcodec_INCLUDE_DIR}/bin${_bin_suffix}/opus*.dll"
 	"${FFMPEG_avcodec_INCLUDE_DIR}/../bin/libbz2*.dll"
 	"${FFMPEG_avcodec_INCLUDE_DIR}/../bin/zlib*.dll"
+	"${FFMPEG_avcodec_INCLUDE_DIR}/../bin/libzlib*.dll"
 	"${FFMPEG_avcodec_INCLUDE_DIR}/bin/libbz2*.dll"
 	"${FFMPEG_avcodec_INCLUDE_DIR}/bin/zlib*.dll"
+	"${FFMPEG_avcodec_INCLUDE_DIR}/bin/libzlib*.dll"
 
 	"${FFMPEG_avcodec_INCLUDE_DIR}/../bin${_bin_suffix}/libbz2*.dll"
 	"${FFMPEG_avcodec_INCLUDE_DIR}/../bin${_bin_suffix}/zlib*.dll"
+	"${FFMPEG_avcodec_INCLUDE_DIR}/../bin${_bin_suffix}/libzlib*.dll"
 	"${FFMPEG_avcodec_INCLUDE_DIR}/bin${_bin_suffix}/libbz2*.dll"
 	"${FFMPEG_avcodec_INCLUDE_DIR}/bin${_bin_suffix}/zlib*.dll"
+	"${FFMPEG_avcodec_INCLUDE_DIR}/bin${_bin_suffix}/libzlib*.dll"
+
+	"${FFMPEG_avcodec_INCLUDE_DIR}/../bin${_bin_suffix}/libsrt*.dll"
+	"${FFMPEG_avcodec_INCLUDE_DIR}/../bin${_bin_suffix}/srt*.dll"
+	"${FFMPEG_avcodec_INCLUDE_DIR}/bin${_bin_suffix}/libsrt*.dll"
+	"${FFMPEG_avcodec_INCLUDE_DIR}/bin${_bin_suffix}/srt*.dll"
+	"${FFMPEG_avcodec_INCLUDE_DIR}/../bin/libsrt*.dll"
+	"${FFMPEG_avcodec_INCLUDE_DIR}/../bin/srt*.dll"
+	"${FFMPEG_avcodec_INCLUDE_DIR}/bin/libsrt*.dll"
+	"${FFMPEG_avcodec_INCLUDE_DIR}/bin/srt*.dll"
+	"${FFMPEG_avcodec_INCLUDE_DIR}/../bin${_bin_suffix}/libmbedcrypto*.dll"
+	"${FFMPEG_avcodec_INCLUDE_DIR}/../bin${_bin_suffix}/mbedcrypto*.dll"
+	"${FFMPEG_avcodec_INCLUDE_DIR}/bin${_bin_suffix}/libmbedcrypto*.dll"
+	"${FFMPEG_avcodec_INCLUDE_DIR}/bin${_bin_suffix}/mbedcrypto*.dll"
+	"${FFMPEG_avcodec_INCLUDE_DIR}/../bin/libmbedcrypto*.dll"
+	"${FFMPEG_avcodec_INCLUDE_DIR}/../bin/mbedcrypto*.dll"
+	"${FFMPEG_avcodec_INCLUDE_DIR}/bin/libmbedcrypto*.dll"
+	"${FFMPEG_avcodec_INCLUDE_DIR}/bin/mbedcrypto*.dll"
+	"${FFMPEG_avcodec_INCLUDE_DIR}/../bin${_bin_suffix}/libmbedx509*.dll"
+	"${FFMPEG_avcodec_INCLUDE_DIR}/../bin${_bin_suffix}/mbedx509*.dll"
+	"${FFMPEG_avcodec_INCLUDE_DIR}/bin${_bin_suffix}/libmbedx509*.dll"
+	"${FFMPEG_avcodec_INCLUDE_DIR}/bin${_bin_suffix}/mbedx509*.dll"
+	"${FFMPEG_avcodec_INCLUDE_DIR}/../bin/libmbedx509*.dll"
+	"${FFMPEG_avcodec_INCLUDE_DIR}/../bin/mbedx509*.dll"
+	"${FFMPEG_avcodec_INCLUDE_DIR}/bin/libmbedx509*.dll"
+	"${FFMPEG_avcodec_INCLUDE_DIR}/bin/mbedx509*.dll"
+	"${FFMPEG_avcodec_INCLUDE_DIR}/../bin${_bin_suffix}/libmbedtls*.dll"
+	"${FFMPEG_avcodec_INCLUDE_DIR}/../bin${_bin_suffix}/mbedtls*.dll"
+	"${FFMPEG_avcodec_INCLUDE_DIR}/bin${_bin_suffix}/libmbedtls*.dll"
+	"${FFMPEG_avcodec_INCLUDE_DIR}/bin${_bin_suffix}/mbedtls*.dll"
+	"${FFMPEG_avcodec_INCLUDE_DIR}/../bin/libmbedtls*.dll"
+	"${FFMPEG_avcodec_INCLUDE_DIR}/../bin/mbedtls*.dll"
+	"${FFMPEG_avcodec_INCLUDE_DIR}/bin/libmbedtls*.dll"
+	"${FFMPEG_avcodec_INCLUDE_DIR}/bin/mbedtls*.dll"
+	"${FFMPEG_avcodec_INCLUDE_DIR}/../bin${_bin_suffix}/libwinpthread*.dll"
+	"${FFMPEG_avcodec_INCLUDE_DIR}/../bin${_bin_suffix}/winpthread*.dll"
+	"${FFMPEG_avcodec_INCLUDE_DIR}/bin${_bin_suffix}/libwinpthread*.dll"
+	"${FFMPEG_avcodec_INCLUDE_DIR}/bin${_bin_suffix}/winpthread*.dll"
+	"${FFMPEG_avcodec_INCLUDE_DIR}/../bin/libwinpthread*.dll"
+	"${FFMPEG_avcodec_INCLUDE_DIR}/../bin/winpthread*.dll"
+	"${FFMPEG_avcodec_INCLUDE_DIR}/bin/libwinpthread*.dll"
+	"${FFMPEG_avcodec_INCLUDE_DIR}/bin/winpthread*.dll"
 	)
 
 file(GLOB X264_BIN_FILES
@@ -130,13 +177,21 @@ file(GLOB LUA_BIN_FILES
 	"${LUAJIT_INCLUDE_DIR}/bin${_bin_suffix}/lua*.dll"
 	"${LUAJIT_INCLUDE_DIR}/bin/lua*.dll"
 	"${LUAJIT_INCLUDE_DIR}/lua*.dll"
+	"${LUAJIT_INCLUDE_DIR}/../../bin${_bin_suffix}/lua.dll"
+	"${LUAJIT_INCLUDE_DIR}/../../bin/lua.dll"
+	"${LUAJIT_INCLUDE_DIR}/../bin${_bin_suffix}/lua.dll"
+	"${LUAJIT_INCLUDE_DIR}/../bin/lua.dll"
+	"${LUAJIT_INCLUDE_DIR}/bin${_bin_suffix}/lua.dll"
+	"${LUAJIT_INCLUDE_DIR}/bin/lua.dll"
+	"${LUAJIT_INCLUDE_DIR}/lua.dll"
 	)
 
 if (ZLIB_LIB)
 	GET_FILENAME_COMPONENT(ZLIB_BIN_PATH ${ZLIB_LIB} PATH)
 endif()
 file(GLOB ZLIB_BIN_FILES
-	"${ZLIB_BIN_PATH}/zlib*.dll")
+	"${ZLIB_BIN_PATH}/zlib*.dll"
+	"${ZLIB_BIN_PATH}/libzlib*.dll")
 
 if (NOT ZLIB_BIN_FILES)
 	file(GLOB ZLIB_BIN_FILES
@@ -144,6 +199,10 @@ if (NOT ZLIB_BIN_FILES)
 		"${ZLIB_INCLUDE_DIR}/../bin/zlib*.dll"
 		"${ZLIB_INCLUDE_DIR}/bin${_bin_suffix}/zlib*.dll"
 		"${ZLIB_INCLUDE_DIR}/bin/zlib*.dll"
+		"${ZLIB_INCLUDE_DIR}/../bin${_bin_suffix}/libzlib*.dll"
+		"${ZLIB_INCLUDE_DIR}/../bin/libzlib*.dll"
+		"${ZLIB_INCLUDE_DIR}/bin${_bin_suffix}/libzlib*.dll"
+		"${ZLIB_INCLUDE_DIR}/bin/libzlib*.dll"
 		)
 endif()
 

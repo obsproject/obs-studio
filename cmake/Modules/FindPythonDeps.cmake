@@ -38,7 +38,7 @@ FIND_PATH(PYTHON_INCLUDE_DIR
 		)
 
 find_library(PYTHON_LIB
-	NAMES ${_PYTHON_LIBRARIES} python36
+	NAMES ${_PYTHON_LIBRARIES} python38 python37 python36
 	HINTS
 		ENV PythonPath${_lib_suffix}
 		ENV PythonPath
