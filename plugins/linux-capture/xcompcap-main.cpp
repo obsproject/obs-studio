@@ -575,6 +575,7 @@ void XCompcapMain::tick(float seconds)
 
 	XCompcap::processEvents();
 
+	Window prevWin = p->win;
 	if (p->win && XCompcap::windowWasReconfigured(p->win)) {
 		p->window_check_time = FIND_WINDOW_INTERVAL;
 		p->win = 0;
@@ -589,15 +590,24 @@ void XCompcapMain::tick(float seconds)
 		if (p->window_check_time < FIND_WINDOW_INTERVAL)
 			return;
 
-		Window newWin = getWindowFromString(p->windowName);
+		for (Window cwin : XCompcap::getTopLevelWindows()) {
+			if (cwin == prevWin) {
+				p->win = cwin;
+				break;
+			}
+		}
+		if (!p->win) {
+			Window newWin = getWindowFromString(p->windowName);
 
-		p->window_check_time = 0.0;
+			p->window_check_time = 0.0;
 
-		if (newWin && XGetWindowAttributes(xdisp, newWin, &attr)) {
-			p->win = newWin;
-			updateSettings(0);
-		} else {
-			return;
+			if (newWin &&
+			    XGetWindowAttributes(xdisp, newWin, &attr)) {
+				p->win = newWin;
+				updateSettings(0);
+			} else {
+				return;
+			}
 		}
 	}
 
