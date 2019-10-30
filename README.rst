@@ -17,6 +17,10 @@ OBS Studio <https://obsproject.com>
    :alt: OBS Studio Discord Server
    :target: https://obsproject.com/discord
 
+.. image:: https://d322cqt584bo4o.cloudfront.net/obs-studio/localized.svg
+   :alt: OBS Studio Translation Project Progress
+   :target: https://crowdin.com/project/obs-studio
+
 What is OBS Studio?
 -------------------
 
