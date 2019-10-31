@@ -1,3 +1,11 @@
+trigger:
+  branches:
+    include:
+      - streamlabs-24.0.1
+  tags:
+    include:
+      - '*'
+
 workspace:
   clean: all
 
