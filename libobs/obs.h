@@ -2111,6 +2111,9 @@ EXPORT void *obs_encoder_create_rerouted(obs_encoder_t *encoder,
 /** Returns whether encoder is paused */
 EXPORT bool obs_encoder_paused(const obs_encoder_t *output);
 
+/** Set encoder error to outputs */
+EXPORT void encoder_error_for_output(obs_encoder_t *encoder, const char * error_text);
+
 /* ------------------------------------------------------------------------- */
 /* Stream Services */
 
