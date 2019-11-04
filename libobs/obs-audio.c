@@ -66,7 +66,7 @@ static inline void mix_audio(struct audio_output_data *main_mixes,
 	if (source->audio_ts != ts->start) {
 		start_point = convert_time_to_frames(
 			sample_rate, source->audio_ts - ts->start);
-		if (start_point == AUDIO_OUTPUT_FRAMES)
+		if (start_point >= AUDIO_OUTPUT_FRAMES)
 			return;
 
 		total_floats -= start_point;
@@ -95,6 +95,8 @@ static inline void mix_audio(struct audio_output_data *main_mixes,
 					source->audio_output_buf[mode][mix_idx]
 								[ch];
 				register float *end;
+				if(!mix || !aud)
+					return;
 
 				mix += start_point;
 				end = aud + total_floats;
