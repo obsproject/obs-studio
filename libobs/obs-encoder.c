@@ -289,7 +289,7 @@ void obs_encoder_destroy(obs_encoder_t *encoder)
 {
 	if (encoder) {
 		bool destroy;
-
+		set_encoder_active(encoder , false);
 		obs_context_data_remove(&encoder->context);
 
 		pthread_mutex_lock(&encoder->init_mutex);

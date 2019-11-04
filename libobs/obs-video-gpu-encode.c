@@ -61,8 +61,13 @@ static void *gpu_encode_thread(void *unused)
 
 		for (size_t i = 0; i < video->gpu_encoders.num; i++) {
 			obs_encoder_t *encoder = video->gpu_encoders.array[i];
-			da_push_back(encoders, &encoder);
-			obs_encoder_addref(encoder);
+			if (obs_encoder_active(encoder)) {
+				obs_weak_encoder_t *control = encoder->control;
+				if (control->ref.refs != -1) {
+					da_push_back(encoders, &encoder);
+					obs_encoder_addref(encoder);
+				}
+			}
 		}
 
 		pthread_mutex_unlock(&video->gpu_encoder_mutex);
