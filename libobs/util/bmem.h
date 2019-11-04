@@ -38,6 +38,7 @@ EXPORT void *brealloc(void *ptr, size_t size);
 EXPORT void bfree(void *ptr);
 
 EXPORT int base_get_alignment(void);
+EXPORT bool is_allocator_failed(void);
 
 EXPORT long bnum_allocs(void);
 
