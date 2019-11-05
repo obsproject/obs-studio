@@ -643,6 +643,7 @@ void SimpleOutput::UpdateRecordingSettings()
 	} else if (videoEncoder == SIMPLE_ENCODER_NVENC) {
 		UpdateRecordingSettings_nvenc(crf);
 	}
+	UpdateRecordingAudioSettings();
 }
 
 inline void SimpleOutput::SetupOutputs()
