@@ -6,109 +6,109 @@ trigger:
     include:
       - '*'
 
-workspace:
-  clean: all
-
-strategy:
-  matrix:
-    Release:
-      CefBuildConfig: Release
-      BuildConfig: RelWithDebInfo
-      ReleaseName: release
-    Debug:
-      CefBuildConfig: Debug
-      BuildConfig: Debug
-      ReleaseName: debug
-
-pool:
-  name: 'Default'
-
 variables:
-  CmakeGenerator: Visual Studio 15 2017
-  DepsPath32: $(Build.SourcesDirectory)\dependencies2017\win32
-  DepsPath64: $(Build.SourcesDirectory)\dependencies2017\win64
-  BuildPath32: $(Build.SourcesDirectory)\build32
-  BuildPath64: $(Build.SourcesDirectory)\build64
-  InstallPath: $(Build.SourcesDirectory)\packed_build
-  CefVersion: 75.1.16_g16a67c4_chromium-75.0.3770.100
-  CefDirName: cef_binary_$(CefVersion)_windows64_minimal
-  CefPath: $(Build.SourcesDirectory)\$(CefDirName)
-  CefBuildPath: $(CefPath)\build
-  CefZip: $(CefDirName).zip
-  CefUrl: https://s3-us-west-2.amazonaws.com/streamlabs-cef-dist/$(CefZip)
-  DependenciesUrl: https://obs-studio-deployment.s3-us-west-2.amazonaws.com/dependencies2017.1.zip
-  VLCLibPath: $(Build.SourcesDirectory)\vlc
-  VLCUrl: https://obsproject.com/downloads/vlc.zip
+  InstallPath: packed_build
+  CEF_VERSION: 75.1.16_g16a67c4_chromium-75.0.3770.100
 
-steps:
-- powershell: 'Write-Host "##vso[task.setvariable variable=tag]$((git.exe describe --tags --abbrev=0) | Out-String)"'
-  displayName: 'Get tag for artifact'
+jobs:
+- job: 'Windows64'
+  pool:
+    name: 'Default'
+  workspace:
+    clean: all
+  strategy:
+    matrix:
+      Release:
+        CefBuildConfig: Release
+        BuildConfig: RelWithDebInfo
+        ReleaseName: release
+      Debug:
+        CefBuildConfig: Debug
+        BuildConfig: Debug
+        ReleaseName: debug
+  steps:
+    - powershell: 'Write-Host "##vso[task.setvariable variable=tag]$((git.exe describe --tags --abbrev=0) | Out-String)"'
+      displayName: 'Get tag for artifact'
 
-- script: | 
-    git submodule update --init --recursive --jobs 2
-    if not exist "%BuildPath32%" (mkdir "%BuildPath32%")
-    if not exist "%BuildPath64%" (mkdir "%BuildPath64%")
-  displayName: 'Update submodules and create build folders'
+    - script: git submodule update --init --recursive --jobs 2
+      displayName: 'Checkout Submodules'
 
-- script: |
-    if not exist "dependencies2017.1.zip" (curl -kLO "%DependenciesUrl%" -f --retry 5)
-    if not exist "%CefZip%" (curl -kLO "%CefUrl%" -f --retry 5)
-    if not exist "vlc.zip" (curl -kLO "%VLCUrl%" -f --retry 5)
-    7z x "%CefZip%"
-    7z x dependencies2017.1.zip -odependencies2017
-    7z x vlc.zip -ovlc
-  displayName: 'Download and extract dependencies'
+    - script: ./slobs_CI/install-script-win.cmd
+      displayName: 'Configure / Build'
 
-- script: 'cmake -G"%CMakeGenerator%" -A x64 -H"%CefPath%" -B"%CefBuildPath%" -DCEF_RUNTIME_LIBRARY_FLAG="/MD"'
-  displayName: 'Configure libCef'
+    - task: ArchiveFiles@2
+      inputs:
+        rootFolderOrFile: $(InstallPath)
+        includeRootFolder: true
+        archiveType: 7z
+        archiveFile: 'libobs-windows64-$(ReleaseName)-$(tag).7z'
+      displayName: 'Generate artifact'
 
-- script: 'cmake --build "%CefBuildPath%" --config %CefBuildConfig% --target libcef_dll_wrapper -v'
-  displayName: 'Build libCef'
+    - task: PublishBuildArtifacts@1
+      inputs:
+        pathtoPublish: libobs-windows64-$(ReleaseName)-$(tag).7z
+        artifactName: libobs-$(ReleaseName)-$(BuildNumber).7z
+      displayName: 'Publish artifact'
 
-- script: 'cmake -H.
-                 -B"%BuildPath64%"
-                 -G"%CmakeGenerator%"
-                 -A x64
-                 -DCMAKE_INSTALL_PREFIX="%InstallPath%"
-                 -DDepsPath="%DepsPath64%"
-                 -DVLCPath="%VLCLibPath%"
-                 -DCEF_ROOT_DIR="%CefPath%"
-                 -DENABLE_UI=false
-                 -DCOPIED_DEPENDENCIES=false
-                 -DCOPY_DEPENDENCIES=true
-                 -DENABLE_SCRIPTING=false
-                 -DBUILD_CAPTIONS=false
-                 -DCOMPILE_D3D12_HOOK=true
-                 -DBUILD_BROWSER=true
-                 -DBROWSER_FRONTEND_API_SUPPORT=false
-                 -DBROWSER_PANEL_SUPPORT=false
-                 -DBROWSER_USE_STATIC_CRT=false
-                 -DEXPERIMENTAL_SHARED_TEXTURE_SUPPORT=true'
-  displayName: 'Configure libobs'
+    - task: S3Upload@1
+      inputs:
+        awsCredentials: 'Streamlabs AWS'
+        regionName: 'us-west-2'
+        bucketName: 'obsstudios3.streamlabs.com'
+        globExpressions: 'libobs-windows64-$(ReleaseName)-$(tag).7z'
+        filesAcl: 'public-read'
+      displayName: 'Upload artifact to S3'
+      condition: and(succeeded(), contains(variables['Build.SourceBranch'], 'tags'))
 
-- script: 'cmake --build "%BuildPath64%" --target install --config %BuildConfig% -v'
-  displayName: 'Build libobs'
-  
-- task: ArchiveFiles@2
-  inputs:
-    rootFolderOrFile: $(InstallPath)
-    includeRootFolder: true
-    archiveType: 7z
-    archiveFile: 'libobs-$(ReleaseName)-$(tag).7z'
-  displayName: 'Generate artifact'
+- job: 'MacOX'
+  pool:
+    vmImage: 'macos-10.13'
 
-- task: PublishBuildArtifacts@1
-  inputs: 
-    pathtoPublish: $(Build.SourcesDirectory)\libobs-$(ReleaseName)-$(tag).7z
-    artifactName: libobs-$(ReleaseName)-$(BuildNumber).7z
-  displayName: 'Publish artifact'
+  strategy:
+    matrix:
+      Release:
+        CefBuildConfig: Release
+        BuildConfig: RelWithDebInfo
+        ReleaseName: release
+      Debug:
+        CefBuildConfig: Debug
+        BuildConfig: Debug
+        ReleaseName: debug
 
-- task: S3Upload@1
-  inputs:
-    awsCredentials: 'Streamlabs AWS'
-    regionName: 'us-west-2'
-    bucketName: 'obsstudios3.streamlabs.com'
-    globExpressions: 'libobs-$(ReleaseName)-$(tag).7z'
-    filesAcl: 'public-read'
-  displayName: 'Upload artifact to S3'
-  condition: and(succeeded(), contains(variables['Build.SourceBranch'], 'tags'))
+  steps:
+  - powershell: 'Write-Host "##vso[task.setvariable variable=tag]$((git describe --tags --abbrev=0) | Out-String)"'
+    displayName: 'Get tag for artifact'
+
+  - script: git submodule update --init --recursive --jobs 2
+    displayName: 'Checkout Submodules'
+
+  - script: ./slobs_CI/install-script-osx.sh
+    displayName: 'Install Dependencies'
+
+  - script: ./slobs_CI/build-script-osx.sh
+    displayName: 'Configure / Build'
+
+  - task: ArchiveFiles@2
+    inputs:
+      rootFolderOrFile: $(InstallPath)
+      includeRootFolder: true
+      archiveType: 7z
+      archiveFile: 'libobs-osx-$(ReleaseName)-$(tag).7z'
+    displayName: 'Generate artifact'
+
+  - task: PublishBuildArtifacts@1
+    inputs:
+      pathtoPublish: libobs-osx-$(ReleaseName)-$(tag).7z
+      artifactName: libobs-$(ReleaseName)-$(BuildNumber).7z
+    displayName: 'Publish artifact'
+
+  - task: S3Upload@1
+    inputs:
+      awsCredentials: 'Streamlabs AWS'
+      regionName: 'us-west-2'
+      bucketName: 'obsstudios3.streamlabs.com'
+      globExpressions: 'libobs-osx-$(ReleaseName)-$(tag).7z'
+      filesAcl: 'public-read'
+    displayName: 'Upload artifact to S3'
+    condition: and(succeeded(), contains(variables['Build.SourceBranch'], 'tags'))
+     
