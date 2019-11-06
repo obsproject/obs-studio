@@ -1,10 +1,12 @@
 #include <QMessageBox>
+#include <QUrl>
 
 #include "window-basic-settings.hpp"
 #include "obs-frontend-api.h"
 #include "obs-app.hpp"
 #include "window-basic-main.hpp"
 #include "qt-wrappers.hpp"
+#include "url-push-button.hpp"
 
 #ifdef BROWSER_AVAILABLE
 #include <browser-panel.hpp>
@@ -177,44 +179,34 @@ void OBSBasicSettings::SaveStream1Settings()
 
 void OBSBasicSettings::UpdateKeyLink()
 {
-	bool custom = IsCustomService();
-	QString serviceName = ui->service->currentText();
-
-	if (custom)
-		serviceName = "";
-
-	QString text = QTStr("Basic.AutoConfig.StreamPage.StreamKey");
-	if (serviceName == "Twitch") {
-		text += " <a href=\"https://";
-		text += "www.twitch.tv/broadcast/dashboard/streamkey";
-		text += "\">";
-		text += QTStr(
-			"Basic.AutoConfig.StreamPage.StreamKey.LinkToSite");
-		text += "</a>";
-	} else if (serviceName == "YouTube / YouTube Gaming") {
-		text += " <a href=\"https://";
-		text += "www.youtube.com/live_dashboard";
-		text += "\">";
-		text += QTStr(
-			"Basic.AutoConfig.StreamPage.StreamKey.LinkToSite");
-		text += "</a>";
-	} else if (serviceName.startsWith("Restream.io")) {
-		text += " <a href=\"https://";
-		text += "restream.io/settings/streaming-setup?from=OBS";
-		text += "\">";
-		text += QTStr(
-			"Basic.AutoConfig.StreamPage.StreamKey.LinkToSite");
-		text += "</a>";
-	} else if (serviceName == "Facebook Live") {
-		text += " <a href=\"https://";
-		text += "www.facebook.com/live/create";
-		text += "\">";
-		text += QTStr(
-			"Basic.AutoConfig.StreamPage.StreamKey.LinkToSite");
-		text += "</a>";
+	if (IsCustomService()) {
+		ui->getStreamKeyButton->hide();
+		return;
 	}
 
-	ui->streamKeyLabel->setText(text);
+	QString serviceName = ui->service->currentText();
+	QString streamKeyLink;
+	if (serviceName == "Twitch") {
+		streamKeyLink = QTStr(
+			"https://www.twitch.tv/broadcast/dashboard/streamkey");
+	} else if (serviceName == "YouTube / YouTube Gaming") {
+		streamKeyLink = QTStr("https://www.youtube.com/live_dashboard");
+	} else if (serviceName.startsWith("Restream.io")) {
+		streamKeyLink = QTStr(
+			"https://restream.io/settings/streaming-setup?from=OBS");
+	} else if (serviceName == "Facebook Live") {
+		streamKeyLink +=
+			QTStr("https://www.facebook.com/live/create?ref=OBS");
+	} else if (serviceName.startsWith("Twitter")) {
+		streamKeyLink = QTStr("https://www.pscp.tv/account/producer");
+	}
+
+	if (QString(streamKeyLink).isNull()) {
+		ui->getStreamKeyButton->hide();
+	} else {
+		ui->getStreamKeyButton->setTargetUrl(QUrl(streamKeyLink));
+		ui->getStreamKeyButton->show();
+	}
 }
 
 void OBSBasicSettings::LoadServices(bool showAll)
