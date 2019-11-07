@@ -173,12 +173,6 @@ static bool vaapi_update(void *data, obs_data_t *settings)
 	int bitrate = (int)obs_data_get_int(settings, "bitrate");
 	int keyint_sec = (int)obs_data_get_int(settings, "keyint_sec");
 
-	int qp = (int)obs_data_get_int(settings, "qp");
-	int quality = (int)obs_data_get_int(settings, "quality");
-
-	av_opt_set_int(enc->context->priv_data, "qp", qp, 0);
-	av_opt_set_int(enc->context->priv_data, "quality", quality, 0);
-
 	video_t *video = obs_encoder_video(enc->encoder);
 	const struct video_output_info *voi = video_output_get_info(video);
 	struct video_scale_info info;
@@ -218,8 +212,6 @@ static bool vaapi_update(void *data, obs_data_t *settings)
 
 	info("settings:\n"
 	     "\tdevice:       %s\n"
-	     "\tqp:           %d\n"
-	     "\tquality:      %d\n"
 	     "\tprofile:      %d\n"
 	     "\tlevel:        %d\n"
 	     "\tbitrate:      %d\n"
@@ -227,8 +219,8 @@ static bool vaapi_update(void *data, obs_data_t *settings)
 	     "\twidth:        %d\n"
 	     "\theight:       %d\n"
 	     "\tb-frames:     %d\n",
-	     device, qp, quality, profile, level, bitrate,
-	     enc->context->gop_size, enc->context->width, enc->context->height,
+	     device, profile, level, bitrate, enc->context->gop_size,
+	     enc->context->width, enc->context->height,
 	     enc->context->max_b_frames);
 
 	return vaapi_init_codec(enc, device);
@@ -453,8 +445,6 @@ static void vaapi_defaults(obs_data_t *settings)
 	obs_data_set_default_int(settings, "bitrate", 2500);
 	obs_data_set_default_int(settings, "keyint_sec", 0);
 	obs_data_set_default_int(settings, "bf", 0);
-	obs_data_set_default_int(settings, "qp", 20);
-	obs_data_set_default_int(settings, "quality", 0);
 	obs_data_set_default_int(settings, "rendermode", 0);
 }
 
