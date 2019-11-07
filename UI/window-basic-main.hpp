@@ -476,12 +476,13 @@ public slots:
 	void SaveProject();
 
 	void SetTransition(OBSSource transition);
+	void OverrideTransition(OBSSource transition);
 	void TransitionToScene(OBSScene scene, bool force = false,
 			       bool direct = false);
 	void TransitionToScene(OBSSource scene, bool force = false,
 			       bool direct = false,
 			       bool quickTransition = false,
-			       bool black = false);
+			       int quickDuration = 0, bool black = false);
 	void SetCurrentScene(OBSSource scene, bool force = false,
 			     bool direct = false);
 

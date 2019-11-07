@@ -126,11 +126,13 @@ void OBSBasic::TriggerQuickTransition(int id)
 		OBSScene scene = GetCurrentScene();
 		obs_source_t *source = obs_scene_get_source(scene);
 
-		ui->transitionDuration->setValue(qt->duration);
-		if (GetCurrentTransition() != qt->source)
-			SetTransition(qt->source);
+		if (GetCurrentTransition() != qt->source) {
+			OverrideTransition(qt->source);
+			overridingTransition = true;
+		}
 
-		TransitionToScene(source, false, false, true, qt->fadeToBlack);
+		TransitionToScene(source, false, false, true, qt->duration,
+				  qt->fadeToBlack);
 	}
 }
 
@@ -281,7 +283,7 @@ void OBSBasic::TransitionStopped()
 	swapScene = nullptr;
 }
 
-static void OverrideTransition(OBSSource transition)
+void OBSBasic::OverrideTransition(OBSSource transition)
 {
 	obs_source_t *oldTransition = obs_get_output_source(0);
 
@@ -303,7 +305,8 @@ void OBSBasic::TransitionFullyStopped()
 }
 
 void OBSBasic::TransitionToScene(OBSSource source, bool force, bool direct,
-				 bool quickTransition, bool black)
+				 bool quickTransition, int quickDuration,
+				 bool black)
 {
 	obs_scene_t *scene = obs_scene_from_source(source);
 	bool usingPreviewProgram = IsPreviewProgramMode();
@@ -383,6 +386,9 @@ void OBSBasic::TransitionToScene(OBSSource source, bool force, bool direct,
 		} else if (!black) {
 			prevFTBSource = nullptr;
 		}
+
+		if (quickTransition)
+			duration = quickDuration;
 
 		bool success = obs_transition_start(
 			transition, OBS_TRANSITION_MODE_AUTO, duration, source);
