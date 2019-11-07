@@ -64,6 +64,8 @@ struct ffmpeg_muxer {
 	pthread_t mux_thread;
 	bool mux_thread_joinable;
 	volatile bool muxing;
+
+	int64_t save_length_usec;
 };
 
 static const char *ffmpeg_mux_getname(void *type)
@@ -87,6 +89,7 @@ static inline void replay_buffer_clear(struct ffmpeg_muxer *stream)
 	stream->max_time = 0;
 	stream->save_ts = 0;
 	stream->keyframes = 0;
+	stream->save_length_usec = -1;
 }
 
 static void ffmpeg_mux_destroy(void *data)
@@ -565,6 +568,23 @@ static void save_replay_proc(void *data, calldata_t *cd)
 	UNUSED_PARAMETER(cd);
 }
 
+static void save_replay_proc_secs(void *data, calldata_t *cd)
+{
+	int64_t secs;
+
+	// maybe should save full RB if no valid value is found
+	if (!calldata_get_int(cd, "seconds", &secs)) {
+		blog(LOG_ERROR,
+		     "save_replay_proc_secs: got an invalid length, not saving");
+		return;
+	}
+
+	((struct ffmpeg_muxer *)data)->save_length_usec =
+		(secs > 0) ? secs * 1000000 : -1;
+
+	replay_buffer_hotkey(data, 0, NULL, true);
+}
+
 static void get_last_replay(void *data, calldata_t *cd)
 {
 	struct ffmpeg_muxer *stream = data;
@@ -585,6 +605,8 @@ static void *replay_buffer_create(obs_data_t *settings, obs_output_t *output)
 
 	proc_handler_t *ph = obs_output_get_proc_handler(output);
 	proc_handler_add(ph, "void save()", save_replay_proc, stream);
+	proc_handler_add(ph, "void save_length(int seconds)",
+			 save_replay_proc_secs, stream);
 	proc_handler_add(ph, "void get_last_replay(out string path)",
 			 get_last_replay, stream);
 
@@ -763,9 +785,21 @@ static void replay_buffer_save(struct ffmpeg_muxer *stream)
 	int64_t audio_offsets[MAX_AUDIO_MIXES] = {0};
 	int64_t audio_dts_offsets[MAX_AUDIO_MIXES] = {0};
 
+	struct encoder_packet *pkt =
+		circlebuf_data(&stream->packets, (num_packets - 1) * size);
+
+	int64_t dts_offset = pkt->dts_usec - stream->save_length_usec;
+
+	if (stream->save_length_usec == -1 || dts_offset < 0) {
+		pkt = circlebuf_data(&stream->packets, 0);
+		dts_offset = pkt->dts_usec;
+	}
+
 	for (size_t i = 0; i < num_packets; i++) {
-		struct encoder_packet *pkt;
 		pkt = circlebuf_data(&stream->packets, i * size);
+
+		if (pkt->dts_usec < dts_offset)
+			continue;
 
 		if (pkt->type == OBS_ENCODER_VIDEO) {
 			if (!found_video) {
@@ -809,6 +843,7 @@ static void replay_buffer_save(struct ffmpeg_muxer *stream)
 	/* ---------------------------- */
 
 	os_atomic_set_bool(&stream->muxing, true);
+	stream->save_length_usec = -1;
 	stream->mux_thread_joinable = pthread_create(&stream->mux_thread, NULL,
 						     replay_buffer_mux_thread,
 						     stream) == 0;
