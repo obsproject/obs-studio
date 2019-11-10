@@ -300,6 +300,8 @@ private:
 	QIcon GetHotkeysIcon() const;
 	QIcon GetAdvancedIcon() const;
 
+	int CurrentFLVTrack();
+
 private slots:
 	void on_theme_activated(int idx);
 
