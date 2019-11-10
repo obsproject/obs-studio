@@ -35,6 +35,8 @@
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <X11/Xlib-xcb.h>
+#include <X11/XF86keysym.h>
+#include <X11/Sunkeysym.h>
 #include <inttypes.h>
 
 const char *get_module_extension(void)
@@ -501,8 +503,29 @@ static int get_keysym(obs_key_t key)
 		return XK_Hyper_R;
 	case OBS_KEY_HELP:
 		return XK_Help;
+	case OBS_KEY_CANCEL:
+		return XK_Cancel;
+	case OBS_KEY_FIND:
+		return XK_Find;
+	case OBS_KEY_REDO:
+		return XK_Redo;
+	case OBS_KEY_UNDO:
+		return XK_Undo;
 	case OBS_KEY_SPACE:
 		return XK_space;
+
+	case OBS_KEY_COPY:
+		return XF86XK_Copy;
+	case OBS_KEY_CUT:
+		return XF86XK_Cut;
+	case OBS_KEY_OPEN:
+		return XF86XK_Open;
+	case OBS_KEY_PASTE:
+		return XF86XK_Paste;
+	case OBS_KEY_FRONT:
+		return SunXK_Front;
+	case OBS_KEY_PROPS:
+		return SunXK_Props;
 
 	case OBS_KEY_EXCLAM:
 		return XK_exclam;
