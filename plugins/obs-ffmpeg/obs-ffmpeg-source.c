@@ -322,7 +322,7 @@ static void ffmpeg_source_update(void *data, obs_data_t *settings)
 		input = (char *)obs_data_get_string(settings, "input");
 		input_format =
 			(char *)obs_data_get_string(settings, "input_format");
-		s->is_looping = false;
+		s->is_looping = obs_data_get_bool(settings, "looping");
 		s->close_when_inactive = true;
 	}
 
