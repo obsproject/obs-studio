@@ -42,7 +42,7 @@
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout">
      <property name="spacing">
-      <number>-1</number>
+      <number>6</number>
      </property>
      <item>
       <spacer name="horizontalSpacer">
@@ -56,6 +56,13 @@
         </size>
        </property>
       </spacer>
+     </item>
+     <item>
+      <widget class="QLabel" name="outputStatus">
+       <property name="text">
+        <string>OutputState.Idle</string>
+       </property>
+      </widget>
      </item>
      <item>
       <widget class="QPushButton" name="startOutput">
@@ -97,6 +104,13 @@
         </size>
        </property>
       </spacer>
+     </item>
+     <item>
+      <widget class="QLabel" name="previewOutputStatus">
+       <property name="text">
+        <string>OutputState.Idle</string>
+       </property>
+      </widget>
      </item>
      <item>
       <widget class="QPushButton" name="startPreviewOutput">
