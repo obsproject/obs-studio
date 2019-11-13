@@ -1515,6 +1515,24 @@
             }
         },
         {
+            "name": "YouNow",
+            "common": false,
+            "servers": [
+                {
+                    "name": "younow.com",
+                    "url": "https://signaling-api.younow-prod.video.propsproject.com/api/v1/ingest/server/"
+                }
+            ],
+            "recommended": {
+                "keyint": 2,
+                "output": "ftl_output",
+                "max audio bitrate": 160,
+                "max video bitrate": 7000,
+                "profile": "main",
+                "bframes": 0
+            }
+        },
+        {
             "name": "Steam",
             "common": false,
             "servers": [

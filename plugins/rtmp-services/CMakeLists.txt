@@ -1,15 +1,21 @@
 project(rtmp-services)
 
+find_package(Libcurl REQUIRED)
+
+include_directories(${LIBCURL_INCLUDE_DIRS})
+
 include_directories(${OBS_JANSSON_INCLUDE_DIRS})
 
 set(rtmp-services_SOURCES
 	twitch.c
+	younow.c
 	rtmp-common.c
 	rtmp-custom.c
 	rtmp-services-main.c)
 
 set(rtmp-services_HEADERS
 	twitch.h
+	younow.h
 	rtmp-format-ver.h)
 
 set(RTMP_SERVICES_URL
@@ -28,10 +34,12 @@ add_library(rtmp-services MODULE
 	${rtmp-services_SOURCES}
 	${rtmp-services_HEADERS}
 	${rtmp-services_config_HEADERS})
+
 target_link_libraries(rtmp-services
 	libobs
 	file-updater
-	${OBS_JANSSON_IMPORT})
+	${OBS_JANSSON_IMPORT}
+	${LIBCURL_LIBRARIES})
 
 target_include_directories(rtmp-services
 	PUBLIC
