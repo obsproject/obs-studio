@@ -533,6 +533,24 @@ void OBSBasic::AddExtraBrowserDock(const QString &title, const QString &url,
 
 	dock->SetWidget(browser);
 
+	/* Add support for Twitch Dashboard panels */
+	if (url.contains("twitch.tv/popout") &&
+	    url.contains("dashboard/live")) {
+		QRegularExpression re("twitch.tv\/popout\/([^/]+)\/");
+		QRegularExpressionMatch match = re.match(url);
+		QString username = match.captured(1);
+		if (username.length() > 0) {
+			std::string script;
+			script =
+				"Object.defineProperty(document, 'referrer', { get: () => '";
+			script += "https://twitch.tv/";
+			script += QT_TO_UTF8(username);
+			script += "/dashboard/live";
+			script += "'});";
+			browser->setStartupScript(script);
+		}
+	}
+
 	addDockWidget(Qt::RightDockWidgetArea, dock);
 
 	if (firstCreate) {
