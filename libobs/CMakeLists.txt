@@ -110,7 +110,7 @@ if(WIN32)
 	endif()
 elseif(APPLE)
 	set(libobs_PLATFORM_SOURCES
-		obs-cocoa.c
+		obs-cocoa.m
 		util/threading-posix.c
 		util/pipe-posix.c
 		util/platform-nix.c

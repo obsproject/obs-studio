@@ -43,7 +43,7 @@ static const char *startup_script_template = "\
 for val in pairs(package.preload) do\n\
 	package.preload[val] = nil\n\
 end\n\
-package.cpath = package.cpath .. \";\" .. \"%s\" .. \"/?." SO_EXT "\"\n\
+package.cpath = package.cpath .. \";\" .. \"%s/Contents/MacOS/?.so\" .. \";\" .. \"%s\" .. \"/?." SO_EXT "\"\n\
 require \"obslua\"\n";
 
 static const char *get_script_path_func = "\
@@ -1310,7 +1310,31 @@ void obs_lua_load(void)
 	/* ---------------------------------------------- */
 	/* Initialize Lua startup script                  */
 
-	dstr_printf(&tmp, startup_script_template, SCRIPT_DIR);
+char* bundlePath = "./";
+
+#ifdef __APPLE__
+	Class nsRunningApplication = objc_lookUpClass("NSRunningApplication");
+	SEL currentAppSel = sel_getUid("currentApplication");
+
+	typedef id (*running_app_func)(Class, SEL);
+	running_app_func operatingSystemName = (running_app_func)objc_msgSend;
+	id app = operatingSystemName(nsRunningApplication, currentAppSel);
+
+	typedef id (*bundle_url_func)(id, SEL);
+	bundle_url_func bundleURL = (bundle_url_func)objc_msgSend;
+	id url = bundleURL(app, sel_getUid("bundleURL"));
+
+	typedef id (*url_path_func)(id, SEL);
+	url_path_func urlPath = (url_path_func)objc_msgSend;
+
+	id path = urlPath(url, sel_getUid("path"));
+
+	typedef id (*string_func)(id, SEL);
+	string_func utf8String = (string_func)objc_msgSend;
+	bundlePath = (char *)utf8String(path, sel_registerName("UTF8String"));
+#endif
+
+	dstr_printf(&tmp, startup_script_template, bundlePath, SCRIPT_DIR);
 	startup_script = tmp.array;
 
 	dstr_free(&dep_paths);
