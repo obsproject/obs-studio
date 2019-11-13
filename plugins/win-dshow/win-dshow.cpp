@@ -468,6 +468,12 @@ static inline enum speaker_layout convert_speaker_layout(uint8_t channels)
 void DShowInput::OnEncodedVideoData(enum AVCodecID id, unsigned char *data,
 				    size_t size, long long ts)
 {
+	/* If format changes, free and allow it to recreate the decoder */
+	if (ffmpeg_decode_valid(video_decoder) &&
+	    video_decoder->codec->id != id) {
+		ffmpeg_decode_free(video_decoder);
+	}
+
 	if (!ffmpeg_decode_valid(video_decoder)) {
 		/* Only use MJPEG hardware decoding on resolutions higher
 		 * than 1920x1080.  The reason why is because we want to strike
