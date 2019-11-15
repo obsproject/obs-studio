@@ -101,6 +101,7 @@ typedef struct {
 	mfxU16 nbFrames;
 	mfxU16 nICQQuality;
 	bool bMBBRC;
+	bool bCQM;
 } qsv_param_t;
 
 enum qsv_cpu_platform {
@@ -113,6 +114,8 @@ enum qsv_cpu_platform {
 	QSV_CPU_PLATFORM_HSW,
 	QSV_CPU_PLATFORM_BDW,
 	QSV_CPU_PLATFORM_SKL,
+	QSV_CPU_PLATFORM_KBL,
+	QSV_CPU_PLATFORM_ICL,
 	QSV_CPU_PLATFORM_INTEL
 };
 
