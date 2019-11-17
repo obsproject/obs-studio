@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <string>
 #include <memory>
+#include <locale>
 
 using namespace std;
 using namespace Gdiplus;
