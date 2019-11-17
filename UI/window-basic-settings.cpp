@@ -471,6 +471,9 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->enableNewSocketLoop,  CHECK_CHANGED,  ADV_CHANGED);
 	HookWidget(ui->enableLowLatencyMode, CHECK_CHANGED,  ADV_CHANGED);
 	HookWidget(ui->hotkeyFocusType,      COMBO_CHANGED,  ADV_CHANGED);
+#ifdef _WIN32
+	HookWidget(ui->suppressHotkeys,      CHECK_CHANGED,  ADV_CHANGED);
+#endif
 	HookWidget(ui->autoRemux,            CHECK_CHANGED,  ADV_CHANGED);
 	HookWidget(ui->dynBitrate,           CHECK_CHANGED,  ADV_CHANGED);
 	/* clang-format on */
@@ -2296,6 +2299,10 @@ void OBSBasicSettings::LoadAdvancedSettings()
 	bool autoRemux = config_get_bool(main->Config(), "Video", "AutoRemux");
 	const char *hotkeyFocusType = config_get_string(
 		App()->GlobalConfig(), "General", "HotkeyFocusType");
+#ifdef _WIN32
+	bool suppressHotkeys = config_get_bool(App()->GlobalConfig(), "General",
+					       "SuppressHotkeys");
+#endif
 	bool dynBitrate =
 		config_get_bool(main->Config(), "Output", "DynamicBitrate");
 
@@ -2372,6 +2379,9 @@ void OBSBasicSettings::LoadAdvancedSettings()
 #endif
 
 	SetComboByValue(ui->hotkeyFocusType, hotkeyFocusType);
+#ifdef _WIN32
+	ui->suppressHotkeys->setChecked(suppressHotkeys);
+#endif
 
 	loading = false;
 }
@@ -2972,6 +2982,13 @@ void OBSBasicSettings::SaveAdvancedSettings()
 	bool browserHWAccel = ui->browserHWAccel->isChecked();
 	config_set_bool(App()->GlobalConfig(), "General", "BrowserHWAccel",
 			browserHWAccel);
+
+	if (WidgetChanged(ui->suppressHotkeys)) {
+		bool checked = ui->suppressHotkeys->isChecked();
+		config_set_bool(App()->GlobalConfig(), "General",
+				"SuppressHotkeys", checked);
+		resuppress_global_hotkeys(checked);
+	}
 #endif
 
 	if (WidgetChanged(ui->hotkeyFocusType)) {

@@ -314,6 +314,7 @@ EXPORT obs_key_t obs_key_from_name(const char *name);
 #ifdef _WIN32
 bool suppress_global_hotkey(obs_key_combination_t combo);
 bool unsuppress_global_hotkey(obs_key_combination_t combo);
+EXPORT void resuppress_global_hotkeys(bool suppress);
 #endif
 
 static inline bool obs_key_combination_is_empty(obs_key_combination_t combo)

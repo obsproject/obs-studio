@@ -435,6 +435,11 @@ bool OBSApp::InitGlobalConfigDefaults()
 	config_set_default_string(globalConfig, "General", "HotkeyFocusType",
 				  "NeverDisableHotkeys");
 
+#ifdef _WIN32
+	config_set_default_bool(globalConfig, "General", "SuppressHotkeys",
+				false);
+#endif
+
 	config_set_default_bool(globalConfig, "BasicWindow",
 				"VerticalVolControl", false);
 

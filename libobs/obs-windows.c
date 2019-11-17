@@ -963,3 +963,18 @@ bool unsuppress_global_hotkey(obs_key_combination_t combo)
 {
 	return UnregisterHotKey(NULL, get_hotkey_id(combo));
 }
+
+static bool resuppress_callback(void *data, size_t idx,
+				obs_hotkey_binding_t *binding)
+{
+	bool suppress = *(bool *)data;
+	unsuppress_global_hotkey(binding->key);
+	if (suppress)
+		suppress_global_hotkey(binding->key);
+	return true;
+}
+
+void resuppress_global_hotkeys(bool suppress)
+{
+	obs_enum_hotkey_bindings(resuppress_callback, &suppress);
+}

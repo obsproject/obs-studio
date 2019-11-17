@@ -5243,6 +5243,13 @@
                    <item row="0" column="1">
                     <widget class="QComboBox" name="hotkeyFocusType"/>
                    </item>
+                   <item row="2" column="1">
+                    <widget class="QCheckBox" name="suppressHotkeys">
+                     <property name="text">
+                      <string>Basic.Settings.Advanced.Hotkeys.SuppressHotkeys</string>
+                     </property>
+                    </widget>
+                   </item>
                    <item row="1" column="0">
                     <spacer name="horizontalSpacer_14">
                      <property name="orientation">
