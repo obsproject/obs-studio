@@ -43,7 +43,8 @@ static const char *startup_script_template = "\
 for val in pairs(package.preload) do\n\
 	package.preload[val] = nil\n\
 end\n\
-package.cpath = package.cpath .. \";\" .. \"%s/Contents/MacOS/?.so\" .. \";\" .. \"%s\" .. \"/?." SO_EXT "\"\n\
+package.cpath = package.cpath .. \";\" .. \"%s/Contents/MacOS/?.so\" .. \";\" .. \"%s\" .. \"/?." SO_EXT
+					     "\"\n\
 require \"obslua\"\n";
 
 static const char *get_script_path_func = "\
@@ -1310,7 +1311,7 @@ void obs_lua_load(void)
 	/* ---------------------------------------------- */
 	/* Initialize Lua startup script                  */
 
-char* bundlePath = "./";
+	char *bundlePath = "./";
 
 #ifdef __APPLE__
 	Class nsRunningApplication = objc_lookUpClass("NSRunningApplication");
