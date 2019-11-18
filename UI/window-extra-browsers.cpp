@@ -536,7 +536,7 @@ void OBSBasic::AddExtraBrowserDock(const QString &title, const QString &url,
 	/* Add support for Twitch Dashboard panels */
 	if (url.contains("twitch.tv/popout") &&
 	    url.contains("dashboard/live")) {
-		QRegularExpression re("twitch.tv\/popout\/([^/]+)\/");
+		QRegularExpression re("twitch.tv\\/popout\\/([^/]+)\\/");
 		QRegularExpressionMatch match = re.match(url);
 		QString username = match.captured(1);
 		if (username.length() > 0) {
