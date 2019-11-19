@@ -35,6 +35,7 @@ cp ../CI/install/osx/Info.plist ./OBS.app/Contents
 -x ./OBS.app/Contents/MacOS/obs \
 -x ./OBS.app/Contents/MacOS/obs-ffmpeg-mux \
 -x ./OBS.app/Contents/MacOS/obslua.so \
+-x ./OBS.app/Contents/MacOS/_obspython.so \
 -x ./OBS.app/Contents/Plugins/obs-x264.so \
 -x ./OBS.app/Contents/Plugins/text-freetype2.so \
 -x ./OBS.app/Contents/Plugins/obs-libfdk.so
