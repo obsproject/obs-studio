@@ -216,7 +216,8 @@ void TwitchAuth::LoadUI()
 	chat->SetWidget(browser);
 	cef->add_force_popup_url(moderation_tools_url, chat.data());
 
-	script = bttv_script;
+	script = "localStorage.setItem('twilight.theme', 1);";
+	script += bttv_script;
 	script += ffz_script;
 	browser->setStartupScript(script);
 
