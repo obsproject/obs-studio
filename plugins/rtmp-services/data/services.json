@@ -358,7 +358,8 @@
                 "max audio bitrate": 160,
                 "max video bitrate": 10000,
                 "profile": "main",
-                "bframes": 0
+                "bframes": 0,
+                "x264opts": "scenecut=0"
             }
         },
         {
@@ -446,7 +447,8 @@
                 "keyint": 2,
                 "max audio bitrate": 160,
                 "max video bitrate": 10000,
-                "profile": "main"
+                "profile": "main",
+                "x264opts": "scenecut=0"
             }
         },
         {
