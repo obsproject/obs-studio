@@ -5098,6 +5098,10 @@ inline void OBSBasic::OnDeactivate()
 		if (trayIcon)
 			trayIcon->setIcon(QIcon::fromTheme(
 				"obs-tray", QIcon(":/res/images/obs.png")));
+	} else {
+		if (trayIcon)
+			trayIcon->setIcon(
+				QIcon(":/res/images/tray_active.png"));
 	}
 }
 
