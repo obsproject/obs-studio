@@ -245,6 +245,7 @@ set(obs_SOURCES
 	combobox-ignorewheel.cpp
 	spinbox-ignorewheel.cpp
 	record-button.cpp
+	ui-validation.cpp
 	url-push-button.cpp
 	volume-control.cpp
 	adv-audio-control.cpp
@@ -302,6 +303,7 @@ set(obs_HEADERS
 	menu-button.hpp
 	mute-checkbox.hpp
 	record-button.hpp
+	ui-validation.hpp
 	url-push-button.hpp
 	volume-control.hpp
 	adv-audio-control.hpp

@@ -456,8 +456,6 @@ private:
 
 	void ReceivedIntroJson(const QString &text);
 
-	bool NoSourcesConfirmation();
-
 #ifdef BROWSER_AVAILABLE
 	QList<QSharedPointer<QDockWidget>> extraBrowserDocks;
 	QList<QSharedPointer<QAction>> extraBrowserDockActions;
