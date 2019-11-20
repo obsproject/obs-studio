@@ -1199,6 +1199,15 @@ bool OBSBasic::InitBasicConfigDefaults()
 	}
 
 	/* ----------------------------------------------------- */
+	/* set twitch chat extensions to "both" if prev version  */
+	/* is under 24.1                                         */
+	if (config_get_bool(GetGlobalConfig(), "General", "Pre24.1Defaults") &&
+	    !config_has_user_value(basicConfig, "Twitch", "AddonChoice")) {
+		config_set_int(basicConfig, "Twitch", "AddonChoice", 3);
+		changed = true;
+	}
+
+	/* ----------------------------------------------------- */
 
 	if (changed)
 		config_save_safe(basicConfig, "tmp", nullptr);

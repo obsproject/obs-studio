@@ -115,6 +115,7 @@ private:
 	bool advancedChanged = false;
 	int pageIndex = 0;
 	bool loading = true;
+	bool forceAuthReload = false;
 	std::string savedTheme;
 
 	int lastSimpleRecQualityIdx = 0;

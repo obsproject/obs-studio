@@ -39,6 +39,8 @@ void OBSBasicSettings::InitStreamPage()
 	ui->connectAccount2->setVisible(false);
 	ui->disconnectAccount->setVisible(false);
 	ui->bandwidthTestEnable->setVisible(false);
+	ui->twitchAddonDropdown->setVisible(false);
+	ui->twitchAddonLabel->setVisible(false);
 
 	int vertSpacing = ui->topStreamLayout->verticalSpacing();
 
@@ -55,6 +57,15 @@ void OBSBasicSettings::InitStreamPage()
 	ui->streamkeyPageLayout->setContentsMargins(m);
 
 	LoadServices(false);
+
+	ui->twitchAddonDropdown->addItem(
+		QTStr("Basic.Settings.Stream.TTVAddon.None"));
+	ui->twitchAddonDropdown->addItem(
+		QTStr("Basic.Settings.Stream.TTVAddon.BTTV"));
+	ui->twitchAddonDropdown->addItem(
+		QTStr("Basic.Settings.Stream.TTVAddon.FFZ"));
+	ui->twitchAddonDropdown->addItem(
+		QTStr("Basic.Settings.Stream.TTVAddon.Both"));
 
 	connect(ui->service, SIGNAL(currentIndexChanged(int)), this,
 		SLOT(UpdateServerList()));
@@ -98,6 +109,9 @@ void OBSBasicSettings::LoadStream1Settings()
 
 		bool bw_test = obs_data_get_bool(settings, "bwtest");
 		ui->bandwidthTestEnable->setChecked(bw_test);
+
+		idx = config_get_int(main->Config(), "Twitch", "AddonChoice");
+		ui->twitchAddonDropdown->setCurrentIndex(idx);
 	}
 
 	UpdateServerList();
@@ -161,6 +175,21 @@ void OBSBasicSettings::SaveStream1Settings()
 
 	obs_data_set_bool(settings, "bwtest",
 			  ui->bandwidthTestEnable->isChecked());
+
+	if (!!auth && strcmp(auth->service(), "Twitch") == 0) {
+		bool choiceExists = config_has_user_value(
+			main->Config(), "Twitch", "AddonChoice");
+		int currentChoice =
+			config_get_int(main->Config(), "Twitch", "AddonChoice");
+		int newChoice = ui->twitchAddonDropdown->currentIndex();
+
+		config_set_int(main->Config(), "Twitch", "AddonChoice",
+			       newChoice);
+
+		if (choiceExists && currentChoice != newChoice)
+			forceAuthReload = true;
+	}
+
 	obs_data_set_string(settings, "key", QT_TO_UTF8(ui->key->text()));
 
 	OBSService newService = obs_service_create(
@@ -277,6 +306,8 @@ void OBSBasicSettings::on_service_currentIndexChanged(int)
 
 	ui->disconnectAccount->setVisible(false);
 	ui->bandwidthTestEnable->setVisible(false);
+	ui->twitchAddonDropdown->setVisible(false);
+	ui->twitchAddonLabel->setVisible(false);
 
 #ifdef BROWSER_AVAILABLE
 	if (cef) {
@@ -430,8 +461,11 @@ void OBSBasicSettings::OnOAuthStreamKeyConnected()
 		ui->connectAccount2->setVisible(false);
 		ui->disconnectAccount->setVisible(true);
 
-		if (strcmp(a->service(), "Twitch") == 0)
+		if (strcmp(a->service(), "Twitch") == 0) {
 			ui->bandwidthTestEnable->setVisible(true);
+			ui->twitchAddonLabel->setVisible(true);
+			ui->twitchAddonDropdown->setVisible(true);
+		}
 	}
 
 	ui->streamStackWidget->setCurrentIndex((int)Section::StreamKey);
@@ -494,6 +528,8 @@ void OBSBasicSettings::on_disconnectAccount_clicked()
 	ui->connectAccount2->setVisible(true);
 	ui->disconnectAccount->setVisible(false);
 	ui->bandwidthTestEnable->setVisible(false);
+	ui->twitchAddonDropdown->setVisible(false);
+	ui->twitchAddonLabel->setVisible(false);
 	ui->key->setText("");
 }
 

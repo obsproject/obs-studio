@@ -735,6 +735,18 @@ bool OBSApp::InitGlobalConfig()
 		changed = true;
 	}
 
+#define PRE_24_1_DEFS "Pre24.1Defaults"
+	if (!config_has_user_value(globalConfig, "General", PRE_24_1_DEFS)) {
+		bool useOldDefaults = lastVersion &&
+				      lastVersion <
+					      MAKE_SEMANTIC_VERSION(24, 1, 0);
+
+		config_set_bool(globalConfig, "General", PRE_24_1_DEFS,
+				useOldDefaults);
+		changed = true;
+	}
+#undef PRE_24_1_DEFS
+
 	if (config_has_user_value(globalConfig, "BasicWindow",
 				  "MultiviewLayout")) {
 		const char *layout = config_get_string(
