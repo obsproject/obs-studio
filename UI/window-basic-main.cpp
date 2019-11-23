@@ -5087,6 +5087,9 @@ inline void OBSBasic::OnActivate()
 	}
 }
 
+extern volatile bool recording_paused;
+extern volatile bool replaybuf_active;
+
 inline void OBSBasic::OnDeactivate()
 {
 	if (!outputHandler->Active() && !ui->profileMenu->isEnabled()) {
@@ -5098,8 +5101,10 @@ inline void OBSBasic::OnDeactivate()
 		if (trayIcon)
 			trayIcon->setIcon(QIcon::fromTheme(
 				"obs-tray", QIcon(":/res/images/obs.png")));
-	} else {
-		if (trayIcon)
+	} else if (trayIcon) {
+		if (os_atomic_load_bool(&recording_paused))
+			trayIcon->setIcon(QIcon(":/res/images/obs_paused.png"));
+		else
 			trayIcon->setIcon(
 				QIcon(":/res/images/tray_active.png"));
 	}
@@ -5506,9 +5511,6 @@ void OBSBasic::RecordingStop(int code, QString last_error)
 
 #define RP_NO_HOTKEY_TITLE QTStr("Output.ReplayBuffer.NoHotkey.Title")
 #define RP_NO_HOTKEY_TEXT QTStr("Output.ReplayBuffer.NoHotkey.Msg")
-
-extern volatile bool recording_paused;
-extern volatile bool replaybuf_active;
 
 void OBSBasic::ShowReplayBufferPauseWarning()
 {
