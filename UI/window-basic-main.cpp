@@ -1053,7 +1053,7 @@ retryScene:
 		opt_start_replaybuffer = false;
 	}
 
-	copyString = nullptr;
+	copyStrings.clear();
 	copyFiltersString = nullptr;
 
 	LogScenes();
@@ -5855,6 +5855,11 @@ int OBSBasic::GetTopSelectedSourceItem()
 	return selectedItems.count() ? selectedItems[0].row() : -1;
 }
 
+QModelIndexList OBSBasic::GetAllSelectedSourceItems()
+{
+	return ui->sources->selectionModel()->selectedIndexes();
+}
+
 void OBSBasic::on_preview_customContextMenuRequested(const QPoint &pos)
 {
 	CreateSourcePopupMenu(GetTopSelectedSourceItem(), true);
@@ -7036,41 +7041,52 @@ bool OBSBasic::sysTrayMinimizeToTray()
 
 void OBSBasic::on_actionCopySource_triggered()
 {
-	OBSSceneItem item = GetCurrentSceneItem();
-	if (!item)
-		return;
+	copyStrings.clear();
+	bool allowPastingDuplicate = true;
 
-	on_actionCopyTransform_triggered();
+	for (auto &selectedSource : GetAllSelectedSourceItems()) {
+		OBSSceneItem item = ui->sources->Get(selectedSource.row());
+		if (!item)
+			continue;
 
-	OBSSource source = obs_sceneitem_get_source(item);
+		on_actionCopyTransform_triggered();
 
-	copyString = obs_source_get_name(source);
-	copyVisible = obs_sceneitem_visible(item);
+		OBSSource source = obs_sceneitem_get_source(item);
+
+		copyStrings.push_front(obs_source_get_name(source));
+
+		copyVisible = obs_sceneitem_visible(item);
+
+		uint32_t output_flags = obs_source_get_output_flags(source);
+		if (!(output_flags & OBS_SOURCE_DO_NOT_DUPLICATE) == 0)
+			allowPastingDuplicate = false;
+	}
 
 	ui->actionPasteRef->setEnabled(true);
-
-	uint32_t output_flags = obs_source_get_output_flags(source);
-	if ((output_flags & OBS_SOURCE_DO_NOT_DUPLICATE) == 0)
-		ui->actionPasteDup->setEnabled(true);
-	else
-		ui->actionPasteDup->setEnabled(false);
+	ui->actionPasteDup->setEnabled(allowPastingDuplicate);
 }
 
 void OBSBasic::on_actionPasteRef_triggered()
 {
-	/* do not allow duplicate refs of the same group in the same scene */
-	OBSScene scene = GetCurrentScene();
-	if (!!obs_scene_get_group(scene, copyString))
-		return;
+	for (auto &copyString : copyStrings) {
+		/* do not allow duplicate refs of the same group in the same scene */
+		OBSScene scene = GetCurrentScene();
+		if (!!obs_scene_get_group(scene, copyString))
+			continue;
 
-	OBSBasicSourceSelect::SourcePaste(copyString, copyVisible, false);
-	on_actionPasteTransform_triggered();
+		OBSBasicSourceSelect::SourcePaste(copyString, copyVisible,
+						  false);
+		on_actionPasteTransform_triggered();
+	}
 }
 
 void OBSBasic::on_actionPasteDup_triggered()
 {
-	OBSBasicSourceSelect::SourcePaste(copyString, copyVisible, true);
-	on_actionPasteTransform_triggered();
+	for (auto &copyString : copyStrings) {
+		OBSBasicSourceSelect::SourcePaste(copyString, copyVisible,
+						  true);
+		on_actionPasteTransform_triggered();
+	}
 }
 
 void OBSBasic::AudioMixerCopyFilters()
