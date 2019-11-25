@@ -594,6 +594,13 @@ public slots:
 	bool AddSceneCollection(bool create_new,
 				const QString &name = QString());
 
+	void RefreshUICollections();
+	void ChangeUICollection();
+	void SaveUI();
+	void CreateDefaultUI();
+	void LoadUI(const char *);
+	bool AddUICollection(bool, const QString &);
+
 	void UpdatePatronJson(const QString &text, const QString &error);
 
 	void ShowContextBar();
@@ -926,6 +933,13 @@ private slots:
 	void on_actionRemoveSceneCollection_triggered();
 	void on_actionImportSceneCollection_triggered();
 	void on_actionExportSceneCollection_triggered();
+
+	void on_actionNewUICollection_triggered();
+	void on_actionDupUICollection_triggered();
+	void on_actionRenameUICollection_triggered();
+	void on_actionRemoveUICollection_triggered();
+	void on_actionImportUICollection_triggered();
+	void on_actionExportUICollection_triggered();
 
 	void on_actionNewProfile_triggered();
 	void on_actionDupProfile_triggered();

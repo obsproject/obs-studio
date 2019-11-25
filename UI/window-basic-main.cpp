@@ -356,11 +356,26 @@ OBSBasic::OBSBasic(QWidget *parent)
 
 	QPoint curPos;
 
-	UpdateContextBar();
+	char fileName[512];
+	char savePath[512];
+	const char *uiCollection = config_get_string(
+		App()->GlobalConfig(), "Basic", "UICollectionFile");
+	ret = snprintf(fileName, 512, "obs-studio/basic/ui/%s.json",
+		       uiCollection);
+	if (ret <= 0)
+		return;
+	ret = GetConfigPath(savePath, sizeof(savePath), fileName);
+	if (ret <= 0)
+		return;
+	obs_data_t *data = obs_data_create_from_json_file_safe(savePath, "bak");
+	if (!data) {
+		blog(LOG_INFO, "No ui file found, creating default scene");
+		CreateDefaultUI();
+		SaveUI();
+		return;
+	}
 
-	//restore parent window geometry
-	const char *geometry = config_get_string(App()->GlobalConfig(),
-						 "BasicWindow", "geometry");
+	const char *geometry = obs_data_get_string(data, "geometry");
 	if (geometry != NULL) {
 		QByteArray byteArray =
 			QByteArray::fromBase64(QByteArray(geometry));
@@ -380,6 +395,7 @@ OBSBasic::OBSBasic(QWidget *parent)
 			QGuiApplication::primaryScreen()->geometry();
 		QSize adjSize = desktopRect.size() / 2 - size() / 2;
 		curPos = QPoint(adjSize.width(), adjSize.height());
+		SaveUI();
 	}
 
 	QPoint curSize(width(), height());
@@ -764,6 +780,12 @@ void OBSBasic::CreateDefaultScene(bool firstStart)
 	obs_scene_release(scene);
 
 	disableSaving--;
+}
+
+void OBSBasic::CreateDefaultUI() //TODO: Implement
+{
+	on_resetUI_triggered();
+	return;
 }
 
 static void ReorderItemByName(QListWidget *lw, const char *name, int newIndex)
@@ -1779,6 +1801,7 @@ void OBSBasic::OBSInit()
 
 	RefreshSceneCollections();
 	RefreshProfiles();
+	RefreshUICollections();
 	disableSaving--;
 
 	auto addDisplay = [this](OBSQTDisplay *window) {
@@ -1829,10 +1852,31 @@ void OBSBasic::OBSInit()
 		LoadExtraBrowserDocks();
 	}
 #endif
+	char nfileName[512];
+	char nsavePath[512];
+	const char *uiCollection = config_get_string(
+		App()->GlobalConfig(), "Basic", "UICollectionFile");
 
-	const char *dockStateStr = config_get_string(
-		App()->GlobalConfig(), "BasicWindow", "DockState");
+	ret = snprintf(nfileName, 512, "obs-studio/basic/ui/%s.json",
+		       uiCollection);
+	if (ret <= 0)
+		return;
 
+	ret = GetConfigPath(nsavePath, sizeof(nsavePath), nfileName);
+	if (ret <= 0)
+		return;
+
+	obs_data_t *data =
+		obs_data_create_from_json_file_safe(nsavePath, "bak");
+
+	if (!data) {
+		blog(LOG_INFO, "No ui file found, creating default scene");
+		CreateDefaultUI();
+		SaveUI();
+		RefreshUICollections();
+		return;
+	}
+	const char *dockStateStr = obs_data_get_string(data, "DockState");
 	if (!dockStateStr) {
 		on_resetUI_triggered();
 	} else {
@@ -4178,9 +4222,7 @@ void OBSBasic::closeEvent(QCloseEvent *event)
 	}
 
 	if (isVisible())
-		config_set_string(App()->GlobalConfig(), "BasicWindow",
-				  "geometry",
-				  saveGeometry().toBase64().constData());
+		SaveUI();
 
 	if (outputHandler && outputHandler->Active()) {
 		SetShowing(true);
@@ -4227,8 +4269,8 @@ void OBSBasic::closeEvent(QCloseEvent *event)
 
 	delete extraBrowsers;
 
-	config_set_string(App()->GlobalConfig(), "BasicWindow", "DockState",
-			  saveState().toBase64().constData());
+	//config_set_string(App()->GlobalConfig(), "BasicWindow", "DockState",
+	//		  saveState().toBase64().constData());
 
 #ifdef BROWSER_AVAILABLE
 	SaveExtraBrowserDocks();
