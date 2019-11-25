@@ -621,6 +621,7 @@ private slots:
 	void ScenePasteFilters();
 
 	void CheckDiskSpaceRemaining();
+	void OpenSavedProjector(SavedProjectorInfo *info);
 
 	void ScenesReordered(const QModelIndex &parent, int start, int end,
 			     const QModelIndex &destination, int row);

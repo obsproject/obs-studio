@@ -242,6 +242,7 @@ OBSBasic::OBSBasic(QWidget *parent)
 	qRegisterMetaType<OBSSceneItem>("OBSSceneItem");
 	qRegisterMetaType<OBSSource>("OBSSource");
 	qRegisterMetaType<obs_hotkey_id>("obs_hotkey_id");
+	qRegisterMetaType<SavedProjectorInfo *>("SavedProjectorInfo *");
 
 	qRegisterMetaTypeStreamOperators<std::vector<std::shared_ptr<OBSSignal>>>(
 		"std::vector<std::shared_ptr<OBSSignal>>");
@@ -6570,6 +6571,13 @@ void OBSBasic::OpenSceneWindow()
 void OBSBasic::OpenSavedProjectors()
 {
 	for (SavedProjectorInfo *info : savedProjectorsArray) {
+		OpenSavedProjector(info);
+	}
+}
+
+void OBSBasic::OpenSavedProjector(SavedProjectorInfo *info)
+{
+	if (info) {
 		OBSProjector *projector = nullptr;
 		switch (info->type) {
 		case ProjectorType::Source:
@@ -6577,7 +6585,7 @@ void OBSBasic::OpenSavedProjectors()
 			OBSSource source =
 				obs_get_source_by_name(info->name.c_str());
 			if (!source)
-				continue;
+				return;
 
 			projector = OpenProjector(source, info->monitor,
 						  info->type);
