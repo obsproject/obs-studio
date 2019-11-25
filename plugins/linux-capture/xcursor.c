@@ -103,7 +103,7 @@ void xcursor_tick(xcursor_t *data)
 	XFree(xc);
 }
 
-void xcursor_render(xcursor_t *data)
+void xcursor_render(xcursor_t *data, int x_offset, int y_offset)
 {
 	if (!data->tex)
 		return;
@@ -117,7 +117,8 @@ void xcursor_render(xcursor_t *data)
 	gs_enable_color(true, true, true, false);
 
 	gs_matrix_push();
-	gs_matrix_translate3f(data->render_x, data->render_y, 0.0f);
+	gs_matrix_translate3f(data->render_x + x_offset,
+			      data->render_y + y_offset, 0.0f);
 	gs_draw_sprite(data->tex, 0, 0, 0);
 	gs_matrix_pop();
 
