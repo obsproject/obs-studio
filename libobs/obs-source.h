@@ -43,6 +43,23 @@ enum obs_balance_type {
 	OBS_BALANCE_TYPE_LINEAR,
 };
 
+enum obs_icon_type {
+	OBS_ICON_TYPE_UNKNOWN,
+	OBS_ICON_TYPE_IMAGE,
+	OBS_ICON_TYPE_COLOR,
+	OBS_ICON_TYPE_SLIDESHOW,
+	OBS_ICON_TYPE_AUDIO_INPUT,
+	OBS_ICON_TYPE_AUDIO_OUTPUT,
+	OBS_ICON_TYPE_DESKTOP_CAPTURE,
+	OBS_ICON_TYPE_WINDOW_CAPTURE,
+	OBS_ICON_TYPE_GAME_CAPTURE,
+	OBS_ICON_TYPE_CAMERA,
+	OBS_ICON_TYPE_TEXT,
+	OBS_ICON_TYPE_MEDIA,
+	OBS_ICON_TYPE_BROWSER,
+	OBS_ICON_TYPE_CUSTOM,
+};
+
 /**
  * @name Source output flags
  *
@@ -471,6 +488,9 @@ struct obs_source_info {
 	bool (*audio_mix)(void *data, uint64_t *ts_out,
 			  struct audio_output_data *audio_output,
 			  size_t channels, size_t sample_rate);
+
+	/** Icon type for the source */
+	enum obs_icon_type icon_type;
 };
 
 EXPORT void obs_register_source_s(const struct obs_source_info *info,

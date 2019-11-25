@@ -2170,6 +2170,10 @@ static inline void obs_source_frame_destroy(struct obs_source_frame *frame)
 EXPORT void obs_source_frame_copy(struct obs_source_frame *dst,
 				  const struct obs_source_frame *src);
 
+/* ------------------------------------------------------------------------- */
+/* Get source icon type */
+EXPORT enum obs_icon_type obs_source_get_icon_type(const char *id);
+
 #ifdef __cplusplus
 }
 #endif

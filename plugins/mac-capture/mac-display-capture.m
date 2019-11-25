@@ -658,4 +658,5 @@ struct obs_source_info display_capture_info = {
 	.get_defaults = display_capture_defaults,
 	.get_properties = display_capture_properties,
 	.update = display_capture_update,
+	.icon_type = OBS_ICON_TYPE_DESKTOP_CAPTURE,
 };

@@ -1281,4 +1281,5 @@ struct obs_source_info syphon_info = {
 	.get_height = syphon_get_height,
 	.update = syphon_update,
 	.save = syphon_save,
+	.icon_type = OBS_ICON_TYPE_GAME_CAPTURE,
 };

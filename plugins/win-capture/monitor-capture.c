@@ -243,4 +243,5 @@ struct obs_source_info monitor_capture_info = {
 	.get_height = monitor_capture_height,
 	.get_defaults = monitor_capture_defaults,
 	.get_properties = monitor_capture_properties,
+	.icon_type = OBS_ICON_TYPE_DESKTOP_CAPTURE,
 };

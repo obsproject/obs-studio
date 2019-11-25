@@ -52,6 +52,7 @@ static struct obs_source_info freetype2_source_info = {
 	.video_render = ft2_source_render,
 	.video_tick = ft2_video_tick,
 	.get_properties = ft2_source_properties,
+	.icon_type = OBS_ICON_TYPE_TEXT,
 };
 
 static bool plugin_initialized = false;

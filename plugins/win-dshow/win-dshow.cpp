@@ -1999,5 +1999,6 @@ void RegisterDShowSource()
 	info.update = UpdateDShowInput;
 	info.get_defaults = GetDShowDefaults;
 	info.get_properties = GetDShowProperties;
+	info.icon_type = OBS_ICON_TYPE_CAMERA;
 	obs_register_source(&info);
 }

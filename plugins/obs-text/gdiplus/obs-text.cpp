@@ -1042,6 +1042,7 @@ bool obs_module_load(void)
 	si.type = OBS_SOURCE_TYPE_INPUT;
 	si.output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_CUSTOM_DRAW;
 	si.get_properties = get_properties;
+	si.icon_type = OBS_ICON_TYPE_TEXT;
 
 	si.get_name = [](void *) { return obs_module_text("TextGDIPlus"); };
 	si.create = [](obs_data_t *settings, obs_source_t *source) {

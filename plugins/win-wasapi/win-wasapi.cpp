@@ -618,6 +618,7 @@ void RegisterWASAPIInput()
 	info.update = UpdateWASAPISource;
 	info.get_defaults = GetWASAPIDefaultsInput;
 	info.get_properties = GetWASAPIPropertiesInput;
+	info.icon_type = OBS_ICON_TYPE_AUDIO_INPUT;
 	obs_register_source(&info);
 }
 
@@ -634,5 +635,6 @@ void RegisterWASAPIOutput()
 	info.update = UpdateWASAPISource;
 	info.get_defaults = GetWASAPIDefaultsOutput;
 	info.get_properties = GetWASAPIPropertiesOutput;
+	info.icon_type = OBS_ICON_TYPE_AUDIO_OUTPUT;
 	obs_register_source(&info);
 }

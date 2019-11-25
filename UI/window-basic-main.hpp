@@ -117,6 +117,36 @@ private:
 
 class OBSBasic : public OBSMainWindow {
 	Q_OBJECT
+	Q_PROPERTY(QIcon imageIcon READ GetImageIcon WRITE SetImageIcon
+			   DESIGNABLE true)
+	Q_PROPERTY(QIcon colorIcon READ GetColorIcon WRITE SetColorIcon
+			   DESIGNABLE true)
+	Q_PROPERTY(QIcon slideshowIcon READ GetSlideshowIcon WRITE
+			   SetSlideshowIcon DESIGNABLE true)
+	Q_PROPERTY(QIcon audioInputIcon READ GetAudioInputIcon WRITE
+			   SetAudioInputIcon DESIGNABLE true)
+	Q_PROPERTY(QIcon audioOutputIcon READ GetAudioOutputIcon WRITE
+			   SetAudioOutputIcon DESIGNABLE true)
+	Q_PROPERTY(QIcon desktopCapIcon READ GetDesktopCapIcon WRITE
+			   SetDesktopCapIcon DESIGNABLE true)
+	Q_PROPERTY(QIcon windowCapIcon READ GetWindowCapIcon WRITE
+			   SetWindowCapIcon DESIGNABLE true)
+	Q_PROPERTY(QIcon gameCapIcon READ GetGameCapIcon WRITE SetGameCapIcon
+			   DESIGNABLE true)
+	Q_PROPERTY(QIcon cameraIcon READ GetCameraIcon WRITE SetCameraIcon
+			   DESIGNABLE true)
+	Q_PROPERTY(QIcon textIcon READ GetTextIcon WRITE SetTextIcon
+			   DESIGNABLE true)
+	Q_PROPERTY(QIcon mediaIcon READ GetMediaIcon WRITE SetMediaIcon
+			   DESIGNABLE true)
+	Q_PROPERTY(QIcon browserIcon READ GetBrowserIcon WRITE SetBrowserIcon
+			   DESIGNABLE true)
+	Q_PROPERTY(QIcon groupIcon READ GetGroupIcon WRITE SetGroupIcon
+			   DESIGNABLE true)
+	Q_PROPERTY(QIcon sceneIcon READ GetSceneIcon WRITE SetSceneIcon
+			   DESIGNABLE true)
+	Q_PROPERTY(QIcon defaultIcon READ GetDefaultIcon WRITE SetDefaultIcon
+			   DESIGNABLE true)
 
 	friend class OBSAbout;
 	friend class OBSBasicPreview;
@@ -441,6 +471,36 @@ private:
 				 bool firstCreate);
 #endif
 
+	QIcon imageIcon;
+	QIcon colorIcon;
+	QIcon slideshowIcon;
+	QIcon audioInputIcon;
+	QIcon audioOutputIcon;
+	QIcon desktopCapIcon;
+	QIcon windowCapIcon;
+	QIcon gameCapIcon;
+	QIcon cameraIcon;
+	QIcon textIcon;
+	QIcon mediaIcon;
+	QIcon browserIcon;
+	QIcon groupIcon;
+	QIcon sceneIcon;
+	QIcon defaultIcon;
+
+	QIcon GetImageIcon() const;
+	QIcon GetColorIcon() const;
+	QIcon GetSlideshowIcon() const;
+	QIcon GetAudioInputIcon() const;
+	QIcon GetAudioOutputIcon() const;
+	QIcon GetDesktopCapIcon() const;
+	QIcon GetWindowCapIcon() const;
+	QIcon GetGameCapIcon() const;
+	QIcon GetCameraIcon() const;
+	QIcon GetTextIcon() const;
+	QIcon GetMediaIcon() const;
+	QIcon GetBrowserIcon() const;
+	QIcon GetDefaultIcon() const;
+
 public slots:
 	void DeferSaveBegin();
 	void DeferSaveEnd();
@@ -566,6 +626,22 @@ private slots:
 			     const QModelIndex &destination, int row);
 
 	void ResetStatsHotkey();
+
+	void SetImageIcon(const QIcon &icon);
+	void SetColorIcon(const QIcon &icon);
+	void SetSlideshowIcon(const QIcon &icon);
+	void SetAudioInputIcon(const QIcon &icon);
+	void SetAudioOutputIcon(const QIcon &icon);
+	void SetDesktopCapIcon(const QIcon &icon);
+	void SetWindowCapIcon(const QIcon &icon);
+	void SetGameCapIcon(const QIcon &icon);
+	void SetCameraIcon(const QIcon &icon);
+	void SetTextIcon(const QIcon &icon);
+	void SetMediaIcon(const QIcon &icon);
+	void SetBrowserIcon(const QIcon &icon);
+	void SetGroupIcon(const QIcon &icon);
+	void SetSceneIcon(const QIcon &icon);
+	void SetDefaultIcon(const QIcon &icon);
 
 private:
 	/* OBS Callbacks */
@@ -695,6 +771,10 @@ public:
 	void DeleteProjector(OBSProjector *projector);
 	void AddProjectorMenuMonitors(QMenu *parent, QObject *target,
 				      const char *slot);
+
+	QIcon GetSourceIcon(const char *id) const;
+	QIcon GetGroupIcon() const;
+	QIcon GetSceneIcon() const;
 
 protected:
 	virtual void closeEvent(QCloseEvent *event) override;
