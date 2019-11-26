@@ -577,8 +577,10 @@ static bool init_avformat(mp_media_t *m)
 		av_dict_set_int(&opts, "buffer_size", m->buffering, 0);
 
 	m->fmt = avformat_alloc_context();
-	m->fmt->interrupt_callback.callback = interrupt_callback;
-	m->fmt->interrupt_callback.opaque = m;
+	if (!m->is_local_file) {
+		m->fmt->interrupt_callback.callback = interrupt_callback;
+		m->fmt->interrupt_callback.opaque = m;
+	}
 
 	int ret = avformat_open_input(&m->fmt, m->path, format,
 				      opts ? &opts : NULL);
