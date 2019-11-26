@@ -176,7 +176,7 @@ bool OBSBasic::AddUICollection(bool create_new, const QString &qname)
 	config_set_string(App()->GlobalConfig(), "Basic", "UICollectionFile",
 			  file.c_str());
 	if (create_new) {
-		CreateDefaultUI();
+		CreateDefaultUI(false);
 	}
 	SaveUI();
 	RefreshUICollections();
@@ -516,11 +516,11 @@ void OBSBasic::SaveUI()
 		return;
 
 	if (isVisible()) {
-		const char *saveWindow = saveGeometry().toBase64().constData();
 		const char *dockState = saveState().toBase64().constData();
 		obs_data_t *saveData = obs_data_create();
-		obs_data_set_string(saveData, "geometry", saveWindow);
 		obs_data_set_string(saveData, "DockState", dockState);
+		obs_data_set_string(saveData, "ExtraBrowserDocks",
+				    ExtraBrowserSaveString().c_str());
 
 		if (!obs_data_save_json_safe(saveData, savePath, "tmp", "bak"))
 			blog(LOG_ERROR, "Could not save ui data to %s",
@@ -535,39 +535,25 @@ void OBSBasic::LoadUI(const char *file)
 	obs_data_t *data = obs_data_create_from_json_file_safe(file, "bak");
 	if (!data) {
 		blog(LOG_INFO, "No ui file found, creating default ui");
-		CreateDefaultUI();
+		CreateDefaultUI(false);
 		SaveUI();
 		return;
 	}
 
-	/*const char *geometry = obs_data_get_string(data, "geometry"); TODO: Probably unncessary and gets in the way
+	LoadExtraBrowserDocks(obs_data_get_string(data, "ExtraBrowserDocks"));
 
-	if (!geometry) {
-		blog(LOG_WARNING,
-		     "No geometry found in file %s, using default ui", file);
-		CreateDefaultUI();
-		SaveUI();
-		return;
-	}
-
-	QByteArray byteArray = QByteArray::fromBase64(QByteArray(geometry));
-	restoreGeometry(byteArray);
-
-	QRect windowGeometry = normalGeometry();
-	if (!WindowPositionValid(windowGeometry)) {
-		QRect rect = App()->desktop()->geometry();
-		setGeometry(QStyle::alignedRect(Qt::LeftToRight,
-						Qt::AlignCenter, size(), rect));
-	}*/
-
-	const char *dockStateStr = obs_data_get_string(data, "DockState");
+	const char *dockStateStr =
+			obs_data_get_string(data, "DockState");
 	if (!dockStateStr) {
-		CreateDefaultUI();
+		CreateDefaultUI(false);
+		blog(LOG_WARNING, "No dock state to hydrate");
 	} else {
 		QByteArray dockState =
 			QByteArray::fromBase64(QByteArray(dockStateStr));
-		if (!restoreState(dockState))
-			CreateDefaultUI();
+		if (!restoreState(dockState)) {
+			blog(LOG_WARNING, "Unable to restore dock state");
+			CreateDefaultUI(false);
+		}
 	}
 	std::string name;
 	name = strrchr(file, '/') + 1;

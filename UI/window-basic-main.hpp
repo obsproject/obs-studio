@@ -491,7 +491,8 @@ private:
 	QStringList extraBrowserDockTargets;
 
 	void ClearExtraBrowserDocks();
-	void LoadExtraBrowserDocks();
+	void LoadExtraBrowserDocks(const char *);
+	std::string ExtraBrowserSaveString();
 	void SaveExtraBrowserDocks();
 	void ManageExtraBrowserDocks();
 	void AddExtraBrowserDock(const QString &title, const QString &url,
@@ -597,7 +598,7 @@ public slots:
 	void RefreshUICollections();
 	void ChangeUICollection();
 	void SaveUI();
-	void CreateDefaultUI();
+	void CreateDefaultUI(bool);
 	void LoadUI(const char *);
 	bool AddUICollection(bool, const QString &);
 
@@ -972,7 +973,7 @@ private slots:
 	void on_autoConfigure_triggered();
 	void on_stats_triggered();
 
-	void on_resetUI_triggered(bool);
+	void on_resetUI_triggered();
 	void on_lockUI_toggled(bool lock);
 
 	void PauseToggled();
