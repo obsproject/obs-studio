@@ -139,7 +139,7 @@ static int mp_media_next_packet(mp_media_t *media)
 
 	int ret = av_read_frame(media->fmt, &pkt);
 	if (ret < 0) {
-		if (ret != AVERROR_EOF)
+		if (ret != AVERROR_EOF && ret != AVERROR_EXIT)
 			blog(LOG_WARNING, "MP: av_read_frame failed: %s (%d)",
 			     av_err2str(ret), ret);
 		return ret;
@@ -230,7 +230,7 @@ static bool mp_media_prepare_frames(mp_media_t *m)
 	while (!mp_media_ready_to_start(m)) {
 		if (!m->eof) {
 			int ret = mp_media_next_packet(m);
-			if (ret == AVERROR_EOF)
+			if (ret == AVERROR_EOF || ret == AVERROR_EXIT)
 				m->eof = true;
 			else if (ret < 0)
 				return false;
