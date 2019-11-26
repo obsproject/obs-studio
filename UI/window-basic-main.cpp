@@ -5754,6 +5754,20 @@ void OBSBasic::on_streamButton_clicked()
 			return;
 		}
 
+		auto action =
+			UIValidation::StreamSettingsConfirmation(this, service);
+		switch (action) {
+		case StreamSettingsAction::ContinueStream:
+			break;
+		case StreamSettingsAction::OpenSettings:
+			on_action_Settings_triggered();
+			ui->streamButton->setChecked(false);
+			return;
+		case StreamSettingsAction::Cancel:
+			ui->streamButton->setChecked(false);
+			return;
+		}
+
 		bool confirm = config_get_bool(GetGlobalConfig(), "BasicWindow",
 					       "WarnBeforeStartingStream");
 

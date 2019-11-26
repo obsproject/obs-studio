@@ -6,6 +6,7 @@
 #include <QPushButton>
 
 #include <obs-app.hpp>
+#include <obs-service.h>
 
 static int CountVideoSources()
 {
@@ -53,4 +54,66 @@ bool UIValidation::NoSourcesConfirmation(QWidget *parent)
 		return false;
 	else
 		return true;
+}
+
+StreamSettingsAction
+UIValidation::StreamSettingsConfirmation(QWidget *parent, OBSService service)
+{
+	// Custom services can user API key in URL or user/pass combo.
+	// So only check there is a URL
+	char const *serviceType = obs_service_get_type(service);
+	bool isCustomUrlService = (strcmp(serviceType, "rtmp_custom") == 0);
+
+	char const *streamUrl = obs_service_get_url(service);
+	char const *streamKey = obs_service_get_key(service);
+
+	bool hasStreamUrl = (streamUrl != NULL && streamUrl[0] != '\0');
+	bool hasStreamKey = ((streamKey != NULL && streamKey[0] != '\0') ||
+			     isCustomUrlService);
+
+	if (hasStreamUrl && hasStreamKey)
+		return StreamSettingsAction::ContinueStream;
+
+	QString msg;
+
+	if (!hasStreamUrl && !hasStreamKey) {
+		msg = QTStr("Basic.Settings.Stream.MissingUrlAndApiKey");
+	} else if (!hasStreamKey) {
+		msg = QTStr("Basic.Settings.Stream.MissingStreamKey");
+	} else {
+		msg = QTStr("Basic.Settings.Stream.MissingUrl");
+	}
+
+	QMessageBox messageBox(parent);
+	messageBox.setWindowTitle(
+		QTStr("Basic.Settings.Stream.MissingSettingAlert"));
+	messageBox.setText(msg);
+
+	QPushButton *cancel;
+	QPushButton *settings;
+
+#ifdef __APPLE__
+#define ACCEPT_BUTTON QMessageBox::AcceptRole
+#define REJECT_BUTTON QMessageBox::ResetRole
+#else
+#define ACCEPT_BUTTON QMessageBox::NoRole
+#define REJECT_BUTTON QMessageBox::NoRole
+#endif
+	settings = messageBox.addButton(
+		QTStr("Basic.Settings.Stream.StreamSettingsWarning"),
+		ACCEPT_BUTTON);
+	cancel = messageBox.addButton(QTStr("Cancel"), REJECT_BUTTON);
+
+	messageBox.setDefaultButton(settings);
+	messageBox.setEscapeButton(cancel);
+
+	messageBox.setIcon(QMessageBox::Warning);
+	messageBox.exec();
+
+	if (messageBox.clickedButton() == settings)
+		return StreamSettingsAction::OpenSettings;
+	if (messageBox.clickedButton() == cancel)
+		return StreamSettingsAction::Cancel;
+
+	return StreamSettingsAction::ContinueStream;
 }
