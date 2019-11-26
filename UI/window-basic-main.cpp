@@ -6644,6 +6644,9 @@ void OBSBasic::UpdateTitleBar()
 	name << " - " << Str("TitleBar.Scenes") << ": " << sceneCollection;
 
 	setWindowTitle(QT_UTF8(name.str().c_str()));
+
+	ui->scenesDock->setWindowTitle(QTStr("Basic.Main.Scenes") + ": " +
+				       sceneCollection);
 }
 
 int OBSBasic::GetProfilePath(char *path, size_t size, const char *file) const
