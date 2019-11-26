@@ -357,7 +357,9 @@ void OBSBasic::on_actionRemoveUICollection_triggered()
 	     oldName.c_str(), oldFile.c_str(), newName.c_str(), newFile);
 	blog(LOG_INFO, "------------------------------------------------");
 
-	blog(LOG_INFO, "%s", config_get_string(App()->GlobalConfig(), "Basic", "UICollectionFile"));
+	blog(LOG_INFO, "%s",
+	     config_get_string(App()->GlobalConfig(), "Basic",
+			       "UICollectionFile"));
 	//if (api) { TODO
 	//	api->on_event(OBS_FRONTEND_EVENT_SCENE_COLLECTION_LIST_CHANGED);
 	//	api->on_event(OBS_FRONTEND_EVENT_SCENE_COLLECTION_CHANGED);
@@ -538,10 +540,11 @@ void OBSBasic::LoadUI(const char *file)
 		return;
 	}
 
-	const char *geometry = obs_data_get_string(data, "geometry");
+	/*const char *geometry = obs_data_get_string(data, "geometry"); TODO: Probably unncessary and gets in the way
 
 	if (!geometry) {
-		blog(LOG_WARNING, "No geometry found in file %s, using default ui", file);
+		blog(LOG_WARNING,
+		     "No geometry found in file %s, using default ui", file);
 		CreateDefaultUI();
 		SaveUI();
 		return;
@@ -554,15 +557,15 @@ void OBSBasic::LoadUI(const char *file)
 	if (!WindowPositionValid(windowGeometry)) {
 		QRect rect = App()->desktop()->geometry();
 		setGeometry(QStyle::alignedRect(Qt::LeftToRight,
-						Qt::AlignCenter, size(),
-						rect));
-	}
+						Qt::AlignCenter, size(), rect));
+	}*/
 
 	const char *dockStateStr = obs_data_get_string(data, "DockState");
 	if (!dockStateStr) {
 		CreateDefaultUI();
 	} else {
-		QByteArray dockState = QByteArray::fromBase64(QByteArray(dockStateStr));
+		QByteArray dockState =
+			QByteArray::fromBase64(QByteArray(dockStateStr));
 		if (!restoreState(dockState))
 			CreateDefaultUI();
 	}
@@ -570,6 +573,8 @@ void OBSBasic::LoadUI(const char *file)
 	name = strrchr(file, '/') + 1;
 	name.resize(name.size() - 5);
 
-	config_set_string(App()->GlobalConfig(), "Basic", "UICollection", name.c_str());
-	config_set_string(App()->GlobalConfig(), "Basic", "UICollectionFile", name.c_str());
+	config_set_string(App()->GlobalConfig(), "Basic", "UICollection",
+			  name.c_str());
+	config_set_string(App()->GlobalConfig(), "Basic", "UICollectionFile",
+			  name.c_str());
 }

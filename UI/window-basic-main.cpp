@@ -356,26 +356,8 @@ OBSBasic::OBSBasic(QWidget *parent)
 
 	QPoint curPos;
 
-	char fileName[512];
-	char savePath[512];
-	const char *uiCollection = config_get_string(
-		App()->GlobalConfig(), "Basic", "UICollectionFile");
-	ret = snprintf(fileName, 512, "obs-studio/basic/ui/%s.json",
-		       uiCollection);
-	if (ret <= 0)
-		return;
-	ret = GetConfigPath(savePath, sizeof(savePath), fileName);
-	if (ret <= 0)
-		return;
-	obs_data_t *data = obs_data_create_from_json_file_safe(savePath, "bak");
-	if (!data) {
-		blog(LOG_INFO, "No ui file found, creating default scene");
-		CreateDefaultUI();
-		SaveUI();
-		return;
-	}
-
-	const char *geometry = obs_data_get_string(data, "geometry");
+	const char *geometry = config_get_string(App()->GlobalConfig(),
+						 "BasicWindow", "geometry");
 	if (geometry != NULL) {
 		QByteArray byteArray =
 			QByteArray::fromBase64(QByteArray(geometry));
@@ -395,7 +377,6 @@ OBSBasic::OBSBasic(QWidget *parent)
 			QGuiApplication::primaryScreen()->geometry();
 		QSize adjSize = desktopRect.size() / 2 - size() / 2;
 		curPos = QPoint(adjSize.width(), adjSize.height());
-		SaveUI();
 	}
 
 	QPoint curSize(width(), height());
@@ -784,7 +765,7 @@ void OBSBasic::CreateDefaultScene(bool firstStart)
 
 void OBSBasic::CreateDefaultUI() //TODO: Implement
 {
-	on_resetUI_triggered();
+	on_resetUI_triggered(false);
 	return;
 }
 
@@ -1878,12 +1859,12 @@ void OBSBasic::OBSInit()
 	}
 	const char *dockStateStr = obs_data_get_string(data, "DockState");
 	if (!dockStateStr) {
-		on_resetUI_triggered();
+		on_resetUI_triggered(false);
 	} else {
 		QByteArray dockState =
 			QByteArray::fromBase64(QByteArray(dockStateStr));
 		if (!restoreState(dockState))
-			on_resetUI_triggered();
+			on_resetUI_triggered(false);
 	}
 
 	bool pre23Defaults = config_get_bool(App()->GlobalConfig(), "General",
@@ -4222,7 +4203,9 @@ void OBSBasic::closeEvent(QCloseEvent *event)
 	}
 
 	if (isVisible())
-		SaveUI();
+		config_set_string(App()->GlobalConfig(), "BasicWindow",
+				  "geometry",
+				  saveGeometry().toBase64().constData());
 
 	if (outputHandler && outputHandler->Active()) {
 		SetShowing(true);
@@ -7301,7 +7284,7 @@ int OBSBasic::GetProfilePath(char *path, size_t size, const char *file) const
 	return snprintf(path, size, "%s/%s/%s", profiles_path, profile, file);
 }
 
-void OBSBasic::on_resetUI_triggered()
+void OBSBasic::on_resetUI_triggered(bool warn)
 {
 	/* prune deleted extra docks */
 	for (int i = extraDocks.size() - 1; i >= 0; i--) {
@@ -7310,7 +7293,7 @@ void OBSBasic::on_resetUI_triggered()
 		}
 	}
 
-	if (extraDocks.size()) {
+	if (extraDocks.size() && warn) {
 		QMessageBox::StandardButton button = QMessageBox::question(
 			this, QTStr("ResetUIWarning.Title"),
 			QTStr("ResetUIWarning.Text"));

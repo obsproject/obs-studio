@@ -972,7 +972,7 @@ private slots:
 	void on_autoConfigure_triggered();
 	void on_stats_triggered();
 
-	void on_resetUI_triggered();
+	void on_resetUI_triggered(bool);
 	void on_lockUI_toggled(bool lock);
 
 	void PauseToggled();
