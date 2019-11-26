@@ -5,7 +5,7 @@
 #include <util/threading.h>
 #include <windows.h>
 #include <dxgi.h>
-#include <emmintrin.h>
+#include <util/sse-intrin.h>
 #include <ipc-util/pipe.h>
 #include "obfuscate.h"
 #include "inject-library.h"

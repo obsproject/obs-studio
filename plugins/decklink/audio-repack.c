@@ -1,6 +1,6 @@
 #include "audio-repack.h"
 
-#include <emmintrin.h>
+#include <util/sse-intrin.h>
 
 int check_buffer(struct audio_repack *repack, uint32_t frame_count)
 {
