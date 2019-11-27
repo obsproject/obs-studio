@@ -1920,8 +1920,16 @@ void OBSBasic::OBSInit()
 			&OBSBasic::ManageExtraBrowserDocks);
 		ui->viewMenuDocks->insertSeparator(ui->toggleScenes);
 
-		LoadExtraBrowserDocks(
-			obs_data_get_string(data, "ExtraBrowserDocks"));
+		const char *configDockBrowsers = config_get_string(App()->GlobalConfig(), "BasicWindow", "ExtraBrowserDocks");
+		bool EBDUsed = config_get_bool(App()->GlobalConfig(), "BasicWindow", "UsedDefaultEBD");
+
+		if (configDockBrowsers && !EBDUsed) {
+			LoadExtraBrowserDocks(configDockBrowsers);
+			config_set_bool(App()->GlobalConfig(), "BasicWindow", "UsedDefaultEBD", true);
+		} else {
+			LoadExtraBrowserDocks(
+				obs_data_get_string(data, "ExtraBrowserDocks"));
+		}
 	}
 #endif
 
@@ -1932,15 +1940,29 @@ void OBSBasic::OBSInit()
 		RefreshUICollections();
 		return;
 	}
-	const char *dockStateStr = obs_data_get_string(data, "DockState");
-	if (!dockStateStr) {
+
+	const char *configDockState = config_get_string(
+		App()->GlobalConfig(), "BasicWindow", "DockState");
+
+	std::string dockStateStr = obs_data_get_string(data, "DockState");
+	bool DSUsed = config_get_bool(App()->GlobalConfig(), "BasicWindow",
+				      "UsedDefaultDockState");
+
+	if (configDockState && !DSUsed) {
+		dockStateStr = std::string(configDockState);
+		config_set_bool(App()->GlobalConfig(), "BasicWindow", "UsedDefaultDockState", true);
+	}
+
+	if (dockStateStr.empty()) {
 		CreateDefaultUI(false);
 	} else {
-		QByteArray dockState =
-			QByteArray::fromBase64(QByteArray(dockStateStr));
+		QByteArray dockState = QByteArray::fromBase64(
+			QByteArray(dockStateStr.c_str()));
 		if (!restoreState(dockState))
 			CreateDefaultUI(false);
 	}
+
+	obs_data_release(data);
 
 	bool pre23Defaults = config_get_bool(App()->GlobalConfig(), "General",
 					     "Pre23Defaults");
@@ -4323,6 +4345,7 @@ void OBSBasic::closeEvent(QCloseEvent *event)
 
 	Auth::Save();
 	SaveProjectNow();
+	SaveUI();
 	auth.reset();
 
 	delete extraBrowsers;
@@ -7359,7 +7382,8 @@ int OBSBasic::GetProfilePath(char *path, size_t size, const char *file) const
 	return snprintf(path, size, "%s/%s/%s", profiles_path, profile, file);
 }
 
-void OBSBasic::on_resetUI_triggered() {
+void OBSBasic::on_resetUI_triggered()
+{
 	CreateDefaultUI(true);
 }
 
