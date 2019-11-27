@@ -5742,7 +5742,9 @@ void OBSBasic::on_streamButton_clicked()
 			QMessageBox::StandardButton button =
 				OBSMessageBox::question(
 					this, QTStr("ConfirmStop.Title"),
-					QTStr("ConfirmStop.Text"));
+					QTStr("ConfirmStop.Text"),
+					QMessageBox::Yes | QMessageBox::No,
+					QMessageBox::No);
 
 			if (button == QMessageBox::No) {
 				ui->streamButton->setChecked(true);
@@ -5778,7 +5780,9 @@ void OBSBasic::on_streamButton_clicked()
 			QMessageBox::StandardButton button =
 				OBSMessageBox::question(
 					this, QTStr("ConfirmStart.Title"),
-					QTStr("ConfirmStart.Text"));
+					QTStr("ConfirmStart.Text"),
+					QMessageBox::Yes | QMessageBox::No,
+					QMessageBox::No);
 
 			if (button == QMessageBox::No) {
 				ui->streamButton->setChecked(false);
@@ -5800,7 +5804,9 @@ void OBSBasic::on_recordButton_clicked()
 			QMessageBox::StandardButton button =
 				OBSMessageBox::question(
 					this, QTStr("ConfirmStopRecord.Title"),
-					QTStr("ConfirmStopRecord.Text"));
+					QTStr("ConfirmStopRecord.Text"),
+					QMessageBox::Yes | QMessageBox::No,
+					QMessageBox::No);
 
 			if (button == QMessageBox::No) {
 				ui->recordButton->setChecked(true);
