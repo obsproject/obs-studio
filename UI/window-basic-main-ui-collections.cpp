@@ -537,6 +537,7 @@ void OBSBasic::LoadUI(const char *file)
 		blog(LOG_INFO, "No ui file found, creating default ui");
 		CreateDefaultUI(false);
 		SaveUI();
+		obs_data_release(data);
 		return;
 	}
 
@@ -563,4 +564,6 @@ void OBSBasic::LoadUI(const char *file)
 			  name.c_str());
 	config_set_string(App()->GlobalConfig(), "Basic", "UICollectionFile",
 			  name.c_str());
+
+	obs_data_release(data);
 }
