@@ -20,7 +20,7 @@
 #include "math-defs.h"
 #include "vec4.h"
 
-#include <util/sse-intrin.h>
+#include "../util/sse-intrin.h"
 
 #ifdef __cplusplus
 extern "C" {

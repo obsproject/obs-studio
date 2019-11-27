@@ -19,7 +19,7 @@
 
 #include "math-defs.h"
 
-#include <util/sse-intrin.h>
+#include "../util/sse-intrin.h"
 
 #ifdef __cplusplus
 extern "C" {
