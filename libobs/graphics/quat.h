@@ -21,7 +21,7 @@
 #include "math-defs.h"
 #include "vec3.h"
 
-#include <util/sse-intrin.h>
+#include "../util/sse-intrin.h"
 
 /*
  * Quaternion math
