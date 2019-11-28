@@ -16,6 +16,10 @@
 
 #pragma once
 
+#ifdef _WIN32
+#include <Unknwn.h>
+#endif
+
 /* Oh no I have my own com pointer class, the world is ending, how dare you
  * write your own! */
 
