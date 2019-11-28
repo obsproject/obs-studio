@@ -191,6 +191,7 @@ if(NOT INSTALLER_RUN)
 
 	if(WIN32)
 		add_subdirectory(libobs-d3d11)
+		add_subdirectory(libobs-winrt)
 	endif()
 
 	add_subdirectory(libobs-opengl)
