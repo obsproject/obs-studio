@@ -424,3 +424,52 @@ HWND find_window(enum window_search_mode mode, enum window_priority priority,
 
 	return best_window;
 }
+
+struct top_level_enum_data {
+	enum window_search_mode mode;
+	enum window_priority priority;
+	const char *class;
+	const char *title;
+	const char *exe;
+	bool uwp_window;
+	HWND best_window;
+	int best_rating;
+};
+
+BOOL CALLBACK enum_windows_proc(HWND window, LPARAM lParam)
+{
+	struct top_level_enum_data *data = (struct top_level_enum_data *)lParam;
+
+	if (!check_window_valid(window, data->mode))
+		return TRUE;
+
+	const int rating = window_rating(window, data->priority, data->class,
+					 data->title, data->exe,
+					 data->uwp_window);
+	if (rating < data->best_rating) {
+		data->best_rating = rating;
+		data->best_window = window;
+	}
+
+	return rating > 0;
+}
+
+HWND find_window_top_level(enum window_search_mode mode,
+			   enum window_priority priority, const char *class,
+			   const char *title, const char *exe)
+{
+	if (!class)
+		return NULL;
+
+	struct top_level_enum_data data;
+	data.mode = mode;
+	data.priority = priority;
+	data.class = class;
+	data.title = title;
+	data.exe = exe;
+	data.uwp_window = strcmp(class, "Windows.UI.Core.CoreWindow") == 0;
+	data.best_window = NULL;
+	data.best_rating = 0x7FFFFFFF;
+	EnumWindows(enum_windows_proc, (LPARAM)&data);
+	return data.best_window;
+}
