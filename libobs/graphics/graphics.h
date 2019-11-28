@@ -169,6 +169,12 @@ enum gs_texture_type {
 	GS_TEXTURE_CUBE,
 };
 
+struct gs_device_loss {
+	void (*device_loss_release)(void *data);
+	void (*device_loss_rebuild)(void *device, void *data);
+	void *data;
+};
+
 struct gs_monitor_info {
 	int rotation_degrees;
 	long x;
@@ -882,6 +888,9 @@ EXPORT bool gs_texture_create_nv12(gs_texture_t **tex_y, gs_texture_t **tex_uv,
 
 EXPORT gs_stagesurf_t *gs_stagesurface_create_nv12(uint32_t width,
 						   uint32_t height);
+
+EXPORT void gs_register_loss_callbacks(const struct gs_device_loss *callbacks);
+EXPORT void gs_unregister_loss_callbacks(void *data);
 
 #endif
 

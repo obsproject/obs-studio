@@ -946,6 +946,7 @@ struct gs_device {
 	matrix4 curViewMatrix;
 	matrix4 curViewProjMatrix;
 
+	vector<gs_device_loss> loss_callbacks;
 	gs_obj *first_obj = nullptr;
 
 	void InitCompiler();

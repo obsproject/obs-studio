@@ -2798,3 +2798,22 @@ device_stagesurface_create_nv12(gs_device_t *device, uint32_t width,
 
 	return surf;
 }
+
+extern "C" EXPORT void
+device_register_loss_callbacks(gs_device_t *device,
+			       const gs_device_loss *callbacks)
+{
+	device->loss_callbacks.emplace_back(*callbacks);
+}
+
+extern "C" EXPORT void device_unregister_loss_callbacks(gs_device_t *device,
+							void *data)
+{
+	for (auto iter = device->loss_callbacks.begin();
+	     iter != device->loss_callbacks.end(); ++iter) {
+		if (iter->data == data) {
+			device->loss_callbacks.erase(iter);
+			break;
+		}
+	}
+}
