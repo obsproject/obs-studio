@@ -192,7 +192,7 @@ void RemuxEntryPathItemDelegate::paint(QPainter *painter,
 		if (state != Ready) {
 			QColor background = localOption.palette.color(
 				QPalette::ColorGroup::Disabled,
-				QPalette::ColorRole::Background);
+				QPalette::ColorRole::Window);
 
 			localOption.backgroundBrush = QBrush(background);
 		}
