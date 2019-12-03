@@ -19,6 +19,14 @@ set_target_properties(libobs-winrt
 	PROPERTIES
 		OUTPUT_NAME libobs-winrt
 		PREFIX "")
+target_precompile_headers(libobs-winrt
+	PRIVATE
+		[["../libobs/util/windows/ComPtr.hpp"]]
+		<obs-module.h>
+		<d3d11.h>
+		<Windows.Graphics.Capture.Interop.h>
+		<winrt/Windows.Foundation.Metadata.h>
+		<winrt/Windows.Graphics.Capture.h>)
 target_link_libraries(libobs-winrt
 	libobs
 	windowsapp)

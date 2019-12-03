@@ -1,12 +1,3 @@
-#include "winrt-capture.h"
-
-#include "../libobs/util/windows/ComPtr.hpp"
-
-#include <d3d11.h>
-#include <Windows.Graphics.Capture.Interop.h>
-#include <winrt/Windows.Foundation.Metadata.h>
-#include <winrt/Windows.Graphics.Capture.h>
-
 extern "C" {
 HRESULT __stdcall CreateDirect3D11DeviceFromDXGIDevice(
 	::IDXGIDevice *dxgiDevice, ::IInspectable **graphicsDevice);
