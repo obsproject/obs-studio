@@ -317,7 +317,7 @@ void SourceTreeItem::EnterEditMode()
 	editor->setStyleSheet("background: none");
 	editor->selectAll();
 	editor->installEventFilter(this);
-	boxLayout->insertWidget(1, editor);
+	boxLayout->insertWidget(2, editor);
 	setFocusProxy(editor);
 }
 
@@ -336,7 +336,7 @@ void SourceTreeItem::ExitEditMode(bool save)
 	delete editor;
 	editor = nullptr;
 	setFocusPolicy(Qt::NoFocus);
-	boxLayout->insertWidget(1, label);
+	boxLayout->insertWidget(2, label);
 
 	/* ----------------------------------------- */
 	/* check for empty string                    */
