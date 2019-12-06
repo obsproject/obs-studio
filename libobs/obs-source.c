@@ -2273,11 +2273,15 @@ static bool filter_compatible(obs_source_t *source, obs_source_t *filter)
 	uint32_t s_caps = source->info.output_flags;
 	uint32_t f_caps = filter->info.output_flags;
 
-	if ((f_caps & OBS_SOURCE_AUDIO) != 0 &&
-	    (f_caps & OBS_SOURCE_VIDEO) == 0)
-		f_caps &= ~OBS_SOURCE_ASYNC;
+	// If the filter is video and the source is video, succeed.
+	if ((s_caps & (f_caps & OBS_SOURCE_VIDEO)) != 0)
+		return true;
 
-	return (s_caps & f_caps) == f_caps;
+	// If the filter is audio and the source is audio, succeed.
+	if ((s_caps & (f_caps & OBS_SOURCE_AUDIO)) != 0)
+		return true;
+
+	return false;
 }
 
 void obs_source_filter_add(obs_source_t *source, obs_source_t *filter)
