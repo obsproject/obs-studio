@@ -355,9 +355,6 @@ set(libobs_util_HEADERS
 	util/crc32.h
 	util/base.h
 	util/text-lookup.h
-	util/vc/vc_inttypes.h
-	util/vc/vc_stdbool.h
-	util/vc/vc_stdint.h
 	util/bmem.h
 	util/c99defs.h
 	util/util_uint128.h
