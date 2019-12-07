@@ -22,7 +22,7 @@ static void *decklink_output_create(obs_data_t *settings, obs_output_t *output)
 
 	decklinkOutput->deviceHash = obs_data_get_string(settings, DEVICE_HASH);
 	decklinkOutput->modeID = obs_data_get_int(settings, MODE_ID);
-	decklinkOutput->keyerMode = obs_data_get_int(settings, KEYER);
+	decklinkOutput->keyerMode = (int)obs_data_get_int(settings, KEYER);
 
 	return decklinkOutput;
 }
@@ -33,7 +33,7 @@ static void decklink_output_update(void *data, obs_data_t *settings)
 
 	decklink->deviceHash = obs_data_get_string(settings, DEVICE_HASH);
 	decklink->modeID = obs_data_get_int(settings, MODE_ID);
-	decklink->keyerMode = obs_data_get_int(settings, KEYER);
+	decklink->keyerMode = (int)obs_data_get_int(settings, KEYER);
 }
 
 static bool decklink_output_start(void *data)
