@@ -3509,7 +3509,8 @@ void OBSBasicSettings::on_theme_activated(int idx)
 	if (currT == defaultTheme)
 		currT = DEFAULT_THEME;
 
-	App()->SetTheme(currT.toUtf8().constData());
+	if (currT != App()->GetTheme())
+		App()->SetTheme(currT.toUtf8().constData());
 }
 
 void OBSBasicSettings::on_listWidget_itemSelectionChanged()
@@ -3535,7 +3536,8 @@ void OBSBasicSettings::on_buttonBox_clicked(QAbstractButton *button)
 	if (val == QDialogButtonBox::AcceptRole ||
 	    val == QDialogButtonBox::RejectRole) {
 		if (val == QDialogButtonBox::RejectRole) {
-			App()->SetTheme(savedTheme);
+			if (savedTheme != App()->GetTheme())
+				App()->SetTheme(savedTheme);
 #ifdef _WIN32
 			if (toggleAero)
 				SetAeroEnabled(!aeroWasDisabled);
