@@ -48,6 +48,7 @@ struct RunOnceMutexData;
 
 class RunOnceMutex {
 	RunOnceMutexData *data = nullptr;
+
 public:
 	RunOnceMutex(RunOnceMutexData *data_) : data(data_) {}
 	RunOnceMutex(const RunOnceMutex &rom) = delete;

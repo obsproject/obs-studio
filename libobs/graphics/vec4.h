@@ -18,7 +18,8 @@
 #pragma once
 
 #include "math-defs.h"
-#include <xmmintrin.h>
+
+#include "../util/sse-intrin.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -43,7 +44,7 @@ static inline void vec4_zero(struct vec4 *v)
 }
 
 static inline void vec4_set(struct vec4 *dst, float x, float y, float z,
-		float w)
+			    float w)
 {
 	dst->m = _mm_set_ps(w, z, y, x);
 }
@@ -56,49 +57,45 @@ static inline void vec4_copy(struct vec4 *dst, const struct vec4 *v)
 EXPORT void vec4_from_vec3(struct vec4 *dst, const struct vec3 *v);
 
 static inline void vec4_add(struct vec4 *dst, const struct vec4 *v1,
-		const struct vec4 *v2)
+			    const struct vec4 *v2)
 {
 	dst->m = _mm_add_ps(v1->m, v2->m);
 }
 
 static inline void vec4_sub(struct vec4 *dst, const struct vec4 *v1,
-		const struct vec4 *v2)
+			    const struct vec4 *v2)
 {
 	dst->m = _mm_sub_ps(v1->m, v2->m);
 }
 
 static inline void vec4_mul(struct vec4 *dst, const struct vec4 *v1,
-		const struct vec4 *v2)
+			    const struct vec4 *v2)
 {
 	dst->m = _mm_mul_ps(v1->m, v2->m);
 }
 
 static inline void vec4_div(struct vec4 *dst, const struct vec4 *v1,
-		const struct vec4 *v2)
+			    const struct vec4 *v2)
 {
 	dst->m = _mm_div_ps(v1->m, v2->m);
 }
 
-static inline void vec4_addf(struct vec4 *dst, const struct vec4 *v,
-		float f)
+static inline void vec4_addf(struct vec4 *dst, const struct vec4 *v, float f)
 {
 	dst->m = _mm_add_ps(v->m, _mm_set1_ps(f));
 }
 
-static inline void vec4_subf(struct vec4 *dst, const struct vec4 *v,
-		float f)
+static inline void vec4_subf(struct vec4 *dst, const struct vec4 *v, float f)
 {
 	dst->m = _mm_sub_ps(v->m, _mm_set1_ps(f));
 }
 
-static inline void vec4_mulf(struct vec4 *dst, const struct vec4 *v,
-		float f)
+static inline void vec4_mulf(struct vec4 *dst, const struct vec4 *v, float f)
 {
 	dst->m = _mm_mul_ps(v->m, _mm_set1_ps(f));
 }
 
-static inline void vec4_divf(struct vec4 *dst, const struct vec4 *v,
-		float f)
+static inline void vec4_divf(struct vec4 *dst, const struct vec4 *v, float f)
 {
 	dst->m = _mm_div_ps(v->m, _mm_set1_ps(f));
 }
@@ -139,42 +136,38 @@ static inline float vec4_dist(const struct vec4 *v1, const struct vec4 *v2)
 static inline void vec4_norm(struct vec4 *dst, const struct vec4 *v)
 {
 	float dot_val = vec4_dot(v, v);
-	dst->m = (dot_val > 0.0f) ?
-		_mm_mul_ps(v->m, _mm_set1_ps(1.0f/sqrtf(dot_val))) :
-		_mm_setzero_ps();
+	dst->m = (dot_val > 0.0f)
+			 ? _mm_mul_ps(v->m, _mm_set1_ps(1.0f / sqrtf(dot_val)))
+			 : _mm_setzero_ps();
 }
 
 static inline int vec4_close(const struct vec4 *v1, const struct vec4 *v2,
-		float epsilon)
+			     float epsilon)
 {
 	struct vec4 test;
 	vec4_sub(&test, v1, v2);
-	return test.x < epsilon &&
-	       test.y < epsilon &&
-	       test.z < epsilon &&
+	return test.x < epsilon && test.y < epsilon && test.z < epsilon &&
 	       test.w < epsilon;
 }
 
 static inline void vec4_min(struct vec4 *dst, const struct vec4 *v1,
-		const struct vec4 *v2)
+			    const struct vec4 *v2)
 {
 	dst->m = _mm_min_ps(v1->m, v2->m);
 }
 
-static inline void vec4_minf(struct vec4 *dst, const struct vec4 *v,
-		float f)
+static inline void vec4_minf(struct vec4 *dst, const struct vec4 *v, float f)
 {
 	dst->m = _mm_min_ps(v->m, _mm_set1_ps(f));
 }
 
 static inline void vec4_max(struct vec4 *dst, const struct vec4 *v1,
-		const struct vec4 *v2)
+			    const struct vec4 *v2)
 {
 	dst->m = _mm_max_ps(v1->m, v2->m);
 }
 
-static inline void vec4_maxf(struct vec4 *dst, const struct vec4 *v,
-		float f)
+static inline void vec4_maxf(struct vec4 *dst, const struct vec4 *v, float f)
 {
 	dst->m = _mm_max_ps(v->m, _mm_set1_ps(f));
 }
@@ -206,7 +199,7 @@ static inline void vec4_ceil(struct vec4 *dst, const struct vec4 *v)
 static inline uint32_t vec4_to_rgba(const struct vec4 *src)
 {
 	uint32_t val;
-	val  = (uint32_t)((double)src->x * 255.0);
+	val = (uint32_t)((double)src->x * 255.0);
 	val |= (uint32_t)((double)src->y * 255.0) << 8;
 	val |= (uint32_t)((double)src->z * 255.0) << 16;
 	val |= (uint32_t)((double)src->w * 255.0) << 24;
@@ -216,7 +209,7 @@ static inline uint32_t vec4_to_rgba(const struct vec4 *src)
 static inline uint32_t vec4_to_bgra(const struct vec4 *src)
 {
 	uint32_t val;
-	val  = (uint32_t)((double)src->z * 255.0);
+	val = (uint32_t)((double)src->z * 255.0);
 	val |= (uint32_t)((double)src->y * 255.0) << 8;
 	val |= (uint32_t)((double)src->x * 255.0) << 16;
 	val |= (uint32_t)((double)src->w * 255.0) << 24;
@@ -225,28 +218,28 @@ static inline uint32_t vec4_to_bgra(const struct vec4 *src)
 
 static inline void vec4_from_rgba(struct vec4 *dst, uint32_t rgba)
 {
-	dst->x = (float)((double)(rgba&0xFF) * (1.0/255.0));
+	dst->x = (float)((double)(rgba & 0xFF) * (1.0 / 255.0));
 	rgba >>= 8;
-	dst->y = (float)((double)(rgba&0xFF) * (1.0/255.0));
+	dst->y = (float)((double)(rgba & 0xFF) * (1.0 / 255.0));
 	rgba >>= 8;
-	dst->z = (float)((double)(rgba&0xFF) * (1.0/255.0));
+	dst->z = (float)((double)(rgba & 0xFF) * (1.0 / 255.0));
 	rgba >>= 8;
-	dst->w = (float)((double)(rgba&0xFF) * (1.0/255.0));
+	dst->w = (float)((double)(rgba & 0xFF) * (1.0 / 255.0));
 }
 
 static inline void vec4_from_bgra(struct vec4 *dst, uint32_t bgra)
 {
-	dst->z = (float)((double)(bgra&0xFF) * (1.0/255.0));
+	dst->z = (float)((double)(bgra & 0xFF) * (1.0 / 255.0));
 	bgra >>= 8;
-	dst->y = (float)((double)(bgra&0xFF) * (1.0/255.0));
+	dst->y = (float)((double)(bgra & 0xFF) * (1.0 / 255.0));
 	bgra >>= 8;
-	dst->x = (float)((double)(bgra&0xFF) * (1.0/255.0));
+	dst->x = (float)((double)(bgra & 0xFF) * (1.0 / 255.0));
 	bgra >>= 8;
-	dst->w = (float)((double)(bgra&0xFF) * (1.0/255.0));
+	dst->w = (float)((double)(bgra & 0xFF) * (1.0 / 255.0));
 }
 
 EXPORT void vec4_transform(struct vec4 *dst, const struct vec4 *v,
-		const struct matrix4 *m);
+			   const struct matrix4 *m);
 
 #ifdef __cplusplus
 }

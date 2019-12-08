@@ -6,7 +6,7 @@ SliderIgnoreScroll::SliderIgnoreScroll(QWidget *parent) : QSlider(parent)
 }
 
 SliderIgnoreScroll::SliderIgnoreScroll(Qt::Orientation orientation,
-		QWidget *parent)
+				       QWidget *parent)
 	: QSlider(parent)
 {
 	setFocusPolicy(Qt::StrongFocus);

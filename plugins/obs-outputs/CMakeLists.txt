@@ -26,6 +26,7 @@ endif()
 
 if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/ftl-sdk/CMakeLists.txt")
 	find_package(Libcurl REQUIRED)
+	message(STATUS "Found ftl-sdk: ftl outputs enabled")
 
 	add_definitions(-DFTL_STATIC_COMPILE)
 

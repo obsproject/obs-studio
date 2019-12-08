@@ -23,8 +23,7 @@
 using namespace std;
 
 NameDialog::NameDialog(QWidget *parent)
-	: QDialog (parent),
-	  ui      (new Ui::NameDialog)
+	: QDialog(parent), ui(new Ui::NameDialog)
 {
 	ui->setupUi(this);
 
@@ -37,15 +36,16 @@ static bool IsWhitespace(char ch)
 }
 
 bool NameDialog::AskForName(QWidget *parent, const QString &title,
-		const QString &text, string &str, const QString &placeHolder,
-		int maxSize)
+			    const QString &text, string &str,
+			    const QString &placeHolder, int maxSize)
 {
 	if (maxSize <= 0 || maxSize > 32767)
-		maxSize = 256;
+		maxSize = 170;
 
 	NameDialog dialog(parent);
 	dialog.setWindowTitle(title);
-	dialog.setWindowFlags(dialog.windowFlags() & ~Qt::WindowContextHelpButtonHint);
+	dialog.setWindowFlags(dialog.windowFlags() &
+			      ~Qt::WindowContextHelpButtonHint);
 	dialog.ui->label->setText(text);
 	dialog.ui->userText->setMaxLength(maxSize);
 	dialog.ui->userText->setText(placeHolder);

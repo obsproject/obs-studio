@@ -62,26 +62,25 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <obs-module.h>
 
 #define do_log(level, format, ...) \
-	blog(level, "[qsv encoder: '%s'] " format, \
-			"msdk_impl", ##__VA_ARGS__)
+	blog(level, "[qsv encoder: '%s'] " format, "msdk_impl", ##__VA_ARGS__)
 
-#define warn(format, ...)  do_log(LOG_WARNING, format, ##__VA_ARGS__)
-#define info(format, ...)  do_log(LOG_INFO,    format, ##__VA_ARGS__)
-#define debug(format, ...) do_log(LOG_DEBUG,   format, ##__VA_ARGS__)
+#define warn(format, ...) do_log(LOG_WARNING, format, ##__VA_ARGS__)
+#define info(format, ...) do_log(LOG_INFO, format, ##__VA_ARGS__)
+#define debug(format, ...) do_log(LOG_DEBUG, format, ##__VA_ARGS__)
 
 mfxHDL QSV_Encoder_Internal::g_DX_Handle = NULL;
 mfxU16 QSV_Encoder_Internal::g_numEncodersOpen = 0;
 
-QSV_Encoder_Internal::QSV_Encoder_Internal(mfxIMPL& impl, mfxVersion& version) :
-	m_pmfxSurfaces(NULL),
-	m_pmfxENC(NULL),
-	m_nSPSBufferSize(100),
-	m_nPPSBufferSize(100),
-	m_nTaskPool(0),
-	m_pTaskPool(NULL),
-	m_nTaskIdx(0),
-	m_nFirstSyncTask(0),
-	m_outBitstream()
+QSV_Encoder_Internal::QSV_Encoder_Internal(mfxIMPL &impl, mfxVersion &version)
+	: m_pmfxSurfaces(NULL),
+	  m_pmfxENC(NULL),
+	  m_nSPSBufferSize(1024),
+	  m_nPPSBufferSize(1024),
+	  m_nTaskPool(0),
+	  m_pTaskPool(NULL),
+	  m_nTaskIdx(0),
+	  m_nFirstSyncTask(0),
+	  m_outBitstream()
 {
 	mfxIMPL tempImpl;
 	mfxStatus sts;
@@ -103,17 +102,16 @@ QSV_Encoder_Internal::QSV_Encoder_Internal(mfxIMPL& impl, mfxVersion& version) :
 			m_bUseD3D11 = true;
 			if (m_bUseD3D11)
 				blog(LOG_INFO, "\timpl:           D3D11\n"
-				               "\tsurf:           D3D11");
+					       "\tsurf:           D3D11");
 			else
 				blog(LOG_INFO, "\timpl:           D3D11\n"
-				               "\tsurf:           SysMem");
+					       "\tsurf:           SysMem");
 
 			m_impl = tempImpl;
 			m_ver = version;
 			return;
 		}
-	}
-	else if (m_bD3D9HACK) {
+	} else if (m_bD3D9HACK) {
 		tempImpl = impl | MFX_IMPL_VIA_D3D9;
 		sts = m_session.Init(tempImpl, &version);
 		if (sts == MFX_ERR_NONE) {
@@ -137,12 +135,11 @@ QSV_Encoder_Internal::QSV_Encoder_Internal(mfxIMPL& impl, mfxVersion& version) :
 		m_session.Close();
 
 		blog(LOG_INFO, "\timpl:           D3D09\n"
-		               "\tsurf:           SysMem");
+			       "\tsurf:           SysMem");
 
 		m_impl = tempImpl;
 		m_ver = version;
 	}
-
 }
 
 QSV_Encoder_Internal::~QSV_Encoder_Internal()
@@ -151,19 +148,20 @@ QSV_Encoder_Internal::~QSV_Encoder_Internal()
 		ClearData();
 }
 
-mfxStatus QSV_Encoder_Internal::Open(qsv_param_t * pParams)
+mfxStatus QSV_Encoder_Internal::Open(qsv_param_t *pParams)
 {
 	mfxStatus sts = MFX_ERR_NONE;
 
 	if (m_bUseD3D11)
 		// Use D3D11 surface
-		sts = Initialize(m_impl, m_ver, &m_session, &m_mfxAllocator, &g_DX_Handle, false, false);
+		sts = Initialize(m_impl, m_ver, &m_session, &m_mfxAllocator,
+				 &g_DX_Handle, false, false);
 	else if (m_bD3D9HACK)
 		// Use hack
-		sts = Initialize(m_impl, m_ver, &m_session, &m_mfxAllocator, &g_DX_Handle, false, true);
+		sts = Initialize(m_impl, m_ver, &m_session, &m_mfxAllocator,
+				 &g_DX_Handle, false, true);
 	else
 		sts = Initialize(m_impl, m_ver, &m_session, NULL);
-
 
 	MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
@@ -193,8 +191,7 @@ mfxStatus QSV_Encoder_Internal::Open(qsv_param_t * pParams)
 	return sts;
 }
 
-
-bool QSV_Encoder_Internal::InitParams(qsv_param_t * pParams)
+bool QSV_Encoder_Internal::InitParams(qsv_param_t *pParams)
 {
 	memset(&m_mfxEncParams, 0, sizeof(m_mfxEncParams));
 
@@ -212,6 +209,7 @@ bool QSV_Encoder_Internal::InitParams(qsv_param_t * pParams)
 	m_mfxEncParams.mfx.FrameInfo.CropY = 0;
 	m_mfxEncParams.mfx.FrameInfo.CropW = pParams->nWidth;
 	m_mfxEncParams.mfx.FrameInfo.CropH = pParams->nHeight;
+	m_mfxEncParams.mfx.GopRefDist = pParams->nbFrames + 1;
 
 	m_mfxEncParams.mfx.RateControlMethod = pParams->nRateControl;
 
@@ -242,38 +240,44 @@ bool QSV_Encoder_Internal::InitParams(qsv_param_t * pParams)
 		break;
 	case MFX_RATECONTROL_LA_ICQ:
 		m_mfxEncParams.mfx.ICQQuality = pParams->nICQQuality;
+	case MFX_RATECONTROL_LA_HRD:
+		m_mfxEncParams.mfx.TargetKbps = pParams->nTargetBitRate;
+		m_mfxEncParams.mfx.MaxKbps = pParams->nTargetBitRate;
 		break;
 	default:
 		break;
 	}
 
 	m_mfxEncParams.AsyncDepth = pParams->nAsyncDepth;
-	m_mfxEncParams.mfx.GopPicSize = (mfxU16)(pParams->nKeyIntSec *
-			pParams->nFpsNum / (float)pParams->nFpsDen);
+	m_mfxEncParams.mfx.GopPicSize =
+		(mfxU16)(pParams->nKeyIntSec * pParams->nFpsNum /
+			 (float)pParams->nFpsDen);
 
-	static mfxExtBuffer* extendedBuffers[2];
+	static mfxExtBuffer *extendedBuffers[3];
 	int iBuffers = 0;
-	if (pParams->nAsyncDepth == 1) {
-		m_mfxEncParams.mfx.NumRefFrame = 1;
-		// low latency, I and P frames only
-		m_mfxEncParams.mfx.GopRefDist = 1;
-		memset(&m_co, 0, sizeof(mfxExtCodingOption));
-		m_co.Header.BufferId = MFX_EXTBUFF_CODING_OPTION;
-		m_co.Header.BufferSz = sizeof(mfxExtCodingOption);
-		m_co.MaxDecFrameBuffering = 1;
-		extendedBuffers[iBuffers++] = (mfxExtBuffer*)&m_co;
-	}
-	else
-		m_mfxEncParams.mfx.GopRefDist = pParams->nbFrames + 1;
 
-	if (pParams->nRateControl == MFX_RATECONTROL_LA_ICQ ||
-	    pParams->nRateControl == MFX_RATECONTROL_LA) {
-
+	if (m_ver.Major == 1 && m_ver.Minor >= 8) {
 		memset(&m_co2, 0, sizeof(mfxExtCodingOption2));
-		m_co2.Header.BufferId = MFX_EXTBUFF_CODING_OPTION;
+		m_co2.Header.BufferId = MFX_EXTBUFF_CODING_OPTION2;
 		m_co2.Header.BufferSz = sizeof(m_co2);
-		m_co2.LookAheadDepth = pParams->nLADEPTH;
-		extendedBuffers[iBuffers++] = (mfxExtBuffer*)& m_co2;
+		if (pParams->nRateControl == MFX_RATECONTROL_LA_ICQ ||
+		    pParams->nRateControl == MFX_RATECONTROL_LA)
+			m_co2.LookAheadDepth = pParams->nLADEPTH;
+		if (pParams->bMBBRC)
+			m_co2.MBBRC = MFX_CODINGOPTION_ON;
+		if (pParams->nbFrames > 1)
+			m_co2.BRefType = MFX_B_REF_PYRAMID;
+		extendedBuffers[iBuffers++] = (mfxExtBuffer *)&m_co2;
+	}
+
+	if (pParams->bCQM) {
+		if (m_ver.Major == 1 && m_ver.Minor >= 16) {
+			memset(&m_co3, 0, sizeof(mfxExtCodingOption3));
+			m_co3.Header.BufferId = MFX_EXTBUFF_CODING_OPTION3;
+			m_co3.Header.BufferSz = sizeof(m_co3);
+			m_co3.ScenarioInfo = 7; // MFX_SCENARIO_GAME_STREAMING
+			extendedBuffers[iBuffers++] = (mfxExtBuffer *)&m_co3;
+		}
 	}
 
 	if (iBuffers > 0) {
@@ -311,7 +315,7 @@ mfxStatus QSV_Encoder_Internal::AllocateSurfaces()
 	// Allocate required surfaces
 	if (m_bUseD3D11 || m_bD3D9HACK) {
 		sts = m_mfxAllocator.Alloc(m_mfxAllocator.pthis, &EncRequest,
-				&m_mfxResponse);
+					   &m_mfxResponse);
 		MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
 		m_nSurfNum = m_mfxResponse.NumFrameActual;
@@ -323,15 +327,14 @@ mfxStatus QSV_Encoder_Internal::AllocateSurfaces()
 			m_pmfxSurfaces[i] = new mfxFrameSurface1;
 			memset(m_pmfxSurfaces[i], 0, sizeof(mfxFrameSurface1));
 			memcpy(&(m_pmfxSurfaces[i]->Info),
-					&(m_mfxEncParams.mfx.FrameInfo),
-					sizeof(mfxFrameInfo));
+			       &(m_mfxEncParams.mfx.FrameInfo),
+			       sizeof(mfxFrameInfo));
 			m_pmfxSurfaces[i]->Data.MemId = m_mfxResponse.mids[i];
 		}
-	}
-	else {
+	} else {
 		mfxU16 width = (mfxU16)MSDK_ALIGN32(EncRequest.Info.Width);
 		mfxU16 height = (mfxU16)MSDK_ALIGN32(EncRequest.Info.Height);
-		mfxU8  bitsPerPixel = 12;
+		mfxU8 bitsPerPixel = 12;
 		mfxU32 surfaceSize = width * height * bitsPerPixel / 8;
 		m_nSurfNum = EncRequest.NumFrameSuggested;
 
@@ -340,13 +343,14 @@ mfxStatus QSV_Encoder_Internal::AllocateSurfaces()
 			m_pmfxSurfaces[i] = new mfxFrameSurface1;
 			memset(m_pmfxSurfaces[i], 0, sizeof(mfxFrameSurface1));
 			memcpy(&(m_pmfxSurfaces[i]->Info),
-					&(m_mfxEncParams.mfx.FrameInfo),
-					sizeof(mfxFrameInfo));
+			       &(m_mfxEncParams.mfx.FrameInfo),
+			       sizeof(mfxFrameInfo));
 
-			mfxU8* pSurface = (mfxU8*) new mfxU8[surfaceSize];
+			mfxU8 *pSurface = (mfxU8 *)new mfxU8[surfaceSize];
 			m_pmfxSurfaces[i]->Data.Y = pSurface;
 			m_pmfxSurfaces[i]->Data.U = pSurface + width * height;
-			m_pmfxSurfaces[i]->Data.V = pSurface + width * height + 1;
+			m_pmfxSurfaces[i]->Data.V =
+				pSurface + width * height + 1;
 			m_pmfxSurfaces[i]->Data.Pitch = width;
 		}
 	}
@@ -364,15 +368,15 @@ mfxStatus QSV_Encoder_Internal::GetVideoParam()
 	opt.Header.BufferId = MFX_EXTBUFF_CODING_OPTION_SPSPPS;
 	opt.Header.BufferSz = sizeof(mfxExtCodingOptionSPSPPS);
 
-	static mfxExtBuffer* extendedBuffers[1];
-	extendedBuffers[0] = (mfxExtBuffer*)& opt;
+	static mfxExtBuffer *extendedBuffers[1];
+	extendedBuffers[0] = (mfxExtBuffer *)&opt;
 	m_parameter.ExtParam = extendedBuffers;
 	m_parameter.NumExtParam = 1;
 
 	opt.SPSBuffer = m_SPSBuffer;
 	opt.PPSBuffer = m_PPSBuffer;
-	opt.SPSBufSize = 100; //  m_nSPSBufferSize;
-	opt.PPSBufSize = 100; //  m_nPPSBufferSize;
+	opt.SPSBufSize = 1024; //  m_nSPSBufferSize;
+	opt.PPSBufSize = 1024; //  m_nPPSBufferSize;
 
 	mfxStatus sts = m_pmfxENC->GetVideoParam(&m_parameter);
 	MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
@@ -384,7 +388,7 @@ mfxStatus QSV_Encoder_Internal::GetVideoParam()
 }
 
 void QSV_Encoder_Internal::GetSPSPPS(mfxU8 **pSPSBuf, mfxU8 **pPPSBuf,
-		mfxU16 *pnSPSBuf, mfxU16 *pnPPSBuf)
+				     mfxU16 *pnSPSBuf, mfxU16 *pnPPSBuf)
 {
 	*pSPSBuf = m_SPSBuffer;
 	*pPPSBuf = m_PPSBuffer;
@@ -409,7 +413,7 @@ mfxStatus QSV_Encoder_Internal::InitBitstream()
 		m_pTaskPool[i].mfxBS.DataLength = 0;
 
 		MSDK_CHECK_POINTER(m_pTaskPool[i].mfxBS.Data,
-				MFX_ERR_MEMORY_ALLOC);
+				   MFX_ERR_MEMORY_ALLOC);
 	}
 
 	memset(&m_outBitstream, 0, sizeof(mfxBitstream));
@@ -424,21 +428,18 @@ mfxStatus QSV_Encoder_Internal::InitBitstream()
 }
 
 mfxStatus QSV_Encoder_Internal::LoadNV12(mfxFrameSurface1 *pSurface,
-		uint8_t *pDataY, uint8_t *pDataUV, uint32_t strideY,
-		uint32_t strideUV)
+					 uint8_t *pDataY, uint8_t *pDataUV,
+					 uint32_t strideY, uint32_t strideUV)
 {
 	mfxU16 w, h, i, pitch;
-	mfxU8* ptr;
-	mfxFrameInfo* pInfo = &pSurface->Info;
-	mfxFrameData* pData = &pSurface->Data;
+	mfxU8 *ptr;
+	mfxFrameInfo *pInfo = &pSurface->Info;
+	mfxFrameData *pData = &pSurface->Data;
 
-	if (pInfo->CropH > 0 && pInfo->CropW > 0)
-	{
+	if (pInfo->CropH > 0 && pInfo->CropW > 0) {
 		w = pInfo->CropW;
 		h = pInfo->CropH;
-	}
-	else
-	{
+	} else {
 		w = pInfo->Width;
 		h = pInfo->Height;
 	}
@@ -460,7 +461,7 @@ mfxStatus QSV_Encoder_Internal::LoadNV12(mfxFrameSurface1 *pSurface,
 	return MFX_ERR_NONE;
 }
 
-int QSV_Encoder_Internal::GetFreeTaskIndex(Task* pTaskPool, mfxU16 nPoolSize)
+int QSV_Encoder_Internal::GetFreeTaskIndex(Task *pTaskPool, mfxU16 nPoolSize)
 {
 	if (pTaskPool)
 		for (int i = 0; i < nPoolSize; i++)
@@ -470,8 +471,8 @@ int QSV_Encoder_Internal::GetFreeTaskIndex(Task* pTaskPool, mfxU16 nPoolSize)
 }
 
 mfxStatus QSV_Encoder_Internal::Encode(uint64_t ts, uint8_t *pDataY,
-		uint8_t *pDataUV, uint32_t strideY, uint32_t strideUV,
-		mfxBitstream **pBS)
+				       uint8_t *pDataUV, uint32_t strideY,
+				       uint32_t strideUV, mfxBitstream **pBS)
 {
 	mfxStatus sts = MFX_ERR_NONE;
 	*pBS = NULL;
@@ -492,13 +493,13 @@ mfxStatus QSV_Encoder_Internal::Encode(uint64_t ts, uint8_t *pDataY,
 
 	while (MFX_ERR_NOT_FOUND == nTaskIdx || MFX_ERR_NOT_FOUND == nSurfIdx) {
 		// No more free tasks or surfaces, need to sync
-		sts = m_session.SyncOperation(m_pTaskPool[m_nFirstSyncTask].syncp,
-				60000);
+		sts = m_session.SyncOperation(
+			m_pTaskPool[m_nFirstSyncTask].syncp, 60000);
 		MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
 		mfxU8 *pTemp = m_outBitstream.Data;
 		memcpy(&m_outBitstream, &m_pTaskPool[m_nFirstSyncTask].mfxBS,
-				sizeof(mfxBitstream));
+		       sizeof(mfxBitstream));
 
 		m_pTaskPool[m_nFirstSyncTask].mfxBS.Data = pTemp;
 		m_pTaskPool[m_nFirstSyncTask].mfxBS.DataLength = 0;
@@ -527,7 +528,8 @@ mfxStatus QSV_Encoder_Internal::Encode(uint64_t ts, uint8_t *pDataY,
 	mfxFrameSurface1 *pSurface = m_pmfxSurfaces[nSurfIdx];
 	if (m_bUseD3D11 || m_bD3D9HACK) {
 		sts = m_mfxAllocator.Lock(m_mfxAllocator.pthis,
-				pSurface->Data.MemId, &(pSurface->Data));
+					  pSurface->Data.MemId,
+					  &(pSurface->Data));
 		MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 	}
 
@@ -537,22 +539,24 @@ mfxStatus QSV_Encoder_Internal::Encode(uint64_t ts, uint8_t *pDataY,
 
 	if (m_bUseD3D11 || m_bD3D9HACK) {
 		sts = m_mfxAllocator.Unlock(m_mfxAllocator.pthis,
-				pSurface->Data.MemId, &(pSurface->Data));
+					    pSurface->Data.MemId,
+					    &(pSurface->Data));
 		MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 	}
 
 	for (;;) {
 		// Encode a frame asynchronously (returns immediately)
 		sts = m_pmfxENC->EncodeFrameAsync(NULL, pSurface,
-				&m_pTaskPool[nTaskIdx].mfxBS,
-				&m_pTaskPool[nTaskIdx].syncp);
+						  &m_pTaskPool[nTaskIdx].mfxBS,
+						  &m_pTaskPool[nTaskIdx].syncp);
 
 		if (MFX_ERR_NONE < sts && !m_pTaskPool[nTaskIdx].syncp) {
 			// Repeat the call if warning and no output
 			if (MFX_WRN_DEVICE_BUSY == sts)
-				MSDK_SLEEP(1);  // Wait if device is busy, then repeat the same call
+				MSDK_SLEEP(
+					1); // Wait if device is busy, then repeat the same call
 		} else if (MFX_ERR_NONE < sts && m_pTaskPool[nTaskIdx].syncp) {
-			sts = MFX_ERR_NONE;     // Ignore warnings if output is available
+			sts = MFX_ERR_NONE; // Ignore warnings if output is available
 			break;
 		} else if (MFX_ERR_NOT_ENOUGH_BUFFER == sts) {
 			// Allocate more bitstream buffer memory here if needed...
@@ -569,7 +573,8 @@ mfxStatus QSV_Encoder_Internal::Drain()
 	mfxStatus sts = MFX_ERR_NONE;
 
 	while (m_pTaskPool && m_pTaskPool[m_nFirstSyncTask].syncp) {
-		sts = m_session.SyncOperation(m_pTaskPool[m_nFirstSyncTask].syncp, 60000);
+		sts = m_session.SyncOperation(
+			m_pTaskPool[m_nFirstSyncTask].syncp, 60000);
 		MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
 		m_pTaskPool[m_nFirstSyncTask].syncp = NULL;
@@ -584,8 +589,7 @@ mfxStatus QSV_Encoder_Internal::ClearData()
 	mfxStatus sts = MFX_ERR_NONE;
 	sts = Drain();
 
-	if (m_pmfxENC)
-	{
+	if (m_pmfxENC) {
 		sts = m_pmfxENC->Close();
 		delete m_pmfxENC;
 		m_pmfxENC = NULL;
@@ -610,8 +614,7 @@ mfxStatus QSV_Encoder_Internal::ClearData()
 		MSDK_SAFE_DELETE_ARRAY(m_pTaskPool);
 	}
 
-	if (m_outBitstream.Data)
-	{
+	if (m_outBitstream.Data) {
 		delete m_outBitstream.Data;
 		m_outBitstream.Data = NULL;
 	}

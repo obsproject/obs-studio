@@ -15,13 +15,13 @@
 #endif
 
 static bool operator!=(const media_frames_per_second &a,
-		const media_frames_per_second &b)
+		       const media_frames_per_second &b)
 {
 	return a.numerator != b.numerator || a.denominator != b.denominator;
 }
 
 static bool operator==(const media_frames_per_second &a,
-		const media_frames_per_second &b)
+		       const media_frames_per_second &b)
 {
 	return !(a != b);
 }
@@ -36,27 +36,27 @@ class OBSFrameRatePropertyWidget : public QWidget {
 public:
 	frame_rate_ranges_t fps_ranges;
 
-	QComboBox      *modeSelect   = nullptr;
-	QStackedWidget *modeDisplay  = nullptr;
+	QComboBox *modeSelect = nullptr;
+	QStackedWidget *modeDisplay = nullptr;
 
-	QWidget        *labels       = nullptr;
-	QLabel         *currentFPS   = nullptr;
-	QLabel         *timePerFrame = nullptr;
-	QLabel         *minLabel     = nullptr;
-	QLabel         *maxLabel     = nullptr;
+	QWidget *labels = nullptr;
+	QLabel *currentFPS = nullptr;
+	QLabel *timePerFrame = nullptr;
+	QLabel *minLabel = nullptr;
+	QLabel *maxLabel = nullptr;
 
-	QComboBox      *simpleFPS    = nullptr;
+	QComboBox *simpleFPS = nullptr;
 
-	QComboBox      *fpsRange     = nullptr;
-	QSpinBox       *numEdit      = nullptr;
-	QSpinBox       *denEdit      = nullptr;
+	QComboBox *fpsRange = nullptr;
+	QSpinBox *numEdit = nullptr;
+	QSpinBox *denEdit = nullptr;
 
-	bool           updating      = false;
+	bool updating = false;
 
-	const char     *name         = nullptr;
-	obs_data_t     *settings     = nullptr;
+	const char *name = nullptr;
+	obs_data_t *settings = nullptr;
 
-	QLabel         *warningLabel = nullptr;
+	QLabel *warningLabel = nullptr;
 
 	OBSFrameRatePropertyWidget() = default;
 };

@@ -110,7 +110,7 @@ if(WIN32)
 	endif()
 elseif(APPLE)
 	set(libobs_PLATFORM_SOURCES
-		obs-cocoa.c
+		obs-cocoa.m
 		util/threading-posix.c
 		util/pipe-posix.c
 		util/platform-nix.c
@@ -174,9 +174,20 @@ elseif(UNIX)
 		util/pipe-posix.c
 		util/platform-nix.c)
 
-	set(libobs_PLATFORM_HEADERS
-		util/threading-posix.h)
-
+	if(CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64")
+		set(libobs_PLATFORM_HEADERS
+			util/aarch/check.h
+			util/aarch/hedley.h
+			util/aarch/mmx.h
+			util/aarch/simde-arch.h
+			util/aarch/simde-common.h
+			util/aarch/sse.h
+			util/aarch/sse2.h
+			util/threading-posix.h)
+	else()
+		set(libobs_PLATFORM_HEADERS
+			util/threading-posix.h)
+	endif()
 	if(HAVE_PULSEAUDIO)
 		set(libobs_audio_monitoring_HEADERS
 			audio-monitoring/pulse/pulseaudio-wrapper.h)
@@ -337,15 +348,13 @@ set(libobs_util_SOURCES
 	util/cf-parser.c
 	util/profiler.c)
 set(libobs_util_HEADERS
+	util/sse-intrin.h
 	util/array-serializer.h
 	util/file-serializer.h
 	util/utf8.h
 	util/crc32.h
 	util/base.h
 	util/text-lookup.h
-	util/vc/vc_inttypes.h
-	util/vc/vc_stdbool.h
-	util/vc/vc_stdint.h
 	util/bmem.h
 	util/c99defs.h
 	util/util_uint128.h
@@ -454,7 +463,7 @@ if(UNIX AND NOT APPLE)
 		set(PRIVATE_LIBS "${PRIVATE_LIBS} -l${LIB}")
 	endforeach()
 	CONFIGURE_FILE("libobs.pc.in" "libobs.pc" @ONLY)
-	install(FILES "${CMAKE_CURRENT_BINARY_DIR}/libobs.pc" DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/pkgconfig")
+	install(FILES "${CMAKE_CURRENT_BINARY_DIR}/libobs.pc" DESTINATION "${CMAKE_INSTALL_LIBDIR}/pkgconfig")
 endif()
 
 set_target_properties(libobs PROPERTIES
@@ -470,6 +479,9 @@ if(CMAKE_SYSTEM_PROCESSOR MATCHES "^(powerpc|ppc)64le")
 		PUBLIC
 			-mvsx)
 	add_compile_definitions(NO_WARN_X86_INTRINSICS)
+elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64")
+        target_compile_options(libobs
+                        PUBLIC)
 elseif(NOT MSVC)
 	target_compile_options(libobs
 		PUBLIC

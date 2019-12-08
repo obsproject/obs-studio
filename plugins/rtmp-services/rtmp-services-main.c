@@ -35,7 +35,7 @@ static bool confirm_service_file(void *param, struct file_download_data *file)
 		obs_data_t *data;
 		int format_version;
 
-		data = obs_data_create_from_json((char*)file->buffer.array);
+		data = obs_data_create_from_json((char *)file->buffer.array);
 		if (!data)
 			return false;
 
@@ -78,20 +78,18 @@ bool obs_module_load(void)
 
 	proc_handler_t *ph = obs_get_proc_handler();
 	proc_handler_add(ph, "void twitch_ingests_refresh(int seconds)",
-			refresh_callback, NULL);
+			 refresh_callback, NULL);
 
 #if !defined(_WIN32) || CHECK_FOR_SERVICE_UPDATES
 	char *local_dir = obs_module_file("");
 	char *cache_dir = obs_module_config_path("");
 
 	if (cache_dir) {
-		update_info = update_info_create(
-				RTMP_SERVICES_LOG_STR,
-				module_name.array,
-				RTMP_SERVICES_URL,
-				local_dir,
-				cache_dir,
-				confirm_service_file, NULL);
+		update_info = update_info_create(RTMP_SERVICES_LOG_STR,
+						 module_name.array,
+						 RTMP_SERVICES_URL, local_dir,
+						 cache_dir,
+						 confirm_service_file, NULL);
 	}
 
 	load_twitch_data();

@@ -23,7 +23,7 @@ matrix:
       osx_image: xcode9.4
       env:
        - CMAKE_PREFIX_PATH=/usr/local/opt/qt5/lib/cmake
-       - CEF_BUILD_VERSION=3.3282.1726.gc8368c8
+       - CEF_BUILD_VERSION=3770
       before_install: "./CI/install-dependencies-osx.sh"
       before_script: "./CI/before-script-osx.sh"
       before_deploy: "./CI/before-deploy-osx.sh"
@@ -64,3 +64,7 @@ notifications:
     on_success: always
     on_failure: always
 
+branches:
+  except:
+    - # Do not build tags that we create when we upload to GitHub Releases
+    - /^(?i:continuous)/

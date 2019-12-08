@@ -184,6 +184,11 @@ QListWidget::item:hover:!active {
 	border: none;
 }
 
+QListWidget::item,
+SourceTree::item {
+	height: 24px;
+}
+
 /***********************/
 /* --- Dock widget --- */
 /***********************/
@@ -505,6 +510,10 @@ QToolButton:pressed {
 
 * [themeID="downArrowIconSmall"] {
 	qproperty-icon: url(./Dark/down.svg);
+}
+
+* [themeID="pauseIconSmall"] {
+	qproperty-icon: url(./Dark/media-pause.svg);
 }
 
 /***********************/
@@ -952,7 +961,8 @@ QPushButton:checked#recordButton,
 QPushButton:checked[themeID="replayBufferButton"],
 QPushButton:checked#modeSwitch,
 QPushButton:checked#settingsButton,
-QPushButton:checked#exitButton {
+QPushButton:checked#exitButton,
+QPushButton:checked[themeID="pauseIconSmall"] {
 	background-color: rgba(240, 98, 146, 0.5); /* Pink (Secondary) */
 	border: 1px solid rgba(240, 98, 146, 0.5); /* Pink (Secondary) */
 }
@@ -1288,7 +1298,7 @@ LockedCheckBox::indicator:unchecked:hover {
     image: url(:res/images/unlocked.svg);
 }
 
-/* Visibilty CheckBox */
+/* Visibility CheckBox */
 
 VisibilityCheckBox {
     outline: none;
@@ -1322,4 +1332,36 @@ VisibilityCheckBox::indicator:unchecked:hover {
 
 * [themeID="revertIcon"] {
     qproperty-icon: url(./Dark/revert.svg);
+}
+
+QPushButton#extraPanelDelete {
+    background-color: rgb(35, 38, 41);
+}
+
+QPushButton#extraPanelDelete:hover {
+     background-color: rgba(145, 76, 103);
+}
+
+QPushButton#extraPanelDelete:pressed {
+     background-color: rgb(240, 98, 146);
+}
+
+/* Source Icons */
+
+OBSBasic {
+    qproperty-imageIcon: url(./Dark/sources/image.svg);
+    qproperty-colorIcon: url(./Dark/sources/brush.svg);
+    qproperty-slideshowIcon: url(./Dark/sources/slideshow.svg);
+    qproperty-audioInputIcon: url(./Dark/sources/microphone.svg);
+    qproperty-audioOutputIcon: url(./Dark/settings/audio.svg);
+    qproperty-desktopCapIcon: url(./Dark/settings/video.svg);
+    qproperty-windowCapIcon: url(./Dark/sources/window.svg);
+    qproperty-gameCapIcon: url(./Dark/sources/gamepad.svg);
+    qproperty-cameraIcon: url(./Dark/sources/camera.svg);
+    qproperty-textIcon: url(./Dark/sources/text.svg);
+    qproperty-mediaIcon: url(./Dark/sources/media.svg);
+    qproperty-browserIcon: url(./Dark/sources/globe.svg);
+    qproperty-groupIcon: url(./Dark/sources/group.svg);
+    qproperty-sceneIcon: url(./Dark/sources/scene.svg);
+    qproperty-defaultIcon: url(./Dark/sources/default.svg);
 }

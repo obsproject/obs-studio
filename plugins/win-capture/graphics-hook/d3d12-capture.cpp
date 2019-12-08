@@ -13,29 +13,29 @@
 #define MAX_BACKBUFFERS 8
 
 struct d3d12_data {
-	ID3D12Device                   *device; /* do not release */
-	uint32_t                       base_cx;
-	uint32_t                       base_cy;
-	uint32_t                       cx;
-	uint32_t                       cy;
-	DXGI_FORMAT                    format;
-	bool                           using_shtex;
-	bool                           using_scale;
-	bool                           multisampled;
-	bool                           dxgi_1_4;
+	ID3D12Device *device; /* do not release */
+	uint32_t base_cx;
+	uint32_t base_cy;
+	uint32_t cx;
+	uint32_t cy;
+	DXGI_FORMAT format;
+	bool using_shtex;
+	bool using_scale;
+	bool multisampled;
+	bool dxgi_1_4;
 
-	ID3D11Device                   *device11;
-	ID3D11DeviceContext            *context11;
-	ID3D11On12Device               *device11on12;
+	ID3D11Device *device11;
+	ID3D11DeviceContext *context11;
+	ID3D11On12Device *device11on12;
 
 	union {
 		struct {
-			struct shtex_data      *shtex_info;
-			ID3D11Resource         *backbuffer11[MAX_BACKBUFFERS];
-			UINT                   backbuffer_count;
-			UINT                   cur_backbuffer;
-			ID3D11Texture2D        *copy_tex;
-			HANDLE                 handle;
+			struct shtex_data *shtex_info;
+			ID3D11Resource *backbuffer11[MAX_BACKBUFFERS];
+			UINT backbuffer_count;
+			UINT cur_backbuffer;
+			ID3D11Texture2D *copy_tex;
+			HANDLE handle;
 		};
 	};
 };
@@ -81,15 +81,14 @@ static bool create_d3d12_tex(bb_info &bb)
 
 	for (UINT i = 0; i < bb.count; i++) {
 		hr = data.device11on12->CreateWrappedResource(
-				bb.backbuffer[i],
-				&rf11,
-				D3D12_RESOURCE_STATE_COPY_SOURCE,
-				D3D12_RESOURCE_STATE_PRESENT,
-				__uuidof(ID3D11Resource),
-				(void**)&data.backbuffer11[i]);
+			bb.backbuffer[i], &rf11,
+			D3D12_RESOURCE_STATE_COPY_SOURCE,
+			D3D12_RESOURCE_STATE_PRESENT, __uuidof(ID3D11Resource),
+			(void **)&data.backbuffer11[i]);
 		if (FAILED(hr)) {
 			hlog_hr("create_d3d12_tex: failed to create "
-					"backbuffer11", hr);
+				"backbuffer11",
+				hr);
 			return false;
 		}
 	}
@@ -107,21 +106,22 @@ static bool create_d3d12_tex(bb_info &bb)
 	hr = data.device11->CreateTexture2D(&desc11, nullptr, &data.copy_tex);
 	if (FAILED(hr)) {
 		hlog_hr("create_d3d12_tex: creation of d3d11 copy tex failed",
-				hr);
+			hr);
 		return false;
 	}
 
 	for (UINT i = 0; i < bb.count; i++) {
 		data.device11on12->ReleaseWrappedResources(
-				&data.backbuffer11[i], 1);
+			&data.backbuffer11[i], 1);
 	}
 
 	IDXGIResource *dxgi_res;
 	hr = data.copy_tex->QueryInterface(__uuidof(IDXGIResource),
-			(void**)&dxgi_res);
+					   (void **)&dxgi_res);
 	if (FAILED(hr)) {
 		hlog_hr("create_d3d12_tex: failed to query "
-			"IDXGIResource interface from texture", hr);
+			"IDXGIResource interface from texture",
+			hr);
 		return false;
 	}
 
@@ -136,14 +136,6 @@ static bool create_d3d12_tex(bb_info &bb)
 }
 
 typedef PFN_D3D11ON12_CREATE_DEVICE create_11_on_12_t;
-
-const static D3D_FEATURE_LEVEL feature_levels[] =
-{
-	D3D_FEATURE_LEVEL_11_0,
-	D3D_FEATURE_LEVEL_10_1,
-	D3D_FEATURE_LEVEL_10_0,
-	D3D_FEATURE_LEVEL_9_3,
-};
 
 static bool d3d12_init_11on12(void)
 {
@@ -166,11 +158,11 @@ static bool d3d12_init_11on12(void)
 	}
 
 	if (!initialized_func && !create_11_on_12) {
-		create_11_on_12 = (create_11_on_12_t)GetProcAddress(d3d11,
-				"D3D11On12CreateDevice");
+		create_11_on_12 = (create_11_on_12_t)GetProcAddress(
+			d3d11, "D3D11On12CreateDevice");
 		if (!create_11_on_12) {
 			hlog("d3d12_init_11on12: Failed to get "
-					"D3D11On12CreateDevice address");
+			     "D3D11On12CreateDevice address");
 		}
 
 		initialized_func = true;
@@ -180,16 +172,15 @@ static bool d3d12_init_11on12(void)
 		return false;
 	}
 
-	hr = create_11_on_12(data.device, 0, nullptr, 0,
-			nullptr, 0, 0,
-			&data.device11, &data.context11, nullptr);
+	hr = create_11_on_12(data.device, 0, nullptr, 0, nullptr, 0, 0,
+			     &data.device11, &data.context11, nullptr);
 	if (FAILED(hr)) {
 		hlog_hr("d3d12_init_11on12: failed to create 11 device", hr);
 		return false;
 	}
 
 	data.device11->QueryInterface(__uuidof(ID3D11On12Device),
-			(void**)&data.device11on12);
+				      (void **)&data.device11on12);
 	if (FAILED(hr)) {
 		hlog_hr("d3d12_init_11on12: failed to query 11on12 device", hr);
 		return false;
@@ -206,9 +197,9 @@ static bool d3d12_shtex_init(HWND window, bb_info &bb)
 	if (!create_d3d12_tex(bb)) {
 		return false;
 	}
-	if (!capture_init_shtex(&data.shtex_info, window,
-				data.base_cx, data.base_cy, data.cx, data.cy,
-				data.format, false, (uintptr_t)data.handle)) {
+	if (!capture_init_shtex(&data.shtex_info, window, data.base_cx,
+				data.base_cy, data.cx, data.cy, data.format,
+				false, (uintptr_t)data.handle)) {
 		return false;
 	}
 
@@ -217,7 +208,7 @@ static bool d3d12_shtex_init(HWND window, bb_info &bb)
 }
 
 static inline bool d3d12_init_format(IDXGISwapChain *swap, HWND &window,
-		bb_info &bb)
+				     bb_info &bb)
 {
 	DXGI_SWAP_CHAIN_DESC desc;
 	IDXGISwapChain3 *swap3;
@@ -235,7 +226,7 @@ static inline bool d3d12_init_format(IDXGISwapChain *swap, HWND &window,
 	data.base_cx = desc.BufferDesc.Width;
 	data.base_cy = desc.BufferDesc.Height;
 
-	hr = swap->QueryInterface(__uuidof(IDXGISwapChain3), (void**)&swap3);
+	hr = swap->QueryInterface(__uuidof(IDXGISwapChain3), (void **)&swap3);
 	if (SUCCEEDED(hr)) {
 		data.dxgi_1_4 = true;
 		hlog("We're DXGI1.4 boys!");
@@ -243,24 +234,25 @@ static inline bool d3d12_init_format(IDXGISwapChain *swap, HWND &window,
 	}
 
 	hlog("Buffer count: %d, swap effect: %d", (int)desc.BufferCount,
-			(int)desc.SwapEffect);
+	     (int)desc.SwapEffect);
 
 	bb.count = desc.SwapEffect == DXGI_SWAP_EFFECT_DISCARD
-		? 1 : desc.BufferCount;
+			   ? 1
+			   : desc.BufferCount;
 
 	if (bb.count == 1)
 		data.dxgi_1_4 = false;
 
 	if (bb.count > MAX_BACKBUFFERS) {
 		hlog("Somehow it's using more than the max backbuffers.  "
-				"Not sure why anyone would do that.");
+		     "Not sure why anyone would do that.");
 		bb.count = 1;
 		data.dxgi_1_4 = false;
 	}
 
 	for (UINT i = 0; i < bb.count; i++) {
 		hr = swap->GetBuffer(i, __uuidof(ID3D12Resource),
-				(void**)&bb.backbuffer[i]);
+				     (void **)&bb.backbuffer[i]);
 		if (SUCCEEDED(hr)) {
 			bb.backbuffer[i]->Release();
 		} else {
@@ -287,7 +279,7 @@ static void d3d12_init(IDXGISwapChain *swap)
 
 	data.using_scale = global_hook_info->use_scale;
 
-	hr = swap->GetDevice(__uuidof(ID3D12Device), (void**)&data.device);
+	hr = swap->GetDevice(__uuidof(ID3D12Device), (void **)&data.device);
 	if (FAILED(hr)) {
 		hlog_hr("d3d12_init: failed to get device from swap", hr);
 		return;
@@ -304,7 +296,7 @@ static void d3d12_init(IDXGISwapChain *swap)
 	if (success) {
 		if (global_hook_info->force_shmem) {
 			hlog("d3d12_init: shared memory capture currently "
-					"unsupported; ignoring");
+			     "unsupported; ignoring");
 		}
 
 		success = d3d12_shtex_init(window, bb);
@@ -324,14 +316,14 @@ static inline void d3d12_copy_texture(ID3D11Resource *dst, ID3D11Resource *src)
 }
 
 static inline void d3d12_shtex_capture(IDXGISwapChain *swap,
-		bool capture_overlay)
+				       bool capture_overlay)
 {
 	bool dxgi_1_4 = data.dxgi_1_4;
 	UINT cur_idx;
 
 	if (dxgi_1_4) {
 		IDXGISwapChain3 *swap3 =
-			reinterpret_cast<IDXGISwapChain3*>(swap);
+			reinterpret_cast<IDXGISwapChain3 *>(swap);
 		cur_idx = swap3->GetCurrentBackBufferIndex();
 		if (!capture_overlay) {
 			if (++cur_idx >= data.backbuffer_count)
@@ -354,9 +346,9 @@ static inline void d3d12_shtex_capture(IDXGISwapChain *swap,
 	}
 }
 
-void d3d12_capture(void *swap_ptr, void*, bool capture_overlay)
+void d3d12_capture(void *swap_ptr, void *, bool capture_overlay)
 {
-	IDXGISwapChain *swap = (IDXGISwapChain*)swap_ptr;
+	IDXGISwapChain *swap = (IDXGISwapChain *)swap_ptr;
 
 	if (capture_should_stop()) {
 		d3d12_free();

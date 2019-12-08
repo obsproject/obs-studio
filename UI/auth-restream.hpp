@@ -2,15 +2,19 @@
 
 #include "auth-oauth.hpp"
 
-class RestreamWidget;
+class BrowserDock;
 
 class RestreamAuth : public OAuthStreamKey {
 	Q_OBJECT
 
-	QSharedPointer<RestreamWidget> chat;
-	QSharedPointer<RestreamWidget> info;
+	QSharedPointer<BrowserDock> chat;
+	QSharedPointer<BrowserDock> info;
+	QSharedPointer<BrowserDock> channels;
+
 	QSharedPointer<QAction> chatMenu;
 	QSharedPointer<QAction> infoMenu;
+	QSharedPointer<QAction> channelMenu;
+
 	bool uiLoaded = false;
 
 	virtual bool RetryLogin() override;

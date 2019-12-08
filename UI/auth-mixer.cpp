@@ -7,9 +7,9 @@
 #include <qt-wrappers.hpp>
 #include <obs-app.hpp>
 
+#include "window-dock-browser.hpp"
 #include "window-basic-main.hpp"
 #include "remote-text.hpp"
-#include "window-dock.hpp"
 
 #include <json11.hpp>
 
@@ -20,30 +20,18 @@
 
 using namespace json11;
 
-#include <browser-panel.hpp>
-extern QCef *cef;
-extern QCefCookieManager *panel_cookies;
-
 /* ------------------------------------------------------------------------- */
 
-#define MIXER_AUTH_URL \
-	"https://obsproject.com/app-auth/mixer?action=redirect"
-#define MIXER_TOKEN_URL \
-	"https://obsproject.com/app-auth/mixer-token"
+#define MIXER_AUTH_URL "https://obsproject.com/app-auth/mixer?action=redirect"
+#define MIXER_TOKEN_URL "https://obsproject.com/app-auth/mixer-token"
 
 #define MIXER_SCOPE_VERSION 1
 
-static Auth::Def mixerDef = {
-	"Mixer",
-	Auth::Type::OAuth_StreamKey
-};
+static Auth::Def mixerDef = {"Mixer", Auth::Type::OAuth_StreamKey};
 
 /* ------------------------------------------------------------------------- */
 
-MixerAuth::MixerAuth(const Def &d)
-	: OAuthStreamKey(d)
-{
-}
+MixerAuth::MixerAuth(const Def &d) : OAuthStreamKey(d) {}
 
 bool MixerAuth::GetChannelInfo(bool allow_retry)
 try {
@@ -71,23 +59,16 @@ try {
 	bool success;
 
 	if (id.empty()) {
-		auto func = [&] () {
+		auto func = [&]() {
 			success = GetRemoteFile(
-					"https://mixer.com/api/v1/users/current",
-					output,
-					error,
-					nullptr,
-					"application/json",
-					nullptr,
-					headers,
-					nullptr,
-					5);
+				"https://mixer.com/api/v1/users/current",
+				output, error, nullptr, "application/json",
+				nullptr, headers, nullptr, 5);
 		};
 
 		ExecThreadedWithoutBlocking(
-				func,
-				QTStr("Auth.LoadingChannel.Title"),
-				QTStr("Auth.LoadingChannel.Text").arg(service()));
+			func, QTStr("Auth.LoadingChannel.Title"),
+			QTStr("Auth.LoadingChannel.Text").arg(service()));
 		if (!success || output.empty())
 			throw ErrorInfo("Failed to get user info from remote",
 					error);
@@ -98,11 +79,12 @@ try {
 
 		error = json["error"].string_value();
 		if (!error.empty())
-			throw ErrorInfo(error,
-					json["error_description"].string_value());
+			throw ErrorInfo(
+				error,
+				json["error_description"].string_value());
 
-		id    = std::to_string(json["channel"]["id"].int_value());
-		name  = json["channel"]["token"].string_value();
+		id = std::to_string(json["channel"]["id"].int_value());
+		name = json["channel"]["token"].string_value();
 	}
 
 	/* ------------------ */
@@ -114,23 +96,15 @@ try {
 
 	output.clear();
 
-	auto func = [&] () {
-		success = GetRemoteFile(
-				url.c_str(),
-				output,
-				error,
-				nullptr,
-				"application/json",
-				nullptr,
-				headers,
-				nullptr,
-				5);
+	auto func = [&]() {
+		success = GetRemoteFile(url.c_str(), output, error, nullptr,
+					"application/json", nullptr, headers,
+					nullptr, 5);
 	};
 
 	ExecThreadedWithoutBlocking(
-			func,
-			QTStr("Auth.LoadingChannel.Title"),
-			QTStr("Auth.LoadingChannel.Text").arg(service()));
+		func, QTStr("Auth.LoadingChannel.Title"),
+		QTStr("Auth.LoadingChannel.Text").arg(service()));
 	if (!success || output.empty())
 		throw ErrorInfo("Failed to get stream key from remote", error);
 
@@ -140,7 +114,8 @@ try {
 
 	error = json["error"].string_value();
 	if (!error.empty())
-		throw ErrorInfo(error, json["error_description"].string_value());
+		throw ErrorInfo(error,
+				json["error_description"].string_value());
 
 	std::string key_suffix = json["streamKey"].string_value();
 
@@ -161,14 +136,13 @@ try {
 } catch (ErrorInfo info) {
 	QString title = QTStr("Auth.ChannelFailure.Title");
 	QString text = QTStr("Auth.ChannelFailure.Text")
-		.arg(service(), info.message.c_str(), info.error.c_str());
+			       .arg(service(), info.message.c_str(),
+				    info.error.c_str());
 
 	QMessageBox::warning(OBSBasic::Get(), title, text);
 
-	blog(LOG_WARNING, "%s: %s: %s",
-			__FUNCTION__,
-			info.message.c_str(),
-			info.error.c_str());
+	blog(LOG_WARNING, "%s: %s: %s", __FUNCTION__, info.message.c_str(),
+	     info.error.c_str());
 	return false;
 }
 
@@ -179,15 +153,13 @@ void MixerAuth::SaveInternal()
 	config_set_string(main->Config(), service(), "Id", id.c_str());
 	if (uiLoaded) {
 		config_set_string(main->Config(), service(), "DockState",
-				main->saveState().toBase64().constData());
+				  main->saveState().toBase64().constData());
 	}
 	OAuthStreamKey::SaveInternal();
 }
 
-static inline std::string get_config_str(
-		OBSBasic *main,
-		const char *section,
-		const char *name)
+static inline std::string get_config_str(OBSBasic *main, const char *section,
+					 const char *name)
 {
 	const char *val = config_get_string(main->Config(), section, name);
 	return val ? val : "";
@@ -204,13 +176,6 @@ bool MixerAuth::LoadInternal()
 	firstLoad = false;
 	return OAuthStreamKey::LoadInternal();
 }
-
-class MixerChat : public OBSDock {
-public:
-	inline MixerChat() : OBSDock() {}
-
-	QScopedPointer<QCefWidget> widget;
-};
 
 void MixerAuth::LoadUI()
 {
@@ -231,7 +196,7 @@ void MixerAuth::LoadUI()
 	QSize size = main->frameSize();
 	QPoint pos = main->pos();
 
-	chat.reset(new MixerChat());
+	chat.reset(new BrowserDock());
 	chat->setObjectName("mixerChat");
 	chat->resize(300, 600);
 	chat->setMinimumSize(200, 300);
@@ -239,7 +204,7 @@ void MixerAuth::LoadUI()
 	chat->setAllowedAreas(Qt::AllDockWidgetAreas);
 
 	QCefWidget *browser = cef->create_widget(nullptr, url, panel_cookies);
-	chat->setWidget(browser);
+	chat->SetWidget(browser);
 
 	main->addDockWidget(Qt::RightDockWidgetArea, chat.data());
 	chatMenu.reset(main->AddDockWidget(chat.data()));
@@ -252,8 +217,8 @@ void MixerAuth::LoadUI()
 	if (firstLoad) {
 		chat->setVisible(true);
 	} else {
-		const char *dockStateStr = config_get_string(main->Config(),
-				service(), "DockState");
+		const char *dockStateStr = config_get_string(
+			main->Config(), service(), "DockState");
 		QByteArray dockState =
 			QByteArray::fromBase64(QByteArray(dockStateStr));
 		main->restoreState(dockState);
@@ -301,7 +266,7 @@ std::shared_ptr<Auth> MixerAuth::Login(QWidget *parent)
 	deobfuscate_str(&client_id[0], MIXER_HASH);
 
 	if (!auth->GetToken(MIXER_TOKEN_URL, client_id, MIXER_SCOPE_VERSION,
-				QT_TO_UTF8(login.GetCode()))) {
+			    QT_TO_UTF8(login.GetCode()))) {
 		return nullptr;
 	}
 
@@ -328,9 +293,6 @@ static void DeleteCookies()
 
 void RegisterMixerAuth()
 {
-	OAuth::RegisterOAuth(
-			mixerDef,
-			CreateMixerAuth,
-			MixerAuth::Login,
-			DeleteCookies);
+	OAuth::RegisterOAuth(mixerDef, CreateMixerAuth, MixerAuth::Login,
+			     DeleteCookies);
 }

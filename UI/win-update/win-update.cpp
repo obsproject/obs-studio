@@ -42,7 +42,7 @@ static __declspec(thread) HCRYPTPROV provider = 0;
 
 typedef struct {
 	BLOBHEADER blobheader;
-	RSAPUBKEY  rsapubkey;
+	RSAPUBKEY rsapubkey;
 } PUBLICKEYHEADER;
 
 #pragma pack(pop, r1)
@@ -120,8 +120,7 @@ static const unsigned char obs_pub[] = {
 	0x42, 0x61, 0x35, 0x66, 0x37, 0x4c, 0x6f, 0x4b, 0x38, 0x43, 0x41, 0x77,
 	0x45, 0x41, 0x41, 0x51, 0x3d, 0x3d, 0x0a, 0x2d, 0x2d, 0x2d, 0x2d, 0x2d,
 	0x45, 0x4e, 0x44, 0x20, 0x50, 0x55, 0x42, 0x4c, 0x49, 0x43, 0x20, 0x4b,
-	0x45, 0x59, 0x2d, 0x2d, 0x2d, 0x2d, 0x2d, 0x0a
-};
+	0x45, 0x59, 0x2d, 0x2d, 0x2d, 0x2d, 0x2d, 0x0a};
 static const unsigned int obs_pub_len = 800;
 
 /* ------------------------------------------------------------------------ */
@@ -132,27 +131,22 @@ try {
 	if (os_utf8_to_wcs_ptr(file, 0, &w_file) == 0)
 		return false;
 
-	WinHandle handle = CreateFileW(
-			w_file,
-			GENERIC_WRITE,
-			0,
-			nullptr,
-			CREATE_ALWAYS,
-			FILE_FLAG_WRITE_THROUGH,
-			nullptr);
+	WinHandle handle = CreateFileW(w_file, GENERIC_WRITE, 0, nullptr,
+				       CREATE_ALWAYS, FILE_FLAG_WRITE_THROUGH,
+				       nullptr);
 
 	if (handle == INVALID_HANDLE_VALUE)
-		throw strprintf("Failed to open file '%s': %lu",
-				file, GetLastError());
+		throw strprintf("Failed to open file '%s': %lu", file,
+				GetLastError());
 
 	DWORD written;
 	if (!WriteFile(handle, data, (DWORD)size, &written, nullptr))
-		throw strprintf("Failed to write file '%s': %lu",
-				file, GetLastError());
+		throw strprintf("Failed to write file '%s': %lu", file,
+				GetLastError());
 
 	return true;
 
-} catch (string text) {
+} catch (string &text) {
 	blog(LOG_WARNING, "%s: %s", __FUNCTION__, text.c_str());
 	return false;
 }
@@ -163,30 +157,24 @@ try {
 	if (os_utf8_to_wcs_ptr(file, 0, &w_file) == 0)
 		return false;
 
-	WinHandle handle = CreateFileW(
-			w_file,
-			GENERIC_READ,
-			FILE_SHARE_READ,
-			nullptr,
-			OPEN_EXISTING,
-			0,
-			nullptr);
+	WinHandle handle = CreateFileW(w_file, GENERIC_READ, FILE_SHARE_READ,
+				       nullptr, OPEN_EXISTING, 0, nullptr);
 
 	if (handle == INVALID_HANDLE_VALUE)
-		throw strprintf("Failed to open file '%s': %lu",
-				file, GetLastError());
+		throw strprintf("Failed to open file '%s': %lu", file,
+				GetLastError());
 
 	DWORD size = GetFileSize(handle, nullptr);
 	data.resize(size);
 
 	DWORD read;
 	if (!ReadFile(handle, &data[0], size, &read, nullptr))
-		throw strprintf("Failed to write file '%s': %lu",
-				file, GetLastError());
+		throw strprintf("Failed to write file '%s': %lu", file,
+				GetLastError());
 
 	return true;
 
-} catch (string text) {
+} catch (string &text) {
 	blog(LOG_WARNING, "%s: %s", __FUNCTION__, text.c_str());
 	return false;
 }
@@ -196,7 +184,7 @@ static void HashToString(const uint8_t *in, char *out)
 	const char alphabet[] = "0123456789abcdef";
 
 	for (int i = 0; i != BLAKE2_HASH_LENGTH; ++i) {
-		out[2 * i]     = alphabet[in[i] / 16];
+		out[2 * i] = alphabet[in[i] / 16];
 		out[2 * i + 1] = alphabet[in[i] % 16];
 	}
 
@@ -214,10 +202,10 @@ try {
 		return false;
 
 	WinHandle handle = CreateFileW(w_path, GENERIC_READ, FILE_SHARE_READ,
-			nullptr, OPEN_EXISTING, 0, nullptr);
+				       nullptr, OPEN_EXISTING, 0, nullptr);
 	if (handle == INVALID_HANDLE_VALUE)
-		throw strprintf("Failed to open file '%s': %lu",
-				path, GetLastError());
+		throw strprintf("Failed to open file '%s': %lu", path,
+				GetLastError());
 
 	vector<BYTE> buf;
 	buf.resize(65536);
@@ -225,9 +213,9 @@ try {
 	for (;;) {
 		DWORD read = 0;
 		if (!ReadFile(handle, buf.data(), (DWORD)buf.size(), &read,
-					nullptr))
-			throw strprintf("Failed to read file '%s': %lu",
-					path, GetLastError());
+			      nullptr))
+			throw strprintf("Failed to read file '%s': %lu", path,
+					GetLastError());
 
 		if (!read)
 			break;
@@ -241,7 +229,7 @@ try {
 
 	return true;
 
-} catch (string text) {
+} catch (string &text) {
 	blog(LOG_DEBUG, "%s: %s", __FUNCTION__, text.c_str());
 	return false;
 }
@@ -249,19 +237,19 @@ try {
 /* ------------------------------------------------------------------------ */
 
 static bool VerifyDigitalSignature(uint8_t *buf, size_t len, uint8_t *sig,
-		size_t sigLen)
+				   size_t sigLen)
 {
 	/* ASN of PEM public key */
-	BYTE  binaryKey[1024];
+	BYTE binaryKey[1024];
 	DWORD binaryKeyLen = sizeof(binaryKey);
 
 	/* Windows X509 public key info from ASN */
 	LocalPtr<CERT_PUBLIC_KEY_INFO> publicPBLOB;
-	DWORD                          iPBLOBSize;
+	DWORD iPBLOBSize;
 
 	/* RSA BLOB info from X509 public key */
 	LocalPtr<PUBLICKEYHEADER> rsaPublicBLOB;
-	DWORD                     rsaPublicBLOBSize;
+	DWORD rsaPublicBLOBSize;
 
 	/* Handle to public key */
 	CryptKey keyOut;
@@ -272,41 +260,26 @@ static bool VerifyDigitalSignature(uint8_t *buf, size_t len, uint8_t *sig,
 	/* Signature in little-endian format */
 	vector<BYTE> reversedSig;
 
-	if (!CryptStringToBinaryA((LPCSTR)obs_pub,
-	                          obs_pub_len,
-	                          CRYPT_STRING_BASE64HEADER,
-	                          binaryKey,
-	                          &binaryKeyLen,
-	                          nullptr,
-	                          nullptr))
+	if (!CryptStringToBinaryA((LPCSTR)obs_pub, obs_pub_len,
+				  CRYPT_STRING_BASE64HEADER, binaryKey,
+				  &binaryKeyLen, nullptr, nullptr))
 		return false;
 
-	if (!CryptDecodeObjectEx(X509_ASN_ENCODING,
-	                         X509_PUBLIC_KEY_INFO,
-	                         binaryKey,
-	                         binaryKeyLen,
-	                         CRYPT_ENCODE_ALLOC_FLAG,
-	                         nullptr,
-	                         &publicPBLOB,
-	                         &iPBLOBSize))
+	if (!CryptDecodeObjectEx(X509_ASN_ENCODING, X509_PUBLIC_KEY_INFO,
+				 binaryKey, binaryKeyLen,
+				 CRYPT_ENCODE_ALLOC_FLAG, nullptr, &publicPBLOB,
+				 &iPBLOBSize))
 		return false;
 
-	if (!CryptDecodeObjectEx(X509_ASN_ENCODING,
-	                         RSA_CSP_PUBLICKEYBLOB,
-	                         publicPBLOB->PublicKey.pbData,
-	                         publicPBLOB->PublicKey.cbData,
-	                         CRYPT_ENCODE_ALLOC_FLAG,
-	                         nullptr,
-	                         &rsaPublicBLOB,
-	                         &rsaPublicBLOBSize))
+	if (!CryptDecodeObjectEx(X509_ASN_ENCODING, RSA_CSP_PUBLICKEYBLOB,
+				 publicPBLOB->PublicKey.pbData,
+				 publicPBLOB->PublicKey.cbData,
+				 CRYPT_ENCODE_ALLOC_FLAG, nullptr,
+				 &rsaPublicBLOB, &rsaPublicBLOBSize))
 		return false;
 
-	if (!CryptImportKey(provider,
-	                    (const BYTE *)rsaPublicBLOB.get(),
-	                    rsaPublicBLOBSize,
-	                    0,
-	                    0,
-	                    &keyOut))
+	if (!CryptImportKey(provider, (const BYTE *)rsaPublicBLOB.get(),
+			    rsaPublicBLOBSize, 0, 0, &keyOut))
 		return false;
 
 	if (!CryptCreateHash(provider, CALG_SHA_512, 0, 0, &hash))
@@ -321,19 +294,15 @@ static bool VerifyDigitalSignature(uint8_t *buf, size_t len, uint8_t *sig,
 	for (size_t i = 0; i < sigLen; i++)
 		reversedSig[i] = sig[sigLen - i - 1];
 
-	if (!CryptVerifySignature(hash,
-	                          reversedSig.data(),
-	                          (DWORD)sigLen,
-	                          keyOut,
-	                          nullptr,
-	                          0))
+	if (!CryptVerifySignature(hash, reversedSig.data(), (DWORD)sigLen,
+				  keyOut, nullptr, 0))
 		return false;
 
 	return true;
 }
 
 static inline void HexToByteArray(const char *hexStr, size_t hexLen,
-		vector<uint8_t> &out)
+				  vector<uint8_t> &out)
 {
 	char ptr[3];
 
@@ -347,7 +316,7 @@ static inline void HexToByteArray(const char *hexStr, size_t hexLen,
 }
 
 static bool CheckDataSignature(const string &data, const char *name,
-		const char *hexSig, size_t sigLen)
+			       const char *hexSig, size_t sigLen)
 try {
 	if (sigLen == 0 || sigLen > 0xFFFF || (sigLen & 1) != 0)
 		throw strprintf("Missing or invalid signature for %s", name);
@@ -357,15 +326,13 @@ try {
 	signature.reserve(sigLen);
 	HexToByteArray(hexSig, sigLen, signature);
 
-	if (!VerifyDigitalSignature((uint8_t*)data.data(),
-	                            data.size(),
-	                            signature.data(),
-	                            signature.size()))
+	if (!VerifyDigitalSignature((uint8_t *)data.data(), data.size(),
+				    signature.data(), signature.size()))
 		throw strprintf("Signature check failed for %s", name);
 
 	return true;
 
-} catch (string text) {
+} catch (string &text) {
 	blog(LOG_WARNING, "%s: %s", __FUNCTION__, text.c_str());
 	return false;
 }
@@ -374,12 +341,12 @@ try {
 
 static bool FetchUpdaterModule(const char *url)
 try {
-	long     responseCode;
-	uint8_t  updateFileHash[BLAKE2_HASH_LENGTH];
+	long responseCode;
+	uint8_t updateFileHash[BLAKE2_HASH_LENGTH];
 	vector<string> extraHeaders;
 
-	BPtr<char> updateFilePath = GetConfigPathPtr(
-			"obs-studio\\updates\\updater.exe");
+	BPtr<char> updateFilePath =
+		GetConfigPathPtr("obs-studio\\updates\\updater.exe");
 
 	if (CalculateFileHash(updateFilePath, updateFileHash)) {
 		char hashString[BLAKE2_HASH_STR_LENGTH];
@@ -394,8 +361,8 @@ try {
 	string error;
 	string data;
 
-	bool success = GetRemoteFile(url, data, error, &responseCode,
-			nullptr, nullptr, extraHeaders, &signature);
+	bool success = GetRemoteFile(url, data, error, &responseCode, nullptr,
+				     nullptr, extraHeaders, &signature);
 
 	if (!success || (responseCode != 200 && responseCode != 304)) {
 		if (responseCode == 404)
@@ -407,7 +374,7 @@ try {
 	/* A new file must be digitally signed */
 	if (responseCode == 200) {
 		bool valid = CheckDataSignature(data, url, signature.data(),
-				signature.size());
+						signature.size());
 		if (!valid)
 			throw string("Invalid updater module signature");
 
@@ -417,7 +384,7 @@ try {
 
 	return true;
 
-} catch (string text) {
+} catch (string &text) {
 	blog(LOG_WARNING, "%s: %s", __FUNCTION__, text.c_str());
 	return false;
 }
@@ -425,7 +392,7 @@ try {
 /* ------------------------------------------------------------------------ */
 
 static bool ParseUpdateManifest(const char *manifest, bool *updatesAvailable,
-		string &notes_str, int &updateVer)
+				string &notes_str, int &updateVer)
 try {
 
 	json_error_t error;
@@ -442,10 +409,8 @@ try {
 	int patch = root.GetInt("version_patch");
 
 	if (major == 0)
-		throw strprintf("Invalid version number: %d.%d.%d",
-				major,
-				minor,
-				patch);
+		throw strprintf("Invalid version number: %d.%d.%d", major,
+				minor, patch);
 
 	json_t *notes = json_object_get(root, "notes");
 	if (!json_is_string(notes))
@@ -465,7 +430,7 @@ try {
 
 	return true;
 
-} catch (string text) {
+} catch (string &text) {
 	blog(LOG_WARNING, "%s: %s", __FUNCTION__, text.c_str());
 	return false;
 }
@@ -491,8 +456,8 @@ string GetProgramGUID()
 	/* NOTE: this is an arbitrary random number that we use to count the
 	 * number of unique OBS installations and is not associated with any
 	 * kind of identifiable information */
-	const char *pguid = config_get_string(GetGlobalConfig(),
-			"General", "InstallGUID");
+	const char *pguid =
+		config_get_string(GetGlobalConfig(), "General", "InstallGUID");
 	string guid;
 	if (pguid)
 		guid = pguid;
@@ -501,9 +466,8 @@ string GetProgramGUID()
 		GenerateGUID(guid);
 
 		if (!guid.empty())
-			config_set_string(GetGlobalConfig(),
-					"General", "InstallGUID",
-					guid.c_str());
+			config_set_string(GetGlobalConfig(), "General",
+					  "InstallGUID", guid.c_str());
 	}
 
 	return guid;
@@ -516,13 +480,12 @@ void AutoUpdateThread::infoMsg(const QString &title, const QString &text)
 
 void AutoUpdateThread::info(const QString &title, const QString &text)
 {
-	QMetaObject::invokeMethod(this, "infoMsg",
-			Qt::BlockingQueuedConnection,
-			Q_ARG(QString, title),
-			Q_ARG(QString, text));
+	QMetaObject::invokeMethod(this, "infoMsg", Qt::BlockingQueuedConnection,
+				  Q_ARG(QString, title), Q_ARG(QString, text));
 }
 
-int AutoUpdateThread::queryUpdateSlot(bool localManualUpdate, const QString &text)
+int AutoUpdateThread::queryUpdateSlot(bool localManualUpdate,
+				      const QString &text)
 {
 	OBSUpdate updateDlg(App()->GetMainWindow(), localManualUpdate, text);
 	return updateDlg.exec();
@@ -533,17 +496,17 @@ int AutoUpdateThread::queryUpdate(bool localManualUpdate, const char *text_utf8)
 	int ret = OBSUpdate::No;
 	QString text = text_utf8;
 	QMetaObject::invokeMethod(this, "queryUpdateSlot",
-			Qt::BlockingQueuedConnection,
-			Q_RETURN_ARG(int, ret),
-			Q_ARG(bool, localManualUpdate),
-			Q_ARG(QString, text));
+				  Qt::BlockingQueuedConnection,
+				  Q_RETURN_ARG(int, ret),
+				  Q_ARG(bool, localManualUpdate),
+				  Q_ARG(QString, text));
 	return ret;
 }
 
 static bool IsFileInUse(const wstring &file)
 {
 	WinHandle f = CreateFile(file.c_str(), GENERIC_WRITE, 0, nullptr,
-			OPEN_EXISTING, 0, nullptr);
+				 OPEN_EXISTING, 0, nullptr);
 	if (!f.Valid()) {
 		int err = GetLastError();
 		if (err == ERROR_SHARING_VIOLATION ||
@@ -557,35 +520,33 @@ static bool IsFileInUse(const wstring &file)
 static bool IsGameCaptureInUse()
 {
 	wstring path = L"..\\..\\data\\obs-plugins\\win-capture\\graphics-hook";
-	return IsFileInUse(path + L"32.dll") ||
-	       IsFileInUse(path + L"64.dll");
+	return IsFileInUse(path + L"32.dll") || IsFileInUse(path + L"64.dll");
 }
 
 void AutoUpdateThread::run()
 try {
-	long           responseCode;
+	long responseCode;
 	vector<string> extraHeaders;
-	string         text;
-	string         error;
-	string         signature;
-	CryptProvider  localProvider;
-	BYTE           manifestHash[BLAKE2_HASH_LENGTH];
-	bool           updatesAvailable = false;
-	bool           success;
+	string text;
+	string error;
+	string signature;
+	CryptProvider localProvider;
+	BYTE manifestHash[BLAKE2_HASH_LENGTH];
+	bool updatesAvailable = false;
+	bool success;
 
 	struct FinishedTrigger {
 		inline ~FinishedTrigger()
 		{
 			QMetaObject::invokeMethod(App()->GetMainWindow(),
-					"updateCheckFinished");	
+						  "updateCheckFinished");
 		}
 	} finishedTrigger;
 
-	BPtr<char> manifestPath = GetConfigPathPtr(
-			"obs-studio\\updates\\manifest.json");
+	BPtr<char> manifestPath =
+		GetConfigPathPtr("obs-studio\\updates\\manifest.json");
 
-	auto ActiveOrGameCaptureLocked = [this] ()
-	{
+	auto ActiveOrGameCaptureLocked = [this]() {
 		if (obs_video_active()) {
 			if (manualUpdate)
 				info(QTStr("Updater.Running.Title"),
@@ -611,11 +572,8 @@ try {
 	/* ----------------------------------- *
 	 * create signature provider           */
 
-	if (!CryptAcquireContext(&localProvider,
-	                         nullptr,
-	                         MS_ENH_RSA_AES_PROV,
-	                         PROV_RSA_AES,
-	                         CRYPT_VERIFYCONTEXT))
+	if (!CryptAcquireContext(&localProvider, nullptr, MS_ENH_RSA_AES_PROV,
+				 PROV_RSA_AES, CRYPT_VERIFYCONTEXT))
 		throw strprintf("CryptAcquireContext failed: %lu",
 				GetLastError());
 
@@ -647,13 +605,14 @@ try {
 	 * get manifest from server            */
 
 	success = GetRemoteFile(WIN_MANIFEST_URL, text, error, &responseCode,
-			nullptr, nullptr, extraHeaders, &signature);
+				nullptr, nullptr, extraHeaders, &signature);
 
 	if (!success || (responseCode != 200 && responseCode != 304)) {
 		if (responseCode == 404)
 			return;
 
-		throw strprintf("Failed to fetch manifest file: %s", error.c_str());
+		throw strprintf("Failed to fetch manifest file: %s",
+				error.c_str());
 	}
 
 	/* ----------------------------------- *
@@ -661,8 +620,8 @@ try {
 
 	/* a new file must be digitally signed */
 	if (responseCode == 200) {
-		success = CheckDataSignature(text, "manifest",
-				signature.data(), signature.size());
+		success = CheckDataSignature(text, "manifest", signature.data(),
+					     signature.size());
 		if (!success)
 			throw string("Invalid manifest signature");
 	}
@@ -687,7 +646,7 @@ try {
 	int updateVer = 0;
 
 	success = ParseUpdateManifest(text.c_str(), &updatesAvailable, notes,
-			updateVer);
+				      updateVer);
 	if (!success)
 		throw string("Failed to parse manifest");
 
@@ -702,7 +661,7 @@ try {
 	 * skip this version if set to skip    */
 
 	int skipUpdateVer = config_get_int(GetGlobalConfig(), "General",
-			"SkipUpdateVersion");
+					   "SkipUpdateVersion");
 	if (!manualUpdate && updateVer == skipUpdateVer)
 		return;
 
@@ -727,13 +686,13 @@ try {
 		if (!manualUpdate) {
 			long long t = (long long)time(nullptr);
 			config_set_int(GetGlobalConfig(), "General",
-					"LastUpdateCheck", t);
+				       "LastUpdateCheck", t);
 		}
 		return;
 
 	} else if (queryResult == OBSUpdate::Skip) {
 		config_set_int(GetGlobalConfig(), "General",
-				"SkipUpdateVersion", updateVer);
+			       "SkipUpdateVersion", updateVer);
 		return;
 	}
 
@@ -749,8 +708,8 @@ try {
 	/* ----------------------------------- *
 	 * execute updater                     */
 
-	BPtr<char> updateFilePath = GetConfigPathPtr(
-			"obs-studio\\updates\\updater.exe");
+	BPtr<char> updateFilePath =
+		GetConfigPathPtr("obs-studio\\updates\\updater.exe");
 	BPtr<wchar_t> wUpdateFilePath;
 
 	size_t size = os_utf8_to_wcs_ptr(updateFilePath, 0, &wUpdateFilePath);
@@ -773,7 +732,7 @@ try {
 		execInfo.lpParameters = UPDATE_ARG_SUFFIX;
 
 	execInfo.lpDirectory = cwd;
-	execInfo.nShow       = SW_SHOWNORMAL;
+	execInfo.nShow = SW_SHOWNORMAL;
 
 	if (!ShellExecuteEx(&execInfo)) {
 		QString msg = QTStr("Updater.FailedToLaunch");
@@ -787,11 +746,11 @@ try {
 	config_set_int(GetGlobalConfig(), "General", "LastUpdateCheck", 0);
 	config_set_int(GetGlobalConfig(), "General", "SkipUpdateVersion", 0);
 	config_set_string(GetGlobalConfig(), "General", "InstallGUID",
-			guid.c_str());
+			  guid.c_str());
 
 	QMetaObject::invokeMethod(App()->GetMainWindow(), "close");
 
-} catch (string text) {
+} catch (string &text) {
 	blog(LOG_WARNING, "%s: %s", __FUNCTION__, text.c_str());
 }
 
@@ -799,26 +758,23 @@ try {
 
 void WhatsNewInfoThread::run()
 try {
-	long           responseCode;
+	long responseCode;
 	vector<string> extraHeaders;
-	string         text;
-	string         error;
-	string         signature;
-	CryptProvider  localProvider;
-	BYTE           whatsnewHash[BLAKE2_HASH_LENGTH];
-	bool           success;
+	string text;
+	string error;
+	string signature;
+	CryptProvider localProvider;
+	BYTE whatsnewHash[BLAKE2_HASH_LENGTH];
+	bool success;
 
-	BPtr<char> whatsnewPath = GetConfigPathPtr(
-			"obs-studio\\updates\\whatsnew.json");
+	BPtr<char> whatsnewPath =
+		GetConfigPathPtr("obs-studio\\updates\\whatsnew.json");
 
 	/* ----------------------------------- *
 	 * create signature provider           */
 
-	if (!CryptAcquireContext(&localProvider,
-	                         nullptr,
-	                         MS_ENH_RSA_AES_PROV,
-	                         PROV_RSA_AES,
-	                         CRYPT_VERIFYCONTEXT))
+	if (!CryptAcquireContext(&localProvider, nullptr, MS_ENH_RSA_AES_PROV,
+				 PROV_RSA_AES, CRYPT_VERIFYCONTEXT))
 		throw strprintf("CryptAcquireContext failed: %lu",
 				GetLastError());
 
@@ -851,7 +807,7 @@ try {
 	 * get json from server                */
 
 	success = GetRemoteFile(WIN_WHATSNEW_URL, text, error, &responseCode,
-			nullptr, nullptr, extraHeaders, &signature);
+				nullptr, nullptr, extraHeaders, &signature);
 
 	if (!success || (responseCode != 200 && responseCode != 304)) {
 		if (responseCode == 404)
@@ -865,8 +821,8 @@ try {
 	 * verify file signature               */
 
 	if (responseCode == 200) {
-		success = CheckDataSignature(text, "whatsnew",
-				signature.data(), signature.size());
+		success = CheckDataSignature(text, "whatsnew", signature.data(),
+					     signature.size());
 		if (!success)
 			throw string("Invalid whatsnew signature");
 	}
@@ -889,6 +845,6 @@ try {
 
 	emit Result(QString::fromUtf8(text.c_str()));
 
-} catch (string text) {
+} catch (string &text) {
 	blog(LOG_WARNING, "%s: %s", __FUNCTION__, text.c_str());
 }

@@ -9,36 +9,27 @@
 #include <sstream>
 
 #include <obs-app.hpp>
+#include "window-dock-browser.hpp"
 #include "window-basic-main.hpp"
 #include "remote-text.hpp"
 #include "ui-config.h"
 #include "obf.h"
-#include <browser-panel.hpp>
 
 using namespace json11;
 
-extern QCef *cef;
-extern QCefCookieManager *panel_cookies;
-
 /* ------------------------------------------------------------------------- */
 
-#define RESTREAM_AUTH_URL "https://obsproject.com/app-auth/restream?action=redirect"
+#define RESTREAM_AUTH_URL \
+	"https://obsproject.com/app-auth/restream?action=redirect"
 #define RESTREAM_TOKEN_URL "https://obsproject.com/app-auth/restream-token"
 #define RESTREAM_STREAMKEY_URL "https://api.restream.io/v2/user/streamKey"
 #define RESTREAM_SCOPE_VERSION 1
 
-
-static Auth::Def restreamDef = {
-	"Restream",
-	Auth::Type::OAuth_StreamKey
-};
+static Auth::Def restreamDef = {"Restream", Auth::Type::OAuth_StreamKey};
 
 /* ------------------------------------------------------------------------- */
 
-RestreamAuth::RestreamAuth(const Def &d)
-	: OAuthStreamKey(d)
-{
-}
+RestreamAuth::RestreamAuth(const Def &d) : OAuthStreamKey(d) {}
 
 bool RestreamAuth::GetChannelInfo()
 try {
@@ -65,23 +56,15 @@ try {
 	Json json;
 	bool success;
 
-	auto func = [&] () {
-		success = GetRemoteFile(
-				RESTREAM_STREAMKEY_URL,
-				output,
-				error,
-				nullptr,
-				"application/json",
-				nullptr,
-				headers,
-				nullptr,
-				5);
+	auto func = [&]() {
+		success = GetRemoteFile(RESTREAM_STREAMKEY_URL, output, error,
+					nullptr, "application/json", nullptr,
+					headers, nullptr, 5);
 	};
 
 	ExecThreadedWithoutBlocking(
-			func,
-			QTStr("Auth.LoadingChannel.Title"),
-			QTStr("Auth.LoadingChannel.Text").arg(service()));
+		func, QTStr("Auth.LoadingChannel.Title"),
+		QTStr("Auth.LoadingChannel.Text").arg(service()));
 	if (!success || output.empty())
 		throw ErrorInfo("Failed to get stream key from remote", error);
 
@@ -91,7 +74,8 @@ try {
 
 	error = json["error"].string_value();
 	if (!error.empty())
-		throw ErrorInfo(error, json["error_description"].string_value());
+		throw ErrorInfo(error,
+				json["error_description"].string_value());
 
 	key_ = json["streamKey"].string_value();
 
@@ -99,14 +83,13 @@ try {
 } catch (ErrorInfo info) {
 	QString title = QTStr("Auth.ChannelFailure.Title");
 	QString text = QTStr("Auth.ChannelFailure.Text")
-		.arg(service(), info.message.c_str(), info.error.c_str());
+			       .arg(service(), info.message.c_str(),
+				    info.error.c_str());
 
 	QMessageBox::warning(OBSBasic::Get(), title, text);
 
-	blog(LOG_WARNING, "%s: %s: %s",
-			__FUNCTION__,
-			info.message.c_str(),
-			info.error.c_str());
+	blog(LOG_WARNING, "%s: %s: %s", __FUNCTION__, info.message.c_str(),
+	     info.error.c_str());
 	return false;
 }
 
@@ -114,14 +97,12 @@ void RestreamAuth::SaveInternal()
 {
 	OBSBasic *main = OBSBasic::Get();
 	config_set_string(main->Config(), service(), "DockState",
-			main->saveState().toBase64().constData());
+			  main->saveState().toBase64().constData());
 	OAuthStreamKey::SaveInternal();
 }
 
-static inline std::string get_config_str(
-		OBSBasic *main,
-		const char *section,
-		const char *name)
+static inline std::string get_config_str(OBSBasic *main, const char *section,
+					 const char *name)
 {
 	const char *val = config_get_string(main->Config(), section, name);
 	return val ? val : "";
@@ -132,13 +113,6 @@ bool RestreamAuth::LoadInternal()
 	firstLoad = false;
 	return OAuthStreamKey::LoadInternal();
 }
-
-class RestreamWidget : public QDockWidget {
-public:
-	inline RestreamWidget() : QDockWidget() {}
-
-	QScopedPointer<QCefWidget> widget;
-};
 
 void RestreamAuth::LoadUI()
 {
@@ -161,7 +135,7 @@ void RestreamAuth::LoadUI()
 	QSize size = main->frameSize();
 	QPoint pos = main->pos();
 
-	chat.reset(new RestreamWidget());
+	chat.reset(new BrowserDock());
 	chat->setObjectName("restreamChat");
 	chat->resize(420, 600);
 	chat->setMinimumSize(200, 300);
@@ -169,7 +143,7 @@ void RestreamAuth::LoadUI()
 	chat->setAllowedAreas(Qt::AllDockWidgetAreas);
 
 	browser = cef->create_widget(nullptr, url, panel_cookies);
-	chat->setWidget(browser);
+	chat->SetWidget(browser);
 
 	main->addDockWidget(Qt::RightDockWidgetArea, chat.data());
 	chatMenu.reset(main->AddDockWidget(chat.data()));
@@ -178,7 +152,7 @@ void RestreamAuth::LoadUI()
 
 	url = "https://restream.io/titles/embed";
 
-	info.reset(new RestreamWidget());
+	info.reset(new BrowserDock());
 	info->setObjectName("restreamInfo");
 	info->resize(410, 600);
 	info->setMinimumSize(200, 150);
@@ -186,25 +160,45 @@ void RestreamAuth::LoadUI()
 	info->setAllowedAreas(Qt::AllDockWidgetAreas);
 
 	browser = cef->create_widget(nullptr, url, panel_cookies);
-	info->setWidget(browser);
+	info->SetWidget(browser);
 
-	main->addDockWidget(Qt::RightDockWidgetArea, info.data());
+	main->addDockWidget(Qt::LeftDockWidgetArea, info.data());
 	infoMenu.reset(main->AddDockWidget(info.data()));
+
+	/* ----------------------------------- */
+
+	url = "https://restream.io/channel/embed";
+
+	channels.reset(new BrowserDock());
+	channels->setObjectName("restreamChannel");
+	channels->resize(410, 600);
+	channels->setMinimumSize(410, 300);
+	channels->setWindowTitle(QTStr("RestreamAuth.Channels"));
+	channels->setAllowedAreas(Qt::AllDockWidgetAreas);
+
+	browser = cef->create_widget(nullptr, url, panel_cookies);
+	channels->SetWidget(browser);
+
+	main->addDockWidget(Qt::LeftDockWidgetArea, channels.data());
+	channelMenu.reset(main->AddDockWidget(channels.data()));
 
 	/* ----------------------------------- */
 
 	chat->setFloating(true);
 	info->setFloating(true);
-	chat->move(pos.x() + size.width() - chat->width() - 50, pos.y() + 50);
-	info->move(pos.x() + 40, pos.y() + 50);
+	channels->setFloating(true);
+
+	chat->move(pos.x() + size.width() - chat->width() - 30, pos.y() + 60);
+	info->move(pos.x() + 20, pos.y() + 60);
+	channels->move(pos.x() + 20 + info->width() + 10, pos.y() + 60);
 
 	if (firstLoad) {
 		chat->setVisible(true);
 		info->setVisible(true);
-	}
-	else {
-		const char *dockStateStr = config_get_string(main->Config(),
-			service(), "DockState");
+		channels->setVisible(true);
+	} else {
+		const char *dockStateStr = config_get_string(
+			main->Config(), service(), "DockState");
 		QByteArray dockState =
 			QByteArray::fromBase64(QByteArray(dockStateStr));
 		main->restoreState(dockState);
@@ -227,8 +221,7 @@ bool RestreamAuth::RetryLogin()
 	std::string client_id = RESTREAM_CLIENTID;
 	deobfuscate_str(&client_id[0], RESTREAM_HASH);
 
-	return GetToken(RESTREAM_TOKEN_URL, client_id,
-			RESTREAM_SCOPE_VERSION,
+	return GetToken(RESTREAM_TOKEN_URL, client_id, RESTREAM_SCOPE_VERSION,
 			QT_TO_UTF8(login.GetCode()), true);
 }
 
@@ -248,8 +241,8 @@ std::shared_ptr<Auth> RestreamAuth::Login(QWidget *parent)
 	deobfuscate_str(&client_id[0], RESTREAM_HASH);
 
 	if (!auth->GetToken(RESTREAM_TOKEN_URL, client_id,
-				RESTREAM_SCOPE_VERSION,
-				QT_TO_UTF8(login.GetCode()))) {
+			    RESTREAM_SCOPE_VERSION,
+			    QT_TO_UTF8(login.GetCode()))) {
 		return nullptr;
 	}
 
@@ -275,9 +268,6 @@ static void DeleteCookies()
 
 void RegisterRestreamAuth()
 {
-	OAuth::RegisterOAuth(
-		restreamDef,
-		CreateRestreamAuth,
-		RestreamAuth::Login,
-		DeleteCookies);
+	OAuth::RegisterOAuth(restreamDef, CreateRestreamAuth,
+			     RestreamAuth::Login, DeleteCookies);
 }

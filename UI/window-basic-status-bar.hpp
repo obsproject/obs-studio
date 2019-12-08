@@ -39,7 +39,7 @@ private:
 	int startTotalFrameCount = 0;
 	int lastSkippedFrameCount = 0;
 
-	int      bitrateUpdateSeconds = 0;
+	int bitrateUpdateSeconds = 0;
 	uint64_t lastBytesSent = 0;
 	uint64_t lastBytesSentTime = 0;
 

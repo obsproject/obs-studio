@@ -36,33 +36,39 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 static enum speaker_layout jack_channels_to_obs_speakers(uint_fast32_t channels)
 {
-	switch(channels) {
-	case 1: return SPEAKERS_MONO;
-	case 2: return SPEAKERS_STEREO;
-	case 3: return SPEAKERS_2POINT1;
-	case 5: return SPEAKERS_4POINT1;
-	case 6: return SPEAKERS_5POINT1;
+	switch (channels) {
+	case 1:
+		return SPEAKERS_MONO;
+	case 2:
+		return SPEAKERS_STEREO;
+	case 3:
+		return SPEAKERS_2POINT1;
+	case 5:
+		return SPEAKERS_4POINT1;
+	case 6:
+		return SPEAKERS_5POINT1;
 	/* What should we do with 7 channels? */
 	/* case 7: return SPEAKERS_...; */
-	case 8: return SPEAKERS_7POINT1;
+	case 8:
+		return SPEAKERS_7POINT1;
 	}
 
 	return SPEAKERS_UNKNOWN;
 }
 
-int jack_process_callback(jack_nframes_t nframes, void* arg)
+int jack_process_callback(jack_nframes_t nframes, void *arg)
 {
-	struct jack_data* data = (struct jack_data*)arg;
+	struct jack_data *data = (struct jack_data *)arg;
 	if (data == 0)
 		return 0;
 
 	pthread_mutex_lock(&data->jack_mutex);
 
 	struct obs_source_audio out;
-	out.speakers        = jack_channels_to_obs_speakers(data->channels);
-	out.samples_per_sec = jack_get_sample_rate (data->jack_client);
+	out.speakers = jack_channels_to_obs_speakers(data->channels);
+	out.samples_per_sec = jack_get_sample_rate(data->jack_client);
 	/* format is always 32 bit float for jack */
-	out.format          = AUDIO_FORMAT_FLOAT_PLANAR;
+	out.format = AUDIO_FORMAT_FLOAT_PLANAR;
 
 	for (unsigned int i = 0; i < data->channels; ++i) {
 		jack_default_audio_sample_t *jack_buffer =
@@ -71,61 +77,61 @@ int jack_process_callback(jack_nframes_t nframes, void* arg)
 		out.data[i] = (uint8_t *)jack_buffer;
 	}
 
-	out.frames    = nframes;
+	out.frames = nframes;
 	out.timestamp = os_gettime_ns() -
-				jack_frames_to_time(data->jack_client, nframes);
+			jack_frames_to_time(data->jack_client, nframes);
 
 	obs_source_output_audio(data->source, &out);
 	pthread_mutex_unlock(&data->jack_mutex);
 	return 0;
 }
 
-int_fast32_t jack_init(struct jack_data* data)
+int_fast32_t jack_init(struct jack_data *data)
 {
 	pthread_mutex_lock(&data->jack_mutex);
 
 	if (data->jack_client != NULL)
 		goto good;
 
-	jack_options_t jack_option = data->start_jack_server ?
-		JackNullOption : JackNoStartServer;
+	jack_options_t jack_option =
+		data->start_jack_server ? JackNullOption : JackNoStartServer;
 
 	data->jack_client = jack_client_open(data->device, jack_option, 0);
 	if (data->jack_client == NULL) {
 		blog(LOG_ERROR,
-			"jack_client_open Error:"
-			"Could not create JACK client! %s",
-			data->device);
+		     "jack_client_open Error:"
+		     "Could not create JACK client! %s",
+		     data->device);
 		goto error;
 	}
 
-	data->jack_ports = (jack_port_t**)bzalloc(
-		sizeof(jack_port_t*) * data->channels);
+	data->jack_ports =
+		(jack_port_t **)bzalloc(sizeof(jack_port_t *) * data->channels);
 	for (unsigned int i = 0; i < data->channels; ++i) {
 		char port_name[10] = {'\0'};
-		snprintf(port_name, sizeof(port_name), "in_%u", i+1);
+		snprintf(port_name, sizeof(port_name), "in_%u", i + 1);
 
-		data->jack_ports[i] = jack_port_register(data->jack_client,
-			port_name, JACK_DEFAULT_AUDIO_TYPE, JackPortIsInput, 0);
+		data->jack_ports[i] = jack_port_register(
+			data->jack_client, port_name, JACK_DEFAULT_AUDIO_TYPE,
+			JackPortIsInput, 0);
 		if (data->jack_ports[i] == NULL) {
 			blog(LOG_ERROR,
-				"jack_port_register Error:"
-				"Could not create JACK port! %s",
-				port_name);
+			     "jack_port_register Error:"
+			     "Could not create JACK port! %s",
+			     port_name);
 			goto error;
 		}
 	}
 
-	if (jack_set_process_callback(data->jack_client,
-			jack_process_callback, data) != 0) {
+	if (jack_set_process_callback(data->jack_client, jack_process_callback,
+				      data) != 0) {
 		blog(LOG_ERROR, "jack_set_process_callback Error");
 		goto error;
 	}
 
 	if (jack_activate(data->jack_client) != 0) {
-		blog(LOG_ERROR,
-			"jack_activate Error:"
-			"Could not activate JACK client!");
+		blog(LOG_ERROR, "jack_activate Error:"
+				"Could not activate JACK client!");
 		goto error;
 	}
 
@@ -138,7 +144,7 @@ error:
 	return 1;
 }
 
-void deactivate_jack(struct jack_data* data)
+void deactivate_jack(struct jack_data *data)
 {
 	pthread_mutex_lock(&data->jack_mutex);
 
@@ -146,7 +152,8 @@ void deactivate_jack(struct jack_data* data)
 		if (data->jack_ports != NULL) {
 			for (int i = 0; i < data->channels; ++i) {
 				if (data->jack_ports[i] != NULL)
-					jack_port_unregister(data->jack_client,
+					jack_port_unregister(
+						data->jack_client,
 						data->jack_ports[i]);
 			}
 			bfree(data->jack_ports);

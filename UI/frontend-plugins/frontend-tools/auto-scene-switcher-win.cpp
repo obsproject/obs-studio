@@ -32,7 +32,7 @@ static bool WindowValid(HWND window)
 		return false;
 
 	GetClientRect(window, &rect);
-	styles    = GetWindowLongPtr(window, GWL_STYLE);
+	styles = GetWindowLongPtr(window, GWL_STYLE);
 	ex_styles = GetWindowLongPtr(window, GWL_EXSTYLE);
 
 	if (ex_styles & WS_EX_TOOLWINDOW)

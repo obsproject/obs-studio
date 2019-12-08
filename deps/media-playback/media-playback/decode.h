@@ -53,29 +53,35 @@ extern "C" {
 struct mp_media;
 
 struct mp_decode {
-	struct mp_media       *m;
-	AVStream              *stream;
-	bool                  audio;
+	struct mp_media *m;
+	AVStream *stream;
+	bool audio;
 
-	AVCodecContext        *decoder;
-	AVCodec               *codec;
+	AVCodecContext *decoder;
+	AVBufferRef *hw_ctx;
+	AVCodec *codec;
 
-	int64_t               last_duration;
-	int64_t               frame_pts;
-	int64_t               next_pts;
-	AVFrame               *frame;
-	bool                  got_first_keyframe;
-	bool                  frame_ready;
-	bool                  eof;
+	int64_t last_duration;
+	int64_t frame_pts;
+	int64_t next_pts;
+	AVFrame *in_frame;
+	AVFrame *sw_frame;
+	AVFrame *hw_frame;
+	AVFrame *frame;
+	enum AVPixelFormat hw_format;
+	bool got_first_keyframe;
+	bool frame_ready;
+	bool eof;
+	bool hw;
 
-	AVPacket              orig_pkt;
-	AVPacket              pkt;
-	bool                  packet_pending;
-	struct circlebuf      packets;
+	AVPacket orig_pkt;
+	AVPacket pkt;
+	bool packet_pending;
+	struct circlebuf packets;
 };
 
 extern bool mp_decode_init(struct mp_media *media, enum AVMediaType type,
-		bool hw);
+			   bool hw);
 extern void mp_decode_free(struct mp_decode *decode);
 
 extern void mp_decode_clear_packets(struct mp_decode *decode);

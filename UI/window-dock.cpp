@@ -6,8 +6,7 @@
 
 void OBSDock::closeEvent(QCloseEvent *event)
 {
-	auto msgBox = [] ()
-	{
+	auto msgBox = []() {
 		QMessageBox msgbox(App()->GetMainWindow());
 		msgbox.setWindowTitle(QTStr("DockCloseWarning.Title"));
 		msgbox.setText(QTStr("DockCloseWarning.Text"));
@@ -27,11 +26,10 @@ void OBSDock::closeEvent(QCloseEvent *event)
 	};
 
 	bool warned = config_get_bool(App()->GlobalConfig(), "General",
-			"WarnedAboutClosingDocks");
+				      "WarnedAboutClosingDocks");
 	if (!warned) {
-		QMetaObject::invokeMethod(App(), "Exec",
-				Qt::QueuedConnection,
-				Q_ARG(VoidFunc, msgBox));
+		QMetaObject::invokeMethod(App(), "Exec", Qt::QueuedConnection,
+					  Q_ARG(VoidFunc, msgBox));
 	}
 
 	QDockWidget::closeEvent(event);

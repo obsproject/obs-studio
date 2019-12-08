@@ -30,8 +30,8 @@ struct glyph_info {
 };
 
 struct ft2_source {
-	char     *font_name;
-	char     *font_style;
+	char *font_name;
+	char *font_style;
 	uint16_t font_size;
 	uint32_t font_flags;
 
@@ -54,7 +54,7 @@ struct ft2_source {
 
 	struct glyph_info *cacheglyphs[num_cache_slots];
 
-	FT_Face	font_face;
+	FT_Face font_face;
 
 	uint8_t *texbuf;
 	gs_vertbuffer_t *vbuf;

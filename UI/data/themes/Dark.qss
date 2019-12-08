@@ -142,7 +142,14 @@ QDockWidget::close-button:pressed, QDockWidget::float-button:pressed {
 QGroupBox {
     border: 1px solid rgb(31,30,31); /* veryDark */;
     border-radius: 5px;
-    padding-top: 16px;
+    padding-top: 24px;
+    font-weight: bold;
+}
+
+QGroupBox::title {
+    subcontrol-origin: margin;
+    left: 4px;
+    top: 4px;
 }
 
 
@@ -251,6 +258,10 @@ QToolButton:pressed {
 
 * [themeID="downArrowIconSmall"] {
     qproperty-icon: url(./Dark/down.svg);
+}
+
+* [themeID="pauseIconSmall"] {
+    qproperty-icon: url(./Dark/media-pause.svg);
 }
 
 
@@ -577,6 +588,19 @@ OBSHotkeyLabel[hotkeyPairHover=true] {
     color: red;
 }
 
+/* Pause */
+PauseCheckBox {
+    outline: none;
+}
+
+PauseCheckBox::indicator:checked {
+    image: url(:/res/images/media-pause.svg);
+}
+
+PauseCheckBox::indicator:unchecked {
+    image: url(:/res/images/media-play.svg);
+}
+
 /* Group Collapse Checkbox */
 
 SourceTreeSubItemCheckBox {
@@ -676,6 +700,11 @@ OBSBasicSettings QListWidget::item {
     padding-bottom: 5px;
 }
 
+QListWidget::item,
+SourceTree::item {
+	height: 24px;
+}
+
 /* Locked CheckBox */
 
 LockedCheckBox {
@@ -691,7 +720,7 @@ LockedCheckBox::indicator:unchecked {
     image: url(:res/images/unlocked.svg);
 }
 
-/* Visibilty CheckBox */
+/* Visibility CheckBox */
 
 VisibilityCheckBox {
     outline: none;
@@ -712,4 +741,36 @@ VisibilityCheckBox::indicator:unchecked {
 
 * [themeID="revertIcon"] {
     qproperty-icon: url(./Dark/revert.svg);
+}
+
+QPushButton#extraPanelDelete {
+    background-color: rgb(31, 30, 31);
+}
+
+QPushButton#extraPanelDelete:hover {
+    background-color: rgb(122,121,122);
+}
+
+QPushButton#extraPanelDelete:pressed {
+    background-color: rgb(31,30,31);
+}
+
+/* Source Icons */
+
+OBSBasic {
+    qproperty-imageIcon: url(./Dark/sources/image.svg);
+    qproperty-colorIcon: url(./Dark/sources/brush.svg);
+    qproperty-slideshowIcon: url(./Dark/sources/slideshow.svg);
+    qproperty-audioInputIcon: url(./Dark/sources/microphone.svg);
+    qproperty-audioOutputIcon: url(./Dark/settings/audio.svg);
+    qproperty-desktopCapIcon: url(./Dark/settings/video.svg);
+    qproperty-windowCapIcon: url(./Dark/sources/window.svg);
+    qproperty-gameCapIcon: url(./Dark/sources/gamepad.svg);
+    qproperty-cameraIcon: url(./Dark/sources/camera.svg);
+    qproperty-textIcon: url(./Dark/sources/text.svg);
+    qproperty-mediaIcon: url(./Dark/sources/media.svg);
+    qproperty-browserIcon: url(./Dark/sources/globe.svg);
+    qproperty-groupIcon: url(./Dark/sources/group.svg);
+    qproperty-sceneIcon: url(./Dark/sources/scene.svg);
+    qproperty-defaultIcon: url(./Dark/sources/default.svg);
 }

@@ -355,7 +355,7 @@ Other Path/File Functions
 
 .. function:: int os_copyfile(const char *file_in, const char *file_out)
 
-   Copys a file.
+   Copies a file.
 
 ---------------------
 

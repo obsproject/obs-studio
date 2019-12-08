@@ -32,6 +32,12 @@
 #define SO_EXT ".dylib"
 #endif
 
+#ifdef __APPLE__
+#define PYTHON_LIB_SUBDIR "lib/"
+#else
+#define PYTHON_LIB_SUBDIR ""
+#endif
+
 bool import_python(const char *python_path)
 {
 	struct dstr lib_path;
@@ -44,25 +50,25 @@ bool import_python(const char *python_path)
 	dstr_init_copy(&lib_path, python_path);
 	dstr_replace(&lib_path, "\\", "/");
 	if (!dstr_is_empty(&lib_path)) {
-		dstr_cat(&lib_path, "/");
+		dstr_cat(&lib_path, "/" PYTHON_LIB_SUBDIR);
 	}
 	dstr_cat(&lib_path, PYTHON_LIB SO_EXT);
 
 	lib = os_dlopen(lib_path.array);
 	if (!lib) {
 		blog(LOG_WARNING, "[Python] Could not load library: %s",
-				lib_path.array);
+		     lib_path.array);
 		goto fail;
 	}
 
-#define IMPORT_FUNC(x) \
-	do { \
-		Import_##x = os_dlsym(lib, #x); \
-		if (!Import_##x) { \
+#define IMPORT_FUNC(x)                                                     \
+	do {                                                               \
+		Import_##x = os_dlsym(lib, #x);                            \
+		if (!Import_##x) {                                         \
 			blog(LOG_WARNING, "[Python] Failed to import: %s", \
-					#x); \
-			goto fail; \
-		} \
+			     #x);                                          \
+			goto fail;                                         \
+		}                                                          \
 	} while (false)
 
 	IMPORT_FUNC(PyType_Ready);

@@ -2,9 +2,9 @@
 
 #include <util/threading.h>
 
-DeckLinkInput::DeckLinkInput(obs_source_t *source, DeckLinkDeviceDiscovery *discovery_)
-		: DecklinkBase(discovery_),
-		  source(source)
+DeckLinkInput::DeckLinkInput(obs_source_t *source,
+			     DeckLinkDeviceDiscovery *discovery_)
+	: DecklinkBase(discovery_), source(source)
 {
 	discovery->AddCallback(DeckLinkInput::DevicesChanged, this);
 }
@@ -15,9 +15,10 @@ DeckLinkInput::~DeckLinkInput(void)
 	Deactivate();
 }
 
-void DeckLinkInput::DevicesChanged(void *param, DeckLinkDevice *device, bool added)
+void DeckLinkInput::DevicesChanged(void *param, DeckLinkDevice *device,
+				   bool added)
 {
-	DeckLinkInput *decklink = reinterpret_cast<DeckLinkInput*>(param);
+	DeckLinkInput *decklink = reinterpret_cast<DeckLinkInput *>(param);
 	std::lock_guard<std::recursive_mutex> lock(decklink->deviceMutex);
 
 	obs_source_update_properties(decklink->source);
@@ -31,15 +32,18 @@ void DeckLinkInput::DevicesChanged(void *param, DeckLinkDevice *device, bool add
 
 		settings = obs_source_get_settings(decklink->source);
 		hash = obs_data_get_string(settings, "device_hash");
-		videoConnection = (BMDVideoConnection) obs_data_get_int(settings, "video_connection");
-		audioConnection = (BMDAudioConnection) obs_data_get_int(settings, "audio_connection");
+		videoConnection = (BMDVideoConnection)obs_data_get_int(
+			settings, "video_connection");
+		audioConnection = (BMDAudioConnection)obs_data_get_int(
+			settings, "audio_connection");
 		mode = obs_data_get_int(settings, "mode_id");
 		obs_data_release(settings);
 
 		if (device->GetHash().compare(hash) == 0) {
 			if (!decklink->activateRefs)
 				return;
-			if (decklink->Activate(device, mode, videoConnection, audioConnection))
+			if (decklink->Activate(device, mode, videoConnection,
+					       audioConnection))
 				os_atomic_dec_long(&decklink->activateRefs);
 		}
 
@@ -52,8 +56,8 @@ void DeckLinkInput::DevicesChanged(void *param, DeckLinkDevice *device, bool add
 }
 
 bool DeckLinkInput::Activate(DeckLinkDevice *device, long long modeId,
-		BMDVideoConnection bmdVideoConnection,
-		BMDAudioConnection bmdAudioConnection)
+			     BMDVideoConnection bmdVideoConnection,
+			     BMDAudioConnection bmdAudioConnection)
 {
 	std::lock_guard<std::recursive_mutex> lock(deviceMutex);
 	DeckLinkDevice *curDevice = GetDevice();
@@ -85,7 +89,8 @@ bool DeckLinkInput::Activate(DeckLinkDevice *device, long long modeId,
 		return false;
 
 	if (GetDevice() == nullptr) {
-		LOG(LOG_ERROR, "Tried to activate an input with nullptr device.");
+		LOG(LOG_ERROR,
+		    "Tried to activate an input with nullptr device.");
 		return false;
 	}
 
@@ -95,7 +100,8 @@ bool DeckLinkInput::Activate(DeckLinkDevice *device, long long modeId,
 		return false;
 	}
 
-	if (!instance->StartCapture(mode, bmdVideoConnection, bmdAudioConnection)) {
+	if (!instance->StartCapture(mode, bmdVideoConnection,
+				    bmdAudioConnection)) {
 		instance = nullptr;
 		return false;
 	}
@@ -133,10 +139,9 @@ void DeckLinkInput::SaveSettings()
 
 	obs_data_t *settings = obs_source_get_settings(source);
 
-	obs_data_set_string(settings, "device_hash",
-			device->GetHash().c_str());
+	obs_data_set_string(settings, "device_hash", device->GetHash().c_str());
 	obs_data_set_string(settings, "device_name",
-			device->GetDisplayName().c_str());
+			    device->GetDisplayName().c_str());
 	obs_data_set_int(settings, "mode_id", instance->GetActiveModeId());
 	obs_data_set_string(settings, "mode_name", mode->GetName().c_str());
 

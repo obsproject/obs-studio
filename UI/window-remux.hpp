@@ -31,8 +31,7 @@
 class RemuxQueueModel;
 class RemuxWorker;
 
-enum RemuxEntryState
-{
+enum RemuxEntryState {
 	Empty,
 	Ready,
 	Pending,
@@ -62,7 +61,7 @@ class OBSRemux : public QDialog {
 
 public:
 	explicit OBSRemux(const char *recPath, QWidget *parent = nullptr,
-			bool autoRemux = false);
+			  bool autoRemux = false);
 	virtual ~OBSRemux() override;
 
 	using job_t = std::shared_ptr<struct media_remux_job>;
@@ -70,8 +69,8 @@ public:
 	void AutoRemux(QString inFile, QString outFile);
 
 protected:
-	void dropEvent(QDropEvent *ev);
-	void dragEnterEvent(QDragEnterEvent *ev);
+	virtual void dropEvent(QDropEvent *ev) override;
+	virtual void dragEnterEvent(QDragEnterEvent *ev) override;
 
 	void remuxNextEntry();
 
@@ -97,17 +96,17 @@ class RemuxQueueModel : public QAbstractTableModel {
 
 public:
 	RemuxQueueModel(QObject *parent = 0)
-		: QAbstractTableModel(parent)
-		, isProcessing(false) {}
+		: QAbstractTableModel(parent), isProcessing(false)
+	{
+	}
 
 	int rowCount(const QModelIndex &parent = QModelIndex()) const;
 	int columnCount(const QModelIndex &parent = QModelIndex()) const;
 	QVariant data(const QModelIndex &index, int role) const;
 	QVariant headerData(int section, Qt::Orientation orientation,
-			int role = Qt::DisplayRole) const;
+			    int role = Qt::DisplayRole) const;
 	Qt::ItemFlags flags(const QModelIndex &index) const;
-	bool setData(const QModelIndex &index, const QVariant &value,
-			int role);
+	bool setData(const QModelIndex &index, const QVariant &value, int role);
 
 	QFileInfoList checkForOverwrites() const;
 	bool checkForErrors() const;
@@ -122,8 +121,7 @@ public:
 	bool autoRemux = false;
 
 private:
-	struct RemuxQueueEntry
-	{
+	struct RemuxQueueEntry {
 		RemuxEntryState state;
 
 		QString sourcePath;
@@ -148,9 +146,8 @@ class RemuxWorker : public QObject {
 	float lastProgress;
 	void UpdateProgress(float percent);
 
-	explicit RemuxWorker()
-		: isWorking(false) { }
-	virtual ~RemuxWorker() {};
+	explicit RemuxWorker() : isWorking(false) {}
+	virtual ~RemuxWorker(){};
 
 private slots:
 	void remux(const QString &source, const QString &target);
@@ -169,17 +166,16 @@ public:
 	RemuxEntryPathItemDelegate(bool isOutput, const QString &defaultPath);
 
 	virtual QWidget *createEditor(QWidget *parent,
-		const QStyleOptionViewItem & /* option */,
-		const QModelIndex &index) const override;
+				      const QStyleOptionViewItem & /* option */,
+				      const QModelIndex &index) const override;
 
-	virtual void setEditorData(QWidget *editor, const QModelIndex &index)
-		const override;
-	virtual void setModelData(QWidget *editor,
-		QAbstractItemModel *model,
-		const QModelIndex &index) const override;
+	virtual void setEditorData(QWidget *editor,
+				   const QModelIndex &index) const override;
+	virtual void setModelData(QWidget *editor, QAbstractItemModel *model,
+				  const QModelIndex &index) const override;
 	virtual void paint(QPainter *painter,
-		const QStyleOptionViewItem &option,
-		const QModelIndex &index) const override;
+			   const QStyleOptionViewItem &option,
+			   const QModelIndex &index) const override;
 
 private:
 	bool isOutput;

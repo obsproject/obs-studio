@@ -101,19 +101,18 @@ void *os_dlopen(const char *path)
 		char *message = NULL;
 
 		FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM |
-		               FORMAT_MESSAGE_IGNORE_INSERTS |
-		               FORMAT_MESSAGE_ALLOCATE_BUFFER,
-		               NULL, error,
-		               MAKELANGID(LANG_ENGLISH, SUBLANG_ENGLISH_US),
-		               (LPSTR)&message, 0, NULL);
+				       FORMAT_MESSAGE_IGNORE_INSERTS |
+				       FORMAT_MESSAGE_ALLOCATE_BUFFER,
+			       NULL, error,
+			       MAKELANGID(LANG_ENGLISH, SUBLANG_ENGLISH_US),
+			       (LPSTR)&message, 0, NULL);
 
-		blog(LOG_INFO, "LoadLibrary failed for '%s': %s (%lu)",
-				path, message, error);
+		blog(LOG_INFO, "LoadLibrary failed for '%s': %s (%lu)", path,
+		     message, error);
 
 		if (message)
 			LocalFree(message);
 	}
-
 
 	return h_library;
 }
@@ -122,7 +121,7 @@ void *os_dlsym(void *module, const char *func)
 {
 	void *handle;
 
-	handle = (void*)GetProcAddress(module, func);
+	handle = (void *)GetProcAddress(module, func);
 
 	return handle;
 }
@@ -133,7 +132,7 @@ void os_dlclose(void *module)
 }
 
 union time_data {
-	FILETIME           ft;
+	FILETIME ft;
 	unsigned long long val;
 };
 
@@ -145,8 +144,8 @@ struct os_cpu_usage_info {
 os_cpu_usage_info_t *os_cpu_usage_info_start(void)
 {
 	struct os_cpu_usage_info *info = bzalloc(sizeof(*info));
-	SYSTEM_INFO           si;
-	FILETIME              dummy;
+	SYSTEM_INFO si;
+	FILETIME dummy;
 
 	GetSystemInfo(&si);
 	GetSystemTimeAsFileTime(&info->last_time.ft);
@@ -160,23 +159,23 @@ os_cpu_usage_info_t *os_cpu_usage_info_start(void)
 double os_cpu_usage_info_query(os_cpu_usage_info_t *info)
 {
 	union time_data cur_time, cur_sys_time, cur_user_time;
-	FILETIME        dummy;
-	double          percent;
+	FILETIME dummy;
+	double percent;
 
 	if (!info)
 		return 0.0;
 
 	GetSystemTimeAsFileTime(&cur_time.ft);
-	GetProcessTimes(GetCurrentProcess(), &dummy, &dummy,
-			&cur_sys_time.ft, &cur_user_time.ft);
+	GetProcessTimes(GetCurrentProcess(), &dummy, &dummy, &cur_sys_time.ft,
+			&cur_user_time.ft);
 
 	percent = (double)(cur_sys_time.val - info->last_sys_time.val +
-		(cur_user_time.val - info->last_user_time.val));
+			   (cur_user_time.val - info->last_user_time.val));
 	percent /= (double)(cur_time.val - info->last_time.val);
 	percent /= (double)info->core_count;
 
-	info->last_time.val      = cur_time.val;
-	info->last_sys_time.val  = cur_sys_time.val;
+	info->last_time.val = cur_time.val;
+	info->last_sys_time.val = cur_sys_time.val;
 	info->last_user_time.val = cur_user_time.val;
 
 	return percent * 100.0;
@@ -196,9 +195,9 @@ bool os_sleepto_ns(uint64_t time_target)
 	if (t >= time_target)
 		return false;
 
-	milliseconds = (uint32_t)((time_target - t)/1000000);
+	milliseconds = (uint32_t)((time_target - t) / 1000000);
 	if (milliseconds > 1)
-		Sleep(milliseconds-1);
+		Sleep(milliseconds - 1);
 
 	for (;;) {
 		t = os_gettime_ns();
@@ -237,12 +236,11 @@ uint64_t os_gettime_ns(void)
 
 /* returns [folder]\[name] on windows */
 static int os_get_path_internal(char *dst, size_t size, const char *name,
-		int folder)
+				int folder)
 {
 	wchar_t path_utf16[MAX_PATH];
 
-	SHGetFolderPathW(NULL, folder, NULL, SHGFP_TYPE_CURRENT,
-			path_utf16);
+	SHGetFolderPathW(NULL, folder, NULL, SHGFP_TYPE_CURRENT, path_utf16);
 
 	if (os_wcs_to_utf8(path_utf16, 0, dst, size) != 0) {
 		if (!name || !*name) {
@@ -265,8 +263,7 @@ static char *os_get_path_ptr_internal(const char *name, int folder)
 	wchar_t path_utf16[MAX_PATH];
 	struct dstr path;
 
-	SHGetFolderPathW(NULL, folder, NULL, SHGFP_TYPE_CURRENT,
-			path_utf16);
+	SHGetFolderPathW(NULL, folder, NULL, SHGFP_TYPE_CURRENT, path_utf16);
 
 	os_wcs_to_utf8_ptr(path_utf16, 0, &ptr);
 	dstr_init_move_array(&path, ptr);
@@ -369,19 +366,19 @@ char *os_get_abs_path_ptr(const char *path)
 }
 
 struct os_dir {
-	HANDLE           handle;
-	WIN32_FIND_DATA  wfd;
-	bool             first;
+	HANDLE handle;
+	WIN32_FIND_DATA wfd;
+	bool first;
 	struct os_dirent out;
 };
 
 os_dir_t *os_opendir(const char *path)
 {
-	struct dstr     path_str = {0};
-	struct os_dir   *dir     = NULL;
+	struct dstr path_str = {0};
+	struct os_dir *dir = NULL;
 	WIN32_FIND_DATA wfd;
-	HANDLE          handle;
-	wchar_t         *w_path;
+	HANDLE handle;
+	wchar_t *w_path;
 
 	dstr_copy(&path_str, path);
 	dstr_cat(&path_str, "/*.*");
@@ -389,10 +386,10 @@ os_dir_t *os_opendir(const char *path)
 	if (os_utf8_to_wcs_ptr(path_str.array, path_str.len, &w_path) > 0) {
 		handle = FindFirstFileW(w_path, &wfd);
 		if (handle != INVALID_HANDLE_VALUE) {
-			dir         = bzalloc(sizeof(struct os_dir));
+			dir = bzalloc(sizeof(struct os_dir));
 			dir->handle = handle;
-			dir->first  = true;
-			dir->wfd    = wfd;
+			dir->first = true;
+			dir->wfd = wfd;
 		}
 
 		bfree(w_path);
@@ -421,7 +418,7 @@ struct os_dirent *os_readdir(os_dir_t *dir)
 	}
 
 	os_wcs_to_utf8(dir->wfd.cFileName, 0, dir->out.d_name,
-			sizeof(dir->out.d_name));
+		       sizeof(dir->out.d_name));
 
 	dir->out.directory = is_dir(&dir->wfd);
 
@@ -438,15 +435,15 @@ void os_closedir(os_dir_t *dir)
 
 int64_t os_get_free_space(const char *path)
 {
-	ULARGE_INTEGER  remainingSpace;
-	char            abs_path[512];
-	wchar_t         w_abs_path[512];
+	ULARGE_INTEGER remainingSpace;
+	char abs_path[512];
+	wchar_t w_abs_path[512];
 
 	if (os_get_abs_path(path, abs_path, 512) > 0) {
 		if (os_utf8_to_wcs(abs_path, 0, w_abs_path, 512) > 0) {
-			BOOL success = GetDiskFreeSpaceExW(w_abs_path,
-					(PULARGE_INTEGER)&remainingSpace,
-					NULL, NULL);
+			BOOL success = GetDiskFreeSpaceExW(
+				w_abs_path, (PULARGE_INTEGER)&remainingSpace,
+				NULL, NULL);
 			if (success)
 				return (int64_t)remainingSpace.QuadPart;
 		}
@@ -456,7 +453,7 @@ int64_t os_get_free_space(const char *path)
 }
 
 static void make_globent(struct os_globent *ent, WIN32_FIND_DATA *wfd,
-		const char *pattern)
+			 const char *pattern)
 {
 	struct dstr name = {0};
 	struct dstr path = {0};
@@ -480,10 +477,10 @@ static void make_globent(struct os_globent *ent, WIN32_FIND_DATA *wfd,
 int os_glob(const char *pattern, int flags, os_glob_t **pglob)
 {
 	DARRAY(struct os_globent) files;
-	HANDLE                    handle;
-	WIN32_FIND_DATA           wfd;
-	int                       ret = -1;
-	wchar_t                   *w_path;
+	HANDLE handle;
+	WIN32_FIND_DATA wfd;
+	int ret = -1;
+	wchar_t *w_path;
 
 	da_init(files);
 
@@ -567,8 +564,8 @@ int os_mkdir(const char *path)
 	bfree(path_utf16);
 
 	if (!success)
-		return (GetLastError() == ERROR_ALREADY_EXISTS) ?
-			MKDIR_EXISTS : MKDIR_ERROR;
+		return (GetLastError() == ERROR_ALREADY_EXISTS) ? MKDIR_EXISTS
+								: MKDIR_ERROR;
 
 	return MKDIR_SUCCESS;
 }
@@ -587,7 +584,9 @@ int os_rename(const char *old_path, const char *new_path)
 	}
 
 	code = MoveFileExW(old_path_utf16, new_path_utf16,
-			MOVEFILE_REPLACE_EXISTING) ? 0 : -1;
+			   MOVEFILE_REPLACE_EXISTING)
+		       ? 0
+		       : -1;
 
 error:
 	bfree(old_path_utf16);
@@ -615,7 +614,8 @@ int os_safe_replace(const char *target, const char *from, const char *backup)
 		code = 0;
 	} else if (GetLastError() == ERROR_FILE_NOT_FOUND) {
 		code = MoveFileExW(wfrom, wtarget, MOVEFILE_REPLACE_EXISTING)
-			? 0 : -1;
+			       ? 0
+			       : -1;
 	}
 
 fail:
@@ -726,19 +726,12 @@ int os_chdir(const char *path)
 	return ret;
 }
 
-typedef DWORD (WINAPI *get_file_version_info_size_w_t)(
-		LPCWSTR module,
-		LPDWORD unused);
-typedef BOOL (WINAPI *get_file_version_info_w_t)(
-		LPCWSTR module,
-		DWORD unused,
-		DWORD len,
-		LPVOID data);
-typedef BOOL (WINAPI *ver_query_value_w_t)(
-		LPVOID data,
-		LPCWSTR subblock,
-		LPVOID *buf,
-		PUINT sizeout);
+typedef DWORD(WINAPI *get_file_version_info_size_w_t)(LPCWSTR module,
+						      LPDWORD unused);
+typedef BOOL(WINAPI *get_file_version_info_w_t)(LPCWSTR module, DWORD unused,
+						DWORD len, LPVOID data);
+typedef BOOL(WINAPI *ver_query_value_w_t)(LPVOID data, LPCWSTR subblock,
+					  LPVOID *buf, PUINT sizeout);
 
 static get_file_version_info_size_w_t get_file_version_info_size = NULL;
 static get_file_version_info_w_t get_file_version_info = NULL;
@@ -761,15 +754,15 @@ static bool initialize_version_functions(void)
 		}
 	}
 
-	get_file_version_info_size = (get_file_version_info_size_w_t)
-		GetProcAddress(ver, "GetFileVersionInfoSizeW");
-	get_file_version_info = (get_file_version_info_w_t)
-		GetProcAddress(ver, "GetFileVersionInfoW");
-	ver_query_value = (ver_query_value_w_t)
-		GetProcAddress(ver, "VerQueryValueW");
+	get_file_version_info_size =
+		(get_file_version_info_size_w_t)GetProcAddress(
+			ver, "GetFileVersionInfoSizeW");
+	get_file_version_info = (get_file_version_info_w_t)GetProcAddress(
+		ver, "GetFileVersionInfoW");
+	ver_query_value =
+		(ver_query_value_w_t)GetProcAddress(ver, "VerQueryValueW");
 
-	if (!get_file_version_info_size ||
-	    !get_file_version_info ||
+	if (!get_file_version_info_size || !get_file_version_info ||
 	    !ver_query_value) {
 		blog(LOG_ERROR, "Failed to load windows version "
 				"functions");
@@ -809,9 +802,10 @@ bool get_dll_ver(const wchar_t *lib, struct win_version_info *ver_info)
 		return false;
 	}
 
-	success = ver_query_value(data, L"\\", (LPVOID*)&info, &len);
+	success = ver_query_value(data, L"\\", (LPVOID *)&info, &len);
 	if (!success || !info || !len) {
-		blog(LOG_ERROR, "Failed to get %s version info value", utf8_lib);
+		blog(LOG_ERROR, "Failed to get %s version info value",
+		     utf8_lib);
 		bfree(data);
 		return false;
 	}
@@ -836,7 +830,7 @@ bool is_64_bit_windows(void)
 }
 
 void get_reg_dword(HKEY hkey, LPCWSTR sub_key, LPCWSTR value_name,
-		struct reg_dword *info)
+		   struct reg_dword *info)
 {
 	struct reg_dword reg = {0};
 	HKEY key;
@@ -854,7 +848,7 @@ void get_reg_dword(HKEY hkey, LPCWSTR sub_key, LPCWSTR value_name,
 	reg.size = sizeof(reg.return_value);
 
 	reg.status = RegQueryValueExW(key, value_name, NULL, NULL,
-			(LPBYTE)&reg.return_value, &reg.size);
+				      (LPBYTE)&reg.return_value, &reg.size);
 
 	RegCloseKey(key);
 
@@ -876,22 +870,24 @@ void get_win_ver(struct win_version_info *info)
 		got_version = true;
 
 		if (ver.major == 10) {
-			HKEY    key;
-			DWORD   size, win10_revision;
+			HKEY key;
+			DWORD size, win10_revision;
 			LSTATUS status;
 
-			status = RegOpenKeyW(HKEY_LOCAL_MACHINE,
-					WINVER_REG_KEY, &key);
+			status = RegOpenKeyW(HKEY_LOCAL_MACHINE, WINVER_REG_KEY,
+					     &key);
 			if (status != ERROR_SUCCESS)
 				return;
 
 			size = sizeof(win10_revision);
 
 			status = RegQueryValueExW(key, L"UBR", NULL, NULL,
-					(LPBYTE)&win10_revision, &size);
+						  (LPBYTE)&win10_revision,
+						  &size);
 			if (status == ERROR_SUCCESS)
-				ver.revis = (int)win10_revision > ver.revis ?
-						(int)win10_revision : ver.revis;
+				ver.revis = (int)win10_revision > ver.revis
+						    ? (int)win10_revision
+						    : ver.revis;
 
 			RegCloseKey(key);
 		}
@@ -923,11 +919,9 @@ bool os_inhibit_sleep_set_active(os_inhibit_t *info, bool active)
 		return false;
 
 	if (active) {
-		SetThreadExecutionState(
-				ES_CONTINUOUS |
-				ES_SYSTEM_REQUIRED |
-				ES_AWAYMODE_REQUIRED |
-				ES_DISPLAY_REQUIRED);
+		SetThreadExecutionState(ES_CONTINUOUS | ES_SYSTEM_REQUIRED |
+					ES_AWAYMODE_REQUIRED |
+					ES_DISPLAY_REQUIRED);
 	} else {
 		SetThreadExecutionState(ES_CONTINUOUS);
 	}
@@ -951,13 +945,13 @@ void os_breakpoint(void)
 
 DWORD num_logical_cores(ULONG_PTR mask)
 {
-	DWORD     left_shift    = sizeof(ULONG_PTR) * 8 - 1;
-	DWORD     bit_set_count = 0;
-	ULONG_PTR bit_test      = (ULONG_PTR)1 << left_shift;
+	DWORD left_shift = sizeof(ULONG_PTR) * 8 - 1;
+	DWORD bit_set_count = 0;
+	ULONG_PTR bit_test = (ULONG_PTR)1 << left_shift;
 
 	for (DWORD i = 0; i <= left_shift; ++i) {
 		bit_set_count += ((mask & bit_test) ? 1 : 0);
-		bit_test      /= 2;
+		bit_test /= 2;
 	}
 
 	return bit_set_count;
@@ -1031,7 +1025,8 @@ uint64_t os_get_sys_free_size(void)
 	return msex.ullAvailPhys;
 }
 
-static inline bool os_get_proc_memory_usage_internal(PROCESS_MEMORY_COUNTERS *pmc)
+static inline bool
+os_get_proc_memory_usage_internal(PROCESS_MEMORY_COUNTERS *pmc)
 {
 	if (!GetProcessMemoryInfo(GetCurrentProcess(), pmc, sizeof(*pmc)))
 		return false;
@@ -1045,7 +1040,7 @@ bool os_get_proc_memory_usage(os_proc_memory_usage_t *usage)
 		return false;
 
 	usage->resident_size = pmc.WorkingSetSize;
-	usage->virtual_size  = pmc.PagefileUsage;
+	usage->virtual_size = pmc.PagefileUsage;
 	return true;
 }
 

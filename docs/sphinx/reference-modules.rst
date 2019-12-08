@@ -98,7 +98,7 @@ to communicate with libobs and front-ends.
 Module Externs
 --------------
 
-These functions are externs that are useable throughout the module.
+These functions are externs that are usable throughout the module.
 
 .. function:: const char *obs_module_text(const char *lookup_string)
 

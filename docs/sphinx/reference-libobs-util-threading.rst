@@ -73,7 +73,7 @@ Event Functions
    
                         - 0 - successful
                         - ETIMEDOUT - Timed out
-                        - EINVAL - An unexpected error occured
+                        - EINVAL - An unexpected error occurred
 
 ----------------------
 
@@ -86,7 +86,7 @@ Event Functions
    
                         - 0 - successful
                         - EAGAIN - The event is not signaled
-                        - EINVAL - An unexpected error occured
+                        - EINVAL - An unexpected error occurred
 
 ----------------------
 
@@ -123,7 +123,7 @@ Semaphore Functions
 
 .. function:: void os_sem_destroy(os_sem_t *sem)
 
-   Destroys a sempahore object.
+   Destroys a semaphore object.
 
    :param sem:   Semaphore object
 
@@ -140,7 +140,7 @@ Semaphore Functions
 
 .. function:: int  os_sem_wait(os_sem_t *sem)
 
-   Decrements the semphore or waits until the semaphore has been
+   Decrements the semaphore or waits until the semaphore has been
    incremented.
 
    :param sem:   Semaphore object

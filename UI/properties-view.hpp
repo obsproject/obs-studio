@@ -10,8 +10,7 @@ class OBSPropertiesView;
 class QLabel;
 
 typedef obs_properties_t *(*PropertiesReloadCallback)(void *obj);
-typedef void              (*PropertiesUpdateCallback)(void *obj,
-							obs_data_t *settings);
+typedef void (*PropertiesUpdateCallback)(void *obj, obs_data_t *settings);
 
 /* ------------------------------------------------------------------------- */
 
@@ -22,8 +21,8 @@ class WidgetInfo : public QObject {
 
 private:
 	OBSPropertiesView *view;
-	obs_property_t    *property;
-	QWidget           *widget;
+	obs_property_t *property;
+	QWidget *widget;
 
 	void BoolChanged(const char *setting);
 	void IntChanged(const char *setting);
@@ -41,9 +40,10 @@ private:
 
 public:
 	inline WidgetInfo(OBSPropertiesView *view_, obs_property_t *prop,
-			QWidget *widget_)
+			  QWidget *widget_)
 		: view(view_), property(prop), widget(widget_)
-	{}
+	{
+	}
 
 public slots:
 
@@ -72,37 +72,38 @@ class OBSPropertiesView : public VScrollArea {
 		std::unique_ptr<obs_properties_t, properties_delete_t>;
 
 private:
-	QWidget                                  *widget = nullptr;
-	properties_t                             properties;
-	OBSData                                  settings;
-	void                                     *obj = nullptr;
-	std::string                              type;
-	PropertiesReloadCallback                 reloadCallback;
-	PropertiesUpdateCallback                 callback = nullptr;
-	int                                      minSize;
+	QWidget *widget = nullptr;
+	properties_t properties;
+	OBSData settings;
+	void *obj = nullptr;
+	std::string type;
+	PropertiesReloadCallback reloadCallback;
+	PropertiesUpdateCallback callback = nullptr;
+	int minSize;
 	std::vector<std::unique_ptr<WidgetInfo>> children;
-	std::string                              lastFocused;
-	QWidget                                  *lastWidget = nullptr;
-	bool                                     deferUpdate;
+	std::string lastFocused;
+	QWidget *lastWidget = nullptr;
+	bool deferUpdate;
 
 	QWidget *NewWidget(obs_property_t *prop, QWidget *widget,
-			const char *signal);
+			   const char *signal);
 
 	QWidget *AddCheckbox(obs_property_t *prop);
 	QWidget *AddText(obs_property_t *prop, QFormLayout *layout,
-			QLabel *&label);
+			 QLabel *&label);
 	void AddPath(obs_property_t *prop, QFormLayout *layout, QLabel **label);
 	void AddInt(obs_property_t *prop, QFormLayout *layout, QLabel **label);
 	void AddFloat(obs_property_t *prop, QFormLayout *layout,
-			QLabel**label);
+		      QLabel **label);
 	QWidget *AddList(obs_property_t *prop, bool &warning);
 	void AddEditableList(obs_property_t *prop, QFormLayout *layout,
-			QLabel *&label);
+			     QLabel *&label);
 	QWidget *AddButton(obs_property_t *prop);
-	void AddColor(obs_property_t *prop, QFormLayout *layout, QLabel *&label);
+	void AddColor(obs_property_t *prop, QFormLayout *layout,
+		      QLabel *&label);
 	void AddFont(obs_property_t *prop, QFormLayout *layout, QLabel *&label);
 	void AddFrameRate(obs_property_t *prop, bool &warning,
-			QFormLayout *layout, QLabel *&label);
+			  QFormLayout *layout, QLabel *&label);
 
 	void AddGroup(obs_property_t *prop, QFormLayout *layout);
 
@@ -125,15 +126,14 @@ signals:
 
 public:
 	OBSPropertiesView(OBSData settings, void *obj,
-			PropertiesReloadCallback reloadCallback,
-			PropertiesUpdateCallback callback,
-			int minSize = 0);
+			  PropertiesReloadCallback reloadCallback,
+			  PropertiesUpdateCallback callback, int minSize = 0);
 	OBSPropertiesView(OBSData settings, const char *type,
-			PropertiesReloadCallback reloadCallback,
-			int minSize = 0);
+			  PropertiesReloadCallback reloadCallback,
+			  int minSize = 0);
 
-	inline obs_data_t *GetSettings() const {return settings;}
+	inline obs_data_t *GetSettings() const { return settings; }
 
-	inline void UpdateSettings() {callback(obj, settings);}
-	inline bool DeferUpdate() const {return deferUpdate;}
+	inline void UpdateSettings() { callback(obj, settings); }
+	inline bool DeferUpdate() const { return deferUpdate; }
 };

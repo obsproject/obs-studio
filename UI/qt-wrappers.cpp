@@ -24,6 +24,7 @@
 #include <QLayout>
 #include <QMessageBox>
 #include <QDataStream>
+#include <QKeyEvent>
 
 #if !defined(_WIN32) && !defined(__APPLE__)
 #include <QX11Info>
@@ -45,20 +46,17 @@ void OBSErrorBox(QWidget *parent, const char *msg, ...)
 	va_end(args);
 }
 
-QMessageBox::StandardButton OBSMessageBox::question(
-		QWidget *parent,
-		const QString &title,
-		const QString &text,
-		QMessageBox::StandardButtons buttons,
-		QMessageBox::StandardButton defaultButton)
+QMessageBox::StandardButton
+OBSMessageBox::question(QWidget *parent, const QString &title,
+			const QString &text,
+			QMessageBox::StandardButtons buttons,
+			QMessageBox::StandardButton defaultButton)
 {
-	QMessageBox mb(QMessageBox::Question,
-			title, text, buttons,
-			parent);
+	QMessageBox mb(QMessageBox::Question, title, text, buttons, parent);
 	mb.setDefaultButton(defaultButton);
-	if (buttons & QMessageBox::Ok) \
+	if (buttons & QMessageBox::Ok)
 		mb.setButtonText(QMessageBox::Ok, QTStr("OK"));
-#define translate_button(x) \
+#define translate_button(x)           \
 	if (buttons & QMessageBox::x) \
 		mb.setButtonText(QMessageBox::x, QTStr(#x));
 	translate_button(Open);
@@ -78,41 +76,31 @@ QMessageBox::StandardButton OBSMessageBox::question(
 	return (QMessageBox::StandardButton)mb.exec();
 }
 
-void OBSMessageBox::information(
-		QWidget *parent,
-		const QString &title,
-		const QString &text)
+void OBSMessageBox::information(QWidget *parent, const QString &title,
+				const QString &text)
 {
-	QMessageBox mb(QMessageBox::Information,
-			title, text, QMessageBox::Ok,
-			parent);
+	QMessageBox mb(QMessageBox::Information, title, text, QMessageBox::Ok,
+		       parent);
 	mb.setButtonText(QMessageBox::Ok, QTStr("OK"));
 	mb.exec();
 }
 
-void OBSMessageBox::warning(
-	QWidget *parent,
-	const QString &title,
-	const QString &text,
-	bool enableRichText)
+void OBSMessageBox::warning(QWidget *parent, const QString &title,
+			    const QString &text, bool enableRichText)
 {
-	QMessageBox mb(QMessageBox::Warning,
-		title, text, QMessageBox::Ok,
-		parent);
+	QMessageBox mb(QMessageBox::Warning, title, text, QMessageBox::Ok,
+		       parent);
 	if (enableRichText)
 		mb.setTextFormat(Qt::RichText);
 	mb.setButtonText(QMessageBox::Ok, QTStr("OK"));
 	mb.exec();
 }
 
-void OBSMessageBox::critical(
-	QWidget *parent,
-	const QString &title,
-	const QString &text)
+void OBSMessageBox::critical(QWidget *parent, const QString &title,
+			     const QString &text)
 {
-	QMessageBox mb(QMessageBox::Critical,
-		title, text, QMessageBox::Ok,
-		parent);
+	QMessageBox mb(QMessageBox::Critical, title, text, QMessageBox::Ok,
+		       parent);
 	mb.setButtonText(QMessageBox::Ok, QTStr("OK"));
 	mb.exec();
 }
@@ -156,13 +144,13 @@ uint32_t TranslateQtKeyboardEventModifiers(Qt::KeyboardModifiers mods)
 }
 
 QDataStream &operator<<(QDataStream &out,
-		const std::vector<std::shared_ptr<OBSSignal>> &)
+			const std::vector<std::shared_ptr<OBSSignal>> &)
 {
 	return out;
 }
 
 QDataStream &operator>>(QDataStream &in,
-		std::vector<std::shared_ptr<OBSSignal>> &)
+			std::vector<std::shared_ptr<OBSSignal>> &)
 {
 	return in;
 }
@@ -186,7 +174,7 @@ QDataStream &operator>>(QDataStream &in, OBSScene &scene)
 
 QDataStream &operator<<(QDataStream &out, const OBSSceneItem &si)
 {
-	obs_scene_t  *scene  = obs_sceneitem_get_scene(si);
+	obs_scene_t *scene = obs_sceneitem_get_scene(si);
 	obs_source_t *source = obs_sceneitem_get_source(si);
 	return out << QString(obs_source_get_name(obs_scene_get_source(scene)))
 		   << QString(obs_source_get_name(source));
@@ -234,15 +222,12 @@ void DeleteLayout(QLayout *layout)
 
 class QuickThread : public QThread {
 public:
-	explicit inline QuickThread(std::function<void()> func_)
-		: func(func_)
-	{}
+	explicit inline QuickThread(std::function<void()> func_) : func(func_)
+	{
+	}
 
 private:
-	virtual void run() override
-	{
-		func();
-	}
+	virtual void run() override { func(); }
 
 	std::function<void()> func;
 };
@@ -258,11 +243,10 @@ void ExecuteFuncSafeBlock(std::function<void()> func)
 {
 	QEventLoop eventLoop;
 
-	auto wait = [&] ()
-	{
+	auto wait = [&]() {
 		func();
 		QMetaObject::invokeMethod(&eventLoop, "quit",
-				Qt::QueuedConnection);
+					  Qt::QueuedConnection);
 	};
 
 	os_atomic_inc_long(&insideEventLoop);
@@ -273,10 +257,8 @@ void ExecuteFuncSafeBlock(std::function<void()> func)
 	os_atomic_dec_long(&insideEventLoop);
 }
 
-void ExecuteFuncSafeBlockMsgBox(
-		std::function<void()> func,
-		const QString &title,
-		const QString &text)
+void ExecuteFuncSafeBlockMsgBox(std::function<void()> func,
+				const QString &title, const QString &text)
 {
 	QMessageBox dlg;
 	dlg.setWindowFlags(dlg.windowFlags() & ~Qt::WindowCloseButtonHint);
@@ -284,8 +266,7 @@ void ExecuteFuncSafeBlockMsgBox(
 	dlg.setText(text);
 	dlg.setStandardButtons(0);
 
-	auto wait = [&] ()
-	{
+	auto wait = [&]() {
 		func();
 		QMetaObject::invokeMethod(&dlg, "accept", Qt::QueuedConnection);
 	};
@@ -305,13 +286,40 @@ void EnableThreadedMessageBoxes(bool enable)
 	enable_message_boxes = enable;
 }
 
-void ExecThreadedWithoutBlocking(
-		std::function<void()> func,
-		const QString &title,
-		const QString &text)
+void ExecThreadedWithoutBlocking(std::function<void()> func,
+				 const QString &title, const QString &text)
 {
 	if (!enable_message_boxes)
 		ExecuteFuncSafeBlock(func);
 	else
 		ExecuteFuncSafeBlockMsgBox(func, title, text);
+}
+
+bool LineEditCanceled(QEvent *event)
+{
+	if (event->type() == QEvent::KeyPress) {
+		QKeyEvent *keyEvent = reinterpret_cast<QKeyEvent *>(event);
+		return keyEvent->key() == Qt::Key_Escape;
+	}
+
+	return false;
+}
+
+bool LineEditChanged(QEvent *event)
+{
+	if (event->type() == QEvent::KeyPress) {
+		QKeyEvent *keyEvent = reinterpret_cast<QKeyEvent *>(event);
+
+		switch (keyEvent->key()) {
+		case Qt::Key_Tab:
+		case Qt::Key_Backtab:
+		case Qt::Key_Enter:
+		case Qt::Key_Return:
+			return true;
+		}
+	} else if (event->type() == QEvent::FocusOut) {
+		return true;
+	}
+
+	return false;
 }

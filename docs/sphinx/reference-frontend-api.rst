@@ -124,6 +124,18 @@ Structures/Enumerations
      the program is either about to load a new scene collection, or the
      program is about to exit.
 
+   - **OBS_FRONTEND_FINISHED_LOADING**
+
+     Triggered when the program has finished loading.
+
+   - **OBS_FRONTEND_EVENT_RECORDING_PAUSED**
+
+     Triggered when the recording has been paused.
+
+   - **OBS_FRONTEND_EVENT_RECORDING_UNPAUSED**
+
+     Triggered when the recording has been unpaused.
+
 .. type:: struct obs_frontend_source_list
 
    - DARRAY(obs_source_t*) **sources**
@@ -399,6 +411,18 @@ Functions
 .. function:: bool obs_frontend_recording_active(void)
 
    :return: *true* if recording active, *false* otherwise.
+
+---------------------------------------
+
+.. function:: void obs_frontend_recording_pause(bool pause)
+
+   :pause: *true* to pause recording, *false* to unpause.
+
+---------------------------------------
+
+.. function:: bool obs_frontend_recording_paused(void)
+
+   :return: *true* if recording paused, *false* otherwise.
 
 ---------------------------------------
 
