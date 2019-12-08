@@ -19,7 +19,6 @@
 #define MIN_ESTIMATE_DURATION_MS 1000
 #define MAX_ESTIMATE_DURATION_MS 2000
 
-
 static const char *ramp_stream_getname(void *unused)
 {
 	UNUSED_PARAMETER(unused);
@@ -1075,7 +1074,7 @@ static int ramp_stream_connect_time(void *data)
 struct obs_output_info ramp_output_info = {
 	.id = "ramp_output",
 	.flags = OBS_OUTPUT_AV | OBS_OUTPUT_ENCODED | OBS_OUTPUT_SERVICE,
-//		 | OBS_OUTPUT_MULTI_TRACK,
+	//		 | OBS_OUTPUT_MULTI_TRACK,
 	.encoded_video_codecs = "h264",
 	.encoded_audio_codecs = "aac",
 	.get_name = ramp_stream_getname,
