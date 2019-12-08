@@ -806,6 +806,119 @@
             }
         },
         {
+            "name": "Restream.io - RAMP",
+            "alt_names": [
+                "Restream.io"
+            ],
+            "common": true,
+            "servers": [
+                {
+                    "name": "Autodetect",
+                    "url": "live.restream.io:10000"
+                },
+                {
+                    "name": "EU-West (London, GB)",
+                    "url": "london.restream.io:10000"
+                },
+                {
+                    "name": "EU-West (Amsterdam, NL)",
+                    "url": "amsterdam.restream.io:10000"
+                },
+                {
+                    "name": "EU-West (Luxembourg)",
+                    "url": "luxembourg.restream.io:10000"
+                },
+                {
+                    "name": "EU-West (Paris, FR)",
+                    "url": "paris.restream.io:10000"
+                },
+                {
+                    "name": "EU-West (Milan, IT)",
+                    "url": "milan.restream.io:10000"
+                },
+                {
+                    "name": "EU-Central (Frankfurt, DE)",
+                    "url": "frankfurt.restream.io:10000"
+                },
+                {
+                    "name": "EU-East (Falkenstein, DE)",
+                    "url": "falkenstein.restream.io:10000"
+                },
+                {
+                    "name": "EU-South (Madrid, Spain)",
+                    "url": "madrid.restream.io:10000"
+                },
+                {
+                    "name": "Russia (Moscow)",
+                    "url": "moscow.restream.io:10000"
+                },
+                {
+                    "name": "Turkey (Istanbul)",
+                    "url": "istanbul.restream.io:10000"
+                },
+                {
+                    "name": "Israel (Tel Aviv)",
+                    "url": "telaviv.restream.io:10000"
+                },
+                {
+                    "name": "US-West (Seattle, WA)",
+                    "url": "seattle.restream.io:10000"
+                },
+                {
+                    "name": "US-West (San Jose, CA)",
+                    "url": "sanjose.restream.io:10000"
+                },
+                {
+                    "name": "US-Central (Dallas, TX)",
+                    "url": "dallas.restream.io:10000"
+                },
+                {
+                    "name": "US-East (Washington, DC)",
+                    "url": "washington.restream.io:10000"
+                },
+                {
+                    "name": "US-East (Miami, FL)",
+                    "url": "miami.restream.io:10000"
+                },
+                {
+                    "name": "US-East (Chicago, IL)",
+                    "url": "chicago.restream.io:10000"
+                },
+                {
+                    "name": "NA-East (Toronto, Canada)",
+                    "url": "toronto.restream.io:10000"
+                },
+                {
+                    "name": "SA (Saint Paul, Brazil)",
+                    "url": "saopaulo.restream.io:10000"
+                },
+                {
+                    "name": "India (Bangalore)",
+                    "url": "bangalore.restream.io:10000"
+                },
+                {
+                    "name": "Asia (Singapore)",
+                    "url": "singapore.restream.io:10000"
+                },
+                {
+                    "name": "Asia (Seoul, South Korea)",
+                    "url": "seoul.restream.io:10000"
+                },
+                {
+                    "name": "Asia (Tokyo, Japan)",
+                    "url": "tokyo.restream.io:10000"
+                },
+                {
+                    "name": "Australia (Sydney)",
+                    "url": "sydney.restream.io:10000"
+                }
+            ],
+            "recommended": {
+                "keyint": 2,
+                "output": "ramp_output"
+            }
+        },
+        {
           "name": "GameTips.TV",
           "servers": [
               {

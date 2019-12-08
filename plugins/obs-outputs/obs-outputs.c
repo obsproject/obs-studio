@@ -11,7 +11,7 @@ OBS_DECLARE_MODULE()
 OBS_MODULE_USE_DEFAULT_LOCALE("obs-outputs", "en-US")
 MODULE_EXPORT const char *obs_module_description(void)
 {
-	return "OBS core RTMP/FLV/null/FTL outputs";
+	return "OBS core RTMP/FLV/null/FTL/RAMP outputs";
 }
 
 extern struct obs_output_info rtmp_output_info;
@@ -19,6 +19,9 @@ extern struct obs_output_info null_output_info;
 extern struct obs_output_info flv_output_info;
 #if COMPILE_FTL
 extern struct obs_output_info ftl_output_info;
+#endif
+#if COMPILE_RAMP
+extern struct obs_output_info ramp_output_info;
 #endif
 
 bool obs_module_load(void)
@@ -33,6 +36,9 @@ bool obs_module_load(void)
 	obs_register_output(&flv_output_info);
 #if COMPILE_FTL
 	obs_register_output(&ftl_output_info);
+#endif
+#if COMPILE_RAMP
+	obs_register_output(&ramp_output_info);
 #endif
 	return true;
 }

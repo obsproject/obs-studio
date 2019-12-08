@@ -79,6 +79,35 @@ else()
 	set(COMPILE_FTL FALSE)
 endif()
 
+if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/ramp-sdk/ramp-sdk.h")
+	message(STATUS "Found ramp-sdk: ramp outputs enabled")
+
+	set(ramp_SOURCES
+		ramp-stream.c
+		ramp-sdk/ramp-sdk.c
+		ramp-sdk/librtmp/ramp-rtmp-rtmp.c
+		ramp-sdk/librtmp/ramp-rtmp-amf.c
+		ramp-sdk/librtmp/ramp-rtmp-cencode.c
+		ramp-sdk/librtmp/ramp-rtmp-log.c
+		ramp-sdk/librtmp/ramp-rtmp-parseurl.c)
+	set(ramp_HEADERS
+		ramp-stream.h
+		ramp-sdk/ramp-sdk.h
+		ramp-sdk/librtmp/ramp-rtmp-rtmp.h
+		ramp-sdk/librtmp/ramp-rtmp-amf.h
+		ramp-sdk/librtmp/ramp-rtmp-bytes.h
+		ramp-sdk/librtmp/ramp-rtmp-cencode.h
+		ramp-sdk/librtmp/ramp-rtmp-dh.h
+		ramp-sdk/librtmp/ramp-rtmp-dhgroups.h
+		ramp-sdk/librtmp/ramp-rtmp-handshake.h
+		ramp-sdk/librtmp/ramp-rtmp-log.h
+		ramp-sdk/librtmp/ramp-rtmp-rtmp_sys.h)
+
+	set(COMPILE_RAMP TRUE)
+else()
+	set(COMPILE_RAMP FALSE)
+endif()
+
 configure_file(
 	"${CMAKE_CURRENT_SOURCE_DIR}/obs-outputs-config.h.in"
 	"${CMAKE_BINARY_DIR}/plugins/obs-outputs/config/obs-outputs-config.h")
@@ -159,6 +188,8 @@ set(obs-outputs_SOURCES
 add_library(obs-outputs MODULE
 	${ftl_SOURCES}
 	${ftl_HEADERS}
+	${ramp_SOURCES}
+	${ramp_HEADERS}
 	${obs-outputs_SOURCES}
 	${obs-outputs_HEADERS}
 	${obs-outputs_librtmp_SOURCES}

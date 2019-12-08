@@ -13,3 +13,4 @@
 #endif
 
 #define COMPILE_FTL @COMPILE_FTL@
+#define COMPILE_RAMP @COMPILE_RAMP@
