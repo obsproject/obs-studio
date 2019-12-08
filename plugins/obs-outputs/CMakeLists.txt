@@ -87,7 +87,6 @@ if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/ramp-sdk/ramp-sdk.h")
 		ramp-sdk/ramp-sdk.c
 		ramp-sdk/librtmp/ramp-rtmp-rtmp.c
 		ramp-sdk/librtmp/ramp-rtmp-amf.c
-		ramp-sdk/librtmp/ramp-rtmp-cencode.c
 		ramp-sdk/librtmp/ramp-rtmp-log.c
 		ramp-sdk/librtmp/ramp-rtmp-parseurl.c)
 	set(ramp_HEADERS
@@ -96,7 +95,6 @@ if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/ramp-sdk/ramp-sdk.h")
 		ramp-sdk/librtmp/ramp-rtmp-rtmp.h
 		ramp-sdk/librtmp/ramp-rtmp-amf.h
 		ramp-sdk/librtmp/ramp-rtmp-bytes.h
-		ramp-sdk/librtmp/ramp-rtmp-cencode.h
 		ramp-sdk/librtmp/ramp-rtmp-dh.h
 		ramp-sdk/librtmp/ramp-rtmp-dhgroups.h
 		ramp-sdk/librtmp/ramp-rtmp-handshake.h
