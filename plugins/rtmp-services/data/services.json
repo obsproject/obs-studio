@@ -1610,6 +1610,19 @@
                 "bframes": 0,
                 "x264opts": "tune=zerolatency"
             }
+        },
+        {
+            "name": "Konduit.live",
+            "servers": [
+                {
+                    "name": "Default",
+                    "url": "rtmp://rtmp.konduit.live/live"
+                }
+            ],
+            "recommended": {
+                "keyint": 2,
+                "x264opts": "scenecut=0"
+            }
         }
     ]
 }
