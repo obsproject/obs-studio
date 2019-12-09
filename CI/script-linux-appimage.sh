@@ -26,16 +26,6 @@ apt-get -y download libpython3.5-minimal libpython3.5-stdlib
 # hence patching it to load resources relative to cwd = usr/
 sed -i -e 's|../../obs-plugins/64bit|././././lib/obs-plugins|g' appdir/usr/lib/libobs.so.0
 
-# rm appdir/AppRun ; cp ../CI/install/AppDir/AppRun appdir/AppRun ; chmod +x appdir/AppRun # custom AppRun
-
-# Workaround for:
-# ERROR getDeps: did not find library libEGL.so.1
-export LD_LIBRARY_PATH=$(dirname $(find /usr/lib/ -name libEGL.so.1 | head -n 1)):$LD_LIBRARY_PATH
-
-# Workaround for:
-# ERROR getDeps: did not find library libGL.so.1
-export LD_LIBRARY_PATH=$(dirname $(find /usr/lib/ -name libGL.so.1 | head -n 1)):$LD_LIBRARY_PATH
-
 # Workaround for:
 # com.obsproject.Studio.appdata.xml
 # W: com.obsproject.Studio:21: invalid-iso8601-date 
