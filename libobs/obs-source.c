@@ -2268,10 +2268,12 @@ obs_source_t *obs_filter_get_target(const obs_source_t *filter)
 		       : NULL;
 }
 
+#define OBS_SOURCE_AV (OBS_SOURCE_ASYNC_VIDEO | OBS_SOURCE_AUDIO)
+
 static bool filter_compatible(obs_source_t *source, obs_source_t *filter)
 {
-	uint32_t s_caps = source->info.output_flags;
-	uint32_t f_caps = filter->info.output_flags;
+	uint32_t s_caps = source->info.output_flags & OBS_SOURCE_AV;
+	uint32_t f_caps = filter->info.output_flags & OBS_SOURCE_AV;
 
 	if ((f_caps & OBS_SOURCE_AUDIO) != 0 &&
 	    (f_caps & OBS_SOURCE_VIDEO) == 0)
