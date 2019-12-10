@@ -516,6 +516,10 @@ QToolButton:pressed {
 	qproperty-icon: url(./Dark/media-pause.svg);
 }
 
+* [themeID="recordIconSmall"] {
+    qproperty-icon: url(./Dark/record.png);
+}
+
 /***********************/
 /* --- Combo boxes --- */
 /***********************/

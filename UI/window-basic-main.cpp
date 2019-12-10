@@ -7490,11 +7490,17 @@ void OBSBasic::PauseRecording()
 	obs_output_t *output = outputHandler->fileOutput;
 
 	if (obs_output_pause(output, true)) {
+        pause.reset(new QPushButton());
 		pause->setAccessibleName(QTStr("Basic.Main.UnpauseRecording"));
 		pause->setToolTip(QTStr("Basic.Main.UnpauseRecording"));
 		pause->blockSignals(true);
 		pause->setChecked(true);
 		pause->blockSignals(false);
+        pause->setProperty("themeID",
+                   QVariant(QStringLiteral("recordIconSmall")));
+        connect(pause.data(), &QAbstractButton::clicked, this,
+			&OBSBasic::PauseToggled);
+        ui->recordingLayout->addWidget(pause.data());
 
 		if (trayIcon)
 			trayIcon->setIcon(QIcon(":/res/images/obs_paused.png"));
@@ -7517,11 +7523,17 @@ void OBSBasic::UnpauseRecording()
 	obs_output_t *output = outputHandler->fileOutput;
 
 	if (obs_output_pause(output, false)) {
+        pause.reset(new QPushButton());
 		pause->setAccessibleName(QTStr("Basic.Main.PauseRecording"));
 		pause->setToolTip(QTStr("Basic.Main.PauseRecording"));
 		pause->blockSignals(true);
 		pause->setChecked(false);
 		pause->blockSignals(false);
+        pause->setProperty("themeID",
+                   QVariant(QStringLiteral("pauseIconSmall")));
+        connect(pause.data(), &QAbstractButton::clicked, this,
+			&OBSBasic::PauseToggled);
+        ui->recordingLayout->addWidget(pause.data());
 
 		if (trayIcon)
 			trayIcon->setIcon(

@@ -43,6 +43,10 @@
     qproperty-icon: url(:/res/images/media-pause.svg);
 }
 
+* [themeID="recordIconSmall"] {
+    qproperty-icon: url(:/res/images/record.png);
+}
+
 MuteCheckBox {
     outline: none;
 }
