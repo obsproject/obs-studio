@@ -28,6 +28,7 @@
 #include <QScreen>
 #include <QColorDialog>
 #include <QSizePolicy>
+#include <QScrollBar>
 
 #include <util/dstr.h>
 #include <util/util.hpp>
@@ -94,7 +95,6 @@ template<typename OBSRef> struct SignalContainer {
 	OBSRef ref;
 	vector<shared_ptr<OBSSignal>> handlers;
 };
-
 }
 
 extern volatile long insideEventLoop;
@@ -104,6 +104,18 @@ Q_DECLARE_METATYPE(OBSSceneItem);
 Q_DECLARE_METATYPE(OBSSource);
 Q_DECLARE_METATYPE(obs_order_movement);
 Q_DECLARE_METATYPE(SignalContainer<OBSScene>);
+
+QDataStream &operator<<(QDataStream &out, const SignalContainer<OBSScene> &v)
+{
+	out << v.ref;
+	return out;
+}
+
+QDataStream &operator>>(QDataStream &in, SignalContainer<OBSScene> &v)
+{
+	in >> v.ref;
+	return in;
+}
 
 template<typename T> static T GetOBSRef(QListWidgetItem *item)
 {
@@ -195,6 +207,9 @@ extern void RegisterRestreamAuth();
 OBSBasic::OBSBasic(QWidget *parent)
 	: OBSMainWindow(parent), ui(new Ui::OBSBasic)
 {
+	qRegisterMetaTypeStreamOperators<SignalContainer<OBSScene>>(
+		"SignalContainer<OBSScene>");
+
 	setAttribute(Qt::WA_NativeWindow);
 
 #if TWITCH_ENABLED
@@ -251,6 +266,10 @@ OBSBasic::OBSBasic(QWidget *parent)
 
 	ui->scenes->setAttribute(Qt::WA_MacShowFocusRect, false);
 	ui->sources->setAttribute(Qt::WA_MacShowFocusRect, false);
+
+	bool sceneGrid = config_get_bool(App()->GlobalConfig(), "BasicWindow",
+					 "gridMode");
+	ui->scenes->SetGridMode(sceneGrid);
 
 	ui->scenes->setItemDelegate(new SceneRenameDelegate(ui->scenes));
 
@@ -4051,6 +4070,7 @@ void OBSBasic::on_scenes_customContextMenuRequested(const QPoint &pos)
 
 	QMenu popup(this);
 	QMenu order(QTStr("Basic.MainMenu.Edit.Order"), this);
+
 	popup.addAction(QTStr("Add"), this,
 			SLOT(on_actionAddScene_triggered()));
 
@@ -4132,7 +4152,24 @@ void OBSBasic::on_scenes_customContextMenuRequested(const QPoint &pos)
 			std::bind(showInMultiview, data));
 	}
 
+	popup.addSeparator();
+
+	bool grid = ui->scenes->GetGridMode();
+
+	QAction *gridAction = new QAction(grid ? QTStr("Basic.Main.ListMode")
+					       : QTStr("Basic.Main.GridMode"),
+					  this);
+	connect(gridAction, SIGNAL(triggered()), this,
+		SLOT(on_actionGridMode_triggered()));
+	popup.addAction(gridAction);
+
 	popup.exec(QCursor::pos());
+}
+
+void OBSBasic::on_actionGridMode_triggered()
+{
+	bool gridMode = !ui->scenes->GetGridMode();
+	ui->scenes->SetGridMode(gridMode);
 }
 
 void OBSBasic::on_actionAddScene_triggered()

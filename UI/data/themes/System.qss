@@ -233,3 +233,10 @@ QListWidget::item,
 SourceTree::item {
 	height: 24px;
 }
+
+/* Scene Tree */
+
+SceneTree {
+    qproperty-gridItemWidth: 150;
+	qproperty-gridItemHeight: 24;
+}

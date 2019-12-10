@@ -12,6 +12,7 @@
 /*   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the            */
 /*   GNU General Public License for more details.                             */
 /*                                                                            */
+/*                                                                            */
 /*   You should have received a copy of the GNU General Public License        */
 /*   along with this program.  If not, see <http://www.gnu.org/licenses/>.    */
 /******************************************************************************/
@@ -773,4 +774,38 @@ OBSBasic {
     qproperty-groupIcon: url(./Dark/sources/group.svg);
     qproperty-sceneIcon: url(./Dark/sources/scene.svg);
     qproperty-defaultIcon: url(./Dark/sources/default.svg);
+}
+
+/* Scene Tree */
+
+SceneTree {
+    qproperty-gridItemWidth: 150;
+	qproperty-gridItemHeight: 27;
+}
+
+*[gridMode="true"] SceneTree::item {
+    color: rgb(225,224,225); /* veryLight */
+    background-color: rgb(76,76,76);
+    border: none;
+    border-radius: 3px;
+    padding: 4px;
+	padding-left: 10px;
+	padding-right: 10px;
+	margin: 1px;
+}
+
+*[gridMode="true"] SceneTree::item:selected {
+    background-color: rgb(122,121,122); /* light */
+}
+
+*[gridMode="true"] SceneTree::item:hover {
+    background-color: rgb(122,121,122); /* light */
+}
+
+*[gridMode="true"] SceneTree::item:pressed {
+    background-color: rgb(31,30,31); /* veryDark */
+}
+
+*[gridMode="true"] SceneTree::item:checked {
+    background-color: rgb(122,121,122); /* light */
 }
