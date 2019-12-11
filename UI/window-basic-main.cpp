@@ -54,6 +54,7 @@
 #include "display-helpers.hpp"
 #include "volume-control.hpp"
 #include "remote-text.hpp"
+#include "ui-validation.hpp"
 #include <fstream>
 #include <sstream>
 
@@ -162,25 +163,6 @@ static void AddExtraModulePaths()
 }
 
 extern obs_frontend_callbacks *InitializeAPIInterface(OBSBasic *main);
-
-static int CountVideoSources()
-{
-	int count = 0;
-
-	auto countSources = [](void *param, obs_source_t *source) {
-		if (!source)
-			return true;
-
-		uint32_t flags = obs_source_get_output_flags(source);
-		if ((flags & OBS_SOURCE_VIDEO) != 0)
-			(*reinterpret_cast<int *>(param))++;
-
-		return true;
-	};
-
-	obs_enum_sources(countSources, &count);
-	return count;
-}
 
 void assignDockToggle(QDockWidget *dock, QAction *action)
 {
@@ -5600,7 +5582,7 @@ void OBSBasic::StartReplayBuffer()
 	if (disableOutputsRef)
 		return;
 
-	if (!NoSourcesConfirmation()) {
+	if (!UIValidation::NoSourcesConfirmation(this)) {
 		replayBufferButton->setChecked(false);
 		return;
 	}
@@ -5745,30 +5727,6 @@ void OBSBasic::ReplayBufferStop(int code)
 	OnDeactivate();
 }
 
-bool OBSBasic::NoSourcesConfirmation()
-{
-	if (CountVideoSources() == 0 && isVisible()) {
-		QString msg;
-		msg = QTStr("NoSources.Text");
-		msg += "\n\n";
-		msg += QTStr("NoSources.Text.AddSource");
-
-		QMessageBox messageBox(this);
-		messageBox.setWindowTitle(QTStr("NoSources.Title"));
-		messageBox.setText(msg);
-		QAbstractButton *Yes = messageBox.addButton(
-			QTStr("Yes"), QMessageBox::YesRole);
-		messageBox.addButton(QTStr("No"), QMessageBox::NoRole);
-		messageBox.setIcon(QMessageBox::Question);
-		messageBox.exec();
-
-		if (messageBox.clickedButton() != Yes)
-			return false;
-	}
-
-	return true;
-}
-
 void OBSBasic::on_streamButton_clicked()
 {
 	if (outputHandler->StreamingActive()) {
@@ -5791,7 +5749,21 @@ void OBSBasic::on_streamButton_clicked()
 
 		StopStreaming();
 	} else {
-		if (!NoSourcesConfirmation()) {
+		if (!UIValidation::NoSourcesConfirmation(this)) {
+			ui->streamButton->setChecked(false);
+			return;
+		}
+
+		auto action =
+			UIValidation::StreamSettingsConfirmation(this, service);
+		switch (action) {
+		case StreamSettingsAction::ContinueStream:
+			break;
+		case StreamSettingsAction::OpenSettings:
+			on_action_Settings_triggered();
+			ui->streamButton->setChecked(false);
+			return;
+		case StreamSettingsAction::Cancel:
 			ui->streamButton->setChecked(false);
 			return;
 		}
@@ -5852,7 +5824,7 @@ void OBSBasic::on_recordButton_clicked()
 		}
 		StopRecording();
 	} else {
-		if (!NoSourcesConfirmation()) {
+		if (!UIValidation::NoSourcesConfirmation(this)) {
 			ui->recordButton->setChecked(false);
 			return;
 		}
