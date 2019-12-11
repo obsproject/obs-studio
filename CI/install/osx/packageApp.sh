@@ -46,7 +46,7 @@ cp ../CI/install/osx/Info.plist ./OBS.app/Contents
 mv ./OBS.app/Contents/MacOS/libobs-opengl.so ./OBS.app/Contents/Frameworks
 
 # put qt network in here becasuse streamdeck uses it
-cp -r /usr/local/opt/qt/lib/QtNetwork.framework ./OBS.app/Contents/Frameworks
+cp -R /usr/local/opt/qt/lib/QtNetwork.framework ./OBS.app/Contents/Frameworks
 chmod +w ./OBS.app/Contents/Frameworks/QtNetwork.framework/Versions/5/QtNetwork
 install_name_tool -change /usr/local/Cellar/qt/5.10.1/lib/QtCore.framework/Versions/5/QtCore @executable_path/../Frameworks/QtCore.framework/Versions/5/QtCore ./OBS.app/Contents/Frameworks/QtNetwork.framework/Versions/5/QtNetwork
 
