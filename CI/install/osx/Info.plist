@@ -9,13 +9,11 @@
 	<key>CFBundleGetInfoString</key>
 	<string>OBS - Free and Open Source Streaming/Recording Software</string>
 	<key>CFBundleExecutable</key>
-	<string>OBS</string>
+	<string>obs</string>
 	<key>CFBundleIdentifier</key>
 	<string>com.obsproject.obs-studio</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
-	<key>CFBundleSignature</key>
-	<string>????</string>
 	<key>LSMinimumSystemVersion</key>
 	<string>10.8.5</string>
 	<key>NSHighResolutionCapable</key>
