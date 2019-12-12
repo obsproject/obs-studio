@@ -31,6 +31,8 @@
 #include "obs.h"
 #include "obs-internal.h"
 
+static bool filter_compatible(obs_source_t *source, obs_source_t *filter);
+
 static inline bool data_valid(const struct obs_source *source, const char *f)
 {
 	return obs_source_valid(source, f) && source->context.data;
@@ -491,6 +493,32 @@ void obs_source_copy_filters(obs_source_t *dst, obs_source_t *src)
 		return;
 
 	duplicate_filters(dst, src, dst->context.private);
+}
+
+static void duplicate_filter(obs_source_t *dst, obs_source_t *filter)
+{
+	if (!filter_compatible(dst, filter))
+		return;
+
+	char *new_name = get_new_filter_name(dst, filter->context.name);
+	bool enabled = obs_source_enabled(filter);
+
+	obs_source_t *dst_filter = obs_source_duplicate(filter, new_name, true);
+	obs_source_set_enabled(dst_filter, enabled);
+
+	bfree(new_name);
+	obs_source_filter_add(dst, dst_filter);
+	obs_source_release(dst_filter);
+}
+
+void obs_source_copy_single_filter(obs_source_t *dst, obs_source_t *filter)
+{
+	if (!obs_source_valid(dst, "obs_source_copy_single_filter"))
+		return;
+	if (!obs_source_valid(filter, "obs_source_copy_single_filter"))
+		return;
+
+	duplicate_filter(dst, filter);
 }
 
 obs_source_t *obs_source_duplicate(obs_source_t *source, const char *new_name,

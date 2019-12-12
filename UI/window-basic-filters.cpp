@@ -741,7 +741,24 @@ void OBSBasicFilters::CustomContextMenu(const QPoint &pos, bool async)
 		popup.addSeparator();
 		popup.addAction(QTStr("Rename"), this, renameSlot);
 		popup.addAction(QTStr("Remove"), this, removeSlot);
+		popup.addSeparator();
+
+		QAction *copyAction = new QAction(QTStr("Copy"));
+		connect(copyAction, SIGNAL(triggered()), this,
+			SLOT(CopyFilter()));
+		copyAction->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_C));
+		ui->effectWidget->addAction(copyAction);
+		ui->asyncWidget->addAction(copyAction);
+		popup.addAction(copyAction);
 	}
+
+	QAction *pasteAction = new QAction(QTStr("Paste"));
+	pasteAction->setEnabled(main->copyFilter);
+	connect(pasteAction, SIGNAL(triggered()), this, SLOT(PasteFilter()));
+	pasteAction->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_V));
+	ui->effectWidget->addAction(pasteAction);
+	ui->asyncWidget->addAction(pasteAction);
+	popup.addAction(pasteAction);
 
 	popup.exec(QCursor::pos());
 }
@@ -863,4 +880,25 @@ void OBSBasicFilters::ResetFilters()
 		obs_source_update(filter, nullptr);
 
 	view->RefreshProperties();
+}
+
+void OBSBasicFilters::CopyFilter()
+{
+	OBSSource filter = nullptr;
+
+	if (isAsync)
+		filter = GetFilter(ui->asyncFilters->currentRow(), true);
+	else
+		filter = GetFilter(ui->effectFilters->currentRow(), false);
+
+	main->copyFilter = OBSGetWeakRef(filter);
+}
+
+void OBSBasicFilters::PasteFilter()
+{
+	OBSSource filter = OBSGetStrongRef(main->copyFilter);
+	if (!filter)
+		return;
+
+	obs_source_copy_single_filter(source, filter);
 }
