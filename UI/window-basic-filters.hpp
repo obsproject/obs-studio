@@ -111,6 +111,9 @@ private slots:
 	void EffectFilterNameEdited(QWidget *editor,
 				    QAbstractItemDelegate::EndEditHint endHint);
 
+	void CopyFilter();
+	void PasteFilter();
+
 public:
 	OBSBasicFilters(QWidget *parent, OBSSource source_);
 	~OBSBasicFilters();
