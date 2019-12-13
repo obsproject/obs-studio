@@ -1501,18 +1501,22 @@ void OBSBasic::ResetOutputs()
 					   : CreateSimpleOutputHandler(this));
 
 		delete replayBufferButton;
+		delete replayLayout;
 
 		if (outputHandler->replayBuffer) {
-			replayBufferButton = new QPushButton(
+			replayBufferButton = new ReplayBufferButton(
 				QTStr("Basic.Main.StartReplayBuffer"), this);
 			replayBufferButton->setCheckable(true);
 			connect(replayBufferButton.data(),
 				&QPushButton::clicked, this,
 				&OBSBasic::ReplayBufferClicked);
 
+			replayLayout = new QHBoxLayout(this);
+			replayLayout->addWidget(replayBufferButton);
+
 			replayBufferButton->setProperty("themeID",
 							"replayBufferButton");
-			ui->buttonsVLayout->insertWidget(2, replayBufferButton);
+			ui->buttonsVLayout->insertLayout(2, replayLayout);
 		}
 
 		if (sysTrayReplayBuffer)
@@ -5664,6 +5668,7 @@ void OBSBasic::ReplayBufferStart()
 		api->on_event(OBS_FRONTEND_EVENT_REPLAY_BUFFER_STARTED);
 
 	OnActivate();
+	UpdateReplayBuffer();
 
 	blog(LOG_INFO, REPLAY_BUFFER_START);
 }
@@ -5725,6 +5730,7 @@ void OBSBasic::ReplayBufferStop(int code)
 		api->on_event(OBS_FRONTEND_EVENT_REPLAY_BUFFER_STOPPED);
 
 	OnDeactivate();
+	UpdateReplayBuffer(false);
 }
 
 void OBSBasic::on_streamButton_clicked()
@@ -7600,6 +7606,26 @@ void OBSBasic::UpdatePause(bool activate)
 	} else {
 		pause.reset();
 	}
+}
+
+void OBSBasic::UpdateReplayBuffer(bool activate)
+{
+	if (!activate || !outputHandler ||
+	    !outputHandler->ReplayBufferActive()) {
+		replay.reset();
+		return;
+	}
+
+	replay.reset(new QPushButton());
+	replay->setAccessibleName(QTStr("Basic.Main.SaveReplay"));
+	replay->setToolTip(QTStr("Basic.Main.SaveReplay"));
+	replay->setCheckable(true);
+	replay->setChecked(false);
+	replay->setProperty("themeID",
+			    QVariant(QStringLiteral("replayIconSmall")));
+	connect(replay.data(), &QAbstractButton::clicked, this,
+		&OBSBasic::ReplayBufferSave);
+	replayLayout->addWidget(replay.data());
 }
 
 #define MBYTE (1024ULL * 1024ULL)

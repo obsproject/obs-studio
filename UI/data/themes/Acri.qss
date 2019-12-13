@@ -1044,3 +1044,9 @@ SceneTree#scenes {
     padding-right: 10px;
     margin: 0px;
 }
+
+/* Save replay icon */
+
+* [themeID="replayIconSmall"] {
+    qproperty-icon: url(./Dark/save.svg);
+}

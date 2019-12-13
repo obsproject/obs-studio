@@ -809,3 +809,9 @@ SceneTree {
 *[gridMode="true"] SceneTree::item:checked {
     background-color: rgb(122,121,122); /* light */
 }
+
+/* Save icon */
+
+* [themeID="replayIconSmall"] {
+    qproperty-icon: url(./Dark/save.svg);
+}

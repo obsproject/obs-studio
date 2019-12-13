@@ -157,6 +157,7 @@ class OBSBasic : public OBSMainWindow {
 	friend class AutoConfig;
 	friend class AutoConfigStreamPage;
 	friend class RecordButton;
+	friend class ReplayBufferButton;
 	friend class ExtraBrowsersModel;
 	friend class ExtraBrowsersDelegate;
 	friend struct OBSStudioAPI;
@@ -241,7 +242,9 @@ private:
 
 	QPointer<QPushButton> transitionButton;
 	QPointer<QPushButton> replayBufferButton;
+	QPointer<QHBoxLayout> replayLayout;
 	QScopedPointer<QPushButton> pause;
+	QScopedPointer<QPushButton> replay;
 
 	QScopedPointer<QSystemTrayIcon> trayIcon;
 	QPointer<QAction> sysTrayStream;
@@ -669,6 +672,7 @@ private:
 	void AutoRemux();
 
 	void UpdatePause(bool activate = true);
+	void UpdateReplayBuffer(bool activate = true);
 
 	bool LowDiskSpace();
 	void DiskSpaceMessage();
