@@ -1059,21 +1059,27 @@ bool OBSApp::InitTheme()
 	defaultPalette = palette();
 
 	const char *themeName =
-		config_get_string(globalConfig, "General", "CurrentTheme");
+		config_get_string(globalConfig, "General", "CurrentTheme2");
 
-	if (!themeName) {
+	if (!themeName)
+		/* Use deprecated "CurrentTheme" value if available */
+		themeName = config_get_string(globalConfig, "General",
+					      "CurrentTheme");
+	if (!themeName)
 		/* Use deprecated "Theme" value if available */
 		themeName = config_get_string(globalConfig, "General", "Theme");
-		if (!themeName)
-			themeName = DEFAULT_THEME;
-		if (!themeName)
-			themeName = "Dark";
-	}
+	if (!themeName)
+		themeName = DEFAULT_THEME;
+	if (!themeName)
+		themeName = "Dark";
 
 	if (strcmp(themeName, "Default") == 0)
 		themeName = "System";
 
-	return SetTheme(themeName);
+	if (strcmp(themeName, "System") != 0 && SetTheme(themeName))
+		return true;
+
+	return SetTheme("System");
 }
 
 OBSApp::OBSApp(int &argc, char **argv, profiler_name_store_t *store)
