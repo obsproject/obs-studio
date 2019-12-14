@@ -491,6 +491,15 @@
             ]
         },
         {
+            "name": "YouStreamer",
+            "servers": [
+                {
+                    "name": "Moscow",
+                    "url": "rtmp://push.youstreamer.com/in/"
+                }
+            ]
+        },
+        {
             "name": "Vaughn Live / iNSTAGIB",
             "servers": [
                 {
