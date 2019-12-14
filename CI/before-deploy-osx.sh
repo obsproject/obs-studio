@@ -41,6 +41,10 @@ fi
 cp /usr/local/opt/mbedtls/lib/libmbedtls.12.dylib ./OBS.app/Contents/Frameworks/
 cp /usr/local/opt/mbedtls/lib/libmbedcrypto.3.dylib ./OBS.app/Contents/Frameworks/
 cp /usr/local/opt/mbedtls/lib/libmbedx509.0.dylib ./OBS.app/Contents/Frameworks/
+chmod +w ./OBS.app/Contents/Frameworks/*.dylib
+install_name_tool -id @executable_path/../Frameworks/libmbedtls.12.dylib ./OBS.app/Contents/Frameworks/libmbedtls.12.dylib
+install_name_tool -id @executable_path/../Frameworks/libmbedcrypto.3.dylib ./OBS.app/Contents/Frameworks/libmbedcrypto.3.dylib
+install_name_tool -id @executable_path/../Frameworks/libmbedx509.0.dylib ./OBS.app/Contents/Frameworks/libmbedx509.0.dylib
 install_name_tool -change /usr/local/opt/mbedtls/lib/libmbedtls.12.dylib @executable_path/../Frameworks/libmbedtls.12.dylib ./OBS.app/Contents/Plugins/obs-outputs.so
 install_name_tool -change /usr/local/opt/mbedtls/lib/libmbedcrypto.3.dylib @executable_path/../Frameworks/libmbedcrypto.3.dylib ./OBS.app/Contents/Plugins/obs-outputs.so
 install_name_tool -change /usr/local/opt/mbedtls/lib/libmbedx509.0.dylib @executable_path/../Frameworks/libmbedx509.0.dylib ./OBS.app/Contents/Plugins/obs-outputs.so
