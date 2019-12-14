@@ -46,9 +46,14 @@ cp ../CI/install/osx/Info.plist ./OBS.app/Contents
 mv ./OBS.app/Contents/MacOS/libobs-opengl.so ./OBS.app/Contents/Frameworks
 
 # put qt network in here becasuse streamdeck uses it
-cp -r /usr/local/opt/qt/lib/QtNetwork.framework ./OBS.app/Contents/Frameworks
+cp -R /usr/local/opt/qt/lib/QtNetwork.framework ./OBS.app/Contents/Frameworks
 chmod +w ./OBS.app/Contents/Frameworks/QtNetwork.framework/Versions/5/QtNetwork
+rm -r ./OBS.app/Contents/Frameworks/QtNetwork.framework/Headers
+rm -r ./OBS.app/Contents/Frameworks/QtNetwork.framework/QtNetwork.prl
+rm -r ./OBS.app/Contents/Frameworks/QtNetwork.framework/Versions/5/Headers/
+chmod 644 ./OBS.app/Contents/Frameworks/QtNetwork.framework/Versions/5/Resources/Info.plist
 install_name_tool -change /usr/local/Cellar/qt/5.10.1/lib/QtCore.framework/Versions/5/QtCore @executable_path/../Frameworks/QtCore.framework/Versions/5/QtCore ./OBS.app/Contents/Frameworks/QtNetwork.framework/Versions/5/QtNetwork
+
 
 # decklink ui qt
 install_name_tool -change /usr/local/opt/qt/lib/QtGui.framework/Versions/5/QtGui @executable_path/../Frameworks/QtGui.framework/Versions/5/QtGui ./OBS.app/Contents/Plugins/decklink-ouput-ui.so
