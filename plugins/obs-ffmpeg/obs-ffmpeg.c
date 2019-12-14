@@ -33,6 +33,7 @@ extern struct obs_encoder_info nvenc_encoder_info;
 
 #ifdef LIBAVUTIL_VAAPI_AVAILABLE
 extern struct obs_encoder_info vaapi_encoder_info;
+extern struct obs_encoder_info vaapi_hevc_encoder_info;
 #endif
 
 #ifndef __APPLE__
@@ -207,9 +208,9 @@ finish:
 #endif
 
 #ifdef LIBAVUTIL_VAAPI_AVAILABLE
-static bool vaapi_supported(void)
+static bool vaapi_supported(const char *codec_name)
 {
-	AVCodec *vaenc = avcodec_find_encoder_by_name("h264_vaapi");
+	AVCodec *vaenc = avcodec_find_encoder_by_name(codec_name);
 	return !!vaenc;
 }
 #endif
@@ -243,9 +244,13 @@ bool obs_module_load(void)
 		obs_register_encoder(&nvenc_encoder_info);
 	}
 #if !defined(_WIN32) && defined(LIBAVUTIL_VAAPI_AVAILABLE)
-	if (vaapi_supported()) {
+	if (vaapi_supported("h264_vaapi")) {
 		blog(LOG_INFO, "FFMPEG VAAPI supported");
 		obs_register_encoder(&vaapi_encoder_info);
+	}
+	if (vaapi_supported("hevc_vaapi")) {
+		blog(LOG_INFO, "FFMPEG HEVC VAAPI supported");
+		obs_register_encoder(&vaapi_hevc_encoder_info);
 	}
 #endif
 #endif
