@@ -1754,6 +1754,10 @@ bool obs_hotkeys_platform_is_pressed(obs_hotkeys_platform_t *plat,
 		IOHIDValueRef value = 0;
 		IOHIDDeviceRef device = IOHIDElementGetDevice(element);
 
+		if (device == NULL) {
+			continue;
+		}
+
 		if (IOHIDDeviceGetValue(device, element, &value) !=
 		    kIOReturnSuccess) {
 			i += 1;
