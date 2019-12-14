@@ -6,10 +6,10 @@ mkdir OBS.app/Contents/MacOS
 mkdir OBS.app/Contents/Plugins
 mkdir OBS.app/Contents/Resources
 
-cp -r rundir/RelWithDebInfo/bin/ ./OBS.app/Contents/MacOS
-cp -r rundir/RelWithDebInfo/data ./OBS.app/Contents/Resources
+cp -R rundir/RelWithDebInfo/bin/ ./OBS.app/Contents/MacOS
+cp -R rundir/RelWithDebInfo/data ./OBS.app/Contents/Resources
 cp ../CI/install/osx/obs.icns ./OBS.app/Contents/Resources
-cp -r rundir/RelWithDebInfo/obs-plugins/ ./OBS.app/Contents/Plugins
+cp -R rundir/RelWithDebInfo/obs-plugins/ ./OBS.app/Contents/Plugins
 cp ../CI/install/osx/Info.plist ./OBS.app/Contents
 
 ../CI/install/osx/dylibBundler -b -cd -d ./OBS.app/Contents/Frameworks -p @executable_path/../Frameworks/ \
@@ -47,7 +47,7 @@ mv ./OBS.app/Contents/MacOS/libobs-opengl.so ./OBS.app/Contents/Frameworks
 
 # put qt network in here becasuse streamdeck uses it
 cp -R /usr/local/opt/qt/lib/QtNetwork.framework ./OBS.app/Contents/Frameworks
-chmod +w ./OBS.app/Contents/Frameworks/QtNetwork.framework/Versions/5/QtNetwork
+chmod -R +w ./OBS.app/Contents/Frameworks/QtNetwork.framework
 rm -r ./OBS.app/Contents/Frameworks/QtNetwork.framework/Headers
 rm -r ./OBS.app/Contents/Frameworks/QtNetwork.framework/QtNetwork.prl
 rm -r ./OBS.app/Contents/Frameworks/QtNetwork.framework/Versions/5/Headers/
