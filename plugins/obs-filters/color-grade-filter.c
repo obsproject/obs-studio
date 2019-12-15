@@ -12,6 +12,8 @@
 
 /* clang-format on */
 
+static const uint32_t LUT_WIDTH = 64;
+
 struct lut_filter_data {
 	obs_source_t *context;
 	gs_effect_t *effect;
@@ -20,12 +22,62 @@ struct lut_filter_data {
 
 	char *file;
 	float clut_amount;
+	float clut_scale;
+	float clut_offset;
 };
 
 static const char *color_grade_filter_get_name(void *unused)
 {
 	UNUSED_PARAMETER(unused);
 	return obs_module_text("ColorGradeFilter");
+}
+
+static gs_texture_t *make_clut_texture(const enum gs_color_format format,
+				       const uint32_t image_width,
+				       const uint32_t image_height,
+				       const uint8_t *data)
+{
+	if (image_width % LUT_WIDTH != 0)
+		return NULL;
+
+	if (image_height % LUT_WIDTH != 0)
+		return NULL;
+
+	const uint32_t pixel_count = LUT_WIDTH * LUT_WIDTH * LUT_WIDTH;
+	if ((image_width * image_height) != pixel_count)
+		return NULL;
+
+	const uint32_t bpp = gs_get_format_bpp(format);
+	if (bpp % 8 != 0)
+		return NULL;
+
+	const uint32_t pixel_size = bpp / 8;
+	const uint32_t buffer_size = pixel_size * pixel_count;
+	uint8_t *const buffer = bmalloc(buffer_size);
+	const uint32_t macro_width = image_width / LUT_WIDTH;
+	const uint32_t macro_height = image_height / LUT_WIDTH;
+	uint8_t *cursor = buffer;
+	for (uint32_t z = 0; z < LUT_WIDTH; ++z) {
+		const int z_x = (z % macro_width) * LUT_WIDTH;
+		const int z_y = (z / macro_height) * LUT_WIDTH;
+		for (uint32_t y = 0; y < LUT_WIDTH; ++y) {
+			const uint32_t row_index = image_width * (z_y + y);
+			for (uint32_t x = 0; x < LUT_WIDTH; ++x) {
+				const uint32_t index = row_index + z_x + x;
+				memcpy(cursor, &data[pixel_size * index],
+				       pixel_size);
+
+				cursor += pixel_size;
+			}
+		}
+	}
+
+	gs_texture_t *const texture =
+		gs_voltexture_create(LUT_WIDTH, LUT_WIDTH, LUT_WIDTH, format, 1,
+				     (const uint8_t **)&buffer, 0);
+	bfree(buffer);
+
+	return texture;
 }
 
 static void color_grade_filter_update(void *data, obs_data_t *settings)
@@ -49,10 +101,17 @@ static void color_grade_filter_update(void *data, obs_data_t *settings)
 
 	obs_enter_graphics();
 
-	gs_image_file_init_texture(&filter->image);
+	gs_voltexture_destroy(filter->target);
+	if (filter->image.loaded) {
+		filter->target = make_clut_texture(filter->image.format,
+						   filter->image.cx,
+						   filter->image.cy,
+						   filter->image.texture_data);
+	}
 
-	filter->target = filter->image.texture;
 	filter->clut_amount = (float)clut_amount;
+	filter->clut_scale = (float)(LUT_WIDTH - 1) / (float)LUT_WIDTH;
+	filter->clut_offset = 0.5f / (float)LUT_WIDTH;
 
 	char *effect_path = obs_module_file("color_grade_filter.effect");
 	gs_effect_destroy(filter->effect);
@@ -121,6 +180,7 @@ static void color_grade_filter_destroy(void *data)
 
 	obs_enter_graphics();
 	gs_effect_destroy(filter->effect);
+	gs_voltexture_destroy(filter->target);
 	gs_image_file_free(&filter->image);
 	obs_leave_graphics();
 
@@ -148,6 +208,12 @@ static void color_grade_filter_render(void *data, gs_effect_t *effect)
 
 	param = gs_effect_get_param_by_name(filter->effect, "clut_amount");
 	gs_effect_set_float(param, filter->clut_amount);
+
+	param = gs_effect_get_param_by_name(filter->effect, "clut_scale");
+	gs_effect_set_float(param, filter->clut_scale);
+
+	param = gs_effect_get_param_by_name(filter->effect, "clut_offset");
+	gs_effect_set_float(param, filter->clut_offset);
 
 	obs_source_process_filter_end(filter->context, filter->effect, 0, 0);
 
