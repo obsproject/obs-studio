@@ -359,6 +359,20 @@ static void update_params(struct obs_qsv *obsqsv, obs_data_t *settings)
 		obsqsv->params.nTargetUsage = MFX_TARGETUSAGE_BALANCED;
 	else if (astrcmpi(target_usage, "speed") == 0)
 		obsqsv->params.nTargetUsage = MFX_TARGETUSAGE_BEST_SPEED;
+	else if (astrcmpi(target_usage, "veryslow") == 0)
+		obsqsv->params.nTargetUsage = MFX_TARGETUSAGE_1;
+	else if (astrcmpi(target_usage, "slower") == 0)
+		obsqsv->params.nTargetUsage = MFX_TARGETUSAGE_2;
+	else if (astrcmpi(target_usage, "slow") == 0)
+		obsqsv->params.nTargetUsage = MFX_TARGETUSAGE_3;
+	else if (astrcmpi(target_usage, "medium") == 0)
+		obsqsv->params.nTargetUsage = MFX_TARGETUSAGE_4;
+	else if (astrcmpi(target_usage, "fast") == 0)
+		obsqsv->params.nTargetUsage = MFX_TARGETUSAGE_5;
+	else if (astrcmpi(target_usage, "faster") == 0)
+		obsqsv->params.nTargetUsage = MFX_TARGETUSAGE_6;
+	else if (astrcmpi(target_usage, "veryfast") == 0)
+		obsqsv->params.nTargetUsage = MFX_TARGETUSAGE_7;
 
 	if (astrcmpi(profile, "baseline") == 0)
 		obsqsv->params.nCodecProfile = MFX_PROFILE_AVC_BASELINE;
