@@ -26,6 +26,7 @@ set(libobs-d3d11_SOURCES
 	d3d11-stagesurf.cpp
 	d3d11-subsystem.cpp
 	d3d11-texture2d.cpp
+	d3d11-texture3d.cpp
 	d3d11-vertexbuffer.cpp
 	d3d11-duplicator.cpp
 	d3d11-rebuild.cpp

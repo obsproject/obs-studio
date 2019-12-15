@@ -18,49 +18,44 @@
 #include <util/base.h>
 #include "d3d11-subsystem.hpp"
 
-void gs_texture_2d::InitSRD(vector<D3D11_SUBRESOURCE_DATA> &srd)
+void gs_texture_3d::InitSRD(vector<D3D11_SUBRESOURCE_DATA> &srd)
 {
-	uint32_t rowSizeBytes = width * gs_get_format_bpp(format);
-	uint32_t texSizeBytes = height * rowSizeBytes / 8;
-	size_t textures = type == GS_TEXTURE_2D ? 1 : 6;
+	uint32_t rowSizeBits = width * gs_get_format_bpp(format);
+	uint32_t sliceSizeBytes = height * rowSizeBits / 8;
 	uint32_t actual_levels = levels;
-	size_t curTex = 0;
 
 	if (!actual_levels)
-		actual_levels = gs_get_total_levels(width, height, 1);
+		actual_levels = gs_get_total_levels(width, height, depth);
 
-	rowSizeBytes /= 8;
+	uint32_t newRowSize = rowSizeBits / 8;
+	uint32_t newSlizeSize = sliceSizeBytes;
 
-	for (size_t i = 0; i < textures; i++) {
-		uint32_t newRowSize = rowSizeBytes;
-		uint32_t newTexSize = texSizeBytes;
+	for (uint32_t level = 0; level < actual_levels; ++level) {
+		D3D11_SUBRESOURCE_DATA newSRD;
+		newSRD.pSysMem = data[level].data();
+		newSRD.SysMemPitch = newRowSize;
+		newSRD.SysMemSlicePitch = newSlizeSize;
+		srd.push_back(newSRD);
 
-		for (uint32_t j = 0; j < actual_levels; j++) {
-			D3D11_SUBRESOURCE_DATA newSRD;
-			newSRD.pSysMem = data[curTex++].data();
-			newSRD.SysMemPitch = newRowSize;
-			newSRD.SysMemSlicePitch = newTexSize;
-			srd.push_back(newSRD);
-
-			newRowSize /= 2;
-			newTexSize /= 4;
-		}
+		newRowSize /= 2;
+		newSlizeSize /= 4;
 	}
 }
 
-void gs_texture_2d::BackupTexture(const uint8_t *const *data)
+void gs_texture_3d::BackupTexture(const uint8_t *const *data)
 {
 	this->data.resize(levels);
 
 	uint32_t w = width;
 	uint32_t h = height;
-	uint32_t bbp = gs_get_format_bpp(format);
+	uint32_t d = depth;
+	const uint32_t bbp = gs_get_format_bpp(format);
 
 	for (uint32_t i = 0; i < levels; i++) {
 		if (!data[i])
 			break;
 
-		uint32_t texSize = bbp * w * h / 8;
+		const uint32_t texSize = bbp * w * h * d / 8;
 		this->data[i].resize(texSize);
 
 		vector<uint8_t> &subData = this->data[i];
@@ -70,10 +65,12 @@ void gs_texture_2d::BackupTexture(const uint8_t *const *data)
 			w /= 2;
 		if (h > 1)
 			h /= 2;
+		if (d > 1)
+			d /= 2;
 	}
 }
 
-void gs_texture_2d::GetSharedHandle(IDXGIResource *dxgi_res)
+void gs_texture_3d::GetSharedHandle(IDXGIResource *dxgi_res)
 {
 	HANDLE handle;
 	HRESULT hr;
@@ -89,29 +86,25 @@ void gs_texture_2d::GetSharedHandle(IDXGIResource *dxgi_res)
 	}
 }
 
-void gs_texture_2d::InitTexture(const uint8_t *const *data)
+void gs_texture_3d::InitTexture(const uint8_t *const *data)
 {
 	HRESULT hr;
 
 	memset(&td, 0, sizeof(td));
 	td.Width = width;
 	td.Height = height;
+	td.Depth = depth;
 	td.MipLevels = genMipmaps ? 0 : levels;
-	td.ArraySize = type == GS_TEXTURE_CUBE ? 6 : 1;
-	td.Format = nv12 ? DXGI_FORMAT_NV12 : dxgiFormat;
+	td.Format = dxgiFormat;
 	td.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-	td.SampleDesc.Count = 1;
 	td.CPUAccessFlags = isDynamic ? D3D11_CPU_ACCESS_WRITE : 0;
 	td.Usage = isDynamic ? D3D11_USAGE_DYNAMIC : D3D11_USAGE_DEFAULT;
 
 	if (type == GS_TEXTURE_CUBE)
 		td.MiscFlags |= D3D11_RESOURCE_MISC_TEXTURECUBE;
 
-	if (isRenderTarget || isGDICompatible)
+	if (isRenderTarget)
 		td.BindFlags |= D3D11_BIND_RENDER_TARGET;
-
-	if (isGDICompatible)
-		td.MiscFlags |= D3D11_RESOURCE_MISC_GDI_COMPATIBLE;
 
 	if ((flags & GS_SHARED_KM_TEX) != 0)
 		td.MiscFlags |= D3D11_RESOURCE_MISC_SHARED_KEYEDMUTEX;
@@ -123,17 +116,10 @@ void gs_texture_2d::InitTexture(const uint8_t *const *data)
 		InitSRD(srd);
 	}
 
-	hr = device->device->CreateTexture2D(&td, data ? srd.data() : NULL,
+	hr = device->device->CreateTexture3D(&td, data ? srd.data() : NULL,
 					     texture.Assign());
 	if (FAILED(hr))
-		throw HRError("Failed to create 2D texture", hr);
-
-	if (isGDICompatible) {
-		hr = texture->QueryInterface(__uuidof(IDXGISurface1),
-					     (void **)gdiSurface.Assign());
-		if (FAILED(hr))
-			throw HRError("Failed to create GDI surface", hr);
-	}
+		throw HRError("Failed to create 3D texture", hr);
 
 	if (isShared) {
 		ComPtr<IDXGIResource> dxgi_res;
@@ -168,22 +154,16 @@ void gs_texture_2d::InitTexture(const uint8_t *const *data)
 	}
 }
 
-void gs_texture_2d::InitResourceView()
+void gs_texture_3d::InitResourceView()
 {
 	HRESULT hr;
 
 	memset(&resourceDesc, 0, sizeof(resourceDesc));
 	resourceDesc.Format = dxgiFormat;
 
-	if (type == GS_TEXTURE_CUBE) {
-		resourceDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURECUBE;
-		resourceDesc.TextureCube.MipLevels =
-			genMipmaps || !levels ? -1 : levels;
-	} else {
-		resourceDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
-		resourceDesc.Texture2D.MipLevels =
-			genMipmaps || !levels ? -1 : levels;
-	}
+	resourceDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE3D;
+	resourceDesc.Texture3D.MostDetailedMip = 0;
+	resourceDesc.Texture3D.MipLevels = genMipmaps || !levels ? -1 : levels;
 
 	hr = device->device->CreateShaderResourceView(texture, &resourceDesc,
 						      shaderRes.Assign());
@@ -191,58 +171,43 @@ void gs_texture_2d::InitResourceView()
 		throw HRError("Failed to create resource view", hr);
 }
 
-void gs_texture_2d::InitRenderTargets()
+void gs_texture_3d::InitRenderTargets()
 {
-	HRESULT hr;
-	if (type == GS_TEXTURE_2D) {
-		D3D11_RENDER_TARGET_VIEW_DESC rtv;
-		rtv.Format = dxgiFormat;
-		rtv.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
-		rtv.Texture2D.MipSlice = 0;
+	D3D11_RENDER_TARGET_VIEW_DESC rtv;
+	rtv.Format = dxgiFormat;
+	rtv.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE3D;
+	rtv.Texture3D.MipSlice = 0;
+	rtv.Texture3D.WSize = 1;
 
-		hr = device->device->CreateRenderTargetView(
-			texture, &rtv, renderTarget[0].Assign());
+	for (UINT i = 0; i < 6; i++) {
+		rtv.Texture3D.FirstWSlice = i;
+		const HRESULT hr = device->device->CreateRenderTargetView(
+			texture, &rtv, renderTarget[i].Assign());
 		if (FAILED(hr))
-			throw HRError("Failed to create render target view",
+			throw HRError("Failed to create volume render "
+				      "target view",
 				      hr);
-	} else {
-		D3D11_RENDER_TARGET_VIEW_DESC rtv;
-		rtv.Format = dxgiFormat;
-		rtv.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2DARRAY;
-		rtv.Texture2DArray.MipSlice = 0;
-		rtv.Texture2DArray.ArraySize = 1;
-
-		for (UINT i = 0; i < 6; i++) {
-			rtv.Texture2DArray.FirstArraySlice = i;
-			hr = device->device->CreateRenderTargetView(
-				texture, &rtv, renderTarget[i].Assign());
-			if (FAILED(hr))
-				throw HRError("Failed to create cube render "
-					      "target view",
-					      hr);
-		}
 	}
 }
 
 #define SHARED_FLAGS (GS_SHARED_TEX | GS_SHARED_KM_TEX)
 
-gs_texture_2d::gs_texture_2d(gs_device_t *device, uint32_t width,
-			     uint32_t height, gs_color_format colorFormat,
-			     uint32_t levels, const uint8_t *const *data,
-			     uint32_t flags_, gs_texture_type type,
-			     bool gdiCompatible, bool nv12_)
-	: gs_texture(device, gs_type::gs_texture_2d, type, levels, colorFormat),
+gs_texture_3d::gs_texture_3d(gs_device_t *device, uint32_t width,
+			     uint32_t height, uint32_t depth,
+			     gs_color_format colorFormat, uint32_t levels,
+			     const uint8_t *const *data, uint32_t flags_)
+	: gs_texture(device, gs_type::gs_texture_3d, GS_TEXTURE_3D, levels,
+		     colorFormat),
 	  width(width),
 	  height(height),
+	  depth(depth),
 	  flags(flags_),
 	  dxgiFormat(ConvertGSTextureFormat(format)),
 	  isRenderTarget((flags_ & GS_RENDER_TARGET) != 0),
-	  isGDICompatible(gdiCompatible),
 	  isDynamic((flags_ & GS_DYNAMIC) != 0),
 	  isShared((flags_ & SHARED_FLAGS) != 0),
 	  genMipmaps((flags_ & GS_BUILD_MIPMAPS) != 0),
-	  sharedHandle(GS_INVALID_HANDLE),
-	  nv12(nv12_)
+	  sharedHandle(GS_INVALID_HANDLE)
 {
 	InitTexture(data);
 	InitResourceView();
@@ -251,60 +216,34 @@ gs_texture_2d::gs_texture_2d(gs_device_t *device, uint32_t width,
 		InitRenderTargets();
 }
 
-gs_texture_2d::gs_texture_2d(gs_device_t *device, ID3D11Texture2D *nv12tex,
-			     uint32_t flags_)
-	: gs_texture(device, gs_type::gs_texture_2d, GS_TEXTURE_2D),
-	  isRenderTarget((flags_ & GS_RENDER_TARGET) != 0),
-	  isDynamic((flags_ & GS_DYNAMIC) != 0),
-	  isShared((flags_ & SHARED_FLAGS) != 0),
-	  genMipmaps((flags_ & GS_BUILD_MIPMAPS) != 0),
-	  nv12(true),
-	  texture(nv12tex)
-{
-	texture->GetDesc(&td);
-
-	this->type = GS_TEXTURE_2D;
-	this->format = GS_R8G8;
-	this->flags = flags_;
-	this->levels = 1;
-	this->device = device;
-	this->chroma = true;
-	this->width = td.Width / 2;
-	this->height = td.Height / 2;
-	this->dxgiFormat = DXGI_FORMAT_R8G8_UNORM;
-
-	InitResourceView();
-	if (isRenderTarget)
-		InitRenderTargets();
-}
-
-gs_texture_2d::gs_texture_2d(gs_device_t *device, uint32_t handle)
-	: gs_texture(device, gs_type::gs_texture_2d, GS_TEXTURE_2D),
+gs_texture_3d::gs_texture_3d(gs_device_t *device, uint32_t handle)
+	: gs_texture(device, gs_type::gs_texture_3d, GS_TEXTURE_3D),
 	  isShared(true),
 	  sharedHandle(handle)
 {
 	HRESULT hr;
 	hr = device->device->OpenSharedResource((HANDLE)(uintptr_t)handle,
-						__uuidof(ID3D11Texture2D),
-						(void **)texture.Assign());
+						IID_PPV_ARGS(texture.Assign()));
 	if (FAILED(hr))
-		throw HRError("Failed to open shared 2D texture", hr);
+		throw HRError("Failed to open shared 3D texture", hr);
 
 	texture->GetDesc(&td);
 
-	this->type = GS_TEXTURE_2D;
+	this->type = GS_TEXTURE_3D;
 	this->format = ConvertDXGITextureFormat(td.Format);
 	this->levels = 1;
 	this->device = device;
 
 	this->width = td.Width;
 	this->height = td.Height;
+	this->depth = td.Depth;
 	this->dxgiFormat = td.Format;
 
 	memset(&resourceDesc, 0, sizeof(resourceDesc));
 	resourceDesc.Format = td.Format;
-	resourceDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
-	resourceDesc.Texture2D.MipLevels = 1;
+	resourceDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE3D;
+	resourceDesc.Texture3D.MostDetailedMip = 0;
+	resourceDesc.Texture3D.MipLevels = 1;
 
 	hr = device->device->CreateShaderResourceView(texture, &resourceDesc,
 						      shaderRes.Assign());
