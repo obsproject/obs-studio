@@ -52,6 +52,7 @@ rm -r ./OBS.app/Contents/Frameworks/QtNetwork.framework/Headers
 rm -r ./OBS.app/Contents/Frameworks/QtNetwork.framework/QtNetwork.prl
 rm -r ./OBS.app/Contents/Frameworks/QtNetwork.framework/Versions/5/Headers/
 chmod 644 ./OBS.app/Contents/Frameworks/QtNetwork.framework/Versions/5/Resources/Info.plist
+install_name_tool -id @executable_path/../Frameworks/QtNetwork.framework/Versions/5/QtNetwork ./OBS.app/Contents/Frameworks/QtNetwork.framework/Versions/5/QtNetwork
 install_name_tool -change /usr/local/Cellar/qt/5.10.1/lib/QtCore.framework/Versions/5/QtCore @executable_path/../Frameworks/QtCore.framework/Versions/5/QtCore ./OBS.app/Contents/Frameworks/QtNetwork.framework/Versions/5/QtNetwork
 
 
