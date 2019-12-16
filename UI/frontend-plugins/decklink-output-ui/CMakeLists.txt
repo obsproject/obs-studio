@@ -11,8 +11,8 @@ if(UNIX AND NOT APPLE)
 	include_directories(${X11_INCLUDE_DIR})
 endif()
 
-set(decklink-ouput-ui_HEADERS
-	${decklink-ouput-ui_HEADERS}
+set(decklink-output-ui_HEADERS
+	${decklink-output-ui_HEADERS}
 	../../properties-view.hpp
 	../../properties-view.moc.hpp
 	../../vertical-scroll-area.hpp
@@ -23,8 +23,8 @@ set(decklink-ouput-ui_HEADERS
 	./DecklinkOutputUI.h
 	decklink-ui-main.h
 	)
-set(decklink-ouput-ui_SOURCES
-	${decklink-ouput-ui_SOURCES}
+set(decklink-output-ui_SOURCES
+	${decklink-output-ui_SOURCES}
 	../../properties-view.cpp
 	../../vertical-scroll-area.cpp
 	../../double-slider.cpp
@@ -34,28 +34,28 @@ set(decklink-ouput-ui_SOURCES
 	./DecklinkOutputUI.cpp
 	decklink-ui-main.cpp
 	)
-set(decklink-ouput-ui_UI
-	${decklink-ouput-ui_UI}
+set(decklink-output-ui_UI
+	${decklink-output-ui_UI}
 	forms/output.ui
 	)
 
 if(APPLE)
-	set(decklink-ouput-ui_PLATFORM_LIBS
+	set(decklink-output-ui_PLATFORM_LIBS
 		${COCOA})
 endif()
 
-qt5_wrap_ui(decklink-ouput-ui_UI_HEADERS
-	${decklink-ouput-ui_UI})
+qt5_wrap_ui(decklink-output-ui_UI_HEADERS
+	${decklink-output-ui_UI})
 
-add_library(decklink-ouput-ui MODULE
-	${decklink-ouput-ui_HEADERS}
-	${decklink-ouput-ui_SOURCES}
-	${decklink-ouput-ui_UI_HEADERS}
+add_library(decklink-output-ui MODULE
+	${decklink-output-ui_HEADERS}
+	${decklink-output-ui_SOURCES}
+	${decklink-output-ui_UI_HEADERS}
 	)
-target_link_libraries(decklink-ouput-ui
+target_link_libraries(decklink-output-ui
 	${frontend-tools_PLATFORM_LIBS}
 	obs-frontend-api
 	Qt5::Widgets
 	libobs)
 
-install_obs_plugin_with_data(decklink-ouput-ui data)
+install_obs_plugin_with_data(decklink-output-ui data)
