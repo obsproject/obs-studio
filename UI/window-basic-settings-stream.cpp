@@ -216,18 +216,19 @@ void OBSBasicSettings::UpdateKeyLink()
 	QString serviceName = ui->service->currentText();
 	QString streamKeyLink;
 	if (serviceName == "Twitch") {
-		streamKeyLink = QTStr(
-			"https://www.twitch.tv/broadcast/dashboard/streamkey");
+		streamKeyLink =
+			"https://www.twitch.tv/broadcast/dashboard/streamkey";
 	} else if (serviceName == "YouTube / YouTube Gaming") {
-		streamKeyLink = QTStr("https://www.youtube.com/live_dashboard");
+		streamKeyLink = "https://www.youtube.com/live_dashboard";
 	} else if (serviceName.startsWith("Restream.io")) {
-		streamKeyLink = QTStr(
-			"https://restream.io/settings/streaming-setup?from=OBS");
+		streamKeyLink =
+			"https://restream.io/settings/streaming-setup?from=OBS";
 	} else if (serviceName == "Facebook Live") {
-		streamKeyLink +=
-			QTStr("https://www.facebook.com/live/create?ref=OBS");
+		streamKeyLink = "https://www.facebook.com/live/create?ref=OBS";
 	} else if (serviceName.startsWith("Twitter")) {
-		streamKeyLink = QTStr("https://www.pscp.tv/account/producer");
+		streamKeyLink = "https://www.pscp.tv/account/producer";
+	} else if (serviceName.startsWith("YouStreamer")) {
+		streamKeyLink = "https://www.app.youstreamer.com/stream/";
 	}
 
 	if (QString(streamKeyLink).isNull()) {
