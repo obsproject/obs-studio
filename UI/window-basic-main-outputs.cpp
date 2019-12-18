@@ -15,6 +15,8 @@ volatile bool recording_active = false;
 volatile bool recording_paused = false;
 volatile bool replaybuf_active = false;
 
+#define RTMP_PROTOCOL "rtmp"
+
 static void OBSStreamStarting(void *data, calldata_t *params)
 {
 	BasicOutputHandler *output = static_cast<BasicOutputHandler *>(data);
@@ -690,8 +692,14 @@ bool SimpleOutput::StartStreaming(obs_service_t *service)
 	/* --------------------- */
 
 	const char *type = obs_service_get_output_type(service);
-	if (!type)
+	if (!type) {
 		type = "rtmp_output";
+		const char *url = obs_service_get_url(service);
+		if (url != NULL &&
+		    strncmp(url, RTMP_PROTOCOL, strlen(RTMP_PROTOCOL)) != 0) {
+			type = "ffmpeg_encoded_output";
+		}
+	}
 
 	/* XXX: this is messy and disgusting and should be refactored */
 	if (outputType != type) {
@@ -1538,8 +1546,14 @@ bool AdvancedOutput::StartStreaming(obs_service_t *service)
 	/* --------------------- */
 
 	const char *type = obs_service_get_output_type(service);
-	if (!type)
+	if (!type) {
 		type = "rtmp_output";
+		const char *url = obs_service_get_url(service);
+		if (url != NULL &&
+		    strncmp(url, RTMP_PROTOCOL, strlen(RTMP_PROTOCOL)) != 0) {
+			type = "ffmpeg_encoded_output";
+		}
+	}
 
 	/* XXX: this is messy and disgusting and should be refactored */
 	if (outputType != type) {
