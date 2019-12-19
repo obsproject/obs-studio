@@ -380,6 +380,25 @@ try {
 	return false;
 }
 
+static bool increase_maximum_frame_latency(ID3D11Device *device)
+{
+	ComQIPtr<IDXGIDevice1> dxgiDevice(device);
+	if (!dxgiDevice) {
+		blog(LOG_DEBUG, "%s: Failed to get IDXGIDevice1", __FUNCTION__);
+		return false;
+	}
+
+	const HRESULT hr = dxgiDevice->SetMaximumFrameLatency(16);
+	if (FAILED(hr)) {
+		blog(LOG_DEBUG, "%s: SetMaximumFrameLatency failed",
+		     __FUNCTION__);
+		return false;
+	}
+
+	blog(LOG_INFO, "DXGI increase maximum frame latency success");
+	return true;
+}
+
 #if USE_GPU_PRIORITY
 static bool set_priority(ID3D11Device *device)
 {
@@ -467,7 +486,12 @@ void gs_device::InitDevice(uint32_t adapterIdx)
 	blog(LOG_INFO, "D3D11 loaded successfully, feature level used: %x",
 	     (unsigned int)levelUsed);
 
-	/* adjust gpu thread priority on non-intel GPUs*/
+	/* prevent stalls sometimes seen in Present calls */
+	if (!increase_maximum_frame_latency(device)) {
+		blog(LOG_INFO, "DXGI increase maximum frame latency failed");
+	}
+
+	/* adjust gpu thread priority on non-intel GPUs */
 #if USE_GPU_PRIORITY
 	if (desc.VendorId != 0x8086 && !set_priority(device)) {
 		blog(LOG_INFO, "D3D11 GPU priority setup "
