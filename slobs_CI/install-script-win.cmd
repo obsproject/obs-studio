@@ -4,6 +4,7 @@ set VLCURL=https://obsproject.com/downloads/vlc.zip
 set CEFURL=https://s3-us-west-2.amazonaws.com/streamlabs-cef-dist
 set CMakeGenerator=Visual Studio 15 2017
 set CefFileName=cef_binary_%CEF_VERSION%_windows64_minimal
+set GPUPriority=1
 
 if exist %DEPS%.zip (curl -kLO %DepsURL% -f --retry 5 -z %DEPS%.zip) else (curl -kLO %DepsURL% -f --retry 5 -C -)
 if exist vlc.zip (curl -kLO %VLCURL% -f --retry 5 -z vlc.zip) else (curl -kLO %VLCURL% -f --retry 5 -C -)
@@ -32,6 +33,7 @@ cmake -H. ^
          -DCOPIED_DEPENDENCIES=false ^
          -DCOPY_DEPENDENCIES=true ^
          -DENABLE_SCRIPTING=false ^
+         -DGPU_PRIORITY_VAL="%GPUPriority%" ^
          -DBUILD_CAPTIONS=false ^
          -DCOMPILE_D3D12_HOOK=true ^
          -DBUILD_BROWSER=true ^
