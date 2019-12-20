@@ -46,7 +46,7 @@ static void update_settings(struct window_capture *wc, obs_data_t *s)
 	bfree(wc->class);
 	bfree(wc->executable);
 
-	build_window_strings(window, &wc->class, &wc->title, &wc->executable);
+	build_window_strings(window, &wc->class, &wc->title, &wc->executable, NULL);
 
 	if (wc->title != NULL) {
 		blog(LOG_INFO,

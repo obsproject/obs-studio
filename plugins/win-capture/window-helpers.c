@@ -23,7 +23,7 @@ static inline char *decode_str(const char *src)
 }
 
 extern void build_window_strings(const char *str, char **class, char **title,
-				 char **exe)
+				 char **exe, bool *sli_mode)
 {
 	char **strlist;
 
@@ -42,6 +42,14 @@ extern void build_window_strings(const char *str, char **class, char **title,
 		*class = decode_str(strlist[1]);
 		*exe = decode_str(strlist[2]);
 	}
+
+	if (sli_mode!=NULL) {
+		*sli_mode = false;
+	 	if (strlist[3]) {
+			*sli_mode = astrcmpi(strlist[2], "1") == 0;
+		}
+	}
+
 
 	strlist_free(strlist);
 }
@@ -383,6 +391,64 @@ static int window_rating(HWND window, enum window_priority priority,
 	return val;
 }
 
+static int window_rating_by_list(HWND window, const DARRAY(struct game_capture_picking_info) * games_whitelist, int *found_index)
+{
+	struct dstr cur_class = {0};
+	struct dstr cur_title = {0};
+	struct dstr cur_exe = {0};
+	int final_val = 0x7FFFFFFF;
+
+	if (!get_window_exe(&cur_exe, window))
+		return 0x7FFFFFFF;
+	get_window_title(&cur_title, window);
+	get_window_class(&cur_class, window);
+	
+	int i = 0;
+	while( i < games_whitelist->num )
+	{
+		*found_index = i;
+		int val = 0x7FFFFFFF;
+		bool class_matches = dstr_cmpi(&cur_class, games_whitelist->array[i].class.array) == 0;
+		bool exe_matches = dstr_cmpi(&cur_exe, games_whitelist->array[i].executable.array) == 0;
+		int title_val = abs(dstr_cmpi(&cur_title, games_whitelist->array[i].title.array));
+
+		/* always match by name with UWP windows */
+		bool uwp_window = dstr_cmpi(&games_whitelist->array[i].class, "Windows.UI.Core.CoreWindow") == 0;
+
+		if (uwp_window) {
+			if (games_whitelist->array[i].priority == WINDOW_PRIORITY_EXE && !exe_matches)
+				val = 0x7FFFFFFF;
+			else
+				val = title_val == 0 ? 0 : 0x7FFFFFFF;
+
+		} else if (games_whitelist->array[i].priority == WINDOW_PRIORITY_CLASS) {
+			val = class_matches ? title_val : 0x7FFFFFFF;
+			if (val != 0x7FFFFFFF && !exe_matches)
+				val += 0x1000;
+
+		} else if (games_whitelist->array[i].priority == WINDOW_PRIORITY_TITLE) {
+			val = title_val == 0 ? 0 : 0x7FFFFFFF;
+
+		} else if (games_whitelist->array[i].priority == WINDOW_PRIORITY_EXE) {
+			val = exe_matches ? title_val : 0x7FFFFFFF;
+		}
+
+		if(final_val > val)
+			final_val = val;
+
+		i++;
+
+		if(final_val == 0) 
+			break;
+	}
+
+	dstr_free(&cur_class);
+	dstr_free(&cur_title);
+	dstr_free(&cur_exe);
+
+	return final_val;
+}
+
 HWND find_window(enum window_search_mode mode, enum window_priority priority,
 		 const char *class, const char *title, const char *exe)
 {
@@ -409,6 +475,35 @@ HWND find_window(enum window_search_mode mode, enum window_priority priority,
 		}
 
 		window = next_window(window, mode, &parent, use_findwindowex);
+	}
+
+	return best_window;
+}
+
+HWND find_window_one_of(enum window_search_mode mode, DARRAY(struct game_capture_picking_info) * games_whitelist)
+{
+	HWND parent;
+	bool use_findwindowex = false;
+
+	HWND window = first_window(mode, &parent, &use_findwindowex);
+	HWND best_window = NULL;
+	int best_rating = 0x7FFFFFFF;
+	int list_index = -1;
+
+	while (window) {
+		int rating = window_rating_by_list(window, games_whitelist, &list_index);
+		if (rating < best_rating) {
+			best_rating = rating;
+			best_window = window;
+			if (rating == 0)
+				break;
+		}
+
+		window = next_window(window, mode, &parent, use_findwindowex);
+	}
+
+	if (best_window) {
+		da_move_item((*games_whitelist), list_index, games_whitelist->num-1);
 	}
 
 	return best_window;
