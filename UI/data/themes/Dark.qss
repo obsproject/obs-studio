@@ -815,3 +815,9 @@ SceneTree {
 * [themeID="replayIconSmall"] {
     qproperty-icon: url(./Dark/save.svg);
 }
+
+/* Play icon */
+
+* [themeID="playIcon"] {
+    qproperty-icon: url(./Dark/play.svg);
+}

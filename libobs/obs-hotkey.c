@@ -1205,6 +1205,15 @@ static inline bool is_pressed(obs_key_t key)
 					       key);
 }
 
+void obs_hotkey_func_invoke(const obs_hotkey_t *hotkey, bool pressed)
+{
+	if (!obs->hotkeys.reroute_hotkeys)
+		hotkey->func(hotkey->data, hotkey->id, hotkey, pressed);
+	else if (obs->hotkeys.router_func)
+		obs->hotkeys.router_func(obs->hotkeys.router_func_data,
+					 hotkey->id, pressed);
+}
+
 static inline void press_released_binding(obs_hotkey_binding_t *binding)
 {
 	binding->pressed = true;
@@ -1213,11 +1222,7 @@ static inline void press_released_binding(obs_hotkey_binding_t *binding)
 	if (hotkey->pressed++)
 		return;
 
-	if (!obs->hotkeys.reroute_hotkeys)
-		hotkey->func(hotkey->data, hotkey->id, hotkey, true);
-	else if (obs->hotkeys.router_func)
-		obs->hotkeys.router_func(obs->hotkeys.router_func_data,
-					 hotkey->id, true);
+	obs_hotkey_func_invoke(hotkey, true);
 }
 
 static inline void release_pressed_binding(obs_hotkey_binding_t *binding)
@@ -1228,11 +1233,7 @@ static inline void release_pressed_binding(obs_hotkey_binding_t *binding)
 	if (--hotkey->pressed)
 		return;
 
-	if (!obs->hotkeys.reroute_hotkeys)
-		hotkey->func(hotkey->data, hotkey->id, hotkey, false);
-	else if (obs->hotkeys.router_func)
-		obs->hotkeys.router_func(obs->hotkeys.router_func_data,
-					 hotkey->id, false);
+	obs_hotkey_func_invoke(hotkey, false);
 }
 
 static inline void handle_binding(obs_hotkey_binding_t *binding,

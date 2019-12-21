@@ -269,6 +269,12 @@ void OBSHotkeyWidget::AddEdit(obs_key_combination combo, int idx)
 	auto edit = new OBSHotkeyEdit(combo);
 	edit->setToolTip(toolTip);
 
+	auto execute = new QPushButton;
+	execute->setProperty("themeID", "playIcon");
+	execute->setToolTip(QTStr("Execute"));
+	execute->setFixedSize(24, 24);
+	execute->setFlat(true);
+
 	auto revert = new QPushButton;
 	revert->setProperty("themeID", "revertIcon");
 	revert->setToolTip(QTStr("Revert"));
@@ -318,6 +324,7 @@ void OBSHotkeyWidget::AddEdit(obs_key_combination combo, int idx)
 	QHBoxLayout *subLayout = new QHBoxLayout;
 	subLayout->setContentsMargins(0, 4, 0, 0);
 	subLayout->addWidget(edit);
+	subLayout->addWidget(execute);
 	subLayout->addWidget(revert);
 	subLayout->addWidget(clear);
 	subLayout->addWidget(add);
@@ -337,6 +344,11 @@ void OBSHotkeyWidget::AddEdit(obs_key_combination combo, int idx)
 	}
 
 	layout()->insertLayout(idx, subLayout);
+
+	QObject::connect(execute, &QPushButton::pressed,
+			 [&] { obs_hotkey_func_invoke(key, true); });
+	QObject::connect(execute, &QPushButton::released,
+			 [&] { obs_hotkey_func_invoke(key, false); });
 
 	QObject::connect(revert, &QPushButton::clicked, edit,
 			 &OBSHotkeyEdit::ResetKey);

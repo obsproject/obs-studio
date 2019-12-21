@@ -2401,10 +2401,9 @@ LayoutHotkey(obs_hotkey_id id, obs_hotkey_t *key, Func &&fun,
 
 	auto combos = keys.find(id);
 	if (combos == std::end(keys))
-		hw = new OBSHotkeyWidget(id, obs_hotkey_get_name(key));
+		hw = new OBSHotkeyWidget(id, key);
 	else
-		hw = new OBSHotkeyWidget(id, obs_hotkey_get_name(key),
-					 combos->second);
+		hw = new OBSHotkeyWidget(id, key, combos->second);
 
 	hw->label = label;
 	label->widget = hw;

@@ -90,12 +90,13 @@ class OBSHotkeyWidget : public QWidget {
 	Q_OBJECT;
 
 public:
-	OBSHotkeyWidget(obs_hotkey_id id, std::string name,
+	OBSHotkeyWidget(obs_hotkey_id id, obs_hotkey_t *key,
 			const std::vector<obs_key_combination_t> &combos = {},
 			QWidget *parent = nullptr)
 		: QWidget(parent),
 		  id(id),
-		  name(name),
+		  name(obs_hotkey_get_name(key)),
+		  key(key),
 		  bindingsChanged(obs_get_signal_handler(),
 				  "hotkey_bindings_changed",
 				  &OBSHotkeyWidget::BindingsChanged, this)
@@ -112,6 +113,7 @@ public:
 
 	obs_hotkey_id id;
 	std::string name;
+	obs_hotkey_t *key;
 
 	bool changed = false;
 	bool Changed() const;
