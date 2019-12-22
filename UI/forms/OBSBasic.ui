@@ -474,7 +474,7 @@
          <number>0</number>
         </property>
         <item>
-         <widget class="QListWidget" name="scenes">
+         <widget class="SceneTree" name="scenes">
           <property name="sizePolicy">
            <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
             <horstretch>0</horstretch>
@@ -1817,6 +1817,11 @@
    <class>SourceTree</class>
    <extends>QListView</extends>
    <header>source-tree.hpp</header>
+  </customwidget>
+  <customwidget>
+   <class>SceneTree</class>
+   <extends>QListWidget</extends>
+   <header>scene-tree.hpp</header>
   </customwidget>
   <customwidget>
    <class>OBSDock</class>

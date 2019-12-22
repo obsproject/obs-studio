@@ -491,6 +491,15 @@
             ]
         },
         {
+            "name": "YouStreamer",
+            "servers": [
+                {
+                    "name": "Moscow",
+                    "url": "rtmp://push.youstreamer.com/in/"
+                }
+            ]
+        },
+        {
             "name": "Vaughn Live / iNSTAGIB",
             "servers": [
                 {
@@ -575,7 +584,7 @@
             "recommended": {
                 "keyint": 2,
                 "profile": "main",
-                "max video bitrate": 4000,
+                "max video bitrate": 6000,
                 "max audio bitrate": 128
             }
         },
@@ -1722,6 +1731,19 @@
                 "max audio bitrate": 192,
                 "bframes": 0,
                 "x264opts": "tune=zerolatency"
+            }
+        },
+        {
+            "name": "Konduit.live",
+            "servers": [
+                {
+                    "name": "Default",
+                    "url": "rtmp://rtmp.konduit.live/live"
+                }
+            ],
+            "recommended": {
+                "keyint": 2,
+                "x264opts": "scenecut=0"
             }
         }
     ]

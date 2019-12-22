@@ -2760,7 +2760,7 @@ void OBSBasicSettings::SaveGeneralSettings()
 		themeData = DEFAULT_THEME;
 
 	if (WidgetChanged(ui->theme)) {
-		config_set_string(GetGlobalConfig(), "General", "CurrentTheme",
+		config_set_string(GetGlobalConfig(), "General", "CurrentTheme2",
 				  QT_TO_UTF8(themeData));
 
 		App()->SetTheme(themeData.toUtf8().constData());
@@ -3509,8 +3509,7 @@ void OBSBasicSettings::on_theme_activated(int idx)
 	if (currT == defaultTheme)
 		currT = DEFAULT_THEME;
 
-	if (currT != App()->GetTheme())
-		App()->SetTheme(currT.toUtf8().constData());
+	App()->SetTheme(currT.toUtf8().constData());
 }
 
 void OBSBasicSettings::on_listWidget_itemSelectionChanged()

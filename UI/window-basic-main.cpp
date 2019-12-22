@@ -28,6 +28,7 @@
 #include <QScreen>
 #include <QColorDialog>
 #include <QSizePolicy>
+#include <QScrollBar>
 
 #include <util/dstr.h>
 #include <util/util.hpp>
@@ -53,6 +54,7 @@
 #include "display-helpers.hpp"
 #include "volume-control.hpp"
 #include "remote-text.hpp"
+#include "ui-validation.hpp"
 #include <fstream>
 #include <sstream>
 
@@ -94,7 +96,6 @@ template<typename OBSRef> struct SignalContainer {
 	OBSRef ref;
 	vector<shared_ptr<OBSSignal>> handlers;
 };
-
 }
 
 extern volatile long insideEventLoop;
@@ -104,6 +105,18 @@ Q_DECLARE_METATYPE(OBSSceneItem);
 Q_DECLARE_METATYPE(OBSSource);
 Q_DECLARE_METATYPE(obs_order_movement);
 Q_DECLARE_METATYPE(SignalContainer<OBSScene>);
+
+QDataStream &operator<<(QDataStream &out, const SignalContainer<OBSScene> &v)
+{
+	out << v.ref;
+	return out;
+}
+
+QDataStream &operator>>(QDataStream &in, SignalContainer<OBSScene> &v)
+{
+	in >> v.ref;
+	return in;
+}
 
 template<typename T> static T GetOBSRef(QListWidgetItem *item)
 {
@@ -151,25 +164,6 @@ static void AddExtraModulePaths()
 
 extern obs_frontend_callbacks *InitializeAPIInterface(OBSBasic *main);
 
-static int CountVideoSources()
-{
-	int count = 0;
-
-	auto countSources = [](void *param, obs_source_t *source) {
-		if (!source)
-			return true;
-
-		uint32_t flags = obs_source_get_output_flags(source);
-		if ((flags & OBS_SOURCE_VIDEO) != 0)
-			(*reinterpret_cast<int *>(param))++;
-
-		return true;
-	};
-
-	obs_enum_sources(countSources, &count);
-	return count;
-}
-
 void assignDockToggle(QDockWidget *dock, QAction *action)
 {
 	auto handleWindowToggle = [action](bool vis) {
@@ -195,6 +189,9 @@ extern void RegisterRestreamAuth();
 OBSBasic::OBSBasic(QWidget *parent)
 	: OBSMainWindow(parent), ui(new Ui::OBSBasic)
 {
+	qRegisterMetaTypeStreamOperators<SignalContainer<OBSScene>>(
+		"SignalContainer<OBSScene>");
+
 	setAttribute(Qt::WA_NativeWindow);
 
 #if TWITCH_ENABLED
@@ -251,6 +248,10 @@ OBSBasic::OBSBasic(QWidget *parent)
 
 	ui->scenes->setAttribute(Qt::WA_MacShowFocusRect, false);
 	ui->sources->setAttribute(Qt::WA_MacShowFocusRect, false);
+
+	bool sceneGrid = config_get_bool(App()->GlobalConfig(), "BasicWindow",
+					 "gridMode");
+	ui->scenes->SetGridMode(sceneGrid);
 
 	ui->scenes->setItemDelegate(new SceneRenameDelegate(ui->scenes));
 
@@ -1500,18 +1501,22 @@ void OBSBasic::ResetOutputs()
 					   : CreateSimpleOutputHandler(this));
 
 		delete replayBufferButton;
+		delete replayLayout;
 
 		if (outputHandler->replayBuffer) {
-			replayBufferButton = new QPushButton(
+			replayBufferButton = new ReplayBufferButton(
 				QTStr("Basic.Main.StartReplayBuffer"), this);
 			replayBufferButton->setCheckable(true);
 			connect(replayBufferButton.data(),
 				&QPushButton::clicked, this,
 				&OBSBasic::ReplayBufferClicked);
 
+			replayLayout = new QHBoxLayout(this);
+			replayLayout->addWidget(replayBufferButton);
+
 			replayBufferButton->setProperty("themeID",
 							"replayBufferButton");
-			ui->buttonsVLayout->insertWidget(2, replayBufferButton);
+			ui->buttonsVLayout->insertLayout(2, replayLayout);
 		}
 
 		if (sysTrayReplayBuffer)
@@ -4051,6 +4056,7 @@ void OBSBasic::on_scenes_customContextMenuRequested(const QPoint &pos)
 
 	QMenu popup(this);
 	QMenu order(QTStr("Basic.MainMenu.Edit.Order"), this);
+
 	popup.addAction(QTStr("Add"), this,
 			SLOT(on_actionAddScene_triggered()));
 
@@ -4132,7 +4138,24 @@ void OBSBasic::on_scenes_customContextMenuRequested(const QPoint &pos)
 			std::bind(showInMultiview, data));
 	}
 
+	popup.addSeparator();
+
+	bool grid = ui->scenes->GetGridMode();
+
+	QAction *gridAction = new QAction(grid ? QTStr("Basic.Main.ListMode")
+					       : QTStr("Basic.Main.GridMode"),
+					  this);
+	connect(gridAction, SIGNAL(triggered()), this,
+		SLOT(on_actionGridMode_triggered()));
+	popup.addAction(gridAction);
+
 	popup.exec(QCursor::pos());
+}
+
+void OBSBasic::on_actionGridMode_triggered()
+{
+	bool gridMode = !ui->scenes->GetGridMode();
+	ui->scenes->SetGridMode(gridMode);
 }
 
 void OBSBasic::on_actionAddScene_triggered()
@@ -5563,7 +5586,7 @@ void OBSBasic::StartReplayBuffer()
 	if (disableOutputsRef)
 		return;
 
-	if (!NoSourcesConfirmation()) {
+	if (!UIValidation::NoSourcesConfirmation(this)) {
 		replayBufferButton->setChecked(false);
 		return;
 	}
@@ -5645,6 +5668,7 @@ void OBSBasic::ReplayBufferStart()
 		api->on_event(OBS_FRONTEND_EVENT_REPLAY_BUFFER_STARTED);
 
 	OnActivate();
+	UpdateReplayBuffer();
 
 	blog(LOG_INFO, REPLAY_BUFFER_START);
 }
@@ -5706,30 +5730,7 @@ void OBSBasic::ReplayBufferStop(int code)
 		api->on_event(OBS_FRONTEND_EVENT_REPLAY_BUFFER_STOPPED);
 
 	OnDeactivate();
-}
-
-bool OBSBasic::NoSourcesConfirmation()
-{
-	if (CountVideoSources() == 0 && isVisible()) {
-		QString msg;
-		msg = QTStr("NoSources.Text");
-		msg += "\n\n";
-		msg += QTStr("NoSources.Text.AddSource");
-
-		QMessageBox messageBox(this);
-		messageBox.setWindowTitle(QTStr("NoSources.Title"));
-		messageBox.setText(msg);
-		QAbstractButton *Yes = messageBox.addButton(
-			QTStr("Yes"), QMessageBox::YesRole);
-		messageBox.addButton(QTStr("No"), QMessageBox::NoRole);
-		messageBox.setIcon(QMessageBox::Question);
-		messageBox.exec();
-
-		if (messageBox.clickedButton() != Yes)
-			return false;
-	}
-
-	return true;
+	UpdateReplayBuffer(false);
 }
 
 void OBSBasic::on_streamButton_clicked()
@@ -5754,7 +5755,21 @@ void OBSBasic::on_streamButton_clicked()
 
 		StopStreaming();
 	} else {
-		if (!NoSourcesConfirmation()) {
+		if (!UIValidation::NoSourcesConfirmation(this)) {
+			ui->streamButton->setChecked(false);
+			return;
+		}
+
+		auto action =
+			UIValidation::StreamSettingsConfirmation(this, service);
+		switch (action) {
+		case StreamSettingsAction::ContinueStream:
+			break;
+		case StreamSettingsAction::OpenSettings:
+			on_action_Settings_triggered();
+			ui->streamButton->setChecked(false);
+			return;
+		case StreamSettingsAction::Cancel:
 			ui->streamButton->setChecked(false);
 			return;
 		}
@@ -5815,7 +5830,7 @@ void OBSBasic::on_recordButton_clicked()
 		}
 		StopRecording();
 	} else {
-		if (!NoSourcesConfirmation()) {
+		if (!UIValidation::NoSourcesConfirmation(this)) {
 			ui->recordButton->setChecked(false);
 			return;
 		}
@@ -7591,6 +7606,26 @@ void OBSBasic::UpdatePause(bool activate)
 	} else {
 		pause.reset();
 	}
+}
+
+void OBSBasic::UpdateReplayBuffer(bool activate)
+{
+	if (!activate || !outputHandler ||
+	    !outputHandler->ReplayBufferActive()) {
+		replay.reset();
+		return;
+	}
+
+	replay.reset(new QPushButton());
+	replay->setAccessibleName(QTStr("Basic.Main.SaveReplay"));
+	replay->setToolTip(QTStr("Basic.Main.SaveReplay"));
+	replay->setCheckable(true);
+	replay->setChecked(false);
+	replay->setProperty("themeID",
+			    QVariant(QStringLiteral("replayIconSmall")));
+	connect(replay.data(), &QAbstractButton::clicked, this,
+		&OBSBasic::ReplayBufferSave);
+	replayLayout->addWidget(replay.data());
 }
 
 #define MBYTE (1024ULL * 1024ULL)

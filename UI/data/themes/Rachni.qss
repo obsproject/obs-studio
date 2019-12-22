@@ -1365,3 +1365,16 @@ OBSBasic {
     qproperty-sceneIcon: url(./Dark/sources/scene.svg);
     qproperty-defaultIcon: url(./Dark/sources/default.svg);
 }
+
+/* Scene Tree */
+
+SceneTree#scenes {
+    qproperty-gridItemWidth: 150;
+    qproperty-gridItemHeight: 30;
+}
+
+/* Save icon */
+
+* [themeID="replayIconSmall"] {
+    qproperty-icon: url(./Dark/save.svg);
+}

@@ -157,6 +157,7 @@ class OBSBasic : public OBSMainWindow {
 	friend class AutoConfig;
 	friend class AutoConfigStreamPage;
 	friend class RecordButton;
+	friend class ReplayBufferButton;
 	friend class ExtraBrowsersModel;
 	friend class ExtraBrowsersDelegate;
 	friend struct OBSStudioAPI;
@@ -241,7 +242,9 @@ private:
 
 	QPointer<QPushButton> transitionButton;
 	QPointer<QPushButton> replayBufferButton;
+	QPointer<QHBoxLayout> replayLayout;
 	QScopedPointer<QPushButton> pause;
+	QScopedPointer<QPushButton> replay;
 
 	QScopedPointer<QSystemTrayIcon> trayIcon;
 	QPointer<QAction> sysTrayStream;
@@ -456,8 +459,6 @@ private:
 
 	void ReceivedIntroJson(const QString &text);
 
-	bool NoSourcesConfirmation();
-
 #ifdef BROWSER_AVAILABLE
 	QList<QSharedPointer<QDockWidget>> extraBrowserDocks;
 	QList<QSharedPointer<QAction>> extraBrowserDockActions;
@@ -671,6 +672,7 @@ private:
 	void AutoRemux();
 
 	void UpdatePause(bool activate = true);
+	void UpdateReplayBuffer(bool activate = true);
 
 	bool LowDiskSpace();
 	void DiskSpaceMessage();
@@ -816,6 +818,7 @@ private slots:
 	void on_scenes_currentItemChanged(QListWidgetItem *current,
 					  QListWidgetItem *prev);
 	void on_scenes_customContextMenuRequested(const QPoint &pos);
+	void on_actionGridMode_triggered();
 	void on_actionAddScene_triggered();
 	void on_actionRemoveScene_triggered();
 	void on_actionSceneUp_triggered();
