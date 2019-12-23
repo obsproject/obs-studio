@@ -93,6 +93,11 @@ OBSBasicAdvAudio::OBSBasicAdvAudio(QWidget *parent)
 	setSizeGripEnabled(true);
 	setWindowModality(Qt::NonModal);
 	setAttribute(Qt::WA_DeleteOnClose, true);
+
+	setContextMenuPolicy(Qt::CustomContextMenu);
+
+	connect(this, SIGNAL(customContextMenuRequested(const QPoint &)), this,
+		SLOT(ShowContextMenu(const QPoint &)));
 }
 
 OBSBasicAdvAudio::~OBSBasicAdvAudio()
@@ -167,4 +172,48 @@ void OBSBasicAdvAudio::SourceRemoved(OBSSource source)
 			break;
 		}
 	}
+}
+
+void OBSBasicAdvAudio::SetVolumeType()
+{
+	QAction *action = reinterpret_cast<QAction *>(sender());
+	VolumeType type = (VolumeType)action->property("volumeType").toInt();
+
+	for (size_t i = 0; i < controls.size(); i++)
+		controls[i]->SetVolumeWidget(type);
+
+	config_set_int(GetGlobalConfig(), "BasicWindow", "AdvAudioVolumeType",
+		       (int)type);
+}
+
+void OBSBasicAdvAudio::ShowContextMenu(const QPoint &pos)
+{
+	VolumeType type = (VolumeType)config_get_int(
+		GetGlobalConfig(), "BasicWindow", "AdvAudioVolumeType");
+
+	QMenu *contextMenu = new QMenu(this);
+
+	QAction *percent = new QAction(QTStr("Percent"), this);
+	QAction *dB = new QAction(QTStr("dB"), this);
+
+	percent->setProperty("volumeType", (int)VolumeType::Percent);
+	dB->setProperty("volumeType", (int)VolumeType::dB);
+
+	connect(percent, SIGNAL(triggered()), this, SLOT(SetVolumeType()),
+		Qt::DirectConnection);
+	connect(dB, SIGNAL(triggered()), this, SLOT(SetVolumeType()),
+		Qt::DirectConnection);
+
+	percent->setCheckable(true);
+	dB->setCheckable(true);
+
+	if (type == VolumeType::Percent)
+		percent->setChecked(true);
+	else if (type == VolumeType::dB)
+		dB->setChecked(true);
+
+	contextMenu->addAction(dB);
+	contextMenu->addAction(percent);
+
+	contextMenu->exec(mapToGlobal(pos));
 }

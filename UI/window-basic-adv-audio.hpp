@@ -31,6 +31,9 @@ public slots:
 	void SourceAdded(OBSSource source);
 	void SourceRemoved(OBSSource source);
 
+	void ShowContextMenu(const QPoint &pos);
+	void SetVolumeType();
+
 public:
 	OBSBasicAdvAudio(QWidget *parent);
 	~OBSBasicAdvAudio();
