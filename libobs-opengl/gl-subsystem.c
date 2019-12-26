@@ -245,7 +245,7 @@ int device_create(gs_device_t **p_device, uint32_t adapter)
 	gl_enable(GL_CULL_FACE);
 	gl_gen_vertex_arrays(1, &device->empty_vao);
 
-	device_leave_context(device);
+	gl_clear_context(device);
 	device->cur_swap = NULL;
 
 #ifdef _WIN32
