@@ -18,7 +18,8 @@ OBSBasicAdvAudio::OBSBasicAdvAudio(QWidget *parent)
 	  sourceAddedSignal(obs_get_signal_handler(), "source_activate",
 			    OBSSourceAdded, this),
 	  sourceRemovedSignal(obs_get_signal_handler(), "source_deactivate",
-			      OBSSourceRemoved, this)
+			      OBSSourceRemoved, this),
+	  showInactive(false)
 {
 	QScrollArea *scrollArea;
 	QVBoxLayout *vlayout;
@@ -70,7 +71,12 @@ OBSBasicAdvAudio::OBSBasicAdvAudio(QWidget *parent)
 
 	QPushButton *closeButton = new QPushButton(QTStr("Close"));
 
+	activeOnly = new QCheckBox();
+	activeOnly->setChecked(!showInactive);
+	activeOnly->setText(QTStr("Basic.AdvAudio.ActiveOnly"));
+
 	QHBoxLayout *buttonLayout = new QHBoxLayout;
+	buttonLayout->addWidget(activeOnly);
 	buttonLayout->addStretch();
 	buttonLayout->addWidget(closeButton);
 
@@ -79,6 +85,9 @@ OBSBasicAdvAudio::OBSBasicAdvAudio(QWidget *parent)
 	vlayout->addWidget(scrollArea);
 	vlayout->addLayout(buttonLayout);
 	setLayout(vlayout);
+
+	connect(activeOnly, SIGNAL(clicked(bool)), this,
+		SLOT(ActiveOnlyChanged(bool)));
 
 	connect(closeButton, &QPushButton::clicked, [this]() { close(); });
 
@@ -115,7 +124,8 @@ bool OBSBasicAdvAudio::EnumSources(void *param, obs_source_t *source)
 	OBSBasicAdvAudio *dialog = reinterpret_cast<OBSBasicAdvAudio *>(param);
 	uint32_t flags = obs_source_get_output_flags(source);
 
-	if ((flags & OBS_SOURCE_AUDIO) != 0 && obs_source_active(source))
+	if ((flags & OBS_SOURCE_AUDIO) != 0 &&
+	    (dialog->showInactive || obs_source_active(source)))
 		dialog->AddAudioSource(source);
 
 	return true;
@@ -139,6 +149,10 @@ void OBSBasicAdvAudio::OBSSourceRemoved(void *param, calldata_t *calldata)
 
 inline void OBSBasicAdvAudio::AddAudioSource(obs_source_t *source)
 {
+	for (size_t i = 0; i < controls.size(); i++) {
+		if (controls[i]->GetSource() == source)
+			return;
+	}
 	OBSAdvAudioCtrl *control = new OBSAdvAudioCtrl(mainLayout, source);
 
 	InsertQObjectByName(controls, control);
@@ -216,4 +230,47 @@ void OBSBasicAdvAudio::ShowContextMenu(const QPoint &pos)
 	contextMenu->addAction(percent);
 
 	contextMenu->exec(mapToGlobal(pos));
+}
+
+void OBSBasicAdvAudio::ActiveOnlyChanged(bool checked)
+{
+	SetShowInactive(!checked);
+}
+
+void OBSBasicAdvAudio::SetShowInactive(bool show)
+{
+	if (showInactive == show)
+		return;
+
+	showInactive = show;
+	activeOnly->setChecked(!showInactive);
+	sourceAddedSignal.Disconnect();
+	sourceRemovedSignal.Disconnect();
+
+	if (showInactive) {
+		sourceAddedSignal.Connect(obs_get_signal_handler(),
+					  "source_create", OBSSourceAdded,
+					  this);
+		sourceRemovedSignal.Connect(obs_get_signal_handler(),
+					    "source_remove", OBSSourceRemoved,
+					    this);
+
+		obs_enum_sources(EnumSources, this);
+	} else {
+		sourceAddedSignal.Connect(obs_get_signal_handler(),
+					  "source_activate", OBSSourceAdded,
+					  this);
+		sourceRemovedSignal.Connect(obs_get_signal_handler(),
+					    "source_deactivate",
+					    OBSSourceRemoved, this);
+
+		for (size_t i = 0; i < controls.size(); i++) {
+			const auto source = controls[i]->GetSource();
+			if (!obs_source_active(source)) {
+				delete controls[i];
+				controls.erase(controls.begin() + i);
+				i--;
+			}
+		}
+	}
 }
