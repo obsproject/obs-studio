@@ -683,6 +683,9 @@ private:
 	void UpdatePause(bool activate = true);
 	void UpdateReplayBuffer(bool activate = true);
 
+	bool OutputPathValid();
+	void OutputPathInvalidMessage();
+
 	bool LowDiskSpace();
 	void DiskSpaceMessage();
 
