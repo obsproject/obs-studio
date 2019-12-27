@@ -27,12 +27,14 @@ OBSAdvAudioCtrl::OBSAdvAudioCtrl(QGridLayout *, obs_source_t *source_)
 	uint32_t flags = obs_source_get_flags(source);
 	uint32_t mixers = obs_source_get_audio_mixers(source);
 
+	activeContainer = new QWidget();
 	forceMonoContainer = new QWidget();
 	mixerContainer = new QWidget();
 	balanceContainer = new QWidget();
 	labelL = new QLabel();
 	labelR = new QLabel();
 	nameLabel = new QLabel();
+	active = new QLabel();
 	stackedWidget = new QStackedWidget();
 	volume = new QDoubleSpinBox();
 	percent = new QSpinBox();
@@ -49,6 +51,9 @@ OBSAdvAudioCtrl::OBSAdvAudioCtrl(QGridLayout *, obs_source_t *source_)
 	mixer5 = new QCheckBox();
 	mixer6 = new QCheckBox();
 
+	activateSignal.Connect(handler, "activate", OBSSourceActivated, this);
+	deactivateSignal.Connect(handler, "deactivate", OBSSourceDeactivated,
+				 this);
 	volChangedSignal.Connect(handler, "volume", OBSSourceVolumeChanged,
 				 this);
 	syncOffsetSignal.Connect(handler, "audio_sync", OBSSourceSyncChanged,
@@ -58,6 +63,9 @@ OBSAdvAudioCtrl::OBSAdvAudioCtrl(QGridLayout *, obs_source_t *source_)
 	mixersSignal.Connect(handler, "audio_mixers", OBSSourceMixersChanged,
 			     this);
 
+	hlayout = new QHBoxLayout();
+	hlayout->setContentsMargins(0, 0, 0, 0);
+	activeContainer->setLayout(hlayout);
 	hlayout = new QHBoxLayout();
 	hlayout->setContentsMargins(0, 0, 0, 0);
 	forceMonoContainer->setLayout(hlayout);
@@ -75,6 +83,15 @@ OBSAdvAudioCtrl::OBSAdvAudioCtrl(QGridLayout *, obs_source_t *source_)
 
 	nameLabel->setText(QT_UTF8(sourceName));
 	nameLabel->setAlignment(Qt::AlignVCenter);
+
+	bool isActive = obs_source_active(source);
+	active->setText(isActive ? QTStr("Basic.Stats.Status.Active")
+				 : QTStr("Basic.Stats.Status.Inactive"));
+	if (isActive)
+		setThemeID(active, "error");
+	activeContainer->layout()->addWidget(active);
+	activeContainer->layout()->setAlignment(active, Qt::AlignVCenter);
+	activeContainer->setFixedWidth(50);
 
 	volume->setMinimum(MIN_DB - 0.1);
 	volume->setMaximum(MAX_DB);
@@ -210,6 +227,7 @@ OBSAdvAudioCtrl::OBSAdvAudioCtrl(QGridLayout *, obs_source_t *source_)
 OBSAdvAudioCtrl::~OBSAdvAudioCtrl()
 {
 	nameLabel->deleteLater();
+	activeContainer->deleteLater();
 	stackedWidget->deleteLater();
 	forceMonoContainer->deleteLater();
 	balanceContainer->deleteLater();
@@ -226,6 +244,7 @@ void OBSAdvAudioCtrl::ShowAudioControl(QGridLayout *layout)
 	int idx = 0;
 
 	layout->addWidget(nameLabel, lastRow, idx++);
+	layout->addWidget(activeContainer, lastRow, idx++);
 	layout->addWidget(stackedWidget, lastRow, idx++);
 	layout->addWidget(forceMonoContainer, lastRow, idx++);
 	layout->addWidget(balanceContainer, lastRow, idx++);
@@ -240,6 +259,20 @@ void OBSAdvAudioCtrl::ShowAudioControl(QGridLayout *layout)
 
 /* ------------------------------------------------------------------------- */
 /* OBS source callbacks */
+
+void OBSAdvAudioCtrl::OBSSourceActivated(void *param, calldata_t *calldata)
+{
+	QMetaObject::invokeMethod(reinterpret_cast<OBSAdvAudioCtrl *>(param),
+				  "SourceActiveChanged", Q_ARG(bool, true));
+	UNUSED_PARAMETER(calldata);
+}
+
+void OBSAdvAudioCtrl::OBSSourceDeactivated(void *param, calldata_t *calldata)
+{
+	QMetaObject::invokeMethod(reinterpret_cast<OBSAdvAudioCtrl *>(param),
+				  "SourceActiveChanged", Q_ARG(bool, false));
+	UNUSED_PARAMETER(calldata);
+}
 
 void OBSAdvAudioCtrl::OBSSourceFlagsChanged(void *param, calldata_t *calldata)
 {
@@ -278,6 +311,17 @@ static inline void setCheckboxState(QCheckBox *checkbox, bool checked)
 	checkbox->blockSignals(true);
 	checkbox->setChecked(checked);
 	checkbox->blockSignals(false);
+}
+
+void OBSAdvAudioCtrl::SourceActiveChanged(bool isActive)
+{
+	if (isActive) {
+		active->setText(QTStr("Basic.Stats.Status.Active"));
+		setThemeID(active, "error");
+	} else {
+		active->setText(QTStr("Basic.Stats.Status.Inactive"));
+		setThemeID(active, "");
+	}
 }
 
 void OBSAdvAudioCtrl::SourceFlagsChanged(uint32_t flags)

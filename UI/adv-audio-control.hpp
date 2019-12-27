@@ -24,11 +24,13 @@ class OBSAdvAudioCtrl : public QObject {
 private:
 	OBSSource source;
 
+	QPointer<QWidget> activeContainer;
 	QPointer<QWidget> forceMonoContainer;
 	QPointer<QWidget> mixerContainer;
 	QPointer<QWidget> balanceContainer;
 
 	QPointer<QLabel> nameLabel;
+	QPointer<QLabel> active;
 	QPointer<QStackedWidget> stackedWidget;
 	QPointer<QSpinBox> percent;
 	QPointer<QDoubleSpinBox> volume;
@@ -49,7 +51,11 @@ private:
 	OBSSignal syncOffsetSignal;
 	OBSSignal flagsSignal;
 	OBSSignal mixersSignal;
+	OBSSignal activateSignal;
+	OBSSignal deactivateSignal;
 
+	static void OBSSourceActivated(void *param, calldata_t *calldata);
+	static void OBSSourceDeactivated(void *param, calldata_t *calldata);
 	static void OBSSourceFlagsChanged(void *param, calldata_t *calldata);
 	static void OBSSourceVolumeChanged(void *param, calldata_t *calldata);
 	static void OBSSourceSyncChanged(void *param, calldata_t *calldata);
@@ -65,6 +71,7 @@ public:
 	void SetVolumeWidget(VolumeType type);
 
 public slots:
+	void SourceActiveChanged(bool active);
 	void SourceFlagsChanged(uint32_t flags);
 	void SourceVolumeChanged(float volume);
 	void SourceSyncChanged(int64_t offset);
