@@ -502,6 +502,11 @@ private:
 	QIcon GetBrowserIcon() const;
 	QIcon GetDefaultIcon() const;
 
+	QSlider *tBar;
+	bool tBarActive = false;
+	bool tBarDown = false;
+	void EnableTBar();
+
 public slots:
 	void DeferSaveBegin();
 	void DeferSaveEnd();
@@ -541,7 +546,8 @@ public slots:
 	void TransitionToScene(OBSScene scene, bool force = false);
 	void TransitionToScene(OBSSource scene, bool force = false,
 			       bool quickTransition = false,
-			       int quickDuration = 0, bool black = false);
+			       int quickDuration = 0, bool black = false,
+			       bool manual = false);
 	void SetCurrentScene(OBSSource scene, bool force = false);
 
 	bool AddSceneCollection(bool create_new,
@@ -644,6 +650,9 @@ private slots:
 	void SetGroupIcon(const QIcon &icon);
 	void SetSceneIcon(const QIcon &icon);
 	void SetDefaultIcon(const QIcon &icon);
+
+	void TBarChanged(int value);
+	void TBarReleased();
 
 private:
 	/* OBS Callbacks */
