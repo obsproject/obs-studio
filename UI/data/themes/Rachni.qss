@@ -184,11 +184,6 @@ QListWidget::item:hover:!active {
 	border: none;
 }
 
-QListWidget::item,
-SourceTree::item {
-	height: 24px;
-}
-
 /***********************/
 /* --- Dock widget --- */
 /***********************/

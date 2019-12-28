@@ -701,11 +701,6 @@ OBSBasicSettings QListWidget::item {
     padding-bottom: 5px;
 }
 
-QListWidget::item,
-SourceTree::item {
-	height: 24px;
-}
-
 /* Locked CheckBox */
 
 LockedCheckBox {

@@ -229,11 +229,6 @@ OBSBasic {
     qproperty-defaultIcon: url(:res/images/sources/default.svg);
 }
 
-QListWidget::item,
-SourceTree::item {
-	height: 24px;
-}
-
 /* Scene Tree */
 
 SceneTree {
