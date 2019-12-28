@@ -1333,6 +1333,7 @@ EXPORT obs_source_t *obs_transition_get_active_source(obs_source_t *transition);
 
 enum obs_transition_mode {
 	OBS_TRANSITION_MODE_AUTO,
+	OBS_TRANSITION_MODE_MANUAL,
 };
 
 EXPORT bool obs_transition_start(obs_source_t *transition,
@@ -1340,6 +1341,8 @@ EXPORT bool obs_transition_start(obs_source_t *transition,
 				 uint32_t duration_ms, obs_source_t *dest);
 
 EXPORT void obs_transition_set(obs_source_t *transition, obs_source_t *source);
+
+EXPORT void obs_transition_set_manual_time(obs_source_t *transition, float t);
 
 enum obs_transition_scale_type {
 	OBS_TRANSITION_SCALE_MAX_ONLY,

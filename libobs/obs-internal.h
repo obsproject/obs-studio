@@ -700,6 +700,7 @@ struct obs_source {
 	gs_texrender_t *transition_texrender[2];
 	pthread_mutex_t transition_mutex;
 	obs_source_t *transition_sources[2];
+	float transition_manual_val;
 	bool transitioning_video;
 	bool transitioning_audio;
 	bool transition_source_active[2];
