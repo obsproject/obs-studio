@@ -1343,6 +1343,8 @@ EXPORT bool obs_transition_start(obs_source_t *transition,
 EXPORT void obs_transition_set(obs_source_t *transition, obs_source_t *source);
 
 EXPORT void obs_transition_set_manual_time(obs_source_t *transition, float t);
+EXPORT void obs_transition_set_manual_torque(obs_source_t *transition,
+					     float torque, float clamp);
 
 enum obs_transition_scale_type {
 	OBS_TRANSITION_SCALE_MAX_ONLY,

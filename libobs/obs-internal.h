@@ -700,6 +700,9 @@ struct obs_source {
 	gs_texrender_t *transition_texrender[2];
 	pthread_mutex_t transition_mutex;
 	obs_source_t *transition_sources[2];
+	float transition_manual_clamp;
+	float transition_manual_torque;
+	float transition_manual_target;
 	float transition_manual_val;
 	bool transitioning_video;
 	bool transitioning_audio;
@@ -728,7 +731,7 @@ extern bool obs_source_init_context(struct obs_source *source,
 
 extern bool obs_transition_init(obs_source_t *transition);
 extern void obs_transition_free(obs_source_t *transition);
-extern void obs_transition_tick(obs_source_t *transition);
+extern void obs_transition_tick(obs_source_t *transition, float t);
 extern void obs_transition_enum_sources(obs_source_t *transition,
 					obs_source_enum_proc_t enum_callback,
 					void *param);
