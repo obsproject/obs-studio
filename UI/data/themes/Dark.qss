@@ -810,3 +810,28 @@ SceneTree {
 * [themeID="replayIconSmall"] {
     qproperty-icon: url(./Dark/save.svg);
 }
+
+/* Studio Mode T-Bar */
+
+QSlider[themeID="tBarSlider"] {
+	height: 80px;
+}
+
+QSlider::groove:horizontal[themeID="tBarSlider"] {
+	border: 1px solid #4c4c4c;
+	height: 5px;
+	background: rgb(31,30,31);;
+	margin: 0 12px;
+}
+
+QSlider::sub-page:horizontal[themeID="tBarSlider"] {
+	background: rgb(31,30,31);;
+	border: 1px solid #4c4c4c;
+}
+
+QSlider::handle:horizontal[themeID="tBarSlider"] {
+	background-color: #d2d2d2;
+	width: 25px;
+	height: 80px;
+	margin: -24px -12px;
+}

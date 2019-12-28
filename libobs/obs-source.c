@@ -1067,7 +1067,7 @@ void obs_source_video_tick(obs_source_t *source, float seconds)
 		return;
 
 	if (source->info.type == OBS_SOURCE_TYPE_TRANSITION)
-		obs_transition_tick(source);
+		obs_transition_tick(source, seconds);
 
 	if ((source->info.output_flags & OBS_SOURCE_ASYNC) != 0)
 		async_tick(source);
