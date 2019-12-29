@@ -36,6 +36,9 @@
 
 #include <glad/glad_egl.h>
 
+/* FIXME glad */
+typedef EGLDisplay (EGLAPIENTRYP PFNEGLGETPLATFORMDISPLAYEXTPROC) (EGLenum platform, void *native_display, const EGLint *attrib_list);
+
 static const int ctx_attribs[] = {
 #ifdef _DEBUG
 	EGL_CONTEXT_OPENGL_DEBUG, EGL_TRUE,
@@ -240,12 +243,31 @@ static bool gl_context_create(struct gl_platform *plat)
 	EGLContext context = EGL_NO_CONTEXT;
 	int egl_min = 0, egl_maj = 0;
 	bool success = false;
+	const char *egl_client_extensions = NULL;
 
 	eglBindAPI(EGL_OPENGL_API);
 
-	edisplay = eglGetDisplay(display);
+	egl_client_extensions = eglQueryString(EGL_NO_DISPLAY, EGL_EXTENSIONS);
+
+		// FIXME glad
+		PFNEGLGETPLATFORMDISPLAYEXTPROC eglGetPlatformDisplayEXT =
+			(PFNEGLGETPLATFORMDISPLAYEXTPROC)(
+					strstr(egl_client_extensions, "EGL_EXT_platform_base")
+					? eglGetProcAddress("eglGetPlatformDisplayEXT")
+					: NULL);
+
+	if (eglGetPlatformDisplayEXT) {
+		// FIXME this forces X11 for now
+		edisplay = eglGetPlatformDisplayEXT(EGL_PLATFORM_X11_EXT, display, NULL);
+		if (EGL_NO_DISPLAY == edisplay)
+			blog(LOG_ERROR, "Failed to get X11/EGL display using eglGetPlatformDisplayExt(EGL_PLATFORM_X11_EXT, ...)");
+	}
+
+	if (EGL_NO_DISPLAY == edisplay)
+		edisplay = eglGetDisplay(display);
+
 	if (EGL_NO_DISPLAY == edisplay) {
-		blog(LOG_ERROR, "Failed to get EGL display");
+		blog(LOG_ERROR, "Failed to get EGL display using eglGetDisplay");
 		return false;
 	}
 
