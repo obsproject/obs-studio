@@ -28,6 +28,7 @@ OBSAdvAudioCtrl::OBSAdvAudioCtrl(QGridLayout *, obs_source_t *source_)
 	uint32_t mixers = obs_source_get_audio_mixers(source);
 
 	activeContainer = new QWidget();
+	muteContainer = new QWidget();
 	forceMonoContainer = new QWidget();
 	mixerContainer = new QWidget();
 	balanceContainer = new QWidget();
@@ -38,6 +39,7 @@ OBSAdvAudioCtrl::OBSAdvAudioCtrl(QGridLayout *, obs_source_t *source_)
 	stackedWidget = new QStackedWidget();
 	volume = new QDoubleSpinBox();
 	percent = new QSpinBox();
+	mute = new MuteCheckBox();
 	forceMono = new QCheckBox();
 	balance = new BalanceSlider();
 #if defined(_WIN32) || defined(__APPLE__) || HAVE_PULSEAUDIO
@@ -56,6 +58,7 @@ OBSAdvAudioCtrl::OBSAdvAudioCtrl(QGridLayout *, obs_source_t *source_)
 				 this);
 	volChangedSignal.Connect(handler, "volume", OBSSourceVolumeChanged,
 				 this);
+	muteSignal.Connect(handler, "mute", OBSSourceMuteChanged, this);
 	syncOffsetSignal.Connect(handler, "audio_sync", OBSSourceSyncChanged,
 				 this);
 	flagsSignal.Connect(handler, "update_flags", OBSSourceFlagsChanged,
@@ -66,6 +69,9 @@ OBSAdvAudioCtrl::OBSAdvAudioCtrl(QGridLayout *, obs_source_t *source_)
 	hlayout = new QHBoxLayout();
 	hlayout->setContentsMargins(0, 0, 0, 0);
 	activeContainer->setLayout(hlayout);
+	hlayout = new QHBoxLayout();
+	hlayout->setContentsMargins(0, 0, 0, 0);
+	muteContainer->setLayout(hlayout);
 	hlayout = new QHBoxLayout();
 	hlayout->setContentsMargins(0, 0, 0, 0);
 	forceMonoContainer->setLayout(hlayout);
@@ -117,6 +123,12 @@ OBSAdvAudioCtrl::OBSAdvAudioCtrl(QGridLayout *, obs_source_t *source_)
 		GetGlobalConfig(), "BasicWindow", "AdvAudioVolumeType");
 
 	SetVolumeWidget(volType);
+
+	mute->setChecked(obs_source_muted(source));
+
+	muteContainer->layout()->addWidget(mute);
+	muteContainer->layout()->setAlignment(mute, Qt::AlignVCenter);
+	muteContainer->setFixedWidth(50);
 
 	forceMono->setChecked((flags & OBS_SOURCE_FLAG_FORCE_MONO) != 0);
 
@@ -196,6 +208,8 @@ OBSAdvAudioCtrl::OBSAdvAudioCtrl(QGridLayout *, obs_source_t *source_)
 			 SLOT(volumeChanged(double)));
 	QWidget::connect(percent, SIGNAL(valueChanged(int)), this,
 			 SLOT(percentChanged(int)));
+	QWidget::connect(mute, SIGNAL(clicked(bool)), this,
+			 SLOT(muteChanged(bool)));
 	QWidget::connect(forceMono, SIGNAL(clicked(bool)), this,
 			 SLOT(downmixMonoChanged(bool)));
 	QWidget::connect(balance, SIGNAL(valueChanged(int)), this,
@@ -229,6 +243,7 @@ OBSAdvAudioCtrl::~OBSAdvAudioCtrl()
 	nameLabel->deleteLater();
 	activeContainer->deleteLater();
 	stackedWidget->deleteLater();
+	muteContainer->deleteLater();
 	forceMonoContainer->deleteLater();
 	balanceContainer->deleteLater();
 	syncOffset->deleteLater();
@@ -246,6 +261,7 @@ void OBSAdvAudioCtrl::ShowAudioControl(QGridLayout *layout)
 	layout->addWidget(nameLabel, lastRow, idx++);
 	layout->addWidget(activeContainer, lastRow, idx++);
 	layout->addWidget(stackedWidget, lastRow, idx++);
+	layout->addWidget(muteContainer, lastRow, idx++);
 	layout->addWidget(forceMonoContainer, lastRow, idx++);
 	layout->addWidget(balanceContainer, lastRow, idx++);
 	layout->addWidget(syncOffset, lastRow, idx++);
@@ -286,6 +302,13 @@ void OBSAdvAudioCtrl::OBSSourceVolumeChanged(void *param, calldata_t *calldata)
 	float volume = (float)calldata_float(calldata, "volume");
 	QMetaObject::invokeMethod(reinterpret_cast<OBSAdvAudioCtrl *>(param),
 				  "SourceVolumeChanged", Q_ARG(float, volume));
+}
+
+void OBSAdvAudioCtrl::OBSSourceMuteChanged(void *param, calldata_t *calldata)
+{
+	bool muted = calldata_bool(calldata, "muted");
+	QMetaObject::invokeMethod(reinterpret_cast<OBSAdvAudioCtrl *>(param),
+				  "SourceMuteChanged", Q_ARG(bool, muted));
 }
 
 void OBSAdvAudioCtrl::OBSSourceSyncChanged(void *param, calldata_t *calldata)
@@ -340,6 +363,11 @@ void OBSAdvAudioCtrl::SourceVolumeChanged(float value)
 	volume->blockSignals(false);
 }
 
+void OBSAdvAudioCtrl::SourceMuteChanged(bool muted)
+{
+	mute->setChecked(muted);
+}
+
 void OBSAdvAudioCtrl::SourceSyncChanged(int64_t offset)
 {
 	syncOffset->setValue(offset / NSEC_PER_MSEC);
@@ -372,6 +400,14 @@ void OBSAdvAudioCtrl::volumeChanged(double db)
 void OBSAdvAudioCtrl::percentChanged(int percent)
 {
 	obs_source_set_volume(source, (float)percent / 100.0f);
+}
+
+void OBSAdvAudioCtrl::muteChanged(bool checked)
+{
+	bool muted = obs_source_muted(source);
+	if (muted != checked) {
+		obs_source_set_muted(source, checked);
+	}
 }
 
 void OBSAdvAudioCtrl::downmixMonoChanged(bool checked)
