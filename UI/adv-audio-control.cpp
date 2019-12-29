@@ -94,7 +94,7 @@ OBSAdvAudioCtrl::OBSAdvAudioCtrl(QGridLayout *, obs_source_t *source_)
 	active->setText(isActive ? QTStr("Basic.Stats.Status.Active")
 				 : QTStr("Basic.Stats.Status.Inactive"));
 	if (isActive)
-		setThemeID(active, "error");
+		setThemeID(active, "good");
 	activeContainer->layout()->addWidget(active);
 	activeContainer->layout()->setAlignment(active, Qt::AlignVCenter);
 	activeContainer->setFixedWidth(50);
@@ -340,7 +340,7 @@ void OBSAdvAudioCtrl::SourceActiveChanged(bool isActive)
 {
 	if (isActive) {
 		active->setText(QTStr("Basic.Stats.Status.Active"));
-		setThemeID(active, "error");
+		setThemeID(active, "good");
 	} else {
 		active->setText(QTStr("Basic.Stats.Status.Inactive"));
 		setThemeID(active, "");
