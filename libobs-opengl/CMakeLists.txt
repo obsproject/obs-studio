@@ -58,6 +58,7 @@ set(libobs-opengl_SOURCES
 	gl-stagesurf.c
 	gl-subsystem.c
 	gl-texture2d.c
+	gl-texture3d.c
 	gl-texturecube.c
 	gl-vertexbuffer.c
 	gl-zstencil.c)

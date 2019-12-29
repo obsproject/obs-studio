@@ -938,10 +938,12 @@ static inline bool gs_is_compressed_format(enum gs_color_format format)
 	return (format == GS_DXT1 || format == GS_DXT3 || format == GS_DXT5);
 }
 
-static inline uint32_t gs_get_total_levels(uint32_t width, uint32_t height)
+static inline uint32_t gs_get_total_levels(uint32_t width, uint32_t height,
+					   uint32_t depth)
 {
 	uint32_t size = width > height ? width : height;
-	uint32_t num_levels = 0;
+	size = size > depth ? size : depth;
+	uint32_t num_levels = 1;
 
 	while (size > 1) {
 		size /= 2;

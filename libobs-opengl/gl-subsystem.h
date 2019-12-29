@@ -527,6 +527,16 @@ struct gs_texture_2d {
 	GLuint unpack_buffer;
 };
 
+struct gs_texture_3d {
+	struct gs_texture base;
+
+	uint32_t width;
+	uint32_t height;
+	uint32_t depth;
+	bool gen_mipmaps;
+	GLuint unpack_buffer;
+};
+
 struct gs_texture_cube {
 	struct gs_texture base;
 

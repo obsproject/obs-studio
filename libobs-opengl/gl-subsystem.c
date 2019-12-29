@@ -349,24 +349,6 @@ uint32_t device_get_height(const gs_device_t *device)
 	}
 }
 
-gs_texture_t *device_voltexture_create(gs_device_t *device, uint32_t width,
-				       uint32_t height, uint32_t depth,
-				       enum gs_color_format color_format,
-				       uint32_t levels, const uint8_t **data,
-				       uint32_t flags)
-{
-	/* TODO */
-	UNUSED_PARAMETER(device);
-	UNUSED_PARAMETER(width);
-	UNUSED_PARAMETER(height);
-	UNUSED_PARAMETER(depth);
-	UNUSED_PARAMETER(color_format);
-	UNUSED_PARAMETER(levels);
-	UNUSED_PARAMETER(data);
-	UNUSED_PARAMETER(flags);
-	return NULL;
-}
-
 gs_samplerstate_t *
 device_samplerstate_create(gs_device_t *device,
 			   const struct gs_sampler_info *info)

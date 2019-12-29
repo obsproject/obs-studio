@@ -1,13 +1,16 @@
 uniform float4x4 ViewProj;
 uniform texture2d image;
 
-uniform texture2d clut;
+uniform texture3d clut;
 uniform float clut_amount;
+uniform float clut_scale;
+uniform float clut_offset;
 
 sampler_state textureSampler {
 	Filter    = Linear;
 	AddressU  = Clamp;
 	AddressV  = Clamp;
+	AddressW  = Clamp;
 };
 
 struct VertDataIn {
@@ -31,29 +34,11 @@ VertDataOut VSDefault(VertDataIn v_in)
 float4 LUT(VertDataOut v_in) : TARGET
 {
 	float4 textureColor = image.Sample(textureSampler, v_in.uv);
-	float blueColor = textureColor.b * 63.0;
 
-	float2 quad1;
-	quad1.y = floor(floor(blueColor) / 8.0);
-	quad1.x = floor(blueColor) - (quad1.y * 8.0);
+	float3 clut_uvw = textureColor.rgb * clut_scale + clut_offset;
+	float3 luttedColor = clut.Sample(textureSampler, clut_uvw).rgb;
 
-	float2 quad2;
-	quad2.y = floor(ceil(blueColor) / 8.0);
-	quad2.x = ceil(blueColor) - (quad2.y * 8.0);
-
-	float2 texPos1;
-	texPos1.x = (quad1.x * 0.125) + 0.5/512.0 + ((0.125 - 1.0/512.0) * textureColor.r);
-	texPos1.y = (quad1.y * 0.125) + 0.5/512.0 + ((0.125 - 1.0/512.0) * textureColor.g);
-
-	float2 texPos2;
-	texPos2.x = (quad2.x * 0.125) + 0.5/512.0 + ((0.125 - 1.0/512.0) * textureColor.r);
-	texPos2.y = (quad2.y * 0.125) + 0.5/512.0 + ((0.125 - 1.0/512.0) * textureColor.g);
-
-	float4 newColor1 = clut.Sample(textureSampler, texPos1);
-	float4 newColor2 = clut.Sample(textureSampler, texPos2);
-	float4 luttedColor = lerp(newColor1, newColor2, frac(blueColor));
-
-	float4 final_color = lerp(textureColor, luttedColor, clut_amount);
+	float3 final_color = lerp(textureColor.rgb, luttedColor, clut_amount);
 	return float4(final_color.rgb, textureColor.a);
 }
 

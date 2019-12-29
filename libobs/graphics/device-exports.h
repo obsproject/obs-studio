@@ -52,7 +52,8 @@ device_cubetexture_create(gs_device_t *device, uint32_t size,
 EXPORT gs_texture_t *
 device_voltexture_create(gs_device_t *device, uint32_t width, uint32_t height,
 			 uint32_t depth, enum gs_color_format color_format,
-			 uint32_t levels, const uint8_t **data, uint32_t flags);
+			 uint32_t levels, const uint8_t *const *data,
+			 uint32_t flags);
 EXPORT gs_zstencil_t *device_zstencil_create(gs_device_t *device,
 					     uint32_t width, uint32_t height,
 					     enum gs_zstencil_format format);
