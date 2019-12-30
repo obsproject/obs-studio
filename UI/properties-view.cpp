@@ -235,10 +235,21 @@ QWidget *OBSPropertiesView::AddText(obs_property_t *prop, QFormLayout *layout,
 {
 	const char *name = obs_property_name(prop);
 	const char *val = obs_data_get_string(settings, name);
+	const bool monospace = obs_property_text_monospace(prop);
 	obs_text_type type = obs_property_text_type(prop);
 
 	if (type == OBS_TEXT_MULTILINE) {
 		QPlainTextEdit *edit = new QPlainTextEdit(QT_UTF8(val));
+#if QT_VERSION >= QT_VERSION_CHECK(5, 10, 0)
+		edit->setTabStopDistance(40);
+#else
+		edit->setTabStopWidth(40);
+#endif
+		if (monospace) {
+			QFont f("Courier");
+			f.setStyleHint(QFont::Monospace);
+			edit->setFont(f);
+		}
 		return NewWidget(prop, edit, SIGNAL(textChanged()));
 
 	} else if (type == OBS_TEXT_PASSWORD) {
