@@ -1477,6 +1477,19 @@
             }
         },
         {
+            "name": "show-it.tv",
+            "servers": [
+                {
+                    "name": "Default",
+                    "url": "rtmp://stream-1.show-it.tv:1935/live"
+                }
+            ],
+            "recommend": {
+                "max video bitrate": 6000,
+                "max audio bitrate": 192
+            }
+        },
+        {
             "name": "ChathostessModels",
             "servers": [
                 {
