@@ -1920,12 +1920,16 @@ void OBSBasic::OBSInit()
 			&OBSBasic::ManageExtraBrowserDocks);
 		ui->viewMenuDocks->insertSeparator(ui->toggleScenes);
 
-		const char *configDockBrowsers = config_get_string(App()->GlobalConfig(), "BasicWindow", "ExtraBrowserDocks");
-		bool EBDUsed = config_get_bool(App()->GlobalConfig(), "BasicWindow", "UsedDefaultEBD");
+		const char *configDockBrowsers =
+			config_get_string(App()->GlobalConfig(), "BasicWindow",
+					  "ExtraBrowserDocks");
+		bool EBDUsed = config_get_bool(App()->GlobalConfig(),
+					       "BasicWindow", "UsedDefaultEBD");
 
 		if (configDockBrowsers && !EBDUsed) {
 			LoadExtraBrowserDocks(configDockBrowsers);
-			config_set_bool(App()->GlobalConfig(), "BasicWindow", "UsedDefaultEBD", true);
+			config_set_bool(App()->GlobalConfig(), "BasicWindow",
+					"UsedDefaultEBD", true);
 		} else {
 			LoadExtraBrowserDocks(
 				obs_data_get_string(data, "ExtraBrowserDocks"));
@@ -1950,7 +1954,8 @@ void OBSBasic::OBSInit()
 
 	if (configDockState && !DSUsed) {
 		dockStateStr = std::string(configDockState);
-		config_set_bool(App()->GlobalConfig(), "BasicWindow", "UsedDefaultDockState", true);
+		config_set_bool(App()->GlobalConfig(), "BasicWindow",
+				"UsedDefaultDockState", true);
 	}
 
 	if (dockStateStr.empty()) {

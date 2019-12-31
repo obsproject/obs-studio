@@ -519,8 +519,10 @@ void OBSBasic::SaveUI()
 		const char *dockState = saveState().toBase64().constData();
 		obs_data_t *saveData = obs_data_create();
 		obs_data_set_string(saveData, "DockState", dockState);
+#ifdef BROWSER_AVAILABLE
 		obs_data_set_string(saveData, "ExtraBrowserDocks",
 				    ExtraBrowserSaveString().c_str());
+#endif
 
 		if (!obs_data_save_json_safe(saveData, savePath, "tmp", "bak"))
 			blog(LOG_ERROR, "Could not save ui data to %s",
@@ -540,11 +542,11 @@ void OBSBasic::LoadUI(const char *file)
 		obs_data_release(data);
 		return;
 	}
-
+#ifdef BROWSER_AVAILABLE
 	LoadExtraBrowserDocks(obs_data_get_string(data, "ExtraBrowserDocks"));
+#endif
 
-	const char *dockStateStr =
-			obs_data_get_string(data, "DockState");
+	const char *dockStateStr = obs_data_get_string(data, "DockState");
 	if (!dockStateStr) {
 		CreateDefaultUI(false);
 		blog(LOG_WARNING, "No dock state to hydrate");

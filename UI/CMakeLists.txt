@@ -16,7 +16,6 @@ add_subdirectory(obs-frontend-api)
 # ----------------------------------------------------------------------------
 
 project(obs)
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(DISABLE_UPDATE_MODULE TRUE CACHE BOOL "Disables building the update module")
 
 if(NOT DEFINED TWITCH_CLIENTID OR "${TWITCH_CLIENTID}" STREQUAL "" OR

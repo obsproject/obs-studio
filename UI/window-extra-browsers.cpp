@@ -482,7 +482,8 @@ void OBSBasic::LoadExtraBrowserDocks(const char *jsonStr)
 	}
 }
 
-std::string OBSBasic::ExtraBrowserSaveString() {
+std::string OBSBasic::ExtraBrowserSaveString()
+{
 	Json::array array;
 	for (int i = 0; i < extraBrowserDocks.size(); i++) {
 		QAction *action = extraBrowserDockActions[i].data();
