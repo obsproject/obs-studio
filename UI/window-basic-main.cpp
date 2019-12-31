@@ -5416,6 +5416,12 @@ void OBSBasic::StartRecording()
 	if (disableOutputsRef)
 		return;
 
+	if (!OutputPathValid()) {
+		OutputPathInvalidMessage();
+		ui->recordButton->setChecked(false);
+		return;
+	}
+
 	if (LowDiskSpace()) {
 		DiskSpaceMessage();
 		ui->recordButton->setChecked(false);
@@ -7653,6 +7659,20 @@ const char *OBSBasic::GetCurrentOutputPath()
 	}
 
 	return path;
+}
+
+void OBSBasic::OutputPathInvalidMessage()
+{
+	blog(LOG_ERROR, "Recording stopped because of bad output path");
+
+	OBSMessageBox::critical(this, QTStr("Output.BadPath.Title"),
+				QTStr("Output.BadPath.Text"));
+}
+
+bool OBSBasic::OutputPathValid()
+{
+	const char *path = GetCurrentOutputPath();
+	return path && *path && QDir(path).exists();
 }
 
 void OBSBasic::DiskSpaceMessage()
