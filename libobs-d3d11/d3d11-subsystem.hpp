@@ -494,12 +494,10 @@ struct gs_texture_2d : gs_texture {
 
 struct gs_texture_3d : gs_texture {
 	ComPtr<ID3D11Texture3D> texture;
-	ComPtr<ID3D11RenderTargetView> renderTarget[6];
 
 	uint32_t width = 0, height = 0, depth = 0;
 	uint32_t flags = 0;
 	DXGI_FORMAT dxgiFormat = DXGI_FORMAT_UNKNOWN;
-	bool isRenderTarget = false;
 	bool isDynamic = false;
 	bool isShared = false;
 	bool genMipmaps = false;
@@ -515,7 +513,6 @@ struct gs_texture_3d : gs_texture {
 	void InitSRD(vector<D3D11_SUBRESOURCE_DATA> &srd);
 	void InitTexture(const uint8_t *const *data);
 	void InitResourceView();
-	void InitRenderTargets();
 	void BackupTexture(const uint8_t *const *data);
 	void GetSharedHandle(IDXGIResource *dxgi_res);
 
@@ -527,8 +524,6 @@ struct gs_texture_3d : gs_texture {
 	inline void Release()
 	{
 		texture.Release();
-		for (auto &rt : renderTarget)
-			rt.Release();
 		shaderRes.Release();
 	}
 

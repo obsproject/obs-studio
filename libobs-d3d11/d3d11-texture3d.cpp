@@ -103,9 +103,6 @@ void gs_texture_3d::InitTexture(const uint8_t *const *data)
 	if (type == GS_TEXTURE_CUBE)
 		td.MiscFlags |= D3D11_RESOURCE_MISC_TEXTURECUBE;
 
-	if (isRenderTarget)
-		td.BindFlags |= D3D11_BIND_RENDER_TARGET;
-
 	if ((flags & GS_SHARED_KM_TEX) != 0)
 		td.MiscFlags |= D3D11_RESOURCE_MISC_SHARED_KEYEDMUTEX;
 	else if ((flags & GS_SHARED_TEX) != 0)
@@ -171,25 +168,6 @@ void gs_texture_3d::InitResourceView()
 		throw HRError("Failed to create resource view", hr);
 }
 
-void gs_texture_3d::InitRenderTargets()
-{
-	D3D11_RENDER_TARGET_VIEW_DESC rtv;
-	rtv.Format = dxgiFormat;
-	rtv.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE3D;
-	rtv.Texture3D.MipSlice = 0;
-	rtv.Texture3D.WSize = 1;
-
-	for (UINT i = 0; i < 6; i++) {
-		rtv.Texture3D.FirstWSlice = i;
-		const HRESULT hr = device->device->CreateRenderTargetView(
-			texture, &rtv, renderTarget[i].Assign());
-		if (FAILED(hr))
-			throw HRError("Failed to create volume render "
-				      "target view",
-				      hr);
-	}
-}
-
 #define SHARED_FLAGS (GS_SHARED_TEX | GS_SHARED_KM_TEX)
 
 gs_texture_3d::gs_texture_3d(gs_device_t *device, uint32_t width,
@@ -203,7 +181,6 @@ gs_texture_3d::gs_texture_3d(gs_device_t *device, uint32_t width,
 	  depth(depth),
 	  flags(flags_),
 	  dxgiFormat(ConvertGSTextureFormat(format)),
-	  isRenderTarget((flags_ & GS_RENDER_TARGET) != 0),
 	  isDynamic((flags_ & GS_DYNAMIC) != 0),
 	  isShared((flags_ & SHARED_FLAGS) != 0),
 	  genMipmaps((flags_ & GS_BUILD_MIPMAPS) != 0),
@@ -211,9 +188,6 @@ gs_texture_3d::gs_texture_3d(gs_device_t *device, uint32_t width,
 {
 	InitTexture(data);
 	InitResourceView();
-
-	if (isRenderTarget)
-		InitRenderTargets();
 }
 
 gs_texture_3d::gs_texture_3d(gs_device_t *device, uint32_t handle)

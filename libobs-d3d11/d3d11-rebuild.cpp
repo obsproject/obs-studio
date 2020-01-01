@@ -302,9 +302,6 @@ void gs_texture_3d::Rebuild(ID3D11Device *dev)
 	if (FAILED(hr))
 		throw HRError("Failed to create resource view", hr);
 
-	if (isRenderTarget)
-		InitRenderTargets();
-
 	acquired = false;
 
 	if ((td.MiscFlags & D3D11_RESOURCE_MISC_SHARED_KEYEDMUTEX) != 0) {
