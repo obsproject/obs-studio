@@ -350,6 +350,7 @@ qt5_wrap_ui(obs_UI_HEADERS ${obs_UI})
 qt5_add_resources(obs_QRC_SOURCES ${obs_QRC})
 
 add_executable(obs WIN32
+	obs.manifest
 	${obs_SOURCES}
 	${obs_HEADERS}
 	${obs_UI_HEADERS}
