@@ -866,7 +866,17 @@ void get_win_ver(struct win_version_info *info)
 		return;
 
 	if (!got_version) {
-		get_dll_ver(L"kernel32", &ver);
+
+		OSVERSIONINFO osvi;
+
+		ZeroMemory(&osvi, sizeof(OSVERSIONINFO));
+		osvi.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
+
+		GetVersionEx(&osvi);
+		ver.build = osvi.dwBuildNumber;
+		ver.major = osvi.dwMajorVersion;
+		ver.minor = osvi.dwMinorVersion;
+		ver.revis = 0; // Not returned in osvi
 		got_version = true;
 
 		if (ver.major == 10) {
