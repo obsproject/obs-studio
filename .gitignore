@@ -89,7 +89,6 @@ tags
 *.obj
 *.pdb
 *.res
-*.manifest
 *.dep
 *.zip
 *.lnk
