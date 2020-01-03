@@ -247,6 +247,6 @@ translated error message stored that can be obtained via the
 
 .. --------------------------------------------------------------------
 
-.. _RTMP Output: https://github.com/jp9000/obs-studio/blob/master/plugins/obs-outputs/rtmp-stream.c
-.. _UI/qt-display.hpp: https://github.com/jp9000/obs-studio/blob/master/UI/qt-display.hpp
-.. _UI/qt-display.cpp: https://github.com/jp9000/obs-studio/blob/master/UI/qt-display.cpp
+.. _RTMP Output: https://github.com/obsproject/obs-studio/blob/master/plugins/obs-outputs/rtmp-stream.c
+.. _UI/qt-display.hpp: https://github.com/obsproject/obs-studio/blob/master/UI/qt-display.hpp
+.. _UI/qt-display.cpp: https://github.com/obsproject/obs-studio/blob/master/UI/qt-display.cpp

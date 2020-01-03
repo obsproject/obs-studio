@@ -164,31 +164,31 @@ queue to ensure encoded packets are sent in monotonic timestamp order
 
 The encoded packet or raw audio data is then sent to the output.
 
-.. _obs_graphics_thread: https://github.com/jp9000/obs-studio/blob/2c58185af3c85f4e594a4c067c9dfe5fa4b5b0a9/libobs/obs-video.c#L588-L651
-.. _libobs/obs-audio.c: https://github.com/jp9000/obs-studio/blob/master/libobs/obs-audio.c
-.. _libobs/obs-video.c: https://github.com/jp9000/obs-studio/blob/master/libobs/obs-video.c
-.. _video_thread: https://github.com/jp9000/obs-studio/blob/2c58185af3c85f4e594a4c067c9dfe5fa4b5b0a9/libobs/media-io/video-io.c#L169-L195
-.. _libobs/media-io/video-io.c: https://github.com/jp9000/obs-studio/blob/master/libobs/media-io/video-io.c
-.. _video output handler: https://github.com/jp9000/obs-studio/blob/master/libobs/media-io/video-io.c
-.. _audio_thread: https://github.com/jp9000/obs-studio/blob/2c58185af3c85f4e594a4c067c9dfe5fa4b5b0a9/libobs/media-io/audio-io.c#L241-L282
-.. _libobs/media-io/audio-io.c: https://github.com/jp9000/obs-studio/blob/master/libobs/media-io/audio-io.c
-.. _MAX_CHANNELS: https://github.com/jp9000/obs-studio/blob/2c58185af3c85f4e594a4c067c9dfe5fa4b5b0a9/libobs/obs-defs.h#L20-L21
-.. _[1]: https://github.com/jp9000/obs-studio/blob/2c58185af3c85f4e594a4c067c9dfe5fa4b5b0a9/libobs/obs-video.c#L99-L129
-.. _obs_core_video::video: https://github.com/jp9000/obs-studio/blob/2c58185af3c85f4e594a4c067c9dfe5fa4b5b0a9/libobs/obs-internal.h#L250
-.. _MAX_CACHE_SIZE: https://github.com/jp9000/obs-studio/blob/2c58185af3c85f4e594a4c067c9dfe5fa4b5b0a9/libobs/media-io/video-io.c#L34
-.. _[2]: https://github.com/jp9000/obs-studio/blob/2c58185af3c85f4e594a4c067c9dfe5fa4b5b0a9/libobs/media-io/video-io.c#L431-L434
-.. _[3]: https://github.com/jp9000/obs-studio/blob/2c58185af3c85f4e594a4c067c9dfe5fa4b5b0a9/libobs/media-io/video-io.c#L115-L167
-.. _libobs/obs-encoder.c: https://github.com/jp9000/obs-studio/blob/master/libobs/obs-encoder.c
-.. _[4]: https://github.com/jp9000/obs-studio/blob/2c58185af3c85f4e594a4c067c9dfe5fa4b5b0a9/libobs/obs-output.c#L1382-L1439
-.. _AUDIO_OUTPUT_FRAMES: https://github.com/jp9000/obs-studio/blob/2c58185af3c85f4e594a4c067c9dfe5fa4b5b0a9/libobs/media-io/audio-io.h#L30
-.. _audio_callback: https://github.com/jp9000/obs-studio/blob/2c58185af3c85f4e594a4c067c9dfe5fa4b5b0a9/libobs/obs-audio.c#L367-L485
-.. _obs_source_output_audio: https://github.com/jp9000/obs-studio/blob/2c58185af3c85f4e594a4c067c9dfe5fa4b5b0a9/libobs/obs-source.c#L2578-L2608
-.. _obs_source::audio_input_buf: https://github.com/jp9000/obs-studio/blob/2c58185af3c85f4e594a4c067c9dfe5fa4b5b0a9/libobs/obs-source.c#L1280-L1283
-.. _[5]: https://github.com/jp9000/obs-studio/blob/2c58185af3c85f4e594a4c067c9dfe5fa4b5b0a9/libobs/obs-source.c#L2561-L2563
-.. _[6]: https://github.com/jp9000/obs-studio/blob/2c58185af3c85f4e594a4c067c9dfe5fa4b5b0a9/libobs/obs-source.c#L2591
-.. _[7]: https://github.com/jp9000/obs-studio/blob/2c58185af3c85f4e594a4c067c9dfe5fa4b5b0a9/libobs/obs-audio.c#L393-L415
-.. _obs_source::audio_output_buf: https://github.com/jp9000/obs-studio/blob/2c58185af3c85f4e594a4c067c9dfe5fa4b5b0a9/libobs/obs-internal.h#L580
-.. _[8]: https://github.com/jp9000/obs-studio/blob/2c58185af3c85f4e594a4c067c9dfe5fa4b5b0a9/libobs/obs-audio.c#L417-L423
-.. _obs_source_info::audio_render: https://github.com/jp9000/obs-studio/blob/2c58185af3c85f4e594a4c067c9dfe5fa4b5b0a9/libobs/obs-source.h#L410-L412
-.. _[9]: https://github.com/jp9000/obs-studio/blob/2c58185af3c85f4e594a4c067c9dfe5fa4b5b0a9/libobs/obs-audio.c#L436-L453
-.. _[10]: https://github.com/jp9000/obs-studio/blob/2c58185af3c85f4e594a4c067c9dfe5fa4b5b0a9/libobs/media-io/audio-io.c#L144-L165
+.. _obs_graphics_thread: https://github.com/obsproject/obs-studio/blob/2c58185af3c85f4e594a4c067c9dfe5fa4b5b0a9/libobs/obs-video.c#L588-L651
+.. _libobs/obs-audio.c: https://github.com/obsproject/obs-studio/blob/master/libobs/obs-audio.c
+.. _libobs/obs-video.c: https://github.com/obsproject/obs-studio/blob/master/libobs/obs-video.c
+.. _video_thread: https://github.com/obsproject/obs-studio/blob/2c58185af3c85f4e594a4c067c9dfe5fa4b5b0a9/libobs/media-io/video-io.c#L169-L195
+.. _libobs/media-io/video-io.c: https://github.com/obsproject/obs-studio/blob/master/libobs/media-io/video-io.c
+.. _video output handler: https://github.com/obsproject/obs-studio/blob/master/libobs/media-io/video-io.c
+.. _audio_thread: https://github.com/obsproject/obs-studio/blob/2c58185af3c85f4e594a4c067c9dfe5fa4b5b0a9/libobs/media-io/audio-io.c#L241-L282
+.. _libobs/media-io/audio-io.c: https://github.com/obsproject/obs-studio/blob/master/libobs/media-io/audio-io.c
+.. _MAX_CHANNELS: https://github.com/obsproject/obs-studio/blob/2c58185af3c85f4e594a4c067c9dfe5fa4b5b0a9/libobs/obs-defs.h#L20-L21
+.. _[1]: https://github.com/obsproject/obs-studio/blob/2c58185af3c85f4e594a4c067c9dfe5fa4b5b0a9/libobs/obs-video.c#L99-L129
+.. _obs_core_video::video: https://github.com/obsproject/obs-studio/blob/2c58185af3c85f4e594a4c067c9dfe5fa4b5b0a9/libobs/obs-internal.h#L250
+.. _MAX_CACHE_SIZE: https://github.com/obsproject/obs-studio/blob/2c58185af3c85f4e594a4c067c9dfe5fa4b5b0a9/libobs/media-io/video-io.c#L34
+.. _[2]: https://github.com/obsproject/obs-studio/blob/2c58185af3c85f4e594a4c067c9dfe5fa4b5b0a9/libobs/media-io/video-io.c#L431-L434
+.. _[3]: https://github.com/obsproject/obs-studio/blob/2c58185af3c85f4e594a4c067c9dfe5fa4b5b0a9/libobs/media-io/video-io.c#L115-L167
+.. _libobs/obs-encoder.c: https://github.com/obsproject/obs-studio/blob/master/libobs/obs-encoder.c
+.. _[4]: https://github.com/obsproject/obs-studio/blob/2c58185af3c85f4e594a4c067c9dfe5fa4b5b0a9/libobs/obs-output.c#L1382-L1439
+.. _AUDIO_OUTPUT_FRAMES: https://github.com/obsproject/obs-studio/blob/2c58185af3c85f4e594a4c067c9dfe5fa4b5b0a9/libobs/media-io/audio-io.h#L30
+.. _audio_callback: https://github.com/obsproject/obs-studio/blob/2c58185af3c85f4e594a4c067c9dfe5fa4b5b0a9/libobs/obs-audio.c#L367-L485
+.. _obs_source_output_audio: https://github.com/obsproject/obs-studio/blob/2c58185af3c85f4e594a4c067c9dfe5fa4b5b0a9/libobs/obs-source.c#L2578-L2608
+.. _obs_source::audio_input_buf: https://github.com/obsproject/obs-studio/blob/2c58185af3c85f4e594a4c067c9dfe5fa4b5b0a9/libobs/obs-source.c#L1280-L1283
+.. _[5]: https://github.com/obsproject/obs-studio/blob/2c58185af3c85f4e594a4c067c9dfe5fa4b5b0a9/libobs/obs-source.c#L2561-L2563
+.. _[6]: https://github.com/obsproject/obs-studio/blob/2c58185af3c85f4e594a4c067c9dfe5fa4b5b0a9/libobs/obs-source.c#L2591
+.. _[7]: https://github.com/obsproject/obs-studio/blob/2c58185af3c85f4e594a4c067c9dfe5fa4b5b0a9/libobs/obs-audio.c#L393-L415
+.. _obs_source::audio_output_buf: https://github.com/obsproject/obs-studio/blob/2c58185af3c85f4e594a4c067c9dfe5fa4b5b0a9/libobs/obs-internal.h#L580
+.. _[8]: https://github.com/obsproject/obs-studio/blob/2c58185af3c85f4e594a4c067c9dfe5fa4b5b0a9/libobs/obs-audio.c#L417-L423
+.. _obs_source_info::audio_render: https://github.com/obsproject/obs-studio/blob/2c58185af3c85f4e594a4c067c9dfe5fa4b5b0a9/libobs/obs-source.h#L410-L412
+.. _[9]: https://github.com/obsproject/obs-studio/blob/2c58185af3c85f4e594a4c067c9dfe5fa4b5b0a9/libobs/obs-audio.c#L436-L453
+.. _[10]: https://github.com/obsproject/obs-studio/blob/2c58185af3c85f4e594a4c067c9dfe5fa4b5b0a9/libobs/media-io/audio-io.c#L144-L165

@@ -519,4 +519,4 @@ Functions used by encoders
 
 .. ---------------------------------------------------------------------------
 
-.. _libobs/obs-encoder.h: https://github.com/jp9000/obs-studio/blob/master/libobs/obs-encoder.h
+.. _libobs/obs-encoder.h: https://github.com/obsproject/obs-studio/blob/master/libobs/obs-encoder.h
