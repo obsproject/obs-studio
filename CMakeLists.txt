@@ -78,7 +78,7 @@ if(${CMAKE_C_COMPILER_ID} MATCHES "Clang" OR ${CMAKE_CXX_COMPILER_ID} MATCHES "C
 	set(CMAKE_COMPILER_IS_CLANG TRUE)
 endif()
 
-if(CMAKE_SYSTEM_PROCESSOR MATCHES "^(powerpc|ppc)64le")
+if(CMAKE_SYSTEM_PROCESSOR MATCHES "^(powerpc|ppc)64(le)?")
 	add_compile_definitions(NO_WARN_X86_INTRINSICS)
 endif()
 
