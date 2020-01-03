@@ -1,7 +1,7 @@
 Extra Math Functions/Macros
 ===========================
 
-.. code:: 
+.. code:: cpp
 
    #include <graphics/math-extra.h>
 

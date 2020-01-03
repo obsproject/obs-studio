@@ -78,7 +78,7 @@ it's no longer needed.
 
 *(Important note: do not use more than one display widget within the
 hierarchy of the same base window; this will cause presentation stalls
-on Macs.)*
+on macOS.)*
 
 For an example of how displays are used with Qt, see
 `UI/qt-display.hpp`_ and `UI/qt-display.cpp`_.

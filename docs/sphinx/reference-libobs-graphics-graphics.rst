@@ -238,7 +238,7 @@ Graphics Structures
 
 .. member:: id  gs_window.view
 
-   (Mac only) A view ID.
+   (macOS only) A view ID.
 
 .. member:: uint32_t gs_window.id
             void* gs_window.display
@@ -267,7 +267,7 @@ Initialization Functions
 
 .. function:: void gs_enum_adapters(bool (*callback)(void *param, const char *name, uint32_t id), void *param)
 
-   Enumerates adapters (this really only applies on windows).
+   Enumerates adapters (this really only applies on Windows).
 
    :param callback: Enumeration callback
    :param param:    Private data passed to the callback
@@ -1084,7 +1084,7 @@ Texture Functions
 
 .. function:: gs_texture_t *gs_texture_create_from_iosurface(void *iosurf)
 
-   **Mac only:** Creates a texture from an IOSurface.
+   **macOS only:** Creates a texture from an IOSurface.
 
    :param iosurf: IOSurface object
 
@@ -1092,7 +1092,7 @@ Texture Functions
 
 .. function:: bool     gs_texture_rebind_iosurface(gs_texture_t *texture, void *iosurf)
 
-   **Mac only:** Rebinds a texture to another IOSurface
+   **macOS only:** Rebinds a texture to another IOSurface
 
    :param texture: Texture object
    :param iosuf:   IOSurface object

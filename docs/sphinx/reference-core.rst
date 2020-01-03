@@ -669,7 +669,7 @@ Displays
   
    *(Important note: do not use more than one display widget within the
    hierarchy of the same base window; this will cause presentation
-   stalls on Macs.)*
+   stalls on macOS.)*
 
    :param  graphics_data: The swap chain initialization data
    :return:               The new display context, or NULL if failed

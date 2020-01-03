@@ -10,8 +10,8 @@ Scripting can be accessed in OBS Studio via the Tools menu -> Scripts
 option, which will bring up the scripting dialog.  Scripts can be added,
 removed, and reloaded in real time while the program is running.
 
-**NOTE:** On windows, currently only Python 3.6 is supported.  To use
-Python on windows, you must download and install Python 3.6.x "x86-64"
+**NOTE:** On Windows, currently only Python 3.6 is supported.  To use
+Python on Windows, you must download and install Python 3.6.x "x86-64"
 for OBS 64bit (64bit is the default), or Python 3.6.x "x86" if using OBS
 32bit.  Then, in the scripting dialog, you must set the path to the
 Python 3.6.x install in the "Python Settings" tab.
