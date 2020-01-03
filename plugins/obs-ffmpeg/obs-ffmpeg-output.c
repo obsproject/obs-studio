@@ -219,7 +219,7 @@ static bool create_video_stream(struct ffmpeg_data *data)
 		data->vcodec->pix_fmts, data->config.format, 0, NULL);
 
 	context = data->video->codec;
-	context->bit_rate = data->config.video_bitrate * 1000;
+	context->bit_rate = (int64_t)data->config.video_bitrate * 1000;
 	context->width = data->config.scale_width;
 	context->height = data->config.scale_height;
 	context->time_base = (AVRational){ovi.fps_den, ovi.fps_num};
@@ -313,7 +313,7 @@ static bool create_audio_stream(struct ffmpeg_data *data, int idx)
 
 	data->audio_streams[idx] = stream;
 	context = data->audio_streams[idx]->codec;
-	context->bit_rate = data->config.audio_bitrate * 1000;
+	context->bit_rate = (int64_t)data->config.audio_bitrate * 1000;
 	context->time_base = (AVRational){1, aoi.samples_per_sec};
 	context->channels = get_audio_channels(aoi.speakers);
 	context->sample_rate = aoi.samples_per_sec;

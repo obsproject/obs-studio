@@ -502,10 +502,10 @@ static int get_audio_mix_count(int audio_mix_mask)
 	return mix_count;
 }
 
-static inline double encoder_bitrate(obs_encoder_t *encoder)
+static inline int encoder_bitrate(obs_encoder_t *encoder)
 {
 	obs_data_t *settings = obs_encoder_get_settings(encoder);
-	double bitrate = obs_data_get_double(settings, "bitrate");
+	const int bitrate = (int)obs_data_get_int(settings, "bitrate");
 
 	obs_data_release(settings);
 
@@ -542,7 +542,7 @@ static int proto_try_connect(struct ffmpeg_encoded_output *stream)
 	config.scale_height = 0;
 	config.width = obs_encoder_get_width(vencoder);
 	config.height = obs_encoder_get_height(vencoder);
-	config.audio_tracks = audio_output_get_channels(audio);
+	config.audio_tracks = (int)audio_output_get_channels(audio);
 	config.audio_mix_count = get_audio_mix_count(config.audio_tracks);
 	config.format =
 		obs_to_ffmpeg_video_format(video_output_get_format(video));
