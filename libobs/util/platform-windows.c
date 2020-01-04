@@ -36,6 +36,7 @@
 static bool have_clockfreq = false;
 static LARGE_INTEGER clock_freq;
 static uint32_t winver = 0;
+static char win_release_id[MAX_SZ_LEN] = "unavailable";
 
 static inline uint64_t get_clockfreq(void)
 {
@@ -927,6 +928,10 @@ static inline void get_reg_ver(struct win_version_info *ver)
 		ver->build = wcstol(str, NULL, 10);
 	}
 
+	if (get_reg_sz(key, L"ReleaseId", str, sizeof(str))) {
+		os_wcs_to_utf8(str, 0, win_release_id, MAX_SZ_LEN);
+	}
+
 	RegCloseKey(key);
 }
 
@@ -986,6 +991,11 @@ void get_win_ver(struct win_version_info *info)
 	}
 
 	*info = ver;
+}
+
+const char *get_win_release_id(void)
+{
+	return win_release_id;
 }
 
 uint32_t get_win_ver_int(void)
