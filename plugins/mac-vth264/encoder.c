@@ -965,6 +965,8 @@ void encoder_list_create()
 		da_push_back(vt_encoders, &enc);
 #undef VT_DICTSTR
 	}
+
+	CFRelease(encoder_list);
 }
 
 void encoder_list_destroy()
