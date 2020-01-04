@@ -31,7 +31,8 @@ void SceneTree::SetGridMode(bool grid)
 		setStyleSheet("");
 	}
 
-	resizeEvent(new QResizeEvent(size(), size()));
+	QResizeEvent event(size(), size());
+	resizeEvent(&event);
 }
 
 bool SceneTree::GetGridMode()
@@ -183,6 +184,6 @@ void SceneTree::rowsInserted(const QModelIndex &parent, int start, int end)
 {
 	QListWidget::rowsInserted(parent, start, end);
 
-	QResizeEvent *event = new QResizeEvent(size(), size());
-	SceneTree::resizeEvent(event);
+	QResizeEvent event(size(), size());
+	SceneTree::resizeEvent(&event);
 }
