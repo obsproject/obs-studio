@@ -31,6 +31,8 @@
 
 #include "../../deps/w32-pthreads/pthread.h"
 
+#define MAX_SZ_LEN 256
+
 static bool have_clockfreq = false;
 static LARGE_INTEGER clock_freq;
 static uint32_t winver = 0;
@@ -857,6 +859,108 @@ void get_reg_dword(HKEY hkey, LPCWSTR sub_key, LPCWSTR value_name,
 
 #define WINVER_REG_KEY L"SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion"
 
+static inline void rtl_get_ver(struct win_version_info *ver)
+{
+	RTL_OSVERSIONINFOEXW osver = {0};
+	HMODULE ntdll = GetModuleHandleW(L"ntdll");
+	NTSTATUS s;
+
+	NTSTATUS(WINAPI * get_ver)
+	(RTL_OSVERSIONINFOEXW *) =
+		(void *)GetProcAddress(ntdll, "RtlGetVersion");
+	if (!get_ver) {
+		return;
+	}
+
+	osver.dwOSVersionInfoSize = sizeof(osver);
+	s = get_ver(&osver);
+	if (s < 0) {
+		return;
+	}
+
+	ver->major = osver.dwMajorVersion;
+	ver->minor = osver.dwMinorVersion;
+	ver->build = osver.dwBuildNumber;
+	ver->revis = 0;
+}
+
+static inline bool get_reg_sz(HKEY key, const wchar_t *val, wchar_t *buf,
+			      const size_t size)
+{
+	DWORD dwsize = (DWORD)size;
+	LSTATUS status;
+
+	status = RegQueryValueExW(key, val, NULL, NULL, (LPBYTE)buf, &dwsize);
+	buf[(size / sizeof(wchar_t)) - 1] = 0;
+	return status == ERROR_SUCCESS;
+}
+
+static inline void get_reg_ver(struct win_version_info *ver)
+{
+	HKEY key;
+	DWORD size, dw_val;
+	LSTATUS status;
+	wchar_t str[MAX_SZ_LEN];
+
+	status = RegOpenKeyW(HKEY_LOCAL_MACHINE, WINVER_REG_KEY, &key);
+	if (status != ERROR_SUCCESS)
+		return;
+
+	size = sizeof(dw_val);
+
+	status = RegQueryValueExW(key, L"CurrentMajorVersionNumber", NULL, NULL,
+				  (LPBYTE)&dw_val, &size);
+	if (status == ERROR_SUCCESS)
+		ver->major = (int)dw_val;
+
+	status = RegQueryValueExW(key, L"CurrentMinorVersionNumber", NULL, NULL,
+				  (LPBYTE)&dw_val, &size);
+	if (status == ERROR_SUCCESS)
+		ver->minor = (int)dw_val;
+
+	status = RegQueryValueExW(key, L"UBR", NULL, NULL, (LPBYTE)&dw_val,
+				  &size);
+	if (status == ERROR_SUCCESS)
+		ver->revis = (int)dw_val;
+
+	if (get_reg_sz(key, L"CurrentBuildNumber", str, sizeof(str))) {
+		ver->build = wcstol(str, NULL, 10);
+	}
+
+	RegCloseKey(key);
+}
+
+static inline bool version_higher(struct win_version_info *cur,
+				  struct win_version_info *new)
+{
+	if (new->major > cur->major) {
+		return true;
+	}
+
+	if (new->major == cur->major) {
+		if (new->minor > cur->minor) {
+			return true;
+		}
+		if (new->minor == cur->minor) {
+			if (new->build > cur->build) {
+				return true;
+			}
+			if (new->build == cur->build) {
+				return new->revis > cur->revis;
+			}
+		}
+	}
+
+	return false;
+}
+
+static inline void use_higher_ver(struct win_version_info *cur,
+				  struct win_version_info *new)
+{
+	if (version_higher(cur, new))
+		*cur = *new;
+}
+
 void get_win_ver(struct win_version_info *info)
 {
 	static struct win_version_info ver = {0};
@@ -866,31 +970,19 @@ void get_win_ver(struct win_version_info *info)
 		return;
 
 	if (!got_version) {
-		get_dll_ver(L"kernel32", &ver);
+		struct win_version_info reg_ver = {0};
+		struct win_version_info rtl_ver = {0};
+		struct win_version_info nto_ver = {0};
+
+		get_reg_ver(&reg_ver);
+		rtl_get_ver(&rtl_ver);
+		get_dll_ver(L"ntoskrnl.exe", &nto_ver);
+
+		ver = reg_ver;
+		use_higher_ver(&ver, &rtl_ver);
+		use_higher_ver(&ver, &nto_ver);
+
 		got_version = true;
-
-		if (ver.major == 10) {
-			HKEY key;
-			DWORD size, win10_revision;
-			LSTATUS status;
-
-			status = RegOpenKeyW(HKEY_LOCAL_MACHINE, WINVER_REG_KEY,
-					     &key);
-			if (status != ERROR_SUCCESS)
-				return;
-
-			size = sizeof(win10_revision);
-
-			status = RegQueryValueExW(key, L"UBR", NULL, NULL,
-						  (LPBYTE)&win10_revision,
-						  &size);
-			if (status == ERROR_SUCCESS)
-				ver.revis = (int)win10_revision > ver.revis
-						    ? (int)win10_revision
-						    : ver.revis;
-
-			RegCloseKey(key);
-		}
 	}
 
 	*info = ver;
