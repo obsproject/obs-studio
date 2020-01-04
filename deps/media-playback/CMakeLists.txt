@@ -23,7 +23,7 @@ add_library(media-playback STATIC
 	${media-playback_SOURCES}
 	)
 
-if(CMAKE_SYSTEM_PROCESSOR MATCHES "^(powerpc|ppc)64le")
+if(CMAKE_SYSTEM_PROCESSOR MATCHES "^(powerpc|ppc)64(le)?")
 	target_compile_options(media-playback
 			PUBLIC
 			-mvsx)
