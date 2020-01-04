@@ -1407,12 +1407,6 @@ void gs_swapchain_destroy(gs_swapchain_t *swapchain)
 	bfree(swapchain);
 }
 
-void gs_voltexture_destroy(gs_texture_t *voltex)
-{
-	/* TODO */
-	UNUSED_PARAMETER(voltex);
-}
-
 uint32_t gs_voltexture_get_width(const gs_texture_t *voltex)
 {
 	/* TODO */

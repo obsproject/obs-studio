@@ -179,3 +179,8 @@ fail:
 	blog(LOG_ERROR, "device_voltexture_create (GL) failed");
 	return NULL;
 }
+
+void gs_voltexture_destroy(gs_texture_t *voltex)
+{
+	gs_texture_destroy(voltex);
+}
