@@ -3546,10 +3546,17 @@ void OBSBasic::ResetUI()
 	bool labels = config_get_bool(GetGlobalConfig(), "BasicWindow",
 				      "StudioModeLabels");
 
-	if (studioPortraitLayout)
+	if (studioPortraitLayout) {
 		ui->previewLayout->setDirection(QBoxLayout::TopToBottom);
-	else
+
+		if (programOptions)
+			ui->horizontalLayout_2->insertWidget(0, programOptions);
+	} else {
 		ui->previewLayout->setDirection(QBoxLayout::LeftToRight);
+
+		if (programOptions)
+			ui->previewLayout->insertWidget(2, programOptions);
+	}
 
 	if (previewProgramMode)
 		ui->previewLabel->setHidden(!labels);

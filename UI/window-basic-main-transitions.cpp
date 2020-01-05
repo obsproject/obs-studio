@@ -786,6 +786,7 @@ void OBSBasic::CreateProgramOptions()
 	programOptions = new QWidget();
 	QVBoxLayout *layout = new QVBoxLayout();
 	layout->setSpacing(4);
+	programOptions->setMaximumWidth(250);
 
 	QPushButton *configTransitions = new QPushButton();
 	configTransitions->setMaximumSize(22, 22);
