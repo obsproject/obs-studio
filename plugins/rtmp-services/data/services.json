@@ -316,10 +316,6 @@
                     "url": "ingest-fra.mixer.com"
                 },
                 {
-                    "name": "EU: Oslo",
-                    "url": "ingest-osl.mixer.com"
-                },
-                {
                     "name": "Brazil: Sao Paulo",
                     "url": "ingest-sao.mixer.com"
                 },
@@ -405,10 +401,6 @@
                 {
                     "name": "EU: Frankfurt",
                     "url": "rtmp://ingest-fra.mixer.com:1935/beam"
-                },
-                {
-                    "name": "EU: Oslo",
-                    "url": "rtmp://ingest-osl.mixer.com:1935/beam"
                 },
                 {
                     "name": "Brazil: Sao Paulo",
@@ -628,6 +620,10 @@
                     "url": "rtmp://falkenstein.restream.io/live"
                 },
                 {
+                    "name": "EU-East (Prague, Czech)",
+                    "url": "rtmp://prague.restream.io/live"
+                },
+                {
                     "name": "EU-South (Madrid, Spain)",
                     "url": "rtmp://madrid.restream.io/live"
                 },
@@ -737,6 +733,10 @@
                     "url": "falkenstein.restream.io"
                 },
                 {
+                    "name": "EU-East (Prague, Czech)",
+                    "url": "prague.restream.io"
+                },
+                {
                     "name": "EU-South (Madrid, Spain)",
                     "url": "madrid.restream.io"
                 },
@@ -813,19 +813,6 @@
                 "profile": "main",
                 "bframes": 0
             }
-        },
-        {
-          "name": "GameTips.TV",
-          "servers": [
-              {
-                  "name": "Iran - Rasht",
-                  "url": "rtmp://rtmp.cdn.server1.gametips.tv:1935/hls"
-              },
-              {
-                  "name": "Germany - Falkenstein/Vogtland",
-                  "url": "rtmp://rtmp.cdn.server2.gametips.tv:1935/hls"
-              }
-          ]
         },
         {
             "name": "Nood",
