@@ -82,7 +82,7 @@
 
 #if defined(USE_MBEDTLS)
 #include <mbedtls/version.h>
-#include <mbedtls/net.h>
+#include <mbedtls/net_sockets.h>
 #include <mbedtls/ssl.h>
 #include <mbedtls/ctr_drbg.h>
 #include <mbedtls/entropy.h>
