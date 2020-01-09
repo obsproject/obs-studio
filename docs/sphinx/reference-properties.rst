@@ -562,7 +562,7 @@ Property Modification Functions
 
 ---------------------
 
-.. function:: void obs_property_list_item_disable(obs_property_t *p, size_t idx,
+.. function:: void obs_property_list_item_disable(obs_property_t *p, size_t idx, bool disabled)
 
 ---------------------
 
