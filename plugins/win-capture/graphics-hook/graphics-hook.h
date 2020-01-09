@@ -28,6 +28,9 @@ static inline HMODULE get_system_module(const char *module);
 static inline HMODULE load_system_library(const char *module);
 extern uint64_t os_gettime_ns(void);
 
+#define flog(format, ...) hlog("%s: " format, __FUNCTION__, ##__VA_ARGS__)
+#define flog_hr(text, hr) hlog_hr(__FUNCTION__ ": " text, hr)
+
 static inline bool capture_active(void);
 static inline bool capture_ready(void);
 static inline bool capture_should_stop(void);
