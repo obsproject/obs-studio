@@ -6471,6 +6471,8 @@ void OBSBasic::Nudge(int dist, MoveDir dir)
 	}
 
 	obs_scene_enum_items(GetCurrentScene(), nudge_callback, &offset);
+
+	ui->preview->SetPositionTooltip();
 }
 
 void OBSBasic::NudgeUp()

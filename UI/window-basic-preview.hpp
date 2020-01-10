@@ -152,4 +152,6 @@ public:
 	 * byte boundary. */
 	static inline void *operator new(size_t size) { return bmalloc(size); }
 	static inline void operator delete(void *ptr) { bfree(ptr); }
+
+	void SetPositionTooltip();
 };

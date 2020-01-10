@@ -1,5 +1,6 @@
 #include <QGuiApplication>
 #include <QMouseEvent>
+#include <QToolTip>
 
 #include <algorithm>
 #include <cmath>
@@ -908,6 +909,8 @@ void OBSBasicPreview::MoveItems(const vec2 &pos)
 	vec2_add(&lastMoveOffset, &lastMoveOffset, &moveOffset);
 
 	obs_scene_enum_items(scene, move_items, &moveOffset);
+
+	SetPositionTooltip();
 }
 
 static bool CounterClockwise(float x1, float x2, float x3, float y1, float y2,
@@ -1942,4 +1945,34 @@ void OBSBasicPreview::SetScalingAmount(float newScalingAmountVal)
 OBSBasicPreview *OBSBasicPreview::Get()
 {
 	return OBSBasic::Get()->ui->preview;
+}
+
+void OBSBasicPreview::SetPositionTooltip()
+{
+	OBSBasic *main = reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
+
+	obs_transform_info oti;
+	obs_video_info ovi;
+
+	OBSSceneItem item = main->GetCurrentSceneItem();
+	obs_sceneitem_get_info(main->GetCurrentSceneItem(), &oti);
+	obs_get_video_info(&ovi);
+
+	OBSSource source = obs_sceneitem_get_source(item);
+
+	int width = std::max(obs_source_get_width(source) * oti.scale.x,
+			     oti.bounds.x);
+	int height = std::max(obs_source_get_height(source) * oti.scale.y,
+			      oti.bounds.y);
+
+	int top = oti.pos.y;
+	int bottom = ovi.base_height - height - top;
+	int left = oti.pos.x;
+	int right = ovi.base_width - width - left;
+
+	QToolTip::showText(QCursor::pos(), QTStr("SourcePosition")
+						   .arg(QString::number(top),
+							QString::number(bottom),
+							QString::number(right),
+							QString::number(left)));
 }
