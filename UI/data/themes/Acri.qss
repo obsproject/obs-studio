@@ -923,6 +923,20 @@ OBSBasicSettings QListWidget::item {
     padding-bottom: 5px;
 }
 
+/* Table */
+
+QTableView {
+    gridline-color: #333336;
+}
+
+QHeaderView {
+    border: none;
+}
+QHeaderView::section {
+    background-color: #101010;
+    border: 1px solid #333336;
+    border-left: none;
+}
 /* Locked CheckBox */
 
 LockedCheckBox {
