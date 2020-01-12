@@ -673,7 +673,6 @@ private:
 
 	void AddSource(const char *id);
 	QMenu *CreateAddSourcePopupMenu();
-	void AddSourcePopupMenu(const QPoint &pos);
 	void copyActionsDynamicProperties();
 
 	static void HotkeyTriggered(void *data, obs_hotkey_id id, bool pressed);
@@ -790,6 +789,8 @@ public:
 	QIcon GetSourceIcon(const char *id) const;
 	QIcon GetGroupIcon() const;
 	QIcon GetSceneIcon() const;
+
+	void AddSourcePopupMenu(const QPoint &pos);
 
 protected:
 	virtual void closeEvent(QCloseEvent *event) override;

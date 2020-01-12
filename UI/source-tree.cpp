@@ -1030,8 +1030,17 @@ Q_DECLARE_METATYPE(OBSSceneItem);
 
 void SourceTree::mouseDoubleClickEvent(QMouseEvent *event)
 {
-	if (event->button() == Qt::LeftButton)
+	if (event->button() == Qt::LeftButton) {
 		QListView::mouseDoubleClickEvent(event);
+
+		QModelIndex idx = indexAt(event->pos());
+
+		if (idx.row() == -1) {
+			OBSBasic *main = reinterpret_cast<OBSBasic *>(
+				App()->GetMainWindow());
+			main->AddSourcePopupMenu(QCursor::pos());
+		}
+	}
 }
 
 void SourceTree::dropEvent(QDropEvent *event)
