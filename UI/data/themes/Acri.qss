@@ -937,6 +937,10 @@ QHeaderView::section {
     border: 1px solid #333336;
     border-left: none;
 }
+*[themeID="trashIcon"] {
+    margin: 0;
+}
+
 /* Locked CheckBox */
 
 LockedCheckBox {

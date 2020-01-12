@@ -138,7 +138,7 @@ void ExtraBrowsersModel::AddDeleteButton(int idx)
 	QPushButton *del = new DelButton(index);
 	del->setProperty("themeID", "trashIcon");
 	del->setObjectName("extraPanelDelete");
-	del->setFixedSize(QSize(20, 20));
+	del->setMinimumSize(QSize(20, 20));
 	connect(del, &QPushButton::clicked, this,
 		&ExtraBrowsersModel::DeleteItem);
 
