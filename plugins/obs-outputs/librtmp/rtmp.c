@@ -344,7 +344,7 @@ RTMP_TLS_LoadCerts() {
 
     CFRelease(keychain_ref);
 #elif defined(__linux__)
-    if (mbedtls_x509_crt_parse_path(chain, "/etc/ssl/certs/") != 0) {
+    if (mbedtls_x509_crt_parse_path(chain, "/etc/ssl/certs/") < 0) {
         goto error;
     }
 #endif
