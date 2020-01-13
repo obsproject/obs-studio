@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>981</width>
-    <height>748</height>
+    <height>726</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -28,7 +28,7 @@
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout">
-     <item alignment="Qt::AlignLeft">
+     <item>
       <widget class="QListWidget" name="listWidget">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Minimum" vsizetype="Expanding">
@@ -151,8 +151,8 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>803</width>
-              <height>977</height>
+              <width>806</width>
+              <height>1254</height>
              </rect>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_19">
@@ -1206,8 +1206,8 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>601</width>
-              <height>631</height>
+              <width>813</width>
+              <height>761</height>
              </rect>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_21">
@@ -2345,8 +2345,8 @@
                                  <rect>
                                   <x>9</x>
                                   <y>0</y>
-                                  <width>221</width>
-                                  <height>21</height>
+                                  <width>236</width>
+                                  <height>25</height>
                                  </rect>
                                 </property>
                                 <layout class="QHBoxLayout" name="horizontalLayout_24">
@@ -3715,8 +3715,8 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>555</width>
-              <height>469</height>
+              <width>767</width>
+              <height>582</height>
              </rect>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_50">
@@ -4200,22 +4200,42 @@
           </widget>
          </item>
          <item row="0" column="1">
-          <widget class="QComboBox" name="baseResolution">
-           <property name="editable">
-            <bool>true</bool>
+          <layout class="QHBoxLayout" name="horizontalLayout_29">
+           <property name="spacing">
+            <number>6</number>
            </property>
-           <property name="currentText">
-            <string notr="true"/>
-           </property>
-           <property name="duplicatesEnabled">
-            <bool>false</bool>
-           </property>
-           <property name="frame">
-            <bool>true</bool>
-           </property>
-          </widget>
+           <item>
+            <widget class="QComboBox" name="baseResolution">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="editable">
+              <bool>true</bool>
+             </property>
+             <property name="currentText">
+              <string notr="true"/>
+             </property>
+             <property name="duplicatesEnabled">
+              <bool>false</bool>
+             </property>
+             <property name="frame">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLabel" name="baseAspect">
+             <property name="text">
+              <string>AspectRatio</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
          </item>
-         <item row="1" column="0">
+         <item row="3" column="0">
           <widget class="QLabel" name="label_10">
            <property name="text">
             <string>Basic.Settings.Video.ScaledResolution</string>
@@ -4225,17 +4245,7 @@
            </property>
           </widget>
          </item>
-         <item row="1" column="1">
-          <widget class="QComboBox" name="outputResolution">
-           <property name="editable">
-            <bool>true</bool>
-           </property>
-           <property name="currentText">
-            <string notr="true"/>
-           </property>
-          </widget>
-         </item>
-         <item row="2" column="0">
+         <item row="5" column="0">
           <widget class="QLabel" name="label_11">
            <property name="text">
             <string>Basic.Settings.Video.DownscaleFilter</string>
@@ -4245,14 +4255,14 @@
            </property>
           </widget>
          </item>
-         <item row="2" column="1">
+         <item row="5" column="1">
           <widget class="QComboBox" name="downscaleFilter">
            <property name="enabled">
             <bool>true</bool>
            </property>
           </widget>
          </item>
-         <item row="3" column="0">
+         <item row="6" column="0">
           <widget class="QComboBox" name="fpsType">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
@@ -4283,7 +4293,7 @@
            </item>
           </widget>
          </item>
-         <item row="3" column="1">
+         <item row="6" column="1">
           <widget class="QStackedWidget" name="fpsTypes">
            <property name="currentIndex">
             <number>1</number>
@@ -4454,7 +4464,7 @@
            </widget>
           </widget>
          </item>
-         <item row="4" column="1">
+         <item row="7" column="1">
           <widget class="QLabel" name="videoMsg">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
@@ -4472,6 +4482,36 @@
             <string>error</string>
            </property>
           </widget>
+         </item>
+         <item row="3" column="1">
+          <layout class="QHBoxLayout" name="horizontalLayout_28">
+           <property name="spacing">
+            <number>6</number>
+           </property>
+           <item>
+            <widget class="QComboBox" name="outputResolution">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="editable">
+              <bool>true</bool>
+             </property>
+             <property name="currentText">
+              <string notr="true"/>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLabel" name="scaledAspect">
+             <property name="text">
+              <string>AspectRatio</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
          </item>
         </layout>
        </widget>
@@ -4531,8 +4571,8 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>803</width>
-              <height>781</height>
+              <width>791</width>
+              <height>970</height>
              </rect>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_23">
@@ -5485,8 +5525,6 @@
   <tabstop>peakMeterType</tabstop>
   <tabstop>monitoringDevice</tabstop>
   <tabstop>disableAudioDucking</tabstop>
-  <tabstop>baseResolution</tabstop>
-  <tabstop>outputResolution</tabstop>
   <tabstop>downscaleFilter</tabstop>
   <tabstop>fpsType</tabstop>
   <tabstop>fpsCommon</tabstop>
