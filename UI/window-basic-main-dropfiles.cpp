@@ -63,6 +63,9 @@ void OBSBasic::AddDropSource(const char *data, DropType image)
 	const char *type = nullptr;
 	QString name;
 
+	obs_video_info ovi;
+	obs_get_video_info(&ovi);
+
 	switch (image) {
 	case DropType_RawText:
 		obs_data_set_string(settings, "text", data);
@@ -97,6 +100,8 @@ void OBSBasic::AddDropSource(const char *data, DropType image)
 	case DropType_Html:
 		obs_data_set_bool(settings, "is_local_file", true);
 		obs_data_set_string(settings, "local_file", data);
+		obs_data_set_int(settings, "width", ovi.base_width);
+		obs_data_set_int(settings, "height", ovi.base_height);
 		name = QUrl::fromLocalFile(QString(data)).fileName();
 		type = "browser_source";
 		break;
