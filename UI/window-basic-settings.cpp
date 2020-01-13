@@ -763,6 +763,9 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	on_baseResolution_editTextChanged(ui->baseResolution->currentText());
 
 	App()->DisableHotkeys();
+
+	channelIndex = ui->channelSetup->currentIndex();
+	sampleRateIndex = ui->sampleRate->currentIndex();
 }
 
 OBSBasicSettings::~OBSBasicSettings()
@@ -3867,10 +3870,22 @@ void OBSBasicSettings::AudioChanged()
 void OBSBasicSettings::AudioChangedRestart()
 {
 	if (!loading) {
-		audioChanged = true;
-		ui->audioMsg->setText(QTStr("Basic.Settings.ProgramRestart"));
-		sender()->setProperty("changed", QVariant(true));
-		EnableApplyButton(true);
+		int currentChannelIndex = ui->channelSetup->currentIndex();
+		int currentSampleRateIndex = ui->sampleRate->currentIndex();
+
+		if (currentChannelIndex != channelIndex ||
+		    currentSampleRateIndex != sampleRateIndex) {
+			audioChanged = true;
+			ui->audioMsg->setText(
+				QTStr("Basic.Settings.ProgramRestart"));
+			sender()->setProperty("changed", QVariant(true));
+			EnableApplyButton(true);
+		} else {
+			audioChanged = false;
+			ui->audioMsg->setText("");
+			sender()->setProperty("changed", QVariant(false));
+			EnableApplyButton(false);
+		}
 	}
 }
 
