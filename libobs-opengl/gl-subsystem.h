@@ -144,17 +144,17 @@ static inline GLenum get_gl_format_type(enum gs_color_format format)
 	case GS_R16:
 		return GL_UNSIGNED_SHORT;
 	case GS_RGBA16F:
-		return GL_UNSIGNED_SHORT;
+		return GL_HALF_FLOAT;
 	case GS_RGBA32F:
 		return GL_FLOAT;
 	case GS_RG16F:
-		return GL_UNSIGNED_SHORT;
+		return GL_HALF_FLOAT;
 	case GS_RG32F:
 		return GL_FLOAT;
 	case GS_R8G8:
 		return GL_UNSIGNED_BYTE;
 	case GS_R16F:
-		return GL_UNSIGNED_SHORT;
+		return GL_HALF_FLOAT;
 	case GS_R32F:
 		return GL_FLOAT;
 	case GS_DXT1:
