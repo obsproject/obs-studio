@@ -1633,15 +1633,6 @@ void OBSBasic::OBSInit()
 	editPropertiesMode = config_get_bool(
 		App()->GlobalConfig(), "BasicWindow", "EditPropertiesMode");
 
-	if (!opt_studio_mode) {
-		SetPreviewProgramMode(config_get_bool(App()->GlobalConfig(),
-						      "BasicWindow",
-						      "PreviewProgramMode"));
-	} else {
-		SetPreviewProgramMode(true);
-		opt_studio_mode = false;
-	}
-
 #define SET_VISIBILITY(name, control)                                         \
 	do {                                                                  \
 		if (config_has_user_value(App()->GlobalConfig(),              \
@@ -1823,6 +1814,15 @@ void OBSBasic::OBSInit()
 				SLOT(OpenMultiviewWindow()));
 
 	ui->sources->UpdateIcons();
+
+	if (!opt_studio_mode) {
+		SetPreviewProgramMode(config_get_bool(App()->GlobalConfig(),
+						      "BasicWindow",
+						      "PreviewProgramMode"));
+	} else {
+		SetPreviewProgramMode(true);
+		opt_studio_mode = false;
+	}
 
 #if !defined(_WIN32) && !defined(__APPLE__)
 	delete ui->actionShowCrashLogs;

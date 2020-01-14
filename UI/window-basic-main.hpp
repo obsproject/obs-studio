@@ -391,7 +391,7 @@ private:
 	void ClearQuickTransitionWidgets();
 	void RefreshQuickTransitions();
 	void DisableQuickTransitionWidgets();
-	void EnableQuickTransitionWidgets();
+	void EnableTransitionWidgets(bool enable);
 	void CreateDefaultQuickTransitions();
 
 	QMenu *CreatePerSceneTransitionMenu();
