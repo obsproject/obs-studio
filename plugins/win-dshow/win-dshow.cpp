@@ -539,8 +539,13 @@ void DShowInput::OnVideoData(const VideoConfig &config, unsigned char *data,
 	frame.format = ConvertVideoFormat(config.format);
 	frame.flip = flip;
 
-	if (config.cy_flip)
-		frame.flip = !frame.flip;
+	/* YUV DIBS are always top-down */
+	if (config.format == VideoFormat::XRGB ||
+	    config.format == VideoFormat::ARGB) {
+		/* RGB DIBs are bottom-up by default */
+		if (!config.cy_flip)
+			frame.flip = !frame.flip;
+	}
 
 	if (videoConfig.format == VideoFormat::XRGB ||
 	    videoConfig.format == VideoFormat::ARGB) {
