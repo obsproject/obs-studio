@@ -546,13 +546,10 @@ static inline bool capture_needs_reset(struct game_capture_config *cfg1,
 					   cfg1->scale_cy != cfg2->scale_cy)) {
 		return true;
 
-	} else if (cfg1->force_shmem != cfg2->force_shmem) {
+	} else if (cfg1->force_shmem != cfg2->force_shmem && cfg1->mode == CAPTURE_MODE_AUTO ) {
 		return true;
 
 	} else if (cfg1->limit_framerate != cfg2->limit_framerate) {
-		return true;
-
-	} else if (cfg1->auto_fit_to_output != cfg2->auto_fit_to_output) {
 		return true;
 
 	} else if (cfg1->capture_overlays != cfg2->capture_overlays) {
@@ -904,10 +901,15 @@ static inline bool init_hook_info(struct game_capture *gc)
 	gc->global_hook_info->capture_overlay = gc->config.capture_overlays;
 	gc->global_hook_info->force_shmem = gc->config.force_shmem;
 	gc->global_hook_info->use_scale = gc->config.force_scaling;
-	if (gc->config.scale_cx)
-		gc->global_hook_info->cx = gc->config.scale_cx;
-	if (gc->config.scale_cy)
-		gc->global_hook_info->cy = gc->config.scale_cy;
+	if (gc->config.force_scaling) {
+		if (gc->config.scale_cx)
+			gc->global_hook_info->cx = gc->config.scale_cx;
+		if (gc->config.scale_cy)
+			gc->global_hook_info->cy = gc->config.scale_cy;
+	} else {
+		gc->global_hook_info->cx = gc->global_hook_info->base_cx;
+		gc->global_hook_info->cy = gc->global_hook_info->base_cy;
+	}
 	reset_frame_interval(gc);
 
 	obs_enter_graphics();
@@ -1230,7 +1232,7 @@ static void get_game_window(struct game_capture *gc)
 	window = find_window_one_of(INCLUDE_MINIMIZED, &gc->games_whitelist);
 	
 	if (window) {
-		gc->config.force_shmem = true;
+		gc->config.force_shmem = gc->games_whitelist.array[gc->games_whitelist.num-1].sli_mode;
 		setup_window(gc, window);
 	} else {
 		gc->wait_for_target_startup = true;
