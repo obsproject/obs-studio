@@ -151,8 +151,8 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>803</width>
-              <height>1026</height>
+              <width>805</width>
+              <height>1321</height>
              </rect>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_19">
@@ -1263,8 +1263,8 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>603</width>
-              <height>631</height>
+              <width>805</width>
+              <height>813</height>
              </rect>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_21">
@@ -2395,7 +2395,7 @@
                                  <rect>
                                   <x>9</x>
                                   <y>0</y>
-                                  <width>236</width>
+                                  <width>249</width>
                                   <height>25</height>
                                  </rect>
                                 </property>
@@ -3758,8 +3758,8 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>555</width>
-              <height>469</height>
+              <width>805</width>
+              <height>771</height>
              </rect>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_50">
@@ -4139,7 +4139,7 @@
                    <item row="0" column="1">
                     <widget class="QComboBox" name="monitoringDevice"/>
                    </item>
-                   <item row="1" column="0">
+                   <item row="4" column="0">
                     <spacer name="horizontalSpacer_11">
                      <property name="orientation">
                       <enum>Qt::Horizontal</enum>
@@ -4152,10 +4152,40 @@
                      </property>
                     </spacer>
                    </item>
-                   <item row="1" column="1">
+                   <item row="4" column="1">
                     <widget class="QCheckBox" name="disableAudioDucking">
                      <property name="text">
                       <string>Basic.Settings.Advanced.Audio.DisableAudioDucking</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="1" column="1">
+                    <widget class="QComboBox" name="monitoringDeviceB"/>
+                   </item>
+                   <item row="1" column="0">
+                    <widget class="QLabel" name="monitoringDevicLabelB">
+                     <property name="text">
+                      <string>Basic.Settings.Advanced.Audio.MonitoringDeviceB</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="2" column="1">
+                    <widget class="QComboBox" name="monitoringDeviceC"/>
+                   </item>
+                   <item row="3" column="1">
+                    <widget class="QComboBox" name="monitoringDeviceD"/>
+                   </item>
+                   <item row="2" column="0">
+                    <widget class="QLabel" name="label_45">
+                     <property name="text">
+                      <string>Basic.Settings.Advanced.Audio.MonitoringDeviceC</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="3" column="0">
+                    <widget class="QLabel" name="label_68">
+                     <property name="text">
+                      <string>Basic.Settings.Advanced.Audio.MonitoringDeviceD</string>
                      </property>
                     </widget>
                    </item>
@@ -4567,8 +4597,8 @@
           <rect>
            <x>0</x>
            <y>0</y>
-           <width>98</width>
-           <height>28</height>
+           <width>96</width>
+           <height>26</height>
           </rect>
          </property>
          <layout class="QFormLayout" name="hotkeyLayout">
@@ -4614,8 +4644,8 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>596</width>
-              <height>781</height>
+              <width>718</width>
+              <height>1037</height>
              </rect>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_23">

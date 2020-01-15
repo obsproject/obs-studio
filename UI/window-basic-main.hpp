@@ -804,6 +804,8 @@ public:
 	QIcon GetGroupIcon() const;
 	QIcon GetSceneIcon() const;
 
+	void LoadAudioMonitoring();
+
 protected:
 	virtual void closeEvent(QCloseEvent *event) override;
 	virtual void changeEvent(QEvent *event) override;
@@ -965,6 +967,8 @@ private slots:
 	void StackedMixerAreaContextMenuRequested();
 
 	void ResizeOutputSizeOfSource();
+
+	void ToggleAudioBus(bool checked);
 
 public slots:
 	void on_actionResetTransform_triggered();

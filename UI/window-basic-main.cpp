@@ -1358,6 +1358,12 @@ bool OBSBasic::InitBasicConfigDefaults()
 		basicConfig, "Audio", "MonitoringDeviceName",
 		Str("Basic.Settings.Advanced.Audio.MonitoringDevice"
 		    ".Default"));
+	config_set_default_string(basicConfig, "Audio", "MonitoringDeviceIdB",
+				  "default");
+	config_set_default_string(
+		basicConfig, "Audio", "MonitoringDeviceNameB",
+		Str("Basic.Settings.Advanced.Audio.MonitoringDevice"
+		    ".Default"));
 	config_set_default_uint(basicConfig, "Audio", "SampleRate", 44100);
 	config_set_default_string(basicConfig, "Audio", "ChannelSetup",
 				  "Stereo");
@@ -1597,18 +1603,7 @@ void OBSBasic::OBSInit()
 			throw UNKNOWN_ERROR;
 	}
 
-	/* load audio monitoring */
-#if defined(_WIN32) || defined(__APPLE__) || HAVE_PULSEAUDIO
-	const char *device_name =
-		config_get_string(basicConfig, "Audio", "MonitoringDeviceName");
-	const char *device_id =
-		config_get_string(basicConfig, "Audio", "MonitoringDeviceId");
-
-	obs_set_audio_monitoring_device(device_name, device_id);
-
-	blog(LOG_INFO, "Audio monitoring device:\n\tname: %s\n\tid: %s",
-	     device_name, device_id);
-#endif
+	LoadAudioMonitoring();
 
 	InitOBSCallbacks();
 	InitHotkeys();
@@ -2934,6 +2929,29 @@ void OBSBasic::VolControlContextMenu()
 
 	/* ------------------- */
 
+	uint32_t busses = obs_source_get_audio_busses(vol->GetSource());
+	obs_data_t *privSettings =
+		obs_source_get_private_settings(vol->GetSource());
+	obs_data_release(privSettings);
+
+	QAction busA(QTStr("Bus A"), this);
+	busA.setCheckable(true);
+	busA.setChecked(busses & (1 << 0));
+
+	QAction busB(QTStr("Bus B"), this);
+	busB.setCheckable(true);
+	busB.setChecked(busses & (1 << 1));
+
+	QAction busC(QTStr("Bus C"), this);
+	busC.setCheckable(true);
+	busC.setChecked(busses & (1 << 2));
+
+	QAction busD(QTStr("Bus D"), this);
+	busD.setCheckable(true);
+	busD.setChecked(busses & (1 << 3));
+
+	/* ------------------- */
+
 	connect(&hideAction, &QAction::triggered, this,
 		&OBSBasic::HideAudioControl, Qt::DirectConnection);
 	connect(&unhideAllAction, &QAction::triggered, this,
@@ -2954,6 +2972,15 @@ void OBSBasic::VolControlContextMenu()
 		&OBSBasic::GetAudioSourceProperties, Qt::DirectConnection);
 	connect(&advPropAction, &QAction::triggered, this,
 		&OBSBasic::on_actionAdvAudioProperties_triggered,
+		Qt::DirectConnection);
+
+	connect(&busA, &QAction::toggled, this, &OBSBasic::ToggleAudioBus,
+		Qt::DirectConnection);
+	connect(&busB, &QAction::toggled, this, &OBSBasic::ToggleAudioBus,
+		Qt::DirectConnection);
+	connect(&busC, &QAction::toggled, this, &OBSBasic::ToggleAudioBus,
+		Qt::DirectConnection);
+	connect(&busD, &QAction::toggled, this, &OBSBasic::ToggleAudioBus,
 		Qt::DirectConnection);
 
 	/* ------------------- */
@@ -2980,6 +3007,15 @@ void OBSBasic::VolControlContextMenu()
 	propertiesAction.setProperty("volControl",
 				     QVariant::fromValue<VolControl *>(vol));
 
+	busA.setProperty("volControl", QVariant::fromValue<VolControl *>(vol));
+	busB.setProperty("volControl", QVariant::fromValue<VolControl *>(vol));
+	busC.setProperty("volControl", QVariant::fromValue<VolControl *>(vol));
+	busD.setProperty("volControl", QVariant::fromValue<VolControl *>(vol));
+	busA.setProperty("bus", 0);
+	busB.setProperty("bus", 1);
+	busC.setProperty("bus", 2);
+	busD.setProperty("bus", 3);
+
 	/* ------------------- */
 
 	if (copyFiltersString == nullptr)
@@ -2988,6 +3024,11 @@ void OBSBasic::VolControlContextMenu()
 		pasteFiltersAction.setEnabled(true);
 
 	QMenu popup;
+	popup.addAction(&busA);
+	popup.addAction(&busB);
+	popup.addAction(&busC);
+	popup.addAction(&busD);
+
 	popup.addAction(&lockAction);
 	popup.addSeparator();
 	popup.addAction(&unhideAllAction);
@@ -7920,4 +7961,66 @@ void OBSBasic::on_customContextMenuRequested(const QPoint &pos)
 
 	if (!className || strstr(className, "Dock") != nullptr)
 		ui->viewMenuDocks->exec(mapToGlobal(pos));
+}
+
+void OBSBasic::ToggleAudioBus(bool checked)
+{
+	QAction *action = reinterpret_cast<QAction *>(sender());
+	VolControl *vol = action->property("volControl").value<VolControl *>();
+	const int bus = action->property("bus").value<int>();
+	OBSSource source = vol->GetSource();
+
+	uint32_t busses = obs_source_get_audio_busses(source);
+	uint32_t new_busses = busses;
+
+	if (checked) {
+		new_busses |= (1 << bus);
+		obs_source_create_audio_bus(source, bus);
+	} else {
+		new_busses &= ~(1 << bus);
+		obs_source_delete_audio_bus(source, bus);
+	}
+
+	obs_source_set_audio_busses(source, new_busses);
+}
+
+void OBSBasic::LoadAudioMonitoring()
+{
+#if defined(_WIN32) || defined(__APPLE__) || HAVE_PULSEAUDIO
+	// Bus A
+	const char *device_name =
+		config_get_string(basicConfig, "Audio", "MonitoringDeviceName");
+	const char *device_id =
+		config_get_string(basicConfig, "Audio", "MonitoringDeviceId");
+	obs_set_audio_monitoring_device2(device_id, 0);
+	blog(LOG_INFO, "Audio monitoring device (Bus A):\n\tname: %s\n\tid: %s",
+	     device_name, device_id);
+
+	// Bus B
+	device_name = config_get_string(basicConfig, "Audio",
+					"MonitoringDeviceNameB");
+	device_id =
+		config_get_string(basicConfig, "Audio", "MonitoringDeviceIdB");
+	obs_set_audio_monitoring_device2(device_id, 1);
+	blog(LOG_INFO, "Audio monitoring device (Bus B):\n\tname: %s\n\tid: %s",
+	     device_name, device_id);
+
+	// Bus C
+	device_name = config_get_string(basicConfig, "Audio",
+					"MonitoringDeviceNameC");
+	device_id =
+		config_get_string(basicConfig, "Audio", "MonitoringDeviceIdC");
+	obs_set_audio_monitoring_device2(device_id, 2);
+	blog(LOG_INFO, "Audio monitoring device (Bus C):\n\tname: %s\n\tid: %s",
+	     device_name, device_id);
+
+	// Bus D
+	device_name = config_get_string(basicConfig, "Audio",
+					"MonitoringDeviceNameD");
+	device_id =
+		config_get_string(basicConfig, "Audio", "MonitoringDeviceIdD");
+	obs_set_audio_monitoring_device2(device_id, 3);
+	blog(LOG_INFO, "Audio monitoring device (Bus D):\n\tname: %s\n\tid: %s",
+	     device_name, device_id);
+#endif
 }
