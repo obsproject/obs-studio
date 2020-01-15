@@ -157,6 +157,11 @@ enum obs_icon_type {
 #define OBS_SOURCE_CAP_DISABLED (1 << 10)
 
 /**
+ * Source type is obsolete (has been updated with new defaults/properties/etc)
+ */
+#define OBS_SOURCE_CAP_OBSOLETE OBS_SOURCE_CAP_DISABLED
+
+/**
  * Source should enable monitoring by default.  Monitoring should be set by the
  * frontend if this flag is set.
  */

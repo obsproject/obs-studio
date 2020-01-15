@@ -142,6 +142,17 @@ Source Definition Structure (obs_source_info)
      from creating an audio feedback loop.  This is primarily only used
      with desktop audio capture sources.
 
+   - **OBS_SOURCE_CAP_DISABLED** - This source type has been disabled
+     and should not be shown as a type of source the user can add.
+
+   - **OBS_SOURCE_CAP_OBSOLETE** - This source type is obsolete and
+     should not be shown as a type of source the user can add.
+     Identical to *OBS_SOURCE_CAP_DISABLED*.  Meant to be used when a
+     source has changed in some way (mostly defaults/properties), but
+     you want to avoid breaking older configurations.  Basically solves
+     the problem of "I want to change the defaults of a source but I
+     don't want to break people's configurations"
+
 .. member:: const char *(*obs_source_info.get_name)(void *type_data)
 
    Get the translated name of the source type.
