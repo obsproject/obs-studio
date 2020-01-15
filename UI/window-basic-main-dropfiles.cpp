@@ -91,6 +91,7 @@ void OBSBasic::AddDropSource(const char *data, DropType image)
 	obs_data_t *settings = obs_data_create();
 	obs_source_t *source = nullptr;
 	const char *type = nullptr;
+	std::vector<const char *> types;
 	QString name;
 
 	obs_video_info ovi;
@@ -133,15 +134,21 @@ void OBSBasic::AddDropSource(const char *data, DropType image)
 		obs_data_set_int(settings, "width", ovi.base_width);
 		obs_data_set_int(settings, "height", ovi.base_height);
 		name = QUrl::fromLocalFile(QString(data)).fileName();
-		type = "browser_source";
+		types = {"browser_source", "linuxbrowser-source"};
 		break;
 	case DropType_Url:
 		AddDropURL(data, name, settings, ovi);
-		type = "browser_source";
+		types = {"browser_source", "linuxbrowser-source"};
 		break;
 	}
 
-	if (!obs_source_get_display_name(type)) {
+	for (char const *t : types) {
+		if (obs_source_get_display_name(t)) {
+			type = t;
+			break;
+		}
+	}
+	if (type == nullptr || !obs_source_get_display_name(type)) {
 		obs_data_release(settings);
 		return;
 	}
