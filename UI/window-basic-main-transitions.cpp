@@ -268,11 +268,7 @@ void OBSBasic::TransitionStopped()
 		if (scene)
 			SetCurrentScene(scene);
 
-		// Make sure we re-enable the transition button
-		if (transitionButton)
-			transitionButton->setEnabled(true);
-
-		EnableQuickTransitionWidgets();
+		EnableTransitionWidgets(true);
 	}
 
 	if (api) {
@@ -343,8 +339,7 @@ void OBSBasic::TransitionToScene(OBSSource source, bool force,
 	obs_source_release(transition);
 
 	float t = obs_transition_get_time(transition);
-	bool stillTransitioning = (!tBarActive && t < 1.0f) ||
-				  (tBarActive && t > 0.0f) || tBarDown;
+	bool stillTransitioning = t < 1.0f && t > 0.0f;
 
 	// If actively transitioning, block new transitions from starting
 	if (usingPreviewProgram && stillTransitioning)
@@ -399,19 +394,13 @@ void OBSBasic::TransitionToScene(OBSSource source, bool force,
 			manual ? OBS_TRANSITION_MODE_MANUAL
 			       : OBS_TRANSITION_MODE_AUTO;
 
+		EnableTransitionWidgets(false);
+
 		bool success = obs_transition_start(transition, mode, duration,
 						    source);
 
 		if (!success)
 			TransitionFullyStopped();
-	}
-
-	// If transition has begun, disable Transition button
-	if (usingPreviewProgram && stillTransitioning) {
-		if (transitionButton)
-			transitionButton->setEnabled(false);
-
-		DisableQuickTransitionWidgets();
 	}
 
 cleanup:
@@ -454,8 +443,6 @@ void OBSBasic::SetTransition(OBSSource transition)
 	ui->transitionRemove->setEnabled(configurable);
 	ui->transitionProps->setEnabled(configurable);
 
-	EnableTBar();
-
 	if (api)
 		api->on_event(OBS_FRONTEND_EVENT_TRANSITION_CHANGED);
 }
@@ -469,6 +456,7 @@ void OBSBasic::on_transitions_currentIndexChanged(int)
 {
 	OBSSource transition = GetCurrentTransition();
 	SetTransition(transition);
+	EnableTBar();
 }
 
 void OBSBasic::AddTransition()
@@ -907,12 +895,15 @@ void OBSBasic::TBarReleased()
 		tBar->setValue(0);
 		tBar->blockSignals(false);
 		tBarActive = false;
+		EnableTransitionWidgets(true);
 
 	} else if (val <= T_BAR_CLAMP) {
 		obs_transition_set_manual_time(GetCurrentTransition(), 0.0f);
 		tBar->blockSignals(true);
 		tBar->setValue(0);
 		tBar->blockSignals(false);
+		tBarActive = false;
+		EnableTransitionWidgets(true);
 	}
 
 	tBarDown = false;
@@ -1215,8 +1206,6 @@ void OBSBasic::QuickTransitionChange()
 		qt->source = GetTransitionComboItem(ui->transitions, trIdx);
 		ResetQuickTransitionText(qt);
 	}
-
-	EnableTBar();
 }
 
 void OBSBasic::QuickTransitionChangeDuration(int value)
@@ -1280,8 +1269,10 @@ void OBSBasic::RefreshQuickTransitions()
 		AddQuickTransitionId(qt.id);
 }
 
-void OBSBasic::DisableQuickTransitionWidgets()
+void OBSBasic::EnableTransitionWidgets(bool enable)
 {
+	ui->transitions->setEnabled(enable);
+
 	if (!IsPreviewProgramMode())
 		return;
 
@@ -1293,33 +1284,16 @@ void OBSBasic::DisableQuickTransitionWidgets()
 		if (!item)
 			break;
 
-		QWidget *widget = item->widget();
-		if (!widget)
+		QPushButton *button =
+			qobject_cast<QPushButton *>(item->widget());
+		if (!button)
 			continue;
 
-		widget->setEnabled(false);
+		button->setEnabled(enable);
 	}
-}
 
-void OBSBasic::EnableQuickTransitionWidgets()
-{
-	if (!IsPreviewProgramMode())
-		return;
-
-	QVBoxLayout *programLayout =
-		reinterpret_cast<QVBoxLayout *>(programOptions->layout());
-
-	for (int idx = 0;; idx++) {
-		QLayoutItem *item = programLayout->itemAt(idx);
-		if (!item)
-			break;
-
-		QWidget *widget = item->widget();
-		if (!widget)
-			continue;
-
-		widget->setEnabled(true);
-	}
+	if (transitionButton)
+		transitionButton->setEnabled(enable);
 }
 
 void OBSBasic::SetPreviewProgramMode(bool enabled)
