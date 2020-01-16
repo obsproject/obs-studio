@@ -1328,6 +1328,9 @@
         },
         {
             "name": "SermonAudio Cloud",
+            "alt_names": [
+                "SermonAudio.com"
+            ],
             "servers": [
                 {
                     "name": "Primary",
