@@ -1327,16 +1327,19 @@
             }
         },
         {
-            "name": "SermonAudio.com",
+            "name": "SermonAudio Cloud",
+            "alt_names": [
+                "SermonAudio.com"
+            ],
             "servers": [
                 {
                     "name": "Primary",
-                    "url": "rtmp://stream.sermonaudio.com/"
+                    "url": "rtmp://webcast.sermonaudio.com/sa"
                 }
             ],
             "recommended": {
-                "max video bitrate": 1000,
-                "max audio bitrate": 64
+                "max video bitrate": 2000,
+                "max audio bitrate": 128
             }
         },
         {
