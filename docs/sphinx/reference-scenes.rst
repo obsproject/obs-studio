@@ -494,6 +494,13 @@ Scene Item Group Functions
 
 ---------------------
 
+.. function:: obs_scene_t *obs_group_from_source(const obs_source_t *source)
+
+   :return: The group context, or *NULL* if not a group.  Does not
+            increase the reference
+
+---------------------
+
 .. function:: bool obs_sceneitem_is_group(obs_sceneitem_t *item)
 
    :param item: Scene item
