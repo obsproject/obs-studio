@@ -48,10 +48,16 @@ void get_default_id(char **id)
 		bzalloc(sizeof(struct pulseaudio_default_output));
 	pulseaudio_get_server_info(
 		(pa_server_info_cb_t)pulseaudio_default_devices, (void *)pdo);
-	*id = bzalloc(strlen(pdo->default_sink_name) + 9);
-	strcat(*id, pdo->default_sink_name);
-	strcat(*id, ".monitor");
-	bfree(pdo->default_sink_name);
+
+	if (!pdo->default_sink_name || !*pdo->default_sink_name) {
+		*id = NULL;
+	} else {
+		*id = bzalloc(strlen(pdo->default_sink_name) + 9);
+		strcat(*id, pdo->default_sink_name);
+		strcat(*id, ".monitor");
+		bfree(pdo->default_sink_name);
+	}
+
 	bfree(pdo);
 	pulseaudio_unref();
 }
