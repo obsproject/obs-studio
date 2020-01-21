@@ -1309,12 +1309,14 @@ void obs_encoder_packet_create_instance(struct encoder_packet *dst,
 	memcpy(dst->data, src->data, src->size);
 }
 
+/* OBS_DEPRECATED */
 void obs_duplicate_encoder_packet(struct encoder_packet *dst,
 				  const struct encoder_packet *src)
 {
 	obs_encoder_packet_create_instance(dst, src);
 }
 
+/* OBS_DEPRECATED */
 void obs_free_encoder_packet(struct encoder_packet *packet)
 {
 	obs_encoder_packet_release(packet);
