@@ -215,8 +215,8 @@ void OBSBasicStatusBar::UpdateStreamTime()
 	int minutes = totalMinutes % 60;
 	int hours = totalMinutes / 60;
 
-	QString text;
-	text.sprintf("LIVE: %02d:%02d:%02d", hours, minutes, seconds);
+	QString text = QString::asprintf("LIVE: %02d:%02d:%02d", hours, minutes,
+					 seconds);
 	streamTime->setText(text);
 	streamTime->setMinimumWidth(streamTime->width());
 
@@ -260,7 +260,8 @@ void OBSBasicStatusBar::UpdateRecordTime()
 		int minutes = totalMinutes % 60;
 		int hours = totalMinutes / 60;
 
-		text.sprintf("REC: %02d:%02d:%02d", hours, minutes, seconds);
+		text = QString::asprintf("REC: %02d:%02d:%02d", hours, minutes,
+					 seconds);
 	}
 
 	recordTime->setText(text);
