@@ -630,7 +630,7 @@ EXPORT gs_effect_t *obs_get_base_effect(enum obs_base_effect effect);
 
 #ifndef SWIG
 /* DEPRECATED: gets texture_rect default effect */
-DEPRECATED
+OBS_DEPRECATED
 EXPORT gs_effect_t *obs_get_default_rect_effect(void);
 #endif
 
@@ -642,7 +642,7 @@ EXPORT proc_handler_t *obs_get_proc_handler(void);
 
 #ifndef SWIG
 /** Renders the main view */
-DEPRECATED
+OBS_DEPRECATED
 EXPORT void obs_render_main_view(void);
 #endif
 
@@ -2037,11 +2037,11 @@ EXPORT uint32_t obs_encoder_get_caps(const obs_encoder_t *encoder);
 
 #ifndef SWIG
 /** Duplicates an encoder packet */
-DEPRECATED
+OBS_DEPRECATED
 EXPORT void obs_duplicate_encoder_packet(struct encoder_packet *dst,
 					 const struct encoder_packet *src);
 
-DEPRECATED
+OBS_DEPRECATED
 EXPORT void obs_free_encoder_packet(struct encoder_packet *packet);
 #endif
 
