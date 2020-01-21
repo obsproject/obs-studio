@@ -1095,6 +1095,15 @@
             ]
         },
         {
+            "name": "Uscreen",
+            "servers": [
+                {
+                    "name": "Default",
+                    "url": "rtmp://live.uscreen.app/app"
+                }
+            ]
+        },
+        {
             "name": "Stripchat",
             "servers": [
                 {
