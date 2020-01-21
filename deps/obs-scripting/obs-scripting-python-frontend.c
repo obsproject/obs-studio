@@ -331,8 +331,7 @@ static PyObject *add_save_callback(PyObject *self, PyObject *args)
 	return python_none();
 }
 
-static void frontend_event_callback(enum obs_frontend_event *event_data,
-				    void *priv)
+static void frontend_event_callback(enum obs_frontend_event event, void *priv)
 {
 	struct python_obs_callback *cb = priv;
 
@@ -343,7 +342,7 @@ static void frontend_event_callback(enum obs_frontend_event *event_data,
 
 	lock_python();
 
-	PyObject *args = Py_BuildValue("(i)", event_data);
+	PyObject *args = Py_BuildValue("(i)", event);
 
 	struct python_obs_callback *last_cb = cur_python_cb;
 	cur_python_cb = cb;
