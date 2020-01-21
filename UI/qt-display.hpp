@@ -2,6 +2,7 @@
 
 #include <QWidget>
 #include <obs.hpp>
+#include <iostream>
 
 #define GREY_COLOR_BACKGROUND 0xFF4C4C4C
 
@@ -17,6 +18,7 @@ class OBSQTDisplay : public QWidget {
 
 	void resizeEvent(QResizeEvent *event) override;
 	void paintEvent(QPaintEvent *event) override;
+	void hideEvent(QHideEvent *event) override;
 
 signals:
 	void DisplayCreated(OBSQTDisplay *window);

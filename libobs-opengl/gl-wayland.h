@@ -42,6 +42,8 @@ void *wayland_device_get_device_obj(gs_device_t *device);
 void gl_wayland_getclientsize(const struct gs_swap_chain *swap, uint32_t *width,
 			      uint32_t *height);
 
+void gl_wayland_clear_context(gs_device_t *device);
+
 void gl_wayland_update(gs_device_t *device);
 
 void wayland_device_load_swapchain(gs_device_t *device, gs_swapchain_t *swap);

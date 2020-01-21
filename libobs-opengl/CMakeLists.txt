@@ -29,24 +29,48 @@ elseif(APPLE)
 		${COCOA}
 		${IOSURF}
 		${OPENGL_gl_LIBRARY})
-else() #This needs to change to be more specific to get ready for Wayland
-	find_package(XCB COMPONENTS XCB REQUIRED)
-	find_package(X11_XCB REQUIRED)
-
-	include_directories(
-		${XCB_INCLUDE_DIRS}
-		${X11_XCB_INCLUDE_DIRS})
-
-	add_definitions(
-		${XCB_DEFINITIONS}
-		${X11_XCB_DEFINITIONS})
-
-	set(libobs-opengl_PLATFORM_DEPS
-		${XCB_LIBRARIES}
-		${X11_XCB_LIBRARIES})
-
+else()
 	set(libobs-opengl_PLATFORM_SOURCES
-		gl-x11.c)
+		gl-nix.c)
+	if(ENABLE_X11)
+		find_package(XCB COMPONENTS XCB REQUIRED)
+		find_package(X11_XCB REQUIRED)
+
+		include_directories(
+			${XCB_INCLUDE_DIRS}
+			${X11_XCB_INCLUDE_DIRS})
+
+		add_definitions(
+			${XCB_DEFINITIONS}
+			${X11_XCB_DEFINITIONS})
+
+		set(libobs-opengl_PLATFORM_DEPS ${libobs-opengl_PLATFORM_DEPS}
+			${XCB_LIBRARIES}
+			${X11_XCB_LIBRARIES})
+
+		set(libobs-opengl_PLATFORM_SOURCES ${libobs-opengl_PLATFORM_SOURCES}
+			gl-x11.c)
+	endif()
+	if(ENABLE_WAYLAND)
+		find_package(Wayland REQUIRED)
+		find_package(EGL REQUIRED)
+
+		include_directories(
+			${WAYLAND_CLIENT_INCLUDE_DIRS}
+			${WAYLAND_EGL_INCLUDE_DIRS}
+			${EGL_INCLUDE_DIRS})
+
+		add_definitions(
+			${WAYLAND_DEFINITIONS})
+
+		set(libobs-opengl_PLATFORM_DEPS ${libobs-opengl_PLATFORM_DEPS}
+			${WAYLAND_CLIENT_LIBRARIES}
+			${WAYLAND_EGL_LIBRARIES}
+			${EGL_LIBRARIES})
+
+		set(libobs-opengl_PLATFORM_SOURCES ${libobs-opengl_PLATFORM_SOURCES}
+			gl-wayland.c)
+	endif()
 endif()
 
 set(libobs-opengl_SOURCES

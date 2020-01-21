@@ -41,6 +41,8 @@ void *x11_device_get_device_obj(gs_device_t *device);
 void gl_x11_getclientsize(const struct gs_swap_chain *swap, uint32_t *width,
 			  uint32_t *height);
 
+void gl_x11_clear_context(gs_device_t *device);
+
 void gl_x11_update(gs_device_t *device);
 
 void x11_device_load_swapchain(gs_device_t *device, gs_swapchain_t *swap);

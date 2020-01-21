@@ -287,6 +287,12 @@ void gl_wayland_getclientsize(const struct gs_swap_chain *swap, uint32_t *width,
 					(void *)height);
 }
 
+void gl_wayland_clear_context(gs_device_t *device)
+{
+	struct gl_platform *plat = device->plat;
+	egl_make_current(plat->display, EGL_NO_SURFACE, EGL_NO_CONTEXT);
+}
+
 void gl_wayland_update(gs_device_t *device)
 {
 	wl_egl_window_resize(device->cur_swap->wi->window,

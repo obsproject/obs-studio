@@ -55,7 +55,7 @@ public:
 
 void OBSErrorBox(QWidget *parent, const char *msg, ...);
 
-void QTToGSWindow(WId windowId, gs_window &gswindow);
+void QTToGSWindow(QWindow *window, WId windowId, gs_window &gswindow);
 
 uint32_t TranslateQtKeyboardEventModifiers(Qt::KeyboardModifiers mods);
 

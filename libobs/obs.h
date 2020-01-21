@@ -31,6 +31,7 @@
 
 #include "obs-config.h"
 #include "obs-defs.h"
+#include "obs-platform.h"
 #include "obs-data.h"
 #include "obs-ui.h"
 #include "obs-properties.h"

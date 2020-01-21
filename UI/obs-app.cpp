@@ -57,6 +57,13 @@
 
 #include "ui-config.h"
 
+#ifdef ENABLE_X11
+#include <QX11Info>
+#endif
+#ifdef ENABLE_WAYLAND
+#include <qpa/qplatformnativeinterface.h>
+#endif
+
 using namespace std;
 
 static log_handler_t def_log_handler;
@@ -1330,6 +1337,22 @@ bool OBSApp::OBSInit()
 	setAttribute(Qt::AA_UseHighDpiPixmaps);
 
 	qRegisterMetaType<VoidFunc>();
+
+#ifdef ENABLE_X11
+	if (QApplication::platformName() == "xcb") {
+		obs_set_platform(OBS_PLATFORM_DEFAULT);
+		obs_set_platform_display(QX11Info::display());
+	}
+#endif
+#ifdef ENABLE_WAYLAND
+	if (QApplication::platformName().contains("wayland")) {
+		obs_set_platform(OBS_PLATFORM_WAYLAND);
+		QPlatformNativeInterface *native =
+			QGuiApplication::platformNativeInterface();
+		obs_set_platform_display(
+			native->nativeResourceForIntegration("display"));
+	}
+#endif
 
 	if (!StartupOBS(locale.c_str(), GetProfilerNameStore()))
 		return false;

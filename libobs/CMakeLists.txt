@@ -13,12 +13,19 @@ endif()
 
 if(UNIX)
 	if (NOT APPLE)
-		find_package(X11_XCB REQUIRED)
-		find_package(XCB OPTIONAL_COMPONENTS XINPUT)
-		if (XCB_XINPUT_FOUND)
-			set(USE_XINPUT "1")
+		if(ENABLE_X11)
+			find_package(X11_XCB REQUIRED)
+			find_package(XCB OPTIONAL_COMPONENTS XINPUT)
+			if (XCB_XINPUT_FOUND)
+				set(USE_XINPUT "1")
+			else()
+				set(USE_XINPUT "0")
+			endif()
 		else()
 			set(USE_XINPUT "0")
+		endif()
+		if(ENABLE_WAYLAND)
+			find_package(Wayland REQUIRED)
 		endif()
 		find_package(PulseAudio)
 		if (NOT "${PULSEAUDIO_LIBRARY}" STREQUAL "")
@@ -189,6 +196,16 @@ elseif(UNIX)
 			util/threading-posix.h)
 	endif()
 
+	if(ENABLE_X11)
+		set(libobs_PLATFORM_SOURCES ${libobs_PLATFORM_SOURCES}
+			obs-x11.c)
+	endif()
+
+	if(ENABLE_WAYLAND)
+		set(libobs_PLATFORM_SOURCES ${libobs_PLATFORM_SOURCES}
+			obs-wayland.c)
+	endif()
+
 	if(HAVE_PULSEAUDIO)
 		set(libobs_audio_monitoring_HEADERS
 			audio-monitoring/pulse/pulseaudio-wrapper.h)
@@ -211,12 +228,15 @@ elseif(UNIX)
 	endif()
 
 	include_directories(
-		${X11_XCB_INCLUDE_DIRS})
+		${X11_XCB_INCLUDE_DIRS}
+		${WAYLAND_CLIENT_INCLUDE_DIR})
 	add_definitions(
-		${X11_XCB_DEFINITIONS})
+		${X11_XCB_DEFINITIONS}
+		${WAYLAND_DEFINITIONS})
 	set(libobs_PLATFORM_DEPS
 		${libobs_PLATFORM_DEPS}
-		${X11_XCB_LIBRARIES})
+		${X11_XCB_LIBRARIES}
+		${WAYLAND_CLIENT_LIBRARIES})
 
 	if(USE_XINPUT)
 		include_directories(
@@ -386,6 +406,7 @@ set(libobs_libobs_SOURCES
 	obs-output.c
 	obs-output-delay.c
 	obs.c
+	obs-platform.c
 	obs-properties.c
 	obs-data.c
 	obs-hotkey.c
@@ -404,6 +425,7 @@ set(libobs_libobs_HEADERS
 	obs-avc.h
 	obs-encoder.h
 	obs-service.h
+	obs-platform.h
 	obs-internal.h
 	obs.h
 	obs-ui.h

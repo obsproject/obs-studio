@@ -25,12 +25,14 @@ static inline QColor rgba_to_color(uint32_t rgba)
 OBSQTDisplay::OBSQTDisplay(QWidget *parent, Qt::WindowFlags flags)
 	: QWidget(parent, flags)
 {
-	setAttribute(Qt::WA_PaintOnScreen);
-	setAttribute(Qt::WA_StaticContents);
-	setAttribute(Qt::WA_NoSystemBackground);
-	setAttribute(Qt::WA_OpaquePaintEvent);
+	if (obs_get_platform() != OBS_PLATFORM_WAYLAND) {
+		setAttribute(Qt::WA_PaintOnScreen);
+		setAttribute(Qt::WA_OpaquePaintEvent);
+	}
 	setAttribute(Qt::WA_DontCreateNativeAncestors);
 	setAttribute(Qt::WA_NativeWindow);
+	setAttribute(Qt::WA_StaticContents);
+	setAttribute(Qt::WA_NoSystemBackground);
 
 	auto windowVisible = [this](bool visible) {
 		if (!visible)
@@ -78,8 +80,14 @@ void OBSQTDisplay::UpdateDisplayBackgroundColor()
 
 void OBSQTDisplay::CreateDisplay()
 {
-	if (display || !windowHandle()->isExposed())
+	if (obs_get_platform() != OBS_PLATFORM_WAYLAND &&
+	    !windowHandle()->isExposed())
 		return;
+
+	if (display) {
+		obs_display_set_enabled(display, true);
+		return;
+	}
 
 	QSize size = GetPixelSize(this);
 
@@ -89,7 +97,7 @@ void OBSQTDisplay::CreateDisplay()
 	info.format = GS_BGRA;
 	info.zsformat = GS_ZS_NONE;
 
-	QTToGSWindow(winId(), info.window);
+	QTToGSWindow(windowHandle(), winId(), info.window);
 
 	display = obs_display_create(&info, backgroundColor);
 
@@ -115,6 +123,13 @@ void OBSQTDisplay::paintEvent(QPaintEvent *event)
 	CreateDisplay();
 
 	QWidget::paintEvent(event);
+}
+
+void OBSQTDisplay::hideEvent(QHideEvent *event)
+{
+	obs_display_set_enabled(display, false);
+
+	QWidget::hideEvent(event);
 }
 
 QPaintEngine *OBSQTDisplay::paintEngine() const

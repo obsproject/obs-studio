@@ -156,6 +156,13 @@ elseif(UNIX)
 	if(NOT UNIX_STRUCTURE)
 		list(APPEND CMAKE_INSTALL_RPATH "$ORIGIN")
 	endif()
+
+	option(ENABLE_X11 "Build support for X11" ON)
+	option(ENABLE_WAYLAND "Build support for Wayland" ON)
+
+	if(NOT ENABLE_X11 AND NOT ENABLE_WAYLAND)
+		message(FATAL_ERROR "At least one of the ENABLE_X11 or ENABLE_WAYLAND options must be set")
+	endif()
 endif()
 
 option(BUILD_TESTS "Build test directory (includes test sources and possibly a platform test executable)" FALSE)

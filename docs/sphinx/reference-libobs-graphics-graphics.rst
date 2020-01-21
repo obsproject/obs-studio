@@ -228,9 +228,9 @@ Graphics Structures
    (Mac only) A view ID.
 
 .. member:: uint32_t gs_window.id
-            void* gs_window.display
+            void* gs_window.surface
 
-   (Linux only) Window ID and display
+   (Linux only) Window ID and surface
 
 ---------------------
 

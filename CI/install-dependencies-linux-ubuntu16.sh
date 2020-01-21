@@ -38,6 +38,7 @@ sudo apt-get install -y \
         pkg-config \
         python3-dev \
         qtbase5-dev \
+        qtbase5-private-dev \
         libqt5svg5-dev \
         swig
 

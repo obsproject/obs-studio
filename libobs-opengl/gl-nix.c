@@ -74,6 +74,8 @@ static struct {
 	void (*getclientsize)(const struct gs_swap_chain *swap, uint32_t *width,
 			      uint32_t *height);
 
+	void (*clear_context)(gs_device_t *device);
+
 	void (*update)(gs_device_t *device);
 
 	void (*device_load_swapchain)(gs_device_t *device,
@@ -97,6 +99,7 @@ extern struct gl_platform *gl_platform_create(gs_device_t *device,
 		gl_callbacks.device_leave_context = x11_device_leave_context;
 		gl_callbacks.device_get_device_obj = x11_device_get_device_obj;
 		gl_callbacks.getclientsize = gl_x11_getclientsize;
+		gl_callbacks.clear_context = gl_x11_clear_context;
 		gl_callbacks.update = gl_x11_update;
 		gl_callbacks.device_load_swapchain = x11_device_load_swapchain;
 		gl_callbacks.device_present = x11_device_present;
@@ -117,6 +120,7 @@ extern struct gl_platform *gl_platform_create(gs_device_t *device,
 		gl_callbacks.device_get_device_obj =
 			wayland_device_get_device_obj;
 		gl_callbacks.getclientsize = gl_wayland_getclientsize;
+		gl_callbacks.clear_context = gl_wayland_clear_context;
 		gl_callbacks.update = gl_wayland_update;
 		gl_callbacks.device_load_swapchain =
 			wayland_device_load_swapchain;
@@ -137,6 +141,7 @@ extern void gl_platform_destroy(struct gl_platform *plat)
 	gl_callbacks.device_enter_context = NULL;
 	gl_callbacks.device_leave_context = NULL;
 	gl_callbacks.getclientsize = NULL;
+	gl_callbacks.clear_context = NULL;
 	gl_callbacks.update = NULL;
 	gl_callbacks.device_load_swapchain = NULL;
 	gl_callbacks.device_present = NULL;
@@ -171,6 +176,11 @@ extern void gl_getclientsize(const struct gs_swap_chain *swap, uint32_t *width,
 			     uint32_t *height)
 {
 	gl_callbacks.getclientsize(swap, width, height);
+}
+
+extern void gl_clear_context(gs_device_t *device)
+{
+	gl_callbacks.clear_context(device);
 }
 
 extern void gl_update(gs_device_t *device)

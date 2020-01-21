@@ -471,7 +471,7 @@ struct gs_window {
 #elif defined(__linux__) || defined(__FreeBSD__)
 	/* I'm not sure how portable defining id to uint32_t is. */
 	uint32_t id;
-	void *display;
+	void *surface;
 #endif
 };
 

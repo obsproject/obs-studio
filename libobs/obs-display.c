@@ -230,13 +230,23 @@ void render_display(struct obs_display *display)
 
 void obs_display_set_enabled(obs_display_t *display, bool enable)
 {
+	pthread_mutex_lock(&obs->data.displays_mutex);
+
 	if (display)
 		display->enabled = enable;
+
+	pthread_mutex_unlock(&obs->data.displays_mutex);
 }
 
 bool obs_display_enabled(obs_display_t *display)
 {
-	return display ? display->enabled : false;
+	pthread_mutex_lock(&obs->data.displays_mutex);
+
+	bool enabled = display ? display->enabled : false;
+
+	pthread_mutex_unlock(&obs->data.displays_mutex);
+
+	return enabled;
 }
 
 void obs_display_set_background_color(obs_display_t *display, uint32_t color)
