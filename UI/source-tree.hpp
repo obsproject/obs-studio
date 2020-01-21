@@ -144,6 +144,8 @@ class SourceTree : public QListView {
 	QStaticText textNoSources;
 	QSvgRenderer iconNoSources;
 
+	bool iconsVisible = true;
+
 	void UpdateNoSourcesMessage();
 
 	void ResetWidgets();
@@ -178,6 +180,7 @@ public:
 	bool GroupedItemsSelected() const;
 
 	void UpdateIcons();
+	void SetIconsVisible(bool visible);
 
 public slots:
 	inline void ReorderItems() { GetStm()->ReorderItems(); }

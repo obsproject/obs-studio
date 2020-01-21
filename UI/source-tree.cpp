@@ -59,21 +59,25 @@ SourceTreeItem::SourceTreeItem(SourceTree *tree_, OBSSceneItem sceneitem_)
 
 	OBSBasic *main = reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
 	const char *id = obs_source_get_id(source);
-	QIcon icon;
 
-	if (strcmp(id, "scene") == 0)
-		icon = main->GetSceneIcon();
-	else if (strcmp(id, "group") == 0)
-		icon = main->GetGroupIcon();
-	else
-		icon = main->GetSourceIcon(id);
+	QLabel *iconLabel = nullptr;
+	if (tree->iconsVisible) {
+		QIcon icon;
 
-	QPixmap pixmap = icon.pixmap(QSize(16, 16));
+		if (strcmp(id, "scene") == 0)
+			icon = main->GetSceneIcon();
+		else if (strcmp(id, "group") == 0)
+			icon = main->GetGroupIcon();
+		else
+			icon = main->GetSourceIcon(id);
 
-	QLabel *iconLabel = new QLabel();
-	iconLabel->setPixmap(pixmap);
-	iconLabel->setFixedSize(16, 16);
-	iconLabel->setStyleSheet("background: none");
+		QPixmap pixmap = icon.pixmap(QSize(16, 16));
+
+		iconLabel = new QLabel();
+		iconLabel->setPixmap(pixmap);
+		iconLabel->setFixedSize(16, 16);
+		iconLabel->setStyleSheet("background: none");
+	}
 
 	vis = new VisibilityCheckBox();
 	vis->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
@@ -100,8 +104,10 @@ SourceTreeItem::SourceTreeItem(SourceTree *tree_, OBSSceneItem sceneitem_)
 	boxLayout = new QHBoxLayout();
 
 	boxLayout->setContentsMargins(0, 0, 0, 0);
-	boxLayout->addWidget(iconLabel);
-	boxLayout->addSpacing(2);
+	if (iconLabel) {
+		boxLayout->addWidget(iconLabel);
+		boxLayout->addSpacing(2);
+	}
 	boxLayout->addWidget(label);
 	boxLayout->addWidget(vis);
 	boxLayout->addSpacing(1);
@@ -969,6 +975,14 @@ SourceTree::SourceTree(QWidget *parent_) : QListView(parent_)
 void SourceTree::UpdateIcons()
 {
 	SourceTreeModel *stm = GetStm();
+	stm->SceneChanged();
+}
+
+void SourceTree::SetIconsVisible(bool visible)
+{
+	SourceTreeModel *stm = GetStm();
+
+	iconsVisible = visible;
 	stm->SceneChanged();
 }
 

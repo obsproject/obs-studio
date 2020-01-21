@@ -1647,6 +1647,10 @@ void OBSBasic::OBSInit()
 	SET_VISIBILITY("ShowStatusBar", toggleStatusBar);
 #undef SET_VISIBILITY
 
+	bool sourceIconsVisible = config_get_bool(
+		GetGlobalConfig(), "BasicWindow", "ShowSourceIcons");
+	ui->toggleSourceIcons->setChecked(sourceIconsVisible);
+
 	{
 		ProfileScope("OBSBasic::Load");
 		disableSaving--;
@@ -6798,6 +6802,14 @@ void OBSBasic::on_toggleStatusBar_toggled(bool visible)
 	ui->statusbar->setVisible(visible);
 
 	config_set_bool(App()->GlobalConfig(), "BasicWindow", "ShowStatusBar",
+			visible);
+}
+
+void OBSBasic::on_toggleSourceIcons_toggled(bool visible)
+{
+	ui->sources->SetIconsVisible(visible);
+
+	config_set_bool(App()->GlobalConfig(), "BasicWindow", "ShowSourceIcons",
 			visible);
 }
 

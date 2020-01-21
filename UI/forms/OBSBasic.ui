@@ -188,7 +188,7 @@
      <x>0</x>
      <y>0</y>
      <width>1079</width>
-     <height>22</height>
+     <height>21</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_File">
@@ -393,6 +393,7 @@
     <addaction name="separator"/>
     <addaction name="viewMenuDocks"/>
     <addaction name="viewMenuToolbars"/>
+    <addaction name="toggleSourceIcons"/>
     <addaction name="toggleStatusBar"/>
     <addaction name="separator"/>
     <addaction name="stats"/>
@@ -728,7 +729,7 @@
           <rect>
            <x>0</x>
            <y>0</y>
-           <width>64</width>
+           <width>80</width>
            <height>16</height>
           </rect>
          </property>
@@ -1786,6 +1787,17 @@
   <action name="actionShowAbout">
    <property name="text">
     <string>Basic.MainMenu.Help.About</string>
+   </property>
+  </action>
+  <action name="toggleSourceIcons">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Basic.MainMenu.View.SourceIcons</string>
    </property>
   </action>
  </widget>
