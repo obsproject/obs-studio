@@ -94,9 +94,9 @@ static inline const int *get_ffmpeg_coeffs(enum video_colorspace cs)
 		return sws_getCoefficients(SWS_CS_ITU601);
 	case VIDEO_CS_709:
 		return sws_getCoefficients(SWS_CS_ITU709);
+	default:
+		return sws_getCoefficients(SWS_CS_ITU601);
 	}
-
-	return sws_getCoefficients(SWS_CS_ITU601);
 }
 
 static inline int get_ffmpeg_range_type(enum video_range_type type)
