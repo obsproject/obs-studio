@@ -110,7 +110,7 @@ static void rtmp_stream_destroy(void *data)
 		}
 	}
 
-	RTMP_TLS_Free();
+	RTMP_TLS_Free(&stream->rtmp);
 	free_packets(stream);
 	dstr_free(&stream->path);
 	dstr_free(&stream->key);
@@ -934,7 +934,8 @@ static int try_connect(struct rtmp_stream *stream)
 
 	info("Connecting to RTMP URL %s...", stream->path.array);
 
-	RTMP_Init(&stream->rtmp);
+	// this should have been called already by rtmp_stream_create
+	//RTMP_Init(&stream->rtmp);
 	if (!RTMP_SetupURL(&stream->rtmp, stream->path.array))
 		return OBS_OUTPUT_BAD_PATH;
 
