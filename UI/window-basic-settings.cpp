@@ -247,6 +247,25 @@ static void PopulateAACBitrates(initializer_list<QComboBox *> boxes)
 	}
 }
 
+static int gcd(int a, int b)
+{
+	return b == 0 ? a : gcd(b, a % b);
+}
+
+static std::tuple<int, int> aspect_ratio(int cx, int cy)
+{
+	int common = gcd(cx, cy);
+	int newCX = cx / common;
+	int newCY = cy / common;
+
+	if (newCX == 8 && newCY == 5) {
+		newCX = 16;
+		newCY = 10;
+	}
+
+	return std::make_tuple(newCX, newCY);
+}
+
 void RestrictResetBitrates(initializer_list<QComboBox *> boxes, int maxbitrate);
 
 void OBSBasicSettings::HookWidget(QWidget *widget, const char *signal,
@@ -759,8 +778,6 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	SimpleRecordingQualityChanged();
 
 	UpdateAutomaticReplayBufferCheckboxes();
-
-	on_baseResolution_editTextChanged(ui->baseResolution->currentText());
 
 	App()->DisableHotkeys();
 
@@ -1406,6 +1423,13 @@ void OBSBasicSettings::LoadResolutionLists()
 	ResetDownscales(cx, cy);
 
 	ui->outputResolution->lineEdit()->setText(outputResString.c_str());
+
+	std::tuple<int, int> aspect = aspect_ratio(cx, cy);
+
+	ui->baseAspect->setText(
+		QTStr("AspectRatio")
+			.arg(QString::number(std::get<0>(aspect)),
+			     QString::number(std::get<1>(aspect))));
 }
 
 static inline void LoadFPSCommon(OBSBasic *main, Ui::OBSBasicSettings *ui)
@@ -3751,25 +3775,6 @@ static bool ValidResolutions(Ui::OBSBasicSettings *ui)
 
 	ui->videoMsg->setText("");
 	return true;
-}
-
-static int gcd(int a, int b)
-{
-	return b == 0 ? a : gcd(b, a % b);
-}
-
-static std::tuple<int, int> aspect_ratio(int cx, int cy)
-{
-	int common = gcd(cx, cy);
-	int newCX = cx / common;
-	int newCY = cy / common;
-
-	if (newCX == 8 && newCY == 5) {
-		newCX = 16;
-		newCY = 10;
-	}
-
-	return std::make_tuple(newCX, newCY);
 }
 
 void OBSBasicSettings::RecalcOutputResPixels(const char *resText)
