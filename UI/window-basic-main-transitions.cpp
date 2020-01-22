@@ -889,8 +889,11 @@ void OBSBasic::TBarReleased()
 {
 	int val = tBar->value();
 
+	OBSSource transition = obs_get_output_source(0);
+	obs_source_release(transition);
+
 	if ((tBar->maximum() - val) <= T_BAR_CLAMP) {
-		obs_transition_set_manual_time(GetCurrentTransition(), 1.0f);
+		obs_transition_set_manual_time(transition, 1.0f);
 		tBar->blockSignals(true);
 		tBar->setValue(0);
 		tBar->blockSignals(false);
@@ -898,7 +901,8 @@ void OBSBasic::TBarReleased()
 		EnableTransitionWidgets(true);
 
 	} else if (val <= T_BAR_CLAMP) {
-		obs_transition_set_manual_time(GetCurrentTransition(), 0.0f);
+		obs_transition_set_manual_time(transition, 0.0f);
+		TransitionFullyStopped();
 		tBar->blockSignals(true);
 		tBar->setValue(0);
 		tBar->blockSignals(false);
@@ -911,16 +915,18 @@ void OBSBasic::TBarReleased()
 
 void OBSBasic::TBarChanged(int value)
 {
+	OBSSource transition = obs_get_output_source(0);
+	obs_source_release(transition);
+
 	if (!tBarDown) {
-		obs_transition_set_manual_torque(GetCurrentTransition(), 8.0f,
-						 0.05f);
+		obs_transition_set_manual_torque(transition, 8.0f, 0.05f);
 		TransitionToScene(GetCurrentSceneSource(), false, false, false,
 				  0, true);
 		tBarActive = true;
 		tBarDown = true;
 	}
 
-	obs_transition_set_manual_time(GetCurrentTransition(),
+	obs_transition_set_manual_time(transition,
 				       (float)value / T_BAR_PRECISION_F);
 }
 
