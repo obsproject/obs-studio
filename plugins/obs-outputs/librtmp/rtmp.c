@@ -344,14 +344,25 @@ RTMP_TLS_LoadCerts(RTMP *r) {
     CFRelease(keychain_ref);
 #elif defined(__linux__)
     if (mbedtls_x509_crt_parse_path(chain, "/etc/ssl/certs/") < 0) {
+        RTMP_Log(RTMP_LOGERROR, "mbedtls_x509_crt_parse_path: Couldn't parse "
+            "/etc/ssl/certs");
         goto error;
     }
+
+    // mbedtls_x509_crt_parse_path ignores symlinks which causes an issue on
+    // some distributions. try parsing the most common CA bundles directly
+    // to work around this (we don't care if it fails)
+    mbedtls_x509_crt_parse_file(chain, "/etc/ssl/certs/ca-bundle.crt");
+    mbedtls_x509_crt_parse_file(chain, "/etc/ssl/certs/ca-certificates.crt");
 #endif
 
     mbedtls_ssl_conf_ca_chain(&r->RTMP_TLS_ctx->conf, chain, NULL);
     return;
 
 error:
+    RTMP_Log(RTMP_LOGERROR, "RTMP_TLS_LoadCerts: Failed to load "
+        "root certificate chains, RTMPS connections will likely "
+        "fail");
     mbedtls_x509_crt_free(chain);
     free(chain);
     r->RTMP_TLS_ctx->cacert = NULL;
