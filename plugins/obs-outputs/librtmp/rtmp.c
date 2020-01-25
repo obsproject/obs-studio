@@ -1086,10 +1086,9 @@ RTMP_Connect1(RTMP *r, RTMPPacket *cp)
         if (connect_return < 0)
         {
 #if defined(USE_MBEDTLS)
+            r->last_error_code = connect_return;
             if (connect_return == MBEDTLS_ERR_X509_CERT_VERIFY_FAILED)
             {
-                r->last_error_code = connect_return;
-
                 // show a more detailed error in the log if possible
                 int verify_result = mbedtls_ssl_get_verify_result(r->m_sb.sb_ssl);
                 if (verify_result)

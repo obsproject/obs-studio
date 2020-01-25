@@ -514,10 +514,18 @@ static void set_output_error(struct rtmp_stream *stream)
 		case -0x2700:
 			msg = obs_module_text("SSLCertVerifyFailed");
 			break;
+		case -0x7680:
+			msg = "Failed to load root certificates for a secure TLS connection."
+#if defined(__linux__)
+			      " Check you have an up to date root certificate bundle in /etc/ssl/certs."
+#endif
+				;
+			break;
 		}
 	}
 
-	obs_output_set_last_error(stream->output, msg);
+	if (msg)
+		obs_output_set_last_error(stream->output, msg);
 }
 
 static void dbr_add_frame(struct rtmp_stream *stream, struct dbr_frame *back)
