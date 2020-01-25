@@ -3760,8 +3760,11 @@ int OBSBasic::ResetVideo()
 	ovi.output_height =
 		(uint32_t)config_get_uint(basicConfig, "Video", "OutputCY");
 	ovi.output_format = GetVideoFormatFromName(colorFormat);
-	ovi.colorspace = astrcmpi(colorSpace, "601") == 0 ? VIDEO_CS_601
-							  : VIDEO_CS_709;
+	ovi.colorspace = astrcmpi(colorSpace, "601") == 0
+				 ? VIDEO_CS_601
+				 : (astrcmpi(colorSpace, "709") == 0
+					    ? VIDEO_CS_709
+					    : VIDEO_CS_SRGB);
 	ovi.range = astrcmpi(colorRange, "Full") == 0 ? VIDEO_RANGE_FULL
 						      : VIDEO_RANGE_PARTIAL;
 	ovi.adapter =

@@ -4824,6 +4824,11 @@
                       <widget class="QComboBox" name="colorSpace">
                        <item>
                         <property name="text">
+                         <string notr="true">sRGB</string>
+                        </property>
+                       </item>
+                       <item>
+                        <property name="text">
                          <string notr="true">709</string>
                         </property>
                        </item>
