@@ -438,99 +438,6 @@ RTMP_TLS_Free(RTMP *r) {
 #endif
 }
 
-void *
-RTMP_TLS_AllocServerContext(RTMP *r, const char* cert, const char* key)
-{
-    void *ctx = NULL;
-#ifdef CRYPTO
-    if (!r->RTMP_TLS_ctx)
-        RTMP_TLS_Init(r);
-#if defined(USE_MBEDTLS)
-    tls_server_ctx *tc = ctx = calloc(1, sizeof(struct tls_server_ctx));
-    tc->conf = &r->RTMP_TLS_ctx->conf;
-    tc->ctr_drbg = &r->RTMP_TLS_ctx->ctr_drbg;
-
-    mbedtls_x509_crt_init(&tc->cert);
-    if (mbedtls_x509_crt_parse_file(&tc->cert, cert))
-    {
-        free(tc);
-        return NULL;
-    }
-
-    mbedtls_pk_init(&tc->key);
-    if (mbedtls_pk_parse_keyfile(&tc->key, key, NULL))
-    {
-        mbedtls_x509_crt_free(&tc->cert);
-        mbedtls_pk_free(&tc->key);
-        free(tc);
-        return NULL;
-    }
-#elif defined(USE_POLARSSL)
-    tls_server_ctx *tc = ctx = calloc(1, sizeof(struct tls_server_ctx));
-    tc->dhm_P = my_dhm_P;
-    tc->dhm_G = my_dhm_G;
-    tc->hs = &RTMP_TLS_ctx->hs;
-    if (x509parse_crtfile(&tc->cert, cert))
-    {
-        free(tc);
-        return NULL;
-    }
-    if (x509parse_keyfile(&tc->key, key, NULL))
-    {
-        x509_free(&tc->cert);
-        free(tc);
-        return NULL;
-    }
-#elif defined(USE_GNUTLS) && !defined(NO_SSL)
-    gnutls_certificate_allocate_credentials((gnutls_certificate_credentials*) &ctx);
-    if (gnutls_certificate_set_x509_key_file(ctx, cert, key, GNUTLS_X509_FMT_PEM) != 0)
-    {
-        gnutls_certificate_free_credentials(ctx);
-        return NULL;
-    }
-#elif !defined(NO_SSL) /* USE_OPENSSL */
-    ctx = SSL_CTX_new(SSLv23_server_method());
-    if (!SSL_CTX_use_certificate_chain_file(ctx, cert))
-    {
-        SSL_CTX_free(ctx);
-        return NULL;
-    }
-    if (!SSL_CTX_use_PrivateKey_file(ctx, key, SSL_FILETYPE_PEM))
-    {
-        SSL_CTX_free(ctx);
-        return NULL;
-    }
-#endif
-#else
-    (void)cert;
-    (void)key;
-#endif
-    return ctx;
-}
-
-void
-RTMP_TLS_FreeServerContext(void *ctx)
-{
-#ifdef CRYPTO
-#if defined(USE_MBEDTLS)
-    mbedtls_x509_crt_free(&((tls_server_ctx*)ctx)->cert);
-    mbedtls_pk_free(&((tls_server_ctx*)ctx)->key);
-    free(ctx);
-#elif defined(USE_POLARSSL)
-    x509_free(&((tls_server_ctx*)ctx)->cert);
-    rsa_free(&((tls_server_ctx*)ctx)->key);
-    free(ctx);
-#elif defined(USE_GNUTLS) && !defined(NO_SSL)
-    gnutls_certificate_free_credentials(ctx);
-#elif !defined(NO_SSL) /* USE_OPENSSL */
-    SSL_CTX_free(ctx);
-#endif
-
-#else
-    (void)ctx;
-#endif
-}
-
 RTMP *
 RTMP_Alloc()
 {
@@ -1022,36 +929,6 @@ RTMP_Connect0(RTMP *r, struct sockaddr * service, socklen_t addrlen)
         setsockopt(r->m_sb.sb_socket, IPPROTO_TCP, TCP_NODELAY, (char *) &on, sizeof(on));
 
     return TRUE;
-}
-
-int
-RTMP_TLS_Accept(RTMP *r, void *ctx)
-{
-#if defined(CRYPTO) && !defined(NO_SSL)
-    tls_server_ctx *srv_ctx = ctx;
-    TLS_server(srv_ctx, r->m_sb.sb_ssl);
-
-#if defined(USE_MBEDTLS)
-    mbedtls_net_context *client_fd = &r->RTMP_TLS_ctx->net;
-    mbedtls_net_init(client_fd);
-    client_fd->fd = r->m_sb.sb_socket;
-    TLS_setfd(r->m_sb.sb_ssl, client_fd);
-#else
-    TLS_setfd(r->m_sb.sb_ssl, r->m_sb.sb_socket);
-#endif
-
-    int connect_return = TLS_connect(r->m_sb.sb_ssl);
-    if (connect_return < 0)
-    {
-        RTMP_Log(RTMP_LOGERROR, "%s, TLS_Connect failed", __FUNCTION__);
-        return FALSE;
-    }
-    return TRUE;
-#else
-    (void)r;
-    (void)ctx;
-    return FALSE;
-#endif
 }
 
 int
@@ -4137,69 +4014,6 @@ HandShake(RTMP *r, int FP9HandShake)
     (void)FP9HandShake;
     return TRUE;
 }
-
-static int
-SHandShake(RTMP *r)
-{
-    int i;
-    char serverbuf[RTMP_SIG_SIZE + 1], *serversig = serverbuf + 1;
-    char clientsig[RTMP_SIG_SIZE];
-    uint32_t uptime;
-    int bMatch;
-
-    if (ReadN(r, serverbuf, 1) != 1)	/* 0x03 or 0x06 */
-        return FALSE;
-
-    RTMP_Log(RTMP_LOGDEBUG, "%s: Type Request  : %02X", __FUNCTION__, serverbuf[0]);
-
-    if (serverbuf[0] != 3)
-    {
-        RTMP_Log(RTMP_LOGERROR, "%s: Type unknown: client sent %02X",
-                 __FUNCTION__, serverbuf[0]);
-        return FALSE;
-    }
-
-    uptime = htonl(RTMP_GetTime());
-    memcpy(serversig, &uptime, 4);
-
-    memset(&serversig[4], 0, 4);
-#ifdef _DEBUG
-    for (i = 8; i < RTMP_SIG_SIZE; i++)
-        serversig[i] = 0xff;
-#else
-    for (i = 8; i < RTMP_SIG_SIZE; i++)
-        serversig[i] = (char)(rand() % 256);
-#endif
-
-    if (!WriteN(r, serverbuf, RTMP_SIG_SIZE + 1))
-        return FALSE;
-
-    if (ReadN(r, clientsig, RTMP_SIG_SIZE) != RTMP_SIG_SIZE)
-        return FALSE;
-
-    /* decode client response */
-
-    memcpy(&uptime, clientsig, 4);
-    uptime = ntohl(uptime);
-
-    RTMP_Log(RTMP_LOGDEBUG, "%s: Client Uptime : %d", __FUNCTION__, uptime);
-    RTMP_Log(RTMP_LOGDEBUG, "%s: Player Version: %d.%d.%d.%d", __FUNCTION__,
-             clientsig[4], clientsig[5], clientsig[6], clientsig[7]);
-
-    /* 2nd part of handshake */
-    if (!WriteN(r, clientsig, RTMP_SIG_SIZE))
-        return FALSE;
-
-    if (ReadN(r, clientsig, RTMP_SIG_SIZE) != RTMP_SIG_SIZE)
-        return FALSE;
-
-    bMatch = (memcmp(serversig, clientsig, RTMP_SIG_SIZE) == 0);
-    if (!bMatch)
-    {
-        RTMP_Log(RTMP_LOGWARNING, "%s, client signature does not match!", __FUNCTION__);
-    }
-    return TRUE;
-}
 #endif
 
 int
@@ -4441,12 +4255,6 @@ RTMP_SendPacket(RTMP *r, RTMPPacket *packet, int queue)
         r->m_vecChannelsOut[packet->m_nChannel] = malloc(sizeof(RTMPPacket));
     memcpy(r->m_vecChannelsOut[packet->m_nChannel], packet, sizeof(RTMPPacket));
     return TRUE;
-}
-
-int
-RTMP_Serve(RTMP *r)
-{
-    return SHandShake(r);
 }
 
 void

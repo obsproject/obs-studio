@@ -87,14 +87,6 @@ typedef struct tls_ctx
     mbedtls_net_context net;
 } tls_ctx;
 
-typedef struct tls_server_ctx
-{
-  mbedtls_ssl_config *conf;
-  mbedtls_ctr_drbg_context *ctr_drbg;
-  mbedtls_pk_context key;
-  mbedtls_x509_crt cert;
-} tls_server_ctx;
-
 typedef tls_ctx *TLS_CTX;
 
 #define TLS_client(ctx,s)	\
@@ -104,18 +96,6 @@ typedef tls_ctx *TLS_CTX;
 	mbedtls_ssl_config_defaults(&ctx->conf, MBEDTLS_SSL_IS_CLIENT, MBEDTLS_SSL_TRANSPORT_STREAM, MBEDTLS_SSL_PRESET_DEFAULT);\
   mbedtls_ssl_conf_authmode(&ctx->conf, MBEDTLS_SSL_VERIFY_REQUIRED);\
 	mbedtls_ssl_conf_rng(&ctx->conf, mbedtls_ctr_drbg_random, &ctx->ctr_drbg)
-
-#define TLS_server(ctx,s)\
-  s = malloc(sizeof(mbedtls_ssl_context));\
-  mbedtls_ssl_init(s);\
-  mbedtls_ssl_setup(s, ctx->conf);\
-	mbedtls_ssl_conf_endpoint(ctx->conf, MBEDTLS_SSL_IS_SERVER);\
-  mbedtls_ssl_conf_authmode(ctx->conf, MBEDTLS_SSL_VERIFY_REQUIRED);\
-	mbedtls_ssl_conf_rng(ctx->conf, mbedtls_ctr_drbg_random, ctx->ctr_drbg);\
-	mbedtls_ssl_conf_own_cert(ctx->conf, &ctx->cert, &ctx->key);\
-	mbedtls_ssl_conf_dh_param_bin(ctx->conf,\
-    (const unsigned char *)my_dhm_P, strlen(my_dhm_P),\
-    (const unsigned char *)my_dhm_G, strlen(my_dhm_G))
 
 #define TLS_setfd(s,fd)	mbedtls_ssl_set_bio(s, fd, mbedtls_net_send, mbedtls_net_recv, NULL)
 #define TLS_connect(s)	mbedtls_ssl_handshake(s)
@@ -143,14 +123,6 @@ typedef struct tls_ctx
     havege_state hs;
     ssl_session ssn;
 } tls_ctx;
-typedef struct tls_server_ctx
-{
-    havege_state *hs;
-    x509_cert cert;
-    rsa_context key;
-    ssl_session ssn;
-    const char *dhm_P, *dhm_G;
-} tls_server_ctx;
 
 #define TLS_CTX tls_ctx *
 #define TLS_client(ctx,s)	s = malloc(sizeof(ssl_context)); ssl_init(s);\
@@ -158,13 +130,6 @@ typedef struct tls_server_ctx
 	ssl_set_rng(s, havege_random, &ctx->hs);\
 	ssl_set_ciphersuites(s, ssl_default_ciphersuites);\
 	SSL_SET_SESSION(s, 1, 600, &ctx->ssn)
-#define TLS_server(ctx,s)	s = malloc(sizeof(ssl_context)); ssl_init(s);\
-	ssl_set_endpoint(s, SSL_IS_SERVER); ssl_set_authmode(s, SSL_VERIFY_NONE);\
-	ssl_set_rng(s, havege_random, ((tls_server_ctx*)ctx)->hs);\
-	ssl_set_ciphersuites(s, ssl_default_ciphersuites);\
-	SSL_SET_SESSION(s, 1, 600, &((tls_server_ctx*)ctx)->ssn);\
-	ssl_set_own_cert(s, &((tls_server_ctx*)ctx)->cert, &((tls_server_ctx*)ctx)->key);\
-	ssl_set_dh_param(s, ((tls_server_ctx*)ctx)->dhm_P, ((tls_server_ctx*)ctx)->dhm_G)
 #define TLS_setfd(s,fd)	ssl_set_bio(s, net_recv, &fd, net_send, &fd)
 #define TLS_connect(s)	ssl_handshake(s)
 #define TLS_accept(s)	ssl_handshake(s)
@@ -183,7 +148,6 @@ typedef struct tls_ctx
 } tls_ctx;
 #define TLS_CTX	tls_ctx *
 #define TLS_client(ctx,s)	gnutls_init((gnutls_session_t *)(&s), GNUTLS_CLIENT); gnutls_priority_set(s, ctx->prios); gnutls_credentials_set(s, GNUTLS_CRD_CERTIFICATE, ctx->cred)
-#define TLS_server(ctx,s)	gnutls_init((gnutls_session_t *)(&s), GNUTLS_SERVER); gnutls_priority_set_direct(s, "NORMAL", NULL); gnutls_credentials_set(s, GNUTLS_CRD_CERTIFICATE, ctx)
 #define TLS_setfd(s,fd)	gnutls_transport_set_ptr(s, (gnutls_transport_ptr_t)(long)fd)
 #define TLS_connect(s)	gnutls_handshake(s)
 #define TLS_accept(s)	gnutls_handshake(s)
@@ -200,7 +164,6 @@ typedef struct tls_ctx
 #else	/* USE_OPENSSL */
 #define TLS_CTX	SSL_CTX *
 #define TLS_client(ctx,s)	s = SSL_new(ctx)
-#define TLS_server(ctx,s)	s = SSL_new(ctx)
 #define TLS_setfd(s,fd)	SSL_set_fd(s,fd)
 #define TLS_connect(s)	SSL_connect(s)
 #define TLS_accept(s)	SSL_accept(s)
@@ -527,8 +490,6 @@ extern "C"
     struct sockaddr;
     int RTMP_Connect0(RTMP *r, struct sockaddr *svc, socklen_t addrlen);
     int RTMP_Connect1(RTMP *r, RTMPPacket *cp);
-    int RTMP_Serve(RTMP *r);
-    int RTMP_TLS_Accept(RTMP *r, void *ctx);
 
     int RTMP_ReadPacket(RTMP *r, RTMPPacket *packet);
     int RTMP_SendPacket(RTMP *r, RTMPPacket *packet, int queue);
@@ -551,9 +512,6 @@ extern "C"
     void RTMP_TLS_Free(RTMP *r);
     void RTMP_Free(RTMP *r);
     void RTMP_EnableWrite(RTMP *r);
-
-    void *RTMP_TLS_AllocServerContext(RTMP *r, const char* cert, const char* key);
-    void RTMP_TLS_FreeServerContext(void *ctx);
 
     int RTMP_LibVersion(void);
     void RTMP_UserInterrupt(void);	/* user typed Ctrl-C */
