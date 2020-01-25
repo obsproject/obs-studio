@@ -362,23 +362,9 @@ static void log_x264(void *param, int level, const char *format, va_list args)
 	UNUSED_PARAMETER(level);
 }
 
-static inline const char *get_x264_colorspace_name(enum video_colorspace cs)
-{
-	switch (cs) {
-	case VIDEO_CS_DEFAULT:
-	case VIDEO_CS_601:
-	case VIDEO_CS_SRGB:
-		return "undef";
-	case VIDEO_CS_709:;
-	}
-
-	return "bt709";
-}
-
-static inline int get_x264_cs_val(enum video_colorspace cs,
+static inline int get_x264_cs_val(const char *const name,
 				  const char *const names[])
 {
-	const char *name = get_x264_colorspace_name(cs);
 	int idx = 0;
 	do {
 		if (strcmp(names[idx], name) == 0)
@@ -481,13 +467,38 @@ static void update_params(struct obs_x264 *obsx264, obs_data_t *settings,
 	if (obs_data_has_user_value(settings, "bf"))
 		obsx264->params.i_bframe = bf;
 
-	obsx264->params.vui.i_transfer =
-		get_x264_cs_val(info.colorspace, x264_transfer_names);
-	obsx264->params.vui.i_colmatrix =
-		get_x264_cs_val(info.colorspace, x264_colmatrix_names);
-	obsx264->params.vui.i_colorprim =
-		get_x264_cs_val(info.colorspace, x264_colorprim_names);
+	static const char *const smpte170m = "smpte170m";
+	static const char *const bt709 = "bt709";
+	static const char *const iec61966_2_1 = "iec61966-2-1";
+	const char *colorprim = NULL;
+	const char *transfer = NULL;
+	const char *colmatrix = NULL;
+	switch (info.colorspace) {
+	case VIDEO_CS_DEFAULT:
+	case VIDEO_CS_601:
+		colorprim = smpte170m;
+		transfer = smpte170m;
+		colmatrix = smpte170m;
+		break;
+	case VIDEO_CS_709:
+		colorprim = bt709;
+		transfer = bt709;
+		colmatrix = bt709;
+		break;
+	case VIDEO_CS_SRGB:
+		colorprim = bt709;
+		transfer = iec61966_2_1;
+		colmatrix = bt709;
+		break;
+	}
+
 	obsx264->params.vui.b_fullrange = info.range == VIDEO_RANGE_FULL;
+	obsx264->params.vui.i_colorprim =
+		get_x264_cs_val(colorprim, x264_colorprim_names);
+	obsx264->params.vui.i_transfer =
+		get_x264_cs_val(transfer, x264_transfer_names);
+	obsx264->params.vui.i_colmatrix =
+		get_x264_cs_val(colmatrix, x264_colmatrix_names);
 
 	/* use the new filler method for CBR to allow real-time adjusting of
 	 * the bitrate */
