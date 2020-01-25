@@ -169,8 +169,10 @@ static bool open_video_codec(struct ffmpeg_data *data)
 	data->vframe->format = context->pix_fmt;
 	data->vframe->width = context->width;
 	data->vframe->height = context->height;
-	data->vframe->colorspace = data->config.color_space;
 	data->vframe->color_range = data->config.color_range;
+	data->vframe->color_primaries = data->config.color_primaries;
+	data->vframe->color_trc = data->config.color_trc;
+	data->vframe->colorspace = data->config.colorspace;
 
 	ret = av_frame_get_buffer(data->vframe, base_get_alignment());
 	if (ret < 0) {
@@ -225,8 +227,10 @@ static bool create_video_stream(struct ffmpeg_data *data)
 	context->time_base = (AVRational){ovi.fps_den, ovi.fps_num};
 	context->gop_size = data->config.gop_size;
 	context->pix_fmt = closest_format;
-	context->colorspace = data->config.color_space;
 	context->color_range = data->config.color_range;
+	context->color_primaries = data->config.color_primaries;
+	context->color_trc = data->config.color_trc;
+	context->colorspace = data->config.colorspace;
 	context->thread_count = 0;
 
 	data->video->time_base = context->time_base;
@@ -1057,16 +1061,39 @@ static bool try_connect(struct ffmpeg_output *output)
 	config.audio_tracks = (int)obs_output_get_mixers(output->output);
 	config.audio_mix_count = get_audio_mix_count(config.audio_tracks);
 
+	config.color_range = voi->range == VIDEO_RANGE_FULL ? AVCOL_RANGE_JPEG
+							    : AVCOL_RANGE_MPEG;
+	switch (voi->colorspace) {
+	case VIDEO_CS_DEFAULT:
+	case VIDEO_CS_601:
+		config.color_primaries = AVCOL_PRI_SMPTE170M;
+		config.color_trc = AVCOL_TRC_SMPTE170M;
+		break;
+	case VIDEO_CS_709:
+		config.color_primaries = AVCOL_PRI_BT709;
+		config.color_trc = AVCOL_TRC_BT709;
+		break;
+	case VIDEO_CS_SRGB:
+		config.color_primaries = AVCOL_PRI_BT709;
+		config.color_trc = AVCOL_TRC_IEC61966_2_1;
+		break;
+	}
+
 	if (format_is_yuv(voi->format)) {
-		config.color_range = voi->range == VIDEO_RANGE_FULL
-					     ? AVCOL_RANGE_JPEG
-					     : AVCOL_RANGE_MPEG;
-		config.color_space = voi->colorspace == VIDEO_CS_709
-					     ? AVCOL_SPC_BT709
-					     : AVCOL_SPC_BT470BG;
+		switch (voi->colorspace) {
+		case VIDEO_CS_DEFAULT:
+		case VIDEO_CS_601:
+			config.colorspace = AVCOL_SPC_SMPTE170M;
+			break;
+		case VIDEO_CS_709:
+			config.colorspace = AVCOL_SPC_BT709;
+			break;
+		case VIDEO_CS_SRGB:
+			config.colorspace = AVCOL_SPC_BT709;
+			break;
+		}
 	} else {
-		config.color_range = AVCOL_RANGE_UNSPECIFIED;
-		config.color_space = AVCOL_SPC_RGB;
+		config.colorspace = AVCOL_SPC_RGB;
 	}
 
 	if (config.format == AV_PIX_FMT_NONE) {

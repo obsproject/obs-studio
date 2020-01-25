@@ -79,6 +79,10 @@ struct main_params {
 	int height;
 	int fps_num;
 	int fps_den;
+	int color_primaries;
+	int color_trc;
+	int colorspace;
+	int color_range;
 	char *acodec;
 	char *muxer_settings;
 };
@@ -249,6 +253,18 @@ static bool init_params(int *argc, char ***argv, struct main_params *params,
 			return false;
 		if (!get_opt_int(argc, argv, &params->height, "video height"))
 			return false;
+		if (!get_opt_int(argc, argv, &params->color_primaries,
+				 "video color primaries"))
+			return false;
+		if (!get_opt_int(argc, argv, &params->color_trc,
+				 "video color trc"))
+			return false;
+		if (!get_opt_int(argc, argv, &params->colorspace,
+				 "video colorspace"))
+			return false;
+		if (!get_opt_int(argc, argv, &params->color_range,
+				 "video color range"))
+			return false;
 		if (!get_opt_int(argc, argv, &params->fps_num, "video fps num"))
 			return false;
 		if (!get_opt_int(argc, argv, &params->fps_den, "video fps den"))
@@ -327,6 +343,10 @@ static void create_video_stream(struct ffmpeg_mux *ffm)
 	context->height = ffm->params.height;
 	context->coded_width = ffm->params.width;
 	context->coded_height = ffm->params.height;
+	context->color_primaries = ffm->params.color_primaries;
+	context->color_trc = ffm->params.color_trc;
+	context->colorspace = ffm->params.colorspace;
+	context->color_range = ffm->params.color_range;
 	context->extradata = extradata;
 	context->extradata_size = ffm->video_header.size;
 	context->time_base =
