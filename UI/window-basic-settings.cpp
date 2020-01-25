@@ -795,6 +795,16 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	QValidator *validator = new QRegExpValidator(rx, this);
 	ui->baseResolution->lineEdit()->setValidator(validator);
 	ui->outputResolution->lineEdit()->setValidator(validator);
+
+	QAction *action = new QAction(this);
+	action->setShortcut(Qt::Key_Escape);
+	ui->generalPage->addAction(action);
+	ui->outputPage->addAction(action);
+	ui->streamPage->addAction(action);
+	ui->audioPage->addAction(action);
+	ui->videoPage->addAction(action);
+	ui->advancedPage->addAction(action);
+	connect(action, SIGNAL(triggered()), this, SLOT(EscapeTriggered()));
 }
 
 OBSBasicSettings::~OBSBasicSettings()
@@ -805,6 +815,11 @@ OBSBasicSettings::~OBSBasicSettings()
 	App()->UpdateHotkeyFocusSetting();
 
 	EnableThreadedMessageBoxes(false);
+}
+
+void OBSBasicSettings::EscapeTriggered()
+{
+	close();
 }
 
 void OBSBasicSettings::SaveCombo(QComboBox *widget, const char *section,
@@ -3519,7 +3534,8 @@ bool OBSBasicSettings::QueryChanges()
 	button = OBSMessageBox::question(
 		this, QTStr("Basic.Settings.ConfirmTitle"),
 		QTStr("Basic.Settings.Confirm"),
-		QMessageBox::Yes | QMessageBox::No | QMessageBox::Cancel);
+		QMessageBox::Yes | QMessageBox::No | QMessageBox::Cancel,
+		QMessageBox::Yes);
 
 	if (button == QMessageBox::Cancel) {
 		return false;
