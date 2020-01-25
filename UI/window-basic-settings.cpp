@@ -623,9 +623,6 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	connect(ui->advOutTrack6Bitrate, SIGNAL(currentIndexChanged(int)), this,
 		SLOT(UpdateStreamDelayEstimate()));
 
-	//Apply button disabled until change.
-	EnableApplyButton(false);
-
 	// Initialize libff library
 	ff_init();
 
@@ -782,7 +779,6 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 		SLOT(AdvOutRecCheckWarnings()));
 	AdvOutRecCheckWarnings();
 
-	ui->buttonBox->button(QDialogButtonBox::Apply)->setIcon(QIcon());
 	ui->buttonBox->button(QDialogButtonBox::Ok)->setIcon(QIcon());
 	ui->buttonBox->button(QDialogButtonBox::Cancel)->setIcon(QIcon());
 
@@ -3582,8 +3578,7 @@ void OBSBasicSettings::on_buttonBox_clicked(QAbstractButton *button)
 {
 	QDialogButtonBox::ButtonRole val = ui->buttonBox->buttonRole(button);
 
-	if (val == QDialogButtonBox::ApplyRole ||
-	    val == QDialogButtonBox::AcceptRole) {
+	if (val == QDialogButtonBox::AcceptRole) {
 		SaveSettings();
 		ClearChanged();
 	}
@@ -3865,7 +3860,6 @@ void OBSBasicSettings::GeneralChanged()
 	if (!loading) {
 		generalChanged = true;
 		sender()->setProperty("changed", QVariant(true));
-		EnableApplyButton(true);
 	}
 }
 
@@ -3874,7 +3868,6 @@ void OBSBasicSettings::Stream1Changed()
 	if (!loading) {
 		stream1Changed = true;
 		sender()->setProperty("changed", QVariant(true));
-		EnableApplyButton(true);
 	}
 }
 
@@ -3883,7 +3876,6 @@ void OBSBasicSettings::OutputsChanged()
 	if (!loading) {
 		outputsChanged = true;
 		sender()->setProperty("changed", QVariant(true));
-		EnableApplyButton(true);
 	}
 }
 
@@ -3892,7 +3884,6 @@ void OBSBasicSettings::AudioChanged()
 	if (!loading) {
 		audioChanged = true;
 		sender()->setProperty("changed", QVariant(true));
-		EnableApplyButton(true);
 	}
 }
 
@@ -3908,12 +3899,10 @@ void OBSBasicSettings::AudioChangedRestart()
 			ui->audioMsg->setText(
 				QTStr("Basic.Settings.ProgramRestart"));
 			sender()->setProperty("changed", QVariant(true));
-			EnableApplyButton(true);
 		} else {
 			audioChanged = false;
 			ui->audioMsg->setText("");
 			sender()->setProperty("changed", QVariant(false));
-			EnableApplyButton(false);
 		}
 	}
 }
@@ -4004,7 +3993,6 @@ void OBSBasicSettings::VideoChangedRestart()
 		videoChanged = true;
 		ui->videoMsg->setText(QTStr("Basic.Settings.ProgramRestart"));
 		sender()->setProperty("changed", QVariant(true));
-		EnableApplyButton(true);
 	}
 }
 
@@ -4015,7 +4003,6 @@ void OBSBasicSettings::AdvancedChangedRestart()
 		ui->advancedMsg->setText(
 			QTStr("Basic.Settings.ProgramRestart"));
 		sender()->setProperty("changed", QVariant(true));
-		EnableApplyButton(true);
 	}
 }
 
@@ -4024,7 +4011,6 @@ void OBSBasicSettings::VideoChangedResolution()
 	if (!loading && ValidResolutions(ui.get())) {
 		videoChanged = true;
 		sender()->setProperty("changed", QVariant(true));
-		EnableApplyButton(true);
 	}
 }
 
@@ -4033,7 +4019,6 @@ void OBSBasicSettings::VideoChanged()
 	if (!loading) {
 		videoChanged = true;
 		sender()->setProperty("changed", QVariant(true));
-		EnableApplyButton(true);
 	}
 }
 
@@ -4049,9 +4034,6 @@ void OBSBasicSettings::HotkeysChanged()
 			       const auto &hw = *hotkey.second;
 			       return hw.Changed();
 		       });
-
-	if (hotkeysChanged)
-		EnableApplyButton(true);
 }
 
 void OBSBasicSettings::ReloadHotkeys(obs_hotkey_id ignoreKey)
@@ -4064,7 +4046,6 @@ void OBSBasicSettings::AdvancedChanged()
 	if (!loading) {
 		advancedChanged = true;
 		sender()->setProperty("changed", QVariant(true));
-		EnableApplyButton(true);
 	}
 }
 

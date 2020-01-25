@@ -177,11 +177,6 @@ private:
 		       hotkeysChanged;
 	}
 
-	inline void EnableApplyButton(bool en)
-	{
-		ui->buttonBox->button(QDialogButtonBox::Apply)->setEnabled(en);
-	}
-
 	inline void ClearChanged()
 	{
 		generalChanged = false;
@@ -191,7 +186,6 @@ private:
 		videoChanged = false;
 		hotkeysChanged = false;
 		advancedChanged = false;
-		EnableApplyButton(false);
 	}
 
 #ifdef _WIN32

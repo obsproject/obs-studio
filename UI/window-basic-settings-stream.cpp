@@ -482,10 +482,8 @@ void OBSBasicSettings::OnAuthConnected()
 		OnOAuthStreamKeyConnected();
 	}
 
-	if (!loading) {
+	if (!loading)
 		stream1Changed = true;
-		EnableApplyButton(true);
-	}
 }
 
 void OBSBasicSettings::on_connectAccount_clicked()
