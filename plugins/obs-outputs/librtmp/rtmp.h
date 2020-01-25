@@ -52,7 +52,13 @@
 #ifdef CRYPTO
 #if defined(USE_MBEDTLS)
 #include <mbedtls/version.h>
+
+#if MBEDTLS_VERSION_NUMBER >= 0x02040000
 #include <mbedtls/net_sockets.h>
+#else
+#include <mbedtls/net.h>
+#endif
+
 #include <mbedtls/ssl.h>
 #include <mbedtls/ctr_drbg.h>
 #include <mbedtls/entropy.h>

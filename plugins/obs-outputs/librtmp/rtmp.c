@@ -2711,9 +2711,16 @@ b64enc(const unsigned char *input, int length, char *output, int maxsize)
 
 #if defined(USE_MBEDTLS)
 typedef	mbedtls_md5_context MD5_CTX;
+
+#if MBEDTLS_VERSION_NUMBER >= 0x02040000
 #define MD5_Init(ctx)	mbedtls_md5_init(ctx); mbedtls_md5_starts_ret(ctx)
 #define MD5_Update(ctx,data,len)	mbedtls_md5_update_ret(ctx,(unsigned char *)data,len)
 #define MD5_Final(dig,ctx)	mbedtls_md5_finish_ret(ctx,dig); mbedtls_md5_free(ctx)
+#else
+#define MD5_Init(ctx)	mbedtls_md5_init(ctx); mbedtls_md5_starts(ctx)
+#define MD5_Update(ctx,data,len)	mbedtls_md5_update(ctx,(unsigned char *)data,len)
+#define MD5_Final(dig,ctx)	mbedtls_md5_finish(ctx,dig); mbedtls_md5_free(ctx)
+#endif
 
 #elif defined(USE_POLARSSL)
 #define MD5_CTX	md5_context
