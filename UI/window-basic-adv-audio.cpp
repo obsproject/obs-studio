@@ -119,6 +119,9 @@ OBSBasicAdvAudio::OBSBasicAdvAudio(QWidget *parent)
 
 	/* enum user scene/sources */
 	obs_enum_sources(EnumSources, this);
+	obs_source_t *tr = obs_frontend_get_current_transition();
+	EnumSources(this, tr);
+	obs_source_release(tr);
 
 	resize(1100, 340);
 	setWindowTitle(QTStr("Basic.AdvAudio"));
@@ -147,8 +150,10 @@ bool OBSBasicAdvAudio::EnumSources(void *param, obs_source_t *source)
 {
 	OBSBasicAdvAudio *dialog = reinterpret_cast<OBSBasicAdvAudio *>(param);
 	uint32_t flags = obs_source_get_output_flags(source);
+	enum obs_source_type type = obs_source_get_type(source);
+	bool showAnyway = type == OBS_SOURCE_TYPE_TRANSITION;
 
-	if ((flags & OBS_SOURCE_AUDIO) != 0 &&
+	if (((flags & OBS_SOURCE_AUDIO) != 0 || showAnyway) &&
 	    (dialog->showInactive || obs_source_active(source)))
 		dialog->AddAudioSource(source);
 
@@ -252,6 +257,9 @@ void OBSBasicAdvAudio::SetShowInactive(bool show)
 					    this);
 
 		obs_enum_sources(EnumSources, this);
+		obs_source_t *tr = obs_frontend_get_current_transition();
+		EnumSources(this, tr);
+		obs_source_release(tr);
 
 		SetIconsVisible(showVisible);
 	} else {

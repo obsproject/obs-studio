@@ -139,6 +139,8 @@ OBSAdvAudioCtrl::OBSAdvAudioCtrl(QGridLayout *, obs_source_t *source_)
 	balance->setTickPosition(QSlider::TicksAbove);
 	balance->setTickInterval(50);
 
+	enum obs_source_type type = obs_source_get_type(source);
+
 	const char *speakers =
 		config_get_string(main->Config(), "Audio", "ChannelSetup");
 
@@ -168,6 +170,8 @@ OBSAdvAudioCtrl::OBSAdvAudioCtrl(QGridLayout *, obs_source_t *source_)
 	int mt = (int)obs_source_get_monitoring_type(source);
 	idx = monitoringType->findData(mt);
 	monitoringType->setCurrentIndex(idx);
+	if (type == OBS_SOURCE_TYPE_TRANSITION)
+		monitoringType->setDisabled(true);
 #endif
 
 	mixer1->setText("1");
@@ -192,12 +196,14 @@ OBSAdvAudioCtrl::OBSAdvAudioCtrl(QGridLayout *, obs_source_t *source_)
 		balanceContainer->setMaximumWidth(170);
 	}
 
-	mixerContainer->layout()->addWidget(mixer1);
-	mixerContainer->layout()->addWidget(mixer2);
-	mixerContainer->layout()->addWidget(mixer3);
-	mixerContainer->layout()->addWidget(mixer4);
-	mixerContainer->layout()->addWidget(mixer5);
-	mixerContainer->layout()->addWidget(mixer6);
+	if (type != OBS_SOURCE_TYPE_TRANSITION) {
+		mixerContainer->layout()->addWidget(mixer1);
+		mixerContainer->layout()->addWidget(mixer2);
+		mixerContainer->layout()->addWidget(mixer3);
+		mixerContainer->layout()->addWidget(mixer4);
+		mixerContainer->layout()->addWidget(mixer5);
+		mixerContainer->layout()->addWidget(mixer6);
+	}
 
 	QWidget::connect(volume, SIGNAL(valueChanged(double)), this,
 			 SLOT(volumeChanged(double)));

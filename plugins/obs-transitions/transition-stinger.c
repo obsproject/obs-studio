@@ -68,6 +68,13 @@ static void stinger_update(void *data, obs_data_t *settings)
 	s->monitoring_type =
 		(int)obs_data_get_int(settings, "audio_monitoring");
 	obs_source_set_monitoring_type(s->media_source, s->monitoring_type);
+	obs_source_set_monitoring_type(s->source, s->monitoring_type);
+	obs_source_set_volume(s->media_source,
+			      obs_source_get_volume(s->source));
+	obs_source_set_muted(s->media_source, obs_source_muted(s->source));
+	obs_source_set_flags(s->media_source, obs_source_get_flags(s->source));
+	obs_source_set_sync_offset(s->media_source,
+				   obs_source_get_sync_offset(s->source));
 
 	s->fade_style =
 		(enum fade_style)obs_data_get_int(settings, "audio_fade_style");
@@ -85,6 +92,37 @@ static void stinger_update(void *data, obs_data_t *settings)
 	}
 }
 
+static void stinger_volume(void *data, calldata_t *calldata)
+{
+	struct stinger_info *s = data;
+
+	float mul = (float)calldata_float(calldata, "volume");
+	obs_source_set_volume(s->media_source, mul);
+}
+
+static void stinger_muted(void *data, calldata_t *calldata)
+{
+	struct stinger_info *s = data;
+
+	obs_source_set_muted(s->media_source, calldata_bool(calldata, "muted"));
+}
+
+static void stinger_flags(void *data, calldata_t *calldata)
+{
+	struct stinger_info *s = data;
+
+	int flags = (int)calldata_int(calldata, "flags");
+	obs_source_set_flags(s->media_source, flags);
+}
+
+static void stinger_audio_sync(void *data, calldata_t *calldata)
+{
+	struct stinger_info *s = data;
+
+	int offset = (int)calldata_int(calldata, "offset");
+	obs_source_set_sync_offset(s->media_source, offset);
+}
+
 static void *stinger_create(obs_data_t *settings, obs_source_t *source)
 {
 	struct stinger_info *s = bzalloc(sizeof(*s));
@@ -92,6 +130,14 @@ static void *stinger_create(obs_data_t *settings, obs_source_t *source)
 	s->source = source;
 	s->mix_a = mix_a_fade_in_out;
 	s->mix_b = mix_b_fade_in_out;
+	signal_handler_connect(obs_source_get_signal_handler(s->source),
+			       "volume", stinger_volume, s);
+	signal_handler_connect(obs_source_get_signal_handler(s->source), "mute",
+			       stinger_muted, s);
+	signal_handler_connect(obs_source_get_signal_handler(s->source),
+			       "update_flags", stinger_flags, s);
+	signal_handler_connect(obs_source_get_signal_handler(s->source),
+			       "audio_sync", stinger_audio_sync, s);
 
 	obs_transition_enable_fixed(s->source, true, 0);
 	obs_source_update(source, settings);
@@ -101,6 +147,14 @@ static void *stinger_create(obs_data_t *settings, obs_source_t *source)
 static void stinger_destroy(void *data)
 {
 	struct stinger_info *s = data;
+	signal_handler_disconnect(obs_source_get_signal_handler(s->source),
+				  "volume", stinger_volume, s);
+	signal_handler_disconnect(obs_source_get_signal_handler(s->source),
+				  "mute", stinger_muted, s);
+	signal_handler_disconnect(obs_source_get_signal_handler(s->source),
+				  "update_flags", stinger_flags, s);
+	signal_handler_disconnect(obs_source_get_signal_handler(s->source),
+				  "audio_sync", stinger_audio_sync, s);
 	obs_source_release(s->media_source);
 	bfree(s);
 }
