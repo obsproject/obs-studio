@@ -47,6 +47,7 @@ sudo apt-get install -y \
         libxcb-xinerama0-dev \
         libxcomposite-dev \
         libxinerama-dev \
+        libmbedtls-dev \
         pkg-config \
         python3-dev \
         qtbase5-dev \
