@@ -3983,9 +3983,13 @@ void OBSBasic::on_actionAdvAudioProperties_triggered()
 		return;
 	}
 
+	bool iconsVisible = config_get_bool(App()->GlobalConfig(),
+					    "BasicWindow", "ShowSourceIcons");
+
 	advAudioWindow = new OBSBasicAdvAudio(this);
 	advAudioWindow->show();
 	advAudioWindow->setAttribute(Qt::WA_DeleteOnClose, true);
+	advAudioWindow->SetIconsVisible(iconsVisible);
 
 	connect(advAudioWindow, SIGNAL(destroyed()), this,
 		SLOT(on_advAudioProps_destroyed()));
@@ -6808,6 +6812,8 @@ void OBSBasic::on_toggleStatusBar_toggled(bool visible)
 void OBSBasic::on_toggleSourceIcons_toggled(bool visible)
 {
 	ui->sources->SetIconsVisible(visible);
+	if (advAudioWindow != nullptr)
+		advAudioWindow->SetIconsVisible(visible);
 
 	config_set_bool(App()->GlobalConfig(), "BasicWindow", "ShowSourceIcons",
 			visible);

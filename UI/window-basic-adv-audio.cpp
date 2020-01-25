@@ -29,6 +29,8 @@ OBSBasicAdvAudio::OBSBasicAdvAudio(QWidget *parent)
 	int idx = 0;
 	mainLayout = new QGridLayout;
 	mainLayout->setContentsMargins(0, 0, 0, 0);
+	label = new QLabel("");
+	mainLayout->addWidget(label, 0, idx++);
 	label = new QLabel(QTStr("Basic.AdvAudio.Name"));
 	label->setStyleSheet("font-weight: bold;");
 	mainLayout->addWidget(label, 0, idx++);
@@ -259,6 +261,8 @@ void OBSBasicAdvAudio::SetShowInactive(bool show)
 					    this);
 
 		obs_enum_sources(EnumSources, this);
+
+		SetIconsVisible(showVisible);
 	} else {
 		sourceAddedSignal.Connect(obs_get_signal_handler(),
 					  "source_activate", OBSSourceAdded,
@@ -275,5 +279,18 @@ void OBSBasicAdvAudio::SetShowInactive(bool show)
 				i--;
 			}
 		}
+	}
+}
+
+void OBSBasicAdvAudio::SetIconsVisible(bool visible)
+{
+	showVisible = visible;
+
+	QLayoutItem *item = mainLayout->itemAtPosition(0, 0);
+	QLabel *headerLabel = qobject_cast<QLabel *>(item->widget());
+	visible ? headerLabel->show() : headerLabel->hide();
+
+	for (int i = 0; i < controls.size(); i++) {
+		controls[i]->SetIconVisible(visible);
 	}
 }

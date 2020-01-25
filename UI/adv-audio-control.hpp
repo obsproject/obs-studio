@@ -29,6 +29,7 @@ private:
 	QPointer<QWidget> mixerContainer;
 	QPointer<QWidget> balanceContainer;
 
+	QPointer<QLabel> iconLabel;
 	QPointer<QLabel> nameLabel;
 	QPointer<QLabel> active;
 	QPointer<QStackedWidget> stackedWidget;
@@ -69,6 +70,7 @@ public:
 	void ShowAudioControl(QGridLayout *layout);
 
 	void SetVolumeWidget(VolumeType type);
+	void SetIconVisible(bool visible);
 
 public slots:
 	void SourceActiveChanged(bool active);
