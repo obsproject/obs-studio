@@ -879,7 +879,7 @@ HandShake(RTMP * r, int FP9HandShake)
         if (encrypted)
         {
             /* generate Diffie-Hellmann parameters */
-            r->Link.dh = DHInit(r, 1024);
+            r->Link.dh = DHInit(1024);
             if (!r->Link.dh)
             {
                 RTMP_Log(RTMP_LOGERROR, "%s: Couldn't initialize Diffie-Hellmann!",
@@ -1271,7 +1271,7 @@ SHandShake(RTMP * r)
         if (encrypted)
         {
             /* generate Diffie-Hellmann parameters */
-            r->Link.dh = DHInit(r, 1024);
+            r->Link.dh = DHInit(1024);
             if (!r->Link.dh)
             {
                 RTMP_Log(RTMP_LOGERROR, "%s: Couldn't initialize Diffie-Hellmann!",

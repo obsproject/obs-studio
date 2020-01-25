@@ -251,7 +251,7 @@ failed:
 }
 
 static MDH *
-DHInit(RTMP *r, int nKeyBits)
+DHInit(int nKeyBits)
 {
     size_t res;
     MDH *dh = MDH_new();
