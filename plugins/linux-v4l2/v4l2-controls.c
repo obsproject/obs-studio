@@ -27,7 +27,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #if defined(__i386__)
 #define UINT_TO_POINTER(val) ((void *)(unsigned int)(val))
 #define POINTER_TO_UINT(p) ((unsigned int)(unsigned int)(p))
-#elif defined(__x86_64__)
+#elif defined(__x86_64__) || defined(__aarch64__) || (_MIPS_SIM == _ABI64)
 #define UINT_TO_POINTER(val) ((void *)(unsigned long)(val))
 #define POINTER_TO_UINT(p) ((unsigned int)(unsigned long)(p))
 #else
