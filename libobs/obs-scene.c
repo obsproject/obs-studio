@@ -1445,6 +1445,39 @@ obs_sceneitem_t *obs_scene_find_source(obs_scene_t *scene, const char *name)
 	return item;
 }
 
+obs_sceneitem_t *obs_scene_find_source_recursive(obs_scene_t *scene,
+						 const char *name)
+{
+	struct obs_scene_item *item;
+
+	if (!scene)
+		return NULL;
+
+	full_lock(scene);
+
+	item = scene->first_item;
+	while (item) {
+		if (strcmp(item->source->context.name, name) == 0)
+			break;
+
+		if (item->is_group) {
+			obs_scene_t *group = item->source->context.data;
+			obs_sceneitem_t *child =
+				obs_scene_find_source(group, name);
+			if (child) {
+				item = child;
+				break;
+			}
+		}
+
+		item = item->next;
+	}
+
+	full_unlock(scene);
+
+	return item;
+}
+
 obs_sceneitem_t *obs_scene_find_sceneitem_by_id(obs_scene_t *scene, int64_t id)
 {
 	struct obs_scene_item *item;

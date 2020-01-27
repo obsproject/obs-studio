@@ -1450,6 +1450,9 @@ EXPORT obs_scene_t *obs_scene_from_source(const obs_source_t *source);
 EXPORT obs_sceneitem_t *obs_scene_find_source(obs_scene_t *scene,
 					      const char *name);
 
+EXPORT obs_sceneitem_t *obs_scene_find_source_recursive(obs_scene_t *scene,
+							const char *name);
+
 EXPORT obs_sceneitem_t *obs_scene_find_sceneitem_by_id(obs_scene_t *scene,
 						       int64_t id);
 

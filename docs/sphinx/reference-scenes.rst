@@ -225,6 +225,16 @@ General Scene Functions
 
 ---------------------
 
+.. function:: obs_sceneitem_t *obs_scene_find_source_recursive(obs_scene_t *scene, const char *name)
+
+   Same as obs_scene_find_source, but also searches groups within the
+   scene.
+
+   :param name: The name of the source to find
+   :return:     The scene item if found, otherwise *NULL* if not found
+
+---------------------
+
 .. function:: obs_sceneitem_t *obs_scene_find_sceneitem_by_id(obs_scene_t *scene, int64_t id)
 
    :param id: The unique numeric identifier of the scene item
