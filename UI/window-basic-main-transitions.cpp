@@ -1413,6 +1413,8 @@ void OBSBasic::SetPreviewProgramMode(bool enabled)
 		if (!previewEnabled)
 			EnablePreviewDisplay(false);
 
+		ui->transitions->setEnabled(true);
+
 		if (api)
 			api->on_event(OBS_FRONTEND_EVENT_STUDIO_MODE_DISABLED);
 
