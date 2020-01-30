@@ -348,12 +348,6 @@ RTMP_TLS_LoadCerts(RTMP *r) {
             "/etc/ssl/certs");
         goto error;
     }
-
-    // mbedtls_x509_crt_parse_path ignores symlinks which causes an issue on
-    // some distributions. try parsing the most common CA bundles directly
-    // to work around this (we don't care if it fails)
-    mbedtls_x509_crt_parse_file(chain, "/etc/ssl/certs/ca-bundle.crt");
-    mbedtls_x509_crt_parse_file(chain, "/etc/ssl/certs/ca-certificates.crt");
 #endif
 
     mbedtls_ssl_conf_ca_chain(&r->RTMP_TLS_ctx->conf, chain, NULL);
