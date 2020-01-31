@@ -59,7 +59,15 @@ struct ffmpeg_source {
 	bool seekable;
 
 	enum obs_media_state state;
+	obs_hotkey_pair_id play_pause_hotkey;
+	obs_hotkey_id stop_hotkey;
 };
+
+static void set_media_state(void *data, enum obs_media_state state)
+{
+	struct ffmpeg_source *s = data;
+	s->state = state;
+}
 
 static bool is_local_file_modified(obs_properties_t *props,
 				   obs_property_t *prop, obs_data_t *settings)
@@ -299,6 +307,7 @@ static void ffmpeg_source_start(struct ffmpeg_source *s)
 		mp_media_play(&s->media, s->is_looping);
 		if (s->is_local_file)
 			obs_source_show_preloaded_video(s->source);
+		set_media_state(s, OBS_MEDIA_STATE_PLAYING);
 	}
 }
 
@@ -376,7 +385,7 @@ static void restart_hotkey(void *data, obs_hotkey_id id, obs_hotkey_t *hotkey,
 
 	struct ffmpeg_source *s = data;
 	if (obs_source_active(s->source))
-		ffmpeg_source_start(s);
+		obs_source_media_restart(s->source);
 }
 
 static void restart_proc(void *data, calldata_t *cd)
@@ -432,6 +441,50 @@ static void get_nb_frames(void *data, calldata_t *cd)
 	calldata_set_int(cd, "num_frames", frames);
 }
 
+static bool ffmpeg_source_play_hotkey(void *data, obs_hotkey_pair_id id,
+				      obs_hotkey_t *hotkey, bool pressed)
+{
+	UNUSED_PARAMETER(id);
+	UNUSED_PARAMETER(hotkey);
+
+	struct ffmpeg_source *s = data;
+
+	if (s->state == OBS_MEDIA_STATE_PLAYING || !pressed ||
+	    !obs_source_active(s->source))
+		return false;
+
+	obs_source_media_play_pause(s->source, false);
+	return true;
+}
+
+static bool ffmpeg_source_pause_hotkey(void *data, obs_hotkey_pair_id id,
+				       obs_hotkey_t *hotkey, bool pressed)
+{
+	UNUSED_PARAMETER(id);
+	UNUSED_PARAMETER(hotkey);
+
+	struct ffmpeg_source *s = data;
+
+	if (s->state != OBS_MEDIA_STATE_PLAYING || !pressed ||
+	    !obs_source_active(s->source))
+		return false;
+
+	obs_source_media_play_pause(s->source, true);
+	return true;
+}
+
+static void ffmpeg_source_stop_hotkey(void *data, obs_hotkey_id id,
+				      obs_hotkey_t *hotkey, bool pressed)
+{
+	UNUSED_PARAMETER(id);
+	UNUSED_PARAMETER(hotkey);
+
+	struct ffmpeg_source *s = data;
+
+	if (pressed && obs_source_active(s->source))
+		obs_source_media_stop(s->source);
+}
+
 static void *ffmpeg_source_create(obs_data_t *settings, obs_source_t *source)
 {
 	UNUSED_PARAMETER(settings);
@@ -442,6 +495,16 @@ static void *ffmpeg_source_create(obs_data_t *settings, obs_source_t *source)
 	s->hotkey = obs_hotkey_register_source(source, "MediaSource.Restart",
 					       obs_module_text("RestartMedia"),
 					       restart_hotkey, s);
+
+	s->play_pause_hotkey = obs_hotkey_pair_register_source(
+		s->source, "MediaSource.Play", obs_module_text("Play"),
+		"MediaSource.Pause", obs_module_text("Pause"),
+		ffmpeg_source_play_hotkey, ffmpeg_source_pause_hotkey, s, s);
+
+	s->stop_hotkey = obs_hotkey_register_source(source, "MediaSource.Stop",
+						    obs_module_text("Stop"),
+						    ffmpeg_source_stop_hotkey,
+						    s);
 
 	proc_handler_t *ph = obs_source_get_proc_handler(source);
 	proc_handler_add(ph, "void restart()", restart_proc, s);
@@ -476,7 +539,7 @@ static void ffmpeg_source_activate(void *data)
 	struct ffmpeg_source *s = data;
 
 	if (s->restart_on_activate)
-		ffmpeg_source_start(s);
+		obs_source_media_restart(s->source);
 }
 
 static void ffmpeg_source_deactivate(void *data)
