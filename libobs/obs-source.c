@@ -80,6 +80,14 @@ static const char *source_signals[] = {
 	"void transition_start(ptr source)",
 	"void transition_video_stop(ptr source)",
 	"void transition_stop(ptr source)",
+	"void media_play(ptr source)",
+	"void media_pause(ptr source)",
+	"void media_restart(ptr source)",
+	"void media_stopped(ptr source)",
+	"void media_next(ptr source)",
+	"void media_previous(ptr source)",
+	"void media_started(ptr source)",
+	"void media_ended(ptr source)",
 	NULL,
 };
 
@@ -4741,4 +4749,130 @@ enum obs_icon_type obs_source_get_icon_type(const char *id)
 {
 	const struct obs_source_info *info = get_source_info(id);
 	return (info) ? info->icon_type : OBS_ICON_TYPE_UNKNOWN;
+}
+
+void obs_source_media_play_pause(obs_source_t *source, bool pause)
+{
+	if (!obs_source_valid(source, "obs_source_media_play_pause"))
+		return;
+
+	if (!source->info.media_play_pause)
+		return;
+
+	source->info.media_play_pause(source->context.data, pause);
+
+	if (pause)
+		obs_source_dosignal(source, NULL, "media_pause");
+	else
+		obs_source_dosignal(source, NULL, "media_play");
+}
+
+void obs_source_media_restart(obs_source_t *source)
+{
+	if (!obs_source_valid(source, "obs_source_media_restart"))
+		return;
+
+	if (!source->info.media_restart)
+		return;
+
+	source->info.media_restart(source->context.data);
+
+	obs_source_dosignal(source, NULL, "media_restart");
+}
+
+void obs_source_media_stop(obs_source_t *source)
+{
+	if (!obs_source_valid(source, "obs_source_media_stop"))
+		return;
+
+	if (!source->info.media_stop)
+		return;
+
+	source->info.media_stop(source->context.data);
+
+	obs_source_dosignal(source, NULL, "media_stopped");
+}
+
+void obs_source_media_next(obs_source_t *source)
+{
+	if (!obs_source_valid(source, "obs_source_media_next"))
+		return;
+
+	if (!source->info.media_next)
+		return;
+
+	source->info.media_next(source->context.data);
+
+	obs_source_dosignal(source, NULL, "media_next");
+}
+
+void obs_source_media_previous(obs_source_t *source)
+{
+	if (!obs_source_valid(source, "obs_source_media_previous"))
+		return;
+
+	if (!source->info.media_previous)
+		return;
+
+	source->info.media_previous(source->context.data);
+
+	obs_source_dosignal(source, NULL, "media_previous");
+}
+
+int64_t obs_source_media_get_duration(obs_source_t *source)
+{
+	if (!obs_source_valid(source, "obs_source_media_get_duration"))
+		return 0;
+
+	if (source->info.media_get_duration)
+		return source->info.media_get_duration(source->context.data);
+	else
+		return 0;
+}
+
+int64_t obs_source_media_get_time(obs_source_t *source)
+{
+	if (!obs_source_valid(source, "obs_source_media_get_time"))
+		return 0;
+
+	if (source->info.media_get_time)
+		return source->info.media_get_time(source->context.data);
+	else
+		return 0;
+}
+
+void obs_source_media_set_time(obs_source_t *source, int64_t ms)
+{
+	if (!obs_source_valid(source, "obs_source_media_set_time"))
+		return;
+
+	if (source->info.media_set_time)
+		source->info.media_set_time(source->context.data, ms);
+}
+
+enum obs_media_state obs_source_media_get_state(obs_source_t *source)
+{
+	if (!obs_source_valid(source, "obs_source_media_get_state"))
+		return OBS_MEDIA_STATE_NONE;
+
+	if (source->info.media_get_state)
+		return source->info.media_get_state(source->context.data);
+	else
+		return OBS_MEDIA_STATE_NONE;
+}
+
+void obs_source_media_started(obs_source_t *source)
+{
+	if (!obs_source_valid(source, "obs_source_media_started"))
+		return;
+
+	obs_source_dosignal(source, NULL, "media_started");
+}
+
+void obs_source_media_ended(obs_source_t *source)
+{
+	if (!obs_source_valid(source, "obs_source_media_ended"))
+		return;
+
+	obs_source_dosignal(source, NULL, "media_ended");
 }
