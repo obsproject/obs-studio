@@ -310,7 +310,7 @@ static void mp_media_next_audio(mp_media_t *m)
 
 	if (!m->pause)
 		audio.timestamp = m->base_ts + d->frame_pts - m->start_ts +
-			m->play_sys_ts - base_sys_ts;
+				  m->play_sys_ts - base_sys_ts;
 
 	if (audio.format == AUDIO_FORMAT_UNKNOWN)
 		return;
@@ -398,7 +398,7 @@ static void mp_media_next_video(mp_media_t *m, bool preload)
 
 	if (!m->pause)
 		frame->timestamp = m->base_ts + d->frame_pts - m->start_ts +
-			m->play_sys_ts - base_sys_ts;
+				   m->play_sys_ts - base_sys_ts;
 
 	frame->width = f->width;
 	frame->height = f->height;
@@ -830,7 +830,7 @@ void mp_media_stop(mp_media_t *m)
 int64_t mp_get_current_time(mp_media_t *m)
 {
 	return (int64_t)(((float)m->next_pts_ns / 1000000.0f) *
-			((float)m->speed / 100.0f));
+			 ((float)m->speed / 100.0f));
 }
 
 void mp_media_seek_to(mp_media_t *m, int64_t pos)
@@ -843,15 +843,16 @@ void mp_media_seek_to(mp_media_t *m, int64_t pos)
 	AVStream *stream = m->fmt->streams[0];
 
 	int64_t seek_target = AVSEEK_FLAG_BACKWARD == AVSEEK_FLAG_BACKWARD
-		? av_rescale_q(seek_to, AV_TIME_BASE_Q, stream->time_base)
-		: seek_to;
+				      ? av_rescale_q(seek_to, AV_TIME_BASE_Q,
+						     stream->time_base)
+				      : seek_to;
 
 	if (m->is_local_file) {
 		int ret = av_seek_frame(m->fmt, 0, seek_target,
-				AVSEEK_FLAG_BACKWARD);
+					AVSEEK_FLAG_BACKWARD);
 		if (ret < 0) {
 			blog(LOG_WARNING, "MP: Failed to seek: %s",
-					av_err2str(ret));
+			     av_err2str(ret));
 		}
 	}
 

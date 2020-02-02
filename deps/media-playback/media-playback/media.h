@@ -125,7 +125,6 @@ extern void mp_media_play_pause(mp_media_t *media, bool pause);
 extern int64_t mp_get_current_time(mp_media_t *m);
 extern void mp_media_seek_to(mp_media_t *m, int64_t pos);
 
-
 /* #define DETAILED_DEBUG_INFO */
 
 #if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(57, 48, 101)
