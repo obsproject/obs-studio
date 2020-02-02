@@ -2027,7 +2027,7 @@ bool GetFileSafeName(const char *name, std::string &file)
 		return false;
 
 	file.resize(len);
-	os_wcs_to_utf8(wfile.c_str(), wfile.size(), &file[0], len);
+	os_wcs_to_utf8(wfile.c_str(), wfile.size(), &file[0], len + 1);
 	return true;
 }
 
