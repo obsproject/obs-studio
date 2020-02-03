@@ -110,7 +110,7 @@ static void rtmp_stream_destroy(void *data)
 		}
 	}
 
-	RTMP_TLS_Free();
+	RTMP_TLS_Free(&stream->rtmp);
 	free_packets(stream);
 	dstr_free(&stream->path);
 	dstr_free(&stream->key);
@@ -145,8 +145,8 @@ static void *rtmp_stream_create(obs_data_t *settings, obs_output_t *output)
 	stream->output = output;
 	pthread_mutex_init_value(&stream->packets_mutex);
 
-	RTMP_Init(&stream->rtmp);
 	RTMP_LogSetCallback(log_rtmp);
+	RTMP_Init(&stream->rtmp);
 	RTMP_LogSetLevel(RTMP_LOGWARNING);
 
 	if (pthread_mutex_init(&stream->packets_mutex, NULL) != 0)
@@ -514,10 +514,18 @@ static void set_output_error(struct rtmp_stream *stream)
 		case -0x2700:
 			msg = obs_module_text("SSLCertVerifyFailed");
 			break;
+		case -0x7680:
+			msg = "Failed to load root certificates for a secure TLS connection."
+#if defined(__linux__)
+			      " Check you have an up to date root certificate bundle in /etc/ssl/certs."
+#endif
+				;
+			break;
 		}
 	}
 
-	obs_output_set_last_error(stream->output, msg);
+	if (msg)
+		obs_output_set_last_error(stream->output, msg);
 }
 
 static void dbr_add_frame(struct rtmp_stream *stream, struct dbr_frame *back)
@@ -934,7 +942,8 @@ static int try_connect(struct rtmp_stream *stream)
 
 	info("Connecting to RTMP URL %s...", stream->path.array);
 
-	RTMP_Init(&stream->rtmp);
+	// this should have been called already by rtmp_stream_create
+	//RTMP_Init(&stream->rtmp);
 	if (!RTMP_SetupURL(&stream->rtmp, stream->path.array))
 		return OBS_OUTPUT_BAD_PATH;
 
