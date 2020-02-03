@@ -58,7 +58,7 @@ static inline void update_settings(struct duplicator_capture *capture,
 	capture->x = 0;
 	capture->y = 0;
 	capture->rot = 0;
-	capture->reset_timeout = 0.0f;
+	capture->reset_timeout = RESET_INTERVAL_SEC;
 
 	obs_leave_graphics();
 }
