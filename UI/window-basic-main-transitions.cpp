@@ -267,9 +267,9 @@ void OBSBasic::TransitionStopped()
 		OBSSource scene = OBSGetStrongRef(swapScene);
 		if (scene)
 			SetCurrentScene(scene);
-
-		EnableTransitionWidgets(true);
 	}
+
+	EnableTransitionWidgets(true);
 
 	if (api) {
 		api->on_event(OBS_FRONTEND_EVENT_TRANSITION_STOPPED);
