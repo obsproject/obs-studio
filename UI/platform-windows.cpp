@@ -300,10 +300,13 @@ RunOnceMutex GetRunOnceMutex(bool &already_running)
 		name = "OBSStudioCore";
 	} else {
 		char path[500];
+		char absPath[512];
 		*path = 0;
+		*absPath = 0;
 		GetConfigPath(path, sizeof(path), "");
+		os_get_abs_path(path, absPath, sizeof(absPath));
 		name = "OBSStudioPortable";
-		name += path;
+		name += absPath;
 	}
 
 	BPtr<wchar_t> wname;
