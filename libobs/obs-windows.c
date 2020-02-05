@@ -1040,6 +1040,9 @@ void obs_key_to_str(obs_key_t key, struct dstr *str)
 	if (key == OBS_KEY_NONE) {
 		return;
 
+	} else if (key >= OBS_KEY_F13 && key <= OBS_KEY_F24) {
+		dstr_printf(str, "F%d", (int)(key - OBS_KEY_F13 + 13));
+		return;
 	} else if (key >= OBS_KEY_MOUSE1 && key <= OBS_KEY_MOUSE29) {
 		if (obs->hotkeys.translations[key]) {
 			dstr_copy(str, obs->hotkeys.translations[key]);
