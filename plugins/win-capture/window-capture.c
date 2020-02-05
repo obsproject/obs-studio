@@ -16,6 +16,8 @@
 
 /* clang-format on */
 
+#define WC_CHECK_TIMER 1.0f
+
 struct window_capture {
 	obs_source_t *source;
 
@@ -103,6 +105,7 @@ static void wc_update(void *data, obs_data_t *settings)
 
 	/* forces a reset */
 	wc->window = NULL;
+	wc->check_window_timer = WC_CHECK_TIMER;
 }
 
 static uint32_t wc_width(void *data)
@@ -166,7 +169,7 @@ static void wc_tick(void *data, float seconds)
 
 		wc->check_window_timer += seconds;
 
-		if (wc->check_window_timer < 1.0f) {
+		if (wc->check_window_timer < WC_CHECK_TIMER) {
 			if (wc->capture.valid)
 				dc_capture_free(&wc->capture);
 			return;
