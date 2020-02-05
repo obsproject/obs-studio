@@ -21,6 +21,7 @@ private:
 	OBSSignal sourceAddedSignal;
 	OBSSignal sourceRemovedSignal;
 	bool showInactive;
+	bool showVisible;
 
 	std::vector<OBSAdvAudioCtrl *> controls;
 
@@ -43,4 +44,5 @@ public:
 	OBSBasicAdvAudio(QWidget *parent);
 	~OBSBasicAdvAudio();
 	void SetShowInactive(bool showInactive);
+	void SetIconsVisible(bool visible);
 };

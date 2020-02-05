@@ -33,6 +33,7 @@ OBSAdvAudioCtrl::OBSAdvAudioCtrl(QGridLayout *, obs_source_t *source_)
 	balanceContainer = new QWidget();
 	labelL = new QLabel();
 	labelR = new QLabel();
+	iconLabel = new QLabel();
 	nameLabel = new QLabel();
 	active = new QLabel();
 	stackedWidget = new QStackedWidget();
@@ -80,6 +81,14 @@ OBSAdvAudioCtrl::OBSAdvAudioCtrl(QGridLayout *, obs_source_t *source_)
 	labelL->setText("L");
 
 	labelR->setText("R");
+
+	OBSBasic *main = reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
+
+	QIcon sourceIcon = main->GetSourceIcon(obs_source_get_id(source));
+	QPixmap pixmap = sourceIcon.pixmap(QSize(16, 16));
+	iconLabel->setPixmap(pixmap);
+	iconLabel->setFixedSize(16, 16);
+	iconLabel->setStyleSheet("background: none");
 
 	nameLabel->setText(QT_UTF8(sourceName));
 	nameLabel->setAlignment(Qt::AlignVCenter);
@@ -129,8 +138,6 @@ OBSAdvAudioCtrl::OBSAdvAudioCtrl(QGridLayout *, obs_source_t *source_)
 	balance->setMaximum(100);
 	balance->setTickPosition(QSlider::TicksAbove);
 	balance->setTickInterval(50);
-
-	OBSBasic *main = reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
 
 	const char *speakers =
 		config_get_string(main->Config(), "Audio", "ChannelSetup");
@@ -226,6 +233,7 @@ OBSAdvAudioCtrl::OBSAdvAudioCtrl(QGridLayout *, obs_source_t *source_)
 
 OBSAdvAudioCtrl::~OBSAdvAudioCtrl()
 {
+	iconLabel->deleteLater();
 	nameLabel->deleteLater();
 	activeContainer->deleteLater();
 	stackedWidget->deleteLater();
@@ -243,6 +251,7 @@ void OBSAdvAudioCtrl::ShowAudioControl(QGridLayout *layout)
 	int lastRow = layout->rowCount();
 	int idx = 0;
 
+	layout->addWidget(iconLabel, lastRow, idx++);
 	layout->addWidget(nameLabel, lastRow, idx++);
 	layout->addWidget(activeContainer, lastRow, idx++);
 	layout->addWidget(stackedWidget, lastRow, idx++);
@@ -494,4 +503,9 @@ void OBSAdvAudioCtrl::SetVolumeWidget(VolumeType type)
 		stackedWidget->setCurrentWidget(volume);
 		break;
 	}
+}
+
+void OBSAdvAudioCtrl::SetIconVisible(bool visible)
+{
+	visible ? iconLabel->show() : iconLabel->hide();
 }
