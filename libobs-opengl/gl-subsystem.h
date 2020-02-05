@@ -627,6 +627,7 @@ extern struct fbo_info *get_fbo(gs_texture_t *tex, uint32_t width,
 				uint32_t height);
 
 extern void gl_update(gs_device_t *device);
+extern void gl_clear_context(gs_device_t *device);
 
 extern struct gl_platform *gl_platform_create(gs_device_t *device,
 					      uint32_t adapter);
