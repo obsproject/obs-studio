@@ -1,25 +1,17 @@
 OBS Studio <https://obsproject.com>
 ===================================
 
-.. image:: https://travis-ci.org/obsproject/obs-studio.svg?branch=master
-   :alt: OBS Studio Build Status - Travis CI
-   :target: https://travis-ci.org/obsproject/obs-studio
-
-.. image:: https://ci.appveyor.com/api/projects/status/github/obsproject/obs-studio?branch=master&svg=true
-   :alt: OBS Studio Build Status - AppVeyor CI
-   :target: https://ci.appveyor.com/project/jp9000/obs-studio/branch/master
-
 .. image:: https://dev.azure.com/obsjim/obsjim/_apis/build/status/obsproject.obs-studio?branchName=master
-  :alt: OBS Studio Build Status - Azure Pipelines
-  :target: https://dev.azure.com/obsjim/obsjim/_build/latest?definitionId=1&branchName=master
-
-.. image:: https://discordapp.com/api/guilds/348973006581923840/widget.png?style=shield
-   :alt: OBS Studio Discord Server
-   :target: https://obsproject.com/discord
+   :alt: OBS Studio Build Status - Azure Pipelines
+   :target: https://dev.azure.com/obsjim/obsjim/_build/latest?definitionId=1&branchName=master
 
 .. image:: https://d322cqt584bo4o.cloudfront.net/obs-studio/localized.svg
    :alt: OBS Studio Translation Project Progress
    :target: https://crowdin.com/project/obs-studio
+
+.. image:: https://discordapp.com/api/guilds/348973006581923840/widget.png?style=shield
+   :alt: OBS Studio Discord Server
+   :target: https://obsproject.com/discord
 
 What is OBS Studio?
 -------------------
