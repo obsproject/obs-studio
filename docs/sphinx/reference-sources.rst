@@ -423,6 +423,25 @@ Source Definition Structure (obs_source_info)
 
    (Optional)
 
+.. member:: enum obs_icon_type obs_source_info.icon_type
+
+   Icon used for the source.
+
+   - **OBS_ICON_TYPE_UNKNOWN**         - Unknown
+   - **OBS_ICON_TYPE_IMAGE**           - Image
+   - **OBS_ICON_TYPE_COLOR**           - Color
+   - **OBS_ICON_TYPE_SLIDESHOW**       - Slideshow
+   - **OBS_ICON_TYPE_AUDIO_INPUT**     - Audio Input
+   - **OBS_ICON_TYPE_AUDIO_OUTPUT**    - Audio Output
+   - **OBS_ICON_TYPE_DESKTOP_CAPTURE** - Desktop Capture
+   - **OBS_ICON_TYPE_WINDOW_CAPTURE**  - Window Capture
+   - **OBS_ICON_TYPE_GAME_CAPTURE**    - Game Capture
+   - **OBS_ICON_TYPE_CAMERA**          - Camera
+   - **OBS_ICON_TYPE_TEXT**            - Text
+   - **OBS_ICON_TYPE_MEDIA**           - Media
+   - **OBS_ICON_TYPE_BROWSER**         - Browser
+   - **OBS_ICON_TYPE_CUSTOM**          - Custom (not implemented yet)
+
 
 .. _source_signal_handler_reference:
 
