@@ -153,6 +153,9 @@ Source Definition Structure (obs_source_info)
      the problem of "I want to change the defaults of a source but I
      don't want to break people's configurations"
 
+   - **OBS_SOURCE_CONTROLLABLE_MEDIA** - This source has media that can
+     be controlled
+
 .. member:: const char *(*obs_source_info.get_name)(void *type_data)
 
    Get the translated name of the source type.
@@ -442,6 +445,51 @@ Source Definition Structure (obs_source_info)
    - **OBS_ICON_TYPE_BROWSER**         - Browser
    - **OBS_ICON_TYPE_CUSTOM**          - Custom (not implemented yet)
 
+.. member:: void (*obs_source_info.media_play_pause)(void *data, bool pause)
+
+   Called to pause or play media.
+
+.. member:: void (*obs_source_info.media_restart)(void *data)
+
+   Called to restart the media.
+
+.. member:: void (*obs_source_info.media_stop)(void *data)
+
+   Called to stop the media.
+
+.. member:: void (*obs_source_info.media_next)(void *data)
+
+   Called to go to the next media.
+
+.. member:: void (*obs_source_info.media_previous)(void *data)
+
+   Called to go to the previous media.
+
+.. member:: int64_t (*obs_source_info.media_get_duration)(void *data)
+
+   Called to get the media duration.
+
+.. member:: int64_t (*obs_source_info.media_get_time)(void *data)
+
+   Called to get the current time of the media.
+
+.. member:: void (*obs_source_info.media_set_time)(void *data, int64_t miliseconds)
+
+   Called to set the media time.
+
+.. member:: enum obs_media_state (*obs_source_info.media_get_state)(void *data)
+
+   Called to get the state of the media.
+
+   - **OBS_MEDIA_STATE_NONE**      - None
+   - **OBS_MEDIA_STATE_PLAYING**   - Playing
+   - **OBS_MEDIA_STATE_OPENING**   - Opening
+   - **OBS_MEDIA_STATE_BUFFERING** - Buffering
+   - **OBS_MEDIA_STATE_PAUSED**    - Paused
+   - **OBS_MEDIA_STATE_STOPPED**   - Stopped
+   - **OBS_MEDIA_STATE_ENDED**     - Ended
+   - **OBS_MEDIA_STATE_ERROR**     - Error
+
 
 .. _source_signal_handler_reference:
 
@@ -558,6 +606,37 @@ Source Signals
 
    Called when a transition has stopped.
 
+**media_started**
+
+   Called when media has started.
+
+**media_ended**
+
+   Called when media has ended.
+
+**media_pause**
+
+   Called when media has been paused.
+
+**media_play**
+
+   Called when media starts playing.
+
+**media_restart**
+
+   Called when the playing of media has been restarted.
+
+**media_stopped**
+
+   Called when the playing of media has been stopped.
+
+**media_next**
+
+   Called when the media source switches to the next media.
+
+**media_previous**
+
+   Called when the media source switches to the previous media.
 
 General Source Functions
 ------------------------
