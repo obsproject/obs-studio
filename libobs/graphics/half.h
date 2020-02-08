@@ -51,7 +51,7 @@ struct half {
 };
 
 /* adapted from DirectXMath XMConvertFloatToHalf */
-inline struct half half_from_float(float f)
+static struct half half_from_float(float f)
 {
 	uint32_t Result;
 
@@ -90,7 +90,7 @@ inline struct half half_from_float(float f)
 	return h;
 }
 
-inline struct half half_from_bits(uint16_t u)
+static struct half half_from_bits(uint16_t u)
 {
 	struct half h;
 	h.u = u;
