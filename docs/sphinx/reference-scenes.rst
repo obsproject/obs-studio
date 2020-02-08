@@ -540,8 +540,8 @@ Scene Item Group Functions
 
 .. function:: void obs_sceneitem_group_remove_item(obs_sceneitem_t *item)
 
-   Rmoves a scene item from a group.  The item will be placed before the
-   group in the main scene.
+   Removes a scene item from a group.  The item will be placed before
+   the group in the main scene.
 
 ---------------------
 
