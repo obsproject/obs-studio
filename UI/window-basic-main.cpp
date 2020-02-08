@@ -2541,6 +2541,8 @@ void OBSBasic::AddScene(OBSSource source)
 					    this),
 		std::make_shared<OBSSignal>(handler, "reorder",
 					    OBSBasic::SceneReordered, this),
+		std::make_shared<OBSSignal>(handler, "refresh",
+					    OBSBasic::SceneRefreshed, this),
 	});
 
 	item->setData(static_cast<int>(QtDataRole::OBSSignals),
@@ -3240,6 +3242,15 @@ void OBSBasic::ReorderSources(OBSScene scene)
 	SaveProject();
 }
 
+void OBSBasic::RefreshSources(OBSScene scene)
+{
+	if (scene != GetCurrentScene() || ui->sources->IgnoreReorder())
+		return;
+
+	ui->sources->RefreshItems();
+	SaveProject();
+}
+
 /* OBS Callbacks */
 
 void OBSBasic::SceneReordered(void *data, calldata_t *params)
@@ -3249,6 +3260,16 @@ void OBSBasic::SceneReordered(void *data, calldata_t *params)
 	obs_scene_t *scene = (obs_scene_t *)calldata_ptr(params, "scene");
 
 	QMetaObject::invokeMethod(window, "ReorderSources",
+				  Q_ARG(OBSScene, OBSScene(scene)));
+}
+
+void OBSBasic::SceneRefreshed(void *data, calldata_t *params)
+{
+	OBSBasic *window = static_cast<OBSBasic *>(data);
+
+	obs_scene_t *scene = (obs_scene_t *)calldata_ptr(params, "scene");
+
+	QMetaObject::invokeMethod(window, "RefreshSources",
 				  Q_ARG(OBSScene, OBSScene(scene)));
 }
 

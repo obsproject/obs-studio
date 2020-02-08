@@ -184,6 +184,7 @@ public:
 
 public slots:
 	inline void ReorderItems() { GetStm()->ReorderItems(); }
+	inline void RefreshItems() { GetStm()->SceneChanged(); }
 	void Remove(OBSSceneItem item);
 	void GroupSelectedItems();
 	void UngroupSelectedGroups();

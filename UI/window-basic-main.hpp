@@ -580,6 +580,7 @@ private slots:
 	void ToggleAlwaysOnTop();
 
 	void ReorderSources(OBSScene scene);
+	void RefreshSources(OBSScene scene);
 
 	void ProcessHotkey(obs_hotkey_id id, bool pressed);
 
@@ -661,6 +662,7 @@ private slots:
 private:
 	/* OBS Callbacks */
 	static void SceneReordered(void *data, calldata_t *params);
+	static void SceneRefreshed(void *data, calldata_t *params);
 	static void SceneItemAdded(void *data, calldata_t *params);
 	static void SceneItemSelected(void *data, calldata_t *params);
 	static void SceneItemDeselected(void *data, calldata_t *params);
