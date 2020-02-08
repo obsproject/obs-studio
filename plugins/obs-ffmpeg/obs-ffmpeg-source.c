@@ -163,7 +163,7 @@ static obs_properties_t *ffmpeg_source_getproperties(void *data)
 				obs_module_text("RestartWhenActivated"));
 
 	prop = obs_properties_add_int_slider(props, "buffering_mb",
-					     obs_module_text("BufferingMB"), 1,
+					     obs_module_text("BufferingMB"), 0,
 					     16, 1);
 	obs_property_int_set_suffix(prop, " MB");
 
