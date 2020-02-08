@@ -2750,6 +2750,8 @@ void obs_sceneitem_group_add_item(obs_sceneitem_t *group, obs_sceneitem_t *item)
 	/* ------------------------- */
 
 	full_unlock(scene);
+
+	signal_refresh(scene);
 }
 
 void obs_sceneitem_group_remove_item(obs_sceneitem_t *group,
@@ -2786,6 +2788,8 @@ void obs_sceneitem_group_remove_item(obs_sceneitem_t *group,
 	resize_group(group);
 	full_unlock(groupscene);
 	full_unlock(scene);
+
+	signal_refresh(scene);
 }
 
 static void
