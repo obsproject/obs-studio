@@ -1598,6 +1598,13 @@ EXPORT obs_sceneitem_t *obs_scene_insert_group(obs_scene_t *scene,
 					       obs_sceneitem_t **items,
 					       size_t count);
 
+EXPORT obs_sceneitem_t *obs_scene_add_group2(obs_scene_t *scene,
+					     const char *name, bool signal);
+EXPORT obs_sceneitem_t *obs_scene_insert_group2(obs_scene_t *scene,
+						const char *name,
+						obs_sceneitem_t **items,
+						size_t count, bool signal);
+
 EXPORT obs_sceneitem_t *obs_scene_get_group(obs_scene_t *scene,
 					    const char *name);
 
@@ -1606,6 +1613,7 @@ EXPORT bool obs_sceneitem_is_group(obs_sceneitem_t *item);
 EXPORT obs_scene_t *obs_sceneitem_group_get_scene(const obs_sceneitem_t *group);
 
 EXPORT void obs_sceneitem_group_ungroup(obs_sceneitem_t *group);
+EXPORT void obs_sceneitem_group_ungroup2(obs_sceneitem_t *group, bool signal);
 
 EXPORT void obs_sceneitem_group_add_item(obs_sceneitem_t *group,
 					 obs_sceneitem_t *item);

@@ -2571,6 +2571,12 @@ obs_sceneitem_t *obs_scene_add_group(obs_scene_t *scene, const char *name)
 	return obs_scene_insert_group(scene, name, NULL, 0);
 }
 
+obs_sceneitem_t *obs_scene_add_group2(obs_scene_t *scene, const char *name,
+				      bool signal)
+{
+	return obs_scene_insert_group2(scene, name, NULL, 0, signal);
+}
+
 obs_sceneitem_t *obs_scene_insert_group(obs_scene_t *scene, const char *name,
 					obs_sceneitem_t **items, size_t count)
 {
@@ -2625,6 +2631,17 @@ obs_sceneitem_t *obs_scene_insert_group(obs_scene_t *scene, const char *name,
 
 	/* ------------------------- */
 
+	return item;
+}
+
+obs_sceneitem_t *obs_scene_insert_group2(obs_scene_t *scene, const char *name,
+					 obs_sceneitem_t **items, size_t count,
+					 bool signal)
+{
+	obs_sceneitem_t *item =
+		obs_scene_insert_group(scene, name, items, count);
+	if (signal && item)
+		signal_refresh(scene);
 	return item;
 }
 
@@ -2706,6 +2723,14 @@ void obs_sceneitem_group_ungroup(obs_sceneitem_t *item)
 	full_unlock(scene);
 
 	obs_sceneitem_release(item);
+}
+
+void obs_sceneitem_group_ungroup2(obs_sceneitem_t *item, bool signal)
+{
+	obs_scene_t *scene = item->parent;
+	obs_sceneitem_group_ungroup(item);
+	if (signal)
+		signal_refresh(scene);
 }
 
 void obs_sceneitem_group_add_item(obs_sceneitem_t *group, obs_sceneitem_t *item)
