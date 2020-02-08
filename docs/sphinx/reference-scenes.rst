@@ -487,7 +487,7 @@ Scene Item Group Functions
 
 ---------------------
 
-.. function:: obs_sceneitem_t *obs_scene_add_group2(obs_scene_t *scene, const char *name)
+.. function:: obs_sceneitem_t *obs_scene_add_group2(obs_scene_t *scene, const char *name, bool signal)
 
    Adds a group with the specified name.
 
