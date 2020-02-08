@@ -135,6 +135,11 @@ Scene Signals
 
    Called when scene items have been reoredered in the scene.
 
+**refresh** (ptr scene)
+
+   Called when the entire scene item list needs to be refreshed.
+   Usually this is only used when groups have changed.
+
 **item_visible** (ptr scene, ptr item, bool visible)
 
    Called when a scene item's visibility state changes.

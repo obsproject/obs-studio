@@ -48,6 +48,7 @@ static const char *obs_scene_signals[] = {
 	"void item_add(ptr scene, ptr item)",
 	"void item_remove(ptr scene, ptr item)",
 	"void reorder(ptr scene)",
+	"void refresh(ptr scene)",
 	"void item_visible(ptr scene, ptr item, bool visible)",
 	"void item_select(ptr scene, ptr item)",
 	"void item_deselect(ptr scene, ptr item)",
@@ -1917,6 +1918,18 @@ static inline void signal_reorder(struct obs_scene_item *item)
 
 	calldata_init_fixed(&params, stack, sizeof(stack));
 	signal_parent(item->parent, command, &params);
+}
+
+static inline void signal_refresh(obs_scene_t *scene)
+{
+	const char *command = NULL;
+	struct calldata params;
+	uint8_t stack[128];
+
+	command = "refresh";
+
+	calldata_init_fixed(&params, stack, sizeof(stack));
+	signal_parent(scene, command, &params);
 }
 
 void obs_sceneitem_set_order(obs_sceneitem_t *item,
