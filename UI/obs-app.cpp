@@ -1761,6 +1761,10 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 
 	QCoreApplication::addLibraryPath(".");
 
+#if __APPLE__
+	InstallNSApplicationSubclass();
+#endif
+
 	OBSApp program(argc, argv, profilerNameStore.get());
 	try {
 		bool created_log = false;
