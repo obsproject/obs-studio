@@ -840,16 +840,9 @@ void mp_media_seek_to(mp_media_t *m, int64_t pos)
 
 	int64_t seek_to = pos * 1000;
 
-	AVStream *stream = m->fmt->streams[0];
-
-	int64_t seek_target = AVSEEK_FLAG_BACKWARD == AVSEEK_FLAG_BACKWARD
-				      ? av_rescale_q(seek_to, AV_TIME_BASE_Q,
-						     stream->time_base)
-				      : seek_to;
-
 	if (m->is_local_file) {
-		int ret = av_seek_frame(m->fmt, 0, seek_target,
-					AVSEEK_FLAG_BACKWARD);
+		int ret = av_seek_frame(m->fmt, -1, seek_to,
+					AVSEEK_FLAG_ANY);
 		if (ret < 0) {
 			blog(LOG_WARNING, "MP: Failed to seek: %s",
 			     av_err2str(ret));
