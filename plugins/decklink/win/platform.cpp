@@ -15,8 +15,8 @@ IDeckLinkIterator *CreateDeckLinkIteratorInstance(void)
 {
 	IDeckLinkIterator *iterator;
 	const HRESULT result =
-			CoCreateInstance(CLSID_CDeckLinkIterator, nullptr, CLSCTX_ALL,
-					IID_IDeckLinkIterator, (void **)&iterator);
+		CoCreateInstance(CLSID_CDeckLinkIterator, nullptr, CLSCTX_ALL,
+				 IID_IDeckLinkIterator, (void **)&iterator);
 	return result == S_OK ? iterator : nullptr;
 }
 
