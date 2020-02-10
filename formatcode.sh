@@ -29,9 +29,9 @@ fi
 
 find . -type d \( -path ./deps \
 -o -path ./cmake \
--o -path ./plugins/decklink/win \
--o -path ./plugins/decklink/mac \
--o -path ./plugins/decklink/linux \
+-o -path ./plugins/decklink/win/decklink-sdk \
+-o -path ./plugins/decklink/mac/decklink-sdk \
+-o -path ./plugins/decklink/linux/decklink-sdk \
 -o -path ./plugins/enc-amf \
 -o -path ./plugins/mac-syphon/syphon-framework \
 -o -path ./plugins/obs-outputs/ftl-sdk \

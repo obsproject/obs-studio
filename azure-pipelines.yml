@@ -41,6 +41,7 @@ jobs:
     displayName: 'Cmake'
 
   - bash: |
+      set -e
       cd ./build
       make -j4
       cd -
@@ -126,6 +127,7 @@ jobs:
     displayName: 'CMake'
 
   - bash: |
+      set -e
       cd ./build
       make -j4
       cd -
