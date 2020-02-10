@@ -40,10 +40,7 @@ jobs:
   - script: ./CI/before-script-osx.sh
     displayName: 'Cmake'
 
-  - bash: |
-      cd ./build
-      make -j4
-      cd -
+  - script: make -C build -j4
     displayName: 'Build'
 
   - script: ./CI/before-deploy-osx.sh
