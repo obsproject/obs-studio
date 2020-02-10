@@ -2798,6 +2798,7 @@ void obs_sceneitem_group_remove_item(obs_sceneitem_t *group,
 
 	signal_refresh(scene);
 }
+
 static void
 build_current_order_info(obs_scene_t *scene,
 			 struct obs_sceneitem_order_info **items_out,
