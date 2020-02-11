@@ -150,11 +150,7 @@ static inline bool capture_alive(void)
 {
 	HANDLE handle = OpenMutexW(SYNCHRONIZE, false, keepalive_name);
 	CloseHandle(handle);
-
-	if (handle)
-		return true;
-
-	return GetLastError() != ERROR_FILE_NOT_FOUND;
+	return handle != NULL && handle != INVALID_HANDLE_VALUE;
 }
 
 static inline bool capture_active(void)
