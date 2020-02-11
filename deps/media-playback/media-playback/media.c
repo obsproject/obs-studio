@@ -436,19 +436,17 @@ static void mp_media_calc_next_ns(mp_media_t *m)
 		m->next_pts_ns = min_next_ns;
 }
 
-static bool mp_media_reset(mp_media_t *m)
+static void seek_to(mp_media_t *m, int64_t pos, bool reset)
 {
 	AVStream *stream = m->fmt->streams[0];
-	int64_t seek_pos;
+	int64_t seek_pos = pos;
 	int seek_flags;
-	bool stopping;
-	bool active;
 
 	if (m->fmt->duration == AV_NOPTS_VALUE) {
-		seek_pos = 0;
 		seek_flags = AVSEEK_FLAG_FRAME;
 	} else {
-		seek_pos = m->fmt->start_time;
+		if (reset)
+			seek_pos = m->fmt->start_time;
 		seek_flags = AVSEEK_FLAG_BACKWARD;
 	}
 
@@ -469,6 +467,14 @@ static bool mp_media_reset(mp_media_t *m)
 		mp_decode_flush(&m->v);
 	if (m->has_audio && m->is_local_file)
 		mp_decode_flush(&m->a);
+}
+
+static bool mp_media_reset(mp_media_t *m)
+{
+	bool stopping;
+	bool active;
+
+	seek_to(m, 0, true);
 
 	int64_t next_ts = mp_media_get_base_pts(m);
 	int64_t offset = next_ts - m->next_pts_ns;
@@ -829,8 +835,8 @@ void mp_media_stop(mp_media_t *m)
 
 int64_t mp_get_current_time(mp_media_t *m)
 {
-	return (int64_t)(((float)m->next_pts_ns / 1000000.0f) *
-			 ((float)m->speed / 100.0f));
+	int speed = (int)((float)m->speed / 100.0f);
+	return (mp_media_get_base_pts(m) / 1000000) * speed;
 }
 
 void mp_media_seek_to(mp_media_t *m, int64_t pos)
@@ -838,26 +844,5 @@ void mp_media_seek_to(mp_media_t *m, int64_t pos)
 	if (!m->active)
 		return;
 
-	int64_t seek_to = pos * 1000;
-
-	AVStream *stream = m->fmt->streams[0];
-
-	int64_t seek_target = AVSEEK_FLAG_BACKWARD == AVSEEK_FLAG_BACKWARD
-				      ? av_rescale_q(seek_to, AV_TIME_BASE_Q,
-						     stream->time_base)
-				      : seek_to;
-
-	if (m->is_local_file) {
-		int ret = av_seek_frame(m->fmt, 0, seek_target,
-					AVSEEK_FLAG_BACKWARD);
-		if (ret < 0) {
-			blog(LOG_WARNING, "MP: Failed to seek: %s",
-			     av_err2str(ret));
-		}
-	}
-
-	if (m->has_video && m->is_local_file)
-		mp_decode_flush(&m->v);
-	if (m->has_audio && m->is_local_file)
-		mp_decode_flush(&m->a);
+	seek_to(m, pos * 1000, false);
 }
