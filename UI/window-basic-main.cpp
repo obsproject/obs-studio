@@ -5640,9 +5640,34 @@ void OBSBasic::StartReplayBuffer()
 	obs_data_array_release(bindings);
 	obs_data_release(hotkeys);
 
-	if (!count) {
-		OBSMessageBox::information(this, RP_NO_HOTKEY_TITLE,
-					   RP_NO_HOTKEY_TEXT);
+	auto msgBox = []() {
+		bool accept = false;
+
+		QMessageBox msgbox(App()->GetMainWindow());
+		msgbox.setWindowTitle(RP_NO_HOTKEY_TITLE);
+		msgbox.setText(RP_NO_HOTKEY_TEXT);
+		msgbox.setIcon(QMessageBox::Icon::Information);
+		msgbox.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
+		msgbox.setDefaultButton(QMessageBox::No);
+
+		QCheckBox *cb = new QCheckBox(QTStr("DoNotShowAgain"));
+		msgbox.setCheckBox(cb);
+
+		if (msgbox.exec() == QMessageBox::Yes)
+			accept = true;
+
+		if (cb->isChecked()) {
+			config_set_bool(App()->GlobalConfig(), "General",
+					"WarnReplayBufferHotkey", true);
+			config_save_safe(App()->GlobalConfig(), "tmp", nullptr);
+		}
+
+		return accept;
+	};
+
+	bool warned = config_get_bool(App()->GlobalConfig(), "General",
+				      "WarnReplayBufferHotkey");
+	if (!count && !warned && !msgBox()) {
 		replayBufferButton->setChecked(false);
 		return;
 	}
