@@ -1644,6 +1644,21 @@
                 "keyint": 2,
                 "x264opts": "scenecut=0"
             }
+        },
+        {
+            "name": "Uncanny.gg",
+            "servers": [
+                {
+                    "name": "Default",
+                    "url": "rtmp://stream.uncanny.gg/fortnite"
+                }
+            ],
+            "recommended": {
+                "keyint": 2,
+                "profile": "main",
+                "max video bitrate": 10000,
+                "max audio bitrate": 192
+            }
         }
     ]
 }
