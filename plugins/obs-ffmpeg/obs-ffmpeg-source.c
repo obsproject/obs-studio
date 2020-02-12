@@ -261,6 +261,9 @@ static void media_stopped(void *opaque)
 		if (s->close_when_inactive && s->media_valid)
 			s->destroy_media = true;
 	}
+
+	set_media_state(s, OBS_MEDIA_STATE_ENDED);
+	obs_source_media_ended(s->source);
 }
 
 static void ffmpeg_source_open(struct ffmpeg_source *s)
@@ -308,6 +311,7 @@ static void ffmpeg_source_start(struct ffmpeg_source *s)
 		if (s->is_local_file)
 			obs_source_show_preloaded_video(s->source);
 		set_media_state(s, OBS_MEDIA_STATE_PLAYING);
+		obs_source_media_started(s->source);
 	}
 }
 
