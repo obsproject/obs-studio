@@ -1336,6 +1336,15 @@
             }
         },
         {
+            "name": "Madcat",
+            "servers": [
+                {
+                    "name": "Default",
+                    "url": "rtmp://73846.livepush.myqcloud.com/live/"
+                }
+            ]
+        },
+        {
             "name": "SermonAudio Cloud",
             "alt_names": [
                 "SermonAudio.com"
