@@ -3925,10 +3925,23 @@ void OBSBasic::closeEvent(QCloseEvent *event)
 
 void OBSBasic::changeEvent(QEvent *event)
 {
-	if (event->type() == QEvent::WindowStateChange && isMinimized() &&
-	    trayIcon && trayIcon->isVisible() && sysTrayMinimizeToTray()) {
+	if (event->type() == QEvent::WindowStateChange) {
+		QWindowStateChangeEvent *stateEvent =
+			(QWindowStateChangeEvent *)event;
 
-		ToggleShowHide();
+		if (isMinimized()) {
+			if (trayIcon && trayIcon->isVisible() &&
+			    sysTrayMinimizeToTray()) {
+				ToggleShowHide();
+			}
+
+			if (previewEnabled)
+				EnablePreviewDisplay(false);
+		} else if (stateEvent->oldState() == Qt::WindowMinimized &&
+			   isVisible()) {
+			if (previewEnabled)
+				EnablePreviewDisplay(true);
+		}
 	}
 }
 
@@ -6917,9 +6930,6 @@ void OBSBasic::SetShowing(bool showing)
 			showHide->setText(QTStr("Basic.SystemTray.Show"));
 		QTimer::singleShot(250, this, SLOT(hide()));
 
-		if (previewEnabled)
-			EnablePreviewDisplay(false);
-
 		setVisible(false);
 
 #ifdef __APPLE__
@@ -6930,9 +6940,6 @@ void OBSBasic::SetShowing(bool showing)
 		if (showHide)
 			showHide->setText(QTStr("Basic.SystemTray.Hide"));
 		QTimer::singleShot(250, this, SLOT(show()));
-
-		if (previewEnabled)
-			EnablePreviewDisplay(true);
 
 		setVisible(true);
 
