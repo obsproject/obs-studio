@@ -206,6 +206,10 @@ OBSBasic::OBSBasic(QWidget *parent)
 
 	setAcceptDrops(true);
 
+	setContextMenuPolicy(Qt::CustomContextMenu);
+	connect(this, SIGNAL(customContextMenuRequested(const QPoint &)), this,
+		SLOT(on_customContextMenuRequested(const QPoint &)));
+
 	api = InitializeAPIInterface(this);
 
 	ui->setupUi(this);
@@ -7772,4 +7776,15 @@ void OBSBasic::ResetStatsHotkey()
 	QList<OBSBasicStats *> list = findChildren<OBSBasicStats *>();
 
 	foreach(OBSBasicStats * s, list) s->Reset();
+}
+
+void OBSBasic::on_customContextMenuRequested(const QPoint &pos)
+{
+	QWidget *widget = childAt(pos);
+	const char *className = nullptr;
+	if (widget != nullptr)
+		className = widget->metaObject()->className();
+
+	if (!className || strstr(className, "Dock") != nullptr)
+		ui->viewMenuDocks->exec(mapToGlobal(pos));
 }
