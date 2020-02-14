@@ -93,7 +93,8 @@ QObject *CreateShortcutFilter()
 {
 	return new OBSEventFilter([](QObject *obj, QEvent *event) {
 		auto mouse_event = [](QMouseEvent &event) {
-			if (!App()->HotkeysEnabledInFocus())
+			if (!App()->HotkeysEnabledInFocus() &&
+			    event.button() != Qt::LeftButton)
 				return true;
 
 			obs_key_combination_t hotkey = {0, OBS_KEY_NONE};
