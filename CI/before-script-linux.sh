@@ -8,4 +8,4 @@ fi
 set -ex
 ccache -s || echo "CCache is not available."
 mkdir build && cd build
-cmake -DBUILD_CAPTIONS=ON ..
+cmake -DUNIX_STRUCTURE=1 -DCMAKE_INSTALL_PREFIX="/usr" -DBUILD_CAPTIONS=ON ..

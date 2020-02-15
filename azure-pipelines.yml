@@ -133,3 +133,11 @@ jobs:
       cd -
     displayName: 'Build'
 
+  - script: ./CI/before-deploy-linux.sh
+    condition: or(ne(variables['Build.Reason'], 'PullRequest'), eq(variables['prHasCILabel'], true))
+    displayName: 'Before deploy'
+  - task: PublishBuildArtifacts@1
+    condition: or(ne(variables['Build.Reason'], 'PullRequest'), eq(variables['prHasCILabel'], true))
+    inputs:
+      pathtoPublish: './nightly'
+      artifactName: linux_build
