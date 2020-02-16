@@ -1248,6 +1248,11 @@ void OBSBasicSettings::LoadGeneralSettings()
 	ui->multiviewLayout->setCurrentIndex(config_get_int(
 		GetGlobalConfig(), "BasicWindow", "MultiviewLayout"));
 
+	prevLangIndex = ui->language->currentIndex();
+
+	if (obs_video_active())
+		ui->language->setEnabled(false);
+
 	loading = false;
 }
 
@@ -2120,6 +2125,11 @@ void OBSBasicSettings::LoadAudioDevices()
 		LoadListValues(ui->desktopAudioDevice1, outputs, 1);
 		LoadListValues(ui->desktopAudioDevice2, outputs, 2);
 		obs_properties_destroy(output_props);
+	}
+
+	if (obs_video_active()) {
+		ui->sampleRate->setEnabled(false);
+		ui->channelSetup->setEnabled(false);
 	}
 }
 
@@ -3514,6 +3524,15 @@ void OBSBasicSettings::SaveSettings()
 		blog(LOG_INFO, "Settings changed (%s)", changed.c_str());
 		blog(LOG_INFO, MINOR_SEPARATOR);
 	}
+
+	bool langChanged = (ui->language->currentIndex() != prevLangIndex);
+	bool audioRestart = (ui->channelSetup->currentIndex() != channelIndex ||
+			     ui->sampleRate->currentIndex() != sampleRateIndex);
+
+	if (langChanged || audioRestart)
+		restart = true;
+	else
+		restart = false;
 }
 
 bool OBSBasicSettings::QueryChanges()
@@ -3535,6 +3554,7 @@ bool OBSBasicSettings::QueryChanges()
 		if (toggleAero)
 			SetAeroEnabled(!aeroWasDisabled);
 #endif
+		restart = false;
 	}
 
 	ClearChanged();
