@@ -331,9 +331,32 @@ void obs_properties_remove_by_name(obs_properties_t *props, const char *name)
 
 	while (cur) {
 		if (strcmp(cur->name, name) == 0) {
+			// Fix props->last pointer.
+			if (props->last == &cur->next) {
+				if (cur == prev) {
+					// If we are the last entry and there
+					// is no previous entry, reset.
+					props->last = &props->first_property;
+				} else {
+					// If we are the last entry and there
+					// is a previous entry, update.
+					props->last = &prev->next;
+				}
+			}
+
+			// Fix props->first_property.
+			if (props->first_property == cur)
+				props->first_property = cur->next;
+
+			// Update the previous element next pointer with our
+			// next pointer. This is an automatic no-op if both
+			// elements alias the same memory.
 			prev->next = cur->next;
-			cur->next = 0;
+
+			// Finally clear our own next pointer and destroy.
+			cur->next = NULL;
 			obs_property_destroy(cur);
+
 			break;
 		}
 
