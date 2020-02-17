@@ -1,0 +1,12 @@
+on:
+  push:
+    branches:
+      - master
+jobs:
+  triage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: mschilde/auto-label-merge-conflicts@master
+        with:
+          CONFLICT_LABEL_NAME: "Has Conflicts"
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
