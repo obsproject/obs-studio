@@ -2842,11 +2842,37 @@ void OBSBasic::MixerRenameSource()
 	}
 }
 
+static inline bool SourceVolumeLocked(obs_source_t *source)
+{
+	obs_data_t *priv_settings = obs_source_get_private_settings(source);
+	bool lock = obs_data_get_bool(priv_settings, "volume_locked");
+	obs_data_release(priv_settings);
+
+	return lock;
+}
+
+void OBSBasic::LockVolumeControl(bool lock)
+{
+	QAction *action = reinterpret_cast<QAction *>(sender());
+	VolControl *vol = action->property("volControl").value<VolControl *>();
+	obs_source_t *source = vol->GetSource();
+
+	obs_data_t *priv_settings = obs_source_get_private_settings(source);
+	obs_data_set_bool(priv_settings, "volume_locked", lock);
+	obs_data_release(priv_settings);
+
+	vol->EnableSlider(!lock);
+}
+
 void OBSBasic::VolControlContextMenu()
 {
 	VolControl *vol = reinterpret_cast<VolControl *>(sender());
 
 	/* ------------------- */
+
+	QAction lockAction(QTStr("LockVolume"), this);
+	lockAction.setCheckable(true);
+	lockAction.setChecked(SourceVolumeLocked(vol->GetSource()));
 
 	QAction hideAction(QTStr("Hide"), this);
 	QAction unhideAllAction(QTStr("UnhideAll"), this);
@@ -2870,6 +2896,8 @@ void OBSBasic::VolControlContextMenu()
 		&OBSBasic::HideAudioControl, Qt::DirectConnection);
 	connect(&unhideAllAction, &QAction::triggered, this,
 		&OBSBasic::UnhideAllAudioControls, Qt::DirectConnection);
+	connect(&lockAction, &QAction::toggled, this,
+		&OBSBasic::LockVolumeControl, Qt::DirectConnection);
 	connect(&mixerRenameAction, &QAction::triggered, this,
 		&OBSBasic::MixerRenameSource, Qt::DirectConnection);
 
@@ -2895,6 +2923,8 @@ void OBSBasic::VolControlContextMenu()
 
 	hideAction.setProperty("volControl",
 			       QVariant::fromValue<VolControl *>(vol));
+	lockAction.setProperty("volControl",
+			       QVariant::fromValue<VolControl *>(vol));
 	mixerRenameAction.setProperty("volControl",
 				      QVariant::fromValue<VolControl *>(vol));
 
@@ -2916,6 +2946,8 @@ void OBSBasic::VolControlContextMenu()
 		pasteFiltersAction.setEnabled(true);
 
 	QMenu popup;
+	popup.addAction(&lockAction);
+	popup.addSeparator();
 	popup.addAction(&unhideAllAction);
 	popup.addAction(&hideAction);
 	popup.addAction(&mixerRenameAction);
@@ -3018,6 +3050,8 @@ void OBSBasic::ActivateAudioSource(OBSSource source)
 	bool vertical = config_get_bool(GetGlobalConfig(), "BasicWindow",
 					"VerticalVolControl");
 	VolControl *vol = new VolControl(source, true, vertical);
+
+	vol->EnableSlider(!SourceVolumeLocked(source));
 
 	double meterDecayRate =
 		config_get_double(basicConfig, "Audio", "MeterDecayRate");

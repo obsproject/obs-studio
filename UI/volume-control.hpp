@@ -252,4 +252,6 @@ public:
 
 	void SetMeterDecayRate(qreal q);
 	void setPeakMeterType(enum obs_peak_meter_type peakMeterType);
+
+	void EnableSlider(bool enable);
 };
