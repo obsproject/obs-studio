@@ -74,7 +74,9 @@ static bool decklink_output_start(void *data)
 	obs_output_set_video_conversion(decklink->GetOutput(), &to);
 
 	device->SetKeyerMode(decklink->keyerMode);
-	decklink->Activate(device, decklink->modeID);
+
+	if (!decklink->Activate(device, decklink->modeID))
+		return false;
 
 	struct audio_convert_info conversion = {};
 	conversion.format = AUDIO_FORMAT_16BIT;
