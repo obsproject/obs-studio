@@ -264,6 +264,37 @@ uint64_t image_source_get_memory_usage(void *data)
 	return s->if2.mem_usage;
 }
 
+static void missing_file_callback(void *src, const char *new_path, void *data)
+{
+	struct image_source *s = src;
+
+	obs_source_t *source = s->source;
+	obs_data_t *settings = obs_source_get_settings(source);
+	obs_data_set_string(settings, "file", new_path);
+	obs_source_update(source, settings);
+	obs_data_release(settings);
+
+	UNUSED_PARAMETER(data);
+}
+
+static obs_missing_files_t *image_source_missingfiles(void *data)
+{
+	struct image_source *s = data;
+	obs_missing_files_t *files = obs_missing_files_create();
+
+	if (strcmp(s->file, "") != 0) {
+		if (!os_file_exists(s->file)) {
+			obs_missing_file_t *file = obs_missing_file_create(
+				s->file, missing_file_callback,
+				OBS_MISSING_FILE_SOURCE, s->source, NULL);
+
+			obs_missing_files_add_file(files, file);
+		}
+	}
+
+	return files;
+}
+
 static struct obs_source_info image_source_info = {
 	.id = "image_source",
 	.type = OBS_SOURCE_TYPE_INPUT,
@@ -279,6 +310,7 @@ static struct obs_source_info image_source_info = {
 	.get_height = image_source_getheight,
 	.video_render = image_source_render,
 	.video_tick = image_source_tick,
+	.missing_files = image_source_missingfiles,
 	.get_properties = image_source_properties,
 	.icon_type = OBS_ICON_TYPE_IMAGE,
 };
