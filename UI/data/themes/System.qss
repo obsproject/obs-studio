@@ -209,6 +209,10 @@ VisibilityCheckBox::indicator:unchecked {
     qproperty-icon: url(:res/images/revert.svg);
 }
 
+OBSMissingFiles {
+	qproperty-warningIcon: url(:res/images/alert.svg);
+}
+
 /* Source Icons */
 
 OBSBasic {

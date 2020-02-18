@@ -1359,6 +1359,10 @@ QPushButton#extraPanelDelete:pressed {
      background-color: rgb(240, 98, 146);
 }
 
+OBSMissingFiles {
+	qproperty-warningIcon: url(./Dark/alert.svg);
+}
+
 /* Source Icons */
 
 OBSBasic {
