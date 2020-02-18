@@ -234,6 +234,7 @@ private:
 	void OnOAuthStreamKeyConnected();
 	void OnAuthConnected();
 	QString lastService;
+	int prevLangIndex;
 private slots:
 	void UpdateServerList();
 	void UpdateKeyLink();

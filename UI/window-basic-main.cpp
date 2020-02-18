@@ -3916,6 +3916,7 @@ void OBSBasic::closeEvent(QCloseEvent *event)
 
 		if (button == QMessageBox::No) {
 			event->ignore();
+			restart = false;
 			return;
 		}
 	}
@@ -4046,6 +4047,16 @@ void OBSBasic::on_action_Settings_triggered()
 	SystemTray(false);
 
 	settings_already_executing = false;
+
+	if (restart) {
+		QMessageBox::StandardButton button = OBSMessageBox::question(
+			this, QTStr("Restart"), QTStr("NeedsRestart"));
+
+		if (button == QMessageBox::Yes)
+			close();
+		else
+			restart = false;
+	}
 }
 
 void OBSBasic::on_actionAdvAudioProperties_triggered()
