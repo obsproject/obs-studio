@@ -660,6 +660,8 @@ private slots:
 	void TBarChanged(int value);
 	void TBarReleased();
 
+	void LockVolumeControl(bool lock);
+
 private:
 	/* OBS Callbacks */
 	static void SceneReordered(void *data, calldata_t *params);

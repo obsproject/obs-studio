@@ -276,6 +276,11 @@ VolControl::VolControl(OBSSource source_, bool showConfig, bool vertical)
 	VolumeChanged();
 }
 
+void VolControl::EnableSlider(bool enable)
+{
+	slider->setEnabled(enable);
+}
+
 VolControl::~VolControl()
 {
 	obs_fader_remove_callback(obs_fader, OBSVolumeChanged, this);
