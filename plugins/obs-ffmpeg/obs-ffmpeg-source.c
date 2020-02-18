@@ -727,6 +727,37 @@ static enum obs_media_state ffmpeg_source_get_state(void *data)
 	return s->state;
 }
 
+static void missing_file_callback(void *src, const char *new_path, void *data)
+{
+	struct ffmpeg_source *s = src;
+
+	obs_source_t *source = s->source;
+	obs_data_t *settings = obs_source_get_settings(source);
+	obs_data_set_string(settings, "local_file", new_path);
+	obs_source_update(source, settings);
+	obs_data_release(settings);
+
+	UNUSED_PARAMETER(data);
+}
+
+static obs_missing_files_t *ffmpeg_source_missingfiles(void *data)
+{
+	struct ffmpeg_source *s = data;
+	obs_missing_files_t *files = obs_missing_files_create();
+
+	if (s->is_local_file && strcmp(s->input, "") != 0) {
+		if (!os_file_exists(s->input)) {
+			obs_missing_file_t *file = obs_missing_file_create(
+				s->input, missing_file_callback,
+				OBS_MISSING_FILE_SOURCE, s->source, NULL);
+
+			obs_missing_files_add_file(files, file);
+		}
+	}
+
+	return files;
+}
+
 struct obs_source_info ffmpeg_source = {
 	.id = "ffmpeg_source",
 	.type = OBS_SOURCE_TYPE_INPUT,
@@ -741,6 +772,7 @@ struct obs_source_info ffmpeg_source = {
 	.activate = ffmpeg_source_activate,
 	.deactivate = ffmpeg_source_deactivate,
 	.video_tick = ffmpeg_source_tick,
+	.missing_files = ffmpeg_source_missingfiles,
 	.update = ffmpeg_source_update,
 	.icon_type = OBS_ICON_TYPE_MEDIA,
 	.media_play_pause = ffmpeg_source_play_pause,

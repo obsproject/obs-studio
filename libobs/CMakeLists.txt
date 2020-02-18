@@ -409,6 +409,7 @@ set(libobs_libobs_SOURCES
 	obs.c
 	obs-properties.c
 	obs-data.c
+	obs-missing-files.c
 	obs-hotkey.c
 	obs-hotkey-name-map.c
 	obs-module.c
@@ -430,6 +431,7 @@ set(libobs_libobs_HEADERS
 	obs-ui.h
 	obs-properties.h
 	obs-data.h
+	obs-missing-files.h
 	obs-interaction.h
 	obs-hotkey.h
 	obs-hotkeys.h
