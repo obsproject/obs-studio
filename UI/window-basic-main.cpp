@@ -4570,6 +4570,7 @@ void OBSBasic::CreateSourcePopupMenu(int idx, bool preview)
 			popup.addSeparator();
 
 		OBSSceneItem sceneItem = ui->sources->Get(idx);
+		bool lock = obs_sceneitem_locked(sceneItem);
 		obs_source_t *source = obs_sceneitem_get_source(sceneItem);
 		uint32_t flags = obs_source_get_output_flags(source);
 		bool isAsyncVideo = (flags & OBS_SOURCE_ASYNC_VIDEO) ==
@@ -4589,6 +4590,18 @@ void OBSBasic::CreateSourcePopupMenu(int idx, bool preview)
 		popup.addSeparator();
 		popup.addMenu(ui->orderMenu);
 		popup.addMenu(ui->transformMenu);
+
+		ui->actionResetTransform->setEnabled(!lock);
+		ui->actionRotate90CW->setEnabled(!lock);
+		ui->actionRotate90CCW->setEnabled(!lock);
+		ui->actionRotate180->setEnabled(!lock);
+		ui->actionFlipHorizontal->setEnabled(!lock);
+		ui->actionFlipVertical->setEnabled(!lock);
+		ui->actionFitToScreen->setEnabled(!lock);
+		ui->actionStretchToScreen->setEnabled(!lock);
+		ui->actionCenterToScreen->setEnabled(!lock);
+		ui->actionVerticalCenter->setEnabled(!lock);
+		ui->actionHorizontalCenter->setEnabled(!lock);
 
 		sourceProjector = new QMenu(QTStr("SourceProjector"));
 		AddProjectorMenuMonitors(sourceProjector, this,
@@ -6188,6 +6201,8 @@ static bool reset_tr(obs_scene_t *scene, obs_sceneitem_t *item, void *param)
 		obs_sceneitem_group_enum_items(item, reset_tr, nullptr);
 	if (!obs_sceneitem_selected(item))
 		return true;
+	if (obs_sceneitem_locked(item))
+		return true;
 
 	obs_sceneitem_defer_update_begin(item);
 
@@ -6265,6 +6280,8 @@ static bool RotateSelectedSources(obs_scene_t *scene, obs_sceneitem_t *item,
 					       param);
 	if (!obs_sceneitem_selected(item))
 		return true;
+	if (obs_sceneitem_locked(item))
+		return true;
 
 	float rot = *reinterpret_cast<float *>(param);
 
@@ -6313,6 +6330,8 @@ static bool MultiplySelectedItemScale(obs_scene_t *scene, obs_sceneitem_t *item,
 					       param);
 	if (!obs_sceneitem_selected(item))
 		return true;
+	if (obs_sceneitem_locked(item))
+		return true;
 
 	vec3 tl = GetItemTL(item);
 
@@ -6355,6 +6374,8 @@ static bool CenterAlignSelectedItems(obs_scene_t *scene, obs_sceneitem_t *item,
 		obs_sceneitem_group_enum_items(item, CenterAlignSelectedItems,
 					       param);
 	if (!obs_sceneitem_selected(item))
+		return true;
+	if (obs_sceneitem_locked(item))
 		return true;
 
 	obs_video_info ovi;
@@ -6409,6 +6430,8 @@ static bool center_to_scene(obs_scene_t *, obs_sceneitem_t *item, void *param)
 		obs_sceneitem_group_enum_items(item, center_to_scene,
 					       &centerType);
 	if (!obs_sceneitem_selected(item))
+		return true;
+	if (obs_sceneitem_locked(item))
 		return true;
 
 	obs_get_video_info(&ovi);
