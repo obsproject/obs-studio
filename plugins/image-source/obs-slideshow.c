@@ -64,7 +64,7 @@
 extern uint64_t image_source_get_memory_usage(void *data);
 
 #define BYTES_TO_MBYTES (1024 * 1024)
-#define MAX_MEM_USAGE (250 * BYTES_TO_MBYTES)
+#define MAX_MEM_USAGE (400 * BYTES_TO_MBYTES)
 
 struct image_file_data {
 	char *path;
