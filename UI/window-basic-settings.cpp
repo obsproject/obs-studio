@@ -3672,16 +3672,8 @@ void OBSBasicSettings::on_advOutEncoder_currentIndexChanged(int idx)
 		ui->advOutputStreamTab->layout()->addWidget(streamEncoderProps);
 	}
 
-	uint32_t caps = obs_get_encoder_caps(QT_TO_UTF8(encoder));
-
-	if (caps & OBS_ENCODER_CAP_PASS_TEXTURE) {
-		ui->advOutUseRescale->setChecked(false);
-		ui->advOutUseRescale->setVisible(false);
-		ui->advOutRescale->setVisible(false);
-	} else {
-		ui->advOutUseRescale->setVisible(true);
-		ui->advOutRescale->setVisible(true);
-	}
+	ui->advOutUseRescale->setVisible(true);
+	ui->advOutRescale->setVisible(true);
 
 	UNUSED_PARAMETER(idx);
 }
@@ -3712,16 +3704,8 @@ void OBSBasicSettings::on_advOutRecEncoder_currentIndexChanged(int idx)
 			SLOT(AdvReplayBufferChanged()));
 	}
 
-	uint32_t caps = obs_get_encoder_caps(QT_TO_UTF8(encoder));
-
-	if (caps & OBS_ENCODER_CAP_PASS_TEXTURE) {
-		ui->advOutRecUseRescale->setChecked(false);
-		ui->advOutRecUseRescale->setVisible(false);
-		ui->advOutRecRescaleContainer->setVisible(false);
-	} else {
-		ui->advOutRecUseRescale->setVisible(true);
-		ui->advOutRecRescaleContainer->setVisible(true);
-	}
+	ui->advOutRecUseRescale->setVisible(true);
+	ui->advOutRecRescaleContainer->setVisible(true);
 }
 
 void OBSBasicSettings::on_advOutFFIgnoreCompat_stateChanged(int)
