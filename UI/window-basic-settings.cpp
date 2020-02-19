@@ -50,6 +50,9 @@
 #include <util/platform.h>
 #include "ui-config.h"
 
+#define ENCODER_HIDE_FLAGS \
+	(OBS_ENCODER_CAP_DEPRECATED | OBS_ENCODER_CAP_INTERNAL)
+
 using namespace std;
 
 // Used for QVariant in codec comboboxes
@@ -886,7 +889,7 @@ void OBSBasicSettings::LoadEncoderTypes()
 				break;
 			}
 		}
-		if ((caps & OBS_ENCODER_CAP_DEPRECATED) != 0)
+		if ((caps & ENCODER_HIDE_FLAGS) != 0)
 			continue;
 
 		QString qName = QT_UTF8(name);
@@ -1728,7 +1731,7 @@ void OBSBasicSettings::LoadAdvOutputStreamingEncoderProperties()
 
 	if (!SetComboByValue(ui->advOutEncoder, type)) {
 		uint32_t caps = obs_get_encoder_caps(type);
-		if ((caps & OBS_ENCODER_CAP_DEPRECATED) != 0) {
+		if ((caps & ENCODER_HIDE_FLAGS) != 0) {
 			const char *name = obs_encoder_get_display_name(type);
 
 			ui->advOutEncoder->insertItem(0, QT_UTF8(name),
@@ -1821,7 +1824,7 @@ void OBSBasicSettings::LoadAdvOutputRecordingEncoderProperties()
 
 	if (!SetComboByValue(ui->advOutRecEncoder, type)) {
 		uint32_t caps = obs_get_encoder_caps(type);
-		if ((caps & OBS_ENCODER_CAP_DEPRECATED) != 0) {
+		if ((caps & ENCODER_HIDE_FLAGS) != 0) {
 			const char *name = obs_encoder_get_display_name(type);
 
 			ui->advOutRecEncoder->insertItem(1, QT_UTF8(name),
