@@ -581,6 +581,9 @@ static void *nvenc_create(obs_data_t *settings, obs_encoder_t *encoder)
 		goto fail;
 	}
 
+	if (obs_encoder_scaling_enabled(encoder)) {
+		goto fail;
+	}
 	if (!obs_nv12_tex_active()) {
 		goto fail;
 	}
