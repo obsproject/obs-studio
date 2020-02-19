@@ -1983,6 +1983,9 @@ EXPORT enum obs_encoder_type obs_encoder_get_type(const obs_encoder_t *encoder);
 EXPORT void obs_encoder_set_scaled_size(obs_encoder_t *encoder, uint32_t width,
 					uint32_t height);
 
+/** For video encoders, returns true if pre-encode scaling is enabled */
+EXPORT bool obs_encoder_scaling_enabled(const obs_encoder_t *encoder);
+
 /** For video encoders, returns the width of the encoded image */
 EXPORT uint32_t obs_encoder_get_width(const obs_encoder_t *encoder);
 
