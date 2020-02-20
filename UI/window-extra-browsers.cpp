@@ -522,7 +522,7 @@ void OBSBasic::AddExtraBrowserDock(const QString &title, const QString &url,
 	BrowserDock *dock = new BrowserDock();
 	dock->setObjectName(title + OBJ_NAME_SUFFIX);
 	dock->resize(460, 600);
-	dock->setMinimumSize(150, 150);
+	dock->setMinimumSize(80, 80);
 	dock->setWindowTitle(title);
 	dock->setAllowedAreas(Qt::AllDockWidgetAreas);
 
