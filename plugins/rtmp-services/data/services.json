@@ -1688,6 +1688,39 @@
                 "max video bitrate": 10000,
                 "max audio bitrate": 192
             }
+        },
+        {
+            "name": "Whalebone.tv",
+            "servers": [
+                {
+                    "name": "Automatic",
+                    "url": "rtmp://live.whalebone.tv/live"
+                },
+                {
+                    "name": "Tokyo, Japan",
+                    "url": "rtmp://ap-northeast.live.whalebone.tv/live"
+                },
+                {
+                    "name": "Frankfurt, Germany",
+                    "url": "rtmp://eu-central.live.whalebone.tv/live"
+                },
+                {
+                    "name": "London, United Kingdom",
+                    "url": "rtmp://eu-west.live.whalebone.tv/live"
+                },
+                {
+                    "name": "São Paulo, Brazil",
+                    "url": "rtmp://sa-east.live.whalebone.tv/live"
+                },
+                {
+                    "name": "North Virgina, United States",
+                    "url": "rtmp://us-east.live.whalebone.tv/live"
+                },
+                {
+                    "name": "Oregon, United States",
+                    "url": "rtmp://us-west.live.whalebone.tv/live"
+                }
+            ]
         }
     ]
 }
