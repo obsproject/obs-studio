@@ -55,7 +55,7 @@ add_library(win-ivcam MODULE
 target_link_libraries(win-ivcam
 	libobs)
 
-install_obs_plugin_with_data(win-ivcam data)
+install_obs_plugin(win-ivcam)
 
 if(CMAKE_SIZEOF_VOID_P EQUAL 4)
 	add_subdirectory(seg_service)
