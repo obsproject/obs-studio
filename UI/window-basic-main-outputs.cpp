@@ -1282,8 +1282,6 @@ inline void AdvancedOutput::SetupStreaming()
 	bool rescale = config_get_bool(main->Config(), "AdvOut", "Rescale");
 	const char *rescaleRes =
 		config_get_string(main->Config(), "AdvOut", "RescaleRes");
-	int streamTrack =
-		config_get_int(main->Config(), "AdvOut", "TrackIndex") - 1;
 	unsigned int cx = 0;
 	unsigned int cy = 0;
 
@@ -1294,7 +1292,7 @@ inline void AdvancedOutput::SetupStreaming()
 		}
 	}
 
-	obs_output_set_audio_encoder(streamOutput, streamAudioEnc, streamTrack);
+	obs_output_set_audio_encoder(streamOutput, streamAudioEnc, 0);
 	obs_encoder_set_scaled_size(h264Streaming, cx, cy);
 	obs_encoder_set_video(h264Streaming, obs_get_video());
 }
