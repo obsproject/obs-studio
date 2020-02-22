@@ -407,6 +407,8 @@ static int send_packet(struct rtmp_stream *stream,
 	int recv_size = 0;
 	int ret = 0;
 
+	assert(idx < RTMP_MAX_STREAMS);
+
 	if (!stream->new_socket_loop) {
 #ifdef _WIN32
 		ret = ioctlsocket(stream->rtmp.m_sb.sb_socket, FIONREAD,
