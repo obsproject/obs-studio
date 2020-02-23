@@ -95,6 +95,9 @@ struct mp_media {
 	pthread_t thread;
 
 	bool pause;
+	bool reset_ts;
+	bool seek;
+	int64_t seek_pos;
 };
 
 typedef struct mp_media mp_media_t;

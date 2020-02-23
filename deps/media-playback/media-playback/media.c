@@ -308,8 +308,7 @@ static void mp_media_next_audio(mp_media_t *m)
 	audio.format = convert_sample_format(f->format);
 	audio.frames = f->nb_samples;
 
-	if (!m->pause)
-		audio.timestamp = m->base_ts + d->frame_pts - m->start_ts +
+	audio.timestamp = m->base_ts + d->frame_pts - m->start_ts +
 				  m->play_sys_ts - base_sys_ts;
 
 	if (audio.format == AUDIO_FORMAT_UNKNOWN)
@@ -396,8 +395,7 @@ static void mp_media_next_video(mp_media_t *m, bool preload)
 	if (frame->format == VIDEO_FORMAT_NONE)
 		return;
 
-	if (!m->pause)
-		frame->timestamp = m->base_ts + d->frame_pts - m->start_ts +
+	frame->timestamp = m->base_ts + d->frame_pts - m->start_ts +
 				   m->play_sys_ts - base_sys_ts;
 
 	frame->width = f->width;
@@ -420,7 +418,6 @@ static void mp_media_next_video(mp_media_t *m, bool preload)
 static void mp_media_calc_next_ns(mp_media_t *m)
 {
 	int64_t min_next_ns = mp_media_get_next_min_pts(m);
-
 	int64_t delta = min_next_ns - m->next_pts_ns;
 #ifdef _DEBUG
 	assert(delta >= 0);
@@ -431,24 +428,19 @@ static void mp_media_calc_next_ns(mp_media_t *m)
 		delta = 0;
 
 	m->next_ns += delta;
-
-	if (!m->pause)
-		m->next_pts_ns = min_next_ns;
+	m->next_pts_ns = min_next_ns;
 }
 
-static void seek_to(mp_media_t *m, int64_t pos, bool reset)
+static void seek_to(mp_media_t *m, int64_t pos)
 {
 	AVStream *stream = m->fmt->streams[0];
 	int64_t seek_pos = pos;
 	int seek_flags;
 
-	if (m->fmt->duration == AV_NOPTS_VALUE) {
+	if (m->fmt->duration == AV_NOPTS_VALUE)
 		seek_flags = AVSEEK_FLAG_FRAME;
-	} else {
-		if (reset)
-			seek_pos = m->fmt->start_time;
+	else
 		seek_flags = AVSEEK_FLAG_BACKWARD;
-	}
 
 	int64_t seek_target = seek_flags == AVSEEK_FLAG_BACKWARD
 				      ? av_rescale_q(seek_pos, AV_TIME_BASE_Q,
@@ -474,7 +466,7 @@ static bool mp_media_reset(mp_media_t *m)
 	bool stopping;
 	bool active;
 
-	seek_to(m, 0, true);
+	seek_to(m, m->fmt->start_time);
 
 	int64_t next_ts = mp_media_get_base_pts(m);
 	int64_t offset = next_ts - m->next_pts_ns;
@@ -625,6 +617,14 @@ static bool init_avformat(mp_media_t *m)
 	return true;
 }
 
+static void reset_ts(mp_media_t *m)
+{
+	m->base_ts += mp_media_get_base_pts(m);
+	m->play_sys_ts = (int64_t)os_gettime_ns();
+	m->start_ts = m->next_pts_ns = mp_media_get_next_min_pts(m);
+	m->next_ns = 0;
+}
+
 static inline bool mp_media_thread(mp_media_t *m)
 {
 	os_set_thread_name("mp_media_thread");
@@ -637,7 +637,8 @@ static inline bool mp_media_thread(mp_media_t *m)
 	}
 
 	for (;;) {
-		bool reset, kill, is_active;
+		bool reset, kill, is_active, seek, pause, reset_time;
+		int64_t seek_pos;
 		bool timeout = false;
 
 		pthread_mutex_lock(&m->mutex);
@@ -658,6 +659,13 @@ static inline bool mp_media_thread(mp_media_t *m)
 		m->reset = false;
 		m->kill = false;
 
+		pause = m->pause;
+		seek_pos = m->seek_pos;
+		seek = m->seek;
+		reset_time = m->reset_ts;
+		m->seek = false;
+		m->reset_ts = false;
+
 		pthread_mutex_unlock(&m->mutex);
 
 		if (kill) {
@@ -667,6 +675,19 @@ static inline bool mp_media_thread(mp_media_t *m)
 			mp_media_reset(m);
 			continue;
 		}
+
+		if (seek) {
+			seek_to(m, seek_pos);
+			continue;
+		}
+
+		if (reset_time) {
+			reset_ts(m);
+			continue;
+		}
+
+		if (pause)
+			continue;
 
 		/* frames are ready */
 		if (is_active && !timeout) {
@@ -816,9 +837,11 @@ void mp_media_play_pause(mp_media_t *m, bool pause)
 	pthread_mutex_lock(&m->mutex);
 	if (m->active) {
 		m->pause = pause;
-		os_sem_post(m->sem);
+		m->reset_ts = !pause;
 	}
 	pthread_mutex_unlock(&m->mutex);
+
+	os_sem_post(m->sem);
 }
 
 void mp_media_stop(mp_media_t *m)
@@ -828,9 +851,10 @@ void mp_media_stop(mp_media_t *m)
 		m->reset = true;
 		m->active = false;
 		m->stopping = true;
-		os_sem_post(m->sem);
 	}
 	pthread_mutex_unlock(&m->mutex);
+
+	os_sem_post(m->sem);
 }
 
 int64_t mp_get_current_time(mp_media_t *m)
@@ -841,8 +865,12 @@ int64_t mp_get_current_time(mp_media_t *m)
 
 void mp_media_seek_to(mp_media_t *m, int64_t pos)
 {
-	if (!m->active)
-		return;
+	pthread_mutex_lock(&m->mutex);
+	if (m->active) {
+		m->seek = true;
+		m->seek_pos = pos * 1000;
+	}
+	pthread_mutex_unlock(&m->mutex);
 
-	seek_to(m, pos * 1000, false);
+	os_sem_post(m->sem);
 }
