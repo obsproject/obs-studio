@@ -1100,6 +1100,12 @@ bool OBSApp::InitTheme()
 	return SetTheme("System");
 }
 
+void OBSApp::InitSplash()
+{
+	splash = new OBSSplash(QPixmap(":/res/images/splash.png"));
+	splash->show();
+}
+
 OBSApp::OBSApp(int &argc, char **argv, profiler_name_store_t *store)
 	: QApplication(argc, argv), profilerNameStore(store)
 {
@@ -1335,6 +1341,7 @@ bool OBSApp::OBSInit()
 
 	qRegisterMetaType<VoidFunc>();
 
+	UpdateSplash("Loading core..");
 	if (!StartupOBS(locale.c_str(), GetProfilerNameStore()))
 		return false;
 
@@ -1453,6 +1460,34 @@ bool OBSApp::TranslateString(const char *lookupVal, const char **out) const
 	}
 
 	return text_lookup_getstr(App()->GetTextLookup(), lookupVal, out);
+}
+
+void OBSSplash::drawContents(QPainter *painter)
+{
+	int offX = 10;
+	int offY = offX - 2;
+	QPixmap textPix = OBSSplash::pixmap();
+
+	QString ver = "v";
+#ifdef HAVE_OBSCONFIG_H
+	ver += OBS_VERSION;
+#else
+	ver += LIBOBS_API_MAJOR_VER + "." + LIBOBS_API_MINOR_VER + "." +
+	       LIBOBS_API_PATCH_VER;
+#endif
+
+	QFont font = QFont();
+	font.setPixelSize(14);
+	painter->setPen(Qt::white);
+	painter->setFont(font);
+
+	QRect rect = textPix.rect();
+	rect.setTopLeft(QPoint(offX - 1, offY - 1));
+	rect.setSize(QSize(rect.width() - offX, rect.height() - offY));
+
+	painter->drawText(rect, Qt::AlignRight | Qt::AlignBottom, ver);
+	painter->drawText(rect, Qt::AlignLeft | Qt::AlignBottom,
+			  OBSSplash::message());
 }
 
 QString OBSTranslator::translate(const char *context, const char *sourceText,
@@ -1774,6 +1809,9 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 #endif
 
 	OBSApp program(argc, argv, profilerNameStore.get());
+	program.InitSplash();
+	program.UpdateSplash("Preparing..");
+
 	try {
 		bool created_log = false;
 
@@ -1795,6 +1833,7 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 			goto run;
 		}
 
+		program.UpdateSplash("Checking for other instances..");
 		if (!multi) {
 			QMessageBox::StandardButtons buttons(
 				QMessageBox::Yes | QMessageBox::Cancel);
@@ -1835,6 +1874,7 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 	run:
 #endif
 
+		program.UpdateSplash("Preparing..");
 		if (!created_log) {
 			create_log_file(logFile);
 			created_log = true;
@@ -1855,6 +1895,7 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 
 		prof.Stop();
 
+		program.GetSplash()->finish(program.GetMainWindow());
 		ret = program.exec();
 
 	} catch (const char *error) {

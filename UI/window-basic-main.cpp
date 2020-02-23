@@ -859,6 +859,7 @@ void OBSBasic::Load(const char *file)
 {
 	disableSaving++;
 
+	App()->UpdateSplash("Loading scenes and sources..");
 	obs_data_t *data = obs_data_create_from_json_file_safe(file, "bak");
 	if (!data) {
 		disableSaving--;
@@ -1551,6 +1552,7 @@ void OBSBasic::OBSInit()
 {
 	ProfileScope("OBSBasic::OBSInit");
 
+	App()->UpdateSplash("Loading Scene Collection..");
 	const char *sceneCollection = config_get_string(
 		App()->GlobalConfig(), "Basic", "SceneCollectionFile");
 	char savePath[512];
@@ -1569,11 +1571,14 @@ void OBSBasic::OBSInit()
 	if (ret <= 0)
 		throw "Failed to get scene collection json file path";
 
+	App()->UpdateSplash("Loading profile..");
 	if (!InitBasicConfig())
 		throw "Failed to load basic.ini";
+	App()->UpdateSplash("Loading audio devices..");
 	if (!ResetAudio())
 		throw "Failed to initialize audio";
 
+	App()->UpdateSplash("Initialising canvas..");
 	ret = ResetVideo();
 
 	switch (ret) {
@@ -1590,6 +1595,7 @@ void OBSBasic::OBSInit()
 
 	/* load audio monitoring */
 #if defined(_WIN32) || defined(__APPLE__) || HAVE_PULSEAUDIO
+	App()->UpdateSplash("Loading audio monitoring..");
 	const char *device_name =
 		config_get_string(basicConfig, "Audio", "MonitoringDeviceName");
 	const char *device_id =
@@ -1602,8 +1608,10 @@ void OBSBasic::OBSInit()
 #endif
 
 	InitOBSCallbacks();
+	App()->UpdateSplash("Loading hotkeys..");
 	InitHotkeys();
 
+	App()->UpdateSplash("Loading plugins..");
 	AddExtraModulePaths();
 	blog(LOG_INFO, "---------------------------------");
 	obs_load_all_modules();
@@ -1616,6 +1624,7 @@ void OBSBasic::OBSInit()
 	cef = obs_browser_init_panel();
 #endif
 
+	App()->UpdateSplash("Loading configuration..");
 	InitBasicConfigDefaults2();
 
 	CheckForSimpleModeX264Fallback();
@@ -1623,12 +1632,16 @@ void OBSBasic::OBSInit()
 	blog(LOG_INFO, STARTUP_SEPARATOR);
 
 	ResetOutputs();
+	App()->UpdateSplash("Loading hotkeys..");
 	CreateHotkeys();
 
+	App()->UpdateSplash("Loading service..");
 	if (!InitService())
 		throw "Failed to initialize service";
 
 	InitPrimitives();
+
+	App()->UpdateSplash("Loading configuration..");
 
 	sceneDuplicationMode = config_get_bool(
 		App()->GlobalConfig(), "BasicWindow", "SceneDuplicationMode");
@@ -1662,7 +1675,9 @@ void OBSBasic::OBSInit()
 		disableSaving++;
 	}
 
+	App()->UpdateSplash("Checking for updates..");
 	TimedCheckForUpdates();
+	App()->UpdateSplash("Loading configuration..");
 	loaded = true;
 
 	previewEnabled = config_get_bool(App()->GlobalConfig(), "BasicWindow",
@@ -1682,9 +1697,13 @@ void OBSBasic::OBSInit()
 	}
 #endif
 
+	App()->UpdateSplash("Preparing scene collections..");
 	RefreshSceneCollections();
+	App()->UpdateSplash("Preparing profiles..");
 	RefreshProfiles();
 	disableSaving--;
+
+	App()->UpdateSplash("Preparing OBS window..");
 
 	auto addDisplay = [this](OBSQTDisplay *window) {
 		obs_display_add_draw_callback(window->GetDisplay(),
@@ -1844,6 +1863,7 @@ void OBSBasic::OBSInit()
 	ui->actionCheckForUpdates = nullptr;
 #endif
 
+	App()->UpdateSplash("Finalising..");
 	OnFirstLoad();
 
 #ifdef __APPLE__

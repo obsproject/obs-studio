@@ -20,6 +20,8 @@
 #include <QApplication>
 #include <QTranslator>
 #include <QPointer>
+#include <QSplashScreen>
+#include <QPainter>
 #include <obs.hpp>
 #include <util/lexer.h>
 #include <util/profiler.h>
@@ -62,6 +64,15 @@ public:
 				  int n) const override;
 };
 
+class OBSSplash : public QSplashScreen {
+	Q_OBJECT
+public:
+	using QSplashScreen::QSplashScreen;
+
+protected:
+	void drawContents(QPainter *painter) override;
+};
+
 typedef std::function<void()> VoidFunc;
 
 class OBSApp : public QApplication {
@@ -74,6 +85,7 @@ private:
 	TextLookup textLookup;
 	OBSContext obsContext;
 	QPointer<OBSMainWindow> mainWindow;
+	QPointer<OBSSplash> splash;
 	profiler_name_store_t *profilerNameStore = nullptr;
 
 	os_inhibit_t *sleepInhibitor = nullptr;
@@ -105,6 +117,9 @@ public:
 
 	void AppInit();
 	bool OBSInit();
+	void InitSplash();
+	inline QPointer<OBSSplash> GetSplash() { return splash; }
+	inline void UpdateSplash(QString msg) { splash->showMessage(msg); }
 
 	void UpdateHotkeyFocusSetting(bool reset = true);
 	void DisableHotkeys();
