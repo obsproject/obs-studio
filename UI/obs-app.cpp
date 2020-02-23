@@ -1809,7 +1809,7 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 		}
 
 		if (cancel_launch)
-			ret = 0;
+			return 0;
 
 		if (!created_log) {
 			create_log_file(logFile);
@@ -1847,7 +1847,7 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 		}
 
 		if (!program.OBSInit())
-			ret = 0;
+			return 0;
 
 		prof.Stop();
 
