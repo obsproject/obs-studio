@@ -348,6 +348,9 @@ try {
 
 	/* ----------------------------------------------------------------- */
 
+	for (gs_device_loss &callback : loss_callbacks)
+		callback.device_loss_release(callback.data);
+
 	gs_obj *obj = first_obj;
 
 	while (obj) {
@@ -404,6 +407,7 @@ try {
 		state.Release();
 
 	context->ClearState();
+	context->Flush();
 
 	context.Release();
 	device.Release();
@@ -505,6 +509,9 @@ try {
 		state.Rebuild(dev);
 	for (auto &state : blendStates)
 		state.Rebuild(dev);
+
+	for (gs_device_loss &callback : loss_callbacks)
+		callback.device_loss_rebuild(device.Get(), callback.data);
 
 } catch (const char *error) {
 	bcrash("Failed to recreate D3D11: %s", error);

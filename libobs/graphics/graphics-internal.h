@@ -311,6 +311,10 @@ struct gs_exports {
 	gs_stagesurf_t *(*device_stagesurface_create_nv12)(gs_device_t *device,
 							   uint32_t width,
 							   uint32_t height);
+	void (*device_register_loss_callbacks)(
+		gs_device_t *device, const struct gs_device_loss *callbacks);
+	void (*device_unregister_loss_callbacks)(gs_device_t *device,
+						 void *data);
 #endif
 };
 

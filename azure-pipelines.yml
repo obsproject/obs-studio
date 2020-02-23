@@ -62,7 +62,7 @@ jobs:
   variables:
     prHasCILabel: $[ dependencies.Prebuild.outputs['checkPrLabel.prHasCILabel'] ]
   pool:
-    vmImage: 'vs2017-win2016'
+    vmImage: 'windows-2019'
   steps:
   - script: git submodule update --init --recursive
     displayName: 'Checkout Submodules'
@@ -89,7 +89,7 @@ jobs:
   variables:
     prHasCILabel: $[ dependencies.Prebuild.outputs['checkPrLabel.prHasCILabel'] ]
   pool:
-    vmImage: 'vs2017-win2016'
+    vmImage: 'windows-2019'
   steps:
   - script: git submodule update --init --recursive
     displayName: 'Checkout Submodules'
