@@ -309,7 +309,7 @@ static void mp_media_next_audio(mp_media_t *m)
 	audio.frames = f->nb_samples;
 
 	audio.timestamp = m->base_ts + d->frame_pts - m->start_ts +
-				  m->play_sys_ts - base_sys_ts;
+			  m->play_sys_ts - base_sys_ts;
 
 	if (audio.format == AUDIO_FORMAT_UNKNOWN)
 		return;
@@ -396,7 +396,7 @@ static void mp_media_next_video(mp_media_t *m, bool preload)
 		return;
 
 	frame->timestamp = m->base_ts + d->frame_pts - m->start_ts +
-				   m->play_sys_ts - base_sys_ts;
+			   m->play_sys_ts - base_sys_ts;
 
 	frame->width = f->width;
 	frame->height = f->height;
