@@ -1777,6 +1777,17 @@
     <string>Basic.Main.Controls</string>
    </property>
   </action>
+  <action name="toggleMediaControls">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>MediaControls</string>
+   </property>
+  </action>
   <action name="actionHelpPortal">
    <property name="text">
     <string>Basic.MainMenu.Help.HelpPortal</string>

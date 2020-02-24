@@ -1744,8 +1744,12 @@ void OBSBasic::OBSInit()
 	}
 #endif
 
+	/* setup media controls widget */
+	//MediaControls *controls = new MediaControls();
+
 	const char *dockStateStr = config_get_string(
 		App()->GlobalConfig(), "BasicWindow", "DockState");
+
 	if (!dockStateStr) {
 		on_resetUI_triggered();
 	} else {

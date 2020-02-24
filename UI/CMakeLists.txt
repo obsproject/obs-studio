@@ -232,6 +232,7 @@ set(obs_SOURCES
 	window-basic-preview.cpp
 	window-basic-about.cpp
 	window-importer.cpp
+	media-controls.cpp
 	window-namedialog.cpp
 	window-log-reply.cpp
 	window-projector.cpp
@@ -262,7 +263,8 @@ set(obs_SOURCES
 	source-label.cpp
 	remote-text.cpp
 	audio-encoders.cpp
-	qt-wrappers.cpp)
+	qt-wrappers.cpp
+	media-slider.cpp)
 
 set(obs_HEADERS
 	${obs_PLATFORM_HEADERS}
@@ -287,6 +289,7 @@ set(obs_HEADERS
 	window-basic-transform.hpp
 	window-basic-preview.hpp
 	window-importer.hpp
+	media-controls.hpp
 	window-namedialog.hpp
 	window-log-reply.hpp
 	window-projector.hpp
@@ -325,7 +328,8 @@ set(obs_HEADERS
 	remote-text.hpp
 	audio-encoders.hpp
 	qt-wrappers.hpp
-	clickable-label.hpp)
+	clickable-label.hpp
+	media-slider.hpp)
 
 set(obs_importers_HEADERS
 	importers/importers.hpp)
@@ -358,7 +362,9 @@ set(obs_UI
 	forms/OBSUpdate.ui
 	forms/OBSRemux.ui
 	forms/OBSImporter.ui
-	forms/OBSAbout.ui)
+	forms/OBSAbout.ui
+	forms/OBSAbout.ui
+	forms/MediaControls.ui)
 
 set(obs_QRC
 	forms/obs.qrc)
