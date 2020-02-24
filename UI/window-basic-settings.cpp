@@ -2247,10 +2247,15 @@ void OBSBasicSettings::LoadAudioSources()
 		label->setMinimumSize(QSize(170, 0));
 		label->setAlignment(Qt::AlignRight | Qt::AlignTrailing |
 				    Qt::AlignVCenter);
-		connect(label, &OBSSourceLabel::Removed,
-			[=]() { LoadAudioSources(); });
-		connect(label, &OBSSourceLabel::Destroyed,
-			[=]() { LoadAudioSources(); });
+		connect(label, &OBSSourceLabel::Removed, [=]() {
+			QMetaObject::invokeMethod(this,
+						  "ReloadAudioSources",
+						  Qt::QueuedConnection);
+		});
+		connect(label, &OBSSourceLabel::Destroyed, [=]() {
+			QMetaObject::invokeMethod(this, "ReloadAudioSources",
+						  Qt::QueuedConnection);
+		});
 
 		layout->addRow(label, form);
 		return true;
