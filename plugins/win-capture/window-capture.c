@@ -213,6 +213,78 @@ static void wc_defaults(obs_data_t *defaults)
 	obs_data_set_default_bool(defaults, "compatibility", false);
 }
 
+static void encode_dstr(struct dstr *str)
+{
+	dstr_replace(str, "#", "#22");
+	dstr_replace(str, ":", "#3A");
+}
+
+static char *decode_str(const char *src)
+{
+	struct dstr str = {0};
+	dstr_copy(&str, src);
+	dstr_replace(&str, "#3A", ":");
+	dstr_replace(&str, "#22", "#");
+	return str.array;
+}
+
+static bool window_changed_callback(obs_properties_t *props, obs_property_t *p,
+				    obs_data_t *settings)
+{
+	const char *window = obs_data_get_string(settings, "capturedWindow");
+	size_t size = obs_property_list_item_count(p);
+	bool found = false;
+	bool disabled_unknown_found = false;
+
+	for (size_t i = 0; i < size; i++) {
+		if (strcmp(obs_property_list_item_string(p, i), window) == 0) {
+			found = true;
+			continue;
+		}
+		if (obs_property_list_item_disabled(p, i))
+			disabled_unknown_found = true;
+	}
+
+	if (!found && !disabled_unknown_found) {
+		struct dstr name = {0};
+
+		char *process = decode_str(strrchr(window, ':') + 1);
+		size_t titleLen = strchr(window, ':') - window;
+		char title[512];
+
+		strncpy(title, window, titleLen);
+		title[titleLen] = '\0';
+
+		char *dec_title = decode_str(title);
+
+		dstr_printf(&name, "[%s]: %s", process, dec_title);
+
+		size_t idx =
+			obs_property_list_add_string(p, name.array, window);
+		obs_property_list_item_disable(p, idx, true);
+
+		dstr_free(&name);
+
+		bfree(process);
+		bfree(dec_title);
+
+		return true;
+	}
+
+	if (found && !disabled_unknown_found)
+		return false;
+
+	for (size_t i = 0; i < size;) {
+		if (obs_property_list_item_disabled(p, i)) {
+			obs_property_list_item_remove(p, i);
+			continue;
+		}
+		i += 1;
+	}
+
+	return true;
+}
+
 static bool wc_capture_method_changed(obs_properties_t *props,
 				      obs_property_t *p, obs_data_t *settings)
 {
@@ -247,6 +319,8 @@ static obs_properties_t *wc_properties(void *data)
 				    OBS_COMBO_TYPE_LIST,
 				    OBS_COMBO_FORMAT_STRING);
 	fill_window_list(p, EXCLUDE_MINIMIZED, NULL);
+
+	obs_property_set_modified_callback(p, window_changed_callback);
 
 	p = obs_properties_add_list(ppts, "priority", TEXT_MATCH_PRIORITY,
 				    OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
@@ -360,6 +434,13 @@ static void wc_tick(void *data, float seconds)
 						   wc->priority, wc->class,
 						   wc->title, wc->executable);
 		if (!wc->window) {
+			obs_data_t *settings =
+				obs_source_get_settings(wc->source);
+			const char *window =
+				obs_data_get_string(settings, "window");
+
+			obs_data_set_string(settings, "capturedWindow", window);
+
 			if (wc->capture.valid)
 				dc_capture_free(&wc->capture);
 			return;
@@ -426,6 +507,34 @@ static void wc_tick(void *data, float seconds)
 			wc->capture_winrt = wc->exports.winrt_capture_init(
 				wc->cursor, wc->window);
 		}
+	}
+	if (reset_capture) {
+		struct dstr title = {0};
+		struct dstr class = {0};
+		struct dstr exec = {0};
+		struct dstr win = {0};
+
+		get_window_exe(&exec, wc->window);
+		get_window_class(&class, wc->window);
+		get_window_title(&title, wc->window);
+
+		encode_dstr(&title);
+		encode_dstr(&class);
+		encode_dstr(&exec);
+
+		dstr_printf(&win, "%s:%s:%s", title.array, class.array,
+			    exec.array);
+
+		obs_data_t *settings = obs_source_get_settings(wc->source);
+
+		obs_data_set_string(settings, "capturedWindow", win.array);
+		obs_source_update(wc->source, settings);
+
+		obs_data_release(settings);
+		dstr_free(&title);
+		dstr_free(&class);
+		dstr_free(&exec);
+		dstr_free(&win);
 	}
 
 	obs_leave_graphics();
