@@ -844,7 +844,11 @@ void *obs_graphics_thread(void *param)
 
 	srand((unsigned int)time(NULL));
 
-	while (!video_output_stopped(obs->video.video)) {
+	for (;;) {
+		/* defer loop break to clean up sources */
+		const bool stop_requested =
+			video_output_stopped(obs->video.video);
+
 		uint64_t frame_start = os_gettime_ns();
 		uint64_t frame_time_ns;
 		bool raw_active = obs->video.raw_active > 0;
@@ -920,6 +924,9 @@ void *obs_graphics_thread(void *param)
 			fps_total_ns = 0;
 			fps_total_frames = 0;
 		}
+
+		if (stop_requested)
+			break;
 	}
 
 	UNUSED_PARAMETER(param);
