@@ -245,14 +245,13 @@ SceneTree {
 /* Studio Mode T-Bar */
 
 QSlider[themeID="tBarSlider"] {
-	height: 80px;
+	height: 24px;
 }
 
 QSlider::groove:horizontal[themeID="tBarSlider"] {
 	border: 1px solid #4c4c4c;
 	height: 5px;
 	background: #DCD9D7;
-	margin: 0 12px;
 }
 
 QSlider::sub-page:horizontal[themeID="tBarSlider"] {
@@ -261,9 +260,8 @@ QSlider::sub-page:horizontal[themeID="tBarSlider"] {
 }
 
 QSlider::handle:horizontal[themeID="tBarSlider"] {
-	background-color: #f3f3f3;
-	border: 1px solid #4c4c4c;
-	width: 25px;
-	height: 80px;
-	margin: -24px -12px;
+	background-color: #4c4c4c;
+	width: 12px;
+	height: 24px;
+	margin: -24px 0px;
 }
