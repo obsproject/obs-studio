@@ -290,7 +290,7 @@ void OBSBasicAdvAudio::SetIconsVisible(bool visible)
 	QLabel *headerLabel = qobject_cast<QLabel *>(item->widget());
 	visible ? headerLabel->show() : headerLabel->hide();
 
-	for (int i = 0; i < controls.size(); i++) {
+	for (size_t i = 0; i < controls.size(); i++) {
 		controls[i]->SetIconVisible(visible);
 	}
 }
