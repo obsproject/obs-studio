@@ -93,7 +93,6 @@ struct gl_platform *gl_platform_create(gs_device_t *device, uint32_t adapter)
 	GLint interval = 0;
 	[context setValues:&interval forParameter:NSOpenGLCPSwapInterval];
 	const bool success = gladLoadGL() != 0;
-	[NSOpenGLContext clearCurrentContext];
 
 	if (!success) {
 		blog(LOG_ERROR, "gladLoadGL failed");
