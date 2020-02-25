@@ -19,6 +19,7 @@
 #define TEXT_MATCH_EXE      obs_module_text("WindowCapture.Priority.Exe")
 #define TEXT_CAPTURE_CURSOR obs_module_text("CaptureCursor")
 #define TEXT_COMPATIBILITY  obs_module_text("Compatibility")
+#define TEXT_CLIENT_AREA    obs_module_text("ClientArea")
 
 /* clang-format on */
 
@@ -26,12 +27,13 @@
 
 struct winrt_exports {
 	bool *(*winrt_capture_supported)();
-	struct winrt_capture *(*winrt_capture_init)(bool cursor, HWND window);
+	struct winrt_capture *(*winrt_capture_init)(bool cursor, HWND window,
+						    bool client_area);
 	void (*winrt_capture_free)(struct winrt_capture *capture);
 	void (*winrt_capture_render)(struct winrt_capture *capture,
 				     gs_effect_t *effect);
-	int32_t (*winrt_capture_width)(const struct winrt_capture *capture);
-	int32_t (*winrt_capture_height)(const struct winrt_capture *capture);
+	uint32_t (*winrt_capture_width)(const struct winrt_capture *capture);
+	uint32_t (*winrt_capture_height)(const struct winrt_capture *capture);
 };
 
 enum window_capture_method {
@@ -50,6 +52,7 @@ struct window_capture {
 	enum window_priority priority;
 	bool cursor;
 	bool compatibility;
+	bool client_area;
 	bool use_wildcards; /* TODO */
 
 	struct dc_capture capture;
@@ -139,6 +142,7 @@ static void update_settings(struct window_capture *wc, obs_data_t *s)
 	wc->cursor = obs_data_get_bool(s, "cursor");
 	wc->use_wildcards = obs_data_get_bool(s, "use_wildcards");
 	wc->compatibility = obs_data_get_bool(s, "compatibility");
+	wc->client_area = obs_data_get_bool(s, "client_area");
 }
 
 /* ------------------------------------------------------------------------- */
@@ -252,18 +256,23 @@ static void wc_defaults(obs_data_t *defaults)
 	obs_data_set_default_int(defaults, "method", METHOD_AUTO);
 	obs_data_set_default_bool(defaults, "cursor", true);
 	obs_data_set_default_bool(defaults, "compatibility", false);
+	obs_data_set_default_bool(defaults, "client_area", true);
 }
 
 static void update_settings_visibility(obs_properties_t *props,
 				       enum window_capture_method method)
 {
 	const bool bitblt_options = method == METHOD_BITBLT;
+	const bool wgc_options = method == METHOD_WGC;
 
 	obs_property_t *p = obs_properties_get(props, "cursor");
 	obs_property_set_visible(p, bitblt_options);
 
 	p = obs_properties_get(props, "compatibility");
 	obs_property_set_visible(p, bitblt_options);
+
+	p = obs_properties_get(props, "client_area");
+	obs_property_set_visible(p, wgc_options);
 }
 
 static bool wc_capture_method_changed(obs_properties_t *props,
@@ -320,6 +329,8 @@ static obs_properties_t *wc_properties(void *data)
 	obs_properties_add_bool(ppts, "cursor", TEXT_CAPTURE_CURSOR);
 
 	obs_properties_add_bool(ppts, "compatibility", TEXT_COMPATIBILITY);
+
+	obs_properties_add_bool(ppts, "client_area", TEXT_CLIENT_AREA);
 
 	return ppts;
 }
@@ -441,7 +452,7 @@ static void wc_tick(void *data, float seconds)
 	} else if (wc->method == METHOD_WGC) {
 		if (wc->window && (wc->capture_winrt == NULL)) {
 			wc->capture_winrt = wc->exports.winrt_capture_init(
-				wc->cursor, wc->window);
+				wc->cursor, wc->window, wc->client_area);
 		}
 	}
 
