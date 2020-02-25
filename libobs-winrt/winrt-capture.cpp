@@ -31,8 +31,56 @@ static winrt::com_ptr<T> GetDXGIInterfaceFromObject(
 	return result;
 }
 
+static bool get_client_box(HWND window, uint32_t width, uint32_t height,
+			   D3D11_BOX *client_box)
+{
+	RECT client_rect, window_rect{};
+	POINT upper_left{};
+
+	const bool client_box_available =
+		GetClientRect(window, &client_rect) &&
+		(DwmGetWindowAttribute(window, DWMWA_EXTENDED_FRAME_BOUNDS,
+				       &window_rect,
+				       sizeof(window_rect)) == S_OK) &&
+		ClientToScreen(window, &upper_left);
+	if (client_box_available) {
+		const uint32_t left =
+			(upper_left.x > window_rect.left)
+				? (upper_left.x - window_rect.left)
+				: 0;
+		client_box->left = left;
+
+		const uint32_t top = (upper_left.y > window_rect.top)
+					     ? (upper_left.y - window_rect.top)
+					     : 0;
+		client_box->top = top;
+
+		uint32_t texture_width = 1;
+		if (width > left) {
+			texture_width =
+				min(width - left, (uint32_t)client_rect.right);
+		}
+
+		uint32_t texture_height = 1;
+		if (height > top) {
+			texture_height =
+				min(height - top, (uint32_t)client_rect.bottom);
+		}
+
+		client_box->right = left + texture_width;
+		client_box->bottom = top + texture_height;
+
+		client_box->front = 0;
+		client_box->back = 1;
+	}
+
+	return client_box_available;
+}
+
 struct winrt_capture {
 	bool capture_cursor;
+	HWND window;
+	bool client_area;
 
 	gs_texture_t *texture;
 	bool texture_written;
@@ -47,6 +95,11 @@ struct winrt_capture {
 	winrt::Windows::Graphics::SizeInt32 last_size;
 	winrt::Windows::Graphics::Capture::Direct3D11CaptureFramePool::
 		FrameArrived_revoker frame_arrived;
+
+	uint32_t texture_width;
+	uint32_t texture_height;
+	D3D11_BOX client_box;
+	bool client_box_available;
 
 	bool thread_changed;
 	struct winrt_capture *next;
@@ -70,23 +123,45 @@ struct winrt_capture {
 		D3D11_TEXTURE2D_DESC desc;
 		frame_surface->GetDesc(&desc);
 
+		client_box_available = false;
+		if (client_area) {
+			client_box_available = get_client_box(
+				window, desc.Width, desc.Height, &client_box);
+		}
+
+		if (client_box_available) {
+			texture_width = client_box.right - client_box.left;
+			texture_height = client_box.bottom - client_box.top;
+		} else {
+			texture_width = desc.Width;
+			texture_height = desc.Height;
+		}
+
 		if (texture) {
-			if (desc.Width != gs_texture_get_width(texture) ||
-			    desc.Height != gs_texture_get_height(texture)) {
+			if (texture_width != gs_texture_get_width(texture) ||
+			    texture_height != gs_texture_get_height(texture)) {
 				gs_texture_destroy(texture);
 				texture = nullptr;
 			}
 		}
 
 		if (!texture) {
-			texture = gs_texture_create(desc.Width, desc.Height,
-						    GS_BGRA, 1, nullptr, 0);
+			texture = gs_texture_create(texture_width,
+						    texture_height, GS_BGRA, 1,
+						    nullptr, 0);
 		}
 
-		/* if they gave an SRV, we could avoid this copy */
-		context->CopyResource(
-			(ID3D11Texture2D *)gs_texture_get_obj(texture),
-			frame_surface.get());
+		if (client_box_available) {
+			context->CopySubresourceRegion(
+				(ID3D11Texture2D *)gs_texture_get_obj(texture),
+				0, 0, 0, 0, frame_surface.get(), 0,
+				&client_box);
+		} else {
+			/* if they gave an SRV, we could avoid this copy */
+			context->CopyResource(
+				(ID3D11Texture2D *)gs_texture_get_obj(texture),
+				frame_surface.get());
+		}
 
 		texture_written = true;
 
@@ -160,8 +235,8 @@ static void winrt_capture_device_loss_rebuild(void *device_void, void *data)
 
 thread_local bool initialized_tls;
 
-extern "C" EXPORT struct winrt_capture *winrt_capture_init(bool cursor,
-							   HWND window)
+extern "C" EXPORT struct winrt_capture *
+winrt_capture_init(bool cursor, HWND window, bool client_area)
 {
 	ID3D11Device *const d3d_device = (ID3D11Device *)gs_get_device_obj();
 	ComPtr<IDXGIDevice> dxgi_device;
@@ -192,8 +267,9 @@ extern "C" EXPORT struct winrt_capture *winrt_capture_init(bool cursor,
 					       IGraphicsCaptureItem>(),
 			reinterpret_cast<void **>(winrt::put_abi(item)));
 	} catch (winrt::hresult_invalid_argument &) {
-		blog(LOG_WARNING, "[winrt_capture_init] Failed to "
-				  "create GraphicsCaptureItem");
+		/* too spammy */
+		//blog(LOG_WARNING, "[winrt_capture_init] Failed to "
+		//		  "create GraphicsCaptureItem");
 		return nullptr;
 	}
 
@@ -216,6 +292,8 @@ extern "C" EXPORT struct winrt_capture *winrt_capture_init(bool cursor,
 
 	struct winrt_capture *capture = new winrt_capture{};
 	capture->capture_cursor = cursor;
+	capture->window = window;
+	capture->client_area = client_area;
 	capture->item = item;
 	capture->device = device;
 	d3d_device->GetImmediateContext(&capture->context);
@@ -315,14 +393,14 @@ extern "C" EXPORT void winrt_capture_render(struct winrt_capture *capture,
 	}
 }
 
-extern "C" EXPORT int32_t
+extern "C" EXPORT uint32_t
 winrt_capture_width(const struct winrt_capture *capture)
 {
-	return capture ? capture->last_size.Width : 0;
+	return capture ? capture->texture_width : 0;
 }
 
-extern "C" EXPORT int32_t
+extern "C" EXPORT uint32_t
 winrt_capture_height(const struct winrt_capture *capture)
 {
-	return capture ? capture->last_size.Height : 0;
+	return capture ? capture->texture_height : 0;
 }

@@ -24,11 +24,13 @@ target_precompile_headers(libobs-winrt
 		[["../libobs/util/windows/ComPtr.hpp"]]
 		<obs-module.h>
 		<d3d11.h>
+		<dwmapi.h>
 		<Windows.Graphics.Capture.Interop.h>
 		<winrt/Windows.Foundation.Metadata.h>
 		<winrt/Windows.Graphics.Capture.h>)
 target_link_libraries(libobs-winrt
 	libobs
+	Dwmapi
 	windowsapp)
 
 install_obs_core(libobs-winrt)
