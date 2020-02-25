@@ -15,14 +15,6 @@ DecklinkOutputUI::DecklinkOutputUI(QWidget *parent)
 
 	propertiesView = nullptr;
 	previewPropertiesView = nullptr;
-
-	connect(ui->startOutput, SIGNAL(released()), this, SLOT(StartOutput()));
-	connect(ui->stopOutput, SIGNAL(released()), this, SLOT(StopOutput()));
-
-	connect(ui->startPreviewOutput, SIGNAL(released()), this,
-		SLOT(StartPreviewOutput()));
-	connect(ui->stopPreviewOutput, SIGNAL(released()), this,
-		SLOT(StopPreviewOutput()));
 }
 
 void DecklinkOutputUI::ShowHideDialog()
@@ -106,15 +98,10 @@ void DecklinkOutputUI::SavePreviewSettings()
 		obs_data_save_json_safe(settings, path, "tmp", "bak");
 }
 
-void DecklinkOutputUI::StartOutput()
+void DecklinkOutputUI::on_outputButton_clicked()
 {
 	SaveSettings();
-	output_start();
-}
-
-void DecklinkOutputUI::StopOutput()
-{
-	output_stop();
+	output_toggle();
 }
 
 void DecklinkOutputUI::PropertiesChanged()
@@ -126,24 +113,19 @@ void DecklinkOutputUI::OutputStateChanged(bool active)
 {
 	QString text;
 	if (active) {
-		text = QString(obs_module_text("OutputState.Active"));
+		text = QString(obs_module_text("Stop"));
 	} else {
-		text = QString(obs_module_text("OutputState.Idle"));
+		text = QString(obs_module_text("Start"));
 	}
 
-	QMetaObject::invokeMethod(ui->outputStatus, "setText",
-				  Q_ARG(QString, text));
+	ui->outputButton->setChecked(active);
+	ui->outputButton->setText(text);
 }
 
-void DecklinkOutputUI::StartPreviewOutput()
+void DecklinkOutputUI::on_previewOutputButton_clicked()
 {
 	SavePreviewSettings();
-	preview_output_start();
-}
-
-void DecklinkOutputUI::StopPreviewOutput()
-{
-	preview_output_stop();
+	preview_output_toggle();
 }
 
 void DecklinkOutputUI::PreviewPropertiesChanged()
@@ -155,11 +137,11 @@ void DecklinkOutputUI::PreviewOutputStateChanged(bool active)
 {
 	QString text;
 	if (active) {
-		text = QString(obs_module_text("OutputState.Active"));
+		text = QString(obs_module_text("Stop"));
 	} else {
-		text = QString(obs_module_text("OutputState.Idle"));
+		text = QString(obs_module_text("Start"));
 	}
 
-	QMetaObject::invokeMethod(ui->previewOutputStatus, "setText",
-				  Q_ARG(QString, text));
+	ui->previewOutputButton->setChecked(active);
+	ui->previewOutputButton->setText(text);
 }
