@@ -89,19 +89,11 @@ static void stinger_update(void *data, obs_data_t *settings)
 	s->track_matte_enabled =
 		obs_data_get_bool(settings, "track_matte_enabled");
 	s->matte_layout = obs_data_get_int(settings, "track_matte_layout");
+	s->matte_width_factor =
+		(s->matte_layout == MATTE_LAYOUT_HORIZONTAL ? 2.0f : 1.0f);
+	s->matte_height_factor =
+		(s->matte_layout == MATTE_LAYOUT_VERTICAL ? 2.0f : 1.0f);
 	s->invert_matte = obs_data_get_bool(settings, "invert_matte");
-
-	s->matte_width_factor = 1.0f;
-	s->matte_height_factor = 1.0f;
-	if (s->track_matte_enabled) {
-		if (s->matte_layout == MATTE_LAYOUT_HORIZONTAL) {
-			s->matte_width_factor = 2.0f;
-		}
-
-		if (s->matte_layout == MATTE_LAYOUT_VERTICAL) {
-			s->matte_height_factor = 2.0f;
-		}
-	}
 
 	if (s->matte_source) {
 		obs_source_release(s->matte_source);
@@ -286,8 +278,15 @@ static void stinger_video_render(void *data, gs_effect_t *effect)
 	if (!media_cx || !media_cy)
 		return;
 
-	float scale_x = source_cx / ((float)media_cx / s->matte_width_factor);
-	float scale_y = source_cy / ((float)media_cy / s->matte_height_factor);
+	float scale_x, scale_y;
+	if (s->track_matte_enabled) {
+		scale_x = source_cx / ((float)media_cx / s->matte_width_factor);
+		scale_y =
+			source_cy / ((float)media_cy / s->matte_height_factor);
+	} else {
+		scale_x = source_cx / (float)media_cx;
+		scale_y = source_cy / (float)media_cy;
+	}
 
 	gs_matrix_push();
 	gs_matrix_scale3f(scale_x, scale_y, 1.0f);
