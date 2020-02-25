@@ -653,6 +653,9 @@ const char *os_get_path_extension(const char *path)
 	char *period;
 	char *slash;
 
+	if (!path[0])
+		return NULL;
+
 	dstr_init_copy(&temp, path);
 	dstr_replace(&temp, "\\", "/");
 
