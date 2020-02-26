@@ -1818,6 +1818,23 @@
                     "url": "rtmp://rtmp.virtwish.com/live"
                 }
             ]
+        },
+        {
+            "name": "Caffeine",
+            "common": true,
+            "servers": [
+                {
+                    "name": "Primary",
+                    "url": "http://www.caffeine.tv"
+                }
+            ],
+            "recommended": {
+                "keyint": 3,
+                "output": "caffeine_output",
+                "profile": "main",
+                "max video bitrate": 2000,
+                "max audio bitrate": 128
+            }
         }
     ]
 }
