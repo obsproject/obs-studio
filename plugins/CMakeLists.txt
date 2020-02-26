@@ -70,6 +70,10 @@ if(WIN32 OR APPLE)
 	endif()
 endif()
 
+if(CAFFEINE_ENABLED)
+	add_subdirectory(caffeine)
+endif()
+
 add_subdirectory(image-source)
 add_subdirectory(obs-x264)
 add_subdirectory(obs-libfdk)
