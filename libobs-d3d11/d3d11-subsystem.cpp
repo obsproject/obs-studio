@@ -25,6 +25,7 @@
 #include <d3d9.h>
 #include "d3d11-subsystem.hpp"
 #include "d3d11-config.h"
+#include "intel-nv12-support.hpp"
 
 struct UnsupportedHWError : HRError {
 	inline UnsupportedHWError(const char *str, HRESULT hr)
@@ -510,7 +511,7 @@ void gs_device::InitDevice(uint32_t adapterIdx)
 	}
 
 	/* Intel CopyResource is very slow with NV12 */
-	if (desc.VendorId == 0x8086) {
+	if (desc.VendorId == 0x8086 && IsOldIntelPlatform(desc.DeviceId)) {
 		return;
 	}
 

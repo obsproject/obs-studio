@@ -34,6 +34,7 @@ set(libobs-d3d11_SOURCES
 
 set(libobs-d3d11_HEADERS
 	${CMAKE_CURRENT_BINARY_DIR}/d3d11-config.h
+	intel-nv12-support.hpp
 	d3d11-shaderprocessor.hpp
 	d3d11-subsystem.hpp)
 
