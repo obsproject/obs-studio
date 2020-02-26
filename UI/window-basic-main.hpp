@@ -800,6 +800,7 @@ public:
 	void CreateFiltersWindow(obs_source_t *source);
 
 	QAction *AddDockWidget(QDockWidget *dock);
+	void RemoveCaffeineDockWidget(QDockWidget *dock);
 
 	static OBSBasic *Get();
 

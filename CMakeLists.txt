@@ -227,6 +227,18 @@ if(NOT INSTALLER_RUN)
 		endif()
 
 		find_package(Qt5Widgets ${FIND_MODE})
+
+		option(BUILD_CAFFEINE "Enables streaming to Caffeine.tv" ON)
+		if (BUILD_CAFFEINE)
+			find_package(libcaffeine)
+			if (LIBCAFFEINE_FOUND)
+				set(CAFFEINE_ENABLED TRUE)
+			else()
+				set(CAFFEINE_ENABLED FALSE)
+			endif()
+		else()
+			set(CAFFEINE_ENABLED FALSE)
+		endif()
 	endif()
 
 	add_subdirectory(deps)

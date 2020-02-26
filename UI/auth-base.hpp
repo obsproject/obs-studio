@@ -24,14 +24,12 @@ protected:
 	};
 
 public:
-	enum class Type {
-		None,
-		OAuth_StreamKey,
-	};
+	enum class Type { None, OAuth_StreamKey, Custom };
 
 	struct Def {
 		std::string service;
 		Type type;
+		bool key_hidden;
 	};
 
 	typedef std::function<std::shared_ptr<Auth>()> create_cb;
@@ -48,6 +46,8 @@ public:
 
 	static std::shared_ptr<Auth> Create(const std::string &service);
 	static Type AuthType(const std::string &service);
+	static bool IsKeyHidden(const std::string &service);
+	static bool CanAuthService(const std::string &service);
 	static void Load();
 	static void Save();
 

@@ -236,6 +236,10 @@ private:
 	QString lastService;
 	int prevLangIndex;
 	bool prevBrowserAccel;
+	QString lastServiceKey;
+#if CAFFEINE_ENABLED
+	QString lastSignedInAs;
+#endif
 private slots:
 	void UpdateServerList();
 	void UpdateKeyLink();

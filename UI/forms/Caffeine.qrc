@@ -1,0 +1,9 @@
+<RCC>
+  <qresource prefix="/caffeine">
+    <file>images/CaffeineLogo.svg</file>
+    <file>fonts/Poppins-Bold.ttf</file>
+    <file>fonts/Poppins-Regular.ttf</file>
+    <file>fonts/Poppins-Light.ttf</file>
+    <file>fonts/Poppins-ExtraLight.ttf</file>
+  </qresource>
+</RCC>
