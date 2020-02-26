@@ -28,6 +28,8 @@ extern "C" {
 #define OBS_OUTPUT_SERVICE (1 << 3)
 #define OBS_OUTPUT_MULTI_TRACK (1 << 4)
 #define OBS_OUTPUT_CAN_PAUSE (1 << 5)
+#define OBS_OUTPUT_BANDWIDTH_TEST_DISABLED (1 << 6)
+#define OBS_OUTPUT_HARDWARE_ENCODING_DISABLED (1 << 7)
 
 struct encoder_packet;
 
