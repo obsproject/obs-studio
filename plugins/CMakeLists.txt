@@ -70,6 +70,10 @@ else()
 	message(STATUS "obs-vst submodule not found!  Please fetch/update submodules.  obs-vst plugin disabled.")
 endif()
 
+if(CAFFEINE_ENABLED)
+	add_subdirectory(caffeine)
+endif()
+
 add_subdirectory(image-source)
 add_subdirectory(obs-x264)
 add_subdirectory(obs-libfdk)
