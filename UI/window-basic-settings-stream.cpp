@@ -10,14 +10,15 @@
 
 #ifdef BROWSER_AVAILABLE
 #include <browser-panel.hpp>
+#endif
+
+#ifdef AUTH_ENABLED
 #include "auth-oauth.hpp"
 #endif
 
-struct QCef;
-struct QCefCookieManager;
-
-extern QCef *cef;
-extern QCefCookieManager *panel_cookies;
+#if CAFFEINE_ENABLED
+#include "auth-caffeine.hpp"
+#endif
 
 enum class ListOpt : int {
 	ShowAll = 1,
@@ -39,6 +40,8 @@ void OBSBasicSettings::InitStreamPage()
 	ui->connectAccount2->setVisible(false);
 	ui->disconnectAccount->setVisible(false);
 	ui->bandwidthTestEnable->setVisible(false);
+	ui->authSignedInAs->setVisible(false);
+	//ui->authSignedInAsLabel->setVisible(false);
 	ui->twitchAddonDropdown->setVisible(false);
 	ui->twitchAddonLabel->setVisible(false);
 	ui->mixerAddonDropdown->setVisible(false);
@@ -92,14 +95,13 @@ void OBSBasicSettings::LoadStream1Settings()
 	const char *service = obs_data_get_string(settings, "service");
 	const char *server = obs_data_get_string(settings, "server");
 	const char *key = obs_data_get_string(settings, "key");
+	const char *username = obs_data_get_string(settings, "username");
 
 	if (strcmp(type, "rtmp_custom") == 0) {
 		ui->service->setCurrentIndex(0);
 		ui->customServer->setText(server);
 
 		bool use_auth = obs_data_get_bool(settings, "use_auth");
-		const char *username =
-			obs_data_get_string(settings, "username");
 		const char *password =
 			obs_data_get_string(settings, "password");
 		ui->authUsername->setText(QT_UTF8(username));
@@ -108,9 +110,16 @@ void OBSBasicSettings::LoadStream1Settings()
 	} else {
 		int idx = ui->service->findText(service);
 		if (idx == -1) {
-			if (service && *service)
+			if (service && *service) {
+				// Insert placeholder for unrecognized service
 				ui->service->insertItem(1, service);
-			idx = 1;
+				idx = 1;
+			} else {
+				// Default to twitch or first non-custom service
+				idx = ui->service->findText("Twitch");
+				if (idx == -1)
+					idx = 1;
+			}
 		}
 		ui->service->setCurrentIndex(idx);
 
@@ -134,6 +143,18 @@ void OBSBasicSettings::LoadStream1Settings()
 			idx = 0;
 		}
 		ui->server->setCurrentIndex(idx);
+
+#if CAFFEINE_ENABLED
+		if (username && username[0]) {
+			lastSignedInAs = username;
+			//ui->authSignedInAsLabel->setVisible(true);
+			ui->authSignedInAs->setVisible(true);
+			ui->authSignedInAs->setText(QT_UTF8(username));
+		} else {
+			//ui->authSignedInAsLabel->setVisible(false);
+			ui->authSignedInAs->setVisible(false);
+		}
+#endif
 	}
 
 	ui->key->setText(key);
@@ -169,6 +190,12 @@ void OBSBasicSettings::SaveStream1Settings()
 		obs_data_set_string(
 			settings, "server",
 			QT_TO_UTF8(ui->server->currentData().toString()));
+#if CAFFEINE_ENABLED
+		if (ui->service->currentText() == "Caffeine") {
+			obs_data_set_string(settings, "username",
+					    QT_TO_UTF8(lastSignedInAs));
+		}
+#endif
 	} else {
 		obs_data_set_string(settings, "server",
 				    QT_TO_UTF8(ui->customServer->text()));
@@ -313,11 +340,6 @@ void OBSBasicSettings::LoadServices(bool showAll)
 	ui->service->blockSignals(false);
 }
 
-static inline bool is_auth_service(const std::string &service)
-{
-	return Auth::AuthType(service) != Auth::Type::None;
-}
-
 void OBSBasicSettings::on_service_currentIndexChanged(int)
 {
 	bool showMore = ui->service->currentData().toInt() ==
@@ -335,23 +357,52 @@ void OBSBasicSettings::on_service_currentIndexChanged(int)
 	ui->mixerAddonDropdown->setVisible(false);
 	ui->mixerAddonLabel->setVisible(false);
 
-#ifdef BROWSER_AVAILABLE
-	if (cef) {
-		if (lastService != service.c_str()) {
-			QString key = ui->key->text();
-			bool can_auth = is_auth_service(service);
-			int page = can_auth && (!loading || key.isEmpty())
-					   ? (int)Section::Connect
-					   : (int)Section::StreamKey;
+#ifdef AUTH_ENABLED
+	auth.reset();
 
-			ui->streamStackWidget->setCurrentIndex(page);
-			ui->streamKeyWidget->setVisible(true);
-			ui->streamKeyLabel->setVisible(true);
-			ui->connectAccount2->setVisible(can_auth);
-		}
-	} else {
-		ui->connectAccount2->setVisible(false);
+	if (!!main->auth &&
+	    service.find(main->auth->service()) != std::string::npos) {
+		auth = main->auth;
+		OnAuthConnected();
 	}
+
+	bool can_auth = Auth::CanAuthService(service);
+	bool hidden_key = Auth::IsKeyHidden(service);
+	QString connectString =
+		QTStr("Basic.AutoConfig.StreamPage.ConnectAccount")
+			.arg(hidden_key ? QTStr("Required")
+					: QTStr("Optional"));
+	ui->connectAccount->setText(connectString);
+	ui->connectAccount2->setText(connectString);
+
+	if (lastService.isEmpty()) {
+		lastService = service.c_str();
+		lastServiceKey = ui->key->text();
+	} else if (lastService != service.c_str()) {
+		// Don't show the stream key from the previous service
+		ui->key->clear();
+	} else {
+		ui->key->setText(lastServiceKey);
+	}
+	QString key = ui->key->text();
+	bool authenticated = !key.isEmpty();
+	int page = can_auth && (!loading || key.isEmpty())
+			   ? (int)Section::Connect
+			   : (int)Section::StreamKey;
+	if (hidden_key)
+		page = (int)Section::StreamKey;
+	ui->useStreamKey->setVisible(!hidden_key);
+	ui->streamStackWidget->setCurrentIndex(page);
+	ui->streamKeyWidget->setVisible(!hidden_key);
+	ui->streamKeyLabel->setVisible(!hidden_key);
+#if CAFFEINE_ENABLED
+	bool isCaffeine = service == "Caffeine";
+	ui->authSignedInAs->setVisible(authenticated && isCaffeine);
+	ui->authSignedInAs->setText(lastSignedInAs);
+#endif
+	ui->connectAccount->setVisible(can_auth && !authenticated);
+	ui->disconnectAccount->setVisible(can_auth && authenticated);
+	ui->connectAccount2->setVisible(can_auth && !authenticated);
 #else
 	ui->connectAccount2->setVisible(false);
 #endif
@@ -374,15 +425,7 @@ void OBSBasicSettings::on_service_currentIndexChanged(int)
 		ui->serverStackedWidget->setCurrentIndex(0);
 	}
 
-#ifdef BROWSER_AVAILABLE
-	auth.reset();
-
-	if (!!main->auth &&
-	    service.find(main->auth->service()) != std::string::npos) {
-		auth = main->auth;
-		OnAuthConnected();
-	}
-#endif
+	update();
 }
 
 void OBSBasicSettings::UpdateServerList()
@@ -395,8 +438,6 @@ void OBSBasicSettings::UpdateServerList()
 		LoadServices(true);
 		ui->service->showPopup();
 		return;
-	} else {
-		lastService = serviceName;
 	}
 
 	obs_properties_t *props = obs_get_service_properties("rtmp_common");
@@ -473,7 +514,7 @@ OBSService OBSBasicSettings::SpawnTempService()
 
 void OBSBasicSettings::OnOAuthStreamKeyConnected()
 {
-#ifdef BROWSER_AVAILABLE
+#ifdef AUTH_ENABLED
 	OAuthStreamKey *a = reinterpret_cast<OAuthStreamKey *>(auth.get());
 
 	if (a) {
@@ -482,10 +523,23 @@ void OBSBasicSettings::OnOAuthStreamKeyConnected()
 		if (validKey)
 			ui->key->setText(QT_UTF8(a->key().c_str()));
 
+		lastService = a->service();
+		lastServiceKey = a->key().c_str();
 		ui->streamKeyWidget->setVisible(false);
 		ui->streamKeyLabel->setVisible(false);
+		ui->connectAccount->setVisible(false);
 		ui->connectAccount2->setVisible(false);
 		ui->disconnectAccount->setVisible(true);
+
+#if CAFFEINE_ENABLED
+		if (std::string(a->service()) == "Caffeine") {
+			auto caffeine = dynamic_cast<CaffeineAuth *>(a);
+			lastSignedInAs = caffeine->GetUsername().c_str();
+			//ui->authSignedInAsLabel->setVisible(true);
+			ui->authSignedInAs->setVisible(true);
+			ui->authSignedInAs->setText(lastSignedInAs);
+		}
+#endif
 
 		if (strcmp(a->service(), "Twitch") == 0) {
 			ui->bandwidthTestEnable->setVisible(true);
@@ -499,6 +553,7 @@ void OBSBasicSettings::OnOAuthStreamKeyConnected()
 	}
 
 	ui->streamStackWidget->setCurrentIndex((int)Section::StreamKey);
+	update();
 #endif
 }
 
@@ -507,7 +562,7 @@ void OBSBasicSettings::OnAuthConnected()
 	std::string service = QT_TO_UTF8(ui->service->currentText());
 	Auth::Type type = Auth::AuthType(service);
 
-	if (type == Auth::Type::OAuth_StreamKey) {
+	if (type != Auth::Type::None) {
 		OnOAuthStreamKeyConnected();
 	}
 
@@ -519,7 +574,7 @@ void OBSBasicSettings::OnAuthConnected()
 
 void OBSBasicSettings::on_connectAccount_clicked()
 {
-#ifdef BROWSER_AVAILABLE
+#ifdef AUTH_ENABLED
 	std::string service = QT_TO_UTF8(ui->service->currentText());
 
 	OAuth::DeleteCookies(service);
@@ -546,20 +601,28 @@ void OBSBasicSettings::on_disconnectAccount_clicked()
 		return;
 	}
 
+	// Remove the auth here if caffeine account is not associated
+#if !CAFFEINE_ENABLED
 	main->auth.reset();
 	auth.reset();
+#endif
 
 	std::string service = QT_TO_UTF8(ui->service->currentText());
 
-#ifdef BROWSER_AVAILABLE
+	bool hidden_key = false;
+#ifdef AUTH_ENABLED
 	OAuth::DeleteCookies(service);
+	hidden_key = Auth::IsKeyHidden(service);
 #endif
-
-	ui->streamKeyWidget->setVisible(true);
-	ui->streamKeyLabel->setVisible(true);
+	ui->useStreamKey->setVisible(!hidden_key);
+	ui->streamKeyWidget->setVisible(!hidden_key);
+	ui->streamKeyLabel->setVisible(!hidden_key);
 	ui->connectAccount2->setVisible(true);
+	ui->connectAccount->setVisible(true);
 	ui->disconnectAccount->setVisible(false);
 	ui->bandwidthTestEnable->setVisible(false);
+	ui->authSignedInAs->setVisible(false);
+	//ui->authSignedInAsLabel->setVisible(false);#
 	ui->twitchAddonDropdown->setVisible(false);
 	ui->twitchAddonLabel->setVisible(false);
 	ui->key->setText("");

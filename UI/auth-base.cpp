@@ -4,6 +4,9 @@
 #include <vector>
 #include <map>
 
+struct QCef;
+extern QCef *cef;
+
 struct AuthInfo {
 	Auth::Def def;
 	Auth::create_cb create;
@@ -37,6 +40,30 @@ Auth::Type Auth::AuthType(const std::string &service)
 	}
 
 	return Type::None;
+}
+
+bool Auth::IsKeyHidden(const std::string &service)
+{
+	for (auto &a : authDefs) {
+		if (service.find(a.def.service) != std::string::npos) {
+			return a.def.key_hidden;
+		}
+	}
+
+	return false;
+}
+
+bool Auth::CanAuthService(const std::string &service)
+{
+	switch (Auth::AuthType(service)) {
+	case Auth::Type::Custom:
+		return true;
+	case Auth::Type::OAuth_StreamKey:
+		return !!cef;
+	case Auth::Type::None:
+	default:
+		return false;
+	}
 }
 
 void Auth::Load()

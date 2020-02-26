@@ -186,6 +186,7 @@ void assignDockToggle(QDockWidget *dock, QAction *action)
 
 extern void RegisterTwitchAuth();
 extern void RegisterMixerAuth();
+extern void RegisterCaffeineAuth();
 extern void RegisterRestreamAuth();
 
 OBSBasic::OBSBasic(QWidget *parent)
@@ -201,6 +202,9 @@ OBSBasic::OBSBasic(QWidget *parent)
 #endif
 #if MIXER_ENABLED
 	RegisterMixerAuth();
+#endif
+#if CAFFEINE_ENABLED
+	RegisterCaffeineAuth();
 #endif
 #if RESTREAM_ENABLED
 	RegisterRestreamAuth();
@@ -7600,6 +7604,9 @@ QAction *OBSBasic::AddDockWidget(QDockWidget *dock)
 {
 	QAction *action = ui->viewMenuDocks->addAction(dock->windowTitle());
 	action->setCheckable(true);
+	if (dock->isVisible()) {
+		action->setChecked(true);
+	}
 	assignDockToggle(dock, action);
 	extraDocks.push_back(dock);
 
@@ -7618,6 +7625,16 @@ QAction *OBSBasic::AddDockWidget(QDockWidget *dock)
 	}
 
 	return action;
+}
+
+void OBSBasic::RemoveCaffeineDockWidget(QDockWidget *dock)
+{
+	for (auto &it : ui->viewMenuDocks->actions()) {
+		if (it->text() == dock->windowTitle()) {
+			ui->viewMenuDocks->removeAction(it);
+			return;
+		}
+	}
 }
 
 OBSBasic *OBSBasic::Get()

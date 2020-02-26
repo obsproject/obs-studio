@@ -279,6 +279,13 @@ void AutoConfigTestPage::TestBandwidthThread()
 	OBSOutput output =
 		obs_output_create(output_type, "test_stream", nullptr, nullptr);
 	obs_output_release(output);
+	uint32_t flags = obs_output_get_flags(output);
+	if (flags & OBS_OUTPUT_HARDWARE_ENCODING_DISABLED)
+		wiz->hardwareEncodingAvailable = false;
+	if (flags & OBS_OUTPUT_BANDWIDTH_TEST_DISABLED) {
+		QMetaObject::invokeMethod(this, "NextStage");
+		return;
+	}
 	obs_output_update(output, output_settings);
 
 	const char *audio_codec = obs_output_get_supported_audio_codecs(output);
@@ -1045,6 +1052,8 @@ void AutoConfigTestPage::FinalizeResults()
 		     new QLabel(scaleRes, ui->finishPage));
 	form->addRow(newLabel("Basic.Settings.Video.FPS"),
 		     new QLabel(fpsStr, ui->finishPage));
+
+	QTimer::singleShot(0, [this]() { wiz->adjustSize(); });
 }
 
 #define STARTING_SEPARATOR \

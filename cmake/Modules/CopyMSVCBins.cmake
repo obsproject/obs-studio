@@ -19,6 +19,13 @@ else()
 	set(_bin_suffix 32)
 endif()
 
+set(LIBCAFFEINE_BIN_REL_FILES
+	${LIBCAFFEINE_BINARY_RELWITHDEBINFO}
+)
+set(LIBCAFFEINE_BIN_DBG_FILES
+	${LIBCAFFEINE_BINARY_DEBUG}
+)
+
 file(GLOB FFMPEG_BIN_FILES
 	"${FFMPEG_avcodec_INCLUDE_DIR}/../bin/avcodec-*.dll"
 	"${FFMPEG_avcodec_INCLUDE_DIR}/../bin${_bin_suffix}/avcodec-*.dll"
@@ -203,10 +210,12 @@ set(ALL_BASE_BIN_FILES
 	${QT_ICU_BIN_FILES})
 
 set(ALL_REL_BIN_FILES
-	${QT_BIN_FILES})
+	${QT_BIN_FILES}
+	${LIBCAFFEINE_BIN_REL_FILES})
 
 set(ALL_DBG_BIN_FILES
-	${QT_DEBUG_BIN_FILES})
+	${QT_DEBUG_BIN_FILES}
+	${LIBCAFFEINE_BIN_DBG_FILES})
 
 set(ALL_PLATFORM_BIN_FILES)
 set(ALL_PLATFORM_REL_BIN_FILES
@@ -243,6 +252,7 @@ foreach(list
 	endif()
 endforeach()
 
+message(STATUS "Libcaffeine files: ${LIBCAFFEINE_BIN_REL_FILES} ${LIBCAFFEINE_BIN_DBG_FILES}")
 message(STATUS "FFmpeg files: ${FFMPEG_BIN_FILES}")
 message(STATUS "x264 files: ${X264_BIN_FILES}")
 message(STATUS "Libfdk files: ${LIBFDK_BIN_FILES}")

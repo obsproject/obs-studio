@@ -16,15 +16,18 @@
 
 using namespace json11;
 
+#ifdef BROWSER_AVAILABLE
 #include <browser-panel.hpp>
 extern QCef *cef;
 extern QCefCookieManager *panel_cookies;
+#endif
 
 /* ------------------------------------------------------------------------- */
 
 OAuthLogin::OAuthLogin(QWidget *parent, const std::string &url, bool token)
 	: QDialog(parent), get_token(token)
 {
+#ifdef BROWSER_AVAILABLE
 	if (!cef) {
 		return;
 	}
@@ -61,18 +64,23 @@ OAuthLogin::OAuthLogin(QWidget *parent, const std::string &url, bool token)
 	QVBoxLayout *topLayout = new QVBoxLayout(this);
 	topLayout->addWidget(cefWidget);
 	topLayout->addLayout(bottomLayout);
+#endif
 }
 
 OAuthLogin::~OAuthLogin()
 {
+#ifdef BROWSER_AVAILABLE
 	delete cefWidget;
+#endif
 }
 
 int OAuthLogin::exec()
 {
+#ifdef BROWSER_AVAILABLE
 	if (cefWidget) {
 		return QDialog::exec();
 	}
+#endif
 
 	return QDialog::Rejected;
 }

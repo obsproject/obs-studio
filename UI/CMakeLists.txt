@@ -143,7 +143,41 @@ elseif(UNIX)
                 Qt5::X11Extras)
 endif()
 
-if(BROWSER_AVAILABLE_INTERNAL)
+if(CAFFEINE_ENABLED)
+	find_package(libcaffeine REQUIRED)
+	find_package(Threads REQUIRED)
+	add_definitions(${THREADS_DEFINITIONS})
+
+	if(WIN32)
+		set(caffeine_PLATFORM_DEPS
+			shlwapi.lib
+			w32-pthreads)
+	endif()
+
+	include_directories(
+		${LIBCAFFEINE_INCLUDE_DIR}
+		)
+	set(caffeine_HEADERS
+		auth-caffeine.hpp
+		)
+	set(caffeine_SOURCES
+		auth-caffeine.cpp
+		)
+	list(APPEND obs_PLATFORM_SOURCES
+		${caffeine_SOURCES}
+		)
+	list(APPEND obs_PLATFORM_HEADERS
+		${caffeine_HEADERS}
+		)
+	set(obs_PLATFORM_LIBRARIES
+		${obs_PLATFORM_LIBRARIES}
+		${caffeine_PLATFORM_DEPS}
+		libcaffeine
+		${THREADS_LIBRARIES})
+endif()
+
+if(CAFFEINE_ENABLED OR BROWSER_AVAILABLE_INTERNAL)
+	add_definitions(-DAUTH_ENABLED)
 	list(APPEND obs_PLATFORM_SOURCES
 		obf.c
 		auth-oauth.cpp
@@ -156,7 +190,9 @@ if(BROWSER_AVAILABLE_INTERNAL)
 		window-dock-browser.hpp
 		window-extra-browsers.hpp
 		)
+endif()
 
+if(BROWSER_AVAILABLE_INTERNAL)
 	if(TWITCH_ENABLED)
 		list(APPEND obs_PLATFORM_SOURCES
 			auth-twitch.cpp
@@ -362,6 +398,22 @@ set(obs_UI
 
 set(obs_QRC
 	forms/obs.qrc)
+
+if(CAFFEINE_ENABLED)
+	list(APPEND obs_UI
+		forms/CaffeineSignIn.ui
+		forms/CaffeinePanel.ui
+	)
+	list(APPEND obs_HEADERS
+		window-caffeine.hpp
+	)
+	list(APPEND obs_SOURCES
+		window-caffeine.cpp
+	)
+	list(APPEND obs_QRC
+		forms/Caffeine.qrc
+	)
+endif()
 
 qt5_wrap_ui(obs_UI_HEADERS ${obs_UI})
 qt5_add_resources(obs_QRC_SOURCES ${obs_QRC})
