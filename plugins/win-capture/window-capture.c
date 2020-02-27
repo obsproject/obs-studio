@@ -306,6 +306,12 @@ static obs_properties_t *wc_properties(void *data)
 
 	obs_property_t *p;
 
+	p = obs_properties_add_list(ppts, "window", TEXT_WINDOW,
+				    OBS_COMBO_TYPE_LIST,
+				    OBS_COMBO_FORMAT_STRING);
+	fill_window_list(p, EXCLUDE_MINIMIZED, NULL);
+	obs_property_set_modified_callback(p, wc_window_changed);
+
 	p = obs_properties_add_list(ppts, "method", TEXT_METHOD,
 				    OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
 	obs_property_list_add_int(p, TEXT_METHOD_AUTO, METHOD_AUTO);
@@ -313,12 +319,6 @@ static obs_properties_t *wc_properties(void *data)
 	obs_property_list_add_int(p, TEXT_METHOD_WGC, METHOD_WGC);
 	obs_property_list_item_disable(p, 1, !wc->wgc_supported);
 	obs_property_set_modified_callback(p, wc_capture_method_changed);
-
-	p = obs_properties_add_list(ppts, "window", TEXT_WINDOW,
-				    OBS_COMBO_TYPE_LIST,
-				    OBS_COMBO_FORMAT_STRING);
-	fill_window_list(p, EXCLUDE_MINIMIZED, NULL);
-	obs_property_set_modified_callback(p, wc_window_changed);
 
 	p = obs_properties_add_list(ppts, "priority", TEXT_MATCH_PRIORITY,
 				    OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
