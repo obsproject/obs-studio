@@ -931,11 +931,6 @@ void send_off_encoder_packet(obs_encoder_t *encoder, bool success,
 			encoder->first_received = true;
 		}
 
-		/* if packet is audio, mark as keyframe if it isn't already */
-		if (pkt->type == OBS_ENCODER_AUDIO) {
-			pkt->keyframe = true;
-		}
-
 		/* we use system time here to ensure sync with other encoders,
 		 * you do not want to use relative timestamps here */
 		pkt->dts_usec = encoder->start_ts / 1000 +
