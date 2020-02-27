@@ -149,8 +149,10 @@ static inline HMODULE load_system_library(const char *name)
 static inline bool capture_alive(void)
 {
 	HANDLE handle = OpenMutexW(SYNCHRONIZE, false, keepalive_name);
-	CloseHandle(handle);
-	return handle != NULL && handle != INVALID_HANDLE_VALUE;
+	const bool success = handle != NULL;
+	if (success)
+		CloseHandle(handle);
+	return success;
 }
 
 static inline bool capture_active(void)
