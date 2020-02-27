@@ -22,6 +22,9 @@
 #include <QThread>
 #include <QWidgetAction>
 #include <QSystemTrayIcon>
+#ifdef _WIN32
+#include <QWinTaskbarButton>
+#endif
 #include <QStyledItemDelegate>
 #include <obs.hpp>
 #include <vector>
@@ -299,6 +302,10 @@ private:
 	QPointer<QObject> shortcutFilter;
 	QPointer<QAction> renameScene;
 	QPointer<QAction> renameSource;
+
+#ifdef _WIN32
+	QWinTaskbarButton *taskBtn = new QWinTaskbarButton(this);
+#endif
 
 	QPointer<QWidget> programWidget;
 	QPointer<QVBoxLayout> programLayout;
