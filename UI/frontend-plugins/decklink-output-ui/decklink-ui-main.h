@@ -1,8 +1,6 @@
 #pragma once
 
-void output_start();
-void output_stop();
+void output_toggle();
 OBSData load_settings();
-void preview_output_start();
-void preview_output_stop();
+void preview_output_toggle();
 OBSData load_preview_settings();

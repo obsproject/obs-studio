@@ -12,16 +12,12 @@ private:
 	OBSPropertiesView *previewPropertiesView;
 
 public slots:
-	void StartOutput();
-	void StopOutput();
+	void on_outputButton_clicked();
 	void PropertiesChanged();
-
 	void OutputStateChanged(bool);
 
-	void StartPreviewOutput();
-	void StopPreviewOutput();
+	void on_previewOutputButton_clicked();
 	void PreviewPropertiesChanged();
-
 	void PreviewOutputStateChanged(bool);
 
 public:
