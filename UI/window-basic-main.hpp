@@ -23,6 +23,9 @@
 #include <QSystemTrayIcon>
 #ifdef _WIN32
 #include <QWinTaskbarButton>
+#include <QWinJumpList>
+#include <QWinJumpListCategory>
+#include <QWinJumpListItem>
 #endif
 #include <QStyledItemDelegate>
 #include <obs.hpp>
