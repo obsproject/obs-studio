@@ -37,6 +37,7 @@ static HANDLE filemap_hook_info = NULL;
 
 static HINSTANCE dll_inst = NULL;
 static volatile bool stop_loop = false;
+static HANDLE dup_hook_mutex = NULL;
 static HANDLE capture_thread = NULL;
 char system_path[MAX_PATH] = {0};
 char process_name[MAX_PATH] = {0};
@@ -272,6 +273,7 @@ static void free_hook(void)
 	close_handle(&signal_ready);
 	close_handle(&signal_stop);
 	close_handle(&signal_restart);
+	close_handle(&dup_hook_mutex);
 	ipc_pipe_client_free(&pipe);
 }
 
@@ -786,12 +788,41 @@ void capture_free(void)
 	active = false;
 }
 
+#define HOOK_NAME L"graphics_hook_dup_mutex"
+
+static inline HANDLE open_mutex_plus_id(const wchar_t *name, DWORD id)
+{
+	wchar_t new_name[64];
+	_snwprintf(new_name, 64, L"%s%lu", name, id);
+	return open_mutex(new_name);
+}
+
+static bool init_dll(void)
+{
+	DWORD pid = GetCurrentProcessId();
+	HANDLE h;
+
+	h = open_mutex_plus_id(HOOK_NAME, pid);
+	if (h) {
+		CloseHandle(h);
+		return false;
+	}
+
+	dup_hook_mutex = create_mutex_plus_id(HOOK_NAME, pid);
+	return !!dup_hook_mutex;
+}
+
 BOOL WINAPI DllMain(HINSTANCE hinst, DWORD reason, LPVOID unused1)
 {
 	if (reason == DLL_PROCESS_ATTACH) {
 		wchar_t name[MAX_PATH];
 
 		dll_inst = hinst;
+
+		if (!init_dll()) {
+			DbgOut("Duplicate hook library");
+			return false;
+		}
 
 		HANDLE cur_thread;
 		bool success = DuplicateHandle(GetCurrentProcess(),
