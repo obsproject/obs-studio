@@ -109,9 +109,16 @@ struct hook_info {
 
 static inline HANDLE create_hook_info(DWORD id)
 {
-	wchar_t new_name[64];
-	_snwprintf(new_name, 64, L"%s%lu", SHMEM_HOOK_INFO, id);
+	HANDLE handle = NULL;
 
-	return CreateFileMappingW(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, 0,
-				  sizeof(struct hook_info), new_name);
+	wchar_t new_name[64];
+	const int len = swprintf(new_name, _countof(new_name),
+				 SHMEM_HOOK_INFO L"%lu", id);
+	if (len > 0) {
+		handle = CreateFileMappingW(INVALID_HANDLE_VALUE, NULL,
+					    PAGE_READWRITE, 0,
+					    sizeof(struct hook_info), new_name);
+	}
+
+	return handle;
 }
