@@ -46,6 +46,9 @@ static bool decklink_output_start(void *data)
 		return false;
 	}
 
+	if (!decklink->deviceHash || !*decklink->deviceHash)
+		return false;
+
 	decklink->audio_samplerate = aoi.samples_per_sec;
 	decklink->audio_planes = 2;
 	decklink->audio_size =
