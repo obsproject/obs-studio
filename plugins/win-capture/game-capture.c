@@ -893,23 +893,22 @@ static inline bool create_inject_process(struct game_capture *gc,
 	return success;
 }
 
+extern char *get_hook_path(bool b64);
+
 static inline bool inject_hook(struct game_capture *gc)
 {
 	bool matching_architecture;
 	bool success = false;
-	const char *hook_dll;
 	char *inject_path;
 	char *hook_path;
 
 	if (gc->process_is_64bit) {
-		hook_dll = "graphics-hook64.dll";
 		inject_path = obs_module_file("inject-helper64.exe");
 	} else {
-		hook_dll = "graphics-hook32.dll";
 		inject_path = obs_module_file("inject-helper32.exe");
 	}
 
-	hook_path = obs_module_file(hook_dll);
+	hook_path = get_hook_path(gc->process_is_64bit);
 
 	if (!check_file_integrity(gc, inject_path, "inject helper")) {
 		goto cleanup;

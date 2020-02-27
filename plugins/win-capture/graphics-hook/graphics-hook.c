@@ -314,6 +314,15 @@ static inline bool attempt_hook(void)
 	static bool d3d9_hooked = false;
 	static bool dxgi_hooked = false;
 	static bool gl_hooked = false;
+#if COMPILE_VULKAN_HOOK
+	static bool vulkan_hooked = false;
+	if (!vulkan_hooked) {
+		vulkan_hooked = hook_vulkan();
+		if (vulkan_hooked) {
+			return true;
+		}
+	}
+#endif //COMPILE_VULKAN_HOOK
 
 	if (!d3d9_hooked) {
 		if (!d3d9_hookable()) {
@@ -788,6 +797,9 @@ void capture_free(void)
 	active = false;
 }
 
+BOOL init_vk_layer();
+BOOL shutdown_vk_layer();
+
 #define HOOK_NAME L"graphics_hook_dup_mutex"
 
 static inline HANDLE open_mutex_plus_id(const wchar_t *name, DWORD id)
@@ -845,7 +857,11 @@ BOOL WINAPI DllMain(HINSTANCE hinst, DWORD reason, LPVOID unused1)
 		if (!init_mutexes()) {
 			return false;
 		}
-
+#if COMPILE_VULKAN_HOOK
+		if (!init_vk_layer()) {
+			return false;
+		}
+#endif
 		/* this prevents the library from being automatically unloaded
 		 * by the next FreeLibrary call */
 		GetModuleFileNameW(hinst, name, MAX_PATH);
@@ -860,12 +876,19 @@ BOOL WINAPI DllMain(HINSTANCE hinst, DWORD reason, LPVOID unused1)
 		}
 
 	} else if (reason == DLL_PROCESS_DETACH) {
+		if (!dup_hook_mutex) {
+			return true;
+		}
+
 		if (capture_thread) {
 			stop_loop = true;
 			WaitForSingleObject(capture_thread, 300);
 			CloseHandle(capture_thread);
 		}
 
+#if COMPILE_VULKAN_HOOK
+		shutdown_vk_layer();
+#endif
 		free_hook();
 	}
 
