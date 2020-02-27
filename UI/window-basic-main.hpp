@@ -21,6 +21,9 @@
 #include <QAction>
 #include <QWidgetAction>
 #include <QSystemTrayIcon>
+#ifdef _WIN32
+#include <QWinTaskbarButton>
+#endif
 #include <QStyledItemDelegate>
 #include <obs.hpp>
 #include <vector>
@@ -277,6 +280,10 @@ private:
 	QPointer<QMenu> deinterlaceMenu;
 	QPointer<QMenu> perSceneTransitionMenu;
 	QPointer<QObject> shortcutFilter;
+
+#ifdef _WIN32
+	QWinTaskbarButton *taskBtn = new QWinTaskbarButton(this);
+#endif
 
 	QPointer<QWidget> programWidget;
 	QPointer<QVBoxLayout> programLayout;
