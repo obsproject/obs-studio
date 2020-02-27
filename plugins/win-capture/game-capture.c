@@ -1899,7 +1899,7 @@ static bool use_scaling_callback(obs_properties_t *ppts, obs_property_t *p,
 	return true;
 }
 
-static void insert_preserved_val(obs_property_t *p, const char *val)
+static void insert_preserved_val(obs_property_t *p, const char *val, size_t idx)
 {
 	char *class = NULL;
 	char *title = NULL;
@@ -1909,8 +1909,8 @@ static void insert_preserved_val(obs_property_t *p, const char *val)
 	build_window_strings(val, &class, &title, &executable);
 
 	dstr_printf(&desc, "[%s]: %s", executable, title);
-	obs_property_list_insert_string(p, 1, desc.array, val);
-	obs_property_list_item_disable(p, 1, true);
+	obs_property_list_insert_string(p, idx, desc.array, val);
+	obs_property_list_item_disable(p, idx, true);
 
 	dstr_free(&desc);
 	bfree(class);
@@ -1918,14 +1918,15 @@ static void insert_preserved_val(obs_property_t *p, const char *val)
 	bfree(executable);
 }
 
-static bool window_changed_callback(obs_properties_t *ppts, obs_property_t *p,
-				    obs_data_t *settings)
+bool check_window_property_setting(obs_properties_t *ppts, obs_property_t *p,
+				   obs_data_t *settings, const char *val,
+				   size_t idx)
 {
 	const char *cur_val;
 	bool match = false;
 	size_t i = 0;
 
-	cur_val = obs_data_get_string(settings, SETTING_CAPTURE_WINDOW);
+	cur_val = obs_data_get_string(settings, val);
 	if (!cur_val) {
 		return false;
 	}
@@ -1942,12 +1943,19 @@ static bool window_changed_callback(obs_properties_t *ppts, obs_property_t *p,
 	}
 
 	if (cur_val && *cur_val && !match) {
-		insert_preserved_val(p, cur_val);
+		insert_preserved_val(p, cur_val, idx);
 		return true;
 	}
 
 	UNUSED_PARAMETER(ppts);
 	return false;
+}
+
+static bool window_changed_callback(obs_properties_t *ppts, obs_property_t *p,
+				    obs_data_t *settings)
+{
+	return check_window_property_setting(ppts, p, settings,
+					     SETTING_CAPTURE_WINDOW, 1);
 }
 
 static const double default_scale_vals[] = {1.25, 1.5, 2.0, 2.5, 3.0};

@@ -286,6 +286,11 @@ static bool wc_capture_method_changed(obs_properties_t *props,
 	return true;
 }
 
+extern bool check_window_property_setting(obs_properties_t *ppts,
+					  obs_property_t *p,
+					  obs_data_t *settings, const char *val,
+					  size_t idx);
+
 static bool wc_window_changed(obs_properties_t *props, obs_property_t *p,
 			      obs_data_t *settings)
 {
@@ -294,6 +299,7 @@ static bool wc_window_changed(obs_properties_t *props, obs_property_t *p,
 
 	update_settings_visibility(props, wc->method);
 
+	check_window_property_setting(props, p, settings, "window", 0);
 	return true;
 }
 
