@@ -930,7 +930,7 @@ static inline bool inject_hook(struct game_capture *gc)
 	} else {
 		info("using helper (%s hook)",
 		     use_anticheat(gc) ? "compatibility" : "direct");
-		success = create_inject_process(gc, inject_path, hook_dll);
+		success = create_inject_process(gc, inject_path, hook_path);
 	}
 
 cleanup:

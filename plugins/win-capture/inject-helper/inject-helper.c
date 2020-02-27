@@ -109,12 +109,7 @@ int main(int argc, char *argv_ansi[])
 	if (argv && argc == 4) {
 		DWORD size = GetModuleFileNameW(NULL, dll_path, MAX_PATH);
 		if (size) {
-			wchar_t *name_start = wcsrchr(dll_path, '\\');
-			if (name_start) {
-				*(++name_start) = 0;
-				wcscpy(name_start, argv[1]);
-				ret = inject_helper(argv, dll_path);
-			}
+			ret = inject_helper(argv, argv[1]);
 		}
 	}
 	LocalFree(argv);
