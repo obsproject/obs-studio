@@ -1,0 +1,11 @@
+#!/bin/bash
+
+# libobs.so.0 loads its resources relative to the user's current working directory (cwd).
+# Hence we need to cd to usr/ inside the AppDir before executing the application.
+# A proper fix would be to make libobs.so.0 load its resources from a path relative to itself.
+# But seemingly OBS on the Mac works the same, so we can live with this for now.
+
+HERE="$(dirname "$(readlink -f "${0}")")"
+export PYTHONHOME="${HERE}/usr/"
+cd "${HERE}/usr/"
+exec ./bin/obs "$@"

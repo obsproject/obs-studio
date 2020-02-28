@@ -130,6 +130,17 @@ jobs:
       set -e
       cd ./build
       make -j4
+      sudo make DESTDIR=appdir -j4 install
       cd -
+      mkdir ./nightly
+      sudo chmod +x ./CI/before-deploy-linux.sh
     displayName: 'Build'
 
+  - script: ./CI/before-deploy-linux.sh
+    condition: or(ne(variables['Build.Reason'], 'PullRequest'), eq(variables['prHasCILabel'], true))
+    displayName: 'Before deploy'
+  - task: PublishBuildArtifacts@1
+    condition: or(ne(variables['Build.Reason'], 'PullRequest'), eq(variables['prHasCILabel'], true))
+    inputs:
+      pathtoPublish: './nightly'
+      artifactName: linux_build
