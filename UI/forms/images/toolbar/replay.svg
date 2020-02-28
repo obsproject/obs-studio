@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   width="32"
+   height="32"
+   viewBox="0 0 32 32"
+   version="1.1"
+   id="svg8">
+  <defs
+     id="defs2" />
+  <metadata
+     id="metadata5">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     id="layer1"
+     transform="matrix(9.7920512,0,0,9.7920512,6.8281779,-2881.8558)">
+    <circle
+       style="fill:#eeeeee;fill-opacity:1;stroke:#747474;stroke-width:0.065196;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;paint-order:normal"
+       id="path4544"
+       cx="1.0695828"
+       cy="295.93961"
+       r="0.52916664" />
+  </g>
+  <g
+     transform="matrix(1.2192855,0,0,1.2192855,2.5794885,1.3724117)"
+     id="g23"
+     style="fill:none;stroke:#747474;stroke-width:2.70650311;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1">
+    <polyline
+       style="stroke:#747474;stroke-width:2.70650311;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       points="1 4 1 10 7 10"
+       id="polyline9" />
+    <path
+       style="stroke:#747474;stroke-width:2.70650311;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       d="M 3.51,15 A 9,9 0 1 0 5.64,5.64 L 1,10"
+       id="path11" />
+  </g>
+  <g
+     style="fill:none;stroke:#eeeeee;stroke-width:1.64030492;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+     id="g852"
+     transform="matrix(1.2192855,0,0,1.2192855,2.5778057,1.378133)">
+    <polyline
+       id="polyline848"
+       points="1 4 1 10 7 10"
+       style="stroke:#eeeeee;stroke-width:1.64030492;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1" />
+    <path
+       id="path850"
+       d="M 3.51,15 A 9,9 0 1 0 5.64,5.64 L 1,10"
+       style="stroke:#eeeeee;stroke-width:1.64030492;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1" />
+  </g>
+</svg>

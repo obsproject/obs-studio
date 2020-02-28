@@ -23,6 +23,8 @@
 #include <QSystemTrayIcon>
 #ifdef _WIN32
 #include <QWinTaskbarButton>
+#include <QWinThumbnailToolBar>
+#include <QWinThumbnailToolButton>
 #endif
 #include <QStyledItemDelegate>
 #include <obs.hpp>
@@ -283,6 +285,21 @@ private:
 
 #ifdef _WIN32
 	QWinTaskbarButton *taskBtn = new QWinTaskbarButton(this);
+	QWinThumbnailToolBar *thumbBar = new QWinThumbnailToolBar(this);
+	QWinThumbnailToolButton *thumbStream =
+		new QWinThumbnailToolButton(thumbBar);
+	QWinThumbnailToolButton *thumbRecord =
+		new QWinThumbnailToolButton(thumbBar);
+	QWinThumbnailToolButton *thumbReplay =
+		new QWinThumbnailToolButton(thumbBar);
+	QWinThumbnailToolButton *thumbVCam =
+		new QWinThumbnailToolButton(thumbBar);
+	QWinThumbnailToolButton *thumbSep =
+		new QWinThumbnailToolButton(thumbBar);
+	QWinThumbnailToolButton *thumbPause =
+		new QWinThumbnailToolButton(thumbBar);
+	QWinThumbnailToolButton *thumbReplaySave =
+		new QWinThumbnailToolButton(thumbBar);
 #endif
 
 	QPointer<QWidget> programWidget;

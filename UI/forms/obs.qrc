@@ -40,6 +40,12 @@
     <file>images/recording-pause-inactive.svg</file>
     <file>images/streaming-active.svg</file>
     <file>images/streaming-inactive.svg</file>
+    <file>images/toolbar/pause.svg</file>
+    <file>images/toolbar/record.svg</file>
+    <file>images/toolbar/replay.svg</file>
+    <file>images/toolbar/save.svg</file>
+    <file>images/toolbar/stream.svg</file>
+    <file>images/toolbar/cam.svg</file>
   </qresource>
   <qresource prefix="/settings">
     <file>images/settings/output.svg</file>

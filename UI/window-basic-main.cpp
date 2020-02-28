@@ -1546,6 +1546,9 @@ void OBSBasic::AddVCamButton()
 
 	vcamButton->setProperty("themeID", "vcamButton");
 	ui->buttonsVLayout->insertWidget(2, vcamButton);
+#ifdef _WIN32
+	thumbVCam->setVisible(true);
+#endif
 }
 
 void OBSBasic::ResetOutputs()
@@ -1581,6 +1584,10 @@ void OBSBasic::ResetOutputs()
 							"replayBufferButton");
 			ui->buttonsVLayout->insertLayout(2, replayLayout);
 		}
+#ifdef _WIN32
+		thumbReplay->setVisible(!!outputHandler->replayBuffer);
+		thumbReplaySave->setVisible(!!outputHandler->replayBuffer);
+#endif
 
 		if (sysTrayReplayBuffer)
 			sysTrayReplayBuffer->setEnabled(
@@ -1839,6 +1846,59 @@ void OBSBasic::OBSInit()
 
 #ifdef _WIN32
 	taskBtn->setWindow(windowHandle());
+	thumbBar->setWindow(windowHandle());
+
+	thumbStream->setToolTip(QTStr("Basic.Main.StartStreaming"));
+	thumbStream->setIcon(QIcon(":/res/images/toolbar/stream.svg"));
+	thumbStream->setDismissOnClick(true);
+	thumbBar->addButton(thumbStream);
+	connect(thumbStream, SIGNAL(clicked()), this,
+		SLOT(on_streamButton_clicked()));
+
+	thumbRecord->setToolTip(QTStr("Basic.Main.StartRecording"));
+	thumbRecord->setIcon(QIcon(":/res/images//toolbar/record.svg"));
+	thumbRecord->setDismissOnClick(true);
+	thumbBar->addButton(thumbRecord);
+	connect(thumbRecord, SIGNAL(clicked()), this,
+		SLOT(on_recordButton_clicked()));
+
+	thumbReplay->setToolTip(QTStr("Basic.Main.StartReplayBuffer"));
+	thumbReplay->setIcon(QIcon(":/res/images/toolbar/replay.svg"));
+	thumbReplay->setDismissOnClick(true);
+	thumbBar->addButton(thumbReplay);
+	connect(thumbReplay, &QWinThumbnailToolButton::clicked, this,
+		&OBSBasic::ReplayBufferClicked);
+
+	thumbVCam->setToolTip(QTStr("Basic.Main.StartVirtualCam"));
+	thumbVCam->setIcon(QIcon(":/res/images//toolbar/cam.svg"));
+	if (!vcamEnabled) {
+		thumbVCam->setVisible(false);
+	}
+	thumbVCam->setDismissOnClick(true);
+	thumbBar->addButton(thumbVCam);
+	connect(thumbVCam, &QWinThumbnailToolButton::clicked, this,
+		&OBSBasic::VCamButtonClicked);
+
+	thumbSep->setEnabled(false);
+	thumbSep->setVisible(false);
+	thumbSep->setFlat(true);
+	thumbBar->addButton(thumbSep);
+
+	thumbPause->setToolTip(QTStr("Basic.Main.PauseRecording"));
+	thumbPause->setIcon(QIcon(":/res/images/toolbar/pause.svg"));
+	thumbPause->setVisible(false);
+	thumbPause->setDismissOnClick(true);
+	thumbBar->addButton(thumbPause);
+	connect(thumbPause, &QWinThumbnailToolButton::clicked, this,
+		&OBSBasic::PauseToggled);
+
+	thumbReplaySave->setToolTip(QTStr("Basic.Main.SaveReplay"));
+	thumbReplaySave->setIcon(QIcon(":/res/images/toolbar/save.svg"));
+	thumbReplaySave->setDismissOnClick(true);
+	thumbReplaySave->setVisible(false);
+	thumbBar->addButton(thumbReplaySave);
+	connect(thumbReplaySave, &QWinThumbnailToolButton::clicked, this,
+		&OBSBasic::ReplayBufferSave);
 #endif
 
 	bool has_last_version = config_has_user_value(App()->GlobalConfig(),
@@ -5322,6 +5382,9 @@ void OBSBasic::StartStreaming()
 	ui->streamButton->setEnabled(false);
 	ui->streamButton->setChecked(false);
 	ui->streamButton->setText(QTStr("Basic.Main.Connecting"));
+#ifdef _WIN32
+	thumbStream->setToolTip(QTStr("Basic.Main.Connecting"));
+#endif
 
 	if (sysTrayStream) {
 		sysTrayStream->setEnabled(false);
@@ -5336,6 +5399,9 @@ void OBSBasic::StartStreaming()
 		ui->streamButton->setText(QTStr("Basic.Main.StartStreaming"));
 		ui->streamButton->setEnabled(true);
 		ui->streamButton->setChecked(false);
+#ifdef _WIN32
+		thumbStream->setToolTip(QTStr("Basic.Main.StartStreaming"));
+#endif
 
 		if (sysTrayStream) {
 			sysTrayStream->setText(ui->streamButton->text());
@@ -5478,6 +5544,9 @@ void OBSBasic::StreamDelayStarting(int sec)
 	ui->streamButton->setText(QTStr("Basic.Main.StopStreaming"));
 	ui->streamButton->setEnabled(true);
 	ui->streamButton->setChecked(true);
+#ifdef _WIN32
+	thumbStream->setToolTip(QTStr("Basic.Main.StopStreaming"));
+#endif
 
 	if (sysTrayStream) {
 		sysTrayStream->setText(ui->streamButton->text());
@@ -5504,6 +5573,9 @@ void OBSBasic::StreamDelayStopping(int sec)
 	ui->streamButton->setText(QTStr("Basic.Main.StartStreaming"));
 	ui->streamButton->setEnabled(true);
 	ui->streamButton->setChecked(false);
+#ifdef _WIN32
+	thumbStream->setToolTip(QTStr("Basic.Main.StartStreaming"));
+#endif
 
 	if (sysTrayStream) {
 		sysTrayStream->setText(ui->streamButton->text());
@@ -5531,6 +5603,9 @@ void OBSBasic::StreamingStart()
 	ui->streamButton->setText(QTStr("Basic.Main.StopStreaming"));
 	ui->streamButton->setEnabled(true);
 	ui->streamButton->setChecked(true);
+#ifdef _WIN32
+	thumbStream->setToolTip(QTStr("Basic.Main.StopStreaming"));
+#endif
 	ui->statusbar->StreamStarted(outputHandler->streamOutput);
 
 	if (sysTrayStream) {
@@ -5549,6 +5624,9 @@ void OBSBasic::StreamingStart()
 void OBSBasic::StreamStopping()
 {
 	ui->streamButton->setText(QTStr("Basic.Main.StoppingStreaming"));
+#ifdef _WIN32
+	thumbStream->setToolTip(QTStr("Basic.Main.StoppingStreaming"));
+#endif
 
 	if (sysTrayStream)
 		sysTrayStream->setText(ui->streamButton->text());
@@ -5607,6 +5685,9 @@ void OBSBasic::StreamingStop(int code, QString last_error)
 	ui->streamButton->setText(QTStr("Basic.Main.StartStreaming"));
 	ui->streamButton->setEnabled(true);
 	ui->streamButton->setChecked(false);
+#ifdef _WIN32
+	thumbStream->setToolTip(QTStr("Basic.Main.StartStreaming"));
+#endif
 
 	if (sysTrayStream) {
 		sysTrayStream->setText(ui->streamButton->text());
@@ -5717,6 +5798,9 @@ void OBSBasic::StartRecording()
 void OBSBasic::RecordStopping()
 {
 	ui->recordButton->setText(QTStr("Basic.Main.StoppingRecording"));
+#ifdef _WIN32
+	thumbRecord->setToolTip(QTStr("Basic.Main.StoppingRecording"));
+#endif
 
 	if (sysTrayRecord)
 		sysTrayRecord->setText(ui->recordButton->text());
@@ -5741,6 +5825,9 @@ void OBSBasic::RecordingStart()
 	ui->statusbar->RecordingStarted(outputHandler->fileOutput);
 	ui->recordButton->setText(QTStr("Basic.Main.StopRecording"));
 	ui->recordButton->setChecked(true);
+#ifdef _WIN32
+	thumbRecord->setToolTip(QTStr("Basic.Main.StopRecording"));
+#endif
 
 	if (sysTrayRecord)
 		sysTrayRecord->setText(ui->recordButton->text());
@@ -5763,6 +5850,9 @@ void OBSBasic::RecordingStop(int code, QString last_error)
 	ui->statusbar->RecordingStopped();
 	ui->recordButton->setText(QTStr("Basic.Main.StartRecording"));
 	ui->recordButton->setChecked(false);
+#ifdef _WIN32
+	thumbRecord->setToolTip(QTStr("Basic.Main.StartRecording"));
+#endif
 
 	if (sysTrayRecord)
 		sysTrayRecord->setText(ui->recordButton->text());
@@ -5895,6 +5985,9 @@ void OBSBasic::ReplayBufferStopping()
 		return;
 
 	replayBufferButton->setText(QTStr("Basic.Main.StoppingReplayBuffer"));
+#ifdef _WIN32
+	thumbReplay->setToolTip(QTStr("Basic.Main.StoppingReplayBuffer"));
+#endif
 
 	if (sysTrayReplayBuffer)
 		sysTrayReplayBuffer->setText(replayBufferButton->text());
@@ -5924,6 +6017,9 @@ void OBSBasic::ReplayBufferStart()
 
 	replayBufferButton->setText(QTStr("Basic.Main.StopReplayBuffer"));
 	replayBufferButton->setChecked(true);
+#ifdef _WIN32
+	thumbReplay->setToolTip(QTStr("Basic.Main.StopReplayBuffer"));
+#endif
 
 	if (sysTrayReplayBuffer)
 		sysTrayReplayBuffer->setText(replayBufferButton->text());
@@ -5959,6 +6055,9 @@ void OBSBasic::ReplayBufferStop(int code)
 
 	replayBufferButton->setText(QTStr("Basic.Main.StartReplayBuffer"));
 	replayBufferButton->setChecked(false);
+#ifdef _WIN32
+	thumbReplay->setToolTip(QTStr("Basic.Main.StartReplayBuffer"));
+#endif
 
 	if (sysTrayReplayBuffer)
 		sysTrayReplayBuffer->setText(replayBufferButton->text());
@@ -6034,6 +6133,9 @@ void OBSBasic::OnVirtualCamStart()
 
 	vcamButton->setText(QTStr("Basic.Main.StopVirtualCam"));
 	vcamButton->setChecked(true);
+#ifdef _WIN32
+	thumbVCam->setToolTip(QTStr("Basic.Main.StopVirtualCam"));
+#endif
 
 	OnActivate();
 
@@ -6047,6 +6149,9 @@ void OBSBasic::OnVirtualCamStop(int)
 
 	vcamButton->setText(QTStr("Basic.Main.StartVirtualCam"));
 	vcamButton->setChecked(false);
+#ifdef _WIN32
+	thumbVCam->setToolTip(QTStr("Basic.Main.StartVirtualCam"));
+#endif
 
 	blog(LOG_INFO, VIRTUAL_CAM_STOP);
 
@@ -7882,6 +7987,11 @@ void OBSBasic::PauseRecording()
 		pause->blockSignals(true);
 		pause->setChecked(true);
 		pause->blockSignals(false);
+#ifdef _WIN32
+		thumbSep->setVisible(true);
+		thumbPause->setVisible(true);
+		thumbPause->setToolTip(QTStr("Basic.Main.UnpauseRecording"));
+#endif
 
 		ui->statusbar->RecordingPaused();
 
@@ -7914,6 +8024,11 @@ void OBSBasic::UnpauseRecording()
 
 		ui->statusbar->RecordingUnpaused();
 
+#ifdef _WIN32
+		thumbSep->setVisible(true);
+		thumbPause->setVisible(true);
+		thumbPause->setToolTip(QTStr("Basic.Main.PauseRecording"));
+#endif
 		if (trayIcon)
 			trayIcon->setIcon(
 				QIcon(":/res/images/tray_active.png"));
@@ -7943,6 +8058,12 @@ void OBSBasic::UpdatePause(bool activate)
 {
 	if (!activate || !outputHandler || !outputHandler->RecordingActive()) {
 		pause.reset();
+#ifdef _WIN32
+		if (!thumbReplaySave->isVisible()) {
+			thumbSep->setVisible(false);
+		}
+		thumbPause->setVisible(false);
+#endif
 		return;
 	}
 
@@ -7976,6 +8097,11 @@ void OBSBasic::UpdatePause(bool activate)
 		pause->setChecked(false);
 		pause->setProperty("themeID",
 				   QVariant(QStringLiteral("pauseIconSmall")));
+#ifdef _WIN32
+		thumbSep->setVisible(true);
+		thumbPause->setVisible(true);
+		thumbPause->setToolTip(QTStr("Basic.Main.PauseRecording"));
+#endif
 
 		QSizePolicy sp;
 		sp.setHeightForWidth(true);
@@ -7986,6 +8112,12 @@ void OBSBasic::UpdatePause(bool activate)
 		ui->recordingLayout->addWidget(pause.data());
 	} else {
 		pause.reset();
+#ifdef _WIN32
+		if (!thumbReplaySave->isVisible()) {
+			thumbSep->setVisible(false);
+		}
+		thumbPause->setVisible(false);
+#endif
 	}
 }
 
@@ -7994,6 +8126,12 @@ void OBSBasic::UpdateReplayBuffer(bool activate)
 	if (!activate || !outputHandler ||
 	    !outputHandler->ReplayBufferActive()) {
 		replay.reset();
+#ifdef _WIN32
+		if (!thumbPause->isVisible()) {
+			thumbSep->setVisible(false);
+		}
+		thumbReplaySave->setVisible(false);
+#endif
 		return;
 	}
 
@@ -8004,6 +8142,10 @@ void OBSBasic::UpdateReplayBuffer(bool activate)
 	replay->setChecked(false);
 	replay->setProperty("themeID",
 			    QVariant(QStringLiteral("replayIconSmall")));
+#ifdef _WIN32
+	thumbSep->setVisible(true);
+	thumbReplaySave->setVisible(true);
+#endif
 
 	QSizePolicy sp;
 	sp.setHeightForWidth(true);
