@@ -1,6 +1,7 @@
 #include <windows.h>
 #include <psapi.h>
 #include "graphics-hook.h"
+#include "../graphics-hook-ver.h"
 #include "../obfuscate.h"
 #include "../funchook.h"
 
@@ -539,6 +540,8 @@ bool capture_init_shtex(struct shtex_data **data, HWND window, uint32_t base_cx,
 	*data = shmem_info;
 	(*data)->tex_handle = (uint32_t)handle;
 
+	global_hook_info->hook_ver_major = HOOK_VER_MAJOR;
+	global_hook_info->hook_ver_minor = HOOK_VER_MINOR;
 	global_hook_info->window = (uint32_t)(uintptr_t)window;
 	global_hook_info->type = CAPTURE_TYPE_TEXTURE;
 	global_hook_info->format = format;
@@ -732,6 +735,8 @@ bool capture_init_shmem(struct shmem_data **data, HWND window, uint32_t base_cx,
 	(*data)->tex1_offset = (uint32_t)align_pos;
 	(*data)->tex2_offset = (*data)->tex1_offset + aligned_tex;
 
+	global_hook_info->hook_ver_major = HOOK_VER_MAJOR;
+	global_hook_info->hook_ver_minor = HOOK_VER_MINOR;
 	global_hook_info->window = (uint32_t)(uintptr_t)window;
 	global_hook_info->type = CAPTURE_TYPE_MEMORY;
 	global_hook_info->format = format;

@@ -10,6 +10,7 @@
 #include "obfuscate.h"
 #include "inject-library.h"
 #include "graphics-hook-info.h"
+#include "graphics-hook-ver.h"
 #include "window-helpers.h"
 #include "cursor-capture.h"
 #include "app-helpers.h"
@@ -1609,6 +1610,17 @@ static inline bool init_shtex_capture(struct game_capture *gc)
 static bool start_capture(struct game_capture *gc)
 {
 	debug("Starting capture");
+
+	/* prevent from using a DLL version that's higher than current */
+	if (gc->global_hook_info->hook_ver_major > HOOK_VER_MAJOR) {
+		warn("cannot initialize hook, DLL hook version is "
+		     "%" PRIu32 ".%" PRIu32
+		     ", current plugin hook major version is %d.%d",
+		     gc->global_hook_info->hook_ver_major,
+		     gc->global_hook_info->hook_ver_minor, HOOK_VER_MAJOR,
+		     HOOK_VER_MINOR);
+		return false;
+	}
 
 	if (gc->global_hook_info->type == CAPTURE_TYPE_MEMORY) {
 		if (!init_shmem_capture(gc)) {
