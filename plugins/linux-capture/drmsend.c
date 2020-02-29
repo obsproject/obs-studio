@@ -14,9 +14,10 @@
 #include <string.h>
 #include <errno.h>
 
-#define ERR(fmt, ...) fprintf(stderr, "" fmt "\n", ##__VA_ARGS__)
+#define LOG_PREFIX "obs-drmsend: "
 
-#define MSG(fmt, ...) fprintf(stdout, "obs-drmsend: " fmt "\n", ##__VA_ARGS__)
+#define ERR(fmt, ...) fprintf(stderr, LOG_PREFIX fmt "\n", ##__VA_ARGS__)
+#define MSG(fmt, ...) fprintf(stdout, LOG_PREFIX fmt "\n", ##__VA_ARGS__)
 
 void printUsage(const char *name)
 {
@@ -40,7 +41,9 @@ int main(int argc, const char *argv[])
 		return 1;
 	}
 
-	drmSetClientCap(drmfd, DRM_CLIENT_CAP_UNIVERSAL_PLANES, 1);
+	if (0 != drmSetClientCap(drmfd, DRM_CLIENT_CAP_UNIVERSAL_PLANES, 1)) {
+		perror("Cannot tell drm to expose all planes; the rest will very likely fail");
+	}
 
 	int sockfd = -1;
 	int retval = 2;
@@ -50,7 +53,8 @@ int main(int argc, const char *argv[])
 	{
 		drmModePlaneResPtr planes = drmModeGetPlaneResources(drmfd);
 		if (!planes) {
-			ERR("Cannot get drm planes: %d", errno);
+			ERR("Cannot get drm planes: %s (%d)", strerror(errno),
+			    errno);
 			goto cleanup;
 		}
 
@@ -59,8 +63,8 @@ int main(int argc, const char *argv[])
 			drmModePlanePtr plane =
 				drmModeGetPlane(drmfd, planes->planes[i]);
 			if (!plane) {
-				ERR("Cannot get drmModePlanePtr for plane %#x",
-				    planes->planes[i]);
+				ERR("Cannot get drmModePlanePtr for plane %#x: %s (%d)",
+				    planes->planes[i], strerror(errno), errno);
 				continue;
 			}
 
@@ -87,13 +91,13 @@ int main(int argc, const char *argv[])
 
 			drmModeFBPtr drmfb = drmModeGetFB(drmfd, plane->fb_id);
 			if (!drmfb) {
-				ERR("Cannot get drmModeFBPtr for fb %#x",
-				    plane->fb_id);
+				ERR("Cannot get drmModeFBPtr for fb %#x: %s (%d)",
+				    plane->fb_id, strerror(errno), errno);
 			} else {
 				if (!drmfb->handle) {
-					ERR("Cannot get FB handle for fb %#x",
+					ERR("\t\tFB handle for fb %#x is NULL",
 					    plane->fb_id);
-					ERR("Possible reason: not permitted to get fb handles. Run either with sudo, or setcap cap_sys_admin+ep %s",
+					ERR("\t\tPossible reason: not permitted to get FB handles. Do `sudo setcap cap_sys_admin+ep %s`",
 					    argv[0]);
 				} else {
 					int fb_fd = -1;
@@ -101,9 +105,9 @@ int main(int argc, const char *argv[])
 						drmfd, drmfb->handle, 0,
 						&fb_fd);
 					if (ret != 0 || fb_fd == -1) {
-						ERR("Cannot get fd for fb %#x handle %#x: %d",
+						ERR("Cannot get fd for fb %#x handle %#x: %s (%d)",
 						    plane->fb_id, drmfb->handle,
-						    errno);
+						    strerror(errno), errno);
 					} else {
 						const int fb_index =
 							response.num_framebuffers++;
@@ -176,7 +180,7 @@ int main(int argc, const char *argv[])
 		goto cleanup;
 	}
 
-	MSG("sent %d", (int)sent);
+	MSG("sent %d bytes", (int)sent);
 	retval = 0;
 
 cleanup:
