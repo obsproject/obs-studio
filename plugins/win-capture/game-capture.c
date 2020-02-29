@@ -1251,8 +1251,13 @@ static inline enum capture_result init_capture_data(struct game_capture *gc)
 
 	CloseHandle(gc->hook_data_map);
 
-	gc->hook_data_map = open_map_plus_id(gc, SHMEM_TEXTURE,
-					     gc->global_hook_info->map_id);
+	wchar_t name[64];
+	_snwprintf(name, 64, L"%s_%d_", SHMEM_TEXTURE,
+		   (uint32_t)(uintptr_t)gc->window);
+
+	gc->hook_data_map =
+		open_map_plus_id(gc, name, gc->global_hook_info->map_id);
+
 	if (!gc->hook_data_map) {
 		DWORD error = GetLastError();
 		if (error == 2) {
