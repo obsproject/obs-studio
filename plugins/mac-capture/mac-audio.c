@@ -817,6 +817,7 @@ struct obs_source_info coreaudio_input_capture_info = {
 	.update = coreaudio_update,
 	.get_defaults = coreaudio_defaults,
 	.get_properties = coreaudio_input_properties,
+	.icon_type = OBS_ICON_TYPE_AUDIO_INPUT,
 };
 
 struct obs_source_info coreaudio_output_capture_info = {
@@ -830,4 +831,5 @@ struct obs_source_info coreaudio_output_capture_info = {
 	.update = coreaudio_update,
 	.get_defaults = coreaudio_defaults,
 	.get_properties = coreaudio_output_properties,
+	.icon_type = OBS_ICON_TYPE_AUDIO_OUTPUT,
 };

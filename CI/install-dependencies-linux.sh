@@ -1,7 +1,6 @@
 #!/bin/sh
 set -ex
 
-sudo add-apt-repository ppa:jonathonf/ffmpeg-3 -y
 curl -L https://packagecloud.io/github/git-lfs/gpgkey | sudo apt-key add -
 
 # gets us newer clang
@@ -48,9 +47,14 @@ sudo apt-get install -y \
         libxcb-xinerama0-dev \
         libxcomposite-dev \
         libxinerama-dev \
+        libmbedtls-dev \
         pkg-config \
         python3-dev \
         qtbase5-dev \
         libqt5svg5-dev \
         swig \
         clang-format-8
+
+# build cef
+wget --quiet --retry-connrefused --waitretry=1 https://cdn-fastly.obsproject.com/downloads/cef_binary_${CEF_BUILD_VERSION}_linux64.tar.bz2
+tar -xjf ./cef_binary_${CEF_BUILD_VERSION}_linux64.tar.bz2

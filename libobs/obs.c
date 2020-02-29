@@ -139,6 +139,8 @@ static bool obs_init_gpu_conversion(struct obs_video_info *ovi)
 			if (!video->convert_textures[2])
 				return false;
 			break;
+		default:
+			break;
 		}
 #ifdef _WIN32
 	}
@@ -189,6 +191,8 @@ static bool obs_init_gpu_copy_surfaces(struct obs_video_info *ovi, size_t i)
 			ovi->output_width, ovi->output_height, GS_R8);
 		if (!video->copy_surfaces[i][2])
 			return false;
+		break;
+	default:
 		break;
 	}
 
@@ -867,8 +871,9 @@ static bool obs_init(const char *locale, const char *module_config_path,
 }
 
 #ifdef _WIN32
-extern void initialize_com(void);
+extern bool initialize_com(void);
 extern void uninitialize_com(void);
+static bool com_initialized = false;
 #endif
 
 /* Separate from actual context initialization
@@ -929,7 +934,7 @@ bool obs_startup(const char *locale, const char *module_config_path,
 	}
 
 #ifdef _WIN32
-	initialize_com();
+	com_initialized = initialize_com();
 #endif
 
 	success = obs_init(locale, module_config_path, store);
@@ -1044,7 +1049,8 @@ void obs_shutdown(void)
 	bfree(cmdline_args.argv);
 
 #ifdef _WIN32
-	uninitialize_com();
+	if (com_initialized)
+		uninitialize_com();
 #endif
 }
 
@@ -1650,7 +1656,7 @@ gs_effect_t *obs_get_base_effect(enum obs_base_effect effect)
 	return NULL;
 }
 
-/* DEPRECATED */
+/* OBS_DEPRECATED */
 gs_effect_t *obs_get_default_rect_effect(void)
 {
 	if (!obs)
@@ -1672,6 +1678,7 @@ proc_handler_t *obs_get_proc_handler(void)
 	return obs->procs;
 }
 
+/* OBS_DEPRECATED */
 void obs_render_main_view(void)
 {
 	if (!obs)

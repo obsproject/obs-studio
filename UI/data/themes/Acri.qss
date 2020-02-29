@@ -200,11 +200,6 @@ SourceTree {
 	border-bottom: 1px solid #2f2f2f;
 }
 
-SourceTree QLabel {
-	padding: 2px 0px;
-	margin: -2px 4px -2px;
-}
-
 SourceTree QLineEdit {
 	background-color: #0c101e;
 	padding: 2px;
@@ -928,6 +923,24 @@ OBSBasicSettings QListWidget::item {
     padding-bottom: 5px;
 }
 
+/* Table */
+
+QTableView {
+    gridline-color: #333336;
+}
+
+QHeaderView {
+    border: none;
+}
+QHeaderView::section {
+    background-color: #101010;
+    border: 1px solid #333336;
+    border-left: none;
+}
+*[themeID="trashIcon"] {
+    margin: 0;
+}
+
 /* Locked CheckBox */
 
 LockedCheckBox {
@@ -957,7 +970,7 @@ LockedCheckBox::indicator:unchecked:hover {
     image: url(:res/images/unlocked.svg);
 }
 
-/* Visibilty CheckBox */
+/* Visibility CheckBox */
 
 VisibilityCheckBox {
     outline: none;
@@ -1005,4 +1018,83 @@ QPushButton#extraPanelDelete:hover {
 
 QPushButton#extraPanelDelete:pressed {
     background-color: #161f41;
+}
+
+/* Source Icons */
+
+OBSBasic {
+    qproperty-imageIcon: url(./Dark/sources/image.svg);
+    qproperty-colorIcon: url(./Dark/sources/brush.svg);
+    qproperty-slideshowIcon: url(./Dark/sources/slideshow.svg);
+    qproperty-audioInputIcon: url(./Dark/sources/microphone.svg);
+    qproperty-audioOutputIcon: url(./Dark/settings/audio.svg);
+    qproperty-desktopCapIcon: url(./Dark/settings/video.svg);
+    qproperty-windowCapIcon: url(./Dark/sources/window.svg);
+    qproperty-gameCapIcon: url(./Dark/sources/gamepad.svg);
+    qproperty-cameraIcon: url(./Dark/sources/camera.svg);
+    qproperty-textIcon: url(./Dark/sources/text.svg);
+    qproperty-mediaIcon: url(./Dark/sources/media.svg);
+    qproperty-browserIcon: url(./Dark/sources/globe.svg);
+    qproperty-groupIcon: url(./Dark/sources/group.svg);
+    qproperty-sceneIcon: url(./Dark/sources/scene.svg);
+    qproperty-defaultIcon: url(./Dark/sources/default.svg);
+}
+
+/* Scene Tree */
+
+SceneTree#scenes {
+    qproperty-gridItemWidth: 180;
+    qproperty-gridItemHeight: 35;
+}
+
+*[gridMode="true"] SceneTree#scenes {
+	border-bottom: none;
+}
+
+*[gridMode="false"] SceneTree#scenes {
+	border-bottom: 2px solid #2f2f2f;
+}
+
+*[gridMode="true"] SceneTree::item {
+    padding: 4px;
+    padding-left: 10px;
+    padding-right: 10px;
+    margin: 0px;
+}
+
+/* Save replay icon */
+
+* [themeID="replayIconSmall"] {
+    qproperty-icon: url(./Dark/save.svg);
+}
+
+/* Studio Mode T-Bar */
+
+QSlider[themeID="tBarSlider"] {
+	height: 28px;
+}
+
+QSlider::groove:horizontal[themeID="tBarSlider"] {
+	height: 5px;
+	background-color: QLinearGradient(x1: 0, y1: 0, x2: 0, y2: 1,
+		stop: 0 rgb(31,30,31),
+		stop: 0.75 rgb(50, 49, 50));
+	border: none;
+	border-radius: 2px;
+}
+
+QSlider::sub-page:horizontal[themeID="tBarSlider"] {
+	height: 5px;
+	background-color: QLinearGradient(x1: 0, y1: 0, x2: 0, y2: 1,
+		stop: 0 rgb(31,30,31),
+		stop: 0.75 rgb(50, 49, 50));
+	border: none;
+	border-radius: 2px;
+}
+
+QSlider::handle:horizontal[themeID="tBarSlider"] {
+	background-color: #d2d2d2;
+	width: 14px;
+	height: 28px;
+	margin: -28px 0px;
 }

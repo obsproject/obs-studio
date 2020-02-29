@@ -216,8 +216,17 @@ void TwitchAuth::LoadUI()
 	chat->SetWidget(browser);
 	cef->add_force_popup_url(moderation_tools_url, chat.data());
 
-	script = bttv_script;
-	script += ffz_script;
+	script = "localStorage.setItem('twilight.theme', 1);";
+
+	const int twAddonChoice =
+		config_get_int(main->Config(), service(), "AddonChoice");
+	if (twAddonChoice) {
+		if (twAddonChoice & 0x1)
+			script += bttv_script;
+		if (twAddonChoice & 0x2)
+			script += ffz_script;
+	}
+
 	browser->setStartupScript(script);
 
 	main->addDockWidget(Qt::RightDockWidgetArea, chat.data());
@@ -260,8 +269,15 @@ void TwitchAuth::LoadSecondaryUIPanes()
 	script += name;
 	script += "/dashboard/live";
 	script += referrer_script2;
-	script += bttv_script;
-	script += ffz_script;
+
+	const int twAddonChoice =
+		config_get_int(main->Config(), service(), "AddonChoice");
+	if (twAddonChoice) {
+		if (twAddonChoice & 0x1)
+			script += bttv_script;
+		if (twAddonChoice & 0x2)
+			script += ffz_script;
+	}
 
 	/* ----------------------------------- */
 

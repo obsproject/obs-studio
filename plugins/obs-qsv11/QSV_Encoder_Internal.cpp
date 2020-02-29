@@ -74,8 +74,8 @@ mfxU16 QSV_Encoder_Internal::g_numEncodersOpen = 0;
 QSV_Encoder_Internal::QSV_Encoder_Internal(mfxIMPL &impl, mfxVersion &version)
 	: m_pmfxSurfaces(NULL),
 	  m_pmfxENC(NULL),
-	  m_nSPSBufferSize(100),
-	  m_nPPSBufferSize(100),
+	  m_nSPSBufferSize(1024),
+	  m_nPPSBufferSize(1024),
 	  m_nTaskPool(0),
 	  m_pTaskPool(NULL),
 	  m_nTaskIdx(0),
@@ -253,7 +253,7 @@ bool QSV_Encoder_Internal::InitParams(qsv_param_t *pParams)
 		(mfxU16)(pParams->nKeyIntSec * pParams->nFpsNum /
 			 (float)pParams->nFpsDen);
 
-	static mfxExtBuffer *extendedBuffers[2];
+	static mfxExtBuffer *extendedBuffers[3];
 	int iBuffers = 0;
 
 	if (m_ver.Major == 1 && m_ver.Minor >= 8) {
@@ -268,6 +268,16 @@ bool QSV_Encoder_Internal::InitParams(qsv_param_t *pParams)
 		if (pParams->nbFrames > 1)
 			m_co2.BRefType = MFX_B_REF_PYRAMID;
 		extendedBuffers[iBuffers++] = (mfxExtBuffer *)&m_co2;
+	}
+
+	if (pParams->bCQM) {
+		if (m_ver.Major == 1 && m_ver.Minor >= 16) {
+			memset(&m_co3, 0, sizeof(mfxExtCodingOption3));
+			m_co3.Header.BufferId = MFX_EXTBUFF_CODING_OPTION3;
+			m_co3.Header.BufferSz = sizeof(m_co3);
+			m_co3.ScenarioInfo = 7; // MFX_SCENARIO_GAME_STREAMING
+			extendedBuffers[iBuffers++] = (mfxExtBuffer *)&m_co3;
+		}
 	}
 
 	if (iBuffers > 0) {
@@ -365,8 +375,8 @@ mfxStatus QSV_Encoder_Internal::GetVideoParam()
 
 	opt.SPSBuffer = m_SPSBuffer;
 	opt.PPSBuffer = m_PPSBuffer;
-	opt.SPSBufSize = 100; //  m_nSPSBufferSize;
-	opt.PPSBufSize = 100; //  m_nPPSBufferSize;
+	opt.SPSBufSize = 1024; //  m_nSPSBufferSize;
+	opt.PPSBufSize = 1024; //  m_nPPSBufferSize;
 
 	mfxStatus sts = m_pmfxENC->GetVideoParam(&m_parameter);
 	MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);

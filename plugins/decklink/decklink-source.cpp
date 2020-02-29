@@ -342,6 +342,7 @@ struct obs_source_info create_decklink_source_info()
 	decklink_source_info.update = decklink_update;
 	decklink_source_info.show = decklink_show;
 	decklink_source_info.hide = decklink_hide;
+	decklink_source_info.icon_type = OBS_ICON_TYPE_CAMERA;
 
 	return decklink_source_info;
 }

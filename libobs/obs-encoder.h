@@ -32,6 +32,7 @@ extern "C" {
 #define OBS_ENCODER_CAP_DEPRECATED (1 << 0)
 #define OBS_ENCODER_CAP_PASS_TEXTURE (1 << 1)
 #define OBS_ENCODER_CAP_DYN_BITRATE (1 << 2)
+#define OBS_ENCODER_CAP_INTERNAL (1 << 3)
 
 /** Specifies the encoder type */
 enum obs_encoder_type {

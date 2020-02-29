@@ -826,7 +826,7 @@ Draw Functions
 
    Gets the current viewport
 
-   :param rect: Pointer to recieve viewport rectangle
+   :param rect: Pointer to receive viewport rectangle
 
 ---------------------
 

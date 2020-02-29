@@ -5,6 +5,10 @@ if (WIN32)
   add_definitions(-D_CRT_SECURE_NO_WARNINGS)
 endif()
 
+if (UNIX AND NOT APPLE)
+  add_compile_options("-fPIC")
+endif()
+
 # Don't need to prefix local includes with "caption/*"
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/caption)
 

@@ -182,7 +182,7 @@ Property Object Functions
 
                           - **OBS_COMBO_TYPE_EDITABLE** - Can be edited.
                             Only used with string lists.
-                          - **OBS_COMBO_TYPE_LIST** - Not ediable.
+                          - **OBS_COMBO_TYPE_LIST** - Not editable.
 
    :param    format:      Can be one of the following values:
 
@@ -562,7 +562,7 @@ Property Modification Functions
 
 ---------------------
 
-.. function:: void obs_property_list_item_disable(obs_property_t *p, size_t idx,
+.. function:: void obs_property_list_item_disable(obs_property_t *p, size_t idx, bool disabled)
 
 ---------------------
 

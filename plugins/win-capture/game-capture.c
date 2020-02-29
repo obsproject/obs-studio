@@ -5,7 +5,7 @@
 #include <util/threading.h>
 #include <windows.h>
 #include <dxgi.h>
-#include <emmintrin.h>
+#include <util/sse-intrin.h>
 #include <ipc-util/pipe.h>
 #include "obfuscate.h"
 #include "inject-library.h"
@@ -1251,8 +1251,13 @@ static inline enum capture_result init_capture_data(struct game_capture *gc)
 
 	CloseHandle(gc->hook_data_map);
 
-	gc->hook_data_map = open_map_plus_id(gc, SHMEM_TEXTURE,
-					     gc->global_hook_info->map_id);
+	wchar_t name[64];
+	_snwprintf(name, 64, L"%s_%d_", SHMEM_TEXTURE,
+		   (uint32_t)(uintptr_t)gc->window);
+
+	gc->hook_data_map =
+		open_map_plus_id(gc, name, gc->global_hook_info->map_id);
+
 	if (!gc->hook_data_map) {
 		DWORD error = GetLastError();
 		if (error == 2) {
@@ -1899,7 +1904,7 @@ static bool use_scaling_callback(obs_properties_t *ppts, obs_property_t *p,
 	return true;
 }
 
-static void insert_preserved_val(obs_property_t *p, const char *val)
+static void insert_preserved_val(obs_property_t *p, const char *val, size_t idx)
 {
 	char *class = NULL;
 	char *title = NULL;
@@ -1909,8 +1914,8 @@ static void insert_preserved_val(obs_property_t *p, const char *val)
 	build_window_strings(val, &class, &title, &executable);
 
 	dstr_printf(&desc, "[%s]: %s", executable, title);
-	obs_property_list_insert_string(p, 1, desc.array, val);
-	obs_property_list_item_disable(p, 1, true);
+	obs_property_list_insert_string(p, idx, desc.array, val);
+	obs_property_list_item_disable(p, idx, true);
 
 	dstr_free(&desc);
 	bfree(class);
@@ -1918,14 +1923,15 @@ static void insert_preserved_val(obs_property_t *p, const char *val)
 	bfree(executable);
 }
 
-static bool window_changed_callback(obs_properties_t *ppts, obs_property_t *p,
-				    obs_data_t *settings)
+bool check_window_property_setting(obs_properties_t *ppts, obs_property_t *p,
+				   obs_data_t *settings, const char *val,
+				   size_t idx)
 {
 	const char *cur_val;
 	bool match = false;
 	size_t i = 0;
 
-	cur_val = obs_data_get_string(settings, SETTING_CAPTURE_WINDOW);
+	cur_val = obs_data_get_string(settings, val);
 	if (!cur_val) {
 		return false;
 	}
@@ -1942,12 +1948,19 @@ static bool window_changed_callback(obs_properties_t *ppts, obs_property_t *p,
 	}
 
 	if (cur_val && *cur_val && !match) {
-		insert_preserved_val(p, cur_val);
+		insert_preserved_val(p, cur_val, idx);
 		return true;
 	}
 
 	UNUSED_PARAMETER(ppts);
 	return false;
+}
+
+static bool window_changed_callback(obs_properties_t *ppts, obs_property_t *p,
+				    obs_data_t *settings)
+{
+	return check_window_property_setting(ppts, p, settings,
+					     SETTING_CAPTURE_WINDOW, 1);
 }
 
 static const double default_scale_vals[] = {1.25, 1.5, 2.0, 2.5, 3.0};
@@ -2103,4 +2116,5 @@ struct obs_source_info game_capture_info = {
 	.update = game_capture_update,
 	.video_tick = game_capture_tick,
 	.video_render = game_capture_render,
+	.icon_type = OBS_ICON_TYPE_GAME_CAPTURE,
 };

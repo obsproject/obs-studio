@@ -52,13 +52,13 @@ static inline void update_settings(struct duplicator_capture *capture,
 	obs_enter_graphics();
 
 	gs_duplicator_destroy(capture->duplicator);
-	capture->duplicator = gs_duplicator_create(capture->monitor);
+	capture->duplicator = NULL;
 	capture->width = 0;
 	capture->height = 0;
 	capture->x = 0;
 	capture->y = 0;
 	capture->rot = 0;
-	capture->reset_timeout = 0.0f;
+	capture->reset_timeout = RESET_INTERVAL_SEC;
 
 	obs_leave_graphics();
 }
@@ -323,4 +323,5 @@ struct obs_source_info duplicator_capture_info = {
 	.get_height = duplicator_capture_height,
 	.get_defaults = duplicator_capture_defaults,
 	.get_properties = duplicator_capture_properties,
+	.icon_type = OBS_ICON_TYPE_DESKTOP_CAPTURE,
 };

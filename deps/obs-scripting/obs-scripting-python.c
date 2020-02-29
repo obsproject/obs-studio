@@ -1651,6 +1651,13 @@ bool obs_scripting_load_python(const char *python_path)
 
 	add_to_python_path(SCRIPT_DIR);
 
+#if __APPLE__
+	char *exec_path = os_get_executable_path_ptr("");
+	if (exec_path)
+		add_to_python_path(exec_path);
+	bfree(exec_path);
+#endif
+
 	py_obspython = PyImport_ImportModule("obspython");
 	bool success = !py_error();
 	if (!success) {

@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8.12)
+cmake_minimum_required(VERSION 3.10)
 
 if (UNIX AND POLICY CMP0072)
 	# In case of both legacy and glvnd OpenGL libraries found. Prefer GLVND
@@ -10,6 +10,35 @@ project(obs-studio)
 option(BUILD_CAPTIONS "Build captions" FALSE)
 
 if(WIN32)
+	cmake_minimum_required(VERSION 3.16)
+
+	# Check for Win SDK version 10.0.18362 or above
+	if(MSVC AND MSVC_VERSION LESS 1920)
+		message(STATUS "Windows API version is ${CMAKE_VS_WINDOWS_TARGET_PLATFORM_VERSION}")
+		string(REPLACE "." ";" WINAPI_VER "${CMAKE_VS_WINDOWS_TARGET_PLATFORM_VERSION}")
+
+		list(GET WINAPI_VER 0 WINAPI_VER_MAJOR)
+		list(GET WINAPI_VER 1 WINAPI_VER_MINOR)
+		list(GET WINAPI_VER 2 WINAPI_VER_BUILD)
+
+		set(WINAPI_COMPATIBLE FALSE)
+		if(WINAPI_VER_MAJOR EQUAL 10)
+			if (WINAPI_VER_MINOR EQUAL 0)
+				if (WINAPI_VER_BUILD GREATER_EQUAL 18362)
+					set(WINAPI_COMPATIBLE TRUE)
+				endif()
+			else()
+				set(WINAPI_COMPATIBLE TRUE)
+			endif()
+		elseif(WINAPI_VER_MAJOR GREATER 10)
+			set(WINAPI_COMPATIBLE TRUE)
+		endif()
+
+		if(NOT WINAPI_COMPATIBLE)
+			message(FATAL_ERROR "OBS requires Windows 10 SDK version 10.0.18362.0 and above to compile.\nPlease download the most recent Windows 10 SDK in order to compile (or update to Visual Studio 2019).")
+		endif()
+	endif()
+
 	if (QTDIR OR DEFINED ENV{QTDIR} OR DEFINED ENV{QTDIR32} OR DEFINED ENV{QTDIR64})
 		# Qt path set by user or env var
 	else()
@@ -70,19 +99,38 @@ if(NOT CMAKE_BUILD_TYPE)
         set(CMAKE_BUILD_TYPE RelWithDebInfo)
 endif()
 
-find_package(CXX11 REQUIRED)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CXX11_FLAGS}")
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED YES)
+set(CMAKE_CXX_EXTENSIONS NO)
 
 if(${CMAKE_C_COMPILER_ID} MATCHES "Clang" OR ${CMAKE_CXX_COMPILER_ID} MATCHES "Clang")
 	set(CMAKE_COMPILER_IS_CLANG TRUE)
 endif()
 
-if(CMAKE_SYSTEM_PROCESSOR MATCHES "^(powerpc|ppc)64le")
+if (MSVC_CXX_ARCHITECTURE_ID)
+    string(TOLOWER ${MSVC_CXX_ARCHITECTURE_ID} LOWERCASE_CMAKE_SYSTEM_PROCESSOR)
+else ()
+    string(TOLOWER ${CMAKE_SYSTEM_PROCESSOR} LOWERCASE_CMAKE_SYSTEM_PROCESSOR)
+endif ()
+
+if(LOWERCASE_CMAKE_SYSTEM_PROCESSOR MATCHES "(i[3-6]86|x86|x64|x86_64|amd64)")
+	set(NEEDS_SIMDE "0")
+	if(NOT MSVC)
+		set(ARCH_SIMD_FLAGS "-mmmx" "-msse" "-msse2")
+	endif()
+elseif(LOWERCASE_CMAKE_SYSTEM_PROCESSOR MATCHES "^(powerpc|ppc)64(le)?")
+	set(NEEDS_SIMDE "0")
+	set(ARCH_SIMD_FLAGS "-mvsx")
 	add_compile_definitions(NO_WARN_X86_INTRINSICS)
+else()
+	set(NEEDS_SIMDE "1")
+	add_definitions(-DNEEDS_SIMDE=1)
+	set(ARCH_SIMD_FLAGS "")
+	message(STATUS "No Native SSE2 SIMD Support - Using SIMDE")
 endif()
 
 if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX OR CMAKE_COMPILER_IS_CLANG)
-	set(CMAKE_CXX_FLAGS "-Wall -Wextra -Wvla -Wno-unused-function -Werror-implicit-function-declaration -Wno-missing-field-initializers ${CMAKE_CXX_FLAGS} -fno-strict-aliasing")
+	set(CMAKE_CXX_FLAGS "-Wall -Wextra -Wvla -Wno-unused-function -Wno-missing-field-initializers ${CMAKE_CXX_FLAGS} -fno-strict-aliasing")
 	set(CMAKE_C_FLAGS "-Wall -Wextra -Wvla -Wno-unused-function -Werror-implicit-function-declaration -Wno-missing-braces -Wno-missing-field-initializers ${CMAKE_C_FLAGS} -std=gnu99 -fno-strict-aliasing")
 
 	option(USE_LIBC++ "Use libc++ instead of libstdc++" ${APPLE})
@@ -177,6 +225,7 @@ if(NOT INSTALLER_RUN)
 
 	if(WIN32)
 		add_subdirectory(libobs-d3d11)
+		add_subdirectory(libobs-winrt)
 	endif()
 
 	add_subdirectory(libobs-opengl)

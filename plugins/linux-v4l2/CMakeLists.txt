@@ -31,6 +31,7 @@ include_directories(
 
 set(linux-v4l2_SOURCES
 	linux-v4l2.c
+	v4l2-controls.c
 	v4l2-input.c
 	v4l2-helpers.c
 	${linux-v4l2-udev_SOURCES}

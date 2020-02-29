@@ -276,6 +276,11 @@ VolControl::VolControl(OBSSource source_, bool showConfig, bool vertical)
 	VolumeChanged();
 }
 
+void VolControl::EnableSlider(bool enable)
+{
+	slider->setEnabled(enable);
+}
+
 VolControl::~VolControl()
 {
 	obs_fader_remove_callback(obs_fader, OBSVolumeChanged, this);
@@ -488,7 +493,7 @@ void VolumeMeter::setPeakMeterType(enum obs_peak_meter_type peakMeterType)
 		// processing required by lossy audio compression.
 		//
 		// The alignment level was not specified, but I've adjusted
-		// it compared to a sample-peak meter. Incidently Youtube
+		// it compared to a sample-peak meter. Incidentally Youtube
 		// uses this new Alignment Level as the maximum integrated
 		// loudness of a video.
 		//

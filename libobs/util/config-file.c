@@ -95,7 +95,7 @@ config_t *config_create(const char *file)
 static inline void remove_ref_whitespace(struct strref *ref)
 {
 	if (ref->array) {
-		while (is_whitespace(*ref->array)) {
+		while (ref->len && is_whitespace(*ref->array)) {
 			ref->array++;
 			ref->len--;
 		}
@@ -130,7 +130,7 @@ static bool config_parse_string(struct lexer *lex, struct strref *ref, char end)
 		strref_add(ref, &token.text);
 	}
 
-	remove_ref_whitespace(ref);
+	//remove_ref_whitespace(ref);
 	return success;
 }
 

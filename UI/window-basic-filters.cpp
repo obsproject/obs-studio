@@ -139,6 +139,26 @@ OBSBasicFilters::OBSBasicFilters(QWidget *parent, OBSSource source_)
 		ui->rightContainerLayout->insertStretch(1);
 		ui->preview->hide();
 	}
+
+	QAction *renameAsync = new QAction(ui->asyncWidget);
+	renameAsync->setShortcutContext(Qt::WidgetWithChildrenShortcut);
+	connect(renameAsync, SIGNAL(triggered()), this,
+		SLOT(RenameAsyncFilter()));
+	ui->asyncWidget->addAction(renameAsync);
+
+	QAction *renameEffect = new QAction(ui->effectWidget);
+	renameEffect->setShortcutContext(Qt::WidgetWithChildrenShortcut);
+	connect(renameEffect, SIGNAL(triggered()), this,
+		SLOT(RenameEffectFilter()));
+	ui->effectWidget->addAction(renameEffect);
+
+#ifdef __APPLE__
+	renameAsync->setShortcut({Qt::Key_Return});
+	renameEffect->setShortcut({Qt::Key_Return});
+#else
+	renameAsync->setShortcut({Qt::Key_F2});
+	renameEffect->setShortcut({Qt::Key_F2});
+#endif
 }
 
 OBSBasicFilters::~OBSBasicFilters()

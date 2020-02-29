@@ -29,6 +29,14 @@
 #include <IOKit/hid/IOHIDDevice.h>
 #include <IOKit/hid/IOHIDManager.h>
 
+#import <AppKit/AppKit.h>
+
+bool is_in_bundle()
+{
+	NSRunningApplication *app = [NSRunningApplication currentApplication];
+	return [app bundleIdentifier] != nil;
+}
+
 const char *get_module_extension(void)
 {
 	return ".so";
@@ -51,12 +59,45 @@ void add_default_module_paths(void)
 {
 	for (int i = 0; i < module_patterns_size; i++)
 		obs_add_module_path(module_bin[i], module_data[i]);
+
+	if (is_in_bundle()) {
+		NSRunningApplication *app =
+			[NSRunningApplication currentApplication];
+		NSURL *bundleURL = [app bundleURL];
+		NSURL *pluginsURL = [bundleURL
+			URLByAppendingPathComponent:@"Contents/Plugins"];
+		NSURL *dataURL = [bundleURL
+			URLByAppendingPathComponent:
+				@"Contents/Resources/data/obs-plugins/%module%"];
+
+		const char *binPath = [[pluginsURL path]
+			cStringUsingEncoding:NSUTF8StringEncoding];
+		const char *dataPath = [[dataURL path]
+			cStringUsingEncoding:NSUTF8StringEncoding];
+
+		obs_add_module_path(binPath, dataPath);
+	}
 }
 
 char *find_libobs_data_file(const char *file)
 {
 	struct dstr path;
-	dstr_init_copy(&path, OBS_INSTALL_DATA_PATH "/libobs/");
+
+	if (is_in_bundle()) {
+		NSRunningApplication *app =
+			[NSRunningApplication currentApplication];
+		NSURL *bundleURL = [app bundleURL];
+		NSURL *libobsDataURL =
+			[bundleURL URLByAppendingPathComponent:
+					   @"Contents/Resources/data/libobs/"];
+		const char *libobsDataPath = [[libobsDataURL path]
+			cStringUsingEncoding:NSUTF8StringEncoding];
+		dstr_init_copy(&path, libobsDataPath);
+		dstr_cat(&path, "/");
+	} else {
+		dstr_init_copy(&path, OBS_INSTALL_DATA_PATH "/libobs/");
+	}
+
 	dstr_cat(&path, file);
 	return path.array;
 }
@@ -111,13 +152,20 @@ static void log_available_memory(void)
 		     memory_available / 1024 / 1024);
 }
 
-static void log_os_name(id pi, SEL UTF8String)
+static void log_os_name(id pi, SEL UTF8StringSel)
 {
-	unsigned long os_id = (unsigned long)objc_msgSend(
+	typedef int (*os_func)(id, SEL);
+	os_func operatingSystem = (os_func)objc_msgSend;
+	unsigned long os_id = (unsigned long)operatingSystem(
 		pi, sel_registerName("operatingSystem"));
 
-	id os = objc_msgSend(pi, sel_registerName("operatingSystemName"));
-	const char *name = (const char *)objc_msgSend(os, UTF8String);
+	typedef id (*os_name_func)(id, SEL);
+	os_name_func operatingSystemName = (os_name_func)objc_msgSend;
+	id os = operatingSystemName(pi,
+				    sel_registerName("operatingSystemName"));
+	typedef const char *(*utf8_func)(id, SEL);
+	utf8_func UTF8String = (utf8_func)objc_msgSend;
+	const char *name = UTF8String(os, UTF8StringSel);
 
 	if (os_id == 5 /*NSMACHOperatingSystem*/) {
 		blog(LOG_INFO, "OS Name: Mac OS X (%s)", name);
@@ -127,11 +175,15 @@ static void log_os_name(id pi, SEL UTF8String)
 	blog(LOG_INFO, "OS Name: %s", name ? name : "Unknown");
 }
 
-static void log_os_version(id pi, SEL UTF8String)
+static void log_os_version(id pi, SEL UTF8StringSel)
 {
-	id vs = objc_msgSend(pi,
-			     sel_registerName("operatingSystemVersionString"));
-	const char *version = (const char *)objc_msgSend(vs, UTF8String);
+	typedef id (*version_func)(id, SEL);
+	version_func operatingSystemVersionString = (version_func)objc_msgSend;
+	id vs = operatingSystemVersionString(
+		pi, sel_registerName("operatingSystemVersionString"));
+	typedef const char *(*utf8_func)(id, SEL);
+	utf8_func UTF8String = (utf8_func)objc_msgSend;
+	const char *version = UTF8String(vs, UTF8StringSel);
 
 	blog(LOG_INFO, "OS Version: %s", version ? version : "Unknown");
 }
@@ -139,8 +191,9 @@ static void log_os_version(id pi, SEL UTF8String)
 static void log_os(void)
 {
 	Class NSProcessInfo = objc_getClass("NSProcessInfo");
-	id pi = objc_msgSend((id)NSProcessInfo,
-			     sel_registerName("processInfo"));
+	typedef id (*func)(id, SEL);
+	func processInfo = (func)objc_msgSend;
+	id pi = processInfo((id)NSProcessInfo, sel_registerName("processInfo"));
 
 	SEL UTF8String = sel_registerName("UTF8String");
 
@@ -1673,9 +1726,11 @@ static bool mouse_button_pressed(obs_key_t key, bool *pressed)
 	}
 
 	Class NSEvent = objc_getClass("NSEvent");
-	SEL pressedMouseButtons = sel_registerName("pressedMouseButtons");
-	NSUInteger buttons =
-		(NSUInteger)objc_msgSend((id)NSEvent, pressedMouseButtons);
+	SEL pressedMouseButtonsSel = sel_registerName("pressedMouseButtons");
+	typedef int (*func)(id, SEL);
+	func pressedMouseButtons = (func)objc_msgSend;
+	NSUInteger buttons = (NSUInteger)pressedMouseButtons(
+		(id)NSEvent, pressedMouseButtonsSel);
 
 	*pressed = (buttons & (1 << button)) != 0;
 	return true;
@@ -1698,6 +1753,10 @@ bool obs_hotkeys_platform_is_pressed(obs_hotkeys_platform_t *plat,
 		IOHIDElementRef element = plat->keys[key].array[i];
 		IOHIDValueRef value = 0;
 		IOHIDDeviceRef device = IOHIDElementGetDevice(element);
+
+		if (device == NULL) {
+			continue;
+		}
 
 		if (IOHIDDeviceGetValue(device, element, &value) !=
 		    kIOReturnSuccess) {

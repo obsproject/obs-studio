@@ -235,10 +235,21 @@ QWidget *OBSPropertiesView::AddText(obs_property_t *prop, QFormLayout *layout,
 {
 	const char *name = obs_property_name(prop);
 	const char *val = obs_data_get_string(settings, name);
+	const bool monospace = obs_property_text_monospace(prop);
 	obs_text_type type = obs_property_text_type(prop);
 
 	if (type == OBS_TEXT_MULTILINE) {
 		QPlainTextEdit *edit = new QPlainTextEdit(QT_UTF8(val));
+#if QT_VERSION >= QT_VERSION_CHECK(5, 10, 0)
+		edit->setTabStopDistance(40);
+#else
+		edit->setTabStopWidth(40);
+#endif
+		if (monospace) {
+			QFont f("Courier");
+			f.setStyleHint(QFont::Monospace);
+			edit->setFont(f);
+		}
 		return NewWidget(prop, edit, SIGNAL(textChanged()));
 
 	} else if (type == OBS_TEXT_PASSWORD) {
@@ -577,10 +588,9 @@ void OBSPropertiesView::AddEditableList(obs_property_t *prop,
 	for (size_t i = 0; i < count; i++) {
 		obs_data_t *item = obs_data_array_item(array, i);
 		list->addItem(QT_UTF8(obs_data_get_string(item, "value")));
-		list->setItemSelected(list->item((int)i),
-				      obs_data_get_bool(item, "selected"));
-		list->setItemHidden(list->item((int)i),
-				    obs_data_get_bool(item, "hidden"));
+		QListWidgetItem *const list_item = list->item((int)i);
+		list_item->setSelected(obs_data_get_bool(item, "selected"));
+		list_item->setHidden(obs_data_get_bool(item, "hidden"));
 		obs_data_release(item);
 	}
 
@@ -1820,7 +1830,7 @@ void WidgetInfo::ControlChanged()
 		break;
 	case OBS_PROPERTY_GROUP:
 		GroupChanged(setting);
-		return;
+		break;
 	}
 
 	if (view->callback && !view->deferUpdate)

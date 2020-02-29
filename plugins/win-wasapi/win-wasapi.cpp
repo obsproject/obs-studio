@@ -28,6 +28,7 @@ class WASAPISource {
 	obs_source_t *source;
 	string device_id;
 	string device_name;
+	string device_sample = "-";
 	bool isInputDevice;
 	bool useDeviceTiming = false;
 	bool isDefaultDevice = false;
@@ -289,7 +290,8 @@ void WASAPISource::InitCapture()
 	client->Start();
 	active = true;
 
-	blog(LOG_INFO, "WASAPI: Device '%s' initialized", device_name.c_str());
+	blog(LOG_INFO, "WASAPI: Device '%s' [%s Hz] initialized",
+	     device_name.c_str(), device_sample.c_str());
 }
 
 void WASAPISource::Initialize()
@@ -307,6 +309,22 @@ void WASAPISource::Initialize()
 		return;
 
 	device_name = GetDeviceName(device);
+
+	HRESULT resSample;
+	IPropertyStore *store = nullptr;
+	PWAVEFORMATEX deviceFormatProperties;
+	PROPVARIANT prop;
+	resSample = device->OpenPropertyStore(STGM_READ, &store);
+	if (!FAILED(resSample)) {
+		resSample =
+			store->GetValue(PKEY_AudioEngine_DeviceFormat, &prop);
+		if (!FAILED(resSample)) {
+			deviceFormatProperties =
+				(PWAVEFORMATEX)prop.blob.pBlobData;
+			device_sample = std::to_string(
+				deviceFormatProperties->nSamplesPerSec);
+		}
+	}
 
 	InitClient();
 	if (!isInputDevice)
@@ -368,7 +386,14 @@ DWORD WINAPI WASAPISource::ReconnectThread(LPVOID param)
 
 	os_set_thread_name("win-wasapi: reconnect thread");
 
-	CoInitializeEx(0, COINIT_MULTITHREADED);
+	const HRESULT hr = CoInitializeEx(0, COINIT_MULTITHREADED);
+	const bool com_initialized = SUCCEEDED(hr);
+	if (!com_initialized) {
+		blog(LOG_ERROR,
+		     "[WASAPISource::ReconnectThread]"
+		     " CoInitializeEx failed: 0x%08X",
+		     hr);
+	}
 
 	obs_monitoring_type type =
 		obs_source_get_monitoring_type(source->source);
@@ -381,6 +406,9 @@ DWORD WINAPI WASAPISource::ReconnectThread(LPVOID param)
 	}
 
 	obs_source_set_monitoring_type(source->source, type);
+
+	if (com_initialized)
+		CoUninitialize();
 
 	source->reconnectThread = nullptr;
 	source->reconnecting = false;
@@ -590,6 +618,7 @@ void RegisterWASAPIInput()
 	info.update = UpdateWASAPISource;
 	info.get_defaults = GetWASAPIDefaultsInput;
 	info.get_properties = GetWASAPIPropertiesInput;
+	info.icon_type = OBS_ICON_TYPE_AUDIO_INPUT;
 	obs_register_source(&info);
 }
 
@@ -606,5 +635,6 @@ void RegisterWASAPIOutput()
 	info.update = UpdateWASAPISource;
 	info.get_defaults = GetWASAPIDefaultsOutput;
 	info.get_properties = GetWASAPIPropertiesOutput;
+	info.icon_type = OBS_ICON_TYPE_AUDIO_OUTPUT;
 	obs_register_source(&info);
 }

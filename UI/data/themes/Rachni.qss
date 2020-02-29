@@ -1293,7 +1293,7 @@ LockedCheckBox::indicator:unchecked:hover {
     image: url(:res/images/unlocked.svg);
 }
 
-/* Visibilty CheckBox */
+/* Visibility CheckBox */
 
 VisibilityCheckBox {
     outline: none;
@@ -1339,4 +1339,68 @@ QPushButton#extraPanelDelete:hover {
 
 QPushButton#extraPanelDelete:pressed {
      background-color: rgb(240, 98, 146);
+}
+
+/* Source Icons */
+
+OBSBasic {
+    qproperty-imageIcon: url(./Dark/sources/image.svg);
+    qproperty-colorIcon: url(./Dark/sources/brush.svg);
+    qproperty-slideshowIcon: url(./Dark/sources/slideshow.svg);
+    qproperty-audioInputIcon: url(./Dark/sources/microphone.svg);
+    qproperty-audioOutputIcon: url(./Dark/settings/audio.svg);
+    qproperty-desktopCapIcon: url(./Dark/settings/video.svg);
+    qproperty-windowCapIcon: url(./Dark/sources/window.svg);
+    qproperty-gameCapIcon: url(./Dark/sources/gamepad.svg);
+    qproperty-cameraIcon: url(./Dark/sources/camera.svg);
+    qproperty-textIcon: url(./Dark/sources/text.svg);
+    qproperty-mediaIcon: url(./Dark/sources/media.svg);
+    qproperty-browserIcon: url(./Dark/sources/globe.svg);
+    qproperty-groupIcon: url(./Dark/sources/group.svg);
+    qproperty-sceneIcon: url(./Dark/sources/scene.svg);
+    qproperty-defaultIcon: url(./Dark/sources/default.svg);
+}
+
+/* Scene Tree */
+
+SceneTree#scenes {
+    qproperty-gridItemWidth: 150;
+    qproperty-gridItemHeight: 30;
+}
+
+/* Save icon */
+
+* [themeID="replayIconSmall"] {
+    qproperty-icon: url(./Dark/save.svg);
+}
+
+/* Studio Mode T-Bar */
+
+QSlider[themeID="tBarSlider"] {
+	height: 24px;
+}
+
+QSlider::groove:horizontal[themeID="tBarSlider"] {
+	height: 5px;
+	background-color: QLinearGradient(x1: 1, y1: 0, x2: 0, y2: 0,
+		stop: 0 rgb(35, 38, 41), /* Dark Gray */
+		stop: 0.75 rgb(50, 49, 50));
+	border: none;
+	border-radius: 2px;
+}
+
+QSlider::sub-page:horizontal[themeID="tBarSlider"] {
+	height: 5px;
+	background-color: QLinearGradient(x1: 1, y1: 0, x2: 0, y2: 0,
+		stop: 0 rgb(35, 38, 41), /* Dark Gray */
+		stop: 0.75 rgb(50, 49, 50));
+	border: none;
+	border-radius: 2px;
+}
+
+QSlider::handle:horizontal[themeID="tBarSlider"] {
+	background-color: #d2d2d2;
+	width: 12px;
+	height: 24px;
+	margin: -24px 0px;
 }

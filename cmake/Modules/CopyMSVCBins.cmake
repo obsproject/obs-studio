@@ -1,4 +1,4 @@
-# Doesn't realy make sense anywhere else
+# Doesn't really make sense anywhere else
 if(NOT MSVC)
 	return()
 endif()
@@ -8,7 +8,7 @@ if(COPIED_DEPENDENCIES)
 	return()
 endif()
 
-option(COPY_DEPENDENCIES "Automaticaly try copying all dependencies" ON)
+option(COPY_DEPENDENCIES "Automatically try copying all dependencies" ON)
 if(NOT COPY_DEPENDENCIES)
 	return()
 endif()
@@ -64,6 +64,12 @@ file(GLOB FFMPEG_BIN_FILES
 
 	"${FFMPEG_avcodec_INCLUDE_DIR}/../bin/libvpx*.dll"
 	"${FFMPEG_avcodec_INCLUDE_DIR}/bin/libvpx*.dll"
+
+	"${FFMPEG_avcodec_INCLUDE_DIR}/../bin/libsrt*.dll"
+	"${FFMPEG_avcodec_INCLUDE_DIR}/bin/libsrt*.dll"
+
+	"${FFMPEG_avcodec_INCLUDE_DIR}/../bin/libmbedcrypto*.dll"
+	"${FFMPEG_avcodec_INCLUDE_DIR}/bin/libmbedcrypto*.dll"
 
 	"${FFMPEG_avcodec_INCLUDE_DIR}/../bin${_bin_suffix}/libopus*.dll"
 	"${FFMPEG_avcodec_INCLUDE_DIR}/../bin${_bin_suffix}/opus*.dll"

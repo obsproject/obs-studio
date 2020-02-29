@@ -34,10 +34,9 @@ private:
 
 	void mousePressEvent(QMouseEvent *event) override;
 	void mouseDoubleClickEvent(QMouseEvent *event) override;
+	void closeEvent(QCloseEvent *event) override;
 
-	int savedMonitor;
-	bool isWindow;
-	QString projectorTitle;
+	int savedMonitor = -1;
 	ProjectorType type = ProjectorType::Source;
 	std::vector<OBSWeakSource> multiviewScenes;
 	std::vector<OBSSource> multiviewLabels;
@@ -73,17 +72,23 @@ private:
 	void UpdateMultiview();
 	void UpdateProjectorTitle(QString name);
 
+	QRect prevGeometry;
+	void SetHideCursor();
+	void SetMonitor(int monitor);
+
 private slots:
 	void EscapeTriggered();
+	void OpenFullScreenProjector();
+	void OpenWindowedProjector();
 
 public:
 	OBSProjector(QWidget *widget, obs_source_t *source_, int monitor,
-		     QString title, ProjectorType type_);
+		     ProjectorType type_);
 	~OBSProjector();
 
 	OBSSource GetSource();
 	ProjectorType GetProjectorType();
 	int GetMonitor();
 	static void UpdateMultiviewProjectors();
-	static void RenameProjector(QString oldName, QString newName);
+	void RenameProjector(QString oldName, QString newName);
 };

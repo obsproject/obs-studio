@@ -323,3 +323,15 @@ bool LineEditChanged(QEvent *event)
 
 	return false;
 }
+
+void setThemeID(QWidget *widget, const QString &themeID)
+{
+	if (widget->property("themeID").toString() != themeID) {
+		widget->setProperty("themeID", themeID);
+
+		/* force style sheet recalculation */
+		QString qss = widget->styleSheet();
+		widget->setStyleSheet("/* */");
+		widget->setStyleSheet(qss);
+	}
+}

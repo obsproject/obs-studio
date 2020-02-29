@@ -56,7 +56,6 @@ class OBSBasicStats : public QWidget {
 
 	void AddOutputLabels(QString name);
 	void Update();
-	void Reset();
 
 	virtual void closeEvent(QCloseEvent *event) override;
 
@@ -76,6 +75,9 @@ private:
 
 private slots:
 	void RecordingTimeLeft();
+
+public slots:
+	void Reset();
 
 protected:
 	virtual void showEvent(QShowEvent *event) override;

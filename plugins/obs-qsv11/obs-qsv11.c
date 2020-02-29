@@ -240,6 +240,18 @@ static bool rate_control_modified(obs_properties_t *ppts, obs_property_t *p,
 	return true;
 }
 
+static bool profile_modified(obs_properties_t *ppts, obs_property_t *p,
+			     obs_data_t *settings)
+{
+	const char *profile = obs_data_get_string(settings, "profile");
+	enum qsv_cpu_platform plat = qsv_get_cpu_platform();
+	bool bVisible = ((astrcmpi(profile, "high") == 0) &&
+			 (plat >= QSV_CPU_PLATFORM_ICL));
+	p = obs_properties_get(ppts, "CQM");
+	obs_property_set_visible(p, bVisible);
+	return true;
+}
+
 static inline void add_rate_controls(obs_property_t *list,
 				     const struct qsv_rate_control_info *rc)
 {
@@ -267,6 +279,8 @@ static obs_properties_t *obs_qsv_props(void *unused)
 				       OBS_COMBO_TYPE_LIST,
 				       OBS_COMBO_FORMAT_STRING);
 	add_strings(list, qsv_profile_names);
+
+	obs_property_set_modified_callback(list, profile_modified);
 
 	obs_properties_add_int(props, "keyint_sec", TEXT_KEYINT_SEC, 1, 20, 1);
 	obs_properties_add_int(props, "async_depth", TEXT_ASYNC_DEPTH, 1, 7, 1);
@@ -299,6 +313,8 @@ static obs_properties_t *obs_qsv_props(void *unused)
 
 	if (is_skl_or_greater_platform())
 		obs_properties_add_bool(props, "mbbrc", TEXT_MBBRC);
+
+	obs_properties_add_bool(props, "CQM", "Customized quantization matrix");
 
 	return props;
 }
@@ -343,6 +359,20 @@ static void update_params(struct obs_qsv *obsqsv, obs_data_t *settings)
 		obsqsv->params.nTargetUsage = MFX_TARGETUSAGE_BALANCED;
 	else if (astrcmpi(target_usage, "speed") == 0)
 		obsqsv->params.nTargetUsage = MFX_TARGETUSAGE_BEST_SPEED;
+	else if (astrcmpi(target_usage, "veryslow") == 0)
+		obsqsv->params.nTargetUsage = MFX_TARGETUSAGE_1;
+	else if (astrcmpi(target_usage, "slower") == 0)
+		obsqsv->params.nTargetUsage = MFX_TARGETUSAGE_2;
+	else if (astrcmpi(target_usage, "slow") == 0)
+		obsqsv->params.nTargetUsage = MFX_TARGETUSAGE_3;
+	else if (astrcmpi(target_usage, "medium") == 0)
+		obsqsv->params.nTargetUsage = MFX_TARGETUSAGE_4;
+	else if (astrcmpi(target_usage, "fast") == 0)
+		obsqsv->params.nTargetUsage = MFX_TARGETUSAGE_5;
+	else if (astrcmpi(target_usage, "faster") == 0)
+		obsqsv->params.nTargetUsage = MFX_TARGETUSAGE_6;
+	else if (astrcmpi(target_usage, "veryfast") == 0)
+		obsqsv->params.nTargetUsage = MFX_TARGETUSAGE_7;
 
 	if (astrcmpi(profile, "baseline") == 0)
 		obsqsv->params.nCodecProfile = MFX_PROFILE_AVC_BASELINE;
@@ -436,6 +466,8 @@ static void update_params(struct obs_qsv *obsqsv, obs_data_t *settings)
 	     "\twidth:          %d\n"
 	     "\theight:         %d",
 	     voi->fps_num, voi->fps_den, width, height);
+
+	obsqsv->params.bCQM = (bool)obs_data_get_bool(settings, "CQM");
 
 	info("debug info:");
 }

@@ -64,7 +64,7 @@
 extern uint64_t image_source_get_memory_usage(void *data);
 
 #define BYTES_TO_MBYTES (1024 * 1024)
-#define MAX_MEM_USAGE (250 * BYTES_TO_MBYTES)
+#define MAX_MEM_USAGE (400 * BYTES_TO_MBYTES)
 
 struct image_file_data {
 	char *path;
@@ -940,4 +940,5 @@ struct obs_source_info slideshow_info = {
 	.get_height = ss_height,
 	.get_defaults = ss_defaults,
 	.get_properties = ss_properties,
+	.icon_type = OBS_ICON_TYPE_SLIDESHOW,
 };

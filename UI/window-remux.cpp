@@ -192,7 +192,7 @@ void RemuxEntryPathItemDelegate::paint(QPainter *painter,
 		if (state != Ready) {
 			QColor background = localOption.palette.color(
 				QPalette::ColorGroup::Disabled,
-				QPalette::ColorRole::Background);
+				QPalette::ColorRole::Window);
 
 			localOption.backgroundBrush = QBrush(background);
 		}
@@ -461,6 +461,7 @@ void RemuxQueueModel::checkInputPath(int row)
 	if (entry.sourcePath.isEmpty()) {
 		entry.state = RemuxEntryState::Empty;
 	} else {
+		entry.sourcePath = QDir::toNativeSeparators(entry.sourcePath);
 		QFileInfo fileInfo(entry.sourcePath);
 		if (fileInfo.exists())
 			entry.state = RemuxEntryState::Ready;
@@ -468,8 +469,9 @@ void RemuxQueueModel::checkInputPath(int row)
 			entry.state = RemuxEntryState::InvalidPath;
 
 		if (entry.state == RemuxEntryState::Ready)
-			entry.targetPath = fileInfo.path() + QDir::separator() +
-					   fileInfo.completeBaseName() + ".mp4";
+			entry.targetPath = QDir::toNativeSeparators(
+				fileInfo.path() + QDir::separator() +
+				fileInfo.completeBaseName() + ".mp4");
 	}
 
 	if (entry.state == RemuxEntryState::Ready && isProcessing)

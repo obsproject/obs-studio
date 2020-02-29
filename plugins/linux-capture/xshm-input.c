@@ -324,7 +324,9 @@ static bool xshm_server_changed(obs_properties_t *props, obs_property_t *p,
 			    ")",
 			    i, w, h, x, y);
 
-		obs_property_list_add_int(screens, screen_info.array, i);
+		if (h > 0 && w > 0)
+			obs_property_list_add_int(screens, screen_info.array,
+						  i);
 	}
 
 	/* handle missing screen */
@@ -506,4 +508,5 @@ struct obs_source_info xshm_input = {
 	.video_render = xshm_video_render,
 	.get_width = xshm_getwidth,
 	.get_height = xshm_getheight,
+	.icon_type = OBS_ICON_TYPE_DESKTOP_CAPTURE,
 };

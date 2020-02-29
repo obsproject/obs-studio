@@ -20,7 +20,6 @@
 #include "obs-config.h"
 #include "obs-app.hpp"
 #include "platform.hpp"
-using namespace std;
 
 #include <util/windows/win-version.h>
 #include <util/platform.h>
@@ -36,6 +35,8 @@ using namespace std;
 #include <util/windows/WinHandle.hpp>
 #include <util/windows/HRError.hpp>
 #include <util/windows/ComPtr.hpp>
+
+using namespace std;
 
 static inline bool check_path(const char *data, const char *path,
 			      string &output)
@@ -299,10 +300,13 @@ RunOnceMutex GetRunOnceMutex(bool &already_running)
 		name = "OBSStudioCore";
 	} else {
 		char path[500];
+		char absPath[512];
 		*path = 0;
+		*absPath = 0;
 		GetConfigPath(path, sizeof(path), "");
+		os_get_abs_path(path, absPath, sizeof(absPath));
 		name = "OBSStudioPortable";
-		name += path;
+		name += absPath;
 	}
 
 	BPtr<wchar_t> wname;

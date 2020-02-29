@@ -93,5 +93,12 @@ size_t os_process_pipe_write(os_process_pipe_t *pp, const uint8_t *data,
 		return 0;
 	}
 
-	return fwrite(data, 1, len, pp->file);
+	size_t written = 0;
+	while (written < len) {
+		size_t ret = fwrite(data + written, 1, len - written, pp->file);
+		if (!ret)
+			return written;
+		written += ret;
+	}
+	return written;
 }

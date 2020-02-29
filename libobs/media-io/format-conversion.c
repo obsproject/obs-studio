@@ -16,8 +16,8 @@
 ******************************************************************************/
 
 #include "format-conversion.h"
-#include <xmmintrin.h>
-#include <emmintrin.h>
+
+#include "../util/sse-intrin.h"
 
 /* ...surprisingly, if I don't use a macro to force inlining, it causes the
  * CPU usage to boost by a tremendous amount in debug builds. */

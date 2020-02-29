@@ -16,6 +16,8 @@ else
   /bin/bash -c "sudo xcode-select -s /Applications/Xcode_9.4.1.app/Contents/Developer"
 fi
 
+git fetch origin --tags
+
 # Leave obs-studio folder
 cd ../
 
@@ -28,9 +30,11 @@ sudo installer -pkg ./Packages.pkg -target /
 brew update
 
 #Base OBS Deps and ccache
-brew install jack speexdsp ccache mbedtls clang-format
+brew install jack speexdsp ccache mbedtls clang-format freetype fdk-aac
 brew install https://gist.githubusercontent.com/DDRBoxman/b3956fab6073335a4bf151db0dcbd4ad/raw/ed1342a8a86793ea8c10d8b4d712a654da121ace/qt.rb
 brew install https://gist.githubusercontent.com/DDRBoxman/4cada55c51803a2f963fa40ce55c9d3e/raw/572c67e908bfbc1bcb8c476ea77ea3935133f5b5/swig.rb
+
+pip install dmgbuild
 
 export PATH=/usr/local/opt/ccache/libexec:$PATH
 ccache -s || echo "CCache is not available."

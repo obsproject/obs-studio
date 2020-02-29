@@ -61,7 +61,7 @@ if(NOT UNIX_STRUCTURE)
 		set(OBS_INSTALL_PREFIX "")
 		set(OBS_RELATIVE_PREFIX "../")
 
-		set(OBS_SCRIPT_PLUGIN_DESTINATION "${OBS_DATA_DESTINATION}/obs-scripting/${_lib_suffix}bit")
+		set(OBS_SCRIPT_PLUGIN_DESTINATION "${OBS_DATA_DESTINATION}/obs-scripting")
 	else()
 		set(OBS_EXECUTABLE_DESTINATION "bin/${_lib_suffix}bit")
 		set(OBS_EXECUTABLE32_DESTINATION "bin/32bit")
