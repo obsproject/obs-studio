@@ -182,9 +182,9 @@ static void init_vulkan_registry(bool b64)
 
 	wchar_t path[MAX_PATH];
 	get_programdata_path(path, L"obs-studio-hook\\");
+	make_filename(path, L"obs-vulkan", L".json");
 
 	s = get_reg(HKEY_LOCAL_MACHINE, IMPLICIT_LAYERS, path, b64);
-	make_filename(path, L"obs-vulkan", L".json");
 
 	if (s == ERROR_FILE_NOT_FOUND) {
 		s = get_reg(HKEY_CURRENT_USER, IMPLICIT_LAYERS, path, b64);
