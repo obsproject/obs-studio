@@ -1,6 +1,7 @@
 #include <windows.h>
 #include <psapi.h>
 #include "graphics-hook.h"
+#include "../graphics-hook-ver.h"
 #include "../obfuscate.h"
 #include "../funchook.h"
 
@@ -37,6 +38,7 @@ static HANDLE filemap_hook_info = NULL;
 
 static HINSTANCE dll_inst = NULL;
 static volatile bool stop_loop = false;
+static HANDLE dup_hook_mutex = NULL;
 static HANDLE capture_thread = NULL;
 char system_path[MAX_PATH] = {0};
 char process_name[MAX_PATH] = {0};
@@ -272,6 +274,7 @@ static void free_hook(void)
 	close_handle(&signal_ready);
 	close_handle(&signal_stop);
 	close_handle(&signal_restart);
+	close_handle(&dup_hook_mutex);
 	ipc_pipe_client_free(&pipe);
 }
 
@@ -312,6 +315,15 @@ static inline bool attempt_hook(void)
 	static bool d3d9_hooked = false;
 	static bool dxgi_hooked = false;
 	static bool gl_hooked = false;
+#if COMPILE_VULKAN_HOOK
+	static bool vulkan_hooked = false;
+	if (!vulkan_hooked) {
+		vulkan_hooked = hook_vulkan();
+		if (vulkan_hooked) {
+			return true;
+		}
+	}
+#endif //COMPILE_VULKAN_HOOK
 
 	if (!d3d9_hooked) {
 		if (!d3d9_hookable()) {
@@ -528,6 +540,8 @@ bool capture_init_shtex(struct shtex_data **data, HWND window, uint32_t base_cx,
 	*data = shmem_info;
 	(*data)->tex_handle = (uint32_t)handle;
 
+	global_hook_info->hook_ver_major = HOOK_VER_MAJOR;
+	global_hook_info->hook_ver_minor = HOOK_VER_MINOR;
 	global_hook_info->window = (uint32_t)(uintptr_t)window;
 	global_hook_info->type = CAPTURE_TYPE_TEXTURE;
 	global_hook_info->format = format;
@@ -721,6 +735,8 @@ bool capture_init_shmem(struct shmem_data **data, HWND window, uint32_t base_cx,
 	(*data)->tex1_offset = (uint32_t)align_pos;
 	(*data)->tex2_offset = (*data)->tex1_offset + aligned_tex;
 
+	global_hook_info->hook_ver_major = HOOK_VER_MAJOR;
+	global_hook_info->hook_ver_minor = HOOK_VER_MINOR;
 	global_hook_info->window = (uint32_t)(uintptr_t)window;
 	global_hook_info->type = CAPTURE_TYPE_MEMORY;
 	global_hook_info->format = format;
@@ -786,12 +802,44 @@ void capture_free(void)
 	active = false;
 }
 
+BOOL init_vk_layer();
+BOOL shutdown_vk_layer();
+
+#define HOOK_NAME L"graphics_hook_dup_mutex"
+
+static inline HANDLE open_mutex_plus_id(const wchar_t *name, DWORD id)
+{
+	wchar_t new_name[64];
+	_snwprintf(new_name, 64, L"%s%lu", name, id);
+	return open_mutex(new_name);
+}
+
+static bool init_dll(void)
+{
+	DWORD pid = GetCurrentProcessId();
+	HANDLE h;
+
+	h = open_mutex_plus_id(HOOK_NAME, pid);
+	if (h) {
+		CloseHandle(h);
+		return false;
+	}
+
+	dup_hook_mutex = create_mutex_plus_id(HOOK_NAME, pid);
+	return !!dup_hook_mutex;
+}
+
 BOOL WINAPI DllMain(HINSTANCE hinst, DWORD reason, LPVOID unused1)
 {
 	if (reason == DLL_PROCESS_ATTACH) {
 		wchar_t name[MAX_PATH];
 
 		dll_inst = hinst;
+
+		if (!init_dll()) {
+			DbgOut("Duplicate hook library");
+			return false;
+		}
 
 		HANDLE cur_thread;
 		bool success = DuplicateHandle(GetCurrentProcess(),
@@ -814,7 +862,11 @@ BOOL WINAPI DllMain(HINSTANCE hinst, DWORD reason, LPVOID unused1)
 		if (!init_mutexes()) {
 			return false;
 		}
-
+#if COMPILE_VULKAN_HOOK
+		if (!init_vk_layer()) {
+			return false;
+		}
+#endif
 		/* this prevents the library from being automatically unloaded
 		 * by the next FreeLibrary call */
 		GetModuleFileNameW(hinst, name, MAX_PATH);
@@ -829,12 +881,19 @@ BOOL WINAPI DllMain(HINSTANCE hinst, DWORD reason, LPVOID unused1)
 		}
 
 	} else if (reason == DLL_PROCESS_DETACH) {
+		if (!dup_hook_mutex) {
+			return true;
+		}
+
 		if (capture_thread) {
 			stop_loop = true;
 			WaitForSingleObject(capture_thread, 300);
 			CloseHandle(capture_thread);
 		}
 
+#if COMPILE_VULKAN_HOOK
+		shutdown_vk_layer();
+#endif
 		free_hook();
 	}
 

@@ -1071,6 +1071,8 @@ static bool UpdateVS2017Redists(json_t *root)
 	return success;
 }
 
+extern "C" void UpdateHookFiles(void);
+
 static bool Update(wchar_t *cmdLine)
 {
 	/* ------------------------------------- *
@@ -1407,6 +1409,14 @@ static bool Update(wchar_t *cmdLine)
 			}
 		}
 	}
+
+	/* ------------------------------------- *
+	 * Update hook files and vulkan registry */
+
+	UpdateHookFiles();
+
+	/* ------------------------------------- *
+	 * Finish                                */
 
 	/* If we get here, all updates installed successfully so we can purge
 	 * the old versions */
