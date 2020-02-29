@@ -605,6 +605,15 @@ extern void gl_update(gs_device_t *device)
 	);
 }
 
+extern void gl_clear_context(gs_device_t *device)
+{
+	Display *display = device->plat->edisplay;
+
+	if (!eglMakeCurrent(display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT)) {
+		blog(LOG_ERROR, "Failed to reset current context.");
+	}
+}
+
 extern void device_load_swapchain(gs_device_t *device, gs_swapchain_t *swap)
 {
 	if (device->cur_swap == swap)
