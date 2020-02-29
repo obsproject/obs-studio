@@ -1271,8 +1271,8 @@ void OBSBasicSettings::LoadGeneralSettings()
 void OBSBasicSettings::LoadRendererList()
 {
 #ifdef HAVE_SELECTABLE_RENDERERS
-	const char *renderer = config_get_string(GetGlobalConfig(), "Video",
-			"Renderer");
+	const char *renderer =
+		config_get_string(GetGlobalConfig(), "Video", "Renderer");
 
 #ifdef _WIN32
 	ui->renderer->addItem(QT_UTF8("Direct3D 11"));
@@ -3043,13 +3043,13 @@ void OBSBasicSettings::SaveVideoSettings()
 
 void OBSBasicSettings::SaveAdvancedSettings()
 {
-	QString lastMonitoringDevice = config_get_string(main->Config(),
-			"Audio", "MonitoringDeviceId");
+	QString lastMonitoringDevice = config_get_string(
+		main->Config(), "Audio", "MonitoringDeviceId");
 
 #ifdef HAVE_SELECTABLE_RENDERERS
 	if (WidgetChanged(ui->renderer))
 		config_set_string(App()->GlobalConfig(), "Video", "Renderer",
-				QT_TO_UTF8(ui->renderer->currentText()));
+				  QT_TO_UTF8(ui->renderer->currentText()));
 #endif
 
 #ifdef _WIN32

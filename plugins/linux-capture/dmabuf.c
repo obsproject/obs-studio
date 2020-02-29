@@ -16,10 +16,13 @@
 // FIXME stringify errno
 
 // FIXME integrate into glad
-typedef void (APIENTRYP PFNGLEGLIMAGETARGETTEXTURE2DOESPROC)(GLenum target, GLeglImageOES image);
+typedef void(APIENTRYP PFNGLEGLIMAGETARGETTEXTURE2DOESPROC)(
+	GLenum target, GLeglImageOES image);
 GLAPI PFNGLEGLIMAGETARGETTEXTURE2DOESPROC glad_glEGLImageTargetTexture2DOES;
-typedef void (APIENTRYP PFNGLEGLIMAGETARGETRENDERBUFFERSTORAGEOESPROC)(GLenum target, GLeglImageOES image);
-GLAPI PFNGLEGLIMAGETARGETRENDERBUFFERSTORAGEOESPROC glad_glEGLImageTargetRenderbufferStorageOES;
+typedef void(APIENTRYP PFNGLEGLIMAGETARGETRENDERBUFFERSTORAGEOESPROC)(
+	GLenum target, GLeglImageOES image);
+GLAPI PFNGLEGLIMAGETARGETRENDERBUFFERSTORAGEOESPROC
+	glad_glEGLImageTargetRenderbufferStorageOES;
 
 // FIXME glad
 static PFNGLEGLIMAGETARGETTEXTURE2DOESPROC glEGLImageTargetTexture2DOES;
@@ -74,27 +77,31 @@ static int dmabuf_source_receive_framebuffers(dmabuf_source_fblist_t *list)
 	int retval = 0;
 	int sockfd = -1;
 
-
 	/* Get socket filename */
 	struct sockaddr_un addr = {0};
 	addr.sun_family = AF_UNIX;
 	{
-		const char * const module_path = obs_get_module_data_path(obs_current_module());
+		const char *const module_path =
+			obs_get_module_data_path(obs_current_module());
 		assert(module_path);
 		if (!os_file_exists(module_path)) {
 			if (MKDIR_ERROR == os_mkdir(module_path)) {
-				blog(LOG_ERROR, "Unable to create directory %s", module_path);
+				blog(LOG_ERROR, "Unable to create directory %s",
+				     module_path);
 				return 0;
 			}
 		}
 
 		const int module_path_len = strlen(module_path);
-		if (module_path_len + socket_filename_len + 1 >= (int)sizeof(addr.sun_path)) {
-			blog(LOG_ERROR, "Socket filename is too long, max %d", (int)sizeof(addr.sun_path));
+		if (module_path_len + socket_filename_len + 1 >=
+		    (int)sizeof(addr.sun_path)) {
+			blog(LOG_ERROR, "Socket filename is too long, max %d",
+			     (int)sizeof(addr.sun_path));
 			return 0;
 		}
 		memcpy(addr.sun_path, module_path, module_path_len);
-		memcpy(addr.sun_path + module_path_len, socket_filename, socket_filename_len);
+		memcpy(addr.sun_path + module_path_len, socket_filename,
+		       socket_filename_len);
 
 		blog(LOG_DEBUG, "Will bind socket to %s", addr.sun_path);
 	}
@@ -102,38 +109,47 @@ static int dmabuf_source_receive_framebuffers(dmabuf_source_fblist_t *list)
 	/* Find obs-drmsend */
 	char drmsend_filename[PATH_MAX + 1];
 	{
-		const ssize_t drmsend_filename_len = readlink("/proc/self/exe", drmsend_filename, sizeof(drmsend_filename));
+		const ssize_t drmsend_filename_len =
+			readlink("/proc/self/exe", drmsend_filename,
+				 sizeof(drmsend_filename));
 		if (drmsend_filename_len < 0) {
-				blog(LOG_ERROR, "Unable to retrieve full path to obs binary: %d", errno);
-				return 0;
+			blog(LOG_ERROR,
+			     "Unable to retrieve full path to obs binary: %d",
+			     errno);
+			return 0;
 		}
 
-		if (drmsend_filename_len + obs_drmsend_suffix_len + 1 > (int)sizeof(drmsend_filename)) {
-				blog(LOG_ERROR, "Full path to obs-drmsend is too long");
-				return 0;
+		if (drmsend_filename_len + obs_drmsend_suffix_len + 1 >
+		    (int)sizeof(drmsend_filename)) {
+			blog(LOG_ERROR, "Full path to obs-drmsend is too long");
+			return 0;
 		}
 
-		memcpy(drmsend_filename + drmsend_filename_len, obs_drmsend_suffix, obs_drmsend_suffix_len + 1);
+		memcpy(drmsend_filename + drmsend_filename_len,
+		       obs_drmsend_suffix, obs_drmsend_suffix_len + 1);
 
 		if (!os_file_exists(drmsend_filename)) {
-				blog(LOG_ERROR, "%s doesn't exist", drmsend_filename);
-				return 0;
+			blog(LOG_ERROR, "%s doesn't exist", drmsend_filename);
+			return 0;
 		}
 
-		blog(LOG_DEBUG, "Will execute obs-drmsend from %s", drmsend_filename);
+		blog(LOG_DEBUG, "Will execute obs-drmsend from %s",
+		     drmsend_filename);
 	}
 
 	/* 1. create and listen on unix socket */
 	sockfd = socket(AF_UNIX, SOCK_STREAM, 0);
 
 	unlink(addr.sun_path);
-	if (-1 == bind(sockfd, (const struct sockaddr*)&addr, sizeof(addr))) {
-		blog(LOG_ERROR, "Cannot bind unix socket to %s: %d", addr.sun_path, errno);
+	if (-1 == bind(sockfd, (const struct sockaddr *)&addr, sizeof(addr))) {
+		blog(LOG_ERROR, "Cannot bind unix socket to %s: %d",
+		     addr.sun_path, errno);
 		goto socket_cleanup;
 	}
 
 	if (-1 == listen(sockfd, 1)) {
-		blog(LOG_ERROR, "Cannot listen on unix socket bound to %s: %d", addr.sun_path, errno);
+		blog(LOG_ERROR, "Cannot listen on unix socket bound to %s: %d",
+		     addr.sun_path, errno);
 		goto socket_cleanup;
 	}
 
@@ -143,8 +159,10 @@ static int dmabuf_source_receive_framebuffers(dmabuf_source_fblist_t *list)
 		blog(LOG_ERROR, "Cannot fork(): %d", errno);
 		goto socket_cleanup;
 	} else if (drmsend_pid == 0) {
-		execlp(drmsend_filename, drmsend_filename, dri_filename, addr.sun_path, NULL);
-		fprintf(stderr, "Cannot execlp(%s): %d\n", drmsend_filename, errno);
+		execlp(drmsend_filename, drmsend_filename, dri_filename,
+		       addr.sun_path, NULL);
+		fprintf(stderr, "Cannot execlp(%s): %d\n", drmsend_filename,
+			errno);
 		exit(-1);
 	}
 
@@ -200,13 +218,15 @@ static int dmabuf_source_receive_framebuffers(dmabuf_source_fblist_t *list)
 		msg.msg_iov = &io;
 		msg.msg_iovlen = 1;
 
-		char cmsg_buf[CMSG_SPACE(sizeof(int) * OBS_DRMSEND_MAX_FRAMEBUFFERS)];
+		char cmsg_buf[CMSG_SPACE(sizeof(int) *
+					 OBS_DRMSEND_MAX_FRAMEBUFFERS)];
 		msg.msg_control = cmsg_buf;
 		msg.msg_controllen = sizeof(cmsg_buf);
 		struct cmsghdr *cmsg = CMSG_FIRSTHDR(&msg);
 		cmsg->cmsg_level = SOL_SOCKET;
 		cmsg->cmsg_type = SCM_RIGHTS;
-		cmsg->cmsg_len = CMSG_LEN(sizeof(int) * OBS_DRMSEND_MAX_FRAMEBUFFERS);
+		cmsg->cmsg_len =
+			CMSG_LEN(sizeof(int) * OBS_DRMSEND_MAX_FRAMEBUFFERS);
 
 		// FIXME blocking, may hang if drmsend dies before sending anything
 		const ssize_t recvd = recvmsg(connfd, &msg, 0);
@@ -217,44 +237,55 @@ static int dmabuf_source_receive_framebuffers(dmabuf_source_fblist_t *list)
 		}
 
 		if (io.iov_len != sizeof(list->resp)) {
-			blog(LOG_ERROR, "Received metadata size mismatch: %d received, %d expected",
-				(int)io.iov_len, (int)sizeof(list->resp));
+			blog(LOG_ERROR,
+			     "Received metadata size mismatch: %d received, %d expected",
+			     (int)io.iov_len, (int)sizeof(list->resp));
 			break;
 		}
 
 		if (list->resp.tag != OBS_DRMSEND_TAG) {
-			blog(LOG_ERROR, "Received metadata tag mismatch: %#x received, %#x expected",
-					list->resp.tag, OBS_DRMSEND_TAG);
+			blog(LOG_ERROR,
+			     "Received metadata tag mismatch: %#x received, %#x expected",
+			     list->resp.tag, OBS_DRMSEND_TAG);
 			break;
 		}
 
-		if (cmsg->cmsg_len != CMSG_LEN(sizeof(int) * list->resp.num_framebuffers)) {
-			blog(LOG_ERROR, "Received fd size mismatch: %d received, %d expected",
-				(int)cmsg->cmsg_len, (int)CMSG_LEN(sizeof(int) * list->resp.num_framebuffers));
+		if (cmsg->cmsg_len !=
+		    CMSG_LEN(sizeof(int) * list->resp.num_framebuffers)) {
+			blog(LOG_ERROR,
+			     "Received fd size mismatch: %d received, %d expected",
+			     (int)cmsg->cmsg_len,
+			     (int)CMSG_LEN(sizeof(int) *
+					   list->resp.num_framebuffers));
 			break;
 		}
 
-		memcpy(list->fb_fds, CMSG_DATA(cmsg), sizeof(int) * list->resp.num_framebuffers);
+		memcpy(list->fb_fds, CMSG_DATA(cmsg),
+		       sizeof(int) * list->resp.num_framebuffers);
 		retval = 1;
 		break;
 	}
 	close(connfd);
 
 	if (retval) {
-		blog(LOG_INFO, "Received %d framebuffers:", list->resp.num_framebuffers);
+		blog(LOG_INFO,
+		     "Received %d framebuffers:", list->resp.num_framebuffers);
 		for (int i = 0; i < list->resp.num_framebuffers; ++i) {
-			const drmsend_framebuffer_t *fb = list->resp.framebuffers + i;
-			blog(LOG_INFO, "Received width=%d height=%d pitch=%u fourcc=%#x fd=%d",
-				fb->width, fb->height, fb->pitch, fb->fourcc, list->fb_fds[i]);
+			const drmsend_framebuffer_t *fb =
+				list->resp.framebuffers + i;
+			blog(LOG_INFO,
+			     "Received width=%d height=%d pitch=%u fourcc=%#x fd=%d",
+			     fb->width, fb->height, fb->pitch, fb->fourcc,
+			     list->fb_fds[i]);
 		}
 	}
 
-// TODO consider using separate thread for waitpid() on drmsend_pid
+	// TODO consider using separate thread for waitpid() on drmsend_pid
 	/* 5. waitpid() on obs-drmsend w/ timeout (poll) */
 	int exited = 0;
 child_cleanup:
 	for (int i = 0; i < 10; ++i) {
-		usleep(500*1000);
+		usleep(500 * 1000);
 		int wstatus = 0;
 		const pid_t p = waitpid(drmsend_pid, &wstatus, WNOHANG);
 		if (p == drmsend_pid) {
@@ -262,7 +293,8 @@ child_cleanup:
 				exited = 1;
 				const int status = WEXITSTATUS(wstatus);
 				if (status != 0)
-					blog(LOG_ERROR, "%s returned %d", drmsend_filename, status);
+					blog(LOG_ERROR, "%s returned %d",
+					     drmsend_filename, status);
 				break;
 			}
 		} else if (-1 == p) {
@@ -276,7 +308,8 @@ child_cleanup:
 	}
 
 	if (!exited)
-		blog(LOG_ERROR, "Couldn't wait for %s to exit, expect zombies", drmsend_filename);
+		blog(LOG_ERROR, "Couldn't wait for %s to exit, expect zombies",
+		     drmsend_filename);
 
 socket_cleanup:
 	close(sockfd);
@@ -316,7 +349,7 @@ static void dmabuf_source_open(dmabuf_source_t *ctx, uint32_t fb_id)
 	const drmsend_framebuffer_t *fb = ctx->fbs.resp.framebuffers + index;
 
 	blog(LOG_DEBUG, "%dx%d %d %d %d", fb->width, fb->height,
-		ctx->fbs.fb_fds[index], fb->offset, fb->pitch);
+	     ctx->fbs.fb_fds[index], fb->offset, fb->pitch);
 
 	obs_enter_graphics();
 
@@ -324,6 +357,7 @@ static void dmabuf_source_open(dmabuf_source_t *ctx, uint32_t fb_id)
 	const EGLDisplay edisp = graphics->device->plat->edisplay;
 	ctx->edisp = edisp;
 
+	/* clang-format off */
 	// FIXME check for EGL_EXT_image_dma_buf_import
 	EGLAttrib eimg_attrs[] = {
 		EGL_WIDTH, fb->width,
@@ -334,9 +368,10 @@ static void dmabuf_source_open(dmabuf_source_t *ctx, uint32_t fb_id)
 		EGL_DMA_BUF_PLANE0_PITCH_EXT, fb->pitch,
 		EGL_NONE
 	};
+	/* clang-format on */
 
-	ctx->eimage = eglCreateImage(edisp, EGL_NO_CONTEXT, EGL_LINUX_DMA_BUF_EXT, 0,
-		eimg_attrs);
+	ctx->eimage = eglCreateImage(edisp, EGL_NO_CONTEXT,
+				     EGL_LINUX_DMA_BUF_EXT, 0, eimg_attrs);
 
 	if (!ctx->eimage) {
 		// FIXME stringify error
@@ -346,9 +381,9 @@ static void dmabuf_source_open(dmabuf_source_t *ctx, uint32_t fb_id)
 	}
 
 	// FIXME handle fourcc?
-	ctx->texture = gs_texture_create(fb->width, fb->height,
-		GS_BGRA, 1, NULL, GS_DYNAMIC);
-	const GLuint gltex = *(GLuint*)gs_texture_get_obj(ctx->texture);
+	ctx->texture = gs_texture_create(fb->width, fb->height, GS_BGRA, 1,
+					 NULL, GS_DYNAMIC);
+	const GLuint gltex = *(GLuint *)gs_texture_get_obj(ctx->texture);
 	blog(LOG_DEBUG, "gltex = %x", gltex);
 	glBindTexture(GL_TEXTURE_2D, gltex);
 
@@ -421,7 +456,8 @@ static void *dmabuf_source_create(obs_data_t *settings, obs_source_t *source)
 
 	ctx->xcb = xcb_connect(NULL, NULL);
 	if (!ctx->xcb || xcb_connection_has_error(ctx->xcb)) {
-		blog(LOG_ERROR, "Unable to open X display, cursor will not be available");
+		blog(LOG_ERROR,
+		     "Unable to open X display, cursor will not be available");
 	}
 
 	ctx->cursor = xcb_xcursor_init(ctx->xcb);
@@ -471,10 +507,10 @@ static void dmabuf_source_video_tick(void *data, float seconds)
 	if (!ctx->cursor)
 		return;
 
-	xcb_xfixes_get_cursor_image_cookie_t cur_c
-		= xcb_xfixes_get_cursor_image_unchecked(ctx->xcb);
-	xcb_xfixes_get_cursor_image_reply_t *cur_r
-		= xcb_xfixes_get_cursor_image_reply(ctx->xcb, cur_c, NULL);
+	xcb_xfixes_get_cursor_image_cookie_t cur_c =
+		xcb_xfixes_get_cursor_image_unchecked(ctx->xcb);
+	xcb_xfixes_get_cursor_image_reply_t *cur_r =
+		xcb_xfixes_get_cursor_image_reply(ctx->xcb, cur_c, NULL);
 
 	obs_enter_graphics();
 	xcb_xcursor_update(ctx->cursor, cur_r);
@@ -526,13 +562,15 @@ static obs_properties_t *dmabuf_source_get_properties(void *data)
 	obs_properties_t *props = obs_properties_create();
 
 	obs_properties_add_bool(props, "show_cursor",
-			obs_module_text("CaptureCursor"));
+				obs_module_text("CaptureCursor"));
 
-	obs_property_t *fb_list = obs_properties_add_list(props, "framebuffer", "Framebuffer to capture",
+	obs_property_t *fb_list = obs_properties_add_list(
+		props, "framebuffer", "Framebuffer to capture",
 		OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
 
 	for (int i = 0; i < stack_list.resp.num_framebuffers; ++i) {
-		const drmsend_framebuffer_t *fb = stack_list.resp.framebuffers + i;
+		const drmsend_framebuffer_t *fb =
+			stack_list.resp.framebuffers + i;
 		char buf[128];
 		sprintf(buf, "%dx%d (%#x)", fb->width, fb->height, fb->fb_id);
 		obs_property_list_add_int(fb_list, buf, fb->fb_id);
@@ -570,7 +608,8 @@ struct obs_source_info dmabuf_input = {
 	.id = "dmabuf-source",
 	.type = OBS_SOURCE_TYPE_INPUT,
 	.get_name = dmabuf_source_get_name,
-	.output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_CUSTOM_DRAW | OBS_SOURCE_DO_NOT_DUPLICATE,
+	.output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_CUSTOM_DRAW |
+			OBS_SOURCE_DO_NOT_DUPLICATE,
 	.create = dmabuf_source_create,
 	.destroy = dmabuf_source_destroy,
 	.video_tick = dmabuf_source_video_tick,

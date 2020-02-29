@@ -14,17 +14,17 @@
 #include <string.h>
 #include <errno.h>
 
-#define ERR(fmt, ...) \
-	fprintf(stderr, "" fmt "\n", ##__VA_ARGS__)
+#define ERR(fmt, ...) fprintf(stderr, "" fmt "\n", ##__VA_ARGS__)
 
-#define MSG(fmt, ...) \
-	fprintf(stdout, "obs-drmsend: " fmt "\n", ##__VA_ARGS__)
+#define MSG(fmt, ...) fprintf(stdout, "obs-drmsend: " fmt "\n", ##__VA_ARGS__)
 
-void printUsage(const char *name) {
+void printUsage(const char *name)
+{
 	MSG("usage: %s /dev/dri/card socket_filename", name);
 }
 
-int main(int argc, const char *argv[]) {
+int main(int argc, const char *argv[])
+{
 	if (argc < 3) {
 		printUsage(argv[0]);
 		return 1;
@@ -56,9 +56,11 @@ int main(int argc, const char *argv[]) {
 
 		MSG("DRM planes %d:", planes->count_planes);
 		for (uint32_t i = 0; i < planes->count_planes; ++i) {
-			drmModePlanePtr plane = drmModeGetPlane(drmfd, planes->planes[i]);
+			drmModePlanePtr plane =
+				drmModeGetPlane(drmfd, planes->planes[i]);
 			if (!plane) {
-				ERR("Cannot get drmModePlanePtr for plane %#x", planes->planes[i]);
+				ERR("Cannot get drmModePlanePtr for plane %#x",
+				    planes->planes[i]);
 				continue;
 			}
 
@@ -69,7 +71,8 @@ int main(int argc, const char *argv[]) {
 
 			int j = 0;
 			for (; j < response.num_framebuffers; ++j) {
-				if (response.framebuffers[j].fb_id == plane->fb_id)
+				if (response.framebuffers[j].fb_id ==
+				    plane->fb_id)
 					break;
 			}
 
@@ -77,38 +80,50 @@ int main(int argc, const char *argv[]) {
 				goto plane_continue;
 
 			if (j == OBS_DRMSEND_MAX_FRAMEBUFFERS) {
-				ERR("Too many framebuffers, max %d", OBS_DRMSEND_MAX_FRAMEBUFFERS);
+				ERR("Too many framebuffers, max %d",
+				    OBS_DRMSEND_MAX_FRAMEBUFFERS);
 				goto plane_continue;
 			}
 
 			drmModeFBPtr drmfb = drmModeGetFB(drmfd, plane->fb_id);
 			if (!drmfb) {
-				ERR("Cannot get drmModeFBPtr for fb %#x", plane->fb_id);
+				ERR("Cannot get drmModeFBPtr for fb %#x",
+				    plane->fb_id);
 			} else {
 				if (!drmfb->handle) {
-					ERR("Cannot get FB handle for fb %#x", plane->fb_id);
-					ERR("Possible reason: not permitted to get fb handles. Run either with sudo, or setcap cap_sys_admin+ep %s", argv[0]);
+					ERR("Cannot get FB handle for fb %#x",
+					    plane->fb_id);
+					ERR("Possible reason: not permitted to get fb handles. Run either with sudo, or setcap cap_sys_admin+ep %s",
+					    argv[0]);
 				} else {
 					int fb_fd = -1;
-					const int ret = drmPrimeHandleToFD(drmfd, drmfb->handle, 0, &fb_fd);
+					const int ret = drmPrimeHandleToFD(
+						drmfd, drmfb->handle, 0,
+						&fb_fd);
 					if (ret != 0 || fb_fd == -1) {
-						ERR("Cannot get fd for fb %#x handle %#x: %d", plane->fb_id, drmfb->handle, errno);
+						ERR("Cannot get fd for fb %#x handle %#x: %d",
+						    plane->fb_id, drmfb->handle,
+						    errno);
 					} else {
-						const int fb_index = response.num_framebuffers++;
-						drmsend_framebuffer_t *fb = response.framebuffers + fb_index;
+						const int fb_index =
+							response.num_framebuffers++;
+						drmsend_framebuffer_t *fb =
+							response.framebuffers +
+							fb_index;
 						fb_fds[fb_index] = fb_fd;
 						fb->fb_id = plane->fb_id;
 						fb->width = drmfb->width;
 						fb->height = drmfb->height;
 						fb->pitch = drmfb->pitch;
 						fb->offset = 0;
-						fb->fourcc = DRM_FORMAT_XRGB8888; // FIXME
+						fb->fourcc =
+							DRM_FORMAT_XRGB8888; // FIXME
 					}
 				}
 				drmModeFreeFB(drmfb);
 			}
 
-plane_continue:
+		plane_continue:
 			drmModeFreePlane(plane);
 		}
 
@@ -121,12 +136,13 @@ plane_continue:
 		addr.sun_family = AF_UNIX;
 		if (strlen(sockname) >= sizeof(addr.sun_path)) {
 			MSG("Socket filename '%s' is too long, max %d",
-				sockname, (int)sizeof(addr.sun_path));
+			    sockname, (int)sizeof(addr.sun_path));
 			goto cleanup;
 		}
 
 		strcpy(addr.sun_path, sockname);
-		if (-1 == connect(sockfd, (const struct sockaddr*)&addr, sizeof(addr))) {
+		if (-1 == connect(sockfd, (const struct sockaddr *)&addr,
+				  sizeof(addr))) {
 			MSG("Cannot connect to unix socket: %d", errno);
 			goto cleanup;
 		}
