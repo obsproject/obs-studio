@@ -599,7 +599,7 @@ static int64_t ffmpeg_source_get_duration(void *data)
 	int64_t dur = 0;
 
 	if (s->media.fmt)
-		dur = (float)s->media.fmt->duration / 1000.0f;
+		dur = s->media.fmt->duration / INT64_C(1000);
 
 	return dur;
 }
