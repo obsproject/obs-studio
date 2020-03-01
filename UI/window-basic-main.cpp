@@ -3977,7 +3977,7 @@ void OBSBasic::changeEvent(QEvent *event)
 
 			if (previewEnabled)
 				EnablePreviewDisplay(false);
-		} else if (stateEvent->oldState() == Qt::WindowMinimized &&
+		} else if (stateEvent->oldState() & Qt::WindowMinimized &&
 			   isVisible()) {
 			if (previewEnabled)
 				EnablePreviewDisplay(true);
