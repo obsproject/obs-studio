@@ -2038,10 +2038,41 @@ static void obs_source_update_async_video(obs_source_t *source)
 	}
 }
 
+static void rotate_async_video(obs_source_t *source, long rotation)
+{
+	float x = 0;
+	float y = 0;
+
+	switch (rotation) {
+	case 90:
+		y = (float)source->async_width;
+		break;
+	case 270:
+	case -90:
+		x = (float)source->async_height;
+		break;
+	case 180:
+		x = (float)source->async_width;
+		y = (float)source->async_height;
+	}
+
+	gs_matrix_translate3f(x, y, 0);
+	gs_matrix_rotaa4f(0.0f, 0.0f, -1.0f, RAD((float)rotation));
+}
+
 static inline void obs_source_render_async_video(obs_source_t *source)
 {
-	if (source->async_textures[0] && source->async_active)
+	if (source->async_textures[0] && source->async_active) {
+		long rotation = source->async_rotation;
+		if (rotation) {
+			gs_matrix_push();
+			rotate_async_video(source, rotation);
+		}
 		obs_source_draw_async_texture(source);
+		if (rotation) {
+			gs_matrix_pop();
+		}
+	}
 }
 
 static inline void obs_source_render_filters(obs_source_t *source)
@@ -2165,6 +2196,18 @@ void obs_source_video_render(obs_source_t *source)
 	obs_source_release(source);
 }
 
+static inline uint32_t get_async_width(const obs_source_t *source)
+{
+	return ((source->async_rotation % 180) == 0) ? source->async_width
+						     : source->async_height;
+}
+
+static inline uint32_t get_async_height(const obs_source_t *source)
+{
+	return ((source->async_rotation % 180) == 0) ? source->async_height
+						     : source->async_width;
+}
+
 static uint32_t get_base_width(const obs_source_t *source)
 {
 	bool is_filter = !!source->filter_parent;
@@ -2180,7 +2223,7 @@ static uint32_t get_base_width(const obs_source_t *source)
 		return get_base_width(source->filter_target);
 	}
 
-	return source->async_active ? source->async_width : 0;
+	return source->async_active ? get_async_width(source) : 0;
 }
 
 static uint32_t get_base_height(const obs_source_t *source)
@@ -2198,7 +2241,7 @@ static uint32_t get_base_height(const obs_source_t *source)
 		return get_base_height(source->filter_target);
 	}
 
-	return source->async_active ? source->async_height : 0;
+	return source->async_active ? get_async_height(source) : 0;
 }
 
 static uint32_t get_recurse_width(obs_source_t *source)
@@ -2798,6 +2841,12 @@ void obs_source_output_video2(obs_source_t *source,
 	       sizeof(frame->color_range_max));
 
 	obs_source_output_video_internal(source, &new_frame);
+}
+
+void obs_source_set_async_rotation(obs_source_t *source, long rotation)
+{
+	if (source)
+		source->async_rotation = rotation;
 }
 
 static inline bool preload_frame_changed(obs_source_t *source,

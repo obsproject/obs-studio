@@ -1175,6 +1175,8 @@ EXPORT void obs_source_output_video(obs_source_t *source,
 EXPORT void obs_source_output_video2(obs_source_t *source,
 				     const struct obs_source_frame2 *frame);
 
+EXPORT void obs_source_set_async_rotation(obs_source_t *source, long rotation);
+
 /**
  * Preloads asynchronous video data to allow instantaneous playback
  *

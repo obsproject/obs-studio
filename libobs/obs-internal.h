@@ -641,6 +641,7 @@ struct obs_source {
 	bool async_cache_full_range;
 	enum gs_color_format async_texture_formats[MAX_AV_PLANES];
 	int async_channel_count;
+	long async_rotation;
 	bool async_flip;
 	bool async_active;
 	bool async_update_texture;
