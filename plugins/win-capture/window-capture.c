@@ -385,12 +385,12 @@ static void wc_tick(void *data, float seconds)
 		wc->check_window_timer = 0.0f;
 
 		wc->window = (wc->method == METHOD_WGC)
-				     ? find_window_top_level(EXCLUDE_MINIMIZED,
+				     ? find_window_top_level(INCLUDE_MINIMIZED,
 							     wc->priority,
 							     wc->class,
 							     wc->title,
 							     wc->executable)
-				     : find_window(EXCLUDE_MINIMIZED,
+				     : find_window(INCLUDE_MINIMIZED,
 						   wc->priority, wc->class,
 						   wc->title, wc->executable);
 		if (!wc->window) {
