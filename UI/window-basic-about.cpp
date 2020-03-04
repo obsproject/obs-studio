@@ -11,9 +11,9 @@ using namespace json11;
 
 OBSAbout::OBSAbout(QWidget *parent) : QDialog(parent), ui(new Ui::OBSAbout)
 {
-	ui->setupUi(this);
-
 	setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
+
+	ui->setupUi(this);
 
 	QString bitness;
 	QString ver;
