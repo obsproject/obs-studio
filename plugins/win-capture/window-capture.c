@@ -323,7 +323,7 @@ static obs_properties_t *wc_properties(void *data)
 	obs_property_list_add_int(p, TEXT_METHOD_AUTO, METHOD_AUTO);
 	obs_property_list_add_int(p, TEXT_METHOD_BITBLT, METHOD_BITBLT);
 	obs_property_list_add_int(p, TEXT_METHOD_WGC, METHOD_WGC);
-	obs_property_list_item_disable(p, 1, !wc->wgc_supported);
+	obs_property_list_item_disable(p, 2, !wc->wgc_supported);
 	obs_property_set_modified_callback(p, wc_capture_method_changed);
 
 	p = obs_properties_add_list(ppts, "priority", TEXT_MATCH_PRIORITY,
