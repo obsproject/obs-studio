@@ -318,12 +318,13 @@ bool SourceTreeItem::IsEditing()
 void SourceTreeItem::EnterEditMode()
 {
 	setFocusPolicy(Qt::StrongFocus);
+	int index = boxLayout->indexOf(label);
 	boxLayout->removeWidget(label);
 	editor = new QLineEdit(label->text());
 	editor->setStyleSheet("background: none");
 	editor->selectAll();
 	editor->installEventFilter(this);
-	boxLayout->insertWidget(2, editor);
+	boxLayout->insertWidget(index, editor);
 	setFocusProxy(editor);
 }
 
@@ -338,11 +339,12 @@ void SourceTreeItem::ExitEditMode(bool save)
 	std::string newName = QT_TO_UTF8(editor->text());
 
 	setFocusProxy(nullptr);
+	int index = boxLayout->indexOf(editor);
 	boxLayout->removeWidget(editor);
 	delete editor;
 	editor = nullptr;
 	setFocusPolicy(Qt::NoFocus);
-	boxLayout->insertWidget(2, label);
+	boxLayout->insertWidget(index, label);
 
 	/* ----------------------------------------- */
 	/* check for empty string                    */
