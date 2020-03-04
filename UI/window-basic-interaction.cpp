@@ -57,9 +57,6 @@ OBSBasicInteraction::OBSBasicInteraction(QWidget *parent, OBSSource source_)
 	if (cx > 400 && cy > 400)
 		resize(cx, cy);
 
-	OBSData settings = obs_source_get_settings(source);
-	obs_data_release(settings);
-
 	const char *name = obs_source_get_name(source);
 	setWindowTitle(QTStr("Basic.InteractionWindow").arg(QT_UTF8(name)));
 
