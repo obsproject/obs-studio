@@ -528,22 +528,22 @@ static int proto_try_connect(struct ffmpeg_encoded_output *stream)
 	config.url = url;
 	config.format_name = "mpegts";
 	config.format_mime_type = "video/MP2T";
-	config.muxer_settings = 0;
+	config.muxer_settings = "";
 	config.video_bitrate = encoder_bitrate(vencoder);
-	config.audio_bitrate = obs_encoder_get_sample_rate(aencoder) / 1000;
+	config.audio_bitrate = encoder_bitrate(aencoder);
 	config.gop_size = 250;
 	config.video_encoder = "";
 	config.video_encoder_id = AV_CODEC_ID_H264;
 	config.audio_encoder = "";
 	config.audio_encoder_id = AV_CODEC_ID_AAC;
-	config.video_settings = 0;
-	config.audio_settings = 0;
+	config.video_settings = "";
+	config.audio_settings = "";
 	config.scale_width = 0;
 	config.scale_height = 0;
 	config.width = obs_encoder_get_width(vencoder);
 	config.height = obs_encoder_get_height(vencoder);
-	config.audio_tracks = (int)audio_output_get_channels(audio);
-	config.audio_mix_count = get_audio_mix_count(config.audio_tracks);
+	config.audio_tracks = (int)obs_output_get_mixer(stream->output);
+	config.audio_mix_count = 1;
 	config.format =
 		obs_to_ffmpeg_video_format(video_output_get_format(video));
 
