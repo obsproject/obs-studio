@@ -509,8 +509,9 @@ private:
 
 	QSlider *tBar;
 	bool tBarActive = false;
-	bool tBarDown = false;
-	void EnableTBar();
+
+	OBSSource GetOverrideTransition(OBSSource source);
+	int GetOverrideTransitionDuration(OBSSource source);
 
 public slots:
 	void DeferSaveBegin();
