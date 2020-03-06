@@ -58,6 +58,11 @@
 #include <pthread.h>
 #endif
 
+#if !defined(_WIN32) && !defined(__APPLE__)
+#include <obs-nix-platform.h>
+#include <QX11Info>
+#endif
+
 #include <iostream>
 
 #include "ui-config.h"
@@ -1383,6 +1388,13 @@ bool OBSApp::OBSInit()
 	setAttribute(Qt::AA_DontCreateNativeWidgetSiblings);
 
 	qRegisterMetaType<VoidFunc>();
+
+#if !defined(_WIN32) && !defined(__APPLE__)
+	obs_set_nix_platform(OBS_NIX_PLATFORM_X11_GLX);
+	if (QApplication::platformName() == "xcb") {
+		obs_set_nix_platform_display(QX11Info::display());
+	}
+#endif
 
 	if (!StartupOBS(locale.c_str(), GetProfilerNameStore()))
 		return false;
