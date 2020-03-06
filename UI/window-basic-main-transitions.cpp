@@ -356,6 +356,7 @@ void OBSBasic::TransitionToScene(OBSSource source, bool force,
 		OBSSource trOverride = GetOverrideTransition(source);
 
 		if (trOverride && !overridingTransition && !quickTransition) {
+			transition = trOverride;
 			duration = GetOverrideTransitionDuration(source);
 			OverrideTransition(trOverride);
 			overridingTransition = true;
