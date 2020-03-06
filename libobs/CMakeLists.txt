@@ -187,6 +187,7 @@ elseif(APPLE)
 elseif(UNIX)
 	set(libobs_PLATFORM_SOURCES
 		obs-nix.c
+		obs-nix-x11.c
 		util/threading-posix.c
 		util/pipe-posix.c
 		util/platform-nix.c)
