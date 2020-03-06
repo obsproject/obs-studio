@@ -289,12 +289,20 @@ void log_system_info(void)
 #if defined(__linux__)
 	log_distribution_info();
 #endif
-	obs_nix_x11_log_info();
+	switch (obs_get_platform()) {
+	case OBS_PLATFORM_DEFAULT:
+		obs_nix_x11_log_info();
+		break;
+	}
 }
 
 bool obs_hotkeys_platform_init(struct obs_core_hotkeys *hotkeys)
 {
-	hotkeys_vtable = obs_nix_x11_get_hotkeys_vtable();
+	switch (obs_get_platform()) {
+	case OBS_PLATFORM_DEFAULT:
+		hotkeys_vtable = obs_nix_x11_get_hotkeys_vtable();
+		break;
+	}
 
 	return hotkeys_vtable->init(hotkeys);
 }

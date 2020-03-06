@@ -54,6 +54,11 @@
 #include <pthread.h>
 #endif
 
+#if !defined(_WIN32) && !defined(__APPLE__)
+#define IS_UNIX 1
+#include <QX11Info>
+#endif
+
 #include <iostream>
 
 #include "ui-config.h"
@@ -1335,6 +1340,12 @@ bool OBSApp::OBSInit()
 
 	qRegisterMetaType<VoidFunc>();
 
+#if defined(IS_UNIX)
+	if (QApplication::platformName() == "xcb") {
+		obs_set_platform_display(QX11Info::display());
+	}
+#endif
+
 	if (!StartupOBS(locale.c_str(), GetProfilerNameStore()))
 		return false;
 
@@ -2087,10 +2098,6 @@ static inline bool arg_is(const char *arg, const char *long_form,
 	return (long_form && strcmp(arg, long_form) == 0) ||
 	       (short_form && strcmp(arg, short_form) == 0);
 }
-
-#if !defined(_WIN32) && !defined(__APPLE__)
-#define IS_UNIX 1
-#endif
 
 /* if using XDG and was previously using an older build of OBS, move config
  * files to XDG directory */

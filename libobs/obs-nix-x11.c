@@ -32,7 +32,7 @@
 
 void obs_nix_x11_log_info(void)
 {
-	Display *dpy = XOpenDisplay(NULL);
+	Display *dpy = obs_get_platform_display();
 	if (!dpy) {
 		blog(LOG_INFO, "Unable to open X display");
 		return;
@@ -827,7 +827,7 @@ static inline void registerMouseEvents(struct obs_core_hotkeys *hotkeys)
 
 static bool obs_nix_x11_hotkeys_platform_init(struct obs_core_hotkeys *hotkeys)
 {
-	Display *display = XOpenDisplay(NULL);
+	Display *display = obs_get_platform_display();
 	if (!display)
 		return false;
 

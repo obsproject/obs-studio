@@ -387,6 +387,7 @@ set(libobs_libobs_SOURCES
 	obs-output.c
 	obs-output-delay.c
 	obs.c
+	obs-platform.c
 	obs-properties.c
 	obs-data.c
 	obs-hotkey.c
@@ -408,6 +409,7 @@ set(libobs_libobs_HEADERS
 	obs-internal.h
 	obs.h
 	obs-ui.h
+	obs-platform.h
 	obs-properties.h
 	obs-data.h
 	obs-interaction.h
