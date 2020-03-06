@@ -120,7 +120,8 @@ static bool source_name_exists(const Json::array &sources, const string &name)
 	return false;
 }
 
-static string get_source_name_from_id(const Json::array &sources,
+static string get_source_name_from_id(const Json &root,
+				      const Json::array &sources,
 				      const string &id)
 {
 	for (size_t i = 0; i < sources.size(); i++) {
@@ -129,6 +130,25 @@ static string get_source_name_from_id(const Json::array &sources,
 
 		if (source_id == id)
 			return item["name"].string_value();
+	}
+
+	Json::array scene_arr = root["scenes"]["items"].array_items();
+
+	for (size_t i = 0; i < scene_arr.size(); i++) {
+		Json item = scene_arr[i];
+		string source_id = item["id"].string_value();
+
+		if (source_id == id) {
+			string name = item["name"].string_value();
+
+			int copy = 1;
+			string out_name = name;
+
+			while (source_name_exists(sources, out_name))
+				out_name = name + "(" + to_string(copy++) + ")";
+
+			return out_name;
+		}
 	}
 
 	return "";
@@ -164,8 +184,8 @@ static void get_hotkey_bindings(Json::object &out_hotkeys,
 	}
 }
 
-static void get_scene_items(const Json::array &out_sources, Json::object &scene,
-			    const Json::array &in)
+static void get_scene_items(const Json &root, const Json::array &out_sources,
+			    Json::object &scene, const Json::array &in)
 {
 	int length = 0;
 
@@ -177,7 +197,7 @@ static void get_scene_items(const Json::array &out_sources, Json::object &scene,
 
 		Json in_crop = item["crop"];
 		string id = item["sourceId"].string_value();
-		string name = get_source_name_from_id(out_sources, id);
+		string name = get_source_name_from_id(root, out_sources, id);
 
 		Json::array hotkey_items =
 			item["hotkeys"]["items"].array_items();
@@ -326,7 +346,7 @@ static int attempt_import(const Json &root, const string &name, Json &res)
 		Json in_items = scene["sceneItems"];
 		Json::array items_arr = in_items["items"].array_items();
 
-		get_scene_items(out_sources, out, items_arr);
+		get_scene_items(root, out_sources, out, items_arr);
 
 		out_sources.push_back(out);
 	}
