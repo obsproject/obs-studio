@@ -28,7 +28,7 @@ elseif(APPLE)
 		${COCOA}
 		${IOSURF}
 		${OPENGL_gl_LIBRARY})
-else() #This needs to change to be more specific to get ready for Wayland
+else()
 	find_package(XCB COMPONENTS XCB REQUIRED)
 	find_package(X11_XCB REQUIRED)
 

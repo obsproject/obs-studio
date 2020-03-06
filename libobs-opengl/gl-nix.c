@@ -32,6 +32,11 @@ static void init_winsys(void)
 	case OBS_NIX_PLATFORM_X11_EGL:
 		gl_vtable = gl_x11_egl_get_winsys_vtable();
 		break;
+#ifdef ENABLE_WAYLAND
+	case OBS_NIX_PLATFORM_WAYLAND:
+		blog(LOG_ERROR, "EGL/Wayland not implemented yet");
+		break;
+#endif
 	}
 
 	assert(gl_vtable != NULL);
