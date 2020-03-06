@@ -202,6 +202,8 @@ if(APPLE)
 	list(APPEND CMAKE_INSTALL_RPATH "@loader_path/" "@executable_path/")
 elseif(UNIX)
 	option(USE_XDG "Utilize XDG Base Directory Specification" ON)
+	option(ENABLE_WAYLAND "Build support for Wayland" ON)
+
 	if(USE_XDG)
 		add_definitions(-DUSE_XDG)
 	endif()
