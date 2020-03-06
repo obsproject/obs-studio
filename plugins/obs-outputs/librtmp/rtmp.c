@@ -4361,10 +4361,10 @@ RTMP_Close(RTMP *r)
             free(r->Link.streams[idx].playpath.av_val);
             r->Link.streams[idx].playpath.av_val = NULL;
         }
-    }
 
-    r->Link.curStreamIdx = 0;
-    r->Link.nStreams = 0;
+        r->Link.curStreamIdx = 0;
+        r->Link.nStreams = 0;
+    }
 
     if ((r->Link.protocol & RTMP_FEATURE_WRITE) &&
             (r->Link.pFlags & RTMP_PUB_CLEAN) &&
