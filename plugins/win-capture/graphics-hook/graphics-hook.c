@@ -505,7 +505,7 @@ static inline void unlock_shmem_tex(int id)
 static inline bool init_shared_info(size_t size, HWND window)
 {
 	wchar_t name[64];
-	_snwprintf(name, 64, L"%s_%d_%u", SHMEM_TEXTURE,
+	_snwprintf(name, 64, L"%s_%u_%u", SHMEM_TEXTURE,
 		   (uint32_t)(uintptr_t)window, ++shmem_id_counter);
 
 	shmem_file_handle = CreateFileMappingW(INVALID_HANDLE_VALUE, NULL,
