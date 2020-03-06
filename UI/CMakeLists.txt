@@ -403,6 +403,11 @@ if (APPLE)
 	set_target_properties(obs PROPERTIES LINK_FLAGS "-pagezero_size 10000 -image_base 100000000")
 endif()
 
+if (ENABLE_WAYLAND)
+	find_package(Qt5Gui)
+	include_directories(${Qt5Gui_PRIVATE_INCLUDE_DIRS})
+endif()
+
 define_graphic_modules(obs)
 
 install_obs_core(obs)

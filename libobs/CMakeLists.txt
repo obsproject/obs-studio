@@ -20,6 +20,12 @@ if(UNIX)
 		else()
 			set(USE_XINPUT "0")
 		endif()
+
+		if (ENABLE_WAYLAND)
+			find_package(Qt5Gui)
+			include_directories(${Qt5Gui_PRIVATE_INCLUDE_DIRS})
+		endif()
+
 		find_package(PulseAudio)
 		if (NOT "${PULSEAUDIO_LIBRARY}" STREQUAL "")
 			message(STATUS "Found PulseAudio - Audio Monitor enabled")
@@ -175,6 +181,11 @@ elseif(UNIX)
 		util/pipe-posix.c
 		util/platform-nix.c)
 
+	if(ENABLE_WAYLAND)
+		set(libobs_PLATFORM_SOURCES ${libobs_PLATFORM_SOURCES}
+			obs-nix-wayland.c)
+	endif()
+
 	if(NEEDS_SIMDE)
 		set(libobs_PLATFORM_HEADERS
 			util/simde/check.h
@@ -212,12 +223,15 @@ elseif(UNIX)
 	endif()
 
 	include_directories(
-		${X11_XCB_INCLUDE_DIRS})
+		${X11_XCB_INCLUDE_DIRS}
+		${WAYLAND_CLIENT_INCLUDE_DIR})
 	add_definitions(
-		${X11_XCB_DEFINITIONS})
+		${X11_XCB_DEFINITIONS}
+		${WAYLAND_DEFINITIONS})
 	set(libobs_PLATFORM_DEPS
 		${libobs_PLATFORM_DEPS}
-		${X11_XCB_LIBRARIES})
+		${X11_XCB_LIBRARIES}
+		${WAYLAND_CLIENT_LIBRARIES})
 
 	if(USE_XINPUT)
 		include_directories(

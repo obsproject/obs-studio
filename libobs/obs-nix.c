@@ -19,6 +19,11 @@
 #include "obs-internal.h"
 #include "obs-nix.h"
 #include "obs-nix-x11.h"
+
+#ifdef ENABLE_WAYLAND
+#include "obs-nix-wayland.h"
+#endif
+
 #if defined(__FreeBSD__)
 #define _GNU_SOURCE
 #endif
@@ -293,6 +298,11 @@ void log_system_info(void)
 	case OBS_PLATFORM_DEFAULT:
 		obs_nix_x11_log_info();
 		break;
+#ifdef ENABLE_WAYLAND
+	case OBS_PLATFORM_WAYLAND:
+		obs_nix_wayland_log_info();
+		break;
+#endif
 	}
 }
 
@@ -302,6 +312,11 @@ bool obs_hotkeys_platform_init(struct obs_core_hotkeys *hotkeys)
 	case OBS_PLATFORM_DEFAULT:
 		hotkeys_vtable = obs_nix_x11_get_hotkeys_vtable();
 		break;
+#ifdef ENABLE_WAYLAND
+	case OBS_PLATFORM_WAYLAND:
+		hotkeys_vtable = obs_nix_wayland_get_hotkeys_vtable();
+		break;
+#endif
 	}
 
 	return hotkeys_vtable->init(hotkeys);

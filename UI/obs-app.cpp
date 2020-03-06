@@ -57,6 +57,11 @@
 #if !defined(_WIN32) && !defined(__APPLE__)
 #define IS_UNIX 1
 #include <QX11Info>
+
+#ifdef ENABLE_WAYLAND
+#include <qpa/qplatformnativeinterface.h>
+#endif
+
 #endif
 
 #include <iostream>
@@ -1340,11 +1345,26 @@ bool OBSApp::OBSInit()
 
 	qRegisterMetaType<VoidFunc>();
 
+	obs_set_platform(OBS_PLATFORM_DEFAULT);
+
 #if defined(IS_UNIX)
 	if (QApplication::platformName() == "xcb") {
 		obs_set_platform_display(QX11Info::display());
 	}
+
+#ifdef ENABLE_WAYLAND
+	if (QApplication::platformName().contains("wayland")) {
+		obs_set_platform(OBS_PLATFORM_WAYLAND);
+		QPlatformNativeInterface *native =
+			QGuiApplication::platformNativeInterface();
+		obs_set_platform_display(
+			native->nativeResourceForIntegration("display"));
+
+		blog(LOG_INFO, "Platform: Wayland");
+	}
 #endif
+
+#endif // IS_UNIX
 
 	if (!StartupOBS(locale.c_str(), GetProfilerNameStore()))
 		return false;
