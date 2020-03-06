@@ -1091,9 +1091,18 @@ static VkResult VKAPI OBS_CreateInstance(const VkInstanceCreateInfo *cinfo,
 	/* (HACK) Set api version to 1.1 if set to 1.0              */
 	/* We do this to get our extensions working properly        */
 
-	VkApplicationInfo ai = *info.pApplicationInfo;
-	if (ai.apiVersion < VK_API_VERSION_1_1) {
-		info.pApplicationInfo = &ai;
+	VkApplicationInfo ai;
+	if (info.pApplicationInfo) {
+		ai = *info.pApplicationInfo;
+		if (ai.apiVersion < VK_API_VERSION_1_1)
+			ai.apiVersion = VK_API_VERSION_1_1;
+	} else {
+		ai.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
+		ai.pNext = NULL;
+		ai.pApplicationName = NULL;
+		ai.applicationVersion = 0;
+		ai.pEngineName = NULL;
+		ai.engineVersion = 0;
 		ai.apiVersion = VK_API_VERSION_1_1;
 	}
 
