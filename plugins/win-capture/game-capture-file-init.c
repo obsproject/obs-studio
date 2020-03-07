@@ -1,6 +1,7 @@
 #include <windows.h>
 #include <strsafe.h>
 #include <shlobj.h>
+#include <aclapi.h>
 #include <obs-module.h>
 #include <util/windows/win-version.h>
 #include <util/platform.h>
@@ -10,7 +11,7 @@
 /* ------------------------------------------------------------------------- */
 /* helper funcs                                                              */
 
-static bool has_elevation()
+static bool has_elevation_internal()
 {
 	SID_IDENTIFIER_AUTHORITY sia = SECURITY_NT_AUTHORITY;
 	PSID sid = NULL;
@@ -26,6 +27,57 @@ static bool has_elevation()
 	}
 
 	return elevated;
+}
+
+static bool has_elevation()
+{
+	static bool elevated = false;
+	static bool initialized = false;
+	if (!initialized) {
+		elevated = has_elevation_internal();
+		initialized = true;
+	}
+
+	return elevated;
+}
+
+static bool add_aap_perms(const wchar_t *dir)
+{
+	PSECURITY_DESCRIPTOR sd = NULL;
+	PACL new_dacl = NULL;
+	bool success = false;
+
+	PACL dacl;
+	if (GetNamedSecurityInfoW(dir, SE_FILE_OBJECT,
+				  DACL_SECURITY_INFORMATION, NULL, NULL, &dacl,
+				  NULL, &sd) != ERROR_SUCCESS) {
+		goto fail;
+	}
+
+	EXPLICIT_ACCESSW ea = {0};
+	ea.grfAccessPermissions = GENERIC_READ | GENERIC_EXECUTE | SYNCHRONIZE;
+	ea.grfAccessMode = GRANT_ACCESS;
+	ea.grfInheritance = SUB_CONTAINERS_AND_OBJECTS_INHERIT;
+	ea.Trustee.TrusteeForm = TRUSTEE_IS_NAME;
+	ea.Trustee.ptstrName = L"ALL APPLICATION PACKAGES";
+
+	if (SetEntriesInAclW(1, &ea, dacl, &new_dacl) != ERROR_SUCCESS) {
+		goto fail;
+	}
+
+	if (SetNamedSecurityInfoW((wchar_t *)dir, SE_FILE_OBJECT,
+				  DACL_SECURITY_INFORMATION, NULL, NULL,
+				  new_dacl, NULL) != ERROR_SUCCESS) {
+		goto fail;
+	}
+
+	success = true;
+fail:
+	if (sd)
+		LocalFree(sd);
+	if (new_dacl)
+		LocalFree(new_dacl);
+	return success;
 }
 
 static inline bool file_exists(const wchar_t *path)
@@ -137,12 +189,17 @@ static bool update_hook_file(bool b64)
 	}
 	if (!file_exists(dst) || !file_exists(dst_json)) {
 		CreateDirectoryW(temp, NULL);
+		if (has_elevation())
+			add_aap_perms(temp);
 		if (!CopyFileW(src_json, dst_json, false))
 			return false;
 		if (!CopyFileW(src, dst, false))
 			return false;
 		return true;
 	}
+
+	if (has_elevation())
+		add_aap_perms(temp);
 
 	struct win_version_info ver_src = {0};
 	struct win_version_info ver_dst = {0};
