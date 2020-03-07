@@ -506,8 +506,10 @@ static inline void unlock_shmem_tex(int id)
 static inline bool init_shared_info(size_t size, HWND window)
 {
 	wchar_t name[64];
+	HWND top = GetAncestor(window, GA_ROOT);
+
 	swprintf(name, 64, SHMEM_TEXTURE "_%" PRIu64 "_%u",
-		 (uint64_t)(uintptr_t)window, ++shmem_id_counter);
+		 (uint64_t)(uintptr_t)top, ++shmem_id_counter);
 
 	shmem_file_handle = CreateFileMappingW(INVALID_HANDLE_VALUE, NULL,
 					       PAGE_READWRITE, 0, (DWORD)size,
