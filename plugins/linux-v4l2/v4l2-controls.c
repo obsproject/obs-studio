@@ -24,14 +24,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #define blog(level, msg, ...) blog(level, "v4l2-controls: " msg, ##__VA_ARGS__)
 
-#if defined(__i386__)
-#define UINT_TO_POINTER(val) ((void *)(unsigned int)(val))
-#define POINTER_TO_UINT(p) ((unsigned int)(unsigned int)(p))
-#elif defined(__x86_64__) || defined(__aarch64__) || (_MIPS_SIM == _ABI64)
+#if defined(__LP64__)
 #define UINT_TO_POINTER(val) ((void *)(unsigned long)(val))
 #define POINTER_TO_UINT(p) ((unsigned int)(unsigned long)(p))
 #else
-#error "unknown platform, this code won't work"
+#define UINT_TO_POINTER(val) ((void *)(unsigned int)(val))
+#define POINTER_TO_UINT(p) ((unsigned int)(unsigned int)(p))
 #endif
 
 static bool v4l2_control_changed(void *data, obs_properties_t *props,
