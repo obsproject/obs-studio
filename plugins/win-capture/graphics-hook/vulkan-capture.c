@@ -35,8 +35,6 @@
 /* use the loader's dispatch table pointer as a key for internal data maps */
 #define GET_LDT(x) (*(void **)x)
 
-#define DUMMY_WINDOW_CLASS_NAME L"graphics_hook_vk_dummy_window"
-
 /* clang-format off */
 static const GUID dxgi_factory1_guid =
 {0x770aae78, 0xf26f, 0x4dba, {0xa8, 0x29, 0x25, 0x3c, 0x83, 0xd1, 0xb3, 0x87}};
@@ -98,8 +96,6 @@ struct vk_data {
 
 	ID3D11Device *d3d11_device;
 	ID3D11DeviceContext *d3d11_context;
-	IDXGISwapChain *dxgi_swap;
-	HWND dummy_hwnd;
 };
 
 static struct vk_swap_data *get_swap_data(struct vk_data *data,
@@ -118,7 +114,8 @@ static struct vk_swap_data *get_swap_data(struct vk_data *data,
 static struct vk_swap_data *get_new_swap_data(struct vk_data *data)
 {
 	for (int i = 0; i < OBJ_MAX; i++) {
-		if (data->swaps[i].surf == NULL && data->swaps[i].sc == NULL) {
+		if (data->swaps[i].surf == VK_NULL_HANDLE &&
+		    data->swaps[i].sc == VK_NULL_HANDLE) {
 			return &data->swaps[i];
 		}
 	}
@@ -235,8 +232,8 @@ static void vk_shtex_free(struct vk_data *data)
 
 		swap->handle = INVALID_HANDLE_VALUE;
 		swap->d3d11_tex = NULL;
-		swap->export_mem = NULL;
-		swap->export_image = NULL;
+		swap->export_mem = VK_NULL_HANDLE;
+		swap->export_image = VK_NULL_HANDLE;
 
 		swap->captured = false;
 	}
@@ -248,10 +245,6 @@ static void vk_shtex_free(struct vk_data *data)
 	if (data->d3d11_device) {
 		ID3D11Device_Release(data->d3d11_device);
 		data->d3d11_device = NULL;
-	}
-	if (data->dxgi_swap) {
-		IDXGISwapChain_Release(data->dxgi_swap);
-		data->dxgi_swap = NULL;
 	}
 
 	data->cur_swap = NULL;
@@ -297,7 +290,8 @@ static struct vk_surf_data *find_surf_data(struct vk_inst_data *data,
 	for (int i = 0; i < OBJ_MAX; i++) {
 		if (data->surfaces[i].surf == surf) {
 			return &data->surfaces[i];
-		} else if (data->surfaces[i].surf == NULL && idx == OBJ_MAX) {
+		} else if (data->surfaces[i].surf == VK_NULL_HANDLE &&
+			   idx == OBJ_MAX) {
 			idx = i;
 		}
 	}
@@ -351,46 +345,6 @@ static void remove_instance(void *inst)
 /* ======================================================================== */
 /* capture                                                                  */
 
-static bool vk_register_window(void)
-{
-	WNDCLASSW wc = {0};
-	wc.style = CS_OWNDC;
-	wc.hInstance = GetModuleHandle(NULL);
-	wc.lpfnWndProc = DefWindowProc;
-	wc.lpszClassName = DUMMY_WINDOW_CLASS_NAME;
-
-	if (!RegisterClassW(&wc)) {
-		flog("failed to register window class: %d", GetLastError());
-		return false;
-	}
-
-	return true;
-}
-
-static inline bool vk_shtex_init_window(struct vk_data *data)
-{
-	static bool registered = false;
-	if (!registered) {
-		static bool failure = false;
-		if (failure || !vk_register_window()) {
-			failure = true;
-			return false;
-		}
-		registered = true;
-	}
-
-	data->dummy_hwnd = CreateWindowExW(
-		0, DUMMY_WINDOW_CLASS_NAME, L"Dummy VK window, ignore",
-		WS_POPUP | WS_CLIPCHILDREN | WS_CLIPSIBLINGS, 0, 0, 2, 2, NULL,
-		NULL, GetModuleHandle(NULL), NULL);
-	if (!data->dummy_hwnd) {
-		flog("failed to create window: %d", GetLastError());
-		return false;
-	}
-
-	return true;
-}
-
 static inline bool vk_shtex_init_d3d11(struct vk_data *data)
 {
 	D3D_FEATURE_LEVEL level_used;
@@ -410,16 +364,6 @@ static inline bool vk_shtex_init_d3d11(struct vk_data *data)
 		return false;
 	}
 
-	DXGI_SWAP_CHAIN_DESC desc = {0};
-	desc.BufferCount = 2;
-	desc.BufferDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
-	desc.BufferDesc.Width = 2;
-	desc.BufferDesc.Height = 2;
-	desc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-	desc.SampleDesc.Count = 1;
-	desc.Windowed = true;
-	desc.OutputWindow = data->dummy_hwnd;
-
 	HRESULT(WINAPI * create_factory)
 	(REFIID, void **) = (void *)GetProcAddress(dxgi, "CreateDXGIFactory1");
 	if (!create_factory) {
@@ -428,10 +372,10 @@ static inline bool vk_shtex_init_d3d11(struct vk_data *data)
 		return false;
 	}
 
-	PFN_D3D11_CREATE_DEVICE_AND_SWAP_CHAIN create =
-		(void *)GetProcAddress(d3d11, "D3D11CreateDeviceAndSwapChain");
+	PFN_D3D11_CREATE_DEVICE create =
+		(void *)GetProcAddress(d3d11, "D3D11CreateDevice");
 	if (!create) {
-		flog("failed to get D3D11CreateDeviceAndSwapChain address: %d",
+		flog("failed to get D3D11CreateDevice address: %d",
 		     GetLastError());
 		return false;
 	}
@@ -460,8 +404,8 @@ static inline bool vk_shtex_init_d3d11(struct vk_data *data)
 
 	hr = create(adapter, D3D_DRIVER_TYPE_UNKNOWN, NULL, 0, feature_levels,
 		    sizeof(feature_levels) / sizeof(D3D_FEATURE_LEVEL),
-		    D3D11_SDK_VERSION, &desc, &data->dxgi_swap,
-		    &data->d3d11_device, &level_used, &data->d3d11_context);
+		    D3D11_SDK_VERSION, &data->d3d11_device, &level_used,
+		    &data->d3d11_context);
 	IDXGIAdapter_Release(adapter);
 
 	if (FAILED(hr)) {
@@ -559,7 +503,7 @@ static inline bool vk_shtex_init_vulkan_tex(struct vk_data *data,
 	res = funcs->CreateImage(data->device, &ici, NULL, &swap->export_image);
 	if (VK_SUCCESS != res) {
 		flog("failed to CreateImage: %s", result_to_str(res));
-		swap->export_image = NULL;
+		swap->export_image = VK_NULL_HANDLE;
 		return false;
 	}
 
@@ -615,7 +559,7 @@ static inline bool vk_shtex_init_vulkan_tex(struct vk_data *data,
 	if (mem_type_idx == pdmp.memoryTypeCount) {
 		flog("failed to get memory type index");
 		funcs->DestroyImage(data->device, swap->export_image, NULL);
-		swap->export_image = NULL;
+		swap->export_image = VK_NULL_HANDLE;
 		return false;
 	}
 
@@ -652,7 +596,7 @@ static inline bool vk_shtex_init_vulkan_tex(struct vk_data *data,
 	if (VK_SUCCESS != res) {
 		flog("failed to AllocateMemory: %s", result_to_str(res));
 		funcs->DestroyImage(data->device, swap->export_image, NULL);
-		swap->export_image = NULL;
+		swap->export_image = VK_NULL_HANDLE;
 		return false;
 	}
 
@@ -677,7 +621,7 @@ static inline bool vk_shtex_init_vulkan_tex(struct vk_data *data,
 		     use_bi2 ? "BindImageMemory2" : "BindImageMemory",
 		     result_to_str(res));
 		funcs->DestroyImage(data->device, swap->export_image, NULL);
-		swap->export_image = NULL;
+		swap->export_image = VK_NULL_HANDLE;
 		return false;
 	}
 	return true;
@@ -686,9 +630,6 @@ static inline bool vk_shtex_init_vulkan_tex(struct vk_data *data,
 static bool vk_shtex_init(struct vk_data *data, HWND window,
 			  struct vk_swap_data *swap)
 {
-	if (!vk_shtex_init_window(data)) {
-		return false;
-	}
 	if (!vk_shtex_init_d3d11(data)) {
 		return false;
 	}
@@ -1403,7 +1344,7 @@ static void VKAPI OBS_DestroySwapchainKHR(VkDevice device, VkSwapchainKHR sc,
 		}
 
 		swap->sc = VK_NULL_HANDLE;
-		swap->surf = NULL;
+		swap->surf = VK_NULL_HANDLE;
 	}
 
 	funcs->DestroySwapchainKHR(device, sc, ac);
