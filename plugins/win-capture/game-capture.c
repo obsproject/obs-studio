@@ -223,7 +223,7 @@ static inline HANDLE open_map_plus_id(struct game_capture *gc,
 				      const wchar_t *name, DWORD id)
 {
 	wchar_t new_name[64];
-	_snwprintf(new_name, 64, L"%s%lu", name, id);
+	swprintf(new_name, 64, L"%s%lu", name, id);
 
 	debug("map id: %S", new_name);
 
@@ -674,8 +674,7 @@ static inline bool open_target_process(struct game_capture *gc)
 static inline bool init_keepalive(struct game_capture *gc)
 {
 	wchar_t new_name[64];
-	_snwprintf(new_name, 64, L"%s%lu", WINDOW_HOOK_KEEPALIVE,
-		   gc->process_id);
+	swprintf(new_name, 64, WINDOW_HOOK_KEEPALIVE L"%lu", gc->process_id);
 
 	gc->keepalive_mutex = CreateMutexW(NULL, false, new_name);
 	if (!gc->keepalive_mutex) {
@@ -1252,8 +1251,8 @@ static inline enum capture_result init_capture_data(struct game_capture *gc)
 	CloseHandle(gc->hook_data_map);
 
 	wchar_t name[64];
-	_snwprintf(name, 64, L"%s_%u_", SHMEM_TEXTURE,
-		   (uint32_t)(uintptr_t)gc->window);
+	swprintf(name, 64, SHMEM_TEXTURE "_%" PRIu64 "_",
+		 (uint64_t)(uintptr_t)gc->window);
 
 	gc->hook_data_map =
 		open_map_plus_id(gc, name, gc->global_hook_info->map_id);
@@ -1302,11 +1301,11 @@ static void copy_b5g6r5_tex(struct game_capture *gc, int cur_texture,
 	uint32_t gc_cy = gc->cy;
 	uint32_t gc_pitch = gc->pitch;
 
-	for (uint32_t y = 0; y < gc_cy; y++) {
+	for (size_t y = 0; y < gc_cy; y++) {
 		uint8_t *row = input + (gc_pitch * y);
 		uint8_t *out = data + (pitch * y);
 
-		for (uint32_t x = 0; x < gc_cx; x += 8) {
+		for (size_t x = 0; x < gc_cx; x += 8) {
 			__m128i pixels_blue, pixels_green, pixels_red;
 			__m128i pixels_result;
 			__m128i *pixels_dest;
@@ -1390,11 +1389,11 @@ static void copy_b5g5r5a1_tex(struct game_capture *gc, int cur_texture,
 	uint32_t gc_cy = gc->cy;
 	uint32_t gc_pitch = gc->pitch;
 
-	for (uint32_t y = 0; y < gc_cy; y++) {
+	for (size_t y = 0; y < gc_cy; y++) {
 		uint8_t *row = input + (gc_pitch * y);
 		uint8_t *out = data + (pitch * y);
 
-		for (uint32_t x = 0; x < gc_cx; x += 8) {
+		for (size_t x = 0; x < gc_cx; x += 8) {
 			__m128i pixels_blue, pixels_green, pixels_red,
 				pixels_alpha;
 			__m128i pixels_result;
@@ -1538,13 +1537,13 @@ static void copy_shmem_tex(struct game_capture *gc)
 
 		} else if (pitch == gc->pitch) {
 			memcpy(data, gc->texture_buffers[cur_texture],
-			       pitch * gc->cy);
+			       (size_t)pitch * (size_t)gc->cy);
 		} else {
 			uint8_t *input = gc->texture_buffers[cur_texture];
 			uint32_t best_pitch = pitch < gc->pitch ? pitch
 								: gc->pitch;
 
-			for (uint32_t y = 0; y < gc->cy; y++) {
+			for (size_t y = 0; y < gc->cy; y++) {
 				uint8_t *line_in = input + gc->pitch * y;
 				uint8_t *line_out = data + pitch * y;
 				memcpy(line_out, line_in, best_pitch);

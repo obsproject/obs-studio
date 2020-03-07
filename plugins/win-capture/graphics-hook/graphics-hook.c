@@ -1,5 +1,6 @@
 #include <windows.h>
 #include <psapi.h>
+#include <inttypes.h>
 #include "graphics-hook.h"
 #include "../graphics-hook-ver.h"
 #include "../obfuscate.h"
@@ -416,7 +417,7 @@ static inline void hlogv(const char *format, va_list args)
 	char message[1024] = "";
 	int num = _vsprintf_p(message, 1024, format, args);
 	if (num) {
-		if (!ipc_pipe_client_write(&pipe, message, num + 1)) {
+		if (!ipc_pipe_client_write(&pipe, message, (size_t)num + 1)) {
 			ipc_pipe_client_free(&pipe);
 		}
 		DbgOut(message);
@@ -505,8 +506,8 @@ static inline void unlock_shmem_tex(int id)
 static inline bool init_shared_info(size_t size, HWND window)
 {
 	wchar_t name[64];
-	_snwprintf(name, 64, L"%s_%u_%u", SHMEM_TEXTURE,
-		   (uint32_t)(uintptr_t)window, ++shmem_id_counter);
+	swprintf(name, 64, SHMEM_TEXTURE "_%" PRIu64 "_%u",
+		 (uint64_t)(uintptr_t)window, ++shmem_id_counter);
 
 	shmem_file_handle = CreateFileMappingW(INVALID_HANDLE_VALUE, NULL,
 					       PAGE_READWRITE, 0, (DWORD)size,
@@ -602,7 +603,7 @@ static DWORD CALLBACK copy_thread(LPVOID unused)
 			int lock_id = try_lock_shmem_tex(shmem_id);
 			if (lock_id != -1) {
 				memcpy(thread_data.shmem_textures[lock_id],
-				       cur_data, pitch * cy);
+				       cur_data, (size_t)pitch * (size_t)cy);
 
 				unlock_shmem_tex(lock_id);
 				((struct shmem_data *)shmem_info)->last_tex =
