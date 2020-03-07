@@ -385,7 +385,9 @@ static void restart_hotkey(void *data, obs_hotkey_id id, obs_hotkey_t *hotkey,
 {
 	UNUSED_PARAMETER(id);
 	UNUSED_PARAMETER(hotkey);
-	UNUSED_PARAMETER(pressed);
+
+	if (!pressed)
+		return;
 
 	struct ffmpeg_source *s = data;
 	if (obs_source_active(s->source))
@@ -451,9 +453,12 @@ static bool ffmpeg_source_play_hotkey(void *data, obs_hotkey_pair_id id,
 	UNUSED_PARAMETER(id);
 	UNUSED_PARAMETER(hotkey);
 
+	if (!pressed)
+		return false;
+
 	struct ffmpeg_source *s = data;
 
-	if (s->state == OBS_MEDIA_STATE_PLAYING || !pressed ||
+	if (s->state == OBS_MEDIA_STATE_PLAYING ||
 	    !obs_source_active(s->source))
 		return false;
 
@@ -467,9 +472,12 @@ static bool ffmpeg_source_pause_hotkey(void *data, obs_hotkey_pair_id id,
 	UNUSED_PARAMETER(id);
 	UNUSED_PARAMETER(hotkey);
 
+	if (!pressed)
+		return false;
+
 	struct ffmpeg_source *s = data;
 
-	if (s->state != OBS_MEDIA_STATE_PLAYING || !pressed ||
+	if (s->state != OBS_MEDIA_STATE_PLAYING ||
 	    !obs_source_active(s->source))
 		return false;
 
@@ -483,9 +491,12 @@ static void ffmpeg_source_stop_hotkey(void *data, obs_hotkey_id id,
 	UNUSED_PARAMETER(id);
 	UNUSED_PARAMETER(hotkey);
 
+	if (!pressed)
+		return;
+
 	struct ffmpeg_source *s = data;
 
-	if (pressed && obs_source_active(s->source))
+	if (obs_source_active(s->source))
 		obs_source_media_stop(s->source);
 }
 
