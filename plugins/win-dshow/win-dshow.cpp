@@ -522,6 +522,11 @@ void DShowInput::OnVideoData(const VideoConfig &config, unsigned char *data,
 			     size_t size, long long startTime,
 			     long long endTime, long rotation)
 {
+	if (rotation != lastRotation) {
+		lastRotation = rotation;
+		obs_source_set_async_rotation(source, rotation);
+	}
+
 	if (videoConfig.format == VideoFormat::H264) {
 		OnEncodedVideoData(AV_CODEC_ID_H264, data, size, startTime);
 		return;
@@ -590,11 +595,6 @@ void DShowInput::OnVideoData(const VideoConfig &config, unsigned char *data,
 	} else {
 		/* TODO: other formats */
 		return;
-	}
-
-	if (rotation != lastRotation) {
-		lastRotation = rotation;
-		obs_source_set_async_rotation(source, rotation);
 	}
 
 	obs_source_output_video2(source, &frame);
