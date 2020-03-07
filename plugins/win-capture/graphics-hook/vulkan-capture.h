@@ -457,6 +457,7 @@ DXGI_FORMAT vk_format_to_dxgi(VkFormat format)
 		dxgi_format = DXGI_FORMAT_B8G8R8A8_UNORM;
 		break;
 	case VK_FORMAT_A8B8G8R8_UNORM_PACK32:
+		dxgi_format = DXGI_FORMAT_R8G8B8A8_UNORM;
 		break;
 	case VK_FORMAT_A8B8G8R8_SNORM_PACK32:
 		break;
