@@ -2,6 +2,46 @@
 #include <strsafe.h>
 #include <shlobj.h>
 #include <stdbool.h>
+#include <aclapi.h>
+
+static bool add_aap_perms(const wchar_t *dir)
+{
+	PSECURITY_DESCRIPTOR sd = NULL;
+	PACL new_dacl = NULL;
+	bool success = false;
+
+	PACL dacl;
+	if (GetNamedSecurityInfoW(dir, SE_FILE_OBJECT,
+				  DACL_SECURITY_INFORMATION, NULL, NULL, &dacl,
+				  NULL, &sd) != ERROR_SUCCESS) {
+		goto fail;
+	}
+
+	EXPLICIT_ACCESSW ea = {0};
+	ea.grfAccessPermissions = GENERIC_READ | GENERIC_EXECUTE | SYNCHRONIZE;
+	ea.grfAccessMode = GRANT_ACCESS;
+	ea.grfInheritance = SUB_CONTAINERS_AND_OBJECTS_INHERIT;
+	ea.Trustee.TrusteeForm = TRUSTEE_IS_NAME;
+	ea.Trustee.ptstrName = L"ALL APPLICATION PACKAGES";
+
+	if (SetEntriesInAclW(1, &ea, dacl, &new_dacl) != ERROR_SUCCESS) {
+		goto fail;
+	}
+
+	if (SetNamedSecurityInfoW((wchar_t *)dir, SE_FILE_OBJECT,
+				  DACL_SECURITY_INFORMATION, NULL, NULL,
+				  new_dacl, NULL) != ERROR_SUCCESS) {
+		goto fail;
+	}
+
+	success = true;
+fail:
+	if (sd)
+		LocalFree(sd);
+	if (new_dacl)
+		LocalFree(new_dacl);
+	return success;
+}
 
 static inline bool file_exists(const wchar_t *path)
 {
@@ -75,6 +115,7 @@ static bool update_hook_file(bool b64)
 	}
 
 	CreateDirectoryW(temp, NULL);
+	add_aap_perms(temp);
 	CopyFileW(src, dst, false);
 	CopyFileW(src_json, dst_json, false);
 	return true;
