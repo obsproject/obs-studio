@@ -12,12 +12,24 @@ struct __declspec(uuid("A9B3D012-3DF2-4EE3-B8D1-8695F457D3C1"))
 					       void **object) = 0;
 };
 
-extern "C" EXPORT bool winrt_capture_supported()
+extern "C" EXPORT BOOL winrt_capture_supported()
 {
-	/* no contract for IGraphicsCaptureItemInterop, verify 10.0.18362.0 */
+	return winrt::Windows::Foundation::Metadata::ApiInformation::IsTypePresent(
+		       L"Windows.Graphics.Capture.GraphicsCaptureSession") &&
+	       winrt::Windows::Graphics::Capture::GraphicsCaptureSession::
+		       IsSupported();
+}
+
+extern "C" EXPORT BOOL winrt_capture_cursor_toggle_supported()
+{
+#ifdef NTDDI_WIN10_VB
 	return winrt::Windows::Foundation::Metadata::ApiInformation::
-		IsApiContractPresent(L"Windows.Foundation.UniversalApiContract",
-				     8);
+		IsPropertyPresent(
+			L"Windows.Graphics.Capture.GraphicsCaptureSession",
+			L"IsCursorCaptureEnabled");
+#else
+	return false;
+#endif
 }
 
 template<typename T>
@@ -78,9 +90,11 @@ static bool get_client_box(HWND window, uint32_t width, uint32_t height,
 }
 
 struct winrt_capture {
-	bool capture_cursor;
 	HWND window;
 	bool client_area;
+
+	bool capture_cursor;
+	bool cursor_visible;
 
 	gs_texture_t *texture;
 	bool texture_written;
@@ -103,6 +117,58 @@ struct winrt_capture {
 
 	bool thread_changed;
 	struct winrt_capture *next;
+
+	void draw_cursor()
+	{
+		CURSORINFO ci{};
+		ci.cbSize = sizeof(CURSORINFO);
+		if (!GetCursorInfo(&ci))
+			return;
+
+		if (!ci.flags & CURSOR_SHOWING)
+			return;
+
+		HICON icon = CopyIcon(ci.hCursor);
+		if (!icon)
+			return;
+
+		ICONINFO ii;
+		if (GetIconInfo(icon, &ii)) {
+			POINT win_pos{};
+			if (window) {
+				if (client_area) {
+					ClientToScreen(window, &win_pos);
+				} else {
+					RECT window_rect;
+					if (DwmGetWindowAttribute(
+						    window,
+						    DWMWA_EXTENDED_FRAME_BOUNDS,
+						    &window_rect,
+						    sizeof(window_rect)) ==
+					    S_OK) {
+						win_pos.x = window_rect.left;
+						win_pos.y = window_rect.top;
+					}
+				}
+			}
+
+			POINT pos;
+			pos.x = ci.ptScreenPos.x - (int)ii.xHotspot - win_pos.x;
+			pos.y = ci.ptScreenPos.y - (int)ii.yHotspot - win_pos.y;
+
+			HDC hdc = (HDC)gs_texture_get_dc(texture);
+
+			DrawIconEx(hdc, pos.x, pos.y, icon, 0, 0, 0, NULL,
+				   DI_NORMAL);
+
+			gs_texture_release_dc(texture);
+
+			DeleteObject(ii.hbmColor);
+			DeleteObject(ii.hbmMask);
+		}
+
+		DestroyIcon(icon);
+	}
 
 	void on_frame_arrived(winrt::Windows::Graphics::Capture::
 				      Direct3D11CaptureFramePool const &sender,
@@ -146,9 +212,8 @@ struct winrt_capture {
 		}
 
 		if (!texture) {
-			texture = gs_texture_create(texture_width,
-						    texture_height, GS_BGRA, 1,
-						    nullptr, 0);
+			texture = gs_texture_create_gdi(texture_width,
+							texture_height);
 		}
 
 		if (client_box_available) {
@@ -161,6 +226,10 @@ struct winrt_capture {
 			context->CopyResource(
 				(ID3D11Texture2D *)gs_texture_get_obj(texture),
 				frame_surface.get());
+		}
+
+		if (capture_cursor && cursor_visible) {
+			draw_cursor();
 		}
 
 		texture_written = true;
@@ -222,6 +291,12 @@ static void winrt_capture_device_loss_rebuild(void *device_void, void *data)
 	const winrt::Windows::Graphics::Capture::GraphicsCaptureSession session =
 		frame_pool.CreateCaptureSession(capture->item);
 
+	/* disable cursor capture if possible since ours performs better */
+#ifdef NTDDI_WIN10_VB
+	if (winrt_capture_cursor_toggle_supported())
+		session.IsCursorCaptureEnabled(false);
+#endif
+
 	capture->device = device;
 	d3d_device->GetImmediateContext(&capture->context);
 	capture->frame_pool = frame_pool;
@@ -236,7 +311,7 @@ static void winrt_capture_device_loss_rebuild(void *device_void, void *data)
 thread_local bool initialized_tls;
 
 extern "C" EXPORT struct winrt_capture *
-winrt_capture_init(bool cursor, HWND window, bool client_area)
+winrt_capture_init(BOOL cursor, HWND window, BOOL client_area)
 {
 	ID3D11Device *const d3d_device = (ID3D11Device *)gs_get_device_obj();
 	ComPtr<IDXGIDevice> dxgi_device;
@@ -287,13 +362,21 @@ winrt_capture_init(bool cursor, HWND window, bool client_area)
 	const winrt::Windows::Graphics::Capture::GraphicsCaptureSession session =
 		frame_pool.CreateCaptureSession(item);
 
+	/* disable cursor capture if possible since ours performs better */
+	const BOOL cursor_toggle_supported =
+		winrt_capture_cursor_toggle_supported();
+#ifdef NTDDI_WIN10_VB
+	if (cursor_toggle_supported)
+		session.IsCursorCaptureEnabled(false);
+#endif
+
 	if (capture_list == nullptr)
 		initialized_tls = true;
 
 	struct winrt_capture *capture = new winrt_capture{};
-	capture->capture_cursor = cursor;
 	capture->window = window;
 	capture->client_area = client_area;
+	capture->capture_cursor = cursor && cursor_toggle_supported;
 	capture->item = item;
 	capture->device = device;
 	d3d_device->GetImmediateContext(&capture->context);
@@ -364,6 +447,12 @@ static void draw_texture(struct winrt_capture *capture, gs_effect_t *effect)
 		}
 	}
 	gs_technique_end(tech);
+}
+
+extern "C" EXPORT void winrt_capture_show_cursor(struct winrt_capture *capture,
+						 BOOL visible)
+{
+	capture->cursor_visible = visible;
 }
 
 extern "C" EXPORT void winrt_capture_render(struct winrt_capture *capture,
