@@ -3,11 +3,15 @@
 #include <shlobj.h>
 #include <stdbool.h>
 #include <aclapi.h>
+#include <sddl.h>
 
 static bool add_aap_perms(const wchar_t *dir)
 {
 	PSECURITY_DESCRIPTOR sd = NULL;
-	PACL new_dacl = NULL;
+	SID *aap_sid = NULL;
+	SID *bu_sid = NULL;
+	PACL new_dacl1 = NULL;
+	PACL new_dacl2 = NULL;
 	bool success = false;
 
 	PACL dacl;
@@ -21,16 +25,31 @@ static bool add_aap_perms(const wchar_t *dir)
 	ea.grfAccessPermissions = GENERIC_READ | GENERIC_EXECUTE;
 	ea.grfAccessMode = GRANT_ACCESS;
 	ea.grfInheritance = SUB_CONTAINERS_AND_OBJECTS_INHERIT;
-	ea.Trustee.TrusteeForm = TRUSTEE_IS_NAME;
-	ea.Trustee.ptstrName = L"ALL APPLICATION PACKAGES";
+	ea.Trustee.TrusteeForm = TRUSTEE_IS_SID;
 
-	if (SetEntriesInAclW(1, &ea, dacl, &new_dacl) != ERROR_SUCCESS) {
+	/* ALL_APP_PACKAGES */
+	ConvertStringSidToSidW(L"S-1-15-2-1", &aap_sid);
+	ea.Trustee.ptstrName = (wchar_t *)aap_sid;
+
+	if (SetEntriesInAclW(1, &ea, dacl, &new_dacl1) != ERROR_SUCCESS) {
+		goto fail;
+	}
+
+	ea.grfAccessPermissions = GENERIC_READ | GENERIC_WRITE |
+				  GENERIC_EXECUTE;
+
+	/* BUILTIN_USERS */
+	ConvertStringSidToSidW(L"S-1-5-32-545", &bu_sid);
+	ea.Trustee.ptstrName = (wchar_t *)bu_sid;
+
+	DWORD s = SetEntriesInAclW(1, &ea, new_dacl1, &new_dacl2);
+	if (s != ERROR_SUCCESS) {
 		goto fail;
 	}
 
 	if (SetNamedSecurityInfoW((wchar_t *)dir, SE_FILE_OBJECT,
 				  DACL_SECURITY_INFORMATION, NULL, NULL,
-				  new_dacl, NULL) != ERROR_SUCCESS) {
+				  new_dacl2, NULL) != ERROR_SUCCESS) {
 		goto fail;
 	}
 
@@ -38,8 +57,14 @@ static bool add_aap_perms(const wchar_t *dir)
 fail:
 	if (sd)
 		LocalFree(sd);
-	if (new_dacl)
-		LocalFree(new_dacl);
+	if (new_dacl1)
+		LocalFree(new_dacl1);
+	if (new_dacl2)
+		LocalFree(new_dacl2);
+	if (aap_sid)
+		LocalFree(aap_sid);
+	if (bu_sid)
+		LocalFree(bu_sid);
 	return success;
 }
 
