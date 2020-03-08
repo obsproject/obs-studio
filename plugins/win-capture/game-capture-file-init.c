@@ -234,6 +234,7 @@ static bool update_hook_file(bool b64)
 /* Sets vulkan layer registry if it doesn't already exist */
 static void init_vulkan_registry(bool b64)
 {
+	DWORD flags = b64 ? KEY_WOW64_64KEY : KEY_WOW64_32KEY;
 	HKEY key = NULL;
 	LSTATUS s;
 
@@ -250,6 +251,17 @@ static void init_vulkan_registry(bool b64)
 			warn("Failed to query registry keys: %d", (int)s);
 			goto finish;
 		}
+
+		if (s == ERROR_SUCCESS && has_elevation()) {
+			s = RegOpenKeyEx(HKEY_CURRENT_USER, IMPLICIT_LAYERS, 0,
+					 KEY_WRITE | flags, &key);
+			if (s == ERROR_SUCCESS) {
+				RegDeleteValueW(key, path);
+				RegCloseKey(key);
+				s = -1;
+				key = NULL;
+			}
+		}
 	} else if (s != ERROR_SUCCESS) {
 		warn("Failed to query registry keys: %d", (int)s);
 		goto finish;
@@ -260,7 +272,6 @@ static void init_vulkan_registry(bool b64)
 	}
 
 	HKEY type = has_elevation() ? HKEY_LOCAL_MACHINE : HKEY_CURRENT_USER;
-	DWORD flags = b64 ? KEY_WOW64_64KEY : KEY_WOW64_32KEY;
 	DWORD temp;
 
 	s = RegCreateKeyExW(type, IMPLICIT_LAYERS, 0, NULL, 0,
