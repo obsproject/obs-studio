@@ -26,10 +26,13 @@
 #define WC_CHECK_TIMER 1.0f
 
 struct winrt_exports {
-	bool *(*winrt_capture_supported)();
-	struct winrt_capture *(*winrt_capture_init)(bool cursor, HWND window,
-						    bool client_area);
+	BOOL *(*winrt_capture_supported)();
+	BOOL *(*winrt_capture_cursor_toggle_supported)();
+	struct winrt_capture *(*winrt_capture_init)(BOOL cursor, HWND window,
+						    BOOL client_area);
 	void (*winrt_capture_free)(struct winrt_capture *capture);
+	void (*winrt_capture_show_cursor)(struct winrt_capture *capture,
+					  BOOL visible);
 	void (*winrt_capture_render)(struct winrt_capture *capture,
 				     gs_effect_t *effect);
 	uint32_t (*winrt_capture_width)(const struct winrt_capture *capture);
@@ -171,8 +174,10 @@ static bool load_winrt_imports(struct winrt_exports *exports, void *module,
 	bool success = true;
 
 	WINRT_IMPORT(winrt_capture_supported);
+	WINRT_IMPORT(winrt_capture_cursor_toggle_supported);
 	WINRT_IMPORT(winrt_capture_init);
 	WINRT_IMPORT(winrt_capture_free);
+	WINRT_IMPORT(winrt_capture_show_cursor);
 	WINRT_IMPORT(winrt_capture_render);
 	WINRT_IMPORT(winrt_capture_width);
 	WINRT_IMPORT(winrt_capture_height);
@@ -260,13 +265,18 @@ static void wc_defaults(obs_data_t *defaults)
 }
 
 static void update_settings_visibility(obs_properties_t *props,
-				       enum window_capture_method method)
+				       struct window_capture *wc)
 {
+	const enum window_capture_method method = wc->method;
 	const bool bitblt_options = method == METHOD_BITBLT;
 	const bool wgc_options = method == METHOD_WGC;
 
+	const bool wgc_cursor_toggle =
+		wgc_options &&
+		wc->exports.winrt_capture_cursor_toggle_supported();
+
 	obs_property_t *p = obs_properties_get(props, "cursor");
-	obs_property_set_visible(p, bitblt_options);
+	obs_property_set_visible(p, bitblt_options || wgc_cursor_toggle);
 
 	p = obs_properties_get(props, "compatibility");
 	obs_property_set_visible(p, bitblt_options);
@@ -281,7 +291,7 @@ static bool wc_capture_method_changed(obs_properties_t *props,
 	struct window_capture *wc = obs_properties_get_param(props);
 	update_settings(wc, settings);
 
-	update_settings_visibility(props, wc->method);
+	update_settings_visibility(props, wc);
 
 	return true;
 }
@@ -297,7 +307,7 @@ static bool wc_window_changed(obs_properties_t *props, obs_property_t *p,
 	struct window_capture *wc = obs_properties_get_param(props);
 	update_settings(wc, settings);
 
-	update_settings_visibility(props, wc->method);
+	update_settings_visibility(props, wc);
 
 	check_window_property_setting(props, p, settings, "window", 0);
 	return true;
@@ -417,8 +427,12 @@ static void wc_tick(void *data, float seconds)
 		if (!GetWindowThreadProcessId(wc->window, &target_pid))
 			target_pid = 0;
 
-		wc->capture.cursor_hidden = foreground_pid && target_pid &&
-					    foreground_pid != target_pid;
+		const bool cursor_hidden = foreground_pid && target_pid &&
+					   foreground_pid != target_pid;
+		wc->capture.cursor_hidden = cursor_hidden;
+		if (wc->capture_winrt)
+			wc->exports.winrt_capture_show_cursor(wc->capture_winrt,
+							      !cursor_hidden);
 
 		wc->cursor_check_time = 0.0f;
 	}
