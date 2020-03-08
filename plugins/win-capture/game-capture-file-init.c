@@ -55,7 +55,7 @@ static bool add_aap_perms(const wchar_t *dir)
 	}
 
 	EXPLICIT_ACCESSW ea = {0};
-	ea.grfAccessPermissions = GENERIC_READ | GENERIC_EXECUTE | SYNCHRONIZE;
+	ea.grfAccessPermissions = GENERIC_READ | GENERIC_EXECUTE;
 	ea.grfAccessMode = GRANT_ACCESS;
 	ea.grfInheritance = SUB_CONTAINERS_AND_OBJECTS_INHERIT;
 	ea.Trustee.TrusteeForm = TRUSTEE_IS_NAME;
