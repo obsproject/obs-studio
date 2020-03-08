@@ -1047,6 +1047,8 @@ static VkResult VKAPI OBS_CreateInstance(const VkInstanceCreateInfo *cinfo,
 		ai.apiVersion = VK_API_VERSION_1_1;
 	}
 
+	info.pApplicationInfo = &ai;
+
 	/* -------------------------------------------------------- */
 	/* create instance                                          */
 
