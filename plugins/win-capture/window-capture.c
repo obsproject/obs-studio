@@ -26,9 +26,9 @@
 #define WC_CHECK_TIMER 1.0f
 
 struct winrt_exports {
-	bool *(*winrt_capture_supported)();
-	struct winrt_capture *(*winrt_capture_init)(bool cursor, HWND window,
-						    bool client_area);
+	BOOL *(*winrt_capture_supported)();
+	struct winrt_capture *(*winrt_capture_init)(BOOL cursor, HWND window,
+						    BOOL client_area);
 	void (*winrt_capture_free)(struct winrt_capture *capture);
 	void (*winrt_capture_render)(struct winrt_capture *capture,
 				     gs_effect_t *effect);

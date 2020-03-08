@@ -12,12 +12,12 @@ struct __declspec(uuid("A9B3D012-3DF2-4EE3-B8D1-8695F457D3C1"))
 					       void **object) = 0;
 };
 
-extern "C" EXPORT bool winrt_capture_supported()
+extern "C" EXPORT BOOL winrt_capture_supported()
 {
-	/* no contract for IGraphicsCaptureItemInterop, verify 10.0.18362.0 */
-	return winrt::Windows::Foundation::Metadata::ApiInformation::
-		IsApiContractPresent(L"Windows.Foundation.UniversalApiContract",
-				     8);
+	return winrt::Windows::Foundation::Metadata::ApiInformation::IsTypePresent(
+		       L"Windows.Graphics.Capture.GraphicsCaptureSession") &&
+	       winrt::Windows::Graphics::Capture::GraphicsCaptureSession::
+		       IsSupported();
 }
 
 template<typename T>
@@ -236,7 +236,7 @@ static void winrt_capture_device_loss_rebuild(void *device_void, void *data)
 thread_local bool initialized_tls;
 
 extern "C" EXPORT struct winrt_capture *
-winrt_capture_init(bool cursor, HWND window, bool client_area)
+winrt_capture_init(BOOL cursor, HWND window, BOOL client_area)
 {
 	ID3D11Device *const d3d_device = (ID3D11Device *)gs_get_device_obj();
 	ComPtr<IDXGIDevice> dxgi_device;

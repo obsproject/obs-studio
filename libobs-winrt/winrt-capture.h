@@ -9,9 +9,9 @@
 extern "C" {
 #endif
 
-EXPORT bool winrt_capture_supported();
-EXPORT struct winrt_capture *winrt_capture_init(bool cursor, HWND window,
-						bool client_area);
+EXPORT BOOL winrt_capture_supported();
+EXPORT struct winrt_capture *winrt_capture_init(BOOL cursor, HWND window,
+						BOOL client_area);
 EXPORT void winrt_capture_free(struct winrt_capture *capture);
 
 EXPORT void winrt_capture_render(struct winrt_capture *capture,
