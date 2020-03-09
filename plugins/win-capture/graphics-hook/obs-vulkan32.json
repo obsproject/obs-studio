@@ -1,7 +1,7 @@
 {
     "file_format_version": "1.1.2",
     "layer": {
-        "name": "VK_LAYER_OBS_hook",
+        "name": "VK_LAYER_OBS_HOOK",
         "type": "GLOBAL",
         "library_path": ".\\graphics-hook32.dll",
         "api_version": "1.2.131",
