@@ -230,8 +230,10 @@ static bool update_hook_file(bool b64)
 	struct win_version_info ver_dst = {0};
 	if (!get_dll_ver(src, &ver_src))
 		return false;
+#ifndef _DEBUG
 	if (!get_dll_ver(dst, &ver_dst))
 		return false;
+#endif
 
 	/* if source is greater than dst, overwrite new file  */
 	while (win_version_compare(&ver_dst, &ver_src) < 0) {
