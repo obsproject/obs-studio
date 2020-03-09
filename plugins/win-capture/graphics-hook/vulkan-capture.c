@@ -935,6 +935,11 @@ static inline HWND get_swap_window(struct vk_swap_data *swap)
 	return NULL;
 }
 
+static inline bool valid_rect(struct vk_swap_data *swap)
+{
+	return !!swap->image_extent.width && !!swap->image_extent.height;
+}
+
 static void vk_capture(struct vk_data *data, VkQueue queue,
 		       const VkPresentInfoKHR *info)
 {
@@ -965,7 +970,7 @@ static void vk_capture(struct vk_data *data, VkQueue queue,
 		vk_shtex_free(data);
 	}
 	if (capture_should_init()) {
-		if (!vk_shtex_init(data, window, swap)) {
+		if (valid_rect(swap) && !vk_shtex_init(data, window, swap)) {
 			vk_shtex_free(data);
 			data->valid = false;
 		}
