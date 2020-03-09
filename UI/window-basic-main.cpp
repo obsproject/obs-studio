@@ -6016,7 +6016,7 @@ void OBSBasic::on_settingsButton_clicked()
 
 void OBSBasic::on_actionHelpPortal_triggered()
 {
-	QUrl url = QUrl("https://obsproject.com/help", QUrl::TolerantMode);
+	QUrl url = QUrl("https://caffeine.custhelp.com", QUrl::TolerantMode);
 	QDesktopServices::openUrl(url);
 }
 
