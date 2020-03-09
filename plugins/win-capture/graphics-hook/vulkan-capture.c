@@ -428,8 +428,8 @@ static inline bool vk_shtex_init_d3d11_tex(struct vk_data *data,
 	desc.MipLevels = 1;
 	desc.ArraySize = 1;
 
-	flog("OBS requesting %s texture format",
-	     vk_format_to_str(swap->format));
+	flog("OBS requesting %s texture format.  capture dimensions: %dx%d",
+	     vk_format_to_str(swap->format), (int)desc.Width, (int)desc.Height);
 
 	desc.Format = vk_format_to_dxgi(swap->format);
 	desc.SampleDesc.Count = 1;
