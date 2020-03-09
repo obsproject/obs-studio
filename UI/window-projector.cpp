@@ -979,7 +979,7 @@ void OBSProjector::UpdateProjectorTitle(QString name)
 		if (!window)
 			title = QTStr("MultiviewProjector");
 		else
-			title = QTStr("MultiviewWindow");
+			title = QTStr("MultiviewWindowed");
 		break;
 	default:
 		title = name;
