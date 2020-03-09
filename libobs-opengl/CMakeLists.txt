@@ -46,6 +46,7 @@ else() #This needs to change to be more specific to get ready for Wayland
 
 	set(libobs-opengl_PLATFORM_SOURCES
 		gl-nix.c
+		gl-x11-egl.c
 		gl-x11-glx.c)
 endif()
 

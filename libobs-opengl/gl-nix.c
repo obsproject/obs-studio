@@ -17,6 +17,7 @@
 
 #include "gl-nix.h"
 #include "gl-x11-glx.h"
+#include "gl-x11-egl.h"
 
 static const struct gl_winsys_vtable *gl_vtable = NULL;
 
@@ -24,7 +25,12 @@ static void init_winsys(void)
 {
 	assert(gl_vtable == NULL);
 
-	gl_vtable = gl_x11_glx_get_winsys_vtable();
+	if (getenv("OBS_USE_EGL")) {
+		gl_vtable = gl_x11_egl_get_winsys_vtable();
+		blog(LOG_INFO, "Using EGL/X11");
+	} else {
+		gl_vtable = gl_x11_glx_get_winsys_vtable();
+	}
 
 	assert(gl_vtable != NULL);
 }
