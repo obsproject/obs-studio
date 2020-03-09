@@ -108,6 +108,7 @@ bool import_python(const char *python_path)
 	IMPORT_FUNC(PyExc_RuntimeError);
 	IMPORT_FUNC(PyObject_GetAttr);
 	IMPORT_FUNC(PyUnicode_FromString);
+	IMPORT_FUNC(PyDict_New);
 	IMPORT_FUNC(PyDict_GetItemString);
 	IMPORT_FUNC(PyDict_SetItemString);
 	IMPORT_FUNC(PyCFunction_NewEx);
@@ -140,6 +141,7 @@ bool import_python(const char *python_path)
 	IMPORT_FUNC(PyLong_FromUnsignedLongLong);
 	IMPORT_FUNC(PyArg_VaParse);
 	IMPORT_FUNC(_Py_NoneStruct);
+	IMPORT_FUNC(PyTuple_New);
 
 #undef IMPORT_FUNC
 
