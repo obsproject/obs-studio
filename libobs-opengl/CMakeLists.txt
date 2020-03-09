@@ -45,7 +45,7 @@ else() #This needs to change to be more specific to get ready for Wayland
 		${X11_XCB_LIBRARIES})
 
 	set(libobs-opengl_PLATFORM_SOURCES
-		gl-x11.c)
+		gl-x11-glx.c)
 endif()
 
 set(libobs-opengl_SOURCES
