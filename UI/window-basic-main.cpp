@@ -3588,6 +3588,8 @@ static inline enum video_format GetVideoFormatFromName(const char *name)
 		return VIDEO_FORMAT_I420;
 	else if (astrcmpi(name, "NV12") == 0)
 		return VIDEO_FORMAT_NV12;
+	else if (astrcmpi(name, "YUY2") == 0)
+		return VIDEO_FORMAT_YUY2;
 	else if (astrcmpi(name, "I444") == 0)
 		return VIDEO_FORMAT_I444;
 #if 0 //currently unsupported

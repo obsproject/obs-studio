@@ -66,6 +66,11 @@ static inline void calc_gpu_conversion_sizes(const struct obs_video_info *ovi)
 		video->conversion_techs[1] = "NV12_UV";
 		video->conversion_width_i = 1.f / (float)ovi->output_width;
 		break;
+	case VIDEO_FORMAT_YUY2:
+		video->conversion_needed = true;
+		video->conversion_techs[0] = "YUY2";
+		video->conversion_width_i = 1.f / (float)ovi->output_width;
+		break;
 	case VIDEO_FORMAT_I444:
 		video->conversion_needed = true;
 		video->conversion_techs[0] = "Planar_Y";
@@ -107,17 +112,18 @@ static bool obs_init_gpu_conversion(struct obs_video_info *ovi)
 				       GS_RENDER_TARGET | GS_SHARED_KM_TEX);
 	} else {
 #endif
-		video->convert_textures[0] =
-			gs_texture_create(ovi->output_width, ovi->output_height,
-					  GS_R8, 1, NULL, GS_RENDER_TARGET);
-
 		const struct video_output_info *info =
 			video_output_get_info(video->video);
 		switch (info->format) {
 		case VIDEO_FORMAT_I420:
+			video->convert_textures[0] = gs_texture_create(
+				ovi->output_width, ovi->output_height, GS_R8, 1,
+				NULL, GS_RENDER_TARGET);
 			video->convert_textures[1] = gs_texture_create(
 				ovi->output_width / 2, ovi->output_height / 2,
 				GS_R8, 1, NULL, GS_RENDER_TARGET);
+			if (!video->convert_textures[1])
+				return false;
 			video->convert_textures[2] = gs_texture_create(
 				ovi->output_width / 2, ovi->output_height / 2,
 				GS_R8, 1, NULL, GS_RENDER_TARGET);
@@ -125,14 +131,29 @@ static bool obs_init_gpu_conversion(struct obs_video_info *ovi)
 				return false;
 			break;
 		case VIDEO_FORMAT_NV12:
+			video->convert_textures[0] = gs_texture_create(
+				ovi->output_width, ovi->output_height, GS_R8, 1,
+				NULL, GS_RENDER_TARGET);
 			video->convert_textures[1] = gs_texture_create(
 				ovi->output_width / 2, ovi->output_height / 2,
 				GS_R8G8, 1, NULL, GS_RENDER_TARGET);
+			if (!video->convert_textures[1])
+				return false;
+			break;
+		case VIDEO_FORMAT_YUY2:
+			video->convert_textures[0] = gs_texture_create(
+				ovi->output_width / 2, ovi->output_height,
+				GS_RGBA, 1, NULL, GS_RENDER_TARGET);
 			break;
 		case VIDEO_FORMAT_I444:
+			video->convert_textures[0] = gs_texture_create(
+				ovi->output_width, ovi->output_height, GS_R8, 1,
+				NULL, GS_RENDER_TARGET);
 			video->convert_textures[1] = gs_texture_create(
 				ovi->output_width, ovi->output_height, GS_R8, 1,
 				NULL, GS_RENDER_TARGET);
+			if (!video->convert_textures[1])
+				return false;
 			video->convert_textures[2] = gs_texture_create(
 				ovi->output_width, ovi->output_height, GS_R8, 1,
 				NULL, GS_RENDER_TARGET);
@@ -148,8 +169,6 @@ static bool obs_init_gpu_conversion(struct obs_video_info *ovi)
 
 	if (!video->convert_textures[0])
 		return false;
-	if (!video->convert_textures[1])
-		return false;
 
 	return true;
 }
@@ -158,15 +177,12 @@ static bool obs_init_gpu_copy_surfaces(struct obs_video_info *ovi, size_t i)
 {
 	struct obs_core_video *video = &obs->video;
 
-	video->copy_surfaces[i][0] = gs_stagesurface_create(
-		ovi->output_width, ovi->output_height, GS_R8);
-	if (!video->copy_surfaces[i][0])
-		return false;
-
 	const struct video_output_info *info =
 		video_output_get_info(video->video);
 	switch (info->format) {
 	case VIDEO_FORMAT_I420:
+		video->copy_surfaces[i][0] = gs_stagesurface_create(
+			ovi->output_width, ovi->output_height, GS_R8);
 		video->copy_surfaces[i][1] = gs_stagesurface_create(
 			ovi->output_width / 2, ovi->output_height / 2, GS_R8);
 		if (!video->copy_surfaces[i][1])
@@ -177,12 +193,20 @@ static bool obs_init_gpu_copy_surfaces(struct obs_video_info *ovi, size_t i)
 			return false;
 		break;
 	case VIDEO_FORMAT_NV12:
+		video->copy_surfaces[i][0] = gs_stagesurface_create(
+			ovi->output_width, ovi->output_height, GS_R8);
 		video->copy_surfaces[i][1] = gs_stagesurface_create(
 			ovi->output_width / 2, ovi->output_height / 2, GS_R8G8);
 		if (!video->copy_surfaces[i][1])
 			return false;
 		break;
+	case VIDEO_FORMAT_YUY2:
+		video->copy_surfaces[i][0] = gs_stagesurface_create(
+			ovi->output_width / 2, ovi->output_height, GS_RGBA);
+		break;
 	case VIDEO_FORMAT_I444:
+		video->copy_surfaces[i][0] = gs_stagesurface_create(
+			ovi->output_width, ovi->output_height, GS_R8);
 		video->copy_surfaces[i][1] = gs_stagesurface_create(
 			ovi->output_width, ovi->output_height, GS_R8);
 		if (!video->copy_surfaces[i][1])
@@ -195,6 +219,9 @@ static bool obs_init_gpu_copy_surfaces(struct obs_video_info *ovi, size_t i)
 	default:
 		break;
 	}
+
+	if (!video->copy_surfaces[i][0])
+		return false;
 
 	return true;
 }

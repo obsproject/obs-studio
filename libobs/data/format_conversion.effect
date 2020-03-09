@@ -152,6 +152,24 @@ VertPosWide VSPosWide_Reverse(uint id : VERTEXID)
 	return vert_out;
 }
 
+VertTexPosWide VSPacked422(uint id : VERTEXID)
+{
+	float idHigh = float(id >> 1);
+	float idLow = float(id & uint(1));
+
+	float x = idHigh * 4.0 - 1.0;
+	float y = idLow * 4.0 - 1.0;
+
+	float u_right = idHigh * 2.0;
+	float u_left = u_right - width_i;
+	float v = obs_glsl_compile ? (idLow * 2.0) : (1.0 - idLow * 2.0);
+
+	VertTexPosWide vert_out;
+	vert_out.uuv = float3(u_left, u_right, v);
+	vert_out.pos = float4(x, y, 0.0, 1.0);
+	return vert_out;
+}
+
 float PS_Y(FragPos frag_in) : TARGET
 {
 	float3 rgb = image.Load(int3(frag_in.pos.xy, 0)).rgb;
@@ -199,6 +217,24 @@ float PS_V_Wide(FragTexWide frag_in) : TARGET
 	float3 rgb = (rgb_left + rgb_right) * 0.5;
 	float v = dot(color_vec2.xyz, rgb) + color_vec2.w;
 	return v;
+}
+
+float4 PSYUY2(VertTexPosWide frag_in) : TARGET
+{
+	float2 pos_y_left = float2(frag_in.pos.x * 2.0 - 0.5, frag_in.pos.y);
+	float2 pos_y_right = float2(pos_y_left.x + 1.0, frag_in.pos.y);
+	float3 rgb_y_left = image.Load(int3(pos_y_left, 0)).rgb;
+	float3 rgb_y_right = image.Load(int3(pos_y_right, 0)).rgb;
+	float y0 = dot(color_vec0.xyz, rgb_y_left) + color_vec0.w;
+	float y1 = dot(color_vec0.xyz, rgb_y_right) + color_vec0.w;
+
+	float3 rgb_uv_left = image.Sample(def_sampler, frag_in.uuv.xz).rgb;
+	float3 rgb_uv_right = image.Sample(def_sampler, frag_in.uuv.yz).rgb;
+	float3 rgb_uv = (rgb_uv_left + rgb_uv_right) * 0.5;
+	float u = dot(color_vec1.xyz, rgb_uv) + color_vec1.w;
+	float v = dot(color_vec2.xyz, rgb_uv) + color_vec2.w;
+
+	return float4(y0, u, y1, v);
 }
 
 float3 YUV_to_RGB(float3 yuv)
@@ -436,6 +472,15 @@ technique NV12_UV
 	{
 		vertex_shader = VSTexPos_Left(id);
 		pixel_shader  = PS_UV_Wide(frag_in);
+	}
+}
+
+technique YUY2
+{
+	pass
+	{
+		vertex_shader = VSPacked422(id);
+		pixel_shader  = PSYUY2(frag_in);
 	}
 }
 

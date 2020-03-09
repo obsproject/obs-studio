@@ -322,23 +322,18 @@ static void render_convert_texture(struct obs_core_video *video,
 	if (video->convert_textures[0]) {
 		gs_effect_set_texture(image, texture);
 		gs_effect_set_vec4(color_vec0, &vec0);
+		gs_effect_set_vec4(color_vec1, &vec1);
+		gs_effect_set_vec4(color_vec2, &vec2);
+		gs_effect_set_vec4(color_vec2, &vec2);
+		gs_effect_set_float(width_i, video->conversion_width_i);
 		render_convert_plane(effect, video->convert_textures[0],
 				     video->conversion_techs[0]);
 
 		if (video->convert_textures[1]) {
-			gs_effect_set_texture(image, texture);
-			gs_effect_set_vec4(color_vec1, &vec1);
-			if (!video->convert_textures[2])
-				gs_effect_set_vec4(color_vec2, &vec2);
-			gs_effect_set_float(width_i, video->conversion_width_i);
 			render_convert_plane(effect, video->convert_textures[1],
 					     video->conversion_techs[1]);
 
 			if (video->convert_textures[2]) {
-				gs_effect_set_texture(image, texture);
-				gs_effect_set_vec4(color_vec2, &vec2);
-				gs_effect_set_float(width_i,
-						    video->conversion_width_i);
 				render_convert_plane(
 					effect, video->convert_textures[2],
 					video->conversion_techs[2]);
@@ -618,6 +613,18 @@ static void set_gpu_converted_data(struct obs_core_video *video,
 
 			break;
 		}
+		case VIDEO_FORMAT_YUY2: {
+			const uint32_t width = info->width;
+			const uint32_t height = info->height;
+
+			set_gpu_converted_plane(width * 2, height,
+						input->linesize[0],
+						output->linesize[0],
+						input->data[0],
+						output->data[0]);
+
+			break;
+		}
 		case VIDEO_FORMAT_I444: {
 			const uint32_t width = info->width;
 			const uint32_t height = info->height;
@@ -645,7 +652,6 @@ static void set_gpu_converted_data(struct obs_core_video *video,
 
 		case VIDEO_FORMAT_NONE:
 		case VIDEO_FORMAT_YVYU:
-		case VIDEO_FORMAT_YUY2:
 		case VIDEO_FORMAT_UYVY:
 		case VIDEO_FORMAT_RGBA:
 		case VIDEO_FORMAT_BGRA:
