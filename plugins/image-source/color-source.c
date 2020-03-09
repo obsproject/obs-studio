@@ -131,7 +131,8 @@ struct obs_source_info color_source_info_v1 = {
 };
 
 struct obs_source_info color_source_info_v2 = {
-	.id = "color_source_v2",
+	.id = "color_source",
+	.version = 2,
 	.type = OBS_SOURCE_TYPE_INPUT,
 	.output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_CUSTOM_DRAW,
 	.create = color_source_create,

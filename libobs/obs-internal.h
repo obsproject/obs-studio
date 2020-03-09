@@ -726,6 +726,8 @@ struct obs_source {
 };
 
 extern struct obs_source_info *get_source_info(const char *id);
+extern struct obs_source_info *get_source_info2(const char *unversioned_id,
+						uint32_t ver);
 extern bool obs_source_init_context(struct obs_source *source,
 				    obs_data_t *settings, const char *name,
 				    obs_data_t *hotkey_data, bool private);

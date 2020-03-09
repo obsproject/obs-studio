@@ -523,6 +523,10 @@ struct obs_source_info {
 	int64_t (*media_get_time)(void *data);
 	void (*media_set_time)(void *data, int64_t miliseconds);
 	enum obs_media_state (*media_get_state)(void *data);
+
+	/* version-related stuff */
+	uint32_t version; /* increment if needed to specify a new version */
+	const char *unversioned_id; /* set internally, don't set manually */
 };
 
 EXPORT void obs_register_source_s(const struct obs_source_info *info,

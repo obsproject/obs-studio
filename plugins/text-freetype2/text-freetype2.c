@@ -53,7 +53,8 @@ static struct obs_source_info freetype2_source_info_v1 = {
 };
 
 static struct obs_source_info freetype2_source_info_v2 = {
-	.id = "text_ft2_source_v2",
+	.id = "text_ft2_source",
+	.version = 2,
 	.type = OBS_SOURCE_TYPE_INPUT,
 	.output_flags = OBS_SOURCE_VIDEO |
 #ifdef _WIN32

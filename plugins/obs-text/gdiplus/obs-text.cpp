@@ -1098,7 +1098,7 @@ bool obs_module_load(void)
 	};
 
 	obs_source_info si_v2 = si;
-	si_v2.id = "text_gdiplus_v2";
+	si_v2.version = 2;
 	si_v2.output_flags &= ~OBS_SOURCE_CAP_OBSOLETE;
 	si_v2.get_defaults = [](obs_data_t *settings) {
 		defaults(settings, 2);

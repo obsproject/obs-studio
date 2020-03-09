@@ -517,6 +517,10 @@ EXPORT bool obs_enum_source_types(size_t idx, const char **id);
  * etc).
  */
 EXPORT bool obs_enum_input_types(size_t idx, const char **id);
+EXPORT bool obs_enum_input_types2(size_t idx, const char **id,
+				  const char **unversioned_id);
+
+EXPORT const char *obs_get_latest_input_type_id(const char *unversioned_id);
 
 /**
  * Enumerates all available filter source types.
@@ -938,6 +942,7 @@ EXPORT enum obs_source_type obs_source_get_type(const obs_source_t *source);
 
 /** Gets the source identifier */
 EXPORT const char *obs_source_get_id(const obs_source_t *source);
+EXPORT const char *obs_source_get_unversioned_id(const obs_source_t *source);
 
 /** Returns the signal handler for a source */
 EXPORT signal_handler_t *

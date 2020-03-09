@@ -4719,6 +4719,7 @@ void OBSBasic::AddSource(const char *id)
 
 QMenu *OBSBasic::CreateAddSourcePopupMenu()
 {
+	const char *unversioned_type;
 	const char *type;
 	bool foundValues = false;
 	bool foundDeprecated = false;
@@ -4759,7 +4760,7 @@ QMenu *OBSBasic::CreateAddSourcePopupMenu()
 		popup->insertAction(after, popupItem);
 	};
 
-	while (obs_enum_input_types(idx++, &type)) {
+	while (obs_enum_input_types2(idx++, &type, &unversioned_type)) {
 		const char *name = obs_source_get_display_name(type);
 		uint32_t caps = obs_get_source_output_flags(type);
 
@@ -4767,9 +4768,9 @@ QMenu *OBSBasic::CreateAddSourcePopupMenu()
 			continue;
 
 		if ((caps & OBS_SOURCE_DEPRECATED) == 0) {
-			addSource(popup, type, name);
+			addSource(popup, unversioned_type, name);
 		} else {
-			addSource(deprecated, type, name);
+			addSource(deprecated, unversioned_type, name);
 			foundDeprecated = true;
 		}
 		foundValues = true;

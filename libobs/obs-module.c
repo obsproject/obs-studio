@@ -581,7 +581,7 @@ void obs_register_source_s(const struct obs_source_info *info, size_t size)
 		goto error;
 	}
 
-	if (get_source_info(info->id)) {
+	if (get_source_info2(info->id, info->version)) {
 		source_warn("Source '%s' already exists!  "
 			    "Duplicate library?",
 			    info->id);
@@ -648,6 +648,17 @@ void obs_register_source_s(const struct obs_source_info *info, size_t size)
 			    (long long unsigned)size,
 			    (long long unsigned)sizeof(data));
 		goto error;
+	}
+
+	/* version-related stuff */
+	data.unversioned_id = data.id;
+	if (data.version) {
+		struct dstr versioned_id = {0};
+		dstr_printf(&versioned_id, "%s_v%d", data.id,
+			    (int)data.version);
+		data.id = versioned_id.array;
+	} else {
+		data.id = bstrdup(data.id);
 	}
 
 	if (array)

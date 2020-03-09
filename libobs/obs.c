@@ -989,6 +989,15 @@ void obs_shutdown(void)
 	if (!obs)
 		return;
 
+	for (size_t i = 0; i < obs->source_types.num; i++) {
+		struct obs_source_info *item = &obs->source_types.array[i];
+		if (item->type_data && item->free_type_data)
+			item->free_type_data(item->type_data);
+		if (item->id)
+			bfree((void *)item->id);
+	}
+	da_free(obs->source_types);
+
 #define FREE_REGISTERED_TYPES(structure, list)                         \
 	do {                                                           \
 		for (size_t i = 0; i < list.num; i++) {                \
@@ -999,7 +1008,6 @@ void obs_shutdown(void)
 		da_free(list);                                         \
 	} while (false)
 
-	FREE_REGISTERED_TYPES(obs_source_info, obs->source_types);
 	FREE_REGISTERED_TYPES(obs_output_info, obs->output_types);
 	FREE_REGISTERED_TYPES(obs_encoder_info, obs->encoder_types);
 	FREE_REGISTERED_TYPES(obs_service_info, obs->service_types);
@@ -1253,6 +1261,47 @@ bool obs_enum_input_types(size_t idx, const char **id)
 		return false;
 	*id = obs->input_types.array[idx].id;
 	return true;
+}
+
+bool obs_enum_input_types2(size_t idx, const char **id,
+			   const char **unversioned_id)
+{
+	if (!obs)
+		return false;
+
+	if (idx >= obs->input_types.num)
+		return false;
+	if (id)
+		*id = obs->input_types.array[idx].id;
+	if (unversioned_id)
+		*unversioned_id = obs->input_types.array[idx].unversioned_id;
+	return true;
+}
+
+const char *obs_get_latest_input_type_id(const char *unversioned_id)
+{
+	struct obs_source_info *latest = NULL;
+	int version = -1;
+
+	if (!obs)
+		return false;
+	if (!unversioned_id)
+		return false;
+
+	for (size_t i = 0; i < obs->input_types.num; i++) {
+		struct obs_source_info *info = &obs->input_types.array[i];
+		if (strcmp(info->unversioned_id, unversioned_id) == 0 &&
+		    (int)info->version > version) {
+			latest = info;
+			version = info->version;
+		}
+	}
+
+	assert(!!latest);
+	if (!latest)
+		return NULL;
+
+	return latest->id;
 }
 
 bool obs_enum_filter_types(size_t idx, const char **id)
@@ -1769,6 +1818,7 @@ static obs_source_t *obs_load_source_type(obs_data_t *source_data)
 	obs_source_t *source;
 	const char *name = obs_data_get_string(source_data, "name");
 	const char *id = obs_data_get_string(source_data, "id");
+	const char *v_id = obs_data_get_string(source_data, "versioned_id");
 	obs_data_t *settings = obs_data_get_obj(source_data, "settings");
 	obs_data_t *hotkeys = obs_data_get_obj(source_data, "hotkeys");
 	double volume;
@@ -1784,7 +1834,10 @@ static obs_source_t *obs_load_source_type(obs_data_t *source_data)
 
 	prev_ver = (uint32_t)obs_data_get_int(source_data, "prev_ver");
 
-	source = obs_source_create_set_last_ver(id, name, settings, hotkeys,
+	if (!*v_id)
+		v_id = id;
+
+	source = obs_source_create_set_last_ver(v_id, name, settings, hotkeys,
 						prev_ver);
 
 	obs_data_release(hotkeys);
@@ -1958,7 +2011,8 @@ obs_data_t *obs_save_source(obs_source_t *source)
 	int64_t sync = obs_source_get_sync_offset(source);
 	uint32_t flags = obs_source_get_flags(source);
 	const char *name = obs_source_get_name(source);
-	const char *id = obs_source_get_id(source);
+	const char *id = source->info.unversioned_id;
+	const char *v_id = source->info.id;
 	bool enabled = obs_source_enabled(source);
 	bool muted = obs_source_muted(source);
 	bool push_to_mute = obs_source_push_to_mute_enabled(source);
@@ -1982,6 +2036,7 @@ obs_data_t *obs_save_source(obs_source_t *source)
 
 	obs_data_set_string(source_data, "name", name);
 	obs_data_set_string(source_data, "id", id);
+	obs_data_set_string(source_data, "versioned_id", v_id);
 	obs_data_set_obj(source_data, "settings", settings);
 	obs_data_set_int(source_data, "mixers", mixers);
 	obs_data_set_int(source_data, "sync", sync);

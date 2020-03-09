@@ -66,8 +66,8 @@ def script_properties():
 	sources = obs.obs_enum_sources()
 	if sources is not None:
 		for source in sources:
-			source_id = obs.obs_source_get_id(source)
-			if source_id == "text_gdiplus" or source_id == "text_ft2_source" or source_id == "text_gdiplus_v2" or source_id == "text_ft2_source_v2":
+			source_id = obs.obs_source_get_unversioned_id(source)
+			if source_id == "text_gdiplus" or source_id == "text_ft2_source":
 				name = obs.obs_source_get_name(source)
 				obs.obs_property_list_add_string(p, name, name)
 
