@@ -1284,9 +1284,9 @@ const char *obs_get_latest_input_type_id(const char *unversioned_id)
 	int version = -1;
 
 	if (!obs)
-		return false;
+		return NULL;
 	if (!unversioned_id)
-		return false;
+		return NULL;
 
 	for (size_t i = 0; i < obs->source_types.num; i++) {
 		struct obs_source_info *info = &obs->source_types.array[i];
