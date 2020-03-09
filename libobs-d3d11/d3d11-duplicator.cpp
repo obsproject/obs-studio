@@ -16,6 +16,8 @@
 ******************************************************************************/
 
 #include "d3d11-subsystem.hpp"
+#include "util/platform.h"
+#include <map>
 #include <unordered_map>
 
 static inline bool get_monitor(gs_device_t *device, int monitor_idx,
@@ -32,6 +34,16 @@ static inline bool get_monitor(gs_device_t *device, int monitor_idx,
 	}
 
 	return true;
+}
+
+static inline void get_display_device(DXGI_OUTPUT_DESC *desc,
+				      MONITORINFOEX *moninfo,
+				      DISPLAY_DEVICE *ddev)
+{
+	moninfo->cbSize = sizeof(MONITORINFOEX);
+	GetMonitorInfoW(desc->Monitor, moninfo);
+	ddev->cb = sizeof(*ddev);
+	EnumDisplayDevices(moninfo->szDevice, 0, ddev, 1);
 }
 
 void gs_duplicator::Start()
@@ -95,6 +107,10 @@ EXPORT bool device_get_duplicator_monitor_info(gs_device_t *device,
 		return false;
 	}
 
+	DISPLAY_DEVICE ddev;
+	MONITORINFOEX monitorinf;
+	get_display_device(&desc, &monitorinf, &ddev);
+
 	switch (desc.Rotation) {
 	case DXGI_MODE_ROTATION_UNSPECIFIED:
 	case DXGI_MODE_ROTATION_IDENTITY:
@@ -118,6 +134,17 @@ EXPORT bool device_get_duplicator_monitor_info(gs_device_t *device,
 	info->y = desc.DesktopCoordinates.top;
 	info->cx = desc.DesktopCoordinates.right - info->x;
 	info->cy = desc.DesktopCoordinates.bottom - info->y;
+
+	char *devname = NULL;
+#ifdef UNICODE
+	os_wcs_to_utf8_ptr(ddev.DeviceString, 128, &devname);
+#else
+	devname = (char *)bstrdup(ddev.DeviceString);
+#endif
+	info->monitor_name = devname;
+	bfree(devname);
+
+	info->flags = monitorinf.dwFlags;
 
 	return true;
 }
