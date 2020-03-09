@@ -341,6 +341,7 @@ obs_source_create_internal(const char *id, const char *name,
 
 		source->info.id = bstrdup(id);
 		source->owns_info_id = true;
+		source->info.unversioned_id = bstrdup(source->info.id);
 	} else {
 		source->info = *info;
 
@@ -661,8 +662,10 @@ void obs_source_destroy(struct obs_source *source)
 	obs_data_release(source->private_settings);
 	obs_context_data_free(&source->context);
 
-	if (source->owns_info_id)
+	if (source->owns_info_id) {
 		bfree((void *)source->info.id);
+		bfree((void *)source->info.unversioned_id);
+	}
 
 	bfree(source);
 }

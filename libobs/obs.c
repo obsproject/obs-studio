@@ -1839,6 +1839,10 @@ static obs_source_t *obs_load_source_type(obs_data_t *source_data)
 
 	source = obs_source_create_set_last_ver(v_id, name, settings, hotkeys,
 						prev_ver);
+	if (source->owns_info_id) {
+		bfree((void *)source->info.unversioned_id);
+		source->info.unversioned_id = bstrdup(id);
+	}
 
 	obs_data_release(hotkeys);
 
