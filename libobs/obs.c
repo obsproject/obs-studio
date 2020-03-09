@@ -1288,8 +1288,8 @@ const char *obs_get_latest_input_type_id(const char *unversioned_id)
 	if (!unversioned_id)
 		return false;
 
-	for (size_t i = 0; i < obs->input_types.num; i++) {
-		struct obs_source_info *info = &obs->input_types.array[i];
+	for (size_t i = 0; i < obs->source_types.num; i++) {
+		struct obs_source_info *info = &obs->source_types.array[i];
 		if (strcmp(info->unversioned_id, unversioned_id) == 0 &&
 		    (int)info->version > version) {
 			latest = info;
