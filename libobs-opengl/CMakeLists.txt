@@ -49,6 +49,26 @@ else()
 		gl-nix.c
 		gl-nix-glx.c
 		gl-nix-egl-x11.c)
+
+	if(ENABLE_WAYLAND)
+		include_directories(
+			${WAYLAND_CLIENT_INCLUDE_DIRS}
+			${WAYLAND_EGL_INCLUDE_DIRS}
+			${EGL_INCLUDE_DIRS})
+
+		add_definitions(
+			${WAYLAND_DEFINITIONS})
+
+		set(libobs-opengl_PLATFORM_DEPS
+			${libobs-opengl_PLATFORM_DEPS}
+			${WAYLAND_CLIENT_LIBRARIES}
+			${WAYLAND_EGL_LIBRARIES}
+			${EGL_LIBRARIES})
+
+		set(libobs-opengl_PLATFORM_SOURCES
+			${libobs-opengl_PLATFORM_SOURCES}
+			gl-nix-egl-wayland.c)
+	endif()
 endif()
 
 set(libobs-opengl_SOURCES

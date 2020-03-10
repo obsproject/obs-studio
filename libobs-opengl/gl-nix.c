@@ -19,17 +19,31 @@
 #include "gl-nix-egl-x11.h"
 #include "gl-nix-glx.h"
 
+#ifdef ENABLE_WAYLAND
+#include "gl-nix-egl-wayland.h"
+#endif
+
 static const struct gl_winsys_vtable *gl_vtable = NULL;
 
 static void init_winsys(void)
 {
 	assert(gl_vtable == NULL);
 
-	if (getenv("OBS_USE_EGL")) {
-		gl_vtable = gl_nix_egl_x11_get_winsys_vtable();
-		blog(LOG_INFO, "Using EGL/X11");
-	} else {
-		gl_vtable = gl_nix_glx_get_winsys_vtable();
+	switch (obs_get_platform()) {
+	case OBS_PLATFORM_DEFAULT:
+		if (getenv("OBS_USE_EGL")) {
+			gl_vtable = gl_nix_egl_x11_get_winsys_vtable();
+			blog(LOG_INFO, "Using EGL/X11");
+		} else {
+			gl_vtable = gl_nix_glx_get_winsys_vtable();
+		}
+		break;
+#ifdef ENABLE_WAYLAND
+	case OBS_PLATFORM_WAYLAND:
+		gl_vtable = gl_nix_egl_wayland_get_winsys_vtable();
+		blog(LOG_INFO, "Using EGL/Wayland");
+		break;
+#endif
 	}
 
 	assert(gl_vtable != NULL);

@@ -17,6 +17,8 @@
 
 #pragma once
 
+#include <obs.h>
+
 #include "gl-subsystem.h"
 
 struct gl_winsys_vtable {
