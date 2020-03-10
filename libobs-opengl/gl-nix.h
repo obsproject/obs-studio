@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include <obs.h>
 #include <obs-nix-platform.h>
 
 #include "gl-subsystem.h"
