@@ -1239,6 +1239,17 @@ static inline bool init_events(struct game_capture *gc)
 
 enum capture_result { CAPTURE_FAIL, CAPTURE_RETRY, CAPTURE_SUCCESS };
 
+static inline bool init_data_map(struct game_capture *gc, HWND window)
+{
+	wchar_t name[64];
+	swprintf(name, 64, SHMEM_TEXTURE "_%" PRIu64 "_",
+		 (uint64_t)(uintptr_t)window);
+
+	gc->hook_data_map =
+		open_map_plus_id(gc, name, gc->global_hook_info->map_id);
+	return !!gc->hook_data_map;
+}
+
 static inline enum capture_result init_capture_data(struct game_capture *gc)
 {
 	gc->cx = gc->global_hook_info->cx;
@@ -1252,15 +1263,17 @@ static inline enum capture_result init_capture_data(struct game_capture *gc)
 
 	CloseHandle(gc->hook_data_map);
 
-	wchar_t name[64];
-	swprintf(name, 64, SHMEM_TEXTURE "_%" PRIu64 "_",
-		 (uint64_t)(uintptr_t)gc->window);
+	DWORD error = 0;
+	if (!init_data_map(gc, gc->window)) {
+		error = GetLastError();
 
-	gc->hook_data_map =
-		open_map_plus_id(gc, name, gc->global_hook_info->map_id);
+		/* if there's an error, try with 0 (for UWP programs) */
+		if (init_data_map(gc, NULL)) {
+			error = 0;
+		}
+	}
 
 	if (!gc->hook_data_map) {
-		DWORD error = GetLastError();
 		if (error == 2) {
 			return CAPTURE_RETRY;
 		} else {
