@@ -20,6 +20,7 @@
 #include <QApplication>
 #include <QMessageBox>
 #include <QWidget>
+#include <QWindow>
 #include <QThread>
 #include <obs.hpp>
 
@@ -56,7 +57,7 @@ public:
 
 void OBSErrorBox(QWidget *parent, const char *msg, ...);
 
-void QTToGSWindow(WId windowId, gs_window &gswindow);
+void QTToGSWindow(QWindow *window, gs_window &gswindow);
 
 uint32_t TranslateQtKeyboardEventModifiers(Qt::KeyboardModifiers mods);
 
