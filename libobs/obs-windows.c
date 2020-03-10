@@ -60,9 +60,6 @@ char *find_libobs_data_file(const char *file)
 	struct dstr path;
 	dstr_init(&path);
 
-	if (check_path(file, "data/libobs/", &path))
-		return path.array;
-
 	if (check_path(file, "../../data/libobs/", &path))
 		return path.array;
 
