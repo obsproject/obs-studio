@@ -28,6 +28,11 @@
 
 #if !defined(_WIN32) && !defined(__APPLE__)
 #include <QX11Info>
+
+#ifdef ENABLE_WAYLAND
+#include <qpa/qplatformnativeinterface.h>
+#endif
+
 #endif
 
 static inline void OBSErrorBoxva(QWidget *parent, const char *msg, va_list args)
@@ -105,15 +110,27 @@ void OBSMessageBox::critical(QWidget *parent, const QString &title,
 	mb.exec();
 }
 
-void QTToGSWindow(WId windowId, gs_window &gswindow)
+void QTToGSWindow(QWindow *window, WId windowId, gs_window &gswindow)
 {
 #ifdef _WIN32
 	gswindow.hwnd = (HWND)windowId;
 #elif __APPLE__
 	gswindow.view = (id)windowId;
 #else
-	gswindow.id = windowId;
-	gswindow.surface = QX11Info::display();
+	switch (obs_get_platform()) {
+	case OBS_PLATFORM_DEFAULT:
+		gswindow.id = windowId;
+		gswindow.surface = QX11Info::display();
+		break;
+#ifdef ENABLE_WAYLAND
+	case OBS_PLATFORM_WAYLAND:
+		QPlatformNativeInterface *native =
+			QGuiApplication::platformNativeInterface();
+		gswindow.surface =
+			native->nativeResourceForWindow("surface", window);
+		break;
+#endif
+	}
 #endif
 }
 
