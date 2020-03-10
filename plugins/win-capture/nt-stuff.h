@@ -56,6 +56,9 @@ typedef void(WINAPI *RTLINITUNICODESTRINGFUNC)(PCUNICODE_STRING pstr,
 					       const wchar_t *lpstrName);
 typedef NTSTATUS(WINAPI *NTOPENFUNC)(PHANDLE phandle, ACCESS_MASK access,
 				     POBJECT_ATTRIBUTES objattr);
+typedef NTSTATUS(WINAPI *NTCREATEMUTANT)(PHANDLE phandle, ACCESS_MASK access,
+					 POBJECT_ATTRIBUTES objattr,
+					 BOOLEAN isowner);
 typedef ULONG(WINAPI *RTLNTSTATUSTODOSERRORFUNC)(NTSTATUS status);
 typedef NTSTATUS(WINAPI *NTQUERYSYSTEMINFORMATIONFUNC)(SYSTEM_INFORMATION_CLASS,
 						       PVOID, ULONG, PULONG);
@@ -206,3 +209,30 @@ fail:
 MAKE_NT_OPEN_FUNC(nt_open_mutex, NtOpenMutant, SYNCHRONIZE)
 MAKE_NT_OPEN_FUNC(nt_open_event, NtOpenEvent, EVENT_MODIFY_STATE | SYNCHRONIZE)
 MAKE_NT_OPEN_FUNC(nt_open_map, NtOpenSection, FILE_MAP_READ | FILE_MAP_WRITE)
+
+static HANDLE nt_create_mutex(const wchar_t *name)
+{
+	static bool initialized = false;
+	static NTCREATEMUTANT create = NULL;
+	HANDLE handle;
+	NTSTATUS status;
+	UNICODE_STRING unistr;
+	OBJECT_ATTRIBUTES attr;
+
+	if (!initialized) {
+		create = (NTCREATEMUTANT)get_nt_func("NtCreateMutant");
+		initialized = true;
+	}
+
+	if (!create)
+		return NULL;
+
+	rtl_init_str(&unistr, name);
+	init_named_attribs(&attr, &unistr);
+
+	status = create(&handle, SYNCHRONIZE, &attr, FALSE);
+	if (NT_SUCCESS(status))
+		return handle;
+	nt_set_last_error(status);
+	return NULL;
+}

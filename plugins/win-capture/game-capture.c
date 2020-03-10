@@ -676,7 +676,9 @@ static inline bool init_keepalive(struct game_capture *gc)
 	wchar_t new_name[64];
 	swprintf(new_name, 64, WINDOW_HOOK_KEEPALIVE L"%lu", gc->process_id);
 
-	gc->keepalive_mutex = CreateMutexW(NULL, false, new_name);
+	gc->keepalive_mutex = gc->is_app
+				      ? create_app_mutex(gc->app_sid, new_name)
+				      : CreateMutexW(NULL, false, new_name);
 	if (!gc->keepalive_mutex) {
 		warn("Failed to create keepalive mutex: %lu", GetLastError());
 		return false;

@@ -53,6 +53,14 @@ wchar_t *get_app_sid(HANDLE process)
 static const wchar_t *path_format =
 	L"\\Sessions\\%lu\\AppContainerNamedObjects\\%s\\%s";
 
+HANDLE create_app_mutex(const wchar_t *sid, const wchar_t *name)
+{
+	wchar_t path[MAX_PATH];
+	DWORD session_id = WTSGetActiveConsoleSessionId();
+	_snwprintf(path, MAX_PATH, path_format, session_id, sid, name);
+	return nt_create_mutex(path);
+}
+
 HANDLE open_app_mutex(const wchar_t *sid, const wchar_t *name)
 {
 	wchar_t path[MAX_PATH];
