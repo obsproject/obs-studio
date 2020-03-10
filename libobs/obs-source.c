@@ -4595,7 +4595,7 @@ static inline void process_audio_source_tick(obs_source_t *source,
 void obs_source_audio_render(obs_source_t *source, uint32_t mixers,
 			     size_t channels, size_t sample_rate, size_t size)
 {
-	if (!source->audio_output_buf[0][0]) {
+	if (!source->audio_output_buf[0][0] || !source->context.data) {
 		source->audio_pending = true;
 		return;
 	}
