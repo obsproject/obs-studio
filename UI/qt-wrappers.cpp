@@ -113,7 +113,7 @@ void QTToGSWindow(WId windowId, gs_window &gswindow)
 	gswindow.view = (id)windowId;
 #else
 	gswindow.id = windowId;
-	gswindow.display = QX11Info::display();
+	gswindow.surface = QX11Info::display();
 #endif
 }
 

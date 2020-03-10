@@ -84,7 +84,7 @@ struct gl_windowinfo *
 gl_nix_egl_wayland_windowinfo_create(const struct gs_init_data *info)
 {
 	struct wl_egl_window *window =
-		wl_egl_window_create(info->window.display, info->cx, info->cy);
+		wl_egl_window_create(info->window.surface, info->cx, info->cy);
 	if (window == NULL) {
 		blog(LOG_ERROR, "wl_egl_window_create failed");
 		return NULL;
