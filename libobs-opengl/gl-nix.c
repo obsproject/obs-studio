@@ -19,6 +19,10 @@
 #include "gl-x11-glx.h"
 #include "gl-x11-egl.h"
 
+#ifdef ENABLE_WAYLAND
+#include "gl-wayland-egl.h"
+#endif
+
 static const struct gl_winsys_vtable *gl_vtable = NULL;
 
 static void init_winsys(void)
@@ -34,7 +38,8 @@ static void init_winsys(void)
 		break;
 #ifdef ENABLE_WAYLAND
 	case OBS_NIX_PLATFORM_WAYLAND:
-		blog(LOG_ERROR, "EGL/Wayland not implemented yet");
+		gl_vtable = gl_wayland_egl_get_winsys_vtable();
+		blog(LOG_INFO, "Using EGL/Wayland");
 		break;
 #endif
 	}
