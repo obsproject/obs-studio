@@ -1753,6 +1753,9 @@ obs_sceneitem_t *obs_scene_add(obs_scene_t *scene, obs_source_t *source)
 	struct calldata params;
 	uint8_t stack[128];
 
+	if (!item)
+		return NULL;
+
 	calldata_init_fixed(&params, stack, sizeof(stack));
 	calldata_set_ptr(&params, "scene", scene);
 	calldata_set_ptr(&params, "item", item);
