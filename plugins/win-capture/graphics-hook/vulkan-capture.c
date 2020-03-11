@@ -1308,22 +1308,20 @@ OBS_CreateSwapchainKHR(VkDevice device, const VkSwapchainCreateInfoKHR *cinfo,
 	struct vk_data *data = get_device_data(device);
 	struct vk_device_funcs *funcs = &data->funcs;
 
-	struct vk_swap_data *swap = get_new_swap_data(data);
-
-	swap->surf = cinfo->surface;
-	swap->image_extent = cinfo->imageExtent;
-	swap->format = cinfo->imageFormat;
-
 	VkSwapchainCreateInfoKHR info = *cinfo;
 	info.imageUsage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
 
 	VkResult res = funcs->CreateSwapchainKHR(device, &info, ac, p_sc);
+	debug_res("CreateSwapchainKHR", res);
+	if (res != VK_SUCCESS)
+		return res;
 	VkSwapchainKHR sc = *p_sc;
 
 	uint32_t count = 0;
 	res = funcs->GetSwapchainImagesKHR(data->device, sc, &count, NULL);
 	debug_res("GetSwapchainImagesKHR", res);
 
+	struct vk_swap_data *swap = get_new_swap_data(data);
 	if (count > 0) {
 		if (count > OBJ_MAX)
 			count = OBJ_MAX;
@@ -1331,11 +1329,15 @@ OBS_CreateSwapchainKHR(VkDevice device, const VkSwapchainCreateInfoKHR *cinfo,
 		res = funcs->GetSwapchainImagesKHR(data->device, sc, &count,
 						   swap->swap_images);
 		debug_res("GetSwapchainImagesKHR", res);
-		swap->image_count = count;
 	}
 
 	swap->sc = sc;
-	return res;
+	swap->image_extent = cinfo->imageExtent;
+	swap->format = cinfo->imageFormat;
+	swap->surf = cinfo->surface;
+	swap->image_count = count;
+
+	return VK_SUCCESS;
 }
 
 static void VKAPI OBS_DestroySwapchainKHR(VkDevice device, VkSwapchainKHR sc,
