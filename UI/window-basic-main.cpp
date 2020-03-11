@@ -1024,6 +1024,7 @@ retryScene:
 		ui->preview->SetScrollingOffset(scrollOffX, scrollOffY);
 	}
 	ui->preview->SetFixedScaling(fixedScaling);
+	emit ui->preview->DisplayResized();
 
 	/* ---------------------- */
 
