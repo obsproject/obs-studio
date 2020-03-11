@@ -34,7 +34,7 @@ OBSAbout::OBSAbout(QWidget *parent) : QDialog(parent), ui(new Ui::OBSAbout)
 
 	ui->contribute->setText(QTStr("About.Contribute"));
 	ui->donate->setText(
-		"&nbsp;&nbsp;<a href='https://obsproject.com/donate'>" +
+		"&nbsp;&nbsp;<a href='https://obsproject.com/contribute'>" +
 		QTStr("About.Donate") + "</a>");
 	ui->donate->setTextInteractionFlags(Qt::TextBrowserInteraction);
 	ui->donate->setOpenExternalLinks(true);
