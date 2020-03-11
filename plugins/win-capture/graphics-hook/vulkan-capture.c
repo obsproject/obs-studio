@@ -973,6 +973,7 @@ static void vk_capture(struct vk_data *data, VkQueue queue,
 		if (valid_rect(swap) && !vk_shtex_init(data, window, swap)) {
 			vk_shtex_free(data);
 			data->valid = false;
+			flog("vk_shtex_init failed");
 		}
 	}
 	if (capture_ready()) {
@@ -1261,6 +1262,7 @@ static VkResult VKAPI OBS_CreateDevice(VkPhysicalDevice phy_device,
 		goto fail;
 	}
 	if (!idata->valid) {
+		flog("instance not valid");
 		goto fail;
 	}
 
