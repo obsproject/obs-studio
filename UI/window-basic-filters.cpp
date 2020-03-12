@@ -738,6 +738,9 @@ void OBSBasicFilters::CustomContextMenu(const QPoint &pos, bool async)
 
 void OBSBasicFilters::EditItem(QListWidgetItem *item, bool async)
 {
+	if (editActive)
+		return;
+
 	Qt::ItemFlags flags = item->flags();
 	OBSSource filter = item->data(Qt::UserRole).value<OBSSource>();
 	const char *name = obs_source_get_name(filter);
@@ -748,6 +751,7 @@ void OBSBasicFilters::EditItem(QListWidgetItem *item, bool async)
 	list->removeItemWidget(item);
 	list->editItem(item);
 	item->setFlags(flags);
+	editActive = true;
 }
 
 void OBSBasicFilters::on_asyncFilters_customContextMenuRequested(
@@ -814,6 +818,7 @@ void OBSBasicFilters::FilterNameEdited(QWidget *editor, QListWidget *list)
 
 	listItem->setText(QString());
 	SetupVisibilityItem(list, listItem, filter);
+	editActive = false;
 }
 
 void OBSBasicFilters::AsyncFilterNameEdited(
