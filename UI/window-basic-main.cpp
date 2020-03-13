@@ -4137,11 +4137,15 @@ void OBSBasic::AddProjectorMenuMonitors(QMenu *parent, QObject *target,
 		QRect screenGeometry = screen->geometry();
 		QString name = "";
 #ifdef _WIN32
-		DISPLAY_DEVICEA ddev;
+		DISPLAY_DEVICE ddev;
 		ddev.cb = sizeof(ddev);
-		EnumDisplayDevicesA(screen->name().toStdString().c_str(), 0,
-				    &ddev, 1);
-		name = ddev.DeviceString;
+		BPtr<wchar_t> wideName;
+		os_utf8_to_wcs_ptr(screen->name().toStdString().c_str(), 0,
+				   &wideName);
+		EnumDisplayDevices(wideName, 0, &ddev, 1);
+		BPtr<char> newName;
+		os_wcs_to_utf8_ptr(ddev.DeviceString, 0, &newName);
+		name = newName;
 #elif defined(__APPLE__)
 		name = screen->name();
 #elif QT_VERSION >= QT_VERSION_CHECK(5, 9, 0)
