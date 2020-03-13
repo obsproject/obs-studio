@@ -816,7 +816,10 @@ static void vk_shtex_capture(struct vk_data *data,
 
 	VkCommandBuffer cmd_buffer = pool_data->cmd_buffers[image_index];
 	res = funcs->BeginCommandBuffer(cmd_buffer, &begin_info);
+
+#ifdef MORE_DEBUGGING
 	debug_res("BeginCommandBuffer", res);
+#endif
 
 	/* ------------------------------------------------------ */
 	/* transition shared texture if necessary                 */
@@ -950,7 +953,10 @@ static void vk_shtex_capture(struct vk_data *data,
 
 	VkFence fence = pool_data->fences[image_index];
 	res = funcs->QueueSubmit(queue, 1, &submit_info, fence);
+
+#ifdef MORE_DEBUGGING
 	debug_res("QueueSubmit", res);
+#endif
 
 	if (res == VK_SUCCESS)
 		pool_data->cmd_buffer_busy[image_index] = true;
@@ -968,9 +974,11 @@ static void vk_capture(struct vk_data *data, VkQueue queue,
 	HWND window = NULL;
 	uint32_t idx = 0;
 
+#ifdef MORE_DEBUGGING
 	debug("QueuePresentKHR called on "
 	      "devicekey %p, swapchain count %d",
 	      &data->funcs, info->swapchainCount);
+#endif
 
 	/* use first swap chain associated with a window */
 	for (; idx < info->swapchainCount; idx++) {

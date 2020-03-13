@@ -850,6 +850,7 @@ DXGI_FORMAT vk_format_to_dxgi(VkFormat format)
 }
 
 //#define DEBUG_PRINT
+//#define MORE_DEBUGGING
 //#define DEBUG_PRINT_PROCADDR
 
 #ifdef DEBUG_PRINT
