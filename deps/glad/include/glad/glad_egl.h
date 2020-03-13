@@ -7,21 +7,24 @@
     APIs: egl=1.5
     Profile: -
     Extensions:
+        EGL_EXT_image_dma_buf_import,
+        EGL_EXT_image_dma_buf_import_modifiers,
         EGL_EXT_platform_wayland,
         EGL_EXT_platform_x11,
         EGL_KHR_create_context,
         EGL_KHR_create_context_no_error,
         EGL_KHR_platform_wayland,
-        EGL_KHR_platform_x11
+        EGL_KHR_platform_x11,
+        EGL_MESA_image_dma_buf_export
     Loader: True
     Local files: False
     Omit khrplatform: False
     Reproducible: False
 
     Commandline:
-        --api="egl=1.5" --generator="c" --spec="egl" --extensions="EGL_EXT_platform_wayland,EGL_EXT_platform_x11,EGL_KHR_create_context,EGL_KHR_create_context_no_error,EGL_KHR_platform_wayland,EGL_KHR_platform_x11"
+        --api="egl=1.5" --generator="c" --spec="egl" --extensions="EGL_EXT_image_dma_buf_import,EGL_EXT_image_dma_buf_import_modifiers,EGL_EXT_platform_wayland,EGL_EXT_platform_x11,EGL_KHR_create_context,EGL_KHR_create_context_no_error,EGL_KHR_platform_wayland,EGL_KHR_platform_x11"
     Online:
-        https://glad.dav1d.de/#language=c&specification=egl&loader=on&api=egl%3D1.5&extensions=EGL_EXT_platform_wayland&extensions=EGL_EXT_platform_x11&extensions=EGL_KHR_create_context&extensions=EGL_KHR_create_context_no_error&extensions=EGL_KHR_platform_wayland&extensions=EGL_KHR_platform_x11
+        https://glad.dav1d.de/#language=c&specification=egl&loader=on&api=egl%3D1.5&extensions=EGL_EXT_image_dma_buf_import&extensions=EGL_EXT_image_dma_buf_import_modifiers&extensions=EGL_EXT_platform_wayland&extensions=EGL_EXT_platform_x11&extensions=EGL_KHR_create_context&extensions=EGL_KHR_create_context_no_error&extensions=EGL_KHR_platform_wayland&extensions=EGL_KHR_platform_x11
 */
 
 
@@ -339,6 +342,39 @@ EGLDisplay eglGetPlatformDisplay(EGLenum platform, void *native_display, const E
 EGLSurface eglCreatePlatformWindowSurface(EGLDisplay dpy, EGLConfig config, void *native_window, const EGLAttrib *attrib_list);
 EGLSurface eglCreatePlatformPixmapSurface(EGLDisplay dpy, EGLConfig config, void *native_pixmap, const EGLAttrib *attrib_list);
 EGLBoolean eglWaitSync(EGLDisplay dpy, EGLSync sync, EGLint flags);
+#define EGL_LINUX_DMA_BUF_EXT 0x3270
+#define EGL_LINUX_DRM_FOURCC_EXT 0x3271
+#define EGL_DMA_BUF_PLANE0_FD_EXT 0x3272
+#define EGL_DMA_BUF_PLANE0_OFFSET_EXT 0x3273
+#define EGL_DMA_BUF_PLANE0_PITCH_EXT 0x3274
+#define EGL_DMA_BUF_PLANE1_FD_EXT 0x3275
+#define EGL_DMA_BUF_PLANE1_OFFSET_EXT 0x3276
+#define EGL_DMA_BUF_PLANE1_PITCH_EXT 0x3277
+#define EGL_DMA_BUF_PLANE2_FD_EXT 0x3278
+#define EGL_DMA_BUF_PLANE2_OFFSET_EXT 0x3279
+#define EGL_DMA_BUF_PLANE2_PITCH_EXT 0x327A
+#define EGL_YUV_COLOR_SPACE_HINT_EXT 0x327B
+#define EGL_SAMPLE_RANGE_HINT_EXT 0x327C
+#define EGL_YUV_CHROMA_HORIZONTAL_SITING_HINT_EXT 0x327D
+#define EGL_YUV_CHROMA_VERTICAL_SITING_HINT_EXT 0x327E
+#define EGL_ITU_REC601_EXT 0x327F
+#define EGL_ITU_REC709_EXT 0x3280
+#define EGL_ITU_REC2020_EXT 0x3281
+#define EGL_YUV_FULL_RANGE_EXT 0x3282
+#define EGL_YUV_NARROW_RANGE_EXT 0x3283
+#define EGL_YUV_CHROMA_SITING_0_EXT 0x3284
+#define EGL_YUV_CHROMA_SITING_0_5_EXT 0x3285
+#define EGL_DMA_BUF_PLANE3_FD_EXT 0x3440
+#define EGL_DMA_BUF_PLANE3_OFFSET_EXT 0x3441
+#define EGL_DMA_BUF_PLANE3_PITCH_EXT 0x3442
+#define EGL_DMA_BUF_PLANE0_MODIFIER_LO_EXT 0x3443
+#define EGL_DMA_BUF_PLANE0_MODIFIER_HI_EXT 0x3444
+#define EGL_DMA_BUF_PLANE1_MODIFIER_LO_EXT 0x3445
+#define EGL_DMA_BUF_PLANE1_MODIFIER_HI_EXT 0x3446
+#define EGL_DMA_BUF_PLANE2_MODIFIER_LO_EXT 0x3447
+#define EGL_DMA_BUF_PLANE2_MODIFIER_HI_EXT 0x3448
+#define EGL_DMA_BUF_PLANE3_MODIFIER_LO_EXT 0x3449
+#define EGL_DMA_BUF_PLANE3_MODIFIER_HI_EXT 0x344A
 #define EGL_PLATFORM_WAYLAND_EXT 0x31D8
 #define EGL_PLATFORM_X11_EXT 0x31D5
 #define EGL_PLATFORM_X11_SCREEN_EXT 0x31D6
@@ -359,6 +395,18 @@ EGLBoolean eglWaitSync(EGLDisplay dpy, EGLSync sync, EGLint flags);
 #define EGL_PLATFORM_WAYLAND_KHR 0x31D8
 #define EGL_PLATFORM_X11_KHR 0x31D5
 #define EGL_PLATFORM_X11_SCREEN_KHR 0x31D6
+#ifndef EGL_EXT_image_dma_buf_import
+#define EGL_EXT_image_dma_buf_import 1
+#endif
+#ifndef EGL_EXT_image_dma_buf_import_modifiers
+#define EGL_EXT_image_dma_buf_import_modifiers 1
+typedef EGLBoolean (APIENTRYP PFNEGLQUERYDMABUFFORMATSEXTPROC)(EGLDisplay dpy, EGLint max_formats, EGLint *formats, EGLint *num_formats);
+GLAPI PFNEGLQUERYDMABUFFORMATSEXTPROC glad_eglQueryDmaBufFormatsEXT;
+#define eglQueryDmaBufFormatsEXT glad_eglQueryDmaBufFormatsEXT
+typedef EGLBoolean (APIENTRYP PFNEGLQUERYDMABUFMODIFIERSEXTPROC)(EGLDisplay dpy, EGLint format, EGLint max_modifiers, EGLuint64KHR *modifiers, EGLBoolean *external_only, EGLint *num_modifiers);
+GLAPI PFNEGLQUERYDMABUFMODIFIERSEXTPROC glad_eglQueryDmaBufModifiersEXT;
+#define eglQueryDmaBufModifiersEXT glad_eglQueryDmaBufModifiersEXT
+#endif
 #ifndef EGL_EXT_platform_wayland
 #define EGL_EXT_platform_wayland 1
 #endif
@@ -376,6 +424,15 @@ EGLBoolean eglWaitSync(EGLDisplay dpy, EGLSync sync, EGLint flags);
 #endif
 #ifndef EGL_KHR_platform_x11
 #define EGL_KHR_platform_x11 1
+#endif
+#ifndef EGL_MESA_image_dma_buf_export
+#define EGL_MESA_image_dma_buf_export 1
+typedef EGLBoolean (APIENTRYP PFNEGLEXPORTDMABUFIMAGEQUERYMESAPROC)(EGLDisplay dpy, EGLImageKHR image, int *fourcc, int *num_planes, EGLuint64KHR *modifiers);
+GLAPI PFNEGLEXPORTDMABUFIMAGEQUERYMESAPROC glad_eglExportDMABUFImageQueryMESA;
+#define eglExportDMABUFImageQueryMESA glad_eglExportDMABUFImageQueryMESA
+typedef EGLBoolean (APIENTRYP PFNEGLEXPORTDMABUFIMAGEMESAPROC)(EGLDisplay dpy, EGLImageKHR image, int *fds, EGLint *strides, EGLint *offsets);
+GLAPI PFNEGLEXPORTDMABUFIMAGEMESAPROC glad_eglExportDMABUFImageMESA;
+#define eglExportDMABUFImageMESA glad_eglExportDMABUFImageMESA
 #endif
 
 #ifdef __cplusplus
