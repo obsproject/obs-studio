@@ -43,7 +43,7 @@ static const GUID dxgi_resource_guid =
 /* clang-format on */
 
 static bool vulkan_seen = false;
-static CRITICAL_SECTION mutex;
+static SRWLOCK mutex = SRWLOCK_INIT; // Faster CRITICAL_SECTION
 
 /* ======================================================================== */
 /* hook data                                                                */
@@ -52,7 +52,7 @@ struct vk_swap_data {
 	VkSwapchainKHR sc;
 	VkExtent2D image_extent;
 	VkFormat format;
-	VkSurfaceKHR surf;
+	HWND hwnd;
 	VkImage export_image;
 	bool layout_initialized;
 	VkDeviceMemory export_mem;
@@ -94,6 +94,8 @@ struct vk_data {
 	struct vk_cmd_pool_data cmd_pools[OBJ_MAX];
 	VkExternalMemoryProperties external_mem_props;
 
+	struct vk_inst_data *inst_data;
+
 	ID3D11Device *d3d11_device;
 	ID3D11DeviceContext *d3d11_context;
 };
@@ -114,8 +116,7 @@ static struct vk_swap_data *get_swap_data(struct vk_data *data,
 static struct vk_swap_data *get_new_swap_data(struct vk_data *data)
 {
 	for (int i = 0; i < OBJ_MAX; i++) {
-		if (data->swaps[i].surf == VK_NULL_HANDLE &&
-		    data->swaps[i].sc == VK_NULL_HANDLE) {
+		if (data->swaps[i].sc == VK_NULL_HANDLE) {
 			return &data->swaps[i];
 		}
 	}
@@ -130,14 +131,14 @@ static inline size_t find_obj_idx(void *objs[], void *obj)
 {
 	size_t idx = SIZE_MAX;
 
-	EnterCriticalSection(&mutex);
+	AcquireSRWLockExclusive(&mutex);
 	for (size_t i = 0; i < OBJ_MAX; i++) {
 		if (objs[i] == obj) {
 			idx = i;
 			break;
 		}
 	}
-	LeaveCriticalSection(&mutex);
+	ReleaseSRWLockExclusive(&mutex);
 
 	return idx;
 }
@@ -146,7 +147,7 @@ static size_t get_obj_idx(void *objs[], void *obj)
 {
 	size_t idx = SIZE_MAX;
 
-	EnterCriticalSection(&mutex);
+	AcquireSRWLockExclusive(&mutex);
 	for (size_t i = 0; i < OBJ_MAX; i++) {
 		if (objs[i] == obj) {
 			idx = i;
@@ -156,7 +157,7 @@ static size_t get_obj_idx(void *objs[], void *obj)
 			idx = i;
 		}
 	}
-	LeaveCriticalSection(&mutex);
+	ReleaseSRWLockExclusive(&mutex);
 	return idx;
 }
 
@@ -263,45 +264,79 @@ static void vk_remove_device(void *dev)
 
 	memset(data, 0, sizeof(*data));
 
-	EnterCriticalSection(&mutex);
+	AcquireSRWLockExclusive(&mutex);
 	devices[idx] = NULL;
-	LeaveCriticalSection(&mutex);
+	ReleaseSRWLockExclusive(&mutex);
 }
 
 /* ------------------------------------------------------------------------- */
 
 struct vk_surf_data {
 	VkSurfaceKHR surf;
-	HINSTANCE hinstance;
 	HWND hwnd;
+	struct vk_surf_data *next;
 };
 
 struct vk_inst_data {
 	bool valid;
 
 	struct vk_inst_funcs funcs;
-	struct vk_surf_data surfaces[OBJ_MAX];
+	struct vk_surf_data *surfaces;
 };
 
-static struct vk_surf_data *find_surf_data(struct vk_inst_data *data,
-					   VkSurfaceKHR surf)
+static void insert_surf_data(struct vk_inst_data *data, VkSurfaceKHR surf,
+			     HWND hwnd)
 {
-	int idx = OBJ_MAX;
-	for (int i = 0; i < OBJ_MAX; i++) {
-		if (data->surfaces[i].surf == surf) {
-			return &data->surfaces[i];
-		} else if (data->surfaces[i].surf == VK_NULL_HANDLE &&
-			   idx == OBJ_MAX) {
-			idx = i;
-		}
-	}
-	if (idx != OBJ_MAX) {
-		data->surfaces[idx].surf = surf;
-		return &data->surfaces[idx];
-	}
+	struct vk_surf_data *surf_data = malloc(sizeof(struct vk_surf_data));
+	if (surf_data) {
+		surf_data->surf = surf;
+		surf_data->hwnd = hwnd;
 
-	debug("find_surf_data failed, no more free slots");
-	return NULL;
+		AcquireSRWLockExclusive(&mutex);
+		struct vk_surf_data *next = data->surfaces;
+		surf_data->next = next;
+		data->surfaces = surf_data;
+		ReleaseSRWLockExclusive(&mutex);
+	}
+}
+
+static HWND find_surf_hwnd(struct vk_inst_data *data, VkSurfaceKHR surf)
+{
+	HWND hwnd = NULL;
+
+	AcquireSRWLockExclusive(&mutex);
+	struct vk_surf_data *surf_data = data->surfaces;
+	while (surf_data) {
+		if (surf_data->surf == surf) {
+			hwnd = surf_data->hwnd;
+			break;
+		}
+		surf_data = surf_data->next;
+	}
+	ReleaseSRWLockExclusive(&mutex);
+
+	return hwnd;
+}
+
+static void erase_surf_data(struct vk_inst_data *data, VkSurfaceKHR surf)
+{
+	AcquireSRWLockExclusive(&mutex);
+	struct vk_surf_data *current = data->surfaces;
+	if (current->surf == surf) {
+		data->surfaces = current->next;
+	} else {
+		struct vk_surf_data *previous;
+		do {
+			previous = current;
+			current = current->next;
+		} while (current && current->surf != surf);
+
+		if (current)
+			previous->next = current->next;
+	}
+	ReleaseSRWLockExclusive(&mutex);
+
+	free(current);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -337,9 +372,9 @@ static void remove_instance(void *inst)
 	struct vk_inst_data *data = &inst_data[idx];
 	memset(data, 0, sizeof(*data));
 
-	EnterCriticalSection(&mutex);
+	AcquireSRWLockExclusive(&mutex);
 	instances[idx] = NULL;
-	LeaveCriticalSection(&mutex);
+	ReleaseSRWLockExclusive(&mutex);
 }
 
 /* ======================================================================== */
@@ -921,20 +956,6 @@ static void vk_shtex_capture(struct vk_data *data,
 		pool_data->cmd_buffer_busy[image_index] = true;
 }
 
-static inline HWND get_swap_window(struct vk_swap_data *swap)
-{
-	for (size_t i = 0; i < OBJ_MAX; i++) {
-		struct vk_surf_data *surf_data =
-			find_surf_data(&inst_data[i], swap->surf);
-
-		if (!!surf_data && surf_data->surf == swap->surf) {
-			return surf_data->hwnd;
-		}
-	}
-
-	return NULL;
-}
-
 static inline bool valid_rect(struct vk_swap_data *swap)
 {
 	return !!swap->image_extent.width && !!swap->image_extent.height;
@@ -955,7 +976,7 @@ static void vk_capture(struct vk_data *data, VkQueue queue,
 	for (; idx < info->swapchainCount; idx++) {
 		struct vk_swap_data *cur_swap =
 			get_swap_data(data, info->pSwapchains[idx]);
-		window = get_swap_window(cur_swap);
+		window = cur_swap->hwnd;
 		if (!!window) {
 			swap = cur_swap;
 			break;
@@ -1083,6 +1104,7 @@ static VkResult VKAPI OBS_CreateInstance(const VkInstanceCreateInfo *cinfo,
 	GETADDR(GetInstanceProcAddr);
 	GETADDR(DestroyInstance);
 	GETADDR(CreateWin32SurfaceKHR);
+	GETADDR(DestroySurfaceKHR);
 	GETADDR(GetPhysicalDeviceMemoryProperties);
 	GETADDR(GetPhysicalDeviceImageFormatProperties2);
 #undef GETADDR
@@ -1276,6 +1298,7 @@ static VkResult VKAPI OBS_CreateDevice(VkPhysicalDevice phy_device,
 		goto fail;
 	}
 
+	data->inst_data = idata;
 	data->valid = true;
 
 fail:
@@ -1336,7 +1359,7 @@ OBS_CreateSwapchainKHR(VkDevice device, const VkSwapchainCreateInfoKHR *cinfo,
 	swap->sc = sc;
 	swap->image_extent = cinfo->imageExtent;
 	swap->format = cinfo->imageFormat;
-	swap->surf = cinfo->surface;
+	swap->hwnd = find_surf_hwnd(data->inst_data, cinfo->surface);
 	swap->image_count = count;
 
 	return VK_SUCCESS;
@@ -1355,7 +1378,7 @@ static void VKAPI OBS_DestroySwapchainKHR(VkDevice device, VkSwapchainKHR sc,
 		}
 
 		swap->sc = VK_NULL_HANDLE;
-		swap->surf = VK_NULL_HANDLE;
+		swap->hwnd = NULL;
 	}
 
 	funcs->DestroySwapchainKHR(device, sc, ac);
@@ -1389,13 +1412,19 @@ static VkResult VKAPI OBS_CreateWin32SurfaceKHR(
 	struct vk_inst_funcs *funcs = &data->funcs;
 
 	VkResult res = funcs->CreateWin32SurfaceKHR(inst, info, ac, surf);
-	if (NULL != surf && VK_NULL_HANDLE != *surf) {
-		struct vk_surf_data *surf_data = find_surf_data(data, *surf);
-
-		surf_data->hinstance = info->hinstance;
-		surf_data->hwnd = info->hwnd;
-	}
+	if (res == VK_SUCCESS)
+		insert_surf_data(data, *surf, info->hwnd);
 	return res;
+}
+
+static void VKAPI OBS_DestroySurfaceKHR(VkInstance inst, VkSurfaceKHR surf,
+					const VkAllocationCallbacks *ac)
+{
+	struct vk_inst_data *data = get_inst_data(inst);
+	struct vk_inst_funcs *funcs = &data->funcs;
+
+	erase_surf_data(data, surf);
+	funcs->DestroySurfaceKHR(inst, surf, ac);
 }
 
 #define GETPROCADDR(func)              \
@@ -1431,6 +1460,7 @@ static VkFunc VKAPI OBS_GetInstanceProcAddr(VkInstance inst, const char *name)
 	GETPROCADDR(CreateInstance);
 	GETPROCADDR(DestroyInstance);
 	GETPROCADDR(CreateWin32SurfaceKHR);
+	GETPROCADDR(DestroySurfaceKHR);
 
 	/* device chain functions we intercept */
 	GETPROCADDR(GetDeviceProcAddr);
@@ -1472,23 +1502,4 @@ bool hook_vulkan(void)
 		hooked = true;
 	}
 	return hooked;
-}
-
-static bool vulkan_initialized = false;
-
-bool init_vk_layer()
-{
-	if (!vulkan_initialized) {
-		InitializeCriticalSection(&mutex);
-		vulkan_initialized = true;
-	}
-	return true;
-}
-
-bool shutdown_vk_layer()
-{
-	if (vulkan_initialized) {
-		DeleteCriticalSection(&mutex);
-	}
-	return true;
 }
