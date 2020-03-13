@@ -1504,7 +1504,7 @@ void obs_enum_sources(bool (*enum_proc)(void *, obs_source_t *), void *param)
 		obs_source_t *next_source =
 			(obs_source_t *)source->context.next;
 
-		if (source->info.id == group_info.id &&
+		if (strcmp(source->info.id, group_info.id) == 0 &&
 		    !enum_proc(param, source)) {
 			break;
 		} else if (source->info.type == OBS_SOURCE_TYPE_INPUT &&
