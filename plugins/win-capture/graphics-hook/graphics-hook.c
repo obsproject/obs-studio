@@ -805,9 +805,6 @@ void capture_free(void)
 	active = false;
 }
 
-BOOL init_vk_layer();
-BOOL shutdown_vk_layer();
-
 #define HOOK_NAME L"graphics_hook_dup_mutex"
 
 static inline HANDLE open_mutex_plus_id(const wchar_t *name, DWORD id)
@@ -865,11 +862,7 @@ BOOL WINAPI DllMain(HINSTANCE hinst, DWORD reason, LPVOID unused1)
 		if (!init_mutexes()) {
 			return false;
 		}
-#if COMPILE_VULKAN_HOOK
-		if (!init_vk_layer()) {
-			return false;
-		}
-#endif
+
 		/* this prevents the library from being automatically unloaded
 		 * by the next FreeLibrary call */
 		GetModuleFileNameW(hinst, name, MAX_PATH);
@@ -894,9 +887,6 @@ BOOL WINAPI DllMain(HINSTANCE hinst, DWORD reason, LPVOID unused1)
 			CloseHandle(capture_thread);
 		}
 
-#if COMPILE_VULKAN_HOOK
-		shutdown_vk_layer();
-#endif
 		free_hook();
 	}
 
