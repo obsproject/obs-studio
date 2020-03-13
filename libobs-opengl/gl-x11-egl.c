@@ -634,6 +634,25 @@ static void gl_x11_egl_device_present(gs_device_t *device)
 		     get_egl_error_string());
 }
 
+static struct gs_texture *gl_x11_egl_device_texture_create_from_dmabuf(
+	gs_device_t *device, unsigned int width, unsigned int height,
+	enum gs_color_format color_format, uint32_t n_planes, const int *fds,
+	const uint32_t *strides, const uint32_t *offsets,
+	const uint64_t *modifiers)
+{
+	UNUSED_PARAMETER(device);
+	UNUSED_PARAMETER(width);
+	UNUSED_PARAMETER(height);
+	UNUSED_PARAMETER(color_format);
+	UNUSED_PARAMETER(n_planes);
+	UNUSED_PARAMETER(fds);
+	UNUSED_PARAMETER(strides);
+	UNUSED_PARAMETER(offsets);
+	UNUSED_PARAMETER(modifiers);
+
+	return NULL;
+}
+
 static const struct gl_winsys_vtable egl_x11_winsys_vtable = {
 	.windowinfo_create = gl_x11_egl_windowinfo_create,
 	.windowinfo_destroy = gl_x11_egl_windowinfo_destroy,
@@ -649,6 +668,8 @@ static const struct gl_winsys_vtable egl_x11_winsys_vtable = {
 	.update = gl_x11_egl_update,
 	.device_load_swapchain = gl_x11_egl_device_load_swapchain,
 	.device_present = gl_x11_egl_device_present,
+	.device_texture_create_from_dmabuf =
+		gl_x11_egl_device_texture_create_from_dmabuf,
 };
 
 const struct gl_winsys_vtable *gl_x11_egl_get_winsys_vtable(void)
