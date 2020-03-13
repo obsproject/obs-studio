@@ -350,6 +350,7 @@ set(libobs_util_SOURCES
 	util/cf-parser.c
 	util/profiler.c)
 set(libobs_util_HEADERS
+	util/curl/curl-helper.h
 	util/sse-intrin.h
 	util/array-serializer.h
 	util/file-serializer.h
