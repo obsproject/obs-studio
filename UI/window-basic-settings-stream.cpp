@@ -228,7 +228,7 @@ void OBSBasicSettings::UpdateKeyLink()
 	} else if (serviceName.startsWith("Twitter")) {
 		streamKeyLink = "https://www.pscp.tv/account/producer";
 	} else if (serviceName.startsWith("YouStreamer")) {
-		streamKeyLink = "https://www.app.youstreamer.com/stream/";
+		streamKeyLink = "https://app.youstreamer.com/stream/";
 	}
 
 	if (QString(streamKeyLink).isNull()) {
