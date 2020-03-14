@@ -210,24 +210,31 @@ static void *wc_create(obs_data_t *settings, obs_source_t *source)
 	return wc;
 }
 
-static void wc_destroy(void *data)
+static void wc_actual_destroy(void *data)
 {
 	struct window_capture *wc = data;
 
-	if (wc) {
-		obs_enter_graphics();
-		dc_capture_free(&wc->capture);
-		obs_leave_graphics();
-
-		bfree(wc->title);
-		bfree(wc->class);
-		bfree(wc->executable);
-
-		if (wc->winrt_module)
-			os_dlclose(wc->winrt_module);
-
-		bfree(wc);
+	if (wc->capture_winrt) {
+		wc->exports.winrt_capture_free(wc->capture_winrt);
 	}
+
+	obs_enter_graphics();
+	dc_capture_free(&wc->capture);
+	obs_leave_graphics();
+
+	bfree(wc->title);
+	bfree(wc->class);
+	bfree(wc->executable);
+
+	if (wc->winrt_module)
+		os_dlclose(wc->winrt_module);
+
+	bfree(wc);
+}
+
+static void wc_destroy(void *data)
+{
+	obs_queue_task(OBS_TASK_GRAPHICS, wc_actual_destroy, data, false);
 }
 
 static void wc_update(void *data, obs_data_t *settings)
