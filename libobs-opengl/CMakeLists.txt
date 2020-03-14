@@ -45,6 +45,7 @@ else()
 		${X11_XCB_LIBRARIES})
 
 	set(libobs-opengl_PLATFORM_SOURCES
+		gl-egl-common.c
 		gl-nix.c
 		gl-x11-egl.c
 		gl-x11-glx.c)
