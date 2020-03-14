@@ -1409,6 +1409,7 @@ void OBSBasic::SetPreviewProgramMode(bool enabled)
 			EnablePreviewDisplay(false);
 
 		ui->transitions->setEnabled(true);
+		tBarActive = false;
 
 		if (api)
 			api->on_event(OBS_FRONTEND_EVENT_STUDIO_MODE_DISABLED);
