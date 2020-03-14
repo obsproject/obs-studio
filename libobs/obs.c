@@ -513,11 +513,9 @@ static void obs_free_video(void)
 		circlebuf_free(&video->vframe_info_buffer_gpu);
 
 		video->texture_rendered = false;
-		;
 		memset(video->textures_copied, 0,
 		       sizeof(video->textures_copied));
 		video->texture_converted = false;
-		;
 
 		pthread_mutex_destroy(&video->gpu_encoder_mutex);
 		pthread_mutex_init_value(&video->gpu_encoder_mutex);
