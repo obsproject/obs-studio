@@ -20,6 +20,8 @@
 #include <wayland-client.h>
 #include <wayland-egl.h>
 
+#include "gl-egl-common.h"
+
 #include <glad/glad_egl.h>
 
 static const EGLint config_attribs[] = {EGL_SURFACE_TYPE,
@@ -325,17 +327,11 @@ static struct gs_texture *gl_wayland_egl_device_texture_create_from_dmabuf(
 	const uint32_t *strides, const uint32_t *offsets,
 	const uint64_t *modifiers)
 {
-	UNUSED_PARAMETER(device);
-	UNUSED_PARAMETER(width);
-	UNUSED_PARAMETER(height);
-	UNUSED_PARAMETER(color_format);
-	UNUSED_PARAMETER(n_planes);
-	UNUSED_PARAMETER(fds);
-	UNUSED_PARAMETER(strides);
-	UNUSED_PARAMETER(offsets);
-	UNUSED_PARAMETER(modifiers);
+	struct gl_platform *plat = device->plat;
 
-	return NULL;
+	return gl_egl_create_dmabuf_image(plat->display, width, height,
+					  color_format, n_planes, fds, strides,
+					  offsets, modifiers);
 }
 
 static const struct gl_winsys_vtable egl_wayland_winsys_vtable = {
