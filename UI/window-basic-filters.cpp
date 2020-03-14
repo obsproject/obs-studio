@@ -444,10 +444,18 @@ void OBSBasicFilters::AddNewFilter(const char *id)
 		obs_source_t *existing_filter;
 		string name = obs_source_get_display_name(id);
 
+		QString placeholder = QString::fromStdString(name);
+		QString text{placeholder};
+		int i = 2;
+		while ((existing_filter = obs_source_get_filter_by_name(
+				source, QT_TO_UTF8(text)))) {
+			obs_source_release(existing_filter);
+			text = QString("%1 %2").arg(placeholder).arg(i++);
+		}
+
 		bool success = NameDialog::AskForName(
 			this, QTStr("Basic.Filters.AddFilter.Title"),
-			QTStr("Basic.FIlters.AddFilter.Text"), name,
-			QT_UTF8(name.c_str()));
+			QTStr("Basic.Filters.AddFilter.Text"), name, text);
 		if (!success)
 			return;
 
