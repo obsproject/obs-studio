@@ -2267,6 +2267,9 @@ void OBSBasic::ClearHotkeys()
 
 OBSBasic::~OBSBasic()
 {
+	/* clear out UI event queue */
+	QApplication::sendPostedEvents(App());
+
 	if (updateCheckThread && updateCheckThread->isRunning())
 		updateCheckThread->wait();
 

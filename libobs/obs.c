@@ -426,6 +426,8 @@ static int obs_init_video(struct obs_video_info *ovi)
 		return OBS_VIDEO_FAIL;
 	if (pthread_mutex_init(&video->gpu_encoder_mutex, NULL) < 0)
 		return OBS_VIDEO_FAIL;
+	if (pthread_mutex_init(&video->task_mutex, NULL) < 0)
+		return OBS_VIDEO_FAIL;
 
 	errorcode = pthread_create(&video->video_thread, NULL,
 				   obs_graphics_thread, obs);
@@ -520,6 +522,10 @@ static void obs_free_video(void)
 		pthread_mutex_destroy(&video->gpu_encoder_mutex);
 		pthread_mutex_init_value(&video->gpu_encoder_mutex);
 		da_free(video->gpu_encoders);
+
+		pthread_mutex_destroy(&video->task_mutex);
+		pthread_mutex_init_value(&video->task_mutex);
+		circlebuf_free(&video->tasks);
 
 		video->gpu_encoder_active = 0;
 		video->cur_texture = 0;
@@ -843,6 +849,7 @@ static bool obs_init(const char *locale, const char *module_config_path,
 
 	pthread_mutex_init_value(&obs->audio.monitoring_mutex);
 	pthread_mutex_init_value(&obs->video.gpu_encoder_mutex);
+	pthread_mutex_init_value(&obs->video.task_mutex);
 
 	obs->name_store_owned = !store;
 	obs->name_store = store ? store : profiler_name_store_create();
@@ -2576,4 +2583,77 @@ bool obs_nv12_tex_active(void)
 		return false;
 
 	return video->using_nv12_tex;
+}
+
+/* ------------------------------------------------------------------------- */
+/* task stuff                                                                */
+
+struct task_wait_info {
+	obs_task_t task;
+	void *param;
+	os_event_t *event;
+};
+
+static void task_wait_callback(void *param)
+{
+	struct task_wait_info *info = param;
+	info->task(info->param);
+	os_event_signal(info->event);
+}
+
+THREAD_LOCAL bool is_graphics_thread = false;
+
+static bool in_task_thread(enum obs_task_type type)
+{
+	/* NOTE: OBS_TASK_UI is handled independently */
+
+	if (type == OBS_TASK_GRAPHICS)
+		return is_graphics_thread;
+
+	assert(false);
+	return false;
+}
+
+void obs_queue_task(enum obs_task_type type, obs_task_t task, void *param,
+		    bool wait)
+{
+	if (!obs)
+		return;
+
+	if (type == OBS_TASK_UI) {
+		if (obs->ui_task_handler) {
+			obs->ui_task_handler(task, param, wait);
+		} else {
+			blog(LOG_ERROR, "UI task could not be queued, "
+					"there's no UI task handler!");
+		}
+	} else {
+		if (in_task_thread(type)) {
+			task(param);
+		} else if (wait) {
+			struct task_wait_info info = {
+				.task = task,
+				.param = param,
+			};
+
+			os_event_init(&info.event, OS_EVENT_TYPE_MANUAL);
+			obs_queue_task(type, task_wait_callback, &info, false);
+			os_event_wait(info.event);
+			os_event_destroy(info.event);
+		} else {
+			struct obs_core_video *video = &obs->video;
+			struct obs_task_info info = {task, param};
+
+			pthread_mutex_lock(&video->task_mutex);
+			circlebuf_push_back(&video->tasks, &info, sizeof(info));
+			pthread_mutex_unlock(&video->task_mutex);
+		}
+	}
+}
+
+void obs_set_ui_task_handler(obs_task_handler_t handler)
+{
+	if (!obs)
+		return;
+	obs->ui_task_handler = handler;
 }

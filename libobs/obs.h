@@ -745,6 +745,19 @@ EXPORT void obs_apply_private_data(obs_data_t *settings);
 EXPORT void obs_set_private_data(obs_data_t *settings);
 EXPORT obs_data_t *obs_get_private_data(void);
 
+typedef void (*obs_task_t)(void *param);
+
+enum obs_task_type {
+	OBS_TASK_UI,
+	OBS_TASK_GRAPHICS,
+};
+
+EXPORT void obs_queue_task(enum obs_task_type type, obs_task_t task,
+			   void *param, bool wait);
+
+typedef void (*obs_task_handler_t)(obs_task_t task, void *param, bool wait);
+EXPORT void obs_set_ui_task_handler(obs_task_handler_t handler);
+
 /* ------------------------------------------------------------------------- */
 /* View context */
 
