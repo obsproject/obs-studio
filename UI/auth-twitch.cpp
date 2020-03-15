@@ -38,6 +38,10 @@ TwitchAuth::TwitchAuth(const Def &d) : OAuthStreamKey(d)
 	cef->add_popup_whitelist_url(
 		"https://twitch.tv/popout/frankerfacez/chat?ffz-settings",
 		this);
+
+	/* enables javascript-based popups.  basically bttv popups */
+	cef->add_popup_whitelist_url("about:blank#blocked", this);
+
 	uiLoadTimer.setSingleShot(true);
 	uiLoadTimer.setInterval(500);
 	connect(&uiLoadTimer, &QTimer::timeout, this,
