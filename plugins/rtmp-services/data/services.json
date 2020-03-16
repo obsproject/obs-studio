@@ -1724,7 +1724,6 @@
         },
         {
             "name": "LOCO",
-            "common": true,
             "servers": [
                 {
                     "name": "Default",
