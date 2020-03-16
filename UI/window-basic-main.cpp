@@ -1896,6 +1896,9 @@ void OBSBasic::ReceivedIntroJson(const QString &text)
 {
 #ifdef BROWSER_AVAILABLE
 #ifdef _WIN32
+	if (closing)
+		return;
+
 	std::string err;
 	Json json = Json::parse(QT_TO_UTF8(text), err);
 	if (!err.empty())
@@ -1970,7 +1973,33 @@ void OBSBasic::ReceivedIntroJson(const QString &text)
 	}
 #endif
 	cef->init_browser();
-	ExecuteFuncSafeBlock([] { cef->wait_for_browser_init(); });
+
+	WhatsNewBrowserInitThread *wnbit =
+		new WhatsNewBrowserInitThread(QT_UTF8(info_url.c_str()));
+	if (wnbit) {
+		connect(wnbit, &WhatsNewBrowserInitThread::Result, this,
+			&OBSBasic::ShowWhatsNew);
+	}
+	if (wnbit) {
+		whatsNewInitThread.reset(wnbit);
+		whatsNewInitThread->start();
+	}
+#else
+	UNUSED_PARAMETER(text);
+#endif
+#else
+	UNUSED_PARAMETER(text);
+#endif
+}
+
+void OBSBasic::ShowWhatsNew(const QString &url)
+{
+#ifdef BROWSER_AVAILABLE
+#ifdef _WIN32
+	if (closing)
+		return;
+
+	std::string info_url = QT_TO_UTF8(url);
 
 	QDialog *dlg = new QDialog(this);
 	dlg->setAttribute(Qt::WA_DeleteOnClose, true);
@@ -2003,10 +2032,10 @@ void OBSBasic::ReceivedIntroJson(const QString &text)
 
 	dlg->show();
 #else
-	UNUSED_PARAMETER(text);
+	UNUSED_PARAMETER(url);
 #endif
 #else
-	UNUSED_PARAMETER(text);
+	UNUSED_PARAMETER(url);
 #endif
 }
 
@@ -3933,8 +3962,12 @@ void OBSBasic::closeEvent(QCloseEvent *event)
 
 	blog(LOG_INFO, SHUTDOWN_SEPARATOR);
 
+	closing = true;
+
 	if (introCheckThread)
 		introCheckThread->wait();
+	if (whatsNewInitThread)
+		whatsNewInitThread->wait();
 	if (updateCheckThread)
 		updateCheckThread->wait();
 	if (logUploadThread)
