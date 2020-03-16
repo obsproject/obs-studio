@@ -1721,6 +1721,18 @@
                     "url": "rtmp://us-west.live.whalebone.tv/live"
                 }
             ]
+        },
+        {
+            "name": "LOCO",
+            "servers": [
+                {
+                    "name": "Default",
+                    "url": "rtmp://ivory-ingest.getloconow.com:1935/stream"
+                }
+            ],
+            "recommended": {
+                "keyint": 2
+            }
         }
     ]
 }
