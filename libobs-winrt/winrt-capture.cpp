@@ -311,22 +311,27 @@ static void winrt_capture_device_loss_rebuild(void *device_void, void *data)
 thread_local bool initialized_tls;
 
 extern "C" EXPORT struct winrt_capture *
-winrt_capture_init(BOOL cursor, HWND window, BOOL client_area)
-{
+winrt_capture_init(BOOL cursor, HWND window, BOOL client_area, char **error,
+		   HRESULT *hr_out)
+try {
 	ID3D11Device *const d3d_device = (ID3D11Device *)gs_get_device_obj();
 	ComPtr<IDXGIDevice> dxgi_device;
-	if (FAILED(d3d_device->QueryInterface(&dxgi_device))) {
-		blog(LOG_WARNING, "[winrt_capture_init] Failed to "
-				  "get DXGI device");
+
+	*error = nullptr;
+
+	HRESULT hr = d3d_device->QueryInterface(&dxgi_device);
+	if (FAILED(hr)) {
+		*error = bstrdup("Failed to get DXGI device");
+		*hr_out = hr;
 		return nullptr;
 	}
 
 	winrt::com_ptr<IInspectable> inspectable;
-	HRESULT hr = CreateDirect3D11DeviceFromDXGIDevice(dxgi_device.Get(),
-							  inspectable.put());
+	hr = CreateDirect3D11DeviceFromDXGIDevice(dxgi_device.Get(),
+						  inspectable.put());
 	if (FAILED(hr)) {
-		blog(LOG_WARNING, "[winrt_capture_init] Failed to "
-				  "get WinRT device");
+		*error = bstrdup("Failed to get WinRT device");
+		*hr_out = hr;
 		return nullptr;
 	}
 
@@ -341,10 +346,9 @@ winrt_capture_init(BOOL cursor, HWND window, BOOL client_area)
 			winrt::guid_of<ABI::Windows::Graphics::Capture::
 					       IGraphicsCaptureItem>(),
 			reinterpret_cast<void **>(winrt::put_abi(item)));
-	} catch (winrt::hresult_invalid_argument &) {
-		/* too spammy */
-		//blog(LOG_WARNING, "[winrt_capture_init] Failed to "
-		//		  "create GraphicsCaptureItem");
+	} catch (winrt::hresult_error &err) {
+		*error = bstrdup("CreateForWindow failed");
+		*hr_out = err.code();
 		return nullptr;
 	}
 
@@ -398,6 +402,11 @@ winrt_capture_init(BOOL cursor, HWND window, BOOL client_area)
 	gs_register_loss_callbacks(&callbacks);
 
 	return capture;
+
+} catch (winrt::hresult_error &err) {
+	*error = bstrdup("oh wow something else in winrt_capture_init failed");
+	*hr_out = err.code();
+	return nullptr;
 }
 
 extern "C" EXPORT void winrt_capture_free(struct winrt_capture *capture)
