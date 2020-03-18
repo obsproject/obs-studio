@@ -1265,10 +1265,12 @@ static inline enum capture_result init_capture_data(struct game_capture *gc)
 
 	DWORD error = 0;
 	if (!init_data_map(gc, gc->window)) {
+		HWND retry_hwnd = (HWND)(uintptr_t)gc->global_hook_info->window;
 		error = GetLastError();
 
-		/* if there's an error, try with 0 (for UWP programs) */
-		if (init_data_map(gc, NULL)) {
+		/* if there's an error, just override.  some windows don't play
+		 * nice. */
+		if (init_data_map(gc, retry_hwnd)) {
 			error = 0;
 		}
 	}
