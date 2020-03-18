@@ -13,15 +13,19 @@ struct __declspec(uuid("A9B3D012-3DF2-4EE3-B8D1-8695F457D3C1"))
 };
 
 extern "C" EXPORT BOOL winrt_capture_supported()
-{
+try {
 	/* no contract for IGraphicsCaptureItemInterop, verify 10.0.18362.0 */
 	return winrt::Windows::Foundation::Metadata::ApiInformation::
 		IsApiContractPresent(L"Windows.Foundation.UniversalApiContract",
 				     8);
+} catch (winrt::hresult_error &err) {
+	blog(LOG_ERROR, "winrt_capture_supported (0x%08X): %ls", err.to_abi(),
+	     err.message().c_str());
+	return false;
 }
 
 extern "C" EXPORT BOOL winrt_capture_cursor_toggle_supported()
-{
+try {
 #ifdef NTDDI_WIN10_VB
 	return winrt::Windows::Foundation::Metadata::ApiInformation::
 		IsPropertyPresent(
@@ -30,6 +34,10 @@ extern "C" EXPORT BOOL winrt_capture_cursor_toggle_supported()
 #else
 	return false;
 #endif
+} catch (winrt::hresult_error &err) {
+	blog(LOG_ERROR, "winrt_capture_cursor_toggle_supported (0x%08X): %ls",
+	     err.to_abi(), err.message().c_str());
+	return false;
 }
 
 template<typename T>
