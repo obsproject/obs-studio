@@ -29,8 +29,7 @@ struct winrt_exports {
 	BOOL *(*winrt_capture_supported)();
 	BOOL *(*winrt_capture_cursor_toggle_supported)();
 	struct winrt_capture *(*winrt_capture_init)(BOOL cursor, HWND window,
-						    BOOL client_area,
-						    char **error, HRESULT *hr);
+						    BOOL client_area);
 	void (*winrt_capture_free)(struct winrt_capture *capture);
 	void (*winrt_capture_show_cursor)(struct winrt_capture *capture,
 					  BOOL visible);
@@ -247,6 +246,8 @@ static void wc_update(void *data, obs_data_t *settings)
 	/* forces a reset */
 	wc->window = NULL;
 	wc->check_window_timer = WC_CHECK_TIMER;
+
+	wc->previously_failed = false;
 }
 
 static uint32_t wc_width(void *data)
@@ -480,24 +481,16 @@ static void wc_tick(void *data, float seconds)
 		dc_capture_capture(&wc->capture, wc->window);
 	} else if (wc->method == METHOD_WGC) {
 		if (wc->window && (wc->capture_winrt == NULL)) {
-			char *error = NULL;
-			HRESULT hr;
+			if (!wc->previously_failed) {
+				wc->capture_winrt =
+					wc->exports.winrt_capture_init(
+						wc->cursor, wc->window,
+						wc->client_area);
 
-			wc->capture_winrt = wc->exports.winrt_capture_init(
-				wc->cursor, wc->window, wc->client_area, &error,
-				&hr);
-
-			if (!wc->capture_winrt && !wc->previously_failed) {
-				blog(LOG_WARNING,
-				     "%s: winrt_capture_init failed: %s: %lX",
-				     obs_source_get_name(wc->source), error,
-				     hr);
-				wc->previously_failed = true;
-			} else if (wc->capture_winrt) {
-				wc->previously_failed = false;
+				if (!wc->capture_winrt) {
+					wc->previously_failed = true;
+				}
 			}
-
-			bfree(error);
 		}
 	}
 

@@ -14,10 +14,10 @@ struct __declspec(uuid("A9B3D012-3DF2-4EE3-B8D1-8695F457D3C1"))
 
 extern "C" EXPORT BOOL winrt_capture_supported()
 {
-	return winrt::Windows::Foundation::Metadata::ApiInformation::IsTypePresent(
-		       L"Windows.Graphics.Capture.GraphicsCaptureSession") &&
-	       winrt::Windows::Graphics::Capture::GraphicsCaptureSession::
-		       IsSupported();
+	/* no contract for IGraphicsCaptureItemInterop, verify 10.0.18362.0 */
+	return winrt::Windows::Foundation::Metadata::ApiInformation::
+		IsApiContractPresent(L"Windows.Foundation.UniversalApiContract",
+				     8);
 }
 
 extern "C" EXPORT BOOL winrt_capture_cursor_toggle_supported()
@@ -311,18 +311,14 @@ static void winrt_capture_device_loss_rebuild(void *device_void, void *data)
 thread_local bool initialized_tls;
 
 extern "C" EXPORT struct winrt_capture *
-winrt_capture_init(BOOL cursor, HWND window, BOOL client_area, char **error,
-		   HRESULT *hr_out)
+winrt_capture_init(BOOL cursor, HWND window, BOOL client_area)
 try {
 	ID3D11Device *const d3d_device = (ID3D11Device *)gs_get_device_obj();
 	ComPtr<IDXGIDevice> dxgi_device;
 
-	*error = nullptr;
-
 	HRESULT hr = d3d_device->QueryInterface(&dxgi_device);
 	if (FAILED(hr)) {
-		*error = bstrdup("Failed to get DXGI device");
-		*hr_out = hr;
+		blog(LOG_ERROR, "Failed to get DXGI device");
 		return nullptr;
 	}
 
@@ -330,8 +326,7 @@ try {
 	hr = CreateDirect3D11DeviceFromDXGIDevice(dxgi_device.Get(),
 						  inspectable.put());
 	if (FAILED(hr)) {
-		*error = bstrdup("Failed to get WinRT device");
-		*hr_out = hr;
+		blog(LOG_ERROR, "Failed to get WinRT device");
 		return nullptr;
 	}
 
@@ -347,8 +342,8 @@ try {
 					       IGraphicsCaptureItem>(),
 			reinterpret_cast<void **>(winrt::put_abi(item)));
 	} catch (winrt::hresult_error &err) {
-		*error = bstrdup("CreateForWindow failed");
-		*hr_out = err.code();
+		blog(LOG_ERROR, "CreateForWindow (0x%08X): %ls", err.to_abi(),
+		     err.message().c_str());
 		return nullptr;
 	}
 
@@ -404,8 +399,8 @@ try {
 	return capture;
 
 } catch (winrt::hresult_error &err) {
-	*error = bstrdup("oh wow something else in winrt_capture_init failed");
-	*hr_out = err.code();
+	blog(LOG_ERROR, "winrt_capture_init (0x%08X): %ls", err.to_abi(),
+	     err.message().c_str());
 	return nullptr;
 }
 
