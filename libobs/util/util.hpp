@@ -68,7 +68,7 @@ class ConfigFile {
 
 public:
 	inline ConfigFile() : config(NULL) {}
-	inline ConfigFile(ConfigFile &&other) : config(other.config)
+	inline ConfigFile(ConfigFile &&other) noexcept : config(other.config)
 	{
 		other.config = nullptr;
 	}
@@ -120,7 +120,7 @@ class TextLookup {
 
 public:
 	inline TextLookup(lookup_t *lookup = nullptr) : lookup(lookup) {}
-	inline TextLookup(TextLookup &&other) : lookup(other.lookup)
+	inline TextLookup(TextLookup &&other) noexcept : lookup(other.lookup)
 	{
 		other.lookup = nullptr;
 	}
