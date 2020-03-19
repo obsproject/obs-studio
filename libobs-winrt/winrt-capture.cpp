@@ -133,7 +133,7 @@ struct winrt_capture {
 		if (!GetCursorInfo(&ci))
 			return;
 
-		if (!ci.flags & CURSOR_SHOWING)
+		if (!(ci.flags & CURSOR_SHOWING))
 			return;
 
 		HICON icon = CopyIcon(ci.hCursor);
