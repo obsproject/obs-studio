@@ -7180,8 +7180,10 @@ void OBSBasic::IconActivated(QSystemTrayIcon::ActivationReason reason)
 	AddProjectorMenuMonitors(studioProgramProjector, this,
 				 SLOT(OpenStudioProgramProjector()));
 
-	if (reason == QSystemTrayIcon::Trigger)
+	if (reason == QSystemTrayIcon::Trigger) {
+		EnablePreviewDisplay(previewEnabled && !isVisible());
 		ToggleShowHide();
+	}
 }
 
 void OBSBasic::SysTrayNotify(const QString &text,
