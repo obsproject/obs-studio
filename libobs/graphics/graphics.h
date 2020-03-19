@@ -181,8 +181,6 @@ struct gs_monitor_info {
 	long y;
 	long cx;
 	long cy;
-	char *monitor_name;
-	uint32_t flags;
 };
 
 struct gs_tvertarray {
