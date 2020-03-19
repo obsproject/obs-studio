@@ -20,6 +20,7 @@
 
 #include <string.h>
 #include <stdarg.h>
+#include <utility>
 
 #include "bmem.h"
 #include "config-file.h"
@@ -36,7 +37,7 @@ template<typename T> class BPtr {
 
 public:
 	inline BPtr(T *p = nullptr) : ptr(p) {}
-	inline BPtr(BPtr &&other) : ptr(other.ptr) { other.ptr = nullptr; }
+	inline BPtr(BPtr &&other) { *this = std::move(other); }
 	inline ~BPtr() { bfree(ptr); }
 
 	inline T *operator=(T *p)
@@ -45,6 +46,14 @@ public:
 		ptr = p;
 		return p;
 	}
+
+	inline BPtr &operator=(BPtr &&other)
+	{
+		ptr = other.ptr;
+		other.ptr = nullptr;
+		return *this;
+	}
+
 	inline operator T *() { return ptr; }
 	inline T **operator&()
 	{
