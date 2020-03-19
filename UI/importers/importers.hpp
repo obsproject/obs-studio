@@ -38,6 +38,7 @@ typedef std::vector<std::string> OBSImporterFiles;
 
 class Importer {
 public:
+	virtual ~Importer() {}
 	virtual std::string Prog() { return "Null"; };
 	virtual int ImportScenes(const std::string &path, std::string &name,
 				 json11::Json &res) = 0;
