@@ -326,6 +326,8 @@ void WASAPISource::Initialize()
 					deviceFormatProperties->nSamplesPerSec);
 			}
 		}
+
+		store->Release();
 	}
 
 	InitClient();
