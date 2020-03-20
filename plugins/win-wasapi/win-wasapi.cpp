@@ -319,10 +319,12 @@ void WASAPISource::Initialize()
 		resSample =
 			store->GetValue(PKEY_AudioEngine_DeviceFormat, &prop);
 		if (!FAILED(resSample)) {
-			deviceFormatProperties =
-				(PWAVEFORMATEX)prop.blob.pBlobData;
-			device_sample = std::to_string(
-				deviceFormatProperties->nSamplesPerSec);
+			if (prop.vt != VT_EMPTY && prop.blob.pBlobData) {
+				deviceFormatProperties =
+					(PWAVEFORMATEX)prop.blob.pBlobData;
+				device_sample = std::to_string(
+					deviceFormatProperties->nSamplesPerSec);
+			}
 		}
 	}
 
