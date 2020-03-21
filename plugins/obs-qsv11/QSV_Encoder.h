@@ -74,17 +74,10 @@ static const struct qsv_rate_control_info qsv_ratecontrols[] = {
 	{"AVBR", false},  {"ICQ", true},  {"LA_ICQ", true}, {"LA_CBR", true},
 	{"LA_VBR", true}, {0, false}};
 static const char *const qsv_profile_names[] = {"high", "main", "baseline", 0};
-static const char *const qsv_usage_names[] = {"quality",
-					      "balanced",
-					      "speed",
-					      "veryslow",
-					      "slower",
-					      "slow",
-					      "medium",
-					      "fast",
-					      "faster"
-					      "veryfast",
-					      0};
+static const char *const qsv_usage_names[] = {"quality",  "balanced", "speed",
+					      "veryslow", "slower",   "slow",
+					      "medium",   "fast",     "faster",
+					      "veryfast", 0};
 
 typedef struct qsv_t qsv_t;
 
