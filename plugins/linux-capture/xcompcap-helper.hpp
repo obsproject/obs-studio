@@ -84,7 +84,7 @@ std::list<Window> getAllWindows();
 
 inline std::string getWindowName(Window win)
 {
-	return getWindowAtom(win, "_NET_WM_NAME");
+	return getWindowAtom(win, "WM_NAME");
 }
 
 inline std::string getWindowClass(Window win)
