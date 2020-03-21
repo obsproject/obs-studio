@@ -3537,7 +3537,8 @@ void OBSBasicSettings::SaveSettings()
 	bool audioRestart = (ui->channelSetup->currentIndex() != channelIndex ||
 			     ui->sampleRate->currentIndex() != sampleRateIndex);
 	bool browserHWAccelChanged =
-		(ui->browserHWAccel->isChecked() != prevBrowserAccel);
+		(ui->browserHWAccel &&
+		 ui->browserHWAccel->isChecked() != prevBrowserAccel);
 
 	if (langChanged || audioRestart || browserHWAccelChanged)
 		restart = true;
