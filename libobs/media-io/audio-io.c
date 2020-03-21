@@ -23,6 +23,7 @@
 #include "../util/circlebuf.h"
 #include "../util/platform.h"
 #include "../util/profiler.h"
+#include "../util/util_uint64.h"
 
 #include "audio-io.h"
 #include "audio-resampler.h"
@@ -78,11 +79,7 @@ struct audio_output {
 
 static inline double ts_to_frames(const audio_t *audio, uint64_t ts)
 {
-	double audio_offset_d = (double)ts;
-	audio_offset_d /= 1000000000.0;
-	audio_offset_d *= (double)audio->info.samples_per_sec;
-
-	return audio_offset_d;
+	return util_mul_div64(ts, audio->info.samples_per_sec, 1000000000ULL);
 }
 
 static inline double positive_round(double val)

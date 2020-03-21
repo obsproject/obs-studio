@@ -17,6 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <util/platform.h>
 #include <util/bmem.h>
+#include <util/util_uint64.h>
 #include <obs-module.h>
 
 #include "pulse-wrapper.h"
@@ -161,7 +162,7 @@ static pa_channel_map pulse_channel_map(enum speaker_layout layout)
 
 static inline uint64_t samples_to_ns(size_t frames, uint_fast32_t rate)
 {
-	return frames * NSEC_PER_SEC / rate;
+	return util_mul_div64(frames, NSEC_PER_SEC, rate);
 }
 
 static inline uint64_t get_sample_time(size_t frames, uint_fast32_t rate)

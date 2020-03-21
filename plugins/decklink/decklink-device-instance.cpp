@@ -6,6 +6,7 @@
 
 #include <util/platform.h>
 #include <util/threading.h>
+#include <util/util_uint64.h>
 
 #include <sstream>
 #include <algorithm>
@@ -90,8 +91,8 @@ void DeckLinkDeviceInstance::HandleAudioPacket(
 	if (decklink && !static_cast<DeckLinkInput *>(decklink)->buffering) {
 		currentPacket.timestamp = os_gettime_ns();
 		currentPacket.timestamp -=
-			(uint64_t)frameCount * 1000000000ULL /
-			(uint64_t)currentPacket.samples_per_sec;
+			util_mul_div64(frameCount, 1000000000ULL,
+				       currentPacket.samples_per_sec);
 	}
 
 	int maxdevicechannel = device->GetMaxChannel();
@@ -113,7 +114,7 @@ void DeckLinkDeviceInstance::HandleAudioPacket(
 	}
 
 	nextAudioTS = timestamp +
-		      ((uint64_t)frameCount * 1000000000ULL / 48000ULL) + 1;
+		      util_mul_div64(frameCount, 1000000000ULL, 48000ULL) + 1;
 
 	obs_source_output_audio(
 		static_cast<DeckLinkInput *>(decklink)->GetSource(),

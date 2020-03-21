@@ -16,6 +16,7 @@
 ******************************************************************************/
 
 #include "obs-internal.h"
+#include "util/util_uint64.h"
 #include "graphics/math-extra.h"
 
 #define lock_transition(transition) \
@@ -866,7 +867,7 @@ static inline float get_sample_time(obs_source_t *transition,
 				    uint64_t ts)
 {
 	uint64_t sample_ts_offset =
-		(uint64_t)sample * 1000000000ULL / (uint64_t)sample_rate;
+		util_mul_div64(sample, 1000000000ULL, sample_rate);
 	uint64_t i_ts = ts + sample_ts_offset;
 	return calc_time(transition, i_ts);
 }
