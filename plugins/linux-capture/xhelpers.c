@@ -104,6 +104,22 @@ bool randr_is_active(xcb_connection_t *xcb)
 	return true;
 }
 
+static bool randr_has_monitors(xcb_connection_t *xcb)
+{
+	xcb_randr_query_version_cookie_t ver_c;
+	xcb_randr_query_version_reply_t *ver_r;
+
+	ver_c = xcb_randr_query_version(xcb, XCB_RANDR_MAJOR_VERSION,
+					XCB_RANDR_MINOR_VERSION);
+	ver_r = xcb_randr_query_version_reply(xcb, ver_c, 0);
+	if (!ver_r)
+		return 0;
+
+	bool ret = ver_r->major_version > 1 || ver_r->minor_version >= 5;
+	free(ver_r);
+	return ret;
+}
+
 int randr_screen_count(xcb_connection_t *xcb)
 {
 	if (!xcb)
@@ -111,6 +127,19 @@ int randr_screen_count(xcb_connection_t *xcb)
 	xcb_screen_t *screen;
 	screen = xcb_setup_roots_iterator(xcb_get_setup(xcb)).data;
 
+	if (randr_has_monitors(xcb)) {
+		xcb_randr_get_monitors_cookie_t mon_c;
+		xcb_randr_get_monitors_reply_t *mon_r;
+
+		mon_c = xcb_randr_get_monitors(xcb, screen->root, true);
+		mon_r = xcb_randr_get_monitors_reply(xcb, mon_c, 0);
+		if (!mon_r)
+			return 0;
+
+		int count = xcb_randr_get_monitors_monitors_length(mon_r);
+		free(mon_r);
+		return count;
+	}
 	xcb_randr_get_screen_resources_cookie_t res_c;
 	xcb_randr_get_screen_resources_reply_t *res_r;
 
@@ -124,11 +153,58 @@ int randr_screen_count(xcb_connection_t *xcb)
 
 int randr_screen_geo(xcb_connection_t *xcb, int_fast32_t screen,
 		     int_fast32_t *x, int_fast32_t *y, int_fast32_t *w,
-		     int_fast32_t *h, xcb_screen_t **rscreen)
+		     int_fast32_t *h, xcb_screen_t **rscreen, char **name)
 {
 	xcb_screen_t *xscreen;
 	xscreen = xcb_setup_roots_iterator(xcb_get_setup(xcb)).data;
 
+	if (randr_has_monitors(xcb)) {
+		xcb_randr_get_monitors_cookie_t mon_c;
+		xcb_randr_get_monitors_reply_t *mon_r;
+
+		mon_c = xcb_randr_get_monitors(xcb, xscreen->root, true);
+		mon_r = xcb_randr_get_monitors_reply(xcb, mon_c, 0);
+		if (!mon_r)
+			return 0;
+
+		int monitors = xcb_randr_get_monitors_monitors_length(mon_r);
+		if (screen < 0 || screen >= monitors) {
+			free(mon_r);
+			goto fail;
+		}
+
+		xcb_randr_monitor_info_iterator_t mon_i;
+		mon_i = xcb_randr_get_monitors_monitors_iterator(mon_r);
+
+		int s;
+		for (s = 0; s < screen; s++)
+			xcb_randr_monitor_info_next(&mon_i);
+
+		xcb_randr_monitor_info_t *mon = mon_i.data;
+
+		*x = mon->x;
+		*y = mon->y;
+		*w = mon->width;
+		*h = mon->height;
+		if (rscreen)
+			*rscreen = xscreen;
+
+		if (mon->name && name) {
+			xcb_get_atom_name_cookie_t atom_c;
+			xcb_get_atom_name_reply_t *atom_r;
+
+			atom_c = xcb_get_atom_name(xcb, mon->name);
+			atom_r = xcb_get_atom_name_reply(xcb, atom_c, 0);
+			if (atom_r) {
+				*name = strndup(
+					xcb_get_atom_name_name(atom_r),
+					xcb_get_atom_name_name_length(atom_r));
+				free(atom_r);
+			}
+		}
+		free(mon_r);
+		return 0;
+	}
 	xcb_randr_get_screen_resources_cookie_t res_c;
 	xcb_randr_get_screen_resources_reply_t *res_r;
 
