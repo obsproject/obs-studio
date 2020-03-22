@@ -25,12 +25,13 @@ OBSProjector::OBSProjector(QWidget *widget, obs_source_t *source_, int monitor,
 	type = type_;
 
 	setWindowIcon(QIcon::fromTheme("obs", QIcon(":/res/images/obs.png")));
-	UpdateProjectorTitle(QT_UTF8(obs_source_get_name(source)));
 
 	if (monitor == -1)
 		resize(480, 270);
 	else
 		SetMonitor(monitor);
+
+	UpdateProjectorTitle(QT_UTF8(obs_source_get_name(source)));
 
 	QAction *action = new QAction(this);
 	action->setShortcut(Qt::Key_Escape);
