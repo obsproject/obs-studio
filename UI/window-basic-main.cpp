@@ -1665,6 +1665,7 @@ void OBSBasic::OBSInit()
 	}
 
 	TimedCheckForUpdates();
+	ShowReleaseNotes();
 	loaded = true;
 
 	previewEnabled = config_get_bool(App()->GlobalConfig(), "BasicWindow",
@@ -3203,6 +3204,37 @@ void OBSBasic::TimedCheckForUpdates()
 	if (secs > UPDATE_CHECK_INTERVAL)
 		CheckForUpdates(false);
 #endif
+}
+
+void OBSBasic::ShowReleaseNotes()
+{
+	std::string output;
+	std::string error;
+
+	bool success = false;
+	std::string url;
+	url += "https://api.github.com/repos/obsproject/obs-studio/releases/tags/";
+	url += OBS_VERSION;
+	auto func = [&]() {
+		success = GetRemoteFile(url.c_str(), output, error, nullptr,
+					"application/json", nullptr,
+					std::vector<std::string>(), nullptr);
+	};
+
+	ExecThreadedWithoutBlocking(func, nullptr, nullptr);
+
+	if (!success || output.empty())
+		return;
+
+	Json json = Json::parse(output, error);
+	if (!error.empty())
+		return;
+	std::string htmlUrl = json["html_url"].string_value();
+	if (htmlUrl.length() == 0)
+		return;
+
+	ui->actionReleaseNotes->setIconText(htmlUrl.c_str());
+	ui->actionReleaseNotes->setVisible(true);
 }
 
 void OBSBasic::CheckForUpdates(bool manualUpdate)
@@ -6035,6 +6067,12 @@ void OBSBasic::on_actionWebsite_triggered()
 void OBSBasic::on_actionDiscord_triggered()
 {
 	QUrl url = QUrl("https://obsproject.com/discord", QUrl::TolerantMode);
+	QDesktopServices::openUrl(url);
+}
+
+void OBSBasic::on_actionReleaseNotes_triggered()
+{
+	QUrl url = QUrl(ui->actionReleaseNotes->iconText(), QUrl::TolerantMode);
 	QDesktopServices::openUrl(url);
 }
 
