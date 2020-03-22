@@ -536,6 +536,7 @@
     <addaction name="actionShowMacPermissions"/>
     <addaction name="separator"/>
     <addaction name="actionShowWhatsNew"/>
+    <addaction name="actionReleaseNotes"/>
     <addaction name="actionShowAbout"/>
     <addaction name="separator"/>
    </widget>
@@ -2009,6 +2010,14 @@
   <action name="actionRestartSafe">
    <property name="text">
     <string>Basic.MainMenu.Help.RestartSafeMode</string>
+   </property>
+  </action>
+  <action name="actionReleaseNotes">
+   <property name="visible">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Basic.MainMenu.Help.ReleaseNotes</string>
    </property>
   </action>
   <action name="actionInteract">

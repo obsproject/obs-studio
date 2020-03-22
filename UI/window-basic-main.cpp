@@ -522,6 +522,10 @@ OBSBasic::OBSBasic(QWidget *parent)
 	QPoint newPos = curPos + statsDockPos;
 	statsDock->move(newPos);
 
+#ifdef HAVE_OBSCONFIG_H
+	ui->actionReleaseNotes->setVisible(true);
+#endif
+
 	ui->previewDisabledWidget->setContextMenuPolicy(Qt::CustomContextMenu);
 	connect(ui->enablePreviewButton, &QPushButton::clicked, this,
 		&OBSBasic::TogglePreview);
@@ -8277,6 +8281,14 @@ void OBSBasic::on_actionShowWhatsNew_triggered()
 	introCheckThread.reset(wnit);
 	introCheckThread->start();
 #endif
+}
+
+void OBSBasic::on_actionReleaseNotes_triggered()
+{
+	QString addr("https://github.com/obsproject/obs-studio/releases");
+	QUrl url(QString("%1/%2").arg(addr, obs_get_version_string()),
+		 QUrl::TolerantMode);
+	QDesktopServices::openUrl(url);
 }
 
 void OBSBasic::on_actionShowSettingsFolder_triggered()
