@@ -14,7 +14,7 @@ variables:
 jobs:
 - job: Prebuild
   pool:
-    vmImage: 'ubuntu-16.04'
+    vmImage: 'ubuntu-18.04'
   steps:
   - bash: |
      if curl -s "https://api.github.com/repos/$BUILD_REPOSITORY_ID/issues/$SYSTEM_PULLREQUEST_PULLREQUESTNUMBER/labels" | grep '"name": "Seeking Testers"'
@@ -116,7 +116,7 @@ jobs:
   variables:
     prHasCILabel: $[ dependencies.Prebuild.outputs['checkPrLabel.prHasCILabel'] ]
   pool:
-    vmImage: 'ubuntu-16.04'
+    vmImage: 'ubuntu-18.04'
   steps:
   - script: git submodule update --init --recursive
     displayName: 'Checkout Submodules'
