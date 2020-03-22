@@ -98,6 +98,8 @@ int_fast32_t v4l2_update_controls(int_fast32_t dev, obs_properties_t *props,
 	memset(&qctrl, 0, sizeof(qctrl));
 	qctrl.id = V4L2_CTRL_FLAG_NEXT_CTRL;
 	while (0 == v4l2_ioctl(dev, VIDIOC_QUERYCTRL, &qctrl)) {
+		qctrl.id |= V4L2_CTRL_FLAG_NEXT_CTRL;
+
 		if (qctrl.flags & V4L2_CTRL_FLAG_DISABLED) {
 			blog(LOG_INFO, "found control %s but it is disabled",
 			     qctrl.name);
@@ -145,8 +147,6 @@ int_fast32_t v4l2_update_controls(int_fast32_t dev, obs_properties_t *props,
 			     (char *)qctrl.name, qctrl.default_value);
 			break;
 		}
-
-		qctrl.id |= V4L2_CTRL_FLAG_NEXT_CTRL;
 	}
 
 	return 0;
