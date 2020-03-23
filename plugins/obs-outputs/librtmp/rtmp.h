@@ -156,11 +156,6 @@ typedef struct tls_ctx
 #define TLS_shutdown(s)	gnutls_bye(s, GNUTLS_SHUT_RDWR)
 #define TLS_close(s)	gnutls_deinit(s)
 
-#elif defined(USE_ONLY_MD5)
-#include "md5.h"
-#include "cencode.h"
-#define MD5_DIGEST_LENGTH 16
-
 #else	/* USE_OPENSSL */
 #define TLS_CTX	SSL_CTX *
 #define TLS_client(ctx,s)	s = SSL_new(ctx)
@@ -173,6 +168,10 @@ typedef struct tls_ctx
 #define TLS_close(s)	SSL_free(s)
 
 #endif
+#elif defined(USE_ONLY_MD5)
+#include "md5.h"
+#include "cencode.h"
+#define MD5_DIGEST_LENGTH 16
 #endif
 
 #ifdef __cplusplus
