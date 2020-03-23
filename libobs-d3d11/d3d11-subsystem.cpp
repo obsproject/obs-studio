@@ -945,6 +945,8 @@ static inline void LogD3DAdapters()
 		     desc.DedicatedVideoMemory);
 		blog(LOG_INFO, "\t  Shared VRAM:    %u",
 		     desc.SharedSystemMemory);
+		blog(LOG_INFO, "\t  PCI ID:         %x:%x", desc.VendorId,
+		     desc.DeviceId);
 
 		/* driver version */
 		LARGE_INTEGER umd;
