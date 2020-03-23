@@ -1,10 +1,13 @@
 uniform float4x4 ViewProj;
 uniform texture2d image;
 
-uniform texture3d clut;
+uniform texture2d clut_1d;
+uniform texture3d clut_3d;
 uniform float clut_amount;
-uniform float clut_scale;
-uniform float clut_offset;
+uniform float3 clut_scale;
+uniform float3 clut_offset;
+uniform float3 domain_min;
+uniform float3 domain_max;
 
 sampler_state textureSampler {
 	Filter    = Linear;
@@ -31,22 +34,61 @@ VertDataOut VSDefault(VertDataIn v_in)
 	return vert_out;
 }
 
-float4 LUT(VertDataOut v_in) : TARGET
+float4 LUT1D(VertDataOut v_in) : TARGET
 {
 	float4 textureColor = image.Sample(textureSampler, v_in.uv);
 
-	float3 clut_uvw = textureColor.rgb * clut_scale + clut_offset;
-	float3 luttedColor = clut.Sample(textureSampler, clut_uvw).rgb;
+	if (textureColor.r >= domain_min.r && textureColor.r <= domain_max.r) {
+		float u = textureColor.r * clut_scale.r + clut_offset.r;
+		float channel = clut_1d.Sample(textureSampler, float2(u, 0.5)).r;
+		textureColor.r = lerp(textureColor.r, channel, clut_amount);
+	}
 
-	float3 final_color = lerp(textureColor.rgb, luttedColor, clut_amount);
-	return float4(final_color.rgb, textureColor.a);
+	if (textureColor.g >= domain_min.g && textureColor.g <= domain_max.g) {
+		float u = textureColor.g * clut_scale.g + clut_offset.g;
+		float channel = clut_1d.Sample(textureSampler, float2(u, 0.5)).g;
+		textureColor.g = lerp(textureColor.g, channel, clut_amount);
+	}
+
+	if (textureColor.b >= domain_min.b && textureColor.b <= domain_max.b) {
+		float u = textureColor.b * clut_scale.b + clut_offset.b;
+		float channel = clut_1d.Sample(textureSampler, float2(u, 0.5)).b;
+		textureColor.b = lerp(textureColor.b, channel, clut_amount);
+	}
+
+	return textureColor;
 }
 
-technique Draw
+float4 LUT3D(VertDataOut v_in) : TARGET
+{
+	float4 textureColor = image.Sample(textureSampler, v_in.uv);
+
+	if (textureColor.r >= domain_min.r && textureColor.r <= domain_max.r &&
+		textureColor.g >= domain_min.g && textureColor.g <= domain_max.g &&
+		textureColor.b >= domain_min.b && textureColor.b <= domain_max.b)
+	{
+		float3 clut_uvw = textureColor.rgb * clut_scale + clut_offset;
+		float3 luttedColor = clut_3d.Sample(textureSampler, clut_uvw).rgb;
+		textureColor.rgb = lerp(textureColor.rgb, luttedColor, clut_amount);
+	}
+
+	return textureColor;
+}
+
+technique Draw1D
 {
 	pass
 	{
 		vertex_shader = VSDefault(v_in);
-		pixel_shader  = LUT(v_in);
+		pixel_shader  = LUT1D(v_in);
+	}
+}
+
+technique Draw3D
+{
+	pass
+	{
+		vertex_shader = VSDefault(v_in);
+		pixel_shader  = LUT3D(v_in);
 	}
 }
