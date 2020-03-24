@@ -274,6 +274,7 @@ static void color_grade_filter_update(void *data, obs_data_t *settings)
 				&filter->domain_max, &filter->clut_dim);
 		} else {
 			gs_image_file_init(&filter->image, path);
+			filter->cube_width = LUT_WIDTH;
 			filter->clut_dim = CLUT_3D;
 		}
 	}
@@ -285,48 +286,48 @@ static void color_grade_filter_update(void *data, obs_data_t *settings)
 			filter->target = make_clut_texture_png(
 				filter->image.format, filter->image.cx,
 				filter->image.cy, filter->image.texture_data);
-			const float clut_scale =
-				(float)(LUT_WIDTH - 1) / (float)LUT_WIDTH;
+			const float clut_scale = (float)(LUT_WIDTH - 1);
 			vec3_set(&filter->clut_scale, clut_scale, clut_scale,
 				 clut_scale);
-			const float clut_offset = 0.5f / (float)LUT_WIDTH;
-			vec3_set(&filter->clut_offset, clut_offset, clut_offset,
-				 clut_offset);
+			vec3_set(&filter->clut_offset, 0.f, 0.f, 0.f);
 		} else if (filter->cube_data) {
 			const uint32_t width = filter->cube_width;
 			if (filter->clut_dim == CLUT_1D) {
 				filter->target = gs_texture_create(
 					width, 1, GS_RGBA16F, 1,
-					(uint8_t **)&filter->cube_data, 0);
+					(const uint8_t **)&filter->cube_data,
+					0);
 			} else {
 				filter->target = gs_voltexture_create(
 					width, width, width, GS_RGBA16F, 1,
-					(uint8_t **)&filter->cube_data, 0);
+					(const uint8_t **)&filter->cube_data,
+					0);
 			}
 
 			struct vec3 domain_scale;
 			vec3_sub(&domain_scale, &filter->domain_max,
 				 &filter->domain_min);
-			const float clut_scale0 =
-				(width - 1) / (width * domain_scale.x);
-			const float clut_scale1 =
-				(width - 1) / (width * domain_scale.y);
-			const float clut_scale2 =
-				(width - 1) / (width * domain_scale.z);
-			vec3_set(&filter->clut_scale, clut_scale0, clut_scale1,
-				 clut_scale2);
 
-			const float clut_offset0 =
-				0.5f / width -
-				filter->domain_min.x * clut_scale0;
-			const float clut_offset1 =
-				0.5f / width -
-				filter->domain_min.y * clut_scale1;
-			const float clut_offset2 =
-				0.5f / width -
-				filter->domain_min.z * clut_scale2;
-			vec3_set(&filter->clut_offset, clut_offset0,
-				 clut_offset1, clut_offset2);
+			const float width_minus_one = (float)(width - 1);
+			vec3_set(&filter->clut_scale, width_minus_one,
+				 width_minus_one, width_minus_one);
+			vec3_div(&filter->clut_scale, &filter->clut_scale,
+				 &domain_scale);
+
+			vec3_neg(&filter->clut_offset, &filter->domain_min);
+			vec3_mul(&filter->clut_offset, &filter->clut_offset,
+				 &filter->clut_scale);
+
+			/* 1D shader wants normalized UVW */
+			if (filter->clut_dim == CLUT_1D) {
+				vec3_divf(&filter->clut_scale,
+					  &filter->clut_scale, (float)width);
+
+				vec3_addf(&filter->clut_offset,
+					  &filter->clut_offset, 0.5f);
+				vec3_divf(&filter->clut_offset,
+					  &filter->clut_offset, (float)width);
+			}
 		}
 	}
 
@@ -447,6 +448,9 @@ static void color_grade_filter_render(void *data, gs_effect_t *effect)
 
 	param = gs_effect_get_param_by_name(filter->effect, "domain_max");
 	gs_effect_set_vec3(param, &filter->domain_max);
+
+	param = gs_effect_get_param_by_name(filter->effect, "cube_width_i");
+	gs_effect_set_float(param, 1.0f / filter->cube_width);
 
 	obs_source_process_filter_tech_end(filter->context, filter->effect, 0,
 					   0, tech_name);
