@@ -893,56 +893,60 @@
             "name": "Castr.io",
             "servers": [
                 {
-                    "name": "Chicago US",
+                    "name": "US-East (Chicago, IL)",
                     "url": "rtmp://cg.castr.io/static"
                 },
                 {
-                    "name": "Los Angeles US",
-                    "url": "rtmp://la.castr.io/static"
-                },
-                {
-                    "name": "New York US",
+                    "name": "US-East (New York, NY)",
                     "url": "rtmp://ny.castr.io/static"
                 },
                 {
-                    "name": "Miami US",
+                    "name": "US-East (Miami, FL)",
                     "url": "rtmp://mi.castr.io/static"
                 },
                 {
-                    "name": "Montreal CA",
+                    "name": "US-West (Seattle, WA)",
+                    "url": "rtmp://se.castr.io/static"
+                },
+                {
+                    "name": "US-West (Los Angeles, CA)",
+                    "url": "rtmp://la.castr.io/static"
+                },
+                {
+                    "name": "US-Central (Dallas, TX)",
+                    "url": "rtmp://da.castr.io/static"
+                },
+                {
+                    "name": "NA-East (Toronto, CA)",
                     "url": "rtmp://qc.castr.io/static"
                 },
                 {
-                    "name": "London UK",
-                    "url": "rtmp://uk.castr.io/static"
-                },
-                {
-                    "name": "Frankfurt DE",
-                    "url": "rtmp://de.castr.io/static"
-                },
-                {
-                    "name": "Frankfurt DE 2",
-                    "url": "rtmp://fr.castr.io/static"
-                },
-                {
-                    "name": "Moscow RU",
-                    "url": "rtmp://ru.castr.io/static"
-                },
-                {
-                    "name": "Singapore",
-                    "url": "rtmp://sg.castr.io/static"
-                },
-                {
-                    "name": "Sydney AU",
-                    "url": "rtmp://au.castr.io/static"
-                },
-                {
-                    "name": "Brazil",
+                    "name": "SA (Sao Paulo, BR)",
                     "url": "rtmp://br.castr.io/static"
                 },
                 {
-                    "name": "India",
+                    "name": "EU-West (London, UK)",
+                    "url": "rtmp://uk.castr.io/static"
+                },
+                {
+                    "name": "EU-Central (Frankfurt, DE)",
+                    "url": "rtmp://fr.castr.io/static"
+                },
+                {
+                    "name": "Russia (Moscow)",
+                    "url": "rtmp://ru.castr.io/static"
+                },
+                {
+                    "name": "Asia (Singapore)",
+                    "url": "rtmp://sg.castr.io/static"
+                },
+                {
+                    "name": "Asia (India)",
                     "url": "rtmp://in.castr.io/static"
+                },
+                {
+                    "name": "Australia (Sydney)",
+                    "url": "rtmp://au.castr.io/static"
                 },
                 {
                     "name": "US Central",
@@ -975,10 +979,6 @@
                 {
                     "name": "Singapore",
                     "url": "rtmp://sg-central.castr.io/static"
-                },
-                {
-                    "name": "India",
-                    "url": "rtmp://in.castr.io/static"
                 }
             ],
             "recommended": {
