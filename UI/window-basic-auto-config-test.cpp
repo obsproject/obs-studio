@@ -624,10 +624,12 @@ bool AutoConfigTestPage::TestSoftwareEncoding()
 	int i = 0;
 	int count = 1;
 
-	auto testRes = [&](long double div, int fps_num, int fps_den,
-			   bool force) {
+	auto testRes = [&](int cy, int fps_num, int fps_den, bool force) {
 		int per = ++i * 100 / count;
 		QMetaObject::invokeMethod(this, "Progress", Q_ARG(int, per));
+
+		if (cy > baseCY)
+			return true;
 
 		/* no need for more than 3 tests max */
 		if (results.size() >= 3)
@@ -640,8 +642,8 @@ bool AutoConfigTestPage::TestSoftwareEncoding()
 
 		long double fps = ((long double)fps_num / (long double)fps_den);
 
-		int cx = int((long double)baseCX / div);
-		int cy = int((long double)baseCY / div);
+		int cx = int(((long double)baseCX / (long double)baseCY) *
+			     (long double)cy);
 
 		if (!force && wiz->type != AutoConfig::Type::Recording) {
 			int est = EstimateMinBitrate(cx, cy, fps_num, fps_den);
@@ -697,38 +699,50 @@ bool AutoConfigTestPage::TestSoftwareEncoding()
 	};
 
 	if (wiz->specificFPSNum && wiz->specificFPSDen) {
-		count = 5;
-		if (!testRes(1.0, 0, 0, false))
+		count = 7;
+		if (!testRes(2160, 0, 0, false))
 			return false;
-		if (!testRes(1.5, 0, 0, false))
+		if (!testRes(1440, 0, 0, false))
 			return false;
-		if (!testRes(1.0 / 0.6, 0, 0, false))
+		if (!testRes(1080, 0, 0, false))
 			return false;
-		if (!testRes(2.0, 0, 0, false))
+		if (!testRes(720, 0, 0, false))
 			return false;
-		if (!testRes(2.25, 0, 0, true))
+		if (!testRes(480, 0, 0, false))
+			return false;
+		if (!testRes(360, 0, 0, false))
+			return false;
+		if (!testRes(240, 0, 0, true))
 			return false;
 	} else {
-		count = 10;
-		if (!testRes(1.0, 60, 1, false))
+		count = 14;
+		if (!testRes(2160, 60, 1, false))
 			return false;
-		if (!testRes(1.0, 30, 1, false))
+		if (!testRes(2160, 30, 1, false))
 			return false;
-		if (!testRes(1.5, 60, 1, false))
+		if (!testRes(1440, 60, 1, false))
 			return false;
-		if (!testRes(1.5, 30, 1, false))
+		if (!testRes(1440, 30, 1, false))
 			return false;
-		if (!testRes(1.0 / 0.6, 60, 1, false))
+		if (!testRes(1080, 60, 1, false))
 			return false;
-		if (!testRes(1.0 / 0.6, 30, 1, false))
+		if (!testRes(1080, 30, 1, false))
 			return false;
-		if (!testRes(2.0, 60, 1, false))
+		if (!testRes(720, 60, 1, false))
 			return false;
-		if (!testRes(2.0, 30, 1, false))
+		if (!testRes(720, 30, 1, false))
 			return false;
-		if (!testRes(2.25, 60, 1, false))
+		if (!testRes(480, 60, 1, false))
 			return false;
-		if (!testRes(2.25, 30, 1, true))
+		if (!testRes(480, 30, 1, false))
+			return false;
+		if (!testRes(360, 60, 1, false))
+			return false;
+		if (!testRes(360, 30, 1, false))
+			return false;
+		if (!testRes(240, 60, 1, false))
+			return false;
+		if (!testRes(240, 30, 1, true))
 			return false;
 	}
 
@@ -787,8 +801,10 @@ void AutoConfigTestPage::FindIdealHardwareResolution()
 		maxDataRate = 1280 * 720 * 30 + 1000;
 	}
 
-	auto testRes = [&](long double div, int fps_num, int fps_den,
-			   bool force) {
+	auto testRes = [&](int cy, int fps_num, int fps_den, bool force) {
+		if (cy > baseCY)
+			return;
+
 		if (results.size() >= 3)
 			return;
 
@@ -799,8 +815,8 @@ void AutoConfigTestPage::FindIdealHardwareResolution()
 
 		long double fps = ((long double)fps_num / (long double)fps_den);
 
-		int cx = int((long double)baseCX / div);
-		int cy = int((long double)baseCY / div);
+		int cx = int(((long double)baseCX / (long double)baseCY) *
+			     (long double)cy);
 
 		long double rate = (long double)cx * (long double)cy * fps;
 		if (!force && rate > maxDataRate)
@@ -825,22 +841,28 @@ void AutoConfigTestPage::FindIdealHardwareResolution()
 	};
 
 	if (wiz->specificFPSNum && wiz->specificFPSDen) {
-		testRes(1.0, 0, 0, false);
-		testRes(1.5, 0, 0, false);
-		testRes(1.0 / 0.6, 0, 0, false);
-		testRes(2.0, 0, 0, false);
-		testRes(2.25, 0, 0, true);
+		testRes(2160, 0, 0, false);
+		testRes(1440, 0, 0, false);
+		testRes(1080, 0, 0, false);
+		testRes(720, 0, 0, false);
+		testRes(480, 0, 0, false);
+		testRes(360, 0, 0, false);
+		testRes(240, 0, 0, true);
 	} else {
-		testRes(1.0, 60, 1, false);
-		testRes(1.0, 30, 1, false);
-		testRes(1.5, 60, 1, false);
-		testRes(1.5, 30, 1, false);
-		testRes(1.0 / 0.6, 60, 1, false);
-		testRes(1.0 / 0.6, 30, 1, false);
-		testRes(2.0, 60, 1, false);
-		testRes(2.0, 30, 1, false);
-		testRes(2.25, 60, 1, false);
-		testRes(2.25, 30, 1, true);
+		testRes(2160, 60, 1, false);
+		testRes(2160, 30, 1, false);
+		testRes(1440, 60, 1, false);
+		testRes(1440, 30, 1, false);
+		testRes(1080, 60, 1, false);
+		testRes(1080, 30, 1, false);
+		testRes(720, 60, 1, false);
+		testRes(720, 30, 1, false);
+		testRes(480, 60, 1, false);
+		testRes(480, 30, 1, false);
+		testRes(360, 60, 1, false);
+		testRes(360, 30, 1, false);
+		testRes(240, 60, 1, false);
+		testRes(240, 30, 1, true);
 	}
 
 	int minArea = 960 * 540 + 1000;
