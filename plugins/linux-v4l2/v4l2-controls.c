@@ -102,7 +102,7 @@ static inline bool add_control_property(obs_properties_t *props,
 	obs_property_t *prop = NULL;
 
 	if (!valid_control(qctrl)) {
-		return;
+		return false;
 	}
 
 	switch (qctrl->type) {
@@ -131,7 +131,10 @@ static inline bool add_control_property(obs_properties_t *props,
 		blog(LOG_INFO, "setting default for %s to %d",
 		     (char *)qctrl->name, qctrl->default_value);
 		break;
+	default:
+		return false;
 	}
+	return true;
 }
 
 int_fast32_t v4l2_update_controls(int_fast32_t dev, obs_properties_t *props,
