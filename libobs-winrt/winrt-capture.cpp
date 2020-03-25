@@ -18,9 +18,13 @@ try {
 	return winrt::Windows::Foundation::Metadata::ApiInformation::
 		IsApiContractPresent(L"Windows.Foundation.UniversalApiContract",
 				     8);
-} catch (winrt::hresult_error &err) {
+} catch (const winrt::hresult_error &err) {
 	blog(LOG_ERROR, "winrt_capture_supported (0x%08X): %ls", err.to_abi(),
 	     err.message().c_str());
+	return false;
+} catch (...) {
+	blog(LOG_ERROR, "winrt_capture_supported (0x%08X)",
+	     winrt::to_hresult());
 	return false;
 }
 
@@ -34,9 +38,13 @@ try {
 #else
 	return false;
 #endif
-} catch (winrt::hresult_error &err) {
+} catch (const winrt::hresult_error &err) {
 	blog(LOG_ERROR, "winrt_capture_cursor_toggle_supported (0x%08X): %ls",
 	     err.to_abi(), err.message().c_str());
+	return false;
+} catch (...) {
+	blog(LOG_ERROR, "winrt_capture_cursor_toggle_supported (0x%08X)",
+	     winrt::to_hresult());
 	return false;
 }
 
@@ -353,6 +361,10 @@ try {
 		blog(LOG_ERROR, "CreateForWindow (0x%08X): %ls", err.to_abi(),
 		     err.message().c_str());
 		return nullptr;
+	} catch (...) {
+		blog(LOG_ERROR, "CreateForWindow (0x%08X)",
+		     winrt::to_hresult());
+		return nullptr;
 	}
 
 	const winrt::Windows::Graphics::DirectX::Direct3D11::IDirect3DDevice
@@ -406,9 +418,12 @@ try {
 
 	return capture;
 
-} catch (winrt::hresult_error &err) {
+} catch (const winrt::hresult_error &err) {
 	blog(LOG_ERROR, "winrt_capture_init (0x%08X): %ls", err.to_abi(),
 	     err.message().c_str());
+	return nullptr;
+} catch (...) {
+	blog(LOG_ERROR, "winrt_capture_init (0x%08X)", winrt::to_hresult());
 	return nullptr;
 }
 
