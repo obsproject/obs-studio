@@ -1494,14 +1494,28 @@
             "name": "Bongacams",
             "servers": [
                 {
-                    "name": "Default",
-                    "url": "rtmp://origin.bcrncdn.com:1934/live"
+                    "name": "Automatic / Default",
+                    "url": "rtmp://auto.origin.gnsbc.com:1934/live"
+                },
+                {
+                    "name": "Automatic / Backup",
+                    "url": "rtmp://origin.bcvidorigin.com:1934/live"
+                },
+                {
+                    "name": "Europe",
+                    "url": "rtmp://z-eu.origin.gnsbc.com:1934/live"
+                },
+                {
+                    "name": "North America",
+                    "url": "rtmp://z-us.origin.gnsbc.com:1934/live"
                 }
             ],
             "recommend": {
                 "keyint": 2,
                 "max video bitrate": 6000,
-                "max audio bitrate": 192
+                "max audio bitrate": 192,
+                "bframes": 0,
+                "x264opts": "tune=zerolatency"
             }
         },
         {
