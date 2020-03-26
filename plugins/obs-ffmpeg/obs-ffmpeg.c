@@ -240,6 +240,11 @@ bool obs_module_load(void)
 #ifdef _WIN32
 		if (get_win_ver_int() > 0x0601) {
 			jim_nvenc_load();
+		} else {
+			// if on Win 7, new nvenc isn't available so there's
+			// no nvenc encoder for the user to select, expose
+			// the old encoder directly
+			nvenc_encoder_info.caps &= ~OBS_ENCODER_CAP_INTERNAL;
 		}
 #endif
 		obs_register_encoder(&nvenc_encoder_info);
