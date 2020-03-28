@@ -1181,18 +1181,17 @@ static inline bool is_device_link_info(VkLayerDeviceCreateInfo *lici)
 }
 
 static VkResult VKAPI OBS_CreateDevice(VkPhysicalDevice phy_device,
-				       const VkDeviceCreateInfo *cinfo,
+				       const VkDeviceCreateInfo *info,
 				       const VkAllocationCallbacks *ac,
 				       VkDevice *p_device)
 {
-	VkDeviceCreateInfo info = *cinfo;
 	struct vk_inst_data *idata = get_inst_data(phy_device);
 	struct vk_inst_funcs *ifuncs = &idata->funcs;
 	struct vk_data *data = NULL;
 
 	VkResult ret = VK_ERROR_INITIALIZATION_FAILED;
 
-	VkLayerDeviceCreateInfo *ldci = (void *)info.pNext;
+	VkLayerDeviceCreateInfo *ldci = (void *)info->pNext;
 
 	/* -------------------------------------------------------- */
 	/* step through chain until we get to the link info         */
@@ -1222,8 +1221,7 @@ static VkResult VKAPI OBS_CreateDevice(VkPhysicalDevice phy_device,
 	PFN_vkCreateDevice createFunc =
 		(PFN_vkCreateDevice)gipa(VK_NULL_HANDLE, "vkCreateDevice");
 
-	ret = createFunc(phy_device, idata->valid ? &info : cinfo, ac,
-			 p_device);
+	ret = createFunc(phy_device, info, ac, p_device);
 	if (ret != VK_SUCCESS) {
 		goto fail;
 	}
@@ -1291,6 +1289,7 @@ static VkResult VKAPI OBS_CreateDevice(VkPhysicalDevice phy_device,
 	if (funcs_not_found) {
 		goto fail;
 	}
+
 	if (!idata->valid) {
 		flog("instance not valid");
 		goto fail;
@@ -1320,11 +1319,15 @@ static void VKAPI OBS_DestroyDevice(VkDevice device,
 	if (!data)
 		return;
 
-	for (uint32_t fam_idx = 0; fam_idx < _countof(data->cmd_pools);
-	     fam_idx++) {
-		struct vk_cmd_pool_data *pool_data = &data->cmd_pools[fam_idx];
-		if (pool_data->cmd_pool != VK_NULL_HANDLE) {
-			vk_shtex_destroy_cmd_pool_objects(data, pool_data);
+	if (data->valid) {
+		for (uint32_t fam_idx = 0; fam_idx < _countof(data->cmd_pools);
+		     fam_idx++) {
+			struct vk_cmd_pool_data *pool_data =
+				&data->cmd_pools[fam_idx];
+			if (pool_data->cmd_pool != VK_NULL_HANDLE) {
+				vk_shtex_destroy_cmd_pool_objects(data,
+								  pool_data);
+			}
 		}
 	}
 
@@ -1339,15 +1342,17 @@ OBS_CreateSwapchainKHR(VkDevice device, const VkSwapchainCreateInfoKHR *cinfo,
 		       const VkAllocationCallbacks *ac, VkSwapchainKHR *p_sc)
 {
 	struct vk_data *data = get_device_data(device);
-	struct vk_device_funcs *funcs = &data->funcs;
 
 	VkSwapchainCreateInfoKHR info = *cinfo;
-	info.imageUsage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+	if (data->valid)
+		info.imageUsage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
 
+	struct vk_device_funcs *funcs = &data->funcs;
 	VkResult res = funcs->CreateSwapchainKHR(device, &info, ac, p_sc);
 	debug_res("CreateSwapchainKHR", res);
-	if (res != VK_SUCCESS)
+	if ((res != VK_SUCCESS) || !data->valid)
 		return res;
+
 	VkSwapchainKHR sc = *p_sc;
 
 	uint32_t count = 0;
@@ -1379,14 +1384,16 @@ static void VKAPI OBS_DestroySwapchainKHR(VkDevice device, VkSwapchainKHR sc,
 	struct vk_data *data = get_device_data(device);
 	struct vk_device_funcs *funcs = &data->funcs;
 
-	struct vk_swap_data *swap = get_swap_data(data, sc);
-	if (swap) {
-		if (data->cur_swap == swap) {
-			vk_shtex_free(data);
-		}
+	if (data->valid) {
+		struct vk_swap_data *swap = get_swap_data(data, sc);
+		if (swap) {
+			if (data->cur_swap == swap) {
+				vk_shtex_free(data);
+			}
 
-		swap->sc = VK_NULL_HANDLE;
-		swap->hwnd = NULL;
+			swap->sc = VK_NULL_HANDLE;
+			swap->hwnd = NULL;
+		}
 	}
 
 	funcs->DestroySwapchainKHR(device, sc, ac);
