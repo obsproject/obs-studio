@@ -298,15 +298,8 @@ static int attempt_import(const Json &root, const string &name, Json &res)
 		Json::array filter_items = in_filters["items"].array_items();
 
 		Json in_settings = scene["settings"];
-		Json in_sync = scene["syncOffset"];
 
-		int sync = (int)(in_sync["sec"].number_value() * 1000000000 +
-				 in_sync["nsec"].number_value());
-
-		double vol = scene["volume"].number_value();
-		bool muted = scene["muted"].bool_value();
 		string name = scene["name"].string_value();
-		int monitoring = scene["monitoringType"].int_value();
 
 		Json::object out_hotkeys = Json::object{};
 		get_hotkey_bindings(out_hotkeys, hotkey_items, "");
@@ -336,11 +329,8 @@ static int attempt_import(const Json &root, const string &name, Json &res)
 				     {"id", "scene"},
 				     {"sl_id", sl_id},
 				     {"settings", in_settings},
-				     {"sync", sync},
-				     {"volume", vol},
-				     {"muted", muted},
+				     {"volume", 1.0},
 				     {"name", out_name},
-				     {"monitoring_type", monitoring},
 				     {"private_settings", Json::object{}}};
 
 		Json in_items = scene["sceneItems"];
