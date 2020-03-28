@@ -112,6 +112,9 @@ QWidget *RemuxEntryPathItemDelegate::createEditor(
 				    QSizePolicy::ControlType::LineEdit));
 		layout->addWidget(text);
 
+		QObject::connect(text, SIGNAL(editingFinished()), this,
+				 SLOT(updateText()));
+
 		QToolButton *browseButton = new QToolButton();
 		browseButton->setText("...");
 		browseButton->setSizePolicy(buttonSizePolicy);
@@ -143,8 +146,6 @@ void RemuxEntryPathItemDelegate::setEditorData(QWidget *editor,
 {
 	QLineEdit *text = editor->findChild<QLineEdit *>();
 	text->setText(index.data().toString());
-	QObject::connect(text, SIGNAL(textEdited(QString)), this,
-			 SLOT(updateText()));
 	editor->setProperty(PATH_LIST_PROP, QVariant());
 }
 
