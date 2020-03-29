@@ -35,13 +35,6 @@
 /* use the loader's dispatch table pointer as a key for internal data maps */
 #define GET_LDT(x) (*(void **)x)
 
-/* clang-format off */
-static const GUID dxgi_factory1_guid =
-{0x770aae78, 0xf26f, 0x4dba, {0xa8, 0x29, 0x25, 0x3c, 0x83, 0xd1, 0xb3, 0x87}};
-static const GUID dxgi_resource_guid =
-{0x035f3ab4, 0x482e, 0x4e50, {0xb4, 0x1f, 0x8a, 0x7f, 0x8b, 0xd8, 0x96, 0x0b}};
-/* clang-format on */
-
 static bool vulkan_seen = false;
 static SRWLOCK mutex = SRWLOCK_INIT; // Faster CRITICAL_SECTION
 
@@ -228,7 +221,7 @@ static void vk_shtex_free(struct vk_data *data)
 					       NULL);
 
 		if (swap->d3d11_tex) {
-			ID3D11Resource_Release(swap->d3d11_tex);
+			ID3D11Texture2D_Release(swap->d3d11_tex);
 		}
 
 		swap->handle = INVALID_HANDLE_VALUE;
@@ -384,7 +377,7 @@ static inline bool vk_shtex_init_d3d11(struct vk_data *data)
 {
 	D3D_FEATURE_LEVEL level_used;
 	IDXGIFactory1 *factory;
-	IDXGIAdapter *adapter;
+	IDXGIAdapter1 *adapter;
 	HRESULT hr;
 
 	HMODULE d3d11 = load_system_library("d3d11.dll");
@@ -415,14 +408,13 @@ static inline bool vk_shtex_init_d3d11(struct vk_data *data)
 		return false;
 	}
 
-	hr = create_factory(&dxgi_factory1_guid, (void **)&factory);
+	hr = create_factory(&IID_IDXGIFactory1, &factory);
 	if (FAILED(hr)) {
 		flog_hr("failed to create factory", hr);
 		return false;
 	}
 
-	hr = IDXGIFactory1_EnumAdapters1(factory, 0,
-					 (IDXGIAdapter1 **)&adapter);
+	hr = IDXGIFactory1_EnumAdapters1(factory, 0, &adapter);
 	IDXGIFactory1_Release(factory);
 
 	if (FAILED(hr)) {
@@ -437,11 +429,12 @@ static inline bool vk_shtex_init_d3d11(struct vk_data *data)
 		D3D_FEATURE_LEVEL_9_3,
 	};
 
-	hr = create(adapter, D3D_DRIVER_TYPE_UNKNOWN, NULL, 0, feature_levels,
+	hr = create((IDXGIAdapter *)adapter, D3D_DRIVER_TYPE_UNKNOWN, NULL, 0,
+		    feature_levels,
 		    sizeof(feature_levels) / sizeof(D3D_FEATURE_LEVEL),
 		    D3D11_SDK_VERSION, &data->d3d11_device, &level_used,
 		    &data->d3d11_context);
-	IDXGIAdapter_Release(adapter);
+	IDXGIAdapter1_Release(adapter);
 
 	if (FAILED(hr)) {
 		flog_hr("failed to create device", hr);
@@ -480,8 +473,8 @@ static inline bool vk_shtex_init_d3d11_tex(struct vk_data *data,
 		return false;
 	}
 
-	hr = ID3D11Device_QueryInterface(swap->d3d11_tex, &dxgi_resource_guid,
-					 (void **)&dxgi_res);
+	hr = ID3D11Texture2D_QueryInterface(swap->d3d11_tex, &IID_IDXGIResource,
+					    &dxgi_res);
 	if (FAILED(hr)) {
 		flog_hr("failed to get IDXGIResource", hr);
 		return false;
@@ -1369,6 +1362,7 @@ OBS_CreateSwapchainKHR(VkDevice device, const VkSwapchainCreateInfoKHR *cinfo,
 	swap->format = cinfo->imageFormat;
 	swap->hwnd = find_surf_hwnd(data->inst_data, cinfo->surface);
 	swap->image_count = count;
+	swap->d3d11_tex = NULL;
 
 	return VK_SUCCESS;
 }
