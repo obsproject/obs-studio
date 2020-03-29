@@ -119,7 +119,8 @@ static void mask_filter_defaults(obs_data_t *settings)
 	obs_data_set_default_int(settings, SETTING_OPACITY, 100);
 }
 
-#define IMAGE_FILTER_EXTENSIONS " (*.bmp *.jpg *.jpeg *.tga *.gif *.png)"
+#define IMAGE_FILTER_EXTENSIONS \
+	" (*.bmp *.BMP *.jpg *.JPG *.jpeg *.JPEG *.tga *.TGA *.gif *.GIF *.png *.PNG)"
 
 static obs_properties_t *mask_filter_properties(void *data)
 {

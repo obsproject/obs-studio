@@ -209,13 +209,13 @@ static void image_source_tick(void *data, float seconds)
 }
 
 static const char *image_filter =
-	"All formats (*.bmp *.tga *.png *.jpeg *.jpg *.gif *.psd);;"
-	"BMP Files (*.bmp);;"
-	"Targa Files (*.tga);;"
-	"PNG Files (*.png);;"
-	"JPEG Files (*.jpeg *.jpg);;"
-	"GIF Files (*.gif);;"
-	"PSD Files (*.psd);;"
+	"All formats (*.bmp *.BMP *.tga *.TGA *.png *.PNG *.jpeg *.JPEG *.jpg *.JPG *.gif *.GIF *.psd *.PSD);;"
+	"BMP Files (*.bmp *.BMP);;"
+	"Targa Files (*.tga *.TGA);;"
+	"PNG Files (*.png *.PNG);;"
+	"JPEG Files (*.jpeg *.JPEG *.jpg *.JPG);;"
+	"GIF Files (*.gif *.GIF);;"
+	"PSD Files (*.psd *.PSD);;"
 	"All Files (*.*)";
 
 static obs_properties_t *image_source_properties(void *data)
