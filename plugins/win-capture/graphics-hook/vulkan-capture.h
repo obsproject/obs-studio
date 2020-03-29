@@ -9,6 +9,7 @@ struct vk_inst_funcs {
 	DEF_FUNC(DestroySurfaceKHR);
 	DEF_FUNC(GetPhysicalDeviceMemoryProperties);
 	DEF_FUNC(GetPhysicalDeviceImageFormatProperties2);
+	DEF_FUNC(EnumerateDeviceExtensionProperties);
 };
 
 struct vk_device_funcs {

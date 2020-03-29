@@ -1108,6 +1108,7 @@ static VkResult VKAPI OBS_CreateInstance(const VkInstanceCreateInfo *cinfo,
 	GETADDR(DestroySurfaceKHR);
 	GETADDR(GetPhysicalDeviceMemoryProperties);
 	GETADDR(GetPhysicalDeviceImageFormatProperties2);
+	GETADDR(EnumerateDeviceExtensionProperties);
 #undef GETADDR
 
 	data->valid = !funcs_not_found;
@@ -1288,6 +1289,46 @@ static VkResult VKAPI OBS_CreateDevice(VkPhysicalDevice phy_device,
 		flog("instance not valid");
 		goto fail;
 	}
+
+	const char *required_device_extensions[] = {
+		VK_KHR_EXTERNAL_MEMORY_WIN32_EXTENSION_NAME};
+
+	uint32_t device_extension_count = 0;
+	ret = ifuncs->EnumerateDeviceExtensionProperties(
+		phy_device, NULL, &device_extension_count, NULL);
+	if (ret != VK_SUCCESS)
+		goto fail;
+
+	VkExtensionProperties *device_extensions = _malloca(
+		sizeof(VkExtensionProperties) * device_extension_count);
+	ret = ifuncs->EnumerateDeviceExtensionProperties(
+		phy_device, NULL, &device_extension_count, device_extensions);
+	if (ret != VK_SUCCESS)
+		goto fail;
+
+	bool extensions_found = true;
+	for (uint32_t i = 0; i < _countof(required_device_extensions); i++) {
+		const char *const required_extension =
+			required_device_extensions[i];
+
+		bool found = false;
+		for (uint32_t j = 0; j < device_extension_count; j++) {
+			if (!strcmp(required_extension,
+				    device_extensions[j].extensionName)) {
+				found = true;
+				break;
+			}
+		}
+
+		if (!found) {
+			flog("missing device extension: %s",
+			     required_extension);
+			extensions_found = false;
+		}
+	}
+
+	if (!extensions_found)
+		goto fail;
 
 	VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
 	VkImageUsageFlags usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
