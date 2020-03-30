@@ -234,8 +234,6 @@ VolControl::VolControl(OBSSource source_, bool showConfig, bool vertical)
 		mainLayout->addItem(controlLayout);
 
 		volMeter->setFocusProxy(slider);
-
-		setMaximumWidth(110);
 	} else {
 		QHBoxLayout *volLayout = new QHBoxLayout;
 		QHBoxLayout *textLayout = new QHBoxLayout;
@@ -267,6 +265,12 @@ VolControl::VolControl(OBSSource source_, bool showConfig, bool vertical)
 
 		volMeter->setFocusProxy(slider);
 	}
+
+	nameLabel->setStyleSheet("background: none");
+	volLabel->setStyleSheet("background: none");
+	mute->setStyleSheet("background: none");
+	slider->setStyleSheet("background: none");
+	config->setStyleSheet("background: none");
 
 	setLayout(mainLayout);
 

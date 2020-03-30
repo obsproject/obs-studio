@@ -1288,3 +1288,7 @@ QCalendarWidget QAbstractItemView:enabled {
 QCalendarWidget QAbstractItemView:disabled {
     color: rgb(122,121,122);
 }
+
+MixerTree::item:selected {
+	border: 1px solid #d2d2d2;
+}

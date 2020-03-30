@@ -298,7 +298,8 @@ set(obs_SOURCES
 	locked-checkbox.cpp
 	visibility-checkbox.cpp
 	media-slider.cpp
-	undo-stack-obs.cpp)
+	undo-stack-obs.cpp
+	mixer-tree.cpp)
 
 set(obs_HEADERS
 	${obs_PLATFORM_HEADERS}
@@ -373,7 +374,8 @@ set(obs_HEADERS
 	obs-proxy-style.hpp
 	obs-proxy-style.hpp
 	media-slider.hpp
-	undo-stack-obs.hpp)
+	undo-stack-obs.hpp
+	mixer-tree.hpp)
 
 set(obs_importers_HEADERS
 	importers/importers.hpp)

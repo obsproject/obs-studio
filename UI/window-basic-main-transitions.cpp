@@ -385,6 +385,13 @@ void OBSBasic::TransitionToScene(OBSSource source, bool force,
 		return;
 	}
 
+	if (prevSource) {
+		SaveMixerOrder(obs_scene_from_source(prevSource));
+		LoadMixerOrder();
+	}
+
+	prevSource = source;
+
 	float t = obs_transition_get_time(transition);
 	bool stillTransitioning = t < 1.0f && t > 0.0f;
 

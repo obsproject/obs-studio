@@ -351,3 +351,7 @@ QCalendarWidget #qt_calendar_nextmonth {
     qproperty-icon: url(./Dark/expand.svg);
     icon-size: 16px, 16px;
 }
+
+MixerTree::item:selected {
+	border: 1px solid #000000;
+}
