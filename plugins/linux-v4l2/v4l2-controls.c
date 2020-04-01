@@ -102,7 +102,7 @@ static inline bool add_control_property(obs_properties_t *props,
 	obs_property_t *prop = NULL;
 
 	if (!valid_control(qctrl)) {
-		return;
+		return false;
 	}
 
 	switch (qctrl->type) {
