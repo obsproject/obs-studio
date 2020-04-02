@@ -550,6 +550,14 @@ static obs_properties_t *vaapi_properties(void *unused)
 
 	obs_property_list_add_int(list, "H.264 (default)", AV_CODEC_ID_H264);
 
+	list = obs_properties_add_list(props, "profile", "Profile",
+				       OBS_COMBO_TYPE_LIST,
+				       OBS_COMBO_FORMAT_INT);
+	obs_property_list_add_int(list, "Constrained Baseline (default)",
+				  FF_PROFILE_H264_CONSTRAINED_BASELINE);
+	obs_property_list_add_int(list, "Main", FF_PROFILE_H264_MAIN);
+	obs_property_list_add_int(list, "High", FF_PROFILE_H264_HIGH);
+
 	list = obs_properties_add_list(props, "level", "Level",
 				       OBS_COMBO_TYPE_LIST,
 				       OBS_COMBO_FORMAT_INT);
