@@ -561,12 +561,16 @@ static obs_properties_t *vaapi_properties(void *unused)
 	list = obs_properties_add_list(props, "level", "Level",
 				       OBS_COMBO_TYPE_LIST,
 				       OBS_COMBO_FORMAT_INT);
-	obs_property_list_add_int(list, "480p30 (3.0)", 30);
-	obs_property_list_add_int(list, "720p30/480p60  (3.1)", 31);
-	obs_property_list_add_int(list, "Compatibility mode  (4.0 default)",
+	obs_property_list_add_int(list, "Auto", FF_LEVEL_UNKNOWN);
+	obs_property_list_add_int(list, "3.0", 30);
+	obs_property_list_add_int(list, "3.1", 31);
+	obs_property_list_add_int(list, "4.0 (default) (Compatibility mode)",
 				  40);
-	obs_property_list_add_int(list, "720p60/1080p30 (4.1)", 41);
-	obs_property_list_add_int(list, "1080p60 (4.2)", 42);
+	obs_property_list_add_int(list, "4.1", 41);
+	obs_property_list_add_int(list, "4.2", 42);
+	obs_property_list_add_int(list, "5.0", 50);
+	obs_property_list_add_int(list, "5.1", 51);
+	obs_property_list_add_int(list, "5.2", 52);
 
 	list = obs_properties_add_list(props, "rate_control",
 				       obs_module_text("RateControl"),
