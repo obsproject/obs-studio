@@ -45,12 +45,12 @@ tar -xf ./osx-deps-2018-08-09.tar.gz -C /tmp
 
 # Fetch vlc codebase
 hr "Downloading VLC repo"
-wget --quiet --retry-connrefused --waitretry=1 https://downloads.videolan.org/vlc/3.0.4/vlc-3.0.4.tar.xz
-tar -xf vlc-3.0.4.tar.xz
+wget --quiet --retry-connrefused --waitretry=1 https://downloads.videolan.org/vlc/3.0.8/vlc-3.0.8.tar.xz
+tar -xf vlc-3.0.8.tar.xz
 
 # Get sparkle
 hr "Downloading Sparkle framework"
-wget --quiet --retry-connrefused --waitretry=1 -O sparkle.tar.bz2 https://github.com/sparkle-project/Sparkle/releases/download/1.20.0/Sparkle-1.20.0.tar.bz2
+wget --quiet --retry-connrefused --waitretry=1 -O sparkle.tar.bz2 https://github.com/sparkle-project/Sparkle/releases/download/1.23.0/Sparkle-1.23.0.tar.bz2
 mkdir ./sparkle
 tar -xf ./sparkle.tar.bz2 -C ./sparkle
 sudo cp -R ./sparkle/Sparkle.framework /Library/Frameworks/Sparkle.framework
