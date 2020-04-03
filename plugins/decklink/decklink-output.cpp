@@ -60,6 +60,9 @@ static bool decklink_output_start(void *data)
 
 	device.Set(deviceEnum->FindByHash(decklink->deviceHash));
 
+	if (!device)
+		return false;
+
 	DeckLinkDeviceMode *mode = device->FindOutputMode(decklink->modeID);
 
 	decklink->SetSize(mode->GetWidth(), mode->GetHeight());
