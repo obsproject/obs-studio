@@ -74,7 +74,7 @@ endif()
 
 find_package(ZLIB REQUIRED)
 
-include_directories(SYSTEM ${ZLIB_INCLUDE_DIR})
+include_directories(SYSTEM ${ZLIB_INCLUDE_DIRS})
 
 add_definitions(-DLIBOBS_EXPORTS)
 
