@@ -195,8 +195,6 @@ static void *load_cube_file(const char *const path, uint32_t *const width)
 
 	FILE *const file = os_fopen(path, "rb");
 	if (file) {
-		float min_value[] = {0.0f, 0.0f, 0.0f};
-		float max_value[] = {1.0f, 1.0f, 1.0f};
 		float red, green, blue;
 		unsigned width_1d = 0;
 		unsigned width_3d = 0;
@@ -205,23 +203,12 @@ static void *load_cube_file(const char *const path, uint32_t *const width)
 
 		char line[256];
 		unsigned u;
-		float f[3];
 		while (fgets(line, sizeof(line), file)) {
 			if (sscanf(line, "%f %f %f", &red, &green, &blue) ==
 			    3) {
 				/* no more metadata */
 				data_found = true;
 				break;
-			} else if (sscanf(line, "DOMAIN_MIN %f %f %f", &f[0],
-					  &f[1], &f[2]) == 3) {
-				min_value[0] = f[0];
-				min_value[1] = f[1];
-				min_value[2] = f[2];
-			} else if (sscanf(line, "DOMAIN_MAX %f %f %f", &f[0],
-					  &f[1], &f[2]) == 3) {
-				max_value[0] = f[0];
-				max_value[1] = f[1];
-				max_value[2] = f[2];
 			} else if (sscanf(line, "LUT_1D_SIZE %u", &u) == 1) {
 				width_1d = u;
 			} else if (sscanf(line, "LUT_3D_SIZE %u", &u) == 1) {
@@ -299,7 +286,7 @@ static void color_grade_filter_update(void *data, obs_data_t *settings)
 			const uint32_t width = filter->cube_width;
 			filter->target = gs_voltexture_create(
 				width, width, width, GS_RGBA16F, 1,
-				(uint8_t **)&filter->cube_data, 0);
+				(const uint8_t **)&filter->cube_data, 0);
 			filter->clut_scale = (float)(width - 1) / (float)width;
 			filter->clut_offset = 0.5f / (float)width;
 		}
