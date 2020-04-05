@@ -286,3 +286,13 @@ direct access to declarations or callback pointers.
    :param handler: Procedure handler object
    :param name:    Name of procedure to call
    :param params:  Calldata structure to pass to the procedure
+
+---------------------
+
+.. function:: bool proc_handler_exists(proc_handler_t *handler, const char *name)
+
+   Checks if a function exists in a procedure handler.
+
+   :param handler: Procedure handler object
+   :param name:    Name of procedure to check for
+
