@@ -235,6 +235,13 @@ static bool load_winrt_imports(struct winrt_exports *exports, void *module,
 	return success;
 }
 
+static void get_window_handle(void *data, calldata_t *cd)
+{
+	struct window_capture *wc = data;
+
+	calldata_set_ptr(cd, "window", wc->window);
+}
+
 static void *wc_create(obs_data_t *settings, obs_source_t *source)
 {
 	struct window_capture *wc = bzalloc(sizeof(struct window_capture));
@@ -256,6 +263,10 @@ static void *wc_create(obs_data_t *settings, obs_source_t *source)
 			wc->wgc_supported = true;
 		}
 	}
+
+	proc_handler_t *ph = obs_source_get_proc_handler(source);
+	proc_handler_add(ph, "void get_window_handle(out ptr window)",
+			 get_window_handle, wc);
 
 	update_settings(wc, settings);
 	log_settings(wc, settings);
