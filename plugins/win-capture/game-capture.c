@@ -572,6 +572,9 @@ static void *game_capture_create(obs_data_t *settings, obs_source_t *source)
 	proc_handler_add(ph, "void get_process_handle(out ptr process)",
 			 get_process_handle, gc);
 
+	signal_handler_t *sh = obs_source_get_signal_handler(gc->source);
+	signal_handler_add(sh, "void window_changed(ptr window)");
+
 	game_capture_update(gc, settings);
 	return gc;
 }
@@ -1035,6 +1038,13 @@ static bool init_hook(struct game_capture *gc)
 	gc->next_window = NULL;
 	gc->active = true;
 	gc->retrying = 0;
+
+	calldata_t *cd = calldata_create();
+	calldata_set_ptr(cd, "window", gc->window);
+	signal_handler_signal(obs_source_get_signal_handler(gc->source),
+			      "window_changed", cd);
+	calldata_free(cd);
+
 	return true;
 }
 

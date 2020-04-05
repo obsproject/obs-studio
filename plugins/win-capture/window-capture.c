@@ -267,6 +267,8 @@ static void *wc_create(obs_data_t *settings, obs_source_t *source)
 	proc_handler_t *ph = obs_source_get_proc_handler(source);
 	proc_handler_add(ph, "void get_window_handle(out ptr window)",
 			 get_window_handle, wc);
+	signal_handler_t *sh = obs_source_get_signal_handler(wc->source);
+	signal_handler_add(sh, "void window_changed(ptr window)");
 
 	update_settings(wc, settings);
 	log_settings(wc, settings);
@@ -484,6 +486,13 @@ static void wc_tick(void *data, float seconds)
 				     : find_window(INCLUDE_MINIMIZED,
 						   wc->priority, wc->class,
 						   wc->title, wc->executable);
+
+		calldata_t *cd = calldata_create();
+		calldata_set_ptr(cd, "window", wc->window);
+		signal_handler_signal(obs_source_get_signal_handler(wc->source),
+				      "update_window", cd);
+		calldata_free(cd);
+
 		if (!wc->window) {
 			if (wc->capture.valid)
 				dc_capture_free(&wc->capture);
