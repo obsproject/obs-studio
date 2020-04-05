@@ -49,6 +49,9 @@ EXPORT void proc_handler_add(proc_handler_t *handler, const char *decl_string,
 EXPORT bool proc_handler_call(proc_handler_t *handler, const char *name,
 			      calldata_t *params);
 
+/** Checks if a function exists in a procedure handler. Returns true if the named procedure is found. */
+EXPORT bool proc_handler_exists(proc_handler_t *handler, const char *name);
+
 #ifdef __cplusplus
 }
 #endif

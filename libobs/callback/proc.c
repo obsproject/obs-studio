@@ -90,3 +90,18 @@ bool proc_handler_call(proc_handler_t *handler, const char *name,
 
 	return false;
 }
+
+bool proc_handler_exists(proc_handler_t *handler, const char *name)
+{
+	if (!handler)
+		return false;
+
+	for (size_t i = 0; i < handler->procs.num; i++) {
+		struct proc_info *info = handler->procs.array + i;
+
+		if (strcmp(info->func.name, name) == 0)
+			return true;
+	}
+
+	return false;
+}
