@@ -76,6 +76,7 @@ void init_window(cocoa_window_t cw, obs_data_t *settings)
 
 	cw->owner_name = @(obs_data_get_string(settings, "owner_name"));
 	cw->window_name = @(obs_data_get_string(settings, "window_name"));
+	cw->window_id = obs_data_get_int(settings, "window");
 	[cw->owner_name retain];
 	[cw->window_name retain];
 	find_window(cw, settings, true);
