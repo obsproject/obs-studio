@@ -1,0 +1,15 @@
+# - Config file for the obs-frontend-api package
+# It defines the following variables
+#  OBS_FRONTEND_API_INCLUDE_DIRS
+#  OBS_FRONTEND_API_LIBRARIES
+
+set(OBS_FRONTEND_API_INCLUDE_DIRS "@CONF_INCLUDE_DIRS@")
+
+# Cleanup possible relative paths
+get_filename_component(OBS_FRONTEND_API_INCLUDE_DIRS "${OBS_FRONTEND_API_INCLUDE_DIRS}" ABSOLUTE)
+
+if(NOT TARGET obs-frontend-api)
+	include("${CMAKE_CURRENT_LIST_DIR}/obs-frontend-apiTarget.cmake")
+endif()
+
+set(OBS_FRONTEND_API_LIBRARIES libobs obs-frontend-api)
