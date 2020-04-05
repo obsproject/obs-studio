@@ -92,8 +92,8 @@ struct slideshow2 {
 	uint32_t cy;
 
 	pthread_mutex_t mutex;
-	DARRAY(char *) filePaths;
-	DARRAY(char *) fileQueue;
+	DARRAY(char *) file_paths;
+	DARRAY(char *) file_queue;
 
 	enum behavior behavior;
 
@@ -131,14 +131,14 @@ static obs_source_t *create_source_from_file(const char *file)
 
 static void free_files(struct darray *array)
 {
-	DARRAY(char *) filePaths;
-	filePaths.da = *array;
+	DARRAY(char *) file_paths;
+	file_paths.da = *array;
 
-	for (size_t i = 0; i < filePaths.num; i++) {
-		bfree(filePaths.array[i]);
+	for (size_t i = 0; i < file_paths.num; i++) {
+		bfree(file_paths.array[i]);
 	}
 
-	da_free(filePaths);
+	da_free(file_paths);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -180,12 +180,12 @@ static void add_file(struct slideshow2 *ss, struct darray *array,
 
 static void shuffle_queue(struct slideshow2 *ss)
 {
-	if (!ss->randomize || ss->fileQueue.num <= 1) {
+	if (!ss->randomize || ss->file_queue.num <= 1) {
 		return;
 	}
 
 	// Knuth shuffle
-	const int num = (int)ss->fileQueue.num;
+	const int num = (int)ss->file_queue.num;
 	for (int i = num - 1; i >= 1; i--) {
 		int j;
 
@@ -201,21 +201,21 @@ static void shuffle_queue(struct slideshow2 *ss)
 		// temporary value, which would not be required for `char *`.
 		// Direct array access would be a lot faster. But first do it
 		// correct, then optimize if it's too slow.
-		da_swap(ss->fileQueue, i, j);
+		da_swap(ss->file_queue, i, j);
 	}
 }
 
 static void update_queue(struct slideshow2 *ss)
 {
-	for (size_t i = 0; i < ss->fileQueue.num; i++) {
-		bfree(ss->fileQueue.array[i]);
+	for (size_t i = 0; i < ss->file_queue.num; i++) {
+		bfree(ss->file_queue.array[i]);
 	}
-	da_resize(ss->fileQueue, ss->filePaths.num);
-	for (size_t i = 0; i < ss->fileQueue.num; i++) {
-		ss->fileQueue.array[i] = bstrdup(ss->filePaths.array[i]);
+	da_resize(ss->file_queue, ss->file_paths.num);
+	for (size_t i = 0; i < ss->file_queue.num; i++) {
+		ss->file_queue.array[i] = bstrdup(ss->file_paths.array[i]);
 	}
 
-	if (ss->cur_item >= ss->fileQueue.num) {
+	if (ss->cur_item >= ss->file_queue.num) {
 		ss->cur_item = 0;
 	}
 
@@ -233,7 +233,7 @@ static bool valid_extension(const char *ext)
 
 static inline bool item_valid(struct slideshow2 *ss)
 {
-	return ss->fileQueue.num && ss->cur_item < ss->fileQueue.num;
+	return ss->file_queue.num && ss->cur_item < ss->file_queue.num;
 }
 
 static void do_transition(void *data, bool to_null)
@@ -243,12 +243,12 @@ static void do_transition(void *data, bool to_null)
 
 	if (valid && ss->use_cut) {
 		obs_source_t *source = create_source_from_file(
-			ss->fileQueue.array[ss->cur_item]);
+			ss->file_queue.array[ss->cur_item]);
 		obs_transition_set(ss->transition, source);
 		obs_source_release(source);
 	} else if (valid && !to_null) {
 		obs_source_t *source = create_source_from_file(
-			ss->fileQueue.array[ss->cur_item]);
+			ss->file_queue.array[ss->cur_item]);
 		obs_transition_start(ss->transition, OBS_TRANSITION_MODE_AUTO,
 				     ss->tr_speed, source);
 		obs_source_release(source);
@@ -362,8 +362,8 @@ static void ss_update(void *data, obs_data_t *settings)
 
 	pthread_mutex_lock(&ss->mutex);
 
-	old_files.da = ss->filePaths.da;
-	ss->filePaths.da = new_files.da;
+	old_files.da = ss->file_paths.da;
+	ss->file_paths.da = new_files.da;
 	if (new_tr) {
 		old_tr = ss->transition;
 		ss->transition = new_tr;
@@ -446,7 +446,7 @@ static void ss_update(void *data, obs_data_t *settings)
 				      OBS_TRANSITION_SCALE_ASPECT);
 	if (new_tr)
 		obs_source_add_active_child(ss->source, new_tr);
-	if (ss->filePaths.num)
+	if (ss->file_paths.num)
 		do_transition(ss, false);
 
 	obs_data_array_release(array);
@@ -468,9 +468,9 @@ static void ss_restart(void *data)
 	ss->cur_item = 0;
 
 	obs_source_t *source =
-		ss->fileQueue.num > 0
+		ss->file_queue.num > 0
 			? create_source_from_file(
-				  ss->fileQueue.array[ss->cur_item])
+				  ss->file_queue.array[ss->cur_item])
 			: NULL;
 	obs_transition_set(ss->transition, source);
 	obs_source_release(source);
@@ -495,11 +495,11 @@ static void ss_next_slide(void *data)
 {
 	struct slideshow2 *ss = data;
 
-	if (!ss->fileQueue.num ||
+	if (!ss->file_queue.num ||
 	    obs_transition_get_time(ss->transition) < 1.0f)
 		return;
 
-	if (++ss->cur_item >= ss->fileQueue.num)
+	if (++ss->cur_item >= ss->file_queue.num)
 		ss->cur_item = 0;
 
 	do_transition(ss, false);
@@ -509,12 +509,12 @@ static void ss_previous_slide(void *data)
 {
 	struct slideshow2 *ss = data;
 
-	if (!ss->fileQueue.num ||
+	if (!ss->file_queue.num ||
 	    obs_transition_get_time(ss->transition) < 1.0f)
 		return;
 
 	if (ss->cur_item == 0)
-		ss->cur_item = ss->fileQueue.num - 1;
+		ss->cur_item = ss->file_queue.num - 1;
 	else
 		--ss->cur_item;
 
@@ -592,8 +592,8 @@ static void ss_destroy(void *data)
 	struct slideshow2 *ss = data;
 
 	obs_source_release(ss->transition);
-	free_files(&ss->filePaths.da);
-	free_files(&ss->fileQueue.da);
+	free_files(&ss->file_paths.da);
+	free_files(&ss->file_queue.da);
 	pthread_mutex_destroy(&ss->mutex);
 	bfree(ss);
 }
@@ -680,7 +680,7 @@ static void ss_video_tick(void *data, float seconds)
 
 	/* ----------------------------------------------------- */
 	/* fade to transparency when the file list becomes empty */
-	if (!ss->fileQueue.num) {
+	if (!ss->file_queue.num) {
 		obs_source_t *active_transition_source =
 			obs_transition_get_active_source(ss->transition);
 
@@ -697,7 +697,7 @@ static void ss_video_tick(void *data, float seconds)
 	if (ss->elapsed > ss->slide_time) {
 		ss->elapsed -= ss->slide_time;
 
-		if (!ss->loop && ss->cur_item == ss->fileQueue.num - 1) {
+		if (!ss->loop && ss->cur_item == ss->file_queue.num - 1) {
 			if (ss->hide)
 				do_transition(ss, true);
 			else
@@ -706,12 +706,12 @@ static void ss_video_tick(void *data, float seconds)
 			return;
 		}
 
-		if (++ss->cur_item >= ss->fileQueue.num) {
+		if (++ss->cur_item >= ss->file_queue.num) {
 			ss->cur_item = 0;
 			shuffle_queue(ss);
 		}
 
-		if (ss->fileQueue.num)
+		if (ss->file_queue.num)
 			do_transition(ss, false);
 	}
 }
@@ -876,8 +876,8 @@ static obs_properties_t *ss_properties(void *data)
 
 	if (ss) {
 		pthread_mutex_lock(&ss->mutex);
-		if (ss->filePaths.num) {
-			char **last = da_end(ss->filePaths);
+		if (ss->file_paths.num) {
+			char **last = da_end(ss->file_paths);
 			const char *slash;
 
 			dstr_copy(&path, *last);
