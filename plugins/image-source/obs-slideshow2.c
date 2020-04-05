@@ -192,7 +192,7 @@ static void free_cache_entry(struct slideshow2 *ss, struct cache_entry *entry)
 	assert(ss->have_mutex);
 
 	bfree(entry->path);
-	da_push_back(ss->source_cleanup, entry->source);
+	da_push_back(ss->source_cleanup, &entry->source);
 }
 
 static void clear_cache(struct slideshow2 *ss)
@@ -229,8 +229,8 @@ static struct cache_entry *get_cache_entry(struct slideshow2 *ss,
 	return NULL;
 }
 
-static obs_source_t *get_cached_source(struct slideshow2 *ss,
-				       size_t filequeue_index)
+static obs_source_t *obtain_cached_source(struct slideshow2 *ss,
+					  size_t filequeue_index)
 {
 	assert(ss->have_mutex);
 
@@ -531,7 +531,7 @@ static bool do_transition(struct slideshow2 *ss, bool to_null)
 	bool valid = item_valid(ss);
 
 	if (valid && ss->use_cut) {
-		obs_source_t *source = get_cached_source(ss, ss->cur_item);
+		obs_source_t *source = obtain_cached_source(ss, ss->cur_item);
 		if (!source) {
 			debug("No cached source, need to retry");
 			ss->retry_transition = true;
@@ -540,7 +540,7 @@ static bool do_transition(struct slideshow2 *ss, bool to_null)
 		obs_transition_set(ss->transition, source);
 		obs_source_release(source);
 	} else if (valid && !to_null) {
-		obs_source_t *source = get_cached_source(ss, ss->cur_item);
+		obs_source_t *source = obtain_cached_source(ss, ss->cur_item);
 		if (!source) {
 			debug("No cached source, need to retry");
 			ss->retry_transition = true;
@@ -786,7 +786,7 @@ static void ss_restart(void *data)
 	set_cur_item(ss, 0);
 
 	obs_source_t *source = ss->file_queue.num > 0
-				       ? get_cached_source(ss, ss->cur_item)
+				       ? obtain_cached_source(ss, ss->cur_item)
 				       : NULL;
 	obs_transition_set(ss->transition, source);
 	obs_source_release(source);
