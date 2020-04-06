@@ -25,9 +25,12 @@ OBSLogReply::OBSLogReply(QWidget *parent, const QString &url, const bool crash)
 	setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
 	ui->setupUi(this);
 	ui->urlEdit->setText(url);
+	if (crash) {
+		ui->description->setText(
+			Str("LogReturnDialog.Description.Crash"));
+	}
 
 	installEventFilter(CreateShortcutFilter());
-	UNUSED_PARAMETER(crash);
 }
 
 void OBSLogReply::on_copyURL_clicked()
