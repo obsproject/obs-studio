@@ -60,8 +60,10 @@ bool find_window(cocoa_window_t cw, obs_data_t *settings, bool force)
 
 		NSNumber *window_id = (NSNumber *)dict[WINDOW_NUMBER];
 		cw->window_id = window_id.intValue;
+		cw->owner_pid = (NSNumber *)dict[OWNER_PID];
 
 		obs_data_set_int(settings, "window", cw->window_id);
+		obs_data_set_int(settings, "owner_pid", cw->owner_pid.intValue);
 		return true;
 	}
 
@@ -76,10 +78,43 @@ void init_window(cocoa_window_t cw, obs_data_t *settings)
 
 	cw->owner_name = @(obs_data_get_string(settings, "owner_name"));
 	cw->window_name = @(obs_data_get_string(settings, "window_name"));
-	cw->window_id = obs_data_get_int(settings, "window");
 	[cw->owner_name retain];
 	[cw->window_name retain];
-	find_window(cw, settings, true);
+
+	// Find initial window.
+	pthread_mutex_lock(&cw->name_lock);
+
+	if (!cw->window_name.length && !cw->owner_name.length)
+		goto invalid_name;
+
+	NSNumber *owner_pid = @(obs_data_get_int(settings, "owner_pid"));
+	NSNumber *window_id = @(obs_data_get_int(settings, "window"));
+	for (NSDictionary *dict in enumerate_windows()) {
+		bool owner_names_match =
+			[cw->owner_name isEqualToString:dict[OWNER_NAME]];
+		bool ids_match =
+			[owner_pid isEqualToNumber:dict[OWNER_PID]] &&
+			[window_id isEqualToNumber:dict[WINDOW_NUMBER]];
+		bool window_names_match =
+			[cw->window_name isEqualToString:dict[WINDOW_NAME]];
+
+		if (owner_names_match && (ids_match || window_names_match)) {
+			pthread_mutex_unlock(&cw->name_lock);
+
+			NSNumber *window_id = (NSNumber *)dict[WINDOW_NUMBER];
+			cw->window_id = window_id.intValue;
+			cw->owner_pid = (NSNumber *)dict[OWNER_PID];
+
+			obs_data_set_int(settings, "window", cw->window_id);
+			obs_data_set_int(settings, "owner_pid",
+					 cw->owner_pid.intValue);
+			return;
+		}
+	}
+
+invalid_name:
+	pthread_mutex_unlock(&cw->name_lock);
+	return;
 }
 
 void destroy_window(cocoa_window_t cw)
