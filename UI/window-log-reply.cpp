@@ -22,6 +22,7 @@
 OBSLogReply::OBSLogReply(QWidget *parent, const QString &url)
 	: QDialog(parent), ui(new Ui::OBSLogReply)
 {
+	setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
 	ui->setupUi(this);
 	ui->urlEdit->setText(url);
 
