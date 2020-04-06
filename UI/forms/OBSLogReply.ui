@@ -40,6 +40,13 @@
        </property>
       </widget>
      </item>
+     <item>
+      <widget class="QPushButton" name="analyzeURL">
+       <property name="text">
+        <string>LogReturnDialog.AnalyzeURL</string>
+       </property>
+      </widget>
+     </item>
     </layout>
    </item>
    <item>

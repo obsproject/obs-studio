@@ -31,4 +31,5 @@ public:
 
 private slots:
 	void on_copyURL_clicked();
+	void on_analyzeURL_clicked();
 };
