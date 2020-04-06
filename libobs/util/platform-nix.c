@@ -275,7 +275,20 @@ char *os_get_program_data_path_ptr(const char *name)
 char *os_get_executable_path_ptr(const char *name)
 {
 	char exe[PATH_MAX];
+#if defined(__FreeBSD__) || defined(__DragonFly__)
+	int sysctlname[4] = {CTL_KERN, KERN_PROC, KERN_PROC_PATHNAME, -1};
+	size_t pathlen = PATH_MAX;
+	ssize_t count;
+	if (sysctl(sysctlname, nitems(sysctlname), exe, &pathlen, NULL, 0) ==
+	    -1) {
+		blog(LOG_ERROR, "sysctl(KERN_PROC_PATHNAME) failed, errno %d",
+		     errno);
+		return NULL;
+	}
+	count = pathlen;
+#else
 	ssize_t count = readlink("/proc/self/exe", exe, PATH_MAX);
+#endif
 	const char *path_out = NULL;
 	struct dstr path;
 
