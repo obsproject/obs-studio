@@ -19,7 +19,7 @@
 #include "window-log-reply.hpp"
 #include "obs-app.hpp"
 
-OBSLogReply::OBSLogReply(QWidget *parent, const QString &url)
+OBSLogReply::OBSLogReply(QWidget *parent, const QString &url, const bool crash)
 	: QDialog(parent), ui(new Ui::OBSLogReply)
 {
 	setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
@@ -27,6 +27,7 @@ OBSLogReply::OBSLogReply(QWidget *parent, const QString &url)
 	ui->urlEdit->setText(url);
 
 	installEventFilter(CreateShortcutFilter());
+	UNUSED_PARAMETER(crash);
 }
 
 void OBSLogReply::on_copyURL_clicked()
