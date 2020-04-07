@@ -261,7 +261,7 @@ static void log_kernel_version(void)
 	blog(LOG_INFO, "Kernel Version: %s %s", info.sysname, info.release);
 }
 
-#if defined(__linux__)
+#if defined(__linux__) || defined(__FreeBSD__)
 static void log_distribution_info(void)
 {
 	FILE *fp;
@@ -322,7 +322,7 @@ void log_system_info(void)
 	log_processor_cores();
 	log_memory_info();
 	log_kernel_version();
-#if defined(__linux__)
+#if defined(__linux__) || defined(__FreeBSD__)
 	log_distribution_info();
 	log_desktop_session_info();
 #endif
