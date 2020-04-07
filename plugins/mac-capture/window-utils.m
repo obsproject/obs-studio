@@ -60,10 +60,11 @@ bool find_window(cocoa_window_t cw, obs_data_t *settings, bool force)
 
 		NSNumber *window_id = (NSNumber *)dict[WINDOW_NUMBER];
 		cw->window_id = window_id.intValue;
-		cw->owner_pid = (NSNumber *)dict[OWNER_PID];
+		NSNumber *owner_pid = (NSNumber *)dict[OWNER_PID];
+		cw->owner_pid = owner_pid.intValue;
 
 		obs_data_set_int(settings, "window", cw->window_id);
-		obs_data_set_int(settings, "owner_pid", cw->owner_pid.intValue);
+		obs_data_set_int(settings, "owner_pid", cw->owner_pid);
 		return true;
 	}
 
@@ -103,11 +104,11 @@ void init_window(cocoa_window_t cw, obs_data_t *settings)
 
 			NSNumber *window_id = (NSNumber *)dict[WINDOW_NUMBER];
 			cw->window_id = window_id.intValue;
-			cw->owner_pid = (NSNumber *)dict[OWNER_PID];
+			NSNumber *owner_pid = (NSNumber *)dict[OWNER_PID];
+			cw->owner_pid = owner_pid.intValue;
 
 			obs_data_set_int(settings, "window", cw->window_id);
-			obs_data_set_int(settings, "owner_pid",
-					 cw->owner_pid.intValue);
+			obs_data_set_int(settings, "owner_pid", cw->owner_pid);
 			return;
 		}
 	}
