@@ -7264,7 +7264,7 @@ void OBSBasic::on_actionCopySource_triggered()
 		copyVisible = obs_sceneitem_visible(item);
 
 		uint32_t output_flags = obs_source_get_output_flags(source);
-		if (!(output_flags & OBS_SOURCE_DO_NOT_DUPLICATE) == 0)
+		if (output_flags & OBS_SOURCE_DO_NOT_DUPLICATE)
 			allowPastingDuplicate = false;
 	}
 
