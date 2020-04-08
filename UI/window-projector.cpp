@@ -166,8 +166,8 @@ void OBSProjector::SetMonitor(int monitor)
 {
 	savedMonitor = monitor;
 	QScreen *screen = QGuiApplication::screens()[monitor];
-	showFullScreen();
 	setGeometry(screen->geometry());
+	showFullScreen();
 	SetHideCursor();
 }
 
