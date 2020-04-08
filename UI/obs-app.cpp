@@ -1392,6 +1392,10 @@ bool OBSApp::OBSInit()
 #if !defined(_WIN32) && !defined(__APPLE__)
 	obs_set_nix_platform(OBS_NIX_PLATFORM_X11_GLX);
 	if (QApplication::platformName() == "xcb") {
+		if (getenv("OBS_USE_EGL")) {
+			blog(LOG_INFO, "Using EGL/X11");
+			obs_set_nix_platform(OBS_NIX_PLATFORM_X11_EGL);
+		}
 		obs_set_nix_platform_display(QX11Info::display());
 	}
 #endif
