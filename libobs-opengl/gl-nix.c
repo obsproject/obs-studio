@@ -25,11 +25,13 @@ static void init_winsys(void)
 {
 	assert(gl_vtable == NULL);
 
-	if (getenv("OBS_USE_EGL")) {
-		gl_vtable = gl_x11_egl_get_winsys_vtable();
-		blog(LOG_INFO, "Using EGL/X11");
-	} else {
+	switch (obs_get_nix_platform()) {
+	case OBS_NIX_PLATFORM_X11_GLX:
 		gl_vtable = gl_x11_glx_get_winsys_vtable();
+		break;
+	case OBS_NIX_PLATFORM_X11_EGL:
+		gl_vtable = gl_x11_egl_get_winsys_vtable();
+		break;
 	}
 
 	assert(gl_vtable != NULL);
