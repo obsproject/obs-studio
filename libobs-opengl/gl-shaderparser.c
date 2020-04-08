@@ -450,7 +450,7 @@ static bool gl_write_intrinsic(struct gl_shader_parser *glsp,
 	bool written = true;
 
 	if (strref_cmp(&token->str, "atan2") == 0) {
-		dstr_cat(&glsp->gl_string, "atan2");
+		dstr_cat(&glsp->gl_string, "atan");
 	} else if (strref_cmp(&token->str, "ddx") == 0) {
 		dstr_cat(&glsp->gl_string, "dFdx");
 	} else if (strref_cmp(&token->str, "ddy") == 0) {
