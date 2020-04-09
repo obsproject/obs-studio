@@ -1346,7 +1346,7 @@ void OBSBasic::SetPreviewProgramMode(bool enabled)
 
 		RefreshQuickTransitions();
 
-		programLabel = new QLabel(QTStr("StudioMode.Program"));
+		programLabel = new QLabel(QTStr("StudioMode.Program"), this);
 		programLabel->setSizePolicy(QSizePolicy::Preferred,
 					    QSizePolicy::Preferred);
 		programLabel->setAlignment(Qt::AlignHCenter | Qt::AlignBottom);
