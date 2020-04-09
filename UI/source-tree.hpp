@@ -8,6 +8,8 @@
 #include <QStaticText>
 #include <QSvgRenderer>
 #include <QAbstractListModel>
+#include <obs.hpp>
+#include <obs-frontend-api.h>
 
 class QLabel;
 class QCheckBox;

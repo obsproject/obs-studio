@@ -2,6 +2,7 @@
 
 #include <obs.hpp>
 #include <util/platform.h>
+#include <obs-frontend-api.h>
 #include <QPointer>
 #include <QWidget>
 #include <QTimer>
