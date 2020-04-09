@@ -360,6 +360,8 @@ error:
     mbedtls_x509_crt_free(chain);
     free(chain);
     r->RTMP_TLS_ctx->cacert = NULL;
+#else /* USE_MBEDTLS */
+	UNUSED_PARAMETER(r);
 #endif /* USE_MBEDTLS */
 }
 
@@ -407,6 +409,7 @@ RTMP_TLS_Init(RTMP *r)
     SSL_CTX_set_default_verify_paths(RTMP_TLS_ctx);
 #endif
 #else
+	UNUSED_PARAMETER(r);
 #endif
 }
 
@@ -429,6 +432,8 @@ RTMP_TLS_Free(RTMP *r) {
     // NO mbedtls_net_free() BECAUSE WE SET IT UP BY HAND!
     free(r->RTMP_TLS_ctx);
     r->RTMP_TLS_ctx = NULL;
+#else
+	UNUSED_PARAMETER(r);
 #endif
 }
 
