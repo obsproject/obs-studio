@@ -58,9 +58,6 @@ OBSProjector::OBSProjector(QWidget *widget, obs_source_t *source_, int monitor,
 
 	connect(this, &OBSQTDisplay::DisplayCreated, addDrawCallback);
 
-	if (isFullScreen())
-		SetHideCursor();
-
 	if (type == ProjectorType::Multiview) {
 		obs_enter_graphics();
 
@@ -171,6 +168,7 @@ void OBSProjector::SetMonitor(int monitor)
 	QScreen *screen = QGuiApplication::screens()[monitor];
 	showFullScreen();
 	setGeometry(screen->geometry());
+	SetHideCursor();
 }
 
 void OBSProjector::SetHideCursor()
@@ -1034,7 +1032,6 @@ void OBSProjector::OpenFullScreenProjector()
 
 	int monitor = sender()->property("monitor").toInt();
 	SetMonitor(monitor);
-	SetHideCursor();
 
 	UpdateProjectorTitle(QT_UTF8(obs_source_get_name(source)));
 }
