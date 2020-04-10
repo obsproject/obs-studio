@@ -55,7 +55,7 @@ jobs:
     condition: or(ne(variables['Build.Reason'], 'PullRequest'), eq(variables['prHasCILabel'], true))
     inputs:
       pathtoPublish: './nightly'
-      artifactName: build
+      artifactName: macbuild
 
 - job: 'Build_Windows32'
   dependsOn: Prebuild
