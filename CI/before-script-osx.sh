@@ -3,11 +3,6 @@ export PATH=/usr/local/opt/ccache/libexec:$PATH
 
 git fetch --tags
 
-./formatcode.sh
-if ! ./CI/check-format.sh; then
-	exit 1
-fi
-
 mkdir build
 cd build
 cmake -DENABLE_SPARKLE_UPDATER=ON \
