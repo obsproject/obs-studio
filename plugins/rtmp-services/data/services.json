@@ -1747,6 +1747,28 @@
             "recommended": {
                 "keyint": 2
             }
+        },
+        {
+            "name": "Weabook",
+            "servers": [
+                {
+                    "name": "SG, Singapore",
+                    "url": "rtmp://sg-api.weabook.live"
+                },
+                {
+                    "name": "US, N.Virginia",
+                    "url": "rtmp://us-api.weabook.live"
+                },
+                {
+                    "name": "JP, Tokyo",
+                    "url": "rtmp://jp-api.weabook.live"
+                }
+            ],
+            "recommended": {
+                "keyint": 2,
+                "max video bitrate": 10000,
+                "max audio bitrate": 192
+            }
         }
     ]
 }
