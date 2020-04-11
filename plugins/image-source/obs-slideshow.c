@@ -8,6 +8,7 @@
 	blog(level, "[slideshow: '%s'] " format, \
 	     obs_source_get_name(ss->source), ##__VA_ARGS__)
 
+#define debug(format, ...) do_log(LOG_DEBUG, format, ##__VA_ARGS__)
 #define warn(format, ...) do_log(LOG_WARNING, format, ##__VA_ARGS__)
 
 /* clang-format off */
@@ -61,15 +62,10 @@
 
 /* ------------------------------------------------------------------------- */
 
-extern uint64_t image_source_get_memory_usage(void *data);
-
-#define BYTES_TO_MBYTES (1024 * 1024)
-#define MAX_MEM_USAGE (400 * BYTES_TO_MBYTES)
-
-struct image_file_data {
-	char *path;
-	obs_source_t *source;
-};
+/* How many items to cache in front of and behind the current item. Total
+ * number of cached items is thus 1 + (2 * CACHE_IN_ADVANCE)
+ */
+#define CACHE_IN_ADVANCE 2
 
 enum behavior {
 	BEHAVIOR_STOP_RESTART,
@@ -77,8 +73,22 @@ enum behavior {
 	BEHAVIOR_ALWAYS_PLAY,
 };
 
+struct cache_entry {
+	/* Index in file_queue this cache entry belongs to. */
+	size_t filequeue_index;
+	/* Path of the loaded source to double-check cache consistency. */
+	char *path;
+	/* The loaded image source. */
+	obs_source_t *source;
+};
+
 struct slideshow {
 	obs_source_t *source;
+
+	pthread_mutex_t mutex;
+	volatile bool have_mutex;
+
+	/* Variables that need mutex lock */
 
 	bool randomize;
 	bool loop;
@@ -96,14 +106,24 @@ struct slideshow {
 	obs_source_t *transition;
 
 	float elapsed;
-	size_t cur_item;
 
 	uint32_t cx;
 	uint32_t cy;
-	uint64_t mem_usage;
 
-	pthread_mutex_t mutex;
-	DARRAY(struct image_file_data) files;
+	DARRAY(char *) file_paths;
+	DARRAY(char *) file_queue;
+	size_t cur_item;
+
+	DARRAY(struct cache_entry) cache_entries;
+	DARRAY(obs_source_t *) source_cleanup;
+
+	bool retry_transition;
+
+	/* Variables that can do without mutex lock */
+
+	os_event_t *cache_event;
+	pthread_t cache_thread;
+	bool cache_thread_created;
 
 	enum behavior behavior;
 
@@ -114,36 +134,30 @@ struct slideshow {
 	obs_hotkey_id prev_hotkey;
 };
 
+static void lock_mutex(struct slideshow *ss)
+{
+	pthread_mutex_lock(&ss->mutex);
+	assert(!ss->have_mutex);
+	ss->have_mutex = true;
+}
+
+static void unlock_mutex(struct slideshow *ss)
+{
+	assert(ss->have_mutex);
+	ss->have_mutex = false;
+	pthread_mutex_unlock(&ss->mutex);
+}
+
 static obs_source_t *get_transition(struct slideshow *ss)
 {
 	obs_source_t *tr;
 
-	pthread_mutex_lock(&ss->mutex);
+	lock_mutex(ss);
 	tr = ss->transition;
 	obs_source_addref(tr);
-	pthread_mutex_unlock(&ss->mutex);
+	unlock_mutex(ss);
 
 	return tr;
-}
-
-static obs_source_t *get_source(struct darray *array, const char *path)
-{
-	DARRAY(struct image_file_data) files;
-	obs_source_t *source = NULL;
-
-	files.da = *array;
-
-	for (size_t i = 0; i < files.num; i++) {
-		const char *cur_path = files.array[i].path;
-
-		if (strcmp(path, cur_path) == 0) {
-			source = files.array[i].source;
-			obs_source_addref(source);
-			break;
-		}
-	}
-
-	return source;
 }
 
 static obs_source_t *create_source_from_file(const char *file)
@@ -161,20 +175,253 @@ static obs_source_t *create_source_from_file(const char *file)
 
 static void free_files(struct darray *array)
 {
-	DARRAY(struct image_file_data) files;
-	files.da = *array;
+	DARRAY(char *) file_paths;
+	file_paths.da = *array;
 
-	for (size_t i = 0; i < files.num; i++) {
-		bfree(files.array[i].path);
-		obs_source_release(files.array[i].source);
+	for (size_t i = 0; i < file_paths.num; i++) {
+		bfree(file_paths.array[i]);
 	}
 
-	da_free(files);
+	da_free(file_paths);
 }
 
-static inline size_t random_file(struct slideshow *ss)
+/* ------------------------------------------------------------------------- */
+
+static void free_cache_entry(struct slideshow *ss, struct cache_entry *entry)
 {
-	return (size_t)rand() % ss->files.num;
+	assert(ss->have_mutex);
+
+	bfree(entry->path);
+	da_push_back(ss->source_cleanup, &entry->source);
+}
+
+static void clear_cache(struct slideshow *ss)
+{
+	// Also happening during ss_destroy where we do not hold the lock.
+	// assert(ss->have_mutex);
+
+	for (size_t i = 0; i < ss->cache_entries.num; i++) {
+		free_cache_entry(ss, &ss->cache_entries.array[i]);
+	}
+	da_erase_range(ss->cache_entries, 0, ss->cache_entries.num);
+}
+
+static struct cache_entry *get_cache_entry(struct slideshow *ss,
+					   size_t filequeue_index)
+{
+	assert(ss->have_mutex);
+
+	for (size_t i = 0; i < ss->cache_entries.num; i++) {
+		struct cache_entry *entry = &ss->cache_entries.array[i];
+		if (entry->filequeue_index != filequeue_index)
+			continue;
+
+		if (strcmp(entry->path,
+			   ss->file_queue.array[filequeue_index]) != 0) {
+			warn("Cache invalid, paths do not match.");
+			clear_cache(ss);
+			return NULL;
+		}
+
+		return entry;
+	}
+
+	return NULL;
+}
+
+static obs_source_t *obtain_cached_source(struct slideshow *ss,
+					  size_t filequeue_index)
+{
+	assert(ss->have_mutex);
+
+	struct cache_entry *entry = get_cache_entry(ss, filequeue_index);
+	if (!entry)
+		return NULL;
+
+	obs_source_addref(entry->source);
+	return entry->source;
+}
+
+static size_t min(size_t val1, size_t val2)
+{
+	if (val1 < val2)
+		return val1;
+	return val2;
+}
+
+static bool next_index_to_cache(struct slideshow *ss,
+				size_t *out_filequeue_index)
+{
+	assert(ss->have_mutex);
+
+	size_t num = ss->file_queue.num;
+	if (num == 0)
+		return false;
+
+	size_t cur_item = ss->cur_item;
+	size_t num_entries_after = min(CACHE_IN_ADVANCE, (num - 1));
+	size_t num_entries_before =
+		min(CACHE_IN_ADVANCE, (num - num_entries_after - 1));
+	size_t index = cur_item;
+
+	if (!get_cache_entry(ss, index)) {
+		*out_filequeue_index = index;
+		return true;
+	}
+	for (size_t i = 1; i <= num_entries_after; i++) {
+		index = (cur_item + i) % num;
+		if (!get_cache_entry(ss, index)) {
+			*out_filequeue_index = index;
+			return true;
+		}
+	}
+	for (size_t i = 1; i <= num_entries_before; i++) {
+		if (i > cur_item)
+			index = num - (i - cur_item);
+		else
+			index = cur_item - i;
+
+		if (!get_cache_entry(ss, index)) {
+			*out_filequeue_index = index;
+			return true;
+		}
+	}
+
+	return false;
+}
+
+static bool should_cache_filequeue_index(size_t index, size_t min_valid,
+					 size_t max_valid, size_t num)
+{
+	assert(min_valid < num && max_valid < num);
+
+	if (max_valid >= min_valid) {
+		/* No wrap-around of the valid range. Easy case. */
+		return index >= min_valid && index <= max_valid;
+	}
+
+	return (index >= min_valid && index < num) ||
+	       (index >= 0 && index <= max_valid);
+}
+
+static void evict_stale_cache_entries(struct slideshow *ss)
+{
+	assert(ss->have_mutex);
+
+	size_t num = ss->file_queue.num;
+	if (num == 0)
+		return;
+
+	size_t cur_item = ss->cur_item;
+	size_t num_entries_after = min(CACHE_IN_ADVANCE, (num - 1));
+	size_t num_entries_before =
+		min(CACHE_IN_ADVANCE, (num - num_entries_after - 1));
+	size_t first_index;
+	if (num_entries_before > cur_item)
+		first_index = num - (num_entries_before - cur_item);
+	else
+		first_index = cur_item - num_entries_before;
+	size_t last_index = (cur_item + num_entries_after) % num;
+
+	for (size_t i = 0; i < ss->cache_entries.num;) {
+		struct cache_entry *entry = &ss->cache_entries.array[i];
+		if (should_cache_filequeue_index(entry->filequeue_index,
+						 first_index, last_index,
+						 num)) {
+			i++;
+			continue;
+		}
+
+		debug("Evicting stale cache entry %zu (current: %zu)",
+		      entry->filequeue_index, ss->cur_item);
+
+		free_cache_entry(ss, entry);
+		da_erase(ss->cache_entries, i);
+		/* No increase of i since the array decreased. */
+	}
+}
+
+static void load_and_cache(struct slideshow *ss, size_t filequeue_index,
+			   char *path)
+{
+	assert(!ss->have_mutex);
+
+	obs_source_t *source = create_source_from_file(path);
+	if (source == NULL) {
+		warn("Failed to load %s", path);
+		bfree(path);
+		/* How to procede? We're going to be stuck until cur_item
+		 * changes as in the next cache_thread iteration we're going
+		 * to try to load the same entry again. Need some way to signal
+		 * this error condition so that at least the succeeding entries
+		 * are going to get cached.
+		 */
+		return;
+	}
+
+	struct cache_entry entry = {.filequeue_index = filequeue_index,
+				    .path = path,
+				    .source = source};
+
+	lock_mutex(ss);
+	if (filequeue_index < ss->file_queue.num) {
+		if (strcmp(path, ss->file_queue.array[filequeue_index]) == 0) {
+			debug("Caching %s (%zu, current: %zu)", path,
+			      filequeue_index, ss->cur_item);
+			da_push_back(ss->cache_entries, &entry);
+		} else {
+			warn("Item %zu has changed from %s to %s, skipping cache load",
+			     filequeue_index, path,
+			     ss->file_queue.array[filequeue_index]);
+			free_cache_entry(ss, &entry);
+		}
+	} else {
+		warn("Filequeue shrunk while caching, skipping cache load of %s",
+		     path);
+		free_cache_entry(ss, &entry);
+	}
+	unlock_mutex(ss);
+}
+
+static void *cache_thread(void *opaque)
+{
+	struct slideshow *ss = opaque;
+
+	os_set_thread_name("slideshow: cache worker thread");
+
+	while (true) {
+		os_event_wait(ss->cache_event);
+
+		lock_mutex(ss);
+
+		evict_stale_cache_entries(ss);
+
+		DARRAY(obs_source_t *) cleanup = {0};
+		da_move(cleanup, ss->source_cleanup);
+
+		size_t filequeue_index = 0;
+		char *path = NULL;
+		if (next_index_to_cache(ss, &filequeue_index)) {
+			path = bstrdup(ss->file_queue.array[filequeue_index]);
+		}
+
+		unlock_mutex(ss);
+
+		/* Release the sources outside the lock to avoid a deadlock with
+		 * the graphics thread.
+		 */
+		for (size_t i = 0; i < cleanup.num; i++) {
+			obs_source_release(cleanup.array[i]);
+		}
+		da_free(cleanup);
+
+		if (path == NULL) {
+			os_event_reset(ss->cache_event);
+			continue;
+		}
+
+		load_and_cache(ss, filequeue_index, path);
+	}
 }
 
 /* ------------------------------------------------------------------------- */
@@ -188,39 +435,78 @@ static const char *ss_getname(void *unused)
 static void add_file(struct slideshow *ss, struct darray *array,
 		     const char *path, uint32_t *cx, uint32_t *cy)
 {
-	DARRAY(struct image_file_data) new_files;
-	struct image_file_data data;
-	obs_source_t *new_source;
+	UNUSED_PARAMETER(ss);
+	DARRAY(char *) new_files;
 
 	new_files.da = *array;
 
-	pthread_mutex_lock(&ss->mutex);
-	new_source = get_source(&ss->files.da, path);
-	pthread_mutex_unlock(&ss->mutex);
+	char *copiedPath = bstrdup(path);
+	da_push_back(new_files, &copiedPath);
 
-	if (!new_source)
-		new_source = get_source(&new_files.da, path);
-	if (!new_source)
-		new_source = create_source_from_file(path);
+	*array = new_files.da;
 
-	if (new_source) {
-		uint32_t new_cx = obs_source_get_width(new_source);
-		uint32_t new_cy = obs_source_get_height(new_source);
+	// Read the image dimensions
+	obs_source_t *tmp_source = create_source_from_file(path);
 
-		data.path = bstrdup(path);
-		data.source = new_source;
-		da_push_back(new_files, &data);
+	if (tmp_source) {
+		uint32_t new_cx = obs_source_get_width(tmp_source);
+		uint32_t new_cy = obs_source_get_height(tmp_source);
 
 		if (new_cx > *cx)
 			*cx = new_cx;
 		if (new_cy > *cy)
 			*cy = new_cy;
 
-		void *source_data = obs_obj_get_data(new_source);
-		ss->mem_usage += image_source_get_memory_usage(source_data);
+		obs_source_release(tmp_source);
+	}
+}
+
+static void shuffle_queue(struct slideshow *ss)
+{
+	assert(ss->have_mutex);
+
+	if (!ss->randomize || ss->file_queue.num <= 1) {
+		return;
 	}
 
-	*array = new_files.da;
+	// Knuth shuffle
+	const int num = (int)ss->file_queue.num;
+	for (int i = num - 1; i >= 1; i--) {
+		int j;
+
+		// Avoid modulo bias by retrying if the result is outside
+		// the range divisible by the upper_bound.
+		do {
+			j = rand();
+		} while (j >= RAND_MAX - (RAND_MAX % i));
+
+		j %= i;
+
+		// Possible optimization: `da_swap` allocates and frees a
+		// temporary value, which would not be required for `char *`.
+		// Direct array access would be a lot faster. But first do it
+		// correct, then optimize if it's too slow.
+		da_swap(ss->file_queue, i, j);
+	}
+}
+
+static void update_queue(struct slideshow *ss)
+{
+	assert(ss->have_mutex);
+
+	for (size_t i = 0; i < ss->file_queue.num; i++) {
+		bfree(ss->file_queue.array[i]);
+	}
+	da_resize(ss->file_queue, ss->file_paths.num);
+	for (size_t i = 0; i < ss->file_queue.num; i++) {
+		ss->file_queue.array[i] = bstrdup(ss->file_paths.array[i]);
+	}
+
+	if (ss->cur_item >= ss->file_queue.num) {
+		ss->cur_item = 0;
+	}
+
+	shuffle_queue(ss);
 }
 
 static bool valid_extension(const char *ext)
@@ -234,32 +520,58 @@ static bool valid_extension(const char *ext)
 
 static inline bool item_valid(struct slideshow *ss)
 {
-	return ss->files.num && ss->cur_item < ss->files.num;
+	assert(ss->have_mutex);
+
+	return ss->file_queue.num && ss->cur_item < ss->file_queue.num;
 }
 
-static void do_transition(void *data, bool to_null)
+static bool do_transition(struct slideshow *ss, bool to_null)
 {
-	struct slideshow *ss = data;
+	assert(ss->have_mutex);
 	bool valid = item_valid(ss);
 
-	if (valid && ss->use_cut)
-		obs_transition_set(ss->transition,
-				   ss->files.array[ss->cur_item].source);
-
-	else if (valid && !to_null)
+	if (valid && ss->use_cut) {
+		obs_source_t *source = obtain_cached_source(ss, ss->cur_item);
+		if (!source) {
+			debug("No cached source, need to retry");
+			ss->retry_transition = true;
+			return false;
+		}
+		obs_transition_set(ss->transition, source);
+		obs_source_release(source);
+	} else if (valid && !to_null) {
+		obs_source_t *source = obtain_cached_source(ss, ss->cur_item);
+		if (!source) {
+			debug("No cached source, need to retry");
+			ss->retry_transition = true;
+			return false;
+		}
 		obs_transition_start(ss->transition, OBS_TRANSITION_MODE_AUTO,
-				     ss->tr_speed,
-				     ss->files.array[ss->cur_item].source);
-
-	else
+				     ss->tr_speed, source);
+		obs_source_release(source);
+	} else {
 		obs_transition_start(ss->transition, OBS_TRANSITION_MODE_AUTO,
 				     ss->tr_speed, NULL);
+	}
+
+	ss->retry_transition = false;
+	return true;
+}
+
+static void set_cur_item(struct slideshow *ss, size_t index)
+{
+	assert(ss->have_mutex);
+	if (ss->cur_item == index)
+		return;
+
+	ss->cur_item = index;
+	os_event_signal(ss->cache_event);
 }
 
 static void ss_update(void *data, obs_data_t *settings)
 {
-	DARRAY(struct image_file_data) new_files;
-	DARRAY(struct image_file_data) old_files;
+	DARRAY(char *) new_files;
+	DARRAY(char *) old_files;
 	obs_source_t *new_tr = NULL;
 	obs_source_t *old_tr = NULL;
 	struct slideshow *ss = data;
@@ -317,8 +629,6 @@ static void ss_update(void *data, obs_data_t *settings)
 	/* ------------------------------------- */
 	/* create new list of sources */
 
-	ss->mem_usage = 0;
-
 	for (size_t i = 0; i < count; i++) {
 		obs_data_t *item = obs_data_array_item(array, i);
 		const char *path = obs_data_get_string(item, "value");
@@ -346,9 +656,6 @@ static void ss_update(void *data, obs_data_t *settings)
 				dstr_cat(&dir_path, ent->d_name);
 				add_file(ss, &new_files.da, dir_path.array, &cx,
 					 &cy);
-
-				if (ss->mem_usage >= MAX_MEM_USAGE)
-					break;
 			}
 
 			dstr_free(&dir_path);
@@ -358,22 +665,21 @@ static void ss_update(void *data, obs_data_t *settings)
 		}
 
 		obs_data_release(item);
-
-		if (ss->mem_usage >= MAX_MEM_USAGE)
-			break;
 	}
 
 	/* ------------------------------------- */
 	/* update settings data */
 
-	pthread_mutex_lock(&ss->mutex);
+	lock_mutex(ss);
 
-	old_files.da = ss->files.da;
-	ss->files.da = new_files.da;
+	old_files.da = ss->file_paths.da;
+	ss->file_paths.da = new_files.da;
 	if (new_tr) {
 		old_tr = ss->transition;
 		ss->transition = new_tr;
 	}
+
+	update_queue(ss);
 
 	if (strcmp(tr_name, "cut_transition") != 0) {
 		if (new_duration < 100)
@@ -389,7 +695,7 @@ static void ss_update(void *data, obs_data_t *settings)
 	ss->tr_name = tr_name;
 	ss->slide_time = (float)new_duration / 1000.0f;
 
-	pthread_mutex_unlock(&ss->mutex);
+	unlock_mutex(ss);
 
 	/* ------------------------------------- */
 	/* clean up and restart transition */
@@ -440,21 +746,22 @@ static void ss_update(void *data, obs_data_t *settings)
 
 	/* ------------------------- */
 
+	lock_mutex(ss);
+
 	ss->cx = cx;
 	ss->cy = cy;
-	ss->cur_item = 0;
+	set_cur_item(ss, 0);
 	ss->elapsed = 0.0f;
 	obs_transition_set_size(ss->transition, cx, cy);
 	obs_transition_set_alignment(ss->transition, OBS_ALIGN_CENTER);
 	obs_transition_set_scale_type(ss->transition,
 				      OBS_TRANSITION_SCALE_ASPECT);
-
-	if (ss->randomize && ss->files.num)
-		ss->cur_item = random_file(ss);
 	if (new_tr)
 		obs_source_add_active_child(ss->source, new_tr);
-	if (ss->files.num)
+	if (ss->file_paths.num)
 		do_transition(ss, false);
+
+	unlock_mutex(ss);
 
 	obs_data_array_release(array);
 }
@@ -463,62 +770,91 @@ static void ss_play_pause(void *data)
 {
 	struct slideshow *ss = data;
 
+	lock_mutex(ss);
 	ss->paused = !ss->paused;
 	ss->manual = ss->paused;
+	unlock_mutex(ss);
 }
 
 static void ss_restart(void *data)
 {
 	struct slideshow *ss = data;
 
-	ss->elapsed = 0.0f;
-	ss->cur_item = 0;
+	lock_mutex(ss);
 
-	obs_transition_set(ss->transition,
-			   ss->files.array[ss->cur_item].source);
+	ss->elapsed = 0.0f;
+	set_cur_item(ss, 0);
+
+	obs_source_t *source = ss->file_queue.num > 0
+				       ? obtain_cached_source(ss, ss->cur_item)
+				       : NULL;
+	obs_transition_set(ss->transition, source);
+	obs_source_release(source);
 
 	ss->stop = false;
 	ss->paused = false;
+
+	unlock_mutex(ss);
 }
 
 static void ss_stop(void *data)
 {
 	struct slideshow *ss = data;
 
+	lock_mutex(ss);
+
 	ss->elapsed = 0.0f;
-	ss->cur_item = 0;
+	set_cur_item(ss, 0);
 
 	do_transition(ss, true);
 	ss->stop = true;
 	ss->paused = false;
+
+	unlock_mutex(ss);
 }
 
 static void ss_next_slide(void *data)
 {
 	struct slideshow *ss = data;
 
-	if (!ss->files.num || obs_transition_get_time(ss->transition) < 1.0f)
-		return;
+	lock_mutex(ss);
 
-	if (++ss->cur_item >= ss->files.num)
-		ss->cur_item = 0;
+	if (!ss->file_queue.num ||
+	    obs_transition_get_time(ss->transition) < 1.0f) {
+		unlock_mutex(ss);
+		return;
+	}
+
+	size_t next = ss->cur_item + 1;
+	if (next >= ss->file_queue.num)
+		next = 0;
+	set_cur_item(ss, next);
 
 	do_transition(ss, false);
+
+	unlock_mutex(ss);
 }
 
 static void ss_previous_slide(void *data)
 {
 	struct slideshow *ss = data;
 
-	if (!ss->files.num || obs_transition_get_time(ss->transition) < 1.0f)
+	lock_mutex(ss);
+
+	if (!ss->file_queue.num ||
+	    obs_transition_get_time(ss->transition) < 1.0f) {
+		unlock_mutex(ss);
 		return;
+	}
 
 	if (ss->cur_item == 0)
-		ss->cur_item = ss->files.num - 1;
+		set_cur_item(ss, ss->file_queue.num - 1);
 	else
-		--ss->cur_item;
+		set_cur_item(ss, ss->cur_item - 1);
 
 	do_transition(ss, false);
+
+	unlock_mutex(ss);
 }
 
 static void play_pause_hotkey(void *data, obs_hotkey_id id,
@@ -591,8 +927,22 @@ static void ss_destroy(void *data)
 {
 	struct slideshow *ss = data;
 
+	if (ss->cache_thread_created) {
+		pthread_cancel(ss->cache_thread);
+		pthread_join(ss->cache_thread, NULL);
+	}
+
+	clear_cache(ss);
+
+	for (size_t i = 0; i < ss->source_cleanup.num; i++) {
+		obs_source_release(ss->source_cleanup.array[i]);
+	}
+	da_free(ss->source_cleanup);
+
+	os_event_destroy(ss->cache_event);
 	obs_source_release(ss->transition);
-	free_files(&ss->files.da);
+	free_files(&ss->file_paths.da);
+	free_files(&ss->file_queue.da);
 	pthread_mutex_destroy(&ss->mutex);
 	bfree(ss);
 }
@@ -632,6 +982,12 @@ static void *ss_create(obs_data_t *settings, obs_source_t *source)
 	if (pthread_mutex_init(&ss->mutex, NULL) != 0)
 		goto error;
 
+	if (os_event_init(&ss->cache_event, OS_EVENT_TYPE_MANUAL) != 0)
+		goto error;
+	if (pthread_create(&ss->cache_thread, NULL, cache_thread, ss) != 0)
+		goto error;
+	ss->cache_thread_created = true;
+
 	obs_source_update(source, NULL);
 
 	UNUSED_PARAMETER(settings);
@@ -659,25 +1015,27 @@ static void ss_video_tick(void *data, float seconds)
 {
 	struct slideshow *ss = data;
 
+	lock_mutex(ss);
+
 	if (!ss->transition || !ss->slide_time)
-		return;
+		goto out;
 
 	if (ss->restart_on_activate && !ss->randomize && ss->use_cut) {
 		ss->elapsed = 0.0f;
-		ss->cur_item = 0;
+		set_cur_item(ss, 0);
 		do_transition(ss, false);
 		ss->restart_on_activate = false;
 		ss->use_cut = false;
 		ss->stop = false;
-		return;
+		goto out;
 	}
 
 	if (ss->pause_on_deactivate || ss->manual || ss->stop || ss->paused)
-		return;
+		goto out;
 
 	/* ----------------------------------------------------- */
 	/* fade to transparency when the file list becomes empty */
-	if (!ss->files.num) {
+	if (!ss->file_queue.num) {
 		obs_source_t *active_transition_source =
 			obs_transition_get_active_source(ss->transition);
 
@@ -694,30 +1052,32 @@ static void ss_video_tick(void *data, float seconds)
 	if (ss->elapsed > ss->slide_time) {
 		ss->elapsed -= ss->slide_time;
 
-		if (!ss->loop && ss->cur_item == ss->files.num - 1) {
+		if (!ss->loop && ss->cur_item == ss->file_queue.num - 1) {
 			if (ss->hide)
 				do_transition(ss, true);
 			else
 				do_transition(ss, false);
 
-			return;
+			goto out;
 		}
 
-		if (ss->randomize) {
-			size_t next = ss->cur_item;
-			if (ss->files.num > 1) {
-				while (next == ss->cur_item)
-					next = random_file(ss);
-			}
-			ss->cur_item = next;
-
-		} else if (++ss->cur_item >= ss->files.num) {
-			ss->cur_item = 0;
+		size_t next = ss->cur_item + 1;
+		if (next >= ss->file_queue.num) {
+			next = 0;
+			shuffle_queue(ss);
+			clear_cache(ss);
 		}
+		set_cur_item(ss, next);
 
-		if (ss->files.num)
+		if (ss->file_queue.num)
 			do_transition(ss, false);
+	} else if (ss->retry_transition) {
+		debug("Retrying transition");
+		do_transition(ss, false);
 	}
+
+out:
+	unlock_mutex(ss);
 }
 
 static inline bool ss_audio_render_(obs_source_t *transition, uint64_t *ts_out,
@@ -779,22 +1139,28 @@ static void ss_enum_sources(void *data, obs_source_enum_proc_t cb, void *param)
 {
 	struct slideshow *ss = data;
 
-	pthread_mutex_lock(&ss->mutex);
+	lock_mutex(ss);
 	if (ss->transition)
 		cb(ss->source, ss->transition, param);
-	pthread_mutex_unlock(&ss->mutex);
+	unlock_mutex(ss);
 }
 
 static uint32_t ss_width(void *data)
 {
 	struct slideshow *ss = data;
-	return ss->transition ? ss->cx : 0;
+	lock_mutex(ss);
+	uint32_t result = ss->transition ? ss->cx : 0;
+	unlock_mutex(ss);
+	return result;
 }
 
 static uint32_t ss_height(void *data)
 {
 	struct slideshow *ss = data;
-	return ss->transition ? ss->cy : 0;
+	lock_mutex(ss);
+	uint32_t result = ss->transition ? ss->cy : 0;
+	unlock_mutex(ss);
+	return result;
 }
 
 static void ss_defaults(obs_data_t *settings)
@@ -879,18 +1245,18 @@ static obs_properties_t *ss_properties(void *data)
 	obs_property_list_add_string(p, str, str);
 
 	if (ss) {
-		pthread_mutex_lock(&ss->mutex);
-		if (ss->files.num) {
-			struct image_file_data *last = da_end(ss->files);
+		lock_mutex(ss);
+		if (ss->file_paths.num) {
+			char **last = da_end(ss->file_paths);
 			const char *slash;
 
-			dstr_copy(&path, last->path);
+			dstr_copy(&path, *last);
 			dstr_replace(&path, "\\", "/");
 			slash = strrchr(path.array, '/');
 			if (slash)
 				dstr_resize(&path, slash - path.array + 1);
 		}
-		pthread_mutex_unlock(&ss->mutex);
+		unlock_mutex(ss);
 	}
 
 	obs_properties_add_editable_list(ppts, S_FILES, T_FILES,
