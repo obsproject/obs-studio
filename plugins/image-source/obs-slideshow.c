@@ -242,7 +242,7 @@ static obs_source_t *obtain_cached_source(struct slideshow *ss,
 	return entry->source;
 }
 
-static size_t min(size_t val1, size_t val2)
+static size_t min_size(size_t val1, size_t val2)
 {
 	if (val1 < val2)
 		return val1;
@@ -259,9 +259,9 @@ static bool next_index_to_cache(struct slideshow *ss,
 		return false;
 
 	size_t cur_item = ss->cur_item;
-	size_t num_entries_after = min(CACHE_IN_ADVANCE, (num - 1));
+	size_t num_entries_after = min_size(CACHE_IN_ADVANCE, (num - 1));
 	size_t num_entries_before =
-		min(CACHE_IN_ADVANCE, (num - num_entries_after - 1));
+		min_size(CACHE_IN_ADVANCE, (num - num_entries_after - 1));
 	size_t index = cur_item;
 
 	if (!get_cache_entry(ss, index)) {
@@ -313,9 +313,9 @@ static void evict_stale_cache_entries(struct slideshow *ss)
 		return;
 
 	size_t cur_item = ss->cur_item;
-	size_t num_entries_after = min(CACHE_IN_ADVANCE, (num - 1));
+	size_t num_entries_after = min_size(CACHE_IN_ADVANCE, (num - 1));
 	size_t num_entries_before =
-		min(CACHE_IN_ADVANCE, (num - num_entries_after - 1));
+		min_size(CACHE_IN_ADVANCE, (num - num_entries_after - 1));
 	size_t first_index;
 	if (num_entries_before > cur_item)
 		first_index = num - (num_entries_before - cur_item);
