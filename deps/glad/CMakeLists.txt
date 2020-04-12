@@ -3,7 +3,7 @@ project(glad)
 find_package(OpenGL)
 
 if(NOT WIN32 AND NOT APPLE)
-	find_package(X11)
+	find_package(X11 REQUIRED)
 	find_package(EGL REQUIRED)
 endif()
 
