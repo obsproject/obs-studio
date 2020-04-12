@@ -324,13 +324,18 @@ static void gl_x11_egl_windowinfo_destroy(struct gl_windowinfo *info)
 	bfree(info);
 }
 
-static Display *open_windowless_display(void)
+static Display *open_windowless_display(Display *platform_display)
 {
-	Display *display = XOpenDisplay(NULL);
+	Display *display;
 	xcb_connection_t *xcb_conn;
 	xcb_screen_iterator_t screen_iterator;
 	xcb_screen_t *screen;
 	int screen_num;
+
+	if (platform_display)
+		display = platform_display;
+	else
+		display = XOpenDisplay(NULL);
 
 	if (!display) {
 		blog(LOG_ERROR, "Unable to open new X connection!");
@@ -392,7 +397,8 @@ static struct gl_platform *gl_x11_egl_platform_create(gs_device_t *device,
 	   For an explanation see here: http://xcb.freedesktop.org/MixingCalls/
 	   Essentially, EGL requires Xlib. Everything else we use xcb. */
 	struct gl_platform *plat = bmalloc(sizeof(struct gl_platform));
-	Display *display = open_windowless_display();
+	Display *platform_display = obs_get_nix_platform_display();
+	Display *display = open_windowless_display(platform_display);
 
 	if (!display) {
 		goto fail_display_open;
