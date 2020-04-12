@@ -1779,6 +1779,34 @@
                 "max video bitrate": 904,
                 "x264opts": "tune=zerolatency"
             }
+        },
+        {
+            "name" : "weabook.live",
+            "servers": [
+                {
+                    "name" : "SG Central: Singapore ",
+                    "url" : "rtmp://sg-api.weabook.live/live"
+                },
+                {
+                    "name" : "JP Central: Tokyo ",
+                    "url" : "rtmp://jp-api.weabook.live/live"
+                },
+                {
+                    "name" : "US Central: N.Virgina ",
+                    "url" : "rtmp://us-api.weabook.live/live"
+                },
+                {
+                    "name": "Premium Member, Singapore",
+                    "url" : "rtmp://sg-premium.rtmp.weabook.live/live"
+                }
+            ],
+            "recommended": {
+                "keyint": 2,
+                "profile": "high",
+                "max audio bitrate": 192,
+                "max video bitrate": 5808,
+                "x264opts": "tune=zerolatency"
+            }
         }
     ]
 }
