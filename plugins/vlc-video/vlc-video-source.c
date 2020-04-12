@@ -276,6 +276,61 @@ static enum audio_format convert_vlc_audio_format(char *format)
 
 /* ------------------------------------------------------------------------- */
 
+static void vlcs_get_metadata(void *data, calldata_t *cd)
+{
+	struct vlc_source *vlcs = data;
+	const char *data_id = calldata_string(cd, "tag_id");
+
+	if (!vlcs || !data_id)
+		return;
+	libvlc_media_t *media =
+		libvlc_media_player_get_media_(vlcs->media_player);
+
+	if (!media)
+		return;
+
+#define VLC_META(media, cd, did, tid, tag)                               \
+	else if (strcmp(did, tid) == 0)                                  \
+	{                                                                \
+		calldata_set_string(cd, "tag_data",                      \
+				    libvlc_media_get_meta_(media, tag)); \
+	}
+
+	if (strcmp(data_id, "title") == 0)
+		calldata_set_string(cd, "tag_data",
+				    libvlc_media_get_meta_(media,
+							   libvlc_meta_Title));
+
+	VLC_META(media, cd, data_id, "artist", libvlc_meta_Artist)
+	VLC_META(media, cd, data_id, "genre", libvlc_meta_Genre)
+	VLC_META(media, cd, data_id, "copyright", libvlc_meta_Copyright)
+	VLC_META(media, cd, data_id, "album", libvlc_meta_Album)
+	VLC_META(media, cd, data_id, "track_number", libvlc_meta_TrackNumber)
+	VLC_META(media, cd, data_id, "description", libvlc_meta_Description)
+	VLC_META(media, cd, data_id, "rating", libvlc_meta_Rating)
+	VLC_META(media, cd, data_id, "date", libvlc_meta_Date)
+	VLC_META(media, cd, data_id, "setting", libvlc_meta_Setting)
+	VLC_META(media, cd, data_id, "url", libvlc_meta_URL)
+	VLC_META(media, cd, data_id, "language", libvlc_meta_Language)
+	VLC_META(media, cd, data_id, "now_playing", libvlc_meta_NowPlaying)
+	VLC_META(media, cd, data_id, "publisher", libvlc_meta_Publisher)
+	VLC_META(media, cd, data_id, "encoded_by", libvlc_meta_EncodedBy)
+	VLC_META(media, cd, data_id, "artwork_url", libvlc_meta_ArtworkURL)
+	VLC_META(media, cd, data_id, "track_id", libvlc_meta_TrackID)
+	VLC_META(media, cd, data_id, "track_total", libvlc_meta_TrackTotal)
+	VLC_META(media, cd, data_id, "director", libvlc_meta_Director)
+	VLC_META(media, cd, data_id, "season", libvlc_meta_Season)
+	VLC_META(media, cd, data_id, "episode", libvlc_meta_Episode)
+	VLC_META(media, cd, data_id, "show_name", libvlc_meta_ShowName)
+	VLC_META(media, cd, data_id, "actors", libvlc_meta_Actors)
+	VLC_META(media, cd, data_id, "album_artist", libvlc_meta_AlbumArtist)
+	VLC_META(media, cd, data_id, "disc_number", libvlc_meta_DiscNumber)
+	VLC_META(media, cd, data_id, "disc_total", libvlc_meta_DiscTotal)
+#undef VLC_META
+}
+
+/* ------------------------------------------------------------------------- */
+
 static const char *vlcs_get_name(void *unused)
 {
 	UNUSED_PARAMETER(unused);
@@ -894,6 +949,11 @@ static void *vlcs_create(obs_data_t *settings, obs_source_t *source)
 			     vlcs_stopped, c);
 	libvlc_event_attach_(event_manager, libvlc_MediaPlayerOpening,
 			     vlcs_started, c);
+
+	proc_handler_t *ph = obs_source_get_proc_handler(source);
+	proc_handler_add(
+		ph, "void get_metadata(in string tag_id out string tag_data)",
+		vlcs_get_metadata, c);
 
 	obs_source_update(source, NULL);
 
