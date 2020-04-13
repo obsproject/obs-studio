@@ -13,7 +13,7 @@ task:
     freetype2 jackit jansson luajit mbedtls pulseaudio speexdsp
     libsysinfo libudev-devd libv4l libx264 cmake ninja
     mesa-libs lua52 pkgconf
-    qt5-svg qt5-qmake qt5-buildtools qt5-x11extras
+    qt5-svg qt5-qmake qt5-buildtools qt5-x11extras qt5-xml
   script:
   - mkdir build
   - cd build
