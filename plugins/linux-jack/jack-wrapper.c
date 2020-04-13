@@ -43,6 +43,8 @@ static enum speaker_layout jack_channels_to_obs_speakers(uint_fast32_t channels)
 		return SPEAKERS_STEREO;
 	case 3:
 		return SPEAKERS_2POINT1;
+	case 4:
+		return SPEAKERS_4POINT0;
 	case 5:
 		return SPEAKERS_4POINT1;
 	case 6:
