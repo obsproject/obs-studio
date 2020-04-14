@@ -34,6 +34,12 @@
     <file>images/sources/text.svg</file>
     <file>images/sources/window.svg</file>
     <file>images/sources/default.svg</file>
+    <file>images/recording-active.svg</file>
+    <file>images/recording-inactive.svg</file>
+    <file>images/recording-pause.svg</file>
+    <file>images/recording-pause-inactive.svg</file>
+    <file>images/streaming-active.svg</file>
+    <file>images/streaming-inactive.svg</file>
   </qresource>
   <qresource prefix="/settings">
     <file>images/settings/output.svg</file>
