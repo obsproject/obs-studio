@@ -1532,10 +1532,10 @@
             }
         },
         {
-            "name": "ChathostessModels",
+            "name": "Chathostess",
             "servers": [
                 {
-                    "name": "ChathostessModels - Default",
+                    "name": "Chathostess - Default",
                     "url": "rtmp://wowza05.foobarweb.com/cmschatsys_video"
                 }
             ],
