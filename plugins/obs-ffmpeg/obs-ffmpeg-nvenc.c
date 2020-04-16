@@ -477,6 +477,7 @@ void nvenc_defaults(obs_data_t *settings)
 	obs_data_set_default_bool(settings, "psycho_aq", true);
 	obs_data_set_default_int(settings, "gpu", 0);
 	obs_data_set_default_int(settings, "bf", 2);
+	obs_data_set_default_bool(settings, "repeat_headers", false);
 }
 
 static bool rate_control_modified(obs_properties_t *ppts, obs_property_t *p,
@@ -576,6 +577,9 @@ obs_properties_t *nvenc_properties_internal(bool ffmpeg)
 			obs_module_text("NVENC.PsychoVisualTuning"));
 		obs_property_set_long_description(
 			p, obs_module_text("NVENC.PsychoVisualTuning.ToolTip"));
+		p = obs_properties_add_bool(props, "repeat_headers",
+					    "repeat_headers");
+		obs_property_set_visible(p, false);
 	}
 
 	obs_properties_add_int(props, "gpu", obs_module_text("GPU"), 0, 8, 1);
