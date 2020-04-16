@@ -10,6 +10,7 @@ cmake -DENABLE_SPARKLE_UPDATER=ON \
 -DQTDIR=/usr/local/Cellar/qt/5.14.1 \
 -DDepsPath=/tmp/obsdeps \
 -DVLCPath=$PWD/../../vlc-3.0.8 \
+-DFreetypePath=/tmp/obsdeps
 -DBUILD_BROWSER=ON \
 -DBROWSER_DEPLOY=ON \
 -DBUILD_CAPTIONS=ON \
