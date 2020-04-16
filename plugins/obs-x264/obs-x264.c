@@ -576,7 +576,7 @@ static bool update_settings(struct obs_x264 *obsx264, obs_data_t *settings,
 			apply_x264_profile(obsx264, profile);
 	}
 
-	obsx264->params.b_repeat_headers = false;
+	obsx264->params.b_repeat_headers = true;
 
 	strlist_free(paramlist);
 	bfree(preset);
