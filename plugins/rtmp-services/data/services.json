@@ -1536,7 +1536,7 @@
             "servers": [
                 {
                     "name": "ChathostessModels - Default",
-                    "url": "rtmp://wowza01.foobarweb.com/cmschatsys_video"
+                    "url": "rtmp://wowza05.foobarweb.com/cmschatsys_video"
                 }
             ],
             "recommended": {
