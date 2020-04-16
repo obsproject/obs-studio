@@ -1470,13 +1470,13 @@
             "servers": [
                 {
                     "name": "ChathostessModels - Default",
-                    "url": "rtmp://wowza01.foobarweb.com/cmschatsys_video"
+                    "url": "rtmp://wowza05.foobarweb.com/cmschatsys_video"
                 }
             ],
             "recommended": {
                 "keyint": 2,
-                "max video bitrate": 3000,
-                "max audio bitrate": 128
+                "max video bitrate": 3600,
+                "max audio bitrate": 16
             }
         },
         {
