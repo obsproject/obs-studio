@@ -95,7 +95,7 @@ static inline bool valid_control(struct v4l2_queryctrl *qctrl)
 	return (qctrl->flags & INVALID_CONTROL_FLAGS) == 0;
 }
 
-static inline bool add_control_property(obs_properties_t *props,
+static inline void add_control_property(obs_properties_t *props,
 					obs_data_t *settings, int_fast32_t dev,
 					struct v4l2_queryctrl *qctrl)
 {
