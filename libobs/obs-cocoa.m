@@ -65,7 +65,7 @@ void add_default_module_paths(void)
 			[NSRunningApplication currentApplication];
 		NSURL *bundleURL = [app bundleURL];
 		NSURL *pluginsURL = [bundleURL
-			URLByAppendingPathComponent:@"Contents/Plugins"];
+			URLByAppendingPathComponent:@"Contents/PlugIns"];
 		NSURL *dataURL = [bundleURL
 			URLByAppendingPathComponent:
 				@"Contents/Resources/data/obs-plugins/%module%"];
