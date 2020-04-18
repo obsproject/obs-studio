@@ -3921,6 +3921,7 @@ void OBSBasic::ClearSceneData()
 		return true;
 	};
 
+	obs_enum_scenes(cb, nullptr);
 	obs_enum_sources(cb, nullptr);
 
 	if (api)
