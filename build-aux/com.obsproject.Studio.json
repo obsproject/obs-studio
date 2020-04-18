@@ -1,0 +1,204 @@
+{
+  "app-id": "com.obsproject.Studio",
+  "default-branch": "stable",
+  "runtime": "org.kde.Platform",
+  "runtime-version": "5.14",
+  "sdk": "org.kde.Sdk",
+  "command": "obs",
+  "finish-args": [
+    "--socket=x11",
+    "--socket=pulseaudio",
+    "--device=all",
+    "--share=network",
+    "--share=ipc",
+    "--filesystem=xdg-run/obs-xdg-portal:create",
+    "--filesystem=host",
+    "--talk-name=org.kde.StatusNotifierWatcher",
+    "--talk-name=org.freedesktop.ScreenSaver",
+    "--talk-name=org.freedesktop.PowerManagement.Inhibit",
+    "--talk-name=org.freedesktop.Notifications",
+    "--talk-name=org.mate.SessionManager",
+    "--talk-name=org.gnome.SessionManager",
+    "--own-name=org.kde.StatusNotifierItem-2-2"
+  ],
+  "cleanup": [
+    "/lib/pkgconfig",
+    "/share/man",
+    "*.la"
+  ],
+  "modules": [
+    {
+      "name": "x264",
+      "config-opts": [
+        "--disable-cli",
+        "--enable-shared"
+      ],
+      "cleanup": [
+        "/include"
+      ],
+      "sources": [
+        {
+          "type": "archive",
+          "url": "https://code.videolan.org/videolan/x264/-/archive/1771b556ee45207f8711744ccbd5d42a3949b14c/x264-1771b556ee45207f8711744ccbd5d42a3949b14c.tar.bz2",
+          "sha256": "b31c5db5337873b9ee42b8cbc60b56d60ce368fa7e4c4eff90a729b36eeb8326"
+        }
+      ]
+    },
+    {
+      "name": "v4l-utils",
+      "config-opts": [
+        "--disable-static",
+        "--disable-doxygen-doc",
+        "--disable-libdvbv5",
+        "--disable-v4l-utils",
+        "--disable-qv4l2",
+        "--with-udevdir=/app/lib/udev/"
+      ],
+      "cleanup": [
+        "/include"
+      ],
+      "sources": [
+        {
+          "type": "archive",
+          "url": "https://linuxtv.org/downloads/v4l-utils/v4l-utils-1.18.0.tar.bz2",
+          "sha256": "6cb60d822eeed20486a03cc23e0fc65956fbc1e85e0c1a7477f68bbd9802880d"
+        }
+      ]
+    },
+    {
+      "name": "nv-codec-headers",
+      "no-autogen": true,
+      "make-install-args": [
+        "PREFIX=/app"
+      ],
+      "cleanup": [
+        "*"
+      ],
+      "sources": [
+        {
+          "type": "git",
+          "url": "https://git.videolan.org/git/ffmpeg/nv-codec-headers.git",
+          "commit": "4a0bbfd58724d6d19851cd8a6f7a9098dde9ab77",
+          "tag": "n9.1.23.1"
+        }
+      ]
+    },
+    {
+      "name": "ffmpeg",
+      "config-opts": [
+        "--enable-gpl",
+        "--enable-shared",
+        "--disable-static",
+        "--enable-gnutls",
+        "--disable-doc",
+        "--disable-programs",
+        "--disable-devices",
+        "--enable-libopus",
+        "--enable-libvpx",
+        "--enable-libvorbis",
+        "--enable-libx264",
+        "--enable-nvenc"
+      ],
+      "cleanup": [
+        "/share/ffmpeg",
+        "/include"
+      ],
+      "sources": [
+        {
+          "type": "archive",
+          "url": "https://www.ffmpeg.org/releases/ffmpeg-4.2.2.tar.xz",
+          "sha256": "cb754255ab0ee2ea5f66f8850e1bd6ad5cac1cd855d0a2f4990fb8c668b0d29c"
+        }
+      ]
+    },
+    {
+      "name": "luajit",
+      "no-autogen": true,
+      "cleanup": [
+        "/bin",
+        "/include"
+      ],
+      "sources": [
+        {
+          "type": "archive",
+          "url": "http://luajit.org/download/LuaJIT-2.1.0-beta3.tar.gz",
+          "sha256": "1ad2e34b111c802f9d0cdf019e986909123237a28c746b21295b63c9e785d9c3"
+        },
+        {
+          "type": "shell",
+          "commands": [
+            "sed -i 's|/usr/local|/app|' ./Makefile"
+          ]
+        }
+      ]
+    },
+    {
+        "name": "swig",
+        "config-opts": [
+          "--without-boost",
+          "--without-pcre",
+          "--without-alllang",
+          "--with-lua=/app/bin/luajit-2.1.0-beta2",
+          "--with-luaincl=/app/include/luajit-2.1",
+          "--with-python3"
+        ],
+        "cleanup": [
+          "*"
+        ],
+        "sources": [
+            {
+                "type": "archive",
+                "url": "https://prdownloads.sourceforge.net/swig/swig-4.0.1.tar.gz",
+                "sha256": "7a00b4d0d53ad97a14316135e2d702091cd5f193bb58bcfcd8bc59d41e7887a9"
+            }
+        ]
+    },
+    {
+      "name": "mbedtls",
+      "buildsystem": "cmake-ninja",
+      "builddir": true,
+      "config-opts": [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_POSITION_INDEPENDENT_CODE=ON",
+        "-DUSE_SHARED_MBEDTLS_LIBRARY=ON",
+        "-DUSE_STATIC_MBEDTLS_LIBRARY=OFF",
+        "-DENABLE_TESTING=OFF",
+        "-DENABLE_PROGRAMS=OFF"
+      ],
+      "cleanup": [
+        "/include"
+      ],
+      "sources": [
+        {
+          "type": "archive",
+          "url": "https://tls.mbed.org/download/mbedtls-2.16.5-apache.tgz",
+          "sha256": "65b4c6cec83e048fd1c675e9a29a394ea30ad0371d37b5742453f74084e7b04d"
+        }
+      ]
+    },
+    {
+      "name": "obs",
+      "buildsystem": "cmake-ninja",
+      "builddir": true,
+      "config-opts": [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DUNIX_STRUCTURE=ON",
+        "-DUSE_XDG=ON",
+        "-DDISABLE_ALSA=ON",
+        "-DDISABLE_JACK=ON",
+        "-DENABLE_PULSEAUDIO=ON",
+        "-DWITH_RTMPS=ON"
+      ],
+      "post-install": [
+        "install -d /app/lib/blackmagic /app/lib/ndi",
+        "ln -s /app/lib/ndi/obs-ndi.so /app/lib/obs-plugins/obs-ndi.so"
+      ],
+      "sources": [
+        {
+          "type": "git",
+          "url": "https://github.com/obsproject/obs-studio.git"
+        }
+      ]
+    }
+  ]
+}
