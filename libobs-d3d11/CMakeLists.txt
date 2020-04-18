@@ -4,6 +4,9 @@ include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/libobs")
 
 add_definitions(-DLIBOBS_EXPORTS)
 
+set(MODULE_DESCRIPTION "OBS Library D3D11 wrapper")
+configure_file(${CMAKE_SOURCE_DIR}/cmake/winrc/obs-module.rc.in libobs-d3d11.rc)
+
 if(NOT DEFINED GPU_PRIORITY_VAL OR "${GPU_PRIORITY_VAL}" STREQUAL "" OR
    "${GPU_PRIORITY_VAL}" STREQUAL "0")
 	set(USE_GPU_PRIORITY FALSE)
@@ -30,7 +33,8 @@ set(libobs-d3d11_SOURCES
 	d3d11-vertexbuffer.cpp
 	d3d11-duplicator.cpp
 	d3d11-rebuild.cpp
-	d3d11-zstencilbuffer.cpp)
+	d3d11-zstencilbuffer.cpp
+	libobs-d3d11.rc)
 
 set(libobs-d3d11_HEADERS
 	${CMAKE_CURRENT_BINARY_DIR}/d3d11-config.h

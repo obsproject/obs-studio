@@ -156,6 +156,13 @@ set(obs-outputs_SOURCES
 	flv-mux.c
 	net-if.c)
 
+if(WIN32)
+	set(MODULE_DESCRIPTION "OBS output module")
+	configure_file(${CMAKE_SOURCE_DIR}/cmake/winrc/obs-module.rc.in obs-outputs.rc)
+	list(APPEND obs-outputs_SOURCES
+		obs-outputs.rc)
+endif()
+
 add_library(obs-outputs MODULE
 	${ftl_SOURCES}
 	${ftl_HEADERS}

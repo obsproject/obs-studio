@@ -58,6 +58,13 @@ set(obs-qsv11_SOURCES
 	obs-qsv11.c
 	obs-qsv11-plugin-main.c)
 
+if(WIN32)
+	set(MODULE_DESCRIPTION "OBS QSV encoder")
+	configure_file(${CMAKE_SOURCE_DIR}/cmake/winrc/obs-module.rc.in obs-qsv11.rc)
+	list(APPEND obs-qsv11_SOURCES
+		obs-qsv11.rc)
+endif()
+
 set(obs-qsv11_HEADERS
 	bits/linux_defs.h
 	bits/windows_defs.h

@@ -40,9 +40,11 @@ set(win-ivcam_seg_library_SOURCES
 	${win-ivcam_seg_library_GENERATED_FILES}
 	)
 
+set(MODULE_DESCRIPTION "OBS Intel(R) RealSense(TM) module")
+configure_file(${CMAKE_SOURCE_DIR}/cmake/winrc/obs-module.rc.in win-ivcam.rc)
 set(win-ivcam_SOURCES
 	realsense.cpp
-	)
+	win-ivcam.rc)
 
 source_group("seg_library\\Source Files" FILES ${win-ivcam_seg_library_SOURCES})
 source_group("seg_library\\Header Files" FILES ${win-ivcam_seg_library_HEADERS})

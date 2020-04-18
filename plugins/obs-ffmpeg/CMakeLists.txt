@@ -46,9 +46,12 @@ if(ENABLE_FFMPEG_LOGGING)
 endif()
 
 if(WIN32)
+	set(MODULE_DESCRIPTION "OBS FFmpeg module")
+	configure_file(${CMAKE_SOURCE_DIR}/cmake/winrc/obs-module.rc.in obs-ffmpeg.rc)
 	list(APPEND obs-ffmpeg_SOURCES
 		jim-nvenc.c
-		jim-nvenc-helpers.c)
+		jim-nvenc-helpers.c
+		obs-ffmpeg.rc)
 	list(APPEND obs-ffmpeg_HEADERS
 		jim-nvenc.h)
 endif()

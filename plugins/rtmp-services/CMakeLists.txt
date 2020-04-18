@@ -13,6 +13,13 @@ set(rtmp-services_SOURCES
 	rtmp-custom.c
 	rtmp-services-main.c)
 
+if(WIN32)
+	set(MODULE_DESCRIPTION "OBS RTMP Services")
+	configure_file(${CMAKE_SOURCE_DIR}/cmake/winrc/obs-module.rc.in rtmp-services.rc)
+	list(APPEND rtmp-services_SOURCES
+		rtmp-services.rc)
+endif()
+
 set(rtmp-services_HEADERS
 	twitch.h
 	younow.h
