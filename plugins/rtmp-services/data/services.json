@@ -1532,16 +1532,20 @@
             }
         },
         {
-            "name": "ChathostessModels",
+            "name": "Chathostess",
             "servers": [
                 {
-                    "name": "ChathostessModels - Default",
+                    "name": "Chathostess - Default",
                     "url": "rtmp://wowza01.foobarweb.com/cmschatsys_video"
+                },
+                {
+                    "name": "Chathostess - Backup",
+                    "url": "rtmp://wowza05.foobarweb.com/cmschatsys_video"
                 }
             ],
             "recommended": {
                 "keyint": 2,
-                "max video bitrate": 3000,
+                "max video bitrate": 3600,
                 "max audio bitrate": 128
             }
         },
