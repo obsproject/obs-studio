@@ -2,8 +2,6 @@ name: 'CI Multiplatform Build'
 
 on:
   push:
-    branches:
-      - master
   pull_request:
     paths-ignore:
       - '**.md'
@@ -86,11 +84,15 @@ jobs:
         run: |
           mkdir ./build
           cd ./build
-          cmake -DENABLE_SPARKLE_UPDATER=ON -DCMAKE_OSX_DEPLOYMENT_TARGET=10.11 -DQTDIR="/usr/local/Cellar/qt/${{ env.QT_VERSION }}" -DDepsPath="/tmp/obsdeps" -DVLCPath="${{ github.workspace }}/cmbuild/vlc-${{ env.VLC_VERSION }}" -DBUILD_BROWSER=ON -DBROWSER_DEPLOY=ON -DBUILD_CAPTIONS=ON -DWITH_RTMPS=ON -DCEF_ROOT_DIR="${{ github.workspace }}/cmbuild/cef_binary_${{ env.CEF_BUILD_VERSION }}_macosx64" ..
+          cmake -DENABLE_UNIT_TESTS=YES -DENABLE_SPARKLE_UPDATER=ON -DCMAKE_OSX_DEPLOYMENT_TARGET=10.11 -DQTDIR="/usr/local/Cellar/qt/${{ env.QT_VERSION }}" -DDepsPath="/tmp/obsdeps" -DVLCPath="${{ github.workspace }}/cmbuild/vlc-${{ env.VLC_VERSION }}" -DBUILD_BROWSER=ON -DBROWSER_DEPLOY=ON -DBUILD_CAPTIONS=ON -DWITH_RTMPS=ON -DCEF_ROOT_DIR="${{ github.workspace }}/cmbuild/cef_binary_${{ env.CEF_BUILD_VERSION }}_macosx64" ..
       - name: 'Build'
         shell: bash
         working-directory: ${{ github.workspace }}/build
         run: make -j4
+      - name: 'Test'
+        shell: bash
+        working-directory: ${{ github.workspace }}/build
+        run: make CTEST_OUTPUT_ON_FAILURE=1 test
       - name: 'Install prerequisite: Packages app'
         if: success() && (github.event_name != 'pull_request' || contains( github.event.pull_request.labels.*.name, 'Seeking Testers'))
         shell: bash
@@ -177,7 +179,8 @@ jobs:
            python3-dev \
            qtbase5-dev \
            libqt5svg5-dev \
-           swig
+           swig \
+           libcmocka-dev
       - name: 'Install prerequisite: Chromium Embedded Framework'
         shell: bash
         run: |
@@ -189,11 +192,15 @@ jobs:
         run: |
           mkdir ./build
           cd ./build
-          cmake -DUNIX_STRUCTURE=0 -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/obs-studio-portable" -DBUILD_CAPTIONS=ON -DWITH_RTMPS=ON -DBUILD_BROWSER=ON -DCEF_ROOT_DIR="${{ github.workspace }}/cmbuild/cef_binary_${{ env.CEF_BUILD_VERSION }}_linux64" ..
+          cmake -DUNIX_STRUCTURE=0 -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/obs-studio-portable" -DENABLE_UNIT_TESTS=ON -DBUILD_CAPTIONS=ON -DWITH_RTMPS=ON -DBUILD_BROWSER=ON -DCEF_ROOT_DIR="${{ github.workspace }}/cmbuild/cef_binary_${{ env.CEF_BUILD_VERSION }}_linux64" ..
       - name: 'Build'
         shell: bash
         working-directory: ${{ github.workspace }}/build
         run: make -j4
+      - name: 'Test'
+        shell: bash
+        working-directory: ${{ github.workspace }}/build
+        run: make CTEST_OUTPUT_ON_FAILURE=1 test
       - name: 'Package'
         if: success() && (github.event_name != 'pull_request' || contains( github.event.pull_request.labels.*.name, 'Seeking Testers'))
         shell: bash

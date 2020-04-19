@@ -358,7 +358,8 @@ set(libobs_util_SOURCES
 	util/crc32.c
 	util/text-lookup.c
 	util/cf-parser.c
-	util/profiler.c)
+	util/profiler.c
+	util/bitstream.c)
 set(libobs_util_HEADERS
 	util/curl/curl-helper.h
 	util/sse-intrin.h
@@ -383,7 +384,8 @@ set(libobs_util_HEADERS
 	util/lexer.h
 	util/platform.h
 	util/profiler.h
-	util/profiler.hpp)
+	util/profiler.hpp
+	util/bitstream.h)
 
 set(libobs_libobs_SOURCES
 	${libobs_PLATFORM_SOURCES}

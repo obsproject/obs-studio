@@ -40,7 +40,7 @@ using DisplayContext =
 
 static void CreateOBS()
 {
-	if (!obs_startup("en", nullptr))
+	if (!obs_startup("en", nullptr, nullptr))
 		throw "Couldn't create OBS";
 
 	struct obs_video_info ovi;
@@ -67,7 +67,7 @@ static DisplayContext CreateDisplay(NSView *view)
 	info.zsformat = GS_ZS_NONE;
 	info.window.view = view;
 
-	return DisplayContext{obs_display_create(&info)};
+	return DisplayContext{obs_display_create(&info, 0)};
 }
 
 static SceneContext SetupScene()
