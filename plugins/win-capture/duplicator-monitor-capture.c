@@ -20,6 +20,8 @@
 #define TEXT_COMPATIBILITY   obs_module_text("Compatibility")
 #define TEXT_MONITOR         obs_module_text("Monitor")
 #define TEXT_PRIMARY_MONITOR obs_module_text("PrimaryMonitor")
+#define ERROR_UNKNOWN		 1
+#define ERROR_WRONG_GPU      2
 
 /* clang-format on */
 
@@ -265,6 +267,29 @@ static void duplicator_capture_render(void *data, gs_effect_t *effect)
 	}
 }
 
+static int duplicator_capture_get_error(void *data)
+{
+	struct duplicator_capture *capture = data;
+
+	bool error = capture->showing && !capture->duplicator;
+
+	if (!error)
+		return 0;
+
+	DWORD i = capture->monitor;
+	DISPLAY_DEVICEA device;
+	device.cb = sizeof(device);
+	const char *name = gs_get_adapter_name();
+	bool success = EnumDisplayDevicesA(NULL, i, &device,
+					   EDD_GET_DEVICE_INTERFACE_NAME);
+
+	if (success)
+		if (strcmp(device.DeviceString, name) != 0)
+			return ERROR_WRONG_GPU;
+
+	return ERROR_UNKNOWN;
+}
+
 static bool get_monitor_props(obs_property_t *monitor_list, int monitor_idx)
 {
 	struct dstr monitor_desc = {0};
@@ -318,6 +343,7 @@ struct obs_source_info duplicator_capture_info = {
 	.destroy = duplicator_capture_destroy,
 	.video_render = duplicator_capture_render,
 	.video_tick = duplicator_capture_tick,
+	.video_get_error = duplicator_capture_get_error,
 	.update = duplicator_capture_update,
 	.get_width = duplicator_capture_width,
 	.get_height = duplicator_capture_height,

@@ -145,6 +145,7 @@ struct game_capture {
 	bool activate_hook;
 	bool process_is_64bit;
 	bool error_acquiring;
+	bool error_capturing;
 	bool dwm_capture;
 	bool initial_config;
 	bool convert_16bit;
@@ -1640,15 +1641,18 @@ static bool start_capture(struct game_capture *gc)
 
 	if (gc->global_hook_info->type == CAPTURE_TYPE_MEMORY) {
 		if (!init_shmem_capture(gc)) {
+			gc->error_capturing = true;
 			return false;
 		}
 
+		gc->error_capturing = false;
 		info("memory capture successful");
 	} else {
 		if (!init_shtex_capture(gc)) {
+			gc->error_capturing = true;
 			return false;
 		}
-
+		gc->error_capturing = false;
 		info("shared texture capture successful");
 	}
 
@@ -1755,9 +1759,10 @@ static void game_capture_tick(void *data, float seconds)
 		debug("capture initializing!");
 		enum capture_result result = init_capture_data(gc);
 
-		if (result == CAPTURE_SUCCESS)
-			gc->capturing = start_capture(gc);
-		else
+		if (result == CAPTURE_SUCCESS) {
+			bool start_successful = start_capture(gc);
+			gc->capturing = start_successful;
+		} else
 			debug("init_capture_data failed");
 
 		if (result != CAPTURE_RETRY && !gc->capturing) {
@@ -1862,6 +1867,13 @@ static void game_capture_render(void *data, gs_effect_t *effect)
 			game_capture_render_cursor(gc);
 		}
 	}
+}
+
+static int game_capture_has_error(void *data)
+{
+	struct game_capture *gc = data;
+
+	return gc->error_acquiring || gc->error_capturing ? 1 : 0;
 }
 
 static uint32_t game_capture_width(void *data)
@@ -2143,5 +2155,6 @@ struct obs_source_info game_capture_info = {
 	.update = game_capture_update,
 	.video_tick = game_capture_tick,
 	.video_render = game_capture_render,
+	.video_get_error = game_capture_has_error,
 	.icon_type = OBS_ICON_TYPE_GAME_CAPTURE,
 };
