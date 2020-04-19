@@ -242,6 +242,8 @@ private:
 	QPointer<QWidget> extraBrowsers;
 	QPointer<QWidget> importer;
 
+	QPointer<QMenu> startStreamMenu;
+
 	QPointer<QPushButton> transitionButton;
 	QPointer<QPushButton> replayBufferButton;
 	QPointer<QHBoxLayout> replayLayout;
@@ -254,6 +256,21 @@ private:
 	QPointer<QAction> sysTrayReplayBuffer;
 	QPointer<QAction> showHide;
 	QPointer<QAction> exit;
+	QPointer<QMenu> trayMenu;
+	QPointer<QMenu> previewProjector;
+	QPointer<QMenu> studioProgramProjector;
+	QPointer<QMenu> multiviewProjectorMenu;
+	QPointer<QMenu> previewProjectorSource;
+	QPointer<QMenu> previewProjectorMain;
+	QPointer<QMenu> sceneProjectorMenu;
+	QPointer<QMenu> sourceProjector;
+	QPointer<QMenu> scaleFilteringMenu;
+	QPointer<QMenu> colorMenu;
+	QPointer<QWidgetAction> colorWidgetAction;
+	QPointer<ColorSelect> colorSelect;
+	QPointer<QMenu> deinterlaceMenu;
+	QPointer<QMenu> perSceneTransitionMenu;
+	QPointer<QObject> shortcutFilter;
 
 	QPointer<QWidget> programWidget;
 	QPointer<QVBoxLayout> programLayout;
@@ -261,6 +278,8 @@ private:
 
 	QScopedPointer<QThread> patronJsonThread;
 	std::string patronJson;
+
+	void UpdateMultiviewProjectorMenu();
 
 	void DrawBackdrop(float cx, float cy);
 

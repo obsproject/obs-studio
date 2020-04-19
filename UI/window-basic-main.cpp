@@ -271,7 +271,8 @@ OBSBasic::OBSBasic(QWidget *parent)
 	connect(windowHandle(), &QWindow::screenChanged, displayResize);
 	connect(ui->preview, &OBSQTDisplay::DisplayResized, displayResize);
 
-	QObject *shortcutFilter = CreateShortcutFilter();
+	delete shortcutFilter;
+	shortcutFilter = CreateShortcutFilter();
 	installEventFilter(shortcutFilter);
 
 	stringstream name;
@@ -1821,10 +1822,12 @@ void OBSBasic::OBSInit()
 
 	ui->viewMenu->addSeparator();
 
-	QMenu *multiviewProjectorMenu = new QMenu(QTStr("MultiviewProjector"));
+	multiviewProjectorMenu = new QMenu(QTStr("MultiviewProjector"));
 	ui->viewMenu->addMenu(multiviewProjectorMenu);
 	AddProjectorMenuMonitors(multiviewProjectorMenu, this,
 				 SLOT(OpenMultiviewProjector()));
+	connect(ui->viewMenu->menuAction(), &QAction::hovered, this,
+		&OBSBasic::UpdateMultiviewProjectorMenu);
 	ui->viewMenu->addAction(QTStr("MultiviewWindowed"), this,
 				SLOT(OpenMultiviewWindow()));
 
@@ -2041,6 +2044,13 @@ void OBSBasic::ShowWhatsNew(const QString &url)
 #else
 	UNUSED_PARAMETER(url);
 #endif
+}
+
+void OBSBasic::UpdateMultiviewProjectorMenu()
+{
+	multiviewProjectorMenu->clear();
+	AddProjectorMenuMonitors(multiviewProjectorMenu, this,
+				 SLOT(OpenMultiviewProjector()));
 }
 
 void OBSBasic::InitHotkeys()
@@ -2299,6 +2309,21 @@ OBSBasic::~OBSBasic()
 	if (updateCheckThread && updateCheckThread->isRunning())
 		updateCheckThread->wait();
 
+	delete multiviewProjectorMenu;
+	delete previewProjector;
+	delete studioProgramProjector;
+	delete previewProjectorSource;
+	delete previewProjectorMain;
+	delete sourceProjector;
+	delete sceneProjectorMenu;
+	delete scaleFilteringMenu;
+	delete colorMenu;
+	delete colorWidgetAction;
+	delete colorSelect;
+	delete deinterlaceMenu;
+	delete perSceneTransitionMenu;
+	delete shortcutFilter;
+	delete trayMenu;
 	delete programOptions;
 	delete program;
 
@@ -4231,7 +4256,8 @@ void OBSBasic::on_scenes_customContextMenuRequested(const QPoint &pos)
 
 		popup.addSeparator();
 
-		QMenu *sceneProjectorMenu = new QMenu(QTStr("SceneProjector"));
+		delete sceneProjectorMenu;
+		sceneProjectorMenu = new QMenu(QTStr("SceneProjector"));
 		AddProjectorMenuMonitors(sceneProjectorMenu, this,
 					 SLOT(OpenSceneProjector()));
 		popup.addMenu(sceneProjectorMenu);
@@ -4246,7 +4272,8 @@ void OBSBasic::on_scenes_customContextMenuRequested(const QPoint &pos)
 
 		popup.addSeparator();
 
-		QMenu *perSceneTransitionMenu = CreatePerSceneTransitionMenu();
+		delete perSceneTransitionMenu;
+		perSceneTransitionMenu = CreatePerSceneTransitionMenu();
 		popup.addMenu(perSceneTransitionMenu);
 
 		/* ---------------------- */
@@ -4557,6 +4584,13 @@ ColorSelect::ColorSelect(QWidget *parent)
 void OBSBasic::CreateSourcePopupMenu(int idx, bool preview)
 {
 	QMenu popup(this);
+	delete previewProjectorSource;
+	delete sourceProjector;
+	delete scaleFilteringMenu;
+	delete colorMenu;
+	delete colorWidgetAction;
+	delete colorSelect;
+	delete deinterlaceMenu;
 
 	if (preview) {
 		QAction *action = popup.addAction(
@@ -4571,8 +4605,7 @@ void OBSBasic::CreateSourcePopupMenu(int idx, bool preview)
 		popup.addAction(ui->actionLockPreview);
 		popup.addMenu(ui->scalingMenu);
 
-		QMenu *previewProjectorSource =
-			new QMenu(QTStr("PreviewProjector"));
+		previewProjectorSource = new QMenu(QTStr("PreviewProjector"));
 		AddProjectorMenuMonitors(previewProjectorSource, this,
 					 SLOT(OpenPreviewProjector()));
 
@@ -4629,9 +4662,9 @@ void OBSBasic::CreateSourcePopupMenu(int idx, bool preview)
 		bool hasAudio = (flags & OBS_SOURCE_AUDIO) == OBS_SOURCE_AUDIO;
 		QAction *action;
 
-		QMenu *colorMenu = new QMenu(QTStr("ChangeBG"));
-		QWidgetAction *colorWidgetAction = new QWidgetAction(colorMenu);
-		ColorSelect *colorSelect = new ColorSelect(colorMenu);
+		colorMenu = new QMenu(QTStr("ChangeBG"));
+		colorWidgetAction = new QWidgetAction(colorMenu);
+		colorSelect = new ColorSelect(colorMenu);
 		popup.addMenu(AddBackgroundColorMenu(
 			colorMenu, colorWidgetAction, colorSelect, sceneItem));
 		popup.addAction(QTStr("Rename"), this,
@@ -4654,7 +4687,7 @@ void OBSBasic::CreateSourcePopupMenu(int idx, bool preview)
 		ui->actionVerticalCenter->setEnabled(!lock);
 		ui->actionHorizontalCenter->setEnabled(!lock);
 
-		QMenu *sourceProjector = new QMenu(QTStr("SourceProjector"));
+		sourceProjector = new QMenu(QTStr("SourceProjector"));
 		AddProjectorMenuMonitors(sourceProjector, this,
 					 SLOT(OpenSourceProjector()));
 
@@ -4674,8 +4707,7 @@ void OBSBasic::CreateSourcePopupMenu(int idx, bool preview)
 		}
 
 		if (isAsyncVideo) {
-			QMenu *deinterlaceMenu =
-				new QMenu(QTStr("Deinterlacing"));
+			deinterlaceMenu = new QMenu(QTStr("Deinterlacing"));
 			popup.addMenu(
 				AddDeinterlacingMenu(deinterlaceMenu, source));
 			popup.addSeparator();
@@ -4693,7 +4725,7 @@ void OBSBasic::CreateSourcePopupMenu(int idx, bool preview)
 		if (width == 0 || height == 0)
 			resizeOutput->setEnabled(false);
 
-		QMenu *scaleFilteringMenu = new QMenu(QTStr("ScaleFiltering"));
+		scaleFilteringMenu = new QMenu(QTStr("ScaleFiltering"));
 		popup.addMenu(
 			AddScaleFilteringMenu(scaleFilteringMenu, sceneItem));
 		popup.addSeparator();
@@ -5353,7 +5385,10 @@ void OBSBasic::StreamDelayStarting(int sec)
 		sysTrayStream->setEnabled(true);
 	}
 
-	QMenu *startStreamMenu = new QMenu();
+	if (!startStreamMenu.isNull())
+		startStreamMenu->deleteLater();
+
+	startStreamMenu = new QMenu();
 	startStreamMenu->addAction(QTStr("Basic.Main.StopStreaming"), this,
 				   SLOT(StopStreaming()));
 	startStreamMenu->addAction(QTStr("Basic.Main.ForceStopStreaming"), this,
@@ -5376,7 +5411,10 @@ void OBSBasic::StreamDelayStopping(int sec)
 		sysTrayStream->setEnabled(true);
 	}
 
-	QMenu *startStreamMenu = new QMenu();
+	if (!startStreamMenu.isNull())
+		startStreamMenu->deleteLater();
+
+	startStreamMenu = new QMenu();
 	startStreamMenu->addAction(QTStr("Basic.Main.StartStreaming"), this,
 				   SLOT(StartStreaming()));
 	startStreamMenu->addAction(QTStr("Basic.Main.ForceStopStreaming"), this,
@@ -5499,7 +5537,11 @@ void OBSBasic::StreamingStop(int code, QString last_error)
 			      QSystemTrayIcon::Warning);
 	}
 
-	ui->streamButton->setMenu(nullptr);
+	if (!startStreamMenu.isNull()) {
+		ui->streamButton->setMenu(nullptr);
+		startStreamMenu->deleteLater();
+		startStreamMenu = nullptr;
+	}
 }
 
 void OBSBasic::AutoRemux()
@@ -6066,6 +6108,7 @@ void OBSBasic::on_program_customContextMenuRequested(const QPoint &)
 void OBSBasic::PreviewDisabledMenu(const QPoint &pos)
 {
 	QMenu popup(this);
+	delete previewProjectorMain;
 
 	QAction *action =
 		popup.addAction(QTStr("Basic.Main.PreviewConextMenu.Enable"),
@@ -6073,7 +6116,7 @@ void OBSBasic::PreviewDisabledMenu(const QPoint &pos)
 	action->setCheckable(true);
 	action->setChecked(obs_display_enabled(ui->preview->GetDisplay()));
 
-	QMenu *previewProjectorMain = new QMenu(QTStr("PreviewProjector"));
+	previewProjectorMain = new QMenu(QTStr("PreviewProjector"));
 	AddProjectorMenuMonitors(previewProjectorMain, this,
 				 SLOT(OpenPreviewProjector()));
 
@@ -7105,10 +7148,9 @@ void OBSBasic::SystemTrayInit()
 					  trayIcon.data());
 	exit = new QAction(QTStr("Exit"), trayIcon.data());
 
-	QMenu *trayMenu = new QMenu;
-	QMenu *previewProjector = new QMenu(QTStr("PreviewProjector"));
-	QMenu *studioProgramProjector =
-		new QMenu(QTStr("StudioProgramProjector"));
+	trayMenu = new QMenu;
+	previewProjector = new QMenu(QTStr("PreviewProjector"));
+	studioProgramProjector = new QMenu(QTStr("StudioProgramProjector"));
 	AddProjectorMenuMonitors(previewProjector, this,
 				 SLOT(OpenPreviewProjector()));
 	AddProjectorMenuMonitors(studioProgramProjector, this,
@@ -7141,6 +7183,14 @@ void OBSBasic::SystemTrayInit()
 
 void OBSBasic::IconActivated(QSystemTrayIcon::ActivationReason reason)
 {
+	// Refresh projector list
+	previewProjector->clear();
+	studioProgramProjector->clear();
+	AddProjectorMenuMonitors(previewProjector, this,
+				 SLOT(OpenPreviewProjector()));
+	AddProjectorMenuMonitors(studioProgramProjector, this,
+				 SLOT(OpenStudioProgramProjector()));
+
 	if (reason == QSystemTrayIcon::Trigger) {
 		EnablePreviewDisplay(previewEnabled && !isVisible());
 		ToggleShowHide();
