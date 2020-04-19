@@ -244,7 +244,12 @@ if(NOT INSTALLER_RUN)
 	add_subdirectory(libobs)
 	add_subdirectory(plugins)
 	add_subdirectory(UI)
-	if (BUILD_TESTS)
+
+	if (ENABLE_UNIT_TESTS)
+		enable_testing()
+	endif()
+
+	if (BUILD_TESTS OR ENABLE_UNIT_TESTS)
 		add_subdirectory(test)
 	endif()
 
