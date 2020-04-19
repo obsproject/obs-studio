@@ -2208,6 +2208,17 @@ void obs_source_video_render(obs_source_t *source)
 	obs_source_release(source);
 }
 
+int obs_source_video_get_error(obs_source_t *source)
+{
+	if (!obs_source_valid(source, "obs_source_video_get_error"))
+		return 0;
+
+	if (source->context.data != 0 && source->info.video_get_error != 0)
+		return source->info.video_get_error(source->context.data);
+
+	return 0;
+}
+
 static inline uint32_t get_async_width(const obs_source_t *source)
 {
 	return ((source->async_rotation % 180) == 0) ? source->async_width

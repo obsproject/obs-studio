@@ -24,6 +24,7 @@ extern "C" {
 #endif
 
 EXPORT const char *device_get_name(void);
+EXPORT const char *device_get_adapter_name(gs_device_t *device);
 EXPORT int device_get_type(void);
 EXPORT bool device_enum_adapters(bool (*callback)(void *param, const char *name,
 						  uint32_t id),

@@ -330,6 +330,14 @@ struct obs_source_info {
 	void (*video_render)(void *data, gs_effect_t *effect);
 
 	/**
+	 * Called to ask the source if there was an error in the video_render() or in the video_tick() function.
+	 *
+	 * @param data    Source data
+	 * @return		  0, if there are no errors. Non zero return values indicate an error.
+	 */
+	int (*video_get_error)(void *data);
+
+	/**
 	 * Called to filter raw async video data.
 	 *
 	 * @note          This function is only used with filter sources.

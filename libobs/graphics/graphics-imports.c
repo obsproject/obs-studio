@@ -43,6 +43,7 @@ bool load_graphics_imports(struct gs_exports *exports, void *module,
 	bool success = true;
 
 	GRAPHICS_IMPORT(device_get_name);
+	GRAPHICS_IMPORT_OPTIONAL(device_get_adapter_name);
 	GRAPHICS_IMPORT(device_get_type);
 	GRAPHICS_IMPORT_OPTIONAL(device_enum_adapters);
 	GRAPHICS_IMPORT(device_preprocessor_name);

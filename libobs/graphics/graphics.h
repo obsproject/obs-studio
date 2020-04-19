@@ -494,6 +494,7 @@ struct gs_init_data {
 #define GS_DEVICE_DIRECT3D_11 2
 
 EXPORT const char *gs_get_device_name(void);
+EXPORT const char *gs_get_adapter_name(void);
 EXPORT int gs_get_device_type(void);
 EXPORT void gs_enum_adapters(bool (*callback)(void *param, const char *name,
 					      uint32_t id),

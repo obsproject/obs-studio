@@ -427,7 +427,7 @@ static bool set_priority(ID3D11Device *device)
 
 void gs_device::InitDevice(uint32_t adapterIdx)
 {
-	wstring adapterName;
+	wstring wideAdapterName;
 	DXGI_ADAPTER_DESC desc;
 	D3D_FEATURE_LEVEL levelUsed = D3D_FEATURE_LEVEL_10_0;
 	HRESULT hr = 0;
@@ -439,13 +439,14 @@ void gs_device::InitDevice(uint32_t adapterIdx)
 	//createFlags |= D3D11_CREATE_DEVICE_DEBUG;
 #endif
 
-	adapterName = (adapter->GetDesc(&desc) == S_OK) ? desc.Description
-							: L"<unknown>";
-
+	wideAdapterName = (adapter->GetDesc(&desc) == S_OK) ? desc.Description
+							    : L"<unknown>";
 	BPtr<char> adapterNameUTF8;
-	os_wcs_to_utf8_ptr(adapterName.c_str(), 0, &adapterNameUTF8);
+	os_wcs_to_utf8_ptr(wideAdapterName.c_str(), 0, &adapterNameUTF8);
 	blog(LOG_INFO, "Loading up D3D11 on adapter %s (%" PRIu32 ")",
 	     adapterNameUTF8.Get(), adapterIdx);
+
+	adapterName = adapterNameUTF8.Get();
 
 	hr = D3D11CreateDevice(adapter, D3D_DRIVER_TYPE_UNKNOWN, NULL,
 			       createFlags, featureLevels,
@@ -755,6 +756,11 @@ gs_device::~gs_device()
 const char *device_get_name(void)
 {
 	return "Direct3D 11";
+}
+
+const char *device_get_adapter_name(gs_device_t *device)
+{
+	return device->adapterName.c_str();
 }
 
 int device_get_type(void)

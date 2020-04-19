@@ -906,6 +906,9 @@ EXPORT void obs_source_update(obs_source_t *source, obs_data_t *settings);
 /** Renders a video source. */
 EXPORT void obs_source_video_render(obs_source_t *source);
 
+/** Gets the error of a video source. Zero if no error occured or the source is invalid */
+EXPORT int obs_source_video_get_error(obs_source_t *source);
+
 /** Gets the width of a source (if it has video) */
 EXPORT uint32_t obs_source_get_width(obs_source_t *source);
 

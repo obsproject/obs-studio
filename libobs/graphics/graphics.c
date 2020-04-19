@@ -304,6 +304,20 @@ const char *gs_get_device_name(void)
 		       : NULL;
 }
 
+const char *gs_get_adapter_name(void)
+{
+	if (!gs_valid("gs_get_adapter_name"))
+		return NULL;
+
+	graphics_t *graphics = thread_graphics;
+
+	if (thread_graphics->exports.device_get_adapter_name)
+		return thread_graphics->exports.device_get_adapter_name(
+			graphics->device);
+
+	return NULL;
+}
+
 int gs_get_device_type(void)
 {
 	return gs_valid("gs_get_device_type")

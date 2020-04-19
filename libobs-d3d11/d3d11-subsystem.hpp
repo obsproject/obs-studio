@@ -903,6 +903,7 @@ struct gs_device {
 	ComPtr<ID3D11Device> device;
 	ComPtr<ID3D11DeviceContext> context;
 	uint32_t adpIdx = 0;
+	string adapterName;
 	bool nv12Supported = false;
 
 	gs_texture_2d *curRenderTarget = nullptr;
