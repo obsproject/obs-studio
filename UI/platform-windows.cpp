@@ -414,3 +414,105 @@ QString GetMonitorName(const QString &id)
 
 	return QString::fromWCharArray(target.monitorFriendlyDeviceName);
 }
+
+#define REGISTRY_GPU_POWER_PROFILE \
+	"Software\\Microsoft\\DirectX\\UserGpuPreferences"
+
+bool ToggleOBSGpuPowerProfile()
+{
+	enum GpuPowerProfiles profile = GetOBSGpuPowerProfile();
+
+	if (profile == UseDefault || profile == UsePowerSavingGpu) {
+		profile = UseHighPerformanceGpu;
+	} else {
+		profile = UsePowerSavingGpu;
+	}
+
+	return SetOBSGpuPowerProfile(profile);
+}
+
+enum GpuPowerProfiles GetOBSGpuPowerProfile()
+{
+	LPTSTR keyPath = TEXT(REGISTRY_GPU_POWER_PROFILE);
+
+	HKEY key;
+
+	bool success = RegOpenKey(HKEY_CURRENT_USER, keyPath, &key) ==
+		       ERROR_SUCCESS;
+
+	GpuPowerProfiles profile = UseDefault;
+
+	if (success) {
+		TCHAR executablePath[MAX_PATH];
+		GetModuleFileName(nullptr, executablePath, MAX_PATH);
+
+		wchar_t value[1024];
+		DWORD value_length = 1024;
+		DWORD type = REG_SZ;
+		success = RegQueryValueEx(key, executablePath, NULL, &type,
+					  (LPBYTE)&value,
+					  &value_length) == ERROR_SUCCESS;
+
+		if (success && wcscmp(value, L"GpuPreference=0;\0") == 0) {
+			profile = UseDefault;
+		}
+		if (success && wcscmp(value, L"GpuPreference=1;\0") == 0) {
+			profile = UsePowerSavingGpu;
+		}
+		if (success && wcscmp(value, L"GpuPreference=2;\0") == 0) {
+			profile = UseHighPerformanceGpu;
+		}
+
+		RegCloseKey(key);
+	}
+
+	return profile;
+}
+
+bool SetOBSGpuPowerProfile(enum GpuPowerProfiles profile)
+{
+	bool success = true;
+
+	LPTSTR keyPath = TEXT(REGISTRY_GPU_POWER_PROFILE);
+
+	HKEY key;
+	DWORD disposition;
+
+	success &= RegCreateKeyEx(HKEY_CURRENT_USER, keyPath, 0, nullptr, 0,
+				  KEY_WRITE, nullptr, &key,
+				  &disposition) == ERROR_SUCCESS;
+
+	if (success) {
+		// The \0 in the value ist important! Otherwise you
+		// may corrupt your registry entry resulting in the graphic system of windows to break!
+		// The GpuPreference specifies that OBS wants to run with a specific GPU
+		// > 0 -> use high performance GPU
+		// > 1 -> use power saving GPU
+		// > 2 -> use system default GPU
+
+		TCHAR executablePath[MAX_PATH];
+		GetModuleFileName(nullptr, executablePath, MAX_PATH);
+
+		if (profile == UsePowerSavingGpu) {
+			const wchar_t value[] = L"GpuPreference=1;\0";
+			success &= RegSetValueEx(key, executablePath, 0, REG_SZ,
+						 LPBYTE(value),
+						 sizeof value) == ERROR_SUCCESS;
+
+		} else if (profile == UseHighPerformanceGpu) {
+			const wchar_t value[] = L"GpuPreference=2;\0";
+			success &= RegSetValueEx(key, executablePath, 0, REG_SZ,
+						 LPBYTE(value),
+						 sizeof value) == ERROR_SUCCESS;
+		} else {
+			const wchar_t value[] = L"GpuPreference=0;\0";
+			success &= RegSetValueEx(key, executablePath, 0, REG_SZ,
+						 LPBYTE(value),
+						 sizeof value) == ERROR_SUCCESS;
+		}
+
+		success &= RegCloseKey(key) == ERROR_SUCCESS;
+	}
+
+	return success;
+}

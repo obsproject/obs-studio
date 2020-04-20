@@ -23,6 +23,9 @@
 #include <QSplitter>
 #include "qt-display.hpp"
 #include <obs.hpp>
+#include <QLabel>
+#include <QHBoxLayout>
+#include "helpwidget.hpp"
 
 class OBSPropertiesView;
 class OBSBasic;
@@ -36,6 +39,8 @@ private:
 	OBSBasic *main;
 	bool acceptClicked;
 
+	bool didShowVideoHasErrorMessage = false;
+
 	OBSSource source;
 	OBSSignal removedSignal;
 	OBSSignal renamedSignal;
@@ -44,6 +49,9 @@ private:
 	OBSPropertiesView *view;
 	QDialogButtonBox *buttonBox;
 	QSplitter *windowSplitter;
+	QGridLayout *previewLayout;
+	QWidget *previewArea;
+	HelpWidget *helpWidget;
 
 	OBSSource sourceA;
 	OBSSource sourceB;
@@ -60,9 +68,15 @@ private:
 	int CheckSettings();
 	void Cleanup();
 
+signals:
+	void VideoHasError(int code);
+	void VideoClearError();
+
 private slots:
 	void on_buttonBox_clicked(QAbstractButton *button);
 	void AddPreviewButton();
+	void ShowVideoHasErrorMessage(int code);
+	void HideVideoHasErrorMessage();
 
 public:
 	OBSBasicProperties(QWidget *parent, OBSSource source_);

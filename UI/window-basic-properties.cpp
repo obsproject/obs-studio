@@ -26,6 +26,9 @@
 #include <QScreen>
 #include <QWindow>
 #include <QMessageBox>
+#include "helpwidget.hpp"
+#include "helpwidget-gamecapturefailed.hpp"
+#include "helpwidget-monitorcapturefailed.hpp"
 
 using namespace std;
 
@@ -34,7 +37,6 @@ static void CreateTransitionScene(OBSSource scene, const char *text,
 
 OBSBasicProperties::OBSBasicProperties(QWidget *parent, OBSSource source_)
 	: QDialog(parent),
-	  preview(new OBSQTDisplay(this)),
 	  main(qobject_cast<OBSBasic *>(parent)),
 	  acceptClicked(false),
 	  source(source_),
@@ -78,19 +80,30 @@ OBSBasicProperties::OBSBasicProperties(QWidget *parent, OBSSource source_)
 	obs_data_apply(oldSettings, settings);
 	obs_data_release(settings);
 
-	view = new OBSPropertiesView(
-		settings, source,
-		(PropertiesReloadCallback)obs_source_properties,
-		(PropertiesUpdateCallback)obs_source_update);
-	view->setMinimumHeight(150);
+	previewLayout = new QGridLayout(this);
+	previewLayout->setMargin(0);
+
+	previewArea = new QWidget(this);
+	previewArea->setLayout(previewLayout);
+
+	preview = new OBSQTDisplay(previewArea);
 
 	preview->setMinimumSize(20, 150);
 	preview->setSizePolicy(
 		QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding));
 
+	previewLayout->addWidget(preview);
+
+	view = new OBSPropertiesView(
+		settings, source,
+		(PropertiesReloadCallback)obs_source_properties,
+		(PropertiesUpdateCallback)obs_source_update);
+
+	view->setMinimumHeight(150);
+
 	// Create a QSplitter to keep a unified workflow here.
 	windowSplitter = new QSplitter(Qt::Orientation::Vertical, this);
-	windowSplitter->addWidget(preview);
+	windowSplitter->addWidget(previewArea);
 	windowSplitter->addWidget(view);
 	windowSplitter->setChildrenCollapsible(false);
 	//windowSplitter->setSizes(QList<int>({ 16777216, 150 }));
@@ -136,6 +149,12 @@ OBSBasicProperties::OBSBasicProperties(QWidget *parent, OBSSource source_)
 	bool drawable_type = type == OBS_SOURCE_TYPE_INPUT ||
 			     type == OBS_SOURCE_TYPE_SCENE;
 	bool drawable_preview = (caps & OBS_SOURCE_VIDEO) != 0;
+
+	connect(this, &OBSBasicProperties::VideoHasError, this,
+		&OBSBasicProperties::ShowVideoHasErrorMessage);
+
+	connect(this, &OBSBasicProperties::VideoClearError, this,
+		&OBSBasicProperties::HideVideoHasErrorMessage);
 
 	if (drawable_preview && drawable_type) {
 		preview->show();
@@ -398,6 +417,16 @@ void OBSBasicProperties::DrawPreview(void *data, uint32_t cx, uint32_t cy)
 
 	gs_projection_pop();
 	gs_viewport_pop();
+
+	int code = obs_source_video_get_error(window->source);
+
+	if (code) {
+		if (!window->didShowVideoHasErrorMessage) {
+			emit window->VideoHasError(code);
+		}
+	} else if (window->didShowVideoHasErrorMessage) {
+		emit window->VideoClearError();
+	}
 }
 
 void OBSBasicProperties::DrawTransitionPreview(void *data, uint32_t cx,
@@ -443,6 +472,47 @@ void OBSBasicProperties::Cleanup()
 	obs_display_remove_draw_callback(
 		preview->GetDisplay(),
 		OBSBasicProperties::DrawTransitionPreview, this);
+}
+
+void OBSBasicProperties::ShowVideoHasErrorMessage(int code)
+{
+	if (didShowVideoHasErrorMessage)
+		return;
+
+	didShowVideoHasErrorMessage = true;
+
+	const char *id = obs_source_get_id(source);
+	if (strcmp(id, "game_capture") == 0) {
+		helpWidget = new GameCaptureFailedHelpWidget(previewArea);
+	}
+	if (strcmp(id, "monitor_capture") == 0) {
+		helpWidget = new MonitorCaptureFailedHelpWidget(previewArea);
+	}
+
+	if (helpWidget != nullptr) {
+		if (helpWidget->ShouldDisplayHelp(code)) {
+			helpWidget->setAutoFillBackground(true);
+
+			previewLayout->addWidget(helpWidget, 0, 0);
+			previewLayout->setAlignment(helpWidget,
+						    Qt::AlignCenter);
+		} else {
+			delete helpWidget;
+			helpWidget = nullptr;
+		}
+	}
+}
+
+void OBSBasicProperties::HideVideoHasErrorMessage()
+{
+	didShowVideoHasErrorMessage = false;
+
+	if (helpWidget != nullptr) {
+		previewLayout->removeWidget(helpWidget);
+
+		delete helpWidget;
+		helpWidget = nullptr;
+	}
 }
 
 void OBSBasicProperties::reject()

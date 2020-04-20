@@ -231,6 +231,9 @@ set(obs_SOURCES
 	window-basic-transform.cpp
 	window-basic-preview.cpp
 	window-basic-about.cpp
+	helpwidget-gamecapturefailed.cpp
+	helpwidget-monitorcapturefailed.cpp
+	helpwidget.cpp
 	window-importer.cpp
 	window-namedialog.cpp
 	window-log-reply.cpp
@@ -286,6 +289,9 @@ set(obs_HEADERS
 	window-basic-adv-audio.hpp
 	window-basic-transform.hpp
 	window-basic-preview.hpp
+	helpwidget-gamecapturefailed.hpp
+	helpwidget-monitorcapturefailed.hpp
+	helpwidget.hpp
 	window-importer.hpp
 	window-namedialog.hpp
 	window-log-reply.hpp
@@ -347,6 +353,7 @@ set(obs_UI
 	forms/AutoConfigStreamPage.ui
 	forms/AutoConfigTestPage.ui
 	forms/ColorSelect.ui
+	forms/HelpWidget.ui
 	forms/OBSLogReply.ui
 	forms/OBSBasic.ui
 	forms/OBSBasicTransform.ui

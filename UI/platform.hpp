@@ -61,6 +61,12 @@ public:
 
 RunOnceMutex GetRunOnceMutex(bool &already_running);
 QString GetMonitorName(const QString &id);
+
+enum GpuPowerProfiles { UseDefault, UsePowerSavingGpu, UseHighPerformanceGpu };
+
+bool ToggleOBSGpuPowerProfile();
+enum GpuPowerProfiles GetOBSGpuPowerProfile();
+bool SetOBSGpuPowerProfile(enum GpuPowerProfiles profile);
 #endif
 
 #ifdef __APPLE__
