@@ -119,6 +119,11 @@ SourceTree QLineEdit {
 
 /* Dock Widget */
 
+QDockWidget {
+	titlebar-close-icon: url('./Dark/Close.svg');
+	titlebar-normal-icon: url('./Dark/Popout.svg');
+}
+
 QDockWidget::title {
     text-align: center;
     background-color: rgb(70,69,70);
