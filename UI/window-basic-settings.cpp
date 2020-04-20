@@ -309,6 +309,38 @@ void OBSBasicSettings::HookWidget(QWidget *widget, const char *signal,
 #define ADV_RESTART     SLOT(AdvancedChangedRestart())
 /* clang-format on */
 
+void OBSBasicSettings::ShowOutputsWarning()
+{
+	if (!obs_video_active())
+		return;
+
+	auto msgBox = [this]() {
+		QMessageBox msgbox(this);
+		msgbox.setWindowTitle(QTStr("OutputsActive.Title"));
+		msgbox.setText(QTStr("OutputsActive.Text"));
+		msgbox.setIcon(QMessageBox::Icon::Warning);
+		msgbox.addButton(QMessageBox::Ok);
+
+		QCheckBox *cb = new QCheckBox(QTStr("DoNotShowAgain"));
+		msgbox.setCheckBox(cb);
+
+		msgbox.exec();
+
+		if (cb->isChecked()) {
+			config_set_bool(App()->GlobalConfig(), "General",
+					"SettingsOutputWarning", true);
+			config_save_safe(App()->GlobalConfig(), "tmp", nullptr);
+		}
+	};
+
+	bool warned = config_get_bool(App()->GlobalConfig(), "General",
+				      "SettingsOutputWarning");
+	if (!warned) {
+		QMetaObject::invokeMethod(App(), "Exec", Qt::QueuedConnection,
+					  Q_ARG(VoidFunc, msgBox));
+	}
+}
+
 OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	: QDialog(parent),
 	  main(qobject_cast<OBSBasic *>(parent)),
@@ -803,6 +835,8 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	QValidator *validator = new QRegExpValidator(rx, this);
 	ui->baseResolution->lineEdit()->setValidator(validator);
 	ui->outputResolution->lineEdit()->setValidator(validator);
+
+	ShowOutputsWarning();
 }
 
 OBSBasicSettings::~OBSBasicSettings()

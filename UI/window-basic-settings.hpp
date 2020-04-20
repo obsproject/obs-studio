@@ -236,6 +236,9 @@ private:
 	QString lastService;
 	int prevLangIndex;
 	bool prevBrowserAccel;
+
+	void ShowOutputsWarning();
+
 private slots:
 	void UpdateServerList();
 	void UpdateKeyLink();
