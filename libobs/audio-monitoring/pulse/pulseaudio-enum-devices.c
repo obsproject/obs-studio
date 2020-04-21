@@ -30,3 +30,10 @@ void obs_enum_audio_monitoring_devices(obs_enum_audio_device_cb cb, void *data)
 
 	bfree(ecb);
 }
+
+char *obs_get_default_audio_monitoring_device()
+{
+	char *id = NULL;
+	get_default_id(&id);
+	return id;
+}

@@ -177,3 +177,10 @@ bool devices_match(const char *id1, const char *id2)
 
 	return match;
 }
+
+char *obs_get_default_audio_monitoring_device()
+{
+	char *id = NULL;
+	get_default_id(&id);
+	return id;
+}

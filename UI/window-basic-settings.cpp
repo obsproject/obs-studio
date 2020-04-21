@@ -4344,18 +4344,24 @@ void OBSBasicSettings::FillSimpleStreamingValues()
 void OBSBasicSettings::FillAudioMonitoringDevices()
 {
 	QComboBox *cb = ui->monitoringDevice;
+	char *defaultId = obs_get_default_audio_monitoring_device();
+	cb->setProperty("defaultId", QT_UTF8(defaultId));
 
 	auto enum_devices = [](void *param, const char *name, const char *id) {
 		QComboBox *cb = (QComboBox *)param;
-		cb->addItem(name, id);
+		QString defaultId = cb->property("defaultId").value<QString>();
+
+		if (defaultId == QT_UTF8(id))
+			cb->addItem(QT_UTF8(name) + " " + QTStr("Default"),
+				    "default");
+		else
+			cb->addItem(name, id);
+
 		return true;
 	};
 
-	cb->addItem(QTStr("Basic.Settings.Advanced.Audio.MonitoringDevice"
-			  ".Default"),
-		    "default");
-
 	obs_enum_audio_monitoring_devices(enum_devices, cb);
+	bfree(defaultId);
 }
 
 void OBSBasicSettings::SimpleRecordingQualityChanged()
