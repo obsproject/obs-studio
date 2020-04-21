@@ -1430,18 +1430,38 @@ void OBSBasicSettings::LoadResolutionLists()
 
 	ui->baseResolution->clear();
 
-	auto addRes = [this](int cx, int cy) {
+	auto addRes = [this](int cx, int cy, QString label = "") {
 		QString res = ResString(cx, cy).c_str();
+		res += label;
+
 		if (ui->baseResolution->findText(res) == -1)
 			ui->baseResolution->addItem(res);
 	};
 
-	for (QScreen *screen : QGuiApplication::screens()) {
+	obs_video_info ovi;
+	obs_get_video_info(&ovi);
+
+	addRes(ovi.base_width, ovi.base_height,
+	       QString(" ") + QTStr("Current"));
+	addRes(1920, 1080, QString(" ") + QTStr("Recommended"));
+
+	QList<QScreen *> screens = QGuiApplication::screens();
+	for (int i = 0; i < screens.size(); i++) {
+		QScreen *screen = screens[i];
 		QSize as = screen->size();
-		addRes(as.width(), as.height());
+		QString primary = "";
+
+		if (i == 0) {
+			primary += ", ";
+			primary += QTStr("Primary");
+		}
+
+		addRes(as.width(), as.height(),
+		       QString(" ") +
+			       QTStr("DisplayNumber")
+				       .arg(QString::number(i + 1), primary));
 	}
 
-	addRes(1920, 1080);
 	addRes(1280, 720);
 
 	string outputResString = ResString(out_cx, out_cy);
@@ -2990,7 +3010,10 @@ void OBSBasicSettings::SaveGeneralSettings()
 
 void OBSBasicSettings::SaveVideoSettings()
 {
-	QString baseResolution = ui->baseResolution->currentText();
+	QString res = ui->baseResolution->currentText();
+	QStringList pieces = res.split(" ");
+	QString baseResolution = pieces.value(0);
+
 	QString outputResolution = ui->outputResolution->currentText();
 	int fpsType = ui->fpsType->currentIndex();
 	uint32_t cx = 0, cy = 0;
@@ -3801,7 +3824,10 @@ void OBSBasicSettings::on_colorFormat_currentIndexChanged(const QString &text)
 
 static bool ValidResolutions(Ui::OBSBasicSettings *ui)
 {
-	QString baseRes = ui->baseResolution->lineEdit()->text();
+	QString res = ui->baseResolution->lineEdit()->text();
+	QStringList pieces = res.split(" ");
+	QString baseRes = pieces.value(0);
+
 	QString outputRes = ui->outputResolution->lineEdit()->text();
 	uint32_t cx, cy;
 
