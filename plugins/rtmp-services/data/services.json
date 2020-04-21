@@ -1809,6 +1809,15 @@
                 "max video bitrate": 10000,
                 "max audio bitrate": 192
             }
+        },
+        {
+            "name": "VirtWish",
+            "servers": [
+                {
+                    "name": "Default",
+                    "url": "rtmp://rtmp.virtwish.com/live"
+                }
+            ]
         }
     ]
 }
