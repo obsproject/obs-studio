@@ -1128,7 +1128,7 @@
             "servers": [
                 {
                     "name": "Auto",
-                    "url": "rtmp://s-sd.stripcdn.com/ext"
+                    "url": "rtmp://s-sd.stripst.com/ext"
                 }
             ],
             "recommended": {
