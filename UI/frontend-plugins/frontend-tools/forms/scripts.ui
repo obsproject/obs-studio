@@ -147,6 +147,13 @@
             </widget>
            </item>
            <item>
+            <widget class="QPushButton" name="editScript">
+             <property name="text">
+              <string>EditScript</string>
+             </property>
+            </widget>
+           </item>
+           <item>
             <widget class="QPushButton" name="scriptLog">
              <property name="text">
               <string>ScriptLogWindow</string>
