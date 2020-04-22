@@ -427,6 +427,16 @@ void ScriptsTool::on_scripts_customContextMenuRequested(const QPoint &pos)
 	popup.exec(QCursor::pos());
 }
 
+void ScriptsTool::on_editScript_clicked()
+{
+	int row = ui->scripts->currentRow();
+	if (row == -1)
+		return;
+	QUrl url = QUrl::fromLocalFile(
+		ui->scripts->item(row)->data(Qt::UserRole).toString());
+	QDesktopServices::openUrl(url);
+}
+
 void ScriptsTool::on_scriptLog_clicked()
 {
 	scriptLogWindow->show();
