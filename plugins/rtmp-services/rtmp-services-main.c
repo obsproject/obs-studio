@@ -55,6 +55,10 @@ extern void load_twitch_data(void);
 extern void unload_twitch_data(void);
 extern void twitch_ingests_refresh(int seconds);
 
+extern void init_nimotv_data(void);
+extern void load_nimotv_data(void);
+extern void unload_nimotv_data(void);
+
 static void refresh_callback(void *unused, calldata_t *cd)
 {
 	int seconds = (int)calldata_int(cd, "seconds");
@@ -71,6 +75,7 @@ static void refresh_callback(void *unused, calldata_t *cd)
 bool obs_module_load(void)
 {
 	init_twitch_data();
+	init_nimotv_data();
 
 	dstr_copy(&module_name, "rtmp-services plugin (libobs ");
 	dstr_cat(&module_name, obs_get_version_string());
@@ -93,6 +98,7 @@ bool obs_module_load(void)
 	}
 
 	load_twitch_data();
+	load_nimotv_data();
 
 	bfree(local_dir);
 	bfree(cache_dir);
@@ -107,5 +113,6 @@ void obs_module_unload(void)
 {
 	update_info_destroy(update_info);
 	unload_twitch_data();
+	unload_nimotv_data();
 	dstr_free(&module_name);
 }

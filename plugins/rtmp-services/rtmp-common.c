@@ -6,6 +6,7 @@
 #include "rtmp-format-ver.h"
 #include "twitch.h"
 #include "younow.h"
+#include "nimotv.h"
 
 struct rtmp_common {
 	char *service;
@@ -27,6 +28,7 @@ static inline json_t *find_service(json_t *root, const char *name,
 static inline const char *get_string_val(json_t *service, const char *key);
 
 extern void twitch_ingests_refresh(int seconds);
+extern void nimotv_ingests_refresh(int seconds, const char *key, bool is_auto);
 
 static void ensure_valid_url(struct rtmp_common *service, json_t *json,
 			     obs_data_t *settings)
@@ -322,6 +324,50 @@ static inline bool fill_twitch_servers(obs_property_t *servers_prop)
 	return success;
 }
 
+static bool fill_nimotv_servers_locked(obs_property_t *servers_prop)
+{
+	size_t count = nimotv_ingest_count();
+
+	obs_property_list_add_string(servers_prop,
+				     obs_module_text("Server.Auto"), "auto");
+
+	if (count < 1)
+		return false;
+
+	for (size_t i = 0; i < count; i++) {
+		struct nimotv_ingest ing = nimotv_ingest(i);
+		obs_property_list_add_string(servers_prop, ing.name, ing.url);
+	}
+
+	return true;
+}
+
+static inline const char *find_first_nimotv_server(json_t *root)
+{
+	json_t *json_service = find_service(root, "Nimo TV", NULL);
+	if (!json_service)
+		return NULL;
+	json_t *servers = json_object_get(json_service, "servers");
+	if (!servers)
+		return NULL;
+	json_t *server = json_array_get(servers, 0);
+	if (!server)
+		return NULL;
+	const char *url = get_string_val(server, "url");
+	return url;
+}
+
+static inline bool fill_nimotv_servers(obs_property_t *servers_prop)
+{
+	bool success;
+
+	nimotv_ingests_lock();
+	success = fill_nimotv_servers_locked(servers_prop);
+	nimotv_ingests_unlock();
+
+	return success;
+}
+
 static void fill_servers(obs_property_t *servers_prop, json_t *service,
 			 const char *name)
 {
@@ -346,6 +392,11 @@ static void fill_servers(obs_property_t *servers_prop, json_t *service,
 	}
 	if (strcmp(name, "Twitch") == 0) {
 		if (fill_twitch_servers(servers_prop))
+			return;
+	}
+
+	if (strcmp(name, "Nimo TV") == 0) {
+		if (fill_nimotv_servers(servers_prop))
 			return;
 	}
 
@@ -601,6 +652,32 @@ static const char *rtmp_common_url(void *data)
 		if (service->server && service->key) {
 			return younow_get_ingest(service->server, service->key);
 		}
+	}
+
+	if (service->service && strcmp(service->service, "Nimo TV") == 0) {
+		if (service->server && strcmp(service->server, "auto") == 0) {
+			const char *url = NULL;
+			nimotv_ingests_refresh(3, service->key, true);
+
+			nimotv_ingests_lock();
+			url = get_recommended_ingest();
+			nimotv_ingests_unlock();
+
+			if (!url) {
+				json_t *root = open_services_file();
+				if (root) {
+					const char *first_url =
+						find_first_nimotv_server(root);
+					if (first_url) {
+						url = bstrdup(first_url);
+					}
+					json_decref(root);
+				}
+			}
+			return url;
+		}
+
+		nimotv_ingests_refresh(3, service->key, false);
 	}
 
 	return service->server;

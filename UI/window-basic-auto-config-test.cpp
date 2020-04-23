@@ -249,9 +249,10 @@ void AutoConfigTestPage::TestBandwidthThread()
 		GetServers(servers);
 
 	/* just use the first server if it only has one alternate server,
-	 * or if using Mixer or Restream due to their "auto" servers */
+	 * or if using Mixer, Restream or Nimo TV due to their "auto" servers */
 	if (servers.size() < 3 || wiz->serviceName == "Mixer.com - FTL" ||
-	    wiz->serviceName.substr(0, 11) == "Restream.io") {
+	    wiz->serviceName.substr(0, 11) == "Restream.io" ||
+	    wiz->serviceName == "Nimo TV") {
 		servers.resize(1);
 
 	} else if (wiz->service == AutoConfig::Service::Twitch &&
