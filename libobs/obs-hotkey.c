@@ -1205,6 +1205,91 @@ static inline bool is_pressed(obs_key_t key)
 					       key);
 }
 
+static inline bool is_hotkey_pressed(obs_key_combination_t *hotkey)
+{
+	bool pressed = false;
+	if (is_pressed(hotkey->key)) {
+
+		pressed = true;
+	} else if (hotkey->modifiers != 0) {
+		switch (hotkey->modifiers) {
+		case 2:
+			pressed = is_pressed(OBS_KEY_SHIFT);
+			break;
+		case 4:
+			pressed = is_pressed(OBS_KEY_CONTROL);
+			break;
+		case 8:
+			pressed = is_pressed(OBS_KEY_ALT);
+			break;
+		case 128:
+			pressed = is_pressed(OBS_KEY_META);
+			break;
+		case 6:
+			if (is_pressed(OBS_KEY_SHIFT) ||
+			    is_pressed(OBS_KEY_CONTROL))
+				pressed = true;
+			break;
+		case 10:
+			if (is_pressed(OBS_KEY_SHIFT) ||
+			    is_pressed(OBS_KEY_ALT))
+				pressed = true;
+			break;
+		case 130:
+			if (is_pressed(OBS_KEY_SHIFT) ||
+			    is_pressed(OBS_KEY_META))
+				pressed = true;
+			break;
+		case 12:
+			if (is_pressed(OBS_KEY_CONTROL) ||
+			    is_pressed(OBS_KEY_ALT))
+				pressed = true;
+			break;
+		case 132:
+			if (is_pressed(OBS_KEY_CONTROL) ||
+			    is_pressed(OBS_KEY_META))
+				pressed = true;
+			break;
+		case 136:
+			if (is_pressed(OBS_KEY_ALT) || is_pressed(OBS_KEY_META))
+				pressed = true;
+			break;
+		case 14:
+			if (is_pressed(OBS_KEY_SHIFT) ||
+			    is_pressed(OBS_KEY_CONTROL) ||
+			    is_pressed(OBS_KEY_ALT))
+				pressed = true;
+			break;
+		case 134:
+			if (is_pressed(OBS_KEY_SHIFT) ||
+			    is_pressed(OBS_KEY_CONTROL) ||
+			    is_pressed(OBS_KEY_META))
+				pressed = true;
+			break;
+		case 140:
+			if (is_pressed(OBS_KEY_CONTROL) ||
+			    is_pressed(OBS_KEY_ALT) || is_pressed(OBS_KEY_META))
+				pressed = true;
+			break;
+
+		case 138:
+			if (is_pressed(OBS_KEY_SHIFT) ||
+			    is_pressed(OBS_KEY_ALT) || is_pressed(OBS_KEY_META))
+				pressed = true;
+			break;
+		case 142:
+			if (is_pressed(OBS_KEY_SHIFT) ||
+			    is_pressed(OBS_KEY_CONTROL) ||
+			    is_pressed(OBS_KEY_ALT) || is_pressed(OBS_KEY_META))
+				pressed = true;
+			break;
+		default:
+			break;
+		}
+	}
+	return pressed;
+}
+
 static inline void press_released_binding(obs_hotkey_binding_t *binding)
 {
 	binding->pressed = true;
@@ -1218,6 +1303,13 @@ static inline void press_released_binding(obs_hotkey_binding_t *binding)
 	else if (obs->hotkeys.router_func)
 		obs->hotkeys.router_func(obs->hotkeys.router_func_data,
 					 hotkey->id, true);
+
+	if (binding->key.modifiers != 0) {
+		bool pressed;
+		do {
+			pressed = is_hotkey_pressed(&binding->key);
+		} while (pressed);
+	}
 }
 
 static inline void release_pressed_binding(obs_hotkey_binding_t *binding)
@@ -1233,6 +1325,13 @@ static inline void release_pressed_binding(obs_hotkey_binding_t *binding)
 	else if (obs->hotkeys.router_func)
 		obs->hotkeys.router_func(obs->hotkeys.router_func_data,
 					 hotkey->id, false);
+
+		if (binding->key.modifiers != 0) {
+		bool pressed;
+		do {
+			pressed = is_hotkey_pressed(&binding->key);
+		} while (pressed);
+	}
 }
 
 static inline void handle_binding(obs_hotkey_binding_t *binding,
@@ -1261,16 +1360,16 @@ static inline void handle_binding(obs_hotkey_binding_t *binding,
 
 	if (binding->pressed || no_press)
 		return;
-
-	press_released_binding(binding);
+	if (binding->key.modifiers == modifiers)
+		press_released_binding(binding);
 	return;
 
 reset:
 	binding->modifiers_match = modifiers_match_;
 	if (!binding->pressed)
 		return;
-
-	release_pressed_binding(binding);
+	if (binding->key.modifiers == modifiers)
+		release_pressed_binding(binding);
 }
 
 struct obs_hotkey_internal_inject {
