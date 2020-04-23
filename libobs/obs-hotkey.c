@@ -1326,7 +1326,7 @@ static inline void release_pressed_binding(obs_hotkey_binding_t *binding)
 		obs->hotkeys.router_func(obs->hotkeys.router_func_data,
 					 hotkey->id, false);
 
-		if (binding->key.modifiers != 0) {
+	if (binding->key.modifiers != 0) {
 		bool pressed;
 		do {
 			pressed = is_hotkey_pressed(&binding->key);
