@@ -1818,6 +1818,28 @@
                     "url": "rtmp://rtmp.virtwish.com/live"
                 }
             ]
+        },
+        {
+            "name": "Nimo TV",
+            "servers": [
+                {
+                    "name": "Global:1",
+                    "url": "rtmp://wspush.rtmp.nimo.tv/live/"
+                },
+                {
+                    "name": "Global:2",
+                    "url": "rtmp://txpush.rtmp.nimo.tv/live/"
+                },
+                {
+                    "name": "Global:3",
+                    "url": "rtmp://alpush.rtmp.nimo.tv/live/"
+                }
+            ],
+            "recommended": {
+                "keyint": 2,
+                "max video bitrate": 6000,
+                "max audio bitrate": 160
+            }
         }
     ]
 }
