@@ -69,6 +69,7 @@ using namespace Gdiplus;
 #define S_EXTENTS_CX                    "extents_cx"
 #define S_EXTENTS_CY                    "extents_cy"
 #define S_TRANSFORM                     "transform"
+#define S_ANTIALIASING                  "antialiasing"
 
 #define S_ALIGN_LEFT                    "left"
 #define S_ALIGN_CENTER                  "center"
@@ -82,6 +83,9 @@ using namespace Gdiplus;
 #define S_TRANSFORM_UPPERCASE           1
 #define S_TRANSFORM_LOWERCASE           2
 #define S_TRANSFORM_STARTCASE           3
+
+#define S_ANTIALIASING_NONE             0
+#define S_ANTIALIASING_STANDARD         1
 
 #define T_(v)                           obs_module_text(v)
 #define T_FONT                          T_("Font")
@@ -110,6 +114,7 @@ using namespace Gdiplus;
 #define T_EXTENTS_CX                    T_("Width")
 #define T_EXTENTS_CY                    T_("Height")
 #define T_TRANSFORM                     T_("Transform")
+#define T_ANTIALIASING                  T_("Antialiasing")
 
 #define T_FILTER_TEXT_FILES             T_("Filter.TextFiles")
 #define T_FILTER_ALL_FILES              T_("Filter.AllFiles")
@@ -242,6 +247,7 @@ struct TextSource {
 	bool italic = false;
 	bool underline = false;
 	bool strikeout = false;
+	bool antialiasing = true;
 	bool vertical = false;
 
 	bool use_outline = false;
@@ -288,6 +294,7 @@ struct TextSource {
 	void RenderText();
 	void LoadFileText();
 	void TransformText();
+	void SetAntiAliasing(Graphics &graphics_bitmap);
 
 	const char *GetMainString(const char *str);
 
@@ -575,9 +582,8 @@ void TextSource::RenderText()
 		warn_stat("graphics_bitmap.Clear");
 	}
 
-	graphics_bitmap.SetTextRenderingHint(TextRenderingHintAntiAlias);
 	graphics_bitmap.SetCompositingMode(CompositingModeSourceOver);
-	graphics_bitmap.SetSmoothingMode(SmoothingModeAntiAlias);
+	SetAntiAliasing(graphics_bitmap);
 
 	if (!text.empty()) {
 		if (use_outline) {
@@ -684,6 +690,19 @@ void TextSource::TransformText()
 	}
 }
 
+void TextSource::SetAntiAliasing(Graphics &graphics_bitmap)
+{
+	if (!antialiasing) {
+		graphics_bitmap.SetTextRenderingHint(
+			TextRenderingHintSingleBitPerPixel);
+		graphics_bitmap.SetSmoothingMode(SmoothingModeNone);
+		return;
+	}
+
+	graphics_bitmap.SetTextRenderingHint(TextRenderingHintAntiAlias);
+	graphics_bitmap.SetSmoothingMode(SmoothingModeAntiAlias);
+}
+
 #define obs_data_get_uint32 (uint32_t) obs_data_get_int
 
 inline void TextSource::Update(obs_data_t *s)
@@ -712,6 +731,7 @@ inline void TextSource::Update(obs_data_t *s)
 	uint32_t n_extents_cx = obs_data_get_uint32(s, S_EXTENTS_CX);
 	uint32_t n_extents_cy = obs_data_get_uint32(s, S_EXTENTS_CY);
 	int new_text_transform = (int)obs_data_get_int(s, S_TRANSFORM);
+	bool new_antialiasing = obs_data_get_bool(s, S_ANTIALIASING);
 
 	const char *font_face = obs_data_get_string(font_obj, "face");
 	int font_size = (int)obs_data_get_int(font_obj, "size");
@@ -763,6 +783,7 @@ inline void TextSource::Update(obs_data_t *s)
 	extents_cx = n_extents_cx;
 	extents_cy = n_extents_cy;
 	text_transform = new_text_transform;
+	antialiasing = new_antialiasing;
 
 	if (!gradient) {
 		color2 = color;
@@ -965,6 +986,8 @@ static obs_properties_t *get_properties(void *data)
 	obs_properties_add_path(props, S_FILE, T_FILE, OBS_PATH_FILE,
 				filter.c_str(), path.c_str());
 
+	obs_properties_add_bool(props, S_ANTIALIASING, T_ANTIALIASING);
+
 	p = obs_properties_add_list(props, S_TRANSFORM, T_TRANSFORM,
 				    OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
 	obs_property_list_add_int(p, T_TRANSFORM_NONE, S_TRANSFORM_NONE);
@@ -976,6 +999,7 @@ static obs_properties_t *get_properties(void *data)
 				  S_TRANSFORM_STARTCASE);
 
 	obs_properties_add_bool(props, S_VERTICAL, T_VERTICAL);
+
 	obs_properties_add_color(props, S_COLOR, T_COLOR);
 	p = obs_properties_add_int_slider(props, S_OPACITY, T_OPACITY, 0, 100,
 					  1);
@@ -1059,6 +1083,7 @@ static void defaults(obs_data_t *settings, int ver)
 	obs_data_set_default_int(settings, S_EXTENTS_CX, 100);
 	obs_data_set_default_int(settings, S_EXTENTS_CY, 100);
 	obs_data_set_default_int(settings, S_TRANSFORM, S_TRANSFORM_NONE);
+	obs_data_set_default_bool(settings, S_ANTIALIASING, true);
 
 	obs_data_release(font_obj);
 };
