@@ -64,7 +64,6 @@ MODULE_EXPORT const char *obs_module_description(void)
 }
 
 extern struct obs_encoder_info obs_qsv_encoder;
-extern struct obs_encoder_info obs_qsv_encoder_tex;
 
 bool obs_module_load(void)
 {
@@ -77,7 +76,6 @@ bool obs_module_load(void)
 
 	if (sts == MFX_ERR_NONE) {
 		obs_register_encoder(&obs_qsv_encoder);
-		obs_register_encoder(&obs_qsv_encoder_tex);
 		MFXClose(session);
 	} else {
 		impl = MFX_IMPL_HARDWARE_ANY | MFX_IMPL_VIA_D3D9;

@@ -57,8 +57,8 @@ IDXGIAdapter *GetIntelDeviceAdapterHandle(mfxSession session)
 		}
 	}
 
-	HRESULT hres = CreateDXGIFactory1(__uuidof(IDXGIFactory2),
-					  (void **)(&g_pDXGIFactory));
+	HRESULT hres = CreateDXGIFactory(__uuidof(IDXGIFactory2),
+					 (void **)(&g_pDXGIFactory));
 	if (FAILED(hres))
 		return NULL;
 
@@ -429,46 +429,6 @@ mfxStatus simple_unlock(mfxHDL pthis, mfxMemId mid, mfxFrameData *ptr)
 		ptr->U = ptr->V = ptr->Y = 0;
 		ptr->A = ptr->R = ptr->G = ptr->B = 0;
 	}
-
-	return MFX_ERR_NONE;
-}
-
-mfxStatus simple_copytex(mfxHDL pthis, mfxMemId mid, mfxU32 tex_handle,
-			 mfxU64 lock_key, mfxU64 *next_key)
-{
-	pthis; // To suppress warning for this unused parameter
-
-	CustomMemId *memId = (CustomMemId *)mid;
-	ID3D11Texture2D *pSurface = (ID3D11Texture2D *)memId->memId;
-
-	IDXGIKeyedMutex *km;
-	ID3D11Texture2D *input_tex;
-	HRESULT hr;
-
-	hr = g_pD3D11Device->OpenSharedResource((HANDLE)(uintptr_t)tex_handle,
-						IID_ID3D11Texture2D,
-						(void **)&input_tex);
-	if (FAILED(hr)) {
-		return MFX_ERR_INVALID_HANDLE;
-	}
-
-	hr = input_tex->QueryInterface(IID_IDXGIKeyedMutex, (void **)&km);
-	if (FAILED(hr)) {
-		input_tex->Release();
-		return MFX_ERR_INVALID_HANDLE;
-	}
-
-	input_tex->SetEvictionPriority(DXGI_RESOURCE_PRIORITY_MAXIMUM);
-
-	km->AcquireSync(lock_key, INFINITE);
-
-	D3D11_TEXTURE2D_DESC desc = {0};
-	input_tex->GetDesc(&desc);
-	D3D11_BOX SrcBox = {0, 0, 0, desc.Width, desc.Height, 1};
-	g_pD3D11Ctx->CopySubresourceRegion(pSurface, 0, 0, 0, 0, input_tex, 0,
-					   &SrcBox);
-
-	km->ReleaseSync(*next_key);
 
 	return MFX_ERR_NONE;
 }

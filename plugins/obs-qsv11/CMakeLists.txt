@@ -87,7 +87,6 @@ target_link_libraries(obs-qsv11
 	d3d11
 	dxva2
 	dxgi
-	dxguid
 	)
 
 target_compile_definitions(obs-qsv11 PRIVATE DX11_D3D)
