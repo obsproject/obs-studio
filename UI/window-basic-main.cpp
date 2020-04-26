@@ -5727,9 +5727,6 @@ void OBSBasic::RecordingStop(int code, QString last_error)
 	UpdatePause(false);
 }
 
-#define RP_NO_HOTKEY_TITLE QTStr("Output.ReplayBuffer.NoHotkey.Title")
-#define RP_NO_HOTKEY_TEXT QTStr("Output.ReplayBuffer.NoHotkey.Msg")
-
 void OBSBasic::ShowReplayBufferPauseWarning()
 {
 	auto msgBox = []() {
@@ -5777,21 +5774,6 @@ void OBSBasic::StartReplayBuffer()
 
 	if (LowDiskSpace()) {
 		DiskSpaceMessage();
-		replayBufferButton->setChecked(false);
-		return;
-	}
-
-	obs_output_t *output = outputHandler->replayBuffer;
-	obs_data_t *hotkeys = obs_hotkeys_save_output(output);
-	obs_data_array_t *bindings =
-		obs_data_get_array(hotkeys, "ReplayBuffer.Save");
-	size_t count = obs_data_array_count(bindings);
-	obs_data_array_release(bindings);
-	obs_data_release(hotkeys);
-
-	if (!count) {
-		OBSMessageBox::information(this, RP_NO_HOTKEY_TITLE,
-					   RP_NO_HOTKEY_TEXT);
 		replayBufferButton->setChecked(false);
 		return;
 	}

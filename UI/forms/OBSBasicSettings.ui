@@ -1766,13 +1766,6 @@
                      </widget>
                     </item>
                     <item row="2" column="1">
-                     <widget class="QLabel" name="label_45">
-                      <property name="text">
-                       <string>Basic.Settings.Output.ReplayBuffer.HotkeyMessage</string>
-                      </property>
-                     </widget>
-                    </item>
-                    <item row="3" column="1">
                      <widget class="QLabel" name="simpleRBEstimate">
                       <property name="text">
                        <string notr="true"/>
@@ -3676,13 +3669,6 @@
                          </widget>
                         </item>
                         <item row="2" column="1">
-                         <widget class="QLabel" name="advRBHotkeyLabel">
-                          <property name="text">
-                           <string>Basic.Settings.Output.ReplayBuffer.HotkeyMessage</string>
-                          </property>
-                         </widget>
-                        </item>
-                        <item row="3" column="1">
                          <widget class="QLabel" name="advRBEstimate">
                           <property name="text">
                            <string notr="true"/>
