@@ -681,9 +681,9 @@ void OBSBasic::SetCurrentScene(OBSSource scene, bool force)
 		OBSSource actualLastScene = OBSGetStrongRef(lastScene);
 		if (actualLastScene != scene) {
 			if (scene)
-				obs_source_inc_showing(scene);
+				obs_source_inc_active(scene);
 			if (actualLastScene)
-				obs_source_dec_showing(actualLastScene);
+				obs_source_dec_active(actualLastScene);
 			lastScene = OBSGetWeakRef(scene);
 		}
 	}
@@ -1339,7 +1339,7 @@ void OBSBasic::SetPreviewProgramMode(bool enabled)
 
 		if (curScene) {
 			obs_source_t *source = obs_scene_get_source(curScene);
-			obs_source_inc_showing(source);
+			obs_source_inc_active(source);
 			lastScene = OBSGetWeakRef(source);
 			programScene = OBSGetWeakRef(source);
 		}
