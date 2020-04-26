@@ -1325,7 +1325,6 @@
             ],
             "recommended": {
                 "keyint": 2,
-                "profile": "main",
                 "max audio bitrate": 128,
                 "max video bitrate": 10000
             }
