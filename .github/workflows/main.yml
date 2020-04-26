@@ -19,7 +19,7 @@ jobs:
     name: 'macOS 64-bit'
     runs-on: [macos-latest]
     env:
-      MACOS_DEPS_VERSION: '2020-04-18'
+      MACOS_DEPS_VERSION: '2020-04-24'
       VLC_VERSION: '3.0.8'
       SPARKLE_VERSION: '1.23.0'
       QT_VERSION: '5.14.1'
