@@ -88,6 +88,13 @@ static bool nvenc_init_codec(struct nvenc_encoder *enc)
 {
 	int ret;
 
+	// avcodec_open2 will overwrite priv_data, we call this to get a
+	// local copy of the "gpu" setting for improved error messages.
+	int64_t gpu;
+	if (av_opt_get_int(enc->context->priv_data, "gpu", 0, &gpu) < 0) {
+		gpu = -1;
+	}
+
 	ret = avcodec_open2(enc->context, enc->nvenc, NULL);
 	if (ret < 0) {
 		// if we were a fallback from jim-nvenc, there may already be a
@@ -101,7 +108,18 @@ static bool nvenc_init_codec(struct nvenc_encoder *enc)
 			dstr_replace(&error_message, "%1", av_err2str(ret));
 			dstr_cat(&error_message, "\r\n\r\n");
 
-			if (ret == AVERROR_EXTERNAL) {
+			if (gpu > 0) {
+				// if a non-zero GPU failed, almost always
+				// user error. tell then to fix it.
+				char gpu_str[16];
+				snprintf(gpu_str, sizeof(gpu_str) - 1, "%d",
+					 (int)gpu);
+				gpu_str[sizeof(gpu_str) - 1] = 0;
+
+				dstr_cat(&error_message,
+					 obs_module_text("NVENC.BadGPUIndex"));
+				dstr_replace(&error_message, "%1", gpu_str);
+			} else if (ret == AVERROR_EXTERNAL) {
 				// special case for common NVENC error
 				dstr_cat(&error_message,
 					 obs_module_text("NVENC.GenericError"));
