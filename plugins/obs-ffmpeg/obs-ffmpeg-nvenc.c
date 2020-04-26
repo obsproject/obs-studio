@@ -96,23 +96,18 @@ static bool nvenc_init_codec(struct nvenc_encoder *enc)
 		if (!obs_encoder_get_last_error(enc->encoder)) {
 			struct dstr error_message = {0};
 
-			// special case for common NVENC error
+			dstr_copy(&error_message,
+				  obs_module_text("NVENC.Error"));
+			dstr_replace(&error_message, "%1", av_err2str(ret));
+			dstr_cat(&error_message, "\r\n\r\n");
+
 			if (ret == AVERROR_EXTERNAL) {
-				dstr_printf(
-					&error_message,
-					"Failed to open NVENC codec: %s\r\n\r\n"
-					"Check your video drivers are up to "
-					"date. Disable other software that may "
-					"be using NVENC such as NVIDIA "
-					"ShadowPlay or Windows 10 Game "
-					"DVR.",
-					av_err2str(ret));
+				// special case for common NVENC error
+				dstr_cat(&error_message,
+					 obs_module_text("NVENC.GenericError"));
 			} else {
-				dstr_printf(
-					&error_message,
-					"Failed to open NVENC codec: %s\r\n\r\n"
-					"Please check your video drivers are up to date.",
-					av_err2str(ret));
+				dstr_cat(&error_message,
+					 obs_module_text("NVENC.CheckDrivers"));
 			}
 
 			obs_encoder_set_last_error(enc->encoder,

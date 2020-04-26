@@ -21,18 +21,12 @@ bool nv_failed(obs_encoder_t *encoder, NVENCSTATUS err, const char *func,
 
 	case NV_ENC_ERR_OUT_OF_MEMORY:
 		obs_encoder_set_last_error(
-			encoder,
-			"NVENC Error: Too many concurrent sessions. "
-			"Try closing other recording software which might "
-			"be using NVENC such as Windows 10 Game DVR.");
+			encoder, obs_module_text("NVENC.TooManySessions"));
 		break;
 
 	case NV_ENC_ERR_UNSUPPORTED_DEVICE:
 		obs_encoder_set_last_error(
-			encoder,
-			"NVENC Error: Unsupported device. Check your "
-			"video card supports NVENC and that the drivers are "
-			"up to date.");
+			encoder, obs_module_text("NVENC.UnsupportedDevice"));
 		break;
 
 	default:
@@ -140,9 +134,7 @@ static inline bool init_nvenc_internal(obs_encoder_t *encoder)
 			   NVENCAPI_MINOR_VERSION;
 	if (cur_ver > ver) {
 		obs_encoder_set_last_error(
-			encoder,
-			"Your current video card driver does not support "
-			"this NVENC version, please update your drivers.");
+			encoder, obs_module_text("NVENC.OutdatedDriver"));
 
 		error("Current driver version does not support this NVENC "
 		      "version, please upgrade your driver");
