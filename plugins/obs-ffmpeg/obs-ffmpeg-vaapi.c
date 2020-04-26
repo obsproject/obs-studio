@@ -539,8 +539,6 @@ static obs_properties_t *vaapi_properties(void *unused)
 			char card[128] = "Card: ";
 			sprintf(card, "Card%d: %s", i - 28, path);
 			obs_property_list_add_string(list, card, path);
-		} else {
-			break;
 		}
 	}
 
