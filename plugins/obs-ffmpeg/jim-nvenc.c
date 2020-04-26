@@ -568,13 +568,16 @@ static void *nvenc_create(obs_data_t *settings, obs_encoder_t *encoder)
 	 * gpu other than the one OBS is currently running on. */
 	int gpu = (int)obs_data_get_int(settings, "gpu");
 	if (gpu != 0) {
+		info("different GPU selected by user, falling back to ffmpeg");
 		goto fail;
 	}
 
 	if (obs_encoder_scaling_enabled(encoder)) {
+		info("scaling enabled, falling back to ffmpeg");
 		goto fail;
 	}
 	if (!obs_nv12_tex_active()) {
+		info("nv12 not active, falling back to ffmpeg");
 		goto fail;
 	}
 	if (!init_nvenc(encoder)) {
