@@ -47,6 +47,7 @@ elseif("${CMAKE_SYSTEM_NAME}" MATCHES "FreeBSD")
 	add_subdirectory(linux-v4l2)
 	add_subdirectory(linux-jack)
 	add_subdirectory(linux-alsa)
+	add_subdirectory(vlc-video)
 endif()
 
 option(BUILD_BROWSER "Build browser plugin" OFF)
