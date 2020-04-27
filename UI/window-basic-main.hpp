@@ -82,6 +82,8 @@ struct SavedProjectorInfo {
 	int monitor;
 	std::string geometry;
 	std::string name;
+	bool alwaysOnTop;
+	bool alwaysOnTopOverridden;
 };
 
 struct QuickTransition {
