@@ -1861,6 +1861,46 @@
                 "max video bitrate": 6000,
                 "max audio bitrate": 160
             }
+        },
+        {
+            "name": "XLoveCam.com",
+            "servers": [
+                {
+                    "name": "Europe(main)",
+                    "url": "rtmp://nl.eu.stream.xlove.com/performer-origin"
+                },
+                {
+                    "name": "Europe(Romania)",
+                    "url": "rtmp://ro.eu.stream.xlove.com/performer-origin"
+                },
+                {
+                    "name": "Europe(Russia)",
+                    "url": "rtmp://ru.eu.stream.xlove.com/performer-origin"
+                },
+                {
+                    "name": "North America(US East)",
+                    "url": "rtmp://usec.na.stream.xlove.com/performer-origin"
+                },
+                {
+                    "name": "North America(US West)",
+                    "url": "rtmp://uswc.na.stream.xlove.com/performer-origin"
+                },
+                {
+                    "name": "North America(Canada)",
+                    "url": "rtmp://ca.na.stream.xlove.com/performer-origin"
+                },
+                {
+                    "name": "South America",
+                    "url": "rtmp://co.sa.stream.xlove.com/performer-origin"
+                },
+                {
+                    "name": "Asia",
+                    "url": "rtmp://sg.as.stream.xlove.com/performer-origin"
+                }
+            ],
+            "recommended": {
+                "x264opts": "scenecut=0"
+            }
         }
     ]
 }
