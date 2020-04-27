@@ -408,11 +408,11 @@ void OBSBasicProperties::DrawTransitionPreview(void *data, uint32_t cx,
 {
 	OBSBasicProperties *window = static_cast<OBSBasicProperties *>(data);
 
-	if (!window->source)
+	if (!window->sourceClone)
 		return;
 
-	uint32_t sourceCX = max(obs_source_get_width(window->source), 1u);
-	uint32_t sourceCY = max(obs_source_get_height(window->source), 1u);
+	uint32_t sourceCX = max(obs_source_get_width(window->sourceClone), 1u);
+	uint32_t sourceCY = max(obs_source_get_height(window->sourceClone), 1u);
 
 	int x, y;
 	int newCX, newCY;
