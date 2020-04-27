@@ -391,7 +391,7 @@ static void restart_hotkey(void *data, obs_hotkey_id id, obs_hotkey_t *hotkey,
 		return;
 
 	struct ffmpeg_source *s = data;
-	if (obs_source_active(s->source))
+	if (obs_source_showing(s->source))
 		obs_source_media_restart(s->source);
 }
 
@@ -460,7 +460,7 @@ static bool ffmpeg_source_play_hotkey(void *data, obs_hotkey_pair_id id,
 	struct ffmpeg_source *s = data;
 
 	if (s->state == OBS_MEDIA_STATE_PLAYING ||
-	    !obs_source_active(s->source))
+	    !obs_source_showing(s->source))
 		return false;
 
 	obs_source_media_play_pause(s->source, false);
@@ -479,7 +479,7 @@ static bool ffmpeg_source_pause_hotkey(void *data, obs_hotkey_pair_id id,
 	struct ffmpeg_source *s = data;
 
 	if (s->state != OBS_MEDIA_STATE_PLAYING ||
-	    !obs_source_active(s->source))
+	    !obs_source_showing(s->source))
 		return false;
 
 	obs_source_media_play_pause(s->source, true);
@@ -497,7 +497,7 @@ static void ffmpeg_source_stop_hotkey(void *data, obs_hotkey_id id,
 
 	struct ffmpeg_source *s = data;
 
-	if (obs_source_active(s->source))
+	if (obs_source_showing(s->source))
 		obs_source_media_stop(s->source);
 }
 
@@ -599,7 +599,7 @@ static void ffmpeg_source_restart(void *data)
 {
 	struct ffmpeg_source *s = data;
 
-	if (obs_source_active(s->source))
+	if (obs_source_showing(s->source))
 		ffmpeg_source_start(s);
 
 	set_media_state(s, OBS_MEDIA_STATE_PLAYING);

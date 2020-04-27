@@ -779,7 +779,7 @@ static void vlcs_play_pause_hotkey(void *data, obs_hotkey_id id,
 
 	enum obs_media_state state = obs_source_media_get_state(c->source);
 
-	if (pressed && obs_source_active(c->source)) {
+	if (pressed && obs_source_showing(c->source)) {
 		if (state == OBS_MEDIA_STATE_PLAYING)
 			obs_source_media_play_pause(c->source, true);
 		else if (state == OBS_MEDIA_STATE_PAUSED)
@@ -795,7 +795,7 @@ static void vlcs_restart_hotkey(void *data, obs_hotkey_id id,
 
 	struct vlc_source *c = data;
 
-	if (pressed && obs_source_active(c->source))
+	if (pressed && obs_source_showing(c->source))
 		obs_source_media_restart(c->source);
 }
 
@@ -807,7 +807,7 @@ static void vlcs_stop_hotkey(void *data, obs_hotkey_id id, obs_hotkey_t *hotkey,
 
 	struct vlc_source *c = data;
 
-	if (pressed && obs_source_active(c->source))
+	if (pressed && obs_source_showing(c->source))
 		obs_source_media_stop(c->source);
 }
 
@@ -819,7 +819,7 @@ static void vlcs_playlist_next_hotkey(void *data, obs_hotkey_id id,
 
 	struct vlc_source *c = data;
 
-	if (pressed && obs_source_active(c->source))
+	if (pressed && obs_source_showing(c->source))
 		obs_source_media_next(c->source);
 }
 
@@ -831,7 +831,7 @@ static void vlcs_playlist_prev_hotkey(void *data, obs_hotkey_id id,
 
 	struct vlc_source *c = data;
 
-	if (pressed && obs_source_active(c->source))
+	if (pressed && obs_source_showing(c->source))
 		obs_source_media_previous(c->source);
 }
 

@@ -529,7 +529,7 @@ static void play_pause_hotkey(void *data, obs_hotkey_id id,
 
 	struct slideshow *ss = data;
 
-	if (pressed && obs_source_active(ss->source))
+	if (pressed && obs_source_showing(ss->source))
 		ss_play_pause(ss);
 }
 
@@ -541,7 +541,7 @@ static void restart_hotkey(void *data, obs_hotkey_id id, obs_hotkey_t *hotkey,
 
 	struct slideshow *ss = data;
 
-	if (pressed && obs_source_active(ss->source))
+	if (pressed && obs_source_showing(ss->source))
 		ss_restart(ss);
 }
 
@@ -553,7 +553,7 @@ static void stop_hotkey(void *data, obs_hotkey_id id, obs_hotkey_t *hotkey,
 
 	struct slideshow *ss = data;
 
-	if (pressed && obs_source_active(ss->source))
+	if (pressed && obs_source_showing(ss->source))
 		ss_stop(ss);
 }
 
@@ -568,7 +568,7 @@ static void next_slide_hotkey(void *data, obs_hotkey_id id,
 	if (!ss->manual)
 		return;
 
-	if (pressed && obs_source_active(ss->source))
+	if (pressed && obs_source_showing(ss->source))
 		ss_next_slide(ss);
 }
 
@@ -583,7 +583,7 @@ static void previous_slide_hotkey(void *data, obs_hotkey_id id,
 	if (!ss->manual)
 		return;
 
-	if (pressed && obs_source_active(ss->source))
+	if (pressed && obs_source_showing(ss->source))
 		ss_previous_slide(ss);
 }
 
