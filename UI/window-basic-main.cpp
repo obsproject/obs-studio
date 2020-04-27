@@ -5065,6 +5065,10 @@ void OBSBasic::CreateSourcePopupMenu(int idx, bool preview)
 				SLOT(ScreenshotSelectedSource()));
 		popup.addSeparator();
 
+		popup.addMenu(CreateVisibilityTransitionMenu(true));
+		popup.addMenu(CreateVisibilityTransitionMenu(false));
+		popup.addSeparator();
+
 		action = popup.addAction(QTStr("Interact"), this,
 					 SLOT(on_actionInteract_triggered()));
 
