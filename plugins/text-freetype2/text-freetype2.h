@@ -75,6 +75,7 @@ static void ft2_source_destroy(void *data);
 static void ft2_source_update(void *data, obs_data_t *settings);
 static void ft2_source_render(void *data, gs_effect_t *effect);
 static void ft2_video_tick(void *data, float seconds);
+static void ft2_source_set_text(void *data, const char *text);
 
 void draw_outlines(struct ft2_source *srcdata);
 void draw_drop_shadow(struct ft2_source *srcdata);

@@ -490,6 +490,10 @@ Source Definition Structure (obs_source_info)
    - **OBS_MEDIA_STATE_ENDED**     - Ended
    - **OBS_MEDIA_STATE_ERROR**     - Error
 
+.. member:: void (*obs_source_info.set_text)(void *data, const char *text)
+
+   Called to set text of text source.
+
 
 .. _source_signal_handler_reference:
 
@@ -1234,6 +1238,10 @@ Functions used by sources
    Removes an active child source.  Must be called by parent sources on child
    sources when the child is removed or inactive.  This ensures that the source
    is properly deactivated if the parent is no longer active.
+
+.. function:: void obs_source_set_text(obs_source_t *source, const char *text)
+
+   Set texts to text source.
 
 ---------------------
 

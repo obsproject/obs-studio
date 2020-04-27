@@ -2230,6 +2230,9 @@ EXPORT void obs_source_frame_copy(struct obs_source_frame *dst,
 /* Get source icon type */
 EXPORT enum obs_icon_type obs_source_get_icon_type(const char *id);
 
+/* Set text of text source */
+EXPORT void obs_source_set_text(obs_source_t *source, const char *text);
+
 #ifdef __cplusplus
 }
 #endif

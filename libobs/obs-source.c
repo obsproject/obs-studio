@@ -4953,3 +4953,12 @@ void obs_source_media_ended(obs_source_t *source)
 
 	obs_source_dosignal(source, NULL, "media_ended");
 }
+
+void obs_source_set_text(obs_source_t *source, const char *text)
+{
+	if (!obs_source_valid(source, "obs_source_set_text"))
+		return;
+
+	if (source->info.set_text)
+		source->info.set_text(source->context.data, text);
+}

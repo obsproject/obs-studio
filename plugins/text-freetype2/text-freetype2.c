@@ -50,6 +50,7 @@ static struct obs_source_info freetype2_source_info_v1 = {
 	.video_tick = ft2_video_tick,
 	.get_properties = ft2_source_properties,
 	.icon_type = OBS_ICON_TYPE_TEXT,
+	.set_text = ft2_source_set_text,
 };
 
 static struct obs_source_info freetype2_source_info_v2 = {
@@ -71,6 +72,7 @@ static struct obs_source_info freetype2_source_info_v2 = {
 	.video_tick = ft2_video_tick,
 	.get_properties = ft2_source_properties,
 	.icon_type = OBS_ICON_TYPE_TEXT,
+	.set_text = ft2_source_set_text,
 };
 
 static bool plugin_initialized = false;
@@ -525,4 +527,20 @@ static void *ft2_source_create_v1(obs_data_t *settings, obs_source_t *source)
 static void *ft2_source_create_v2(obs_data_t *settings, obs_source_t *source)
 {
 	return ft2_source_create(settings, source, 2);
+}
+
+static void ft2_source_set_text(void *data, const char *text)
+{
+	struct ft2_source *srcdata = data;
+	bfree(srcdata->text);
+	os_utf8_to_wcs_ptr(text, strlen(text), &srcdata->text);
+	cache_glyphs(srcdata, srcdata->text);
+	set_up_vertex_buffer(srcdata);
+
+	obs_data_t *settings = obs_source_get_settings(srcdata->src);
+
+	if (settings) {
+		obs_data_set_string(settings, "text", text);
+		obs_data_release(settings);
+	}
 }

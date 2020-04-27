@@ -294,6 +294,7 @@ struct TextSource {
 	inline void Update(obs_data_t *settings);
 	inline void Tick(float seconds);
 	inline void Render();
+	inline void SetText(const char *text);
 };
 
 static time_t get_modified_timestamp(const char *filename)
@@ -861,6 +862,24 @@ inline void TextSource::Render()
 	gs_technique_end(tech);
 }
 
+inline void TextSource::SetText(const char *newText)
+{
+	text = to_wide(GetMainString(newText));
+
+	if (!text.empty() && text.back() != '\n')
+		text.push_back('\n');
+
+	TransformText();
+	RenderText();
+
+	obs_data_t *settings = obs_source_get_settings(source);
+
+	if (settings) {
+		obs_data_set_string(settings, "text", newText);
+		obs_data_release(settings);
+	}
+}
+
 /* ------------------------------------------------------------------------- */
 
 static ULONG_PTR gdip_token = 0;
@@ -1095,6 +1114,9 @@ bool obs_module_load(void)
 	};
 	si.video_render = [](void *data, gs_effect_t *) {
 		reinterpret_cast<TextSource *>(data)->Render();
+	};
+	si.set_text = [](void *data, const char *newText) {
+		reinterpret_cast<TextSource *>(data)->SetText(newText);
 	};
 
 	obs_source_info si_v2 = si;
