@@ -417,6 +417,7 @@ private:
 	void CreateDefaultQuickTransitions();
 
 	QMenu *CreatePerSceneTransitionMenu();
+	QMenu *CreateVisibilityTransitionMenu(bool visible);
 
 	QuickTransition *GetQuickTransition(int id);
 	int GetQuickTransitionIdx(int id);
@@ -957,6 +958,9 @@ private slots:
 	void on_transitionProps_clicked();
 	void on_transitionDuration_valueChanged(int value);
 	void on_tbar_position_valueChanged(int value);
+
+	void on_actionShowTransitionProperties_triggered();
+	void on_actionHideTransitionProperties_triggered();
 
 	void on_modeSwitch_clicked();
 

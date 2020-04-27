@@ -470,6 +470,40 @@ Scene Item Functions
 
 ---------------------
 
+.. function:: void obs_sceneitem_set_show_transition(obs_sceneitem_t *item, obs_source_t *transition)
+              void obs_sceneitem_set_hide_transition(obs_sceneitem_t *item, obs_source_t *transition)
+
+   Set a transition for showing or hiding a scene item. Set *NULL* to remove the transition.
+
+---------------------
+
+.. function:: obs_source_t *obs_sceneitem_get_show_transition(obs_sceneitem_t *item)
+              obs_source_t *obs_sceneitem_get_hide_transition(obs_sceneitem_t *item)
+
+   :return: The transition for showing or hiding a scene item. *NULL* if no transition is set.
+
+---------------------
+
+.. function:: void obs_sceneitem_set_show_transition_duration(obs_sceneitem_t *item, uint32_t duration_ms)
+              void obs_sceneitem_set_hide_transition_duration(obs_sceneitem_t *item, uint32_t duration_ms)
+
+   Set transition duration for showing or hiding a scene item.
+
+---------------------
+
+.. function:: uint32_t obs_sceneitem_get_show_transition_duration(obs_sceneitem_t *item)
+              uint32_t obs_sceneitem_get_hide_transition_duration(obs_sceneitem_t *item)
+
+   :return: The transition duration in ms for showing or hiding a scene item.
+
+---------------------
+
+.. function:: void obs_sceneitem_do_transition(obs_sceneitem_t *item, bool visible)
+
+   Start the transition for showing or hiding a scene item.
+
+---------------------
+
 
 .. _scene_item_group_reference:
 
