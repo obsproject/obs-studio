@@ -16,6 +16,7 @@
 
 #include "bmem.h"
 #include "threading.h"
+#include "util/platform.h"
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
@@ -192,4 +193,21 @@ void os_set_thread_name(const char *name)
 #endif
 	}
 #endif
+
+	typedef HRESULT(WINAPI * set_thread_description_t)(HANDLE thread,
+							   PCWSTR desc);
+
+	HMODULE k32 = LoadLibraryW(L"Kernel32.dll");
+	set_thread_description_t std = NULL;
+	std = (set_thread_description_t)GetProcAddress(k32,
+						       "SetThreadDescription");
+	if (std) {
+		wchar_t *wname;
+		os_utf8_to_wcs_ptr(name, 0, &wname);
+
+		std(GetCurrentThread(), wname);
+
+		bfree(wname);
+	}
+	FreeLibrary(k32);
 }
