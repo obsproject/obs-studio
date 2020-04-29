@@ -5,6 +5,7 @@
 
 #include "rtmp-format-ver.h"
 #include "twitch.h"
+#include "younow.h"
 
 struct rtmp_common {
 	char *service;
@@ -485,7 +486,9 @@ static void apply_video_encoder_settings(obs_data_t *settings,
 	obs_data_set_string(settings, "rate_control", "CBR");
 
 	item = json_object_get(recommended, "profile");
-	if (json_is_string(item)) {
+	obs_data_item_t *enc_item = obs_data_item_byname(settings, "profile");
+	if (json_is_string(item) &&
+	    obs_data_item_gettype(enc_item) == OBS_DATA_STRING) {
 		const char *profile = json_string_value(item);
 		obs_data_set_string(settings, "profile", profile);
 	}
@@ -591,6 +594,12 @@ static const char *rtmp_common_url(void *data)
 			twitch_ingests_unlock();
 
 			return ing.url;
+		}
+	}
+
+	if (service->service && strcmp(service->service, "YouNow") == 0) {
+		if (service->server && service->key) {
+			return younow_get_ingest(service->server, service->key);
 		}
 	}
 

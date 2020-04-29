@@ -105,3 +105,5 @@ static inline Qt::ConnectionType WaitConnection()
 
 bool LineEditCanceled(QEvent *event);
 bool LineEditChanged(QEvent *event);
+
+void setThemeID(QWidget *widget, const QString &themeID);

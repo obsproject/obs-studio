@@ -22,7 +22,7 @@ static void *decklink_output_create(obs_data_t *settings, obs_output_t *output)
 
 	decklinkOutput->deviceHash = obs_data_get_string(settings, DEVICE_HASH);
 	decklinkOutput->modeID = obs_data_get_int(settings, MODE_ID);
-	decklinkOutput->keyerMode = obs_data_get_int(settings, KEYER);
+	decklinkOutput->keyerMode = (int)obs_data_get_int(settings, KEYER);
 
 	return decklinkOutput;
 }
@@ -33,7 +33,7 @@ static void decklink_output_update(void *data, obs_data_t *settings)
 
 	decklink->deviceHash = obs_data_get_string(settings, DEVICE_HASH);
 	decklink->modeID = obs_data_get_int(settings, MODE_ID);
-	decklink->keyerMode = obs_data_get_int(settings, KEYER);
+	decklink->keyerMode = (int)obs_data_get_int(settings, KEYER);
 }
 
 static bool decklink_output_start(void *data)
@@ -46,6 +46,9 @@ static bool decklink_output_start(void *data)
 		return false;
 	}
 
+	if (!decklink->deviceHash || !*decklink->deviceHash)
+		return false;
+
 	decklink->audio_samplerate = aoi.samples_per_sec;
 	decklink->audio_planes = 2;
 	decklink->audio_size =
@@ -56,6 +59,9 @@ static bool decklink_output_start(void *data)
 	ComPtr<DeckLinkDevice> device;
 
 	device.Set(deviceEnum->FindByHash(decklink->deviceHash));
+
+	if (!device)
+		return false;
 
 	DeckLinkDeviceMode *mode = device->FindOutputMode(decklink->modeID);
 
@@ -74,7 +80,9 @@ static bool decklink_output_start(void *data)
 	obs_output_set_video_conversion(decklink->GetOutput(), &to);
 
 	device->SetKeyerMode(decklink->keyerMode);
-	decklink->Activate(device, decklink->modeID);
+
+	if (!decklink->Activate(device, decklink->modeID))
+		return false;
 
 	struct audio_convert_info conversion = {};
 	conversion.format = AUDIO_FORMAT_16BIT;

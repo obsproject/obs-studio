@@ -664,7 +664,8 @@ void XCompcapMain::render(gs_effect_t *effect)
 		effect = obs_get_base_effect(OBS_EFFECT_DEFAULT);
 
 		while (gs_effect_loop(effect, "Draw")) {
-			xcursor_render(p->cursor);
+			xcursor_render(p->cursor, -p->cur_cut_left,
+				       -p->cur_cut_top);
 		}
 	}
 }

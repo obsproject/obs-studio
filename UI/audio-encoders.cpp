@@ -175,7 +175,7 @@ static void PopulateBitrateMap()
 			if (aac_ != GetCodec(encoder.c_str()))
 				continue;
 
-			// disable mf_aac if audio ouput is not stereo nor mono
+			// disable mf_aac if audio output is not stereo nor mono
 			if ((output_channels >= 3) && (encoder == "mf_aac"))
 				continue;
 

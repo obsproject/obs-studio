@@ -17,3 +17,20 @@ void RecordButton::resizeEvent(QResizeEvent *event)
 
 	event->accept();
 }
+
+void ReplayBufferButton::resizeEvent(QResizeEvent *event)
+{
+	OBSBasic *main = OBSBasic::Get();
+	if (!main->replay)
+		return;
+
+	QSize replaySize = main->replay->size();
+	int height = main->ui->recordButton->size().height();
+
+	if (replaySize.height() != height || replaySize.width() != height) {
+		main->replay->setMinimumSize(height, height);
+		main->replay->setMaximumSize(height, height);
+	}
+
+	event->accept();
+}

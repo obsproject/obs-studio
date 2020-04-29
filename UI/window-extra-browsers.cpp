@@ -1,7 +1,7 @@
 #include "window-extra-browsers.hpp"
+#include "window-dock-browser.hpp"
 #include "window-basic-main.hpp"
 #include "qt-wrappers.hpp"
-#include "window-dock.hpp"
 
 #include <QLineEdit>
 #include <QHBoxLayout>
@@ -9,10 +9,6 @@
 #include <json11.hpp>
 
 #include "ui_OBSExtraBrowsers.h"
-
-#include <browser-panel.hpp>
-extern QCef *cef;
-extern QCefCookieManager *panel_cookies;
 
 using namespace json11;
 
@@ -26,19 +22,6 @@ enum class Column : int {
 	Count,
 };
 
-class ExtraBrowser : public OBSDock {
-public:
-	inline ExtraBrowser() : OBSDock() {}
-
-	QScopedPointer<QCefWidget> cefWidget;
-
-	inline void SetWidget(QCefWidget *widget_)
-	{
-		setWidget(widget_);
-		cefWidget.reset(widget_);
-	}
-};
-
 /* ------------------------------------------------------------------------- */
 
 void ExtraBrowsersModel::Reset()
@@ -48,7 +31,7 @@ void ExtraBrowsersModel::Reset()
 	OBSBasic *main = OBSBasic::Get();
 
 	for (int i = 0; i < main->extraBrowserDocks.size(); i++) {
-		ExtraBrowser *dock = reinterpret_cast<ExtraBrowser *>(
+		BrowserDock *dock = reinterpret_cast<BrowserDock *>(
 			main->extraBrowserDocks[i].data());
 
 		Item item;
@@ -155,7 +138,7 @@ void ExtraBrowsersModel::AddDeleteButton(int idx)
 	QPushButton *del = new DelButton(index);
 	del->setProperty("themeID", "trashIcon");
 	del->setObjectName("extraPanelDelete");
-	del->setFixedSize(QSize(20, 20));
+	del->setMinimumSize(QSize(20, 20));
 	connect(del, &QPushButton::clicked, this,
 		&ExtraBrowsersModel::DeleteItem);
 
@@ -191,7 +174,7 @@ void ExtraBrowsersModel::UpdateItem(Item &item)
 	int idx = item.prevIdx;
 
 	OBSBasic *main = OBSBasic::Get();
-	ExtraBrowser *dock = reinterpret_cast<ExtraBrowser *>(
+	BrowserDock *dock = reinterpret_cast<BrowserDock *>(
 		main->extraBrowserDocks[idx].data());
 	dock->setWindowTitle(item.title);
 	dock->setObjectName(item.title + OBJ_NAME_SUFFIX);
@@ -536,10 +519,10 @@ void OBSBasic::AddExtraBrowserDock(const QString &title, const QString &url,
 		panel_version = obs_browser_qcef_version();
 	}
 
-	ExtraBrowser *dock = new ExtraBrowser();
+	BrowserDock *dock = new BrowserDock();
 	dock->setObjectName(title + OBJ_NAME_SUFFIX);
 	dock->resize(460, 600);
-	dock->setMinimumSize(150, 150);
+	dock->setMinimumSize(80, 80);
 	dock->setWindowTitle(title);
 	dock->setAllowedAreas(Qt::AllDockWidgetAreas);
 
@@ -549,6 +532,24 @@ void OBSBasic::AddExtraBrowserDock(const QString &title, const QString &url,
 		browser->allowAllPopups(true);
 
 	dock->SetWidget(browser);
+
+	/* Add support for Twitch Dashboard panels */
+	if (url.contains("twitch.tv/popout") &&
+	    url.contains("dashboard/live")) {
+		QRegularExpression re("twitch.tv\\/popout\\/([^/]+)\\/");
+		QRegularExpressionMatch match = re.match(url);
+		QString username = match.captured(1);
+		if (username.length() > 0) {
+			std::string script;
+			script =
+				"Object.defineProperty(document, 'referrer', { get: () => '";
+			script += "https://twitch.tv/";
+			script += QT_TO_UTF8(username);
+			script += "/dashboard/live";
+			script += "'});";
+			browser->setStartupScript(script);
+		}
+	}
 
 	addDockWidget(Qt::RightDockWidgetArea, dock);
 
@@ -566,8 +567,14 @@ void OBSBasic::AddExtraBrowserDock(const QString &title, const QString &url,
 		dock->setVisible(true);
 	}
 
+	QAction *action = AddDockWidget(dock);
+	if (firstCreate) {
+		action->blockSignals(true);
+		action->setChecked(true);
+		action->blockSignals(false);
+	}
+
 	extraBrowserDocks.push_back(QSharedPointer<QDockWidget>(dock));
-	extraBrowserDockActions.push_back(
-		QSharedPointer<QAction>(AddDockWidget(dock)));
+	extraBrowserDockActions.push_back(QSharedPointer<QAction>(action));
 	extraBrowserDockTargets.push_back(url);
 }

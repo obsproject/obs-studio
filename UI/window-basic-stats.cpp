@@ -18,18 +18,6 @@
 #define TIMER_INTERVAL 2000
 #define REC_TIME_LEFT_INTERVAL 30000
 
-static void setThemeID(QWidget *widget, const QString &themeID)
-{
-	if (widget->property("themeID").toString() != themeID) {
-		widget->setProperty("themeID", themeID);
-
-		/* force style sheet recalculation */
-		QString qss = widget->styleSheet();
-		widget->setStyleSheet("/* */");
-		widget->setStyleSheet(qss);
-	}
-}
-
 void OBSBasicStats::OBSFrontendEvent(enum obs_frontend_event event, void *ptr)
 {
 	OBSBasicStats *stats = reinterpret_cast<OBSBasicStats *>(ptr);
@@ -297,13 +285,7 @@ void OBSBasicStats::Update()
 
 	/* ------------------ */
 
-	const char *mode = config_get_string(main->Config(), "Output", "Mode");
-	const char *path = strcmp(mode, "Advanced")
-				   ? config_get_string(main->Config(),
-						       "SimpleOutput",
-						       "FilePath")
-				   : config_get_string(main->Config(), "AdvOut",
-						       "RecFilePath");
+	const char *path = main->GetCurrentOutputPath();
 
 #define MBYTE (1024ULL * 1024ULL)
 #define GBYTE (1024ULL * 1024ULL * 1024ULL)
@@ -455,9 +437,9 @@ void OBSBasicStats::RecordingTimeLeft()
 	int minutes = totalMinutes % 60;
 	int hours = totalMinutes / 60;
 
-	QString text;
-	text.sprintf("%d %s, %d %s", hours, QT_TO_UTF8(QTStr("Hours")), minutes,
-		     QT_TO_UTF8(QTStr("Minutes")));
+	QString text = QString::asprintf("%d %s, %d %s", hours,
+					 QT_TO_UTF8(QTStr("Hours")), minutes,
+					 QT_TO_UTF8(QTStr("Minutes")));
 	recordTimeLeft->setText(text);
 	recordTimeLeft->setMinimumWidth(recordTimeLeft->width());
 }

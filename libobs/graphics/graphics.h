@@ -169,6 +169,12 @@ enum gs_texture_type {
 	GS_TEXTURE_CUBE,
 };
 
+struct gs_device_loss {
+	void (*device_loss_release)(void *data);
+	void (*device_loss_rebuild)(void *device, void *data);
+	void *data;
+};
+
 struct gs_monitor_info {
 	int rotation_degrees;
 	long x;
@@ -500,6 +506,7 @@ EXPORT void gs_destroy(graphics_t *graphics);
 EXPORT void gs_enter_context(graphics_t *graphics);
 EXPORT void gs_leave_context(void);
 EXPORT graphics_t *gs_get_context(void);
+EXPORT void *gs_get_device_obj(void);
 
 EXPORT void gs_matrix_push(void);
 EXPORT void gs_matrix_pop(void);
@@ -667,6 +674,7 @@ EXPORT void gs_copy_texture_region(gs_texture_t *dst, uint32_t dst_x,
 				   uint32_t src_w, uint32_t src_h);
 EXPORT void gs_stage_texture(gs_stagesurf_t *dst, gs_texture_t *src);
 
+EXPORT void gs_begin_frame(void);
 EXPORT void gs_begin_scene(void);
 EXPORT void gs_draw(enum gs_draw_mode draw_mode, uint32_t start_vert,
 		    uint32_t num_verts);
@@ -881,6 +889,9 @@ EXPORT bool gs_texture_create_nv12(gs_texture_t **tex_y, gs_texture_t **tex_uv,
 EXPORT gs_stagesurf_t *gs_stagesurface_create_nv12(uint32_t width,
 						   uint32_t height);
 
+EXPORT void gs_register_loss_callbacks(const struct gs_device_loss *callbacks);
+EXPORT void gs_unregister_loss_callbacks(void *data);
+
 #endif
 
 /* inline functions used by modules */
@@ -936,10 +947,12 @@ static inline bool gs_is_compressed_format(enum gs_color_format format)
 	return (format == GS_DXT1 || format == GS_DXT3 || format == GS_DXT5);
 }
 
-static inline uint32_t gs_get_total_levels(uint32_t width, uint32_t height)
+static inline uint32_t gs_get_total_levels(uint32_t width, uint32_t height,
+					   uint32_t depth)
 {
 	uint32_t size = width > height ? width : height;
-	uint32_t num_levels = 0;
+	size = size > depth ? size : depth;
+	uint32_t num_levels = 1;
 
 	while (size > 1) {
 		size /= 2;

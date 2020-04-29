@@ -29,7 +29,7 @@ static inline bool upload_texture_cube(struct gs_texture_cube *tex,
 	uint32_t i;
 
 	if (!num_levels)
-		num_levels = gs_get_total_levels(tex->size, tex->size);
+		num_levels = gs_get_total_levels(tex->size, tex->size, 1);
 
 	for (i = 0; i < 6; i++) {
 		GLenum target = GL_TEXTURE_CUBE_MAP_POSITIVE_X + i;

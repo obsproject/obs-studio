@@ -9,16 +9,13 @@
 #include <sstream>
 
 #include <obs-app.hpp>
+#include "window-dock-browser.hpp"
 #include "window-basic-main.hpp"
 #include "remote-text.hpp"
 #include "ui-config.h"
 #include "obf.h"
-#include <browser-panel.hpp>
 
 using namespace json11;
-
-extern QCef *cef;
-extern QCefCookieManager *panel_cookies;
 
 /* ------------------------------------------------------------------------- */
 
@@ -117,13 +114,6 @@ bool RestreamAuth::LoadInternal()
 	return OAuthStreamKey::LoadInternal();
 }
 
-class RestreamWidget : public QDockWidget {
-public:
-	inline RestreamWidget() : QDockWidget() {}
-
-	QScopedPointer<QCefWidget> widget;
-};
-
 void RestreamAuth::LoadUI()
 {
 	if (uiLoaded)
@@ -145,7 +135,7 @@ void RestreamAuth::LoadUI()
 	QSize size = main->frameSize();
 	QPoint pos = main->pos();
 
-	chat.reset(new RestreamWidget());
+	chat.reset(new BrowserDock());
 	chat->setObjectName("restreamChat");
 	chat->resize(420, 600);
 	chat->setMinimumSize(200, 300);
@@ -153,7 +143,7 @@ void RestreamAuth::LoadUI()
 	chat->setAllowedAreas(Qt::AllDockWidgetAreas);
 
 	browser = cef->create_widget(nullptr, url, panel_cookies);
-	chat->setWidget(browser);
+	chat->SetWidget(browser);
 
 	main->addDockWidget(Qt::RightDockWidgetArea, chat.data());
 	chatMenu.reset(main->AddDockWidget(chat.data()));
@@ -162,7 +152,7 @@ void RestreamAuth::LoadUI()
 
 	url = "https://restream.io/titles/embed";
 
-	info.reset(new RestreamWidget());
+	info.reset(new BrowserDock());
 	info->setObjectName("restreamInfo");
 	info->resize(410, 600);
 	info->setMinimumSize(200, 150);
@@ -170,7 +160,7 @@ void RestreamAuth::LoadUI()
 	info->setAllowedAreas(Qt::AllDockWidgetAreas);
 
 	browser = cef->create_widget(nullptr, url, panel_cookies);
-	info->setWidget(browser);
+	info->SetWidget(browser);
 
 	main->addDockWidget(Qt::LeftDockWidgetArea, info.data());
 	infoMenu.reset(main->AddDockWidget(info.data()));
@@ -179,7 +169,7 @@ void RestreamAuth::LoadUI()
 
 	url = "https://restream.io/channel/embed";
 
-	channels.reset(new RestreamWidget());
+	channels.reset(new BrowserDock());
 	channels->setObjectName("restreamChannel");
 	channels->resize(410, 600);
 	channels->setMinimumSize(410, 300);
@@ -187,7 +177,7 @@ void RestreamAuth::LoadUI()
 	channels->setAllowedAreas(Qt::AllDockWidgetAreas);
 
 	browser = cef->create_widget(nullptr, url, panel_cookies);
-	channels->setWidget(browser);
+	channels->SetWidget(browser);
 
 	main->addDockWidget(Qt::LeftDockWidgetArea, channels.data());
 	channelMenu.reset(main->AddDockWidget(channels.data()));

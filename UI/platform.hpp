@@ -60,9 +60,11 @@ public:
 };
 
 RunOnceMutex GetRunOnceMutex(bool &already_running);
+QString GetMonitorName(const QString &id);
 #endif
 
 #ifdef __APPLE__
 void EnableOSXVSync(bool enable);
 void EnableOSXDockIcon(bool enable);
+void InstallNSApplicationSubclass();
 #endif

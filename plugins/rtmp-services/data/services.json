@@ -316,10 +316,6 @@
                     "url": "ingest-fra.mixer.com"
                 },
                 {
-                    "name": "EU: Oslo",
-                    "url": "ingest-osl.mixer.com"
-                },
-                {
                     "name": "Brazil: Sao Paulo",
                     "url": "ingest-sao.mixer.com"
                 },
@@ -358,7 +354,8 @@
                 "max audio bitrate": 160,
                 "max video bitrate": 10000,
                 "profile": "main",
-                "bframes": 0
+                "bframes": 0,
+                "x264opts": "scenecut=0"
             }
         },
         {
@@ -406,10 +403,6 @@
                     "url": "rtmp://ingest-fra.mixer.com:1935/beam"
                 },
                 {
-                    "name": "EU: Oslo",
-                    "url": "rtmp://ingest-osl.mixer.com:1935/beam"
-                },
-                {
                     "name": "Brazil: Sao Paulo",
                     "url": "rtmp://ingest-sao.mixer.com:1935/beam"
                 },
@@ -446,7 +439,8 @@
                 "keyint": 2,
                 "max audio bitrate": 160,
                 "max video bitrate": 10000,
-                "profile": "main"
+                "profile": "main",
+                "x264opts": "scenecut=0"
             }
         },
         {
@@ -485,6 +479,15 @@
                 {
                     "name": "Моscow",
                     "url": "rtmp://msk.goodgame.ru:1940/live"
+                }
+            ]
+        },
+        {
+            "name": "YouStreamer",
+            "servers": [
+                {
+                    "name": "Moscow",
+                    "url": "rtmp://push.youstreamer.com/in/"
                 }
             ]
         },
@@ -573,7 +576,7 @@
             "recommended": {
                 "keyint": 2,
                 "profile": "main",
-                "max video bitrate": 4000,
+                "max video bitrate": 6000,
                 "max audio bitrate": 128
             }
         },
@@ -615,6 +618,10 @@
                 {
                     "name": "EU-East (Falkenstein, DE)",
                     "url": "rtmp://falkenstein.restream.io/live"
+                },
+                {
+                    "name": "EU-East (Prague, Czech)",
+                    "url": "rtmp://prague.restream.io/live"
                 },
                 {
                     "name": "EU-South (Madrid, Spain)",
@@ -726,6 +733,10 @@
                     "url": "falkenstein.restream.io"
                 },
                 {
+                    "name": "EU-East (Prague, Czech)",
+                    "url": "prague.restream.io"
+                },
+                {
                     "name": "EU-South (Madrid, Spain)",
                     "url": "madrid.restream.io"
                 },
@@ -802,19 +813,6 @@
                 "profile": "main",
                 "bframes": 0
             }
-        },
-        {
-          "name": "GameTips.TV",
-          "servers": [
-              {
-                  "name": "Iran - Rasht",
-                  "url": "rtmp://rtmp.cdn.server1.gametips.tv:1935/hls"
-              },
-              {
-                  "name": "Germany - Falkenstein/Vogtland",
-                  "url": "rtmp://rtmp.cdn.server2.gametips.tv:1935/hls"
-              }
-          ]
         },
         {
             "name": "Nood",
@@ -895,72 +893,92 @@
             "name": "Castr.io",
             "servers": [
                 {
-                    "name": "Chicago US",
-                    "url": "rtmp://cg.castr.io"
+                    "name": "US-East (Chicago, IL)",
+                    "url": "rtmp://cg.castr.io/static"
                 },
                 {
-                    "name": "Los Angeles US",
-                    "url": "rtmp://la.castr.io"
+                    "name": "US-East (New York, NY)",
+                    "url": "rtmp://ny.castr.io/static"
                 },
                 {
-                    "name": "New York US",
-                    "url": "rtmp://ny.castr.io"
+                    "name": "US-East (Miami, FL)",
+                    "url": "rtmp://mi.castr.io/static"
                 },
                 {
-                    "name": "Montreal CA",
-                    "url": "rtmp://qc.castr.io"
+                    "name": "US-West (Seattle, WA)",
+                    "url": "rtmp://se.castr.io/static"
                 },
                 {
-                    "name": "London UK",
-                    "url": "rtmp://uk.castr.io"
+                    "name": "US-West (Los Angeles, CA)",
+                    "url": "rtmp://la.castr.io/static"
                 },
                 {
-                    "name": "Frankfurt DE",
-                    "url": "rtmp://de.castr.io"
+                    "name": "US-Central (Dallas, TX)",
+                    "url": "rtmp://da.castr.io/static"
                 },
                 {
-                    "name": "Frankfurt DE 2",
-                    "url": "rtmp://fr.castr.io"
+                    "name": "NA-East (Toronto, CA)",
+                    "url": "rtmp://qc.castr.io/static"
                 },
                 {
-                    "name": "Moscow RU",
-                    "url": "rtmp://ru.castr.io"
+                    "name": "SA (Sao Paulo, BR)",
+                    "url": "rtmp://br.castr.io/static"
                 },
                 {
-                    "name": "Singapore",
-                    "url": "rtmp://sg.castr.io"
+                    "name": "EU-West (London, UK)",
+                    "url": "rtmp://uk.castr.io/static"
                 },
                 {
-                    "name": "Sydney AU",
-                    "url": "rtmp://au.castr.io"
+                    "name": "EU-Central (Frankfurt, DE)",
+                    "url": "rtmp://fr.castr.io/static"
                 },
                 {
-                    "name": "Brazil",
-                    "url": "rtmp://br.castr.io"
+                    "name": "Russia (Moscow)",
+                    "url": "rtmp://ru.castr.io/static"
+                },
+                {
+                    "name": "Asia (Singapore)",
+                    "url": "rtmp://sg.castr.io/static"
+                },
+                {
+                    "name": "Asia (India)",
+                    "url": "rtmp://in.castr.io/static"
+                },
+                {
+                    "name": "Australia (Sydney)",
+                    "url": "rtmp://au.castr.io/static"
                 },
                 {
                     "name": "US Central",
-                    "url": "rtmp://us-central.castr.io"
+                    "url": "rtmp://us-central.castr.io/static"
                 },
                 {
                     "name": "US West",
-                    "url": "rtmp://us-west.castr.io"
+                    "url": "rtmp://us-west.castr.io/static"
                 },
                 {
                     "name": "US East",
-                    "url": "rtmp://us-east.castr.io"
+                    "url": "rtmp://us-east.castr.io/static"
                 },
                 {
                     "name": "US South",
-                    "url": "rtmp://us-south.castr.io"
+                    "url": "rtmp://us-south.castr.io/static"
                 },
                 {
                     "name": "South America",
-                    "url": "rtmp://south-am.castr.io"
+                    "url": "rtmp://south-am.castr.io/static"
                 },
                 {
                     "name": "EU Central",
-                    "url": "rtmp://eu-central.castr.io"
+                    "url": "rtmp://eu-central.castr.io/static"
+                },
+                {
+                    "name": "AU South",
+                    "url": "rtmp://au-central.castr.io/static"
+                },
+                {
+                    "name": "Singapore",
+                    "url": "rtmp://sg-central.castr.io/static"
                 }
             ],
             "recommended": {
@@ -1012,7 +1030,7 @@
                 },
                 {
                     "name": "North America : US West",
-                     "url": "rtmp://rtmpmanager-aws-en-west.afreeca.tv/live"
+                    "url": "rtmp://rtmpmanager-aws-en-west.afreeca.tv/live"
                 },
                 {
                     "name": "Asia : Singapore",
@@ -1030,8 +1048,8 @@
             "name": "아프리카TV",
             "servers": [
                 {
-                "name": "Korea",
-                "url": "rtmp://rtmpmanager-freecat.afreeca.tv/app/"
+                    "name": "Korea",
+                    "url": "rtmp://rtmpmanager-freecat.afreeca.tv/app/"
                 }
             ],
             "recommended": {
@@ -1097,11 +1115,20 @@
             ]
         },
         {
+            "name": "Uscreen",
+            "servers": [
+                {
+                    "name": "Default",
+                    "url": "rtmp://live.uscreen.app/app"
+                }
+            ]
+        },
+        {
             "name": "Stripchat",
             "servers": [
                 {
                     "name": "Auto",
-                    "url": "rtmp://s-sd.stripcdn.com/ext"
+                    "url": "rtmp://s-sd.stripst.com/ext"
                 }
             ],
             "recommended": {
@@ -1329,16 +1356,28 @@
             }
         },
         {
-            "name": "SermonAudio.com",
+            "name": "Madcat",
+            "servers": [
+                {
+                    "name": "Default",
+                    "url": "rtmp://73846.livepush.myqcloud.com/live/"
+                }
+            ]
+        },
+        {
+            "name": "SermonAudio Cloud",
+            "alt_names": [
+                "SermonAudio.com"
+            ],
             "servers": [
                 {
                     "name": "Primary",
-                    "url": "rtmp://stream.sermonaudio.com/"
+                    "url": "rtmp://webcast.sermonaudio.com/sa"
                 }
             ],
             "recommended": {
-                "max video bitrate": 1000,
-                "max audio bitrate": 64
+                "max video bitrate": 2000,
+                "max audio bitrate": 128
             }
         },
         {
@@ -1455,14 +1494,59 @@
             "name": "Bongacams",
             "servers": [
                 {
-                    "name": "Default",
-                    "url": "rtmp://origin.bcrncdn.com:1934/live"
+                    "name": "Automatic / Default",
+                    "url": "rtmp://auto.origin.gnsbc.com:1934/live"
+                },
+                {
+                    "name": "Automatic / Backup",
+                    "url": "rtmp://origin.bcvidorigin.com:1934/live"
+                },
+                {
+                    "name": "Europe",
+                    "url": "rtmp://z-eu.origin.gnsbc.com:1934/live"
+                },
+                {
+                    "name": "North America",
+                    "url": "rtmp://z-us.origin.gnsbc.com:1934/live"
                 }
             ],
             "recommend": {
                 "keyint": 2,
                 "max video bitrate": 6000,
+                "max audio bitrate": 192,
+                "bframes": 0,
+                "x264opts": "tune=zerolatency"
+            }
+        },
+        {
+            "name": "show-it.tv",
+            "servers": [
+                {
+                    "name": "Default",
+                    "url": "rtmp://stream-1.show-it.tv:1935/live"
+                }
+            ],
+            "recommend": {
+                "max video bitrate": 6000,
                 "max audio bitrate": 192
+            }
+        },
+        {
+            "name": "Chathostess",
+            "servers": [
+                {
+                    "name": "Chathostess - Default",
+                    "url": "rtmp://wowza01.foobarweb.com/cmschatsys_video"
+                },
+                {
+                    "name": "Chathostess - Backup",
+                    "url": "rtmp://wowza05.foobarweb.com/cmschatsys_video"
+                }
+            ],
+            "recommended": {
+                "keyint": 2,
+                "max video bitrate": 3600,
+                "max audio bitrate": 128
             }
         },
         {
@@ -1498,6 +1582,24 @@
                 "max audio bitrate": 192,
                 "bframes": 0,
                 "x264opts": "tune=zerolatency"
+            }
+        },
+        {
+            "name": "YouNow",
+            "common": false,
+            "servers": [
+                {
+                    "name": "younow.com",
+                    "url": "https://signaling-api.younow-prod.video.propsproject.com/api/v1/ingest/server/"
+                }
+            ],
+            "recommended": {
+                "keyint": 2,
+                "output": "ftl_output",
+                "max audio bitrate": 160,
+                "max video bitrate": 7000,
+                "profile": "main",
+                "bframes": 0
             }
         },
         {
@@ -1559,6 +1661,163 @@
                 "max video bitrate": 7000,
                 "max audio bitrate": 128
             }
+        },
+        {
+            "name": "Stars.AVN.com",
+            "servers": [
+                {
+                    "name": "Default",
+                    "url": "rtmp://alpha.gateway.stars.avn.com/live"
+                }
+            ],
+            "recommended": {
+                "keyint": 2,
+                "profile": "main",
+                "max video bitrate": 2500,
+                "max audio bitrate": 192,
+                "bframes": 0,
+                "x264opts": "tune=zerolatency"
+            }
+        },
+        {
+            "name": "Konduit.live",
+            "servers": [
+                {
+                    "name": "Default",
+                    "url": "rtmp://rtmp.konduit.live/live"
+                }
+            ],
+            "recommended": {
+                "keyint": 2,
+                "x264opts": "scenecut=0"
+            }
+        },
+        {
+            "name": "Uncanny.gg",
+            "servers": [
+                {
+                    "name": "Default",
+                    "url": "rtmp://stream.uncanny.gg/fortnite"
+                }
+            ],
+            "recommended": {
+                "keyint": 2,
+                "profile": "main",
+                "max video bitrate": 10000,
+                "max audio bitrate": 192
+            }
+        },
+        {
+            "name": "Whalebone.tv",
+            "servers": [
+                {
+                    "name": "Automatic",
+                    "url": "rtmp://live.whalebone.tv/live"
+                },
+                {
+                    "name": "Tokyo, Japan",
+                    "url": "rtmp://ap-northeast.live.whalebone.tv/live"
+                },
+                {
+                    "name": "Frankfurt, Germany",
+                    "url": "rtmp://eu-central.live.whalebone.tv/live"
+                },
+                {
+                    "name": "London, United Kingdom",
+                    "url": "rtmp://eu-west.live.whalebone.tv/live"
+                },
+                {
+                    "name": "São Paulo, Brazil",
+                    "url": "rtmp://sa-east.live.whalebone.tv/live"
+                },
+                {
+                    "name": "North Virgina, United States",
+                    "url": "rtmp://us-east.live.whalebone.tv/live"
+                },
+                {
+                    "name": "Oregon, United States",
+                    "url": "rtmp://us-west.live.whalebone.tv/live"
+                }
+            ]
+        },
+        {
+            "name": "LOCO",
+            "servers": [
+                {
+                    "name": "Default",
+                    "url": "rtmp://ivory-ingest.getloconow.com:1935/stream"
+                }
+            ],
+            "recommended": {
+                "keyint": 2
+            }
+        },
+        {
+            "name": "niconico, premium member (ニコニコ生放送 プレミアム会員)",
+            "servers": [
+                {
+                    "name": "Default",
+                    "url": "rtmp://aliveorigin.dmc.nico/named_input"
+                }
+            ],
+            "recommended": {
+                "keyint": 2,
+                "profile": "high",
+                "max audio bitrate": 192,
+                "max video bitrate": 5808,
+                "x264opts": "tune=zerolatency"
+            }
+        },
+        {
+            "name": "niconico, free member (ニコニコ生放送 一般会員)",
+            "servers": [
+                {
+                    "name": "Default",
+                    "url": "rtmp://aliveorigin.dmc.nico/named_input"
+                }
+            ],
+            "recommended": {
+                "keyint": 2,
+                "profile": "high",
+                "max audio bitrate": 96,
+                "max video bitrate": 904,
+                "x264opts": "tune=zerolatency"
+            }
+        },
+        {
+            "name": "WASD.TV",
+            "servers": [
+                {
+                    "name": "Automatic",
+                    "url": "rtmp://push.rtmp.wasd.tv/live"
+                },
+                {
+                    "name": "Russia, Moscow",
+                    "url": "rtmp://ru-moscow.rtmp.wasd.tv/live"
+                },
+                {
+                    "name": "Germany, Frankfurt",
+                    "url": "rtmp://de-frankfurt.rtmp.wasd.tv/live"
+                },
+                {
+                    "name": "Finland, Helsinki",
+                    "url": "rtmp://fi-helsinki.rtmp.wasd.tv/live"
+                }
+            ],
+            "recommended": {
+                "keyint": 2,
+                "max video bitrate": 10000,
+                "max audio bitrate": 192
+            }
+        },
+        {
+            "name": "VirtWish",
+            "servers": [
+                {
+                    "name": "Default",
+                    "url": "rtmp://rtmp.virtwish.com/live"
+                }
+            ]
         }
     ]
 }

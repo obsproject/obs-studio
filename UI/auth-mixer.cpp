@@ -7,9 +7,9 @@
 #include <qt-wrappers.hpp>
 #include <obs-app.hpp>
 
+#include "window-dock-browser.hpp"
 #include "window-basic-main.hpp"
 #include "remote-text.hpp"
-#include "window-dock.hpp"
 
 #include <json11.hpp>
 
@@ -19,10 +19,6 @@
 #include "obf.h"
 
 using namespace json11;
-
-#include <browser-panel.hpp>
-extern QCef *cef;
-extern QCefCookieManager *panel_cookies;
 
 /* ------------------------------------------------------------------------- */
 
@@ -181,12 +177,10 @@ bool MixerAuth::LoadInternal()
 	return OAuthStreamKey::LoadInternal();
 }
 
-class MixerChat : public OBSDock {
-public:
-	inline MixerChat() : OBSDock() {}
-
-	QScopedPointer<QCefWidget> widget;
-};
+static const char *elixr_script = "\
+var elixr = document.createElement('script');\
+elixr.setAttribute('src','https://api.mixrelixr.com/scripts/elixr-emotes-embedded-chat.bundle.js');\
+document.head.appendChild(elixr);";
 
 void MixerAuth::LoadUI()
 {
@@ -200,6 +194,7 @@ void MixerAuth::LoadUI()
 	OBSBasic::InitBrowserPanelSafeBlock();
 	OBSBasic *main = OBSBasic::Get();
 
+	std::string script = "";
 	std::string url;
 	url += "https://mixer.com/embed/chat/";
 	url += id;
@@ -207,7 +202,7 @@ void MixerAuth::LoadUI()
 	QSize size = main->frameSize();
 	QPoint pos = main->pos();
 
-	chat.reset(new MixerChat());
+	chat.reset(new BrowserDock());
 	chat->setObjectName("mixerChat");
 	chat->resize(300, 600);
 	chat->setMinimumSize(200, 300);
@@ -215,7 +210,16 @@ void MixerAuth::LoadUI()
 	chat->setAllowedAreas(Qt::AllDockWidgetAreas);
 
 	QCefWidget *browser = cef->create_widget(nullptr, url, panel_cookies);
-	chat->setWidget(browser);
+	chat->SetWidget(browser);
+
+	const int mxAddonChoice =
+		config_get_int(main->Config(), service(), "AddonChoice");
+	if (mxAddonChoice) {
+		if (mxAddonChoice & 0x1)
+			script += elixr_script;
+	}
+
+	browser->setStartupScript(script);
 
 	main->addDockWidget(Qt::RightDockWidgetArea, chat.data());
 	chatMenu.reset(main->AddDockWidget(chat.data()));

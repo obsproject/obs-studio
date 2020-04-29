@@ -1,12 +1,13 @@
-#include "window-basic-auto-config.hpp"
-#include "window-basic-main.hpp"
-#include "qt-wrappers.hpp"
-#include "obs-app.hpp"
-
 #include <QMessageBox>
 #include <QScreen>
 
 #include <obs.hpp>
+
+#include "window-basic-auto-config.hpp"
+#include "window-basic-main.hpp"
+#include "qt-wrappers.hpp"
+#include "obs-app.hpp"
+#include "url-push-button.hpp"
 
 #include "ui_AutoConfigStartPage.h"
 #include "ui_AutoConfigVideoPage.h"
@@ -289,7 +290,7 @@ int AutoConfigStreamPage::nextId() const
 	return AutoConfig::TestPage;
 }
 
-inline bool AutoConfigStreamPage::IsCustom() const
+inline bool AutoConfigStreamPage::IsCustomService() const
 {
 	return ui->service->currentData().toInt() == (int)ListOpt::Custom;
 }
@@ -299,7 +300,7 @@ bool AutoConfigStreamPage::validatePage()
 	OBSData service_settings = obs_data_create();
 	obs_data_release(service_settings);
 
-	wiz->customServer = IsCustom();
+	wiz->customServer = IsCustomService();
 
 	const char *serverType = wiz->customServer ? "rtmp_custom"
 						   : "rtmp_common";
@@ -417,6 +418,8 @@ void AutoConfigStreamPage::on_connectAccount_clicked()
 #ifdef BROWSER_AVAILABLE
 	std::string service = QT_TO_UTF8(ui->service->currentText());
 
+	OAuth::DeleteCookies(service);
+
 	auth = OAuthStreamKey::Login(this, service);
 	if (!!auth)
 		OnAuthConnected();
@@ -478,7 +481,7 @@ void AutoConfigStreamPage::ServiceChanged()
 	std::string service = QT_TO_UTF8(ui->service->currentText());
 	bool regionBased = service == "Twitch" || service == "Smashcast";
 	bool testBandwidth = ui->doBandwidthTest->isChecked();
-	bool custom = IsCustom();
+	bool custom = IsCustomService();
 
 	ui->disconnectAccount->setVisible(false);
 
@@ -551,44 +554,37 @@ void AutoConfigStreamPage::ServiceChanged()
 
 void AutoConfigStreamPage::UpdateKeyLink()
 {
-	bool custom = IsCustom();
+	if (IsCustomService()) {
+		ui->doBandwidthTest->setEnabled(true);
+		return;
+	}
+
 	QString serviceName = ui->service->currentText();
 	bool isYoutube = false;
+	QString streamKeyLink;
 
-	if (custom)
-		serviceName = "";
-
-	QString text = QTStr("Basic.AutoConfig.StreamPage.StreamKey");
 	if (serviceName == "Twitch") {
-		text += " <a href=\"https://";
-		text += "www.twitch.tv/broadcast/dashboard/streamkey";
-		text += "\">";
-		text += QTStr(
-			"Basic.AutoConfig.StreamPage.StreamKey.LinkToSite");
-		text += "</a>";
+		streamKeyLink =
+			"https://www.twitch.tv/broadcast/dashboard/streamkey";
 	} else if (serviceName == "YouTube / YouTube Gaming") {
-		text += " <a href=\"https://";
-		text += "www.youtube.com/live_dashboard";
-		text += "\">";
-		text += QTStr(
-			"Basic.AutoConfig.StreamPage.StreamKey.LinkToSite");
-		text += "</a>";
-
+		streamKeyLink = "https://www.youtube.com/live_dashboard";
 		isYoutube = true;
 	} else if (serviceName.startsWith("Restream.io")) {
-		text += " <a href=\"https://";
-		text += "restream.io/settings/streaming-setup?from=OBS";
-		text += "\">";
-		text += QTStr(
-			"Basic.AutoConfig.StreamPage.StreamKey.LinkToSite");
-		text += "</a>";
+		streamKeyLink =
+			"https://restream.io/settings/streaming-setup?from=OBS";
 	} else if (serviceName == "Facebook Live") {
-		text += " <a href=\"https://";
-		text += "www.facebook.com/live/create";
-		text += "\">";
-		text += QTStr(
-			"Basic.AutoConfig.StreamPage.StreamKey.LinkToSite");
-		text += "</a>";
+		streamKeyLink = "https://www.facebook.com/live/create?ref=OBS";
+	} else if (serviceName.startsWith("Twitter")) {
+		streamKeyLink = "https://www.pscp.tv/account/producer";
+	} else if (serviceName.startsWith("YouStreamer")) {
+		streamKeyLink = "https://www.app.youstreamer.com/stream/";
+	}
+
+	if (QString(streamKeyLink).isNull()) {
+		ui->streamKeyButton->hide();
+	} else {
+		ui->streamKeyButton->setTargetUrl(QUrl(streamKeyLink));
+		ui->streamKeyButton->show();
 	}
 
 	if (isYoutube) {
@@ -597,8 +593,6 @@ void AutoConfigStreamPage::UpdateKeyLink()
 	} else {
 		ui->doBandwidthTest->setEnabled(true);
 	}
-
-	ui->streamKeyLabel->setText(text);
 }
 
 void AutoConfigStreamPage::LoadServices(bool showAll)
@@ -695,7 +689,7 @@ void AutoConfigStreamPage::UpdateCompleted()
 	    (ui->key->text().isEmpty() && !auth)) {
 		ready = false;
 	} else {
-		bool custom = IsCustom();
+		bool custom = IsCustomService();
 		if (custom) {
 			ready = !ui->customServer->text().isEmpty();
 		} else {

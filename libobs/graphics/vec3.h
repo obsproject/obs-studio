@@ -19,7 +19,8 @@
 
 #include "math-defs.h"
 #include "vec4.h"
-#include <xmmintrin.h>
+
+#include "../util/sse-intrin.h"
 
 #ifdef __cplusplus
 extern "C" {

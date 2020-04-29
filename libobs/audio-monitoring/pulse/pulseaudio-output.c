@@ -287,7 +287,7 @@ static void pulseaudio_source_info(pa_context *c, const pa_source_info *i,
 {
 	UNUSED_PARAMETER(c);
 	PULSE_DATA(userdata);
-	// An error occured
+	// An error occurred
 	if (eol < 0) {
 		data->format = PA_SAMPLE_INVALID;
 		goto skip;

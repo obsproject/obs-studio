@@ -371,6 +371,31 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 		return App()->GlobalConfig();
 	}
 
+	void obs_frontend_open_projector(const char *type, int monitor,
+					 const char *geometry,
+					 const char *name) override
+	{
+		SavedProjectorInfo proj = {
+			ProjectorType::Preview,
+			monitor,
+			geometry ? geometry : "",
+			name ? name : "",
+		};
+		if (type) {
+			if (astrcmpi(type, "Source") == 0)
+				proj.type = ProjectorType::Source;
+			else if (astrcmpi(type, "Scene") == 0)
+				proj.type = ProjectorType::Scene;
+			else if (astrcmpi(type, "StudioProgram") == 0)
+				proj.type = ProjectorType::StudioProgram;
+			else if (astrcmpi(type, "Multiview") == 0)
+				proj.type = ProjectorType::Multiview;
+		}
+		QMetaObject::invokeMethod(main, "OpenSavedProjector",
+					  WaitConnection(),
+					  Q_ARG(SavedProjectorInfo *, &proj));
+	}
+
 	void obs_frontend_save(void) override { main->SaveProject(); }
 
 	void obs_frontend_defer_save_begin(void) override

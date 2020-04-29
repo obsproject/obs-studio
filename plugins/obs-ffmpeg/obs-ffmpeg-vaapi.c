@@ -160,24 +160,68 @@ static bool vaapi_init_codec(struct vaapi_encoder *enc, const char *path)
 	return true;
 }
 
+/* "Allowed" options per Rate Control
+ * See FFMPEG libavcodec/vaapi_encode.c (vaapi_encode_rc_modes)
+ */
+typedef struct {
+	const char *name;
+	bool qp;
+	bool bitrate;
+	bool maxrate;
+} rc_mode_t;
+
+static const rc_mode_t *get_rc_mode(const char *name)
+{
+	/* Set "allowed" options per Rate Control */
+	static const rc_mode_t RC_MODES[] = {
+		{.name = "CBR", .qp = false, .bitrate = true, .maxrate = false},
+		{.name = "CQP", .qp = true, .bitrate = false, .maxrate = false},
+		{.name = "VBR", .qp = false, .bitrate = true, .maxrate = true},
+		NULL};
+
+	const rc_mode_t *rc_mode = RC_MODES;
+
+	while (!!rc_mode && strcmp(rc_mode->name, name) != 0)
+		rc_mode++;
+
+	return rc_mode ? rc_mode : RC_MODES;
+}
+
 static bool vaapi_update(void *data, obs_data_t *settings)
 {
 	struct vaapi_encoder *enc = data;
 
 	const char *device = obs_data_get_string(settings, "vaapi_device");
 
+	const char *rate_control =
+		obs_data_get_string(settings, "rate_control");
+	const rc_mode_t *rc_mode = get_rc_mode(rate_control);
+	bool cbr = strcmp(rc_mode->name, "CBR") == 0;
+
 	int profile = (int)obs_data_get_int(settings, "profile");
 	int bf = (int)obs_data_get_int(settings, "bf");
-
-	int level = (int)obs_data_get_int(settings, "level");
-	int bitrate = (int)obs_data_get_int(settings, "bitrate");
-	int keyint_sec = (int)obs_data_get_int(settings, "keyint_sec");
-
-	int qp = (int)obs_data_get_int(settings, "qp");
-	int quality = (int)obs_data_get_int(settings, "quality");
+	int qp = rc_mode->qp ? (int)obs_data_get_int(settings, "qp") : 0;
 
 	av_opt_set_int(enc->context->priv_data, "qp", qp, 0);
-	av_opt_set_int(enc->context->priv_data, "quality", quality, 0);
+
+	int level = (int)obs_data_get_int(settings, "level");
+	int bitrate = rc_mode->bitrate
+			      ? (int)obs_data_get_int(settings, "bitrate")
+			      : 0;
+	int maxrate = rc_mode->maxrate
+			      ? (int)obs_data_get_int(settings, "maxrate")
+			      : 0;
+	int keyint_sec = (int)obs_data_get_int(settings, "keyint_sec");
+
+	/* For Rate Control which allows maxrate, FFMPEG will give
+	 * an error if maxrate > bitrate. To prevent that set maxrate
+	 * to 0.
+	 * For CBR, maxrate = bitrate
+	 */
+	if (cbr)
+		maxrate = bitrate;
+	else if (rc_mode->maxrate && maxrate && maxrate < bitrate)
+		maxrate = 0;
 
 	video_t *video = obs_encoder_video(enc->encoder);
 	const struct video_output_info *voi = video_output_get_info(video);
@@ -193,7 +237,7 @@ static bool vaapi_update(void *data, obs_data_t *settings)
 	enc->context->max_b_frames = bf;
 	enc->context->level = level;
 	enc->context->bit_rate = bitrate * 1000;
-	enc->context->rc_max_rate = bitrate * 1000;
+	enc->context->rc_max_rate = maxrate * 1000;
 
 	enc->context->width = obs_encoder_get_width(enc->encoder);
 	enc->context->height = obs_encoder_get_height(enc->encoder);
@@ -218,16 +262,17 @@ static bool vaapi_update(void *data, obs_data_t *settings)
 
 	info("settings:\n"
 	     "\tdevice:       %s\n"
-	     "\tqp:           %d\n"
-	     "\tquality:      %d\n"
+	     "\trate_control: %s\n"
 	     "\tprofile:      %d\n"
 	     "\tlevel:        %d\n"
+	     "\tqp:           %d\n"
 	     "\tbitrate:      %d\n"
+	     "\tmaxrate:      %d\n"
 	     "\tkeyint:       %d\n"
 	     "\twidth:        %d\n"
 	     "\theight:       %d\n"
 	     "\tb-frames:     %d\n",
-	     device, qp, quality, profile, level, bitrate,
+	     device, rate_control, profile, level, qp, bitrate, maxrate,
 	     enc->context->gop_size, enc->context->width, enc->context->height,
 	     enc->context->max_b_frames);
 
@@ -453,9 +498,28 @@ static void vaapi_defaults(obs_data_t *settings)
 	obs_data_set_default_int(settings, "bitrate", 2500);
 	obs_data_set_default_int(settings, "keyint_sec", 0);
 	obs_data_set_default_int(settings, "bf", 0);
-	obs_data_set_default_int(settings, "qp", 20);
-	obs_data_set_default_int(settings, "quality", 0);
 	obs_data_set_default_int(settings, "rendermode", 0);
+	obs_data_set_default_string(settings, "rate_control", "CBR");
+	obs_data_set_default_int(settings, "qp", 20);
+	obs_data_set_default_int(settings, "maxrate", 0);
+}
+
+static bool rate_control_modified(obs_properties_t *ppts, obs_property_t *p,
+				  obs_data_t *settings)
+{
+	UNUSED_PARAMETER(p);
+
+	const char *rate_control =
+		obs_data_get_string(settings, "rate_control");
+
+	const rc_mode_t *rc_mode = get_rc_mode(rate_control);
+
+	/* Set options visibility per Rate Control */
+	set_visible(ppts, "qp", rc_mode->qp);
+	set_visible(ppts, "bitrate", rc_mode->bitrate);
+	set_visible(ppts, "maxrate", rc_mode->maxrate);
+
+	return true;
 }
 
 static obs_properties_t *vaapi_properties(void *unused)
@@ -496,14 +560,30 @@ static obs_properties_t *vaapi_properties(void *unused)
 	obs_property_list_add_int(list, "720p60/1080p30 (4.1)", 41);
 	obs_property_list_add_int(list, "1080p60 (4.2)", 42);
 
+	list = obs_properties_add_list(props, "rate_control",
+				       obs_module_text("RateControl"),
+				       OBS_COMBO_TYPE_LIST,
+				       OBS_COMBO_FORMAT_STRING);
+	obs_property_list_add_string(list, "CBR (default)", "CBR");
+	obs_property_list_add_string(list, "CQP", "CQP");
+	obs_property_list_add_string(list, "VBR", "VBR");
+
+	obs_property_set_modified_callback(list, rate_control_modified);
+
 	obs_property_t *p;
 	p = obs_properties_add_int(props, "bitrate", obs_module_text("Bitrate"),
 				   0, 300000, 50);
 	obs_property_int_set_suffix(p, " Kbps");
 
+	p = obs_properties_add_int(
+		props, "maxrate", obs_module_text("MaxBitrate"), 0, 300000, 50);
+	obs_property_int_set_suffix(p, " Kbps");
+
+	obs_properties_add_int(props, "qp", "QP", 0, 51, 1);
+
 	obs_properties_add_int(props, "keyint_sec",
-			       obs_module_text("Keyframe Interval (seconds)"),
-			       0, 20, 1);
+			       obs_module_text("KeyframeIntervalSec"), 0, 20,
+			       1);
 
 	return props;
 }

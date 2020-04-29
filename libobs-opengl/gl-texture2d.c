@@ -26,7 +26,7 @@ static bool upload_texture_2d(struct gs_texture_2d *tex, const uint8_t **data)
 	bool success;
 
 	if (!num_levels)
-		num_levels = gs_get_total_levels(tex->width, tex->height);
+		num_levels = gs_get_total_levels(tex->width, tex->height, 1);
 
 	if (!gl_bind_texture(GL_TEXTURE_2D, tex->base.texture))
 		return false;
@@ -145,18 +145,25 @@ static inline bool is_texture_2d(const gs_texture_t *tex, const char *func)
 
 void gs_texture_destroy(gs_texture_t *tex)
 {
-	struct gs_texture_2d *tex2d = (struct gs_texture_2d *)tex;
 	if (!tex)
-		return;
-
-	if (!is_texture_2d(tex, "gs_texture_destroy"))
 		return;
 
 	if (tex->cur_sampler)
 		gs_samplerstate_destroy(tex->cur_sampler);
 
-	if (!tex->is_dummy && tex->is_dynamic && tex2d->unpack_buffer)
-		gl_delete_buffers(1, &tex2d->unpack_buffer);
+	if (!tex->is_dummy && tex->is_dynamic) {
+		if (tex->type == GS_TEXTURE_2D) {
+			struct gs_texture_2d *tex2d =
+				(struct gs_texture_2d *)tex;
+			if (tex2d->unpack_buffer)
+				gl_delete_buffers(1, &tex2d->unpack_buffer);
+		} else if (tex->type == GS_TEXTURE_3D) {
+			struct gs_texture_3d *tex3d =
+				(struct gs_texture_3d *)tex;
+			if (tex3d->unpack_buffer)
+				gl_delete_buffers(1, &tex3d->unpack_buffer);
+		}
+	}
 
 	if (tex->texture)
 		gl_delete_textures(1, &tex->texture);
@@ -253,19 +260,22 @@ failed:
 
 bool gs_texture_is_rect(const gs_texture_t *tex)
 {
-	const struct gs_texture_2d *tex2d = (const struct gs_texture_2d *)tex;
-	if (!is_texture_2d(tex, "gs_texture_unmap")) {
+	if (tex->type == GS_TEXTURE_3D)
+		return false;
+
+	if (!is_texture_2d(tex, "gs_texture_is_rect")) {
 		blog(LOG_ERROR, "gs_texture_is_rect (GL) failed");
 		return false;
 	}
 
+	const struct gs_texture_2d *tex2d = (const struct gs_texture_2d *)tex;
 	return tex2d->base.gl_target == GL_TEXTURE_RECTANGLE;
 }
 
 void *gs_texture_get_obj(gs_texture_t *tex)
 {
 	struct gs_texture_2d *tex2d = (struct gs_texture_2d *)tex;
-	if (!is_texture_2d(tex, "gs_texture_unmap")) {
+	if (!is_texture_2d(tex, "gs_texture_get_obj")) {
 		blog(LOG_ERROR, "gs_texture_get_obj (GL) failed");
 		return NULL;
 	}

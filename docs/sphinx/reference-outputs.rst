@@ -122,7 +122,7 @@ Output Definition Structure (obs_output_info)
 
 .. member:: void (*obs_output_info.raw_audio)(void *data, struct audio_data *frames)
 
-   This is called when the output recieves raw audio data.  Only applies
+   This is called when the output receives raw audio data.  Only applies
    to outputs that are not encoded.
 
    **This callback must be used with single-track raw outputs.**
@@ -131,7 +131,7 @@ Output Definition Structure (obs_output_info)
 
 .. member:: void (*obs_output_info.raw_audio2)(void *data, size_t idx, struct audio_data *frames)
 
-   This is called when the output recieves raw audio data.  Only applies
+   This is called when the output receives raw audio data.  Only applies
    to outputs that are not encoded.
 
    **This callback must be used with multi-track raw outputs.**
@@ -251,7 +251,7 @@ Output Signals
 
    :Parameters: - **code** - Can be one of the following values:
 
-                  | OBS_OUTPUT_SUCCESS        - Successfuly stopped
+                  | OBS_OUTPUT_SUCCESS        - Successfully stopped
                   | OBS_OUTPUT_BAD_PATH       - The specified path was invalid
                   | OBS_OUTPUT_CONNECT_FAILED - Failed to connect to a server
                   | OBS_OUTPUT_INVALID_STREAM - Invalid stream path
@@ -368,7 +368,7 @@ General Output Functions
 
    Starts the output.
 
-   :return: *true* if output successfuly started, *false* otherwise.  If
+   :return: *true* if output successfully started, *false* otherwise.  If
             the output failed to start,
             :c:func:`obs_output_get_last_error()` may contain a specific
             error string related to the reason
@@ -460,7 +460,7 @@ General Output Functions
 
    Pause an output (if supported by the output).
 
-   :return: *true* if the output was paused successfuly, *false*
+   :return: *true* if the output was paused successfully, *false*
             otherwise
 
 ---------------------
@@ -818,7 +818,7 @@ Functions used by outputs
    to the user
 
    :param code: | Can be one of the following values:
-                | OBS_OUTPUT_SUCCESS        - Successfuly stopped
+                | OBS_OUTPUT_SUCCESS        - Successfully stopped
                 | OBS_OUTPUT_BAD_PATH       - The specified path was invalid
                 | OBS_OUTPUT_CONNECT_FAILED - Failed to connect to a server
                 | OBS_OUTPUT_INVALID_STREAM - Invalid stream path

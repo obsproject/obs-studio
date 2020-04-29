@@ -16,6 +16,7 @@
 ******************************************************************************/
 
 #include "obs-internal.h"
+#include "graphics/math-extra.h"
 
 #define lock_transition(transition) \
 	pthread_mutex_lock(&transition->transition_mutex);
@@ -203,10 +204,23 @@ static void recalculate_transition_size(obs_source_t *transition)
 	transition->transition_actual_cy = cy;
 }
 
-void obs_transition_tick(obs_source_t *transition)
+void obs_transition_tick(obs_source_t *transition, float t)
 {
 	recalculate_transition_size(transition);
 	recalculate_transition_matrices(transition);
+
+	if (transition->transition_mode == OBS_TRANSITION_MODE_MANUAL) {
+		if (transition->transition_manual_torque == 0.0f) {
+			transition->transition_manual_val =
+				transition->transition_manual_target;
+		} else {
+			transition->transition_manual_val = calc_torquef(
+				transition->transition_manual_val,
+				transition->transition_manual_target,
+				transition->transition_manual_torque,
+				transition->transition_manual_clamp, t);
+		}
+	}
 
 	if (trylock_textures(transition) == 0) {
 		gs_texrender_reset(transition->transition_texrender[0]);
@@ -351,6 +365,7 @@ bool obs_transition_start(obs_source_t *transition,
 	bool active;
 	bool same_as_source;
 	bool same_as_dest;
+	bool same_mode;
 
 	if (!transition_valid(transition, "obs_transition_start"))
 		return false;
@@ -358,11 +373,21 @@ bool obs_transition_start(obs_source_t *transition,
 	lock_transition(transition);
 	same_as_source = dest == transition->transition_sources[0];
 	same_as_dest = dest == transition->transition_sources[1];
+	same_mode = mode == transition->transition_mode;
 	active = transition_active(transition);
 	unlock_transition(transition);
 
 	if (same_as_source && !active)
 		return false;
+	if (active && mode == OBS_TRANSITION_MODE_MANUAL && same_mode &&
+	    same_as_dest)
+		return true;
+
+	lock_transition(transition);
+	transition->transition_mode = mode;
+	transition->transition_manual_val = 0.0f;
+	transition->transition_manual_target = 0.0f;
+	unlock_transition(transition);
 
 	if (transition->info.transition_start)
 		transition->info.transition_start(transition->context.data);
@@ -389,9 +414,23 @@ bool obs_transition_start(obs_source_t *transition,
 	recalculate_transition_size(transition);
 	recalculate_transition_matrices(transition);
 
-	/* TODO: Add mode */
-	UNUSED_PARAMETER(mode);
 	return true;
+}
+
+void obs_transition_set_manual_torque(obs_source_t *transition, float torque,
+				      float clamp)
+{
+	lock_transition(transition);
+	transition->transition_manual_torque = torque;
+	transition->transition_manual_clamp = clamp;
+	unlock_transition(transition);
+}
+
+void obs_transition_set_manual_time(obs_source_t *transition, float t)
+{
+	lock_transition(transition);
+	transition->transition_manual_target = t;
+	unlock_transition(transition);
 }
 
 void obs_transition_set(obs_source_t *transition, obs_source_t *source)
@@ -415,6 +454,8 @@ void obs_transition_set(obs_source_t *transition, obs_source_t *source)
 	transition->transition_sources[0] = source;
 	transition->transitioning_video = false;
 	transition->transitioning_audio = false;
+	transition->transition_manual_val = 0.0f;
+	transition->transition_manual_target = 0.0f;
 	unlock_transition(transition);
 
 	for (size_t i = 0; i < 2; i++) {
@@ -429,6 +470,9 @@ void obs_transition_set(obs_source_t *transition, obs_source_t *source)
 
 static float calc_time(obs_source_t *transition, uint64_t ts)
 {
+	if (transition->transition_mode == OBS_TRANSITION_MODE_MANUAL)
+		return transition->transition_manual_val;
+
 	uint64_t end;
 
 	if (ts <= transition->transition_start_time)

@@ -12,11 +12,14 @@ set(win-dshow_HEADERS
 	encode-dstr.hpp
 	ffmpeg-decode.h)
 
+set(MODULE_DESCRIPTION "OBS DirectShow module")
+configure_file(${CMAKE_SOURCE_DIR}/cmake/winrc/obs-module.rc.in win-dshow.rc)
 set(win-dshow_SOURCES
 	win-dshow.cpp
 	win-dshow-encoder.cpp
 	dshow-plugin.cpp
-	ffmpeg-decode.c)
+	ffmpeg-decode.c
+	win-dshow.rc)
 
 set(libdshowcapture_SOURCES
 	libdshowcapture/source/capture-filter.cpp

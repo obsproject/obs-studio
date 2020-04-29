@@ -25,8 +25,7 @@
 enum AVHWDeviceType hw_priority[] = {
 	AV_HWDEVICE_TYPE_D3D11VA, AV_HWDEVICE_TYPE_DXVA2,
 	AV_HWDEVICE_TYPE_VAAPI,   AV_HWDEVICE_TYPE_VDPAU,
-	AV_HWDEVICE_TYPE_QSV,     AV_HWDEVICE_TYPE_CUDA,
-	AV_HWDEVICE_TYPE_NONE,
+	AV_HWDEVICE_TYPE_QSV,     AV_HWDEVICE_TYPE_NONE,
 };
 
 static bool has_hw_type(AVCodec *c, enum AVHWDeviceType type,
@@ -310,7 +309,7 @@ static int decode_packet(struct mp_decode *d, int *got_frame)
 #endif
 
 #ifdef USE_NEW_HARDWARE_CODEC_METHOD
-	if (*got_frame && ret && d->hw) {
+	if (*got_frame && d->hw) {
 		if (d->hw_frame->format != d->hw_format) {
 			d->frame = d->hw_frame;
 			return ret;

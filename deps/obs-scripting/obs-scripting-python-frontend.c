@@ -331,6 +331,76 @@ static PyObject *add_save_callback(PyObject *self, PyObject *args)
 	return python_none();
 }
 
+static void frontend_event_callback(enum obs_frontend_event event, void *priv)
+{
+	struct python_obs_callback *cb = priv;
+
+	if (cb->base.removed) {
+		obs_frontend_remove_event_callback(frontend_event_callback, cb);
+		return;
+	}
+
+	lock_python();
+
+	PyObject *args = Py_BuildValue("(i)", event);
+
+	struct python_obs_callback *last_cb = cur_python_cb;
+	cur_python_cb = cb;
+	cur_python_script = (struct obs_python_script *)cb->base.script;
+
+	PyObject *py_ret = PyObject_CallObject(cb->func, args);
+	Py_XDECREF(py_ret);
+	py_error();
+
+	cur_python_script = NULL;
+	cur_python_cb = last_cb;
+
+	Py_XDECREF(args);
+
+	unlock_python();
+}
+
+static PyObject *remove_event_callback(PyObject *self, PyObject *args)
+{
+	struct obs_python_script *script = cur_python_script;
+	PyObject *py_cb = NULL;
+
+	UNUSED_PARAMETER(self);
+
+	if (!parse_args(args, "O", &py_cb))
+		return python_none();
+	if (!py_cb || !PyFunction_Check(py_cb))
+		return python_none();
+
+	struct python_obs_callback *cb =
+		find_python_obs_callback(script, py_cb);
+	if (cb)
+		remove_python_obs_callback(cb);
+	return python_none();
+}
+
+static void add_event_callback_defer(void *cb)
+{
+	obs_frontend_add_event_callback(frontend_event_callback, cb);
+}
+
+static PyObject *add_event_callback(PyObject *self, PyObject *args)
+{
+	struct obs_python_script *script = cur_python_script;
+	PyObject *py_cb = NULL;
+
+	UNUSED_PARAMETER(self);
+
+	if (!parse_args(args, "O", &py_cb))
+		return python_none();
+	if (!py_cb || !PyFunction_Check(py_cb))
+		return python_none();
+
+	struct python_obs_callback *cb = add_python_obs_callback(script, py_cb);
+	defer_call_post(add_event_callback_defer, cb);
+	return python_none();
+}
+
 /* ----------------------------------- */
 
 void add_python_frontend_funcs(PyObject *module)
@@ -353,6 +423,8 @@ void add_python_frontend_funcs(PyObject *module)
 		DEF_FUNC(set_current_profile),
 		DEF_FUNC(remove_save_callback),
 		DEF_FUNC(add_save_callback),
+		DEF_FUNC(remove_event_callback),
+		DEF_FUNC(add_event_callback),
 
 #undef DEF_FUNC
 		{0}};

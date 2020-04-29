@@ -2,7 +2,12 @@ cmake_minimum_required(VERSION 2.8)
 project(obspython)
 
 if(POLICY CMP0078)
+	# UseSWIG generates standard target names.
 	cmake_policy(SET CMP0078 OLD)
+endif()
+if(POLICY CMP0086)
+	# UseSWIG honors SWIG_MODULE_NAME via -module flag.
+	cmake_policy(SET CMP0086 OLD)
 endif()
 
 find_package(SWIG 2 REQUIRED)
@@ -42,7 +47,12 @@ if(CMAKE_VERSION VERSION_GREATER 3.7.2)
 else()
 	SWIG_ADD_MODULE(obspython python obspython.i ../cstrcache.cpp ../cstrcache.h)
 endif()
-SWIG_LINK_LIBRARIES(obspython obs-scripting libobs ${PYTHON_LIBRARIES})
+
+IF(APPLE)
+	SWIG_LINK_LIBRARIES(obspython obs-scripting libobs)
+ELSE()
+	SWIG_LINK_LIBRARIES(obspython obs-scripting libobs ${PYTHON_LIBRARIES})
+ENDIF()
 
 function(install_plugin_bin_swig target additional_target)
 	if(APPLE)
@@ -57,14 +67,7 @@ function(install_plugin_bin_swig target additional_target)
 		PREFIX "")
 
 	if (APPLE)
-		set_property(
-				TARGET ${additional_target}
-				APPEND
-				PROPERTY INSTALL_RPATH
-				"/usr/local/Cellar/python3/3.6.4_2/Frameworks/Python.framework/Versions/3.6/lib/"
-				"/Library/Frameworks/Python.framework/Versions/3.6/lib/"
-				"/opt/local/Library/Frameworks/Python.framework/Versions/3.6/lib/"
-		)
+		SET_TARGET_PROPERTIES(${additional_target} PROPERTIES LINK_FLAGS "-undefined dynamic_lookup")
 	endif()
 
 	install(FILES "${CMAKE_CURRENT_BINARY_DIR}/obspython.py"

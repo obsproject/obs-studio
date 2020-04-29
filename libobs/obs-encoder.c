@@ -276,6 +276,8 @@ static void obs_encoder_actually_destroy(obs_encoder_t *encoder)
 		obs_context_data_free(&encoder->context);
 		if (encoder->owns_info_id)
 			bfree((void *)encoder->info.id);
+		if (encoder->last_error_message)
+			bfree(encoder->last_error_message);
 		bfree(encoder);
 	}
 }
@@ -521,6 +523,7 @@ void obs_encoder_shutdown(obs_encoder_t *encoder)
 		encoder->offset_usec = 0;
 		encoder->start_ts = 0;
 	}
+	obs_encoder_set_last_error(encoder, NULL);
 	pthread_mutex_unlock(&encoder->init_mutex);
 }
 
@@ -692,6 +695,14 @@ void obs_encoder_set_scaled_size(obs_encoder_t *encoder, uint32_t width,
 
 	encoder->scaled_width = width;
 	encoder->scaled_height = height;
+}
+
+bool obs_encoder_scaling_enabled(const obs_encoder_t *encoder)
+{
+	if (!obs_encoder_valid(encoder, "obs_encoder_scaling_enabled"))
+		return false;
+
+	return encoder->scaled_width || encoder->scaled_height;
 }
 
 uint32_t obs_encoder_get_width(const obs_encoder_t *encoder)
@@ -981,14 +992,11 @@ static inline bool video_pause_check_internal(struct pause_data *pause,
 		return false;
 	}
 
-	if (ts == pause->ts_start) {
-		return true;
-
-	} else if (ts == pause->ts_end) {
+	if (ts == pause->ts_end) {
 		pause->ts_start = 0;
 		pause->ts_end = 0;
-	} else {
 
+	} else if (ts >= pause->ts_start) {
 		return true;
 	}
 
@@ -1188,6 +1196,12 @@ static void unpause_audio(struct pause_data *pause, struct audio_data *data,
 	uint64_t cutoff_frames = pause->ts_end - data->timestamp;
 	cutoff_frames = ns_to_audio_frames(sample_rate, cutoff_frames);
 
+	for (size_t i = 0; i < MAX_AV_PLANES; i++) {
+		if (!data->data[i])
+			break;
+		data->data[i] += cutoff_frames * sizeof(float);
+	}
+
 	data->timestamp = pause->ts_start;
 	data->frames = data->frames - (uint32_t)cutoff_frames;
 	pause->ts_start = 0;
@@ -1306,12 +1320,14 @@ void obs_encoder_packet_create_instance(struct encoder_packet *dst,
 	memcpy(dst->data, src->data, src->size);
 }
 
+/* OBS_DEPRECATED */
 void obs_duplicate_encoder_packet(struct encoder_packet *dst,
 				  const struct encoder_packet *src)
 {
 	obs_encoder_packet_create_instance(dst, src);
 }
 
+/* OBS_DEPRECATED */
 void obs_free_encoder_packet(struct encoder_packet *packet)
 {
 	obs_encoder_packet_release(packet);
@@ -1470,4 +1486,26 @@ bool obs_encoder_paused(const obs_encoder_t *encoder)
 	return obs_encoder_valid(encoder, "obs_encoder_paused")
 		       ? os_atomic_load_bool(&encoder->paused)
 		       : false;
+}
+
+const char *obs_encoder_get_last_error(obs_encoder_t *encoder)
+{
+	if (!obs_encoder_valid(encoder, "obs_encoder_get_last_error"))
+		return NULL;
+
+	return encoder->last_error_message;
+}
+
+void obs_encoder_set_last_error(obs_encoder_t *encoder, const char *message)
+{
+	if (!obs_encoder_valid(encoder, "obs_encoder_set_last_error"))
+		return;
+
+	if (encoder->last_error_message)
+		bfree(encoder->last_error_message);
+
+	if (message)
+		encoder->last_error_message = bstrdup(message);
+	else
+		encoder->last_error_message = NULL;
 }

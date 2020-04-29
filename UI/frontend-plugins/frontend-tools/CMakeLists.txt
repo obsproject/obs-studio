@@ -71,8 +71,11 @@ if(SCRIPTING_ENABLED)
 endif()
 
 if(WIN32)
+	set(MODULE_DESCRIPTION "OBS Frontend Tools")
+	configure_file(${CMAKE_SOURCE_DIR}/cmake/winrc/obs-module.rc.in frontend-tools.rc)
 	set(frontend-tools_PLATFORM_SOURCES
-		auto-scene-switcher-win.cpp)
+		auto-scene-switcher-win.cpp
+		frontend-tools.rc)
 
 	if(BUILD_CAPTIONS)
 		set(frontend-tools_PLATFORM_SOURCES

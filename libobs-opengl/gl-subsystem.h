@@ -144,17 +144,17 @@ static inline GLenum get_gl_format_type(enum gs_color_format format)
 	case GS_R16:
 		return GL_UNSIGNED_SHORT;
 	case GS_RGBA16F:
-		return GL_UNSIGNED_SHORT;
+		return GL_HALF_FLOAT;
 	case GS_RGBA32F:
 		return GL_FLOAT;
 	case GS_RG16F:
-		return GL_UNSIGNED_SHORT;
+		return GL_HALF_FLOAT;
 	case GS_RG32F:
 		return GL_FLOAT;
 	case GS_R8G8:
 		return GL_UNSIGNED_BYTE;
 	case GS_R16F:
-		return GL_UNSIGNED_SHORT;
+		return GL_HALF_FLOAT;
 	case GS_R32F:
 		return GL_FLOAT;
 	case GS_DXT1:
@@ -527,6 +527,16 @@ struct gs_texture_2d {
 	GLuint unpack_buffer;
 };
 
+struct gs_texture_3d {
+	struct gs_texture base;
+
+	uint32_t width;
+	uint32_t height;
+	uint32_t depth;
+	bool gen_mipmaps;
+	GLuint unpack_buffer;
+};
+
 struct gs_texture_cube {
 	struct gs_texture base;
 
@@ -617,6 +627,7 @@ extern struct fbo_info *get_fbo(gs_texture_t *tex, uint32_t width,
 				uint32_t height);
 
 extern void gl_update(gs_device_t *device);
+extern void gl_clear_context(gs_device_t *device);
 
 extern struct gl_platform *gl_platform_create(gs_device_t *device,
 					      uint32_t adapter);

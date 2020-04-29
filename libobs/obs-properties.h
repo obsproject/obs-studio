@@ -313,6 +313,7 @@ EXPORT double obs_property_float_step(obs_property_t *p);
 EXPORT enum obs_number_type obs_property_float_type(obs_property_t *p);
 EXPORT const char *obs_property_float_suffix(obs_property_t *p);
 EXPORT enum obs_text_type obs_property_text_type(obs_property_t *p);
+EXPORT enum obs_text_type obs_property_text_monospace(obs_property_t *p);
 EXPORT enum obs_path_type obs_property_path_type(obs_property_t *p);
 EXPORT const char *obs_property_path_filter(obs_property_t *p);
 EXPORT const char *obs_property_path_default_path(obs_property_t *p);
@@ -326,6 +327,7 @@ EXPORT void obs_property_float_set_limits(obs_property_t *p, double min,
 EXPORT void obs_property_int_set_suffix(obs_property_t *p, const char *suffix);
 EXPORT void obs_property_float_set_suffix(obs_property_t *p,
 					  const char *suffix);
+EXPORT void obs_property_text_set_monospace(obs_property_t *p, bool monospace);
 
 EXPORT void obs_property_list_clear(obs_property_t *p);
 
@@ -395,7 +397,7 @@ EXPORT enum obs_group_type obs_property_group_type(obs_property_t *p);
 EXPORT obs_properties_t *obs_property_group_content(obs_property_t *p);
 
 #ifndef SWIG
-DEPRECATED
+OBS_DEPRECATED
 EXPORT enum obs_text_type obs_proprety_text_type(obs_property_t *p);
 #endif
 

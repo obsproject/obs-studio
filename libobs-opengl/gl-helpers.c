@@ -45,13 +45,10 @@ bool gl_init_face(GLenum target, GLenum type, uint32_t num_levels,
 			data++;
 
 		size /= 4;
-		width /= 2;
-		height /= 2;
-
-		if (width == 0)
-			width = 1;
-		if (height == 0)
-			height = 1;
+		if (width > 1)
+			width /= 2;
+		if (height > 1)
+			height /= 2;
 	}
 
 	if (data)

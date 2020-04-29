@@ -1,4 +1,5 @@
 #include <obs-module.h>
+#include <util/dstr.h>
 
 #define TIMING_TIME 0
 #define TIMING_FRAME 1
@@ -46,8 +47,12 @@ static void stinger_update(void *data, obs_data_t *settings)
 	obs_data_set_string(media_settings, "local_file", path);
 
 	obs_source_release(s->media_source);
-	s->media_source = obs_source_create_private("ffmpeg_source", NULL,
+	struct dstr name;
+	dstr_init_copy(&name, obs_source_get_name(s->source));
+	dstr_cat(&name, " (Stinger)");
+	s->media_source = obs_source_create_private("ffmpeg_source", name.array,
 						    media_settings);
+	dstr_free(&name);
 	obs_data_release(media_settings);
 
 	int64_t point = obs_data_get_int(settings, "transition_point");
@@ -225,7 +230,8 @@ static void stinger_transition_start(void *data)
 
 		proc_handler_call(ph, "get_duration", &cd);
 		proc_handler_call(ph, "get_nb_frames", &cd);
-		s->duration_ns = (uint64_t)calldata_int(&cd, "duration");
+		s->duration_ns =
+			(uint64_t)calldata_int(&cd, "duration") + 250000000ULL;
 		s->duration_frames = (uint64_t)calldata_int(&cd, "num_frames");
 
 		if (s->transition_point_is_frame)

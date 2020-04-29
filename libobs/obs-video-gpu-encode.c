@@ -58,9 +58,10 @@ static void *gpu_encode_thread(void *unused)
 		video_output_inc_texture_frames(video->video);
 
 		for (size_t i = 0; i < video->gpu_encoders.num; i++) {
-			obs_encoder_t *encoder = video->gpu_encoders.array[i];
-			da_push_back(encoders, &encoder);
-			obs_encoder_addref(encoder);
+			obs_encoder_t *encoder = obs_encoder_get_ref(
+				video->gpu_encoders.array[i]);
+			if (encoder)
+				da_push_back(encoders, &encoder);
 		}
 
 		pthread_mutex_unlock(&video->gpu_encoder_mutex);

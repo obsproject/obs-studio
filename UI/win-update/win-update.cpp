@@ -20,7 +20,14 @@
 #include <winhttp.h>
 #include <shellapi.h>
 
+#ifdef BROWSER_AVAILABLE
+#include <browser-panel.hpp>
+#endif
+
 using namespace std;
+
+struct QCef;
+extern QCef *cef;
 
 /* ------------------------------------------------------------------------ */
 
@@ -503,26 +510,6 @@ int AutoUpdateThread::queryUpdate(bool localManualUpdate, const char *text_utf8)
 	return ret;
 }
 
-static bool IsFileInUse(const wstring &file)
-{
-	WinHandle f = CreateFile(file.c_str(), GENERIC_WRITE, 0, nullptr,
-				 OPEN_EXISTING, 0, nullptr);
-	if (!f.Valid()) {
-		int err = GetLastError();
-		if (err == ERROR_SHARING_VIOLATION ||
-		    err == ERROR_LOCK_VIOLATION)
-			return true;
-	}
-
-	return false;
-}
-
-static bool IsGameCaptureInUse()
-{
-	wstring path = L"..\\..\\data\\obs-plugins\\win-capture\\graphics-hook";
-	return IsFileInUse(path + L"32.dll") || IsFileInUse(path + L"64.dll");
-}
-
 void AutoUpdateThread::run()
 try {
 	long responseCode;
@@ -545,29 +532,6 @@ try {
 
 	BPtr<char> manifestPath =
 		GetConfigPathPtr("obs-studio\\updates\\manifest.json");
-
-	auto ActiveOrGameCaptureLocked = [this]() {
-		if (obs_video_active()) {
-			if (manualUpdate)
-				info(QTStr("Updater.Running.Title"),
-				     QTStr("Updater.Running.Text"));
-			return true;
-		}
-		if (IsGameCaptureInUse()) {
-			if (manualUpdate)
-				info(QTStr("Updater.GameCaptureActive.Title"),
-				     QTStr("Updater.GameCaptureActive.Text"));
-			return true;
-		}
-
-		return false;
-	};
-
-	/* ----------------------------------- *
-	 * warn if running or gc locked        */
-
-	if (ActiveOrGameCaptureLocked())
-		return;
 
 	/* ----------------------------------- *
 	 * create signature provider           */
@@ -663,12 +627,6 @@ try {
 	int skipUpdateVer = config_get_int(GetGlobalConfig(), "General",
 					   "SkipUpdateVersion");
 	if (!manualUpdate && updateVer == skipUpdateVer)
-		return;
-
-	/* ----------------------------------- *
-	 * warn again if running or gc locked  */
-
-	if (ActiveOrGameCaptureLocked())
 		return;
 
 	/* ----------------------------------- *
@@ -847,4 +805,14 @@ try {
 
 } catch (string &text) {
 	blog(LOG_WARNING, "%s: %s", __FUNCTION__, text.c_str());
+}
+
+/* ------------------------------------------------------------------------ */
+
+void WhatsNewBrowserInitThread::run()
+{
+#ifdef BROWSER_AVAILABLE
+	cef->wait_for_browser_init();
+#endif
+	emit Result(url);
 }

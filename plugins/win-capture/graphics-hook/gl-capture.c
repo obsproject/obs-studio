@@ -30,6 +30,7 @@ static struct func_hook wgl_swap_buffers;
 static struct func_hook wgl_delete_context;
 
 static bool darkest_dungeon_fix = false;
+static bool functions_initialized = false;
 
 struct gl_data {
 	HDC hdc;
@@ -262,7 +263,6 @@ static const D3D_FEATURE_LEVEL feature_levels[] = {
 	D3D_FEATURE_LEVEL_11_0,
 	D3D_FEATURE_LEVEL_10_1,
 	D3D_FEATURE_LEVEL_10_0,
-	D3D_FEATURE_LEVEL_9_3,
 };
 
 static inline bool gl_shtex_init_d3d11(void)
@@ -725,7 +725,6 @@ static void gl_shmem_capture(void)
 
 static void gl_capture(HDC hdc)
 {
-	static bool functions_initialized = false;
 	static bool critical_failure = false;
 
 	if (critical_failure) {
@@ -829,7 +828,7 @@ static BOOL WINAPI hook_wgl_delete_context(HGLRC hrc)
 {
 	BOOL ret;
 
-	if (capture_active()) {
+	if (capture_active() && functions_initialized) {
 		HDC last_hdc = jimglGetCurrentDC();
 		HGLRC last_hrc = jimglGetCurrentContext();
 

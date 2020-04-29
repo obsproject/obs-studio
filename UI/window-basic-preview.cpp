@@ -650,13 +650,15 @@ void OBSBasicPreview::mouseReleaseEvent(QMouseEvent *event)
 
 			std::lock_guard<std::mutex> lock(selectMutex);
 			if (altDown || ctrlDown || shiftDown) {
-				for (int i = 0; i < selectedItems.size(); i++) {
+				for (size_t i = 0; i < selectedItems.size();
+				     i++) {
 					obs_sceneitem_select(selectedItems[i],
 							     true);
 				}
 			}
 
-			for (int i = 0; i < hoveredPreviewItems.size(); i++) {
+			for (size_t i = 0; i < hoveredPreviewItems.size();
+			     i++) {
 				bool select = true;
 				obs_sceneitem_t *item = hoveredPreviewItems[i];
 
@@ -1512,10 +1514,9 @@ static void DrawLine(float x1, float y1, float x2, float y2, float thickness,
 	gs_vertex2f(x1, y1);
 	gs_vertex2f(x1 + (xSide * (thickness / scale.x)),
 		    y1 + (ySide * (thickness / scale.y)));
+	gs_vertex2f(x2, y2);
 	gs_vertex2f(x2 + (xSide * (thickness / scale.x)),
 		    y2 + (ySide * (thickness / scale.y)));
-	gs_vertex2f(x2, y2);
-	gs_vertex2f(x1, y1);
 
 	gs_vertbuffer_t *line = gs_render_save();
 
@@ -1530,24 +1531,17 @@ static void DrawRect(float thickness, vec2 scale)
 
 	gs_vertex2f(0.0f, 0.0f);
 	gs_vertex2f(0.0f + (thickness / scale.x), 0.0f);
+	gs_vertex2f(0.0f, 1.0f);
 	gs_vertex2f(0.0f + (thickness / scale.x), 1.0f);
-	gs_vertex2f(0.0f, 1.0f);
-	gs_vertex2f(0.0f, 0.0f);
-	gs_vertex2f(0.0f, 1.0f);
 	gs_vertex2f(0.0f, 1.0f - (thickness / scale.y));
+	gs_vertex2f(1.0f, 1.0f);
 	gs_vertex2f(1.0f, 1.0f - (thickness / scale.y));
-	gs_vertex2f(1.0f, 1.0f);
-	gs_vertex2f(0.0f, 1.0f);
-	gs_vertex2f(1.0f, 1.0f);
 	gs_vertex2f(1.0f - (thickness / scale.x), 1.0f);
+	gs_vertex2f(1.0f, 0.0f);
 	gs_vertex2f(1.0f - (thickness / scale.x), 0.0f);
-	gs_vertex2f(1.0f, 0.0f);
-	gs_vertex2f(1.0f, 1.0f);
-	gs_vertex2f(1.0f, 0.0f);
 	gs_vertex2f(1.0f, 0.0f + (thickness / scale.y));
-	gs_vertex2f(0.0f, 0.0f + (thickness / scale.y));
 	gs_vertex2f(0.0f, 0.0f);
-	gs_vertex2f(1.0f, 0.0f);
+	gs_vertex2f(0.0f, 0.0f + (thickness / scale.y));
 
 	gs_vertbuffer_t *rect = gs_render_save();
 
@@ -1677,7 +1671,7 @@ bool OBSBasicPreview::DrawSelectedItem(obs_scene_t *scene,
 	bool hovered = false;
 	{
 		std::lock_guard<std::mutex> lock(prev->selectMutex);
-		for (int i = 0; i < prev->hoveredPreviewItems.size(); i++) {
+		for (size_t i = 0; i < prev->hoveredPreviewItems.size(); i++) {
 			if (prev->hoveredPreviewItems[i] == item) {
 				hovered = true;
 				break;
@@ -1895,10 +1889,8 @@ void OBSBasicPreview::DrawSceneEditing()
 
 			gs_vertex2f(0.0f, 0.0f);
 			gs_vertex2f(1.0f, 0.0f);
-			gs_vertex2f(1.0f, 1.0f);
-			gs_vertex2f(1.0f, 1.0f);
-			gs_vertex2f(0.0f, 0.0f);
 			gs_vertex2f(0.0f, 1.0f);
+			gs_vertex2f(1.0f, 1.0f);
 
 			rectFill = gs_render_save();
 		}

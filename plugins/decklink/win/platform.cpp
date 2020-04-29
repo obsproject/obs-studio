@@ -11,6 +11,15 @@ IDeckLinkDiscovery *CreateDeckLinkDiscoveryInstance(void)
 	return result == S_OK ? instance : nullptr;
 }
 
+IDeckLinkIterator *CreateDeckLinkIteratorInstance(void)
+{
+	IDeckLinkIterator *iterator;
+	const HRESULT result =
+		CoCreateInstance(CLSID_CDeckLinkIterator, nullptr, CLSCTX_ALL,
+				 IID_IDeckLinkIterator, (void **)&iterator);
+	return result == S_OK ? iterator : nullptr;
+}
+
 bool DeckLinkStringToStdString(decklink_string_t input, std::string &output)
 {
 	if (input == nullptr)

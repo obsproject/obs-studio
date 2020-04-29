@@ -88,8 +88,50 @@ static bool nvenc_init_codec(struct nvenc_encoder *enc)
 {
 	int ret;
 
+	// avcodec_open2 will overwrite priv_data, we call this to get a
+	// local copy of the "gpu" setting for improved error messages.
+	int64_t gpu;
+	if (av_opt_get_int(enc->context->priv_data, "gpu", 0, &gpu) < 0) {
+		gpu = -1;
+	}
+
 	ret = avcodec_open2(enc->context, enc->nvenc, NULL);
 	if (ret < 0) {
+		// if we were a fallback from jim-nvenc, there may already be a
+		// more useful error returned from that, so don't overwrite.
+		// this can be removed if / when ffmpeg fallback is removed.
+		if (!obs_encoder_get_last_error(enc->encoder)) {
+			struct dstr error_message = {0};
+
+			dstr_copy(&error_message,
+				  obs_module_text("NVENC.Error"));
+			dstr_replace(&error_message, "%1", av_err2str(ret));
+			dstr_cat(&error_message, "\r\n\r\n");
+
+			if (gpu > 0) {
+				// if a non-zero GPU failed, almost always
+				// user error. tell then to fix it.
+				char gpu_str[16];
+				snprintf(gpu_str, sizeof(gpu_str) - 1, "%d",
+					 (int)gpu);
+				gpu_str[sizeof(gpu_str) - 1] = 0;
+
+				dstr_cat(&error_message,
+					 obs_module_text("NVENC.BadGPUIndex"));
+				dstr_replace(&error_message, "%1", gpu_str);
+			} else if (ret == AVERROR_EXTERNAL) {
+				// special case for common NVENC error
+				dstr_cat(&error_message,
+					 obs_module_text("NVENC.GenericError"));
+			} else {
+				dstr_cat(&error_message,
+					 obs_module_text("NVENC.CheckDrivers"));
+			}
+
+			obs_encoder_set_last_error(enc->encoder,
+						   error_message.array);
+			dstr_free(&error_message);
+		}
 		warn("Failed to open NVENC codec: %s", av_err2str(ret));
 		return false;
 	}
@@ -296,6 +338,8 @@ static void *nvenc_create(obs_data_t *settings, obs_encoder_t *encoder)
 	blog(LOG_INFO, "---------------------------------");
 
 	if (!enc->nvenc) {
+		obs_encoder_set_last_error(encoder,
+					   "Couldn't find NVENC encoder");
 		warn("Couldn't find encoder");
 		goto fail;
 	}
@@ -570,5 +614,9 @@ struct obs_encoder_info nvenc_encoder_info = {
 	.get_extra_data = nvenc_extra_data,
 	.get_sei_data = nvenc_sei_data,
 	.get_video_info = nvenc_video_info,
+#ifdef _WIN32
+	.caps = OBS_ENCODER_CAP_DYN_BITRATE | OBS_ENCODER_CAP_INTERNAL,
+#else
 	.caps = OBS_ENCODER_CAP_DYN_BITRATE,
+#endif
 };

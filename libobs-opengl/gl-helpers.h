@@ -149,10 +149,22 @@ static inline bool gl_bind_renderbuffer(GLenum target, GLuint buffer)
 	return gl_success("glBindRendebuffer");
 }
 
+static inline bool gl_gen_framebuffers(GLsizei num_arrays, GLuint *arrays)
+{
+	glGenFramebuffers(num_arrays, arrays);
+	return gl_success("glGenFramebuffers");
+}
+
 static inline bool gl_bind_framebuffer(GLenum target, GLuint buffer)
 {
 	glBindFramebuffer(target, buffer);
 	return gl_success("glBindFramebuffer");
+}
+
+static inline void gl_delete_framebuffers(GLsizei num_arrays, GLuint *arrays)
+{
+	glDeleteFramebuffers(num_arrays, arrays);
+	gl_success("glDeleteFramebuffers");
 }
 
 static inline bool gl_tex_param_f(GLenum target, GLenum param, GLfloat val)

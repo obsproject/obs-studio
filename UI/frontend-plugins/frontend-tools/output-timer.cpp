@@ -180,8 +180,8 @@ void OutputTimer::UpdateStreamTimerDisplay()
 	int minutes = (remainingTime % 3600) / 60;
 	int hours = remainingTime / 3600;
 
-	QString text;
-	text.sprintf("%02d:%02d:%02d", hours, minutes, seconds);
+	QString text =
+		QString::asprintf("%02d:%02d:%02d", hours, minutes, seconds);
 	ui->streamTime->setText(text);
 }
 
@@ -199,8 +199,8 @@ void OutputTimer::UpdateRecordTimerDisplay()
 	int minutes = (remainingTime % 3600) / 60;
 	int hours = remainingTime / 3600;
 
-	QString text;
-	text.sprintf("%02d:%02d:%02d", hours, minutes, seconds);
+	QString text =
+		QString::asprintf("%02d:%02d:%02d", hours, minutes, seconds);
 	ui->recordTime->setText(text);
 }
 

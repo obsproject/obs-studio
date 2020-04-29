@@ -79,8 +79,6 @@ void qsv_encoder_version(unsigned short *major, unsigned short *minor)
 
 qsv_t *qsv_encoder_open(qsv_param_t *pParams)
 {
-	bool false_value = false;
-
 	QSV_Encoder_Internal *pEncoder = new QSV_Encoder_Internal(impl, ver);
 	mfxStatus sts = pEncoder->Open(pParams);
 	if (sts != MFX_ERR_NONE) {
@@ -198,6 +196,23 @@ int qsv_encoder_encode(qsv_t *pContext, uint64_t ts, uint8_t *pDataY,
 		return -1;
 }
 
+int qsv_encoder_encode_tex(qsv_t *pContext, uint64_t ts, uint32_t tex_handle,
+			   uint64_t lock_key, uint64_t *next_key,
+			   mfxBitstream **pBS)
+{
+	QSV_Encoder_Internal *pEncoder = (QSV_Encoder_Internal *)pContext;
+	mfxStatus sts = MFX_ERR_NONE;
+
+	sts = pEncoder->Encode_tex(ts, tex_handle, lock_key, next_key, pBS);
+
+	if (sts == MFX_ERR_NONE)
+		return 0;
+	else if (sts == MFX_ERR_MORE_DATA)
+		return 1;
+	else
+		return -1;
+}
+
 int qsv_encoder_close(qsv_t *pContext)
 {
 	QSV_Encoder_Internal *pEncoder = (QSV_Encoder_Internal *)pContext;
@@ -302,6 +317,12 @@ enum qsv_cpu_platform qsv_get_cpu_platform()
 	case 0x4e:
 	case 0x5e:
 		return QSV_CPU_PLATFORM_SKL;
+	case 0x8e:
+	case 0x9e:
+		return QSV_CPU_PLATFORM_KBL;
+	case 0x7d:
+	case 0x7e:
+		return QSV_CPU_PLATFORM_ICL;
 	}
 
 	//assume newer revisions are at least as capable as Haswell

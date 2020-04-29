@@ -50,7 +50,7 @@ static const int ctx_attribs[] = {
 	GLX_CONTEXT_MAJOR_VERSION_ARB,
 	3,
 	GLX_CONTEXT_MINOR_VERSION_ARB,
-	2,
+	3,
 	None,
 };
 
@@ -94,53 +94,6 @@ struct gl_platform {
 	GLXContext context;
 	GLXPbuffer pbuffer;
 };
-
-static void print_info_stuff(const struct gs_init_data *info)
-{
-	blog(LOG_INFO,
-	     "X and Y: %i %i\n"
-	     "Backbuffers: %i\n"
-	     "Color Format: %i\n"
-	     "ZStencil Format: %i\n"
-	     "Adapter: %i\n",
-	     info->cx, info->cy, info->num_backbuffers, info->format,
-	     info->zsformat, info->adapter);
-}
-/* The following utility functions are copied verbatim from WGL code.
- * GLX and WGL are more similar than most people realize. */
-
-/* For now, only support basic 32bit formats for graphics output. */
-static inline int get_color_format_bits(enum gs_color_format format)
-{
-	switch ((uint32_t)format) {
-	case GS_RGBA:
-		return 32;
-	default:
-		return 0;
-	}
-}
-
-static inline int get_depth_format_bits(enum gs_zstencil_format zsformat)
-{
-	switch ((uint32_t)zsformat) {
-	case GS_Z16:
-		return 16;
-	case GS_Z24_S8:
-		return 24;
-	default:
-		return 0;
-	}
-}
-
-static inline int get_stencil_format_bits(enum gs_zstencil_format zsformat)
-{
-	switch ((uint32_t)zsformat) {
-	case GS_Z24_S8:
-		return 8;
-	default:
-		return 0;
-	}
-}
 
 /*
  * Since we cannot take advantage of the asynchronous nature of xcb,
@@ -277,7 +230,6 @@ gl_windowinfo_create(const struct gs_init_data *info)
 
 extern void gl_windowinfo_destroy(struct gl_windowinfo *info)
 {
-	UNUSED_PARAMETER(info);
 	bfree(info);
 }
 
@@ -510,6 +462,11 @@ extern void device_leave_context(gs_device_t *device)
 	}
 }
 
+void *device_get_device_obj(gs_device_t *device)
+{
+	return device->plat->context;
+}
+
 extern void gl_getclientsize(const struct gs_swap_chain *swap, uint32_t *width,
 			     uint32_t *height)
 {
@@ -525,6 +482,15 @@ extern void gl_getclientsize(const struct gs_swap_chain *swap, uint32_t *width,
 	}
 
 	free(geometry);
+}
+
+extern void gl_clear_context(gs_device_t *device)
+{
+	Display *display = device->plat->display;
+
+	if (!glXMakeContextCurrent(display, None, None, NULL)) {
+		blog(LOG_ERROR, "Failed to reset current context.");
+	}
 }
 
 extern void gl_update(gs_device_t *device)

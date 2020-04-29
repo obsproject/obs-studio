@@ -99,8 +99,9 @@ static obs_properties_t *sharpness_properties(void *data)
 {
 	obs_properties_t *props = obs_properties_create();
 
-	obs_properties_add_float_slider(props, "sharpness", "Sharpness", 0.0,
-					1.0, 0.01);
+	obs_properties_add_float_slider(props, "sharpness",
+					obs_module_text("Sharpness"), 0.0, 1.0,
+					0.01);
 
 	UNUSED_PARAMETER(data);
 	return props;

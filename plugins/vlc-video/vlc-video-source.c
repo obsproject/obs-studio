@@ -661,20 +661,61 @@ static void vlcs_update(void *data, obs_data_t *settings)
 	obs_data_array_release(array);
 }
 
-static void vlcs_stopped(const struct libvlc_event_t *event, void *data)
+static void vlcs_started(const struct libvlc_event_t *event, void *data)
 {
 	struct vlc_source *c = data;
-	if (!c->loop)
-		obs_source_output_video(c->source, NULL);
+	obs_source_media_started(c->source);
 
 	UNUSED_PARAMETER(event);
 }
 
-static void vlcs_play_pause(void *data)
+static void vlcs_stopped(const struct libvlc_event_t *event, void *data)
+{
+	struct vlc_source *c = data;
+	if (!c->loop) {
+		obs_source_output_video(c->source, NULL);
+		obs_source_media_ended(c->source);
+	}
+
+	UNUSED_PARAMETER(event);
+}
+
+static enum obs_media_state vlcs_get_state(void *data)
 {
 	struct vlc_source *c = data;
 
-	libvlc_media_list_player_pause_(c->media_list_player);
+	libvlc_state_t state = libvlc_media_player_get_state_(c->media_player);
+
+	switch (state) {
+	case libvlc_NothingSpecial:
+		return OBS_MEDIA_STATE_NONE;
+	case libvlc_Opening:
+		return OBS_MEDIA_STATE_OPENING;
+	case libvlc_Buffering:
+		return OBS_MEDIA_STATE_BUFFERING;
+	case libvlc_Playing:
+		return OBS_MEDIA_STATE_PLAYING;
+	case libvlc_Paused:
+		return OBS_MEDIA_STATE_PAUSED;
+	case libvlc_Stopped:
+		return OBS_MEDIA_STATE_STOPPED;
+	case libvlc_Ended:
+		return OBS_MEDIA_STATE_ENDED;
+	case libvlc_Error:
+		return OBS_MEDIA_STATE_ERROR;
+	}
+
+	return 0;
+}
+
+static void vlcs_play_pause(void *data, bool pause)
+{
+	struct vlc_source *c = data;
+
+	if (pause)
+		libvlc_media_list_player_pause_(c->media_list_player);
+	else
+		libvlc_media_list_player_play_(c->media_list_player);
 }
 
 static void vlcs_restart(void *data)
@@ -707,6 +748,27 @@ static void vlcs_playlist_prev(void *data)
 	libvlc_media_list_player_previous_(c->media_list_player);
 }
 
+static int64_t vlcs_get_duration(void *data)
+{
+	struct vlc_source *c = data;
+
+	return (int64_t)libvlc_media_player_get_length_(c->media_player);
+}
+
+static int64_t vlcs_get_time(void *data)
+{
+	struct vlc_source *c = data;
+
+	return (int64_t)libvlc_media_player_get_time_(c->media_player);
+}
+
+static void vlcs_set_time(void *data, int64_t ms)
+{
+	struct vlc_source *c = data;
+
+	libvlc_media_player_set_time_(c->media_player, (libvlc_time_t)ms);
+}
+
 static void vlcs_play_pause_hotkey(void *data, obs_hotkey_id id,
 				   obs_hotkey_t *hotkey, bool pressed)
 {
@@ -715,8 +777,14 @@ static void vlcs_play_pause_hotkey(void *data, obs_hotkey_id id,
 
 	struct vlc_source *c = data;
 
-	if (pressed && obs_source_active(c->source))
-		vlcs_play_pause(c);
+	enum obs_media_state state = obs_source_media_get_state(c->source);
+
+	if (pressed && obs_source_active(c->source)) {
+		if (state == OBS_MEDIA_STATE_PLAYING)
+			obs_source_media_play_pause(c->source, true);
+		else if (state == OBS_MEDIA_STATE_PAUSED)
+			obs_source_media_play_pause(c->source, false);
+	}
 }
 
 static void vlcs_restart_hotkey(void *data, obs_hotkey_id id,
@@ -728,7 +796,7 @@ static void vlcs_restart_hotkey(void *data, obs_hotkey_id id,
 	struct vlc_source *c = data;
 
 	if (pressed && obs_source_active(c->source))
-		vlcs_restart(c);
+		obs_source_media_restart(c->source);
 }
 
 static void vlcs_stop_hotkey(void *data, obs_hotkey_id id, obs_hotkey_t *hotkey,
@@ -740,7 +808,7 @@ static void vlcs_stop_hotkey(void *data, obs_hotkey_id id, obs_hotkey_t *hotkey,
 	struct vlc_source *c = data;
 
 	if (pressed && obs_source_active(c->source))
-		vlcs_stop(c);
+		obs_source_media_stop(c->source);
 }
 
 static void vlcs_playlist_next_hotkey(void *data, obs_hotkey_id id,
@@ -752,7 +820,7 @@ static void vlcs_playlist_next_hotkey(void *data, obs_hotkey_id id,
 	struct vlc_source *c = data;
 
 	if (pressed && obs_source_active(c->source))
-		vlcs_playlist_next(c);
+		obs_source_media_next(c->source);
 }
 
 static void vlcs_playlist_prev_hotkey(void *data, obs_hotkey_id id,
@@ -764,7 +832,7 @@ static void vlcs_playlist_prev_hotkey(void *data, obs_hotkey_id id,
 	struct vlc_source *c = data;
 
 	if (pressed && obs_source_active(c->source))
-		vlcs_playlist_prev(c);
+		obs_source_media_previous(c->source);
 }
 
 static void *vlcs_create(obs_data_t *settings, obs_source_t *source)
@@ -824,6 +892,8 @@ static void *vlcs_create(obs_data_t *settings, obs_source_t *source)
 	event_manager = libvlc_media_player_event_manager_(c->media_player);
 	libvlc_event_attach_(event_manager, libvlc_MediaPlayerEndReached,
 			     vlcs_stopped, c);
+	libvlc_event_attach_(event_manager, libvlc_MediaPlayerOpening,
+			     vlcs_started, c);
 
 	obs_source_update(source, NULL);
 
@@ -952,7 +1022,8 @@ struct obs_source_info vlc_source_info = {
 	.id = "vlc_source",
 	.type = OBS_SOURCE_TYPE_INPUT,
 	.output_flags = OBS_SOURCE_ASYNC_VIDEO | OBS_SOURCE_AUDIO |
-			OBS_SOURCE_DO_NOT_DUPLICATE,
+			OBS_SOURCE_DO_NOT_DUPLICATE |
+			OBS_SOURCE_CONTROLLABLE_MEDIA,
 	.get_name = vlcs_get_name,
 	.create = vlcs_create,
 	.destroy = vlcs_destroy,
@@ -961,4 +1032,14 @@ struct obs_source_info vlc_source_info = {
 	.get_properties = vlcs_properties,
 	.activate = vlcs_activate,
 	.deactivate = vlcs_deactivate,
+	.icon_type = OBS_ICON_TYPE_MEDIA,
+	.media_play_pause = vlcs_play_pause,
+	.media_restart = vlcs_restart,
+	.media_stop = vlcs_stop,
+	.media_next = vlcs_playlist_next,
+	.media_previous = vlcs_playlist_prev,
+	.media_get_duration = vlcs_get_duration,
+	.media_get_time = vlcs_get_time,
+	.media_set_time = vlcs_set_time,
+	.media_get_state = vlcs_get_state,
 };
