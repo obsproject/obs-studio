@@ -37,6 +37,7 @@ struct ft2_source {
 
 	bool file_load_failed;
 	bool from_file;
+	bool antialiasing;
 	char *text_file;
 	wchar_t *text;
 	time_t m_timestamp;
