@@ -207,6 +207,15 @@ void obs_output_destroy(obs_output_t *output)
 		if (output->context.data) {
 			output->info.destroy(output->context.data);
 			output->context.data = NULL;
+
+			// In case when output has started connecting, but haven't started
+			// capturing data (i.e. not active), the info `destroy` call can
+			// switch output to active state - in this case it is needed to wait till
+			// the `end_data_capture_thread` will finish.
+			// Otherwise we might run into a data race
+			if (data_capture_ending(output))
+				pthread_join(output->end_data_capture_thread,
+					     NULL);
 		}
 
 		free_packets(output);
