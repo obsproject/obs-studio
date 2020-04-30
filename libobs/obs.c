@@ -907,7 +907,6 @@ void obs_add_data_path(const char *path)
 {
 	struct dstr *new_path = da_push_back_new(core_module_paths);
 	dstr_init_copy(new_path, path);
-	da_push_back(core_module_paths, new_path);
 }
 
 bool obs_remove_data_path(const char *path)
