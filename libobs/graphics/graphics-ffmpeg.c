@@ -2,6 +2,7 @@
 
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
+#include <libavutil/imgutils.h>
 #include <libswscale/swscale.h>
 
 #include "../obs-ffmpeg-compat.h"
@@ -122,9 +123,11 @@ static bool ffmpeg_image_reformat_frame(struct ffmpeg_image *info,
 		}
 
 	} else {
+		static const enum AVPixelFormat format = AV_PIX_FMT_BGRA;
+
 		sws_ctx = sws_getContext(info->cx, info->cy, info->format,
-					 info->cx, info->cy, AV_PIX_FMT_BGRA,
-					 SWS_POINT, NULL, NULL, NULL);
+					 info->cx, info->cy, format, SWS_POINT,
+					 NULL, NULL, NULL);
 		if (!sws_ctx) {
 			blog(LOG_WARNING,
 			     "Failed to create scale context "
@@ -133,17 +136,36 @@ static bool ffmpeg_image_reformat_frame(struct ffmpeg_image *info,
 			return false;
 		}
 
+		uint8_t *pointers[4];
+		int linesizes[4];
+		ret = av_image_alloc(pointers, linesizes, info->cx, info->cy,
+				     format, 32);
+		if (ret < 0) {
+			blog(LOG_WARNING, "av_image_alloc failed for '%s': %s",
+			     info->file, av_err2str(ret));
+			sws_freeContext(sws_ctx);
+			return false;
+		}
+
 		ret = sws_scale(sws_ctx, (const uint8_t *const *)frame->data,
-				frame->linesize, 0, info->cy, &out, &linesize);
+				frame->linesize, 0, info->cy, pointers,
+				linesizes);
 		sws_freeContext(sws_ctx);
 
 		if (ret < 0) {
 			blog(LOG_WARNING, "sws_scale failed for '%s': %s",
 			     info->file, av_err2str(ret));
+			av_freep(pointers);
 			return false;
 		}
 
-		info->format = AV_PIX_FMT_BGRA;
+		for (size_t y = 0; y < (size_t)info->cy; y++)
+			memcpy(out + y * linesize,
+			       pointers[0] + y * linesizes[0], linesize);
+
+		av_freep(pointers);
+
+		info->format = format;
 	}
 
 	return true;
