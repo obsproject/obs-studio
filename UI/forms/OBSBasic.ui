@@ -526,6 +526,18 @@
         </item>
         <item>
          <widget class="QToolBar" name="scenesToolbar">
+          <property name="minimumSize">
+           <size>
+            <width>0</width>
+            <height>22</height>
+           </size>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>16777215</width>
+            <height>22</height>
+           </size>
+          </property>
           <property name="iconSize">
            <size>
             <width>16</width>
@@ -661,6 +673,18 @@
         </item>
         <item>
          <widget class="QToolBar" name="sourcesToolbar">
+          <property name="minimumSize">
+           <size>
+            <width>0</width>
+            <height>22</height>
+           </size>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>16777215</width>
+            <height>22</height>
+           </size>
+          </property>
           <property name="iconSize">
            <size>
             <width>16</width>
