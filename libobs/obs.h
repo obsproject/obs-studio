@@ -1571,6 +1571,9 @@ EXPORT void obs_sceneitem_set_order(obs_sceneitem_t *item,
 				    enum obs_order_movement movement);
 EXPORT void obs_sceneitem_set_order_position(obs_sceneitem_t *item,
 					     int position);
+EXPORT void obs_scene_set_items_order(obs_scene_t *scene, 
+						 int64_t* new_items_order, 
+						 int items_count);
 EXPORT void obs_sceneitem_set_bounds_type(obs_sceneitem_t *item,
 					  enum obs_bounds_type type);
 EXPORT void obs_sceneitem_set_bounds_alignment(obs_sceneitem_t *item,

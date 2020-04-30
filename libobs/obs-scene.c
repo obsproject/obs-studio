@@ -231,7 +231,9 @@ static inline void detach_sceneitem(struct obs_scene_item *item)
 
 	if (item->next)
 		item->next->prev = item->prev;
-
+	
+	item->prev = NULL;
+	item->next = NULL;
 	item->parent = NULL;
 }
 
@@ -2079,6 +2081,57 @@ void obs_sceneitem_set_order_position(obs_sceneitem_t *item, int position)
 	full_unlock(scene);
 
 	signal_reorder(item);
+	obs_scene_release(scene);
+}
+
+void obs_scene_set_items_order(obs_scene_t *scene, int64_t* new_items_order, int items_count)
+{
+	if (!scene || items_count <= 1)
+		return;
+
+	obs_scene_addref(scene);
+	full_lock(scene);
+
+	//create array with items of this scene
+	obs_sceneitem_t **scene_items_cached = bzalloc(items_count * sizeof(obs_sceneitem_t*)); 
+
+	obs_sceneitem_t *current_item = scene->first_item;
+	scene_items_cached[0] = current_item;
+	for (int i = 1; i < items_count; i++) {
+		scene_items_cached[i] = current_item->next;
+		if (current_item->next == NULL)
+			break;
+		current_item = current_item->next;
+	}
+
+	if (scene_items_cached[items_count-1] == NULL || scene_items_cached[items_count-1]->next != NULL) {
+		blog(LOG_ERROR, "obs_scene_set_items_order: Wrong items count in order array");
+	} else {
+		//deattach all items from scene 
+		for (int i = 0; i < items_count; i++) {
+			detach_sceneitem(scene_items_cached[i]);
+		}
+
+		scene->first_item = NULL;
+		//reattach items to the scene in order of id's 
+		for (int i = 0; i < items_count; i++) {
+			int64_t item_id = new_items_order[i];
+			for (int j = 0; j < items_count; j++ ) {
+				obs_sceneitem_t * item = scene_items_cached[j];
+				if (item != NULL) {
+					if (item->id == item_id) {
+						attach_sceneitem(scene, item, NULL);
+						scene_items_cached[j] = NULL;
+						break;
+					}
+				}
+			}
+		}
+	}
+
+	bfree(scene_items_cached);
+
+	full_unlock(scene);
 	obs_scene_release(scene);
 }
 
