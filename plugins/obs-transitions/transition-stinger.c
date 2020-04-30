@@ -213,6 +213,15 @@ static void stinger_transition_start(void *data)
 	struct stinger_info *s = data;
 
 	if (s->media_source) {
+		obs_data_t *settings = obs_source_get_settings(s->media_source);
+		const char *path = obs_data_get_string(settings, "local_file");
+		obs_data_release(settings);
+
+		if (path && !path[0]) {
+			blog(LOG_WARNING, "Stinger transition file path is empty");
+			return;
+		}
+
 		calldata_t cd = {0};
 
 		proc_handler_t *ph =
