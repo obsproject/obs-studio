@@ -178,10 +178,14 @@ void gs_vertex_shader::Rebuild(ID3D11Device *dev)
 	if (FAILED(hr))
 		throw HRError("Failed to create vertex shader", hr);
 
-	hr = dev->CreateInputLayout(layoutData.data(), (UINT)layoutData.size(),
-				    data.data(), data.size(), &layout);
-	if (FAILED(hr))
-		throw HRError("Failed to create input layout", hr);
+	if (!layoutData.empty()) {
+		hr = dev->CreateInputLayout(layoutData.data(),
+					    (UINT)layoutData.size(),
+					    data.data(), data.size(), &layout);
+
+		if (FAILED(hr))
+			throw HRError("Failed to create input layout", hr);
+	}
 
 	if (constantSize) {
 		hr = dev->CreateBuffer(&bd, NULL, &constants);

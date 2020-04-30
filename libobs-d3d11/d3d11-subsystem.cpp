@@ -2240,6 +2240,10 @@ void gs_vertexbuffer_destroy(gs_vertbuffer_t *vertbuffer)
 {
 	if (vertbuffer && vertbuffer->device->lastVertexBuffer == vertbuffer)
 		vertbuffer->device->lastVertexBuffer = nullptr;
+
+	if (vertbuffer && vertbuffer->device->curVertexBuffer == vertbuffer)
+		vertbuffer->device->curVertexBuffer = nullptr;
+
 	delete vertbuffer;
 }
 
