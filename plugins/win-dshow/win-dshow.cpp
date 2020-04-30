@@ -849,7 +849,7 @@ bool DShowInput::UpdateVideoConfig(obs_data_t *settings)
 	}
 
 	PropertiesData data;
-	Device::EnumVideoDevices(data.devices);
+	Device::EnumVideoDevices(data.devices, true);
 	VideoDevice dev;
 	if (!data.GetDevice(dev, video_device_id.c_str())) {
 		blog(LOG_WARNING, "%s: data.GetDevice failed",
@@ -1841,8 +1841,9 @@ static obs_properties_t *GetDShowProperties(void *obj)
 						    OBS_COMBO_FORMAT_STRING);
 
 	obs_property_set_modified_callback(p, DeviceSelectionChanged);
+	bool activate_devices = obs_source_active(input->source);
 
-	Device::EnumVideoDevices(data->devices);
+	Device::EnumVideoDevices(data->devices, activate_devices);
 	for (const VideoDevice &device : data->devices)
 		AddDevice(p, device);
 
@@ -1919,7 +1920,7 @@ static obs_properties_t *GetDShowProperties(void *obj)
 	/* ------------------------------------- */
 	/* audio settings */
 
-	Device::EnumAudioDevices(data->audioDevices);
+	Device::EnumAudioDevices(data->audioDevices, activate_devices);
 
 	p = obs_properties_add_list(ppts, AUDIO_OUTPUT_MODE, TEXT_AUDIO_MODE,
 				    OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
