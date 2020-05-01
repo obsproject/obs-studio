@@ -548,7 +548,15 @@ void AutoConfigStreamPage::ServiceChanged()
 		OnAuthConnected();
 	}
 #endif
-
+	if (service.compare("SHOWROOM") == 0) {
+		ui->streamKeyLabel->setText(QCoreApplication::translate(
+			"OBSBasicSettings",
+			"Basic.AutoConfig.StreamPage.AccessKey", nullptr));
+	} else {
+		ui->streamKeyLabel->setText(QCoreApplication::translate(
+			"OBSBasicSettings",
+			"Basic.AutoConfig.StreamPage.StreamKey", nullptr));
+	}
 	UpdateCompleted();
 }
 
