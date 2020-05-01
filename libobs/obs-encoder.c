@@ -1532,3 +1532,11 @@ bool obs_encoder_paused(const obs_encoder_t *encoder)
 		       ? os_atomic_load_bool(&encoder->paused)
 		       : false;
 }
+
+void obs_outputs_set_last_error(obs_encoder_t *encoder, const char * error_text)
+{
+	for (size_t i = 0; i < encoder->outputs.num; i++) {
+		struct obs_output *output = encoder->outputs.array[i];
+		obs_output_set_last_error(output, error_text);
+	}
+}

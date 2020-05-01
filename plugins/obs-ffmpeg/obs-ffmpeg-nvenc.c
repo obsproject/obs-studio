@@ -90,6 +90,7 @@ static bool nvenc_init_codec(struct nvenc_encoder *enc)
 
 	ret = avcodec_open2(enc->context, enc->nvenc, NULL);
 	if (ret < 0) {
+		obs_outputs_set_last_error( enc->encoder,  av_err2str( ret ) );
 		warn("Failed to open NVENC codec: %s", av_err2str(ret));
 		return false;
 	}
