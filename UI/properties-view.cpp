@@ -114,7 +114,8 @@ void OBSPropertiesView::RefreshProperties()
 	widget->setLayout(layout);
 
 	QSizePolicy mainPolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-	QSizePolicy policy(QSizePolicy::Preferred, QSizePolicy::Preferred);
+
+	//QSizePolicy policy(QSizePolicy::Preferred, QSizePolicy::Preferred);
 	//widget->setSizePolicy(policy);
 
 	layout->setLabelAlignment(Qt::AlignRight);
