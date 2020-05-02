@@ -345,34 +345,21 @@ void OBSBasic::TransitionToScene(OBSSource source, bool force,
 	if (usingPreviewProgram && stillTransitioning)
 		goto cleanup;
 
-	tBarActive = false;
-
 	if (force) {
 		obs_transition_set(transition, source);
 		if (api)
 			api->on_event(OBS_FRONTEND_EVENT_SCENE_CHANGED);
 	} else {
-		/* check for scene override */
-		OBSData data = obs_source_get_private_settings(source);
-		obs_data_release(data);
-
-		const char *trOverrideName =
-			obs_data_get_string(data, "transition");
 		int duration = ui->transitionDuration->value();
 
-		if (trOverrideName && *trOverrideName && !quickTransition) {
-			OBSSource trOverride = FindTransition(trOverrideName);
-			if (trOverride) {
-				transition = trOverride;
+		/* check for scene override */
+		OBSSource trOverride = GetOverrideTransition(source);
 
-				obs_data_set_default_int(
-					data, "transition_duration", 300);
-
-				duration = (int)obs_data_get_int(
-					data, "transition_duration");
-				OverrideTransition(trOverride);
-				overridingTransition = true;
-			}
+		if (trOverride && !overridingTransition && !quickTransition) {
+			transition = trOverride;
+			duration = GetOverrideTransitionDuration(source);
+			OverrideTransition(trOverride);
+			overridingTransition = true;
 		}
 
 		if (black && !prevFTBSource) {
@@ -456,7 +443,6 @@ void OBSBasic::on_transitions_currentIndexChanged(int)
 {
 	OBSSource transition = GetCurrentTransition();
 	SetTransition(transition);
-	EnableTBar();
 }
 
 void OBSBasic::AddTransition()
@@ -909,8 +895,19 @@ void OBSBasic::TBarReleased()
 		tBarActive = false;
 		EnableTransitionWidgets(true);
 	}
+}
 
-	tBarDown = false;
+static bool ValidTBarTransition(OBSSource transition)
+{
+	if (!transition)
+		return false;
+
+	QString id = QT_UTF8(obs_source_get_id(transition));
+
+	if (id == "cut_transition" || id == "obs_stinger_transition")
+		return false;
+
+	return true;
 }
 
 void OBSBasic::TBarChanged(int value)
@@ -918,32 +915,31 @@ void OBSBasic::TBarChanged(int value)
 	OBSSource transition = obs_get_output_source(0);
 	obs_source_release(transition);
 
-	if (!tBarDown) {
+	if (!tBarActive) {
+		OBSSource sceneSource = GetCurrentSceneSource();
+		OBSSource tBarTr = GetOverrideTransition(sceneSource);
+
+		if (!ValidTBarTransition(tBarTr)) {
+			tBarTr = GetCurrentTransition();
+
+			if (!ValidTBarTransition(tBarTr))
+				tBarTr = FindTransition(
+					obs_source_get_display_name(
+						"fade_transition"));
+
+			OverrideTransition(tBarTr);
+			overridingTransition = true;
+
+			transition = tBarTr;
+		}
+
 		obs_transition_set_manual_torque(transition, 8.0f, 0.05f);
-		TransitionToScene(GetCurrentSceneSource(), false, false, false,
-				  0, true);
+		TransitionToScene(sceneSource, false, false, false, 0, true);
 		tBarActive = true;
-		tBarDown = true;
 	}
 
 	obs_transition_set_manual_time(transition,
 				       (float)value / T_BAR_PRECISION_F);
-}
-
-void OBSBasic::EnableTBar()
-{
-	if (!previewProgramMode)
-		return;
-
-	const char *id = obs_source_get_id(GetCurrentTransition());
-
-	if (!id || strcmp(id, "cut_transition") == 0 ||
-	    strcmp(id, "obs_stinger_transition") == 0) {
-		tBar->setValue(0);
-		tBar->setEnabled(false);
-	} else {
-		tBar->setEnabled(true);
-	}
 }
 
 void OBSBasic::on_modeSwitch_clicked()
@@ -1318,7 +1314,6 @@ void OBSBasic::SetPreviewProgramMode(bool enabled)
 
 		CreateProgramDisplay();
 		CreateProgramOptions();
-		EnableTBar();
 
 		OBSScene curScene = GetCurrentScene();
 
@@ -1351,7 +1346,7 @@ void OBSBasic::SetPreviewProgramMode(bool enabled)
 
 		RefreshQuickTransitions();
 
-		programLabel = new QLabel(QTStr("StudioMode.Program"));
+		programLabel = new QLabel(QTStr("StudioMode.Program"), this);
 		programLabel->setSizePolicy(QSizePolicy::Preferred,
 					    QSizePolicy::Preferred);
 		programLabel->setAlignment(Qt::AlignHCenter | Qt::AlignBottom);
@@ -1414,6 +1409,7 @@ void OBSBasic::SetPreviewProgramMode(bool enabled)
 			EnablePreviewDisplay(false);
 
 		ui->transitions->setEnabled(true);
+		tBarActive = false;
 
 		if (api)
 			api->on_event(OBS_FRONTEND_EVENT_STUDIO_MODE_DISABLED);
@@ -1529,4 +1525,34 @@ void OBSBasic::LoadTransitions(obs_data_array_t *transitions)
 		obs_data_release(item);
 		obs_source_release(source);
 	}
+}
+
+OBSSource OBSBasic::GetOverrideTransition(OBSSource source)
+{
+	if (!source)
+		return nullptr;
+
+	OBSData data = obs_source_get_private_settings(source);
+	obs_data_release(data);
+
+	const char *trOverrideName = obs_data_get_string(data, "transition");
+
+	OBSSource trOverride = nullptr;
+
+	if (trOverrideName && *trOverrideName)
+		trOverride = FindTransition(trOverrideName);
+
+	return trOverride;
+}
+
+int OBSBasic::GetOverrideTransitionDuration(OBSSource source)
+{
+	if (!source)
+		return 300;
+
+	OBSData data = obs_source_get_private_settings(source);
+	obs_data_release(data);
+	obs_data_set_default_int(data, "transition_duration", 300);
+
+	return (int)obs_data_get_int(data, "transition_duration");
 }

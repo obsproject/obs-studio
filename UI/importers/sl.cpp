@@ -107,19 +107,47 @@ static string translate_hotkey(const Json &hotkey, const string &source)
 #undef add_translation
 }
 
-static string get_source_name_from_id(const Json &root, const string &id)
+static bool source_name_exists(const Json::array &sources, const string &name)
 {
-	Json::array source_arr = root["sources"]["items"].array_items();
+	for (size_t i = 0; i < sources.size(); i++) {
+		Json item = sources[i];
+		string source_name = item["name"].string_value();
+
+		if (source_name == name)
+			return true;
+	}
+
+	return false;
+}
+
+static string get_source_name_from_id(const Json &root,
+				      const Json::array &sources,
+				      const string &id)
+{
+	for (size_t i = 0; i < sources.size(); i++) {
+		Json item = sources[i];
+		string source_id = item["sl_id"].string_value();
+
+		if (source_id == id)
+			return item["name"].string_value();
+	}
+
 	Json::array scene_arr = root["scenes"]["items"].array_items();
 
-	source_arr.insert(source_arr.end(), scene_arr.begin(), scene_arr.end());
-
-	for (size_t i = 0; i < source_arr.size(); i++) {
-		Json item = source_arr[i];
+	for (size_t i = 0; i < scene_arr.size(); i++) {
+		Json item = scene_arr[i];
 		string source_id = item["id"].string_value();
 
 		if (source_id == id) {
-			return item["name"].string_value();
+			string name = item["name"].string_value();
+
+			int copy = 1;
+			string out_name = name;
+
+			while (source_name_exists(sources, out_name))
+				out_name = name + "(" + to_string(copy++) + ")";
+
+			return out_name;
 		}
 	}
 
@@ -156,8 +184,8 @@ static void get_hotkey_bindings(Json::object &out_hotkeys,
 	}
 }
 
-static void get_scene_items(const Json &root, Json::object &scene,
-			    const Json::array &in)
+static void get_scene_items(const Json &root, const Json::array &out_sources,
+			    Json::object &scene, const Json::array &in)
 {
 	int length = 0;
 
@@ -169,7 +197,7 @@ static void get_scene_items(const Json &root, Json::object &scene,
 
 		Json in_crop = item["crop"];
 		string id = item["sourceId"].string_value();
-		string name = get_source_name_from_id(root, id);
+		string name = get_source_name_from_id(root, out_sources, id);
 
 		Json::array hotkey_items =
 			item["hotkeys"]["items"].array_items();
@@ -239,15 +267,23 @@ static int attempt_import(const Json &root, const string &name, Json &res)
 			out_filters.push_back(filter);
 		}
 
+		int copy = 1;
+		string out_name = name;
+		while (source_name_exists(out_sources, out_name))
+			out_name = name + "(" + to_string(copy++) + ")";
+
+		string sl_id = source["id"].string_value();
+
 		out_sources.push_back(
 			Json::object{{"filters", out_filters},
 				     {"hotkeys", out_hotkeys},
 				     {"id", source["type"]},
+				     {"sl_id", sl_id},
 				     {"settings", in_settings},
 				     {"sync", sync},
 				     {"volume", vol},
 				     {"muted", muted},
-				     {"name", name},
+				     {"name", out_name},
 				     {"monitoring_type", monitoring}});
 	}
 
@@ -256,24 +292,14 @@ static int attempt_import(const Json &root, const string &name, Json &res)
 	for (size_t i = 0; i < scenes_arr.size(); i++) {
 		Json scene = scenes_arr[i];
 
-		if (scene_name == "")
-			scene_name = scene["name"].string_value();
-
 		Json in_hotkeys = scene["hotkeys"];
 		Json::array hotkey_items = in_hotkeys["items"].array_items();
 		Json in_filters = scene["filters"];
 		Json::array filter_items = in_filters["items"].array_items();
 
 		Json in_settings = scene["settings"];
-		Json in_sync = scene["syncOffset"];
 
-		int sync = (int)(in_sync["sec"].number_value() * 1000000000 +
-				 in_sync["nsec"].number_value());
-
-		double vol = scene["volume"].number_value();
-		bool muted = scene["muted"].bool_value();
 		string name = scene["name"].string_value();
-		int monitoring = scene["monitoringType"].int_value();
 
 		Json::object out_hotkeys = Json::object{};
 		get_hotkey_bindings(out_hotkeys, hotkey_items, "");
@@ -287,22 +313,30 @@ static int attempt_import(const Json &root, const string &name, Json &res)
 			out_filters.push_back(filter);
 		}
 
+		int copy = 1;
+		string out_name = name;
+		while (source_name_exists(out_sources, out_name))
+			out_name = name + "(" + to_string(copy++) + ")";
+
+		if (scene_name == "")
+			scene_name = out_name;
+
+		string sl_id = scene["id"].string_value();
+
 		Json::object out =
 			Json::object{{"filters", out_filters},
 				     {"hotkeys", out_hotkeys},
 				     {"id", "scene"},
+				     {"sl_id", sl_id},
 				     {"settings", in_settings},
-				     {"sync", sync},
-				     {"volume", vol},
-				     {"muted", muted},
-				     {"name", name},
-				     {"monitoring_type", monitoring},
+				     {"volume", 1.0},
+				     {"name", out_name},
 				     {"private_settings", Json::object{}}};
 
 		Json in_items = scene["sceneItems"];
 		Json::array items_arr = in_items["items"].array_items();
 
-		get_scene_items(root, out, items_arr);
+		get_scene_items(root, out_sources, out, items_arr);
 
 		out_sources.push_back(out);
 	}

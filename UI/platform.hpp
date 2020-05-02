@@ -60,6 +60,7 @@ public:
 };
 
 RunOnceMutex GetRunOnceMutex(bool &already_running);
+QString GetMonitorName(const QString &id);
 #endif
 
 #ifdef __APPLE__

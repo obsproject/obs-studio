@@ -81,12 +81,22 @@ add_definitions(-DLIBOBS_EXPORTS)
 include_directories(${OBS_JANSSON_INCLUDE_DIRS})
 
 if(WIN32)
+	set(MODULE_DESCRIPTION "OBS Library")
+	file(STRINGS obs-config.h _version_parse REGEX "^.*(MAJOR|MINOR|PATCH)_VER[ \t]+[0-9]+[ \t]*$")
+
+	string(REGEX REPLACE ".*MAJOR_VER[ \t]+([0-9]+).*" "\\1" UI_VERSION_MAJOR "${_version_parse}")
+	string(REGEX REPLACE ".*MINOR_VER[ \t]+([0-9]+).*" "\\1" UI_VERSION_MINOR "${_version_parse}")
+	string(REGEX REPLACE ".*PATCH_VER[ \t]+([0-9]+).*" "\\1" UI_VERSION_PATCH "${_version_parse}")
+	set(UI_VERSION "${UI_VERSION_MAJOR}.${UI_VERSION_MINOR}.${UI_VERSION_PATCH}")
+
+	configure_file(${CMAKE_SOURCE_DIR}/cmake/winrc/obs-module.rc.in libobs.rc)
 	set(libobs_PLATFORM_SOURCES
 		obs-win-crash-handler.c
 		obs-windows.c
 		util/threading-windows.c
 		util/pipe-windows.c
-		util/platform-windows.c)
+		util/platform-windows.c
+		libobs.rc)
 	set(libobs_PLATFORM_HEADERS
 		util/threading-windows.h
 		util/windows/win-registry.h
@@ -350,6 +360,7 @@ set(libobs_util_SOURCES
 	util/cf-parser.c
 	util/profiler.c)
 set(libobs_util_HEADERS
+	util/curl/curl-helper.h
 	util/sse-intrin.h
 	util/array-serializer.h
 	util/file-serializer.h

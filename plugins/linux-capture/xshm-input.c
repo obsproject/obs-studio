@@ -104,7 +104,7 @@ static int_fast32_t xshm_update_geometry(struct xshm_data *data)
 	if (data->use_randr) {
 		if (randr_screen_geo(data->xcb, data->screen_id, &data->x_org,
 				     &data->y_org, &data->width, &data->height,
-				     &data->xcb_screen) < 0) {
+				     &data->xcb_screen, NULL) < 0) {
 			return -1;
 		}
 	} else if (data->use_xinerama) {
@@ -308,21 +308,31 @@ static bool xshm_server_changed(obs_properties_t *props, obs_property_t *p,
 				  : xcb_setup_roots_length(xcb_get_setup(xcb));
 
 	for (int_fast32_t i = 0; i < count; ++i) {
+		char *name;
+		char name_tmp[12];
 		int_fast32_t x, y, w, h;
 		x = y = w = h = 0;
 
+		name = NULL;
 		if (randr)
-			randr_screen_geo(xcb, i, &x, &y, &w, &h, NULL);
+			randr_screen_geo(xcb, i, &x, &y, &w, &h, NULL, &name);
 		else if (xinerama)
 			xinerama_screen_geo(xcb, i, &x, &y, &w, &h);
 		else
 			x11_screen_geo(xcb, i, &w, &h);
 
+		if (name == NULL) {
+			sprintf(name_tmp, "%" PRIuFAST32, i);
+			name = name_tmp;
+		}
+
 		dstr_printf(&screen_info,
-			    "Screen %" PRIuFAST32 " (%" PRIuFAST32
-			    "x%" PRIuFAST32 " @ %" PRIuFAST32 ",%" PRIuFAST32
-			    ")",
-			    i, w, h, x, y);
+			    "Screen %s (%" PRIuFAST32 "x%" PRIuFAST32
+			    " @ %" PRIuFAST32 ",%" PRIuFAST32 ")",
+			    name, w, h, x, y);
+
+		if (name != name_tmp)
+			free(name);
 
 		if (h > 0 && w > 0)
 			obs_property_list_add_int(screens, screen_info.array,

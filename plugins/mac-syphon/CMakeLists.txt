@@ -55,6 +55,9 @@ set(syphon_SOURCES
 	syphon-framework/SyphonServerDirectory.m
 	)
 
+add_library(syphon-framework ${syphon_HEADERS}
+	${syphon_SOURCES})
+
 set(mac-syphon_HEADERS
 	)
 
@@ -70,15 +73,17 @@ add_definitions(-DSYPHON_UNIQUE_CLASS_NAME_PREFIX=OBS_ -include
 
 add_library(mac-syphon MODULE
 	${mac-syphon_SOURCES}
-	${mac-syphon_HEADERS}
-	${syphon_HEADERS}
-	${syphon_SOURCES})
+	${mac-syphon_HEADERS})
 
 target_link_libraries(mac-syphon
 	libobs
+	syphon-framework
 	${COCOA}
 	${IOSURF}
 	${SCRIPTINGBRIDGE}
 	${OPENGL_gl_LIBRARY})
+
+set_property (TARGET mac-syphon APPEND_STRING PROPERTY
+	COMPILE_FLAGS "-fobjc-arc")
 
 install_obs_plugin_with_data(mac-syphon data)

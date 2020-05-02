@@ -155,6 +155,11 @@ QListWidget QLineEdit {
 
 /* Dock stuff */
 QDockWidget {
+	titlebar-close-icon: url('./Dark/Close.svg');
+	titlebar-normal-icon: url('./Dark/Popout.svg');
+}
+
+QDockWidget {
 	background: #181819;
 	border: none;
 	font-size: 14px;
@@ -182,6 +187,7 @@ QDockWidget::float-button {
 	subcontrol-position: top right;
 	subcontrol-origin: padding;
 	right: 0px;
+	margin: 0px;
 }
 
 QDockWidget::float-button {

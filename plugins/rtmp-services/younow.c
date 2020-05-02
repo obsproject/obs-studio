@@ -1,4 +1,4 @@
-#include <curl/curl.h>
+#include <util/curl/curl-helper.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -63,6 +63,7 @@ const char *younow_get_ingest(const char *server, const char *key)
 	curl_easy_setopt(curl_handle, CURLOPT_TIMEOUT, 3L);
 	curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, younow_write_cb);
 	curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *)&chunk);
+	curl_obs_set_revoke_setting(curl_handle);
 
 #if LIBCURL_VERSION_NUM >= 0x072400
 	// A lot of servers don't yet support ALPN

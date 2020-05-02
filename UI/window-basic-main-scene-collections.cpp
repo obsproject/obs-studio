@@ -392,6 +392,7 @@ void OBSBasic::on_actionImportSceneCollection_triggered()
 	OBSImporter *imp;
 	imp = new OBSImporter(this);
 	imp->exec();
+	delete imp;
 
 	RefreshSceneCollections();
 }

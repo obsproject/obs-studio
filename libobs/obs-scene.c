@@ -86,7 +86,7 @@ static void *scene_create(obs_data_t *settings, struct obs_source *source)
 	struct obs_scene *scene = bzalloc(sizeof(struct obs_scene));
 	scene->source = source;
 
-	if (source->info.id == group_info.id) {
+	if (strcmp(source->info.id, group_info.id) == 0) {
 		scene->is_group = true;
 		scene->custom_size = true;
 		scene->cx = 0;
@@ -737,7 +737,7 @@ static void scene_load_item(struct obs_scene *scene, obs_data_t *item_data)
 		return;
 	}
 
-	item->is_group = source->info.id == group_info.id;
+	item->is_group = strcmp(source->info.id, group_info.id) == 0;
 
 	obs_data_set_default_int(item_data, "align",
 				 OBS_ALIGN_TOP | OBS_ALIGN_LEFT);
@@ -1410,7 +1410,7 @@ obs_source_t *obs_scene_get_source(const obs_scene_t *scene)
 
 obs_scene_t *obs_scene_from_source(const obs_source_t *source)
 {
-	if (!source || source->info.id != scene_info.id)
+	if (!source || strcmp(source->info.id, scene_info.id) != 0)
 		return NULL;
 
 	return source->context.data;
@@ -1418,7 +1418,7 @@ obs_scene_t *obs_scene_from_source(const obs_source_t *source)
 
 obs_scene_t *obs_group_from_source(const obs_source_t *source)
 {
-	if (!source || source->info.id != group_info.id)
+	if (!source || strcmp(source->info.id, group_info.id) != 0)
 		return NULL;
 
 	return source->context.data;
@@ -1691,7 +1691,7 @@ static obs_sceneitem_t *obs_scene_add_internal(obs_scene_t *scene,
 	item->actions_mutex = mutex;
 	item->user_visible = true;
 	item->locked = false;
-	item->is_group = source->info.id == group_info.id;
+	item->is_group = strcmp(source->info.id, group_info.id) == 0;
 	item->private_settings = obs_data_create();
 	item->toggle_visibility = OBS_INVALID_HOTKEY_PAIR_ID;
 	os_atomic_set_long(&item->active_refs, 1);
@@ -1752,6 +1752,9 @@ obs_sceneitem_t *obs_scene_add(obs_scene_t *scene, obs_source_t *source)
 	obs_sceneitem_t *item = obs_scene_add_internal(scene, source, NULL);
 	struct calldata params;
 	uint8_t stack[128];
+
+	if (!item)
+		return NULL;
 
 	calldata_init_fixed(&params, stack, sizeof(stack));
 	calldata_set_ptr(&params, "scene", scene);
@@ -2983,7 +2986,7 @@ obs_sceneitem_t *obs_sceneitem_get_group(obs_scene_t *scene,
 
 bool obs_source_is_group(const obs_source_t *source)
 {
-	return source && source->info.id == group_info.id;
+	return source && strcmp(source->info.id, group_info.id) == 0;
 }
 
 bool obs_scene_is_group(const obs_scene_t *scene)

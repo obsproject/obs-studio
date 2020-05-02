@@ -42,9 +42,9 @@ void OBSBasicTransform::HookWidget(QWidget *widget, const char *signal,
 OBSBasicTransform::OBSBasicTransform(OBSBasic *parent)
 	: QDialog(parent), ui(new Ui::OBSBasicTransform), main(parent)
 {
-	ui->setupUi(this);
-
 	setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
+
+	ui->setupUi(this);
 
 	HookWidget(ui->positionX, DSCROLL_CHANGED, SLOT(OnControlChanged()));
 	HookWidget(ui->positionY, DSCROLL_CHANGED, SLOT(OnControlChanged()));

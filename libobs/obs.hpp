@@ -236,7 +236,7 @@ public:
 	}
 
 	OBSSignal(const OBSSignal &) = delete;
-	OBSSignal(OBSSignal &&other)
+	OBSSignal(OBSSignal &&other) noexcept
 		: handler(other.handler),
 		  signal(other.signal),
 		  callback(other.callback),
@@ -249,7 +249,7 @@ public:
 	}
 
 	OBSSignal &operator=(const OBSSignal &) = delete;
-	OBSSignal &operator=(OBSSignal &&other)
+	OBSSignal &operator=(OBSSignal &&other) noexcept
 	{
 		Disconnect();
 

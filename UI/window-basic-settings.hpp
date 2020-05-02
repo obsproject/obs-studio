@@ -235,6 +235,7 @@ private:
 	void OnAuthConnected();
 	QString lastService;
 	int prevLangIndex;
+	bool prevBrowserAccel;
 private slots:
 	void UpdateServerList();
 	void UpdateKeyLink();

@@ -71,6 +71,10 @@ General Functions
 
 ---------------------
 
+.. function:: obs_properties_t *obs_properties_get_parent(obs_properties_t *props)
+
+---------------------
+
 
 Property Object Functions
 -------------------------
@@ -276,6 +280,29 @@ Property Object Functions
 
 ---------------------
 
+.. function:: obs_property_t *obs_properties_add_group(obs_properties_t *props, const char *name, const char *description, enum obs_group_type type, obs_properties_t *group)
+
+   Adds a property group.
+
+   :param    name:        Setting identifier string
+   :param    description: Localized name shown to user
+   :param    type:        Can be one of the following values:
+
+                          - **OBS_GROUP_NORMAL** - A normal group with just a name and content.
+                          - **OBS_GROUP_CHECKABLE** - A checkable group with a checkbox, name and content.
+
+   :param    group:       Group to add
+
+   :return:               The property
+
+   Important Related Functions:
+
+   - :c:func:`obs_property_group_type`
+   - :c:func:`obs_property_group_content`
+   - :c:func:`obs_properties_get_parent`
+
+---------------------
+
 
 Property Enumeration Functions
 ------------------------------
@@ -340,6 +367,7 @@ Property Enumeration Functions
             - OBS_PROPERTY_FONT
             - OBS_PROPERTY_EDITABLE_LIST
             - OBS_PROPERTY_FRAME_RATE
+            - OBS_PROPERTY_GROUP
 
 ---------------------
 
@@ -464,6 +492,20 @@ Property Enumeration Functions
 ---------------------
 
 .. function:: struct media_frames_per_second obs_property_frame_rate_fps_range_max( obs_property_t *p, size_t idx)
+
+---------------------
+
+.. function:: enum obs_group_type obs_property_group_type(obs_property_t *p)
+
+  :return: One of the following values:
+
+            - OBS_COMBO_INVALID
+            - OBS_GROUP_NORMAL
+            - OBS_GROUP_CHECKABLE
+
+---------------------
+
+.. function:: obs_properties_t *obs_property_group_content(obs_property_t *p)
 
 ---------------------
 

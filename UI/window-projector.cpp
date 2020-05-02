@@ -25,12 +25,13 @@ OBSProjector::OBSProjector(QWidget *widget, obs_source_t *source_, int monitor,
 	type = type_;
 
 	setWindowIcon(QIcon::fromTheme("obs", QIcon(":/res/images/obs.png")));
-	UpdateProjectorTitle(QT_UTF8(obs_source_get_name(source)));
 
 	if (monitor == -1)
 		resize(480, 270);
 	else
 		SetMonitor(monitor);
+
+	UpdateProjectorTitle(QT_UTF8(obs_source_get_name(source)));
 
 	QAction *action = new QAction(this);
 	action->setShortcut(Qt::Key_Escape);
@@ -56,9 +57,6 @@ OBSProjector::OBSProjector(QWidget *widget, obs_source_t *source_, int monitor,
 	};
 
 	connect(this, &OBSQTDisplay::DisplayCreated, addDrawCallback);
-
-	if (isFullScreen())
-		SetHideCursor();
 
 	if (type == ProjectorType::Multiview) {
 		obs_enter_graphics();
@@ -168,8 +166,9 @@ void OBSProjector::SetMonitor(int monitor)
 {
 	savedMonitor = monitor;
 	QScreen *screen = QGuiApplication::screens()[monitor];
-	showFullScreen();
 	setGeometry(screen->geometry());
+	showFullScreen();
+	SetHideCursor();
 }
 
 void OBSProjector::SetHideCursor()
@@ -979,7 +978,7 @@ void OBSProjector::UpdateProjectorTitle(QString name)
 		if (!window)
 			title = QTStr("MultiviewProjector");
 		else
-			title = QTStr("MultiviewWindow");
+			title = QTStr("MultiviewWindowed");
 		break;
 	default:
 		title = name;
@@ -1033,7 +1032,6 @@ void OBSProjector::OpenFullScreenProjector()
 
 	int monitor = sender()->property("monitor").toInt();
 	SetMonitor(monitor);
-	SetHideCursor();
 
 	UpdateProjectorTitle(QT_UTF8(obs_source_get_name(source)));
 }

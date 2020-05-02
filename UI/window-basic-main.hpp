@@ -193,6 +193,8 @@ private:
 	const char *copyFiltersString = nullptr;
 	bool copyVisible = true;
 
+	bool closing = false;
+	QScopedPointer<QThread> whatsNewInitThread;
 	QScopedPointer<QThread> updateCheckThread;
 	QScopedPointer<QThread> introCheckThread;
 	QScopedPointer<QThread> logUploadThread;
@@ -463,6 +465,7 @@ private:
 	void LoadSavedProjectors(obs_data_array_t *savedProjectors);
 
 	void ReceivedIntroJson(const QString &text);
+	void ShowWhatsNew(const QString &url);
 
 #ifdef BROWSER_AVAILABLE
 	QList<QSharedPointer<QDockWidget>> extraBrowserDocks;
@@ -509,8 +512,9 @@ private:
 
 	QSlider *tBar;
 	bool tBarActive = false;
-	bool tBarDown = false;
-	void EnableTBar();
+
+	OBSSource GetOverrideTransition(OBSSource source);
+	int GetOverrideTransitionDuration(OBSSource source);
 
 public slots:
 	void DeferSaveBegin();

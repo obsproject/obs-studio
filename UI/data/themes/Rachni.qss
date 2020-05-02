@@ -189,6 +189,11 @@ QListWidget::item:hover:!active {
 /***********************/
 
 QDockWidget {
+	titlebar-close-icon: url('./Dark/Close.svg');
+	titlebar-normal-icon: url('./Dark/Popout.svg');
+}
+
+QDockWidget {
 	background: rgb(49, 54, 59); /* Blue-gray */
 	border: 1px solid rgb(58, 64, 69); /* Light Blue-gray */
 }

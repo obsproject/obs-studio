@@ -20,7 +20,14 @@
 #include <winhttp.h>
 #include <shellapi.h>
 
+#ifdef BROWSER_AVAILABLE
+#include <browser-panel.hpp>
+#endif
+
 using namespace std;
+
+struct QCef;
+extern QCef *cef;
 
 /* ------------------------------------------------------------------------ */
 
@@ -798,4 +805,14 @@ try {
 
 } catch (string &text) {
 	blog(LOG_WARNING, "%s: %s", __FUNCTION__, text.c_str());
+}
+
+/* ------------------------------------------------------------------------ */
+
+void WhatsNewBrowserInitThread::run()
+{
+#ifdef BROWSER_AVAILABLE
+	cef->wait_for_browser_init();
+#endif
+	emit Result(url);
 }

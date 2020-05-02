@@ -169,6 +169,12 @@ void OBSBasic::AddDropSource(const char *data, DropType image)
 
 void OBSBasic::dragEnterEvent(QDragEnterEvent *event)
 {
+	// refuse drops of our own widgets
+	if (event->source() != nullptr) {
+		event->setDropAction(Qt::IgnoreAction);
+		return;
+	}
+
 	event->acceptProposedAction();
 }
 

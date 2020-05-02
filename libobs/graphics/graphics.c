@@ -1272,6 +1272,9 @@ gs_swapchain_t *gs_swapchain_create(const struct gs_init_data *data)
 	if (!gs_valid_p("gs_swapchain_create", data))
 		return NULL;
 
+	if (new_data.num_backbuffers == 0)
+		new_data.num_backbuffers = 1;
+
 	return graphics->exports.device_swapchain_create(graphics->device,
 							 &new_data);
 }

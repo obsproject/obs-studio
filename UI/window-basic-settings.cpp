@@ -323,9 +323,9 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 
 	EnableThreadedMessageBoxes(true);
 
-	ui->setupUi(this);
-
 	setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
+
+	ui->setupUi(this);
 
 	main->EnableOutputs(false);
 
@@ -376,6 +376,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->key,                  EDIT_CHANGED,   STREAM1_CHANGED);
 	HookWidget(ui->bandwidthTestEnable,  CHECK_CHANGED,  STREAM1_CHANGED);
 	HookWidget(ui->twitchAddonDropdown,  COMBO_CHANGED,  STREAM1_CHANGED);
+	HookWidget(ui->mixerAddonDropdown,   COMBO_CHANGED,  STREAM1_CHANGED);
 	HookWidget(ui->useAuth,              CHECK_CHANGED,  STREAM1_CHANGED);
 	HookWidget(ui->authUsername,         EDIT_CHANGED,   STREAM1_CHANGED);
 	HookWidget(ui->authPw,               EDIT_CHANGED,   STREAM1_CHANGED);
@@ -2267,10 +2268,12 @@ void OBSBasicSettings::LoadAudioSources()
 		label->setMinimumSize(QSize(170, 0));
 		label->setAlignment(Qt::AlignRight | Qt::AlignTrailing |
 				    Qt::AlignVCenter);
-		connect(label, &OBSSourceLabel::Removed,
-			[=]() { LoadAudioSources(); });
-		connect(label, &OBSSourceLabel::Destroyed,
-			[=]() { LoadAudioSources(); });
+		connect(label, &OBSSourceLabel::Removed, [=]() {
+			QMetaObject::invokeMethod(this, "ReloadAudioSources");
+		});
+		connect(label, &OBSSourceLabel::Destroyed, [=]() {
+			QMetaObject::invokeMethod(this, "ReloadAudioSources");
+		});
 
 		layout->addRow(label, form);
 		return true;
@@ -2280,7 +2283,8 @@ void OBSBasicSettings::LoadAudioSources()
 	obs_enum_sources(
 		[](void *data, obs_source_t *source) {
 			auto &AddSource = *static_cast<AddSource_t *>(data);
-			AddSource(source);
+			if (!obs_source_removed(source))
+				AddSource(source);
 			return true;
 		},
 		static_cast<void *>(&AddSource));
@@ -2457,6 +2461,7 @@ void OBSBasicSettings::LoadAdvancedSettings()
 	bool browserHWAccel = config_get_bool(App()->GlobalConfig(), "General",
 					      "BrowserHWAccel");
 	ui->browserHWAccel->setChecked(browserHWAccel);
+	prevBrowserAccel = ui->browserHWAccel->isChecked();
 #endif
 
 	SetComboByValue(ui->hotkeyFocusType, hotkeyFocusType);
@@ -3553,8 +3558,11 @@ void OBSBasicSettings::SaveSettings()
 	bool langChanged = (ui->language->currentIndex() != prevLangIndex);
 	bool audioRestart = (ui->channelSetup->currentIndex() != channelIndex ||
 			     ui->sampleRate->currentIndex() != sampleRateIndex);
+	bool browserHWAccelChanged =
+		(ui->browserHWAccel &&
+		 ui->browserHWAccel->isChecked() != prevBrowserAccel);
 
-	if (langChanged || audioRestart)
+	if (langChanged || audioRestart || browserHWAccelChanged)
 		restart = true;
 	else
 		restart = false;

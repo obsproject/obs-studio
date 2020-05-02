@@ -952,7 +952,7 @@ static int process_packet(struct ffmpeg_output *output)
 	if (ret < 0) {
 		av_free_packet(&packet);
 		ffmpeg_log_error(LOG_WARNING, &output->ff_data,
-				 "receive_audio: Error writing packet: %s",
+				 "process_packet: Error writing packet: %s",
 				 av_err2str(ret));
 		return ret;
 	}

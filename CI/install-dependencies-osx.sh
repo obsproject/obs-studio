@@ -12,8 +12,6 @@ set -v
 
 if [[ $TRAVIS ]]; then
   git fetch --unshallow
-else
-  /bin/bash -c "sudo xcode-select -s /Applications/Xcode_9.4.1.app/Contents/Developer"
 fi
 
 git fetch origin --tags
@@ -30,8 +28,11 @@ sudo installer -pkg ./Packages.pkg -target /
 brew update
 
 #Base OBS Deps and ccache
-brew install jack speexdsp ccache mbedtls clang-format freetype fdk-aac
-brew install https://gist.githubusercontent.com/DDRBoxman/b3956fab6073335a4bf151db0dcbd4ad/raw/ed1342a8a86793ea8c10d8b4d712a654da121ace/qt.rb
+brew install jack speexdsp ccache mbedtls freetype fdk-aac
+brew install https://gist.githubusercontent.com/DDRBoxman/9c7a2b08933166f4b61ed9a44b242609/raw/ef4de6c587c6bd7f50210eccd5bd51ff08e6de13/qt.rb
+if [ -d "$(brew --cellar)/swig" ]; then
+    brew unlink swig
+fi
 brew install https://gist.githubusercontent.com/DDRBoxman/4cada55c51803a2f963fa40ce55c9d3e/raw/572c67e908bfbc1bcb8c476ea77ea3935133f5b5/swig.rb
 
 pip install dmgbuild
@@ -41,17 +42,17 @@ ccache -s || echo "CCache is not available."
 
 # Fetch and untar prebuilt OBS deps that are compatible with older versions of OSX
 hr "Downloading OBS deps"
-wget --quiet --retry-connrefused --waitretry=1 https://obs-nightly.s3.amazonaws.com/osx-deps-2018-08-09.tar.gz
-tar -xf ./osx-deps-2018-08-09.tar.gz -C /tmp
+wget --quiet --retry-connrefused --waitretry=1 https://github.com/obsproject/obs-deps/releases/download/2020-04-24/osx-deps-2020-04-24.tar.gz
+tar -xf ./osx-deps-2020-04-24.tar.gz -C /tmp
 
 # Fetch vlc codebase
 hr "Downloading VLC repo"
-wget --quiet --retry-connrefused --waitretry=1 https://downloads.videolan.org/vlc/3.0.4/vlc-3.0.4.tar.xz
-tar -xf vlc-3.0.4.tar.xz
+wget --quiet --retry-connrefused --waitretry=1 https://downloads.videolan.org/vlc/3.0.8/vlc-3.0.8.tar.xz
+tar -xf vlc-3.0.8.tar.xz
 
 # Get sparkle
 hr "Downloading Sparkle framework"
-wget --quiet --retry-connrefused --waitretry=1 -O sparkle.tar.bz2 https://github.com/sparkle-project/Sparkle/releases/download/1.20.0/Sparkle-1.20.0.tar.bz2
+wget --quiet --retry-connrefused --waitretry=1 -O sparkle.tar.bz2 https://github.com/sparkle-project/Sparkle/releases/download/1.23.0/Sparkle-1.23.0.tar.bz2
 mkdir ./sparkle
 tar -xf ./sparkle.tar.bz2 -C ./sparkle
 sudo cp -R ./sparkle/Sparkle.framework /Library/Frameworks/Sparkle.framework

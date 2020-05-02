@@ -454,6 +454,8 @@ void obs_transition_set(obs_source_t *transition, obs_source_t *source)
 	transition->transition_sources[0] = source;
 	transition->transitioning_video = false;
 	transition->transitioning_audio = false;
+	transition->transition_manual_val = 0.0f;
+	transition->transition_manual_target = 0.0f;
 	unlock_transition(transition);
 
 	for (size_t i = 0; i < 2; i++) {

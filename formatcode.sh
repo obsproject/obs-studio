@@ -14,10 +14,8 @@ set -o nounset
 # Get CPU count
 OS=$(uname)
 NPROC=1
-if [[ $OS = "Linux" ]] ; then
-    NPROC=$(nproc)
-elif [[ ${OS} = "Darwin" ]] ; then
-    NPROC=$(sysctl -n hw.physicalcpu)
+if [[ $OS = "Linux" || $OS = "Darwin" ]] ; then
+    NPROC=$(getconf _NPROCESSORS_ONLN)
 fi
 
 # Discover clang-format

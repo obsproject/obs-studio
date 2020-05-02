@@ -136,7 +136,6 @@ static const char *internal_microsoft_exes[] = {
 	"windowsinternal",
 	"systemsettings",
 	"textinputhost",
-	"winstore.app",
 	"searchapp",
 	"video.ui",
 	"searchui",

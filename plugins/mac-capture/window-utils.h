@@ -6,6 +6,7 @@
 
 struct cocoa_window {
 	CGWindowID window_id;
+	int owner_pid;
 
 	pthread_mutex_t name_lock;
 	NSString *owner_name;

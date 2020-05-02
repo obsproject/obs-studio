@@ -1,9 +1,9 @@
+#include <util/curl/curl-helper.h>
 #include <util/threading.h>
 #include <util/platform.h>
 #include <util/darray.h>
 #include <util/dstr.h>
 #include <obs-data.h>
-#include <curl/curl.h>
 #include "file-updater.h"
 
 #define warn(msg, ...) \
@@ -118,6 +118,7 @@ static bool do_http_request(struct update_info *info, const char *url,
 	curl_easy_setopt(info->curl, CURLOPT_FAILONERROR, true);
 	curl_easy_setopt(info->curl, CURLOPT_NOSIGNAL, 1);
 	curl_easy_setopt(info->curl, CURLOPT_ACCEPT_ENCODING, "");
+	curl_obs_set_revoke_setting(info->curl);
 
 	if (!info->remote_url) {
 		// We only care about headers from the main package file

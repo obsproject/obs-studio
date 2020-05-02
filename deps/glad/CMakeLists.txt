@@ -11,9 +11,12 @@ set(glad_SOURCES
 	include/glad/glad.h)
 
 if(WIN32)
+	set(MODULE_DESCRIPTION "Glad OpenGL Loading Library")
+	configure_file(${CMAKE_SOURCE_DIR}/cmake/winrc/obs-module.rc.in obsglad.rc)
 	set(glad_PLATFORM_SOURCES
 		src/glad_wgl.c
-		include/glad/glad_wgl.h)
+		include/glad/glad_wgl.h
+		obsglad.rc)
 elseif(NOT APPLE)
 	set(glad_PLATFORM_SOURCES
 		src/glad_glx.c

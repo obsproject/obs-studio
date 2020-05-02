@@ -27,7 +27,7 @@
 /*
  * Increment if major breaking API changes
  */
-#define LIBOBS_API_MAJOR_VER 24
+#define LIBOBS_API_MAJOR_VER 25
 
 /*
  * Increment if backward-compatible additions

@@ -329,7 +329,7 @@ static obs_properties_t *color_grade_filter_properties(void *data)
 	obs_properties_t *props = obs_properties_create();
 	struct dstr filter_str = {0};
 
-	dstr_cat(&filter_str, "(*.cube;*.png)");
+	dstr_cat(&filter_str, "PNG/Cube (*.cube *.png)");
 
 	if (s && s->file && *s->file) {
 		dstr_copy(&path, s->file);

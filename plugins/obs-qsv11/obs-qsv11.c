@@ -60,6 +60,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <util/platform.h>
 #include <obs-module.h>
 #include <obs-avc.h>
+#include <d3d11.h>
+#include <dxgi1_2.h>
 
 #ifndef _STDINT_H_INCLUDED
 #define _STDINT_H_INCLUDED
@@ -582,6 +584,92 @@ static void *obs_qsv_create(obs_data_t *settings, obs_encoder_t *encoder)
 	return obsqsv;
 }
 
+static HANDLE get_lib(const char *lib)
+{
+	HMODULE mod = GetModuleHandleA(lib);
+	if (mod)
+		return mod;
+
+	mod = LoadLibraryA(lib);
+	if (!mod)
+		blog(LOG_INFO, "Failed to load %s", lib);
+	return mod;
+}
+
+typedef HRESULT(WINAPI *CREATEDXGIFACTORY1PROC)(REFIID, void **);
+
+static bool is_intel_gpu_primary()
+{
+	HMODULE dxgi = get_lib("DXGI.dll");
+	CREATEDXGIFACTORY1PROC create_dxgi;
+	IDXGIFactory1 *factory;
+	IDXGIAdapter *adapter;
+	DXGI_ADAPTER_DESC desc;
+	HRESULT hr;
+
+	if (!dxgi) {
+		return false;
+	}
+	create_dxgi = (CREATEDXGIFACTORY1PROC)GetProcAddress(
+		dxgi, "CreateDXGIFactory1");
+
+	if (!create_dxgi) {
+		blog(LOG_INFO, "Failed to load D3D11/DXGI procedures");
+		return false;
+	}
+
+	hr = create_dxgi(&IID_IDXGIFactory1, &factory);
+	if (FAILED(hr)) {
+		blog(LOG_INFO, "CreateDXGIFactory1 failed");
+		return false;
+	}
+
+	hr = factory->lpVtbl->EnumAdapters(factory, 0, &adapter);
+	factory->lpVtbl->Release(factory);
+	if (FAILED(hr)) {
+		blog(LOG_INFO, "EnumAdapters failed");
+		return false;
+	}
+
+	hr = adapter->lpVtbl->GetDesc(adapter, &desc);
+	adapter->lpVtbl->Release(adapter);
+	if (FAILED(hr)) {
+		blog(LOG_INFO, "GetDesc failed");
+		return false;
+	}
+
+	/*check whether adapter 0 is Intel*/
+	if (desc.VendorId == 0x8086) {
+		return true;
+	} else {
+		return false;
+	}
+}
+
+static void *obs_qsv_create_tex(obs_data_t *settings, obs_encoder_t *encoder)
+{
+	if (!is_intel_gpu_primary()) {
+		blog(LOG_INFO,
+		     ">>> app not on intel GPU, fall back to old qsv encoder");
+		return obs_encoder_create_rerouted(encoder, "obs_qsv11_soft");
+	}
+
+	if (!obs_nv12_tex_active()) {
+		blog(LOG_INFO,
+		     ">>> nv12 tex not active, fall back to old qsv encoder");
+		return obs_encoder_create_rerouted(encoder, "obs_qsv11_soft");
+	}
+
+	if (obs_encoder_scaling_enabled(encoder)) {
+		blog(LOG_INFO,
+		     ">>> encoder scaling active, fall back to old qsv encoder");
+		return obs_encoder_create_rerouted(encoder, "obs_qsv11_soft");
+	}
+
+	blog(LOG_INFO, ">>> new qsv encoder");
+	return obs_qsv_create(settings, encoder);
+}
+
 static bool obs_qsv_extra_data(void *data, uint8_t **extra_data, size_t *size)
 {
 	struct obs_qsv *obsqsv = data;
@@ -792,8 +880,51 @@ static bool obs_qsv_encode(void *data, struct encoder_frame *frame,
 	return true;
 }
 
+static bool obs_qsv_encode_tex(void *data, uint32_t handle, int64_t pts,
+			       uint64_t lock_key, uint64_t *next_key,
+			       struct encoder_packet *packet,
+			       bool *received_packet)
+{
+	struct obs_qsv *obsqsv = data;
+
+	if (handle == GS_INVALID_HANDLE) {
+		warn("Encode failed: bad texture handle");
+		*next_key = lock_key;
+		return false;
+	}
+
+	if (!packet || !received_packet)
+		return false;
+
+	EnterCriticalSection(&g_QsvCs);
+
+	video_t *video = obs_encoder_video(obsqsv->encoder);
+	const struct video_output_info *voi = video_output_get_info(video);
+
+	mfxBitstream *pBS = NULL;
+
+	int ret;
+
+	mfxU64 qsvPTS = pts * 90000 / voi->fps_num;
+
+	ret = qsv_encoder_encode_tex(obsqsv->context, qsvPTS, handle, lock_key,
+				     next_key, &pBS);
+
+	if (ret < 0) {
+		warn("encode failed");
+		LeaveCriticalSection(&g_QsvCs);
+		return false;
+	}
+
+	parse_packet(obsqsv, packet, pBS, voi->fps_num, received_packet);
+
+	LeaveCriticalSection(&g_QsvCs);
+
+	return true;
+}
+
 struct obs_encoder_info obs_qsv_encoder = {
-	.id = "obs_qsv11",
+	.id = "obs_qsv11_soft",
 	.type = OBS_ENCODER_VIDEO,
 	.codec = "h264",
 	.get_name = obs_qsv_getname,
@@ -806,5 +937,22 @@ struct obs_encoder_info obs_qsv_encoder = {
 	.get_extra_data = obs_qsv_extra_data,
 	.get_sei_data = obs_qsv_sei,
 	.get_video_info = obs_qsv_video_info,
-	.caps = OBS_ENCODER_CAP_DYN_BITRATE,
+	.caps = OBS_ENCODER_CAP_DYN_BITRATE | OBS_ENCODER_CAP_INTERNAL,
+};
+
+struct obs_encoder_info obs_qsv_encoder_tex = {
+	.id = "obs_qsv11",
+	.type = OBS_ENCODER_VIDEO,
+	.codec = "h264",
+	.get_name = obs_qsv_getname,
+	.create = obs_qsv_create_tex,
+	.destroy = obs_qsv_destroy,
+	.caps = OBS_ENCODER_CAP_DYN_BITRATE | OBS_ENCODER_CAP_PASS_TEXTURE,
+	.encode_texture = obs_qsv_encode_tex,
+	.update = obs_qsv_update,
+	.get_properties = obs_qsv_props,
+	.get_defaults = obs_qsv_defaults,
+	.get_extra_data = obs_qsv_extra_data,
+	.get_sei_data = obs_qsv_sei,
+	.get_video_info = obs_qsv_video_info,
 };

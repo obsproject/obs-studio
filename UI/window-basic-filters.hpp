@@ -74,6 +74,8 @@ private:
 
 	int noPreviewMargin;
 
+	bool editActive = false;
+
 private slots:
 	void AddFilter(OBSSource filter);
 	void RemoveFilter(OBSSource filter);

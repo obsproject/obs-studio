@@ -108,12 +108,9 @@ static void color_source_defaults_v1(obs_data_t *settings)
 
 static void color_source_defaults_v2(obs_data_t *settings)
 {
-	struct obs_video_info ovi;
-	obs_get_video_info(&ovi);
-
 	obs_data_set_default_int(settings, "color", 0xFFFFFFFF);
-	obs_data_set_default_int(settings, "width", ovi.base_width);
-	obs_data_set_default_int(settings, "height", ovi.base_height);
+	obs_data_set_default_int(settings, "width", 1920);
+	obs_data_set_default_int(settings, "height", 1080);
 }
 
 struct obs_source_info color_source_info_v1 = {
@@ -134,7 +131,8 @@ struct obs_source_info color_source_info_v1 = {
 };
 
 struct obs_source_info color_source_info_v2 = {
-	.id = "color_source_v2",
+	.id = "color_source",
+	.version = 2,
 	.type = OBS_SOURCE_TYPE_INPUT,
 	.output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_CUSTOM_DRAW,
 	.create = color_source_create,

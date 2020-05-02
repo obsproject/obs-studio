@@ -39,6 +39,13 @@ set(decklink-ouput-ui_UI
 	forms/output.ui
 	)
 
+if(WIN32)
+	set(MODULE_DESCRIPTION "OBS DeckLink Output UI")
+	configure_file(${CMAKE_SOURCE_DIR}/cmake/winrc/obs-module.rc.in decklink-ouput-ui.rc)
+	list(APPEND decklink-ouput-ui_SOURCES
+		decklink-ouput-ui.rc)
+endif()
+
 if(APPLE)
 	set(decklink-ouput-ui_PLATFORM_LIBS
 		${COCOA})

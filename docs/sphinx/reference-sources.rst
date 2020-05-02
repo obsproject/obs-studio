@@ -1186,6 +1186,14 @@ Functions used by sources
 
 ---------------------
 
+.. function:: void obs_source_set_async_rotation(obs_source_t *source, long rotation)
+
+   Allows the ability to set rotation (0, 90, 180, -90, 270) for an
+   async video source.  The rotation will be automatically applied to
+   the source.
+
+---------------------
+
 .. function:: void obs_source_preload_video(obs_source_t *source, const struct obs_source_frame *frame)
 
    Preloads a video frame to ensure a frame is ready for playback as

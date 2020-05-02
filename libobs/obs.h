@@ -517,6 +517,10 @@ EXPORT bool obs_enum_source_types(size_t idx, const char **id);
  * etc).
  */
 EXPORT bool obs_enum_input_types(size_t idx, const char **id);
+EXPORT bool obs_enum_input_types2(size_t idx, const char **id,
+				  const char **unversioned_id);
+
+EXPORT const char *obs_get_latest_input_type_id(const char *unversioned_id);
 
 /**
  * Enumerates all available filter source types.
@@ -741,6 +745,19 @@ EXPORT void obs_apply_private_data(obs_data_t *settings);
 EXPORT void obs_set_private_data(obs_data_t *settings);
 EXPORT obs_data_t *obs_get_private_data(void);
 
+typedef void (*obs_task_t)(void *param);
+
+enum obs_task_type {
+	OBS_TASK_UI,
+	OBS_TASK_GRAPHICS,
+};
+
+EXPORT void obs_queue_task(enum obs_task_type type, obs_task_t task,
+			   void *param, bool wait);
+
+typedef void (*obs_task_handler_t)(obs_task_t task, void *param, bool wait);
+EXPORT void obs_set_ui_task_handler(obs_task_handler_t handler);
+
 /* ------------------------------------------------------------------------- */
 /* View context */
 
@@ -938,6 +955,7 @@ EXPORT enum obs_source_type obs_source_get_type(const obs_source_t *source);
 
 /** Gets the source identifier */
 EXPORT const char *obs_source_get_id(const obs_source_t *source);
+EXPORT const char *obs_source_get_unversioned_id(const obs_source_t *source);
 
 /** Returns the signal handler for a source */
 EXPORT signal_handler_t *
@@ -1174,6 +1192,8 @@ EXPORT void obs_source_output_video(obs_source_t *source,
 				    const struct obs_source_frame *frame);
 EXPORT void obs_source_output_video2(obs_source_t *source,
 				     const struct obs_source_frame2 *frame);
+
+EXPORT void obs_source_set_async_rotation(obs_source_t *source, long rotation);
 
 /**
  * Preloads asynchronous video data to allow instantaneous playback
@@ -2081,6 +2101,10 @@ EXPORT void *obs_encoder_create_rerouted(obs_encoder_t *encoder,
 
 /** Returns whether encoder is paused */
 EXPORT bool obs_encoder_paused(const obs_encoder_t *output);
+
+EXPORT const char *obs_encoder_get_last_error(obs_encoder_t *encoder);
+EXPORT void obs_encoder_set_last_error(obs_encoder_t *encoder,
+				       const char *message);
 
 /* ------------------------------------------------------------------------- */
 /* Stream Services */

@@ -270,6 +270,7 @@ static inline void gl_write_structs(struct gl_shader_parser *glsp)
  *   mul      -> (change to operator)
  *   rsqrt    -> inversesqrt
  *   saturate -> (use clamp)
+ *   sincos   -> (map to manual sin/cos calls)
  *   tex*     -> texture
  *   tex*grad -> textureGrad
  *   tex*lod  -> textureLod
@@ -299,6 +300,51 @@ static bool gl_write_mul(struct gl_shader_parser *glsp,
 
 	*p_token = cfp->cur_token;
 	return true;
+}
+
+static bool gl_write_sincos(struct gl_shader_parser *glsp,
+			    struct cf_token **p_token)
+{
+	struct cf_parser *cfp = &glsp->parser.cfp;
+	struct dstr var = {0};
+	bool success = false;
+
+	cfp->cur_token = *p_token;
+
+	if (!cf_next_token(cfp))
+		return false;
+	if (!cf_token_is(cfp, "("))
+		return false;
+
+	dstr_printf(&var, "sincos_var_internal_%d", glsp->sincos_counter++);
+
+	dstr_cat(&glsp->gl_string, "float ");
+	dstr_cat_dstr(&glsp->gl_string, &var);
+	dstr_cat(&glsp->gl_string, " = ");
+	gl_write_function_contents(glsp, &cfp->cur_token, ",");
+	dstr_cat(&glsp->gl_string, "); ");
+
+	if (!cf_next_token(cfp))
+		goto fail;
+	gl_write_function_contents(glsp, &cfp->cur_token, ",");
+	dstr_cat(&glsp->gl_string, " = sin(");
+	dstr_cat_dstr(&glsp->gl_string, &var);
+	dstr_cat(&glsp->gl_string, "); ");
+
+	if (!cf_next_token(cfp))
+		goto fail;
+	gl_write_function_contents(glsp, &cfp->cur_token, ")");
+	dstr_cat(&glsp->gl_string, " = cos(");
+	dstr_cat_dstr(&glsp->gl_string, &var);
+	dstr_cat(&glsp->gl_string, ")");
+
+	success = true;
+
+fail:
+	dstr_free(&var);
+
+	*p_token = cfp->cur_token;
+	return success;
 }
 
 static bool gl_write_saturate(struct gl_shader_parser *glsp,
@@ -404,7 +450,7 @@ static bool gl_write_intrinsic(struct gl_shader_parser *glsp,
 	bool written = true;
 
 	if (strref_cmp(&token->str, "atan2") == 0) {
-		dstr_cat(&glsp->gl_string, "atan2");
+		dstr_cat(&glsp->gl_string, "atan");
 	} else if (strref_cmp(&token->str, "ddx") == 0) {
 		dstr_cat(&glsp->gl_string, "dFdx");
 	} else if (strref_cmp(&token->str, "ddy") == 0) {
@@ -421,6 +467,8 @@ static bool gl_write_intrinsic(struct gl_shader_parser *glsp,
 		written = gl_write_saturate(glsp, &token);
 	} else if (strref_cmp(&token->str, "mul") == 0) {
 		written = gl_write_mul(glsp, &token);
+	} else if (strref_cmp(&token->str, "sincos") == 0) {
+		written = gl_write_sincos(glsp, &token);
 	} else {
 		struct shader_var *var = sp_getparam(glsp, token);
 		if (var && astrcmp_n(var->type, "texture", 7) == 0)

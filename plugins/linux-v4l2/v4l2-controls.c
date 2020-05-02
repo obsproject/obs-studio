@@ -24,14 +24,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #define blog(level, msg, ...) blog(level, "v4l2-controls: " msg, ##__VA_ARGS__)
 
-#if defined(__i386__)
-#define UINT_TO_POINTER(val) ((void *)(unsigned int)(val))
-#define POINTER_TO_UINT(p) ((unsigned int)(unsigned int)(p))
-#elif defined(__x86_64__) || defined(__aarch64__) || (_MIPS_SIM == _ABI64)
+#if defined(__LP64__)
 #define UINT_TO_POINTER(val) ((void *)(unsigned long)(val))
 #define POINTER_TO_UINT(p) ((unsigned int)(unsigned long)(p))
 #else
-#error "unknown platform, this code won't work"
+#define UINT_TO_POINTER(val) ((void *)(unsigned int)(val))
+#define POINTER_TO_UINT(p) ((unsigned int)(unsigned int)(p))
 #endif
 
 static bool v4l2_control_changed(void *data, obs_properties_t *props,
@@ -88,11 +86,58 @@ static int_fast32_t v4l2_update_controls_menu(int_fast32_t dev,
 	return 0;
 }
 
+#define INVALID_CONTROL_FLAGS                                 \
+	(V4L2_CTRL_FLAG_DISABLED | V4L2_CTRL_FLAG_READ_ONLY | \
+	 V4L2_CTRL_FLAG_VOLATILE)
+
+static inline bool valid_control(struct v4l2_queryctrl *qctrl)
+{
+	return (qctrl->flags & INVALID_CONTROL_FLAGS) == 0;
+}
+
+static inline void add_control_property(obs_properties_t *props,
+					obs_data_t *settings, int_fast32_t dev,
+					struct v4l2_queryctrl *qctrl)
+{
+	obs_property_t *prop = NULL;
+
+	if (!valid_control(qctrl)) {
+		return;
+	}
+
+	switch (qctrl->type) {
+	case V4L2_CTRL_TYPE_INTEGER:
+		prop = obs_properties_add_int_slider(
+			props, (char *)qctrl->name, (char *)qctrl->name,
+			qctrl->minimum, qctrl->maximum, qctrl->step);
+		obs_data_set_default_int(settings, (char *)qctrl->name,
+					 qctrl->default_value);
+		obs_property_set_modified_callback2(prop, v4l2_control_changed,
+						    UINT_TO_POINTER(qctrl->id));
+		break;
+	case V4L2_CTRL_TYPE_BOOLEAN:
+		prop = obs_properties_add_bool(props, (char *)qctrl->name,
+					       (char *)qctrl->name);
+		obs_data_set_default_bool(settings, (char *)qctrl->name,
+					  qctrl->default_value);
+		obs_property_set_modified_callback2(prop, v4l2_control_changed,
+						    UINT_TO_POINTER(qctrl->id));
+		break;
+	case V4L2_CTRL_TYPE_MENU:
+	case V4L2_CTRL_TYPE_INTEGER_MENU:
+		v4l2_update_controls_menu(dev, props, qctrl);
+		obs_data_set_default_int(settings, (char *)qctrl->name,
+					 qctrl->default_value);
+		blog(LOG_INFO, "setting default for %s to %d",
+		     (char *)qctrl->name, qctrl->default_value);
+		break;
+	}
+}
+
 int_fast32_t v4l2_update_controls(int_fast32_t dev, obs_properties_t *props,
 				  obs_data_t *settings)
 {
 	struct v4l2_queryctrl qctrl;
-	obs_property_t *prop = NULL;
 
 	if (!dev || !props)
 		return -1;
@@ -100,54 +145,7 @@ int_fast32_t v4l2_update_controls(int_fast32_t dev, obs_properties_t *props,
 	memset(&qctrl, 0, sizeof(qctrl));
 	qctrl.id = V4L2_CTRL_FLAG_NEXT_CTRL;
 	while (0 == v4l2_ioctl(dev, VIDIOC_QUERYCTRL, &qctrl)) {
-		if (qctrl.flags & V4L2_CTRL_FLAG_DISABLED) {
-			blog(LOG_INFO, "found control %s but it is disabled",
-			     qctrl.name);
-			continue;
-		}
-
-		if (qctrl.flags & V4L2_CTRL_FLAG_READ_ONLY) {
-			blog(LOG_INFO, "found control %s but it is readonly",
-			     qctrl.name);
-			continue;
-		}
-
-		if (qctrl.flags & V4L2_CTRL_FLAG_VOLATILE) {
-			blog(LOG_INFO, "found control %s but it is volatile",
-			     qctrl.name);
-			continue;
-		}
-
-		switch (qctrl.type) {
-		case V4L2_CTRL_TYPE_INTEGER:
-			prop = obs_properties_add_int_slider(
-				props, (char *)qctrl.name, (char *)qctrl.name,
-				qctrl.minimum, qctrl.maximum, qctrl.step);
-			obs_data_set_default_int(settings, (char *)qctrl.name,
-						 qctrl.default_value);
-			obs_property_set_modified_callback2(
-				prop, v4l2_control_changed,
-				UINT_TO_POINTER(qctrl.id));
-			break;
-		case V4L2_CTRL_TYPE_BOOLEAN:
-			prop = obs_properties_add_bool(
-				props, (char *)qctrl.name, (char *)qctrl.name);
-			obs_data_set_default_bool(settings, (char *)qctrl.name,
-						  qctrl.default_value);
-			obs_property_set_modified_callback2(
-				prop, v4l2_control_changed,
-				UINT_TO_POINTER(qctrl.id));
-			break;
-		case V4L2_CTRL_TYPE_MENU:
-		case V4L2_CTRL_TYPE_INTEGER_MENU:
-			v4l2_update_controls_menu(dev, props, &qctrl);
-			obs_data_set_default_int(settings, (char *)qctrl.name,
-						 qctrl.default_value);
-			blog(LOG_INFO, "setting default for %s to %d",
-			     (char *)qctrl.name, qctrl.default_value);
-			break;
-		}
-
+		add_control_property(props, settings, dev, &qctrl);
 		qctrl.id |= V4L2_CTRL_FLAG_NEXT_CTRL;
 	}
 

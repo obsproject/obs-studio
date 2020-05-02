@@ -360,6 +360,8 @@ error:
     mbedtls_x509_crt_free(chain);
     free(chain);
     r->RTMP_TLS_ctx->cacert = NULL;
+#else /* USE_MBEDTLS */
+	UNUSED_PARAMETER(r);
 #endif /* USE_MBEDTLS */
 }
 
@@ -407,6 +409,7 @@ RTMP_TLS_Init(RTMP *r)
     SSL_CTX_set_default_verify_paths(RTMP_TLS_ctx);
 #endif
 #else
+	UNUSED_PARAMETER(r);
 #endif
 }
 
@@ -429,6 +432,8 @@ RTMP_TLS_Free(RTMP *r) {
     // NO mbedtls_net_free() BECAUSE WE SET IT UP BY HAND!
     free(r->RTMP_TLS_ctx);
     r->RTMP_TLS_ctx = NULL;
+#else
+	UNUSED_PARAMETER(r);
 #endif
 }
 
@@ -2583,7 +2588,7 @@ b64enc(const unsigned char *input, int length, char *output, int maxsize)
 #if defined(USE_MBEDTLS)
 typedef	mbedtls_md5_context MD5_CTX;
 
-#if MBEDTLS_VERSION_NUMBER >= 0x02040000
+#if MBEDTLS_VERSION_NUMBER >= 0x02070000
 #define MD5_Init(ctx)	mbedtls_md5_init(ctx); mbedtls_md5_starts_ret(ctx)
 #define MD5_Update(ctx,data,len)	mbedtls_md5_update_ret(ctx,(unsigned char *)data,len)
 #define MD5_Final(dig,ctx)	mbedtls_md5_finish_ret(ctx,dig); mbedtls_md5_free(ctx)
@@ -4361,10 +4366,10 @@ RTMP_Close(RTMP *r)
             free(r->Link.streams[idx].playpath.av_val);
             r->Link.streams[idx].playpath.av_val = NULL;
         }
-    }
 
-    r->Link.curStreamIdx = 0;
-    r->Link.nStreams = 0;
+        r->Link.curStreamIdx = 0;
+        r->Link.nStreams = 0;
+    }
 
     if ((r->Link.protocol & RTMP_FEATURE_WRITE) &&
             (r->Link.pFlags & RTMP_PUB_CLEAN) &&

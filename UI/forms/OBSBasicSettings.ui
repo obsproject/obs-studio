@@ -151,8 +151,8 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>806</width>
-              <height>1254</height>
+              <width>803</width>
+              <height>1026</height>
              </rect>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_19">
@@ -958,6 +958,12 @@
              </item>
              <item row="0" column="1">
               <widget class="QStackedWidget" name="serverStackedWidget">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
                <property name="currentIndex">
                 <number>1</number>
                </property>
@@ -1140,7 +1146,7 @@
                </property>
               </widget>
              </item>
-             <item row="8" column="0">
+             <item row="9" column="0">
               <widget class="QLabel" name="authUsernameLabel">
                <property name="text">
                 <string>Basic.Settings.Stream.Custom.Username</string>
@@ -1150,10 +1156,10 @@
                </property>
               </widget>
              </item>
-             <item row="8" column="1">
+             <item row="9" column="1">
               <widget class="QLineEdit" name="authUsername"/>
              </item>
-             <item row="9" column="0">
+             <item row="10" column="0">
               <widget class="QLabel" name="authPwLabel">
                <property name="text">
                 <string>Basic.Settings.Stream.Custom.Password</string>
@@ -1163,7 +1169,7 @@
                </property>
               </widget>
              </item>
-             <item row="9" column="1">
+             <item row="10" column="1">
               <widget class="QWidget" name="authPwWidget" native="true">
                <layout class="QHBoxLayout" name="horizontalLayout_25">
                 <property name="leftMargin">
@@ -1208,6 +1214,19 @@
                </property>
               </widget>
              </item>
+             <item row="8" column="0">
+              <widget class="QLabel" name="mixerAddonLabel">
+               <property name="text">
+                <string>Basic.Settings.Stream.MixerAddon</string>
+               </property>
+               <property name="buddy">
+                <cstring>mixerAddonDropdown</cstring>
+               </property>
+              </widget>
+             </item>
+             <item row="8" column="1">
+              <widget class="QComboBox" name="mixerAddonDropdown"/>
+             </item>
             </layout>
            </widget>
           </widget>
@@ -1244,8 +1263,8 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>813</width>
-              <height>761</height>
+              <width>603</width>
+              <height>631</height>
              </rect>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_21">
@@ -1747,13 +1766,6 @@
                      </widget>
                     </item>
                     <item row="2" column="1">
-                     <widget class="QLabel" name="label_45">
-                      <property name="text">
-                       <string>Basic.Settings.Output.ReplayBuffer.HotkeyMessage</string>
-                      </property>
-                     </widget>
-                    </item>
-                    <item row="3" column="1">
                      <widget class="QLabel" name="simpleRBEstimate">
                       <property name="text">
                        <string notr="true"/>
@@ -3657,13 +3669,6 @@
                          </widget>
                         </item>
                         <item row="2" column="1">
-                         <widget class="QLabel" name="advRBHotkeyLabel">
-                          <property name="text">
-                           <string>Basic.Settings.Output.ReplayBuffer.HotkeyMessage</string>
-                          </property>
-                         </widget>
-                        </item>
-                        <item row="3" column="1">
                          <widget class="QLabel" name="advRBEstimate">
                           <property name="text">
                            <string notr="true"/>
@@ -3753,8 +3758,8 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>767</width>
-              <height>582</height>
+              <width>555</width>
+              <height>469</height>
              </rect>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_50">
@@ -4609,8 +4614,8 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>791</width>
-              <height>970</height>
+              <width>596</width>
+              <height>781</height>
              </rect>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_23">
