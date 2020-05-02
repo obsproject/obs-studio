@@ -292,8 +292,6 @@ void device_present(gs_device_t *device)
 	glFlush();
 	[NSOpenGLContext clearCurrentContext];
 
-	CGLUnlockContext([device->plat->context CGLContextObj]);
-
 	CGLLockContext([device->cur_swap->wi->context CGLContextObj]);
 
 	[device->cur_swap->wi->context makeCurrentContext];
@@ -308,8 +306,6 @@ void device_present(gs_device_t *device)
 	[NSOpenGLContext clearCurrentContext];
 
 	CGLUnlockContext([device->cur_swap->wi->context CGLContextObj]);
-
-	CGLLockContext([device->plat->context CGLContextObj]);
 
 	[device->plat->context makeCurrentContext];
 }
