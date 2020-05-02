@@ -492,6 +492,15 @@
             ]
         },
         {
+            "name": "Mixcloud",
+            "servers": [
+                {
+                    "name": "Primary",
+                    "url": "rtmp://rtmp.mixcloud.com/broadcast"
+                }
+            ]
+        },
+        {
             "name": "Vaughn Live / iNSTAGIB",
             "servers": [
                 {
