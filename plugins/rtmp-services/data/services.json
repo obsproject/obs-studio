@@ -1399,6 +1399,27 @@
             ]
         },
         {
+            "name": "GameTips.TV",
+            "servers": [
+                {
+                    "name": "Iran - Tehran | AsiaTech",
+                    "url": "rtmp://rtmp.s2.gametips.tv:1935/live"
+                },
+                {
+                    "name": "Netherlands - Amsterdam | Serverius",
+                    "url": "rtmp://rtmp.s3.gametips.tv:1935/live"
+                },
+                {
+                    "name": "Iran - Tehran | ParsOnline",
+                    "url": "rtmp://rtmp.s4.gametips.tv:1935/live"
+                },
+                {
+                    "name": "Iran - Tehran | AfraNet",
+                    "url": "rtmp://rtmp.s5.gametips.tv:1935/live"
+                }
+            ]
+        },
+        {
             "name": "KakaoTV",
             "servers": [
                 {
