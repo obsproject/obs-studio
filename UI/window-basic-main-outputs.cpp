@@ -832,8 +832,6 @@ bool SimpleOutput::StartStreaming(obs_service_t *service)
 
 static void remove_reserved_file_characters(string &s)
 {
-	replace(s.begin(), s.end(), '/', '_');
-	replace(s.begin(), s.end(), '\\', '_');
 	replace(s.begin(), s.end(), '*', '_');
 	replace(s.begin(), s.end(), '?', '_');
 	replace(s.begin(), s.end(), '"', '_');
@@ -841,6 +839,48 @@ static void remove_reserved_file_characters(string &s)
 	replace(s.begin(), s.end(), ':', '_');
 	replace(s.begin(), s.end(), '>', '_');
 	replace(s.begin(), s.end(), '<', '_');
+}
+
+static string generate_replay_filename_format(string format, string prefix,
+					      string suffix)
+{
+	replace(format.begin(), format.end(), '\\', '/');
+	replace(prefix.begin(), prefix.end(), '\\', '/');
+	replace(suffix.begin(), suffix.end(), '\\', '/');
+
+	size_t last = format.rfind('/');
+
+	string f;
+
+	if (!prefix.empty()) {
+		if (prefix.back() != ' ' && prefix.back() != '/')
+			prefix += " ";
+	}
+
+	if (last == string::npos) {
+		f += prefix + format;
+	} else {
+		const string directory = format.substr(0, ++last);
+		const string filename = format.substr(last);
+
+		f += directory + prefix + filename;
+	}
+
+	if (!suffix.empty()) {
+		string u = "";
+		while (suffix.back() == '/') {
+			suffix.pop_back();
+			u += "_";
+		}
+		suffix += u;
+		if (suffix.front() != ' ')
+			f += " ";
+		f += suffix;
+	}
+
+	remove_reserved_file_characters(f);
+
+	return f;
 }
 
 static void ensure_directory_exists(string &path)
@@ -927,32 +967,19 @@ bool SimpleOutput::ConfigureRecording(bool updateReplayBuffer)
 	if (lastChar != '/' && lastChar != '\\')
 		strPath += "/";
 
-	strPath += GenerateSpecifiedFilename(ffmpegOutput ? "avi" : format,
-					     noSpace, filenameFormat);
+	string f = generate_replay_filename_format(filenameFormat, rbPrefix,
+						   rbSuffix);
+
+	strPath += GenerateSpecifiedFilename(
+		ffmpegOutput ? "avi" : format, noSpace,
+		updateReplayBuffer ? f.c_str() : filenameFormat);
+
 	ensure_directory_exists(strPath);
 	if (!overwriteIfExists)
 		FindBestFilename(strPath, noSpace);
 
 	obs_data_t *settings = obs_data_create();
 	if (updateReplayBuffer) {
-		string f;
-
-		if (rbPrefix && *rbPrefix) {
-			f += rbPrefix;
-			if (f.back() != ' ')
-				f += " ";
-		}
-
-		f += filenameFormat;
-
-		if (rbSuffix && *rbSuffix) {
-			if (*rbSuffix != ' ')
-				f += " ";
-			f += rbSuffix;
-		}
-
-		remove_reserved_file_characters(f);
-
 		obs_data_set_string(settings, "directory", path);
 		obs_data_set_string(settings, "format", f.c_str());
 		obs_data_set_string(settings, "extension", format);
@@ -1823,6 +1850,9 @@ bool AdvancedOutput::StartReplayBuffer()
 
 		os_closedir(dir);
 
+		string f = generate_replay_filename_format(filenameFormat,
+							   rbPrefix, rbSuffix);
+
 		string strPath;
 		strPath += path;
 
@@ -1831,29 +1861,12 @@ bool AdvancedOutput::StartReplayBuffer()
 			strPath += "/";
 
 		strPath += GenerateSpecifiedFilename(recFormat, noSpace,
-						     filenameFormat);
+						     f.c_str());
 		ensure_directory_exists(strPath);
 		if (!overwriteIfExists)
 			FindBestFilename(strPath, noSpace);
 
 		obs_data_t *settings = obs_data_create();
-		string f;
-
-		if (rbPrefix && *rbPrefix) {
-			f += rbPrefix;
-			if (f.back() != ' ')
-				f += " ";
-		}
-
-		f += filenameFormat;
-
-		if (rbSuffix && *rbSuffix) {
-			if (*rbSuffix != ' ')
-				f += " ";
-			f += rbSuffix;
-		}
-
-		remove_reserved_file_characters(f);
 
 		obs_data_set_string(settings, "directory", path);
 		obs_data_set_string(settings, "format", f.c_str());
