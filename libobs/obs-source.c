@@ -501,13 +501,12 @@ obs_source_t *obs_source_duplicate(obs_source_t *source, const char *new_name,
 	if (!obs_source_valid(source, "obs_source_duplicate"))
 		return NULL;
 
-	if ((source->info.output_flags & OBS_SOURCE_DO_NOT_DUPLICATE) != 0) {
-		obs_source_addref(source);
-		return source;
-	}
-
 	if (source->info.type == OBS_SOURCE_TYPE_SCENE) {
 		obs_scene_t *scene = obs_scene_from_source(source);
+		if (scene && !create_private) {
+			obs_source_addref(source);
+			return source;
+		}
 		if (!scene)
 			scene = obs_group_from_source(source);
 		if (!scene)
@@ -519,6 +518,11 @@ obs_source_t *obs_source_duplicate(obs_source_t *source, const char *new_name,
 				       : OBS_SCENE_DUP_COPY);
 		obs_source_t *new_source = obs_scene_get_source(new_scene);
 		return new_source;
+	}
+
+	if ((source->info.output_flags & OBS_SOURCE_DO_NOT_DUPLICATE) != 0) {
+		obs_source_addref(source);
+		return source;
 	}
 
 	settings = obs_data_create();
