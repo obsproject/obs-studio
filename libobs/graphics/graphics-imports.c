@@ -215,5 +215,8 @@ bool load_graphics_imports(struct gs_exports *exports, void *module,
 	GRAPHICS_IMPORT_OPTIONAL(device_stagesurface_create_nv12);
 #endif
 
+	/* SLOBS custom functions */
+	GRAPHICS_IMPORT_OPTIONAL(device_set_rebuild_callback);
+
 	return success;
 }

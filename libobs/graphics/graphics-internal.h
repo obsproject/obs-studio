@@ -311,6 +311,10 @@ struct gs_exports {
 							   uint32_t width,
 							   uint32_t height);
 #endif
+
+	/* SLOBS custom functions */
+	void (*device_set_rebuild_callback)(
+		gs_device_t *device, gs_rebuild_device_callback_t callback);
 };
 
 struct blend_state {

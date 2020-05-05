@@ -441,6 +441,9 @@ try {
 	for (auto &state : blendStates)
 		state.Rebuild(dev);
 
+	if (rebuildCallback)
+		rebuildCallback();
+
 } catch (const char *error) {
 	bcrash("Failed to recreate D3D11: %s", error);
 

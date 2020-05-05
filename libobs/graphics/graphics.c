@@ -2953,3 +2953,14 @@ gs_stagesurf_t *gs_stagesurface_create_nv12(uint32_t width, uint32_t height)
 }
 
 #endif
+
+void gs_set_rebuild_device_callback(gs_rebuild_device_callback_t callback)
+{
+	graphics_t *graphics = thread_graphics;
+
+	if (!gs_valid("gs_set_rebuild_device_callback"))
+		return;
+
+	graphics->exports.device_set_rebuild_callback(graphics->device,
+						      callback);
+}

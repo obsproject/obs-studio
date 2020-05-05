@@ -884,6 +884,12 @@ EXPORT gs_stagesurf_t *gs_stagesurface_create_nv12(uint32_t width,
 
 #endif
 
+/* SLOBS custom functions */
+typedef void (*gs_rebuild_device_callback_t)();
+
+EXPORT void
+gs_set_rebuild_device_callback(gs_rebuild_device_callback_t callback);
+
 /* inline functions used by modules */
 
 static inline uint32_t gs_get_format_bpp(enum gs_color_format format)

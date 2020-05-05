@@ -902,6 +902,8 @@ struct gs_device {
 
 	gs_obj *first_obj = nullptr;
 
+	gs_rebuild_device_callback_t rebuildCallback = nullptr;
+
 	void InitCompiler();
 	void InitFactory(uint32_t adapterIdx);
 	void InitDevice(uint32_t adapterIdx);
