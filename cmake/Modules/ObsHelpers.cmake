@@ -446,7 +446,7 @@ function(install_obs_bin target mode)
 		install(FILES "${bin}"
 			DESTINATION "${OBS_EXECUTABLE_DESTINATION}")
 
-		if(DEFINED ${obsInstallerTempDir})
+		if(DEFINED ENV{obsInstallerTempDir})
 			add_custom_command(TARGET ${target} POST_BUILD
 				COMMAND "${CMAKE_COMMAND}" -E copy
 					"${bin}"
@@ -496,7 +496,7 @@ function(install_obs_data target datadir datadest)
 			"${CMAKE_CURRENT_SOURCE_DIR}/${datadir}" "${OBS_OUTPUT_DIR}/$<CONFIGURATION>/data/${datadest}"
 		VERBATIM)
 
-	if(CMAKE_SIZEOF_VOID_P EQUAL 8 AND DEFINED ${obsInstallerTempDir})
+	if(CMAKE_SIZEOF_VOID_P EQUAL 8 AND DEFINED ENV{obsInstallerTempDir})
 		add_custom_command(TARGET ${target} POST_BUILD
 			COMMAND "${CMAKE_COMMAND}" -E copy_directory
 				"${CMAKE_CURRENT_SOURCE_DIR}/${datadir}" "${obsInstallerTempDir}/${OBS_DATA_DESTINATION}/${datadest}"

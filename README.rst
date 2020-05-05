@@ -42,6 +42,103 @@ Quick Links
    (Note: The bug tracker is linked to forum accounts.  To use the bug
    tracker, log in to a forum account)
 
+Building from source
+--------------------
+
+ Clone the repository and submodules
+  .. code-block:: text
+
+      git clone --recursive https://github.com/obsproject/obs-studio.git
+
+**Windows:**
+
+  Install the following prerequisites: 
+
+  1. `Qt 5.14.1 <https://www.qt.io/download-qt-installer?hsCtaTracking=99d9dd4f-5681-48d2-b096-470725510d34%7C074ddad0-fdef-4e53-8aa8-5e8a876d6ab4>`_
+
+  2. `Cmake <https://cmake.org/>`_
+
+  3. Pre-built windows dependencies for VS2017  https://obsproject.com/downloads/dependencies2017.zip
+  4. `Visual Studio 2019 <https://visualstudio.microsoft.com/vs/older-downloads/>`_
+  5. `LLVM <https://releases.llvm.org/>`_
+  6. `Embedded chrome browser library <http://opensource.spotify.com/cefbuilds/index.html>`_  version 08/29/2018 - CEF 3.3440.1806.g65046b7 / Chromium 68.0.3440.106 
+  
+  After installing the `prerequisites <https://github.com/obsproject/obs-studio/wiki/Install-Instructions>`_ .Create the following environment variables:
+
+  #. **QTDIR** - Path pointing Qt 5.14.1 msvc2017_64 folder
+
+  #. **obsInstallerTempDir** - Empty directory path
+
+  #. **DepsPath** - Path to pre-built windows dependencies win64/include
+
+  #. **LIBCAFFEINE_DIR** - Path to `prebuilt libcaffeine <https://github.com/caffeinetv/libcaffeine/releases>`_  folder
+
+  #. **CEF_ROOT_DIR** - Path to the embedded chrome browser library 
+
+  Run the automated build script: ``build.bat [OPTION]``   
+
+  .. csv-table:: 
+   :header: "Option", "Usage"
+   :widths: 20, 80
+
+   "*-help*", "To display the supported options."
+   "*-check*", "To verify project prerequisites are set."
+   "*-build*", "To build 64 bit version of obs-studio."
+   "*-package*", "To build package."
+  
+
+**Mac:**
+
+  Install following prerequisites: 
+
+  - Homebrew
+  - `Qt <https://www.qt.io/download-qt-installer?hsCtaTracking=99d9dd4f-5681-48d2-b096-470725510d34%7C074ddad0-fdef-4e53-8aa8-5e8a876d6ab4>`_
+
+  Build steps:
+
+  Open Terminal 
+
+  1. Install FFmpeg
+
+     .. code-block:: text
+
+      brew tap homebrew-ffmpeg/ffmpeg
+
+      brew install homebrew-ffmpeg/ffmpeg/ffmpeg --with-srt
+
+  2. Set environment variable for Qt
+
+     .. code-block:: text
+
+      export QTDIR="path/to/Qt"
+
+      export DYLID_FRAMEWORK_PATH="path/to/Qt/5.14.1/clang_64/lib"
+
+  3. Install cmake
+ 
+     .. code-block:: text
+
+      brew install cmake
+
+  4. Change directory obs-studio directory 
+
+     .. code-block:: text
+
+      mkdir build
+
+      cd build 
+
+      cmake .. & make
+
+  5. After it built successfully then run the app 
+     
+     .. code-block:: text
+
+      cd rundir/RelWithDebInfo/bin
+
+      ./obs
+
+  
 Contributing
 ------------
 
