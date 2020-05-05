@@ -1563,15 +1563,12 @@ static INT_PTR CALLBACK UpdateDialogProc(HWND hwnd, UINT message, WPARAM wParam,
 	return false;
 }
 
-static void RestartAsAdmin(LPWSTR lpCmdLine)
+static int RestartAsAdmin(LPCWSTR lpCmdLine, LPCWSTR cwd)
 {
 	wchar_t myPath[MAX_PATH];
 	if (!GetModuleFileNameW(nullptr, myPath, _countof(myPath) - 1)) {
-		return;
+		return 0;
 	}
-
-	wchar_t cwd[MAX_PATH];
-	GetCurrentDirectoryW(_countof(cwd) - 1, cwd);
 
 	SHELLEXECUTEINFO shExInfo = {0};
 	shExInfo.cbSize = sizeof(shExInfo);
@@ -1591,13 +1588,16 @@ static void RestartAsAdmin(LPWSTR lpCmdLine)
 	if (ShellExecuteEx(&shExInfo)) {
 		DWORD exitCode;
 
+		WaitForSingleObject(shExInfo.hProcess, INFINITE);
+
 		if (GetExitCodeProcess(shExInfo.hProcess, &exitCode)) {
 			if (exitCode == 1) {
-				LaunchOBS();
+				return exitCode;
 			}
 		}
 		CloseHandle(shExInfo.hProcess);
 	}
+	return 0;
 }
 
 static bool HasElevation()
@@ -1622,11 +1622,25 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR lpCmdLine, int)
 {
 	INITCOMMONCONTROLSEX icce;
 
+	wchar_t cwd[MAX_PATH];
+	wchar_t newPath[MAX_PATH];
+	GetCurrentDirectoryW(_countof(cwd) - 1, cwd);
+
+	is32bit = wcsstr(cwd, L"bin\\32bit") != nullptr;
+
 	if (!HasElevation()) {
 		HANDLE hLowMutex = CreateMutexW(
 			nullptr, true, L"OBSUpdaterRunningAsNonAdminUser");
 
-		RestartAsAdmin(lpCmdLine);
+		/* return code 1 =  user wanted to launch OBS */
+		if (RestartAsAdmin(lpCmdLine, cwd) == 1) {
+			StringCbCat(cwd, sizeof(cwd), L"\\..\\..");
+			GetFullPathName(cwd, _countof(newPath), newPath,
+					nullptr);
+			SetCurrentDirectory(newPath);
+
+			LaunchOBS();
+		}
 
 		if (hLowMutex) {
 			ReleaseMutex(hLowMutex);
@@ -1635,18 +1649,9 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR lpCmdLine, int)
 
 		return 0;
 	} else {
-		{
-			wchar_t cwd[MAX_PATH];
-			wchar_t newPath[MAX_PATH];
-			GetCurrentDirectoryW(_countof(cwd) - 1, cwd);
-
-			is32bit = wcsstr(cwd, L"bin\\32bit") != nullptr;
-			StringCbCat(cwd, sizeof(cwd), L"\\..\\..");
-
-			GetFullPathName(cwd, _countof(newPath), newPath,
-					nullptr);
-			SetCurrentDirectory(newPath);
-		}
+		StringCbCat(cwd, sizeof(cwd), L"\\..\\..");
+		GetFullPathName(cwd, _countof(newPath), newPath, nullptr);
+		SetCurrentDirectory(newPath);
 
 		hinstMain = hInstance;
 
