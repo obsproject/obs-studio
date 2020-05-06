@@ -41,12 +41,14 @@ extern "C" {
 typedef void (*mp_video_cb)(void *opaque, struct obs_source_frame *frame);
 typedef void (*mp_audio_cb)(void *opaque, struct obs_source_audio *audio);
 typedef void (*mp_stop_cb)(void *opaque);
+typedef void (*mp_kill_cb)(void *opaque);
 
 struct mp_media {
 	AVFormatContext *fmt;
 
 	mp_video_cb v_preload_cb;
 	mp_stop_cb stop_cb;
+	mp_kill_cb kill_cb;
 	mp_video_cb v_cb;
 	mp_audio_cb a_cb;
 	void *opaque;
@@ -109,6 +111,7 @@ struct mp_media_info {
 	mp_video_cb v_preload_cb;
 	mp_audio_cb a_cb;
 	mp_stop_cb stop_cb;
+	mp_kill_cb kill_cb;
 
 	const char *path;
 	const char *format;

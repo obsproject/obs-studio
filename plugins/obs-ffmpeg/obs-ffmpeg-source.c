@@ -287,19 +287,6 @@ static void ffmpeg_source_open(struct ffmpeg_source *s)
 	}
 }
 
-static void ffmpeg_source_tick(void *data, float seconds)
-{
-	UNUSED_PARAMETER(seconds);
-
-	struct ffmpeg_source *s = data;
-	if (s->destroy_media) {
-		if (s->media_valid) {
-			mp_media_free(&s->media);
-			s->media_valid = false;
-		}
-		s->destroy_media = false;
-	}
-}
 
 static void ffmpeg_source_start(struct ffmpeg_source *s)
 {
@@ -314,6 +301,45 @@ static void ffmpeg_source_start(struct ffmpeg_source *s)
 		obs_source_media_started(s->source);
 	}
 }
+
+
+static void *ffpmeg_source_reconnect(void *data)
+{
+	os_sleep_ms(10000);
+	blog(LOG_ERROR, "MP: start reconnect thread");
+	struct ffmpeg_source *s = data;
+	if (s->media_valid) {
+		return;
+	}
+	bool active = obs_source_active(s->source);
+	if (!s->close_when_inactive || active)
+		ffmpeg_source_open(s);
+
+	if (!s->restart_on_activate || active)
+		ffmpeg_source_start(s);
+}
+
+static void ffmpeg_source_tick(void *data, float seconds)
+{
+	UNUSED_PARAMETER(seconds);
+
+	struct ffmpeg_source *s = data;
+	if (s->destroy_media) {
+		if (s->media_valid) {
+			mp_media_free(&s->media);
+			s->media_valid = false;
+		}
+		s->destroy_media = false;
+		blog(LOG_ERROR, "MP: prepare reconnect thread");
+		pthread_t reconnect_thread;
+		if (pthread_create(&reconnect_thread, NULL,
+				   ffpmeg_source_reconnect, s) != 0) {
+			blog(LOG_WARNING, "MP: Could not create reconnect thread");
+			return false;
+		}
+	}
+}
+
 
 static void ffmpeg_source_update(void *data, obs_data_t *settings)
 {
@@ -362,6 +388,8 @@ static void ffmpeg_source_update(void *data, obs_data_t *settings)
 
 	if (s->media_valid) {
 		mp_media_free(&s->media);
+		bfree((&s->media)->path);
+		bfree((&s->media)->format_name);
 		s->media_valid = false;
 	}
 

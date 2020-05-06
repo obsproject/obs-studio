@@ -584,6 +584,7 @@ static bool init_avformat(mp_media_t *m)
 
 	m->fmt = avformat_alloc_context();
 	if (!m->is_local_file) {
+		av_dict_set(&opts, "stimeout", "30000000", 0);
 		m->fmt->interrupt_callback.callback = interrupt_callback;
 		m->fmt->interrupt_callback.opaque = m;
 	}
@@ -811,8 +812,6 @@ void mp_media_free(mp_media_t *media)
 	os_sem_destroy(media->sem);
 	sws_freeContext(media->swscale);
 	av_freep(&media->scale_pic[0]);
-	bfree(media->path);
-	bfree(media->format_name);
 	memset(media, 0, sizeof(*media));
 	pthread_mutex_init_value(&media->mutex);
 }
