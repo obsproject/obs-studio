@@ -287,7 +287,6 @@ static void ffmpeg_source_open(struct ffmpeg_source *s)
 	}
 }
 
-
 static void ffmpeg_source_start(struct ffmpeg_source *s)
 {
 	if (!s->media_valid)
@@ -301,7 +300,6 @@ static void ffmpeg_source_start(struct ffmpeg_source *s)
 		obs_source_media_started(s->source);
 	}
 }
-
 
 static void *ffpmeg_source_reconnect(void *data)
 {
@@ -334,12 +332,12 @@ static void ffmpeg_source_tick(void *data, float seconds)
 		pthread_t reconnect_thread;
 		if (pthread_create(&reconnect_thread, NULL,
 				   ffpmeg_source_reconnect, s) != 0) {
-			blog(LOG_WARNING, "MP: Could not create reconnect thread");
+			blog(LOG_WARNING,
+			     "MP: Could not create reconnect thread");
 			return false;
 		}
 	}
 }
-
 
 static void ffmpeg_source_update(void *data, obs_data_t *settings)
 {
