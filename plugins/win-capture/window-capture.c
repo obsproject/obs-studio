@@ -31,6 +31,7 @@ struct winrt_exports {
 	struct winrt_capture *(*winrt_capture_init)(BOOL cursor, HWND window,
 						    BOOL client_area);
 	void (*winrt_capture_free)(struct winrt_capture *capture);
+	BOOL *(*winrt_capture_active)(const struct winrt_capture *capture);
 	void (*winrt_capture_show_cursor)(struct winrt_capture *capture,
 					  BOOL visible);
 	void (*winrt_capture_render)(struct winrt_capture *capture,
@@ -178,6 +179,7 @@ static bool load_winrt_imports(struct winrt_exports *exports, void *module,
 	WINRT_IMPORT(winrt_capture_cursor_toggle_supported);
 	WINRT_IMPORT(winrt_capture_init);
 	WINRT_IMPORT(winrt_capture_free);
+	WINRT_IMPORT(winrt_capture_active);
 	WINRT_IMPORT(winrt_capture_show_cursor);
 	WINRT_IMPORT(winrt_capture_render);
 	WINRT_IMPORT(winrt_capture_width);
@@ -501,10 +503,21 @@ static void wc_render(void *data, gs_effect_t *effect)
 {
 	struct window_capture *wc = data;
 	gs_effect_t *const opaque = obs_get_base_effect(OBS_EFFECT_OPAQUE);
-	if (wc->method == METHOD_WGC)
-		wc->exports.winrt_capture_render(wc->capture_winrt, opaque);
-	else
+	if (wc->method == METHOD_WGC) {
+		if (wc->capture_winrt) {
+			if (wc->exports.winrt_capture_active(
+				    wc->capture_winrt)) {
+				wc->exports.winrt_capture_render(
+					wc->capture_winrt, opaque);
+			} else {
+				wc->exports.winrt_capture_free(
+					wc->capture_winrt);
+				wc->capture_winrt = NULL;
+			}
+		}
+	} else {
 		dc_capture_render(&wc->capture, opaque);
+	}
 
 	UNUSED_PARAMETER(effect);
 }

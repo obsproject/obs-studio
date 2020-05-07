@@ -123,6 +123,8 @@ struct winrt_capture {
 	winrt::Windows::Graphics::Capture::GraphicsCaptureSession session{
 		nullptr};
 	winrt::Windows::Graphics::SizeInt32 last_size;
+	winrt::Windows::Graphics::Capture::GraphicsCaptureItem::Closed_revoker
+		closed;
 	winrt::Windows::Graphics::Capture::Direct3D11CaptureFramePool::
 		FrameArrived_revoker frame_arrived;
 
@@ -132,6 +134,7 @@ struct winrt_capture {
 	bool client_box_available;
 
 	bool thread_changed;
+	bool active;
 	struct winrt_capture *next;
 
 	void draw_cursor()
@@ -184,6 +187,14 @@ struct winrt_capture {
 		}
 
 		DestroyIcon(icon);
+	}
+
+	void
+	on_closed(winrt::Windows::Graphics::Capture::GraphicsCaptureItem const
+			  &sender,
+		  winrt::Windows::Foundation::IInspectable const &)
+	{
+		active = FALSE;
 	}
 
 	void on_frame_arrived(winrt::Windows::Graphics::Capture::
@@ -402,9 +413,12 @@ try {
 	capture->frame_pool = frame_pool;
 	capture->session = session;
 	capture->last_size = size;
+	capture->closed = item.Closed(winrt::auto_revoke,
+				      {capture, &winrt_capture::on_closed});
 	capture->frame_arrived = frame_pool.FrameArrived(
 		winrt::auto_revoke,
 		{capture, &winrt_capture::on_frame_arrived});
+	capture->active = TRUE;
 	capture->next = capture_list;
 	capture_list = capture;
 
@@ -449,6 +463,7 @@ extern "C" EXPORT void winrt_capture_free(struct winrt_capture *capture)
 		obs_leave_graphics();
 
 		capture->frame_arrived.revoke();
+		capture->closed.revoke();
 		capture->frame_pool.Close();
 		capture->session.Close();
 
@@ -476,6 +491,11 @@ static void draw_texture(struct winrt_capture *capture, gs_effect_t *effect)
 	gs_technique_end(tech);
 }
 
+extern "C" EXPORT BOOL winrt_capture_active(const struct winrt_capture *capture)
+{
+	return capture->active;
+}
+
 extern "C" EXPORT void winrt_capture_show_cursor(struct winrt_capture *capture,
 						 BOOL visible)
 {
@@ -485,7 +505,7 @@ extern "C" EXPORT void winrt_capture_show_cursor(struct winrt_capture *capture,
 extern "C" EXPORT void winrt_capture_render(struct winrt_capture *capture,
 					    gs_effect_t *effect)
 {
-	if (capture && capture->texture_written) {
+	if (capture->texture_written) {
 		if (!initialized_tls) {
 			struct winrt_capture *current = capture_list;
 			while (current) {
