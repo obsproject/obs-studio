@@ -699,6 +699,15 @@ static void receive_video(void *param, struct video_data *frame)
 	if (!data->start_timestamp)
 		data->start_timestamp = frame->timestamp;
 
+	ret = av_frame_make_writable(data->vframe);
+	if (ret < 0) {
+		blog(LOG_WARNING,
+		     "receive_video: Error obtaining writable "
+		     "AVFrame: %s",
+		     av_err2str(ret));
+		//FIXME: stop the encode with an error
+		return;
+	}
 	if (!!data->swscale)
 		sws_scale(data->swscale, (const uint8_t *const *)frame->data,
 			  (const int *)frame->linesize, 0, data->config.height,
