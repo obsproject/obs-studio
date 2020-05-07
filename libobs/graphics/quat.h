@@ -20,7 +20,8 @@
 #include "../util/c99defs.h"
 #include "math-defs.h"
 #include "vec3.h"
-#include <xmmintrin.h>
+
+#include "../util/sse-intrin.h"
 
 /*
  * Quaternion math

@@ -26,6 +26,7 @@ extern struct obs_output_info replay_buffer;
 extern struct obs_encoder_info aac_encoder_info;
 extern struct obs_encoder_info opus_encoder_info;
 extern struct obs_encoder_info nvenc_encoder_info;
+extern struct obs_output_info ffmpeg_encoded_output_info;
 
 #if LIBAVUTIL_VERSION_INT >= AV_VERSION_INT(55, 27, 100)
 #define LIBAVUTIL_VAAPI_AVAILABLE
@@ -40,42 +41,59 @@ extern struct obs_encoder_info vaapi_encoder_info;
 static const char *nvenc_check_name = "nvenc_check";
 
 #ifdef _WIN32
-static const wchar_t *blacklisted_adapters[] = {
-	L"720M", L"730M",  L"740M",  L"745M",  L"820M",  L"830M",
-	L"840M", L"845M",  L"920M",  L"930M",  L"940M",  L"945M",
-	L"1030", L"MX110", L"MX130", L"MX150", L"MX230", L"MX250",
-	L"M520", L"M500",  L"P500",  L"K620M",
+static const int blacklisted_adapters[] = {
+	0x1298, // GK208M [GeForce GT 720M]
+	0x1140, // GF117M [GeForce 610M/710M/810M/820M / GT 620M/625M/630M/720M]
+	0x1293, // GK208M [GeForce GT 730M]
+	0x1290, // GK208M [GeForce GT 730M]
+	0x0fe1, // GK107M [GeForce GT 730M]
+	0x0fdf, // GK107M [GeForce GT 740M]
+	0x1294, // GK208M [GeForce GT 740M]
+	0x1292, // GK208M [GeForce GT 740M]
+	0x0fe2, // GK107M [GeForce GT 745M]
+	0x0fe3, // GK107M [GeForce GT 745M]
+	0x1140, // GF117M [GeForce 610M/710M/810M/820M / GT 620M/625M/630M/720M]
+	0x0fed, // GK107M [GeForce 820M]
+	0x1340, // GM108M [GeForce 830M]
+	0x1393, // GM107M [GeForce 840M]
+	0x1341, // GM108M [GeForce 840M]
+	0x1398, // GM107M [GeForce 845M]
+	0x1390, // GM107M [GeForce 845M]
+	0x1344, // GM108M [GeForce 845M]
+	0x1299, // GK208BM [GeForce 920M]
+	0x134f, // GM108M [GeForce 920MX]
+	0x134e, // GM108M [GeForce 930MX]
+	0x1349, // GM108M [GeForce 930M]
+	0x1346, // GM108M [GeForce 930M]
+	0x179c, // GM107 [GeForce 940MX]
+	0x139c, // GM107M [GeForce 940M]
+	0x1347, // GM108M [GeForce 940M]
+	0x134d, // GM108M [GeForce 940MX]
+	0x134b, // GM108M [GeForce 940MX]
+	0x1399, // GM107M [GeForce 945M]
+	0x1348, // GM108M [GeForce 945M / 945A]
+	0x1d01, // GP108 [GeForce GT 1030]
+	0x0fc5, // GK107 [GeForce GT 1030]
+	0x174e, // GM108M [GeForce MX110]
+	0x174d, // GM108M [GeForce MX130]
+	0x1d10, // GP108M [GeForce MX150]
+	0x1d12, // GP108M [GeForce MX150]
+	0x1d11, // GP108M [GeForce MX230]
+	0x1d13, // GP108M [GeForce MX250]
+	0x1d52, // GP108BM [GeForce MX250]
+	0x137b, // GM108GLM [Quadro M520 Mobile]
+	0x1d33, // GP108GLM [Quadro P500 Mobile]
+	0x137a, // GM108GLM [Quadro K620M / Quadro M500M]
 };
 
 static const size_t num_blacklisted =
 	sizeof(blacklisted_adapters) / sizeof(blacklisted_adapters[0]);
 
-static bool is_adapter(const wchar_t *name, const wchar_t *adapter)
-{
-	const wchar_t *find = wstrstri(name, adapter);
-	if (!find) {
-		return false;
-	}
-
-	/* check before string for potential numeric mismatch */
-	if (find > name && iswdigit(find[-1]) && iswdigit(find[0])) {
-		return false;
-	}
-
-	/* check after string for potential numeric mismatch */
-	size_t len = wcslen(adapter);
-	if (iswdigit(find[len - 1]) && iswdigit(find[len])) {
-		return false;
-	}
-
-	return true;
-}
-
-static bool is_blacklisted(const wchar_t *name)
+static bool is_blacklisted(const int device_id)
 {
 	for (size_t i = 0; i < num_blacklisted; i++) {
-		const wchar_t *blacklisted_adapter = blacklisted_adapters[i];
-		if (is_adapter(name, blacklisted_adapter)) {
+		const int blacklisted_adapter = blacklisted_adapters[i];
+		if (device_id == blacklisted_adapter) {
 			return true;
 		}
 	}
@@ -128,8 +146,8 @@ static bool nvenc_device_available(void)
 			continue;
 		}
 
-		if (wstrstri(desc.Description, L"nvidia") &&
-		    !is_blacklisted(desc.Description)) {
+		// 0x10de = NVIDIA Corporation
+		if (desc.VendorId == 0x10de && !is_blacklisted(desc.DeviceId)) {
 			available = true;
 			goto finish;
 		}
@@ -215,12 +233,18 @@ bool obs_module_load(void)
 	obs_register_output(&replay_buffer);
 	obs_register_encoder(&aac_encoder_info);
 	obs_register_encoder(&opus_encoder_info);
+	obs_register_output(&ffmpeg_encoded_output_info);
 #ifndef __APPLE__
 	if (nvenc_supported()) {
 		blog(LOG_INFO, "NVENC supported");
 #ifdef _WIN32
 		if (get_win_ver_int() > 0x0601) {
 			jim_nvenc_load();
+		} else {
+			// if on Win 7, new nvenc isn't available so there's
+			// no nvenc encoder for the user to select, expose
+			// the old encoder directly
+			nvenc_encoder_info.caps &= ~OBS_ENCODER_CAP_INTERNAL;
 		}
 #endif
 		obs_register_encoder(&nvenc_encoder_info);

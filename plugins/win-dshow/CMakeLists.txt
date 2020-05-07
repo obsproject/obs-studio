@@ -7,16 +7,20 @@ project(win-dshow)
 
 find_package(FFmpeg REQUIRED COMPONENTS avcodec avutil)
 include_directories(${FFMPEG_INCLUDE_DIRS})
+include_directories(${OBS_JANSSON_INCLUDE_DIRS})
 
 set(win-dshow_HEADERS
 	encode-dstr.hpp
 	ffmpeg-decode.h)
 
+set(MODULE_DESCRIPTION "OBS DirectShow module")
+configure_file(${CMAKE_SOURCE_DIR}/cmake/winrc/obs-module.rc.in win-dshow.rc)
 set(win-dshow_SOURCES
 	win-dshow.cpp
 	win-dshow-encoder.cpp
 	dshow-plugin.cpp
-	ffmpeg-decode.c)
+	ffmpeg-decode.c
+	win-dshow.rc)
 
 set(libdshowcapture_SOURCES
 	libdshowcapture/source/capture-filter.cpp
@@ -31,6 +35,8 @@ set(libdshowcapture_SOURCES
 	libdshowcapture/source/dshow-formats.cpp
 	libdshowcapture/source/dshow-media-type.cpp
 	libdshowcapture/source/dshow-encoded-device.cpp
+	libdshowcapture/source/dshow-settings.cpp
+	libdshowcapture/source/dshow-dialogbox.cpp
 	libdshowcapture/source/log.cpp)
 
 set(libdshowcapture_HEADERS
@@ -46,6 +52,8 @@ set(libdshowcapture_HEADERS
 	libdshowcapture/source/dshow-enum.hpp
 	libdshowcapture/source/dshow-formats.hpp
 	libdshowcapture/source/dshow-media-type.hpp
+	libdshowcapture/source/dshow-settings.hpp
+	libdshowcapture/source/dshow-dialogbox.hpp
 	libdshowcapture/source/log.hpp)
 
 add_library(win-dshow MODULE
@@ -58,6 +66,7 @@ target_link_libraries(win-dshow
 	strmiids
 	ksuser
 	wmcodecdspuuid
-	${FFMPEG_LIBRARIES})
+	${FFMPEG_LIBRARIES}
+	${OBS_JANSSON_IMPORT})
 
 install_obs_plugin_with_data(win-dshow data)

@@ -279,6 +279,8 @@ static void obs_encoder_actually_destroy(obs_encoder_t *encoder)
 		obs_context_data_free(&encoder->context);
 		if (encoder->owns_info_id)
 			bfree((void *)encoder->info.id);
+		if (encoder->last_error_message)
+			bfree(encoder->last_error_message);
 		bfree(encoder);
 	}
 }
@@ -526,6 +528,7 @@ void obs_encoder_shutdown(obs_encoder_t *encoder)
 		encoder->offset_usec = 0;
 		encoder->start_ts = 0;
 	}
+	obs_encoder_set_last_error(encoder, NULL);
 	pthread_mutex_unlock(&encoder->init_mutex);
 }
 
@@ -697,6 +700,14 @@ void obs_encoder_set_scaled_size(obs_encoder_t *encoder, uint32_t width,
 
 	encoder->scaled_width = width;
 	encoder->scaled_height = height;
+}
+
+bool obs_encoder_scaling_enabled(const obs_encoder_t *encoder)
+{
+	if (!obs_encoder_valid(encoder, "obs_encoder_scaling_enabled"))
+		return false;
+
+	return encoder->scaled_width || encoder->scaled_height;
 }
 
 uint32_t obs_encoder_get_width(const obs_encoder_t *encoder)
@@ -1367,12 +1378,14 @@ void obs_encoder_packet_create_instance(struct encoder_packet *dst,
 	memcpy(dst->data, src->data, src->size);
 }
 
+/* OBS_DEPRECATED */
 void obs_duplicate_encoder_packet(struct encoder_packet *dst,
 				  const struct encoder_packet *src)
 {
 	obs_encoder_packet_create_instance(dst, src);
 }
 
+/* OBS_DEPRECATED */
 void obs_free_encoder_packet(struct encoder_packet *packet)
 {
 	obs_encoder_packet_release(packet);
@@ -1533,10 +1546,32 @@ bool obs_encoder_paused(const obs_encoder_t *encoder)
 		       : false;
 }
 
-void obs_outputs_set_last_error(obs_encoder_t *encoder, const char * error_text)
+void obs_outputs_set_last_error(obs_encoder_t *encoder, const char *error_text)
 {
 	for (size_t i = 0; i < encoder->outputs.num; i++) {
 		struct obs_output *output = encoder->outputs.array[i];
 		obs_output_set_last_error(output, error_text);
 	}
+}
+
+const char *obs_encoder_get_last_error(obs_encoder_t *encoder)
+{
+	if (!obs_encoder_valid(encoder, "obs_encoder_get_last_error"))
+		return NULL;
+
+	return encoder->last_error_message;
+}
+
+void obs_encoder_set_last_error(obs_encoder_t *encoder, const char *message)
+{
+	if (!obs_encoder_valid(encoder, "obs_encoder_set_last_error"))
+		return;
+
+	if (encoder->last_error_message)
+		bfree(encoder->last_error_message);
+
+	if (message)
+		encoder->last_error_message = bstrdup(message);
+	else
+		encoder->last_error_message = NULL;
 }

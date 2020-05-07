@@ -110,6 +110,10 @@ struct mp_media {
 	bool process_audio;
 	bool process_video;
 	int32_t pix_format;
+	bool pause;
+	bool reset_ts;
+	bool seek;
+	int64_t seek_pos;
 };
 
 typedef struct mp_media mp_media_t;
@@ -137,6 +141,9 @@ extern void mp_media_free(mp_media_t *media);
 
 extern void mp_media_play(mp_media_t *media, bool loop);
 extern void mp_media_stop(mp_media_t *media);
+extern void mp_media_play_pause(mp_media_t *media, bool pause);
+extern int64_t mp_get_current_time(mp_media_t *m);
+extern void mp_media_seek_to(mp_media_t *m, int64_t pos);
 
 /* #define DETAILED_DEBUG_INFO */
 

@@ -9,7 +9,6 @@
 #include "qt-wrappers.hpp"
 #include "platform.hpp"
 
-static QList<OBSProjector *> windowedProjectors;
 static QList<OBSProjector *> multiviewProjectors;
 static bool updatingMultiview = false, drawLabel, drawSafeArea, mouseSwitching,
 	    transitionOnDoubleClick;
@@ -17,38 +16,27 @@ static MultiviewLayout multiviewLayout;
 static size_t maxSrcs, numSrcs;
 
 OBSProjector::OBSProjector(QWidget *widget, obs_source_t *source_, int monitor,
-			   QString title, ProjectorType type_)
+			   ProjectorType type_)
 	: OBSQTDisplay(widget, Qt::Window),
 	  source(source_),
 	  removedSignal(obs_source_get_signal_handler(source), "remove",
 			OBSSourceRemoved, this)
 {
-	projectorTitle = std::move(title);
-	savedMonitor = monitor;
-	isWindow = savedMonitor < 0;
 	type = type_;
 
-	if (isWindow) {
-		setWindowIcon(
-			QIcon::fromTheme("obs", QIcon(":/res/images/obs.png")));
+	setWindowIcon(QIcon::fromTheme("obs", QIcon(":/res/images/obs.png")));
 
-		UpdateProjectorTitle(projectorTitle);
-		windowedProjectors.push_back(this);
-
+	if (monitor == -1)
 		resize(480, 270);
-	} else {
-		setWindowFlags(Qt::FramelessWindowHint |
-			       Qt::X11BypassWindowManagerHint);
+	else
+		SetMonitor(monitor);
 
-		QScreen *screen = QGuiApplication::screens()[savedMonitor];
-		setGeometry(screen->geometry());
+	UpdateProjectorTitle(QT_UTF8(obs_source_get_name(source)));
 
-		QAction *action = new QAction(this);
-		action->setShortcut(Qt::Key_Escape);
-		addAction(action);
-		connect(action, SIGNAL(triggered()), this,
-			SLOT(EscapeTriggered()));
-	}
+	QAction *action = new QAction(this);
+	action->setShortcut(Qt::Key_Escape);
+	addAction(action);
+	connect(action, SIGNAL(triggered()), this, SLOT(EscapeTriggered()));
 
 	SetAlwaysOnTop(this, config_get_bool(GetGlobalConfig(), "BasicWindow",
 					     "ProjectorAlwaysOnTop"));
@@ -69,14 +57,6 @@ OBSProjector::OBSProjector(QWidget *widget, obs_source_t *source_, int monitor,
 	};
 
 	connect(this, &OBSQTDisplay::DisplayCreated, addDrawCallback);
-
-	bool hideCursor = config_get_bool(GetGlobalConfig(), "BasicWindow",
-					  "HideProjectorCursor");
-	if (hideCursor && !isWindow && type != ProjectorType::Multiview) {
-		QPixmap empty(16, 16);
-		empty.fill(Qt::transparent);
-		setCursor(QCursor(empty));
-	}
 
 	if (type == ProjectorType::Multiview) {
 		obs_enter_graphics();
@@ -146,8 +126,7 @@ OBSProjector::OBSProjector(QWidget *widget, obs_source_t *source_, int monitor,
 	show();
 
 	// We need it here to allow keyboard input in X11 to listen to Escape
-	if (!isWindow)
-		activateWindow();
+	activateWindow();
 }
 
 OBSProjector::~OBSProjector()
@@ -180,10 +159,27 @@ OBSProjector::~OBSProjector()
 	if (type == ProjectorType::Multiview)
 		multiviewProjectors.removeAll(this);
 
-	if (isWindow)
-		windowedProjectors.removeAll(this);
-
 	App()->DecrementSleepInhibition();
+}
+
+void OBSProjector::SetMonitor(int monitor)
+{
+	savedMonitor = monitor;
+	QScreen *screen = QGuiApplication::screens()[monitor];
+	setGeometry(screen->geometry());
+	showFullScreen();
+	SetHideCursor();
+}
+
+void OBSProjector::SetHideCursor()
+{
+	bool hideCursor = config_get_bool(GetGlobalConfig(), "BasicWindow",
+					  "HideProjectorCursor");
+
+	if (hideCursor && type != ProjectorType::Multiview)
+		setCursor(Qt::BlankCursor);
+	else
+		setCursor(Qt::ArrowCursor);
 }
 
 static OBSSource CreateLabel(const char *name, size_t h)
@@ -591,7 +587,7 @@ void OBSProjector::OBSRenderMultiview(void *data, uint32_t cx, uint32_t cy)
 		gs_matrix_pop();
 	}
 
-	// Region for future usage with aditional info.
+	// Region for future usage with additional info.
 	if (multiviewLayout == MultiviewLayout::HORIZONTAL_TOP_24_SCENES) {
 		// Just paint the background for now
 		paintAreaWithColor(window->thickness, window->thickness,
@@ -653,6 +649,9 @@ void OBSProjector::OBSRender(void *data, uint32_t cx, uint32_t cy)
 			source = curSource;
 			window->source = source;
 		}
+	} else if (window->type == ProjectorType::Preview &&
+		   !main->IsPreviewProgramMode()) {
+		window->source = nullptr;
 	}
 
 	if (source)
@@ -817,7 +816,19 @@ void OBSProjector::mousePressEvent(QMouseEvent *event)
 	OBSQTDisplay::mousePressEvent(event);
 
 	if (event->button() == Qt::RightButton) {
+		OBSBasic *main =
+			reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
 		QMenu popup(this);
+
+		QMenu *projectorMenu = new QMenu(QTStr("Fullscreen"));
+		main->AddProjectorMenuMonitors(projectorMenu, this,
+					       SLOT(OpenFullScreenProjector()));
+		popup.addMenu(projectorMenu);
+
+		if (GetMonitor() > -1)
+			popup.addAction(QTStr("Windowed"), this,
+					SLOT(OpenWindowedProjector()));
+
 		popup.addAction(QTStr("Close"), this, SLOT(EscapeTriggered()));
 		popup.exec(QCursor::pos());
 	}
@@ -841,7 +852,8 @@ void OBSProjector::mousePressEvent(QMouseEvent *event)
 
 void OBSProjector::EscapeTriggered()
 {
-	deleteLater();
+	OBSBasic *main = reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
+	main->DeleteProjector(this);
 }
 
 void OBSProjector::UpdateMultiview()
@@ -934,15 +946,39 @@ void OBSProjector::UpdateMultiview()
 
 void OBSProjector::UpdateProjectorTitle(QString name)
 {
-	projectorTitle = name;
+	bool window = (GetMonitor() == -1);
 
 	QString title = nullptr;
 	switch (type) {
 	case ProjectorType::Scene:
-		title = QTStr("SceneWindow") + " - " + name;
+		if (!window)
+			title = QTStr("SceneProjector") + " - " + name;
+		else
+			title = QTStr("SceneWindow") + " - " + name;
 		break;
 	case ProjectorType::Source:
-		title = QTStr("SourceWindow") + " - " + name;
+		if (!window)
+			title = QTStr("SourceProjector") + " - " + name;
+		else
+			title = QTStr("SourceWindow") + " - " + name;
+		break;
+	case ProjectorType::Preview:
+		if (!window)
+			title = QTStr("PreviewProjector");
+		else
+			title = QTStr("PreviewWindow");
+		break;
+	case ProjectorType::StudioProgram:
+		if (!window)
+			title = QTStr("StudioProgramProjector");
+		else
+			title = QTStr("StudioProgramWindow");
+		break;
+	case ProjectorType::Multiview:
+		if (!window)
+			title = QTStr("MultiviewProjector");
+		else
+			title = QTStr("MultiviewWindowed");
 		break;
 	default:
 		title = name;
@@ -983,7 +1019,41 @@ void OBSProjector::UpdateMultiviewProjectors()
 
 void OBSProjector::RenameProjector(QString oldName, QString newName)
 {
-	for (auto &projector : windowedProjectors)
-		if (projector->projectorTitle == oldName)
-			projector->UpdateProjectorTitle(newName);
+	if (oldName == newName)
+		return;
+
+	UpdateProjectorTitle(newName);
+}
+
+void OBSProjector::OpenFullScreenProjector()
+{
+	if (!isFullScreen())
+		prevGeometry = geometry();
+
+	int monitor = sender()->property("monitor").toInt();
+	SetMonitor(monitor);
+
+	UpdateProjectorTitle(QT_UTF8(obs_source_get_name(source)));
+}
+
+void OBSProjector::OpenWindowedProjector()
+{
+	showFullScreen();
+	showNormal();
+	setCursor(Qt::ArrowCursor);
+
+	if (!prevGeometry.isNull())
+		setGeometry(prevGeometry);
+	else
+		resize(480, 270);
+
+	savedMonitor = -1;
+
+	UpdateProjectorTitle(QT_UTF8(obs_source_get_name(source)));
+}
+
+void OBSProjector::closeEvent(QCloseEvent *event)
+{
+	EscapeTriggered();
+	event->accept();
 }

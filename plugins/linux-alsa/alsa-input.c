@@ -88,6 +88,7 @@ struct obs_source_info alsa_input_capture = {
 	.get_defaults = alsa_get_defaults,
 	.get_name = alsa_get_name,
 	.get_properties = alsa_get_properties,
+	.icon_type = OBS_ICON_TYPE_AUDIO_INPUT,
 };
 
 static bool _alsa_try_open(struct alsa_data *);

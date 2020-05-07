@@ -31,7 +31,7 @@ bool OBSBasicSourceSelect::EnumSources(void *data, obs_source_t *source)
 	OBSBasicSourceSelect *window =
 		static_cast<OBSBasicSourceSelect *>(data);
 	const char *name = obs_source_get_name(source);
-	const char *id = obs_source_get_id(source);
+	const char *id = obs_source_get_unversioned_id(source);
 
 	if (strcmp(id, window->id) == 0)
 		window->ui->sourceList->addItem(QT_UTF8(name));
@@ -44,7 +44,7 @@ bool OBSBasicSourceSelect::EnumGroups(void *data, obs_source_t *source)
 	OBSBasicSourceSelect *window =
 		static_cast<OBSBasicSourceSelect *>(data);
 	const char *name = obs_source_get_name(source);
-	const char *id = obs_source_get_id(source);
+	const char *id = obs_source_get_unversioned_id(source);
 
 	if (strcmp(id, window->id) == 0) {
 		OBSBasic *main =
@@ -82,7 +82,7 @@ void OBSBasicSourceSelect::OBSSourceRemoved(void *data, calldata_t *calldata)
 void OBSBasicSourceSelect::SourceAdded(OBSSource source)
 {
 	const char *name = obs_source_get_name(source);
-	const char *sourceId = obs_source_get_id(source);
+	const char *sourceId = obs_source_get_unversioned_id(source);
 
 	if (strcmp(sourceId, id) != 0)
 		return;
@@ -93,7 +93,7 @@ void OBSBasicSourceSelect::SourceAdded(OBSSource source)
 void OBSBasicSourceSelect::SourceRemoved(OBSSource source)
 {
 	const char *name = obs_source_get_name(source);
-	const char *sourceId = obs_source_get_id(source);
+	const char *sourceId = obs_source_get_unversioned_id(source);
 
 	if (strcmp(sourceId, id) != 0)
 		return;
@@ -184,7 +184,8 @@ bool AddNew(QWidget *parent, const char *id, const char *name,
 					   QTStr("NameExists.Text"));
 
 	} else {
-		source = obs_source_create(id, name, NULL, nullptr);
+		const char *v_id = obs_get_latest_input_type_id(id);
+		source = obs_source_create(v_id, name, NULL, nullptr);
 
 		if (source) {
 			AddSourceData data;
@@ -249,7 +250,8 @@ static inline const char *GetSourceDisplayName(const char *id)
 {
 	if (strcmp(id, "scene") == 0)
 		return Str("Basic.Scene");
-	return obs_source_get_display_name(id);
+	const char *v_id = obs_get_latest_input_type_id(id);
+	return obs_source_get_display_name(v_id);
 }
 
 Q_DECLARE_METATYPE(OBSScene);

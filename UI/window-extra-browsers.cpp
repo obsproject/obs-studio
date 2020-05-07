@@ -138,7 +138,7 @@ void ExtraBrowsersModel::AddDeleteButton(int idx)
 	QPushButton *del = new DelButton(index);
 	del->setProperty("themeID", "trashIcon");
 	del->setObjectName("extraPanelDelete");
-	del->setFixedSize(QSize(20, 20));
+	del->setMinimumSize(QSize(20, 20));
 	connect(del, &QPushButton::clicked, this,
 		&ExtraBrowsersModel::DeleteItem);
 
@@ -522,7 +522,7 @@ void OBSBasic::AddExtraBrowserDock(const QString &title, const QString &url,
 	BrowserDock *dock = new BrowserDock();
 	dock->setObjectName(title + OBJ_NAME_SUFFIX);
 	dock->resize(460, 600);
-	dock->setMinimumSize(150, 150);
+	dock->setMinimumSize(80, 80);
 	dock->setWindowTitle(title);
 	dock->setAllowedAreas(Qt::AllDockWidgetAreas);
 
@@ -532,6 +532,24 @@ void OBSBasic::AddExtraBrowserDock(const QString &title, const QString &url,
 		browser->allowAllPopups(true);
 
 	dock->SetWidget(browser);
+
+	/* Add support for Twitch Dashboard panels */
+	if (url.contains("twitch.tv/popout") &&
+	    url.contains("dashboard/live")) {
+		QRegularExpression re("twitch.tv\\/popout\\/([^/]+)\\/");
+		QRegularExpressionMatch match = re.match(url);
+		QString username = match.captured(1);
+		if (username.length() > 0) {
+			std::string script;
+			script =
+				"Object.defineProperty(document, 'referrer', { get: () => '";
+			script += "https://twitch.tv/";
+			script += QT_TO_UTF8(username);
+			script += "/dashboard/live";
+			script += "'});";
+			browser->setStartupScript(script);
+		}
+	}
 
 	addDockWidget(Qt::RightDockWidgetArea, dock);
 

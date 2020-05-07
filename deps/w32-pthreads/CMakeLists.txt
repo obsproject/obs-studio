@@ -4,8 +4,11 @@ if(NOT WIN32)
 	return()
 endif()
 
+set(MODULE_DESCRIPTION "POSIX Threads for Windows")
+configure_file(${CMAKE_SOURCE_DIR}/cmake/winrc/obs-module.rc.in w32-pthreads.rc)
 set(w32-pthreads_SOURCES
-	pthread.c)
+	pthread.c
+	w32-pthreads.rc)
 
 set(w32-pthreads_HEADERS
 	implement.h

@@ -173,7 +173,7 @@ class AutoConfigStreamPage : public QWizardPage {
 	bool ready = false;
 
 	void LoadServices(bool showAll);
-	inline bool IsCustom() const;
+	inline bool IsCustomService() const;
 
 public:
 	AutoConfigStreamPage(QWidget *parent = nullptr);

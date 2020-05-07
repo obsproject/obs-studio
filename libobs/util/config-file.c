@@ -130,7 +130,7 @@ static bool config_parse_string(struct lexer *lex, struct strref *ref, char end)
 		strref_add(ref, &token.text);
 	}
 
-	remove_ref_whitespace(ref);
+	//remove_ref_whitespace(ref);
 	return success;
 }
 

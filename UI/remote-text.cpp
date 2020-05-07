@@ -15,7 +15,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#include <curl/curl.h>
+#include <util/curl/curl-helper.h>
 #include "obs-app.hpp"
 #include "qt-wrappers.hpp"
 #include "remote-text.hpp"
@@ -70,6 +70,7 @@ void RemoteTextThread::run()
 		curl_easy_setopt(curl.get(), CURLOPT_WRITEFUNCTION,
 				 string_write);
 		curl_easy_setopt(curl.get(), CURLOPT_WRITEDATA, &str);
+		curl_obs_set_revoke_setting(curl.get());
 
 		if (timeoutSec)
 			curl_easy_setopt(curl.get(), CURLOPT_TIMEOUT,
@@ -155,6 +156,8 @@ bool GetRemoteFile(const char *url, std::string &str, std::string &error,
 		curl_easy_setopt(curl.get(), CURLOPT_WRITEFUNCTION,
 				 string_write);
 		curl_easy_setopt(curl.get(), CURLOPT_WRITEDATA, &str);
+		curl_obs_set_revoke_setting(curl.get());
+
 		if (signature) {
 			curl_easy_setopt(curl.get(), CURLOPT_HEADERFUNCTION,
 					 header_write);

@@ -26,6 +26,7 @@ endif()
 
 if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/ftl-sdk/CMakeLists.txt")
 	find_package(Libcurl REQUIRED)
+	message(STATUS "Found ftl-sdk: ftl outputs enabled")
 
 	add_definitions(-DFTL_STATIC_COMPILE)
 
@@ -154,6 +155,13 @@ set(obs-outputs_SOURCES
 	flv-output.c
 	flv-mux.c
 	net-if.c)
+
+if(WIN32)
+	set(MODULE_DESCRIPTION "OBS output module")
+	configure_file(${CMAKE_SOURCE_DIR}/cmake/winrc/obs-module.rc.in obs-outputs.rc)
+	list(APPEND obs-outputs_SOURCES
+		obs-outputs.rc)
+endif()
 
 add_library(obs-outputs MODULE
 	${ftl_SOURCES}

@@ -232,6 +232,19 @@
    </item>
   </layout>
  </widget>
+ <tabstops>
+  <tabstop>streamingTimerHours</tabstop>
+  <tabstop>streamingTimerMinutes</tabstop>
+  <tabstop>streamingTimerSeconds</tabstop>
+  <tabstop>outputTimerStream</tabstop>
+  <tabstop>autoStartStreamTimer</tabstop>
+  <tabstop>recordingTimerHours</tabstop>
+  <tabstop>recordingTimerMinutes</tabstop>
+  <tabstop>recordingTimerSeconds</tabstop>
+  <tabstop>outputTimerRecord</tabstop>
+  <tabstop>autoStartRecordTimer</tabstop>
+  <tabstop>pauseRecordTimer</tabstop>
+ </tabstops>
  <resources/>
  <connections/>
 </ui>

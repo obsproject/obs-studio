@@ -45,3 +45,8 @@ extern HWND find_window_one_of(enum window_search_mode mode,
 
 extern int window_rating_by_list(HWND window, 
 			const DARRAY(struct game_capture_picking_info) * games_whitelist, int *found_index);
+
+extern HWND find_window_top_level(enum window_search_mode mode,
+				  enum window_priority priority,
+				  const char *class, const char *title,
+				  const char *exe);

@@ -5,12 +5,13 @@
 #include <util/threading.h>
 #include <windows.h>
 #include <dxgi.h>
-#include <emmintrin.h>
+#include <util/sse-intrin.h>
 #include <ipc-util/pipe.h>
 #include <graphics/image-file.h>
 #include "obfuscate.h"
 #include "inject-library.h"
 #include "graphics-hook-info.h"
+#include "graphics-hook-ver.h"
 #include "window-helpers.h"
 #include "cursor-capture.h"
 #include "app-helpers.h"
@@ -241,7 +242,7 @@ static inline HANDLE open_map_plus_id(struct game_capture *gc,
 				      const wchar_t *name, DWORD id)
 {
 	wchar_t new_name[64];
-	_snwprintf(new_name, 64, L"%s%lu", name, id);
+	swprintf(new_name, 64, L"%s%lu", name, id);
 
 	debug("map id: %S", new_name);
 
@@ -806,10 +807,11 @@ static inline bool open_target_process(struct game_capture *gc)
 static inline bool init_keepalive(struct game_capture *gc)
 {
 	wchar_t new_name[64];
-	_snwprintf(new_name, 64, L"%s%lu", WINDOW_HOOK_KEEPALIVE,
-		   gc->process_id);
+	swprintf(new_name, 64, WINDOW_HOOK_KEEPALIVE L"%lu", gc->process_id);
 
-	gc->keepalive_mutex = CreateMutexW(NULL, false, new_name);
+	gc->keepalive_mutex = gc->is_app
+				      ? create_app_mutex(gc->app_sid, new_name)
+				      : CreateMutexW(NULL, false, new_name);
 	if (!gc->keepalive_mutex) {
 		warn("Failed to create keepalive mutex: %lu", GetLastError());
 		return false;
@@ -1031,23 +1033,22 @@ static inline bool create_inject_process(struct game_capture *gc,
 	return success;
 }
 
+extern char *get_hook_path(bool b64);
+
 static inline bool inject_hook(struct game_capture *gc)
 {
 	bool matching_architecture;
 	bool success = false;
-	const char *hook_dll;
 	char *inject_path;
 	char *hook_path;
 
 	if (gc->process_is_64bit) {
-		hook_dll = "graphics-hook64.dll";
 		inject_path = obs_module_file("inject-helper64.exe");
 	} else {
-		hook_dll = "graphics-hook32.dll";
 		inject_path = obs_module_file("inject-helper32.exe");
 	}
 
-	hook_path = obs_module_file(hook_dll);
+	hook_path = get_hook_path(gc->process_is_64bit);
 
 	if (!check_file_integrity(gc, inject_path, "inject helper")) {
 		goto cleanup;
@@ -1068,7 +1069,7 @@ static inline bool inject_hook(struct game_capture *gc)
 	} else {
 		info("using helper (%s hook)",
 		     use_anticheat(gc) ? "compatibility" : "direct");
-		success = create_inject_process(gc, inject_path, hook_dll);
+		success = create_inject_process(gc, inject_path, hook_path);
 	}
 
 cleanup:
@@ -1392,6 +1393,17 @@ static inline bool init_events(struct game_capture *gc)
 
 enum capture_result { CAPTURE_FAIL, CAPTURE_RETRY, CAPTURE_SUCCESS };
 
+static inline bool init_data_map(struct game_capture *gc, HWND window)
+{
+	wchar_t name[64];
+	swprintf(name, 64, SHMEM_TEXTURE "_%" PRIu64 "_",
+		 (uint64_t)(uintptr_t)window);
+
+	gc->hook_data_map =
+		open_map_plus_id(gc, name, gc->global_hook_info->map_id);
+	return !!gc->hook_data_map;
+}
+
 static inline enum capture_result init_capture_data(struct game_capture *gc)
 {
 	gc->cx = gc->global_hook_info->cx;
@@ -1406,10 +1418,19 @@ static inline enum capture_result init_capture_data(struct game_capture *gc)
 	CloseHandle(gc->hook_data_map);
 	send_game_capture_status_event(gc);
 
-	gc->hook_data_map = open_map_plus_id(gc, SHMEM_TEXTURE,
-					     gc->global_hook_info->map_id);
+	DWORD error = 0;
+	if (!init_data_map(gc, gc->window)) {
+		HWND retry_hwnd = (HWND)(uintptr_t)gc->global_hook_info->window;
+		error = GetLastError();
+
+		/* if there's an error, just override.  some windows don't play
+		 * nice. */
+		if (init_data_map(gc, retry_hwnd)) {
+			error = 0;
+		}
+	}
+
 	if (!gc->hook_data_map) {
-		DWORD error = GetLastError();
 		if (error == 2) {
 			return CAPTURE_RETRY;
 		} else {
@@ -1452,11 +1473,11 @@ static void copy_b5g6r5_tex(struct game_capture *gc, int cur_texture,
 	uint32_t gc_cy = gc->cy;
 	uint32_t gc_pitch = gc->pitch;
 
-	for (uint32_t y = 0; y < gc_cy; y++) {
+	for (size_t y = 0; y < gc_cy; y++) {
 		uint8_t *row = input + (gc_pitch * y);
 		uint8_t *out = data + (pitch * y);
 
-		for (uint32_t x = 0; x < gc_cx; x += 8) {
+		for (size_t x = 0; x < gc_cx; x += 8) {
 			__m128i pixels_blue, pixels_green, pixels_red;
 			__m128i pixels_result;
 			__m128i *pixels_dest;
@@ -1540,11 +1561,11 @@ static void copy_b5g5r5a1_tex(struct game_capture *gc, int cur_texture,
 	uint32_t gc_cy = gc->cy;
 	uint32_t gc_pitch = gc->pitch;
 
-	for (uint32_t y = 0; y < gc_cy; y++) {
+	for (size_t y = 0; y < gc_cy; y++) {
 		uint8_t *row = input + (gc_pitch * y);
 		uint8_t *out = data + (pitch * y);
 
-		for (uint32_t x = 0; x < gc_cx; x += 8) {
+		for (size_t x = 0; x < gc_cx; x += 8) {
 			__m128i pixels_blue, pixels_green, pixels_red,
 				pixels_alpha;
 			__m128i pixels_result;
@@ -1688,7 +1709,7 @@ static void copy_shmem_tex(struct game_capture *gc)
 
 		} else if (pitch == gc->pitch) {
 			memcpy(data, gc->texture_buffers[cur_texture],
-			       pitch * gc->cy);
+			       (size_t)pitch * (size_t)gc->cy);
 		} else {
 			uint8_t *input = gc->texture_buffers[cur_texture];
 			uint32_t best_pitch = pitch < gc->pitch ? pitch
@@ -1775,6 +1796,17 @@ static inline bool init_shtex_capture(struct game_capture *gc)
 static bool start_capture(struct game_capture *gc)
 {
 	debug("Starting capture");
+
+	/* prevent from using a DLL version that's higher than current */
+	if (gc->global_hook_info->hook_ver_major > HOOK_VER_MAJOR) {
+		warn("cannot initialize hook, DLL hook version is "
+		     "%" PRIu32 ".%" PRIu32
+		     ", current plugin hook major version is %d.%d",
+		     gc->global_hook_info->hook_ver_major,
+		     gc->global_hook_info->hook_ver_minor, HOOK_VER_MAJOR,
+		     HOOK_VER_MINOR);
+		return false;
+	}
 
 	if (gc->global_hook_info->type == CAPTURE_TYPE_MEMORY) {
 		if (!init_shmem_capture(gc)) {
@@ -2150,7 +2182,7 @@ static bool use_scaling_callback(obs_properties_t *ppts, obs_property_t *p,
 	return true;
 }
 
-static void insert_preserved_val(obs_property_t *p, const char *val)
+static void insert_preserved_val(obs_property_t *p, const char *val, size_t idx)
 {
 	char *class = NULL;
 	char *title = NULL;
@@ -2160,8 +2192,8 @@ static void insert_preserved_val(obs_property_t *p, const char *val)
 	build_window_strings(val, &class, &title, &executable, NULL);
 
 	dstr_printf(&desc, "[%s]: %s", executable, title);
-	obs_property_list_insert_string(p, 1, desc.array, val);
-	obs_property_list_item_disable(p, 1, true);
+	obs_property_list_insert_string(p, idx, desc.array, val);
+	obs_property_list_item_disable(p, idx, true);
 
 	dstr_free(&desc);
 	bfree(class);
@@ -2169,14 +2201,15 @@ static void insert_preserved_val(obs_property_t *p, const char *val)
 	bfree(executable);
 }
 
-static bool window_changed_callback(obs_properties_t *ppts, obs_property_t *p,
-				    obs_data_t *settings)
+bool check_window_property_setting(obs_properties_t *ppts, obs_property_t *p,
+				   obs_data_t *settings, const char *val,
+				   size_t idx)
 {
 	const char *cur_val;
 	bool match = false;
 	size_t i = 0;
 
-	cur_val = obs_data_get_string(settings, SETTING_CAPTURE_WINDOW);
+	cur_val = obs_data_get_string(settings, val);
 	if (!cur_val) {
 		return false;
 	}
@@ -2193,12 +2226,19 @@ static bool window_changed_callback(obs_properties_t *ppts, obs_property_t *p,
 	}
 
 	if (cur_val && *cur_val && !match) {
-		insert_preserved_val(p, cur_val);
+		insert_preserved_val(p, cur_val, idx);
 		return true;
 	}
 
 	UNUSED_PARAMETER(ppts);
 	return false;
+}
+
+static bool window_changed_callback(obs_properties_t *ppts, obs_property_t *p,
+				    obs_data_t *settings)
+{
+	return check_window_property_setting(ppts, p, settings,
+					     SETTING_CAPTURE_WINDOW, 1);
 }
 
 static const double default_scale_vals[] = {1.25, 1.5, 2.0, 2.5, 3.0};
@@ -2365,4 +2405,5 @@ struct obs_source_info game_capture_info = {
 	.update = game_capture_update,
 	.video_tick = game_capture_tick,
 	.video_render = game_capture_render,
+	.icon_type = OBS_ICON_TYPE_GAME_CAPTURE,
 };

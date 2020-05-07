@@ -82,6 +82,7 @@ extern "C" void xcomposite_load(void)
 	sinfo.video_render = xcompcap_video_render;
 	sinfo.get_width = xcompcap_getwidth;
 	sinfo.get_height = xcompcap_getheight;
+	sinfo.icon_type = OBS_ICON_TYPE_WINDOW_CAPTURE,
 
 	obs_register_source(&sinfo);
 }

@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>981</width>
-    <height>748</height>
+    <height>726</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -28,7 +28,7 @@
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout">
-     <item alignment="Qt::AlignLeft">
+     <item>
       <widget class="QListWidget" name="listWidget">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Minimum" vsizetype="Expanding">
@@ -152,7 +152,7 @@
               <x>0</x>
               <y>0</y>
               <width>803</width>
-              <height>977</height>
+              <height>1026</height>
              </rect>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_19">
@@ -606,6 +606,44 @@
                  </widget>
                 </item>
                 <item>
+                 <widget class="QGroupBox" name="groupBox_19">
+                  <property name="title">
+                   <string>Basic.Settings.General.Importers</string>
+                  </property>
+                  <layout class="QFormLayout" name="formLayout_36">
+                   <property name="fieldGrowthPolicy">
+                    <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+                   </property>
+                   <property name="labelAlignment">
+                    <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                   </property>
+                   <property name="topMargin">
+                    <number>2</number>
+                   </property>
+                   <item row="0" column="0">
+                    <spacer name="horizontalSpacer_26">
+                     <property name="orientation">
+                      <enum>Qt::Horizontal</enum>
+                     </property>
+                     <property name="sizeHint" stdset="0">
+                      <size>
+                       <width>170</width>
+                       <height>5</height>
+                      </size>
+                     </property>
+                    </spacer>
+                   </item>
+                   <item row="0" column="1">
+                    <widget class="QCheckBox" name="automaticSearch">
+                     <property name="text">
+                      <string>Basic.Settings.General.AutomaticCollectionSearch</string>
+                     </property>
+                    </widget>
+                   </item>
+                  </layout>
+                 </widget>
+                </item>
+                <item>
                  <widget class="QGroupBox" name="groupBox_11">
                   <property name="title">
                    <string>Basic.TogglePreviewProgramMode</string>
@@ -775,7 +813,7 @@
             <property name="labelAlignment">
              <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
             </property>
-            <item row="2" column="0">
+            <item row="3" column="0">
              <widget class="QLabel" name="serviceLabel">
               <property name="text">
                <string>Basic.AutoConfig.StreamPage.Service</string>
@@ -785,7 +823,7 @@
               </property>
              </widget>
             </item>
-            <item row="2" column="1">
+            <item row="3" column="1">
              <widget class="QComboBox" name="service">
               <property name="maxVisibleItems">
                <number>20</number>
@@ -920,8 +958,14 @@
              </item>
              <item row="0" column="1">
               <widget class="QStackedWidget" name="serverStackedWidget">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
                <property name="currentIndex">
-                <number>0</number>
+                <number>1</number>
                </property>
                <widget class="QWidget" name="servicePage">
                 <layout class="QHBoxLayout" name="horizontalLayout_21">
@@ -1011,10 +1055,23 @@
                   </property>
                  </widget>
                 </item>
+                <item>
+                 <widget class="UrlPushButton" name="getStreamKeyButton">
+                  <property name="toolTip">
+                   <string/>
+                  </property>
+                  <property name="toolTipDuration">
+                   <number>-4</number>
+                  </property>
+                  <property name="text">
+                   <string>Basic.AutoConfig.StreamPage.GetStreamKey</string>
+                  </property>
+                 </widget>
+                </item>
                </layout>
               </widget>
              </item>
-             <item row="2" column="0">
+             <item row="3" column="0">
               <spacer name="horizontalSpacer_18">
                <property name="orientation">
                 <enum>Qt::Horizontal</enum>
@@ -1027,7 +1084,7 @@
                </property>
               </spacer>
              </item>
-             <item row="2" column="1">
+             <item row="3" column="1">
               <layout class="QHBoxLayout" name="horizontalLayout_15">
                <item>
                 <widget class="QPushButton" name="connectAccount2">
@@ -1051,7 +1108,7 @@
                </item>
               </layout>
              </item>
-             <item row="3" column="1">
+             <item row="4" column="1">
               <layout class="QHBoxLayout" name="horizontalLayout_23">
                <item>
                 <widget class="QPushButton" name="disconnectAccount">
@@ -1076,16 +1133,20 @@
               </layout>
              </item>
              <item row="5" column="1">
+              <widget class="QCheckBox" name="bandwidthTestEnable">
+               <property name="text">
+                <string>Basic.Settings.Stream.BandwidthTestMode</string>
+               </property>
+              </widget>
+             </item>
+             <item row="6" column="1">
               <widget class="QCheckBox" name="useAuth">
                <property name="text">
                 <string>Basic.Settings.Stream.Custom.UseAuthentication</string>
                </property>
               </widget>
              </item>
-             <item row="6" column="1">
-              <widget class="QLineEdit" name="authUsername"/>
-             </item>
-             <item row="6" column="0">
+             <item row="9" column="0">
               <widget class="QLabel" name="authUsernameLabel">
                <property name="text">
                 <string>Basic.Settings.Stream.Custom.Username</string>
@@ -1095,7 +1156,10 @@
                </property>
               </widget>
              </item>
-             <item row="7" column="0">
+             <item row="9" column="1">
+              <widget class="QLineEdit" name="authUsername"/>
+             </item>
+             <item row="10" column="0">
               <widget class="QLabel" name="authPwLabel">
                <property name="text">
                 <string>Basic.Settings.Stream.Custom.Password</string>
@@ -1105,7 +1169,7 @@
                </property>
               </widget>
              </item>
-             <item row="7" column="1">
+             <item row="10" column="1">
               <widget class="QWidget" name="authPwWidget" native="true">
                <layout class="QHBoxLayout" name="horizontalLayout_25">
                 <property name="leftMargin">
@@ -1137,12 +1201,31 @@
                </layout>
               </widget>
              </item>
-             <item row="4" column="1">
-              <widget class="QCheckBox" name="bandwidthTestEnable">
+             <item row="7" column="1">
+              <widget class="QComboBox" name="twitchAddonDropdown"/>
+             </item>
+             <item row="7" column="0">
+              <widget class="QLabel" name="twitchAddonLabel">
                <property name="text">
-                <string>Basic.Settings.Stream.BandwidthTestMode</string>
+                <string>Basic.Settings.Stream.TTVAddon</string>
+               </property>
+               <property name="buddy">
+                <cstring>twitchAddonDropdown</cstring>
                </property>
               </widget>
+             </item>
+             <item row="8" column="0">
+              <widget class="QLabel" name="mixerAddonLabel">
+               <property name="text">
+                <string>Basic.Settings.Stream.MixerAddon</string>
+               </property>
+               <property name="buddy">
+                <cstring>mixerAddonDropdown</cstring>
+               </property>
+              </widget>
+             </item>
+             <item row="8" column="1">
+              <widget class="QComboBox" name="mixerAddonDropdown"/>
              </item>
             </layout>
            </widget>
@@ -1180,7 +1263,7 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>601</width>
+              <width>603</width>
               <height>631</height>
              </rect>
             </property>
@@ -1683,13 +1766,6 @@
                      </widget>
                     </item>
                     <item row="2" column="1">
-                     <widget class="QLabel" name="label_45">
-                      <property name="text">
-                       <string>Basic.Settings.Output.ReplayBuffer.HotkeyMessage</string>
-                      </property>
-                     </widget>
-                    </item>
-                    <item row="3" column="1">
                      <widget class="QLabel" name="simpleRBEstimate">
                       <property name="text">
                        <string notr="true"/>
@@ -1836,6 +1912,55 @@
                              </property>
                             </widget>
                            </item>
+                           <item row="2" column="0">
+                            <widget class="QLabel" name="advOutEncLabel">
+                             <property name="text">
+                              <string>Basic.Settings.Output.Encoder</string>
+                             </property>
+                             <property name="buddy">
+                              <cstring>advOutEncoder</cstring>
+                             </property>
+                            </widget>
+                           </item>
+                           <item row="2" column="1">
+                            <widget class="QComboBox" name="advOutEncoder"/>
+                           </item>
+                           <item row="3" column="1">
+                            <widget class="QCheckBox" name="advOutApplyService">
+                             <property name="text">
+                              <string>Basic.Settings.Output.Adv.ApplyServiceSettings</string>
+                             </property>
+                             <property name="checked">
+                              <bool>true</bool>
+                             </property>
+                            </widget>
+                           </item>
+                           <item row="4" column="0">
+                            <widget class="QCheckBox" name="advOutUseRescale">
+                             <property name="sizePolicy">
+                              <sizepolicy hsizetype="Minimum" vsizetype="Expanding">
+                               <horstretch>0</horstretch>
+                               <verstretch>0</verstretch>
+                              </sizepolicy>
+                             </property>
+                             <property name="layoutDirection">
+                              <enum>Qt::RightToLeft</enum>
+                             </property>
+                             <property name="text">
+                              <string>Basic.Settings.Output.Adv.Rescale</string>
+                             </property>
+                            </widget>
+                           </item>
+                           <item row="4" column="1">
+                            <widget class="QComboBox" name="advOutRescale">
+                             <property name="enabled">
+                              <bool>false</bool>
+                             </property>
+                             <property name="editable">
+                              <bool>true</bool>
+                             </property>
+                            </widget>
+                           </item>
                            <item row="1" column="1">
                             <widget class="QWidget" name="widget_8" native="true">
                              <property name="sizePolicy">
@@ -1903,55 +2028,6 @@
                                </widget>
                               </item>
                              </layout>
-                            </widget>
-                           </item>
-                           <item row="2" column="0">
-                            <widget class="QLabel" name="advOutEncLabel">
-                             <property name="text">
-                              <string>Basic.Settings.Output.Encoder</string>
-                             </property>
-                             <property name="buddy">
-                              <cstring>advOutEncoder</cstring>
-                             </property>
-                            </widget>
-                           </item>
-                           <item row="2" column="1">
-                            <widget class="QComboBox" name="advOutEncoder"/>
-                           </item>
-                           <item row="3" column="1">
-                            <widget class="QCheckBox" name="advOutApplyService">
-                             <property name="text">
-                              <string>Basic.Settings.Output.Adv.ApplyServiceSettings</string>
-                             </property>
-                             <property name="checked">
-                              <bool>true</bool>
-                             </property>
-                            </widget>
-                           </item>
-                           <item row="4" column="0">
-                            <widget class="QCheckBox" name="advOutUseRescale">
-                             <property name="sizePolicy">
-                              <sizepolicy hsizetype="Minimum" vsizetype="Expanding">
-                               <horstretch>0</horstretch>
-                               <verstretch>0</verstretch>
-                              </sizepolicy>
-                             </property>
-                             <property name="layoutDirection">
-                              <enum>Qt::RightToLeft</enum>
-                             </property>
-                             <property name="text">
-                              <string>Basic.Settings.Output.Adv.Rescale</string>
-                             </property>
-                            </widget>
-                           </item>
-                           <item row="4" column="1">
-                            <widget class="QComboBox" name="advOutRescale">
-                             <property name="enabled">
-                              <bool>false</bool>
-                             </property>
-                             <property name="editable">
-                              <bool>true</bool>
-                             </property>
                             </widget>
                            </item>
                           </layout>
@@ -2174,72 +2250,6 @@
                               </property>
                              </widget>
                             </item>
-                            <item row="3" column="1">
-                             <widget class="QWidget" name="widget_9" native="true">
-                              <property name="sizePolicy">
-                               <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
-                                <horstretch>0</horstretch>
-                                <verstretch>0</verstretch>
-                               </sizepolicy>
-                              </property>
-                              <layout class="QHBoxLayout" name="horizontalLayout_9">
-                               <property name="leftMargin">
-                                <number>0</number>
-                               </property>
-                               <property name="topMargin">
-                                <number>0</number>
-                               </property>
-                               <property name="rightMargin">
-                                <number>0</number>
-                               </property>
-                               <property name="bottomMargin">
-                                <number>0</number>
-                               </property>
-                               <item>
-                                <widget class="QCheckBox" name="advOutRecTrack1">
-                                 <property name="text">
-                                  <string notr="true">1</string>
-                                 </property>
-                                </widget>
-                               </item>
-                               <item>
-                                <widget class="QCheckBox" name="advOutRecTrack2">
-                                 <property name="text">
-                                  <string notr="true">2</string>
-                                 </property>
-                                </widget>
-                               </item>
-                               <item>
-                                <widget class="QCheckBox" name="advOutRecTrack3">
-                                 <property name="text">
-                                  <string notr="true">3</string>
-                                 </property>
-                                </widget>
-                               </item>
-                               <item>
-                                <widget class="QCheckBox" name="advOutRecTrack4">
-                                 <property name="text">
-                                  <string notr="true">4</string>
-                                 </property>
-                                </widget>
-                               </item>
-                               <item>
-                                <widget class="QCheckBox" name="advOutRecTrack5">
-                                 <property name="text">
-                                  <string notr="true">5</string>
-                                 </property>
-                                </widget>
-                               </item>
-                               <item>
-                                <widget class="QCheckBox" name="advOutRecTrack6">
-                                 <property name="text">
-                                  <string notr="true">6</string>
-                                 </property>
-                                </widget>
-                               </item>
-                              </layout>
-                             </widget>
-                            </item>
                             <item row="4" column="0">
                              <widget class="QLabel" name="advOutRecEncLabel">
                               <property name="text">
@@ -2309,6 +2319,133 @@
                             </item>
                             <item row="6" column="1">
                              <widget class="QLineEdit" name="advOutMuxCustom"/>
+                            </item>
+                            <item row="3" column="1">
+                             <widget class="QStackedWidget" name="advRecTrackWidget">
+                              <property name="sizePolicy">
+                               <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+                                <horstretch>0</horstretch>
+                                <verstretch>0</verstretch>
+                               </sizepolicy>
+                              </property>
+                              <property name="currentIndex">
+                               <number>0</number>
+                              </property>
+                              <widget class="QWidget" name="recTracks">
+                               <layout class="QHBoxLayout" name="horizontalLayout_9">
+                                <property name="leftMargin">
+                                 <number>0</number>
+                                </property>
+                                <property name="topMargin">
+                                 <number>0</number>
+                                </property>
+                                <property name="rightMargin">
+                                 <number>0</number>
+                                </property>
+                                <property name="bottomMargin">
+                                 <number>0</number>
+                                </property>
+                                <item>
+                                 <widget class="QCheckBox" name="advOutRecTrack1">
+                                  <property name="text">
+                                   <string notr="true">1</string>
+                                  </property>
+                                 </widget>
+                                </item>
+                                <item>
+                                 <widget class="QCheckBox" name="advOutRecTrack2">
+                                  <property name="text">
+                                   <string notr="true">2</string>
+                                  </property>
+                                 </widget>
+                                </item>
+                                <item>
+                                 <widget class="QCheckBox" name="advOutRecTrack3">
+                                  <property name="text">
+                                   <string notr="true">3</string>
+                                  </property>
+                                 </widget>
+                                </item>
+                                <item>
+                                 <widget class="QCheckBox" name="advOutRecTrack4">
+                                  <property name="text">
+                                   <string notr="true">4</string>
+                                  </property>
+                                 </widget>
+                                </item>
+                                <item>
+                                 <widget class="QCheckBox" name="advOutRecTrack5">
+                                  <property name="text">
+                                   <string notr="true">5</string>
+                                  </property>
+                                 </widget>
+                                </item>
+                                <item>
+                                 <widget class="QCheckBox" name="advOutRecTrack6">
+                                  <property name="text">
+                                   <string notr="true">6</string>
+                                  </property>
+                                 </widget>
+                                </item>
+                               </layout>
+                              </widget>
+                              <widget class="QWidget" name="flvTracks">
+                               <widget class="QWidget" name="horizontalLayoutWidget">
+                                <property name="geometry">
+                                 <rect>
+                                  <x>9</x>
+                                  <y>0</y>
+                                  <width>236</width>
+                                  <height>25</height>
+                                 </rect>
+                                </property>
+                                <layout class="QHBoxLayout" name="horizontalLayout_24">
+                                 <item>
+                                  <widget class="QRadioButton" name="flvTrack1">
+                                   <property name="text">
+                                    <string>1</string>
+                                   </property>
+                                  </widget>
+                                 </item>
+                                 <item>
+                                  <widget class="QRadioButton" name="flvTrack2">
+                                   <property name="text">
+                                    <string>2</string>
+                                   </property>
+                                  </widget>
+                                 </item>
+                                 <item>
+                                  <widget class="QRadioButton" name="flvTrack3">
+                                   <property name="text">
+                                    <string>3</string>
+                                   </property>
+                                  </widget>
+                                 </item>
+                                 <item>
+                                  <widget class="QRadioButton" name="flvTrack4">
+                                   <property name="text">
+                                    <string>4</string>
+                                   </property>
+                                  </widget>
+                                 </item>
+                                 <item>
+                                  <widget class="QRadioButton" name="flvTrack5">
+                                   <property name="text">
+                                    <string>5</string>
+                                   </property>
+                                  </widget>
+                                 </item>
+                                 <item>
+                                  <widget class="QRadioButton" name="flvTrack6">
+                                   <property name="text">
+                                    <string>6</string>
+                                   </property>
+                                  </widget>
+                                 </item>
+                                </layout>
+                               </widget>
+                              </widget>
+                             </widget>
                             </item>
                            </layout>
                           </widget>
@@ -3532,13 +3669,6 @@
                          </widget>
                         </item>
                         <item row="2" column="1">
-                         <widget class="QLabel" name="advRBHotkeyLabel">
-                          <property name="text">
-                           <string>Basic.Settings.Output.ReplayBuffer.HotkeyMessage</string>
-                          </property>
-                         </widget>
-                        </item>
-                        <item row="3" column="1">
                          <widget class="QLabel" name="advRBEstimate">
                           <property name="text">
                            <string notr="true"/>
@@ -3685,19 +3815,19 @@
                    <item row="0" column="1">
                     <widget class="QComboBox" name="sampleRate">
                      <property name="currentText">
-                      <string notr="true">44.1khz</string>
+                      <string notr="true">44.1 kHz</string>
                      </property>
                      <property name="currentIndex">
                       <number>0</number>
                      </property>
                      <item>
                       <property name="text">
-                       <string>44.1khz</string>
+                       <string>44.1 kHz</string>
                       </property>
                      </item>
                      <item>
                       <property name="text">
-                       <string>48khz</string>
+                       <string>48 kHz</string>
                       </property>
                      </item>
                     </widget>
@@ -4113,22 +4243,42 @@
           </widget>
          </item>
          <item row="0" column="1">
-          <widget class="QComboBox" name="baseResolution">
-           <property name="editable">
-            <bool>true</bool>
+          <layout class="QHBoxLayout" name="horizontalLayout_29">
+           <property name="spacing">
+            <number>6</number>
            </property>
-           <property name="currentText">
-            <string notr="true"/>
-           </property>
-           <property name="duplicatesEnabled">
-            <bool>false</bool>
-           </property>
-           <property name="frame">
-            <bool>true</bool>
-           </property>
-          </widget>
+           <item>
+            <widget class="QComboBox" name="baseResolution">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="editable">
+              <bool>true</bool>
+             </property>
+             <property name="currentText">
+              <string notr="true"/>
+             </property>
+             <property name="duplicatesEnabled">
+              <bool>false</bool>
+             </property>
+             <property name="frame">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLabel" name="baseAspect">
+             <property name="text">
+              <string>AspectRatio</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
          </item>
-         <item row="1" column="0">
+         <item row="3" column="0">
           <widget class="QLabel" name="label_10">
            <property name="text">
             <string>Basic.Settings.Video.ScaledResolution</string>
@@ -4138,17 +4288,7 @@
            </property>
           </widget>
          </item>
-         <item row="1" column="1">
-          <widget class="QComboBox" name="outputResolution">
-           <property name="editable">
-            <bool>true</bool>
-           </property>
-           <property name="currentText">
-            <string notr="true"/>
-           </property>
-          </widget>
-         </item>
-         <item row="2" column="0">
+         <item row="5" column="0">
           <widget class="QLabel" name="label_11">
            <property name="text">
             <string>Basic.Settings.Video.DownscaleFilter</string>
@@ -4158,14 +4298,14 @@
            </property>
           </widget>
          </item>
-         <item row="2" column="1">
+         <item row="5" column="1">
           <widget class="QComboBox" name="downscaleFilter">
            <property name="enabled">
             <bool>true</bool>
            </property>
           </widget>
          </item>
-         <item row="3" column="0">
+         <item row="6" column="0">
           <widget class="QComboBox" name="fpsType">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
@@ -4196,10 +4336,10 @@
            </item>
           </widget>
          </item>
-         <item row="3" column="1">
+         <item row="6" column="1">
           <widget class="QStackedWidget" name="fpsTypes">
            <property name="currentIndex">
-            <number>0</number>
+            <number>1</number>
            </property>
            <widget class="QWidget" name="page">
             <layout class="QHBoxLayout" name="horizontalLayout_2">
@@ -4367,7 +4507,7 @@
            </widget>
           </widget>
          </item>
-         <item row="4" column="1">
+         <item row="7" column="1">
           <widget class="QLabel" name="videoMsg">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
@@ -4385,6 +4525,36 @@
             <string>error</string>
            </property>
           </widget>
+         </item>
+         <item row="3" column="1">
+          <layout class="QHBoxLayout" name="horizontalLayout_28">
+           <property name="spacing">
+            <number>6</number>
+           </property>
+           <item>
+            <widget class="QComboBox" name="outputResolution">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="editable">
+              <bool>true</bool>
+             </property>
+             <property name="currentText">
+              <string notr="true"/>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLabel" name="scaledAspect">
+             <property name="text">
+              <string>AspectRatio</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
          </item>
         </layout>
        </widget>
@@ -4444,7 +4614,7 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>803</width>
+              <width>596</width>
               <height>781</height>
              </rect>
             </property>
@@ -5249,6 +5419,13 @@
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>UrlPushButton</class>
+   <extends>QPushButton</extends>
+   <header>url-push-button.hpp</header>
+  </customwidget>
+ </customwidgets>
  <tabstops>
   <tabstop>listWidget</tabstop>
   <tabstop>scrollArea_2</tabstop>
@@ -5391,8 +5568,6 @@
   <tabstop>peakMeterType</tabstop>
   <tabstop>monitoringDevice</tabstop>
   <tabstop>disableAudioDucking</tabstop>
-  <tabstop>baseResolution</tabstop>
-  <tabstop>outputResolution</tabstop>
   <tabstop>downscaleFilter</tabstop>
   <tabstop>fpsType</tabstop>
   <tabstop>fpsCommon</tabstop>

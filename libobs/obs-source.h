@@ -43,6 +43,34 @@ enum obs_balance_type {
 	OBS_BALANCE_TYPE_LINEAR,
 };
 
+enum obs_icon_type {
+	OBS_ICON_TYPE_UNKNOWN,
+	OBS_ICON_TYPE_IMAGE,
+	OBS_ICON_TYPE_COLOR,
+	OBS_ICON_TYPE_SLIDESHOW,
+	OBS_ICON_TYPE_AUDIO_INPUT,
+	OBS_ICON_TYPE_AUDIO_OUTPUT,
+	OBS_ICON_TYPE_DESKTOP_CAPTURE,
+	OBS_ICON_TYPE_WINDOW_CAPTURE,
+	OBS_ICON_TYPE_GAME_CAPTURE,
+	OBS_ICON_TYPE_CAMERA,
+	OBS_ICON_TYPE_TEXT,
+	OBS_ICON_TYPE_MEDIA,
+	OBS_ICON_TYPE_BROWSER,
+	OBS_ICON_TYPE_CUSTOM,
+};
+
+enum obs_media_state {
+	OBS_MEDIA_STATE_NONE,
+	OBS_MEDIA_STATE_PLAYING,
+	OBS_MEDIA_STATE_OPENING,
+	OBS_MEDIA_STATE_BUFFERING,
+	OBS_MEDIA_STATE_PAUSED,
+	OBS_MEDIA_STATE_STOPPED,
+	OBS_MEDIA_STATE_ENDED,
+	OBS_MEDIA_STATE_ERROR,
+};
+
 /**
  * @name Source output flags
  *
@@ -140,6 +168,11 @@ enum obs_balance_type {
 #define OBS_SOURCE_CAP_DISABLED (1 << 10)
 
 /**
+ * Source type is obsolete (has been updated with new defaults/properties/etc)
+ */
+#define OBS_SOURCE_CAP_OBSOLETE OBS_SOURCE_CAP_DISABLED
+
+/**
  * Source should enable monitoring by default.  Monitoring should be set by the
  * frontend if this flag is set.
  */
@@ -147,6 +180,11 @@ enum obs_balance_type {
 
 /** Used internally for audio submixing */
 #define OBS_SOURCE_SUBMIX (1 << 12)
+
+/**
+ * Source type can be controlled by media controls
+ */
+#define OBS_SOURCE_CONTROLLABLE_MEDIA (1 << 13)
 
 /** @} */
 
@@ -471,6 +509,24 @@ struct obs_source_info {
 	bool (*audio_mix)(void *data, uint64_t *ts_out,
 			  struct audio_output_data *audio_output,
 			  size_t channels, size_t sample_rate);
+
+	/** Icon type for the source */
+	enum obs_icon_type icon_type;
+
+	/** Media controls */
+	void (*media_play_pause)(void *data, bool pause);
+	void (*media_restart)(void *data);
+	void (*media_stop)(void *data);
+	void (*media_next)(void *data);
+	void (*media_previous)(void *data);
+	int64_t (*media_get_duration)(void *data);
+	int64_t (*media_get_time)(void *data);
+	void (*media_set_time)(void *data, int64_t miliseconds);
+	enum obs_media_state (*media_get_state)(void *data);
+
+	/* version-related stuff */
+	uint32_t version; /* increment if needed to specify a new version */
+	const char *unversioned_id; /* set internally, don't set manually */
 };
 
 EXPORT void obs_register_source_s(const struct obs_source_info *info,

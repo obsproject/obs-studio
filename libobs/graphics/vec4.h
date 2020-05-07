@@ -18,7 +18,8 @@
 #pragma once
 
 #include "math-defs.h"
-#include <xmmintrin.h>
+
+#include "../util/sse-intrin.h"
 
 #ifdef __cplusplus
 extern "C" {

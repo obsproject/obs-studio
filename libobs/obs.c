@@ -441,6 +441,8 @@ static int obs_init_video(struct obs_video_info *ovi)
 		return OBS_VIDEO_FAIL;
 	if (pthread_mutex_init(&video->gpu_encoder_mutex, NULL) < 0)
 		return OBS_VIDEO_FAIL;
+	if (pthread_mutex_init(&video->task_mutex, NULL) < 0)
+		return OBS_VIDEO_FAIL;
 
 	errorcode = pthread_create(&video->video_thread, NULL,
 				   obs_graphics_thread, obs);
@@ -557,6 +559,10 @@ static void obs_free_video(void)
 		pthread_mutex_destroy(&video->gpu_encoder_mutex);
 		pthread_mutex_init_value(&video->gpu_encoder_mutex);
 		da_free(video->gpu_encoders);
+
+		pthread_mutex_destroy(&video->task_mutex);
+		pthread_mutex_init_value(&video->task_mutex);
+		circlebuf_free(&video->tasks);
 
 		video->gpu_encoder_active = 0;
 		video->cur_texture = 0;
@@ -880,6 +886,7 @@ static bool obs_init(const char *locale, const char *module_config_path,
 
 	pthread_mutex_init_value(&obs->audio.monitoring_mutex);
 	pthread_mutex_init_value(&obs->video.gpu_encoder_mutex);
+	pthread_mutex_init_value(&obs->video.task_mutex);
 
 	obs->name_store_owned = !store;
 	obs->name_store = store ? store : profiler_name_store_create();
@@ -913,8 +920,9 @@ static bool obs_init(const char *locale, const char *module_config_path,
 }
 
 #ifdef _WIN32
-extern void initialize_com(void);
+extern bool initialize_com(void);
 extern void uninitialize_com(void);
+static bool com_initialized = false;
 #endif
 
 /* Separate from actual context initialization
@@ -975,7 +983,7 @@ bool obs_startup(const char *locale, const char *module_config_path,
 	}
 
 #ifdef _WIN32
-	initialize_com();
+	com_initialized = initialize_com();
 #endif
 
 	success = obs_init(locale, module_config_path, store);
@@ -1030,6 +1038,15 @@ void obs_shutdown(void)
 	if (!obs)
 		return;
 
+	for (size_t i = 0; i < obs->source_types.num; i++) {
+		struct obs_source_info *item = &obs->source_types.array[i];
+		if (item->type_data && item->free_type_data)
+			item->free_type_data(item->type_data);
+		if (item->id)
+			bfree((void *)item->id);
+	}
+	da_free(obs->source_types);
+
 #define FREE_REGISTERED_TYPES(structure, list)                         \
 	do {                                                           \
 		for (size_t i = 0; i < list.num; i++) {                \
@@ -1040,7 +1057,6 @@ void obs_shutdown(void)
 		da_free(list);                                         \
 	} while (false)
 
-	FREE_REGISTERED_TYPES(obs_source_info, obs->source_types);
 	FREE_REGISTERED_TYPES(obs_output_info, obs->output_types);
 	FREE_REGISTERED_TYPES(obs_encoder_info, obs->encoder_types);
 	FREE_REGISTERED_TYPES(obs_service_info, obs->service_types);
@@ -1090,7 +1106,8 @@ void obs_shutdown(void)
 	bfree(cmdline_args.argv);
 
 #ifdef _WIN32
-	uninitialize_com();
+	if (com_initialized)
+		uninitialize_com();
 #endif
 }
 
@@ -1295,6 +1312,47 @@ bool obs_enum_input_types(size_t idx, const char **id)
 	return true;
 }
 
+bool obs_enum_input_types2(size_t idx, const char **id,
+			   const char **unversioned_id)
+{
+	if (!obs)
+		return false;
+
+	if (idx >= obs->input_types.num)
+		return false;
+	if (id)
+		*id = obs->input_types.array[idx].id;
+	if (unversioned_id)
+		*unversioned_id = obs->input_types.array[idx].unversioned_id;
+	return true;
+}
+
+const char *obs_get_latest_input_type_id(const char *unversioned_id)
+{
+	struct obs_source_info *latest = NULL;
+	int version = -1;
+
+	if (!obs)
+		return NULL;
+	if (!unversioned_id)
+		return NULL;
+
+	for (size_t i = 0; i < obs->source_types.num; i++) {
+		struct obs_source_info *info = &obs->source_types.array[i];
+		if (strcmp(info->unversioned_id, unversioned_id) == 0 &&
+		    (int)info->version > version) {
+			latest = info;
+			version = info->version;
+		}
+	}
+
+	assert(!!latest);
+	if (!latest)
+		return NULL;
+
+	return latest->id;
+}
+
 bool obs_enum_filter_types(size_t idx, const char **id)
 {
 	if (!obs)
@@ -1495,7 +1553,7 @@ void obs_enum_sources(bool (*enum_proc)(void *, obs_source_t *), void *param)
 		obs_source_t *next_source =
 			(obs_source_t *)source->context.next;
 
-		if (source->info.id == group_info.id &&
+		if (strcmp(source->info.id, group_info.id) == 0 &&
 		    !enum_proc(param, source)) {
 			break;
 		} else if (source->info.type == OBS_SOURCE_TYPE_INPUT &&
@@ -1736,7 +1794,7 @@ gs_effect_t *obs_get_base_effect(enum obs_base_effect effect)
 	return NULL;
 }
 
-/* DEPRECATED */
+/* OBS_DEPRECATED */
 gs_effect_t *obs_get_default_rect_effect(void)
 {
 	if (!obs)
@@ -1758,6 +1816,7 @@ proc_handler_t *obs_get_proc_handler(void)
 	return obs->procs;
 }
 
+/* OBS_DEPRECATED */
 void obs_render_main_view(void)
 {
 	if (!obs)
@@ -1930,6 +1989,7 @@ static obs_source_t *obs_load_source_type(obs_data_t *source_data)
 	obs_source_t *source;
 	const char *name = obs_data_get_string(source_data, "name");
 	const char *id = obs_data_get_string(source_data, "id");
+	const char *v_id = obs_data_get_string(source_data, "versioned_id");
 	obs_data_t *settings = obs_data_get_obj(source_data, "settings");
 	obs_data_t *hotkeys = obs_data_get_obj(source_data, "hotkeys");
 	double volume;
@@ -1945,8 +2005,15 @@ static obs_source_t *obs_load_source_type(obs_data_t *source_data)
 
 	prev_ver = (uint32_t)obs_data_get_int(source_data, "prev_ver");
 
-	source = obs_source_create_set_last_ver(id, name, settings, hotkeys,
+	if (!*v_id)
+		v_id = id;
+
+	source = obs_source_create_set_last_ver(v_id, name, settings, hotkeys,
 						prev_ver);
+	if (source->owns_info_id) {
+		bfree((void *)source->info.unversioned_id);
+		source->info.unversioned_id = bstrdup(id);
+	}
 
 	obs_data_release(hotkeys);
 
@@ -2119,7 +2186,8 @@ obs_data_t *obs_save_source(obs_source_t *source)
 	int64_t sync = obs_source_get_sync_offset(source);
 	uint32_t flags = obs_source_get_flags(source);
 	const char *name = obs_source_get_name(source);
-	const char *id = obs_source_get_id(source);
+	const char *id = source->info.unversioned_id;
+	const char *v_id = source->info.id;
 	bool enabled = obs_source_enabled(source);
 	bool muted = obs_source_muted(source);
 	bool push_to_mute = obs_source_push_to_mute_enabled(source);
@@ -2143,6 +2211,7 @@ obs_data_t *obs_save_source(obs_source_t *source)
 
 	obs_data_set_string(source_data, "name", name);
 	obs_data_set_string(source_data, "id", id);
+	obs_data_set_string(source_data, "versioned_id", v_id);
 	obs_data_set_obj(source_data, "settings", settings);
 	obs_data_set_int(source_data, "mixers", mixers);
 	obs_data_set_int(source_data, "sync", sync);
@@ -2205,7 +2274,8 @@ obs_data_array_t *obs_save_sources_filtered(obs_save_source_filter_cb cb,
 
 	while (source) {
 		if ((source->info.type != OBS_SOURCE_TYPE_FILTER) != 0 &&
-		    !source->context.private && cb(data_, source)) {
+		    !source->context.private && !source->removed &&
+		    cb(data_, source)) {
 			obs_data_t *source_data = obs_save_source(source);
 
 			obs_data_array_push_back(array, source_data);
@@ -2684,4 +2754,77 @@ bool obs_nv12_tex_active(void)
 		return false;
 
 	return video->using_nv12_tex;
+}
+
+/* ------------------------------------------------------------------------- */
+/* task stuff                                                                */
+
+struct task_wait_info {
+	obs_task_t task;
+	void *param;
+	os_event_t *event;
+};
+
+static void task_wait_callback(void *param)
+{
+	struct task_wait_info *info = param;
+	info->task(info->param);
+	os_event_signal(info->event);
+}
+
+THREAD_LOCAL bool is_graphics_thread = false;
+
+static bool in_task_thread(enum obs_task_type type)
+{
+	/* NOTE: OBS_TASK_UI is handled independently */
+
+	if (type == OBS_TASK_GRAPHICS)
+		return is_graphics_thread;
+
+	assert(false);
+	return false;
+}
+
+void obs_queue_task(enum obs_task_type type, obs_task_t task, void *param,
+		    bool wait)
+{
+	if (!obs)
+		return;
+
+	if (type == OBS_TASK_UI) {
+		if (obs->ui_task_handler) {
+			obs->ui_task_handler(task, param, wait);
+		} else {
+			blog(LOG_ERROR, "UI task could not be queued, "
+					"there's no UI task handler!");
+		}
+	} else {
+		if (in_task_thread(type)) {
+			task(param);
+		} else if (wait) {
+			struct task_wait_info info = {
+				.task = task,
+				.param = param,
+			};
+
+			os_event_init(&info.event, OS_EVENT_TYPE_MANUAL);
+			obs_queue_task(type, task_wait_callback, &info, false);
+			os_event_wait(info.event);
+			os_event_destroy(info.event);
+		} else {
+			struct obs_core_video *video = &obs->video;
+			struct obs_task_info info = {task, param};
+
+			pthread_mutex_lock(&video->task_mutex);
+			circlebuf_push_back(&video->tasks, &info, sizeof(info));
+			pthread_mutex_unlock(&video->task_mutex);
+		}
+	}
+}
+
+void obs_set_ui_task_handler(obs_task_handler_t handler)
+{
+	if (!obs)
+		return;
+	obs->ui_task_handler = handler;
 }

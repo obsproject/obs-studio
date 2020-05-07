@@ -14,10 +14,8 @@ set -o nounset
 # Get CPU count
 OS=$(uname)
 NPROC=1
-if [[ $OS = "Linux" ]] ; then
-    NPROC=$(nproc)
-elif [[ ${OS} = "Darwin" ]] ; then
-    NPROC=$(sysctl -n hw.physicalcpu)
+if [[ $OS = "Linux" || $OS = "Darwin" ]] ; then
+    NPROC=$(getconf _NPROCESSORS_ONLN)
 fi
 
 # Discover clang-format
@@ -27,5 +25,14 @@ else
     CLANG_FORMAT=clang-format
 fi
 
-find . -type d \( -path ./deps -o -path ./cmake -o -path ./plugins/decklink/win -o -path ./plugins/decklink/mac -o -path ./plugins/decklink/linux -o -path ./build \) -prune -type f -o -name '*.h' -or -name '*.hpp' -or -name '*.m' -or -name '*.mm' -or -name '*.c' -or -name '*.cpp' \
+find . -type d \( -path ./deps \
+-o -path ./cmake \
+-o -path ./plugins/decklink/win/decklink-sdk \
+-o -path ./plugins/decklink/mac/decklink-sdk \
+-o -path ./plugins/decklink/linux/decklink-sdk \
+-o -path ./plugins/enc-amf \
+-o -path ./plugins/mac-syphon/syphon-framework \
+-o -path ./plugins/obs-outputs/ftl-sdk \
+-o -path ./plugins/obs-vst \
+-o -path ./build \) -prune -type f -o -name '*.h' -or -name '*.hpp' -or -name '*.m' -or -name '*.mm' -or -name '*.c' -or -name '*.cpp' \
 | xargs -I{} -P ${NPROC} ${CLANG_FORMAT} -i -style=file  -fallback-style=none {}

@@ -1,10 +1,12 @@
 #include <QMessageBox>
+#include <QUrl>
 
 #include "window-basic-settings.hpp"
 #include "obs-frontend-api.h"
 #include "obs-app.hpp"
 #include "window-basic-main.hpp"
 #include "qt-wrappers.hpp"
+#include "url-push-button.hpp"
 
 #ifdef BROWSER_AVAILABLE
 #include <browser-panel.hpp>
@@ -37,6 +39,10 @@ void OBSBasicSettings::InitStreamPage()
 	ui->connectAccount2->setVisible(false);
 	ui->disconnectAccount->setVisible(false);
 	ui->bandwidthTestEnable->setVisible(false);
+	ui->twitchAddonDropdown->setVisible(false);
+	ui->twitchAddonLabel->setVisible(false);
+	ui->mixerAddonDropdown->setVisible(false);
+	ui->mixerAddonLabel->setVisible(false);
 
 	int vertSpacing = ui->topStreamLayout->verticalSpacing();
 
@@ -53,6 +59,20 @@ void OBSBasicSettings::InitStreamPage()
 	ui->streamkeyPageLayout->setContentsMargins(m);
 
 	LoadServices(false);
+
+	ui->twitchAddonDropdown->addItem(
+		QTStr("Basic.Settings.Stream.TTVAddon.None"));
+	ui->twitchAddonDropdown->addItem(
+		QTStr("Basic.Settings.Stream.TTVAddon.BTTV"));
+	ui->twitchAddonDropdown->addItem(
+		QTStr("Basic.Settings.Stream.TTVAddon.FFZ"));
+	ui->twitchAddonDropdown->addItem(
+		QTStr("Basic.Settings.Stream.TTVAddon.Both"));
+
+	ui->mixerAddonDropdown->addItem(
+		QTStr("Basic.Settings.Stream.MixerAddon.None"));
+	ui->mixerAddonDropdown->addItem(
+		QTStr("Basic.Settings.Stream.MixerAddon.MEE"));
 
 	connect(ui->service, SIGNAL(currentIndexChanged(int)), this,
 		SLOT(UpdateServerList()));
@@ -96,6 +116,12 @@ void OBSBasicSettings::LoadStream1Settings()
 
 		bool bw_test = obs_data_get_bool(settings, "bwtest");
 		ui->bandwidthTestEnable->setChecked(bw_test);
+
+		idx = config_get_int(main->Config(), "Twitch", "AddonChoice");
+		ui->twitchAddonDropdown->setCurrentIndex(idx);
+
+		idx = config_get_int(main->Config(), "Mixer", "AddonChoice");
+		ui->mixerAddonDropdown->setCurrentIndex(idx);
 	}
 
 	UpdateServerList();
@@ -159,6 +185,34 @@ void OBSBasicSettings::SaveStream1Settings()
 
 	obs_data_set_bool(settings, "bwtest",
 			  ui->bandwidthTestEnable->isChecked());
+
+	if (!!auth && strcmp(auth->service(), "Twitch") == 0) {
+		bool choiceExists = config_has_user_value(
+			main->Config(), "Twitch", "AddonChoice");
+		int currentChoice =
+			config_get_int(main->Config(), "Twitch", "AddonChoice");
+		int newChoice = ui->twitchAddonDropdown->currentIndex();
+
+		config_set_int(main->Config(), "Twitch", "AddonChoice",
+			       newChoice);
+
+		if (choiceExists && currentChoice != newChoice)
+			forceAuthReload = true;
+	}
+	if (!!auth && strcmp(auth->service(), "Mixer") == 0) {
+		bool choiceExists = config_has_user_value(
+			main->Config(), "Mixer", "AddonChoice");
+		int currentChoice =
+			config_get_int(main->Config(), "Mixer", "AddonChoice");
+		int newChoice = ui->mixerAddonDropdown->currentIndex();
+
+		config_set_int(main->Config(), "Mixer", "AddonChoice",
+			       newChoice);
+
+		if (choiceExists && currentChoice != newChoice)
+			forceAuthReload = true;
+	}
+
 	obs_data_set_string(settings, "key", QT_TO_UTF8(ui->key->text()));
 
 	OBSService newService = obs_service_create(
@@ -177,44 +231,35 @@ void OBSBasicSettings::SaveStream1Settings()
 
 void OBSBasicSettings::UpdateKeyLink()
 {
-	bool custom = IsCustomService();
-	QString serviceName = ui->service->currentText();
-
-	if (custom)
-		serviceName = "";
-
-	QString text = QTStr("Basic.AutoConfig.StreamPage.StreamKey");
-	if (serviceName == "Twitch") {
-		text += " <a href=\"https://";
-		text += "www.twitch.tv/broadcast/dashboard/streamkey";
-		text += "\">";
-		text += QTStr(
-			"Basic.AutoConfig.StreamPage.StreamKey.LinkToSite");
-		text += "</a>";
-	} else if (serviceName == "YouTube / YouTube Gaming") {
-		text += " <a href=\"https://";
-		text += "www.youtube.com/live_dashboard";
-		text += "\">";
-		text += QTStr(
-			"Basic.AutoConfig.StreamPage.StreamKey.LinkToSite");
-		text += "</a>";
-	} else if (serviceName.startsWith("Restream.io")) {
-		text += " <a href=\"https://";
-		text += "restream.io/settings/streaming-setup?from=OBS";
-		text += "\">";
-		text += QTStr(
-			"Basic.AutoConfig.StreamPage.StreamKey.LinkToSite");
-		text += "</a>";
-	} else if (serviceName == "Facebook Live") {
-		text += " <a href=\"https://";
-		text += "www.facebook.com/live/create";
-		text += "\">";
-		text += QTStr(
-			"Basic.AutoConfig.StreamPage.StreamKey.LinkToSite");
-		text += "</a>";
+	if (IsCustomService()) {
+		ui->getStreamKeyButton->hide();
+		return;
 	}
 
-	ui->streamKeyLabel->setText(text);
+	QString serviceName = ui->service->currentText();
+	QString streamKeyLink;
+	if (serviceName == "Twitch") {
+		streamKeyLink =
+			"https://www.twitch.tv/broadcast/dashboard/streamkey";
+	} else if (serviceName == "YouTube / YouTube Gaming") {
+		streamKeyLink = "https://www.youtube.com/live_dashboard";
+	} else if (serviceName.startsWith("Restream.io")) {
+		streamKeyLink =
+			"https://restream.io/settings/streaming-setup?from=OBS";
+	} else if (serviceName == "Facebook Live") {
+		streamKeyLink = "https://www.facebook.com/live/create?ref=OBS";
+	} else if (serviceName.startsWith("Twitter")) {
+		streamKeyLink = "https://www.pscp.tv/account/producer";
+	} else if (serviceName.startsWith("YouStreamer")) {
+		streamKeyLink = "https://app.youstreamer.com/stream/";
+	}
+
+	if (QString(streamKeyLink).isNull()) {
+		ui->getStreamKeyButton->hide();
+	} else {
+		ui->getStreamKeyButton->setTargetUrl(QUrl(streamKeyLink));
+		ui->getStreamKeyButton->show();
+	}
 }
 
 void OBSBasicSettings::LoadServices(bool showAll)
@@ -285,6 +330,10 @@ void OBSBasicSettings::on_service_currentIndexChanged(int)
 
 	ui->disconnectAccount->setVisible(false);
 	ui->bandwidthTestEnable->setVisible(false);
+	ui->twitchAddonDropdown->setVisible(false);
+	ui->twitchAddonLabel->setVisible(false);
+	ui->mixerAddonDropdown->setVisible(false);
+	ui->mixerAddonLabel->setVisible(false);
 
 #ifdef BROWSER_AVAILABLE
 	if (cef) {
@@ -438,8 +487,15 @@ void OBSBasicSettings::OnOAuthStreamKeyConnected()
 		ui->connectAccount2->setVisible(false);
 		ui->disconnectAccount->setVisible(true);
 
-		if (strcmp(a->service(), "Twitch") == 0)
+		if (strcmp(a->service(), "Twitch") == 0) {
 			ui->bandwidthTestEnable->setVisible(true);
+			ui->twitchAddonLabel->setVisible(true);
+			ui->twitchAddonDropdown->setVisible(true);
+		}
+		if (strcmp(a->service(), "Mixer") == 0) {
+			ui->mixerAddonLabel->setVisible(true);
+			ui->mixerAddonDropdown->setVisible(true);
+		}
 	}
 
 	ui->streamStackWidget->setCurrentIndex((int)Section::StreamKey);
@@ -465,6 +521,8 @@ void OBSBasicSettings::on_connectAccount_clicked()
 {
 #ifdef BROWSER_AVAILABLE
 	std::string service = QT_TO_UTF8(ui->service->currentText());
+
+	OAuth::DeleteCookies(service);
 
 	auth = OAuthStreamKey::Login(this, service);
 	if (!!auth)
@@ -502,6 +560,8 @@ void OBSBasicSettings::on_disconnectAccount_clicked()
 	ui->connectAccount2->setVisible(true);
 	ui->disconnectAccount->setVisible(false);
 	ui->bandwidthTestEnable->setVisible(false);
+	ui->twitchAddonDropdown->setVisible(false);
+	ui->twitchAddonLabel->setVisible(false);
 	ui->key->setText("");
 }
 

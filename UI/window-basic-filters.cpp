@@ -54,6 +54,8 @@ OBSBasicFilters::OBSBasicFilters(QWidget *parent, OBSSource source_)
 {
 	main = reinterpret_cast<OBSBasic *>(parent);
 
+	setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
+
 	ui->setupUi(this);
 	UpdateFilters();
 
@@ -64,7 +66,6 @@ OBSBasicFilters::OBSBasicFilters(QWidget *parent, OBSSource source_)
 
 	const char *name = obs_source_get_name(source);
 	setWindowTitle(QTStr("Basic.Filters.Title").arg(QT_UTF8(name)));
-	setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
 
 #ifndef QT_NO_SHORTCUT
 	ui->actionRemoveFilter->setShortcut(
@@ -139,6 +140,26 @@ OBSBasicFilters::OBSBasicFilters(QWidget *parent, OBSSource source_)
 		ui->rightContainerLayout->insertStretch(1);
 		ui->preview->hide();
 	}
+
+	QAction *renameAsync = new QAction(ui->asyncWidget);
+	renameAsync->setShortcutContext(Qt::WidgetWithChildrenShortcut);
+	connect(renameAsync, SIGNAL(triggered()), this,
+		SLOT(RenameAsyncFilter()));
+	ui->asyncWidget->addAction(renameAsync);
+
+	QAction *renameEffect = new QAction(ui->effectWidget);
+	renameEffect->setShortcutContext(Qt::WidgetWithChildrenShortcut);
+	connect(renameEffect, SIGNAL(triggered()), this,
+		SLOT(RenameEffectFilter()));
+	ui->effectWidget->addAction(renameEffect);
+
+#ifdef __APPLE__
+	renameAsync->setShortcut({Qt::Key_Return});
+	renameEffect->setShortcut({Qt::Key_Return});
+#else
+	renameAsync->setShortcut({Qt::Key_F2});
+	renameEffect->setShortcut({Qt::Key_F2});
+#endif
 }
 
 OBSBasicFilters::~OBSBasicFilters()
@@ -423,10 +444,18 @@ void OBSBasicFilters::AddNewFilter(const char *id)
 		obs_source_t *existing_filter;
 		string name = obs_source_get_display_name(id);
 
+		QString placeholder = QString::fromStdString(name);
+		QString text{placeholder};
+		int i = 2;
+		while ((existing_filter = obs_source_get_filter_by_name(
+				source, QT_TO_UTF8(text)))) {
+			obs_source_release(existing_filter);
+			text = QString("%1 %2").arg(placeholder).arg(i++);
+		}
+
 		bool success = NameDialog::AskForName(
 			this, QTStr("Basic.Filters.AddFilter.Title"),
-			QTStr("Basic.FIlters.AddFilter.Text"), name,
-			QT_UTF8(name.c_str()));
+			QTStr("Basic.Filters.AddFilter.Text"), name, text);
 		if (!success)
 			return;
 
@@ -717,6 +746,9 @@ void OBSBasicFilters::CustomContextMenu(const QPoint &pos, bool async)
 
 void OBSBasicFilters::EditItem(QListWidgetItem *item, bool async)
 {
+	if (editActive)
+		return;
+
 	Qt::ItemFlags flags = item->flags();
 	OBSSource filter = item->data(Qt::UserRole).value<OBSSource>();
 	const char *name = obs_source_get_name(filter);
@@ -727,6 +759,7 @@ void OBSBasicFilters::EditItem(QListWidgetItem *item, bool async)
 	list->removeItemWidget(item);
 	list->editItem(item);
 	item->setFlags(flags);
+	editActive = true;
 }
 
 void OBSBasicFilters::on_asyncFilters_customContextMenuRequested(
@@ -793,6 +826,7 @@ void OBSBasicFilters::FilterNameEdited(QWidget *editor, QListWidget *list)
 
 	listItem->setText(QString());
 	SetupVisibilityItem(list, listItem, filter);
+	editActive = false;
 }
 
 void OBSBasicFilters::AsyncFilterNameEdited(

@@ -137,13 +137,6 @@ static bool create_d3d12_tex(bb_info &bb)
 
 typedef PFN_D3D11ON12_CREATE_DEVICE create_11_on_12_t;
 
-const static D3D_FEATURE_LEVEL feature_levels[] = {
-	D3D_FEATURE_LEVEL_11_0,
-	D3D_FEATURE_LEVEL_10_1,
-	D3D_FEATURE_LEVEL_10_0,
-	D3D_FEATURE_LEVEL_9_3,
-};
-
 static bool d3d12_init_11on12(void)
 {
 	static HMODULE d3d11 = nullptr;

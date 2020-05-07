@@ -74,6 +74,7 @@ enum video_colorspace {
 	VIDEO_CS_DEFAULT,
 	VIDEO_CS_601,
 	VIDEO_CS_709,
+	VIDEO_CS_SRGB,
 };
 
 enum video_range_type {
@@ -176,7 +177,8 @@ static inline const char *get_video_colorspace_name(enum video_colorspace cs)
 	case VIDEO_CS_709:
 		return "709";
 	case VIDEO_CS_601:
-	case VIDEO_CS_DEFAULT:;
+	case VIDEO_CS_DEFAULT:
+	case VIDEO_CS_SRGB:;
 	}
 
 	return "601";

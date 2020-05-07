@@ -1,6 +1,7 @@
 #include "jim-nvenc.h"
 #include <util/platform.h>
 #include <util/threading.h>
+#include <util/dstr.h>
 
 static void *nvenc_lib = NULL;
 static pthread_mutex_t init_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -9,18 +10,40 @@ NV_CREATE_INSTANCE_FUNC nv_create_instance = NULL;
 
 #define error(format, ...) blog(LOG_ERROR, "[jim-nvenc] " format, ##__VA_ARGS__)
 
-static inline bool nv_failed(NVENCSTATUS err, const char *func,
-			     const char *call)
+bool nv_failed(obs_encoder_t *encoder, NVENCSTATUS err, const char *func,
+	       const char *call)
 {
-	if (err == NV_ENC_SUCCESS)
+	struct dstr error_message = {0};
+
+	switch (err) {
+	case NV_ENC_SUCCESS:
 		return false;
+
+	case NV_ENC_ERR_OUT_OF_MEMORY:
+		obs_encoder_set_last_error(
+			encoder, obs_module_text("NVENC.TooManySessions"));
+		break;
+
+	case NV_ENC_ERR_UNSUPPORTED_DEVICE:
+		obs_encoder_set_last_error(
+			encoder, obs_module_text("NVENC.UnsupportedDevice"));
+		break;
+
+	default:
+		dstr_printf(&error_message,
+			    "NVENC Error: %s: %s failed: %d (%s)", func, call,
+			    (int)err, nv_error_name(err));
+		obs_encoder_set_last_error(encoder, error_message.array);
+		dstr_free(&error_message);
+		break;
+	}
 
 	error("%s: %s failed: %d (%s)", func, call, (int)err,
 	      nv_error_name(err));
 	return true;
 }
 
-#define NV_FAILED(x) nv_failed(x, __FUNCTION__, #x)
+#define NV_FAILED(e, x) nv_failed(e, x, __FUNCTION__, #x)
 
 bool load_nvenc_lib(void)
 {
@@ -83,7 +106,7 @@ const char *nv_error_name(NVENCSTATUS err)
 	return "Unknown Error";
 }
 
-static inline bool init_nvenc_internal(void)
+static inline bool init_nvenc_internal(obs_encoder_t *encoder)
 {
 	static bool initialized = false;
 	static bool success = false;
@@ -95,17 +118,24 @@ static inline bool init_nvenc_internal(void)
 	NV_MAX_VER_FUNC nv_max_ver = (NV_MAX_VER_FUNC)load_nv_func(
 		"NvEncodeAPIGetMaxSupportedVersion");
 	if (!nv_max_ver) {
+		obs_encoder_set_last_error(
+			encoder,
+			"Missing NvEncodeAPIGetMaxSupportedVersion, check "
+			"your video card drivers are up to date.");
 		return false;
 	}
 
 	uint32_t ver = 0;
-	if (NV_FAILED(nv_max_ver(&ver))) {
+	if (NV_FAILED(encoder, nv_max_ver(&ver))) {
 		return false;
 	}
 
 	uint32_t cur_ver = (NVENCAPI_MAJOR_VERSION << 4) |
 			   NVENCAPI_MINOR_VERSION;
 	if (cur_ver > ver) {
+		obs_encoder_set_last_error(
+			encoder, obs_module_text("NVENC.OutdatedDriver"));
+
 		error("Current driver version does not support this NVENC "
 		      "version, please upgrade your driver");
 		return false;
@@ -114,10 +144,13 @@ static inline bool init_nvenc_internal(void)
 	nv_create_instance = (NV_CREATE_INSTANCE_FUNC)load_nv_func(
 		"NvEncodeAPICreateInstance");
 	if (!nv_create_instance) {
+		obs_encoder_set_last_error(
+			encoder, "Missing NvEncodeAPICreateInstance, check "
+				 "your video card drivers are up to date.");
 		return false;
 	}
 
-	if (NV_FAILED(nv_create_instance(&nv))) {
+	if (NV_FAILED(encoder, nv_create_instance(&nv))) {
 		return false;
 	}
 
@@ -125,12 +158,12 @@ static inline bool init_nvenc_internal(void)
 	return true;
 }
 
-bool init_nvenc(void)
+bool init_nvenc(obs_encoder_t *encoder)
 {
 	bool success;
 
 	pthread_mutex_lock(&init_mutex);
-	success = init_nvenc_internal();
+	success = init_nvenc_internal(encoder);
 	pthread_mutex_unlock(&init_mutex);
 
 	return success;

@@ -35,6 +35,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <util/platform.h>
 #include <obs-module.h>
 
+#include "v4l2-controls.h"
 #include "v4l2-helpers.h"
 
 #if HAVE_UDEV
@@ -579,6 +580,7 @@ static bool device_selected(obs_properties_t *props, obs_property_t *p,
 
 	obs_property_t *prop = obs_properties_get(props, "input");
 	v4l2_input_list(dev, prop);
+	v4l2_update_controls(dev, props, settings);
 	v4l2_close(dev);
 
 	obs_property_modified(prop, settings);
@@ -1005,4 +1007,5 @@ struct obs_source_info v4l2_input = {
 	.update = v4l2_update,
 	.get_defaults = v4l2_defaults,
 	.get_properties = v4l2_properties,
+	.icon_type = OBS_ICON_TYPE_CAMERA,
 };

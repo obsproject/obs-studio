@@ -80,6 +80,10 @@ struct graphics_offsets {
 };
 
 struct hook_info {
+	/* hook version */
+	uint32_t hook_ver_major;
+	uint32_t hook_ver_minor;
+
 	/* capture info */
 	enum capture_type type;
 	uint32_t window;
@@ -101,6 +105,8 @@ struct hook_info {
 
 	/* hook addresses */
 	struct graphics_offsets offsets;
+
+	uint32_t reserved[128];
 };
 
 #pragma pack(pop)
@@ -109,9 +115,16 @@ struct hook_info {
 
 static inline HANDLE create_hook_info(DWORD id)
 {
-	wchar_t new_name[64];
-	_snwprintf(new_name, 64, L"%s%lu", SHMEM_HOOK_INFO, id);
+	HANDLE handle = NULL;
 
-	return CreateFileMappingW(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, 0,
-				  sizeof(struct hook_info), new_name);
+	wchar_t new_name[64];
+	const int len = swprintf(new_name, _countof(new_name),
+				 SHMEM_HOOK_INFO L"%lu", id);
+	if (len > 0) {
+		handle = CreateFileMappingW(INVALID_HANDLE_VALUE, NULL,
+					    PAGE_READWRITE, 0,
+					    sizeof(struct hook_info), new_name);
+	}
+
+	return handle;
 }

@@ -92,6 +92,7 @@ PY_EXTERN PyObject *(*Import_PyExc_TypeError);
 PY_EXTERN PyObject *(*Import_PyExc_RuntimeError);
 PY_EXTERN PyObject *(*Import_PyObject_GetAttr)(PyObject *, PyObject *);
 PY_EXTERN PyObject *(*Import_PyUnicode_FromString)(const char *u);
+PY_EXTERN PyObject *(*Import_PyDict_New)(void);
 PY_EXTERN PyObject *(*Import_PyDict_GetItemString)(PyObject *dp,
 						   const char *key);
 PY_EXTERN int (*Import_PyDict_SetItemString)(PyObject *dp, const char *key,
@@ -133,6 +134,7 @@ PY_EXTERN PyObject *(*Import_PyUnicode_AsUTF8String)(PyObject *unicode);
 PY_EXTERN PyObject *(*Import_PyLong_FromUnsignedLongLong)(unsigned long long);
 PY_EXTERN int (*Import_PyArg_VaParse)(PyObject *, const char *, va_list);
 PY_EXTERN PyObject(*Import__Py_NoneStruct);
+PY_EXTERN PyObject *(*Import_PyTuple_New)(Py_ssize_t size);
 
 extern bool import_python(const char *python_path);
 
@@ -174,6 +176,7 @@ extern bool import_python(const char *python_path);
 #define PyExc_RuntimeError (*Import_PyExc_RuntimeError)
 #define PyObject_GetAttr Import_PyObject_GetAttr
 #define PyUnicode_FromString Import_PyUnicode_FromString
+#define PyDict_New Import_PyDict_New
 #define PyDict_GetItemString Import_PyDict_GetItemString
 #define PyDict_SetItemString Import_PyDict_SetItemString
 #define PyCFunction_NewEx Import_PyCFunction_NewEx
@@ -206,6 +209,7 @@ extern bool import_python(const char *python_path);
 #define PyLong_FromUnsignedLongLong Import_PyLong_FromUnsignedLongLong
 #define PyArg_VaParse Import_PyArg_VaParse
 #define _Py_NoneStruct (*Import__Py_NoneStruct)
+#define PyTuple_New Import_PyTuple_New
 #endif
 
 #endif

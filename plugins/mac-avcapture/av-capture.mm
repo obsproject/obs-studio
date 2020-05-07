@@ -2194,6 +2194,7 @@ bool obs_module_load(void)
 		.get_defaults = av_capture_defaults,
 		.get_properties = av_capture_properties,
 		.update = av_capture_update,
+		.icon_type = OBS_ICON_TYPE_CAMERA,
 	};
 
 	obs_register_source(&av_capture_info);

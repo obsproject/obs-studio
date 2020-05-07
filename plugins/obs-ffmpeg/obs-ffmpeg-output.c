@@ -22,73 +22,9 @@
 #include <util/darray.h>
 #include <util/platform.h>
 
-#include <libavutil/opt.h>
-#include <libavutil/pixdesc.h>
-#include <libavformat/avformat.h>
-#include <libswscale/swscale.h>
-
+#include "obs-ffmpeg-output.h"
 #include "obs-ffmpeg-formats.h"
-#include "closest-pixel-format.h"
 #include "obs-ffmpeg-compat.h"
-
-struct ffmpeg_cfg {
-	const char *url;
-	const char *format_name;
-	const char *format_mime_type;
-	const char *muxer_settings;
-	int gop_size;
-	int video_bitrate;
-	int audio_bitrate;
-	const char *video_encoder;
-	int video_encoder_id;
-	const char *audio_encoder;
-	int audio_encoder_id;
-	const char *video_settings;
-	const char *audio_settings;
-	int audio_mix_count;
-	int audio_tracks;
-	enum AVPixelFormat format;
-	enum AVColorRange color_range;
-	enum AVColorSpace color_space;
-	int scale_width;
-	int scale_height;
-	int width;
-	int height;
-};
-
-struct ffmpeg_data {
-	AVStream *video;
-	AVStream **audio_streams;
-	AVCodec *acodec;
-	AVCodec *vcodec;
-	AVFormatContext *output;
-	struct SwsContext *swscale;
-
-	int64_t total_frames;
-	AVFrame *vframe;
-	int frame_size;
-
-	uint64_t start_timestamp;
-
-	int64_t total_samples[MAX_AUDIO_MIXES];
-	uint32_t audio_samplerate;
-	enum audio_format audio_format;
-	size_t audio_planes;
-	size_t audio_size;
-	int num_audio_streams;
-
-	/* audio_tracks is a bitmask storing the indices of the mixes */
-	int audio_tracks;
-	struct circlebuf excess_frames[MAX_AUDIO_MIXES][MAX_AV_PLANES];
-	uint8_t *samples[MAX_AUDIO_MIXES][MAX_AV_PLANES];
-	AVFrame *aframe[MAX_AUDIO_MIXES];
-
-	struct ffmpeg_cfg config;
-
-	bool initialized;
-
-	char *last_error;
-};
 
 struct ffmpeg_output {
 	obs_output_t *output;
@@ -183,7 +119,8 @@ static bool parse_params(AVCodecContext *context, char **opts)
 			*assign = 0;
 			value = assign + 1;
 
-			if (av_opt_set(context->priv_data, name, value, 0)) {
+			if (av_opt_set(context, name, value,
+				       AV_OPT_SEARCH_CHILDREN)) {
 				blog(LOG_WARNING, "Failed to set %s=%s", name,
 				     value);
 				ret = false;
@@ -278,11 +215,11 @@ static bool create_video_stream(struct ffmpeg_data *data)
 			data->config.video_encoder))
 		return false;
 
-	closest_format =
-		get_closest_format(data->config.format, data->vcodec->pix_fmts);
+	closest_format = avcodec_find_best_pix_fmt_of_list(
+		data->vcodec->pix_fmts, data->config.format, 0, NULL);
 
 	context = data->video->codec;
-	context->bit_rate = data->config.video_bitrate * 1000;
+	context->bit_rate = (int64_t)data->config.video_bitrate * 1000;
 	context->width = data->config.scale_width;
 	context->height = data->config.scale_height;
 	context->time_base = (AVRational){ovi.fps_den, ovi.fps_num};
@@ -376,7 +313,7 @@ static bool create_audio_stream(struct ffmpeg_data *data, int idx)
 
 	data->audio_streams[idx] = stream;
 	context = data->audio_streams[idx]->codec;
-	context->bit_rate = data->config.audio_bitrate * 1000;
+	context->bit_rate = (int64_t)data->config.audio_bitrate * 1000;
 	context->time_base = (AVRational){1, aoi.samples_per_sec};
 	context->channels = get_audio_channels(aoi.speakers);
 	context->sample_rate = aoi.samples_per_sec;
@@ -522,7 +459,7 @@ static void close_audio(struct ffmpeg_data *data)
 	}
 }
 
-static void ffmpeg_data_free(struct ffmpeg_data *data)
+void ffmpeg_data_free(struct ffmpeg_data *data)
 {
 	if (data->initialized)
 		av_write_trailer(data->output);
@@ -582,8 +519,7 @@ static void set_encoder_ids(struct ffmpeg_data *data)
 		data->config.audio_encoder, data->config.audio_encoder_id);
 }
 
-static bool ffmpeg_data_init(struct ffmpeg_data *data,
-			     struct ffmpeg_cfg *config)
+bool ffmpeg_data_init(struct ffmpeg_data *data, struct ffmpeg_cfg *config)
 {
 	bool is_rtmp = false;
 

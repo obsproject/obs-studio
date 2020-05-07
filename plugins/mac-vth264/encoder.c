@@ -1,5 +1,6 @@
 #include <obs-module.h>
 #include <util/darray.h>
+#include <obs-avc.h>
 
 #include <CoreFoundation/CoreFoundation.h>
 #include <VideoToolbox/VideoToolbox.h>
@@ -671,6 +672,8 @@ static bool is_sample_keyframe(CMSampleBufferRef buffer)
 static bool parse_sample(struct vt_h264_encoder *enc, CMSampleBufferRef buffer,
 			 struct encoder_packet *packet, CMTime off)
 {
+	int type;
+
 	CMTime pts = CMSampleBufferGetPresentationTimeStamp(buffer);
 	CMTime dts = CMSampleBufferGetDecodeTimeStamp(buffer);
 
@@ -702,6 +705,37 @@ static bool parse_sample(struct vt_h264_encoder *enc, CMSampleBufferRef buffer,
 	packet->data = enc->packet_data.array;
 	packet->size = enc->packet_data.num;
 	packet->keyframe = keyframe;
+
+	// VideoToolbox produces packets with priority lower than the RTMP code
+	// expects, which causes it to be unable to recover from frame drops.
+	// Fix this by manually adjusting the priority.
+	uint8_t *start = enc->packet_data.array;
+	uint8_t *end = start + enc->packet_data.num;
+
+	start = (uint8_t *)obs_avc_find_startcode(start, end);
+	while (true) {
+		while (start < end && !*(start++))
+			;
+
+		if (start == end)
+			break;
+
+		type = start[0] & 0x1F;
+		if (type == OBS_NAL_SLICE_IDR || type == OBS_NAL_SLICE) {
+			uint8_t prev_type = (start[0] >> 5) & 0x3;
+			start[0] &= ~(3 << 5);
+
+			if (type == OBS_NAL_SLICE_IDR)
+				start[0] |= OBS_NAL_PRIORITY_HIGHEST << 5;
+			else if (type == OBS_NAL_SLICE &&
+				 prev_type != OBS_NAL_PRIORITY_DISPOSABLE)
+				start[0] |= OBS_NAL_PRIORITY_HIGH << 5;
+			else
+				start[0] |= prev_type << 5;
+		}
+
+		start = (uint8_t *)obs_avc_find_startcode(start, end);
+	}
 
 	CFRelease(buffer);
 	return true;
@@ -929,6 +963,8 @@ void encoder_list_create()
 		da_push_back(vt_encoders, &enc);
 #undef VT_DICTSTR
 	}
+
+	CFRelease(encoder_list);
 }
 
 void encoder_list_destroy()

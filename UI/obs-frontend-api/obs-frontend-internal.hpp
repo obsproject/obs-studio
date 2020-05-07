@@ -72,6 +72,9 @@ struct obs_frontend_callbacks {
 	virtual config_t *obs_frontend_get_profile_config(void) = 0;
 	virtual config_t *obs_frontend_get_global_config(void) = 0;
 
+	virtual void obs_frontend_open_projector(const char *type, int monitor,
+						 const char *geometry,
+						 const char *name) = 0;
 	virtual void obs_frontend_save(void) = 0;
 	virtual void obs_frontend_defer_save_begin(void) = 0;
 	virtual void obs_frontend_defer_save_end(void) = 0;

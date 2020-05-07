@@ -1,5 +1,6 @@
 <RCC>
   <qresource prefix="/res">
+    <file>images/save.svg</file>
     <file>images/media-pause.svg</file>
     <file>images/mute.svg</file>
     <file>images/refresh.svg</file>
@@ -9,14 +10,36 @@
     <file>images/down.svg</file>
     <file>images/up.svg</file>
     <file>images/obs.png</file>
+    <file>images/obs_paused.png</file>
     <file>images/tray_active.png</file>
     <file>images/expand.svg</file>
     <file>images/unlocked.svg</file>
     <file>images/locked.svg</file>
     <file>images/invisible.svg</file>
     <file>images/visible.svg</file>
+    <file>images/help.svg</file>
+    <file>images/help_light.svg</file>
     <file>images/trash.svg</file>
     <file>images/revert.svg</file>
+    <file>images/sources/brush.svg</file>
+    <file>images/sources/camera.svg</file>
+    <file>images/sources/gamepad.svg</file>
+    <file>images/sources/globe.svg</file>
+    <file>images/sources/group.svg</file>
+    <file>images/sources/image.svg</file>
+    <file>images/sources/media.svg</file>
+    <file>images/sources/microphone.svg</file>
+    <file>images/sources/scene.svg</file>
+    <file>images/sources/slideshow.svg</file>
+    <file>images/sources/text.svg</file>
+    <file>images/sources/window.svg</file>
+    <file>images/sources/default.svg</file>
+    <file>images/recording-active.svg</file>
+    <file>images/recording-inactive.svg</file>
+    <file>images/recording-pause.svg</file>
+    <file>images/recording-pause-inactive.svg</file>
+    <file>images/streaming-active.svg</file>
+    <file>images/streaming-inactive.svg</file>
   </qresource>
   <qresource prefix="/settings">
     <file>images/settings/output.svg</file>

@@ -110,7 +110,7 @@ static void rtmp_stream_destroy(void *data)
 		}
 	}
 
-	RTMP_TLS_Free();
+	RTMP_TLS_Free(&stream->rtmp);
 	free_packets(stream);
 	dstr_free(&stream->path);
 	dstr_free(&stream->key);
@@ -145,8 +145,8 @@ static void *rtmp_stream_create(obs_data_t *settings, obs_output_t *output)
 	stream->output = output;
 	pthread_mutex_init_value(&stream->packets_mutex);
 
-	RTMP_Init(&stream->rtmp);
 	RTMP_LogSetCallback(log_rtmp);
+	RTMP_Init(&stream->rtmp);
 	RTMP_LogSetLevel(RTMP_LOGWARNING);
 
 	if (pthread_mutex_init(&stream->packets_mutex, NULL) != 0)
@@ -407,6 +407,8 @@ static int send_packet(struct rtmp_stream *stream,
 	int recv_size = 0;
 	int ret = 0;
 
+	assert(idx < RTMP_MAX_STREAMS);
+
 	if (!stream->new_socket_loop) {
 #ifdef _WIN32
 		ret = ioctlsocket(stream->rtmp.m_sb.sb_socket, FIONREAD,
@@ -514,10 +516,18 @@ static void set_output_error(struct rtmp_stream *stream)
 		case -0x2700:
 			msg = obs_module_text("SSLCertVerifyFailed");
 			break;
+		case -0x7680:
+			msg = "Failed to load root certificates for a secure TLS connection."
+#if defined(__linux__)
+			      " Check you have an up to date root certificate bundle in /etc/ssl/certs."
+#endif
+				;
+			break;
 		}
 	}
 
-	obs_output_set_last_error(stream->output, msg);
+	if (msg)
+		obs_output_set_last_error(stream->output, msg);
 }
 
 static void dbr_add_frame(struct rtmp_stream *stream, struct dbr_frame *back)
@@ -934,7 +944,15 @@ static int try_connect(struct rtmp_stream *stream)
 
 	info("Connecting to RTMP URL %s...", stream->path.array);
 
-	RTMP_Init(&stream->rtmp);
+	// this should have been called already by rtmp_stream_create
+	//RTMP_Init(&stream->rtmp);
+
+	// since we don't call RTMP_Init above, there's no other good place
+	// to reset this as doing it in RTMP_Close breaks the ugly RTMP
+	// authentication system
+	memset(&stream->rtmp.Link, 0, sizeof(stream->rtmp.Link));
+	stream->rtmp.last_error_code = 0;
+
 	if (!RTMP_SetupURL(&stream->rtmp, stream->path.array))
 		return OBS_OUTPUT_BAD_PATH;
 
@@ -1342,7 +1360,7 @@ static void check_to_drop_frames(struct rtmp_stream *stream, bool pframes)
 			return;
 		}
 
-		if (buffer_duration_usec >= DBR_TRIGGER_USEC) {
+		if ((uint64_t)buffer_duration_usec >= DBR_TRIGGER_USEC) {
 			pthread_mutex_lock(&stream->dbr_mutex);
 			bitrate_changed = dbr_bitrate_lowered(stream);
 			pthread_mutex_unlock(&stream->dbr_mutex);

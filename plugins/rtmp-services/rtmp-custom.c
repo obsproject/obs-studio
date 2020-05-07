@@ -18,6 +18,8 @@ static void rtmp_custom_update(void *data, obs_data_t *settings)
 
 	bfree(service->server);
 	bfree(service->key);
+	bfree(service->username);
+	bfree(service->password);
 
 	service->server = bstrdup(obs_data_get_string(settings, "server"));
 	service->key = bstrdup(obs_data_get_string(settings, "key"));

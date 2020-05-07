@@ -25,6 +25,7 @@
 #include <d3d9.h>
 #include "d3d11-subsystem.hpp"
 #include "d3d11-config.h"
+#include "intel-nv12-support.hpp"
 
 struct UnsupportedHWError : HRError {
 	inline UnsupportedHWError(const char *str, HRESULT hr)
@@ -231,7 +232,6 @@ const static D3D_FEATURE_LEVEL featureLevels[] = {
 	D3D_FEATURE_LEVEL_11_0,
 	D3D_FEATURE_LEVEL_10_1,
 	D3D_FEATURE_LEVEL_10_0,
-	D3D_FEATURE_LEVEL_9_3,
 };
 
 /* ------------------------------------------------------------------------- */
@@ -353,6 +353,25 @@ try {
 	return false;
 }
 
+static bool increase_maximum_frame_latency(ID3D11Device *device)
+{
+	ComQIPtr<IDXGIDevice1> dxgiDevice(device);
+	if (!dxgiDevice) {
+		blog(LOG_DEBUG, "%s: Failed to get IDXGIDevice1", __FUNCTION__);
+		return false;
+	}
+
+	const HRESULT hr = dxgiDevice->SetMaximumFrameLatency(16);
+	if (FAILED(hr)) {
+		blog(LOG_DEBUG, "%s: SetMaximumFrameLatency failed",
+		     __FUNCTION__);
+		return false;
+	}
+
+	blog(LOG_INFO, "DXGI increase maximum frame latency success");
+	return true;
+}
+
 #if USE_GPU_PRIORITY
 static bool set_priority(ID3D11Device *device)
 {
@@ -404,17 +423,13 @@ static bool set_priority(ID3D11Device *device)
 	return true;
 }
 
-static bool is_intel(const wstring &name)
-{
-	return wstrstri(name.c_str(), L"intel") != nullptr;
-}
 #endif
 
 void gs_device::InitDevice(uint32_t adapterIdx)
 {
 	wstring adapterName;
 	DXGI_ADAPTER_DESC desc;
-	D3D_FEATURE_LEVEL levelUsed = D3D_FEATURE_LEVEL_9_3;
+	D3D_FEATURE_LEVEL levelUsed = D3D_FEATURE_LEVEL_10_0;
 	HRESULT hr = 0;
 
 	adpIdx = adapterIdx;
@@ -444,9 +459,14 @@ void gs_device::InitDevice(uint32_t adapterIdx)
 	blog(LOG_INFO, "D3D11 loaded successfully, feature level used: %x",
 	     (unsigned int)levelUsed);
 
-	/* adjust gpu thread priority */
+	/* prevent stalls sometimes seen in Present calls */
+	if (!increase_maximum_frame_latency(device)) {
+		blog(LOG_INFO, "DXGI increase maximum frame latency failed");
+	}
+
+	/* adjust gpu thread priority on non-intel GPUs */
 #if USE_GPU_PRIORITY
-	if (!is_intel(adapterName) && !set_priority(device)) {
+	if (desc.VendorId != 0x8086 && !set_priority(device)) {
 		blog(LOG_INFO, "D3D11 GPU priority setup "
 			       "failed (not admin?)");
 	}
@@ -466,7 +486,7 @@ void gs_device::InitDevice(uint32_t adapterIdx)
 	}
 
 	/* Intel CopyResource is very slow with NV12 */
-	if (desc.VendorId == 0x8086) {
+	if (desc.VendorId == 0x8086 && IsOldIntelPlatform(desc.DeviceId)) {
 		return;
 	}
 
@@ -799,6 +819,53 @@ bool device_enum_adapters(bool (*callback)(void *param, const char *name,
 	}
 }
 
+static bool GetMonitorTarget(const MONITORINFOEX &info,
+			     DISPLAYCONFIG_TARGET_DEVICE_NAME &target)
+{
+	bool found = false;
+
+	UINT32 numPath, numMode;
+	if (GetDisplayConfigBufferSizes(QDC_ONLY_ACTIVE_PATHS, &numPath,
+					&numMode) == ERROR_SUCCESS) {
+		std::vector<DISPLAYCONFIG_PATH_INFO> paths(numPath);
+		std::vector<DISPLAYCONFIG_MODE_INFO> modes(numMode);
+		if (QueryDisplayConfig(QDC_ONLY_ACTIVE_PATHS, &numPath,
+				       paths.data(), &numMode, modes.data(),
+				       nullptr) == ERROR_SUCCESS) {
+			paths.resize(numPath);
+			for (size_t i = 0; i < numPath; ++i) {
+				const DISPLAYCONFIG_PATH_INFO &path = paths[i];
+
+				DISPLAYCONFIG_SOURCE_DEVICE_NAME
+				source;
+				source.header.type =
+					DISPLAYCONFIG_DEVICE_INFO_GET_SOURCE_NAME;
+				source.header.size = sizeof(source);
+				source.header.adapterId =
+					path.sourceInfo.adapterId;
+				source.header.id = path.sourceInfo.id;
+				if (DisplayConfigGetDeviceInfo(
+					    &source.header) == ERROR_SUCCESS &&
+				    wcscmp(info.szDevice,
+					   source.viewGdiDeviceName) == 0) {
+					target.header.type =
+						DISPLAYCONFIG_DEVICE_INFO_GET_TARGET_NAME;
+					target.header.size = sizeof(target);
+					target.header.adapterId =
+						path.sourceInfo.adapterId;
+					target.header.id = path.targetInfo.id;
+					found = DisplayConfigGetDeviceInfo(
+							&target.header) ==
+						ERROR_SUCCESS;
+					break;
+				}
+			}
+		}
+	}
+
+	return found;
+}
+
 static inline void LogAdapterMonitors(IDXGIAdapter1 *adapter)
 {
 	UINT i;
@@ -809,15 +876,41 @@ static inline void LogAdapterMonitors(IDXGIAdapter1 *adapter)
 		if (FAILED(output->GetDesc(&desc)))
 			continue;
 
-		RECT rect = desc.DesktopCoordinates;
+		unsigned refresh = 0;
+
+		bool target_found = false;
+		DISPLAYCONFIG_TARGET_DEVICE_NAME target;
+
+		MONITORINFOEX info;
+		info.cbSize = sizeof(info);
+		if (GetMonitorInfo(desc.Monitor, &info)) {
+			target_found = GetMonitorTarget(info, target);
+
+			DEVMODE mode;
+			mode.dmSize = sizeof(mode);
+			mode.dmDriverExtra = 0;
+			if (EnumDisplaySettings(info.szDevice,
+						ENUM_CURRENT_SETTINGS, &mode)) {
+				refresh = mode.dmDisplayFrequency;
+			}
+		}
+
+		if (!target_found) {
+			target.monitorFriendlyDeviceName[0] = 0;
+		}
+
+		const RECT &rect = desc.DesktopCoordinates;
 		blog(LOG_INFO,
 		     "\t  output %u: "
 		     "pos={%d, %d}, "
 		     "size={%d, %d}, "
-		     "attached=%s",
+		     "attached=%s, "
+		     "refresh=%u, "
+		     "name=%ls",
 		     i, rect.left, rect.top, rect.right - rect.left,
 		     rect.bottom - rect.top,
-		     desc.AttachedToDesktop ? "true" : "false");
+		     desc.AttachedToDesktop ? "true" : "false", refresh,
+		     target.monitorFriendlyDeviceName);
 	}
 }
 
@@ -855,6 +948,27 @@ static inline void LogD3DAdapters()
 		     desc.DedicatedVideoMemory);
 		blog(LOG_INFO, "\t  Shared VRAM:    %u",
 		     desc.SharedSystemMemory);
+		blog(LOG_INFO, "\t  PCI ID:         %x:%x", desc.VendorId,
+		     desc.DeviceId);
+
+		/* driver version */
+		LARGE_INTEGER umd;
+		hr = adapter->CheckInterfaceSupport(__uuidof(IDXGIDevice),
+						    &umd);
+		if (SUCCEEDED(hr)) {
+			const uint64_t version = umd.QuadPart;
+			const uint16_t aa = (version >> 48) & 0xffff;
+			const uint16_t bb = (version >> 32) & 0xffff;
+			const uint16_t ccccc = (version >> 16) & 0xffff;
+			const uint16_t ddddd = version & 0xffff;
+			blog(LOG_INFO,
+			     "\t  Driver Version: %" PRIu16 ".%" PRIu16
+			     ".%" PRIu16 ".%" PRIu16,
+			     aa, bb, ccccc, ddddd);
+		} else {
+			blog(LOG_INFO, "\t  Driver Version: Unknown (0x%X)",
+			     (unsigned)hr);
+		}
 
 		LogAdapterMonitors(adapter);
 	}
@@ -1033,19 +1147,23 @@ gs_texture_t *device_cubetexture_create(gs_device_t *device, uint32_t size,
 gs_texture_t *device_voltexture_create(gs_device_t *device, uint32_t width,
 				       uint32_t height, uint32_t depth,
 				       enum gs_color_format color_format,
-				       uint32_t levels, const uint8_t **data,
+				       uint32_t levels,
+				       const uint8_t *const *data,
 				       uint32_t flags)
 {
-	/* TODO */
-	UNUSED_PARAMETER(device);
-	UNUSED_PARAMETER(width);
-	UNUSED_PARAMETER(height);
-	UNUSED_PARAMETER(depth);
-	UNUSED_PARAMETER(color_format);
-	UNUSED_PARAMETER(levels);
-	UNUSED_PARAMETER(data);
-	UNUSED_PARAMETER(flags);
-	return NULL;
+	gs_texture *texture = NULL;
+	try {
+		texture = new gs_texture_3d(device, width, height, depth,
+					    color_format, levels, data, flags);
+	} catch (const HRError &error) {
+		blog(LOG_ERROR, "device_voltexture_create (D3D11): %s (%08lX)",
+		     error.str, error.hr);
+		LogD3D11ErrorDetails(error, device);
+	} catch (const char *error) {
+		blog(LOG_ERROR, "device_voltexture_create (D3D11): %s", error);
+	}
+
+	return texture;
 }
 
 gs_zstencil_t *device_zstencil_create(gs_device_t *device, uint32_t width,
@@ -1634,6 +1752,16 @@ void device_stage_texture(gs_device_t *device, gs_stagesurf_t *dst,
 	}
 }
 
+extern "C" void reset_duplicators(void);
+
+void device_begin_frame(gs_device_t *device)
+{
+	/* does nothing in D3D11 */
+	UNUSED_PARAMETER(device);
+
+	reset_duplicators();
+}
+
 void device_begin_scene(gs_device_t *device)
 {
 	clear_textures(device);
@@ -1764,12 +1892,9 @@ void device_present(gs_device_t *device)
 	}
 }
 
-extern "C" void reset_duplicators(void);
-
 void device_flush(gs_device_t *device)
 {
 	device->context->Flush();
-	reset_duplicators();
 }
 
 void device_set_cull_mode(gs_device_t *device, enum gs_cull_mode mode)
@@ -2661,4 +2786,24 @@ device_set_rebuild_callback(gs_device_t *device,
 			    gs_rebuild_device_callback_t callback)
 {
 	device->rebuildCallback = std::move(callback);
+}
+
+extern "C" EXPORT void
+device_register_loss_callbacks(gs_device_t *device,
+			       const gs_device_loss *callbacks)
+{
+	device->loss_callbacks.emplace_back(*callbacks);
+}
+
+extern "C" EXPORT void
+device_unregister_loss_callbacks(gs_device_t *device,
+					void *data)
+{
+	for (auto iter = device->loss_callbacks.begin();
+	     iter != device->loss_callbacks.end(); ++iter) {
+		if (iter->data == data) {
+			device->loss_callbacks.erase(iter);
+			break;
+		}
+	}
 }

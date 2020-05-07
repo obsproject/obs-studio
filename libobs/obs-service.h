@@ -52,7 +52,7 @@ struct obs_service_info {
 	 *
 	 * @param  data    Internal service data
 	 * @param  output  Output context
-	 * @eturn          true to allow the output to start up,
+	 * @return         true to allow the output to start up,
 	 *                 false to prevent output from starting up
 	 */
 	bool (*initialize)(void *data, obs_output_t *output);

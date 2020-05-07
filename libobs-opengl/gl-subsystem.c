@@ -130,23 +130,15 @@ static void gl_enable_debug() {}
 
 static bool gl_init_extensions(struct gs_device *device)
 {
-	if (!GLAD_GL_VERSION_2_1) {
-		blog(LOG_ERROR, "obs-studio requires OpenGL version 2.1 or "
-				"higher.");
+	if (!GLAD_GL_VERSION_3_3) {
+		blog(LOG_ERROR,
+		     "obs-studio requires OpenGL version 3.3 or higher.");
 		return false;
 	}
 
 	gl_enable_debug();
 
-	if (!GLAD_GL_VERSION_3_0 && !GLAD_GL_ARB_framebuffer_object) {
-		blog(LOG_ERROR, "OpenGL extension ARB_framebuffer_object "
-				"is required.");
-		return false;
-	}
-
-	if (GLAD_GL_VERSION_3_2 || GLAD_GL_ARB_seamless_cube_map) {
-		gl_enable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
-	}
+	gl_enable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 
 	if (GLAD_GL_VERSION_4_3 || GLAD_GL_ARB_copy_image)
 		device->copy_type = COPY_TYPE_ARB;
@@ -182,8 +174,11 @@ void convert_sampler_info(struct gs_sampler_state *sampler,
 	sampler->max_anisotropy = info->max_anisotropy;
 
 	max_anisotropy_max = 1;
-	glGetIntegerv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &max_anisotropy_max);
-	gl_success("glGetIntegerv(GL_MAX_TEXTURE_ANISOTROPY_MAX)");
+	if (GLAD_GL_EXT_texture_filter_anisotropic) {
+		glGetIntegerv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT,
+			      &max_anisotropy_max);
+		gl_success("glGetIntegerv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT)");
+	}
 
 	if (1 <= sampler->max_anisotropy &&
 	    sampler->max_anisotropy <= max_anisotropy_max)
@@ -250,7 +245,7 @@ int device_create(gs_device_t **p_device, uint32_t adapter)
 	gl_enable(GL_CULL_FACE);
 	gl_gen_vertex_arrays(1, &device->empty_vao);
 
-	device_leave_context(device);
+	gl_clear_context(device);
 	device->cur_swap = NULL;
 
 #ifdef _WIN32
@@ -352,24 +347,6 @@ uint32_t device_get_height(const gs_device_t *device)
 		blog(LOG_WARNING, "device_get_height (GL): No active swap");
 		return 0;
 	}
-}
-
-gs_texture_t *device_voltexture_create(gs_device_t *device, uint32_t width,
-				       uint32_t height, uint32_t depth,
-				       enum gs_color_format color_format,
-				       uint32_t levels, const uint8_t **data,
-				       uint32_t flags)
-{
-	/* TODO */
-	UNUSED_PARAMETER(device);
-	UNUSED_PARAMETER(width);
-	UNUSED_PARAMETER(height);
-	UNUSED_PARAMETER(depth);
-	UNUSED_PARAMETER(color_format);
-	UNUSED_PARAMETER(levels);
-	UNUSED_PARAMETER(data);
-	UNUSED_PARAMETER(flags);
-	return NULL;
 }
 
 gs_samplerstate_t *
@@ -475,9 +452,12 @@ static bool load_texture_sampler(gs_texture_t *tex, gs_samplerstate_t *ss)
 		success = false;
 	if (!gl_tex_param_i(tex->gl_target, GL_TEXTURE_WRAP_R, ss->address_w))
 		success = false;
-	if (!gl_tex_param_i(tex->gl_target, GL_TEXTURE_MAX_ANISOTROPY_EXT,
-			    ss->max_anisotropy))
-		success = false;
+	if (GLAD_GL_EXT_texture_filter_anisotropic) {
+		if (!gl_tex_param_i(tex->gl_target,
+				    GL_TEXTURE_MAX_ANISOTROPY_EXT,
+				    ss->max_anisotropy))
+			success = false;
+	}
 
 	apply_swizzle(tex);
 
@@ -929,6 +909,12 @@ void device_copy_texture(gs_device_t *device, gs_texture_t *dst,
 	device_copy_texture_region(device, dst, 0, 0, src, 0, 0, 0, 0);
 }
 
+void device_begin_frame(gs_device_t *device)
+{
+	/* does nothing */
+	UNUSED_PARAMETER(device);
+}
+
 void device_begin_scene(gs_device_t *device)
 {
 	clear_textures(device);
@@ -1278,7 +1264,6 @@ void device_set_viewport(gs_device_t *device, int x, int y, int width,
 			 int height)
 {
 	uint32_t base_height = 0;
-	int gl_y = 0;
 
 	/* GL uses bottom-up coordinates for viewports.  We want top-down */
 	if (device->cur_render_target) {
@@ -1288,7 +1273,8 @@ void device_set_viewport(gs_device_t *device, int x, int y, int width,
 		gl_getclientsize(device->cur_swap, &dw, &base_height);
 	}
 
-	if (base_height)
+	GLint gl_y = y;
+	if (base_height && !device->cur_fbo)
 		gl_y = base_height - y - height;
 
 	glViewport(x, gl_y, width, height);
@@ -1419,12 +1405,6 @@ void gs_swapchain_destroy(gs_swapchain_t *swapchain)
 
 	gl_windowinfo_destroy(swapchain->wi);
 	bfree(swapchain);
-}
-
-void gs_voltexture_destroy(gs_texture_t *voltex)
-{
-	/* TODO */
-	UNUSED_PARAMETER(voltex);
 }
 
 uint32_t gs_voltexture_get_width(const gs_texture_t *voltex)

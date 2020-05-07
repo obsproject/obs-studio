@@ -2,6 +2,7 @@
 
 #define WIN32_MEAN_AND_LEAN
 #include <windows.h>
+#include <initguid.h>
 #include <mmdeviceapi.h>
 #include <audioclient.h>
 #include <propsys.h>

@@ -15,6 +15,8 @@ volatile bool recording_active = false;
 volatile bool recording_paused = false;
 volatile bool replaybuf_active = false;
 
+#define RTMP_PROTOCOL "rtmp"
+
 static void OBSStreamStarting(void *data, calldata_t *params)
 {
 	BasicOutputHandler *output = static_cast<BasicOutputHandler *>(data);
@@ -643,6 +645,7 @@ void SimpleOutput::UpdateRecordingSettings()
 	} else if (videoEncoder == SIMPLE_ENCODER_NVENC) {
 		UpdateRecordingSettings_nvenc(crf);
 	}
+	UpdateRecordingAudioSettings();
 }
 
 inline void SimpleOutput::SetupOutputs()
@@ -689,8 +692,14 @@ bool SimpleOutput::StartStreaming(obs_service_t *service)
 	/* --------------------- */
 
 	const char *type = obs_service_get_output_type(service);
-	if (!type)
+	if (!type) {
 		type = "rtmp_output";
+		const char *url = obs_service_get_url(service);
+		if (url != NULL &&
+		    strncmp(url, RTMP_PROTOCOL, strlen(RTMP_PROTOCOL)) != 0) {
+			type = "ffmpeg_encoded_output";
+		}
+	}
 
 	/* XXX: this is messy and disgusting and should be refactored */
 	if (outputType != type) {
@@ -1273,15 +1282,8 @@ inline void AdvancedOutput::SetupStreaming()
 	bool rescale = config_get_bool(main->Config(), "AdvOut", "Rescale");
 	const char *rescaleRes =
 		config_get_string(main->Config(), "AdvOut", "RescaleRes");
-	int streamTrack =
-		config_get_int(main->Config(), "AdvOut", "TrackIndex") - 1;
-	uint32_t caps = obs_encoder_get_caps(h264Streaming);
 	unsigned int cx = 0;
 	unsigned int cy = 0;
-
-	if ((caps & OBS_ENCODER_CAP_PASS_TEXTURE) != 0) {
-		rescale = false;
-	}
 
 	if (rescale && rescaleRes && *rescaleRes) {
 		if (sscanf(rescaleRes, "%ux%u", &cx, &cy) != 2) {
@@ -1290,7 +1292,7 @@ inline void AdvancedOutput::SetupStreaming()
 		}
 	}
 
-	obs_output_set_audio_encoder(streamOutput, streamAudioEnc, streamTrack);
+	obs_output_set_audio_encoder(streamOutput, streamAudioEnc, 0);
 	obs_encoder_set_scaled_size(h264Streaming, cx, cy);
 	obs_encoder_set_video(h264Streaming, obs_get_video());
 }
@@ -1304,7 +1306,18 @@ inline void AdvancedOutput::SetupRecording()
 	bool rescale = config_get_bool(main->Config(), "AdvOut", "RecRescale");
 	const char *rescaleRes =
 		config_get_string(main->Config(), "AdvOut", "RecRescaleRes");
-	int tracks = config_get_int(main->Config(), "AdvOut", "RecTracks");
+	int tracks;
+
+	const char *recFormat =
+		config_get_string(main->Config(), "AdvOut", "RecFormat");
+
+	bool flv = strcmp(recFormat, "flv") == 0;
+
+	if (flv)
+		tracks = config_get_int(main->Config(), "AdvOut", "FLVTrack");
+	else
+		tracks = config_get_int(main->Config(), "AdvOut", "RecTracks");
+
 	obs_data_t *settings = obs_data_create();
 	unsigned int cx = 0;
 	unsigned int cy = 0;
@@ -1319,11 +1332,6 @@ inline void AdvancedOutput::SetupRecording()
 			obs_output_set_video_encoder(replayBuffer,
 						     h264Streaming);
 	} else {
-		uint32_t caps = obs_encoder_get_caps(h264Recording);
-		if ((caps & OBS_ENCODER_CAP_PASS_TEXTURE) != 0) {
-			rescale = false;
-		}
-
 		if (rescale && rescaleRes && *rescaleRes) {
 			if (sscanf(rescaleRes, "%ux%u", &cx, &cy) != 2) {
 				cx = 0;
@@ -1339,15 +1347,24 @@ inline void AdvancedOutput::SetupRecording()
 						     h264Recording);
 	}
 
-	for (int i = 0; i < MAX_AUDIO_MIXES; i++) {
-		if ((tracks & (1 << i)) != 0) {
-			obs_output_set_audio_encoder(fileOutput, aacTrack[i],
-						     idx);
-			if (replayBuffer)
-				obs_output_set_audio_encoder(replayBuffer,
+	if (!flv) {
+		for (int i = 0; i < MAX_AUDIO_MIXES; i++) {
+			if ((tracks & (1 << i)) != 0) {
+				obs_output_set_audio_encoder(fileOutput,
 							     aacTrack[i], idx);
-			idx++;
+				if (replayBuffer)
+					obs_output_set_audio_encoder(
+						replayBuffer, aacTrack[i], idx);
+				idx++;
+			}
 		}
+	} else if (flv && tracks != 0) {
+		obs_output_set_audio_encoder(fileOutput, aacTrack[tracks - 1],
+					     idx);
+
+		if (replayBuffer)
+			obs_output_set_audio_encoder(replayBuffer,
+						     aacTrack[tracks - 1], idx);
 	}
 
 	obs_data_set_string(settings, "path", path);
@@ -1517,8 +1534,14 @@ bool AdvancedOutput::StartStreaming(obs_service_t *service)
 	/* --------------------- */
 
 	const char *type = obs_service_get_output_type(service);
-	if (!type)
+	if (!type) {
 		type = "rtmp_output";
+		const char *url = obs_service_get_url(service);
+		if (url != NULL &&
+		    strncmp(url, RTMP_PROTOCOL, strlen(RTMP_PROTOCOL)) != 0) {
+			type = "ffmpeg_encoded_output";
+		}
+	}
 
 	/* XXX: this is messy and disgusting and should be refactored */
 	if (outputType != type) {

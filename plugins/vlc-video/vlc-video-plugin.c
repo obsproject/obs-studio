@@ -36,8 +36,11 @@ LIBVLC_AUDIO_SET_FORMAT_CALLBACKS libvlc_audio_set_format_callbacks_;
 LIBVLC_MEDIA_PLAYER_PLAY libvlc_media_player_play_;
 LIBVLC_MEDIA_PLAYER_STOP libvlc_media_player_stop_;
 LIBVLC_MEDIA_PLAYER_GET_TIME libvlc_media_player_get_time_;
+LIBVLC_MEDIA_PLAYER_SET_TIME libvlc_media_player_set_time_;
 LIBVLC_VIDEO_GET_SIZE libvlc_video_get_size_;
 LIBVLC_MEDIA_PLAYER_EVENT_MANAGER libvlc_media_player_event_manager_;
+LIBVLC_MEDIA_PLAYER_GET_STATE libvlc_media_player_get_state_;
+LIBVLC_MEDIA_PLAYER_GET_LENGTH libvlc_media_player_get_length_;
 
 /* libvlc media list */
 LIBVLC_MEDIA_LIST_NEW libvlc_media_list_new_;
@@ -108,8 +111,11 @@ static bool load_vlc_funcs(void)
 	LOAD_VLC_FUNC(libvlc_media_player_play);
 	LOAD_VLC_FUNC(libvlc_media_player_stop);
 	LOAD_VLC_FUNC(libvlc_media_player_get_time);
+	LOAD_VLC_FUNC(libvlc_media_player_set_time);
 	LOAD_VLC_FUNC(libvlc_video_get_size);
 	LOAD_VLC_FUNC(libvlc_media_player_event_manager);
+	LOAD_VLC_FUNC(libvlc_media_player_get_state);
+	LOAD_VLC_FUNC(libvlc_media_player_get_length);
 
 	/* libvlc media list */
 	LOAD_VLC_FUNC(libvlc_media_list_new);

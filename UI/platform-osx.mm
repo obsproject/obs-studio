@@ -28,11 +28,29 @@
 
 using namespace std;
 
+bool isInBundle()
+{
+	NSRunningApplication *app = [NSRunningApplication currentApplication];
+	return [app bundleIdentifier] != nil;
+}
+
 bool GetDataFilePath(const char *data, string &output)
 {
-	stringstream str;
-	str << OBS_DATA_PATH "/obs-studio/" << data;
-	output = str.str();
+	if (isInBundle()) {
+		NSRunningApplication *app =
+			[NSRunningApplication currentApplication];
+		NSURL *bundleURL = [app bundleURL];
+		NSString *path = [NSString
+			stringWithFormat:@"Contents/Resources/data/obs-studio/%@",
+					 [NSString stringWithUTF8String:data]];
+		NSURL *dataURL = [bundleURL URLByAppendingPathComponent:path];
+		output = [[dataURL path] UTF8String];
+	} else {
+		stringstream str;
+		str << OBS_DATA_PATH "/obs-studio/" << data;
+		output = str.str();
+	}
+
 	return !access(output.c_str(), R_OK);
 }
 
@@ -177,4 +195,33 @@ void EnableOSXDockIcon(bool enable)
 	else
 		[NSApp setActivationPolicy:
 				NSApplicationActivationPolicyProhibited];
+}
+
+/*
+ * This custom NSApplication subclass makes the app compatible with CEF. Qt
+ * also has an NSApplication subclass, but it doesn't conflict thanks to Qt
+ * using arcane magic to hook into the NSApplication superclass itself if the
+ * program has its own NSApplication subclass.
+ */
+
+@protocol CrAppProtocol
+- (BOOL)isHandlingSendEvent;
+@end
+
+@interface OBSApplication : NSApplication <CrAppProtocol>
+@property (nonatomic, getter=isHandlingSendEvent) BOOL handlingSendEvent;
+@end
+
+@implementation OBSApplication
+- (void)sendEvent:(NSEvent *)event
+{
+	_handlingSendEvent = YES;
+	[super sendEvent:event];
+	_handlingSendEvent = NO;
+}
+@end
+
+void InstallNSApplicationSubclass()
+{
+	[OBSApplication sharedApplication];
 }

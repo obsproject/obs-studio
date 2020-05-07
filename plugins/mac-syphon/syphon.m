@@ -41,12 +41,6 @@ struct syphon {
 };
 typedef struct syphon *syphon_t;
 
-static inline void objc_release(NSObject **obj)
-{
-	[*obj release];
-	*obj = nil;
-}
-
 static inline void update_properties(syphon_t s)
 {
 	obs_source_update_properties(s->source);
@@ -101,10 +95,7 @@ static void stop_client(syphon_t s)
 	obs_enter_graphics();
 
 	if (s->client) {
-		@autoreleasepool {
-			[s->client stop];
-			objc_release(&s->client);
-		}
+		[s->client stop];
 	}
 
 	if (s->tex) {
@@ -178,16 +169,6 @@ static inline void check_description(syphon_t s, NSDictionary *desc)
 	    surfaces_string.UTF8String);
 }
 
-static inline bool update_string(NSString **str, NSString *new)
-{
-	if (!new)
-		return false;
-
-	[*str release];
-	*str = [new retain];
-	return true;
-}
-
 static inline void handle_new_frame(syphon_t s,
 				    SYPHON_CLIENT_UNIQUE_CLASS_NAME *client)
 {
@@ -233,33 +214,24 @@ static void create_client(syphon_t s)
 	NSDictionary *desc = find_by_uuid(servers, s->uuid);
 	if (!desc) {
 		desc = servers[0];
-		if (update_string(&s->uuid,
-				  desc[SyphonServerDescriptionUUIDKey]))
+		if (![s->uuid isEqualToString:
+				      desc[SyphonServerDescriptionUUIDKey]]) {
 			s->uuid_changed = true;
+		}
 	}
 
 	check_version(s, desc);
 	check_description(s, desc);
 
-	@autoreleasepool {
-		s->client = [[SYPHON_CLIENT_UNIQUE_CLASS_NAME alloc]
-			initWithServerDescription:desc
-					  options:nil
-				  newFrameHandler:^(
-					  SYPHON_CLIENT_UNIQUE_CLASS_NAME
-						  *client) {
-					  handle_new_frame(s, client);
-				  }];
-	}
+	s->client = [[SYPHON_CLIENT_UNIQUE_CLASS_NAME alloc]
+		initWithServerDescription:desc
+				  options:nil
+			  newFrameHandler:^(
+				  SYPHON_CLIENT_UNIQUE_CLASS_NAME *client) {
+				  handle_new_frame(s, client);
+			  }];
 
 	s->active = true;
-}
-
-static inline void release_settings(syphon_t s)
-{
-	[s->app_name release];
-	[s->name release];
-	[s->uuid release];
 }
 
 static inline bool load_syphon_settings(syphon_t s, obs_data_t *settings)
@@ -275,10 +247,9 @@ static inline bool load_syphon_settings(syphon_t s, obs_data_t *settings)
 	if ([uuid isEqual:s->uuid] && equal_names)
 		return false;
 
-	release_settings(s);
-	s->app_name = [app_name retain];
-	s->name = [name retain];
-	s->uuid = [uuid retain];
+	s->app_name = app_name;
+	s->name = name;
+	s->uuid = uuid;
 	s->uuid_changed = false;
 	return true;
 }
@@ -299,10 +270,12 @@ static inline void update_from_announce(syphon_t s, NSDictionary *info)
 	    !([app_name isEqual:s->app_name] && [name isEqual:s->name]))
 		return;
 
-	update_string(&s->app_name, app_name);
-	update_string(&s->name, name);
-	if (update_string(&s->uuid, uuid))
+	s->app_name = app_name;
+	s->name = name;
+	if (![s->uuid isEqualToString:uuid]) {
+		s->uuid = uuid;
 		s->uuid_changed = true;
+	}
 
 	create_client(s);
 }
@@ -324,8 +297,6 @@ static inline void update_inject_state(syphon_t s, NSDictionary *info,
 
 	if (!(s->inject_server_found = announce)) {
 		s->inject_wait_time = 0.f;
-
-		objc_release(&s->inject_uuid);
 		LOG(LOG_INFO,
 		    "Injected server retired: "
 		    "[%s] InjectedSyphon (%s)",
@@ -336,7 +307,7 @@ static inline void update_inject_state(syphon_t s, NSDictionary *info,
 	if (s->inject_uuid) //TODO: track multiple injected instances?
 		return;
 
-	s->inject_uuid = [uuid retain];
+	s->inject_uuid = uuid;
 	LOG(LOG_INFO, "Injected server found: [%s] %s (%s)",
 	    app_name.UTF8String, name.UTF8String, uuid.UTF8String);
 }
@@ -487,26 +458,31 @@ static void *syphon_create_internal(obs_data_t *settings, obs_source_t *source)
 
 	s->source = source;
 
-	if (!init_obs_graphics_objects(s))
-		goto fail;
+	if (!init_obs_graphics_objects(s)) {
+		syphon_destroy_internal(s);
+		return NULL;
+	}
 
-	if (!load_syphon_settings(s, settings))
-		goto fail;
+	if (!load_syphon_settings(s, settings)) {
+		syphon_destroy_internal(s);
+		return NULL;
+	}
 
 	const char *inject_info = obs_data_get_string(settings, "application");
 	s->inject_info = obs_data_create_from_json(inject_info);
 	s->inject_active = obs_data_get_bool(settings, "inject");
 	s->inject_app = @(obs_data_get_string(s->inject_info, "name"));
 
-	if (s->inject_app)
-		[s->inject_app retain];
-
-	if (!create_syphon_listeners(s))
-		goto fail;
+	if (!create_syphon_listeners(s)) {
+		syphon_destroy_internal(s);
+		return NULL;
+	}
 
 	NSWorkspace *ws = [NSWorkspace sharedWorkspace];
-	if (!create_applications_observer(s, ws))
-		goto fail;
+	if (!create_applications_observer(s, ws)) {
+		syphon_destroy_internal(s);
+		return NULL;
+	}
 
 	if (s->inject_active)
 		find_and_inject_target(s, ws.runningApplications, false);
@@ -519,10 +495,6 @@ static void *syphon_create_internal(obs_data_t *settings, obs_source_t *source)
 		obs_data_get_bool(settings, "allow_transparency");
 
 	return s;
-
-fail:
-	syphon_destroy_internal(s);
-	return NULL;
 }
 
 static void *syphon_create(obs_data_t *settings, obs_source_t *source)
@@ -550,14 +522,8 @@ static inline void syphon_destroy_internal(syphon_t s)
 	[ws removeObserver:s->launch_listener
 		forKeyPath:NSStringFromSelector(@selector
 						(runningApplications))];
-	objc_release(&s->launch_listener);
-
-	objc_release(&s->inject_app);
-	objc_release(&s->inject_uuid);
 
 	obs_data_release(s->inject_info);
-
-	release_settings(s);
 
 	obs_enter_graphics();
 	stop_client(s);
@@ -1198,11 +1164,7 @@ static inline void update_inject(syphon_t s, obs_data_t *settings)
 	obs_data_t *prev = s->inject_info;
 	s->inject_info = obs_data_create_from_json(inject_str);
 
-	NSString *prev_app = s->inject_app;
-	s->inject_app = [@(obs_data_get_string(s->inject_info, "name")) retain];
-	[prev_app release];
-
-	objc_release(&s->inject_uuid);
+	s->inject_app = @(obs_data_get_string(s->inject_info, "name"));
 
 	SyphonServerDirectory *ssd = [SyphonServerDirectory sharedDirectory];
 	NSArray *servers = [ssd serversMatchingName:@"InjectedSyphon"
@@ -1281,4 +1243,5 @@ struct obs_source_info syphon_info = {
 	.get_height = syphon_get_height,
 	.update = syphon_update,
 	.save = syphon_save,
+	.icon_type = OBS_ICON_TYPE_GAME_CAPTURE,
 };

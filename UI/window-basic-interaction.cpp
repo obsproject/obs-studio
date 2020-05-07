@@ -44,6 +44,10 @@ OBSBasicInteraction::OBSBasicInteraction(QWidget *parent, OBSSource source_)
 	int cy = (int)config_get_int(App()->GlobalConfig(), "InteractionWindow",
 				     "cy");
 
+	Qt::WindowFlags flags = windowFlags();
+	Qt::WindowFlags helpFlag = Qt::WindowContextHelpButtonHint;
+	setWindowFlags(flags & (~helpFlag));
+
 	ui->setupUi(this);
 
 	ui->preview->setMouseTracking(true);
@@ -52,9 +56,6 @@ OBSBasicInteraction::OBSBasicInteraction(QWidget *parent, OBSSource source_)
 
 	if (cx > 400 && cy > 400)
 		resize(cx, cy);
-
-	OBSData settings = obs_source_get_settings(source);
-	obs_data_release(settings);
 
 	const char *name = obs_source_get_name(source);
 	setWindowTitle(QTStr("Basic.InteractionWindow").arg(QT_UTF8(name)));

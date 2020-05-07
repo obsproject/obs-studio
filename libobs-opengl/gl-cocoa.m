@@ -25,13 +25,16 @@
 
 struct gl_windowinfo {
 	NSView *view;
+	NSOpenGLContext *context;
+	gs_texture_t *texture;
+	GLuint fbo;
 };
 
 struct gl_platform {
 	NSOpenGLContext *context;
 };
 
-static NSOpenGLContext *gl_context_create(void)
+static NSOpenGLContext *gl_context_create(NSOpenGLContext *share)
 {
 	unsigned attrib_count = 0;
 
@@ -62,7 +65,8 @@ static NSOpenGLContext *gl_context_create(void)
 	}
 
 	NSOpenGLContext *context;
-	context = [[NSOpenGLContext alloc] initWithFormat:pf shareContext:nil];
+	context = [[NSOpenGLContext alloc] initWithFormat:pf
+					     shareContext:share];
 	[pf release];
 	if (!context) {
 		blog(LOG_ERROR, "Failed to create context");
@@ -76,28 +80,29 @@ static NSOpenGLContext *gl_context_create(void)
 
 struct gl_platform *gl_platform_create(gs_device_t *device, uint32_t adapter)
 {
-	struct gl_platform *plat = bzalloc(sizeof(struct gl_platform));
-	GLint interval = 0;
-
-	plat->context = gl_context_create();
-	if (!plat->context)
-		goto fail;
-
-	[plat->context makeCurrentContext];
-	[plat->context setValues:&interval forParameter:NSOpenGLCPSwapInterval];
-
-	if (!gladLoadGL())
-		goto fail;
-
-	return plat;
-
-fail:
-	blog(LOG_ERROR, "gl_platform_create failed");
-	gl_platform_destroy(plat);
-
 	UNUSED_PARAMETER(device);
 	UNUSED_PARAMETER(adapter);
-	return NULL;
+
+	NSOpenGLContext *context = gl_context_create(nil);
+	if (!context) {
+		blog(LOG_ERROR, "gl_context_create failed");
+		return NULL;
+	}
+
+	[context makeCurrentContext];
+	GLint interval = 0;
+	[context setValues:&interval forParameter:NSOpenGLCPSwapInterval];
+	const bool success = gladLoadGL() != 0;
+
+	if (!success) {
+		blog(LOG_ERROR, "gladLoadGL failed");
+		[context release];
+		return NULL;
+	}
+
+	struct gl_platform *plat = bzalloc(sizeof(struct gl_platform));
+	plat->context = context;
+	return plat;
 }
 
 void gl_platform_destroy(struct gl_platform *platform)
@@ -113,14 +118,72 @@ void gl_platform_destroy(struct gl_platform *platform)
 
 bool gl_platform_init_swapchain(struct gs_swap_chain *swap)
 {
-	UNUSED_PARAMETER(swap);
+	NSOpenGLContext *parent = swap->device->plat->context;
+	NSOpenGLContext *context = gl_context_create(parent);
+	bool success = context != nil;
+	if (success) {
+		CGLContextObj parent_obj = [parent CGLContextObj];
+		CGLLockContext(parent_obj);
 
-	return true;
+		[parent makeCurrentContext];
+		struct gs_init_data *init_data = &swap->info;
+		swap->wi->texture = device_texture_create(
+			swap->device, init_data->cx, init_data->cy,
+			init_data->format, 1, NULL, GS_RENDER_TARGET);
+		glFlush();
+		[NSOpenGLContext clearCurrentContext];
+
+		CGLContextObj context_obj = [context CGLContextObj];
+		CGLLockContext(context_obj);
+
+		[context makeCurrentContext];
+		[context setView:swap->wi->view];
+		GLint interval = 0;
+		[context setValues:&interval
+			forParameter:NSOpenGLCPSwapInterval];
+		gl_gen_framebuffers(1, &swap->wi->fbo);
+		gl_bind_framebuffer(GL_FRAMEBUFFER, swap->wi->fbo);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+				       GL_TEXTURE_2D,
+				       swap->wi->texture->texture, 0);
+		gl_success("glFrameBufferTexture2D");
+		glFlush();
+		[NSOpenGLContext clearCurrentContext];
+
+		CGLUnlockContext(context_obj);
+
+		CGLUnlockContext(parent_obj);
+
+		swap->wi->context = context;
+	}
+
+	return success;
 }
 
 void gl_platform_cleanup_swapchain(struct gs_swap_chain *swap)
 {
-	UNUSED_PARAMETER(swap);
+	NSOpenGLContext *parent = swap->device->plat->context;
+	CGLContextObj parent_obj = [parent CGLContextObj];
+	CGLLockContext(parent_obj);
+
+	NSOpenGLContext *context = swap->wi->context;
+	CGLContextObj context_obj = [context CGLContextObj];
+	CGLLockContext(context_obj);
+
+	[context makeCurrentContext];
+	gl_delete_framebuffers(1, &swap->wi->fbo);
+	glFlush();
+	[NSOpenGLContext clearCurrentContext];
+
+	CGLUnlockContext(context_obj);
+
+	[parent makeCurrentContext];
+	gs_texture_destroy(swap->wi->texture);
+	glFlush();
+	[NSOpenGLContext clearCurrentContext];
+	swap->wi->context = nil;
+
+	CGLUnlockContext(parent_obj);
 }
 
 struct gl_windowinfo *gl_windowinfo_create(const struct gs_init_data *info)
@@ -150,19 +213,62 @@ void gl_windowinfo_destroy(struct gl_windowinfo *wi)
 
 void gl_update(gs_device_t *device)
 {
-	[device->plat->context update];
+	gs_swapchain_t *swap = device->cur_swap;
+	NSOpenGLContext *parent = device->plat->context;
+	NSOpenGLContext *context = swap->wi->context;
+	dispatch_async(dispatch_get_main_queue(), ^() {
+		CGLContextObj parent_obj = [parent CGLContextObj];
+		CGLLockContext(parent_obj);
+
+		CGLContextObj context_obj = [context CGLContextObj];
+		CGLLockContext(context_obj);
+
+		[context makeCurrentContext];
+		[context update];
+		struct gs_init_data *info = &swap->info;
+		gs_texture_t *previous = swap->wi->texture;
+		swap->wi->texture = device_texture_create(device, info->cx,
+							  info->cy,
+							  info->format, 1, NULL,
+							  GS_RENDER_TARGET);
+		gl_bind_framebuffer(GL_FRAMEBUFFER, swap->wi->fbo);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+				       GL_TEXTURE_2D,
+				       swap->wi->texture->texture, 0);
+		gl_success("glFrameBufferTexture2D");
+		gs_texture_destroy(previous);
+		glFlush();
+		[NSOpenGLContext clearCurrentContext];
+
+		CGLUnlockContext(context_obj);
+
+		CGLUnlockContext(parent_obj);
+	});
+}
+
+void gl_clear_context(gs_device_t *device)
+{
+	UNUSED_PARAMETER(device);
+	[NSOpenGLContext clearCurrentContext];
 }
 
 void device_enter_context(gs_device_t *device)
 {
+	CGLLockContext([device->plat->context CGLContextObj]);
+
 	[device->plat->context makeCurrentContext];
 }
 
 void device_leave_context(gs_device_t *device)
 {
-	UNUSED_PARAMETER(device);
-
+	glFlush();
 	[NSOpenGLContext clearCurrentContext];
+	device->cur_render_target = NULL;
+	device->cur_zstencil_buffer = NULL;
+	device->cur_swap = NULL;
+	device->cur_fbo = NULL;
+
+	CGLUnlockContext([device->plat->context CGLContextObj]);
 }
 
 void *device_get_device_obj(gs_device_t *device)
@@ -177,15 +283,35 @@ void device_load_swapchain(gs_device_t *device, gs_swapchain_t *swap)
 
 	device->cur_swap = swap;
 	if (swap) {
-		[device->plat->context setView:swap->wi->view];
-	} else {
-		[device->plat->context clearDrawable];
+		device_set_render_target(device, swap->wi->texture, NULL);
 	}
 }
 
 void device_present(gs_device_t *device)
 {
-	[device->plat->context flushBuffer];
+	glFlush();
+	[NSOpenGLContext clearCurrentContext];
+
+	CGLUnlockContext([device->plat->context CGLContextObj]);
+
+	CGLLockContext([device->cur_swap->wi->context CGLContextObj]);
+
+	[device->cur_swap->wi->context makeCurrentContext];
+	gl_bind_framebuffer(GL_READ_FRAMEBUFFER, device->cur_swap->wi->fbo);
+	gl_bind_framebuffer(GL_DRAW_FRAMEBUFFER, 0);
+	const uint32_t width = device->cur_swap->info.cx;
+	const uint32_t height = device->cur_swap->info.cy;
+	glBlitFramebuffer(0, 0, width, height, 0, height, width, 0,
+			  GL_COLOR_BUFFER_BIT, GL_NEAREST);
+	[device->cur_swap->wi->context flushBuffer];
+	glFlush();
+	[NSOpenGLContext clearCurrentContext];
+
+	CGLUnlockContext([device->cur_swap->wi->context CGLContextObj]);
+
+	CGLLockContext([device->plat->context CGLContextObj]);
+
+	[device->plat->context makeCurrentContext];
 }
 
 void gl_getclientsize(const struct gs_swap_chain *swap, uint32_t *width,

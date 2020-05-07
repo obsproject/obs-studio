@@ -28,6 +28,9 @@ static inline HMODULE get_system_module(const char *module);
 static inline HMODULE load_system_library(const char *module);
 extern uint64_t os_gettime_ns(void);
 
+#define flog(format, ...) hlog("%s: " format, __FUNCTION__, ##__VA_ARGS__)
+#define flog_hr(text, hr) hlog_hr(__FUNCTION__ ": " text, hr)
+
 static inline bool capture_active(void);
 static inline bool capture_ready(void);
 static inline bool capture_should_stop(void);
@@ -42,6 +45,9 @@ extern bool hook_d3d8(void);
 extern bool hook_d3d9(void);
 extern bool hook_dxgi(void);
 extern bool hook_gl(void);
+#if COMPILE_VULKAN_HOOK
+extern bool hook_vulkan(void);
+#endif
 
 extern void d3d10_capture(void *swap, void *backbuffer, bool capture_overlay);
 extern void d3d10_free(void);
@@ -146,12 +152,10 @@ static inline HMODULE load_system_library(const char *name)
 static inline bool capture_alive(void)
 {
 	HANDLE handle = OpenMutexW(SYNCHRONIZE, false, keepalive_name);
-	CloseHandle(handle);
-
-	if (handle)
-		return true;
-
-	return GetLastError() != ERROR_FILE_NOT_FOUND;
+	const bool success = handle != NULL;
+	if (success)
+		CloseHandle(handle);
+	return success;
 }
 
 static inline bool capture_active(void)

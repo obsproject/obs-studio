@@ -24,6 +24,11 @@
 #include "media-io/format-conversion.h"
 #include "media-io/video-frame.h"
 
+#ifdef _WIN32
+#define WIN32_MEAN_AND_LEAN
+#include <windows.h>
+#endif
+
 static uint64_t tick_sources(uint64_t cur_time, uint64_t last_time)
 {
 	struct obs_core_data *data = &obs->data;
@@ -932,6 +937,25 @@ static void clear_gpu_frame_data(void)
 }
 #endif
 
+extern THREAD_LOCAL bool is_graphics_thread;
+
+static void execute_graphics_tasks(void)
+{
+	struct obs_core_video *video = &obs->video;
+	bool tasks_remaining = true;
+
+	while (tasks_remaining) {
+		pthread_mutex_lock(&video->task_mutex);
+		if (video->tasks.size) {
+			struct obs_task_info info;
+			circlebuf_pop_front(&video->tasks, &info, sizeof(info));
+			info.task(info.param);
+		}
+		tasks_remaining = !!video->tasks.size;
+		pthread_mutex_unlock(&video->task_mutex);
+	}
+}
+
 static const char *tick_sources_name = "tick_sources";
 static const char *render_displays_name = "render_displays";
 static const char *output_frame_name = "output_frame";
@@ -948,6 +972,8 @@ void *obs_graphics_thread(void *param)
 	bool raw_was_active = false;
 	bool was_active = false;
 
+	is_graphics_thread = true;
+
 	obs->video.video_time = os_gettime_ns();
 	obs->video.video_frame_interval_ns = interval;
 
@@ -960,7 +986,11 @@ void *obs_graphics_thread(void *param)
 
 	srand((unsigned int)time(NULL));
 
-	while (!video_output_stopped(obs->video.video)) {
+	for (;;) {
+		/* defer loop break to clean up sources */
+		const bool stop_requested =
+			video_output_stopped(obs->video.video);
+
 		uint64_t frame_start = os_gettime_ns();
 		uint64_t frame_time_ns;
 		bool raw_active = obs->video.raw_active > 0;
@@ -987,9 +1017,23 @@ void *obs_graphics_thread(void *param)
 
 		profile_start(video_thread_name);
 
+		gs_enter_context(obs->video.graphics);
+		gs_begin_frame();
+		gs_leave_context();
+
 		profile_start(tick_sources_name);
 		last_time = tick_sources(obs->video.video_time, last_time);
 		profile_end(tick_sources_name);
+
+		execute_graphics_tasks();
+
+#ifdef _WIN32
+		MSG msg;
+		while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
+			TranslateMessage(&msg);
+			DispatchMessage(&msg);
+		}
+#endif
 
 		profile_start(output_frame_name);
 		output_frame(raw_active, gpu_active);
@@ -1024,6 +1068,9 @@ void *obs_graphics_thread(void *param)
 			fps_total_ns = 0;
 			fps_total_frames = 0;
 		}
+
+		if (stop_requested)
+			break;
 	}
 
 	UNUSED_PARAMETER(param);

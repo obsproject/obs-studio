@@ -23,22 +23,14 @@ add_library(media-playback STATIC
 	${media-playback_SOURCES}
 	)
 
-if(CMAKE_SYSTEM_PROCESSOR MATCHES "^(powerpc|ppc)64le")
-	target_compile_options(media-playback
-			PUBLIC
-			-mvsx)
-	add_compile_definitions(NO_WARN_X86_INTRINSICS)
-elseif(NOT MSVC)
-	target_compile_options(media-playback
-		PUBLIC
-			-mmmx
-			-msse
-			-msse2)
-endif()
+target_compile_options(media-playback
+	PUBLIC
+	${ARCH_SIMD_FLAGS})
 
 target_include_directories(media-playback
 	PUBLIC .
 	)
+
 
 if(NOT MSVC)
         if(NOT MINGW)

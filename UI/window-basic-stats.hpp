@@ -2,6 +2,7 @@
 
 #include <obs.hpp>
 #include <util/platform.h>
+#include <obs-frontend-api.h>
 #include <QPointer>
 #include <QWidget>
 #include <QTimer>
@@ -56,7 +57,6 @@ class OBSBasicStats : public QWidget {
 
 	void AddOutputLabels(QString name);
 	void Update();
-	void Reset();
 
 	virtual void closeEvent(QCloseEvent *event) override;
 
@@ -76,6 +76,9 @@ private:
 
 private slots:
 	void RecordingTimeLeft();
+
+public slots:
+	void Reset();
 
 protected:
 	virtual void showEvent(QShowEvent *event) override;

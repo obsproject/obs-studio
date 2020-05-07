@@ -1,0 +1,348 @@
+name: 'CI Multiplatform Build'
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    paths-ignore:
+      - '**.md'
+    branches:
+      - master
+
+env:
+  CEF_BUILD_VERSION: '3770'
+  CEF_VERSION: '75.1.16+g16a67c4+chromium-75.0.3770.100'
+
+jobs:
+  macos64:
+    name: 'macOS 64-bit'
+    runs-on: [macos-latest]
+    env:
+      MACOS_DEPS_VERSION: '2020-04-24'
+      VLC_VERSION: '3.0.8'
+      SPARKLE_VERSION: '1.23.0'
+      QT_VERSION: '5.14.1'
+    steps:
+      - name: 'Checkout'
+        uses: actions/checkout@v2
+        with:
+          submodules: 'recursive'
+      - name: 'Fetch Git Tags'
+        run: |
+          git fetch --prune --unshallow
+          echo ::set-env name=OBS_GIT_BRANCH::$(git rev-parse --abbrev-ref HEAD)
+          echo ::set-env name=OBS_GIT_HASH::$(git rev-parse --short HEAD)
+          echo ::set-env name=OBS_GIT_TAG::$(git describe --tags --abbrev=0)
+      - name: 'Install prerequisites (Homebrew)'
+        shell: bash
+        run: |
+          brew bundle --file ./CI/scripts/macos/Brewfile
+      - name: 'Install prerequisite: Pre-built dependencies'
+        shell: bash
+        run: |
+          curl -L -O https://github.com/obsproject/obs-deps/releases/download/${{ env.MACOS_DEPS_VERSION }}/osx-deps-${{ env.MACOS_DEPS_VERSION }}.tar.gz
+          tar -xf ./osx-deps-${{ env.MACOS_DEPS_VERSION }}.tar.gz -C "/tmp"
+      - name: 'Install prerequisite: VLC'
+        shell: bash
+        run: |
+          curl -L -O https://downloads.videolan.org/vlc/${{ env.VLC_VERSION }}/vlc-${{ env.VLC_VERSION }}.tar.xz
+          if [ ! -d "${{ github.workspace }}/cmbuild" ]; then mkdir "${{ github.workspace }}/cmbuild"; fi
+          tar -xf ./vlc-${{ env.VLC_VERSION }}.tar.xz -C "${{ github.workspace }}/cmbuild"
+      - name: 'Install prerequisite: Sparkle'
+        shell: bash
+        run: |
+          curl -L -o sparkle.tar.bz2 https://github.com/sparkle-project/Sparkle/releases/download/${{ env.SPARKLE_VERSION }}/Sparkle-${{ env.SPARKLE_VERSION }}.tar.bz2
+          mkdir ${{ github.workspace }}/cmbuild/sparkle
+          tar -xf ./sparkle.tar.bz2 -C ${{ github.workspace }}/cmbuild/sparkle
+          sudo cp -R ${{ github.workspace }}/cmbuild/sparkle/Sparkle.framework /Library/Frameworks/Sparkle.framework
+      - name: 'Restore Chromium Embedded Framework from cache'
+        id: cef-cache
+        uses: actions/cache@v1
+        env:
+          CACHE_NAME: 'cef-cache'
+        with:
+          path: ${{ github.workspace }}/cmbuild/cef_binary_${{ env.CEF_BUILD_VERSION }}_macosx64
+          key: ${{ runner.os }}-pr-${{ env.CACHE_NAME }}-${{ env.CEF_BUILD_VERSION }}
+          restore-keys: |
+            ${{ runner.os }}-pr-${{ env.CACHE_NAME }}-
+      - name: 'Install prerequisite: Chromium Embedded Framework'
+        if: steps.cef-cache.outputs.cache-hit != 'true'
+        shell: bash
+        run: |
+          curl -L -O https://obs-nightly.s3-us-west-2.amazonaws.com/cef_binary_${{ env.CEF_BUILD_VERSION }}_macosx64.tar.bz2
+          tar -xf ./cef_binary_${{ env.CEF_BUILD_VERSION }}_macosx64.tar.bz2 -C ${{ github.workspace }}/cmbuild/
+          cd ${{ github.workspace }}/cmbuild/cef_binary_${{ env.CEF_BUILD_VERSION }}_macosx64
+          sed -i '.orig' '/add_subdirectory(tests\/ceftests)/d' ./CMakeLists.txt
+          # target 10.11
+          sed -i '.orig' s/\"10.9\"/\"10.11\"/ ./cmake/cef_variables.cmake
+          mkdir build && cd build
+          cmake  -DCMAKE_CXX_FLAGS="-std=c++11 -stdlib=libc++" -DCMAKE_EXE_LINKER_FLAGS="-std=c++11 -stdlib=libc++" -DCMAKE_OSX_DEPLOYMENT_TARGET=10.11  ..
+          make -j4
+          mkdir libcef_dll
+          cd ../../
+      - name: 'Configure'
+        shell: bash
+        run: |
+          mkdir ./build
+          cd ./build
+          cmake -DENABLE_SPARKLE_UPDATER=ON -DCMAKE_OSX_DEPLOYMENT_TARGET=10.11 -DQTDIR="/usr/local/Cellar/qt/${{ env.QT_VERSION }}" -DDepsPath="/tmp/obsdeps" -DVLCPath="${{ github.workspace }}/cmbuild/vlc-${{ env.VLC_VERSION }}" -DBUILD_BROWSER=ON -DBROWSER_DEPLOY=ON -DBUILD_CAPTIONS=ON -DWITH_RTMPS=ON -DCEF_ROOT_DIR="${{ github.workspace }}/cmbuild/cef_binary_${{ env.CEF_BUILD_VERSION }}_macosx64" ..
+      - name: 'Build'
+        shell: bash
+        working-directory: ${{ github.workspace }}/build
+        run: make -j4
+      - name: 'Install prerequisite: Packages app'
+        if: success() && (github.event_name != 'pull_request' || contains( github.event.pull_request.labels.*.name, 'Seeking Testers'))
+        shell: bash
+        run: |
+          curl -L -O https://s3-us-west-2.amazonaws.com/obs-nightly/Packages.pkg
+          sudo installer -pkg ./Packages.pkg -target /
+      - name: 'Install prerequisite: DMGbuild'
+        if: success() && (github.event_name != 'pull_request' || contains( github.event.pull_request.labels.*.name, 'Seeking Testers'))
+        shell: bash
+        run: |
+          pip3 install dmgbuild
+      - name: 'Package'
+        if: success() && (github.event_name != 'pull_request' || contains( github.event.pull_request.labels.*.name, 'Seeking Testers'))
+        shell: bash
+        run: |
+          FILE_DATE=$(date +%Y-%m-%d)
+          FILE_NAME=$FILE_DATE-${{ env.OBS_GIT_HASH }}-${{ env.OBS_GIT_TAG }}-osx.dmg
+          echo "::set-env name=FILE_NAME::${FILE_NAME}"
+          ./CI/scripts/macos/prepareApp.sh
+          dmgbuild -s ./CI/scripts/macos/package/settings.json "OBS" OBS.dmg
+          mkdir ./nightly
+          sudo mv ./OBS.dmg ./nightly/${FILE_NAME}
+      - name: 'Publish'
+        if: success() && (github.event_name != 'pull_request' || contains( github.event.pull_request.labels.*.name, 'Seeking Testers'))
+        uses: actions/upload-artifact@v2-preview
+        with:
+          name: '${{ env.FILE_NAME }}'
+          path: ./nightly/*.dmg
+  ubuntu64:
+    name: 'Linux/Ubuntu 64-bit'
+    runs-on: [ubuntu-latest]
+    steps:
+      - name: 'Checkout'
+        uses: actions/checkout@v2
+        with:
+          submodules: 'recursive'
+      - name: 'Fetch Git Tags'
+        run: |
+          git fetch --prune --unshallow
+          echo ::set-env name=OBS_GIT_BRANCH::$(git rev-parse --abbrev-ref HEAD)
+          echo ::set-env name=OBS_GIT_HASH::$(git rev-parse --short HEAD)
+          echo ::set-env name=OBS_GIT_TAG::$(git describe --tags --abbrev=0)
+      - name: Install prerequisites (Apt)
+        shell: bash
+        run: |
+          sudo dpkg --add-architecture amd64
+          sudo apt-get -qq update
+          sudo apt-get install -y \
+           build-essential \
+           checkinstall \
+           cmake \
+           libasound2-dev \
+           libavcodec-dev \
+           libavdevice-dev \
+           libavfilter-dev \
+           libavformat-dev \
+           libavutil-dev \
+           libcurl4-openssl-dev \
+           libfdk-aac-dev \
+           libfontconfig-dev \
+           libfreetype6-dev \
+           libgl1-mesa-dev \
+           libjack-jackd2-dev \
+           libjansson-dev \
+           libluajit-5.1-dev \
+           libpulse-dev \
+           libqt5x11extras5-dev \
+           libspeexdsp-dev \
+           libswresample-dev \
+           libswscale-dev \
+           libudev-dev \
+           libv4l-dev \
+           libva-dev \
+           libvlc-dev \
+           libx11-dev \
+           libx264-dev \
+           libxcb-randr0-dev \
+           libxcb-shm0-dev \
+           libxcb-xinerama0-dev \
+           libxcomposite-dev \
+           libxinerama-dev \
+           libmbedtls-dev \
+           pkg-config \
+           python3-dev \
+           qtbase5-dev \
+           libqt5svg5-dev \
+           swig
+      - name: 'Install prerequisite: Chromium Embedded Framework'
+        shell: bash
+        run: |
+          curl -kL https://cdn-fastly.obsproject.com/downloads/cef_binary_${{ env.CEF_BUILD_VERSION }}_linux64.tar.bz2 -f --retry 5 -o cef.tar.bz2
+          if [ ! -d "${{ github.workspace }}/cmbuild" ]; then mkdir "${{ github.workspace }}/cmbuild"; fi
+          tar -C"${{ github.workspace }}/cmbuild" -xjf cef.tar.bz2
+      - name: 'Configure'
+        shell: bash
+        run: |
+          mkdir ./build
+          cd ./build
+          cmake -DUNIX_STRUCTURE=0 -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/obs-studio-portable" -DBUILD_CAPTIONS=ON -DWITH_RTMPS=ON -DBUILD_BROWSER=ON -DCEF_ROOT_DIR="${{ github.workspace }}/cmbuild/cef_binary_${{ env.CEF_BUILD_VERSION }}_linux64" ..
+      - name: 'Build'
+        shell: bash
+        working-directory: ${{ github.workspace }}/build
+        run: make -j4
+      - name: 'Package'
+        if: success() && (github.event_name != 'pull_request' || contains( github.event.pull_request.labels.*.name, 'Seeking Testers'))
+        shell: bash
+        run: |
+          FILE_DATE=$(date +%Y-%m-%d)
+          FILE_NAME=$FILE_DATE-${{ env.OBS_GIT_HASH }}-${{ env.OBS_GIT_TAG }}-linux64.tar.gz
+          echo "::set-env name=FILE_NAME::${FILE_NAME}"
+          cd ./build
+          sudo checkinstall --default --install=no --pkgname=obs-studio --fstrans=yes --backup=no --pkgversion="$(date +%Y%m%d)-git" --deldoc=yes
+          mkdir ../nightly
+          tar -cvzf "${FILE_NAME}" *.deb
+          mv "${FILE_NAME}" ../nightly/
+          cd -
+      - name: 'Publish'
+        if: success() && (github.event_name != 'pull_request' || contains( github.event.pull_request.labels.*.name, 'Seeking Testers'))
+        uses: actions/upload-artifact@v2-preview
+        with:
+          name: '${{ env.FILE_NAME }}'
+          path: './nightly/*.tar.gz'
+  win64:
+    name: 'Windows 64-bit'
+    runs-on: [windows-latest]
+    env:
+      QT_VERSION: '5.10.1'
+      CMAKE_GENERATOR: "Visual Studio 16 2019"
+      CMAKE_SYSTEM_VERSION: "10.0.18363.657"
+      WINDOWS_DEPS_VERSION: '2017'
+      TWITCH-CLIENTID: ${{ secrets.TWITCH_CLIENTID }}
+      TWITCH-HASH: ${{ secrets.TWITCH_HASH }}
+      MIXER-CLIENTID: ${{ secrets.MIXER_CLIENTID }}
+      MIXER-HASH: ${{ secrets.MIXER_HASH }}
+      RESTREAM-CLIENTID: ${{ secrets.RESTREAM-CLIENTID }}
+      RESTREAM-HASH: ${{ secrets.RESTREAM-HASH }}
+    steps:
+      - name: 'Add msbuild to PATH'
+        uses: microsoft/setup-msbuild@v1.0.0
+      - name: 'Checkout'
+        uses: actions/checkout@v2
+        with:
+          submodules: 'recursive'
+      - name: 'Fetch Git Tags'
+        shell: bash
+        run: |
+          git fetch --prune --unshallow
+          echo ::set-env name=OBS_GIT_BRANCH::$(git rev-parse --abbrev-ref HEAD)
+          echo ::set-env name=OBS_GIT_HASH::$(git rev-parse --short HEAD)
+          echo ::set-env name=OBS_GIT_TAG::$(git describe --tags --abbrev=0)
+      - name: 'Install prerequisite: QT'
+        run: |
+          curl -kLO https://cdn-fastly.obsproject.com/downloads/Qt_${{ env.QT_VERSION }}.7z -f --retry 5 -C -
+          7z x Qt_${{ env.QT_VERSION }}.7z -o"${{ github.workspace }}/cmbuild/QT"
+      - name: 'Install prerequisite: Pre-built dependencies'
+        run: |
+          curl -kLO https://cdn-fastly.obsproject.com/downloads/dependencies${{ env.WINDOWS_DEPS_VERSION }}.zip -f --retry 5 -C -
+          7z x dependencies${{ env.WINDOWS_DEPS_VERSION }}.zip -o"${{ github.workspace }}/cmbuild/deps"
+      - name: 'Install prerequisite: VLC'
+        run: |
+          curl -kL https://cdn-fastly.obsproject.com/downloads/vlc.zip -f --retry 5 -o vlc.zip
+          7z x vlc.zip -o"${{ github.workspace }}/cmbuild/vlc"
+      - name: 'Install prerequisite: Chromium Embedded Framework'
+        run: |
+          curl -kL https://cdn-fastly.obsproject.com/downloads/cef_binary_${{ env.CEF_VERSION }}_windows64_minimal.zip -f --retry 5 -o cef.zip
+          7z x cef.zip -o"${{ github.workspace }}/cmbuild"
+      - name: 'Configure'
+        run: |
+          mkdir ./build
+          mkdir ./build64
+          cd ./build64
+          cmake -G"${{ env.CMAKE_GENERATOR }}" -A"x64" -DCMAKE_SYSTEM_VERSION="${{ env.CMAKE_SYSTEM_VERSION }}" -DBUILD_BROWSER=true -DBUILD_CAPTIONS=true -DCOMPILE_D3D12_HOOK=true -DDepsPath="${{ github.workspace }}/cmbuild/deps/win64" -DQTDIR="${{ github.workspace }}/cmbuild/QT/${{ env.QT_VERSION }}/msvc2017_64" -DCEF_ROOT_DIR="${{ github.workspace }}/cmdbuild/cef_binary_${{ env.CEF_VERSION }}_windows64_minimal" -DCOPIED_DEPENDENCIES=FALSE -DCOPY_DEPENDENCIES=TRUE ..
+      - name: 'Build'
+        run: msbuild /m /p:Configuration=RelWithDebInfo .\build64\obs-studio.sln
+      - name: 'Package'
+        if: success() && (github.event_name != 'pull_request' || contains( github.event.pull_request.labels.*.name, 'Seeking Testers'))
+        run: |
+          $env:FILE_DATE=(Get-Date -UFormat "%F")
+          $env:FILE_NAME="${env:FILE_DATE}-${{ env.OBS_GIT_HASH }}-${{ env.OBS_GIT_TAG }}-win64.zip"
+          echo "::set-env name=FILE_NAME::${env:FILE_NAME}"
+          robocopy .\build64\rundir\RelWithDebInfo .\build\ /E /XF .gitignore
+          7z a ${env:FILE_NAME} .\build\*
+      - name: 'Publish'
+        if: success() && (github.event_name != 'pull_request' || contains( github.event.pull_request.labels.*.name, 'Seeking Testers'))
+        uses: actions/upload-artifact@v2-preview
+        with:
+          name: '${{ env.FILE_NAME }}'
+          path: '*-win64.zip'
+
+  win32:
+    name: 'Windows 32-bit'
+    runs-on: [windows-latest]
+    env:
+      QT_VERSION: '5.10.1'
+      CMAKE_GENERATOR: "Visual Studio 16 2019"
+      CMAKE_SYSTEM_VERSION: "10.0.18363.657"
+      WINDOWS_DEPS_VERSION: '2017'
+      TWITCH-CLIENTID: ${{ secrets.TWITCH_CLIENTID }}
+      TWITCH-HASH: ${{ secrets.TWITCH_HASH }}
+      MIXER-CLIENTID: ${{ secrets.MIXER_CLIENTID }}
+      MIXER-HASH: ${{ secrets.MIXER_HASH }}
+      RESTREAM-CLIENTID: ${{ secrets.RESTREAM-CLIENTID }}
+      RESTREAM-HASH: ${{ secrets.RESTREAM-HASH }}
+    steps:
+      - name: 'Add msbuild to PATH'
+        uses: microsoft/setup-msbuild@v1.0.0
+      - name: 'Checkout'
+        uses: actions/checkout@v2
+        with:
+          submodules: 'recursive'
+      - name: 'Fetch Git Tags'
+        shell: bash
+        run: |
+          git fetch --prune --unshallow
+          echo ::set-env name=OBS_GIT_BRANCH::$(git rev-parse --abbrev-ref HEAD)
+          echo ::set-env name=OBS_GIT_HASH::$(git rev-parse --short HEAD)
+          echo ::set-env name=OBS_GIT_TAG::$(git describe --tags --abbrev=0)
+      - name: 'Install prerequisite: QT'
+        run: |
+          curl -kLO https://cdn-fastly.obsproject.com/downloads/Qt_${{ env.QT_VERSION }}.7z -f --retry 5 -C -
+          7z x Qt_${{ env.QT_VERSION }}.7z -o"${{ github.workspace }}/cmbuild/QT"
+      - name: 'Install prerequisite: Pre-built dependencies'
+        run: |
+          curl -kLO https://cdn-fastly.obsproject.com/downloads/dependencies${{ env.WINDOWS_DEPS_VERSION }}.zip -f --retry 5 -C -
+          7z x dependencies${{ env.WINDOWS_DEPS_VERSION }}.zip -o"${{ github.workspace }}/cmbuild/deps"
+      - name: 'Install prerequisite: VLC'
+        run: |
+          curl -kL https://cdn-fastly.obsproject.com/downloads/vlc.zip -f --retry 5 -o vlc.zip
+          7z x vlc.zip -o"${{ github.workspace }}/cmbuild/vlc"
+      - name: 'Install prerequisite: Chromium Embedded Framework'
+        run: |
+          curl -kL https://cdn-fastly.obsproject.com/downloads/cef_binary_${{ env.CEF_VERSION }}_windows32_minimal.zip -f --retry 5 -o cef.zip
+          7z x cef.zip -o"${{ github.workspace }}/cmbuild"
+      - name: 'Configure'
+        run: |
+          mkdir ./build
+          mkdir ./build32
+          cd ./build32
+          cmake -G"${{ env.CMAKE_GENERATOR }}" -A"Win32" -DCMAKE_SYSTEM_VERSION="${{ env.CMAKE_SYSTEM_VERSION }}" -DBUILD_BROWSER=true -DBUILD_CAPTIONS=true -DCOMPILE_D3D12_HOOK=true -DDepsPath="${{ github.workspace }}/cmbuild/deps/win32" -DQTDIR="${{ github.workspace }}/cmbuild/QT/${{ env.QT_VERSION }}/msvc2017" -DCEF_ROOT_DIR="${{ github.workspace }}/cmdbuild/cef_binary_${{ env.CEF_VERSION }}_windows32_minimal" -DCOPIED_DEPENDENCIES=FALSE -DCOPY_DEPENDENCIES=TRUE ..
+      - name: 'Build'
+        run: msbuild /m /p:Configuration=RelWithDebInfo .\build32\obs-studio.sln
+      - name: 'Package'
+        if: success() && (github.event_name != 'pull_request' || contains( github.event.pull_request.labels.*.name, 'Seeking Testers'))
+        run: |
+          $env:FILE_DATE=(Get-Date -UFormat "%F")
+          $env:FILE_NAME="${env:FILE_DATE}-${{ env.OBS_GIT_HASH }}-${{ env.OBS_GIT_TAG }}-win32.zip"
+          echo "::set-env name=FILE_NAME::${env:FILE_NAME}"
+          robocopy .\build32\rundir\RelWithDebInfo .\build\ /E /XF .gitignore
+          7z a ${env:FILE_NAME} .\build\*
+      - name: 'Publish'
+        if: success() && (github.event_name != 'pull_request' || contains( github.event.pull_request.labels.*.name, 'Seeking Testers'))
+        uses: actions/upload-artifact@v2-preview
+        with:
+          name: '${{ env.FILE_NAME }}'
+          path: '*-win32.zip'
