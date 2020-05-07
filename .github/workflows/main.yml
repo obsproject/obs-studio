@@ -37,25 +37,15 @@ jobs:
       - name: 'Install prerequisites (Homebrew)'
         shell: bash
         run: |
+          if [ -d "$(brew --cellar)/swig" ]; then
+               brew unlink swig
+          fi
+
+          if [ -d "$(brew --cellar)/qt" ]; then
+               brew unlink qt
+          fi
+
           brew bundle --file ./CI/scripts/macos/Brewfile
-      - name: 'Install prerequisite: Pre-built dependencies'
-        shell: bash
-        run: |
-          curl -L -O https://github.com/obsproject/obs-deps/releases/download/${{ env.MACOS_DEPS_VERSION }}/osx-deps-${{ env.MACOS_DEPS_VERSION }}.tar.gz
-          tar -xf ./osx-deps-${{ env.MACOS_DEPS_VERSION }}.tar.gz -C "/tmp"
-      - name: 'Install prerequisite: VLC'
-        shell: bash
-        run: |
-          curl -L -O https://downloads.videolan.org/vlc/${{ env.VLC_VERSION }}/vlc-${{ env.VLC_VERSION }}.tar.xz
-          if [ ! -d "${{ github.workspace }}/cmbuild" ]; then mkdir "${{ github.workspace }}/cmbuild"; fi
-          tar -xf ./vlc-${{ env.VLC_VERSION }}.tar.xz -C "${{ github.workspace }}/cmbuild"
-      - name: 'Install prerequisite: Sparkle'
-        shell: bash
-        run: |
-          curl -L -o sparkle.tar.bz2 https://github.com/sparkle-project/Sparkle/releases/download/${{ env.SPARKLE_VERSION }}/Sparkle-${{ env.SPARKLE_VERSION }}.tar.bz2
-          mkdir ${{ github.workspace }}/cmbuild/sparkle
-          tar -xf ./sparkle.tar.bz2 -C ${{ github.workspace }}/cmbuild/sparkle
-          sudo cp -R ${{ github.workspace }}/cmbuild/sparkle/Sparkle.framework /Library/Frameworks/Sparkle.framework
       - name: 'Restore Chromium Embedded Framework from cache'
         id: cef-cache
         uses: actions/cache@v1
@@ -64,8 +54,53 @@ jobs:
         with:
           path: ${{ github.workspace }}/cmbuild/cef_binary_${{ env.CEF_BUILD_VERSION }}_macosx64
           key: ${{ runner.os }}-pr-${{ env.CACHE_NAME }}-${{ env.CEF_BUILD_VERSION }}
-          restore-keys: |
-            ${{ runner.os }}-pr-${{ env.CACHE_NAME }}-
+      - name: 'Restore pre-built dependencies from cache'
+        id: deps-cache
+        uses: actions/cache@v1
+        env:
+          CACHE_NAME: 'deps-cache'
+        with:
+          path: /tmp/obsdeps
+          key: ${{ runner.os }}-pr-${{ env.CACHE_NAME }}-${{ env.MACOS_DEPS_VERSION }}
+      - name: 'Restore VLC dependency from cache'
+        id: vlc-cache
+        uses: actions/cache@v1
+        env:
+          CACHE_NAME: 'vlc-cache'
+        with:
+          path: ${{ github.workspace }}/cmbuild/vlc-${{ env.VLC_VERSION }}
+          key: ${{ runner.os }}-pr-${{ env.CACHE_NAME }}-${{ env.VLC_VERSION }}
+      - name: 'Restore Sparkle dependency from cache'
+        id: sparkle-cache
+        uses: actions/cache@v1
+        env:
+          CACHE_NAME: 'sparkle-cache'
+        with:
+          path: ${{ github.workspace }}/cmbuild/sparkle
+          key: ${{ runner.os }}-pr-${{ env.CACHE_NAME }}-${{ env.SPARKLE_VERSION }}
+      - name: 'Install prerequisite: Pre-built dependencies'
+        if: steps.deps-cache.outputs.cache-hit != 'true'
+        shell: bash
+        run: |
+          curl -L -O https://github.com/obsproject/obs-deps/releases/download/${{ env.MACOS_DEPS_VERSION }}/osx-deps-${{ env.MACOS_DEPS_VERSION }}.tar.gz
+          tar -xf ./osx-deps-${{ env.MACOS_DEPS_VERSION }}.tar.gz -C "/tmp"
+      - name: 'Install prerequisite: VLC'
+        if: steps.vlc-cache.outputs.cache-hit != 'true'
+        shell: bash
+        run: |
+          curl -L -O https://downloads.videolan.org/vlc/${{ env.VLC_VERSION }}/vlc-${{ env.VLC_VERSION }}.tar.xz
+          if [ ! -d "${{ github.workspace }}/cmbuild" ]; then mkdir "${{ github.workspace }}/cmbuild"; fi
+          tar -xf ./vlc-${{ env.VLC_VERSION }}.tar.xz -C "${{ github.workspace }}/cmbuild"
+      - name: 'Install prerequisite: Sparkle'
+        if: steps.sparkle-cache.outputs.cache-hit != 'true'
+        shell: bash
+        run: |
+          curl -L -o sparkle.tar.bz2 https://github.com/sparkle-project/Sparkle/releases/download/${{ env.SPARKLE_VERSION }}/Sparkle-${{ env.SPARKLE_VERSION }}.tar.bz2
+          mkdir ${{ github.workspace }}/cmbuild/sparkle
+          tar -xf ./sparkle.tar.bz2 -C ${{ github.workspace }}/cmbuild/sparkle
+      - name: 'Setup prerequisite: Sparkle'
+        shell: bash
+        run: sudo cp -R ${{ github.workspace }}/cmbuild/sparkle/Sparkle.framework /Library/Frameworks/Sparkle.framework
       - name: 'Install prerequisite: Chromium Embedded Framework'
         if: steps.cef-cache.outputs.cache-hit != 'true'
         shell: bash
@@ -102,17 +137,94 @@ jobs:
         shell: bash
         run: |
           pip3 install dmgbuild
+      - name: 'Create macOS application bundle'
+        if: success() && (github.event_name != 'pull_request' || contains( github.event.pull_request.labels.*.name, 'Seeking Testers'))
+        working-directory: ${{ github.workspace }}/build
+        shell: bash
+        run: |
+          if [ -d ./OBS.app ]; then rm -rf ./OBS.app; fi
+          mkdir -p OBS.app/Contents/MacOS
+          mkdir OBS.app/Contents/PlugIns
+          mkdir OBS.app/Contents/Resources
+
+          cp -R rundir/RelWithDebInfo/bin/ ./OBS.app/Contents/MacOS
+          cp -R rundir/RelWithDebInfo/data ./OBS.app/Contents/Resources
+          cp ../CI/scripts/macos/app/obs.icns ./OBS.app/Contents/Resources
+          cp -R rundir/RelWithDebInfo/obs-plugins/ ./OBS.app/Contents/PlugIns
+          cp ../CI/scripts/macos/app/Info.plist ./OBS.app/Contents
+
+          if [ -d ./OBS.app/Contents/Resources/data/obs-scripting ]; then
+            mv ./OBS.app/Contents/Resources/data/obs-scripting/obslua.so ./OBS.app/Contents/MacOS/
+            mv ./OBS.app/Contents/Resources/data/obs-scripting/_obspython.so ./OBS.app/Contents/MacOS/
+            mv ./OBS.app/Contents/Resources/data/obs-scripting/obspython.py ./OBS.app/Contents/MacOS/
+            rm -rf ./OBS.app/Contents/Resources/data/obs-scripting/
+          fi
+
+          install_name_tool -change libmbedtls.12.dylib @executable_path/../Frameworks/libmbedtls.12.dylib ./OBS.app/Contents/Plugins/obs-outputs.so
+          install_name_tool -change libmbedcrypto.3.dylib @executable_path/../Frameworks/libmbedcrypto.3.dylib ./OBS.app/Contents/Plugins/obs-outputs.so
+          install_name_tool -change libmbedx509.0.dylib @executable_path/../Frameworks/libmbedx509.0.dylib ./OBS.app/Contents/Plugins/obs-outputs.so
+
+          ../CI/scripts/macos/app/dylibBundler -cd -of -a ./OBS.app -q -f \
+            -s ./OBS.app/Contents/MacOS \
+            -s "${{ github.workspace }}/cmbuild/sparkle/Sparkle.framework" \
+            -x ./OBS.app/Contents/PlugIns/coreaudio-encoder.so \
+            -x ./OBS.app/Contents/PlugIns/decklink-ouput-ui.so \
+            -x ./OBS.app/Contents/PlugIns/frontend-tools.so \
+            -x ./OBS.app/Contents/PlugIns/image-source.so \
+            -x ./OBS.app/Contents/PlugIns/linux-jack.so \
+            -x ./OBS.app/Contents/PlugIns/mac-avcapture.so \
+            -x ./OBS.app/Contents/PlugIns/mac-capture.so \
+            -x ./OBS.app/Contents/PlugIns/mac-decklink.so \
+            -x ./OBS.app/Contents/PlugIns/mac-syphon.so \
+            -x ./OBS.app/Contents/PlugIns/mac-vth264.so \
+            -x ./OBS.app/Contents/PlugIns/obs-browser.so \
+            -x ./OBS.app/Contents/PlugIns/obs-browser-page \
+            -x ./OBS.app/Contents/PlugIns/obs-ffmpeg.so \
+            -x ./OBS.app/Contents/PlugIns/obs-filters.so \
+            -x ./OBS.app/Contents/PlugIns/obs-transitions.so \
+            -x ./OBS.app/Contents/PlugIns/obs-vst.so \
+            -x ./OBS.app/Contents/PlugIns/rtmp-services.so \
+            -x ./OBS.app/Contents/MacOS/obs-ffmpeg-mux \
+            -x ./OBS.app/Contents/MacOS/obslua.so \
+            -x ./OBS.app/Contents/MacOS/_obspython.so \
+            -x ./OBS.app/Contents/PlugIns/obs-x264.so \
+            -x ./OBS.app/Contents/PlugIns/text-freetype2.so \
+            -x ./OBS.app/Contents/PlugIns/obs-libfdk.so \
+            -x ./OBS.app/Contents/PlugIns/obs-outputs.so
+
+          mv ./OBS.app/Contents/MacOS/libobs-opengl.so ./OBS.app/Contents/Frameworks
+
+          sudo cp -R "${{ github.workspace }}/cmbuild/cef_binary_${{ env.CEF_BUILD_VERSION }}_macosx64/Release/Chromium Embedded Framework.framework" ./OBS.app/Contents/Frameworks/
+          sudo chown -R $(whoami) ./OBS.app/Contents/Frameworks/
+          install_name_tool -change /usr/local/Cellar/qt/${{ env.QT_VERSION }}/QtGui.framework/Versions/5/QtGui @executable_path/../Frameworks/QtGui.framework/Versions/5/QtGui ./OBS.app/Contents/Plugins/obs-browser.so
+          install_name_tool -change /usr/local/Cellar/qt/${{ env.QT_VERSION }}/lib/QtCore.framework/Versions/5/QtCore @executable_path/../Frameworks/QtCore.framework/Versions/5/QtCore ./OBS.app/Contents/Plugins/obs-browser.so
+          install_name_tool -change /usr/local/Cellar/qt/${{ env.QT_VERSION }}/lib/QtWidgets.framework/Versions/5/QtWidgets @executable_path/../Frameworks/QtWidgets.framework/Versions/5/QtWidgets ./OBS.app/Contents/Plugins/obs-browser.so
+
+          cp ../CI/scripts/macos/app/OBSPublicDSAKey.pem ./OBS.app/Contents/Resources
+
+          plutil -insert CFBundleVersion -string ${{ env.OBS_GIT_TAG }}-${{ env.OBS_GIT_HASH }} ./OBS.app/Contents/Info.plist
+          plutil -insert CFBundleShortVersionString -string ${{ env.OBS_GIT_TAG }}-${{ env.OBS_GIT_HASH }} ./OBS.app/Contents/Info.plist
+          plutil -insert OBSFeedsURL -string https://obsproject.com/osx_update/feeds.xml ./OBS.app/Contents/Info.plist
+          plutil -insert SUFeedURL -string https://obsproject.com/osx_update/stable/updates.xml ./OBS.app/Contents/Info.plist
+          plutil -insert SUPublicDSAKeyFile -string OBSPublicDSAKey.pem ./OBS.app/Contents/Info.plist
       - name: 'Package'
         if: success() && (github.event_name != 'pull_request' || contains( github.event.pull_request.labels.*.name, 'Seeking Testers'))
+        working-directory: ${{ github.workspace }}/build
         shell: bash
         run: |
           FILE_DATE=$(date +%Y-%m-%d)
-          FILE_NAME=$FILE_DATE-${{ env.OBS_GIT_HASH }}-${{ env.OBS_GIT_TAG }}-osx.dmg
+          FILE_NAME=$FILE_DATE-${{ env.OBS_GIT_HASH }}-${{ env.OBS_GIT_TAG }}-macOS.dmg
           echo "::set-env name=FILE_NAME::${FILE_NAME}"
-          ./CI/scripts/macos/prepareApp.sh
-          dmgbuild -s ./CI/scripts/macos/package/settings.json "OBS" OBS.dmg
-          mkdir ./nightly
-          sudo mv ./OBS.dmg ./nightly/${FILE_NAME}
+
+          cp ../CI/scripts/macos/package/settings.json.template ./settings.json
+          sed -i '' 's#\$\$VERSION\$\$#${{ env.OBS_GIT_TAG }}#g' ./settings.json
+          sed -i '' 's#\$\$CI_PATH\$\$#../CI/scripts/macos#g' ./settings.json
+          sed -i '' 's#\$\$BUNDLE_PATH\$\$#${{ github.workspace }}/build#g' ./settings.json
+
+          dmgbuild "OBS-Studio ${{ env.OBS_GIT_TAG }}" "${FILE_NAME}" -s ./settings.json
+          mkdir ../nightly
+          sudo mv ./${FILE_NAME} ../nightly/${FILE_NAME}
+
       - name: 'Publish'
         if: success() && (github.event_name != 'pull_request' || contains( github.event.pull_request.labels.*.name, 'Seeking Testers'))
         uses: actions/upload-artifact@v2-preview
@@ -178,7 +290,16 @@ jobs:
            qtbase5-dev \
            libqt5svg5-dev \
            swig
+      - name: 'Restore Chromium Embedded Framework from cache'
+        id: cef-cache
+        uses: actions/cache@v1
+        env:
+          CACHE_NAME: 'cef-cache'
+        with:
+          path: ${{ github.workspace }}/cmbuild/cef_binary_${{ env.CEF_BUILD_VERSION }}_linux64
+          key: ${{ runner.os }}-pr-${{ env.CACHE_NAME }}-${{ env.CEF_BUILD_VERSION }}
       - name: 'Install prerequisite: Chromium Embedded Framework'
+        if: steps.cef-cache.outputs.cache-hit != 'true'
         shell: bash
         run: |
           curl -kL https://cdn-fastly.obsproject.com/downloads/cef_binary_${{ env.CEF_BUILD_VERSION }}_linux64.tar.bz2 -f --retry 5 -o cef.tar.bz2
@@ -221,6 +342,7 @@ jobs:
       CMAKE_GENERATOR: "Visual Studio 16 2019"
       CMAKE_SYSTEM_VERSION: "10.0.18363.657"
       WINDOWS_DEPS_VERSION: '2017'
+      VLC_VERSION: '3.0.0-git'
       TWITCH-CLIENTID: ${{ secrets.TWITCH_CLIENTID }}
       TWITCH-HASH: ${{ secrets.TWITCH_HASH }}
       MIXER-CLIENTID: ${{ secrets.MIXER_CLIENTID }}
@@ -241,19 +363,55 @@ jobs:
           echo ::set-env name=OBS_GIT_BRANCH::$(git rev-parse --abbrev-ref HEAD)
           echo ::set-env name=OBS_GIT_HASH::$(git rev-parse --short HEAD)
           echo ::set-env name=OBS_GIT_TAG::$(git describe --tags --abbrev=0)
+      - name: 'Restore QT dependency from cache'
+        id: qt-cache
+        uses: actions/cache@v1
+        env:
+          CACHE_NAME: 'windows-qt-cache'
+        with:
+          path: ${{ github.workspace }}/cmbuild/QT
+          key: ${{ runner.os }}-pr-${{ env.CACHE_NAME }}-${{ env.QT_VERSION }}
+      - name: 'Restore pre-built dependencies from cache'
+        id: deps-cache
+        uses: actions/cache@v1
+        env:
+          CACHE_NAME: 'windows-deps-cache'
+        with:
+          path: ${{ github.workspace }}/cmbuild/deps
+          key: ${{ runner.os }}-pr-${{ env.CACHE_NAME }}-${{ env.WINDOWS_DEPS_VERSION }}
+      - name: 'Restore VLC dependency from cache'
+        id: vlc-cache
+        uses: actions/cache@v1
+        env:
+          CACHE_NAME: 'windows-vlc-cache'
+        with:
+          path: ${{ github.workspace }}/cmbuild/vlc
+          key: ${{ runner.os }}-pr-${{ env.CACHE_NAME }}-${{ env.VLC_VERSION }}
+      - name: 'Restore CEF dependency from cache (64 bit)'
+        id: cef-cache
+        uses: actions/cache@v1
+        env:
+          CACHE_NAME: 'windows-cef-64-cache'
+        with:
+          path: ${{ github.workspace }}/cmdbuild/cef_binary_${{ env.CEF_BUILD_VERSION }}_windows64_minimal
+          key: ${{ runner.os }}-pr-${{ env.CACHE_NAME }}-${{ env.CEF_BUILD_VERSION }}
       - name: 'Install prerequisite: QT'
+        if: steps.qt-cache.outputs.cache-hit != 'true'
         run: |
           curl -kLO https://cdn-fastly.obsproject.com/downloads/Qt_${{ env.QT_VERSION }}.7z -f --retry 5 -C -
           7z x Qt_${{ env.QT_VERSION }}.7z -o"${{ github.workspace }}/cmbuild/QT"
       - name: 'Install prerequisite: Pre-built dependencies'
+        if: steps.deps-cache.outputs.cache-hit != 'true'
         run: |
           curl -kLO https://cdn-fastly.obsproject.com/downloads/dependencies${{ env.WINDOWS_DEPS_VERSION }}.zip -f --retry 5 -C -
           7z x dependencies${{ env.WINDOWS_DEPS_VERSION }}.zip -o"${{ github.workspace }}/cmbuild/deps"
       - name: 'Install prerequisite: VLC'
+        if: steps.vlc-cache.outputs.cache-hit != 'true'
         run: |
           curl -kL https://cdn-fastly.obsproject.com/downloads/vlc.zip -f --retry 5 -o vlc.zip
           7z x vlc.zip -o"${{ github.workspace }}/cmbuild/vlc"
       - name: 'Install prerequisite: Chromium Embedded Framework'
+        if: steps.cef-cache.outputs.cache-hit != 'true'
         run: |
           curl -kL https://cdn-fastly.obsproject.com/downloads/cef_binary_${{ env.CEF_VERSION }}_windows64_minimal.zip -f --retry 5 -o cef.zip
           7z x cef.zip -o"${{ github.workspace }}/cmbuild"
@@ -308,19 +466,55 @@ jobs:
           echo ::set-env name=OBS_GIT_BRANCH::$(git rev-parse --abbrev-ref HEAD)
           echo ::set-env name=OBS_GIT_HASH::$(git rev-parse --short HEAD)
           echo ::set-env name=OBS_GIT_TAG::$(git describe --tags --abbrev=0)
+      - name: 'Restore QT dependency from cache'
+        id: qt-cache
+        uses: actions/cache@v1
+        env:
+          CACHE_NAME: 'qt-cache'
+        with:
+          path: ${{ github.workspace }}/cmbuild/QT
+          key: ${{ runner.os }}-pr-${{ env.CACHE_NAME }}-${{ env.QT_VERSION }}
+      - name: 'Restore pre-built dependencies from cache'
+        id: deps-cache
+        uses: actions/cache@v1
+        env:
+          CACHE_NAME: 'deps-cache'
+        with:
+          path: ${{ github.workspace }}/cmbuild/deps
+          key: ${{ runner.os }}-pr-${{ env.CACHE_NAME }}-${{ env.WINDOWS_DEPS_VERSION }}
+      - name: 'Restore VLC dependency from cache'
+        id: vlc-cache
+        uses: actions/cache@v1
+        env:
+          CACHE_NAME: 'vlc-cache'
+        with:
+          path: ${{ github.workspace }}/cmbuild/vlc
+          key: ${{ runner.os }}-pr-${{ env.CACHE_NAME }}-${{ env.WINDOWS_VLC_VERSION }}
+      - name: 'Restore CEF dependency from cache (32 bit)'
+        id: cef-cache
+        uses: actions/cache@v1
+        env:
+          CACHE_NAME: 'cef-32-cache'
+        with:
+          path: ${{ github.workspace }}/cmdbuild/cef_binary_${{ env.CEF_BUILD_VERSION }}_windows32_minimal
+          key: ${{ runner.os }}-pr-${{ env.CACHE_NAME }}-${{ env.CEF_VERSION }}
       - name: 'Install prerequisite: QT'
+        if: steps.qt-cache.outputs.cache-hit != 'true'
         run: |
           curl -kLO https://cdn-fastly.obsproject.com/downloads/Qt_${{ env.QT_VERSION }}.7z -f --retry 5 -C -
           7z x Qt_${{ env.QT_VERSION }}.7z -o"${{ github.workspace }}/cmbuild/QT"
       - name: 'Install prerequisite: Pre-built dependencies'
+        if: steps.deps-cache.outputs.cache-hit != 'true'
         run: |
           curl -kLO https://cdn-fastly.obsproject.com/downloads/dependencies${{ env.WINDOWS_DEPS_VERSION }}.zip -f --retry 5 -C -
           7z x dependencies${{ env.WINDOWS_DEPS_VERSION }}.zip -o"${{ github.workspace }}/cmbuild/deps"
       - name: 'Install prerequisite: VLC'
+        if: steps.vlc-cache.outputs.cache-hit != 'true'
         run: |
           curl -kL https://cdn-fastly.obsproject.com/downloads/vlc.zip -f --retry 5 -o vlc.zip
           7z x vlc.zip -o"${{ github.workspace }}/cmbuild/vlc"
       - name: 'Install prerequisite: Chromium Embedded Framework'
+        if: steps.cef-cache.outputs.cache-hit != 'true'
         run: |
           curl -kL https://cdn-fastly.obsproject.com/downloads/cef_binary_${{ env.CEF_VERSION }}_windows32_minimal.zip -f --retry 5 -o cef.zip
           7z x cef.zip -o"${{ github.workspace }}/cmbuild"
