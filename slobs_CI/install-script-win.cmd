@@ -2,7 +2,7 @@ set DEPS=dependencies2017.2
 set DepsURL=https://obs-studio-deployment.s3-us-west-2.amazonaws.com/%DEPS%.zip
 set VLCURL=https://obsproject.com/downloads/vlc.zip
 set CEFURL=https://s3-us-west-2.amazonaws.com/streamlabs-cef-dist
-set CMakeGenerator=Visual Studio 15 2017
+set CMakeGenerator=Visual Studio 16 2019
 set CefFileName=cef_binary_%CEF_VERSION%_windows64_minimal
 set GPUPriority=1
 
@@ -25,6 +25,7 @@ cmake -H. ^
          -B%CD%\build ^
          -G"%CmakeGenerator%" ^
          -A x64 ^
+         -DCMAKE_SYSTEM_VERSION=10.0 ^
          -DCMAKE_INSTALL_PREFIX=%CD%\%InstallPath% ^
          -DDepsPath=%CD%\%DEPS%\win64 ^
          -DVLCPath=%CD%\vlc ^
