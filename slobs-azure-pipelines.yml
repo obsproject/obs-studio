@@ -1,7 +1,7 @@
 trigger:
   branches:
     include:
-      - streamlabs-24.0.3
+      - streamlabs-25.0.8
   tags:
     include:
       - '*'
