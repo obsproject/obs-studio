@@ -122,6 +122,24 @@ choose_method(enum window_capture_method method, bool wgc_supported,
 	return METHOD_BITBLT;
 }
 
+static const char *get_method_name(int method)
+{
+	const char *method_name = "";
+	switch (method) {
+	case METHOD_AUTO:
+		method_name = "Automatic";
+		break;
+	case METHOD_BITBLT:
+		method_name = "BitBlt";
+		break;
+	case METHOD_WGC:
+		method_name = "WGC";
+		break;
+	}
+
+	return method_name;
+}
+
 static void update_settings(struct window_capture *wc, obs_data_t *s)
 {
 	int method = (int)obs_data_get_int(s, "method");
@@ -134,20 +152,23 @@ static void update_settings(struct window_capture *wc, obs_data_t *s)
 
 	build_window_strings(window, &wc->class, &wc->title, &wc->executable);
 
-	if (wc->title != NULL) {
-		blog(LOG_INFO,
-		     "[window-capture: '%s'] update settings:\n"
-		     "\texecutable: %s",
-		     obs_source_get_name(wc->source), wc->executable);
-		blog(LOG_DEBUG, "\tclass:      %s", wc->class);
-	}
-
 	wc->method = choose_method(method, wc->wgc_supported, wc->class);
 	wc->priority = (enum window_priority)priority;
 	wc->cursor = obs_data_get_bool(s, "cursor");
 	wc->use_wildcards = obs_data_get_bool(s, "use_wildcards");
 	wc->compatibility = obs_data_get_bool(s, "compatibility");
 	wc->client_area = obs_data_get_bool(s, "client_area");
+
+	if (wc->title != NULL) {
+		blog(LOG_INFO,
+		     "[window-capture: '%s'] update settings:\n"
+		     "\texecutable: %s\n"
+		     "\tmethod selected: %s\n"
+		     "\tmethod chosen: %s\n",
+		     obs_source_get_name(wc->source), wc->executable,
+		     get_method_name(method), get_method_name(wc->method));
+		blog(LOG_DEBUG, "\tclass:      %s", wc->class);
+	}
 }
 
 /* ------------------------------------------------------------------------- */
