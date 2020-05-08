@@ -139,5 +139,7 @@ endif()
 
 # Now we've accounted for the 3-vs-1 library case:
 include(FindPackageHandleStandardArgs)
+set(FPHSA_NAME_MISMATCHED 1)
 find_package_handle_standard_args(Libmbedtls DEFAULT_MSG MBEDTLS_LIBRARIES MBEDTLS_INCLUDE_DIRS)
+unset(FPHSA_NAME_MISMATCHED)
 mark_as_advanced(MBEDTLS_INCLUDE_DIR MBEDTLS_LIBRARIES MBEDTLS_INCLUDE_DIRS)

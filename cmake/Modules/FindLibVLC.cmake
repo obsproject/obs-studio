@@ -59,7 +59,9 @@ find_library(VLC_LIB
 		../bin${_lib_suffix} ../bin)
 
 include(FindPackageHandleStandardArgs)
+set(FPHSA_NAME_MISMATCHED 1)
 find_package_handle_standard_args(LibVLC_INCLUDES DEFAULT_MSG VLC_INCLUDE_DIR)
+unset(FPHSA_NAME_MISMATCHED)
 find_package_handle_standard_args(LibVLC DEFAULT_MSG VLC_LIB VLC_INCLUDE_DIR)
 mark_as_advanced(VLC_INCLUDE_DIR VLC_LIB)
 

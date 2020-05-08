@@ -61,7 +61,7 @@ find_library(VULKAN_LIB
 		../bin${_lib_suffix} ../bin)
 
 include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(vulkan DEFAULT_MSG VULKAN_LIB VULKAN_INCLUDE_DIR)
+find_package_handle_standard_args(Vulkan DEFAULT_MSG VULKAN_LIB VULKAN_INCLUDE_DIR)
 mark_as_advanced(VULKAN_INCLUDE_DIR VULKAN_LIB)
 
 if(VULKAN_FOUND)
