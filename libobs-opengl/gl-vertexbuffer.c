@@ -275,11 +275,3 @@ void device_load_vertexbuffer(gs_device_t *device, gs_vertbuffer_t *vb)
 {
 	device->cur_vertex_buffer = vb;
 }
-
-void device_set_rebuild_callback(gs_device_t *device,
-				 gs_rebuild_device_callback_t callback)
-{
-	/* Do nothing - OpenGL */
-	UNUSED_PARAMETER(device);
-	UNUSED_PARAMETER(callback);
-}

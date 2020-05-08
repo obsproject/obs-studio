@@ -510,9 +510,6 @@ try {
 	for (auto &state : blendStates)
 		state.Rebuild(dev);
 
-	if (rebuildCallback)
-		rebuildCallback();
-
 	for (gs_device_loss &callback : loss_callbacks)
 		callback.device_loss_rebuild(device.Get(), callback.data);
 

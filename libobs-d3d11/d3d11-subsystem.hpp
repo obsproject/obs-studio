@@ -949,8 +949,6 @@ struct gs_device {
 	vector<gs_device_loss> loss_callbacks;
 	gs_obj *first_obj = nullptr;
 
-	gs_rebuild_device_callback_t rebuildCallback = nullptr;
-
 	void InitCompiler();
 	void InitFactory(uint32_t adapterIdx);
 	void InitDevice(uint32_t adapterIdx);
