@@ -51,7 +51,7 @@ static inline void capture_frame(struct window_capture *wc)
 	size_t height = CGImageGetHeight(img);
 
 	CGRect rect = {{0, 0}, {width, height}};
-	da_reserve(wc->buffer, width * height * 4);
+	da_resize(wc->buffer, width * height * 4);
 	uint8_t *data = wc->buffer.array;
 
 	CGContextRef cg_context = CGBitmapContextCreate(
