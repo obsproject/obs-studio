@@ -17,10 +17,6 @@ struct window_capture {
 	//CGWindowListOption  window_option;
 	CGWindowImageOption image_option;
 
-	CGColorSpaceRef color_space;
-
-	DARRAY(uint8_t) buffer;
-
 	pthread_t capture_thread;
 	os_event_t *capture_event;
 	os_event_t *stop_event;
@@ -50,28 +46,22 @@ static inline void capture_frame(struct window_capture *wc)
 	size_t width = CGImageGetWidth(img);
 	size_t height = CGImageGetHeight(img);
 
-	CGRect rect = {{0, 0}, {width, height}};
-	da_resize(wc->buffer, width * height * 4);
-	uint8_t *data = wc->buffer.array;
-
-	CGContextRef cg_context = CGBitmapContextCreate(
-		data, width, height, 8, width * 4, wc->color_space,
-		kCGBitmapByteOrder32Host | kCGImageAlphaPremultipliedFirst);
-	CGContextSetBlendMode(cg_context, kCGBlendModeCopy);
-	CGContextDrawImage(cg_context, rect, img);
-	CGContextRelease(cg_context);
+	CGDataProviderRef provider = CGImageGetDataProvider(img);
+	CFDataRef data = CGDataProviderCopyData(provider);
+	uint8_t *const bytes = (uint8_t *)CFDataGetBytePtr(data);
 	CGImageRelease(img);
 
 	struct obs_source_frame frame = {
 		.format = VIDEO_FORMAT_BGRA,
 		.width = width,
 		.height = height,
-		.data[0] = data,
+		.data[0] = bytes,
 		.linesize[0] = width * 4,
 		.timestamp = ts,
 	};
 
 	obs_source_output_video(wc->source, &frame);
+	CFRelease(data);
 }
 
 static void *capture_thread(void *data)
@@ -83,9 +73,22 @@ static void *capture_thread(void *data)
 		if (os_event_try(wc->stop_event) != EAGAIN)
 			break;
 
+		const uint64_t begin = clock_gettime_nsec_np(CLOCK_UPTIME_RAW);
+
 		@autoreleasepool {
 			capture_frame(wc);
 		}
+
+		const uint64_t end = clock_gettime_nsec_np(CLOCK_UPTIME_RAW);
+		uint64_t diff = end - begin;
+
+		/* sleep for 50% utilization, up to one second */
+		if (diff > 1000000000)
+			diff = 1000000000;
+		struct timespec ts;
+		ts.tv_sec = diff / 1000000000;
+		ts.tv_nsec = diff % 1000000000;
+		nanosleep(&ts, 0);
 	}
 
 	return NULL;
@@ -97,10 +100,6 @@ static inline void *window_capture_create_internal(obs_data_t *settings,
 	struct window_capture *wc = bzalloc(sizeof(struct window_capture));
 
 	wc->source = source;
-
-	wc->color_space = CGColorSpaceCreateDeviceRGB();
-
-	da_init(wc->buffer);
 
 	init_window(&wc->window, settings);
 
@@ -131,10 +130,6 @@ static void window_capture_destroy(void *data)
 	os_event_signal(cap->capture_event);
 
 	pthread_join(cap->capture_thread, NULL);
-
-	CGColorSpaceRelease(cap->color_space);
-
-	da_free(cap->buffer);
 
 	os_event_destroy(cap->capture_event);
 	os_event_destroy(cap->stop_event);
