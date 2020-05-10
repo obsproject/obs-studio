@@ -255,6 +255,22 @@ void ScriptsTool::RefreshLists()
 	}
 }
 
+void ScriptsTool::SetScriptDefaults(const char *path)
+{
+	for (OBSScript &script : scriptData->scripts) {
+		const char *script_path = obs_script_get_path(script);
+		if (strcmp(script_path, path) == 0) {
+			obs_data_t *settings = obs_script_get_settings(script);
+			obs_data_clear(settings);
+			obs_data_release(settings);
+
+			obs_script_update(script, nullptr);
+			on_reloadScripts_clicked();
+			break;
+		}
+	}
+}
+
 void ScriptsTool::on_close_clicked()
 {
 	close();
@@ -431,6 +447,16 @@ void ScriptsTool::on_scripts_currentRowChanged(int row)
 		(PropertiesUpdateCallback)obs_script_update);
 	ui->propertiesLayout->addWidget(propertiesView);
 	ui->description->setText(obs_script_get_description(script));
+}
+
+void ScriptsTool::on_defaults_clicked()
+{
+	QListWidgetItem *item = ui->scripts->currentItem();
+	if (!item)
+		return;
+
+	SetScriptDefaults(
+		item->data(Qt::UserRole).toString().toUtf8().constData());
 }
 
 /* ----------------------------------------------------------------- */
