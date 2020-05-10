@@ -62,11 +62,14 @@ static winrt::com_ptr<T> GetDXGIInterfaceFromObject(
 static bool get_client_box(HWND window, uint32_t width, uint32_t height,
 			   D3D11_BOX *client_box)
 {
-	RECT client_rect, window_rect{};
+	RECT client_rect{}, window_rect{};
 	POINT upper_left{};
 
-	const bool client_box_available =
-		GetClientRect(window, &client_rect) &&
+	/* check iconic (minimized) twice, ABA is very unlikely */
+	bool client_box_available =
+		!IsIconic(window) && GetClientRect(window, &client_rect) &&
+		!IsIconic(window) && (client_rect.right > 0) &&
+		(client_rect.bottom > 0) &&
 		(DwmGetWindowAttribute(window, DWMWA_EXTENDED_FRAME_BOUNDS,
 				       &window_rect,
 				       sizeof(window_rect)) == S_OK) &&
@@ -100,6 +103,9 @@ static bool get_client_box(HWND window, uint32_t width, uint32_t height,
 
 		client_box->front = 0;
 		client_box->back = 1;
+
+		client_box_available = (client_box->right <= width) &&
+				       (client_box->bottom <= height);
 	}
 
 	return client_box_available;
@@ -131,7 +137,6 @@ struct winrt_capture {
 	uint32_t texture_width;
 	uint32_t texture_height;
 	D3D11_BOX client_box;
-	bool client_box_available;
 
 	bool thread_changed;
 	bool active;
@@ -189,10 +194,9 @@ struct winrt_capture {
 		DestroyIcon(icon);
 	}
 
-	void
-	on_closed(winrt::Windows::Graphics::Capture::GraphicsCaptureItem const
-			  &sender,
-		  winrt::Windows::Foundation::IInspectable const &)
+	void on_closed(
+		winrt::Windows::Graphics::Capture::GraphicsCaptureItem const &,
+		winrt::Windows::Foundation::IInspectable const &)
 	{
 		active = FALSE;
 	}
@@ -216,50 +220,53 @@ struct winrt_capture {
 		D3D11_TEXTURE2D_DESC desc;
 		frame_surface->GetDesc(&desc);
 
-		client_box_available = false;
-		if (client_area) {
-			client_box_available = get_client_box(
-				window, desc.Width, desc.Height, &client_box);
-		}
-
-		if (client_box_available) {
-			texture_width = client_box.right - client_box.left;
-			texture_height = client_box.bottom - client_box.top;
-		} else {
-			texture_width = desc.Width;
-			texture_height = desc.Height;
-		}
-
-		if (texture) {
-			if (texture_width != gs_texture_get_width(texture) ||
-			    texture_height != gs_texture_get_height(texture)) {
-				gs_texture_destroy(texture);
-				texture = nullptr;
+		if (!client_area || get_client_box(window, desc.Width,
+						   desc.Height, &client_box)) {
+			if (client_area) {
+				texture_width =
+					client_box.right - client_box.left;
+				texture_height =
+					client_box.bottom - client_box.top;
+			} else {
+				texture_width = desc.Width;
+				texture_height = desc.Height;
 			}
-		}
 
-		if (!texture) {
-			texture = gs_texture_create_gdi(texture_width,
-							texture_height);
-		}
+			if (texture) {
+				if (texture_width !=
+					    gs_texture_get_width(texture) ||
+				    texture_height !=
+					    gs_texture_get_height(texture)) {
+					gs_texture_destroy(texture);
+					texture = nullptr;
+				}
+			}
 
-		if (client_box_available) {
-			context->CopySubresourceRegion(
-				(ID3D11Texture2D *)gs_texture_get_obj(texture),
-				0, 0, 0, 0, frame_surface.get(), 0,
-				&client_box);
-		} else {
-			/* if they gave an SRV, we could avoid this copy */
-			context->CopyResource(
-				(ID3D11Texture2D *)gs_texture_get_obj(texture),
-				frame_surface.get());
-		}
+			if (!texture) {
+				texture = gs_texture_create_gdi(texture_width,
+								texture_height);
+			}
 
-		if (capture_cursor && cursor_visible) {
-			draw_cursor();
-		}
+			if (client_area) {
+				context->CopySubresourceRegion(
+					(ID3D11Texture2D *)gs_texture_get_obj(
+						texture),
+					0, 0, 0, 0, frame_surface.get(), 0,
+					&client_box);
+			} else {
+				/* if they gave an SRV, we could avoid this copy */
+				context->CopyResource(
+					(ID3D11Texture2D *)gs_texture_get_obj(
+						texture),
+					frame_surface.get());
+			}
 
-		texture_written = true;
+			if (capture_cursor && cursor_visible) {
+				draw_cursor();
+			}
+
+			texture_written = true;
+		}
 
 		if (frame_content_size.Width != last_size.Width ||
 		    frame_content_size.Height != last_size.Height) {
