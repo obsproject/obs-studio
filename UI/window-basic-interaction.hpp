@@ -80,6 +80,6 @@ protected:
 		return filter(obj, event);
 	}
 
-private:
+public:
 	EventFilterFunc filter;
 };
