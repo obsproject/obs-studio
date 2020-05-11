@@ -1264,9 +1264,7 @@ bool initialize_com(void)
 {
 	const HRESULT hr = CoInitializeEx(0, COINIT_APARTMENTTHREADED);
 	const bool success = SUCCEEDED(hr);
-	if (success)
-		blog(LOG_INFO, "CoInitializeEx succeeded: 0x%08X", hr);
-	else
+	if (!success)
 		blog(LOG_ERROR, "CoInitializeEx failed: 0x%08X", hr);
 	return success;
 }
