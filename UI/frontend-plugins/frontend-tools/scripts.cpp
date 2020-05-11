@@ -199,10 +199,19 @@ ScriptsTool::ScriptsTool() : QWidget(nullptr), ui(new Ui_ScriptsTool)
 	propertiesView->setSizePolicy(QSizePolicy::Expanding,
 				      QSizePolicy::Expanding);
 	ui->propertiesLayout->addWidget(propertiesView);
+
+	config_t *global_config = obs_frontend_get_global_config();
+	int row =
+		config_get_int(global_config, "scripts-tool", "prevScriptRow");
+	ui->scripts->setCurrentRow(row);
 }
 
 ScriptsTool::~ScriptsTool()
 {
+	config_t *global_config = obs_frontend_get_global_config();
+	config_set_int(global_config, "scripts-tool", "prevScriptRow",
+		       ui->scripts->currentRow());
+
 	delete ui;
 }
 
@@ -331,6 +340,8 @@ void ScriptsTool::on_addScripts_clicked()
 				obs_script_get_properties(script);
 			obs_properties_apply_settings(prop, settings);
 			obs_properties_destroy(prop);
+
+			ui->scripts->setCurrentItem(item);
 		}
 	}
 }
