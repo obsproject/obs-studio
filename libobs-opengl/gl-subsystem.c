@@ -1512,3 +1512,9 @@ bool gs_timer_range_get_data(gs_timer_range_t *range, bool *disjoint,
 	*frequency = 1000000000;
 	return true;
 }
+
+void device_rebuild(gs_device_t *device)
+{
+	/* Do nothing - GL */
+	UNUSED_PARAMETER(device);
+}

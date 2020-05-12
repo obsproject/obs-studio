@@ -316,6 +316,8 @@ struct gs_exports {
 	void (*device_unregister_loss_callbacks)(gs_device_t *device,
 						 void *data);
 #endif
+	/* SLOBS custom functions */
+	void (*device_rebuild)(gs_device_t *device);
 };
 
 struct blend_state {

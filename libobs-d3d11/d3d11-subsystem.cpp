@@ -2800,3 +2800,8 @@ device_unregister_loss_callbacks(gs_device_t *device,
 		}
 	}
 }
+
+extern "C" EXPORT void device_rebuild(gs_device_t *device)
+{
+	device->RebuildDevice();
+}

@@ -894,6 +894,9 @@ EXPORT void gs_unregister_loss_callbacks(void *data);
 
 #endif
 
+/* SLOBS custom functions */
+EXPORT void gs_rebuild_device();
+
 /* inline functions used by modules */
 
 static inline uint32_t gs_get_format_bpp(enum gs_color_format format)

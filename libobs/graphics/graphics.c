@@ -2987,3 +2987,15 @@ void gs_unregister_loss_callbacks(void *data)
 }
 
 #endif
+
+void gs_rebuild_device()
+{
+	graphics_t *graphics = thread_graphics;
+
+	if (!gs_valid("gs_rebuild_device"))
+		return;
+
+	if (graphics->exports.device_rebuild) {
+		graphics->exports.device_rebuild(graphics->device);
+	}
+}
