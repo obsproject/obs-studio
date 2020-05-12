@@ -43,7 +43,6 @@ extern struct obs_core *obs = NULL;
 #define SETTING_CAPTURE_OVERLAYS "capture_overlays"
 #define SETTING_ANTI_CHEAT_HOOK  "anti_cheat_hook"
 #define SETTING_HOOK_RATE        "hook_rate"
-#define SETTING_FIT_TO_OUTPUT    "auto_fit_to_output"
 #define SETTING_AUTO_LIST_FILE   "auto_capture_list_path"
 #define SETTING_PLACEHOLDER_IMG  "auto_placeholder_image"
 
@@ -72,7 +71,6 @@ extern struct obs_core *obs = NULL;
 #define TEXT_MATCH_EXE           obs_module_text("WindowCapture.Priority.Exe")
 #define TEXT_CAPTURE_CURSOR      obs_module_text("CaptureCursor")
 #define TEXT_LIMIT_FRAMERATE     obs_module_text("GameCapture.LimitFramerate")
-#define TEXT_AUTO_FIT_TO_OUTPUT  obs_module_text("GameCapture.AutoFitToOutput")
 #define TEXT_CAPTURE_OVERLAYS    obs_module_text("GameCapture.CaptureOverlays")
 #define TEXT_ANTI_CHEAT_HOOK     obs_module_text("GameCapture.AntiCheatHook")
 #define TEXT_HOOK_RATE           obs_module_text("GameCapture.HookRate")
@@ -201,7 +199,6 @@ struct game_capture {
 struct graphics_offsets offsets32 = {0};
 struct graphics_offsets offsets64 = {0};
 
-static void send_game_capture_status_event(struct game_capture *gc);
 static void unload_placeholder_image(struct game_capture *gc);
 static void load_placeholder_image(struct game_capture *gc);
 
@@ -419,7 +416,6 @@ static void stop_capture(struct game_capture *gc)
 	if (gc->retrying)
 		gc->retrying--;
 
-	send_game_capture_status_event(gc);
 }
 
 static inline void free_config(struct game_capture_config *config)
@@ -501,8 +497,6 @@ static inline void get_config(struct game_capture_config *cfg,
 		obs_data_get_bool(settings, SETTING_ANTI_CHEAT_HOOK);
 	cfg->hook_rate =
 		(enum hook_rate)obs_data_get_int(settings, SETTING_HOOK_RATE);
-	cfg->auto_fit_to_output =
-		obs_data_get_bool(settings, SETTING_FIT_TO_OUTPUT);
 
 	scale_str = obs_data_get_string(settings, SETTING_SCALE_RES);
 	ret = sscanf(scale_str, "%" PRIu32 "x%" PRIu32, &cfg->scale_cx,
@@ -610,15 +604,6 @@ static void unload_placeholder_image(struct game_capture *gc)
 		gs_image_file2_free(&gc->if2);
 		obs_leave_graphics();
 	}
-}
-
-static void send_game_capture_status_event(struct game_capture *gc)
-{
-	struct calldata data;
-	uint8_t stack[128];
-	calldata_init_fixed(&data, stack, sizeof(stack));
-	calldata_set_ptr(&data, "source", gc->source);
-	signal_handler_signal(gc->source->context.signals, "game_capture_changed", &data);
 }
 
 static void game_capture_update(void *data, obs_data_t *settings)
@@ -1416,7 +1401,6 @@ static inline enum capture_result init_capture_data(struct game_capture *gc)
 	}
 
 	CloseHandle(gc->hook_data_map);
-	send_game_capture_status_event(gc);
 
 	DWORD error = 0;
 	if (!init_data_map(gc, gc->window)) {
@@ -2054,6 +2038,15 @@ static void game_capture_render(void *data, gs_effect_t *effect)
 	effect = obs_get_base_effect(gc->config.allow_transparency
 					     ? OBS_EFFECT_DEFAULT
 					     : OBS_EFFECT_OPAQUE);
+	
+	if (gc->config.mode == CAPTURE_MODE_AUTO) {	
+		struct obs_video_info ovi;	
+		obs_get_video_info(&ovi);
+		float cx_scale = ovi.base_width/(float)gc->cx;
+		float cy_scale = ovi.base_height/(float)gc->cy;
+		gs_matrix_push();
+		gs_matrix_scale3f(cx_scale, cy_scale, 1.0f);
+	}
 
 	while (gs_effect_loop(effect, "Draw")) {
 		obs_source_draw(gc->texture, 0, 0, 0, 0,
@@ -2073,6 +2066,10 @@ static void game_capture_render(void *data, gs_effect_t *effect)
 			game_capture_render_cursor(gc);
 		}
 	}
+
+	if (gc->config.mode == CAPTURE_MODE_AUTO) {	
+		gs_matrix_pop();
+	}
 }
 
 static uint32_t game_capture_width(void *data)
@@ -2081,7 +2078,7 @@ static uint32_t game_capture_width(void *data)
 	if (gc->config.mode == CAPTURE_MODE_AUTO) {
 		struct obs_video_info ovi;	
 		obs_get_video_info(&ovi);
-		return gc->active ? gc->cx : ovi.base_width;
+		return ovi.base_width;
 	} else 
 		return gc->active ? gc->cx : 0;
 }
@@ -2092,7 +2089,7 @@ static uint32_t game_capture_height(void *data)
 	if (gc->config.mode == CAPTURE_MODE_AUTO) {
 		struct obs_video_info ovi;	
 		obs_get_video_info(&ovi);
-		return gc->active ? gc->cy : ovi.base_height;
+		return ovi.base_height;
 	} else 
 		return gc->active ? gc->cy : 0;
 }
@@ -2118,7 +2115,6 @@ static void game_capture_defaults(obs_data_t *settings)
 	obs_data_set_default_bool(settings, SETTING_ANTI_CHEAT_HOOK, true);
 	obs_data_set_default_int(settings, SETTING_HOOK_RATE,
 				 (int)HOOK_RATE_NORMAL);
-	obs_data_set_default_bool(settings, SETTING_FIT_TO_OUTPUT, true);
 
 	obs_data_set_default_string(settings, SETTING_AUTO_LIST_FILE, "");
 	obs_data_set_default_string(settings, SETTING_PLACEHOLDER_IMG, "");
@@ -2159,9 +2155,6 @@ static bool mode_callback(obs_properties_t *ppts, obs_property_t *p,
 	
 	p = obs_properties_get(ppts, SETTING_SCALE_RES);
 	obs_property_set_visible(p, !capture_window_auto);
-
-	p = obs_properties_get(ppts, SETTING_FIT_TO_OUTPUT);
-	obs_property_set_visible(p, false);
 
 	p = obs_properties_get(ppts, SETTING_AUTO_LIST_FILE);
 	obs_property_set_visible(p, false);
@@ -2369,9 +2362,6 @@ static obs_properties_t *game_capture_properties(void *data)
 
 	obs_properties_add_bool(ppts, SETTING_CAPTURE_OVERLAYS,
 				TEXT_CAPTURE_OVERLAYS);
-
-	obs_properties_add_bool(ppts, SETTING_FIT_TO_OUTPUT,
-				TEXT_AUTO_FIT_TO_OUTPUT);
 
 	obs_properties_add_text(ppts, SETTING_AUTO_LIST_FILE,
 				SETTING_AUTO_LIST_FILE, OBS_TEXT_DEFAULT);
