@@ -25,5 +25,6 @@ target_include_directories(w32-pthreads
 	PUBLIC
 		"$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>")
 target_link_libraries(w32-pthreads)
+set_target_properties(w32-pthreads PROPERTIES FOLDER "deps")
 
 install_obs_core(w32-pthreads EXPORT w32-pthreads)

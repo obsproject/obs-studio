@@ -64,5 +64,6 @@ target_link_libraries(decklink-ouput-ui
 	obs-frontend-api
 	Qt5::Widgets
 	libobs)
+set_target_properties(decklink-ouput-ui PROPERTIES FOLDER "frontend")
 
 install_obs_plugin_with_data(decklink-ouput-ui data)

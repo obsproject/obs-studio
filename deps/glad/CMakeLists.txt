@@ -35,6 +35,7 @@ add_library(glad SHARED
 	${glad_SOURCES}
 	${glad_PLATFORM_SOURCES})
 set_target_properties(glad PROPERTIES
+	FOLDER "deps"
 	OUTPUT_NAME obsglad
 	VERSION "0"
 	SOVERSION "0")

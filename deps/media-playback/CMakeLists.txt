@@ -41,3 +41,4 @@ endif()
 target_link_libraries(media-playback
 	${FFMPEG_LIBRARIES}
 	)
+set_target_properties(media-playback PROPERTIES FOLDER "deps")

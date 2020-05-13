@@ -44,5 +44,6 @@ add_library(vlc-video MODULE
 target_link_libraries(vlc-video
 	libobs
 	${vlc-video_PLATFORM_DEPS})
+set_target_properties(vlc-video PROPERTIES FOLDER "plugins")
 
 install_obs_plugin_with_data(vlc-video data)

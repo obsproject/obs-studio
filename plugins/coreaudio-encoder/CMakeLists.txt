@@ -37,5 +37,6 @@ add_library(coreaudio-encoder MODULE
 target_link_libraries(coreaudio-encoder
 	libobs
 	${coreaudio-encoder_LIBS})
+set_target_properties(coreaudio-encoder PROPERTIES FOLDER "plugins")
 
 install_obs_plugin_with_data(coreaudio-encoder data)

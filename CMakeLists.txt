@@ -9,6 +9,8 @@ project(obs-studio)
 
 option(BUILD_CAPTIONS "Build captions" FALSE)
 
+set_property(GLOBAL PROPERTY USE_FOLDERS ON)
+
 if(WIN32)
 	cmake_minimum_required(VERSION 3.16)
 

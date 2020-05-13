@@ -69,5 +69,6 @@ target_link_libraries(obs-filters
 	libobs
 	${obs-filters_PLATFORM_DEPS}
 	${obs-filters_LIBSPEEXDSP_LIBRARIES})
+set_target_properties(obs-filters PROPERTIES FOLDER "plugins")
 
 install_obs_plugin_with_data(obs-filters data)

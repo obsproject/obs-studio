@@ -91,6 +91,7 @@ target_link_libraries(obs-qsv11
 	)
 
 target_compile_definitions(obs-qsv11 PRIVATE DX11_D3D)
+set_target_properties(obs-qsv11 PROPERTIES FOLDER "plugins")
 
 source_group("obs-qsv11\\Source Files" FILES ${obs-qsv11_SOURCES})
 source_group("obs-qsv11\\Header Files" FILES ${obs-qsv11_HEADERS})

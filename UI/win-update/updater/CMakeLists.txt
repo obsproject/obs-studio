@@ -51,3 +51,4 @@ target_link_libraries(updater
 	shell32
 	winhttp
 	)
+set_target_properties(updater PROPERTIES FOLDER "frontend")

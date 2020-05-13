@@ -62,5 +62,6 @@ target_link_libraries(win-dshow
 	ksuser
 	wmcodecdspuuid
 	${FFMPEG_LIBRARIES})
+set_target_properties(win-dshow PROPERTIES FOLDER "plugins")
 
 install_obs_plugin_with_data(win-dshow data)

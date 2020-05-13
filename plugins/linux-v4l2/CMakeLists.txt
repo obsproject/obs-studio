@@ -45,5 +45,6 @@ target_link_libraries(linux-v4l2
 	${LIBV4L2_LIBRARIES}
 	${UDEV_LIBRARIES}
 )
+set_target_properties(linux-v4l2 PROPERTIES FOLDER "plugins")
 
 install_obs_plugin_with_data(linux-v4l2 data)

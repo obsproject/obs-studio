@@ -47,6 +47,7 @@ add_library(libobs-d3d11 MODULE
 	${libobs-d3d11_HEADERS})
 set_target_properties(libobs-d3d11
 	PROPERTIES
+		FOLDER "core"
 		OUTPUT_NAME libobs-d3d11
 		PREFIX "")
 target_link_libraries(libobs-d3d11

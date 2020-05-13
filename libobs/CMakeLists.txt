@@ -480,6 +480,7 @@ if(UNIX AND NOT APPLE)
 endif()
 
 set_target_properties(libobs PROPERTIES
+	FOLDER "core"
 	OUTPUT_NAME obs
 	VERSION "0"
 	SOVERSION "0")

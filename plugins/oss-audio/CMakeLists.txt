@@ -32,5 +32,6 @@ add_library(oss-audio MODULE
 target_link_libraries(oss-audio
 	libobs
 )
+set_target_properties(oss-audio PROPERTIES FOLDER "plugins")
 
 install_obs_plugin(oss-audio)

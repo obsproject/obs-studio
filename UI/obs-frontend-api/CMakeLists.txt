@@ -22,6 +22,7 @@ add_library(obs-frontend-api SHARED
 	${obs-frontend-api_HEADERS})
 target_link_libraries(obs-frontend-api
 	libobs)
+set_target_properties(obs-frontend-api PROPERTIES FOLDER "frontend")
 
 if(UNIX AND NOT APPLE)
 	set_target_properties(obs-frontend-api

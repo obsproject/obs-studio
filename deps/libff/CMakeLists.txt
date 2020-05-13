@@ -50,6 +50,7 @@ endif(WIN32)
 add_library (libff STATIC
 	${libff_HEADERS}
 	${libff_SOURCES})
+set_target_properties(libff PROPERTIES FOLDER "deps")
 
 target_include_directories(libff
 	PUBLIC .)

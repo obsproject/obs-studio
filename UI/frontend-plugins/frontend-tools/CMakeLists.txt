@@ -122,5 +122,6 @@ target_link_libraries(frontend-tools
 	obs-frontend-api
 	Qt5::Widgets
 	libobs)
+set_target_properties(frontend-tools PROPERTIES FOLDER "frontend")
 
 install_obs_plugin_with_data(frontend-tools data)

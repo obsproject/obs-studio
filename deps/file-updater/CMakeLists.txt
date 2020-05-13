@@ -30,3 +30,4 @@ target_link_libraries(file-updater
 	${LIBCURL_LIBRARIES}
 	${file-updater_PLATFORM_DEPS}
 	libobs)
+set_target_properties(file-updater PROPERTIES FOLDER "deps")

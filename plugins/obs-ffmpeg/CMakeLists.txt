@@ -65,6 +65,7 @@ target_link_libraries(obs-ffmpeg
 	media-playback
 	${obs-ffmpeg_PLATFORM_DEPS}
 	${FFMPEG_LIBRARIES})
+set_target_properties(obs-ffmpeg PROPERTIES FOLDER "plugins/obs-ffmpeg")
 
 install_obs_plugin_with_data(obs-ffmpeg data)
 

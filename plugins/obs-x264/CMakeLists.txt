@@ -20,5 +20,6 @@ add_library(obs-x264 MODULE
 target_link_libraries(obs-x264
 	libobs
 	${LIBX264_LIBRARIES})
+set_target_properties(obs-x264 PROPERTIES FOLDER "plugins")
 
 install_obs_plugin_with_data(obs-x264 data)

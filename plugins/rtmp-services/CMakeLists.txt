@@ -48,6 +48,8 @@ target_link_libraries(rtmp-services
 	${OBS_JANSSON_IMPORT}
 	${LIBCURL_LIBRARIES})
 
+set_target_properties(rtmp-services PROPERTIES FOLDER "plugins")
+
 target_include_directories(rtmp-services
 	PUBLIC
 		"$<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/plugins/rtmp-services>")
