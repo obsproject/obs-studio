@@ -142,6 +142,18 @@ void obs_frontend_set_transition_duration(int duration)
 		c->obs_frontend_set_transition_duration(duration);
 }
 
+void obs_frontend_release_tbar(void)
+{
+	if (callbacks_valid())
+		c->obs_frontend_release_tbar();
+}
+
+void obs_frontend_set_tbar_position(int position)
+{
+	if (callbacks_valid())
+		c->obs_frontend_set_tbar_position(position);
+}
+
 char **obs_frontend_get_scene_collections(void)
 {
 	if (!callbacks_valid())

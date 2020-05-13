@@ -915,6 +915,8 @@ void OBSBasic::TBarChanged(int value)
 	OBSSource transition = obs_get_output_source(0);
 	obs_source_release(transition);
 
+	tBar->setValue(value);
+
 	if (!tBarActive) {
 		OBSSource sceneSource = GetCurrentSceneSource();
 		OBSSource tBarTr = GetOverrideTransition(sceneSource);
