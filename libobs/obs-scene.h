@@ -97,4 +97,6 @@ struct obs_scene {
 	pthread_mutex_t video_mutex;
 	pthread_mutex_t audio_mutex;
 	struct obs_scene_item *first_item;
+
+	bool is_dsk;
 };

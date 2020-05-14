@@ -1455,6 +1455,8 @@ EXPORT void obs_transition_swap_end(obs_source_t *tr_dest,
  */
 EXPORT obs_scene_t *obs_scene_create(const char *name);
 
+EXPORT obs_scene_t *obs_dsk_create(const char *name);
+
 EXPORT obs_scene_t *obs_scene_create_private(const char *name);
 
 enum obs_scene_duplicate_type {
@@ -1657,6 +1659,12 @@ EXPORT obs_scene_t *obs_group_from_source(const obs_source_t *source);
 
 EXPORT void obs_sceneitem_defer_group_resize_begin(obs_sceneitem_t *item);
 EXPORT void obs_sceneitem_defer_group_resize_end(obs_sceneitem_t *item);
+
+/** Gets the dsk from its source, or NULL if not a group */
+EXPORT obs_scene_t *obs_dsk_from_source(const obs_source_t *source);
+
+EXPORT bool obs_source_is_dsk(const obs_source_t *source);
+EXPORT bool obs_scene_is_dsk(const obs_scene_t *scene);
 
 /* ------------------------------------------------------------------------- */
 /* Outputs */
