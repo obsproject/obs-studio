@@ -116,6 +116,12 @@ struct obs_frontend_callbacks {
 	virtual void on_preload(obs_data_t *settings) = 0;
 	virtual void on_save(obs_data_t *settings) = 0;
 	virtual void on_event(enum obs_frontend_event event) = 0;
+
+	virtual void obs_frontend_get_global_scenes(
+		struct obs_frontend_source_list *sources) = 0;
+	virtual obs_source_t *obs_frontend_get_current_global_scene(void) = 0;
+	virtual void
+	obs_frontend_set_current_global_scene(obs_source_t *scene) = 0;
 };
 
 EXPORT void

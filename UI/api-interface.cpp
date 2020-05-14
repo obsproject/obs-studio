@@ -92,7 +92,7 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 		if (main->IsPreviewProgramMode()) {
 			source = obs_weak_source_get_source(main->programScene);
 		} else {
-			source = main->GetCurrentSceneSource();
+			source = main->GetCurrentSceneListSource();
 			obs_source_addref(source);
 		}
 		return source;
@@ -505,7 +505,7 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 		OBSSource source = nullptr;
 
 		if (main->IsPreviewProgramMode()) {
-			source = main->GetCurrentSceneSource();
+			source = main->GetCurrentSceneListSource();
 			obs_source_addref(source);
 		}
 
@@ -520,6 +520,34 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 						  Q_ARG(OBSSource,
 							OBSSource(scene)),
 						  Q_ARG(bool, false));
+		}
+	}
+
+	obs_source_t *obs_frontend_get_current_global_scene(void) override
+	{
+		OBSSource source = main->GetCurrentSceneListSource();
+		obs_source_addref(source);
+
+		return source;
+	}
+
+	void obs_frontend_set_current_global_scene(obs_source_t *scene) override
+	{
+		QMetaObject::invokeMethod(main, "SetDSKSource",
+					  Q_ARG(OBSSource, OBSSource(scene)),
+					  Q_ARG(bool, false));
+	}
+
+	void obs_frontend_get_global_scenes(
+		struct obs_frontend_source_list *sources) override
+	{
+		for (int i = 0; i < main->ui->dsk->count(); i++) {
+			QListWidgetItem *item = main->ui->dsk->item(i);
+			OBSScene scene = GetOBSRef<OBSScene>(item);
+			obs_source_t *source = obs_scene_get_source(scene);
+
+			obs_source_addref(source);
+			da_push_back(sources->sources, &source);
 		}
 	}
 

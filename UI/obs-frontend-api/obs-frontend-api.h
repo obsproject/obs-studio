@@ -49,6 +49,8 @@ enum obs_frontend_event {
 	OBS_FRONTEND_EVENT_RECORDING_UNPAUSED,
 
 	OBS_FRONTEND_EVENT_TRANSITION_DURATION_CHANGED,
+
+	OBS_FRONTEND_EVENT_GLOBAL_SCENE_CHANGED,
 };
 
 /* ------------------------------------------------------------------------- */
@@ -191,6 +193,11 @@ EXPORT bool obs_frontend_preview_enabled(void);
 
 EXPORT obs_source_t *obs_frontend_get_current_preview_scene(void);
 EXPORT void obs_frontend_set_current_preview_scene(obs_source_t *scene);
+
+EXPORT void
+obs_frontend_get_global_scenes(struct obs_frontend_source_list *sources);
+EXPORT obs_source_t *obs_frontend_get_current_global_scene(void);
+EXPORT void obs_frontend_set_current_global_scene(obs_source_t *scene);
 
 /* ------------------------------------------------------------------------- */
 
