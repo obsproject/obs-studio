@@ -542,6 +542,8 @@ obs_source_t *obs_source_duplicate(obs_source_t *source, const char *new_name,
 		if (!scene)
 			scene = obs_group_from_source(source);
 		if (!scene)
+			scene = obs_dsk_from_source(source);
+		if (!scene)
 			return NULL;
 
 		obs_scene_t *new_scene = obs_scene_duplicate(

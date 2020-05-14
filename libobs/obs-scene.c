@@ -22,6 +22,7 @@
 #include "obs-scene.h"
 
 const struct obs_source_info group_info;
+const struct obs_source_info dsk_info;
 
 static void resize_group(obs_sceneitem_t *group);
 static void resize_scene(obs_scene_t *scene);
@@ -81,6 +82,12 @@ static const char *group_getname(void *unused)
 	return "Group";
 }
 
+static const char *dsk_getname(void *unused)
+{
+	UNUSED_PARAMETER(unused);
+	return "DSK";
+}
+
 static void *scene_create(obs_data_t *settings, struct obs_source *source)
 {
 	pthread_mutexattr_t attr;
@@ -92,6 +99,8 @@ static void *scene_create(obs_data_t *settings, struct obs_source *source)
 		scene->custom_size = true;
 		scene->cx = 0;
 		scene->cy = 0;
+	} else if (strcmp(source->info.id, dsk_info.id) == 0) {
+		scene->is_dsk = true;
 	}
 
 	signal_handler_add_array(obs_source_get_signal_handler(source),
@@ -1199,6 +1208,24 @@ const struct obs_source_info group_info = {
 	.enum_active_sources = scene_enum_active_sources,
 	.enum_all_sources = scene_enum_all_sources};
 
+const struct obs_source_info dsk_info = {
+	.id = "dsk",
+	.type = OBS_SOURCE_TYPE_SCENE,
+	.output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_CUSTOM_DRAW |
+			OBS_SOURCE_COMPOSITE,
+	.get_name = dsk_getname,
+	.create = scene_create,
+	.destroy = scene_destroy,
+	.video_tick = scene_video_tick,
+	.video_render = scene_video_render,
+	.audio_render = scene_audio_render,
+	.get_width = scene_getwidth,
+	.get_height = scene_getheight,
+	.load = scene_load,
+	.save = scene_save,
+	.enum_active_sources = scene_enum_active_sources,
+	.enum_all_sources = scene_enum_all_sources};
+
 static inline obs_scene_t *create_id(const char *id, const char *name)
 {
 	struct obs_source *source = obs_source_create(id, name, NULL, NULL);
@@ -1219,6 +1246,11 @@ obs_scene_t *obs_scene_create(const char *name)
 obs_scene_t *obs_scene_create_private(const char *name)
 {
 	return create_private_id("scene", name);
+}
+
+obs_scene_t *obs_dsk_create(const char *name)
+{
+	return create_id("dsk", name);
 }
 
 static obs_source_t *get_child_at_idx(obs_scene_t *scene, size_t idx)
@@ -1420,6 +1452,14 @@ obs_scene_t *obs_scene_from_source(const obs_source_t *source)
 obs_scene_t *obs_group_from_source(const obs_source_t *source)
 {
 	if (!source || strcmp(source->info.id, group_info.id) != 0)
+		return NULL;
+
+	return source->context.data;
+}
+
+obs_scene_t *obs_dsk_from_source(const obs_source_t *source)
+{
+	if (!source || strcmp(source->info.id, dsk_info.id) != 0)
 		return NULL;
 
 	return source->context.data;
@@ -2993,6 +3033,16 @@ bool obs_source_is_group(const obs_source_t *source)
 bool obs_scene_is_group(const obs_scene_t *scene)
 {
 	return scene ? scene->is_group : false;
+}
+
+bool obs_source_is_dsk(const obs_source_t *source)
+{
+	return source && strcmp(source->info.id, dsk_info.id) == 0;
+}
+
+bool obs_scene_is_dsk(const obs_scene_t *scene)
+{
+	return scene ? scene->is_dsk : false;
 }
 
 void obs_sceneitem_group_enum_items(obs_sceneitem_t *group,
