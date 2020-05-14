@@ -751,9 +751,9 @@ void OBSBasic::TransitionClicked()
 		TransitionToScene(GetCurrentScene());
 }
 
-#define T_BAR_PRECISION 1024
+#define T_BAR_PRECISION 1023
 #define T_BAR_PRECISION_F ((float)T_BAR_PRECISION)
-#define T_BAR_CLAMP (T_BAR_PRECISION / 10)
+#define T_BAR_CLAMP ((T_BAR_PRECISION + 1) / 10)
 
 void OBSBasic::CreateProgramOptions()
 {
@@ -786,9 +786,10 @@ void OBSBasic::CreateProgramOptions()
 	mainButtonLayout->addWidget(transitionButton);
 	mainButtonLayout->addWidget(configTransitions);
 
+	tBarSide = false;
 	tBar = new QSlider(Qt::Horizontal);
 	tBar->setMinimum(0);
-	tBar->setMaximum(T_BAR_PRECISION - 1);
+	tBar->setMaximum(T_BAR_PRECISION);
 
 	tBar->setProperty("themeID", "tBarSlider");
 
@@ -879,19 +880,33 @@ void OBSBasic::TBarReleased()
 	obs_source_release(transition);
 
 	if ((tBar->maximum() - val) <= T_BAR_CLAMP) {
-		obs_transition_set_manual_time(transition, 1.0f);
+		if (!tBarSide) {
+			obs_transition_set_manual_time(transition, 1.0f);
+		} else {
+			obs_transition_set_manual_time(transition, 0.0f);
+			TransitionFullyStopped();
+		}
 		tBar->blockSignals(true);
-		tBar->setValue(0);
+		tBar->setValue(T_BAR_PRECISION);
 		tBar->blockSignals(false);
+		if (!tBarSide) {
+			tBarSide = true;
+		}
 		tBarActive = false;
 		EnableTransitionWidgets(true);
-
 	} else if (val <= T_BAR_CLAMP) {
-		obs_transition_set_manual_time(transition, 0.0f);
-		TransitionFullyStopped();
+		if (!tBarSide) {
+			obs_transition_set_manual_time(transition, 0.0f);
+			TransitionFullyStopped();
+		} else {
+			obs_transition_set_manual_time(transition, 1.0f);
+		}
 		tBar->blockSignals(true);
 		tBar->setValue(0);
 		tBar->blockSignals(false);
+		if (tBarSide) {
+			tBarSide = false;
+		}
 		tBarActive = false;
 		EnableTransitionWidgets(true);
 	}
@@ -938,8 +953,26 @@ void OBSBasic::TBarChanged(int value)
 		tBarActive = true;
 	}
 
-	obs_transition_set_manual_time(transition,
-				       (float)value / T_BAR_PRECISION_F);
+	if (!tBarSide) {
+		float position = (float)value / T_BAR_PRECISION_F;
+		if (position == 0.0) {
+			position = ((float)value + 1.0) / T_BAR_PRECISION_F;
+		} else if (position == 1.0) {
+			position = ((float)value - 1.0) / T_BAR_PRECISION_F;
+		}
+		obs_transition_set_manual_time(transition, position);
+	} else {
+		float position =
+			(T_BAR_PRECISION_F - (float)value) / T_BAR_PRECISION_F;
+		if (position == 0.0) {
+			position = (T_BAR_PRECISION_F - (float)value + 1.0) /
+				   T_BAR_PRECISION_F;
+		} else if (position == 1.0) {
+			position = (T_BAR_PRECISION_F - (float)value - 1.0) /
+				   T_BAR_PRECISION_F;
+		}
+		obs_transition_set_manual_time(transition, position);
+	}
 }
 
 void OBSBasic::on_modeSwitch_clicked()

@@ -512,6 +512,7 @@ private:
 
 	QSlider *tBar;
 	bool tBarActive = false;
+	bool tBarSide = false;
 
 	OBSSource GetOverrideTransition(OBSSource source);
 	int GetOverrideTransitionDuration(OBSSource source);
