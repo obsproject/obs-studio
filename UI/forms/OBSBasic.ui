@@ -7,7 +7,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1079</width>
+    <width>1191</width>
     <height>730</height>
    </rect>
   </property>
@@ -202,8 +202,8 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1079</width>
-     <height>22</height>
+     <width>1191</width>
+     <height>30</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_File">
@@ -395,6 +395,7 @@
      <addaction name="toggleTransitions"/>
      <addaction name="toggleControls"/>
      <addaction name="toggleStats"/>
+     <addaction name="toggleDSK"/>
     </widget>
     <action name="actionFullscreenInterface">
      <property name="text">
@@ -429,6 +430,144 @@
    <addaction name="menuBasic_MainMenu_Help"/>
   </widget>
   <widget class="OBSBasicStatusBar" name="statusbar"/>
+  <widget class="OBSDock" name="dskDock">
+   <property name="autoFillBackground">
+    <bool>false</bool>
+   </property>
+   <property name="features">
+    <set>QDockWidget::AllDockWidgetFeatures</set>
+   </property>
+   <property name="windowTitle">
+    <string>DownstreamKeyer</string>
+   </property>
+   <attribute name="dockWidgetArea">
+    <number>8</number>
+   </attribute>
+   <widget class="QWidget" name="dockWidgetContents_2">
+    <layout class="QVBoxLayout" name="verticalLayout_6">
+     <property name="spacing">
+      <number>0</number>
+     </property>
+     <property name="leftMargin">
+      <number>0</number>
+     </property>
+     <property name="topMargin">
+      <number>0</number>
+     </property>
+     <property name="rightMargin">
+      <number>0</number>
+     </property>
+     <property name="bottomMargin">
+      <number>0</number>
+     </property>
+     <item>
+      <widget class="QFrame" name="dskFrame">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="minimumSize">
+        <size>
+         <width>160</width>
+         <height>0</height>
+        </size>
+       </property>
+       <property name="frameShape">
+        <enum>QFrame::StyledPanel</enum>
+       </property>
+       <property name="frameShadow">
+        <enum>QFrame::Sunken</enum>
+       </property>
+       <layout class="QVBoxLayout" name="verticalLayout_12">
+        <property name="spacing">
+         <number>0</number>
+        </property>
+        <property name="leftMargin">
+         <number>0</number>
+        </property>
+        <property name="topMargin">
+         <number>0</number>
+        </property>
+        <property name="rightMargin">
+         <number>0</number>
+        </property>
+        <property name="bottomMargin">
+         <number>0</number>
+        </property>
+        <item>
+         <widget class="SceneTree" name="dsk">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="contextMenuPolicy">
+           <enum>Qt::CustomContextMenu</enum>
+          </property>
+          <property name="frameShape">
+           <enum>QFrame::NoFrame</enum>
+          </property>
+          <property name="frameShadow">
+           <enum>QFrame::Plain</enum>
+          </property>
+          <property name="showDropIndicator" stdset="0">
+           <bool>true</bool>
+          </property>
+          <property name="dragEnabled">
+           <bool>true</bool>
+          </property>
+          <property name="dragDropMode">
+           <enum>QAbstractItemView::InternalMove</enum>
+          </property>
+          <property name="defaultDropAction">
+           <enum>Qt::TargetMoveAction</enum>
+          </property>
+          <addaction name="actionRemoveScene"/>
+         </widget>
+        </item>
+        <item>
+         <widget class="QToolBar" name="dskToolbar">
+          <property name="iconSize">
+           <size>
+            <width>16</width>
+            <height>16</height>
+           </size>
+          </property>
+          <property name="floatable">
+           <bool>false</bool>
+          </property>
+          <addaction name="actionAddSceneDSK"/>
+          <addaction name="actionRemoveSceneDSK"/>
+          <addaction name="separator"/>
+          <addaction name="actionSceneUpDSK"/>
+          <addaction name="actionSceneDownDSK"/>
+         </widget>
+        </item>
+        <item>
+         <spacer name="scenesFixedSizeHSpacer">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeType">
+           <enum>QSizePolicy::Fixed</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>150</width>
+            <height>0</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+       </layout>
+      </widget>
+     </item>
+    </layout>
+   </widget>
+  </widget>
   <widget class="OBSDock" name="scenesDock">
    <property name="features">
     <set>QDockWidget::AllDockWidgetFeatures</set>
@@ -753,7 +892,7 @@
           <rect>
            <x>0</x>
            <y>0</y>
-           <width>71</width>
+           <width>76</width>
            <height>16</height>
           </rect>
          </property>
@@ -807,7 +946,7 @@
            <x>0</x>
            <y>0</y>
            <width>16</width>
-           <height>28</height>
+           <height>26</height>
           </rect>
          </property>
          <property name="sizePolicy">
@@ -1241,6 +1380,18 @@
     <string notr="true">addIconSmall</string>
    </property>
   </action>
+  <action name="actionAddSceneDSK">
+   <property name="icon">
+    <iconset>
+     <normaloff>:/res/images/add.png</normaloff>:/res/images/add.png</iconset>
+   </property>
+   <property name="text">
+    <string>Add</string>
+   </property>
+   <property name="themeID" stdset="0">
+    <string notr="true">addIconSmall</string>
+   </property>
+  </action>
   <action name="actionAddSource">
    <property name="icon">
     <iconset>
@@ -1254,6 +1405,24 @@
    </property>
   </action>
   <action name="actionRemoveScene">
+   <property name="icon">
+    <iconset>
+     <normaloff>:/res/images/list_remove.png</normaloff>:/res/images/list_remove.png</iconset>
+   </property>
+   <property name="text">
+    <string>Remove</string>
+   </property>
+   <property name="shortcut">
+    <string>Del</string>
+   </property>
+   <property name="shortcutContext">
+    <enum>Qt::WidgetWithChildrenShortcut</enum>
+   </property>
+   <property name="themeID" stdset="0">
+    <string notr="true">removeIconSmall</string>
+   </property>
+  </action>
+  <action name="actionRemoveSceneDSK">
    <property name="icon">
     <iconset>
      <normaloff>:/res/images/list_remove.png</normaloff>:/res/images/list_remove.png</iconset>
@@ -1316,6 +1485,18 @@
     <string notr="true">upArrowIconSmall</string>
    </property>
   </action>
+  <action name="actionSceneUpDSK">
+   <property name="icon">
+    <iconset>
+     <normaloff>:/res/images/up.png</normaloff>:/res/images/up.png</iconset>
+   </property>
+   <property name="text">
+    <string>MoveUp</string>
+   </property>
+   <property name="themeID" stdset="0">
+    <string notr="true">upArrowIconSmall</string>
+   </property>
+  </action>
   <action name="actionSourceUp">
    <property name="enabled">
     <bool>true</bool>
@@ -1332,6 +1513,18 @@
    </property>
   </action>
   <action name="actionSceneDown">
+   <property name="icon">
+    <iconset>
+     <normaloff>:/res/images/down.png</normaloff>:/res/images/down.png</iconset>
+   </property>
+   <property name="text">
+    <string>MoveDown</string>
+   </property>
+   <property name="themeID" stdset="0">
+    <string notr="true">downArrowIconSmall</string>
+   </property>
+  </action>
+  <action name="actionSceneDownDSK">
    <property name="icon">
     <iconset>
      <normaloff>:/res/images/down.png</normaloff>:/res/images/down.png</iconset>
@@ -1822,6 +2015,17 @@
    </property>
    <property name="text">
     <string>Basic.MainMenu.View.SourceIcons</string>
+   </property>
+  </action>
+  <action name="toggleDSK">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>DownstreamKeyer</string>
    </property>
   </action>
  </widget>

@@ -262,7 +262,8 @@ set(obs_SOURCES
 	source-label.cpp
 	remote-text.cpp
 	audio-encoders.cpp
-	qt-wrappers.cpp)
+	qt-wrappers.cpp
+	window-basic-main-dsk.cpp)
 
 set(obs_HEADERS
 	${obs_PLATFORM_HEADERS}

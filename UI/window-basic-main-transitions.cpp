@@ -123,7 +123,7 @@ void OBSBasic::TriggerQuickTransition(int id)
 	QuickTransition *qt = GetQuickTransition(id);
 
 	if (qt && previewProgramMode) {
-		OBSScene scene = GetCurrentScene();
+		OBSScene scene = GetCurrentSceneListScene();
 		obs_source_t *source = obs_scene_get_source(scene);
 
 		if (GetCurrentTransition() != qt->source) {
@@ -322,7 +322,7 @@ void OBSBasic::TransitionToScene(OBSSource source, bool force,
 			if (!sceneDuplicationMode && newScene == source)
 				return;
 
-			if (newScene && newScene != GetCurrentSceneSource())
+			if (newScene && newScene != GetCurrentSceneListSource())
 				swapScene = lastProgramScene;
 		}
 	}
@@ -675,6 +675,9 @@ template<typename T> static T GetOBSRef(QListWidgetItem *item)
 
 void OBSBasic::SetCurrentScene(OBSSource scene, bool force)
 {
+	if (prevSceneListSource == scene)
+		return;
+
 	if (!IsPreviewProgramMode()) {
 		TransitionToScene(scene, force);
 	} else {
@@ -688,7 +691,7 @@ void OBSBasic::SetCurrentScene(OBSSource scene, bool force)
 		}
 	}
 
-	if (obs_scene_get_source(GetCurrentScene()) != scene) {
+	if (GetCurrentSceneListSource() != scene) {
 		for (int i = 0; i < ui->scenes->count(); i++) {
 			QListWidgetItem *item = ui->scenes->item(i);
 			OBSScene itemScene = GetOBSRef<OBSScene>(item);
@@ -707,6 +710,7 @@ void OBSBasic::SetCurrentScene(OBSSource scene, bool force)
 	}
 
 	UpdateSceneSelection(scene);
+	prevSceneListSource = scene;
 
 	bool userSwitched = (!force && !disableSaving);
 	blog(LOG_INFO, "%s to scene '%s'",
@@ -748,7 +752,7 @@ void OBSBasic::CreateProgramDisplay()
 void OBSBasic::TransitionClicked()
 {
 	if (previewProgramMode)
-		TransitionToScene(GetCurrentScene());
+		TransitionToScene(GetCurrentSceneListScene());
 }
 
 #define T_BAR_PRECISION 1024
@@ -916,7 +920,7 @@ void OBSBasic::TBarChanged(int value)
 	obs_source_release(transition);
 
 	if (!tBarActive) {
-		OBSSource sceneSource = GetCurrentSceneSource();
+		OBSSource sceneSource = GetCurrentSceneListSource();
 		OBSSource tBarTr = GetOverrideTransition(sceneSource);
 
 		if (!ValidTBarTransition(tBarTr)) {
@@ -1315,7 +1319,7 @@ void OBSBasic::SetPreviewProgramMode(bool enabled)
 		CreateProgramDisplay();
 		CreateProgramOptions();
 
-		OBSScene curScene = GetCurrentScene();
+		OBSScene curScene = GetCurrentSceneListScene();
 
 		obs_scene_t *dup;
 		if (sceneDuplicationMode) {
@@ -1382,7 +1386,7 @@ void OBSBasic::SetPreviewProgramMode(bool enabled)
 	} else {
 		OBSSource actualProgramScene = OBSGetStrongRef(programScene);
 		if (!actualProgramScene)
-			actualProgramScene = GetCurrentSceneSource();
+			actualProgramScene = GetCurrentSceneListSource();
 		else
 			SetCurrentScene(actualProgramScene, true);
 		TransitionToScene(actualProgramScene, true);

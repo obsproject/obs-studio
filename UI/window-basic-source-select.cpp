@@ -289,7 +289,7 @@ OBSBasicSourceSelect::OBSBasicSourceSelect(OBSBasic *parent, const char *id_)
 	if (strcmp(id_, "scene") == 0) {
 		OBSBasic *main =
 			reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
-		OBSSource curSceneSource = main->GetCurrentSceneSource();
+		OBSSource curSceneSource = main->GetCurrentSceneListSource();
 
 		ui->selectExisting->setChecked(true);
 		ui->createNew->setChecked(false);

@@ -161,6 +161,7 @@ class OBSBasic : public OBSMainWindow {
 	friend class ExtraBrowsersModel;
 	friend class ExtraBrowsersDelegate;
 	friend struct OBSStudioAPI;
+	friend class SourceTree;
 
 	enum class MoveDir { Up, Down, Left, Right };
 
@@ -225,7 +226,6 @@ private:
 	gs_vertbuffer_t *boxBottom = nullptr;
 	gs_vertbuffer_t *circle = nullptr;
 
-	bool sceneChanging = false;
 	bool ignoreSelectionUpdate = false;
 
 	int previewX = 0, previewY = 0;
@@ -331,7 +331,11 @@ private:
 
 	void LoadSceneListOrder(obs_data_array_t *array);
 	obs_data_array_t *SaveSceneListOrder();
-	void ChangeSceneIndex(bool relative, int idx, int invalidIdx);
+	void ChangeListIndex(QListWidget *list, bool relative, int idx,
+			     int invalidIdx);
+
+	void LoadDSKListOrder(obs_data_array_t *array);
+	obs_data_array_t *SaveDSKListOrder();
 
 	void TempFileOutput(const char *path, int vBitrate, int aBitrate);
 	void TempStreamOutput(const char *url, const char *key, int vBitrate,
@@ -354,6 +358,7 @@ private:
 	void RefreshSceneCollections();
 	void ChangeSceneCollection();
 	void LogScenes();
+	void LogGlobalScenes();
 
 	void LoadProfile();
 	void ResetProfileData();
@@ -703,10 +708,23 @@ private:
 	void DiskSpaceMessage();
 
 	OBSSource prevFTBSource = nullptr;
+	OBSSource prevSceneListSource = nullptr;
+
+	bool IsDSK(OBSScene scene);
+	void SetDSKSource(OBSSource source);
+	void AddDSKScene(OBSScene scene);
+	void AddSceneQuery(bool dsk);
+	void ShowScenesMenu(SceneTree *list, const QPoint &pos);
+	void ReorderItemByName(QListWidget *lw, const char *name, int newIndex);
+	void RemoveSceneListItem(QListWidget *list, obs_scene_t *scene);
 
 public:
 	OBSSource GetProgramSource();
 	OBSScene GetCurrentScene();
+	OBSScene GetCurrentGlobalScene();
+	OBSScene GetCurrentSceneListScene();
+	OBSSource GetCurrentSceneListSource();
+	OBSScene GetSceneFromListItem(QListWidgetItem *item);
 
 	void SysTrayNotify(const QString &text, QSystemTrayIcon::MessageIcon n);
 
@@ -841,15 +859,26 @@ private slots:
 	void on_actionHorizontalCenter_triggered();
 
 	void on_customContextMenuRequested(const QPoint &pos);
+	void on_dsk_customContextMenuRequested(const QPoint &pos);
 
+	void on_dsk_currentItemChanged(QListWidgetItem *current,
+				       QListWidgetItem *prev);
 	void on_scenes_currentItemChanged(QListWidgetItem *current,
 					  QListWidgetItem *prev);
+	void on_dsk_itemClicked(QListWidgetItem *item);
+	void on_scenes_itemClicked(QListWidgetItem *item);
+
 	void on_scenes_customContextMenuRequested(const QPoint &pos);
 	void on_actionGridMode_triggered();
+	void on_actionGridModeDSK_triggered();
 	void on_actionAddScene_triggered();
+	void on_actionAddSceneDSK_triggered();
 	void on_actionRemoveScene_triggered();
+	void on_actionRemoveSceneDSK_triggered();
 	void on_actionSceneUp_triggered();
 	void on_actionSceneDown_triggered();
+	void on_actionSceneUpDSK_triggered();
+	void on_actionSceneDownDSK_triggered();
 	void on_sources_customContextMenuRequested(const QPoint &pos);
 	void on_scenes_itemDoubleClicked(QListWidgetItem *item);
 	void on_actionAddSource_triggered();
@@ -931,11 +960,17 @@ private slots:
 	void MoveSceneToTop();
 	void MoveSceneToBottom();
 
+	void MoveDSKToTop();
+	void MoveDSKToBottom();
+
 	void EditSceneName();
+	void EditDSKName();
 	void EditSceneItemName();
 
 	void SceneNameEdited(QWidget *editor,
 			     QAbstractItemDelegate::EndEditHint endHint);
+	void SceneNameEditedDSK(QWidget *editor,
+				QAbstractItemDelegate::EndEditHint endHint);
 
 	void OpenSceneFilters();
 	void OpenFilters();
@@ -985,6 +1020,8 @@ public:
 				   const char *file) const override;
 
 	static void InitBrowserPanelSafeBlock();
+
+	bool IsDSKDockVisible();
 
 private:
 	std::unique_ptr<Ui::OBSBasic> ui;

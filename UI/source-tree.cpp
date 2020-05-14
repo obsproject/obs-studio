@@ -526,10 +526,14 @@ void SourceTreeItem::Deselect()
 void SourceTreeModel::OBSFrontendEvent(enum obs_frontend_event event, void *ptr)
 {
 	SourceTreeModel *stm = reinterpret_cast<SourceTreeModel *>(ptr);
+	OBSBasic *main = reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
 
 	switch ((int)event) {
 	case OBS_FRONTEND_EVENT_PREVIEW_SCENE_CHANGED:
-		stm->SceneChanged();
+		stm->st->SetScene(main->GetCurrentSceneListScene());
+		break;
+	case OBS_FRONTEND_EVENT_GLOBAL_SCENE_CHANGED:
+		stm->st->SetScene(main->GetCurrentGlobalScene());
 		break;
 	case OBS_FRONTEND_EVENT_EXIT:
 	case OBS_FRONTEND_EVENT_SCENE_COLLECTION_CLEANUP:
@@ -540,6 +544,7 @@ void SourceTreeModel::OBSFrontendEvent(enum obs_frontend_event event, void *ptr)
 
 void SourceTreeModel::Clear()
 {
+	st->scene = nullptr;
 	beginResetModel();
 	items.clear();
 	endResetModel();
@@ -1556,4 +1561,33 @@ void SourceTree::paintEvent(QPaintEvent *event)
 	} else {
 		QListView::paintEvent(event);
 	}
+}
+
+void SourceTree::SetScene(OBSScene newScene)
+{
+	OBSBasic *main = reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
+
+	if ((obs_scene_is_dsk(newScene) && !main->IsDSKDockVisible()) ||
+	    !main->ui->dsk->count())
+		scene = main->GetCurrentSceneListScene();
+	else
+		scene = newScene;
+
+	QString title = QTStr("Basic.Main.Sources");
+
+	if (scene) {
+		const char *name =
+			obs_source_get_name(obs_scene_get_source(scene));
+		title += " (";
+		title += QT_UTF8(name);
+		title += ")";
+	}
+
+	main->ui->sourcesDock->setWindowTitle(title);
+	GetStm()->SceneChanged();
+}
+
+obs_scene_t *SourceTree::GetScene()
+{
+	return scene;
 }

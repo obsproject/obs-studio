@@ -272,7 +272,7 @@ void OBSProjector::OBSRenderMultiview(void *data, uint32_t cx, uint32_t cy)
 
 	GetScaleAndCenterPos(targetCX, targetCY, cx, cy, x, y, scale);
 
-	OBSSource previewSrc = main->GetCurrentSceneSource();
+	OBSSource previewSrc = main->GetCurrentSceneListSource();
 	OBSSource programSrc = main->GetProgramSource();
 	bool studioMode = main->IsPreviewProgramMode();
 
@@ -641,7 +641,7 @@ void OBSProjector::OBSRender(void *data, uint32_t cx, uint32_t cy)
 
 	if (window->type == ProjectorType::Preview &&
 	    main->IsPreviewProgramMode()) {
-		OBSSource curSource = main->GetCurrentSceneSource();
+		OBSSource curSource = main->GetCurrentSceneListSource();
 
 		if (source != curSource) {
 			obs_source_dec_showing(source);
@@ -845,7 +845,7 @@ void OBSProjector::mousePressEvent(QMouseEvent *event)
 			return;
 
 		OBSBasic *main = (OBSBasic *)obs_frontend_get_main_window();
-		if (main->GetCurrentSceneSource() != src)
+		if (main->GetCurrentSceneListSource() != src)
 			main->SetCurrentScene(src, false);
 	}
 }

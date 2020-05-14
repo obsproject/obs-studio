@@ -159,6 +159,8 @@ class SourceTree : public QListView {
 		return reinterpret_cast<SourceTreeModel *>(model());
 	}
 
+	obs_scene_t *scene = nullptr;
+
 public:
 	inline SourceTreeItem *GetItemWidget(int idx)
 	{
@@ -183,6 +185,9 @@ public:
 
 	void UpdateIcons();
 	void SetIconsVisible(bool visible);
+
+	obs_scene_t *GetScene();
+	void SetScene(OBSScene newScene);
 
 public slots:
 	inline void ReorderItems() { GetStm()->ReorderItems(); }
