@@ -17,6 +17,7 @@
 #include "app-helpers.h"
 #include "nt-stuff.h"
 #include "obs-internal.h"
+#include <jansson.h>
 
 extern struct obs_core *obs = NULL;
 
@@ -43,7 +44,7 @@ extern struct obs_core *obs = NULL;
 #define SETTING_CAPTURE_OVERLAYS "capture_overlays"
 #define SETTING_ANTI_CHEAT_HOOK  "anti_cheat_hook"
 #define SETTING_HOOK_RATE        "hook_rate"
-#define SETTING_AUTO_LIST_FILE   "auto_capture_list_path"
+#define SETTING_AUTO_LIST_FILE   "auto_capture_rules_path"
 #define SETTING_PLACEHOLDER_IMG  "auto_placeholder_image"
 
 /* deprecated */
@@ -125,6 +126,15 @@ struct game_capture_config {
 	enum hook_rate hook_rate;
 };
 
+struct auto_game_capture {
+	DARRAY(struct game_capture_matching_rule) matching_rules;
+	DARRAY(HWND) checked_windows;
+	HANDLE mutex;
+	
+	HWND last_matched_window;
+	int last_matched_window_repeats;
+};
+
 struct game_capture {
 	obs_source_t *source;
 
@@ -162,7 +172,7 @@ struct game_capture {
 	bool cursor_hidden;
 
 	struct game_capture_config config;
-	DARRAY(struct game_capture_picking_info) games_whitelist;
+	struct auto_game_capture auto_capture;
 	struct dstr placeholder_img;
 	gs_image_file2_t if2;
 
@@ -319,50 +329,52 @@ static inline float hook_rate_to_float(enum hook_rate rate)
 	}
 }
 
-static void load_whitelist(struct game_capture * gc, const char * whitelist_path)
+static void load_whitelist(struct auto_game_capture * ac, const char * whitelist_path)
 {
-	if (gc->games_whitelist.num != 0) 
+	if (ac->matching_rules.num != 0) 
 		return;
 
-	FILE* file = fopen(whitelist_path, "r");
-	if (file) {
-		char line[512];
+	char *file_data = os_quick_read_utf8_file(whitelist_path);
+	if (!file_data)
+		return;
 
-		while (fgets(line, sizeof(line), file)) {
-			char * class;
-			char * title;
-			char * executable;
-			bool sli_mode;
-			build_window_strings(line, &class, &title, &executable, &sli_mode);
-			if (executable && title && class)
-			{
-				struct game_capture_picking_info game_info = {0};
+	json_error_t error;
+	json_t *root = json_loads(file_data, JSON_REJECT_DUPLICATES, &error);
+	bfree(file_data);
+	if (root) {
+		WaitForSingleObject(ac->mutex, INFINITE);
+	
+		da_free(ac->checked_windows);
 
-				dstr_copy(&game_info.title, title);
-				dstr_copy(&game_info.class, class);
-				dstr_copy(&game_info.executable,executable);
-				game_info.priority = 2;
-				game_info.sli_mode = sli_mode;
-				da_push_back(gc->games_whitelist, &game_info);
-			}
-		}
+		size_t index;
+		json_t *json_rule;
+		json_array_foreach (root, index, json_rule) {
+			struct game_capture_matching_rule rule = convert_json_to_matching_rule(json_rule);
+			da_push_back(ac->matching_rules, &rule);
+		};
 
-		fclose(file);
-	} 
+		ac->last_matched_window = NULL;
+		ReleaseMutex(ac->mutex);
+	}
+	json_decref(root);
 
 }
 
-static void free_whitelist(struct game_capture * gc)
+static void free_whitelist(struct auto_game_capture * ac)
 {
-	for (size_t i = 0; i < gc->games_whitelist.num; i++) {
-		struct game_capture_picking_info * game_info = gc->games_whitelist.array + i;
+	WaitForSingleObject(ac->mutex, INFINITE);
+	for (size_t i = 0; i < ac->matching_rules.num; i++) {
+		struct game_capture_matching_rule * rule = ac->matching_rules.array + i;
 		
-		dstr_free(&game_info->title);
-		dstr_free(&game_info->class);
-		dstr_free(&game_info->executable);
+		dstr_free(&rule->title);
+		dstr_free(&rule->class);
+		dstr_free(&rule->executable);
 	}
 
-	da_free(gc->games_whitelist);
+	da_free(ac->matching_rules);
+
+	da_free(ac->checked_windows);
+	ReleaseMutex(ac->mutex);
 }
 
 static void stop_capture(struct game_capture *gc)
@@ -443,7 +455,8 @@ static void game_capture_destroy(void *data)
 	dstr_free(&gc->executable);
 	free_config(&gc->config);
 	
-	free_whitelist(gc);
+	free_whitelist(&gc->auto_capture);
+	CloseHandle(&gc->auto_capture.mutex);
 	dstr_free(&gc->placeholder_img);
 	unload_placeholder_image(gc);
 
@@ -464,7 +477,7 @@ static inline void get_config(struct game_capture_config *cfg,
 	const char *mode_str = NULL;
 
 	build_window_strings(window, &cfg->class, &cfg->title,
-			     &cfg->executable, NULL);
+			     &cfg->executable);
 
 	if (using_older_non_mode_format(settings)) {
 		bool any = obs_data_get_bool(settings, SETTING_ANY_FULLSCREEN);
@@ -617,11 +630,12 @@ static void game_capture_update(void *data, obs_data_t *settings)
 
 	get_config(&cfg, settings, window);
 
-	const char *games_list_file = obs_data_get_string(settings, SETTING_AUTO_LIST_FILE);
 	if (cfg.mode == CAPTURE_MODE_AUTO) {
-		load_whitelist(gc, games_list_file);
+		const char *games_list_file = obs_data_get_string(settings, SETTING_AUTO_LIST_FILE);
+		load_whitelist(&gc->auto_capture, games_list_file);
+		gc->auto_capture.last_matched_window = NULL;
 	} else {
-		free_whitelist(gc);
+		free_whitelist(&gc->auto_capture);
 	}
 	
 	const char *placeholder_img = obs_data_get_string(settings, SETTING_PLACEHOLDER_IMG);
@@ -695,7 +709,13 @@ static void *game_capture_create(obs_data_t *settings, obs_source_t *source)
 		gc->source, HOTKEY_START, TEXT_HOTKEY_START, HOTKEY_STOP,
 		TEXT_HOTKEY_STOP, hotkey_start, hotkey_stop, gc, gc);
 
-	da_init(gc->games_whitelist);
+	gc->auto_capture.mutex = CreateMutex(NULL, FALSE, NULL);
+
+	da_init(gc->auto_capture.matching_rules);
+	da_init(gc->auto_capture.checked_windows);
+	gc->auto_capture.last_matched_window = NULL;
+	gc->auto_capture.last_matched_window_repeats = 0;
+
 	dstr_init(&gc->placeholder_img);
 
 	game_capture_update(gc, settings);
@@ -1211,16 +1231,41 @@ static void setup_window(struct game_capture *gc, HWND window)
 	}
 }
 
+static void save_selected_window(struct game_capture *gc, HWND window)
+{
+	struct dstr window_line = {0};
+	obs_data_t *settings = obs_source_get_settings(gc->source);
+	get_captured_window_line(window, &window_line);
+	obs_data_set_string(settings, SETTING_CAPTURE_WINDOW, window_line.array);
+
+	obs_data_release(settings);
+}		
+
 static void get_game_window(struct game_capture *gc)
 {
 	HWND window;
-
-	window = find_window_one_of(INCLUDE_MINIMIZED, &gc->games_whitelist);
-	
+	struct auto_game_capture * ac = &gc->auto_capture;
+	WaitForSingleObject(ac->mutex, INFINITE);
+	window = find_matching_window(INCLUDE_MINIMIZED, &ac->matching_rules, &ac->checked_windows);
+	ReleaseMutex(ac->mutex);
 	if (window) {
-		gc->config.force_shmem = gc->games_whitelist.array[gc->games_whitelist.num-1].sli_mode;
+		if (window == ac->last_matched_window) {
+			gc->config.force_shmem = false;
+			ac->last_matched_window_repeats++;
+
+			if (ac->last_matched_window_repeats >= 2)
+				gc->config.force_shmem = true;
+
+			if (ac->last_matched_window_repeats == 3)
+				ac->last_matched_window_repeats = 0;
+		} else {
+			ac->last_matched_window_repeats = 1;
+			ac->last_matched_window = window;
+		}
 		setup_window(gc, window);
+ 		save_selected_window(gc, window);
 	} else {
+		ac->last_matched_window = window;
 		gc->wait_for_target_startup = true;
 	}
 }
@@ -1805,7 +1850,7 @@ static bool start_capture(struct game_capture *gc)
 
 		info("shared texture capture successful");
 	}
-
+	gc->auto_capture.last_matched_window = NULL;
 	return true;
 }
 
@@ -2182,7 +2227,7 @@ static void insert_preserved_val(obs_property_t *p, const char *val, size_t idx)
 	char *executable = NULL;
 	struct dstr desc = {0};
 
-	build_window_strings(val, &class, &title, &executable, NULL);
+	build_window_strings(val, &class, &title, &executable);
 
 	dstr_printf(&desc, "[%s]: %s", executable, title);
 	obs_property_list_insert_string(p, idx, desc.array, val);

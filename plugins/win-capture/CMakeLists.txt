@@ -1,5 +1,7 @@
 project(win-capture)
 
+include_directories(${OBS_JANSSON_INCLUDE_DIRS})
+
 set(win-capture_HEADERS
 	nt-stuff.h
 	obfuscate.h
@@ -33,6 +35,7 @@ add_library(win-capture MODULE
 target_link_libraries(win-capture
 	libobs
 	ipc-util
+	${OBS_JANSSON_IMPORT}
 	psapi)
 
 install_obs_plugin_with_data(win-capture data)
