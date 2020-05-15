@@ -35,7 +35,6 @@ set(libdshowcapture_SOURCES
 	libdshowcapture/source/dshow-formats.cpp
 	libdshowcapture/source/dshow-media-type.cpp
 	libdshowcapture/source/dshow-encoded-device.cpp
-	libdshowcapture/source/dshow-settings.cpp
 	libdshowcapture/source/dshow-dialogbox.cpp
 	libdshowcapture/source/log.cpp)
 
@@ -52,7 +51,6 @@ set(libdshowcapture_HEADERS
 	libdshowcapture/source/dshow-enum.hpp
 	libdshowcapture/source/dshow-formats.hpp
 	libdshowcapture/source/dshow-media-type.hpp
-	libdshowcapture/source/dshow-settings.hpp
 	libdshowcapture/source/dshow-dialogbox.hpp
 	libdshowcapture/source/log.hpp)
 
