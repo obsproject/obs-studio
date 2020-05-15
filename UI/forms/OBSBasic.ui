@@ -1768,6 +1768,17 @@
     <string>Basic.MainMenu.View.SourceIcons</string>
    </property>
   </action>
+  <action name="toggleLog">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>LogViewer</string>
+   </property>
+  </action>
  </widget>
  <customwidgets>
   <customwidget>
