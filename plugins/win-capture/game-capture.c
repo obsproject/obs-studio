@@ -652,7 +652,7 @@ static void load_placeholder_image(struct game_capture *gc)
 			SetTextColor(memDC, 0x00FFFFFF);
 			SetBkColor(memDC, 0x00000000);
 
-			int string_width = 0;
+			SIZE string_width = {0};
 
 			HFONT   font;
 			LOGFONT LogFont = {0};
@@ -668,7 +668,7 @@ static void load_placeholder_image(struct game_capture *gc)
 				SelectObject(memDC, font);
 				
 				GetTextExtentPoint32(memDC, translated_string, len, &string_width);
-				if (string_width < gc->placeholder_text_width) 
+				if (string_width.cx < gc->placeholder_text_width) 
 					break;
 				
 				DeleteObject(font);
@@ -676,7 +676,7 @@ static void load_placeholder_image(struct game_capture *gc)
 			}
 
 			TextOut(memDC, 
-				(gc->placeholder_text_width-string_width)/2, 
+				(gc->placeholder_text_width-string_width.cx)/2, 
 				(gc->placeholder_text_height-LogFont.lfHeight)/2, 
 				translated_string, len); 
 
