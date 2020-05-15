@@ -88,9 +88,9 @@ void RemoteTextThread::run()
 
 		code = curl_easy_perform(curl.get());
 		if (code != CURLE_OK) {
-			emit Result(QString(), QT_UTF8(error));
+			emit Result(QString(), QT_UTF8(error), automatic);
 		} else {
-			emit Result(QT_UTF8(str.c_str()), QString());
+			emit Result(QT_UTF8(str.c_str()), QString(), automatic);
 		}
 
 		curl_slist_free_all(header);

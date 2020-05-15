@@ -335,6 +335,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->language,             COMBO_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->theme, 		     COMBO_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->enableAutoUpdates,    CHECK_CHANGED,  GENERAL_CHANGED);
+	HookWidget(ui->crashAutoUpload,      CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->openStatsOnStartup,   CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->warnBeforeStreamStart,CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->warnBeforeStreamStop, CHECK_CHANGED,  GENERAL_CHANGED);
@@ -604,6 +605,11 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	delete ui->resetOSXVSync;
 	ui->disableOSXVSync = nullptr;
 	ui->resetOSXVSync = nullptr;
+#endif
+
+#ifndef _WIN32
+	delete ui->crashAutoUpload;
+	ui->crashAutoUpload = nullptr;
 #endif
 
 	connect(ui->streamDelaySec, SIGNAL(valueChanged(int)), this,
@@ -1115,6 +1121,13 @@ void OBSBasicSettings::LoadGeneralSettings()
 						 "EnableAutoUpdates");
 	ui->enableAutoUpdates->setChecked(enableAutoUpdates);
 #endif
+
+#if defined(_WIN32)
+	bool crashAutoUpload = config_get_bool(GetGlobalConfig(), "General",
+					       "AutoReportCrashes");
+	ui->crashAutoUpload->setChecked(crashAutoUpload);
+#endif
+
 	bool openStatsOnStartup = config_get_bool(main->Config(), "General",
 						  "OpenStatsOnStartup");
 	ui->openStatsOnStartup->setChecked(openStatsOnStartup);
@@ -2842,6 +2855,14 @@ void OBSBasicSettings::SaveGeneralSettings()
 				"EnableAutoUpdates",
 				ui->enableAutoUpdates->isChecked());
 #endif
+
+#if defined(_WIN32)
+	if (WidgetChanged(ui->crashAutoUpload))
+		config_set_bool(GetGlobalConfig(), "General",
+				"AutoReportCrashes",
+				ui->crashAutoUpload->isChecked());
+#endif
+
 	if (WidgetChanged(ui->openStatsOnStartup))
 		config_set_bool(main->Config(), "General", "OpenStatsOnStartup",
 				ui->openStatsOnStartup->isChecked());

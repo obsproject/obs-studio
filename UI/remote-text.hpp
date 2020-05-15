@@ -31,21 +31,24 @@ class RemoteTextThread : public QThread {
 	std::vector<std::string> extraHeaders;
 
 	int timeoutSec = 0;
+	bool automatic = false;
 
 	void run() override;
 
 signals:
-	void Result(const QString &text, const QString &error);
+	void Result(const QString &text, const QString &error,
+		    const bool &automatic);
 
 public:
 	inline RemoteTextThread(std::string url_,
 				std::string contentType_ = std::string(),
 				std::string postData_ = std::string(),
-				int timeoutSec_ = 0)
+				bool automatic_ = false, int timeoutSec_ = 0)
 		: url(url_),
 		  contentType(contentType_),
 		  postData(postData_),
-		  timeoutSec(timeoutSec_)
+		  timeoutSec(timeoutSec_),
+		  automatic(automatic_)
 	{
 	}
 
@@ -53,12 +56,13 @@ public:
 				std::vector<std::string> &&extraHeaders_,
 				std::string contentType_ = std::string(),
 				std::string postData_ = std::string(),
-				int timeoutSec_ = 0)
+				bool automatic_ = false, int timeoutSec_ = 0)
 		: url(url_),
 		  contentType(contentType_),
 		  postData(postData_),
 		  extraHeaders(std::move(extraHeaders_)),
-		  timeoutSec(timeoutSec_)
+		  timeoutSec(timeoutSec_),
+		  automatic(automatic_)
 	{
 	}
 };

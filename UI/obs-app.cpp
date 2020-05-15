@@ -1891,6 +1891,27 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 	"Woops, OBS has crashed!\n\nWould you like to copy the crash log " \
 	"to the clipboard? The crash log will still be saved to:\n\n%s"
 
+// Make OBS know it has previously crashed when started up again
+static void generate_crash_file()
+{
+	string name = "obs-studio/crashes/obs-crashed.txt";
+	BPtr<char> path(GetConfigPathPtr(name.c_str()));
+
+	fstream file;
+
+#ifdef _WIN32
+	BPtr<wchar_t> wpath;
+	os_utf8_to_wcs_ptr(path, 0, &wpath);
+	file.open(wpath, ios_base::in | ios_base::out | ios_base::trunc |
+				 ios_base::binary);
+#else
+	file.open(path, ios_base::in | ios_base::out | ios_base::trunc |
+				ios_base::binary);
+#endif
+	file << "OBS has crashed";
+	file.close();
+}
+
 static void main_crash_handler(const char *format, va_list args, void *param)
 {
 	char *text = new char[MAX_CRASH_REPORT_SIZE];
@@ -1920,6 +1941,8 @@ static void main_crash_handler(const char *format, va_list args, void *param)
 #endif
 	file << text;
 	file.close();
+
+	generate_crash_file();
 
 	string pathString(path.Get());
 

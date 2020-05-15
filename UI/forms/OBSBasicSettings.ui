@@ -151,8 +151,8 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>803</width>
-              <height>1026</height>
+              <width>805</width>
+              <height>1349</height>
              </rect>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_19">
@@ -238,10 +238,17 @@
                      </property>
                     </widget>
                    </item>
-                   <item row="3" column="1">
+                   <item row="4" column="1">
                     <widget class="QCheckBox" name="openStatsOnStartup">
                      <property name="text">
                       <string>Basic.Settings.General.OpenStatsOnStartup</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="3" column="1">
+                    <widget class="QCheckBox" name="crashAutoUpload">
+                     <property name="text">
+                      <string>Basic.Settings.General.CrashAutoUpload</string>
                      </property>
                     </widget>
                    </item>
@@ -1263,8 +1270,8 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>603</width>
-              <height>631</height>
+              <width>732</width>
+              <height>813</height>
              </rect>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_21">
@@ -2395,7 +2402,7 @@
                                  <rect>
                                   <x>9</x>
                                   <y>0</y>
-                                  <width>236</width>
+                                  <width>249</width>
                                   <height>25</height>
                                  </rect>
                                 </property>
@@ -3758,8 +3765,8 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>555</width>
-              <height>469</height>
+              <width>682</width>
+              <height>657</height>
              </rect>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_50">
@@ -4567,8 +4574,8 @@
           <rect>
            <x>0</x>
            <y>0</y>
-           <width>98</width>
-           <height>28</height>
+           <width>96</width>
+           <height>26</height>
           </rect>
          </property>
          <layout class="QFormLayout" name="hotkeyLayout">
@@ -4614,8 +4621,8 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>596</width>
-              <height>781</height>
+              <width>718</width>
+              <height>1037</height>
              </rect>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_23">

@@ -407,6 +407,41 @@ OBSBasic::OBSBasic(QWidget *parent)
 		this,
 		SLOT(ScenesReordered(const QModelIndex &, int, int,
 				     const QModelIndex &, int)));
+
+	UploadCrashLog();
+}
+
+void OBSBasic::UploadCrashLog()
+{
+#ifdef _WIN32
+	char path[512];
+
+	if (GetConfigPath(path, sizeof(path),
+			  "obs-studio/crashes/obs-crashed.txt") <= 0)
+		return;
+
+	if (!os_file_exists(path))
+		return;
+
+	QFile file(QT_UTF8(path));
+	file.remove();
+
+	bool uploadCrashLog = config_get_bool(GetGlobalConfig(), "General",
+					      "AutoReportCrashes");
+
+	if (uploadCrashLog) {
+		UploadLog("obs-studio/crashes", App()->GetLastCrashLog(), true);
+	} else {
+		QMessageBox::StandardButton reply;
+		reply = QMessageBox::question(
+			this, QTStr("Crashed"), QTStr("PreviouslyCrashed"),
+			QMessageBox::Yes | QMessageBox::No);
+
+		if (reply == QMessageBox::Yes)
+			UploadLog("obs-studio/crashes",
+				  App()->GetLastCrashLog());
+	}
+#endif
 }
 
 static void SaveAudioDevice(const char *name, int channel, obs_data_t *parent,
@@ -5024,7 +5059,7 @@ static BPtr<char> ReadLogFile(const char *subdir, const char *log)
 	return file;
 }
 
-void OBSBasic::UploadLog(const char *subdir, const char *file)
+void OBSBasic::UploadLog(const char *subdir, const char *file, bool automatic)
 {
 	BPtr<char> fileString{ReadLogFile(subdir, file)};
 
@@ -5047,11 +5082,16 @@ void OBSBasic::UploadLog(const char *subdir, const char *file)
 
 	RemoteTextThread *thread =
 		new RemoteTextThread("https://obsproject.com/logs/upload",
-				     "text/plain", ss.str().c_str());
+				     "text/plain", ss.str().c_str(), automatic);
 
 	logUploadThread.reset(thread);
+
 	connect(thread, &RemoteTextThread::Result, this,
 		&OBSBasic::logUploadFinished);
+
+	if (automatic)
+		blog(LOG_INFO, "Auto uploading %s to OBS developers", file);
+
 	logUploadThread->start();
 }
 
@@ -5111,9 +5151,13 @@ void OBSBasic::on_actionCheckForUpdates_triggered()
 	CheckForUpdates(true);
 }
 
-void OBSBasic::logUploadFinished(const QString &text, const QString &error)
+void OBSBasic::logUploadFinished(const QString &text, const QString &error,
+				 const bool &automatic)
 {
 	ui->menuLogFiles->setEnabled(true);
+
+	if (automatic)
+		return;
 
 	if (text.isEmpty()) {
 		OBSMessageBox::critical(
