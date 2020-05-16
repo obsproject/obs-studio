@@ -686,6 +686,16 @@ static void LoadAudioDevice(const char *name, int channel, obs_data_t *parent)
 		const char *name = obs_source_get_name(source);
 		blog(LOG_INFO, "[Loaded global audio device]: '%s'", name);
 		obs_source_enum_filters(source, LogFilter, (void *)(intptr_t)1);
+		obs_monitoring_type monitoring_type =
+			obs_source_get_monitoring_type(source);
+		if (monitoring_type != OBS_MONITORING_TYPE_NONE) {
+			const char *type = (monitoring_type ==
+					    OBS_MONITORING_TYPE_MONITOR_ONLY)
+						   ? "monitor only"
+						   : "monitor and output";
+
+			blog(LOG_INFO, "    - monitoring: %s", type);
+		}
 		obs_source_release(source);
 	}
 
