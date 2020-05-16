@@ -148,7 +148,6 @@ static void obs_qsv_defaults(obs_data_t *settings)
 	obs_data_set_default_int(settings, "bitrate", 2500);
 	obs_data_set_default_int(settings, "max_bitrate", 3000);
 	obs_data_set_default_string(settings, "profile", "high");
-	obs_data_set_default_int(settings, "async_depth", 4);
 	obs_data_set_default_string(settings, "rate_control", "CBR");
 
 	obs_data_set_default_int(settings, "accuracy", 1000);
@@ -157,9 +156,9 @@ static void obs_qsv_defaults(obs_data_t *settings)
 	obs_data_set_default_int(settings, "qpp", 23);
 	obs_data_set_default_int(settings, "qpb", 23);
 	obs_data_set_default_int(settings, "icq_quality", 23);
-	obs_data_set_default_int(settings, "la_depth", 15);
 
 	obs_data_set_default_int(settings, "keyint_sec", 3);
+	obs_data_set_default_string(settings, "latency", "normal");
 	obs_data_set_default_int(settings, "bframes", 3);
 	obs_data_set_default_bool(settings, "mbbrc", true);
 }
@@ -176,12 +175,11 @@ static inline void add_strings(obs_property_t *list, const char *const *strings)
 #define TEXT_TARGET_BITRATE obs_module_text("Bitrate")
 #define TEXT_MAX_BITRATE obs_module_text("MaxBitrate")
 #define TEXT_PROFILE obs_module_text("Profile")
-#define TEXT_ASYNC_DEPTH obs_module_text("AsyncDepth")
+#define TEXT_LATENCY obs_module_text("Latency")
 #define TEXT_RATE_CONTROL obs_module_text("RateControl")
 #define TEXT_ACCURACY obs_module_text("Accuracy")
 #define TEXT_CONVERGENCE obs_module_text("Convergence")
 #define TEXT_ICQ_QUALITY obs_module_text("ICQQuality")
-#define TEXT_LA_DEPTH obs_module_text("LookAheadDepth")
 #define TEXT_KEYINT_SEC obs_module_text("KeyframeIntervalSec")
 #define TEXT_BFRAMES obs_module_text("B Frames")
 #define TEXT_MBBRC obs_module_text("Content Adaptive Quantization")
@@ -225,12 +223,6 @@ static bool rate_control_modified(obs_properties_t *ppts, obs_property_t *p,
 	bVisible = astrcmpi(rate_control, "ICQ") == 0 ||
 		   astrcmpi(rate_control, "LA_ICQ") == 0;
 	p = obs_properties_get(ppts, "icq_quality");
-	obs_property_set_visible(p, bVisible);
-
-	bVisible = astrcmpi(rate_control, "LA_ICQ") == 0 ||
-		   astrcmpi(rate_control, "LA_CBR") == 0 ||
-		   astrcmpi(rate_control, "LA_VBR") == 0;
-	p = obs_properties_get(ppts, "la_depth");
 	obs_property_set_visible(p, bVisible);
 
 	bVisible = astrcmpi(rate_control, "CBR") == 0 ||
@@ -285,7 +277,6 @@ static obs_properties_t *obs_qsv_props(void *unused)
 	obs_property_set_modified_callback(list, profile_modified);
 
 	obs_properties_add_int(props, "keyint_sec", TEXT_KEYINT_SEC, 1, 20, 1);
-	obs_properties_add_int(props, "async_depth", TEXT_ASYNC_DEPTH, 1, 7, 1);
 
 	list = obs_properties_add_list(props, "rate_control", TEXT_RATE_CONTROL,
 				       OBS_COMBO_TYPE_LIST,
@@ -310,7 +301,11 @@ static obs_properties_t *obs_qsv_props(void *unused)
 	obs_properties_add_int(props, "qpb", "QPB", 1, 51, 1);
 	obs_properties_add_int(props, "icq_quality", TEXT_ICQ_QUALITY, 1, 51,
 			       1);
-	obs_properties_add_int(props, "la_depth", TEXT_LA_DEPTH, 10, 100, 1);
+	list = obs_properties_add_list(props, "latency", TEXT_LATENCY,
+				       OBS_COMBO_TYPE_LIST,
+				       OBS_COMBO_FORMAT_STRING);
+	add_strings(list, qsv_latency_names);
+
 	obs_properties_add_int(props, "bframes", TEXT_BFRAMES, 0, 3, 1);
 
 	if (is_skl_or_greater_platform())
@@ -331,7 +326,7 @@ static void update_params(struct obs_qsv *obsqsv, obs_data_t *settings)
 	const char *profile = obs_data_get_string(settings, "profile");
 	const char *rate_control =
 		obs_data_get_string(settings, "rate_control");
-	int async_depth = (int)obs_data_get_int(settings, "async_depth");
+	const char *latency = obs_data_get_string(settings, "latency");
 	int target_bitrate = (int)obs_data_get_int(settings, "bitrate");
 	int max_bitrate = (int)obs_data_get_int(settings, "max_bitrate");
 	int accuracy = (int)obs_data_get_int(settings, "accuracy");
@@ -340,7 +335,6 @@ static void update_params(struct obs_qsv *obsqsv, obs_data_t *settings)
 	int qpp = (int)obs_data_get_int(settings, "qpp");
 	int qpb = (int)obs_data_get_int(settings, "qpb");
 	int icq_quality = (int)obs_data_get_int(settings, "icq_quality");
-	int la_depth = (int)obs_data_get_int(settings, "la_depth");
 	int keyint_sec = (int)obs_data_get_int(settings, "keyint_sec");
 	bool cbr_override = obs_data_get_bool(settings, "cbr");
 	int bFrames = (int)obs_data_get_int(settings, "bframes");
@@ -413,13 +407,30 @@ static void update_params(struct obs_qsv *obsqsv, obs_data_t *settings)
 	else if (astrcmpi(rate_control, "LA_CBR") == 0)
 		obsqsv->params.nRateControl = MFX_RATECONTROL_LA_HRD;
 
-	obsqsv->params.nAsyncDepth = (mfxU16)async_depth;
+	if (astrcmpi(latency, "ultra-low") == 0) {
+		obsqsv->params.nAsyncDepth = 1;
+		obsqsv->params.nLADEPTH = (mfxU16)0;
+	} else if (astrcmpi(latency, "low") == 0) {
+		obsqsv->params.nAsyncDepth = 4;
+		obsqsv->params.nLADEPTH =
+			(mfxU16)(voi->fps_num / voi->fps_den / 2);
+	} else if (astrcmpi(latency, "normal") == 0) {
+		obsqsv->params.nAsyncDepth = 4;
+		obsqsv->params.nLADEPTH = (mfxU16)(voi->fps_num / voi->fps_den);
+	}
+
+	if (obsqsv->params.nLADEPTH > 0) {
+		if (obsqsv->params.nLADEPTH > 100)
+			obsqsv->params.nLADEPTH = 100;
+		else if (obsqsv->params.nLADEPTH < 10)
+			obsqsv->params.nLADEPTH = 10;
+	}
+
 	obsqsv->params.nAccuracy = (mfxU16)accuracy;
 	obsqsv->params.nConvergence = (mfxU16)convergence;
 	obsqsv->params.nQPI = (mfxU16)qpi;
 	obsqsv->params.nQPP = (mfxU16)qpp;
 	obsqsv->params.nQPB = (mfxU16)qpb;
-	obsqsv->params.nLADEPTH = (mfxU16)la_depth;
 	obsqsv->params.nTargetBitRate = (mfxU16)target_bitrate;
 	obsqsv->params.nMaxBitRate = (mfxU16)max_bitrate;
 	obsqsv->params.nWidth = (mfxU16)width;
