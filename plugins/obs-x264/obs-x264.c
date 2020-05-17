@@ -20,6 +20,7 @@
 #include <util/darray.h>
 #include <util/platform.h>
 #include <obs-module.h>
+#include "obs-x264-options.h"
 
 #ifndef _STDINT_H_INCLUDED
 #define _STDINT_H_INCLUDED
@@ -255,72 +256,63 @@ static const char *validate(struct obs_x264 *obsx264, const char *val,
 	return NULL;
 }
 
-static void override_base_param(struct obs_x264 *obsx264, const char *param,
-				char **preset, char **profile, char **tune)
+static void override_base_param(struct obs_x264 *obsx264,
+				struct obs_x264_option option, char **preset,
+				char **profile, char **tune)
 {
-	char *name;
-	const char *val;
-
-	if (getparam(param, &name, &val)) {
-		if (astrcmpi(name, "preset") == 0) {
-			const char *valid_name = validate(
-				obsx264, val, "preset", x264_preset_names);
-			if (valid_name) {
-				bfree(*preset);
-				*preset = bstrdup(val);
-			}
-
-		} else if (astrcmpi(name, "profile") == 0) {
-			const char *valid_name = validate(
-				obsx264, val, "profile", x264_profile_names);
-			if (valid_name) {
-				bfree(*profile);
-				*profile = bstrdup(val);
-			}
-
-		} else if (astrcmpi(name, "tune") == 0) {
-			const char *valid_name =
-				validate(obsx264, val, "tune", x264_tune_names);
-			if (valid_name) {
-				bfree(*tune);
-				*tune = bstrdup(val);
-			}
+	const char *name = option.name;
+	const char *val = option.value;
+	if (astrcmpi(name, "preset") == 0) {
+		const char *valid_name =
+			validate(obsx264, val, "preset", x264_preset_names);
+		if (valid_name) {
+			bfree(*preset);
+			*preset = bstrdup(val);
 		}
 
-		bfree(name);
+	} else if (astrcmpi(name, "profile") == 0) {
+		const char *valid_name =
+			validate(obsx264, val, "profile", x264_profile_names);
+		if (valid_name) {
+			bfree(*profile);
+			*profile = bstrdup(val);
+		}
+
+	} else if (astrcmpi(name, "tune") == 0) {
+		const char *valid_name =
+			validate(obsx264, val, "tune", x264_tune_names);
+		if (valid_name) {
+			bfree(*tune);
+			*tune = bstrdup(val);
+		}
 	}
 }
 
-static inline void override_base_params(struct obs_x264 *obsx264, char **params,
+static inline void override_base_params(struct obs_x264 *obsx264,
+					const struct obs_x264_options *options,
 					char **preset, char **profile,
 					char **tune)
 {
-	while (*params)
-		override_base_param(obsx264, *(params++), preset, profile,
-				    tune);
+	for (size_t i = 0; i < options->count; ++i)
+		override_base_param(obsx264, options->options[i], preset,
+				    profile, tune);
 }
 
 #define OPENCL_ALIAS "opencl_is_experimental_and_potentially_unstable"
 
-static inline void set_param(struct obs_x264 *obsx264, const char *param)
+static inline void set_param(struct obs_x264 *obsx264,
+			     struct obs_x264_option option)
 {
-	char *name;
-	const char *val;
-
-	if (getparam(param, &name, &val)) {
-		if (strcmp(name, "preset") != 0 &&
-		    strcmp(name, "profile") != 0 && strcmp(name, "tune") != 0 &&
-		    strcmp(name, "fps") != 0 &&
-		    strcmp(name, "force-cfr") != 0 &&
-		    strcmp(name, "width") != 0 && strcmp(name, "height") != 0 &&
-		    strcmp(name, "opencl") != 0) {
-			if (strcmp(name, OPENCL_ALIAS) == 0)
-				strcpy(name, "opencl");
-			if (x264_param_parse(&obsx264->params, name, val) != 0)
-				warn("x264 param: %s failed", param);
-		}
-
-		bfree(name);
+	const char *name = option.name;
+	const char *val = option.value;
+	if (strcmp(name, "preset") != 0 && strcmp(name, "profile") != 0 &&
+	    strcmp(name, "tune") != 0 && strcmp(name, "fps") != 0 &&
+	    strcmp(name, "force-cfr") != 0 && strcmp(name, "width") != 0 &&
+	    strcmp(name, "height") != 0 && strcmp(name, "opencl") != 0) {
+		if (strcmp(option.name, OPENCL_ALIAS) == 0)
+			name = "opencl";
+		if (x264_param_parse(&obsx264->params, name, val) != 0)
+			warn("x264 param: %s=%s failed", name, val);
 	}
 }
 
@@ -398,7 +390,7 @@ enum rate_control {
 };
 
 static void update_params(struct obs_x264 *obsx264, obs_data_t *settings,
-			  char **params, bool update)
+			  const struct obs_x264_options *options, bool update)
 {
 	video_t *video = obs_encoder_video(obsx264->encoder);
 	const struct video_output_info *voi = video_output_get_info(video);
@@ -516,8 +508,8 @@ static void update_params(struct obs_x264 *obsx264, obs_data_t *settings,
 	else
 		obsx264->params.i_csp = X264_CSP_NV12;
 
-	while (*params)
-		set_param(obsx264, *(params++));
+	for (size_t i = 0; i < options->count; ++i)
+		set_param(obsx264, options->options[i]);
 
 	if (!update) {
 		info("settings:\n"
@@ -543,18 +535,17 @@ static bool update_settings(struct obs_x264 *obsx264, obs_data_t *settings,
 	char *preset = bstrdup(obs_data_get_string(settings, "preset"));
 	char *profile = bstrdup(obs_data_get_string(settings, "profile"));
 	char *tune = bstrdup(obs_data_get_string(settings, "tune"));
-	const char *opts = obs_data_get_string(settings, "x264opts");
+	const char *options_string = obs_data_get_string(settings, "x264opts");
+	struct obs_x264_options options =
+		obs_x264_parse_options(options_string);
 
-	char **paramlist;
 	bool success = true;
-
-	paramlist = strlist_split(opts, ' ', false);
 
 	if (!update)
 		blog(LOG_INFO, "---------------------------------");
 
 	if (!obsx264->context) {
-		override_base_params(obsx264, paramlist, &preset, &profile,
+		override_base_params(obsx264, &options, &preset, &profile,
 				     &tune);
 
 		if (preset && *preset)
@@ -568,9 +559,10 @@ static bool update_settings(struct obs_x264 *obsx264, obs_data_t *settings,
 	}
 
 	if (success) {
-		update_params(obsx264, settings, paramlist, update);
-		if (opts && *opts && !update)
-			info("custom settings: %s", opts);
+		update_params(obsx264, settings, &options, update);
+		if (options.count > 0 && options_string && !update) {
+			info("custom settings: %s", options_string);
+		}
 
 		if (!obsx264->context)
 			apply_x264_profile(obsx264, profile);
@@ -578,7 +570,7 @@ static bool update_settings(struct obs_x264 *obsx264, obs_data_t *settings,
 
 	obsx264->params.b_repeat_headers = false;
 
-	strlist_free(paramlist);
+	obs_x264_free_options(options);
 	bfree(preset);
 	bfree(profile);
 	bfree(tune);
