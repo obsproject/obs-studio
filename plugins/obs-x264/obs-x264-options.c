@@ -29,12 +29,17 @@ struct obs_x264_options obs_x264_parse_options(const char *options_string)
 		return (struct obs_x264_options){
 			.count = 0,
 			.options = NULL,
+			.ignored_word_count = 0,
+			.ignored_words = NULL,
 			.input_words = NULL,
 		};
 	}
 	size_t input_option_count = 0;
 	for (char **input_word = input_words; *input_word; ++input_word)
 		input_option_count += 1;
+	char **ignored_words =
+		bmalloc(input_option_count * sizeof(*ignored_words));
+	char **ignored_word = ignored_words;
 	struct obs_x264_option *out_options =
 		bmalloc(input_option_count * sizeof(*out_options));
 	struct obs_x264_option *out_option = out_options;
@@ -42,11 +47,16 @@ struct obs_x264_options obs_x264_parse_options(const char *options_string)
 		if (getparam(*input_word, &out_option->name,
 			     &out_option->value)) {
 			++out_option;
+		} else {
+			*ignored_word = *input_word;
+			++ignored_word;
 		}
 	}
 	return (struct obs_x264_options){
 		.count = out_option - out_options,
 		.options = out_options,
+		.ignored_word_count = ignored_word - ignored_words,
+		.ignored_words = ignored_words,
 		.input_words = input_words,
 	};
 }
@@ -56,5 +66,6 @@ void obs_x264_free_options(struct obs_x264_options options)
 	for (size_t i = 0; i < options.count; ++i) {
 		bfree(options.options[i].name);
 	}
+	bfree(options.ignored_words);
 	strlist_free(options.input_words);
 }

@@ -10,6 +10,8 @@ struct obs_x264_option {
 struct obs_x264_options {
 	size_t count;
 	struct obs_x264_option *options;
+	size_t ignored_word_count;
+	char **ignored_words;
 	char **input_words;
 };
 

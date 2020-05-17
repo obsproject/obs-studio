@@ -510,6 +510,9 @@ static void update_params(struct obs_x264 *obsx264, obs_data_t *settings,
 	else
 		obsx264->params.i_csp = X264_CSP_NV12;
 
+	for (size_t i = 0; i < options->ignored_word_count; ++i)
+		warn("ignoring invalid x264 option: %s",
+		     options->ignored_words[i]);
 	for (size_t i = 0; i < options->count; ++i)
 		set_param(obsx264, options->options[i]);
 
