@@ -2,8 +2,9 @@
 #include <obs.h>
 #include <util/dstr.h>
 
-#include <windows.h>
+#include <dwmapi.h>
 #include <psapi.h>
+#include <windows.h>
 #include "window-helpers.h"
 #include "obfuscate.h"
 
@@ -440,6 +441,12 @@ BOOL CALLBACK enum_windows_proc(HWND window, LPARAM lParam)
 	struct top_level_enum_data *data = (struct top_level_enum_data *)lParam;
 
 	if (!check_window_valid(window, data->mode))
+		return TRUE;
+
+	int cloaked;
+	if (SUCCEEDED(DwmGetWindowAttribute(window, DWMWA_CLOAKED, &cloaked,
+					    sizeof(cloaked))) &&
+	    cloaked)
 		return TRUE;
 
 	const int rating = window_rating(window, data->priority, data->class,
