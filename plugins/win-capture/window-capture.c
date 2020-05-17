@@ -421,6 +421,7 @@ static void wc_tick(void *data, float seconds)
 			return;
 		}
 
+		wc->previously_failed = false;
 		reset_capture = true;
 
 	} else if (IsIconic(wc->window)) {
