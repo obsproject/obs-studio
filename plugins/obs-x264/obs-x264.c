@@ -16,6 +16,8 @@
 ******************************************************************************/
 
 #include <stdio.h>
+#include <string.h>
+#include <util/bmem.h>
 #include <util/dstr.h>
 #include <util/darray.h>
 #include <util/platform.h>
@@ -529,15 +531,44 @@ static void update_params(struct obs_x264 *obsx264, obs_data_t *settings,
 	}
 }
 
+static void log_custom_options(struct obs_x264 *obsx264,
+			       const struct obs_x264_options *options)
+{
+	if (options->count == 0) {
+		return;
+	}
+	size_t settings_string_length = 0;
+	for (size_t i = 0; i < options->count; ++i)
+		settings_string_length += strlen(options->options[i].name) +
+					  strlen(options->options[i].value) + 5;
+	size_t buffer_size = settings_string_length + 1;
+	char *settings_string = bmalloc(settings_string_length + 1);
+	char *p = settings_string;
+	size_t remaining_buffer_size = buffer_size;
+	for (size_t i = 0; i < options->count; ++i) {
+		int chars_written = snprintf(p, remaining_buffer_size,
+					     "\n\t%s = %s",
+					     options->options[i].name,
+					     options->options[i].value);
+		assert(chars_written >= 0);
+		assert(chars_written <= remaining_buffer_size);
+		p += chars_written;
+		remaining_buffer_size -= chars_written;
+	}
+	assert(remaining_buffer_size == 1);
+	assert(*p == '\0');
+	info("custom settings: %s", settings_string);
+	bfree(settings_string);
+}
+
 static bool update_settings(struct obs_x264 *obsx264, obs_data_t *settings,
 			    bool update)
 {
 	char *preset = bstrdup(obs_data_get_string(settings, "preset"));
 	char *profile = bstrdup(obs_data_get_string(settings, "profile"));
 	char *tune = bstrdup(obs_data_get_string(settings, "tune"));
-	const char *options_string = obs_data_get_string(settings, "x264opts");
-	struct obs_x264_options options =
-		obs_x264_parse_options(options_string);
+	struct obs_x264_options options = obs_x264_parse_options(
+		obs_data_get_string(settings, "x264opts"));
 
 	bool success = true;
 
@@ -560,8 +591,8 @@ static bool update_settings(struct obs_x264 *obsx264, obs_data_t *settings,
 
 	if (success) {
 		update_params(obsx264, settings, &options, update);
-		if (options.count > 0 && options_string && !update) {
-			info("custom settings: %s", options_string);
+		if (!update) {
+			log_custom_options(obsx264, &options);
 		}
 
 		if (!obsx264->context)
