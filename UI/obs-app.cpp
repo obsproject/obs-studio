@@ -2339,7 +2339,7 @@ void ctrlc_handler(int s)
 	main->close();
 }
 
-int main(int argc, char *argv[])
+int obs_main(int argc, char *argv[])
 {
 #ifndef _WIN32
 	signal(SIGPIPE, SIG_IGN);

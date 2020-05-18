@@ -182,6 +182,8 @@ signals:
 	void StyleChanged();
 };
 
+int obs_main(int argc, char *argv[]);
+
 int GetConfigPath(char *path, size_t size, const char *name);
 char *GetConfigPathPtr(const char *name);
 
