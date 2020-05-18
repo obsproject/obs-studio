@@ -192,6 +192,7 @@ ScriptsTool::ScriptsTool() : QWidget(nullptr), ui(new Ui_ScriptsTool)
 #else
 	delete ui->pythonSettingsTab;
 	ui->pythonSettingsTab = nullptr;
+	ui->tabWidget->setStyleSheet("QTabWidget::pane {border: 0;}");
 #endif
 
 	delete propertiesView;
