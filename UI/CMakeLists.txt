@@ -3,8 +3,10 @@ if(DISABLE_UI)
 	return()
 elseif(ENABLE_UI)
 	set(FIND_MODE REQUIRED)
+	set(TEST_FIND_MODE)
 else()
 	set(FIND_MODE QUIET)
+	set(TEST_FIND_MODE QUIET)
 endif()
 
 if(BROWSER_AVAILABLE_INTERNAL)
@@ -57,6 +59,7 @@ set(CMAKE_INCLUDE_CURRENT_DIR TRUE)
 set(CMAKE_AUTOMOC TRUE)
 
 find_package(Qt5Svg ${FIND_MODE})
+find_package(Qt5Test ${TEST_FIND_MODE})
 find_package(Qt5Xml ${FIND_MODE})
 
 find_package(FFmpeg REQUIRED COMPONENTS avcodec avutil avformat)
@@ -419,6 +422,17 @@ endif()
 install_obs_core(obs)
 install_obs_data(obs data obs-studio)
 install_obs_data_file(obs ../AUTHORS obs-studio/authors)
+
+if (TARGET Qt5::Test)
+	add_executable(obs-properties-view-test
+		properties-view-test.cpp)
+	target_link_libraries(obs-properties-view-test PRIVATE Qt5::Test obs-lib)
+	set_target_properties(obs-properties-view-test PROPERTIES FOLDER "frontend")
+	set(RUNDIR "${OBS_OUTPUT_DIR}/$<CONFIGURATION>/bin/${OBS_OUTPUT_DIR_BIT_SUFFIX}")
+	set_target_properties(obs-properties-view-test PROPERTIES VS_DEBUGGER_ENVIRONMENT
+		"PATH=${Qt5Core_DIR}/../../../bin;${RUNDIR};$(PATH)
+QT_PLUGIN_PATH=${RUNDIR}")
+endif()
 
 if (UNIX AND UNIX_STRUCTURE AND NOT APPLE)
 	add_subdirectory(xdg-data)

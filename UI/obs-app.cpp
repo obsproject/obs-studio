@@ -1111,19 +1111,23 @@ OBSApp::OBSApp(int &argc, char **argv, profiler_name_store_t *store)
 OBSApp::~OBSApp()
 {
 #ifdef _WIN32
-	bool disableAudioDucking =
-		config_get_bool(globalConfig, "Audio", "DisableAudioDucking");
-	if (disableAudioDucking)
-		DisableAudioDucking(false);
+	if (globalConfig) {
+		bool disableAudioDucking = config_get_bool(
+			globalConfig, "Audio", "DisableAudioDucking");
+		if (disableAudioDucking)
+			DisableAudioDucking(false);
+	}
 #endif
 
 #ifdef __APPLE__
-	bool vsyncDiabled =
-		config_get_bool(globalConfig, "Video", "DisableOSXVSync");
-	bool resetVSync =
-		config_get_bool(globalConfig, "Video", "ResetOSXVSyncOnExit");
-	if (vsyncDiabled && resetVSync)
-		EnableOSXVSync(true);
+	if (globalConfig) {
+		bool vsyncDiabled = config_get_bool(globalConfig, "Video",
+						    "DisableOSXVSync");
+		bool resetVSync = config_get_bool(globalConfig, "Video",
+						  "ResetOSXVSyncOnExit");
+		if (vsyncDiabled && resetVSync)
+			EnableOSXVSync(true);
+	}
 #endif
 
 	os_inhibit_sleep_set_active(sleepInhibitor, false);
