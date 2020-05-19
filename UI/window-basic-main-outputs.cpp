@@ -697,7 +697,7 @@ bool SimpleOutput::StartStreaming(obs_service_t *service)
 		const char *url = obs_service_get_url(service);
 		if (url != NULL &&
 		    strncmp(url, RTMP_PROTOCOL, strlen(RTMP_PROTOCOL)) != 0) {
-			type = "ffmpeg_encoded_output";
+			type = "ffmpeg_mpegts_muxer";
 		}
 	}
 
@@ -1539,7 +1539,7 @@ bool AdvancedOutput::StartStreaming(obs_service_t *service)
 		const char *url = obs_service_get_url(service);
 		if (url != NULL &&
 		    strncmp(url, RTMP_PROTOCOL, strlen(RTMP_PROTOCOL)) != 0) {
-			type = "ffmpeg_encoded_output";
+			type = "ffmpeg_mpegts_muxer";
 		}
 	}
 

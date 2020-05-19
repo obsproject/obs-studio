@@ -64,12 +64,20 @@ struct ffmpeg_muxer {
 	pthread_t mux_thread;
 	bool mux_thread_joinable;
 	volatile bool muxing;
+
+	bool is_network;
 };
 
 static const char *ffmpeg_mux_getname(void *type)
 {
 	UNUSED_PARAMETER(type);
 	return obs_module_text("FFmpegMuxer");
+}
+
+static const char *ffmpeg_mpegts_mux_getname(void *type)
+{
+	UNUSED_PARAMETER(type);
+	return obs_module_text("FFmpegMpegtsMuxer");
 }
 
 static inline void replay_buffer_clear(struct ffmpeg_muxer *stream)
@@ -107,6 +115,9 @@ static void *ffmpeg_mux_create(obs_data_t *settings, obs_output_t *output)
 {
 	struct ffmpeg_muxer *stream = bzalloc(sizeof(*stream));
 	stream->output = output;
+
+	if (obs_output_get_flags(output) & OBS_OUTPUT_SERVICE)
+		stream->is_network = true;
 
 	UNUSED_PARAMETER(settings);
 	return stream;
@@ -264,6 +275,27 @@ static inline void start_pipe(struct ffmpeg_muxer *stream, const char *path)
 	dstr_free(&cmd);
 }
 
+static void set_file_not_readable_error(struct ffmpeg_muxer *stream,
+					obs_data_t *settings, const char *path)
+{
+	struct dstr error_message;
+	dstr_init_copy(&error_message, obs_module_text("UnableToWritePath"));
+#ifdef _WIN32
+	/* special warning for Windows 10 users about Defender */
+	struct win_version_info ver;
+	get_win_ver(&ver);
+	if (ver.major >= 10) {
+		dstr_cat(&error_message, "\n\n");
+		dstr_cat(&error_message,
+			 obs_module_text("WarnWindowsDefender"));
+	}
+#endif
+	dstr_replace(&error_message, "%1", path);
+	obs_output_set_last_error(stream->output, error_message.array);
+	dstr_free(&error_message);
+	obs_data_release(settings);
+}
+
 static bool ffmpeg_mux_start(void *data)
 {
 	struct ffmpeg_muxer *stream = data;
@@ -276,34 +308,31 @@ static bool ffmpeg_mux_start(void *data)
 		return false;
 
 	settings = obs_output_get_settings(stream->output);
-	path = obs_data_get_string(settings, "path");
-
-	/* ensure output path is writable to avoid generic error message */
-	/* TODO: remove once ffmpeg-mux is refactored to pass errors back */
-	FILE *test_file = os_fopen(path, "wb");
-	if (!test_file) {
-		struct dstr error_message;
-		dstr_init_copy(&error_message,
-			       obs_module_text("UnableToWritePath"));
-#ifdef _WIN32
-		// special warning for Windows 10 users about Defender
-		struct win_version_info ver;
-		get_win_ver(&ver);
-		if (ver.major >= 10) {
-			dstr_cat(&error_message, "\n\n");
-			dstr_cat(&error_message,
-				 obs_module_text("WarnWindowsDefender"));
-		}
-#endif
-		dstr_replace(&error_message, "%1", path);
-		obs_output_set_last_error(stream->output, error_message.array);
-		dstr_free(&error_message);
-		obs_data_release(settings);
-		return false;
+	if (stream->is_network) {
+		obs_service_t *service;
+		service = obs_output_get_service(stream->output);
+		if (!service)
+			return false;
+		path = obs_service_get_url(service);
+	} else {
+		path = obs_data_get_string(settings, "path");
 	}
 
-	fclose(test_file);
-	os_unlink(path);
+	if (!stream->is_network) {
+		/* ensure output path is writable to avoid generic error
+		 * message.
+		 *
+		 * TODO: remove once ffmpeg-mux is refactored to pass
+		 * errors back */
+		FILE *test_file = os_fopen(path, "wb");
+		if (!test_file) {
+			set_file_not_readable_error(stream, settings, path);
+			return false;
+		}
+
+		fclose(test_file);
+		os_unlink(path);
+	}
 
 	start_pipe(stream, path);
 	obs_data_release(settings);
@@ -525,6 +554,37 @@ struct obs_output_info ffmpeg_muxer = {
 	.encoded_packet = ffmpeg_mux_data,
 	.get_total_bytes = ffmpeg_mux_total_bytes,
 	.get_properties = ffmpeg_mux_properties,
+};
+
+static int connect_time(struct ffmpeg_mux *stream)
+{
+	UNUSED_PARAMETER(stream);
+	/* TODO */
+	return 0;
+}
+
+static int ffmpeg_mpegts_mux_connect_time(void *data)
+{
+	struct ffmpeg_mux *stream = data;
+	/* TODO */
+	return connect_time(stream);
+}
+
+struct obs_output_info ffmpeg_mpegts_muxer = {
+	.id = "ffmpeg_mpegts_muxer",
+	.flags = OBS_OUTPUT_AV | OBS_OUTPUT_ENCODED | OBS_OUTPUT_MULTI_TRACK |
+		 OBS_OUTPUT_SERVICE,
+	.encoded_video_codecs = "h264",
+	.encoded_audio_codecs = "aac",
+	.get_name = ffmpeg_mpegts_mux_getname,
+	.create = ffmpeg_mux_create,
+	.destroy = ffmpeg_mux_destroy,
+	.start = ffmpeg_mux_start,
+	.stop = ffmpeg_mux_stop,
+	.encoded_packet = ffmpeg_mux_data,
+	.get_total_bytes = ffmpeg_mux_total_bytes,
+	.get_properties = ffmpeg_mux_properties,
+	.get_connect_time_ms = ffmpeg_mpegts_mux_connect_time,
 };
 
 /* ------------------------------------------------------------------------ */
