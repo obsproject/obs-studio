@@ -594,6 +594,13 @@ void OBSPropertiesView::AddEditableList(obs_property_t *prop,
 
 	WidgetInfo *info = new WidgetInfo(this, prop, list);
 
+	list->setDragDropMode(QAbstractItemView::InternalMove);
+	connect(list->model(),
+		SIGNAL(rowsMoved(QModelIndex, int, int, QModelIndex, int)),
+		info,
+		SLOT(EditListReordered(const QModelIndex &, int, int,
+				       const QModelIndex &, int)));
+
 	QVBoxLayout *sideLayout = new QVBoxLayout();
 	NewButton(sideLayout, info, "addIconSmall", &WidgetInfo::EditListAdd);
 	NewButton(sideLayout, info, "removeIconSmall",
@@ -1772,6 +1779,19 @@ void WidgetInfo::GroupChanged(const char *setting)
 	obs_data_set_bool(view->settings, setting,
 			  groupbox->isCheckable() ? groupbox->isChecked()
 						  : true);
+}
+
+void WidgetInfo::EditListReordered(const QModelIndex &parent, int start,
+				   int end, const QModelIndex &destination,
+				   int row)
+{
+	UNUSED_PARAMETER(parent);
+	UNUSED_PARAMETER(start);
+	UNUSED_PARAMETER(end);
+	UNUSED_PARAMETER(destination);
+	UNUSED_PARAMETER(row);
+
+	EditableListChanged();
 }
 
 void WidgetInfo::EditableListChanged()

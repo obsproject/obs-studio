@@ -58,6 +58,8 @@ public slots:
 	void EditListEdit();
 	void EditListUp();
 	void EditListDown();
+	void EditListReordered(const QModelIndex &parent, int start, int end,
+			       const QModelIndex &destination, int row);
 };
 
 /* ------------------------------------------------------------------------- */
