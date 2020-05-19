@@ -226,7 +226,6 @@ private:
 	gs_vertbuffer_t *circle = nullptr;
 
 	bool sceneChanging = false;
-	bool ignoreSelectionUpdate = false;
 
 	int previewX = 0, previewY = 0;
 	int previewCX = 0, previewCY = 0;
@@ -573,8 +572,6 @@ private slots:
 	void RemoveScene(OBSSource source);
 	void RenameSources(OBSSource source, QString newName, QString prevName);
 
-	void SelectSceneItem(OBSScene scene, OBSSceneItem item, bool select);
-
 	void ActivateAudioSource(OBSSource source);
 	void DeactivateAudioSource(OBSSource source);
 
@@ -671,8 +668,6 @@ private:
 	static void SceneReordered(void *data, calldata_t *params);
 	static void SceneRefreshed(void *data, calldata_t *params);
 	static void SceneItemAdded(void *data, calldata_t *params);
-	static void SceneItemSelected(void *data, calldata_t *params);
-	static void SceneItemDeselected(void *data, calldata_t *params);
 	static void SourceCreated(void *data, calldata_t *params);
 	static void SourceRemoved(void *data, calldata_t *params);
 	static void SourceActivated(void *data, calldata_t *params);
