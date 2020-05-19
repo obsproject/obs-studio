@@ -325,7 +325,8 @@ set(obs_HEADERS
 	remote-text.hpp
 	audio-encoders.hpp
 	qt-wrappers.hpp
-	clickable-label.hpp)
+	clickable-label.hpp
+	studio-mode-checkbox.hpp)
 
 set(obs_importers_HEADERS
 	importers/importers.hpp)

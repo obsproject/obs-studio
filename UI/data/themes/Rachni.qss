@@ -1326,6 +1326,29 @@ VisibilityCheckBox::indicator:unchecked:hover {
     image: url(:res/images/invisible.svg);
 }
 
+/* Studio Mode CheckBox */
+
+StudioModeCheckBox {
+	outline: none;
+	background: transparent;
+}
+
+StudioModeCheckBox::indicator:checked {
+	image: url(./Dark/studio-mode-enabled.svg);
+}
+
+StudioModeCheckBox::indicator:unchecked {
+	image: url(:res/images/studio-mode-disabled.svg);
+}
+
+StudioModeCheckBox::indicator:checked:hover {
+	image: url(./Dark/studio-mode-enabled.svg);
+}
+
+StudioModeCheckBox::indicator:unchecked:hover {
+	image: url(:res/images/studio-mode-disabled.svg);
+}
+
 * [themeID="trashIcon"] {
     qproperty-icon: url(./Dark/trash.svg);
 }

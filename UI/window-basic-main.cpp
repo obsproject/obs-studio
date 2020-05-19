@@ -188,6 +188,65 @@ extern void RegisterTwitchAuth();
 extern void RegisterMixerAuth();
 extern void RegisterRestreamAuth();
 
+void OBSBasic::SetupMenuWidget()
+{
+	QWidget *topWidget = new QWidget();
+	QHBoxLayout *topWidgetHLayout = new QHBoxLayout();
+
+	QPushButton *settingsButton = new QPushButton();
+	settingsButton->setFlat(true);
+
+	previewVis = new VisibilityCheckBox();
+	previewVis->setChecked(config_get_bool(
+		App()->GlobalConfig(), "BasicWindow", "PreviewEnabled"));
+	connect(previewVis, SIGNAL(clicked()), this, SLOT(TogglePreview()));
+
+	previewLock = new LockedCheckBox();
+	connect(previewLock, SIGNAL(toggled(bool)), ui->preview,
+		SLOT(SetLocked(bool)));
+
+	studioMode = new StudioModeCheckBox();
+	connect(studioMode, SIGNAL(clicked()), this,
+		SLOT(on_modeSwitch_clicked()));
+
+	previewVis->setFixedSize(16, 16);
+	previewLock->setFixedSize(16, 16);
+	studioMode->setFixedSize(24, 16);
+	studioMode->setIconSize(QSize(24, 16));
+
+#ifdef __APPLE__
+	previewVis->setAttribute(Qt::WA_LayoutUsesWidgetRect);
+	previewLock->setAttribute(Qt::WA_LayoutUsesWidgetRect);
+	studioMode->setAttribute(Qt::WA_LayoutUsesWidgetRect);
+#endif
+
+	settingsButton->setFlat(true);
+	settingsButton->setFixedSize(22, 22);
+	settingsButton->setIconSize(QSize(20, 20));
+	settingsButton->setProperty("themeID", "configIconSmall");
+	settingsButton->setToolTip(QTStr("OpenSettings"));
+	connect(settingsButton, SIGNAL(clicked()), this,
+		SLOT(on_settingsButton_clicked()));
+
+	topWidgetHLayout->addWidget(ui->menubar);
+	topWidgetHLayout->addStretch();
+	topWidgetHLayout->addWidget(previewVis);
+	topWidgetHLayout->addSpacing(6);
+	topWidgetHLayout->addWidget(previewLock);
+	topWidgetHLayout->addSpacing(25);
+	topWidgetHLayout->addWidget(studioMode);
+	topWidgetHLayout->addSpacing(6);
+	topWidgetHLayout->addWidget(settingsButton);
+	topWidgetHLayout->addSpacing(10);
+	topWidgetHLayout->setContentsMargins(0, 0, 0, 0);
+	topWidgetHLayout->setSpacing(0);
+
+	//v->addLayout(l);
+	topWidget->setLayout(topWidgetHLayout);
+
+	setMenuWidget(topWidget);
+}
+
 OBSBasic::OBSBasic(QWidget *parent)
 	: OBSMainWindow(parent), ui(new Ui::OBSBasic)
 {
@@ -216,6 +275,8 @@ OBSBasic::OBSBasic(QWidget *parent)
 
 	ui->setupUi(this);
 	ui->previewDisabledWidget->setVisible(false);
+
+	SetupMenuWidget();
 
 	startingDockLayout = saveState();
 
@@ -1677,10 +1738,9 @@ void OBSBasic::OBSInit()
 	previewEnabled = config_get_bool(App()->GlobalConfig(), "BasicWindow",
 					 "PreviewEnabled");
 
-	if (!previewEnabled && !IsPreviewProgramMode())
-		QMetaObject::invokeMethod(this, "EnablePreviewDisplay",
-					  Qt::QueuedConnection,
-					  Q_ARG(bool, previewEnabled));
+	QMetaObject::invokeMethod(this, "EnablePreviewDisplay",
+				  Qt::QueuedConnection,
+				  Q_ARG(bool, previewEnabled));
 
 #ifdef _WIN32
 	uint32_t winVer = GetWindowsVersion();
@@ -6557,15 +6617,28 @@ void OBSBasic::on_actionHorizontalCenter_triggered()
 
 void OBSBasic::EnablePreviewDisplay(bool enable)
 {
+	previewEnabled = enable;
+
+	previewVis->blockSignals(true);
 	obs_display_set_enabled(ui->preview->GetDisplay(), enable);
 	ui->preview->setVisible(enable);
 	ui->previewDisabledWidget->setVisible(!enable);
+	previewVis->setChecked(enable);
+	previewVis->blockSignals(false);
+
+	if (!enable)
+		previewVis->setToolTip(
+			QTStr("Basic.Main.PreviewConextMenu.Enable"));
+	else
+		previewVis->setToolTip(QTStr("Basic.Main.Preview.Disable"));
 }
 
 void OBSBasic::TogglePreview()
 {
-	previewEnabled = !previewEnabled;
-	EnablePreviewDisplay(previewEnabled);
+	if (previewProgramMode)
+		return;
+
+	EnablePreviewDisplay(!previewEnabled);
 }
 
 void OBSBasic::EnablePreview()
@@ -6573,7 +6646,6 @@ void OBSBasic::EnablePreview()
 	if (previewProgramMode)
 		return;
 
-	previewEnabled = true;
 	EnablePreviewDisplay(true);
 }
 
@@ -6582,7 +6654,6 @@ void OBSBasic::DisablePreview()
 	if (previewProgramMode)
 		return;
 
-	previewEnabled = false;
 	EnablePreviewDisplay(false);
 }
 

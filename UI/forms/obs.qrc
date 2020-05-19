@@ -40,6 +40,8 @@
     <file>images/recording-pause-inactive.svg</file>
     <file>images/streaming-active.svg</file>
     <file>images/streaming-inactive.svg</file>
+    <file>images/studio-mode-enabled.svg</file>
+    <file>images/studio-mode-disabled.svg</file>
   </qresource>
   <qresource prefix="/settings">
     <file>images/settings/output.svg</file>

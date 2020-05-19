@@ -34,6 +34,9 @@
 #include "window-projector.hpp"
 #include "window-basic-about.hpp"
 #include "auth-base.hpp"
+#include "locked-checkbox.hpp"
+#include "visibility-checkbox.hpp"
+#include "studio-mode-checkbox.hpp"
 
 #include <obs-frontend-internal.hpp>
 
@@ -515,6 +518,11 @@ private:
 
 	OBSSource GetOverrideTransition(OBSSource source);
 	int GetOverrideTransitionDuration(OBSSource source);
+
+	void SetupMenuWidget();
+	VisibilityCheckBox *previewVis;
+	LockedCheckBox *previewLock;
+	StudioModeCheckBox *studioMode;
 
 public slots:
 	void DeferSaveBegin();

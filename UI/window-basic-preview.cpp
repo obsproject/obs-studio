@@ -1933,3 +1933,21 @@ OBSBasicPreview *OBSBasicPreview::Get()
 {
 	return OBSBasic::Get()->ui->preview;
 }
+
+void OBSBasicPreview::SetLocked(bool newLockedVal)
+{
+	OBSBasic *main = reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
+
+	locked = newLockedVal;
+
+	main->previewLock->blockSignals(true);
+	main->previewLock->setChecked(newLockedVal);
+	main->previewLock->blockSignals(false);
+
+	if (!locked)
+		main->previewLock->setToolTip(
+			QTStr("Basic.MainMenu.Edit.LockPreview"));
+	else
+		main->previewLock->setToolTip(
+			QTStr("Basic.MainMenu.Edit.UnlockPreview"));
+}

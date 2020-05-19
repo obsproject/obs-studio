@@ -123,7 +123,6 @@ public:
 	void DrawOverflow();
 	void DrawSceneEditing();
 
-	inline void SetLocked(bool newLockedVal) { locked = newLockedVal; }
 	inline void ToggleLocked() { locked = !locked; }
 	inline bool Locked() const { return locked; }
 
@@ -152,4 +151,7 @@ public:
 	 * byte boundary. */
 	static inline void *operator new(size_t size) { return bmalloc(size); }
 	static inline void operator delete(void *ptr) { bfree(ptr); }
+
+public slots:
+	void SetLocked(bool newLockedVal);
 };

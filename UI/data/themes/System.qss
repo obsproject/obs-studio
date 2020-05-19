@@ -201,6 +201,21 @@ VisibilityCheckBox::indicator:unchecked {
     image: url(:res/images/invisible.svg);
 }
 
+/* Studio Mode CheckBox */
+
+StudioModeCheckBox {
+	outline: none;
+	background: transparent;
+}
+
+StudioModeCheckBox::indicator:checked {
+	image: url(:res/images/studio-mode-enabled.svg);
+}
+
+StudioModeCheckBox::indicator:unchecked {
+	image: url(:res/images/studio-mode-disabled.svg);
+}
+
 * [themeID="trashIcon"] {
     qproperty-icon: url(:res/images/trash.svg);
 }

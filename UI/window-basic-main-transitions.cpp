@@ -1300,12 +1300,24 @@ void OBSBasic::EnableTransitionWidgets(bool enable)
 
 void OBSBasic::SetPreviewProgramMode(bool enabled)
 {
+	if (!enabled)
+		studioMode->setToolTip(QTStr("EnableStudioMode"));
+	else
+		studioMode->setToolTip(QTStr("DisableStudioMode"));
+
 	if (IsPreviewProgramMode() == enabled)
 		return;
 
 	ui->previewLabel->setHidden(!enabled);
 
-	ui->modeSwitch->setChecked(enabled);
+	studioMode->blockSignals(true);
+	studioMode->setChecked(enabled);
+	studioMode->blockSignals(false);
+
+	previewVis->blockSignals(true);
+	previewVis->setEnabled(!enabled);
+	previewVis->blockSignals(false);
+
 	os_atomic_set_bool(&previewProgramMode, enabled);
 
 	if (IsPreviewProgramMode()) {
