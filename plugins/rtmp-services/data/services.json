@@ -217,6 +217,25 @@
             }
         },
         {
+            "name": "VIMM",
+            "servers": [
+                {
+                    "name": "Europe: Frankfurt",
+                    "url": "rtmp://eu.vimm.tv/live"
+                },
+                {
+                    "name": "North America: Montreal",
+                    "url": "rtmp://us.vimm.tv/live"
+                }
+            ],
+            "recommended": {
+                "keyint": 2,
+                "max video bitrate": 8000,
+                "max audio bitrate": 320,
+                "x264opts": "scenecut=0"
+            }
+        },
+        {
             "name": "Smashcast",
             "servers": [
                 {
