@@ -49,6 +49,7 @@
 
 #ifdef _WIN32
 #include <windows.h>
+#include <filesystem>
 #else
 #include <signal.h>
 #include <pthread.h>
@@ -1888,8 +1889,7 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 
 #define CRASH_MESSAGE                                                      \
 	"Woops, OBS has crashed!\n\nWould you like to copy the crash log " \
-	"to the clipboard?  (Crash logs will still be saved to the "       \
-	"%appdata%\\obs-studio\\crashes directory)"
+	"to the clipboard? The crash log will still be saved to:\n\n%s"
 
 static void main_crash_handler(const char *format, va_list args, void *param)
 {
@@ -1898,10 +1898,12 @@ static void main_crash_handler(const char *format, va_list args, void *param)
 	vsnprintf(text, MAX_CRASH_REPORT_SIZE, format, args);
 	text[MAX_CRASH_REPORT_SIZE - 1] = 0;
 
-	delete_oldest_file(true, "obs-studio/crashes");
+	string crashFilePath = "obs-studio/crashes";
 
-	string name = "obs-studio/crashes/Crash ";
-	name += GenerateTimeDateFilename("txt");
+	delete_oldest_file(true, crashFilePath.c_str());
+
+	string name = crashFilePath + "/";
+	name += "Crash " + GenerateTimeDateFilename("txt");
 
 	BPtr<char> path(GetConfigPathPtr(name.c_str()));
 
@@ -1919,7 +1921,26 @@ static void main_crash_handler(const char *format, va_list args, void *param)
 	file << text;
 	file.close();
 
-	int ret = MessageBoxA(NULL, CRASH_MESSAGE, "OBS has crashed!",
+	string pathString(path.Get());
+
+#ifdef _WIN32
+	std::replace(pathString.begin(), pathString.end(), '/', '\\');
+#endif
+
+	string absolutePath =
+		canonical(filesystem::path(pathString)).u8string();
+
+	size_t size = snprintf(nullptr, 0, CRASH_MESSAGE, absolutePath.c_str());
+
+	unique_ptr<char[]> message_buffer(new char[size + 1]);
+
+	snprintf(message_buffer.get(), size + 1, CRASH_MESSAGE,
+		 absolutePath.c_str());
+
+	string finalMessage =
+		string(message_buffer.get(), message_buffer.get() + size);
+
+	int ret = MessageBoxA(NULL, finalMessage.c_str(), "OBS has crashed!",
 			      MB_YESNO | MB_ICONERROR | MB_TASKMODAL);
 
 	if (ret == IDYES) {
