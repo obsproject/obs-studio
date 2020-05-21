@@ -875,7 +875,7 @@ void VolumeMeter::paintHMeter(QPainter &painter, int x, int y, int width,
 		painter.fillRect(peakPosition, y,
 				 maximumPosition - peakPosition, height,
 				 backgroundErrorColor);
-	} else {
+	} else if (int(magnitude) != 0) {
 		if (!clipping) {
 			QTimer::singleShot(CLIP_FLASH_DURATION_MS, this,
 					   SLOT(ClipEnding()));
