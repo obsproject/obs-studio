@@ -578,15 +578,13 @@ HWND find_matching_window(enum window_search_mode mode, DARRAY(struct game_captu
 		if (!already_checked_window) {
 			int window_match_power = find_matching_rule_for_window(window, matching_rules, &list_index, best_window_match_power);
 			if (window_match_power > best_window_match_power) {
-				best_window_match_power = window_match_power;
-				if (matching_rules->array[list_index].type == WINDOW_MATCH_IGNORE ) {
-					best_window = NULL;
-				} else {
+				if (matching_rules->array[list_index].type == WINDOW_MATCH_CAPTURE ) {
+					best_window_match_power = window_match_power;
 					best_window = window;
-				}
-				if (matching_rules->array[list_index].mask &
-				    (WINDOW_MATCH_EXE | WINDOW_MATCH_CLASS | WINDOW_MATCH_TITLE)) {
-					break;
+					if (matching_rules->array[list_index].mask &
+					    (WINDOW_MATCH_EXE | WINDOW_MATCH_CLASS | WINDOW_MATCH_TITLE)) {
+						break;
+					}
 				}
 			}
 			
