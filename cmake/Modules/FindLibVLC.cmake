@@ -4,6 +4,9 @@
 #  LIBVLC_INCLUDE_DIRS
 #  LIBVLC_LIBRARIES
 #
+# For use in OBS: 
+#
+#  VLC_INCLUDE_DIR
 
 find_package(PkgConfig QUIET)
 if (PKG_CONFIG_FOUND)
@@ -56,11 +59,14 @@ find_library(VLC_LIB
 		../bin${_lib_suffix} ../bin)
 
 include(FindPackageHandleStandardArgs)
-# OBS doesnt depend on linking, so we dont include VLC_LIB here as required.
-find_package_handle_standard_args(LibVLC DEFAULT_MSG VLC_INCLUDE_DIR)
+find_package_handle_standard_args(LibVLC_INCLUDES DEFAULT_MSG VLC_INCLUDE_DIR)
+find_package_handle_standard_args(LibVLC DEFAULT_MSG VLC_LIB VLC_INCLUDE_DIR)
 mark_as_advanced(VLC_INCLUDE_DIR VLC_LIB)
+
+if(LIBVLC_INCLUDES_FOUND)
+	set(LIBVLC_INCLUDE_DIRS ${VLC_INCLUDE_DIR})
+endif()
 
 if(LIBVLC_FOUND)
 	set(LIBVLC_LIBRARIES ${VLC_LIB})
-	set(LIBVLC_INCLUDE_DIRS ${VLC_INCLUDE_DIR})
 endif()

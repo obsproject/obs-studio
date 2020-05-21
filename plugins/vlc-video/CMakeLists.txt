@@ -5,13 +5,13 @@ if(DISABLE_VLC)
 	return()
 endif()
 
-if(ENABLE_VLC)
-	find_package(LibVLC REQUIRED)
-else()
-	find_package(LibVLC)
-	if(NOT LIBVLC_FOUND)
-		message(STATUS "VLC video plugin disabled")
-	endif()
+find_package(LibVLC QUIET)
+
+if(NOT LIBVLC_INCLUDES_FOUND AND ENABLE_VLC)
+	message(FATAL_ERROR "LibVLC includes not found but set as enabled")
+elseif(NOT LIBVLC_INCLUDES_FOUND)
+	message(STATUS "LibVLC includes not found, VLC video plugin disabled")
+	return()
 endif()
 
 include_directories(${LIBVLC_INCLUDE_DIRS})
@@ -41,7 +41,6 @@ endif()
 add_library(vlc-video MODULE
 	${vlc-video_SOURCES}
 	${vlc-video_HEADERS})
-# instead of linking vlc we load at runtime.
 target_link_libraries(vlc-video
 	libobs
 	${vlc-video_PLATFORM_DEPS})
