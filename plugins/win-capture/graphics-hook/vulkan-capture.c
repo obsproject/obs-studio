@@ -96,6 +96,9 @@ struct vk_data {
 
 	struct vk_inst_data *inst_data;
 
+	VkAllocationCallbacks ac_storage;
+	const VkAllocationCallbacks *ac;
+
 	ID3D11Device *d3d11_device;
 	ID3D11DeviceContext *d3d11_context;
 };
@@ -221,7 +224,7 @@ static void vk_shtex_free(struct vk_data *data)
 
 		if (swap->export_image)
 			data->funcs.DestroyImage(data->device,
-						 swap->export_image, NULL);
+						 swap->export_image, data->ac);
 
 		if (swap->export_mem)
 			data->funcs.FreeMemory(data->device, swap->export_mem,
@@ -284,10 +287,27 @@ struct vk_inst_data {
 	struct vk_surf_data *surfaces;
 };
 
-static void insert_surf_data(struct vk_inst_data *data, VkSurfaceKHR surf,
-			     HWND hwnd)
+static void *object_malloc(const VkAllocationCallbacks *ac, size_t size,
+			   size_t alignment)
 {
-	struct vk_surf_data *surf_data = malloc(sizeof(struct vk_surf_data));
+	return ac ? ac->pfnAllocation(ac->pUserData, size, alignment,
+				      VK_SYSTEM_ALLOCATION_SCOPE_OBJECT)
+		  : _aligned_malloc(size, alignment);
+}
+
+static void object_free(const VkAllocationCallbacks *ac, void *memory)
+{
+	if (ac)
+		ac->pfnFree(ac->pUserData, memory);
+	else
+		_aligned_free(memory);
+}
+
+static void insert_surf_data(struct vk_inst_data *data, VkSurfaceKHR surf,
+			     HWND hwnd, const VkAllocationCallbacks *ac)
+{
+	struct vk_surf_data *surf_data = object_malloc(
+		ac, sizeof(struct vk_surf_data), _Alignof(struct vk_surf_data));
 	if (surf_data) {
 		surf_data->surf = surf;
 		surf_data->hwnd = hwnd;
@@ -318,7 +338,8 @@ static HWND find_surf_hwnd(struct vk_inst_data *data, VkSurfaceKHR surf)
 	return hwnd;
 }
 
-static void erase_surf_data(struct vk_inst_data *data, VkSurfaceKHR surf)
+static void erase_surf_data(struct vk_inst_data *data, VkSurfaceKHR surf,
+			    const VkAllocationCallbacks *ac)
 {
 	AcquireSRWLockExclusive(&mutex);
 	struct vk_surf_data *current = data->surfaces;
@@ -336,7 +357,7 @@ static void erase_surf_data(struct vk_inst_data *data, VkSurfaceKHR surf)
 	}
 	ReleaseSRWLockExclusive(&mutex);
 
-	free(current);
+	object_free(ac, current);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -535,7 +556,8 @@ static inline bool vk_shtex_init_vulkan_tex(struct vk_data *data,
 	ici.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
 	VkResult res;
-	res = funcs->CreateImage(data->device, &ici, NULL, &swap->export_image);
+	res = funcs->CreateImage(data->device, &ici, data->ac,
+				 &swap->export_image);
 	if (VK_SUCCESS != res) {
 		flog("failed to CreateImage: %s", result_to_str(res));
 		swap->export_image = VK_NULL_HANDLE;
@@ -593,7 +615,7 @@ static inline bool vk_shtex_init_vulkan_tex(struct vk_data *data,
 
 	if (mem_type_idx == pdmp.memoryTypeCount) {
 		flog("failed to get memory type index");
-		funcs->DestroyImage(data->device, swap->export_image, NULL);
+		funcs->DestroyImage(data->device, swap->export_image, data->ac);
 		swap->export_image = VK_NULL_HANDLE;
 		return false;
 	}
@@ -630,7 +652,7 @@ static inline bool vk_shtex_init_vulkan_tex(struct vk_data *data,
 				    &swap->export_mem);
 	if (VK_SUCCESS != res) {
 		flog("failed to AllocateMemory: %s", result_to_str(res));
-		funcs->DestroyImage(data->device, swap->export_image, NULL);
+		funcs->DestroyImage(data->device, swap->export_image, data->ac);
 		swap->export_image = VK_NULL_HANDLE;
 		return false;
 	}
@@ -655,7 +677,7 @@ static inline bool vk_shtex_init_vulkan_tex(struct vk_data *data,
 		flog("%s failed: %s",
 		     use_bi2 ? "BindImageMemory2" : "BindImageMemory",
 		     result_to_str(res));
-		funcs->DestroyImage(data->device, swap->export_image, NULL);
+		funcs->DestroyImage(data->device, swap->export_image, data->ac);
 		swap->export_image = VK_NULL_HANDLE;
 		return false;
 	}
@@ -708,8 +730,8 @@ static void vk_shtex_create_cmd_pool_objects(struct vk_data *data,
 	cpci.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 	cpci.queueFamilyIndex = fam_idx;
 
-	VkResult res = data->funcs.CreateCommandPool(data->device, &cpci, NULL,
-						     &pool_data->cmd_pool);
+	VkResult res = data->funcs.CreateCommandPool(
+		data->device, &cpci, data->ac, &pool_data->cmd_pool);
 	debug_res("CreateCommandPool", res);
 
 	VkCommandBufferAllocateInfo cbai;
@@ -734,7 +756,8 @@ static void vk_shtex_create_cmd_pool_objects(struct vk_data *data,
 		fci.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
 		fci.pNext = NULL;
 		fci.flags = 0;
-		res = data->funcs.CreateFence(data->device, &fci, NULL, fence);
+		res = data->funcs.CreateFence(data->device, &fci, data->ac,
+					      fence);
 		debug_res("CreateFence", res);
 	}
 
@@ -751,7 +774,7 @@ static void vk_shtex_destroy_fence(struct vk_data *data, bool *cmd_buffer_busy,
 		*cmd_buffer_busy = false;
 	}
 
-	data->funcs.DestroyFence(device, *fence, NULL);
+	data->funcs.DestroyFence(device, *fence, data->ac);
 	*fence = VK_NULL_HANDLE;
 }
 
@@ -766,7 +789,8 @@ vk_shtex_destroy_cmd_pool_objects(struct vk_data *data,
 		vk_shtex_destroy_fence(data, cmd_buffer_busy, fence);
 	}
 
-	data->funcs.DestroyCommandPool(data->device, pool_data->cmd_pool, NULL);
+	data->funcs.DestroyCommandPool(data->device, pool_data->cmd_pool,
+				       data->ac);
 	pool_data->cmd_pool = VK_NULL_HANDLE;
 	pool_data->image_count = 0;
 }
@@ -1306,6 +1330,13 @@ static VkResult VKAPI OBS_CreateDevice(VkPhysicalDevice phy_device,
 	}
 
 	data->inst_data = idata;
+
+	data->ac = NULL;
+	if (ac) {
+		data->ac_storage = *ac;
+		data->ac = &data->ac_storage;
+	}
+
 	data->valid = true;
 
 fail:
@@ -1428,7 +1459,7 @@ static VkResult VKAPI OBS_CreateWin32SurfaceKHR(
 
 	VkResult res = funcs->CreateWin32SurfaceKHR(inst, info, ac, surf);
 	if (res == VK_SUCCESS)
-		insert_surf_data(data, *surf, info->hwnd);
+		insert_surf_data(data, *surf, info->hwnd, ac);
 	return res;
 }
 
@@ -1438,7 +1469,7 @@ static void VKAPI OBS_DestroySurfaceKHR(VkInstance inst, VkSurfaceKHR surf,
 	struct vk_inst_data *data = get_inst_data(inst);
 	struct vk_inst_funcs *funcs = &data->funcs;
 
-	erase_surf_data(data, surf);
+	erase_surf_data(data, surf, ac);
 	funcs->DestroySurfaceKHR(inst, surf, ac);
 }
 
