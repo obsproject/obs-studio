@@ -13,9 +13,13 @@ if(WIN32)
 	list(APPEND obs-frontend-api_SOURCES
 		obs-frontend-api.rc)
 endif()
+
+set(obs-frontend-api_PUBLIC_HEADERS
+	obs-frontend-api.h)
+
 set(obs-frontend-api_HEADERS
 	obs-frontend-internal.hpp
-	obs-frontend-api.h)
+	${obs-frontend-api_PUBLIC_HEADERS})
 
 add_library(obs-frontend-api SHARED
 	${obs-frontend-api_SOURCES}
@@ -34,3 +38,4 @@ if(UNIX AND NOT APPLE)
 endif()
 
 install_obs_core(obs-frontend-api)
+install_obs_headers(${obs-frontend-api_PUBLIC_HEADERS})
