@@ -138,7 +138,6 @@ struct winrt_capture {
 	uint32_t texture_height;
 	D3D11_BOX client_box;
 
-	bool thread_changed;
 	bool active;
 	struct winrt_capture *next;
 
@@ -283,7 +282,7 @@ struct winrt_capture {
 	}
 };
 
-struct winrt_capture *capture_list;
+static struct winrt_capture *capture_list;
 
 static void winrt_capture_device_loss_release(void *data)
 {
@@ -296,11 +295,31 @@ static void winrt_capture_device_loss_release(void *data)
 	capture->frame_pool = nullptr;
 	capture->context = nullptr;
 	capture->device = nullptr;
+	capture->item = nullptr;
 }
 
 static void winrt_capture_device_loss_rebuild(void *device_void, void *data)
 {
 	winrt_capture *capture = static_cast<winrt_capture *>(data);
+
+	auto activation_factory = winrt::get_activation_factory<
+		winrt::Windows::Graphics::Capture::GraphicsCaptureItem>();
+	auto interop_factory =
+		activation_factory.as<IGraphicsCaptureItemInterop>();
+	winrt::Windows::Graphics::Capture::GraphicsCaptureItem item = {nullptr};
+	try {
+		interop_factory->CreateForWindow(
+			capture->window,
+			winrt::guid_of<ABI::Windows::Graphics::Capture::
+					       IGraphicsCaptureItem>(),
+			reinterpret_cast<void **>(winrt::put_abi(item)));
+	} catch (winrt::hresult_error &err) {
+		blog(LOG_ERROR, "CreateForWindow (0x%08X): %ls", err.to_abi(),
+		     err.message().c_str());
+	} catch (...) {
+		blog(LOG_ERROR, "CreateForWindow (0x%08X)",
+		     winrt::to_hresult());
+	}
 
 	ID3D11Device *const d3d_device = (ID3D11Device *)device_void;
 	ComPtr<IDXGIDevice> dxgi_device;
@@ -323,7 +342,7 @@ static void winrt_capture_device_loss_rebuild(void *device_void, void *data)
 					DirectXPixelFormat::B8G8R8A8UIntNormalized,
 				2, capture->last_size);
 	const winrt::Windows::Graphics::Capture::GraphicsCaptureSession session =
-		frame_pool.CreateCaptureSession(capture->item);
+		frame_pool.CreateCaptureSession(item);
 
 	/* disable cursor capture if possible since ours performs better */
 #ifdef NTDDI_WIN10_VB
@@ -331,6 +350,7 @@ static void winrt_capture_device_loss_rebuild(void *device_void, void *data)
 		session.IsCursorCaptureEnabled(false);
 #endif
 
+	capture->item = item;
 	capture->device = device;
 	d3d_device->GetImmediateContext(&capture->context);
 	capture->frame_pool = frame_pool;
@@ -341,8 +361,6 @@ static void winrt_capture_device_loss_rebuild(void *device_void, void *data)
 
 	session.StartCapture();
 }
-
-thread_local bool initialized_tls;
 
 extern "C" EXPORT struct winrt_capture *
 winrt_capture_init(BOOL cursor, HWND window, BOOL client_area)
@@ -406,9 +424,6 @@ try {
 	if (cursor_toggle_supported)
 		session.IsCursorCaptureEnabled(false);
 #endif
-
-	if (capture_list == nullptr)
-		initialized_tls = true;
 
 	struct winrt_capture *capture = new winrt_capture{};
 	capture->window = window;
@@ -512,28 +527,8 @@ extern "C" EXPORT void winrt_capture_show_cursor(struct winrt_capture *capture,
 extern "C" EXPORT void winrt_capture_render(struct winrt_capture *capture,
 					    gs_effect_t *effect)
 {
-	if (capture->texture_written) {
-		if (!initialized_tls) {
-			struct winrt_capture *current = capture_list;
-			while (current) {
-				current->thread_changed = true;
-				current = current->next;
-			}
-
-			initialized_tls = true;
-		}
-
-		if (capture->thread_changed) {
-			/* new graphics thread. treat like device loss. */
-			winrt_capture_device_loss_release(capture);
-			winrt_capture_device_loss_rebuild(gs_get_device_obj(),
-							  capture);
-
-			capture->thread_changed = false;
-		}
-
+	if (capture->texture_written)
 		draw_texture(capture, effect);
-	}
 }
 
 extern "C" EXPORT uint32_t
@@ -546,4 +541,23 @@ extern "C" EXPORT uint32_t
 winrt_capture_height(const struct winrt_capture *capture)
 {
 	return capture ? capture->texture_height : 0;
+}
+
+extern "C" EXPORT void winrt_capture_thread_start()
+{
+	struct winrt_capture *capture = capture_list;
+	void *const device = gs_get_device_obj();
+	while (capture) {
+		winrt_capture_device_loss_rebuild(device, capture);
+		capture = capture->next;
+	}
+}
+
+extern "C" EXPORT void winrt_capture_thread_stop()
+{
+	struct winrt_capture *capture = capture_list;
+	while (capture) {
+		winrt_capture_device_loss_release(capture);
+		capture = capture->next;
+	}
 }

@@ -539,7 +539,7 @@ static const uint8_t *set_gpu_converted_plane(uint32_t width, uint32_t height,
 					      const uint8_t *in, uint8_t *out)
 {
 	if ((width == linesize_input) && (width == linesize_output)) {
-		size_t total = width * height;
+		size_t total = (size_t)width * (size_t)height;
 		memcpy(out, in, total);
 		in += total;
 	} else {
@@ -672,10 +672,12 @@ static inline void copy_rgbx_frame(struct video_frame *output,
 
 	/* if the line sizes match, do a single copy */
 	if (input->linesize[0] == output->linesize[0]) {
-		memcpy(out_ptr, in_ptr, input->linesize[0] * info->height);
+		memcpy(out_ptr, in_ptr,
+		       (size_t)input->linesize[0] * (size_t)info->height);
 	} else {
+		const size_t copy_size = (size_t)info->width * 4;
 		for (size_t y = 0; y < info->height; y++) {
-			memcpy(out_ptr, in_ptr, info->width * 4);
+			memcpy(out_ptr, in_ptr, copy_size);
 			in_ptr += input->linesize[0];
 			out_ptr += output->linesize[0];
 		}
@@ -835,11 +837,97 @@ static void execute_graphics_tasks(void)
 	}
 }
 
+#ifdef _WIN32
+
+struct winrt_exports {
+	void (*winrt_initialize)();
+	void (*winrt_uninitialize)();
+	struct winrt_disaptcher *(*winrt_dispatcher_init)();
+	void (*winrt_dispatcher_free)(struct winrt_disaptcher *dispatcher);
+	void (*winrt_capture_thread_start)();
+	void (*winrt_capture_thread_stop)();
+};
+
+#define WINRT_IMPORT(func)                                        \
+	do {                                                      \
+		exports->func = os_dlsym(module, #func);          \
+		if (!exports->func) {                             \
+			success = false;                          \
+			blog(LOG_ERROR,                           \
+			     "Could not load function '%s' from " \
+			     "module '%s'",                       \
+			     #func, module_name);                 \
+		}                                                 \
+	} while (false)
+
+static bool load_winrt_imports(struct winrt_exports *exports, void *module,
+			       const char *module_name)
+{
+	bool success = true;
+
+	WINRT_IMPORT(winrt_initialize);
+	WINRT_IMPORT(winrt_uninitialize);
+	WINRT_IMPORT(winrt_dispatcher_init);
+	WINRT_IMPORT(winrt_dispatcher_free);
+	WINRT_IMPORT(winrt_capture_thread_start);
+	WINRT_IMPORT(winrt_capture_thread_stop);
+
+	return success;
+}
+
+struct winrt_state {
+	bool loaded;
+	void *winrt_module;
+	struct winrt_exports exports;
+	struct winrt_disaptcher *dispatcher;
+};
+
+static void init_winrt_state(struct winrt_state *winrt)
+{
+	static const char *const module_name = "libobs-winrt";
+
+	winrt->winrt_module = os_dlopen(module_name);
+	winrt->loaded = winrt->winrt_module &&
+			load_winrt_imports(&winrt->exports, winrt->winrt_module,
+					   module_name);
+	winrt->dispatcher = NULL;
+	if (winrt->loaded) {
+		winrt->exports.winrt_initialize();
+		winrt->dispatcher = winrt->exports.winrt_dispatcher_init();
+
+		gs_enter_context(obs->video.graphics);
+		winrt->exports.winrt_capture_thread_start();
+		gs_leave_context();
+	}
+}
+
+static void uninit_winrt_state(struct winrt_state *winrt)
+{
+	if (winrt->winrt_module) {
+		if (winrt->loaded) {
+			winrt->exports.winrt_capture_thread_stop();
+			if (winrt->dispatcher)
+				winrt->exports.winrt_dispatcher_free(
+					winrt->dispatcher);
+			winrt->exports.winrt_uninitialize();
+		}
+
+		os_dlclose(winrt->winrt_module);
+	}
+}
+
+#endif // #ifdef _WIN32
+
 static const char *tick_sources_name = "tick_sources";
 static const char *render_displays_name = "render_displays";
 static const char *output_frame_name = "output_frame";
 void *obs_graphics_thread(void *param)
 {
+#ifdef _WIN32
+	struct winrt_state winrt;
+	init_winrt_state(&winrt);
+#endif // #ifdef _WIN32
+
 	uint64_t last_time = 0;
 	uint64_t interval = video_output_get_frame_time(obs->video.video);
 	uint64_t frame_time_total_ns = 0;
@@ -951,6 +1039,10 @@ void *obs_graphics_thread(void *param)
 		if (stop_requested)
 			break;
 	}
+
+#ifdef _WIN32
+	uninit_winrt_state(&winrt);
+#endif
 
 	UNUSED_PARAMETER(param);
 	return NULL;
