@@ -6,7 +6,7 @@
 
 find_package(PkgConfig QUIET)
 if (PKG_CONFIG_FOUND)
-	pkg_check_modules(_UDEV QUIET udev)
+	pkg_check_modules(_UDEV QUIET libudev)
 endif()
 
 find_path(UDEV_INCLUDE_DIR
