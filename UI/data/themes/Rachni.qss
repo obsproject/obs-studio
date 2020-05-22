@@ -189,8 +189,8 @@ QListWidget::item:hover:!active {
 /***********************/
 
 QDockWidget {
-	titlebar-close-icon: url('./Dark/Close.svg');
-	titlebar-normal-icon: url('./Dark/Popout.svg');
+	titlebar-close-icon: url('./Dark/close.svg');
+	titlebar-normal-icon: url('./Dark/popout.svg');
 }
 
 QDockWidget {
