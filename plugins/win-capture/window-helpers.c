@@ -127,24 +127,29 @@ void get_window_class(struct dstr *class, HWND hwnd)
 		dstr_from_wcs(class, temp);
 }
 
-/* not capturable or internal windows */
-static const char *internal_microsoft_exes[] = {
-	"startmenuexperiencehost",
-	"applicationframehost",
-	"peopleexperiencehost",
-	"shellexperiencehost",
-	"microsoft.notes",
+/* not capturable or internal windows, exact executable names */
+static const char *internal_microsoft_exes_exact[] = {
+	"startmenuexperiencehost.exe",
+	"applicationframehost.exe",
+	"peopleexperiencehost.exe",
+	"shellexperiencehost.exe",
+	"microsoft.notes.exe",
+	"systemsettings.exe",
+	"textinputhost.exe",
+	"searchapp.exe",
+	"video.ui.exe",
+	"searchui.exe",
+	"lockapp.exe",
+	"cortana.exe",
+	"gamebar.exe",
+	"tabtip.exe",
+	"time.exe",
+	NULL,
+};
+
+/* partial matches start from the beginning of the executable name */
+static const char *internal_microsoft_exes_partial[] = {
 	"windowsinternal",
-	"systemsettings",
-	"textinputhost",
-	"searchapp",
-	"video.ui",
-	"searchui",
-	"lockapp",
-	"cortana",
-	"gamebar",
-	"tabtip",
-	"time",
 	NULL,
 };
 
@@ -153,7 +158,13 @@ static bool is_microsoft_internal_window_exe(const char *exe)
 	if (!exe)
 		return false;
 
-	for (const char **vals = internal_microsoft_exes; *vals; vals++) {
+	for (const char **vals = internal_microsoft_exes_exact; *vals; vals++) {
+		if (astrcmpi(exe, *vals) == 0)
+			return true;
+	}
+
+	for (const char **vals = internal_microsoft_exes_partial; *vals;
+	     vals++) {
 		if (astrcmpi_n(exe, *vals, strlen(*vals)) == 0)
 			return true;
 	}
