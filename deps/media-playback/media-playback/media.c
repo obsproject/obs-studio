@@ -583,6 +583,9 @@ static bool init_avformat(mp_media_t *m)
 		av_dict_set_int(&opts, "buffer_size", m->buffering, 0);
 
 	m->fmt = avformat_alloc_context();
+	if (m->buffering == 0) {
+		m->fmt->flags |= AVFMT_FLAG_NOBUFFER;
+	}
 	if (!m->is_local_file) {
 		m->fmt->interrupt_callback.callback = interrupt_callback;
 		m->fmt->interrupt_callback.opaque = m;
