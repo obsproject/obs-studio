@@ -17,6 +17,7 @@
 ******************************************************************************/
 
 #include "util/threading.h"
+#include "util/util_uint64.h"
 #include "graphics/math-defs.h"
 #include "obs-scene.h"
 
@@ -974,8 +975,8 @@ static void apply_scene_item_audio_actions(struct obs_scene_item *item,
 		if (timestamp < ts)
 			timestamp = ts;
 
-		new_frame_num = (timestamp - ts) * (uint64_t)sample_rate /
-				1000000000ULL;
+		new_frame_num = util_mul_div64(timestamp - ts, sample_rate,
+					       1000000000ULL);
 
 		if (ts && new_frame_num >= AUDIO_OUTPUT_FRAMES)
 			break;
@@ -1024,8 +1025,8 @@ static bool apply_scene_item_volume(struct obs_scene_item *item, float **buf,
 	pthread_mutex_unlock(&item->actions_mutex);
 
 	if (actions_pending) {
-		uint64_t duration = (uint64_t)AUDIO_OUTPUT_FRAMES *
-				    1000000000ULL / (uint64_t)sample_rate;
+		uint64_t duration = util_mul_div64(AUDIO_OUTPUT_FRAMES,
+						   1000000000ULL, sample_rate);
 
 		if (!ts || action.timestamp < (ts + duration)) {
 			apply_scene_item_audio_actions(item, buf, ts,

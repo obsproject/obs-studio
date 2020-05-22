@@ -6,6 +6,7 @@
 #include <windows.h>
 #include <dxgi.h>
 #include <util/sse-intrin.h>
+#include <util/util_uint64.h>
 #include <ipc-util/pipe.h>
 #include "obfuscate.h"
 #include "inject-library.h"
@@ -729,7 +730,8 @@ static inline void reset_frame_interval(struct game_capture *gc)
 	uint64_t interval = 0;
 
 	if (obs_get_video_info(&ovi)) {
-		interval = ovi.fps_den * 1000000000ULL / ovi.fps_num;
+		interval =
+			util_mul_div64(ovi.fps_den, 1000000000ULL, ovi.fps_num);
 
 		/* Always limit capture framerate to some extent.  If a game
 		 * running at 900 FPS is being captured without some sort of

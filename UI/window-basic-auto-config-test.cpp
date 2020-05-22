@@ -4,6 +4,7 @@
 
 #include <obs.hpp>
 #include <util/platform.h>
+#include <util/util_uint64.h>
 #include <graphics/vec4.h>
 #include <graphics/graphics.h>
 #include <graphics/math-extra.h>
@@ -413,12 +414,14 @@ void AutoConfigTestPage::TestBandwidthThread()
 		cv.wait(ul);
 
 		uint64_t total_time = os_gettime_ns() - t_start;
+		if (total_time == 0)
+			total_time = 1;
 
 		int total_bytes =
 			(int)obs_output_get_total_bytes(output) - start_bytes;
-		uint64_t bitrate = (uint64_t)total_bytes * 8 * 1000000000 /
-				   total_time / 1000;
-
+		uint64_t bitrate = util_mul_div64(
+			total_bytes, 8ULL * 1000000000ULL / 1000ULL,
+			total_time);
 		if (obs_output_get_frames_dropped(output) ||
 		    (int)bitrate < (wiz->startingBitrate * 75 / 100)) {
 			server.bitrate = (int)bitrate * 70 / 100;

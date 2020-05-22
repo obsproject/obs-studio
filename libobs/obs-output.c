@@ -17,6 +17,7 @@
 
 #include <inttypes.h>
 #include "util/platform.h"
+#include "util/util_uint64.h"
 #include "obs.h"
 #include "obs-internal.h"
 
@@ -1731,8 +1732,8 @@ static bool prepare_audio(struct obs_output *output,
 	*new = *old;
 
 	if (old->timestamp < output->video_start_ts) {
-		uint64_t duration = (uint64_t)old->frames * 1000000000 /
-				    (uint64_t)output->sample_rate;
+		uint64_t duration = util_mul_div64(old->frames, 1000000000ULL,
+						   output->sample_rate);
 		uint64_t end_ts = (old->timestamp + duration);
 		uint64_t cutoff;
 
@@ -1742,7 +1743,8 @@ static bool prepare_audio(struct obs_output *output,
 		cutoff = output->video_start_ts - old->timestamp;
 		new->timestamp += cutoff;
 
-		cutoff = cutoff * (uint64_t)output->sample_rate / 1000000000;
+		cutoff = util_mul_div64(cutoff, output->sample_rate,
+					1000000000ULL);
 
 		for (size_t i = 0; i < output->planes; i++)
 			new->data[i] += output->audio_size *(uint32_t)cutoff;

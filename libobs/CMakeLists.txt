@@ -370,6 +370,7 @@ set(libobs_util_HEADERS
 	util/text-lookup.h
 	util/bmem.h
 	util/c99defs.h
+	util/util_uint64.h
 	util/util_uint128.h
 	util/cf-parser.h
 	util/threading.h
