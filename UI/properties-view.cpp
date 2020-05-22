@@ -650,7 +650,7 @@ void OBSPropertiesView::AddColor(obs_property_t *prop, QFormLayout *layout,
 
 	QPalette palette = QPalette(color);
 	colorLabel->setFrameStyle(QFrame::Sunken | QFrame::Panel);
-	colorLabel->setText(color.name(QColor::HexArgb));
+	colorLabel->setText(color.name(QColor::HexRgb));
 	colorLabel->setPalette(palette);
 	colorLabel->setStyleSheet(
 		QString("background-color :%1; color: %2;")
