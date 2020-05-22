@@ -474,7 +474,6 @@ DXGI_FORMAT vk_format_to_dxgi(VkFormat format)
 	case VK_FORMAT_A8B8G8R8_SRGB_PACK32:
 		break;
 	case VK_FORMAT_A2R10G10B10_UNORM_PACK32:
-		dxgi_format = DXGI_FORMAT_R10G10B10A2_UNORM;
 		break;
 	case VK_FORMAT_A2R10G10B10_SNORM_PACK32:
 		break;
@@ -841,11 +840,6 @@ DXGI_FORMAT vk_format_to_dxgi(VkFormat format)
 		break;
 	case VK_FORMAT_PVRTC2_4BPP_SRGB_BLOCK_IMG:
 		break;
-	}
-	if (dxgi_format == DXGI_FORMAT_UNKNOWN) {
-		flog("unknown swapchain format, "
-		     "defaulting to B8G8R8A8_UNORM");
-		dxgi_format = DXGI_FORMAT_B8G8R8A8_UNORM;
 	}
 	return dxgi_format;
 }

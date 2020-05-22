@@ -471,16 +471,24 @@ static inline bool vk_shtex_init_d3d11_tex(struct vk_data *data,
 	IDXGIResource *dxgi_res;
 	HRESULT hr;
 
+	const UINT width = swap->image_extent.width;
+	const UINT height = swap->image_extent.height;
+
+	flog("OBS requesting %s texture format. capture dimensions: %ux%u",
+	     vk_format_to_str(swap->format), width, height);
+
+	const DXGI_FORMAT format = vk_format_to_dxgi(swap->format);
+	if (format == DXGI_FORMAT_UNKNOWN) {
+		flog("cannot convert to DXGI format");
+		return false;
+	}
+
 	D3D11_TEXTURE2D_DESC desc = {0};
-	desc.Width = swap->image_extent.width;
-	desc.Height = swap->image_extent.height;
+	desc.Width = width;
+	desc.Height = height;
 	desc.MipLevels = 1;
 	desc.ArraySize = 1;
-
-	flog("OBS requesting %s texture format.  capture dimensions: %dx%d",
-	     vk_format_to_str(swap->format), (int)desc.Width, (int)desc.Height);
-
-	desc.Format = vk_format_to_dxgi(swap->format);
+	desc.Format = format;
 	desc.SampleDesc.Count = 1;
 	desc.SampleDesc.Quality = 0;
 	desc.Usage = D3D11_USAGE_DEFAULT;
