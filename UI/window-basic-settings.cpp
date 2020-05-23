@@ -103,6 +103,11 @@ static inline bool ResTooHigh(uint32_t cx, uint32_t cy)
 	return cx > 16384 || cy > 16384;
 }
 
+static inline bool ResTooLow(uint32_t cx, uint32_t cy)
+{
+	return cx < 8 || cy < 8;
+}
+
 /* parses "[width]x[height]", string, i.e. 1024x768 */
 static bool ConvertResText(const char *res, uint32_t &cx, uint32_t &cy)
 {
@@ -137,7 +142,7 @@ static bool ConvertResText(const char *res, uint32_t &cx, uint32_t &cy)
 	if (lexer_getbasetoken(lex, &token, IGNORE_WHITESPACE))
 		return false;
 
-	if (ResTooHigh(cx, cy)) {
+	if (ResTooHigh(cx, cy) || ResTooLow(cx, cy)) {
 		cx = cy = 0;
 		return false;
 	}

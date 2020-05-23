@@ -3706,14 +3706,14 @@ int OBSBasic::ResetVideo()
 	ovi.gpu_conversion = true;
 	ovi.scale_type = GetScaleType(basicConfig);
 
-	if (ovi.base_width == 0 || ovi.base_height == 0) {
+	if (ovi.base_width < 8 || ovi.base_height < 8) {
 		ovi.base_width = 1920;
 		ovi.base_height = 1080;
 		config_set_uint(basicConfig, "Video", "BaseCX", 1920);
 		config_set_uint(basicConfig, "Video", "BaseCY", 1080);
 	}
 
-	if (ovi.output_width == 0 || ovi.output_height == 0) {
+	if (ovi.output_width < 8 || ovi.output_height < 8) {
 		ovi.output_width = ovi.base_width;
 		ovi.output_height = ovi.base_height;
 		config_set_uint(basicConfig, "Video", "OutputCX",
@@ -4727,7 +4727,7 @@ void OBSBasic::CreateSourcePopupMenu(int idx, bool preview)
 
 		resizeOutput->setEnabled(!obs_video_active());
 
-		if (width == 0 || height == 0)
+		if (width < 8 || height < 8)
 			resizeOutput->setEnabled(false);
 
 		scaleFilteringMenu = new QMenu(QTStr("ScaleFiltering"));
