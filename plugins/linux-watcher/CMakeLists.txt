@@ -3,7 +3,8 @@ project(watcher)
 
 set(watcher_SOURCES
       watcher.c
-      watcher-source.c)
+      watcher-source.c
+      queue.c)
 
 add_library(watcher MODULE
       ${watcher_SOURCES})

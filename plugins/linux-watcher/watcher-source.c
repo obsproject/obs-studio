@@ -1,16 +1,23 @@
 #include <obs-module.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <errno.h>
 #include <sys/types.h>
 #include <sys/inotify.h>
-#include <unistd.h>
+#include <sys/syscall.h>
 #include <limits.h>
-#include <pthread.h> 
+#include <pthread.h>
+#include <unistd.h>
+#include "obs-internal.h"
+
+#include "queue.h"
 
 
+static pthread_mutex_t watcher_mutex = PTHREAD_MUTEX_INITIALIZER;
+static signal_handler_t *watcher_signalhandler = NULL;
+static const char *watcher_signals[] = {"void device_added(string device)", NULL};
 #define BUF_LEN (10 * (sizeof(struct inotify_event) + NAME_MAX + 1))
- 
 
 struct watcher_source {
 	uint32_t color;
@@ -18,90 +25,129 @@ struct watcher_source {
 	uint32_t width;
 	uint32_t height;
 
+	pthread_t watcher;
+	int wd;
+	int wfd;
+	q_head *wqh;
+
+
 	obs_source_t *src;
 };
- 
+
 struct watcher_handler {
-	void * src;
-	void * cb;
+	void *src;
+	void *cb;
 };
 
- static void displayInotifyEvent(struct inotify_event *i)
- {
-     printf("    wd =%2d; ", i->wd);
-     if (i->cookie > 0)
-         printf("cookie =%4d; ", i->cookie);
- 
-     printf("mask = ");
-     if (i->mask & IN_ACCESS)        printf("IN_ACCESS ");
-     if (i->mask & IN_ATTRIB)        printf("IN_ATTRIB ");
-     if (i->mask & IN_CLOSE_NOWRITE) printf("IN_CLOSE_NOWRITE ");
-     if (i->mask & IN_CLOSE_WRITE)   printf("IN_CLOSE_WRITE ");
-     if (i->mask & IN_CREATE)        printf("IN_CREATE ");
-     if (i->mask & IN_DELETE)        printf("IN_DELETE ");
-     if (i->mask & IN_DELETE_SELF)   printf("IN_DELETE_SELF ");
-     if (i->mask & IN_IGNORED)       printf("IN_IGNORED ");
-     if (i->mask & IN_ISDIR)         printf("IN_ISDIR ");
-     if (i->mask & IN_MODIFY)        printf("IN_MODIFY ");
-     if (i->mask & IN_MOVE_SELF)     printf("IN_MOVE_SELF ");
-     if (i->mask & IN_MOVED_FROM)    printf("IN_MOVED_FROM ");
-     if (i->mask & IN_MOVED_TO)      printf("IN_MOVED_TO ");
-     if (i->mask & IN_OPEN)          printf("IN_OPEN ");
-     if (i->mask & IN_Q_OVERFLOW)    printf("IN_Q_OVERFLOW ");
-     if (i->mask & IN_UNMOUNT)       printf("IN_UNMOUNT ");
-     printf("\n");
- 
-     if (i->len > 0)
-         printf("        name = %s\n", i->name);
- }
 
-static void* watcher_source_watch(void * args)
+static void device_added(void *data, calldata_t *calldata)
 {
-	 int inotifyFd, wd, j;
-     char buf[BUF_LEN] __attribute__ ((aligned(8)));
-     ssize_t numRead;
-     char *p;
-     struct inotify_event *event;
-	 struct watcher_source *context = args;
- 
-     inotifyFd = inotify_init();                 /* Create inotify instance */
-     if (inotifyFd == -1)
-         printf("[ERROR] inotify_init");
- 
-	 
-     
-	wd = inotify_add_watch(inotifyFd, "/tmp/test", IN_ALL_EVENTS);
-	if (wd == -1)
-		printf("[ERROR] inotify_add_watch");
- 
-    printf("Watching %s using wd %d\n", "/tmp/test", wd);
-    
-     for (;;) {                                  /* Read events forever */
-         numRead = read(inotifyFd, buf, BUF_LEN);
-         if (numRead == 0)
-             printf("[ERROR] read() from inotify fd returned 0!");
- 
-         if (numRead == -1)
-             continue;
- 
-         printf("Read %ld bytes from inotify fd\n", (long) numRead);
- 
-         /* Process all of the events in buffer returned by read() */
- 
-         for (p = buf; p < buf + numRead; ) {
-             event = (struct inotify_event *) p;
-             displayInotifyEvent(event);
-			 context->color = 0xFFFFFF00;
-             p += sizeof(struct inotify_event) + event->len;
-         }
-     }
+	//printf("before calling pthread_create getpid: %d getpthread_self: %lu\n",getpid(), pthread_self());
+	printf("here failed ..\n");
+	struct watcher_source *context = data;
+	obs_source_update_properties(context->src);	
+	const char *file;
+	calldata_get_string(calldata, "device", &file);
+	queue.put(context->wqh, &file);
+	char **mem;
+    while ((mem = queue.get(context->wqh)) != NULL) {
+		printf("%s\n", *mem);
+	}
+	printf("here %s\n", file);
+	// if (strcmp(data->device_id, dev))
+	// 	return;
 
+	// blog(LOG_INFO, "Device %s reconnected", dev);
+
+
+}
+
+static void *watcher_source_watch(void *data)
+{
+	char buf[BUF_LEN] __attribute__((aligned(8)));
+	ssize_t numRead;
+	char *p;
+	struct inotify_event *event;
+	struct watcher_source *context = data;
+
+	context->wfd = inotify_init(); /* Create inotify instance */
+	if (context->wfd == -1)
+		printf("[ERROR] inotify_init");
+
+	context->wd =
+		inotify_add_watch(context->wfd, "/tmp/test", IN_ALL_EVENTS);
+	if (context->wd == -1)
+		printf("[ERROR] inotify_add_watch");
+
+	printf("Watching %s using wd %d\n", "/tmp/test", context->wd);
+
+	for (;;) { /* Read events forever */
+		numRead = read(context->wfd, buf, BUF_LEN);
+		if (numRead == 0)
+			printf("[ERROR] read() from inotify fd returned 0!");
+
+		if (numRead == -1)
+			continue;
+
+		/* Add a file to the queue if a file was created */
+		for (p = buf; p < buf + numRead;) {
+			event = (struct inotify_event *)p;
+			if (event->mask & IN_CREATE) {
+				// struct node *e = malloc(sizeof(struct node));
+				// if (e == NULL) {
+				// 	fprintf(stderr, "malloc failed");
+				// 	exit(EXIT_FAILURE);
+				// }
+				
+				printf("Found file %s\n", event->name);
+				//TAILQ_INSERT_TAIL(&head, e, nodes);
+				//e = NULL;
+				struct calldata msg;
+
+				pthread_mutex_lock(&watcher_mutex);
+
+				calldata_init(&msg);
+				char file[BUF_LEN];
+				snprintf(file, sizeof(buf), "%s", event->name);
+				calldata_set_string(&msg, "device", file);
+
+				signal_handler_signal(
+					watcher_signalhandler,
+					"device_added", &msg);
+
+				calldata_free(&msg);
+
+				pthread_mutex_unlock(&watcher_mutex);
+			}
+			context->color = 0xFFFFFF00;
+			p += sizeof(struct inotify_event) + event->len;
+		}
+	}
+
+	// //TODO: Clean up and sigint thread
+	// struct node *e = NULL;
+	// while (!TAILQ_EMPTY(&head)) {
+	// 	e = TAILQ_FIRST(&head);
+	// 	TAILQ_REMOVE(&head, e, nodes);
+	// 	free(e);
+	// 	e = NULL;
+	// }
+
+	return NULL;
 }
 
 static const char *watcher_source_get_name(void *unused)
 {
 	UNUSED_PARAMETER(unused);
 	return obs_module_text("WatcherSource");
+}
+
+static void watcher_clean(void *data)
+{
+	struct watcher_source *context = data;
+	inotify_rm_watch(context->wfd, context->wd);
+	close(context->wfd);
+	//TODO: clean up q
 }
 
 static void watcher_source_update(void *data, obs_data_t *settings)
@@ -111,22 +157,43 @@ static void watcher_source_update(void *data, obs_data_t *settings)
 	uint32_t width = (uint32_t)obs_data_get_int(settings, "width");
 	uint32_t height = (uint32_t)obs_data_get_int(settings, "height");
 
+	// if (context->watcher != (pthread_t)NULL) {
+	// 	pthread_cancel(context->watcher);
+	// 	pthread_join(context->watcher, NULL);
+	// 	watcher_clean(data);
+	// }
 	context->color = color;
 	context->width = width;
 	context->height = height;
-
-	pthread_t thread_id;
-	pthread_create(&thread_id, NULL, watcher_source_watch, data); 
-
+	
+	
 }
 
 static void *watcher_source_create(obs_data_t *settings, obs_source_t *source)
 {
+	int x = syscall(SYS_gettid);
+	//printf("%d",x);
+	//printf("0 before calling pthread_create getpid: %d getpthread_self: %lu\n",getpid(), pthread_self());
+	
 	UNUSED_PARAMETER(source);
 
 	struct watcher_source *context = bzalloc(sizeof(struct watcher_source));
 	context->src = source;
+	context->wqh = queue.q_init();
 
+	pthread_mutex_lock(&watcher_mutex);
+	if (pthread_create(&context->watcher, NULL, watcher_source_watch, context) != 0)
+			goto fail;
+	//signal_handler_t *sh = v4l2_get_udev_signalhandler();
+	watcher_signalhandler = signal_handler_create();
+		if (!watcher_signalhandler)
+			goto fail;
+		signal_handler_add_array(watcher_signalhandler, watcher_signals);
+
+	signal_handler_connect(watcher_signalhandler, "device_added", &device_added, context);
+
+fail:
+	pthread_mutex_unlock(&watcher_mutex);
 	watcher_source_update(context, settings);
 
 	return context;
@@ -135,9 +202,7 @@ static void *watcher_source_create(obs_data_t *settings, obs_source_t *source)
 static void watcher_source_destroy(void *data)
 {
 	bfree(data);
-	//TODO: AG
-   //inotify_rm_watch( fd, wd );
-   //close( fd );
+	watcher_clean(data);
 }
 
 static obs_properties_t *watcher_source_properties(void *unused)
@@ -204,7 +269,7 @@ static void watcher_source_defaults(obs_data_t *settings)
 
 struct obs_source_info watcher_source_info = {
 	.id = "watcher_source",
-	.version = 2,
+	.version = 3,
 	.type = OBS_SOURCE_TYPE_INPUT,
 	.output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_CUSTOM_DRAW,
 	.create = watcher_source_create,
