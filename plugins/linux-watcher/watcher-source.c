@@ -55,6 +55,10 @@ static void file_added(void *data, calldata_t *calldata)
 	}
 	e->file = file;
 	TAILQ_INSERT_TAIL(&context->wqh, e, wfnodes);
+	// TAILQ_FOREACH(e, head, nodes)
+    // {
+    //     printf("%c", e->c);
+    // }
 	e = NULL;
 	printf("booyah here %s\n", file);
 }
