@@ -6,18 +6,24 @@
 #include <sys/types.h>
 #include <sys/inotify.h>
 #include <sys/syscall.h>
+#include <sys/queue.h>
 #include <limits.h>
 #include <pthread.h>
 #include <unistd.h>
+
 #include "obs-internal.h"
-
-#include "queue.h"
-
 
 static pthread_mutex_t watcher_mutex = PTHREAD_MUTEX_INITIALIZER;
 static signal_handler_t *watcher_signalhandler = NULL;
-static const char *watcher_signals[] = {"void device_added(string device)", NULL};
+static const char *watcher_signals[] = {"void file_added(string file)", NULL};
 #define BUF_LEN (10 * (sizeof(struct inotify_event) + NAME_MAX + 1))
+
+//Queue for watcher files
+typedef struct wfnode {
+	char *file;
+	TAILQ_ENTRY(wfnode) wfnodes;
+} wfnode_t;
+typedef TAILQ_HEAD(wfhead_s, wfnode) wfhead_t;
 
 struct watcher_source {
 	uint32_t color;
@@ -28,38 +34,29 @@ struct watcher_source {
 	pthread_t watcher;
 	int wd;
 	int wfd;
-	q_head *wqh;
-
+	wfhead_t wqh;
 
 	obs_source_t *src;
 };
 
-struct watcher_handler {
-	void *src;
-	void *cb;
-};
-
-
-static void device_added(void *data, calldata_t *calldata)
+static void file_added(void *data, calldata_t *calldata)
 {
 	//printf("before calling pthread_create getpid: %d getpthread_self: %lu\n",getpid(), pthread_self());
 	printf("here failed ..\n");
 	struct watcher_source *context = data;
-	obs_source_update_properties(context->src);	
+	obs_source_update_properties(context->src);
 	const char *file;
-	calldata_get_string(calldata, "device", &file);
-	queue.put(context->wqh, &file);
-	char **mem;
-    while ((mem = queue.get(context->wqh)) != NULL) {
-		printf("%s\n", *mem);
+	calldata_get_string(calldata, "file", &file);
+	struct wfnode *e = NULL;
+	e = malloc(sizeof(struct wfnode));
+	if (e == NULL) {
+		fprintf(stderr, "malloc failed");
+		exit(EXIT_FAILURE);
 	}
-	printf("here %s\n", file);
-	// if (strcmp(data->device_id, dev))
-	// 	return;
-
-	// blog(LOG_INFO, "Device %s reconnected", dev);
-
-
+	e->file = file;
+	TAILQ_INSERT_TAIL(&context->wqh, e, wfnodes);
+	e = NULL;
+	printf("booyah here %s\n", file);
 }
 
 static void *watcher_source_watch(void *data)
@@ -98,7 +95,7 @@ static void *watcher_source_watch(void *data)
 				// 	fprintf(stderr, "malloc failed");
 				// 	exit(EXIT_FAILURE);
 				// }
-				
+
 				printf("Found file %s\n", event->name);
 				//TAILQ_INSERT_TAIL(&head, e, nodes);
 				//e = NULL;
@@ -109,11 +106,10 @@ static void *watcher_source_watch(void *data)
 				calldata_init(&msg);
 				char file[BUF_LEN];
 				snprintf(file, sizeof(buf), "%s", event->name);
-				calldata_set_string(&msg, "device", file);
+				calldata_set_string(&msg, "file", file);
 
-				signal_handler_signal(
-					watcher_signalhandler,
-					"device_added", &msg);
+				signal_handler_signal(watcher_signalhandler,
+						      "file_added", &msg);
 
 				calldata_free(&msg);
 
@@ -123,15 +119,6 @@ static void *watcher_source_watch(void *data)
 			p += sizeof(struct inotify_event) + event->len;
 		}
 	}
-
-	// //TODO: Clean up and sigint thread
-	// struct node *e = NULL;
-	// while (!TAILQ_EMPTY(&head)) {
-	// 	e = TAILQ_FIRST(&head);
-	// 	TAILQ_REMOVE(&head, e, nodes);
-	// 	free(e);
-	// 	e = NULL;
-	// }
 
 	return NULL;
 }
@@ -147,7 +134,13 @@ static void watcher_clean(void *data)
 	struct watcher_source *context = data;
 	inotify_rm_watch(context->wfd, context->wd);
 	close(context->wfd);
-	//TODO: clean up q
+	while (!TAILQ_EMPTY(&context->wqh))
+    {
+        struct wfnode * e = TAILQ_FIRST(&context->wqh);
+        TAILQ_REMOVE(&context->wqh, e, wfnodes);
+        free(e);
+        e = NULL;
+    }
 }
 
 static void watcher_source_update(void *data, obs_data_t *settings)
@@ -157,16 +150,15 @@ static void watcher_source_update(void *data, obs_data_t *settings)
 	uint32_t width = (uint32_t)obs_data_get_int(settings, "width");
 	uint32_t height = (uint32_t)obs_data_get_int(settings, "height");
 
-	// if (context->watcher != (pthread_t)NULL) {
-	// 	pthread_cancel(context->watcher);
-	// 	pthread_join(context->watcher, NULL);
-	// 	watcher_clean(data);
-	// }
+	if (context->watcher != (pthread_t)NULL) {
+		pthread_cancel(context->watcher);
+		pthread_join(context->watcher, NULL);
+		watcher_clean(data);
+	}
 	context->color = color;
 	context->width = width;
 	context->height = height;
-	
-	
+	pthread_create(&context->watcher, NULL, watcher_source_watch, context);
 }
 
 static void *watcher_source_create(obs_data_t *settings, obs_source_t *source)
@@ -174,23 +166,23 @@ static void *watcher_source_create(obs_data_t *settings, obs_source_t *source)
 	int x = syscall(SYS_gettid);
 	//printf("%d",x);
 	//printf("0 before calling pthread_create getpid: %d getpthread_self: %lu\n",getpid(), pthread_self());
-	
+
 	UNUSED_PARAMETER(source);
 
 	struct watcher_source *context = bzalloc(sizeof(struct watcher_source));
 	context->src = source;
-	context->wqh = queue.q_init();
+	wfhead_t head;
+	TAILQ_INIT(&head);
+	context->wqh = head;
 
-	pthread_mutex_lock(&watcher_mutex);
-	if (pthread_create(&context->watcher, NULL, watcher_source_watch, context) != 0)
-			goto fail;
-	//signal_handler_t *sh = v4l2_get_udev_signalhandler();
+	pthread_mutex_lock(&watcher_mutex);	
 	watcher_signalhandler = signal_handler_create();
-		if (!watcher_signalhandler)
-			goto fail;
-		signal_handler_add_array(watcher_signalhandler, watcher_signals);
+	if (!watcher_signalhandler)
+		goto fail;
+	signal_handler_add_array(watcher_signalhandler, watcher_signals);
 
-	signal_handler_connect(watcher_signalhandler, "device_added", &device_added, context);
+	signal_handler_connect(watcher_signalhandler, "file_added", &file_added,
+			       context);
 
 fail:
 	pthread_mutex_unlock(&watcher_mutex);
