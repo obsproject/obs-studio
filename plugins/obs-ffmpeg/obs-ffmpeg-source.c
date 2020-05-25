@@ -87,8 +87,6 @@ static bool is_local_file_modified(obs_properties_t *props,
 	obs_property_t *local_file = obs_properties_get(props, "local_file");
 	obs_property_t *looping = obs_properties_get(props, "looping");
 	obs_property_t *buffering = obs_properties_get(props, "buffering_mb");
-	obs_property_t *close =
-		obs_properties_get(props, "close_when_inactive");
 	obs_property_t *seekable = obs_properties_get(props, "seekable");
 	obs_property_t *speed = obs_properties_get(props, "speed_percent");
 	obs_property_t *reconnect_delay_sec =
@@ -96,7 +94,6 @@ static bool is_local_file_modified(obs_properties_t *props,
 	obs_property_set_visible(input, !enabled);
 	obs_property_set_visible(input_format, !enabled);
 	obs_property_set_visible(buffering, !enabled);
-	obs_property_set_visible(close, enabled);
 	obs_property_set_visible(local_file, enabled);
 	obs_property_set_visible(looping, enabled);
 	obs_property_set_visible(speed, enabled);
@@ -392,8 +389,6 @@ static void ffmpeg_source_update(void *data, obs_data_t *settings)
 		input = (char *)obs_data_get_string(settings, "local_file");
 		input_format = NULL;
 		s->is_looping = obs_data_get_bool(settings, "looping");
-		s->close_when_inactive =
-			obs_data_get_bool(settings, "close_when_inactive");
 	} else {
 		input = (char *)obs_data_get_string(settings, "input");
 		input_format =
@@ -404,7 +399,6 @@ static void ffmpeg_source_update(void *data, obs_data_t *settings)
 						 ? 10
 						 : s->reconnect_delay_sec;
 		s->is_looping = false;
-		s->close_when_inactive = true;
 
 		if (s->reconnect_thread_valid) {
 			s->stop_reconnect = true;
@@ -412,6 +406,9 @@ static void ffmpeg_source_update(void *data, obs_data_t *settings)
 			s->stop_reconnect = false;
 		}
 	}
+
+	s->close_when_inactive =
+		obs_data_get_bool(settings, "close_when_inactive");
 
 	s->input = input ? bstrdup(input) : NULL;
 	s->input_format = input_format ? bstrdup(input_format) : NULL;
