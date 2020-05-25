@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2020 Andrew Grosser <dioptre@gmail.com>, 2015 John R. Bradley <jrb@turrettech.com>
+ *
+ * Permission to use, copy, modify, and distribute this software for any
+ * purpose with or without fee is hereby granted, provided that the above
+ * copyright notice and this permission notice appear in all copies.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+ * ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+ * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+ */
+
 #include <obs-module.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -12,10 +28,27 @@
 #include <unistd.h>
 
 #include "obs-internal.h"
+#include <obs-module.h>
+#include <util/platform.h>
+#include <util/dstr.h>
+
+#include "obs-ffmpeg-compat.h"
+#include "obs-ffmpeg-formats.h"
+
+#include <media-playback/media.h>
+
+#define FF_LOG(level, format, ...) \
+	blog(level, "[Media Source]: " format, ##__VA_ARGS__)
+#define FF_LOG_S(source, level, format, ...)        \
+	blog(level, "[Media Source '%s']: " format, \
+	     obs_source_get_name(source), ##__VA_ARGS__)
+#define FF_BLOG(level, format, ...) \
+	FF_LOG_S(s->source, level, format, ##__VA_ARGS__)
+
 
 static pthread_mutex_t watcher_mutex = PTHREAD_MUTEX_INITIALIZER;
 static signal_handler_t *watcher_signalhandler = NULL;
-static const char *watcher_signals[] = {"void file_added(string file)", NULL};
+static const char *watcher_signals[] = {"void watcher_file_added(string file)", NULL};
 #define BUF_LEN (10 * (sizeof(struct inotify_event) + NAME_MAX + 1))
 
 //Queue for watcher files
@@ -26,25 +59,49 @@ typedef struct wfnode {
 typedef TAILQ_HEAD(wfhead_s, wfnode) wfhead_t;
 
 struct watcher_source {
-	uint32_t color;
+	mp_media_t media;
+	bool media_valid;
+	bool destroy_media;
 
-	uint32_t width;
-	uint32_t height;
+	struct SwsContext *sws_ctx;
+	int sws_width;
+	int sws_height;
+	enum AVPixelFormat sws_format;
+	uint8_t *sws_data;
+	int sws_linesize;
+	enum video_range_type range;
+	obs_source_t *source;
+	obs_hotkey_id hotkey;
+
+	char *input;
+	char *input_format;
+	int buffering_mb;
+	int speed_percent;
+	bool is_looping;
+	bool is_local_file;
+	bool is_hw_decoding;
+	bool is_clear_on_media_end;
+	bool restart_on_activate;
+	bool close_when_inactive;
+	bool seekable;
+
+	enum obs_media_state state;
+	obs_hotkey_pair_id play_pause_hotkey;
+	obs_hotkey_id stop_hotkey;
 
 	pthread_t watcher;
 	int wd;
 	int wfd;
 	wfhead_t wqh;
 
-	obs_source_t *src;
 };
 
-static void file_added(void *data, calldata_t *calldata)
+static void watcher_file_added(void *data, calldata_t *calldata)
 {
 	//printf("before calling pthread_create getpid: %d getpthread_self: %lu\n",getpid(), pthread_self());
 	printf("here failed ..\n");
 	struct watcher_source *context = data;
-	obs_source_update_properties(context->src);
+	obs_source_update_properties(context->source);
 	const char *file;
 	calldata_get_string(calldata, "file", &file);
 	struct wfnode *e = NULL;
@@ -113,24 +170,17 @@ static void *watcher_source_watch(void *data)
 				calldata_set_string(&msg, "file", file);
 
 				signal_handler_signal(watcher_signalhandler,
-						      "file_added", &msg);
+						      "watcher_file_added", &msg);
 
 				calldata_free(&msg);
 
 				pthread_mutex_unlock(&watcher_mutex);
 			}
-			context->color = 0xFFFFFF00;
 			p += sizeof(struct inotify_event) + event->len;
 		}
 	}
 
 	return NULL;
-}
-
-static const char *watcher_source_get_name(void *unused)
-{
-	UNUSED_PARAMETER(unused);
-	return obs_module_text("WatcherSource");
 }
 
 static void watcher_clean(void *data)
@@ -147,37 +197,462 @@ static void watcher_clean(void *data)
     }
 }
 
+static void set_media_state(void *data, enum obs_media_state state)
+{
+	struct watcher_source *s = data;
+	s->state = state;
+}
+
+static bool is_local_file_modified(obs_properties_t *props,
+				   obs_property_t *prop, obs_data_t *settings)
+{
+	UNUSED_PARAMETER(prop);
+
+	bool enabled = obs_data_get_bool(settings, "is_local_file");
+	obs_property_t *input = obs_properties_get(props, "input");
+	obs_property_t *input_format =
+		obs_properties_get(props, "input_format");
+	obs_property_t *local_file = obs_properties_get(props, "local_file");
+	obs_property_t *looping = obs_properties_get(props, "looping");
+	obs_property_t *buffering = obs_properties_get(props, "buffering_mb");
+	obs_property_t *close =
+		obs_properties_get(props, "close_when_inactive");
+	obs_property_t *seekable = obs_properties_get(props, "seekable");
+	obs_property_t *speed = obs_properties_get(props, "speed_percent");
+	obs_property_set_visible(input, !enabled);
+	obs_property_set_visible(input_format, !enabled);
+	obs_property_set_visible(buffering, !enabled);
+	obs_property_set_visible(close, enabled);
+	obs_property_set_visible(local_file, enabled);
+	obs_property_set_visible(looping, enabled);
+	obs_property_set_visible(speed, enabled);
+	obs_property_set_visible(seekable, !enabled);
+
+	return true;
+}
+
+static void watcher_source_defaults(obs_data_t *settings)
+{
+	obs_data_set_default_bool(settings, "is_local_file", true);
+	obs_data_set_default_bool(settings, "looping", false);
+	obs_data_set_default_bool(settings, "clear_on_media_end", true);
+	obs_data_set_default_bool(settings, "restart_on_activate", true);
+	obs_data_set_default_int(settings, "buffering_mb", 2);
+	obs_data_set_default_int(settings, "speed_percent", 100);
+}
+
+static const char *media_filter =
+	" (*.mp4 *.ts *.mov *.flv *.mkv *.avi *.mp3 *.ogg *.aac *.wav *.gif *.webm);;";
+static const char *video_filter =
+	" (*.mp4 *.ts *.mov *.flv *.mkv *.avi *.gif *.webm);;";
+static const char *audio_filter = " (*.mp3 *.aac *.ogg *.wav);;";
+
+static obs_properties_t *watcher_source_getproperties(void *data)
+{
+	struct watcher_source *s = data;
+	struct dstr filter = {0};
+	struct dstr path = {0};
+	UNUSED_PARAMETER(data);
+
+	obs_properties_t *props = obs_properties_create();
+
+	obs_properties_set_flags(props, OBS_PROPERTIES_DEFER_UPDATE);
+
+	obs_property_t *prop;
+	// use this when obs allows non-readonly paths
+	prop = obs_properties_add_bool(props, "is_local_file",
+				       obs_module_text("LocalFile"));
+
+	obs_property_set_modified_callback(prop, is_local_file_modified);
+
+	dstr_copy(&filter, obs_module_text("MediaFileFilter.AllMediaFiles"));
+	dstr_cat(&filter, media_filter);
+	dstr_cat(&filter, obs_module_text("MediaFileFilter.VideoFiles"));
+	dstr_cat(&filter, video_filter);
+	dstr_cat(&filter, obs_module_text("MediaFileFilter.AudioFiles"));
+	dstr_cat(&filter, audio_filter);
+	dstr_cat(&filter, obs_module_text("MediaFileFilter.AllFiles"));
+	dstr_cat(&filter, " (*.*)");
+
+	if (s && s->input && *s->input) {
+		const char *slash;
+
+		dstr_copy(&path, s->input);
+		dstr_replace(&path, "\\", "/");
+		slash = strrchr(path.array, '/');
+		if (slash)
+			dstr_resize(&path, slash - path.array + 1);
+	}
+
+	obs_properties_add_path(props, "local_file",
+				obs_module_text("LocalFile"), OBS_PATH_FILE,
+				filter.array, path.array);
+	dstr_free(&filter);
+	dstr_free(&path);
+
+	prop = obs_properties_add_bool(props, "looping",
+				       obs_module_text("Looping"));
+
+	obs_properties_add_bool(props, "restart_on_activate",
+				obs_module_text("RestartWhenActivated"));
+
+	prop = obs_properties_add_int_slider(props, "buffering_mb",
+					     obs_module_text("BufferingMB"), 0,
+					     16, 1);
+	obs_property_int_set_suffix(prop, " MB");
+
+	obs_properties_add_text(props, "input", obs_module_text("Input"),
+				OBS_TEXT_DEFAULT);
+
+	obs_properties_add_text(props, "input_format",
+				obs_module_text("InputFormat"),
+				OBS_TEXT_DEFAULT);
+
+#ifndef __APPLE__
+	obs_properties_add_bool(props, "hw_decode",
+				obs_module_text("HardwareDecode"));
+#endif
+
+	obs_properties_add_bool(props, "clear_on_media_end",
+				obs_module_text("ClearOnMediaEnd"));
+
+	prop = obs_properties_add_bool(
+		props, "close_when_inactive",
+		obs_module_text("CloseFileWhenInactive"));
+
+	obs_property_set_long_description(
+		prop, obs_module_text("CloseFileWhenInactive.ToolTip"));
+
+	prop = obs_properties_add_int_slider(props, "speed_percent",
+					     obs_module_text("SpeedPercentage"),
+					     1, 200, 1);
+	obs_property_int_set_suffix(prop, "%");
+
+	prop = obs_properties_add_list(props, "color_range",
+				       obs_module_text("ColorRange"),
+				       OBS_COMBO_TYPE_LIST,
+				       OBS_COMBO_FORMAT_INT);
+	obs_property_list_add_int(prop, obs_module_text("ColorRange.Auto"),
+				  VIDEO_RANGE_DEFAULT);
+	obs_property_list_add_int(prop, obs_module_text("ColorRange.Partial"),
+				  VIDEO_RANGE_PARTIAL);
+	obs_property_list_add_int(prop, obs_module_text("ColorRange.Full"),
+				  VIDEO_RANGE_FULL);
+
+	obs_properties_add_bool(props, "seekable", obs_module_text("Seekable"));
+
+	return props;
+}
+
+static void dump_source_info(struct watcher_source *s, const char *input,
+			     const char *input_format)
+{
+	FF_BLOG(LOG_INFO,
+		"settings:\n"
+		"\tinput:                   %s\n"
+		"\tinput_format:            %s\n"
+		"\tspeed:                   %d\n"
+		"\tis_looping:              %s\n"
+		"\tis_hw_decoding:          %s\n"
+		"\tis_clear_on_media_end:   %s\n"
+		"\trestart_on_activate:     %s\n"
+		"\tclose_when_inactive:     %s",
+		input ? input : "(null)",
+		input_format ? input_format : "(null)", s->speed_percent,
+		s->is_looping ? "yes" : "no", s->is_hw_decoding ? "yes" : "no",
+		s->is_clear_on_media_end ? "yes" : "no",
+		s->restart_on_activate ? "yes" : "no",
+		s->close_when_inactive ? "yes" : "no");
+}
+
+static void get_frame(void *opaque, struct obs_source_frame *f)
+{
+	struct watcher_source *s = opaque;
+	obs_source_output_video(s->source, f);
+}
+
+static void preload_frame(void *opaque, struct obs_source_frame *f)
+{
+	struct watcher_source *s = opaque;
+	if (s->close_when_inactive)
+		return;
+
+	if (s->is_clear_on_media_end || s->is_looping)
+		obs_source_preload_video(s->source, f);
+}
+
+static void get_audio(void *opaque, struct obs_source_audio *a)
+{
+	struct watcher_source *s = opaque;
+	obs_source_output_audio(s->source, a);
+}
+
+static void media_stopped(void *opaque)
+{
+	struct watcher_source *s = opaque;
+	if (s->is_clear_on_media_end) {
+		obs_source_output_video(s->source, NULL);
+	}
+
+	if (s->close_when_inactive && s->media_valid)
+		s->destroy_media = true;
+
+	set_media_state(s, OBS_MEDIA_STATE_ENDED);
+	obs_source_media_ended(s->source);
+}
+
+static void watcher_source_open(struct watcher_source *s)
+{
+	if (s->input && *s->input) {
+		struct mp_media_info info = {
+			.opaque = s,
+			.v_cb = get_frame,
+			.v_preload_cb = preload_frame,
+			.a_cb = get_audio,
+			.stop_cb = media_stopped,
+			.path = s->input,
+			.format = s->input_format,
+			.buffering = s->buffering_mb * 1024 * 1024,
+			.speed = s->speed_percent,
+			.force_range = s->range,
+			.hardware_decoding = s->is_hw_decoding,
+			.is_local_file = s->is_local_file || s->seekable};
+
+		s->media_valid = mp_media_init(&s->media, &info);
+	}
+}
+
+static void watcher_source_tick(void *data, float seconds)
+{
+	UNUSED_PARAMETER(seconds);
+
+	struct watcher_source *s = data;
+	if (s->destroy_media) {
+		if (s->media_valid) {
+			mp_media_free(&s->media);
+			s->media_valid = false;
+		}
+		s->destroy_media = false;
+	}
+}
+
+static void watcher_source_start(struct watcher_source *s)
+{
+	if (!s->media_valid)
+		watcher_source_open(s);
+
+	if (s->media_valid) {
+		mp_media_play(&s->media, s->is_looping);
+		if (s->is_local_file)
+			obs_source_show_preloaded_video(s->source);
+		set_media_state(s, OBS_MEDIA_STATE_PLAYING);
+		obs_source_media_started(s->source);
+	}
+}
+
 static void watcher_source_update(void *data, obs_data_t *settings)
 {
-	struct watcher_source *context = data;
-	uint32_t color = (uint32_t)obs_data_get_int(settings, "color");
-	uint32_t width = (uint32_t)obs_data_get_int(settings, "width");
-	uint32_t height = (uint32_t)obs_data_get_int(settings, "height");
+	struct watcher_source *s = data;
 
-	if (context->watcher != (pthread_t)NULL) {
-		pthread_cancel(context->watcher);
-		pthread_join(context->watcher, NULL);
-		watcher_clean(data);
+	bool is_local_file = obs_data_get_bool(settings, "is_local_file");
+
+	char *input;
+	char *input_format;
+
+	bfree(s->input);
+	bfree(s->input_format);
+
+	if (s->watcher != (pthread_t)NULL) {
+		pthread_cancel(s->watcher);
+		pthread_join(s->watcher, NULL);
+		watcher_clean(s);
 	}
-	context->color = color;
-	context->width = width;
-	context->height = height;
-	pthread_create(&context->watcher, NULL, watcher_source_watch, context);
+	
+	pthread_create(&s->watcher, NULL, watcher_source_watch, s);
+
+	if (is_local_file) {
+		input = (char *)obs_data_get_string(settings, "local_file");
+		input_format = NULL;
+		s->is_looping = obs_data_get_bool(settings, "looping");
+		s->close_when_inactive =
+			obs_data_get_bool(settings, "close_when_inactive");
+	} else {
+		input = (char *)obs_data_get_string(settings, "input");
+		input_format =
+			(char *)obs_data_get_string(settings, "input_format");
+		s->is_looping = false;
+		s->close_when_inactive = true;
+	}
+
+	s->input = input ? bstrdup(input) : NULL;
+	s->input_format = input_format ? bstrdup(input_format) : NULL;
+#ifndef __APPLE__
+	s->is_hw_decoding = obs_data_get_bool(settings, "hw_decode");
+#endif
+	s->is_clear_on_media_end =
+		obs_data_get_bool(settings, "clear_on_media_end");
+	s->restart_on_activate =
+		obs_data_get_bool(settings, "restart_on_activate");
+	s->range = (enum video_range_type)obs_data_get_int(settings,
+							   "color_range");
+	s->buffering_mb = (int)obs_data_get_int(settings, "buffering_mb");
+	s->speed_percent = (int)obs_data_get_int(settings, "speed_percent");
+	s->is_local_file = is_local_file;
+	s->seekable = obs_data_get_bool(settings, "seekable");
+
+	if (s->speed_percent < 1 || s->speed_percent > 200)
+		s->speed_percent = 100;
+
+	if (s->media_valid) {
+		mp_media_free(&s->media);
+		s->media_valid = false;
+	}
+
+	bool active = obs_source_active(s->source);
+	if (!s->close_when_inactive || active)
+		watcher_source_open(s);
+
+	dump_source_info(s, input, input_format);
+	if (!s->restart_on_activate || active)
+		watcher_source_start(s);
+}
+
+static const char *watcher_source_getname(void *unused)
+{
+	UNUSED_PARAMETER(unused);
+	return obs_module_text("WatcherSource");
+}
+
+static void restart_hotkey(void *data, obs_hotkey_id id, obs_hotkey_t *hotkey,
+			   bool pressed)
+{
+	UNUSED_PARAMETER(id);
+	UNUSED_PARAMETER(hotkey);
+
+	if (!pressed)
+		return;
+
+	struct watcher_source *s = data;
+	if (obs_source_showing(s->source))
+		obs_source_media_restart(s->source);
+}
+
+static void restart_proc(void *data, calldata_t *cd)
+{
+	restart_hotkey(data, 0, NULL, true);
+	UNUSED_PARAMETER(cd);
+}
+
+static void get_duration(void *data, calldata_t *cd)
+{
+	struct watcher_source *s = data;
+	int64_t dur = 0;
+	if (s->media.fmt)
+		dur = s->media.fmt->duration;
+
+	calldata_set_int(cd, "duration", dur * 1000);
+}
+
+static void get_nb_frames(void *data, calldata_t *cd)
+{
+	struct watcher_source *s = data;
+	int64_t frames = 0;
+
+	if (!s->media.fmt) {
+		calldata_set_int(cd, "num_frames", frames);
+		return;
+	}
+
+	int video_stream_index = av_find_best_stream(
+		s->media.fmt, AVMEDIA_TYPE_VIDEO, -1, -1, NULL, 0);
+
+	if (video_stream_index < 0) {
+		FF_BLOG(LOG_WARNING, "Getting number of frames failed: No "
+				     "video stream in media file!");
+		calldata_set_int(cd, "num_frames", frames);
+		return;
+	}
+
+	AVStream *stream = s->media.fmt->streams[video_stream_index];
+
+	if (stream->nb_frames > 0) {
+		frames = stream->nb_frames;
+	} else {
+		FF_BLOG(LOG_DEBUG, "nb_frames not set, estimating using frame "
+				   "rate and duration");
+		AVRational avg_frame_rate = stream->avg_frame_rate;
+		frames = (int64_t)ceil((double)s->media.fmt->duration /
+				       (double)AV_TIME_BASE *
+				       (double)avg_frame_rate.num /
+				       (double)avg_frame_rate.den);
+	}
+
+	calldata_set_int(cd, "num_frames", frames);
+}
+
+static bool watcher_source_play_hotkey(void *data, obs_hotkey_pair_id id,
+				      obs_hotkey_t *hotkey, bool pressed)
+{
+	UNUSED_PARAMETER(id);
+	UNUSED_PARAMETER(hotkey);
+
+	if (!pressed)
+		return false;
+
+	struct watcher_source *s = data;
+
+	if (s->state == OBS_MEDIA_STATE_PLAYING ||
+	    !obs_source_showing(s->source))
+		return false;
+
+	obs_source_media_play_pause(s->source, false);
+	return true;
+}
+
+static bool watcher_source_pause_hotkey(void *data, obs_hotkey_pair_id id,
+				       obs_hotkey_t *hotkey, bool pressed)
+{
+	UNUSED_PARAMETER(id);
+	UNUSED_PARAMETER(hotkey);
+
+	if (!pressed)
+		return false;
+
+	struct watcher_source *s = data;
+
+	if (s->state != OBS_MEDIA_STATE_PLAYING ||
+	    !obs_source_showing(s->source))
+		return false;
+
+	obs_source_media_play_pause(s->source, true);
+	return true;
+}
+
+static void watcher_source_stop_hotkey(void *data, obs_hotkey_id id,
+				      obs_hotkey_t *hotkey, bool pressed)
+{
+	UNUSED_PARAMETER(id);
+	UNUSED_PARAMETER(hotkey);
+
+	if (!pressed)
+		return;
+
+	struct watcher_source *s = data;
+
+	if (obs_source_showing(s->source))
+		obs_source_media_stop(s->source);
 }
 
 static void *watcher_source_create(obs_data_t *settings, obs_source_t *source)
 {
-	int x = syscall(SYS_gettid);
-	//printf("%d",x);
-	//printf("0 before calling pthread_create getpid: %d getpthread_self: %lu\n",getpid(), pthread_self());
+	UNUSED_PARAMETER(settings);
 
-	UNUSED_PARAMETER(source);
+	struct watcher_source *s = bzalloc(sizeof(struct watcher_source));
+	s->source = source;
 
-	struct watcher_source *context = bzalloc(sizeof(struct watcher_source));
-	context->src = source;
 	wfhead_t head;
 	TAILQ_INIT(&head);
-	context->wqh = head;
+	s->wqh = head;
 
 	pthread_mutex_lock(&watcher_mutex);	
 	watcher_signalhandler = signal_handler_create();
@@ -185,97 +660,165 @@ static void *watcher_source_create(obs_data_t *settings, obs_source_t *source)
 		goto fail;
 	signal_handler_add_array(watcher_signalhandler, watcher_signals);
 
-	signal_handler_connect(watcher_signalhandler, "file_added", &file_added,
-			       context);
+	signal_handler_connect(watcher_signalhandler, "watcher_file_added", &watcher_file_added,
+			       s);
 
 fail:
 	pthread_mutex_unlock(&watcher_mutex);
-	watcher_source_update(context, settings);
 
-	return context;
+	s->hotkey = obs_hotkey_register_source(source, "MediaSource.Restart",
+					       obs_module_text("RestartMedia"),
+					       restart_hotkey, s);
+
+	s->play_pause_hotkey = obs_hotkey_pair_register_source(
+		s->source, "MediaSource.Play", obs_module_text("Play"),
+		"MediaSource.Pause", obs_module_text("Pause"),
+		watcher_source_play_hotkey, watcher_source_pause_hotkey, s, s);
+
+	s->stop_hotkey = obs_hotkey_register_source(source, "MediaSource.Stop",
+						    obs_module_text("Stop"),
+						    watcher_source_stop_hotkey,
+						    s);
+
+	proc_handler_t *ph = obs_source_get_proc_handler(source);
+	proc_handler_add(ph, "void restart()", restart_proc, s);
+	proc_handler_add(ph, "void get_duration(out int duration)",
+			 get_duration, s);
+	proc_handler_add(ph, "void get_nb_frames(out int num_frames)",
+			 get_nb_frames, s);
+
+	watcher_source_update(s, settings);
+	return s;
 }
 
 static void watcher_source_destroy(void *data)
 {
-	bfree(data);
-	watcher_clean(data);
+	struct watcher_source *s = data;
+	watcher_clean(s);
+	if (s->hotkey)
+		obs_hotkey_unregister(s->hotkey);
+	if (s->media_valid)
+		mp_media_free(&s->media);
+
+	if (s->sws_ctx != NULL)
+		sws_freeContext(s->sws_ctx);
+	bfree(s->sws_data);
+	bfree(s->input);
+	bfree(s->input_format);
+	bfree(s);
+	
 }
 
-static obs_properties_t *watcher_source_properties(void *unused)
+static void watcher_source_activate(void *data)
 {
-	UNUSED_PARAMETER(unused);
+	struct watcher_source *s = data;
 
-	obs_properties_t *props = obs_properties_create();
-
-	obs_properties_add_color(props, "color",
-				 obs_module_text("WatcherSource.Color"));
-
-	obs_properties_add_int(props, "width",
-			       obs_module_text("WatcherSource.Width"), 0, 4096,
-			       1);
-
-	obs_properties_add_int(props, "height",
-			       obs_module_text("WatcherSource.Height"), 0, 4096,
-			       1);
-
-	return props;
+	if (s->restart_on_activate)
+		obs_source_media_restart(s->source);
 }
 
-static void watcher_source_render(void *data, gs_effect_t *effect)
+static void watcher_source_deactivate(void *data)
 {
-	UNUSED_PARAMETER(effect);
+	struct watcher_source *s = data;
 
-	struct watcher_source *context = data;
+	if (s->restart_on_activate) {
+		if (s->media_valid) {
+			mp_media_stop(&s->media);
 
-	gs_effect_t *solid = obs_get_base_effect(OBS_EFFECT_SOLID);
-	gs_eparam_t *color = gs_effect_get_param_by_name(solid, "color");
-	gs_technique_t *tech = gs_effect_get_technique(solid, "Solid");
-
-	struct vec4 colorVal;
-	vec4_from_rgba(&colorVal, context->color);
-	gs_effect_set_vec4(color, &colorVal);
-
-	gs_technique_begin(tech);
-	gs_technique_begin_pass(tech, 0);
-
-	gs_draw_sprite(0, 0, context->width, context->height);
-
-	gs_technique_end_pass(tech);
-	gs_technique_end(tech);
+			if (s->is_clear_on_media_end)
+				obs_source_output_video(s->source, NULL);
+		}
+	}
 }
 
-static uint32_t watcher_source_getwidth(void *data)
+static void watcher_source_play_pause(void *data, bool pause)
 {
-	struct watcher_source *context = data;
-	return context->width;
+	struct watcher_source *s = data;
+
+	mp_media_play_pause(&s->media, pause);
+
+	if (pause)
+		set_media_state(s, OBS_MEDIA_STATE_PAUSED);
+	else
+		set_media_state(s, OBS_MEDIA_STATE_PLAYING);
 }
 
-static uint32_t watcher_source_getheight(void *data)
+static void watcher_source_stop(void *data)
 {
-	struct watcher_source *context = data;
-	return context->height;
+	struct watcher_source *s = data;
+
+	if (s->media_valid) {
+		mp_media_stop(&s->media);
+		obs_source_output_video(s->source, NULL);
+		set_media_state(s, OBS_MEDIA_STATE_STOPPED);
+	}
 }
 
-static void watcher_source_defaults(obs_data_t *settings)
+static void watcher_source_restart(void *data)
 {
-	obs_data_set_default_int(settings, "color", 0xFFFFFFFF);
-	obs_data_set_default_int(settings, "width", 400);
-	obs_data_set_default_int(settings, "height", 400);
+	struct watcher_source *s = data;
+
+	if (obs_source_showing(s->source))
+		watcher_source_start(s);
+
+	set_media_state(s, OBS_MEDIA_STATE_PLAYING);
+}
+
+static int64_t watcher_source_get_duration(void *data)
+{
+	struct watcher_source *s = data;
+	int64_t dur = 0;
+
+	if (s->media.fmt)
+		dur = s->media.fmt->duration / INT64_C(1000);
+
+	return dur;
+}
+
+static int64_t watcher_source_get_time(void *data)
+{
+	struct watcher_source *s = data;
+
+	return mp_get_current_time(&s->media);
+}
+
+static void watcher_source_set_time(void *data, int64_t ms)
+{
+	struct watcher_source *s = data;
+
+	mp_media_seek_to(&s->media, ms);
+}
+
+static enum obs_media_state watcher_source_get_state(void *data)
+{
+	struct watcher_source *s = data;
+
+	return s->state;
 }
 
 struct obs_source_info watcher_source_info = {
 	.id = "watcher_source",
-	.version = 3,
+	.version = 4,
 	.type = OBS_SOURCE_TYPE_INPUT,
-	.output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_CUSTOM_DRAW,
+	.output_flags = OBS_SOURCE_ASYNC_VIDEO | OBS_SOURCE_AUDIO |
+			OBS_SOURCE_DO_NOT_DUPLICATE |
+			OBS_SOURCE_CONTROLLABLE_MEDIA,
+	.get_name = watcher_source_getname,
 	.create = watcher_source_create,
 	.destroy = watcher_source_destroy,
-	.update = watcher_source_update,
-	.get_name = watcher_source_get_name,
 	.get_defaults = watcher_source_defaults,
-	.get_width = watcher_source_getwidth,
-	.get_height = watcher_source_getheight,
-	.video_render = watcher_source_render,
-	.get_properties = watcher_source_properties,
-	.icon_type = OBS_ICON_TYPE_COLOR,
+	.get_properties = watcher_source_getproperties,
+	.activate = watcher_source_activate,
+	.deactivate = watcher_source_deactivate,
+	.video_tick = watcher_source_tick,
+	.update = watcher_source_update,
+	.icon_type = OBS_ICON_TYPE_MEDIA,
+	.media_play_pause = watcher_source_play_pause,
+	.media_restart = watcher_source_restart,
+	.media_stop = watcher_source_stop,
+	.media_get_duration = watcher_source_get_duration,
+	.media_get_time = watcher_source_get_time,
+	.media_set_time = watcher_source_set_time,
+	.media_get_state = watcher_source_get_state,
 };
+
