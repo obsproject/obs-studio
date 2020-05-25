@@ -22,6 +22,7 @@
 #include <sys/types.h>
 #include <sys/inotify.h>
 #include <sys/syscall.h>
+#include <sys/stat.h>
 #include <sys/queue.h>
 #include <limits.h>
 #include <pthread.h>
@@ -73,6 +74,7 @@ struct watcher_source {
 	obs_source_t *source;
 	obs_hotkey_id hotkey;
 
+	char *directory;
 	char *input;
 	char *input_format;
 	int buffering_mb;
@@ -84,7 +86,8 @@ struct watcher_source {
 	bool restart_on_activate;
 	bool close_when_inactive;
 	bool seekable;
-
+	int queue_max; 
+	
 	enum obs_media_state state;
 	obs_hotkey_pair_id play_pause_hotkey;
 	obs_hotkey_id stop_hotkey;
@@ -93,32 +96,9 @@ struct watcher_source {
 	int wd;
 	int wfd;
 	wfhead_t wqh;
+	
 
 };
-
-static void watcher_file_added(void *data, calldata_t *calldata)
-{
-	//printf("before calling pthread_create getpid: %d getpthread_self: %lu\n",getpid(), pthread_self());
-	printf("here failed ..\n");
-	struct watcher_source *context = data;
-	obs_source_update_properties(context->source);
-	const char *file;
-	calldata_get_string(calldata, "file", &file);
-	struct wfnode *e = NULL;
-	e = malloc(sizeof(struct wfnode));
-	if (e == NULL) {
-		fprintf(stderr, "malloc failed");
-		exit(EXIT_FAILURE);
-	}
-	e->file = file;
-	TAILQ_INSERT_TAIL(&context->wqh, e, wfnodes);
-	// TAILQ_FOREACH(e, head, nodes)
-    // {
-    //     printf("%c", e->c);
-    // }
-	e = NULL;
-	printf("booyah here %s\n", file);
-}
 
 static void *watcher_source_watch(void *data)
 {
@@ -133,11 +113,11 @@ static void *watcher_source_watch(void *data)
 		printf("[ERROR] inotify_init");
 
 	context->wd =
-		inotify_add_watch(context->wfd, "/tmp/test", IN_ALL_EVENTS);
+		inotify_add_watch(context->wfd, context->directory, IN_ALL_EVENTS);
 	if (context->wd == -1)
 		printf("[ERROR] inotify_add_watch");
 
-	printf("Watching %s using wd %d\n", "/tmp/test", context->wd);
+	//printf("Watching %s using wd %d\n", context->directory, context->wd);
 
 	for (;;) { /* Read events forever */
 		numRead = read(context->wfd, buf, BUF_LEN);
@@ -151,29 +131,19 @@ static void *watcher_source_watch(void *data)
 		for (p = buf; p < buf + numRead;) {
 			event = (struct inotify_event *)p;
 			if (event->mask & IN_CREATE) {
-				// struct node *e = malloc(sizeof(struct node));
-				// if (e == NULL) {
-				// 	fprintf(stderr, "malloc failed");
-				// 	exit(EXIT_FAILURE);
-				// }
-
-				printf("Found file %s\n", event->name);
-				//TAILQ_INSERT_TAIL(&head, e, nodes);
-				//e = NULL;
+				//printf("Found file %s\n", event->name);
 				struct calldata msg;
-
 				pthread_mutex_lock(&watcher_mutex);
-
 				calldata_init(&msg);
-				char file[BUF_LEN];
+				char * file;
+				file = malloc(sizeof(char)*NAME_MAX);
 				snprintf(file, sizeof(buf), "%s", event->name);
 				calldata_set_string(&msg, "file", file);
-
+				calldata_set_string(&msg, "sname", context->source->context.name);
 				signal_handler_signal(watcher_signalhandler,
-						      "watcher_file_added", &msg);
-
+						      "watcher_file_added", &msg);				
 				calldata_free(&msg);
-
+				free(file);
 				pthread_mutex_unlock(&watcher_mutex);
 			}
 			p += sizeof(struct inotify_event) + event->len;
@@ -235,10 +205,12 @@ static void watcher_source_defaults(obs_data_t *settings)
 {
 	obs_data_set_default_bool(settings, "is_local_file", true);
 	obs_data_set_default_bool(settings, "looping", false);
-	obs_data_set_default_bool(settings, "clear_on_media_end", true);
-	obs_data_set_default_bool(settings, "restart_on_activate", true);
+	obs_data_set_default_bool(settings, "clear_on_media_end", false);
+	obs_data_set_default_bool(settings, "restart_on_activate", false);
 	obs_data_set_default_int(settings, "buffering_mb", 2);
 	obs_data_set_default_int(settings, "speed_percent", 100);
+	obs_data_set_default_int(settings, "queue_max", 0);
+	obs_data_set_default_string(settings, "directory", "/tmp/videos");	
 }
 
 static const char *media_filter =
@@ -260,10 +232,10 @@ static obs_properties_t *watcher_source_getproperties(void *data)
 
 	obs_property_t *prop;
 	// use this when obs allows non-readonly paths
-	prop = obs_properties_add_bool(props, "is_local_file",
-				       obs_module_text("LocalFile"));
+	// prop = obs_properties_add_bool(props, "is_local_file",
+	// 			       obs_module_text("LocalFile"));
 
-	obs_property_set_modified_callback(prop, is_local_file_modified);
+	// obs_property_set_modified_callback(prop, is_local_file_modified);
 
 	dstr_copy(&filter, obs_module_text("MediaFileFilter.AllMediaFiles"));
 	dstr_cat(&filter, media_filter);
@@ -289,6 +261,14 @@ static obs_properties_t *watcher_source_getproperties(void *data)
 				filter.array, path.array);
 	dstr_free(&filter);
 	dstr_free(&path);
+
+	obs_properties_add_path(props, "directory",
+				obs_module_text("LocalDirectory"), OBS_PATH_DIRECTORY,
+				NULL, "/tmp/videos");
+	
+	obs_properties_add_int(props, "queue_max", 
+					     obs_module_text("QueueMaximum"), 0,
+					     100000, 1);				
 
 	prop = obs_properties_add_bool(props, "looping",
 				       obs_module_text("Looping"));
@@ -468,7 +448,16 @@ static void watcher_source_update(void *data, obs_data_t *settings)
 		watcher_clean(s);
 	}
 	
-	pthread_create(&s->watcher, NULL, watcher_source_watch, s);
+	
+	s->directory = (char *)obs_data_get_string(settings, "directory");
+	struct stat sb;
+	if (s->directory != NULL && s->directory[0] != '\0' && stat(s->directory, &sb) == 0 && S_ISDIR(sb.st_mode)) {
+		blog(LOG_INFO, "Watching directory: %s", s->directory);
+		pthread_create(&s->watcher, NULL, watcher_source_watch, s);
+	} else {
+		blog(LOG_WARNING, "Failed to watch directory: %s", s->directory);
+	}
+	
 
 	if (is_local_file) {
 		input = (char *)obs_data_get_string(settings, "local_file");
@@ -516,6 +505,47 @@ static void watcher_source_update(void *data, obs_data_t *settings)
 	if (!s->restart_on_activate || active)
 		watcher_source_start(s);
 }
+
+
+static void watcher_file_added(void *data, calldata_t *calldata)
+{	
+	struct watcher_source *context = data;
+	obs_source_update_properties(context->source);
+	const char *file;
+	calldata_get_string(calldata, "file", &file);
+	blog(LOG_INFO, "Watcher received file %s", file);
+	const char *sname;
+	calldata_get_string(calldata, "sname", &sname);	
+	if (strcmp(sname, context->source->context.name) != 0) {
+		//Call isn't meant for us
+		return;
+	}
+	struct wfnode *e = NULL;
+	e = malloc(sizeof(struct wfnode));
+	if (e == NULL) return;
+	
+	//TODO: ADD QUEUE LOGIC
+	// char f[BUF_LEN] __attribute__((aligned(8)));
+	// snprintf(f, sizeof(f), "%s%s%s", context->directory, "/", file);
+	// e->file = f;	
+	//TAILQ_INSERT_TAIL(&context->wqh, e, wfnodes);
+	// TAILQ_FOREACH(e, head, nodes)
+    // {
+    //     printf("%c", e->c);
+    // }
+	// e = NULL;
+
+	char * ff = NULL;
+	ff = malloc(sizeof(char)*NAME_MAX);
+	if (ff == NULL) return;
+	snprintf(ff, sizeof(char)*NAME_MAX, "%s%s%s", context->directory, "/", file);
+	printf("file %s", ff);
+	obs_data_set_bool(context->source->context.settings, "is_local_file", true);
+	obs_data_set_string(context->source->context.settings, "local_file", ff);
+	obs_source_update(context->source, context->source->context.settings);
+	free(ff);
+}
+
 
 static const char *watcher_source_getname(void *unused)
 {
