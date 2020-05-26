@@ -461,7 +461,7 @@ static void game_capture_destroy(void *data)
 	free_config(&gc->config);
 	
 	free_whitelist(&gc->auto_capture);
-	CloseHandle(&gc->auto_capture.mutex);
+	close_handle(&gc->auto_capture.mutex);
 	dstr_free(&gc->placeholder_image_path);
 	dstr_free(&gc->placeholder_text);
 	unload_placeholder_image(gc);
@@ -1550,7 +1550,7 @@ static inline enum capture_result init_capture_data(struct game_capture *gc)
 		gc->data = NULL;
 	}
 
-	CloseHandle(gc->hook_data_map);
+	close_handle(&gc->hook_data_map);
 
 	DWORD error = 0;
 	if (!init_data_map(gc, gc->window)) {
