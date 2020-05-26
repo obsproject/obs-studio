@@ -524,8 +524,7 @@ static void watcher_source_update(void *data, obs_data_t *settings)
 				while ((ent = readdir(dir)) != NULL) {
 					if (s->wqlen == s->queue_max)
 						break;
-					if (strcmp(".", ent->d_name) == 0 ||
-					    strcmp("..", ent->d_name) == 0)
+					if (ent->d_type != DT_REG)
 						continue;
 					char *f = NULL;
 					f = malloc(sizeof(char) * NAME_MAX);
