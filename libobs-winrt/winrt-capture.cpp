@@ -427,19 +427,6 @@ try {
 	return nullptr;
 }
 
-#ifdef WIN32
-
-static DWORD WINAPI closeSession(void *param)
-{
-	winrt_capture *capture = (winrt_capture *)param;
-	capture->session.Close();
-
-	delete capture;
-	return 0;
-}
-
-#endif
-
 extern "C" EXPORT void winrt_capture_free(struct winrt_capture *capture)
 {
 	if (capture) {
@@ -463,19 +450,9 @@ extern "C" EXPORT void winrt_capture_free(struct winrt_capture *capture)
 
 		capture->frame_arrived.revoke();
 		capture->frame_pool.Close();
+		//capture->session.Close();
 
-#ifdef WIN32
-		DWORD worker;
-		HANDLE res = CreateThread(nullptr, 0, closeSession, (void *)capture, 0,
-			     &worker);
-		if (!res)
-			blog(LOG_ERROR,
-			     "Failed to launched close session thread");
-#else
-		capture->session.Close();
-
-		delete capture;
-#endif
+		//delete capture;
 	}
 }
 
