@@ -1239,6 +1239,9 @@ static inline void handle_binding(obs_hotkey_binding_t *binding,
 				  uint32_t modifiers, bool no_press,
 				  bool strict_modifiers, bool *pressed)
 {
+	if (pressed && !*pressed)
+		return;
+
 	bool modifiers_match_ =
 		modifiers_match(binding, modifiers, strict_modifiers);
 	bool modifiers_only = binding->key.key == OBS_KEY_NONE;
