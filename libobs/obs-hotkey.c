@@ -1239,6 +1239,9 @@ static inline void handle_binding(obs_hotkey_binding_t *binding,
 				  uint32_t modifiers, bool no_press,
 				  bool strict_modifiers, bool *pressed)
 {
+	if (pressed && !*pressed)
+		return;
+
 	bool modifiers_match_ =
 		modifiers_match(binding, modifiers, strict_modifiers);
 	bool modifiers_only = binding->key.key == OBS_KEY_NONE;
@@ -1255,8 +1258,7 @@ static inline void handle_binding(obs_hotkey_binding_t *binding,
 	if ((!binding->modifiers_match && !modifiers_only) || !modifiers_match_)
 		goto reset;
 
-	if ((pressed && !*pressed) ||
-	    (!pressed && !is_pressed(binding->key.key)))
+	if ((!pressed && !is_pressed(binding->key.key)))
 		goto reset;
 
 	if (binding->pressed || no_press)
