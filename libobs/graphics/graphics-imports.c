@@ -195,6 +195,7 @@ bool load_graphics_imports(struct gs_exports *exports, void *module,
 #ifdef __APPLE__
 	GRAPHICS_IMPORT_OPTIONAL(device_texture_create_from_iosurface);
 	GRAPHICS_IMPORT_OPTIONAL(gs_texture_rebind_iosurface);
+	GRAPHICS_IMPORT_OPTIONAL(create_iosurface);
 
 	/* win32 specific functions */
 #elif _WIN32

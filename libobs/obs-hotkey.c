@@ -24,13 +24,13 @@ static inline bool lock(void)
 	if (!obs)
 		return false;
 
-	pthread_mutex_lock(&obs->hotkeys.mutex);
+	// pthread_mutex_lock(&obs->hotkeys.mutex); Not hotkey thread running
 	return true;
 }
 
 static inline void unlock(void)
 {
-	pthread_mutex_unlock(&obs->hotkeys.mutex);
+	// pthread_mutex_unlock(&obs->hotkeys.mutex); Not hotkey thread running
 }
 
 obs_hotkey_id obs_hotkey_get_id(const obs_hotkey_t *key)

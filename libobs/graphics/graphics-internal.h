@@ -273,6 +273,7 @@ struct gs_exports {
 							      void *iosurf);
 	bool (*gs_texture_rebind_iosurface)(gs_texture_t *texture,
 					    void *iosurf);
+	uint32_t (*create_iosurface)(gs_device_t *dev, uint32_t width, uint32_t height);
 
 #elif _WIN32
 	bool (*device_gdi_texture_available)(void);

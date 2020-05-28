@@ -2751,6 +2751,18 @@ bool gs_texture_rebind_iosurface(gs_texture_t *texture, void *iosurf)
 	return graphics->exports.gs_texture_rebind_iosurface(texture, iosurf);
 }
 
+uint32_t gs_create_iosurface(uint32_t width, uint32_t height)
+{
+	graphics_t *graphics = thread_graphics;
+
+	if (!gs_valid("gs_create_iosurface"))
+		return NULL;
+	if (!graphics->exports.create_iosurface)
+		return NULL;
+
+	return graphics->exports.create_iosurface(graphics->device, width, height);
+}
+
 #elif _WIN32
 
 bool gs_gdi_texture_available(void)

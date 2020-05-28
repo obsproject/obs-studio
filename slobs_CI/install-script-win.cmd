@@ -34,6 +34,7 @@ cmake -H. ^
          -DDepsPath=%CD%\%DEPS%\win64 ^
          -DVLCPath=%CD%\vlc ^
          -DCEF_ROOT_DIR=%CEFPATH% ^
+         -DUSE_UI_LOOP=false ^
          -DENABLE_UI=false ^
          -DCOPIED_DEPENDENCIES=false ^
          -DCOPY_DEPENDENCIES=true ^

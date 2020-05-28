@@ -860,7 +860,11 @@ EXPORT void obs_display_destroy(obs_display_t *display);
 /** Changes the size of this display */
 EXPORT void obs_display_resize(obs_display_t *display, uint32_t cx,
 			       uint32_t cy);
-
+#ifdef __APPLE__
+/** Creates IOSurface (Apple shared memory) */
+EXPORT uint32_t obs_display_create_iosurface(obs_display_t *display,
+						uint32_t width, uint32_t height);
+#endif
 /**
  * Adds a draw callback for this display context
  *

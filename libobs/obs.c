@@ -901,8 +901,6 @@ static bool obs_init(const char *locale, const char *module_config_path,
 		return false;
 	if (!obs_init_handlers())
 		return false;
-	if (!obs_init_hotkeys())
-		return false;
 
 	if (module_config_path)
 		obs->module_config_path = bstrdup(module_config_path);
@@ -1075,7 +1073,6 @@ void obs_shutdown(void)
 	obs_free_audio();
 	obs_free_data();
 	obs_free_video();
-	obs_free_hotkeys();
 	obs_free_graphics();
 	proc_handler_destroy(obs->procs);
 	signal_handler_destroy(obs->signals);

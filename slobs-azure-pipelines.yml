@@ -9,6 +9,7 @@ trigger:
 variables:
   InstallPath: packed_build
   CEF_VERSION: 75.1.16_g16a67c4_chromium-75.0.3770.100
+  CEF_MAC_BUILD_VERSION: 3770
 
 jobs:
 - job: 'Windows64'
@@ -62,7 +63,7 @@ jobs:
 
 - job: 'MacOX'
   pool:
-    vmImage: 'macos-10.13'
+    vmImage: 'macos-10.14'
 
   strategy:
     matrix:
@@ -111,4 +112,8 @@ jobs:
       filesAcl: 'public-read'
     displayName: 'Upload artifact to S3'
     condition: and(succeeded(), contains(variables['Build.SourceBranch'], 'tags'))
-     
+
+  - script: 'python ./slobs_CI/sentry-osx.py'
+    env:
+      SENTRY_AUTH_TOKEN: $(sentryAuth)
+    displayName: 'Upload debug files to Sentry'

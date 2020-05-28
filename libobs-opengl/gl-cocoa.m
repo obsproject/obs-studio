@@ -28,6 +28,7 @@ struct gl_windowinfo {
 	NSOpenGLContext *context;
 	gs_texture_t *texture;
 	GLuint fbo;
+	uint32_t surfaceID;
 };
 
 struct gl_platform {
@@ -137,7 +138,6 @@ bool gl_platform_init_swapchain(struct gs_swap_chain *swap)
 		CGLLockContext(context_obj);
 
 		[context makeCurrentContext];
-		[context setView:swap->wi->view];
 		GLint interval = 0;
 		[context setValues:&interval
 			forParameter:NSOpenGLCPSwapInterval];
@@ -191,13 +191,7 @@ struct gl_windowinfo *gl_windowinfo_create(const struct gs_init_data *info)
 	if (!info)
 		return NULL;
 
-	if (!info->window.view)
-		return NULL;
-
 	struct gl_windowinfo *wi = bzalloc(sizeof(struct gl_windowinfo));
-
-	wi->view = info->window.view;
-	[info->window.view setWantsBestResolutionOpenGLSurface:YES];
 
 	return wi;
 }
@@ -207,6 +201,7 @@ void gl_windowinfo_destroy(struct gl_windowinfo *wi)
 	if (!wi)
 		return;
 
+	blog(LOG_INFO, "gl_windowinfo_destroy");
 	wi->view = nil;
 	bfree(wi);
 }
@@ -226,6 +221,18 @@ void gl_update(gs_device_t *device)
 		[context makeCurrentContext];
 		[context update];
 		struct gs_init_data *info = &swap->info;
+		if (!info) {
+			blog(LOG_ERROR, "gl-cocoa: Could not update, invalid data");
+			return;
+		}
+		if (!swap) {
+			blog(LOG_ERROR, "gl-cocoa: Could not update, invlid swap");
+			return;
+		}
+		if (!swap->wi || !swap->wi->texture) {
+			blog(LOG_ERROR, "gl-cocoa: Could not update, invalid window");
+			return;
+		}
 		gs_texture_t *previous = swap->wi->texture;
 		swap->wi->texture = device_texture_create(device, info->cx,
 							  info->cy,
@@ -287,6 +294,36 @@ void device_load_swapchain(gs_device_t *device, gs_swapchain_t *swap)
 	}
 }
 
+void write_iosurface(gs_device_t *device)
+{
+	gs_swapchain_t *swap = device->cur_swap;
+	if (!swap->wi->surfaceID)
+		return;
+
+	IOSurfaceRef surface = IOSurfaceLookup((IOSurfaceID) swap->wi->surfaceID);
+	if (!surface)
+		return;
+
+	IOSurfaceLock(surface, 0, NULL);
+	void* data = IOSurfaceGetBaseAddress(surface);
+
+	if (!data) {
+		blog(LOG_ERROR, "gl-cocoa: failed to write in the IOSurface");
+		return;
+	}
+
+	glReadPixels(0,
+		0,
+		IOSurfaceGetBytesPerRow(surface) / 4,
+		IOSurfaceGetHeight(surface),
+		GL_BGRA,
+		GL_UNSIGNED_INT_8_8_8_8_REV,
+		data);
+	gl_success("glReadPixels");
+
+	IOSurfaceUnlock(surface, 0, NULL);
+}
+
 void device_present(gs_device_t *device)
 {
 	glFlush();
@@ -297,12 +334,7 @@ void device_present(gs_device_t *device)
 	CGLLockContext([device->cur_swap->wi->context CGLContextObj]);
 
 	[device->cur_swap->wi->context makeCurrentContext];
-	gl_bind_framebuffer(GL_READ_FRAMEBUFFER, device->cur_swap->wi->fbo);
-	gl_bind_framebuffer(GL_DRAW_FRAMEBUFFER, 0);
-	const uint32_t width = device->cur_swap->info.cx;
-	const uint32_t height = device->cur_swap->info.cy;
-	glBlitFramebuffer(0, 0, width, height, 0, height, width, 0,
-			  GL_COLOR_BUFFER_BIT, GL_NEAREST);
+	write_iosurface(device);
 	[device->cur_swap->wi->context flushBuffer];
 	glFlush();
 	[NSOpenGLContext clearCurrentContext];
@@ -427,4 +459,28 @@ bool gs_texture_rebind_iosurface(gs_texture_t *texture, void *iosurf)
 		return false;
 
 	return true;
+}
+
+uint32_t create_iosurface(gs_device_t *device, uint32_t width, uint32_t height)
+{
+	gs_swapchain_t *swap = device->cur_swap;
+	if (!swap)
+		return 0;
+
+	swap->wi->surfaceID = 0;
+	NSDictionary* surfaceAttributes = [[NSDictionary alloc] initWithObjectsAndKeys:[NSNumber numberWithBool:YES], (NSString*)kIOSurfaceIsGlobal,
+									   [NSNumber numberWithUnsignedInteger:(NSUInteger)width], (NSString*)kIOSurfaceWidth,
+									   [NSNumber numberWithUnsignedInteger:(NSUInteger)height], (NSString*)kIOSurfaceHeight,
+									   [NSNumber numberWithUnsignedInteger:4U], (NSString*)kIOSurfaceBytesPerElement, nil];
+
+
+
+	IOSurfaceRef _surfaceRef =  IOSurfaceCreate((CFDictionaryRef) surfaceAttributes);
+
+	if (_surfaceRef)
+		swap->wi->surfaceID = IOSurfaceGetID(_surfaceRef);
+
+	[surfaceAttributes release];
+
+    return swap->wi->surfaceID;
 }

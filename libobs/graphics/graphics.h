@@ -831,6 +831,7 @@ EXPORT void gs_debug_marker_end(void);
  * from shared surface resources */
 EXPORT gs_texture_t *gs_texture_create_from_iosurface(void *iosurf);
 EXPORT bool gs_texture_rebind_iosurface(gs_texture_t *texture, void *iosurf);
+EXPORT uint32_t gs_create_iosurface(uint32_t width, uint32_t height);
 
 #elif _WIN32
 
