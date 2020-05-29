@@ -77,12 +77,15 @@ private:
 	QRect prevGeometry;
 	void SetMonitor(int monitor);
 
+	QScreen *screen = nullptr;
+
 private slots:
 	void EscapeTriggered();
 	void OpenFullScreenProjector();
 	void ResizeToContent();
 	void OpenWindowedProjector();
 	void AlwaysOnTopToggled(bool alwaysOnTop);
+	void ScreenRemoved(QScreen *screen_);
 
 public:
 	OBSProjector(QWidget *widget, obs_source_t *source_, int monitor,
