@@ -1394,13 +1394,20 @@
             }
         },
         {
-            "name": "Madcat",
+            "name": "Trovo",
+            "alt_names": ["Madcat"],
             "servers": [
                 {
                     "name": "Default",
-                    "url": "rtmp://73846.livepush.myqcloud.com/live/"
+                    "url": "rtmp://livepush.trovo.live/live/"
                 }
-            ]
+            ],
+            "recommended": {
+                "keyint": 2,
+                "max video bitrate": 9000,
+                "max audio bitrate": 160,
+                "x264opts": "scenecut=0"
+            }
         },
         {
             "name": "Mixcloud",
