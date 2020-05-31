@@ -222,7 +222,6 @@ struct TextSource {
 	bool read_from_file = false;
 	string file;
 	time_t file_timestamp = 0;
-	bool update_file = false;
 	float update_time_elapsed = 0.0f;
 
 	wstring text;
