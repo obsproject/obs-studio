@@ -160,12 +160,14 @@ static void image_source_tick(void *data, float seconds)
 
 	context->update_time_elapsed += seconds;
 
-	if (context->update_time_elapsed >= 1.0f) {
-		time_t t = get_modified_timestamp(context->file);
-		context->update_time_elapsed = 0.0f;
+	if (obs_source_showing(context->source)) {
+		if (context->update_time_elapsed >= 1.0f) {
+			time_t t = get_modified_timestamp(context->file);
+			context->update_time_elapsed = 0.0f;
 
-		if (context->file_timestamp != t) {
-			image_source_load(context);
+			if (context->file_timestamp != t) {
+				image_source_load(context);
+			}
 		}
 	}
 
