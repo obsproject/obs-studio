@@ -97,3 +97,7 @@ tags
 .DS_Store
 */.DS_Store
 */**/.DS_Store
+plugins/obs-vst
+plugins/obs-browser
+plugins/obs-vst
+plugins/enc-amf
