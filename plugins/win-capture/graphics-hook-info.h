@@ -106,6 +106,9 @@ struct hook_info {
 	/* hook addresses */
 	struct graphics_offsets offsets;
 
+	/* Pass the DX version*/
+	uint32_t dxversion;
+
 	uint32_t reserved[128];
 };
 
