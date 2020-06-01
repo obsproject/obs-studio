@@ -567,7 +567,7 @@ void AutoConfigStreamPage::UpdateKeyLink()
 		streamKeyLink =
 			"https://www.twitch.tv/broadcast/dashboard/streamkey";
 	} else if (serviceName == "YouTube / YouTube Gaming") {
-		streamKeyLink = "https://www.youtube.com/live_dashboard";
+		streamKeyLink = "https://www.youtube.com/livestreaming";
 		isYoutube = true;
 	} else if (serviceName.startsWith("Restream.io")) {
 		streamKeyLink =
