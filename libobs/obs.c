@@ -988,10 +988,6 @@ struct obs_cmdline_args obs_get_cmdline_args(void)
 void obs_shutdown(void)
 {
 	struct obs_module *module;
-	struct obs_core *core;
-
-	if (!obs)
-		return;
 
 	for (size_t i = 0; i < obs->source_types.num; i++) {
 		struct obs_source_info *item = &obs->source_types.array[i];
@@ -1027,6 +1023,14 @@ void obs_shutdown(void)
 	stop_video();
 	stop_hotkeys();
 
+	module = obs->first_module;
+	while (module) {
+		struct obs_module *next = module->next;
+		free_module(module);
+		module = next;
+	}
+	obs->first_module = NULL;
+
 	obs_free_audio();
 	obs_free_data();
 	obs_free_video();
@@ -1037,27 +1041,17 @@ void obs_shutdown(void)
 	obs->procs = NULL;
 	obs->signals = NULL;
 
-	core = obs;
+	for (size_t i = 0; i < obs->module_paths.num; i++)
+		free_module_path(obs->module_paths.array + i);
+	da_free(obs->module_paths);
+
+	if (obs->name_store_owned)
+		profiler_name_store_free(obs->name_store);
+
+	bfree(obs->module_config_path);
+	bfree(obs->locale);
+	bfree(obs);
 	obs = NULL;
-
-	module = core->first_module;
-	while (module) {
-		struct obs_module *next = module->next;
-		free_module(module);
-		module = next;
-	}
-	core->first_module = NULL;
-
-	for (size_t i = 0; i < core->module_paths.num; i++)
-		free_module_path(core->module_paths.array + i);
-	da_free(core->module_paths);
-
-	if (core->name_store_owned)
-		profiler_name_store_free(core->name_store);
-
-	bfree(core->module_config_path);
-	bfree(core->locale);
-	bfree(core);
 	bfree(cmdline_args.argv);
 
 #ifdef _WIN32
