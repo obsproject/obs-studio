@@ -78,8 +78,7 @@ static const char *const qsv_usage_names[] = {"quality",  "balanced", "speed",
 					      "veryslow", "slower",   "slow",
 					      "medium",   "fast",     "faster",
 					      "veryfast", 0};
-static const char *const qsv_latency_names[] = {"ultra-low", "low", "normal",
-						0};
+
 typedef struct qsv_t qsv_t;
 
 typedef struct {
@@ -118,7 +117,6 @@ enum qsv_cpu_platform {
 	QSV_CPU_PLATFORM_BDW,
 	QSV_CPU_PLATFORM_SKL,
 	QSV_CPU_PLATFORM_KBL,
-	QSV_CPU_PLATFORM_CNL,
 	QSV_CPU_PLATFORM_ICL,
 	QSV_CPU_PLATFORM_INTEL
 };
