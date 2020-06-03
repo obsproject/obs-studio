@@ -30,14 +30,10 @@ try {
 
 extern "C" EXPORT BOOL winrt_capture_cursor_toggle_supported()
 try {
-#ifdef NTDDI_WIN10_VB
 	return winrt::Windows::Foundation::Metadata::ApiInformation::
 		IsPropertyPresent(
 			L"Windows.Graphics.Capture.GraphicsCaptureSession",
 			L"IsCursorCaptureEnabled");
-#else
-	return false;
-#endif
 } catch (const winrt::hresult_error &err) {
 	blog(LOG_ERROR, "winrt_capture_cursor_toggle_supported (0x%08X): %ls",
 	     err.to_abi(), err.message().c_str());
@@ -345,10 +341,8 @@ static void winrt_capture_device_loss_rebuild(void *device_void, void *data)
 		frame_pool.CreateCaptureSession(item);
 
 	/* disable cursor capture if possible since ours performs better */
-#ifdef NTDDI_WIN10_VB
 	if (winrt_capture_cursor_toggle_supported())
 		session.IsCursorCaptureEnabled(false);
-#endif
 
 	capture->item = item;
 	capture->device = device;
@@ -420,10 +414,8 @@ try {
 	/* disable cursor capture if possible since ours performs better */
 	const BOOL cursor_toggle_supported =
 		winrt_capture_cursor_toggle_supported();
-#ifdef NTDDI_WIN10_VB
 	if (cursor_toggle_supported)
 		session.IsCursorCaptureEnabled(false);
-#endif
 
 	struct winrt_capture *capture = new winrt_capture{};
 	capture->window = window;
