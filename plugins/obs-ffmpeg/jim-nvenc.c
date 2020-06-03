@@ -573,8 +573,7 @@ static void *nvenc_create(obs_data_t *settings, obs_encoder_t *encoder)
 	}
 
 	if (obs_encoder_scaling_enabled(encoder)) {
-		info("scaling enabled, falling back to ffmpeg");
-		goto fail;
+		obs_encoder_set_scaled_size(encoder, 0, 0);
 	}
 	if (!obs_nv12_tex_active()) {
 		info("nv12 not active, falling back to ffmpeg");
