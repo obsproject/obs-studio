@@ -185,7 +185,7 @@ static bool update_hook_file(bool b64)
 	wchar_t dst_json[MAX_PATH];
 
 	StringCbCopyW(temp, sizeof(temp),
-		      L"..\\..\\data\\obs-plugins\\"
+		      L"data\\obs-plugins\\"
 		      L"win-capture\\");
 	make_filename(temp, L"obs-vulkan", L".json");
 
@@ -193,7 +193,7 @@ static bool update_hook_file(bool b64)
 		return false;
 
 	StringCbCopyW(temp, sizeof(temp),
-		      L"..\\..\\data\\obs-plugins\\"
+		      L"data\\obs-plugins\\"
 		      L"win-capture\\");
 	make_filename(temp, L"graphics-hook", L".dll");
 
