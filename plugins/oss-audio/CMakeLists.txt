@@ -34,4 +34,4 @@ target_link_libraries(oss-audio
 )
 set_target_properties(oss-audio PROPERTIES FOLDER "plugins")
 
-install_obs_plugin(oss-audio)
+install_obs_plugin_with_data(oss-audio data)
