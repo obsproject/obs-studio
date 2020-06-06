@@ -162,6 +162,7 @@ static void obs_qsv_defaults(obs_data_t *settings)
 	obs_data_set_default_int(settings, "keyint_sec", 3);
 	obs_data_set_default_string(settings, "latency", "normal");
 	obs_data_set_default_int(settings, "bframes", 3);
+	obs_data_set_default_bool(settings, "enhancements", false);
 	obs_data_set_default_bool(settings, "mbbrc", true);
 }
 
@@ -184,7 +185,8 @@ static inline void add_strings(obs_property_t *list, const char *const *strings)
 #define TEXT_ICQ_QUALITY obs_module_text("ICQQuality")
 #define TEXT_KEYINT_SEC obs_module_text("KeyframeIntervalSec")
 #define TEXT_BFRAMES obs_module_text("B Frames")
-#define TEXT_MBBRC obs_module_text("Content Adaptive Quantization")
+#define TEXT_PERCEPTUAL_ENHANCEMENTS \
+	obs_module_text("SubjectiveVideoEnhancements")
 
 static inline bool is_skl_or_greater_platform()
 {
@@ -227,6 +229,26 @@ static bool update_latency(obs_data_t *settings)
 	return true;
 }
 
+static bool update_enhancements(obs_data_t *settings)
+{
+	bool mbbrc = true;
+	if (obs_data_item_byname(settings, "mbbrc") != NULL) {
+		mbbrc = (bool)obs_data_get_bool(settings, "mbbrc");
+		obs_data_erase(settings, "mbbrc");
+	}
+
+	bool cqm = false;
+	if (obs_data_item_byname(settings, "CQM") != NULL) {
+		cqm = (bool)obs_data_get_bool(settings, "CQM");
+		obs_data_erase(settings, "CQM");
+	}
+
+	bool enabled = (mbbrc && cqm);
+	obs_data_set_bool(settings, "enhancements", enabled);
+
+	return true;
+}
+
 static bool rate_control_modified(obs_properties_t *ppts, obs_property_t *p,
 				  obs_data_t *settings)
 {
@@ -264,12 +286,12 @@ static bool rate_control_modified(obs_properties_t *ppts, obs_property_t *p,
 	obs_property_set_visible(p, bVisible);
 
 	bVisible = astrcmpi(rate_control, "CBR") == 0 ||
-		   astrcmpi(rate_control, "VBR") == 0 ||
-		   astrcmpi(rate_control, "AVBR") == 0;
-	p = obs_properties_get(ppts, "mbbrc");
+		   astrcmpi(rate_control, "VBR") == 0;
+	p = obs_properties_get(ppts, "enhancements");
 	obs_property_set_visible(p, bVisible);
 
 	update_latency(settings);
+	update_enhancements(settings);
 
 	return true;
 }
@@ -351,9 +373,8 @@ static obs_properties_t *obs_qsv_props(void *unused)
 	obs_properties_add_int(props, "bframes", TEXT_BFRAMES, 0, 3, 1);
 
 	if (is_skl_or_greater_platform())
-		obs_properties_add_bool(props, "mbbrc", TEXT_MBBRC);
-
-	obs_properties_add_bool(props, "CQM", "Customized quantization matrix");
+		obs_properties_add_bool(props, "enhancements",
+					TEXT_PERCEPTUAL_ENHANCEMENTS);
 
 	return props;
 }
@@ -363,6 +384,7 @@ static void update_params(struct obs_qsv *obsqsv, obs_data_t *settings)
 	video_t *video = obs_encoder_video(obsqsv->encoder);
 	const struct video_output_info *voi = video_output_get_info(video);
 	update_latency(settings);
+	update_enhancements(settings);
 
 	const char *target_usage =
 		obs_data_get_string(settings, "target_usage");
@@ -381,7 +403,7 @@ static void update_params(struct obs_qsv *obsqsv, obs_data_t *settings)
 	int keyint_sec = (int)obs_data_get_int(settings, "keyint_sec");
 	bool cbr_override = obs_data_get_bool(settings, "cbr");
 	int bFrames = (int)obs_data_get_int(settings, "bframes");
-	bool mbbrc = obs_data_get_bool(settings, "mbbrc");
+	bool enhancements = obs_data_get_bool(settings, "enhancements");
 
 	if (obs_data_has_user_value(settings, "bf"))
 		bFrames = (int)obs_data_get_int(settings, "bf");
@@ -483,7 +505,8 @@ static void update_params(struct obs_qsv *obsqsv, obs_data_t *settings)
 	obsqsv->params.nbFrames = (mfxU16)bFrames;
 	obsqsv->params.nKeyIntSec = (mfxU16)keyint_sec;
 	obsqsv->params.nICQQuality = (mfxU16)icq_quality;
-	obsqsv->params.bMBBRC = mbbrc;
+	obsqsv->params.bMBBRC = enhancements;
+	obsqsv->params.bCQM = enhancements;
 
 	info("settings:\n\trate_control:   %s", rate_control);
 
@@ -522,8 +545,6 @@ static void update_params(struct obs_qsv *obsqsv, obs_data_t *settings)
 	     "\twidth:          %d\n"
 	     "\theight:         %d",
 	     voi->fps_num, voi->fps_den, width, height);
-
-	obsqsv->params.bCQM = (bool)obs_data_get_bool(settings, "CQM");
 
 	info("debug info:");
 }
