@@ -218,33 +218,50 @@ static Window getWindowFromString(std::string wstr)
 	}
 
 	size_t firstMark = wstr.find(WIN_STRING_DIV);
+	size_t lastMark = wstr.rfind(WIN_STRING_DIV);
 	size_t markSize = strlen(WIN_STRING_DIV);
 
+	// wstr only consists of the window-id
 	if (firstMark == std::string::npos)
 		return (Window)std::stol(wstr);
 
-	Window wid = 0;
-
-	wstr = wstr.substr(firstMark + markSize);
-
-	size_t lastMark = wstr.rfind(WIN_STRING_DIV);
-	std::string wname = wstr.substr(0, lastMark);
+	// wstr also contains window-name and window-class
+	std::string wid = wstr.substr(0, firstMark);
+	std::string wname = wstr.substr(firstMark + markSize,
+					lastMark - firstMark - markSize);
 	std::string wcls = wstr.substr(lastMark + markSize);
 
-	Window matchedNameWin = wid;
+	Window winById = (Window)std::stol(wid);
+
+	// first try to find a match by the window-id
+	for (Window cwin : XCompcap::getTopLevelWindows()) {
+		// match by window-id
+		if (cwin == winById) {
+			blog(LOG_INFO, "Found Window '%s' by Window-ID %s",
+			     wname.c_str(), wid.c_str());
+
+			return cwin;
+		}
+	}
+
+	// then try to find a match by name & class
 	for (Window cwin : XCompcap::getTopLevelWindows()) {
 		std::string cwinname = XCompcap::getWindowName(cwin);
 		std::string ccls = XCompcap::getWindowClass(cwin);
 
-		if (cwin == wid && wname == cwinname && wcls == ccls)
-			return wid;
+		// match by name and class
+		if (wname == cwinname && wcls == ccls) {
+			blog(LOG_INFO, "Found Window '%s' by Name & Class",
+			     wname.c_str());
 
-		if (wname == cwinname ||
-		    (!matchedNameWin && !wcls.empty() && wcls == ccls))
-			matchedNameWin = cwin;
+			return cwin;
+		}
 	}
 
-	return matchedNameWin;
+	// no match
+	blog(LOG_DEBUG, "Did not find Window By ID %s, Name '%s' or Class '%s'",
+	     wid.c_str(), wname.c_str(), wcls.c_str());
+	return 0;
 }
 
 static void xcc_cleanup(XCompcapMain_private *p)
