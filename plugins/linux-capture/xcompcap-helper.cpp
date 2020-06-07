@@ -32,22 +32,6 @@ void cleanupDisplay()
 	xdisplay = 0;
 }
 
-static void getAllWindows(Window parent, std::list<Window> &windows)
-{
-	UNUSED_PARAMETER(parent);
-	UNUSED_PARAMETER(windows);
-}
-
-std::list<Window> getAllWindows()
-{
-	std::list<Window> res;
-
-	for (int i = 0; i < ScreenCount(disp()); ++i)
-		getAllWindows(RootWindow(disp(), i), res);
-
-	return res;
-}
-
 // Specification for checking for ewmh support at
 // http://standards.freedesktop.org/wm-spec/wm-spec-latest.html#idm140200472693600
 
@@ -180,40 +164,6 @@ std::string getWindowAtom(Window win, const char *atom)
 	XFree(tp.value);
 
 	return res;
-}
-
-std::string getWindowCommand(Window win)
-{
-	Atom xi = XInternAtom(disp(), "WM_COMMAND", false);
-	int n;
-	char **list = 0;
-	XTextProperty tp;
-	std::string res = "error";
-
-	XGetTextProperty(disp(), win, &tp, xi);
-
-	if (!tp.nitems)
-		return std::string();
-
-	if (tp.encoding == XA_STRING) {
-		res = (char *)tp.value;
-	} else {
-		int ret = XmbTextPropertyToTextList(disp(), &tp, &list, &n);
-		if (ret >= Success && n > 0 && *list) {
-			res = *list;
-			XFreeStringList(list);
-		}
-	}
-
-	XFree(tp.value);
-
-	return res;
-}
-
-int getWindowPid(Window win)
-{
-	UNUSED_PARAMETER(win);
-	return 1234; //TODO
 }
 
 static std::map<XCompcapMain *, Window> windowForSource;
