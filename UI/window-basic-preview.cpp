@@ -495,13 +495,15 @@ void OBSBasicPreview::keyReleaseEvent(QKeyEvent *event)
 
 void OBSBasicPreview::wheelEvent(QWheelEvent *event)
 {
-	if (scrollMode && IsFixedScaling() &&
-	    event->orientation() == Qt::Vertical) {
-		if (event->delta() > 0)
-			SetScalingLevel(scalingLevel + 1);
-		else if (event->delta() < 0)
-			SetScalingLevel(scalingLevel - 1);
-		emit DisplayResized();
+	if (scrollMode && IsFixedScaling()) {
+		const int delta = event->angleDelta().y();
+		if (delta != 0) {
+			if (delta > 0)
+				SetScalingLevel(scalingLevel + 1);
+			else
+				SetScalingLevel(scalingLevel - 1);
+			emit DisplayResized();
+		}
 	}
 
 	OBSQTDisplay::wheelEvent(event);

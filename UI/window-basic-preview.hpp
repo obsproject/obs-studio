@@ -105,7 +105,8 @@ private:
 	void ProcessClick(const vec2 &pos);
 
 public:
-	OBSBasicPreview(QWidget *parent, Qt::WindowFlags flags = 0);
+	OBSBasicPreview(QWidget *parent,
+			Qt::WindowFlags flags = Qt::WindowFlags());
 	~OBSBasicPreview();
 
 	static OBSBasicPreview *Get();

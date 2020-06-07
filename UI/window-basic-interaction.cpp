@@ -314,22 +314,32 @@ bool OBSBasicInteraction::HandleMouseWheelEvent(QWheelEvent *event)
 	int xDelta = 0;
 	int yDelta = 0;
 
+	const QPoint angleDelta = event->angleDelta();
 	if (!event->pixelDelta().isNull()) {
-		if (event->orientation() == Qt::Horizontal)
+		if (angleDelta.x())
 			xDelta = event->pixelDelta().x();
 		else
 			yDelta = event->pixelDelta().y();
 	} else {
-		if (event->orientation() == Qt::Horizontal)
-			xDelta = event->delta();
+		if (angleDelta.x())
+			xDelta = angleDelta.x();
 		else
-			yDelta = event->delta();
+			yDelta = angleDelta.y();
 	}
 
-	if (GetSourceRelativeXY(event->x(), event->y(), mouseEvent.x,
-				mouseEvent.y))
+#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
+	const QPointF position = event->position();
+	const int x = position.x();
+	const int y = position.y();
+#else
+	const int x = event->x();
+	const int y = event->y();
+#endif
+
+	if (GetSourceRelativeXY(x, y, mouseEvent.x, mouseEvent.y)) {
 		obs_source_send_mouse_wheel(source, &mouseEvent, xDelta,
 					    yDelta);
+	}
 
 	return true;
 }
