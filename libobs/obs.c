@@ -429,8 +429,13 @@ static int obs_init_video(struct obs_video_info *ovi)
 	if (pthread_mutex_init(&video->task_mutex, NULL) < 0)
 		return OBS_VIDEO_FAIL;
 
+#ifdef __APPLE__
+	errorcode = pthread_create(&video->video_thread, NULL,
+				   obs_graphics_thread_autorelease, obs);
+#else
 	errorcode = pthread_create(&video->video_thread, NULL,
 				   obs_graphics_thread, obs);
+#endif
 	if (errorcode != 0)
 		return OBS_VIDEO_FAIL;
 
