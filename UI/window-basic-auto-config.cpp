@@ -578,6 +578,8 @@ void AutoConfigStreamPage::UpdateKeyLink()
 		streamKeyLink = "https://www.pscp.tv/account/producer";
 	} else if (serviceName.startsWith("YouStreamer")) {
 		streamKeyLink = "https://www.app.youstreamer.com/stream/";
+	} else if (serviceName == "Trovo") {
+		streamKeyLink = "https://studio.trovo.live/mychannel/stream";
 	}
 
 	if (QString(streamKeyLink).isNull()) {
