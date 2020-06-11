@@ -205,7 +205,7 @@ static bool mp_media_init_scaling(mp_media_t *m)
 					  m->v.decoder->pix_fmt,
 					  m->v.decoder->width,
 					  m->v.decoder->height, m->scale_format,
-					  SWS_FAST_BILINEAR, NULL, NULL, NULL);
+					  SWS_POINT, NULL, NULL, NULL);
 	if (!m->swscale) {
 		blog(LOG_WARNING, "MP: Failed to initialize scaler");
 		return false;
