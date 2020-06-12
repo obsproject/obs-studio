@@ -27,6 +27,7 @@ struct vk_device_funcs {
 	DEF_FUNC(DestroyImage);
 	DEF_FUNC(GetImageMemoryRequirements);
 	DEF_FUNC(GetImageMemoryRequirements2);
+	DEF_FUNC(ResetCommandPool);
 	DEF_FUNC(BeginCommandBuffer);
 	DEF_FUNC(EndCommandBuffer);
 	DEF_FUNC(CmdCopyImage);
