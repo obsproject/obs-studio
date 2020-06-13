@@ -1153,17 +1153,31 @@ static bool Update(wchar_t *cmdLine)
 		GetCurrentDirectory(_countof(lpAppDataPath), lpAppDataPath);
 		StringCbCat(lpAppDataPath, sizeof(lpAppDataPath), L"\\config");
 	} else {
-		CoTaskMemPtr<wchar_t> pOut;
-		HRESULT hr = SHGetKnownFolderPath(FOLDERID_RoamingAppData,
-						  KF_FLAG_DEFAULT, nullptr,
-						  &pOut);
-		if (hr != S_OK) {
+		DWORD ret;
+		ret = GetEnvironmentVariable(L"OBS_USER_APPDATA_PATH",
+					     lpAppDataPath,
+					     _countof(lpAppDataPath));
+
+		if (ret >= _countof(lpAppDataPath)) {
 			Status(L"Update failed: Could not determine AppData "
 			       L"location");
 			return false;
 		}
 
-		StringCbCopy(lpAppDataPath, sizeof(lpAppDataPath), pOut);
+		if (!ret) {
+			CoTaskMemPtr<wchar_t> pOut;
+			HRESULT hr = SHGetKnownFolderPath(
+				FOLDERID_RoamingAppData, KF_FLAG_DEFAULT,
+				nullptr, &pOut);
+			if (hr != S_OK) {
+				Status(L"Update failed: Could not determine AppData "
+				       L"location");
+				return false;
+			}
+
+			StringCbCopy(lpAppDataPath, sizeof(lpAppDataPath),
+				     pOut);
+		}
 	}
 
 	StringCbCat(lpAppDataPath, sizeof(lpAppDataPath), L"\\obs-studio");
@@ -1584,6 +1598,14 @@ static int RestartAsAdmin(LPCWSTR lpCmdLine, LPCWSTR cwd)
 	/* annoyingly the actual elevated updater will disappear behind other
 	 * windows :( */
 	AllowSetForegroundWindow(ASFW_ANY);
+
+	/* if the admin is a different user, save the path to the user's
+	 * appdata so we can load the correct manifest */
+	CoTaskMemPtr<wchar_t> pOut;
+	HRESULT hr = SHGetKnownFolderPath(FOLDERID_RoamingAppData,
+					  KF_FLAG_DEFAULT, nullptr, &pOut);
+	if (hr == S_OK)
+		SetEnvironmentVariable(L"OBS_USER_APPDATA_PATH", pOut);
 
 	if (ShellExecuteEx(&shExInfo)) {
 		DWORD exitCode;
