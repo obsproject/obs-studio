@@ -1629,6 +1629,17 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR lpCmdLine, int)
 	is32bit = wcsstr(cwd, L"bin\\32bit") != nullptr;
 
 	if (!HasElevation()) {
+
+		WinHandle hMutex = OpenMutex(
+			SYNCHRONIZE, false, L"OBSUpdaterRunningAsNonAdminUser");
+		if (hMutex) {
+			MessageBox(
+				nullptr, L"Updater Error",
+				L"OBS Studio Updater must be run as an administrator.",
+				MB_ICONWARNING);
+			return 2;
+		}
+
 		HANDLE hLowMutex = CreateMutexW(
 			nullptr, true, L"OBSUpdaterRunningAsNonAdminUser");
 
