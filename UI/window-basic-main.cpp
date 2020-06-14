@@ -7965,3 +7965,15 @@ void OBSBasic::on_customContextMenuRequested(const QPoint &pos)
 	if (!className || strstr(className, "Dock") != nullptr)
 		ui->viewMenuDocks->exec(mapToGlobal(pos));
 }
+
+void OBSBasic::UpdateProjectorHideCursor()
+{
+	for (size_t i = 0; i < projectors.size(); i++)
+		projectors[i]->SetHideCursor();
+}
+
+void OBSBasic::UpdateProjectorAlwaysOnTop(bool top)
+{
+	for (size_t i = 0; i < projectors.size(); i++)
+		SetAlwaysOnTop(projectors[i], top);
+}

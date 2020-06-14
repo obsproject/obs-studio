@@ -173,6 +173,9 @@ void OBSProjector::SetMonitor(int monitor)
 
 void OBSProjector::SetHideCursor()
 {
+	if (savedMonitor == -1)
+		return;
+
 	bool hideCursor = config_get_bool(GetGlobalConfig(), "BasicWindow",
 					  "HideProjectorCursor");
 
