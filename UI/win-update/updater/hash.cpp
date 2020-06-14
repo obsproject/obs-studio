@@ -45,6 +45,7 @@ void StringToHash(const wchar_t *in, BYTE *out)
 
 bool CalculateFileHash(const wchar_t *path, BYTE *hash)
 {
+	static BYTE hashBuffer[1048576];
 	blake2b_state blake2;
 	if (blake2b_init(&blake2, BLAKE2_HASH_LENGTH) != 0)
 		return false;
@@ -54,19 +55,16 @@ bool CalculateFileHash(const wchar_t *path, BYTE *hash)
 	if (handle == INVALID_HANDLE_VALUE)
 		return false;
 
-	vector<BYTE> buf;
-	buf.resize(65536);
-
 	for (;;) {
 		DWORD read = 0;
-		if (!ReadFile(handle, buf.data(), (DWORD)buf.size(), &read,
+		if (!ReadFile(handle, hashBuffer, sizeof(hashBuffer), &read,
 			      nullptr))
 			return false;
 
 		if (!read)
 			break;
 
-		if (blake2b_update(&blake2, buf.data(), read) != 0)
+		if (blake2b_update(&blake2, hashBuffer, read) != 0)
 			return false;
 	}
 
