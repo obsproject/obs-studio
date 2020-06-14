@@ -24,6 +24,9 @@ OBSProjector::OBSProjector(QWidget *widget, obs_source_t *source_, int monitor,
 {
 	type = type_;
 
+	SetAlwaysOnTop(this, config_get_bool(GetGlobalConfig(), "BasicWindow",
+					     "ProjectorAlwaysOnTop"));
+
 	setWindowIcon(QIcon::fromTheme("obs", QIcon(":/res/images/obs.png")));
 
 	if (monitor == -1)
@@ -37,9 +40,6 @@ OBSProjector::OBSProjector(QWidget *widget, obs_source_t *source_, int monitor,
 	action->setShortcut(Qt::Key_Escape);
 	addAction(action);
 	connect(action, SIGNAL(triggered()), this, SLOT(EscapeTriggered()));
-
-	SetAlwaysOnTop(this, config_get_bool(GetGlobalConfig(), "BasicWindow",
-					     "ProjectorAlwaysOnTop"));
 
 	setAttribute(Qt::WA_DeleteOnClose, true);
 
