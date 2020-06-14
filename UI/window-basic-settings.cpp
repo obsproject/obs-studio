@@ -468,6 +468,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->sampleRate,           COMBO_CHANGED,  AUDIO_RESTART);
 	HookWidget(ui->meterDecayRate,       COMBO_CHANGED,  AUDIO_CHANGED);
 	HookWidget(ui->peakMeterType,        COMBO_CHANGED,  AUDIO_CHANGED);
+	HookWidget(ui->meterUpdateRate,      COMBO_CHANGED,  AUDIO_CHANGED);
 	HookWidget(ui->desktopAudioDevice1,  COMBO_CHANGED,  AUDIO_CHANGED);
 	HookWidget(ui->desktopAudioDevice2,  COMBO_CHANGED,  AUDIO_CHANGED);
 	HookWidget(ui->auxAudioDevice1,      COMBO_CHANGED,  AUDIO_CHANGED);
@@ -2290,6 +2291,8 @@ void OBSBasicSettings::LoadAudioSettings()
 		config_get_double(main->Config(), "Audio", "MeterDecayRate");
 	uint32_t peakMeterTypeIdx =
 		config_get_uint(main->Config(), "Audio", "PeakMeterType");
+	uint32_t meterUpdateRate =
+		config_get_uint(main->Config(), "Audio", "MeterUpdateRate");
 
 	loading = true;
 
@@ -2326,6 +2329,11 @@ void OBSBasicSettings::LoadAudioSettings()
 		ui->meterDecayRate->setCurrentIndex(0);
 
 	ui->peakMeterType->setCurrentIndex(peakMeterTypeIdx);
+
+	if (meterUpdateRate == VOLUME_METER_UPDATE_60HZ)
+		ui->meterUpdateRate->setCurrentIndex(1);
+	else
+		ui->meterUpdateRate->setCurrentIndex(0);
 
 	LoadAudioDevices();
 	LoadAudioSources();
@@ -3407,6 +3415,23 @@ void OBSBasicSettings::SaveAudioSettings()
 				peakMeterTypeIdx);
 
 		main->UpdateVolumeControlsPeakMeterType();
+	}
+
+	if (WidgetChanged(ui->meterUpdateRate)) {
+		uint32_t meterUpdateRate;
+		switch (ui->meterUpdateRate->currentIndex()) {
+		case 1:
+			meterUpdateRate = VOLUME_METER_UPDATE_60HZ;
+			break;
+		case 0:
+		default:
+			meterUpdateRate = VOLUME_METER_UPDATE_30HZ;
+			break;
+		}
+		config_set_double(main->Config(), "Audio", "MeterUpdateRate",
+				  meterUpdateRate);
+
+		main->UpdateVolumeControlsUpdateRate();
 	}
 
 	for (auto &audioSource : audioSources) {

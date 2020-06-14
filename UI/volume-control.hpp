@@ -120,6 +120,7 @@ private:
 	qreal clipLevel;
 	qreal minimumInputLevel;
 	qreal peakDecayRate;
+	qreal meterUpdateRate;
 	qreal magnitudeIntegrationTime;
 	qreal peakHoldDuration;
 	qreal inputPeakHoldDuration;
@@ -171,6 +172,8 @@ public:
 	void setMinimumInputLevel(qreal v);
 	qreal getPeakDecayRate() const;
 	void setPeakDecayRate(qreal v);
+	qreal getMeterUpdateRate() const;
+	void setMeterUpdateRate(qreal v);
 	qreal getMagnitudeIntegrationTime() const;
 	void setMagnitudeIntegrationTime(qreal v);
 	qreal getPeakHoldDuration() const;
@@ -193,6 +196,7 @@ public:
 
 	void AddVolControl(VolumeMeter *meter);
 	void RemoveVolControl(VolumeMeter *meter);
+	void SetInterval(int updateRate);
 
 protected:
 	void timerEvent(QTimerEvent *event) override;
@@ -252,6 +256,7 @@ public:
 
 	void SetMeterDecayRate(qreal q);
 	void setPeakMeterType(enum obs_peak_meter_type peakMeterType);
+	void SetMeterUpdateRate(qreal q);
 
 	void EnableSlider(bool enable);
 };

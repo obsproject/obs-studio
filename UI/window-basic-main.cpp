@@ -557,6 +557,15 @@ void OBSBasic::UpdateVolumeControlsPeakMeterType()
 	}
 }
 
+void OBSBasic::UpdateVolumeControlsUpdateRate()
+{
+	double meterUpdateRate =
+		config_get_uint(basicConfig, "Audio", "MeterUpdateRate");
+
+	for (size_t i = 0; i < volumes.size(); i++)
+		volumes[i]->SetMeterUpdateRate(meterUpdateRate);
+}
+
 void OBSBasic::ClearVolumeControls()
 {
 	for (VolControl *vol : volumes)
@@ -1364,6 +1373,8 @@ bool OBSBasic::InitBasicConfigDefaults()
 	config_set_default_double(basicConfig, "Audio", "MeterDecayRate",
 				  VOLUME_METER_DECAY_FAST);
 	config_set_default_uint(basicConfig, "Audio", "PeakMeterType", 0);
+	config_set_default_uint(basicConfig, "Audio", "MeterUpdateRate",
+				VOLUME_METER_UPDATE_30HZ);
 
 	CheckExistingCookieId();
 
@@ -3121,6 +3132,10 @@ void OBSBasic::ActivateAudioSource(OBSSource source)
 	}
 
 	vol->setPeakMeterType(peakMeterType);
+
+	uint32_t meterUpdateRate =
+		config_get_uint(basicConfig, "Audio", "MeterUpdateRate");
+	vol->SetMeterUpdateRate(meterUpdateRate);
 
 	vol->setContextMenuPolicy(Qt::CustomContextMenu);
 

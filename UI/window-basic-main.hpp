@@ -299,6 +299,7 @@ private:
 
 	void UpdateVolumeControlsDecayRate();
 	void UpdateVolumeControlsPeakMeterType();
+	void UpdateVolumeControlsUpdateRate();
 	void ClearVolumeControls();
 
 	void UploadLog(const char *subdir, const char *file);

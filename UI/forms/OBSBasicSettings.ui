@@ -4108,6 +4108,36 @@
                      </item>
                     </widget>
                    </item>
+                   <item row="2" column="0">
+                    <widget class="QLabel" name="meterUpdateRateLabel">
+                     <property name="toolTip">
+                      <string>Basic.Settings.Audio.MeterUpdateRate.TT</string>
+                     </property>
+                     <property name="text">
+                      <string>Basic.Settings.Audio.MeterUpdateRate</string>
+                     </property>
+                     <property name="buddy">
+                      <cstring>meterUpdateRate</cstring>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="2" column="1">
+                    <widget class="QComboBox" name="meterUpdateRate">
+                     <property name="currentIndex">
+                      <number>0</number>
+                     </property>
+                     <item>
+                      <property name="text">
+                       <string>Basic.Settings.Audio.MeterUpdateRate.30Hz</string>
+                      </property>
+                     </item>
+                     <item>
+                      <property name="text">
+                       <string>Basic.Settings.Audio.MeterUpdateRate.60Hz</string>
+                      </property>
+                     </item>
+                    </widget>
+                   </item>
                   </layout>
                  </widget>
                 </item>

@@ -119,6 +119,11 @@ void VolControl::setPeakMeterType(enum obs_peak_meter_type peakMeterType)
 	volMeter->setPeakMeterType(peakMeterType);
 }
 
+void VolControl::SetMeterUpdateRate(qreal q)
+{
+	volMeter->setMeterUpdateRate(q);
+}
+
 VolControl::VolControl(OBSSource source_, bool showConfig, bool vertical)
 	: source(std::move(source_)),
 	  levelTotal(0.0f),
@@ -453,6 +458,24 @@ void VolumeMeter::setPeakDecayRate(qreal v)
 	peakDecayRate = v;
 }
 
+qreal VolumeMeter::getMeterUpdateRate() const
+{
+	return meterUpdateRate;
+}
+
+void VolumeMeter::setMeterUpdateRate(qreal v)
+{
+	meterUpdateRate = v;
+	updateTimerRef = updateTimer.toStrongRef();
+	if (!updateTimerRef) {
+		updateTimerRef = QSharedPointer<VolumeMeterTimer>::create();
+		updateTimerRef->start(meterUpdateRate);
+		updateTimer = updateTimerRef;
+	} else {
+		updateTimerRef->SetInterval(meterUpdateRate);
+	}
+}
+
 qreal VolumeMeter::getMagnitudeIntegrationTime() const
 {
 	return magnitudeIntegrationTime;
@@ -552,6 +575,7 @@ VolumeMeter::VolumeMeter(QWidget *parent, obs_volmeter_t *obs_volmeter,
 	clipLevel = -0.5;                                //  -0.5 dB
 	minimumInputLevel = -50.0;                       // -50 dB
 	peakDecayRate = 11.76;                           //  20 dB / 1.7 sec
+	meterUpdateRate = 34;                            //  34 ms (~30 Hz)
 	magnitudeIntegrationTime = 0.3;                  //  99% in 300 ms
 	peakHoldDuration = 20.0;                         //  20 seconds
 	inputPeakHoldDuration = 1.0;                     //  1 second
@@ -562,7 +586,7 @@ VolumeMeter::VolumeMeter(QWidget *parent, obs_volmeter_t *obs_volmeter,
 	updateTimerRef = updateTimer.toStrongRef();
 	if (!updateTimerRef) {
 		updateTimerRef = QSharedPointer<VolumeMeterTimer>::create();
-		updateTimerRef->start(34);
+		updateTimerRef->start(meterUpdateRate);
 		updateTimer = updateTimerRef;
 	}
 
@@ -1100,4 +1124,9 @@ void VolumeMeterTimer::timerEvent(QTimerEvent *)
 {
 	for (VolumeMeter *meter : volumeMeters)
 		meter->update();
+}
+
+void VolumeMeterTimer::SetInterval(int updateRate)
+{
+	this->setInterval(updateRate);
 }
