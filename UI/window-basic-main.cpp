@@ -1374,7 +1374,7 @@ bool OBSBasic::InitBasicConfigDefaults()
 				  VOLUME_METER_DECAY_FAST);
 	config_set_default_uint(basicConfig, "Audio", "PeakMeterType", 0);
 	config_set_default_uint(basicConfig, "Audio", "MeterUpdateRate",
-				VOLUME_METER_UPDATE_30HZ);
+				VOLUME_METER_UPDATE_60HZ);
 
 	CheckExistingCookieId();
 

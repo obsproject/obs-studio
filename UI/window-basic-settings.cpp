@@ -2330,10 +2330,10 @@ void OBSBasicSettings::LoadAudioSettings()
 
 	ui->peakMeterType->setCurrentIndex(peakMeterTypeIdx);
 
-	if (meterUpdateRate == VOLUME_METER_UPDATE_60HZ)
-		ui->meterUpdateRate->setCurrentIndex(1);
-	else
+	if (meterUpdateRate == VOLUME_METER_UPDATE_30HZ)
 		ui->meterUpdateRate->setCurrentIndex(0);
+	else
+		ui->meterUpdateRate->setCurrentIndex(1);
 
 	LoadAudioDevices();
 	LoadAudioSources();
@@ -3420,12 +3420,12 @@ void OBSBasicSettings::SaveAudioSettings()
 	if (WidgetChanged(ui->meterUpdateRate)) {
 		uint32_t meterUpdateRate;
 		switch (ui->meterUpdateRate->currentIndex()) {
-		case 1:
-			meterUpdateRate = VOLUME_METER_UPDATE_60HZ;
-			break;
 		case 0:
-		default:
 			meterUpdateRate = VOLUME_METER_UPDATE_30HZ;
+			break;
+		case 1:
+		default:
+			meterUpdateRate = VOLUME_METER_UPDATE_60HZ;
 			break;
 		}
 		config_set_double(main->Config(), "Audio", "MeterUpdateRate",

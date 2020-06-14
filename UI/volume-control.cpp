@@ -575,7 +575,7 @@ VolumeMeter::VolumeMeter(QWidget *parent, obs_volmeter_t *obs_volmeter,
 	clipLevel = -0.5;                                //  -0.5 dB
 	minimumInputLevel = -50.0;                       // -50 dB
 	peakDecayRate = 11.76;                           //  20 dB / 1.7 sec
-	meterUpdateRate = 34;                            //  34 ms (~30 Hz)
+	meterUpdateRate = 16;                            //  16 ms (~60 Hz)
 	magnitudeIntegrationTime = 0.3;                  //  99% in 300 ms
 	peakHoldDuration = 20.0;                         //  20 seconds
 	inputPeakHoldDuration = 1.0;                     //  1 second

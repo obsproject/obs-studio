@@ -4124,7 +4124,7 @@
                    <item row="2" column="1">
                     <widget class="QComboBox" name="meterUpdateRate">
                      <property name="currentIndex">
-                      <number>0</number>
+                      <number>1</number>
                      </property>
                      <item>
                       <property name="text">
