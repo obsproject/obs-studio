@@ -9,6 +9,12 @@ enum class StreamSettingsAction {
 	OpenSettings,
 	Cancel,
 	ContinueStream,
+	OpenSettingsStream = 110,
+	OpenSettingsOutput = 120,
+	OpenSettingsAudio = 130,
+	OpenSettingsVideo = 140,
+	OpenSettingsHotkeys = 150,
+	OpenSettingsAdvanced = 160
 };
 
 class UIValidation : public QObject {

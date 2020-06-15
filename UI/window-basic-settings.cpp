@@ -4850,3 +4850,8 @@ int OBSBasicSettings::CurrentFLVTrack()
 
 	return 0;
 }
+
+void OBSBasicSettings::SwitchToScreen(int index)
+{
+	ui->listWidget->setCurrentRow(index);
+}

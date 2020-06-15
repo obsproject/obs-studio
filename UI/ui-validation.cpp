@@ -111,7 +111,7 @@ UIValidation::StreamSettingsConfirmation(QWidget *parent, OBSService service)
 	messageBox.exec();
 
 	if (messageBox.clickedButton() == settings)
-		return StreamSettingsAction::OpenSettings;
+		return StreamSettingsAction::OpenSettingsStream;
 	if (messageBox.clickedButton() == cancel)
 		return StreamSettingsAction::Cancel;
 

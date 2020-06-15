@@ -383,4 +383,6 @@ protected:
 public:
 	OBSBasicSettings(QWidget *parent);
 	~OBSBasicSettings();
+
+	void SwitchToScreen(int index);
 };

@@ -4135,14 +4135,20 @@ void OBSBasic::on_actionRemux_triggered()
 
 void OBSBasic::on_action_Settings_triggered()
 {
+	on_action_Settings_triggered(0);
+}
+
+void OBSBasic::on_action_Settings_triggered(int index)
+{
 	static bool settings_already_executing = false;
 
 	/* Do not load settings window if inside of a temporary event loop
 	 * because we could be inside of an Auth::LoadUI call.  Keep trying
 	 * once per second until we've exit any known sub-loops. */
 	if (os_atomic_load_long(&insideEventLoop) != 0) {
-		QTimer::singleShot(1000, this,
-				   SLOT(on_action_Settings_triggered()));
+		QTimer::singleShot(1000, this, [this, index] {
+			on_action_Settings_triggered(index);
+		});
 		return;
 	}
 
@@ -4154,6 +4160,7 @@ void OBSBasic::on_action_Settings_triggered()
 
 	{
 		OBSBasicSettings settings(this);
+		settings.SwitchToScreen(index);
 		settings.exec();
 	}
 
@@ -6081,8 +6088,8 @@ void OBSBasic::on_streamButton_clicked()
 		switch (action) {
 		case StreamSettingsAction::ContinueStream:
 			break;
-		case StreamSettingsAction::OpenSettings:
-			on_action_Settings_triggered();
+		case StreamSettingsAction::OpenSettingsStream:
+			on_action_Settings_triggered(1);
 			ui->streamButton->setChecked(false);
 			return;
 		case StreamSettingsAction::Cancel:
