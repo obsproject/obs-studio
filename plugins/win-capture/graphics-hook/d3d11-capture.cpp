@@ -795,8 +795,6 @@ static inline void d3d11_shmem_capture(ID3D11Resource *backbuffer)
 		d3d11_copy_texture(data.scale_tex, backbuffer);
 		d3d11_scale_texture(data.render_targets[data.cur_tex],
 				    data.scale_resource);
-	} else {
-		d3d11_copy_texture(data.textures[data.cur_tex], backbuffer);
 	}
 
 	if (data.copy_wait < NUM_BUFFERS - 1) {
@@ -811,7 +809,12 @@ static inline void d3d11_shmem_capture(ID3D11Resource *backbuffer)
 			shmem_texture_data_unlock(next_tex);
 		}
 
-		d3d11_copy_texture(dst, src);
+		if (data.using_scale) {
+			d3d11_copy_texture(dst, src);
+		} else {
+			d3d11_copy_texture(data.copy_surfaces[next_tex],
+					   backbuffer);
+		}
 		data.texture_ready[next_tex] = true;
 	}
 
