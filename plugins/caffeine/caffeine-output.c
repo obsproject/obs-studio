@@ -35,6 +35,20 @@
 		dstr_free(&message);                                \
 	} while (false)
 
+#define CAFF_AUDIO_FORMAT AUDIO_FORMAT_16BIT
+#define CAFF_AUDIO_FORMAT_TYPE int16_t
+#define CAFF_AUDIO_LAYOUT SPEAKERS_STEREO
+#define CAFF_AUDIO_LAYOUT_MUL 2
+#define CAFF_AUDIO_SAMPLERATE 48000ul
+#define NANOSECONDS 1000000000ull
+
+static int const enforced_height = 720;
+
+struct caffeine_audio {
+	struct audio_data *frames;
+	struct caffeine_audio *next;
+};
+
 struct caffeine_output {
 	obs_output_t *output;
 	caff_InstanceHandle instance;
@@ -47,7 +61,40 @@ struct caffeine_output {
 	pthread_t monitor_thread;
 	char *foreground_process;
 	char *game_id;
+
+	pthread_t audio_thread;
+	struct caffeine_audio *audio_queue;
+	pthread_mutex_t audio_lock;
+	pthread_cond_t audio_cond;
+	bool audio_stop;
 };
+
+static void audio_data_copy(struct audio_data *left, struct audio_data *right)
+{
+	for (int idx = 0; idx < MAX_AV_PLANES; idx++) {
+		if (!left->data[idx]) {
+			right->data[idx] = NULL;
+		} else {
+			size_t size = left->frames *
+				      sizeof(CAFF_AUDIO_FORMAT_TYPE) *
+				      CAFF_AUDIO_LAYOUT_MUL;
+			right->data[idx] = bmalloc(size);
+			memcpy(right->data[idx], left->data[idx], size);
+		}
+	}
+	right->frames = left->frames;
+	right->timestamp = left->timestamp;
+}
+
+static void audio_data_free(struct audio_data *ptr)
+{
+	for (int idx = 0; idx < MAX_AV_PLANES; idx++) {
+		if (!ptr->data[idx])
+			continue;
+		bfree(ptr->data[idx]);
+	}
+	bfree(ptr);
+}
 
 static const char *caffeine_get_name(void *data)
 {
@@ -97,6 +144,75 @@ caff_VideoFormat obs_to_caffeine_format(enum video_format format)
 	}
 }
 
+static bool prepare_audio(struct caffeine_output *context,
+			  const struct audio_data *frame,
+			  struct audio_data *output)
+{
+	/* This fixes an issue where unencoded outputs have video & audio out of sync
+	 *
+	 * Copied/adapted from obs-outputs/flv-output
+	 */
+
+	*output = *frame;
+
+	if (frame->timestamp < context->start_timestamp) {
+		uint64_t duration = ((uint64_t)frame->frames) * NANOSECONDS /
+				    CAFF_AUDIO_SAMPLERATE;
+		uint64_t end_ts = (frame->timestamp + duration);
+		uint64_t cutoff;
+
+		if (end_ts <= context->start_timestamp)
+			return false;
+
+		cutoff = context->start_timestamp - frame->timestamp;
+		output->timestamp += cutoff;
+
+		cutoff = cutoff * CAFF_AUDIO_SAMPLERATE / NANOSECONDS;
+
+		for (size_t i = 0; i < context->audio_planes; i++)
+			output->data[i] +=
+				context->audio_size * (uint32_t)cutoff;
+		output->frames -= (uint32_t)cutoff;
+	}
+
+	return true;
+}
+
+static void *PTW32_CDECL caffeine_handle_audio(void *ptr)
+{
+	struct caffeine_output *context = (struct caffeine_output *)ptr;
+
+	pthread_mutex_lock(&context->audio_lock);
+	while (!context->audio_stop) {
+		// Wait for a signal.
+		pthread_cond_wait(&context->audio_cond, &context->audio_lock);
+		if (context->audio_stop || !context->audio_queue)
+			continue;
+
+		// Dequeue the front element.
+		while (context->audio_queue) {
+			// Grab the first element and unlock the mutex.
+			struct caffeine_audio *here = context->audio_queue;
+			context->audio_queue = here->next;
+			pthread_mutex_unlock(&context->audio_lock);
+
+			// Send off the audio.
+			caff_sendAudio(context->instance, here->frames->data[0],
+				       here->frames->frames);
+
+			// Delete the dequeued element.
+			audio_data_free(here->frames);
+			bfree(here);
+
+			// Lock the mutex again.
+			pthread_mutex_lock(&context->audio_lock);
+		}
+	}
+	pthread_mutex_unlock(&context->audio_lock);
+
+	return NULL;
+}
+
 static void *caffeine_create(obs_data_t *settings, obs_output_t *output)
 {
 	trace();
@@ -114,8 +230,6 @@ static void *caffeine_create(obs_data_t *settings, obs_output_t *output)
 
 static void caffeine_stream_started(void *data);
 static void caffeine_stream_failed(void *data, caff_Result error);
-
-static int const enforced_height = 720;
 
 static bool caffeine_authenticate(struct caffeine_output *context)
 {
@@ -183,9 +297,10 @@ static bool caffeine_start(void *data)
 		return false;
 	}
 
-	struct audio_convert_info conversion = {.format = AUDIO_FORMAT_16BIT,
-						.speakers = SPEAKERS_STEREO,
-						.samples_per_sec = 48000};
+	struct audio_convert_info conversion = {.format = CAFF_AUDIO_FORMAT,
+						.speakers = CAFF_AUDIO_LAYOUT,
+						.samples_per_sec =
+							CAFF_AUDIO_SAMPLERATE};
 	obs_output_set_audio_conversion(output, &conversion);
 
 	context->audio_planes =
@@ -195,6 +310,15 @@ static bool caffeine_start(void *data)
 
 	if (!obs_output_can_begin_data_capture(output, 0))
 		return false;
+
+	{ // Initialize Audio
+		context->audio_stop = false;
+		context->audio_queue = NULL;
+		pthread_mutex_init(&context->audio_lock, NULL);
+		pthread_cond_init(&context->audio_cond, NULL);
+		pthread_create(&context->audio_thread, NULL,
+			       &caffeine_handle_audio, context);
+	}
 
 	obs_service_t *service = obs_output_get_service(output);
 	obs_data_t *settings = obs_service_get_settings(service);
@@ -338,56 +462,47 @@ static void caffeine_raw_video(void *data, struct video_data *frame)
 		       width, height, timestampMicros);
 }
 
-/* This fixes an issue where unencoded outputs have video & audio out of sync
- *
- * Copied/adapted from obs-outputs/flv-output
- */
-static bool prepare_audio(struct caffeine_output *context,
-			  const struct audio_data *frame,
-			  struct audio_data *output)
-{
-	*output = *frame;
-
-	const uint64_t NANOSECONDS = 1000000000;
-	const uint64_t SAMPLES = 48000;
-
-	if (frame->timestamp < context->start_timestamp) {
-		uint64_t duration =
-			(uint64_t)frame->frames * NANOSECONDS / SAMPLES;
-		uint64_t end_ts = (frame->timestamp + duration);
-		uint64_t cutoff;
-
-		if (end_ts <= context->start_timestamp)
-			return false;
-
-		cutoff = context->start_timestamp - frame->timestamp;
-		output->timestamp += cutoff;
-
-		cutoff = cutoff * SAMPLES / NANOSECONDS;
-
-		for (size_t i = 0; i < context->audio_planes; i++)
-			output->data[i] +=
-				context->audio_size * (uint32_t)cutoff;
-		output->frames -= (uint32_t)cutoff;
-	}
-
-	return true;
-}
-
 static void caffeine_raw_audio(void *data, struct audio_data *frames)
 {
 #ifdef TRACE_FRAMES
 	trace();
 #endif
 	struct caffeine_output *context = data;
-	struct audio_data in;
 
+	// Ensure that everything is initialized and still available.
+	if (context->audio_stop || !context->audio_lock || !context->audio_cond)
+		return;
+
+	// Ensure that we are actually live and have started streaming.
 	if (!context->start_timestamp)
 		return;
-	if (!prepare_audio(context, frames, &in))
-		return;
 
-	caff_sendAudio(context->instance, in.data[0], in.frames);
+	// Cut off or abort audio data if it does not start at our intended time.
+	struct audio_data in;
+	if (!prepare_audio(context, frames, &in)) {
+		return;
+	}
+
+	// Create a copy of the audio data for queuing.
+	// ToDo: Can this be optimized to use circlebuf for data?
+	struct caffeine_audio *ca =
+		(struct caffeine_audio *)bmalloc(sizeof(struct caffeine_audio));
+	ca->next = NULL;
+	ca->frames = (struct audio_data *)bmalloc(sizeof(struct audio_data));
+	audio_data_copy(&in, ca->frames);
+
+	// Enqueue Audio
+	pthread_mutex_lock(&context->audio_lock);
+	{
+		// Find the last element that we can write to. This looks a bit weird,
+		// but it is a pointer to the last 'next' entry that is valid.
+		struct caffeine_audio **tgt = &context->audio_queue;
+		while (((*tgt) != NULL) && ((*tgt)->next != NULL))
+			tgt = &((*tgt)->next);
+		*tgt = ca;
+	}
+	pthread_cond_signal(&context->audio_cond);
+	pthread_mutex_unlock(&context->audio_lock);
 }
 
 static void caffeine_stop(void *data, uint64_t ts)
@@ -402,6 +517,25 @@ static void caffeine_stop(void *data, uint64_t ts)
 	if (context->is_online) {
 		context->is_online = false;
 		pthread_join(context->monitor_thread, NULL);
+	}
+
+	{         // Clean up Audio
+		{ // Signal thread to stop and join with it.
+			pthread_mutex_lock(&context->audio_lock);
+			context->audio_stop = true;
+			pthread_cond_signal(&context->audio_cond);
+			pthread_mutex_unlock(&context->audio_lock);
+			pthread_join(context->audio_thread, NULL);
+			pthread_mutex_destroy(&context->audio_lock);
+			pthread_cond_destroy(&context->audio_cond);
+		}
+		while (context->audio_queue) {
+			// clean up any remaining data.
+			struct caffeine_audio *here = context->audio_queue;
+			context->audio_queue = here->next;
+			audio_data_free(here->frames);
+			bfree(here);
+		}
 	}
 
 	caff_endBroadcast(context->instance);
@@ -440,12 +574,15 @@ struct obs_output_info caffeine_output_info = {
 	.flags = OBS_OUTPUT_AV | OBS_OUTPUT_SERVICE |
 		 OBS_OUTPUT_BANDWIDTH_TEST_DISABLED |
 		 OBS_OUTPUT_HARDWARE_ENCODING_DISABLED,
+
 	.get_name = caffeine_get_name,
+
 	.create = caffeine_create,
+	.destroy = caffeine_destroy,
+
 	.start = caffeine_start,
+	.stop = caffeine_stop,
+
 	.raw_video = caffeine_raw_video,
 	.raw_audio = caffeine_raw_audio,
-	.stop = caffeine_stop,
-	.destroy = caffeine_destroy,
-	.get_congestion = caffeine_get_congestion,
 };
