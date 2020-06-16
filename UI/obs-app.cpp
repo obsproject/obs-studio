@@ -192,7 +192,9 @@ QObject *CreateShortcutFilter()
 			hotkey.modifiers = TranslateQtKeyboardEventModifiers(
 				event->modifiers());
 
-			obs_hotkey_inject_event(hotkey, pressed);
+			if (obs_hotkey_inject_event2(hotkey, pressed))
+				event->accept();
+
 			return true;
 		};
 
@@ -203,8 +205,7 @@ QObject *CreateShortcutFilter()
 
 		/*case QEvent::MouseButtonDblClick:
 		case QEvent::Wheel:*/
-		case QEvent::KeyPress:
-		case QEvent::KeyRelease:
+		case QEvent::ShortcutOverride:
 			return key_event(static_cast<QKeyEvent *>(event));
 
 		default:

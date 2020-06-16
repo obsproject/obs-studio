@@ -1277,6 +1277,7 @@ struct obs_hotkey_internal_inject {
 	obs_key_combination_t hotkey;
 	bool pressed;
 	bool strict_modifiers;
+	bool bound;
 };
 
 static inline bool inject_hotkey(void *data, size_t idx,
@@ -1291,6 +1292,9 @@ static inline bool inject_hotkey(void *data, size_t idx,
 			       event->pressed;
 		handle_binding(binding, event->hotkey.modifiers, false,
 			       event->strict_modifiers, &pressed);
+
+		if (binding->key.key == event->hotkey.key)
+			event->bound = true;
 	}
 
 	return true;
@@ -1305,9 +1309,25 @@ void obs_hotkey_inject_event(obs_key_combination_t hotkey, bool pressed)
 		{hotkey.modifiers, hotkey.key},
 		pressed,
 		obs->hotkeys.strict_modifiers,
-	};
+		false};
 	enum_bindings(inject_hotkey, &event);
 	unlock();
+}
+
+bool obs_hotkey_inject_event2(obs_key_combination_t hotkey, bool pressed)
+{
+	if (!lock())
+		return false;
+
+	struct obs_hotkey_internal_inject event = {
+		{hotkey.modifiers, hotkey.key},
+		pressed,
+		obs->hotkeys.strict_modifiers,
+		false};
+	enum_bindings(inject_hotkey, &event);
+	unlock();
+
+	return event.bound;
 }
 
 void obs_hotkey_enable_background_press(bool enable)
