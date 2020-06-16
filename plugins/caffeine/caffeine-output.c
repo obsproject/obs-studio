@@ -265,6 +265,8 @@ static bool caffeine_start(void *data)
 	struct caffeine_output *context = data;
 	obs_output_t *output = context->output;
 
+	obs_output_set_media(output, obs_get_video(), obs_get_audio());
+
 	switch (caff_checkVersion()) {
 	case caff_ResultSuccess:
 		break;
