@@ -3379,6 +3379,14 @@ HandleInvoke(RTMP *r, const char *body, unsigned int nBodySize)
                 r->m_pausing = 3;
             }
         }
+
+        else
+        {
+            if (description.av_len)
+                RTMP_Log(RTMP_LOGWARNING, "Unhandled: %s:\n%s (%s)", r->Link.tcUrl.av_val, code.av_val, description.av_val);
+            else
+                RTMP_Log(RTMP_LOGWARNING, "Unhandled: %s:\n%s", r->Link.tcUrl.av_val, code.av_val);
+        }
     }
     else if (AVMATCH(&method, &av_playlist_ready))
     {
