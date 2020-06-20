@@ -14,6 +14,7 @@ volatile bool streaming_active = false;
 volatile bool recording_active = false;
 volatile bool recording_paused = false;
 volatile bool replaybuf_active = false;
+volatile bool virtualcam_active = false;
 
 #define RTMP_PROTOCOL "rtmp"
 
@@ -139,6 +140,30 @@ static void OBSReplayBufferStopping(void *data, calldata_t *params)
 	UNUSED_PARAMETER(params);
 }
 
+static void OBSStartVirtualCam(void *data, calldata_t *params)
+{
+	BasicOutputHandler *output = static_cast<BasicOutputHandler *>(data);
+
+	output->virtualCamActive = true;
+	os_atomic_set_bool(&virtualcam_active, true);
+	QMetaObject::invokeMethod(output->main, "OnVirtualCamStart");
+
+	UNUSED_PARAMETER(params);
+}
+
+static void OBSStopVirtualCam(void *data, calldata_t *params)
+{
+	BasicOutputHandler *output = static_cast<BasicOutputHandler *>(data);
+	int code = (int)calldata_int(params, "code");
+
+	output->virtualCamActive = false;
+	os_atomic_set_bool(&virtualcam_active, false);
+	QMetaObject::invokeMethod(output->main, "OnVirtualCamStop",
+				  Q_ARG(int, code));
+
+	UNUSED_PARAMETER(params);
+}
+
 static void FindBestFilename(string &strPath, bool noSpace)
 {
 	int num = 2;
@@ -192,6 +217,49 @@ static bool CreateAACEncoder(OBSEncoder &res, string &id, int bitrate,
 		return true;
 	}
 
+	return false;
+}
+
+/* ------------------------------------------------------------------------ */
+
+inline BasicOutputHandler::BasicOutputHandler(OBSBasic *main_) : main(main_)
+{
+	if (main->vcamEnabled) {
+		virtualCam = obs_output_create("virtualcam_output",
+					       "virtualcam_output", nullptr,
+					       nullptr);
+		obs_output_release(virtualCam);
+
+		signal_handler_t *signal =
+			obs_output_get_signal_handler(virtualCam);
+		startVirtualCam.Connect(signal, "start", OBSStartVirtualCam,
+					this);
+		stopVirtualCam.Connect(signal, "stop", OBSStopVirtualCam, this);
+	}
+}
+
+bool BasicOutputHandler::StartVirtualCam()
+{
+	if (main->vcamEnabled) {
+		obs_output_set_media(virtualCam, obs_get_video(),
+				     obs_get_audio());
+		return obs_output_start(virtualCam);
+	}
+	return false;
+}
+
+void BasicOutputHandler::StopVirtualCam()
+{
+	if (main->vcamEnabled) {
+		obs_output_stop(virtualCam);
+	}
+}
+
+bool BasicOutputHandler::VirtualCamActive() const
+{
+	if (main->vcamEnabled) {
+		return obs_output_active(virtualCam);
+	}
 	return false;
 }
 

@@ -1425,6 +1425,40 @@ static bool Update(wchar_t *cmdLine)
 	}
 
 	/* ------------------------------------- *
+	 * Install virtual camera                */
+
+	if (!bIsPortable) {
+		wchar_t regsvr[MAX_PATH];
+		wchar_t src[MAX_PATH];
+		wchar_t tmp[MAX_PATH];
+		wchar_t tmp2[MAX_PATH];
+
+		SHGetFolderPathW(nullptr, CSIDL_SYSTEM, nullptr,
+				 SHGFP_TYPE_CURRENT, regsvr);
+		StringCbCat(regsvr, sizeof(regsvr), L"\\regsvr32.exe");
+
+		GetCurrentDirectoryW(_countof(src), src);
+		StringCbCat(src, sizeof(src),
+			    L"\\data\\obs-plugins\\win-dshow\\");
+
+		StringCbCopy(tmp, sizeof(tmp), L"\"\"");
+		StringCbCat(tmp, sizeof(tmp), regsvr);
+		StringCbCat(tmp, sizeof(tmp), L"\" /s \"");
+		StringCbCat(tmp, sizeof(tmp), src);
+		StringCbCat(tmp, sizeof(tmp), L"obs-virtualcam-module");
+
+		StringCbCopy(tmp2, sizeof(tmp2), tmp);
+		StringCbCat(tmp2, sizeof(tmp2), L"32.dll\"\"");
+		_wsystem(tmp2);
+
+		if (is_64bit_windows()) {
+			StringCbCopy(tmp2, sizeof(tmp2), tmp);
+			StringCbCat(tmp2, sizeof(tmp2), L"64.dll\"\"");
+			_wsystem(tmp2);
+		}
+	}
+
+	/* ------------------------------------- *
 	 * Update hook files and vulkan registry */
 
 	UpdateHookFiles();
