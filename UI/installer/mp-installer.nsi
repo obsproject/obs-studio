@@ -352,13 +352,15 @@ Section -FinishSection
 	# ---------------------------------------
 	# 64bit vulkan hook registry stuff
 
-	SetRegView 64
-	WriteRegStr HKLM "Software\${APPNAME}" "" "$INSTDIR"
+	${if} ${RunningX64}
+		SetRegView 64
+		WriteRegStr HKLM "Software\${APPNAME}" "" "$INSTDIR"
 
-	ClearErrors
-	DeleteRegValue HKCU "Software\Khronos\Vulkan\ImplicitLayers" "$APPDATA\obs-studio-hook\obs-vulkan64.json"
-	ClearErrors
-	WriteRegDWORD HKLM "Software\Khronos\Vulkan\ImplicitLayers" "$APPDATA\obs-studio-hook\obs-vulkan64.json" 0
+		ClearErrors
+		DeleteRegValue HKCU "Software\Khronos\Vulkan\ImplicitLayers" "$APPDATA\obs-studio-hook\obs-vulkan64.json"
+		ClearErrors
+		WriteRegDWORD HKLM "Software\Khronos\Vulkan\ImplicitLayers" "$APPDATA\obs-studio-hook\obs-vulkan64.json" 0
+	${endif}
 
 	# ---------------------------------------
 	# 32bit vulkan hook registry stuff
@@ -409,10 +411,11 @@ Section "un.obs-studio Program Files" UninstallSection1
 	SetRegView 32
 	DeleteRegValue HKCU "Software\Khronos\Vulkan\ImplicitLayers" "$APPDATA\obs-studio-hook\obs-vulkan32.json"
 	DeleteRegValue HKLM "Software\Khronos\Vulkan\ImplicitLayers" "$APPDATA\obs-studio-hook\obs-vulkan32.json"
-	SetRegView 64
-	DeleteRegValue HKCU "Software\Khronos\Vulkan\ImplicitLayers" "$APPDATA\obs-studio-hook\obs-vulkan64.json"
-	DeleteRegValue HKLM "Software\Khronos\Vulkan\ImplicitLayers" "$APPDATA\obs-studio-hook\obs-vulkan64.json"
-
+	${if} ${RunningX64}
+		SetRegView 64
+		DeleteRegValue HKCU "Software\Khronos\Vulkan\ImplicitLayers" "$APPDATA\obs-studio-hook\obs-vulkan64.json"
+		DeleteRegValue HKLM "Software\Khronos\Vulkan\ImplicitLayers" "$APPDATA\obs-studio-hook\obs-vulkan64.json"
+	${endif}
 	SetRegView default
 	SetShellVarContext current
 	ClearErrors
