@@ -1954,6 +1954,53 @@
             "recommended": {
                 "x264opts": "scenecut=0"
             }
+        },
+        {
+            "name": "AngelThump",
+            "servers": [
+                {
+                    "name": "Auto",
+                    "url": "rtmp://ingest.angelthump.com/live"
+                },
+                {
+                    "name": "New York 3",
+                    "url": "rtmp://nyc-ingest.angelthump.com:1935/live"
+                },
+                {
+                    "name": "San Francisco 2",
+                    "url": "rtmp://sfo-ingest.angelthump.com:1935/live"
+                },
+                {
+                    "name": "Singapore 1",
+                    "url": "rtmp://sgp-ingest.angelthump.com:1935/live"
+                },
+                {
+                    "name": "London 1",
+                    "url": "rtmp://lon-ingest.angelthump.com:1935/live"
+                },
+                {
+                    "name": "Frankfurt 1",
+                    "url": "rtmp://fra-ingest.angelthump.com:1935/live"
+                },
+                {
+                    "name": "Toronto 1",
+                    "url": "rtmp://tor-ingest.angelthump.com:1935/live"
+                },
+                {
+                    "name": "Bangalore 1",
+                    "url": "rtmp://blr-ingest.angelthump.com:1935/live"
+                },
+                {
+                    "name": "Amsterdam 3",
+                    "url": "rtmp://ams-ingest.angelthump.com:1935/live"
+                }
+            ],
+            "recommended": {
+                "keyint": 2,
+                "profile": "high",
+                "max video bitrate": 3500,
+                "max audio bitrate": 160
+            }
         }
     ]
 }
