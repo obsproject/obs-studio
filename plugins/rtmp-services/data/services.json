@@ -1022,40 +1022,30 @@
             }
         },
         {
-            "name": "Afreeca.TV",
+            "name": "AfreecaTV",
+            "alt_names": ["아프리카TV", "Afreeca.TV"],
             "servers": [
                 {
+                    "name": "Asia : Korea",
+                    "url": "rtmp://rtmpmanager-freecat.afreeca.tv/app"
+                },
+                {
                     "name": "North America : US East",
-                    "url": "rtmp://rtmpmanager-aws-en-east.afreeca.tv/live"
+                    "url": "rtmp://rtmp-esu.afreecatv.com/app"
                 },
                 {
                     "name": "North America : US West",
-                    "url": "rtmp://rtmpmanager-aws-en-west.afreeca.tv/live"
+                    "url": "rtmp://rtmp-wsu.afreecatv.com/app"
                 },
                 {
                     "name": "Asia : Singapore",
-                    "url": "rtmp://rtmpmanager-aws-sg.afreeca.tv/live"
+                    "url": "rtmp://rtmp-sgp.afreecatv.com/app"
                 }
             ],
             "recommended": {
-                "keyint": 1,
+                "keyint": 2,
                 "profile": "main",
-                "max video bitrate": 5000,
-                "max audio bitrate": 192
-            }
-        },
-        {
-            "name": "아프리카TV",
-            "servers": [
-                {
-                    "name": "Korea",
-                    "url": "rtmp://rtmpmanager-freecat.afreeca.tv/app/"
-                }
-            ],
-            "recommended": {
-                "keyint": 1,
-                "profile": "main",
-                "max video bitrate": 5000,
+                "max video bitrate": 8000,
                 "max audio bitrate": 192
             }
         },
