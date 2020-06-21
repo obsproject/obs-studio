@@ -1804,3 +1804,17 @@ bool obs_hotkeys_platform_is_pressed(obs_hotkeys_platform_t *plat,
 
 	return false;
 }
+
+void *obs_graphics_thread_autorelease(void *param)
+{
+	@autoreleasepool {
+		return obs_graphics_thread(param);
+	}
+}
+
+bool obs_graphics_thread_loop_autorelease(struct obs_graphics_context *context)
+{
+	@autoreleasepool {
+		return obs_graphics_thread_loop(context);
+	}
+}

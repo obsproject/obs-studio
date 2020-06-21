@@ -921,6 +921,93 @@ static void uninit_winrt_state(struct winrt_state *winrt)
 static const char *tick_sources_name = "tick_sources";
 static const char *render_displays_name = "render_displays";
 static const char *output_frame_name = "output_frame";
+bool obs_graphics_thread_loop(struct obs_graphics_context *context)
+{
+	/* defer loop break to clean up sources */
+	const bool stop_requested = video_output_stopped(obs->video.video);
+
+	uint64_t frame_start = os_gettime_ns();
+	uint64_t frame_time_ns;
+	bool raw_active = obs->video.raw_active > 0;
+#ifdef _WIN32
+	const bool gpu_active = obs->video.gpu_encoder_active > 0;
+	const bool active = raw_active || gpu_active;
+#else
+	const bool gpu_active = 0;
+	const bool active = raw_active;
+#endif
+
+	if (!context->was_active && active)
+		clear_base_frame_data();
+	if (!context->raw_was_active && raw_active)
+		clear_raw_frame_data();
+#ifdef _WIN32
+	if (!context->gpu_was_active && gpu_active)
+		clear_gpu_frame_data();
+
+	context->gpu_was_active = gpu_active;
+#endif
+	context->raw_was_active = raw_active;
+	context->was_active = active;
+
+	profile_start(context->video_thread_name);
+
+	gs_enter_context(obs->video.graphics);
+	gs_begin_frame();
+	gs_leave_context();
+
+	profile_start(tick_sources_name);
+	context->last_time =
+		tick_sources(obs->video.video_time, context->last_time);
+	profile_end(tick_sources_name);
+
+	execute_graphics_tasks();
+
+#ifdef _WIN32
+	MSG msg;
+	while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
+		TranslateMessage(&msg);
+		DispatchMessage(&msg);
+	}
+#endif
+
+	profile_start(output_frame_name);
+	output_frame(raw_active, gpu_active);
+	profile_end(output_frame_name);
+
+	profile_start(render_displays_name);
+	render_displays();
+	profile_end(render_displays_name);
+
+	frame_time_ns = os_gettime_ns() - frame_start;
+
+	profile_end(context->video_thread_name);
+
+	profile_reenable_thread();
+
+	video_sleep(&obs->video, raw_active, gpu_active, &obs->video.video_time,
+		    context->interval);
+
+	context->frame_time_total_ns += frame_time_ns;
+	context->fps_total_ns += (obs->video.video_time - context->last_time);
+	context->fps_total_frames++;
+
+	if (context->fps_total_ns >= 1000000000ULL) {
+		obs->video.video_fps =
+			(double)context->fps_total_frames /
+			((double)context->fps_total_ns / 1000000000.0);
+		obs->video.video_avg_frame_time_ns =
+			context->frame_time_total_ns /
+			(uint64_t)context->fps_total_frames;
+
+		context->frame_time_total_ns = 0;
+		context->fps_total_ns = 0;
+		context->fps_total_frames = 0;
+	}
+
+	return !stop_requested;
+}
+
 void *obs_graphics_thread(void *param)
 {
 #ifdef _WIN32
@@ -928,18 +1015,9 @@ void *obs_graphics_thread(void *param)
 	init_winrt_state(&winrt);
 #endif // #ifdef _WIN32
 
-	uint64_t last_time = 0;
-	uint64_t interval = video_output_get_frame_time(obs->video.video);
-	uint64_t frame_time_total_ns = 0;
-	uint64_t fps_total_ns = 0;
-	uint32_t fps_total_frames = 0;
-#ifdef _WIN32
-	bool gpu_was_active = false;
-#endif
-	bool raw_was_active = false;
-	bool was_active = false;
-
 	is_graphics_thread = true;
+
+	const uint64_t interval = video_output_get_frame_time(obs->video.video);
 
 	obs->video.video_time = os_gettime_ns();
 	obs->video.video_frame_interval_ns = interval;
@@ -953,92 +1031,25 @@ void *obs_graphics_thread(void *param)
 
 	srand((unsigned int)time(NULL));
 
-	for (;;) {
-		/* defer loop break to clean up sources */
-		const bool stop_requested =
-			video_output_stopped(obs->video.video);
-
-		uint64_t frame_start = os_gettime_ns();
-		uint64_t frame_time_ns;
-		bool raw_active = obs->video.raw_active > 0;
+	struct obs_graphics_context context;
+	context.interval = video_output_get_frame_time(obs->video.video);
+	context.frame_time_total_ns = 0;
+	context.fps_total_ns = 0;
+	context.fps_total_frames = 0;
+	context.last_time = 0;
 #ifdef _WIN32
-		const bool gpu_active = obs->video.gpu_encoder_active > 0;
-		const bool active = raw_active || gpu_active;
+	context.gpu_was_active = false;
+#endif
+	context.raw_was_active = false;
+	context.was_active = false;
+	context.video_thread_name = video_thread_name;
+
+#ifdef __APPLE__
+	while (obs_graphics_thread_loop_autorelease(&context))
 #else
-		const bool gpu_active = 0;
-		const bool active = raw_active;
+	while (obs_graphics_thread_loop(&context))
 #endif
-
-		if (!was_active && active)
-			clear_base_frame_data();
-		if (!raw_was_active && raw_active)
-			clear_raw_frame_data();
-#ifdef _WIN32
-		if (!gpu_was_active && gpu_active)
-			clear_gpu_frame_data();
-
-		gpu_was_active = gpu_active;
-#endif
-		raw_was_active = raw_active;
-		was_active = active;
-
-		profile_start(video_thread_name);
-
-		gs_enter_context(obs->video.graphics);
-		gs_begin_frame();
-		gs_leave_context();
-
-		profile_start(tick_sources_name);
-		last_time = tick_sources(obs->video.video_time, last_time);
-		profile_end(tick_sources_name);
-
-		execute_graphics_tasks();
-
-#ifdef _WIN32
-		MSG msg;
-		while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
-			TranslateMessage(&msg);
-			DispatchMessage(&msg);
-		}
-#endif
-
-		profile_start(output_frame_name);
-		output_frame(raw_active, gpu_active);
-		profile_end(output_frame_name);
-
-		profile_start(render_displays_name);
-		render_displays();
-		profile_end(render_displays_name);
-
-		frame_time_ns = os_gettime_ns() - frame_start;
-
-		profile_end(video_thread_name);
-
-		profile_reenable_thread();
-
-		video_sleep(&obs->video, raw_active, gpu_active,
-			    &obs->video.video_time, interval);
-
-		frame_time_total_ns += frame_time_ns;
-		fps_total_ns += (obs->video.video_time - last_time);
-		fps_total_frames++;
-
-		if (fps_total_ns >= 1000000000ULL) {
-			obs->video.video_fps =
-				(double)fps_total_frames /
-				((double)fps_total_ns / 1000000000.0);
-			obs->video.video_avg_frame_time_ns =
-				frame_time_total_ns /
-				(uint64_t)fps_total_frames;
-
-			frame_time_total_ns = 0;
-			fps_total_ns = 0;
-			fps_total_frames = 0;
-		}
-
-		if (stop_requested)
-			break;
-	}
+		;
 
 #ifdef _WIN32
 	uninit_winrt_state(&winrt);
