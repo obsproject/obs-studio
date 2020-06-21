@@ -525,6 +525,9 @@ private:
 	OBSSource GetOverrideTransition(OBSSource source);
 	int GetOverrideTransitionDuration(OBSSource source);
 
+	void UpdateProjectorHideCursor();
+	void UpdateProjectorAlwaysOnTop(bool top);
+
 public slots:
 	void DeferSaveBegin();
 	void DeferSaveEnd();

@@ -73,7 +73,6 @@ private:
 	void UpdateProjectorTitle(QString name);
 
 	QRect prevGeometry;
-	void SetHideCursor();
 	void SetMonitor(int monitor);
 
 private slots:
@@ -91,4 +90,5 @@ public:
 	int GetMonitor();
 	static void UpdateMultiviewProjectors();
 	void RenameProjector(QString oldName, QString newName);
+	void SetHideCursor();
 };

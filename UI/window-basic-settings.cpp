@@ -2900,11 +2900,20 @@ void OBSBasicSettings::SaveGeneralSettings()
 			"WarnBeforeStoppingRecord",
 			ui->warnBeforeRecordStop->isChecked());
 
-	config_set_bool(GetGlobalConfig(), "BasicWindow", "HideProjectorCursor",
-			ui->hideProjectorCursor->isChecked());
-	config_set_bool(GetGlobalConfig(), "BasicWindow",
-			"ProjectorAlwaysOnTop",
+	if (WidgetChanged(ui->hideProjectorCursor)) {
+		config_set_bool(GetGlobalConfig(), "BasicWindow",
+				"HideProjectorCursor",
+				ui->hideProjectorCursor->isChecked());
+		main->UpdateProjectorHideCursor();
+	}
+
+	if (WidgetChanged(ui->projectorAlwaysOnTop)) {
+		config_set_bool(GetGlobalConfig(), "BasicWindow",
+				"ProjectorAlwaysOnTop",
+				ui->projectorAlwaysOnTop->isChecked());
+		main->UpdateProjectorAlwaysOnTop(
 			ui->projectorAlwaysOnTop->isChecked());
+	}
 
 	if (WidgetChanged(ui->recordWhenStreaming))
 		config_set_bool(GetGlobalConfig(), "BasicWindow",
