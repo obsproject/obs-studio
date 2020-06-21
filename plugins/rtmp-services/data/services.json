@@ -571,19 +571,6 @@
             }
         },
         {
-            "name": "CyberGame.TV",
-            "servers": [
-                {
-                    "name": "RU Origin",
-                    "url": "rtmp://st.cybergame.tv:1953/live"
-                },
-                {
-                    "name": "RU Premium",
-                    "url": "rtmp://premium.cybergame.tv:1953/premium"
-                }
-            ]
-        },
-        {
             "name": "Facebook Live",
             "common": true,
             "servers": [
@@ -992,10 +979,6 @@
                     "url": "rtmp://eu-central.castr.io/static"
                 },
                 {
-                    "name": "AU South",
-                    "url": "rtmp://au-central.castr.io/static"
-                },
-                {
                     "name": "Singapore",
                     "url": "rtmp://sg-central.castr.io/static"
                 }
@@ -1012,21 +995,6 @@
                     "url": "rtmp://live.boomstream.com/live"
                 }
             ]
-        },
-        {
-            "name": "Stream.live",
-            "servers": [
-                {
-                    "name": "Default",
-                    "url": "rtmp://media.stream.live:1935/live"
-                }
-            ],
-            "recommended": {
-                "keyint": 2,
-                "profile": "main",
-                "max video bitrate": 2500,
-                "max audio bitrate": 160
-            }
         },
         {
             "name": "Meridix Live Sports Platform",
