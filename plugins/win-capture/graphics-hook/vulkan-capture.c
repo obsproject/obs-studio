@@ -854,9 +854,9 @@ static void vk_shtex_capture(struct vk_data *data,
 		imb.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
 		imb.pNext = NULL;
 		imb.srcAccessMask = 0;
-		imb.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+		imb.dstAccessMask = 0;
 		imb.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-		imb.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+		imb.newLayout = VK_IMAGE_LAYOUT_GENERAL;
 		imb.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 		imb.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 		imb.image = swap->export_image;
@@ -868,8 +868,8 @@ static void vk_shtex_capture(struct vk_data *data,
 
 		funcs->CmdPipelineBarrier(cmd_buffer,
 					  VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-					  VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0,
-					  NULL, 0, NULL, 1, &imb);
+					  VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0,
+					  0, NULL, 0, NULL, 1, &imb);
 
 		swap->layout_initialized = true;
 	}
@@ -897,9 +897,9 @@ static void vk_shtex_capture(struct vk_data *data,
 
 	dst_mb->sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
 	dst_mb->pNext = NULL;
-	dst_mb->srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+	dst_mb->srcAccessMask = 0;
 	dst_mb->dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-	dst_mb->oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+	dst_mb->oldLayout = VK_IMAGE_LAYOUT_GENERAL;
 	dst_mb->newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
 	dst_mb->srcQueueFamilyIndex = VK_QUEUE_FAMILY_EXTERNAL;
 	dst_mb->dstQueueFamilyIndex = fam_idx;
@@ -911,8 +911,7 @@ static void vk_shtex_capture(struct vk_data *data,
 	dst_mb->subresourceRange.layerCount = 1;
 
 	funcs->CmdPipelineBarrier(cmd_buffer,
-				  VK_PIPELINE_STAGE_TRANSFER_BIT |
-					  VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
+				  VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
 				  VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, NULL, 0,
 				  NULL, 2, mb);
 
@@ -953,11 +952,15 @@ static void vk_shtex_capture(struct vk_data *data,
 	src_mb->oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
 	src_mb->newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 
+	dst_mb->srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+	dst_mb->dstAccessMask = 0;
+	dst_mb->oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+	dst_mb->newLayout = VK_IMAGE_LAYOUT_GENERAL;
 	dst_mb->srcQueueFamilyIndex = fam_idx;
 	dst_mb->dstQueueFamilyIndex = VK_QUEUE_FAMILY_EXTERNAL;
 
 	funcs->CmdPipelineBarrier(cmd_buffer, VK_PIPELINE_STAGE_TRANSFER_BIT,
-				  VK_PIPELINE_STAGE_TRANSFER_BIT |
+				  VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT |
 					  VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
 				  0, 0, NULL, 0, NULL, 2, mb);
 
