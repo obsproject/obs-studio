@@ -322,7 +322,7 @@ static void oss_stop_reader(struct oss_input_data *handle)
 static const char *oss_getname(void *unused)
 {
 	UNUSED_PARAMETER(unused);
-	return obs_module_text("OSS Input");
+	return obs_module_text("OSSInput");
 }
 
 /**
@@ -630,16 +630,18 @@ static obs_properties_t *oss_properties(void *unused)
 					  OBS_COMBO_TYPE_LIST,
 					  OBS_COMBO_FORMAT_STRING);
 
-	obs_property_list_add_string(devices, "Default", OSS_DSP_DEFAULT);
-	obs_property_list_add_string(devices, "Custom", OBS_PATH_DSP_CUSTOM);
+	obs_property_list_add_string(devices, obs_module_text("Default"),
+				     OSS_DSP_DEFAULT);
+	obs_property_list_add_string(devices, obs_module_text("Custom"),
+				     OBS_PATH_DSP_CUSTOM);
 	obs_property_set_modified_callback(devices, oss_on_devices_changed);
 
 	obs_properties_add_text(props, OBS_PROPS_CUSTOM_DSP,
-				obs_module_text("Custom DSP Path"),
+				obs_module_text("CustomDSPPath"),
 				OBS_TEXT_DEFAULT);
 
 	rate = obs_properties_add_list(props, OBS_PROPS_RATE,
-				       obs_module_text("Sample rate"),
+				       obs_module_text("SampleRate"),
 				       OBS_COMBO_TYPE_LIST,
 				       OBS_COMBO_FORMAT_INT);
 	channels = obs_properties_add_list(props, OBS_PROPS_CHANNELS,
@@ -649,7 +651,7 @@ static obs_properties_t *oss_properties(void *unused)
 	oss_fill_device_info(rate, channels, OSS_DSP_DEFAULT);
 
 	sample_fmt = obs_properties_add_list(props, OBS_PROPS_SAMPLE_FMT,
-					     obs_module_text("Sample format"),
+					     obs_module_text("SampleFormat"),
 					     OBS_COMBO_TYPE_LIST,
 					     OBS_COMBO_FORMAT_INT);
 
