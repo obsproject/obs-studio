@@ -19,7 +19,7 @@ add_library(libobs-winrt MODULE
 	${libobs-winrt_HEADERS})
 set_target_properties(libobs-winrt
 	PROPERTIES
-		FOLDER "plugins/win-capture"
+		FOLDER "core"
 		OUTPUT_NAME libobs-winrt
 		PREFIX "")
 target_precompile_headers(libobs-winrt
