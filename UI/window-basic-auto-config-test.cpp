@@ -250,8 +250,8 @@ void AutoConfigTestPage::TestBandwidthThread()
 		GetServers(servers);
 
 	/* just use the first server if it only has one alternate server,
-	 * or if using Mixer or Restream due to their "auto" servers */
-	if (servers.size() < 3 || wiz->serviceName == "Mixer.com - FTL" ||
+	 * or if using Restream due to their "auto" servers */
+	if (servers.size() < 3 ||
 	    wiz->serviceName.substr(0, 11) == "Restream.io") {
 		servers.resize(1);
 
