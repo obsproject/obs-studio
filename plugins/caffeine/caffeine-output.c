@@ -178,7 +178,7 @@ static bool prepare_audio(struct caffeine_output *context,
 	return true;
 }
 
-static void *PTW32_CDECL caffeine_handle_audio(void *ptr)
+static void *__cdecl caffeine_handle_audio(void *ptr)
 {
 	struct caffeine_output *context = (struct caffeine_output *)ptr;
 
@@ -222,10 +222,27 @@ static void *caffeine_create(obs_data_t *settings, obs_output_t *output)
 		bzalloc(sizeof(struct caffeine_output));
 	context->output = output;
 
+	// Create mutex and condvar.
+	if (pthread_mutex_init(&context->audio_lock, NULL) != 0) {
+		goto fail;
+	}
+	if (pthread_cond_init(&context->audio_cond, NULL) != 0) {
+		goto fail;
+	}
+
 	/* TODO: can we get this from the CaffeineAuth object somehow? */
 	context->instance = caff_createInstance();
+	if (!context->instance) {
+		goto fail;
+	}
 
 	return context;
+fail:
+	pthread_mutex_destroy(&context->audio_lock);
+	pthread_cond_destroy(&context->audio_cond);
+	caff_freeInstance(context->instance);
+	bfree(context);
+	return NULL;
 }
 
 static void caffeine_stream_started(void *data);
@@ -316,8 +333,6 @@ static bool caffeine_start(void *data)
 	{ // Initialize Audio
 		context->audio_stop = false;
 		context->audio_queue = NULL;
-		pthread_mutex_init(&context->audio_lock, NULL);
-		pthread_cond_init(&context->audio_cond, NULL);
 		pthread_create(&context->audio_thread, NULL,
 			       &caffeine_handle_audio, context);
 	}
@@ -472,7 +487,7 @@ static void caffeine_raw_audio(void *data, struct audio_data *frames)
 	struct caffeine_output *context = data;
 
 	// Ensure that everything is initialized and still available.
-	if (context->audio_stop || !context->audio_lock || !context->audio_cond)
+	if (context->audio_stop)
 		return;
 
 	// Ensure that we are actually live and have started streaming.
@@ -528,8 +543,6 @@ static void caffeine_stop(void *data, uint64_t ts)
 			pthread_cond_signal(&context->audio_cond);
 			pthread_mutex_unlock(&context->audio_lock);
 			pthread_join(context->audio_thread, NULL);
-			pthread_mutex_destroy(&context->audio_lock);
-			pthread_cond_destroy(&context->audio_cond);
 		}
 		while (context->audio_queue) {
 			// clean up any remaining data.
@@ -550,6 +563,10 @@ static void caffeine_destroy(void *data)
 	trace();
 	struct caffeine_output *context = data;
 	caff_freeInstance(&context->instance);
+
+	// Free mutex and condvar.
+	pthread_mutex_destroy(&context->audio_lock);
+	pthread_cond_destroy(&context->audio_cond);
 
 	bfree(data);
 }
