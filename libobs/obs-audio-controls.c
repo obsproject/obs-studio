@@ -891,15 +891,7 @@ unsigned int obs_volmeter_get_update_interval(obs_volmeter_t *volmeter)
 
 int obs_volmeter_get_nr_channels(obs_volmeter_t *volmeter)
 {
-	int source_nr_audio_channels;
 	int obs_nr_audio_channels;
-
-	if (volmeter->source) {
-		source_nr_audio_channels = get_audio_channels(
-			volmeter->source->sample_info.speakers);
-	} else {
-		source_nr_audio_channels = 1;
-	}
 
 	struct obs_audio_info audio_info;
 	if (obs_get_audio_info(&audio_info)) {
@@ -908,7 +900,8 @@ int obs_volmeter_get_nr_channels(obs_volmeter_t *volmeter)
 		obs_nr_audio_channels = 2;
 	}
 
-	return CLAMP(source_nr_audio_channels, 1, obs_nr_audio_channels);
+	UNUSED_PARAMETER(volmeter);
+	return obs_nr_audio_channels;
 }
 
 void obs_volmeter_add_callback(obs_volmeter_t *volmeter,
