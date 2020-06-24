@@ -78,6 +78,7 @@ private:
 private slots:
 	void EscapeTriggered();
 	void OpenFullScreenProjector();
+	void ResizeToContent();
 	void OpenWindowedProjector();
 
 public:
