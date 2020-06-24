@@ -1527,6 +1527,9 @@ void OBSBasic::ResetOutputs()
 				&QPushButton::clicked, this,
 				&OBSBasic::ReplayBufferClicked);
 
+			replayBufferButton->setSizePolicy(QSizePolicy::Ignored,
+							  QSizePolicy::Fixed);
+
 			replayLayout = new QHBoxLayout(this);
 			replayLayout->addWidget(replayBufferButton);
 
