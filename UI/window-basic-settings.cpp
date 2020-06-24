@@ -468,8 +468,10 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->sampleRate,           COMBO_CHANGED,  AUDIO_RESTART);
 	HookWidget(ui->meterDecayRate,       COMBO_CHANGED,  AUDIO_CHANGED);
 	HookWidget(ui->peakMeterType,        COMBO_CHANGED,  AUDIO_CHANGED);
+#ifndef __APPLE__
 	HookWidget(ui->desktopAudioDevice1,  COMBO_CHANGED,  AUDIO_CHANGED);
 	HookWidget(ui->desktopAudioDevice2,  COMBO_CHANGED,  AUDIO_CHANGED);
+#endif
 	HookWidget(ui->auxAudioDevice1,      COMBO_CHANGED,  AUDIO_CHANGED);
 	HookWidget(ui->auxAudioDevice2,      COMBO_CHANGED,  AUDIO_CHANGED);
 	HookWidget(ui->auxAudioDevice3,      COMBO_CHANGED,  AUDIO_CHANGED);
@@ -2112,11 +2114,21 @@ void OBSBasicSettings::LoadListValues(QComboBox *widget, obs_property_t *prop,
 
 void OBSBasicSettings::LoadAudioDevices()
 {
+#ifdef __APPLE__
+	ui->label_2->hide();
+	ui->desktopAudioDevice1->hide();
+	ui->formLayout_53->removeWidget(ui->label_2);
+	ui->formLayout_53->removeWidget(ui->desktopAudioDevice1);
+
+	ui->label_3->hide();
+	ui->desktopAudioDevice2->hide();
+	ui->formLayout_53->removeWidget(ui->label_3);
+	ui->formLayout_53->removeWidget(ui->desktopAudioDevice2);
+#endif
+
 	const char *input_id = App()->InputAudioSource();
-	const char *output_id = App()->OutputAudioSource();
 
 	obs_properties_t *input_props = obs_get_source_properties(input_id);
-	obs_properties_t *output_props = obs_get_source_properties(output_id);
 
 	if (input_props) {
 		obs_property_t *inputs =
@@ -2128,6 +2140,10 @@ void OBSBasicSettings::LoadAudioDevices()
 		obs_properties_destroy(input_props);
 	}
 
+#ifndef __APPLE__
+	const char *output_id = App()->OutputAudioSource();
+	obs_properties_t *output_props = obs_get_source_properties(output_id);
+
 	if (output_props) {
 		obs_property_t *outputs =
 			obs_properties_get(output_props, "device_id");
@@ -2135,6 +2151,7 @@ void OBSBasicSettings::LoadAudioDevices()
 		LoadListValues(ui->desktopAudioDevice2, outputs, 2);
 		obs_properties_destroy(output_props);
 	}
+#endif
 
 	if (obs_video_active()) {
 		ui->sampleRate->setEnabled(false);
@@ -3443,10 +3460,12 @@ void OBSBasicSettings::SaveAudioSettings()
 				       Str(name), index);
 	};
 
+#ifndef __APPLE__
 	UpdateAudioDevice(false, ui->desktopAudioDevice1,
 			  "Basic.DesktopDevice1", 1);
 	UpdateAudioDevice(false, ui->desktopAudioDevice2,
 			  "Basic.DesktopDevice2", 2);
+#endif
 	UpdateAudioDevice(true, ui->auxAudioDevice1, "Basic.AuxDevice1", 3);
 	UpdateAudioDevice(true, ui->auxAudioDevice2, "Basic.AuxDevice2", 4);
 	UpdateAudioDevice(true, ui->auxAudioDevice3, "Basic.AuxDevice3", 5);

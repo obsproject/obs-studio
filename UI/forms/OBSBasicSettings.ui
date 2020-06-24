@@ -119,7 +119,7 @@
      <item>
       <widget class="QStackedWidget" name="settingsPages">
        <property name="currentIndex">
-        <number>0</number>
+        <number>3</number>
        </property>
        <widget class="QWidget" name="generalPage">
         <layout class="QVBoxLayout" name="verticalLayout_18">
@@ -151,8 +151,8 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>803</width>
-              <height>1026</height>
+              <width>810</width>
+              <height>1087</height>
              </rect>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_19">
@@ -1263,8 +1263,8 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>603</width>
-              <height>631</height>
+              <width>740</width>
+              <height>767</height>
              </rect>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_21">
@@ -2395,7 +2395,7 @@
                                  <rect>
                                   <x>9</x>
                                   <y>0</y>
-                                  <width>236</width>
+                                  <width>250</width>
                                   <height>25</height>
                                  </rect>
                                 </property>
@@ -3758,8 +3758,8 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>555</width>
-              <height>469</height>
+              <width>810</width>
+              <height>610</height>
              </rect>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_50">
@@ -3909,7 +3909,7 @@
                     <widget class="QLabel" name="label_2">
                      <property name="minimumSize">
                       <size>
-                       <width>170</width>
+                       <width>0</width>
                        <height>0</height>
                       </size>
                      </property>
@@ -3953,8 +3953,17 @@
                    </item>
                    <item row="2" column="0">
                     <widget class="QLabel" name="label_4">
+                     <property name="minimumSize">
+                      <size>
+                       <width>170</width>
+                       <height>0</height>
+                      </size>
+                     </property>
                      <property name="text">
                       <string>Basic.Settings.Audio.AuxDevice</string>
+                     </property>
+                     <property name="alignment">
+                      <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                      </property>
                      <property name="buddy">
                       <cstring>auxAudioDevice1</cstring>
@@ -4614,8 +4623,8 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>596</width>
-              <height>781</height>
+              <width>755</width>
+              <height>930</height>
              </rect>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_23">
