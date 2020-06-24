@@ -1802,23 +1802,9 @@ void OBSBasic::OBSInit()
 		config_save_safe(App()->GlobalConfig(), "tmp", nullptr);
 	}
 
-	if (!first_run && !has_last_version && !Active()) {
-		QString msg;
-		msg = QTStr("Basic.FirstStartup.RunWizard");
-
-		QMessageBox::StandardButton button = OBSMessageBox::question(
-			this, QTStr("Basic.AutoConfig"), msg);
-
-		if (button == QMessageBox::Yes) {
-			QMetaObject::invokeMethod(this,
-						  "on_autoConfigure_triggered",
-						  Qt::QueuedConnection);
-		} else {
-			msg = QTStr("Basic.FirstStartup.RunWizard.NoClicked");
-			OBSMessageBox::information(
-				this, QTStr("Basic.AutoConfig"), msg);
-		}
-	}
+	if (!first_run && !has_last_version && !Active())
+		QMetaObject::invokeMethod(this, "on_autoConfigure_triggered",
+					  Qt::QueuedConnection);
 
 	ToggleMixerLayout(config_get_bool(App()->GlobalConfig(), "BasicWindow",
 					  "VerticalVolControl"));
