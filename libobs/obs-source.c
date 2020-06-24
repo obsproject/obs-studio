@@ -2373,7 +2373,7 @@ void obs_source_filter_add(obs_source_t *source, obs_source_t *filter)
 		return;
 	}
 
-	if (!filter_compatible(source, filter)) {
+	if (!source->owns_info_id && !filter_compatible(source, filter)) {
 		pthread_mutex_unlock(&source->filter_mutex);
 		return;
 	}
