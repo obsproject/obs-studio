@@ -1,5 +1,6 @@
 #include "ui-validation.hpp"
 
+#include "ui-config.h"
 #include <obs.hpp>
 #include <QString>
 #include <QMessageBox>
@@ -75,7 +76,13 @@ UIValidation::StreamSettingsConfirmation(QWidget *parent, OBSService service)
 		return StreamSettingsAction::ContinueStream;
 
 	QString msg;
-
+#if CAFFEINE_ENABLED
+	if (hasStreamUrl) {
+		return StreamSettingsAction::ContinueStream;
+	} else {
+		msg = QTStr("Basic.Settings.Stream.MissingUrl");
+	}
+#else
 	if (!hasStreamUrl && !hasStreamKey) {
 		msg = QTStr("Basic.Settings.Stream.MissingUrlAndApiKey");
 	} else if (!hasStreamKey) {
@@ -83,6 +90,7 @@ UIValidation::StreamSettingsConfirmation(QWidget *parent, OBSService service)
 	} else {
 		msg = QTStr("Basic.Settings.Stream.MissingUrl");
 	}
+#endif
 
 	QMessageBox messageBox(parent);
 	messageBox.setWindowTitle(

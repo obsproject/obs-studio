@@ -262,11 +262,15 @@ static json_t *open_services_file(void)
 	char *file;
 	json_t *root = NULL;
 
+	// Don't use the file from user config.
+	// Temporary fix until we land caffeine service in OBS mainline.
+	/*
 	file = obs_module_config_path("services.json");
 	if (file) {
 		root = open_json_file(file);
 		bfree(file);
 	}
+	*/
 
 	if (!root) {
 		file = obs_module_file("services.json");
