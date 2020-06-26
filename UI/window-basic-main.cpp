@@ -590,6 +590,7 @@ obs_data_array_t *OBSBasic::SaveProjectors()
 
 		obs_data_t *data = obs_data_create();
 		ProjectorType type = projector->GetProjectorType();
+
 		switch (type) {
 		case ProjectorType::Scene:
 		case ProjectorType::Source: {
@@ -601,11 +602,20 @@ obs_data_array_t *OBSBasic::SaveProjectors()
 		default:
 			break;
 		}
+
 		obs_data_set_int(data, "monitor", projector->GetMonitor());
 		obs_data_set_int(data, "type", static_cast<int>(type));
 		obs_data_set_string(
 			data, "geometry",
 			projector->saveGeometry().toBase64().constData());
+
+		if (projector->IsAlwaysOnTopOverridden())
+			obs_data_set_bool(data, "alwaysOnTop",
+					  projector->IsAlwaysOnTop());
+
+		obs_data_set_bool(data, "alwaysOnTopOverridden",
+				  projector->IsAlwaysOnTopOverridden());
+
 		obs_data_array_push_back(savedProjectors, data);
 		obs_data_release(data);
 	};
@@ -792,6 +802,10 @@ void OBSBasic::LoadSavedProjectors(obs_data_array_t *array)
 		info->geometry =
 			std::string(obs_data_get_string(data, "geometry"));
 		info->name = std::string(obs_data_get_string(data, "name"));
+		info->alwaysOnTop = obs_data_get_bool(data, "alwaysOnTop");
+		info->alwaysOnTopOverridden =
+			obs_data_get_bool(data, "alwaysOnTopOverridden");
+
 		savedProjectorsArray.emplace_back(info);
 
 		obs_data_release(data);
@@ -6872,6 +6886,10 @@ void OBSBasic::OpenSavedProjector(SavedProjectorInfo *info)
 					Qt::LeftToRight, Qt::AlignCenter,
 					size(), rect));
 			}
+
+			if (info->alwaysOnTopOverridden)
+				projector->SetIsAlwaysOnTop(info->alwaysOnTop,
+							    true);
 		}
 	}
 }

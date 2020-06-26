@@ -10,6 +10,8 @@
 #include "platform.hpp"
 
 static QList<OBSProjector *> multiviewProjectors;
+static QList<OBSProjector *> allProjectors;
+
 static bool updatingMultiview = false, drawLabel, drawSafeArea, mouseSwitching,
 	    transitionOnDoubleClick;
 static MultiviewLayout multiviewLayout;
@@ -40,6 +42,10 @@ OBSProjector::OBSProjector(QWidget *widget, obs_source_t *source_, int monitor,
 	action->setShortcut(Qt::Key_Escape);
 	addAction(action);
 	connect(action, SIGNAL(triggered()), this, SLOT(EscapeTriggered()));
+
+	isAlwaysOnTop = config_get_bool(GetGlobalConfig(), "BasicWindow",
+					"ProjectorAlwaysOnTop");
+	SetAlwaysOnTop(this, isAlwaysOnTop);
 
 	setAttribute(Qt::WA_DeleteOnClose, true);
 
@@ -120,6 +126,8 @@ OBSProjector::OBSProjector(QWidget *widget, obs_source_t *source_, int monitor,
 
 	if (source)
 		obs_source_inc_showing(source);
+
+	allProjectors.push_back(this);
 
 	ready = true;
 
@@ -837,6 +845,16 @@ void OBSProjector::mousePressEvent(QMouseEvent *event)
 					this, SLOT(ResizeToContent()));
 		}
 
+		QAction *alwaysOnTopButton =
+			new QAction(QTStr("Basic.MainMenu.AlwaysOnTop"), this);
+		alwaysOnTopButton->setCheckable(true);
+		alwaysOnTopButton->setChecked(isAlwaysOnTop);
+
+		connect(alwaysOnTopButton, &QAction::toggled, this,
+			&OBSProjector::AlwaysOnTopToggled);
+
+		popup.addAction(alwaysOnTopButton);
+
 		popup.addAction(QTStr("Close"), this, SLOT(EscapeTriggered()));
 		popup.exec(QCursor::pos());
 	}
@@ -862,6 +880,8 @@ void OBSProjector::EscapeTriggered()
 {
 	OBSBasic *main = reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
 	main->DeleteProjector(this);
+
+	allProjectors.removeAll(this);
 }
 
 void OBSProjector::UpdateMultiview()
@@ -1087,8 +1107,31 @@ void OBSProjector::ResizeToContent()
 	resize(newX, newY);
 }
 
+void OBSProjector::AlwaysOnTopToggled(bool isAlwaysOnTop)
+{
+	SetIsAlwaysOnTop(isAlwaysOnTop, true);
+}
+
 void OBSProjector::closeEvent(QCloseEvent *event)
 {
 	EscapeTriggered();
 	event->accept();
+}
+
+bool OBSProjector::IsAlwaysOnTop() const
+{
+	return isAlwaysOnTop;
+}
+
+bool OBSProjector::IsAlwaysOnTopOverridden() const
+{
+	return isAlwaysOnTopOverridden;
+}
+
+void OBSProjector::SetIsAlwaysOnTop(bool isAlwaysOnTop, bool isOverridden)
+{
+	this->isAlwaysOnTop = isAlwaysOnTop;
+	this->isAlwaysOnTopOverridden = isOverridden;
+
+	SetAlwaysOnTop(this, isAlwaysOnTop);
 }
