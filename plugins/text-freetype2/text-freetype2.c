@@ -1,4 +1,4 @@
-﻿/******************************************************************************
+/******************************************************************************
 Copyright (C) 2014 by Nibbles
 
 This program is free software: you can redistribute it and/or modify
@@ -155,6 +155,9 @@ static obs_properties_t *ft2_source_properties(void *unused)
 
 	obs_properties_add_bool(props, "from_file",
 				obs_module_text("ReadFromFile"));
+
+	obs_properties_add_bool(props, "antialiasing",
+				obs_module_text("Antialiasing"));
 
 	obs_properties_add_bool(props, "log_mode",
 				obs_module_text("ChatLogMode"));
@@ -365,6 +368,8 @@ static void ft2_source_update(void *data, obs_data_t *settings)
 	if (ft2_lib == NULL)
 		goto error;
 
+	const size_t texbuf_size = (size_t)texbuf_w * (size_t)texbuf_h;
+
 	if (srcdata->draw_effect == NULL) {
 		char *effect_file = NULL;
 		char *error_string = NULL;
@@ -385,6 +390,16 @@ static void ft2_source_update(void *data, obs_data_t *settings)
 
 	if (srcdata->font_size != font_size || srcdata->from_file != from_file)
 		vbuf_needs_update = true;
+
+	const bool new_aa_setting = obs_data_get_bool(settings, "antialiasing");
+	const bool aa_changed = srcdata->antialiasing != new_aa_setting;
+	if (aa_changed) {
+		srcdata->antialiasing = new_aa_setting;
+		if (srcdata->texbuf != NULL) {
+			memset(srcdata->texbuf, 0, texbuf_size);
+		}
+		cache_standard_glyphs(srcdata);
+	}
 
 	srcdata->file_load_failed = false;
 	srcdata->from_file = from_file;
@@ -422,7 +437,7 @@ static void ft2_source_update(void *data, obs_data_t *settings)
 		bfree(srcdata->texbuf);
 		srcdata->texbuf = NULL;
 	}
-	srcdata->texbuf = bzalloc(texbuf_w * texbuf_h);
+	srcdata->texbuf = bzalloc(texbuf_size);
 
 	if (srcdata->font_face)
 		cache_standard_glyphs(srcdata);
@@ -504,6 +519,8 @@ static void *ft2_source_create(obs_data_t *settings, obs_source_t *source,
 	obs_data_set_default_string(font_obj, "face", DEFAULT_FACE);
 	obs_data_set_default_int(font_obj, "size", font_size);
 	obs_data_set_default_obj(settings, "font", font_obj);
+
+	obs_data_set_default_bool(settings, "antialiasing", true);
 
 	obs_data_set_default_int(settings, "log_lines", 6);
 
