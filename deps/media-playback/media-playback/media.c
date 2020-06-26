@@ -216,7 +216,7 @@ static bool mp_media_init_scaling(mp_media_t *m)
 
 	int ret = av_image_alloc(m->scale_pic, m->scale_linesizes,
 				 m->v.decoder->width, m->v.decoder->height,
-				 m->scale_format, 1);
+				 m->scale_format, 32);
 	if (ret < 0) {
 		blog(LOG_WARNING, "MP: Failed to create scale pic data");
 		return false;
