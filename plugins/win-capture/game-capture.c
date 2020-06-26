@@ -131,9 +131,6 @@ struct auto_game_capture {
 	DARRAY(struct game_capture_matching_rule) matching_rules;
 	DARRAY(HWND) checked_windows;
 	HANDLE mutex;
-	
-	HWND last_matched_window;
-	int last_matched_window_repeats;
 };
 
 struct game_capture {
@@ -358,7 +355,6 @@ static void load_whitelist(struct auto_game_capture * ac, const char * whitelist
 			da_push_back(ac->matching_rules, &rule);
 		};
 
-		ac->last_matched_window = NULL;
 		ReleaseMutex(ac->mutex);
 	}
 	json_decref(root);
@@ -560,7 +556,7 @@ static inline bool capture_needs_reset(struct game_capture_config *cfg1,
 					   cfg1->scale_cy != cfg2->scale_cy)) {
 		return true;
 
-	} else if (cfg1->force_shmem != cfg2->force_shmem && cfg1->mode == CAPTURE_MODE_AUTO ) {
+	} else if (cfg1->force_shmem != cfg2->force_shmem) {
 		return true;
 
 	} else if (cfg1->limit_framerate != cfg2->limit_framerate) {
@@ -735,7 +731,6 @@ static void game_capture_update(void *data, obs_data_t *settings)
 	if (cfg.mode == CAPTURE_MODE_AUTO) {
 		const char *games_list_file = obs_data_get_string(settings, SETTING_AUTO_LIST_FILE);
 		load_whitelist(&gc->auto_capture, games_list_file);
-		gc->auto_capture.last_matched_window = NULL;
 	} else {
 		free_whitelist(&gc->auto_capture);
 	}
@@ -816,8 +811,6 @@ static void *game_capture_create(obs_data_t *settings, obs_source_t *source)
 
 	da_init(gc->auto_capture.matching_rules);
 	da_init(gc->auto_capture.checked_windows);
-	gc->auto_capture.last_matched_window = NULL;
-	gc->auto_capture.last_matched_window_repeats = 0;
 
 	dstr_init(&gc->placeholder_image_path);
 	dstr_init(&gc->placeholder_text);
@@ -1354,23 +1347,9 @@ static void get_game_window(struct game_capture *gc)
 	window = find_matching_window(INCLUDE_MINIMIZED, &ac->matching_rules, &ac->checked_windows);
 	ReleaseMutex(ac->mutex);
 	if (window) {
-		if (window == ac->last_matched_window) {
-			gc->config.force_shmem = false;
-			ac->last_matched_window_repeats++;
-
-			if (ac->last_matched_window_repeats >= 2)
-				gc->config.force_shmem = true;
-
-			if (ac->last_matched_window_repeats == 3)
-				ac->last_matched_window_repeats = 0;
-		} else {
-			ac->last_matched_window_repeats = 1;
-			ac->last_matched_window = window;
-		}
 		setup_window(gc, window);
  		save_selected_window(gc, window);
 	} else {
-		ac->last_matched_window = window;
 		gc->wait_for_target_startup = true;
 	}
 }
@@ -1955,7 +1934,7 @@ static bool start_capture(struct game_capture *gc)
 
 		info("shared texture capture successful");
 	}
-	gc->auto_capture.last_matched_window = NULL;
+
 	return true;
 }
 
@@ -2326,9 +2305,6 @@ static bool mode_callback(obs_properties_t *ppts, obs_property_t *p,
 	obs_property_set_visible(p, capture_window);
 
 	//some settings hidden in auto game capture mode 
-	p = obs_properties_get(ppts, SETTING_COMPATIBILITY);
-	obs_property_set_visible(p, !capture_window_auto);
-
 	p = obs_properties_get(ppts, SETTING_LIMIT_FRAMERATE);
 	obs_property_set_visible(p, !capture_window_auto);
 	
