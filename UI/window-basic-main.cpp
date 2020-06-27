@@ -9947,3 +9947,29 @@ void OBSBasic::UpdatePreviewSafeAreas()
 	drawSafeAreas = config_get_bool(App()->GlobalConfig(), "BasicWindow",
 					"ShowSafeAreas");
 }
+
+void OBSBasic::SetDisplayAffinity(QWindow *window)
+{
+	if (!SetDisplayAffinitySupported())
+		return;
+
+	bool hideFromCapture = config_get_bool(App()->GlobalConfig(),
+					       "BasicWindow",
+					       "HideOBSWindowsFromCapture");
+
+	// Don't hide projectors, those are designed to be visible / captured
+	if (window->property("isOBSProjectorWindow") == true)
+		return;
+
+#ifdef _WIN32
+	HWND hwnd = (HWND)window->winId();
+
+	if (hideFromCapture)
+		SetWindowDisplayAffinity(hwnd, WDA_EXCLUDEFROMCAPTURE);
+	else
+		SetWindowDisplayAffinity(hwnd, WDA_NONE);
+#else
+// TODO: Implement for other platforms if possible. Don't forget to
+// implement SetDisplayAffinitySupported too!
+#endif
+}

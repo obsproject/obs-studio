@@ -196,6 +196,12 @@ void SetAlwaysOnTop(QWidget *window, bool enable)
 	window->show();
 }
 
+bool SetDisplayAffinitySupported(void)
+{
+	// Not implemented yet
+	return false;
+}
+
 typedef void (*set_int_t)(int);
 
 void EnableOSXVSync(bool enable)
