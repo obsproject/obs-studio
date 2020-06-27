@@ -863,6 +863,13 @@ static void replay_buffer_save(struct ffmpeg_muxer *stream)
 		dstr_cat_ch(&stream->path, '/');
 	dstr_cat(&stream->path, filename);
 
+	char *slash = strrchr(stream->path.array, '/');
+	if (slash) {
+		*slash = 0;
+		os_mkdirs(stream->path.array);
+		*slash = '/';
+	}
+
 	bfree(filename);
 	obs_data_release(settings);
 
