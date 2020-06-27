@@ -105,6 +105,8 @@ private:
 	void AddExtraThemeColor(QPalette &pal, int group, const char *name,
 				uint32_t color);
 
+	bool notify(QObject *receiver, QEvent *e) override;
+
 public:
 	OBSApp(int &argc, char **argv, profiler_name_store_t *store);
 	~OBSApp();

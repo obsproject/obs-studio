@@ -251,3 +251,9 @@ void SetAlwaysOnTop(QWidget *window, bool enable)
 	window->setWindowFlags(flags);
 	window->show();
 }
+
+bool SetDisplayAffinitySupported(void)
+{
+	// Not implemented yet
+	return false;
+}

@@ -37,8 +37,11 @@ std::vector<std::string> GetPreferredLocales();
 bool IsAlwaysOnTop(QWidget *window);
 void SetAlwaysOnTop(QWidget *window, bool enable);
 
+bool SetDisplayAffinitySupported(void);
+
 #ifdef _WIN32
 uint32_t GetWindowsVersion();
+uint32_t GetWindowsBuild();
 void SetAeroEnabled(bool enable);
 void SetProcessPriority(const char *priority);
 void SetWin32DropStyle(QWidget *window);
