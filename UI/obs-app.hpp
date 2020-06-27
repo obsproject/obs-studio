@@ -72,9 +72,10 @@ private:
 	std::string theme;
 	ConfigFile globalConfig;
 	TextLookup textLookup;
-	OBSContext obsContext;
 	QPointer<OBSMainWindow> mainWindow;
 	profiler_name_store_t *profilerNameStore = nullptr;
+
+	bool libobs_initialized = false;
 
 	os_inhibit_t *sleepInhibitor = nullptr;
 	int sleepInhibitRefs = 0;

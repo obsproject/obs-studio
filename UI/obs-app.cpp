@@ -1131,6 +1131,9 @@ OBSApp::~OBSApp()
 
 	os_inhibit_sleep_set_active(sleepInhibitor, false);
 	os_inhibit_sleep_destroy(sleepInhibitor);
+
+	if (libobs_initialized)
+		obs_shutdown();
 }
 
 static void move_basic_to_profiles(void)
@@ -1351,6 +1354,8 @@ bool OBSApp::OBSInit()
 
 	if (!StartupOBS(locale.c_str(), GetProfilerNameStore()))
 		return false;
+
+	libobs_initialized = true;
 
 	obs_set_ui_task_handler(ui_task_handler);
 
