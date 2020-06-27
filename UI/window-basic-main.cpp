@@ -5392,7 +5392,8 @@ inline void OBSBasic::OnActivate()
 		UpdateProcessPriority();
 
 #ifdef _WIN32
-		taskProg->show();
+		if (taskbarStatusColor())
+			taskProg->show();
 		taskProg->resume();
 		taskProg->setValue(1);
 		taskBtn->setOverlayIcon(QIcon::fromTheme(
@@ -5426,7 +5427,8 @@ inline void OBSBasic::OnDeactivate()
 	} else {
 		if (os_atomic_load_bool(&recording_paused)) {
 #ifdef _WIN32
-			taskProg->show();
+			if (taskbarStatusColor())
+				taskProg->show();
 			taskProg->pause();
 			taskBtn->setOverlayIcon(QIcon::fromTheme(
 				"obs-paused",
@@ -5437,7 +5439,8 @@ inline void OBSBasic::OnDeactivate()
 					QIcon(":/res/images/obs_paused.png"));
 		} else {
 #ifdef _WIN32
-			taskProg->show();
+			if (taskbarStatusColor())
+				taskProg->show();
 			taskProg->resume();
 			taskBtn->setOverlayIcon(QIcon::fromTheme(
 				"obs-active",
@@ -7451,7 +7454,13 @@ bool OBSBasic::sysTrayMinimizeToTray()
 	return config_get_bool(GetGlobalConfig(), "BasicWindow",
 			       "SysTrayMinimizeToTray");
 }
-
+#ifdef _WIN32
+bool OBSBasic::taskbarStatusColor()
+{
+	return config_get_bool(GetGlobalConfig(), "BasicWindow",
+			       "TaskbarStatusColor");
+}
+#endif
 void OBSBasic::on_actionCopySource_triggered()
 {
 	copyStrings.clear();
