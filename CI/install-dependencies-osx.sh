@@ -28,7 +28,7 @@ sudo installer -pkg ./Packages.pkg -target /
 brew update
 
 #Base OBS Deps and ccache
-for DEPENDENCY in jack speexdsp ccache mbedtls freetype fdk-aac; do
+for DEPENDENCY in jack speexdsp ccache mbedtls freetype fdk-aac cmocka; do
     if [ ! -d "$(brew --cellar)/${DEPENDENCY}" ]; then
         brew install $DEPENDENCY
     else
