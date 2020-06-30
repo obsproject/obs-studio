@@ -21,7 +21,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <ft2build.h>
 
 #define num_cache_slots 65535
-#define src_glyph srcdata->cacheglyphs[glyph_index]
 
 struct glyph_info {
 	float u, v, u2, v2;

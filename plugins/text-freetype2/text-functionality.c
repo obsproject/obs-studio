@@ -108,43 +108,35 @@ void set_up_vertex_buffer(struct ft2_source *srcdata)
 	srcdata->vbuf =
 		create_uv_vbuffer((uint32_t)wcslen(srcdata->text) * 6, true);
 
-	if (srcdata->custom_width <= 100)
-		goto skip_word_wrap;
-	if (!srcdata->word_wrap)
-		goto skip_word_wrap;
+	if (srcdata->custom_width > 100 && srcdata->word_wrap) {
+		len = wcslen(srcdata->text);
 
-	len = wcslen(srcdata->text);
+		for (uint32_t i = 0; i <= len; i++) {
+			if (i == len || srcdata->text[i] == L' ' ||
+			    srcdata->text[i] == L'\n') {
+				if (x + word_width > srcdata->custom_width) {
+					if (space_pos != 0)
+						srcdata->text[space_pos] =
+							L'\n';
+					x = 0;
+				}
+				if (i == len)
+					continue;
 
-	for (uint32_t i = 0; i <= len; i++) {
-		if (i == wcslen(srcdata->text))
-			goto eos_check;
+				x += word_width;
+				word_width = 0;
+				if (srcdata->text[i] == L'\n')
+					x = 0;
+				if (srcdata->text[i] == L' ')
+					space_pos = i;
+			}
 
-		if (srcdata->text[i] != L' ' && srcdata->text[i] != L'\n')
-			goto next_char;
-
-	eos_check:;
-		if (x + word_width > srcdata->custom_width) {
-			if (space_pos != 0)
-				srcdata->text[space_pos] = L'\n';
-			x = 0;
+			glyph_index = FT_Get_Char_Index(srcdata->font_face,
+							srcdata->text[i]);
+			word_width += srcdata->cacheglyphs[glyph_index]->xadv;
 		}
-		if (i == wcslen(srcdata->text))
-			goto eos_skip;
-
-		x += word_width;
-		word_width = 0;
-		if (srcdata->text[i] == L'\n')
-			x = 0;
-		if (srcdata->text[i] == L' ')
-			space_pos = i;
-	next_char:;
-		glyph_index =
-			FT_Get_Char_Index(srcdata->font_face, srcdata->text[i]);
-		word_width += src_glyph->xadv;
-	eos_skip:;
 	}
 
-skip_word_wrap:;
 	fill_vertex_buffer(srcdata);
 	obs_leave_graphics();
 }
@@ -175,36 +167,30 @@ void fill_vertex_buffer(struct ft2_source *srcdata)
 	}
 
 	for (size_t i = 0; i < len; i++) {
-	add_linebreak:;
-		if (srcdata->text[i] != L'\n')
-			goto draw_glyph;
-		dx = 0;
-		i++;
-		dy += srcdata->max_h + 4;
-		if (i == wcslen(srcdata->text))
-			goto skip_glyph;
-		if (srcdata->text[i] == L'\n')
-			goto add_linebreak;
-	draw_glyph:;
+		if (srcdata->text[i] == L'\n') {
+			dx = 0;
+			dy += srcdata->max_h + 4;
+			continue;
+		}
 		// Skip filthy dual byte Windows line breaks
 		if (srcdata->text[i] == L'\r')
-			goto skip_glyph;
+			continue;
 
 		glyph_index =
 			FT_Get_Char_Index(srcdata->font_face, srcdata->text[i]);
-		if (src_glyph == NULL)
-			goto skip_glyph;
+		if (srcdata->cacheglyphs[glyph_index] == NULL)
+			continue;
 
-		if (srcdata->custom_width < 100)
-			goto skip_custom_width;
-
-		if (dx + src_glyph->xadv > srcdata->custom_width) {
-			dx = 0;
-			dy += srcdata->max_h + 4;
+		if (srcdata->custom_width >= 100) {
+			if (dx + srcdata->cacheglyphs[glyph_index]->xadv >
+			    srcdata->custom_width) {
+				dx = 0;
+				dy += srcdata->max_h + 4;
+			}
 		}
 
-	skip_custom_width:;
-
+		struct glyph_info *src_glyph =
+			srcdata->cacheglyphs[glyph_index];
 		set_v3_rect(vdata->points + (cur_glyph * 6),
 			    (float)dx + (float)src_glyph->xoff,
 			    (float)dy - (float)src_glyph->yoff,
@@ -217,7 +203,6 @@ void fill_vertex_buffer(struct ft2_source *srcdata)
 		if (dy - (float)src_glyph->yoff + src_glyph->h > max_y)
 			max_y = dy - src_glyph->yoff + src_glyph->h;
 		cur_glyph++;
-	skip_glyph:;
 	}
 
 	srcdata->cy = max_y;
@@ -331,7 +316,7 @@ void cache_glyphs(struct ft2_source *srcdata, wchar_t *cache_glyphs)
 		const FT_UInt glyph_index =
 			FT_Get_Char_Index(srcdata->font_face, cache_glyphs[i]);
 
-		if (src_glyph != NULL) {
+		if (srcdata->cacheglyphs[glyph_index] != NULL) {
 			continue;
 		}
 
