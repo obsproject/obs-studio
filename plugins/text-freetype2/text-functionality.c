@@ -19,70 +19,19 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <util/platform.h>
 #include <ft2build.h>
 #include FT_FREETYPE_H
+#include FT_GLYPH_H
+#include FT_OUTLINE_H
+#include FT_BITMAP_H
 #include <sys/stat.h>
 #include "text-freetype2.h"
 #include "obs-convenience.h"
-
-float offsets[16] = {-2.0f, 0.0f, 0.0f, -2.0f, 2.0f,  0.0f, 2.0f,  0.0f,
-		     0.0f,  2.0f, 0.0f, 2.0f,  -2.0f, 0.0f, -2.0f, 0.0f};
-
-extern uint32_t texbuf_w, texbuf_h;
-
-void draw_outlines(struct ft2_source *srcdata)
-{
-	// Horrible (hopefully temporary) solution for outlines.
-	uint32_t *tmp;
-
-	struct gs_vb_data *vdata = gs_vertexbuffer_get_data(srcdata->vbuf);
-
-	if (!srcdata->text)
-		return;
-
-	tmp = vdata->colors;
-	vdata->colors = srcdata->colorbuf;
-
-	gs_matrix_push();
-	for (int32_t i = 0; i < 8; i++) {
-		gs_matrix_translate3f(offsets[i * 2], offsets[(i * 2) + 1],
-				      0.0f);
-		draw_uv_vbuffer(srcdata->vbuf, srcdata->tex,
-				srcdata->draw_effect,
-				(uint32_t)wcslen(srcdata->text) * 6);
-	}
-	gs_matrix_identity();
-	gs_matrix_pop();
-
-	vdata->colors = tmp;
-}
-
-void draw_drop_shadow(struct ft2_source *srcdata)
-{
-	// Horrible (hopefully temporary) solution for drop shadow.
-	uint32_t *tmp;
-
-	struct gs_vb_data *vdata = gs_vertexbuffer_get_data(srcdata->vbuf);
-
-	if (!srcdata->text)
-		return;
-
-	tmp = vdata->colors;
-	vdata->colors = srcdata->colorbuf;
-
-	gs_matrix_push();
-	gs_matrix_translate3f(4.0f, 4.0f, 0.0f);
-	draw_uv_vbuffer(srcdata->vbuf, srcdata->tex, srcdata->draw_effect,
-			(uint32_t)wcslen(srcdata->text) * 6);
-	gs_matrix_identity();
-	gs_matrix_pop();
-
-	vdata->colors = tmp;
-}
 
 void set_up_vertex_buffer(struct ft2_source *srcdata)
 {
 	FT_UInt glyph_index = 0;
 	uint32_t x = 0, space_pos = 0, word_width = 0;
 	size_t len;
+	size_t vbuf_size;
 
 	if (!srcdata->text)
 		return;
@@ -105,8 +54,13 @@ void set_up_vertex_buffer(struct ft2_source *srcdata)
 		return;
 	}
 
-	srcdata->vbuf =
-		create_uv_vbuffer((uint32_t)wcslen(srcdata->text) * 6, true);
+	vbuf_size = 6;
+	if (srcdata->outline_text)
+		vbuf_size += 6;
+	if (srcdata->drop_shadow)
+		vbuf_size += 6;
+	srcdata->n_vbuf = (uint32_t)wcslen(srcdata->text) * vbuf_size;
+	srcdata->vbuf = create_uv_vbuffer(srcdata->n_vbuf, true);
 
 	if (srcdata->custom_width > 100 && srcdata->word_wrap) {
 		len = wcslen(srcdata->text);
@@ -133,7 +87,9 @@ void set_up_vertex_buffer(struct ft2_source *srcdata)
 
 			glyph_index = FT_Get_Char_Index(srcdata->font_face,
 							srcdata->text[i]);
-			word_width += srcdata->cacheglyphs[glyph_index]->xadv;
+			if (srcdata->cacheglyphs[glyph_index])
+				word_width +=
+					srcdata->cacheglyphs[glyph_index]->xadv;
 		}
 	}
 
@@ -152,57 +108,90 @@ void fill_vertex_buffer(struct ft2_source *srcdata)
 
 	FT_UInt glyph_index = 0;
 
-	uint32_t dx = 0, dy = srcdata->max_h, max_y = dy;
 	uint32_t cur_glyph = 0;
 	size_t len = wcslen(srcdata->text);
 
-	if (srcdata->colorbuf != NULL) {
-		bfree(srcdata->colorbuf);
-		srcdata->colorbuf = NULL;
-	}
-	srcdata->colorbuf =
-		bzalloc(sizeof(uint32_t) * wcslen(srcdata->text) * 6);
-	for (size_t i = 0; i < len * 6; i++) {
-		srcdata->colorbuf[i] = 0xFF000000;
-	}
+	uint32_t max_y = srcdata->max_h;
 
-	for (size_t i = 0; i < len; i++) {
-		if (srcdata->text[i] == L'\n') {
-			dx = 0;
-			dy += srcdata->max_h + 4;
+	for (size_t k = 0; k < 3; k++) {
+		// k=0: shadow
+		// k=1: outline
+		// k=2: actual text
+		if (k == 0 && !srcdata->drop_shadow)
 			continue;
-		}
-		// Skip filthy dual byte Windows line breaks
-		if (srcdata->text[i] == L'\r')
+		if (k == 1 && !srcdata->outline_text)
 			continue;
 
-		glyph_index =
-			FT_Get_Char_Index(srcdata->font_face, srcdata->text[i]);
-		if (srcdata->cacheglyphs[glyph_index] == NULL)
-			continue;
+		uint32_t dx = 0;
+		uint32_t dy = srcdata->max_h;
 
-		if (srcdata->custom_width >= 100) {
-			if (dx + srcdata->cacheglyphs[glyph_index]->xadv >
-			    srcdata->custom_width) {
+		for (size_t i = 0; i < len; i++) {
+			if (srcdata->text[i] == L'\n') {
 				dx = 0;
 				dy += srcdata->max_h + 4;
+				continue;
 			}
-		}
+			// Skip filthy dual byte Windows line breaks
+			if (srcdata->text[i] == L'\r')
+				continue;
 
-		struct glyph_info *src_glyph =
-			srcdata->cacheglyphs[glyph_index];
-		set_v3_rect(vdata->points + (cur_glyph * 6),
-			    (float)dx + (float)src_glyph->xoff,
-			    (float)dy - (float)src_glyph->yoff,
-			    (float)src_glyph->w, (float)src_glyph->h);
-		set_v2_uv(tvarray + (cur_glyph * 6), src_glyph->u, src_glyph->v,
-			  src_glyph->u2, src_glyph->v2);
-		set_rect_colors2(col + (cur_glyph * 6), srcdata->color[0],
-				 srcdata->color[1]);
-		dx += src_glyph->xadv;
-		if (dy - (float)src_glyph->yoff + src_glyph->h > max_y)
-			max_y = dy - src_glyph->yoff + src_glyph->h;
-		cur_glyph++;
+			glyph_index = FT_Get_Char_Index(srcdata->font_face,
+							srcdata->text[i]);
+			if (srcdata->cacheglyphs[glyph_index] == NULL)
+				continue;
+			if (srcdata->outline_text &&
+			    srcdata->cacheglyphs_outline[glyph_index] == NULL)
+				continue;
+
+			if (srcdata->custom_width >= 100) {
+				if (dx + srcdata->cacheglyphs[glyph_index]->xadv >
+				    srcdata->custom_width) {
+					dx = 0;
+					dy += srcdata->max_h + 4;
+				}
+			}
+
+			struct glyph_info *src_glyph;
+			uint32_t c0, c1;
+			float x0, y0;
+			switch (k) {
+			case 0:
+				if (srcdata->outline_text)
+					src_glyph = srcdata->cacheglyphs_outline
+							    [glyph_index];
+				else
+					src_glyph =
+						srcdata->cacheglyphs[glyph_index];
+				x0 = (float)dx + (float)src_glyph->xoff + 4.0f;
+				y0 = (float)dy - (float)src_glyph->yoff + 4.0f;
+				c0 = c1 = srcdata->color[3];
+				break;
+			case 1:
+				src_glyph =
+					srcdata->cacheglyphs_outline[glyph_index];
+				x0 = (float)dx + (float)src_glyph->xoff;
+				y0 = (float)dy - (float)src_glyph->yoff;
+				c0 = c1 = srcdata->color[2];
+				break;
+			case 2:
+				src_glyph = srcdata->cacheglyphs[glyph_index];
+				x0 = (float)dx + (float)src_glyph->xoff;
+				y0 = (float)dy - (float)src_glyph->yoff;
+				c0 = srcdata->color[0];
+				c1 = srcdata->color[1];
+				break;
+			}
+			set_v3_rect(vdata->points + (cur_glyph * 6), x0, y0,
+				    (float)src_glyph->w, (float)src_glyph->h);
+			set_v2_uv(tvarray + (cur_glyph * 6), src_glyph->u,
+				  src_glyph->v, src_glyph->u2, src_glyph->v2);
+			set_rect_colors2(col + (cur_glyph * 6), c0, c1);
+			src_glyph = srcdata->cacheglyphs[glyph_index];
+			dx += src_glyph->xadv;
+			if (dy - (float)src_glyph->yoff + src_glyph->h > max_y)
+				max_y = dy - src_glyph->yoff + src_glyph->h;
+			cur_glyph++;
+		}
 	}
 
 	srcdata->cy = max_y;
@@ -217,8 +206,16 @@ void cache_standard_glyphs(struct ft2_source *srcdata)
 		}
 	}
 
+	for (uint32_t i = 0; i < num_cache_slots; i++) {
+		if (srcdata->cacheglyphs_outline[i] != NULL) {
+			bfree(srcdata->cacheglyphs_outline[i]);
+			srcdata->cacheglyphs_outline[i] = NULL;
+		}
+	}
+
 	srcdata->texbuf_x = 0;
 	srcdata->texbuf_y = 0;
+	srcdata->texbuf_max_h = 0;
 
 	cache_glyphs(srcdata, L"abcdefghijklmnopqrstuvwxyz"
 			      L"ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890"
@@ -229,6 +226,12 @@ FT_Render_Mode get_render_mode(struct ft2_source *srcdata)
 {
 	return srcdata->antialiasing ? FT_RENDER_MODE_NORMAL
 				     : FT_RENDER_MODE_MONO;
+}
+
+#define flt2pos_eps ((float)(0.5f / 128.f))
+static inline FT_Pos flt2pos(float x)
+{
+	return (FT_Pos)(x * 128.f + 0.5f);
 }
 
 void load_glyph(struct ft2_source *srcdata, const FT_UInt glyph_index,
@@ -297,15 +300,19 @@ void rasterize(struct ft2_source *srcdata, FT_GlyphSlot slot,
 	}
 }
 
-void cache_glyphs(struct ft2_source *srcdata, wchar_t *cache_glyphs)
+static int32_t cache_glyphs_one(struct ft2_source *srcdata,
+				wchar_t *cache_glyphs,
+				struct glyph_info **cacheglyphs,
+				bool is_outline)
 {
 	if (!srcdata->font_face || !cache_glyphs)
-		return;
+		return 0;
 
 	FT_GlyphSlot slot = srcdata->font_face->glyph;
 
 	uint32_t dx = srcdata->texbuf_x;
 	uint32_t dy = srcdata->texbuf_y;
+	uint32_t dh = srcdata->texbuf_max_h;
 
 	int32_t cached_glyphs = 0;
 	const size_t len = wcslen(cache_glyphs);
@@ -316,24 +323,41 @@ void cache_glyphs(struct ft2_source *srcdata, wchar_t *cache_glyphs)
 		const FT_UInt glyph_index =
 			FT_Get_Char_Index(srcdata->font_face, cache_glyphs[i]);
 
-		if (srcdata->cacheglyphs[glyph_index] != NULL) {
+		if (cacheglyphs[glyph_index] != NULL) {
 			continue;
 		}
 
 		load_glyph(srcdata, glyph_index, render_mode);
+
+		bool is_outline_format = slot->format ==
+					 FT_GLYPH_FORMAT_OUTLINE;
+		float outline_size = srcdata->outline_size;
+		if (is_outline && is_outline_format &&
+		    outline_size > flt2pos_eps)
+			FT_Outline_Embolden(&slot->outline,
+					    flt2pos(outline_size));
+
 		FT_Render_Glyph(slot, render_mode);
+
+		if (is_outline && !is_outline_format &&
+		    outline_size > flt2pos_eps)
+			FT_Bitmap_Embolden(ft2_lib, &slot->bitmap,
+					   flt2pos(outline_size),
+					   flt2pos(outline_size));
 
 		const uint32_t g_w = slot->bitmap.width;
 		const uint32_t g_h = slot->bitmap.rows;
 
-		if (srcdata->max_h < g_h) {
+		if (!is_outline && srcdata->max_h < g_h) {
 			srcdata->max_h = g_h;
 		}
 
 		if (dx + g_w >= texbuf_w) {
 			dx = 0;
-			dy += srcdata->max_h + 1;
-		}
+			dy += dh + 1;
+			dh = g_h;
+		} else if (dh < g_h)
+			dh = g_h;
 
 		if (dy + g_h >= texbuf_h) {
 			blog(LOG_WARNING,
@@ -341,20 +365,37 @@ void cache_glyphs(struct ft2_source *srcdata, wchar_t *cache_glyphs)
 			break;
 		}
 
-		src_glyph = init_glyph(slot, dx, dy, g_w, g_h);
+		struct glyph_info *src_glyph =
+			init_glyph(slot, dx, dy, g_w, g_h);
+		if (is_outline) {
+			src_glyph->xoff -= outline_size;
+			src_glyph->yoff -= is_outline_format ? outline_size
+							     : -outline_size;
+		}
+		cacheglyphs[glyph_index] = src_glyph;
+
 		rasterize(srcdata, slot, render_mode, dx, dy);
 
 		dx += (g_w + 1);
-		if (dx >= texbuf_w) {
-			dx = 0;
-			dy += srcdata->max_h;
-		}
-
 		cached_glyphs++;
 	}
 
 	srcdata->texbuf_x = dx;
 	srcdata->texbuf_y = dy;
+	srcdata->texbuf_max_h = dh;
+
+	return cached_glyphs;
+}
+
+void cache_glyphs(struct ft2_source *srcdata, wchar_t *text)
+{
+	int32_t cached_glyphs =
+		cache_glyphs_one(srcdata, text, srcdata->cacheglyphs, false);
+	if (srcdata->outline_text)
+		cached_glyphs += cache_glyphs_one(
+			srcdata, text, srcdata->cacheglyphs_outline, true);
+
+	// TODO: If it becomes out of memory, need garbage collection. Especially bold outline consumes a lot of image space.
 
 	if (cached_glyphs > 0) {
 

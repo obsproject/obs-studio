@@ -33,8 +33,6 @@ MODULE_EXPORT const char *obs_module_description(void)
 	return "FreeType2 text source";
 }
 
-uint32_t texbuf_w = 2048, texbuf_h = 2048;
-
 static struct obs_source_info freetype2_source_info_v1 = {
 	.id = "text_ft2_source",
 	.type = OBS_SOURCE_TYPE_INPUT,
@@ -140,12 +138,11 @@ static obs_properties_t *ft2_source_properties(void *unused)
 	UNUSED_PARAMETER(unused);
 
 	obs_properties_t *props = obs_properties_create();
-	//obs_property_t *prop;
+	obs_property_t *prop;
 
 	// TODO:
 	//	Scrolling. Can't think of a way to do it with the render
 	//		targets currently being broken. (0.4.2)
-	//	Better/pixel shader outline/drop shadow
 	//	Some way to pull text files from network, I dunno
 
 	obs_properties_add_font(props, "font", obs_module_text("Font"));
@@ -170,13 +167,36 @@ static obs_properties_t *ft2_source_properties(void *unused)
 				obs_module_text("TextFileFilter"), NULL);
 
 	obs_properties_add_color(props, "color1", obs_module_text("Color1"));
+	prop = obs_properties_add_int_slider(props, "color1_opacity",
+					     obs_module_text("Color1Opacity"),
+					     0, 100, 1);
+	obs_property_int_set_suffix(prop, "%");
 
 	obs_properties_add_color(props, "color2", obs_module_text("Color2"));
+	prop = obs_properties_add_int_slider(props, "color2_opacity",
+					     obs_module_text("Color2Opacity"),
+					     0, 100, 1);
+	obs_property_int_set_suffix(prop, "%");
 
 	obs_properties_add_bool(props, "outline", obs_module_text("Outline"));
+	obs_properties_add_float(props, "outline_size",
+				 obs_module_text("Outline size"), 0.00, 1e2,
+				 1.0);
+	obs_properties_add_color(props, "outline_color",
+				 obs_module_text("Color"));
+	prop = obs_properties_add_int_slider(props, "outline_opacity",
+					     obs_module_text("OutlineOpacity"),
+					     0, 100, 1);
+	obs_property_int_set_suffix(prop, "%");
 
 	obs_properties_add_bool(props, "drop_shadow",
 				obs_module_text("DropShadow"));
+	obs_properties_add_color(props, "shadow_color",
+				 obs_module_text("Color"));
+	prop = obs_properties_add_int_slider(props, "shadow_opacity",
+					     obs_module_text("ShadowOpacity"),
+					     0, 100, 1);
+	obs_property_int_set_suffix(prop, "%");
 
 	obs_properties_add_int(props, "custom_width",
 			       obs_module_text("CustomWidth"), 0, 4096, 1);
@@ -203,6 +223,13 @@ static void ft2_source_destroy(void *data)
 		}
 	}
 
+	for (uint32_t i = 0; i < num_cache_slots; i++) {
+		if (srcdata->cacheglyphs_outline[i] != NULL) {
+			bfree(srcdata->cacheglyphs_outline[i]);
+			srcdata->cacheglyphs_outline[i] = NULL;
+		}
+	}
+
 	if (srcdata->font_name != NULL)
 		bfree(srcdata->font_name);
 	if (srcdata->font_style != NULL)
@@ -211,8 +238,6 @@ static void ft2_source_destroy(void *data)
 		bfree(srcdata->text);
 	if (srcdata->texbuf != NULL)
 		bfree(srcdata->texbuf);
-	if (srcdata->colorbuf != NULL)
-		bfree(srcdata->colorbuf);
 	if (srcdata->text_file != NULL)
 		bfree(srcdata->text_file);
 
@@ -248,13 +273,9 @@ static void ft2_source_render(void *data, gs_effect_t *effect)
 		return;
 
 	gs_reset_blend_state();
-	if (srcdata->outline_text)
-		draw_outlines(srcdata);
-	if (srcdata->drop_shadow)
-		draw_drop_shadow(srcdata);
 
 	draw_uv_vbuffer(srcdata->vbuf, srcdata->tex, srcdata->draw_effect,
-			(uint32_t)wcslen(srcdata->text) * 6);
+			srcdata->n_vbuf);
 
 	UNUSED_PARAMETER(effect);
 }
@@ -308,13 +329,21 @@ static bool init_font(struct ft2_source *srcdata)
 	return FT_New_Face(ft2_lib, path, index, &srcdata->font_face) == 0;
 }
 
+static uint32_t color_from_color_opacity(uint32_t c, uint32_t o)
+{
+	return (c & 0x00FFFFFF) | (((o * 255 / 100) << 24) & 0xFF000000);
+}
+
 static void ft2_source_update(void *data, obs_data_t *settings)
 {
 	struct ft2_source *srcdata = data;
 	obs_data_t *font_obj = obs_data_get_obj(settings, "font");
 	bool vbuf_needs_update = false;
 	bool word_wrap = false;
-	uint32_t color[2];
+	bool outline_text;
+	bool drop_shadow;
+	uint32_t color[4];
+	float outline_size;
 	uint32_t custom_width = 0;
 
 	const char *font_name = obs_data_get_string(font_obj, "face");
@@ -325,12 +354,39 @@ static void ft2_source_update(void *data, obs_data_t *settings)
 	if (!font_obj)
 		return;
 
-	srcdata->drop_shadow = obs_data_get_bool(settings, "drop_shadow");
-	srcdata->outline_text = obs_data_get_bool(settings, "outline");
+	drop_shadow = obs_data_get_bool(settings, "drop_shadow");
+
+	outline_text = obs_data_get_bool(settings, "outline");
+	outline_size = obs_data_get_double(settings, "outline_size");
+
+	if (drop_shadow != srcdata->drop_shadow) {
+		srcdata->drop_shadow = drop_shadow;
+		vbuf_needs_update = true;
+	}
+
+	if (outline_text != srcdata->outline_text) {
+		srcdata->outline_text = outline_text;
+		vbuf_needs_update = true;
+	}
+
+	if (fabsf(outline_size - srcdata->outline_size) > 0.007)
+		vbuf_needs_update = 1;
+	srcdata->outline_size = outline_size;
+
 	word_wrap = obs_data_get_bool(settings, "word_wrap");
 
-	color[0] = (uint32_t)obs_data_get_int(settings, "color1");
-	color[1] = (uint32_t)obs_data_get_int(settings, "color2");
+	color[0] = color_from_color_opacity(
+		obs_data_get_int(settings, "color1"),
+		obs_data_get_int(settings, "color1_opacity"));
+	color[1] = color_from_color_opacity(
+		obs_data_get_int(settings, "color2"),
+		obs_data_get_int(settings, "color2_opacity"));
+	color[2] = color_from_color_opacity(
+		obs_data_get_int(settings, "outline_color"),
+		obs_data_get_int(settings, "outline_opacity"));
+	color[3] = color_from_color_opacity(
+		obs_data_get_int(settings, "shadow_color"),
+		obs_data_get_int(settings, "shadow_opacity"));
 
 	custom_width = (uint32_t)obs_data_get_int(settings, "custom_width");
 	if (custom_width >= 100) {
@@ -349,10 +405,11 @@ static void ft2_source_update(void *data, obs_data_t *settings)
 		vbuf_needs_update = true;
 	}
 
-	if (color[0] != srcdata->color[0] || color[1] != srcdata->color[1]) {
-		srcdata->color[0] = color[0];
-		srcdata->color[1] = color[1];
-		vbuf_needs_update = true;
+	for (size_t i = 0; i < 4; i++) {
+		if (color[i] != srcdata->color[i]) {
+			srcdata->color[i] = color[i];
+			vbuf_needs_update = true;
+		}
 	}
 
 	bool from_file = obs_data_get_bool(settings, "from_file");
@@ -363,7 +420,10 @@ static void ft2_source_update(void *data, obs_data_t *settings)
 		srcdata->log_lines = log_lines;
 		vbuf_needs_update = true;
 	}
-	srcdata->log_mode = chat_log_mode;
+	if (srcdata->log_mode != chat_log_mode) {
+		srcdata->log_mode = chat_log_mode;
+		vbuf_needs_update = true;
+	}
 
 	if (ft2_lib == NULL)
 		goto error;
@@ -395,10 +455,7 @@ static void ft2_source_update(void *data, obs_data_t *settings)
 	const bool aa_changed = srcdata->antialiasing != new_aa_setting;
 	if (aa_changed) {
 		srcdata->antialiasing = new_aa_setting;
-		if (srcdata->texbuf != NULL) {
-			memset(srcdata->texbuf, 0, texbuf_size);
-		}
-		cache_standard_glyphs(srcdata);
+		vbuf_needs_update = true;
 	}
 
 	srcdata->file_load_failed = false;
@@ -433,16 +490,18 @@ static void ft2_source_update(void *data, obs_data_t *settings)
 		FT_Select_Charmap(srcdata->font_face, FT_ENCODING_UNICODE);
 	}
 
-	if (srcdata->texbuf != NULL) {
-		bfree(srcdata->texbuf);
-		srcdata->texbuf = NULL;
-	}
-	srcdata->texbuf = bzalloc(texbuf_size);
-
-	if (srcdata->font_face)
-		cache_standard_glyphs(srcdata);
-
 skip_font_load:
+	if (vbuf_needs_update) {
+		if (srcdata->texbuf != NULL) {
+			bfree(srcdata->texbuf);
+			srcdata->texbuf = NULL;
+		}
+		srcdata->texbuf = bzalloc(texbuf_size);
+
+		if (srcdata->font_face)
+			cache_standard_glyphs(srcdata);
+	}
+
 	if (from_file) {
 		const char *tmp = obs_data_get_string(settings, "text_file");
 
@@ -525,7 +584,16 @@ static void *ft2_source_create(obs_data_t *settings, obs_source_t *source,
 	obs_data_set_default_int(settings, "log_lines", 6);
 
 	obs_data_set_default_int(settings, "color1", 0xFFFFFFFF);
+	obs_data_set_default_int(settings, "color1_opacity", 100);
 	obs_data_set_default_int(settings, "color2", 0xFFFFFFFF);
+	obs_data_set_default_int(settings, "color2_opacity", 100);
+
+	obs_data_set_default_double(settings, "outline_size", 2.0);
+	obs_data_set_default_int(settings, "outline_color", 0xFF000000);
+	obs_data_set_default_int(settings, "outline_opacity", 100);
+
+	obs_data_set_default_int(settings, "shadow_color", 0xFF000000);
+	obs_data_set_default_int(settings, "shadow_opacity", 100);
 
 	ft2_source_update(srcdata, settings);
 

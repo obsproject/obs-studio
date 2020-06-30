@@ -21,10 +21,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <ft2build.h>
 
 #define num_cache_slots 65535
+#define texbuf_w 2048
+#define texbuf_h 4096
 
 struct glyph_info {
 	float u, v, u2, v2;
-	int32_t w, h, xoff, yoff;
+	float xoff, yoff;
+	int32_t w, h;
 	int32_t xadv;
 };
 
@@ -44,23 +47,25 @@ struct ft2_source {
 	uint64_t last_checked;
 
 	uint32_t cx, cy, max_h, custom_width;
-	uint32_t texbuf_x, texbuf_y;
-	uint32_t color[2];
-	uint32_t *colorbuf;
+	uint32_t texbuf_x, texbuf_y, texbuf_max_h;
+	uint32_t color[4];
 
 	int32_t cur_scroll, scroll_speed;
 
 	gs_texture_t *tex;
 
 	struct glyph_info *cacheglyphs[num_cache_slots];
+	struct glyph_info *cacheglyphs_outline[num_cache_slots];
 
 	FT_Face font_face;
 
 	uint8_t *texbuf;
 	gs_vertbuffer_t *vbuf;
+	size_t n_vbuf;
 
 	gs_effect_t *draw_effect;
 	bool outline_text, drop_shadow;
+	float outline_size;
 	bool log_mode, word_wrap;
 	uint32_t log_lines;
 
