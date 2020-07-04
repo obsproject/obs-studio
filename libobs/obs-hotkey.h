@@ -148,6 +148,9 @@ obs_hotkeys_set_audio_hotkeys_translations(const char *mute, const char *unmute,
 					   const char *push_to_mute,
 					   const char *push_to_talk);
 
+EXPORT void obs_hotkeys_set_filter_hotkeys_translations(const char *enable,
+							const char *disable);
+
 EXPORT void obs_hotkeys_set_sceneitem_hotkeys_translations(const char *show,
 							   const char *hide);
 

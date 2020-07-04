@@ -76,7 +76,6 @@ enum class QtDataRole {
 	OBSRef = Qt::UserRole,
 	OBSSignals,
 };
-
 struct SavedProjectorInfo {
 	ProjectorType type;
 	int monitor;
@@ -189,7 +188,6 @@ private:
 	std::vector<OBSSignal> signalHandlers;
 
 	QList<QPointer<QDockWidget>> extraDocks;
-
 	bool loaded = false;
 	long disableSaving = 1;
 	bool projectChanged = false;
@@ -817,8 +815,19 @@ public:
 	QIcon GetSourceIcon(const char *id) const;
 	QIcon GetGroupIcon() const;
 	QIcon GetSceneIcon() const;
-
-protected:
+	bool startup = true;
+	void *AddControlPage(QIcon *icon, QString *name, QWidget *page);
+	QList<QIcon *>   ControlIcons;
+	QList<QString *> ControlNames;
+	QList<QWidget *> ControlPages;
+	void *AddInputControl(QString *name, QWidget *page);
+	QList<QString *> InputNames;
+	QList<QWidget *> InputPages;
+	void *AddOutputControl(QString *name, QWidget *page);
+	
+	QList<QString *> OutputNames;
+	QList<QWidget *> OutputPages;
+	protected:
 	virtual void closeEvent(QCloseEvent *event) override;
 	virtual void changeEvent(QEvent *event) override;
 

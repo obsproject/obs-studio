@@ -25,11 +25,13 @@
 #include <string>
 
 #include <libff/ff-util.h>
+#include <QStringList>
 
+#include<window-control.hpp>
 #include <obs.hpp>
 
 #include "auth-base.hpp"
-
+#include <window-control.hpp>
 class OBSBasic;
 class QAbstractButton;
 class QComboBox;
@@ -37,9 +39,10 @@ class QCheckBox;
 class QLabel;
 class OBSPropertiesView;
 class OBSHotkeyWidget;
-
+class OBSControlWidget;
 #include "ui_OBSBasicSettings.h"
-
+#include "mapper.hpp"
+#include "obs-frontend-api.h"
 #define VOLUME_METER_DECAY_FAST 23.53
 #define VOLUME_METER_DECAY_MEDIUM 11.76
 #define VOLUME_METER_DECAY_SLOW 8.57
@@ -97,14 +100,17 @@ class OBSBasicSettings : public QDialog {
 	//Q_PROPERTY(QIcon hotkeysIcon READ GetHotkeysIcon WRITE SetHotkeysIcon   DESIGNABLE true)
 	Q_PROPERTY(QIcon advancedIcon READ GetAdvancedIcon WRITE SetAdvancedIcon
 			   DESIGNABLE true)
-	Q_PROPERTY(QIcon controlsIcon READ GetControlsIcon WRITE SetControlsIcon
-			   DESIGNABLE true)				  
+	Q_PROPERTY(QIcon controlsIcon READ GetHotkeysIcon WRITE SetControlsIcon
+			   DESIGNABLE true)
 private:
 	OBSBasic *main;
 
 	std::unique_ptr<Ui::OBSBasicSettings> ui;
+	QList<QPointer<OBSControlWidget>> controlsWidgets;
 
 	std::shared_ptr<Auth> auth;
+	ControlMapper *mapper;
+
 
 	bool generalChanged = false;
 	bool stream1Changed = false;
@@ -233,6 +239,31 @@ private:
 	QString lastService;
 	int prevLangIndex;
 	bool prevBrowserAccel;
+	QTabWidget *tabs;
+	QLabel *noHotkeys;
+	QWidget *hotkeysFrontend;
+	QWidget *hotkeysScenes;
+	QWidget *hotkeysSources;
+	QWidget *hotkeysFilters;
+	QWidget *hotkeysOutputs;
+	QWidget *hotkeysEncoders;
+	QWidget *hotkeysServices;
+
+	QComboBox *scenesCombo;
+	QComboBox *sourcesCombo;
+	QComboBox *filtersSourceCombo;
+	QComboBox *filtersCombo;
+	QComboBox *outputsCombo;
+	QComboBox *encodersCombo;
+	QComboBox *servicesCombo;
+
+	QLabel *sceneLabel;
+	QLabel *sourceLabel;
+	QLabel *filtersSourceLabel;
+	QLabel *outputLabel;
+	QLabel *encoderLabel;
+	QLabel *serviceLabel;
+
 private slots:
 	void UpdateServerList();
 	void UpdateKeyLink();
@@ -243,7 +274,12 @@ private slots:
 	void on_useStreamKey_clicked();
 	void on_useAuth_toggled();
 
+	void HotkeysTabChanged(int tab);
+	void HotkeysComboChanged(const QString &text);
+	void FiltersSourceComboChanged(const QString &text);
+
 private:
+	bool startup = true;
 	/* output */
 	void LoadSimpleOutputSettings();
 	void LoadAdvOutputStreamingSettings();
@@ -306,10 +342,22 @@ private:
 
 	int CurrentFLVTrack();
 
+	QStringList ControlsList;
+
+	using encoders_elem_t =
+		std::tuple<OBSEncoder, QPointer<QLabel>, QPointer<QWidget>>;
+	using outputs_elem_t =
+		std::tuple<OBSOutput, QPointer<QLabel>, QPointer<QWidget>>;
+	using services_elem_t =
+		std::tuple<OBSService, QPointer<QLabel>, QPointer<QWidget>>;
+	using sources_elem_t =
+		std::tuple<OBSSource, QPointer<QLabel>, QPointer<QWidget>>;
+	std::vector<sources_elem_t> filters;
+
 private slots:
 	void on_theme_activated(int idx);
 
-	void on_listWidget_itemSelectionChanged();
+	void on_treeWidget_itemSelectionChanged();
 	void on_buttonBox_clicked(QAbstractButton *button);
 
 	void on_service_currentIndexChanged(int idx);
@@ -373,6 +421,9 @@ private slots:
 	//void SetHotkeysIcon(const QIcon &icon);
 	void SetControlsIcon(const QIcon &icon);
 	void SetAdvancedIcon(const QIcon &icon);
+	void SettingListSelectionChanged();
+	void HideMultipleControlsWidgets();
+	void ShowMultipleControlsWidgets();
 
 protected:
 	virtual void closeEvent(QCloseEvent *event);
@@ -380,9 +431,42 @@ protected:
 public:
 	OBSBasicSettings(QWidget *parent);
 	~OBSBasicSettings();
-	QListWidget getControlsList();
-	QStackedWidget GetControlsStack();
-	QString *AddControlPage(QIcon *icon, QString *name, QWidget *page);
+	QStringList getControlsList();
+	void loadControlWindows();
+	QString AddControlPage(QIcon icon, QString name, QWidget page);
+	QString AddInputControl(QString name, QWidget page);
+	QString AddOutputControl(QString name, QWidget page);
+
+	//bits involving obs specific output widget
+	QHBoxLayout *MakeComboPair(QString label, QStringList entries);
+	QStringList FrontendActions = {"Start Streaming",
+					"Stop Streaming",
+					"Toggle Start/Stop Streaming",
+					"Start Recording",
+					"Stop Recording",
+					"Pause Recording",
+					"Unpause Recording",
+					"Start Replay Buffer",
+					"Stop Replay Buffer",
+					"Enable Preview",
+					"Disable Preview",
+					"Studio Mode",
+					"Transition",
+					"Reset Stats"};
+	QStringList Scenes;
+	QStringList GetScenes();
+	QStringList Sources;
+	QStringList GetSources();
+	QStringList Filters;
+	QStringList GetFilters();
+	QStringList Outputs;
+	QStringList GetOutputs();
+	void ClearActions();
+
+ private slots:
+	void obs_type_select(int);
+
 signals:
 	void onControlChange(QString Change);
+
 };

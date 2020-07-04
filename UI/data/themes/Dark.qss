@@ -101,6 +101,19 @@ QMenuBar::item {
     background-color: rgb(58,57,58); /* dark */
 }
 
+
+
+QTreeView::branch:has-children:!has-siblings:closed,
+QTreeView::branch:closed:has-children:has-siblings {
+        border-image: none;
+        image: url('./Dark/expand.svg');
+}
+
+QTreeView::branch:open:has-children:!has-siblings,
+QTreeView::branch:open:has-children:has-siblings  {
+        border-image: none;
+        image: url('./Dark/down.svg');
+}
 QListWidget::item:selected:!active,
 SourceTree::item:selected:!active {
     color: rgb(255, 255, 255);

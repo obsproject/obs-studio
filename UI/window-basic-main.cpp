@@ -2117,6 +2117,9 @@ void OBSBasic::InitHotkeys()
 	obs_hotkeys_set_sceneitem_hotkeys_translations(Str("SceneItemShow"),
 						       Str("SceneItemHide"));
 
+	obs_hotkeys_set_filter_hotkeys_translations(Str("Enable"),
+						    Str("Disable"));
+
 	obs_hotkey_enable_callback_rerouting(true);
 	obs_hotkey_set_callback_routing_func(OBSBasic::HotkeyTriggered, this);
 }
@@ -8032,3 +8035,22 @@ void OBSBasic::UpdateProjectorAlwaysOnTop(bool top)
 	for (size_t i = 0; i < projectors.size(); i++)
 		SetAlwaysOnTop(projectors[i], top);
 }
+void *OBSBasic::AddControlPage(QIcon *icon, QString *name, QWidget *page)
+{
+	ControlIcons.append(icon);
+	ControlNames.append(name);
+	ControlPages.append(page);
+	return (QString *)name;
+};
+void *OBSBasic::AddInputControl( QString *name, QWidget *page)
+{
+	InputNames.append(name);
+	InputPages.append(page);
+	return (QString *)name;
+};
+void *OBSBasic::AddOutputControl(QString *name, QWidget *page)
+{
+	OutputNames.append(name);
+	OutputPages.append(page);
+	return (QString *)name;
+};

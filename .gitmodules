@@ -16,3 +16,6 @@
 [submodule "plugins/obs-outputs/ftl-sdk"]
 	path = plugins/obs-outputs/ftl-sdk
 	url = https://github.com/Mixer/ftl-sdk.git
+[submodule "plugins/obs-midi"]
+	path = plugins/obs-midi
+	url = git@github.com:cpyarger/obs-midi.git

@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>981</width>
-    <height>726</height>
+    <width>951</width>
+    <height>616</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -22,35 +22,46 @@
     <height>512</height>
    </size>
   </property>
+  <property name="maximumSize">
+   <size>
+    <width>16777215</width>
+    <height>16777215</height>
+   </size>
+  </property>
   <property name="windowTitle">
    <string>Settings</string>
   </property>
-  <layout class="QVBoxLayout" name="verticalLayout">
-   <item>
+  <layout class="QGridLayout" name="gridLayout">
+   <item row="0" column="0">
     <layout class="QHBoxLayout" name="horizontalLayout">
      <item>
-      <widget class="QListWidget" name="listWidget">
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="Minimum" vsizetype="Expanding">
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
-       </property>
+      <widget class="QTreeWidget" name="treeWidget">
        <property name="maximumSize">
         <size>
-         <width>135</width>
+         <width>200</width>
          <height>16777215</height>
         </size>
        </property>
        <property name="iconSize">
         <size>
-         <width>32</width>
-         <height>32</height>
+         <width>30</width>
+         <height>30</height>
         </size>
        </property>
-       <property name="currentRow">
-        <number>-1</number>
+       <property name="rootIsDecorated">
+        <bool>true</bool>
        </property>
+       <property name="animated">
+        <bool>true</bool>
+       </property>
+       <property name="headerHidden">
+        <bool>true</bool>
+       </property>
+       <column>
+        <property name="text">
+         <string>1</string>
+        </property>
+       </column>
        <item>
         <property name="text">
          <string>Basic.Settings.General</string>
@@ -118,6 +129,9 @@
      </item>
      <item>
       <widget class="QStackedWidget" name="settingsPages">
+       <property name="frameShape">
+        <enum>QFrame::StyledPanel</enum>
+       </property>
        <property name="currentIndex">
         <number>5</number>
        </property>
@@ -151,7 +165,7 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>803</width>
+              <width>706</width>
               <height>1026</height>
              </rect>
             </property>
@@ -314,13 +328,6 @@
                      </property>
                     </widget>
                    </item>
-                   <item row="5" column="1">
-                    <widget class="QCheckBox" name="replayWhileStreaming">
-                     <property name="text">
-                      <string>Basic.Settings.General.ReplayBufferWhileStreaming</string>
-                     </property>
-                    </widget>
-                   </item>
                    <item row="6" column="1">
                     <widget class="QCheckBox" name="keepReplayStreamStops">
                      <property name="enabled">
@@ -328,6 +335,13 @@
                      </property>
                      <property name="text">
                       <string>Basic.Settings.General.KeepReplayBufferStreamStops</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="5" column="1">
+                    <widget class="QCheckBox" name="replayWhileStreaming">
+                     <property name="text">
+                      <string>Basic.Settings.General.ReplayBufferWhileStreaming</string>
                      </property>
                     </widget>
                    </item>
@@ -1263,8 +1277,8 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>820</width>
-              <height>677</height>
+              <width>603</width>
+              <height>612</height>
              </rect>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_21">
@@ -3758,8 +3772,8 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>820</width>
-              <height>639</height>
+              <width>555</width>
+              <height>469</height>
              </rect>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_50">
@@ -4567,8 +4581,8 @@
           <rect>
            <x>0</x>
            <y>0</y>
-           <width>818</width>
-           <height>675</height>
+           <width>721</width>
+           <height>563</height>
           </rect>
          </property>
          <layout class="QFormLayout" name="hotkeyLayout">
@@ -4590,10 +4604,16 @@
           <property name="leftMargin">
            <number>0</number>
           </property>
+          <property name="topMargin">
+           <number>0</number>
+          </property>
           <property name="rightMargin">
            <number>0</number>
           </property>
-          <item row="1" column="1">
+          <property name="bottomMargin">
+           <number>0</number>
+          </property>
+          <item row="0" column="1">
            <widget class="QStackedWidget" name="ControlsStackedWidget">
             <property name="sizePolicy">
              <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
@@ -4602,93 +4622,749 @@
              </sizepolicy>
             </property>
             <property name="frameShape">
-             <enum>QFrame::StyledPanel</enum>
+             <enum>QFrame::NoFrame</enum>
             </property>
             <property name="frameShadow">
              <enum>QFrame::Raised</enum>
             </property>
             <property name="currentIndex">
-             <number>-1</number>
+             <number>0</number>
             </property>
-           </widget>
-          </item>
-          <item row="0" column="1">
-           <widget class="QListWidget" name="ControlsListWidget">
-            <property name="sizePolicy">
-             <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-              <horstretch>0</horstretch>
-              <verstretch>2</verstretch>
-             </sizepolicy>
-            </property>
-            <property name="maximumSize">
-             <size>
-              <width>16777215</width>
-              <height>80</height>
-             </size>
-            </property>
-            <property name="frameShadow">
-             <enum>QFrame::Sunken</enum>
-            </property>
-            <property name="midLineWidth">
-             <number>2</number>
-            </property>
-            <property name="verticalScrollBarPolicy">
-             <enum>Qt::ScrollBarAlwaysOff</enum>
-            </property>
-            <property name="editTriggers">
-             <set>QAbstractItemView::NoEditTriggers</set>
-            </property>
-            <property name="showDropIndicator" stdset="0">
-             <bool>false</bool>
-            </property>
-            <property name="dragDropMode">
-             <enum>QAbstractItemView::DragDrop</enum>
-            </property>
-            <property name="defaultDropAction">
-             <enum>Qt::IgnoreAction</enum>
-            </property>
-            <property name="alternatingRowColors">
-             <bool>false</bool>
-            </property>
-            <property name="selectionBehavior">
-             <enum>QAbstractItemView::SelectItems</enum>
-            </property>
-            <property name="iconSize">
-             <size>
-              <width>50</width>
-              <height>50</height>
-             </size>
-            </property>
-            <property name="movement">
-             <enum>QListView::Free</enum>
-            </property>
-            <property name="flow">
-             <enum>QListView::LeftToRight</enum>
-            </property>
-            <property name="isWrapping" stdset="0">
-             <bool>false</bool>
-            </property>
-            <property name="resizeMode">
-             <enum>QListView::Fixed</enum>
-            </property>
-            <property name="layoutMode">
-             <enum>QListView::SinglePass</enum>
-            </property>
-            <property name="spacing">
-             <number>10</number>
-            </property>
-            <property name="gridSize">
-             <size>
-              <width>100</width>
-              <height>100</height>
-             </size>
-            </property>
-            <property name="viewMode">
-             <enum>QListView::IconMode</enum>
-            </property>
-            <property name="uniformItemSizes">
-             <bool>true</bool>
-            </property>
+            <widget class="QWidget" name="MappingPage">
+             <layout class="QGridLayout" name="gridLayout_2">
+              <item row="0" column="0" colspan="3">
+               <layout class="QVBoxLayout" name="verticalLayout" stretch="0">
+                <property name="spacing">
+                 <number>3</number>
+                </property>
+                <item>
+                 <widget class="QSplitter" name="FiltersSplitter">
+                  <property name="maximumSize">
+                   <size>
+                    <width>16777215</width>
+                    <height>25</height>
+                   </size>
+                  </property>
+                  <property name="orientation">
+                   <enum>Qt::Horizontal</enum>
+                  </property>
+                  <widget class="QComboBox" name="cb_input_filter">
+                   <property name="sizePolicy">
+                    <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+                     <horstretch>0</horstretch>
+                     <verstretch>0</verstretch>
+                    </sizepolicy>
+                   </property>
+                   <property name="minimumSize">
+                    <size>
+                     <width>50</width>
+                     <height>0</height>
+                    </size>
+                   </property>
+                   <property name="maximumSize">
+                    <size>
+                     <width>16777215</width>
+                     <height>25</height>
+                    </size>
+                   </property>
+                   <property name="sizeAdjustPolicy">
+                    <enum>QComboBox::AdjustToContents</enum>
+                   </property>
+                   <item>
+                    <property name="text">
+                     <string>Hotkeys</string>
+                    </property>
+                   </item>
+                  </widget>
+                  <widget class="QLabel" name="label_45">
+                   <property name="sizePolicy">
+                    <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
+                     <horstretch>2</horstretch>
+                     <verstretch>0</verstretch>
+                    </sizepolicy>
+                   </property>
+                   <property name="minimumSize">
+                    <size>
+                     <width>0</width>
+                     <height>0</height>
+                    </size>
+                   </property>
+                   <property name="maximumSize">
+                    <size>
+                     <width>16777215</width>
+                     <height>25</height>
+                    </size>
+                   </property>
+                   <property name="text">
+                    <string>Input Filter</string>
+                   </property>
+                  </widget>
+                  <widget class="QComboBox" name="cb_output_filter">
+                   <property name="sizePolicy">
+                    <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+                     <horstretch>0</horstretch>
+                     <verstretch>0</verstretch>
+                    </sizepolicy>
+                   </property>
+                   <property name="minimumSize">
+                    <size>
+                     <width>50</width>
+                     <height>0</height>
+                    </size>
+                   </property>
+                   <property name="maximumSize">
+                    <size>
+                     <width>16777215</width>
+                     <height>25</height>
+                    </size>
+                   </property>
+                   <property name="sizeAdjustPolicy">
+                    <enum>QComboBox::AdjustToContents</enum>
+                   </property>
+                   <item>
+                    <property name="text">
+                     <string>OBS</string>
+                    </property>
+                   </item>
+                  </widget>
+                  <widget class="QLabel" name="label_68">
+                   <property name="sizePolicy">
+                    <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
+                     <horstretch>2</horstretch>
+                     <verstretch>0</verstretch>
+                    </sizepolicy>
+                   </property>
+                   <property name="minimumSize">
+                    <size>
+                     <width>0</width>
+                     <height>0</height>
+                    </size>
+                   </property>
+                   <property name="maximumSize">
+                    <size>
+                     <width>16777215</width>
+                     <height>25</height>
+                    </size>
+                   </property>
+                   <property name="text">
+                    <string>Output Filter</string>
+                   </property>
+                  </widget>
+                 </widget>
+                </item>
+               </layout>
+              </item>
+              <item row="1" column="0">
+               <widget class="QLabel" name="label_69">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
+                  <horstretch>2</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="minimumSize">
+                 <size>
+                  <width>0</width>
+                  <height>0</height>
+                 </size>
+                </property>
+                <property name="maximumSize">
+                 <size>
+                  <width>150</width>
+                  <height>25</height>
+                 </size>
+                </property>
+                <property name="text">
+                 <string>Search</string>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="1">
+               <widget class="QLineEdit" name="SearchEdit">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Expanding" vsizetype="Maximum">
+                  <horstretch>2</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="minimumSize">
+                 <size>
+                  <width>0</width>
+                  <height>0</height>
+                 </size>
+                </property>
+                <property name="maximumSize">
+                 <size>
+                  <width>16777215</width>
+                  <height>25</height>
+                 </size>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="2">
+               <widget class="QPushButton" name="ResetFilter">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="maximumSize">
+                 <size>
+                  <width>16777215</width>
+                  <height>25</height>
+                 </size>
+                </property>
+                <property name="text">
+                 <string>Clear Filters</string>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="0" colspan="3">
+               <widget class="QTableWidget" name="tableWidget">
+                <property name="sizeAdjustPolicy">
+                 <enum>QAbstractScrollArea::AdjustToContents</enum>
+                </property>
+                <property name="alternatingRowColors">
+                 <bool>true</bool>
+                </property>
+                <property name="selectionBehavior">
+                 <enum>QAbstractItemView::SelectRows</enum>
+                </property>
+                <attribute name="horizontalHeaderCascadingSectionResizes">
+                 <bool>true</bool>
+                </attribute>
+                <attribute name="horizontalHeaderMinimumSectionSize">
+                 <number>150</number>
+                </attribute>
+                <attribute name="horizontalHeaderShowSortIndicator" stdset="0">
+                 <bool>false</bool>
+                </attribute>
+                <attribute name="horizontalHeaderStretchLastSection">
+                 <bool>true</bool>
+                </attribute>
+                <attribute name="verticalHeaderStretchLastSection">
+                 <bool>false</bool>
+                </attribute>
+                <row>
+                 <property name="text">
+                  <string>1</string>
+                 </property>
+                </row>
+                <column>
+                 <property name="text">
+                  <string>Input Plugin</string>
+                 </property>
+                </column>
+                <column>
+                 <property name="text">
+                  <string>Input String</string>
+                 </property>
+                </column>
+                <column>
+                 <property name="text">
+                  <string>Output Plugin</string>
+                 </property>
+                </column>
+                <column>
+                 <property name="text">
+                  <string>Output String</string>
+                 </property>
+                </column>
+                <item row="0" column="0">
+                 <property name="text">
+                  <string>Hotkeys</string>
+                 </property>
+                </item>
+                <item row="0" column="1">
+                 <property name="text">
+                  <string>CTRL+F12</string>
+                 </property>
+                </item>
+                <item row="0" column="2">
+                 <property name="text">
+                  <string>OBS</string>
+                 </property>
+                </item>
+                <item row="0" column="3">
+                 <property name="text">
+                  <string>Set Scene, Scene 1</string>
+                 </property>
+                </item>
+               </widget>
+              </item>
+              <item row="3" column="0" colspan="3">
+               <layout class="QHBoxLayout" name="BottomSection" stretch="10,10,1">
+                <property name="sizeConstraint">
+                 <enum>QLayout::SetNoConstraint</enum>
+                </property>
+                <item alignment="Qt::AlignTop">
+                 <widget class="QFrame" name="InputFrame">
+                  <property name="frameShape">
+                   <enum>QFrame::StyledPanel</enum>
+                  </property>
+                  <property name="frameShadow">
+                   <enum>QFrame::Raised</enum>
+                  </property>
+                  <layout class="QGridLayout" name="gridLayout_4">
+                   <item row="0" column="0" alignment="Qt::AlignHCenter">
+                    <widget class="QLabel" name="label_70">
+                     <property name="text">
+                      <string>Input</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="2" column="0">
+                    <widget class="Line" name="line_2">
+                     <property name="orientation">
+                      <enum>Qt::Horizontal</enum>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="1" column="0">
+                    <widget class="QSplitter" name="splitter_input">
+                     <property name="maximumSize">
+                      <size>
+                       <width>16777215</width>
+                       <height>25</height>
+                      </size>
+                     </property>
+                     <property name="orientation">
+                      <enum>Qt::Horizontal</enum>
+                     </property>
+                     <widget class="QLabel" name="label_71">
+                      <property name="text">
+                       <string>Input</string>
+                      </property>
+                     </widget>
+                     <widget class="QComboBox" name="cb_input_select">
+                      <property name="minimumSize">
+                       <size>
+                        <width>0</width>
+                        <height>0</height>
+                       </size>
+                      </property>
+                      <property name="maximumSize">
+                       <size>
+                        <width>16777215</width>
+                        <height>25</height>
+                       </size>
+                      </property>
+                      <item>
+                       <property name="text">
+                        <string>Hotkeys</string>
+                       </property>
+                      </item>
+                     </widget>
+                    </widget>
+                   </item>
+                   <item row="3" column="0">
+                    <widget class="QStackedWidget" name="sw_input_widgets">
+                     <property name="sizePolicy">
+                      <sizepolicy hsizetype="Preferred" vsizetype="MinimumExpanding">
+                       <horstretch>0</horstretch>
+                       <verstretch>0</verstretch>
+                      </sizepolicy>
+                     </property>
+                     <property name="minimumSize">
+                      <size>
+                       <width>0</width>
+                       <height>100</height>
+                      </size>
+                     </property>
+                     <property name="currentIndex">
+                      <number>0</number>
+                     </property>
+                     <widget class="QWidget" name="Hotkeys_2">
+                      <layout class="QGridLayout" name="gridLayout_10">
+                       <item row="0" column="0">
+                        <widget class="QPushButton" name="pushButton_10">
+                         <property name="maximumSize">
+                          <size>
+                           <width>16777215</width>
+                           <height>25</height>
+                          </size>
+                         </property>
+                         <property name="text">
+                          <string>Listen</string>
+                         </property>
+                        </widget>
+                       </item>
+                       <item row="0" column="1">
+                        <widget class="QLineEdit" name="lineEdit_2">
+                         <property name="maximumSize">
+                          <size>
+                           <width>16777215</width>
+                           <height>25</height>
+                          </size>
+                         </property>
+                         <property name="text">
+                          <string>CTRL+ALT+F12</string>
+                         </property>
+                        </widget>
+                       </item>
+                      </layout>
+                     </widget>
+                    </widget>
+                   </item>
+                  </layout>
+                 </widget>
+                </item>
+                <item alignment="Qt::AlignTop">
+                 <widget class="QFrame" name="frame_output">
+                  <property name="frameShape">
+                   <enum>QFrame::StyledPanel</enum>
+                  </property>
+                  <property name="frameShadow">
+                   <enum>QFrame::Raised</enum>
+                  </property>
+                  <layout class="QGridLayout" name="gridLayout_11">
+                   <item row="2" column="1">
+                    <widget class="Line" name="line">
+                     <property name="orientation">
+                      <enum>Qt::Horizontal</enum>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="1" column="1">
+                    <widget class="QSplitter" name="splitter_output">
+                     <property name="sizePolicy">
+                      <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                       <horstretch>0</horstretch>
+                       <verstretch>0</verstretch>
+                      </sizepolicy>
+                     </property>
+                     <property name="maximumSize">
+                      <size>
+                       <width>16777215</width>
+                       <height>25</height>
+                      </size>
+                     </property>
+                     <property name="orientation">
+                      <enum>Qt::Horizontal</enum>
+                     </property>
+                     <widget class="QSplitter" name="output_splitter">
+                      <property name="orientation">
+                       <enum>Qt::Horizontal</enum>
+                      </property>
+                      <widget class="QLabel" name="label_77">
+                       <property name="text">
+                        <string>Output</string>
+                       </property>
+                      </widget>
+                      <widget class="QComboBox" name="cb_output_select">
+                       <property name="sizePolicy">
+                        <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                         <horstretch>0</horstretch>
+                         <verstretch>0</verstretch>
+                        </sizepolicy>
+                       </property>
+                       <property name="minimumSize">
+                        <size>
+                         <width>0</width>
+                         <height>0</height>
+                        </size>
+                       </property>
+                       <property name="maximumSize">
+                        <size>
+                         <width>16777215</width>
+                         <height>25</height>
+                        </size>
+                       </property>
+                       <item>
+                        <property name="text">
+                         <string>OBS</string>
+                        </property>
+                       </item>
+                      </widget>
+                     </widget>
+                    </widget>
+                   </item>
+                   <item row="3" column="1">
+                    <widget class="QStackedWidget" name="sw_output_widgets">
+                     <property name="currentIndex">
+                      <number>0</number>
+                     </property>
+                     <widget class="QWidget" name="OBSOutputActions">
+                      <layout class="QGridLayout" name="gridLayout_12">
+                       <item row="0" column="0">
+                        <widget class="QSplitter" name="splitter_16">
+                         <property name="orientation">
+                          <enum>Qt::Horizontal</enum>
+                         </property>
+                         <widget class="QLabel" name="label_88">
+                          <property name="text">
+                           <string>Section</string>
+                          </property>
+                         </widget>
+                         <widget class="QComboBox" name="CB_OBS_Section_Selector">
+                          <property name="maximumSize">
+                           <size>
+                            <width>16777215</width>
+                            <height>25</height>
+                           </size>
+                          </property>
+                          <item>
+                           <property name="text">
+                            <string>Frontend</string>
+                           </property>
+                          </item>
+                          <item>
+                           <property name="text">
+                            <string>Scenes</string>
+                           </property>
+                          </item>
+                          <item>
+                           <property name="text">
+                            <string>Sources</string>
+                           </property>
+                          </item>
+                          <item>
+                           <property name="text">
+                            <string>Filters</string>
+                           </property>
+                          </item>
+                          <item>
+                           <property name="text">
+                            <string>Outputs</string>
+                           </property>
+                          </item>
+                         </widget>
+                        </widget>
+                       </item>
+                       <item row="1" column="0">
+                        <widget class="QSplitter" name="splitter_14">
+                         <property name="orientation">
+                          <enum>Qt::Horizontal</enum>
+                         </property>
+                         <widget class="QStackedWidget" name="SW_OBS_Sections">
+                          <property name="currentIndex">
+                           <number>0</number>
+                          </property>
+                          <widget class="QWidget" name="Frontend">
+                           <layout class="QGridLayout" name="gridLayout_15">
+                            <item row="0" column="0">
+                             <widget class="QSplitter" name="splitter_17">
+                              <property name="orientation">
+                               <enum>Qt::Horizontal</enum>
+                              </property>
+                              <widget class="QLabel" name="label_84">
+                               <property name="sizePolicy">
+                                <sizepolicy hsizetype="Preferred" vsizetype="MinimumExpanding">
+                                 <horstretch>0</horstretch>
+                                 <verstretch>0</verstretch>
+                                </sizepolicy>
+                               </property>
+                               <property name="text">
+                                <string>Action</string>
+                               </property>
+                              </widget>
+                              <widget class="QComboBox" name="comboBox_4">
+                               <property name="sizePolicy">
+                                <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                                 <horstretch>2</horstretch>
+                                 <verstretch>0</verstretch>
+                                </sizepolicy>
+                               </property>
+                               <property name="minimumSize">
+                                <size>
+                                 <width>0</width>
+                                 <height>0</height>
+                                </size>
+                               </property>
+                               <property name="maximumSize">
+                                <size>
+                                 <width>16777215</width>
+                                 <height>25</height>
+                                </size>
+                               </property>
+                               <item>
+                                <property name="text">
+                                 <string>Start Streaming</string>
+                                </property>
+                               </item>
+                               <item>
+                                <property name="text">
+                                 <string>Stop Streaming</string>
+                                </property>
+                               </item>
+                               <item>
+                                <property name="text">
+                                 <string>Toggle Start/Stop Streaming</string>
+                                </property>
+                               </item>
+                               <item>
+                                <property name="text">
+                                 <string>Start Recording</string>
+                                </property>
+                               </item>
+                               <item>
+                                <property name="text">
+                                 <string>Stop Recording</string>
+                                </property>
+                               </item>
+                               <item>
+                                <property name="text">
+                                 <string>Pause Recording</string>
+                                </property>
+                               </item>
+                               <item>
+                                <property name="text">
+                                 <string>Unpause Recording</string>
+                                </property>
+                               </item>
+                               <item>
+                                <property name="text">
+                                 <string>Start Replay Buffer</string>
+                                </property>
+                               </item>
+                               <item>
+                                <property name="text">
+                                 <string>Stop Replay Buffer</string>
+                                </property>
+                               </item>
+                               <item>
+                                <property name="text">
+                                 <string>Enable Preview</string>
+                                </property>
+                               </item>
+                               <item>
+                                <property name="text">
+                                 <string>Disable Preview</string>
+                                </property>
+                               </item>
+                               <item>
+                                <property name="text">
+                                 <string>Studio Mode</string>
+                                </property>
+                               </item>
+                               <item>
+                                <property name="text">
+                                 <string>Transition</string>
+                                </property>
+                               </item>
+                               <item>
+                                <property name="text">
+                                 <string>Reset Stats</string>
+                                </property>
+                               </item>
+                              </widget>
+                             </widget>
+                            </item>
+                           </layout>
+                          </widget>
+                          <widget class="QWidget" name="Scenes">
+                           <layout class="QGridLayout" name="gridLayout_16">
+                            <item row="0" column="0">
+                             <widget class="QSplitter" name="splitter_13">
+                              <property name="orientation">
+                               <enum>Qt::Horizontal</enum>
+                              </property>
+                             </widget>
+                            </item>
+                           </layout>
+                          </widget>
+                          <widget class="QWidget" name="Sources"/>
+                          <widget class="QWidget" name="Filters"/>
+                          <widget class="QWidget" name="Outputs"/>
+                         </widget>
+                        </widget>
+                       </item>
+                      </layout>
+                     </widget>
+                    </widget>
+                   </item>
+                   <item row="0" column="1" alignment="Qt::AlignHCenter">
+                    <widget class="QLabel" name="label_72">
+                     <property name="text">
+                      <string>Output</string>
+                     </property>
+                    </widget>
+                   </item>
+                  </layout>
+                 </widget>
+                </item>
+                <item alignment="Qt::AlignHCenter|Qt::AlignVCenter">
+                 <widget class="QFrame" name="ControlsFrame">
+                  <property name="sizePolicy">
+                   <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                   </sizepolicy>
+                  </property>
+                  <property name="frameShape">
+                   <enum>QFrame::StyledPanel</enum>
+                  </property>
+                  <property name="frameShadow">
+                   <enum>QFrame::Raised</enum>
+                  </property>
+                  <layout class="QGridLayout" name="gridLayout_13">
+                   <item row="0" column="0">
+                    <widget class="QSplitter" name="splitter_Controls">
+                     <property name="maximumSize">
+                      <size>
+                       <width>16777215</width>
+                       <height>55</height>
+                      </size>
+                     </property>
+                     <property name="orientation">
+                      <enum>Qt::Vertical</enum>
+                     </property>
+                     <widget class="QPushButton" name="btn_add_control">
+                      <property name="sizePolicy">
+                       <sizepolicy hsizetype="Minimum" vsizetype="Maximum">
+                        <horstretch>2</horstretch>
+                        <verstretch>0</verstretch>
+                       </sizepolicy>
+                      </property>
+                      <property name="minimumSize">
+                       <size>
+                        <width>0</width>
+                        <height>0</height>
+                       </size>
+                      </property>
+                      <property name="maximumSize">
+                       <size>
+                        <width>16777215</width>
+                        <height>25</height>
+                       </size>
+                      </property>
+                      <property name="text">
+                       <string>Add Control</string>
+                      </property>
+                     </widget>
+                     <widget class="QPushButton" name="btn_delete_control">
+                      <property name="sizePolicy">
+                       <sizepolicy hsizetype="Minimum" vsizetype="Maximum">
+                        <horstretch>2</horstretch>
+                        <verstretch>0</verstretch>
+                       </sizepolicy>
+                      </property>
+                      <property name="minimumSize">
+                       <size>
+                        <width>0</width>
+                        <height>0</height>
+                       </size>
+                      </property>
+                      <property name="maximumSize">
+                       <size>
+                        <width>16777215</width>
+                        <height>25</height>
+                       </size>
+                      </property>
+                      <property name="text">
+                       <string>Delete Control</string>
+                      </property>
+                     </widget>
+                    </widget>
+                   </item>
+                  </layout>
+                 </widget>
+                </item>
+               </layout>
+              </item>
+             </layout>
+            </widget>
            </widget>
           </item>
          </layout>
@@ -5520,7 +6196,7 @@
      </item>
     </layout>
    </item>
-   <item>
+   <item row="1" column="0">
     <widget class="QDialogButtonBox" name="buttonBox">
      <property name="standardButtons">
       <set>QDialogButtonBox::Apply|QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
@@ -5537,7 +6213,6 @@
   </customwidget>
  </customwidgets>
  <tabstops>
-  <tabstop>listWidget</tabstop>
   <tabstop>scrollArea_2</tabstop>
   <tabstop>language</tabstop>
   <tabstop>theme</tabstop>
@@ -5714,82 +6389,18 @@
  </resources>
  <connections>
   <connection>
-   <sender>listWidget</sender>
-   <signal>currentRowChanged(int)</signal>
-   <receiver>settingsPages</receiver>
-   <slot>setCurrentIndex(int)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>75</x>
-     <y>35</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>199</x>
-     <y>50</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>fpsType</sender>
-   <signal>currentIndexChanged(int)</signal>
-   <receiver>fpsTypes</receiver>
-   <slot>setCurrentIndex(int)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>310</x>
-     <y>29</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>241</x>
-     <y>30</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>outputMode</sender>
-   <signal>currentIndexChanged(int)</signal>
-   <receiver>outputModePages</receiver>
-   <slot>setCurrentIndex(int)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>241</x>
-     <y>16</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>401</x>
-     <y>64</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>simpleOutAdvanced</sender>
+   <sender>replayWhileStreaming</sender>
    <signal>toggled(bool)</signal>
-   <receiver>simpleOutPreset</receiver>
-   <slot>setVisible(bool)</slot>
+   <receiver>keepReplayStreamStops</receiver>
+   <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>251</x>
-     <y>64</y>
+     <x>933</x>
+     <y>268</y>
     </hint>
     <hint type="destinationlabel">
-     <x>251</x>
-     <y>64</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>simpleOutAdvanced</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>label_24</receiver>
-   <slot>setVisible(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>251</x>
-     <y>64</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>251</x>
-     <y>64</y>
+     <x>933</x>
+     <y>291</y>
     </hint>
    </hints>
   </connection>
@@ -5797,118 +6408,6 @@
    <sender>simpleOutAdvanced</sender>
    <signal>toggled(bool)</signal>
    <receiver>simpleOutCustom</receiver>
-   <slot>setVisible(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>251</x>
-     <y>64</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>251</x>
-     <y>64</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>simpleOutAdvanced</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>label_23</receiver>
-   <slot>setVisible(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>251</x>
-     <y>64</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>251</x>
-     <y>64</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>advOutRecType</sender>
-   <signal>currentIndexChanged(int)</signal>
-   <receiver>stackedWidget</receiver>
-   <slot>setCurrentIndex(int)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>260</x>
-     <y>73</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>242</x>
-     <y>85</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>advOutFFUseRescale</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>advOutFFRescale</receiver>
-   <slot>setEnabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>260</x>
-     <y>85</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>229</x>
-     <y>85</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>advOutUseRescale</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>advOutRescale</receiver>
-   <slot>setEnabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>260</x>
-     <y>64</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>229</x>
-     <y>64</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>advOutRecUseRescale</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>advOutRecRescale</receiver>
-   <slot>setEnabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>260</x>
-     <y>85</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>229</x>
-     <y>85</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>advOutFFType</sender>
-   <signal>currentIndexChanged(int)</signal>
-   <receiver>stackedWidget_2</receiver>
-   <slot>setCurrentIndex(int)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>260</x>
-     <y>85</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>260</x>
-     <y>85</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>simpleOutAdvanced</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>simpleOutEnforce</receiver>
    <slot>setVisible(bool)</slot>
    <hints>
     <hint type="sourcelabel">
@@ -5938,6 +6437,182 @@
    </hints>
   </connection>
   <connection>
+   <sender>advOutFFUseRescale</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>advOutFFRescale</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>260</x>
+     <y>85</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>229</x>
+     <y>85</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>fpsType</sender>
+   <signal>currentIndexChanged(int)</signal>
+   <receiver>fpsTypes</receiver>
+   <slot>setCurrentIndex(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>310</x>
+     <y>29</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>241</x>
+     <y>30</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>advOutRecType</sender>
+   <signal>currentIndexChanged(int)</signal>
+   <receiver>stackedWidget</receiver>
+   <slot>setCurrentIndex(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>260</x>
+     <y>73</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>242</x>
+     <y>85</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>simpleOutAdvanced</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>label_24</receiver>
+   <slot>setVisible(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>251</x>
+     <y>64</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>251</x>
+     <y>64</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>connectAccount2</sender>
+   <signal>clicked()</signal>
+   <receiver>connectAccount</receiver>
+   <slot>click()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>484</x>
+     <y>142</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>454</x>
+     <y>87</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>streamDelayEnable</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>label_56</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>250</x>
+     <y>39</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>250</x>
+     <y>39</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>snappingEnabled</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>snapDistance</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>933</x>
+     <y>340</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>933</x>
+     <y>366</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>streamDelayEnable</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>streamDelayPreserve</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>250</x>
+     <y>39</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>250</x>
+     <y>39</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>advOutUseRescale</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>advOutRescale</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>260</x>
+     <y>64</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>229</x>
+     <y>64</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>streamDelayEnable</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>streamDelayInfo</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>250</x>
+     <y>39</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>250</x>
+     <y>39</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>snappingEnabled</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>centerSnapping</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>933</x>
+     <y>340</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>933</x>
+     <y>435</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
    <sender>systemTrayEnabled</sender>
    <signal>toggled(bool)</signal>
    <receiver>systemTrayAlways</receiver>
@@ -5950,6 +6625,102 @@
     <hint type="destinationlabel">
      <x>933</x>
      <y>625</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>simpleOutAdvanced</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>simpleOutEnforce</receiver>
+   <slot>setVisible(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>251</x>
+     <y>64</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>251</x>
+     <y>64</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>snappingEnabled</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>sourceSnapping</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>933</x>
+     <y>340</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>933</x>
+     <y>412</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>advOutFFType</sender>
+   <signal>currentIndexChanged(int)</signal>
+   <receiver>stackedWidget_2</receiver>
+   <slot>setCurrentIndex(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>260</x>
+     <y>85</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>260</x>
+     <y>85</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>snappingEnabled</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>screenSnapping</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>933</x>
+     <y>340</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>933</x>
+     <y>389</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>simpleOutAdvanced</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>label_23</receiver>
+   <slot>setVisible(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>251</x>
+     <y>64</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>251</x>
+     <y>64</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>advOutRecUseRescale</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>advOutRecRescale</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>260</x>
+     <y>85</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>229</x>
+     <y>85</y>
     </hint>
    </hints>
   </connection>
@@ -5986,118 +6757,6 @@
    </hints>
   </connection>
   <connection>
-   <sender>snappingEnabled</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>snapDistance</receiver>
-   <slot>setEnabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>933</x>
-     <y>340</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>933</x>
-     <y>366</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>snappingEnabled</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>screenSnapping</receiver>
-   <slot>setEnabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>933</x>
-     <y>340</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>933</x>
-     <y>389</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>snappingEnabled</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>sourceSnapping</receiver>
-   <slot>setEnabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>933</x>
-     <y>340</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>933</x>
-     <y>412</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>snappingEnabled</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>centerSnapping</receiver>
-   <slot>setEnabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>933</x>
-     <y>340</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>933</x>
-     <y>435</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>recordWhenStreaming</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>keepRecordStreamStops</receiver>
-   <slot>setEnabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>933</x>
-     <y>222</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>933</x>
-     <y>245</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>replayWhileStreaming</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>keepReplayStreamStops</receiver>
-   <slot>setEnabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>933</x>
-     <y>268</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>933</x>
-     <y>291</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>streamDelayEnable</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>label_56</receiver>
-   <slot>setEnabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>250</x>
-     <y>39</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>250</x>
-     <y>39</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
    <sender>streamDelayEnable</sender>
    <signal>toggled(bool)</signal>
    <receiver>streamDelaySec</receiver>
@@ -6114,66 +6773,114 @@
    </hints>
   </connection>
   <connection>
-   <sender>streamDelayEnable</sender>
+   <sender>simpleOutAdvanced</sender>
    <signal>toggled(bool)</signal>
-   <receiver>streamDelayInfo</receiver>
-   <slot>setEnabled(bool)</slot>
+   <receiver>simpleOutPreset</receiver>
+   <slot>setVisible(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>250</x>
-     <y>39</y>
+     <x>251</x>
+     <y>64</y>
     </hint>
     <hint type="destinationlabel">
-     <x>250</x>
-     <y>39</y>
+     <x>251</x>
+     <y>64</y>
     </hint>
    </hints>
   </connection>
   <connection>
-   <sender>streamDelayEnable</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>streamDelayPreserve</receiver>
-   <slot>setEnabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>250</x>
-     <y>39</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>250</x>
-     <y>39</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>connectAccount2</sender>
-   <signal>clicked()</signal>
-   <receiver>connectAccount</receiver>
-   <slot>click()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>484</x>
-     <y>142</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>454</x>
-     <y>87</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>ControlsListWidget</sender>
-   <signal>currentRowChanged(int)</signal>
-   <receiver>ControlsStackedWidget</receiver>
+   <sender>cb_input_select</sender>
+   <signal>currentIndexChanged(int)</signal>
+   <receiver>sw_input_widgets</receiver>
    <slot>setCurrentIndex(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>563</x>
-     <y>74</y>
+     <x>436</x>
+     <y>270</y>
     </hint>
     <hint type="destinationlabel">
-     <x>563</x>
-     <y>403</y>
+     <x>399</x>
+     <y>317</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>CB_OBS_Section_Selector</sender>
+   <signal>currentIndexChanged(int)</signal>
+   <receiver>SW_OBS_Sections</receiver>
+   <slot>setCurrentIndex(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>815</x>
+     <y>413</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>764</x>
+     <y>485</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>cb_output_select</sender>
+   <signal>currentIndexChanged(int)</signal>
+   <receiver>sw_output_widgets</receiver>
+   <slot>setCurrentIndex(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>831</x>
+     <y>381</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>764</x>
+     <y>478</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>btn_delete_control</sender>
+   <signal>clicked()</signal>
+   <receiver>output_splitter</receiver>
+   <slot>hide()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>211</x>
+     <y>473</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>764</x>
+     <y>366</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>btn_delete_control</sender>
+   <signal>clicked()</signal>
+   <receiver>splitter_input</receiver>
+   <slot>hide()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>211</x>
+     <y>473</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>430</x>
+     <y>366</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>btn_delete_control</sender>
+   <signal>clicked()</signal>
+   <receiver>FiltersSplitter</receiver>
+   <slot>hide()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>211</x>
+     <y>326</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>477</x>
+     <y>86</y>
     </hint>
    </hints>
   </connection>

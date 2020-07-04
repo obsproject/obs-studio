@@ -1615,3 +1615,14 @@ void obs_hotkeys_set_sceneitem_hotkeys_translations(const char *show,
 	SET_T(hide);
 #undef SET_T
 }
+
+void obs_hotkeys_set_filter_hotkeys_translations(const char *enable,
+						 const char *disable)
+{
+#define SET_T(n)               \
+	bfree(obs->hotkeys.n); \
+	obs->hotkeys.n = bstrdup(n)
+	SET_T(enable);
+	SET_T(disable);
+#undef SET_T
+}

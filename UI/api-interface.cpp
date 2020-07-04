@@ -4,6 +4,7 @@
 #include "window-basic-main.hpp"
 #include "window-basic-main-outputs.hpp"
 #include "window-basic-settings.hpp"
+#include "mapper.hpp"
 #include <functional>
 
 using namespace std;
@@ -52,10 +53,22 @@ inline size_t GetCallbackIdx(vector<OBSStudioCallback<T>> &callbacks,
 struct OBSStudioAPI : obs_frontend_callbacks {
 	OBSBasic *main;
 	OBSBasicSettings *settings;
+	ControlMapper *map;
 	vector<OBSStudioCallback<obs_frontend_event_cb>> callbacks;
 	vector<OBSStudioCallback<obs_frontend_save_cb>> saveCallbacks;
 	vector<OBSStudioCallback<obs_frontend_save_cb>> preloadCallbacks;
 
+	//***********************Control Mapping Bits**************************/
+
+	inline OBSStudioAPI(ControlMapper *map_) : map(map_) {}
+
+	void *obs_frontend_get_mapper(void) override
+	{
+		return (void *)map;
+	}
+
+	//***********************OBS Frontend Main Bits**************************/
+	
 	inline OBSStudioAPI(OBSBasic *main_) : main(main_) {}
 
 	void *obs_frontend_get_main_window(void) override
@@ -330,9 +343,21 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 	{
 		return (void *)main->AddDockWidget((QDockWidget *)dock);
 	}
-	void *obs_frontend_add_control_window(void *icon, void *name, void *Window) override
+
+
+	void *obs_frontend_add_control_window(void *icon, void *name, void *page) override
 	{
-		return (void *)settings->AddControlPage((QIcon *)icon, (QString *)name, (QWidget *)Window);
+		return (void *)main->AddControlPage((QIcon *)icon ,(QString *)name, (QWidget *)page);
+	
+	}
+	void *obs_frontend_add_input_control( void *name, void *page) override
+	{
+		return (void *)main->AddInputControl((QString *)name, (QWidget *)page);
+	
+	}
+	void *obs_frontend_add_output_control( void *name, void *page) override
+	{
+		return (void *)main->AddOutputControl((QString *)name, (QWidget *)page);
 	
 	}
 	void obs_frontend_add_event_callback(obs_frontend_event_cb callback,
