@@ -94,11 +94,11 @@ class OBSBasicSettings : public QDialog {
 			   DESIGNABLE true)
 	Q_PROPERTY(QIcon videoIcon READ GetVideoIcon WRITE SetVideoIcon
 			   DESIGNABLE true)
-	Q_PROPERTY(QIcon hotkeysIcon READ GetHotkeysIcon WRITE SetHotkeysIcon
-			   DESIGNABLE true)
+	//Q_PROPERTY(QIcon hotkeysIcon READ GetHotkeysIcon WRITE SetHotkeysIcon   DESIGNABLE true)
 	Q_PROPERTY(QIcon advancedIcon READ GetAdvancedIcon WRITE SetAdvancedIcon
 			   DESIGNABLE true)
-
+	Q_PROPERTY(QIcon controlsIcon READ GetControlsIcon WRITE SetControlsIcon
+			   DESIGNABLE true)				  
 private:
 	OBSBasic *main;
 
@@ -148,10 +148,6 @@ private:
 	std::vector<OBSSignal> audioSourceSignals;
 	OBSSignal sourceCreated;
 	OBSSignal channelChanged;
-
-	std::vector<std::pair<bool, QPointer<OBSHotkeyWidget>>> hotkeys;
-	OBSSignal hotkeyRegistered;
-	OBSSignal hotkeyUnregistered;
 
 	uint32_t outputCX = 0;
 	uint32_t outputCY = 0;
@@ -214,8 +210,9 @@ private:
 	void LoadOutputSettings();
 	void LoadAudioSettings();
 	void LoadVideoSettings();
-	void
-	LoadHotkeySettings(obs_hotkey_id ignoreKey = OBS_INVALID_HOTKEY_ID);
+	//void LoadHotkeySettings(obs_hotkey_id ignoreKey = OBS_INVALID_HOTKEY_ID);
+	void ControlsChanged();
+	void ReloadControls();
 	void LoadAdvancedSettings();
 	void LoadSettings(bool changedOnly);
 
@@ -296,6 +293,7 @@ private:
 	QIcon videoIcon;
 	QIcon hotkeysIcon;
 	QIcon advancedIcon;
+	QIcon controlsIcon;
 
 	QIcon GetGeneralIcon() const;
 	QIcon GetStreamIcon() const;
@@ -304,6 +302,7 @@ private:
 	QIcon GetVideoIcon() const;
 	QIcon GetHotkeysIcon() const;
 	QIcon GetAdvancedIcon() const;
+	QIcon GetControlsIcon() const;
 
 	int CurrentFLVTrack();
 
@@ -344,8 +343,8 @@ private slots:
 	void VideoChanged();
 	void VideoChangedResolution();
 	void VideoChangedRestart();
-	void HotkeysChanged();
-	void ReloadHotkeys(obs_hotkey_id ignoreKey = OBS_INVALID_HOTKEY_ID);
+	//void HotkeysChanged();
+	//void ReloadHotkeys(obs_hotkey_id ignoreKey = OBS_INVALID_HOTKEY_ID);
 	void AdvancedChanged();
 	void AdvancedChangedRestart();
 
@@ -371,7 +370,8 @@ private slots:
 	void SetOutputIcon(const QIcon &icon);
 	void SetAudioIcon(const QIcon &icon);
 	void SetVideoIcon(const QIcon &icon);
-	void SetHotkeysIcon(const QIcon &icon);
+	//void SetHotkeysIcon(const QIcon &icon);
+	void SetControlsIcon(const QIcon &icon);
 	void SetAdvancedIcon(const QIcon &icon);
 
 protected:
@@ -380,4 +380,9 @@ protected:
 public:
 	OBSBasicSettings(QWidget *parent);
 	~OBSBasicSettings();
+	QListWidget getControlsList();
+	QStackedWidget GetControlsStack();
+	QString *AddControlPage(QIcon *icon, QString *name, QWidget *page);
+signals:
+	void onControlChange(QString Change);
 };

@@ -49,7 +49,7 @@
         </size>
        </property>
        <property name="currentRow">
-        <number>0</number>
+        <number>-1</number>
        </property>
        <item>
         <property name="text">
@@ -98,7 +98,7 @@
        </item>
        <item>
         <property name="text">
-         <string>Basic.Settings.Hotkeys</string>
+         <string>Basic.Settings.Controls</string>
         </property>
         <property name="icon">
          <iconset resource="obs.qrc">
@@ -119,7 +119,7 @@
      <item>
       <widget class="QStackedWidget" name="settingsPages">
        <property name="currentIndex">
-        <number>0</number>
+        <number>5</number>
        </property>
        <widget class="QWidget" name="generalPage">
         <layout class="QVBoxLayout" name="verticalLayout_18">
@@ -1263,8 +1263,8 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>603</width>
-              <height>631</height>
+              <width>820</width>
+              <height>677</height>
              </rect>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_21">
@@ -3758,8 +3758,8 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>555</width>
-              <height>469</height>
+              <width>820</width>
+              <height>639</height>
              </rect>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_50">
@@ -4558,17 +4558,17 @@
          </item>
         </layout>
        </widget>
-       <widget class="QScrollArea" name="hotkeyPage">
+       <widget class="QScrollArea" name="controlsPage">
         <property name="widgetResizable">
          <bool>true</bool>
         </property>
-        <widget class="QWidget" name="hotkeyWidget">
+        <widget class="QWidget" name="controlsWidget">
          <property name="geometry">
           <rect>
            <x>0</x>
            <y>0</y>
-           <width>98</width>
-           <height>28</height>
+           <width>818</width>
+           <height>675</height>
           </rect>
          </property>
          <layout class="QFormLayout" name="hotkeyLayout">
@@ -4576,11 +4576,121 @@
            <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
           </property>
           <property name="labelAlignment">
-           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+           <set>Qt::AlignCenter</set>
+          </property>
+          <property name="formAlignment">
+           <set>Qt::AlignCenter</set>
+          </property>
+          <property name="horizontalSpacing">
+           <number>0</number>
           </property>
           <property name="verticalSpacing">
            <number>0</number>
           </property>
+          <property name="leftMargin">
+           <number>0</number>
+          </property>
+          <property name="rightMargin">
+           <number>0</number>
+          </property>
+          <item row="1" column="1">
+           <widget class="QStackedWidget" name="ControlsStackedWidget">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+              <horstretch>0</horstretch>
+              <verstretch>10</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="frameShape">
+             <enum>QFrame::StyledPanel</enum>
+            </property>
+            <property name="frameShadow">
+             <enum>QFrame::Raised</enum>
+            </property>
+            <property name="currentIndex">
+             <number>-1</number>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1">
+           <widget class="QListWidget" name="ControlsListWidget">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+              <horstretch>0</horstretch>
+              <verstretch>2</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>16777215</width>
+              <height>80</height>
+             </size>
+            </property>
+            <property name="frameShadow">
+             <enum>QFrame::Sunken</enum>
+            </property>
+            <property name="midLineWidth">
+             <number>2</number>
+            </property>
+            <property name="verticalScrollBarPolicy">
+             <enum>Qt::ScrollBarAlwaysOff</enum>
+            </property>
+            <property name="editTriggers">
+             <set>QAbstractItemView::NoEditTriggers</set>
+            </property>
+            <property name="showDropIndicator" stdset="0">
+             <bool>false</bool>
+            </property>
+            <property name="dragDropMode">
+             <enum>QAbstractItemView::DragDrop</enum>
+            </property>
+            <property name="defaultDropAction">
+             <enum>Qt::IgnoreAction</enum>
+            </property>
+            <property name="alternatingRowColors">
+             <bool>false</bool>
+            </property>
+            <property name="selectionBehavior">
+             <enum>QAbstractItemView::SelectItems</enum>
+            </property>
+            <property name="iconSize">
+             <size>
+              <width>50</width>
+              <height>50</height>
+             </size>
+            </property>
+            <property name="movement">
+             <enum>QListView::Free</enum>
+            </property>
+            <property name="flow">
+             <enum>QListView::LeftToRight</enum>
+            </property>
+            <property name="isWrapping" stdset="0">
+             <bool>false</bool>
+            </property>
+            <property name="resizeMode">
+             <enum>QListView::Fixed</enum>
+            </property>
+            <property name="layoutMode">
+             <enum>QListView::SinglePass</enum>
+            </property>
+            <property name="spacing">
+             <number>10</number>
+            </property>
+            <property name="gridSize">
+             <size>
+              <width>100</width>
+              <height>100</height>
+             </size>
+            </property>
+            <property name="viewMode">
+             <enum>QListView::IconMode</enum>
+            </property>
+            <property name="uniformItemSizes">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
          </layout>
         </widget>
        </widget>
@@ -4614,7 +4724,7 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>596</width>
+              <width>604</width>
               <height>781</height>
              </rect>
             </property>
@@ -6048,6 +6158,22 @@
     <hint type="destinationlabel">
      <x>454</x>
      <y>87</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>ControlsListWidget</sender>
+   <signal>currentRowChanged(int)</signal>
+   <receiver>ControlsStackedWidget</receiver>
+   <slot>setCurrentIndex(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>563</x>
+     <y>74</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>563</x>
+     <y>403</y>
     </hint>
    </hints>
   </connection>

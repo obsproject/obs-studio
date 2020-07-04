@@ -34,6 +34,7 @@
 #include <QScreen>
 #include <QStandardItemModel>
 #include <QSpacerItem>
+#include <QListWidget>
 
 #include "audio-encoders.hpp"
 #include "hotkey-edit.hpp"
@@ -680,7 +681,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 			      ReloadAudioSources, this);
 	channelChanged.Connect(obs_get_signal_handler(), "channel_change",
 			       ReloadAudioSources, this);
-
+	/*
 	auto ReloadHotkeys = [](void *data, calldata_t *) {
 		auto settings = static_cast<OBSBasicSettings *>(data);
 		QMetaObject::invokeMethod(settings, "ReloadHotkeys");
@@ -699,7 +700,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	hotkeyUnregistered.Connect(obs_get_signal_handler(),
 				   "hotkey_unregister", ReloadHotkeysIgnore,
 				   this);
-
+*/
 	FillSimpleRecordingValues();
 	FillSimpleStreamingValues();
 #if defined(_WIN32) || defined(__APPLE__) || HAVE_PULSEAUDIO
@@ -2569,7 +2570,7 @@ static inline void AddHotkeys(
 		layout.addRow(hlabel, widget);
 	}
 }
-
+/*
 void OBSBasicSettings::LoadHotkeySettings(obs_hotkey_id ignoreKey)
 {
 	hotkeys.clear();
@@ -2815,7 +2816,7 @@ void OBSBasicSettings::LoadHotkeySettings(obs_hotkey_id ignoreKey)
 	AddHotkeys(*layout, obs_encoder_get_name, encoders);
 	AddHotkeys(*layout, obs_service_get_name, services);
 }
-
+*/
 void OBSBasicSettings::LoadSettings(bool changedOnly)
 {
 	if (!changedOnly || generalChanged)
@@ -2828,8 +2829,8 @@ void OBSBasicSettings::LoadSettings(bool changedOnly)
 		LoadAudioSettings();
 	if (!changedOnly || videoChanged)
 		LoadVideoSettings();
-	if (!changedOnly || hotkeysChanged)
-		LoadHotkeySettings();
+	//if (!changedOnly || hotkeysChanged)
+	//	LoadHotkeySettings();
 	if (!changedOnly || advancedChanged)
 		LoadAdvancedSettings();
 }
@@ -3473,7 +3474,7 @@ void OBSBasicSettings::SaveAudioSettings()
 	UpdateAudioDevice(true, ui->auxAudioDevice4, "Basic.AuxDevice4", 6);
 	main->SaveProject();
 }
-
+/*
 void OBSBasicSettings::SaveHotkeySettings()
 {
 	const auto &config = main->Config();
@@ -3512,7 +3513,7 @@ void OBSBasicSettings::SaveHotkeySettings()
 		obs_data_release(hotkeys);
 	}
 }
-
+*/
 #define MINOR_SEPARATOR "------------------------------------------------"
 
 static void AddChangedVal(std::string &changed, const char *str)
@@ -3534,8 +3535,8 @@ void OBSBasicSettings::SaveSettings()
 		SaveAudioSettings();
 	if (videoChanged)
 		SaveVideoSettings();
-	if (hotkeysChanged)
-		SaveHotkeySettings();
+	//if (hotkeysChanged)
+	//	SaveHotkeySettings();
 	if (advancedChanged)
 		SaveAdvancedSettings();
 
@@ -4088,7 +4089,7 @@ void OBSBasicSettings::VideoChanged()
 		EnableApplyButton(true);
 	}
 }
-
+/*
 void OBSBasicSettings::HotkeysChanged()
 {
 	using namespace std;
@@ -4110,7 +4111,7 @@ void OBSBasicSettings::ReloadHotkeys(obs_hotkey_id ignoreKey)
 {
 	LoadHotkeySettings(ignoreKey);
 }
-
+*/
 void OBSBasicSettings::AdvancedChanged()
 {
 	if (!loading) {
@@ -4749,7 +4750,11 @@ QIcon OBSBasicSettings::GetHotkeysIcon() const
 {
 	return hotkeysIcon;
 }
-
+QIcon OBSBasicSettings::GetControlsIcon() const
+{
+		return controlsIcon;
+	
+}
 QIcon OBSBasicSettings::GetAdvancedIcon() const
 {
 	return advancedIcon;
@@ -4780,7 +4785,8 @@ void OBSBasicSettings::SetVideoIcon(const QIcon &icon)
 	ui->listWidget->item(4)->setIcon(icon);
 }
 
-void OBSBasicSettings::SetHotkeysIcon(const QIcon &icon)
+//void OBSBasicSettings::SetHotkeysIcon(const QIcon &icon)
+void OBSBasicSettings::SetControlsIcon(const QIcon &icon)
 {
 	ui->listWidget->item(5)->setIcon(icon);
 }
@@ -4806,4 +4812,19 @@ int OBSBasicSettings::CurrentFLVTrack()
 		return 6;
 
 	return 0;
+}
+QListWidget OBSBasicSettings::getControlsList()
+{
+	return static_cast<QListWidget>(this);
+}
+
+QString *OBSBasicSettings::AddControlPage(QIcon *icon, QString *name,
+					  QWidget *page)
+{
+	QListWidgetItem *newpage =
+		new QListWidgetItem(QIcon(*icon), QString(*name));
+	ui->ControlsListWidget->addItem(newpage);
+	int PageNumber = ui->ControlsStackedWidget->addWidget(page);
+	connect(this, SIGNAL(onControlChange), this, SLOT(callback));
+	return name;
 }

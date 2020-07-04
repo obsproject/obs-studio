@@ -88,7 +88,8 @@ obs_frontend_source_list_free(struct obs_frontend_source_list *source_list)
 EXPORT void *obs_frontend_get_main_window(void);
 EXPORT void *obs_frontend_get_main_window_handle(void);
 EXPORT void *obs_frontend_get_system_tray(void);
-
+EXPORT void *obs_frontend_get_settings_window(void);
+EXPORT void *obs_frontend_get_settings_window_handle(void);
 EXPORT char **obs_frontend_get_scene_names(void);
 EXPORT void obs_frontend_get_scenes(struct obs_frontend_source_list *sources);
 EXPORT obs_source_t *obs_frontend_get_current_scene(void);
@@ -122,7 +123,8 @@ EXPORT void *obs_frontend_add_dock(void *dock);
 
 typedef void (*obs_frontend_event_cb)(enum obs_frontend_event event,
 				      void *private_data);
-
+EXPORT void *obs_frontend_add_control_window(void *icon, void *name,
+					     void *window);
 EXPORT void obs_frontend_add_event_callback(obs_frontend_event_cb callback,
 					    void *private_data);
 EXPORT void obs_frontend_remove_event_callback(obs_frontend_event_cb callback,

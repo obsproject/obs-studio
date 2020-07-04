@@ -3,7 +3,7 @@
 #include "qt-wrappers.hpp"
 #include "window-basic-main.hpp"
 #include "window-basic-main-outputs.hpp"
-
+#include "window-basic-settings.hpp"
 #include <functional>
 
 using namespace std;
@@ -51,6 +51,7 @@ inline size_t GetCallbackIdx(vector<OBSStudioCallback<T>> &callbacks,
 
 struct OBSStudioAPI : obs_frontend_callbacks {
 	OBSBasic *main;
+	OBSBasicSettings *settings;
 	vector<OBSStudioCallback<obs_frontend_event_cb>> callbacks;
 	vector<OBSStudioCallback<obs_frontend_save_cb>> saveCallbacks;
 	vector<OBSStudioCallback<obs_frontend_save_cb>> preloadCallbacks;
@@ -66,7 +67,15 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 	{
 		return (void *)main->winId();
 	}
+	void *obs_frontend_get_settings_window(void) override
+	{
+		return (void *)settings;
+	}
 
+	void *obs_frontend_get_settings_window_handle(void) override
+	{
+		return (void *)settings->winId();
+	}
 	void *obs_frontend_get_system_tray(void) override
 	{
 		return (void *)main->trayIcon.data();
@@ -321,7 +330,11 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 	{
 		return (void *)main->AddDockWidget((QDockWidget *)dock);
 	}
-
+	void *obs_frontend_add_control_window(void *icon, void *name, void *Window) override
+	{
+		return (void *)settings->AddControlPage((QIcon *)icon, (QString *)name, (QWidget *)Window);
+	
+	}
 	void obs_frontend_add_event_callback(obs_frontend_event_cb callback,
 					     void *private_data) override
 	{
