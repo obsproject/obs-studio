@@ -1866,6 +1866,8 @@ void OBSBasic::OBSInit()
 
 	OnFirstLoad();
 
+	activateWindow();
+
 #ifdef __APPLE__
 	QMetaObject::invokeMethod(this, "DeferredSysTrayLoad",
 				  Qt::QueuedConnection, Q_ARG(int, 10));
@@ -7009,6 +7011,8 @@ void OBSBasic::on_resetUI_triggered()
 	resizeDocks(docks, {cy, cy, cy, cy, cy}, Qt::Vertical);
 	resizeDocks(docks, sizes, Qt::Horizontal);
 #endif
+
+	activateWindow();
 }
 
 void OBSBasic::on_lockUI_toggled(bool lock)
