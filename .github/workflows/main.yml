@@ -2,6 +2,10 @@ name: 'CI Multiplatform Build'
 
 on:
   push:
+    paths-ignore:
+      - '**.md'
+    branches:
+      - master
   pull_request:
     paths-ignore:
       - '**.md'
@@ -17,7 +21,7 @@ jobs:
     name: 'macOS 64-bit'
     runs-on: [macos-latest]
     env:
-      MACOS_DEPS_VERSION: '2020-04-24'
+      MACOS_DEPS_VERSION: '2020-07-06'
       VLC_VERSION: '3.0.8'
       SPARKLE_VERSION: '1.23.0'
       QT_VERSION: '5.14.1'
@@ -32,17 +36,19 @@ jobs:
           echo ::set-env name=OBS_GIT_BRANCH::$(git rev-parse --abbrev-ref HEAD)
           echo ::set-env name=OBS_GIT_HASH::$(git rev-parse --short HEAD)
           echo ::set-env name=OBS_GIT_TAG::$(git describe --tags --abbrev=0)
+      - name: 'Check for Github Labels'
+        if: github.event_name == 'pull_request'
+        run: |
+          LABELS_URL="$(echo ${{ github.event.pull_request.url }} | sed s'/pulls/issues/')"
+          LABEL_FOUND="$(curl -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" "${LABELS_URL}/labels" | sed -n 's/.*"name": "\(.*\)",/\1/p' | grep 'Seeking Testers' || true)"
+          if [ "${LABEL_FOUND}" = "Seeking Testers" ]; then
+            echo ::set-env name=SEEKING_TESTERS::1
+          else
+            echo ::set-env name=SEEKING_TESTERS::0
+          fi
       - name: 'Install prerequisites (Homebrew)'
         shell: bash
         run: |
-          if [ -d "$(brew --cellar)/swig" ]; then
-               brew unlink swig
-          fi
-
-          if [ -d "$(brew --cellar)/qt" ]; then
-               brew unlink qt
-          fi
-
           brew bundle --file ./CI/scripts/macos/Brewfile
       - name: 'Restore Chromium Embedded Framework from cache'
         id: cef-cache
@@ -57,6 +63,14 @@ jobs:
         uses: actions/cache@v1
         env:
           CACHE_NAME: 'deps-cache'
+        with:
+          path: /tmp/obsdeps
+          key: ${{ runner.os }}-pr-${{ env.CACHE_NAME }}-${{ env.MACOS_DEPS_VERSION }}
+      - name: 'Restore pre-built Qt dependency from cache'
+        id: deps-qt-cache
+        uses: actions/cache@v1
+        env:
+          CACHE_NAME: 'deps-qt-cache'
         with:
           path: /tmp/obsdeps
           key: ${{ runner.os }}-pr-${{ env.CACHE_NAME }}-${{ env.MACOS_DEPS_VERSION }}
@@ -80,8 +94,15 @@ jobs:
         if: steps.deps-cache.outputs.cache-hit != 'true'
         shell: bash
         run: |
-          curl -L -O https://github.com/obsproject/obs-deps/releases/download/${{ env.MACOS_DEPS_VERSION }}/osx-deps-${{ env.MACOS_DEPS_VERSION }}.tar.gz
-          tar -xf ./osx-deps-${{ env.MACOS_DEPS_VERSION }}.tar.gz -C "/tmp"
+          curl -L -O https://github.com/obsproject/obs-deps/releases/download/${{ env.MACOS_DEPS_VERSION }}/macos-deps-${{ env.MACOS_DEPS_VERSION }}.tar.gz
+          tar -xf ./macos-deps-${{ env.MACOS_DEPS_VERSION }}.tar.gz -C "/tmp"
+      - name: 'Install prerequisite: Pre-built dependency Qt'
+        if: steps.deps-qt-cache.outputs.cache-hit != 'true'
+        shell: bash
+        run: |
+          curl -L -O https://github.com/obsproject/obs-deps/releases/download/${{ env.MACOS_DEPS_VERSION }}/macos-qt-${{ env.QT_VERSION }}-${{ env.MACOS_DEPS_VERSION }}.tar.gz
+          tar -xf ./macos-qt-${{ env.QT_VERSION }}-${{ env.MACOS_DEPS_VERSION }}.tar.gz -C "/tmp"
+          xattr -r -d com.apple.quarantine /tmp/obsdeps
       - name: 'Install prerequisite: VLC'
         if: steps.vlc-cache.outputs.cache-hit != 'true'
         shell: bash
@@ -119,7 +140,7 @@ jobs:
         run: |
           mkdir ./build
           cd ./build
-          cmake -DENABLE_UNIT_TESTS=YES -DENABLE_SPARKLE_UPDATER=ON -DCMAKE_OSX_DEPLOYMENT_TARGET=10.11 -DQTDIR="/usr/local/Cellar/qt/${{ env.QT_VERSION }}" -DDepsPath="/tmp/obsdeps" -DVLCPath="${{ github.workspace }}/cmbuild/vlc-${{ env.VLC_VERSION }}" -DENABLE_VLC=ON -DBUILD_BROWSER=ON -DBROWSER_DEPLOY=ON -DBUILD_CAPTIONS=ON -DWITH_RTMPS=ON -DCEF_ROOT_DIR="${{ github.workspace }}/cmbuild/cef_binary_${{ env.CEF_BUILD_VERSION }}_macosx64" ..
+          cmake -DENABLE_UNIT_TESTS=YES -DENABLE_SPARKLE_UPDATER=ON -DCMAKE_OSX_DEPLOYMENT_TARGET=10.11 -DQTDIR="/tmp/obsdeps" -DSWIGDIR="/tmp/obsdeps" -DDepsPath="/tmp/obsdeps" -DVLCPath="${{ github.workspace }}/cmbuild/vlc-${{ env.VLC_VERSION }}" -DENABLE_VLC=ON -DBUILD_BROWSER=ON -DBROWSER_DEPLOY=ON -DBUILD_CAPTIONS=ON -DWITH_RTMPS=ON -DCEF_ROOT_DIR="${{ github.workspace }}/cmbuild/cef_binary_${{ env.CEF_BUILD_VERSION }}_macosx64" ..
       - name: 'Build'
         shell: bash
         working-directory: ${{ github.workspace }}/build
@@ -129,18 +150,18 @@ jobs:
         working-directory: ${{ github.workspace }}/build
         run: make CTEST_OUTPUT_ON_FAILURE=1 test
       - name: 'Install prerequisite: Packages app'
-        if: success() && (github.event_name != 'pull_request' || contains( github.event.pull_request.labels.*.name, 'Seeking Testers'))
+        if: success() && (github.event_name != 'pull_request' || env.SEEKING_TESTERS == '1')
         shell: bash
         run: |
           curl -L -O https://s3-us-west-2.amazonaws.com/obs-nightly/Packages.pkg
           sudo installer -pkg ./Packages.pkg -target /
       - name: 'Install prerequisite: DMGbuild'
-        if: success() && (github.event_name != 'pull_request' || contains( github.event.pull_request.labels.*.name, 'Seeking Testers'))
+        if: success() && (github.event_name != 'pull_request' || env.SEEKING_TESTERS == '1')
         shell: bash
         run: |
           pip3 install dmgbuild
       - name: 'Create macOS application bundle'
-        if: success() && (github.event_name != 'pull_request' || contains( github.event.pull_request.labels.*.name, 'Seeking Testers'))
+        if: success() && (github.event_name != 'pull_request' || env.SEEKING_TESTERS == '1')
         working-directory: ${{ github.workspace }}/build
         shell: bash
         run: |
@@ -149,7 +170,9 @@ jobs:
           mkdir OBS.app/Contents/PlugIns
           mkdir OBS.app/Contents/Resources
 
-          cp -R rundir/RelWithDebInfo/bin/ ./OBS.app/Contents/MacOS
+          cp rundir/RelWithDebInfo/bin/obs ./OBS.app/Contents/MacOS
+          cp rundir/RelWithDebInfo/bin/obs-ffmpeg-mux ./OBS.app/Contents/MacOS
+          cp rundir/RelWithDebInfo/bin/libobsglad.0.dylib ./OBS.app/Contents/MacOS
           cp -R rundir/RelWithDebInfo/data ./OBS.app/Contents/Resources
           cp ../CI/scripts/macos/app/obs.icns ./OBS.app/Contents/Resources
           cp -R rundir/RelWithDebInfo/obs-plugins/ ./OBS.app/Contents/PlugIns
@@ -162,13 +185,10 @@ jobs:
             rm -rf ./OBS.app/Contents/Resources/data/obs-scripting/
           fi
 
-          install_name_tool -change libmbedtls.12.dylib @executable_path/../Frameworks/libmbedtls.12.dylib ./OBS.app/Contents/Plugins/obs-outputs.so
-          install_name_tool -change libmbedcrypto.3.dylib @executable_path/../Frameworks/libmbedcrypto.3.dylib ./OBS.app/Contents/Plugins/obs-outputs.so
-          install_name_tool -change libmbedx509.0.dylib @executable_path/../Frameworks/libmbedx509.0.dylib ./OBS.app/Contents/Plugins/obs-outputs.so
-
           ../CI/scripts/macos/app/dylibBundler -cd -of -a ./OBS.app -q -f \
             -s ./OBS.app/Contents/MacOS \
             -s "${{ github.workspace }}/cmbuild/sparkle/Sparkle.framework" \
+            -s ./rundir/RelWithDebInfo/bin \
             -x ./OBS.app/Contents/PlugIns/coreaudio-encoder.so \
             -x ./OBS.app/Contents/PlugIns/decklink-ouput-ui.so \
             -x ./OBS.app/Contents/PlugIns/frontend-tools.so \
@@ -194,13 +214,10 @@ jobs:
             -x ./OBS.app/Contents/PlugIns/obs-libfdk.so \
             -x ./OBS.app/Contents/PlugIns/obs-outputs.so
 
-          mv ./OBS.app/Contents/MacOS/libobs-opengl.so ./OBS.app/Contents/Frameworks
+          mv ./libobs-opengl/libobs-opengl.so ./OBS.app/Contents/Frameworks
 
           sudo cp -R "${{ github.workspace }}/cmbuild/cef_binary_${{ env.CEF_BUILD_VERSION }}_macosx64/Release/Chromium Embedded Framework.framework" ./OBS.app/Contents/Frameworks/
           sudo chown -R $(whoami) ./OBS.app/Contents/Frameworks/
-          install_name_tool -change /usr/local/Cellar/qt/${{ env.QT_VERSION }}/QtGui.framework/Versions/5/QtGui @executable_path/../Frameworks/QtGui.framework/Versions/5/QtGui ./OBS.app/Contents/Plugins/obs-browser.so
-          install_name_tool -change /usr/local/Cellar/qt/${{ env.QT_VERSION }}/lib/QtCore.framework/Versions/5/QtCore @executable_path/../Frameworks/QtCore.framework/Versions/5/QtCore ./OBS.app/Contents/Plugins/obs-browser.so
-          install_name_tool -change /usr/local/Cellar/qt/${{ env.QT_VERSION }}/lib/QtWidgets.framework/Versions/5/QtWidgets @executable_path/../Frameworks/QtWidgets.framework/Versions/5/QtWidgets ./OBS.app/Contents/Plugins/obs-browser.so
 
           cp ../CI/scripts/macos/app/OBSPublicDSAKey.pem ./OBS.app/Contents/Resources
 
@@ -210,7 +227,7 @@ jobs:
           plutil -insert SUFeedURL -string https://obsproject.com/osx_update/stable/updates.xml ./OBS.app/Contents/Info.plist
           plutil -insert SUPublicDSAKeyFile -string OBSPublicDSAKey.pem ./OBS.app/Contents/Info.plist
       - name: 'Package'
-        if: success() && (github.event_name != 'pull_request' || contains( github.event.pull_request.labels.*.name, 'Seeking Testers'))
+        if: success() && (github.event_name != 'pull_request' || env.SEEKING_TESTERS == '1')
         working-directory: ${{ github.workspace }}/build
         shell: bash
         run: |
@@ -228,7 +245,7 @@ jobs:
           sudo mv ./${FILE_NAME} ../nightly/${FILE_NAME}
 
       - name: 'Publish'
-        if: success() && (github.event_name != 'pull_request' || contains( github.event.pull_request.labels.*.name, 'Seeking Testers'))
+        if: success() && (github.event_name != 'pull_request' || env.SEEKING_TESTERS == '1')
         uses: actions/upload-artifact@v2-preview
         with:
           name: '${{ env.FILE_NAME }}'
@@ -247,6 +264,16 @@ jobs:
           echo ::set-env name=OBS_GIT_BRANCH::$(git rev-parse --abbrev-ref HEAD)
           echo ::set-env name=OBS_GIT_HASH::$(git rev-parse --short HEAD)
           echo ::set-env name=OBS_GIT_TAG::$(git describe --tags --abbrev=0)
+      - name: 'Check for Github Labels'
+        if: github.event_name == 'pull_request'
+        run: |
+          LABELS_URL="$(echo ${{ github.event.pull_request.url }} | sed s'/pulls/issues/')"
+          LABEL_FOUND="$(curl -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" "${LABELS_URL}/labels" | sed -n 's/.*"name": "\(.*\)",/\1/p' | grep 'Seeking Testers' || true)"
+          if [ "${LABEL_FOUND}" = "Seeking Testers" ]; then
+            echo ::set-env name=SEEKING_TESTERS::1
+          else
+            echo ::set-env name=SEEKING_TESTERS::0
+          fi
       - name: Install prerequisites (Apt)
         shell: bash
         run: |
@@ -323,7 +350,7 @@ jobs:
         working-directory: ${{ github.workspace }}/build
         run: make CTEST_OUTPUT_ON_FAILURE=1 test
       - name: 'Package'
-        if: success() && (github.event_name != 'pull_request' || contains( github.event.pull_request.labels.*.name, 'Seeking Testers'))
+        if: success() && (github.event_name != 'pull_request' || env.SEEKING_TESTERS == '1')
         shell: bash
         run: |
           FILE_DATE=$(date +%Y-%m-%d)
@@ -336,7 +363,7 @@ jobs:
           mv "${FILE_NAME}" ../nightly/
           cd -
       - name: 'Publish'
-        if: success() && (github.event_name != 'pull_request' || contains( github.event.pull_request.labels.*.name, 'Seeking Testers'))
+        if: success() && (github.event_name != 'pull_request' || env.SEEKING_TESTERS == '1')
         uses: actions/upload-artifact@v2-preview
         with:
           name: '${{ env.FILE_NAME }}'
@@ -370,6 +397,17 @@ jobs:
           echo ::set-env name=OBS_GIT_BRANCH::$(git rev-parse --abbrev-ref HEAD)
           echo ::set-env name=OBS_GIT_HASH::$(git rev-parse --short HEAD)
           echo ::set-env name=OBS_GIT_TAG::$(git describe --tags --abbrev=0)
+      - name: 'Check for Github Labels'
+        if: github.event_name == 'pull_request'
+        shell: bash
+        run: |
+          LABELS_URL="$(echo ${{ github.event.pull_request.url }} | sed s'/pulls/issues/')"
+          LABEL_FOUND="$(curl -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" "${LABELS_URL}/labels" | sed -n 's/.*"name": "\(.*\)",/\1/p' | grep 'Seeking Testers' || true)"
+          if [ "${LABEL_FOUND}" = "Seeking Testers" ]; then
+            echo ::set-env name=SEEKING_TESTERS::1
+          else
+            echo ::set-env name=SEEKING_TESTERS::0
+          fi
       - name: 'Restore QT dependency from cache'
         id: qt-cache
         uses: actions/cache@v1
@@ -400,7 +438,7 @@ jobs:
         env:
           CACHE_NAME: 'windows-cef-64-cache'
         with:
-          path: ${{ github.workspace }}/cmdbuild/cef_binary_${{ env.CEF_BUILD_VERSION }}_windows64_minimal
+          path: ${{ github.workspace }}/cmbuild/cef_binary_${{ env.CEF_VERSION }}_windows64_minimal
           key: ${{ runner.os }}-pr-${{ env.CACHE_NAME }}-${{ env.CEF_BUILD_VERSION }}
       - name: 'Install prerequisite: QT'
         if: steps.qt-cache.outputs.cache-hit != 'true'
@@ -427,11 +465,11 @@ jobs:
           mkdir ./build
           mkdir ./build64
           cd ./build64
-          cmake -G"${{ env.CMAKE_GENERATOR }}" -A"x64" -DCMAKE_SYSTEM_VERSION="${{ env.CMAKE_SYSTEM_VERSION }}" -DBUILD_BROWSER=true -DBUILD_CAPTIONS=true -DCOMPILE_D3D12_HOOK=true -DVLCPath="${{ github.workspace }}/cmbuild/vlc" -DDepsPath="${{ github.workspace }}/cmbuild/deps/win64" -DQTDIR="${{ github.workspace }}/cmbuild/QT/${{ env.QT_VERSION }}/msvc2017_64" -DENABLE_VLC=ON -DCEF_ROOT_DIR="${{ github.workspace }}/cmdbuild/cef_binary_${{ env.CEF_VERSION }}_windows64_minimal" -DCOPIED_DEPENDENCIES=FALSE -DCOPY_DEPENDENCIES=TRUE ..
+          cmake -G"${{ env.CMAKE_GENERATOR }}" -A"x64" -DCMAKE_SYSTEM_VERSION="${{ env.CMAKE_SYSTEM_VERSION }}" -DBUILD_BROWSER=true -DBUILD_CAPTIONS=true -DCOMPILE_D3D12_HOOK=true -DVLCPath="${{ github.workspace }}/cmbuild/vlc" -DDepsPath="${{ github.workspace }}/cmbuild/deps/win64" -DQTDIR="${{ github.workspace }}/cmbuild/QT/${{ env.QT_VERSION }}/msvc2017_64" -DENABLE_VLC=ON -DCEF_ROOT_DIR="${{ github.workspace }}/cmbuild/cef_binary_${{ env.CEF_VERSION }}_windows64_minimal" -DCOPIED_DEPENDENCIES=FALSE -DCOPY_DEPENDENCIES=TRUE ..
       - name: 'Build'
         run: msbuild /m /p:Configuration=RelWithDebInfo .\build64\obs-studio.sln
       - name: 'Package'
-        if: success() && (github.event_name != 'pull_request' || contains( github.event.pull_request.labels.*.name, 'Seeking Testers'))
+        if: success() && (github.event_name != 'pull_request' || env.SEEKING_TESTERS == '1')
         run: |
           $env:FILE_DATE=(Get-Date -UFormat "%F")
           $env:FILE_NAME="${env:FILE_DATE}-${{ env.OBS_GIT_HASH }}-${{ env.OBS_GIT_TAG }}-win64.zip"
@@ -439,7 +477,7 @@ jobs:
           robocopy .\build64\rundir\RelWithDebInfo .\build\ /E /XF .gitignore
           7z a ${env:FILE_NAME} .\build\*
       - name: 'Publish'
-        if: success() && (github.event_name != 'pull_request' || contains( github.event.pull_request.labels.*.name, 'Seeking Testers'))
+        if: success() && (github.event_name != 'pull_request' || env.SEEKING_TESTERS == '1')
         uses: actions/upload-artifact@v2-preview
         with:
           name: '${{ env.FILE_NAME }}'
@@ -473,6 +511,17 @@ jobs:
           echo ::set-env name=OBS_GIT_BRANCH::$(git rev-parse --abbrev-ref HEAD)
           echo ::set-env name=OBS_GIT_HASH::$(git rev-parse --short HEAD)
           echo ::set-env name=OBS_GIT_TAG::$(git describe --tags --abbrev=0)
+      - name: 'Check for Github Labels'
+        if: github.event_name == 'pull_request'
+        shell: bash
+        run: |
+          LABELS_URL="$(echo ${{ github.event.pull_request.url }} | sed s'/pulls/issues/')"
+          LABEL_FOUND="$(curl -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" "${LABELS_URL}/labels" | sed -n 's/.*"name": "\(.*\)",/\1/p' | grep 'Seeking Testers' || true)"
+          if [ "${LABEL_FOUND}" = "Seeking Testers" ]; then
+            echo ::set-env name=SEEKING_TESTERS::1
+          else
+            echo ::set-env name=SEEKING_TESTERS::0
+          fi
       - name: 'Restore QT dependency from cache'
         id: qt-cache
         uses: actions/cache@v1
@@ -503,8 +552,8 @@ jobs:
         env:
           CACHE_NAME: 'cef-32-cache'
         with:
-          path: ${{ github.workspace }}/cmdbuild/cef_binary_${{ env.CEF_BUILD_VERSION }}_windows32_minimal
-          key: ${{ runner.os }}-pr-${{ env.CACHE_NAME }}-${{ env.CEF_VERSION }}
+          path: ${{ github.workspace }}/cmbuild/cef_binary_${{ env.CEF_VERSION }}_windows32_minimal
+          key: ${{ runner.os }}-pr-${{ env.CACHE_NAME }}-${{ env.CEF_BUILD_VERSION }}
       - name: 'Install prerequisite: QT'
         if: steps.qt-cache.outputs.cache-hit != 'true'
         run: |
@@ -530,11 +579,11 @@ jobs:
           mkdir ./build
           mkdir ./build32
           cd ./build32
-          cmake -G"${{ env.CMAKE_GENERATOR }}" -A"Win32" -DCMAKE_SYSTEM_VERSION="${{ env.CMAKE_SYSTEM_VERSION }}" -DENABLE_VLC=ON -DBUILD_BROWSER=true -DBUILD_CAPTIONS=true -DCOMPILE_D3D12_HOOK=true -DVLCPath="${{ github.workspace }}/cmbuild/vlc" -DDepsPath="${{ github.workspace }}/cmbuild/deps/win32" -DQTDIR="${{ github.workspace }}/cmbuild/QT/${{ env.QT_VERSION }}/msvc2017" -DCEF_ROOT_DIR="${{ github.workspace }}/cmdbuild/cef_binary_${{ env.CEF_VERSION }}_windows32_minimal" -DCOPIED_DEPENDENCIES=FALSE -DCOPY_DEPENDENCIES=TRUE ..
+          cmake -G"${{ env.CMAKE_GENERATOR }}" -A"Win32" -DCMAKE_SYSTEM_VERSION="${{ env.CMAKE_SYSTEM_VERSION }}" -DENABLE_VLC=ON -DBUILD_BROWSER=true -DBUILD_CAPTIONS=true -DCOMPILE_D3D12_HOOK=true -DVLCPath="${{ github.workspace }}/cmbuild/vlc" -DDepsPath="${{ github.workspace }}/cmbuild/deps/win32" -DQTDIR="${{ github.workspace }}/cmbuild/QT/${{ env.QT_VERSION }}/msvc2017" -DCEF_ROOT_DIR="${{ github.workspace }}/cmbuild/cef_binary_${{ env.CEF_VERSION }}_windows32_minimal" -DCOPIED_DEPENDENCIES=FALSE -DCOPY_DEPENDENCIES=TRUE ..
       - name: 'Build'
         run: msbuild /m /p:Configuration=RelWithDebInfo .\build32\obs-studio.sln
       - name: 'Package'
-        if: success() && (github.event_name != 'pull_request' || contains( github.event.pull_request.labels.*.name, 'Seeking Testers'))
+        if: success() && (github.event_name != 'pull_request' || env.SEEKING_TESTERS == '1')
         run: |
           $env:FILE_DATE=(Get-Date -UFormat "%F")
           $env:FILE_NAME="${env:FILE_DATE}-${{ env.OBS_GIT_HASH }}-${{ env.OBS_GIT_TAG }}-win32.zip"
@@ -542,7 +591,7 @@ jobs:
           robocopy .\build32\rundir\RelWithDebInfo .\build\ /E /XF .gitignore
           7z a ${env:FILE_NAME} .\build\*
       - name: 'Publish'
-        if: success() && (github.event_name != 'pull_request' || contains( github.event.pull_request.labels.*.name, 'Seeking Testers'))
+        if: success() && (github.event_name != 'pull_request' || env.SEEKING_TESTERS == '1')
         uses: actions/upload-artifact@v2-preview
         with:
           name: '${{ env.FILE_NAME }}'
