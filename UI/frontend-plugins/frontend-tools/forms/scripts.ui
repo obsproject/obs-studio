@@ -137,6 +137,13 @@
             </spacer>
            </item>
            <item>
+            <widget class="QPushButton" name="defaults">
+             <property name="text">
+              <string>Defaults</string>
+             </property>
+            </widget>
+           </item>
+           <item>
             <widget class="QPushButton" name="scriptLog">
              <property name="text">
               <string>ScriptLogWindow</string>
