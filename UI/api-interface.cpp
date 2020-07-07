@@ -151,6 +151,17 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 					  "setValue", Q_ARG(int, duration));
 	}
 
+	void obs_frontend_release_tbar(void) override
+	{
+		QMetaObject::invokeMethod(main, "TBarReleased");
+	}
+
+	void obs_frontend_set_tbar_position(int position) override
+	{
+		QMetaObject::invokeMethod(main, "TBarChanged",
+					  Q_ARG(int, position));
+	}
+
 	void obs_frontend_get_scene_collections(
 		std::vector<std::string> &strings) override
 	{
