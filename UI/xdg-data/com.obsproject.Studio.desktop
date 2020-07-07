@@ -3,6 +3,7 @@ Version=1.0
 Name=OBS Studio
 GenericName=Streaming/Recording Software
 GenericName[fr]=Logiciel d'enregistrement/diffusion
+GenericName[ru]=Программа для записи/трансляции видео
 Comment=Free and Open Source Streaming/Recording Software
 Comment[fr]=Logiciel libre d'enregistrement et de diffusion sur Internet
 Comment[ru]=Бесплатная программа с открытым кодом для записи/трансляции видео
