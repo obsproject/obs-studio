@@ -374,6 +374,14 @@ Section -FinishSection
 	WriteRegDWORD HKLM "Software\Khronos\Vulkan\ImplicitLayers" "$APPDATA\obs-studio-hook\obs-vulkan32.json" 0
 
 	# ---------------------------------------
+	# Register virtual camera dlls
+
+	Exec '"$SYSDIR\regsvr32.exe" /s "$INSTDIR\data\obs-plugins\win-dshow\obs-virtualcam-module32.dll"'
+	${if} ${RunningX64}
+		Exec '"$SYSDIR\regsvr32.exe" /s "$INSTDIR\data\obs-plugins\win-dshow\obs-virtualcam-module64.dll"'
+	${endif}
+
+	# ---------------------------------------
 
 	ClearErrors
 	SetRegView default
@@ -419,6 +427,12 @@ Section "un.obs-studio Program Files" UninstallSection1
 	SetRegView default
 	SetShellVarContext current
 	ClearErrors
+
+	; Unregister virtual camera dlls
+	Exec '"$SYSDIR\regsvr32.exe" /u /s "$INSTDIR\data\obs-plugins\win-dshow\obs-virtualcam-module32.dll"'
+	${if} ${RunningX64}
+		Exec '"$SYSDIR\regsvr32.exe" /u /s "$INSTDIR\data\obs-plugins\win-dshow\obs-virtualcam-module64.dll"'
+	${endif}
 
 	; Remove from registry...
 	DeleteRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APPNAME}"

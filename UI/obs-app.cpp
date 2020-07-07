@@ -75,6 +75,7 @@ bool opt_start_streaming = false;
 bool opt_start_recording = false;
 bool opt_studio_mode = false;
 bool opt_start_replaybuffer = false;
+bool opt_start_virtualcam = false;
 bool opt_minimize_tray = false;
 bool opt_allow_opengl = false;
 bool opt_always_on_top = false;
@@ -2425,6 +2426,9 @@ int main(int argc, char *argv[])
 		} else if (arg_is(argv[i], "--startreplaybuffer", nullptr)) {
 			opt_start_replaybuffer = true;
 
+		} else if (arg_is(argv[i], "--startvirtualcam", nullptr)) {
+			opt_start_virtualcam = true;
+
 		} else if (arg_is(argv[i], "--collection", nullptr)) {
 			if (++i < argc)
 				opt_starting_collection = argv[i];
@@ -2451,7 +2455,8 @@ int main(int argc, char *argv[])
 				<< "--help, -h: Get list of available commands.\n\n"
 				<< "--startstreaming: Automatically start streaming.\n"
 				<< "--startrecording: Automatically start recording.\n"
-				<< "--startreplaybuffer: Start replay buffer.\n\n"
+				<< "--startreplaybuffer: Start replay buffer.\n"
+				<< "--startvirtualcam: Start virtual camera (if available).\n\n"
 				<< "--collection <string>: Use specific scene collection."
 				<< "\n"
 				<< "--profile <string>: Use specific profile.\n"
