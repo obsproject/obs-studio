@@ -657,14 +657,15 @@ void OBSPropertiesView::AddColor(obs_property_t *prop, QFormLayout *layout,
 
 	QPalette palette = QPalette(color);
 	colorLabel->setFrameStyle(QFrame::Sunken | QFrame::Panel);
+	// The picker doesn't have an alpha option, show only RGB
 	colorLabel->setText(color.name(QColor::HexRgb));
 	colorLabel->setPalette(palette);
 	colorLabel->setStyleSheet(
 		QString("background-color :%1; color: %2;")
 			.arg(palette.color(QPalette::Window)
-				     .name(QColor::HexArgb))
+				     .name(QColor::HexRgb))
 			.arg(palette.color(QPalette::WindowText)
-				     .name(QColor::HexArgb)));
+				     .name(QColor::HexRgb)));
 	colorLabel->setAutoFillBackground(true);
 	colorLabel->setAlignment(Qt::AlignCenter);
 	colorLabel->setToolTip(QT_UTF8(obs_property_long_description(prop)));
@@ -1710,14 +1711,14 @@ bool WidgetInfo::ColorChanged(const char *setting)
 		return false;
 
 	QLabel *label = static_cast<QLabel *>(widget);
-	label->setText(color.name(QColor::HexArgb));
+	label->setText(color.name(QColor::HexRgb));
 	QPalette palette = QPalette(color);
 	label->setPalette(palette);
 	label->setStyleSheet(QString("background-color :%1; color: %2;")
 				     .arg(palette.color(QPalette::Window)
-						  .name(QColor::HexArgb))
+						  .name(QColor::HexRgb))
 				     .arg(palette.color(QPalette::WindowText)
-						  .name(QColor::HexArgb)));
+						  .name(QColor::HexRgb)));
 
 	obs_data_set_int(view->settings, setting, color_to_int(color));
 
