@@ -1,3 +1,4 @@
+#include "obs-module.h"
 #include "scripts.hpp"
 #include "frontend-tools-config.h"
 #include "../../properties-view.hpp"
@@ -13,6 +14,9 @@
 #include <QDialogButtonBox>
 #include <QResizeEvent>
 #include <QAction>
+#include <QMessageBox>
+#include <QUrl>
+#include <QDesktopServices>
 
 #include <obs.hpp>
 #include <obs-module.h>
@@ -468,6 +472,40 @@ void ScriptsTool::on_defaults_clicked()
 
 	SetScriptDefaults(
 		item->data(Qt::UserRole).toString().toUtf8().constData());
+}
+
+void ScriptsTool::on_description_linkActivated(const QString &link)
+{
+	QUrl url(link, QUrl::StrictMode);
+	if (url.isValid() && (url.scheme().compare("http") == 0 ||
+			      url.scheme().compare("https") == 0)) {
+		QString msg(obs_module_text("ScriptDescriptionLink.Text"));
+		msg += "\n\n";
+		msg += QString(obs_module_text(
+				       "ScriptDescriptionLink.Text.Url"))
+			       .arg(link);
+
+		const char *open =
+			obs_module_text("ScriptDescriptionLink.OpenURL");
+
+		QMessageBox messageBox(this);
+		messageBox.setWindowTitle(open);
+		messageBox.setText(msg);
+
+		obs_frontend_push_ui_translation(obs_module_get_string);
+		QPushButton *yesButton =
+			messageBox.addButton(open, QMessageBox::YesRole);
+		QPushButton *noButton =
+			messageBox.addButton(tr("Cancel"), QMessageBox::NoRole);
+		obs_frontend_pop_ui_translation();
+		messageBox.setDefaultButton(yesButton);
+		messageBox.setEscapeButton(noButton);
+		messageBox.setIcon(QMessageBox::Question);
+		messageBox.exec();
+
+		if (messageBox.clickedButton() == yesButton)
+			QDesktopServices::openUrl(url);
+	}
 }
 
 /* ----------------------------------------------------------------- */
