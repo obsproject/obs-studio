@@ -14,13 +14,10 @@
 
 struct d3d12_data {
 	ID3D12Device *device; /* do not release */
-	uint32_t base_cx;
-	uint32_t base_cy;
 	uint32_t cx;
 	uint32_t cy;
 	DXGI_FORMAT format;
 	bool using_shtex;
-	bool using_scale;
 	bool multisampled;
 	bool dxgi_1_4;
 
@@ -197,9 +194,8 @@ static bool d3d12_shtex_init(HWND window, bb_info &bb)
 	if (!create_d3d12_tex(bb)) {
 		return false;
 	}
-	if (!capture_init_shtex(&data.shtex_info, window, data.base_cx,
-				data.base_cy, data.cx, data.cy, data.format,
-				false, (uintptr_t)data.handle)) {
+	if (!capture_init_shtex(&data.shtex_info, window, data.cx, data.cy,
+				data.format, false, (uintptr_t)data.handle)) {
 		return false;
 	}
 
@@ -223,8 +219,8 @@ static inline bool d3d12_init_format(IDXGISwapChain *swap, HWND &window,
 	data.format = fix_dxgi_format(desc.BufferDesc.Format);
 	data.multisampled = desc.SampleDesc.Count > 1;
 	window = desc.OutputWindow;
-	data.base_cx = desc.BufferDesc.Width;
-	data.base_cy = desc.BufferDesc.Height;
+	data.cx = desc.BufferDesc.Width;
+	data.cy = desc.BufferDesc.Height;
 
 	hr = swap->QueryInterface(__uuidof(IDXGISwapChain3), (void **)&swap3);
 	if (SUCCEEDED(hr)) {
@@ -260,24 +256,14 @@ static inline bool d3d12_init_format(IDXGISwapChain *swap, HWND &window,
 		}
 	}
 
-	if (data.using_scale) {
-		data.cx = global_hook_info->cx;
-		data.cy = global_hook_info->cy;
-	} else {
-		data.cx = desc.BufferDesc.Width;
-		data.cy = desc.BufferDesc.Height;
-	}
 	return true;
 }
 
 static void d3d12_init(IDXGISwapChain *swap)
 {
-	bool success = true;
 	bb_info bb = {};
 	HWND window;
 	HRESULT hr;
-
-	data.using_scale = global_hook_info->use_scale;
 
 	hr = swap->GetDevice(__uuidof(ID3D12Device), (void **)&data.device);
 	if (FAILED(hr)) {
@@ -290,19 +276,13 @@ static void d3d12_init(IDXGISwapChain *swap)
 	if (!d3d12_init_format(swap, window, bb)) {
 		return;
 	}
-	if (data.using_scale) {
-		hlog("d3d12_init: scaling currently unsupported; ignoring");
-	}
-	if (success) {
-		if (global_hook_info->force_shmem) {
-			hlog("d3d12_init: shared memory capture currently "
-			     "unsupported; ignoring");
-		}
 
-		success = d3d12_shtex_init(window, bb);
+	if (global_hook_info->force_shmem) {
+		hlog("d3d12_init: shared memory capture currently "
+		     "unsupported; ignoring");
 	}
 
-	if (!success)
+	if (!d3d12_shtex_init(window, bb))
 		d3d12_free();
 }
 

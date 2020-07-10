@@ -705,11 +705,11 @@ static bool vk_shtex_init(struct vk_data *data, HWND window,
 
 	data->cur_swap = swap;
 
-	swap->captured = capture_init_shtex(
-		&swap->shtex_info, window, swap->image_extent.width,
-		swap->image_extent.height, swap->image_extent.width,
-		swap->image_extent.height, (uint32_t)swap->format, false,
-		(uintptr_t)swap->handle);
+	swap->captured = capture_init_shtex(&swap->shtex_info, window,
+					    swap->image_extent.width,
+					    swap->image_extent.height,
+					    (uint32_t)swap->format, false,
+					    (uintptr_t)swap->handle);
 
 	if (swap->captured) {
 		if (global_hook_info->force_shmem) {

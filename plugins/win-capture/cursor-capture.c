@@ -210,7 +210,7 @@ void cursor_capture(struct cursor_data *data)
 }
 
 void cursor_draw(struct cursor_data *data, long x_offset, long y_offset,
-		 float x_scale, float y_scale, long width, long height)
+		 long width, long height)
 {
 	long x = data->cursor_pos.x + x_offset;
 	long y = data->cursor_pos.y + y_offset;
@@ -226,7 +226,6 @@ void cursor_draw(struct cursor_data *data, long x_offset, long y_offset,
 		gs_enable_color(true, true, true, false);
 
 		gs_matrix_push();
-		gs_matrix_scale3f(x_scale, y_scale, 1.0f);
 		obs_source_draw(data->texture, x_draw, y_draw, 0, 0, false);
 		gs_matrix_pop();
 

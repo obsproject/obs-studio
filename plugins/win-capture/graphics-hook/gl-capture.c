@@ -34,14 +34,11 @@ static bool functions_initialized = false;
 
 struct gl_data {
 	HDC hdc;
-	uint32_t base_cx;
-	uint32_t base_cy;
 	uint32_t cx;
 	uint32_t cy;
 	DXGI_FORMAT format;
 	GLuint fbo;
 	bool using_shtex;
-	bool using_scale;
 	bool shmem_fallback;
 
 	union {
@@ -434,9 +431,8 @@ static bool gl_shtex_init(HWND window)
 	if (!gl_init_fbo()) {
 		return false;
 	}
-	if (!capture_init_shtex(&data.shtex_info, window, data.base_cx,
-				data.base_cy, data.cx, data.cy, data.format,
-				true, (uintptr_t)data.handle)) {
+	if (!capture_init_shtex(&data.shtex_info, window, data.cx, data.cy,
+				data.format, true, (uintptr_t)data.handle)) {
 		return false;
 	}
 
@@ -516,9 +512,8 @@ static bool gl_shmem_init(HWND window)
 	if (!gl_init_fbo()) {
 		return false;
 	}
-	if (!capture_init_shmem(&data.shmem_info, window, data.base_cx,
-				data.base_cy, data.cx, data.cy, data.cx * 4,
-				data.format, true)) {
+	if (!capture_init_shmem(&data.shmem_info, window, data.cx, data.cy,
+				data.cx * 4, data.format, true)) {
 		return false;
 	}
 
@@ -538,28 +533,19 @@ static int gl_init(HDC hdc)
 	RECT rc = {0};
 
 	if (darkest_dungeon_fix) {
-		data.base_cx = 1920;
-		data.base_cy = 1080;
+		data.cx = 1920;
+		data.cy = 1080;
 	} else {
 		GetClientRect(window, &rc);
-		data.base_cx = rc.right;
-		data.base_cy = rc.bottom;
+		data.cx = rc.right;
+		data.cy = rc.bottom;
 	}
 
 	data.hdc = hdc;
 	data.format = DXGI_FORMAT_B8G8R8A8_UNORM;
-	data.using_scale = global_hook_info->use_scale;
 	data.using_shtex = nv_capture_available &&
 			   !global_hook_info->force_shmem &&
 			   !data.shmem_fallback;
-
-	if (data.using_scale) {
-		data.cx = global_hook_info->cx;
-		data.cy = global_hook_info->cy;
-	} else {
-		data.cx = data.base_cx;
-		data.cy = data.base_cy;
-	}
 
 	if (data.using_shtex) {
 		success = gl_shtex_init(window);
@@ -606,8 +592,8 @@ static void gl_copy_backbuffer(GLuint dst)
 		return;
 	}
 
-	glBlitFramebuffer(0, 0, data.base_cx, data.base_cy, 0, 0, data.cx,
-			  data.cy, GL_COLOR_BUFFER_BIT, GL_LINEAR);
+	glBlitFramebuffer(0, 0, data.cx, data.cy, 0, 0, data.cx, data.cy,
+			  GL_COLOR_BUFFER_BIT, GL_LINEAR);
 	gl_error("gl_copy_backbuffer", "failed to blit");
 }
 
@@ -638,27 +624,23 @@ static void gl_shtex_capture(void)
 	IDXGISwapChain_Present(data.dxgi_swap, 0, 0);
 }
 
-static inline void gl_shmem_capture_queue_copy(void)
+static void gl_shmem_capture_copy(int i)
 {
-	for (int i = 0; i < NUM_BUFFERS; i++) {
-		if (data.texture_ready[i]) {
-			GLvoid *buffer;
+	if (data.texture_ready[i]) {
+		GLvoid *buffer;
 
-			data.texture_ready[i] = false;
+		data.texture_ready[i] = false;
 
-			glBindBuffer(GL_PIXEL_PACK_BUFFER, data.pbos[i]);
-			if (gl_error("gl_shmem_capture_queue_copy",
-				     "failed to bind pbo")) {
-				return;
-			}
+		glBindBuffer(GL_PIXEL_PACK_BUFFER, data.pbos[i]);
+		if (gl_error("gl_shmem_capture_queue_copy",
+			     "failed to bind pbo")) {
+			return;
+		}
 
-			buffer =
-				glMapBuffer(GL_PIXEL_PACK_BUFFER, GL_READ_ONLY);
-			if (buffer) {
-				data.texture_mapped[i] = true;
-				shmem_copy_data(i, buffer);
-			}
-			break;
+		buffer = glMapBuffer(GL_PIXEL_PACK_BUFFER, GL_READ_ONLY);
+		if (buffer) {
+			data.texture_mapped[i] = true;
+			shmem_copy_data(i, buffer);
 		}
 	}
 }
@@ -686,6 +668,7 @@ static void gl_shmem_capture(void)
 	int next_tex;
 	GLint last_fbo;
 	GLint last_tex;
+	GLint last_pbo;
 
 	glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &last_fbo);
 	if (gl_error("gl_shmem_capture", "failed to get last fbo")) {
@@ -697,30 +680,36 @@ static void gl_shmem_capture(void)
 		return;
 	}
 
-	gl_shmem_capture_queue_copy();
+	glGetIntegerv(GL_PIXEL_PACK_BUFFER_BINDING, &last_pbo);
+	if (gl_error("gl_shmem_capture", "failed to get last pbo")) {
+		return;
+	}
 
-	next_tex = (data.cur_tex == NUM_BUFFERS - 1) ? 0 : data.cur_tex + 1;
-
-	gl_copy_backbuffer(data.textures[next_tex]);
+	next_tex = (data.cur_tex + 1) % NUM_BUFFERS;
+	gl_shmem_capture_copy(next_tex);
 
 	if (data.copy_wait < NUM_BUFFERS - 1) {
 		data.copy_wait++;
 	} else {
-		GLuint src = data.textures[next_tex];
-		GLuint dst = data.pbos[next_tex];
-
-		if (shmem_texture_data_lock(next_tex)) {
+		if (shmem_texture_data_lock(data.cur_tex)) {
+			glBindBuffer(GL_PIXEL_PACK_BUFFER,
+				     data.pbos[data.cur_tex]);
 			glUnmapBuffer(GL_PIXEL_PACK_BUFFER);
-			data.texture_mapped[next_tex] = false;
-			shmem_texture_data_unlock(next_tex);
+			data.texture_mapped[data.cur_tex] = false;
+			shmem_texture_data_unlock(data.cur_tex);
 		}
 
-		gl_shmem_capture_stage(dst, src);
-		data.texture_ready[next_tex] = true;
+		gl_copy_backbuffer(data.textures[data.cur_tex]);
+		gl_shmem_capture_stage(data.pbos[data.cur_tex],
+				       data.textures[data.cur_tex]);
+		data.texture_ready[data.cur_tex] = true;
 	}
 
 	glBindTexture(GL_TEXTURE_2D, last_tex);
+	glBindBuffer(GL_PIXEL_PACK_BUFFER, last_pbo);
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, last_fbo);
+
+	data.cur_tex = next_tex;
 }
 
 static void gl_capture(HDC hdc)
@@ -757,7 +746,7 @@ static void gl_capture(HDC hdc)
 
 		/* reset capture if resized */
 		get_window_size(hdc, &new_cx, &new_cy);
-		if (new_cx != data.base_cx || new_cy != data.base_cy) {
+		if (new_cx != data.cx || new_cy != data.cy) {
 			if (new_cx != 0 && new_cy != 0)
 				gl_free();
 			return;

@@ -205,7 +205,7 @@ static uint32_t duplicator_capture_height(void *data)
 
 static void draw_cursor(struct duplicator_capture *capture)
 {
-	cursor_draw(&capture->cursor_data, -capture->x, -capture->y, 1.0f, 1.0f,
+	cursor_draw(&capture->cursor_data, -capture->x, -capture->y,
 		    capture->rot % 180 == 0 ? capture->width : capture->height,
 		    capture->rot % 180 == 0 ? capture->height : capture->width);
 }
