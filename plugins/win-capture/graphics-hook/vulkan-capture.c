@@ -1580,6 +1580,10 @@ static VkFunc VKAPI OBS_GetInstanceProcAddr(VkInstance inst, const char *name)
 
 #undef GETPROCADDR
 
+#ifndef _WIN64
+#pragma comment(linker, "/EXPORT:OBS_Negotiate=_OBS_Negotiate@4")
+#endif
+
 EXPORT VkResult VKAPI OBS_Negotiate(VkNegotiateLayerInterface *nli)
 {
 	if (nli->loaderLayerInterfaceVersion >= 2) {
