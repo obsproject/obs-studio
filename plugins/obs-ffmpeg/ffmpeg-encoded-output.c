@@ -832,6 +832,11 @@ static uint64_t ffmpeg_encoded_output_total_bytes_sent(void *data)
 	return stream->total_bytes_sent;
 }
 
+static bool ffmpeg_encoded_output_is_ready_to_update(void *data)
+{
+	struct ffmpeg_encoded_output *stream = data;
+	return !(connecting(stream) || active(stream));
+}
 static int ffmpeg_encoded_output_dropped_frames(void *data)
 {
 	struct ffmpeg_encoded_output *stream = data;
@@ -870,4 +875,6 @@ struct obs_output_info ffmpeg_encoded_output_info = {
 	.get_total_bytes = ffmpeg_encoded_output_total_bytes_sent,
 	.get_congestion = ffmpeg_encoded_output_congestion,
 	.get_connect_time_ms = ffmpeg_encoded_output_connect_time,
-	.get_dropped_frames = ffmpeg_encoded_output_dropped_frames};
+	.get_dropped_frames = ffmpeg_encoded_output_dropped_frames,
+	.is_ready_to_update = ffmpeg_encoded_output_is_ready_to_update,
+};

@@ -275,6 +275,12 @@ static void ftl_stream_stop(void *data, uint64_t ts)
 	}
 }
 
+static bool ftl_stream_is_ready_to_update(void *data)
+{
+	struct ftl_stream *stream = data;
+	return !(connecting(stream) || active(stream));
+}
+
 static inline bool get_next_packet(struct ftl_stream *stream,
 				   struct encoder_packet *packet)
 {
@@ -1161,4 +1167,5 @@ struct obs_output_info ftl_output_info = {
 	.get_total_bytes = ftl_stream_total_bytes_sent,
 	.get_congestion = ftl_stream_congestion,
 	.get_dropped_frames = ftl_stream_dropped_frames,
+	.is_ready_to_update = ftl_stream_is_ready_to_update,
 };

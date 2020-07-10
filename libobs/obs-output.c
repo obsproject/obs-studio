@@ -257,6 +257,16 @@ const char *obs_output_get_name(const obs_output_t *output)
 		       : NULL;
 }
 
+bool obs_output_is_ready_to_update(obs_output_t *output)
+{
+	bool ret = true;
+
+	if (output->context.data)
+		ret = output->info.is_ready_to_update(output->context.data);
+
+	return ret;
+}
+
 bool obs_output_actual_start(obs_output_t *output)
 {
 	bool success = false;

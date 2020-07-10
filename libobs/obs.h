@@ -1764,6 +1764,9 @@ EXPORT bool obs_weak_output_references_output(obs_weak_output_t *weak,
 EXPORT const char *obs_output_get_name(const obs_output_t *output);
 
 /** Starts the output. */
+EXPORT bool obs_output_is_ready_to_update(obs_output_t *output);
+
+/** Starts the output. */
 EXPORT bool obs_output_start(obs_output_t *output);
 
 /** Stops the output. */
@@ -2228,6 +2231,7 @@ EXPORT const char *obs_service_get_type(const obs_service_t *service);
 
 /** Updates the settings of the service context */
 EXPORT void obs_service_update(obs_service_t *service, obs_data_t *settings);
+EXPORT bool obs_service_is_ready_to_update(obs_service_t *service);
 
 /** Returns the current settings for this service */
 EXPORT obs_data_t *obs_service_get_settings(const obs_service_t *service);
