@@ -29,7 +29,7 @@ public:
 	OBSSignal destroyedSignal;
 
 	OBSSourceLabel(const obs_source_t *source, QWidget *parent = nullptr,
-		       Qt::WindowFlags f = 0)
+		       Qt::WindowFlags f = Qt::WindowFlags())
 		: QLabel(obs_source_get_name(source), parent, f),
 		  renamedSignal(obs_source_get_signal_handler(source), "rename",
 				&OBSSourceLabel::SourceRenamed, this),

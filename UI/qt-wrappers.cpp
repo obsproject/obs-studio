@@ -264,7 +264,7 @@ void ExecuteFuncSafeBlockMsgBox(std::function<void()> func,
 	dlg.setWindowFlags(dlg.windowFlags() & ~Qt::WindowCloseButtonHint);
 	dlg.setWindowTitle(title);
 	dlg.setText(text);
-	dlg.setStandardButtons(0);
+	dlg.setStandardButtons(QMessageBox::StandardButtons());
 
 	auto wait = [&]() {
 		func();

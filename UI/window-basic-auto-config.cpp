@@ -850,7 +850,7 @@ AutoConfig::AutoConfig(QWidget *parent) : QWizard(parent)
 		streamPage->ui->preferHardware->setChecked(preferHardware);
 	}
 
-	setOptions(0);
+	setOptions(QWizard::WizardOptions());
 	setButtonText(QWizard::FinishButton,
 		      QTStr("Basic.AutoConfig.ApplySettings"));
 	setButtonText(QWizard::BackButton, QTStr("Back"));
