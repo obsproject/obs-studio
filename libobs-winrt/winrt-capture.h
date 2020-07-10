@@ -21,6 +21,7 @@ EXPORT void winrt_capture_render(struct winrt_capture *capture,
 				 gs_effect_t *effect);
 EXPORT uint32_t winrt_capture_width(const struct winrt_capture *capture);
 EXPORT uint32_t winrt_capture_height(const struct winrt_capture *capture);
+EXPORT bool winrt_capture_is_closed(const struct winrt_capture *capture);
 
 #ifdef __cplusplus
 }

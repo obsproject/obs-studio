@@ -125,11 +125,13 @@ struct winrt_capture {
 	winrt::Windows::Graphics::SizeInt32 last_size;
 	winrt::Windows::Graphics::Capture::Direct3D11CaptureFramePool::
 		FrameArrived_revoker frame_arrived;
+	winrt::Windows::Graphics::Capture::GraphicsCaptureItem::Closed_revoker item_closed;
 
 	uint32_t texture_width;
 	uint32_t texture_height;
 	D3D11_BOX client_box;
 	bool client_box_available;
+	bool capture_closed;
 
 	bool thread_changed;
 	struct winrt_capture *next;
@@ -185,7 +187,11 @@ struct winrt_capture {
 
 		DestroyIcon(icon);
 	}
-
+	void on_item_closed(winrt::Windows::Graphics::Capture::GraphicsCaptureItem const& sender,
+				winrt::Windows::Foundation::IInspectable const&)
+	{
+		capture_closed = true;
+	}
 	void on_frame_arrived(winrt::Windows::Graphics::Capture::
 				      Direct3D11CaptureFramePool const &sender,
 			      winrt::Windows::Foundation::IInspectable const &)
@@ -270,6 +276,7 @@ struct winrt_capture *capture_list;
 static void winrt_capture_device_loss_release(void *data)
 {
 	winrt_capture *capture = static_cast<winrt_capture *>(data);
+	capture->item_closed.revoke();
 	capture->frame_arrived.revoke();
 	capture->frame_pool.Close();
 	capture->session.Close();
@@ -320,7 +327,7 @@ static void winrt_capture_device_loss_rebuild(void *device_void, void *data)
 	capture->frame_arrived = frame_pool.FrameArrived(
 		winrt::auto_revoke,
 		{capture, &winrt_capture::on_frame_arrived});
-
+	capture->item_closed = capture->item.Closed(winrt::auto_revoke, {capture, &winrt_capture::on_item_closed});
 	session.StartCapture();
 }
 
@@ -393,6 +400,7 @@ try {
 		initialized_tls = true;
 
 	struct winrt_capture *capture = new winrt_capture{};
+	capture->capture_closed = false;
 	capture->window = window;
 	capture->client_area = client_area;
 	capture->capture_cursor = cursor && cursor_toggle_supported;
@@ -405,6 +413,9 @@ try {
 	capture->frame_arrived = frame_pool.FrameArrived(
 		winrt::auto_revoke,
 		{capture, &winrt_capture::on_frame_arrived});
+	capture->item_closed = capture->item.Closed(
+		winrt::auto_revoke,
+		{capture, &winrt_capture::on_item_closed});
 	capture->next = capture_list;
 	capture_list = capture;
 
@@ -448,6 +459,7 @@ extern "C" EXPORT void winrt_capture_free(struct winrt_capture *capture)
 		gs_texture_destroy(capture->texture);
 		obs_leave_graphics();
 
+		capture->item_closed.revoke();
 		capture->frame_arrived.revoke();
 		capture->frame_pool.Close();
 		//capture->session.Close();
@@ -519,4 +531,10 @@ extern "C" EXPORT uint32_t
 winrt_capture_height(const struct winrt_capture *capture)
 {
 	return capture ? capture->texture_height : 0;
+}
+
+extern "C" EXPORT bool
+winrt_capture_is_closed(const struct winrt_capture *capture)
+{
+	return capture->capture_closed;
 }

@@ -37,6 +37,7 @@ struct winrt_exports {
 				     gs_effect_t *effect);
 	uint32_t (*winrt_capture_width)(const struct winrt_capture *capture);
 	uint32_t (*winrt_capture_height)(const struct winrt_capture *capture);
+	bool (*winrt_capture_is_closed)(const struct winrt_capture *capture);
 };
 
 enum window_capture_method {
@@ -182,6 +183,7 @@ static bool load_winrt_imports(struct winrt_exports *exports, void *module,
 	WINRT_IMPORT(winrt_capture_render);
 	WINRT_IMPORT(winrt_capture_width);
 	WINRT_IMPORT(winrt_capture_height);
+	WINRT_IMPORT(winrt_capture_is_closed);
 
 	return success;
 }
@@ -381,11 +383,16 @@ static void wc_tick(void *data, float seconds)
 	struct window_capture *wc = data;
 	RECT rect;
 	bool reset_capture = false;
+	bool winrt_capture_failed = false;
 
 	if (!obs_source_showing(wc->source))
 		return;
 
-	if (!wc->window || !IsWindow(wc->window)) {
+	if (wc->capture_winrt && wc->exports.winrt_capture_is_closed(wc->capture_winrt)) {
+		winrt_capture_failed = true;
+	}
+
+	if (!wc->window || !IsWindow(wc->window) || winrt_capture_failed) {
 		if (!wc->title && !wc->class)
 			return;
 
