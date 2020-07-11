@@ -3064,6 +3064,8 @@ static const AVal av_NetStream_Play_UnpublishNotify =
 static const AVal av_NetStream_Publish_Start = AVC("NetStream.Publish.Start");
 static const AVal av_NetStream_Publish_Rejected = AVC("NetStream.Publish.Rejected");
 static const AVal av_NetStream_Publish_Denied = AVC("NetStream.Publish.Denied");
+static const AVal av_NetStream_Publish_BadName = AVC("NetStream.Publish.BadName");
+
 
 /* Returns 0 for OK/Failed/error, 1 for 'Stop or Complete' */
 static int
@@ -3314,7 +3316,8 @@ HandleInvoke(RTMP *r, const char *body, unsigned int nBodySize)
                 || AVMATCH(&code, &av_NetStream_Play_StreamNotFound)
                 || AVMATCH(&code, &av_NetConnection_Connect_InvalidApp)
                 || AVMATCH(&code, &av_NetStream_Publish_Rejected)
-                || AVMATCH(&code, &av_NetStream_Publish_Denied))
+                || AVMATCH(&code, &av_NetStream_Publish_Denied)
+                || AVMATCH(&code, &av_NetStream_Publish_BadName))
         {
             r->m_stream_id = -1;
             RTMP_Close(r);
@@ -3375,6 +3378,14 @@ HandleInvoke(RTMP *r, const char *body, unsigned int nBodySize)
                 RTMP_SendPause(r, FALSE, r->m_pauseStamp);
                 r->m_pausing = 3;
             }
+        }
+
+        else
+        {
+            if (description.av_len)
+                RTMP_Log(RTMP_LOGWARNING, "Unhandled: %s:\n%s (%s)", r->Link.tcUrl.av_val, code.av_val, description.av_val);
+            else
+                RTMP_Log(RTMP_LOGWARNING, "Unhandled: %s:\n%s", r->Link.tcUrl.av_val, code.av_val);
         }
     }
     else if (AVMATCH(&method, &av_playlist_ready))
