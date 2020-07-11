@@ -5321,6 +5321,7 @@ void OBSBasic::StartStreaming()
 	SaveProject();
 
 	ui->streamButton->setEnabled(false);
+	ui->streamButton->setChecked(false);
 	ui->streamButton->setText(QTStr("Basic.Main.Connecting"));
 
 	if (sysTrayStream) {
