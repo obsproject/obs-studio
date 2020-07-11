@@ -45,6 +45,7 @@ CI_QT_VERSION=$(cat ${CI_WORKFLOW} | sed -En "s/[ ]+QT_VERSION: '([0-9\.]+)'/\1/
 
 BUILD_DEPS=(
     "obs-deps ${MACOS_DEPS_VERSION:-${CI_DEPS_VERSION}}"
+    "qt-deps ${QT_VERSION:-${CI_QT_VERSION}} ${MACOS_DEPS_VERSION:-${CI_DEPS_VERSION}}"
     "cef ${CEF_BUILD_VERSION:-${CI_CEF_VERSION}}"
     "vlc ${VLC_VERSION:-${CI_VLC_VERSION}}"
     "sparkle ${SPARKLE_VERSION:-${CI_SPARKLE_VERSION}}"
@@ -102,19 +103,7 @@ install_homebrew_deps() {
         exit 1
     fi
 
-    info "Specific Swig and Qt versions will be installed and *pinned* on your system."
-
-    if [ -d "$(brew --cellar)/swig" ]; then
-         brew unlink swig
-    fi
-
-    if [ -d "$(brew --cellar)/qt" ]; then
-         brew unlink qt
-    fi
-
     brew bundle --file ${CI_SCRIPTS}/Brewfile
-    brew pin qt
-    brew pin swig
 }
 
 check_ccache() {
@@ -127,9 +116,19 @@ install_obs-deps() {
     hr "Setting up pre-built macOS OBS dependencies v${1}"
     ensure_dir ${DEPS_BUILD_DIR}
     step "Download..."
-    curl -s -L -C - -O https://github.com/obsproject/obs-deps/releases/download/${1}/osx-deps-${1}.tar.gz
+    curl -s -L -C - -O https://github.com/obsproject/obs-deps/releases/download/${1}/macos-deps-${1}.tar.gz
     step "Unpack..."
-    tar -xf ./osx-deps-${1}.tar.gz -C /tmp
+    tar -xf ./macos-deps-${1}.tar.gz -C /tmp
+}
+
+install_qt-deps() {
+    hr "Setting up pre-built dependency QT v${1}"
+    ensure_dir ${DEPS_BUILD_DIR}
+    step "Download..."
+    curl -s -L -C - -O https://github.com/obsproject/obs-deps/releases/download/${2}/macos-qt-${1}-${2}.tar.gz
+    step "Unpack..."
+    tar -xf ./macos-qt-${1}-${2}.tar.gz -C /tmp
+    xattr -r -d com.apple.quarantine /tmp/obsdeps
 }
 
 install_vlc() {
@@ -233,8 +232,9 @@ configure_obs_build() {
     hr "Run CMAKE for OBS..."
     cmake -DENABLE_SPARKLE_UPDATER=ON \
         -DCMAKE_OSX_DEPLOYMENT_TARGET=10.11 \
-        -DQTDIR="/usr/local/Cellar/qt/${QT_VERSION:-${CI_QT_VERSION}}" \
-        -DDepsPath=/tmp/obsdeps \
+        -DQTDIR="/tmp/obsdeps" \
+        -DSWIGDIR="/tmp/obsdeps" \
+        -DDepsPath="/tmp/obsdeps" \
         -DVLCPath="${DEPS_BUILD_DIR}/vlc-${VLC_VERSION:-${CI_VLC_VERSION}}" \
         -DBUILD_BROWSER=ON \
         -DBROWSER_DEPLOY=ON \
@@ -242,6 +242,7 @@ configure_obs_build() {
         -DWITH_RTMPS=ON \
         -DCEF_ROOT_DIR="${DEPS_BUILD_DIR}/cef_binary_${CEF_BUILD_VERSION:-${CI_CEF_VERSION}}_macosx64" \
         ..
+
 }
 
 run_obs_build() {
@@ -261,15 +262,16 @@ bundle_dylibs() {
 
     hr "Bundle dylibs for macOS application"
 
-    step "Fix mbedtls for obs-outputs..."
-    install_name_tool -change libmbedtls.12.dylib @executable_path/../Frameworks/libmbedtls.12.dylib ./OBS.app/Contents/Plugins/obs-outputs.so
-    install_name_tool -change libmbedcrypto.3.dylib @executable_path/../Frameworks/libmbedcrypto.3.dylib ./OBS.app/Contents/Plugins/obs-outputs.so
-    install_name_tool -change libmbedx509.0.dylib @executable_path/../Frameworks/libmbedx509.0.dylib ./OBS.app/Contents/Plugins/obs-outputs.so
+    # step "Fix mbedtls for obs-outputs..."
+    # install_name_tool -change libmbedtls.12.dylib @executable_path/../Frameworks/libmbedtls.12.dylib ./OBS.app/Contents/Plugins/obs-outputs.so
+    # install_name_tool -change libmbedcrypto.3.dylib @executable_path/../Frameworks/libmbedcrypto.3.dylib ./OBS.app/Contents/Plugins/obs-outputs.so
+    # install_name_tool -change libmbedx509.0.dylib @executable_path/../Frameworks/libmbedx509.0.dylib ./OBS.app/Contents/Plugins/obs-outputs.so
 
     step "Run dylibBundler.."
     ${CI_SCRIPTS}/app/dylibBundler -cd -of -a ./OBS.app -q -f \
         -s ./OBS.app/Contents/MacOS \
         -s "${DEPS_BUILD_DIR}/sparkle/Sparkle.framework" \
+        -s ./rundir/RelWithDebInfo/bin/ \
         -x ./OBS.app/Contents/PlugIns/coreaudio-encoder.so \
         -x ./OBS.app/Contents/PlugIns/decklink-ouput-ui.so \
         -x ./OBS.app/Contents/PlugIns/frontend-tools.so \
@@ -295,7 +297,7 @@ bundle_dylibs() {
         -x ./OBS.app/Contents/PlugIns/obs-libfdk.so \
         -x ./OBS.app/Contents/PlugIns/obs-outputs.so
     step "Move libobs-opengl to final destination"
-    mv ./OBS.app/Contents/MacOS/libobs-opengl.so ./OBS.app/Contents/Frameworks
+    cp ./libobs-opengl/libobs-opengl.so ./OBS.app/Contents/Frameworks
 }
 
 install_frameworks() {
@@ -310,10 +312,6 @@ install_frameworks() {
     step "Copy Framework..."
     sudo cp -R "${DEPS_BUILD_DIR}/cef_binary_${CEF_BUILD_VERSION:-${CI_CEF_VERSION}}_macosx64/Release/Chromium Embedded Framework.framework" ./OBS.app/Contents/Frameworks/
     sudo chown -R $(whoami) ./OBS.app/Contents/Frameworks/
-    step "Fix dylib references in obs-browser.so"
-    install_name_tool -change /usr/local/Cellar/qt/${QT_VERSION:-${CI_QT_VERSION}}/QtGui.framework/Versions/5/QtGui @executable_path/../Frameworks/QtGui.framework/Versions/5/QtGui ./OBS.app/Contents/Plugins/obs-browser.so
-    install_name_tool -change /usr/local/Cellar/qt/${QT_VERSION:-${CI_QT_VERSION}}/lib/QtCore.framework/Versions/5/QtCore @executable_path/../Frameworks/QtCore.framework/Versions/5/QtCore ./OBS.app/Contents/Plugins/obs-browser.so
-    install_name_tool -change /usr/local/Cellar/qt/${QT_VERSION:-${CI_QT_VERSION}}/lib/QtWidgets.framework/Versions/5/QtWidgets @executable_path/../Frameworks/QtWidgets.framework/Versions/5/QtWidgets ./OBS.app/Contents/Plugins/obs-browser.so
 }
 
 prepare_macos_bundle() {
@@ -332,7 +330,9 @@ prepare_macos_bundle() {
     mkdir OBS.app/Contents/PlugIns
     mkdir OBS.app/Contents/Resources
 
-    cp -R rundir/RelWithDebInfo/bin/ ./OBS.app/Contents/MacOS
+    cp rundir/RelWithDebInfo/bin/obs ./OBS.app/Contents/MacOS
+    cp rundir/RelWithDebInfo/bin/obs-ffmpeg-mux ./OBS.app/Contents/MacOS
+    cp rundir/RelWithDebInfo/bin/libobsglad.0.dylib ./OBS.app/Contents/MacOS
     cp -R rundir/RelWithDebInfo/data ./OBS.app/Contents/Resources
     cp ${CI_SCRIPTS}/app/obs.icns ./OBS.app/Contents/Resources
     cp -R rundir/RelWithDebInfo/obs-plugins/ ./OBS.app/Contents/PlugIns
@@ -501,7 +501,7 @@ full-build-macos() {
         set -- ${DEPENDENCY}
         trap "caught_error ${DEPENDENCY}" ERR
         FUNC_NAME="install_${1}"
-        ${FUNC_NAME} ${2}
+        ${FUNC_NAME} ${2} ${3}
     done
 
     check_ccache
