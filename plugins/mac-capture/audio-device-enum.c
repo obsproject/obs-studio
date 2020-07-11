@@ -11,7 +11,10 @@ static inline bool device_is_input(char *device)
 {
 	return astrstri(device, "soundflower") == NULL &&
 	       astrstri(device, "wavtap") == NULL &&
-	       astrstri(device, "soundsiphon") == NULL;
+	       astrstri(device, "soundsiphon") == NULL &&
+	       astrstri(device, "ishowu") == NULL &&
+	       astrstri(device, "blackhole") == NULL &&
+	       astrstri(device, "loopback") == NULL;
 }
 
 static inline bool enum_success(OSStatus stat, const char *msg)
