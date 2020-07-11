@@ -72,7 +72,8 @@ struct vk_frame_data {
 
 struct vk_family_data {
 	struct vk_frame_data frames[OBJ_MAX];
-	uint32_t image_count;
+	uint32_t frame_index;
+	uint32_t frame_count;
 };
 
 struct vk_data {
@@ -193,10 +194,10 @@ static void vk_shtex_clear_fence(const struct vk_data *data,
 static void vk_shtex_wait_until_pool_idle(struct vk_data *data,
 					  struct vk_family_data *family_data)
 {
-	for (uint32_t image_idx = 0; image_idx < family_data->image_count;
-	     image_idx++) {
+	for (uint32_t frame_idx = 0; frame_idx < family_data->frame_count;
+	     frame_idx++) {
 		struct vk_frame_data *frame_data =
-			&family_data->frames[image_idx];
+			&family_data->frames[frame_idx];
 		if (frame_data->cmd_pool != VK_NULL_HANDLE)
 			vk_shtex_clear_fence(data, frame_data);
 	}
@@ -766,7 +767,8 @@ static void vk_shtex_create_family_objects(struct vk_data *data,
 		debug_res("CreateFence", res);
 	}
 
-	family_data->image_count = image_count;
+	family_data->frame_index = 0;
+	family_data->frame_count = image_count;
 }
 
 static void vk_shtex_destroy_fence(struct vk_data *data, bool *cmd_buffer_busy,
@@ -786,10 +788,10 @@ static void vk_shtex_destroy_fence(struct vk_data *data, bool *cmd_buffer_busy,
 static void vk_shtex_destroy_family_objects(struct vk_data *data,
 					    struct vk_family_data *family_data)
 {
-	for (uint32_t image_idx = 0; image_idx < family_data->image_count;
-	     image_idx++) {
+	for (uint32_t frame_idx = 0; frame_idx < family_data->frame_count;
+	     frame_idx++) {
 		struct vk_frame_data *frame_data =
-			&family_data->frames[image_idx];
+			&family_data->frames[frame_idx];
 		bool *cmd_buffer_busy = &frame_data->cmd_buffer_busy;
 		VkFence *fence = &frame_data->fence;
 		vk_shtex_destroy_fence(data, cmd_buffer_busy, fence);
@@ -799,7 +801,7 @@ static void vk_shtex_destroy_family_objects(struct vk_data *data,
 		frame_data->cmd_pool = VK_NULL_HANDLE;
 	}
 
-	family_data->image_count = 0;
+	family_data->frame_count = 0;
 }
 
 static void vk_shtex_capture(struct vk_data *data,
@@ -836,13 +838,15 @@ static void vk_shtex_capture(struct vk_data *data,
 
 	struct vk_family_data *family_data = &data->families[fam_idx];
 	const uint32_t image_count = swap->image_count;
-	if (family_data->image_count < image_count) {
-		if (family_data->image_count > 0)
+	if (family_data->frame_count < image_count) {
+		if (family_data->frame_count > 0)
 			vk_shtex_destroy_family_objects(data, family_data);
 		vk_shtex_create_family_objects(data, fam_idx, image_count);
 	}
 
-	struct vk_frame_data *frame_data = &family_data->frames[image_index];
+	const uint32_t frame_index = family_data->frame_index;
+	struct vk_frame_data *frame_data = &family_data->frames[frame_index];
+	family_data->frame_index = (frame_index + 1) % family_data->frame_count;
 	vk_shtex_clear_fence(data, frame_data);
 
 	res = funcs->ResetCommandPool(data->device, frame_data->cmd_pool, 0);
@@ -1413,7 +1417,7 @@ static void VKAPI OBS_DestroyDevice(VkDevice device,
 		     fam_idx++) {
 			struct vk_family_data *family_data =
 				&data->families[fam_idx];
-			if (family_data->image_count > 0) {
+			if (family_data->frame_count > 0) {
 				vk_shtex_destroy_family_objects(data,
 								family_data);
 			}
