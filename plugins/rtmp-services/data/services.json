@@ -2011,6 +2011,21 @@
                 "max audio bitrate": 256,
                 "max video bitrate": 20480
             }
+        },
+        {
+            "name": "Taryana - Apachat | تاریانا - آپاچت",
+            "servers": [
+                {
+                    "name": "Global: Fastest (Recommended)",
+                    "url": "rtmp://cdn.apachat.com:443/multistream"
+                }
+            ],
+            "recommended": {
+                "keyint": 2,
+                "profile": "main",
+                "max video bitrate": 4000,
+                "max audio bitrate": 192
+            }
         }
     ]
 }
