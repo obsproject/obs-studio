@@ -420,10 +420,6 @@ bool OBSApp::InitGlobalConfigDefaults()
 				"KeepRecordingWhenStreamStops", false);
 	config_set_default_bool(globalConfig, "BasicWindow", "SysTrayEnabled",
 				true);
-#ifdef _WIN32
-	config_set_default_bool(globalConfig, "BasicWindow",
-				"TaskbarStatusColor", true);
-#endif
 	config_set_default_bool(globalConfig, "BasicWindow",
 				"SysTrayWhenStarted", false);
 	config_set_default_bool(globalConfig, "BasicWindow", "SaveProjectors",

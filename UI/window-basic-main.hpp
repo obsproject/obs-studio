@@ -465,9 +465,6 @@ private:
 	void ReplayBufferClicked();
 
 	bool sysTrayMinimizeToTray();
-#ifdef _WIN32
-	bool taskbarStatusColor();
-#endif
 
 	void EnumDialogs();
 
