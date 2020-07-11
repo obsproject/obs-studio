@@ -218,7 +218,7 @@ char *strdepad(char *str)
 	while (is_padding(*temp))
 		++temp;
 
-	len = strlen(str);
+	len = strlen(temp);
 	if (temp != str)
 		memmove(str, temp, len + 1);
 
@@ -247,7 +247,7 @@ wchar_t *wcsdepad(wchar_t *str)
 	while (*temp == ' ' || *temp == '\t')
 		++temp;
 
-	len = wcslen(str);
+	len = wcslen(temp);
 	if (temp != str)
 		memmove(str, temp, (len + 1) * sizeof(wchar_t));
 
