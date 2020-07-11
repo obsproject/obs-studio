@@ -398,6 +398,9 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->systemTrayEnabled,    CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->systemTrayWhenStarted,CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->systemTrayAlways,     CHECK_CHANGED,  GENERAL_CHANGED);
+#ifdef _WIN32
+	HookWidget(ui->taskbarColor,         CHECK_CHANGED,  GENERAL_CHANGED);
+#endif
 	HookWidget(ui->saveProjectors,       CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->snappingEnabled,      CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->screenSnapping,       CHECK_CHANGED,  GENERAL_CHANGED);
@@ -629,6 +632,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	delete ui->enableNewSocketLoop;
 	delete ui->enableLowLatencyMode;
 	delete ui->browserHWAccel;
+	delete ui->taskbarColor;
 	delete ui->sourcesGroup;
 #if defined(__APPLE__) || HAVE_PULSEAUDIO
 	delete ui->disableAudioDucking;
@@ -643,6 +647,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	ui->enableNewSocketLoop = nullptr;
 	ui->enableLowLatencyMode = nullptr;
 	ui->browserHWAccel = nullptr;
+	ui->taskbarColor = nullptr;
 	ui->sourcesGroup = nullptr;
 #if defined(__APPLE__) || HAVE_PULSEAUDIO
 	ui->disableAudioDucking = nullptr;
@@ -1198,7 +1203,11 @@ void OBSBasicSettings::LoadGeneralSettings()
 	bool systemTrayAlways = config_get_bool(
 		GetGlobalConfig(), "BasicWindow", "SysTrayMinimizeToTray");
 	ui->systemTrayAlways->setChecked(systemTrayAlways);
-
+#ifdef _WIN32
+	bool taskbarColor = config_get_bool(GetGlobalConfig(), "BasicWindow",
+					    "TaskbarStatusColor");
+	ui->taskbarColor->setChecked(taskbarColor);
+#endif
 	bool saveProjectors = config_get_bool(GetGlobalConfig(), "BasicWindow",
 					      "SaveProjectors");
 	ui->saveProjectors->setChecked(saveProjectors);
@@ -2994,7 +3003,15 @@ void OBSBasicSettings::SaveGeneralSettings()
 		config_set_bool(GetGlobalConfig(), "BasicWindow",
 				"SysTrayMinimizeToTray",
 				ui->systemTrayAlways->isChecked());
-
+#ifdef _WIN32
+	if (WidgetChanged(ui->taskbarColor)) {
+		bool enable_color = ui->taskbarColor->isChecked();
+		config_set_bool(GetGlobalConfig(), "BasicWindow",
+				"TaskbarStatusColor", enable_color);
+		if (!enable_color)
+			main->taskProg->setVisible(enable_color);
+	}
+#endif
 	if (WidgetChanged(ui->saveProjectors))
 		config_set_bool(GetGlobalConfig(), "BasicWindow",
 				"SaveProjectors",
