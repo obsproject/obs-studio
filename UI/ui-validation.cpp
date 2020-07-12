@@ -117,3 +117,47 @@ UIValidation::StreamSettingsConfirmation(QWidget *parent, OBSService service)
 
 	return StreamSettingsAction::ContinueStream;
 }
+
+StreamSettingsAction UIValidation::BandwidthModeConfirmation(QWidget *parent,
+							     OBSService service)
+{
+	obs_data_t *settings = obs_service_get_settings(service);
+	bool bwtest = obs_data_get_bool(settings, "bwtest");
+	obs_data_release(settings);
+
+	if (bwtest && parent->isVisible()) {
+
+		QMessageBox messageBox(parent);
+		messageBox.setWindowTitle(QTStr("ConfirmBWTest.Title"));
+		messageBox.setText(QTStr("ConfirmBWTest.Text"));
+
+		QPushButton *cancel;
+		QPushButton *settings;
+		QPushButton *stream;
+
+#ifdef __APPLE__
+#define ACCEPT_BUTTON QMessageBox::AcceptRole
+#define REJECT_BUTTON QMessageBox::ResetRole
+#else
+#define ACCEPT_BUTTON QMessageBox::NoRole
+#define REJECT_BUTTON QMessageBox::NoRole
+#endif
+		settings = messageBox.addButton(
+			QTStr("Basic.Settings.Stream.StreamSettingsWarning"),
+			QMessageBox::NoRole);
+		cancel = messageBox.addButton(QTStr("No"), REJECT_BUTTON);
+		stream = messageBox.addButton(QTStr("Yes"), ACCEPT_BUTTON);
+
+		messageBox.setDefaultButton(stream);
+		messageBox.setEscapeButton(cancel);
+
+		messageBox.setIcon(QMessageBox::Question);
+		messageBox.exec();
+
+		if (messageBox.clickedButton() == settings)
+			return StreamSettingsAction::OpenSettingsStream;
+		if (messageBox.clickedButton() == cancel)
+			return StreamSettingsAction::Cancel;
+	}
+	return StreamSettingsAction::ContinueStream;
+}

@@ -6083,9 +6083,9 @@ void OBSBasic::on_streamButton_clicked()
 			return;
 		}
 
-		auto action =
+		auto keyAction =
 			UIValidation::StreamSettingsConfirmation(this, service);
-		switch (action) {
+		switch (keyAction) {
 		case StreamSettingsAction::ContinueStream:
 			break;
 		case StreamSettingsAction::OpenSettingsStream:
@@ -6100,21 +6100,21 @@ void OBSBasic::on_streamButton_clicked()
 		bool confirm = config_get_bool(GetGlobalConfig(), "BasicWindow",
 					       "WarnBeforeStartingStream");
 
-		obs_data_t *settings = obs_service_get_settings(service);
-		bool bwtest = obs_data_get_bool(settings, "bwtest");
-		obs_data_release(settings);
+		auto bwAction =
+			UIValidation::BandwidthModeConfirmation(this, service);
+		switch (bwAction) {
+		case StreamSettingsAction::ContinueStream:
+			break;
+		case StreamSettingsAction::OpenSettingsStream:
+			on_action_Settings_triggered(1);
+			ui->streamButton->setChecked(false);
+			return;
+		case StreamSettingsAction::Cancel:
+			ui->streamButton->setChecked(false);
+			return;
+		}
 
-		if (bwtest && isVisible()) {
-			QMessageBox::StandardButton button =
-				OBSMessageBox::question(
-					this, QTStr("ConfirmBWTest.Title"),
-					QTStr("ConfirmBWTest.Text"));
-
-			if (button == QMessageBox::No) {
-				ui->streamButton->setChecked(false);
-				return;
-			}
-		} else if (confirm && isVisible()) {
+		if (confirm && isVisible()) {
 			QMessageBox::StandardButton button =
 				OBSMessageBox::question(
 					this, QTStr("ConfirmStart.Title"),

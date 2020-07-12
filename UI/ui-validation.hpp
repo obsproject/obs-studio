@@ -33,4 +33,7 @@ public:
 	 * settings are valid. */
 	static StreamSettingsAction
 	StreamSettingsConfirmation(QWidget *parent, OBSService service);
+
+	static StreamSettingsAction
+	BandwidthModeConfirmation(QWidget *parent, OBSService service);
 };
