@@ -30,6 +30,8 @@
 //#define WRITE_FLV_HEADER
 
 #define VIDEO_HEADER_SIZE 5
+#define VIDEODATA_AVCVIDEOPACKET 7.0
+#define AUDIODATA_AAC 10.0
 
 static inline double encoder_bitrate(obs_encoder_t *encoder)
 {
@@ -85,14 +87,15 @@ static bool build_flv_meta_data(obs_output_t *context, uint8_t **output,
 		enc_num_val(&enc, end, "height",
 			    (double)obs_encoder_get_height(vencoder));
 
-		enc_str_val(&enc, end, "videocodecid", "avc1");
+		enc_num_val(&enc, end, "videocodecid",
+			    VIDEODATA_AVCVIDEOPACKET);
 		enc_num_val(&enc, end, "videodatarate",
 			    encoder_bitrate(vencoder));
 		enc_num_val(&enc, end, "framerate",
 			    video_output_get_frame_rate(video));
 	}
 
-	enc_str_val(&enc, end, "audiocodecid", "mp4a");
+	enc_num_val(&enc, end, "audiocodecid", AUDIODATA_AAC);
 	enc_num_val(&enc, end, "audiodatarate", encoder_bitrate(aencoder));
 	enc_num_val(&enc, end, "audiosamplerate",
 		    (double)obs_encoder_get_sample_rate(aencoder));
