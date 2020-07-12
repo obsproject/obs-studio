@@ -649,6 +649,12 @@ static void ffmpeg_source_play_pause(void *data, bool pause)
 {
 	struct ffmpeg_source *s = data;
 
+	if (!s->media_valid)
+		ffmpeg_source_open(s);
+
+	if (!s->media_valid)
+		return;
+
 	mp_media_play_pause(&s->media, pause);
 
 	if (pause)
