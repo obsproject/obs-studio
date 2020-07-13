@@ -165,3 +165,17 @@ sudo install_name_tool -change /tmp/obsdeps/bin/libavutil.56.dylib @executable_p
 sudo install_name_tool -change /tmp/obsdeps/bin/libswscale.5.dylib @executable_path/libswscale.5.dylib $PWD/../packed_build/obs-plugins/slobs-virtual-cam.so
 sudo install_name_tool -change /tmp/obsdeps/bin/libavformat.58.dylib @executable_path/libavformat.58.dylib $PWD/../packed_build/obs-plugins/slobs-virtual-cam.so
 sudo install_name_tool -change /tmp/obsdeps/bin/libswresample.3.dylib @executable_path/libswresample.3.dylib $PWD/../packed_build/obs-plugins/slobs-virtual-cam.so
+
+
+sudo install_name_tool -change /tmp/obsdeps/bin/libmbedtls.12.dylib @executable_path/libmbedtls.12.dylib $PWD/../packed_build/bin/libavformat.58.dylib
+sudo install_name_tool -change /tmp/obsdeps/bin/libmbedx509.0.dylib @executable_path/libmbedx509.0.dylib $PWD/../packed_build/bin/libavformat.58.dylib
+sudo install_name_tool -change /tmp/obsdeps/bin/libmbedcrypto.3.dylib @executable_path/libmbedcrypto.3.dylib $PWD/../packed_build/bin/libavformat.58.dylib
+
+sudo install_name_tool -change /tmp/obsdeps/bin/libmbedtls.12.dylib @executable_path/libmbedtls.12.dylib $PWD/../packed_build/bin/libavdevice.58.dylib
+sudo install_name_tool -change /tmp/obsdeps/bin/libmbedx509.0.dylib @executable_path/libmbedx509.0.dylib $PWD/../packed_build/bin/libavdevice.58.dylib
+sudo install_name_tool -change /tmp/obsdeps/bin/libmbedcrypto.3.dylib @executable_path/libmbedcrypto.3.dylib $PWD/../packed_build/bin/libavdevice.58.dylib
+
+sudo install_name_tool -change /tmp/obsdeps/bin/libmbedtls.12.dylib @executable_path/libmbedtls.12.dylib $PWD/../packed_build/bin/libavfilter.7.dylib
+sudo install_name_tool -change /tmp/obsdeps/bin/libmbedx509.0.dylib @executable_path/libmbedx509.0.dylib $PWD/../packed_build/bin/libavfilter.7.dylib
+sudo install_name_tool -change /tmp/obsdeps/bin/libmbedcrypto.3.dylib @executable_path/libmbedcrypto.3.dylib $PWD/../packed_build/bin/libavfilter.7.dylib
+
