@@ -81,8 +81,8 @@ struct v4l2_data {
 	pthread_t thread;
 	os_event_t *event;
 
-	bool framerateUnchanged;
-	bool resolutionUnchanged;
+	bool framerate_unchanged;
+	bool resolution_unchanged;
 	int_fast32_t dev;
 	int width;
 	int height;
@@ -976,28 +976,28 @@ static bool v4l2_settings_changed(struct v4l2_data *data, obs_data_t *settings)
 		       obs_data_get_int(settings, "dv_timing");
 
 		if (obs_data_get_int(settings, "resolution") == -1 &&
-		    !data->resolutionUnchanged) {
-			data->resolutionUnchanged = true;
+		    !data->resolution_unchanged) {
+			data->resolution_unchanged = true;
 			res |= true;
 		} else if (obs_data_get_int(settings, "resolution") == -1 &&
-			   data->resolutionUnchanged) {
+			   data->resolution_unchanged) {
 			res |= false;
 		} else {
-			data->resolutionUnchanged = false;
+			data->resolution_unchanged = false;
 			res |= (data->resolution !=
 				obs_data_get_int(settings, "resolution")) &&
 			       (obs_data_get_int(settings, "resolution") != -1);
 		}
 
 		if (obs_data_get_int(settings, "framerate") == -1 &&
-		    !data->framerateUnchanged) {
-			data->framerateUnchanged = true;
+		    !data->framerate_unchanged) {
+			data->framerate_unchanged = true;
 			res |= true;
 		} else if (obs_data_get_int(settings, "framerate") == -1 &&
-			   data->framerateUnchanged) {
+			   data->framerate_unchanged) {
 			res |= false;
 		} else {
-			data->framerateUnchanged = false;
+			data->framerate_unchanged = false;
 			res |= (data->framerate !=
 				obs_data_get_int(settings, "framerate")) &&
 			       (obs_data_get_int(settings, "framerate") != -1);
@@ -1052,8 +1052,8 @@ static void *v4l2_create(obs_data_t *settings, obs_source_t *source)
 	struct v4l2_data *data = bzalloc(sizeof(struct v4l2_data));
 	data->dev = -1;
 	data->source = source;
-	data->resolutionUnchanged = false;
-	data->framerateUnchanged = false;
+	data->resolution_unchanged = false;
+	data->framerate_unchanged = false;
 
 	/* Bitch about build problems ... */
 #ifndef V4L2_CAP_DEVICE_CAPS
