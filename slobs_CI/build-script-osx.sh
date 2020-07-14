@@ -134,6 +134,11 @@ cp /usr/local/opt/libpng/lib/libpng16.16.dylib $PWD/../packed_build/bin/libpng16
 cp /usr/local/Cellar/speexdsp/1.2.0/lib/libspeexdsp.1.dylib $PWD/../packed_build/bin/libspeexdsp.1.dylib
 cp /usr/local/opt/openssl@1.1/lib/libssl.1.1.dylib $PWD/../packed_build/bin/libssl.1.1.dylib
 
+chmod +w $PWD/../packed_build/bin/libspeexdsp.1.dylib
+chmod +w $PWD/../packed_build/bin/libssl.1.1.dylib
+chmod +w $PWD/../packed_build/bin/libfdk-aac.2.dylib
+chmod +w $PWD/../packed_build/bin/libcurl.4.dylib
+
 sudo install_name_tool -change /usr/local/opt/openssl@1.1/lib/libssl.1.1.dylib @executable_path/libssl.1.1.dylib $PWD/../packed_build/bin/libdb-18.1.dylib
 sudo install_name_tool -change /usr/local/opt/openssl@1.1/lib/libcrypto.1.1.dylib @executable_path/libcrypto.1.1.dylib $PWD/../packed_build/bin/libdb-18.1.dylib
 
