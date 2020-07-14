@@ -778,6 +778,15 @@ char *os_generate_formatted_filename(const char *extension, bool space,
 				strcpy(convert, get_video_format_name(
 							ovi.output_format));
 				replace_text(&sf, pos, 3, convert);
+			} else if (astrcmp_n(cmp, "%VR", 3) == 0) {
+				strcpy(convert,
+				       get_video_range_name(ovi.output_format,
+							    ovi.range));
+				replace_text(&sf, pos, 3, convert);
+			} else if (astrcmp_n(cmp, "%CS", 3) == 0) {
+				strcpy(convert, get_video_colorspace_name(
+							ovi.colorspace));
+				replace_text(&sf, pos, 3, convert);
 			}
 		}
 
