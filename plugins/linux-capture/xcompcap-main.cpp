@@ -104,7 +104,7 @@ void XCompcapMain::defaults(obs_data_t *settings)
 	obs_data_set_default_bool(settings, "exclude_alpha", false);
 }
 
-#define FIND_WINDOW_INTERVAL 2.0
+#define FIND_WINDOW_INTERVAL 0.5
 
 struct XCompcapMain_private {
 	XCompcapMain_private()
