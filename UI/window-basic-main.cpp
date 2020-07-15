@@ -4649,8 +4649,6 @@ void OBSBasic::CreateSourcePopupMenu(int idx, bool preview)
 		action->setCheckable(true);
 		action->setChecked(
 			obs_display_enabled(ui->preview->GetDisplay()));
-		if (IsPreviewProgramMode())
-			action->setEnabled(false);
 
 		popup.addAction(ui->actionLockPreview);
 		popup.addMenu(ui->scalingMenu);
@@ -6711,6 +6709,10 @@ void OBSBasic::EnablePreviewDisplay(bool enable)
 	obs_display_set_enabled(ui->preview->GetDisplay(), enable);
 	ui->preview->setVisible(enable);
 	ui->previewDisabledWidget->setVisible(!enable);
+	if (programWidget) {
+		programWidget->setVisible(enable);
+	}
+	UpdatePreviewProgramLabels();
 }
 
 void OBSBasic::TogglePreview()
@@ -8119,10 +8121,10 @@ void OBSBasic::UpdatePreviewProgramLabels()
 	bool labels = config_get_bool(GetGlobalConfig(), "BasicWindow",
 				      "StudioModeLabels");
 
-	if (!previewProgramMode)
+	if (!IsPreviewProgramMode())
 		ui->previewLabel->setHidden(true);
 	else
-		ui->previewLabel->setHidden(!labels);
+		ui->previewLabel->setHidden(!labels || !previewEnabled);
 
 	if (programLabel)
 		programLabel->setHidden(!labels);

@@ -1311,9 +1311,6 @@ void OBSBasic::SetPreviewProgramMode(bool enabled)
 	os_atomic_set_bool(&previewProgramMode, enabled);
 
 	if (IsPreviewProgramMode()) {
-		if (!previewEnabled)
-			EnablePreviewDisplay(true);
-
 		CreateProgramDisplay();
 		CreateProgramOptions();
 
@@ -1375,6 +1372,10 @@ void OBSBasic::SetPreviewProgramMode(bool enabled)
 		ui->previewLayout->setAlignment(programOptions,
 						Qt::AlignCenter);
 
+		if (!previewEnabled) {
+			programWidget->setVisible(false);
+		}
+
 		if (api)
 			api->on_event(OBS_FRONTEND_EVENT_STUDIO_MODE_ENABLED);
 
@@ -1406,9 +1407,6 @@ void OBSBasic::SetPreviewProgramMode(bool enabled)
 
 		for (QuickTransition &qt : quickTransitions)
 			qt.button = nullptr;
-
-		if (!previewEnabled)
-			EnablePreviewDisplay(false);
 
 		ui->transitions->setEnabled(true);
 		tBarActive = false;
