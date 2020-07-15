@@ -389,13 +389,7 @@ OBSBasic::OBSBasic(QWidget *parent)
 	ui->previewLabel->setProperty("themeID", "previewProgramLabels");
 	ui->previewLabel->style()->polish(ui->previewLabel);
 
-	bool labels = config_get_bool(GetGlobalConfig(), "BasicWindow",
-				      "StudioModeLabels");
-
-	if (!previewProgramMode)
-		ui->previewLabel->setHidden(true);
-	else
-		ui->previewLabel->setHidden(!labels);
+	UpdatePreviewProgramLabels();
 
 	ui->previewDisabledWidget->setContextMenuPolicy(Qt::CustomContextMenu);
 	connect(ui->previewDisabledWidget,
@@ -3711,19 +3705,12 @@ void OBSBasic::ResetUI()
 	bool studioPortraitLayout = config_get_bool(
 		GetGlobalConfig(), "BasicWindow", "StudioPortraitLayout");
 
-	bool labels = config_get_bool(GetGlobalConfig(), "BasicWindow",
-				      "StudioModeLabels");
-
 	if (studioPortraitLayout)
 		ui->previewLayout->setDirection(QBoxLayout::TopToBottom);
 	else
 		ui->previewLayout->setDirection(QBoxLayout::LeftToRight);
 
-	if (previewProgramMode)
-		ui->previewLabel->setHidden(!labels);
-
-	if (programLabel)
-		programLabel->setHidden(!labels);
+	UpdatePreviewProgramLabels();
 }
 
 int OBSBasic::ResetVideo()
@@ -8125,4 +8112,18 @@ void OBSBasic::UpdateProjectorAlwaysOnTop(bool top)
 {
 	for (size_t i = 0; i < projectors.size(); i++)
 		SetAlwaysOnTop(projectors[i], top);
+}
+
+void OBSBasic::UpdatePreviewProgramLabels()
+{
+	bool labels = config_get_bool(GetGlobalConfig(), "BasicWindow",
+				      "StudioModeLabels");
+
+	if (!previewProgramMode)
+		ui->previewLabel->setHidden(true);
+	else
+		ui->previewLabel->setHidden(!labels);
+
+	if (programLabel)
+		programLabel->setHidden(!labels);
 }
