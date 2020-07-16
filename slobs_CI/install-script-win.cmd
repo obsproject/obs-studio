@@ -7,11 +7,14 @@ set CefFileName=cef_binary_%CEF_VERSION%_windows64_minimal
 set GPUPriority=1
 set AMD_OLD=enc-amf_old
 set AMD_URL=https://obs-studio-deployment.s3-us-west-2.amazonaws.com/%AMD_OLD%.zip
+set OBS_VIRTUALCAM=obs-virtualsource_32bit
+set OBS_VIRTUALCAM_URL=https://obs-studio-deployment.s3-us-west-2.amazonaws.com/%OBS_VIRTUALCAM%.zip
 
 if exist %DEPS%.zip (curl -kLO %DepsURL% -f --retry 5 -z %DEPS%.zip) else (curl -kLO %DepsURL% -f --retry 5 -C -)
 if exist vlc.zip (curl -kLO %VLCURL% -f --retry 5 -z vlc.zip) else (curl -kLO %VLCURL% -f --retry 5 -C -)
 if exist %CefFileName%.zip (curl -kLO %CEFURL%/%CefFileName%.zip -f --retry 5 -z %CefFileName%.zip) else (curl -kLO %CEFURL%/%CefFileName%.zip -f --retry 5 -C -)
 if exist %AMD_OLD%.zip (curl -kLO %AMD_URL% -f --retry 5 -z %AMD_OLD%.zip) else (curl -kLO %AMD_URL% -f --retry 5 -C -)
+if exist %OBS_VIRTUALCAM%.zip (curl -kLO %OBS_VIRTUALCAM_URL% -f --retry 5 -z %OBS_VIRTUALCAM%.zip) else (curl -kLO %OBS_VIRTUALCAM_URL% -f --retry 5 -C -)
 
 mkdir build
 
@@ -19,6 +22,7 @@ mkdir build
 7z x vlc.zip -ovlc
 7z x %CefFileName%.zip -oCEF
 7z x %AMD_OLD%.zip -o%AMD_OLD%
+7z x %OBS_VIRTUALCAM%.zip -o%OBS_VIRTUALCAM%
 
 set CEFPATH=%CD%\CEF\%CefFileName%
 
@@ -51,3 +55,6 @@ cmake -H. ^
 cmake --build %CD%\build --target install --config %BuildConfig% -v
 
 move %CD%\%AMD_OLD% %CD%\%InstallPath%\%AMD_OLD%
+
+mkdir %CD%\%InstallPath%\data\obs-plugins\obs-virtualoutput
+move %CD%\%OBS_VIRTUALCAM% %CD%\%InstallPath%\data\obs-plugins\obs-virtualoutput\%OBS_VIRTUALCAM%
