@@ -98,6 +98,7 @@ struct mp_media {
 	bool pause;
 	bool reset_ts;
 	bool seek;
+	bool seek_next_ts;
 	int64_t seek_pos;
 };
 

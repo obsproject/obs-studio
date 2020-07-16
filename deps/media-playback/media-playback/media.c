@@ -419,13 +419,19 @@ static void mp_media_calc_next_ns(mp_media_t *m)
 {
 	int64_t min_next_ns = mp_media_get_next_min_pts(m);
 	int64_t delta = min_next_ns - m->next_pts_ns;
+
+	if (m->seek_next_ts) {
+		delta = 0;
+		m->seek_next_ts = false;
+	} else {
 #ifdef _DEBUG
-	assert(delta >= 0);
+		assert(delta >= 0);
 #endif
-	if (delta < 0)
-		delta = 0;
-	if (delta > 3000000000)
-		delta = 0;
+		if (delta < 0)
+			delta = 0;
+		if (delta > 3000000000)
+			delta = 0;
+	}
 
 	m->next_ns += delta;
 	m->next_pts_ns = min_next_ns;
@@ -473,6 +479,7 @@ static bool mp_media_reset(mp_media_t *m)
 
 	m->eof = false;
 	m->base_ts += next_ts;
+	m->seek_next_ts = false;
 
 	pthread_mutex_lock(&m->mutex);
 	stopping = m->stopping;
@@ -684,6 +691,7 @@ static inline bool mp_media_thread(mp_media_t *m)
 		}
 
 		if (seek) {
+			m->seek_next_ts = true;
 			seek_to(m, seek_pos);
 			continue;
 		}
