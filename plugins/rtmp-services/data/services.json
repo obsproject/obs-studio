@@ -2017,7 +2017,7 @@
             "servers": [
                 {
                     "name": "Global: Fastest (Recommended)",
-                    "url": "rtmp://cdn.apachat.com:443/multistream"
+                    "url": "rtmp://cdn.apachat.com:443/"
                 }
             ],
             "recommended": {
