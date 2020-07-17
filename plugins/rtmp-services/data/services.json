@@ -1356,11 +1356,11 @@
             }
         },
         {
-            "name": "Madcat",
+            "name": "Trovo",
             "servers": [
                 {
                     "name": "Default",
-                    "url": "rtmp://73846.livepush.myqcloud.com/live/"
+                    "url": "rtmp://livepush.trovo.live/live/"
                 }
             ]
         },
