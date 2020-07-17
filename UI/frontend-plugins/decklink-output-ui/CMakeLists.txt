@@ -9,10 +9,13 @@ if(UNIX AND NOT APPLE)
 	find_package(X11 REQUIRED)
 	link_libraries(${X11_LIBRARIES})
 	include_directories(${X11_INCLUDE_DIR})
+
+	find_package(Qt5X11Extras REQUIRED)
 endif()
 
 set(decklink-ouput-ui_HEADERS
 	${decklink-ouput-ui_HEADERS}
+	../../qt-wrappers.hpp
 	../../properties-view.hpp
 	../../properties-view.moc.hpp
 	../../vertical-scroll-area.hpp
@@ -25,6 +28,7 @@ set(decklink-ouput-ui_HEADERS
 	)
 set(decklink-ouput-ui_SOURCES
 	${decklink-ouput-ui_SOURCES}
+	../../qt-wrappers.cpp
 	../../properties-view.cpp
 	../../vertical-scroll-area.cpp
 	../../double-slider.cpp
@@ -64,6 +68,12 @@ target_link_libraries(decklink-ouput-ui
 	obs-frontend-api
 	Qt5::Widgets
 	libobs)
+
+if(UNIX AND NOT APPLE)
+	target_link_libraries(decklink-ouput-ui
+		Qt5::X11Extras)
+endif()
+
 set_target_properties(decklink-ouput-ui PROPERTIES FOLDER "frontend")
 
 install_obs_plugin_with_data(decklink-ouput-ui data)

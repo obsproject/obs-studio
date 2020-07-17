@@ -412,9 +412,9 @@ void OBSBasic::on_actionExportSceneCollection_triggered()
 		return;
 	}
 
-	QString exportFile = QFileDialog::getSaveFileName(
-		this, QTStr("Basic.MainMenu.SceneCollection.Export"),
-		home + "/" + currentFile, "JSON Files (*.json)");
+	QString exportFile =
+		SaveFile(this, QTStr("Basic.MainMenu.SceneCollection.Export"),
+			 home + "/" + currentFile, "JSON Files (*.json)");
 
 	string file = QT_TO_UTF8(exportFile);
 

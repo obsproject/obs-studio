@@ -496,9 +496,8 @@ void OBSBasic::on_actionImportProfile_triggered()
 		return;
 	}
 
-	QString dir = QFileDialog::getExistingDirectory(
-		this, QTStr("Basic.MainMenu.Profile.Import"), home,
-		QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
+	QString dir = SelectDirectory(
+		this, QTStr("Basic.MainMenu.Profile.Import"), home);
 
 	if (!dir.isEmpty() && !dir.isNull()) {
 		QString inputPath = QString::fromUtf8(path);
@@ -543,9 +542,8 @@ void OBSBasic::on_actionExportProfile_triggered()
 		return;
 	}
 
-	QString dir = QFileDialog::getExistingDirectory(
-		this, QTStr("Basic.MainMenu.Profile.Export"), home,
-		QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
+	QString dir = SelectDirectory(
+		this, QTStr("Basic.MainMenu.Profile.Export"), home);
 
 	if (!dir.isEmpty() && !dir.isNull()) {
 		QString outputDir = dir + "/" + currentProfile;

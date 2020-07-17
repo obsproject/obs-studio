@@ -1,6 +1,7 @@
 #include "scripts.hpp"
 #include "frontend-tools-config.h"
 #include "../../properties-view.hpp"
+#include "../../qt-wrappers.hpp"
 
 #include <QFileDialog>
 #include <QPlainTextEdit>
@@ -319,19 +320,16 @@ void ScriptsTool::on_addScripts_clicked()
 		lastBrowsedDir = baseScriptPath;
 	}
 
-	QFileDialog dlg(this, obs_module_text("AddScripts"));
-	dlg.setFileMode(QFileDialog::ExistingFiles);
-	dlg.setDirectory(QDir(lastBrowsedDir.c_str()));
-	dlg.setNameFilter(filter);
-	dlg.exec();
-
-	QStringList files = dlg.selectedFiles();
+	QStringList files = OpenFiles(this,
+				      QT_UTF8(obs_module_text("AddScripts")),
+				      QT_UTF8(lastBrowsedDir.c_str()), filter);
 	if (!files.count())
 		return;
 
-	lastBrowsedDir = dlg.directory().path().toUtf8().constData();
-
 	for (const QString &file : files) {
+		lastBrowsedDir =
+			QFileInfo(file).absolutePath().toUtf8().constData();
+
 		QByteArray pathBytes = file.toUtf8();
 		const char *path = pathBytes.constData();
 
@@ -396,8 +394,8 @@ void ScriptsTool::on_scriptLog_clicked()
 void ScriptsTool::on_pythonPathBrowse_clicked()
 {
 	QString curPath = ui->pythonPath->text();
-	QString newPath = QFileDialog::getExistingDirectory(
-		this, ui->pythonPathLabel->text(), curPath);
+	QString newPath =
+		SelectDirectory(this, ui->pythonPathLabel->text(), curPath);
 
 	if (newPath.isEmpty())
 		return;
