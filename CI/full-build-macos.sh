@@ -231,7 +231,8 @@ configure_obs_build() {
 
     hr "Run CMAKE for OBS..."
     cmake -DENABLE_SPARKLE_UPDATER=ON \
-        -DCMAKE_OSX_DEPLOYMENT_TARGET=10.11 \
+        -DCMAKE_OSX_DEPLOYMENT_TARGET=10.13 \
+        -DDISABLE_PYTHON=ON  \
         -DQTDIR="/tmp/obsdeps" \
         -DSWIGDIR="/tmp/obsdeps" \
         -DDepsPath="/tmp/obsdeps" \
@@ -262,11 +263,6 @@ bundle_dylibs() {
 
     hr "Bundle dylibs for macOS application"
 
-    # step "Fix mbedtls for obs-outputs..."
-    # install_name_tool -change libmbedtls.12.dylib @executable_path/../Frameworks/libmbedtls.12.dylib ./OBS.app/Contents/Plugins/obs-outputs.so
-    # install_name_tool -change libmbedcrypto.3.dylib @executable_path/../Frameworks/libmbedcrypto.3.dylib ./OBS.app/Contents/Plugins/obs-outputs.so
-    # install_name_tool -change libmbedx509.0.dylib @executable_path/../Frameworks/libmbedx509.0.dylib ./OBS.app/Contents/Plugins/obs-outputs.so
-
     step "Run dylibBundler.."
     ${CI_SCRIPTS}/app/dylibBundler -cd -of -a ./OBS.app -q -f \
         -s ./OBS.app/Contents/MacOS \
@@ -291,7 +287,6 @@ bundle_dylibs() {
         -x ./OBS.app/Contents/PlugIns/rtmp-services.so \
         -x ./OBS.app/Contents/MacOS/obs-ffmpeg-mux \
         -x ./OBS.app/Contents/MacOS/obslua.so \
-        -x ./OBS.app/Contents/MacOS/_obspython.so \
         -x ./OBS.app/Contents/PlugIns/obs-x264.so \
         -x ./OBS.app/Contents/PlugIns/text-freetype2.so \
         -x ./OBS.app/Contents/PlugIns/obs-libfdk.so \
@@ -340,8 +335,8 @@ prepare_macos_bundle() {
     # Scripting plugins are required to be placed in same directory as binary
     if [ -d ./OBS.app/Contents/Resources/data/obs-scripting ]; then
         mv ./OBS.app/Contents/Resources/data/obs-scripting/obslua.so ./OBS.app/Contents/MacOS/
-        mv ./OBS.app/Contents/Resources/data/obs-scripting/_obspython.so ./OBS.app/Contents/MacOS/
-        mv ./OBS.app/Contents/Resources/data/obs-scripting/obspython.py ./OBS.app/Contents/MacOS/
+        # mv ./OBS.app/Contents/Resources/data/obs-scripting/_obspython.so ./OBS.app/Contents/MacOS/
+        # mv ./OBS.app/Contents/Resources/data/obs-scripting/obspython.py ./OBS.app/Contents/MacOS/
         rm -rf ./OBS.app/Contents/Resources/data/obs-scripting/
     fi
 
