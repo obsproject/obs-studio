@@ -30,18 +30,27 @@
 #define VkFunc PFN_vkVoidFunction
 #define EXPORT VK_LAYER_EXPORT
 
-#define OBJ_MAX 16
-
 /* use the loader's dispatch table pointer as a key for internal data maps */
 #define GET_LDT(x) (*(void **)x)
 
 static bool vulkan_seen = false;
-static SRWLOCK mutex = SRWLOCK_INIT; // Faster CRITICAL_SECTION
 
 /* ======================================================================== */
 /* hook data                                                                */
 
+struct vk_obj_node {
+	uint64_t obj;
+	struct vk_obj_node *next;
+};
+
+struct vk_obj_list {
+	struct vk_obj_node *root;
+	SRWLOCK mutex;
+};
+
 struct vk_swap_data {
+	struct vk_obj_node node;
+
 	VkSwapchainKHR sc;
 	VkExtent2D image_extent;
 	VkFormat format;
@@ -49,7 +58,7 @@ struct vk_swap_data {
 	VkImage export_image;
 	bool layout_initialized;
 	VkDeviceMemory export_mem;
-	VkImage swap_images[OBJ_MAX];
+	VkImage *swap_images;
 	uint32_t image_count;
 
 	HANDLE handle;
@@ -71,25 +80,42 @@ struct vk_frame_data {
 };
 
 struct vk_family_data {
-	struct vk_frame_data frames[OBJ_MAX];
+	struct vk_frame_data *frames;
 	uint32_t frame_index;
 	uint32_t frame_count;
 };
 
+struct vk_surf_data {
+	struct vk_obj_node node;
+
+	HWND hwnd;
+};
+
+struct vk_inst_data {
+	struct vk_obj_node node;
+
+	bool valid;
+
+	struct vk_inst_funcs funcs;
+	struct vk_obj_list surfaces;
+};
+
 struct vk_data {
+	struct vk_obj_node node;
+
 	bool valid;
 
 	struct vk_device_funcs funcs;
 	VkPhysicalDevice phy_device;
 	VkDevice device;
-	struct vk_swap_data swaps[OBJ_MAX];
+	struct vk_obj_list swaps;
 	struct vk_swap_data *cur_swap;
-	uint32_t swap_idx;
 
-	struct vk_queue_data queues[OBJ_MAX];
+	struct vk_queue_data *queues;
 	uint32_t queue_count;
 
-	struct vk_family_data families[OBJ_MAX];
+	struct vk_family_data *families;
+	uint32_t family_capacity;
 	VkExternalMemoryProperties external_mem_props;
 
 	struct vk_inst_data *inst_data;
@@ -101,82 +127,129 @@ struct vk_data {
 	ID3D11DeviceContext *d3d11_context;
 };
 
+/* ------------------------------------------------------------------------- */
+
+static void *vk_alloc(const VkAllocationCallbacks *ac, size_t size,
+		      size_t alignment, enum VkSystemAllocationScope scope)
+{
+	return ac ? ac->pfnAllocation(ac->pUserData, size, alignment, scope)
+		  : _aligned_malloc(size, alignment);
+}
+
+static void vk_free(const VkAllocationCallbacks *ac, void *memory)
+{
+	if (ac)
+		ac->pfnFree(ac->pUserData, memory);
+	else
+		_aligned_free(memory);
+}
+
+static void add_obj_data(struct vk_obj_list *list, uint64_t obj, void *data)
+{
+	AcquireSRWLockExclusive(&list->mutex);
+
+	struct vk_obj_node *const node = data;
+	node->obj = obj;
+	node->next = list->root;
+	list->root = node;
+
+	ReleaseSRWLockExclusive(&list->mutex);
+}
+
+static struct vk_obj_node *get_obj_data(struct vk_obj_list *list, uint64_t obj)
+{
+	struct vk_obj_node *data = NULL;
+
+	AcquireSRWLockExclusive(&list->mutex);
+
+	struct vk_obj_node *node = list->root;
+	while (node) {
+		if (node->obj == obj) {
+			data = node;
+			break;
+		}
+
+		node = node->next;
+	}
+
+	ReleaseSRWLockExclusive(&list->mutex);
+
+	return data;
+}
+
+static struct vk_obj_node *remove_obj_data(struct vk_obj_list *list,
+					   uint64_t obj)
+{
+	struct vk_obj_node *data = NULL;
+
+	AcquireSRWLockExclusive(&list->mutex);
+
+	struct vk_obj_node *prev = NULL;
+	struct vk_obj_node *node = list->root;
+	while (node) {
+		if (node->obj == obj) {
+			data = node;
+			if (prev)
+				prev->next = node->next;
+			else
+				list->root = node->next;
+			break;
+		}
+
+		prev = node;
+		node = node->next;
+	}
+
+	ReleaseSRWLockExclusive(&list->mutex);
+
+	return data;
+}
+
+static void init_obj_list(struct vk_obj_list *list)
+{
+	list->root = NULL;
+	InitializeSRWLock(&list->mutex);
+}
+
+/* ------------------------------------------------------------------------- */
+
+static struct vk_obj_list devices;
+
+static struct vk_data *add_device_data(VkDevice device,
+				       const VkAllocationCallbacks *ac)
+{
+	struct vk_data *data = vk_alloc(ac, sizeof(struct vk_data),
+					_Alignof(struct vk_data),
+					VK_SYSTEM_ALLOCATION_SCOPE_DEVICE);
+	add_obj_data(&devices, (uint64_t)GET_LDT(device), data);
+	return data;
+}
+
+static struct vk_data *get_device_data(void *obj)
+{
+	return (struct vk_data *)get_obj_data(&devices, (uint64_t)GET_LDT(obj));
+}
+
+/* ------------------------------------------------------------------------- */
+
+static struct vk_swap_data *add_swap_data(struct vk_data *data,
+					  VkSwapchainKHR sc)
+{
+	struct vk_swap_data *swap = vk_alloc(data->ac,
+					     sizeof(struct vk_swap_data),
+					     _Alignof(struct vk_swap_data),
+					     VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);
+	add_obj_data(&data->swaps, (uint64_t)sc, swap);
+	return swap;
+}
+
 static struct vk_swap_data *get_swap_data(struct vk_data *data,
 					  VkSwapchainKHR sc)
 {
-	for (int i = 0; i < OBJ_MAX; i++) {
-		if (data->swaps[i].sc == sc) {
-			return &data->swaps[i];
-		}
-	}
-
-	debug("get_swap_data failed, swapchain not found");
-	return NULL;
-}
-
-static struct vk_swap_data *get_new_swap_data(struct vk_data *data)
-{
-	for (int i = 0; i < OBJ_MAX; i++) {
-		if (data->swaps[i].sc == VK_NULL_HANDLE) {
-			return &data->swaps[i];
-		}
-	}
-
-	debug("get_new_swap_data failed, no more free slot");
-	return NULL;
+	return (struct vk_swap_data *)get_obj_data(&data->swaps, (uint64_t)sc);
 }
 
 /* ------------------------------------------------------------------------- */
-
-static inline size_t find_obj_idx(void *objs[], void *obj)
-{
-	size_t idx = SIZE_MAX;
-
-	AcquireSRWLockExclusive(&mutex);
-	for (size_t i = 0; i < OBJ_MAX; i++) {
-		if (objs[i] == obj) {
-			idx = i;
-			break;
-		}
-	}
-	ReleaseSRWLockExclusive(&mutex);
-
-	return idx;
-}
-
-static size_t get_obj_idx(void *objs[], void *obj)
-{
-	size_t idx = SIZE_MAX;
-
-	AcquireSRWLockExclusive(&mutex);
-	for (size_t i = 0; i < OBJ_MAX; i++) {
-		if (objs[i] == obj) {
-			idx = i;
-			break;
-		}
-		if (!objs[i] && idx == SIZE_MAX) {
-			idx = i;
-		}
-	}
-	ReleaseSRWLockExclusive(&mutex);
-	return idx;
-}
-
-/* ------------------------------------------------------------------------- */
-
-static struct vk_data device_data[OBJ_MAX] = {0};
-static void *devices[OBJ_MAX] = {0};
-
-static inline struct vk_data *get_device_data(void *dev)
-{
-	size_t idx = get_obj_idx(devices, GET_LDT(dev));
-	if (idx == SIZE_MAX) {
-		debug("out of device slots");
-		return NULL;
-	}
-
-	return &device_data[idx];
-}
 
 static void vk_shtex_clear_fence(const struct vk_data *data,
 				 struct vk_frame_data *frame_data)
@@ -205,8 +278,7 @@ static void vk_shtex_wait_until_pool_idle(struct vk_data *data,
 
 static void vk_shtex_wait_until_idle(struct vk_data *data)
 {
-	for (uint32_t fam_idx = 0; fam_idx < _countof(data->families);
-	     fam_idx++) {
+	for (uint32_t fam_idx = 0; fam_idx < data->family_capacity; fam_idx++) {
 		struct vk_family_data *family_data = &data->families[fam_idx];
 		vk_shtex_wait_until_pool_idle(data, family_data);
 	}
@@ -218,9 +290,8 @@ static void vk_shtex_free(struct vk_data *data)
 
 	vk_shtex_wait_until_idle(data);
 
-	for (int swap_idx = 0; swap_idx < OBJ_MAX; swap_idx++) {
-		struct vk_swap_data *swap = &data->swaps[swap_idx];
-
+	struct vk_swap_data *swap = (struct vk_swap_data *)data->swaps.root;
+	while (swap) {
 		if (swap->export_image)
 			data->funcs.DestroyImage(data->device,
 						 swap->export_image, data->ac);
@@ -239,6 +310,8 @@ static void vk_shtex_free(struct vk_data *data)
 		swap->export_image = VK_NULL_HANDLE;
 
 		swap->captured = false;
+
+		swap = (struct vk_swap_data *)swap->node.next;
 	}
 
 	if (data->d3d11_context) {
@@ -255,146 +328,52 @@ static void vk_shtex_free(struct vk_data *data)
 	hlog("------------------ vulkan capture freed ------------------");
 }
 
-static void vk_remove_device(void *dev)
-{
-	size_t idx = find_obj_idx(devices, GET_LDT(dev));
-	if (idx == SIZE_MAX) {
-		return;
-	}
-
-	struct vk_data *data = &device_data[idx];
-
-	memset(data, 0, sizeof(*data));
-
-	AcquireSRWLockExclusive(&mutex);
-	devices[idx] = NULL;
-	ReleaseSRWLockExclusive(&mutex);
-}
-
 /* ------------------------------------------------------------------------- */
-
-struct vk_surf_data {
-	VkSurfaceKHR surf;
-	HWND hwnd;
-	struct vk_surf_data *next;
-};
-
-struct vk_inst_data {
-	bool valid;
-
-	struct vk_inst_funcs funcs;
-	struct vk_surf_data *surfaces;
-};
-
-static void *object_malloc(const VkAllocationCallbacks *ac, size_t size,
-			   size_t alignment)
-{
-	return ac ? ac->pfnAllocation(ac->pUserData, size, alignment,
-				      VK_SYSTEM_ALLOCATION_SCOPE_OBJECT)
-		  : _aligned_malloc(size, alignment);
-}
-
-static void object_free(const VkAllocationCallbacks *ac, void *memory)
-{
-	if (ac)
-		ac->pfnFree(ac->pUserData, memory);
-	else
-		_aligned_free(memory);
-}
 
 static void insert_surf_data(struct vk_inst_data *data, VkSurfaceKHR surf,
 			     HWND hwnd, const VkAllocationCallbacks *ac)
 {
-	struct vk_surf_data *surf_data = object_malloc(
-		ac, sizeof(struct vk_surf_data), _Alignof(struct vk_surf_data));
+	struct vk_surf_data *surf_data = vk_alloc(
+		ac, sizeof(struct vk_surf_data), _Alignof(struct vk_surf_data),
+		VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);
 	if (surf_data) {
-		surf_data->surf = surf;
 		surf_data->hwnd = hwnd;
 
-		AcquireSRWLockExclusive(&mutex);
-		struct vk_surf_data *next = data->surfaces;
-		surf_data->next = next;
-		data->surfaces = surf_data;
-		ReleaseSRWLockExclusive(&mutex);
+		add_obj_data(&data->surfaces, (uint64_t)surf, surf_data);
 	}
 }
 
 static HWND find_surf_hwnd(struct vk_inst_data *data, VkSurfaceKHR surf)
 {
-	HWND hwnd = NULL;
-
-	AcquireSRWLockExclusive(&mutex);
-	struct vk_surf_data *surf_data = data->surfaces;
-	while (surf_data) {
-		if (surf_data->surf == surf) {
-			hwnd = surf_data->hwnd;
-			break;
-		}
-		surf_data = surf_data->next;
-	}
-	ReleaseSRWLockExclusive(&mutex);
-
-	return hwnd;
-}
-
-static void erase_surf_data(struct vk_inst_data *data, VkSurfaceKHR surf,
-			    const VkAllocationCallbacks *ac)
-{
-	AcquireSRWLockExclusive(&mutex);
-	struct vk_surf_data *current = data->surfaces;
-	if (current->surf == surf) {
-		data->surfaces = current->next;
-	} else {
-		struct vk_surf_data *previous;
-		do {
-			previous = current;
-			current = current->next;
-		} while (current && current->surf != surf);
-
-		if (current)
-			previous->next = current->next;
-	}
-	ReleaseSRWLockExclusive(&mutex);
-
-	object_free(ac, current);
+	struct vk_surf_data *surf_data = (struct vk_surf_data *)get_obj_data(
+		&data->surfaces, (uint64_t)surf);
+	return surf_data->hwnd;
 }
 
 /* ------------------------------------------------------------------------- */
 
-static struct vk_inst_data inst_data[OBJ_MAX] = {0};
-static void *instances[OBJ_MAX] = {0};
+static struct vk_obj_list instances;
+
+static struct vk_inst_data *add_inst_data(void *inst,
+					  const VkAllocationCallbacks *ac)
+{
+	struct vk_inst_data *data = vk_alloc(
+		ac, sizeof(struct vk_inst_data), _Alignof(struct vk_inst_data),
+		VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
+	add_obj_data(&instances, (uint64_t)GET_LDT(inst), data);
+	return data;
+}
 
 static struct vk_inst_data *get_inst_data(void *inst)
 {
-	size_t idx = get_obj_idx(instances, GET_LDT(inst));
-	if (idx == SIZE_MAX) {
-		debug("out of instance slots");
-		return NULL;
-	}
-
-	vulkan_seen = true;
-	return &inst_data[idx];
+	return (struct vk_inst_data *)get_obj_data(&instances,
+						   (uint64_t)GET_LDT(inst));
 }
 
 static inline struct vk_inst_funcs *get_inst_funcs(void *inst)
 {
-	struct vk_inst_data *data = get_inst_data(inst);
+	struct vk_inst_data *data = (struct vk_inst_data *)get_inst_data(inst);
 	return &data->funcs;
-}
-
-static void remove_instance(void *inst)
-{
-	size_t idx = find_obj_idx(instances, inst);
-	if (idx == SIZE_MAX) {
-		return;
-	}
-
-	struct vk_inst_data *data = &inst_data[idx];
-	memset(data, 0, sizeof(*data));
-
-	AcquireSRWLockExclusive(&mutex);
-	instances[idx] = NULL;
-	ReleaseSRWLockExclusive(&mutex);
 }
 
 /* ======================================================================== */
@@ -712,17 +691,16 @@ static bool vk_shtex_init(struct vk_data *data, HWND window,
 					    (uint32_t)swap->format, false,
 					    (uintptr_t)swap->handle);
 
-	if (swap->captured) {
-		if (global_hook_info->force_shmem) {
-			flog("shared memory capture currently "
-			     "unsupported; ignoring");
-		}
+	if (!swap->captured)
+		return false;
 
-		hlog("vulkan shared texture capture successful");
-		return true;
+	if (global_hook_info->force_shmem) {
+		flog("shared memory capture currently "
+		     "unsupported; ignoring");
 	}
 
-	return false;
+	hlog("vulkan shared texture capture successful");
+	return true;
 }
 
 static void vk_shtex_create_family_objects(struct vk_data *data,
@@ -730,6 +708,14 @@ static void vk_shtex_create_family_objects(struct vk_data *data,
 					   uint32_t image_count)
 {
 	struct vk_family_data *family_data = &data->families[fam_idx];
+	family_data->frames =
+		vk_alloc(data->ac, image_count * sizeof(struct vk_frame_data),
+			 _Alignof(struct vk_frame_data),
+			 VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);
+	memset(family_data->frames, 0,
+	       image_count * sizeof(struct vk_frame_data));
+	family_data->frame_index = 0;
+	family_data->frame_count = image_count;
 
 	for (uint32_t image_index = 0; image_index < image_count;
 	     image_index++) {
@@ -766,9 +752,6 @@ static void vk_shtex_create_family_objects(struct vk_data *data,
 					      &frame_data->fence);
 		debug_res("CreateFence", res);
 	}
-
-	family_data->frame_index = 0;
-	family_data->frame_count = image_count;
 }
 
 static void vk_shtex_destroy_fence(struct vk_data *data, bool *cmd_buffer_busy,
@@ -801,6 +784,8 @@ static void vk_shtex_destroy_family_objects(struct vk_data *data,
 		frame_data->cmd_pool = VK_NULL_HANDLE;
 	}
 
+	vk_free(data->ac, family_data->frames);
+	family_data->frames = NULL;
 	family_data->frame_count = 0;
 }
 
@@ -832,9 +817,6 @@ static void vk_shtex_capture(struct vk_data *data,
 		if (data->queues[i].queue == queue)
 			fam_idx = data->queues[i].fam_idx;
 	}
-
-	if (fam_idx >= _countof(data->families))
-		return;
 
 	struct vk_family_data *family_data = &data->families[fam_idx];
 	const uint32_t image_count = swap->image_count;
@@ -1139,7 +1121,7 @@ static VkResult VKAPI OBS_CreateInstance(const VkInstanceCreateInfo *cinfo,
 	/* -------------------------------------------------------- */
 	/* fetch the functions we need                              */
 
-	struct vk_inst_data *data = get_inst_data(inst);
+	struct vk_inst_data *data = add_inst_data(inst, ac);
 	struct vk_inst_funcs *funcs = &data->funcs;
 
 #define GETADDR(x)                                     \
@@ -1162,6 +1144,8 @@ static VkResult VKAPI OBS_CreateInstance(const VkInstanceCreateInfo *cinfo,
 	GETADDR(EnumerateDeviceExtensionProperties);
 #undef GETADDR
 
+	init_obj_list(&data->surfaces);
+
 	data->valid = !funcs_not_found;
 	return res;
 }
@@ -1170,8 +1154,11 @@ static VkResult VKAPI OBS_DestroyInstance(VkInstance instance,
 					  const VkAllocationCallbacks *ac)
 {
 	struct vk_inst_funcs *funcs = get_inst_funcs(instance);
+	const uint64_t obj = (uint64_t)GET_LDT(instance);
+	struct vk_inst_data *data =
+		(struct vk_inst_data *)remove_obj_data(&instances, obj);
 	funcs->DestroyInstance(instance, ac);
-	remove_instance(instance);
+	vk_free(ac, data);
 	return VK_SUCCESS;
 }
 
@@ -1273,7 +1260,7 @@ static VkResult VKAPI OBS_CreateDevice(VkPhysicalDevice phy_device,
 
 	VkDevice device = *p_device;
 
-	data = get_device_data(*p_device);
+	data = add_device_data(*p_device, ac);
 	struct vk_device_funcs *dfuncs = &data->funcs;
 
 	data->valid = false; /* set true below if it doesn't go to fail */
@@ -1399,6 +1386,33 @@ static VkResult VKAPI OBS_CreateDevice(VkPhysicalDevice phy_device,
 		data->ac = &data->ac_storage;
 	}
 
+	uint32_t queue_capacity = 0;
+	uint32_t family_capacity = 1;
+	for (uint32_t i = 0, count = info->queueCreateInfoCount; i < count;
+	     ++i) {
+		const VkDeviceQueueCreateInfo *queue_info =
+			&info->pQueueCreateInfos[i];
+		queue_capacity += queue_info->queueCount;
+		family_capacity =
+			max(family_capacity, queue_info->queueFamilyIndex + 1);
+	}
+
+	data->queues = vk_alloc(ac,
+				queue_capacity * sizeof(struct vk_queue_data),
+				_Alignof(struct vk_queue_data),
+				VK_SYSTEM_ALLOCATION_SCOPE_DEVICE);
+	data->queue_count = 0;
+
+	data->families =
+		vk_alloc(ac, family_capacity * sizeof(struct vk_family_data),
+			 _Alignof(struct vk_family_data),
+			 VK_SYSTEM_ALLOCATION_SCOPE_DEVICE);
+	memset(data->families, 0,
+	       family_capacity * sizeof(struct vk_family_data));
+	data->family_capacity = family_capacity;
+
+	init_obj_list(&data->swaps);
+
 	data->valid = true;
 
 fail:
@@ -1413,21 +1427,26 @@ static void VKAPI OBS_DestroyDevice(VkDevice device,
 		return;
 
 	if (data->valid) {
-		for (uint32_t fam_idx = 0; fam_idx < _countof(data->families);
+		for (uint32_t fam_idx = 0; fam_idx < data->family_capacity;
 		     fam_idx++) {
 			struct vk_family_data *family_data =
 				&data->families[fam_idx];
-			if (family_data->frame_count > 0) {
-				vk_shtex_destroy_family_objects(data,
-								family_data);
-			}
+			vk_shtex_destroy_family_objects(data, family_data);
 		}
+
+		vk_free(ac, data->queues);
+		data->queues = NULL;
+		data->queue_count = 0;
+
+		vk_free(ac, data->families);
+		data->families = NULL;
+		data->family_capacity = 0;
 	}
 
-	data->queue_count = 0;
-
-	vk_remove_device(device);
+	const uint64_t obj = (uint64_t)GET_LDT(device);
+	remove_obj_data(&devices, obj);
 	data->funcs.DestroyDevice(device, ac);
+	vk_free(ac, data);
 }
 
 static VkResult VKAPI
@@ -1452,11 +1471,11 @@ OBS_CreateSwapchainKHR(VkDevice device, const VkSwapchainCreateInfoKHR *cinfo,
 	res = funcs->GetSwapchainImagesKHR(data->device, sc, &count, NULL);
 	debug_res("GetSwapchainImagesKHR", res);
 
-	struct vk_swap_data *swap = get_new_swap_data(data);
+	struct vk_swap_data *swap = add_swap_data(data, sc);
 	if (count > 0) {
-		if (count > OBJ_MAX)
-			count = OBJ_MAX;
-
+		swap->swap_images = vk_alloc(ac, count * sizeof(VkImage),
+					     _Alignof(VkImage),
+					     VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);
 		res = funcs->GetSwapchainImagesKHR(data->device, sc, &count,
 						   swap->swap_images);
 		debug_res("GetSwapchainImagesKHR", res);
@@ -1487,10 +1506,17 @@ static void VKAPI OBS_DestroySwapchainKHR(VkDevice device, VkSwapchainKHR sc,
 
 			swap->sc = VK_NULL_HANDLE;
 			swap->hwnd = NULL;
-		}
-	}
 
-	funcs->DestroySwapchainKHR(device, sc, ac);
+			vk_free(ac, swap->swap_images);
+			swap->swap_images = NULL;
+			swap->image_count = 0;
+		}
+
+		const uint64_t obj = swap->node.obj;
+		remove_obj_data(&data->swaps, obj);
+		funcs->DestroySwapchainKHR(device, sc, ac);
+		vk_free(data->ac, swap);
+	}
 }
 
 static void VKAPI OBS_GetDeviceQueue(VkDevice device, uint32_t queueFamilyIndex,
@@ -1532,8 +1558,11 @@ static void VKAPI OBS_DestroySurfaceKHR(VkInstance inst, VkSurfaceKHR surf,
 	struct vk_inst_data *data = get_inst_data(inst);
 	struct vk_inst_funcs *funcs = &data->funcs;
 
-	erase_surf_data(data, surf, ac);
+	const uint64_t obj = (uint64_t)surf;
+	struct vk_surf_data *surf_data =
+		(struct vk_surf_data *)remove_obj_data(&data->surfaces, obj);
 	funcs->DestroySurfaceKHR(inst, surf, ac);
+	vk_free(ac, surf_data);
 }
 
 #define GETPROCADDR(func)              \
@@ -1602,6 +1631,13 @@ EXPORT VkResult VKAPI OBS_Negotiate(VkNegotiateLayerInterface *nli)
 
 	if (nli->loaderLayerInterfaceVersion > cur_ver) {
 		nli->loaderLayerInterfaceVersion = cur_ver;
+	}
+
+	if (!vulkan_seen) {
+		init_obj_list(&instances);
+		init_obj_list(&devices);
+
+		vulkan_seen = true;
 	}
 
 	return VK_SUCCESS;
