@@ -597,13 +597,33 @@ static void *aac_create(obs_data_t *settings, obs_encoder_t *encoder)
 
 	/*
 	 * Fix channel map differences between CoreAudio AAC, FFmpeg, Wav
-	 * New channel mappings below assume 2.1, 4.1, 5.1, 7.1 resp.
+	 * New channel mappings below assume 2.1, 4.0, 4.1, 5.1, 7.1 resp.
 	 */
+
 	if (ca->channels == 3) {
 		SInt32 channelMap3[3] = {2, 0, 1};
 		AudioConverterSetProperty(ca->converter,
 					  kAudioConverterChannelMap,
 					  sizeof(channelMap3), channelMap3);
+
+	} else if (ca->channels == 4) {
+		/*
+		 * For four channels coreaudio encoder has default channel "quad"
+		 * instead of 4.0. So explicitly set channel layout to
+		 * kAudioChannelLayoutTag_MPEG_4_0_B = (116L << 16) | 4.
+		 */
+		AudioChannelLayout inAcl = {0};
+		inAcl.mChannelLayoutTag = (116L << 16) | 4;
+		AudioConverterSetProperty(ca->converter,
+					  kAudioConverterInputChannelLayout,
+					  sizeof(inAcl), &inAcl);
+		AudioConverterSetProperty(ca->converter,
+					  kAudioConverterOutputChannelLayout,
+					  sizeof(inAcl), &inAcl);
+		SInt32 channelMap4[4] = {2, 0, 1, 3};
+		AudioConverterSetProperty(ca->converter,
+					  kAudioConverterChannelMap,
+					  sizeof(channelMap4), channelMap4);
 
 	} else if (ca->channels == 5) {
 		SInt32 channelMap5[5] = {2, 0, 1, 3, 4};

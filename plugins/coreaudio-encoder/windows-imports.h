@@ -61,6 +61,24 @@ struct AudioStreamPacketDescription {
 };
 typedef struct AudioStreamPacketDescription AudioStreamPacketDescription;
 
+typedef UInt32 AudioChannelLabel;
+typedef UInt32 AudioChannelLayoutTag;
+
+struct AudioChannelDescription {
+	AudioChannelLabel mChannelLabel;
+	UInt32 mChannelFlags;
+	float mCoordinates[3];
+};
+typedef struct AudioChannelDescription AudioChannelDescription;
+
+struct AudioChannelLayout {
+	AudioChannelLayoutTag mChannelLayoutTag;
+	UInt32 mChannelBitmap;
+	UInt32 mNumberChannelDescriptions;
+	AudioChannelDescription mChannelDescriptions[kVariableLengthArray];
+};
+typedef struct AudioChannelLayout AudioChannelLayout;
+
 typedef OSStatus (*AudioConverterComplexInputDataProc)(
 	AudioConverterRef inAudioConverter, UInt32 *ioNumberDataPackets,
 	AudioBufferList *ioData,
