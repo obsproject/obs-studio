@@ -39,6 +39,7 @@ set(linux-v4l2_SOURCES
 	v4l2-controls.c
 	v4l2-input.c
 	v4l2-helpers.c
+	v4l2-output.c
 	${linux-v4l2-udev_SOURCES}
 )
 
