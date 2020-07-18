@@ -391,7 +391,9 @@ jobs:
            qtbase5-dev \
            libqt5svg5-dev \
            swig \
-           libcmocka-dev
+           libcmocka-dev \
+           linux-generic \
+           v4l2loopback-dkms
       - name: 'Restore Chromium Embedded Framework from cache'
         id: cef-cache
         uses: actions/cache@v2.1.2
