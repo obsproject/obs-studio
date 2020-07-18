@@ -23,3 +23,9 @@
 [submodule "plugins/slobs-virtual-cam"]
 	path = plugins/slobs-virtual-cam
 	url = https://github.com/stream-labs/slobs-virtual-cam.git
+[submodule "plugins/obs-openvr"]
+	path = plugins/obs-openvr
+	url = https://github.com/stream-labs/OBS-OpenVR-Input-Plugin.git
+[submodule "plugins/motion-effect"]
+	path = plugins/motion-effect
+	url = https://github.com/stream-labs/motion-effect.git
