@@ -454,6 +454,8 @@ static void color_grade_filter_render(void *data, gs_effect_t *effect)
 
 	obs_source_process_filter_tech_end(filter->context, filter->effect, 0,
 					   0, tech_name);
+
+	UNUSED_PARAMETER(effect);
 }
 
 struct obs_source_info color_grade_filter = {

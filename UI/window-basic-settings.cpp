@@ -76,6 +76,8 @@ protected:
 			if (key == Qt::Key_Escape) {
 				return false;
 			}
+		default:
+			break;
 		}
 
 		return shortcutFilter->filter(obj, event);
