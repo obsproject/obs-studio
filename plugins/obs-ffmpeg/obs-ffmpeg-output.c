@@ -135,7 +135,7 @@ static bool parse_params(AVCodecContext *context, char **opts)
 
 static bool open_video_codec(struct ffmpeg_data *data)
 {
-	AVCodecContext *context = data->video->codec;
+	AVCodecContext *const context = data->video_ctx;
 	char **opts = strlist_split(data->config.video_settings, ' ', false);
 	int ret;
 
@@ -180,6 +180,10 @@ static bool open_video_codec(struct ffmpeg_data *data)
 		return false;
 	}
 
+#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(57, 48, 101)
+	avcodec_parameters_from_context(data->video->codecpar, context);
+#endif
+
 	return true;
 }
 
@@ -218,7 +222,11 @@ static bool create_video_stream(struct ffmpeg_data *data)
 	closest_format = avcodec_find_best_pix_fmt_of_list(
 		data->vcodec->pix_fmts, data->config.format, 0, NULL);
 
+#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(57, 48, 101)
+	context = avcodec_alloc_context3(data->vcodec);
+#else
 	context = data->video->codec;
+#endif
 	context->bit_rate = (int64_t)data->config.video_bitrate * 1000;
 	context->width = data->config.scale_width;
 	context->height = data->config.scale_height;
@@ -233,6 +241,8 @@ static bool create_video_stream(struct ffmpeg_data *data)
 
 	if (data->output->oformat->flags & AVFMT_GLOBALHEADER)
 		context->flags |= CODEC_FLAG_GLOBAL_H;
+
+	data->video_ctx = context;
 
 	if (!open_video_codec(data))
 		return false;
@@ -250,7 +260,7 @@ static bool create_video_stream(struct ffmpeg_data *data)
 
 static bool open_audio_codec(struct ffmpeg_data *data, int idx)
 {
-	AVCodecContext *context = data->audio_streams[idx]->codec;
+	AVCodecContext *const context = data->audio_infos[idx].ctx;
 	char **opts = strlist_split(data->config.audio_settings, ' ', false);
 	int ret;
 
@@ -292,6 +302,11 @@ static bool open_audio_codec(struct ffmpeg_data *data, int idx)
 		return false;
 	}
 
+#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(57, 48, 101)
+	avcodec_parameters_from_context(data->audio_infos[idx].stream->codecpar,
+					context);
+#endif
+
 	return true;
 }
 
@@ -311,8 +326,11 @@ static bool create_audio_stream(struct ffmpeg_data *data, int idx)
 			data->config.audio_encoder))
 		return false;
 
-	data->audio_streams[idx] = stream;
-	context = data->audio_streams[idx]->codec;
+#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(57, 48, 101)
+	context = avcodec_alloc_context3(data->acodec);
+#else
+	context = stream->codec;
+#endif
 	context->bit_rate = (int64_t)data->config.audio_bitrate * 1000;
 	context->time_base = (AVRational){1, aoi.samples_per_sec};
 	context->channels = get_audio_channels(aoi.speakers);
@@ -328,7 +346,7 @@ static bool create_audio_stream(struct ffmpeg_data *data, int idx)
 				      ? data->acodec->sample_fmts[0]
 				      : AV_SAMPLE_FMT_FLTP;
 
-	data->audio_streams[idx]->time_base = context->time_base;
+	stream->time_base = context->time_base;
 
 	data->audio_samplerate = aoi.samples_per_sec;
 	data->audio_format = convert_ffmpeg_sample_format(context->sample_fmt);
@@ -337,6 +355,9 @@ static bool create_audio_stream(struct ffmpeg_data *data, int idx)
 
 	if (data->output->oformat->flags & AVFMT_GLOBALHEADER)
 		context->flags |= CODEC_FLAG_GLOBAL_H;
+
+	data->audio_infos[idx].stream = stream;
+	data->audio_infos[idx].ctx = context;
 
 	return open_audio_codec(data, idx);
 }
@@ -351,8 +372,8 @@ static inline bool init_streams(struct ffmpeg_data *data)
 
 	if (format->audio_codec != AV_CODEC_ID_NONE &&
 	    data->num_audio_streams) {
-		data->audio_streams =
-			calloc(1, data->num_audio_streams * sizeof(void *));
+		data->audio_infos = calloc(data->num_audio_streams,
+					   sizeof(*data->audio_infos));
 		for (int i = 0; i < data->num_audio_streams; i++) {
 			if (!create_audio_stream(data, i))
 				return false;
@@ -402,10 +423,6 @@ static inline bool open_output_file(struct ffmpeg_data *data)
 		}
 	}
 
-	strncpy(data->output->filename, data->config.url,
-		sizeof(data->output->filename));
-	data->output->filename[sizeof(data->output->filename) - 1] = 0;
-
 	ret = avformat_write_header(data->output, &dict);
 	if (ret < 0) {
 		ffmpeg_log_error(LOG_WARNING, data, "Error opening '%s': %s",
@@ -432,7 +449,11 @@ static inline bool open_output_file(struct ffmpeg_data *data)
 
 static void close_video(struct ffmpeg_data *data)
 {
+#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(57, 48, 101)
+	avcodec_free_context(&data->video_ctx);
+#else
 	avcodec_close(data->video->codec);
+#endif
 	av_frame_unref(data->vframe);
 
 	// This format for some reason derefs video frame
@@ -452,8 +473,13 @@ static void close_audio(struct ffmpeg_data *data)
 
 		if (data->samples[idx][0])
 			av_freep(&data->samples[idx][0]);
-		if (data->audio_streams[idx])
-			avcodec_close(data->audio_streams[idx]->codec);
+		if (data->audio_infos[idx].ctx) {
+#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(57, 48, 101)
+			avcodec_free_context(&data->audio_infos[idx].ctx);
+#else
+			avcodec_close(data->audio_infos[idx].stream->codec);
+#endif
+		}
 		if (data->aframe[idx])
 			av_frame_free(&data->aframe[idx]);
 	}
@@ -466,10 +492,10 @@ void ffmpeg_data_free(struct ffmpeg_data *data)
 
 	if (data->video)
 		close_video(data);
-	if (data->audio_streams) {
+	if (data->audio_infos) {
 		close_audio(data);
-		free(data->audio_streams);
-		data->audio_streams = NULL;
+		free(data->audio_infos);
+		data->audio_infos = NULL;
 	}
 
 	if (data->output) {
@@ -555,7 +581,7 @@ bool ffmpeg_data_init(struct ffmpeg_data *data, struct ffmpeg_cfg *config)
 	}
 
 	avformat_alloc_output_context2(&data->output, output_format, NULL,
-				       NULL);
+				       data->config.url);
 
 	if (!data->output) {
 		ffmpeg_log_error(LOG_WARNING, data,
@@ -688,7 +714,7 @@ static void receive_video(void *param, struct video_data *frame)
 	if (!data->video)
 		return;
 
-	AVCodecContext *context = data->video->codec;
+	AVCodecContext *context = data->video_ctx;
 	AVPacket packet = {0};
 	int ret = 0, got_packet;
 
@@ -833,13 +859,13 @@ static void encode_audio(struct ffmpeg_output *output, int idx,
 		return;
 
 	packet.pts = rescale_ts(packet.pts, context,
-				data->audio_streams[idx]->time_base);
+				data->audio_infos[idx].stream->time_base);
 	packet.dts = rescale_ts(packet.dts, context,
-				data->audio_streams[idx]->time_base);
+				data->audio_infos[idx].stream->time_base);
 	packet.duration =
 		(int)av_rescale_q(packet.duration, context->time_base,
-				  data->audio_streams[idx]->time_base);
-	packet.stream_index = data->audio_streams[idx]->index;
+				  data->audio_infos[idx].stream->time_base);
+	packet.stream_index = data->audio_infos[idx].stream->index;
 
 	pthread_mutex_lock(&output->write_mutex);
 	da_push_back(output->packets, &packet);
@@ -868,7 +894,7 @@ static void receive_audio(void *param, size_t mix_idx, struct audio_data *frame)
 	int track_order;
 
 	// codec doesn't support audio or none configured
-	if (!data->audio_streams)
+	if (!data->audio_infos)
 		return;
 
 	/* check that the track was selected */
@@ -878,7 +904,7 @@ static void receive_audio(void *param, size_t mix_idx, struct audio_data *frame)
 	/* get track order (first selected, etc ...) */
 	track_order = get_track_order(data->audio_tracks, mix_idx);
 
-	AVCodecContext *context = data->audio_streams[track_order]->codec;
+	AVCodecContext *context = data->audio_infos[track_order].ctx;
 
 	if (!data->start_timestamp)
 		return;
@@ -916,7 +942,7 @@ static uint64_t get_packet_sys_dts(struct ffmpeg_output *output,
 		time_base = data->video->time_base;
 		start_ts = output->video_start_ts;
 	} else {
-		time_base = data->audio_streams[0]->time_base;
+		time_base = data->audio_infos[0].stream->time_base;
 		start_ts = output->audio_start_ts;
 	}
 
@@ -949,10 +975,8 @@ static int process_packet(struct ffmpeg_output *output)
 
 	if (stopping(output)) {
 		uint64_t sys_ts = get_packet_sys_dts(output, &packet);
-		if (sys_ts >= output->stop_ts) {
-			ffmpeg_output_full_stop(output);
+		if (sys_ts >= output->stop_ts)
 			return 0;
-		}
 	}
 
 	output->total_bytes += packet.size;
@@ -1159,12 +1183,12 @@ static void ffmpeg_output_stop(void *data, uint64_t ts)
 	struct ffmpeg_output *output = data;
 
 	if (output->active) {
-		if (ts == 0) {
-			ffmpeg_output_full_stop(output);
-		} else {
-			os_atomic_set_bool(&output->stopping, true);
+		if (ts > 0) {
 			output->stop_ts = ts;
+			os_atomic_set_bool(&output->stopping, true);
 		}
+
+		ffmpeg_output_full_stop(output);
 	}
 }
 
