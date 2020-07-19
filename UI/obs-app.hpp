@@ -144,6 +144,7 @@ public:
 
 	std::string GetVersionString() const;
 	bool IsPortableMode();
+	bool IsUpdaterDisabled();
 
 	const char *InputAudioSource() const;
 	const char *OutputAudioSource() const;

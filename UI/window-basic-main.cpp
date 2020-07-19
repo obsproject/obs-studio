@@ -1894,6 +1894,9 @@ void OBSBasic::OBSInit()
 	ui->actionUploadLastCrashLog = nullptr;
 	ui->menuCrashLogs = nullptr;
 	ui->actionCheckForUpdates = nullptr;
+#elif _WIN32 || __APPLE__
+	if (App()->IsUpdaterDisabled())
+		ui->actionCheckForUpdates->setEnabled(false);
 #endif
 
 	OnFirstLoad();
@@ -3248,6 +3251,8 @@ void trigger_sparkle_update();
 
 void OBSBasic::TimedCheckForUpdates()
 {
+	if (App()->IsUpdaterDisabled())
+		return;
 	if (!config_get_bool(App()->GlobalConfig(), "General",
 			     "EnableAutoUpdates"))
 		return;
