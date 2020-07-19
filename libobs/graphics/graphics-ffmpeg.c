@@ -11,9 +11,6 @@ struct ffmpeg_image {
 	const char *file;
 	AVFormatContext *fmt_ctx;
 	AVCodecContext *decoder_ctx;
-	AVCodec *decoder;
-	AVStream *stream;
-	int stream_idx;
 
 	int cx, cy;
 	enum AVPixelFormat format;
@@ -21,26 +18,46 @@ struct ffmpeg_image {
 
 static bool ffmpeg_image_open_decoder_context(struct ffmpeg_image *info)
 {
-	int ret = av_find_best_stream(info->fmt_ctx, AVMEDIA_TYPE_VIDEO, -1, 1,
-				      NULL, 0);
+	AVFormatContext *const fmt_ctx = info->fmt_ctx;
+	int ret = av_find_best_stream(fmt_ctx, AVMEDIA_TYPE_VIDEO, -1, 1, NULL,
+				      0);
 	if (ret < 0) {
 		blog(LOG_WARNING, "Couldn't find video stream in file '%s': %s",
 		     info->file, av_err2str(ret));
 		return false;
 	}
 
-	info->stream_idx = ret;
-	info->stream = info->fmt_ctx->streams[ret];
-	info->decoder_ctx = info->stream->codec;
-	info->decoder = avcodec_find_decoder(info->decoder_ctx->codec_id);
-
-	if (!info->decoder) {
+	AVStream *const stream = fmt_ctx->streams[ret];
+#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(57, 48, 101)
+	AVCodecParameters *const codecpar = stream->codecpar;
+	AVCodec *const decoder = avcodec_find_decoder(codecpar->codec_id);
+#else
+	AVCodecContext *const decoder_ctx = stream->codec;
+	AVCodec *const decoder = avcodec_find_decoder(decoder_ctx->codec_id);
+#endif
+	if (!decoder) {
 		blog(LOG_WARNING, "Failed to find decoder for file '%s'",
 		     info->file);
 		return false;
 	}
 
-	ret = avcodec_open2(info->decoder_ctx, info->decoder, NULL);
+#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(57, 48, 101)
+	AVCodecContext *const decoder_ctx = avcodec_alloc_context3(decoder);
+	avcodec_parameters_to_context(decoder_ctx, codecpar);
+#endif
+
+	info->decoder_ctx = decoder_ctx;
+#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(57, 48, 101)
+	info->cx = codecpar->width;
+	info->cy = codecpar->height;
+	info->format = codecpar->format;
+#else
+	info->cx = decoder_ctx->width;
+	info->cy = decoder_ctx->height;
+	info->format = decoder_ctx->pix_fmt;
+#endif
+
+	ret = avcodec_open2(decoder_ctx, decoder, NULL);
 	if (ret < 0) {
 		blog(LOG_WARNING,
 		     "Failed to open video codec for file '%s': "
@@ -54,7 +71,11 @@ static bool ffmpeg_image_open_decoder_context(struct ffmpeg_image *info)
 
 static void ffmpeg_image_free(struct ffmpeg_image *info)
 {
+#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(57, 48, 101)
+	avcodec_free_context(&info->decoder_ctx);
+#else
 	avcodec_close(info->decoder_ctx);
+#endif
 	avformat_close_input(&info->fmt_ctx);
 }
 
@@ -67,7 +88,6 @@ static bool ffmpeg_image_init(struct ffmpeg_image *info, const char *file)
 
 	memset(info, 0, sizeof(struct ffmpeg_image));
 	info->file = file;
-	info->stream_idx = -1;
 
 	ret = avformat_open_input(&info->fmt_ctx, file, NULL, NULL);
 	if (ret < 0) {
@@ -88,9 +108,6 @@ static bool ffmpeg_image_init(struct ffmpeg_image *info, const char *file)
 	if (!ffmpeg_image_open_decoder_context(info))
 		goto fail;
 
-	info->cx = info->decoder_ctx->width;
-	info->cy = info->decoder_ctx->height;
-	info->format = info->decoder_ctx->pix_fmt;
 	return true;
 
 fail:

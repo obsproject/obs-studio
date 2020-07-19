@@ -95,10 +95,16 @@ struct header {
 	int size;
 };
 
+struct audio_info {
+	AVStream *stream;
+	AVCodecContext *ctx;
+};
+
 struct ffmpeg_mux {
 	AVFormatContext *output;
 	AVStream *video_stream;
-	AVStream **audio_streams;
+	AVCodecContext *video_ctx;
+	struct audio_info *audio_infos;
 	struct main_params params;
 	struct audio_params *audio;
 	struct header video_header;
@@ -116,6 +122,10 @@ static void header_free(struct header *header)
 static void free_avformat(struct ffmpeg_mux *ffm)
 {
 	if (ffm->output) {
+#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(57, 48, 101)
+		avcodec_free_context(&ffm->video_ctx);
+#endif
+
 		if ((ffm->output->oformat->flags & AVFMT_NOFILE) == 0)
 			avio_close(ffm->output->pb);
 
@@ -123,12 +133,16 @@ static void free_avformat(struct ffmpeg_mux *ffm)
 		ffm->output = NULL;
 	}
 
-	if (ffm->audio_streams) {
-		free(ffm->audio_streams);
+	if (ffm->audio_infos) {
+#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(57, 48, 101)
+		for (int i = 0; i < ffm->num_audio_streams; ++i)
+			avcodec_free_context(&ffm->audio_infos[i].ctx);
+#endif
+		free(ffm->audio_infos);
 	}
 
 	ffm->video_stream = NULL;
-	ffm->audio_streams = NULL;
+	ffm->audio_infos = NULL;
 	ffm->num_audio_streams = 0;
 }
 
@@ -245,7 +259,7 @@ static bool init_params(int *argc, char ***argv, struct main_params *params,
 		if (!get_opt_str(argc, argv, &params->acodec, "audio codec"))
 			return false;
 
-		audio = calloc(1, sizeof(*audio) * params->tracks);
+		audio = calloc(params->tracks, sizeof(*audio));
 
 		for (int i = 0; i < params->tracks; i++) {
 			if (!get_audio_params(&audio[i], argc, argv)) {
@@ -263,25 +277,22 @@ static bool init_params(int *argc, char ***argv, struct main_params *params,
 }
 
 static bool new_stream(struct ffmpeg_mux *ffm, AVStream **stream,
-		       const char *name, enum AVCodecID *id)
+		       const char *name, AVCodec **codec)
 {
 	const AVCodecDescriptor *desc = avcodec_descriptor_get_by_name(name);
-	AVCodec *codec;
 
 	if (!desc) {
 		fprintf(stderr, "Couldn't find encoder '%s'\n", name);
 		return false;
 	}
 
-	*id = desc->id;
-
-	codec = avcodec_find_encoder(desc->id);
-	if (!codec) {
+	*codec = avcodec_find_encoder(desc->id);
+	if (!*codec) {
 		fprintf(stderr, "Couldn't create encoder");
 		return false;
 	}
 
-	*stream = avformat_new_stream(ffm->output, codec);
+	*stream = avformat_new_stream(ffm->output, *codec);
 	if (!*stream) {
 		fprintf(stderr, "Couldn't create stream for encoder '%s'\n",
 			name);
@@ -294,11 +305,11 @@ static bool new_stream(struct ffmpeg_mux *ffm, AVStream **stream,
 
 static void create_video_stream(struct ffmpeg_mux *ffm)
 {
+	AVCodec *codec;
 	AVCodecContext *context;
 	void *extradata = NULL;
 
-	if (!new_stream(ffm, &ffm->video_stream, ffm->params.vcodec,
-			&ffm->output->oformat->video_codec))
+	if (!new_stream(ffm, &ffm->video_stream, ffm->params.vcodec, &codec))
 		return;
 
 	if (ffm->video_header.size) {
@@ -306,8 +317,12 @@ static void create_video_stream(struct ffmpeg_mux *ffm)
 				      ffm->video_header.size);
 	}
 
+#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(57, 48, 101)
+	context = avcodec_alloc_context3(codec);
+#else
 	context = ffm->video_stream->codec;
-	context->bit_rate = ffm->params.vbitrate * 1000;
+#endif
+	context->bit_rate = (int64_t)ffm->params.vbitrate * 1000;
 	context->width = ffm->params.width;
 	context->height = ffm->params.height;
 	context->coded_width = ffm->params.width;
@@ -322,19 +337,23 @@ static void create_video_stream(struct ffmpeg_mux *ffm)
 
 	if (ffm->output->oformat->flags & AVFMT_GLOBALHEADER)
 		context->flags |= CODEC_FLAG_GLOBAL_H;
+
+#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(57, 48, 101)
+	avcodec_parameters_from_context(ffm->video_stream->codecpar, context);
+#endif
+
+	ffm->video_ctx = context;
 }
 
 static void create_audio_stream(struct ffmpeg_mux *ffm, int idx)
 {
+	AVCodec *codec;
 	AVCodecContext *context;
 	AVStream *stream;
 	void *extradata = NULL;
 
-	if (!new_stream(ffm, &stream, ffm->params.acodec,
-			&ffm->output->oformat->audio_codec))
+	if (!new_stream(ffm, &stream, ffm->params.acodec, &codec))
 		return;
-
-	ffm->audio_streams[idx] = stream;
 
 	av_dict_set(&stream->metadata, "title", ffm->audio[idx].name, 0);
 
@@ -345,8 +364,12 @@ static void create_audio_stream(struct ffmpeg_mux *ffm, int idx)
 				      ffm->audio_header[idx].size);
 	}
 
+#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(57, 48, 101)
+	context = avcodec_alloc_context3(codec);
+#else
 	context = stream->codec;
-	context->bit_rate = ffm->audio[idx].abitrate * 1000;
+#endif
+	context->bit_rate = (int64_t)ffm->audio[idx].abitrate * 1000;
 	context->channels = ffm->audio[idx].channels;
 	context->sample_rate = ffm->audio[idx].sample_rate;
 	context->sample_fmt = AV_SAMPLE_FMT_S16;
@@ -364,6 +387,12 @@ static void create_audio_stream(struct ffmpeg_mux *ffm, int idx)
 	if (ffm->output->oformat->flags & AVFMT_GLOBALHEADER)
 		context->flags |= CODEC_FLAG_GLOBAL_H;
 
+#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(57, 48, 101)
+	avcodec_parameters_from_context(stream->codecpar, context);
+#endif
+
+	ffm->audio_infos[ffm->num_audio_streams].stream = stream;
+	ffm->audio_infos[ffm->num_audio_streams].ctx = context;
 	ffm->num_audio_streams++;
 }
 
@@ -373,8 +402,8 @@ static bool init_streams(struct ffmpeg_mux *ffm)
 		create_video_stream(ffm);
 
 	if (ffm->params.tracks) {
-		ffm->audio_streams =
-			calloc(1, ffm->params.tracks * sizeof(void *));
+		ffm->audio_infos =
+			calloc(ffm->params.tracks, sizeof(*ffm->audio_infos));
 
 		for (int i = 0; i < ffm->params.tracks; i++)
 			create_audio_stream(ffm, i);
@@ -477,10 +506,6 @@ static inline int open_output_file(struct ffmpeg_mux *ffm)
 		}
 	}
 
-	strncpy(ffm->output->filename, ffm->params.file,
-		sizeof(ffm->output->filename));
-	ffm->output->filename[sizeof(ffm->output->filename) - 1] = 0;
-
 	AVDictionary *dict = NULL;
 	if ((ret = av_dict_parse_string(&dict, ffm->params.muxer_settings, "=",
 					" ", 0))) {
@@ -544,7 +569,7 @@ static int ffmpeg_mux_init_context(struct ffmpeg_mux *ffm)
 	}
 
 	ret = avformat_alloc_output_context2(&ffm->output, output_format, NULL,
-					     NULL);
+					     ffm->params.file);
 	if (ret < 0) {
 		fprintf(stderr, "Couldn't initialize output context: %s\n",
 			av_err2str(ret));
@@ -578,7 +603,7 @@ static int ffmpeg_mux_init_internal(struct ffmpeg_mux *ffm, int argc,
 
 	if (ffm->params.tracks) {
 		ffm->audio_header =
-			calloc(1, sizeof(struct header) * ffm->params.tracks);
+			calloc(ffm->params.tracks, sizeof(*ffm->audio_header));
 	}
 
 #if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58, 9, 100)
@@ -614,11 +639,27 @@ static inline int get_index(struct ffmpeg_mux *ffm,
 		}
 	} else {
 		if ((int)info->index < ffm->num_audio_streams) {
-			return ffm->audio_streams[info->index]->id;
+			return ffm->audio_infos[info->index].stream->id;
 		}
 	}
 
 	return -1;
+}
+
+static AVCodecContext *get_codec_context(struct ffmpeg_mux *ffm,
+					 struct ffm_packet_info *info)
+{
+	if (info->type == FFM_PACKET_VIDEO) {
+		if (ffm->video_stream) {
+			return ffm->video_ctx;
+		}
+	} else {
+		if ((int)info->index < ffm->num_audio_streams) {
+			return ffm->audio_infos[info->index].ctx;
+		}
+	}
+
+	return NULL;
 }
 
 static inline AVStream *get_stream(struct ffmpeg_mux *ffm, int idx)
@@ -626,12 +667,14 @@ static inline AVStream *get_stream(struct ffmpeg_mux *ffm, int idx)
 	return ffm->output->streams[idx];
 }
 
-static inline int64_t rescale_ts(struct ffmpeg_mux *ffm, int64_t val, int idx)
+static inline int64_t rescale_ts(struct ffmpeg_mux *ffm,
+				 AVRational codec_time_base, int64_t val,
+				 int idx)
 {
 	AVStream *stream = get_stream(ffm, idx);
 
-	return av_rescale_q_rnd(val / stream->codec->time_base.num,
-				stream->codec->time_base, stream->time_base,
+	return av_rescale_q_rnd(val / codec_time_base.num, codec_time_base,
+				stream->time_base,
 				AV_ROUND_NEAR_INF | AV_ROUND_PASS_MINMAX);
 }
 
@@ -646,13 +689,16 @@ static inline bool ffmpeg_mux_packet(struct ffmpeg_mux *ffm, uint8_t *buf,
 		return true;
 	}
 
+	const AVRational codec_time_base =
+		get_codec_context(ffm, info)->time_base;
+
 	av_init_packet(&packet);
 
 	packet.data = buf;
 	packet.size = (int)info->size;
 	packet.stream_index = idx;
-	packet.pts = rescale_ts(ffm, info->pts, idx);
-	packet.dts = rescale_ts(ffm, info->dts, idx);
+	packet.pts = rescale_ts(ffm, codec_time_base, info->pts, idx);
+	packet.dts = rescale_ts(ffm, codec_time_base, info->dts, idx);
 
 	if (info->keyframe)
 		packet.flags = AV_PKT_FLAG_KEY;
