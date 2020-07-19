@@ -461,8 +461,12 @@ static void seek_to(mp_media_t *m, int64_t pos)
 		}
 	}
 
-	if (m->has_video && m->is_local_file)
+	if (m->has_video && m->is_local_file) {
 		mp_decode_flush(&m->v);
+		if (m->seek_next_ts && m->pause && m->v_preload_cb &&
+		    mp_media_prepare_frames(m))
+			mp_media_next_video(m, true);
+	}
 	if (m->has_audio && m->is_local_file)
 		mp_decode_flush(&m->a);
 }
