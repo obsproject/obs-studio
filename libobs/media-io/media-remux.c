@@ -111,8 +111,10 @@ static inline bool init_output(media_remux_job_t job, const char *out_filename)
 
 		av_dict_copy(&out_stream->metadata, in_stream->metadata, 0);
 
+#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(57, 48, 101)
+		out_stream->codecpar->codec_tag = 0;
+#else
 		out_stream->codec->codec_tag = 0;
-#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(57, 48, 101)
 		out_stream->time_base = out_stream->codec->time_base;
 		if (job->ofmt_ctx->oformat->flags & AVFMT_GLOBALHEADER)
 			out_stream->codec->flags |= CODEC_FLAG_GLOBAL_H;
