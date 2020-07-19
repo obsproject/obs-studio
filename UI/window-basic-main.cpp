@@ -1930,6 +1930,12 @@ void OBSBasic::OnFirstLoad()
 #endif
 
 	Auth::Load();
+
+	bool autoVCam = config_get_bool(GetGlobalConfig(), "BasicWindow",
+					"AutoStartVirtualCam");
+
+	if (autoVCam && vcamEnabled)
+		VCamButtonClicked();
 }
 
 void OBSBasic::DeferredSysTrayLoad(int requeueCount)

@@ -399,6 +399,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->keepReplayStreamStops,CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->systemTrayEnabled,    CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->systemTrayWhenStarted,CHECK_CHANGED,  GENERAL_CHANGED);
+	HookWidget(ui->autoStartVcam,        CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->systemTrayAlways,     CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->saveProjectors,       CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->snappingEnabled,      CHECK_CHANGED,  GENERAL_CHANGED);
@@ -855,6 +856,9 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	QValidator *validator = new QRegExpValidator(rx, this);
 	ui->baseResolution->lineEdit()->setValidator(validator);
 	ui->outputResolution->lineEdit()->setValidator(validator);
+
+	if (!main->vcamEnabled)
+		ui->autoStartVcam->hide();
 }
 
 OBSBasicSettings::~OBSBasicSettings()
@@ -1200,6 +1204,10 @@ void OBSBasicSettings::LoadGeneralSettings()
 	bool systemTrayAlways = config_get_bool(
 		GetGlobalConfig(), "BasicWindow", "SysTrayMinimizeToTray");
 	ui->systemTrayAlways->setChecked(systemTrayAlways);
+
+	bool autoVCam = config_get_bool(GetGlobalConfig(), "BasicWindow",
+					"AutoStartVirtualCam");
+	ui->autoStartVcam->setChecked(autoVCam);
 
 	bool saveProjectors = config_get_bool(GetGlobalConfig(), "BasicWindow",
 					      "SaveProjectors");
@@ -2996,6 +3004,11 @@ void OBSBasicSettings::SaveGeneralSettings()
 		config_set_bool(GetGlobalConfig(), "BasicWindow",
 				"SysTrayMinimizeToTray",
 				ui->systemTrayAlways->isChecked());
+
+	if (WidgetChanged(ui->autoStartVcam))
+		config_set_bool(GetGlobalConfig(), "BasicWindow",
+				"AutoStartVirtualCam",
+				ui->autoStartVcam->isChecked());
 
 	if (WidgetChanged(ui->saveProjectors))
 		config_set_bool(GetGlobalConfig(), "BasicWindow",
