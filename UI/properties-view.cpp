@@ -1631,18 +1631,14 @@ bool WidgetInfo::PathChanged(const char *setting)
 	QString path;
 
 	if (type == OBS_PATH_DIRECTORY)
-		path = QFileDialog::getExistingDirectory(
-			view, QT_UTF8(desc), QT_UTF8(default_path),
-			QFileDialog::ShowDirsOnly |
-				QFileDialog::DontResolveSymlinks);
+		path = SelectDirectory(view, QT_UTF8(desc),
+				       QT_UTF8(default_path));
 	else if (type == OBS_PATH_FILE)
-		path = QFileDialog::getOpenFileName(view, QT_UTF8(desc),
-						    QT_UTF8(default_path),
-						    QT_UTF8(filter));
+		path = OpenFile(view, QT_UTF8(desc), QT_UTF8(default_path),
+				QT_UTF8(filter));
 	else if (type == OBS_PATH_FILE_SAVE)
-		path = QFileDialog::getSaveFileName(view, QT_UTF8(desc),
-						    QT_UTF8(default_path),
-						    QT_UTF8(filter));
+		path = SaveFile(view, QT_UTF8(desc), QT_UTF8(default_path),
+				QT_UTF8(filter));
 
 	if (path.isEmpty())
 		return false;
@@ -1905,9 +1901,8 @@ class EditableItemDialog : public QDialog {
 		if (curPath.isEmpty())
 			curPath = default_path;
 
-		QString path = QFileDialog::getOpenFileName(
-			App()->GetMainWindow(), QTStr("Browse"), curPath,
-			filter);
+		QString path = OpenFile(App()->GetMainWindow(), QTStr("Browse"),
+					curPath, filter);
 		if (path.isEmpty())
 			return;
 
@@ -2026,9 +2021,8 @@ void WidgetInfo::EditListAddFiles()
 	QString title = QTStr("Basic.PropertiesWindow.AddEditableListFiles")
 				.arg(QT_UTF8(desc));
 
-	QStringList files = QFileDialog::getOpenFileNames(
-		App()->GetMainWindow(), title, QT_UTF8(default_path),
-		QT_UTF8(filter));
+	QStringList files = OpenFiles(App()->GetMainWindow(), title,
+				      QT_UTF8(default_path), QT_UTF8(filter));
 
 	if (files.count() == 0)
 		return;
@@ -2047,8 +2041,8 @@ void WidgetInfo::EditListAddDir()
 	QString title = QTStr("Basic.PropertiesWindow.AddEditableListDir")
 				.arg(QT_UTF8(desc));
 
-	QString dir = QFileDialog::getExistingDirectory(
-		App()->GetMainWindow(), title, QT_UTF8(default_path));
+	QString dir = SelectDirectory(App()->GetMainWindow(), title,
+				      QT_UTF8(default_path));
 
 	if (dir.isEmpty())
 		return;
@@ -2086,15 +2080,11 @@ void WidgetInfo::EditListEdit()
 		QString path;
 
 		if (pathDir.exists())
-			path = QFileDialog::getExistingDirectory(
-				App()->GetMainWindow(), QTStr("Browse"),
-				item->text(),
-				QFileDialog::ShowDirsOnly |
-					QFileDialog::DontResolveSymlinks);
+			path = SelectDirectory(App()->GetMainWindow(),
+					       QTStr("Browse"), item->text());
 		else
-			path = QFileDialog::getOpenFileName(
-				App()->GetMainWindow(), QTStr("Browse"),
-				item->text(), QT_UTF8(filter));
+			path = OpenFile(App()->GetMainWindow(), QTStr("Browse"),
+					item->text(), QT_UTF8(filter));
 
 		if (path.isEmpty())
 			return;
