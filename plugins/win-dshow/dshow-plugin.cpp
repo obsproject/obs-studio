@@ -42,12 +42,12 @@ bool obs_module_load(void)
 	RegisterDShowEncoders();
 	obs_register_output(&virtualcam_info);
 
-	if (vcam_installed(false)) {
-		obs_data_t *obs_settings = obs_data_create();
-		obs_data_set_bool(obs_settings, "vcamEnabled", true);
-		obs_apply_private_data(obs_settings);
-		obs_data_release(obs_settings);
-	}
+	bool installed = vcam_installed(false);
+
+	obs_data_t *obs_settings = obs_data_create();
+	obs_data_set_bool(obs_settings, "vcamEnabled", installed);
+	obs_apply_private_data(obs_settings);
+	obs_data_release(obs_settings);
 
 	return true;
 }
