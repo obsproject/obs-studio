@@ -189,6 +189,6 @@ sudo install_name_tool -change /tmp/obsdeps/bin/libmbedcrypto.3.dylib @executabl
 
 sudo install_name_tool -change /tmp/obsdeps/bin/libmbedcrypto.3.dylib @executable_path/libmbedcrypto.3.dylib $PWD/../packed_build/bin/libmbedx509.0.dylib
 
-sudo install_name_tool -change /tmp/obsdeps/bin/libx264.159.dylib @executable_path/libmbedcrypto.3.dylib $PWD/../packed_build/obs-plugins/obs-x264.so
+sudo install_name_tool -change /tmp/obsdeps/bin/libx264.159.dylib @executable_path/libx264.159.dylib $PWD/../packed_build/obs-plugins/obs-x264.so
 
 sudo install_name_tool -change /tmp/obsdeps/lib/libfreetype.6.dylib @executable_path/libfreetype.6.dylib $PWD/../packed_build/obs-plugins/text-freetype2.so
