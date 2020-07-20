@@ -493,6 +493,8 @@ static void apply_video_encoder_settings(obs_data_t *settings,
 		obs_data_set_string(settings, "profile", profile);
 	}
 
+	obs_data_item_release(&enc_item);
+
 	item = json_object_get(recommended, "max video bitrate");
 	if (json_is_integer(item)) {
 		int max_bitrate = (int)json_integer_value(item);
