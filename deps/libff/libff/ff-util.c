@@ -291,7 +291,6 @@ static inline bool is_output_device(const AVClass *avclass)
 	if (!avclass)
 		return 0;
 
-#if LIBAVUTIL_VERSION_INT >= AV_VERSION_INT(52, 66, 101)
 	switch (avclass->category) {
 	case AV_CLASS_CATEGORY_DEVICE_VIDEO_OUTPUT:
 	case AV_CLASS_CATEGORY_DEVICE_AUDIO_OUTPUT:
@@ -300,9 +299,6 @@ static inline bool is_output_device(const AVClass *avclass)
 	default:
 		return false;
 	}
-#else
-	return (avclass->category == AV_CLASS_CATEGORY_OUTPUT);
-#endif
 }
 
 const struct ff_format_desc *ff_format_supported()

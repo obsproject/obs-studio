@@ -30,9 +30,15 @@ struct ffmpeg_cfg {
 	int height;
 };
 
+struct ffmpeg_audio_info {
+	AVStream *stream;
+	AVCodecContext *ctx;
+};
+
 struct ffmpeg_data {
 	AVStream *video;
-	AVStream **audio_streams;
+	AVCodecContext *video_ctx;
+	struct ffmpeg_audio_info *audio_infos;
 	AVCodec *acodec;
 	AVCodec *vcodec;
 	AVFormatContext *output;
