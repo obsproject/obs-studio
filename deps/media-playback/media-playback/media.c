@@ -227,13 +227,20 @@ static bool mp_media_init_scaling(mp_media_t *m)
 
 static bool mp_media_prepare_frames(mp_media_t *m)
 {
+	bool actively_seeking = m->seek_next_ts && m->pause;
+
 	while (!mp_media_ready_to_start(m)) {
 		if (!m->eof) {
 			int ret = mp_media_next_packet(m);
-			if (ret == AVERROR_EOF || ret == AVERROR_EXIT)
-				m->eof = true;
-			else if (ret < 0)
+			if (ret == AVERROR_EOF || ret == AVERROR_EXIT) {
+				if (!actively_seeking) {
+					m->eof = true;
+				} else {
+					break;
+				}
+			} else if (ret < 0) {
 				return false;
+			}
 		}
 
 		if (m->has_video && !mp_decode_frame(&m->v))
