@@ -40,6 +40,10 @@ std::string GenerateTimeDateFilename(const char *extension,
 				     bool noSpace = false);
 std::string GenerateSpecifiedFilename(const char *extension, bool noSpace,
 				      const char *format);
+std::string GetFormatString(const char *format, const char *prefix,
+			    const char *suffix);
+std::string GetOutputFilename(const char *path, const char *ext, bool noSpace,
+			      bool overwrite, const char *format);
 QObject *CreateShortcutFilter();
 
 struct BaseLexer {
