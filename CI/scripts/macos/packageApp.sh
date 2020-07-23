@@ -39,10 +39,10 @@ cp ../CI/scripts/macos/app/Info.plist ./OBS.app/Contents
 -x ./OBS.app/Contents/MacOS/obs \
 -x ./OBS.app/Contents/MacOS/obs-ffmpeg-mux \
 -x ./OBS.app/Contents/MacOS/obslua.so \
--x ./OBS.app/Contents/MacOS/_obspython.so \
 -x ./OBS.app/Contents/PlugIns/obs-x264.so \
 -x ./OBS.app/Contents/PlugIns/text-freetype2.so \
 -x ./OBS.app/Contents/PlugIns/obs-libfdk.so
+# -x ./OBS.app/Contents/MacOS/_obspython.so \
 # -x ./OBS.app/Contents/PlugIns/obs-outputs.so \
 
 /usr/local/Cellar/qt/${QT_VERSION}/bin/macdeployqt ./OBS.app
