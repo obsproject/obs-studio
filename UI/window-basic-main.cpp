@@ -2347,6 +2347,31 @@ void OBSBasic::CreateHotkeys()
 		"OBSBasic.ResetStats", Str("Basic.Stats.ResetStats"),
 		resetStats, this);
 	LoadHotkey(statsHotkey, "OBSBasic.ResetStats");
+
+	auto screenshot = [](void *data, obs_hotkey_id, obs_hotkey_t *,
+			     bool pressed) {
+		if (pressed)
+			QMetaObject::invokeMethod(static_cast<OBSBasic *>(data),
+						  "Screenshot",
+						  Qt::QueuedConnection);
+	};
+
+	screenshotHotkey = obs_hotkey_register_frontend(
+		"OBSBasic.Screenshot", Str("Screenshot"), screenshot, this);
+	LoadHotkey(screenshotHotkey, "OBSBasic.Screenshot");
+
+	auto screenshotSource = [](void *data, obs_hotkey_id, obs_hotkey_t *,
+				   bool pressed) {
+		if (pressed)
+			QMetaObject::invokeMethod(static_cast<OBSBasic *>(data),
+						  "ScreenshotSelectedSource",
+						  Qt::QueuedConnection);
+	};
+
+	sourceScreenshotHotkey = obs_hotkey_register_frontend(
+		"OBSBasic.SelectedSourceScreenshot",
+		Str("Screenshot.SourceHotkey"), screenshotSource, this);
+	LoadHotkey(sourceScreenshotHotkey, "OBSBasic.SelectedSourceScreenshot");
 }
 
 void OBSBasic::ClearHotkeys()
@@ -2360,6 +2385,8 @@ void OBSBasic::ClearHotkeys()
 	obs_hotkey_unregister(togglePreviewProgramHotkey);
 	obs_hotkey_unregister(transitionHotkey);
 	obs_hotkey_unregister(statsHotkey);
+	obs_hotkey_unregister(screenshotHotkey);
+	obs_hotkey_unregister(sourceScreenshotHotkey);
 }
 
 OBSBasic::~OBSBasic()
@@ -2370,6 +2397,7 @@ OBSBasic::~OBSBasic()
 	if (updateCheckThread && updateCheckThread->isRunning())
 		updateCheckThread->wait();
 
+	delete screenshotData;
 	delete multiviewProjectorMenu;
 	delete previewProjector;
 	delete studioProgramProjector;
@@ -4330,6 +4358,8 @@ void OBSBasic::on_scenes_customContextMenuRequested(const QPoint &pos)
 			QTStr("SceneWindow"), this, SLOT(OpenSceneWindow()));
 
 		popup.addAction(sceneWindow);
+		popup.addAction(QTStr("Screenshot.Scene"), this,
+				SLOT(ScreenshotScene()));
 		popup.addSeparator();
 		popup.addAction(QTStr("Filters"), this,
 				SLOT(OpenSceneFilters()));
@@ -4681,6 +4711,9 @@ void OBSBasic::CreateSourcePopupMenu(int idx, bool preview)
 
 		popup.addAction(previewWindow);
 
+		popup.addAction(QTStr("Screenshot.Preview"), this,
+				SLOT(ScreenshotScene()));
+
 		popup.addSeparator();
 	}
 
@@ -4796,6 +4829,8 @@ void OBSBasic::CreateSourcePopupMenu(int idx, bool preview)
 
 		popup.addMenu(sourceProjector);
 		popup.addAction(sourceWindow);
+		popup.addAction(QTStr("Screenshot.Source"), this,
+				SLOT(ScreenshotSelectedSource()));
 		popup.addSeparator();
 
 		action = popup.addAction(QTStr("Interact"), this,
@@ -6248,6 +6283,9 @@ void OBSBasic::on_program_customContextMenuRequested(const QPoint &)
 				SLOT(OpenStudioProgramWindow()));
 
 	popup.addAction(studioProgramWindow);
+
+	popup.addAction(QTStr("Screenshot.StudioProgram"), this,
+			SLOT(ScreenshotProgram()));
 
 	popup.exec(QCursor::pos());
 }

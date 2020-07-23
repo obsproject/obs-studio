@@ -118,6 +118,10 @@ struct obs_frontend_callbacks {
 	virtual void on_preload(obs_data_t *settings) = 0;
 	virtual void on_save(obs_data_t *settings) = 0;
 	virtual void on_event(enum obs_frontend_event event) = 0;
+
+	virtual void obs_frontend_take_screenshot() = 0;
+	virtual void
+	obs_frontend_take_source_screenshot(obs_source_t *source) = 0;
 };
 
 EXPORT void

@@ -463,3 +463,15 @@ void obs_frontend_set_current_preview_scene(obs_source_t *scene)
 	if (callbacks_valid())
 		c->obs_frontend_set_current_preview_scene(scene);
 }
+
+void obs_frontend_take_screenshot(void)
+{
+	if (callbacks_valid())
+		c->obs_frontend_take_screenshot();
+}
+
+void obs_frontend_take_source_screenshot(obs_source_t *source)
+{
+	if (callbacks_valid())
+		c->obs_frontend_take_source_screenshot(source);
+}
