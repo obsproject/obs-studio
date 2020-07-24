@@ -340,10 +340,6 @@ static void fill_servers(obs_property_t *servers_prop, json_t *service,
 		return;
 	}
 
-	if (strcmp(name, "Mixer.com - FTL") == 0) {
-		obs_property_list_add_string(
-			servers_prop, obs_module_text("Server.Auto"), "auto");
-	}
 	if (strcmp(name, "Twitch") == 0) {
 		if (fill_twitch_servers(servers_prop))
 			return;

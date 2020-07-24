@@ -151,8 +151,8 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>803</width>
-              <height>1026</height>
+              <width>806</width>
+              <height>1254</height>
              </rect>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_19">
@@ -1146,7 +1146,7 @@
                </property>
               </widget>
              </item>
-             <item row="9" column="0">
+             <item row="8" column="0">
               <widget class="QLabel" name="authUsernameLabel">
                <property name="text">
                 <string>Basic.Settings.Stream.Custom.Username</string>
@@ -1156,10 +1156,10 @@
                </property>
               </widget>
              </item>
-             <item row="9" column="1">
+             <item row="8" column="1">
               <widget class="QLineEdit" name="authUsername"/>
              </item>
-             <item row="10" column="0">
+             <item row="9" column="0">
               <widget class="QLabel" name="authPwLabel">
                <property name="text">
                 <string>Basic.Settings.Stream.Custom.Password</string>
@@ -1169,7 +1169,7 @@
                </property>
               </widget>
              </item>
-             <item row="10" column="1">
+             <item row="9" column="1">
               <widget class="QWidget" name="authPwWidget" native="true">
                <layout class="QHBoxLayout" name="horizontalLayout_25">
                 <property name="leftMargin">
@@ -1214,19 +1214,6 @@
                </property>
               </widget>
              </item>
-             <item row="8" column="0">
-              <widget class="QLabel" name="mixerAddonLabel">
-               <property name="text">
-                <string>Basic.Settings.Stream.MixerAddon</string>
-               </property>
-               <property name="buddy">
-                <cstring>mixerAddonDropdown</cstring>
-               </property>
-              </widget>
-             </item>
-             <item row="8" column="1">
-              <widget class="QComboBox" name="mixerAddonDropdown"/>
-             </item>
             </layout>
            </widget>
           </widget>
@@ -1263,8 +1250,8 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>603</width>
-              <height>631</height>
+              <width>813</width>
+              <height>761</height>
              </rect>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_21">
@@ -3758,8 +3745,8 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>555</width>
-              <height>469</height>
+              <width>767</width>
+              <height>582</height>
              </rect>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_50">
@@ -4614,8 +4601,8 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>596</width>
-              <height>781</height>
+              <width>791</width>
+              <height>970</height>
              </rect>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_23">

@@ -378,8 +378,6 @@ jobs:
       VLC_VERSION: '3.0.0-git'
       TWITCH-CLIENTID: ${{ secrets.TWITCH_CLIENTID }}
       TWITCH-HASH: ${{ secrets.TWITCH_HASH }}
-      MIXER-CLIENTID: ${{ secrets.MIXER_CLIENTID }}
-      MIXER-HASH: ${{ secrets.MIXER_HASH }}
       RESTREAM-CLIENTID: ${{ secrets.RESTREAM-CLIENTID }}
       RESTREAM-HASH: ${{ secrets.RESTREAM-HASH }}
     steps:
@@ -492,8 +490,6 @@ jobs:
       WINDOWS_DEPS_VERSION: '2017'
       TWITCH-CLIENTID: ${{ secrets.TWITCH_CLIENTID }}
       TWITCH-HASH: ${{ secrets.TWITCH_HASH }}
-      MIXER-CLIENTID: ${{ secrets.MIXER_CLIENTID }}
-      MIXER-HASH: ${{ secrets.MIXER_HASH }}
       RESTREAM-CLIENTID: ${{ secrets.RESTREAM-CLIENTID }}
       RESTREAM-HASH: ${{ secrets.RESTREAM-HASH }}
     steps:

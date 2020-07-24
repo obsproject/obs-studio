@@ -6,8 +6,6 @@ variables:
   CEF_VERSION: 75.1.16+g16a67c4+chromium-75.0.3770.100
   TWITCH-CLIENTID: $(twitch_clientid)
   TWITCH-HASH: $(twitch_hash)
-  MIXER-CLIENTID: $(mixer_clientid)
-  MIXER-HASH: $(mixer_hash)
   RESTREAM-CLIENTID: $(restream_clientid)
   RESTREAM-HASH: $(restream_hash)
 
