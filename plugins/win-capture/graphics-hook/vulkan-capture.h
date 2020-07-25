@@ -7,6 +7,7 @@ struct vk_inst_funcs {
 	DEF_FUNC(DestroyInstance);
 	DEF_FUNC(CreateWin32SurfaceKHR);
 	DEF_FUNC(DestroySurfaceKHR);
+	DEF_FUNC(GetPhysicalDeviceQueueFamilyProperties);
 	DEF_FUNC(GetPhysicalDeviceMemoryProperties);
 	DEF_FUNC(GetPhysicalDeviceImageFormatProperties2);
 	DEF_FUNC(EnumerateDeviceExtensionProperties);
