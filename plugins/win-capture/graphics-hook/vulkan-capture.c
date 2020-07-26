@@ -200,6 +200,22 @@ static void init_obj_list(struct vk_obj_list *list)
 	InitializeSRWLock(&list->mutex);
 }
 
+static struct vk_obj_node *obj_walk_begin(struct vk_obj_list *list)
+{
+	AcquireSRWLockExclusive(&list->mutex);
+	return list->root;
+}
+
+static struct vk_obj_node *obj_walk_next(struct vk_obj_node *node)
+{
+	return node->next;
+}
+
+static void obj_walk_end(struct vk_obj_list *list)
+{
+	ReleaseSRWLockExclusive(&list->mutex);
+}
+
 /* ------------------------------------------------------------------------- */
 
 static struct vk_obj_list devices;
@@ -283,6 +299,22 @@ static void remove_free_queue_all(struct vk_data *data,
 	}
 }
 
+static struct vk_queue_data *queue_walk_begin(struct vk_data *data)
+{
+	return (struct vk_queue_data *)obj_walk_begin(&data->queues);
+}
+
+static struct vk_queue_data *queue_walk_next(struct vk_queue_data *queue_data)
+{
+	return (struct vk_queue_data *)obj_walk_next(
+		(struct vk_obj_node *)queue_data);
+}
+
+static void queue_walk_end(struct vk_data *data)
+{
+	obj_walk_end(&data->queues);
+}
+
 /* ------------------------------------------------------------------------- */
 
 static struct vk_swap_data *alloc_swap_data(const VkAllocationCallbacks *ac)
@@ -312,6 +344,22 @@ static void remove_free_swap_data(struct vk_data *data, VkSwapchainKHR sc,
 		(struct vk_swap_data *)remove_obj_data(&data->swaps,
 						       (uint64_t)sc);
 	vk_free(ac, swap_data);
+}
+
+static struct vk_swap_data *swap_walk_begin(struct vk_data *data)
+{
+	return (struct vk_swap_data *)obj_walk_begin(&data->swaps);
+}
+
+static struct vk_swap_data *swap_walk_next(struct vk_swap_data *swap_data)
+{
+	return (struct vk_swap_data *)obj_walk_next(
+		(struct vk_obj_node *)swap_data);
+}
+
+static void swap_walk_end(struct vk_data *data)
+{
+	obj_walk_end(&data->swaps);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -355,9 +403,8 @@ static void vk_shtex_free(struct vk_data *data)
 
 	vk_shtex_wait_until_idle(data);
 
-	AcquireSRWLockExclusive(&data->swaps.mutex);
+	struct vk_swap_data *swap = swap_walk_begin(data);
 
-	struct vk_swap_data *swap = (struct vk_swap_data *)data->swaps.root;
 	while (swap) {
 		VkDevice device = data->device;
 		if (swap->export_image)
@@ -378,10 +425,10 @@ static void vk_shtex_free(struct vk_data *data)
 
 		swap->captured = false;
 
-		swap = (struct vk_swap_data *)swap->node.next;
+		swap = swap_walk_next(swap);
 	}
 
-	ReleaseSRWLockExclusive(&data->swaps.mutex);
+	swap_walk_end(data);
 
 	if (data->d3d11_context) {
 		ID3D11DeviceContext_Release(data->d3d11_context);
