@@ -59,6 +59,9 @@ struct vk_queue_data {
 
 	uint32_t fam_idx;
 	bool supports_transfer;
+	struct vk_frame_data *frames;
+	uint32_t frame_index;
+	uint32_t frame_count;
 };
 
 struct vk_frame_data {
@@ -66,12 +69,6 @@ struct vk_frame_data {
 	VkCommandBuffer cmd_buffer;
 	VkFence fence;
 	bool cmd_buffer_busy;
-};
-
-struct vk_family_data {
-	struct vk_frame_data *frames;
-	uint32_t frame_index;
-	uint32_t frame_count;
 };
 
 struct vk_surf_data {
@@ -103,8 +100,6 @@ struct vk_data {
 
 	struct vk_obj_list queues;
 
-	struct vk_family_data *families;
-	uint32_t family_capacity;
 	VkExternalMemoryProperties external_mem_props;
 
 	struct vk_inst_data *inst_data;
@@ -272,6 +267,9 @@ static struct vk_queue_data *add_queue_data(struct vk_data *data, VkQueue queue,
 	add_obj_data(&data->queues, (uint64_t)queue, queue_data);
 	queue_data->fam_idx = fam_idx;
 	queue_data->supports_transfer = supports_transfer;
+	queue_data->frames = NULL;
+	queue_data->frame_index = 0;
+	queue_data->frame_count = 0;
 	return queue_data;
 }
 
@@ -378,12 +376,12 @@ static void vk_shtex_clear_fence(const struct vk_data *data,
 }
 
 static void vk_shtex_wait_until_pool_idle(struct vk_data *data,
-					  struct vk_family_data *family_data)
+					  struct vk_queue_data *queue_data)
 {
-	for (uint32_t frame_idx = 0; frame_idx < family_data->frame_count;
+	for (uint32_t frame_idx = 0; frame_idx < queue_data->frame_count;
 	     frame_idx++) {
 		struct vk_frame_data *frame_data =
-			&family_data->frames[frame_idx];
+			&queue_data->frames[frame_idx];
 		if (frame_data->cmd_pool != VK_NULL_HANDLE)
 			vk_shtex_clear_fence(data, frame_data);
 	}
@@ -391,10 +389,15 @@ static void vk_shtex_wait_until_pool_idle(struct vk_data *data,
 
 static void vk_shtex_wait_until_idle(struct vk_data *data)
 {
-	for (uint32_t fam_idx = 0; fam_idx < data->family_capacity; fam_idx++) {
-		struct vk_family_data *family_data = &data->families[fam_idx];
-		vk_shtex_wait_until_pool_idle(data, family_data);
+	struct vk_queue_data *queue_data = queue_walk_begin(data);
+
+	while (queue_data) {
+		vk_shtex_wait_until_pool_idle(data, queue_data);
+
+		queue_data = queue_walk_next(queue_data);
 	}
+
+	queue_walk_end(data);
 }
 
 static void vk_shtex_free(struct vk_data *data)
@@ -880,31 +883,30 @@ static bool vk_shtex_init(struct vk_data *data, HWND window,
 	return true;
 }
 
-static void vk_shtex_create_family_objects(struct vk_data *data,
-					   uint32_t fam_idx,
-					   uint32_t image_count)
+static void vk_shtex_create_frame_objects(struct vk_data *data,
+					  struct vk_queue_data *queue_data,
+					  uint32_t image_count)
 {
-	struct vk_family_data *family_data = &data->families[fam_idx];
-	family_data->frames =
+	queue_data->frames =
 		vk_alloc(data->ac, image_count * sizeof(struct vk_frame_data),
 			 _Alignof(struct vk_frame_data),
 			 VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);
-	memset(family_data->frames, 0,
+	memset(queue_data->frames, 0,
 	       image_count * sizeof(struct vk_frame_data));
-	family_data->frame_index = 0;
-	family_data->frame_count = image_count;
+	queue_data->frame_index = 0;
+	queue_data->frame_count = image_count;
 
 	VkDevice device = data->device;
 	for (uint32_t image_index = 0; image_index < image_count;
 	     image_index++) {
 		struct vk_frame_data *frame_data =
-			&family_data->frames[image_index];
+			&queue_data->frames[image_index];
 
 		VkCommandPoolCreateInfo cpci;
 		cpci.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
 		cpci.pNext = NULL;
 		cpci.flags = 0;
-		cpci.queueFamilyIndex = fam_idx;
+		cpci.queueFamilyIndex = queue_data->fam_idx;
 
 		VkResult res = data->funcs.CreateCommandPool(
 			device, &cpci, data->ac, &frame_data->cmd_pool);
@@ -946,15 +948,15 @@ static void vk_shtex_destroy_fence(struct vk_data *data, bool *cmd_buffer_busy,
 	*fence = VK_NULL_HANDLE;
 }
 
-static void vk_shtex_destroy_family_objects(struct vk_data *data,
-					    struct vk_family_data *family_data)
+static void vk_shtex_destroy_frame_objects(struct vk_data *data,
+					   struct vk_queue_data *queue_data)
 {
 	VkDevice device = data->device;
 
-	for (uint32_t frame_idx = 0; frame_idx < family_data->frame_count;
+	for (uint32_t frame_idx = 0; frame_idx < queue_data->frame_count;
 	     frame_idx++) {
 		struct vk_frame_data *frame_data =
-			&family_data->frames[frame_idx];
+			&queue_data->frames[frame_idx];
 		bool *cmd_buffer_busy = &frame_data->cmd_buffer_busy;
 		VkFence *fence = &frame_data->fence;
 		vk_shtex_destroy_fence(data, cmd_buffer_busy, fence);
@@ -964,9 +966,9 @@ static void vk_shtex_destroy_family_objects(struct vk_data *data,
 		frame_data->cmd_pool = VK_NULL_HANDLE;
 	}
 
-	vk_free(data->ac, family_data->frames);
-	family_data->frames = NULL;
-	family_data->frame_count = 0;
+	vk_free(data->ac, queue_data->frames);
+	queue_data->frames = NULL;
+	queue_data->frame_count = 0;
 }
 
 static void vk_shtex_capture(struct vk_data *data,
@@ -995,17 +997,16 @@ static void vk_shtex_capture(struct vk_data *data,
 	struct vk_queue_data *queue_data = get_queue_data(data, queue);
 	uint32_t fam_idx = queue_data->fam_idx;
 
-	struct vk_family_data *family_data = &data->families[fam_idx];
 	const uint32_t image_count = swap->image_count;
-	if (family_data->frame_count < image_count) {
-		if (family_data->frame_count > 0)
-			vk_shtex_destroy_family_objects(data, family_data);
-		vk_shtex_create_family_objects(data, fam_idx, image_count);
+	if (queue_data->frame_count < image_count) {
+		if (queue_data->frame_count > 0)
+			vk_shtex_destroy_frame_objects(data, queue_data);
+		vk_shtex_create_frame_objects(data, queue_data, image_count);
 	}
 
-	const uint32_t frame_index = family_data->frame_index;
-	struct vk_frame_data *frame_data = &family_data->frames[frame_index];
-	family_data->frame_index = (frame_index + 1) % family_data->frame_count;
+	const uint32_t frame_index = queue_data->frame_index;
+	struct vk_frame_data *frame_data = &queue_data->frames[frame_index];
+	queue_data->frame_index = (frame_index + 1) % queue_data->frame_count;
 	vk_shtex_clear_fence(data, frame_data);
 
 	VkDevice device = data->device;
@@ -1585,17 +1586,6 @@ static VkResult VKAPI_CALL OBS_CreateDevice(VkPhysicalDevice phy_device,
 		data->ac = &data->ac_storage;
 	}
 
-	uint32_t totol_queue_count = 0;
-	uint32_t family_capacity = 1;
-	for (uint32_t i = 0, count = info->queueCreateInfoCount; i < count;
-	     ++i) {
-		const VkDeviceQueueCreateInfo *queue_info =
-			&info->pQueueCreateInfos[i];
-		totol_queue_count += queue_info->queueCount;
-		family_capacity =
-			max(family_capacity, queue_info->queueFamilyIndex + 1);
-	}
-
 	uint32_t queue_family_property_count = 0;
 	ifuncs->GetPhysicalDeviceQueueFamilyProperties(
 		phy_device, &queue_family_property_count, NULL);
@@ -1629,14 +1619,6 @@ static VkResult VKAPI_CALL OBS_CreateDevice(VkPhysicalDevice phy_device,
 
 	_freea(queue_family_properties);
 
-	data->families =
-		vk_alloc(ac, family_capacity * sizeof(struct vk_family_data),
-			 _Alignof(struct vk_family_data),
-			 VK_SYSTEM_ALLOCATION_SCOPE_DEVICE);
-	memset(data->families, 0,
-	       family_capacity * sizeof(struct vk_family_data));
-	data->family_capacity = family_capacity;
-
 	init_obj_list(&data->swaps);
 
 	data->valid = true;
@@ -1651,18 +1633,17 @@ static void VKAPI_CALL OBS_DestroyDevice(VkDevice device,
 	struct vk_data *data = remove_device_data(device);
 
 	if (data->valid) {
-		for (uint32_t fam_idx = 0; fam_idx < data->family_capacity;
-		     fam_idx++) {
-			struct vk_family_data *family_data =
-				&data->families[fam_idx];
-			vk_shtex_destroy_family_objects(data, family_data);
+		struct vk_queue_data *queue_data = queue_walk_begin(data);
+
+		while (queue_data) {
+			vk_shtex_destroy_frame_objects(data, queue_data);
+
+			queue_data = queue_walk_next(queue_data);
 		}
 
-		remove_free_queue_all(data, ac);
+		queue_walk_end(data);
 
-		vk_free(ac, data->families);
-		data->families = NULL;
-		data->family_capacity = 0;
+		remove_free_queue_all(data, ac);
 	}
 
 	PFN_vkDestroyDevice destroy_device = data->funcs.DestroyDevice;
