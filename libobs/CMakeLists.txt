@@ -362,6 +362,7 @@ set(libobs_util_SOURCES
 set(libobs_util_HEADERS
 	util/curl/curl-helper.h
 	util/sse-intrin.h
+	util/sse2neon.h
 	util/array-serializer.h
 	util/file-serializer.h
 	util/utf8.h
