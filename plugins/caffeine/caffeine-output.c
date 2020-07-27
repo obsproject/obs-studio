@@ -514,7 +514,7 @@ static void caffeine_raw_audio(void *data, struct audio_data *frames)
 		// Find the last element that we can write to. This looks a bit weird,
 		// but it is a pointer to the last 'next' entry that is valid.
 		struct caffeine_audio **tgt = &context->audio_queue;
-		while (((*tgt) != NULL) && ((*tgt)->next != NULL))
+		while ((*tgt) != NULL)
 			tgt = &((*tgt)->next);
 		*tgt = ca;
 	}
