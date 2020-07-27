@@ -148,7 +148,6 @@ static void obs_qsv_defaults(obs_data_t *settings)
 	obs_data_set_default_int(settings, "bitrate", 2500);
 	obs_data_set_default_int(settings, "max_bitrate", 3000);
 	obs_data_set_default_string(settings, "profile", "high");
-	obs_data_set_default_int(settings, "async_depth", 4);
 	obs_data_set_default_string(settings, "rate_control", "CBR");
 
 	obs_data_set_default_int(settings, "accuracy", 1000);
@@ -157,13 +156,11 @@ static void obs_qsv_defaults(obs_data_t *settings)
 	obs_data_set_default_int(settings, "qpp", 23);
 	obs_data_set_default_int(settings, "qpb", 23);
 	obs_data_set_default_int(settings, "icq_quality", 23);
-	obs_data_set_default_int(settings, "la_depth", 15);
 
 	obs_data_set_default_int(settings, "keyint_sec", 3);
 	obs_data_set_default_string(settings, "latency", "normal");
 	obs_data_set_default_int(settings, "bframes", 3);
 	obs_data_set_default_bool(settings, "enhancements", false);
-	obs_data_set_default_bool(settings, "mbbrc", true);
 }
 
 static inline void add_strings(obs_property_t *list, const char *const *strings)
@@ -196,10 +193,22 @@ static inline bool is_skl_or_greater_platform()
 
 static bool update_latency(obs_data_t *settings)
 {
-	int async_depth = (int)obs_data_get_int(settings, "async_depth");
-	int la_depth = (int)obs_data_get_int(settings, "la_depth");
+	bool update = false;
+	int async_depth = 4;
+	if (obs_data_item_byname(settings, "async_depth") != NULL) {
+		async_depth = (int)obs_data_get_int(settings, "async_depth");
+		obs_data_erase(settings, "async_depth");
+		update = true;
+	}
 
-	if (async_depth > 0 || la_depth > 0) {
+	int la_depth = 15;
+	if (obs_data_item_byname(settings, "la_depth") != NULL) {
+		la_depth = (int)obs_data_get_int(settings, "la_depth");
+		obs_data_erase(settings, "la_depth");
+		update = true;
+	}
+
+	if (update) {
 		const char *rate_control =
 			obs_data_get_string(settings, "rate_control");
 
@@ -221,9 +230,6 @@ static bool update_latency(obs_data_t *settings)
 				obs_data_set_string(settings, "latency",
 						    "ultra-low");
 		}
-
-		obs_data_erase(settings, "async_depth");
-		obs_data_erase(settings, "la_depth");
 	}
 
 	return true;
@@ -231,20 +237,25 @@ static bool update_latency(obs_data_t *settings)
 
 static bool update_enhancements(obs_data_t *settings)
 {
+	bool update = false;
 	bool mbbrc = true;
 	if (obs_data_item_byname(settings, "mbbrc") != NULL) {
 		mbbrc = (bool)obs_data_get_bool(settings, "mbbrc");
 		obs_data_erase(settings, "mbbrc");
+		update = true;
 	}
 
 	bool cqm = false;
 	if (obs_data_item_byname(settings, "CQM") != NULL) {
 		cqm = (bool)obs_data_get_bool(settings, "CQM");
 		obs_data_erase(settings, "CQM");
+		update = true;
 	}
 
-	bool enabled = (mbbrc && cqm);
-	obs_data_set_bool(settings, "enhancements", enabled);
+	if (update) {
+		bool enabled = (mbbrc && cqm);
+		obs_data_set_bool(settings, "enhancements", enabled);
+	}
 
 	return true;
 }
