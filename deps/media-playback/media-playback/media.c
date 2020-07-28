@@ -416,10 +416,15 @@ static void mp_media_next_video(mp_media_t *m, bool preload)
 		d->got_first_keyframe = true;
 	}
 
-	if (preload)
-		m->v_preload_cb(m->opaque, frame);
-	else
+	if (preload) {
+		if (m->seek_next_ts && m->v_seek_cb) {
+			m->v_seek_cb(m->opaque, frame);
+		} else {
+			m->v_preload_cb(m->opaque, frame);
+		}
+	} else {
 		m->v_cb(m->opaque, frame);
+	}
 }
 
 static void mp_media_calc_next_ns(mp_media_t *m)
@@ -780,6 +785,7 @@ bool mp_media_init(mp_media_t *media, const struct mp_media_info *info)
 	media->v_cb = info->v_cb;
 	media->a_cb = info->a_cb;
 	media->stop_cb = info->stop_cb;
+	media->v_seek_cb = info->v_seek_cb;
 	media->v_preload_cb = info->v_preload_cb;
 	media->force_range = info->force_range;
 	media->buffering = info->buffering;
