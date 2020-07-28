@@ -148,10 +148,18 @@ void SetAlwaysOnTop(QWidget *window, bool enable)
 {
 	Qt::WindowFlags flags = window->windowFlags();
 
-	if (enable)
+	if (enable) {
+		/* Force the level of the window high so it sits on top of
+		 * full-screen applications like Keynote */
+		NSView *nsv = (__bridge NSView *)reinterpret_cast<void *>(
+			window->winId());
+		NSWindow *nsw = nsv.window;
+		[nsw setLevel:1024];
+
 		flags |= Qt::WindowStaysOnTopHint;
-	else
+	} else {
 		flags &= ~Qt::WindowStaysOnTopHint;
+	}
 
 	window->setWindowFlags(flags);
 	window->show();
