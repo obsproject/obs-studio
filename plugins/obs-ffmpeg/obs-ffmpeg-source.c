@@ -262,6 +262,12 @@ static void preload_frame(void *opaque, struct obs_source_frame *f)
 		FF_BLOG(LOG_INFO, "Reconnected.");
 }
 
+static void seek_frame(void *opaque, struct obs_source_frame *f)
+{
+	struct ffmpeg_source *s = opaque;
+	obs_source_set_video_frame(s->source, f);
+}
+
 static void get_audio(void *opaque, struct obs_source_audio *a)
 {
 	struct ffmpeg_source *s = opaque;
@@ -292,6 +298,7 @@ static void ffmpeg_source_open(struct ffmpeg_source *s)
 			.opaque = s,
 			.v_cb = get_frame,
 			.v_preload_cb = preload_frame,
+			.v_seek_cb = seek_frame,
 			.a_cb = get_audio,
 			.stop_cb = media_stopped,
 			.path = s->input,
