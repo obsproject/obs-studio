@@ -1210,6 +1210,18 @@ EXPORT void obs_source_preload_video2(obs_source_t *source,
 /** Shows any preloaded video data */
 EXPORT void obs_source_show_preloaded_video(obs_source_t *source);
 
+/**
+ * Sets current async video frame immediately
+ *
+ * NOTE: Non-YUV formats will always be treated as full range with this
+ * function!  Use obs_source_preload_video2 instead if partial range support is
+ * desired for non-YUV video formats.
+ */
+EXPORT void obs_source_set_video_frame(obs_source_t *source,
+				       const struct obs_source_frame *frame);
+EXPORT void obs_source_set_video_frame2(obs_source_t *source,
+					const struct obs_source_frame2 *frame);
+
 /** Outputs audio data (always asynchronous) */
 EXPORT void obs_source_output_audio(obs_source_t *source,
 				    const struct obs_source_audio *audio);
