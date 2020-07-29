@@ -103,6 +103,7 @@ install_homebrew_deps() {
         exit 1
     fi
 
+    brew update
     brew bundle --file ${CI_SCRIPTS}/Brewfile
 }
 

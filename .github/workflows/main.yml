@@ -49,6 +49,7 @@ jobs:
       - name: 'Install prerequisites (Homebrew)'
         shell: bash
         run: |
+          brew update --preinstall
           brew bundle --file ./CI/scripts/macos/Brewfile
       - name: 'Restore Chromium Embedded Framework from cache'
         id: cef-cache
