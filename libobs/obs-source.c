@@ -2888,8 +2888,6 @@ obs_source_preload_video_internal(obs_source_t *source,
 	if (!frame)
 		return;
 
-	obs_enter_graphics();
-
 	if (preload_frame_changed(source, frame)) {
 		obs_source_frame_destroy(source->async_preload_frame);
 		source->async_preload_frame = obs_source_frame_create(
@@ -2897,13 +2895,8 @@ obs_source_preload_video_internal(obs_source_t *source,
 	}
 
 	copy_frame_data(source->async_preload_frame, frame);
-	set_async_texture_size(source, source->async_preload_frame);
-	update_async_textures(source, source->async_preload_frame,
-			      source->async_textures, source->async_texrender);
 
 	source->last_frame_ts = frame->timestamp;
-
-	obs_leave_graphics();
 }
 
 void obs_source_preload_video(obs_source_t *source,
@@ -2962,7 +2955,17 @@ void obs_source_show_preloaded_video(obs_source_t *source)
 	if (!obs_source_valid(source, "obs_source_show_preloaded_video"))
 		return;
 
+	if (!source->async_preload_frame)
+		return;
+
+	obs_enter_graphics();
+
+	set_async_texture_size(source, source->async_preload_frame);
+	update_async_textures(source, source->async_preload_frame,
+			      source->async_textures, source->async_texrender);
 	source->async_active = true;
+
+	obs_leave_graphics();
 
 	pthread_mutex_lock(&source->audio_buf_mutex);
 	sys_ts = (source->monitoring_type != OBS_MONITORING_TYPE_MONITOR_ONLY)

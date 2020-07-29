@@ -317,9 +317,10 @@ static void ffmpeg_source_start(struct ffmpeg_source *s)
 		return;
 
 	mp_media_play(&s->media, s->is_looping, s->reconnecting);
-	if (s->is_local_file)
+	if (s->is_local_file && (s->is_clear_on_media_end || s->is_looping))
 		obs_source_show_preloaded_video(s->source);
-
+	else
+		obs_source_output_video(s->source, NULL);
 	set_media_state(s, OBS_MEDIA_STATE_PLAYING);
 	obs_source_media_started(s->source);
 }
