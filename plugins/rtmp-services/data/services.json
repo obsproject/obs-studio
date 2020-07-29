@@ -1742,6 +1742,20 @@
                 "max video bitrate": 4000,
                 "max audio bitrate": 192
             }
+        },
+        {
+            "name": "api.video",
+            "servers": [
+                {
+                    "name": "Default",
+                    "url": "rtmp://broadcast.api.video/s"
+                }
+            ],
+            "recommended": {
+                "keyint": 2,
+                "max video bitrate": 20000,
+                "max audio bitrate": 192
+            }
         }
     ]
 }
