@@ -150,9 +150,9 @@ sudo install_name_tool -change /usr/local/opt/berkeley-db/lib/libdb-18.1.dylib @
 
 sudo install_name_tool -change /usr/local/Cellar/openssl@1.1/1.1.1d/lib/libcrypto.1.1.dylib @executable_path/libcrypto.1.1.dylib $PWD/../packed_build/bin/libcrypto.1.1.dylib
 
-sudo install_name_tool -change /usr/local/opt/mbedtls/lib/libmbedtls.12.dylib @executable_path/libmbedtls.12.dylib $PWD/../packed_build/obs-plugins/obs-outputs.so
-sudo install_name_tool -change /usr/local/opt/mbedtls/lib/libmbedcrypto.3.dylib @executable_path/libmbedcrypto.3.dylib $PWD/../packed_build/obs-plugins/obs-outputs.so
-sudo install_name_tool -change /usr/local/opt/mbedtls/lib/libmbedx509.0.dylib @executable_path/libmbedx509.0.dylib $PWD/../packed_build/obs-plugins/obs-outputs.so
+sudo install_name_tool -change libmbedtls.12.dylib @executable_path/libmbedtls.12.dylib $PWD/../packed_build/obs-plugins/obs-outputs.so
+sudo install_name_tool -change libmbedcrypto.3.dylib @executable_path/libmbedcrypto.3.dylib $PWD/../packed_build/obs-plugins/obs-outputs.so
+sudo install_name_tool -change libmbedx509.0.dylib @executable_path/libmbedx509.0.dylib $PWD/../packed_build/obs-plugins/obs-outputs.so
 sudo install_name_tool -change /usr/local/opt/curl/lib/libcurl.4.dylib @executable_path/libcurl.4.dylib $PWD/../packed_build/obs-plugins/obs-outputs.so
 sudo install_name_tool -change /tmp/obsdeps/bin/libjansson.4.dylib @executable_path/libjansson.4.dylib $PWD/../packed_build/obs-plugins/obs-outputs.so
 
@@ -192,3 +192,5 @@ sudo install_name_tool -change /tmp/obsdeps/bin/libmbedcrypto.3.dylib @executabl
 sudo install_name_tool -change /tmp/obsdeps/bin/libx264.159.dylib @executable_path/libx264.159.dylib $PWD/../packed_build/obs-plugins/obs-x264.so
 
 sudo install_name_tool -change /tmp/obsdeps/lib/libfreetype.6.dylib @executable_path/libfreetype.6.dylib $PWD/../packed_build/obs-plugins/text-freetype2.so
+
+sudo install_name_tool -change /usr/local/opt/fdk-aac/lib/libfdk-aac.2.dylib @executable_path/libfdk-aac.2.dylib $PWD/../packed_build/obs-plugins/obs-libfdk.so
