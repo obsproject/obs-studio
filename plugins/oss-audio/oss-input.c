@@ -29,7 +29,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #define blog(level, msg, ...) blog(level, "oss-audio: " msg, ##__VA_ARGS__)
 
-#define NSEC_PER_SEC 1000000000LL
+#define NSEC_PER_SEC 1000000000ULL
 
 #define OSS_MAX_CHANNELS 8
 
@@ -255,9 +255,9 @@ static void *oss_reader_thr(void *vptr)
 				oss_channels_to_obs_speakers(handle->channels);
 			out.samples_per_sec = handle->rate;
 			out.frames = nbytes / framesize;
-			out.timestamp =
-				os_gettime_ns() -
-				((out.frames * NSEC_PER_SEC) / handle->rate);
+			out.timestamp = os_gettime_ns() -
+					util_mul_div64(out.frames, NSEC_PER_SEC,
+						       handle->rate);
 			obs_source_output_audio(handle->source, &out);
 		}
 		if (fds[1].revents & POLLIN) {
