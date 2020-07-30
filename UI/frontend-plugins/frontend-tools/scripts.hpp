@@ -48,6 +48,8 @@ public slots:
 	void on_scriptLog_clicked();
 	void on_defaults_clicked();
 
+	void OpenScriptParentDirectory();
+
 	void on_scripts_currentRowChanged(int row);
 
 	void on_pythonPathBrowse_clicked();
