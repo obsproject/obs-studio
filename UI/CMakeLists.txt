@@ -203,6 +203,7 @@ set(obs_SOURCES
 	window-basic-settings-stream.cpp
 	window-basic-main-screenshot.cpp
 	window-basic-auto-config-test.cpp
+	auto-config-start-page.cpp
 	window-basic-main-scene-collections.cpp
 	window-basic-main-transitions.cpp
 	window-basic-main-dropfiles.cpp
@@ -269,6 +270,8 @@ set(obs_HEADERS
 	window-basic-interaction.hpp
 	window-basic-properties.hpp
 	window-basic-auto-config.hpp
+	auto-config-start-page.hpp
+	auto-config-enums.hpp
 	window-basic-main-outputs.hpp
 	window-basic-source-select.hpp
 	window-basic-about.hpp

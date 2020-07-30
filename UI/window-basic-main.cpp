@@ -7875,7 +7875,7 @@ SourceTreeItem *OBSBasic::GetItemWidgetFromSceneItem(obs_sceneitem_t *sceneItem)
 
 void OBSBasic::on_autoConfigure_triggered()
 {
-	AutoConfig test(this);
+	AutoConfigWizard test(this);
 	test.setModal(true);
 	test.show();
 	test.exec();

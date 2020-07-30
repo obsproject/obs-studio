@@ -13,18 +13,19 @@
 #include <string>
 #include <mutex>
 
-class Ui_AutoConfigStartPage;
+#include "auto-config-start-page.hpp"
+#include "auto-config-enums.hpp"
+
+class AutoConfigStreamPage;
 class Ui_AutoConfigVideoPage;
 class Ui_AutoConfigStreamPage;
 class Ui_AutoConfigTestPage;
 
-class AutoConfigStreamPage;
 class Auth;
 
-class AutoConfig : public QWizard {
+class AutoConfigWizard : public QWizard {
 	Q_OBJECT
 
-	friend class AutoConfigStartPage;
 	friend class AutoConfigVideoPage;
 	friend class AutoConfigStreamPage;
 	friend class AutoConfigTestPage;
@@ -113,40 +114,17 @@ class AutoConfig : public QWizard {
 	void SaveSettings();
 
 public:
-	AutoConfig(QWidget *parent);
-	~AutoConfig();
-
-	enum Page {
-		StartPage,
-		VideoPage,
-		StreamPage,
-		TestPage,
-	};
-};
-
-class AutoConfigStartPage : public QWizardPage {
-	Q_OBJECT
-
-	friend class AutoConfig;
-
-	Ui_AutoConfigStartPage *ui;
-
-public:
-	AutoConfigStartPage(QWidget *parent = nullptr);
-	~AutoConfigStartPage();
-
-	virtual int nextId() const override;
+	AutoConfigWizard(QWidget *parent);
+	~AutoConfigWizard();
 
 public slots:
-	void on_prioritizeStreaming_clicked();
-	void on_prioritizeRecording_clicked();
-	void PrioritizeVCam();
+	void ChangedPriorityType(PriorityMode);
 };
 
 class AutoConfigVideoPage : public QWizardPage {
 	Q_OBJECT
 
-	friend class AutoConfig;
+	friend class AutoConfigWizard;
 
 	Ui_AutoConfigVideoPage *ui;
 
@@ -161,7 +139,7 @@ public:
 class AutoConfigStreamPage : public QWizardPage {
 	Q_OBJECT
 
-	friend class AutoConfig;
+	friend class AutoConfigWizard;
 
 	enum class Section : int {
 		Connect,
@@ -202,7 +180,7 @@ public slots:
 class AutoConfigTestPage : public QWizardPage {
 	Q_OBJECT
 
-	friend class AutoConfig;
+	friend class AutoConfigWizard;
 
 	QPointer<QFormLayout> results;
 

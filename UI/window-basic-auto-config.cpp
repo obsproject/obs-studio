@@ -9,7 +9,6 @@
 #include "obs-app.hpp"
 #include "url-push-button.hpp"
 
-#include "ui_AutoConfigStartPage.h"
 #include "ui_AutoConfigVideoPage.h"
 #include "ui_AutoConfigStreamPage.h"
 
@@ -24,13 +23,13 @@ struct QCefCookieManager;
 extern QCef *cef;
 extern QCefCookieManager *panel_cookies;
 
-#define wiz reinterpret_cast<AutoConfig *>(wizard())
+#define wiz reinterpret_cast<AutoConfigWizard *>(wizard())
 
 /* ------------------------------------------------------------------------- */
 
 #define SERVICE_PATH "service.json"
 
-static OBSData OpenServiceSettings(std::string &type)
+static OBSData GetServiceSettings(std::string &type)
 {
 	char serviceJsonPath[512];
 	int ret = GetProfilePath(serviceJsonPath, sizeof(serviceJsonPath),
@@ -54,60 +53,11 @@ static OBSData OpenServiceSettings(std::string &type)
 static void GetServiceInfo(std::string &type, std::string &service,
 			   std::string &server, std::string &key)
 {
-	OBSData settings = OpenServiceSettings(type);
+	OBSData settings = GetServiceSettings(type);
 
 	service = obs_data_get_string(settings, "service");
 	server = obs_data_get_string(settings, "server");
 	key = obs_data_get_string(settings, "key");
-}
-
-/* ------------------------------------------------------------------------- */
-
-AutoConfigStartPage::AutoConfigStartPage(QWidget *parent)
-	: QWizardPage(parent), ui(new Ui_AutoConfigStartPage)
-{
-	ui->setupUi(this);
-	setTitle(QTStr("Basic.AutoConfig.StartPage"));
-	setSubTitle(QTStr("Basic.AutoConfig.StartPage.SubTitle"));
-
-	OBSBasic *main = OBSBasic::Get();
-	if (main->VCamEnabled()) {
-		QRadioButton *prioritizeVCam = new QRadioButton(
-			QTStr("Basic.AutoConfig.StartPage.PrioritizeVirtualCam"),
-			this);
-		QBoxLayout *box = reinterpret_cast<QBoxLayout *>(layout());
-		box->insertWidget(2, prioritizeVCam);
-
-		connect(prioritizeVCam, &QPushButton::clicked, this,
-			&AutoConfigStartPage::PrioritizeVCam);
-	}
-}
-
-AutoConfigStartPage::~AutoConfigStartPage()
-{
-	delete ui;
-}
-
-int AutoConfigStartPage::nextId() const
-{
-	return wiz->type == AutoConfig::Type::VirtualCam
-		       ? AutoConfig::TestPage
-		       : AutoConfig::VideoPage;
-}
-
-void AutoConfigStartPage::on_prioritizeStreaming_clicked()
-{
-	wiz->type = AutoConfig::Type::Streaming;
-}
-
-void AutoConfigStartPage::on_prioritizeRecording_clicked()
-{
-	wiz->type = AutoConfig::Type::Recording;
-}
-
-void AutoConfigStartPage::PrioritizeVCam()
-{
-	wiz->type = AutoConfig::Type::VirtualCam;
 }
 
 /* ------------------------------------------------------------------------- */
@@ -137,13 +87,15 @@ AutoConfigVideoPage::AutoConfigVideoPage(QWidget *parent)
 					   : QString::number(fpsVal, 'g', 2);
 
 	ui->fps->addItem(QTStr(FPS_PREFER_HIGH_FPS),
-			 (int)AutoConfig::FPSType::PreferHighFPS);
+			 (int)AutoConfigWizard::FPSType::PreferHighFPS);
 	ui->fps->addItem(QTStr(FPS_PREFER_HIGH_RES),
-			 (int)AutoConfig::FPSType::PreferHighRes);
+			 (int)AutoConfigWizard::FPSType::PreferHighRes);
 	ui->fps->addItem(QTStr(FPS_USE_CURRENT).arg(fpsStr),
-			 (int)AutoConfig::FPSType::UseCurrent);
-	ui->fps->addItem(QStringLiteral("30"), (int)AutoConfig::FPSType::fps30);
-	ui->fps->addItem(QStringLiteral("60"), (int)AutoConfig::FPSType::fps60);
+			 (int)AutoConfigWizard::FPSType::UseCurrent);
+	ui->fps->addItem(QStringLiteral("30"),
+			 (int)AutoConfigWizard::FPSType::fps30);
+	ui->fps->addItem(QStringLiteral("60"),
+			 (int)AutoConfigWizard::FPSType::fps60);
 	ui->fps->setCurrentIndex(0);
 
 	QString cxStr = QString::number(ovi.base_width);
@@ -188,9 +140,9 @@ AutoConfigVideoPage::~AutoConfigVideoPage()
 
 int AutoConfigVideoPage::nextId() const
 {
-	return wiz->type == AutoConfig::Type::Recording
-		       ? AutoConfig::TestPage
-		       : AutoConfig::StreamPage;
+	return wiz->type == AutoConfigWizard::Type::Recording
+		       ? AutoConfig::WizardPage::TestPage
+		       : AutoConfig::WizardPage::StreamPage;
 }
 
 bool AutoConfigVideoPage::validatePage()
@@ -198,33 +150,34 @@ bool AutoConfigVideoPage::validatePage()
 	int encRes = ui->canvasRes->currentData().toInt();
 	wiz->baseResolutionCX = encRes >> 16;
 	wiz->baseResolutionCY = encRes & 0xFFFF;
-	wiz->fpsType = (AutoConfig::FPSType)ui->fps->currentData().toInt();
+	wiz->fpsType =
+		(AutoConfigWizard::FPSType)ui->fps->currentData().toInt();
 
 	obs_video_info ovi;
 	obs_get_video_info(&ovi);
 
 	switch (wiz->fpsType) {
-	case AutoConfig::FPSType::PreferHighFPS:
+	case AutoConfigWizard::FPSType::PreferHighFPS:
 		wiz->specificFPSNum = 0;
 		wiz->specificFPSDen = 0;
 		wiz->preferHighFPS = true;
 		break;
-	case AutoConfig::FPSType::PreferHighRes:
+	case AutoConfigWizard::FPSType::PreferHighRes:
 		wiz->specificFPSNum = 0;
 		wiz->specificFPSDen = 0;
 		wiz->preferHighFPS = false;
 		break;
-	case AutoConfig::FPSType::UseCurrent:
+	case AutoConfigWizard::FPSType::UseCurrent:
 		wiz->specificFPSNum = ovi.fps_num;
 		wiz->specificFPSDen = ovi.fps_den;
 		wiz->preferHighFPS = false;
 		break;
-	case AutoConfig::FPSType::fps30:
+	case AutoConfigWizard::FPSType::fps30:
 		wiz->specificFPSNum = 30;
 		wiz->specificFPSDen = 1;
 		wiz->preferHighFPS = false;
 		break;
-	case AutoConfig::FPSType::fps60:
+	case AutoConfigWizard::FPSType::fps60:
 		wiz->specificFPSNum = 60;
 		wiz->specificFPSDen = 1;
 		wiz->preferHighFPS = false;
@@ -310,7 +263,7 @@ bool AutoConfigStreamPage::isComplete() const
 
 int AutoConfigStreamPage::nextId() const
 {
-	return AutoConfig::TestPage;
+	return WizardPage::TestPage;
 }
 
 inline bool AutoConfigStreamPage::IsCustomService() const
@@ -370,16 +323,17 @@ bool AutoConfigStreamPage::validatePage()
 
 	if (!wiz->customServer) {
 		if (wiz->serviceName == "Twitch")
-			wiz->service = AutoConfig::Service::Twitch;
+			wiz->service = AutoConfigWizard::Service::Twitch;
 		else if (wiz->serviceName == "Smashcast")
-			wiz->service = AutoConfig::Service::Smashcast;
+			wiz->service = AutoConfigWizard::Service::Smashcast;
 		else
-			wiz->service = AutoConfig::Service::Other;
+			wiz->service = AutoConfigWizard::Service::Other;
 	} else {
-		wiz->service = AutoConfig::Service::Other;
+		wiz->service = AutoConfigWizard::Service::Other;
 	}
 
-	if (wiz->service != AutoConfig::Service::Twitch && wiz->bandwidthTest) {
+	if (wiz->service != AutoConfigWizard::Service::Twitch &&
+	    wiz->bandwidthTest) {
 		QMessageBox::StandardButton button;
 #define WARNING_TEXT(x) QTStr("Basic.AutoConfig.StreamPage.StreamWarning." x)
 		button = OBSMessageBox::question(this, WARNING_TEXT("Title"),
@@ -728,7 +682,7 @@ void AutoConfigStreamPage::UpdateCompleted()
 
 /* ------------------------------------------------------------------------- */
 
-AutoConfig::AutoConfig(QWidget *parent) : QWizard(parent)
+AutoConfigWizard::AutoConfigWizard(QWidget *parent) : QWizard(parent)
 {
 	EnableThreadedMessageBoxes(true);
 
@@ -750,13 +704,17 @@ AutoConfig::AutoConfig(QWidget *parent) : QWizard(parent)
 	setWizardStyle(QWizard::ModernStyle);
 #endif
 	streamPage = new AutoConfigStreamPage();
+	AutoConfigStartPage *startPage = new AutoConfigStartPage(this);
 
-	setPage(StartPage, new AutoConfigStartPage());
-	setPage(VideoPage, new AutoConfigVideoPage());
-	setPage(StreamPage, streamPage);
-	setPage(TestPage, new AutoConfigTestPage());
+	setPage(AutoConfig::StartPage, startPage);
+	setPage(AutoConfig::VideoPage, new AutoConfigVideoPage());
+	setPage(AutoConfig::StreamPage, streamPage);
+	setPage(AutoConfig::TestPage, new AutoConfigTestPage());
 	setWindowTitle(QTStr("Basic.AutoConfig"));
 	setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
+
+	connect(startPage, &AutoConfigStartPage::priorityModeChanged, this,
+		&AutoConfigWizard::ChangedPriorityType);
 
 	obs_video_info ovi;
 	obs_get_video_info(&ovi);
@@ -859,14 +817,29 @@ AutoConfig::AutoConfig(QWidget *parent) : QWizard(parent)
 	setButtonText(QWizard::CancelButton, QTStr("Cancel"));
 }
 
-AutoConfig::~AutoConfig()
+AutoConfigWizard::~AutoConfigWizard()
 {
 	OBSBasic *main = reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
 	main->EnableOutputs(true);
 	EnableThreadedMessageBoxes(false);
 }
 
-void AutoConfig::TestHardwareEncoding()
+void AutoConfigWizard::ChangedPriorityType(PriorityMode mode)
+{
+	switch (mode) {
+	case (PriorityMode::Recording):
+		type = AutoConfigWizard::Type::Recording;
+		break;
+	case (PriorityMode::Streaming):
+		type = AutoConfigWizard::Type::Streaming;
+		break;
+	case (PriorityMode::VirtualCam):
+		type = AutoConfigWizard::Type::VirtualCam;
+		break;
+	}
+}
+
+void AutoConfigWizard::TestHardwareEncoding()
 {
 	size_t idx = 0;
 	const char *id;
@@ -880,7 +853,7 @@ void AutoConfig::TestHardwareEncoding()
 	}
 }
 
-bool AutoConfig::CanTestServer(const char *server)
+bool AutoConfigWizard::CanTestServer(const char *server)
 {
 	if (!testRegions || (regionUS && regionEU && regionAsia && regionOther))
 		return true;
@@ -919,7 +892,7 @@ bool AutoConfig::CanTestServer(const char *server)
 	return false;
 }
 
-void AutoConfig::done(int result)
+void AutoConfigWizard::done(int result)
 {
 	QWizard::done(result);
 
@@ -930,7 +903,7 @@ void AutoConfig::done(int result)
 	}
 }
 
-inline const char *AutoConfig::GetEncoderId(Encoder enc)
+inline const char *AutoConfigWizard::GetEncoderId(Encoder enc)
 {
 	switch (enc) {
 	case Encoder::NVENC:
@@ -944,7 +917,7 @@ inline const char *AutoConfig::GetEncoderId(Encoder enc)
 	}
 };
 
-void AutoConfig::SaveStreamSettings()
+void AutoConfigWizard::SaveStreamSettings()
 {
 	OBSBasic *main = reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
 
@@ -988,7 +961,7 @@ void AutoConfig::SaveStreamSettings()
 	config_remove_value(main->Config(), "SimpleOutput", "UseAdvanced");
 }
 
-void AutoConfig::SaveSettings()
+void AutoConfigWizard::SaveSettings()
 {
 	OBSBasic *main = reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
 
