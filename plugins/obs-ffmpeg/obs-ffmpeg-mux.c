@@ -754,10 +754,14 @@ static void *replay_buffer_mux_thread(void *data)
 	
 error:
 	os_process_pipe_destroy(stream->pipe);
+	int ret = os_process_pipe_destroy(stream->pipe);
 	stream->pipe = NULL;
 	da_free(stream->mux_packets);
 	os_atomic_set_bool(&stream->muxing, false);
-	if (!hasFailed) {
+	if (ret < 0) {
+		signal_failure(stream);
+	}
+	else if (!hasFailed) {
 		do_output_signal(stream->output, "wrote");
 	}
 	return NULL;
