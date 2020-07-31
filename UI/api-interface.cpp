@@ -534,6 +534,17 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 		}
 	}
 
+	void obs_frontend_take_screenshot(void) override
+	{
+		QMetaObject::invokeMethod(main, "Screenshot");
+	}
+
+	void obs_frontend_take_source_screenshot(obs_source_t *source) override
+	{
+		QMetaObject::invokeMethod(main, "Screenshot",
+					  Q_ARG(OBSSource, OBSSource(source)));
+	}
+
 	void on_load(obs_data_t *settings) override
 	{
 		for (size_t i = saveCallbacks.size(); i > 0; i--) {
