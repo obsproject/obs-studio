@@ -38,6 +38,7 @@
 
 #include "qt-wrappers.hpp"
 #include "obs-app.hpp"
+#include "log-viewer.hpp"
 #include "window-basic-main.hpp"
 #include "window-basic-settings.hpp"
 #include "crash-report.hpp"
@@ -88,6 +89,8 @@ bool remuxAfterRecord = false;
 string remuxFilename;
 
 bool restart = false;
+
+QPointer<OBSLogViewer> obsLogViewer;
 
 // GPU hint exports for AMD/NVIDIA laptops
 #ifdef _MSC_VER
@@ -250,12 +253,22 @@ string CurrentDateTimeString()
 }
 
 static inline void LogString(fstream &logFile, const char *timeString,
-			     char *str)
+			     char *str, int log_level)
 {
-	logFile << timeString << str << endl;
+	string msg;
+	msg += timeString;
+	msg += str;
+
+	logFile << msg << endl;
+
+	if (!!obsLogViewer)
+		QMetaObject::invokeMethod(obsLogViewer.data(), "AddLine",
+					  Qt::QueuedConnection,
+					  Q_ARG(int, log_level),
+					  Q_ARG(QString, QString(msg.c_str())));
 }
 
-static inline void LogStringChunk(fstream &logFile, char *str)
+static inline void LogStringChunk(fstream &logFile, char *str, int log_level)
 {
 	char *nextLine = str;
 	string timeString = CurrentTimeString();
@@ -272,12 +285,12 @@ static inline void LogStringChunk(fstream &logFile, char *str)
 			nextLine[0] = 0;
 		}
 
-		LogString(logFile, timeString.c_str(), str);
+		LogString(logFile, timeString.c_str(), str, log_level);
 		nextLine++;
 		str = nextLine;
 	}
 
-	LogString(logFile, timeString.c_str(), str);
+	LogString(logFile, timeString.c_str(), str, log_level);
 }
 
 #define MAX_REPEATED_LINES 30
@@ -368,7 +381,7 @@ static void do_log(int log_level, const char *msg, va_list args, void *param)
 	if (log_level <= LOG_INFO || log_verbose) {
 		if (too_many_repeated_entries(logFile, msg, str))
 			return;
-		LogStringChunk(logFile, str);
+		LogStringChunk(logFile, str, log_level);
 	}
 
 #if defined(_WIN32) && defined(OBS_DEBUGBREAK_ON_ERROR)
