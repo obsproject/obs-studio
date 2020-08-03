@@ -8,7 +8,6 @@
 #include "window-basic-main.hpp"
 #include "qt-wrappers.hpp"
 
-
 AutoConfigStartPage::AutoConfigStartPage(QWidget *parent) : QWizardPage(parent)
 {
 	selectedMode_ = PriorityMode::Streaming;
@@ -18,7 +17,7 @@ AutoConfigStartPage::AutoConfigStartPage(QWidget *parent) : QWizardPage(parent)
 	// Setup UI
 	QVBoxLayout *layout = new QVBoxLayout;
 	this->setLayout(layout);
-  this->setMaximumWidth(400);
+	this->setMaximumWidth(400);
 
 	// Setup Buttons
 	QString streamLabel =

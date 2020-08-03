@@ -1,15 +1,14 @@
 #pragma once
 
 #include <QWizard>
-#include <QPointer>
 #include <QWizardPage>
 
 #include "auto-config-enums.hpp"
 
 enum class PriorityMode {
-  Streaming,
-  Recording, 
-  VirtualCam,
+	Streaming,
+	Recording,
+	VirtualCam,
 };
 
 class AutoConfigStartPage : public QWizardPage {
@@ -22,8 +21,8 @@ public:
 	virtual int nextId() const override;
 
 private:
-  PriorityMode selectedMode_;
+	PriorityMode selectedMode_;
 
 signals:
-  void priorityModeChanged(PriorityMode mode);
+	void priorityModeChanged(PriorityMode mode);
 };

@@ -9,4 +9,18 @@ enum WizardPage {
 	TestPage,
 };
 
+enum class SetupType {
+	Invalid,
+	Streaming,
+	Recording,
+	VirtualCam,
+};
+
+enum class FPSType : int {
+	PreferHighFPS,
+	PreferHighRes,
+	UseCurrent,
+	fps30,
+	fps60,
+};
 }

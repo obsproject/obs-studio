@@ -58,6 +58,7 @@
 #include "remote-text.hpp"
 #include "ui-validation.hpp"
 #include "media-controls.hpp"
+#include "auto-config-model.hpp"
 #include <fstream>
 #include <sstream>
 
@@ -7875,10 +7876,12 @@ SourceTreeItem *OBSBasic::GetItemWidgetFromSceneItem(obs_sceneitem_t *sceneItem)
 
 void OBSBasic::on_autoConfigure_triggered()
 {
-	AutoConfigWizard test(this);
-	test.setModal(true);
-	test.show();
-	test.exec();
+	QSharedPointer<AutoConfig::AutoConfigModel> wizardModel(
+		new AutoConfig::AutoConfigModel());
+	AutoConfigWizard autoConfigWizard(this, wizardModel);
+	autoConfigWizard.setModal(true);
+	autoConfigWizard.show();
+	autoConfigWizard.exec();
 }
 
 void OBSBasic::on_stats_triggered()
