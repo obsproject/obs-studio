@@ -599,7 +599,7 @@ struct obs_source {
 	bool owns_info_id;
 
 	/* signals to call the source update in the video thread */
-	bool defer_update;
+	long defer_update_count;
 
 	/* ensures show/hide are only called once */
 	volatile long show_refs;
