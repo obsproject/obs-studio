@@ -98,7 +98,6 @@ void ScreenshotObj::Copy()
 {
 	uint8_t *videoData = nullptr;
 	uint32_t videoLinesize = 0;
-	bool success = false;
 
 	image = QImage(cx, cy, QImage::Format::Format_RGBX8888);
 
@@ -109,7 +108,6 @@ void ScreenshotObj::Copy()
 			       videoData + (y * videoLinesize), linesize);
 
 		gs_stagesurface_unmap(stagesurf);
-		success = true;
 	}
 }
 
