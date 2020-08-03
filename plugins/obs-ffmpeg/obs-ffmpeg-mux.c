@@ -718,6 +718,7 @@ static void *replay_buffer_mux_thread(void *data)
 {
 	bool hasFailed = false;
 	struct ffmpeg_muxer *stream = data;
+	int ret = 0;
 
 	do_output_signal(stream->output, "writing");
 
@@ -753,8 +754,7 @@ static void *replay_buffer_mux_thread(void *data)
 	}
 	
 error:
-	os_process_pipe_destroy(stream->pipe);
-	int ret = os_process_pipe_destroy(stream->pipe);
+	ret = os_process_pipe_destroy(stream->pipe);
 	stream->pipe = NULL;
 	da_free(stream->mux_packets);
 	os_atomic_set_bool(&stream->muxing, false);
