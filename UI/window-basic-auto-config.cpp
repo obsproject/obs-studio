@@ -745,7 +745,7 @@ AutoConfig::AutoConfig(QWidget *parent) : QWizard(parent)
 
 	std::string serviceType;
 	GetServiceInfo(serviceType, serviceName, server, key);
-#ifdef _WIN32
+#if defined(_WIN32) || defined(__APPLE__)
 	setWizardStyle(QWizard::ModernStyle);
 #endif
 	streamPage = new AutoConfigStreamPage();
