@@ -203,7 +203,7 @@
      <x>0</x>
      <y>0</y>
      <width>1079</width>
-     <height>30</height>
+     <height>21</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_File">
@@ -376,12 +376,6 @@
     <property name="title">
      <string>Basic.MainMenu.View</string>
     </property>
-    <widget class="QMenu" name="viewMenuToolbars">
-     <property name="title">
-      <string>Basic.MainMenu.View.Toolbars</string>
-     </property>
-     <addaction name="toggleListboxToolbars"/>
-    </widget>
     <widget class="QMenu" name="viewMenuDocks">
      <property name="title">
       <string>Basic.MainMenu.View.Docks</string>
@@ -407,7 +401,7 @@
     <addaction name="actionFullscreenInterface"/>
     <addaction name="separator"/>
     <addaction name="viewMenuDocks"/>
-    <addaction name="viewMenuToolbars"/>
+    <addaction name="toggleListboxToolbars"/>
     <addaction name="toggleSourceIcons"/>
     <addaction name="toggleStatusBar"/>
     <addaction name="separator"/>
@@ -1584,7 +1578,7 @@
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>Basic.MainMenu.View.Toolbars.Listboxes</string>
+    <string>Basic.MainMenu.View.ListboxToolbars</string>
    </property>
   </action>
   <action name="toggleStatusBar">
