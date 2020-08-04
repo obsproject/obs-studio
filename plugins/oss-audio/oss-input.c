@@ -38,6 +38,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define OSS_RATE_DEFAULT 48000
 #define OSS_CHANNELS_DEFAULT 2
 
+#define OSS_DEVICE_BEGIN "Installed devices:"
+#define OSS_USERDEVICE_BEGIN "Installed devices from userspace:"
+
 /**
  * Control block of plugin instance
  */
@@ -460,6 +463,7 @@ static void oss_prop_add_devices(obs_property_t *p)
 	char *line = NULL;
 	size_t linecap = 0;
 	FILE *fp;
+	bool ud_matching = false;
 
 	fp = fopen(OSS_SNDSTAT_PATH, "r");
 	if (fp == NULL) {
@@ -470,35 +474,65 @@ static void oss_prop_add_devices(obs_property_t *p)
 
 	while (getline(&line, &linecap, fp) > 0) {
 		int pcm;
-		char *ptr, *pdesc, *descr, *devname, *pmode;
+		char *ptr, *pdesc, *pmode;
+		char *descr = NULL, *devname = NULL;
+		char *udname = NULL;
 
-		if (sscanf(line, "pcm%i: ", &pcm) != 1)
+		if (!strncmp(line, OSS_DEVICE_BEGIN,
+			     strlen(OSS_DEVICE_BEGIN))) {
+			ud_matching = false;
 			continue;
+		}
+		if (!strncmp(line, OSS_USERDEVICE_BEGIN,
+			     strlen(OSS_USERDEVICE_BEGIN))) {
+			ud_matching = true;
+			continue;
+		}
+
+		if (!ud_matching) {
+			if (sscanf(line, "pcm%i: ", &pcm) != 1)
+				continue;
+		} else {
+			char *end = strchr(line, ':');
+			if (end == NULL || end - line == 0)
+				continue;
+
+			udname = strndup(line, end - line);
+			if (udname == NULL)
+				continue;
+		}
 		if ((ptr = strchr(line, '<')) == NULL)
-			continue;
+			goto free_all_str;
 		pdesc = ptr + 1;
 		if ((ptr = strrchr(pdesc, '>')) == NULL)
-			continue;
+			goto free_all_str;
 		*ptr++ = '\0';
 		if (*ptr++ != ' ' || *ptr++ != '(')
-			continue;
+			goto free_all_str;
 		pmode = ptr;
 		if ((ptr = strrchr(pmode, ')')) == NULL)
-			continue;
+			goto free_all_str;
 		*ptr++ = '\0';
 		if (strcmp(pmode, "rec") != 0 && strcmp(pmode, "play/rec") != 0)
-			continue;
-		if (asprintf(&descr, "pcm%i: %s", pcm, pdesc) == -1)
-			continue;
-		if (asprintf(&devname, "/dev/dsp%i", pcm) == -1) {
-			free(descr);
-			continue;
+			goto free_all_str;
+		if (!ud_matching) {
+			if (asprintf(&descr, "pcm%i: %s", pcm, pdesc) == -1)
+				goto free_all_str;
+			if (asprintf(&devname, "/dev/dsp%i", pcm) == -1)
+				goto free_all_str;
+		} else {
+			if (asprintf(&descr, "%s: %s", udname, pdesc) == -1)
+				goto free_all_str;
+			if (asprintf(&devname, "/dev/%s", udname) == -1)
+				goto free_all_str;
 		}
 
 		obs_property_list_add_string(p, descr, devname);
 
+	free_all_str:
 		free(descr);
 		free(devname);
+		free(udname);
 	}
 	free(line);
 
