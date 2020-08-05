@@ -6,6 +6,7 @@
 
 #include "obs-app.hpp"
 #include "window-basic-main.hpp"
+#include "auto-config-model.hpp"
 #include "qt-wrappers.hpp"
 
 AutoConfigStartPage::AutoConfigStartPage(QWidget *parent) : QWizardPage(parent)
@@ -17,7 +18,7 @@ AutoConfigStartPage::AutoConfigStartPage(QWidget *parent) : QWizardPage(parent)
 	// Setup UI
 	QVBoxLayout *layout = new QVBoxLayout;
 	this->setLayout(layout);
-	this->setMaximumWidth(400);
+	this->setMinimumWidth(AutoConfig::AutoConfigModel::wizardMinWidth());
 
 	// Setup Buttons
 	QString streamLabel =

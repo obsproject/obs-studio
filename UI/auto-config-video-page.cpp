@@ -21,7 +21,7 @@ AutoConfigVideoPage::AutoConfigVideoPage(
 	// Main vertical layout for widget
 	mainVLayout = new QVBoxLayout(this);
 	this->setLayout(mainVLayout);
-	this->setMinimumWidth(500);
+	this->setMinimumWidth(AutoConfig::AutoConfigModel::wizardMinWidth());
 	this->setMinimumHeight(300);
 
 	// Create form section

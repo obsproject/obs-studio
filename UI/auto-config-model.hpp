@@ -5,6 +5,9 @@ namespace AutoConfig {
 
 struct AutoConfigModel {
 
+	// Constants for UI
+	static int wizardMinWidth(void) { return 500; }
+
 	// What is the wizard setting up:
 	SetupType setupType = SetupType::Streaming;
 
