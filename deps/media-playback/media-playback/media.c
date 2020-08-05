@@ -717,8 +717,13 @@ static inline bool mp_media_thread(mp_media_t *m)
 			continue;
 		}
 
-		if (pause)
+		if (pause) {
+			/*create a sleep timer to prevent continous loop execution*/
+			pthread_mutex_lock(&m->mutex);
+			m->next_ns += 200000000;
+			pthread_mutex_unlock(&m->mutex);
 			continue;
+		}
 
 		/* frames are ready */
 		if (is_active && !timeout) {
