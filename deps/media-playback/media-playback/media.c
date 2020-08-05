@@ -109,9 +109,15 @@ static inline enum speaker_layout convert_speaker_layout(uint8_t channels)
 	}
 }
 
-static inline enum video_colorspace convert_color_space(enum AVColorSpace s)
+static inline enum video_colorspace
+convert_color_space(enum AVColorSpace s, enum AVColorTransferCharacteristic trc)
 {
-	return s == AVCOL_SPC_BT709 ? VIDEO_CS_709 : VIDEO_CS_DEFAULT;
+	if (s == AVCOL_SPC_BT709) {
+		return (trc == AVCOL_TRC_IEC61966_2_1) ? VIDEO_CS_SRGB
+						       : VIDEO_CS_709;
+	}
+
+	return VIDEO_CS_DEFAULT;
 }
 
 static inline enum video_range_type convert_color_range(enum AVColorRange r)
@@ -372,7 +378,7 @@ static void mp_media_next_video(mp_media_t *m, bool preload)
 		frame->data[0] -= frame->linesize[0] * (f->height - 1);
 
 	new_format = convert_pixel_format(m->scale_format);
-	new_space = convert_color_space(f->colorspace);
+	new_space = convert_color_space(f->colorspace, f->color_trc);
 	new_range = m->force_range == VIDEO_RANGE_DEFAULT
 			    ? convert_color_range(f->color_range)
 			    : m->force_range;

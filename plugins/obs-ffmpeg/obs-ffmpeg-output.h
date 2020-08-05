@@ -23,7 +23,9 @@ struct ffmpeg_cfg {
 	int audio_tracks;
 	enum AVPixelFormat format;
 	enum AVColorRange color_range;
-	enum AVColorSpace color_space;
+	enum AVColorPrimaries color_primaries;
+	enum AVColorTransferCharacteristic color_trc;
+	enum AVColorSpace colorspace;
 	int scale_width;
 	int scale_height;
 	int width;
