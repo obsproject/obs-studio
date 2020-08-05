@@ -15,4 +15,8 @@ bool DecklinkBase::Activate(DeckLinkDevice *, long long)
 	return false;
 }
 
-void DecklinkBase::Deactivate() {}
+bool DecklinkBase::Activate(DeckLinkDevice *, long long, BMDVideoConnection,
+			    BMDAudioConnection)
+{
+	return false;
+}
