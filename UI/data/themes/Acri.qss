@@ -345,6 +345,10 @@ QToolButton:pressed {
 	qproperty-icon: url(./Dark/settings/general.svg);
 }
 
+* [themeID="refreshIconSmall"] {
+    qproperty-icon: url(./Dark/refresh.svg);
+}
+
 * [themeID="upArrowIconSmall"] {
 	qproperty-icon: url(./Dark/up.svg);
 }
