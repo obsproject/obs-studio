@@ -463,8 +463,14 @@ static void ss_play_pause(void *data)
 {
 	struct slideshow *ss = data;
 
-	ss->paused = !ss->paused;
-	ss->manual = ss->paused;
+	if (ss->stop) {
+		ss->stop = false;
+		ss->paused = false;
+		do_transition(ss, false);
+	} else {
+		ss->paused = !ss->paused;
+		ss->manual = ss->paused;
+	}
 }
 
 static void ss_restart(void *data)
