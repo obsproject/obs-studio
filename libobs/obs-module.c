@@ -189,6 +189,20 @@ const char *obs_get_module_data_path(obs_module_t *module)
 	return module ? module->data_path : NULL;
 }
 
+obs_module_t *obs_get_module(const char *name)
+{
+	obs_module_t *module = obs->first_module;
+	while (module) {
+		if (strcmp(module->mod_name, name) == 0) {
+			return module;
+		}
+
+		module = module->next;
+	}
+
+	return NULL;
+}
+
 char *obs_find_module_file(obs_module_t *module, const char *file)
 {
 	struct dstr output = {0};
