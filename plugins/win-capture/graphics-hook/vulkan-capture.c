@@ -449,13 +449,6 @@ static void vk_shtex_free(struct vk_data *data)
 
 /* ------------------------------------------------------------------------- */
 
-/* https://github.com/KhronosGroup/VK-GL-CTS/issues/218 */
-#define CTS_WORKAROUND
-
-#ifdef CTS_WORKAROUND
-static struct vk_obj_list surfaces;
-#endif
-
 static void add_surf_data(struct vk_inst_data *data, VkSurfaceKHR surf,
 			  HWND hwnd, const VkAllocationCallbacks *ac)
 {
@@ -465,39 +458,22 @@ static void add_surf_data(struct vk_inst_data *data, VkSurfaceKHR surf,
 	if (surf_data) {
 		surf_data->hwnd = hwnd;
 
-#ifdef CTS_WORKAROUND
-		(void)data;
-		add_obj_data(&surfaces, (uint64_t)surf, surf_data);
-#else
 		add_obj_data(&data->surfaces, (uint64_t)surf, surf_data);
-#endif
 	}
 }
 
 static HWND find_surf_hwnd(struct vk_inst_data *data, VkSurfaceKHR surf)
 {
-#ifdef CTS_WORKAROUND
-	(void)data;
-	struct vk_surf_data *surf_data =
-		(struct vk_surf_data *)get_obj_data(&surfaces, (uint64_t)surf);
-#else
 	struct vk_surf_data *surf_data = (struct vk_surf_data *)get_obj_data(
 		&data->surfaces, (uint64_t)surf);
-#endif
 	return surf_data->hwnd;
 }
 
 static void remove_free_surf_data(struct vk_inst_data *data, VkSurfaceKHR surf,
 				  const VkAllocationCallbacks *ac)
 {
-#ifdef CTS_WORKAROUND
-	(void)data;
-	struct vk_surf_data *surf_data = (struct vk_surf_data *)remove_obj_data(
-		&surfaces, (uint64_t)surf);
-#else
 	struct vk_surf_data *surf_data = (struct vk_surf_data *)remove_obj_data(
 		&data->surfaces, (uint64_t)surf);
-#endif
 	vk_free(ac, surf_data);
 }
 
@@ -1837,9 +1813,6 @@ __declspec(dllexport) VkResult VKAPI_CALL
 	if (!vulkan_seen) {
 		init_obj_list(&instances);
 		init_obj_list(&devices);
-#ifdef CTS_WORKAROUND
-		init_obj_list(&surfaces);
-#endif
 
 		vulkan_seen = true;
 	}
