@@ -25,3 +25,9 @@
 [submodule ".\\plugins\\obs-midi"]
 	path = .\\plugins\\obs-midi
 	url = https://github.com/cpyarger/obs-midi.git
+[submodule ".\\plugins\\obs-actions"]
+	path = .\\plugins\\obs-actions
+	url = https://github.com/cpyarger/obs-actions.git
+[submodule ".\\plugins\\obs-hotkeys"]
+	path = .\\plugins\\obs-hotkeys
+	url = https://github.com/cpyarger/obs-hotkeys.git

@@ -424,20 +424,19 @@ private slots:
 	void SetControlsIcon(const QIcon &icon);
 	void SetAdvancedIcon(const QIcon &icon);
 	void SettingListSelectionChanged();
-	obs_data_t *MakeMap();
-	void FilterTable(QString filter);
-	void FilterTriggers(QString filter);
-	void FilterActions(QString filter);
-	void do_table_selection(int row, int col);
+public:
+	OBSBasicSettings(QWidget *parent);
+	~OBSBasicSettings();
 
 protected:
 	virtual void closeEvent(QCloseEvent *event);
 
+
+
+//*********************Control Mapper*****************************//
 public:
-	OBSBasicSettings(QWidget *parent);
-	~OBSBasicSettings();
-	QStringList getControlsList();
-	void loadControlWindows();
+	QStringList get_control_list();
+	void load_controls();
 	obs_data_t *inputaction;
 	obs_data_t *outputaction;
 <<<<<<< HEAD
@@ -450,16 +449,17 @@ public:
 private:
 	QComboBox *TriggerFilter;
 	QComboBox *ActionsFilter;
-
-
 signals:
-	void onControlChange(QString Change);
-	void EditTrigger(QString TriggerType, obs_data_t *TriggerString);
-	void EditAction(QString ActionType, obs_data_t *TriggerType);
+	void on_control_change(QString Change);
+	void edit_trigger(obs_data_t *trigger);
+	void edit_action(obs_data_t *action);
 public slots:
-	void AddRow(obs_data_t *TString, obs_data_t *AString);
-	void EditRow(int row, obs_data_t *TString, obs_data_t *AString);
-	void DeleteRow();
-	void ResetToDefaults();
-	void ClearTable();
+	void add_row(obs_data_t *trigger, obs_data_t *action);
+	void edit_row(int row, obs_data_t *trigger, obs_data_t *action);
+	void delete_row();
+	void reset_to_defaults();
+	void clear_table();
+private slots:
+	void filter_control_table(QString filter);
+	void control_table_selection(int row, int col);
 };

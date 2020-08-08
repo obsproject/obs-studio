@@ -1023,7 +1023,7 @@ protected:
 		obs_data_t *hk = obs_data_create();
 		obs_data_set_string(hk, "Hotkey",
 				    event->text().toStdString().c_str());
-		mapper->TriggerEvent("Hotkeys", hk);
+		mapper->trigger_event("Hotkeys", hk);
 		blog(1, "event -- %s", event->text().toStdString().c_str());
 		obs_data_release(hk);
 	}

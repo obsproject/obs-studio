@@ -408,7 +408,7 @@ OBSBasic::OBSBasic(QWidget *parent)
 		SLOT(ScenesReordered(const QModelIndex &, int, int,
 				     const QModelIndex &, int)));
 	mapper = new ControlMapper();
-	mapper->LoadMapping();
+	mapper->load_mapping();
 }
 
 static void SaveAudioDevice(const char *name, int channel, obs_data_t *parent,

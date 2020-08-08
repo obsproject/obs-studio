@@ -16,65 +16,20 @@
 #include <map>
 
 
-typedef struct {
-	obs_data_t *data;
-	obs_data_t *value;
-	const char *Type = obs_data_get_string(data, "Type");
-	void setType(const char *type)
-	{
-		obs_data_set_string(data, "Type", type);
-	};
-	void setType(QString type)
-	{
-		obs_data_set_string(data, "Type", type.toStdString().c_str());
-	};
-	QString String = QString(Type);
-} Trigger;
-typedef struct {
-	
-	obs_data_t *data;
-	obs_data_t *value;
-	const char *Type = obs_data_get_string(data, "Type");
+class Mapping : public QObject
+{
+	Q_OBJECT
 
-	void setType(const char *type)
-	{
-		obs_data_set_string(data, "Type", type);
-	};
-	void setType(QString type)
-	{
-		obs_data_set_string(data, "Type", type.toStdString().c_str());
-	};
-	QString String = QString(Type);
-} Action;
-typedef struct {
+public:
 
-	Trigger trigger;
-	Action action;
+	Mapping();
+	Mapping(obs_data_t *mapson);
+	obs_data_t *trigger;
+	obs_data_t* action;
 	obs_data_t *map;
-	void init(const char *mapson)
-	{
-		map = obs_data_create_from_json(mapson);
-		trigger.data = obs_data_create_from_json(obs_data_get_string(map,"trigger"));
-		action.data = obs_data_create_from_json(obs_data_get_string(map, "action"));
-
-	}
-	void init(obs_data_t *mapson) { init(obs_data_get_json(mapson));}
-	void init()
-	{
-		map = obs_data_create();
-		trigger.data = obs_data_create();
-		action.data = obs_data_create();
-	}
-	obs_data_t * setdata()
-	{
-		obs_data_set_string(map, "trigger",
-				    obs_data_get_json(trigger.data));
-		obs_data_set_string(map, "action",
-				    obs_data_get_json(action.data));
-		return map;
-	}
-	const char *GetJSON() { return obs_data_get_json(map); }
-} Mapping;
+	obs_data_t *setdata();
+	const char *get_JSON() { return obs_data_get_json(map); }
+};
 
 class ControlMapper : public QObject {
 	Q_OBJECT
@@ -82,51 +37,43 @@ class ControlMapper : public QObject {
 public:
 	ControlMapper();
 	~ControlMapper();
-
-	bool DebugEnabled = true;
-	bool AlertsEnabled = false;
-	int editRow = -1;
-	bool EditMode = false;
-	bool SettingsLoaded;
-	bool LoadMapping();
-	config_t *GetMappingStore();
-
-	obs_data_t * CurrentTriggerString = obs_data_create();
-	QString CurrentTriggerType = "Hotkeys";
-	obs_data_t * CurrentActionString = obs_data_create();
-	QString CurrentActionType = "OBS";
-
-	obs_data_t * PreviousTriggerString;
-	QString PreviousTriggerType;
-	obs_data_t * PreviousActionString;
-	QString PreviousActionType;
-	int MappingExists(obs_data_t *triggerstring);
+	bool debug_enabled = true;
+	bool alerts_enabled = false;
+	int  edit_row = -1;
+	bool edit_mode = false;
+	bool settings_loaded;
+	
+	obs_data_t *current_trigger_string = obs_data_create();
+	obs_data_t *current_action_string = obs_data_create();
+	obs_data_t *previous_trigger_string;
+	obs_data_t *previous_action_string;
+	config_t *get_mapping_store();
+	int mapping_exists(obs_data_t *triggerstring);
 signals:
-	void AddTableRow(obs_data_t* mapdata);
-	void EditTableRow(int row, obs_data_t *mapdata);
-	void EditTableRow(int row, obs_data_t *triggerdata,obs_data_t * actiondata);
-	void AddTableRow(obs_data_t *triggerdata, obs_data_t * actiondata);
-	void DoAction(obs_data_t *actionString);
-	void mapLoadAction(obs_data_t *map);
-	void ClearTable();
-	void EditAction(QString type, obs_data_t * data);
-	void EditTrigger(QString type, obs_data_t * data);
-	void ResetToDefaults();
+	void add_table_row(obs_data_t *mapdata);
+	void add_table_row(obs_data_t *triggerdata, obs_data_t *actiondata);
+	void edit_table_row(int row, obs_data_t *mapdata);
+	void edit_table_row(int row, obs_data_t *triggerdata,
+			  obs_data_t *actiondata);
+	void do_action(obs_data_t *actionString);
+	void map_load_action(obs_data_t *map);
+	void clear_table();
+	void edit_action(obs_data_t *data);
+	void edit_trigger(obs_data_t *data);
+	void reset_to_defaults();
 public slots:
-	void UpdateTrigger(QString type, obs_data_t *string);
-	void UpdateAction(QString type, obs_data_t *string);
-	void SaveMapping();
-	void AddorEditMapping();
-	void doload(obs_data_t *map);
-	void TriggerEvent(QString triggertype, obs_data_t *TriggerString);
+	bool load_mapping();
+	void update_trigger(obs_data_t *string);
+	void update_action(obs_data_t *string);
+	void save_mapping();
+	void add_or_edit_mapping();
+	void do_load(obs_data_t *map);
+	void trigger_event(QString triggertype, obs_data_t *TriggerString);
 
-	void deleteEntry(int row);
+	void delete_entry(int row);
 
 private:
-
-	void SetDefaults();
-	config_t *MapConfig;
-	obs_data_array* MapArray;
-
-
+	void set_defaults();
+	config_t *map_config;
+	obs_data_array *map_array;
 };
