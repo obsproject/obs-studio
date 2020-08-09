@@ -2677,11 +2677,6 @@ void OBSBasic::AddScene(OBSSource source)
 	container.handlers.assign({
 		std::make_shared<OBSSignal>(handler, "item_add",
 					    OBSBasic::SceneItemAdded, this),
-		std::make_shared<OBSSignal>(handler, "item_select",
-					    OBSBasic::SceneItemSelected, this),
-		std::make_shared<OBSSignal>(handler, "item_deselect",
-					    OBSBasic::SceneItemDeselected,
-					    this),
 		std::make_shared<OBSSignal>(handler, "reorder",
 					    OBSBasic::SceneReordered, this),
 		std::make_shared<OBSSignal>(handler, "refresh",
@@ -2849,16 +2844,6 @@ void OBSBasic::RenameSources(OBSSource source, QString newName,
 	obs_scene_t *scene = obs_scene_from_source(source);
 	if (scene)
 		OBSProjector::UpdateMultiviewProjectors();
-}
-
-void OBSBasic::SelectSceneItem(OBSScene scene, OBSSceneItem item, bool select)
-{
-	SignalBlocker sourcesSignalBlocker(ui->sources);
-
-	if (scene != GetCurrentScene() || ignoreSelectionUpdate)
-		return;
-
-	ui->sources->SelectItem(item, select);
 }
 
 static inline bool SourceMixerHidden(obs_source_t *source)
@@ -3461,31 +3446,6 @@ void OBSBasic::SceneItemAdded(void *data, calldata_t *params)
 
 	QMetaObject::invokeMethod(window, "AddSceneItem",
 				  Q_ARG(OBSSceneItem, OBSSceneItem(item)));
-}
-
-void OBSBasic::SceneItemSelected(void *data, calldata_t *params)
-{
-	OBSBasic *window = static_cast<OBSBasic *>(data);
-
-	obs_scene_t *scene = (obs_scene_t *)calldata_ptr(params, "scene");
-	obs_sceneitem_t *item = (obs_sceneitem_t *)calldata_ptr(params, "item");
-
-	QMetaObject::invokeMethod(window, "SelectSceneItem",
-				  Q_ARG(OBSScene, scene),
-				  Q_ARG(OBSSceneItem, item), Q_ARG(bool, true));
-}
-
-void OBSBasic::SceneItemDeselected(void *data, calldata_t *params)
-{
-	OBSBasic *window = static_cast<OBSBasic *>(data);
-
-	obs_scene_t *scene = (obs_scene_t *)calldata_ptr(params, "scene");
-	obs_sceneitem_t *item = (obs_sceneitem_t *)calldata_ptr(params, "item");
-
-	QMetaObject::invokeMethod(window, "SelectSceneItem",
-				  Q_ARG(OBSScene, scene),
-				  Q_ARG(OBSSceneItem, item),
-				  Q_ARG(bool, false));
 }
 
 void OBSBasic::SourceCreated(void *data, calldata_t *params)
