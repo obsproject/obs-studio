@@ -41,8 +41,8 @@ public:
 
 	bool Activate(DeckLinkDevice *device, long long modeId,
 		      BMDVideoConnection bmdVideoConnection,
-		      BMDAudioConnection bmdAudioConnection);
-	void Deactivate();
+		      BMDAudioConnection bmdAudioConnection) override;
+	void Deactivate() override;
 	bool Capturing();
 
 	bool buffering = false;
