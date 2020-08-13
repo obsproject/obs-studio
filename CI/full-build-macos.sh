@@ -294,6 +294,15 @@ bundle_dylibs() {
         -x ./OBS.app/Contents/PlugIns/obs-outputs.so
     step "Move libobs-opengl to final destination"
     cp ./libobs-opengl/libobs-opengl.so ./OBS.app/Contents/Frameworks
+
+    step "Copy QtNetwork for plugin support"
+    cp -R /tmp/obsdeps/lib/QtNetwork.framework ./OBS.app/Contents/Frameworks
+    chmod -R +w ./OBS.app/Contents/Frameworks/QtNetwork.framework
+    rm -r ./OBS.app/Contents/Frameworks/QtNetwork.framework/Headers
+    rm -r ./OBS.app/Contents/Frameworks/QtNetwork.framework/Versions/5/Headers/
+    chmod 644 ./OBS.app/Contents/Frameworks/QtNetwork.framework/Versions/5/Resources/Info.plist
+    install_name_tool -id @executable_path/../Frameworks/QtNetwork.framework/Versions/5/QtNetwork ./OBS.app/Contents/Frameworks/QtNetwork.framework/Versions/5/QtNetwork
+    install_name_tool -change /tmp/obsdeps/lib/QtCore.framework/Versions/5/QtCore @executable_path/../Frameworks/QtCore.framework/Versions/5/QtCore ./OBS.app/Contents/Frameworks/QtNetwork.framework/Versions/5/QtNetwork
 }
 
 install_frameworks() {
