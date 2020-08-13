@@ -133,11 +133,13 @@ cp /usr/local/opt/mbedtls/lib/libmbedx509.0.dylib $PWD/../packed_build/bin/libmb
 cp /usr/local/opt/libpng/lib/libpng16.16.dylib $PWD/../packed_build/bin/libpng16.16.dylib
 cp /usr/local/Cellar/speexdsp/1.2.0/lib/libspeexdsp.1.dylib $PWD/../packed_build/bin/libspeexdsp.1.dylib
 cp /usr/local/opt/openssl@1.1/lib/libssl.1.1.dylib $PWD/../packed_build/bin/libssl.1.1.dylib
+cp /usr/local/opt/xz/lib/liblzma.5.dylib $PWD/../packed_build/bin/liblzma.5.dylib
 
 chmod u+w $PWD/../packed_build/bin/libspeexdsp.1.dylib
 chmod u+w $PWD/../packed_build/bin/libssl.1.1.dylib
 chmod u+w $PWD/../packed_build/bin/libfdk-aac.2.dylib
 chmod u+w $PWD/../packed_build/bin/libcurl.4.dylib
+chmod u+w $PWD/../packed_build/bin/liblzma.5.dylib
 
 sudo install_name_tool -change /usr/local/opt/openssl@1.1/lib/libssl.1.1.dylib @executable_path/libssl.1.1.dylib $PWD/../packed_build/bin/libdb-18.1.dylib
 sudo install_name_tool -change /usr/local/opt/openssl@1.1/lib/libcrypto.1.1.dylib @executable_path/libcrypto.1.1.dylib $PWD/../packed_build/bin/libdb-18.1.dylib
@@ -194,3 +196,5 @@ sudo install_name_tool -change /tmp/obsdeps/bin/libx264.159.dylib @executable_pa
 sudo install_name_tool -change /tmp/obsdeps/lib/libfreetype.6.dylib @executable_path/libfreetype.6.dylib $PWD/../packed_build/obs-plugins/text-freetype2.so
 
 sudo install_name_tool -change /usr/local/opt/fdk-aac/lib/libfdk-aac.2.dylib @executable_path/libfdk-aac.2.dylib $PWD/../packed_build/obs-plugins/obs-libfdk.so
+
+sudo install_name_tool -change /usr/local/opt/xz/lib/liblzma.5.dylib @executable_path/liblzma.5.dylib $PWD/../packed_build/bin/libavcodec.58.dylib
