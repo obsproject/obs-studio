@@ -85,7 +85,7 @@ endif()
 
 # Binary Versioning for Windows
 if(WIN32)
-	string(REPLACE "-" ";" UI_VERSION_SPLIT ${OBS_VERSION})
+	string(REPLACE "-" ";" UI_VERSION_SPLIT "25.19.9-5-gc6249353e-modified")
 	list(GET UI_VERSION_SPLIT 0 UI_VERSION)
 	string(REPLACE "." ";" UI_VERSION_SEMANTIC ${UI_VERSION})
 	list(GET UI_VERSION_SEMANTIC 0 UI_VERSION_MAJOR)
