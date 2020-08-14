@@ -61,19 +61,19 @@ struct obs_frontend_callbacks {
 						      void *private_data) = 0;
 
 	virtual void *obs_frontend_add_dock(void *dock) = 0;
-	virtual void *obs_frontend_add_control_window( void *icon,
-						      void *name,
+	virtual void *obs_frontend_add_control_window(void *icon, void *name,
 						      void *page) = 0;
 
-	virtual void *obs_frontend_add_input_control(void *name, void *page) = 0;
-	virtual void *obs_frontend_add_output_control(void *name, void *page) = 0;
+	virtual void *obs_frontend_add_input_control(void *name,
+						     void *page) = 0;
+	virtual void *obs_frontend_add_output_control(void *name,
+						      void *page) = 0;
 	virtual void
 	obs_frontend_add_event_callback(obs_frontend_event_cb callback,
 					void *private_data) = 0;
 	virtual void
 	obs_frontend_remove_event_callback(obs_frontend_event_cb callback,
 					   void *private_data) = 0;
-
 
 	virtual obs_output_t *obs_frontend_get_streaming_output(void) = 0;
 	virtual obs_output_t *obs_frontend_get_recording_output(void) = 0;

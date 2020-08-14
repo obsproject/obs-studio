@@ -64,8 +64,7 @@ void *obs_frontend_get_main_window(void)
 }
 void *obs_frontend_get_mapper(void)
 {
-	return !!callbacks_valid() ? c->obs_frontend_get_mapper()
-				   : nullptr;
+	return !!callbacks_valid() ? c->obs_frontend_get_mapper() : nullptr;
 }
 void *obs_frontend_get_settings_window(void)
 {
@@ -298,7 +297,9 @@ void *obs_frontend_add_dock(void *dock)
 }
 void *obs_frontend_add_control_window(void *icon, void *name, void *page)
 {
-	return !!callbacks_valid() ? c->obs_frontend_add_control_window( icon, name, page) : nullptr;
+	return !!callbacks_valid()
+		       ? c->obs_frontend_add_control_window(icon, name, page)
+		       : nullptr;
 }
 
 void *obs_frontend_add_input_control(void *name, void *page)

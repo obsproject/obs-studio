@@ -23,6 +23,11 @@
     <height>0</height>
    </size>
   </property>
+  <property name="font">
+   <font>
+    <family>Tahoma</family>
+   </font>
+  </property>
   <property name="windowTitle">
    <string>.MainWindow</string>
   </property>
@@ -203,7 +208,7 @@
      <x>0</x>
      <y>0</y>
      <width>1079</width>
-     <height>22</height>
+     <height>20</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_File">
@@ -500,6 +505,12 @@
             <verstretch>0</verstretch>
            </sizepolicy>
           </property>
+          <property name="font">
+           <font>
+            <family>Tahoma</family>
+            <pointsize>8</pointsize>
+           </font>
+          </property>
           <property name="contextMenuPolicy">
            <enum>Qt::CustomContextMenu</enum>
           </property>
@@ -635,6 +646,12 @@
             <verstretch>0</verstretch>
            </sizepolicy>
           </property>
+          <property name="font">
+           <font>
+            <family>Tahoma</family>
+            <pointsize>8</pointsize>
+           </font>
+          </property>
           <property name="contextMenuPolicy">
            <enum>Qt::CustomContextMenu</enum>
           </property>
@@ -753,7 +770,7 @@
           <rect>
            <x>0</x>
            <y>0</y>
-           <width>71</width>
+           <width>93</width>
            <height>16</height>
           </rect>
          </property>

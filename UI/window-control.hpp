@@ -8,11 +8,9 @@
 #include <QIcon>
 #include <QString>
 #include <QDialog>
-class OBSControlWidget : public QDialog
-{
+class OBSControlWidget : public QDialog {
 
 public:
-	inline OBSControlWidget(QIcon *Icon = nullptr,
-			 QString *Name = nullptr, QWidget *Page = nullptr);
-
+	inline OBSControlWidget(QIcon *Icon = nullptr, QString *Name = nullptr,
+				QWidget *Page = nullptr);
 };

@@ -25,8 +25,12 @@
 #include <util/profiler.h>
 #include <util/util.hpp>
 #include <util/platform.h>
+#if __has_include(<obs-frontend-api.h>)
 #include <obs-frontend-api.h>
-#include <functional>
+#else
+#include <obs-frontend-api/obs-frontend-api.h>
+#endif
+#include < functional>
 #include <string>
 #include <memory>
 #include <vector>

@@ -1028,6 +1028,7 @@ bool obs_hotkeys_platform_is_pressed(obs_hotkeys_platform_t *context,
 	}
 
 	UNUSED_PARAMETER(context);
+
 	return vk_down(obs_key_to_virtual_key(key));
 }
 
@@ -1113,7 +1114,7 @@ static inline void add_combo_key(obs_key_t key, struct dstr *str)
 
 	if (!dstr_is_empty(&key_str)) {
 		if (!dstr_is_empty(str)) {
-			dstr_cat(str, " + ");
+			dstr_cat(str, "+");
 		}
 		dstr_cat_dstr(str, &key_str);
 	}

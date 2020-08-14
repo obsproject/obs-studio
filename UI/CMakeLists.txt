@@ -262,7 +262,6 @@ set(obs_SOURCES
 	slider-absoluteset-style.cpp
 	qt-display.cpp
 	crash-report.cpp
-	hotkey-edit.cpp
 	source-label.cpp
 	remote-text.cpp
 	audio-encoders.cpp
@@ -326,7 +325,6 @@ set(obs_HEADERS
 	slider-absoluteset-style.hpp
 	qt-display.hpp
 	crash-report.hpp
-	hotkey-edit.hpp
 	source-label.hpp
 	remote-text.hpp
 	audio-encoders.hpp
@@ -365,7 +363,8 @@ set(obs_UI
 	forms/OBSUpdate.ui
 	forms/OBSRemux.ui
 	forms/OBSImporter.ui
-	forms/OBSAbout.ui)
+	forms/OBSAbout.ui
+	forms/OBSActionsWidget.ui)
 
 set(obs_QRC
 	forms/obs.qrc)
@@ -404,7 +403,8 @@ target_link_libraries(obs
 	obs-frontend-api
 	${FFMPEG_LIBRARIES}
 	${LIBCURL_LIBRARIES}
-	${obs_PLATFORM_LIBRARIES})
+	${obs_PLATFORM_LIBRARIES}
+	)
 
 if (APPLE)
 	target_link_libraries(obs

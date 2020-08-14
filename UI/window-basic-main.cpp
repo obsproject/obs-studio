@@ -58,7 +58,7 @@
 #include "ui-validation.hpp"
 #include <fstream>
 #include <sstream>
-
+#include "mapper.hpp"
 #ifdef _WIN32
 #include "win-update/win-update.hpp"
 #include "windows.h"
@@ -407,6 +407,8 @@ OBSBasic::OBSBasic(QWidget *parent)
 		this,
 		SLOT(ScenesReordered(const QModelIndex &, int, int,
 				     const QModelIndex &, int)));
+	mapper = new ControlMapper();
+	mapper->LoadMapping();
 }
 
 static void SaveAudioDevice(const char *name, int channel, obs_data_t *parent,
@@ -2131,6 +2133,7 @@ void OBSBasic::ProcessHotkey(obs_hotkey_id id, bool pressed)
 
 void OBSBasic::HotkeyTriggered(void *data, obs_hotkey_id id, bool pressed)
 {
+
 	OBSBasic &basic = *static_cast<OBSBasic *>(data);
 	QMetaObject::invokeMethod(&basic, "ProcessHotkey",
 				  Q_ARG(obs_hotkey_id, id),
@@ -8042,7 +8045,7 @@ void *OBSBasic::AddControlPage(QIcon *icon, QString *name, QWidget *page)
 	ControlPages.append(page);
 	return (QString *)name;
 };
-void *OBSBasic::AddInputControl( QString *name, QWidget *page)
+void *OBSBasic::AddInputControl(QString *name, QWidget *page)
 {
 	InputNames.append(name);
 	InputPages.append(page);

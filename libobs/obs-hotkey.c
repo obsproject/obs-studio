@@ -16,7 +16,6 @@
 ******************************************************************************/
 
 #include <inttypes.h>
-
 #include "obs-internal.h"
 
 static inline bool lock(void)
@@ -137,12 +136,11 @@ void obs_hotkey_pair_set_descriptions(obs_hotkey_pair_id id, const char *desc0,
 
 static void hotkey_signal(const char *signal, obs_hotkey_t *hotkey)
 {
+
 	calldata_t data;
 	calldata_init(&data);
 	calldata_set_ptr(&data, "key", hotkey);
-
 	signal_handler_signal(obs->hotkeys.signals, signal, &data);
-
 	calldata_free(&data);
 }
 
@@ -614,6 +612,7 @@ static inline void enum_context_hotkeys(struct obs_context_data *context,
 					obs_hotkey_internal_enum_func func,
 					void *data)
 {
+
 	const size_t num = context->hotkeys.num;
 	const obs_hotkey_id *array = context->hotkeys.array;
 	obs_hotkey_t *hotkey_array = obs->hotkeys.hotkeys.array;
@@ -964,6 +963,7 @@ struct binding_find_data {
 static inline bool binding_finder(void *data, size_t idx,
 				  obs_hotkey_binding_t *binding)
 {
+
 	struct binding_find_data *find = data;
 	if (binding->hotkey_id != find->id)
 		return true;
@@ -975,6 +975,7 @@ static inline bool binding_finder(void *data, size_t idx,
 
 static inline bool find_binding(obs_hotkey_id id, size_t *idx)
 {
+
 	struct binding_find_data data = {id, idx, false};
 	enum_bindings(binding_finder, &data);
 	return data.found;
@@ -1168,11 +1169,13 @@ static inline bool enum_hotkey(void *data, size_t idx, obs_hotkey_t *hotkey)
 	UNUSED_PARAMETER(idx);
 
 	struct obs_hotkey_internal_enum_forward *forward = data;
+
 	return forward->func(forward->data, hotkey->id, hotkey);
 }
 
 void obs_enum_hotkeys(obs_hotkey_enum_func func, void *data)
 {
+
 	struct obs_hotkey_internal_enum_forward forwarder = {func, data};
 	if (!lock())
 		return;
@@ -1201,6 +1204,7 @@ static inline bool modifiers_match(obs_hotkey_binding_t *binding,
 
 static inline bool is_pressed(obs_key_t key)
 {
+
 	return obs_hotkeys_platform_is_pressed(obs->hotkeys.platform_context,
 					       key);
 }
@@ -1306,6 +1310,7 @@ void obs_hotkey_inject_event(obs_key_combination_t hotkey, bool pressed)
 		pressed,
 		obs->hotkeys.strict_modifiers,
 	};
+
 	enum_bindings(inject_hotkey, &event);
 	unlock();
 }
@@ -1315,7 +1320,7 @@ void obs_hotkey_enable_background_press(bool enable)
 	if (!lock())
 		return;
 
-	obs->hotkeys.thread_disable_press = !enable;
+	obs->hotkeys.thread_disable_press = false;
 	unlock();
 }
 
@@ -1364,6 +1369,7 @@ static inline void query_hotkeys()
 		obs->hotkeys.thread_disable_press,
 		obs->hotkeys.strict_modifiers,
 	};
+
 	enum_bindings(query_hotkey, &param);
 }
 
@@ -1395,6 +1401,7 @@ void *obs_hotkey_thread(void *arg)
 
 void obs_hotkey_trigger_routed_callback(obs_hotkey_id id, bool pressed)
 {
+
 	if (!lock())
 		return;
 

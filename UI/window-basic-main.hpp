@@ -38,13 +38,13 @@
 #include "window-projector.hpp"
 #include "window-basic-about.hpp"
 #include "auth-base.hpp"
-
+#include "mapper.hpp"
 #include <obs-frontend-internal.hpp>
 
 #include <util/platform.h>
 #include <util/threading.h>
 #include <util/util.hpp>
-
+#include <QKeyEvent>
 #include <QPointer>
 
 class QMessageBox;
@@ -165,6 +165,7 @@ class OBSBasic : public OBSMainWindow {
 	friend class ReplayBufferButton;
 	friend class ExtraBrowsersModel;
 	friend class ExtraBrowsersDelegate;
+
 	friend struct OBSStudioAPI;
 
 	enum class MoveDir { Up, Down, Left, Right };
@@ -752,7 +753,7 @@ public:
 
 	void NewProject();
 	void LoadProject();
-
+	ControlMapper *mapper;
 	inline void GetDisplayRect(int &x, int &y, int &cx, int &cy)
 	{
 		x = previewX;
@@ -817,20 +818,22 @@ public:
 	QIcon GetSceneIcon() const;
 	bool startup = true;
 	void *AddControlPage(QIcon *icon, QString *name, QWidget *page);
-	QList<QIcon *>   ControlIcons;
+	QList<QIcon *> ControlIcons;
 	QList<QString *> ControlNames;
 	QList<QWidget *> ControlPages;
 	void *AddInputControl(QString *name, QWidget *page);
 	QList<QString *> InputNames;
 	QList<QWidget *> InputPages;
 	void *AddOutputControl(QString *name, QWidget *page);
-	
+
 	QList<QString *> OutputNames;
 	QList<QWidget *> OutputPages;
-	protected:
+
+protected:
 	virtual void closeEvent(QCloseEvent *event) override;
 	virtual void changeEvent(QEvent *event) override;
-
+signals:
+	void hotkeypressed(QString type, QString string);
 private slots:
 	void on_actionFullscreenInterface_triggered();
 
@@ -1013,6 +1016,17 @@ public:
 
 private:
 	std::unique_ptr<Ui::OBSBasic> ui;
+
+protected:
+	void keyPressEvent(QKeyEvent *event) override
+	{
+		obs_data_t *hk = obs_data_create();
+		obs_data_set_string(hk, "Hotkey",
+				    event->text().toStdString().c_str());
+		mapper->TriggerEvent("Hotkeys", hk);
+		blog(1, "event -- %s", event->text().toStdString().c_str());
+		obs_data_release(hk);
+	}
 };
 
 class SceneRenameDelegate : public QStyledItemDelegate {
