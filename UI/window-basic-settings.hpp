@@ -232,8 +232,6 @@ private:
 	void OnAuthConnected();
 	QString lastService;
 
-<<<<<<< HEAD
-	int prevLangIndex;
 	bool prevBrowserAccel;
 	QStackedWidget *tabs;
 	QLabel *noHotkeys;
@@ -261,8 +259,6 @@ private:
 	QLabel *serviceLabel;
 
 
-=======
->>>>>>> 6eb88d39... format
 private slots:
 	void UpdateServerList();
 	void UpdateKeyLink();
@@ -338,7 +334,7 @@ private:
 
 	QStringList ControlsList;
 
-<<<<<<< HEAD
+
 	using encoders_elem_t =
 		std::tuple<OBSEncoder, QPointer<QLabel>, QPointer<QWidget>>;
 	using outputs_elem_t =
@@ -349,7 +345,6 @@ private:
 		std::tuple<OBSSource, QPointer<QLabel>, QPointer<QWidget>>;
 	std::vector<sources_elem_t> filters;
 
-	QStringList filters;
 	QStringList encoders;
 	QStringList outputs;
 	QStringList services;
@@ -357,14 +352,11 @@ private:
 	QStringList sources;
 
 
-=======
->>>>>>> 6eb88d39... format
+
 private slots:
 	void on_theme_activated(int idx);
-
 	void on_treeWidget_itemSelectionChanged();
 	void on_buttonBox_clicked(QAbstractButton *button);
-
 	void on_service_currentIndexChanged(int idx);
 	void on_simpleOutputBrowse_clicked();
 	void on_advOutRecPathBrowse_clicked();
@@ -439,13 +431,6 @@ public:
 	void load_controls();
 	obs_data_t *inputaction;
 	obs_data_t *outputaction;
-<<<<<<< HEAD
-
-
-
-=======
->>>>>>> 6eb88d39... format
-
 private:
 	QComboBox *TriggerFilter;
 	QComboBox *ActionsFilter;

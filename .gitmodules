@@ -19,15 +19,9 @@
 [submodule "plugins/obs-midi"]
 	path = plugins/obs-midi
 	url = git@github.com:cpyarger/obs-midi.git
-[submodule "UI/QHotkey"]
-	path = UI/QHotkey
-	url = git@github.com:Skycoder42/QHotkey.git
-[submodule ".\\plugins\\obs-midi"]
-	path = .\\plugins\\obs-midi
-	url = https://github.com/cpyarger/obs-midi.git
-[submodule ".\\plugins\\obs-actions"]
-	path = .\\plugins\\obs-actions
+[submodule "plugins/obs-actions"]
+	path = plugins/obs-actions
 	url = https://github.com/cpyarger/obs-actions.git
-[submodule ".\\plugins\\obs-hotkeys"]
-	path = .\\plugins\\obs-hotkeys
+[submodule "plugins/obs-hotkeys"]
+	path = plugins/obs-hotkeys
 	url = https://github.com/cpyarger/obs-hotkeys.git

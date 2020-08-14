@@ -4542,12 +4542,12 @@ void OBSBasicSettings::load_controls()
 
 	OBSBasic *main = (OBSBasic *)obs_frontend_get_main_window();
 	ControlMapper *map = main->mapper;
-	connect(this, SIGNAL(EditAction(QString, obs_data_t *)), map,
-		SIGNAL(EditAction(QString, obs_data_t *)));
-	connect(this, SIGNAL(EditTrigger(QString, obs_data_t *)), map,
-		SIGNAL(EditTrigger(QString, obs_data_t *)));
+	connect(this, SIGNAL(edit_action(obs_data_t *)), map,
+		SIGNAL(edit_action(obs_data_t *)));
+	connect(this, SIGNAL(edit_trigger(obs_data_t *)), map,
+		SIGNAL(edit_trigger(obs_data_t *)));
 	connect(ui->btn_obs_save_control, SIGNAL(clicked()), map,
-		SLOT(AddorEditMapping()));
+		SLOT(add_or_edit_mapping()));
 	ui->btn_obs_delete_control->hide();
 	ui->bottom_widgets->hide();
 	QTableWidgetItem *triggerfilter = new QTableWidgetItem();
@@ -4557,9 +4557,9 @@ void OBSBasicSettings::load_controls()
 	connect(ui->btn_obs_delete_control, SIGNAL(clicked()), this,
 		SLOT(delete_row()));
 	connect(ui->SearchEdit, SIGNAL(textChanged(QString)), this,
-		SLOT(filter_table(QString)));
+		SLOT(filter_control_table(QString)));
 	connect(ui->tableWidget, SIGNAL(cellClicked(int, int)), this,
-		SLOT(do_table_selection(int, int)));
+		SLOT(control_table_selection(int, int)));
 	connect(map, SIGNAL(add_table_row(obs_data_t *, obs_data_t *)), this,
 		SLOT(add_row(obs_data_t *, obs_data_t *)));
 	connect(map, SIGNAL(edit_table_row(int, obs_data_t *, obs_data_t *)),
