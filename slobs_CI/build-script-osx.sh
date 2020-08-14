@@ -198,3 +198,6 @@ sudo install_name_tool -change /tmp/obsdeps/lib/libfreetype.6.dylib @executable_
 sudo install_name_tool -change /usr/local/opt/fdk-aac/lib/libfdk-aac.2.dylib @executable_path/libfdk-aac.2.dylib $PWD/../packed_build/obs-plugins/obs-libfdk.so
 
 sudo install_name_tool -change /usr/local/opt/xz/lib/liblzma.5.dylib @executable_path/liblzma.5.dylib $PWD/../packed_build/bin/libavcodec.58.dylib
+sudo install_name_tool -change /usr/local/opt/xz/lib/liblzma.5.dylib @executable_path/liblzma.5.dylib $PWD/../packed_build/bin/libavformat.58.dylib
+sudo install_name_tool -change /usr/local/opt/xz/lib/liblzma.5.dylib @executable_path/liblzma.5.dylib $PWD/../packed_build/bin/libavfilter.7.dylib
+sudo install_name_tool -change /usr/local/opt/xz/lib/liblzma.5.dylib @executable_path/liblzma.5.dylib $PWD/../packed_build/bin/libavdevice.58.dylib
