@@ -527,17 +527,6 @@ static void ss_previous_slide(void *data)
 	do_transition(ss, false);
 }
 
-static void get_state_proc(void *data, calldata_t *cd)
-{
-	struct slideshow *ss = data;
-	if (ss->stop)
-		calldata_set_string(cd, "return", "stopped");
-	else if (ss->paused)
-		calldata_set_string(cd, "return", "paused");
-	else
-		calldata_set_string(cd, "return", "playing");
-}
-
 static void play_pause_hotkey(void *data, obs_hotkey_id id,
 			      obs_hotkey_t *hotkey, bool pressed)
 {
@@ -548,12 +537,6 @@ static void play_pause_hotkey(void *data, obs_hotkey_id id,
 
 	if (pressed && obs_source_showing(ss->source))
 		ss_play_pause(ss);
-}
-
-static void play_pause_proc(void *data, calldata_t *cd)
-{
-	ss_play_pause(data);
-	UNUSED_PARAMETER(cd);
 }
 
 static void restart_hotkey(void *data, obs_hotkey_id id, obs_hotkey_t *hotkey,
@@ -568,12 +551,6 @@ static void restart_hotkey(void *data, obs_hotkey_id id, obs_hotkey_t *hotkey,
 		ss_restart(ss);
 }
 
-static void restart_proc(void *data, calldata_t *cd)
-{
-	ss_restart(data);
-	UNUSED_PARAMETER(cd);
-}
-
 static void stop_hotkey(void *data, obs_hotkey_id id, obs_hotkey_t *hotkey,
 			bool pressed)
 {
@@ -584,12 +561,6 @@ static void stop_hotkey(void *data, obs_hotkey_id id, obs_hotkey_t *hotkey,
 
 	if (pressed && obs_source_showing(ss->source))
 		ss_stop(ss);
-}
-
-static void stop_proc(void *data, calldata_t *cd)
-{
-	ss_stop(data);
-	UNUSED_PARAMETER(cd);
 }
 
 static void next_slide_hotkey(void *data, obs_hotkey_id id,
@@ -607,12 +578,6 @@ static void next_slide_hotkey(void *data, obs_hotkey_id id,
 		ss_next_slide(ss);
 }
 
-static void next_slide_proc(void *data, calldata_t *cd)
-{
-	ss_next_slide(data);
-	UNUSED_PARAMETER(cd);
-}
-
 static void previous_slide_hotkey(void *data, obs_hotkey_id id,
 				  obs_hotkey_t *hotkey, bool pressed)
 {
@@ -628,12 +593,6 @@ static void previous_slide_hotkey(void *data, obs_hotkey_id id,
 		ss_previous_slide(ss);
 }
 
-static void previous_slide_proc(void *data, calldata_t *cd)
-{
-	ss_previous_slide(data);
-	UNUSED_PARAMETER(cd);
-}
-
 static void ss_destroy(void *data)
 {
 	struct slideshow *ss = data;
@@ -646,7 +605,6 @@ static void ss_destroy(void *data)
 
 static void *ss_create(obs_data_t *settings, obs_source_t *source)
 {
-	proc_handler_t *ph = obs_source_get_proc_handler(source);
 	struct slideshow *ss = bzalloc(sizeof(*ss));
 
 	ss->source = source;
@@ -675,13 +633,6 @@ static void *ss_create(obs_data_t *settings, obs_source_t *source)
 		source, "SlideShow.PreviousSlide",
 		obs_module_text("SlideShow.PreviousSlide"),
 		previous_slide_hotkey, ss);
-
-	proc_handler_add(ph, "string get_state()", get_state_proc, ss);
-	proc_handler_add(ph, "void playpause()", play_pause_proc, ss);
-	proc_handler_add(ph, "void restart()", restart_proc, ss);
-	proc_handler_add(ph, "void stop()", stop_proc, ss);
-	proc_handler_add(ph, "void next_slide()", next_slide_proc, ss);
-	proc_handler_add(ph, "void previous_slide()", previous_slide_proc, ss);
 
 	pthread_mutex_init_value(&ss->mutex);
 	if (pthread_mutex_init(&ss->mutex, NULL) != 0)
