@@ -10,7 +10,6 @@ class Ui_GameCaptureToolbar;
 class Ui_ImageSourceToolbar;
 class Ui_ColorSourceToolbar;
 class Ui_TextSourceToolbar;
-class Ui_SlideshowToolbar;
 
 class SourceToolbar : public QWidget {
 	Q_OBJECT
@@ -125,24 +124,6 @@ public:
 
 public slots:
 	void on_browse_clicked();
-};
-
-class SlideshowToolbar : public SourceToolbar {
-	Q_OBJECT
-
-	Ui_SlideshowToolbar *ui;
-
-	void UpdateState();
-
-public:
-	SlideshowToolbar(QWidget *parent, OBSSource source);
-	~SlideshowToolbar();
-
-public slots:
-	void on_playPauseButton_clicked();
-	void on_previousButton_clicked();
-	void on_stopButton_clicked();
-	void on_nextButton_clicked();
 };
 
 class ColorSourceToolbar : public SourceToolbar {

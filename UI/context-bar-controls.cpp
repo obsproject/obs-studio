@@ -12,7 +12,6 @@
 #include "ui_image-source-toolbar.h"
 #include "ui_color-source-toolbar.h"
 #include "ui_text-source-toolbar.h"
-#include "ui_slideshow-toolbar.h"
 
 #ifdef _WIN32
 #define get_os_module(win, mac, linux) obs_get_module(win)
@@ -427,87 +426,6 @@ void ImageSourceToolbar::on_browse_clicked()
 	obs_data_set_string(settings, "file", QT_TO_UTF8(path));
 	obs_source_update(source, settings);
 	obs_data_release(settings);
-}
-
-/* ========================================================================= */
-
-SlideshowToolbar::SlideshowToolbar(QWidget *parent, OBSSource source)
-	: SourceToolbar(parent, source), ui(new Ui_SlideshowToolbar)
-{
-	ui->setupUi(this);
-	UpdateState();
-}
-
-SlideshowToolbar::~SlideshowToolbar()
-{
-	delete ui;
-}
-
-void SlideshowToolbar::UpdateState()
-{
-	OBSSource source = GetSource();
-	if (!source) {
-		return;
-	}
-
-	proc_handler_t *ph = obs_source_get_proc_handler(source);
-	calldata_t cd = {};
-
-	proc_handler_call(ph, "get_state", &cd);
-	const char *state = calldata_string(&cd, "return");
-
-	if (strcmp(state, "playing") == 0) {
-		ui->playPauseButton->setProperty("themeID", "pauseIcon");
-		ui->playPauseButton->style()->unpolish(ui->playPauseButton);
-		ui->playPauseButton->style()->polish(ui->playPauseButton);
-		ui->playPauseButton->setToolTip(
-			QTStr("ContextBar.MediaControls.PauseMedia"));
-	} else if (strcmp(state, "paused") == 0 ||
-		   strcmp(state, "stopped") == 0) {
-		ui->playPauseButton->setProperty("themeID", "playIcon");
-		ui->playPauseButton->style()->unpolish(ui->playPauseButton);
-		ui->playPauseButton->style()->polish(ui->playPauseButton);
-		ui->playPauseButton->setToolTip(
-			QTStr("ContextBar.MediaControls.PlayMedia"));
-	}
-}
-
-void SlideshowToolbar::on_playPauseButton_clicked()
-{
-	OBSSource source = GetSource();
-	if (source) {
-		proc_handler_t *ph = obs_source_get_proc_handler(source);
-		proc_handler_call(ph, "playpause", nullptr);
-		UpdateState();
-	}
-}
-
-void SlideshowToolbar::on_previousButton_clicked()
-{
-	OBSSource source = GetSource();
-	if (source) {
-		proc_handler_t *ph = obs_source_get_proc_handler(source);
-		proc_handler_call(ph, "previous_slide", nullptr);
-	}
-}
-
-void SlideshowToolbar::on_stopButton_clicked()
-{
-	OBSSource source = GetSource();
-	if (source) {
-		proc_handler_t *ph = obs_source_get_proc_handler(source);
-		proc_handler_call(ph, "stop", nullptr);
-		UpdateState();
-	}
-}
-
-void SlideshowToolbar::on_nextButton_clicked()
-{
-	OBSSource source = GetSource();
-	if (source) {
-		proc_handler_t *ph = obs_source_get_proc_handler(source);
-		proc_handler_call(ph, "next_slide", nullptr);
-	}
 }
 
 /* ========================================================================= */

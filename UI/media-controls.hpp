@@ -20,6 +20,7 @@ private:
 	int lastSeek;
 	bool prevPaused = false;
 	bool countDownTimer = false;
+	bool isSlideshow = false;
 
 	QString FormatSeconds(int totalSeconds);
 	void StartMediaTimer();

@@ -160,6 +160,9 @@ void MediaControls::SeekTimerCallback()
 
 void MediaControls::StartMediaTimer()
 {
+	if (isSlideshow)
+		return;
+
 	if (!mediaTimer.isActive())
 		mediaTimer.start(1000);
 }
@@ -237,6 +240,12 @@ void MediaControls::RefreshControls()
 	bool has_playlist = strcmp(id, "ffmpeg_source") != 0;
 	ui->previousButton->setVisible(has_playlist);
 	ui->nextButton->setVisible(has_playlist);
+
+	isSlideshow = strcmp(id, "slideshow") == 0;
+	ui->slider->setVisible(!isSlideshow);
+	ui->timerLabel->setVisible(!isSlideshow);
+	ui->label->setVisible(!isSlideshow);
+	ui->durationLabel->setVisible(!isSlideshow);
 
 	obs_media_state state = obs_source_media_get_state(source);
 

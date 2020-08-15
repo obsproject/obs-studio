@@ -2889,16 +2889,17 @@ void OBSBasic::UpdateContextBar()
 	if (item) {
 		obs_source_t *source = obs_sceneitem_get_source(item);
 		const char *id = obs_source_get_unversioned_id(source);
+		uint32_t flags = obs_source_get_output_flags(source);
 
-		if (strcmp(id, "ffmpeg_source") == 0 ||
-		    strcmp(id, "vlc_source") == 0) {
+		if (flags & OBS_SOURCE_CONTROLLABLE_MEDIA) {
 			MediaControls *mediaControls =
 				new MediaControls(ui->emptySpace);
 			mediaControls->SetSource(source);
 
 			ui->emptySpace->layout()->addWidget(mediaControls);
+		}
 
-		} else if (strcmp(id, "browser_source") == 0) {
+		if (strcmp(id, "browser_source") == 0) {
 			BrowserToolbar *c =
 				new BrowserToolbar(ui->emptySpace, source);
 			ui->emptySpace->layout()->addWidget(c);
@@ -2951,11 +2952,6 @@ void OBSBasic::UpdateContextBar()
 		} else if (strcmp(id, "color_source") == 0) {
 			ColorSourceToolbar *c =
 				new ColorSourceToolbar(ui->emptySpace, source);
-			ui->emptySpace->layout()->addWidget(c);
-
-		} else if (strcmp(id, "slideshow") == 0) {
-			SlideshowToolbar *c =
-				new SlideshowToolbar(ui->emptySpace, source);
 			ui->emptySpace->layout()->addWidget(c);
 
 		} else if (strcmp(id, "text_ft2_source") == 0 ||
