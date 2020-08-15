@@ -250,9 +250,10 @@ void AutoConfigTestPage::TestBandwidthThread()
 		GetServers(servers);
 
 	/* just use the first server if it only has one alternate server,
-	 * or if using Restream due to their "auto" servers */
+	 * or if using Restream or Nimo TV due to their "auto" servers */
 	if (servers.size() < 3 ||
-	    wiz->serviceName.substr(0, 11) == "Restream.io") {
+	    wiz->serviceName.substr(0, 11) == "Restream.io" ||
+	    wiz->serviceName == "Nimo TV") {
 		servers.resize(1);
 
 	} else if (wiz->service == AutoConfig::Service::Twitch &&
