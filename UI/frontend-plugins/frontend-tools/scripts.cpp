@@ -16,6 +16,7 @@
 #include <QResizeEvent>
 #include <QAction>
 #include <QMessageBox>
+#include <QMenu>
 #include <QUrl>
 #include <QDesktopServices>
 
@@ -387,6 +388,43 @@ void ScriptsTool::on_reloadScripts_clicked()
 				     .constData());
 
 	on_scripts_currentRowChanged(ui->scripts->currentRow());
+}
+
+void ScriptsTool::OpenScriptParentDirectory()
+{
+	QList<QListWidgetItem *> items = ui->scripts->selectedItems();
+	for (QListWidgetItem *item : items) {
+		QDir dir(item->data(Qt::UserRole).toString());
+		dir.cdUp();
+		QDesktopServices::openUrl(
+			QUrl::fromLocalFile(dir.absolutePath()));
+	}
+}
+
+void ScriptsTool::on_scripts_customContextMenuRequested(const QPoint &pos)
+{
+
+	QListWidgetItem *item = ui->scripts->itemAt(pos);
+
+	QMenu popup(this);
+
+	obs_frontend_push_ui_translation(obs_module_get_string);
+
+	popup.addAction(tr("Add"), this, SLOT(on_addScripts_clicked()));
+
+	if (item) {
+		popup.addSeparator();
+		popup.addAction(obs_module_text("Reload"), this,
+				SLOT(on_reloadScripts_clicked()));
+		popup.addAction(obs_module_text("OpenFileLocation"), this,
+				SLOT(OpenScriptParentDirectory()));
+		popup.addSeparator();
+		popup.addAction(tr("Remove"), this,
+				SLOT(on_removeScripts_clicked()));
+	}
+	obs_frontend_pop_ui_translation();
+
+	popup.exec(QCursor::pos());
 }
 
 void ScriptsTool::on_scriptLog_clicked()

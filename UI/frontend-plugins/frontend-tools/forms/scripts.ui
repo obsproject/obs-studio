@@ -41,6 +41,9 @@
          </item>
          <item>
           <widget class="QListWidget" name="scripts">
+           <property name="contextMenuPolicy">
+            <enum>Qt::CustomContextMenu</enum>
+           </property>
            <property name="sortingEnabled">
             <bool>true</bool>
            </property>
