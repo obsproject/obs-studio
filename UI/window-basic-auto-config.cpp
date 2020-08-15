@@ -273,6 +273,10 @@ AutoConfigStreamPage::AutoConfigStreamPage(QWidget *parent)
 		SLOT(ServiceChanged()));
 	connect(ui->customServer, SIGNAL(textChanged(const QString &)), this,
 		SLOT(ServiceChanged()));
+	connect(ui->customServer, SIGNAL(textChanged(const QString &)), this,
+		SLOT(UpdateKeyLink()));
+	connect(ui->customServer, SIGNAL(editingFinished()), this,
+		SLOT(UpdateKeyLink()));
 	connect(ui->doBandwidthTest, SIGNAL(toggled(bool)), this,
 		SLOT(ServiceChanged()));
 
@@ -573,12 +577,8 @@ void AutoConfigStreamPage::ServiceChanged()
 
 void AutoConfigStreamPage::UpdateKeyLink()
 {
-	if (IsCustomService()) {
-		ui->doBandwidthTest->setEnabled(true);
-		return;
-	}
-
 	QString serviceName = ui->service->currentText();
+	QString customServer = ui->customServer->text();
 	bool isYoutube = false;
 	QString streamKeyLink;
 
@@ -591,7 +591,8 @@ void AutoConfigStreamPage::UpdateKeyLink()
 	} else if (serviceName.startsWith("Restream.io")) {
 		streamKeyLink =
 			"https://restream.io/settings/streaming-setup?from=OBS";
-	} else if (serviceName == "Facebook Live") {
+	} else if (serviceName == "Facebook Live" ||
+		   (customServer.contains("fbcdn.net") && IsCustomService())) {
 		streamKeyLink =
 			"https://www.facebook.com/live/producer?ref=OBS";
 	} else if (serviceName.startsWith("Twitter")) {
