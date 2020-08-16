@@ -31,6 +31,7 @@
 #define OPT_BIND_IP "bind_ip"
 #define OPT_NEWSOCKETLOOP_ENABLED "new_socket_loop_enabled"
 #define OPT_LOWLATENCY_ENABLED "low_latency_mode_enabled"
+#define OPT_METADATA_MULTITRACK "metadata_multitrack"
 
 //#define TEST_FRAMEDROPS
 //#define TEST_FRAMEDROPS_WITH_BITRATE_SHORTCUTS
@@ -58,6 +59,7 @@ struct rtmp_stream {
 	pthread_mutex_t packets_mutex;
 	struct circlebuf packets;
 	bool sent_headers;
+	bool using_metadata_multitrack;
 
 	bool got_first_video;
 	int64_t start_dts_offset;

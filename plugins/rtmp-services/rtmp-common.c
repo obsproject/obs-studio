@@ -14,6 +14,8 @@ struct rtmp_common {
 	char *key;
 
 	char *output;
+
+	bool supports_additional_audio_track;
 };
 
 static const char *rtmp_common_getname(void *unused)
@@ -25,6 +27,7 @@ static const char *rtmp_common_getname(void *unused)
 static json_t *open_services_file(void);
 static inline json_t *find_service(json_t *root, const char *name,
 				   const char **p_new_name);
+static inline bool get_bool_val(json_t *service, const char *key);
 static inline const char *get_string_val(json_t *service, const char *key);
 
 extern void twitch_ingests_refresh(int seconds);
@@ -74,6 +77,7 @@ static void rtmp_common_update(void *data, obs_data_t *settings)
 	service->service = bstrdup(obs_data_get_string(settings, "service"));
 	service->server = bstrdup(obs_data_get_string(settings, "server"));
 	service->key = bstrdup(obs_data_get_string(settings, "key"));
+	service->supports_additional_audio_track = false;
 	service->output = NULL;
 
 	json_t *root = open_services_file();
@@ -94,6 +98,8 @@ static void rtmp_common_update(void *data, obs_data_t *settings)
 					service->output = bstrdup(out);
 			}
 
+			service->supports_additional_audio_track = get_bool_val(
+				serv, "supports_additional_audio_track");
 			ensure_valid_url(service, serv, settings);
 		}
 	}
@@ -622,6 +628,12 @@ static const char *rtmp_common_key(void *data)
 	return service->key;
 }
 
+static bool supports_multitrack(void *data)
+{
+	struct rtmp_common *service = data;
+	return service->supports_additional_audio_track;
+}
+
 struct obs_service_info rtmp_common_service = {
 	.id = "rtmp_common",
 	.get_name = rtmp_common_getname,
@@ -633,4 +645,5 @@ struct obs_service_info rtmp_common_service = {
 	.get_key = rtmp_common_key,
 	.apply_encoder_settings = rtmp_common_apply_settings,
 	.get_output_type = rtmp_common_get_output_type,
+	.supports_multitrack = supports_multitrack,
 };

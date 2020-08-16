@@ -30,5 +30,11 @@ extern void write_file_info(FILE *file, int64_t duration_ms, int64_t size);
 
 extern bool flv_meta_data(obs_output_t *context, uint8_t **output, size_t *size,
 			  bool write_header, size_t audio_idx);
+extern bool flv_additional_meta_data(obs_output_t *context, uint8_t **output,
+				     size_t *size);
 extern void flv_packet_mux(struct encoder_packet *packet, int32_t dts_offset,
 			   uint8_t **output, size_t *size, bool is_header);
+extern void flv_additional_packet_mux(struct encoder_packet *packet,
+				      int32_t dts_offset, uint8_t **output,
+				      size_t *size, bool is_header,
+				      size_t index);
