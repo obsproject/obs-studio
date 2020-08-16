@@ -5319,8 +5319,6 @@ RTMP_Write(RTMP *r, const char *buf, int size, int streamIdx)
                     !pkt->m_nTimeStamp) || pkt->m_packetType == RTMP_PACKET_TYPE_INFO)
             {
                 pkt->m_headerType = RTMP_PACKET_SIZE_LARGE;
-                if (pkt->m_packetType == RTMP_PACKET_TYPE_INFO)
-                    pkt->m_nBodySize += 16;
             }
             else
             {
@@ -5334,11 +5332,6 @@ RTMP_Write(RTMP *r, const char *buf, int size, int streamIdx)
             }
             enc = pkt->m_body;
             pend = enc + pkt->m_nBodySize;
-            if (pkt->m_packetType == RTMP_PACKET_TYPE_INFO)
-            {
-                enc = AMF_EncodeString(enc, pend, &av_setDataFrame);
-                pkt->m_nBytesRead = enc - pkt->m_body;
-            }
         }
         else
         {

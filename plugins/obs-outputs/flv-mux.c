@@ -73,6 +73,7 @@ static bool build_flv_meta_data(obs_output_t *context, uint8_t **output,
 	if (a_idx > 0 && !aencoder)
 		return false;
 
+	enc_str(&enc, end, "@setDataFrame");
 	enc_str(&enc, end, "onMetaData");
 
 	*enc++ = AMF_ECMA_ARRAY;
