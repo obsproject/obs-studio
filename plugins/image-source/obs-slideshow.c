@@ -509,12 +509,10 @@ static void ss_restart(void *data)
 
 	ss->elapsed = 0.0f;
 	ss->cur_item = 0;
-
-	obs_transition_set(ss->transition,
-			   ss->files.array[ss->cur_item].source);
-
 	ss->stop = false;
 	ss->paused = false;
+	do_transition(ss, false);
+
 	set_media_state(ss, OBS_MEDIA_STATE_PLAYING);
 }
 
