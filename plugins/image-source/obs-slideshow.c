@@ -112,7 +112,21 @@ struct slideshow {
 	obs_hotkey_id stop_hotkey;
 	obs_hotkey_id next_hotkey;
 	obs_hotkey_id prev_hotkey;
+
+	enum obs_media_state state;
 };
+
+static void set_media_state(void *data, enum obs_media_state state)
+{
+	struct slideshow *ss = data;
+	ss->state = state;
+}
+
+static enum obs_media_state ss_get_state(void *data)
+{
+	struct slideshow *ss = data;
+	return ss->state;
+}
 
 static obs_source_t *get_transition(struct slideshow *ss)
 {
@@ -242,18 +256,21 @@ static void do_transition(void *data, bool to_null)
 	struct slideshow *ss = data;
 	bool valid = item_valid(ss);
 
-	if (valid && ss->use_cut)
+	if (valid && ss->use_cut) {
 		obs_transition_set(ss->transition,
 				   ss->files.array[ss->cur_item].source);
 
-	else if (valid && !to_null)
+	} else if (valid && !to_null) {
 		obs_transition_start(ss->transition, OBS_TRANSITION_MODE_AUTO,
 				     ss->tr_speed,
 				     ss->files.array[ss->cur_item].source);
 
-	else
+	} else {
 		obs_transition_start(ss->transition, OBS_TRANSITION_MODE_AUTO,
 				     ss->tr_speed, NULL);
+		set_media_state(ss, OBS_MEDIA_STATE_ENDED);
+		obs_source_media_ended(ss->source);
+	}
 }
 
 static void ss_update(void *data, obs_data_t *settings)
@@ -453,13 +470,21 @@ static void ss_update(void *data, obs_data_t *settings)
 		ss->cur_item = random_file(ss);
 	if (new_tr)
 		obs_source_add_active_child(ss->source, new_tr);
-	if (ss->files.num)
+	if (ss->files.num) {
 		do_transition(ss, false);
+
+		if (ss->manual)
+			set_media_state(ss, OBS_MEDIA_STATE_PAUSED);
+		else
+			set_media_state(ss, OBS_MEDIA_STATE_PLAYING);
+
+		obs_source_media_started(ss->source);
+	}
 
 	obs_data_array_release(array);
 }
 
-static void ss_play_pause(void *data)
+static void ss_play_pause(void *data, bool pause)
 {
 	struct slideshow *ss = data;
 
@@ -468,9 +493,14 @@ static void ss_play_pause(void *data)
 		ss->paused = false;
 		do_transition(ss, false);
 	} else {
-		ss->paused = !ss->paused;
-		ss->manual = ss->paused;
+		ss->paused = pause;
+		ss->manual = pause;
 	}
+
+	if (pause)
+		set_media_state(ss, OBS_MEDIA_STATE_PAUSED);
+	else
+		set_media_state(ss, OBS_MEDIA_STATE_PLAYING);
 }
 
 static void ss_restart(void *data)
@@ -485,6 +515,7 @@ static void ss_restart(void *data)
 
 	ss->stop = false;
 	ss->paused = false;
+	set_media_state(ss, OBS_MEDIA_STATE_PLAYING);
 }
 
 static void ss_stop(void *data)
@@ -497,6 +528,8 @@ static void ss_stop(void *data)
 	do_transition(ss, true);
 	ss->stop = true;
 	ss->paused = false;
+
+	set_media_state(ss, OBS_MEDIA_STATE_STOPPED);
 }
 
 static void ss_next_slide(void *data)
@@ -527,17 +560,6 @@ static void ss_previous_slide(void *data)
 	do_transition(ss, false);
 }
 
-static void get_state_proc(void *data, calldata_t *cd)
-{
-	struct slideshow *ss = data;
-	if (ss->stop)
-		calldata_set_string(cd, "return", "stopped");
-	else if (ss->paused)
-		calldata_set_string(cd, "return", "paused");
-	else
-		calldata_set_string(cd, "return", "playing");
-}
-
 static void play_pause_hotkey(void *data, obs_hotkey_id id,
 			      obs_hotkey_t *hotkey, bool pressed)
 {
@@ -547,13 +569,7 @@ static void play_pause_hotkey(void *data, obs_hotkey_id id,
 	struct slideshow *ss = data;
 
 	if (pressed && obs_source_showing(ss->source))
-		ss_play_pause(ss);
-}
-
-static void play_pause_proc(void *data, calldata_t *cd)
-{
-	ss_play_pause(data);
-	UNUSED_PARAMETER(cd);
+		obs_source_media_play_pause(ss->source, !ss->paused);
 }
 
 static void restart_hotkey(void *data, obs_hotkey_id id, obs_hotkey_t *hotkey,
@@ -565,13 +581,7 @@ static void restart_hotkey(void *data, obs_hotkey_id id, obs_hotkey_t *hotkey,
 	struct slideshow *ss = data;
 
 	if (pressed && obs_source_showing(ss->source))
-		ss_restart(ss);
-}
-
-static void restart_proc(void *data, calldata_t *cd)
-{
-	ss_restart(data);
-	UNUSED_PARAMETER(cd);
+		obs_source_media_restart(ss->source);
 }
 
 static void stop_hotkey(void *data, obs_hotkey_id id, obs_hotkey_t *hotkey,
@@ -583,13 +593,7 @@ static void stop_hotkey(void *data, obs_hotkey_id id, obs_hotkey_t *hotkey,
 	struct slideshow *ss = data;
 
 	if (pressed && obs_source_showing(ss->source))
-		ss_stop(ss);
-}
-
-static void stop_proc(void *data, calldata_t *cd)
-{
-	ss_stop(data);
-	UNUSED_PARAMETER(cd);
+		obs_source_media_stop(ss->source);
 }
 
 static void next_slide_hotkey(void *data, obs_hotkey_id id,
@@ -604,13 +608,7 @@ static void next_slide_hotkey(void *data, obs_hotkey_id id,
 		return;
 
 	if (pressed && obs_source_showing(ss->source))
-		ss_next_slide(ss);
-}
-
-static void next_slide_proc(void *data, calldata_t *cd)
-{
-	ss_next_slide(data);
-	UNUSED_PARAMETER(cd);
+		obs_source_media_next(ss->source);
 }
 
 static void previous_slide_hotkey(void *data, obs_hotkey_id id,
@@ -625,13 +623,7 @@ static void previous_slide_hotkey(void *data, obs_hotkey_id id,
 		return;
 
 	if (pressed && obs_source_showing(ss->source))
-		ss_previous_slide(ss);
-}
-
-static void previous_slide_proc(void *data, calldata_t *cd)
-{
-	ss_previous_slide(data);
-	UNUSED_PARAMETER(cd);
+		obs_source_media_previous(ss->source);
 }
 
 static void ss_destroy(void *data)
@@ -646,7 +638,6 @@ static void ss_destroy(void *data)
 
 static void *ss_create(obs_data_t *settings, obs_source_t *source)
 {
-	proc_handler_t *ph = obs_source_get_proc_handler(source);
 	struct slideshow *ss = bzalloc(sizeof(*ss));
 
 	ss->source = source;
@@ -675,13 +666,6 @@ static void *ss_create(obs_data_t *settings, obs_source_t *source)
 		source, "SlideShow.PreviousSlide",
 		obs_module_text("SlideShow.PreviousSlide"),
 		previous_slide_hotkey, ss);
-
-	proc_handler_add(ph, "string get_state()", get_state_proc, ss);
-	proc_handler_add(ph, "void playpause()", play_pause_proc, ss);
-	proc_handler_add(ph, "void restart()", restart_proc, ss);
-	proc_handler_add(ph, "void stop()", stop_proc, ss);
-	proc_handler_add(ph, "void next_slide()", next_slide_proc, ss);
-	proc_handler_add(ph, "void previous_slide()", previous_slide_proc, ss);
 
 	pthread_mutex_init_value(&ss->mutex);
 	if (pthread_mutex_init(&ss->mutex, NULL) != 0)
@@ -980,7 +964,7 @@ struct obs_source_info slideshow_info = {
 	.id = "slideshow",
 	.type = OBS_SOURCE_TYPE_INPUT,
 	.output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_CUSTOM_DRAW |
-			OBS_SOURCE_COMPOSITE,
+			OBS_SOURCE_COMPOSITE | OBS_SOURCE_CONTROLLABLE_MEDIA,
 	.get_name = ss_getname,
 	.create = ss_create,
 	.destroy = ss_destroy,
@@ -996,4 +980,10 @@ struct obs_source_info slideshow_info = {
 	.get_defaults = ss_defaults,
 	.get_properties = ss_properties,
 	.icon_type = OBS_ICON_TYPE_SLIDESHOW,
+	.media_play_pause = ss_play_pause,
+	.media_restart = ss_restart,
+	.media_stop = ss_stop,
+	.media_next = ss_next_slide,
+	.media_previous = ss_previous_slide,
+	.media_get_state = ss_get_state,
 };
