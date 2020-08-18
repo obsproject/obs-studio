@@ -25,6 +25,7 @@ signals:
 public:
 	OBSQTDisplay(QWidget *parent = nullptr,
 		     Qt::WindowFlags flags = Qt::WindowFlags());
+	~OBSQTDisplay() { display = nullptr; }
 
 	virtual QPaintEngine *paintEngine() const override;
 
