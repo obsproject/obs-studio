@@ -6,6 +6,12 @@
 #include <QResizeEvent>
 #include <QShowEvent>
 
+#include <obs-config.h>
+
+#ifdef ENABLE_WAYLAND
+#include <obs-nix-platform.h>
+#endif
+
 static inline long long color_to_int(const QColor &color)
 {
 	auto shift = [&](unsigned val, int shift) {
@@ -33,8 +39,13 @@ OBSQTDisplay::OBSQTDisplay(QWidget *parent, Qt::WindowFlags flags)
 	setAttribute(Qt::WA_NativeWindow);
 
 	auto windowVisible = [this](bool visible) {
-		if (!visible)
+		if (!visible) {
+#ifdef ENABLE_WAYLAND
+			if (obs_get_nix_platform() == OBS_NIX_PLATFORM_WAYLAND)
+				display = nullptr;
+#endif
 			return;
+		}
 
 		if (!display) {
 			CreateDisplay();
