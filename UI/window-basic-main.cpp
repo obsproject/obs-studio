@@ -30,6 +30,7 @@
 #include <QSizePolicy>
 #include <QScrollBar>
 #include <QTextStream>
+#include <QPushButton>
 
 #include <util/dstr.h>
 #include <util/util.hpp>
@@ -5944,9 +5945,63 @@ void OBSBasic::RecordingStop(int code, QString last_error)
 
 	if (remuxAfterRecord)
 		AutoRemux();
+	else
+		ShowRecordingDoneDialog(QString(""));
 
 	OnDeactivate();
 	UpdatePause(false);
+}
+
+void OBSBasic::ShowRecordingDoneDialog(QString altPath)
+{
+	if (!config_get_bool(GetGlobalConfig(), "BasicWindow",
+			     "RecordingDoneDialog"))
+		return;
+
+	const char *mode = config_get_string(basicConfig, "Output", "Mode");
+	bool advanced = astrcmpi(mode, "Advanced") == 0;
+
+	const char *path = !advanced ? config_get_string(basicConfig,
+							 "SimpleOutput",
+							 "FilePath")
+				     : config_get_string(basicConfig, "AdvOut",
+							 "RecFilePath");
+
+	QString input;
+	input += path;
+	input += "/";
+	input += remuxFilename.c_str();
+
+	QMessageBox messageBox(this);
+	messageBox.setWindowTitle(QTStr("Output.Recording.DoneDialog.Title"));
+	messageBox.setText(QTStr("Output.Recording.DoneDialog.Text"));
+
+	QPushButton *close;
+	QPushButton *openFolder;
+	QPushButton *openFile;
+	openFile = messageBox.addButton(QTStr("OpenFile"), QMessageBox::NoRole);
+	openFolder =
+		messageBox.addButton(QTStr("OpenFolder"), QMessageBox::NoRole);
+	close = messageBox.addButton(QTStr("Close"), QMessageBox::NoRole);
+
+	messageBox.setEscapeButton(close);
+	messageBox.setDefaultButton(openFile);
+	messageBox.setIcon(QMessageBox::Information);
+	QCheckBox *cb = new QCheckBox(QTStr("DoNotShowAgain"));
+	cb->setToolTip(
+		QTStr("Output.Recording.DoneDialog.DoNotShowAgain.ToolTip"));
+	messageBox.setCheckBox(cb);
+	messageBox.exec();
+
+	if (cb->isChecked()) {
+		config_set_bool(GetGlobalConfig(), "BasicWindow",
+				"RecordingDoneDialog", false);
+	}
+	if (messageBox.clickedButton() == openFile)
+		QDesktopServices::openUrl(QUrl::fromLocalFile(
+			altPath.length() > 0 ? altPath : input));
+	if (messageBox.clickedButton() == openFolder)
+		QDesktopServices::openUrl(QUrl::fromLocalFile(path));
 }
 
 void OBSBasic::ShowReplayBufferPauseWarning()

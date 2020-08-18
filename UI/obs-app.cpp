@@ -430,6 +430,8 @@ bool OBSApp::InitGlobalConfigDefaults()
 	config_set_default_double(globalConfig, "BasicWindow", "SnapDistance",
 				  10.0);
 	config_set_default_bool(globalConfig, "BasicWindow",
+				"RecordingDoneDialog", true);
+	config_set_default_bool(globalConfig, "BasicWindow",
 				"RecordWhenStreaming", false);
 	config_set_default_bool(globalConfig, "BasicWindow",
 				"KeepRecordingWhenStreamStops", false);

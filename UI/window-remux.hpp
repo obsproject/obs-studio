@@ -58,6 +58,7 @@ class OBSRemux : public QDialog {
 
 	bool autoRemux;
 	QString autoRemuxFile;
+	QString autoRemuxOut;
 
 public:
 	explicit OBSRemux(const char *recPath, QWidget *parent = nullptr,

@@ -387,6 +387,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->theme, 		     COMBO_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->enableAutoUpdates,    CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->openStatsOnStartup,   CHECK_CHANGED,  GENERAL_CHANGED);
+	HookWidget(ui->recordingDoneDialog,  CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->warnBeforeStreamStart,CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->warnBeforeStreamStop, CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->warnBeforeRecordStop, CHECK_CHANGED,  GENERAL_CHANGED);
@@ -1222,6 +1223,10 @@ void OBSBasicSettings::LoadGeneralSettings()
 	double snapDistance = config_get_double(GetGlobalConfig(),
 						"BasicWindow", "SnapDistance");
 	ui->snapDistance->setValue(snapDistance);
+
+	bool recordingDoneDialog = config_get_bool(
+		GetGlobalConfig(), "BasicWindow", "RecordingDoneDialog");
+	ui->recordingDoneDialog->setChecked(recordingDoneDialog);
 
 	bool warnBeforeStreamStart = config_get_bool(
 		GetGlobalConfig(), "BasicWindow", "WarnBeforeStartingStream");
@@ -2937,6 +2942,8 @@ void OBSBasicSettings::SaveGeneralSettings()
 				"AutomaticCollectionSearch",
 				ui->automaticSearch->isChecked());
 
+	config_set_bool(GetGlobalConfig(), "BasicWindow", "RecordingDoneDialog",
+			ui->recordingDoneDialog->isChecked());
 	config_set_bool(GetGlobalConfig(), "BasicWindow",
 			"WarnBeforeStartingStream",
 			ui->warnBeforeStreamStart->isChecked());

@@ -277,34 +277,41 @@
                     </spacer>
                    </item>
                    <item row="0" column="1">
+                    <widget class="QCheckBox" name="recordingDoneDialog">
+                     <property name="text">
+                      <string>Basic.Settings.General.RecordingDoneDialog</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="1" column="1">
                     <widget class="QCheckBox" name="warnBeforeStreamStart">
                      <property name="text">
                       <string>Basic.Settings.General.WarnBeforeStartingStream</string>
                      </property>
                     </widget>
                    </item>
-                   <item row="1" column="1">
+                   <item row="2" column="1">
                     <widget class="QCheckBox" name="warnBeforeStreamStop">
                      <property name="text">
                       <string>Basic.Settings.General.WarnBeforeStoppingStream</string>
                      </property>
                     </widget>
                    </item>
-                   <item row="2" column="1">
+                   <item row="3" column="1">
                     <widget class="QCheckBox" name="warnBeforeRecordStop">
                      <property name="text">
                       <string>Basic.Settings.General.WarnBeforeStoppingRecord</string>
                      </property>
                     </widget>
                    </item>
-                   <item row="3" column="1">
+                   <item row="4" column="1">
                     <widget class="QCheckBox" name="recordWhenStreaming">
                      <property name="text">
                       <string>Basic.Settings.General.RecordWhenStreaming</string>
                      </property>
                     </widget>
                    </item>
-                   <item row="4" column="1">
+                   <item row="5" column="1">
                     <widget class="QCheckBox" name="keepRecordStreamStops">
                      <property name="enabled">
                       <bool>false</bool>
@@ -314,14 +321,14 @@
                      </property>
                     </widget>
                    </item>
-                   <item row="5" column="1">
+                   <item row="6" column="1">
                     <widget class="QCheckBox" name="replayWhileStreaming">
                      <property name="text">
                       <string>Basic.Settings.General.ReplayBufferWhileStreaming</string>
                      </property>
                     </widget>
                    </item>
-                   <item row="6" column="1">
+                   <item row="7" column="1">
                     <widget class="QCheckBox" name="keepReplayStreamStops">
                      <property name="enabled">
                       <bool>false</bool>

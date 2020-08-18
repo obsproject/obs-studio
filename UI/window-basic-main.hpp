@@ -554,6 +554,8 @@ public slots:
 	void RecordStopping();
 	void RecordingStop(int code, QString last_error);
 
+	void ShowRecordingDoneDialog(QString altPath);
+
 	void ShowReplayBufferPauseWarning();
 	void StartReplayBuffer();
 	void StopReplayBuffer();

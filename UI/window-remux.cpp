@@ -33,6 +33,7 @@
 #include <QTimer>
 
 #include "qt-wrappers.hpp"
+#include "window-basic-main.hpp"
 
 #include <memory>
 #include <cmath>
@@ -865,6 +866,7 @@ void OBSRemux::AutoRemux(QString inFile, QString outFile)
 	if (inFile != "" && outFile != "" && autoRemux) {
 		emit remux(inFile, outFile);
 		autoRemuxFile = inFile;
+		autoRemuxOut = outFile;
 	}
 }
 
@@ -927,6 +929,8 @@ void OBSRemux::remuxFinished(bool success)
 
 	if (autoRemux && autoRemuxFile != "") {
 		QTimer::singleShot(3000, this, SLOT(close()));
+		OBSBasic *main = qobject_cast<OBSBasic *>(parent());
+		main->ShowRecordingDoneDialog(autoRemuxOut);
 	}
 
 	remuxNextEntry();
