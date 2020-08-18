@@ -528,11 +528,13 @@ void SourceTreeItem::ExpandClicked(bool checked)
 void SourceTreeItem::Select()
 {
 	tree->SelectItem(sceneitem, true);
+	OBSBasic::Get()->UpdateContextBar();
 }
 
 void SourceTreeItem::Deselect()
 {
 	tree->SelectItem(sceneitem, false);
+	OBSBasic::Get()->UpdateContextBar();
 }
 
 /* ========================================================================= */
