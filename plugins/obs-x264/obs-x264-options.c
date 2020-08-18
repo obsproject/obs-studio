@@ -45,7 +45,7 @@ struct obs_x264_options obs_x264_parse_options(const char *options_string)
 	struct obs_x264_option *out_option = out_options;
 	for (char **input_word = input_words; *input_word; ++input_word) {
 		if (getparam(*input_word, &out_option->name,
-			     &out_option->value)) {
+			     (const char **)&out_option->value)) {
 			++out_option;
 		} else {
 			*ignored_word = *input_word;
