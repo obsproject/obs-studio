@@ -133,7 +133,9 @@ void OBSLogViewer::AddLine(int type, const QString &str)
 
 	QTextCursor newCursor = textArea->textCursor();
 	newCursor.movePosition(QTextCursor::End);
-	newCursor.insertHtml(msg + QStringLiteral("<br>"));
+	newCursor.insertHtml(
+		QStringLiteral("<pre style=\"white-space: pre-wrap\">") + msg +
+		QStringLiteral("<br></pre>"));
 
 	if (bottomScrolled)
 		scroll->setValue(scroll->maximum());
