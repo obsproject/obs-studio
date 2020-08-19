@@ -43,6 +43,7 @@
 #include "window-basic-settings.hpp"
 #include "crash-report.hpp"
 #include "platform.hpp"
+#include "obs-proxy-style.hpp"
 
 #include <fstream>
 
@@ -483,6 +484,10 @@ bool OBSApp::InitGlobalConfigDefaults()
 	config_set_default_bool(globalConfig, "Video", "ResetOSXVSyncOnExit",
 				true);
 #endif
+
+	config_set_default_bool(globalConfig, "BasicWindow",
+				"MediaControlsCountdownTimer", true);
+
 	return true;
 }
 
@@ -1082,6 +1087,7 @@ bool OBSApp::SetTheme(std::string name, std::string path)
 	QString mpath = QString("file:///") + path.c_str();
 	setPalette(defaultPalette);
 	setStyleSheet(mpath);
+	setStyle(new OBSProxyStyle);
 	ParseExtraThemeData(path.c_str());
 
 	emit StyleChanged();
@@ -1985,6 +1991,22 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 
 		/* --------------------------------------- */
 	run:
+#endif
+
+#if !defined(_WIN32) && !defined(__APPLE__)
+		// Mounted by termina during chromeOS linux container startup
+		// https://chromium.googlesource.com/chromiumos/overlays/board-overlays/+/master/project-termina/chromeos-base/termina-lxd-scripts/files/lxd_setup.sh
+		os_dir_t *crosDir = os_opendir("/opt/google/cros-containers");
+		if (crosDir) {
+			QMessageBox::StandardButtons buttons(QMessageBox::Ok);
+			QMessageBox mb(QMessageBox::Critical,
+				       QTStr("ChromeOS.Title"),
+				       QTStr("ChromeOS.Text"), buttons,
+				       nullptr);
+
+			mb.exec();
+			return 0;
+		}
 #endif
 
 		if (!created_log) {

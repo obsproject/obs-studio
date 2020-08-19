@@ -6,6 +6,7 @@
 #include "rtmp-format-ver.h"
 #include "twitch.h"
 #include "younow.h"
+#include "nimotv.h"
 
 struct rtmp_common {
 	char *service;
@@ -345,6 +346,11 @@ static void fill_servers(obs_property_t *servers_prop, json_t *service,
 			return;
 	}
 
+	if (strcmp(name, "Nimo TV") == 0) {
+		obs_property_list_add_string(
+			servers_prop, obs_module_text("Server.Auto"), "auto");
+	}
+
 	json_array_foreach (servers, index, server) {
 		const char *server_name = get_string_val(server, "name");
 		const char *url = get_string_val(server, "url");
@@ -598,6 +604,12 @@ static const char *rtmp_common_url(void *data)
 	if (service->service && strcmp(service->service, "YouNow") == 0) {
 		if (service->server && service->key) {
 			return younow_get_ingest(service->server, service->key);
+		}
+	}
+
+	if (service->service && strcmp(service->service, "Nimo TV") == 0) {
+		if (service->server && strcmp(service->server, "auto") == 0) {
+			return nimotv_get_ingest(service->key);
 		}
 	}
 

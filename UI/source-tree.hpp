@@ -70,6 +70,7 @@ private:
 	OBSSignal sceneRemoveSignal;
 	OBSSignal itemRemoveSignal;
 	OBSSignal groupReorderSignal;
+	OBSSignal selectSignal;
 	OBSSignal deselectSignal;
 	OBSSignal visibleSignal;
 	OBSSignal lockedSignal;
@@ -90,6 +91,7 @@ private slots:
 
 	void ExpandClicked(bool checked);
 
+	void Select();
 	void Deselect();
 };
 

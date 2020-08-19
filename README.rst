@@ -37,10 +37,7 @@ Quick Links
 
  - Donating/backing/sponsoring: https://obsproject.com/contribute
 
- - Bug Tracker: https://obsproject.com/mantis/
-
-   (Note: The bug tracker is linked to forum accounts.  To use the bug
-   tracker, log in to a forum account)
+ - Bug Tracker: https://github.com/obsproject/obs-studio/issues
 
 Contributing
 ------------

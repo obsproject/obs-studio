@@ -156,10 +156,37 @@ static void add_video_encoder_params(struct ffmpeg_muxer *stream,
 
 	obs_data_release(settings);
 
-	dstr_catf(cmd, "%s %d %d %d %d %d ", obs_encoder_get_codec(vencoder),
-		  bitrate, obs_output_get_width(stream->output),
-		  obs_output_get_height(stream->output), (int)info->fps_num,
-		  (int)info->fps_den);
+	enum AVColorPrimaries pri = AVCOL_PRI_UNSPECIFIED;
+	enum AVColorTransferCharacteristic trc = AVCOL_TRC_UNSPECIFIED;
+	enum AVColorSpace spc = AVCOL_SPC_UNSPECIFIED;
+	switch (info->colorspace) {
+	case VIDEO_CS_DEFAULT:
+	case VIDEO_CS_601:
+		pri = AVCOL_PRI_SMPTE170M;
+		trc = AVCOL_TRC_SMPTE170M;
+		spc = AVCOL_SPC_SMPTE170M;
+		break;
+	case VIDEO_CS_709:
+		pri = AVCOL_PRI_BT709;
+		trc = AVCOL_TRC_BT709;
+		spc = AVCOL_SPC_BT709;
+		break;
+	case VIDEO_CS_SRGB:
+		pri = AVCOL_PRI_BT709;
+		trc = AVCOL_TRC_IEC61966_2_1;
+		spc = AVCOL_SPC_BT709;
+		break;
+	}
+
+	const enum AVColorRange range = (info->range == VIDEO_RANGE_FULL)
+						? AVCOL_RANGE_JPEG
+						: AVCOL_RANGE_MPEG;
+
+	dstr_catf(cmd, "%s %d %d %d %d %d %d %d %d %d ",
+		  obs_encoder_get_codec(vencoder), bitrate,
+		  obs_output_get_width(stream->output),
+		  obs_output_get_height(stream->output), (int)pri, (int)trc,
+		  (int)spc, (int)range, (int)info->fps_num, (int)info->fps_den);
 }
 
 static void add_audio_encoder_params(struct dstr *cmd, obs_encoder_t *aencoder)

@@ -860,11 +860,13 @@ uint32_t obs_get_source_output_flags(const char *id)
 
 static void obs_source_deferred_update(obs_source_t *source)
 {
-	if (source->context.data && source->info.update)
+	if (source->context.data && source->info.update) {
+		long count = os_atomic_load_long(&source->defer_update_count);
 		source->info.update(source->context.data,
 				    source->context.settings);
-
-	source->defer_update = false;
+		os_atomic_compare_swap_long(&source->defer_update_count, count,
+					    0);
+	}
 }
 
 void obs_source_update(obs_source_t *source, obs_data_t *settings)
@@ -876,7 +878,7 @@ void obs_source_update(obs_source_t *source, obs_data_t *settings)
 		obs_data_apply(source->context.settings, settings);
 
 	if (source->info.output_flags & OBS_SOURCE_VIDEO) {
-		source->defer_update = true;
+		os_atomic_inc_long(&source->defer_update_count);
 	} else if (source->context.data && source->info.update) {
 		source->info.update(source->context.data,
 				    source->context.settings);
@@ -1101,7 +1103,7 @@ void obs_source_video_tick(obs_source_t *source, float seconds)
 	if ((source->info.output_flags & OBS_SOURCE_ASYNC) != 0)
 		async_tick(source);
 
-	if (source->defer_update)
+	if (os_atomic_load_long(&source->defer_update_count) > 0)
 		obs_source_deferred_update(source);
 
 	/* reset the filter render texture information once every frame */

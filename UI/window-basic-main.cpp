@@ -52,10 +52,12 @@
 #include "window-projector.hpp"
 #include "window-remux.hpp"
 #include "qt-wrappers.hpp"
+#include "context-bar-controls.hpp"
 #include "display-helpers.hpp"
 #include "volume-control.hpp"
 #include "remote-text.hpp"
 #include "ui-validation.hpp"
+#include "media-controls.hpp"
 #include <fstream>
 #include <sstream>
 
@@ -354,6 +356,8 @@ OBSBasic::OBSBasic(QWidget *parent)
 	ui->toggleStats->setChecked(false);
 
 	QPoint curPos;
+
+	UpdateContextBar();
 
 	//restore parent window geometry
 	const char *geometry = config_get_string(App()->GlobalConfig(),
@@ -1383,7 +1387,7 @@ bool OBSBasic::InitBasicConfigDefaults()
 	config_set_default_uint(basicConfig, "Video", "FPSDen", 1);
 	config_set_default_string(basicConfig, "Video", "ScaleType", "bicubic");
 	config_set_default_string(basicConfig, "Video", "ColorFormat", "NV12");
-	config_set_default_string(basicConfig, "Video", "ColorSpace", "601");
+	config_set_default_string(basicConfig, "Video", "ColorSpace", "sRGB");
 	config_set_default_string(basicConfig, "Video", "ColorRange",
 				  "Partial");
 
@@ -1721,6 +1725,18 @@ void OBSBasic::OBSInit()
 		GetGlobalConfig(), "BasicWindow", "ShowSourceIcons");
 	ui->toggleSourceIcons->setChecked(sourceIconsVisible);
 
+	if (config_has_user_value(App()->GlobalConfig(), "BasicWindow",
+				  "ShowContextToolbars")) {
+		bool visible = config_get_bool(App()->GlobalConfig(),
+					       "BasicWindow",
+					       "ShowContextToolbars");
+		ui->toggleContextBar->setChecked(visible);
+		ui->contextContainer->setVisible(visible);
+	} else {
+		ui->toggleContextBar->setChecked(true);
+		ui->contextContainer->setVisible(true);
+	}
+
 	{
 		ProfileScope("OBSBasic::Load");
 		disableSaving--;
@@ -1803,6 +1819,7 @@ void OBSBasic::OBSInit()
 
 	const char *dockStateStr = config_get_string(
 		App()->GlobalConfig(), "BasicWindow", "DockState");
+
 	if (!dockStateStr) {
 		on_resetUI_triggered();
 	} else {
@@ -2314,6 +2331,17 @@ void OBSBasic::CreateHotkeys()
 		this, this);
 	LoadHotkeyPair(togglePreviewHotkeys, "OBSBasic.EnablePreview",
 		       "OBSBasic.DisablePreview");
+
+	contextBarHotkeys = obs_hotkey_pair_register_frontend(
+		"OBSBasic.ShowContextBar", Str("Basic.Main.ShowContextBar"),
+		"OBSBasic.HideContextBar", Str("Basic.Main.HideContextBar"),
+		MAKE_CALLBACK(!basic.ui->contextContainer->isVisible(),
+			      basic.ShowContextBar, "Showing Context Bar"),
+		MAKE_CALLBACK(basic.ui->contextContainer->isVisible(),
+			      basic.HideContextBar, "Hiding Context Bar"),
+		this, this);
+	LoadHotkeyPair(contextBarHotkeys, "OBSBasic.ShowContextBar",
+		       "OBSBasic.HideContextBar");
 #undef MAKE_CALLBACK
 
 	auto togglePreviewProgram = [](void *data, obs_hotkey_id,
@@ -2677,11 +2705,6 @@ void OBSBasic::AddScene(OBSSource source)
 	container.handlers.assign({
 		std::make_shared<OBSSignal>(handler, "item_add",
 					    OBSBasic::SceneItemAdded, this),
-		std::make_shared<OBSSignal>(handler, "item_select",
-					    OBSBasic::SceneItemSelected, this),
-		std::make_shared<OBSSignal>(handler, "item_deselect",
-					    OBSBasic::SceneItemDeselected,
-					    this),
 		std::make_shared<OBSSignal>(handler, "reorder",
 					    OBSBasic::SceneReordered, this),
 		std::make_shared<OBSSignal>(handler, "refresh",
@@ -2849,16 +2872,107 @@ void OBSBasic::RenameSources(OBSSource source, QString newName,
 	obs_scene_t *scene = obs_scene_from_source(source);
 	if (scene)
 		OBSProjector::UpdateMultiviewProjectors();
+
+	UpdateContextBar();
 }
 
-void OBSBasic::SelectSceneItem(OBSScene scene, OBSSceneItem item, bool select)
+void OBSBasic::UpdateContextBar()
 {
-	SignalBlocker sourcesSignalBlocker(ui->sources);
+	OBSSceneItem item = GetCurrentSceneItem();
 
-	if (scene != GetCurrentScene() || ignoreSelectionUpdate)
-		return;
+	QLayoutItem *la = ui->emptySpace->layout()->itemAt(0);
+	if (la) {
+		delete la->widget();
+		ui->emptySpace->layout()->removeItem(la);
+	}
 
-	ui->sources->SelectItem(item, select);
+	if (item) {
+		obs_source_t *source = obs_sceneitem_get_source(item);
+		const char *id = obs_source_get_unversioned_id(source);
+		uint32_t flags = obs_source_get_output_flags(source);
+
+		if (flags & OBS_SOURCE_CONTROLLABLE_MEDIA) {
+			MediaControls *mediaControls =
+				new MediaControls(ui->emptySpace);
+			mediaControls->SetSource(source);
+
+			ui->emptySpace->layout()->addWidget(mediaControls);
+		}
+
+		if (strcmp(id, "browser_source") == 0) {
+			BrowserToolbar *c =
+				new BrowserToolbar(ui->emptySpace, source);
+			ui->emptySpace->layout()->addWidget(c);
+
+		} else if (strcmp(id, "wasapi_input_capture") == 0 ||
+			   strcmp(id, "wasapi_output_capture") == 0 ||
+			   strcmp(id, "coreaudio_input_capture") == 0 ||
+			   strcmp(id, "coreaudio_output_capture") == 0 ||
+			   strcmp(id, "pulse_input_capture") == 0 ||
+			   strcmp(id, "pulse_output_capture") == 0 ||
+			   strcmp(id, "alsa_input_capture") == 0) {
+			AudioCaptureToolbar *c =
+				new AudioCaptureToolbar(ui->emptySpace, source);
+			c->Init();
+			ui->emptySpace->layout()->addWidget(c);
+
+		} else if (strcmp(id, "window_capture") == 0 ||
+			   strcmp(id, "xcomposite_input") == 0) {
+			WindowCaptureToolbar *c = new WindowCaptureToolbar(
+				ui->emptySpace, source);
+			c->Init();
+			ui->emptySpace->layout()->addWidget(c);
+
+		} else if (strcmp(id, "monitor_capture") == 0 ||
+			   strcmp(id, "display_capture") == 0 ||
+			   strcmp(id, "xshm_input") == 0) {
+			DisplayCaptureToolbar *c = new DisplayCaptureToolbar(
+				ui->emptySpace, source);
+			c->Init();
+			ui->emptySpace->layout()->addWidget(c);
+
+		} else if (strcmp(id, "dshow_input") == 0 ||
+			   strcmp(id, "av_capture_input") == 0 ||
+			   strcmp(id, "v4l2_input") == 0) {
+			DeviceCaptureToolbar *c = new DeviceCaptureToolbar(
+				ui->emptySpace, source);
+			c->Init();
+			ui->emptySpace->layout()->addWidget(c);
+
+		} else if (strcmp(id, "game_capture") == 0) {
+			GameCaptureToolbar *c =
+				new GameCaptureToolbar(ui->emptySpace, source);
+			ui->emptySpace->layout()->addWidget(c);
+
+		} else if (strcmp(id, "image_source") == 0) {
+			ImageSourceToolbar *c =
+				new ImageSourceToolbar(ui->emptySpace, source);
+			ui->emptySpace->layout()->addWidget(c);
+
+		} else if (strcmp(id, "color_source") == 0) {
+			ColorSourceToolbar *c =
+				new ColorSourceToolbar(ui->emptySpace, source);
+			ui->emptySpace->layout()->addWidget(c);
+
+		} else if (strcmp(id, "text_ft2_source") == 0 ||
+			   strcmp(id, "text_gdiplus") == 0) {
+			TextSourceToolbar *c =
+				new TextSourceToolbar(ui->emptySpace, source);
+			ui->emptySpace->layout()->addWidget(c);
+		}
+
+		const char *name = obs_source_get_name(source);
+		ui->contextSourceLabel->setText(name);
+
+		ui->sourceFiltersButton->setEnabled(true);
+		ui->sourcePropertiesButton->setEnabled(true);
+	} else {
+		ui->contextSourceLabel->setText(
+			QTStr("ContextBar.NoSelectedSource"));
+
+		ui->sourceFiltersButton->setEnabled(false);
+		ui->sourcePropertiesButton->setEnabled(false);
+	}
 }
 
 static inline bool SourceMixerHidden(obs_source_t *source)
@@ -3463,31 +3577,6 @@ void OBSBasic::SceneItemAdded(void *data, calldata_t *params)
 				  Q_ARG(OBSSceneItem, OBSSceneItem(item)));
 }
 
-void OBSBasic::SceneItemSelected(void *data, calldata_t *params)
-{
-	OBSBasic *window = static_cast<OBSBasic *>(data);
-
-	obs_scene_t *scene = (obs_scene_t *)calldata_ptr(params, "scene");
-	obs_sceneitem_t *item = (obs_sceneitem_t *)calldata_ptr(params, "item");
-
-	QMetaObject::invokeMethod(window, "SelectSceneItem",
-				  Q_ARG(OBSScene, scene),
-				  Q_ARG(OBSSceneItem, item), Q_ARG(bool, true));
-}
-
-void OBSBasic::SceneItemDeselected(void *data, calldata_t *params)
-{
-	OBSBasic *window = static_cast<OBSBasic *>(data);
-
-	obs_scene_t *scene = (obs_scene_t *)calldata_ptr(params, "scene");
-	obs_sceneitem_t *item = (obs_sceneitem_t *)calldata_ptr(params, "item");
-
-	QMetaObject::invokeMethod(window, "SelectSceneItem",
-				  Q_ARG(OBSScene, scene),
-				  Q_ARG(OBSSceneItem, item),
-				  Q_ARG(bool, false));
-}
-
 void OBSBasic::SourceCreated(void *data, calldata_t *params)
 {
 	obs_source_t *source = (obs_source_t *)calldata_ptr(params, "source");
@@ -3792,8 +3881,11 @@ int OBSBasic::ResetVideo()
 	ovi.output_height =
 		(uint32_t)config_get_uint(basicConfig, "Video", "OutputCY");
 	ovi.output_format = GetVideoFormatFromName(colorFormat);
-	ovi.colorspace = astrcmpi(colorSpace, "601") == 0 ? VIDEO_CS_601
-							  : VIDEO_CS_709;
+	ovi.colorspace = astrcmpi(colorSpace, "601") == 0
+				 ? VIDEO_CS_601
+				 : (astrcmpi(colorSpace, "709") == 0
+					    ? VIDEO_CS_709
+					    : VIDEO_CS_SRGB);
 	ovi.range = astrcmpi(colorRange, "Full") == 0 ? VIDEO_RANGE_FULL
 						      : VIDEO_RANGE_PARTIAL;
 	ovi.adapter =
@@ -4257,6 +4349,8 @@ void OBSBasic::on_scenes_currentItemChanged(QListWidgetItem *current,
 
 	if (api)
 		api->on_event(OBS_FRONTEND_EVENT_PREVIEW_SCENE_CHANGED);
+
+	UpdateContextBar();
 
 	UNUSED_PARAMETER(prev);
 }
@@ -7183,6 +7277,23 @@ void OBSBasic::on_toggleListboxToolbars_toggled(bool visible)
 			"ShowListboxToolbars", visible);
 }
 
+void OBSBasic::ShowContextBar()
+{
+	on_toggleContextBar_toggled(true);
+}
+
+void OBSBasic::HideContextBar()
+{
+	on_toggleContextBar_toggled(false);
+}
+
+void OBSBasic::on_toggleContextBar_toggled(bool visible)
+{
+	config_set_bool(App()->GlobalConfig(), "BasicWindow",
+			"ShowContextToolbars", visible);
+	this->ui->contextContainer->setVisible(visible);
+}
+
 void OBSBasic::on_toggleStatusBar_toggled(bool visible)
 {
 	ui->statusbar->setVisible(visible);
@@ -8161,4 +8272,14 @@ void OBSBasic::UpdateProjectorAlwaysOnTop(bool top)
 {
 	for (size_t i = 0; i < projectors.size(); i++)
 		SetAlwaysOnTop(projectors[i], top);
+}
+
+void OBSBasic::on_sourcePropertiesButton_clicked()
+{
+	on_actionSourceProperties_triggered();
+}
+
+void OBSBasic::on_sourceFiltersButton_clicked()
+{
+	OpenFilters();
 }

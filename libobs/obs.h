@@ -420,6 +420,17 @@ EXPORT int obs_open_module(obs_module_t **module, const char *path,
  */
 EXPORT bool obs_init_module(obs_module_t *module);
 
+/** Returns a module based upon its name, or NULL if not found */
+EXPORT obs_module_t *obs_get_module(const char *name);
+
+/** Returns locale text from a specific module */
+EXPORT bool obs_module_get_locale_string(const obs_module_t *mod,
+					 const char *lookup_string,
+					 const char **translated_string);
+
+EXPORT const char *obs_module_get_locale_text(const obs_module_t *mod,
+					      const char *text);
+
 /** Logs loaded modules */
 EXPORT void obs_log_loaded_modules(void);
 

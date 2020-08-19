@@ -92,6 +92,8 @@ struct obs_module {
 	void (*unload)(void);
 	void (*post_load)(void);
 	void (*set_locale)(const char *locale);
+	bool (*get_string)(const char *lookup_string,
+			   const char **translated_string);
 	void (*free_locale)(void);
 	uint32_t (*ver)(void);
 	void (*set_pointer)(obs_module_t *module);
@@ -599,7 +601,7 @@ struct obs_source {
 	bool owns_info_id;
 
 	/* signals to call the source update in the video thread */
-	bool defer_update;
+	long defer_update_count;
 
 	/* ensures show/hide are only called once */
 	volatile long show_refs;

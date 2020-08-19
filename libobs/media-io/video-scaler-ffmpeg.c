@@ -92,12 +92,11 @@ static inline int get_ffmpeg_scale_type(enum video_scale_type type)
 static inline const int *get_ffmpeg_coeffs(enum video_colorspace cs)
 {
 	switch (cs) {
-	case VIDEO_CS_DEFAULT:
-		return sws_getCoefficients(SWS_CS_ITU601);
-	case VIDEO_CS_601:
-		return sws_getCoefficients(SWS_CS_ITU601);
 	case VIDEO_CS_709:
+	case VIDEO_CS_SRGB:
 		return sws_getCoefficients(SWS_CS_ITU709);
+	case VIDEO_CS_DEFAULT:
+	case VIDEO_CS_601:
 	default:
 		return sws_getCoefficients(SWS_CS_ITU601);
 	}
