@@ -56,7 +56,7 @@ OBSQTDisplay::OBSQTDisplay(QWidget *parent, Qt::WindowFlags flags)
 		}
 	};
 
-	auto sizeChanged = [this](QScreen *) {
+	auto screenChanged = [this](QScreen *) {
 		CreateDisplay();
 
 		QSize size = GetPixelSize(this);
@@ -64,7 +64,7 @@ OBSQTDisplay::OBSQTDisplay(QWidget *parent, Qt::WindowFlags flags)
 	};
 
 	connect(windowHandle(), &QWindow::visibleChanged, windowVisible);
-	connect(windowHandle(), &QWindow::screenChanged, sizeChanged);
+	connect(windowHandle(), &QWindow::screenChanged, screenChanged);
 }
 
 QColor OBSQTDisplay::GetDisplayBackgroundColor() const
