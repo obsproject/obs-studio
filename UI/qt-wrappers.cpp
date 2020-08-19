@@ -113,8 +113,10 @@ void OBSMessageBox::critical(QWidget *parent, const QString &title,
 	mb.exec();
 }
 
-void QTToGSWindow(QWindow *window, gs_window &gswindow)
+bool QTToGSWindow(QWindow *window, gs_window &gswindow)
 {
+	bool success = true;
+
 #ifdef _WIN32
 	gswindow.hwnd = (HWND)window->winId();
 #elif __APPLE__
@@ -132,10 +134,12 @@ void QTToGSWindow(QWindow *window, gs_window &gswindow)
 			QGuiApplication::platformNativeInterface();
 		gswindow.display =
 			native->nativeResourceForWindow("surface", window);
+		success = gswindow.display != nullptr;
 		break;
 #endif
 	}
 #endif
+	return success;
 }
 
 uint32_t TranslateQtKeyboardEventModifiers(Qt::KeyboardModifiers mods)
