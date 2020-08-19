@@ -14,6 +14,7 @@
 #
 # Parameters:
 #   -b: Create macOS bundle
+#   -d: Skip dependency checks
 #   -p: Create macOS distribution image
 #   -n: Notarize macOS app and disk image (implies bundling)
 #   -s: Skip the build process (useful for bundling/packaging only)
@@ -24,6 +25,7 @@
 #   CEF_BUILD_VERSION   : Chromium Embedded Framework version
 #   VLC_VERISON         : VLC version
 #   SPARKLE_VERSION     : Sparke Framework version
+#   BUILD_DIR           : Alternative directory to build OBS in
 #
 ##############################################################################
 
@@ -35,6 +37,7 @@ PRODUCT_NAME="OBS-Studio"
 
 CHECKOUT_DIR="$(git rev-parse --show-toplevel)"
 DEPS_BUILD_DIR="${CHECKOUT_DIR}/../obs-build-dependencies"
+BUILD_DIR="${BUILD_DIR:-build}"
 CI_SCRIPTS="${CHECKOUT_DIR}/CI/scripts/macos"
 CI_WORKFLOW="${CHECKOUT_DIR}/.github/workflows/main.yml"
 CI_CEF_VERSION=$(cat ${CI_WORKFLOW} | sed -En "s/[ ]+CEF_BUILD_VERSION: '([0-9]+)'/\1/p")
@@ -56,6 +59,10 @@ COLOR_GREEN=$(tput setaf 2)
 COLOR_BLUE=$(tput setaf 4)
 COLOR_ORANGE=$(tput setaf 3)
 COLOR_RESET=$(tput sgr0)
+
+MACOS_VERSION="$(sw_vers -productVersion)"
+MACOS_MAJOR="$(echo ${MACOS_VERSION} | cut -d '.' -f 1)"
+MACOS_MINOR="$(echo ${MACOS_VERSION} | cut -d '.' -f 2)"
 
 ## DEFINE UTILITIES ##
 
@@ -84,7 +91,7 @@ ensure_dir() {
 }
 
 cleanup() {
-    rm -rf "${CHECKOUT_DIR}/build/settings.json"
+    rm -rf "${CHECKOUT_DIR}/${BUILD_DIR}/settings.json"
     unset CODESIGN_IDENT
     unset CODESIGN_IDENT_USER
     unset CODESIGN_IDENT_PASS
@@ -105,6 +112,20 @@ install_homebrew_deps() {
 
     brew update
     brew bundle --file ${CI_SCRIPTS}/Brewfile
+
+    check_curl
+}
+
+check_curl() {
+    if [ "${MACOS_MAJOR}" -lt "11" ] && [ "${MACOS_MINOR}" -lt "15" ]; then
+        if [ ! -d /usr/local/opt/curl ]; then
+            step "Installing Homebrew curl.."
+            brew install curl
+        fi
+        export CURLCMD="/usr/local/opt/curl/bin/curl"
+    else
+        export CURLCMD="curl"
+    fi
 }
 
 check_ccache() {
@@ -117,7 +138,7 @@ install_obs-deps() {
     hr "Setting up pre-built macOS OBS dependencies v${1}"
     ensure_dir ${DEPS_BUILD_DIR}
     step "Download..."
-    curl -s -L -C - -O https://github.com/obsproject/obs-deps/releases/download/${1}/macos-deps-${1}.tar.gz
+    ${CURLCMD} --progress-bar -L -C - -O https://github.com/obsproject/obs-deps/releases/download/${1}/macos-deps-${1}.tar.gz
     step "Unpack..."
     tar -xf ./macos-deps-${1}.tar.gz -C /tmp
 }
@@ -126,7 +147,7 @@ install_qt-deps() {
     hr "Setting up pre-built dependency QT v${1}"
     ensure_dir ${DEPS_BUILD_DIR}
     step "Download..."
-    curl -s -L -C - -O https://github.com/obsproject/obs-deps/releases/download/${2}/macos-qt-${1}-${2}.tar.gz
+    ${CURLCMD} --progress-bar -L -C - -O https://github.com/obsproject/obs-deps/releases/download/${2}/macos-qt-${1}-${2}.tar.gz
     step "Unpack..."
     tar -xf ./macos-qt-${1}-${2}.tar.gz -C /tmp
     xattr -r -d com.apple.quarantine /tmp/obsdeps
@@ -136,7 +157,7 @@ install_vlc() {
     hr "Setting up dependency VLC v${1}"
     ensure_dir ${DEPS_BUILD_DIR}
     step "Download..."
-    curl -s -L -C - -O https://downloads.videolan.org/vlc/${1}/vlc-${1}.tar.xz
+    ${CURLCMD} --progress-bar -L -C - -O https://downloads.videolan.org/vlc/${1}/vlc-${1}.tar.xz
     step "Unpack ..."
     tar -xf vlc-${1}.tar.xz
 }
@@ -145,7 +166,7 @@ install_sparkle() {
     hr "Setting up dependency Sparkle v${1} (might prompt for password)"
     ensure_dir ${DEPS_BUILD_DIR}/sparkle
     step "Download..."
-    curl -s -L -C - -o sparkle.tar.bz2 https://github.com/sparkle-project/Sparkle/releases/download/${1}/Sparkle-${1}.tar.bz2
+    ${CURLCMD} --progress-bar -L -C - -o sparkle.tar.bz2 https://github.com/sparkle-project/Sparkle/releases/download/${1}/Sparkle-${1}.tar.bz2
     step "Unpack..."
     tar -xf ./sparkle.tar.bz2
     step "Copy to destination..."
@@ -160,7 +181,7 @@ install_cef() {
     hr "Building dependency CEF v${1}"
     ensure_dir ${DEPS_BUILD_DIR}
     step "Download..."
-    curl -s -L -C - -O https://obs-nightly.s3-us-west-2.amazonaws.com/cef_binary_${1}_macosx64.tar.bz2
+    ${CURLCMD} --progress-bar -L -C - -O https://obs-nightly.s3-us-west-2.amazonaws.com/cef_binary_${1}_macosx64.tar.bz2
     step "Unpack..."
     tar -xf ./cef_binary_${1}_macosx64.tar.bz2
     cd ./cef_binary_${1}_macosx64
@@ -182,17 +203,6 @@ install_cef() {
 }
 
 ## CHECK AND INSTALL PACKAGING DEPENDENCIES ##
-install_packages_app() {
-    if [ ! -d /Applications/Packages.app ]; then
-        hr "Installing Packages app"
-        ensure_dir ${DEPS_BUILD_DIR}
-        step "Download..."
-        curl -s -L -C - -O https://s3-us-west-2.amazonaws.com/obs-nightly/Packages.pkg
-        step "Install..."
-        sudo installer -pkg ./Packages.pkg -target /
-    fi
-}
-
 install_dmgbuild() {
     if ! exists dmgbuild; then
         if exists "pip3"; then
@@ -210,7 +220,7 @@ install_dmgbuild() {
 
 ## OBS BUILD FROM SOURCE ##
 configure_obs_build() {
-    ensure_dir "${CHECKOUT_DIR}/build"
+    ensure_dir "${CHECKOUT_DIR}/${BUILD_DIR}"
 
     CUR_DATE=$(date +"%Y-%m-%d@%H%M%S")
     NIGHTLY_DIR="${CHECKOUT_DIR}/nightly-${CUR_DATE}"
@@ -218,17 +228,17 @@ configure_obs_build() {
 
     if [ -d ./OBS.app ]; then
         ensure_dir "${NIGHTLY_DIR}"
-        mv ../build/OBS.app .
+        mv ../${BUILD_DIR}/OBS.app .
         info "You can find OBS.app in ${NIGHTLY_DIR}"
     fi
-    ensure_dir "${CHECKOUT_DIR}/build"
+    ensure_dir "${CHECKOUT_DIR}/${BUILD_DIR}"
     if ([ -n "${PACKAGE_NAME}" ] && [ -f ${PACKAGE_NAME} ]); then
         ensure_dir "${NIGHTLY_DIR}"
-        mv ../build/$(basename "${PACKAGE_NAME}") .
+        mv ../${BUILD_DIR}/$(basename "${PACKAGE_NAME}") .
         info "You can find ${PACKAGE_NAME} in ${NIGHTLY_DIR}"
     fi
 
-    ensure_dir "${CHECKOUT_DIR}/build"
+    ensure_dir "${CHECKOUT_DIR}/${BUILD_DIR}"
 
     hr "Run CMAKE for OBS..."
     cmake -DENABLE_SPARKLE_UPDATER=ON \
@@ -248,14 +258,14 @@ configure_obs_build() {
 }
 
 run_obs_build() {
-    ensure_dir "${CHECKOUT_DIR}/build"
+    ensure_dir "${CHECKOUT_DIR}/${BUILD_DIR}"
     hr "Build OBS..."
     make -j4
 }
 
 ## OBS BUNDLE AS MACOS APPLICATION ##
 bundle_dylibs() {
-    ensure_dir "${CHECKOUT_DIR}/build"
+    ensure_dir "${CHECKOUT_DIR}/${BUILD_DIR}"
 
     if [ ! -d ./OBS.app ]; then
         error "No OBS.app bundle found"
@@ -265,7 +275,7 @@ bundle_dylibs() {
     hr "Bundle dylibs for macOS application"
 
     step "Run dylibBundler.."
-    ${CI_SCRIPTS}/app/dylibBundler -cd -of -a ./OBS.app -q -f \
+    ${CI_SCRIPTS}/app/dylibbundler -cd -of -a ./OBS.app -q -f \
         -s ./OBS.app/Contents/MacOS \
         -s "${DEPS_BUILD_DIR}/sparkle/Sparkle.framework" \
         -s ./rundir/RelWithDebInfo/bin/ \
@@ -306,7 +316,7 @@ bundle_dylibs() {
 }
 
 install_frameworks() {
-    ensure_dir "${CHECKOUT_DIR}/build"
+    ensure_dir "${CHECKOUT_DIR}/${BUILD_DIR}"
 
     if [ ! -d ./OBS.app ]; then
         error "No OBS.app bundle found"
@@ -320,7 +330,7 @@ install_frameworks() {
 }
 
 prepare_macos_bundle() {
-    ensure_dir "${CHECKOUT_DIR}/build"
+    ensure_dir "${CHECKOUT_DIR}/${BUILD_DIR}"
 
     if [ ! -d ./rundir/RelWithDebInfo/bin ]; then
         error "No OBS build found"
@@ -365,7 +375,7 @@ prepare_macos_bundle() {
 
 ## CREATE MACOS DISTRIBUTION AND INSTALLER IMAGE ##
 prepare_macos_image() {
-    ensure_dir "${CHECKOUT_DIR}/build"
+    ensure_dir "${CHECKOUT_DIR}/${BUILD_DIR}"
 
     if [ ! -d ./OBS.app ]; then
         error "No OBS.app bundle found"
@@ -435,7 +445,7 @@ read_codesign_pass() {
 codesign_bundle() {
     if [ ! -n "${CODESIGN_OBS}" ]; then step "Skipping application bundle code signing"; return; fi
 
-    ensure_dir "${CHECKOUT_DIR}/build"
+    ensure_dir "${CHECKOUT_DIR}/${BUILD_DIR}"
     trap "caught_error 'code-signing app'" ERR
 
     if [ ! -d ./OBS.app ]; then
@@ -475,7 +485,7 @@ codesign_bundle() {
 codesign_image() {
     if [ ! -n "${CODESIGN_OBS}" ]; then step "Skipping installer image code signing"; return; fi
 
-    ensure_dir "${CHECKOUT_DIR}/build"
+    ensure_dir "${CHECKOUT_DIR}/${BUILD_DIR}"
     trap "caught_error 'code-signing image'" ERR
 
     if [ ! -f "${FILE_NAME}" ]; then
@@ -499,18 +509,22 @@ codesign_image() {
 full-build-macos() {
     if [ -n "${SKIP_BUILD}" ]; then step "Skipping full build"; return; fi
 
-    hr "Installing Homebrew dependencies"
-    install_homebrew_deps
+    if [ ! -n "${SKIP_DEPS}" ]; then
 
-    for DEPENDENCY in "${BUILD_DEPS[@]}"; do
-        set -- ${DEPENDENCY}
-        trap "caught_error ${DEPENDENCY}" ERR
-        FUNC_NAME="install_${1}"
-        ${FUNC_NAME} ${2} ${3}
-    done
+        hr "Installing Homebrew dependencies"
+        install_homebrew_deps
 
-    check_ccache
-    trap "caught_error 'cmake'" ERR
+        for DEPENDENCY in "${BUILD_DEPS[@]}"; do
+            set -- ${DEPENDENCY}
+            trap "caught_error ${DEPENDENCY}" ERR
+            FUNC_NAME="install_${1}"
+            ${FUNC_NAME} ${2} ${3}
+        done
+
+        check_ccache
+        trap "caught_error 'cmake'" ERR
+    fi
+
     configure_obs_build
     run_obs_build
 }
@@ -521,7 +535,6 @@ bundle_macos() {
 
     hr "Creating macOS app bundle"
     trap "caught_error 'bundle app'" ERR
-    install_packages_app
     ensure_dir ${CHECKOUT_DIR}
     prepare_macos_bundle
 }
@@ -544,7 +557,7 @@ notarize_macos() {
     hr "Notarizing OBS for macOS"
     trap "caught_error 'notarizing app'" ERR
 
-    ensure_dir "${CHECKOUT_DIR}/build"
+    ensure_dir "${CHECKOUT_DIR}/${BUILD_DIR}"
 
     if [ -f "${FILE_NAME}" ]; then
         NOTARIZE_TARGET="${FILE_NAME}"
@@ -569,6 +582,7 @@ notarize_macos() {
 print_usage() {
     echo -e "full-build-macos.sh - Build helper script for OBS-Studio\n"
     echo -e "Usage: ${0}\n" \
+        "-d: Skip dependency checks\n" \
         "-b: Create macOS app bundle\n" \
         "-c: Codesign macOS app bundle\n" \
         "-p: Package macOS app into disk image\n" \
@@ -580,6 +594,7 @@ print_usage() {
 
 obs-build-main() {
     ensure_dir ${CHECKOUT_DIR}
+    step "Fetching OBS tags..."
     git fetch origin --tags
     GIT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
     GIT_HASH=$(git rev-parse --short HEAD)
@@ -600,9 +615,10 @@ obs-build-main() {
     #
     ##########################################################################
 
-    while getopts ":hsbnpc" OPTION; do
+    while getopts ":hdsbnpc" OPTION; do
         case ${OPTION} in
             h) print_usage ;;
+            d) SKIP_DEPS=1 ;;
             s) SKIP_BUILD=1 ;;
             b) BUNDLE_OBS=1 ;;
             n) CODESIGN_OBS=1; NOTARIZE_OBS=1 ;;
