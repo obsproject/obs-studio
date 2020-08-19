@@ -624,7 +624,7 @@ static void previous_slide_hotkey(void *data, obs_hotkey_id id,
 	if (!ss->manual)
 		return;
 
-	if (pressed &&(ss->hotkey_always || obs_source_showing(ss->source)))
+	if (pressed && (ss->hotkey_always || obs_source_showing(ss->source)))
 		obs_source_media_previous(ss->source);
 }
 
