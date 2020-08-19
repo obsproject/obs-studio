@@ -100,7 +100,8 @@ void OBSQTDisplay::CreateDisplay()
 	info.format = GS_BGRA;
 	info.zsformat = GS_ZS_NONE;
 
-	QTToGSWindow(windowHandle(), info.window);
+	if (!QTToGSWindow(windowHandle(), info.window))
+		return;
 
 	display = obs_display_create(&info, backgroundColor);
 
