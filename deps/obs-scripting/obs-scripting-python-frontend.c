@@ -39,7 +39,7 @@ static PyObject *get_scene_names(PyObject *self, PyObject *args)
 		PyObject *py_name = PyUnicode_FromString(*name);
 		if (py_name) {
 			PyList_Append(list, py_name);
-			Py_DECREF(py_name);
+			Py_XDECREF(py_name);
 		}
 		name++;
 	}
@@ -64,7 +64,7 @@ static PyObject *get_scenes(PyObject *self, PyObject *args)
 
 		if (libobs_to_py(obs_source_t, source, false, &py_source)) {
 			PyList_Append(ret, py_source);
-			Py_DECREF(py_source);
+			Py_XDECREF(py_source);
 		}
 	}
 
@@ -119,7 +119,7 @@ static PyObject *get_transitions(PyObject *self, PyObject *args)
 
 		if (libobs_to_py(obs_source_t, source, false, &py_source)) {
 			PyList_Append(ret, py_source);
-			Py_DECREF(py_source);
+			Py_XDECREF(py_source);
 		}
 	}
 
@@ -172,7 +172,7 @@ static PyObject *get_scene_collections(PyObject *self, PyObject *args)
 		PyObject *py_name = PyUnicode_FromString(*name);
 		if (py_name) {
 			PyList_Append(list, py_name);
-			Py_DECREF(py_name);
+			Py_XDECREF(py_name);
 		}
 		name++;
 	}
@@ -218,7 +218,7 @@ static PyObject *get_profiles(PyObject *self, PyObject *args)
 		PyObject *py_name = PyUnicode_FromString(*name);
 		if (py_name) {
 			PyList_Append(list, py_name);
-			Py_DECREF(py_name);
+			Py_XDECREF(py_name);
 		}
 		name++;
 	}
