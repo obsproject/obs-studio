@@ -228,7 +228,7 @@ string CurrentTimeString()
 
 	auto tp = system_clock::now();
 	auto now = system_clock::to_time_t(tp);
-	tstruct = *localtime(&now);
+	tstruct = *localtime_r(&now);
 
 	size_t written = strftime(buf, sizeof(buf), "%X", &tstruct);
 	if (ratio_less<system_clock::period, seconds::period>::value &&
@@ -248,7 +248,7 @@ string CurrentDateTimeString()
 	time_t now = time(0);
 	struct tm tstruct;
 	char buf[80];
-	tstruct = *localtime(&now);
+	tstruct = *localtime_r(&now);
 	strftime(buf, sizeof(buf), "%Y-%m-%d, %X", &tstruct);
 	return buf;
 }
@@ -1649,7 +1649,7 @@ string GenerateTimeDateFilename(const char *extension, bool noSpace)
 	char file[256] = {};
 	struct tm *cur_time;
 
-	cur_time = localtime(&now);
+	cur_time = localtime_r(&now);
 	snprintf(file, sizeof(file), "%d-%02d-%02d%c%02d-%02d-%02d.%s",
 		 cur_time->tm_year + 1900, cur_time->tm_mon + 1,
 		 cur_time->tm_mday, noSpace ? '_' : ' ', cur_time->tm_hour,
