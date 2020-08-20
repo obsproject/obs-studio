@@ -87,9 +87,12 @@ void OBSQTDisplay::UpdateDisplayBackgroundColor()
 	obs_display_set_background_color(display, backgroundColor);
 }
 
-void OBSQTDisplay::CreateDisplay()
+void OBSQTDisplay::CreateDisplay(bool force)
 {
-	if (display || !windowHandle()->isExposed())
+	if (display)
+		return;
+
+	if (!windowHandle()->isExposed() && !force)
 		return;
 
 	QSize size = GetPixelSize(this);

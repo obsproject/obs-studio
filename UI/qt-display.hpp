@@ -13,8 +13,6 @@ class OBSQTDisplay : public QWidget {
 
 	OBSDisplay display;
 
-	void CreateDisplay();
-
 	void resizeEvent(QResizeEvent *event) override;
 	void paintEvent(QPaintEvent *event) override;
 
@@ -36,4 +34,5 @@ public:
 	QColor GetDisplayBackgroundColor() const;
 	void SetDisplayBackgroundColor(const QColor &color);
 	void UpdateDisplayBackgroundColor();
+	void CreateDisplay(bool force = false);
 };
