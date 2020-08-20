@@ -2229,7 +2229,7 @@ bool GetFileSafeName(const char *name, std::string &file)
 		}
 	}
 
-	if (wfile.size() == 0)
+	if ( wfile.empty() )
 		wfile = L"characters_only";
 
 	len = os_wcs_to_utf8(wfile.c_str(), wfile.size(), nullptr, 0);
