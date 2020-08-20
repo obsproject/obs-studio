@@ -138,9 +138,9 @@ void add_functions_to_py_module(PyObject *module, PyMethodDef *method_list)
 			continue;
 		}
 		PyDict_SetItemString(dict, ml->ml_name, func);
-		Py_DECREF(func);
+		Py_XDECREF(func);
 	}
-	Py_DECREF(name);
+	Py_XDECREF(name);
 }
 
 /* -------------------------------------------- */
@@ -228,7 +228,7 @@ static bool load_python_script(struct obs_python_script *data)
 	PyObject *func = PyObject_GetAttrString(py_module, "script_defaults");
 	if (func) {
 		get_defaults(data, func);
-		Py_DECREF(func);
+		Py_XDECREF(func);
 	} else {
 		PyErr_Clear();
 	}
@@ -242,10 +242,10 @@ static bool load_python_script(struct obs_python_script *data)
 			const char *desc = PyBytes_AS_STRING(py_desc);
 			if (desc)
 				dstr_copy(&data->base.desc, desc);
-			Py_DECREF(py_desc);
+			Py_XDECREF(py_desc);
 		}
 		Py_XDECREF(py_ret);
-		Py_DECREF(func);
+		Py_XDECREF(func);
 	} else {
 		PyErr_Clear();
 	}
@@ -1051,7 +1051,7 @@ static bool enum_sources_proc(void *param, obs_source_t *source)
 	if (libobs_to_py(obs_source_t, source, false, &py_source)) {
 		obs_source_get_ref(source);
 		PyList_Append(list, py_source);
-		Py_DECREF(py_source);
+		Py_XDECREF(py_source);
 	}
 	return true;
 }
@@ -1079,7 +1079,7 @@ static bool enum_items_proc(obs_scene_t *scene, obs_sceneitem_t *item,
 	if (libobs_to_py(obs_sceneitem_t, item, false, &py_item)) {
 		obs_sceneitem_addref(item);
 		PyList_Append(list, py_item);
-		Py_DECREF(py_item);
+		Py_XDECREF(py_item);
 	}
 	return true;
 }

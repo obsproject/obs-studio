@@ -224,7 +224,7 @@ static DWORD WINAPI dummy_window_thread(LPVOID *unused)
 static inline void init_dummy_window_thread(void)
 {
 	HANDLE thread =
-		CreateThread(NULL, 0, dummy_window_thread, NULL, 0, NULL);
+		_beginthreadex(NULL, 0, dummy_window_thread, NULL, 0, NULL);
 	if (!thread) {
 		hlog("Failed to create temp D3D window thread: %lu",
 		     GetLastError());
@@ -695,7 +695,7 @@ static inline bool init_shmem_thread(uint32_t pitch, uint32_t cy)
 	InitializeCriticalSection(&thread_data.data_mutex);
 
 	thread_data.copy_thread =
-		CreateThread(NULL, 0, copy_thread, NULL, 0, NULL);
+		_beginthreadex(NULL, 0, copy_thread, NULL, 0, NULL);
 	if (!thread_data.copy_thread) {
 		hlog("init_shmem_thread: Failed to create thread: %d",
 		     GetLastError());
@@ -867,7 +867,7 @@ BOOL WINAPI DllMain(HINSTANCE hinst, DWORD reason, LPVOID unused1)
 		GetModuleFileNameW(hinst, name, MAX_PATH);
 		LoadLibraryW(name);
 
-		capture_thread = CreateThread(
+		capture_thread = _beginthreadex(
 			NULL, 0, (LPTHREAD_START_ROUTINE)main_capture_thread,
 			(LPVOID)cur_thread, 0, 0);
 		if (!capture_thread) {
