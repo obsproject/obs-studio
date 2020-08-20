@@ -6,6 +6,7 @@
 #include <QPushButton>
 #include <QCheckBox>
 #include <QLayout>
+#include <QDesktopServices>
 #include <string>
 
 #include "log-viewer.hpp"
@@ -29,6 +30,9 @@ OBSLogViewer::OBSLogViewer(QWidget *parent) : QDialog(parent)
 	QPushButton *clearButton = new QPushButton(QTStr("Clear"));
 	connect(clearButton, &QPushButton::clicked, this,
 		&OBSLogViewer::ClearText);
+	QPushButton *openButton = new QPushButton(QTStr("OpenFile"));
+	connect(openButton, &QPushButton::clicked, this,
+		&OBSLogViewer::OpenFile);
 	QPushButton *closeButton = new QPushButton(QTStr("Close"));
 	connect(closeButton, &QPushButton::clicked, this, &QDialog::hide);
 
@@ -40,6 +44,7 @@ OBSLogViewer::OBSLogViewer(QWidget *parent) : QDialog(parent)
 	buttonLayout->addSpacing(10);
 	buttonLayout->addWidget(showStartup);
 	buttonLayout->addStretch();
+	buttonLayout->addWidget(openButton);
 	buttonLayout->addWidget(clearButton);
 	buttonLayout->addWidget(closeButton);
 	buttonLayout->addSpacing(10);
@@ -144,4 +149,20 @@ void OBSLogViewer::AddLine(int type, const QString &str)
 void OBSLogViewer::ClearText()
 {
 	textArea->clear();
+}
+
+void OBSLogViewer::OpenFile()
+{
+	char logDir[512];
+	if (GetConfigPath(logDir, sizeof(logDir), "obs-studio/logs") <= 0)
+		return;
+
+	const char *log = App()->GetCurrentLog();
+
+	std::string path = logDir;
+	path += "/";
+	path += log;
+
+	QUrl url = QUrl::fromLocalFile(QT_UTF8(path.c_str()));
+	QDesktopServices::openUrl(url);
 }
