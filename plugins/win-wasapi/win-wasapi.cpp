@@ -283,7 +283,7 @@ void WASAPISource::InitCapture()
 	if (FAILED(res))
 		throw HRError("Failed to set event handle", res);
 
-	captureThread = CreateThread(nullptr, 0, WASAPISource::CaptureThread,
+	captureThread = _beginthreadex(nullptr, 0, WASAPISource::CaptureThread,
 				     this, 0, nullptr);
 	if (!captureThread.Valid())
 		throw "Failed to create capture thread";
@@ -368,7 +368,7 @@ bool WASAPISource::TryInitialize()
 void WASAPISource::Reconnect()
 {
 	reconnecting = true;
-	reconnectThread = CreateThread(
+	reconnectThread = _beginthreadex(
 		nullptr, 0, WASAPISource::ReconnectThread, this, 0, nullptr);
 
 	if (!reconnectThread.Valid())

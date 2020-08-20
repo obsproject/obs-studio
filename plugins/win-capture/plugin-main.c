@@ -98,7 +98,7 @@ bool obs_module_load(void)
 
 	init_hook_files();
 	init_hooks_thread =
-		CreateThread(NULL, 0, init_hooks, config_path, 0, NULL);
+		_beginthreadex(NULL, 0, init_hooks, config_path, 0, NULL);
 	obs_register_source(&game_capture_info);
 
 	return true;

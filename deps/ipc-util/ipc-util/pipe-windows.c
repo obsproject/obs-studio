@@ -150,7 +150,7 @@ static DWORD CALLBACK ipc_pipe_internal_server_thread(LPVOID param)
 static inline bool
 ipc_pipe_internal_start_server_thread(ipc_pipe_server_t *pipe)
 {
-	pipe->thread = CreateThread(NULL, 0, ipc_pipe_internal_server_thread,
+	pipe->thread = _beginthreadex(NULL, 0, ipc_pipe_internal_server_thread,
 				    pipe, 0, NULL);
 	return pipe->thread != NULL;
 }

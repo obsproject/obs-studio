@@ -235,7 +235,7 @@ struct DShowInput {
 			throw "Failed to create activated_event";
 
 		thread =
-			CreateThread(nullptr, 0, DShowThread, this, 0, nullptr);
+			_beginthreadex(nullptr, 0, DShowThread, this, 0, nullptr);
 		if (!thread)
 			throw "Failed to create thread";
 
