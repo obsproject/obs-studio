@@ -162,7 +162,13 @@ void fill_vertex_buffer(struct ft2_source *srcdata)
 
 	uint32_t dx = 0, dy = srcdata->max_h, max_y = dy;
 	uint32_t cur_glyph = 0;
+	uint32_t offset = 0;
 	size_t len = wcslen(srcdata->text);
+
+	if (srcdata->outline_text) {
+		offset = 2;
+		dx = offset;
+	}
 
 	if (srcdata->colorbuf != NULL) {
 		bfree(srcdata->colorbuf);
@@ -178,7 +184,7 @@ void fill_vertex_buffer(struct ft2_source *srcdata)
 	add_linebreak:;
 		if (srcdata->text[i] != L'\n')
 			goto draw_glyph;
-		dx = 0;
+		dx = offset;
 		i++;
 		dy += srcdata->max_h + 4;
 		if (i == wcslen(srcdata->text))
@@ -199,7 +205,7 @@ void fill_vertex_buffer(struct ft2_source *srcdata)
 			goto skip_custom_width;
 
 		if (dx + src_glyph->xadv > srcdata->custom_width) {
-			dx = 0;
+			dx = offset;
 			dy += srcdata->max_h + 4;
 		}
 

@@ -125,14 +125,14 @@ static uint32_t ft2_source_get_width(void *data)
 {
 	struct ft2_source *srcdata = data;
 
-	return srcdata->cx;
+	return srcdata->cx + srcdata->outline_width;
 }
 
 static uint32_t ft2_source_get_height(void *data)
 {
 	struct ft2_source *srcdata = data;
 
-	return srcdata->cy;
+	return srcdata->cy + srcdata->outline_width;
 }
 
 static obs_properties_t *ft2_source_properties(void *unused)
@@ -325,8 +325,16 @@ static void ft2_source_update(void *data, obs_data_t *settings)
 	if (!font_obj)
 		return;
 
+	srcdata->outline_width = 0;
+
 	srcdata->drop_shadow = obs_data_get_bool(settings, "drop_shadow");
 	srcdata->outline_text = obs_data_get_bool(settings, "outline");
+
+	if (srcdata->outline_text && srcdata->drop_shadow)
+		srcdata->outline_width = 6;
+	else if (srcdata->outline_text || srcdata->drop_shadow)
+		srcdata->outline_width = 4;
+
 	word_wrap = obs_data_get_bool(settings, "word_wrap");
 
 	color[0] = (uint32_t)obs_data_get_int(settings, "color1");
