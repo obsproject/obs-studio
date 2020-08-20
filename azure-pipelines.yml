@@ -70,7 +70,7 @@ jobs:
     displayName: 'Download / Setup Deps / Run CMake'
   - task: MSBuild@1
     displayName: 'Build 32-bit'
-    inputs: 
+    inputs:
       msbuildArguments: '/m /p:Configuration=RelWithDebInfo'
       solution: .\build32\obs-studio.sln
   - script: ./CI/before-deploy-win.cmd
@@ -97,7 +97,7 @@ jobs:
     displayName: 'Download / Setup Deps / Run CMake'
   - task: MSBuild@1
     displayName: 'Build 64-bit'
-    inputs: 
+    inputs:
       msbuildArguments: '/m /p:Configuration=RelWithDebInfo'
       solution: .\build64\obs-studio.sln
   - script: ./CI/before-deploy-win.cmd
