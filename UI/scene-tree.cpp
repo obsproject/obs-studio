@@ -106,7 +106,11 @@ void SceneTree::startDrag(Qt::DropActions supportedActions)
 void SceneTree::dropEvent(QDropEvent *event)
 {
 	QListWidget::dropEvent(event);
-	if (event->source() == this && gridMode) {
+
+	if (event->source() != this)
+		return;
+
+	if (gridMode) {
 		int scrollWid = verticalScrollBar()->sizeHint().width();
 		int h = visualItemRect(item(count() - 1)).bottom();
 
@@ -131,6 +135,8 @@ void SceneTree::dropEvent(QDropEvent *event)
 		setCurrentItem(item);
 		resize(size());
 	}
+
+	emit scenesReordered();
 }
 
 void SceneTree::dragMoveEvent(QDragMoveEvent *event)
