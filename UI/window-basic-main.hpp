@@ -726,6 +726,8 @@ private:
 
 	void AutoRemux();
 
+	bool CanPause();
+
 	void UpdatePause(bool activate = true);
 	void UpdateReplayBuffer(bool activate = true);
 
