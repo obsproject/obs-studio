@@ -134,7 +134,7 @@ struct winrt_capture {
 	uint32_t texture_height;
 	D3D11_BOX client_box;
 
-	bool active;
+	BOOL active;
 	struct winrt_capture *next;
 
 	void draw_cursor()
@@ -283,6 +283,8 @@ static struct winrt_capture *capture_list;
 static void winrt_capture_device_loss_release(void *data)
 {
 	winrt_capture *capture = static_cast<winrt_capture *>(data);
+	capture->active = FALSE;
+
 	capture->frame_arrived.revoke();
 	capture->frame_pool.Close();
 	capture->session.Close();
@@ -353,7 +355,15 @@ static void winrt_capture_device_loss_rebuild(void *device_void, void *data)
 		winrt::auto_revoke,
 		{capture, &winrt_capture::on_frame_arrived});
 
-	session.StartCapture();
+	try {
+		session.StartCapture();
+		capture->active = TRUE;
+	} catch (winrt::hresult_error &err) {
+		blog(LOG_ERROR, "StartCapture (0x%08X): %ls", err.to_abi(),
+		     err.message().c_str());
+	} catch (...) {
+		blog(LOG_ERROR, "StartCapture (0x%08X)", winrt::to_hresult());
+	}
 }
 
 extern "C" EXPORT struct winrt_capture *
@@ -432,11 +442,11 @@ try {
 	capture->frame_arrived = frame_pool.FrameArrived(
 		winrt::auto_revoke,
 		{capture, &winrt_capture::on_frame_arrived});
-	capture->active = TRUE;
 	capture->next = capture_list;
 	capture_list = capture;
 
 	session.StartCapture();
+	capture->active = TRUE;
 
 	gs_device_loss callbacks;
 	callbacks.device_loss_release = winrt_capture_device_loss_release;
