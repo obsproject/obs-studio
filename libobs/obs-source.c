@@ -3834,7 +3834,7 @@ static void enum_source_full_tree_callback(obs_source_t *parent,
 			child, enum_source_full_tree_callback, param);
 	if (child->info.enum_all_sources) {
 		if (child->context.data) {
-			child->info.enum_active_sources(
+			child->info.enum_all_sources(
 				child->context.data,
 				enum_source_full_tree_callback, data);
 		}
