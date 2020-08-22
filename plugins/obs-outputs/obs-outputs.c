@@ -77,7 +77,9 @@ bool obs_module_load(void)
 void obs_module_unload(void)
 {
 #ifdef _WIN32
+#ifdef MBEDTLS_THREADING_ALT
 	mbedtls_threading_free_alt();
+#endif
 	WSACleanup();
 #endif
 }
