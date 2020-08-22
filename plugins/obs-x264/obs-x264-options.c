@@ -66,6 +66,7 @@ void obs_x264_free_options(struct obs_x264_options options)
 	for (size_t i = 0; i < options.count; ++i) {
 		bfree(options.options[i].name);
 	}
+	bfree(options.options);
 	bfree(options.ignored_words);
 	strlist_free(options.input_words);
 }
