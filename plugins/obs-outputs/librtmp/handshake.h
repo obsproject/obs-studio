@@ -322,6 +322,7 @@ HMACsha256(const uint8_t *message, size_t messageLen, const uint8_t *key,
 #endif
 
     assert(digestLen == 32);
+    UNUSED_PARAMETER(digestLen); // Make GCC happy digestLen is used in release.
 }
 
 static void
