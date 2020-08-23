@@ -13,6 +13,7 @@ endif()
 
 if(UNIX)
 	if (NOT APPLE)
+		find_package(X11 REQUIRED)
 		find_package(X11_XCB REQUIRED)
 		find_package(XCB OPTIONAL_COMPONENTS XINPUT)
 		if (XCB_XINPUT_FOUND)
@@ -221,11 +222,13 @@ elseif(UNIX)
 	endif()
 
 	include_directories(
+		${X11_X11_INCLUDE_PATH}
 		${X11_XCB_INCLUDE_DIRS})
 	add_definitions(
 		${X11_XCB_DEFINITIONS})
 	set(libobs_PLATFORM_DEPS
 		${libobs_PLATFORM_DEPS}
+		${X11_X11_LIB}
 		${X11_XCB_LIBRARIES})
 
 	if(USE_XINPUT)
