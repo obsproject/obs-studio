@@ -1190,10 +1190,12 @@ static void vk_capture(struct vk_data *data, VkQueue queue,
 	for (; idx < info->swapchainCount; idx++) {
 		struct vk_swap_data *cur_swap =
 			get_swap_data(data, info->pSwapchains[idx]);
-		window = cur_swap->hwnd;
-		if (!!window) {
-			swap = cur_swap;
-			break;
+		if (cur_swap) {
+			window = cur_swap->hwnd;
+			if (window != NULL) {
+				swap = cur_swap;
+				break;
+			}
 		}
 	}
 
@@ -1658,49 +1660,42 @@ OBS_CreateSwapchainKHR(VkDevice device, const VkSwapchainCreateInfoKHR *cinfo,
 		       const VkAllocationCallbacks *ac, VkSwapchainKHR *p_sc)
 {
 	struct vk_data *data = get_device_data(device);
-	struct vk_swap_data *swap_data = NULL;
-	if (data->valid) {
-		swap_data = alloc_swap_data(ac);
-		if (!swap_data)
-			return VK_ERROR_OUT_OF_HOST_MEMORY;
-	}
+	struct vk_device_funcs *funcs = &data->funcs;
+	if (!data->valid)
+		return funcs->CreateSwapchainKHR(device, cinfo, ac, p_sc);
 
 	VkSwapchainCreateInfoKHR info = *cinfo;
-	if (data->valid)
-		info.imageUsage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
-
-	struct vk_device_funcs *funcs = &data->funcs;
+	info.imageUsage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
 	VkResult res = funcs->CreateSwapchainKHR(device, &info, ac, p_sc);
 	debug_res("CreateSwapchainKHR", res);
 	if (res != VK_SUCCESS) {
-		vk_free(ac, swap_data);
-		return res;
+		/* try again with original imageUsage flags */
+		return funcs->CreateSwapchainKHR(device, cinfo, ac, p_sc);
 	}
 
-	if (!data->valid)
-		return res;
-
 	VkSwapchainKHR sc = *p_sc;
-
 	uint32_t count = 0;
 	res = funcs->GetSwapchainImagesKHR(device, sc, &count, NULL);
 	debug_res("GetSwapchainImagesKHR", res);
+	if ((res == VK_SUCCESS) && (count > 0)) {
+		struct vk_swap_data *swap_data = alloc_swap_data(ac);
+		if (swap_data) {
+			init_swap_data(swap_data, data, sc);
+			swap_data->swap_images = vk_alloc(
+				ac, count * sizeof(VkImage), _Alignof(VkImage),
+				VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);
+			res = funcs->GetSwapchainImagesKHR(
+				device, sc, &count, swap_data->swap_images);
+			debug_res("GetSwapchainImagesKHR", res);
 
-	init_swap_data(swap_data, data, sc);
-	if (count > 0) {
-		swap_data->swap_images =
-			vk_alloc(ac, count * sizeof(VkImage), _Alignof(VkImage),
-				 VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);
-		res = funcs->GetSwapchainImagesKHR(device, sc, &count,
-						   swap_data->swap_images);
-		debug_res("GetSwapchainImagesKHR", res);
+			swap_data->image_extent = cinfo->imageExtent;
+			swap_data->format = cinfo->imageFormat;
+			swap_data->hwnd =
+				find_surf_hwnd(data->inst_data, cinfo->surface);
+			swap_data->image_count = count;
+			swap_data->d3d11_tex = NULL;
+		}
 	}
-
-	swap_data->image_extent = cinfo->imageExtent;
-	swap_data->format = cinfo->imageFormat;
-	swap_data->hwnd = find_surf_hwnd(data->inst_data, cinfo->surface);
-	swap_data->image_count = count;
-	swap_data->d3d11_tex = NULL;
 
 	return VK_SUCCESS;
 }
@@ -1722,9 +1717,9 @@ static void VKAPI_CALL OBS_DestroySwapchainKHR(VkDevice device,
 			}
 
 			vk_free(ac, swap->swap_images);
-		}
 
-		remove_free_swap_data(data, sc, ac);
+			remove_free_swap_data(data, sc, ac);
+		}
 	}
 
 	destroy_swapchain(device, sc, ac);
