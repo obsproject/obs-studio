@@ -119,6 +119,9 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 			OBSSource tr = main->ui->transitions->itemData(i)
 					       .value<OBSSource>();
 
+			if (!tr)
+				continue;
+
 			obs_source_addref(tr);
 			da_push_back(sources->sources, &tr);
 		}
