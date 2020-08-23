@@ -531,6 +531,7 @@ private:
 
 	void UpdateProjectorHideCursor();
 	void UpdateProjectorAlwaysOnTop(bool top);
+	void ResetProjectors();
 
 	QPointer<QObject> screenshotData;
 

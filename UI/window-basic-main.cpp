@@ -8269,6 +8269,15 @@ void OBSBasic::UpdateProjectorAlwaysOnTop(bool top)
 		SetAlwaysOnTop(projectors[i], top);
 }
 
+void OBSBasic::ResetProjectors()
+{
+	obs_data_array_t *savedProjectorList = SaveProjectors();
+	ClearProjectors();
+	LoadSavedProjectors(savedProjectorList);
+	OpenSavedProjectors();
+	obs_data_array_release(savedProjectorList);
+}
+
 void OBSBasic::on_sourcePropertiesButton_clicked()
 {
 	on_actionSourceProperties_triggered();
