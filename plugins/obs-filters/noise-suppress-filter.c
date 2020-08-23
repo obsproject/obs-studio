@@ -376,6 +376,8 @@ static inline void process_rnnoise(struct noise_suppress_data *ng)
 			}
 		}
 	}
+#else
+	UNUSED_PARAMETER(ng);
 #endif
 }
 
