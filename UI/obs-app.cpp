@@ -195,6 +195,9 @@ QObject *CreateShortcutFilter()
 					event->nativeVirtualKey());
 			}
 
+			if (event->isAutoRepeat())
+				return true;
+
 			hotkey.modifiers = TranslateQtKeyboardEventModifiers(
 				event->modifiers());
 
