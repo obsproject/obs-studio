@@ -714,6 +714,9 @@ static void ffmpeg_source_set_time(void *data, int64_t ms)
 {
 	struct ffmpeg_source *s = data;
 
+	if (!s->media_valid)
+		return;
+
 	mp_media_seek_to(&s->media, ms);
 }
 
