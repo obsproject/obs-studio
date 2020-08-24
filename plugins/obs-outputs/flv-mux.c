@@ -58,11 +58,11 @@ void write_file_info(FILE *file, int64_t duration_ms, int64_t size)
 	fwrite(buf, 1, enc - buf, file);
 }
 
-static bool build_flv_meta_data(obs_output_t *context, uint8_t **output,
-				size_t *size, size_t a_idx)
+static void build_flv_meta_data(obs_output_t *context, uint8_t **output,
+				size_t *size)
 {
 	obs_encoder_t *vencoder = obs_output_get_video_encoder(context);
-	obs_encoder_t *aencoder = obs_output_get_audio_encoder(context, a_idx);
+	obs_encoder_t *aencoder = obs_output_get_audio_encoder(context, 0);
 	video_t *video = obs_encoder_video(vencoder);
 	audio_t *audio = obs_encoder_audio(aencoder);
 	char buf[4096];
@@ -70,31 +70,23 @@ static bool build_flv_meta_data(obs_output_t *context, uint8_t **output,
 	char *end = enc + sizeof(buf);
 	struct dstr encoder_name = {0};
 
-	if (a_idx > 0 && !aencoder)
-		return false;
-
 	enc_str(&enc, end, "@setDataFrame");
 	enc_str(&enc, end, "onMetaData");
 
 	*enc++ = AMF_ECMA_ARRAY;
-	enc = AMF_EncodeInt32(enc, end, a_idx == 0 ? 20 : 15);
+	enc = AMF_EncodeInt32(enc, end, 20);
 
 	enc_num_val(&enc, end, "duration", 0.0);
 	enc_num_val(&enc, end, "fileSize", 0.0);
 
-	if (a_idx == 0) {
-		enc_num_val(&enc, end, "width",
-			    (double)obs_encoder_get_width(vencoder));
-		enc_num_val(&enc, end, "height",
-			    (double)obs_encoder_get_height(vencoder));
+	enc_num_val(&enc, end, "width",
+		    (double)obs_encoder_get_width(vencoder));
+	enc_num_val(&enc, end, "height",
+		    (double)obs_encoder_get_height(vencoder));
 
-		enc_num_val(&enc, end, "videocodecid",
-			    VIDEODATA_AVCVIDEOPACKET);
-		enc_num_val(&enc, end, "videodatarate",
-			    encoder_bitrate(vencoder));
-		enc_num_val(&enc, end, "framerate",
-			    video_output_get_frame_rate(video));
-	}
+	enc_num_val(&enc, end, "videocodecid", VIDEODATA_AVCVIDEOPACKET);
+	enc_num_val(&enc, end, "videodatarate", encoder_bitrate(vencoder));
+	enc_num_val(&enc, end, "framerate", video_output_get_frame_rate(video));
 
 	enc_num_val(&enc, end, "audiocodecid", AUDIODATA_AAC);
 	enc_num_val(&enc, end, "audiodatarate", encoder_bitrate(aencoder));
@@ -133,11 +125,10 @@ static bool build_flv_meta_data(obs_output_t *context, uint8_t **output,
 
 	*size = enc - buf;
 	*output = bmemdup(buf, *size);
-	return true;
 }
 
-bool flv_meta_data(obs_output_t *context, uint8_t **output, size_t *size,
-		   bool write_header, size_t audio_idx)
+void flv_meta_data(obs_output_t *context, uint8_t **output, size_t *size,
+		   bool write_header)
 {
 	struct array_output_data data;
 	struct serializer s;
@@ -146,12 +137,7 @@ bool flv_meta_data(obs_output_t *context, uint8_t **output, size_t *size,
 	uint32_t start_pos;
 
 	array_output_serializer_init(&s, &data);
-
-	if (!build_flv_meta_data(context, &meta_data, &meta_data_size,
-				 audio_idx)) {
-		bfree(meta_data);
-		return false;
-	}
+	build_flv_meta_data(context, &meta_data, &meta_data_size);
 
 	if (write_header) {
 		s_write(&s, "FLV", 3);
@@ -177,7 +163,6 @@ bool flv_meta_data(obs_output_t *context, uint8_t **output, size_t *size,
 	*size = data.bytes.num;
 
 	bfree(meta_data);
-	return true;
 }
 
 #ifdef DEBUG_TIMESTAMPS
@@ -373,7 +358,7 @@ static void flv_build_additional_meta_data(uint8_t **data, size_t *size)
 	*size = out.bytes.num;
 }
 
-bool flv_additional_meta_data(obs_output_t *context, uint8_t **data,
+void flv_additional_meta_data(obs_output_t *context, uint8_t **data,
 			      size_t *size)
 {
 	obs_encoder_t *aencoder = obs_output_get_audio_encoder(context, 1);
@@ -381,9 +366,6 @@ bool flv_additional_meta_data(obs_output_t *context, uint8_t **data,
 	struct serializer s;
 	uint8_t *meta_data = NULL;
 	size_t meta_data_size;
-
-	if (!aencoder)
-		return false;
 
 	flv_build_additional_meta_data(&meta_data, &meta_data_size);
 
@@ -402,7 +384,6 @@ bool flv_additional_meta_data(obs_output_t *context, uint8_t **data,
 
 	*data = out.bytes.array;
 	*size = out.bytes.num;
-	return false;
 }
 
 static inline void s_u29(struct serializer *s, uint32_t val)

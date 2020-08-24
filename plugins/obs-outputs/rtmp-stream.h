@@ -59,7 +59,6 @@ struct rtmp_stream {
 	pthread_mutex_t packets_mutex;
 	struct circlebuf packets;
 	bool sent_headers;
-	bool using_metadata_multitrack;
 
 	bool got_first_video;
 	int64_t start_dts_offset;
