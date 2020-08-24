@@ -10,8 +10,6 @@
 SceneTree::SceneTree(QWidget *parent_) : QListWidget(parent_)
 {
 	installEventFilter(this);
-	setDragDropMode(InternalMove);
-	setMovement(QListView::Snap);
 }
 
 void SceneTree::SetGridMode(bool grid)
