@@ -2980,7 +2980,8 @@ void OBSBasic::UpdateContextBar()
 		ui->contextSourceLabel->setText(name);
 
 		ui->sourceFiltersButton->setEnabled(true);
-		ui->sourcePropertiesButton->setEnabled(true);
+		ui->sourcePropertiesButton->setEnabled(
+			obs_source_configurable(source));
 	} else {
 		ui->contextSourceLabel->setText(
 			QTStr("ContextBar.NoSelectedSource"));
