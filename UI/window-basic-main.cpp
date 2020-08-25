@@ -5547,7 +5547,7 @@ inline void OBSBasic::OnActivate()
 		App()->IncrementSleepInhibition();
 		UpdateProcessPriority();
 
-		if (trayIcon)
+		if (trayIcon && trayIcon->isVisible())
 			trayIcon->setIcon(QIcon::fromTheme(
 				"obs-tray-active",
 				QIcon(":/res/images/tray_active.png")));
@@ -5565,10 +5565,10 @@ inline void OBSBasic::OnDeactivate()
 		App()->DecrementSleepInhibition();
 		ClearProcessPriority();
 
-		if (trayIcon)
+		if (trayIcon && trayIcon->isVisible())
 			trayIcon->setIcon(QIcon::fromTheme(
 				"obs-tray", QIcon(":/res/images/obs.png")));
-	} else if (trayIcon) {
+	} else if (trayIcon && trayIcon->isVisible()) {
 		if (os_atomic_load_bool(&recording_paused))
 			trayIcon->setIcon(QIcon(":/res/images/obs_paused.png"));
 		else
@@ -7543,7 +7543,8 @@ void OBSBasic::IconActivated(QSystemTrayIcon::ActivationReason reason)
 void OBSBasic::SysTrayNotify(const QString &text,
 			     QSystemTrayIcon::MessageIcon n)
 {
-	if (trayIcon && QSystemTrayIcon::supportsMessages()) {
+	if (trayIcon && trayIcon->isVisible() &&
+	    QSystemTrayIcon::supportsMessages()) {
 		QSystemTrayIcon::MessageIcon icon =
 			QSystemTrayIcon::MessageIcon(n);
 		trayIcon->showMessage("OBS Studio", text, icon, 10000);
@@ -8061,7 +8062,7 @@ void OBSBasic::PauseRecording()
 
 		ui->statusbar->RecordingPaused();
 
-		if (trayIcon)
+		if (trayIcon && trayIcon->isVisible())
 			trayIcon->setIcon(QIcon(":/res/images/obs_paused.png"));
 
 		os_atomic_set_bool(&recording_paused, true);
@@ -8090,7 +8091,7 @@ void OBSBasic::UnpauseRecording()
 
 		ui->statusbar->RecordingUnpaused();
 
-		if (trayIcon)
+		if (trayIcon && trayIcon->isVisible())
 			trayIcon->setIcon(
 				QIcon(":/res/images/tray_active.png"));
 
