@@ -31,9 +31,6 @@ SourceToolbar::SourceToolbar(QWidget *parent, OBSSource source)
 	  weakSource(OBSGetWeakRef(source)),
 	  props(obs_source_properties(source), obs_properties_destroy)
 {
-	obs_data_t *settings = obs_source_get_settings(source);
-	obs_properties_apply_settings(props.get(), settings);
-	obs_data_release(settings);
 }
 
 /* ========================================================================= */
