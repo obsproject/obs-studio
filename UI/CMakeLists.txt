@@ -238,6 +238,7 @@ set(obs_SOURCES
 	item-widget-helpers.cpp
 	context-bar-controls.cpp
 	horizontal-scroll-area.cpp
+	context-bar-controls-devices.cpp
 	vertical-scroll-area.cpp
 	visibility-item-widget.cpp
 	slider-absoluteset-style.cpp
@@ -305,6 +306,7 @@ set(obs_HEADERS
 	item-widget-helpers.hpp
 	visibility-checkbox.hpp
 	context-bar-controls.hpp
+	context-bar-controls-devices.hpp
 	locked-checkbox.hpp
 	horizontal-scroll-area.hpp
 	expand-checkbox.hpp

@@ -53,8 +53,6 @@ protected:
 	const char *prop_name;
 	bool is_int = false;
 
-	void UpdateActivateButtonName();
-
 public:
 	ComboSelectToolbar(QWidget *parent, OBSSource source);
 	~ComboSelectToolbar();
@@ -62,7 +60,6 @@ public:
 
 public slots:
 	void on_device_currentIndexChanged(int idx);
-	void on_activateButton_clicked();
 };
 
 class AudioCaptureToolbar : public ComboSelectToolbar {
@@ -89,12 +86,25 @@ public:
 	void Init() override;
 };
 
-class DeviceCaptureToolbar : public ComboSelectToolbar {
+class DeviceCaptureToolbar : public QWidget {
 	Q_OBJECT
+
+	OBSWeakSource weakSource;
+	Ui_DeviceSelectToolbar *ui;
+	obs_properties_t *props = nullptr;
+	const char *prop_name;
+
+	void UpdateActivateButtonName();
 
 public:
 	DeviceCaptureToolbar(QWidget *parent, OBSSource source);
-	void Init() override;
+	~DeviceCaptureToolbar();
+
+	void SetProperties(obs_properties_t *prpos);
+
+public slots:
+	void on_device_currentIndexChanged(int idx);
+	void on_activateButton_clicked();
 };
 
 class GameCaptureToolbar : public SourceToolbar {

@@ -908,6 +908,13 @@ void OBSBasic::Load(const char *file)
 	InitDefaultTransitions();
 	ClearContextBar();
 
+	if (devicePropertiesThread && devicePropertiesThread->isRunning()) {
+		devicePropertiesThread->wait();
+		devicePropertiesThread.reset();
+	}
+
+	QApplication::sendPostedEvents(this);
+
 	obs_data_t *modulesObj = obs_data_get_obj(data, "modules");
 	if (api)
 		api->on_preload(modulesObj);
@@ -2951,7 +2958,6 @@ void OBSBasic::UpdateContextBar()
 			   strcmp(id, "v4l2_input") == 0) {
 			DeviceCaptureToolbar *c = new DeviceCaptureToolbar(
 				ui->emptySpace, source);
-			c->Init();
 			ui->emptySpace->layout()->addWidget(c);
 
 		} else if (strcmp(id, "game_capture") == 0) {
@@ -4193,6 +4199,12 @@ void OBSBasic::closeEvent(QCloseEvent *event)
 		updateCheckThread->wait();
 	if (logUploadThread)
 		logUploadThread->wait();
+	if (devicePropertiesThread && devicePropertiesThread->isRunning()) {
+		devicePropertiesThread->wait();
+		devicePropertiesThread.reset();
+	}
+
+	QApplication::sendPostedEvents(this);
 
 	signalHandlers.clear();
 

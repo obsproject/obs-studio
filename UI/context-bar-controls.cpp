@@ -152,12 +152,6 @@ void ComboSelectToolbar::Init()
 					   prop_name, is_int);
 }
 
-void ComboSelectToolbar::UpdateActivateButtonName()
-{
-	obs_property_t *p = obs_properties_get(props.get(), "activate");
-	ui->activateButton->setText(obs_property_description(p));
-}
-
 void UpdateSourceComboToolbarValue(QComboBox *combo, OBSSource source, int idx,
 				   const char *prop_name, bool is_int)
 {
@@ -182,22 +176,6 @@ void ComboSelectToolbar::on_device_currentIndexChanged(int idx)
 
 	UpdateSourceComboToolbarValue(ui->device, source, idx, prop_name,
 				      is_int);
-}
-
-void ComboSelectToolbar::on_activateButton_clicked()
-{
-	OBSSource source = GetSource();
-	if (!source) {
-		return;
-	}
-
-	obs_property_t *p = obs_properties_get(props.get(), "activate");
-	if (!p) {
-		return;
-	}
-
-	obs_property_button_clicked(p, source.Get());
-	UpdateActivateButtonName();
 }
 
 AudioCaptureToolbar::AudioCaptureToolbar(QWidget *parent, OBSSource source)
@@ -273,38 +251,6 @@ void DisplayCaptureToolbar::Init()
 	prop_name = "display";
 #else
 	prop_name = "screen";
-#endif
-
-	ComboSelectToolbar::Init();
-}
-
-DeviceCaptureToolbar::DeviceCaptureToolbar(QWidget *parent, OBSSource source)
-	: ComboSelectToolbar(parent, source)
-{
-}
-
-void DeviceCaptureToolbar::Init()
-{
-#ifndef _WIN32
-	delete ui->activateButton;
-	ui->activateButton = nullptr;
-#endif
-
-	obs_module_t *mod =
-		get_os_module("win-dshow", "mac-avcapture", "linux-v4l2");
-	const char *device_str = obs_module_get_locale_text(mod, "Device");
-	ui->deviceLabel->setText(device_str);
-
-#ifdef _WIN32
-	prop_name = "video_device_id";
-#elif __APPLE__
-	prop_name = "device";
-#else
-	prop_name = "device_id";
-#endif
-
-#ifdef _WIN32
-	UpdateActivateButtonName();
 #endif
 
 	ComboSelectToolbar::Init();
