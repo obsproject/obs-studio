@@ -149,7 +149,6 @@ void SourceTreeItem::paintEvent(QPaintEvent *event)
 
 void SourceTreeItem::DisconnectSignals()
 {
-	sceneRemoveSignal.Disconnect();
 	itemRemoveSignal.Disconnect();
 	selectSignal.Disconnect();
 	deselectSignal.Disconnect();
@@ -180,13 +179,8 @@ void SourceTreeItem::ReconnectSignals()
 		obs_sceneitem_t *curItem =
 			(obs_sceneitem_t *)calldata_ptr(cd, "item");
 
-		if (curItem == this_->sceneitem) {
-			QMetaObject::invokeMethod(this_->tree, "Remove",
-						  Q_ARG(OBSSceneItem, curItem));
-			curItem = nullptr;
-		}
-		if (!curItem)
-			QMetaObject::invokeMethod(this_, "Clear");
+		QMetaObject::invokeMethod(this_->tree, "Remove",
+					  Q_ARG(OBSSceneItem, curItem));
 	};
 
 	auto itemVisible = [](void *data, calldata_t *cd) {
@@ -243,7 +237,6 @@ void SourceTreeItem::ReconnectSignals()
 	obs_source_t *sceneSource = obs_scene_get_source(scene);
 	signal_handler_t *signal = obs_source_get_signal_handler(sceneSource);
 
-	sceneRemoveSignal.Connect(signal, "remove", removeItem, this);
 	itemRemoveSignal.Connect(signal, "item_remove", removeItem, this);
 	visibleSignal.Connect(signal, "item_visible", itemVisible, this);
 	lockedSignal.Connect(signal, "item_locked", itemLocked, this);

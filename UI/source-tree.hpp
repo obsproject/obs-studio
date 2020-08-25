@@ -67,7 +67,6 @@ private:
 
 	SourceTree *tree;
 	OBSSceneItem sceneitem;
-	OBSSignal sceneRemoveSignal;
 	OBSSignal itemRemoveSignal;
 	OBSSignal groupReorderSignal;
 	OBSSignal selectSignal;

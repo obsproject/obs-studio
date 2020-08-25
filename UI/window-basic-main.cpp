@@ -2766,23 +2766,27 @@ void OBSBasic::RemoveScene(OBSSource source)
 {
 	obs_scene_t *scene = obs_scene_from_source(source);
 
-	QListWidgetItem *sel = nullptr;
 	int count = ui->scenes->count();
 
+	auto remove_items = [](obs_scene_t *, obs_sceneitem_t *item, void *) {
+		if (item)
+			obs_sceneitem_remove(item);
+
+		return true;
+	};
+
 	for (int i = 0; i < count; i++) {
-		auto item = ui->scenes->item(i);
-		auto cur_scene = GetOBSRef<OBSScene>(item);
+		QListWidgetItem *item = ui->scenes->item(i);
+		OBSScene cur_scene = GetOBSRef<OBSScene>(item);
 		if (cur_scene != scene)
 			continue;
 
-		sel = item;
-		break;
-	}
+		obs_scene_enum_items(cur_scene, remove_items, nullptr);
 
-	if (sel != nullptr) {
-		if (sel == ui->scenes->currentItem())
-			ui->sources->Clear();
+		QListWidgetItem *sel = ui->scenes->takeItem(i);
 		delete sel;
+		sel = nullptr;
+		break;
 	}
 
 	SaveProject();
@@ -4118,8 +4122,6 @@ void OBSBasic::ClearSceneData()
 	CloseDialogs();
 
 	ClearVolumeControls();
-	ClearListItems(ui->scenes);
-	ui->sources->Clear();
 	ClearQuickTransitions();
 	ui->transitions->clear();
 
