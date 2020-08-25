@@ -140,6 +140,22 @@ static const char *get_method_name(int method)
 	return method_name;
 }
 
+static void log_settings(struct window_capture *wc, obs_data_t *s)
+{
+	int method = (int)obs_data_get_int(s, "method");
+
+	if (wc->title != NULL) {
+		blog(LOG_INFO,
+		     "[window-capture: '%s'] update settings:\n"
+		     "\texecutable: %s\n"
+		     "\tmethod selected: %s\n"
+		     "\tmethod chosen: %s\n",
+		     obs_source_get_name(wc->source), wc->executable,
+		     get_method_name(method), get_method_name(wc->method));
+		blog(LOG_DEBUG, "\tclass:      %s", wc->class);
+	}
+}
+
 static void update_settings(struct window_capture *wc, obs_data_t *s)
 {
 	int method = (int)obs_data_get_int(s, "method");
@@ -158,17 +174,6 @@ static void update_settings(struct window_capture *wc, obs_data_t *s)
 	wc->use_wildcards = obs_data_get_bool(s, "use_wildcards");
 	wc->compatibility = obs_data_get_bool(s, "compatibility");
 	wc->client_area = obs_data_get_bool(s, "client_area");
-
-	if (wc->title != NULL) {
-		blog(LOG_INFO,
-		     "[window-capture: '%s'] update settings:\n"
-		     "\texecutable: %s\n"
-		     "\tmethod selected: %s\n"
-		     "\tmethod chosen: %s\n",
-		     obs_source_get_name(wc->source), wc->executable,
-		     get_method_name(method), get_method_name(wc->method));
-		blog(LOG_DEBUG, "\tclass:      %s", wc->class);
-	}
 }
 
 /* ------------------------------------------------------------------------- */
@@ -231,6 +236,7 @@ static void *wc_create(obs_data_t *settings, obs_source_t *source)
 	}
 
 	update_settings(wc, settings);
+	log_settings(wc, settings);
 	return wc;
 }
 
@@ -265,6 +271,7 @@ static void wc_update(void *data, obs_data_t *settings)
 {
 	struct window_capture *wc = data;
 	update_settings(wc, settings);
+	log_settings(wc, settings);
 
 	/* forces a reset */
 	wc->window = NULL;
