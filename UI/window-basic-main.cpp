@@ -906,6 +906,7 @@ void OBSBasic::Load(const char *file)
 
 	ClearSceneData();
 	InitDefaultTransitions();
+	ClearContextBar();
 
 	obs_data_t *modulesObj = obs_data_get_obj(data, "modules");
 	if (api)
@@ -2885,15 +2886,20 @@ void OBSBasic::RenameSources(OBSSource source, QString newName,
 	UpdateContextBar();
 }
 
-void OBSBasic::UpdateContextBar()
+void OBSBasic::ClearContextBar()
 {
-	OBSSceneItem item = GetCurrentSceneItem();
-
 	QLayoutItem *la = ui->emptySpace->layout()->itemAt(0);
 	if (la) {
 		delete la->widget();
 		ui->emptySpace->layout()->removeItem(la);
 	}
+}
+
+void OBSBasic::UpdateContextBar()
+{
+	OBSSceneItem item = GetCurrentSceneItem();
+
+	ClearContextBar();
 
 	if (item) {
 		obs_source_t *source = obs_sceneitem_get_source(item);
