@@ -71,7 +71,8 @@ void *os_dlopen(const char *path)
 #ifdef __APPLE__
 	void *res = dlopen(dylib_name.array, RTLD_LAZY | RTLD_FIRST);
 #else
-	void *res = dlopen(dylib_name.array, RTLD_LAZY);
+	void *res = dlopen(dylib_name.array,
+			   RTLD_LAZY | RTLD_DEEPBIND | RTLD_GLOBAL);
 #endif
 	if (!res)
 		blog(LOG_ERROR, "os_dlopen(%s->%s): %s\n", path,
