@@ -107,13 +107,10 @@ static void SetComboItemDisabled(QComboBox *c, int idx)
 	item->setFlags(Qt::NoItemFlags);
 }
 
-void ComboSelectToolbar::Init()
+void UpdateSourceComboToolbarProperties(QComboBox *combo, OBSSource source,
+					obs_properties_t *props,
+					const char *prop_name, bool is_int)
 {
-	OBSSource source = GetSource();
-	if (!source) {
-		return;
-	}
-
 	std::string cur_id;
 
 	obs_data_t *settings = obs_source_get_settings(source);
@@ -124,25 +121,35 @@ void ComboSelectToolbar::Init()
 	}
 	obs_data_release(settings);
 
-	ui->device->blockSignals(true);
+	combo->blockSignals(true);
 
-	obs_property_t *p = obs_properties_get(props.get(), prop_name);
-	int cur_idx = FillPropertyCombo(ui->device, p, cur_id, is_int);
+	obs_property_t *p = obs_properties_get(props, prop_name);
+	int cur_idx = FillPropertyCombo(combo, p, cur_id, is_int);
 
 	if (cur_idx == -1 || obs_property_list_item_disabled(p, cur_idx)) {
 		if (cur_idx == -1) {
-			ui->device->insertItem(
+			combo->insertItem(
 				0,
 				QTStr("Basic.Settings.Audio.UnknownAudioDevice"));
 			cur_idx = 0;
 		}
 
-		SetComboItemDisabled(ui->device, cur_idx);
-	} else {
-		ui->device->setCurrentIndex(cur_idx);
+		SetComboItemDisabled(combo, cur_idx);
 	}
 
-	ui->device->blockSignals(false);
+	combo->setCurrentIndex(cur_idx);
+	combo->blockSignals(false);
+}
+
+void ComboSelectToolbar::Init()
+{
+	OBSSource source = GetSource();
+	if (!source) {
+		return;
+	}
+
+	UpdateSourceComboToolbarProperties(ui->device, source, props.get(),
+					   prop_name, is_int);
 }
 
 void ComboSelectToolbar::UpdateActivateButtonName()
@@ -151,14 +158,10 @@ void ComboSelectToolbar::UpdateActivateButtonName()
 	ui->activateButton->setText(obs_property_description(p));
 }
 
-void ComboSelectToolbar::on_device_currentIndexChanged(int idx)
+void UpdateSourceComboToolbarValue(QComboBox *combo, OBSSource source, int idx,
+				   const char *prop_name, bool is_int)
 {
-	OBSSource source = GetSource();
-	if (idx == -1 || !source) {
-		return;
-	}
-
-	QString id = ui->device->itemData(idx).toString();
+	QString id = combo->itemData(idx).toString();
 
 	obs_data_t *settings = obs_data_create();
 	if (is_int) {
@@ -168,6 +171,17 @@ void ComboSelectToolbar::on_device_currentIndexChanged(int idx)
 	}
 	obs_source_update(source, settings);
 	obs_data_release(settings);
+}
+
+void ComboSelectToolbar::on_device_currentIndexChanged(int idx)
+{
+	OBSSource source = GetSource();
+	if (idx == -1 || !source) {
+		return;
+	}
+
+	UpdateSourceComboToolbarValue(ui->device, source, idx, prop_name,
+				      is_int);
 }
 
 void ComboSelectToolbar::on_activateButton_clicked()
