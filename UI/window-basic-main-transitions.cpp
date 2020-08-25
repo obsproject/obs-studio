@@ -254,6 +254,8 @@ obs_source_t *OBSBasic::FindTransition(const char *name)
 {
 	for (int i = 0; i < ui->transitions->count(); i++) {
 		OBSSource tr = ui->transitions->itemData(i).value<OBSSource>();
+		if (!tr)
+			continue;
 
 		const char *trName = obs_source_get_name(tr);
 		if (trName && *trName && strcmp(trName, name) == 0)
@@ -706,10 +708,12 @@ void OBSBasic::SetCurrentScene(OBSSource scene, bool force)
 
 	UpdateSceneSelection(scene);
 
-	bool userSwitched = (!force && !disableSaving);
-	blog(LOG_INFO, "%s to scene '%s'",
-	     userSwitched ? "User switched" : "Switched",
-	     obs_source_get_name(scene));
+	if (scene) {
+		bool userSwitched = (!force && !disableSaving);
+		blog(LOG_INFO, "%s to scene '%s'",
+		     userSwitched ? "User switched" : "Switched",
+		     obs_source_get_name(scene));
+	}
 }
 
 void OBSBasic::CreateProgramDisplay()
@@ -1499,7 +1503,7 @@ obs_data_array_t *OBSBasic::SaveTransitions()
 
 	for (int i = 0; i < ui->transitions->count(); i++) {
 		OBSSource tr = ui->transitions->itemData(i).value<OBSSource>();
-		if (!obs_source_configurable(tr))
+		if (!tr || !obs_source_configurable(tr))
 			continue;
 
 		obs_data_t *sourceData = obs_data_create();
