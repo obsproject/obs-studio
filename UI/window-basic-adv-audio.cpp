@@ -28,6 +28,7 @@ OBSBasicAdvAudio::OBSBasicAdvAudio(QWidget *parent)
 
 	QLabel *volLabel = new QLabel(QTStr("Basic.AdvAudio.Volume"));
 	volLabel->setStyleSheet("font-weight: bold;");
+	volLabel->setContentsMargins(0, 0, 6, 0);
 
 	usePercent = new QCheckBox();
 	usePercent->setStyleSheet("font-weight: bold;");
@@ -44,8 +45,8 @@ OBSBasicAdvAudio::OBSBasicAdvAudio(QWidget *parent)
 	QHBoxLayout *volLayout = new QHBoxLayout();
 	volLayout->setContentsMargins(0, 0, 0, 0);
 	volLayout->addWidget(volLabel);
-	volLayout->addStretch();
 	volLayout->addWidget(usePercent);
+	volLayout->addStretch();
 
 	int idx = 0;
 	mainLayout = new QGridLayout;
