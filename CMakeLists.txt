@@ -80,7 +80,6 @@ else()
 	set(OBS_RELEASE_CANDIDATE_MINOR 0)
 	set(OBS_RELEASE_CANDIDATE_PATCH 0)
 	set(OBS_RELEASE_CANDIDATE 0)
-	set(OBS_VERSION "0.0.0-dev")
 endif()
 
 # Binary Versioning for Windows
