@@ -4125,12 +4125,9 @@ void OBSBasic::ClearSceneData()
 
 	ClearProjectors();
 
-	obs_set_output_source(0, nullptr);
-	obs_set_output_source(1, nullptr);
-	obs_set_output_source(2, nullptr);
-	obs_set_output_source(3, nullptr);
-	obs_set_output_source(4, nullptr);
-	obs_set_output_source(5, nullptr);
+	for (int i = 0; i < MAX_CHANNELS; i++)
+		obs_set_output_source(i, nullptr);
+
 	lastScene = nullptr;
 	swapScene = nullptr;
 	programScene = nullptr;
