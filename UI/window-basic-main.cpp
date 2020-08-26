@@ -5318,7 +5318,15 @@ void OBSBasic::on_actionUploadLastLog_triggered()
 
 void OBSBasic::on_actionViewCurrentLog_triggered()
 {
-	logView->setVisible(!logView->isVisible());
+	if (!logView->isVisible()) {
+		logView->setVisible(true);
+	} else {
+		logView->setWindowState(logView->windowState() &
+						~Qt::WindowMinimized |
+					Qt::WindowActive);
+		logView->activateWindow();
+		logView->raise();
+	}
 }
 
 void OBSBasic::on_actionShowCrashLogs_triggered()
