@@ -777,7 +777,6 @@ static void adjust_sndbuf_size(struct rtmp_stream *stream, int new_size)
 static int init_send(struct rtmp_stream *stream)
 {
 	int ret;
-	size_t idx = 0;
 	obs_output_t *context = stream->output;
 
 #if defined(_WIN32)
