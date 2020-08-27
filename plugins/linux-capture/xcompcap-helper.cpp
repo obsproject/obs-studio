@@ -4,6 +4,7 @@
 #include <X11/extensions/Xcomposite.h>
 
 #include <unordered_set>
+#include <map>
 #include <pthread.h>
 
 #include <obs-module.h>
@@ -215,8 +216,73 @@ int getWindowPid(Window win)
 	return 1234; //TODO
 }
 
-static std::unordered_set<Window> changedWindows;
+static std::map<XCompcapMain *, Window> windowForSource;
+static std::unordered_set<XCompcapMain *> changedSources;
 static pthread_mutex_t changeLock = PTHREAD_MUTEX_INITIALIZER;
+
+void registerSource(XCompcapMain *source, Window win)
+{
+	PLock lock(&changeLock);
+
+	blog(LOG_DEBUG, "registerSource(source=%p, win=%ld)", source, win);
+
+	auto it = windowForSource.find(source);
+
+	if (it != windowForSource.end()) {
+		windowForSource.erase(it);
+	}
+
+	// Subscribe to Events
+	XSelectInput(disp(), win,
+		     StructureNotifyMask | ExposureMask | VisibilityChangeMask);
+	XCompositeRedirectWindow(disp(), win, CompositeRedirectAutomatic);
+	XSync(disp(), 0);
+
+	windowForSource.insert(std::make_pair(source, win));
+}
+
+void unregisterSource(XCompcapMain *source)
+{
+	PLock lock(&changeLock);
+
+	blog(LOG_DEBUG, "unregisterSource(source=%p)", source);
+	{
+		auto it = windowForSource.find(source);
+		Window win = it->second;
+
+		if (it != windowForSource.end()) {
+			windowForSource.erase(it);
+		}
+
+		// check if there are still sources listening for the same window
+		it = windowForSource.begin();
+		bool windowInUse = false;
+		while (it != windowForSource.end()) {
+			if (it->second == win) {
+				windowInUse = true;
+				break;
+			}
+			it++;
+		}
+
+		if (!windowInUse) {
+			// Last source released, stop listening for events.
+			XSelectInput(disp(), win, 0);
+			XCompositeUnredirectWindow(disp(), win,
+						   CompositeRedirectAutomatic);
+			XSync(disp(), 0);
+		}
+	}
+
+	{
+		auto it = changedSources.find(source);
+
+		if (it != changedSources.end()) {
+			changedSources.erase(it);
+		}
+	}
+}
+
 void processEvents()
 {
 	PLock lock(&changeLock);
@@ -225,36 +291,56 @@ void processEvents()
 
 	while (XEventsQueued(disp(), QueuedAfterReading) > 0) {
 		XEvent ev;
+		Window win = 0;
 
 		XNextEvent(disp(), &ev);
 
 		if (ev.type == ConfigureNotify)
-			changedWindows.insert(ev.xconfigure.event);
+			win = ev.xconfigure.event;
 
-		if (ev.type == MapNotify)
-			changedWindows.insert(ev.xmap.event);
+		else if (ev.type == MapNotify)
+			win = ev.xmap.event;
 
-		if (ev.type == Expose)
-			changedWindows.insert(ev.xexpose.window);
+		else if (ev.type == Expose)
+			win = ev.xexpose.window;
 
-		if (ev.type == VisibilityNotify)
-			changedWindows.insert(ev.xvisibility.window);
+		else if (ev.type == VisibilityNotify)
+			win = ev.xvisibility.window;
 
-		if (ev.type == DestroyNotify)
-			changedWindows.insert(ev.xdestroywindow.event);
+		else if (ev.type == DestroyNotify)
+			win = ev.xdestroywindow.event;
+
+		if (win != 0) {
+			blog(LOG_DEBUG, "processEvents(): windowChanged=%ld",
+			     win);
+
+			auto it = windowForSource.begin();
+
+			while (it != windowForSource.end()) {
+				if (it->second == win) {
+					blog(LOG_DEBUG,
+					     "processEvents(): sourceChanged=%p",
+					     it->first);
+					changedSources.insert(it->first);
+				}
+				it++;
+			}
+		}
 	}
 
 	XUnlockDisplay(disp());
 }
 
-bool windowWasReconfigured(Window win)
+bool sourceWasReconfigured(XCompcapMain *source)
 {
 	PLock lock(&changeLock);
 
-	auto it = changedWindows.find(win);
+	auto it = changedSources.find(source);
 
-	if (it != changedWindows.end()) {
-		changedWindows.erase(it);
+	if (it != changedSources.end()) {
+		changedSources.erase(it);
+		blog(LOG_DEBUG, "sourceWasReconfigured(source=%p)=true",
+		     source);
 		return true;
 	}
 

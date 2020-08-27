@@ -70,6 +70,8 @@ public:
 	~ObsGsContextHolder();
 };
 
+class XCompcapMain;
+
 namespace XCompcap {
 Display *disp();
 void cleanupDisplay();
@@ -92,6 +94,8 @@ inline std::string getWindowClass(Window win)
 	return getWindowAtom(win, "WM_CLASS");
 }
 
+void registerSource(XCompcapMain *source, Window win);
+void unregisterSource(XCompcapMain *source);
 void processEvents();
-bool windowWasReconfigured(Window win);
+bool sourceWasReconfigured(XCompcapMain *source);
 }

@@ -189,6 +189,8 @@ XCompcapMain::~XCompcapMain()
 {
 	ObsGsContextHolder obsctx;
 
+	XCompcap::unregisterSource(this);
+
 	if (p->tex) {
 		gs_texture_destroy(p->tex);
 		p->tex = 0;
@@ -237,9 +239,6 @@ static Window getWindowFromString(std::string wstr)
 	for (Window cwin : XCompcap::getTopLevelWindows()) {
 		// match by window-id
 		if (cwin == winById) {
-			blog(LOG_INFO, "Found Window '%s' by Window-ID %s",
-			     wname.c_str(), wid.c_str());
-
 			return cwin;
 		}
 	}
@@ -251,9 +250,6 @@ static Window getWindowFromString(std::string wstr)
 
 		// match by name and class
 		if (wname == cwinname && wcls == ccls) {
-			blog(LOG_INFO, "Found Window '%s' by Name & Class",
-			     wname.c_str());
-
 			return cwin;
 		}
 	}
@@ -305,9 +301,6 @@ static void xcc_cleanup(XCompcapMain_private *p)
 	}
 
 	if (p->win) {
-		XCompositeUnredirectWindow(xdisp, p->win,
-					   CompositeRedirectAutomatic);
-		XSelectInput(xdisp, p->win, 0);
 		p->win = 0;
 	}
 
@@ -365,6 +358,7 @@ void XCompcapMain::updateSettings(obs_data_t *settings)
 {
 	PLock lock(&p->lock);
 	ObsGsContextHolder obsctx;
+	XErrorLock xlock;
 
 	blog(LOG_DEBUG, "Settings updating");
 
@@ -373,11 +367,13 @@ void XCompcapMain::updateSettings(obs_data_t *settings)
 	xcc_cleanup(p);
 
 	if (settings) {
+		/* Settings initialized or changed */
 		const char *windowName =
 			obs_data_get_string(settings, "capture_window");
 
 		p->windowName = windowName;
 		p->win = getWindowFromString(windowName);
+		XCompcap::registerSource(this, p->win);
 
 		p->cut_top = obs_data_get_int(settings, "cut_top");
 		p->cut_left = obs_data_get_int(settings, "cut_left");
@@ -391,23 +387,15 @@ void XCompcapMain::updateSettings(obs_data_t *settings)
 		p->exclude_alpha = obs_data_get_bool(settings, "exclude_alpha");
 		p->draw_opaque = false;
 	} else {
+		/* New Window found (stored in p->win), just re-initialize GL-Mapping  */
 		p->win = prevWin;
 	}
 
-	XErrorLock xlock;
-	if (p->win)
-		XCompositeRedirectWindow(xdisp, p->win,
-					 CompositeRedirectAutomatic);
 	if (xlock.gotError()) {
-		blog(LOG_ERROR, "XCompositeRedirectWindow failed: %s",
+		blog(LOG_ERROR, "registeringSource failed: %s",
 		     xlock.getErrorText().c_str());
 		return;
 	}
-
-	if (p->win)
-		XSelectInput(xdisp, p->win,
-			     StructureNotifyMask | ExposureMask |
-				     VisibilityChangeMask);
 	XSync(xdisp, 0);
 
 	XWindowAttributes attr;
@@ -592,7 +580,7 @@ void XCompcapMain::tick(float seconds)
 
 	XCompcap::processEvents();
 
-	if (p->win && XCompcap::windowWasReconfigured(p->win)) {
+	if (p->win && XCompcap::sourceWasReconfigured(this)) {
 		p->window_check_time = FIND_WINDOW_INTERVAL;
 		p->win = 0;
 	}
@@ -612,6 +600,7 @@ void XCompcapMain::tick(float seconds)
 
 		if (newWin && XGetWindowAttributes(xdisp, newWin, &attr)) {
 			p->win = newWin;
+			XCompcap::registerSource(this, p->win);
 			updateSettings(0);
 		} else {
 			return;
