@@ -5446,8 +5446,10 @@
   <tabstop>overflowHide</tabstop>
   <tabstop>overflowAlwaysVisible</tabstop>
   <tabstop>overflowSelectionHide</tabstop>
+  <tabstop>automaticSearch</tabstop>
   <tabstop>doubleClickSwitch</tabstop>
   <tabstop>studioPortraitLayout</tabstop>
+  <tabstop>prevProgLabelToggle</tabstop>
   <tabstop>multiviewMouseSwitch</tabstop>
   <tabstop>multiviewDrawNames</tabstop>
   <tabstop>multiviewDrawAreas</tabstop>
@@ -5459,9 +5461,12 @@
   <tabstop>customServer</tabstop>
   <tabstop>key</tabstop>
   <tabstop>show</tabstop>
+  <tabstop>getStreamKeyButton</tabstop>
   <tabstop>connectAccount2</tabstop>
   <tabstop>disconnectAccount</tabstop>
+  <tabstop>bandwidthTestEnable</tabstop>
   <tabstop>useAuth</tabstop>
+  <tabstop>twitchAddonDropdown</tabstop>
   <tabstop>authUsername</tabstop>
   <tabstop>authPw</tabstop>
   <tabstop>authPwShow</tabstop>
@@ -5500,6 +5505,12 @@
   <tabstop>advOutRecPathBrowse</tabstop>
   <tabstop>advOutNoSpace</tabstop>
   <tabstop>advOutRecFormat</tabstop>
+  <tabstop>flvTrack1</tabstop>
+  <tabstop>flvTrack2</tabstop>
+  <tabstop>flvTrack3</tabstop>
+  <tabstop>flvTrack4</tabstop>
+  <tabstop>flvTrack5</tabstop>
+  <tabstop>flvTrack6</tabstop>
   <tabstop>advOutRecTrack1</tabstop>
   <tabstop>advOutRecTrack2</tabstop>
   <tabstop>advOutRecTrack3</tabstop>
@@ -5548,6 +5559,7 @@
   <tabstop>advReplayBuf</tabstop>
   <tabstop>advRBSecMax</tabstop>
   <tabstop>advRBMegsMax</tabstop>
+  <tabstop>scrollArea_50</tabstop>
   <tabstop>sampleRate</tabstop>
   <tabstop>channelSetup</tabstop>
   <tabstop>desktopAudioDevice1</tabstop>
@@ -5560,6 +5572,8 @@
   <tabstop>peakMeterType</tabstop>
   <tabstop>monitoringDevice</tabstop>
   <tabstop>disableAudioDucking</tabstop>
+  <tabstop>baseResolution</tabstop>
+  <tabstop>outputResolution</tabstop>
   <tabstop>downscaleFilter</tabstop>
   <tabstop>fpsType</tabstop>
   <tabstop>fpsCommon</tabstop>
@@ -5587,9 +5601,11 @@
   <tabstop>reconnectRetryDelay</tabstop>
   <tabstop>reconnectMaxRetries</tabstop>
   <tabstop>bindToIP</tabstop>
+  <tabstop>dynBitrate</tabstop>
   <tabstop>enableNewSocketLoop</tabstop>
   <tabstop>enableLowLatencyMode</tabstop>
   <tabstop>browserHWAccel</tabstop>
+  <tabstop>hotkeyFocusType</tabstop>
  </tabstops>
  <resources>
   <include location="obs.qrc"/>
