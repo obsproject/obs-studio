@@ -361,7 +361,7 @@ static void flv_build_additional_meta_data(uint8_t **data, size_t *size)
 void flv_additional_meta_data(obs_output_t *context, uint8_t **data,
 			      size_t *size)
 {
-	obs_encoder_t *aencoder = obs_output_get_audio_encoder(context, 1);
+	UNUSED_PARAMETER(context);
 	struct array_output_data out;
 	struct serializer s;
 	uint8_t *meta_data = NULL;
@@ -414,6 +414,7 @@ static void flv_build_additional_audio(uint8_t **data, size_t *size,
 				       struct encoder_packet *packet,
 				       bool is_header, size_t index)
 {
+	UNUSED_PARAMETER(index);
 	struct array_output_data out;
 	struct serializer s;
 

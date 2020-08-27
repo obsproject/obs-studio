@@ -565,7 +565,7 @@ static void log_custom_options(struct obs_x264 *obsx264,
 					     options->options[i].name,
 					     options->options[i].value);
 		assert(chars_written >= 0);
-		assert(chars_written <= remaining_buffer_size);
+		assert((size_t)chars_written <= remaining_buffer_size);
 		p += chars_written;
 		remaining_buffer_size -= chars_written;
 	}
