@@ -115,6 +115,10 @@ static void free_files(struct darray *array)
 	da_free(files);
 }
 
+#define MAKEFORMAT(ch0, ch1, ch2, ch3)                                \
+	((uint32_t)(uint8_t)(ch0) | ((uint32_t)(uint8_t)(ch1) << 8) | \
+	 ((uint32_t)(uint8_t)(ch2) << 16) | ((uint32_t)(uint8_t)(ch3) << 24))
+
 static inline bool chroma_is(const char *chroma, const char *val)
 {
 	return *(uint32_t *)chroma == *(uint32_t *)val;
@@ -127,12 +131,12 @@ static enum video_format convert_vlc_video_format(char *chroma, bool *full)
 #define CHROMA_TEST(val, ret)       \
 	if (chroma_is(chroma, val)) \
 	return ret
-#define CHROMA_CONV(val, new_val, ret)                              \
-	do {                                                        \
-		if (chroma_is(chroma, val)) {                       \
-			*(uint32_t *)chroma = *(uint32_t *)new_val; \
-			return ret;                                 \
-		}                                                   \
+#define CHROMA_CONV(val, new_val, ret)                           \
+	do {                                                     \
+		if (chroma_is(chroma, val)) {                    \
+			*(uint32_t *)chroma = (uint32_t)new_val; \
+			return ret;                              \
+		}                                                \
 	} while (false)
 #define CHROMA_CONV_FULL(val, new_val, ret)     \
 	do {                                    \
@@ -147,13 +151,14 @@ static enum video_format convert_vlc_video_format(char *chroma, bool *full)
 	CHROMA_TEST("NV12", VIDEO_FORMAT_NV12);
 	CHROMA_TEST("I420", VIDEO_FORMAT_I420);
 	CHROMA_TEST("IYUV", VIDEO_FORMAT_I420);
-	CHROMA_CONV("NV21", "NV12", VIDEO_FORMAT_NV12);
-	CHROMA_CONV("I422", "NV12", VIDEO_FORMAT_NV12);
-	CHROMA_CONV("Y42B", "NV12", VIDEO_FORMAT_NV12);
-	CHROMA_CONV("YV12", "NV12", VIDEO_FORMAT_NV12);
-	CHROMA_CONV("yv12", "NV12", VIDEO_FORMAT_NV12);
+	CHROMA_CONV("NV21", MAKEFORMAT('N', 'V', '1', '2'), VIDEO_FORMAT_NV12);
+	CHROMA_CONV("I422", MAKEFORMAT('N', 'V', '1', '2'), VIDEO_FORMAT_NV12);
+	CHROMA_CONV("Y42B", MAKEFORMAT('N', 'V', '1', '2'), VIDEO_FORMAT_NV12);
+	CHROMA_CONV("YV12", MAKEFORMAT('N', 'V', '1', '2'), VIDEO_FORMAT_NV12);
+	CHROMA_CONV("yv12", MAKEFORMAT('N', 'V', '1', '2'), VIDEO_FORMAT_NV12);
 
-	CHROMA_CONV_FULL("J420", "J420", VIDEO_FORMAT_I420);
+	CHROMA_CONV_FULL("J420", MAKEFORMAT('J', '4', '2', '0'),
+			 VIDEO_FORMAT_I420);
 
 	/* 4:2:2 formats */
 	CHROMA_TEST("UYVY", VIDEO_FORMAT_UYVY);
@@ -174,33 +179,34 @@ static enum video_format convert_vlc_video_format(char *chroma, bool *full)
 
 	CHROMA_TEST("YVYU", VIDEO_FORMAT_YVYU);
 
-	CHROMA_CONV("v210", "UYVY", VIDEO_FORMAT_UYVY);
-	CHROMA_CONV("cyuv", "UYVY", VIDEO_FORMAT_UYVY);
-	CHROMA_CONV("CYUV", "UYVY", VIDEO_FORMAT_UYVY);
-	CHROMA_CONV("VYUY", "UYVY", VIDEO_FORMAT_UYVY);
-	CHROMA_CONV("NV16", "UYVY", VIDEO_FORMAT_UYVY);
-	CHROMA_CONV("NV61", "UYVY", VIDEO_FORMAT_UYVY);
-	CHROMA_CONV("I410", "UYVY", VIDEO_FORMAT_UYVY);
-	CHROMA_CONV("I422", "UYVY", VIDEO_FORMAT_UYVY);
-	CHROMA_CONV("Y42B", "UYVY", VIDEO_FORMAT_UYVY);
-	CHROMA_CONV("J422", "UYVY", VIDEO_FORMAT_UYVY);
+	CHROMA_CONV("v210", MAKEFORMAT('U', 'Y', 'Y', 'Y'), VIDEO_FORMAT_UYVY);
+	CHROMA_CONV("cyuv", MAKEFORMAT('U', 'Y', 'Y', 'Y'), VIDEO_FORMAT_UYVY);
+	CHROMA_CONV("CYUV", MAKEFORMAT('U', 'Y', 'Y', 'Y'), VIDEO_FORMAT_UYVY);
+	CHROMA_CONV("VYUY", MAKEFORMAT('U', 'Y', 'Y', 'Y'), VIDEO_FORMAT_UYVY);
+	CHROMA_CONV("NV16", MAKEFORMAT('U', 'Y', 'Y', 'Y'), VIDEO_FORMAT_UYVY);
+	CHROMA_CONV("NV61", MAKEFORMAT('U', 'Y', 'Y', 'Y'), VIDEO_FORMAT_UYVY);
+	CHROMA_CONV("I410", MAKEFORMAT('U', 'Y', 'Y', 'Y'), VIDEO_FORMAT_UYVY);
+	CHROMA_CONV("I422", MAKEFORMAT('U', 'Y', 'Y', 'Y'), VIDEO_FORMAT_UYVY);
+	CHROMA_CONV("Y42B", MAKEFORMAT('U', 'Y', 'Y', 'Y'), VIDEO_FORMAT_UYVY);
+	CHROMA_CONV("J422", MAKEFORMAT('U', 'Y', 'Y', 'Y'), VIDEO_FORMAT_UYVY);
 
 	/* 4:4:4 formats */
 	CHROMA_TEST("I444", VIDEO_FORMAT_I444);
-	CHROMA_CONV_FULL("J444", "RGBA", VIDEO_FORMAT_RGBA);
-	CHROMA_CONV("YUVA", "RGBA", VIDEO_FORMAT_RGBA);
+	CHROMA_CONV_FULL("J444", MAKEFORMAT('R', 'G', 'B', 'A'),
+			 VIDEO_FORMAT_RGBA);
+	CHROMA_CONV("YUVA", MAKEFORMAT('R', 'G', 'B', 'A'), VIDEO_FORMAT_RGBA);
 
 	/* 4:4:0 formats */
-	CHROMA_CONV("I440", "I444", VIDEO_FORMAT_I444);
-	CHROMA_CONV("J440", "I444", VIDEO_FORMAT_I444);
+	CHROMA_CONV("I440", MAKEFORMAT('I', '4', '4', '4'), VIDEO_FORMAT_I444);
+	CHROMA_CONV("J440", MAKEFORMAT('I', '4', '4', '4'), VIDEO_FORMAT_I444);
 
 	/* 4:1:0 formats */
-	CHROMA_CONV("YVU9", "NV12", VIDEO_FORMAT_UYVY);
-	CHROMA_CONV("I410", "NV12", VIDEO_FORMAT_UYVY);
+	CHROMA_CONV("YVU9", MAKEFORMAT('N', 'V', '1', '2'), VIDEO_FORMAT_UYVY);
+	CHROMA_CONV("I410", MAKEFORMAT('N', 'V', '1', '2'), VIDEO_FORMAT_UYVY);
 
 	/* 4:1:1 formats */
-	CHROMA_CONV("I411", "NV12", VIDEO_FORMAT_UYVY);
-	CHROMA_CONV("Y41B", "NV12", VIDEO_FORMAT_UYVY);
+	CHROMA_CONV("I411", MAKEFORMAT('N', 'V', '1', '2'), VIDEO_FORMAT_UYVY);
+	CHROMA_CONV("Y41B", MAKEFORMAT('N', 'V', '1', '2'), VIDEO_FORMAT_UYVY);
 
 	/* greyscale formats */
 	CHROMA_TEST("GREY", VIDEO_FORMAT_Y800);
@@ -210,7 +216,7 @@ static enum video_format convert_vlc_video_format(char *chroma, bool *full)
 #undef CHROMA_CONV
 #undef CHROMA_TEST
 
-	*(uint32_t *)chroma = *(uint32_t *)"BGRA";
+	*(uint32_t *)chroma = (uint32_t)MAKEFORMAT('R', 'G', 'B', 'A');
 	return VIDEO_FORMAT_BGRA;
 }
 
@@ -243,34 +249,34 @@ static enum audio_format convert_vlc_audio_format(char *format)
 #define AUDIO_TEST(val, ret)        \
 	if (chroma_is(format, val)) \
 	return ret
-#define AUDIO_CONV(val, new_val, ret)                               \
-	do {                                                        \
-		if (chroma_is(format, val)) {                       \
-			*(uint32_t *)format = *(uint32_t *)new_val; \
-			return ret;                                 \
-		}                                                   \
+#define AUDIO_CONV(val, new_val, ret)                            \
+	do {                                                     \
+		if (chroma_is(format, val)) {                    \
+			*(uint32_t *)format = (uint32_t)new_val; \
+			return ret;                              \
+		}                                                \
 	} while (false)
 
 	AUDIO_TEST("S16N", AUDIO_FORMAT_16BIT);
 	AUDIO_TEST("S32N", AUDIO_FORMAT_32BIT);
 	AUDIO_TEST("FL32", AUDIO_FORMAT_FLOAT);
 
-	AUDIO_CONV("U16N", "S16N", AUDIO_FORMAT_16BIT);
-	AUDIO_CONV("U32N", "S32N", AUDIO_FORMAT_32BIT);
-	AUDIO_CONV("S24N", "S32N", AUDIO_FORMAT_32BIT);
-	AUDIO_CONV("U24N", "S32N", AUDIO_FORMAT_32BIT);
-	AUDIO_CONV("FL64", "FL32", AUDIO_FORMAT_FLOAT);
+	AUDIO_CONV("U16N", MAKEFORMAT('S', '1', '6', 'N'), AUDIO_FORMAT_16BIT);
+	AUDIO_CONV("U32N", MAKEFORMAT('S', '3', '2', 'N'), AUDIO_FORMAT_32BIT);
+	AUDIO_CONV("S24N", MAKEFORMAT('S', '3', '2', 'N'), AUDIO_FORMAT_32BIT);
+	AUDIO_CONV("U24N", MAKEFORMAT('S', '3', '2', 'N'), AUDIO_FORMAT_32BIT);
+	AUDIO_CONV("FL64", MAKEFORMAT('F', 'L', '3', '2'), AUDIO_FORMAT_FLOAT);
 
-	AUDIO_CONV("S16I", "S16N", AUDIO_FORMAT_16BIT);
-	AUDIO_CONV("U16I", "S16N", AUDIO_FORMAT_16BIT);
-	AUDIO_CONV("S24I", "S32N", AUDIO_FORMAT_32BIT);
-	AUDIO_CONV("U24I", "S32N", AUDIO_FORMAT_32BIT);
-	AUDIO_CONV("S32I", "S32N", AUDIO_FORMAT_32BIT);
-	AUDIO_CONV("U32I", "S32N", AUDIO_FORMAT_32BIT);
+	AUDIO_CONV("S16I", MAKEFORMAT('S', '1', '6', 'N'), AUDIO_FORMAT_16BIT);
+	AUDIO_CONV("U16I", MAKEFORMAT('S', '1', '6', 'N'), AUDIO_FORMAT_16BIT);
+	AUDIO_CONV("S24I", MAKEFORMAT('S', '3', '2', 'N'), AUDIO_FORMAT_32BIT);
+	AUDIO_CONV("U24I", MAKEFORMAT('S', '3', '2', 'N'), AUDIO_FORMAT_32BIT);
+	AUDIO_CONV("S32I", MAKEFORMAT('S', '3', '2', 'N'), AUDIO_FORMAT_32BIT);
+	AUDIO_CONV("U32I", MAKEFORMAT('S', '3', '2', 'N'), AUDIO_FORMAT_32BIT);
 #undef AUDIO_CONV
 #undef AUDIO_TEST
 
-	*(uint32_t *)format = *(uint32_t *)"FL32";
+	*(uint32_t *)format = (uint32_t)MAKEFORMAT('F', 'L', '3', '2');
 	return AUDIO_FORMAT_FLOAT;
 }
 
