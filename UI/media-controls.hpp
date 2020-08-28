@@ -33,6 +33,7 @@ private:
 	static void OBSMediaPlay(void *data, calldata_t *calldata);
 	static void OBSMediaPause(void *data, calldata_t *calldata);
 	static void OBSMediaStarted(void *data, calldata_t *calldata);
+	static void OBSMediaStalled(void *data, calldata_t *calldata);
 
 	Ui_MediaControls *ui;
 
@@ -55,6 +56,7 @@ private slots:
 	void StopMedia();
 	void PlaylistNext();
 	void PlaylistPrevious();
+	void SetStalledState();
 
 	void SeekTimerCallback();
 

@@ -69,6 +69,7 @@ enum obs_media_state {
 	OBS_MEDIA_STATE_STOPPED,
 	OBS_MEDIA_STATE_ENDED,
 	OBS_MEDIA_STATE_ERROR,
+	OBS_MEDIA_STATE_STALLED,
 };
 
 /**
@@ -523,6 +524,7 @@ struct obs_source_info {
 	int64_t (*media_get_time)(void *data);
 	void (*media_set_time)(void *data, int64_t miliseconds);
 	enum obs_media_state (*media_get_state)(void *data);
+	void (*media_ir_handler)(void *data);
 
 	/* version-related stuff */
 	uint32_t version; /* increment if needed to specify a new version */

@@ -57,6 +57,7 @@ struct ffmpeg_source {
 	bool restart_on_activate;
 	bool close_when_inactive;
 	bool seekable;
+	int timeout;
 
 	pthread_t reconnect_thread;
 	bool stop_reconnect;
@@ -91,6 +92,7 @@ static bool is_local_file_modified(obs_properties_t *props,
 	obs_property_t *speed = obs_properties_get(props, "speed_percent");
 	obs_property_t *reconnect_delay_sec =
 		obs_properties_get(props, "reconnect_delay_sec");
+	obs_property_t *timeout = obs_properties_get(props, "timeout");
 	obs_property_set_visible(input, !enabled);
 	obs_property_set_visible(input_format, !enabled);
 	obs_property_set_visible(buffering, !enabled);
@@ -99,6 +101,7 @@ static bool is_local_file_modified(obs_properties_t *props,
 	obs_property_set_visible(speed, enabled);
 	obs_property_set_visible(seekable, !enabled);
 	obs_property_set_visible(reconnect_delay_sec, !enabled);
+	obs_property_set_visible(timeout, !enabled);
 
 	return true;
 }
@@ -112,6 +115,7 @@ static void ffmpeg_source_defaults(obs_data_t *settings)
 	obs_data_set_default_int(settings, "reconnect_delay_sec", 10);
 	obs_data_set_default_int(settings, "buffering_mb", 2);
 	obs_data_set_default_int(settings, "speed_percent", 100);
+	obs_data_set_default_int(settings, "timeout", 5);
 }
 
 static const char *media_filter =
@@ -219,6 +223,10 @@ static obs_properties_t *ffmpeg_source_getproperties(void *data)
 
 	obs_properties_add_bool(props, "seekable", obs_module_text("Seekable"));
 
+	prop = obs_properties_add_int_slider(
+		props, "timeout", obs_module_text("DataReadTimeOut"), 1, 30, 1);
+	obs_property_int_set_suffix(prop, " S");
+
 	return props;
 }
 
@@ -291,6 +299,23 @@ static void media_stopped(void *opaque)
 	obs_source_media_ended(s->source);
 }
 
+static void ffmpeg_source_ir_handler(void *data)
+{
+	struct ffmpeg_source *s = data;
+	uint64_t now = os_gettime_ns();
+	uint64_t timeout_ns = (uint64_t)s->timeout * 1000000000;
+	if (s->media.last_frameread_ts > 0 &&
+	    (now - s->media.last_frameread_ts) > timeout_ns) {
+		set_media_state(s, OBS_MEDIA_STATE_STALLED);
+		obs_source_media_stalled(s->source);
+		s->media.last_frameread_ts = 0;
+	} else if (s->media.last_frameread_ts > 0 &&
+		   s->state == OBS_MEDIA_STATE_STALLED) {
+		set_media_state(s, OBS_MEDIA_STATE_PLAYING);
+		obs_source_media_started(s->source);
+	}
+}
+
 static void ffmpeg_source_open(struct ffmpeg_source *s)
 {
 	if (s->input && *s->input) {
@@ -309,6 +334,7 @@ static void ffmpeg_source_open(struct ffmpeg_source *s)
 			.hardware_decoding = s->is_hw_decoding,
 			.is_local_file = s->is_local_file || s->seekable,
 			.reconnecting = s->reconnecting,
+			.ir_cb = ffmpeg_source_ir_handler,
 		};
 
 		s->media_valid = mp_media_init(&s->media, &info);
@@ -407,6 +433,7 @@ static void ffmpeg_source_update(void *data, obs_data_t *settings)
 						 ? 10
 						 : s->reconnect_delay_sec;
 		s->is_looping = false;
+		s->timeout = (int)obs_data_get_int(settings, "timeout");
 
 		if (s->reconnect_thread_valid) {
 			s->stop_reconnect = true;
@@ -750,4 +777,5 @@ struct obs_source_info ffmpeg_source = {
 	.media_get_time = ffmpeg_source_get_time,
 	.media_set_time = ffmpeg_source_set_time,
 	.media_get_state = ffmpeg_source_get_state,
+	.media_ir_handler = ffmpeg_source_ir_handler,
 };

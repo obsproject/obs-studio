@@ -102,6 +102,7 @@ static const char *source_signals[] = {
 	"void media_previous(ptr source)",
 	"void media_started(ptr source)",
 	"void media_ended(ptr source)",
+	"void media_stalled(ptr source)",
 	NULL,
 };
 
@@ -5039,4 +5040,12 @@ void obs_source_media_ended(obs_source_t *source)
 		return;
 
 	obs_source_dosignal(source, NULL, "media_ended");
+}
+
+void obs_source_media_stalled(obs_source_t *source)
+{
+	if (!obs_source_valid(source, "obs_source_media_stalled"))
+		return;
+
+	obs_source_dosignal(source, NULL, "media_stalled");
 }

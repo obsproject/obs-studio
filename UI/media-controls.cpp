@@ -31,6 +31,12 @@ void MediaControls::OBSMediaStarted(void *data, calldata_t *)
 	QMetaObject::invokeMethod(media, "SetPlayingState");
 }
 
+void MediaControls::OBSMediaStalled(void *data, calldata_t *)
+{
+	MediaControls *media = static_cast<MediaControls *>(data);
+	QMetaObject::invokeMethod(media, "SetStalledState");
+}
+
 MediaControls::MediaControls(QWidget *parent)
 	: QWidget(parent), ui(new Ui::MediaControls)
 {
@@ -214,6 +220,11 @@ void MediaControls::SetRestartState()
 	StopMediaTimer();
 }
 
+void MediaControls::SetStalledState()
+{
+	// TODO a1rwulf: Not sure what to do yet
+}
+
 void MediaControls::RefreshControls()
 {
 	OBSSource source;
@@ -261,6 +272,8 @@ void MediaControls::RefreshControls()
 	case OBS_MEDIA_STATE_PAUSED:
 		SetPausedState();
 		break;
+	case OBS_MEDIA_STATE_STALLED:
+		SetStalledState();
 	default:
 		break;
 	}
@@ -286,6 +299,7 @@ void MediaControls::SetSource(OBSSource source)
 		sigs.emplace_back(sh, "media_stopped", OBSMediaStopped, this);
 		sigs.emplace_back(sh, "media_started", OBSMediaStarted, this);
 		sigs.emplace_back(sh, "media_ended", OBSMediaStopped, this);
+		sigs.emplace_back(sh, "media_stalled", OBSMediaStalled, this);
 	} else {
 		weakSource = nullptr;
 	}

@@ -586,6 +586,8 @@ static int interrupt_callback(void *data)
 	if ((ts - m->interrupt_poll_ts) > 20000000) {
 		pthread_mutex_lock(&m->mutex);
 		stop = m->kill || m->stopping;
+		if (m->ir_cb)
+			m->ir_cb(m->opaque);
 		pthread_mutex_unlock(&m->mutex);
 
 		m->interrupt_poll_ts = ts;
@@ -735,6 +737,7 @@ static inline bool mp_media_thread(mp_media_t *m)
 
 			if (!mp_media_prepare_frames(m))
 				return false;
+			m->last_frameread_ts = os_gettime_ns();
 			if (mp_media_eof(m))
 				continue;
 
@@ -797,6 +800,7 @@ bool mp_media_init(mp_media_t *media, const struct mp_media_info *info)
 	media->buffering = info->buffering;
 	media->speed = info->speed;
 	media->is_local_file = info->is_local_file;
+	media->ir_cb = info->ir_cb;
 
 	if (!info->is_local_file || media->speed < 1 || media->speed > 200)
 		media->speed = 100;

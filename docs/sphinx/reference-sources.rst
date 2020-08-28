@@ -638,6 +638,10 @@ Source Signals
 
    Called when the media source switches to the previous media.
 
+**media_stalled**
+
+   Called when media has stalled during playback.
+
 General Source Functions
 ------------------------
 
