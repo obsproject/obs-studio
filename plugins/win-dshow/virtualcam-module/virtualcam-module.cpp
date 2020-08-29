@@ -104,8 +104,8 @@ static inline DWORD string_size(const wchar_t *str)
 	return (DWORD)(wcslen(str) + 1) * sizeof(wchar_t);
 }
 
-static bool RegServer(CLSID cls, const wchar_t *desc, const wchar_t *file,
-		      const wchar_t *model = L"Both",
+static bool RegServer(const CLSID &cls, const wchar_t *desc,
+		      const wchar_t *file, const wchar_t *model = L"Both",
 		      const wchar_t *type = L"InprocServer32")
 {
 	wchar_t cls_str[CHARS_IN_GUID];
@@ -145,7 +145,7 @@ fail:
 	return success;
 }
 
-static bool UnregServer(CLSID cls)
+static bool UnregServer(const CLSID &cls)
 {
 	wchar_t cls_str[CHARS_IN_GUID];
 	wchar_t temp[MAX_PATH];
