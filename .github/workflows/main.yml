@@ -33,8 +33,6 @@ jobs:
       - name: 'Fetch Git Tags'
         run: |
           git fetch --prune --unshallow
-          echo ::set-env name=OBS_GIT_BRANCH::$(git rev-parse --abbrev-ref HEAD)
-          echo ::set-env name=OBS_GIT_HASH::$(git rev-parse --short HEAD)
           echo ::set-env name=OBS_GIT_TAG::$(git describe --tags --abbrev=0)
       - name: 'Check for Github Labels'
         if: github.event_name == 'pull_request'
@@ -229,8 +227,8 @@ jobs:
 
           cp ../CI/scripts/macos/app/OBSPublicDSAKey.pem ./OBS.app/Contents/Resources
 
-          plutil -insert CFBundleVersion -string ${{ env.OBS_GIT_TAG }}-${{ env.OBS_GIT_HASH }} ./OBS.app/Contents/Info.plist
-          plutil -insert CFBundleShortVersionString -string ${{ env.OBS_GIT_TAG }}-${{ env.OBS_GIT_HASH }} ./OBS.app/Contents/Info.plist
+          plutil -insert CFBundleVersion -string ${{ env.OBS_GIT_TAG }}-${{ github.sha }} ./OBS.app/Contents/Info.plist
+          plutil -insert CFBundleShortVersionString -string ${{ env.OBS_GIT_TAG }}-${{ github.sha }} ./OBS.app/Contents/Info.plist
           plutil -insert OBSFeedsURL -string https://obsproject.com/osx_update/feeds.xml ./OBS.app/Contents/Info.plist
           plutil -insert SUFeedURL -string https://obsproject.com/osx_update/stable/updates.xml ./OBS.app/Contents/Info.plist
           plutil -insert SUPublicDSAKeyFile -string OBSPublicDSAKey.pem ./OBS.app/Contents/Info.plist
@@ -240,7 +238,7 @@ jobs:
         shell: bash
         run: |
           FILE_DATE=$(date +%Y-%m-%d)
-          FILE_NAME=$FILE_DATE-${{ env.OBS_GIT_HASH }}-${{ env.OBS_GIT_TAG }}-macOS.dmg
+          FILE_NAME=$FILE_DATE-${{ github.sha }}-${{ env.OBS_GIT_TAG }}-macOS.dmg
           echo "::set-env name=FILE_NAME::${FILE_NAME}"
 
           cp ../CI/scripts/macos/package/settings.json.template ./settings.json
@@ -269,8 +267,6 @@ jobs:
       - name: 'Fetch Git Tags'
         run: |
           git fetch --prune --unshallow
-          echo ::set-env name=OBS_GIT_BRANCH::$(git rev-parse --abbrev-ref HEAD)
-          echo ::set-env name=OBS_GIT_HASH::$(git rev-parse --short HEAD)
           echo ::set-env name=OBS_GIT_TAG::$(git describe --tags --abbrev=0)
       - name: 'Check for Github Labels'
         if: github.event_name == 'pull_request'
@@ -362,7 +358,7 @@ jobs:
         shell: bash
         run: |
           FILE_DATE=$(date +%Y-%m-%d)
-          FILE_NAME=$FILE_DATE-${{ env.OBS_GIT_HASH }}-${{ env.OBS_GIT_TAG }}-linux64.tar.gz
+          FILE_NAME=$FILE_DATE-${{ github.sha }}-${{ env.OBS_GIT_TAG }}-linux64.tar.gz
           echo "::set-env name=FILE_NAME::${FILE_NAME}"
           cd ./build
           sudo checkinstall --default --install=no --pkgname=obs-studio --fstrans=yes --backup=no --pkgversion="$(date +%Y%m%d)-git" --deldoc=yes
@@ -400,8 +396,6 @@ jobs:
         shell: bash
         run: |
           git fetch --prune --unshallow
-          echo ::set-env name=OBS_GIT_BRANCH::$(git rev-parse --abbrev-ref HEAD)
-          echo ::set-env name=OBS_GIT_HASH::$(git rev-parse --short HEAD)
           echo ::set-env name=OBS_GIT_TAG::$(git describe --tags --abbrev=0)
       - name: 'Check for Github Labels'
         if: github.event_name == 'pull_request'
@@ -478,7 +472,7 @@ jobs:
         if: success() && (github.event_name != 'pull_request' || env.SEEKING_TESTERS == '1')
         run: |
           $env:FILE_DATE=(Get-Date -UFormat "%F")
-          $env:FILE_NAME="${env:FILE_DATE}-${{ env.OBS_GIT_HASH }}-${{ env.OBS_GIT_TAG }}-win64.zip"
+          $env:FILE_NAME="${env:FILE_DATE}-${{ github.sha }}-${{ env.OBS_GIT_TAG }}-win64.zip"
           echo "::set-env name=FILE_NAME::${env:FILE_NAME}"
           robocopy .\build64\rundir\RelWithDebInfo .\build\ /E /XF .gitignore
           7z a ${env:FILE_NAME} .\build\*
@@ -512,8 +506,6 @@ jobs:
         shell: bash
         run: |
           git fetch --prune --unshallow
-          echo ::set-env name=OBS_GIT_BRANCH::$(git rev-parse --abbrev-ref HEAD)
-          echo ::set-env name=OBS_GIT_HASH::$(git rev-parse --short HEAD)
           echo ::set-env name=OBS_GIT_TAG::$(git describe --tags --abbrev=0)
       - name: 'Check for Github Labels'
         if: github.event_name == 'pull_request'
@@ -590,7 +582,7 @@ jobs:
         if: success() && (github.event_name != 'pull_request' || env.SEEKING_TESTERS == '1')
         run: |
           $env:FILE_DATE=(Get-Date -UFormat "%F")
-          $env:FILE_NAME="${env:FILE_DATE}-${{ env.OBS_GIT_HASH }}-${{ env.OBS_GIT_TAG }}-win32.zip"
+          $env:FILE_NAME="${env:FILE_DATE}-${{ github.sha }}-${{ env.OBS_GIT_TAG }}-win32.zip"
           echo "::set-env name=FILE_NAME::${env:FILE_NAME}"
           robocopy .\build32\rundir\RelWithDebInfo .\build\ /E /XF .gitignore
           7z a ${env:FILE_NAME} .\build\*
