@@ -5576,12 +5576,6 @@ inline void OBSBasic::OnDeactivate()
 		if (trayIcon && trayIcon->isVisible())
 			trayIcon->setIcon(QIcon::fromTheme(
 				"obs-tray", QIcon(":/res/images/obs.png")));
-	} else if (trayIcon && trayIcon->isVisible()) {
-		if (os_atomic_load_bool(&recording_paused))
-			trayIcon->setIcon(QIcon(":/res/images/obs_paused.png"));
-		else
-			trayIcon->setIcon(
-				QIcon(":/res/images/tray_active.png"));
 	}
 }
 
@@ -6187,8 +6181,6 @@ void OBSBasic::StopVirtualCam()
 
 	if (outputHandler->VirtualCamActive())
 		outputHandler->StopVirtualCam();
-
-	OnDeactivate();
 }
 
 void OBSBasic::OnVirtualCamStart()
