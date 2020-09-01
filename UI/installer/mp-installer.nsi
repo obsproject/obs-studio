@@ -60,7 +60,7 @@ RequestExecutionLevel admin
 !define MUI_LICENSEPAGE_BUTTON "&Next >"
 
 !insertmacro MUI_PAGE_WELCOME
-!insertmacro MUI_PAGE_LICENSE "new\core\data\obs-studio\license\gplv2.txt"
+!insertmacro MUI_PAGE_LICENSE "data\obs-studio\license\gplv2.txt"
 !insertmacro MUI_PAGE_DIRECTORY
 !insertmacro MUI_PAGE_INSTFILES
 !insertmacro MUI_PAGE_FINISH
@@ -269,18 +269,18 @@ Section "OBS Studio" SecCore
 	OBSInstallerUtils::KillProcess "obs-plugins\32bit\cef-bootstrap.exe"
 	OBSInstallerUtils::KillProcess "obs-plugins\64bit\cef-bootstrap.exe"
 
-	File /r "new\core\data"
+	File /r "data"
 
 !ifdef INSTALL64
 	SetOutPath "$INSTDIR\bin"
-	File /r "new\core\bin\64bit"
+	File /r "bin\64bit"
 	SetOutPath "$INSTDIR\obs-plugins"
-	File /r "new\core\obs-plugins\64bit"
+	File /r "obs-plugins\64bit"
 !else
 	SetOutPath "$INSTDIR\bin"
-	File /r "new\core\bin\32bit"
+	File /r "bin\32bit"
 	SetOutPath "$INSTDIR\obs-plugins"
-	File /r "new\core\obs-plugins\32bit"
+	File /r "obs-plugins\32bit"
 !endif
 
 	# ----------------------------
@@ -288,7 +288,7 @@ Section "OBS Studio" SecCore
 	SetShellVarContext all
 
 	SetOutPath "$INSTDIR"
-	File /r "new\obs-browser\data"
+	File /r "obs-browser\data"
 	SetOutPath "$INSTDIR\obs-plugins"
 	OBSInstallerUtils::KillProcess "32bit\cef-bootstrap.exe"
 	OBSInstallerUtils::KillProcess "32bit\obs-browser-page.exe"
@@ -297,20 +297,20 @@ Section "OBS Studio" SecCore
 		OBSInstallerUtils::KillProcess "64bit\obs-browser-page.exe"
 	${endif}
 !ifdef INSTALL64
-	File /r "new\obs-browser\obs-plugins\64bit"
+	File /r "obs-browser\obs-plugins\64bit"
 	SetOutPath "$INSTDIR\bin\64bit"
 !else
-	File /r "new\obs-browser\obs-plugins\32bit"
+	File /r "obs-browser\obs-plugins\32bit"
 	SetOutPath "$INSTDIR\bin\32bit"
 !endif
 
 	# ----------------------------
 	# Copy game capture files to ProgramData
 	SetOutPath "$APPDATA\obs-studio-hook"
-	File "new\core\data\obs-plugins\win-capture\graphics-hook32.dll"
-	File "new\core\data\obs-plugins\win-capture\graphics-hook64.dll"
-	File "new\core\data\obs-plugins\win-capture\obs-vulkan32.json"
-	File "new\core\data\obs-plugins\win-capture\obs-vulkan64.json"
+	File "data\obs-plugins\win-capture\graphics-hook32.dll"
+	File "data\obs-plugins\win-capture\graphics-hook64.dll"
+	File "data\obs-plugins\win-capture\obs-vulkan32.json"
+	File "data\obs-plugins\win-capture\obs-vulkan64.json"
 	OBSInstallerUtils::AddAllApplicationPackages "$APPDATA\obs-studio-hook"
 
 	ClearErrors
