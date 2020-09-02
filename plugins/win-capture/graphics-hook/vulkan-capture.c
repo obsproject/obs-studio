@@ -1226,7 +1226,6 @@ static VkResult VKAPI_CALL OBS_CreateInstance(const VkInstanceCreateInfo *cinfo,
 					      VkInstance *p_inst)
 {
 	VkInstanceCreateInfo info = *cinfo;
-	bool funcs_not_found = false;
 
 	/* -------------------------------------------------------- */
 	/* step through chain until we get to the link info         */
@@ -1282,9 +1281,14 @@ static VkResult VKAPI_CALL OBS_CreateInstance(const VkInstanceCreateInfo *cinfo,
 	PFN_vkCreateInstance create = (void *)gpa(NULL, "vkCreateInstance");
 
 	VkResult res = create(&info, ac, p_inst);
-	if (res != VK_SUCCESS) {
-		vk_free(ac, idata);
-		return res;
+	bool valid = res == VK_SUCCESS;
+	if (!valid) {
+		/* try again with original arguments */
+		res = create(cinfo, ac, p_inst);
+		if (res != VK_SUCCESS) {
+			vk_free(ac, idata);
+			return res;
+		}
 	}
 
 	VkInstance inst = *p_inst;
@@ -1301,10 +1305,11 @@ static VkResult VKAPI_CALL OBS_CreateInstance(const VkInstanceCreateInfo *cinfo,
 		if (!ifuncs->x) {                       \
 			flog("could not get instance "  \
 			     "address for vk" #x);      \
-			funcs_not_found = true;         \
+			funcs_found = false;            \
 		}                                       \
 	} while (false)
 
+	bool funcs_found = true;
 	GETADDR(GetInstanceProcAddr);
 	GETADDR(DestroyInstance);
 	GETADDR(CreateWin32SurfaceKHR);
@@ -1315,9 +1320,11 @@ static VkResult VKAPI_CALL OBS_CreateInstance(const VkInstanceCreateInfo *cinfo,
 	GETADDR(EnumerateDeviceExtensionProperties);
 #undef GETADDR
 
-	init_obj_list(&idata->surfaces);
+	valid = valid && funcs_found;
+	idata->valid = valid;
 
-	idata->valid = !funcs_not_found;
+	if (valid)
+		init_obj_list(&idata->surfaces);
 
 	return res;
 }
@@ -1450,7 +1457,7 @@ static VkResult VKAPI_CALL OBS_CreateDevice(VkPhysicalDevice phy_device,
 	/* fetch the functions we need                              */
 
 	struct vk_device_funcs *dfuncs = &data->funcs;
-	bool funcs_not_found = false;
+	bool funcs_found = true;
 
 #define GETADDR(x)                                         \
 	do {                                               \
@@ -1458,7 +1465,7 @@ static VkResult VKAPI_CALL OBS_CreateDevice(VkPhysicalDevice phy_device,
 		if (!dfuncs->x) {                          \
 			flog("could not get device "       \
 			     "address for vk" #x);         \
-			funcs_not_found = true;            \
+			funcs_found = false;               \
 		}                                          \
 	} while (false)
 
@@ -1492,7 +1499,7 @@ static VkResult VKAPI_CALL OBS_CreateDevice(VkPhysicalDevice phy_device,
 	GETADDR(ResetFences);
 #undef GETADDR
 
-	if (funcs_not_found) {
+	if (!funcs_found) {
 		goto fail;
 	}
 
@@ -1708,7 +1715,7 @@ static VkResult VKAPI_CALL OBS_CreateWin32SurfaceKHR(
 	struct vk_inst_funcs *ifuncs = &idata->funcs;
 
 	VkResult res = ifuncs->CreateWin32SurfaceKHR(inst, info, ac, surf);
-	if (res == VK_SUCCESS)
+	if ((res == VK_SUCCESS) && idata->valid)
 		add_surf_data(idata, *surf, info->hwnd, ac);
 	return res;
 }
@@ -1720,7 +1727,7 @@ static void VKAPI_CALL OBS_DestroySurfaceKHR(VkInstance inst, VkSurfaceKHR surf,
 	struct vk_inst_funcs *ifuncs = &idata->funcs;
 	PFN_vkDestroySurfaceKHR destroy_surface = ifuncs->DestroySurfaceKHR;
 
-	if (surf != VK_NULL_HANDLE)
+	if ((surf != VK_NULL_HANDLE) && idata->valid)
 		remove_free_surf_data(idata, surf, ac);
 
 	destroy_surface(inst, surf, ac);
