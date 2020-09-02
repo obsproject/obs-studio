@@ -169,6 +169,7 @@ QDataStream &operator>>(QDataStream &in, OBSScene &scene)
 
 	obs_source_t *source = obs_get_source_by_name(QT_TO_UTF8(sceneName));
 	scene = obs_scene_from_source(source);
+	obs_source_release(source);
 
 	return in;
 }
