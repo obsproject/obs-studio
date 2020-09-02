@@ -5841,6 +5841,10 @@ void OBSBasic::AutoRemux()
 
 	QString output;
 	output += path;
+	if (fi.path().length() > 0) {
+		output += "/";
+		output += fi.path();
+	}
 	output += "/";
 	output += fi.completeBaseName();
 	output += ".mp4";
