@@ -951,19 +951,12 @@ static uint32_t scene_getheight(void *data)
 }
 
 static void apply_scene_item_audio_actions(struct obs_scene_item *item,
-					   float **p_buf, uint64_t ts,
+					   float *buf, uint64_t ts,
 					   size_t sample_rate)
 {
 	bool cur_visible = item->visible;
 	uint64_t frame_num = 0;
 	size_t deref_count = 0;
-	float *buf = NULL;
-
-	if (p_buf) {
-		if (!*p_buf)
-			*p_buf = malloc(AUDIO_OUTPUT_FRAMES * sizeof(float));
-		buf = *p_buf;
-	}
 
 	pthread_mutex_lock(&item->actions_mutex);
 
@@ -1010,7 +1003,7 @@ static void apply_scene_item_audio_actions(struct obs_scene_item *item,
 	}
 }
 
-static bool apply_scene_item_volume(struct obs_scene_item *item, float **buf,
+static bool apply_scene_item_volume(struct obs_scene_item *item, float *buf,
 				    uint64_t ts, size_t sample_rate)
 {
 	bool actions_pending;
@@ -1074,7 +1067,7 @@ static bool scene_audio_render(void *data, uint64_t *ts_out,
 			       size_t sample_rate)
 {
 	uint64_t timestamp = 0;
-	float *buf = NULL;
+	float buf[AUDIO_OUTPUT_FRAMES];
 	struct obs_source_audio_mix child_audio;
 	struct obs_scene *scene = data;
 	struct obs_scene_item *item;
@@ -1113,7 +1106,7 @@ static bool scene_audio_render(void *data, uint64_t *ts_out,
 		size_t pos, count;
 		bool apply_buf;
 
-		apply_buf = apply_scene_item_volume(item, &buf, timestamp,
+		apply_buf = apply_scene_item_volume(item, buf, timestamp,
 						    sample_rate);
 
 		if (obs_source_audio_pending(item->source)) {
@@ -1159,7 +1152,6 @@ static bool scene_audio_render(void *data, uint64_t *ts_out,
 	*ts_out = timestamp;
 	audio_unlock(scene);
 
-	free(buf);
 	return true;
 }
 

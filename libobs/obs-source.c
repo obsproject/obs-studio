@@ -4532,7 +4532,7 @@ static inline void apply_audio_action(obs_source_t *source,
 static void apply_audio_actions(obs_source_t *source, size_t channels,
 				size_t sample_rate)
 {
-	float *vol_data = malloc(sizeof(float) * AUDIO_OUTPUT_FRAMES);
+	float vol_data[AUDIO_OUTPUT_FRAMES];
 	float cur_vol = get_source_volume(source, source->audio_ts);
 	size_t frame_num = 0;
 
@@ -4573,8 +4573,6 @@ static void apply_audio_actions(obs_source_t *source, size_t channels,
 		if ((source->audio_mixers & (1 << mix)) != 0)
 			multiply_vol_data(source, mix, channels, vol_data);
 	}
-
-	free(vol_data);
 }
 
 static void apply_audio_volume(obs_source_t *source, uint32_t mixers,
