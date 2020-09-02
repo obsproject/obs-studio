@@ -1604,6 +1604,9 @@ static VkResult VKAPI_CALL OBS_CreateDevice(VkPhysicalDevice phy_device,
 	_freea(queue_family_properties);
 
 	init_obj_list(&data->swaps);
+	data->cur_swap = NULL;
+	data->d3d11_device = NULL;
+	data->d3d11_context = NULL;
 
 	data->valid = true;
 
@@ -1674,8 +1677,14 @@ OBS_CreateSwapchainKHR(VkDevice device, const VkSwapchainCreateInfoKHR *cinfo,
 			swap_data->format = cinfo->imageFormat;
 			swap_data->hwnd =
 				find_surf_hwnd(data->inst_data, cinfo->surface);
+			swap_data->export_image = VK_NULL_HANDLE;
+			swap_data->layout_initialized = false;
+			swap_data->export_mem = VK_NULL_HANDLE;
 			swap_data->image_count = count;
+			swap_data->handle = INVALID_HANDLE_VALUE;
+			swap_data->shtex_info = NULL;
 			swap_data->d3d11_tex = NULL;
+			swap_data->captured = false;
 		}
 	}
 
