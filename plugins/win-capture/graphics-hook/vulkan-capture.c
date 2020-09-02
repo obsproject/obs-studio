@@ -449,7 +449,7 @@ static void vk_shtex_free(struct vk_data *data)
 
 /* ------------------------------------------------------------------------- */
 
-static void add_surf_data(struct vk_inst_data *data, VkSurfaceKHR surf,
+static void add_surf_data(struct vk_inst_data *idata, VkSurfaceKHR surf,
 			  HWND hwnd, const VkAllocationCallbacks *ac)
 {
 	struct vk_surf_data *surf_data = vk_alloc(
@@ -458,22 +458,22 @@ static void add_surf_data(struct vk_inst_data *data, VkSurfaceKHR surf,
 	if (surf_data) {
 		surf_data->hwnd = hwnd;
 
-		add_obj_data(&data->surfaces, (uint64_t)surf, surf_data);
+		add_obj_data(&idata->surfaces, (uint64_t)surf, surf_data);
 	}
 }
 
-static HWND find_surf_hwnd(struct vk_inst_data *data, VkSurfaceKHR surf)
+static HWND find_surf_hwnd(struct vk_inst_data *idata, VkSurfaceKHR surf)
 {
 	struct vk_surf_data *surf_data = (struct vk_surf_data *)get_obj_data(
-		&data->surfaces, (uint64_t)surf);
+		&idata->surfaces, (uint64_t)surf);
 	return surf_data->hwnd;
 }
 
-static void remove_free_surf_data(struct vk_inst_data *data, VkSurfaceKHR surf,
+static void remove_free_surf_data(struct vk_inst_data *idata, VkSurfaceKHR surf,
 				  const VkAllocationCallbacks *ac)
 {
 	struct vk_surf_data *surf_data = (struct vk_surf_data *)remove_obj_data(
-		&data->surfaces, (uint64_t)surf);
+		&idata->surfaces, (uint64_t)surf);
 	vk_free(ac, surf_data);
 }
 
@@ -483,10 +483,10 @@ static struct vk_obj_list instances;
 
 static struct vk_inst_data *alloc_inst_data(const VkAllocationCallbacks *ac)
 {
-	struct vk_inst_data *inst_data = vk_alloc(
+	struct vk_inst_data *idata = vk_alloc(
 		ac, sizeof(struct vk_inst_data), _Alignof(struct vk_inst_data),
 		VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
-	return inst_data;
+	return idata;
 }
 
 static void init_inst_data(struct vk_inst_data *data, VkInstance inst)
@@ -502,9 +502,8 @@ static struct vk_inst_data *get_inst_data(VkInstance inst)
 
 static struct vk_inst_funcs *get_inst_funcs(VkInstance inst)
 {
-	struct vk_inst_data *inst_data =
-		(struct vk_inst_data *)get_inst_data(inst);
-	return &inst_data->funcs;
+	struct vk_inst_data *idata = (struct vk_inst_data *)get_inst_data(inst);
+	return &idata->funcs;
 }
 
 static struct vk_inst_data *
@@ -517,18 +516,18 @@ get_inst_data_by_physical_device(VkPhysicalDevice physicalDevice)
 static struct vk_inst_funcs *
 get_inst_funcs_by_physical_device(VkPhysicalDevice physicalDevice)
 {
-	struct vk_inst_data *inst_data =
+	struct vk_inst_data *idata =
 		(struct vk_inst_data *)get_inst_data_by_physical_device(
 			physicalDevice);
-	return &inst_data->funcs;
+	return &idata->funcs;
 }
 
 static void remove_free_inst_data(VkInstance inst,
 				  const VkAllocationCallbacks *ac)
 {
-	struct vk_inst_data *inst_data = (struct vk_inst_data *)remove_obj_data(
+	struct vk_inst_data *idata = (struct vk_inst_data *)remove_obj_data(
 		&instances, (uint64_t)GET_LDT(inst));
-	vk_free(ac, inst_data);
+	vk_free(ac, idata);
 }
 
 /* ======================================================================== */
@@ -1227,7 +1226,6 @@ static VkResult VKAPI_CALL OBS_CreateInstance(const VkInstanceCreateInfo *cinfo,
 					      VkInstance *p_inst)
 {
 	VkInstanceCreateInfo info = *cinfo;
-	bool funcs_not_found = false;
 
 	/* -------------------------------------------------------- */
 	/* step through chain until we get to the link info         */
@@ -1273,8 +1271,8 @@ static VkResult VKAPI_CALL OBS_CreateInstance(const VkInstanceCreateInfo *cinfo,
 	/* -------------------------------------------------------- */
 	/* allocate data node                                       */
 
-	struct vk_inst_data *data = alloc_inst_data(ac);
-	if (!data)
+	struct vk_inst_data *idata = alloc_inst_data(ac);
+	if (!idata)
 		return VK_ERROR_OUT_OF_HOST_MEMORY;
 
 	/* -------------------------------------------------------- */
@@ -1283,29 +1281,35 @@ static VkResult VKAPI_CALL OBS_CreateInstance(const VkInstanceCreateInfo *cinfo,
 	PFN_vkCreateInstance create = (void *)gpa(NULL, "vkCreateInstance");
 
 	VkResult res = create(&info, ac, p_inst);
-	if (res != VK_SUCCESS) {
-		vk_free(ac, data);
-		return res;
+	bool valid = res == VK_SUCCESS;
+	if (!valid) {
+		/* try again with original arguments */
+		res = create(cinfo, ac, p_inst);
+		if (res != VK_SUCCESS) {
+			vk_free(ac, idata);
+			return res;
+		}
 	}
 
 	VkInstance inst = *p_inst;
-	init_inst_data(data, inst);
+	init_inst_data(idata, inst);
 
 	/* -------------------------------------------------------- */
 	/* fetch the functions we need                              */
 
-	struct vk_inst_funcs *funcs = &data->funcs;
+	struct vk_inst_funcs *ifuncs = &idata->funcs;
 
-#define GETADDR(x)                                     \
-	do {                                           \
-		funcs->x = (void *)gpa(inst, "vk" #x); \
-		if (!funcs->x) {                       \
-			flog("could not get instance " \
-			     "address for vk" #x);     \
-			funcs_not_found = true;        \
-		}                                      \
+#define GETADDR(x)                                      \
+	do {                                            \
+		ifuncs->x = (void *)gpa(inst, "vk" #x); \
+		if (!ifuncs->x) {                       \
+			flog("could not get instance "  \
+			     "address for vk" #x);      \
+			funcs_found = false;            \
+		}                                       \
 	} while (false)
 
+	bool funcs_found = true;
 	GETADDR(GetInstanceProcAddr);
 	GETADDR(DestroyInstance);
 	GETADDR(CreateWin32SurfaceKHR);
@@ -1316,9 +1320,11 @@ static VkResult VKAPI_CALL OBS_CreateInstance(const VkInstanceCreateInfo *cinfo,
 	GETADDR(EnumerateDeviceExtensionProperties);
 #undef GETADDR
 
-	init_obj_list(&data->surfaces);
+	valid = valid && funcs_found;
+	idata->valid = valid;
 
-	data->valid = !funcs_not_found;
+	if (valid)
+		init_obj_list(&idata->surfaces);
 
 	return res;
 }
@@ -1326,8 +1332,8 @@ static VkResult VKAPI_CALL OBS_CreateInstance(const VkInstanceCreateInfo *cinfo,
 static void VKAPI_CALL OBS_DestroyInstance(VkInstance instance,
 					   const VkAllocationCallbacks *ac)
 {
-	struct vk_inst_funcs *funcs = get_inst_funcs(instance);
-	PFN_vkDestroyInstance destroy_instance = funcs->DestroyInstance;
+	struct vk_inst_funcs *ifuncs = get_inst_funcs(instance);
+	PFN_vkDestroyInstance destroy_instance = ifuncs->DestroyInstance;
 
 	remove_free_inst_data(instance, ac);
 
@@ -1451,7 +1457,7 @@ static VkResult VKAPI_CALL OBS_CreateDevice(VkPhysicalDevice phy_device,
 	/* fetch the functions we need                              */
 
 	struct vk_device_funcs *dfuncs = &data->funcs;
-	bool funcs_not_found = false;
+	bool funcs_found = true;
 
 #define GETADDR(x)                                         \
 	do {                                               \
@@ -1459,7 +1465,7 @@ static VkResult VKAPI_CALL OBS_CreateDevice(VkPhysicalDevice phy_device,
 		if (!dfuncs->x) {                          \
 			flog("could not get device "       \
 			     "address for vk" #x);         \
-			funcs_not_found = true;            \
+			funcs_found = false;               \
 		}                                          \
 	} while (false)
 
@@ -1493,7 +1499,7 @@ static VkResult VKAPI_CALL OBS_CreateDevice(VkPhysicalDevice phy_device,
 	GETADDR(ResetFences);
 #undef GETADDR
 
-	if (funcs_not_found) {
+	if (!funcs_found) {
 		goto fail;
 	}
 
@@ -1598,6 +1604,9 @@ static VkResult VKAPI_CALL OBS_CreateDevice(VkPhysicalDevice phy_device,
 	_freea(queue_family_properties);
 
 	init_obj_list(&data->swaps);
+	data->cur_swap = NULL;
+	data->d3d11_device = NULL;
+	data->d3d11_context = NULL;
 
 	data->valid = true;
 
@@ -1668,8 +1677,14 @@ OBS_CreateSwapchainKHR(VkDevice device, const VkSwapchainCreateInfoKHR *cinfo,
 			swap_data->format = cinfo->imageFormat;
 			swap_data->hwnd =
 				find_surf_hwnd(data->inst_data, cinfo->surface);
+			swap_data->export_image = VK_NULL_HANDLE;
+			swap_data->layout_initialized = false;
+			swap_data->export_mem = VK_NULL_HANDLE;
 			swap_data->image_count = count;
+			swap_data->handle = INVALID_HANDLE_VALUE;
+			swap_data->shtex_info = NULL;
 			swap_data->d3d11_tex = NULL;
+			swap_data->captured = false;
 		}
 	}
 
@@ -1705,24 +1720,24 @@ static VkResult VKAPI_CALL OBS_CreateWin32SurfaceKHR(
 	VkInstance inst, const VkWin32SurfaceCreateInfoKHR *info,
 	const VkAllocationCallbacks *ac, VkSurfaceKHR *surf)
 {
-	struct vk_inst_data *data = get_inst_data(inst);
-	struct vk_inst_funcs *funcs = &data->funcs;
+	struct vk_inst_data *idata = get_inst_data(inst);
+	struct vk_inst_funcs *ifuncs = &idata->funcs;
 
-	VkResult res = funcs->CreateWin32SurfaceKHR(inst, info, ac, surf);
-	if (res == VK_SUCCESS)
-		add_surf_data(data, *surf, info->hwnd, ac);
+	VkResult res = ifuncs->CreateWin32SurfaceKHR(inst, info, ac, surf);
+	if ((res == VK_SUCCESS) && idata->valid)
+		add_surf_data(idata, *surf, info->hwnd, ac);
 	return res;
 }
 
 static void VKAPI_CALL OBS_DestroySurfaceKHR(VkInstance inst, VkSurfaceKHR surf,
 					     const VkAllocationCallbacks *ac)
 {
-	struct vk_inst_data *data = get_inst_data(inst);
-	struct vk_inst_funcs *funcs = &data->funcs;
-	PFN_vkDestroySurfaceKHR destroy_surface = funcs->DestroySurfaceKHR;
+	struct vk_inst_data *idata = get_inst_data(inst);
+	struct vk_inst_funcs *ifuncs = &idata->funcs;
+	PFN_vkDestroySurfaceKHR destroy_surface = ifuncs->DestroySurfaceKHR;
 
-	if (surf != VK_NULL_HANDLE)
-		remove_free_surf_data(data, surf, ac);
+	if ((surf != VK_NULL_HANDLE) && idata->valid)
+		remove_free_surf_data(idata, surf, ac);
 
 	destroy_surface(inst, surf, ac);
 }
