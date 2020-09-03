@@ -253,6 +253,7 @@ void MediaControls::RefreshControls()
 	switch (state) {
 	case OBS_MEDIA_STATE_STOPPED:
 	case OBS_MEDIA_STATE_ENDED:
+	case OBS_MEDIA_STATE_NONE:
 		SetRestartState();
 		break;
 	case OBS_MEDIA_STATE_PLAYING:
