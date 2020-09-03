@@ -51,10 +51,10 @@ struct BasicOutputHandler {
 
 	virtual void Update() = 0;
 
-	inline bool Active() const
+	inline bool Active(bool check_vcam = true) const
 	{
 		return streamingActive || recordingActive || delayActive ||
-		       replayBufferActive || virtualCamActive;
+		       replayBufferActive || (check_vcam && virtualCamActive);
 	}
 };
 

@@ -725,7 +725,7 @@ const char *FindAudioEncoderFromCodec(const char *type)
 
 bool SimpleOutput::StartStreaming(obs_service_t *service)
 {
-	if (!Active())
+	if (!Active(false))
 		SetupOutputs();
 
 	Auth *auth = main->GetAuth();
@@ -885,7 +885,7 @@ void SimpleOutput::UpdateRecording()
 		Update();
 	}
 
-	if (!Active())
+	if (!Active(false))
 		SetupOutputs();
 
 	if (!ffmpegOutput) {
@@ -1507,7 +1507,7 @@ bool AdvancedOutput::StartStreaming(obs_service_t *service)
 
 	UpdateAudioSettings();
 
-	if (!Active())
+	if (!Active(false))
 		SetupOutputs();
 
 	Auth *auth = main->GetAuth();
@@ -1671,7 +1671,7 @@ bool AdvancedOutput::StartRecording()
 
 	UpdateAudioSettings();
 
-	if (!Active())
+	if (!Active(false))
 		SetupOutputs();
 
 	if (!ffmpegOutput || ffmpegRecording) {
@@ -1740,7 +1740,7 @@ bool AdvancedOutput::StartReplayBuffer()
 
 	UpdateAudioSettings();
 
-	if (!Active())
+	if (!Active(false))
 		SetupOutputs();
 
 	if (!ffmpegOutput || ffmpegRecording) {
