@@ -5332,9 +5332,9 @@ void OBSBasic::on_actionViewCurrentLog_triggered()
 	if (!logView->isVisible()) {
 		logView->setVisible(true);
 	} else {
-		logView->setWindowState(logView->windowState() &
-						~Qt::WindowMinimized |
-					Qt::WindowActive);
+		logView->setWindowState(
+			(logView->windowState() & ~Qt::WindowMinimized) |
+			Qt::WindowActive);
 		logView->activateWindow();
 		logView->raise();
 	}
