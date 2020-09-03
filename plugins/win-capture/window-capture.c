@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <util/dstr.h>
+#include <util/threading.h>
 #include "dc-capture.h"
 #include "window-helpers.h"
 #include "../../libobs/util/platform.h"
@@ -48,6 +49,8 @@ enum window_capture_method {
 
 struct window_capture {
 	obs_source_t *source;
+
+	pthread_mutex_t update_mutex;
 
 	char *title;
 	char *class;
@@ -158,6 +161,8 @@ static void log_settings(struct window_capture *wc, obs_data_t *s)
 
 static void update_settings(struct window_capture *wc, obs_data_t *s)
 {
+	pthread_mutex_lock(&wc->update_mutex);
+
 	int method = (int)obs_data_get_int(s, "method");
 	const char *window = obs_data_get_string(s, "window");
 	int priority = (int)obs_data_get_int(s, "priority");
@@ -174,6 +179,8 @@ static void update_settings(struct window_capture *wc, obs_data_t *s)
 	wc->use_wildcards = obs_data_get_bool(s, "use_wildcards");
 	wc->compatibility = obs_data_get_bool(s, "compatibility");
 	wc->client_area = obs_data_get_bool(s, "client_area");
+
+	pthread_mutex_unlock(&wc->update_mutex);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -219,6 +226,8 @@ static void *wc_create(obs_data_t *settings, obs_source_t *source)
 	struct window_capture *wc = bzalloc(sizeof(struct window_capture));
 	wc->source = source;
 
+	pthread_mutex_init(&wc->update_mutex, NULL);
+
 	obs_enter_graphics();
 	const bool uses_d3d11 = gs_get_device_type() == GS_DEVICE_DIRECT3D_11;
 	obs_leave_graphics();
@@ -258,6 +267,8 @@ static void wc_actual_destroy(void *data)
 
 	if (wc->winrt_module)
 		os_dlclose(wc->winrt_module);
+
+	pthread_mutex_destroy(&wc->update_mutex);
 
 	bfree(wc);
 }
@@ -307,6 +318,8 @@ static void wc_defaults(obs_data_t *defaults)
 static void update_settings_visibility(obs_properties_t *props,
 				       struct window_capture *wc)
 {
+	pthread_mutex_lock(&wc->update_mutex);
+
 	const enum window_capture_method method = wc->method;
 	const bool bitblt_options = method == METHOD_BITBLT;
 	const bool wgc_options = method == METHOD_WGC;
@@ -323,6 +336,8 @@ static void update_settings_visibility(obs_properties_t *props,
 
 	p = obs_properties_get(props, "client_area");
 	obs_property_set_visible(p, wgc_options);
+
+	pthread_mutex_unlock(&wc->update_mutex);
 }
 
 static bool wc_capture_method_changed(obs_properties_t *props,
