@@ -574,7 +574,12 @@ void TextSourceToolbar::on_selectColor_clicked()
 	color = newColor;
 
 	obs_data_t *settings = obs_data_create();
-	obs_data_set_int(settings, "color", color_to_int(color));
+	if (!strncmp(obs_source_get_id(source), "text_ft2_source", 15)) {
+		obs_data_set_int(settings, "color1", color_to_int(color));
+		obs_data_set_int(settings, "color2", color_to_int(color));
+	} else {
+		obs_data_set_int(settings, "color", color_to_int(color));
+	}
 	obs_source_update(source, settings);
 	obs_data_release(settings);
 }
