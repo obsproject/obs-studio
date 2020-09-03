@@ -392,7 +392,8 @@ struct os_dirent *os_readdir(os_dir_t *dir)
 	if (!dir->cur_dirent)
 		return NULL;
 
-	strncpy(dir->out.d_name, dir->cur_dirent->d_name, 255);
+	strncpy(dir->out.d_name, dir->cur_dirent->d_name,
+		sizeof(dir->out.d_name));
 
 	dstr_copy(&file_path, dir->path);
 	dstr_cat(&file_path, "/");
