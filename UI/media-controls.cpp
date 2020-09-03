@@ -40,6 +40,9 @@ MediaControls::MediaControls(QWidget *parent)
 	ui->nextButton->setProperty("themeID", "nextIcon");
 	ui->stopButton->setProperty("themeID", "stopIcon");
 
+	mediaTimer.setTimerType(Qt::PreciseTimer);
+	seekTimer.setTimerType(Qt::PreciseTimer);
+
 	connect(&mediaTimer, SIGNAL(timeout()), this,
 		SLOT(SetSliderPosition()));
 	connect(&seekTimer, SIGNAL(timeout()), this, SLOT(SeekTimerCallback()));
@@ -105,11 +108,11 @@ void MediaControls::MediaSliderClicked()
 	} else if (state == OBS_MEDIA_STATE_PLAYING) {
 		prevPaused = false;
 		PauseMedia();
-		mediaTimer.stop();
+		StopMediaTimer();
 	}
 
 	seek = ui->slider->value();
-	seekTimer.start(100);
+	seekTimer.start(16);
 }
 
 void MediaControls::MediaSliderReleased()
@@ -130,7 +133,7 @@ void MediaControls::MediaSliderReleased()
 
 	if (!prevPaused) {
 		PlayMedia();
-		mediaTimer.start(1000);
+		StartMediaTimer();
 	}
 }
 
@@ -164,7 +167,7 @@ void MediaControls::StartMediaTimer()
 		return;
 
 	if (!mediaTimer.isActive())
-		mediaTimer.start(1000);
+		mediaTimer.start(16);
 }
 
 void MediaControls::StopMediaTimer()
