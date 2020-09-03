@@ -5847,17 +5847,16 @@ void OBSBasic::AutoRemux()
 	input += remuxFilename.c_str();
 
 	QFileInfo fi(remuxFilename.c_str());
+	QString suffix = fi.suffix();
 
 	/* do not remux if lossless */
-	if (fi.suffix().compare("avi", Qt::CaseInsensitive) == 0) {
+	if (suffix.compare("avi", Qt::CaseInsensitive) == 0) {
 		return;
 	}
 
-	QString output;
-	output += path;
-	output += "/";
-	output += fi.completeBaseName();
-	output += ".mp4";
+	QString output = input;
+	output.resize(output.size() - suffix.size());
+	output += "mp4";
 
 	OBSRemux *remux = new OBSRemux(path, this, true);
 	remux->show();
