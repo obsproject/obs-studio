@@ -5589,7 +5589,8 @@ inline void OBSBasic::OnDeactivate()
 		if (trayIcon && trayIcon->isVisible())
 			trayIcon->setIcon(QIcon::fromTheme(
 				"obs-tray", QIcon(":/res/images/obs.png")));
-	} else if (trayIcon && trayIcon->isVisible()) {
+	} else if (outputHandler->Active() && trayIcon &&
+		   trayIcon->isVisible()) {
 		if (os_atomic_load_bool(&recording_paused))
 			trayIcon->setIcon(QIcon(":/res/images/obs_paused.png"));
 		else
