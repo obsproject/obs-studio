@@ -213,6 +213,9 @@ bool BasicOutputHandler::StartVirtualCam()
 	if (main->vcamEnabled) {
 		obs_output_set_media(virtualCam, obs_get_video(),
 				     obs_get_audio());
+		if (!Active())
+			SetupOutputs();
+
 		return obs_output_start(virtualCam);
 	}
 	return false;
@@ -264,7 +267,7 @@ struct SimpleOutput : BasicOutputHandler {
 	void UpdateRecordingAudioSettings();
 	virtual void Update() override;
 
-	void SetupOutputs();
+	void SetupOutputs() override;
 	int GetAudioBitrate() const;
 
 	void LoadRecordingPreset_h264(const char *encoder);
@@ -725,7 +728,7 @@ const char *FindAudioEncoderFromCodec(const char *type)
 
 bool SimpleOutput::StartStreaming(obs_service_t *service)
 {
-	if (!Active(false))
+	if (!Active())
 		SetupOutputs();
 
 	Auth *auth = main->GetAuth();
@@ -885,7 +888,7 @@ void SimpleOutput::UpdateRecording()
 		Update();
 	}
 
-	if (!Active(false))
+	if (!Active())
 		SetupOutputs();
 
 	if (!ffmpegOutput) {
@@ -1058,7 +1061,7 @@ struct AdvancedOutput : BasicOutputHandler {
 	inline void SetupStreaming();
 	inline void SetupRecording();
 	inline void SetupFFmpeg();
-	void SetupOutputs();
+	void SetupOutputs() override;
 	int GetAudioBitrate(size_t i) const;
 
 	virtual bool StartStreaming(obs_service_t *service) override;
@@ -1507,7 +1510,7 @@ bool AdvancedOutput::StartStreaming(obs_service_t *service)
 
 	UpdateAudioSettings();
 
-	if (!Active(false))
+	if (!Active())
 		SetupOutputs();
 
 	Auth *auth = main->GetAuth();
@@ -1671,7 +1674,7 @@ bool AdvancedOutput::StartRecording()
 
 	UpdateAudioSettings();
 
-	if (!Active(false))
+	if (!Active())
 		SetupOutputs();
 
 	if (!ffmpegOutput || ffmpegRecording) {
@@ -1740,7 +1743,7 @@ bool AdvancedOutput::StartReplayBuffer()
 
 	UpdateAudioSettings();
 
-	if (!Active(false))
+	if (!Active())
 		SetupOutputs();
 
 	if (!ffmpegOutput || ffmpegRecording) {

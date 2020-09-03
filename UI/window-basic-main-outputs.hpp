@@ -50,11 +50,12 @@ struct BasicOutputHandler {
 	virtual bool VirtualCamActive() const;
 
 	virtual void Update() = 0;
+	virtual void SetupOutputs() = 0;
 
-	inline bool Active(bool check_vcam = true) const
+	inline bool Active() const
 	{
 		return streamingActive || recordingActive || delayActive ||
-		       replayBufferActive || (check_vcam && virtualCamActive);
+		       replayBufferActive || virtualCamActive;
 	}
 };
 
