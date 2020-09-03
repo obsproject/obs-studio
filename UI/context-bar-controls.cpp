@@ -455,7 +455,12 @@ void ColorSourceToolbar::on_choose_clicked()
 	options |= QColorDialog::DontUseNativeDialog;
 #endif
 
-	color = QColorDialog::getColor(color, this, desc, options);
+	QColor newColor = QColorDialog::getColor(color, this, desc, options);
+	if (!newColor.isValid()) {
+		return;
+	}
+
+	color = newColor;
 	UpdateColor();
 
 	obs_data_t *settings = obs_data_create();
