@@ -2902,6 +2902,18 @@ void OBSBasic::ClearContextBar()
 	}
 }
 
+static bool is_network_media_source(obs_source_t *source, const char *id)
+{
+	if (strcmp(id, "ffmpeg_source") != 0)
+		return false;
+
+	obs_data_t *s = obs_source_get_settings(source);
+	bool is_local_file = obs_data_get_bool(s, "is_local_file");
+	obs_data_release(s);
+
+	return !is_local_file;
+}
+
 void OBSBasic::UpdateContextBar()
 {
 	OBSSceneItem item = GetCurrentSceneItem();
@@ -2914,14 +2926,15 @@ void OBSBasic::UpdateContextBar()
 		uint32_t flags = obs_source_get_output_flags(source);
 
 		if (flags & OBS_SOURCE_CONTROLLABLE_MEDIA) {
-			MediaControls *mediaControls =
-				new MediaControls(ui->emptySpace);
-			mediaControls->SetSource(source);
+			if (!is_network_media_source(source, id)) {
+				MediaControls *mediaControls =
+					new MediaControls(ui->emptySpace);
+				mediaControls->SetSource(source);
 
-			ui->emptySpace->layout()->addWidget(mediaControls);
-		}
-
-		if (strcmp(id, "browser_source") == 0) {
+				ui->emptySpace->layout()->addWidget(
+					mediaControls);
+			}
+		} else if (strcmp(id, "browser_source") == 0) {
 			BrowserToolbar *c =
 				new BrowserToolbar(ui->emptySpace, source);
 			ui->emptySpace->layout()->addWidget(c);
