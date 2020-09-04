@@ -175,9 +175,7 @@ static void input_and_output(struct audio_output *audio, uint64_t audio_time,
 	for (size_t mix_idx = 0; mix_idx < MAX_AUDIO_MIXES; mix_idx++) {
 		struct audio_mix *mix = &audio->mixes[mix_idx];
 
-		memset(mix->buffer[0], 0,
-		       AUDIO_OUTPUT_FRAMES * MAX_AUDIO_CHANNELS *
-			       sizeof(float));
+		memset(mix->buffer, 0, sizeof(mix->buffer));
 
 		for (size_t i = 0; i < audio->planes; i++)
 			data[mix_idx].data[i] = mix->buffer[i];
