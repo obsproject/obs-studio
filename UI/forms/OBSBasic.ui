@@ -206,18 +206,18 @@
       <property name="minimumSize">
        <size>
         <width>0</width>
-        <height>32</height>
+        <height>30</height>
        </size>
       </property>
       <property name="maximumSize">
        <size>
         <width>16777215</width>
-        <height>32</height>
+        <height>30</height>
        </size>
       </property>
       <layout class="QHBoxLayout" name="horizontalLayout9">
        <property name="spacing">
-        <number>4</number>
+        <number>6</number>
        </property>
        <property name="sizeConstraint">
         <enum>QLayout::SetDefaultConstraint</enum>
@@ -266,16 +266,22 @@
           </property>
           <item>
            <widget class="QLabel" name="contextSourceLabel">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
             <property name="minimumSize">
              <size>
-              <width>150</width>
-              <height>0</height>
+              <width>250</width>
+              <height>22</height>
              </size>
             </property>
             <property name="maximumSize">
              <size>
-              <width>150</width>
-              <height>16</height>
+              <width>250</width>
+              <height>22</height>
              </size>
             </property>
             <property name="text">
@@ -298,6 +304,18 @@
               <verstretch>0</verstretch>
              </sizepolicy>
             </property>
+            <property name="minimumSize">
+             <size>
+              <width>0</width>
+              <height>22</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>16777215</width>
+              <height>22</height>
+             </size>
+            </property>
             <property name="toolTip">
              <string>Properties</string>
             </property>
@@ -318,6 +336,18 @@
           </item>
           <item>
            <widget class="QPushButton" name="sourceFiltersButton">
+            <property name="minimumSize">
+             <size>
+              <width>0</width>
+              <height>22</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>16777215</width>
+              <height>22</height>
+             </size>
+            </property>
             <property name="toolTip">
              <string>Filters</string>
             </property>
@@ -349,10 +379,22 @@
        <item>
         <widget class="QWidget" name="emptySpace" native="true">
          <property name="sizePolicy">
-          <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+          <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
            <horstretch>0</horstretch>
            <verstretch>0</verstretch>
           </sizepolicy>
+         </property>
+         <property name="minimumSize">
+          <size>
+           <width>0</width>
+           <height>22</height>
+          </size>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>16777215</width>
+           <height>22</height>
+          </size>
          </property>
          <layout class="QHBoxLayout" name="horizontalLayout_6">
           <property name="spacing">
@@ -929,7 +971,7 @@
           <rect>
            <x>0</x>
            <y>0</y>
-           <width>92</width>
+           <width>94</width>
            <height>16</height>
           </rect>
          </property>

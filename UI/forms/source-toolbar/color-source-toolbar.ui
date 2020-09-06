@@ -7,8 +7,26 @@
     <x>0</x>
     <y>0</y>
     <width>565</width>
-    <height>37</height>
+    <height>22</height>
    </rect>
+  </property>
+  <property name="sizePolicy">
+   <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+    <horstretch>0</horstretch>
+    <verstretch>0</verstretch>
+   </sizepolicy>
+  </property>
+  <property name="minimumSize">
+   <size>
+    <width>0</width>
+    <height>22</height>
+   </size>
+  </property>
+  <property name="maximumSize">
+   <size>
+    <width>16777215</width>
+    <height>22</height>
+   </size>
   </property>
   <property name="windowTitle">
    <string notr="true">Form</string>
@@ -28,10 +46,22 @@
    </property>
    <item>
     <widget class="QLabel" name="color">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
      <property name="minimumSize">
       <size>
        <width>80</width>
-       <height>0</height>
+       <height>22</height>
+      </size>
+     </property>
+     <property name="maximumSize">
+      <size>
+       <width>16777215</width>
+       <height>22</height>
       </size>
      </property>
      <property name="text">
@@ -44,6 +74,18 @@
    </item>
    <item>
     <widget class="QPushButton" name="choose">
+     <property name="minimumSize">
+      <size>
+       <width>0</width>
+       <height>22</height>
+      </size>
+     </property>
+     <property name="maximumSize">
+      <size>
+       <width>16777215</width>
+       <height>22</height>
+      </size>
+     </property>
      <property name="text">
       <string>Basic.PropertiesWindow.SelectColor</string>
      </property>
