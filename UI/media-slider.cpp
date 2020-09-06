@@ -2,7 +2,7 @@
 #include "media-slider.hpp"
 #include <QStyleFactory>
 
-MediaSlider::MediaSlider(QWidget *parent) : QSlider(parent)
+MediaSlider::MediaSlider(QWidget *parent) : SliderIgnoreScroll(parent)
 {
 	setMouseTracking(true);
 

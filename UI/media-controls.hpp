@@ -58,6 +58,9 @@ private slots:
 
 	void SeekTimerCallback();
 
+	void MoveSliderFoward(int seconds = 5);
+	void MoveSliderBackwards(int seconds = 5);
+
 public slots:
 	void PlayMedia();
 	void PauseMedia();

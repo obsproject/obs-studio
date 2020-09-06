@@ -39,6 +39,7 @@ MediaControls::MediaControls(QWidget *parent)
 	ui->previousButton->setProperty("themeID", "previousIcon");
 	ui->nextButton->setProperty("themeID", "nextIcon");
 	ui->stopButton->setProperty("themeID", "stopIcon");
+	setFocusPolicy(Qt::StrongFocus);
 
 	connect(&mediaTimer, SIGNAL(timeout()), this,
 		SLOT(SetSliderPosition()));
@@ -59,6 +60,20 @@ MediaControls::MediaControls(QWidget *parent)
 	restartAction->setShortcut({Qt::Key_R});
 	connect(restartAction, SIGNAL(triggered()), this, SLOT(RestartMedia()));
 	addAction(restartAction);
+
+	QAction *sliderFoward = new QAction(this);
+	sliderFoward->setShortcutContext(Qt::WidgetWithChildrenShortcut);
+	connect(sliderFoward, SIGNAL(triggered()), this,
+		SLOT(MoveSliderFoward()));
+	sliderFoward->setShortcut({Qt::Key_Right});
+	addAction(sliderFoward);
+
+	QAction *sliderBack = new QAction(this);
+	sliderBack->setShortcutContext(Qt::WidgetWithChildrenShortcut);
+	connect(sliderBack, SIGNAL(triggered()), this,
+		SLOT(MoveSliderBackwards()));
+	sliderBack->setShortcut({Qt::Key_Left});
+	addAction(sliderBack);
 }
 
 MediaControls::~MediaControls()
@@ -425,4 +440,32 @@ void MediaControls::on_durationLabel_clicked()
 
 	if (MediaPaused())
 		SetSliderPosition();
+}
+
+void MediaControls::MoveSliderFoward(int seconds)
+{
+	OBSSource source = OBSGetStrongRef(weakSource);
+
+	if (!source)
+		return;
+
+	int ms = obs_source_media_get_time(source);
+	ms += seconds * 1000;
+
+	obs_source_media_set_time(source, ms);
+	SetSliderPosition();
+}
+
+void MediaControls::MoveSliderBackwards(int seconds)
+{
+	OBSSource source = OBSGetStrongRef(weakSource);
+
+	if (!source)
+		return;
+
+	int ms = obs_source_media_get_time(source);
+	ms -= seconds * 1000;
+
+	obs_source_media_set_time(source, ms);
+	SetSliderPosition();
 }

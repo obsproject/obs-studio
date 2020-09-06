@@ -1,9 +1,9 @@
 #pragma once
 
-#include <QSlider>
 #include <QMouseEvent>
+#include "slider-ignorewheel.hpp"
 
-class MediaSlider : public QSlider {
+class MediaSlider : public SliderIgnoreScroll {
 	Q_OBJECT
 
 public:
