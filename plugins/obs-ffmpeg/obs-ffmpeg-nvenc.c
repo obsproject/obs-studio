@@ -241,12 +241,12 @@ static bool nvenc_update(void *data, obs_data_t *settings)
 	enc->context->max_b_frames = bf;
 
 	switch (info.colorspace) {
-	case VIDEO_CS_DEFAULT:
 	case VIDEO_CS_601:
 		enc->context->color_trc = AVCOL_TRC_SMPTE170M;
 		enc->context->color_primaries = AVCOL_PRI_SMPTE170M;
 		enc->context->colorspace = AVCOL_SPC_SMPTE170M;
 		break;
+	case VIDEO_CS_DEFAULT:
 	case VIDEO_CS_709:
 		enc->context->color_trc = AVCOL_TRC_BT709;
 		enc->context->color_primaries = AVCOL_PRI_BT709;

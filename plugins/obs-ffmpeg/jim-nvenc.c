@@ -431,12 +431,12 @@ static bool init_encoder(struct nvenc_data *enc, obs_data_t *settings)
 	vui_params->colourDescriptionPresentFlag = 1;
 
 	switch (voi->colorspace) {
-	case VIDEO_CS_DEFAULT:
 	case VIDEO_CS_601:
 		vui_params->colourPrimaries = 6;
 		vui_params->transferCharacteristics = 6;
 		vui_params->colourMatrix = 6;
 		break;
+	case VIDEO_CS_DEFAULT:
 	case VIDEO_CS_709:
 		vui_params->colourPrimaries = 1;
 		vui_params->transferCharacteristics = 1;

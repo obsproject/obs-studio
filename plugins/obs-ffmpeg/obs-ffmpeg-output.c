@@ -1088,11 +1088,11 @@ static bool try_connect(struct ffmpeg_output *output)
 	config.color_range = voi->range == VIDEO_RANGE_FULL ? AVCOL_RANGE_JPEG
 							    : AVCOL_RANGE_MPEG;
 	switch (voi->colorspace) {
-	case VIDEO_CS_DEFAULT:
 	case VIDEO_CS_601:
 		config.color_primaries = AVCOL_PRI_SMPTE170M;
 		config.color_trc = AVCOL_TRC_SMPTE170M;
 		break;
+	case VIDEO_CS_DEFAULT:
 	case VIDEO_CS_709:
 		config.color_primaries = AVCOL_PRI_BT709;
 		config.color_trc = AVCOL_TRC_BT709;
@@ -1104,18 +1104,9 @@ static bool try_connect(struct ffmpeg_output *output)
 	}
 
 	if (format_is_yuv(voi->format)) {
-		switch (voi->colorspace) {
-		case VIDEO_CS_DEFAULT:
-		case VIDEO_CS_601:
-			config.colorspace = AVCOL_SPC_SMPTE170M;
-			break;
-		case VIDEO_CS_709:
-			config.colorspace = AVCOL_SPC_BT709;
-			break;
-		case VIDEO_CS_SRGB:
-			config.colorspace = AVCOL_SPC_BT709;
-			break;
-		}
+		config.colorspace = (voi->colorspace == VIDEO_CS_601)
+					    ? AVCOL_SPC_SMPTE170M
+					    : AVCOL_SPC_BT709;
 	} else {
 		config.colorspace = AVCOL_SPC_RGB;
 	}
