@@ -143,5 +143,8 @@ source_group("libdshowcapture\\Header Files" FILES ${libdshowcapture_HEADERS})
 install_obs_plugin_with_data(win-dshow data)
 
 if(VIRTUALCAM_ENABLED)
+	configure_file(virtualcam-install.bat.in "${CMAKE_CURRENT_BINARY_DIR}/data/virtualcam-install.bat")
+	configure_file(virtualcam-uninstall.bat.in "${CMAKE_CURRENT_BINARY_DIR}/data/virtualcam-uninstall.bat")
+	install_obs_data_from_abs_path(win-dshow "${CMAKE_CURRENT_BINARY_DIR}/data" "obs-plugins/win-dshow")
 	add_subdirectory(virtualcam-module)
 endif()
