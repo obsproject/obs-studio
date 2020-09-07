@@ -504,6 +504,23 @@ function(install_obs_data target datadir datadest)
 	endif()
 endfunction()
 
+function(install_obs_data_from_abs_path target datadir datadest)
+	install(DIRECTORY ${datadir}/
+		DESTINATION "${OBS_DATA_DESTINATION}/${datadest}"
+		USE_SOURCE_PERMISSIONS)
+	add_custom_command(TARGET ${target} POST_BUILD
+		COMMAND "${CMAKE_COMMAND}" -E copy_directory
+			"${datadir}" "${OBS_OUTPUT_DIR}/$<CONFIGURATION>/data/${datadest}"
+		VERBATIM)
+
+	if(CMAKE_SIZEOF_VOID_P EQUAL 8 AND DEFINED ENV{obsInstallerTempDir})
+		add_custom_command(TARGET ${target} POST_BUILD
+			COMMAND "${CMAKE_COMMAND}" -E copy_directory
+				"${datadir}" "$ENV{obsInstallerTempDir}/${OBS_DATA_DESTINATION}/${datadest}"
+			VERBATIM)
+	endif()
+endfunction()
+
 function(install_obs_data_file target datafile datadest)
 	install(FILES ${datafile}
 		DESTINATION "${OBS_DATA_DESTINATION}/${datadest}")
