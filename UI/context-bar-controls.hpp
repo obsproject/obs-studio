@@ -90,20 +90,17 @@ class DeviceCaptureToolbar : public QWidget {
 	Q_OBJECT
 
 	OBSWeakSource weakSource;
-	Ui_DeviceSelectToolbar *ui;
-	obs_properties_t *props = nullptr;
-	const char *prop_name;
 
-	void UpdateActivateButtonName();
+	Ui_DeviceSelectToolbar *ui;
+	const char *activateText;
+	const char *deactivateText;
+	bool active;
 
 public:
 	DeviceCaptureToolbar(QWidget *parent, OBSSource source);
 	~DeviceCaptureToolbar();
 
-	void SetProperties(obs_properties_t *prpos);
-
 public slots:
-	void on_device_currentIndexChanged(int idx);
 	void on_activateButton_clicked();
 };
 

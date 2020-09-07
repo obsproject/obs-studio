@@ -2966,9 +2966,7 @@ void OBSBasic::UpdateContextBar()
 			c->Init();
 			ui->emptySpace->layout()->addWidget(c);
 
-		} else if (strcmp(id, "dshow_input") == 0 ||
-			   strcmp(id, "av_capture_input") == 0 ||
-			   strcmp(id, "v4l2_input") == 0) {
+		} else if (strcmp(id, "dshow_input") == 0) {
 			DeviceCaptureToolbar *c = new DeviceCaptureToolbar(
 				ui->emptySpace, source);
 			ui->emptySpace->layout()->addWidget(c);
