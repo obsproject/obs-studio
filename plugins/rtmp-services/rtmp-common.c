@@ -645,5 +645,4 @@ struct obs_service_info rtmp_common_service = {
 	.get_key = rtmp_common_key,
 	.apply_encoder_settings = rtmp_common_apply_settings,
 	.get_output_type = rtmp_common_get_output_type,
-	.supports_multitrack = supports_multitrack,
 };

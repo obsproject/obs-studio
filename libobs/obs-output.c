@@ -1018,26 +1018,9 @@ void obs_output_set_audio_conversion(
 	output->audio_conversion_set = true;
 }
 
-static inline bool service_supports_multitrack(const struct obs_output *output)
-{
-	const struct obs_service *service = output->service;
-
-	if (!service || !service->info.supports_multitrack) {
-		return false;
-	}
-
-	return service->info.supports_multitrack(service->context.data);
-}
-
 static inline size_t num_audio_mixes(const struct obs_output *output)
 {
 	size_t mix_count = 1;
-
-	if ((output->info.flags & OBS_OUTPUT_SERVICE) != 0) {
-		if (!service_supports_multitrack(output)) {
-			return 1;
-		}
-	}
 
 	if ((output->info.flags & OBS_OUTPUT_MULTI_TRACK) != 0) {
 		mix_count = 0;
