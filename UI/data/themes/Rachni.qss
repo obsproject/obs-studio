@@ -962,7 +962,8 @@ QPushButton:checked[themeID="replayBufferButton"],
 QPushButton:checked#modeSwitch,
 QPushButton:checked#settingsButton,
 QPushButton:checked#exitButton,
-QPushButton:checked[themeID="pauseIconSmall"] {
+QPushButton:checked[themeID="pauseIconSmall"],
+QPushButton:checked[themeID="vcamButton"] {
 	background-color: rgba(240, 98, 146, 0.5); /* Pink (Secondary) */
 	border: 1px solid rgba(240, 98, 146, 0.5); /* Pink (Secondary) */
 }
