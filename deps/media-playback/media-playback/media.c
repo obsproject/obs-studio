@@ -112,12 +112,18 @@ static inline enum speaker_layout convert_speaker_layout(uint8_t channels)
 static inline enum video_colorspace
 convert_color_space(enum AVColorSpace s, enum AVColorTransferCharacteristic trc)
 {
-	if (s == AVCOL_SPC_BT709) {
+	switch (s) {
+	case AVCOL_SPC_BT709:
 		return (trc == AVCOL_TRC_IEC61966_2_1) ? VIDEO_CS_SRGB
 						       : VIDEO_CS_709;
+	case AVCOL_SPC_FCC:
+	case AVCOL_SPC_BT470BG:
+	case AVCOL_SPC_SMPTE170M:
+	case AVCOL_SPC_SMPTE240M:
+		return VIDEO_CS_601;
+	default:
+		return VIDEO_CS_DEFAULT;
 	}
-
-	return VIDEO_CS_DEFAULT;
 }
 
 static inline enum video_range_type convert_color_range(enum AVColorRange r)

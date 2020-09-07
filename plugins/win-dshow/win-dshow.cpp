@@ -1072,11 +1072,11 @@ DShowInput::GetColorSpace(obs_data_t *settings) const
 
 	if (astrcmpi(space, "709") == 0)
 		return VIDEO_CS_709;
-	else if (astrcmpi(space, "601") == 0)
+
+	if (astrcmpi(space, "601") == 0)
 		return VIDEO_CS_601;
-	else
-		return (videoConfig.format == VideoFormat::HDYC) ? VIDEO_CS_709
-								 : VIDEO_CS_601;
+
+	return VIDEO_CS_DEFAULT;
 }
 
 inline enum video_range_type

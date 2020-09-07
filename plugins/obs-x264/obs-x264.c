@@ -468,12 +468,12 @@ static void update_params(struct obs_x264 *obsx264, obs_data_t *settings,
 	const char *transfer = NULL;
 	const char *colmatrix = NULL;
 	switch (info.colorspace) {
-	case VIDEO_CS_DEFAULT:
 	case VIDEO_CS_601:
 		colorprim = smpte170m;
 		transfer = smpte170m;
 		colmatrix = smpte170m;
 		break;
+	case VIDEO_CS_DEFAULT:
 	case VIDEO_CS_709:
 		colorprim = bt709;
 		transfer = bt709;

@@ -270,6 +270,23 @@ bool ffmpeg_decode_audio(struct ffmpeg_decode *decode, uint8_t *data,
 	return true;
 }
 
+static enum video_colorspace
+convert_color_space(enum AVColorSpace s, enum AVColorTransferCharacteristic trc)
+{
+	switch (s) {
+	case AVCOL_SPC_BT709:
+		return (trc == AVCOL_TRC_IEC61966_2_1) ? VIDEO_CS_SRGB
+						       : VIDEO_CS_709;
+	case AVCOL_SPC_FCC:
+	case AVCOL_SPC_BT470BG:
+	case AVCOL_SPC_SMPTE170M:
+	case AVCOL_SPC_SMPTE240M:
+		return VIDEO_CS_601;
+	default:
+		return VIDEO_CS_DEFAULT;
+	}
+}
+
 bool ffmpeg_decode_video(struct ffmpeg_decode *decode, uint8_t *data,
 			 size_t size, long long *ts,
 			 enum video_range_type range,
@@ -344,20 +361,21 @@ bool ffmpeg_decode_video(struct ffmpeg_decode *decode, uint8_t *data,
 				: VIDEO_RANGE_PARTIAL;
 	}
 
-	if (range != frame->range) {
-		const bool success = video_format_get_parameters(
-			VIDEO_CS_601, range, frame->color_matrix,
-			frame->color_range_min, frame->color_range_max);
-		if (!success) {
-			blog(LOG_ERROR,
-			     "Failed to get video format "
-			     "parameters for video format %u",
-			     VIDEO_CS_601);
-			return false;
-		}
+	const enum video_colorspace cs = convert_color_space(
+		decode->frame->colorspace, decode->frame->color_trc);
 
-		frame->range = range;
+	const bool success = video_format_get_parameters(
+		cs, range, frame->color_matrix, frame->color_range_min,
+		frame->color_range_max);
+	if (!success) {
+		blog(LOG_ERROR,
+		     "Failed to get video format "
+		     "parameters for video format %u",
+		     cs);
+		return false;
 	}
+
+	frame->range = range;
 
 	*ts = decode->frame->pkt_pts;
 

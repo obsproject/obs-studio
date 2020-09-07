@@ -192,7 +192,7 @@ void DeckLinkDeviceInstance::SetupVideoFormat(DeckLinkDeviceMode *mode_)
 #ifdef LOG_SETUP_VIDEO_FORMAT
 	LOG(LOG_INFO, "Setup video format: %s, %s, %s",
 	    pixelFormat == bmdFormat8BitYUV ? "YUV" : "RGB",
-	    activeColorSpace == VIDEO_CS_709 ? "BT.709" : "BT.601",
+	    activeColorSpace == VIDEO_CS_601 ? "BT.601" : "BT.709",
 	    colorRange == VIDEO_RANGE_FULL ? "full" : "limited");
 #endif
 }
