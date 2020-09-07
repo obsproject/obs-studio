@@ -120,7 +120,7 @@ void MediaControls::MediaSliderClicked()
 	} else if (state == OBS_MEDIA_STATE_PLAYING) {
 		prevPaused = false;
 		PauseMedia();
-		mediaTimer.stop();
+		StopMediaTimer();
 	}
 
 	seek = ui->slider->value();
@@ -145,7 +145,7 @@ void MediaControls::MediaSliderReleased()
 
 	if (!prevPaused) {
 		PlayMedia();
-		mediaTimer.start(1000);
+		StartMediaTimer();
 	}
 }
 
