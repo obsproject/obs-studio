@@ -5592,10 +5592,13 @@ inline void OBSBasic::OnDeactivate()
 	} else if (outputHandler->Active() && trayIcon &&
 		   trayIcon->isVisible()) {
 		if (os_atomic_load_bool(&recording_paused))
-			trayIcon->setIcon(QIcon(":/res/images/obs_paused.png"));
+			trayIcon->setIcon(QIcon::fromTheme(
+				"obs-tray-paused",
+				QIcon(":/res/images/obs_paused.png")));
 		else
-			trayIcon->setIcon(
-				QIcon(":/res/images/tray_active.png"));
+			trayIcon->setIcon(QIcon::fromTheme(
+				"obs-tray-active",
+				QIcon(":/res/images/tray_active.png")));
 	}
 }
 
@@ -8084,7 +8087,9 @@ void OBSBasic::PauseRecording()
 		ui->statusbar->RecordingPaused();
 
 		if (trayIcon && trayIcon->isVisible())
-			trayIcon->setIcon(QIcon(":/res/images/obs_paused.png"));
+			trayIcon->setIcon(QIcon::fromTheme(
+				"obs-tray-paused",
+				QIcon(":/res/images/obs_paused.png")));
 
 		os_atomic_set_bool(&recording_paused, true);
 
@@ -8113,8 +8118,9 @@ void OBSBasic::UnpauseRecording()
 		ui->statusbar->RecordingUnpaused();
 
 		if (trayIcon && trayIcon->isVisible())
-			trayIcon->setIcon(
-				QIcon(":/res/images/tray_active.png"));
+			trayIcon->setIcon(QIcon::fromTheme(
+				"obs-tray-active",
+				QIcon(":/res/images/tray_active.png")));
 
 		os_atomic_set_bool(&recording_paused, false);
 
