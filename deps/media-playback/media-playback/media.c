@@ -679,9 +679,10 @@ static inline bool mp_media_thread(mp_media_t *m)
 
 		pthread_mutex_lock(&m->mutex);
 		is_active = m->active;
+		pause = m->pause;
 		pthread_mutex_unlock(&m->mutex);
 
-		if (!is_active) {
+		if (!is_active || pause) {
 			if (os_sem_wait(m->sem) < 0)
 				return false;
 		} else {
