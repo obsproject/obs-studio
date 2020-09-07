@@ -14,6 +14,8 @@ configure_file(
 set(MODULE_DESCRIPTION "OBS Virtual Camera output module")
 configure_file(${CMAKE_SOURCE_DIR}/cmake/winrc/obs-module.rc.in virtualcam-module.rc)
 
+include_directories(${CMAKE_CURRENT_BINARY_DIR}/..)
+
 set(libdshowcapture_SOURCES
 	../libdshowcapture/source/log.cpp
 	../libdshowcapture/source/dshow-base.cpp

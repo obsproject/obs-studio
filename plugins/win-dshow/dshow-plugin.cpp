@@ -13,6 +13,7 @@ MODULE_EXPORT const char *obs_module_description(void)
 extern void RegisterDShowSource();
 extern void RegisterDShowEncoders();
 
+#ifdef VIRTUALCAM_ENABLED
 extern "C" struct obs_output_info virtualcam_info;
 
 static bool vcam_installed(bool b64)
@@ -35,14 +36,19 @@ static bool vcam_installed(bool b64)
 	RegCloseKey(key);
 	return true;
 }
+#endif
 
 bool obs_module_load(void)
 {
 	RegisterDShowSource();
 	RegisterDShowEncoders();
+#ifdef VIRTUALCAM_ENABLED
 	obs_register_output(&virtualcam_info);
 
 	bool installed = vcam_installed(false);
+#else
+	bool installed = false;
+#endif
 
 	obs_data_t *obs_settings = obs_data_create();
 	obs_data_set_bool(obs_settings, "vcamEnabled", installed);

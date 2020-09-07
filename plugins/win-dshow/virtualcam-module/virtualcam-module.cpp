@@ -1,5 +1,5 @@
 #include "virtualcam-filter.hpp"
-#include "../virtualcam-guid.h"
+#include "virtualcam-guid.h"
 
 /* ========================================================================= */
 
