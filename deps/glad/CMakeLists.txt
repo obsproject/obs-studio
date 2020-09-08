@@ -38,7 +38,8 @@ set_target_properties(glad PROPERTIES
 	FOLDER "deps"
 	OUTPUT_NAME obsglad
 	VERSION "0"
-	SOVERSION "0")
+	SOVERSION "0"
+	POSITION_INDEPENDENT_CODE ON)
 target_include_directories(glad
 	PUBLIC include
 	${glad_include_dirs})
@@ -48,9 +49,6 @@ target_compile_definitions(glad
 if(NOT MSVC)
 	target_compile_options(glad
 		PRIVATE -DPIC -fvisibility=hidden)
-	if(NOT MINGW)
-		target_compile_options(glad PRIVATE -fPIC)
-	endif()
 endif()
 
 if(NOT WIN32 AND NOT APPLE)

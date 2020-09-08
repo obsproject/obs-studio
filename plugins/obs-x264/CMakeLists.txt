@@ -14,7 +14,9 @@ add_library(obs-x264-util STATIC
 	${obs-x264-util_HEADERS}
 	${obs-x264-util_SOURCES})
 target_link_libraries(obs-x264-util PRIVATE libobs)
-set_target_properties(obs-x264-util PROPERTIES FOLDER "plugins")
+set_target_properties(obs-x264-util PROPERTIES
+	FOLDER "plugins"
+	POSITION_INDEPENDENT_CODE ON)
 
 set(obs-x264_SOURCES
 	obs-x264.c

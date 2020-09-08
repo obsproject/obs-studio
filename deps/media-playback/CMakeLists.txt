@@ -31,14 +31,9 @@ target_include_directories(media-playback
 	PUBLIC .
 	)
 
-
-if(NOT MSVC)
-        if(NOT MINGW)
-                target_compile_options(media-playback PRIVATE -fPIC)
-        endif()
-endif()
-
 target_link_libraries(media-playback
 	${FFMPEG_LIBRARIES}
 	)
-set_target_properties(media-playback PROPERTIES FOLDER "deps")
+set_target_properties(media-playback PROPERTIES
+	FOLDER "deps"
+	POSITION_INDEPENDENT_CODE ON)

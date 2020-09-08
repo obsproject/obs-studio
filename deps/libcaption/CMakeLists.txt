@@ -36,4 +36,6 @@ set(CAPTION_HEADERS
 )
 
 add_library(caption STATIC ${CAPTION_SOURCES})
-set_target_properties(caption PROPERTIES FOLDER "deps")
+set_target_properties(caption PROPERTIES
+	FOLDER "deps"
+	POSITION_INDEPENDENT_CODE ON)

@@ -50,16 +50,12 @@ endif(WIN32)
 add_library (libff STATIC
 	${libff_HEADERS}
 	${libff_SOURCES})
-set_target_properties(libff PROPERTIES FOLDER "deps")
+set_target_properties(libff PROPERTIES
+	FOLDER "deps"
+	POSITION_INDEPENDENT_CODE ON)
 
 target_include_directories(libff
 	PUBLIC .)
-
-if(NOT MSVC)
-        if(NOT MINGW)
-                target_compile_options(libff PRIVATE -fPIC)
-        endif()
-endif()
 
 target_link_libraries (libff
 	${FFMPEG_LIBRARIES})
