@@ -691,6 +691,8 @@ static inline bool mp_media_thread(mp_media_t *m)
 		if (!is_active || pause) {
 			if (os_sem_wait(m->sem) < 0)
 				return false;
+			if (pause)
+				reset_ts(m);
 		} else {
 			timeout = mp_media_sleepto(m);
 		}
