@@ -221,8 +221,11 @@ static bool create_video_stream(struct ffmpeg_data *data)
 			data->config.video_encoder))
 		return false;
 
-	closest_format = avcodec_find_best_pix_fmt_of_list(
-		data->vcodec->pix_fmts, data->config.format, 0, NULL);
+	closest_format = data->config.format;
+	if (data->vcodec->pix_fmts) {
+		closest_format = avcodec_find_best_pix_fmt_of_list(
+			data->vcodec->pix_fmts, data->config.format, 0, NULL);
+	}
 
 #if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(57, 48, 101)
 	context = avcodec_alloc_context3(data->vcodec);
