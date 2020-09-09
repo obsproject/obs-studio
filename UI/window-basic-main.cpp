@@ -8258,6 +8258,18 @@ void OBSBasic::OutputPathInvalidMessage()
 
 bool OBSBasic::OutputPathValid()
 {
+	const char *mode = config_get_string(Config(), "Output", "Mode");
+	if (strcmp(mode, "Advanced") == 0) {
+		const char *advanced_mode =
+			config_get_string(Config(), "AdvOut", "RecType");
+		if (strcmp(advanced_mode, "FFmpeg") == 0) {
+			bool is_local = config_get_bool(Config(), "AdvOut",
+							"FFOutputToFile");
+			if (!is_local)
+				return true;
+		}
+	}
+
 	const char *path = GetCurrentOutputPath();
 	return path && *path && QDir(path).exists();
 }
