@@ -6,6 +6,8 @@ on:
       - '**.md'
     branches:
       - master
+    tags:
+      - '*'
   pull_request:
     paths-ignore:
       - '**.md'
@@ -251,13 +253,108 @@ jobs:
           dmgbuild "OBS-Studio ${{ env.OBS_GIT_TAG }}" "${FILE_NAME}" -s ./settings.json
           mkdir ../nightly
           sudo mv ./${FILE_NAME} ../nightly/${FILE_NAME}
-
       - name: 'Publish'
         if: success() && (github.event_name != 'pull_request' || env.SEEKING_TESTERS == '1')
         uses: actions/upload-artifact@v2-preview
         with:
           name: '${{ env.FILE_NAME }}'
           path: ./nightly/*.dmg
+      - name: 'Package Release'
+        if: success() && startsWith(github.ref, 'refs/tags/') && github.event_name != 'pull_request'
+        working-directory: ${{ github.workspace }}/build
+        shell: bash
+        run: |
+          FILE_DATE=$(date +%Y-%m-%d)
+          FILE_NAME=$FILE_DATE-${{ env.OBS_GIT_HASH }}-${{ env.OBS_GIT_TAG }}-rel-macOS.dmg
+
+          KEYCHAIN=tempkeychain
+          echo "${{ secrets.MACOS_SIGNING_CERT }}" | base64 --decode > ./certificate.p12
+          security create-keychain -p "" "$KEYCHAIN"
+          security list-keychains -s "$KEYCHAIN"
+          security default-keychain -s "$KEYCHAIN"
+          security unlock-keychain -p "" "$KEYCHAIN"
+          security set-keychain-settings
+          security import ./certificate.p12 -k "$KEYCHAIN" -P "${{ secrets.MACOS_SIGNING_CERT_PASSWORD }}" -T /usr/bin/codesign -T /usr/bin/security
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "" $KEYCHAIN
+
+          codesign --verbose --force --options runtime --sign "${{ secrets.MACOS_SIGNING_IDENTITY }}" ./OBS.app/Contents/Frameworks/Sparkle.framework/Versions/A/Resources/Autoupdate.app/Contents/MacOS/fileop
+          codesign --verbose --force --options runtime --sign "${{ secrets.MACOS_SIGNING_IDENTITY }}" ./OBS.app/Contents/Frameworks/Sparkle.framework/Versions/A/Resources/Autoupdate.app/Contents/MacOS/Autoupdate
+          codesign --verbose --force --options runtime --sign "${{ secrets.MACOS_SIGNING_IDENTITY }}" --deep ./OBS.app/Contents/Frameworks/Sparkle.framework
+
+          codesign --verbose --force --options runtime --sign "${{ secrets.MACOS_SIGNING_IDENTITY }}" "./OBS.app/Contents/Frameworks/Chromium Embedded Framework.framework/Libraries/libEGL.dylib"
+          codesign --verbose --force --options runtime --sign "${{ secrets.MACOS_SIGNING_IDENTITY }}" "./OBS.app/Contents/Frameworks/Chromium Embedded Framework.framework/Libraries/libswiftshader_libEGL.dylib"
+          codesign --verbose --force --options runtime --sign "${{ secrets.MACOS_SIGNING_IDENTITY }}" "./OBS.app/Contents/Frameworks/Chromium Embedded Framework.framework/Libraries/libGLESv2.dylib"
+          codesign --verbose --force --options runtime --sign "${{ secrets.MACOS_SIGNING_IDENTITY }}" "./OBS.app/Contents/Frameworks/Chromium Embedded Framework.framework/Libraries/libswiftshader_libGLESv2.dylib"
+          codesign --verbose --force --options runtime --sign "${{ secrets.MACOS_SIGNING_IDENTITY }}" --deep "./OBS.app/Contents/Frameworks/Chromium Embedded Framework.framework"
+
+          cp ../CI/scripts/macos/app/entitlements.plist  ./entitlements.plist
+
+          codesign --verbose --force --options runtime --entitlements ./entitlements.plist --sign "${{ secrets.MACOS_SIGNING_IDENTITY }}" --deep ./OBS.app
+
+          /usr/bin/ditto -c -k --keepParent ./OBS.app ./OBS.zip
+
+          UPLOAD_RESULT=$(xcrun altool \
+          		--notarize-app \
+          		--primary-bundle-id "com.obsproject.obs-studio" \
+          		--username "${{ secrets.MACOS_NOTARIZATION_USERNAME }}" \
+          		--password "${{ secrets.MACOS_NOTARIZATION_PASSWORD }}" \
+          		--asc-provider "${{ secrets.ASC_PROVIDER_SHORTNAME }}" \
+          		--file OBS.zip)
+
+          REQUEST_UUID=$(echo $UPLOAD_RESULT | awk -F ' = ' '/RequestUUID/ {print $2}')
+          echo "Request UUID: $REQUEST_UUID"
+
+          while sleep 30 && date; do
+              CHECK_RESULT=$(xcrun altool \
+                  --notarization-info "$REQUEST_UUID" \
+                  --username "${{ secrets.MACOS_NOTARIZATION_USERNAME }}" \
+                  --password "${{ secrets.MACOS_NOTARIZATION_PASSWORD }}" \
+                  --asc-provider "${{ secrets.ASC_PROVIDER_SHORTNAME }}")
+              echo $CHECK_RESULT
+
+              if ! grep -q "Status: in progress" <<< "$CHECK_RESULT"; then
+                  echo "Staple ticket to app"
+                  xcrun stapler staple -v OBS.app
+                  break
+              fi
+          done
+
+          dmgbuild "OBS-Studio ${{ env.OBS_GIT_TAG }}" "$FILE_NAME" -s ./settings.json
+
+          UPLOAD_RESULT=$(xcrun altool \
+              --notarize-app \
+              --primary-bundle-id "com.obsproject.obs-studio" \
+              --username "${{ secrets.MACOS_NOTARIZATION_USERNAME }}" \
+              --password "${{ secrets.MACOS_NOTARIZATION_PASSWORD }}" \
+              --asc-provider "${{ secrets.ASC_PROVIDER_SHORTNAME }}" \
+              --file $FILE_NAME)
+
+          REQUEST_UUID=$(echo $UPLOAD_RESULT | awk -F ' = ' '/RequestUUID/ {print $2}')
+          echo "Request UUID: $REQUEST_UUID"
+
+          while sleep 30 && date; do
+              CHECK_RESULT=$(xcrun altool \
+                  --notarization-info "$REQUEST_UUID" \
+                  --username "${{ secrets.MACOS_NOTARIZATION_USERNAME }}" \
+                  --password "${{ secrets.MACOS_NOTARIZATION_PASSWORD }}" \
+                  --asc-provider "${{ secrets.ASC_PROVIDER_SHORTNAME }}")
+              echo $CHECK_RESULT
+
+              if ! grep -q "Status: in progress" <<< "$CHECK_RESULT"; then
+                  echo "Staple ticket to dmg"
+                  xcrun stapler staple -v $FILE_NAME
+                  break
+              fi
+          done
+
+          mkdir ../release
+          sudo mv ./$FILE_NAME ../release/$FILE_NAME
+      - name: 'Publish Release'
+        if: success() && startsWith(github.ref, 'refs/tags/') && github.event_name != 'pull_request'
+        uses: actions/upload-artifact@v2-preview
+        with:
+          name: '${{ env.FILE_NAME }}'
+          path: ./release/*.dmg
   ubuntu64:
     name: 'Linux/Ubuntu 64-bit'
     runs-on: [ubuntu-latest]
