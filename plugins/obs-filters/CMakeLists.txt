@@ -1,7 +1,6 @@
 project(obs-filters)
 
 option(DISABLE_SPEEXDSP "Disable building of the SpeexDSP-based Noise Suppression filter" OFF)
-option(DISABLE_RNNOISE "Disable building of the RNNoise-based Noise Suppression filter" OFF)
 
 if(DISABLE_SPEEXDSP)
 	message(STATUS "SpeexDSP support disabled")
@@ -13,19 +12,20 @@ else()
 	endif()
 endif()
 
-if(DISABLE_RNNOISE)
-	message(STATUS "RNNoise support disabled")
-	set(LIBRNNOISE_FOUND FALSE)
-else()
-	find_package(Librnnoise)
-	if(LIBRNNOISE_FOUND)
-		add_definitions(-DLIBRNNOISE_ENABLED)
-	endif()
-
+find_package(Librnnoise QUIET)
+add_definitions(-DLIBRNNOISE_ENABLED)
+if(NOT LIBRNNOISE_FOUND)
+	file(GLOB rnnoise_SOURCES
+		"rnnoise/src/*.c"
+		"rnnoise/src/*.h"
+		"rnnoise/include/*.h")
+	add_definitions(-DCOMPILE_OPUS)
+	include_directories("rnnoise/include")
+	source_group("rnnoise" FILES ${rnnoise_SOURCES})
+	set(LIBRNNOISE_FOUND TRUE)
 endif()
 
 if(LIBSPEEXDSP_FOUND OR LIBRNNOISE_FOUND)
-	message(STATUS "Noise Reduction effect enabled")
 	set(obs-filters_NOISEREDUCTION_SOURCES
 		noise-suppress-filter.c)
 	set(obs-filters_NOISEREDUCTION_LIBRARIES
@@ -77,6 +77,7 @@ if(WIN32)
 endif()
 
 add_library(obs-filters MODULE
+	${rnnoise_SOURCES}
 	${obs-filters_SOURCES}
 	${obs-filters_config_HEADERS}
 	${obs-filters_NOISEREDUCTION_SOURCES})
