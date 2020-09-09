@@ -13,7 +13,7 @@
 
 #define HOOK_VER_MAJOR 1
 #define HOOK_VER_MINOR 2
-#define HOOK_VER_PATCH 0
+#define HOOK_VER_PATCH 1
 
 #define STRINGIFY(s) #s
 #define MAKE_VERSION_NAME(major, minor, patch) \
