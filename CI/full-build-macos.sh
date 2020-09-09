@@ -54,11 +54,20 @@ BUILD_DEPS=(
     "sparkle ${SPARKLE_VERSION:-${CI_SPARKLE_VERSION}}"
 )
 
-COLOR_RED=$(tput setaf 1)
-COLOR_GREEN=$(tput setaf 2)
-COLOR_BLUE=$(tput setaf 4)
-COLOR_ORANGE=$(tput setaf 3)
-COLOR_RESET=$(tput sgr0)
+if [ -n "${TERM-}" ]; then
+    COLOR_RED=$(tput setaf 1)
+    COLOR_GREEN=$(tput setaf 2)
+    COLOR_BLUE=$(tput setaf 4)
+    COLOR_ORANGE=$(tput setaf 3)
+    COLOR_RESET=$(tput sgr0)
+else
+    COLOR_RED=""
+    COLOR_GREEN=""
+    COLOR_BLUE=""
+    COLOR_ORANGE=""
+    COLOR_RESET=""
+fi
+
 
 MACOS_VERSION="$(sw_vers -productVersion)"
 MACOS_MAJOR="$(echo ${MACOS_VERSION} | cut -d '.' -f 1)"
