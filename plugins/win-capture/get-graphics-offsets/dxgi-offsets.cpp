@@ -102,7 +102,8 @@ static inline void dxgi_free(dxgi_info &info)
 		DestroyWindow(info.hwnd);
 }
 
-void get_dxgi_offsets(struct dxgi_offsets *offsets)
+void get_dxgi_offsets(struct dxgi_offsets *offsets,
+		      struct dxgi_offsets2 *offsets2)
 {
 	dxgi_info info = {};
 	bool success = dxgi_init(info);
@@ -120,6 +121,8 @@ void get_dxgi_offsets(struct dxgi_offsets *offsets)
 				vtable_offset(info.module, swap1, 22);
 			swap1->Release();
 		}
+
+		offsets2->release = vtable_offset(info.module, info.swap, 2);
 	}
 
 	dxgi_free(info);

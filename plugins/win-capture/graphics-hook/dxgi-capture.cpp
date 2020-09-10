@@ -10,6 +10,7 @@
 #include <d3d12.h>
 #endif
 
+typedef ULONG(STDMETHODCALLTYPE *release_t)(IUnknown *);
 typedef HRESULT(STDMETHODCALLTYPE *resize_buffers_t)(IDXGISwapChain *, UINT,
 						     UINT, UINT, DXGI_FORMAT,
 						     UINT);
@@ -17,6 +18,7 @@ typedef HRESULT(STDMETHODCALLTYPE *present_t)(IDXGISwapChain *, UINT, UINT);
 typedef HRESULT(STDMETHODCALLTYPE *present1_t)(IDXGISwapChain1 *, UINT, UINT,
 					       const DXGI_PRESENT_PARAMETERS *);
 
+static struct func_hook release;
 static struct func_hook resize_buffers;
 static struct func_hook present;
 static struct func_hook present1;
@@ -78,6 +80,23 @@ static bool setup_dxgi(IDXGISwapChain *swap)
 #endif
 
 	return false;
+}
+
+static ULONG STDMETHODCALLTYPE hook_release(IUnknown *unknown)
+{
+	unhook(&release);
+	release_t call = (release_t)release.call_addr;
+	ULONG refs = call(unknown);
+	rehook(&release);
+
+	if (unknown == data.swap && refs == 0) {
+		data.free();
+		data.swap = nullptr;
+		data.free = nullptr;
+		data.capture = nullptr;
+	}
+
+	return refs;
 }
 
 static bool resize_buffers_called = false;
@@ -223,6 +242,7 @@ bool hook_dxgi(void)
 	void *present_addr;
 	void *resize_addr;
 	void *present1_addr = nullptr;
+	void *release_addr = nullptr;
 
 	if (!dxgi_module) {
 		return false;
@@ -237,6 +257,9 @@ bool hook_dxgi(void)
 	if (global_hook_info->offsets.dxgi.present1)
 		present1_addr = get_offset_addr(
 			dxgi_module, global_hook_info->offsets.dxgi.present1);
+	if (global_hook_info->offsets.dxgi2.release)
+		release_addr = get_offset_addr(
+			dxgi_module, global_hook_info->offsets.dxgi2.release);
 
 	hook_init(&present, present_addr, (void *)hook_present,
 		  "IDXGISwapChain::Present");
@@ -245,11 +268,16 @@ bool hook_dxgi(void)
 	if (present1_addr)
 		hook_init(&present1, present1_addr, (void *)hook_present1,
 			  "IDXGISwapChain1::Present1");
+	if (release_addr)
+		hook_init(&release, release_addr, (void *)hook_release,
+			  "IDXGISwapChain::Release");
 
 	rehook(&resize_buffers);
 	rehook(&present);
 	if (present1_addr)
 		rehook(&present1);
+	if (release_addr)
+		rehook(&release);
 
 	hlog("Hooked DXGI");
 	return true;
