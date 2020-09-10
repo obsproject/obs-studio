@@ -27,6 +27,7 @@ jobs:
       VLC_VERSION: '3.0.8'
       SPARKLE_VERSION: '1.23.0'
       QT_VERSION: '5.14.1'
+      SIGN_IDENTITY: ''
     steps:
       - name: 'Checkout'
         uses: actions/checkout@v2
@@ -152,17 +153,21 @@ jobs:
         shell: bash
         working-directory: ${{ github.workspace }}/build
         run: make CTEST_OUTPUT_ON_FAILURE=1 test
-      - name: 'Install prerequisite: Packages app'
-        if: success() && (github.event_name != 'pull_request' || env.SEEKING_TESTERS == '1')
-        shell: bash
-        run: |
-          curl -L -O https://s3-us-west-2.amazonaws.com/obs-nightly/Packages.pkg
-          sudo installer -pkg ./Packages.pkg -target /
       - name: 'Install prerequisite: DMGbuild'
         if: success() && (github.event_name != 'pull_request' || env.SEEKING_TESTERS == '1')
         shell: bash
         run: |
           pip3 install dmgbuild
+      - name: 'Install Apple Developer Certificate'
+        if: success() && startsWith(github.ref, 'refs/tags/') && github.event_name != 'pull_request'
+        uses: apple-actions/import-codesign-certs@253ddeeac23f2bdad1646faac5c8c2832e800071
+        with:
+          p12-file-base64: ${{ secrets.MACOS_SIGNING_CERT }}
+          p12-password: ${{ secrets.MACOS_SIGNING_CERT_PASSWORD }}
+      - name: 'Set Signing Identity'
+        if: success() && startsWith(github.ref, 'refs/tags/') && github.event_name != 'pull_request'
+        run: |
+          echo "::set-env name=SIGN_IDENTITY::${{ secrets.MACOS_SIGNING_IDENTITY }}"
       - name: 'Create macOS application bundle'
         if: success() && (github.event_name != 'pull_request' || env.SEEKING_TESTERS == '1')
         working-directory: ${{ github.workspace }}/build
@@ -236,6 +241,20 @@ jobs:
           plutil -insert OBSFeedsURL -string https://obsproject.com/osx_update/feeds.xml ./OBS.app/Contents/Info.plist
           plutil -insert SUFeedURL -string https://obsproject.com/osx_update/stable/updates.xml ./OBS.app/Contents/Info.plist
           plutil -insert SUPublicDSAKeyFile -string OBSPublicDSAKey.pem ./OBS.app/Contents/Info.plist
+
+          codesign --force --options runtime --sign "${SIGN_IDENTITY:--}" "./OBS.app/Contents/Frameworks/Sparkle.framework/Versions/A/Resources/Autoupdate.app/Contents/MacOS/fileop"
+          codesign --force --options runtime --sign "${SIGN_IDENTITY:--}" "./OBS.app/Contents/Frameworks/Sparkle.framework/Versions/A/Resources/Autoupdate.app/Contents/MacOS/Autoupdate"
+          codesign --force --options runtime --sign "${SIGN_IDENTITY:--}" --deep ./OBS.app/Contents/Frameworks/Sparkle.framework
+
+          codesign --force --options runtime --sign "${SIGN_IDENTITY:--}" "./OBS.app/Contents/Frameworks/Chromium Embedded Framework.framework/Libraries/libEGL.dylib"
+          codesign --force --options runtime --sign "${SIGN_IDENTITY:--}" "./OBS.app/Contents/Frameworks/Chromium Embedded Framework.framework/Libraries/libswiftshader_libEGL.dylib"
+          codesign --force --options runtime --sign "${SIGN_IDENTITY:--}" "./OBS.app/Contents/Frameworks/Chromium Embedded Framework.framework/Libraries/libGLESv2.dylib"
+          codesign --force --options runtime --sign "${SIGN_IDENTITY:--}" "./OBS.app/Contents/Frameworks/Chromium Embedded Framework.framework/Libraries/libswiftshader_libGLESv2.dylib"
+          codesign --force --options runtime --sign "${SIGN_IDENTITY:--}" --deep "./OBS.app/Contents/Frameworks/Chromium Embedded Framework.framework"
+
+          codesign --force --options runtime --entitlements "../CI/scripts/macos/app/entitlements.plist" --sign "${SIGN_IDENTITY:--}" --deep ./OBS.app
+
+          codesign -dvv ./OBS.app
       - name: 'Package'
         if: success() && (github.event_name != 'pull_request' || env.SEEKING_TESTERS == '1')
         working-directory: ${{ github.workspace }}/build
@@ -252,7 +271,9 @@ jobs:
 
           dmgbuild "OBS-Studio ${{ env.OBS_GIT_TAG }}" "${FILE_NAME}" -s ./settings.json
           mkdir ../nightly
-          sudo mv ./${FILE_NAME} ../nightly/${FILE_NAME}
+          codesign --force --sign "${SIGN_IDENTITY:--}" ./"${FILE_NAME}"
+          codesign -dvv ./"${FILE_NAME}"
+          sudo cp ./${FILE_NAME} ../nightly/${FILE_NAME}
       - name: 'Publish'
         if: success() && (github.event_name != 'pull_request' || env.SEEKING_TESTERS == '1')
         uses: actions/upload-artifact@v2-preview
@@ -265,95 +286,27 @@ jobs:
         shell: bash
         run: |
           FILE_DATE=$(date +%Y-%m-%d)
-          FILE_NAME=$FILE_DATE-${{ env.OBS_GIT_HASH }}-${{ env.OBS_GIT_TAG }}-rel-macOS.dmg
+          FILE_NAME=$FILE_DATE-${{ env.OBS_GIT_HASH }}-${{ env.OBS_GIT_TAG }}-macOS.dmg
+          RELEASE_FILE_NAME=$FILE_DATE-${{ env.OBS_GIT_HASH }}-${{ env.OBS_GIT_TAG }}-rel-macOS.dmg
+          echo "::set-env name=RELEASE_FILE_NAME::${RELEASE_FILE_NAME}"
 
-          KEYCHAIN=tempkeychain
-          echo "${{ secrets.MACOS_SIGNING_CERT }}" | base64 --decode > ./certificate.p12
-          security create-keychain -p "" "$KEYCHAIN"
-          security list-keychains -s "$KEYCHAIN"
-          security default-keychain -s "$KEYCHAIN"
-          security unlock-keychain -p "" "$KEYCHAIN"
-          security set-keychain-settings
-          security import ./certificate.p12 -k "$KEYCHAIN" -P "${{ secrets.MACOS_SIGNING_CERT_PASSWORD }}" -T /usr/bin/codesign -T /usr/bin/security
-          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "" $KEYCHAIN
+          xcrun altool --store-password-in-keychain-item "AC_PASSWORD" -u "${{ secrets.MACOS_NOTARIZATION_USERNAME }}" -p "${{ secrets.MACOS_NOTARIZATION_PASSWORD }}"
 
-          codesign --verbose --force --options runtime --sign "${{ secrets.MACOS_SIGNING_IDENTITY }}" ./OBS.app/Contents/Frameworks/Sparkle.framework/Versions/A/Resources/Autoupdate.app/Contents/MacOS/fileop
-          codesign --verbose --force --options runtime --sign "${{ secrets.MACOS_SIGNING_IDENTITY }}" ./OBS.app/Contents/Frameworks/Sparkle.framework/Versions/A/Resources/Autoupdate.app/Contents/MacOS/Autoupdate
-          codesign --verbose --force --options runtime --sign "${{ secrets.MACOS_SIGNING_IDENTITY }}" --deep ./OBS.app/Contents/Frameworks/Sparkle.framework
+          xcnotary precheck "./OBS.app"
 
-          codesign --verbose --force --options runtime --sign "${{ secrets.MACOS_SIGNING_IDENTITY }}" "./OBS.app/Contents/Frameworks/Chromium Embedded Framework.framework/Libraries/libEGL.dylib"
-          codesign --verbose --force --options runtime --sign "${{ secrets.MACOS_SIGNING_IDENTITY }}" "./OBS.app/Contents/Frameworks/Chromium Embedded Framework.framework/Libraries/libswiftshader_libEGL.dylib"
-          codesign --verbose --force --options runtime --sign "${{ secrets.MACOS_SIGNING_IDENTITY }}" "./OBS.app/Contents/Frameworks/Chromium Embedded Framework.framework/Libraries/libGLESv2.dylib"
-          codesign --verbose --force --options runtime --sign "${{ secrets.MACOS_SIGNING_IDENTITY }}" "./OBS.app/Contents/Frameworks/Chromium Embedded Framework.framework/Libraries/libswiftshader_libGLESv2.dylib"
-          codesign --verbose --force --options runtime --sign "${{ secrets.MACOS_SIGNING_IDENTITY }}" --deep "./OBS.app/Contents/Frameworks/Chromium Embedded Framework.framework"
-
-          cp ../CI/scripts/macos/app/entitlements.plist  ./entitlements.plist
-
-          codesign --verbose --force --options runtime --entitlements ./entitlements.plist --sign "${{ secrets.MACOS_SIGNING_IDENTITY }}" --deep ./OBS.app
-
-          /usr/bin/ditto -c -k --keepParent ./OBS.app ./OBS.zip
-
-          UPLOAD_RESULT=$(xcrun altool \
-          		--notarize-app \
-          		--primary-bundle-id "com.obsproject.obs-studio" \
-          		--username "${{ secrets.MACOS_NOTARIZATION_USERNAME }}" \
-          		--password "${{ secrets.MACOS_NOTARIZATION_PASSWORD }}" \
-          		--asc-provider "${{ secrets.ASC_PROVIDER_SHORTNAME }}" \
-          		--file OBS.zip)
-
-          REQUEST_UUID=$(echo $UPLOAD_RESULT | awk -F ' = ' '/RequestUUID/ {print $2}')
-          echo "Request UUID: $REQUEST_UUID"
-
-          while sleep 30 && date; do
-              CHECK_RESULT=$(xcrun altool \
-                  --notarization-info "$REQUEST_UUID" \
-                  --username "${{ secrets.MACOS_NOTARIZATION_USERNAME }}" \
-                  --password "${{ secrets.MACOS_NOTARIZATION_PASSWORD }}" \
-                  --asc-provider "${{ secrets.ASC_PROVIDER_SHORTNAME }}")
-              echo $CHECK_RESULT
-
-              if ! grep -q "Status: in progress" <<< "$CHECK_RESULT"; then
-                  echo "Staple ticket to app"
-                  xcrun stapler staple -v OBS.app
-                  break
-              fi
-          done
-
-          dmgbuild "OBS-Studio ${{ env.OBS_GIT_TAG }}" "$FILE_NAME" -s ./settings.json
-
-          UPLOAD_RESULT=$(xcrun altool \
-              --notarize-app \
-              --primary-bundle-id "com.obsproject.obs-studio" \
-              --username "${{ secrets.MACOS_NOTARIZATION_USERNAME }}" \
-              --password "${{ secrets.MACOS_NOTARIZATION_PASSWORD }}" \
-              --asc-provider "${{ secrets.ASC_PROVIDER_SHORTNAME }}" \
-              --file $FILE_NAME)
-
-          REQUEST_UUID=$(echo $UPLOAD_RESULT | awk -F ' = ' '/RequestUUID/ {print $2}')
-          echo "Request UUID: $REQUEST_UUID"
-
-          while sleep 30 && date; do
-              CHECK_RESULT=$(xcrun altool \
-                  --notarization-info "$REQUEST_UUID" \
-                  --username "${{ secrets.MACOS_NOTARIZATION_USERNAME }}" \
-                  --password "${{ secrets.MACOS_NOTARIZATION_PASSWORD }}" \
-                  --asc-provider "${{ secrets.ASC_PROVIDER_SHORTNAME }}")
-              echo $CHECK_RESULT
-
-              if ! grep -q "Status: in progress" <<< "$CHECK_RESULT"; then
-                  echo "Staple ticket to dmg"
-                  xcrun stapler staple -v $FILE_NAME
-                  break
-              fi
-          done
+          if [ "$?" -eq 0 ]; then
+            xcnotary notarize "$FILE_NAME" --developer-account "${{ secrets.MACOS_NOTARIZATION_USERNAME }}" --developer-password-keychain-item "AC_PASSWORD" --provider "${{ secrets.ASC_PROVIDER_SHORTNAME }}"
+          else
+            return 1
+          fi
 
           mkdir ../release
-          sudo mv ./$FILE_NAME ../release/$FILE_NAME
+          sudo mv ./$FILE_NAME ../release/$RELEASE_FILE_NAME
       - name: 'Publish Release'
         if: success() && startsWith(github.ref, 'refs/tags/') && github.event_name != 'pull_request'
         uses: actions/upload-artifact@v2-preview
         with:
-          name: '${{ env.FILE_NAME }}'
+          name: '${{ env.RELEASE_FILE_NAME }}'
           path: ./release/*.dmg
   ubuntu64:
     name: 'Linux/Ubuntu 64-bit'
