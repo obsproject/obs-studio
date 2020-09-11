@@ -58,6 +58,7 @@
 #include "remote-text.hpp"
 #include "ui-validation.hpp"
 #include "media-controls.hpp"
+#include "scene-wizard.hpp"
 #include <fstream>
 #include <sstream>
 
@@ -7932,6 +7933,9 @@ void OBSBasic::on_autoConfigure_triggered()
 	test.setModal(true);
 	test.show();
 	test.exec();
+
+	QMetaObject::invokeMethod(this, "on_actionRunSceneWizard_triggered",
+				  Qt::QueuedConnection);
 }
 
 void OBSBasic::on_stats_triggered()
@@ -8366,4 +8370,10 @@ void OBSBasic::on_sourcePropertiesButton_clicked()
 void OBSBasic::on_sourceFiltersButton_clicked()
 {
 	OpenFilters();
+}
+
+void OBSBasic::on_actionRunSceneWizard_triggered()
+{
+	SceneWizard sw(this);
+	sw.exec();
 }

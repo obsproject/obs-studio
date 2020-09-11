@@ -1459,3 +1459,20 @@ QPushButton#sourceFiltersButton {
 * [themeID="nextIcon"] {
     qproperty-icon: url(./Dark/media/media_next.svg);
 }
+
+/* Scene wizard */
+
+QListWidget[themeID="templateList"] {
+	background-color: rgb(49, 54, 59); /* Blue-gray */
+	border: none;
+}
+
+QListWidget::item:selected[themeID="templateList"] {
+	background-color: rgb(0, 188, 212);; /* Cyan (Primary) */
+	color: rgb(225, 224, 225);
+}
+
+QListWidget::item[themeID="templateList"] {
+	border: 0px;
+	padding: 10px;
+}

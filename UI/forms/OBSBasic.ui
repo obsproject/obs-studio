@@ -426,7 +426,7 @@
      <x>0</x>
      <y>0</y>
      <width>1079</width>
-     <height>21</height>
+     <height>22</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_File">
@@ -587,6 +587,8 @@
     <property name="title">
      <string>Basic.MainMenu.SceneCollection</string>
     </property>
+    <addaction name="actionRunSceneWizard"/>
+    <addaction name="separator"/>
     <addaction name="actionNewSceneCollection"/>
     <addaction name="actionDupSceneCollection"/>
     <addaction name="actionRenameSceneCollection"/>
@@ -649,7 +651,7 @@
   <widget class="OBSBasicStatusBar" name="statusbar"/>
   <widget class="OBSDock" name="scenesDock">
    <property name="features">
-    <set>QDockWidget::DockWidgetClosable|QDockWidget::DockWidgetMovable|QDockWidget::DockWidgetFloatable</set>
+    <set>QDockWidget::AllDockWidgetFeatures</set>
    </property>
    <property name="windowTitle">
     <string>Basic.Main.Scenes</string>
@@ -784,7 +786,7 @@
   </widget>
   <widget class="OBSDock" name="sourcesDock">
    <property name="features">
-    <set>QDockWidget::DockWidgetClosable|QDockWidget::DockWidgetMovable|QDockWidget::DockWidgetFloatable</set>
+    <set>QDockWidget::AllDockWidgetFeatures</set>
    </property>
    <property name="windowTitle">
     <string>Basic.Main.Sources</string>
@@ -920,7 +922,7 @@
   </widget>
   <widget class="OBSDock" name="mixerDock">
    <property name="features">
-    <set>QDockWidget::DockWidgetClosable|QDockWidget::DockWidgetMovable|QDockWidget::DockWidgetFloatable</set>
+    <set>QDockWidget::AllDockWidgetFeatures</set>
    </property>
    <property name="windowTitle">
     <string>Mixer</string>
@@ -971,7 +973,7 @@
           <rect>
            <x>0</x>
            <y>0</y>
-           <width>94</width>
+           <width>74</width>
            <height>16</height>
           </rect>
          </property>
@@ -1060,7 +1062,7 @@
   </widget>
   <widget class="OBSDock" name="transitionsDock">
    <property name="features">
-    <set>QDockWidget::DockWidgetClosable|QDockWidget::DockWidgetMovable|QDockWidget::DockWidgetFloatable</set>
+    <set>QDockWidget::AllDockWidgetFeatures</set>
    </property>
    <property name="windowTitle">
     <string>Basic.SceneTransitions</string>
@@ -1221,7 +1223,7 @@
   </widget>
   <widget class="OBSDock" name="controlsDock">
    <property name="features">
-    <set>QDockWidget::DockWidgetClosable|QDockWidget::DockWidgetMovable|QDockWidget::DockWidgetFloatable</set>
+    <set>QDockWidget::AllDockWidgetFeatures</set>
    </property>
    <property name="windowTitle">
     <string>Basic.Main.Controls</string>
@@ -2003,6 +2005,11 @@
    </property>
    <property name="text">
     <string>Basic.MainMenu.View.ContextBar</string>
+   </property>
+  </action>
+  <action name="actionRunSceneWizard">
+   <property name="text">
+    <string>RunSceneWizard</string>
    </property>
   </action>
  </widget>

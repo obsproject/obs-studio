@@ -252,7 +252,8 @@ set(obs_SOURCES
 	obs-proxy-style.cpp
 	locked-checkbox.cpp
 	visibility-checkbox.cpp
-	media-slider.cpp)
+	media-slider.cpp
+	scene-wizard.cpp)
 
 set(obs_HEADERS
 	${obs_PLATFORM_HEADERS}
@@ -322,7 +323,8 @@ set(obs_HEADERS
 	log-viewer.hpp
 	obs-proxy-style.hpp
 	obs-proxy-style.hpp
-	media-slider.hpp)
+	media-slider.hpp
+	scene-wizard.hpp)
 
 set(obs_importers_HEADERS
 	importers/importers.hpp)
@@ -362,7 +364,8 @@ set(obs_UI
 	forms/OBSUpdate.ui
 	forms/OBSRemux.ui
 	forms/OBSImporter.ui
-	forms/OBSAbout.ui)
+	forms/OBSAbout.ui
+	forms/OBSSceneWizard.ui)
 
 set(obs_QRC
 	forms/obs.qrc)

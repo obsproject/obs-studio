@@ -35,6 +35,7 @@
 #include "window-basic-about.hpp"
 #include "auth-base.hpp"
 #include "log-viewer.hpp"
+#include "scene-wizard.hpp"
 
 #include <obs-frontend-internal.hpp>
 
@@ -167,6 +168,7 @@ class OBSBasic : public OBSMainWindow {
 	friend class DeviceToolbarPropertiesThread;
 	friend struct BasicOutputHandler;
 	friend struct OBSStudioAPI;
+	friend class SceneWizard;
 
 	enum class MoveDir { Up, Down, Left, Right };
 
@@ -869,6 +871,8 @@ private slots:
 	void on_actionCenterToScreen_triggered();
 	void on_actionVerticalCenter_triggered();
 	void on_actionHorizontalCenter_triggered();
+
+	void on_actionRunSceneWizard_triggered();
 
 	void on_customContextMenuRequested(const QPoint &pos);
 

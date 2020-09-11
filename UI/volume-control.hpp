@@ -7,6 +7,7 @@
 #include <QTimer>
 #include <QMutex>
 #include <QList>
+#include "scene-wizard.hpp"
 
 class QPushButton;
 class VolumeMeterTimer;
@@ -205,6 +206,8 @@ class MuteCheckBox;
 
 class VolControl : public QWidget {
 	Q_OBJECT
+
+	friend class SceneWizard;
 
 private:
 	OBSSource source;

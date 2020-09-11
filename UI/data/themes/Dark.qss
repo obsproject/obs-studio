@@ -878,3 +878,20 @@ QSlider::handle:horizontal[themeID="tBarSlider"] {
 * [themeID="previousIcon"] {
     qproperty-icon: url(./Dark/media/media_previous.svg);
 }
+
+/* Scene wizard */
+
+QListWidget[themeID="templateList"] {
+	background-color: rgb(58, 57, 58);
+	border: none;
+}
+
+QListWidget::item:selected[themeID="templateList"] {
+	background-color: rgb(88, 87, 88);
+	color: rgb(225, 224, 225);
+}
+
+QListWidget::item[themeID="templateList"] {
+	border: 0px;
+	padding: 10px;
+}

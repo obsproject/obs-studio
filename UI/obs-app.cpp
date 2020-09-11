@@ -1460,12 +1460,15 @@ bool OBSApp::IsUpdaterDisabled()
 #ifdef __APPLE__
 #define INPUT_AUDIO_SOURCE "coreaudio_input_capture"
 #define OUTPUT_AUDIO_SOURCE "coreaudio_output_capture"
+#define VIDEO_CAPTURE_SOURCE "av_capture_input"
 #elif _WIN32
 #define INPUT_AUDIO_SOURCE "wasapi_input_capture"
 #define OUTPUT_AUDIO_SOURCE "wasapi_output_capture"
+#define VIDEO_CAPTURE_SOURCE "dshow_input"
 #else
 #define INPUT_AUDIO_SOURCE "pulse_input_capture"
 #define OUTPUT_AUDIO_SOURCE "pulse_output_capture"
+#define VIDEO_CAPTURE_SOURCE "v4l2_input"
 #endif
 
 const char *OBSApp::InputAudioSource() const
@@ -1476,6 +1479,11 @@ const char *OBSApp::InputAudioSource() const
 const char *OBSApp::OutputAudioSource() const
 {
 	return OUTPUT_AUDIO_SOURCE;
+}
+
+const char *OBSApp::VideoCaptureSource() const
+{
+	return VIDEO_CAPTURE_SOURCE;
 }
 
 const char *OBSApp::GetLastLog() const

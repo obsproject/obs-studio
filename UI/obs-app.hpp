@@ -153,6 +153,7 @@ public:
 
 	const char *InputAudioSource() const;
 	const char *OutputAudioSource() const;
+	const char *VideoCaptureSource() const;
 
 	const char *GetRenderModule() const;
 
