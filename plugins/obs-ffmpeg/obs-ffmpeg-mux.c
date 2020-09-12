@@ -440,7 +440,11 @@ static void signal_failure(struct ffmpeg_muxer *stream)
 		code = OBS_OUTPUT_UNSUPPORTED;
 		break;
 	default:
-		code = OBS_OUTPUT_ERROR;
+		if (stream->is_network) {
+			code = OBS_OUTPUT_DISCONNECTED;
+		} else {
+			code = OBS_OUTPUT_ENCODE_ERROR;
+		}
 	}
 
 	obs_output_signal_stop(stream->output, code);
