@@ -2271,7 +2271,7 @@ static void game_capture_defaults(obs_data_t *settings)
 	obs_data_set_default_string(settings, SETTING_PLACEHOLDER_IMG, "");
 	obs_data_set_default_string(settings, SETTING_PLACEHOLDER_USR, "");
 	obs_data_set_default_bool(settings, SETTING_PLACEHOLDER_USE, false);
-	obs_data_set_default_string(settings, SETTING_PLACEHOLDER_MSG, "Looking for a game to caputure");
+	obs_data_set_default_string(settings, SETTING_PLACEHOLDER_MSG, "Looking for a game to capture");
 }
 
 static bool mode_callback(obs_properties_t *ppts, obs_property_t *p,
