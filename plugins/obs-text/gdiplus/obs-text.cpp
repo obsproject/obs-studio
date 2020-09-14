@@ -1116,7 +1116,7 @@ bool obs_module_load(void)
 	obs_source_info si = { 0 };
 	si.id = "text_gdiplus";
 	si.type = OBS_SOURCE_TYPE_INPUT;
-	si.output_flags = OBS_SOURCE_VIDEO;
+	si.output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_CUSTOM_DRAW;
 	si.create = text_create;
 	si.destroy = text_destroy;
 	si.get_name = text_get_name;
