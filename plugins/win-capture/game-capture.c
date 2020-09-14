@@ -47,6 +47,8 @@ extern struct obs_core *obs = NULL;
 #define SETTING_AUTO_LIST_FILE   "auto_capture_rules_path"
 #define SETTING_PLACEHOLDER_IMG  "auto_placeholder_image"
 #define SETTING_PLACEHOLDER_MSG  "auto_placeholder_message"
+#define SETTING_PLACEHOLDER_USE  "user_placeholder_use"
+#define SETTING_PLACEHOLDER_USR  "user_placeholder_image"
 
 /* deprecated */
 #define SETTING_ANY_FULLSCREEN   "capture_any_fullscreen"
@@ -75,6 +77,8 @@ extern struct obs_core *obs = NULL;
 #define TEXT_LIMIT_FRAMERATE     obs_module_text("GameCapture.LimitFramerate")
 #define TEXT_CAPTURE_OVERLAYS    obs_module_text("GameCapture.CaptureOverlays")
 #define TEXT_ANTI_CHEAT_HOOK     obs_module_text("GameCapture.AntiCheatHook")
+#define TEXT_PLACEHOLDER_USER    obs_module_text("GameCapture.Placeholder.Custom")
+#define TEXT_PLACEHOLDER_USE     obs_module_text("GameCapture.Placeholder.Use.Custom")
 #define TEXT_HOOK_RATE           obs_module_text("GameCapture.HookRate")
 #define TEXT_HOOK_RATE_SLOW      obs_module_text("GameCapture.HookRate.Slow")
 #define TEXT_HOOK_RATE_NORMAL    obs_module_text("GameCapture.HookRate.Normal")
@@ -735,13 +739,22 @@ static void game_capture_update(void *data, obs_data_t *settings)
 		free_whitelist(&gc->auto_capture);
 	}
 	
-	const char *img_path = obs_data_get_string(settings, SETTING_PLACEHOLDER_IMG);
+	const char *img_path = NULL;
+	const char *placeholder_text = NULL;
+	bool use_custom_placeholder = obs_data_get_bool(settings, SETTING_PLACEHOLDER_USE);
+	if (use_custom_placeholder)
+		img_path = obs_data_get_string(settings, SETTING_PLACEHOLDER_USR);
+	else
+		img_path = obs_data_get_string(settings, SETTING_PLACEHOLDER_IMG);
+
 	if (gc->placeholder_image_path.len == 0 || dstr_cmp(&gc->placeholder_image_path, img_path) != 0) {
 		unload_placeholder_image(gc);
 	}
 	dstr_copy(&gc->placeholder_image_path, img_path);
 
-	const char *placeholder_text = obs_data_get_string(settings, SETTING_PLACEHOLDER_MSG);
+	if (!use_custom_placeholder)
+		placeholder_text = obs_data_get_string(settings, SETTING_PLACEHOLDER_MSG);
+
 	dstr_copy(&gc->placeholder_text, placeholder_text);
 
 	reset_capture = capture_needs_reset(&cfg, &gc->config);
@@ -2154,8 +2167,6 @@ static void game_capture_render(void *data, gs_effect_t *effect)
 					gs_matrix_push();
 					gs_matrix_translate3f(0.0f, (ovi.base_height - gc->placeholder_text_height/scale)/2.05f, 0.0f);
 
-					gs_technique_begin(tech);
-			
 					int passes = gs_technique_begin(tech);
 					for (int i = 0; i < passes; i++) {
 						gs_technique_begin_pass(tech, i);
@@ -2170,26 +2181,6 @@ static void game_capture_render(void *data, gs_effect_t *effect)
 
 					gs_technique_end(tech);
 				}
-			} else {
-				struct color_source *context = data;
-
-				gs_effect_t *solid = obs_get_base_effect(OBS_EFFECT_SOLID);
-				gs_eparam_t *color = gs_effect_get_param_by_name(solid, "color");
-				gs_technique_t *tech = gs_effect_get_technique(solid, "Solid");
-
-				struct vec4 colorVal;
-				vec4_from_rgba(&colorVal, 0x80808080);
-				gs_effect_set_vec4(color, &colorVal);
-
-				gs_technique_begin(tech);
-				gs_technique_begin_pass(tech, 0);
-
-				struct obs_video_info ovi;	
-				obs_get_video_info(&ovi);
-				gs_draw_sprite(0, 0, ovi.base_width, ovi.base_height);
-
-				gs_technique_end_pass(tech);
-				gs_technique_end(tech);
 			}
 		}
 		return;
@@ -2278,6 +2269,8 @@ static void game_capture_defaults(obs_data_t *settings)
 
 	obs_data_set_default_string(settings, SETTING_AUTO_LIST_FILE, "");
 	obs_data_set_default_string(settings, SETTING_PLACEHOLDER_IMG, "");
+	obs_data_set_default_string(settings, SETTING_PLACEHOLDER_USR, "");
+	obs_data_set_default_bool(settings, SETTING_PLACEHOLDER_USE, false);
 	obs_data_set_default_string(settings, SETTING_PLACEHOLDER_MSG, "Looking for a game to caputure");
 }
 
@@ -2322,6 +2315,18 @@ static bool mode_callback(obs_properties_t *ppts, obs_property_t *p,
 
 	p = obs_properties_get(ppts, SETTING_PLACEHOLDER_MSG);
 	obs_property_set_visible(p, false);
+
+	p = obs_properties_get(ppts, SETTING_PLACEHOLDER_USE);
+	obs_property_set_visible(p, capture_window_auto);
+
+	if (capture_window_auto) {
+		bool  use_custom_placeholder = obs_data_get_bool(settings, SETTING_PLACEHOLDER_USE);
+
+		p = obs_properties_get(ppts, SETTING_PLACEHOLDER_USR);
+		obs_property_set_visible(p, use_custom_placeholder);
+	} else {
+		obs_property_set_visible(p, false);
+	}
 
 	return true;
 }
@@ -2532,6 +2537,13 @@ static obs_properties_t *game_capture_properties(void *data)
 
 	obs_properties_add_text(ppts, SETTING_PLACEHOLDER_MSG,
 				SETTING_PLACEHOLDER_MSG, OBS_TEXT_DEFAULT);
+
+	obs_properties_add_bool(ppts, SETTING_PLACEHOLDER_USE,
+				TEXT_PLACEHOLDER_USE);
+
+	obs_properties_add_path(ppts, SETTING_PLACEHOLDER_USR,
+				TEXT_PLACEHOLDER_USER, OBS_PATH_FILE,
+				"PNG (*.png);;JPEG (*.jpg *.jpeg);;BMP (*.bmp)", "");
 
 	p = obs_properties_add_list(ppts, SETTING_HOOK_RATE, TEXT_HOOK_RATE,
 				    OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
