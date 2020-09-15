@@ -151,8 +151,8 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>806</width>
-              <height>1254</height>
+              <width>810</width>
+              <height>1087</height>
              </rect>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_19">
@@ -1177,6 +1177,19 @@
                </property>
               </widget>
              </item>
+             <item row="7" column="0">
+              <widget class="QLabel" name="twitchAddonLabel">
+               <property name="text">
+                <string>Basic.Settings.Stream.TTVAddon</string>
+               </property>
+               <property name="buddy">
+                <cstring>twitchAddonDropdown</cstring>
+               </property>
+              </widget>
+             </item>
+             <item row="7" column="1">
+              <widget class="QComboBox" name="twitchAddonDropdown"/>
+             </item>
              <item row="8" column="0">
               <widget class="QLabel" name="authUsernameLabel">
                <property name="text">
@@ -1232,18 +1245,29 @@
                </layout>
               </widget>
              </item>
-             <item row="7" column="1">
-              <widget class="QComboBox" name="twitchAddonDropdown"/>
-             </item>
-             <item row="7" column="0">
-              <widget class="QLabel" name="twitchAddonLabel">
-               <property name="text">
-                <string>Basic.Settings.Stream.TTVAddon</string>
-               </property>
-               <property name="buddy">
-                <cstring>twitchAddonDropdown</cstring>
-               </property>
-              </widget>
+             <item row="10" column="1">
+              <layout class="QHBoxLayout" name="horizontalLayout_27">
+               <item>
+                <widget class="QPushButton" name="settingWizardBtn">
+                 <property name="text">
+                  <string>Basic.Settings.Stream.PreLiveWizard.RunNow</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <spacer name="horizontalSpacer_27">
+                 <property name="orientation">
+                  <enum>Qt::Horizontal</enum>
+                 </property>
+                 <property name="sizeHint" stdset="0">
+                  <size>
+                   <width>40</width>
+                   <height>20</height>
+                  </size>
+                 </property>
+                </spacer>
+               </item>
+              </layout>
              </item>
             </layout>
            </widget>
@@ -1281,8 +1305,8 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>813</width>
-              <height>761</height>
+              <width>740</width>
+              <height>767</height>
              </rect>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_21">
@@ -2413,7 +2437,7 @@
                                  <rect>
                                   <x>9</x>
                                   <y>0</y>
-                                  <width>236</width>
+                                  <width>250</width>
                                   <height>25</height>
                                  </rect>
                                 </property>
@@ -3776,8 +3800,8 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>767</width>
-              <height>582</height>
+              <width>691</width>
+              <height>601</height>
              </rect>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_50">
@@ -4632,8 +4656,8 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>791</width>
-              <height>970</height>
+              <width>810</width>
+              <height>930</height>
              </rect>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_23">

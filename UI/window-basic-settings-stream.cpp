@@ -249,6 +249,7 @@ void OBSBasicSettings::UpdateKeyLink()
 	QString serviceName = ui->service->currentText();
 	QString customServer = ui->customServer->text();
 	QString streamKeyLink;
+	bool hasStreamWizard = false;
 	if (serviceName == "Twitch") {
 		streamKeyLink = "https://dashboard.twitch.tv/settings/stream";
 	} else if (serviceName.startsWith("YouTube")) {
@@ -260,6 +261,7 @@ void OBSBasicSettings::UpdateKeyLink()
 		   (customServer.contains("fbcdn.net") && IsCustomService())) {
 		streamKeyLink =
 			"https://www.facebook.com/live/producer?ref=OBS";
+		hasStreamWizard = true;
 	} else if (serviceName.startsWith("Twitter")) {
 		streamKeyLink = "https://www.pscp.tv/account/producer";
 	} else if (serviceName.startsWith("YouStreamer")) {
@@ -274,6 +276,7 @@ void OBSBasicSettings::UpdateKeyLink()
 		ui->getStreamKeyButton->setTargetUrl(QUrl(streamKeyLink));
 		ui->getStreamKeyButton->show();
 	}
+	ui->settingWizardBtn->setHidden(!hasStreamWizard);
 }
 
 void OBSBasicSettings::LoadServices(bool showAll)
