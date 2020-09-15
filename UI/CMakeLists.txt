@@ -11,6 +11,7 @@ if(BROWSER_AVAILABLE_INTERNAL)
 	add_definitions(-DBROWSER_AVAILABLE)
 endif()
 
+add_subdirectory(pre-stream-wizard)
 add_subdirectory(obs-frontend-api)
 
 # ----------------------------------------------------------------------------
@@ -69,6 +70,7 @@ endif()
 include_directories(${FFMPEG_INCLUDE_DIRS})
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 include_directories(SYSTEM "obs-frontend-api")
+include_directories(SYSTEM "pre-stream-wizard")
 include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/libobs")
 include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/deps/libff")
 include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/deps/json11")
@@ -188,6 +190,7 @@ set(obs_SOURCES
 	${obs_PLATFORM_SOURCES}
 	${obs_libffutil_SOURCES}
 	../deps/json11/json11.cpp
+	pre-stream-wizard/pre-stream-wizard.cpp
 	obs-app.cpp
 	window-dock.cpp
 	api-interface.cpp
@@ -220,6 +223,8 @@ set(obs_SOURCES
 	window-log-reply.cpp
 	window-projector.cpp
 	window-remux.cpp
+	common-settings.cpp
+	streaming-settings-util.cpp
 	auth-base.cpp
 	source-tree.cpp
 	scene-tree.cpp
@@ -258,6 +263,8 @@ set(obs_HEADERS
 	${obs_PLATFORM_HEADERS}
 	${obs_libffutil_HEADERS}
 	../deps/json11/json11.hpp
+	pre-stream-wizard/pre-stream-current-settings.hpp 
+	pre-stream-wizard/pre-stream-wizard.hpp
 	obs-app.hpp
 	platform.hpp
 	window-dock.hpp
@@ -282,6 +289,8 @@ set(obs_HEADERS
 	window-log-reply.hpp
 	window-projector.hpp
 	window-remux.hpp
+	common-settings.hpp
+	streaming-settings-util.hpp
 	auth-base.hpp
 	source-tree.hpp
 	scene-tree.hpp

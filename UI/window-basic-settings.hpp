@@ -240,6 +240,7 @@ private slots:
 	void UpdateServerList();
 	void UpdateKeyLink();
 	void UpdateMoreInfoLink();
+	void preStreamWizardLaunch();
 	void on_show_clicked();
 	void on_authPwShow_clicked();
 	void on_connectAccount_clicked();

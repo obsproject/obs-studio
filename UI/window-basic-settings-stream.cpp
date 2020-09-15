@@ -7,6 +7,8 @@
 #include "window-basic-main.hpp"
 #include "qt-wrappers.hpp"
 #include "url-push-button.hpp"
+#include "pre-stream-wizard.hpp"
+#include "streaming-settings-util.hpp"
 
 #ifdef BROWSER_AVAILABLE
 #include <browser-panel.hpp>
@@ -77,6 +79,8 @@ void OBSBasicSettings::InitStreamPage()
 		this, SLOT(UpdateKeyLink()));
 	connect(ui->service, SIGNAL(currentIndexChanged(int)), this,
 		SLOT(UpdateMoreInfoLink()));
+	connect(ui->settingWizardBtn, SIGNAL(clicked(bool)), this,
+		SLOT(preStreamWizardLaunch()));
 }
 
 void OBSBasicSettings::LoadStream1Settings()
@@ -277,6 +281,22 @@ void OBSBasicSettings::UpdateKeyLink()
 		ui->getStreamKeyButton->show();
 	}
 	ui->settingWizardBtn->setHidden(!hasStreamWizard);
+}
+
+void OBSBasicSettings::preStreamWizardLaunch()
+{
+	obs_service_t *service_obj = main->GetService();
+	obs_data_t *settings = obs_service_get_settings(service_obj);
+
+	QSharedPointer<StreamWizard::EncoderSettingsRequest> currentSettings =
+		StreamingSettingsUtility::makeEncoderSettingsFromCurrentState(
+			main->Config(), settings);
+
+	StreamWizard::PreStreamWizard wiz = StreamWizard::PreStreamWizard(
+		StreamWizard::Destination::Facebook, currentSettings, this);
+	wiz.exec();
+
+	obs_data_release(settings);
 }
 
 void OBSBasicSettings::LoadServices(bool showAll)

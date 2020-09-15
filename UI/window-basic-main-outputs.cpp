@@ -1,6 +1,7 @@
 #include <string>
 #include <algorithm>
 #include <QMessageBox>
+#include "common-settings.hpp"
 #include "qt-wrappers.hpp"
 #include "audio-encoders.hpp"
 #include "window-basic-main.hpp"
@@ -275,7 +276,6 @@ struct SimpleOutput : BasicOutputHandler {
 	virtual void Update() override;
 
 	void SetupOutputs() override;
-	int GetAudioBitrate() const;
 
 	void LoadRecordingPreset_h264(const char *encoder);
 	void LoadRecordingPreset_Lossless();
@@ -406,8 +406,10 @@ SimpleOutput::SimpleOutput(OBSBasic *main_) : BasicOutputHandler(main_)
 		LoadStreamingPreset_h264("obs_x264");
 	}
 
-	if (!CreateAACEncoder(aacStreaming, aacStreamEncID, GetAudioBitrate(),
-			      "simple_aac", 0))
+	if (!CreateAACEncoder(
+		    aacStreaming, aacStreamEncID,
+		    CommonSettings::GetSimpleAudioBitrate(main->Config()),
+		    "simple_aac", 0))
 		throw "Failed to create aac streaming encoder (simple output)";
 
 	LoadRecordingPreset();
@@ -464,14 +466,6 @@ SimpleOutput::SimpleOutput(OBSBasic *main_) : BasicOutputHandler(main_)
 			       "stopping", OBSRecordStopping, this);
 }
 
-int SimpleOutput::GetAudioBitrate() const
-{
-	int bitrate = (int)config_get_uint(main->Config(), "SimpleOutput",
-					   "ABitrate");
-
-	return FindClosestAvailableAACBitrate(bitrate);
-}
-
 void SimpleOutput::Update()
 {
 	obs_data_t *h264Settings = obs_data_create();
@@ -479,7 +473,8 @@ void SimpleOutput::Update()
 
 	int videoBitrate =
 		config_get_uint(main->Config(), "SimpleOutput", "VBitrate");
-	int audioBitrate = GetAudioBitrate();
+	int audioBitrate =
+		CommonSettings::GetSimpleAudioBitrate(main->Config());
 	bool advanced =
 		config_get_bool(main->Config(), "SimpleOutput", "UseAdvanced");
 	bool enforceBitrate = config_get_bool(main->Config(), "SimpleOutput",
@@ -804,7 +799,9 @@ bool SimpleOutput::SetupStreaming(obs_service_t *service)
 			if (strcmp(codec, "aac") != 0) {
 				const char *id =
 					FindAudioEncoderFromCodec(codec);
-				int audioBitrate = GetAudioBitrate();
+				int audioBitrate =
+					CommonSettings::GetSimpleAudioBitrate(
+						main->Config());
 				obs_data_t *settings = obs_data_create();
 				obs_data_set_int(settings, "bitrate",
 						 audioBitrate);
@@ -1076,7 +1073,6 @@ struct AdvancedOutput : BasicOutputHandler {
 	inline void SetupRecording();
 	inline void SetupFFmpeg();
 	void SetupOutputs() override;
-	int GetAudioBitrate(size_t i) const;
 
 	virtual bool SetupStreaming(obs_service_t *service) override;
 	virtual bool StartStreaming(obs_service_t *service) override;
@@ -1089,26 +1085,6 @@ struct AdvancedOutput : BasicOutputHandler {
 	virtual bool RecordingActive() const override;
 	virtual bool ReplayBufferActive() const override;
 };
-
-static OBSData GetDataFromJsonFile(const char *jsonFile)
-{
-	char fullPath[512];
-	obs_data_t *data = nullptr;
-
-	int ret = GetProfilePath(fullPath, sizeof(fullPath), jsonFile);
-	if (ret > 0) {
-		BPtr<char> jsonData = os_quick_read_utf8_file(fullPath);
-		if (!!jsonData) {
-			data = obs_data_create_from_json(jsonData);
-		}
-	}
-
-	if (!data)
-		data = obs_data_create();
-	OBSData dataRet(data);
-	obs_data_release(data);
-	return dataRet;
-}
 
 static void ApplyEncoderDefaults(OBSData &settings,
 				 const obs_encoder_t *encoder)
@@ -1136,8 +1112,10 @@ AdvancedOutput::AdvancedOutput(OBSBasic *main_) : BasicOutputHandler(main_)
 		config_get_bool(main->Config(), "AdvOut", "FFOutputToFile");
 	useStreamEncoder = astrcmpi(recordEncoder, "none") == 0;
 
-	OBSData streamEncSettings = GetDataFromJsonFile("streamEncoder.json");
-	OBSData recordEncSettings = GetDataFromJsonFile("recordEncoder.json");
+	OBSData streamEncSettings =
+		CommonSettings::GetDataFromJsonFile("streamEncoder.json");
+	OBSData recordEncSettings =
+		CommonSettings::GetDataFromJsonFile("recordEncoder.json");
 
 	const char *rate_control = obs_data_get_string(
 		useStreamEncoder ? streamEncSettings : recordEncSettings,
@@ -1215,8 +1193,11 @@ AdvancedOutput::AdvancedOutput(OBSBasic *main_) : BasicOutputHandler(main_)
 		char name[9];
 		sprintf(name, "adv_aac%d", i);
 
-		if (!CreateAACEncoder(aacTrack[i], aacEncoderID[i],
-				      GetAudioBitrate(i), name, i))
+		if (!CreateAACEncoder(
+			    aacTrack[i], aacEncoderID[i],
+			    CommonSettings::GetAdvancedAudioBitrateForTrack(
+				    main->Config(), i),
+			    name, i))
 			throw "Failed to create audio encoder "
 			      "(advanced output)";
 	}
@@ -1224,7 +1205,9 @@ AdvancedOutput::AdvancedOutput(OBSBasic *main_) : BasicOutputHandler(main_)
 	std::string id;
 	int streamTrack =
 		config_get_int(main->Config(), "AdvOut", "TrackIndex") - 1;
-	if (!CreateAACEncoder(streamAudioEnc, id, GetAudioBitrate(streamTrack),
+	if (!CreateAACEncoder(streamAudioEnc, id,
+			      CommonSettings::GetAdvancedAudioBitrateForTrack(
+				      main->Config(), streamTrack),
 			      "avc_aac_stream", streamTrack))
 		throw "Failed to create streaming audio encoder "
 		      "(advanced output)";
@@ -1246,7 +1229,8 @@ void AdvancedOutput::UpdateStreamSettings()
 	const char *streamEncoder =
 		config_get_string(main->Config(), "AdvOut", "Encoder");
 
-	OBSData settings = GetDataFromJsonFile("streamEncoder.json");
+	OBSData settings =
+		CommonSettings::GetDataFromJsonFile("streamEncoder.json");
 	ApplyEncoderDefaults(settings, h264Streaming);
 
 	if (applyServiceSettings)
@@ -1268,7 +1252,8 @@ void AdvancedOutput::UpdateStreamSettings()
 
 inline void AdvancedOutput::UpdateRecordingSettings()
 {
-	OBSData settings = GetDataFromJsonFile("recordEncoder.json");
+	OBSData settings =
+		CommonSettings::GetDataFromJsonFile("recordEncoder.json");
 	obs_encoder_update(h264Recording, settings);
 }
 
@@ -1456,7 +1441,10 @@ inline void AdvancedOutput::UpdateAudioSettings()
 
 	for (size_t i = 0; i < MAX_AUDIO_MIXES; i++) {
 		settings[i] = obs_data_create();
-		obs_data_set_int(settings[i], "bitrate", GetAudioBitrate(i));
+		obs_data_set_int(
+			settings[i], "bitrate",
+			CommonSettings::GetAdvancedAudioBitrateForTrack(
+				main->Config(), i));
 	}
 
 	for (size_t i = 0; i < MAX_AUDIO_MIXES; i++) {
@@ -1503,16 +1491,6 @@ void AdvancedOutput::SetupOutputs()
 		SetupFFmpeg();
 	else
 		SetupRecording();
-}
-
-int AdvancedOutput::GetAudioBitrate(size_t i) const
-{
-	static const char *names[] = {
-		"Track1Bitrate", "Track2Bitrate", "Track3Bitrate",
-		"Track4Bitrate", "Track5Bitrate", "Track6Bitrate",
-	};
-	int bitrate = (int)config_get_uint(main->Config(), "AdvOut", names[i]);
-	return FindClosestAvailableAACBitrate(bitrate);
 }
 
 bool AdvancedOutput::SetupStreaming(obs_service_t *service)

@@ -334,12 +334,6 @@ private:
 	void TimedCheckForUpdates();
 	void CheckForUpdates(bool manualUpdate);
 
-	void GetFPSCommon(uint32_t &num, uint32_t &den) const;
-	void GetFPSInteger(uint32_t &num, uint32_t &den) const;
-	void GetFPSFraction(uint32_t &num, uint32_t &den) const;
-	void GetFPSNanoseconds(uint32_t &num, uint32_t &den) const;
-	void GetConfigFPS(uint32_t &num, uint32_t &den) const;
-
 	void UpdatePreviewScalingMenu();
 
 	void LoadSceneListOrder(obs_data_array_t *array);

@@ -51,6 +51,7 @@
 #include "window-log-reply.hpp"
 #include "window-projector.hpp"
 #include "window-remux.hpp"
+#include "common-settings.hpp"
 #include "qt-wrappers.hpp"
 #include "context-bar-controls.hpp"
 #include "obs-proxy-style.hpp"
@@ -3910,7 +3911,7 @@ int OBSBasic::ResetVideo()
 	struct obs_video_info ovi;
 	int ret;
 
-	GetConfigFPS(ovi.fps_num, ovi.fps_den);
+	CommonSettings::GetConfigFPS(basicConfig, ovi.fps_num, ovi.fps_den);
 
 	const char *colorFormat =
 		config_get_string(basicConfig, "Video", "ColorFormat");
@@ -6508,75 +6509,6 @@ void OBSBasic::ToggleAlwaysOnTop()
 	SetAlwaysOnTop(this, !isAlwaysOnTop);
 
 	show();
-}
-
-void OBSBasic::GetFPSCommon(uint32_t &num, uint32_t &den) const
-{
-	const char *val = config_get_string(basicConfig, "Video", "FPSCommon");
-
-	if (strcmp(val, "10") == 0) {
-		num = 10;
-		den = 1;
-	} else if (strcmp(val, "20") == 0) {
-		num = 20;
-		den = 1;
-	} else if (strcmp(val, "24 NTSC") == 0) {
-		num = 24000;
-		den = 1001;
-	} else if (strcmp(val, "25 PAL") == 0) {
-		num = 25;
-		den = 1;
-	} else if (strcmp(val, "29.97") == 0) {
-		num = 30000;
-		den = 1001;
-	} else if (strcmp(val, "48") == 0) {
-		num = 48;
-		den = 1;
-	} else if (strcmp(val, "50 PAL") == 0) {
-		num = 50;
-		den = 1;
-	} else if (strcmp(val, "59.94") == 0) {
-		num = 60000;
-		den = 1001;
-	} else if (strcmp(val, "60") == 0) {
-		num = 60;
-		den = 1;
-	} else {
-		num = 30;
-		den = 1;
-	}
-}
-
-void OBSBasic::GetFPSInteger(uint32_t &num, uint32_t &den) const
-{
-	num = (uint32_t)config_get_uint(basicConfig, "Video", "FPSInt");
-	den = 1;
-}
-
-void OBSBasic::GetFPSFraction(uint32_t &num, uint32_t &den) const
-{
-	num = (uint32_t)config_get_uint(basicConfig, "Video", "FPSNum");
-	den = (uint32_t)config_get_uint(basicConfig, "Video", "FPSDen");
-}
-
-void OBSBasic::GetFPSNanoseconds(uint32_t &num, uint32_t &den) const
-{
-	num = 1000000000;
-	den = (uint32_t)config_get_uint(basicConfig, "Video", "FPSNS");
-}
-
-void OBSBasic::GetConfigFPS(uint32_t &num, uint32_t &den) const
-{
-	uint32_t type = config_get_uint(basicConfig, "Video", "FPSType");
-
-	if (type == 1) //"Integer"
-		GetFPSInteger(num, den);
-	else if (type == 2) //"Fraction"
-		GetFPSFraction(num, den);
-	else if (false) //"Nanoseconds", currently not implemented
-		GetFPSNanoseconds(num, den);
-	else
-		GetFPSCommon(num, den);
 }
 
 config_t *OBSBasic::Config() const
