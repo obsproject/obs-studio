@@ -20,6 +20,4 @@ private slots:
 public:
 	OBSLogViewer(QWidget *parent = 0);
 	~OBSLogViewer();
-
-	bool ShowOnStartup();
 };

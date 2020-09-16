@@ -37,8 +37,11 @@ OBSLogViewer::OBSLogViewer(QWidget *parent) : QDialog(parent)
 	QPushButton *closeButton = new QPushButton(QTStr("Close"));
 	connect(closeButton, &QPushButton::clicked, this, &QDialog::hide);
 
+	bool showLogViewerOnStartup = config_get_bool(
+		App()->GlobalConfig(), "LogViewer", "ShowLogStartup");
+
 	QCheckBox *showStartup = new QCheckBox(QTStr("ShowOnStartup"));
-	showStartup->setChecked(ShowOnStartup());
+	showStartup->setChecked(showLogViewerOnStartup);
 	connect(showStartup, SIGNAL(toggled(bool)), this,
 		SLOT(ToggleShowStartup(bool)));
 
@@ -79,12 +82,6 @@ void OBSLogViewer::ToggleShowStartup(bool checked)
 {
 	config_set_bool(App()->GlobalConfig(), "LogViewer", "ShowLogStartup",
 			checked);
-}
-
-bool OBSLogViewer::ShowOnStartup()
-{
-	return config_get_bool(App()->GlobalConfig(), "LogViewer",
-			       "ShowLogStartup");
 }
 
 extern QPointer<OBSLogViewer> obsLogViewer;

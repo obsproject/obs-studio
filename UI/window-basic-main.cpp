@@ -193,9 +193,6 @@ extern void RegisterRestreamAuth();
 OBSBasic::OBSBasic(QWidget *parent)
 	: OBSMainWindow(parent), ui(new Ui::OBSBasic)
 {
-	/* setup log viewer */
-	logView = new OBSLogViewer();
-
 	qRegisterMetaTypeStreamOperators<SignalContainer<OBSScene>>(
 		"SignalContainer<OBSScene>");
 
@@ -1955,8 +1952,14 @@ void OBSBasic::OnFirstLoad()
 
 	Auth::Load();
 
-	if (logView && logView->ShowOnStartup())
+	bool showLogViewerOnStartup = config_get_bool(
+		App()->GlobalConfig(), "LogViewer", "ShowLogStartup");
+
+	if (showLogViewerOnStartup) {
+		if (!logView)
+			logView = new OBSLogViewer();
 		logView->show();
+	}
 }
 
 void OBSBasic::DeferredSysTrayLoad(int requeueCount)
@@ -5331,6 +5334,9 @@ void OBSBasic::on_actionUploadLastLog_triggered()
 
 void OBSBasic::on_actionViewCurrentLog_triggered()
 {
+	if (!logView)
+		logView = new OBSLogViewer();
+
 	if (!logView->isVisible()) {
 		logView->setVisible(true);
 	} else {
