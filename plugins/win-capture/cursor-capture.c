@@ -6,8 +6,7 @@ static uint8_t *get_bitmap_data(HBITMAP hbmp, BITMAP *bmp)
 {
 	if (GetObject(hbmp, sizeof(*bmp), bmp) != 0) {
 		uint8_t *output;
-		unsigned int size =
-			(bmp->bmHeight * bmp->bmWidth * bmp->bmBitsPixel) / 8;
+		unsigned int size = bmp->bmHeight * bmp->bmWidthBytes;
 
 		output = bmalloc(size);
 		GetBitmapBits(hbmp, size, output);
@@ -40,10 +39,17 @@ static inline bool bitmap_has_alpha(uint8_t *data, long num_pixels)
 	return false;
 }
 
-static inline void apply_mask(uint8_t *color, uint8_t *mask, long num_pixels)
+static inline void apply_mask(uint8_t *color, uint8_t *mask, BITMAP *bmp_mask)
 {
-	for (long i = 0; i < num_pixels; i++)
-		color[i * 4 + 3] = bit_to_alpha(mask, i, false);
+	long mask_pix_offs;
+
+	for (long y = 0; y < bmp_mask->bmHeight; y++) {
+		for (long x = 0; x < bmp_mask->bmWidth; x++) {
+			mask_pix_offs = y * (bmp_mask->bmWidthBytes * 8) + x;
+			color[(y * bmp_mask->bmWidth + x) * 4 + 3] =
+				bit_to_alpha(mask, mask_pix_offs, false);
+		}
+	}
 }
 
 static inline uint8_t *copy_from_color(ICONINFO *ii, uint32_t *width,
@@ -69,7 +75,7 @@ static inline uint8_t *copy_from_color(ICONINFO *ii, uint32_t *width,
 		long pixels = bmp_color.bmHeight * bmp_color.bmWidth;
 
 		if (!bitmap_has_alpha(color, pixels))
-			apply_mask(color, mask, pixels);
+			apply_mask(color, mask, &bmp_mask);
 
 		bfree(mask);
 	}
