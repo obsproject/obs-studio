@@ -544,6 +544,8 @@ public slots:
 	void DeferSaveBegin();
 	void DeferSaveEnd();
 
+	void DisplayStreamStartError();
+
 	void StartStreaming();
 	void StopStreaming();
 	void ForceStopStreaming();

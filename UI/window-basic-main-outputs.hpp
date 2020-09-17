@@ -36,6 +36,7 @@ struct BasicOutputHandler {
 
 	virtual ~BasicOutputHandler(){};
 
+	virtual bool SetupStreaming(obs_service_t *service) = 0;
 	virtual bool StartStreaming(obs_service_t *service) = 0;
 	virtual bool StartRecording() = 0;
 	virtual bool StartReplayBuffer() { return false; }
